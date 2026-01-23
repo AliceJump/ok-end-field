@@ -1,5 +1,6 @@
 import re
 import time
+from typing import Any
 
 import win32con
 
@@ -17,29 +18,29 @@ class BaseEfTask(BaseTask):
     def find_confirm(self):
         return self.find_one('skip_dialog_confirm', horizontal_variance=0.05, vertical_variance=0.05)
 
-    def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.02, move=True, key="left", after_sleep=0.01):
-        self.executor.interaction.operate(lambda: self.do_click(x, y, down_time=down_time, key=key), block=True)
-        self.sleep(after_sleep)
+    # def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.02, move=True, key="left", after_sleep=0.01):
+    #     self.executor.interaction.operate(lambda: self.do_click(x, y, down_time=down_time, key=key), block=True)
+    #     self.sleep(after_sleep)
 
-    def do_click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.02, move=True, key="left"):
-        click_pos = self.executor.interaction.make_mouse_position(x, y)
-        if key == "left":
-            btn_down = win32con.WM_LBUTTONDOWN
-            btn_mk = win32con.MK_LBUTTON
-            btn_up = win32con.WM_LBUTTONUP
-        elif key == "middle":
-            btn_down = win32con.WM_MBUTTONDOWN
-            btn_mk = win32con.MK_MBUTTON
-            btn_up = win32con.WM_MBUTTONUP
-        else:
-            btn_down = win32con.WM_RBUTTONDOWN
-            btn_mk = win32con.MK_RBUTTON
-            btn_up = win32con.WM_RBUTTONUP
-        self.executor.interaction.post(btn_down, btn_mk, click_pos
-                  )
-        time.sleep(down_time)
-        self.executor.interaction.post(btn_up, 0, click_pos
-                  )
+    # def do_click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.02, move=True, key="left"):
+    #     click_pos = self.executor.interaction.make_mouse_position(x, y)
+    #     if key == "left":
+    #         btn_down = win32con.WM_LBUTTONDOWN
+    #         btn_mk = win32con.MK_LBUTTON
+    #         btn_up = win32con.WM_LBUTTONUP
+    #     elif key == "middle":
+    #         btn_down = win32con.WM_MBUTTONDOWN
+    #         btn_mk = win32con.MK_MBUTTON
+    #         btn_up = win32con.WM_MBUTTONUP
+    #     else:
+    #         btn_down = win32con.WM_RBUTTONDOWN
+    #         btn_mk = win32con.MK_RBUTTON
+    #         btn_up = win32con.WM_RBUTTONUP
+    #     self.executor.interaction.post(btn_down, btn_mk, click_pos
+    #               )
+    #     time.sleep(down_time)
+    #     self.executor.interaction.post(btn_up, 0, click_pos
+    #               )
 
     # def send_key(self, key, after_sleep=0, down_time=0.04, **kwargs):
     #     vk_code = self.executor.interaction.get_key_by_str(key)
