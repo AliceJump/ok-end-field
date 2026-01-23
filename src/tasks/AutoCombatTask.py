@@ -14,8 +14,8 @@ class AutoCombatTask(BaseEfTask, TriggerTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_config = {'_enabled': True}
-        self.name = "自动战斗(必须在游戏设置里, 将按键6添加为普攻按钮)"
-        self.description = "自动战斗(进入战斗后自动战斗知道结束)"
+        self.name = "自动战斗"
+        self.description = "自动战斗(进入战斗后自动战斗直到结束)"
         self.icon = FluentIcon.ACCEPT
         self.default_config.update({
             "技能释放": "1234",
