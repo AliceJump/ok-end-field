@@ -39,6 +39,7 @@ class AutoCombatTask(BaseEfTask, TriggerTask):
         skill_sequence = self._parse_skill_sequence(raw_skill_config)
         if self.debug:
             self.screenshot('enter_combat')
+        self.click(key='middle')
         while True:
             skill_count = self.get_skill_bar_count()
             if skill_count < 0:
@@ -47,6 +48,7 @@ class AutoCombatTask(BaseEfTask, TriggerTask):
                     self.screenshot('out_of_combat')
                 if self.wait_in_combat():
                     self.log_debug('re-enter combat')
+                    self.click(key='middle')
                     continue
                 break
             elif self.use_e_skill():
