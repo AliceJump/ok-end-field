@@ -12,7 +12,7 @@ on:
 jobs:
   mirrorchyan:
     runs-on: macos-latest
-    # if: ${{ github.repository_owner == 'ok-oldking' }}
+    if: ${{ github.repository_owner == 'ok-oldking' }}
 
     steps:
       - uses: MirrorChyan/uploading-action@v1

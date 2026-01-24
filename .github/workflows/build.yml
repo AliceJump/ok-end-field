@@ -88,7 +88,7 @@ jobs:
               * ok-ef-win32-online-setup.exe 在线安装包, 在线白嫖的服务器不一定稳定, 建议优先使用完整包. 
               * 不要下载ok-ww-win32.zip,和SourceCode.zip, Do Not Download the SourceCode, ok-ww-win32.zip
             ### 如果无法下载或下载慢, 可以使用其他下载源
-              * [Mirror酱下载渠道](https://mirrorchyan.com/zh/projects?rid=okww&source=ok-ww-release), 国内网页直链, 下载需要购买CD-KEY, 已有Mirror酱CD-KEY可免费下载
+              * [Mirror酱下载渠道](https://mirrorchyan.com/zh/projects?rid=ok-end-field&source=ok-ef-release), 国内网页直链, 下载需要购买CD-KEY, 已有Mirror酱CD-KEY可免费下载
               * [夸克网盘](https://pan.quark.cn/s/a1052cec4d13), 免费, 但需要注册并下载夸克网盘客户端
           files: pyappify_dist/*
 
