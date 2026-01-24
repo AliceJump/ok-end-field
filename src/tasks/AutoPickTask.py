@@ -20,7 +20,10 @@ class AutoPickTask(BaseEfTask, TriggerTask):
         self.default_config = {'_enabled': True}
         self.last_box_name = None
         self.last_pick_time = 0
-        self.white_list = {'采集', '萤壳虫', '打开'}
+        self.default_config.update({
+            "白名单": ["采集", "萤壳虫", "打开", "荞花", "柑实"]
+        })
+        self.hint_time = 0
 
     def run(self):
         if self.in_world():
@@ -36,10 +39,10 @@ class AutoPickTask(BaseEfTask, TriggerTask):
                                           y_offset=-button_f.height * 0.2, height_offset=button_f.height * 0.85,
                                           name='choice')
                 white_percent = 0
-                if texts[0].name in self.white_list:
+                if any(keyword in texts[0].name for keyword in self.config.get("白名单", [])):
                     if self.debug:
                         self.screenshot('pick')
-                    self.log_info('pick white_list {}'.format(texts[0].name))
+                    self.log_debug('pick white_list {}'.format(texts[0].name))
                     self.pick()
                     self.sleep(0.2)
                     return
@@ -62,6 +65,9 @@ class AutoPickTask(BaseEfTask, TriggerTask):
                     self.log_info('pick because not gray/white icon {} {}'.format(texts, white_percent))
                     self.pick(text_count)
                     return
+                if time.time() - self.hint_time > 5:
+                    self.log_info('not in white_list {}'.format(texts[0].name))
+                    self.hint_time = time.time()
                 self.sleep(0.2)
 
     def pick(self, count=1):
