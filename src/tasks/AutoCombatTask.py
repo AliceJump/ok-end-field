@@ -43,11 +43,11 @@ class AutoCombatTask(BaseEfTask, TriggerTask):
         self.click(key='middle')
         while True:
             skill_count = self.get_skill_bar_count()
-            if skill_count < 0 and self.ocr_lv():
+            if skill_count < 0 and (self.ocr_lv() or not self.in_team()):
                 if self.debug:
                     self.screenshot('out_of_combat')
-                    self.log_info("自动战斗结束!", notify=self.config.get("后台结束战斗通知") and self.in_bg())
-                    break
+                self.log_info("自动战斗结束!", notify=self.config.get("后台结束战斗通知") and self.in_bg())
+                break
             elif self.use_e_skill():
                 continue
             elif self.use_ult():
@@ -87,10 +87,7 @@ class AutoCombatTask(BaseEfTask, TriggerTask):
                             self.click(after_sleep=0.1)
                         self.next_frame()
             else:
-                if key:=self.config.get("攻击快捷键"):
-                    self.send_key(key, after_sleep=0.3)
-                else:
-                    self.click(after_sleep=0.5)
+                self.click(after_sleep=0.2)
             self.sleep(0.01)
 
     def _parse_skill_sequence(self, raw_config: str) -> list[str]:
