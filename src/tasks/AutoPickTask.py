@@ -20,8 +20,9 @@ class AutoPickTask(BaseEfTask, TriggerTask):
         self.default_config = {'_enabled': True}
         self.last_box_name = None
         self.last_pick_time = 0
-        self.white_list = {'采集', '萤壳虫', '打开', '荞花', '灰芦麦', '灼壳虫', '苦叶椒', "轻红柱状菌", "酮化灌木"}
-        self.hint_time = 0
+        self.white_list = {'采集', '萤壳虫', '打开', '荞花', '灰芦麦', '灼壳虫', '苦叶椒', "轻红柱状菌", "酮化灌木",
+                           '柑实', "触碰"
+                           }
 
     def run(self):
         if self.in_world():
@@ -32,18 +33,19 @@ class AutoPickTask(BaseEfTask, TriggerTask):
                 if not texts:
                     self.log_error('pick can not ocr texts')
                     return
-                start = time.time()
-                icon_zone = button_f.copy(x_offset=button_f.width * 3.3, width_offset=button_f.width * 0.8,
-                                          y_offset=-button_f.height * 0.2, height_offset=button_f.height * 0.85,
-                                          name='choice')
-                white_percent = 0
-                if any(keyword in texts[0].name for keyword in self.white_list):
+
+                if texts[0].name in self.white_list:
                     if self.debug:
                         self.screenshot('pick')
                     self.log_debug('pick white_list {}'.format(texts[0].name))
                     self.pick()
                     self.sleep(0.2)
                     return
+                start = time.time()
+                icon_zone = button_f.copy(x_offset=button_f.width * 3.3, width_offset=button_f.width * 0.8,
+                                          y_offset=-button_f.height * 0.2, height_offset=button_f.height * 0.85,
+                                          name='choice')
+                white_percent = 0
                 while time.time() - start < 0.3:
                     white_percent = self.calculate_color_percentage(white_color, icon_zone)
                     if white_percent > 0.1:
@@ -63,9 +65,6 @@ class AutoPickTask(BaseEfTask, TriggerTask):
                     self.log_info('pick because not gray/white icon {} {}'.format(texts, white_percent))
                     self.pick(text_count)
                     return
-                if time.time() - self.hint_time > 5:
-                    self.log_info('not in white_list {}'.format(texts[0].name))
-                    self.hint_time = time.time()
                 self.sleep(0.2)
 
     def pick(self, count=1):
