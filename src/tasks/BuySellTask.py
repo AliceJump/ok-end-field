@@ -37,7 +37,7 @@ class BuySellTask(BaseEfTask):
         for price in prices:
             price_int = parse_rounded_int(price.name)
             if price_int is not None:
-                closest = price.find_closest_box(None, up_and_downs)
+                closest = price.find_closest_box("all", up_and_downs)
                 self.log_info(f'price_{price_int} find_closest_box {closest}')
                 if closest and closest.closest_distance(price) < self.width_of_screen(0.02):
                     self.log_info(f'found closest box {price_int} {closest}')
@@ -47,6 +47,8 @@ class BuySellTask(BaseEfTask):
         if highest_margin > self.config.get('囤货价格折扣百分比'):
             self.log_info(f'highest margin {highest_margin} > {self.config.get("囤货价格折扣百分比")}')
             self.click(highest_box, after_sleep=1)
+            self.click(0.53, 0.68, after_sleep=0.5)
+            self.click(0.83, 0.79, after_sleep=1)
 
 
 def parse_rounded_int(text):
