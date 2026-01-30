@@ -77,6 +77,18 @@
             "height": 2160,
             "id": 12,
             "file_name": "images/11.png"
+        },
+        {
+            "width": 2560,
+            "height": 1440,
+            "id": 13,
+            "file_name": "images/ticket_wuling_1.png"
+        },
+        {
+            "width": 2560,
+            "height": 1440,
+            "id": 14,
+            "file_name": "images/ticket_valley_1.png"
         }
     ],
     "categories": [
@@ -203,6 +215,14 @@
         {
             "id": 30,
             "name": "ult_4"
+        },
+        {
+            "id": 31,
+            "name": "ticket_valley"
+        },
+        {
+            "id": 32,
+            "name": "ticket_wuling"
         }
     ],
     "annotations": [
@@ -655,6 +675,36 @@
             "ignore": 0,
             "iscrowd": 0,
             "area": 1013.3381518214402
+        },
+        {
+            "id": 30,
+            "image_id": 13,
+            "category_id": 32,
+            "segmentation": [],
+            "bbox": [
+                1688.7765953178052,
+                382.05097202682765,
+                83.10132141713765,
+                61.79329028453845
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 5135.104077357919
+        },
+        {
+            "id": 31,
+            "image_id": 14,
+            "category_id": 31,
+            "segmentation": [],
+            "bbox": [
+                1690.027855153204,
+                382.3955431754875,
+                81.55988857938682,
+                62.841225626740936
+            ],
+            "ignore": 0,
+            "iscrowd": 0,
+            "area": 5125.3233603090985
         }
     ],
     "info": {
