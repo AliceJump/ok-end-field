@@ -1,0 +1,37 @@
+{
+  "version": "3.3.8",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "assist_friend",
+      "shape_type": "rectangle",
+      "flags": {},
+      "points": [
+        [
+          3095.1202473519415,
+          1751.3855173519178
+        ],
+        [
+          3159.573420836751,
+          1751.3855173519178
+        ],
+        [
+          3159.573420836751,
+          1811.3207547169802
+        ],
+        [
+          3095.1202473519415,
+          1811.3207547169802
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "attributes": {}
+    }
+  ],
+  "imagePath": "71f4cdba-Windows_Graphics_Capture_3840x2160_1769676321084.8071_original.png",
+  "imageData": null,
+  "imageHeight": 2160,
+  "imageWidth": 3840
+}

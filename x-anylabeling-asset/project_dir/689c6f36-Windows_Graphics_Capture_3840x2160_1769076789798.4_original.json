@@ -1,0 +1,118 @@
+{
+  "version": "3.3.8",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "pick_f",
+      "shape_type": "rectangle",
+      "flags": {},
+      "points": [
+        [
+          2460.9103133051094,
+          1373.5565454845166
+        ],
+        [
+          2485.809448751795,
+          1373.5565454845166
+        ],
+        [
+          2485.809448751795,
+          1401.5680728620382
+        ],
+        [
+          2460.9103133051094,
+          1401.5680728620382
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "attributes": {}
+    },
+    {
+      "label": "esc",
+      "shape_type": "rectangle",
+      "flags": {},
+      "points": [
+        [
+          3687.9293114355783,
+          15.750615258408526
+        ],
+        [
+          3752.6613366366146,
+          15.750615258408526
+        ],
+        [
+          3752.6613366366146,
+          45.10544900738944
+        ],
+        [
+          3687.9293114355783,
+          45.10544900738944
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "attributes": {}
+    },
+    {
+      "label": "b",
+      "shape_type": "rectangle",
+      "flags": {},
+      "points": [
+        [
+          3382.8153249057186,
+          13.32633009028251
+        ],
+        [
+          3416.0150027071045,
+          13.32633009028251
+        ],
+        [
+          3416.0150027071045,
+          47.3907899753705
+        ],
+        [
+          3382.8153249057186,
+          47.3907899753705
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "attributes": {}
+    },
+    {
+      "label": "c",
+      "shape_type": "rectangle",
+      "flags": {},
+      "points": [
+        [
+          3531.8748346186035,
+          15.163721574997785
+        ],
+        [
+          3561.059607284612,
+          15.163721574997785
+        ],
+        [
+          3561.059607284612,
+          46.38706369152488
+        ],
+        [
+          3531.8748346186035,
+          46.38706369152488
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "attributes": {}
+    }
+  ],
+  "imagePath": "689c6f36-Windows_Graphics_Capture_3840x2160_1769076789798.4_original.png",
+  "imageData": null,
+  "imageHeight": 2160,
+  "imageWidth": 3840
+}

@@ -1,0 +1,37 @@
+{
+  "version": "3.3.8",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "skip_dialog_esc",
+      "shape_type": "rectangle",
+      "flags": {},
+      "points": [
+        [
+          3708.3738345911215,
+          66.71463178258236
+        ],
+        [
+          3770.580720982989,
+          66.71463178258236
+        ],
+        [
+          3770.580720982989,
+          95.56420228315852
+        ],
+        [
+          3708.3738345911215,
+          95.56420228315852
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "attributes": {}
+    }
+  ],
+  "imagePath": "8ac02052-skip_quest_esc.png",
+  "imageData": null,
+  "imageHeight": 2160,
+  "imageWidth": 3840
+}

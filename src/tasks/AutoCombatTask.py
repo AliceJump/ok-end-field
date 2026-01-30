@@ -165,6 +165,8 @@ class AutoCombatTask(BaseEfTask, TriggerTask):
         return self.get_skill_bar_count() >= required_yellow and self.in_team() and not self.ocr_lv()
 
     def in_team(self):
+        one = self.find_one('skill_4')
+        self.log_debug('oneconfidence {}'.format(one.confidence))
         return self.find_one('skill_1') and self.find_one('skill_2') and self.find_one('skill_3') and self.find_one(
             'skill_4')
 

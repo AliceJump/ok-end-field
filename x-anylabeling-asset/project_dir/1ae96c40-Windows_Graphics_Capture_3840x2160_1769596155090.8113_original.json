@@ -1,0 +1,64 @@
+{
+  "version": "3.3.8",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "price_up",
+      "shape_type": "rectangle",
+      "flags": {},
+      "points": [
+        [
+          2293.28958162428,
+          1820.3915715563971
+        ],
+        [
+          2327.940935192777,
+          1820.3915715563971
+        ],
+        [
+          2327.940935192777,
+          1852.7505580729285
+        ],
+        [
+          2293.28958162428,
+          1852.7505580729285
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "attributes": {}
+    },
+    {
+      "label": "price_down",
+      "shape_type": "rectangle",
+      "flags": {},
+      "points": [
+        [
+          1842.723333865341,
+          1820.2929201879417
+        ],
+        [
+          1873.9436634349834,
+          1820.2929201879417
+        ],
+        [
+          1873.9436634349834,
+          1852.7505580729298
+        ],
+        [
+          1842.723333865341,
+          1852.7505580729298
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "attributes": {}
+    }
+  ],
+  "imagePath": "1ae96c40-Windows_Graphics_Capture_3840x2160_1769596155090.8113_original.png",
+  "imageData": null,
+  "imageHeight": 2160,
+  "imageWidth": 3840
+}

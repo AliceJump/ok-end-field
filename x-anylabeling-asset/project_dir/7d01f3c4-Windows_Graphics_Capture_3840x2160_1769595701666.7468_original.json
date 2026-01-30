@@ -1,0 +1,64 @@
+{
+  "version": "3.3.8",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "q",
+      "shape_type": "rectangle",
+      "flags": {},
+      "points": [
+        [
+          99.12337025431121,
+          262.92976894175996
+        ],
+        [
+          129.15504511894983,
+          262.92976894175996
+        ],
+        [
+          129.15504511894983,
+          296.11156685808
+        ],
+        [
+          99.12337025431121,
+          296.11156685808
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "attributes": {}
+    },
+    {
+      "label": "e",
+      "shape_type": "rectangle",
+      "flags": {},
+      "points": [
+        [
+          1964.6217255127528,
+          262.9222423626613
+        ],
+        [
+          1992.7693478096605,
+          262.9222423626613
+        ],
+        [
+          1992.7693478096605,
+          296.5335903527281
+        ],
+        [
+          1964.6217255127528,
+          296.5335903527281
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "attributes": {}
+    }
+  ],
+  "imagePath": "7d01f3c4-Windows_Graphics_Capture_3840x2160_1769595701666.7468_original.png",
+  "imageData": null,
+  "imageHeight": 2160,
+  "imageWidth": 3840
+}

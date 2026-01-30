@@ -1,0 +1,37 @@
+{
+  "version": "3.3.8",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "monthly_card",
+      "shape_type": "rectangle",
+      "flags": {},
+      "points": [
+        [
+          31.123919308357355,
+          1033.314121037464
+        ],
+        [
+          227.20461095100868,
+          1033.314121037464
+        ],
+        [
+          227.20461095100868,
+          1117.3487031700286
+        ],
+        [
+          31.123919308357355,
+          1117.3487031700286
+        ]
+      ],
+      "group_id": null,
+      "description": null,
+      "difficult": false,
+      "attributes": {}
+    }
+  ],
+  "imagePath": "71de7ba9-Windows_Graphics_Capture_3840x2160_1769391175454.205_original.png",
+  "imageData": null,
+  "imageHeight": 2160,
+  "imageWidth": 3840
+}
