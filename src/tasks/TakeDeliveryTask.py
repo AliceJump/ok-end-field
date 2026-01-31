@@ -23,7 +23,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "运送委托接取"
-        self.description = "自动检查运送委托的报酬与券种并接取，未匹配则刷新"
+        self.description = "在运送委托列表界面开启,任务按报酬排序,接武陵券需将滚动条拉到底部"
         self.icon = FluentIcon.ACCEPT
         self.default_config = {
             '_enabled': True,
@@ -32,6 +32,71 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
             '接取武陵券': True,
             '接取武陵券最低金额': 5.0
         }
+
+    def process_ocr_results(self, full_texts, filter_min, reward_pattern):
+        """
+        处理 OCR 结果，提取奖励、接取按钮和刷新按钮。
+        方便单元测试逻辑。
+        """
+        rewards = []
+        accept_btns = []
+        refresh_btn = None
+
+        for t in full_texts:
+            name = t.name.strip()
+            if ("刷新" in name or "秒后可刷新" in name) and t.y > self.height * 0.8:
+                refresh_btn = t
+            elif "接取运送委托" in name:
+                accept_btns.append(t)
+            else:
+                match = reward_pattern.search(name)
+                if match:
+                    try:
+                        val = float(match.group(1))
+                        if val >= filter_min and val <= 100:
+                            rewards.append((t, val))  # 保存 OCR对象 和 提取出的数值
+                        elif val > 100:
+                            self.log_debug(f"金额异常过大({val}万)，可能是OCR误识别，已过滤")
+                    except:
+                        pass
+        return rewards, accept_btns, refresh_btn
+
+    def detect_ticket_type(self, reward_obj, ticket_types):
+        """
+        根据报酬文本的位置，推算图标区域，并尝试识别券种。
+        """
+        search_hw_ratio = 3.6
+        search_h_ratio = 2.4
+
+        min_box_size = 70
+
+        search_width = max(reward_obj.height * search_hw_ratio, min_box_size)
+        search_height = max(reward_obj.height * search_h_ratio, min_box_size)
+
+        x_offset_val = (reward_obj.width / 2) - (search_width / 2)
+        y_offset_val = -search_height
+        target_real_height = search_height + reward_obj.height * 0.5
+
+        icon_search_box = reward_obj.copy(
+            x_offset = x_offset_val,
+            y_offset = y_offset_val,
+            width_offset = search_width - reward_obj.width,
+            height_offset = target_real_height - reward_obj.height
+        )
+
+        # 边界检查
+        if icon_search_box.y < 0:
+            icon_search_box.height += icon_search_box.y
+            icon_search_box.y = 0
+        if icon_search_box.x < 0:
+            icon_search_box.width += icon_search_box.x
+            icon_search_box.x = 0
+
+        found_ticket = self.find_feature(ticket_types, box=icon_search_box)
+        if found_ticket:
+             # 如果返回的是列表，取第一个
+            return found_ticket[0] if isinstance(found_ticket, list) else found_ticket
+        return None
 
     def run(self):
         reward_regex = r"(\d+\.?\d*)万"
@@ -67,28 +132,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
             try:
 
                 full_texts = self.ocr(box=self.box_of_screen(0.05, 0.15, 0.95, 0.95))
-
-                rewards = []
-                accept_btns = []
-                refresh_btn = None
-
-                for t in full_texts:
-                    name = t.name.strip()
-                    if ("刷新" in name or "秒后可刷新" in name) and t.y > self.height * 0.8:
-                        refresh_btn = t
-                    elif "接取运送委托" in name:
-                        accept_btns.append(t)
-                    else:
-                        match = reward_pattern.search(name)
-                        if match:
-                            try:
-                                val = float(match.group(1))
-                                if val >= filter_min and val <= 100:
-                                    rewards.append((t, val)) # 保存 OCR对象 和 提取出的数值
-                                elif val > 100:
-                                    self.log_debug(f"金额异常过大({val}万)，可能是OCR误识别，已过滤")
-                            except:
-                                pass
+                rewards, accept_btns, refresh_btn = self.process_ocr_results(full_texts, filter_min, reward_pattern)
 
                 target_btn = None
                 matched_msg = ""
@@ -106,43 +150,9 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                     if not my_btn:
                         continue # 该行没找到按钮，跳过
 
-                    search_hw_ratio = 3.6
-                    search_h_ratio = 2.4
+                    ticket_result = self.detect_ticket_type(reward_obj, ticket_types)
 
-                    min_box_size = 70
-
-                    search_width = max(reward_obj.height * search_hw_ratio, min_box_size)
-                    search_height = max(reward_obj.height * search_h_ratio, min_box_size)
-
-                    x_offset_val = (reward_obj.width / 2) - (search_width / 2)
-
-                    y_offset_val = -search_height
-
-                    target_real_height = search_height + reward_obj.height * 0.5
-
-                    icon_search_box = reward_obj.copy(
-                        x_offset = x_offset_val,
-                        y_offset = y_offset_val,
-                        width_offset = search_width - reward_obj.width,
-                        height_offset = target_real_height - reward_obj.height
-                    )
-
-                    # 边界检查
-                    if icon_search_box.y < 0:
-                        icon_search_box.height += icon_search_box.y
-                        icon_search_box.y = 0
-                    if icon_search_box.x < 0:
-                        icon_search_box.width += icon_search_box.x
-                        icon_search_box.x = 0
-
-
-                    found_ticket = self.find_feature(ticket_types, box=icon_search_box)
-
-
-                    if found_ticket:
-                        # 如果返回的是列表，取第一个（虽然逻辑上应该是一个 Feature 对象）
-                        ticket_result = found_ticket[0] if isinstance(found_ticket, list) else found_ticket
-
+                    if ticket_result:
                         # 根据具体的图标类型判断对应的金额阈值
                         is_qualified = False
                         if ticket_result.name == 'ticket_valley' and enable_valley and val >= valley_min:
@@ -158,7 +168,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                         else:
                             self.log_debug(f"类型匹配({ticket_result.name})但金额({val}万)不达标")
                     else:
-                        self.log_debug(f"金额符合({val}万)但未找到券种图标 (icon_box={icon_search_box})")
+                        self.log_debug(f"金额符合({val}万)但未找到券种图标")
 
                 # 4. 执行操作
                 if target_btn:
