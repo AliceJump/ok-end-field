@@ -5,6 +5,7 @@ from typing import Any
 import win32con
 
 from ok import BaseTask
+from src.essence.essence_recognizer import EssenceInfo, read_essence_info
 
 
 class BaseEfTask(BaseTask):
@@ -65,3 +66,6 @@ class BaseEfTask(BaseTask):
                                                                                                     threshold=0.75)):
                 self.click(close, after_sleep=1)
                 return False
+
+    def read_essence_info(self) -> EssenceInfo | None:
+        return read_essence_info(self)
