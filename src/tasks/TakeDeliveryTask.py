@@ -23,14 +23,13 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "运送委托接取"
-        self.description = "在运送委托列表界面开启,任务按报酬排序,接武陵券需将滚动条拉到底部"
+        self.description = "自动抢单"
         self.icon = FluentIcon.ACCEPT
         self.default_config = {
-            '_enabled': True,
             '接取谷地券': False,
-            '接取谷地券最低金额': 5.0,
+            '接取谷地券最低金额(万)': 5.0,
             '接取武陵券': True,
-            '接取武陵券最低金额': 5.0
+            '接取武陵券最低金额(万)': 5.0
         }
 
     def process_ocr_results(self, full_texts, filter_min, reward_pattern):
@@ -99,14 +98,37 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         return None
 
     def run(self):
+        # 前置：按Y，点击“仓储节点”，点击“运送委托列表”
+        self.log_info("前置操作：按Y，点击‘仓储节点’，点击‘运送委托列表’")
+        self.send_key('y', down_time=0.05, after_sleep=0.5)
+        storage_box = self.wait_ocr(match="仓储节点", time_out=5)
+        if storage_box:
+            self.click(storage_box[0], move_back=True, after_sleep=0.5)
+        else:
+            self.log_error("未找到‘仓储节点’按钮，任务中止。")
+            return
+
+        delivery_box = self.wait_ocr(match="运送委托列表", time_out=5)
+        if delivery_box:
+            self.click(delivery_box[0], move_back=True, after_sleep=0.5)
+            # 点击后滚动到底部（多次大幅度向下滚动）
+            cx = int(self.width * 0.5)
+            cy = int(self.height * 0.5)
+            for _ in range(6):
+                self.scroll(cx, cy, -8)
+                self.sleep(0.2)
+        else:
+            self.log_error("未找到‘运送委托列表’按钮，任务中止。")
+            return
+
         reward_regex = r"(\d+\.?\d*)万"
         reward_pattern = re.compile(reward_regex, re.I)
 
         # 读取券种配置
         enable_valley = self.config.get('接取谷地券', False)
         enable_wuling = self.config.get('接取武陵券', True)
-        valley_min = float(self.config.get('接取谷地券最低金额', 5.0))
-        wuling_min = float(self.config.get('接取武陵券最低金额', 5.0))
+        valley_min = float(self.config.get('接取谷地券最低金额(万)', 5.0))
+        wuling_min = float(self.config.get('接取武陵券最低金额(万)', 5.0))
 
         ticket_types = []
         if enable_valley:
@@ -124,6 +146,10 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         if enable_wuling:
             active_mins.append(wuling_min)
         filter_min = min(active_mins)
+
+        # 滚动控制状态
+        scroll_step = 0             # 当前滚动计数 (0, 1) -> 2次后刷新
+        scroll_direction = -1       # -1: 向下(wheel负值), 1: 向上(wheel正值)
 
         while True:
             if not self.enabled:
@@ -174,52 +200,60 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                 if target_btn:
                     # 匹配成功后，增加日志并点击
                     self.log_info(f"准备接取任务：{matched_msg}")
-                    self.click(target_btn, after_sleep=2, down_time=0.1)
+                    self.click(target_btn, after_sleep=2, down_time=0.1, move_back=True)
                     return True
                 else:
-                    self.log_info("未找到符合条件(金额+类型)的委托，检测刷新")
+                    self.log_info("未找到符合条件(金额+类型)的委托")
 
-                    # 1. 更新刷新按钮位置记忆 (只要OCR里有，就刷新位置)
+                    # 1. 更新刷新按钮位置记忆
                     if refresh_btn:
-                        self.last_known_refresh_btn = refresh_btn
+                        last_refresh_box = refresh_btn
+                    else:
+                        last_refresh_box = getattr(self, 'last_known_refresh_btn', None)
 
-                    # 2. 尝试执行盲点刷新
-                    # 逻辑：只要知道位置且CD到了就点，完全忽略当前文字内容（避免OCR读数卡死或识别错误）
-                    btn_to_click = getattr(self, 'last_known_refresh_btn', None)
+                    # 2. 检查是否需要滚动 (每轮刷新之间最多滚动1次)
+                    if scroll_step < 1:
+                        scroll_step += 1
+                        direction_str = "向下" if scroll_direction == -1 else "向上"
+                        self.log_info(f"执行第 {scroll_step}/1 次{direction_str}滚动查漏...")
 
-                    if btn_to_click:
+                        # 滚动操作：在屏幕列表中间位置滚动
+                        cx = int(self.width * 0.5)
+                        cy = int(self.height * 0.5)
+                        self.scroll(cx, cy, scroll_direction * 3)
+                        self.sleep(1.0) # 等待滚动动画
+                        continue    # 滚动后重新OCR
+
+                    # 3. 滚动次数已满，准备刷新
+                    self.log_info("已完成当前列表扫描，准备检测刷新")
+
+                    # 4. 尝试执行盲点刷新（直接用 Box 对象）
+                    if last_refresh_box:
                         last_click = getattr(self, 'last_refresh_time', 0)
                         elapsed = time.time() - last_click
 
                         if elapsed < 5.2:
-                            # CD未好，检查检测次数
-                            current_count = getattr(self, 'ocr_count_after_click', 0) + 1
-                            self.ocr_count_after_click = current_count
-
-                            if current_count < 2:
-                                # 还不到2次，等待0.5s后继续循环进行下一次OCR
-                                self.log_debug(f"刷新后第 {current_count} 次检测未果，等待 0.5s 继续检测...")
-                                self.sleep(0.5)
-                                continue
-                            else:
-                                # 已满2次，直接睡到CD结束
-                                wait_time = 5.2 - elapsed
-                                if wait_time > 0:
-                                    self.log_debug(f"已检测 {current_count} 次，不再检测，等待 {wait_time:.2f}s 后刷新...")
-                                    self.sleep(wait_time)
+                            # CD未好
+                            self.log_debug(f"刷新CD中 ({elapsed:.1f}/5.2s)，等待...")
+                            self.sleep(5.2 - elapsed)
 
                         # CD已好（或睡醒），执行点击
-                        self.log_info(f"执行盲点刷新 (坐标: {int(btn_to_click.x)}, {int(btn_to_click.y)})")
-                        self.click(btn_to_click, after_sleep=0.5, down_time=0.2)
+                        self.log_info(f"执行刷新 (坐标: {int(last_refresh_box.x)}, {int(last_refresh_box.y)})")
+                        self.click(last_refresh_box, move_back=True)
                         self.last_refresh_time = time.time()
-                        self.ocr_count_after_click = 0 # 重置计数器
+
+                        # 刷新成功后，滚动状态反转
+                        scroll_direction *= -1
+                        scroll_step = 0             # 重置计数
+
+                        self.sleep(1.0) # 等待刷新内容加载
                     else:
-                        self.log_info("警告: 尚未定位到刷新按钮位置，无法盲点")
-                        self.sleep(1.0)
+                        self.log_info("警告: 尚未定位到刷新按钮位置，无法刷新，重试...")
+                        time.sleep(1.0)
                         continue
             except Exception as e:
                 self.log_info(f"TakeDeliveryTask error: {e}")
                 if "SetCursorPos" in str(e) or "拒绝访问" in str(e):
                     self.log_info("警告: 检测到权限不足或光标控制失败，请尝试【以管理员身份运行】程序！")
-                self.sleep(2)
+                time.sleep(2)
                 continue
