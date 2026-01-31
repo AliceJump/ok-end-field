@@ -199,14 +199,14 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                             if current_count < 2:
                                 # 还不到2次，等待0.5s后继续循环进行下一次OCR
                                 self.log_debug(f"刷新后第 {current_count} 次检测未果，等待 0.5s 继续检测...")
-                                time.sleep(0.5)
+                                self.sleep(0.5)
                                 continue
                             else:
                                 # 已满2次，直接睡到CD结束
                                 wait_time = 5.2 - elapsed
                                 if wait_time > 0:
                                     self.log_debug(f"已检测 {current_count} 次，不再检测，等待 {wait_time:.2f}s 后刷新...")
-                                    time.sleep(wait_time)
+                                    self.sleep(wait_time)
 
                         # CD已好（或睡醒），执行点击
                         self.log_info(f"执行盲点刷新 (坐标: {int(btn_to_click.x)}, {int(btn_to_click.y)})")
@@ -215,11 +215,11 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                         self.ocr_count_after_click = 0 # 重置计数器
                     else:
                         self.log_info("警告: 尚未定位到刷新按钮位置，无法盲点")
-                        time.sleep(1.0)
+                        self.sleep(1.0)
                         continue
             except Exception as e:
                 self.log_info(f"TakeDeliveryTask error: {e}")
                 if "SetCursorPos" in str(e) or "拒绝访问" in str(e):
                     self.log_info("警告: 检测到权限不足或光标控制失败，请尝试【以管理员身份运行】程序！")
-                time.sleep(2)
+                self.sleep(2)
                 continue
