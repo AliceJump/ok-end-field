@@ -265,13 +265,14 @@ class EssenceScanTask(BaseEfTask):
         locked = 0
         lock_skipped = 0
         logs: list[str] = []
-        graduated_weapons: set[str] = set()
-        graduated_weapon_logs: list[str] = []
+        matched_weapons: set[str] = set()
         self.info_set("已识别", "0")
         self.info_set("已毕业基质", "0")
         self.info_set("已上锁", "0")
         self.info_set("已锁定跳过", "0")
         self.info_set("已毕业武器", "0")
+        self.info_set("毕业列表", "")
+        self.info_set("已毕业武器列表", "")
         # 翻页滑动距离：如果配置过小，会导致同一屏反复扫描。
         move_pixel = max(move_pixel, int(dy * (rows - 1)))
 
@@ -394,25 +395,16 @@ class EssenceScanTask(BaseEfTask):
                             lock_skipped += 1
                             self.info_set("已锁定跳过", str(lock_skipped))
 
-                    matched_weapons = "、".join(m.weapon for m in matches[:5])
-                    if len(matches) > 5:
-                        matched_weapons += "…"
+                    matched_weapons.update(m.weapon for m in matches)
+                    weapons_text = "、".join(f"{m.weapon}({m.star})" for m in matches)
 
                     pos = f"[{global_row}-{col + 1}]"
-                    logs.append(f"{pos} {info.name} {entry_text} -> {matched_weapons}")
+                    logs.append(f"{pos} {info.name} {entry_text} -> {weapons_text}")
                     if keep_lines > 0:
                         logs = logs[-keep_lines:]
                     self.info_set("毕业列表", "\n".join(logs))
-
-                    for m in matches:
-                        if m.weapon in graduated_weapons:
-                            continue
-                        graduated_weapons.add(m.weapon)
-                        graduated_weapon_logs.append(f"{m.weapon}({m.star}) -> {pos} {info.name} {entry_text}")
-                        if keep_lines > 0:
-                            graduated_weapon_logs = graduated_weapon_logs[-keep_lines:]
-                        self.info_set("已毕业武器", str(len(graduated_weapons)))
-                        self.info_set("已毕业武器列表", "\n".join(graduated_weapon_logs))
+                    self.info_set("已毕业武器", f"{len(matched_weapons)}（毕业基质 {graduated}）")
+                    self.info_set("已毕业武器列表", "\n".join(logs))
                 if stop_all:
                     break
 
