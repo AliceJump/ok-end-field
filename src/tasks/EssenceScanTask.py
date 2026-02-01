@@ -166,14 +166,15 @@ class EssenceScanTask(BaseEfTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.name = "基质毕业识别与上锁"
-        self.description = "遍历武器基质列表，匹配 weapon_data.csv 并自动上锁毕业基质"
+        self.name = "毕业基质识别"
+        self.description = "遍历武器基质列表，匹配 weapon_data.csv 并处理毕业基质上锁"
         self.icon = FluentIcon.SEARCH
         # 该 output 文本框默认会显示在“开始”按钮同一行，观感较差；此任务用实时日志 + 状态栏即可。
         self.show_info_panel = False
         self.default_config.update(
             {
                 "上锁毕业基质": True,
+                "非毕业基质取消上锁": False,
                 # 以下为内部参数，前面加 "_" 以在 GUI 配置页隐藏
                 "_武器数据CSV": str(Path("assets") / "weapon_data.csv"),
                 "_参考分辨率": [str(_DEFAULT_REF_RESOLUTION[0]), str(_DEFAULT_REF_RESOLUTION[1])],
@@ -192,6 +193,7 @@ class EssenceScanTask(BaseEfTask):
         self.config_description.update(
             {
                 "上锁毕业基质": "命中毕业词条后自动点击右侧小锁上锁",
+                "非毕业基质取消上锁": "非毕业基质会尝试取消上锁（已上锁的会解锁）",
             }
         )
 
@@ -272,6 +274,23 @@ class EssenceScanTask(BaseEfTask):
 
         return False, True
 
+    def _try_unlock(self, settings: EssenceScanSettings, lock_x: int, lock_y: int) -> tuple[bool, bool]:
+        """
+        取消上锁：已解锁则跳过，未知状态则不操作。
+        返回 (unlocked_ok, did_unlock)
+        """
+        self.next_frame()
+        state0 = self._lock_state(settings, lock_x, lock_y)
+        if state0 == LockState.UNLOCKED:
+            return True, False
+        if state0 == LockState.UNKNOWN:
+            return True, False
+
+        self._click_ref(settings, lock_x, lock_y, after_sleep=_LOCK_CLICK_WAIT_SEC)
+        self.next_frame()
+        state1 = self._lock_state(settings, lock_x, lock_y)
+        return state1 == LockState.UNLOCKED, True
+
     def _is_gold_cell(self, cell_box) -> bool:
         for feature_name in _FEATURE_ESSENCE_QUALITY_GOLD:
             if self._has_feature(feature_name, box=cell_box, threshold=_ESSENCE_QUALITY_THRESHOLD):
@@ -313,6 +332,7 @@ class EssenceScanTask(BaseEfTask):
             return
 
         lock_enabled = bool(self.config.get("上锁毕业基质", True))
+        unlock_non_graduate = bool(self.config.get("非毕业基质取消上锁", False))
         stats = EssenceScanStats()
         stats.update_info(self)
 
@@ -338,7 +358,6 @@ class EssenceScanTask(BaseEfTask):
 
         last_first_cell_mean: float | None = None
         gold_seen_any = False
-        non_gold_precheck = 0
 
         stopped_by_user = False
         for page in range(settings.max_pages):
@@ -349,24 +368,6 @@ class EssenceScanTask(BaseEfTask):
             self.log_info(f"[essence] page {page}")
             gold_on_page = 0
             stop_all = False
-
-            # 若已进入金色段，翻页后首格非金色，说明金色已结束：无需再扫描整屏
-            if page > 0 and gold_seen_any:
-                self.next_frame()
-                first_cell_box = self._ref_box(
-                    settings,
-                    grid_x - icon_w / 2,
-                    grid_y - icon_h / 2,
-                    grid_x + icon_w / 2,
-                    grid_y + icon_h / 2,
-                    name="essence_first_cell_check",
-                )
-                # 双检，避免偶发匹配失败导致提前停止
-                if not self._is_gold_cell(first_cell_box):
-                    self.next_frame()
-                    if not self._is_gold_cell(first_cell_box):
-                        self.log_info("[essence] stop: gold segment ended (page header check)")
-                    break
 
             row_start = 0 if page == 0 else 1  # 翻页会有 1 行重叠，避免重复扫描
             for row_in_view in range(row_start, rows):
@@ -393,18 +394,9 @@ class EssenceScanTask(BaseEfTask):
                         name="essence_cell",
                     )
 
-                    if self._is_gold_cell(cell_box):
-                        gold_seen_any = True
-                        non_gold_precheck = 0
-                        gold_on_page += 1
-                    else:
-                        if gold_seen_any:
-                            # 金色段结束：不再点击下一行/下一页，直接优雅停止（多次确认避免误判）
-                            non_gold_precheck += 1
-                            if non_gold_precheck >= 4:
-                                self.log_info("[essence] stop: gold segment ended (grid check)")
-                                stop_all = True
-                                break
+                    is_gold_candidate = self._is_gold_cell(cell_box)
+                    force_click = col == 0 and not gold_seen_any
+                    if not is_gold_candidate and not (gold_seen_any or force_click):
                         continue
 
                     global_row = page * (rows - 1) + row_in_view + 1
@@ -434,6 +426,17 @@ class EssenceScanTask(BaseEfTask):
                     )
                     self.log_info(f"[essence] {pos} {info.name} {info.source or ''} | {entry_text}")
 
+                    if not info.is_gold:
+                        self.log_info(f"[essence] {pos} skip: non-gold {info.name}")
+                        if gold_seen_any:
+                            self.log_info("[essence] stop: non-gold encountered")
+                            stop_all = True
+                            break
+                        continue
+
+                    gold_seen_any = True
+                    gold_on_page += 1
+
                     if len(info.entries) != 3:
                         self.log_debug(f"[essence] {pos} skip: entries={len(info.entries)}")
                         continue
@@ -443,6 +446,11 @@ class EssenceScanTask(BaseEfTask):
 
                     matches = match_weapon_requirements(requirements, info.entry_names)
                     if not matches:
+                        if unlock_non_graduate:
+                            unlocked_ok, did_unlock = self._try_unlock(settings, lock_x, lock_y)
+                            self.log_info(
+                                f"[essence] {pos} unlock did_click={did_unlock} ok={unlocked_ok}"
+                            )
                         continue
 
                     stats.graduated += 1
