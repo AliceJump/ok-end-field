@@ -1,4 +1,7 @@
 from pathlib import Path
+from dataclasses import dataclass, field
+from enum import Enum
+from typing import Final
 
 import pywintypes
 from qfluentwidgets import FluentIcon
@@ -7,36 +10,152 @@ from src.tasks.BaseEfTask import BaseEfTask
 from src.essence.weapon_data import load_weapon_data, match_weapon_requirements
 
 
-_GOLD_COLOR = {
-    "r": (160, 255),
-    "g": (130, 255),
-    "b": (0, 140),
-}
+class LockState(str, Enum):
+    LOCKED = "locked"
+    UNLOCKED = "unlocked"
+    UNKNOWN = "unknown"
 
-_PURPLE_COLOR = {
-    # 紫色品质条可能受 HDR/亮度影响变得更“灰”，适当放宽范围提升检出率
-    "r": (60, 255),
-    "g": (0, 180),
-    "b": (60, 255),
-}
 
-_DARK_COLOR = {
-    "r": (0, 90),
-    "g": (0, 90),
-    "b": (0, 90),
-}
+_INFO_STATUS: Final = "状态"
+_INFO_SCANNED: Final = "已识别"
+_INFO_LOCK_SUCCESS: Final = "上锁成功"
+_INFO_LOCK_SKIPPED: Final = "已锁定跳过"
+_INFO_GRADUATED_ESSENCE: Final = "已毕业基质"
+_INFO_GRADUATED_WEAPONS: Final = "已毕业武器"
 
-_WHITE_COLOR = {
-    "r": (220, 255),
-    "g": (220, 255),
-    "b": (220, 255),
-}
 
-# 锁按钮状态判断：使用“暗像素左右差异”
-# - diff 越大越像“开锁”（未锁）
-# - diff 越小越像“闭锁”（已锁）
-_LOCK_ASYM_LOCKED_THRESHOLD = 0.22
-_LOCK_ASYM_UNLOCKED_THRESHOLD = 0.30
+_FEATURE_ESSENCE_UI_MARKER: Final = "essence_ui_marker"
+_FEATURE_ESSENCE_QUALITY_GOLD: Final[tuple[str, ...]] = (
+    # 兼容旧单标签
+    "essence_quality_gold",
+    # 多模板支持：选中/未选中等不同样式请用不同 tag（每个 tag 在 COCO 中只能有 1 个框）
+    "essence_quality_gold_1",
+    "essence_quality_gold_2",
+    "essence_quality_gold_3",
+)
+_FEATURE_ESSENCE_LOCKED: Final = "essence_locked"
+_FEATURE_ESSENCE_UNLOCKED: Final = "essence_unlocked"
+
+_ESSENCE_UI_THRESHOLD: Final = 0.75
+_ESSENCE_QUALITY_THRESHOLD: Final = 0.75
+_ESSENCE_LOCK_THRESHOLD: Final = 0.75
+
+_LOCK_CLICK_WAIT_SEC: Final = 0.45
+_LOCK_ICON_HALF_SIZE: Final = 36
+_DEFAULT_REF_RESOLUTION: Final[tuple[int, int]] = (2560, 1440)
+_DEFAULT_GRID_ORIGIN: Final[tuple[int, int]] = (190, 256)
+_DEFAULT_GRID_STEP: Final[tuple[int, int]] = (204, 208)
+_DEFAULT_ICON_SIZE: Final[tuple[int, int]] = (238, 236)
+_DEFAULT_LOCK_BUTTON: Final[tuple[int, int]] = (2444, 372)
+_DEFAULT_GRID_COLS: Final = 9
+_DEFAULT_GRID_ROWS: Final = 5
+_DEFAULT_CLICK_WAIT_SEC: Final = 0.35
+_DEFAULT_SCROLL_PIXELS: Final = 140
+_DEFAULT_SCROLL_WAIT_SEC: Final = 1.5
+_DEFAULT_MAX_PAGES: Final = 200
+
+
+def _parse_xy(value, default: tuple[int, int]) -> tuple[int, int]:
+    if isinstance(value, (list, tuple)) and len(value) >= 2:
+        try:
+            return int(value[0]), int(value[1])
+        except Exception:
+            return int(default[0]), int(default[1])
+    if isinstance(value, str):
+        text = value.strip().lower().replace("x", ",")
+        parts = [p.strip() for p in text.split(",") if p.strip()]
+        if len(parts) >= 2:
+            try:
+                return int(parts[0]), int(parts[1])
+            except Exception:
+                return int(default[0]), int(default[1])
+    return int(default[0]), int(default[1])
+
+
+@dataclass(frozen=True)
+class EssenceScanSettings:
+    weapon_csv: Path
+    ref_resolution: tuple[int, int]
+    grid_origin: tuple[int, int]
+    grid_step: tuple[int, int]
+    grid_cols: int
+    grid_rows: int
+    icon_size: tuple[int, int]
+    lock_button: tuple[int, int]
+    click_wait_sec: float
+    scroll_pixels: int
+    scroll_wait_sec: float
+    max_pages: int
+
+    @classmethod
+    def from_task(cls, task: "EssenceScanTask") -> "EssenceScanSettings":
+        config = getattr(task, "config", {}) or {}
+        weapon_csv = Path(str(config.get("_武器数据CSV", str(Path("assets") / "weapon_data.csv")))).expanduser()
+        ref_resolution = _parse_xy(config.get("_参考分辨率"), _DEFAULT_REF_RESOLUTION)
+        grid_origin = _parse_xy(config.get("_网格起点"), _DEFAULT_GRID_ORIGIN)
+        grid_step = _parse_xy(config.get("_网格步长"), _DEFAULT_GRID_STEP)
+        icon_size = _parse_xy(config.get("_图标采样尺寸"), _DEFAULT_ICON_SIZE)
+        lock_button = _parse_xy(config.get("_锁按钮坐标"), _DEFAULT_LOCK_BUTTON)
+
+        try:
+            grid_cols = int(config.get("_每行数量", _DEFAULT_GRID_COLS))
+        except Exception:
+            grid_cols = _DEFAULT_GRID_COLS
+        try:
+            grid_rows = int(config.get("_每屏行数", _DEFAULT_GRID_ROWS))
+        except Exception:
+            grid_rows = _DEFAULT_GRID_ROWS
+
+        try:
+            click_wait_sec = float(config.get("_点击等待秒", _DEFAULT_CLICK_WAIT_SEC))
+        except Exception:
+            click_wait_sec = _DEFAULT_CLICK_WAIT_SEC
+        try:
+            scroll_pixels = int(config.get("_滑动距离像素", _DEFAULT_SCROLL_PIXELS))
+        except Exception:
+            scroll_pixels = _DEFAULT_SCROLL_PIXELS
+        try:
+            scroll_wait_sec = float(config.get("_滑动后等待秒", _DEFAULT_SCROLL_WAIT_SEC))
+        except Exception:
+            scroll_wait_sec = _DEFAULT_SCROLL_WAIT_SEC
+        try:
+            max_pages = int(config.get("_最大翻页", _DEFAULT_MAX_PAGES))
+        except Exception:
+            max_pages = _DEFAULT_MAX_PAGES
+
+        # 翻页滑动距离：如果过小会导致同一屏反复扫描。至少要跨过 rows-1 行。
+        scroll_pixels = max(scroll_pixels, int(grid_step[1] * (grid_rows - 1)))
+
+        return cls(
+            weapon_csv=weapon_csv,
+            ref_resolution=ref_resolution,
+            grid_origin=grid_origin,
+            grid_step=grid_step,
+            grid_cols=grid_cols,
+            grid_rows=grid_rows,
+            icon_size=icon_size,
+            lock_button=lock_button,
+            click_wait_sec=click_wait_sec,
+            scroll_pixels=scroll_pixels,
+            scroll_wait_sec=scroll_wait_sec,
+            max_pages=max_pages,
+        )
+
+
+@dataclass
+class EssenceScanStats:
+    scanned: int = 0
+    graduated: int = 0
+    lock_success: int = 0
+    lock_skipped: int = 0
+    matched_weapons: set[str] = field(default_factory=set)
+
+    def update_info(self, task: "EssenceScanTask") -> None:
+        task.info_set(_INFO_SCANNED, str(self.scanned))
+        task.info_set(_INFO_GRADUATED_ESSENCE, str(self.graduated))
+        task.info_set(_INFO_LOCK_SUCCESS, str(self.lock_success))
+        task.info_set(_INFO_LOCK_SKIPPED, str(self.lock_skipped))
+        task.info_set(_INFO_GRADUATED_WEAPONS, str(len(self.matched_weapons)))
 
 
 class EssenceScanTask(BaseEfTask):
@@ -50,25 +169,24 @@ class EssenceScanTask(BaseEfTask):
         self.name = "基质毕业识别与上锁"
         self.description = "遍历武器基质列表，匹配 weapon_data.csv 并自动上锁毕业基质"
         self.icon = FluentIcon.SEARCH
-        self.show_info_panel = True
+        # 该 output 文本框默认会显示在“开始”按钮同一行，观感较差；此任务用实时日志 + 状态栏即可。
+        self.show_info_panel = False
         self.default_config.update(
             {
                 "上锁毕业基质": True,
                 # 以下为内部参数，前面加 "_" 以在 GUI 配置页隐藏
                 "_武器数据CSV": str(Path("assets") / "weapon_data.csv"),
-                # ok 的 ModifyListItem 假设 list 元素可 len()（即字符串）。这里用字符串避免 GUI 崩溃。
-                "_参考分辨率": ["2560", "1440"],
-                "_网格起点": ["190", "256"],
-                "_网格步长": ["204", "208"],
-                "_每行数量": 9,
-                "_每屏行数": 5,
-                "_图标采样尺寸": ["238", "236"],
-                "_锁按钮坐标": ["2444", "372"],
-                "_点击等待秒": 0.35,
-                "_滑动距离像素": 140,
-                "_滑动后等待秒": 1.5,
-                "_最大翻页": 200,
-                "_毕业列表保留行数": 30,
+                "_参考分辨率": [str(_DEFAULT_REF_RESOLUTION[0]), str(_DEFAULT_REF_RESOLUTION[1])],
+                "_网格起点": [str(_DEFAULT_GRID_ORIGIN[0]), str(_DEFAULT_GRID_ORIGIN[1])],
+                "_网格步长": [str(_DEFAULT_GRID_STEP[0]), str(_DEFAULT_GRID_STEP[1])],
+                "_每行数量": _DEFAULT_GRID_COLS,
+                "_每屏行数": _DEFAULT_GRID_ROWS,
+                "_图标采样尺寸": [str(_DEFAULT_ICON_SIZE[0]), str(_DEFAULT_ICON_SIZE[1])],
+                "_锁按钮坐标": [str(_DEFAULT_LOCK_BUTTON[0]), str(_DEFAULT_LOCK_BUTTON[1])],
+                "_点击等待秒": _DEFAULT_CLICK_WAIT_SEC,
+                "_滑动距离像素": _DEFAULT_SCROLL_PIXELS,
+                "_滑动后等待秒": _DEFAULT_SCROLL_WAIT_SEC,
+                "_最大翻页": _DEFAULT_MAX_PAGES,
             }
         )
         self.config_description.update(
@@ -77,60 +195,8 @@ class EssenceScanTask(BaseEfTask):
             }
         )
 
-    def post_init(self) -> None:
-        super().post_init()
-        # 迁移旧配置：
-        # 1) 老 key -> 新 key（内部参数加 "_" 并隐藏）
-        migrate_keys = {
-            "武器数据CSV": "_武器数据CSV",
-            "参考分辨率": "_参考分辨率",
-            "网格起点": "_网格起点",
-            "网格步长": "_网格步长",
-            "每行数量": "_每行数量",
-            "每屏行数": "_每屏行数",
-            "图标采样尺寸": "_图标采样尺寸",
-            "锁按钮坐标": "_锁按钮坐标",
-            "点击等待秒": "_点击等待秒",
-            "滑动距离像素": "_滑动距离像素",
-            "滑动后等待秒": "_滑动后等待秒",
-            "最大翻页": "_最大翻页",
-            "毕业列表保留行数": "_毕业列表保留行数",
-        }
-        for old_key, new_key in migrate_keys.items():
-            if old_key in self.config and new_key not in self.config:
-                self.config[new_key] = self.config.get(old_key)
-                self.config.pop(old_key, None)
-
-        # 2) list[int] -> list[str]（避免 ok 的 ModifyListItem 对 int 调 len() 崩溃）
-        for key in ("_参考分辨率", "_网格起点", "_网格步长", "_图标采样尺寸", "_锁按钮坐标"):
-            value = self.config.get(key)
-            if isinstance(value, list) and any(not isinstance(v, str) for v in value):
-                self.config[key] = [str(v) for v in value]
-
-    def _parse_xy(self, value, default) -> tuple[int, int]:
-        if isinstance(value, (list, tuple)) and len(value) >= 2:
-            try:
-                return int(value[0]), int(value[1])
-            except Exception:
-                return int(default[0]), int(default[1])
-        if isinstance(value, str):
-            text = value.strip().lower().replace("x", ",")
-            parts = [p.strip() for p in text.split(",") if p.strip()]
-            if len(parts) >= 2:
-                try:
-                    return int(parts[0]), int(parts[1])
-                except Exception:
-                    return int(default[0]), int(default[1])
-        return int(default[0]), int(default[1])
-
-    def _ref_w_h(self) -> tuple[int, int]:
-        return self._parse_xy(self.config.get("_参考分辨率"), (2560, 1440))
-
-    def _ref_xy(self, xy, default) -> tuple[int, int]:
-        return self._parse_xy(xy, default)
-
-    def _ref_box(self, x1: float, y1: float, x2: float, y2: float, *, name: str):
-        ref_w, ref_h = self._ref_w_h()
+    def _ref_box(self, settings: EssenceScanSettings, x1: float, y1: float, x2: float, y2: float, *, name: str):
+        ref_w, ref_h = settings.ref_resolution
         return self.box_of_screen(
             x1 / ref_w,
             y1 / ref_h,
@@ -139,91 +205,91 @@ class EssenceScanTask(BaseEfTask):
             name=name,
         )
 
-    def _click_ref(self, x: float, y: float, *, after_sleep: float = 0.0):
-        ref_w, ref_h = self._ref_w_h()
+    def _click_ref(self, settings: EssenceScanSettings, x: float, y: float, *, after_sleep: float = 0.0):
+        ref_w, ref_h = settings.ref_resolution
         self.click(x / ref_w, y / ref_h, hcenter=True, vcenter=True, after_sleep=after_sleep)
 
-    def _is_locked(self, lock_x: int, lock_y: int) -> bool:
-        return self._lock_asymmetry(lock_x, lock_y) <= _LOCK_ASYM_LOCKED_THRESHOLD
+    def _has_feature(self, feature_name: str, *, box=None, threshold: float = 0.0) -> bool:
+        try:
+            return bool(self.find_one(feature_name, box=box, threshold=threshold))
+        except Exception:
+            return False
 
-    def _lock_asymmetry(self, lock_x: int, lock_y: int) -> float:
+    def _in_essence_ui(self) -> bool:
+        self.next_frame()
+        return self._has_feature(_FEATURE_ESSENCE_UI_MARKER, threshold=_ESSENCE_UI_THRESHOLD)
+
+    def _lock_icon_box(self, settings: EssenceScanSettings, lock_x: int, lock_y: int):
+        hs = _LOCK_ICON_HALF_SIZE
+        return self._ref_box(settings, lock_x - hs, lock_y - hs, lock_x + hs, lock_y + hs, name="essence_lock_icon")
+
+    def _lock_state(self, settings: EssenceScanSettings, lock_x: int, lock_y: int) -> LockState:
         """
-        基于“开锁/闭锁”图标的不对称性计算一个指标（越大越像开锁）。
-        使用灰度下的“暗像素”左右占比差异，比纯白占比对 HDR/抗锯齿更稳。
+        锁按钮是“切换”按钮：已锁再点会解锁。
+        用模板匹配（X-AnyLabeling/COCO）判断当前锁状态：locked / unlocked / unknown。
         """
-        box = self._ref_box(lock_x - 20, lock_y - 20, lock_x + 20, lock_y + 20, name="lock_icon")
-        frame = box.crop_frame(self.frame)
-        if frame is None or getattr(frame, "size", 0) == 0:
-            return 0.0
+        roi = self._lock_icon_box(settings, lock_x, lock_y)
+        locked = self._has_feature(_FEATURE_ESSENCE_LOCKED, box=roi, threshold=_ESSENCE_LOCK_THRESHOLD)
+        unlocked = self._has_feature(_FEATURE_ESSENCE_UNLOCKED, box=roi, threshold=_ESSENCE_LOCK_THRESHOLD)
+        if locked and not unlocked:
+            return LockState.LOCKED
+        if unlocked and not locked:
+            return LockState.UNLOCKED
+        if locked and unlocked:
+            # 宁愿当作已锁，避免误点导致解锁
+            return LockState.LOCKED
+        return LockState.UNKNOWN
 
-        # frame 为 BGR/RGB 均可，灰度用均值近似即可
-        gray = frame.mean(axis=2)
-        dark = gray < 120
-        h, w = dark.shape[:2]
-        if w < 2:
-            return 0.0
-        left = dark[:, : w // 2].mean()
-        right = dark[:, w // 2 :].mean()
-        return float(abs(left - right))
-
-    def _try_lock(self, lock_x: int, lock_y: int) -> tuple[bool, bool]:
+    def _try_lock(self, settings: EssenceScanSettings, lock_x: int, lock_y: int) -> tuple[bool, bool]:
         """
         锁按钮是“切换”按钮：已锁再点会解锁。
 
         返回 (locked_ok, did_lock)
         - locked_ok: 最终是否处于“锁定”状态（或认为已锁定）
-        - did_lock: 本次是否执行过“上锁动作”（仅用于计数）
+        - did_lock: 本次是否执行过“上锁点击”（仅用于计数）
         """
         self.next_frame()
-        diff0 = self._lock_asymmetry(lock_x, lock_y)
-        # diff0 越小越像“闭锁”（已锁）。边界区域宁愿当作已锁，避免误点导致解锁。
-        if diff0 <= _LOCK_ASYM_UNLOCKED_THRESHOLD:
+        state0 = self._lock_state(settings, lock_x, lock_y)
+        if state0 == LockState.LOCKED:
+            return True, False
+        if state0 == LockState.UNKNOWN:
+            # 判不清时不点击，避免“已锁 -> 解锁”的灾难性误触
             return True, False
 
-        # 明确未锁：点一次尝试上锁，并做一次确认
-        self._click_ref(lock_x, lock_y, after_sleep=0.45)
+        # 明确未锁：点一次尝试上锁，并做一次确认（避免双击导致“上锁->解锁”）
+        self._click_ref(settings, lock_x, lock_y, after_sleep=_LOCK_CLICK_WAIT_SEC)
         self.next_frame()
-        diff1 = self._lock_asymmetry(lock_x, lock_y)
-        # 点一次后，只要不再“明确开锁”，就认为上锁成功（避免二次点击导致反向切换）
-        if diff1 <= _LOCK_ASYM_UNLOCKED_THRESHOLD:
+        state1 = self._lock_state(settings, lock_x, lock_y)
+        if state1 == LockState.LOCKED:
             return True, True
 
-        # 若仍然明确未锁（可能点击未生效），再点一次；否则不再尝试，避免误触发“解锁”
-        if diff1 >= _LOCK_ASYM_UNLOCKED_THRESHOLD:
-            self._click_ref(lock_x, lock_y, after_sleep=0.45)
+        # 若仍明确未锁（可能点击没生效），再尝试一次
+        if state1 == LockState.UNLOCKED:
+            self._click_ref(settings, lock_x, lock_y, after_sleep=_LOCK_CLICK_WAIT_SEC)
             self.next_frame()
-            diff2 = self._lock_asymmetry(lock_x, lock_y)
-            return diff2 <= _LOCK_ASYM_UNLOCKED_THRESHOLD, diff2 <= _LOCK_ASYM_UNLOCKED_THRESHOLD
+            state2 = self._lock_state(settings, lock_x, lock_y)
+            return state2 == LockState.LOCKED, True
 
-        return False, False
+        return False, True
 
     def _is_gold_cell(self, cell_box) -> bool:
-        # 采样底部颜色条（品质提示区域）
-        # 使用更宽的采样带，避免不同亮度/HDR/抗锯齿导致底条像素不足
-        # Box.copy 的 height_offset 是“增量”，要截取底部 15%：height_offset = -0.85h
-        strip_box = cell_box.copy(y_offset=cell_box.height * 0.85, height_offset=-cell_box.height * 0.85)
-        # 去掉两侧黑边/边框干扰，提高色占比的稳定性
-        strip_box = strip_box.copy(x_offset=strip_box.width * 0.12, width_offset=-strip_box.width * 0.24)
-        gold_percent = float(self.calculate_color_percentage(_GOLD_COLOR, strip_box))
-        purple_percent = float(self.calculate_color_percentage(_PURPLE_COLOR, strip_box))
-        if purple_percent > 0.08 and purple_percent > gold_percent:
-            return False
-        return gold_percent > 0.03 and gold_percent > purple_percent
+        for feature_name in _FEATURE_ESSENCE_QUALITY_GOLD:
+            if self._has_feature(feature_name, box=cell_box, threshold=_ESSENCE_QUALITY_THRESHOLD):
+                return True
+        return False
 
-    def _is_purple_cell(self, cell_box) -> bool:
-        strip_box = cell_box.copy(y_offset=cell_box.height * 0.85, height_offset=-cell_box.height * 0.85)
-        strip_box = strip_box.copy(x_offset=strip_box.width * 0.12, width_offset=-strip_box.width * 0.24)
-        gold_percent = float(self.calculate_color_percentage(_GOLD_COLOR, strip_box))
-        purple_percent = float(self.calculate_color_percentage(_PURPLE_COLOR, strip_box))
-        # 紫色条：purple 占比明显，且 gold 占比很低（避免把金色边框误判为紫）
-        return purple_percent > 0.08 and purple_percent > gold_percent and gold_percent < 0.03
+    def _scroll_next_page(self, settings: EssenceScanSettings):
+        grid_x, grid_y = settings.grid_origin
+        dx, dy = settings.grid_step
+        cols = settings.grid_cols
+        rows = settings.grid_rows
+        move_pixel = settings.scroll_pixels
 
-    def _scroll_next_page(self, grid_x: int, grid_y: int, dx: int, dy: int, cols: int, rows: int, move_pixel: int):
         start_x = grid_x + (cols // 2) * dx
         start_y = grid_y + (rows - 1) * dy
         end_y = start_y - move_pixel
 
-        ref_w, ref_h = self._ref_w_h()
+        ref_w, ref_h = settings.ref_resolution
         frame_h, frame_w = self.frame.shape[:2]
         from_x = int(round(start_x / ref_w * frame_w))
         from_y = int(round(start_y / ref_h * frame_h))
@@ -232,59 +298,55 @@ class EssenceScanTask(BaseEfTask):
         self.swipe(from_x, from_y, to_x, to_y, duration=0.5)
 
     def run(self):
-        self.info_set("状态", "加载武器数据")
+        # 只保留该任务需要展示的 info keys，避免旧版本遗留字段出现在状态栏
+        info = getattr(self, "info", None)
+        if isinstance(info, dict):
+            info.clear()
 
-        csv_path = Path(str(self.config.get("_武器数据CSV", ""))).expanduser()
-        requirements = load_weapon_data(csv_path)
+        self.info_set(_INFO_STATUS, "运行中")
+
+        settings = EssenceScanSettings.from_task(self)
+        requirements = load_weapon_data(settings.weapon_csv)
         if not requirements:
-            self.log_error(f"未加载到武器数据: {csv_path}")
-            self.info_set("状态", "失败：武器数据为空")
+            self.log_error(f"未加载到武器数据: {settings.weapon_csv}")
+            self.info_set(_INFO_STATUS, "错误")
             return
-        self.info_set("武器数据", f"{len(requirements)} 条")
-
-        grid_x, grid_y = self._ref_xy(self.config.get("_网格起点"), [190, 256])
-        dx, dy = self._ref_xy(self.config.get("_网格步长"), [204, 208])
-        cols = int(self.config.get("_每行数量", 9))
-        rows = int(self.config.get("_每屏行数", 5))
-        icon_w, icon_h = self._ref_xy(self.config.get("_图标采样尺寸"), [238, 236])
-        lock_x, lock_y = self._ref_xy(self.config.get("_锁按钮坐标"), [2444, 372])
-
-        click_wait = float(self.config.get("_点击等待秒", 0.35))
-        move_pixel = int(self.config.get("_滑动距离像素", 140))
-        scroll_wait = float(self.config.get("_滑动后等待秒", 1.5))
-        max_pages = int(self.config.get("_最大翻页", 200))
-        keep_lines = int(self.config.get("_毕业列表保留行数", 30))
 
         lock_enabled = bool(self.config.get("上锁毕业基质", True))
+        stats = EssenceScanStats()
+        stats.update_info(self)
 
-        self.info_set("状态", "开始扫描")
         self.next_frame()
+        if not self._in_essence_ui():
+            self.info_set(_INFO_STATUS, "错误")
+            self.log_error("[essence] please open [武器基质] page first")
+            return
 
-        scanned = 0
-        graduated = 0
-        locked = 0
-        lock_skipped = 0
-        logs: list[str] = []
-        matched_weapons: set[str] = set()
-        self.info_set("已识别", "0")
-        self.info_set("已毕业基质", "0")
-        self.info_set("已上锁", "0")
-        self.info_set("已锁定跳过", "0")
-        self.info_set("已毕业武器", "0")
-        self.info_set("毕业列表", "")
-        self.info_set("已毕业武器列表", "")
-        # 翻页滑动距离：如果配置过小，会导致同一屏反复扫描。
-        move_pixel = max(move_pixel, int(dy * (rows - 1)))
+        self.log_info(
+            "[essence] settings "
+            f"ref={settings.ref_resolution} origin={settings.grid_origin} step={settings.grid_step} "
+            f"cols={settings.grid_cols} rows={settings.grid_rows} icon={settings.icon_size} "
+            f"scroll={settings.scroll_pixels}px max_pages={settings.max_pages} lock={lock_enabled}"
+        )
+
+        grid_x, grid_y = settings.grid_origin
+        dx, dy = settings.grid_step
+        cols = settings.grid_cols
+        rows = settings.grid_rows
+        icon_w, icon_h = settings.icon_size
+        lock_x, lock_y = settings.lock_button
 
         last_first_cell_mean: float | None = None
         gold_seen_any = False
-        non_gold_consecutive = 0
+        non_gold_precheck = 0
 
-        for page in range(max_pages):
+        stopped_by_user = False
+        for page in range(settings.max_pages):
             if not self.enabled:
+                stopped_by_user = True
                 break
 
-            self.info_set("翻页", str(page))
+            self.log_info(f"[essence] page {page}")
             gold_on_page = 0
             stop_all = False
 
@@ -292,22 +354,30 @@ class EssenceScanTask(BaseEfTask):
             if page > 0 and gold_seen_any:
                 self.next_frame()
                 first_cell_box = self._ref_box(
+                    settings,
                     grid_x - icon_w / 2,
                     grid_y - icon_h / 2,
                     grid_x + icon_w / 2,
                     grid_y + icon_h / 2,
-                    name="first_cell_check",
+                    name="essence_first_cell_check",
                 )
-                if self._is_purple_cell(first_cell_box):
-                    self.info_set("状态", "完成：未检测到金色，停止")
+                # 双检，避免偶发匹配失败导致提前停止
+                if not self._is_gold_cell(first_cell_box):
+                    self.next_frame()
+                    if not self._is_gold_cell(first_cell_box):
+                        self.log_info("[essence] stop: gold segment ended (page header check)")
                     break
 
             row_start = 0 if page == 0 else 1  # 翻页会有 1 行重叠，避免重复扫描
             for row_in_view in range(row_start, rows):
                 if not self.enabled:
+                    stopped_by_user = True
+                    stop_all = True
                     break
                 for col in range(cols):
                     if not self.enabled:
+                        stopped_by_user = True
+                        stop_all = True
                         break
 
                     self.next_frame()
@@ -315,32 +385,40 @@ class EssenceScanTask(BaseEfTask):
                     cy = grid_y + row_in_view * dy
 
                     cell_box = self._ref_box(
+                        settings,
                         cx - icon_w / 2,
                         cy - icon_h / 2,
                         cx + icon_w / 2,
                         cy + icon_h / 2,
-                        name="matrix_cell",
+                        name="essence_cell",
                     )
-                    if self._is_purple_cell(cell_box):
-                        self.info_set("状态", "完成：检测到紫色，停止")
-                        stop_all = True
-                        break
-                    if gold_seen_any and not self._is_gold_cell(cell_box):
-                        self.info_set("状态", "完成：金色已结束，停止")
-                        stop_all = True
-                        break
+
+                    if self._is_gold_cell(cell_box):
+                        gold_seen_any = True
+                        non_gold_precheck = 0
+                        gold_on_page += 1
+                    else:
+                        if gold_seen_any:
+                            # 金色段结束：不再点击下一行/下一页，直接优雅停止（多次确认避免误判）
+                            non_gold_precheck += 1
+                            if non_gold_precheck >= 4:
+                                self.log_info("[essence] stop: gold segment ended (grid check)")
+                                stop_all = True
+                                break
+                        continue
 
                     global_row = page * (rows - 1) + row_in_view + 1
-                    self.info_set("点击格子", f"{global_row}-{col + 1}")
+                    pos = f"{global_row}-{col + 1}"
+                    self.log_info(f"[essence] click {pos}")
 
                     try:
-                        self._click_ref(cx, cy, after_sleep=click_wait)
+                        self._click_ref(settings, cx, cy, after_sleep=settings.click_wait_sec)
                     except pywintypes.error as e:
                         if getattr(e, "winerror", None) == 5:
-                            self.info_set("状态", "失败：无法点击（权限不足）")
-                            self.info_set(
-                                "错误",
-                                "PostMessage 拒绝访问。请用「管理员身份」启动本程序后重试：uv run python main.py -t 2",
+                            self.info_set(_INFO_STATUS, "错误")
+                            self.log_error(
+                                "[essence] PostMessage access denied. Start as Administrator then retry: "
+                                "uv run python main.py -t 2"
                             )
                             return
                         raise
@@ -348,63 +426,51 @@ class EssenceScanTask(BaseEfTask):
 
                     info = self.read_essence_info()
                     if not info:
+                        self.log_debug(f"[essence] {pos} ocr empty")
                         continue
 
-                    if info.is_gold:
-                        gold_seen_any = True
-                        non_gold_consecutive = 0
-                        gold_on_page += 1
-                    else:
-                        non_gold_consecutive += 1
-                        if non_gold_consecutive >= 2:
-                            self.info_set("状态", "完成：遇到非金色，停止")
-                            stop_all = True
-                            break
-                        continue
-
-                    if len(info.entries) != 3:
-                        continue
-
-                    scanned += 1
-                    self.info_set("已识别", str(scanned))
-
-                    matches = match_weapon_requirements(requirements, info.entry_names)
                     entry_text = " ".join(
                         f"{e.name}+{e.level}" if e.level is not None else e.name for e in info.entries
                     )
-                    self.info_set("当前基质", f"{info.name} {info.source or ''}")
-                    self.info_set("当前词条", entry_text)
+                    self.log_info(f"[essence] {pos} {info.name} {info.source or ''} | {entry_text}")
 
+                    if len(info.entries) != 3:
+                        self.log_debug(f"[essence] {pos} skip: entries={len(info.entries)}")
+                        continue
+
+                    stats.scanned += 1
+                    self.info_set(_INFO_SCANNED, str(stats.scanned))
+
+                    matches = match_weapon_requirements(requirements, info.entry_names)
                     if not matches:
                         continue
 
-                    graduated += 1
-                    # 状态栏展示用：毕业基质数量
-                    self.info_set("已毕业基质", str(graduated))
-                    # 兼容旧字段（已有人在看日志）
-                    self.info_set("毕业", str(graduated))
+                    stats.graduated += 1
+                    self.info_set(_INFO_GRADUATED_ESSENCE, str(stats.graduated))
+
+                    weapons_text = "、".join(f"{m.weapon}({m.star})" for m in matches)
+                    self.log_info(f"[essence] {pos} graduated -> {weapons_text}")
 
                     if lock_enabled:
-                        locked_ok, did_lock = self._try_lock(lock_x, lock_y)
+                        state_before = self._lock_state(settings, lock_x, lock_y)
+                        locked_ok, did_lock = self._try_lock(settings, lock_x, lock_y)
+                        state_after = self._lock_state(settings, lock_x, lock_y)
+                        self.log_info(
+                            f"[essence] {pos} lock {state_before.value}->{state_after.value} "
+                            f"did_click={did_lock} ok={locked_ok}"
+                        )
+
                         if not locked_ok:
-                            self.info_set("上锁失败", info.name)
+                            self.log_error(f"[essence] {pos} lock failed {info.name}")
                         elif did_lock:
-                            locked += 1
-                            self.info_set("已上锁", str(locked))
+                            stats.lock_success += 1
+                            self.info_set(_INFO_LOCK_SUCCESS, str(stats.lock_success))
                         else:
-                            lock_skipped += 1
-                            self.info_set("已锁定跳过", str(lock_skipped))
+                            stats.lock_skipped += 1
+                            self.info_set(_INFO_LOCK_SKIPPED, str(stats.lock_skipped))
 
-                    matched_weapons.update(m.weapon for m in matches)
-                    weapons_text = "、".join(f"{m.weapon}({m.star})" for m in matches)
-
-                    pos = f"[{global_row}-{col + 1}]"
-                    logs.append(f"{pos} {info.name} {entry_text} -> {weapons_text}")
-                    if keep_lines > 0:
-                        logs = logs[-keep_lines:]
-                    self.info_set("毕业列表", "\n".join(logs))
-                    self.info_set("已毕业武器", f"{len(matched_weapons)}（毕业基质 {graduated}）")
-                    self.info_set("已毕业武器列表", "\n".join(logs))
+                    stats.matched_weapons.update(m.weapon for m in matches)
+                    self.info_set(_INFO_GRADUATED_WEAPONS, str(len(stats.matched_weapons)))
                 if stop_all:
                     break
 
@@ -413,28 +479,36 @@ class EssenceScanTask(BaseEfTask):
 
             # 当前页没有任何金色：一般说明已进入紫色/其他区域，停止即可（避免多轮）
             if page > 0 and gold_on_page == 0:
-                self.info_set("状态", "完成：未检测到金色，停止")
+                self.log_info("[essence] stop: no gold found on page")
                 break
 
             # 简单的“是否真正翻页”校验：如果首格均值几乎不变，说明已到列表底部或滑动无效
             self.next_frame()
             first_cell = self._ref_box(
+                settings,
                 grid_x - icon_w / 2,
                 grid_y - icon_h / 2,
                 grid_x + icon_w / 2,
                 grid_y + icon_h / 2,
-                name="first_cell",
+                name="essence_first_cell_mean",
             ).crop_frame(self.frame)
             first_mean = float(first_cell.mean()) if first_cell.size else 0.0
-            if last_first_cell_mean is not None and abs(first_mean - last_first_cell_mean) < 0.2:
-                self.info_set("状态", "完成：已到列表底部")
+            if (
+                last_first_cell_mean is not None
+                and abs(first_mean - last_first_cell_mean) < 0.2
+            ):
+                self.log_info("[essence] stop: reached bottom (first cell unchanged)")
                 break
             last_first_cell_mean = first_mean
 
-            self._scroll_next_page(grid_x, grid_y, dx, dy, cols, rows, move_pixel)
-            self.sleep(scroll_wait)
+            self._scroll_next_page(settings)
+            self.sleep(settings.scroll_wait_sec)
             self.next_frame()
         else:
-            self.info_set("状态", f"停止：达到最大翻页 {max_pages}")
+            # 达到最大翻页也认为本次扫描结束（细节写入日志）
+            self.log_info(f"[essence] stop: reached max_pages={settings.max_pages}")
 
-        self.info_set("状态", "已停止")
+        if stopped_by_user:
+            self.info_set(_INFO_STATUS, "已停止")
+        else:
+            self.info_set(_INFO_STATUS, "已完成")

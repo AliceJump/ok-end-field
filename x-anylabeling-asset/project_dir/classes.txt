@@ -32,3 +32,9 @@ price_up
 assist_friend
 ticket_valley
 ticket_wuling
+essence_quality_gold_1
+essence_quality_gold_2
+essence_quality_gold_3
+essence_ui_marker
+essence_locked
+essence_unlocked
