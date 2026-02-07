@@ -15,6 +15,7 @@ _LOCATIONS = {
     "wuling": "武陵",
 }
 
+_ASSETS_ITEM_JSON = Path("assets") / "items" / "item.json"
 _ASSETS_ITEM_IMAGES_DIR = Path("assets") / "items" / "images"
 
 def _parse_count(text: str) -> int | None:
