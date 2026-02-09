@@ -9,6 +9,12 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
+msgid "valley4"
+msgstr "四号谷地"
+
+msgid "wuling"
+msgstr "武陵"
+
 msgid "一键日常"
 msgstr ""
 
@@ -83,3 +89,249 @@ msgstr ""
 
 msgid "领任务"
 msgstr ""
+
+msgid "item_bottled_food_1"
+msgstr "柑实罐头"
+
+msgid "item_bottled_food_2"
+msgstr "优质柑实罐头"
+
+msgid "item_bottled_food_3"
+msgstr "精选柑实罐头"
+
+msgid "item_bottled_food_4"
+msgstr "锦草软饮"
+
+msgid "item_bottled_rec_hp_1"
+msgstr "荞愈胶囊"
+
+msgid "item_bottled_rec_hp_2"
+msgstr "优质荞愈胶囊"
+
+msgid "item_bottled_rec_hp_3"
+msgstr "精选荞愈胶囊"
+
+msgid "item_bottled_rec_hp_4"
+msgstr "芽针针剂"
+
+msgid "item_carbon_enr"
+msgstr "稳定碳块"
+
+msgid "item_carbon_enr_powder"
+msgstr "致密碳粉末"
+
+msgid "item_carbon_mtl"
+msgstr "碳块"
+
+msgid "item_carbon_powder"
+msgstr "碳粉末"
+
+msgid "item_crystal_enr"
+msgstr "密制晶体"
+
+msgid "item_crystal_enr_powder"
+msgstr "致密晶体粉末"
+
+msgid "item_crystal_powder"
+msgstr "晶体外壳粉末"
+
+msgid "item_crystal_shell"
+msgstr "晶体外壳"
+
+msgid "item_equip_script_1"
+msgstr "紫晶装备原件"
+
+msgid "item_equip_script_2"
+msgstr "蓝铁装备原件"
+
+msgid "item_equip_script_3"
+msgstr "高晶装备原件"
+
+msgid "item_equip_script_4"
+msgstr "息壤装备原件"
+
+msgid "item_glass_bottle"
+msgstr "紫晶质瓶"
+
+msgid "item_glass_cmpt"
+msgstr "紫晶零件"
+
+msgid "item_glass_enr_bottle"
+msgstr "高晶质瓶"
+
+msgid "item_glass_enr_cmpt"
+msgstr "高晶零件"
+
+msgid "item_iron_bottle"
+msgstr "蓝铁瓶"
+
+msgid "item_iron_cmpt"
+msgstr "铁制零件"
+
+msgid "item_iron_enr"
+msgstr "钢块"
+
+msgid "item_iron_enr_bottle"
+msgstr "钢质瓶"
+
+msgid "item_iron_enr_cmpt"
+msgstr "钢制零件"
+
+msgid "item_iron_enr_powder"
+msgstr "致密蓝铁粉末"
+
+msgid "item_iron_nugget"
+msgstr "蓝铁块"
+
+msgid "item_iron_ore"
+msgstr "蓝铁矿"
+
+msgid "item_iron_powder"
+msgstr "蓝铁粉末"
+
+msgid "item_liquid_plant_grass_1"
+msgstr "锦草溶液"
+
+msgid "item_liquid_plant_grass_2"
+msgstr "芽针溶液"
+
+msgid "item_liquid_water"
+msgstr "清水"
+
+msgid "item_liquid_xiranite"
+msgstr "液化息壤"
+
+msgid "item_muck_feces_1"
+msgstr "驮兽粪便"
+
+msgid "item_muck_xiranite_1"
+msgstr "膨地啪"
+
+msgid "item_originium_enr_powder"
+msgstr "致密源石粉末"
+
+msgid "item_originium_ore"
+msgstr "源矿"
+
+msgid "item_originium_powder"
+msgstr "源石粉末"
+
+msgid "item_plant_bbflower_1"
+msgstr "酮化灌木"
+
+msgid "item_plant_bbflower_powder_1"
+msgstr "酮化灌木粉末"
+
+msgid "item_plant_bbflower_seed_1"
+msgstr "酮化树种"
+
+msgid "item_plant_grass_1"
+msgstr "锦草"
+
+msgid "item_plant_grass_2"
+msgstr "芽针"
+
+msgid "item_plant_grass_powder_1"
+msgstr "锦草粉末"
+
+msgid "item_plant_grass_powder_2"
+msgstr "芽针粉末"
+
+msgid "item_plant_grass_seed_1"
+msgstr "锦草种子"
+
+msgid "item_plant_grass_seed_2"
+msgstr "芽针种子"
+
+msgid "item_plant_moss_1"
+msgstr "荞花"
+
+msgid "item_plant_moss_2"
+msgstr "柑实"
+
+msgid "item_plant_moss_3"
+msgstr "砂叶"
+
+msgid "item_plant_moss_enr_powder_1"
+msgstr "细磨荞花粉末"
+
+msgid "item_plant_moss_enr_powder_2"
+msgstr "细磨柑实粉末"
+
+msgid "item_plant_moss_powder_1"
+msgstr "荞花粉末"
+
+msgid "item_plant_moss_powder_2"
+msgstr "柑实粉末"
+
+msgid "item_plant_moss_powder_3"
+msgstr "砂叶粉末"
+
+msgid "item_plant_moss_seed_1"
+msgstr "荞花种子"
+
+msgid "item_plant_moss_seed_2"
+msgstr "柑实种子"
+
+msgid "item_plant_moss_seed_3"
+msgstr "砂叶种子"
+
+msgid "item_plant_sp_1"
+msgstr "灰芦麦"
+
+msgid "item_plant_sp_2"
+msgstr "苦叶椒"
+
+msgid "item_plant_sp_3"
+msgstr "琼叶参"
+
+msgid "item_plant_sp_4"
+msgstr "金石稻"
+
+msgid "item_plant_sp_seed_1"
+msgstr "灰芦麦种子"
+
+msgid "item_plant_sp_seed_2"
+msgstr "苦叶椒种子"
+
+msgid "item_plant_sp_seed_3"
+msgstr "琼叶参种子"
+
+msgid "item_plant_sp_seed_4"
+msgstr "金石稻种子"
+
+msgid "item_plant_tundra_wood"
+msgstr "原木"
+
+msgid "item_proc_battery_1"
+msgstr "低容谷地电池"
+
+msgid "item_proc_battery_2"
+msgstr "中容谷地电池"
+
+msgid "item_proc_battery_3"
+msgstr "高容谷地电池"
+
+msgid "item_proc_battery_4"
+msgstr "低容武陵电池"
+
+msgid "item_proc_bomb_1"
+msgstr "工业爆炸物"
+
+msgid "item_quartz_enr"
+msgstr "高晶纤维"
+
+msgid "item_quartz_enr_powder"
+msgstr "高晶粉末"
+
+msgid "item_quartz_glass"
+msgstr "紫晶纤维"
+
+msgid "item_quartz_powder"
+msgstr "紫晶粉末"
+
+msgid "item_quartz_sand"
+msgstr "紫晶矿"
+
+msgid "item_xiranite_powder"
+msgstr "息壤"

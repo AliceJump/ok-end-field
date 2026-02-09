@@ -1,0 +1,40 @@
+{
+  "version": "3.3.8",
+  "flags": {},
+  "shapes": [
+    {
+      "kie_linking": [],
+      "label": "essence_unlocked",
+      "score": null,
+      "points": [
+        [
+          2434.896551724138,
+          362.62068965517244
+        ],
+        [
+          2475.448275862069,
+          362.62068965517244
+        ],
+        [
+          2475.448275862069,
+          400.0
+        ],
+        [
+          2434.896551724138,
+          400.0
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "difficult": false,
+      "shape_type": "rectangle",
+      "flags": {},
+      "attributes": {}
+    }
+  ],
+  "imagePath": "essence-unlocked.png",
+  "imageData": null,
+  "imageHeight": 1440,
+  "imageWidth": 2560,
+  "description": ""
+}
