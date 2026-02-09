@@ -58,18 +58,17 @@ jobs:
               python -m unittest $_.FullName
           }
 
-      # Sync Repositories step disabled - requires secrets not available in fork
-      # - name: Sync Repositories # 同步部分代码(deploy.txt中), 合并tag中间更新日志, 到更新库, 以减少用户更新使用的git库大小
-      #   id: sync   # Give the step an ID to access its outputs
-      #   uses: ok-oldking/partial-sync-repo@master
-      #   with:
-      #     repos: |
-      #       https://cnb:${{ secrets.CNB_TOKEN }}@cnb.cool/ok-oldking/ok-ef-update.git
-      #       https://ok-oldking:${{ secrets.OK_GH }}@github.com/ok-oldking/ok-ef-update.git
-      #     sync_list: 'deploy.txt'
-      #     tag: ${{ github.ref_name }}
-      #     gitignore_file: '.update_repo_gitignore'
-      #     show_author: true #在更新日志中加入作者
+      - name: Sync Repositories # 同步部分代码(deploy.txt中), 合并tag中间更新日志, 到更新库, 以减少用户更新使用的git库大小
+        id: sync   # Give the step an ID to access its outputs
+        uses: ok-oldking/partial-sync-repo@master
+        with:
+          repos: |
+            https://cnb:${{ secrets.CNB_TOKEN }}@cnb.cool/ok-oldking/ok-ef-update.git
+            https://ok-oldking:${{ secrets.OK_GH }}@github.com/ok-oldking/ok-ef-update.git
+          sync_list: 'deploy.txt'
+          tag: ${{ github.ref_name }}
+          gitignore_file: '.update_repo_gitignore'
+          show_author: true #在更新日志中加入作者
 
       - name: Build with PyAppify Action
         id: build-app
@@ -81,12 +80,12 @@ jobs:
         with:
           draft: false
           body: |
-            ### Release ${{ github.ref_name }}
-
+            ###  更新日志 ${{ steps.sync.outputs.start_tag }} -> ${{ steps.sync.outputs.end_tag }}:
+                          ${{ steps.sync.outputs.changes_with_asterisk }}
             ### 下载包说明
               * ok-ef-win32-China-setup.exe 完整安装包, 更新使用阿里云+腾讯CNB.
-              * ok-ef-win32-Global-setup.exe full package with dependencies, using GitHub and PyPi as update source
-              * ok-ef-win32-online-setup.exe 在线安装包, 在线白嫖的服务器不一定稳定, 建议优先使用完整包.
+              * ok-ef-win32-Global-setup.exe full package with dependencies, using GitHub and PyPi as update source 
+              * ok-ef-win32-online-setup.exe 在线安装包, 在线白嫖的服务器不一定稳定, 建议优先使用完整包. 
               * 不要下载ok-ww-win32.zip,和SourceCode.zip, Do Not Download the SourceCode, ok-ww-win32.zip
             ### 如果无法下载或下载慢, 可以使用其他下载源
               * [Mirror酱下载渠道](https://mirrorchyan.com/zh/projects?rid=ok-end-field&source=ok-ef-release), 国内网页直链, 下载需要购买CD-KEY, 已有Mirror酱CD-KEY可免费下载
