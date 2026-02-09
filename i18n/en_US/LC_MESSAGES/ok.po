@@ -83,3 +83,299 @@ msgstr "Mail"
 
 msgid "领任务"
 msgstr "Claim Missions"
+
+# Item names from endfield-calc en/item.json
+
+msgid "item_bottled_food_1"
+msgstr "Canned Citrome [C]"
+
+msgid "item_bottled_food_2"
+msgstr "Canned Citrome [B]"
+
+msgid "item_bottled_food_3"
+msgstr "Canned Citrome [A]"
+
+msgid "item_bottled_food_4"
+msgstr "Jincao Drink"
+
+msgid "item_bottled_rec_hp_1"
+msgstr "Buck Capsule [C]"
+
+msgid "item_bottled_rec_hp_2"
+msgstr "Buck Capsule [B]"
+
+msgid "item_bottled_rec_hp_3"
+msgstr "Buck Capsule [A]"
+
+msgid "item_bottled_rec_hp_4"
+msgstr "Yazhen Syringe [C]"
+
+msgid "item_carbon_enr"
+msgstr "Stabilized Carbon"
+
+msgid "item_carbon_enr_powder"
+msgstr "Dense Carbon Powder"
+
+msgid "item_carbon_mtl"
+msgstr "Carbon"
+
+msgid "item_carbon_powder"
+msgstr "Carbon Powder"
+
+msgid "item_crystal_enr"
+msgstr "Packed Origocrust"
+
+msgid "item_crystal_enr_powder"
+msgstr "Dense Origocrust Powder"
+
+msgid "item_crystal_powder"
+msgstr "Origocrust Powder"
+
+msgid "item_crystal_shell"
+msgstr "Origocrust"
+
+msgid "item_equip_script_1"
+msgstr "Amethyst Component"
+
+msgid "item_equip_script_2"
+msgstr "Ferrium Component"
+
+msgid "item_equip_script_3"
+msgstr "Cryston Component"
+
+msgid "item_equip_script_4"
+msgstr "Xiranite Component"
+
+msgid "item_fbottle_glass_grass_1"
+msgstr "Amethyst Bottle"
+
+msgid "item_fbottle_glass_grass_2"
+msgstr "Amethyst Bottle"
+
+msgid "item_fbottle_glass_water"
+msgstr "Amethyst Bottle"
+
+msgid "item_fbottle_glass_xiranite"
+msgstr "Amethyst Bottle"
+
+msgid "item_fbottle_glassenr_grass_1"
+msgstr "Cryston Bottle"
+
+msgid "item_fbottle_glassenr_grass_2"
+msgstr "Cryston Bottle"
+
+msgid "item_fbottle_glassenr_water"
+msgstr "Cryston Bottle"
+
+msgid "item_fbottle_glassenr_xiranite"
+msgstr "Cryston Bottle"
+
+msgid "item_fbottle_iron_grass_1"
+msgstr "Ferrium Bottle"
+
+msgid "item_fbottle_iron_grass_2"
+msgstr "Ferrium Bottle"
+
+msgid "item_fbottle_iron_water"
+msgstr "Ferrium Bottle"
+
+msgid "item_fbottle_iron_xiranite"
+msgstr "Ferrium Bottle"
+
+msgid "item_fbottle_ironenr_grass_1"
+msgstr "Steel Bottle"
+
+msgid "item_fbottle_ironenr_grass_2"
+msgstr "Steel Bottle"
+
+msgid "item_fbottle_ironenr_water"
+msgstr "Steel Bottle"
+
+msgid "item_fbottle_ironenr_xiranite"
+msgstr "Steel Bottle"
+
+msgid "item_glass_bottle"
+msgstr "Amethyst Bottle"
+
+msgid "item_glass_cmpt"
+msgstr "Amethyst Part"
+
+msgid "item_glass_enr_bottle"
+msgstr "Cryston Bottle"
+
+msgid "item_glass_enr_cmpt"
+msgstr "Cryston Part"
+
+msgid "item_iron_bottle"
+msgstr "Ferrium Bottle"
+
+msgid "item_iron_cmpt"
+msgstr "Ferrium Part"
+
+msgid "item_iron_enr"
+msgstr "Steel"
+
+msgid "item_iron_enr_bottle"
+msgstr "Steel Bottle"
+
+msgid "item_iron_enr_cmpt"
+msgstr "Steel Part"
+
+msgid "item_iron_enr_powder"
+msgstr "Dense Ferrium Powder"
+
+msgid "item_iron_nugget"
+msgstr "Ferrium"
+
+msgid "item_iron_ore"
+msgstr "Ferrium Ore"
+
+msgid "item_iron_powder"
+msgstr "Ferrium Powder"
+
+msgid "item_liquid_plant_grass_1"
+msgstr "Jincao Solution"
+
+msgid "item_liquid_plant_grass_2"
+msgstr "Yazhen Solution"
+
+msgid "item_liquid_water"
+msgstr "Clean Water"
+
+msgid "item_liquid_xiranite"
+msgstr "Liquid Xiranite"
+
+msgid "item_muck_feces_1"
+msgstr "Burdo-Muck"
+
+msgid "item_muck_xiranite_1"
+msgstr "Bumper-Rich"
+
+msgid "item_originium_enr_powder"
+msgstr "Dense Originium Powder"
+
+msgid "item_originium_ore"
+msgstr "Originium Ore"
+
+msgid "item_originium_powder"
+msgstr "Originium Powder"
+
+msgid "item_plant_bbflower_1"
+msgstr "Aketine"
+
+msgid "item_plant_bbflower_powder_1"
+msgstr "Aketine Powder"
+
+msgid "item_plant_bbflower_seed_1"
+msgstr "Aketine Seed"
+
+msgid "item_plant_grass_1"
+msgstr "Jincao"
+
+msgid "item_plant_grass_2"
+msgstr "Yazhen"
+
+msgid "item_plant_grass_powder_1"
+msgstr "Jincao Powder"
+
+msgid "item_plant_grass_powder_2"
+msgstr "Yazhen Powder"
+
+msgid "item_plant_grass_seed_1"
+msgstr "Jincao Seed"
+
+msgid "item_plant_grass_seed_2"
+msgstr "Yazhen Seed"
+
+msgid "item_plant_moss_1"
+msgstr "Buckflower"
+
+msgid "item_plant_moss_2"
+msgstr "Citrome"
+
+msgid "item_plant_moss_3"
+msgstr "Sandleaf"
+
+msgid "item_plant_moss_enr_powder_1"
+msgstr "Ground Buckflower Powder"
+
+msgid "item_plant_moss_enr_powder_2"
+msgstr "Ground Citrome Powder"
+
+msgid "item_plant_moss_powder_1"
+msgstr "Buckflower Powder"
+
+msgid "item_plant_moss_powder_2"
+msgstr "Citrome Powder"
+
+msgid "item_plant_moss_powder_3"
+msgstr "Sandleaf Powder"
+
+msgid "item_plant_moss_seed_1"
+msgstr "Buckflower Seed"
+
+msgid "item_plant_moss_seed_2"
+msgstr "Citrome Seed"
+
+msgid "item_plant_moss_seed_3"
+msgstr "Sandleaf Seed"
+
+msgid "item_plant_sp_1"
+msgstr "Reed Rye"
+
+msgid "item_plant_sp_2"
+msgstr "Tartpepper"
+
+msgid "item_plant_sp_3"
+msgstr "Redjade Ginseng"
+
+msgid "item_plant_sp_4"
+msgstr "Amber Rice"
+
+msgid "item_plant_sp_seed_1"
+msgstr "Reed Rye Seed"
+
+msgid "item_plant_sp_seed_2"
+msgstr "Tartpepper Seed"
+
+msgid "item_plant_sp_seed_3"
+msgstr "Redjade Ginseng Seed"
+
+msgid "item_plant_sp_seed_4"
+msgstr "Amber Rice Seed"
+
+msgid "item_plant_tundra_wood"
+msgstr "Wood"
+
+msgid "item_proc_battery_1"
+msgstr "LC Valley Battery"
+
+msgid "item_proc_battery_2"
+msgstr "SC Valley Battery"
+
+msgid "item_proc_battery_3"
+msgstr "HC Valley Battery"
+
+msgid "item_proc_battery_4"
+msgstr "LC Wuling Battery"
+
+msgid "item_proc_bomb_1"
+msgstr "Industrial Explosive"
+
+msgid "item_quartz_enr"
+msgstr "Cryston Fiber"
+
+msgid "item_quartz_enr_powder"
+msgstr "Cryston Powder"
+
+msgid "item_quartz_glass"
+msgstr "Amethyst Fiber"
+
+msgid "item_quartz_powder"
+msgstr "Amethyst Powder"
+
+msgid "item_quartz_sand"
+msgstr "Amethyst Ore"
+
+msgid "item_xiranite_powder"
+msgstr "Xiranite"

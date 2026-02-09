@@ -115,6 +115,7 @@ config = {
     'onetime_tasks': [  # 用户点击触发的任务
         ["src.tasks.DailyTask", "DailyTask"],
         ["src.tasks.TakeDeliveryTask", "TakeDeliveryTask"],
+        ["src.tasks.WarehouseTransferTask", "WarehouseTransferTask"],
         # ["src.tasks.BuySellTask", "BuySellTask"],
         ["src.tasks.EssenceScanTask", "EssenceScanTask"],
         ["ok.task.DiagnosisTask", "DiagnosisTask"],
