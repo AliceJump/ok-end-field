@@ -77,10 +77,14 @@ class TestTakeDeliveryFunctions(TaskTestCase):
         # 我们可以遍历所有 rewards 看看能通过 detect_ticket_type 识别出什么
         ticket_types = ['ticket_valley', 'ticket_wuling']
 
+        # 计算 y_ceiling：使用与 OCR box 相同的顶部边界
+        # 在测试中，OCR box 的顶部是 0.15 * height
+        y_ceiling = self.task.height * 0.15
+
         found_any_ticket = False
         for reward_obj, val in rewards:
-            # 调用新提取的方法检测图标
-            ticket = self.task.detect_ticket_type(reward_obj, ticket_types)
+            # 调用新提取的方法检测图标，传入 y_ceiling 参数
+            ticket = self.task.detect_ticket_type(reward_obj, ticket_types, y_ceiling)
             if ticket:
                 found_any_ticket = True
                 print(f"[Debug] 金额 {val}万 -> 检测到票务类型: {ticket.name}")
