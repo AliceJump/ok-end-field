@@ -28,8 +28,10 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         self.default_config = {
             '接取谷地券': False,
             '接取谷地券最低金额(万)': 5.0,
+            '接取谷地券最高金额(万)': 40.0,
             '接取武陵券': True,
-            '接取武陵券最低金额(万)': 5.0
+            '接取武陵券最低金额(万)': 5.0,
+            '接取武陵券最高金额(万)': 15.0
         }
 
     def process_ocr_results(self, full_texts, filter_min, reward_pattern):
@@ -146,7 +148,9 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         enable_valley = self.config.get('接取谷地券', False)
         enable_wuling = self.config.get('接取武陵券', True)
         valley_min = float(self.config.get('接取谷地券最低金额(万)', 5.0))
+        valley_max = float(self.config.get('接取谷地券最高金额(万)', 40.0))
         wuling_min = float(self.config.get('接取武陵券最低金额(万)', 5.0))
+        wuling_max = float(self.config.get('接取武陵券最高金额(万)', 15.0))
 
         ticket_types = []
         if enable_valley:
@@ -168,6 +172,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         # 滚动控制状态
         scroll_step = 0             # 当前滚动计数 (0, 1) -> 2次后刷新
         scroll_direction = -1       # -1: 向下(wheel负值), 1: 向上(wheel正值)
+        refresh_not_found_count = 0 # 连续未找到刷新按钮计数
 
         while True:
             if not self.enabled:
@@ -177,6 +182,10 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
 
                 full_texts = self.ocr(box=self.box_of_screen(0.05, 0.15, 0.95, 0.95))
                 rewards, accept_btns, refresh_btn = self.process_ocr_results(full_texts, filter_min, reward_pattern)
+
+                # 重置计数
+                if refresh_btn:
+                    refresh_not_found_count = 0
 
                 # 【新增步骤】按 Y 坐标排序，确保从上往下处理，才能正确计算行间距
                 rewards.sort(key=lambda x: x[0].y)
@@ -216,9 +225,9 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                     if ticket_result:
                         # 根据具体的图标类型判断对应的金额阈值
                         is_qualified = False
-                        if ticket_result.name == 'ticket_valley' and enable_valley and val >= valley_min:
+                        if ticket_result.name == 'ticket_valley' and enable_valley and val >= valley_min and val <= valley_max:
                             is_qualified = True
-                        elif ticket_result.name == 'ticket_wuling' and enable_wuling and val >= wuling_min:
+                        elif ticket_result.name == 'ticket_wuling' and enable_wuling and val >= wuling_min and val <= wuling_max:
                             is_qualified = True
 
                         if is_qualified:
@@ -227,16 +236,36 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                             self.log_info(f"匹配成功: {matched_msg}")
                             break
                         else:
-                            self.log_debug(f"类型匹配({ticket_result.name})但金额({val}万)不达标")
+                            self.log_info(f"类型匹配({ticket_result.name})但金额({val}万)不符合范围")
                     else:
                         self.log_debug(f"金额符合({val}万)但未找到券种图标")
 
                 # 4. 执行操作
                 if target_btn:
-                    # 匹配成功后，增加日志并点击
+                    # 匹配成功后，尝试接取任务（最多3次）
                     self.log_info(f"准备接取任务：{matched_msg}")
-                    self.click(target_btn, after_sleep=2)
-                    return True
+
+                    success = False
+                    for attempt in range(1, 4):  # 尝试3次
+                        self.log_info(f"接取运送委托 (尝试 {attempt}/3)")
+                        self.click(target_btn, after_sleep=0)  # 点击后不等待
+                        self.sleep(1.0)  # 等待1秒
+
+                        # 检查是否出现"请尽快送达"
+                        delivery_text = self.wait_ocr(match="请尽快送达", time_out=1, raise_if_not_found=False)
+                        if delivery_text:
+                            self.log_info(f"抢单成功！(第 {attempt} 次尝试)")
+                            success = True
+                            return True
+                        else:
+                            self.log_debug(f"第 {attempt} 次尝试未成功，继续...")
+
+                    # 3次都失败
+                    if not success:
+                        self.log_info("抢单失败（可能已被抢走），等待4秒后继续检测...")
+                        self.sleep(4)
+                        # 继续循环，不返回，让后面的刷新逻辑处理
+
                 else:
                     self.log_info("未找到符合条件(金额+类型)的委托")
 
@@ -246,6 +275,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                     else:
                         last_refresh_box = getattr(self, 'last_known_refresh_btn', None)
 
+                    # 2. 检查是否需要滚动 (每轮刷新之间最多滚动1次)
                     # 2. 检查是否需要滚动 (每轮刷新之间最多滚动1次)
                     if scroll_step < 1:
                         scroll_step += 1
@@ -262,15 +292,17 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                     # 3. 滚动次数已满，准备刷新
                     self.log_info("已完成当前列表扫描，准备检测刷新")
 
-                    # 4. 尝试执行盲点刷新（直接用 Box 对象）
+                    refresh_not_found_count = 0 # 重置计数
+
                     if last_refresh_box:
+
                         last_click = getattr(self, 'last_refresh_time', 0)
                         elapsed = time.time() - last_click
 
-                        if elapsed < 5.2:
+                        if elapsed < 5.6:
                             # CD未好
-                            self.log_debug(f"刷新CD中 ({elapsed:.1f}/5.2s)，等待...")
-                            self.sleep(5.2 - elapsed)
+                            self.log_debug(f"刷新CD中 ({elapsed:.1f}/5.6s)，等待...")
+                            self.sleep(5.6 - elapsed)
 
                         # CD已好（或睡醒），执行点击
                         self.log_info(f"执行刷新 (坐标: {int(last_refresh_box.x)}, {int(last_refresh_box.y)})")
@@ -283,8 +315,15 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
 
                         self.sleep(1.0) # 等待刷新内容加载
                     else:
-                        self.log_info("警告: 尚未定位到刷新按钮位置，无法刷新，重试...")
-                        time.sleep(1.0)
+                        refresh_not_found_count += 1
+                        self.log_info(f"警告: 尚未定位到刷新按钮位置 ({refresh_not_found_count}/10)")
+
+                        if refresh_not_found_count >= 10:
+                            self.log_info("连续 10 次未找到刷新位置，判定为已在任务流程外或已接取，任务终止。")
+                            return
+
+                        self.log_info("等待1秒后重试...")
+                        self.sleep(1.0)
                         continue
             except Exception as e:
                 self.log_info(f"TakeDeliveryTask error: {e}")
