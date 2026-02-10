@@ -116,9 +116,11 @@ config = {
         ["src.tasks.DailyTask", "DailyTask"],
         ["src.tasks.TakeDeliveryTask", "TakeDeliveryTask"],
         ["src.tasks.WarehouseTransferTask", "WarehouseTransferTask"],
+        ["src.tasks.DeliveryTask", "DeliveryTask"],
         # ["src.tasks.BuySellTask", "BuySellTask"],
         ["src.tasks.EssenceScanTask", "EssenceScanTask"],
         ["ok.task.DiagnosisTask", "DiagnosisTask"],
+
     ],
     'trigger_tasks': [  # 不断执行的触发式任务
         ["src.tasks.AutoCombatTask", "AutoCombatTask"],

@@ -28,7 +28,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         self.default_config = {"接取谷地券": False, "接取武陵券": True}
         self.wuling_location = ["武陵城"]
         self.valley_location = ["供能高地", "矿脉源区", "源石研究园"]
-        self._last_refresh_ts=None
+        self._last_refresh_ts=0
 
     def merge_left_right_groups(self):
         """
@@ -67,7 +67,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
             1.5:    (254/1280, 1134/1280),   # 3:2
             1.0:    (0.1271, 0.8561+(0.8561-0.1271)/11),   # 1:1
             9/16:   (0.075,  0.7916),   # 9:16
-            16/9:    (290/1080,  926/1080),   # 16:9
+            16/9:    (290/1080,  926/1080-(926-290)/5/1080),   # 16:9
         }
 
         x_ranges = [
