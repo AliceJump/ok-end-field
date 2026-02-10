@@ -10,99 +10,7 @@ from src.essence.essence_recognizer import EssenceInfo, read_essence_info
 
 user32 = ctypes.windll.user32
 MOUSEEVENTF_MOVE = 0x0001
-TOLERANCE = 100
-
-
-def calc_direction_step(
-        from_pos, to_pos, base_step=90, min_step=60, max_step=150, scale=0.15
-):
-    """
-    计算从起点到终点的方向步长
-    参数:
-        from_pos: 起点坐标，格式为(x, y)
-        to_pos: 终点坐标，格式为(x, y)
-        base_step: 基础步长，默认为90
-        min_step: 最小步长，默认为60
-        max_step: 最大步长，默认为150
-        scale: 步长缩放比例，默认为0.15
-    返回:
-        返回一个元组(dx, dy)，表示在x和y方向上的步长
-    """
-    # 计算x方向和y方向的原始距离差值
-    dx_raw = to_pos[0] - from_pos[0]
-    dy_raw = to_pos[1] - from_pos[1]
-
-    # 计算起点到终点的直线距离
-    dist = math.sqrt(dx_raw ** 2 + dy_raw ** 2)
-    # 如果距离为0，说明起点和终点重合，返回(0, 0)
-    if dist == 0:
-        return 0, 0
-
-    # 距离越近步长越小，同时受 base_step 限制
-    step = int(dist * scale)
-    step = max(min_step, min(max_step, step))
-    step = min(step, base_step)  # 这里让 base_step 起作用，限制最大步长
-
-    dx = round(dx_raw / dist * step)
-    dy = round(dy_raw / dist * step)
-
-    return dx, dy
-
-
-def send_mouse_delta(hwnd, dx, dy, activate=True,only_activate=False, delay=0.02, steps=3):
-    """
-    发送鼠标相对移动的函数，可以选择是否激活目标窗口，并支持平滑移动
-    参数:
-        hwnd: 目标窗口的句柄
-        dx: x方向的移动距离
-        dy: y方向的移动距离
-        activate: 是否激活目标窗口，默认为True
-        delay: 每次移动后的延迟时间，默认为0.02秒
-        steps: 将移动分为多少步完成，默认为3步
-    """
-    if activate:
-        try:
-            current_hwnd = win32gui.GetForegroundWindow()
-            # 只有不在前台才激活
-            if current_hwnd != hwnd:
-                win32gui.ShowWindow(hwnd, 5)  # 5表示SW_SHOW，显示并激活窗口
-                win32gui.SetForegroundWindow(hwnd)  # 将窗口设置为前台窗口
-                time.sleep(delay)  # 等待窗口激活
-
-        except Exception as e:
-            print("窗口激活失败:", e)  # 捕获并打印窗口激活过程中的异常
-
-    # 分 steps 次移动，平滑
-    if not only_activate:
-        for i in range(steps):
-            step_dx = round(dx / steps)
-            step_dy = round(dy / steps)
-            user32.mouse_event(MOUSEEVENTF_MOVE, step_dx, step_dy, 0, 0)
-            time.sleep(delay)
-
-
-def move_to_target_once(hwnd, ocr_obj, screen_center_func, step_pixels=15):
-    """
-    hwnd: 游戏窗口句柄
-    ocr_obj: OCR类对象，必须有 x, y, width, height 属性
-    screen_center_func: 返回屏幕中心坐标
-    step_pixels: 最大移动步长
-    """
-    if ocr_obj is None:
-        return  # 没检测到目标
-
-    # 用目标中心位置
-    target_center = (
-        ocr_obj.x + ocr_obj.width // 2,
-        ocr_obj.y + ocr_obj.height // 2,
-    )
-
-    center_pos = screen_center_func()
-
-    dx, dy = calc_direction_step(center_pos, target_center, base_step=step_pixels)
-
-    if dx != 0 or dy != 0:
-        send_mouse_delta(hwnd, dx, dy)
+TOLERANCE = 50
 
 
 class BaseEfTask(BaseTask):
@@ -111,35 +19,54 @@ class BaseEfTask(BaseTask):
         super().__init__(*args, **kwargs)
         self._logged_in = False
 
+    def move_keys(self, keys, duration):
+        hwnd=self.hwnd.hwnd
+        try:
+            current_hwnd = win32gui.GetForegroundWindow()
+            # 只有不在前台才激活
+            if current_hwnd != hwnd:
+                win32gui.ShowWindow(hwnd, 5)  # 5表示SW_SHOW，显示并激活窗口
+                win32gui.SetForegroundWindow(hwnd)  # 将窗口设置为前台窗口
+                time.sleep(0.5)  # 等待窗口激活
+
+        except Exception as e:
+            print("窗口激活失败:", e)  # 捕获并打印窗口激活过程中的异常
+        key_map = {
+            "w": 0x57,
+            "a": 0x41,
+            "s": 0x53,
+            "d": 0x44,
+        }
+
+        KEYEVENTF_KEYUP = 0x0002
+
+        # 全部按下
+        for k in keys:
+            user32.keybd_event(key_map[k.lower()], 0, 0, 0)
+
+        self.sleep(duration)
+
+        # 全部抬起
+        for k in keys:
+            user32.keybd_event(key_map[k.lower()], 0, KEYEVENTF_KEYUP, 0)
+
     def calc_direction_step(
-            self,from_pos, to_pos, base_step=90, min_step=60, max_step=150, scale=0.15
+        self, from_pos, to_pos, max_step=100, min_step=40, slow_radius=120, deadzone=4
     ):
-        """
-        计算从起点到终点的方向步长
-        参数:
-            from_pos: 起点坐标，格式为(x, y)
-            to_pos: 终点坐标，格式为(x, y)
-            base_step: 基础步长，默认为90
-            min_step: 最小步长，默认为60
-            max_step: 最大步长，默认为150
-            scale: 步长缩放比例，默认为0.15
-        返回:
-            返回一个元组(dx, dy)，表示在x和y方向上的步长
-        """
-        # 计算x方向和y方向的原始距离差值
         dx_raw = to_pos[0] - from_pos[0]
         dy_raw = to_pos[1] - from_pos[1]
 
-        # 计算起点到终点的直线距离
-        dist = math.sqrt(dx_raw ** 2 + dy_raw ** 2)
-        # 如果距离为0，说明起点和终点重合，返回(0, 0)
-        if dist == 0:
+        dist = math.hypot(dx_raw, dy_raw)
+
+        # ===== 死区 =====
+        if dist < deadzone:
             return 0, 0
 
-        # 距离越近步长越小，同时受 base_step 限制
-        step = int(dist * scale)
-        step = max(min_step, min(max_step, step))
-        step = min(step, base_step)  # 这里让 base_step 起作用，限制最大步长
+        # ===== 非线性速度 =====
+        if dist > slow_radius:
+            step = max_step
+        else:
+            step = max(min_step, int(max_step * (dist / slow_radius)))
 
         dx = round(dx_raw / dist * step)
         dy = round(dy_raw / dist * step)
@@ -177,7 +104,7 @@ class BaseEfTask(BaseTask):
                 user32.mouse_event(MOUSEEVENTF_MOVE, step_dx, step_dy, 0, 0)
                 time.sleep(delay)
 
-    def move_to_target_once(self,hwnd, ocr_obj, screen_center_func, step_pixels=15):
+    def move_to_target_once(self,hwnd, ocr_obj, screen_center_func):
         """
         hwnd: 游戏窗口句柄
         ocr_obj: OCR类对象，必须有 x, y, width, height 属性
@@ -195,7 +122,7 @@ class BaseEfTask(BaseTask):
 
         center_pos = screen_center_func()
 
-        dx, dy = self.calc_direction_step(center_pos, target_center, base_step=step_pixels)
+        dx, dy = self.calc_direction_step(center_pos, target_center)
 
         if dx != 0 or dy != 0:
             self.active_and_send_mouse_delta(hwnd, dx, dy)
@@ -212,7 +139,7 @@ class BaseEfTask(BaseTask):
             self.send_key(direction, down_time=0.05, after_sleep=0.5)
         self.center_camera()
 
-    def align_ocr_target_to_center(self, match_or_name, max_time=50,ocr=True):
+    def align_ocr_or_find_target_to_center(self, match_or_name,box=None,threshold=0.8, max_time=100,ocr=True,raise_if_fail=True):
         """
         将OCR识别的目标或图像特征目标对准屏幕中心
         参数:
@@ -223,16 +150,19 @@ class BaseEfTask(BaseTask):
             如果在最大尝试次数内无法对中目标，抛出"对中失败"异常
         """
         last_target=None
+        last_target_fail_count = 0
         for i in range(max_time):
             if ocr:
-            # 使用OCR模式识别目标，设置超时时间为2秒，并启用日志记录
-                result = self.wait_ocr(match=match_or_name, time_out=2, log=True)
+                # 使用OCR模式识别目标，设置超时时间为2秒，并启用日志记录
+                result = self.wait_ocr(match=match_or_name,box=box, time_out=2, log=True)
             else:
-            # 使用图像特征识别模式查找目标
-                result = self.find_one(feature_name=match_or_name)
+                self.sleep(2)
+                # 使用图像特征识别模式查找目标
+                result = self.find_feature(feature_name=match_or_name,threshold=threshold, box=box)
             if result:
                 # OCR 成功
-                result = result[0]
+                if isinstance(result, list):
+                    result = result[0]
                 result.y = result.y - int(self.height * ((525 - 486) / 1080))
 
                 target_center = (
@@ -241,6 +171,7 @@ class BaseEfTask(BaseTask):
                 )
                 screen_center_pos = self.screen_center()
                 last_target = result
+                last_target_fail_count = 0
                 # 计算偏移量
                 dx = target_center[0] - screen_center_pos[0]
                 dy = target_center[1] - screen_center_pos[1]
@@ -250,19 +181,22 @@ class BaseEfTask(BaseTask):
                     return
                 else:
                     self.move_to_target_once(
-                        self.hwnd.hwnd, result, self.screen_center, step_pixels=100
+                        self.hwnd.hwnd, result, self.screen_center
                     )
 
             else:
                 # 每次 OCR 失败，直接随机移动
                 max_offset = 50  # 最大随机偏移
-                if last_target:
-                    move_to_target_once(
-                        self.hwnd.hwnd, last_target, self.screen_center, step_pixels=100
+                if last_target and last_target_fail_count < 5:
+                    self.move_to_target_once(
+                        self.hwnd.hwnd, last_target, self.screen_center
                     )
+                    last_target_fail_count += 1
                 else:
-                    dx = random.randint(-max_offset, max_offset)
-                    dy = random.randint(-max_offset, max_offset)
+                    last_target = None
+                    last_target_fail_count = 0
+                    dx = random.randint(-max_offset//2, max_offset)
+                    dy = random.randint(-max_offset//2, max_offset)
 
                     # 移动鼠标
                     self.active_and_send_mouse_delta(
@@ -274,7 +208,8 @@ class BaseEfTask(BaseTask):
                     )
 
                 # OCR 成功后不需要处理，下一次失败仍然随机
-        raise Exception("对中失败")
+        if raise_if_fail:
+            raise Exception("对中失败")
     def in_bg(self):
         return not self.hwnd.is_foreground()
 

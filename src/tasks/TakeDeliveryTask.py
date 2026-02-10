@@ -4,7 +4,6 @@ from qfluentwidgets import FluentIcon
 
 from ok import TriggerTask, Logger
 from src.tasks.BaseEfTask import BaseEfTask
-
 logger = Logger.get_logger(__name__)
 
 
@@ -121,6 +120,65 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         if any(k in first_name for k in self.valley_location):
             return "ticket_valley"
         return None
+    def other_run(self):
+        cx = int(self.width * 0.5)
+        cy = int(self.height * 0.5)
+        for _ in range(6):
+            self.scroll(cx, cy, -8)
+            self.sleep(0.2)
+        self.sleep(2.0)
+        # 读取券种配置
+        # enable_valley = self.config.get("接取谷地券", False)
+        enable_wuling = True
+        ticket_types = []
+        # if enable_valley:
+        #     ticket_types.append("ticket_valley")
+        if enable_wuling:
+            ticket_types.append("ticket_wuling")
+
+        if not ticket_types:
+            self.log_info("警告: 未启用任何券种，任务退出")
+            return None
+        while True:
+            rows = self.merge_left_right_groups()
+            for row in rows:
+                if row:
+                    ticket_type = self.detect_ticket_type(row)
+                    if ticket_type == "ticket_wuling" and enable_wuling:
+                        if (
+                            "易损" in row["elems"][2].name
+                            and "不易损" not in row["elems"][2].name
+                        ):
+                            self.click(
+                                row["elems"][-1],
+                                after_sleep=2,
+                                down_time=0.1,
+                                move_back=True,
+                            )
+                            return True
+                    # elif ticket_type == "ticket_valley" and enable_valley:
+                    #     if "极易损" in row["elems"][2].name:
+                    #         self.click(
+                    #             row["elems"][-1],
+                    #             after_sleep=2,
+                    #             down_time=0.1,
+                    #             move_back=True,
+                    #         )
+                    #         return True
+            self.log_info("未找到符合条件(金额+类型)的委托，准备刷新重试")
+            for i in range(2):
+                if last_refresh_box := self.wait_ocr(match="刷新", box="bottom_right"):
+                    now = time.time()
+                    last = getattr(self, "_last_refresh_ts", 0.0)
+                    wait = max(0.0, 5.4 - (now - last))
+                    if wait > 0:
+                        self.sleep(wait)
+                    self.click(last_refresh_box, move_back=True)
+                    self._last_refresh_ts = time.time()
+                    self.sleep(3.0)  # 等待刷新内容加载
+                else:
+                    self.log_info("警告: 尚未定位到刷新按钮位置，无法刷新，重试...")
+                    time.sleep(1.0)
 
     def run(self):
         cx = int(self.width * 0.5)
