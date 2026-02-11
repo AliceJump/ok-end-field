@@ -18,11 +18,14 @@ class DeliveryTask(BaseEfTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_config = {"_enabled": True}
-        self.name = "半自动送货"
-        self.description = '选择后上滑索时启动'
+        self.name = "自动送货"
+        self.description = '仅武陵易损单，需要前台'
         self.ends = ["常沄", "资源", "彦宁", "齐纶"]
         self.default_config.update({
-            '说明': '需填写滑索分叉序列(例如"108,64,109",是指上滑索后找108m的滑索并试图滑向它,后面依次为第一个分叉点,第二个分叉点...)',
+            '说明': '需填写滑索分叉序列(例如"108,64,109",是指上滑索后找108m的滑索并试图滑向它,后面依次为第一个分叉点找64m,第二个分叉点...)',
+            '说明2': '出发和结束的滑索尽量与提交点之间的距离接近,且无障碍物',
+            '说明3': '分叉点和出发点尽量选在昏暗区域,可考虑深色滤镜,去仓储节点的传送点需传送后就立即放一个滑索',
+            '说明4': '送货路径相互独立再好不过,分叉点到其他点的距离不能相同,否则可能会误识别导致走错路',
             '通向送货点的滑索分叉序列':'36,14',
             '常沄': "14,108,64,109,60",
             '资源': "14,108,64,109",
@@ -327,6 +330,7 @@ class DeliveryTask(BaseEfTask):
                 match=end_pattern, box="bottom_right", time_out=2, log=True
             ):
                 self.send_key("f")
+                self.skip_dialog()
                 break
 
     def run(self):
