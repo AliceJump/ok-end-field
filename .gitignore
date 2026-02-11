@@ -2,6 +2,8 @@ my_key.txt
 updates/
 working/
 update/
+x-anylabeling-asset/project_dir/coco_output
+x-anylabeling-asset/classes.txt
 tesseract
 models
 fonts
