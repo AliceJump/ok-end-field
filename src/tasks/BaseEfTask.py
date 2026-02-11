@@ -1,10 +1,9 @@
+from ok import BaseTask
 import ctypes
 import math
 import random
 import time
-
 import win32gui
-from ok import BaseTask
 
 from src.essence.essence_recognizer import EssenceInfo, read_essence_info
 
@@ -73,7 +72,7 @@ class BaseEfTask(BaseTask):
 
         return dx, dy
 
-    def active_and_send_mouse_delta(self, hwnd, dx, dy, activate=True, only_activate=False, delay=0.02, steps=3):
+    def active_and_send_mouse_delta(self, hwnd, dx=1, dy=1, activate=True, only_activate=False, delay=0.02, steps=3):
         """
         发送鼠标相对移动的函数，可以选择是否激活目标窗口，并支持平滑移动
         参数:
@@ -84,6 +83,8 @@ class BaseEfTask(BaseTask):
             delay: 每次移动后的延迟时间，默认为0.02秒
             steps: 将移动分为多少步完成，默认为3步
         """
+        if only_activate:
+            activate=True
         if activate:
             try:
                 current_hwnd = win32gui.GetForegroundWindow()
@@ -127,19 +128,19 @@ class BaseEfTask(BaseTask):
         if dx != 0 or dy != 0:
             self.active_and_send_mouse_delta(hwnd, dx, dy)
 
-    def center_camera(self):
-        self.click(0.5, 0.5, down_time=0.2, key="middle")
-        self.wait_until(self.in_combat, time_out=1)
+    # def center_camera(self):
+    #     self.click(0.5, 0.5, down_time=0.2, key="middle")
+    #     self.wait_until(self.in_combat, time_out=1)
 
     def screen_center(self):
         return int(self.width / 2), int(self.height / 2)
 
-    def turn_direction(self, direction):
-        if direction != "w":
-            self.send_key(direction, down_time=0.05, after_sleep=0.5)
-        self.center_camera()
+    # def turn_direction(self, direction):
+    #     if direction != "w":
+    #         self.send_key(direction, down_time=0.05, after_sleep=0.5)
+    #     self.center_camera()
 
-    def align_ocr_or_find_target_to_center(self, match_or_name,box=None,threshold=0.8, max_time=100,ocr=True,raise_if_fail=True):
+    def align_ocr_or_find_target_to_center(self, match_or_name,box=None,threshold=0.8, max_time=100,ocr=True,raise_if_fail=True,is_num=False):
         """
         将OCR识别的目标或图像特征目标对准屏幕中心
         参数:
@@ -149,6 +150,7 @@ class BaseEfTask(BaseTask):
         异常:
             如果在最大尝试次数内无法对中目标，抛出"对中失败"异常
         """
+
         last_target=None
         last_target_fail_count = 0
         for i in range(max_time):
@@ -158,12 +160,19 @@ class BaseEfTask(BaseTask):
             else:
                 self.sleep(2)
                 # 使用图像特征识别模式查找目标
+                box = self.box_of_screen(
+                    (1920 - 1550) / 1920,
+                    150 / 1080,
+                    1550 / 1920,
+                    (1080 - 150) / 1080,
+                )
                 result = self.find_feature(feature_name=match_or_name,threshold=threshold, box=box)
             if result:
                 # OCR 成功
                 if isinstance(result, list):
                     result = result[0]
-                result.y = result.y - int(self.height * ((525 - 486) / 1080))
+                if is_num:
+                    result.y = result.y - int(self.height * ((525 - 486) / 1080))
 
                 target_center = (
                     result.x + result.width // 2,
@@ -178,7 +187,7 @@ class BaseEfTask(BaseTask):
 
                 # 如果目标在容忍范围内
                 if abs(dx) <= TOLERANCE and abs(dy) <= TOLERANCE:
-                    return
+                    return True
                 else:
                     self.move_to_target_once(
                         self.hwnd.hwnd, result, self.screen_center
@@ -208,22 +217,33 @@ class BaseEfTask(BaseTask):
                     )
 
                 # OCR 成功后不需要处理，下一次失败仍然随机
+
         if raise_if_fail:
             raise Exception("对中失败")
-    def skip_dialog(self):
-        if self.find_one("skip_dialog_esc", horizontal_variance=0.05):
-            self.send_key("esc", after_sleep=0.1)
-            start = time.time()
-            clicked_confirm = False
-            while time.time() - start < 3:
-                confirm = self.find_confirm()
-                if confirm:
-                    self.click(confirm, after_sleep=0.4)
-                    clicked_confirm = True
-                elif clicked_confirm:
-                    self.log_debug("AutoSkipDialogTask no confirm break")
-                    break
-                self.next_frame()
+        else:
+            return False
+    def skip_dialog(self,end_list=None,end_box=None):
+        start_time = time.time()
+        while True:
+            if time.time() - start_time > 60:
+                self.log_info("skip_dialog 超时退出")
+                break
+            if self.wait_ocr(match=["工业","探索"],box="top_left", time_out=1.5):
+                break
+            if self.find_one("skip_dialog_esc", horizontal_variance=0.05):
+                self.send_key("esc", after_sleep=0.1)
+                start = time.time()
+                clicked_confirm = False
+                while time.time() - start < 3:
+                    confirm = self.find_confirm()
+                    if confirm:
+                        self.click(confirm, after_sleep=0.4)
+                        clicked_confirm = True
+                    elif clicked_confirm:
+                        self.log_debug("AutoSkipDialogTask no confirm break")
+                        break
+            if end_list and self.wait_ocr(match=end_list, box=end_box, time_out=0.5):
+                break
     def in_bg(self):
         return not self.hwnd.is_foreground()
 
@@ -259,7 +279,17 @@ class BaseEfTask(BaseTask):
             return True
         if esc:
             self.back(after_sleep=1.5)
-
+    def wait_pop_up(self):
+        count = 0
+        while True:
+            if count > 30:
+                raise Exception("提交后未检测到奖励界面，提交失败")
+            result = self.find_one(feature_name="reward_ok", box="bottom",threshold=0.8)
+            if result:
+                self.click(result)
+                break
+            self.sleep(1)
+            count += 1
     def wait_login(self):
         if not self._logged_in:
             if self.in_world():
