@@ -77,7 +77,7 @@ class DeliveryTask(BaseEfTask):
             1.5: (254 / 1280, 1134 / 1280),  # 3:2
             1.0: (0.1271, 0.8561 + (0.8561 - 0.1271) / 11),  # 1:1
             9 / 16: (0.075, 0.7916),  # 9:16
-            16 / 9: (290 / 1080, 926 / 1080 - (926 - 290) / 5 / 1080),  # 16:9
+            16 / 9: (290 / 1080, 926 / 1080),  # 16:9
         }
 
         x_ranges = [
@@ -317,12 +317,13 @@ class DeliveryTask(BaseEfTask):
             ):
                 self.send_key("f")
                 self.skip_dialog()
+                self.wait_click_ocr(match="确认",settle_time=2,after_sleep=2)
                 break
     def run(self):
         for _ in range(3):
             if not self.config.get("仅送货"):
                 self.other_run()
-                self.wait_click_ocr(match=re.compile("送达"), box="bottom_right",settle_time=4, time_out=10, log=True)
+                self.wait_click_ocr(match=re.compile("送达"), box="bottom_right",settle_time=4, time_out=10,after_sleep=10, log=True)
             self.task_to_transfer_point()
             self.to_storage_point_and_back_zip_line()
             ends_list_pattern_dict = {re.compile(end): end for end in self.ends}
