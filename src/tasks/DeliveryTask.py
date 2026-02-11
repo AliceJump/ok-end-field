@@ -326,6 +326,7 @@ class DeliveryTask(BaseEfTask):
                 "w",
                 0.5,
             )
+            self.sleep(1)
             if self.wait_ocr(
                 match=end_pattern, box="bottom_right", time_out=2, log=True
             ):
