@@ -22,17 +22,18 @@ class DeliveryTask(BaseEfTask):
         self.description = '仅武陵易损单，需要前台'
         self.ends = ["常沄", "资源", "彦宁", "齐纶"]
         self.default_config.update({
-            '说明': '需填写滑索分叉序列(例如"108,64,109",是指上滑索后找108m的滑索并试图滑向它,后面依次为第一个分叉点找64m,第二个分叉点...)',
-            '说明2': '出发和结束的滑索尽量与提交点之间的距离接近,且无障碍物',
-            '说明3': '分叉点和出发点尽量选在昏暗区域,可考虑深色滤镜,去仓储节点的传送点需传送后就立即放一个滑索',
-            '说明4': '送货路径相互独立再好不过,分叉点到其他点的距离不能相同,否则可能会误识别导致走错路',
+            
             '通向送货点的滑索分叉序列':'36,14',
             '常沄': "14,108,64,109,60",
             '资源': "14,108,64,109",
             '彦宁': "14,108,64,108,59",
             '齐纶': "14,108,106",
-            '仅送货':False
+            '仅送货':False,
         })
+        # self.config_type["选择测试对象"] = {
+        #     "type": "drop_down",
+        #     "options": self.ends+["通向送货点的滑索分叉序列"],
+        # }
         self.lv_regex = re.compile(r"(?i)lv|\d{2}")
         self.last_target = None
         self.wuling_location = ["武陵城"]
@@ -203,7 +204,7 @@ class DeliveryTask(BaseEfTask):
 
     def zip_line_list_go(self, zip_line_list):
         for zip_line in zip_line_list:
-            self.align_ocr_or_find_target_to_center(re.compile(str(zip_line)))
+            self.align_ocr_or_find_target_to_center(re.compile(str(zip_line)),is_num=True)
             self.log_info(f"成功将滑索调整到{zip_line}的中心")
             self.click(after_sleep=0.5)
             start = time.time()
@@ -270,12 +271,6 @@ class DeliveryTask(BaseEfTask):
                 self.send_key("v")
                 self.align_ocr_or_find_target_to_center(
                     "secondary_objective_direction_dot",
-                    box=self.box_of_screen(
-                        (1920 - 1550) / 1920,
-                        150 / 1080,
-                        1550 / 1920,
-                        (1080 - 150) / 1080,
-                    ),
                     threshold=0.7,
                     ocr=False,
                 )
@@ -299,12 +294,6 @@ class DeliveryTask(BaseEfTask):
         self.send_key("f")
         self.align_ocr_or_find_target_to_center(
             "secondary_objective_direction_dot",
-            box=self.box_of_screen(
-                (1920 - 1550) / 1920,
-                150 / 1080,
-                1550 / 1920,
-                (1080 - 150) / 1080,
-            ),
             threshold=0.6,
             ocr=False,
             raise_if_fail=False,
@@ -315,12 +304,6 @@ class DeliveryTask(BaseEfTask):
             self.send_key("v")
             self.align_ocr_or_find_target_to_center(
                 "secondary_objective_direction_dot",
-                box=self.box_of_screen(
-                    (1920 - 1550) / 1920,
-                    150 / 1080,
-                    1550 / 1920,
-                    (1080 - 150) / 1080,
-                ),
                 threshold=0.6,
                 ocr=False,
             )
@@ -335,9 +318,8 @@ class DeliveryTask(BaseEfTask):
                 self.send_key("f")
                 self.skip_dialog()
                 break
-
     def run(self):
-        for i in range(3):
+        for _ in range(3):
             if not self.config.get("仅送货"):
                 self.other_run()
                 self.wait_click_ocr(match=re.compile("送达"), box="bottom_right",settle_time=4, time_out=10, log=True)
@@ -371,3 +353,4 @@ class DeliveryTask(BaseEfTask):
                 count+=1
             if self.config.get("仅送货"):
                 break
+
