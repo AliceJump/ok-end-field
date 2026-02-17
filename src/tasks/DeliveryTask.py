@@ -231,16 +231,10 @@ class DeliveryTask(BaseEfTask):
                             and "不易损" not in row["elems"][2].name
                         ):
                             x, y, to_x, to_y = row["box"]
-                            if self.find_feature(
-                                feature_name="7_31w_wuling",
-                                box=self.box_of_screen(
-                                    x / self.width,
-                                    y / self.height,
-                                    to_x / self.width,
-                                    to_y / self.height,
-                                ),
-                                threshold=0.9,
-                            ):
+                            if self.find_feature(feature_name="7_31w_wuling",
+                                                 box=self.box_of_screen(x / self.width, y / self.height,
+                                                                        to_x / self.width, to_y / self.height),
+                                                 threshold=0.98):
                                 self.click(
                                     row["elems"][-1],
                                     after_sleep=2,
