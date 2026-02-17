@@ -11,8 +11,11 @@ from src.tasks.BaseEfTask import BaseEfTask
 on_zip_line_tip = ["向目标移动", "离开滑索架"]
 on_zip_line_stop = [re.compile(i) for i in on_zip_line_tip]
 continue_next = re.compile("下一连接点")
-secondary_objective_direction_dot = ["secondary_objective_direction_dot", "secondary_objective_direction_dot_light",
-                                     "secondary_objective_direction_dot_light_two"]
+secondary_objective_direction_dot = [
+    "secondary_objective_direction_dot",
+    "secondary_objective_direction_dot_light",
+    "secondary_objective_direction_dot_light_two",
+]
 
 
 class DeliveryTask(BaseEfTask):
@@ -20,20 +23,23 @@ class DeliveryTask(BaseEfTask):
         super().__init__(*args, **kwargs)
         self.default_config = {"_enabled": True}
         self.name = "自动送货"
-        self.description = "仅武陵7.31w送货,教程视频 BV1LLc7zFEF9 目前干员别礼,赛希送货效果较好"
+        self.description = (
+            "仅武陵7.31w送货,教程视频 BV1LLc7zFEF9 目前干员别礼,赛希送货效果较好"
+        )
         self.ends = ["常沄", "资源", "彦宁", "齐纶"]
         self.config_description = {
-            '选择测试对象': "默认是无，表示正常执行送货任务\n也可以选择特定的滑索分叉序列来测试滑索功能\n选择完整循环测试则会依次测试每个送货目标的完整流程\n(需要锁定次要任务在送货任务上或附近)",
+            "选择测试对象": "默认是无，表示正常执行送货任务\n也可以选择特定的滑索分叉序列来测试滑索功能\n选择完整循环测试则会依次测试每个送货目标的完整流程\n(需要锁定次要任务在送货任务上或附近)",
         }
         self.default_config.update(
             {
-                "功能教程": """https://www.bilibili.com/video/BV1LLc7zFEF9\n分叉终点的滑索的高度最好要低于或等于分叉点滑索的高度\n角色的虚化机制导致拉近视角后头发无法有效遮挡背景以提高识别率""",
+                "功能教程": """https://www.bilibili.com/video/BV1LLc7zFEF9\n分叉终点的滑索的高度最好要低于或等于分叉点滑索的高度\n角色的虚化机制导致拉近视角后头发无法有效遮挡背景以提高识别率\n可以调整滚动放大的次数在避免角色虚化的同时遮挡背景""",
                 "通向送货点": "36,14",
                 "常沄": "14,108,64,109,60",
                 "资源": "14,108,64,109",
                 "彦宁": "14,108,64,108,59",
                 "齐纶": "14,108,106",
                 "是否启用滚动放大视角": True,
+                "滚动放大次数": 9,
                 "仅接取": False,
                 "仅送货": False,
                 "选择测试对象": "无",
@@ -221,14 +227,20 @@ class DeliveryTask(BaseEfTask):
                     ticket_type = self.detect_ticket_type(row)
                     if ticket_type == "ticket_wuling" and enable_wuling:
                         if (
-                                "易损" in row["elems"][2].name
-                                and "不易损" not in row["elems"][2].name
+                            "易损" in row["elems"][2].name
+                            and "不易损" not in row["elems"][2].name
                         ):
                             x, y, to_x, to_y = row["box"]
-                            if self.find_feature(feature_name="7_31w_wuling",
-                                                 box=self.box_of_screen(x / self.width, y / self.height,
-                                                                        to_x / self.width, to_y / self.height),
-                                                 threshold=0.9):
+                            if self.find_feature(
+                                feature_name="7_31w_wuling",
+                                box=self.box_of_screen(
+                                    x / self.width,
+                                    y / self.height,
+                                    to_x / self.width,
+                                    to_y / self.height,
+                                ),
+                                threshold=0.9,
+                            ):
                                 self.click(
                                     row["elems"][-1],
                                     after_sleep=2,
@@ -246,7 +258,9 @@ class DeliveryTask(BaseEfTask):
                         self.sleep(wait)
                     self.click(last_refresh_box, move_back=True)
                     self._last_refresh_ts = time.time()
-                    self.wait_ui_stable(refresh_interval=1) # 刷新后界面稳定的时间可能会比平常长一些，尤其是网络较慢的时候
+                    self.wait_ui_stable(
+                        refresh_interval=1
+                    )  # 刷新后界面稳定的时间可能会比平常长一些，尤其是网络较慢的时候
                     break
                 else:
                     self.log_info("警告: 尚未定位到刷新按钮位置，无法刷新，重试...")
@@ -258,6 +272,7 @@ class DeliveryTask(BaseEfTask):
                 re.compile(str(zip_line)),
                 is_num=True,
                 need_scroll=self.config.get("是否启用滚动放大视角"),
+                scroll_count=self.config.get("滚动放大次数"),
                 ocr_frame_processor=self.isolate_white_yellow_text,
                 max_time=100,
                 tolerance=20,
@@ -285,7 +300,9 @@ class DeliveryTask(BaseEfTask):
         start = time.time()
         self.sleep(1)
         self.next_frame()
-        while not self.ocr(match=on_zip_line_stop,frame=self.next_frame(), box="bottom", log=True):
+        while not self.ocr(
+            match=on_zip_line_stop, frame=self.next_frame(), box="bottom", log=True
+        ):
             self.sleep(0.1)
             if time.time() - start > 60:
                 raise Exception("滑索超时，强制退出")
@@ -305,19 +322,22 @@ class DeliveryTask(BaseEfTask):
         self.click(result, after_sleep=2)
 
         if not self.wait_click_ocr(
-                match="标记显示管理", box="bottom_left", time_out=10, log=True
+            match="标记显示管理", box="bottom_left", time_out=10, log=True
         ):
             return False
 
         if not self.wait_click_ocr(
-                match="清空选中", box="bottom_left", time_out=10, log=True
+            match="清空选中", box="bottom_left", time_out=10, log=True
         ):
             return False
 
         self.back(after_sleep=2)
 
-        result = self.find_feature(feature_name="transfer_point", box=self.box_of_screen(0.01, 0.01, 0.99, 0.99),
-                                   threshold=0.8)
+        result = self.find_feature(
+            feature_name="transfer_point",
+            box=self.box_of_screen(0.01, 0.01, 0.99, 0.99),
+            threshold=0.8,
+        )
         if not result:
             return False
         self.click(result)
@@ -334,11 +354,14 @@ class DeliveryTask(BaseEfTask):
             if self.wait_ocr(match="工业", box="top_left", time_out=2, log=True):
                 self.send_key("tab", after_sleep=1)
             self.send_key("f", after_sleep=2)
-            self.zip_line_list_go([int(i) for i in self.config.get('通向送货点').split(
-                ",")])  # 需要在配置里指定出发点的滑索距离,这里默认是36m的滑索
+            self.zip_line_list_go(
+                [int(i) for i in self.config.get("通向送货点").split(",")]
+            )  # 需要在配置里指定出发点的滑索距离,这里默认是36m的滑索
             if only_zip_line:
                 return True
-            if self.wait_ocr(match="登上滑索架", box="bottom_right", time_out=2, log=True):
+            if self.wait_ocr(
+                match="登上滑索架", box="bottom_right", time_out=2, log=True
+            ):
                 self.send_key("v", after_sleep=1)
                 self.send_key("f", after_sleep=2)
                 self.align_ocr_or_find_target_to_center(
@@ -348,6 +371,7 @@ class DeliveryTask(BaseEfTask):
                     max_time=40,
                     raise_if_fail=False,
                     need_scroll=self.config.get("是否启用滚动放大视角"),
+                    scroll_count=self.config.get("滚动放大次数"),
                 )
                 self.click(key="right")
             for i in range(40):
@@ -359,16 +383,23 @@ class DeliveryTask(BaseEfTask):
                     only_x=True,
                     ocr=False,
                     need_scroll=self.config.get("是否启用滚动放大视角"),
+                    scroll_count=self.config.get("滚动放大次数"),
                 )
                 self.move_keys(
                     "w",
                     1,
                 )
-                if self.wait_ocr(match="仓储节点", box="bottom_right", time_out=2, log=True):
-                    if self.wait_ocr(match="取货", box="bottom_right", time_out=2, log=True):
+                if self.wait_ocr(
+                    match="仓储节点", box="bottom_right", time_out=2, log=True
+                ):
+                    if self.wait_ocr(
+                        match="取货", box="bottom_right", time_out=2, log=True
+                    ):
                         self.send_key("f")
                     break
-            while not self.wait_ocr(match="登上滑索架", box="bottom_right", time_out=10, log=True):
+            while not self.wait_ocr(
+                match="登上滑索架", box="bottom_right", time_out=10, log=True
+            ):
                 self.move_keys("s", 1)
             return True
         return False
@@ -384,6 +415,7 @@ class DeliveryTask(BaseEfTask):
                 ocr=False,
                 raise_if_fail=False,
                 need_scroll=self.config.get("是否启用滚动放大视角"),
+                scroll_count=self.config.get("滚动放大次数"),
             )
             self.click(key="right")
         for i in range(40):
@@ -395,6 +427,7 @@ class DeliveryTask(BaseEfTask):
                 only_x=True,
                 ocr=False,
                 need_scroll=True,
+                scroll_count=self.config.get("滚动放大次数"),
             )
             self.move_keys(
                 "w",
@@ -402,7 +435,7 @@ class DeliveryTask(BaseEfTask):
             )
             self.sleep(1)
             if self.wait_ocr(
-                    match=end_pattern, box="bottom_right", time_out=2, log=True
+                match=end_pattern, box="bottom_right", time_out=2, log=True
             ):
                 self.send_key("f", after_sleep=2)
                 if not self.find_feature(feature_name="reward_ok"):
@@ -429,15 +462,24 @@ class DeliveryTask(BaseEfTask):
                 else:
                     if not self.config.get("仅送货"):
                         self.other_run()
-                        self.wait_click_ocr(match=re.compile("送达"), box="bottom_right", settle_time=4, time_out=10,
-                                            after_sleep=10, log=True)
+                        self.wait_click_ocr(
+                            match=re.compile("送达"),
+                            box="bottom_right",
+                            settle_time=4,
+                            time_out=10,
+                            after_sleep=10,
+                            log=True,
+                        )
                     if not self.task_to_transfer_point():
                         return
                     if not self.to_storage_point_and_back_zip_line():
                         return
                     ends_list_pattern_dict = {re.compile(end): end for end in self.ends}
                     results = self.wait_ocr(
-                        match=list(ends_list_pattern_dict.keys()), box="left", time_out=10, log=True
+                        match=list(ends_list_pattern_dict.keys()),
+                        box="left",
+                        time_out=10,
+                        log=True,
                     )
                     self.send_key("f", after_sleep=2)
                     end_pattern = None
@@ -458,7 +500,9 @@ class DeliveryTask(BaseEfTask):
             for end in self.ends:
                 self.task_to_transfer_point()
                 self.to_storage_point_and_back_zip_line(only_zip_line=True)
-                self.wait_ocr(match="登上滑索架", box="bottom_right", time_out=2, log=True)
+                self.wait_ocr(
+                    match="登上滑索架", box="bottom_right", time_out=2, log=True
+                )
                 self.send_key("f", after_sleep=2)
                 self.on_zip_line_start(end)
                 self.sleep(2)
