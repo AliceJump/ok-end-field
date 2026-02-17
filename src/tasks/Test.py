@@ -23,21 +23,42 @@ class Test(BaseEfTask):
             if self.in_friend_boat():
                 return True
     def run(self):
-        self.click(after_sleep=0.5)
-        start = time.time()
         while True:
-            self.next_frame()
-            self.send_key("e")
-            self.sleep(0.1)
-            result = self.ocr(
-                match=on_zip_line_stop,
-                box="bottom",
-                log=True,
-            )
-            if result:
-                break
-            if time.time() - start > 60:
-                raise Exception("滑索超时，强制退出")
+            if result:=self.wait_ocr(match=re.compile(r"^(?:\d+)(?:\.\d+)?万$"),box=self.box_of_screen(1244/1920,292/1080,1408/1920,926/1080)):
+                result_two_groups=[]
+                for i in range(len(result)):
+                    result_two_groups.append(result[i].name)
+                    if i%2==0 and len(result_two_groups)==2:
+                        self.log_info(f"检测到{result_two_groups[0]}和{result_two_groups[1]}")
+                        result_two_groups=[]
+            self.wait_click_ocr(match="刷新",box=sP.BOTTOM_RIGHT.value,time_out=10)
+            self.wait_ui_stable()
+
+        # if result:=self.wait_click_ocr(
+        #     match=re.compile(r"\d+/5$"),
+        #     after_sleep=2,
+        #     time_out=2,
+        #     box=sP.TOP_RIGHT.value,
+        #     log=True,
+        # ):
+        #     ratios = re.findall(r"\d/5",result[0].name)
+        #     if ratios:
+        #         self.log_info(f"使用情况: {ratios}")
+        # self.click(after_sleep=0.5)
+        # start = time.time()
+        # while True:
+        #     self.next_frame()
+        #     self.send_key("e")
+        #     self.sleep(0.1)
+        #     result = self.ocr(
+        #         match=on_zip_line_stop,
+        #         box="bottom",
+        #         log=True,
+        #     )
+        #     if result:
+        #         break
+        #     if time.time() - start > 60:
+        #         raise Exception("滑索超时，强制退出")
         # while True:
         #     results = self.ocr(match=re.compile("90"))
         #     self.next_frame()
