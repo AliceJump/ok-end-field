@@ -240,7 +240,6 @@ class BaseEfTask(BaseTask):
                         break
                     time.sleep(0.1)
             else:
-                self.sleep(0.5)  # 等待界面更新
                 if isinstance(ocr_match_or_feature_name_list, str):
                     ocr_match_or_feature_name_list = [ocr_match_or_feature_name_list]
                 start_time = time.time()

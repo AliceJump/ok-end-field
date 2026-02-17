@@ -472,11 +472,22 @@ class DailyTask(BaseEfTask):
         self.log_info(f"{outpost_name} 兑换操作完成")
 
     def test_ocr(self):
+        box1 = self.box_of_screen(1749 / 1920,107 / 1080,1789 / 1920,134 / 1080)
+        box2 = self.box_of_screen(
+            (1749 + (1832 - 1750)) / 1920, 107 / 1080, (1789 + (1832 - 1750)) / 1920, 134 / 1080
+        )
         self.wait_click_ocr(
-            match=re.compile("获得调度卷"),
-            box=sP.BOTTOM_RIGHT.value,
+            match=re.compile(r"^\d+/5$"),
             after_sleep=2,
-            time_out=12,
+            time_out=2,
+            box=box1,
+            log=True,
+        )
+        self.wait_click_ocr(
+            match=re.compile(r"^\d+/5$"),
+            after_sleep=2,
+            time_out=2,
+            box=box2,
             log=True,
         )
 
@@ -769,11 +780,12 @@ class DailyTask(BaseEfTask):
                 ocr_match_or_feature_name_list=[re.compile("工作"), re.compile("休息")],
                 raise_if_fail=False,
                 only_x=True,
-                max_time=5,
+                max_time=14,
                 max_step=150,
                 min_step=50,
                 slow_radius=20,
                 tolerance=100,
+                once_time=0.1,
             )
             if find_flag:
                 self.log_info("界面对齐完成")
