@@ -2,7 +2,6 @@ name: Build
 
 on:
   push:
-    # Sequence of patterns matched against refs/tags
     tags:
       - 'v*'
 
@@ -13,10 +12,11 @@ jobs:
 
     env:
       PYTHONIOENCODING: 'UTF-8'
+      NSIS_PATH: "C:\\Program Files\\NSIS"  # 使用本地 NSIS 避免下载失败
 
     strategy:
       matrix:
-        python-version: [ 3.12 ]
+        python-version: [3.12]
 
     steps:
       - name: Configure git
@@ -26,28 +26,33 @@ jobs:
           git config --global core.eol lf
           git config --global user.email "ok-oldking@users.noreply.github.com"
           git config --global user.name "ok-oldking"
-          echo "action_state=yellow" >> $env:GITHUB_ENV
-          echo "${{ env.action_state }}"
 
       - uses: actions/checkout@v4
         with:
           lfs: true
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Set UTF-8 encoding
         run: |
           set PYTHONIOENCODING=utf-8
           set PYTHONLEGACYWINDOWSSTDIO=utf-8
           echo PYTHONIOENCODING=utf-8 >> $GITHUB_ENV
 
+      - name: Clean TEMP folder
+        run: |
+          del /f /s /q %TEMP%\*
+
       - name: Install dependencies
         run: |
+          pip install --upgrade pip wheel setuptools
           pip install -r requirements.txt
+          pip install pyappify==1.0.2
 
-      - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
+      - name: inline_ok_requirements
         run: |
           python -m ok.update.inline_ok_requirements --tag ${{ github.ref_name }}
 
@@ -58,8 +63,8 @@ jobs:
               python -m unittest $_.FullName
           }
 
-      - name: Sync Repositories # 同步部分代码(deploy.txt中), 合并tag中间更新日志, 到更新库, 以减少用户更新使用的git库大小
-        id: sync   # Give the step an ID to access its outputs
+      - name: Sync Repositories
+        id: sync
         uses: ok-oldking/partial-sync-repo@master
         with:
           repos: |
@@ -68,11 +73,17 @@ jobs:
           sync_list: 'deploy.txt'
           tag: ${{ github.ref_name }}
           gitignore_file: '.update_repo_gitignore'
-          show_author: true #在更新日志中加入作者
+          show_author: true
 
-      - name: Build with PyAppify Action
+      - name: Build EXE with PyAppify
         id: build-app
-        uses: ok-oldking/pyappify-action@master #使用pyappify打包exe
+        uses: ok-oldking/pyappify-action@master
+        with:
+          profile: "China"             # 使用你 pyappify.yml 中的 China profile
+          pyappify_path: "."            # 项目根目录
+        env:
+          NSIS_PATH: ${{ env.NSIS_PATH }}
+          TEMP: ${{ runner.temp }}      # 避免临时目录过深
 
       - name: Release
         uses: softprops/action-gh-release@v2
@@ -91,7 +102,6 @@ jobs:
               * [Mirror酱下载渠道](https://mirrorchyan.com/zh/projects?rid=ok-end-field&source=ok-ef-release), 国内网页直链, 下载需要购买CD-KEY, 已有Mirror酱CD-KEY可免费下载
               * [夸克网盘](https://pan.quark.cn/s/a1052cec4d13), 免费, 但需要注册并下载夸克网盘客户端
           files: pyappify_dist/*
-
 
       - name: Trigger MirrorChyanUploading
         if: startsWith(github.ref, 'refs/tags/')
