@@ -78,5 +78,3 @@ class DailyLiaisonMixin(LiaisonMixin):
 
         self.log_info("送礼任务最终失败")
         return False
-
-

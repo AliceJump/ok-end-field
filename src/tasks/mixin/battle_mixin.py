@@ -28,7 +28,6 @@ from src.tasks.AutoCombatLogic import AutoCombatLogic
 from src.tasks.BaseEfTask import BaseEfTask
 
 
-
 class BattleMixin(BaseEfTask):
     """
     自动战斗 Mixin。
@@ -49,14 +48,14 @@ class BattleMixin(BaseEfTask):
         super().__init__(*args, **kwargs)
 
         self.last_no_number_action_time = 0
-        self.last_skill_time=0
+        self.last_skill_time = 0
         self.exit_check_count = None
         self.last_op_time = 0
 
         # 用于识别 LV 或等级文字
         self.lv_regex = re.compile(r"(?i)lv|\d{2}")
 
-    def _parse_skill_sequence(self,raw_config: str) -> list[str]:
+    def _parse_skill_sequence(self, raw_config: str) -> list[str]:
         """
         解析技能释放顺序。
 
@@ -312,6 +311,7 @@ class BattleMixin(BaseEfTask):
             self.click(move=False, key='left', down_time=0.005)
 
             self.last_op_time = time.time()
+
     def handle_no_damage_number_actions(self):
         """战斗中周期触发操作（无伤害数字）"""
         interval = self.config.get("无数字操作间隔", 6)
@@ -323,6 +323,7 @@ class BattleMixin(BaseEfTask):
         self.dodge_forward(pre_hold=0.05, dodge_down_time=0.03, after_sleep=0.02)
         self.last_no_number_action_time = time.time()
         self.last_op_time = time.time()
+
     def get_skill_bar_count(self):
         """
         获取当前技能条数量。
@@ -407,7 +408,7 @@ class BattleMixin(BaseEfTask):
                 consecutive_matches = 0
         return False
 
-    def auto_battle(self, start_sleep: float = None,no_battle: bool=False):
+    def auto_battle(self, start_sleep: float = None, no_battle: bool = False):
         """
         自动战斗主循环。
         """

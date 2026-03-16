@@ -100,12 +100,12 @@ class BaseEfTask(BaseTask):
         return self._detector
 
     def press_game_key(
-        self,
-        key: str,
-        key_type: str = "common",
-        down_time: float = 0.02,
-        after_sleep: float = 0,
-        interval: int = -1
+            self,
+            key: str,
+            key_type: str = "common",
+            down_time: float = 0.02,
+            after_sleep: float = 0,
+            interval: int = -1
     ):
 
         if key_type == "common":

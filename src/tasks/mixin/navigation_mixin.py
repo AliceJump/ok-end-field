@@ -178,9 +178,9 @@ class NavigationMixin(BaseEfTask):
         scroll_bool = False
         sum_dx = 0
         sum_dy = 0
-        if back_prev:    
+        if back_prev:
             prev = win32gui.GetForegroundWindow()
-        move_bool=False
+        move_bool = False
         for i in range(max_time):
             start_action_time = time.time()
             if ocr:
@@ -267,7 +267,7 @@ class NavigationMixin(BaseEfTask):
                         back_window(prev)
                     return True
                 else:
-                    move_bool=True
+                    move_bool = True
                     dx, dy = self.move_to_target_once(result, max_step=max_step, min_step=min_step,
                                                       slow_radius=slow_radius)
                     sum_dx += dx
@@ -275,7 +275,7 @@ class NavigationMixin(BaseEfTask):
 
             else:
                 # 每次 OCR 失败，直接随机移动
-                move_bool=True
+                move_bool = True
                 max_offset = 60  # 最大随机偏移
                 if last_target:
                     decay = 0.9 ** last_target_fail_count

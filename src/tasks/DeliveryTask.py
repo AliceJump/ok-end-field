@@ -82,7 +82,7 @@ class DeliveryTask(ZipLineMixin, MapMixin):
         self.wuling_location = ["武陵城"]
         self.valley_location = ["供能高地", "矿脉源区", "源石研究园"]
         self._last_refresh_ts = 0
-        self.try_time=0
+        self.try_time = 0
         self.add_exit_after_config()
 
     def merge_left_right_groups(self) -> List[DeliveryRow]:
@@ -308,7 +308,7 @@ class DeliveryTask(ZipLineMixin, MapMixin):
         Returns:
             bool: 成功返回True，失败返回False
         """
-        self.try_time=0
+        self.try_time = 0
         self.ensure_main(time_out=120)
         self.log_info("前置操作：按Y，点击‘仓储节点’，点击‘运送委托列表’")
         self.to_model_area("武陵", "仓储节点")
@@ -329,9 +329,9 @@ class DeliveryTask(ZipLineMixin, MapMixin):
         if not ticket_types:
             self.log_info("警告: 未启用任何券种，任务退出")
             return None
-        start_time=time.time()
+        start_time = time.time()
         while True:
-            if time.time()-start_time>600:
+            if time.time() - start_time > 600:
                 self.log_info("接单尝试时间过长，退出")
                 return False
             rows = self.merge_left_right_groups()
@@ -386,8 +386,8 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                                     move_back=True,
                                 )
                                 self.log_info("疑似已经接取委托")
-                                self.try_time+=1
-                                if self.try_time>5:
+                                self.try_time += 1
+                                if self.try_time > 5:
                                     self.log_info("尝试次数过多，退出")
                                     return False
                                 self.next_frame()
@@ -421,17 +421,17 @@ class DeliveryTask(ZipLineMixin, MapMixin):
         Returns:
             bool: 成功返回True，失败返回False
         """
-        if self.wait_ocr(match="登上滑索架", box=self.box.bottom_right, time_out=60, log=True):
+        if result := self.wait_ocr(match="登上滑索架", box=self.box.bottom_right, time_out=60, log=True):
             if self.wait_ocr(match="工业", box=self.box.top_left, time_out=2, log=True):
                 self.press_key("tab", after_sleep=1)
-            self.press_key('f', after_sleep=2)
+            self.click_with_alt(result[0], after_sleep=2)
             self.zip_line_list_go([int(i) for i in self.config.get(self.CFG_TO_DELIVERY_POINT).split(",")],
                                   need_scroll=self.config.get(self.CFG_SCROLL_ENABLE))  # 需要在配置里指定出发点的滑索距离,这里默认是36m的滑索
             if only_zip_line:
                 return True
-            if self.wait_ocr(match="登上滑索架", box=self.box.bottom_right, time_out=2, log=True):
+            if result := self.wait_ocr(match="登上滑索架", box=self.box.bottom_right, time_out=2, log=True):
                 self.press_key("v", after_sleep=1)
-                self.press_key('f', after_sleep=2)
+                self.click_with_alt(result[0], after_sleep=2)
                 self.align_ocr_or_find_target_to_center(
                     ocr_match_or_feature_name_list=secondary_objective_direction_dot,
                     threshold=0.8,
@@ -455,9 +455,10 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                     "w",
                     1,
                 )
-                if self.wait_ocr(match="仓储节点", box=self.box.bottom_right, time_out=2, log=True):
-                    if self.wait_ocr(match="取货", box=self.box.bottom_right, time_out=2, log=True):
-                        self.press_key('f')
+                if self.wait_ocr(match="仓储节点", box=self.box.bottom_right, settle_time=1, time_out=2, log=True):
+                    if result := self.wait_ocr(match=re.compile("取货"), box=self.box.bottom_right, time_out=2,
+                                               log=True):
+                        self.click_with_alt(result[0], after_sleep=2)
                     break
             while not self.wait_ocr(match="登上滑索架", box=self.box.bottom_right, time_out=2, log=True):
                 self.move_keys("s", 1)
@@ -471,17 +472,23 @@ class DeliveryTask(ZipLineMixin, MapMixin):
             end_pattern: 目标点的正则匹配模式
         """
         self.ensure_main()
-        if self.wait_ocr(match="登上滑索架", box=self.box.bottom_right, time_out=30, log=True):
-            self.press_key("v", after_sleep=1)
-            self.press_key('f', after_sleep=2)
-            self.align_ocr_or_find_target_to_center(
-                ocr_match_or_feature_name_list=secondary_objective_direction_dot,
-                threshold=0.8,
-                ocr=False,
-                raise_if_fail=False,
-                need_scroll=self.config.get(self.CFG_SCROLL_ENABLE),
-            )
-            self.click(key="right", after_sleep=2)
+        keys = ["w", "a", "s", "d"]
+        for i in range(4):
+            if result := self.wait_ocr(match="登上滑索架", box=self.box.bottom_right, settle_time=1, time_out=4,
+                                       log=True):
+                self.press_key("v", after_sleep=1)
+                self.click_with_alt(result[0], after_sleep=2)
+                self.align_ocr_or_find_target_to_center(
+                    ocr_match_or_feature_name_list=secondary_objective_direction_dot,
+                    threshold=0.8,
+                    ocr=False,
+                    raise_if_fail=False,
+                    need_scroll=self.config.get(self.CFG_SCROLL_ENABLE),
+                )
+                self.click(key="right", after_sleep=2)
+                break
+            else:
+                self.move_keys(keys[i], 0.1)
         for i in range(40):
             self.sleep(2)
             self.press_key("v", after_sleep=1)
@@ -497,10 +504,10 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                 0.5,
             )
             self.sleep(1)
-            if self.wait_ocr(
-                    match=end_pattern, box=self.box.bottom_right, time_out=2, log=True
+            if result := self.wait_ocr(
+                    match=end_pattern, box=self.box.bottom_right, settle_time=1, time_out=2, log=True
             ):
-                self.press_key('f', after_sleep=2)
+                self.click_with_alt(result[0], after_sleep=2)
                 if not self.find_reward_ok():
                     self.skip_dialog()
                     self.wait_click_ocr(match="确认", settle_time=2, after_sleep=2)
@@ -567,10 +574,12 @@ class DeliveryTask(ZipLineMixin, MapMixin):
             for end in self.ends:
                 self.task_to_transfer_point(self.box.bottom)
                 self.to_storage_point_and_back_zip_line(only_zip_line=True)
-                self.wait_ocr(match="登上滑索架", box=self.box.bottom_right, time_out=2, log=True)
-                self.press_key('f', after_sleep=2)
-                self.on_zip_line_start(end)
-                self.sleep(2)
+                if result := self.wait_ocr(match="登上滑索架", box=self.box.bottom_right, settle_time=1, time_out=2,
+                                           log=True):
+                    self.log_info("未找到登上滑索架，测试失败")
+                    self.click_with_alt(result[0], after_sleep=2)
+                    self.on_zip_line_start(end)
+                    self.sleep(2)
         else:
             zip_line_list_str = self.config.get(self.config.get(self.CFG_TEST_TARGET))
             if zip_line_list_str:

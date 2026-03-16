@@ -7,7 +7,7 @@ class AutoCombatLogic:
     def __init__(self, task: BaseEfTask):
         self.task = task
 
-    def run(self, start_sleep: float = None,no_battle: bool=False ):
+    def run(self, start_sleep: float = None, no_battle: bool = False):
         task = self.task
 
         if not task.in_combat(required_yellow=1):

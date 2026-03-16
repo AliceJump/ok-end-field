@@ -3,6 +3,8 @@ from qfluentwidgets import FluentIcon
 from src.tasks.BaseEfTask import BaseEfTask
 from src.tasks.daily.daily_battle_mixin import DailyBattleMixin
 import re
+
+
 class BattleTask(DailyBattleMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

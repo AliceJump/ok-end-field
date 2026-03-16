@@ -146,6 +146,7 @@ class EssenceScanSettings:
             max_pages=max_pages,
         )
 
+
 @dataclass
 class EssenceScanStats:
     scanned: int = 0

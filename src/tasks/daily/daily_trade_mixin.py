@@ -285,8 +285,8 @@ class DailyTradeMixin(NavigationMixin):
                         self.log_info("等待返回 '地区建设' 界面超时，结束买卖货任务")
                         return False
                     self.back(after_sleep=0.5)
-                if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:]), after_sleep=2,log=True) or
-                        self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]), after_sleep=2,log=True)):
+                if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:]), after_sleep=2, log=True) or
+                        self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]), after_sleep=2, log=True)):
                     self.log_info("未找到卖出货物，无法出售")
                     continue
                 self.wait_click_ocr(

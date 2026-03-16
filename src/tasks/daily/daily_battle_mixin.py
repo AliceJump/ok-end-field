@@ -13,8 +13,11 @@ from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.data.world_map import stages_dict, stages_list
+
 gather_list = stages_dict["能量淤积点"]
-class DailyBattleMixin(Common, MapMixin, ZipLineMixin,BattleMixin):
+
+
+class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.max_half_time = 3
@@ -27,18 +30,19 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin,BattleMixin):
             "后台结束战斗通知": True,
             "无数字操作间隔": 6,
             "进入战斗后的初始等待时间": 3,
-            "仅站桩":False,
-            **{key:"" for key in gather_list}
+            "仅站桩": False,
+            **{key: "" for key in gather_list}
         })
         self.config_description.update({
             "技能释放": "满技能时, 开始释放技能, 如123, 建议只放3个技能",
             "启动技能点数": "当技能点达到该数值时，开始执行技能序列, 1-3",
             "平A间隔": "平A点击间隔(秒), 越小越快, 建议 0.08~0.15",
             "无数字操作间隔": "战斗中周期触发锁敌+向前闪避的最小间隔(秒，最少6秒)",
-            "仅站桩":"是指有战斗设施的情况下不进行战斗，从而有助于提高成功领取奖励的概率\n请提前选择好点位要刷的词缀再启动此任务！！！",
+            "仅站桩": "是指有战斗设施的情况下不进行战斗，从而有助于提高成功领取奖励的概率\n请提前选择好点位要刷的词缀再启动此任务！！！",
             **{key: "参考自动送货的滑索教程进行填写，大部分建议进行滑索填写" for key in gather_list}
         })
         self.config_type["体力本"] = {"type": "drop_down", "options": self.stages_list}
+
     def battle(self):
         stage_name = self.config.get("体力本")
         category_name = get_stage_category(stage_name)
@@ -59,7 +63,8 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin,BattleMixin):
         if category_name != "能量淤积点":
             return self.battle_space(left_ticket, category_name)
         else:
-            return self.battle_gather(left_ticket, stage_name, category_name,no_battle=self.config.get("仅站桩",False))
+            return self.battle_gather(left_ticket, stage_name, category_name,
+                                      no_battle=self.config.get("仅站桩", False))
 
     def battle_gather(self, left_ticket, stage_name, category_name, no_battle=False):
         self.gather_near_transfer_point_dict["枢纽区"] = self.box.top
@@ -74,18 +79,19 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin,BattleMixin):
                 self.click(result, after_sleep=2)
         self.to_near_transfer_point(self.gather_near_transfer_point_dict[stage_name])
         self.ensure_main()
-        zip_line_str=self.config.get(stage_name)
+        zip_line_str = self.config.get(stage_name)
         if zip_line_str:
             self.press_key("f", after_sleep=2)
             zip_line_list = [int(i) for i in zip_line_str.split(",")]
             self.zip_line_list_go(zip_line_list)
-        self.navigate_until_target(target_ocr_pattern=re.compile("激发"),nav_feature_name=fL.gather_icon_out_map, time_out=60)
+        self.navigate_until_target(target_ocr_pattern=re.compile("激发"), nav_feature_name=fL.gather_icon_out_map,
+                                   time_out=60)
         result = self.wait_ocr(match=re.compile("激发"), box=self.box.bottom_right, time_out=5)
         if not result:
             self.log_info("没有找到激发按钮")
             return False
         self.click_with_alt(result)
-        return self.battle_recycle(left_ticket, category_name, "挑战", no_battle=no_battle,challenge_check=True)
+        return self.battle_recycle(left_ticket, category_name, "挑战", no_battle=no_battle, challenge_check=True)
 
     def battle_space(self, left_ticket, category_name):
         self.wait_click_ocr(match=re.compile("进入"), time_out=5, after_sleep=2, box=self.box.bottom_right, log=True)
@@ -94,13 +100,13 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin,BattleMixin):
             return True
         return self.battle_recycle(left_ticket, category_name, "进入")
 
-    def battle_recycle(self, left_ticket, category_name, enter_str, no_battle=False,challenge_check=False):
+    def battle_recycle(self, left_ticket, category_name, enter_str, no_battle=False, challenge_check=False):
         enter_bool = False
         battle_bool = False
         if challenge_check:
             sleep_time = self.config.get("进入战斗后的初始等待时间", 3)
         else:
-            sleep_time=0.1
+            sleep_time = 0.1
         while left_ticket > 0:
             if enter_bool:
                 self.wait_click_ocr(match=re.compile("重新挑战"), box=self.box.bottom_left, log=True, time_out=5,
@@ -113,7 +119,7 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin,BattleMixin):
                 if not self.to_battle(sleep_time, no_battle=no_battle, challenge_check=challenge_check):
                     return False
             else:
-                if not self.to_battle(no_battle=no_battle,challenge_check=challenge_check):
+                if not self.to_battle(no_battle=no_battle, challenge_check=challenge_check):
                     return False
                 else:
                     battle_bool = True
@@ -171,7 +177,7 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin,BattleMixin):
         return False
         # 如果找到位置，则点击按钮
 
-    def to_battle(self, start_sleep: float = None, no_battle: bool = False,challenge_check=False):
+    def to_battle(self, start_sleep: float = None, no_battle: bool = False, challenge_check=False):
         if not challenge_check:
             end_time = time.time()
             while not self.wait_ocr(match=re.compile("撤离"), time_out=1, box=self.box.top_left, log=True):
@@ -191,21 +197,21 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin,BattleMixin):
                     return False
         return self.auto_battle(start_sleep=start_sleep, no_battle=no_battle)
 
-    def to_end(self,challenge=False):
+    def to_end(self, challenge=False):
         prev = win32gui.GetForegroundWindow()
         if challenge:
-            end_feature_name=fL.gather_icon_out_map2
-            use_yolo=False
-            search_box=None
+            end_feature_name = fL.gather_icon_out_map2
+            use_yolo = False
+            search_box = None
         else:
             end_feature_name = "battle_end"
-            use_yolo=True
+            use_yolo = True
             search_box = self.box_of_screen((1920 - 1550) / 1920, 0, 1550 / 1920, (1080 - 150) / 1080)
         for _ in range(9):
             if challenge:
                 if self.find_feature(
-                    end_feature_name,
-                    box=self.box_of_screen((1920 - 1550) / 1920, 150 / 1080, 1550 / 1920, (1080 - 150) / 1080),
+                        end_feature_name,
+                        box=self.box_of_screen((1920 - 1550) / 1920, 150 / 1080, 1550 / 1920, (1080 - 150) / 1080),
                 ):
                     break
             else:
