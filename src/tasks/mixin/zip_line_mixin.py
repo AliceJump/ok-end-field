@@ -48,7 +48,6 @@ class ZipLineMixin(NavigationMixin):
                     self.make_hsv_isolator(hR.WHITE),
                 ],
                 max_time=100,
-                tolerance=20,
             )
             self.log_info(f"成功将滑索调整到{zip_line}的中心")
             self.click(after_sleep=0.5)
