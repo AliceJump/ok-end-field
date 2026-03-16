@@ -505,6 +505,8 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                 0.5,
             )
             self.sleep(1)
+            if end_pattern == re.compile("资源"):
+                end_pattern = re.compile("交货")
             if result := self.wait_ocr(
                     match=end_pattern, box=self.box.bottom_right, settle_time=1, time_out=2, log=True
             ):
