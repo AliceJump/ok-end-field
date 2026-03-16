@@ -123,6 +123,7 @@ class NavigationMixin(BaseEfTask):
             max_time=50,
             ocr=True,
             use_yolo=False,
+            back_prev=False,
             raise_if_fail=True,
             is_num=False,
             need_scroll=False,
@@ -177,7 +178,8 @@ class NavigationMixin(BaseEfTask):
         scroll_bool = False
         sum_dx = 0
         sum_dy = 0
-        prev = win32gui.GetForegroundWindow()
+        if back_prev:    
+            prev = win32gui.GetForegroundWindow()
         move_bool=False
         for i in range(max_time):
             start_action_time = time.time()
@@ -261,7 +263,7 @@ class NavigationMixin(BaseEfTask):
 
                 # 如果目标在容忍范围内
                 if abs(dx) <= tolerance and abs(dy) <= tolerance:
-                    if move_bool:
+                    if move_bool and back_prev:
                         back_window(prev)
                     return True
                 else:

@@ -82,6 +82,7 @@ class DeliveryTask(ZipLineMixin, MapMixin):
         self.wuling_location = ["武陵城"]
         self.valley_location = ["供能高地", "矿脉源区", "源石研究园"]
         self._last_refresh_ts = 0
+        self.try_time=0
         self.add_exit_after_config()
 
     def merge_left_right_groups(self) -> List[DeliveryRow]:
@@ -307,6 +308,7 @@ class DeliveryTask(ZipLineMixin, MapMixin):
         Returns:
             bool: 成功返回True，失败返回False
         """
+        self.try_time=0
         self.ensure_main(time_out=120)
         self.log_info("前置操作：按Y，点击‘仓储节点’，点击‘运送委托列表’")
         self.to_model_area("武陵", "仓储节点")
@@ -327,7 +329,11 @@ class DeliveryTask(ZipLineMixin, MapMixin):
         if not ticket_types:
             self.log_info("警告: 未启用任何券种，任务退出")
             return None
+        start_time=time.time()
         while True:
+            if time.time()-start_time>600:
+                self.log_info("接单尝试时间过长，退出")
+                return False
             rows = self.merge_left_right_groups()
             for row in rows:
                 if row:
@@ -380,6 +386,10 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                                     move_back=True,
                                 )
                                 self.log_info("疑似已经接取委托")
+                                self.try_time+=1
+                                if self.try_time>5:
+                                    self.log_info("尝试次数过多，退出")
+                                    return False
                                 self.next_frame()
                                 if not self.wait_ocr(match="接取运送委托", box=self.box.bottom_right, time_out=1):
                                     self.log_info("接取成功")
@@ -500,6 +510,14 @@ class DeliveryTask(ZipLineMixin, MapMixin):
     def run(self):
         """运输委托任务的主入口，支持多种运行模式"""
         if self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE:
+            ends_list_pattern_dict = {}
+            for end in self.ends:
+                if end == "常沄":
+                    pattern = re.compile(r"常[沄云汶运法]")
+                else:
+                    pattern = re.compile(end)
+
+                ends_list_pattern_dict[pattern] = end
             for _ in range(3):
                 if not self._logged_in:
                     self.ensure_main(time_out=240)
@@ -512,7 +530,8 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                     break
                 else:
                     if not self.config.get(self.CFG_ONLY_DELIVER):
-                        self.other_run()
+                        if not self.other_run():
+                            return
                         self.wait_click_ocr(match=re.compile("送达"), box=self.box.bottom_right, settle_time=4,
                                             time_out=10,
                                             after_sleep=10, log=True)
@@ -526,15 +545,6 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                         return
                     if not self.to_storage_point_and_back_zip_line():
                         return
-                    ends_list_pattern_dict = {}
-
-                    for end in self.ends:
-                        if end == "常沄":
-                            pattern = re.compile(r"常[沄云汶运法]")
-                        else:
-                            pattern = re.compile(end)
-
-                        ends_list_pattern_dict[pattern] = end
                     results = self.wait_ocr(
                         match=list(ends_list_pattern_dict.keys()), box=self.box.left, time_out=10, log=True
                     )
