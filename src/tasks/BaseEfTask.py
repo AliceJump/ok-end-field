@@ -8,7 +8,7 @@ from typing import List
 import cv2
 import imagehash
 import numpy as np
-import win32gui
+import win32process, win32gui, win32api, win32con
 from PIL import Image
 from ok import BaseTask, Box
 from skimage.metrics import structural_similarity as ssim
@@ -700,3 +700,18 @@ class BaseEfTask(BaseTask):
             EssenceInfo: 精华信息对象，失败返回None
         """
         return read_essence_info(self)
+
+    def kill_game(self):
+        try:
+
+            hwnd = self.hwnd.hwnd
+            if hwnd:
+                tid, pid = win32process.GetWindowThreadProcessId(hwnd)
+                handle = win32api.OpenProcess(win32con.PROCESS_TERMINATE, False, pid)
+                win32api.TerminateProcess(handle, 0)
+                win32api.CloseHandle(handle)
+                self.log_info(f"已终止进程 pid={pid}", notify=True)
+            else:
+                self.log_info("未获取到 hwnd，无法终止进程", notify=True)
+        except Exception as e2:
+            self.log_info(f"终止进程失败: {e2}", notify=True)

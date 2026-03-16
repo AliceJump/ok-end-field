@@ -3,7 +3,7 @@ import time
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from ok import Box
+from ok import Box, TaskDisabledException
 
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.BaseEfTask import BaseEfTask
@@ -69,6 +69,7 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                 self.CFG_ONLY_ACCEPT: False,
                 self.CFG_ONLY_DELIVER: False,
                 self.CFG_TEST_TARGET: self.TEST_NONE,
+                "发生异常时终止游戏": False
             }
         )
         self.config_type[self.CFG_TEST_TARGET] = {
@@ -517,59 +518,69 @@ class DeliveryTask(ZipLineMixin, MapMixin):
     def run(self):
         """运输委托任务的主入口，支持多种运行模式"""
         if self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE:
-            ends_list_pattern_dict = {}
-            for end in self.ends:
-                if end == "常沄":
-                    pattern = re.compile(r"常[沄云汶运法]")
-                else:
-                    pattern = re.compile(end)
+            try:
+                ends_list_pattern_dict = {}
+                for end in self.ends:
+                    if end == "常沄":
+                        pattern = re.compile(r"常[沄云汶运法]")
+                    else:
+                        pattern = re.compile(end)
 
-                ends_list_pattern_dict[pattern] = end
-            for _ in range(3):
-                if not self._logged_in:
-                    self.ensure_main(time_out=240)
-                else:
+                    ends_list_pattern_dict[pattern] = end
+                for _ in range(3):
+                    if not self._logged_in:
+                        self.ensure_main(time_out=240)
+                    else:
+                        self.ensure_main()
+                    self.back(after_sleep=2)
                     self.ensure_main()
-                self.back(after_sleep=2)
-                self.ensure_main()
-                if self.config.get(self.CFG_ONLY_ACCEPT):
-                    self.other_run()
-                    break
-                else:
-                    if not self.config.get(self.CFG_ONLY_DELIVER):
-                        if not self.other_run():
-                            return
-                        self.wait_click_ocr(match=re.compile("送达"), box=self.box.bottom_right, settle_time=4,
-                                            time_out=10,
-                                            after_sleep=10, log=True)
-                    success = None
-                    for _ in range(3):
-                        success = self.task_to_transfer_point()
-                        if success:
-                            break
-                    if not success:
-                        self.log_info("前往传送点失败，重试...")
-                        return
-                    if not self.to_storage_point_and_back_zip_line():
-                        return
-                    results = self.wait_ocr(
-                        match=list(ends_list_pattern_dict.keys()), box=self.box.left, time_out=10, log=True
-                    )
-                    self.press_key('f', after_sleep=2)
-                    end_pattern = None
-                    if not results:
-                        raise Exception("未识别到送货目标")
-
-                    for result in results:
-                        for pattern in ends_list_pattern_dict:
-                            m = pattern.search(result.name)
-                            if m:
-                                end_pattern = pattern
-                                self.on_zip_line_start(ends_list_pattern_dict[pattern])
-                                break
-                    self.to_end_and_submit(end_pattern)
-                    if self.config.get(self.CFG_ONLY_DELIVER):
+                    if self.config.get(self.CFG_ONLY_ACCEPT):
+                        self.other_run()
                         break
+                    else:
+                        if not self.config.get(self.CFG_ONLY_DELIVER):
+                            if not self.other_run():
+                                return
+                            self.wait_click_ocr(match=re.compile("送达"), box=self.box.bottom_right, settle_time=4,
+                                                time_out=10,
+                                                after_sleep=10, log=True)
+                        success = None
+                        for _ in range(3):
+                            success = self.task_to_transfer_point()
+                            if success:
+                                break
+                        if not success:
+                            self.log_info("前往传送点失败，重试...")
+                            return
+                        if not self.to_storage_point_and_back_zip_line():
+                            return
+                        results = self.wait_ocr(
+                            match=list(ends_list_pattern_dict.keys()), box=self.box.left, time_out=10, log=True
+                        )
+                        self.press_key('f', after_sleep=2)
+                        end_pattern = None
+                        if not results:
+                            raise Exception("未识别到送货目标")
+
+                        for result in results:
+                            for pattern in ends_list_pattern_dict:
+                                m = pattern.search(result.name)
+                                if m:
+                                    end_pattern = pattern
+                                    self.on_zip_line_start(ends_list_pattern_dict[pattern])
+                                    break
+                        self.to_end_and_submit(end_pattern)
+                        if self.config.get(self.CFG_ONLY_DELIVER):
+                            break
+            except Exception as e:
+                # 除 TaskDisabledException 外的异常才杀死进程
+                if not isinstance(e, TaskDisabledException):
+                    if self.config.get("发生异常时终止游戏", False):
+                        self.log_info("发生异常，终止游戏", notify=True)
+                        self.kill_process()
+                    else:
+                        self.log_info("发生异常，继续运行", notify=True)
+                raise
         elif self.config.get(self.CFG_TEST_TARGET) == self.TEST_FULL_CYCLE:
             for end in self.ends:
                 self.task_to_transfer_point(self.box.bottom)
