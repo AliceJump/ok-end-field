@@ -89,6 +89,7 @@ class FeatureList(str, Enum):
     reward_ok = 'reward_ok'
     secondary_objective_direction_dot = 'secondary_objective_direction_dot'
     secondary_objective_direction_dot_light = 'secondary_objective_direction_dot_light'
+    secondary_objective_direction_dot_light_three = 'secondary_objective_direction_dot_light_three'
     secondary_objective_direction_dot_light_two = 'secondary_objective_direction_dot_light_two'
     skill_1 = 'skill_1'
     skill_2 = 'skill_2'

@@ -40,6 +40,8 @@ class AutoCombatLogic:
                     task.perform_attack_weave()
 
             while True:
+                task.click(key="left")
+                task.perform_attack_weave()
                 if task.is_combat_ended():
                     if task.debug:
                         task.screenshot('out_of_combat')
@@ -77,4 +79,5 @@ class AutoCombatLogic:
                         task.last_skill_time = time.time()
                         task.last_op_time = time.time()
                         task.log_info(f"Used skill {skill_key}")
+                task.click(key='left')
         return True

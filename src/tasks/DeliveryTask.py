@@ -12,7 +12,7 @@ from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
 secondary_objective_direction_dot = [fL.secondary_objective_direction_dot, fL.secondary_objective_direction_dot_light,
-                                     fL.secondary_objective_direction_dot_light_two]
+                                     fL.secondary_objective_direction_dot_light_two, fL.secondary_objective_direction_dot_light_three]
 
 
 @dataclass

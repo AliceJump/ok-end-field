@@ -6,6 +6,7 @@ from src.data.FeatureList import FeatureList as fL
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.AutoCombatLogic import AutoCombatLogic
+from ok import TaskDisabledException
 
 
 class Test(BattleMixin):
@@ -16,8 +17,13 @@ class Test(BattleMixin):
         self.credit_good_search_box = None
 
     def run(self):
-        while True:
-            AutoCombatLogic(self).run()
+        try:
+            self.sleep(5)
+        except Exception as e:
+            # 除 TaskDisabledException 外的异常才杀死进程
+            if not isinstance(e, TaskDisabledException):
+                self.kill_game()
+            raise
 
     def refresh(self, sum_credit):
         if self.refresh_count >= len(self.refresh_cost_list):
