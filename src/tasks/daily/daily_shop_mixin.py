@@ -8,14 +8,14 @@ class DailyShopMixin(Common):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.refresh_count = 0
-        self.refresh_cost_list = [80, 120, 160, 200]
+        self.refresh_cost_list = [80, 120, 160, 201]
         self.credit_good_search_box = None
 
     def refresh(self, sum_credit):
         if self.refresh_count >= len(self.refresh_cost_list):
             return False, sum_credit
         cost = self.refresh_cost_list[self.refresh_count]
-        if sum_credit - cost > 200:
+        if sum_credit - cost > 210:
             if not self.wait_click_ocr(match=re.compile("立即刷新"), time_out=5, box=self.box.bottom_right,
                                        after_sleep=2):
                 return False, sum_credit
@@ -76,7 +76,7 @@ class DailyShopMixin(Common):
                 return False, sum_credit, False
             self.wait_pop_up(after_sleep=2)
             sum_credit -= cost
-        if sum_credit <= 300:
+        if sum_credit <=self.config.get('信用商店保留信用',300):
             return True, sum_credit, True
         return False, sum_credit, True
 
@@ -94,7 +94,7 @@ class DailyShopMixin(Common):
                 return False
             success, sum_credit = self.refresh(sum_credit)
             if not success:
-                if sum_credit <= 300:
+                if sum_credit <=self.config.get('信用商店保留信用',300):
                     return True
                 else:
                     return self.buy_left(sum_credit)
@@ -112,6 +112,6 @@ class DailyShopMixin(Common):
                 return False
             self.wait_pop_up(after_sleep=2)
             sum_credit -= cost
-            if sum_credit <= 300:
+            if sum_credit <=self.config.get('信用商店保留信用',300):
                 return True
         return True
