@@ -59,7 +59,8 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
             if left_ticket < stages_cost[category_name]:
                 self.log_info("体力不足")
                 return True
-        self.to_stage(stage_name, category_name)
+        if not self.to_stage(stage_name, category_name):
+            return False
         if category_name != "能量淤积点":
             return self.battle_space(left_ticket, category_name)
         else:
@@ -172,7 +173,7 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
                 )
                 if enter_bool:
                     return True
-            self.scroll_relative(0.5, 0.5, count=-2)
+            self.scroll_relative(650/1920, 0.5, count=-2)
             self.wait_ui_stable(refresh_interval=0.5)
         return False
         # 如果找到位置，则点击按钮
