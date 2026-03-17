@@ -118,8 +118,9 @@ config = {
         ["src.tasks.DeliveryTask", "DeliveryTask"],
         ["src.tasks.EssenceScanTask", "EssenceScanTask"],
         ["src.tasks.BattleTask", "BattleTask"],
-        ["src.tasks.Test", "Test"],
         ["src.tasks.PeriodicScreenshotTask", "PeriodicScreenshotTask"],
+        ["src.tasks.TestStartGame", "TestStartGame"],
+        ["src.tasks.Test", "Test"],
         ["ok.task.DiagnosisTask", "DiagnosisTask"],
     ],
     "trigger_tasks": [  # 不断执行的触发式任务
