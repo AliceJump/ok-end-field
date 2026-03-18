@@ -579,7 +579,7 @@ class BaseEfTask(BaseTask):
             if self.in_friend_boat():
                 return True
 
-    def ensure_main(self, esc=True, time_out=60, after_sleep=2):
+    def ensure_main(self, esc=True, time_out=60, after_sleep=2, need_active=True):
         """确保回到主界面（游戏世界），超时会抛出异常
         
         Args:
@@ -592,7 +592,7 @@ class BaseEfTask(BaseTask):
         """
         self.info_set("current task", f"wait main esc={esc}")
         if not self.wait_until(
-                lambda: self.is_main(esc=esc), time_out=time_out, raise_if_not_found=False
+                lambda: self.is_main(esc=esc, need_active=need_active), time_out=time_out, raise_if_not_found=False
         ):
             raise Exception("Please start in game world and in team!")
         self.sleep(after_sleep)
@@ -609,18 +609,20 @@ class BaseEfTask(BaseTask):
             self._logged_in = True
         return in_world
 
-    def is_main(self, esc=False):
+    def is_main(self, esc=False, need_active=True):
         """判断是否处于可执行任务的主界面状态
         
         Args:
             esc: 如果是菜单状态，是否按ESC返回（返回False不意味着不是主界面）
+            need_active: 是否需要激活窗口（默认True）
         
         Returns:
             bool: True表示处于主界面，False表示需要继续处理
         """
         self.next_frame()  # 确保拿到最新的截图
         if not self._logged_in:
-            self.active_and_send_mouse_delta(activate=True, only_activate=True)  # 激活窗口，获取最新状态
+            if need_active:
+                self.active_and_send_mouse_delta(activate=True, only_activate=True)  # 激活窗口，获取最新状态
         if self.in_world():
             self._logged_in = True
             return True
@@ -715,3 +717,40 @@ class BaseEfTask(BaseTask):
                 self.log_info("未获取到 hwnd，无法终止进程", notify=True)
         except Exception as e2:
             self.log_info(f"终止进程失败: {e2}", notify=True)
+
+    def kill_all_related_processes(self):
+        """尝试杀死游戏进程和本软件自身进程（除当前进程外）"""
+        import os, sys
+        import win32process, win32gui, win32api, win32con
+        import psutil
+
+        # 1. 杀死游戏进程
+        try:
+            hwnd = getattr(self, "hwnd", None)
+            if hwnd is not None:
+                hwnd_val = getattr(hwnd, "hwnd", None)
+                if hwnd_val:
+                    tid, pid = win32process.GetWindowThreadProcessId(hwnd_val)
+                    handle = win32api.OpenProcess(win32con.PROCESS_TERMINATE, False, pid)
+                    win32api.TerminateProcess(handle, 0)
+                    win32api.CloseHandle(handle)
+                    self.log_info(f"已终止游戏进程 pid={pid}", notify=True)
+                else:
+                    self.log_info("未获取到 hwnd，无法终止游戏进程", notify=True)
+            else:
+                self.log_info("未获取到 hwnd 属性，无法终止游戏进程", notify=True)
+        except Exception as e:
+            self.log_info(f"终止游戏进程失败: {e}", notify=True)
+        # 2. 杀死本软件所有同名进程（除当前进程）
+        try:
+            current_pid = os.getpid()
+            exe_name = psutil.Process(current_pid).name()
+            for proc in psutil.process_iter(["pid", "name"]):
+                if proc.info["name"] == exe_name and proc.info["pid"] != current_pid:
+                    try:
+                        proc.kill()
+                        self.log_info(f"已终止本软件进程 pid={proc.info['pid']}", notify=True)
+                    except Exception as e2:
+                        self.log_info(f"终止本软件进程失败: {e2}", notify=True)
+        except Exception as e:
+            self.log_info(f"查找/终止本软件进程失败: {e}", notify=True)
