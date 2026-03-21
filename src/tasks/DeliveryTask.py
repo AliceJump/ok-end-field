@@ -411,7 +411,7 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                     break
                 else:
                     self.log_info("警告: 尚未定位到刷新按钮位置，无法刷新，重试...")
-                    time.sleep(1.0)
+                    self.sleep(1.0)
 
     def to_storage_point_and_back_zip_line(self, only_zip_line=False):
         """从仓储点出发，乘坐滑索到送货点

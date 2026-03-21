@@ -17,13 +17,7 @@ class Test(BattleMixin):
         self.credit_good_search_box = None
 
     def run(self):
-        try:
-            self.sleep(5)
-        except Exception as e:
-            # 除 TaskDisabledException 外的异常才杀死进程
-            if not isinstance(e, TaskDisabledException):
-                self.kill_game()
-            raise
+        pass
 
     def refresh(self, sum_credit):
         if self.refresh_count >= len(self.refresh_cost_list):

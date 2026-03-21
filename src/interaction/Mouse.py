@@ -60,6 +60,37 @@ def calc_direction_step(from_pos, to_pos, max_step=100, min_step=20, slow_radius
     return dx, dy
 
 
+def click_down(hwnd, x, y, key="left"):
+    """
+    在指定窗口内模拟鼠标按下事件。
+    """
+
+    MOUSEEVENTF_LEFTDOWN = 0x0002
+    MOUSEEVENTF_RIGHTDOWN = 0x0008
+
+    # 坐标转换
+    screen_x, screen_y = win32gui.ClientToScreen(hwnd, (x, y))
+
+    # 移动鼠标
+    user32.SetCursorPos(screen_x, screen_y)
+
+    if key == "left":
+        user32.mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+    elif key == "right":
+        user32.mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0)
+def click_up(hwnd, key="left"):
+    """
+    在指定窗口内模拟鼠标抬起事件。
+    """
+
+    MOUSEEVENTF_LEFTUP = 0x0004
+    MOUSEEVENTF_RIGHTUP = 0x0010
+
+    if key == "left":
+        user32.mouse_event(MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+    elif key == "right":
+        user32.mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0)
+
 # ===== device control =====
 def active_and_send_mouse_delta(hwnd, dx=1, dy=1, activate=True, only_activate=False, delay=0.02, steps=3):
     """

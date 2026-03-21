@@ -370,7 +370,9 @@ class EssenceScanTask(BaseEfTask):
         from_y = int(round(start_y / ref_h * frame_h))
         to_x = int(round(start_x / ref_w * frame_w))
         to_y = int(round(end_y / ref_h * frame_h))
-        self.swipe(from_x, from_y, to_x, to_y, duration=0.5)
+        # self.swipe(from_x, from_y, to_x, to_y, duration=0.5)
+        self.scroll_relative(0.5, 0.5, count=-2)
+        self.wait_ui_stable()
 
     def run(self):
         # 只保留该任务需要展示的 info keys，避免旧版本遗留字段出现在状态栏

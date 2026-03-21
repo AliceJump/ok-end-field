@@ -203,7 +203,7 @@ class NavigationMixin(BaseEfTask):
                             break
                     if result:
                         break
-                    time.sleep(0.1)
+                    self.sleep(0.1)
             else:
                 if isinstance(ocr_match_or_feature_name_list, str):
                     ocr_match_or_feature_name_list = [ocr_match_or_feature_name_list]

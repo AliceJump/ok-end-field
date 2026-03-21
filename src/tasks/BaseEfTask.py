@@ -19,7 +19,7 @@ from src.essence.essence_recognizer import EssenceInfo, read_essence_info
 from src.image.frame_processes import isolate_by_hsv_ranges
 from src.interaction.Key import move_keys
 from src.interaction.KeyConfig import KeyConfigManager
-from src.interaction.Mouse import active_and_send_mouse_delta, move_to_target_once, run_at_window_pos, run_in_window
+from src.interaction.Mouse import active_and_send_mouse_delta, move_to_target_once, run_at_window_pos, run_in_window, click_down, click_up
 from src.interaction.ScreenPosition import ScreenPosition
 from src.data.world_map import areas_list
 
@@ -407,7 +407,7 @@ class BaseEfTask(BaseTask):
                 return False
 
             last_frame = current_frame
-            time.sleep(refresh_interval)
+            self.sleep(refresh_interval)
 
     def to_model_area(self, area, model):
         """导航到指定区域的特定模块

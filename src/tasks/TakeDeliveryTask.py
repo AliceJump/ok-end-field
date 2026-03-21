@@ -329,5 +329,5 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                 self.log_info(f"TakeDeliveryTask error: {e}")
                 if "SetCursorPos" in str(e) or "拒绝访问" in str(e):
                     self.log_info("警告: 检测到权限不足或光标控制失败，请尝试【以管理员身份运行】程序！")
-                time.sleep(2)
+                self.sleep(2)
                 continue
