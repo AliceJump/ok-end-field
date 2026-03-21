@@ -66,7 +66,7 @@ config = {
         # Genshin:某些操作可以后台, 部分游戏支持 PostMessage:可后台点击, 极少游戏支持 ForegroundPostMessage:前台使用PostMessage Pynput/PyDirect:仅支持前台使用
         "capture_method": ["WGC", "BitBlt_RenderFull"],
         # Windows版本支持的话, 优先使用WGC, 否则使用BitBlt_Full. 支持的capture有 BitBlt, WGC, BitBlt_RenderFull, DXGI
-        "check_hdr": True,  # 当用户开启AutoHDR时候提示用户, 但不禁止使用
+        "check_hdr": False,  # 当用户开启AutoHDR时候提示用户, 但不禁止使用
         "force_no_hdr": False,  # True=当用户开启AutoHDR时候禁止使用
         "require_bg": True,  # 要求使用后台截图
     },
