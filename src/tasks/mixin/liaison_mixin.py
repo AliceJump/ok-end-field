@@ -60,7 +60,7 @@ class LiaisonMixin(NavigationMixin):
             for name in self.can_contact_dict.keys()
         }
 
-    def transfer_to_home_point(self):
+    def transfer_to_home_point(self, should_check_out_boat=False):
         """
         通过地图传送到帝江号指定点。
 
@@ -92,7 +92,11 @@ class LiaisonMixin(NavigationMixin):
         if not target_area:
             self.log_info("未找到帝江号区域，传送失败")
             return False
-
+        if should_check_out_boat:
+            if target_area[0].x < self.width / 2:
+                self.log_info("已在帝江号区域内，无需传送")
+                self.ensure_main()
+                return True
         self.log_info("找到帝江号区域，点击进入")
         self.click(target_area, after_sleep=2)
 

@@ -4,12 +4,12 @@ import time
 from src.data.world_map import areas_list, outpost_dict, default_goods
 from src.data.world_map_utils import get_area_by_outpost_name, get_goods_by_outpost_name
 from src.image.hsv_config import HSVRange as hR
-from src.tasks.BaseEfTask import BaseEfTask
+from src.tasks.mixin.liaison_mixin import LiaisonMixin
 from src.data.FeatureList import FeatureList as fL
 from src.data.characters_utils import get_contact_list_with_feature_list
 
 
-class DailyRoutineMixin(BaseEfTask):
+class DailyRoutineMixin(LiaisonMixin):
     def wait_friend_list(self, end_icon_name="friend_chat_icon"):
         start_time = time.time()
         while True:
@@ -538,6 +538,7 @@ class DailyRoutineMixin(BaseEfTask):
     def collect_clue(self):
         self.info_set("current_task", "collect_clue")
         self.log_info("开始收集线索任务")
+        self.transfer_to_home_point(should_check_out_boat=True)
         self.press_key("i", after_sleep=2)
         exchange_help_box = self.box_of_screen(0.1, 561 / 861, 0.9, 0.9)
         if self.wait_click_ocr(match=re.compile("会客室"), time_out=4, box=exchange_help_box, after_sleep=2):
@@ -588,6 +589,7 @@ class DailyRoutineMixin(BaseEfTask):
     def up_make_room_num(self):
         self.info_set("current_task", "up_make_room_num")
         self.log_info("开始制造室任务")
+        self.transfer_to_home_point(should_check_out_boat=True)
         self.press_key("i", after_sleep=2)
         exchange_help_box = self.box_of_screen(0.1, 561 / 861, 0.9, 0.9)
         results = self.wait_ocr(match=re.compile("制造"), time_out=4, box=exchange_help_box)
@@ -612,7 +614,7 @@ class DailyRoutineMixin(BaseEfTask):
                         continue
                 if icon := self.find_one(feature_name=fL.max_icon, horizontal_variance=0.1, vertical_variance=0.1):
                     self.click(icon, after_sleep=2)
-                    self.wait_click_ocr(match=re.compile("确认"), time_out=2, box=self.box.bottom, after_sleep=2)
+                self.wait_click_ocr(match=re.compile("确认"), time_out=2, box=self.box.bottom, after_sleep=2)
             self.safe_back(match=re.compile("运转"), box=self.box.top_left)
         self.wait_click_ocr(match=re.compile("助力"), time_out=2, box=self.box.top_right, after_sleep=2)
         self.wait_click_ocr(match=re.compile("使用"), time_out=2, box=self.box.bottom_right, after_sleep=2)
