@@ -20,7 +20,6 @@ gather_list = stages_dict["能量淤积点"]
 class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.max_half_time = 3
         self.gather_near_transfer_point_dict = dict()
         self.stages_list = stages_list
         self.default_config.update({
@@ -51,14 +50,9 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
         self.wait_click_ocr(match=re.compile("索引"), time_out=5, after_sleep=2, box=self.box.top, log=True)
         left_ticket = self.detect_ticket_number()
         self.log_info(f"当前体力: {left_ticket}")
-        if self.max_half_time > 0:
-            if left_ticket < stages_cost[category_name] - 40:
-                self.log_info("体力不足")
-                return True
-        else:
-            if left_ticket < stages_cost[category_name]:
-                self.log_info("体力不足")
-                return True
+        if left_ticket < stages_cost[category_name]:
+            self.log_info("体力不足")
+            return True
         if not self.to_stage(stage_name, category_name):
             return False
         if category_name != "能量淤积点":
@@ -252,10 +246,9 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
 
         逻辑：
         1. 等待界面稳定，并找到“可领取”提示。
-        2. 尝试点击“获得奖励”，如果失败则本轮减少消耗理智。
+        2. 尝试点击“获得奖励”，如果失败则本轮任务失败。
         3. 扣除本轮理智，判断剩余理智是否足够。
         4. 点击“领取”，记录领取状态。
-        5. 根据剩余理智和 max_half_time 判断下一轮是否可继续。
 
         返回：
             int: 扣掉本轮消耗理智后的剩余理智，如果理智不足则返回 0。
@@ -275,18 +268,15 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
         need_ticket_number = ticket_number
 
         # 尝试点击“获得奖励”，失败则本轮减少消耗理智
-        if self.max_half_time > 0:
-            if not self.wait_click_ocr(
-                    match=re.compile("获得奖励"),
-                    box=self.box_of_screen(530 / 1920, 330 / 1080, 1400 / 1920, 570 / 1080),
-                    time_out=2,
-                    after_sleep=1,
-                    log=True
-            ):
-                need_ticket_number = ticket_number - 40  # 减耗票逻辑
-                self.max_half_time -= 1  # 减耗次数减少
-                self.log_info("未找到 '获得奖励' 按钮，本轮应减少消耗理智，新的本轮消耗理智: {}, 剩余减耗次数: {}".format(
-                    need_ticket_number, self.max_half_time))
+        if not self.wait_click_ocr(
+                match=re.compile("获得奖励"),
+                box=self.box_of_screen(530 / 1920, 330 / 1080, 1400 / 1920, 570 / 1080),
+                time_out=2,
+                after_sleep=1,
+                log=True
+        ):
+            self.log_info("未找到 '获得奖励' 按钮, 任务失败")
+            return 0
 
         # 扣除本轮消耗理智
         sum_ticket_number -= need_ticket_number
@@ -299,11 +289,6 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
         if not self.wait_click_ocr(match=re.compile("领取"), box=self.box.bottom_right, time_out=2, log=True):
             self.log_info("领取失败")
             return 0
-
-        # 如果减耗次数用完，下一轮恢复全额消耗
-        if self.max_half_time <= 0:
-            need_ticket_number = ticket_number
-            self.log_info("减耗次数已用完，下一轮恢复全额消耗理智: {}".format(need_ticket_number))
 
         # 预测下一轮是否还能继续
         next_sum = sum_ticket_number - need_ticket_number

@@ -145,6 +145,7 @@ class NavigationMixin(BaseEfTask):
             max_time: 最大尝试循环次数，默认50次
             ocr: True使用OCR模式识别，False使用图像特征匹配模式
             use_yolo: 在ocr=False时，是否改用YOLO识别（True=YOLO，False=模板特征匹配）
+            back_prev: True时对中完成后返回上一个窗口
             raise_if_fail: True时对中失败抛出异常，False时返回False
             is_num: 数字型目标Y坐标微调（用于识别数字时的位置校正）
             need_scroll: True时在对中过程中自动滚动（通常用于列表)

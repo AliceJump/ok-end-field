@@ -586,6 +586,7 @@ class BaseEfTask(BaseTask):
             esc: 是否按ESC键返回主界面
             time_out: 等待超时时间（秒）
             after_sleep: 完成后等待时间（秒）
+            need_active: 是否需要激活窗口（默认True）
         
         Raises:
             Exception: 无法回到主界面时抛出异常
