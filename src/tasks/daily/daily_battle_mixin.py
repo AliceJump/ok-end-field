@@ -162,7 +162,8 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
                 location = self.find_feature(feature_name=higher_order_feature_dict[stage_name])
             else:
                 # 普通关卡
-                location = self.wait_ocr(match=re.compile(stage_name), box=self.box.left, log=True, time_out=5)
+                location = self.wait_ocr(match=re.compile(stage_name if stage_name != '源石研究园' else '源石研究'), box=self.box.left, log=True, time_out=5)
+                # 「重度能量淤积点·源石研究园」会被居中指针挡住 “园”
 
             if location:
                 enter_bool = self.wait_click_ocr(
