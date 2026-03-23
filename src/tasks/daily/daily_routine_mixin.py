@@ -1,7 +1,7 @@
 import re
 import time
 
-from src.data.world_map import areas_list, outpost_dict, default_goods
+from src.data.world_map import areas_list, outpost_dict, goods_dict
 from src.data.world_map_utils import get_area_by_outpost_name, get_goods_by_outpost_name
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
@@ -319,7 +319,7 @@ class DailyRoutineMixin(LiaisonMixin):
             after_sleep=2,
         )
 
-        can_exchange_goods = default_goods.get(
+        can_exchange_goods = goods_dict.get(
             get_area_by_outpost_name(outpost_name), []
         )
 
