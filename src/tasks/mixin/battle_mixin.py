@@ -306,9 +306,13 @@ class BattleMixin(BaseEfTask):
 
         attack_interval = self.config.get("平A间隔", 0.12)
         attack_interval = max(0.03, min(float(attack_interval), 0.5))
+        repeat_clicks = 4
 
         if time.time() - getattr(self, 'last_op_time', 0) > attack_interval:
-            self.click(move=False, key='left', down_time=0.005)
+            # 连续点击多次，缓解断连击问题
+            for _ in range(repeat_clicks):
+                self.click(move=False, key='left', down_time=0.005)
+                self.sleep(attack_interval)
 
             self.last_op_time = time.time()
 
