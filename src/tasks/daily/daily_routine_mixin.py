@@ -10,6 +10,11 @@ from src.data.characters_utils import get_contact_list_with_feature_list
 
 
 class DailyRoutineMixin(LiaisonMixin):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.default_config.update({"交易货品优先序列": ""})
+        self.config_description.update({"交易货品优先序列": "默认留空，使用方法参见文档：仓库 / docs / 日常任务.md"})
+       
     def wait_friend_list(self, end_icon_name="friend_chat_icon"):
         start_time = time.time()
         while True:
@@ -308,7 +313,7 @@ class DailyRoutineMixin(LiaisonMixin):
         self.log_info(f"{outpost_name} 据点当前券数量: {num}")
         return num
 
-    def perform_outpost_exchange(self, outpost_name):
+    def perform_outpost_exchange(self, outpost_name, priority_list=[]):
         """据点内循环尝试更换货品并兑换。"""
         self.log_info(f"开始处理据点: {outpost_name}")
 
@@ -347,6 +352,12 @@ class DailyRoutineMixin(LiaisonMixin):
             if not goods:
                 self.log_info(f"{outpost_name} 没有可兑换的货物")
                 break
+
+            if len(priority_list) > 0:
+                goods_name = list(map(lambda g: g.name, goods))
+                for p in reversed(priority_list):
+                    if p in goods_name:
+                        goods.insert(0, goods.pop(goods_name.index(p)))
 
             exchange_good = None
             for good in goods:
@@ -448,6 +459,8 @@ class DailyRoutineMixin(LiaisonMixin):
         self.info_set("current_task", "exchange_outpost_goods")
         self.log_info("开始据点兑换任务")
 
+        priority_list = str.split(self.config.get("交易货品优先序列", ""), ",")
+
         for area in areas_list:
             self.log_info(f"进入区域: {area}")
             self.to_model_area(area, "据点管理")
@@ -459,7 +472,7 @@ class DailyRoutineMixin(LiaisonMixin):
 
             for outpost_name in outposts:
                 self.log_info(f"开始兑换据点: {outpost_name}")
-                self.perform_outpost_exchange(outpost_name)
+                self.perform_outpost_exchange(outpost_name, priority_list)
                 self.log_info(f"完成兑换据点: {outpost_name}")
 
             self.log_info(f"{area} 区域据点兑换完成，返回主界面")
