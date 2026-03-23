@@ -78,7 +78,7 @@ An image-recognition-based automation tool for End Field, with background mode s
 - 据点兑换、信用收集、委托转交、领取委托奖励
 - 装备制造、线索收集、日常奖励一键领取
 
-### 自动战斗与资源消耗
+### [自动战斗与资源消耗](docs/体力本.md)
 - 自动进入关卡、智能战斗、自动领奖
 - 支持技能序列、理智消耗优化
 - 多关卡类型（普通/高阶/能量淤积点）
