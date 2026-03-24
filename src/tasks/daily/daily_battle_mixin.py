@@ -104,12 +104,17 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
             sleep_time = 0.1
         while left_ticket > 0:
             if enter_bool:
-                self.wait_click_ocr(match=re.compile("重新挑战"), box=self.box.bottom_left, log=True, time_out=5,
-                                    after_sleep=2)
+                result = self.wait_ocr(match=re.compile("重新挑战"), box=self.box.bottom_left, time_out=5, log=True)
+                if result:
+                    self.sleep(1)
+                    self.click(result)
+
             else:
-                self.wait_click_ocr(match=re.compile(enter_str), time_out=10, after_sleep=2, box=self.box.bottom_right,
-                                    log=True)
-                enter_bool = True
+                result = self.wait_ocr(match=re.compile(enter_str), box=self.box.bottom_right, time_out=10, log=True)
+                if result:
+                    self.sleep(1)
+                    self.click(result)
+                    enter_bool = True
             if battle_bool:
                 if not self.to_battle(sleep_time, no_battle=no_battle, challenge_check=challenge_check):
                     return False
