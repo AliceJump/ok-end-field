@@ -18,7 +18,7 @@ class DailyRoutineMixin(LiaisonMixin):
         })
         self.config_description.update({
             "据点兑换": "是否在「地区建设/据点管理」中通过交易获得地区兑换券。",
-            "交易货品优先序列": "默认留空，交易货品顺序随机。更多用法参见 ./docs/日常任务.md 。"
+            "交易货品优先序列": "默认留空，交易货品顺序随机。更多用法参见 ./docs/日常任务.md > 优先货品交易序列 。"
         })
        
     def wait_friend_list(self, end_icon_name="friend_chat_icon"):
