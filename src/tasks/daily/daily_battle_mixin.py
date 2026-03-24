@@ -86,6 +86,7 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
             self.log_info("没有找到激发按钮")
             return False
         self.click_with_alt(result)
+        self.sleep(1)
         return self.battle_recycle(left_ticket, category_name, "挑战", no_battle=no_battle, challenge_check=True)
 
     def battle_space(self, left_ticket, category_name):
@@ -93,6 +94,7 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
         if self.wait_click_ocr(match=re.compile("取消"), time_out=5, box=self.box.bottom_left, log=True):
             self.log_info("没有进入战斗，可能是因为已经没理智了")
             return True
+        self.sleep(1)
         return self.battle_recycle(left_ticket, category_name, "进入")
 
     def battle_recycle(self, left_ticket, category_name, enter_str, no_battle=False, challenge_check=False):
