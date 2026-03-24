@@ -60,6 +60,16 @@ class LiaisonMixin(NavigationMixin):
             for name in self.can_contact_dict.keys()
         }
 
+        self.config_type["优先送礼对象"] = {"type": "drop_down", "options": list(self.can_contact_dict.keys())}
+        self.default_config.update({
+            "送礼": True,
+            "送礼任务最多尝试次数": 2,
+            "优先送礼对象": list(self.can_contact_dict.keys())[0],
+        })
+        self.config_description.update({
+            "送礼": "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。",
+        })
+
     def transfer_to_home_point(self, should_check_out_boat=False):
         """
         通过地图传送到帝江号指定点。
