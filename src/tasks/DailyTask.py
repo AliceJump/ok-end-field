@@ -26,13 +26,7 @@ class DailyTask(
         self.description = "一键收菜\n反复按esc请前往设置调整主界面单次动作后延迟，建议1.5秒以上"
         self.icon = FluentIcon.SYNC
         self.support_schedule_task = True
-        buy_sell = dict()
-        for area in areas_list:
-            buy_sell[f"{area}买入价"] = 900
-            buy_sell[f"{area}卖出价"] = 4500
-            buy_sell[area] = True
         self.stages_list = stages_list
-        self.default_config.update(buy_sell)
         # self.default_config.update({"优先送礼对象": list(self.can_contact_dict.keys())[0]})
 
         self.default_config.update(
@@ -49,7 +43,7 @@ class DailyTask(
                 "制造舱": True,
                 "买信用商店": False,
                 "信用商店保留信用": 300,
-                "买卖货": True,
+                # "买卖货": True,
                 "刷体力": True,
                 "日常奖励": True,
                 "发生异常时终止游戏": False
