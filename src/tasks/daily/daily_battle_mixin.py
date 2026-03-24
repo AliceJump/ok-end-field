@@ -107,7 +107,7 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
                 self.wait_click_ocr(match=re.compile("重新挑战"), box=self.box.bottom_left, log=True, time_out=5,
                                     after_sleep=2)
             else:
-                self.wait_click_ocr(match=re.compile(enter_str), time_out=5, after_sleep=2, box=self.box.bottom_right,
+                self.wait_click_ocr(match=re.compile(enter_str), time_out=10, after_sleep=2, box=self.box.bottom_right,
                                     log=True)
                 enter_bool = True
             if battle_bool:
