@@ -33,13 +33,13 @@ class DailyTask(
             buy_sell[area] = True
         self.stages_list = stages_list
         self.default_config.update(buy_sell)
-        self.default_config.update({"优先送礼对象": list(self.can_contact_dict.keys())[0]})
+        # self.default_config.update({"优先送礼对象": list(self.can_contact_dict.keys())[0]})
 
         self.default_config.update(
             {
-                "送礼任务最多尝试次数": 2,
-                "送礼": True,
-                "据点兑换": True,
+                # "送礼任务最多尝试次数": 2,
+                # "送礼": True,
+                # "据点兑换": True,
                 "转交运送委托": True,
                 "转交委托奖励领取": True,
                 "造装备": True,
@@ -56,7 +56,7 @@ class DailyTask(
             }
         )
         self.config_type["体力本"] = {"type": "drop_down", "options": self.stages_list}
-        self.config_type["优先送礼对象"] = {"type": "drop_down", "options": list(self.can_contact_dict.keys())}
+        # self.config_type["优先送礼对象"] = {"type": "drop_down", "options": list(self.can_contact_dict.keys())}
         self.config_description.update({"尝试仅收培育室": '前置是启用收信用'})
         self.add_exit_after_config()
         self.config_description.update({
