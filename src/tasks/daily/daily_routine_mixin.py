@@ -12,8 +12,14 @@ from src.data.characters_utils import get_contact_list_with_feature_list
 class DailyRoutineMixin(LiaisonMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.default_config.update({"交易货品优先序列": ""})
-        self.config_description.update({"交易货品优先序列": "默认留空，使用方法参见文档：仓库 / docs / 日常任务.md"})
+        self.default_config.update({
+            "据点兑换": True,
+            "交易货品优先序列": "",
+        })
+        self.config_description.update({
+            "据点兑换": "是否在「地区建设/据点管理」中通过交易获得地区兑换券。",
+            "交易货品优先序列": "默认留空，交易货品顺序随机。更多用法参见 ./docs/日常任务.md 。"
+        })
        
     def wait_friend_list(self, end_icon_name="friend_chat_icon"):
         start_time = time.time()

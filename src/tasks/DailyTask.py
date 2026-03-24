@@ -39,7 +39,7 @@ class DailyTask(
             {
                 "送礼任务最多尝试次数": 2,
                 "送礼": True,
-                "据点兑换": True,
+                # "据点兑换": True,
                 "转交运送委托": True,
                 "转交委托奖励领取": True,
                 "造装备": True,
