@@ -23,6 +23,7 @@ class DailyRoutineMixin(LiaisonMixin):
             "⭐收集线索": True,
             "⭐制造舱": True,
             "⭐日常奖励": True,
+            "⭐周常奖励": True,
         })
         self.config_description.update({
             "⭐据点兑换": "是否在「地区建设/据点管理」中通过交易获得调度券。",
@@ -35,6 +36,7 @@ class DailyRoutineMixin(LiaisonMixin):
             "⭐收集线索": "是否前往「帝江号/会客室」收集全部线索。若集齐线索，则开启情报交流。",
             "⭐制造舱": "是否前往「帝江号/制造仓」收取培养材料。收取后会补足待制造数量。",
             "⭐日常奖励": "是否领取「行动手册/日常」中的奖励。",
+            "⭐周常奖励": "是否领取「活动中心/每周事物」中的奖励。",
         })
        
     def wait_friend_list(self, end_icon_name="friend_chat_icon"):
@@ -531,6 +533,41 @@ class DailyRoutineMixin(LiaisonMixin):
         self.log_info("等待弹窗完成，造装备任务准备完成")
         self.wait_pop_up()
 
+        return True
+
+    def _click_ocr_with_info(self, match_str, box, time_out=5, after_sleep=2):
+        if not self.wait_click_ocr(
+                match=re.compile(match_str),
+                box=box,
+                time_out=time_out,
+                after_sleep=after_sleep,
+        ):
+            self.send_key("esc", after_sleep=0.2)
+            self.log_info(f"未找到{match_str}按钮，任务失败")
+            return False
+
+        self.log_info(f"找到{match_str}按钮并点击")
+        return True
+
+    def claim_weekly_rewards(self):
+        self.info_set("current_task", "claim_daily_rewards")
+        self.log_info("开始领取每周事务")
+
+        self.sleep(2)
+        self.press_key("f7", after_sleep=2)
+        self.log_info("按下 F7 打开活动中心")
+
+        if not self._click_ocr_with_info("每周事务", self.box.left):
+            return False
+
+        if not self._click_ocr_with_info("领取", self.box.top_right):
+            return False
+
+        if not self._click_ocr_with_info("一键领取", self.box.bottom_right):
+            return False
+
+        self.send_key("esc", after_sleep=0.2)
+        self.log_info(f"每周事务领取完成")
         return True
 
     def claim_daily_rewards(self):
