@@ -12,11 +12,11 @@ from ok import TaskDisabledException
 
 
 class DailyTask(
-    DailyLiaisonMixin,
-    DailyTradeMixin,
-    DailyRoutineMixin,
-    DailyShopMixin,
-    DailyBattleMixin
+    DailyBattleMixin,   # 刷体力
+    DailyTradeMixin,    # 买卖货
+    DailyShopMixin,     # 买信用商店
+    DailyRoutineMixin,  # 其它
+    DailyLiaisonMixin,  # 送礼
 ):
     """日常任务聚合执行器。"""
 
