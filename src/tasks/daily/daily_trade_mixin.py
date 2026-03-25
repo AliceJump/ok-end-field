@@ -13,6 +13,27 @@ from src.tasks.mixin.navigation_mixin import NavigationMixin
 
 
 class DailyTradeMixin(NavigationMixin):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        #
+        self.default_config.update({"⭐买卖货": True})
+        buy_sell_dict = dict()
+        buy_sell_desc_dict = dict()
+        for area in areas_list:
+            buy_sell_dict[f"{area}买入价"] = 900
+            buy_sell_dict[f"{area}卖出价"] = 4500
+            buy_sell_dict[area] = True
+            #
+            buy_sell_desc_dict[f"{area}买入价"] = f"{area}物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
+            buy_sell_desc_dict[f"{area}卖出价"] = f"{area}物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
+            buy_sell_desc_dict[area] = f"是否启用「地区建设/{area}物资调度/弹性需求物资」交易。"
+        self.default_config.update(buy_sell_dict)
+        self.config_description.update({
+            "⭐买卖货": "是否在「弹性需求物资」与好友交易赚取调度券。自动选择利润最高的方案，然后用价格上下限判定是否交易。（除非可购买数量即将溢出，这种情况下必定交易。）",
+            **buy_sell_desc_dict,
+        })
+
     def collect_market_goods_info(self):
         def ocr_stock_quantity() -> int:
             stock_piece = self.ocr(
