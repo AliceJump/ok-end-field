@@ -45,18 +45,18 @@ class DailyTask(
             else:
                 self.ensure_main()
             tasks = [  # 确保在主界面
-                ("送礼", self.execute_gift_task),
-                ("据点兑换", self.exchange_outpost_goods),
-                ("转交运送委托", self.delivery_send_others),
-                ("转交委托奖励领取", self.claim_delivery_rewards),
-                ("造装备", self.make_weapon),
-                ("收信用", self.collect_credit),
-                ("收集线索", self.collect_clue),
-                ("制造舱", self.up_make_room_num),
-                ("买信用商店", self.credit_shop),
-                ("买卖货", self.buy_sell),
-                ("刷体力", self.battle),
-                ("日常奖励", self.claim_daily_rewards),
+                ("⭐送礼", self.execute_gift_task),
+                ("⭐据点兑换", self.exchange_outpost_goods),
+                ("⭐转交运送委托", self.delivery_send_others),
+                ("⭐转交委托奖励领取", self.claim_delivery_rewards),
+                ("⭐造装备", self.make_weapon),
+                ("⭐收信用", self.collect_credit),
+                ("⭐收集线索", self.collect_clue),
+                ("⭐制造舱", self.up_make_room_num),
+                ("⭐买信用商店", self.credit_shop),
+                ("⭐买卖货", self.buy_sell),
+                ("⭐刷体力", self.battle),
+                ("⭐日常奖励", self.claim_daily_rewards),
             ]
             all_fail_tasks = []
             if self.debug:

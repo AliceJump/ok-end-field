@@ -14,12 +14,12 @@ class DailyLiaisonMixin(LiaisonMixin):
         #
         self.config_type["优先送礼对象"] = {"type": "drop_down", "options": list(self.can_contact_dict.keys())}
         self.default_config.update({
-            "送礼": True,
+            "⭐送礼": True,
             "送礼任务最多尝试次数": 2,
             "优先送礼对象": list(self.can_contact_dict.keys())[0],
         })
         self.config_description.update({
-            "送礼": "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。如果途中偶遇干员，则直接交互完成送礼。任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。",
+            "⭐送礼": "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。如果途中偶遇干员，则直接交互完成送礼。任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。",
         })
 
     def execute_gift_to_liaison(self):

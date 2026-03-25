@@ -25,7 +25,7 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
         # 下列代码在 AutoCombatTask.py 中有部分重复。如有更新，请两边一起修改。
         # 不要试图归并，否则会影响『日常任务』中的选项顺序。
         self.default_config.update({
-            "刷体力": True,
+            "⭐刷体力": True,
             "体力本": "干员经验",
             "仅站桩": False,
             **{key: "" for key in gather_list},
@@ -37,7 +37,7 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
             "进入战斗后的初始等待时间": 3,
         })
         self.config_description.update({
-            "刷体力": "是否消耗所有「理智」刷取培养材料。",
+            "⭐刷体力": "是否消耗所有「理智」刷取培养材料。",
             "体力本": "刷取哪个副本。所选副本必须领完所有等级的首通奖励。",
             "仅站桩": "若启用，则开始挑战后角色原地不动（不输出）。通常用在建好防御塔的「重度能量淤积点」，可以避免角色离开副本区域。",
             **{key: "需要设好「预刻写属性」。默认留空表示直线前往，更多用法参见 ./docs/体力本.md > 能量淤积点 。" for key in gather_list},

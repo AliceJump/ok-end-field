@@ -8,11 +8,11 @@ class DailyShopMixin(Common):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_config.update({
-            "买信用商店": True,
+            "⭐买信用商店": True,
             "信用商店保留信用": 300,
         })
         self.config_description.update({
-            "买信用商店": "是否在「采购中心/信用交易所」采购。自动刷新 且 仅购买「武库配额」「嵌晶玉」。",
+            "⭐买信用商店": "是否在「采购中心/信用交易所」采购。自动刷新 且 仅购买「武库配额」「嵌晶玉」。",
             "信用商店保留信用": "若剩余信用小于这个数值，则终止采购。",
         })
         self.refresh_count = 0
