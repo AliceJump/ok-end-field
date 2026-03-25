@@ -73,17 +73,17 @@ An image-recognition-based automation tool for End Field, with background mode s
 
 ## 功能一览（模块化架构 & 任务类型）
 
-### 日常任务自动化
-- 送礼、信赖提升、干员联络
-- 据点兑换、信用收集、委托转交、领取委托奖励
-- 装备制造、线索收集、日常奖励一键领取
+### [日常任务自动化](docs/日常任务.md)
+- [送礼、信赖提升、干员联络](docs/日常任务.md#送礼)
+- [据点兑换](docs/日常任务.md#据点兑换)、[信用收集](docs/日常任务.md#收信用)、[委托转交](docs/日常任务.md#转交运送委托)、[领取委托奖励](docs/日常任务.md#转交委托奖励领取)
+- [装备制造](docs/日常任务.md#造装备)、[线索收集](docs/日常任务.md#收集线索)、[日常奖励一键领取](docs/日常任务.md#日常奖励)
 
 ### [自动战斗与资源消耗](docs/体力本.md)
 - 自动进入关卡、智能战斗、自动领奖
 - 支持技能序列、理智消耗优化
 - 多关卡类型（普通/高阶/能量淤积点）
 
-### 自动交易与市场功能
+### [自动交易与市场功能](docs/日常任务.md#买卖货)
 - 市场物品识别、批量收集与比价
 - 好友市场价格对比
 - 自动买卖货物、信用商店自动刷新与购买
@@ -158,12 +158,12 @@ python main_debug.py
 
 您可以通过命令行参数实现自动化启动。
 
-```bash
-# 示例：启动后自动执行第一个任务（一条龙），并在任务完成后退出程序
+``` pwsh
+# 启动后自动执行第1个任务『日常任务』，并在任务完成后退出程序
 ok-ef.exe -t 1 -e
 ```
 
-* `-t` 或 `--task`: 启动后自动执行第 N 个任务。`1` 代表任务列表中的第一个。
+* `-t` 或 `--task`: 启动后自动执行第N个任务。`1` 代表任务列表（文件 [./src/config.py](./src/config.py) 列表 `onetime_tasks`）中的第1个（也就是『日常任务』）。
 * `-e` 或 `--exit`: 任务执行完毕后自动退出程序。
 
 ### 开发调试与测试
@@ -190,8 +190,9 @@ python -m unittest tests/TestEssenceRecognizer.py
 
 ## 🔗 使用ok-script的项目：
 
-* 终末地 [https://github.com/ok-oldking/ok-end-field](https://github.com/ok-oldking/ok-end-field)
-* 明日方舟:终末地 [https://github.com/ok-oldking/ok-ef](https://github.com/ok-oldking/ok-end-field)
+* 终末地 [https://github.com/AliceJump/ok-end-field](https://github.com/AliceJump/ok-end-field)
+* 鸣潮 [https://github.com/ok-oldking/ok-wuthering-waves](https://github.com/ok-oldking/ok-wuthering-waves)
+* 鸣潮(日常一条龙-优化版) [https://github.com/zzc-tongji/ok-ww-enhanced](https://github.com/zzc-tongji/ok-ww-enhanced)
 * 原神(停止维护,
   但是后台过剧情可用) [https://github.com/ok-oldking/ok-genshin-impact](https://github.com/ok-oldking/ok-genshin-impact)
 * 少前2 [https://github.com/ok-oldking/ok-gf2](https://github.com/ok-oldking/ok-gf2)
