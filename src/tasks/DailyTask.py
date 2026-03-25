@@ -34,28 +34,28 @@ class DailyTask(
                 # "送礼任务最多尝试次数": 2,
                 # "送礼": True,
                 # "据点兑换": True,
-                "转交运送委托": True,
-                "转交委托奖励领取": True,
-                "造装备": True,
-                "收信用": True,
-                "尝试仅收培育室": False,
-                "收集线索": True,
-                "制造舱": True,
+                # "转交运送委托": True,
+                # "转交委托奖励领取": True,
+                # "造装备": True,
+                # "收信用": True,
+                # "尝试仅收培育室": False,
+                # "收集线索": True,
+                # "制造舱": True,
                 # "买信用商店": False,
                 # "信用商店保留信用": 300,
                 # "买卖货": True,
                 # "刷体力": True,
-                "日常奖励": True,
+                # "日常奖励": True,
                 "发生异常时终止游戏": False
             }
         )
         # self.config_type["体力本"] = {"type": "drop_down", "options": self.stages_list}
         # self.config_type["优先送礼对象"] = {"type": "drop_down", "options": list(self.can_contact_dict.keys())}
-        self.config_description.update({"尝试仅收培育室": '前置是启用收信用'})
+        # self.config_description.update({"尝试仅收培育室": '前置是启用收信用'})
         self.add_exit_after_config()
-        self.config_description.update({
-            "尝试仅收培育室": "在好友交流助力时，优先尝试仅收取培育室的助力,但每次至少助力一次舱室",
-        })
+        # self.config_description.update({
+        #     "尝试仅收培育室": "在好友交流助力时，优先尝试仅收取培育室的助力,但每次至少助力一次舱室",
+        # })
         if self.debug:
             self.default_config.update({"重复测试的次数": 1})
 
