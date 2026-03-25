@@ -542,7 +542,6 @@ class DailyRoutineMixin(LiaisonMixin):
                 time_out=time_out,
                 after_sleep=after_sleep,
         ):
-            self.send_key("esc", after_sleep=0.2)
             self.log_info(f"未找到{match_str}按钮，任务失败")
             return False
 
@@ -566,7 +565,6 @@ class DailyRoutineMixin(LiaisonMixin):
         if not self._click_ocr_with_info("一键领取", self.box.bottom_right):
             return False
 
-        self.send_key("esc", after_sleep=0.2)
         self.log_info(f"每周事务领取完成")
         return True
 
