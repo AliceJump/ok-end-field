@@ -44,12 +44,12 @@ class DailyTask(
                 "买信用商店": False,
                 "信用商店保留信用": 300,
                 # "买卖货": True,
-                "刷体力": True,
+                # "刷体力": True,
                 "日常奖励": True,
                 "发生异常时终止游戏": False
             }
         )
-        self.config_type["体力本"] = {"type": "drop_down", "options": self.stages_list}
+        # self.config_type["体力本"] = {"type": "drop_down", "options": self.stages_list}
         # self.config_type["优先送礼对象"] = {"type": "drop_down", "options": list(self.can_contact_dict.keys())}
         self.config_description.update({"尝试仅收培育室": '前置是启用收信用'})
         self.add_exit_after_config()

@@ -23,6 +23,7 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
         self.gather_near_transfer_point_dict = dict()
         self.stages_list = stages_list
         self.default_config.update({
+            "刷体力": True,
             "体力本": "干员经验",
             "技能释放": "123",
             "启动技能点数": 2,
