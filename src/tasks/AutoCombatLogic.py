@@ -5,6 +5,7 @@ from src.tasks.BaseEfTask import BaseEfTask
 
 
 class AutoCombatLogic:
+
     def __init__(self, task: BaseEfTask):
         self.task = task
 
@@ -38,7 +39,7 @@ class AutoCombatLogic:
 
             while True:
 
-                if task.is_combat_ended():
+                if task._check_single_exit_condition():
                     if task.debug:
                         task.screenshot("out_of_combat")
 

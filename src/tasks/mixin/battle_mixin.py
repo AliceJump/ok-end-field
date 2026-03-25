@@ -243,7 +243,8 @@ class BattleMixin(BaseEfTask):
             center_area = self.ocr(
                 match=r"^\d+$",
                 box=box,
-                name="center_number"
+                name="center_number",
+                log=True
             )
 
             if len(center_area) > 0:
@@ -408,33 +409,36 @@ class BattleMixin(BaseEfTask):
                 consecutive_matches = 0
         return False
 
-    def auto_battle(self, start_sleep: float = None, no_battle: bool = False):
+
+    def auto_battle(self, no_battle: bool = False):
         """
-        自动战斗主循环。
+        自动战斗主循环
         """
 
-        end_time = None
         start_time = time.time()
+        last_battle_time = None
+        sleep_time = self.config.get("进入战斗后的初始等待时间", 3)
 
         while True:
 
+            # 全局超时保护
             if time.time() - start_time > 420:
                 self.log_info("自动战斗超时")
                 return False
 
-            if end_time and time.time() - end_time > 15.0:
+            # 战斗结束判定
+            if last_battle_time and time.time() - last_battle_time > 15:
                 self.log_info("战斗完成")
                 return True
 
-            battle_done = AutoCombatLogic(self).run(
-                start_sleep=start_sleep,
-                no_battle=no_battle
-            )
+            # 检测战斗
+            battle_detected = AutoCombatLogic(self).run(start_sleep=sleep_time, no_battle=no_battle)
 
-            if not battle_done:
-                self.sleep(0.1)
+            if battle_detected:
+                last_battle_time = time.time()
+                sleep_time = 0.1
             else:
-                end_time = time.time()
+                self.sleep(0.1)
 
 
 def has_rectangles(frame):
