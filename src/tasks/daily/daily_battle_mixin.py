@@ -84,6 +84,9 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
         if not result:
             self.log_info("没有找到激发按钮")
             return False
+        else:
+            self.sleep(1)
+            result = self.wait_ocr(match=re.compile("激发"), box=self.box.bottom_right, time_out=5)
         self.click_with_alt(result)
         return self.battle_recycle(left_ticket, category_name, "挑战", no_battle=no_battle, challenge_check=True)
 
@@ -111,7 +114,7 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
             left_ticket = self.get_claim(stages_cost[category_name], left_ticket)
             self.sleep(2)
             if left_ticket <= 0:
-                self.wait_click_ocr(match=re.compile("离开"), box=self.box.bottom_right, log=True, after_sleep=2)
+                self.wait_click_ocr(match=re.compile("离开"), box=self.box.bottom_right, log=True, recheck_time=1, after_sleep=2)
                 break
         return True
 

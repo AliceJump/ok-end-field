@@ -27,7 +27,8 @@ class AutoCombatLogic:
 
             if task.debug:
                 task.screenshot("enter_combat")
-
+            task.active_and_send_mouse_delta(activate=True, only_activate=True)
+            task.sleep(0.1)
             task.click(key="middle")
 
             pyautogui.mouseDown()
