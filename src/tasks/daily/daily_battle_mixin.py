@@ -22,23 +22,29 @@ class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
         super().__init__(*args, **kwargs)
         self.gather_near_transfer_point_dict = dict()
         self.stages_list = stages_list
+        # 下列代码在 AutoCombatTask.py 中有部分重复。如有更新，请两边一起修改。
+        # 不要试图归并，否则会影响『日常任务』中的选项顺序。
         self.default_config.update({
             "刷体力": True,
             "体力本": "干员经验",
+            "仅站桩": False,
+            **{key: "" for key in gather_list},
+            #
             "技能释放": "123",
             "启动技能点数": 2,
             "后台结束战斗通知": True,
             "无数字操作间隔": 6,
             "进入战斗后的初始等待时间": 3,
-            "仅站桩": False,
-            **{key: "" for key in gather_list}
         })
         self.config_description.update({
-            "技能释放": "满技能时, 开始释放技能, 如123, 建议只放3个技能",
-            "启动技能点数": "当技能点达到该数值时，开始执行技能序列, 1-3",
-            "无数字操作间隔": "战斗中周期触发锁敌+向前闪避的最小间隔(秒，最少6秒)",
-            "仅站桩": "是指有战斗设施的情况下不进行战斗，从而有助于提高成功领取奖励的概率\n请提前选择好点位要刷的词缀再启动此任务！！！",
-            **{key: "参考自动送货的滑索教程进行填写，大部分建议进行滑索填写" for key in gather_list}
+            "刷体力": "是否消耗所有「理智」刷取培养材料。",
+            "体力本": "刷取哪个副本。所选副本必须领完所有等级的首通奖励。",
+            "仅站桩": "若启用，则开始挑战后角色原地不动（不输出）。通常用在建好防御塔的「重度能量淤积点」，可以避免角色离开副本区域。",
+            **{key: "需要设好「预刻写属性」。默认留空表示直线前往，更多用法参见 ./docs/体力本.md > 能量淤积点 。" for key in gather_list},
+            #
+            "技能释放": "「战技」释放角色顺序，比如123。建议只放3个技能。",
+            "启动技能点数": "当「技力条」达到该数值时，开始执行技能序列。取值范围1-3。",
+            "无数字操作间隔": "战斗中周期触发锁敌+向前闪避的最小间隔秒数。取值不小于6。",
         })
         self.config_type["体力本"] = {"type": "drop_down", "options": self.stages_list}
 

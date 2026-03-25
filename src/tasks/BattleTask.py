@@ -9,7 +9,7 @@ class BattleTask(DailyBattleMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "刷体力"
-        self.description = "刷体力任务"
+        self.description = "使用说明参见选项，更多用法参见 ./docs/日常任务.md"
         self.icon = FluentIcon.BRIGHTNESS
 
     def run(self):
