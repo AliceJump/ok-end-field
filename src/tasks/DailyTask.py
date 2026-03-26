@@ -56,8 +56,8 @@ class DailyTask(
                 ("⭐买信用商店", self.credit_shop),
                 ("⭐买卖货", self.buy_sell),
                 ("⭐刷体力", self.battle),
-                ("⭐日常奖励", self.claim_daily_rewards),
                 ("⭐周常奖励", self.claim_weekly_rewards),
+                ("⭐日常奖励", self.claim_daily_rewards),
             ]
             all_fail_tasks = []
             if self.debug:

@@ -22,8 +22,8 @@ class DailyRoutineMixin(LiaisonMixin):
             "尝试仅收培育室": True,
             "⭐收集线索": True,
             "⭐制造舱": True,
-            "⭐日常奖励": True,
             "⭐周常奖励": True,
+            "⭐日常奖励": True,
         })
         self.config_description.update({
             "⭐据点兑换": "是否在「地区建设/据点管理」中通过交易获得调度券。",
@@ -35,8 +35,8 @@ class DailyRoutineMixin(LiaisonMixin):
             "尝试仅收培育室": "若选项开启，则优先尝试仅助力好友「帝江号」上的「培养仓」。如果不能，至少助力一次其它舱室。",
             "⭐收集线索": "是否前往「帝江号/会客室」收集全部线索。若集齐线索，则开启情报交流。",
             "⭐制造舱": "是否前往「帝江号/制造仓」收取培养材料。收取后会补足待制造数量。",
-            "⭐日常奖励": "是否领取「行动手册/日常」中的奖励。",
             "⭐周常奖励": "是否领取「活动中心/每周事物」中的奖励。",
+            "⭐日常奖励": "是否领取「行动手册/日常」中的奖励。",
         })
        
     def wait_friend_list(self, end_icon_name="friend_chat_icon"):
@@ -565,6 +565,7 @@ class DailyRoutineMixin(LiaisonMixin):
         if not self._click_ocr_with_info("一键领取", self.box.bottom_right):
             return False
 
+        self.wait_pop_up(after_sleep=2)
         self.log_info(f"每周事务领取完成")
         return True
 
