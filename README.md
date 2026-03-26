@@ -76,7 +76,7 @@ An image-recognition-based automation tool for End Field, with background mode s
 ### [日常任务自动化](docs/日常任务.md)
 - [送礼、信赖提升、干员联络](docs/日常任务.md#送礼)
 - [据点兑换](docs/日常任务.md#据点兑换)、[信用收集](docs/日常任务.md#收信用)、[委托转交](docs/日常任务.md#转交运送委托)、[领取委托奖励](docs/日常任务.md#转交委托奖励领取)
-- [装备制造](docs/日常任务.md#造装备)、[线索收集](docs/日常任务.md#收集线索)、[日常奖励一键领取](docs/日常任务.md#日常奖励)
+- [装备制造](docs/日常任务.md#造装备)、[线索收集](docs/日常任务.md#收集线索)、[日常和通行证奖励一键领取](docs/日常任务.md#日常奖励)、[周常奖励一键领取](docs/日常任务.md#周常奖励)
 
 ### [自动战斗与资源消耗](docs/体力本.md)
 - 自动进入关卡、智能战斗、自动领奖

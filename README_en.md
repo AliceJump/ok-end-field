@@ -83,7 +83,7 @@ all potential risks.**
 ### One-time tasks (manual click to run)
 
 - Daily Task (gift giving, outpost exchange, delivery handover, delivery reward claim, weapon crafting, credit
-  collection, clue collection, market trading, daily rewards, etc.)
+  collection, clue collection, market trading, daily rewards, weekly rewards, protocol pass reward, etc.)
 - Delivery Commission Pickup (filter by ticket type + reward range, smart scrolling, retry mechanism)
 - Auto Delivery (Wuling 7.31w commission, zipline number recognition navigation)
 - Warehouse Transfer (cross-warehouse batch transfer, min reserve quantity support)
