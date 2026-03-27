@@ -607,7 +607,7 @@ class DailyRoutineMixin(LiaisonMixin):
 
         self.log_info("日常奖励领取完成")
 
-        # 通行证/通行证奖励
+        # 通行证
 
         if not self.wait_click_ocr(
             match=re.compile("前往"),
@@ -618,18 +618,26 @@ class DailyRoutineMixin(LiaisonMixin):
             self.log_info("未找到通行证奖励入口，任务失败")
             return False
 
+        # 通行证任务
         if self.wait_click_ocr(
             match=re.compile("通行证任务"),
             box=self.box.top,
             time_out=5,
             after_sleep=2,
         ):
-            self.wait_click_ocr(
-                match=re.compile("键领取"),  # 一键领取
-                box=self.box.bottom,
-                time_out=5,
-                after_sleep=2,
+            mission_boxes=self.ocr( 
+                x=0.12, y=0.33,
+                to_x=0.31, to_y=0.80,
+                match=re.compile("任务$")
             )
+            for box in mission_boxes:
+                self.click_box(box=box, after_sleep=2)
+                self.wait_click_ocr(
+                    match=re.compile("键领取"),  # 一键领取
+                    box=self.box.bottom,
+                    time_out=5,
+                    after_sleep=2,
+                )
             self.wait_click_ocr(
                 match=re.compile("通行证奖励"),
                 box=self.box.top,
@@ -637,12 +645,20 @@ class DailyRoutineMixin(LiaisonMixin):
                 after_sleep=2,
             )
 
+         # 通行证奖励
         self.wait_click_ocr(
             match=re.compile("领取"),  # 一键领取
             box=self.box.bottom,
             time_out=5,
             after_sleep=2,
         )
+        self.send_key("esc", after_sleep=2)
+        if len(self.ocr(match=re.compile("武器补给"), box=self.box.top_right)) > 0:
+            # 暂不领取武器补给箱
+            self.send_key("esc", after_sleep=2)
+            self.wait_click_ocr(match=re.compile("取消"), time_out=5, after_sleep=2)
+            if len(self.ocr(match=re.compile("是否取消"), box=self.box.center)) > 0:
+                self.wait_click_ocr(match=re.compile("确定"), box=self.box.center, time_out=5, after_sleep=2)
 
         return True
 
