@@ -1,3 +1,4 @@
+import datetime
 from qfluentwidgets import FluentIcon
 
 from src.data.world_map import areas_list, stages_list, stages_dict
@@ -66,6 +67,7 @@ class DailyTask(
                     failed_tasks = []
                     for key, func in tasks:
                         if not self.execute_task(key, func):
+                            self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_FailTask_{key}')
                             failed_tasks.append(key)
                     if failed_tasks:
                         all_fail_tasks.append((repeat_idx + 1, failed_tasks))
@@ -86,6 +88,7 @@ class DailyTask(
                 else:
                     self.log_info("日常完成!", notify=True)
         except Exception as e:
+            self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_Exception')
             # 除 TaskDisabledException 外的异常才杀死进程
             if not isinstance(e, TaskDisabledException):
                 if self.config.get("发生异常时终止游戏", False):
