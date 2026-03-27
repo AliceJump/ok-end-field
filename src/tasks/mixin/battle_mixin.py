@@ -305,8 +305,7 @@ class BattleMixin(BaseEfTask):
         执行普通攻击（平A）。
         """
 
-        attack_interval = self.config.get("平A间隔", 0.12)
-        attack_interval = max(0.03, min(float(attack_interval), 0.5))
+        attack_interval = 0.12
 
         if time.time() - getattr(self, 'last_op_time', 0) > attack_interval:
             self.click(move=False, key='left', down_time=0.005)

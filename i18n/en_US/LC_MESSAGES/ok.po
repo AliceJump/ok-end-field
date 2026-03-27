@@ -851,12 +851,6 @@ msgstr ""
 msgid "干员进阶"
 msgstr ""
 
-msgid "平A点击间隔(秒), 越小越快, 建议 0.08~0.15"
-msgstr ""
-
-msgid "平A间隔"
-msgstr ""
-
 msgid "弧光"
 msgstr ""
 

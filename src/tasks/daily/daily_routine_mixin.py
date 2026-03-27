@@ -36,7 +36,7 @@ class DailyRoutineMixin(LiaisonMixin):
             "⭐收集线索": "是否前往「帝江号/会客室」收集全部线索。若集齐线索，则开启情报交流。",
             "⭐制造舱": "是否前往「帝江号/制造仓」收取培养材料。收取后会补足待制造数量。",
             "⭐周常奖励": "是否领取「活动中心/每周事物」中的奖励。",
-            "⭐日常奖励": "是否领取「行动手册/日常」中的奖励。",
+            "⭐日常奖励": "是否领取「行动手册/日常」和「通行证」中的奖励。",
         })
        
     def wait_friend_list(self, end_icon_name="friend_chat_icon"):
@@ -573,6 +573,8 @@ class DailyRoutineMixin(LiaisonMixin):
         self.info_set("current_task", "claim_daily_rewards")
         self.log_info("开始领取日常奖励任务")
 
+        # 行动手册/日常
+
         self.sleep(2)
         self.press_key("f8", after_sleep=2)
         self.log_info("按下 F8 打开日常奖励界面")
@@ -604,6 +606,60 @@ class DailyRoutineMixin(LiaisonMixin):
             return True
 
         self.log_info("日常奖励领取完成")
+
+        # 通行证
+
+        if not self.wait_click_ocr(
+            match=re.compile("前往"),
+            box=self.box.bottom_right,
+            time_out=5,
+            after_sleep=2,
+        ):
+            self.log_info("未找到通行证奖励入口，任务失败")
+            return False
+
+        # 通行证任务
+        if self.wait_click_ocr(
+            match=re.compile("通行证任务"),
+            box=self.box.top,
+            time_out=5,
+            after_sleep=2,
+        ):
+            mission_boxes=self.ocr( 
+                x=0.12, y=0.33,
+                to_x=0.31, to_y=0.80,
+                match=re.compile("任务$")
+            )
+            for box in mission_boxes:
+                self.click_box(box=box, after_sleep=2)
+                self.wait_click_ocr(
+                    match=re.compile("键领取"),  # 一键领取
+                    box=self.box.bottom,
+                    time_out=5,
+                    after_sleep=2,
+                )
+            self.wait_click_ocr(
+                match=re.compile("通行证奖励"),
+                box=self.box.top,
+                time_out=5,
+                after_sleep=2,
+            )
+
+         # 通行证奖励
+        self.wait_click_ocr(
+            match=re.compile("领取"),  # 一键领取
+            box=self.box.bottom,
+            time_out=5,
+            after_sleep=2,
+        )
+        self.send_key("esc", after_sleep=2)
+        if len(self.ocr(match=re.compile("武器补给"), box=self.box.top_right)) > 0:
+            # 暂不领取武器补给箱
+            self.send_key("esc", after_sleep=2)
+            self.wait_click_ocr(match=re.compile("取消"), time_out=5, after_sleep=2)
+            if len(self.ocr(match=re.compile("是否取消"), box=self.box.center)) > 0:
+                self.wait_click_ocr(match=re.compile("确定"), box=self.box.center, time_out=5, after_sleep=2)
+
         return True
 
     def collect_clue(self):

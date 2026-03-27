@@ -1,3 +1,4 @@
+import datetime
 from qfluentwidgets import FluentIcon
 
 from src.data.world_map import areas_list, stages_list, stages_dict
@@ -23,7 +24,7 @@ class DailyTask(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "日常任务"
-        self.description = "一键收菜\n反复按esc请前往设置调整主界面单次动作后延迟，建议1.5秒以上"
+        self.description = "子任务开关用⭐标出，自上而下顺序执行，最后执行『日常奖励』。\n如果出现反复按ESC的情形，请调高『设置/主界面单次动作后延迟』（建议1.5以上）。"
         self.icon = FluentIcon.SYNC
         self.support_schedule_task = True
         self.stages_list = stages_list
@@ -66,6 +67,7 @@ class DailyTask(
                     failed_tasks = []
                     for key, func in tasks:
                         if not self.execute_task(key, func):
+                            self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_FailTask_{key}')
                             failed_tasks.append(key)
                     if failed_tasks:
                         all_fail_tasks.append((repeat_idx + 1, failed_tasks))
@@ -86,6 +88,7 @@ class DailyTask(
                 else:
                     self.log_info("日常完成!", notify=True)
         except Exception as e:
+            self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_Exception')
             # 除 TaskDisabledException 外的异常才杀死进程
             if not isinstance(e, TaskDisabledException):
                 if self.config.get("发生异常时终止游戏", False):

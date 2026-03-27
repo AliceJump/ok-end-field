@@ -83,7 +83,7 @@ all potential risks.**
 ### One-time tasks (manual click to run)
 
 - Daily Task (gift giving, outpost exchange, delivery handover, delivery reward claim, weapon crafting, credit
-  collection, clue collection, market trading, daily rewards, etc.)
+  collection, clue collection, market trading, daily rewards, weekly rewards, protocol pass reward, etc.)
 - Delivery Commission Pickup (filter by ticket type + reward range, smart scrolling, retry mechanism)
 - Auto Delivery (Wuling 7.31w commission, zipline number recognition navigation)
 - Warehouse Transfer (cross-warehouse batch transfer, min reserve quantity support)
@@ -161,7 +161,7 @@ You can auto-start tasks via CLI:
 ok-ef.exe -t 1 -e
 ```
 
-* `-t` or `--task`: Automatically run the Nth task. `1` is the first task in the list.
+* `-t` or `--task`: Automatically run the Nth task. `1` is the first task in the list（file [./src/config.py](./src/config.py) list `onetime_tasks`）as daily task.
 * `-e` or `--exit`: Exit automatically after the task completes.
 
 ### Development debug & tests
@@ -188,8 +188,9 @@ welcome to build their own automation projects with ok-script.
 
 ## 🔗 Projects using ok-script
 
-* End Field [https://github.com/ok-oldking/ok-end-field](https://github.com/ok-oldking/ok-end-field)
-* Arknights: End Field [https://github.com/ok-oldking/ok-ef](https://github.com/ok-oldking/ok-end-field)
+* End Field [https://github.com/AliceJump/ok-end-field](https://github.com/AliceJump/ok-end-field)
+* Wuthering Waves [https://github.com/ok-oldking/ok-wuthering-waves](https://github.com/ok-oldking/ok-wuthering-waves)
+* Wuthering Waves (Daily Task Enhanced Version) [https://github.com/zzc-tongji/ok-ww-enhanced](https://github.com/zzc-tongji/ok-ww-enhanced)
 * Genshin Impact (maintenance stopped, background story automation
   available) [https://github.com/ok-oldking/ok-genshin-impact](https://github.com/ok-oldking/ok-genshin-impact)
 * Girls’ Frontline 2 [https://github.com/ok-oldking/ok-gf2](https://github.com/ok-oldking/ok-gf2)
