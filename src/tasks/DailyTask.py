@@ -47,6 +47,7 @@ class DailyTask(
                 self.ensure_main()
             tasks = [  # 确保在主界面
                 ("⭐送礼", self.execute_gift_task),
+                ("⭐收邮件", self.claim_mail),
                 ("⭐据点兑换", self.exchange_outpost_goods),
                 ("⭐转交运送委托", self.delivery_send_others),
                 ("⭐转交委托奖励领取", self.claim_delivery_rewards),

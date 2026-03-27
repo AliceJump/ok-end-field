@@ -13,6 +13,7 @@ class DailyRoutineMixin(LiaisonMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_config.update({
+            "⭐收邮件": True,
             "⭐据点兑换": True,
             "交易货品优先序列": "",
             "⭐转交运送委托": True,
@@ -26,6 +27,7 @@ class DailyRoutineMixin(LiaisonMixin):
             "⭐日常奖励": True,
         })
         self.config_description.update({
+            "⭐收邮件": "是否前往「邮箱」领取邮件。",
             "⭐据点兑换": "是否在「地区建设/据点管理」中通过交易获得调度券。",
             "交易货品优先序列": "默认留空，交易货品顺序随机。更多用法参见 ./docs/日常任务.md > 优先货品交易序列 。",
             "⭐转交运送委托": "是否在「地区建设/仓储结点」中转交全部运送委托。",
@@ -166,6 +168,20 @@ class DailyRoutineMixin(LiaisonMixin):
                 self.back(after_sleep=2)
             is_first_time = False
             count += 1
+
+    def claim_mail(self):
+        self.info_set("current_task", "claim_delivery_rewards")
+        self.log_info("开始收邮件")
+
+        self.send_key("k", after_sleep=2)
+        self.wait_click_ocr(
+            x=0, y=0.88,
+            to_x=0.25, to_y=0.95,
+            match=re.compile("收取"),  # 全部收取
+            time_out=5,
+            after_sleep=2,
+        )
+        return True
 
     def claim_delivery_rewards(self):
         self.info_set("current_task", "claim_delivery_rewards")
