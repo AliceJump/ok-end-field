@@ -15,7 +15,6 @@ logger = Logger.get_logger(__name__)
 class AutoCombatTask(BattleMixin, TriggerTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.default_config = {'_enabled': False}
         self.name = "自动战斗"
         self.description = "自动检测战斗开始和结束，使用说明参见选项"
         self.icon = FluentIcon.ACCEPT
@@ -26,7 +25,9 @@ class AutoCombatTask(BattleMixin, TriggerTask):
             "启动技能点数": 2,
             "后台结束战斗通知": True,
             "无数字操作间隔": 6,
-            "进入战斗后的初始等待时间": 2,
+            "进入战斗后的初始等待时间": 3,
+            "启用排轴": False,
+            "排轴序列": "ult_2,1,e,ult_3,sleep_8",
         })
         self.config_description.update({
             "技能释放": "「战技」释放角色顺序，比如123。建议只放3个技能。",

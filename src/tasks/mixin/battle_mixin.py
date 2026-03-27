@@ -49,46 +49,79 @@ class BattleMixin(BaseEfTask):
 
         self.last_no_number_action_time = 0
         self.last_skill_time = 0
-        self.exit_check_count = None
+        self.exit_check_count = 0
         self.last_op_time = 0
-
+        self.config_description.update({
+            "技能释放": "「战技」释放角色顺序，比如123。建议只放3个技能。",
+            "启动技能点数": "当「技力条」达到该数值时，开始执行技能序列。取值范围1-3。",
+            "无数字操作间隔": "战斗中周期触发锁敌+向前闪避的最小间隔秒数。取值不小于6。",
+            "启用排轴": "是否启用排轴功能。启用后会根据「排轴序列」配置的顺序优先释放对应角色的技能,当排轴失败时回退到非排轴状态",
+            "排轴序列": "仅接受'1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n]'这些值的逗号分隔字符串，代表技能释放优先级顺序\n例如'ult_2,1,e,ult_1'表示优先尝试干员2的终结技，再干员1的战技，再尝试连携，再干员1的终极技\n启用排轴功能后，系统会按照该配置的顺序尝试释放技能，一旦成功释放一个技能，就会等待下一个技能，而不是继续尝试后续技能\n这可以用于更精细地控制技能释放顺序，例如优先释放某个干员的技能来配合特定的战术需求。",
+        })
         # 用于识别 LV 或等级文字
         self.lv_regex = re.compile(r"(?i)lv|\d{2}")
 
     def _parse_skill_sequence(self, raw_config: str) -> list[str]:
         """
-        解析技能释放顺序。
+        解析技能释放顺序，兼容两种格式：
 
-        只保留有效技能键：
-            '1','2','3','4'
+        1️⃣ 老格式（纯数字）：
+            "123" -> ["1","2","3"]
 
-        Args:
-            raw_config (str):
-                配置文件中的技能序列
-
-        Returns:
-            list[str]:
-                技能序列
-
-        示例:
-            "134" -> ["1","3","4"]
+        2️⃣ 新格式（逗号分隔）：
+            "ult_1,1,2,e,sleep_2,3"
         """
 
         if not raw_config:
-            return []
+            return ["1", "2", "3"]
 
-        trimmed_config = raw_config.strip()
-        sequence = []
+        trimmed = raw_config.strip()
 
-        valid_skills = {'1', '2', '3', '4'}
+        # =========================
+        # ✅ 新格式：逗号分隔
+        # =========================
+        if "," in trimmed:
+            sequence = []
+            tokens = [t.strip() for t in trimmed.split(",") if t.strip()]
 
-        for char in trimmed_config:
-            if char in valid_skills:
-                sequence.append(char)
+            valid_skills = {"1", "2", "3", "4", "e"}
 
-        return sequence if sequence else ['1', '2', '3']
+            for token in tokens:
+                if token in valid_skills:
+                    sequence.append(token)
 
-    def use_ult(self):
+                elif token.startswith("ult_"):
+                    if token[4:] in {"1", "2", "3", "4"}:
+                        sequence.append(token)
+                    else:
+                        self.task.log_info(f"无效 ult 技能: {token}")
+
+                elif token.startswith("sleep_"):
+                    try:
+                        float(token[6:])
+                        sequence.append(token)
+                    except ValueError:
+                        self.task.log_info(f"无效 sleep 参数: {token}")
+
+                else:
+                    self.task.log_info(f"忽略无效技能: {token}")
+
+            return sequence if sequence else ["1", "2", "3"]
+
+        # =========================
+        # ✅ 老格式：纯数字逐字符
+        # =========================
+        else:
+            sequence = []
+            valid_skills = {"1", "2", "3", "4"}
+
+            for char in trimmed:
+                if char in valid_skills:
+                    sequence.append(char)
+
+            return sequence if sequence else ["1", "2", "3"]
+
+    def use_ult(self, ult_sequence: str = None):
         """
         尝试释放终极技。
 
@@ -100,8 +133,10 @@ class BattleMixin(BaseEfTask):
                 True  : 成功释放
                 False : 未找到可释放技能
         """
-
-        ults = ['1', '2', '3', '4']
+        if ult_sequence is None:
+            ults = ['1', '2', '3', '4']
+        else:
+            ults = [ult_sequence]
 
         for ult in ults:
             if self.find_one("ult_" + ult):
@@ -113,7 +148,7 @@ class BattleMixin(BaseEfTask):
                 self.send_key_up(ult)
 
                 # 等待重新进入战斗
-                self.wait_in_combat(time_out=8)
+                self.sleep(4)
 
                 self.last_op_time = time.time()
 
@@ -186,22 +221,6 @@ class BattleMixin(BaseEfTask):
         """
         单次战斗结束判定。
         """
-
-        skill_count = self.get_skill_bar_count()
-
-        # 技能条存在说明仍在战斗
-        if skill_count >= 0:
-
-            if getattr(self, '_last_exit_fail_skill_count', None) != skill_count:
-                self.log_info(
-                    f"退出检查失败: 技能条仍有效 (count={skill_count})"
-                )
-                self._last_exit_fail_skill_count = skill_count
-
-            return False
-
-        self._last_exit_fail_skill_count = None
-
         # UI状态检测
         has_lv = self.ocr_lv()
         in_team = self.in_team()
@@ -213,19 +232,10 @@ class BattleMixin(BaseEfTask):
             )
             return False
 
-        # 检查是否还有伤害数字
-        has_center_number = self._check_center_area_has_number()
-
-        if has_center_number:
-            self.log_info("退出检查失败: 中间区域仍有伤害数字")
-            return False
-
         self.log_info(
             f"退出检查通过:"
-            f" skill_count={skill_count},"
             f" has_lv={has_lv},"
             f" in_team={in_team},"
-            f" center_number={has_center_number}"
         )
 
         return True
@@ -312,7 +322,7 @@ class BattleMixin(BaseEfTask):
 
             self.last_op_time = time.time()
 
-    def handle_no_damage_number_actions(self):
+    def approach_enemy(self):
         """战斗中周期触发操作（无伤害数字）"""
         interval = self.config.get("无数字操作间隔", 6)
         interval = max(6.0, min(float(interval), 30.0))
@@ -407,7 +417,6 @@ class BattleMixin(BaseEfTask):
             else:
                 consecutive_matches = 0
         return False
-
 
     def auto_battle(self, no_battle: bool = False):
         """

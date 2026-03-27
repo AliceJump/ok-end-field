@@ -35,16 +35,15 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
             "后台结束战斗通知": True,
             "无数字操作间隔": 6,
             "进入战斗后的初始等待时间": 3,
+            "启用排轴": False,
+            "排轴序列": "ult_2,1,e,ult_3,sleep_8",
         })
         self.config_description.update({
             "⭐刷体力": "是否消耗所有「理智」刷取培养材料。",
             "体力本": "刷取哪个副本。所选副本必须领完所有等级的首通奖励。",
             "仅站桩": "若启用，则开始挑战后角色原地不动（不输出），仅对「重度能量淤积点」生效。可以用于建好防御塔情形，避免角色离开副本区域。",
-            **{key: "需要设好「预刻写属性」。默认留空表示直线前往，更多用法参见 ./docs/体力本.md > 能量淤积点 。" for key in gather_list},
-            #
-            "技能释放": "「战技」释放角色顺序，比如123。建议只放3个技能。",
-            "启动技能点数": "当「技力条」达到该数值时，开始执行技能序列。取值范围1-3。",
-            "无数字操作间隔": "战斗中周期触发锁敌+向前闪避的最小间隔秒数。取值不小于6。",
+            **{key: "需要设好「预刻写属性」。默认留空表示直线前往，更多用法参见 ./docs/体力本.md > 能量淤积点 。" for key in
+               gather_list},
         })
         self.config_type["体力本"] = {"type": "drop_down", "options": self.stages_list}
 
@@ -121,7 +120,8 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
             left_ticket = self.get_claim(stages_cost[category_name], left_ticket)
             self.sleep(2)
             if left_ticket <= 0:
-                self.wait_click_ocr(match=re.compile("离开"), box=self.box.bottom_right, log=True, recheck_time=1, after_sleep=2)
+                self.wait_click_ocr(match=re.compile("离开"), box=self.box.bottom_right, log=True, recheck_time=1,
+                                    after_sleep=2)
                 break
         return True
 
@@ -154,7 +154,8 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 location = self.find_feature(feature_name=higher_order_feature_dict[stage_name])
             else:
                 # 普通关卡
-                location = self.wait_ocr(match=re.compile(stage_name if stage_name != '源石研究园' else '源石研究'), box=self.box.left, log=True, time_out=5)
+                location = self.wait_ocr(match=re.compile(stage_name if stage_name != '源石研究园' else '源石研究'),
+                                         box=self.box.left, log=True, time_out=5)
                 # 「重度能量淤积点·源石研究园」会被居中指针挡住 “园”
 
             if location:
@@ -166,7 +167,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 )
                 if enter_bool:
                     return True
-            self.scroll_relative(650/1920, 0.5, count=-2)
+            self.scroll_relative(650 / 1920, 0.5, count=-2)
             self.wait_ui_stable(refresh_interval=0.5)
         return False
         # 如果找到位置，则点击按钮
