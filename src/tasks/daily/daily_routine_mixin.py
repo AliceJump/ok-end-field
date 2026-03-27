@@ -173,8 +173,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
     def claim_mail(self):
         self.info_set("current_task", "claim_delivery_rewards")
         self.log_info("开始收邮件")
-
-        self.send_key("k", after_sleep=2)
+        self.press_key("k", after_sleep=2)
         self.wait_click_ocr(
             x=0, y=0.88,
             to_x=0.25, to_y=0.95,
