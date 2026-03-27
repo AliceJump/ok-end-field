@@ -601,6 +601,7 @@ class DailyRoutineMixin(LiaisonMixin):
         ):
             self.log_info("发现可领取的额外奖励，点击领取")
             self.click(result, after_sleep=2)
+            self.wait_pop_up(after_sleep=2)
             self.wait_pop_up()
             self.log_info("额外奖励领取完成")
             return True

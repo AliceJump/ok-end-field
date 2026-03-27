@@ -640,7 +640,7 @@ class BaseEfTask(BaseTask):
             return False
         return False
 
-    def wait_pop_up(self, after_sleep=0):
+    def wait_pop_up(self,time_out=15, after_sleep=0):
         """等待奖励弹窗出现并点击"OK"按钮
         
         Args:
@@ -650,12 +650,17 @@ class BaseEfTask(BaseTask):
             bool: 成功点击返回True，超时返回False
         """
         count = 0
+        start_time=time.time()
         while True:
+            if time.time()-start_time>time_out:
+                return False
             if count > 30:
                 return False
             result = self.find_one(
                 feature_name="reward_ok", box=self.box.bottom, threshold=0.8
             )
+            if not result:
+                result=self.wait_ocr(match=re.compile("空白"),time_out=1,box=self.box.bottom)
             if result:
                 self.click(result, after_sleep=after_sleep)
                 return True
