@@ -10,9 +10,10 @@ from src.image.hsv_config import HSVRange as hR
 from src.tasks.BaseEfTask import back_window
 from src.tasks.mixin.common import GoodsInfo
 from src.tasks.mixin.navigation_mixin import NavigationMixin
+from src.tasks.mixin.common import Common
 
 
-class DailyTradeMixin(NavigationMixin):
+class DailyTradeMixin(NavigationMixin, Common):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -274,10 +275,7 @@ class DailyTradeMixin(NavigationMixin):
                             return False
                         self.back(after_sleep=0.5)
                     self.click(buy_good.name_box, after_sleep=2)
-                    plus_button = self.find_feature(fL.market_plus_button, box=puls_minus_box)
-                    self.find_feature(fL.market_minus_button, box=puls_minus_box)
-                    if plus_button:
-                        self.click(plus_button, down_time=12, after_sleep=0)
+                    if self.plus_max():
                         self.wait_click_ocr(
                             match=re.compile("购买"),
                             box=self.box.bottom_right,
@@ -346,10 +344,7 @@ class DailyTradeMixin(NavigationMixin):
                         self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]), after_sleep=2)):
                     self.log_info("未找到卖出货物，无法出售")
                     continue
-                plus_button = self.find_feature(fL.market_plus_button, box=puls_minus_box)
-                self.find_feature(fL.market_minus_button, box=puls_minus_box)
-                if plus_button:
-                    self.click(plus_button, down_time=12, after_sleep=0)
+                if self.plus_max():
                     self.wait_click_ocr(
                         match=re.compile("出售"),
                         box=self.box.bottom_right,

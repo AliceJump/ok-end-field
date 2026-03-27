@@ -18,7 +18,7 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
-
+from src.data.FeatureList import FeatureList as fL
 from ok import Box
 
 from src.tasks.BaseEfTask import BaseEfTask
@@ -155,3 +155,16 @@ class Common(BaseEfTask):
         else:
             # OCR失败时默认返回最大值
             return 200
+    def plus_max(self):
+        for plus_button in [fL.plus_button, fL.market_plus_button]:
+            plus_button = self.find_one(feature_name=plus_button, box=self.box.bottom_right, threshold=0.8)
+            if plus_button:
+                break
+
+        if not plus_button:
+            return False
+        plus_click_place = plus_button
+        plus_click_place.x -= int((1849 - 1741) / 1920 * self.width)
+        self.log_info("找到加号按钮，执行点击")
+        self.click(plus_click_place, after_sleep=1)
+        return True

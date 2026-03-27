@@ -17,7 +17,7 @@ from src.data.world_map import stages_dict, stages_list
 gather_list = stages_dict["能量淤积点"]
 
 
-class DailyBattleMixin(Common, MapMixin, ZipLineMixin, BattleMixin):
+class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.gather_near_transfer_point_dict = dict()

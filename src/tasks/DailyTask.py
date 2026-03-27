@@ -2,13 +2,11 @@ import datetime
 from qfluentwidgets import FluentIcon
 
 from src.data.world_map import areas_list, stages_list, stages_dict
-from src.tasks.BaseEfTask import BaseEfTask
 from src.tasks.daily.daily_battle_mixin import DailyBattleMixin
 from src.tasks.daily.daily_liaison_mixin import DailyLiaisonMixin
 from src.tasks.daily.daily_routine_mixin import DailyRoutineMixin
 from src.tasks.daily.daily_shop_mixin import DailyShopMixin
 from src.tasks.daily.daily_trade_mixin import DailyTradeMixin
-from src.tasks.mixin.common import Common
 from ok import TaskDisabledException
 
 
