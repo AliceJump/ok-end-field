@@ -181,6 +181,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             time_out=5,
             after_sleep=2,
         )
+        self.press_key("esc", after_sleep=2)
         return True
 
     def claim_delivery_rewards(self):
