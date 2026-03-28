@@ -18,7 +18,10 @@ class DailyTradeMixin(NavigationMixin, Common):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         #
-        self.default_config.update({"⭐买卖货": True})
+        self.default_config.update({
+            "⭐买卖货": True,
+            "只买不卖": False,
+        })
         buy_sell_dict = dict()
         buy_sell_desc_dict = dict()
         for area in areas_list:
@@ -32,6 +35,7 @@ class DailyTradeMixin(NavigationMixin, Common):
         self.default_config.update(buy_sell_dict)
         self.config_description.update({
             "⭐买卖货": "是否在「弹性需求物资」与好友交易赚取调度券。自动选择利润最高的方案，然后用价格上下限判定是否交易。（除非可购买数量即将溢出，这种情况下必定交易。）",
+            "只买不卖": "启用后将只进行购买操作，不进行出售操作。",
             **buy_sell_desc_dict,
         })
 
@@ -49,17 +53,59 @@ class DailyTradeMixin(NavigationMixin, Common):
         test_goods_re = re.compile("货组")
         market_text_y = None
         market_text = self.wait_ocr(match=re.compile("市场"), box=self.box.left)
-        if market_text:
-            market_text_y = market_text[0].y
         if not market_text:
             self.log_info("未识别到市场文字")
             return [], None
+
+        market_text_y = market_text[0].y
         self.next_frame()
-        goods = self.ocr(
-            match=test_goods_re,
-            log=True,
-            box=self.box_of_screen(0, market_text[0].y / self.height, 1, 1),
-        )
+
+        # =========================
+        # ✅ 只买模式：直接OCR扫描
+        # =========================
+        if self.config.get("只买不卖", False):
+            results = self.ocr(
+                match=re.compile(r"\d+"),
+                box=self.box_of_screen(0, market_text_y / self.height, 1, 1),
+                frame_processor=self.make_hsv_isolator(hR.DARK_GRAY_TEXT),
+                log=True,       
+            )
+
+            candidates = []
+            for res in results:
+                match = re.search(r"\d+", res.name)
+                if not match:
+                    continue
+
+                num = int(match.group())
+
+                # 过滤无效价格（按你的规则）
+                if num > 100:
+                    candidates.append(
+                        GoodsInfo(
+                            good_name="",
+                            stock_quantity=0,
+                            good_price=num,
+                            name_box=res,
+                            friend_name_box=None,
+                            friend_price=0,
+                        )
+                    )
+
+            if not candidates:
+                self.log_info("未找到有效价格")
+                return None, market_text_y
+
+            min_item = min(candidates, key=lambda x: x.good_price)
+
+            self.log_info(f"最低价格: {min_item.good_price}")
+
+            return min_item, market_text_y
+
+        # =========================
+        # ✅ 正常模式：逐个点击采集
+        # =========================
+        goods = self.ocr(match=test_goods_re, log=True, box=self.box_of_screen(0, market_text_y / self.height, 1, 1))
 
         sum_good_info = []
         for good in goods:
@@ -79,29 +125,31 @@ class DailyTradeMixin(NavigationMixin, Common):
                     box=self.box_of_screen(1527 / 1920, 324 / 1080, 1600 / 1920, 400 / 1080),
                     log=True,
                 )
-            self.wait_click_ocr(
-                match=re.compile("查看好友价格"),
-                box=self.box.bottom_right,
-                after_sleep=2,
-            )
+
+            self.wait_click_ocr(match=re.compile("查看好友价格"), box=self.box.bottom_right, after_sleep=2)
+
             self.wait_ui_stable(refresh_interval=1)
             self.next_frame()
+
             friend_name_piece = self.ocr(
                 match=re.compile(r"\d+$"),
                 box=self.box_of_screen(800 / 1920, 430 / 1080, 1270 / 1920, 490 / 1080),
                 frame_processor=self.make_hsv_isolator(hR.DARK_GRAY_TEXT),
                 log=True,
             )
+
             if not good_piece:
                 good_piece = []
             if not friend_name_piece:
                 friend_name_piece = []
+
             self.log_info(
                 f"货物名称: {good.name}, "
                 f"存货数量: {stock_quantity}, "
                 f"价格: {[i.name for i in good_piece]}, "
                 f"价格来源人和价格: {[i.name for i in friend_name_piece]}"
             )
+
             sum_good_info.append(
                 {
                     "good": good,
@@ -110,10 +158,10 @@ class DailyTradeMixin(NavigationMixin, Common):
                     "stock_quantity": stock_quantity,
                 }
             )
+
+            # 返回地区建设
             back_to_area_deadline = time.time() + 20
-            while not self.wait_ocr(
-                    match=re.compile("地区建设"), box=self.box.top_left, time_out=1
-            ):
+            while not self.wait_ocr(match=re.compile("地区建设"), box=self.box.top_left, time_out=1):
                 if time.time() > back_to_area_deadline:
                     self.log_info("等待返回 '地区建设' 界面超时，结束当前市场采集")
                     return sum_good_info, market_text_y
@@ -249,9 +297,14 @@ class DailyTradeMixin(NavigationMixin, Common):
             if not (buy_price and sell_price):
                 self.log_info("未找到买入价或卖出价")
                 continue
-            buy_good, sell_goods, can_buy = self.analyze_goods_info(
-                good_infos, buy_price, sell_price
-            )
+            if self.config.get("只买不卖", False):
+                buy_good=good_infos
+                sell_goods=[]
+                can_buy = buy_good and buy_good.good_price < buy_price
+            else:
+                buy_good, sell_goods, can_buy = self.analyze_goods_info(
+                    good_infos, buy_price, sell_price
+                )
             puls_minus_box = self.box_of_screen(0.36, 0.6630, 0.592, 0.8019)
             if buy_good:
                 if not can_buy:

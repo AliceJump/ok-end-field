@@ -613,7 +613,6 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             self.wait_pop_up(after_sleep=2)
             self.wait_pop_up()
             self.log_info("额外奖励领取完成")
-            return True
 
         self.log_info("日常奖励领取完成")
 
