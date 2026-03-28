@@ -30,8 +30,11 @@ Automates parts of End Field via screen recognition and simulated user inputs.
 
 ### [中文说明](README.md) | English Readme
 
-**Demo & Tutorial:
-** [![YouTube](https://img.shields.io/badge/YouTube-%23FF0000.svg?style=for-the-badge&logo=YouTube&logoColor=white)](https://youtu.be/h6P1KWjdnB4)
+---
+
+**Demo & Tutorial:**
+
+[![YouTube](https://img.shields.io/badge/YouTube-%23FF0000.svg?style=for-the-badge&logo=YouTube&logoColor=white)](https://youtu.be/h6P1KWjdnB4)
 
 ---
 
