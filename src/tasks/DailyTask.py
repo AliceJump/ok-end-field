@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 from qfluentwidgets import FluentIcon
 
 from src.data.world_map import areas_list, stages_list, stages_dict
