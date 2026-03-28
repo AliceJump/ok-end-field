@@ -1,13 +1,7 @@
 import re
-import time
 
-from src.data.world_map import areas_list, outpost_dict, goods_dict
-from src.data.world_map_utils import get_area_by_outpost_name, get_goods_by_outpost_name
-from src.image.hsv_config import HSVRange as hR
-from src.tasks.mixin.liaison_mixin import LiaisonMixin
+from src.data.world_map import areas_list
 from src.tasks.mixin.common import Common
-from src.data.FeatureList import FeatureList as fL
-from src.data.characters_utils import get_contact_list_with_feature_list
 
 
 class DailyBuyMixin(Common):    
