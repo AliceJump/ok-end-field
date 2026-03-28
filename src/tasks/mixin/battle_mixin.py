@@ -94,17 +94,17 @@ class BattleMixin(BaseEfTask):
                     if token[4:] in {"1", "2", "3", "4"}:
                         sequence.append(token)
                     else:
-                        self.task.log_info(f"无效 ult 技能: {token}")
+                        self.log_info(f"无效 ult 技能: {token}")
 
                 elif token.startswith("sleep_"):
                     try:
                         float(token[6:])
                         sequence.append(token)
                     except ValueError:
-                        self.task.log_info(f"无效 sleep 参数: {token}")
+                        self.log_info(f"无效 sleep 参数: {token}")
 
                 else:
-                    self.task.log_info(f"忽略无效技能: {token}")
+                    self.log_info(f"忽略无效技能: {token}")
 
             return sequence if sequence else ["1", "2", "3"]
 
