@@ -30,8 +30,11 @@ An image-recognition-based automation tool for End Field, with background mode s
 
 ### [English Readme](README_en.md) | 中文说明
 
-**演示与教程:
-** [![Bilibili](https://img.shields.io/badge/Bilibili-%2300A1D6.svg?style=for-the-badge&logo=bilibili&logoColor=white)](https://www.bilibili.com/video/BV16PPszhEwN/)
+---
+
+**演示与教程:**
+
+[![Bilibili](https://img.shields.io/badge/Bilibili-%2300A1D6.svg?style=for-the-badge&logo=bilibili&logoColor=white)](https://www.bilibili.com/video/BV16PPszhEwN/)
 
 ---
 

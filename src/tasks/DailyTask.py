@@ -7,11 +7,13 @@ from src.tasks.daily.daily_liaison_mixin import DailyLiaisonMixin
 from src.tasks.daily.daily_routine_mixin import DailyRoutineMixin
 from src.tasks.daily.daily_shop_mixin import DailyShopMixin
 from src.tasks.daily.daily_trade_mixin import DailyTradeMixin
+from src.tasks.daily.daily_buy_mixin import DailyBuyMixin
 from ok import TaskDisabledException
 
 
 class DailyTask(
     DailyBattleMixin,   # 刷体力
+    DailyBuyMixin,      # 买物资
     DailyTradeMixin,    # 买卖货
     DailyShopMixin,     # 买信用商店
     DailyRoutineMixin,  # 其它
@@ -47,6 +49,7 @@ class DailyTask(
                 ("⭐送礼", self.execute_gift_task),
                 ("⭐收邮件", self.claim_mail),
                 ("⭐据点兑换", self.exchange_outpost_goods),
+                ("⭐买物资", self.buy_staple_goods),
                 ("⭐转交运送委托", self.delivery_send_others),
                 ("⭐转交委托奖励领取", self.claim_delivery_rewards),
                 ("⭐造装备", self.make_weapon),

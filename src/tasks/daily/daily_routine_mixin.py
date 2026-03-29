@@ -396,10 +396,13 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 break
 
             if len(priority_list) > 0:
-                goods_name = list(map(lambda g: g.name, goods))
                 for p in reversed(priority_list):
-                    if p in goods_name:
-                        goods.insert(0, goods.pop(goods_name.index(p)))
+                    pm = re.compile(p)
+                    goods_name = list(map(lambda g: g.name, goods))
+                    for g in goods_name:
+                        if pm.search(g):
+                            goods.insert(0, goods.pop(goods_name.index(g)))
+                            break
 
             exchange_good = None
             for good in goods:
