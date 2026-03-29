@@ -259,7 +259,7 @@ class DailyTradeMixin(NavigationMixin, Common):
 
     def navigate_to_friend_exchange(self):
         self.log_info("前往物资调度终端")
-        self.press_key("m", after_sleep=2)
+        self.ensure_map()
         if not self.start_tracking_and_align_target(
                 fL.market_dispatch_terminal, fL.market_dispatch_terminal_out
         ):

@@ -22,12 +22,12 @@ class NavigationMixin(BaseEfTask):
             self.log_info(f"未找到{target_feature_in_map}图标")
             return False
         self.log_info(f"找到{target_feature_in_map}图标，点击进入")
-        self.click(result, after_sleep=2)
+        self.click(result)
 
         if result := self.wait_ocr(match=re.compile("追踪"), box=self.box.bottom_right, time_out=5):
             if "追踪" in result[0].name and "取" not in result[0].name and "消" not in result[0].name:
                 self.log_info("点击追踪按钮")
-                self.click(result, after_sleep=2)
+                self.click(result,after_sleep=0.5)
 
         self.press_key("m", after_sleep=2)
         self.log_info("关闭地图界面 (按下 M)")
@@ -57,7 +57,7 @@ class NavigationMixin(BaseEfTask):
         while not self.wait_ocr(
                 match=target_ocr_pattern,
                 box=self.box.bottom_right,
-                time_out=1,
+                time_out=0.5,
         ):
             if time.time() - start_time > time_out:
                 self.log_info("导航超时")

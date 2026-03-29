@@ -648,6 +648,10 @@ class BaseEfTask(BaseTask):
 
         return True
 
+    def ensure_map(self):
+        while not self.wait_ocr(match=re.compile("事务"), time_out=2, box=self.box.top_left):
+            self.press_key("m")
+
     def wait_pop_up(self,time_out=15, after_sleep=0):
         """等待奖励弹窗出现并点击"OK"按钮
         

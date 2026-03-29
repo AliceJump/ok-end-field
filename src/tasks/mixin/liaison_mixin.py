@@ -79,7 +79,7 @@ class LiaisonMixin(NavigationMixin):
         self.log_info("开始传送到帝江号")
 
         # 打开地图
-        self.press_key("m", after_sleep=2)
+        self.ensure_map()
         self.log_info("打开地图界面 (按下 M)")
 
         # 查找帝江号区域
@@ -92,11 +92,6 @@ class LiaisonMixin(NavigationMixin):
         if not target_area:
             self.log_info("未找到帝江号区域，传送失败")
             return False
-        if should_check_out_boat:
-            if target_area[0].x < self.width / 2:
-                self.log_info("已在帝江号区域内，无需传送")
-                self.ensure_main()
-                return True
         self.log_info("找到帝江号区域，点击进入")
         self.click(target_area, after_sleep=2)
 
@@ -112,7 +107,7 @@ class LiaisonMixin(NavigationMixin):
             return False
 
         self.log_info("找到传送点图标，点击传送点")
-        self.click(tp_icon, after_sleep=2)
+        self.click(tp_icon)
 
         # 查找传送按钮
         transfer_btn = self.wait_ocr(
@@ -127,7 +122,7 @@ class LiaisonMixin(NavigationMixin):
             return False
 
         self.log_info("找到传送按钮，点击进行传送")
-        self.click(transfer_btn, after_sleep=2)
+        self.click(transfer_btn)
 
         # 等待传送完成
         self.log_info("等待传送完成，检查舰桥界面")
@@ -172,7 +167,6 @@ class LiaisonMixin(NavigationMixin):
 
         self.log_info("前往中央环厅可能失败，尝试后续操作")
         return True
-
     def navigate_to_operator_liaison_station(self):
         """
         自动导航到干员联络站。
@@ -181,8 +175,7 @@ class LiaisonMixin(NavigationMixin):
             LiaisonResult | bool
         """
         self.log_info("开始前往干员联络站")
-
-        self.press_key("m", after_sleep=2)
+        self.ensure_map()
         self.log_info("打开地图界面")
 
         if not self.start_tracking_and_align_target(
@@ -244,8 +237,8 @@ class LiaisonMixin(NavigationMixin):
 
             self.log_info(f"第 {attempt}/10 次尝试打开信任度界面")
 
-            self.press_key('f', after_sleep=2)
-
+            self.press_key('f')
+            self.wait_ocr(match=re.compile("干员"),box=self.box.top_left, time_out=5)
             result = {}
             found_target = False
 
@@ -269,9 +262,9 @@ class LiaisonMixin(NavigationMixin):
 
             if not found_target:
 
-                self.back(after_sleep=2)
-                self.press_key('f', after_sleep=2)
-
+                self.ensure_main()
+                self.press_key('f')
+                self.wait_ocr(match=re.compile("干员"), box=self.box.top_left, time_out=5)
                 self.log_info(f"未找到联络对象 {target_name}，尝试其他目标")
 
                 other_results = {}
@@ -314,13 +307,14 @@ class LiaisonMixin(NavigationMixin):
 
             self.log_info("找到联络对象")
 
-            self.click(list(result.values())[0], after_sleep=2)
+            self.click(list(result.values())[0], after_sleep=0.5)
 
             if not self.wait_click_ocr(
                     match=re.compile("确认联络"),
                     box=self.box.bottom_right,
                     time_out=5,
                     log=True,
+                    after_sleep=2,
             ):
                 self.log_info("未找到确认联络按钮，任务失败")
                 return False
@@ -411,7 +405,7 @@ class LiaisonMixin(NavigationMixin):
         self.send_key_down("alt")
         self.sleep(0.5)
 
-        self.click_box(chat_box, after_sleep=1)
+        self.click_box(chat_box, after_sleep=0.5)
 
         self.next_frame()
 
@@ -450,7 +444,7 @@ class LiaisonMixin(NavigationMixin):
                 match=[re.compile("收下"), re.compile("赠送")],
                 box=self.box.bottom_right,
                 time_out=1,
-                after_sleep=2,
+                after_sleep=0.5,
             )
 
             if result:
@@ -466,16 +460,15 @@ class LiaisonMixin(NavigationMixin):
                 end_box=self.box.bottom_left
             )
 
-            self.sleep(1)
 
             self.wait_click_ocr(
                 match=re.compile("确认"),
                 box=self.box.bottom_right,
                 time_out=5,
-                after_sleep=2,
+                after_sleep=0.5,
             )
 
-            self.press_key('f', after_sleep=2)
+            self.press_key('f', after_sleep=0.5)
 
             start_time = time.time()
 
@@ -487,7 +480,7 @@ class LiaisonMixin(NavigationMixin):
 
                 self.click(0.5, 0.5, after_sleep=0.5)
 
-                result = self.wait_ocr(
+                result = self.wait_click_ocr(
                     match=[re.compile("赠送")],
                     box=self.box.bottom_right,
                     time_out=2,
@@ -496,16 +489,8 @@ class LiaisonMixin(NavigationMixin):
                 if result:
                     self.log_info("收下完成，准备赠送礼物")
                     break
-
-        self.wait_click_ocr(
-            match=re.compile("赠送"),
-            box=self.box.bottom_right,
-            time_out=5,
-            after_sleep=2,
-        )
-
+        self.wait_ocr(match=re.compile("默认"), box=self.box.bottom_left, time_out=5)
         self.click(144 / 1920, 855 / 1080)
-
         self.log_info("点击赠送礼物位置")
         self.log_info("本次成功")
 
@@ -513,7 +498,7 @@ class LiaisonMixin(NavigationMixin):
                 match=re.compile("确认赠送"),
                 box=self.box.bottom_right,
                 time_out=5,
-                after_sleep=2,
+                after_sleep=0.5,
         ):
 
             self.log_info("确认赠送按钮已出现")
