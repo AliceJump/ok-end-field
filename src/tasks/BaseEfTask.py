@@ -420,19 +420,16 @@ class BaseEfTask(BaseTask):
         success = False
 
         for _ in range(3):
-            self.press_key("y", after_sleep=2)
-
-            result = self.wait_ocr(match=[re.compile(area) for area in areas_list], box=self.box.left, time_out=5)
-
-            if result:
-                success = True
-                break
-
-            # 没识别到区域，检测左上角是否有“建设”
-            check = self.wait_ocr(match=re.compile("建设"), box=self.box.top_left, time_out=2)
+            self.press_key("y")
+            # 检测左上角是否有“建设”
+            check = self.wait_ocr(match=re.compile("建设"), box=self.box.top_left, time_out=5)
 
             if check:
                 # 界面已经在，只是没识别到区域
+                success = True
+            result = self.wait_ocr(match=[re.compile(area) for area in areas_list], box=self.box.left, time_out=1)
+
+            if result:
                 success = True
                 break
             else:
@@ -448,7 +445,7 @@ class BaseEfTask(BaseTask):
                 break
         if need_change:
             if not self.wait_click_ocr(
-                    match=re.compile("更换"), box=self.box.left, time_out=2, after_sleep=2, log=True
+                    match=re.compile("更换"), box=self.box.left, time_out=2, log=True
             ):
                 return False
             if not self.wait_click_ocr(
@@ -456,22 +453,20 @@ class BaseEfTask(BaseTask):
                     box=self.box_of_screen(
                         648 / 1920, 196 / 1080, 648 / 1920 + 628 / 1920, 196 / 1080 + 192 / 1080
                     ),
-                    time_out=2,
-                    after_sleep=2,
+                    time_out=4,
             ):
                 return False
             if not self.wait_click_ocr(
                     match=re.compile("确认"),
                     box=self.box.bottom_right,
                     time_out=2,
-                    after_sleep=2,
             ):
                 return False
         box = self.wait_ocr(
             match=re.compile(f"{model}"), box=self.box.right, time_out=5
         )
         if box:
-            self.click(box[0], move_back=True, after_sleep=0.5)
+            self.click(box[0], move_back=True, after_sleep=1.5)
             return True
         else:
             self.log_error(f"未找到‘{model}’按钮，任务中止。")
@@ -652,7 +647,6 @@ class BaseEfTask(BaseTask):
                 return False
 
         return True
-
 
     def wait_pop_up(self,time_out=15, after_sleep=0):
         """等待奖励弹窗出现并点击"OK"按钮

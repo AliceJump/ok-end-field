@@ -168,5 +168,5 @@ class Common(BaseEfTask):
         plus_click_place = plus_button
         plus_click_place.x -= int((1849 - 1741) / 1920 * self.width)
         self.log_info("找到加号按钮，执行点击")
-        self.click(plus_click_place, after_sleep=1)
+        self.click(plus_click_place, after_sleep=0.5)
         return True

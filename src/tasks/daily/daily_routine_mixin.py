@@ -362,8 +362,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.wait_click_ocr(
             match=outpost_name,
             box=self.box.top,
-            time_out=5,
-            after_sleep=2,
+            time_out=5
         )
 
         can_exchange_goods = goods_dict.get(
@@ -376,7 +375,8 @@ class DailyRoutineMixin(LiaisonMixin, Common):
 
         max_attempts = 7
         skip_goods = set()
-
+        change_button=None
+        confirm_button=None
         for attempt in range(1, max_attempts + 1):
             num = self.read_outpost_ticket_num(outpost_name)
             if num < 1000:
@@ -384,8 +384,15 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 break
 
             self.log_info(f"尝试第 {attempt}/{max_attempts} 次更换货品")
-            self.wait_click_ocr(match="更换货品", after_sleep=2)
-
+            if not change_button:
+                change_button=self.wait_click_ocr(match=re.compile("货品"),box=self.box.bottom_right, time_out=5)
+            else:
+                self.click(change_button)
+            self.wait_ocr(
+                 match=re.compile("选择"),
+                 box=self.box.top_left,
+                 time_out=5,
+            )
             goods = self.wait_ocr(
                 match=goods_patterns,
                 time_out=5,
@@ -439,15 +446,20 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 break
 
             self.log_info(f"选择货物进行兑换: {exchange_good.name}")
-            self.click(exchange_good, after_sleep=2)
-
+            self.click(exchange_good)
+            if not confirm_button:
+                self.wait_click_ocr(
+                    match=re.compile("确认"),
+                    box=self.box.bottom_right,
+                    time_out=5,
+                )
+            else:
+                self.click(confirm_button)
             self.wait_click_ocr(
-                match=re.compile("确认"),
-                box=self.box.bottom_right,
-                time_out=5,
-                after_sleep=2,
+                match=outpost_name,
+                box=self.box.top,
+                time_out=5
             )
-
             num = self.read_outpost_ticket_num(outpost_name)
             if num < 1000:
                 self.log_info(f"{outpost_name} 据点当前券数量不足 (<1000)，停止兑换")
@@ -455,16 +467,15 @@ class DailyRoutineMixin(LiaisonMixin, Common):
 
             if not self.plus_max():
                 self.log_info("未找到 '确认' 按钮，跳过本次活动")
-                break
+                continue
 
             self.wait_click_ocr(
                 match="交易",
                 box=self.box.bottom_right,
-                time_out=5,
-                after_sleep=2,
+                time_out=5
             )
 
-            self.wait_pop_up(after_sleep=2)
+            self.wait_pop_up()
 
         self.log_info(f"{outpost_name} 兑换操作完成")
 
@@ -521,14 +532,13 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.info_set("current_task", "make_weapon")
         self.log_info("开始造装备任务")
 
-        self.back(after_sleep=2)
+        self.back()
         self.log_info("打开终端界面")
 
         if not self.wait_click_ocr(
                 match=re.compile("装备"),
                 box=self.box.right,
-                time_out=5,
-                after_sleep=2,
+                time_out=5
         ):
             self.log_info("未找到装备按钮，任务失败")
             return False
@@ -537,8 +547,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         if not self.wait_click_ocr(
                 match=re.compile("制作"),
                 box=self.box.bottom_right,
-                time_out=5,
-                after_sleep=2,
+                time_out=5
         ):
             self.log_info("未找到制作按钮，任务失败")
             return False
