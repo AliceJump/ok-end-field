@@ -55,18 +55,18 @@ class DailyRoutineMixin(LiaisonMixin, Common):
 
     def collect_credit(self):
         self.info_set("current_task", "collect_credit")
-        self.press_key("f5", after_sleep=2)
-        self.wait_click_ocr(match=re.compile("信用交易所"), box=self.box.top, time_out=5, after_sleep=2)
+        self.press_key("f5")
+        self.wait_click_ocr(match=re.compile("信用交易所"), box=self.box.top, time_out=5)
         result = self.wait_click_ocr(match=[re.compile("收取信用"), re.compile("无待领取信用")],
                                      box=self.box.bottom_left,
-                                     time_out=5, after_sleep=2)
+                                     time_out=5)
         if not result:
             self.log_info("未找到可收取信用或无待领取信用的选项")
             return False
         if "收取信用" in result[0].name:
-            self.wait_pop_up(after_sleep=2)
+            self.wait_pop_up()
         self.ensure_main()
-        self.back(after_sleep=2)
+        self.back()
         left_exchange_time = 5
         left_help_time = 5
         exchange_time = 0
@@ -76,17 +76,14 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         exchange_not_found = False
         count = 0
         while True:
+            temp_exchange_time = left_exchange_time
             if count >= 10:
                 self.log_info("循环过多次仍未找到交流或助力对象，可能出现异常，结束拜访")
                 return False
             if is_first_time:
-                self.wait_click_ocr(match=re.compile("好友"), box=self.box.right, time_out=5, after_sleep=2)
+                self.wait_click_ocr(match=re.compile("好友"), box=self.box.right, time_out=5)
             else:
                 if left_exchange_time <= 0 and left_help_time <= 0:
-                    self.wait_click_ocr(match=re.compile("结束拜访"), box=self.box.bottom_right, time_out=5,
-                                        after_sleep=2)
-                    self.log_info("交流和助力次数已完成，结束拜访")
-                    self.wait_click_ocr(match=re.compile("确认"), box=self.box.bottom_right, time_out=5, after_sleep=2)
                     if exchange_not_found:
                         self.log_info("未完全找满交流对象，可能存在部分交流次数未完成")
                     self.info_set("exchange_time", exchange_time)
@@ -94,7 +91,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                     return True
 
             result = None
-            self.wait_ui_stable(refresh_interval=0.5)
+            self.wait_ui_stable(refresh_interval=1)
             start_time = time.time()
             scroll_count = 0
             while not result:
@@ -110,10 +107,10 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                         feature_name="can_exchange_info_icon", box=span_box
                     )
                     if scroll_count >= 7:
-                        self.back(after_sleep=2)
+                        self.back()
                         self.ensure_in_friend_boat()
-                        self.press_key('f', after_sleep=2)
-                        self.wait_ui_stable(refresh_interval=0.5)
+                        self.press_key('f')
+                        self.wait_ui_stable(refresh_interval=1)
                         left_exchange_time = 0
                         exchange_not_found = True
                         continue
@@ -126,7 +123,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                     self.scroll_relative(0.5, 0.5, -4)
                     self.wait_ui_stable(refresh_interval=1)
 
-            self.click(result, after_sleep=2)
+            self.click(result)
             self.wait_click_ocr(match=re.compile("确定"), box=self.box.bottom_right, time_out=5, after_sleep=2)
             if not self.ensure_in_friend_boat():
                 self.log_info("未能进入好友帝江号")
@@ -140,15 +137,20 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             self.log_info(f"已进入好友帝江号，准备进行{''.join(actions)}操作")
             self.press_key("y", after_sleep=2)
             if left_exchange_time > 0:
-                self.wait_click_ocr(match=re.compile("情报交流"), box=exchange_help_box, time_out=5, after_sleep=2)
-                left_exchange_time -= 1
-                exchange_time += 1
+                if not self.wait_click_ocr(match=re.compile("情报交流"), box=exchange_help_box, time_out=5):
+                    left_exchange_time = 0
+                else:
+                    left_exchange_time -= 1
+                    exchange_time += 1
             if left_help_time > 0:
                 result = self.wait_ocr(match=re.compile("生产助力"), box=exchange_help_box, time_out=5)
+                if not result and temp_exchange_time <= 0:
+                    self.log_info("未找到可助力的对象")
+                    left_help_time = 0
                 if result:
                     for res in result:
                         if not self.config.get("尝试仅收培育室"):
-                            self.click(res, after_sleep=2)
+                            self.click(res)
                             left_help_time -= 1
                             help_time += 1
                             if left_help_time <= 0:
@@ -158,9 +160,9 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                             self.wait_ui_stable(refresh_interval=0.5)
                             if result := self.wait_ocr(match=re.compile("生产助力"), box=exchange_help_box, time_out=5):
                                 self.log_info("继续进行助力操作")
-                                self.click(result[-1], after_sleep=2)
+                                self.click(result[-1])
                                 if self.find_reward_ok():
-                                    self.wait_pop_up(after_sleep=2)
+                                    self.wait_pop_up()
                                 left_help_time -= 1
                                 help_time += 1
             select_visit_deadline = time.time() + 30
@@ -168,7 +170,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 if time.time() > select_visit_deadline:
                     self.log_info("等待 '选择拜访' 超时，结束本轮好友流程")
                     return False
-                self.back(after_sleep=2)
+                self.back()
             is_first_time = False
             count += 1
 
