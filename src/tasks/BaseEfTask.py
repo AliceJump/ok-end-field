@@ -421,19 +421,17 @@ class BaseEfTask(BaseTask):
 
         for _ in range(3):
             self.press_key("y")
-            # 检测左上角是否有“建设”
             check = self.wait_ocr(match=re.compile("建设"), box=self.box.top_left, time_out=5)
-
             if check:
-                # 界面已经在，只是没识别到区域
                 success = True
+            else:
+                self.log_info("未识别到区域且未检测到建设，重新尝试打开界面")
+                continue
             result = self.wait_ocr(match=[re.compile(area) for area in areas_list], box=self.box.left, time_out=1)
-
             if result:
                 success = True
                 break
             else:
-                # 没有建设，说明界面没打开，继续下一轮重新按 y
                 self.log_info("未识别到区域且未检测到建设，重新尝试打开界面")
 
         if not success:
@@ -467,7 +465,7 @@ class BaseEfTask(BaseTask):
         )
         if box:
             self.click(box[0], move_back=True)
-            self.wait_ocr(match=re.compile(f"{model[:2]}"), box=self.box.right)
+            self.wait_ocr(match=re.compile(f"{model[:2]}"), box=self.box.top_left)
             self.sleep(0.5)
             return True
         else:

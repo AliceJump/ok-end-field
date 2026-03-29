@@ -195,8 +195,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         if not self.wait_click_ocr(
                 match=re.compile("我转交的委托"),
                 box=self.box.top_left,
-                time_out=5,
-                after_sleep=2,
+                time_out=5
         ):
             self.log_info(f"'未找到我转交的委托'节点，返回主界面")
             self.ensure_main()
@@ -242,8 +241,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 if not self.wait_click_ocr(
                         match=re.compile("本地仓储节点"),
                         box=self.box.top_left,
-                        time_out=5,
-                        after_sleep=2,
+                        time_out=5
                 ):
                     self.log_info(f"{area}未找到本地仓储节点，返回主界面")
                     self.ensure_main()
@@ -297,8 +295,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                                                frame_processor=self.make_hsv_isolator(hR.WHITE), log=True)
                         if res:
                             self.log_info(f"找到步骤 {match}，继续下一步")
-                            self.sleep(1)
-                            self.click(res[0], after_sleep=2)
+                            self.click(res[0], after_sleep=1)
                             break
 
                     if not res and i != 2:
@@ -311,8 +308,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 if not self.wait_click_ocr(
                         match=re.compile("转交运送委托"),
                         box=self.box.bottom_left,
-                        time_out=5,
-                        after_sleep=2,
+                        time_out=5
                 ):
                     self.log_info(
                         "未找到 '转交运送委托' 按钮，跳过本次活动"
@@ -322,14 +318,11 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 if not self.wait_click_ocr(
                         match=re.compile("确认"),
                         box=self.box.bottom_right,
-                        time_out=5,
-                        after_sleep=2,
+                        time_out=5
                 ):
                     self.log_info("未找到 '确认' 按钮，跳过本次活动")
                     self.ensure_main()
                     break
-
-                self.sleep(2)
                 count += 1
                 self.log_info(f"{area} 已完成 {count}/{activity_num} 次转交")
 
