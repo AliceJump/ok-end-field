@@ -88,7 +88,11 @@ class LiaisonMixin(NavigationMixin):
             box=self.box.top,
             time_out=5
         )
-
+        if should_check_out_boat:
+            if target_area[0].x < self.width / 2:
+                self.log_info("已在帝江号区域内，无需传送")
+                self.ensure_main()
+                return True
         if not target_area:
             self.log_info("未找到帝江号区域，传送失败")
             return False
@@ -459,7 +463,6 @@ class LiaisonMixin(NavigationMixin):
                 end_list=[re.compile("ms")],
                 end_box=self.box.bottom_left
             )
-
 
             self.wait_click_ocr(
                 match=re.compile("确认"),

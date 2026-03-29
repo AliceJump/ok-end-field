@@ -22,8 +22,9 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             "⭐造装备": True,
             "⭐收信用": True,
             "尝试仅收培育室": True,
-            "⭐收集线索": True,
-            "⭐制造舱": True,
+            "⭐帝江号收菜": True,
+            "收集线索": True,
+            "制造舱": True,
             "⭐周常奖励": True,
             "⭐日常奖励": True,
         })
@@ -36,8 +37,9 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             "⭐造装备": "是否前往「装备制造/套组装备制造」并制作一件列表首位的装备。请确保有足够的装备原件和调度券。",
             "⭐收信用": "是否前往好友的「帝江号」并在「访客终端」上进行助力获得信用。助力结束后，前往「采购中心/信用交易所」收取全部助力。",
             "尝试仅收培育室": "若选项开启，则优先尝试仅助力好友「帝江号」上的「培养仓」。如果不能，至少助力一次其它舱室。",
-            "⭐收集线索": "是否前往「帝江号/会客室」收集全部线索。若集齐线索，则开启情报交流。",
-            "⭐制造舱": "是否前往「帝江号/制造仓」收取培养材料。收取后会补足待制造数量。",
+            "⭐帝江号收菜": "是否前往好友的「帝江号」并在「访客终端」上进行收集线索、制造舱操作",
+            "收集线索": "是否前往「帝江号/会客室」收集全部线索。若集齐线索，则开启情报交流。",
+            "制造舱": "是否前往「帝江号/制造仓」收取培养材料。收取后会补足待制造数量。",
             "⭐周常奖励": "是否领取「活动中心/每周事物」中的奖励。",
             "⭐日常奖励": "是否领取「行动手册/日常」和「通行证」中的奖励。",
         })
@@ -676,25 +678,38 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 self.wait_click_ocr(match=re.compile("确定"), box=self.box.center, time_out=5, after_sleep=2)
 
         return True
-
-    def collect_clue(self):
-        self.info_set("current_task", "collect_clue")
-        self.log_info("开始收集线索任务")
-        self.transfer_to_home_point(should_check_out_boat=True)
-        self.press_key("i", after_sleep=2)
+    def boat_claim_rewards(self):
+        self.enter_home_room_list()
         exchange_help_box = self.box_of_screen(0.1, 561 / 861, 0.9, 0.9)
-        if self.wait_click_ocr(match=re.compile("会客室"), time_out=4, box=exchange_help_box, after_sleep=2):
+        ok_bool_clue=True
+        ok_up_room=True
+        if not self.collect_clue(exchange_help_box):
+            self.log_info("收集线索任务失败")
+            ok_bool_clue=False
+        self.safe_back(match=re.compile("运转"), box=self.box.top_left)
+        if not self.up_make_room_num(exchange_help_box):
+            self.log_info("提升房间等级任务失败")
+            ok_up_room=False
+        if ok_bool_clue and ok_up_room:
+            return True
+        return False
+
+    def collect_clue(self, exchange_help_box):
+        if not self.config.get("收集线索"):
+            self.logger.info("收集线索任务未启用，跳过")
+            return True
+        if self.wait_click_ocr(match=re.compile("会客室"), time_out=6, box=exchange_help_box):
             self.logger.info("进入会客室,准备处理收集线索")
-            self.wait_click_ocr(match=re.compile("确认"), time_out=4, box=self.box.bottom, after_sleep=2)
-            if self.wait_click_ocr(match=re.compile("收集"), time_out=4, box=self.box.right, after_sleep=2):
+            self.wait_click_ocr(match=re.compile("确认"), time_out=6, box=self.box.bottom)
+            if self.wait_click_ocr(match=re.compile("收集"), time_out=4, box=self.box.right,after_sleep=1):
                 self.logger.info("点击收集线索")
-                self.wait_click_ocr(match="领取", time_out=4, box=self.box.bottom_right, after_sleep=2)
+                self.wait_click_ocr(match="领取", time_out=4, box=self.box.bottom_right, after_sleep=1)
                 self.back(after_sleep=1)
             else:
                 self.logger.info("未找到收集线索按钮")
 
-            if self.wait_click_ocr(match=re.compile("接收"), time_out=4, box=self.box.right, after_sleep=2):
-                self.wait_click_ocr(match=re.compile("全部接收"), time_out=4, box=self.box.right, after_sleep=2)
+            if self.wait_click_ocr(match=re.compile("接收"), time_out=4, box=self.box.right, after_sleep=1):
+                self.wait_click_ocr(match=re.compile("全部接收"), time_out=4, box=self.box.right, after_sleep=1)
                 self.back(after_sleep=2)
             else:
                 self.logger.info("未找到接收按钮")
@@ -716,7 +731,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
 
             for result in results:
                 self.logger.info("点击线索框")
-                self.click(result, after_sleep=1)
+                self.click(result)
                 self.wait_click_ocr(match=re.compile("的线索"), time_out=4, box=self.box.top_right, after_sleep=1)
                 if not self.wait_ocr(match=[re.compile(i) for i in ["设施", "等级"]], box=self.box.left, time_out=1):
                     self.back(after_sleep=2)
@@ -728,12 +743,10 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             self.logger.info("未找到会客室，无法收集线索")
             return False
 
-    def up_make_room_num(self):
-        self.info_set("current_task", "up_make_room_num")
-        self.log_info("开始制造室任务")
-        self.transfer_to_home_point(should_check_out_boat=True)
-        self.press_key("i", after_sleep=2)
-        exchange_help_box = self.box_of_screen(0.1, 561 / 861, 0.9, 0.9)
+    def up_make_room_num(self, exchange_help_box):
+        if not self.config.get("制造舱"):
+            self.logger.info("制造舱助力任务未启用，跳过")
+            return True
         results = self.wait_ocr(match=re.compile("制造"), time_out=4, box=exchange_help_box)
         if not results:
             self.log_info("未找到制造舱，任务失败")
@@ -743,23 +756,23 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             self.logger.info("点击制造室")
             for i in range(2):
                 if i == 0:
-                    if not self.wait_click_ocr(match=re.compile("收取"), time_out=2, box=self.box.bottom,
-                                               after_sleep=2):
+                    if not self.wait_click_ocr(match=re.compile("收取"), time_out=3, box=self.box.bottom,
+                                               after_sleep=1):
                         continue
-                    self.wait_pop_up(after_sleep=2)
+                    self.wait_pop_up(after_sleep=1)
                 if i == 1:
-                    if not self.wait_click_ocr(match=re.compile("助力"), time_out=2, box=self.box.top_right,
-                                               after_sleep=2):
+                    if not self.wait_click_ocr(match=re.compile("助力"), time_out=3, box=self.box.top_right,
+                                               after_sleep=1):
                         continue
-                    if not self.wait_click_ocr(match=re.compile("使用"), time_out=2, box=self.box.bottom_right,
-                                               after_sleep=2):
+                    if not self.wait_click_ocr(match=re.compile("使用"), time_out=3, box=self.box.bottom_right,
+                                               after_sleep=1):
                         continue
                 if icon := self.find_one(feature_name=fL.max_icon, horizontal_variance=0.1, vertical_variance=0.1):
-                    self.click(icon, after_sleep=2)
-                self.wait_click_ocr(match=re.compile("确认"), time_out=2, box=self.box.bottom, after_sleep=2)
+                    self.click(icon, after_sleep=1)
+                self.wait_click_ocr(match=re.compile("确认"), time_out=2, box=self.box.bottom, after_sleep=1)
             self.safe_back(match=re.compile("运转"), box=self.box.top_left)
-        self.wait_click_ocr(match=re.compile("助力"), time_out=2, box=self.box.top_right, after_sleep=2)
-        self.wait_click_ocr(match=re.compile("使用"), time_out=2, box=self.box.bottom_right, after_sleep=2)
+        self.wait_click_ocr(match=re.compile("助力"), time_out=2, box=self.box.top_right, after_sleep=1)
+        self.wait_click_ocr(match=re.compile("使用"), time_out=2, box=self.box.bottom_right, after_sleep=1)
         char_list = list(get_contact_list_with_feature_list().values())
         count = 0
         for char in char_list:

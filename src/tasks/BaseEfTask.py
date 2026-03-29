@@ -409,6 +409,36 @@ class BaseEfTask(BaseTask):
             last_frame = current_frame
             self.sleep(refresh_interval)
 
+    def enter_home_room_list(self, timeout=6):
+        """
+        进入基地房间列表页面（i 面板）
+
+        Returns:
+            bool: 是否成功进入
+        """
+
+        self.log_info("进入基地房间列表页面")
+
+        # 1️⃣ 回到基地
+        self.transfer_to_home_point(should_check_out_boat=True)
+
+        # 2️⃣ 打开 i 面板
+        self.press_key("i")
+
+        exchange_help_box = self.box_of_screen(0.1, 561 / 861, 0.9, 0.9)
+
+        # 3️⃣ 判定是否进入成功（识别房间关键词）
+        room_keywords = [re.compile("会客室"), re.compile("制造")]
+
+        results = self.wait_ocr(match=room_keywords, time_out=timeout, box=exchange_help_box)
+
+        if results:
+            self.log_info(f"已进入房间列表: {[r.name for r in results]}")
+            return True
+
+        self.log_info("未识别到房间列表")
+        return False
+
     def to_model_area(self, area, model):
         """导航到指定区域的特定模块
         
