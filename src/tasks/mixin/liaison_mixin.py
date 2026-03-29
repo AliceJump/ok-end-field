@@ -449,7 +449,7 @@ class LiaisonMixin(NavigationMixin):
             result = self.wait_click_ocr(
                 match=[re.compile("收下"), re.compile("赠送")],
                 box=self.box.bottom_right,
-                time_out=2,
+                time_out=1,
                 after_sleep=2,
             )
 
@@ -504,7 +504,7 @@ class LiaisonMixin(NavigationMixin):
             after_sleep=2,
         )
 
-        self.click(144 / 1920, 855 / 1080, after_sleep=2)
+        self.click(144 / 1920, 855 / 1080)
 
         self.log_info("点击赠送礼物位置")
         self.log_info("本次成功")
@@ -532,7 +532,6 @@ class LiaisonMixin(NavigationMixin):
                     match=[re.compile("离开")],
                     box=self.box.bottom_right,
                     time_out=2,
-                    after_sleep=2,
                 )
 
                 if result:

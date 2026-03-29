@@ -19,39 +19,41 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 from src.data.FeatureList import FeatureList as fL
+from src.data.ocr_normalize_map import ocr_confusion_map
 from ok import Box
-
 from src.tasks.BaseEfTask import BaseEfTask
 
 
 def build_name_patterns(find_name: str):
     """
-    根据角色名称生成 OCR 匹配模式。
-
-    为提高 OCR 容错率，将名字拆分为 **连续两字组合**，
-    例如：
-
-        陈千羽 -> ["陈千", "千羽"]
-
-    这样即使 OCR 识别不完整，也有较高概率匹配成功。
-
-    Args:
-        find_name (str):
-            角色名称
-
-    Returns:
-        list[Pattern]:
-            正则表达式列表
+    根据角色名称生成 OCR 匹配模式（优化版：合并 regex，避免组合爆炸）
     """
 
-    # 如果名字长度 >= 2，生成连续双字组合
+    # 1️⃣ 滑窗拆分
     if len(find_name) >= 2:
-        keys = [find_name[i:i + 2] for i in range(len(find_name) - 1)]
+        keys = [find_name[i : i + 2] for i in range(len(find_name) - 1)]
     else:
-        # 单字名称
         keys = [find_name]
 
-    return [re.compile(k) for k in keys]
+    patterns = []
+
+    for key in keys:
+        parts = []
+
+        for ch in key:
+            if ch in ocr_confusion_map:
+                options = [ch] + ocr_confusion_map[ch]
+                part = "(" + "|".join(map(re.escape, options)) + ")"
+            else:
+                part = re.escape(ch)
+
+            parts.append(part)
+
+        # 拼成一个 regex
+        pattern = "".join(parts)
+        patterns.append(re.compile(pattern))
+
+    return patterns
 
 
 class LiaisonResult(int, Enum):
