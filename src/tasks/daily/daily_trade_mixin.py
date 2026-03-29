@@ -383,7 +383,7 @@ class DailyTradeMixin(NavigationMixin, Common):
                     if time.time() > go_friend_deadline:
                         self.log_info("等待 '前往' 按钮超时，跳过该货物出售")
                         break
-                    self.click(c_x, c_y, after_sleep=1)
+                    self.click(c_x, c_y, after_sleep=1,move_back=False)
                 if time.time() > go_friend_deadline:
                     continue
                 if not self.ensure_in_friend_boat():

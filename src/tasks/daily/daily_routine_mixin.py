@@ -174,13 +174,14 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.info_set("current_task", "claim_delivery_rewards")
         self.log_info("开始收邮件")
         self.press_key("k", after_sleep=2)
-        self.wait_click_ocr(
+        if self.wait_click_ocr(
             x=0, y=0.88,
             to_x=0.25, to_y=0.95,
             match=re.compile("收取"),  # 全部收取
             time_out=5,
             after_sleep=2,
-        )
+        ):
+            self.wait_pop_up(after_sleep=2)
         self.press_key("esc", after_sleep=2)
         return True
 
