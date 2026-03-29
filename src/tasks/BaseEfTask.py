@@ -612,11 +612,11 @@ class BaseEfTask(BaseTask):
 
     def is_main(self, esc=False, need_active=True):
         """判断是否处于可执行任务的主界面状态
-        
+            
         Args:
             esc: 如果是菜单状态，是否按ESC返回（返回False不意味着不是主界面）
             need_active: 是否需要激活窗口（默认True）
-        
+            
         Returns:
             bool: True表示处于主界面，False表示需要继续处理
         """
@@ -629,16 +629,30 @@ class BaseEfTask(BaseTask):
             return True
         if self.wait_login():
             return True
-        if result := self.ocr(match=re.compile("结束拜访"), box=self.box.bottom_right):
-            self.click(result, after_sleep=self.once_sleep_time)
-            return False
-        if result := self.ocr(match=[re.compile("确认"), re.compile("确定")], box=self.box.bottom_right):
-            self.click(result, after_sleep=self.once_sleep_time)
+        rules = [
+            [[re.compile("离开"), re.compile("退出"), re.compile("结束")], self.box.center, [re.compile("确认"), re.compile("确定")], self.box.bottom_right],
+            [None, None, re.compile("结束拜访"), self.box.bottom_right],
+            [None, None, re.compile("空白"), self.box.bottom]
+        ]
+        if not self.run_ocr_rules(rules):
             return False
         if esc:
             self.back(after_sleep=self.once_sleep_time)
             return False
         return False
+
+    def run_ocr_rules(self, rules: list[list]) -> bool:
+        for need, need_box, match, box in rules:
+            if need is not None:
+                if not self.ocr(match=need, box=need_box):
+                    continue
+
+            if result := self.ocr(match=match, box=box):
+                self.click_with_alt(result, after_sleep=self.once_sleep_time)
+                return False
+
+        return True
+
 
     def wait_pop_up(self,time_out=15, after_sleep=0):
         """等待奖励弹窗出现并点击"OK"按钮

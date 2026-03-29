@@ -87,6 +87,7 @@ class FeatureList(str, Enum):
     products_icon = 'products_icon'
     q = 'q'
     reward_ok = 'reward_ok'
+    rossi_contact = 'rossi_contact'
     secondary_objective_direction_dot = 'secondary_objective_direction_dot'
     secondary_objective_direction_dot_light = 'secondary_objective_direction_dot_light'
     secondary_objective_direction_dot_light_three = 'secondary_objective_direction_dot_light_three'

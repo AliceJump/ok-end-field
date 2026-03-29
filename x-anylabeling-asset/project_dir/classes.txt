@@ -83,6 +83,7 @@ price_up
 products_icon
 q
 reward_ok
+rossi_contact
 secondary_objective_direction_dot
 secondary_objective_direction_dot_light
 secondary_objective_direction_dot_light_three
