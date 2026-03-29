@@ -57,7 +57,7 @@ class NavigationMixin(BaseEfTask):
         while not self.wait_ocr(
                 match=target_ocr_pattern,
                 box=self.box.bottom_right,
-                time_out=0.5,
+                time_out=1,
         ):
             if time.time() - start_time > time_out:
                 self.log_info("导航超时")

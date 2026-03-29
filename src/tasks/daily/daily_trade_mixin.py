@@ -109,7 +109,7 @@ class DailyTradeMixin(NavigationMixin, Common):
 
         sum_good_info = []
         for good in goods:
-            self.click(good, after_sleep=2)
+            self.click(good)
             self.wait_ui_stable(refresh_interval=1)
             self.next_frame()
             stock_quantity = ocr_stock_quantity()
@@ -126,7 +126,7 @@ class DailyTradeMixin(NavigationMixin, Common):
                     log=True,
                 )
 
-            self.wait_click_ocr(match=re.compile("查看好友价格"), box=self.box.bottom_right, after_sleep=2)
+            self.wait_click_ocr(match=re.compile("查看好友价格"), box=self.box.bottom_right)
 
             self.wait_ui_stable(refresh_interval=1)
             self.next_frame()
@@ -259,7 +259,7 @@ class DailyTradeMixin(NavigationMixin, Common):
 
     def navigate_to_friend_exchange(self):
         self.log_info("前往物资调度终端")
-        self.ensure_map()
+        self.ensure_map(addtional_match=re.compile("中枢"))
         if not self.start_tracking_and_align_target(
                 fL.market_dispatch_terminal, fL.market_dispatch_terminal_out
         ):
@@ -271,7 +271,8 @@ class DailyTradeMixin(NavigationMixin, Common):
         )
 
         if result:
-            self.press_key('f', after_sleep=2)
+            self.press_key('f')
+            self.wait_ui_stable(refresh_interval=1)
         return result
 
     def buy_sell(self):
@@ -290,7 +291,7 @@ class DailyTradeMixin(NavigationMixin, Common):
             if not result:
                 self.log_info("未找到货物")
                 continue
-            self.click(result, after_sleep=2)
+            self.click(result, after_sleep=1)
             good_infos, _ = self.collect_market_goods_info()
             buy_price = self.config.get(f"{area}买入价", 0)
             sell_price = self.config.get(f"{area}卖出价", 0)
@@ -327,14 +328,14 @@ class DailyTradeMixin(NavigationMixin, Common):
                             )
                             return False
                         self.back(after_sleep=0.5)
-                    self.click(buy_good.name_box, after_sleep=2)
+                    self.click(buy_good.name_box)
+                    self.wait_ui_stable(refresh_interval=1)
                     if self.plus_max():
                         self.wait_click_ocr(
                             match=re.compile("购买"),
-                            box=self.box.bottom_right,
-                            after_sleep=2,
+                            box=self.box.bottom_right
                         )
-                        self.wait_pop_up(after_sleep=2)
+                        self.wait_pop_up()
                         for sg in sell_goods:
                             if sg.good_name == buy_good.good_name:
                                 sg.stock_quantity += 1
@@ -357,14 +358,14 @@ class DailyTradeMixin(NavigationMixin, Common):
                         self.log_info("等待返回 '地区建设' 界面超时，结束买卖货任务")
                         return False
                     self.back(after_sleep=0.5)
-                if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:]), after_sleep=2, log=True) or
-                        self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]), after_sleep=2, log=True)):
+                if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:]), log=True) or
+                        self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]), log=True)):
                     self.log_info("未找到卖出货物，无法出售")
                     continue
+                self.wait_ui_stable(refresh_interval=1)
                 self.wait_click_ocr(
                     match=re.compile("查看好友价格"),
                     box=self.box.bottom_right,
-                    after_sleep=2,
                 )
                 self.wait_ui_stable(refresh_interval=1)
                 try:
@@ -378,7 +379,7 @@ class DailyTradeMixin(NavigationMixin, Common):
                 self.click(c_x, c_y, after_sleep=1)
                 go_friend_deadline = time.time() + 20
                 while not self.wait_click_ocr(
-                        match=re.compile("前往"), box=self.box.center, after_sleep=2
+                        match=re.compile("前往"), box=self.box.center
                 ):
                     if time.time() > go_friend_deadline:
                         self.log_info("等待 '前往' 按钮超时，跳过该货物出售")
@@ -393,17 +394,18 @@ class DailyTradeMixin(NavigationMixin, Common):
                 self.navigate_to_friend_exchange()
                 back_window(prev)
                 self.wait_click_ocr(match=re.compile(area), box=self.box.top, after_sleep=2)
-                if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:]), after_sleep=2) or
-                        self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]), after_sleep=2)):
+                if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:])) or
+                        self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]))):
                     self.log_info("未找到卖出货物，无法出售")
                     continue
+                self.wait_ui_stable(refresh_interval=1)
                 if self.plus_max():
                     self.wait_click_ocr(
                         match=re.compile("出售"),
                         box=self.box.bottom_right,
                         after_sleep=2,
                     )
-                    self.wait_pop_up(after_sleep=2)
+                    self.wait_pop_up()
                 else:
                     self.log_info("未找到加号按钮，无法出售")
 

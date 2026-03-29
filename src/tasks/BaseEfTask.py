@@ -466,7 +466,9 @@ class BaseEfTask(BaseTask):
             match=re.compile(f"{model}"), box=self.box.right, time_out=5
         )
         if box:
-            self.click(box[0], move_back=True, after_sleep=1.5)
+            self.click(box[0], move_back=True)
+            self.wait_ocr(match=re.compile(f"{model[:2]}"), box=self.box.right)
+            self.sleep(0.5)
             return True
         else:
             self.log_error(f"未找到‘{model}’按钮，任务中止。")
@@ -489,7 +491,7 @@ class BaseEfTask(BaseTask):
             if time.time() - start_time > 60:
                 self.log_info("skip_dialog 超时退出")
                 return False
-            if self.wait_ocr(match=["工业", "探索"], box=self.box.top_left, time_out=1.5):
+            if self.wait_ocr(match=["工业", "探索"], box=self.box.top_left, time_out=2):
                 return True
             if self.find_one("skip_dialog_esc", horizontal_variance=0.05):
                 self.send_key("esc", after_sleep=0.1)
@@ -503,7 +505,7 @@ class BaseEfTask(BaseTask):
                     elif clicked_confirm:
                         self.log_debug("AutoSkipDialogTask no confirm break")
                         return True
-            if end_list and self.wait_click_ocr(match=end_list, box=end_box, time_out=0.5):
+            if end_list and self.wait_click_ocr(match=end_list, box=end_box, time_out=1):
                 return True
 
     def in_bg(self):
@@ -648,8 +650,16 @@ class BaseEfTask(BaseTask):
 
         return True
 
-    def ensure_map(self):
-        while not self.wait_ocr(match=re.compile("事务"), time_out=2, box=self.box.top_left):
+    def ensure_map(self, addtional_match=None, time_out=30):
+        """确保进入地图界面，超时30秒"""
+        satet_time = time.time()
+        if addtional_match:
+            match = [re.compile("事务")]+addtional_match if isinstance(addtional_match, list) else [re.compile("事务"), re.compile(addtional_match)]
+        else:
+            match = [re.compile("事务")]
+        while not self.wait_ocr(match=match, time_out=2, box=self.box.top_left):
+            if time.time() - satet_time > time_out:
+                raise Exception("进入地图失败")
             self.press_key("m")
 
     def wait_pop_up(self,time_out=15, after_sleep=0):
