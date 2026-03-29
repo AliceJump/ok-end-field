@@ -50,13 +50,22 @@ class DailyLiaisonMixin(LiaisonMixin):
             return False
 
         self.log_info("前往干员联络站")
+        max_retry = 3
+        retry = 0
         result = self.navigate_to_operator_liaison_station()
+        while result == LiaisonResult.FIND_CHAT_ICON:
+            self.log_info(f"聊天界面处理 (第 {retry+1}/{max_retry} 次)")
 
-        if result == LiaisonResult.FIND_CHAT_ICON:
-            self.log_info("发现干员聊天图标，开始收取或赠送礼物")
-            return self.collect_and_give_gifts()
+            if self.collect_and_give_gifts():
+                return True
 
-        elif result:
+            retry += 1
+            if retry >= max_retry:
+                self.log_info("多次收礼失败，停止重试")
+                return False
+
+            result = self.navigate_to_operator_liaison_station()
+        if result:
             self.log_info("成功到达干员联络台，开始干员联络任务")
             if self.perform_operator_liaison():
                 self.log_info("干员联络完成，开始收取或赠送礼物")

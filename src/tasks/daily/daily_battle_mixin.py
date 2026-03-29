@@ -120,8 +120,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
             left_ticket = self.get_claim(stages_cost[category_name], left_ticket)
             self.sleep(2)
             if left_ticket <= 0:
-                self.wait_click_ocr(match=re.compile("离开"), box=self.box.bottom_right, log=True, recheck_time=1,
-                                    after_sleep=2)
+                self.wait_click_ocr(match=re.compile("离开"), box=self.box.bottom_right, log=True, recheck_time=1)
                 break
         return True
 
@@ -174,6 +173,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
 
     def to_battle(self, no_battle: bool = False, challenge_check=False):
         if not challenge_check:
+            self.wait_pop_up(time_out=4)
             end_time = time.time()
             while not self.wait_ocr(match=re.compile("撤离"), time_out=1, box=self.box.top_left, log=True):
                 if time.time() - end_time > 30:
@@ -185,6 +185,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
             back_window(prev)
             self.press_key("f")
         else:
+            self.wait_pop_up(time_out=4)
             end_time = time.time()
             while not self.wait_ocr(match=re.compile("挑战"), time_out=1, box=self.box.top_left, log=True):
                 if time.time() - end_time > 30:

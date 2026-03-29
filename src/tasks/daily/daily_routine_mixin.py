@@ -755,11 +755,6 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             self.click(result, after_sleep=2)
             self.logger.info("点击制造室")
             for i in range(2):
-                if i == 0:
-                    if not self.wait_click_ocr(match=re.compile("收取"), time_out=3, box=self.box.bottom,
-                                               after_sleep=1):
-                        continue
-                    self.wait_pop_up(after_sleep=1)
                 if i == 1:
                     if not self.wait_click_ocr(match=re.compile("助力"), time_out=3, box=self.box.top_right,
                                                after_sleep=1):
@@ -768,8 +763,14 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                                                after_sleep=1):
                         continue
                 if icon := self.find_one(feature_name=fL.max_icon, horizontal_variance=0.1, vertical_variance=0.1):
-                    self.click(icon, after_sleep=1)
-                self.wait_click_ocr(match=re.compile("确认"), time_out=2, box=self.box.bottom, after_sleep=1)
+                    self.click(icon)
+                self.wait_click_ocr(match=re.compile("确认"), time_out=2, box=self.box.bottom)
+                if i == 0:
+                    if not self.wait_click_ocr(
+                        match=re.compile("收取"), time_out=3, box=self.box.bottom
+                    ):
+                        continue
+                    self.wait_pop_up(after_sleep=1)
             self.safe_back(match=re.compile("运转"), box=self.box.top_left)
         self.wait_click_ocr(match=re.compile("助力"), time_out=2, box=self.box.top_right, after_sleep=1)
         self.wait_click_ocr(match=re.compile("使用"), time_out=2, box=self.box.bottom_right, after_sleep=1)

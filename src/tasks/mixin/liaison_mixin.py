@@ -438,7 +438,7 @@ class LiaisonMixin(NavigationMixin):
 
         while True:
 
-            if time.time() - start_time > 30:
+            if time.time() - start_time > 10:
                 self.log_info("等待 收下/赠送 超时")
                 return False
 
@@ -477,7 +477,7 @@ class LiaisonMixin(NavigationMixin):
 
             while True:
 
-                if time.time() - start_time > 30:
+                if time.time() - start_time > 10:
                     self.log_info("等待 收下/赠送 超时")
                     return False
 

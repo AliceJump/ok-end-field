@@ -680,13 +680,14 @@ class BaseEfTask(BaseTask):
 
     def ensure_map(self, addtional_match=None, time_out=30):
         """确保进入地图界面，超时30秒"""
-        satet_time = time.time()
+        self.ensure_main()
+        start_time = time.time()
         if addtional_match:
             match = [re.compile("事务")]+addtional_match if isinstance(addtional_match, list) else [re.compile("事务"), re.compile(addtional_match)]
         else:
             match = [re.compile("事务")]
         while not self.wait_ocr(match=match, time_out=2, box=self.box.top_left):
-            if time.time() - satet_time > time_out:
+            if time.time() - start_time > time_out:
                 raise Exception("进入地图失败")
             self.press_key("m")
 

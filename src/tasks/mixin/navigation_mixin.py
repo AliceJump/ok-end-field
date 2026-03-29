@@ -31,7 +31,12 @@ class NavigationMixin(BaseEfTask):
 
         self.press_key("m", after_sleep=2)
         self.log_info("关闭地图界面 (按下 M)")
-
+        start_time= time.time()
+        while not self.find_feature(feature_name=target_feature_out_map, box=self.box_of_screen(0, 0, 1, 1), threshold=0.7
+        ):
+            if time.time() - start_time > 5:
+                self.log_info("等待追踪图标超时")
+                return False
         self.align_ocr_or_find_target_to_center(
             ocr_match_or_feature_name_list=target_feature_out_map,
             only_x=True,
