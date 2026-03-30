@@ -59,7 +59,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.wait_click_ocr(match=re.compile("信用交易所"), box=self.box.top, time_out=5)
         result = self.wait_click_ocr(match=[re.compile("收取信用"), re.compile("无待领取信用")],
                                      box=self.box.bottom_left,
-                                     time_out=5)
+                                     time_out=7)
         if not result:
             self.log_info("未找到可收取信用或无待领取信用的选项")
             return False
@@ -81,7 +81,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 self.log_info("循环过多次仍未找到交流或助力对象，可能出现异常，结束拜访")
                 return False
             if is_first_time:
-                self.wait_click_ocr(match=re.compile("好友"), box=self.box.right, time_out=5)
+                self.wait_click_ocr(match=re.compile("好友"), box=self.box.right, time_out=7)
             else:
                 if left_exchange_time <= 0 and left_help_time <= 0:
                     if exchange_not_found:
@@ -124,7 +124,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                     self.wait_ui_stable(refresh_interval=1)
 
             self.click(result)
-            self.wait_click_ocr(match=re.compile("确定"), box=self.box.bottom_right, time_out=5, after_sleep=2)
+            self.wait_click_ocr(match=re.compile("确定"), box=self.box.bottom_right, time_out=5)
             if not self.ensure_in_friend_boat():
                 self.log_info("未能进入好友帝江号")
                 return False
@@ -161,8 +161,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                             if result := self.wait_ocr(match=re.compile("生产助力"), box=exchange_help_box, time_out=5):
                                 self.log_info("继续进行助力操作")
                                 self.click(result[-1])
-                                if self.find_reward_ok():
-                                    self.wait_pop_up()
+                                self.wait_pop_up(time_out=3)
                                 left_help_time -= 1
                                 help_time += 1
             select_visit_deadline = time.time() + 30
