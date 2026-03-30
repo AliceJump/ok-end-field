@@ -24,10 +24,10 @@ class DailyShopMixin(Common):
             return False, sum_credit
         cost = self.refresh_cost_list[self.refresh_count]
         if sum_credit - cost > 210:
-            if not self.wait_click_ocr(match=re.compile("立即刷新"), time_out=5, box=self.box.bottom_right,
-                                       after_sleep=2):
+            if not self.wait_click_ocr(match=re.compile("立即刷新"), time_out=5, box=self.box.bottom_right):
                 return False, sum_credit
-            if not self.wait_click_ocr(match=re.compile("确认"), time_out=5, box=self.box.bottom_right, after_sleep=2):
+            if not self.wait_click_ocr(match=re.compile("确认"), time_out=5, box=self.box.bottom_right):
+                self.wait_ui_stable(refresh_interval=0.5)
                 return False, sum_credit
             sum_credit -= cost
             self.refresh_count += 1
@@ -36,7 +36,7 @@ class DailyShopMixin(Common):
 
     def back_shop(self):
         while not self.wait_ocr(match=re.compile("采购"), time_out=1):
-            self.back(after_sleep=2)
+            self.back(after_sleep=1)
 
     def get_cost(self):
 
@@ -75,14 +75,15 @@ class DailyShopMixin(Common):
 
         results.extend(result or [])
         for result in results:
-            self.click(result, after_sleep=2)
+            self.click(result)
+            self.wait_ui_stable(refresh_interval=0.5)
             cost = self.get_cost()
             if cost <= 0:
                 continue
-            if not self.wait_click_ocr(match=re.compile("确认"), after_sleep=2, time_out=4, box=self.box.bottom_right):
+            if not self.wait_click_ocr(match=re.compile("确认"), time_out=4, box=self.box.bottom_right):
                 self.back_shop()
                 return False, sum_credit, False
-            self.wait_pop_up(after_sleep=2)
+            self.wait_pop_up(after_sleep=1)
             sum_credit -= cost
         if sum_credit <=self.config.get('信用商店保留信用',300):
             return True, sum_credit, True
@@ -111,14 +112,15 @@ class DailyShopMixin(Common):
     def buy_left(self, sum_credit):
         results = self.find_feature(feature_name=fL.credit_can_buy, box=self.credit_good_search_box)
         for result in results:
-            self.click(result, after_sleep=2)
+            self.click(result)
+            self.wait_ui_stable(refresh_interval=0.5)
             cost = self.get_cost()
             if cost <= 0:
                 continue
-            if not self.wait_click_ocr(match=re.compile("确认"), after_sleep=2, time_out=4, box=self.box.bottom_right):
+            if not self.wait_click_ocr(match=re.compile("确认"), time_out=4, box=self.box.bottom_right):
                 self.back_shop()
                 return False
-            self.wait_pop_up(after_sleep=2)
+            self.wait_pop_up(after_sleep=1)
             sum_credit -= cost
             if sum_credit <=self.config.get('信用商店保留信用',300):
                 return True
