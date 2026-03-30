@@ -29,6 +29,7 @@ class DailyTask(
         self.support_schedule_task = True
         self.stages_list = stages_list
         self.default_config.update({"发生异常时终止游戏": False})
+        self.config_description.update({"发生异常时终止游戏": "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。"})
         self.add_exit_after_config()
         if self.debug:
             self.default_config.update({"重复测试的次数": 1})
@@ -92,14 +93,16 @@ class DailyTask(
                     self.log_info("日常完成!", notify=True)
         except Exception as e:
             self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_Exception')
-            # 除 TaskDisabledException 外的异常才杀死进程
-            if not isinstance(e, TaskDisabledException):
-                if self.config.get("发生异常时终止游戏", False):
-                    self.log_info("发生异常，终止游戏", notify=True)
-                    self.kill_process()
-                else:
+            if not self.config.get("发生异常时终止游戏", False):
+                self.log_info("发生异常，继续游戏", notify=True)
+                raise e
+            else:
+                if isinstance(e, TaskDisabledException):
                     self.log_info("发生异常，继续游戏", notify=True)
-            raise
+                    raise e
+                else:
+                    self.log_info("发生异常，终止游戏", notify=True)
+
 
     def execute_task(self, key, func):
         """统一执行单个子任务。"""
