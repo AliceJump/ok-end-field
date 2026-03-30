@@ -31,7 +31,6 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
             "体力本": "干员经验",
             "仅站桩": False,
             **{key: "" for key in gather_list},
-            #
             "技能释放": "123",
             "启动技能点数": 2,
             "后台结束战斗通知": True,

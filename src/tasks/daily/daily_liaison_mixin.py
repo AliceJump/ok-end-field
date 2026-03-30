@@ -14,6 +14,7 @@ class DailyLiaisonMixin(LiaisonMixin):
         #
         self.config_type["优先送礼对象"] = {"type": "drop_down", "options": list(self.can_contact_dict.keys())}
         self.default_config.update({
+            "帮助": "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/docs/日常任务.md",
             "⭐送礼": True,
             "送礼任务最多尝试次数": 2,
             "优先送礼对象": list(self.can_contact_dict.keys())[0],
