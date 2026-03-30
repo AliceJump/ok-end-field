@@ -501,17 +501,7 @@ class BaseEfTask(BaseTask):
         else:
             self.log_error(f"未找到‘{model}’按钮，任务中止。")
             return False
-    def back(self, after_sleep = 0):
-        start_time = time.time()
-        try:
-            if self.wait_pop_up(time_out=1):
-                return True
-            return super().back()
-        finally:
-            end_time = time.time()
-            if end_time - start_time < after_sleep:
-                self.sleep(after_sleep - (end_time - start_time))
-    def skip_dialog(self, end_list=re.compile("确认"), end_box=None):
+    def skip_dialog(self, end_box=None):
         """跳过对话框，自动点击"确认"或"跳过"按钮
         
         Args:
@@ -528,8 +518,6 @@ class BaseEfTask(BaseTask):
             if time.time() - start_time > 60:
                 self.log_info("skip_dialog 超时退出")
                 return False
-            if self.wait_ocr(match=["工业", "探索"], box=self.box.top_left, time_out=2):
-                return True
             if self.find_one("skip_dialog_esc", horizontal_variance=0.05):
                 self.send_key("esc", after_sleep=0.1)
                 start = time.time()
@@ -542,8 +530,8 @@ class BaseEfTask(BaseTask):
                     elif clicked_confirm:
                         self.log_debug("AutoSkipDialogTask no confirm break")
                         return True
-            if end_list and self.wait_click_ocr(match=end_list, box=end_box, time_out=1):
-                return True
+                    self.next_frame()
+            self.sleep(0.5)
 
     def in_bg(self):
         """判断游戏窗口是否在后台
@@ -664,7 +652,7 @@ class BaseEfTask(BaseTask):
         if self.wait_login():
             return True
         rules = [
-            [[re.compile("离开"), re.compile("退出"), re.compile("结束")], self.box.center, [re.compile("确认"), re.compile("确定")], self.box.bottom_right],
+            [[re.compile("离开"), re.compile("退出"), re.compile("结束"),re.compile("跳过")], self.box.center, [re.compile("确认"), re.compile("确定")], self.box.bottom_right],
             [None, None, re.compile("结束拜访"), self.box.bottom_right],
             [None, None, re.compile("空白"), self.box.bottom]
         ]

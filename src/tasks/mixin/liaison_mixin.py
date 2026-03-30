@@ -433,7 +433,6 @@ class LiaisonMixin(NavigationMixin):
             bool: 是否成功完成
         """
         self.log_info("开始收取或赠送礼物")
-
         start_time = time.time()
 
         while True:
@@ -456,23 +455,9 @@ class LiaisonMixin(NavigationMixin):
                 break
 
         if result and len(result) > 0 and "收下" in result[0].name:
-
             self.log_info("开始收下礼物")
-
-            self.skip_dialog(
-                end_list=[re.compile("ms")],
-                end_box=self.box.bottom_left
-            )
-
-            self.wait_click_ocr(
-                match=re.compile("确认"),
-                box=self.box.bottom_right,
-                time_out=5,
-                after_sleep=0.5,
-            )
-
+            self.skip_dialog()
             self.press_key('f', after_sleep=0.5)
-
             start_time = time.time()
 
             while True:
@@ -483,11 +468,7 @@ class LiaisonMixin(NavigationMixin):
 
                 self.click(0.5, 0.5, after_sleep=0.5)
 
-                result = self.wait_click_ocr(
-                    match=[re.compile("赠送")],
-                    box=self.box.bottom_right,
-                    time_out=2,
-                )
+                result = self.wait_click_ocr(match=[re.compile("赠送")], box=self.box.bottom_right, time_out=2)
 
                 if result:
                     self.log_info("收下完成，准备赠送礼物")
@@ -496,52 +477,16 @@ class LiaisonMixin(NavigationMixin):
         self.click(144 / 1920, 855 / 1080)
         self.log_info("点击赠送礼物位置")
         self.log_info("本次成功")
-
         if self.wait_click_ocr(
                 match=re.compile("确认赠送"),
                 box=self.box.bottom_right,
                 time_out=5,
                 after_sleep=0.5,
         ):
-
             self.log_info("确认赠送按钮已出现")
 
-            start_time = time.time()
-
-            while True:
-
-                if time.time() - start_time > 30:
-                    self.log_info("等待 离开按钮 超时")
-                    return False
-
-                self.click(0.5, 0.5, after_sleep=0.5)
-
-                result = self.wait_click_ocr(
-                    match=[re.compile("离开")],
-                    box=self.box.bottom_right,
-                    time_out=2,
-                )
-
-                if result:
-                    self.log_info("赠送完成，点击离开")
-                    break
-
+            self.skip_dialog()
             self.log_info("成功赠送礼物")
-
             return True
-
-        else:
-
-            self.back(after_sleep=2)
-            self.back(after_sleep=2)
-
-            self.wait_click_ocr(
-                match=re.compile("确认"),
-                box=self.box.bottom_right,
-                time_out=5,
-                after_sleep=2
-            )
-
         self.log_info("赠送礼物失败")
-
         return False
