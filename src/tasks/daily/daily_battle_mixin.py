@@ -317,7 +317,6 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         if not self.wait_click_ocr(match=re.compile("领取"), box=self.box.bottom_right, time_out=2, log=True):
             self.log_info("领取失败")
             return 0
-        self.wait_pop_up(after_sleep=2)
         # 预测下一轮是否还能继续
         next_sum = sum_ticket_number - need_ticket_number
         self.log_info("预测下一轮消耗理智: {}, 预测下一轮剩余理智: {}".format(need_ticket_number, next_sum))
