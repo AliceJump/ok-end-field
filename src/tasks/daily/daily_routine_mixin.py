@@ -20,6 +20,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             "⭐转交运送委托": True,
             "⭐转交委托奖励领取": True,
             "⭐造装备": True,
+            "⭐简易制作": True,
             "⭐收信用": True,
             "尝试仅收培育室": True,
             "⭐帝江号收菜": True,
@@ -43,6 +44,13 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             "⭐周常奖励": "是否领取「活动中心/每周事物」中的奖励。",
             "⭐日常奖励": "是否领取「行动手册/日常」和「通行证」中的奖励。",
         })
+    def make_simply(self):
+        self.info_set("current_task", "make_simply")
+        self.transfer_to_home_point(should_check_out_boat=True)
+        self.press_key("b")
+        self.wait_click_ocr(match=[re.compile("简易"),re.compile("制作")], box=self.box.top_right, time_out=5)
+        self.wait_click_ocr(match=re.compile("可"), box=self.box.left, time_out=5)
+        self.wait_click_ocr(match="制作", box=self.box.bottom_right, time_out=5)
 
     def wait_friend_list(self, end_icon_name="friend_chat_icon"):
         start_time = time.time()
@@ -711,7 +719,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
 
             if self.wait_click_ocr(match=re.compile("接收"), time_out=4, box=self.box.right, after_sleep=1):
                 self.wait_click_ocr(match=re.compile("全部接收"), time_out=4, box=self.box.right, after_sleep=1)
-                self.back(after_sleep=2)
+                self.back(after_sleep=1)
             else:
                 self.logger.info("未找到接收按钮")
             results = []
@@ -735,7 +743,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 self.click(result)
                 self.wait_click_ocr(match=re.compile("的线索"), time_out=4, box=self.box.top_right, after_sleep=1)
                 if not self.wait_ocr(match=[re.compile(i) for i in ["设施", "等级"]], box=self.box.left, time_out=1):
-                    self.back(after_sleep=2)
+                    self.back(after_sleep=1)
             if self.wait_click_ocr(match=re.compile("开展交流"), time_out=4, box=self.box.bottom, after_sleep=1):
                 self.wait_pop_up()
             self.log_info("收集线索任务完成")

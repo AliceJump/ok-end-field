@@ -501,7 +501,16 @@ class BaseEfTask(BaseTask):
         else:
             self.log_error(f"未找到‘{model}’按钮，任务中止。")
             return False
-
+    def back(self, after_sleep = 0):
+        start_time = time.time()
+        try:
+            if self.wait_pop_up(time_out=1):
+                return True
+            return super().back()
+        finally:
+            end_time = time.time()
+            if end_time - start_time < after_sleep:
+                self.sleep(after_sleep - (end_time - start_time))
     def skip_dialog(self, end_list=re.compile("确认"), end_box=None):
         """跳过对话框，自动点击"确认"或"跳过"按钮
         
@@ -715,7 +724,6 @@ class BaseEfTask(BaseTask):
             if result:
                 self.click(result, after_sleep=after_sleep)
                 return True
-            self.sleep(1)
             count += 1
 
     def wait_login(self):
