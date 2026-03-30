@@ -8,7 +8,6 @@ class DailyBuyMixin(Common):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_config.update({
-            "⭐收邮件": True,
             "⭐买物资": False,
             "购物白名单": "",
             "是否买礼物": True,

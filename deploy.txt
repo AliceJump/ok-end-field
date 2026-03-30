@@ -1,3 +1,4 @@
+docs
 src
 ok
 main.py

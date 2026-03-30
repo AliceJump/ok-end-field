@@ -83,6 +83,7 @@ class DailyTask(
                 failed_tasks = []
                 for key, func in tasks:
                     if not self.execute_task(key, func):
+                        self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_FailTask_{key}')
                         failed_tasks.append(key)
                 if failed_tasks:
                     self.log_info(f"以下任务未完成或失败: {failed_tasks}", notify=True)
