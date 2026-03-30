@@ -301,7 +301,7 @@ class DailyTradeMixin(NavigationMixin, Common):
             if self.config.get("只买不卖", False):
                 buy_good=good_infos
                 sell_goods=[]
-                can_buy = buy_good and buy_good.good_price < buy_price
+                can_buy = buy_good and (buy_good.good_price < buy_price)
             else:
                 buy_good, sell_goods, can_buy = self.analyze_goods_info(
                     good_infos, buy_price, sell_price

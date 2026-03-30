@@ -696,7 +696,9 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         if not self.collect_clue(exchange_help_box):
             self.log_info("收集线索任务失败")
             ok_bool_clue=False
-        self.safe_back(match=re.compile("运转"), box=self.box.top_left)
+        if not self.safe_back(match=re.compile("运转"), box=self.box.top_left):
+            self.log_info("无法返回到运转界面")
+            return False
         if not self.up_make_room_num(exchange_help_box):
             self.log_info("提升房间等级任务失败")
             ok_up_room=False
@@ -781,7 +783,9 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                     ):
                         continue
                     self.wait_pop_up(after_sleep=1)
-            self.safe_back(match=re.compile("运转"), box=self.box.top_left)
+            if not self.safe_back(match=re.compile("运转"), box=self.box.top_left):
+                self.log_info("无法返回到运转界面")
+                return False
         self.wait_click_ocr(match=re.compile("助力"), time_out=2, box=self.box.top_right, after_sleep=1)
         self.wait_click_ocr(match=re.compile("使用"), time_out=2, box=self.box.bottom_right, after_sleep=1)
         char_list = list(get_contact_list_with_feature_list().values())

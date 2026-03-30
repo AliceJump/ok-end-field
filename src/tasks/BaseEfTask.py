@@ -51,7 +51,7 @@ class BaseEfTask(BaseTask):
 
         self._start_detector_loading()
 
-    def safe_back(self, match, box=None, time_out: float = 1, after_sleep: float = 1):
+    def safe_back(self, match, box=None, time_out: float = 30, ocr_time_out: float = 2):
         """
         超时版本的返回操作：在 time_out 内等待 match 出现，如果未出现则执行 back。
 
@@ -59,11 +59,15 @@ class BaseEfTask(BaseTask):
             match: OCR 匹配条件，通常是正则
             box: OCR 搜索区域
             time_out: 最大等待时间（秒）
-            after_sleep: 每次 back 后等待时间
+            ocr_time_out: OCR 等待时间（秒）
         """
-        while not self.wait_ocr(match=match, time_out=time_out, box=box):  # 每次短等待
+        self.start_time = time.time()
+        while not self.wait_ocr(match=match, time_out=ocr_time_out, box=box):  # 每次短等待
+            if time.time() - self.start_time > time_out:
+                return False
             # 超时未找到，则执行 back
-            self.back(after_sleep=after_sleep)
+            self.back()
+        return True
 
     def _start_detector_loading(self):
 

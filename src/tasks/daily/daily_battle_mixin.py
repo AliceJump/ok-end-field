@@ -52,24 +52,20 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
     def battle(self):
         stage_name = self.config.get("体力本")
         category_name = get_stage_category(stage_name)
-        #
         if self.config.get("消耗限时体力药", False):
             self.ensure_main()
-            self.press_key('f8', after_sleep=2)
+            self.press_key('f8')
+            self.wait_click_ocr(match=re.compile("索引"), time_out=7, after_sleep=2, box=self.box.top, log=True)
             self.click(3530/3840, 80/2160, after_sleep=2)  # 右上角加号
             box_list = self.ocr(x=0.28, y=0.45, to_x=0.88, to_y=0.66, match=re.compile(r"(\d+)天"))
             if len(box_list) <= 0:
                 self.log_error("未找到 应急理智加强剂")
-                self.send_key('esc', after_sleep=2)
-                self.send_key('esc', after_sleep=2)
             else:
                 box = box_list[0]
                 validity  = float(re.findall(r'(\d+)', box.name)[0])
                 box_list=self.ocr(x=box.x/self.width+0.04, y=box.y/self.height+0.14, to_x=box.x/self.width+0.08, to_y=box.y/self.height+0.18, match=re.compile(r"(\d+)"))
                 if len(box_list) <= 0:
                     self.log_error("未找到 应急理智加强剂")
-                    self.send_key('esc', after_sleep=2)
-                    self.send_key('esc', after_sleep=2)
                 else:
                     count = float(re.findall(r'(\d+)', box_list[0].name)[0])
                     consume = min(max(1, math.ceil(2 * count / validity)), count)
@@ -79,16 +75,11 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                         self.click(box)
                     if not self.wait_click_ocr(match=re.compile("确认"), box=self.box.bottom_right, after_sleep=2):
                         self.log_error("无法使用 应急理智加强剂")
-                        self.send_key('esc', after_sleep=2)
-                        self.send_key('esc', after_sleep=2)
                     else:
                         self.log_error(f"已使用 {consume} 个 应急理智加强剂")
                         self.wait_pop_up()
-                        self.send_key('esc', after_sleep=2)
-        #
-        self.ensure_main()
-        self.press_key('f8', after_sleep=2)
-        self.wait_click_ocr(match=re.compile("索引"), time_out=5, after_sleep=2, box=self.box.top, log=True)
+        if not self.safe_back(re.compile("干员"), box=self.box.top_left, time_out=10, ocr_time_out=2):
+            return False
         left_ticket = self.detect_ticket_number()
         self.log_info(f"当前体力: {left_ticket}")
         if left_ticket < stages_cost[category_name]:
