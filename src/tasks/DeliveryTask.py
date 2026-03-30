@@ -578,7 +578,7 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                 if not isinstance(e, TaskDisabledException):
                     if self.config.get("发生异常时终止游戏", False):
                         self.log_info("发生异常，终止游戏", notify=True)
-                        self.kill_process()
+                        self.kill_all_related_processes()
                     else:
                         self.log_info("发生异常，继续运行", notify=True)
                 raise
