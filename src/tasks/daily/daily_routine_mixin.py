@@ -51,6 +51,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.wait_click_ocr(match=[re.compile("简易"),re.compile("制作")], box=self.box.top_right, time_out=5)
         self.wait_click_ocr(match=re.compile("可"), box=self.box.left, time_out=5)
         self.wait_click_ocr(match="制作", box=self.box.bottom_right, time_out=5)
+        self.wait_pop_up()
 
     def wait_friend_list(self, end_icon_name="friend_chat_icon"):
         start_time = time.time()
