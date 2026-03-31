@@ -65,7 +65,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
     def collect_credit(self):
         self.info_set("current_task", "collect_credit")
         self.press_key("f5")
-        self.wait_click_ocr(match=re.compile("信用交易所"), box=self.box.top, time_out=5)
+        self.wait_click_ocr(match=re.compile("信用交易所"), box=self.box.top, time_out=5, recheck_time=1)
         result = self.wait_click_ocr(match=[re.compile("收取信用"), re.compile("无待领取信用")],
                                      box=self.box.bottom_left,
                                      time_out=7)
@@ -763,6 +763,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             self.log_info("未找到制造舱，任务失败")
             return False
         for result in results:
+            self.sleep(0.5)
             self.click(result, after_sleep=2)
             self.logger.info("点击制造室")
             for i in range(2):
