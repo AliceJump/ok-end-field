@@ -12,8 +12,8 @@ from ok import TaskDisabledException
 
 
 class DailyTask(
-    DailyBattleMixin,   # 刷体力
     DailyBuyMixin,      # 买物资
+    DailyBattleMixin,   # 刷体力
     DailyTradeMixin,    # 买卖货
     DailyShopMixin,     # 买信用商店
     DailyRoutineMixin,  # 其它
