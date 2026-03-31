@@ -13,6 +13,7 @@ class BattleTask(DailyBattleMixin):
         self.icon = FluentIcon.BRIGHTNESS
 
     def run(self):
+        self.ensure_main(time_out=420)
         if self.battle():
             self.log_info("刷体力结束!", notify=self.config.get("后台结束战斗通知") and self.in_bg())
         else:

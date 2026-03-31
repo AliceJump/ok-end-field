@@ -31,6 +31,7 @@ class DailyShopMixin(Common):
                 return False, sum_credit
             sum_credit -= cost
             self.refresh_count += 1
+            self.wait_ui_stable(refresh_interval=1)
             return True, sum_credit
         return False, sum_credit
 

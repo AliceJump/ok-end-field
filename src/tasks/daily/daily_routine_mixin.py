@@ -90,7 +90,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 self.log_info("循环过多次仍未找到交流或助力对象，可能出现异常，结束拜访")
                 return False
             if is_first_time:
-                self.wait_click_ocr(match=re.compile("好友"), box=self.box.right, time_out=7)
+                self.wait_click_ocr(match=re.compile("好友"), box=self.box.right, time_out=7, recheck_time=1)
             else:
                 if left_exchange_time <= 0 and left_help_time <= 0:
                     if exchange_not_found:
@@ -629,7 +629,6 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             self.log_info("发现可领取的额外奖励，点击领取")
             self.click(result, after_sleep=2)
             self.wait_pop_up(after_sleep=2)
-            self.wait_pop_up()
             self.log_info("额外奖励领取完成")
 
         self.log_info("日常奖励领取完成")

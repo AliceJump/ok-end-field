@@ -130,15 +130,7 @@ class LiaisonMixin(NavigationMixin):
 
         # 等待传送完成
         self.log_info("等待传送完成，检查舰桥界面")
-
-        if not self.wait_ocr(
-                match="舰桥",
-                box=self.box.left,
-                time_out=60,
-                log=True
-        ):
-            pass
-
+        self.ensure_main()
         self.log_info("传送完成，已到达帝江号舰桥")
         return True
 
