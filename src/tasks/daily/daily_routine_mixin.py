@@ -584,16 +584,16 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.log_info("按下 F7 打开活动中心")
 
         if not self._click_ocr_with_info("每周事务", self.box.left):
+            self.log_info("未找到「活动中心/每周事务」")
             return False
 
-        if not self._click_ocr_with_info("领取", self.box.top_right):
-            return False
+        if self._click_ocr_with_info("领取", self.box.top_right):
+            if self._click_ocr_with_info("一键领取", self.box.bottom_right):
+                self.wait_pop_up(after_sleep=2)
+                self.log_info("已领取「每周事务」奖励")
+                return True
 
-        if not self._click_ocr_with_info("一键领取", self.box.bottom_right):
-            return False
-
-        self.wait_pop_up(after_sleep=2)
-        self.log_info(f"每周事务领取完成")
+        self.log_info(f"未找到「每周事务」奖励")
         return True
 
     def claim_daily_rewards(self):

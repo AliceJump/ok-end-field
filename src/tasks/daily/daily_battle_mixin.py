@@ -59,25 +59,26 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
             self.click(3530/3840, 80/2160, after_sleep=2)  # 右上角加号
             box_list = self.ocr(x=0.28, y=0.45, to_x=0.88, to_y=0.66, match=re.compile(r"(\d+)天"))
             if len(box_list) <= 0:
-                self.log_error("未找到 应急理智加强剂")
+                self.log_error("未找到应急理智加强剂，剩余天数未识别")
             else:
                 box = box_list[0]
                 validity  = float(re.findall(r'(\d+)', box.name)[0])
                 box_list=self.ocr(x=box.x/self.width+0.04, y=box.y/self.height+0.14, to_x=box.x/self.width+0.08, to_y=box.y/self.height+0.18, match=re.compile(r"(\d+)"))
                 if len(box_list) <= 0:
-                    self.log_error("未找到 应急理智加强剂")
+                    self.log_info("数量未识别，按照1个处理")
+                    count = 1
                 else:
                     count = float(re.findall(r'(\d+)', box_list[0].name)[0])
-                    consume = min(max(1, math.ceil(2 * count / validity)), count)
-                    self.log_error(f"找到 {int(count)} 个限时 {int(validity)} 天的 应急理智加强剂，本次预计使用 {consume} 个")
-                    #
-                    for i in range(consume):
-                        self.click(box)
-                    if not self.wait_click_ocr(match=re.compile("确认"), box=self.box.bottom_right, after_sleep=2):
-                        self.log_error("无法使用 应急理智加强剂")
-                    else:
-                        self.log_error(f"已使用 {consume} 个 应急理智加强剂")
-                        self.wait_pop_up()
+                consume = min(max(1, math.ceil(2 * count / validity)), count)
+                self.log_error(f"找到 {int(count)} 个限时 {int(validity)} 天的 应急理智加强剂，本次预计使用 {consume} 个")
+                #
+                for i in range(consume):
+                    self.click(box)
+                if not self.wait_click_ocr(match=re.compile("确认"), box=self.box.bottom_right, after_sleep=2):
+                    self.log_error("无法使用 应急理智加强剂")
+                else:
+                    self.log_error(f"已使用 {consume} 个 应急理智加强剂")
+                    self.wait_pop_up()
             if not self.safe_back(re.compile("干员"), box=self.box.top_left, time_out=10, ocr_time_out=2):
                 return False
         left_ticket = self.detect_ticket_number()
