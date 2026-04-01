@@ -73,9 +73,9 @@ class DailyTask(
                 # ===== 多账号模式 =====
                 if accounts_bool:
                     account = accounts_list[repeat_idx]
+                    self.current_user = account[0]
                     self.log_info(f"开始第 {repeat_idx+1}/{repeat_times} 个账号({account[0][-4:]})任务执行")
                     self.login_flow(account[0], account[1])
-                    self.current_user = account[0]
 
                 # ===== 调试模式 =====
                 elif self.debug:
@@ -99,6 +99,11 @@ class DailyTask(
                     self.log_info(f"第 {repeat_idx + 1} 轮 | 失败任务: {self.task_status['failed']}", notify=True)
                 else:
                     self.log_info(f"第 {repeat_idx + 1} 轮 | 日常完成!", notify=True)
+                if hasattr(self, "task_status"):
+                    if self.task_status.get("failed"):
+                        self.info_set("已失败的任务列表", self.task_status["failed"])
+                    if self.task_status.get("success"):
+                        self.info_set("已完成的任务列表", self.task_status["success"])
 
             # ✅ 汇总输出
             if repeat_times > 1:
@@ -120,14 +125,6 @@ class DailyTask(
             if self.current_task_key:
                 self.info_set("当前失败的任务", self.current_task_key)
             raise
-
-        finally:
-            # ✅ 防御性写法（避免异常覆盖）
-            if hasattr(self, "task_status"):
-                if self.task_status.get("failed"):
-                    self.info_set("已失败的任务列表", self.task_status["failed"])
-                if self.task_status.get("success"):
-                    self.info_set("已完成的任务列表", self.task_status["success"])
 
     def execute_task(self, key, func):
         """统一执行单个子任务。"""
