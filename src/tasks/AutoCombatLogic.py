@@ -53,84 +53,83 @@ class AutoCombatLogic:
                 wait_time = task.config.get("进入战斗后的初始等待时间", 3)
                 time.sleep(wait_time)
 
-            while True:
+        while True:
+            if task._check_single_exit_condition():
+                if task.debug:
+                    task.screenshot("out_of_combat")
+                task.log_info("自动战斗结束!", notify=task.config.get("后台结束战斗通知") and task.in_bg())
+                task.log_info("退出战斗主循环")
+                self._end = True
+                pyautogui.mouseUp()
+                break
+            if no_battle:
+                continue
+            task.approach_enemy()
+            if not self.rotation_enabled or not self.rotation_active:
+                if task.use_link_skill() or task.use_ult():
+                    continue
 
-                if task._check_single_exit_condition():
-                    if task.debug:
-                        task.screenshot("out_of_combat")
+                skill_count = task.get_skill_bar_count()
 
-                    task.log_info("自动战斗结束!", notify=task.config.get("后台结束战斗通知") and task.in_bg())
-                    task.log_info("退出战斗主循环")
-                    self._end = True
-                    pyautogui.mouseUp()
-                    break
+                if skill_count >= start_trigger_count:
+                    for skill_key in skill_sequence:
 
-                task.approach_enemy()
-                if not self.rotation_enabled or not self.rotation_active:
-                    if task.use_link_skill() or task.use_ult():
-                        continue
+                        if not task.in_combat():
+                            break
 
-                    skill_count = task.get_skill_bar_count()
+                        while True:
+                            current_points = task.get_skill_bar_count()
+                            time_since_last_skill = time.time() - task.last_skill_time
 
-                    if skill_count >= start_trigger_count:
-                        for skill_key in skill_sequence:
-
-                            if not task.in_combat():
+                            if current_points >= 1 and time_since_last_skill >= 1.0:
                                 break
 
-                            while True:
-                                current_points = task.get_skill_bar_count()
-                                time_since_last_skill = time.time() - task.last_skill_time
+                            if task.use_link_skill() or task.use_ult():
+                                continue
 
-                                if current_points >= 1 and time_since_last_skill >= 1.0:
-                                    break
-
-                                if task.use_link_skill() or task.use_ult():
-                                    continue
-
-                                if current_points < 0 and (task.ocr_lv() or not task.in_team()):
-                                    break
-
-                                task.approach_enemy()
-                                time.sleep(0.05)
-
-                            if not task.in_combat():
+                            if current_points < 0 and (task.ocr_lv() or not task.in_team()):
                                 break
 
-                            task.send_key(skill_key)
-                            task.last_skill_time = time.time()
-                            task.last_op_time = time.time()
+                            task.approach_enemy()
+                            time.sleep(0.05)
 
-                            task.log_info(f"Used skill {skill_key}")
-                else:
-                    if time.time() - self.last_rotation_ok_time >= 5:
-                        self.rotation_active = False
-                        task.log_info("排轴超时，切换为普通模式")
-                    now_skill = self.skill_sequence[self.skill_index]
-                    if now_skill.startswith("ult_"):
-                        ult_sequence = now_skill[4:]
-                        if task.use_ult(ult_sequence=ult_sequence):
-                            task.log_info(f"排轴释放终极技 {now_skill}")
-                            self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
-                            self.last_rotation_ok_time = time.time()
-                            continue
-                    elif now_skill.startswith("sleep_"):
-                        sleep_time = float(now_skill[6:])
-                        task.log_info(f"排轴等待 {sleep_time} 秒")
-                        time.sleep(sleep_time)
+                        if not task.in_combat():
+                            break
+
+                        task.send_key(skill_key)
+                        task.last_skill_time = time.time()
+                        task.last_op_time = time.time()
+
+                        task.log_info(f"Used skill {skill_key}")
+            else:
+                if time.time() - self.last_rotation_ok_time >= 5:
+                    self.rotation_active = False
+                    task.log_info("排轴超时，切换为普通模式")
+                now_skill = self.skill_sequence[self.skill_index]
+                if now_skill.startswith("ult_"):
+                    ult_sequence = now_skill[4:]
+                    if task.use_ult(ult_sequence=ult_sequence):
+                        task.log_info(f"排轴释放终极技 {now_skill}")
                         self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
+                        self.last_rotation_ok_time = time.time()
                         continue
-                    elif now_skill == 'e':
-                        if task.use_link_skill():
-                            task.log_info(f"排轴释放连携技 {now_skill}")
-                            self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
-                            self.last_rotation_ok_time = time.time()
-                            continue
-                    else:
-                        if task.get_skill_bar_count() >= 1:
-                            task.send_key(now_skill)
-                            task.log_info(f"排轴释放技能 {now_skill}")
-                            self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
-                            self.last_rotation_ok_time = time.time()
-                            continue
+                elif now_skill.startswith("sleep_"):
+                    sleep_time = float(now_skill[6:])
+                    task.log_info(f"排轴等待 {sleep_time} 秒")
+                    time.sleep(sleep_time)
+                    self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
+                    continue
+                elif now_skill == 'e':
+                    if task.use_link_skill():
+                        task.log_info(f"排轴释放连携技 {now_skill}")
+                        self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
+                        self.last_rotation_ok_time = time.time()
+                        continue
+                else:
+                    if task.get_skill_bar_count() >= 1:
+                        task.send_key(now_skill)
+                        task.log_info(f"排轴释放技能 {now_skill}")
+                        self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
+                        self.last_rotation_ok_time = time.time()
+                        continue
         return True
