@@ -27,8 +27,9 @@ class DailyTask(
         self.description = "子任务开关用⭐标出，自上而下顺序执行，最后执行『日常奖励』。\n如果出现反复按ESC的情形，请调高『设置/主界面单次动作后延迟』（建议1.5以上）。"
         self.icon = FluentIcon.SYNC
         self.support_schedule_task = True
-        self.stages_list = stages_list
+        self.task_status = {"success": [], "failed": []}
         self.default_config.update({"发生异常时终止游戏": False})
+        self.current_task_key = None
         self.add_exit_after_config()
         if self.debug:
             self.default_config.update({"重复测试的次数": 1})
@@ -65,15 +66,13 @@ class DailyTask(
             all_fail_tasks = []
             if self.debug:
                 for repeat_idx in range(repeat_times):
+                    self.task_status = {"success": [], "failed": []}
                     self.log_info(f"开始第 {repeat_idx + 1}/{repeat_times} 轮任务执行")
-                    failed_tasks = []
                     for key, func in tasks:
-                        if not self.execute_task(key, func):
-                            self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_FailTask_{key}')
-                            failed_tasks.append(key)
-                    if failed_tasks:
-                        all_fail_tasks.append((repeat_idx + 1, failed_tasks))
-                        self.log_info(f"第 {repeat_idx + 1} 轮 | 失败任务: {failed_tasks}", notify=True)
+                        self.execute_task(key, func)
+                    if self.task_status["failed"]:
+                        all_fail_tasks.append((repeat_idx + 1, self.task_status["failed"]))
+                        self.log_info(f"第 {repeat_idx + 1} 轮 | 失败任务: {self.task_status['failed']}", notify=True)
                     else:
                         self.log_info(f"第 {repeat_idx + 1} 轮 | 日常完成!", notify=True)
                 if all_fail_tasks:
@@ -81,13 +80,10 @@ class DailyTask(
                 else:
                     self.log_info("所有重复测试均成功完成!", notify=True)
             else:
-                failed_tasks = []
                 for key, func in tasks:
-                    if not self.execute_task(key, func):
-                        self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_FailTask_{key}')
-                        failed_tasks.append(key)
-                if failed_tasks:
-                    self.log_info(f"以下任务未完成或失败: {failed_tasks}", notify=True)
+                    self.execute_task(key, func)
+                if self.task_status["failed"]:
+                    self.log_info(f"以下任务未完成或失败: {self.task_status['failed']}", notify=True)
                 else:
                     self.log_info("日常完成!", notify=True)
         except Exception as e:
@@ -99,19 +95,32 @@ class DailyTask(
                     self.kill_all_related_processes()
                 else:
                     self.log_info("发生异常，继续游戏", notify=True)
+            if self.current_task_key:
+                self.info_set("当前失败的任务", self.current_task_key)
             raise
+        finally:
+            if self.task_status["failed"]:
+                self.info_set("已失败的任务列表", self.task_status["failed"])
+            if self.task_status["success"]:
+                self.info_set("已完成的任务列表", self.task_status["success"])
 
     def execute_task(self, key, func):
         """统一执行单个子任务。"""
         if isinstance(key, str):
             if not self.config.get(key, False):
                 return True
+        self.current_task_key = key
+        try:
+            self.log_info(f"开始任务: {key}")
+            self.ensure_main()
+            result = func()
 
-        self.log_info(f"开始任务: {key}")
-        self.ensure_main()
-        result = func()
-
-        if result is False:
-            self.log_info(f"任务 {key} 执行失败", notify=True)
-            return False
-        return True
+            if result is False:
+                self.task_status["failed"].append(key)
+                self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_FailTask_{key}')
+                self.log_info(f"任务 {key} 执行失败", notify=True)
+                return False
+            self.task_status["success"].append(key)
+            return True
+        finally:
+            self.current_task_key = None

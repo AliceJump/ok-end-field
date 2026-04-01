@@ -657,8 +657,7 @@ class BaseEfTask(BaseTask):
             return True
         rules = [
             [[re.compile("离开"), re.compile("退出"), re.compile("结束"),re.compile("跳过")], self.box.center, [re.compile("确认"), re.compile("确定")], self.box.bottom_right],
-            [None, None, re.compile("结束拜访"), self.box.bottom_right],
-            [None, None, re.compile("空白"), self.box.bottom]
+            [None, None, [re.compile("空白"), re.compile("结束拜访")], self.box.bottom]
         ]
         if not self.run_ocr_rules(rules):
             return False
@@ -670,10 +669,10 @@ class BaseEfTask(BaseTask):
     def run_ocr_rules(self, rules: list[list]) -> bool:
         for need, need_box, match, box in rules:
             if need is not None:
-                if not self.ocr(match=need, box=need_box):
+                if not self.wait_ocr(match=need, box=need_box, time_out=1):
                     continue
 
-            if result := self.ocr(match=match, box=box):
+            if result := self.wait_ocr(match=match, box=box, time_out=1):
                 self.click_with_alt(result, after_sleep=self.once_sleep_time)
                 return False
 

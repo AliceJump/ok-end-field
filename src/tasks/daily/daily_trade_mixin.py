@@ -80,7 +80,7 @@ class DailyTradeMixin(NavigationMixin, Common):
                 num = int(match.group())
 
                 # 过滤无效价格（按你的规则）
-                if num > 100:
+                if num > 400:
                     candidates.append(
                         GoodsInfo(
                             good_name="",

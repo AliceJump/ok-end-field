@@ -81,9 +81,17 @@ class DailyShopMixin(Common):
             cost = self.get_cost()
             if cost <= 0:
                 continue
-            if not self.wait_click_ocr(match=re.compile("确认"), time_out=4, box=self.box.bottom_right):
+            result = self.wait_click_ocr(
+                match=[re.compile("确认"), re.compile("不足")], time_out=4, box=self.box.bottom_right
+            )
+            if not result:
                 self.back_shop()
-                return False, sum_credit, False
+                return True, sum_credit, True
+            else:
+                if "不足" in result[0].name:
+                    self.info_set("信用商店警告", "购买优先商品时信用不足")
+                    self.back_shop()
+                    return False, sum_credit, False
             self.wait_pop_up(after_sleep=1)
             sum_credit -= cost
         if sum_credit <=self.config.get('信用商店保留信用',300):
@@ -118,9 +126,17 @@ class DailyShopMixin(Common):
             cost = self.get_cost()
             if cost <= 0:
                 continue
-            if not self.wait_click_ocr(match=re.compile("确认"), time_out=4, box=self.box.bottom_right):
+            result = self.wait_click_ocr(
+                match=[re.compile("确认"), re.compile("不足")], time_out=4, box=self.box.bottom_right
+            )
+            if not result:
                 self.back_shop()
                 return False
+            else:
+                if "不足" in result[0].name:
+                    self.info_set("信用商店警告", "购买优先商品时信用不足")
+                    self.back_shop()
+                    return True
             self.wait_pop_up(after_sleep=1)
             sum_credit -= cost
             if sum_credit <=self.config.get('信用商店保留信用',300):
