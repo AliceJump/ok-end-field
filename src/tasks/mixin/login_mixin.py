@@ -38,6 +38,7 @@ class LoginMixin(BaseEfTask):
             raise RuntimeError("未找到登出按钮")
         self.click(result[0], after_sleep=1)
         self.wait_click_ocr(match=re.compile("确认"), time_out=10, box=self.box.bottom_right, after_sleep=2)
+        self._logged_in=False
         start_time = time.time()
         while time.time() - start_time < 60:
             result = self.login_ocr(match=re.compile("密码"), box=self.box.bottom)
