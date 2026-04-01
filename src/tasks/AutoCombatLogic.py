@@ -63,6 +63,7 @@ class AutoCombatLogic:
                 pyautogui.mouseUp()
                 break
             if no_battle:
+                task.sleep(0.5)
                 continue
             task.approach_enemy()
             if not self.rotation_enabled or not self.rotation_active:
