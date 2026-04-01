@@ -8,6 +8,7 @@ from src.tasks.daily.daily_routine_mixin import DailyRoutineMixin
 from src.tasks.daily.daily_shop_mixin import DailyShopMixin
 from src.tasks.daily.daily_trade_mixin import DailyTradeMixin
 from src.tasks.daily.daily_buy_mixin import DailyBuyMixin
+from src.tasks.account.account_mixin import AccountMixin
 from ok import TaskDisabledException
 
 
@@ -18,6 +19,7 @@ class DailyTask(
     DailyShopMixin,     # 买信用商店
     DailyRoutineMixin,  # 其它
     DailyLiaisonMixin,  # 送礼
+    AccountMixin
 ):
     """日常任务聚合执行器。"""
 
@@ -38,15 +40,13 @@ class DailyTask(
         """日常任务主入口。"""
         try:
             self.log_info("开始执行日常任务...", notify=True)
-            repeat_times = 1
-            if self.debug:
-                repeat_times = self.config.get("重复测试的次数", 1)
-                self.log_info(f"当前为调试模式，重复执行 {repeat_times} 次")
-            if not self._logged_in:
-                self.ensure_main(time_out=240)
+            accounts_bool = self.config.get("多账户模式", False)
+            if accounts_bool:
+                accounts_list = self.get_acount_list()
+                repeat_times = len(accounts_list)
             else:
-                self.ensure_main()
-            tasks = [  # 确保在主界面
+                repeat_times = self.config.get("重复测试的次数", 1) if self.debug else 1
+            tasks = [
                 ("⭐送礼", self.execute_gift_task),
                 ("⭐收邮件", self.claim_mail),
                 ("⭐据点兑换", self.exchange_outpost_goods),
@@ -64,45 +64,66 @@ class DailyTask(
                 ("⭐日常奖励", self.claim_daily_rewards),
             ]
             all_fail_tasks = []
-            if self.debug:
-                for repeat_idx in range(repeat_times):
-                    self.task_status = {"success": [], "failed": []}
-                    self.log_info(f"开始第 {repeat_idx + 1}/{repeat_times} 轮任务执行")
-                    for key, func in tasks:
-                        self.execute_task(key, func)
-                    if self.task_status["failed"]:
-                        all_fail_tasks.append((repeat_idx + 1, self.task_status["failed"]))
-                        self.log_info(f"第 {repeat_idx + 1} 轮 | 失败任务: {self.task_status['failed']}", notify=True)
-                    else:
-                        self.log_info(f"第 {repeat_idx + 1} 轮 | 日常完成!", notify=True)
-                if all_fail_tasks:
-                    self.log_info(f"重复测试完成，失败统计: {all_fail_tasks}", notify=True)
+            for repeat_idx in range(repeat_times):
+
+                # ===== 多账号模式 =====
+                if accounts_bool:
+                    account = accounts_list[repeat_idx]
+                    self.log_info(f"开始第 {repeat_idx+1}/{repeat_times} 个账号({account[0][-4:]})任务执行")
+                    self.login_flow(account[0], account[1])
+
+                # ===== 调试模式 =====
+                elif self.debug:
+                    self.log_info(f"调试模式，第 {repeat_idx + 1}/{repeat_times} 轮")
+
+                if not self._logged_in:
+                    self.ensure_main(time_out=240)
                 else:
-                    self.log_info("所有重复测试均成功完成!", notify=True)
-            else:
+                    self.ensure_main()
+                # ✅ 每轮重置状态
+                self.task_status = {"success": [], "failed": []}
+
+                self.log_info(f"开始第 {repeat_idx + 1}/{repeat_times} 轮任务执行")
+
                 for key, func in tasks:
                     self.execute_task(key, func)
+
+                # ✅ 统计结果
                 if self.task_status["failed"]:
-                    self.log_info(f"以下任务未完成或失败: {self.task_status['failed']}", notify=True)
+                    all_fail_tasks.append((repeat_idx + 1, self.task_status["failed"]))
+                    self.log_info(f"第 {repeat_idx + 1} 轮 | 失败任务: {self.task_status['failed']}", notify=True)
                 else:
-                    self.log_info("日常完成!", notify=True)
+                    self.log_info(f"第 {repeat_idx + 1} 轮 | 日常完成!", notify=True)
+
+            # ✅ 汇总输出
+            if repeat_times > 1:
+                if all_fail_tasks:
+                    self.log_info(f"执行完成，失败统计: {all_fail_tasks}", notify=True)
+                else:
+                    self.log_info("所有任务均成功完成!", notify=True)
+
         except Exception as e:
             self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_Exception')
-            # 除 TaskDisabledException 外的异常才杀死进程
+
             if not isinstance(e, TaskDisabledException):
                 if self.config.get("发生异常时终止游戏", False):
                     self.log_info("发生异常，终止游戏", notify=True)
                     self.kill_all_related_processes()
                 else:
                     self.log_info("发生异常，继续游戏", notify=True)
+
             if self.current_task_key:
                 self.info_set("当前失败的任务", self.current_task_key)
+
             raise
+
         finally:
-            if self.task_status["failed"]:
-                self.info_set("已失败的任务列表", self.task_status["failed"])
-            if self.task_status["success"]:
-                self.info_set("已完成的任务列表", self.task_status["success"])
+            # ✅ 防御性写法（避免异常覆盖）
+            if hasattr(self, "task_status"):
+                if self.task_status.get("failed"):
+                    self.info_set("已失败的任务列表", self.task_status["failed"])
+                if self.task_status.get("success"):
+                    self.info_set("已完成的任务列表", self.task_status["success"])
 
     def execute_task(self, key, func):
         """统一执行单个子任务。"""

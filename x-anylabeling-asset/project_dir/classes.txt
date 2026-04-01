@@ -59,6 +59,7 @@ laevatain_contact
 last_rite_contact
 lifeng_contact
 logout
+main_out
 market_dispatch_terminal
 market_dispatch_terminal_out
 market_good_icon

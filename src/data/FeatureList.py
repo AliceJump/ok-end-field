@@ -63,6 +63,7 @@ class FeatureList(str, Enum):
     last_rite_contact = 'last_rite_contact'
     lifeng_contact = 'lifeng_contact'
     logout = 'logout'
+    main_out = 'main_out'
     market_dispatch_terminal = 'market_dispatch_terminal'
     market_dispatch_terminal_out = 'market_dispatch_terminal_out'
     market_good_icon = 'market_good_icon'

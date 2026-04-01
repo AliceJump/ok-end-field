@@ -12,7 +12,7 @@ import win32process, win32gui, win32api, win32con
 from PIL import Image
 from ok import BaseTask, Box
 from skimage.metrics import structural_similarity as ssim
-
+from src.image.login_screenshot import capture_window_by_screen
 from src.OpenVinoYolo8Detect import OpenVinoYolo8Detect
 from src.config import config as app_config
 from src.essence.essence_recognizer import EssenceInfo, read_essence_info
@@ -505,6 +505,22 @@ class BaseEfTask(BaseTask):
         else:
             self.log_error(f"未找到‘{model}’按钮，任务中止。")
             return False
+    def login_screenshot(self):
+        self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True)
+        self.sleep(0.1)
+        return capture_window_by_screen(self.hwnd.hwnd)
+    def login_ocr(self, x = 0, y = 0, to_x = 1, to_y = 1, match = None, width = 0, height = 0, box = None, name = None, threshold = 0, target_height = 0, use_grayscale = False, log = False, frame_processor = None, lib = 'default'):
+        img = self.login_screenshot()
+
+        if not isinstance(img, np.ndarray):
+            img = np.array(img)
+        return super().ocr(x, y, to_x, to_y, match, width, height, box, name, threshold, img, target_height, use_grayscale, log, frame_processor, lib)
+    def login_find_feature(self, feature_name = None, horizontal_variance = 0, vertical_variance = 0, threshold = 0, use_gray_scale = False, x = -1, y = -1, to_x = -1, to_y = -1, width = -1, height = -1, box = None, canny_lower = 0, canny_higher = 0, frame_processor = None, template = None, match_method = cv2.TM_CCOEFF_NORMED, screenshot = False, mask_function = None, frame = None):
+        img = self.login_screenshot()
+
+        if not isinstance(img, np.ndarray):
+            frame = np.array(img)
+        return super().find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale, x, y, to_x, to_y, width, height, box, canny_lower, canny_higher, frame_processor, template, match_method, screenshot, mask_function, frame)
     def skip_dialog(self, end_box=None):
         """跳过对话框，自动点击"确认"或"跳过"按钮
         
