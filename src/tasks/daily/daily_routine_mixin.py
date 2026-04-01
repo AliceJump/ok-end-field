@@ -133,7 +133,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                     self.wait_ui_stable(refresh_interval=1)
 
             self.click(result)
-            self.wait_click_ocr(match=re.compile("确定"), box=self.box.bottom_right, time_out=5)
+            self.click_confirm(time_out=5,after_sleep=2)
             if not self.ensure_in_friend_boat():
                 self.log_info("未能进入好友帝江号")
                 return False
@@ -684,7 +684,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             self.send_key("esc", after_sleep=2)
             self.wait_click_ocr(match=re.compile("取消"), time_out=5, after_sleep=2)
             if len(self.ocr(match=re.compile("是否取消"), box=self.box.center)) > 0:
-                self.wait_click_ocr(match=re.compile("确定"), box=self.box.center, time_out=5, after_sleep=2)
+                self.click_confirm(time_out=5, after_sleep=2)
 
         return True
     def boat_claim_rewards(self):

@@ -554,7 +554,25 @@ class BaseEfTask(BaseTask):
         return self.find_one(
             "skip_dialog_confirm", horizontal_variance=0.05, vertical_variance=0.05
         )
+    def click_confirm(self, after_sleep=0.5, time_out=5):
+        """点击对话框中的"确认"按钮
 
+        Args:
+            after_sleep: 点击后等待时间（秒）
+            time_out: 等待超时时间（秒）
+
+        """
+        start_time= time.time()
+        while True:
+            if time.time() - start_time > time_out:
+                self.log_info("点击确认超时")
+                return False
+            confirm = self.find_confirm()
+            if confirm:
+                self.click(confirm, after_sleep=after_sleep)
+                return True
+            self.sleep(0.1)
+            self.next_frame()
     def in_combat_world(self):
         """判断是否在战斗场景中
         
@@ -655,8 +673,9 @@ class BaseEfTask(BaseTask):
             return True
         if self.wait_login():
             return True
+        if self.click_confirm(time_out=1):
+            return False
         rules = [
-            [[re.compile("离开"), re.compile("退出"), re.compile("结束"),re.compile("跳过")], self.box.center, [re.compile("确认"), re.compile("确定")], self.box.bottom_right],
             [None, None, [re.compile("空白"), re.compile("结束拜访")], self.box.bottom]
         ]
         if not self.run_ocr_rules(rules):
