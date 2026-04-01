@@ -75,6 +75,7 @@ class DailyTask(
                     account = accounts_list[repeat_idx]
                     self.log_info(f"开始第 {repeat_idx+1}/{repeat_times} 个账号({account[0][-4:]})任务执行")
                     self.login_flow(account[0], account[1])
+                    self.current_user = account[0]
 
                 # ===== 调试模式 =====
                 elif self.debug:
@@ -118,7 +119,6 @@ class DailyTask(
 
             if self.current_task_key:
                 self.info_set("当前失败的任务", self.current_task_key)
-
             raise
 
         finally:

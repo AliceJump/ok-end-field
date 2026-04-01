@@ -40,6 +40,7 @@ class BaseEfTask(BaseTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._logged_in = False  # 记录是否已登录游戏
+        self.current_user = ""  # 记录当前用户
         self.box = ScreenPosition(self)  # 屏幕位置辅助对象，提供top/bottom/left/right等边界
         self.key_config = self.get_global_config('Game Hotkey Config')  # 获取全局热键配置
         self.once_sleep_time = self.get_global_config('Ensure Main Once Action Sleep').get("SingleActionWithDelay",
@@ -50,7 +51,10 @@ class BaseEfTask(BaseTask):
         self._detector_loaded_event = threading.Event()
 
         self._start_detector_loading()
-
+    def info_set(self, key, value):
+        if self.current_user:
+            key=f"{key}({self.current_user[-4:]})"
+        return super().info_set(key, value)
     def safe_back(self, match, box=None, time_out: float = 30, ocr_time_out: float = 2):
         """
         超时版本的返回操作：在 time_out 内等待 match 出现，如果未出现则执行 back。
