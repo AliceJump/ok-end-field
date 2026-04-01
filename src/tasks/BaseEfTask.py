@@ -669,15 +669,14 @@ class BaseEfTask(BaseTask):
     def run_ocr_rules(self, rules: list[list]) -> bool:
         for need, need_box, match, box in rules:
             if need is not None:
-                if not self.wait_ocr(match=need, box=need_box, time_out=1):
+                if not self.ocr(match=need, box=need_box, log=True):
                     continue
 
-            if result := self.wait_ocr(match=match, box=box, time_out=1):
+            if result := self.ocr(match=match, box=box, log=True):
                 self.click_with_alt(result, after_sleep=self.once_sleep_time)
                 return False
 
         return True
-
     def ensure_map(self, addtional_match=None, time_out=30):
         """确保进入地图界面，超时30秒"""
         self.ensure_main()
