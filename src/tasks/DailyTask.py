@@ -30,7 +30,10 @@ class DailyTask(
         self.icon = FluentIcon.SYNC
         self.support_schedule_task = True
         self.task_status = {"success": [], "failed": []}
-        self.default_config.update({"发生异常时终止游戏": False})
+        self.default_config.update({
+            "发生异常时终止游戏": False,
+            "⭐传送到帝江号右侧传送点": True,
+        })
         self.current_task_key = None
         self.add_exit_after_config()
         if self.debug:
@@ -62,6 +65,7 @@ class DailyTask(
                 ("⭐买物资", self.buy_staple_goods),
                 ("⭐周常奖励", self.claim_weekly_rewards),
                 ("⭐日常奖励", self.claim_daily_rewards),
+                ("⭐传送到帝江号右侧传送点", lambda: self.transfer_to_home_point(box=self.box.right)),
             ]
             all_fail_tasks = []
             for repeat_idx in range(repeat_times):

@@ -60,7 +60,7 @@ class LiaisonMixin(NavigationMixin):
             for name in self.can_contact_dict.keys()
         }
 
-    def transfer_to_home_point(self, should_check_out_boat=False):
+    def transfer_to_home_point(self, box=None, should_check_out_boat=False):
         """
         通过地图传送到帝江号指定点。
 
@@ -74,6 +74,8 @@ class LiaisonMixin(NavigationMixin):
         Returns:
             bool: 是否成功传送
         """
+        if box is None:
+            box = self.box.left
         self.ensure_main()
 
         self.log_info("开始传送到帝江号")
@@ -86,7 +88,7 @@ class LiaisonMixin(NavigationMixin):
         target_area = self.wait_ocr(
             match=re.compile("帝江号"),
             box=self.box.top,
-            time_out=5
+            time_out=8
         )
         if should_check_out_boat:
             if target_area[0].x < self.width / 2:
@@ -102,7 +104,7 @@ class LiaisonMixin(NavigationMixin):
         # 查找传送点
         tp_icon = self.find_feature(
             feature_name="transfer_point",
-            box=self.box.left,
+            box=box,
             threshold=0.7
         )
 

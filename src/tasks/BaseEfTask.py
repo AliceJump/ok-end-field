@@ -763,7 +763,7 @@ class BaseEfTask(BaseTask):
                 self._logged_in = True
                 return True
             elif self.find_one("monthly_card") or self.find_one("logout"):
-                self.click(after_sleep=1)
+                run_at_window_pos(self.hwnd.hwnd, super().click, self.width//2, self.height//2,1,0.5,0.5)
                 return False
             elif close := (
                     self.find_one(
