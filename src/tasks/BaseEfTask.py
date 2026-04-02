@@ -21,6 +21,7 @@ from src.config import config as app_config
 from src.data.world_map import areas_list
 from src.essence.essence_recognizer import EssenceInfo, read_essence_info
 from src.image.frame_processes import isolate_by_hsv_ranges
+from src.data.FeatureList import FeatureList as fL
 from src.image.login_screenshot import capture_window_by_screen
 from src.interaction.Key import move_keys
 from src.interaction.KeyConfig import KeyConfigManager
@@ -53,12 +54,60 @@ class BaseEfTask(BaseTask):
         self._detector = None
         self._detector_loading = False
         self._detector_loaded_event = threading.Event()
-
         self._start_detector_loading()
     def info_set(self, key, value):
         if self.current_user:
             key=f"{key}({self.current_user[-4:]})"
         return super().info_set(key, value)
+
+    # def find_feature(self, feature_name = None, horizontal_variance = 0, vertical_variance = 0, threshold = 0, use_gray_scale = False, x = -1, y = -1, to_x = -1, to_y = -1, width = -1, height = -1, box = None, canny_lower = 0, canny_higher = 0, frame_processor = None, template = None, match_method = cv2.TM_CCOEFF_NORMED, screenshot = False, mask_function = None, frame = None):
+    #     feature_name = self.get_feature_by_resolution(feature_name, fL=fL)
+    #     return super().find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale, x, y, to_x, to_y, width, height, box, canny_lower, canny_higher, frame_processor, template, match_method, screenshot, mask_function, frame)
+    def scroll(self, x: int, y: int, count: int) -> None:
+        """在指定像素坐标滚动鼠标滚轮
+        
+        Args:
+            x: 滚动位置X坐标（像素）
+            y: 滚动位置Y坐标（像素）
+            count: 滚动次数（正数向上，负数向下）
+        """
+        run_at_window_pos(self.hwnd.hwnd, super().scroll, x, y, 0.5, x, y, count)
+
+    def scroll_relative(self, x: float, y: float, count: int) -> None:
+        """在指定比例坐标滚动鼠标滚轮
+        
+        Args:
+            x: 滚动位置X坐标（0-1的比例）
+            y: 滚动位置Y坐标（0-1的比例）
+            count: 滚动次数
+        """
+        run_at_window_pos(self.hwnd.hwnd, super().scroll_relative, int(x * self.width), int(y * self.height), 0.5, x, y,
+                          count)
+    def get_feature_by_resolution(self, base_name: str, fL):
+        cache_key = (base_name, self.width)
+
+        if not hasattr(self, "_feature_cache"):
+            self._feature_cache = {}
+
+        if cache_key in self._feature_cache:
+            return self._feature_cache[cache_key]
+
+        # 分辨率优先级
+        if self.width >= 3800:
+            suffixes = ("_4k", "_2k", "")
+        elif self.width >= 2500:
+            suffixes = ("_2k", "_4k", "")
+        else:
+            suffixes = ("", "_2k", "_4k")
+
+        for suffix in suffixes:
+            feature = getattr(fL, f"{base_name}{suffix}", None)
+            if feature:
+                self._feature_cache[cache_key] = feature
+                return feature
+
+        raise AttributeError(f"未找到任何可用资源: {base_name}")
+
     def safe_back(self, match, box=None, time_out: float = 30, ocr_time_out: float = 2):
         """
         超时版本的返回操作：在 time_out 内等待 match 出现，如果未出现则执行 back。
@@ -308,26 +357,7 @@ class BaseEfTask(BaseTask):
                    after_sleep=after_sleep, key=key)
         self.send_key_up("alt")
 
-    def scroll(self, x: int, y: int, count: int) -> None:
-        """在指定像素坐标滚动鼠标滚轮
-        
-        Args:
-            x: 滚动位置X坐标（像素）
-            y: 滚动位置Y坐标（像素）
-            count: 滚动次数（正数向上，负数向下）
-        """
-        run_at_window_pos(self.hwnd.hwnd, super().scroll, x, y, 0.5, x, y, count)
 
-    def scroll_relative(self, x: float, y: float, count: int) -> None:
-        """在指定比例坐标滚动鼠标滚轮
-        
-        Args:
-            x: 滚动位置X坐标（0-1的比例）
-            y: 滚动位置Y坐标（0-1的比例）
-            count: 滚动次数
-        """
-        run_at_window_pos(self.hwnd.hwnd, super().scroll_relative, int(x * self.width), int(y * self.height), 0.5, x, y,
-                          count)
 
     def screen_center(self):
         """获取屏幕中心坐标

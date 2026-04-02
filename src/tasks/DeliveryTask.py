@@ -350,21 +350,10 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                                 to_x / self.width,
                                 to_y / self.height,
                             )
-                            if self.width >= 3800:  # 4K
-                                feature_list = [
-                                    fL.wuling_7_31w_4k,
-                                    fL.wuling_7_31w_dark_4k,
-                                ]
-                            elif self.width >= 2500:  # 2K
-                                feature_list = [
-                                    fL.wuling_7_31w_2k,
-                                    fL.wuling_7_31w_dark_2k,
-                                ]
-                            else:  # 1080
-                                feature_list = [
-                                    fL.wuling_7_31w,
-                                    fL.wuling_7_31w_dark,
-                                ]
+                            feature_list = [
+                                fL.wuling_7_31w,
+                                fL.wuling_7_31w_dark,
+                            ]
                             if target_num == "79800":
                                 for i in range(len(feature_list)):
                                     feature_list[i] = feature_list[i].replace("7_31w", "7_98w")
@@ -436,8 +425,7 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                     threshold=0.8,
                     ocr=False,
                     max_time=40,
-                    raise_if_fail=False,
-                    need_scroll=self.config.get(self.CFG_SCROLL_ENABLE),
+                    raise_if_fail=False
                 )
                 self.click(key="right", after_sleep=2)
             for i in range(40):
@@ -448,7 +436,6 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                     threshold=0.7,
                     only_x=True,
                     ocr=False,
-                    need_scroll=self.config.get(self.CFG_SCROLL_ENABLE),
                 )
                 self.move_keys(
                     "w",
@@ -482,7 +469,6 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                     threshold=0.8,
                     ocr=False,
                     raise_if_fail=False,
-                    need_scroll=self.config.get(self.CFG_SCROLL_ENABLE),
                 )
                 self.click(key="right", after_sleep=2)
                 break
@@ -495,8 +481,7 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                 ocr_match_or_feature_name_list=secondary_objective_direction_dot,
                 threshold=0.8,
                 only_x=True,
-                ocr=False,
-                need_scroll=True,
+                ocr=False
             )
             self.move_keys(
                 "w",
@@ -566,7 +551,7 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                                 m = pattern.search(result.name)
                                 if m:
                                     end_pattern = pattern
-                                    self.on_zip_line_start(ends_list_pattern_dict[pattern])
+                                    self.on_zip_line_start(ends_list_pattern_dict[pattern],need_scroll=self.config.get(self.CFG_SCROLL_ENABLE))
                                     break
                         self.to_end_and_submit(end_pattern)
                         if self.config.get(self.CFG_ONLY_DELIVER):
