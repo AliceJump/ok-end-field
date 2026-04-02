@@ -13,13 +13,13 @@ from src.tasks.daily.daily_trade_mixin import DailyTradeMixin
 
 
 class DailyTask(
-    DailyBuyMixin,      # 买物资
-    DailyBattleMixin,   # 刷体力
-    DailyTradeMixin,    # 买卖货
-    DailyShopMixin,     # 买信用商店
+    DailyBuyMixin,  # 买物资
+    DailyBattleMixin,  # 刷体力
+    DailyTradeMixin,  # 买卖货
+    DailyShopMixin,  # 买信用商店
     DailyRoutineMixin,  # 其它
     DailyLiaisonMixin,  # 送礼
-    AccountMixin
+    AccountMixin,
 ):
     """日常任务聚合执行器。"""
 
@@ -30,10 +30,12 @@ class DailyTask(
         self.icon = FluentIcon.SYNC
         self.support_schedule_task = True
         self.task_status = {"success": [], "failed": []}
-        self.default_config.update({
-            "发生异常时终止游戏": False,
-            "⭐传送到帝江号右侧传送点": True,
-        })
+        self.default_config.update({"⭐传送到帝江号右侧传送点": True, "发生异常时终止游戏": False, "仅退出游戏": False})
+        self.config_description.update(
+            {
+                "仅退出游戏": "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n开启发生异常时终止游戏时此选项不生效"
+            }
+        )
         self.current_task_key = None
         self.add_exit_after_config()
         if self.debug:
@@ -112,6 +114,9 @@ class DailyTask(
                 else:
                     self.log_info("所有任务均成功完成!", notify=True)
 
+            if self.config.get("仅退出游戏", False):
+                self.kill_game()
+                raise Exception("任务完成，仅退出游戏, 终止其他过程")
         except Exception as e:
             self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_Exception')
 
@@ -121,7 +126,7 @@ class DailyTask(
                     self.kill_all_related_processes()
                 else:
                     self.log_info("发生异常，继续游戏", notify=True)
-                    
+
             if hasattr(self, "task_status"):
                 if self.task_status.get("failed"):
                     self.info_set("已失败的任务列表", self.task_status["failed"])

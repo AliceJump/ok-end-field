@@ -60,9 +60,9 @@ class BaseEfTask(BaseTask):
             key=f"{key}({self.current_user[-4:]})"
         return super().info_set(key, value)
 
-    # def find_feature(self, feature_name = None, horizontal_variance = 0, vertical_variance = 0, threshold = 0, use_gray_scale = False, x = -1, y = -1, to_x = -1, to_y = -1, width = -1, height = -1, box = None, canny_lower = 0, canny_higher = 0, frame_processor = None, template = None, match_method = cv2.TM_CCOEFF_NORMED, screenshot = False, mask_function = None, frame = None):
-    #     feature_name = self.get_feature_by_resolution(feature_name, fL=fL)
-    #     return super().find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale, x, y, to_x, to_y, width, height, box, canny_lower, canny_higher, frame_processor, template, match_method, screenshot, mask_function, frame)
+    def find_feature(self, feature_name = None, horizontal_variance = 0, vertical_variance = 0, threshold = 0, use_gray_scale = False, x = -1, y = -1, to_x = -1, to_y = -1, width = -1, height = -1, box = None, canny_lower = 0, canny_higher = 0, frame_processor = None, template = None, match_method = cv2.TM_CCOEFF_NORMED, screenshot = False, mask_function = None, frame = None):
+        feature_name = self.get_feature_by_resolution(feature_name, fL=fL)
+        return super().find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale, x, y, to_x, to_y, width, height, box, canny_lower, canny_higher, frame_processor, template, match_method, screenshot, mask_function, frame)
     def scroll(self, x: int, y: int, count: int) -> None:
         """在指定像素坐标滚动鼠标滚轮
         
