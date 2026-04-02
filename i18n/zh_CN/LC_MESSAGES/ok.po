@@ -673,7 +673,7 @@ msgid "F9"
 msgstr ""
 
 msgid "SingleActionWithDelay"
-msgstr ""
+msgstr "单次返回后睡眠时间"
 
 msgid "Test"
 msgstr ""
