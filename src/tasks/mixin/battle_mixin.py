@@ -162,7 +162,7 @@ class BattleMixin(BaseEfTask):
         """
 
         if self.find_one("default_link_skill", threshold=0.7):
-            self.send_key("e")
+            self.press_combat_key("e")
             self.last_op_time = time.time()
             return True
 

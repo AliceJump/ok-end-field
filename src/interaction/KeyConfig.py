@@ -4,12 +4,12 @@ DEFAULT_COMMON_KEYS = {
     'Dodge Key': 'lshift',
     'Jump Key': 'space',
     'Interact Key': 'f',
-    # 'Backpack Key': 'b',作为is_main特征则不可自定义
+    'Backpack Key': 'b',
     'Valuables Key': 'n',
     'Team Key': 'u',
 
     # 通用部分 - UI/信息
-    # 'Operator Key': 'c',作为is_main特征则不可自定义
+    'Operator Key': 'c',
     'Mission Key': 'j',
     'Track Key': 'v',
     'Map Key': 'm',

@@ -5,7 +5,7 @@
         "description": "COCO Label Conversion",
         "contributor": "CVHub",
         "url": "https://github.com/CVHub520/X-AnyLabeling",
-        "date_created": "2026-04-02"
+        "date_created": "2026-04-03"
     },
     "licenses": [
         {
@@ -3145,12 +3145,12 @@
             "image_id": 136,
             "category_id": 35,
             "bbox": [
-                2213,
-                963,
-                23,
-                26
+                2333,
+                846,
+                42,
+                33
             ],
-            "area": 599.7634891284774,
+            "area": 1397.6008971333026,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
