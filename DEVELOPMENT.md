@@ -285,7 +285,7 @@ python main_debug.py
 
 1. 在 `main_debug.py` 模式下运行，框架会根据 `assets/coco_detection.json` 自动裁剪保留标注区域。
 2. 使用 **AnyLabeling**（配置在 `x-anylabeling-asset/`）对新截图打矩形框标注，导出 COCO JSON，合并到 `assets/coco_detection.json`。
-3. 在 `src/data/FeatureList.py` 中添加对应枚举值（值 = 图片文件名，不含 `.png`）。
+3. 运行 `compress.py`（cwd 为项目根目录），脚本会自动压缩图片并更新 `src/data/FeatureList.py`（无需手动填写）。
 4. 在代码中通过 `self.find_feature(fL.my_new_feature)` 调用。
 
 > 分辨率适配：若需要支持 2K/4K，按命名约定 `feature_name_2k`、`feature_name_4k` 提供对应尺寸的图片，`BaseEfTask.get_feature_by_resolution()` 会自动按分辨率选择。
@@ -444,12 +444,9 @@ python auto_release.py
 | 🔴 | 更多副本支持 | 扩充 `stages_dict` 并适配进入/退出流程 | ⬜ |
 | 🔴 | 大世界自动巡逻采集 | 按预设路线自动移动并触发 AutoPickTask | ⬜ |
 | 🔴 | 更多据点/地区支持 | 随版本更新扩充 `world_map.py`（地区、据点、货品） | 🔄 |
-| 🟡 | 自动做任务（委托） | 自动接取并完成地图委托 | ⬜ |
 | 🟡 | 更多干员联络支持 | 持续更新 `characters.py` 以支持新干员 | 🔄 |
 | 🟡 | 基质扫描：更多词条规则 | 扩充 `weapon_data.py` 覆盖更多武器/基质毕业标准 | ⬜ |
 | 🟡 | 仓库转移：更多物品 | 扩充 `item_to_warehouse_dict` 和 `ITEM_TRANSLATION_DICT` | ⬜ |
-| 🟢 | 自动组队/匹配副本 | 联机副本支持 | ⬜ |
-| 🟢 | 活动副本自动化 | 版本活动专属关卡 | ⬜ |
 
 ### 工程质量
 
