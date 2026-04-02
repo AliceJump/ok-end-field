@@ -43,7 +43,29 @@ from src.tasks.BaseEfTask import BaseEfTask
 
 ### 1.1 截图与特征匹配
 
-#### `find_feature(feature_name, *, box=None, threshold=0, use_gray_scale=False, horizontal_variance=0, vertical_variance=0, x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1, canny_lower=0, canny_higher=0, frame_processor=None, template=None, match_method=cv2.TM_CCOEFF_NORMED, screenshot=False, mask_function=None, frame=None)`
+#### `find_feature`
+
+```python
+def find_feature(
+    self,
+    feature_name,
+    *,
+    box=None,
+    threshold=0,
+    use_gray_scale=False,
+    horizontal_variance=0,
+    vertical_variance=0,
+    x=-1, y=-1, to_x=-1, to_y=-1,
+    width=-1, height=-1,
+    canny_lower=0, canny_higher=0,
+    frame_processor=None,
+    template=None,
+    match_method=cv2.TM_CCOEFF_NORMED,
+    screenshot=False,
+    mask_function=None,
+    frame=None,
+)
+```
 
 在当前帧中进行模板匹配，返回匹配到的 `Box` 列表（未匹配时返回空列表）。
 `feature_name` 可传入 `FeatureList` 枚举成员或字符串（图片文件名，不含 `.png`）。
@@ -95,7 +117,22 @@ if box:
 
 > 以下方法继承自 `ok-script` 框架的 `BaseTask`，`BaseEfTask` 直接转发，行为一致。
 
-#### `ocr(box=None, match=None, name=None, threshold=0, target_height=0, use_grayscale=False, log=False, frame_processor=None, lib='default') -> list[dict]`
+#### `ocr`
+
+```python
+def ocr(
+    self,
+    box=None,
+    match=None,
+    name=None,
+    threshold=0,
+    target_height=0,
+    use_grayscale=False,
+    log=False,
+    frame_processor=None,
+    lib='default',
+) -> list[dict]
+```
 
 对指定区域进行 OCR 识别，返回结果列表，每项包含 `text`、`box` 等字段。
 
@@ -112,7 +149,17 @@ result = self.ocr(box=self.box.bottom, match=re.compile(r"\d+"))
 
 ---
 
-#### `wait_ocr(match, box=None, time_out=5, **kwargs) -> list[dict] | None`
+#### `wait_ocr`
+
+```python
+def wait_ocr(
+    self,
+    match,
+    box=None,
+    time_out=5,
+    **kwargs,
+) -> list[dict] | None
+```
 
 阻塞等待直到 OCR 匹配成功或超时。成功返回结果列表，超时返回 `None`。
 
@@ -122,7 +169,18 @@ result = self.wait_ocr(match="确认", box=self.box.center, time_out=10)
 
 ---
 
-#### `wait_click_ocr(match, box=None, time_out=5, after_sleep=0.3, **kwargs) -> bool`
+#### `wait_click_ocr`
+
+```python
+def wait_click_ocr(
+    self,
+    match,
+    box=None,
+    time_out=5,
+    after_sleep=0.3,
+    **kwargs,
+) -> bool
+```
 
 等待 OCR 匹配成功后点击匹配区域。成功返回 `True`，超时返回 `False`。
 
@@ -148,7 +206,22 @@ self.wait_click_ocr(match="开始", box=self.box.bottom, time_out=8)
 
 > 基础 `click` / `back` 等方法继承自 `ok-script` 框架。
 
-#### `click(x=-1, y=-1, *, box=None, name=None, interval=-1, move=True, down_time=0.01, after_sleep=0, key='left')`
+#### `click`
+
+```python
+def click(
+    self,
+    x=-1, y=-1,
+    *,
+    box=None,
+    name=None,
+    interval=-1,
+    move=True,
+    down_time=0.01,
+    after_sleep=0,
+    key='left',
+)
+```
 
 点击指定坐标或 `Box` 中心。`x`/`y` 为 `0~1` 时视为比例坐标，否则为像素坐标；也可直接传 `Box` 对象。
 
@@ -159,7 +232,22 @@ self.click(box=confirm_box)   # 点击 Box 中心
 
 ---
 
-#### `click_with_alt(x=-1, y=-1, *, move_back=False, name=None, interval=-1, move=True, down_time=0.01, after_sleep=0, key='left')`
+#### `click_with_alt`
+
+```python
+def click_with_alt(
+    self,
+    x=-1, y=-1,
+    *,
+    move_back=False,
+    name=None,
+    interval=-1,
+    move=True,
+    down_time=0.01,
+    after_sleep=0,
+    key='left',
+)
+```
 
 按住 `Alt` 键再点击，常用于游戏内物品转移等需要组合键的操作。参数同 `click`。
 
@@ -201,7 +289,18 @@ self.click(box=confirm_box)   # 点击 Box 中心
 
 ---
 
-#### `active_and_send_mouse_delta(dx=1, dy=1, activate=True, only_activate=False, delay=0.02, steps=3)`
+#### `active_and_send_mouse_delta`
+
+```python
+def active_and_send_mouse_delta(
+    self,
+    dx=1, dy=1,
+    activate=True,
+    only_activate=False,
+    delay=0.02,
+    steps=3,
+)
+```
 
 激活游戏窗口并发送鼠标增量移动，用于旋转视角。
 
@@ -353,7 +452,18 @@ self.move_keys(['w', 'd'], duration=1.5)   # 向右前方移动 1.5 秒
 
 ### 1.8 UI 等待
 
-#### `wait_ui_stable(method='phash', threshold=5, stable_time=0.5, max_wait=5, refresh_interval=0.2) -> bool`
+#### `wait_ui_stable`
+
+```python
+def wait_ui_stable(
+    self,
+    method='phash',
+    threshold=5,
+    stable_time=0.5,
+    max_wait=5,
+    refresh_interval=0.2,
+) -> bool
+```
 
 等待 UI 界面停止变化（动画结束等）后再继续执行。
 
@@ -416,7 +526,17 @@ self.info_set("剩余体力", remaining_stamina)
 
 ### 1.10 图像处理
 
-#### `isolate_by_hsv_ranges(frame, ranges, invert=True, kernel_size=2) -> ndarray`
+#### `isolate_by_hsv_ranges`
+
+```python
+def isolate_by_hsv_ranges(
+    self,
+    frame,
+    ranges,
+    invert=True,
+    kernel_size=2,
+) -> ndarray
+```
 
 使用 HSV 颜色掩码提取指定颜色区域。`ranges` 为 `HSVRange` 枚举列表。`invert=True` 时将目标颜色区域以外设为黑色（常用于 OCR 前处理）。
 
@@ -440,7 +560,17 @@ result = self.ocr(box=price_box, frame_processor=processor)
 
 ### 1.11 YOLO 检测
 
-#### `yolo_detect(name: str | list[str], frame=None, box=None, conf=0.7) -> list[Box]`
+#### `yolo_detect`
+
+```python
+def yolo_detect(
+    self,
+    name: str | list[str],
+    frame=None,
+    box=None,
+    conf=0.7,
+) -> list[Box]
+```
 
 使用 YOLOv8 ONNX 模型检测目标，按置信度降序返回 `Box` 列表。
 
@@ -716,7 +846,19 @@ from src.tasks.mixin.navigation_mixin import NavigationMixin
 
 启动追踪：循环对齐目标方向并前进，直到发现目标出现在地图外（即已到达）。
 
-#### `align_ocr_or_find_target_to_center(target_feature=None, ocr_match=None, box=None, max_step=150, min_step=10, slow_radius=300)`
+#### `align_ocr_or_find_target_to_center`
+
+```python
+def align_ocr_or_find_target_to_center(
+    self,
+    target_feature=None,
+    ocr_match=None,
+    box=None,
+    max_step=150,
+    min_step=10,
+    slow_radius=300,
+)
+```
 
 旋转视角（水平鼠标移动）使目标特征或 OCR 文字居中。
 
