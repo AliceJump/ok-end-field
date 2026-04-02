@@ -102,7 +102,7 @@ class BaseEfTask(BaseTask):
             suffixes = ("_2k", "_4k", "")
         else:
             suffixes = ("", "_2k", "_4k")
-    
+
         for suffix in suffixes:
             feature_name = base_name + suffix
             if feature_name in feature_values:
@@ -359,8 +359,6 @@ class BaseEfTask(BaseTask):
         self.click(x=x, y=y, move_back=move_back, name=name, interval=interval, move=move, down_time=down_time,
                    after_sleep=after_sleep, key=key)
         self.send_key_up("alt")
-
-
 
     def screen_center(self):
         """获取屏幕中心坐标
@@ -694,18 +692,16 @@ class BaseEfTask(BaseTask):
         self.sleep(after_sleep)
         self.info_set("current task", f"in main esc={esc}")
 
+
     def in_world(self):
-        """判断是否在游戏世界中（非菜单/对话状态）
-        
-        Returns:
-            bool: True表示在世界中
-        """
-        in_world = self.find_one("esc") and self.find_one("b") and self.find_one("c")
+        """判断是否在游戏世界中（非菜单/对话状态）"""
+        main_world_features = ["esc"]
+
+        in_world = all(self.find_one(f,vertical_variance=0.01, horizontal_variance=0.02) for f in main_world_features)
+
         if in_world:
             self._logged_in = True
-        else:
-            self.sleep(0.1)
-            self.next_frame()
+
         return in_world
 
     def is_main(self, esc=False, need_active=True):
