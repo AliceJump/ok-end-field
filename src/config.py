@@ -3,7 +3,7 @@ import os
 import numpy as np
 from ok import ConfigOption
 from src.interaction.EfInteraction import EfInteraction
-from src.interaction.KeyConfig import DEFAULT_COMMON_KEYS, DEFAULT_INDUSTRY_KEYS
+from src.interaction.KeyConfig import DEFAULT_COMMON_KEYS, DEFAULT_INDUSTRY_KEYS, DEFAULT_COMBAT_KEYS
 
 version = "dev"
 
@@ -43,7 +43,7 @@ def make_bottom_left_black(frame):  # 可选. 某些游戏截图时遮挡UID使�
 
 
 key_config_option = ConfigOption('Game Hotkey Config', {
-    **DEFAULT_COMMON_KEYS, **DEFAULT_INDUSTRY_KEYS
+    **DEFAULT_COMMON_KEYS, **DEFAULT_INDUSTRY_KEYS, **DEFAULT_COMBAT_KEYS
 }, description='In Game Hotkey Config')
 ensure_main_once_action_sleep_option = ConfigOption(
     "Ensure Main Once Action Sleep", {"SingleActionWithDelay": 1.5}, description="Ensure Main Once Action Sleep"
