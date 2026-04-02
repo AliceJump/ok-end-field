@@ -28,6 +28,7 @@ from src.interaction.KeyConfig import KeyConfigManager
 from src.interaction.Mouse import active_and_send_mouse_delta, move_to_target_once, run_at_window_pos
 from src.interaction.ScreenPosition import ScreenPosition
 
+feature_values = [f.value for f in fL]
 
 def back_window(prev):
     current = win32gui.GetForegroundWindow()
@@ -61,7 +62,9 @@ class BaseEfTask(BaseTask):
         return super().info_set(key, value)
 
     def find_feature(self, feature_name = None, horizontal_variance = 0, vertical_variance = 0, threshold = 0, use_gray_scale = False, x = -1, y = -1, to_x = -1, to_y = -1, width = -1, height = -1, box = None, canny_lower = 0, canny_higher = 0, frame_processor = None, template = None, match_method = cv2.TM_CCOEFF_NORMED, screenshot = False, mask_function = None, frame = None):
-        feature_name = self.get_feature_by_resolution(feature_name, fL=fL)
+        if not isinstance(feature_name, str):
+            feature_name = feature_name.value
+        feature_name = self.get_feature_by_resolution(feature_name)
         return super().find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale, x, y, to_x, to_y, width, height, box, canny_lower, canny_higher, frame_processor, template, match_method, screenshot, mask_function, frame)
     def scroll(self, x: int, y: int, count: int) -> None:
         """在指定像素坐标滚动鼠标滚轮
@@ -83,7 +86,7 @@ class BaseEfTask(BaseTask):
         """
         run_at_window_pos(self.hwnd.hwnd, super().scroll_relative, int(x * self.width), int(y * self.height), 0.5, x, y,
                           count)
-    def get_feature_by_resolution(self, base_name: str, fL):
+    def get_feature_by_resolution(self, base_name: str):
         cache_key = (base_name, self.width)
 
         if not hasattr(self, "_feature_cache"):
@@ -99,12 +102,12 @@ class BaseEfTask(BaseTask):
             suffixes = ("_2k", "_4k", "")
         else:
             suffixes = ("", "_2k", "_4k")
-
+    
         for suffix in suffixes:
-            feature = getattr(fL, f"{base_name}{suffix}", None)
-            if feature:
-                self._feature_cache[cache_key] = feature
-                return feature
+            feature_name = base_name + suffix
+            if feature_name in feature_values:
+                self._feature_cache[cache_key] = feature_name
+                return feature_name
 
         raise AttributeError(f"未找到任何可用资源: {base_name}")
 
@@ -700,6 +703,9 @@ class BaseEfTask(BaseTask):
         in_world = self.find_one("esc") and self.find_one("b") and self.find_one("c")
         if in_world:
             self._logged_in = True
+        else:
+            self.sleep(0.1)
+            self.next_frame()
         return in_world
 
     def is_main(self, esc=False, need_active=True):
@@ -716,7 +722,7 @@ class BaseEfTask(BaseTask):
         if not self._logged_in:
             if need_active:
                 self.active_and_send_mouse_delta(activate=True, only_activate=True)  # 激活窗口，获取最新状态
-        if self.in_world():
+        if self.wait_until(self.in_world, time_out=1):
             self._logged_in = True
             return True
         if self.wait_login():
