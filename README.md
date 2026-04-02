@@ -142,6 +142,13 @@ An image-recognition-based automation tool for End Field, with background mode s
 
 ## 💻 开发者专区
 
+### 开发者文档
+
+| 文档 | 说明 |
+|------|------|
+| [开发指南（DEVELOPMENT.md）](docs/dev/DEVELOPMENT.md) | 架构总览、目录结构、开发流程、测试、CI/CD、路线图 |
+| [API 参考（API.md）](docs/dev/API.md) | BaseEfTask、Mixin、ScreenPosition、KeyConfigManager 等详细 API |
+
 ### 从源码运行 (Python)
 
 本项目仅支持 Python 3.12 版本, 必须以管理员权限启动CMD, PyCharm, VSCode。
