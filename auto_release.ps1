@@ -14,7 +14,7 @@ git config i18n.logOutputEncoding utf-8 | Out-Null
 # 版本限制
 $MAX_MAJOR = 10
 $MAX_MINOR = 10
-$MAX_PATCH = 100
+$MAX_PATCH = 99
 
 function Get-AllTags {
 
