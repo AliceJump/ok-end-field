@@ -1,19 +1,18 @@
+import math
 import re
 import time
-import math
 
 import win32gui
 
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import stages_cost, higher_order_feature_dict
+from src.data.world_map import stages_dict, stages_list
 from src.data.world_map_utils import get_stage_category
 from src.tasks.BaseEfTask import back_window
+from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.map_mixin import MapMixin
-from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
-from src.tasks.mixin.battle_mixin import BattleMixin
-from src.data.world_map import stages_dict, stages_list
 
 gather_list = stages_dict["能量淤积点"]
 

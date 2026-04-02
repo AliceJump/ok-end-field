@@ -10,13 +10,28 @@ class AccountMixin(LoginMixin):
             "多账户模式": "是否启用多账户模式",
             "账号列表": "多账户模式下，账号密码列表，每行一个账号，账号密码用逗号分隔",
         })
-    def get_acount_list(self):
+
+    def get_account_list(self):
         account_str = self.config.get("账号列表", "")
         account_list = []
-        if account_str:
-            accounts = account_str.split("\n")
-            for account in accounts:
-                account = account.strip().split(",")
-                if account:
-                    account_list.append(account)
+
+        if not account_str:
+            return account_list
+
+        lines = account_str.splitlines()
+
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue  # ✅ 跳过空行
+
+            parts = [x.strip() for x in line.split(",")]
+
+            if len(parts) != 2:
+                self.log_info(f"账号格式错误，已跳过: {line}")
+                continue  # ✅ 跳过非法格式
+
+            username, password = parts
+            account_list.append((username, password))  # ✅ 用 tuple 更清晰
+
         return account_list

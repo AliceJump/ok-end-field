@@ -23,7 +23,6 @@ import time
 
 from src.data.FeatureList import FeatureList as fL
 from src.data.characters_utils import get_contact_list_with_feature_list
-from src.tasks.BaseEfTask import BaseEfTask
 from src.tasks.mixin.common import LiaisonResult, build_name_patterns
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 

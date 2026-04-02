@@ -1,15 +1,15 @@
 from datetime import datetime
+
+from ok import TaskDisabledException
 from qfluentwidgets import FluentIcon
 
-from src.data.world_map import areas_list, stages_list, stages_dict
+from src.tasks.account.account_mixin import AccountMixin
 from src.tasks.daily.daily_battle_mixin import DailyBattleMixin
+from src.tasks.daily.daily_buy_mixin import DailyBuyMixin
 from src.tasks.daily.daily_liaison_mixin import DailyLiaisonMixin
 from src.tasks.daily.daily_routine_mixin import DailyRoutineMixin
 from src.tasks.daily.daily_shop_mixin import DailyShopMixin
 from src.tasks.daily.daily_trade_mixin import DailyTradeMixin
-from src.tasks.daily.daily_buy_mixin import DailyBuyMixin
-from src.tasks.account.account_mixin import AccountMixin
-from ok import TaskDisabledException
 
 
 class DailyTask(
@@ -45,7 +45,7 @@ class DailyTask(
             self.log_info("开始执行日常任务...", notify=True)
             accounts_bool = self.config.get("多账户模式", False)
             if accounts_bool:
-                accounts_list = self.get_acount_list()
+                accounts_list = self.get_account_list()
                 repeat_times = len(accounts_list)
             else:
                 repeat_times = self.config.get("重复测试的次数", 1) if self.debug else 1
@@ -121,6 +121,12 @@ class DailyTask(
                     self.kill_all_related_processes()
                 else:
                     self.log_info("发生异常，继续游戏", notify=True)
+                    
+            if hasattr(self, "task_status"):
+                if self.task_status.get("failed"):
+                    self.info_set("已失败的任务列表", self.task_status["failed"])
+                if self.task_status.get("success"):
+                    self.info_set("已完成的任务列表", self.task_status["success"])
 
             if self.current_task_key:
                 self.info_set("当前失败的任务", self.current_task_key)
@@ -132,17 +138,15 @@ class DailyTask(
             if not self.config.get(key, False):
                 return True
         self.current_task_key = key
-        try:
-            self.log_info(f"开始任务: {key}")
-            self.ensure_main()
-            result = func()
+        self.log_info(f"开始任务: {key}")
+        self.ensure_main()
+        result = func()
 
-            if result is False:
-                self.task_status["failed"].append(key)
-                self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_FailTask_{key}')
-                self.log_info(f"任务 {key} 执行失败", notify=True)
-                return False
-            self.task_status["success"].append(key)
-            return True
-        finally:
-            self.current_task_key = None
+        if result is False:
+            self.task_status["failed"].append(key)
+            self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_FailTask_{key}')
+            self.log_info(f"任务 {key} 执行失败", notify=True)
+            return False
+        self.task_status["success"].append(key)
+        self.current_task_key = None
+        return True

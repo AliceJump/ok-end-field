@@ -1,6 +1,8 @@
-from src.tasks.BaseEfTask import BaseEfTask
 from ok import TaskDisabledException
-import time
+
+from src.tasks.BaseEfTask import BaseEfTask
+
+
 class TestStartGame(BaseEfTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

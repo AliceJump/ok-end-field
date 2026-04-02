@@ -1,14 +1,12 @@
-import re
-import traceback
+import ctypes
 import time
+
 import win32api
 import win32con
-from win32api import GetCursorPos, GetSystemMetrics, SetCursorPos
 import win32gui
-import ctypes
-
 from ok.device.intercation import PostMessageInteraction
 from ok.util.logger import Logger
+from win32api import GetCursorPos, GetSystemMetrics, SetCursorPos
 
 logger = Logger.get_logger(__name__)
 

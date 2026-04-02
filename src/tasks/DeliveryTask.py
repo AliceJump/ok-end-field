@@ -6,9 +6,7 @@ from typing import List, Tuple
 from ok import Box, TaskDisabledException
 
 from src.data.FeatureList import FeatureList as fL
-from src.tasks.BaseEfTask import BaseEfTask
 from src.tasks.mixin.map_mixin import MapMixin
-from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
 secondary_objective_direction_dot = [fL.secondary_objective_direction_dot, fL.secondary_objective_direction_dot_light,

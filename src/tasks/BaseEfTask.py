@@ -8,20 +8,24 @@ from typing import List
 import cv2
 import imagehash
 import numpy as np
-import win32process, win32gui, win32api, win32con
+import win32api
+import win32con
+import win32gui
+import win32process
 from PIL import Image
 from ok import BaseTask, Box
 from skimage.metrics import structural_similarity as ssim
-from src.image.login_screenshot import capture_window_by_screen
+
 from src.OpenVinoYolo8Detect import OpenVinoYolo8Detect
 from src.config import config as app_config
+from src.data.world_map import areas_list
 from src.essence.essence_recognizer import EssenceInfo, read_essence_info
 from src.image.frame_processes import isolate_by_hsv_ranges
+from src.image.login_screenshot import capture_window_by_screen
 from src.interaction.Key import move_keys
 from src.interaction.KeyConfig import KeyConfigManager
-from src.interaction.Mouse import active_and_send_mouse_delta, move_to_target_once, run_at_window_pos, run_in_window, click_down, click_up
+from src.interaction.Mouse import active_and_send_mouse_delta, move_to_target_once, run_at_window_pos
 from src.interaction.ScreenPosition import ScreenPosition
-from src.data.world_map import areas_list
 
 
 def back_window(prev):
@@ -525,18 +529,12 @@ class BaseEfTask(BaseTask):
         if not isinstance(img, np.ndarray):
             frame = np.array(img)
         return super().find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale, x, y, to_x, to_y, width, height, box, canny_lower, canny_higher, frame_processor, template, match_method, screenshot, mask_function, frame)
-    def skip_dialog(self, end_box=None):
+    def skip_dialog(self):
         """跳过对话框，自动点击"确认"或"跳过"按钮
-        
-        Args:
-            end_list: 结束按钮的OCR匹配模式（默认'确认'）
-            end_box: 查找按钮的区域框（默认右下角）
         
         Returns:
             bool: 成功跳过返回True，超时返回False
         """
-        if not end_box:
-            end_box = self.box.bottom_right
         start_time = time.time()
         while True:
             if time.time() - start_time > 60:
@@ -734,6 +732,7 @@ class BaseEfTask(BaseTask):
         
         Args:
             after_sleep: 点击后等待时间（秒）
+            time_out: 等待超时时间（秒）
         
         Returns:
             bool: 成功点击返回True，超时返回False
@@ -814,8 +813,8 @@ class BaseEfTask(BaseTask):
 
     def kill_all_related_processes(self):
         """尝试杀死游戏进程和本软件自身进程（除当前进程外）"""
-        import os, sys
-        import win32process, win32gui, win32api, win32con
+        import os
+        import win32process, win32api, win32con
         import psutil
 
         # 1. 杀死游戏进程
