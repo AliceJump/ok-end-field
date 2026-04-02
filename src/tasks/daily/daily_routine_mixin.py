@@ -678,6 +678,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             time_out=5,
             after_sleep=2,
         )
+        self.wait_pop_up(after_sleep=2)
         self.send_key("esc", after_sleep=2)
         if len(self.ocr(match=re.compile("武器补给"), box=self.box.top_right)) > 0:
             # 暂不领取武器补给箱
