@@ -235,7 +235,7 @@ class LiaisonMixin(NavigationMixin):
             self.log_info(f"第 {attempt}/10 次尝试打开信任度界面")
 
             self.press_key('f')
-            self.wait_ocr(match=re.compile("干员"),box=self.box.top_left, time_out=5)
+            self.wait_ui_stable(refresh_interval=1)
             result = {}
             found_target = False
 
@@ -261,7 +261,7 @@ class LiaisonMixin(NavigationMixin):
 
                 self.ensure_main()
                 self.press_key('f')
-                self.wait_ocr(match=re.compile("干员"), box=self.box.top_left, time_out=5)
+                self.wait_ui_stable(refresh_interval=1)
                 self.log_info(f"未找到联络对象 {target_name}，尝试其他目标")
 
                 other_results = {}
