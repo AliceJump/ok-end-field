@@ -35,7 +35,7 @@
 
 ## 1. BaseEfTask
 
-所有任务与 Mixin 的公共基类，封装了截图、识别、交互、导航等核心能力。
+所有任务与 Mixin 的公共基类，封装了截图、识别、交互等核心能力。
 
 ```python
 from src.tasks.BaseEfTask import BaseEfTask
@@ -306,7 +306,7 @@ def scroll(
 ) -> None
 ```
 
-在像素坐标 `(x, y)` 处滚动鼠标滚轮。`count` 正数向上，负数向下。
+在像素坐标 `(x, y)` 处滚动鼠标滚轮。`count` 正数向上，负数向下(仅UI界面有效,游戏视角放大无效**需要使用pyautogui.scroll**)
 
 ---
 
@@ -472,7 +472,7 @@ def move_keys(
 )
 ```
 
-同时按住多个方向键并持续 `duration` 秒后松开。`need_back=True` 时会先执行一次返回操作。
+同时按住多个方向键并持续 `duration` 秒后松开。`need_back=True` 时会先执行一次返回之前窗口的操作。
 
 ```python
 self.move_keys(['w', 'd'], duration=1.5)   # 向右前方移动 1.5 秒
@@ -564,7 +564,7 @@ def ensure_main(
 def in_world(self) -> bool
 ```
 
-判断当前是否在大世界（主界面或战斗外）。与 `in_combat_world()` 区别：后者还排除了副本/战斗状态。
+判断当前是否在大世界（战斗界面除外）。与 `in_combat_world()` 区别：后者还排除了副本/战斗状态。
 
 ---
 
@@ -574,7 +574,7 @@ def in_world(self) -> bool
 def in_combat_world(self) -> bool
 ```
 
-判断是否处于大世界非战斗状态（既非副本内、也非战斗中）。
+判断是否处于大世界战斗状态。
 
 ---
 
@@ -604,7 +604,7 @@ def in_friend_boat(self) -> bool
 def ensure_in_friend_boat(self)
 ```
 
-等待并确保进入帝江号场景。
+等待确保进入好友帝江号场景。
 
 ---
 
@@ -644,7 +644,7 @@ def transfer_to_home_point(
 )
 ```
 
-传送到帝江号右侧传送点。`should_check_out_boat=True` 时会先检查是否在好友船并退出。（由 `LiaisonMixin` 实现，参见第 7 节）
+传送到帝江号右侧传送点。`should_check_out_boat=True` 时会先检查是否在帝江号,在则退出。（由 `LiaisonMixin` 实现，参见第 7 节）
 
 ---
 

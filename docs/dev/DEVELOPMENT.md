@@ -300,6 +300,7 @@ python main_debug.py
 ### 5.6 热键适配
 
 游戏内默认快捷键定义在 `src/interaction/KeyConfig.py`（`DEFAULT_COMMON_KEYS`、`DEFAULT_INDUSTRY_KEYS`、`DEFAULT_COMBAT_KEYS`）。若需要按热键操作，使用 `self.key_manager.get_key("Interact Key")` 而不是硬编码 `'f'`，以支持用户自定义按键。
+> 若此键可自定义，则不可使其为模板图片，否则会导致模板匹配失效
 
 ### 5.7 代码规范
 
@@ -483,14 +484,16 @@ python auto_release.py
 | `self.wait_click_ocr(match=..., box=...)` | 等待 OCR 匹配后点击 |
 | `self.click(box_or_xy)` | 点击 Box 中心或绝对坐标 |
 | `self.press_key("key")` | 按键（支持 after_sleep） |
-| `self.scroll(x, y, count)` | 鼠标滚轮 |
+| `self.scroll(x, y, count)` | 鼠标滚轮(仅UI滚动) |
 | `self.sleep(seconds)` | 等待（支持被中断检测） |
 | `self.box_of_screen(x1, y1, x2, y2)` | 按比例创建 Box |
 | `self.log_info/log_debug/log_error(msg)` | 日志输出 |
 | `self.info_set(key, value)` | 在 UI 状态栏显示当前进度 |
 | `self.in_combat_world()` | 判断是否在大世界（非战斗/副本） |
-| `self.transfer_to_home_point()` | 传送到帝江号右侧传送点 |
-| `self.align_ocr_or_find_target_to_center(...)` | 旋转视角使目标居中 |
+| `self.transfer_to_home_point()` | 传送到帝江号(默认左侧)传送点 |
+| `self.align_ocr_or_find_target_to_center(...)` | 移动视角使扫描目标居中 |
+
+[更多API](API.md)
 
 ### ScreenPosition（self.box）
 
