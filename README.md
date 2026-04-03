@@ -66,14 +66,6 @@ An image-recognition-based automation tool for End Field, with background mode s
 * **[夸克网盘](https://pan.quark.cn/s/a1052cec4d13)**: 国内网盘，免费，但需要注册并使用其客户端下载。
 
 
-## ✨ 主要功能
-
-<img width="3200" height="2136"  src="./readme/1.jpg" />
-<img width="3200" height="2136"  src="./readme/2.jpg" />
-<img width="3200" height="2136"  src="./readme/3.jpg" />
-<img width="3200" height="2136"  src="./readme/4.jpg" />
-<img width="3200" height="2136"  src="./readme/5.jpg" />
-
 ## 功能一览（模块化架构 & 任务类型）
 
 ### [日常任务自动化](docs/日常任务.md)
