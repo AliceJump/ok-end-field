@@ -56,6 +56,7 @@ class DailyShopMixin(Common):
         return 0
 
     def buy_once(self, sum_credit):
+        self.wait_ui_stable(refresh_interval=0.5)
         results = []
 
         for search in (fL.weapon_quota, fL.orobertyl):
@@ -100,8 +101,8 @@ class DailyShopMixin(Common):
 
     def credit_shop(self):
         self.credit_good_search_box = self.box_of_screen(200 / 3840, 280 / 2160, 3620 / 3840, 1550 / 2160)
-        self.press_key("f5", after_sleep=2)
-        if not self.wait_click_ocr(match=re.compile("信用"), time_out=5, box=self.box.top_right, after_sleep=2):
+        self.press_key("f5")
+        if not self.wait_click_ocr(match=re.compile("信用"), time_out=7, box=self.box.top_right, recheck_time=1):
             return False
         sum_credit = self.detect_ticket_number()
         while sum_credit > 0:

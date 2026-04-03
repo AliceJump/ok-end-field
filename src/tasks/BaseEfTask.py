@@ -282,7 +282,7 @@ class BaseEfTask(BaseTask):
     def yolo_detect(
             self,
             name: str | list[str],
-            frame=None,
+            frame: np.ndarray | None = None,
             box: Box | None = None,
             conf: float = 0.7,
     ) -> list[Box]:
@@ -360,7 +360,7 @@ class BaseEfTask(BaseTask):
                    after_sleep=after_sleep, key=key)
         self.send_key_up("alt")
 
-    def screen_center(self):
+    def screen_center(self) -> tuple[int, int]:
         """获取屏幕中心坐标
         
         Returns:
@@ -369,15 +369,16 @@ class BaseEfTask(BaseTask):
         return int(self.width / 2), int(self.height / 2)
 
     def wait_ui_stable(
-            self,
-            method="phash",
-            threshold=5,
-            stable_time=0.5,
-            max_wait=5,
-            refresh_interval=0.2,
+        self,
+        method="phash",
+        threshold: int = 5,
+        stable_time: float = 0.5,
+        max_wait: float = 5,
+        refresh_interval: float = 0.2,
+        box: Box | tuple | list | None = None,
     ):
-        """等待界面稳定（UI停止变化）再执行操作
-        
+        """等待界面稳定（支持局部区域/对象）
+
         Args:
             method: 比较两帧相似度方法("phash"/"dhash"/"pixel"/"ssim")
             threshold: 方法对应的阈值
@@ -387,35 +388,47 @@ class BaseEfTask(BaseTask):
             stable_time: 连续稳定时间（秒），默认0.5秒
             max_wait: 最大等待时间（秒），默认5秒
             refresh_interval: 每次获取新帧的间隔（秒），默认0.2秒
-        
+            box: 可选的屏幕区域（Box对象或(x,y,w,h)），仅监测该区域的稳定性
         Returns:
             bool: True表示UI已稳定，False表示超时仍未稳定
         """
+
+        def parse_box(frame, box: Box | tuple | list | None):
+            if box is None:
+                return frame
+
+            # ✅ 对象模式（优先）
+            if hasattr(box, "x"):
+                x = int(box.x)
+                y = int(box.y)
+                w = int(box.width)
+                h = int(box.height)
+                return frame[y:y + h, x:x + w]
+
+            # ✅ tuple 兼容
+            if isinstance(box, (tuple, list)) and len(box) == 4:
+                x, y, w, h = map(int, box)
+                return frame[y:y + h, x:x + w]
+
+            raise ValueError("box must be None / (x,y,w,h) / object(x,y,width,height)")
+
         start_time = time.time()
-        last_frame = self.next_frame()  # 获取初始帧
+        last_frame = parse_box(self.next_frame(), box)
         stable_start = None
 
         while True:
-            current_frame = self.next_frame()  # 获取最新帧
+            current_frame = parse_box(self.next_frame(), box)
 
-            # 1️⃣ phash / dhash 相似度
+            # ===== 相似度 =====
             if method in ("phash", "dhash"):
                 img1 = Image.fromarray(last_frame)
                 img2 = Image.fromarray(current_frame)
-                h1 = (
-                    imagehash.phash(img1)
-                    if method == "phash"
-                    else imagehash.dhash(img1)
-                )
-                h2 = (
-                    imagehash.phash(img2)
-                    if method == "phash"
-                    else imagehash.dhash(img2)
-                )
-                distance = h1 - h2
-                is_stable = distance <= threshold
 
-            # 2️⃣ 像素差法
+                h1 = imagehash.phash(img1) if method == "phash" else imagehash.dhash(img1)
+                h2 = imagehash.phash(img2) if method == "phash" else imagehash.dhash(img2)
+
+                is_stable = (h1 - h2) <= threshold
+
             elif method == "pixel":
                 if last_frame.shape != current_frame.shape:
                     is_stable = False
@@ -423,10 +436,10 @@ class BaseEfTask(BaseTask):
                     diff = cv2.absdiff(last_frame, current_frame)
                     is_stable = np.mean(diff) <= threshold
 
-            # 3️⃣ 结构相似度 SSIM
             elif method == "ssim":
                 last_gray = cv2.cvtColor(last_frame, cv2.COLOR_BGR2GRAY)
                 current_gray = cv2.cvtColor(current_frame, cv2.COLOR_BGR2GRAY)
+
                 if last_gray.shape != current_gray.shape:
                     is_stable = False
                 else:
@@ -436,16 +449,15 @@ class BaseEfTask(BaseTask):
             else:
                 raise ValueError(f"Unknown method {method}")
 
-            # 处理连续稳定时间
+            # ===== 稳定计时 =====
             if is_stable:
                 if stable_start is None:
                     stable_start = time.time()
                 elif time.time() - stable_start >= stable_time:
-                    return True  # 连续稳定达到要求
+                    return True
             else:
-                stable_start = None  # 重置计时
+                stable_start = None
 
-            # 超时退出
             if time.time() - start_time > max_wait:
                 return False
 
@@ -691,7 +703,6 @@ class BaseEfTask(BaseTask):
             raise Exception("Please start in game world and in team!")
         self.sleep(after_sleep)
         self.info_set("current task", f"in main esc={esc}")
-
 
     def in_world(self):
         """判断是否在游戏世界中（非菜单/对话状态）"""

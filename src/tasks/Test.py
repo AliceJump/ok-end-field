@@ -19,10 +19,7 @@ class Test(LoginMixin):
         self.credit_good_search_box = None
 
     def run(self):
-        self.active_and_send_mouse_delta(activate=True, only_activate=True)
-        self.sleep(1)
-        for _ in range(10):
-            pyautogui.scroll(8)
+        self.wait_click_ocr(match=re.compile("立即刷新"), time_out=5, box=self.box.bottom_right, log=True)
     def _type_text(self, text: str):
         """
         通用输入（支持中文）
