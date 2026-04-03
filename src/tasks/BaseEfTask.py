@@ -183,14 +183,14 @@ class BaseEfTask(BaseTask):
 
         return self.send_key(actual_key, interval=interval, down_time=down_time, after_sleep=after_sleep)
 
-    def press_key(self, key, **kwargs):
-        return self.press_game_key(key, "common", **kwargs)
+    def press_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
+        return self.press_game_key(key, "common", down_time=down_time, after_sleep=after_sleep, interval=interval)
 
-    def press_industry_key(self, key, **kwargs):
-        return self.press_game_key(key, "industry", **kwargs)
+    def press_industry_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
+        return self.press_game_key(key, "industry", down_time=down_time, after_sleep=after_sleep, interval=interval)
 
-    def press_combat_key(self, key, **kwargs):
-        return self.press_game_key(key, "combat", **kwargs)
+    def press_combat_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
+        return self.press_game_key(key, "combat", down_time=down_time, after_sleep=after_sleep, interval=interval)
 
     def move_keys(self, keys, duration, need_back=False):
         """向当前窗口发送按键移动指令
