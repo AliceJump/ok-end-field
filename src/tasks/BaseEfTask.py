@@ -30,6 +30,7 @@ from src.interaction.ScreenPosition import ScreenPosition
 
 feature_values = [f.value for f in fL]
 
+
 def back_window(prev):
     current = win32gui.GetForegroundWindow()
 
@@ -56,16 +57,21 @@ class BaseEfTask(BaseTask):
         self._detector_loading = False
         self._detector_loaded_event = threading.Event()
         self._start_detector_loading()
+
     def info_set(self, key, value):
         if self.current_user:
-            key=f"{key}({self.current_user[-4:]})"
+            key = f"{key}({self.current_user[-4:]})"
         return super().info_set(key, value)
 
-    def find_feature(self, feature_name = None, horizontal_variance = 0, vertical_variance = 0, threshold = 0, use_gray_scale = False, x = -1, y = -1, to_x = -1, to_y = -1, width = -1, height = -1, box = None, canny_lower = 0, canny_higher = 0, frame_processor = None, template = None, match_method = cv2.TM_CCOEFF_NORMED, screenshot = False, mask_function = None, frame = None):
-        if not isinstance(feature_name, str):
-            feature_name = feature_name.value
+    def find_feature(self, feature_name=None, horizontal_variance=0, vertical_variance=0, threshold=0,
+                     use_gray_scale=False, x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0,
+                     canny_higher=0, frame_processor=None, template=None, match_method=cv2.TM_CCOEFF_NORMED,
+                     screenshot=False, mask_function=None, frame=None):
         feature_name = self.get_feature_by_resolution(feature_name)
-        return super().find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale, x, y, to_x, to_y, width, height, box, canny_lower, canny_higher, frame_processor, template, match_method, screenshot, mask_function, frame)
+        return super().find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale, x,
+                                    y, to_x, to_y, width, height, box, canny_lower, canny_higher, frame_processor,
+                                    template, match_method, screenshot, mask_function, frame)
+
     def scroll(self, x: int, y: int, count: int) -> None:
         """在指定像素坐标滚动鼠标滚轮
         
@@ -86,6 +92,7 @@ class BaseEfTask(BaseTask):
         """
         run_at_window_pos(self.hwnd.hwnd, super().scroll_relative, int(x * self.width), int(y * self.height), 0.5, x, y,
                           count)
+
     def get_feature_by_resolution(self, base_name: str):
         cache_key = (base_name, self.width)
 
@@ -163,34 +170,17 @@ class BaseEfTask(BaseTask):
 
         return self._detector
 
-    def press_game_key(
-            self,
-            key: str,
-            key_type: str = "common",
-            down_time: float = 0.02,
-            after_sleep: float = 0,
-            interval: int = -1
-    ):
-
-        if key_type == "common":
-            actual_key = self.key_manager.resolve_common_key(key)
-        elif key_type == "industry":
-            actual_key = self.key_manager.resolve_industry_key(key)
-        elif key_type == "combat":
-            actual_key = self.key_manager.resolve_combat_key(key)
-        else:
-            raise ValueError(f"未知 key_type: {key_type}")
-
+    def press_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
+        actual_key = self.key_manager.resolve_key(key, "common")
         return self.send_key(actual_key, interval=interval, down_time=down_time, after_sleep=after_sleep)
 
-    def press_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
-        return self.press_game_key(key, "common", down_time=down_time, after_sleep=after_sleep, interval=interval)
-
     def press_industry_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
-        return self.press_game_key(key, "industry", down_time=down_time, after_sleep=after_sleep, interval=interval)
+        actual_key = self.key_manager.resolve_key(key, "industry")
+        return self.send_key(actual_key, interval=interval, down_time=down_time, after_sleep=after_sleep)
 
     def press_combat_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
-        return self.press_game_key(key, "combat", down_time=down_time, after_sleep=after_sleep, interval=interval)
+        actual_key = self.key_manager.resolve_key(key, "combat")
+        return self.send_key(actual_key, interval=interval, down_time=down_time, after_sleep=after_sleep)
 
     def move_keys(self, keys, duration, need_back=False):
         """向当前窗口发送按键移动指令
@@ -369,13 +359,13 @@ class BaseEfTask(BaseTask):
         return int(self.width / 2), int(self.height / 2)
 
     def wait_ui_stable(
-        self,
-        method="phash",
-        threshold: int = 5,
-        stable_time: float = 0.5,
-        max_wait: float = 5,
-        refresh_interval: float = 0.2,
-        box: Box | tuple | list | None = None,
+            self,
+            method="phash",
+            threshold: int = 5,
+            stable_time: float = 0.5,
+            max_wait: float = 5,
+            refresh_interval: float = 0.2,
+            box: Box | tuple | list | None = None,
     ):
         """等待界面稳定（支持局部区域/对象）
 
@@ -556,22 +546,33 @@ class BaseEfTask(BaseTask):
         else:
             self.log_error(f"未找到‘{model}’按钮，任务中止。")
             return False
+
     def login_screenshot(self):
         self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True)
         self.sleep(0.1)
         return capture_window_by_screen(self.hwnd.hwnd)
-    def login_ocr(self, x = 0, y = 0, to_x = 1, to_y = 1, match = None, width = 0, height = 0, box = None, name = None, threshold = 0, target_height = 0, use_grayscale = False, log = False, frame_processor = None, lib = 'default'):
+
+    def login_ocr(self, x=0, y=0, to_x=1, to_y=1, match=None, width=0, height=0, box=None, name=None, threshold=0,
+                  target_height=0, use_grayscale=False, log=False, frame_processor=None, lib='default'):
         img = self.login_screenshot()
 
         if not isinstance(img, np.ndarray):
             img = np.array(img)
-        return super().ocr(x, y, to_x, to_y, match, width, height, box, name, threshold, img, target_height, use_grayscale, log, frame_processor, lib)
-    def login_find_feature(self, feature_name = None, horizontal_variance = 0, vertical_variance = 0, threshold = 0, use_gray_scale = False, x = -1, y = -1, to_x = -1, to_y = -1, width = -1, height = -1, box = None, canny_lower = 0, canny_higher = 0, frame_processor = None, template = None, match_method = cv2.TM_CCOEFF_NORMED, screenshot = False, mask_function = None, frame = None):
+        return super().ocr(x, y, to_x, to_y, match, width, height, box, name, threshold, img, target_height,
+                           use_grayscale, log, frame_processor, lib)
+
+    def login_find_feature(self, feature_name=None, horizontal_variance=0, vertical_variance=0, threshold=0,
+                           use_gray_scale=False, x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1, box=None,
+                           canny_lower=0, canny_higher=0, frame_processor=None, template=None,
+                           match_method=cv2.TM_CCOEFF_NORMED, screenshot=False, mask_function=None, frame=None):
         img = self.login_screenshot()
 
         if not isinstance(img, np.ndarray):
             frame = np.array(img)
-        return super().find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale, x, y, to_x, to_y, width, height, box, canny_lower, canny_higher, frame_processor, template, match_method, screenshot, mask_function, frame)
+        return super().find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale, x,
+                                    y, to_x, to_y, width, height, box, canny_lower, canny_higher, frame_processor,
+                                    template, match_method, screenshot, mask_function, frame)
+
     def skip_dialog(self):
         """跳过对话框，自动点击"确认"或"跳过"按钮
         
@@ -615,6 +616,7 @@ class BaseEfTask(BaseTask):
         return self.find_one(
             "skip_dialog_confirm", horizontal_variance=0.05, vertical_variance=0.05
         )
+
     def click_confirm(self, after_sleep=0.5, time_out=5):
         """点击对话框中的"确认"按钮
 
@@ -623,7 +625,7 @@ class BaseEfTask(BaseTask):
             time_out: 等待超时时间（秒）
 
         """
-        start_time= time.time()
+        start_time = time.time()
         while True:
             if time.time() - start_time > time_out:
                 self.log_info("点击确认超时")
@@ -634,6 +636,7 @@ class BaseEfTask(BaseTask):
                 return True
             self.sleep(0.1)
             self.next_frame()
+
     def in_combat_world(self):
         """判断是否在战斗场景中
         
@@ -708,7 +711,7 @@ class BaseEfTask(BaseTask):
         """判断是否在游戏世界中（非菜单/对话状态）"""
         main_world_features = ["esc"]
 
-        in_world = all(self.find_one(f,vertical_variance=0.01, horizontal_variance=0.02) for f in main_world_features)
+        in_world = all(self.find_one(f, vertical_variance=0.01, horizontal_variance=0.02) for f in main_world_features)
 
         if in_world:
             self._logged_in = True
@@ -757,12 +760,14 @@ class BaseEfTask(BaseTask):
                 return False
 
         return True
+
     def ensure_map(self, addtional_match=None, time_out=30):
         """确保进入地图界面，超时30秒"""
         self.ensure_main()
         start_time = time.time()
         if addtional_match:
-            match = [re.compile("事务")]+addtional_match if isinstance(addtional_match, list) else [re.compile("事务"), re.compile(addtional_match)]
+            match = [re.compile("事务")] + addtional_match if isinstance(addtional_match, list) else [
+                re.compile("事务"), re.compile(addtional_match)]
         else:
             match = [re.compile("事务")]
         while not self.wait_ocr(match=match, time_out=2, box=self.box.top_left):
@@ -770,7 +775,7 @@ class BaseEfTask(BaseTask):
                 raise Exception("进入地图失败")
             self.press_key("m")
 
-    def wait_pop_up(self,time_out=15, after_sleep=0):
+    def wait_pop_up(self, time_out=15, after_sleep=0):
         """等待奖励弹窗出现并点击"OK"按钮
         
         Args:
@@ -781,9 +786,9 @@ class BaseEfTask(BaseTask):
             bool: 成功点击返回True，超时返回False
         """
         count = 0
-        start_time=time.time()
+        start_time = time.time()
         while True:
-            if time.time()-start_time>time_out:
+            if time.time() - start_time > time_out:
                 return False
             if count > 30:
                 return False
@@ -791,7 +796,7 @@ class BaseEfTask(BaseTask):
                 feature_name="reward_ok", box=self.box.bottom, threshold=0.8
             )
             if not result:
-                result=self.wait_ocr(match=re.compile("空白"),time_out=1,box=self.box.bottom)
+                result = self.wait_ocr(match=re.compile("空白"), time_out=1, box=self.box.bottom)
             if result:
                 self.click(result, after_sleep=after_sleep)
                 return True
@@ -809,7 +814,7 @@ class BaseEfTask(BaseTask):
                 self._logged_in = True
                 return True
             elif self.find_one("monthly_card") or self.find_one("logout"):
-                run_at_window_pos(self.hwnd.hwnd, super().click, self.width//2, self.height//2,1,0.5,0.5)
+                run_at_window_pos(self.hwnd.hwnd, super().click, self.width // 2, self.height // 2, 1, 0.5, 0.5)
                 return False
             elif close := (
                     self.find_one(

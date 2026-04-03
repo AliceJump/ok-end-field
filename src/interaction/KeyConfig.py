@@ -40,6 +40,12 @@ DEFAULT_COMBAT_KEYS = {
     'Link Skill Key': 'e',  # 释放连携技
 }
 
+type_to_key_map = {
+    'common': DEFAULT_COMMON_KEYS,
+    'industry': DEFAULT_INDUSTRY_KEYS,
+    'combat': DEFAULT_COMBAT_KEYS
+}
+
 
 class KeyConfigManager:
     """游戏热键配置管理器，负责替换逻辑"""
@@ -61,88 +67,16 @@ class KeyConfigManager:
         """
         self.key_config = key_config or {}
 
-    def resolve_common_key(self, key: str) -> str:
-        """解析通用部分的热键。
-        
-        先在DEFAULT_COMMON_KEYS中查找该键对应的配置键名，
-        然后从用户配置中读取（如果有自定义），否则返回原键值。
-        
-        Args:
-            key: 按键值（如 'q', 'e', 'f1' 等）
-            
-        Returns:
-            实际要发送的按键值
-            
-        Example:
-            manager = KeyConfigManager({'Map Key': 'shift+m'})
-            actual_key = manager.resolve_common_key('m')  # 返回 'shift+m'
-        """
-        # 在默认键表中查找对应的配置键名
+    def resolve_key(self, key: str, key_type: str = 'common') -> str:
         config_key_name = None
-        for key_name, key_value in DEFAULT_COMMON_KEYS.items():
+
+        default_map = type_to_key_map.get(key_type, {})
+
+        for key_name, key_value in default_map.items():
             if key_value == key:
                 config_key_name = key_name
                 break
 
-        # 从配置中查询（如果用户自定义了），否则使用传入的键值
-        if config_key_name:
-            return self.key_config.get(config_key_name, key)
-
-        return key
-
-    def resolve_industry_key(self, key: str) -> str:
-        """解析集成工业部分的热键。
-        
-        先在DEFAULT_INDUSTRY_KEYS中查找该键对应的配置键名，
-        然后从用户配置中读取（如果有自定义），否则返回原键值。
-        
-        Args:
-            key: 按键值（如 'q', 'e', 'capslock' 等）
-            
-        Returns:
-            实际要发送的按键值
-            
-        Example:
-            manager = KeyConfigManager({'Place Belt Key': 'alt+e'})
-            actual_key = manager.resolve_industry_key('e')  # 返回 'alt+e'
-        """
-        # 在默认键表中查找对应的配置键名
-        config_key_name = None
-        for key_name, key_value in DEFAULT_INDUSTRY_KEYS.items():
-            if key_value == key:
-                config_key_name = key_name
-                break
-
-        # 从配置中查询（如果用户自定义了），否则使用传入的键值
-        if config_key_name:
-            return self.key_config.get(config_key_name, key)
-
-        return key
-
-    def resolve_combat_key(self, key: str) -> str:
-        """解析战斗专用部分的热键。
-        
-        先在DEFAULT_COMBAT_KEYS中查找该键对应的配置键名，
-        然后从用户配置中读取（如果有自定义），否则返回原键值。
-        
-        Args:
-            key: 按键值（如 'e' 等）
-            
-        Returns:
-            实际要发送的按键值
-            
-        Example:
-            manager = KeyConfigManager({'Link Skill Key': 'q'})
-            actual_key = manager.resolve_combat_key('e')  # 返回 'q'
-        """
-        # 在默认键表中查找对应的配置键名
-        config_key_name = None
-        for key_name, key_value in DEFAULT_COMBAT_KEYS.items():
-            if key_value == key:
-                config_key_name = key_name
-                break
-
-        # 从配置中查询（如果用户自定义了），否则使用传入的键值
         if config_key_name:
             return self.key_config.get(config_key_name, key)
 
