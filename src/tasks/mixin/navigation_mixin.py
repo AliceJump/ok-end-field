@@ -3,6 +3,7 @@ import re
 import time
 
 import win32gui
+import pyautogui
 
 from src.interaction.Mouse import active_and_send_mouse_delta
 from src.tasks.BaseEfTask import BaseEfTask, back_window
@@ -341,7 +342,7 @@ class NavigationMixin(BaseEfTask):
                 # cy = int(self.height * 0.5)
                 for _ in range(6):
                     # self.scroll(cx, cy, 8)
-                    self.scroll_relative(0.5, 0.5, 80)
+                    pyautogui.scroll(20)
                     self.sleep(1)
         if raise_if_fail:
             raise Exception("对中失败")
