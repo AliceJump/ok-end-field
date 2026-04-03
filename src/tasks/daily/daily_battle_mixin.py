@@ -203,7 +203,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
             self.wait_pop_up(time_out=4)
             end_time = time.time()
             while not self.wait_ocr(match=re.compile("撤离"), time_out=1, box=self.box.top_left, log=True):
-                if time.time() - end_time > 30:
+                if time.time() - end_time > 300:
                     self.log_info("等待超时，进入协议空间超时")
                     return False
             prev = win32gui.GetForegroundWindow()
