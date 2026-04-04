@@ -1,0 +1,82 @@
+# ok-ef 开发者快速开始
+
+> 目标读者：希望为 ok-ef 贡献代码的开发者。  
+> 阅读本文前请确保已能从源码成功运行项目（见 [DEVELOPMENT.md](DEVELOPMENT.md)）。
+
+---
+
+## 1. 启动软件
+
+```bash
+# 以管理员权限启动（必须）
+python main.py        # Release 模式
+python main_debug.py  # Debug 模式（截图/日志更详细）
+```
+
+程序启动后会打开 GUI 窗口，左侧列出所有可用任务。
+
+---
+
+## 2. 新建一个触发式任务
+
+触发式任务（`TriggerTask`）在后台持续运行，满足条件时自动激活。以下示例新增一个最小化的触发式任务。
+
+### 2.1 创建任务文件
+
+在 `src/tasks/` 下新建文件，例如 `MyTriggerTask.py`：
+
+```python
+from ok import TriggerTask
+from src.tasks.BaseEfTask import BaseEfTask
+
+class MyTriggerTask(BaseEfTask, TriggerTask):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "我的触发任务"
+        self.description = "在此描述任务功能"
+
+    def run(self):
+        # 在此编写触发后执行的逻辑
+        self.logger.info("触发任务已执行")
+```
+
+> **提示**：若任务需要战斗能力，可额外继承 `BattleMixin`；需要地图导航则继承 `MapMixin`。
+
+### 2.2 注册任务
+
+打开 `src/config.py`，将新任务加入 `trigger_tasks` 列表：
+
+```python
+from src.tasks.MyTriggerTask import MyTriggerTask
+
+config = {
+    ...
+    "trigger_tasks": [
+        ...,
+        MyTriggerTask,   # 新增
+    ],
+    ...
+}
+```
+
+### 2.3 运行与验证
+
+重新启动程序（`python main_debug.py`），在 GUI 右侧的触发任务列表中即可看到并启用新任务。
+
+---
+
+## 3. 新建一次性任务（可选）
+
+一次性任务（`BaseTask` 子类）由用户点击触发，执行完毕后自动停止。流程与触发式任务相同，区别在于：
+
+- 继承 `BaseTask`（而非 `TriggerTask`）
+- 注册到 `config["onetime_tasks"]` 列表
+
+---
+
+## 后续阅读
+
+| 文档 | 说明 |
+|------|------|
+| [DEVELOPMENT.md](DEVELOPMENT.md) | 完整架构、目录结构、CI/CD |
+| [API.md](API.md) | BaseEfTask、Mixin、ScreenPosition 等详细 API |
