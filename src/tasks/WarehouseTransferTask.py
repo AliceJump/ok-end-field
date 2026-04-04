@@ -116,20 +116,20 @@ class WarehouseTransferTask(BaseEfTask):
             )
             if hits:
                 self.sleep(0.3)
-                self.send_key("esc", after_sleep=0.2)
+                self.send_key("esc", after_sleep=0.2)  # 确认使用send_key：esc为系统通用退出键，非游戏可配置热键
                 self.log_info(f"仓库切换成功")
                 return
             self.sleep(0.5)
         raise RuntimeError("切换仓库失败：5秒内未检测到“已连接”")
 
     def _ctrl_click(self, box):
-        self.send_key_down("LCONTROL")
+        self.send_key_down("LCONTROL")  # 确认使用send_key：LCONTROL为系统修饰键，用于ctrl+点击多选，非游戏可配置热键
         try:
             self.sleep(0.03)
             self.click(box, move_back=True, down_time=0.03, after_sleep=0, key="left")
             self.sleep(0.03)
         finally:
-            self.send_key_up("LCONTROL")
+            self.send_key_up("LCONTROL")  # 确认使用send_key：释放LCONTROL修饰键
         self.sleep(0.15)
 
     def run(self):

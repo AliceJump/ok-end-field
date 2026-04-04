@@ -97,7 +97,7 @@ class AutoCombatLogic:
                         if not task.in_combat():
                             break
 
-                        task.send_key(skill_key)
+                        task.send_key(skill_key)  # 确认使用send_key：技能键来自用户自定义排轴配置，运行时动态传入，无法通过press_key映射
                         task.last_skill_time = time.time()
                         task.last_op_time = time.time()
 
@@ -128,7 +128,7 @@ class AutoCombatLogic:
                         continue
                 else:
                     if task.get_skill_bar_count() >= 1:
-                        task.send_key(now_skill)
+                        task.send_key(now_skill)  # 确认使用send_key：技能键来自用户自定义排轴配置，运行时动态传入，无法通过press_key映射
                         task.log_info(f"排轴释放技能 {now_skill}")
                         self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
                         self.last_rotation_ok_time = time.time()

@@ -18,7 +18,7 @@ class AutoSkipDialogTask(BaseEfTask, TriggerTask):
 
     def run(self):
         if self.find_one('skip_dialog_esc', horizontal_variance=0.05):
-            self.send_key('esc', after_sleep=0.1)
+            self.send_key('esc', after_sleep=0.1)  # 确认使用send_key：esc为系统通用退出键，非游戏可配置热键
             start = time.time()
             clicked_confirm = False
             while time.time() - start < 3:

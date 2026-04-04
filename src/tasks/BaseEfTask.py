@@ -344,11 +344,11 @@ class BaseEfTask(BaseTask):
             after_sleep: 点击后等待时间
             key: 鼠标按键('left'/'right'/'middle')
         """
-        self.send_key_down("alt")
+        self.send_key_down("alt")  # 确认使用send_key：alt为系统修饰键，用于alt+点击操作，非游戏可配置热键
         self.sleep(0.5)
         self.click(x=x, y=y, move_back=move_back, name=name, interval=interval, move=move, down_time=down_time,
                    after_sleep=after_sleep, key=key)
-        self.send_key_up("alt")
+        self.send_key_up("alt")  # 确认使用send_key：释放alt修饰键
 
     def screen_center(self) -> tuple[int, int]:
         """获取屏幕中心坐标
@@ -585,7 +585,7 @@ class BaseEfTask(BaseTask):
                 self.log_info("skip_dialog 超时退出")
                 return False
             if self.find_one("skip_dialog_esc", horizontal_variance=0.05):
-                self.send_key("esc", after_sleep=0.1)
+                self.send_key("esc", after_sleep=0.1)  # 确认使用send_key：esc为系统通用退出键，非游戏可配置热键
                 start = time.time()
                 clicked_confirm = False
                 while time.time() - start < 3:

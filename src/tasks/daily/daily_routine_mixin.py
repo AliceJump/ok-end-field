@@ -679,10 +679,10 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             after_sleep=2,
         )
         self.wait_pop_up(after_sleep=2)
-        self.send_key("esc", after_sleep=2)
+        self.send_key("esc", after_sleep=2)  # 确认使用send_key：esc为系统通用退出键，非游戏可配置热键
         if len(self.ocr(match=re.compile("武器补给"), box=self.box.top_right)) > 0:
             # 暂不领取武器补给箱
-            self.send_key("esc", after_sleep=2)
+            self.send_key("esc", after_sleep=2)  # 确认使用send_key：esc为系统通用退出键，非游戏可配置热键
             self.wait_click_ocr(match=re.compile("取消"), time_out=5, after_sleep=2)
             if len(self.ocr(match=re.compile("是否取消"), box=self.box.center)) > 0:
                 self.click_confirm(time_out=5, after_sleep=2)

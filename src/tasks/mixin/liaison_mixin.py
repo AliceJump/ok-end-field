@@ -191,12 +191,12 @@ class LiaisonMixin(NavigationMixin):
             if chat_box:
                 self.log_info("发现干员，点击交互图标")
 
-                self.send_key_down("alt")
+                self.send_key_down("alt")  # 确认使用send_key：alt为系统修饰键，用于alt+点击交互，非游戏可配置热键
                 self.sleep(0.5)
 
                 self.click(chat_box, after_sleep=0)
 
-                self.send_key_up("alt")
+                self.send_key_up("alt")  # 确认使用send_key：释放alt修饰键
 
                 return LiaisonResult.FIND_CHAT_ICON
 
@@ -399,7 +399,7 @@ class LiaisonMixin(NavigationMixin):
         """点击干员聊天交互框"""
         self.log_info("发现干员，点击进行交互")
 
-        self.send_key_down("alt")
+        self.send_key_down("alt")  # 确认使用send_key：alt为系统修饰键，用于alt+点击干员聊天框，非游戏可配置热键
         self.sleep(0.5)
 
         self.click_box(chat_box, after_sleep=0.5)
@@ -412,7 +412,7 @@ class LiaisonMixin(NavigationMixin):
             time_out=1
         )
 
-        self.send_key_up("alt")
+        self.send_key_up("alt")  # 确认使用send_key：释放alt修饰键
 
         self.log_info("干员联络完成")
 
