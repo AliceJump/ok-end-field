@@ -299,8 +299,51 @@ python main_debug.py
 
 ### 5.6 热键适配
 
-游戏内默认快捷键定义在 `src/interaction/KeyConfig.py`（`DEFAULT_COMMON_KEYS`、`DEFAULT_INDUSTRY_KEYS`、`DEFAULT_COMBAT_KEYS`）。若需要按热键操作，使用 `self.key_manager.get_key("Interact Key")` 而不是硬编码 `'f'`，以支持用户自定义按键。
-> 若此键可自定义，则不可使其为模板图片，否则会导致模板匹配失效
+游戏内默认快捷键定义在 `src/interaction/KeyConfig.py`（`DEFAULT_COMMON_KEYS`、`DEFAULT_INDUSTRY_KEYS`、`DEFAULT_COMBAT_KEYS`）。若需要按热键操作，**不要硬编码按键字面值**（如 `'f'`），应通过下列封装函数发送，以自动适配用户自定义按键。
+
+> ⚠️ 若某个按键允许用户自定义，**不可将该按键对应的 UI 元素作为模板图片**，否则用户改键后模板匹配将会失效。
+
+#### 可用的按键发送函数
+
+代码中只允许使用以下四种按键操作方式：
+
+**1. 三个任务方法（在 `BaseEfTask` 子类中使用）**
+
+```python
+# 发送通用热键（DEFAULT_COMMON_KEYS 中的按键，如交互键、背包键等）
+self.press_key(key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1)
+
+# 发送集成工业专用热键（DEFAULT_INDUSTRY_KEYS）
+self.press_industry_key(key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1)
+
+# 发送战斗专用热键（DEFAULT_COMBAT_KEYS）
+self.press_combat_key(key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1)
+```
+
+`key` 参数传入**默认按键字面值**（如 `'f'`、`'b'`），框架会通过 `KeyConfigManager.resolve_key()` 自动替换为用户的自定义值。
+
+示例：
+
+```python
+# ✅ 正确：使用封装函数，支持用户改键
+self.press_key('f')          # 交互键，默认 'f'，用户可自定义
+
+# ❌ 错误：硬编码发送，用户改键后失效
+self.send_key('f')
+```
+
+**2. `move_keys`（移动按键，仅用于方向键组合）**
+
+```python
+from src.interaction.move_interaction import move_keys
+
+move_keys(hwnd, keys, duration)
+```
+
+- `keys`：`str` 或 `list[str]`，仅限 `"w"` / `"a"` / `"s"` / `"d"`
+- `duration`：按住时长（秒）
+
+此函数通过 `keybd_event` 模拟原始按键，适用于需要精确控制方向键持续时间的场景（如自动寻路移动）。方向键当前不在自定义热键范围内，可直接使用字面值。
 
 ### 5.7 代码规范
 
