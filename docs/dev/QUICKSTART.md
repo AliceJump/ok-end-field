@@ -1,16 +1,43 @@
 # ok-ef 开发者快速开始
 
-> 目标读者：希望为 ok-ef 贡献代码的开发者。  
-> 阅读本文前请确保已能从源码成功运行项目（见 [DEVELOPMENT.md](DEVELOPMENT.md)）。
+> 目标读者：希望为 ok-ef 贡献代码的开发者。
 
 ---
 
-## 1. 启动软件
+## 1. 从源码运行项目
+
+### 1.1 环境要求
+
+| 项目 | 要求 |
+|------|------|
+| 操作系统 | Windows |
+| Python | **3.12**（仅支持此版本） |
+| 运行权限 | **管理员权限**（必须；需以管理员身份启动 CMD / PyCharm / VSCode） |
+| 安装路径 | 纯英文路径（例如 `D:\dev\ok-end-field`），不要含中文或空格 |
+
+### 1.2 克隆仓库
 
 ```bash
-# 以管理员权限启动（必须）
-python main.py        # Release 模式
-python main_debug.py  # Debug 模式（截图/日志更详细）
+git clone --recurse-submodules https://github.com/AliceJump/ok-end-field.git
+cd ok-end-field
+```
+
+> 项目包含子模块，务必加上 `--recurse-submodules`。
+
+### 1.3 安装依赖
+
+```bash
+pip install -r requirements.txt --upgrade
+```
+
+### 1.4 启动程序
+
+```bash
+# Release 模式
+python main.py
+
+# Debug 模式（截图/日志更详细，推荐开发时使用）
+python main_debug.py
 ```
 
 程序启动后会打开 GUI 窗口，左侧列出所有可用任务。

@@ -139,7 +139,7 @@ An image-recognition-based automation tool for End Field, with background mode s
 
 | 文档 | 说明 |
 |------|------|
-| [快速开始（QUICKSTART.md）](docs/dev/QUICKSTART.md) | 启动软件、新建触发式/一次性任务的最简流程 |
+| [快速开始（QUICKSTART.md）](docs/dev/QUICKSTART.md) | 从源码运行项目、启动软件、新建触发式/一次性任务的最简流程 |
 | [开发指南（DEVELOPMENT.md）](docs/dev/DEVELOPMENT.md) | 架构总览、目录结构、开发流程、测试、CI/CD、路线图 |
 | [API 参考（API.md）](docs/dev/API.md) | BaseEfTask、Mixin、ScreenPosition、KeyConfigManager 等详细 API |
 
