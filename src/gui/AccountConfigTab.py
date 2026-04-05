@@ -153,6 +153,13 @@ class AccountConfigTab(CustomTab):
         task_selector_row.add_layout(task_selector_layout, stretch=1)
         selector_layout.addWidget(task_selector_row)
 
+        view_row = LabelAndWidget("视图", "开启后仅显示与原配置不同的项")
+        self.only_diff_switch = SwitchButton()
+        self.only_diff_switch.setOnText(self.tr("仅差异"))
+        self.only_diff_switch.setOffText(self.tr("全部"))
+        view_row.add_widget(self.only_diff_switch, stretch=0)
+        selector_layout.addWidget(view_row)
+
         action_row = LabelAndWidget("账号任务覆盖操作")
         action_layout = QHBoxLayout()
         self.save_task_override_button = PrimaryPushButton("保存当前账号任务覆盖")
@@ -187,6 +194,7 @@ class AccountConfigTab(CustomTab):
         self.refresh_task_selector_button.clicked.connect(self.rebuild_task_selector)
         self.account_selector.currentTextChanged.connect(self.on_account_changed)
         self.task_selector.currentTextChanged.connect(self.on_task_changed)
+        self.only_diff_switch.checkedChanged.connect(self.on_view_mode_changed)
         self.save_task_override_button.clicked.connect(self.save_current_task_override)
         self.clear_task_override_button.clicked.connect(self.clear_current_task_override)
         self.clear_account_override_button.clicked.connect(self.clear_current_account_overrides)
@@ -388,7 +396,12 @@ class AccountConfigTab(CustomTab):
             return
         self.render_task_editor()
 
-    def _build_virtual_config(self, task, account_name: str):
+    def on_view_mode_changed(self, _):
+        if self._building:
+            return
+        self.render_task_editor()
+
+    def _build_virtual_config(self, task, account_name: str, only_diff: bool = False):
         task_class = task.__class__.__name__
         account_map = (self.overrides_data.get("accounts") or {}).get(account_name, {})
         task_override = account_map.get(task_class, {}) if isinstance(account_map, dict) else {}
@@ -397,6 +410,7 @@ class AccountConfigTab(CustomTab):
         initial = {}
         base_values = {}
         editable_keys = []
+        total_supported_keys = 0
 
         for key, default_value in task.default_config.items():
             if str(key).startswith("_"):
@@ -411,16 +425,21 @@ class AccountConfigTab(CustomTab):
             if not self._is_supported_value(default_value):
                 continue
 
+            total_supported_keys += 1
+
             base_value = dict.get(task.config, key, default_value)
             override_value = task_override.get(key, base_value)
             value = self._coerce_like(base_value, override_value)
+
+            if only_diff and value == base_value:
+                continue
 
             defaults[key] = default_value
             initial[key] = value
             base_values[key] = base_value
             editable_keys.append(key)
 
-        return InMemoryConfig(initial, defaults), editable_keys, base_values
+        return InMemoryConfig(initial, defaults), editable_keys, base_values, total_supported_keys
 
     def render_task_editor(self):
         self._clear_layout(self.editor_layout)
@@ -440,10 +459,24 @@ class AccountConfigTab(CustomTab):
             self.editor_layout.addWidget(BodyLabel("请先选择任务"))
             return
 
-        virtual_config, editable_keys, base_values = self._build_virtual_config(task, account_name)
+        only_diff = bool(self.only_diff_switch.isChecked())
+        virtual_config, editable_keys, base_values, total_supported_keys = self._build_virtual_config(
+            task,
+            account_name,
+            only_diff=only_diff,
+        )
         if not editable_keys:
-            self.editor_layout.addWidget(BodyLabel("该任务暂无可编辑配置项"))
+            if only_diff:
+                self.editor_layout.addWidget(BodyLabel("当前账号在该任务下没有差异项"))
+            else:
+                self.editor_layout.addWidget(BodyLabel("该任务暂无可编辑配置项"))
             return
+
+        summary_text = (
+            f"当前视图：{'仅差异项' if only_diff else '全部配置'} | "
+            f"展示 {len(editable_keys)} / {total_supported_keys} 项"
+        )
+        self.editor_layout.addWidget(BodyLabel(summary_text))
 
         card = ConfigCard(
             None,
