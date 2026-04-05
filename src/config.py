@@ -123,6 +123,9 @@ config = {
         ["src.tasks.Test", "Test"],
         ["ok.task.DiagnosisTask", "DiagnosisTask"],
     ],
+    "custom_tabs": [
+        ["src.gui.AccountConfigTab", "AccountConfigTab"],
+    ],
     "trigger_tasks": [  # 不断执行的触发式任务
         ["src.tasks.AutoCombatTask", "AutoCombatTask"],
         ["src.tasks.AutoSkipDialogTask", "AutoSkipDialogTask"],

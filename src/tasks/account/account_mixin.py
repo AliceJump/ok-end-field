@@ -4,12 +4,17 @@ class AccountMixin(LoginMixin):
         super().__init__(*args, **kwargs)
         self.default_config.update({
             "多账户模式": False,
+            "多账户独立配置": False,
             "账号列表":"账号1,密码1\n账号2,密码2\n账号3,密码3",
         })
         self.config_description.update({
             "多账户模式": (
                 "是否启用多账户模式\n"
                 "需要已登录任意账号"
+            ),
+            "多账户独立配置": (
+                "是否启用账号独立配置覆盖\n"
+                "开启后同一任务可按账号使用不同参数"
             ),
             "账号列表": (
                 "账号密码列表\n"
