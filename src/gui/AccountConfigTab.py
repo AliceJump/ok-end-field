@@ -17,8 +17,12 @@ from qfluentwidgets import (
 from ok.gui.tasks.ConfigCard import ConfigCard
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 from ok.gui.widget.CustomTab import CustomTab
-from src.tasks.DailyTask import DailyTask
-from src.tasks.account.account_scope_store import load_overrides, save_overrides
+from src.tasks.account.account_scope_store import (
+    load_overrides,
+    parse_account_list_text,
+    save_overrides,
+    sync_account_list_text,
+)
 
 
 class InMemoryConfig(dict):
@@ -38,7 +42,6 @@ class InMemoryConfig(dict):
 class AccountConfigTab(CustomTab):
     def __init__(self):
         super().__init__()
-        self.daily_task = None
         self._loaded_once = False
         self._building = False
 
@@ -46,9 +49,12 @@ class AccountConfigTab(CustomTab):
         self.task_map: Dict[str, Any] = {}
         self.current_virtual_config: InMemoryConfig | None = None
         self.current_task = None
-        self.current_account = ""
+        self.current_account_key = ""
+        self.current_account_name = ""
         self.current_editable_keys: list[str] = []
         self.current_base_values: Dict[str, Any] = {}
+        self.account_display_to_key: Dict[str, str] = {}
+        self.account_display_to_name: Dict[str, str] = {}
 
         self._build_ui()
 
@@ -81,6 +87,7 @@ class AccountConfigTab(CustomTab):
         header_layout.setSpacing(6)
         tip = BodyLabel(
             "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。"
+            "账号页只需要填写账号名（手机号），密码请在任务配置里的账号列表中填写。"
         )
         tip.setWordWrap(True)
         header_layout.addWidget(tip)
@@ -91,30 +98,16 @@ class AccountConfigTab(CustomTab):
         base_layout.setContentsMargins(0, 0, 0, 0)
         base_layout.setSpacing(8)
 
-        account_mode_row = LabelAndWidget("多账户模式", "总开关")
-        self.multi_account_switch = SwitchButton()
-        self.multi_account_switch.setOnText(self.tr("启用"))
-        self.multi_account_switch.setOffText(self.tr("禁用"))
-        account_mode_row.add_widget(self.multi_account_switch, stretch=0)
-        base_layout.addWidget(account_mode_row)
-
-        scoped_mode_row = LabelAndWidget("多账户独立配置", "开启后按账号读取覆盖参数")
-        self.scoped_config_switch = SwitchButton()
-        self.scoped_config_switch.setOnText(self.tr("启用"))
-        self.scoped_config_switch.setOffText(self.tr("禁用"))
-        scoped_mode_row.add_widget(self.scoped_config_switch, stretch=0)
-        base_layout.addWidget(scoped_mode_row)
-
-        account_list_row = LabelAndWidget("账号列表", "每行格式：账号,密码")
+        account_list_row = LabelAndWidget("账号列表", "每行一个账号名（手机号），无需密码")
         self.account_list_edit = TextEdit()
         self.account_list_edit.setMinimumHeight(120)
-        self.account_list_edit.setPlaceholderText("账号A,密码A\n账号B,密码B")
+        self.account_list_edit.setPlaceholderText("手机号A\n手机号B")
         account_list_row.add_widget(self.account_list_edit, stretch=1)
         base_layout.addWidget(account_list_row)
 
-        base_action_row = LabelAndWidget("基础配置操作")
+        base_action_row = LabelAndWidget("账号列表操作")
         base_action_layout = QHBoxLayout()
-        self.save_base_button = PrimaryPushButton("保存基础配置")
+        self.save_base_button = PrimaryPushButton("保存账号列表")
         self.refresh_button = PushButton("刷新")
         base_action_layout.addWidget(self.save_base_button)
         base_action_layout.addWidget(self.refresh_button)
@@ -122,7 +115,7 @@ class AccountConfigTab(CustomTab):
         base_action_row.add_layout(base_action_layout, stretch=1)
         base_layout.addWidget(base_action_row)
 
-        self.add_card("多账户基础设置", base_widget)
+        self.add_card("账号基础设置", base_widget)
 
         selector_widget = QWidget()
         selector_layout = QVBoxLayout(selector_widget)
@@ -202,36 +195,50 @@ class AccountConfigTab(CustomTab):
     def _set_status(self, text: str):
         self.status_label.setText(text)
 
-    def _ensure_daily_task(self):
+    def _ensure_executor(self):
         if self.executor is None:
             self._set_status("界面初始化中，请稍候")
             return False
-
-        if self.daily_task is None:
-            try:
-                self.daily_task = self.get_task(DailyTask)
-            except Exception:
-                self.daily_task = None
-
-        if self.daily_task is None:
-            self._set_status("未找到 DailyTask，无法读取多账户基础配置")
-            return False
-
         return True
 
     @staticmethod
-    def _parse_accounts(account_list_text: str) -> list[str]:
-        accounts = []
+    def _parse_accounts(account_list_text: str) -> list[Dict[str, str]]:
+        accounts: list[Dict[str, str]] = []
         seen = set()
-        for raw in account_list_text.splitlines():
-            line = raw.strip()
-            if not line:
-                continue
-            username = line.split(",", 1)[0].strip()
+        for entry in parse_account_list_text(account_list_text):
+            username = str(entry.get("username", "")).strip()
             if username and username not in seen:
                 seen.add(username)
-                accounts.append(username)
+                accounts.append({"username": username, "password": str(entry.get("password", ""))})
         return accounts
+
+    def _resolve_account_key_by_username(self, username: str) -> str:
+        username = username.strip()
+        if not username:
+            return ""
+
+        registry = self.overrides_data.get("account_registry") or {}
+        for account_id, meta in registry.items():
+            if not isinstance(account_id, str) or not isinstance(meta, dict):
+                continue
+
+            current_name = str(meta.get("username", "") or "").strip()
+            if username == current_name:
+                return account_id
+
+        return ""
+
+    def _get_account_name_by_key(self, account_key: str) -> str:
+        if not account_key:
+            return ""
+
+        registry = self.overrides_data.get("account_registry") or {}
+        meta = registry.get(account_key)
+        if isinstance(meta, dict):
+            username = str(meta.get("username", "") or "").strip()
+            if username:
+                return username
+        return account_key
 
     @staticmethod
     def _is_supported_value(value: Any) -> bool:
@@ -288,6 +295,8 @@ class AccountConfigTab(CustomTab):
         tasks = []
         seen = set()
         for task in list(getattr(self.executor, "onetime_tasks", [])) + list(getattr(self.executor, "trigger_tasks", [])):
+            if not getattr(task, "support_multi_account", False):
+                continue
             class_name = task.__class__.__name__
             if class_name in seen:
                 continue
@@ -303,61 +312,112 @@ class AccountConfigTab(CustomTab):
                 widget.deleteLater()
 
     def refresh_from_source(self):
-        if not self._ensure_daily_task():
+        if not self._ensure_executor():
             return
 
         self._building = True
         try:
-            cfg = self.daily_task.config
-            self.multi_account_switch.setChecked(bool(cfg.get("多账户模式", False)))
-            self.scoped_config_switch.setChecked(bool(cfg.get("多账户独立配置", False)))
-            self.account_list_edit.setPlainText(str(cfg.get("账号列表", "") or ""))
             self.overrides_data = load_overrides(force=True)
+            self.account_list_edit.setPlainText(str(self.overrides_data.get("account_list_text", "") or ""))
+
+            tasks = self._collect_tasks()
 
             self.rebuild_account_selector(keep_selection=False)
             self.rebuild_task_selector(keep_selection=False)
             self.render_task_editor()
-            self._set_status("已刷新账号与任务配置")
+
+            if not tasks:
+                self._set_status("未找到 support_multi_account=True 的任务")
+            else:
+                self._set_status("已刷新账号与任务配置（账号页账号列表与任务账号列表独立）")
         finally:
             self._building = False
 
     def save_base_settings(self):
-        if not self._ensure_daily_task():
+        if not self._ensure_executor():
             return
 
-        cfg = self.daily_task.config
-        cfg["多账户模式"] = bool(self.multi_account_switch.isChecked())
-        cfg["多账户独立配置"] = bool(self.scoped_config_switch.isChecked())
-        cfg["账号列表"] = self.account_list_edit.toPlainText().strip()
+        account_list = self.account_list_edit.toPlainText().strip()
+
+        summary = sync_account_list_text(account_list)
+        self.overrides_data = load_overrides(force=True)
 
         self.rebuild_account_selector()
-        self._set_status("基础配置已保存")
+        status = (
+            "账号列表已保存"
+            f"（复用ID {summary.get('reused_count', 0)}，"
+            f"新建ID {summary.get('created_count', 0)}）"
+        )
+        status += "；账号名（手机号）是唯一ID，密码变化不影响ID，账号名变化会新建ID"
+        status += "；账号页无需密码，密码请在任务配置账号列表中填写"
 
-    def _current_account(self) -> str:
-        return self.account_selector.currentText().strip()
+        invalid_count = int(summary.get("invalid_count", 0) or 0)
+        if invalid_count > 0:
+            status += f"；忽略无效行 {invalid_count} 条"
+
+        self._set_status(status)
+
+    def _current_account_key(self) -> str:
+        display = self.account_selector.currentText().strip()
+        return self.account_display_to_key.get(display, "")
+
+    def _current_account_name(self) -> str:
+        display = self.account_selector.currentText().strip()
+        return self.account_display_to_name.get(display, "")
 
     def _current_task(self):
         display = self.task_selector.currentText().strip()
         return self.task_map.get(display)
 
     def rebuild_account_selector(self, keep_selection: bool = True):
-        current = self._current_account() if keep_selection else ""
+        current_key = self._current_account_key() if keep_selection else ""
 
-        accounts = self._parse_accounts(self.account_list_edit.toPlainText())
-        stored_accounts = list((self.overrides_data.get("accounts") or {}).keys())
-        for account in stored_accounts:
-            if account not in accounts:
-                accounts.append(account)
+        raw_items: list[tuple[str, str]] = []
+        for account_entry in self._parse_accounts(self.account_list_edit.toPlainText()):
+            username = str(account_entry.get("username", "")).strip()
+            if not username:
+                continue
+            account_key = self._resolve_account_key_by_username(username) or username
+            raw_items.append((account_key, username))
+
+        for account_key in (self.overrides_data.get("accounts") or {}).keys():
+            display_name = self._get_account_name_by_key(account_key)
+            raw_items.append((str(account_key), display_name))
+
+        dedup_items: list[tuple[str, str]] = []
+        seen_keys = set()
+        for account_key, account_name in raw_items:
+            if not account_key or account_key in seen_keys:
+                continue
+            seen_keys.add(account_key)
+            dedup_items.append((account_key, account_name))
+
+        self.account_display_to_key = {}
+        self.account_display_to_name = {}
 
         self.account_selector.blockSignals(True)
         self.account_selector.clear()
-        for account in accounts:
-            self.account_selector.addItem(account)
+
+        used_display = set()
+        for account_key, account_name in dedup_items:
+            display = account_name or account_key
+            if display in used_display:
+                display = f"{display} ({account_key[-6:]})"
+            used_display.add(display)
+
+            self.account_selector.addItem(display)
+            self.account_display_to_key[display] = account_key
+            self.account_display_to_name[display] = account_name or account_key
+
         self.account_selector.blockSignals(False)
 
-        if current and current in accounts:
-            self.account_selector.setCurrentText(current)
-        elif accounts:
+        if current_key:
+            for display, key in self.account_display_to_key.items():
+                if key == current_key:
+                    self.account_selector.setCurrentText(display)
+                    break
+
+        if self.account_selector.count() > 0 and self.account_selector.currentIndex() < 0:
             self.account_selector.setCurrentIndex(0)
 
     def rebuild_task_selector(self, keep_selection: bool = True):
@@ -401,9 +461,16 @@ class AccountConfigTab(CustomTab):
             return
         self.render_task_editor()
 
-    def _build_virtual_config(self, task, account_name: str, only_diff: bool = False):
+    def _build_virtual_config(self, task, account_key: str, account_name: str, only_diff: bool = False):
         task_class = task.__class__.__name__
-        account_map = (self.overrides_data.get("accounts") or {}).get(account_name, {})
+        accounts = self.overrides_data.get("accounts") or {}
+        account_map = accounts.get(account_key, {})
+        if account_name and (
+            not isinstance(account_map, dict) or (not account_map and account_name in accounts)
+        ):
+            legacy_account_map = accounts.get(account_name, {})
+            if isinstance(legacy_account_map, dict):
+                account_map = legacy_account_map
         task_override = account_map.get(task_class, {}) if isinstance(account_map, dict) else {}
 
         defaults = {}
@@ -445,12 +512,14 @@ class AccountConfigTab(CustomTab):
         self._clear_layout(self.editor_layout)
         self.current_virtual_config = None
         self.current_task = None
-        self.current_account = ""
+        self.current_account_key = ""
+        self.current_account_name = ""
         self.current_editable_keys = []
         self.current_base_values = {}
 
-        account_name = self._current_account()
-        if not account_name:
+        account_key = self._current_account_key()
+        account_name = self._current_account_name()
+        if not account_key:
             self.editor_layout.addWidget(BodyLabel("请先选择账号"))
             return
 
@@ -462,6 +531,7 @@ class AccountConfigTab(CustomTab):
         only_diff = bool(self.only_diff_switch.isChecked())
         virtual_config, editable_keys, base_values, total_supported_keys = self._build_virtual_config(
             task,
+            account_key,
             account_name,
             only_diff=only_diff,
         )
@@ -480,7 +550,7 @@ class AccountConfigTab(CustomTab):
 
         card = ConfigCard(
             None,
-            f"{task.name} - {account_name}",
+            f"{task.name} - {account_name or account_key}",
             virtual_config,
             "按当前账号覆盖该任务配置。未覆盖的项将使用任务原配置。",
             {},
@@ -492,12 +562,13 @@ class AccountConfigTab(CustomTab):
 
         self.current_virtual_config = virtual_config
         self.current_task = task
-        self.current_account = account_name
+        self.current_account_key = account_key
+        self.current_account_name = account_name
         self.current_editable_keys = editable_keys
         self.current_base_values = base_values
 
     def save_current_task_override(self):
-        if not self.current_virtual_config or self.current_task is None or not self.current_account:
+        if not self.current_virtual_config or self.current_task is None or not self.current_account_key:
             self._set_status("请先选择账号与任务")
             return
 
@@ -509,52 +580,68 @@ class AccountConfigTab(CustomTab):
                 diff[key] = current_value
 
         accounts = self.overrides_data.setdefault("accounts", {})
-        account_map = accounts.setdefault(self.current_account, {})
+        account_map = accounts.setdefault(self.current_account_key, {})
 
         task_class = self.current_task.__class__.__name__
         if diff:
             account_map[task_class] = diff
-            self._set_status(f"已保存：{self.current_account} / {self.current_task.name}（覆盖 {len(diff)} 项）")
+            self._set_status(
+                f"已保存：{self.current_account_name or self.current_account_key} / {self.current_task.name}（覆盖 {len(diff)} 项）"
+            )
         else:
             account_map.pop(task_class, None)
-            self._set_status(f"无差异，已清除：{self.current_account} / {self.current_task.name} 覆盖")
+            self._set_status(
+                f"无差异，已清除：{self.current_account_name or self.current_account_key} / {self.current_task.name} 覆盖"
+            )
 
         if not account_map:
-            accounts.pop(self.current_account, None)
+            accounts.pop(self.current_account_key, None)
 
         self.overrides_data = save_overrides(self.overrides_data)
         self.rebuild_account_selector()
 
     def clear_current_task_override(self):
-        account = self._current_account()
+        account_key = self._current_account_key()
+        account_name = self._current_account_name()
         task = self._current_task()
-        if not account or task is None:
+        if not account_key or task is None:
             self._set_status("请先选择账号与任务")
             return
 
         accounts = self.overrides_data.get("accounts", {})
-        account_map = accounts.get(account, {})
+        account_map = accounts.get(account_key, {})
+        if account_name and (
+            not isinstance(account_map, dict) or (not account_map and account_name in accounts)
+        ):
+            legacy_account_map = accounts.get(account_name, {})
+            if isinstance(legacy_account_map, dict):
+                account_map = legacy_account_map
+                account_key = account_name
         task_class = task.__class__.__name__
         account_map.pop(task_class, None)
         if not account_map:
-            accounts.pop(account, None)
+            accounts.pop(account_key, None)
 
         self.overrides_data = save_overrides(self.overrides_data)
         self.render_task_editor()
         self.rebuild_account_selector()
-        self._set_status(f"已清空：{account} / {task.name} 覆盖")
+        self._set_status(f"已清空：{account_name or account_key} / {task.name} 覆盖")
 
     def clear_current_account_overrides(self):
-        account = self._current_account()
-        if not account:
+        account_key = self._current_account_key()
+        account_name = self._current_account_name()
+        if not account_key:
             self._set_status("请先选择账号")
             return
 
         accounts = self.overrides_data.get("accounts", {})
-        if account in accounts:
-            accounts.pop(account, None)
+        if account_key in accounts:
+            accounts.pop(account_key, None)
+            self.overrides_data = save_overrides(self.overrides_data)
+        elif account_name in accounts:
+            accounts.pop(account_name, None)
             self.overrides_data = save_overrides(self.overrides_data)
 
         self.rebuild_account_selector()
         self.render_task_editor()
-        self._set_status(f"已清空账号全部覆盖：{account}")
+        self._set_status(f"已清空账号全部覆盖：{account_name or account_key}")

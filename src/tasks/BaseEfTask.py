@@ -48,6 +48,8 @@ class BaseEfTask(BaseTask, ProcessManager):
         super().__init__(*args, **kwargs)
         self._logged_in = False  # 记录是否已登录游戏
         self.current_user = ""  # 记录当前用户
+        self.current_account_id = ""  # 记录当前账号稳定ID（优先用于账号覆盖）
+        self.support_multi_account = False  # 明确标识该任务是否支持多账号执行逻辑
         self._bind_account_aware_config_get()
         self.box = ScreenPosition(self)  # 屏幕位置辅助对象，提供top/bottom/left/right等边界
         self.key_config = self.get_global_config('Game Hotkey Config')  # 获取全局热键配置
@@ -178,12 +180,13 @@ class BaseEfTask(BaseTask, ProcessManager):
         if not self._is_account_override_enabled():
             return base_value
 
+        account_id = (self.current_account_id or "").strip()
         account_name = (self.current_user or "").strip()
-        if not account_name:
+        if not account_id and not account_name:
             return base_value
 
         task_name = self.__class__.__name__
-        account_overrides = get_account_task_overrides(account_name, task_name)
+        account_overrides = get_account_task_overrides(account_id or account_name, task_name, account_name=account_name)
         if key not in account_overrides:
             return base_value
 
