@@ -779,6 +779,12 @@ def log_error(
 
 输出 ERROR 级别日志。
 
+#### 日志使用约定
+
+1. 在任务类 / Mixin 内，优先使用 `self.log_info/self.log_debug/self.log_error`。
+2. 在非任务模块中，使用模块级 logger（`Logger.get_logger(__name__)`）。
+3. 运行时代码中避免使用 `print` 作为日志输出。
+
 ---
 
 #### `info_set`

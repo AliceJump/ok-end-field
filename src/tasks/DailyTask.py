@@ -28,6 +28,7 @@ class DailyTask(
         self.description = "子任务开关用⭐标出，自上而下顺序执行，最后执行『日常奖励』。\n如果出现反复按ESC的情形，请调高『设置/主界面单次动作后延迟』（建议1.5以上）。"
         self.icon = FluentIcon.SYNC
         self.support_schedule_task = True
+        self.support_multi_account = True
         self.task_status = {"success": [], "failed": []}
         self.default_config.update({"⭐传送到帝江号右侧传送点": True, "发生异常时终止游戏": False, "仅退出游戏": False})
         self.config_description.update(
@@ -74,13 +75,23 @@ class DailyTask(
                 # ===== 多账号模式 =====
                 if accounts_bool:
                     account = accounts_list[repeat_idx]
-                    self.current_user = account[0]
-                    self.log_info(f"开始第 {repeat_idx+1}/{repeat_times} 个账号({account[0][-4:]})任务执行")
-                    self.login_flow(account[0], account[1])
+                    username = str(account.get("username", "")).strip()
+                    password = str(account.get("password", ""))
+                    account_id = str(account.get("account_id", "")).strip() or username
+                    if not username:
+                        self.log_info(f"第 {repeat_idx + 1}/{repeat_times} 个账号为空，已跳过")
+                        continue
+
+                    self.set_current_account(username, account_id)
+                    self.log_info(f"开始第 {repeat_idx+1}/{repeat_times} 个账号({username[-4:]})任务执行")
+                    self.login_flow(username, password)
 
                 # ===== 调试模式 =====
                 elif self.debug:
+                    self.set_current_account("", "")
                     self.log_info(f"调试模式，第 {repeat_idx + 1}/{repeat_times} 轮")
+                else:
+                    self.set_current_account("", "")
 
                 if not self._logged_in:
                     self.ensure_main(time_out=240)

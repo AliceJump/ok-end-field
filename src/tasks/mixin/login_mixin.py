@@ -49,23 +49,44 @@ class LoginMixin(BaseEfTask):
         self.wait_click_ocr(match=re.compile("确认"), time_out=10, box=self.box.bottom_right, after_sleep=2)
         self._logged_in = False
         start_time = time.time()
+        result = None
+        one_ok = False
         while time.time() - start_time < 60:
-            result = self.login_ocr(match=re.compile("密码"), box=self.box.bottom)
-            if result:
+            ocr_result = self.login_ocr(match=re.compile("密码登录"), box=self.box.bottom)
+
+            if not ocr_result:
+                if one_ok:
+                    self.log_error("已经登录后且未检测到‘密码登录’，说明进入登录页面")
+                    break
+                self.sleep(1)
+                continue
+            one_ok = True
+            # 点
+            box = ocr_result[0]
+            run_at_window_pos(
+                self.hwnd.hwnd,
+                pyautogui.click,
+                box.x + box.width // 2,
+                box.y + box.height // 2
+            )
+
+            self.sleep(1)  # 给UI反应时间
+
+            # ✅ recheck：看“密码登录”是否还在
+            check = self.login_ocr(match=re.compile("密码登录"), box=self.box.bottom)
+
+            if not check:
+                # 👉 成功：按钮消失 or 页面变化
+                result = True
                 break
+
+            # 👉 还在 → 说明没点到 / 没反应
+            self.log_debug("点击后仍检测到‘密码登录’，准备重试")
+
             self.sleep(1)
+
         if not result:
-            raise RuntimeError("未找到密码登录按钮")
-        self.sleep(1)
-        while time.time() - start_time < 60:
-            result = self.login_ocr(match=re.compile("密码"), box=self.box.bottom)
-            if result:
-                break
-            self.sleep(1)
-        if not result:
-            raise RuntimeError("未找到密码登录按钮")
-        run_at_window_pos(self.hwnd.hwnd, pyautogui.click, result[0].x + result[0].width // 2,
-                          result[0].y + result[0].height // 2)
+            raise RuntimeError("点击密码登录失败（可能未响应或识别异常）")
         account = self.login_ocr(match=re.compile("账号"), box=self.box.center)
         if not account:
             raise RuntimeError("未找到账号输入框")
@@ -90,9 +111,9 @@ class LoginMixin(BaseEfTask):
 
         self._type_text(password)
         pyautogui.press("enter")
-        if not self._confirm_logined():
+        if not self._confirm_logged_in():
             raise RuntimeError("登录失败")
-    def _confirm_logined(self, time_out=30):
+    def _confirm_logged_in(self, time_out=120):
         start_time = time.time()
         while time.time() - start_time < time_out:
             result = self.find_feature(feature_name=fL.logout)

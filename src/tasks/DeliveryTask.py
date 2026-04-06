@@ -6,6 +6,7 @@ from typing import List, Tuple
 from ok import Box, TaskDisabledException
 
 from src.data.FeatureList import FeatureList as fL
+from src.tasks.account.account_mixin import AccountMixin
 from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
@@ -25,7 +26,7 @@ class DeliveryRow:
     box: Tuple[float, float, float, float]  # (x1, y1, x2, y2)
 
 
-class DeliveryTask(ZipLineMixin, MapMixin):
+class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
     """运输委托自动化任务类 - 处理游戏中的送货操作"""
 
     # 配置键名常量
@@ -43,17 +44,18 @@ class DeliveryTask(ZipLineMixin, MapMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.default_config = {"_enabled": True}
+        self.default_config.update({"_enabled": True})
         self.name = "自动送货"
         self.description = "仅武陵7.98w/7.31w送货,教程视频 BV1LLc7zFEF9"
         self.support_schedule_task = True
+        self.support_multi_account = True
         self.ends = ["常沄", "资源", "彦宁", "齐纶"]
-        self.config_description = {
+        self.config_description.update({
             self.CFG_SCROLL_ENABLE: "启用后在对齐滑索时会自动滚动放大视角\n可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n建议启用此项时不要使用非白发或有白帽角色",
             self.CFG_TEST_TARGET: "默认是无，表示正常执行相关任务\n也可以选择特定的滑索分叉序列来测试滑索功能\n选择完整循环测试则会依次测试每个送货目标的完整流程\n(需要锁定次要任务在送货任务上或附近)",
             self.CFG_ONLY_ACCEPT: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n仅接取7.31w武陵委托，不送货',
             self.CFG_ONLY_DELIVER: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n接取武陵委托后启动自动识别送货',
-        }
+        })
         self.default_config.update(
             {
                 self.CFG_TUTORIAL: "https://www.bilibili.com/video/BV1LLc7zFEF9\n游戏内开启全屏模式时请确保游戏内分辨率与你的屏幕分辨率一致",
@@ -499,78 +501,80 @@ class DeliveryTask(ZipLineMixin, MapMixin):
                 self.wait_pop_up(after_sleep=2)
                 break
 
-    def run(self):
-        """运输委托任务的主入口，支持多种运行模式"""
+    def _run_single_delivery_cycle(self):
         if self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE:
-            try:
-                ends_list_pattern_dict = {}
-                for end in self.ends:
-                    if end == "常沄":
-                        pattern = re.compile(r"常[沄云汶运法]")
-                    else:
-                        pattern = re.compile(end)
+            ends_list_pattern_dict = {}
+            for end in self.ends:
+                if end == "常沄":
+                    pattern = re.compile(r"常[沄云汶运法]")
+                else:
+                    pattern = re.compile(end)
 
-                    ends_list_pattern_dict[pattern] = end
-                for _ in range(3):
-                    if not self._logged_in:
-                        self.ensure_main(time_out=240)
-                    else:
-                        self.ensure_main()
-                    self.back(after_sleep=2)
+                ends_list_pattern_dict[pattern] = end
+            for _ in range(3):
+                if not self._logged_in:
+                    self.ensure_main(time_out=240)
+                else:
                     self.ensure_main()
-                    if self.config.get(self.CFG_ONLY_ACCEPT):
-                        self.other_run()
-                        break
-                    else:
-                        if not self.config.get(self.CFG_ONLY_DELIVER):
-                            if not self.other_run():
-                                return
-                            self.wait_click_ocr(match=re.compile("送达"), box=self.box.bottom_right, settle_time=4,
-                                                time_out=10,
-                                                after_sleep=10, log=True)
-                        success = None
-                        for _ in range(3):
-                            success = self.task_to_transfer_point()
-                            if success:
-                                break
-                        if not success:
-                            self.log_info("前往传送点失败，重试...")
+                self.back(after_sleep=2)
+                self.ensure_main()
+                if self.config.get(self.CFG_ONLY_ACCEPT):
+                    self.other_run()
+                    break
+                else:
+                    if not self.config.get(self.CFG_ONLY_DELIVER):
+                        if not self.other_run():
                             return
-                        if not self.to_storage_point_and_back_zip_line():
-                            return
-                        results = self.wait_ocr(
-                            match=list(ends_list_pattern_dict.keys()), box=self.box.left, time_out=10, log=True
+                        self.wait_click_ocr(
+                            match=re.compile("送达"),
+                            box=self.box.bottom_right,
+                            settle_time=4,
+                            time_out=10,
+                            after_sleep=10,
+                            log=True,
                         )
-                        self.press_key('f', after_sleep=2)
-                        end_pattern = None
-                        if not results:
-                            raise Exception("未识别到送货目标")
-
-                        for result in results:
-                            for pattern in ends_list_pattern_dict:
-                                m = pattern.search(result.name)
-                                if m:
-                                    end_pattern = pattern
-                                    self.on_zip_line_start(ends_list_pattern_dict[pattern],need_scroll=self.config.get(self.CFG_SCROLL_ENABLE))
-                                    break
-                        self.to_end_and_submit(end_pattern)
-                        if self.config.get(self.CFG_ONLY_DELIVER):
+                    success = None
+                    for _ in range(3):
+                        success = self.task_to_transfer_point()
+                        if success:
                             break
-            except Exception as e:
-                # 除 TaskDisabledException 外的异常才杀死进程
-                if not isinstance(e, TaskDisabledException):
-                    if self.config.get("发生异常时终止游戏", False):
-                        self.log_info("发生异常，终止游戏", notify=True)
-                        self.kill_all_related_processes()
-                    else:
-                        self.log_info("发生异常，继续运行", notify=True)
-                raise
+                    if not success:
+                        self.log_info("前往传送点失败，重试...")
+                        return
+                    if not self.to_storage_point_and_back_zip_line():
+                        return
+                    results = self.wait_ocr(
+                        match=list(ends_list_pattern_dict.keys()), box=self.box.left, time_out=10, log=True
+                    )
+                    self.press_key('f', after_sleep=2)
+                    end_pattern = None
+                    if not results:
+                        raise Exception("未识别到送货目标")
+
+                    for result in results:
+                        for pattern in ends_list_pattern_dict:
+                            m = pattern.search(result.name)
+                            if m:
+                                end_pattern = pattern
+                                self.on_zip_line_start(
+                                    ends_list_pattern_dict[pattern],
+                                    need_scroll=self.config.get(self.CFG_SCROLL_ENABLE),
+                                )
+                                break
+                    self.to_end_and_submit(end_pattern)
+                    if self.config.get(self.CFG_ONLY_DELIVER):
+                        break
         elif self.config.get(self.CFG_TEST_TARGET) == self.TEST_FULL_CYCLE:
             for end in self.ends:
                 self.task_to_transfer_point(self.box.bottom)
                 self.to_storage_point_and_back_zip_line(only_zip_line=True)
-                if result := self.wait_ocr(match="登上滑索架", box=self.box.bottom_right, settle_time=1, time_out=2,
-                                           log=True):
+                if result := self.wait_ocr(
+                    match="登上滑索架",
+                    box=self.box.bottom_right,
+                    settle_time=1,
+                    time_out=2,
+                    log=True,
+                ):
                     self.log_info("未找到登上滑索架，测试失败")
                     self.click_with_alt(result[0], after_sleep=2)
                     self.on_zip_line_start(end)
@@ -580,3 +584,45 @@ class DeliveryTask(ZipLineMixin, MapMixin):
             if zip_line_list_str:
                 zip_line_list = [int(i) for i in zip_line_list_str.split(",")]
                 self.zip_line_list_go(zip_line_list, need_scroll=self.config.get(self.CFG_SCROLL_ENABLE))
+
+    def run(self):
+        """运输委托任务的主入口，支持与日常任务一致的多账号执行逻辑。"""
+        try:
+            accounts_bool = self.config.get("多账户模式", False)
+            if accounts_bool:
+                accounts_list = self.get_account_list()
+                repeat_times = len(accounts_list)
+                if repeat_times == 0:
+                    self.log_info("多账户模式已开启，但账号列表为空，自动送货任务结束", notify=True)
+                    return
+            else:
+                accounts_list = []
+                repeat_times = 1
+
+            for repeat_idx in range(repeat_times):
+                if accounts_bool:
+                    account = accounts_list[repeat_idx]
+                    username = str(account.get("username", "")).strip()
+                    password = str(account.get("password", ""))
+                    account_id = str(account.get("account_id", "")).strip() or username
+                    if not username:
+                        self.log_info(f"第 {repeat_idx + 1}/{repeat_times} 个账号为空，已跳过")
+                        continue
+
+                    self.set_current_account(username, account_id)
+                    self.log_info(f"开始第 {repeat_idx + 1}/{repeat_times} 个账号({username[-4:]})自动送货")
+                    self.login_flow(username, password)
+                else:
+                    self.set_current_account("", "")
+
+                self._run_single_delivery_cycle()
+
+        except Exception as e:
+            # 除 TaskDisabledException 外的异常才杀死进程
+            if not isinstance(e, TaskDisabledException):
+                if self.config.get("发生异常时终止游戏", False):
+                    self.log_info("发生异常，终止游戏", notify=True)
+                    self.kill_all_related_processes()
+                else:
+                    self.log_info("发生异常，继续运行", notify=True)
+            raise
