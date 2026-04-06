@@ -9,10 +9,7 @@ profiles:
     requirements: "requirements.txt"
     use_pythonw: true
     show_add_defender: true
-
-  - name: "Debug"
-    main_script: "main_debug.py"
-
+    
   - name: "Global"
     git_url: "https://github.com/ok-oldking/ok-ef-upadate.git"
     main_script: "main.py"
