@@ -55,13 +55,15 @@ class RuntimeMixin:
         return False
 
     def click(self, x=-1, y=-1, move_back=False, name=None, interval=-1, move=True, down_time=0.01, after_sleep=0,
-              key='left'):
+              key='left', hcenter=False, vcenter=False):
         self.sleep(0.1)
         if self.find_danger():
             self.log_info("dangerous")
             self.kill_game()
             raise Exception("dangerous")
-        return super().click(x, y, move_back, name, interval, move, down_time, after_sleep, key)
+        return super().click(x, y, move_back=move_back, name=name, interval=interval, move=move,
+                             down_time=down_time, after_sleep=after_sleep, key=key,
+                             hcenter=hcenter, vcenter=vcenter)
 
     def find_feature(self, feature_name=None, horizontal_variance=0, vertical_variance=0, threshold=0,
                      use_gray_scale=False, x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0,
