@@ -60,7 +60,7 @@ class LoginMixin(BaseEfTask):
                     break
                 self.sleep(1)
                 continue
-            one_ok=True
+            one_ok = True
             # 点
             box = ocr_result[0]
             run_at_window_pos(
@@ -111,9 +111,9 @@ class LoginMixin(BaseEfTask):
 
         self._type_text(password)
         pyautogui.press("enter")
-        if not self._confirm_logined():
+        if not self._confirm_logged_in():
             raise RuntimeError("登录失败")
-    def _confirm_logined(self, time_out=120):
+    def _confirm_logged_in(self, time_out=120):
         start_time = time.time()
         while time.time() - start_time < time_out:
             result = self.find_feature(feature_name=fL.logout)

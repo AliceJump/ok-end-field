@@ -64,23 +64,22 @@ class MyTriggerTask(BaseEfTask, TriggerTask):
 
     def run(self):
         # 在此编写触发后执行的逻辑
-        self.logger.info("触发任务已执行")
+        self.log_info("触发任务已执行")
 ```
 
 > **提示**：若任务需要战斗能力，可额外继承 `BattleMixin`；需要地图导航则继承 `MapMixin`。
+> 日志建议统一使用 `self.log_info/self.log_debug/self.log_error`，避免在运行时代码中使用 `print`。
 
 ### 2.2 注册任务
 
 打开 `src/config.py`，将新任务加入 `trigger_tasks` 列表：
 
 ```python
-from src.tasks.MyTriggerTask import MyTriggerTask
-
 config = {
     ...
     "trigger_tasks": [
         ...,
-        MyTriggerTask,   # 新增
+        ["src.tasks.MyTriggerTask", "MyTriggerTask"],  # 新增
     ],
     ...
 }

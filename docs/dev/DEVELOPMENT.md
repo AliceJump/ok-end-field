@@ -536,6 +536,13 @@ python auto_release.py
 | `self.transfer_to_home_point()` | 传送到帝江号(默认左侧)传送点 |
 | `self.align_ocr_or_find_target_to_center(...)` | 移动视角使扫描目标居中 |
 
+### 日志规范（与当前实现对齐）
+
+1. 任务与 Mixin 代码优先使用 `self.log_info/self.log_debug/self.log_error`。
+2. 非任务模块（如 `src/interaction`、`src/config.py`）使用模块级 logger：`Logger.get_logger(__name__)`。
+3. 运行时代码避免使用 `print` 输出日志；`print` 仅建议用于测试脚本或一次性工具脚本。
+4. 账号列表解析中的非法行会直接忽略，不再逐行输出格式错误日志，避免日志噪声。
+
 [更多API](API.md)
 
 ### ScreenPosition（self.box）

@@ -48,8 +48,30 @@ class BaseEfTask(
         self._detector_loading = False
         self._detector_loaded_event = threading.Event()
         self._start_detector_loading()
+
     def set_current_account(self, username, account_id):
-        """设置当前账号信息，供账号覆盖功能使用。"""
+        """设置当前账号信息，供账号覆盖功能使用。
+
+        调用时机：
+            应在任何依赖账号覆盖的配置读取或任务执行前调用。通常在账号
+            登录上下文已经确定、但尚未开始读取账号相关配置时设置。
+
+        多次调用行为：
+            允许重复调用。后一次调用会直接覆盖此前保存的
+            ``self.current_user`` 和 ``self.current_account_id``，并重新执行
+            ``_bind_account_aware_config_get()``，使后续配置获取逻辑以最新
+            的账号信息为准。
+
+        参数约束：
+            username:
+                当前账号对应的用户名/显示名，应为字符串。建议传入稳定、可
+                识别的原始用户名，不要传入 ``None``、临时拼接值或仅用于显示
+                的不稳定别名。
+            account_id:
+                当前账号的稳定唯一标识，应为字符串。账号覆盖逻辑优先使用该值，
+                因此应尽量传入跨会话保持不变的账号ID，而不是可能变化的昵称、
+                索引或临时标记。
+        """
         self.current_user = username
         self.current_account_id = account_id
         self._bind_account_aware_config_get()
