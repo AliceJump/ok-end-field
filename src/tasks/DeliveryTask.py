@@ -609,13 +609,11 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                         self.log_info(f"第 {repeat_idx + 1}/{repeat_times} 个账号为空，已跳过")
                         continue
 
-                    self.current_user = username
-                    self.current_account_id = account_id
+                    self.set_current_account(username, account_id)
                     self.log_info(f"开始第 {repeat_idx + 1}/{repeat_times} 个账号({username[-4:]})自动送货")
                     self.login_flow(username, password)
                 else:
-                    self.current_user = ""
-                    self.current_account_id = ""
+                    self.set_current_account("", "")
 
                 self._run_single_delivery_cycle()
 

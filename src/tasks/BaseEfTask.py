@@ -36,7 +36,6 @@ class BaseEfTask(
         self.current_user = ""  # 记录当前用户
         self.current_account_id = ""  # 记录当前账号稳定ID（优先用于账号覆盖）
         self.support_multi_account = False  # 明确标识该任务是否支持多账号执行逻辑
-        self._bind_account_aware_config_get()
 
         self.box = ScreenPosition(self)  # 屏幕位置辅助对象，提供top/bottom/left/right等边界
         self.key_config = self.get_global_config("Game Hotkey Config")  # 获取全局热键配置
@@ -49,3 +48,8 @@ class BaseEfTask(
         self._detector_loading = False
         self._detector_loaded_event = threading.Event()
         self._start_detector_loading()
+    def set_current_account(self, username, account_id):
+        """设置当前账号信息，供账号覆盖功能使用。"""
+        self.current_user = username
+        self.current_account_id = account_id
+        self._bind_account_aware_config_get()
