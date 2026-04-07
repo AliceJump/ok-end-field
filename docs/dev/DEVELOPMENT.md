@@ -53,7 +53,8 @@ main.py / main_debug.py
         │       ├── WarehouseTransferTask (仓库物品转移)
         │       ├── EssenceScanTask   (基质扫描/上锁)
         │       ├── PeriodicScreenshotTask (定时截图)
-        │       └── Test / TestStartGame  (开发调试用)
+        │       ├── Test / TestStartGame  (开发调试用)
+        │       └── DiagnosisTask         (框架诊断任务)
         │
         └── trigger_tasks  ← 后台持续运行的触发式任务
                 ├── AutoCombatTask    (自动战斗)
@@ -188,7 +189,7 @@ ok-end-field/
 │   ├── TestEssenceRecognizer.py   # 基质 OCR 解析逻辑测试
 │   ├── TestTakeDeliveryFunctions.py # 运送委托接取逻辑测试
 │   ├── TestWarehouseSwitchOCR.py  # 仓库切换 OCR 测试
-│   └── images/                    # 测试用截图样本
+│   └── (测试样本与用例文件)         # 测试数据与测试脚本
 │
 ├── .github/
 │   ├── workflows/
@@ -197,7 +198,6 @@ ok-end-field/
 │   │   └── mirrorchyan_release_note.yml # Mirror 酱发布说明
 │   └── ISSUE_TEMPLATE/            # Bug 报告模板
 │
-└── x-anylabeling-asset/       # AnyLabeling 标注工具配置（用于标注新模板图片）
 ```
 
 ---
@@ -284,8 +284,8 @@ python main_debug.py
 ### 5.4 添加新的模板图片（Feature）
 
 1. 在 `main_debug.py` 模式下运行，框架会根据 `assets/coco_detection.json` 自动裁剪保留标注区域。
-2. 使用 **AnyLabeling**（配置在 `x-anylabeling-asset/`）对新截图打矩形框标注，导出 COCO JSON，合并到 `assets/coco_detection.json`。
-3. 运行 `compress.py`（cwd 为项目根目录），脚本会自动压缩图片并更新 `src/data/FeatureList.py`（无需手动填写）。
+2. 使用 **AnyLabeling**（本地工具）对新截图打矩形框标注，导出 COCO JSON，合并到 `assets/coco_detection.json`。
+3. 更新 `src/data/FeatureList.py`，为新增模板添加对应枚举项。
 4. 在代码中通过 `self.find_feature(fL.my_new_feature)` 调用。
 
 > 分辨率适配：若需要支持 2K/4K，按命名约定 `feature_name_2k`、`feature_name_4k` 提供对应尺寸的图片，`BaseEfTask.get_feature_by_resolution()` 会自动按分辨率选择。
@@ -335,7 +335,7 @@ self.send_key('f')
 **2. `move_keys`（移动按键，仅用于方向键组合）**
 
 ```python
-from src.interaction.move_interaction import move_keys
+from src.interaction.Key import move_keys
 
 move_keys(hwnd, keys, duration)
 ```
@@ -374,7 +374,7 @@ python -m unittest tests/TestAutoCombat.py
 
 | 文件 | 测试内容 |
 |------|----------|
-| `TestAutoCombat.py` | 战斗/非战斗状态图像识别（使用 `tests/images/` 截图样本） |
+| `TestAutoCombat.py` | 战斗/非战斗状态图像识别（使用 `tests/` 下截图样本） |
 | `TestEssenceRecognizer.py` | 基质 OCR 解析逻辑（`parse_essence_panel`、`_attach_levels`） |
 | `TestEssenceGoldGrid.py` | 基质金色格子图像识别 |
 | `TestEssenceImageFeatures.py` | 基质图像 Feature 匹配 |
@@ -384,7 +384,7 @@ python -m unittest tests/TestAutoCombat.py
 ### 测试注意事项
 
 - 测试全部为**离线单元测试**（使用本地截图样本），不需要运行游戏。
-- 新功能开发时，将相关截图放入 `tests/images/`，编写对应 unittest。
+- 新功能开发时，将相关截图与测试文件一并放入 `tests/` 目录，并编写对应 unittest。
 - CI 会在每次打 tag 前自动运行所有测试，测试失败则中止发布。
 
 ---

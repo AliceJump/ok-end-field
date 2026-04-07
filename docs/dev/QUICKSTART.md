@@ -93,9 +93,9 @@ config = {
 
 ## 3. 新建一次性任务（可选）
 
-一次性任务（`BaseTask` 子类）由用户点击触发，执行完毕后自动停止。流程与触发式任务相同，区别在于：
+一次性任务（`BaseEfTask` 子类）由用户点击触发，执行完毕后自动停止。流程与触发式任务相同，区别在于：
 
-- 继承 `BaseTask`（而非 `TriggerTask`）
+- 继承 `BaseEfTask`（而非 `TriggerTask`）
 - 注册到 `config["onetime_tasks"]` 列表
 
 ---

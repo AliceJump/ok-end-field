@@ -411,39 +411,23 @@ def press_key(
 
 ---
 
-#### `press_game_key`
-
-```python
-def press_game_key(
-    self,
-    key: str,
-    key_type: str = 'common',
-    down_time: float = 0.02,
-    after_sleep: float = 0,
-    interval: int = -1,
-)
-```
-
-发送游戏通用热键，`key` 会经过 `KeyConfigManager.resolve_common_key()` 转换，自动适配用户自定义按键。
-
-```python
-self.press_game_key('m')   # 打开地图（默认 M 键，支持用户自定义）
-self.press_game_key('f')   # 交互键（默认 F）
-```
-
----
-
 #### `press_industry_key`
 
 ```python
 def press_industry_key(
     self,
     key: str,
-    **kwargs,
+    down_time: float = 0.02,
+    after_sleep: float = 0,
+    interval: int = -1,
 )
 ```
 
-发送集成工业专用热键，经 `resolve_industry_key()` 转换。
+发送集成工业专用热键，`key` 会经过 `KeyConfigManager.resolve_key(key, "industry")` 转换，自动适配用户自定义按键。
+
+```python
+self.press_industry_key('f')   # 集成工业交互键（默认 F，支持用户自定义）
+```
 
 ---
 
@@ -453,11 +437,13 @@ def press_industry_key(
 def press_combat_key(
     self,
     key: str,
-    **kwargs,
+    down_time: float = 0.02,
+    after_sleep: float = 0,
+    interval: int = -1,
 )
 ```
 
-发送战斗专用热键，经 `resolve_combat_key()` 转换。
+发送战斗专用热键，`key` 会经过 `KeyConfigManager.resolve_key(key, "combat")` 转换。
 
 ---
 
