@@ -198,6 +198,7 @@ ok-end-field/
 │   │   └── mirrorchyan_release_note.yml # Mirror 酱发布说明
 │   └── ISSUE_TEMPLATE/            # Bug 报告模板
 │
+└── x-anylabeling-asset/           # AnyLabeling 标注配置子仓库（模板标注辅助资源）
 ```
 
 ---
@@ -214,7 +215,7 @@ ok-end-field/
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/AliceJump/ok-end-field.git
+git clone --recurse-submodules https://github.com/AliceJump/ok-end-field.git
 cd ok-end-field
 
 # 2. 安装依赖
@@ -284,7 +285,7 @@ python main_debug.py
 ### 5.4 添加新的模板图片（Feature）
 
 1. 在 `main_debug.py` 模式下运行，框架会根据 `assets/coco_detection.json` 自动裁剪保留标注区域。
-2. 使用 **AnyLabeling**（本地工具）对新截图打矩形框标注，导出 COCO JSON，合并到 `assets/coco_detection.json`。
+2. 使用 **AnyLabeling**（标注配置位于 `x-anylabeling-asset/` 子仓库）对新截图打矩形框标注，导出 COCO JSON，合并到 `assets/coco_detection.json`。
 3. 更新 `src/data/FeatureList.py`，为新增模板添加对应枚举项。
 4. 在代码中通过 `self.find_feature(fL.my_new_feature)` 调用。
 
