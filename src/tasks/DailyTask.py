@@ -53,6 +53,7 @@ class DailyTask(
                 repeat_times = self.config.get("重复测试的次数", 1) if self.debug else 1
             tasks = [
                 ("⭐送礼", self.execute_gift_task),
+                ("⭐帝江号一键存放", self.boat_one_key_store),
                 ("⭐收邮件", self.claim_mail),
                 ("⭐据点兑换", self.exchange_outpost_goods),
                 ("⭐转交运送委托", self.delivery_send_others),
