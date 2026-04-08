@@ -134,10 +134,18 @@ config = {
     ],
 }
 
-# 初始化时固定FAQ链接，避免默认配置或用户配置漂移
-_fixed_faq = "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/README.md"
-_links = config.get("links", {})
-for _locale in ("default", "zh_CN"):
-    _group = _links.setdefault(_locale, {})
-    if isinstance(_group, dict):
-        _group["faq"] = _fixed_faq
+_FIXED_FAQ_URL = "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/README.md"
+
+
+def _enforce_fixed_faq_link(cfg):
+    # 初始化阶段统一覆盖FAQ链接，避免默认配置或用户配置漂移
+    links = cfg.setdefault("links", {})
+    for locale in ("default", "zh_CN"):
+        group = links.get(locale)
+        if not isinstance(group, dict):
+            group = {}
+            links[locale] = group
+        group["faq"] = _FIXED_FAQ_URL
+
+
+_enforce_fixed_faq_link(config)
