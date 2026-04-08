@@ -7,13 +7,6 @@ from src.tasks.mixin.liaison_mixin import LiaisonMixin
 
 
 class DailyLiaisonMixin(LiaisonMixin):
-    _BOAT_STORE_WHITELIST_SUPPORTED_ITEMS = (
-        "材料",
-        "礼物",
-        "食品",
-        "任务物品",
-    )
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.can_contact_dict = get_contact_list_with_feature_list()
@@ -24,12 +17,6 @@ class DailyLiaisonMixin(LiaisonMixin):
             "帮助": "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/docs/日常任务.md",
             "⭐送礼": True,
             "⭐帝江号一键存放": True,
-            "启用一键存放白名单检查": False,
-            "一键存放白名单": "",
-            "一键存放启用_材料": True,
-            "一键存放启用_礼物": True,
-            "一键存放启用_食品": True,
-            "一键存放启用_任务物品": False,
             "送礼任务最多尝试次数": 2,
             "优先送礼对象": list(self.can_contact_dict.keys())[0],
         })
@@ -43,18 +30,6 @@ class DailyLiaisonMixin(LiaisonMixin):
                 "是否在「帝江号」打开背包并点击「一键存放」。\n"
                 "OCR 仅匹配「存放」，以避免「一」字识别失败。"
             ),
-            "启用一键存放白名单检查": (
-                "开启后，执行「一键存放」前会检查白名单条目是否在设置里启用。\n"
-                "若白名单可用项为空，则本轮直接跳过一键存放。"
-            ),
-            "一键存放白名单": (
-                "使用英文逗号分隔白名单条目，例如：材料,礼物。\n"
-                "支持条目：材料,礼物,食品,任务物品。"
-            ),
-            "一键存放启用_材料": "是否启用白名单条目「材料」。",
-            "一键存放启用_礼物": "是否启用白名单条目「礼物」。",
-            "一键存放启用_食品": "是否启用白名单条目「食品」。",
-            "一键存放启用_任务物品": "是否启用白名单条目「任务物品」。",
         })
 
     def execute_gift_to_liaison(self):
@@ -136,11 +111,6 @@ class DailyLiaisonMixin(LiaisonMixin):
     def boat_one_key_store(self):
         """在帝江号执行背包一键存放。"""
         self.info_set("current_task", "boat_one_key_store")
-        if self.config.get("启用一键存放白名单检查", False):
-            enabled_items = self._resolve_boat_store_whitelist_enabled_items()
-            if not enabled_items:
-                self.log_info("一键存放白名单检查开启且无可用项，本轮跳过")
-                return True
         if not self.transfer_to_home_point(should_check_out_boat=True):
             self.log_info("传送到帝江号失败，无法执行一键存放")
             return False
@@ -155,39 +125,3 @@ class DailyLiaisonMixin(LiaisonMixin):
             return False
         self.click(store_btn[0], move_back=True, after_sleep=0.5)
         return True
-
-    def _resolve_boat_store_whitelist_enabled_items(self):
-        raw_text = str(self.config.get("一键存放白名单", "")).strip()
-        raw_items = [s.strip() for s in raw_text.split(",") if s.strip()]
-        if not raw_items:
-            self.log_info("一键存放白名单为空，视为无可用项")
-            return []
-        seen = set()
-        items = []
-        for item in raw_items:
-            if item in seen:
-                continue
-            seen.add(item)
-            items.append(item)
-        enabled_items = []
-        unsupported_items = []
-        disabled_items = []
-        for item in items:
-            if item not in self._BOAT_STORE_WHITELIST_SUPPORTED_ITEMS:
-                unsupported_items.append(item)
-                continue
-            config_key = f"一键存放启用_{item}"
-            if self.config.get(config_key, False):
-                enabled_items.append(item)
-            else:
-                disabled_items.append(item)
-        self.log_info(f"一键存放白名单原始输入: {raw_text}")
-        if unsupported_items:
-            self.log_info(f"一键存放白名单无效项(已过滤): {','.join(unsupported_items)}")
-        if disabled_items:
-            self.log_info(f"一键存放白名单未启用项(已过滤): {','.join(disabled_items)}")
-        self.log_info(
-            f"一键存放白名单启用项: {','.join(enabled_items) if enabled_items else '无'}"
-        )
-        # TODO: 后续可升级为可视化多选配置，减少纯文本白名单维护成本。
-        return enabled_items
