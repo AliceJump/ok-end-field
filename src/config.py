@@ -141,11 +141,9 @@ def _enforce_fixed_faq_link(cfg):
     # 初始化阶段统一覆盖FAQ链接，避免默认配置或用户配置漂移
     links = cfg.setdefault("links", {})
     for locale in ("default", "zh_CN"):
-        group = links.get(locale)
-        if not isinstance(group, dict):
-            group = {}
-            links[locale] = group
-        group["faq"] = _FIXED_FAQ_URL
+        if not isinstance(links.get(locale), dict):
+            links[locale] = {}
+        links[locale]["faq"] = _FIXED_FAQ_URL
 
 
 _enforce_fixed_faq_link(config)
