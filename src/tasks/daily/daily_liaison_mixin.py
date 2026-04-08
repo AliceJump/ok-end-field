@@ -121,8 +121,9 @@ class DailyLiaisonMixin(LiaisonMixin):
             time_out=5,
         )
         if not store_btn:
-            self.log_info("未找到“一键存放”按钮")
+            self.log_info("未找到“存放”按钮")
             return False
         self.click(store_btn[0], move_back=True, after_sleep=0.5)
-        self.wait_click_ocr(match=re.compile("确认"), box=self.box.bottom_right, time_out=2)
+        if not self.wait_click_ocr(match=re.compile("确认"), box=self.box.bottom_right, time_out=2):
+            self.log_info("未找到确认按钮，可能无需确认")
         return True
