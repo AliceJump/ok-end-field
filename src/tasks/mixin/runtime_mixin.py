@@ -27,7 +27,7 @@ feature_values = [f.value for f in fL]
 
 
 def _back_window(prev):
-    return
+    pass
 
 
 class RuntimeMixin:

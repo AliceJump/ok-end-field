@@ -284,6 +284,6 @@ def run_in_window(hwnd, func, *args, **kwargs):
     if win32gui.GetForegroundWindow() != hwnd:
         try:
             active_and_send_mouse_delta(hwnd, only_activate=True)
-        except Exception:
-            pass
+        except win32gui.error as e:
+            print(f"窗口激活失败: {e}")
     return func(*args, **kwargs)

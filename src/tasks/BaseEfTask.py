@@ -12,7 +12,7 @@ from src.tasks.mixin.runtime_mixin import RuntimeMixin
 
 
 def back_window(prev):
-    return
+    pass
 
 
 class BaseEfTask(
