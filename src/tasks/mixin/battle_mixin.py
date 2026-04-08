@@ -24,6 +24,7 @@ import time
 import cv2
 import numpy as np
 
+from src.tasks.sequence_parser import parse_sequence
 from src.tasks.AutoCombatLogic import AutoCombatLogic
 from src.tasks.BaseEfTask import BaseEfTask
 
@@ -100,11 +101,11 @@ class BattleMixin(BaseEfTask):
         trimmed = raw_config.strip()
 
         # =========================
-        # ✅ 新格式：逗号分隔
+        # ✅ 新格式：逗号分隔（支持中文逗号）
         # =========================
-        if "," in trimmed:
+        if "," in trimmed or "，" in trimmed:
             sequence = []
-            tokens = [t.strip() for t in trimmed.split(",") if t.strip()]
+            tokens = parse_sequence(trimmed)
 
             valid_skills = {"1", "2", "3", "4", "e"}
 

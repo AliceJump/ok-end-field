@@ -6,6 +6,7 @@ from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import stages_cost, higher_order_feature_dict
 from src.data.world_map import stages_dict, stages_list
 from src.data.world_map_utils import get_stage_category
+from src.tasks.sequence_parser import parse_int_sequence, parse_sequence
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.map_mixin import MapMixin
@@ -89,7 +90,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         explain = ""
         try:
             if seq:
-                seq_list = [x.strip() for x in seq.split(",") if x.strip()]
+                seq_list = parse_sequence(seq)
                 # 如果有任何无效副本名，全部放弃自动轮换
                 invalid_stages = [x for x in seq_list if x not in self.stages_list]
                 if invalid_stages:
@@ -180,7 +181,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         zip_line_str = self.config.get(stage_name)
         if zip_line_str:
             self.press_key("f", after_sleep=2)
-            zip_line_list = [int(i) for i in zip_line_str.split(",")]
+            zip_line_list = parse_int_sequence(zip_line_str)
             self.zip_line_list_go(
                 zip_line_list,
                 need_scroll=self.config.get(self.CFG_SCROLL_ENABLE),

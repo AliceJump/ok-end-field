@@ -1,6 +1,7 @@
 import re
 
 from src.data.world_map import areas_list
+from src.tasks.sequence_parser import parse_sequence
 from src.tasks.mixin.common import Common
 
 
@@ -31,7 +32,7 @@ class DailyBuyMixin(Common):
         self.info_set("current_task", "buy_staple_goods")
         self.log_info("开始买物资任务")
         #
-        pl = [re.compile(i) for i in [s for s in self.config.get("购物白名单", "").split(",") if s != ""]]
+        pl = [re.compile(i) for i in parse_sequence(self.config.get("购物白名单", ""))]
         #
         for area in areas_list:
             self.ensure_main()
@@ -70,4 +71,3 @@ class DailyBuyMixin(Common):
         self.click_relative(0.8, 0.8, after_sleep=2)
         self.wait_pop_up(after_sleep=2)
         self.log_info("已购买")
-

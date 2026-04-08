@@ -7,6 +7,7 @@ from ok import Box, TaskDisabledException
 
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.account.account_mixin import AccountMixin
+from src.tasks.sequence_parser import parse_int_sequence
 from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
@@ -415,7 +416,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             if self.wait_ocr(match="工业", box=self.box.top_left, time_out=2, log=True):
                 self.press_key("tab", after_sleep=1)
             self.click_with_alt(result[0], after_sleep=2)
-            self.zip_line_list_go([int(i) for i in self.config.get(self.CFG_TO_DELIVERY_POINT).split(",")],
+            self.zip_line_list_go(parse_int_sequence(self.config.get(self.CFG_TO_DELIVERY_POINT)),
                                   need_scroll=self.config.get(self.CFG_SCROLL_ENABLE))  # 需要在配置里指定出发点的滑索距离,这里默认是36m的滑索
             if only_zip_line:
                 return True
@@ -582,7 +583,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         else:
             zip_line_list_str = self.config.get(self.config.get(self.CFG_TEST_TARGET))
             if zip_line_list_str:
-                zip_line_list = [int(i) for i in zip_line_list_str.split(",")]
+                zip_line_list = parse_int_sequence(zip_line_list_str)
                 self.zip_line_list_go(zip_line_list, need_scroll=self.config.get(self.CFG_SCROLL_ENABLE))
 
     def run(self):

@@ -2,6 +2,7 @@ import re
 import time
 
 from src.image.hsv_config import HSVRange as hR
+from src.tasks.sequence_parser import parse_int_sequence
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 
 on_zip_line_tip = ["向目标移动", "离开滑索架"]
@@ -28,7 +29,7 @@ class ZipLineMixin(NavigationMixin):
             if time.time() - start > 60:
                 raise Exception("滑索超时，强制退出")
         zip_line_list_str = self.config.get(delivery_to)
-        zip_line_list = [int(i) for i in zip_line_list_str.split(",")]
+        zip_line_list = parse_int_sequence(zip_line_list_str)
         self.zip_line_list_go(zip_line_list, need_scroll)
 
     def zip_line_list_go(self, zip_line_list, need_scroll=None):

@@ -91,6 +91,16 @@ class TestMyOneTimeTask(TaskTestCase):
         self.set_image('tests/images/in_team.png')
         self.assertTrue(self.task.ocr_lv())
 
+    def test_parse_skill_sequence_legacy_123(self):
+        self.assertEqual(self.task._parse_skill_sequence("123"), ["1", "2", "3"])
+        self.assertEqual(self.task._parse_skill_sequence("1a2b3"), ["1", "2", "3"])
+
+    def test_parse_skill_sequence_unified_for_comma_style(self):
+        self.assertEqual(
+            self.task._parse_skill_sequence(" ult_2， 1, , e , sleep_1 "),
+            ["ult_2", "1", "e", "sleep_1"],
+        )
+
 
 if __name__ == '__main__':
     unittest.main()

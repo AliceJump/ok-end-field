@@ -4,6 +4,7 @@ import time
 from src.data.world_map import areas_list, outpost_dict, goods_dict
 from src.data.world_map_utils import get_area_by_outpost_name, get_goods_by_outpost_name
 from src.image.hsv_config import HSVRange as hR
+from src.tasks.sequence_parser import parse_sequence
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
 from src.tasks.mixin.common import Common
 from src.data.FeatureList import FeatureList as fL
@@ -546,7 +547,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.info_set("current_task", "exchange_outpost_goods")
         self.log_info("开始据点兑换任务")
 
-        priority_list = str.split(self.config.get("交易货品优先序列", ""), ",")
+        priority_list = parse_sequence(self.config.get("交易货品优先序列", ""))
 
         for area in areas_list:
             self.log_info(f"进入区域: {area}")
