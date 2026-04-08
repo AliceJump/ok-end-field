@@ -58,9 +58,10 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self.CFG_ONLY_ACCEPT: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n仅接取7.31w武陵委托，不送货',
             self.CFG_ONLY_DELIVER: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n接取武陵委托后启动自动识别送货',
         })
+        tutorial_value = f"{self.TUTORIAL_LINK}\n{self.TUTORIAL_TIPS}"
         self.default_config.update(
             {
-                self.CFG_TUTORIAL: f"{self.TUTORIAL_LINK}\n{self.TUTORIAL_TIPS}",
+                self.CFG_TUTORIAL: tutorial_value,
                 self.CFG_TARGET_TICKET_NUM: "79800",
                 self.CFG_TO_DELIVERY_POINT: "36,14",
                 "常沄": "14,108,64,109,60",
@@ -74,7 +75,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 "发生异常时终止游戏": False
             }
         )
-        self.config[self.CFG_TUTORIAL] = f"{self.TUTORIAL_LINK}\n{self.TUTORIAL_TIPS}"
+        # 强制覆盖用户已保存配置中的教程链接，避免被改动后持续生效。
+        self.config[self.CFG_TUTORIAL] = tutorial_value
         self.config_type[self.CFG_TEST_TARGET] = {
             "type": "drop_down",
             "options": [self.TEST_NONE, self.CFG_TO_DELIVERY_POINT] + self.ends + [self.TEST_FULL_CYCLE],

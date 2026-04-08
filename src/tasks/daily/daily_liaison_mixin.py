@@ -21,6 +21,7 @@ class DailyLiaisonMixin(LiaisonMixin):
             "送礼任务最多尝试次数": 2,
             "优先送礼对象": list(self.can_contact_dict.keys())[0],
         })
+        # 强制覆盖用户已保存配置中的帮助链接，避免被改动后持续生效。
         self.config["帮助"] = self.HELP_LINK
         self.config_description.update({
             "⭐送礼": (
