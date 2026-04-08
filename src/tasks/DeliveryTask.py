@@ -37,6 +37,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
     CFG_ONLY_DELIVER = "仅送货"
     CFG_TUTORIAL = "教程"
     CFG_TO_DELIVERY_POINT = "通向送货点"
+    TUTORIAL_LINK = "https://www.bilibili.com/video/BV1LLc7zFEF9"
+    TUTORIAL_TIPS = "游戏内开启全屏模式时请确保游戏内分辨率与你的屏幕分辨率一致"
 
     # 配置值常量
     TEST_NONE = "无"
@@ -58,7 +60,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         })
         self.default_config.update(
             {
-                self.CFG_TUTORIAL: "https://www.bilibili.com/video/BV1LLc7zFEF9\n游戏内开启全屏模式时请确保游戏内分辨率与你的屏幕分辨率一致",
+                self.CFG_TUTORIAL: f"{self.TUTORIAL_LINK}\n{self.TUTORIAL_TIPS}",
                 self.CFG_TARGET_TICKET_NUM: "79800",
                 self.CFG_TO_DELIVERY_POINT: "36,14",
                 "常沄": "14,108,64,109,60",
@@ -72,6 +74,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 "发生异常时终止游戏": False
             }
         )
+        self.config[self.CFG_TUTORIAL] = f"{self.TUTORIAL_LINK}\n{self.TUTORIAL_TIPS}"
         self.config_type[self.CFG_TEST_TARGET] = {
             "type": "drop_down",
             "options": [self.TEST_NONE, self.CFG_TO_DELIVERY_POINT] + self.ends + [self.TEST_FULL_CYCLE],
