@@ -7,6 +7,9 @@ from src.interaction.KeyConfig import DEFAULT_COMMON_KEYS, DEFAULT_INDUSTRY_KEYS
 
 version = "dev"
 # 不需要修改version, Github Action打包会自动修改
+FIXED_FAQ_LINK = "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/README.md"
+
+
 def make_bottom_left_black(frame):  # 可选. 某些游戏截图时遮挡UID使用
     """
     将图像左下角的一部分像素修改为黑色。
@@ -84,7 +87,7 @@ config = {
             "sponsor": "https://www.paypal.com/ncp/payment/JWQBH7JZKNGCQ",
             "qq_group": "https://qm.qq.com/q/NcWHQU6q8k",
             "share": "https://1drv.ms/f/c/0c7567d06cc5b5f3/IgAudOtrzHPVT6sJgWeWSiByAZNvwAzcehIdj3hEcprRlP0?e=nsEBmm",
-            "faq": "https://github.com/ok-oldking/ok-end-field",
+            "faq": FIXED_FAQ_LINK,
             "qq_channel": "https://pd.qq.com/s/djmm6l44y",
         },
         "zh_CN": {
@@ -92,7 +95,7 @@ config = {
             "discord": "https://discord.gg/vVyCatEBgA",
             "sponsor": "https://afdian.com/a/AliceJump",
             "share": "https://1drv.ms/f/c/0c7567d06cc5b5f3/IgAudOtrzHPVT6sJgWeWSiByAZNvwAzcehIdj3hEcprRlP0?e=nsEBmm",
-            "faq": "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/README.md",
+            "faq": FIXED_FAQ_LINK,
             "qq_group": "https://qm.qq.com/q/NcWHQU6q8k",
             "qq_channel": "https://pd.qq.com/s/djmm6l44y",
         },
