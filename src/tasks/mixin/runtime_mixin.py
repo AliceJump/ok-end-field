@@ -27,13 +27,7 @@ feature_values = [f.value for f in fL]
 
 
 def _back_window(prev):
-    current = win32gui.GetForegroundWindow()
-
-    if prev and win32gui.IsWindow(prev) and current != prev:
-        try:
-            win32gui.SetForegroundWindow(prev)
-        except Exception:
-            pass
+    return
 
 
 class RuntimeMixin:

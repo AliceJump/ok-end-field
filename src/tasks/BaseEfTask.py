@@ -12,13 +12,7 @@ from src.tasks.mixin.runtime_mixin import RuntimeMixin
 
 
 def back_window(prev):
-    current = win32gui.GetForegroundWindow()
-
-    if prev and win32gui.IsWindow(prev) and current != prev:
-        try:
-            win32gui.SetForegroundWindow(prev)
-        except Exception:
-            pass
+    return
 
 
 class BaseEfTask(
