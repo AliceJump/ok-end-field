@@ -94,7 +94,7 @@ class DailyShopMixin(Common):
 
         results.extend(result or [])
         for idx, item in enumerate(results, start=1):
-            item_name = getattr(item, "name", f"未知商品#{idx}")
+            item_name = item.name if hasattr(item, "name") and item.name else f"未知商品#{idx}"
             self.log_info(f"尝试购买优先商品: {item_name}，当前信用: {sum_credit}")
             self.click(item)
             self.wait_ui_stable(refresh_interval=0.5)
@@ -151,7 +151,7 @@ class DailyShopMixin(Common):
         self.log_info(f"开始购买剩余可购商品，当前信用: {sum_credit}，保留信用: {reserve_credit}")
         results = self.find_feature(feature_name=fL.credit_can_buy, box=self.credit_good_search_box) or []
         for idx, item in enumerate(results, start=1):
-            item_name = getattr(item, "name", f"未知商品#{idx}")
+            item_name = item.name if hasattr(item, "name") and item.name else f"未知商品#{idx}"
             self.log_info(f"尝试购买剩余商品: {item_name}，当前信用: {sum_credit}")
             self.click(item)
             self.wait_ui_stable(refresh_interval=0.5)
