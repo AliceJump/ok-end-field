@@ -7,7 +7,7 @@ from src.interaction.KeyConfig import DEFAULT_COMMON_KEYS, DEFAULT_INDUSTRY_KEYS
 
 version = "dev"
 # 不需要修改version, Github Action打包会自动修改
-# FAQ 统一指向更新库文档，避免多处维护同类说明导致内容不一致。
+# FAQ 统一指向更新库文档，避免多处维护同类说明导致内容不一致
 FAQ_URL = "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/README.md"
 def make_bottom_left_black(frame):  # 可选. 某些游戏截图时遮挡UID使用
     """
