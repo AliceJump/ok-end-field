@@ -111,6 +111,7 @@ class DailyLiaisonMixin(LiaisonMixin):
     def boat_one_key_store(self):
         """在帝江号执行背包一键存放。"""
         self.info_set("current_task", "boat_one_key_store")
+        confirm_pattern = re.compile(r"确认")
         if not self.transfer_to_home_point(should_check_out_boat=True):
             self.log_info("传送到帝江号失败，无法执行一键存放")
             return False
@@ -124,8 +125,8 @@ class DailyLiaisonMixin(LiaisonMixin):
             self.log_info("未找到“存放”按钮")
             return False
         self.click(store_btn[0], move_back=True, after_sleep=0.5)
-        if self.ocr(match=re.compile("确认"), box=self.box.bottom_right):
-            if not self.wait_click_ocr(match=re.compile("确认"), box=self.box.bottom_right, time_out=2):
+        if self.ocr(match=confirm_pattern, box=self.box.bottom_right):
+            if not self.wait_click_ocr(match=confirm_pattern, box=self.box.bottom_right, time_out=2):
                 self.log_info("确认弹窗出现但点击失败")
                 return False
         return True
