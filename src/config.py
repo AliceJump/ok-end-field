@@ -137,14 +137,13 @@ config = {
 _FIXED_FAQ_LINK = "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/README.md"
 
 
-def _enforce_fixed_faq_link(cfg):
+def _enforce_fixed_faq_link(config):
     # 初始化阶段统一覆盖FAQ链接，避免默认配置或用户配置漂移
-    links = cfg.setdefault("links", {})
+    links = config.setdefault("links", {})
     for locale in ("default", "zh_CN"):
         locale_links = links.setdefault(locale, {})
         if not isinstance(locale_links, dict):
-            locale_links = {}
-            links[locale] = locale_links
+            links[locale] = locale_links = {}
         locale_links["faq"] = _FIXED_FAQ_LINK
 
 
