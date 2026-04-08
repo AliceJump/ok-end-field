@@ -29,16 +29,19 @@ class DailyShopMixin(Common):
             return False, sum_credit
         cost = self.refresh_cost_list[self.refresh_count]
         if sum_credit - cost > 210:
+            self.log_info(f"信用商店刷新第{self.refresh_count + 1}次，预计消耗信用: {cost}，当前信用: {sum_credit}")
             while not self.wait_click_ocr(match=re.compile("刷新"), time_out=1, box=self.box_of_screen(2/3, 0.5, 1, 1)):
                 if self.wait_ocr(match=re.compile("购买"),box=self.box.top_left, time_out=1):
                     self.back(after_sleep=1)
                 else:    
                     return True, sum_credit
             if not self.wait_click_ocr(match=re.compile("确认"), time_out=5, box=self.box.bottom_right):
+                self.log_info("信用商店刷新失败：未找到确认按钮")
                 return False, sum_credit
             sum_credit -= cost
             self.refresh_count += 1
             self.wait_ui_stable(refresh_interval=1)
+            self.log_info(f"信用商店刷新成功，消耗信用: {cost}，剩余信用: {sum_credit}")
             return True, sum_credit
         return False, sum_credit
 
@@ -70,6 +73,8 @@ class DailyShopMixin(Common):
     def buy_once(self, sum_credit):
         self.wait_ui_stable(refresh_interval=0.5)
         results = []
+        reserve_credit = self.config.get('信用商店保留信用', 300)
+        self.log_info(f"开始信用商店优先购买，当前信用: {sum_credit}，保留信用: {reserve_credit}")
 
         for search in (fL.weapon_quota, fL.orobertyl):
             r = self.find_feature(feature_name=search, box=self.credit_good_search_box)
@@ -88,27 +93,35 @@ class DailyShopMixin(Common):
         )
 
         results.extend(result or [])
-        for result in results:
-            self.click(result)
+        for item in results:
+            item_name = getattr(item, "name", "未知商品")
+            self.log_info(f"尝试购买优先商品: {item_name}，当前信用: {sum_credit}")
+            self.click(item)
             self.wait_ui_stable(refresh_interval=0.5)
             cost = self.get_cost()
             if cost <= 0:
+                self.log_info(f"跳过商品: {item_name}，未识别到有效价格")
                 continue
+            self.log_info(f"商品价格识别成功: {item_name}，价格: {cost}")
             result = self.wait_click_ocr(
                 match=[re.compile("确认"), re.compile("不足")], time_out=4, box=self.box.bottom_right
             )
             if not result:
+                self.log_info(f"购买流程中断: {item_name}，未找到确认/不足弹窗，尝试返回采购页")
                 if not self.back_shop():
                     return False, sum_credit, False
                 return True, sum_credit, True
             else:
                 if "不足" in result[0].name:
                     self.info_set("信用商店警告", "购买优先商品时信用不足")
+                    self.log_info(f"购买失败: {item_name}，原因: 信用不足，当前信用: {sum_credit}，价格: {cost}")
                     self.back_shop()
                     return False, sum_credit, False
             self.wait_pop_up(after_sleep=1)
             sum_credit -= cost
-        if sum_credit <=self.config.get('信用商店保留信用',300):
+            self.log_info(f"购买成功: {item_name}，消耗信用: {cost}，剩余信用: {sum_credit}")
+        if sum_credit <= reserve_credit:
+            self.log_info(f"信用降至保留阈值，停止优先购买，剩余信用: {sum_credit}，阈值: {reserve_credit}")
             return True, sum_credit, True
         return False, sum_credit, True
 
@@ -134,26 +147,36 @@ class DailyShopMixin(Common):
         return True
 
     def buy_left(self, sum_credit):
+        reserve_credit = self.config.get('信用商店保留信用', 300)
+        self.log_info(f"开始购买剩余可购商品，当前信用: {sum_credit}，保留信用: {reserve_credit}")
         results = self.find_feature(feature_name=fL.credit_can_buy, box=self.credit_good_search_box) or []
-        for result in results:
-            self.click(result)
+        for item in results:
+            item_name = getattr(item, "name", "未知商品")
+            self.log_info(f"尝试购买剩余商品: {item_name}，当前信用: {sum_credit}")
+            self.click(item)
             self.wait_ui_stable(refresh_interval=0.5)
             cost = self.get_cost()
             if cost <= 0:
+                self.log_info(f"跳过商品: {item_name}，未识别到有效价格")
                 continue
+            self.log_info(f"商品价格识别成功: {item_name}，价格: {cost}")
             result = self.wait_click_ocr(
                 match=[re.compile("确认"), re.compile("不足")], time_out=4, box=self.box.bottom_right
             )
             if not result:
+                self.log_info(f"购买流程中断: {item_name}，未找到确认/不足弹窗，尝试返回采购页")
                 self.back_shop()
                 return False
             else:
                 if "不足" in result[0].name:
                     self.info_set("信用商店警告", "购买优先商品时信用不足")
+                    self.log_info(f"购买失败: {item_name}，原因: 信用不足，当前信用: {sum_credit}，价格: {cost}")
                     self.back_shop()
                     return True
             self.wait_pop_up(after_sleep=1)
             sum_credit -= cost
-            if sum_credit <=self.config.get('信用商店保留信用',300):
+            self.log_info(f"购买成功: {item_name}，消耗信用: {cost}，剩余信用: {sum_credit}")
+            if sum_credit <= reserve_credit:
+                self.log_info(f"信用降至保留阈值，停止购买剩余商品，剩余信用: {sum_credit}，阈值: {reserve_credit}")
                 return True
         return True

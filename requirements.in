@@ -1,4 +1,4 @@
-ok-script
+ok-script==1.0.96
 onnxocr-ppocrv4==0.0.5
 openvino
 opencv-python
