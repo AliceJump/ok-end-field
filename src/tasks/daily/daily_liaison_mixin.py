@@ -16,7 +16,7 @@ class DailyLiaisonMixin(LiaisonMixin):
         self.default_config.update({
             "帮助": "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/docs/日常任务.md",
             "⭐送礼": True,
-            "⭐帝江号一键存放": True,
+            "⭐帝江号一键存放": False,
             "送礼任务最多尝试次数": 2,
             "优先送礼对象": list(self.can_contact_dict.keys())[0],
         })
@@ -28,7 +28,7 @@ class DailyLiaisonMixin(LiaisonMixin):
             ),
             "⭐帝江号一键存放": (
                 "是否在「帝江号」打开背包并点击「一键存放」。\n"
-                "OCR 仅匹配「存放」，以避免「一」字识别失败。"
+                "确认不会自动存可用道具导致治疗药被存入后再开启"
             ),
         })
 
