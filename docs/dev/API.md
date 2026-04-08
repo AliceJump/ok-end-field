@@ -472,7 +472,7 @@ def move_keys(
 )
 ```
 
-同时按住多个方向键并持续 `duration` 秒后松开。`need_back` 参数当前不再触发回到之前窗口。
+同时按住多个方向键并持续 `duration` 秒后松开。`need_back=True` 时会先执行一次返回之前窗口的操作。
 
 ```python
 self.move_keys(['w', 'd'], duration=1.5)   # 向右前方移动 1.5 秒

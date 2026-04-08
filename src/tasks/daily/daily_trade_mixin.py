@@ -2,12 +2,9 @@ import re
 import time
 from typing import List
 
-import win32gui
-
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import areas_list
 from src.image.hsv_config import HSVRange as hR
-from src.tasks.BaseEfTask import back_window
 from src.tasks.mixin.common import GoodsInfo
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.mixin.common import Common
@@ -397,9 +394,7 @@ class DailyTradeMixin(NavigationMixin, Common):
                 if not self.ensure_in_friend_boat():
                     self.log_info("未进入好友船")
                     return False
-                prev = win32gui.GetForegroundWindow()
                 self.navigate_to_friend_exchange()
-                back_window(prev)
                 self.wait_click_ocr(match=re.compile(area), box=self.box.top, after_sleep=2)
                 if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:])) or
                         self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]))):

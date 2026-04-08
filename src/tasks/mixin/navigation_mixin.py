@@ -2,11 +2,10 @@ import random
 import re
 import time
 
-import win32gui
 import pyautogui
 
 from src.interaction.Mouse import active_and_send_mouse_delta
-from src.tasks.BaseEfTask import BaseEfTask, back_window
+from src.tasks.BaseEfTask import BaseEfTask
 
 TOLERANCE = 50
 
@@ -59,7 +58,6 @@ class NavigationMixin(BaseEfTask):
         start_time = time.time()
         short_distance_flag = False
         fail_count = 0
-        prev = win32gui.GetForegroundWindow()
         while not self.wait_ocr(
                 match=target_ocr_pattern,
                 box=self.box.bottom_right,
@@ -67,13 +65,11 @@ class NavigationMixin(BaseEfTask):
         ):
             if time.time() - start_time > time_out:
                 self.log_info("导航超时")
-                back_window(prev)
                 return False
 
             if found_special_callback:
                 special_result = found_special_callback()
                 if special_result is not None:
-                    back_window(prev)
                     return special_result
 
             if pre_loop_callback:
@@ -116,7 +112,6 @@ class NavigationMixin(BaseEfTask):
                 self.move_keys("w", duration=0.25)
 
             self.sleep(0.5)
-        back_window(prev)
         return True
 
     def align_ocr_or_find_target_to_center(
@@ -185,8 +180,6 @@ class NavigationMixin(BaseEfTask):
         scroll_bool = False
         sum_dx = 0
         sum_dy = 0
-        if back_prev:
-            prev = win32gui.GetForegroundWindow()
         move_bool = False
         for i in range(max_time):
             start_action_time = time.time()
@@ -270,8 +263,6 @@ class NavigationMixin(BaseEfTask):
 
                 # 如果目标在容忍范围内
                 if abs(dx) <= tolerance and abs(dy) <= tolerance:
-                    if move_bool and back_prev:
-                        back_window(prev)
                     return True
                 else:
                     move_bool = True

@@ -281,9 +281,18 @@ def run_at_window_pos(hwnd, func, x, y, sleep_time=0.5, *args, **kwargs):
 
 
 def run_in_window(hwnd, func, *args, **kwargs):
-    if win32gui.GetForegroundWindow() != hwnd:
-        try:
+    prev = win32gui.GetForegroundWindow()
+    need_restore = prev != hwnd
+
+    try:
+        if need_restore:
             active_and_send_mouse_delta(hwnd, only_activate=True)
-        except win32gui.error as e:
-            print(f"窗口激活失败: {e}")
-    return func(*args, **kwargs)
+
+        return func(*args, **kwargs)
+
+    finally:
+        if need_restore and prev and win32gui.IsWindow(prev):
+            try:
+                win32gui.SetForegroundWindow(prev)
+            except:
+                pass
