@@ -169,7 +169,7 @@ class DailyShopMixin(Common):
                 return False
             else:
                 if "不足" in result[0].name:
-                    self.info_set("信用商店警告", "购买优先商品时信用不足")
+                    self.info_set("信用商店警告", "购买剩余商品时信用不足")
                     self.log_info(f"购买失败: {item_name}，原因: 信用不足，当前信用: {sum_credit}，价格: {cost}")
                     self.back_shop()
                     return True
