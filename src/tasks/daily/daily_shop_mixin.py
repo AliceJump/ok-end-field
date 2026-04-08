@@ -29,12 +29,21 @@ class DailyShopMixin(Common):
             return False, sum_credit
         cost = self.refresh_cost_list[self.refresh_count]
         if sum_credit - cost > 210:
-            self.log_info(f"信用商店刷新第{self.refresh_count + 1}次，预计消耗信用: {cost}，当前信用: {sum_credit}")
+            if not self.back_shop():
+                self.log_info("信用商店刷新中断：未能返回采购页面")
+                return False, sum_credit
+            self.log_info(f"信用商店尝试刷新第{self.refresh_count + 1}次，预计消耗信用: {cost}，当前信用: {sum_credit}")
+            shop_retry = 0
             while not self.wait_click_ocr(match=re.compile("刷新"), time_out=1, box=self.box_of_screen(2/3, 0.5, 1, 1)):
                 if self.wait_ocr(match=re.compile("购买"),box=self.box.top_left, time_out=1):
                     self.back(after_sleep=1)
-                else:    
-                    return True, sum_credit
+                elif not self.back_shop():
+                    self.log_info("信用商店刷新中断：未能返回采购页面")
+                    return False, sum_credit
+                else:
+                    shop_retry += 1
+                    if shop_retry >= 3:
+                        return True, sum_credit
             if not self.wait_click_ocr(match=re.compile("确认"), time_out=5, box=self.box.bottom_right):
                 self.log_info("信用商店刷新失败：未找到确认按钮")
                 return False, sum_credit
@@ -75,6 +84,8 @@ class DailyShopMixin(Common):
         results = []
         reserve_credit = self.config.get('信用商店保留信用', 300)
         self.log_info(f"开始信用商店优先购买，当前信用: {sum_credit}，保留信用: {reserve_credit}")
+        if not self.back_shop():
+            return False, sum_credit, False
 
         for search in (fL.weapon_quota, fL.orobertyl):
             r = self.find_feature(feature_name=search, box=self.credit_good_search_box)
@@ -96,6 +107,9 @@ class DailyShopMixin(Common):
         for idx, item in enumerate(results, start=1):
             item_name = getattr(item, "name", None) or f"未知商品#{idx}"
             self.log_info(f"尝试购买优先商品: {item_name}，当前信用: {sum_credit}")
+            if not self.back_shop():
+                self.info_set("信用商店警告", "购买优先商品前未能返回采购页面")
+                return False, sum_credit, False
             self.click(item)
             self.wait_ui_stable(refresh_interval=0.5)
             cost = self.get_cost()
@@ -149,10 +163,15 @@ class DailyShopMixin(Common):
     def buy_left(self, sum_credit):
         reserve_credit = self.config.get('信用商店保留信用', 300)
         self.log_info(f"开始购买剩余可购商品，当前信用: {sum_credit}，保留信用: {reserve_credit}")
+        if not self.back_shop():
+            return False
         results = self.find_feature(feature_name=fL.credit_can_buy, box=self.credit_good_search_box) or []
         for idx, item in enumerate(results, start=1):
             item_name = getattr(item, "name", None) or f"未知商品#{idx}"
             self.log_info(f"尝试购买剩余商品: {item_name}，当前信用: {sum_credit}")
+            if not self.back_shop():
+                self.info_set("信用商店警告", "购买剩余商品前未能返回采购页面")
+                return False
             self.click(item)
             self.wait_ui_stable(refresh_interval=0.5)
             cost = self.get_cost()
