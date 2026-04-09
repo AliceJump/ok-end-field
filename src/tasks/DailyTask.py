@@ -33,7 +33,8 @@ class DailyTask(
         self.default_config.update({"⭐传送到帝江号右侧传送点": True, "发生异常时终止游戏": False, "仅退出游戏": False})
         self.config_description.update(
             {
-                "仅退出游戏": "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n开启发生异常时终止游戏时此选项不生效"
+                "仅退出游戏": "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n开启发生异常时终止游戏时此选项不生效",
+                "发生异常时终止游戏": "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。",
             }
         )
         self.current_task_key = None
@@ -133,13 +134,6 @@ class DailyTask(
         except Exception as e:
             self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_Exception')
 
-            if not isinstance(e, TaskDisabledException):
-                if self.config.get("发生异常时终止游戏", False):
-                    self.log_info("发生异常，终止游戏", notify=True)
-                    self.kill_all_related_processes()
-                else:
-                    self.log_info("发生异常，继续游戏", notify=True)
-
             if hasattr(self, "task_status"):
                 if self.task_status.get("failed"):
                     self.info_set("已失败的任务列表", self.task_status["failed"])
@@ -148,7 +142,17 @@ class DailyTask(
 
             if self.current_task_key:
                 self.info_set("当前失败的任务", self.current_task_key)
-            raise
+
+            if not self.config.get("发生异常时终止游戏", False):
+                self.log_info("发生异常，继续游戏", notify=True)
+                raise e
+            else:
+                if isinstance(e, TaskDisabledException):
+                    self.log_info("发生异常，继续游戏", notify=True)
+                    raise e
+                else:
+                    self.log_info("发生异常，终止游戏", notify=True)
+                    self.kill_all_related_processes()
 
     def execute_task(self, key, func):
         """统一执行单个子任务。"""

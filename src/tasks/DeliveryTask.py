@@ -1,5 +1,6 @@
 import re
 import time
+from datetime import datetime
 from dataclasses import dataclass
 from typing import List, Tuple
 
@@ -58,6 +59,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self.CFG_TEST_TARGET: "默认是无，表示正常执行相关任务\n也可以选择特定的滑索分叉序列来测试滑索功能\n选择完整循环测试则会依次测试每个送货目标的完整流程\n(需要锁定次要任务在送货任务上或附近)",
             self.CFG_ONLY_ACCEPT: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n仅接取7.31w武陵委托，不送货',
             self.CFG_ONLY_DELIVER: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n接取武陵委托后启动自动识别送货',
+            "发生异常时终止游戏": "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。",
         })
         tutorial_value = f"{self.TUTORIAL_LINK}\n{self.TUTORIAL_TIPS}"
         self.default_config.update(
@@ -625,11 +627,14 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 self._run_single_delivery_cycle()
 
         except Exception as e:
-            # 除 TaskDisabledException 外的异常才杀死进程
-            if not isinstance(e, TaskDisabledException):
-                if self.config.get("发生异常时终止游戏", False):
+            self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DeliveryTask_Exception')
+            if not self.config.get("发生异常时终止游戏", False):
+                self.log_info("发生异常，继续游戏", notify=True)
+                raise e
+            else:
+                if isinstance(e, TaskDisabledException):
+                    self.log_info("发生异常，继续游戏", notify=True)
+                    raise e
+                else:
                     self.log_info("发生异常，终止游戏", notify=True)
                     self.kill_all_related_processes()
-                else:
-                    self.log_info("发生异常，继续运行", notify=True)
-            raise
