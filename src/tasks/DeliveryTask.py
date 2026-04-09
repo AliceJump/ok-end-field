@@ -637,4 +637,3 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     raise e
                 else:
                     self.log_info("发生异常，终止游戏", notify=True)
-                    self.kill_all_related_processes()
