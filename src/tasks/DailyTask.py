@@ -152,7 +152,6 @@ class DailyTask(
                     raise e
                 else:
                     self.log_info("发生异常，终止游戏", notify=True)
-                    self.kill_all_related_processes()
 
     def execute_task(self, key, func):
         """统一执行单个子任务。"""
