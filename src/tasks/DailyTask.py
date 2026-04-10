@@ -44,7 +44,9 @@ class DailyTask(
                     "需要执行的命令行内容。\n"
                     "示例1（Windows）：mxu.exe --autostart --instance 日常任务\n"
                     "示例2（Linux/macOS）：./mxu --autostart -i 日常任务 --quit-after-run\n"
-                    "示例3：python scripts/daily_extra.py"
+                    "示例3：python scripts/daily_extra.py\n"
+                    "说明：--instance/-i 指定实例名，--quit-after-run/-q 表示完成后退出。\n"
+                    "建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。"
                 ),
             }
         )
