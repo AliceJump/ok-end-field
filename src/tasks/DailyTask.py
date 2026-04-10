@@ -1,4 +1,5 @@
 import os
+import shlex
 import subprocess
 from datetime import datetime
 
@@ -185,7 +186,7 @@ class DailyTask(
             return True
 
         kwargs = {
-            "shell": True,
+            "shell": False,
             "close_fds": True,
             "stdout": subprocess.DEVNULL,
             "stderr": subprocess.DEVNULL,
@@ -196,7 +197,12 @@ class DailyTask(
             kwargs["start_new_session"] = True
 
         try:
-            process = subprocess.Popen(command, **kwargs)
+            command_args = shlex.split(command, posix=(os.name != "nt"))
+            if not command_args:
+                self.log_info("结尾外部命令解析后为空，跳过执行")
+                return True
+            process = subprocess.Popen(command_args, **kwargs)
+            self.info_set("结尾外部命令PID", process.pid)
             self.log_info(f"已启动结尾外部命令（非阻塞），pid={process.pid}")
             return True
         except Exception as e:
