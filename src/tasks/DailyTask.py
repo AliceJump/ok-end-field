@@ -40,7 +40,7 @@ class DailyTask(
                 "仅退出游戏": "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n开启发生异常时终止游戏时此选项不生效",
                 "发生异常时终止游戏": "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。",
                 "⭐执行结尾外部命令": "是否在日常任务末尾执行一次外部命令行程序（非阻塞）。",
-                "结尾外部命令": "需要执行的命令行内容，例如 python C:\\\\scripts\\\\daily_extra.py。",
+                "结尾外部命令": "需要执行的命令行内容，例如 Windows: python C:\\\\scripts\\\\daily_extra.py 或 Linux/macOS: python /opt/scripts/daily_extra.py。",
             }
         )
         self.current_task_key = None
@@ -196,6 +196,7 @@ class DailyTask(
         else:
             kwargs["start_new_session"] = True
 
+        command_args = None
         try:
             command_args = shlex.split(command, posix=(os.name != "nt"))
             if not command_args:
@@ -205,6 +206,6 @@ class DailyTask(
             self.log_info(f"已启动结尾外部命令（非阻塞），pid={process.pid}")
             return True
         except Exception as e:
-            failed_program = command_args[0] if "command_args" in locals() and command_args else command
+            failed_program = command_args[0] if command_args else command
             self.log_info(f"启动结尾外部命令失败 ({failed_program}): {e}", notify=True)
             return False
