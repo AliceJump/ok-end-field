@@ -1,6 +1,7 @@
 import math
 import re
 import time
+from datetime import datetime
 
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import stages_cost, higher_order_feature_dict
@@ -29,7 +30,6 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         self.stages_list = stages_list
         # 下列代码在 AutoCombatTask.py 中有部分重复。如有更新，请两边一起修改。
         # 不要试图归并，否则会影响『日常任务』中的选项顺序。
-        from datetime import datetime
         today_str = datetime.now().strftime("%Y-%m-%d")
         self.default_config.update({
             "⭐刷体力": True,
@@ -239,8 +239,12 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         if category_name != "能量淤积点":
             return self.battle_space(left_ticket, category_name)
         else:
-            return self.battle_gather(left_ticket, stage_name, category_name,
-                                      no_battle=self.config.get("仅站桩", False))
+            try:
+                return self.battle_gather(left_ticket, stage_name, category_name, no_battle=self.config.get("仅站桩", False))
+            except Exception as e:
+                # 能量淤积点情况复杂，出现异常的概率比较大，单独截图以便分析。
+                self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyBattleMixin_battleGather_Exception')
+                return False
 
     def battle_gather(self, left_ticket, stage_name, category_name, no_battle=False):
         self.gather_near_transfer_point_dict["枢纽区"] = self.box.top
