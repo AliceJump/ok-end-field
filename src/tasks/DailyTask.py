@@ -1,3 +1,5 @@
+import os
+import subprocess
 from datetime import datetime
 
 from ok import TaskDisabledException
@@ -31,10 +33,13 @@ class DailyTask(
         self.support_multi_account = True
         self.task_status = {"success": [], "failed": []}
         self.default_config.update({"⭐传送到帝江号右侧传送点": True, "发生异常时终止游戏": False, "仅退出游戏": False})
+        self.default_config.update({"⭐执行结尾外部命令": False, "结尾外部命令": ""})
         self.config_description.update(
             {
                 "仅退出游戏": "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n开启发生异常时终止游戏时此选项不生效",
                 "发生异常时终止游戏": "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。",
+                "⭐执行结尾外部命令": "是否在日常任务末尾执行一次外部命令行程序（非阻塞）。",
+                "结尾外部命令": "需要执行的命令行内容，例如 python C:\\\\scripts\\\\daily_extra.py。",
             }
         )
         self.current_task_key = None
@@ -72,6 +77,7 @@ class DailyTask(
                 ("⭐周常奖励", self.claim_weekly_rewards),
                 ("⭐日常奖励", self.claim_daily_rewards),
                 ("⭐传送到帝江号右侧传送点", lambda: self.transfer_to_home_point(box=self.box.right)),
+                ("⭐执行结尾外部命令", self.launch_end_command_non_blocking),
             ]
             all_fail_tasks = []
             for repeat_idx in range(repeat_times):
@@ -171,3 +177,28 @@ class DailyTask(
         self.task_status["success"].append(key)
         self.current_task_key = None
         return True
+
+    def launch_end_command_non_blocking(self):
+        command = str(self.config.get("结尾外部命令", "")).strip()
+        if not command:
+            self.log_info("结尾外部命令为空，跳过执行")
+            return True
+
+        kwargs = {
+            "shell": True,
+            "close_fds": True,
+            "stdout": subprocess.DEVNULL,
+            "stderr": subprocess.DEVNULL,
+        }
+        if os.name == "nt":
+            kwargs["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP | subprocess.DETACHED_PROCESS
+        else:
+            kwargs["start_new_session"] = True
+
+        try:
+            process = subprocess.Popen(command, **kwargs)
+            self.log_info(f"已启动结尾外部命令（非阻塞），pid={process.pid}")
+            return True
+        except Exception as e:
+            self.log_info(f"启动结尾外部命令失败: {e}", notify=True)
+            return False
