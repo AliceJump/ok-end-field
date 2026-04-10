@@ -202,9 +202,9 @@ class DailyTask(
                 self.log_info("结尾外部命令解析后为空，跳过执行")
                 return True
             process = subprocess.Popen(command_args, **kwargs)
-            self.info_set("结尾外部命令进程ID", process.pid)
             self.log_info(f"已启动结尾外部命令（非阻塞），pid={process.pid}")
             return True
         except Exception as e:
-            self.log_info(f"启动结尾外部命令失败: {e}", notify=True)
+            failed_program = command_args[0] if "command_args" in locals() and command_args else command
+            self.log_info(f"启动结尾外部命令失败 ({failed_program}): {e}", notify=True)
             return False
