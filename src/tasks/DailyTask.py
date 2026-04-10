@@ -43,7 +43,7 @@ class DailyTask(
                 "结尾外部命令": (
                     "需要执行的命令行内容。\n"
                     "示例1： python scripts/daily_extra.py\n"
-                    "示例2： python \"C:/tools/maa_task.py\" --preset quick\n"
+                    "示例2： python \"C:\\tools\\maa_task.py\" --preset quick\n"
                     "示例3： /usr/bin/python3 /opt/maa/task.py --tab daily"
                 ),
             }
