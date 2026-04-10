@@ -40,7 +40,12 @@ class DailyTask(
                 "仅退出游戏": "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n开启发生异常时终止游戏时此选项不生效",
                 "发生异常时终止游戏": "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。",
                 "⭐执行结尾外部命令": "是否在日常任务末尾执行一次外部命令行程序（非阻塞）。",
-                "结尾外部命令": "需要执行的命令行内容，例如 Windows: python \"C:\\scripts\\daily_extra.py\"，或 Linux/macOS: python /opt/scripts/daily_extra.py。",
+                "结尾外部命令": (
+                    "需要执行的命令行内容。\n"
+                    "示例1：python scripts/daily_extra.py\n"
+                    "示例2：python \"C:\\tools\\maa_task.py\" --preset quick\n"
+                    "示例3：/usr/bin/python3 /opt/maa/task.py --tab daily"
+                ),
             }
         )
         self.current_task_key = None
