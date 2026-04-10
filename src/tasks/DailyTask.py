@@ -42,8 +42,8 @@ class DailyTask(
                 "⭐执行结尾外部命令": "是否在日常任务末尾执行一次外部命令行程序（非阻塞）。",
                 "结尾外部命令": (
                     "需要执行的命令行内容。\n"
-                    "示例1： mxu.exe --autostart --instance \"日常任务\"\n"
-                    "示例2： mxu.exe --autostart -i \"日常任务\" -q\n"
+                    "示例1（Windows）： mxu.exe --autostart --instance \"日常任务\"\n"
+                    "示例2（Linux/macOS）： ./mxu --autostart -i \"日常任务\" --quit-after-run\n"
                     "示例3： python scripts/daily_extra.py"
                 ),
             }
