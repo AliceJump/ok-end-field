@@ -19,6 +19,7 @@ class EndCommandMixin:
             {
                 "⭐执行结尾外部命令": False,
                 "结尾外部命令": "",
+                "结尾外部命令起始于": "",
                 "结尾外部命令等待退出": False,
                 "结尾外部命令已运行时跳过": False,
             }
@@ -27,6 +28,7 @@ class EndCommandMixin:
             {
                 "⭐执行结尾外部命令": enable_description,
                 "结尾外部命令": command_description,
+                "结尾外部命令起始于": "可选。设置外部命令的起始目录（工作目录）；留空则使用默认目录。",
                 "结尾外部命令等待退出": "开启后等待外部命令执行完成；关闭则后台启动后立即继续。开启此选项可支持多账户模式。",
                 "结尾外部命令已运行时跳过": "开启后若检测到目标命令已在运行，将跳过本次启动。",
             }
@@ -40,6 +42,7 @@ class EndCommandMixin:
 
         wait_for_exit = bool(self.config.get("结尾外部命令等待退出", False))
         skip_if_running = bool(self.config.get("结尾外部命令已运行时跳过", False))
+        start_in = str(self.config.get("结尾外部命令起始于", "")).strip()
 
         command_args = None
         try:
@@ -58,6 +61,12 @@ class EndCommandMixin:
                 "stdout": subprocess.DEVNULL,
                 "stderr": subprocess.DEVNULL,
             }
+            if start_in:
+                start_in_path = os.path.expandvars(os.path.expanduser(start_in))
+                if not os.path.isdir(start_in_path):
+                    self.log_info(f"结尾外部命令起始目录不存在或不可用: {start_in}", notify=True)
+                    return False
+                kwargs["cwd"] = start_in_path
 
             if wait_for_exit:
                 kwargs["stdin"] = subprocess.DEVNULL
