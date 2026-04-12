@@ -64,7 +64,7 @@ class EndCommandMixin:
             if start_in:
                 start_in_path = os.path.expandvars(os.path.expanduser(start_in))
                 if not os.path.isdir(start_in_path):
-                    self.log_info(f"结尾外部命令起始目录不存在或不可用: {start_in}", notify=True)
+                    self.log_info(f"结尾外部命令起始目录不存在或不可用: {start_in_path}", notify=True)
                     return False
                 kwargs["cwd"] = start_in_path
 
