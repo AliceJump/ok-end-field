@@ -113,6 +113,8 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         return stage_name
 
     def battle(self):
+        # 重复的代码用⚠️标注，如有更新，请两边一起修改。
+        #
         # 自动根据日期和刷本序列决定刷哪个本
         stage_name = self.config.get("体力本")
         stage_reward_tier_override = None
@@ -142,7 +144,6 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 if invalid_stages:
                     explain = f"刷体力自动选择失败：刷本序列包含无效副本名 {invalid_stages}，已使用原配置体力本"
                 else:
-                    from datetime import datetime
                     today = datetime.now().date()
                     try:
                         start = datetime.strptime(start_date, "%Y-%m-%d").date()
@@ -195,10 +196,11 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
             f"今日最终刷本: {self._format_stage_with_reward_tier(stage_name, today_reward_tier)} "
             f"(奖励档位={today_reward_tier})"
         )
-        category_name = get_stage_category(stage_name)
+        # F8 索引 ⚠️
         self.ensure_main()
         self.press_key("f8")
         self.wait_click_ocr(match=re.compile("索引"), time_out=7, after_sleep=2, box=self.box.top, log=True)
+        # 体力相关
         if self.config.get("消耗限时体力药", False):
             self.click(3530/3840, 80/2160, after_sleep=2)  # 右上角加号
             box_list = self.ocr(x=0.28, y=0.45, to_x=0.88, to_y=0.66, match=re.compile(r"(\d+)天"))
@@ -226,39 +228,47 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 return False
         left_ticket = self.detect_ticket_number()
         self.log_info(f"当前体力: {left_ticket}")
+        category_name = get_stage_category(stage_name)
         if left_ticket < stages_cost[category_name]:
             self.log_info("体力不足")
             return True
+        # 进入副本详情页 ⚠️
         if not self.to_stage(
-                stage_name,
-                category_name,
-                reward_tier_override=stage_reward_tier_override,
-                ignore_config_tier=ignore_config_reward_tier,
+            stage_name,
+            category_name,
+            reward_tier_override=stage_reward_tier_override,
+            ignore_config_tier=ignore_config_reward_tier,
         ):
             return False
-        if category_name != "能量淤积点":
-            return self.battle_space(left_ticket, category_name)
-        else:
+        # 
+        if category_name == "能量淤积点":
             try:
                 return self.battle_gather(left_ticket, stage_name, category_name, no_battle=self.config.get("仅站桩", False))
             except Exception as e:
                 # 能量淤积点情况复杂，出现异常的概率比较大，单独截图以便分析。
                 self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyBattleMixin_battleGather_Exception')
                 return False
+        else: # 协议空间 or 危境预演
+            return self.battle_space(left_ticket, stage_name, category_name)
 
     def battle_gather(self, left_ticket, stage_name, category_name, no_battle=False):
+        # 重复的代码用⚠️标注，如有更新，请两边一起修改。
+        #
+        # 设置传送点特征搜索区
         self.gather_near_transfer_point_dict["枢纽区"] = self.box.top
         self.gather_near_transfer_point_dict["源石研究园"] = self.box.top
         self.gather_near_transfer_point_dict["矿脉源区"] = self.box.right
         self.gather_near_transfer_point_dict["供能高地"] = self.box.bottom_right
         self.gather_near_transfer_point_dict["武陵城"] = self.box.top
         self.gather_near_transfer_point_dict["清波寨"] = self.box.top
+        # 点击『追踪』按钮，进入地图并传送 ⚠️
         if result := self.wait_ocr(match=re.compile("追踪"), box=self.box.bottom_right, time_out=5):
             if "追踪" in result[0].name and "取" not in result[0].name and "消" not in result[0].name:
                 self.log_info("点击追踪按钮")
                 self.click(result, after_sleep=2)
         self.to_near_transfer_point(self.gather_near_transfer_point_dict[stage_name])
         self.ensure_main()
+        # 滑索移动 ⚠️
         zip_line_str = self.config.get(stage_name)
         if zip_line_str:
             self.press_key("f", after_sleep=2)
@@ -267,27 +277,35 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 zip_line_list,
                 need_scroll=self.config.get(self.CFG_SCROLL_ENABLE),
             )
-        self.navigate_until_target(target_ocr_pattern=re.compile("激发"), nav_feature_name=fL.gather_icon_out_map,
-                                   time_out=60)
+        #
+        self.navigate_until_target(target_ocr_pattern=re.compile("激发|放弃"), nav_feature_name=fL.gather_icon_out_map, time_out=60)
+        #
+        if self.wait_ocr(match=re.compile("放弃"), box=self.box.bottom_right, time_out=5):
+            self.log_info("放弃未领取的奖励")
+            self.wait_click_ocr(match=re.compile("放弃"), box=self.box.bottom_right, time_out=5, recheck_time=1, alt=True)
+            self.wait_click_ocr(match=re.compile("确认"), box=self.box.bottom_right, time_out=5)
+        #
         result = self.wait_ocr(match=re.compile("激发"), box=self.box.bottom_right, time_out=5)
         if not result:
-            self.log_info("没有找到激发按钮")
+            self.log_info("没有找到『激发』按钮")
             return False
         else:
             self.sleep(1)
         if not self.wait_click_ocr(match=re.compile("激发"), box=self.box.bottom_right, time_out=5, recheck_time=1, alt=True):
-            self.log_info("没有找到激发按钮")
+            self.log_info("没有找到『激发』按钮")
             return False
-        return self.battle_recycle(left_ticket, category_name, "挑战", no_battle=no_battle, challenge_check=True)
+        # 开战
+        return self.battle_recycle(left_ticket, stage_name, category_name, "挑战", no_battle=no_battle, challenge_check=True)
 
-    def battle_space(self, left_ticket, category_name):
+    def battle_space(self, left_ticket, stage_name, category_name):
         self.wait_click_ocr(match=re.compile("进入"), time_out=5, after_sleep=2, box=self.box.bottom_right, log=True)
         if self.wait_click_ocr(match=re.compile("取消"), time_out=5, box=self.box.bottom_left, log=True):
             self.log_info("没有进入战斗，可能是因为已经没理智了")
             return True
-        return self.battle_recycle(left_ticket, category_name, "进入")
+        return self.battle_recycle(left_ticket, stage_name, category_name, "进入")
 
-    def battle_recycle(self, left_ticket, category_name, enter_str, no_battle=False, challenge_check=False):
+    def battle_recycle(self, left_ticket, stage_name, category_name, enter_str, no_battle=False, challenge_check=False):
+        # 重复的代码用⚠️标注，如有更新，请两边一起修改。
         enter_bool = False
         while left_ticket > 0:
             if enter_bool:
@@ -299,9 +317,55 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 enter_bool = True
             if not self.to_battle(no_battle=no_battle, challenge_check=challenge_check):
                 return False
+            # 移至奖励发放点，按下 F
             if not self.to_end(challenge=challenge_check):
-                return False
+                self.log_info("未发现奖励领取点")
+                if category_name == "能量淤积点":
+                    try:
+                        self.log_info("当前副本为『能量淤积点』，开始进行二次寻路。")
+                        # F8 索引 ⚠️
+                        self.ensure_main()
+                        self.press_key("f8")
+                        self.wait_click_ocr(match=re.compile("索引"), time_out=7, after_sleep=2, box=self.box.top, log=True)
+                        # 进入副本详情页 ⚠️
+                        if not self.to_stage(
+                            stage_name,
+                            category_name,
+                        ):
+                            raise RuntimeError("无法进入『能量淤积点』详情页")
+                        # 点击『追踪』按钮，进入地图并传送 ⚠️
+                        if result := self.wait_ocr(match=re.compile("追踪"), box=self.box.bottom_right, time_out=5):
+                            if "追踪" in result[0].name and "取" not in result[0].name and "消" not in result[0].name:
+                                self.log_info("点击追踪按钮")
+                                self.click(result, after_sleep=2)
+                        self.to_near_transfer_point(self.gather_near_transfer_point_dict[stage_name])
+                        self.ensure_main()
+                        # 滑索移动 ⚠️
+                        zip_line_str = self.config.get(stage_name)
+                        if zip_line_str:
+                            self.press_key("f", after_sleep=2)
+                            zip_line_list = parse_int_sequence(zip_line_str)
+                            self.zip_line_list_go(
+                                zip_line_list,
+                                need_scroll=self.config.get(self.CFG_SCROLL_ENABLE),
+                            )
+                        #
+                        self.navigate_until_target(target_ocr_pattern=re.compile("领取"), nav_feature_name=fL.gather_icon_out_map, time_out=60)
+                        result = self.wait_ocr(match=re.compile("领取"), box=self.box.bottom_right, time_out=5)
+                        if not result:
+                            raise RuntimeError("没有找到『领取奖励』按钮")
+                        else:
+                            self.sleep(1)
+                        if not self.wait_click_ocr(match=re.compile("领取"), box=self.box.bottom_right, time_out=5, recheck_time=1, alt=True):
+                            raise RuntimeError("没有找到『领取奖励』按钮")
+                    except RuntimeError as e:
+                        self.log_info(f"二次寻路失败：{e.msg}")
+                        return False
+                else:
+                    return False
+            # 在『有可领取的奖励』页面上领取奖励
             left_ticket = self.get_claim(stages_cost[category_name], left_ticket)
+            #
             self.sleep(2)
             if left_ticket <= 0:
                 self.wait_click_ocr(match=re.compile("离开"), box=self.box.bottom_right, log=True, recheck_time=1)
@@ -451,29 +515,18 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
             self.click(key="middle", after_sleep=2)
             self.move_keys("aw", duration=0.1)
             self.sleep(1)
-
-        self.align_ocr_or_find_target_to_center(
-            end_feature_name,
-            ocr=False,
-            use_yolo=use_yolo,
-            box=search_box,
-            max_time=5,
-            only_x=True,
-            raise_if_fail=False,
-            threshold=0.5,
-        )
+        #
         start_time = time.time()
-        while self.align_ocr_or_find_target_to_center(end_feature_name, ocr=False, use_yolo=use_yolo, box=search_box,
-                                                      only_x=True, threshold=0.5, tolerance=100):
-            if time.time() - start_time > 60:
+        while time.time() - start_time < 60:
+            if not self.align_ocr_or_find_target_to_center(end_feature_name, ocr=False, use_yolo=use_yolo, box=search_box, only_x=True, raise_if_fail=False, threshold=0.5, tolerance=100):
                 return False
             if self.wait_ocr(match=re.compile("领取"), time_out=1, box=self.box.bottom_right):
                 self.sleep(0.5)
                 self.press_key("f", down_time=0.2)
-                break
+                return True
             else:
                 self.move_keys('w', duration=0.25)
-        return True
+        return False
 
     def get_claim(self, ticket_number, sum_ticket_number):
         """
