@@ -73,10 +73,12 @@ class BattleMixin(BaseEfTask):
                 "当排轴失败时回退到非排轴状态"
             ),
             "排轴序列": (
-                "仅接受'1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n]'这些值的逗号分隔字符串，\n"
+                "仅接受'1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n],normal_[n]'这些值的逗号分隔字符串，\n"
                 "代表技能释放优先级顺序\n"
                 "例如'ult_2,1,e,ult_1'表示优先尝试干员2的终结技，再干员1的战技，\n"
                 "再尝试连携，再干员1的终极技\n"
+                "normal_[n] 表示临时切换为普通战斗模式 n 秒，期间按「技能释放」顺序自动出技，\n"
+                "n 秒结束后自动恢复排轴模式（从下一个排轴技能继续）\n"
                 "启用排轴功能后，系统会按照该配置的顺序尝试释放技能，\n"
                 "一旦成功释放一个技能，就会等待下一个技能，而不是继续尝试后续技能\n"
                 "这可以用于更精细地控制技能释放顺序，\n"
@@ -111,6 +113,14 @@ class BattleMixin(BaseEfTask):
                     sequence.append(token)
                 except ValueError:
                     self.log_info(f"无效 sleep 参数: {token}")
+            elif token.startswith("normal_"):
+                try:
+                    val = float(token[7:])
+                    if val <= 0:
+                        raise ValueError
+                    sequence.append(token)
+                except ValueError:
+                    self.log_info(f"无效 normal 持续时间: {token}")
             else:
                 self.log_info(f"忽略无效技能: {token}")
 

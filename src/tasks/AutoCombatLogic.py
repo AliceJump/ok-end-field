@@ -154,6 +154,54 @@ class AutoCombatLogic:
                         task.log_info(f"排轴等待 {sleep_time} 秒")
                         time.sleep(sleep_time)
                         self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
+                        self.last_rotation_ok_time = time.time()
+                        continue
+                    elif now_skill.startswith("normal_"):
+                        normal_duration = float(now_skill[7:])
+                        task.log_info(f"排轴临时切换普通战斗 {normal_duration} 秒")
+                        normal_end_time = time.time() + normal_duration
+                        normal_skill_index = 0
+                        normal_skill_sequence = task.config.get("技能释放", ["1", "2", "3"])
+                        normal_start_trigger = task.config.get("启动技能点数", 2)
+                        while time.time() < normal_end_time:
+                            self._sync_normal_attack_hold()
+                            now_check = time.time()
+                            if now_check - self._last_exit_check_time >= self._exit_check_interval:
+                                self._last_exit_check_time = now_check
+                                if task._check_single_exit_condition():
+                                    self._end = True
+                                    break
+                            if task.use_link_skill():
+                                continue
+                            if task.use_ult():
+                                continue
+                            skill_count = task.get_skill_bar_count()
+                            if skill_count < normal_start_trigger:
+                                task.approach_enemy()
+                                task.next_frame()
+                                continue
+                            if normal_skill_index >= len(normal_skill_sequence):
+                                normal_skill_index = 0
+                            current_points = task.get_skill_bar_count()
+                            if current_points < 1:
+                                if task.use_ult():
+                                    continue
+                                if current_points < 0 and (task.ocr_lv() or not task.in_team()):
+                                    normal_skill_index = 0
+                                    continue
+                                task.approach_enemy()
+                                task.next_frame()
+                                continue
+                            if not task.in_combat():
+                                continue
+                            task.send_key(normal_skill_sequence[normal_skill_index])
+                            task.log_info(f"普通模式释放技能 {normal_skill_sequence[normal_skill_index]}")
+                            normal_skill_index += 1
+                        if getattr(self, "_end", False):
+                            break
+                        task.log_info("普通战斗临时模式结束，恢复排轴")
+                        self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
+                        self.last_rotation_ok_time = time.time()
                         continue
                     elif now_skill == 'e':
                         if task.use_link_skill():
