@@ -43,7 +43,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
             "体力刷完后继续刷取次数": 0,
             self.CFG_SCROLL_ENABLE: False,
             **{key: "" for key in gather_list},
-            "技能释放": "123",
+            "技能释放": ["1", "2", "3"],
             "启动技能点数": 2,
             "后台结束战斗通知": True,
             "无数字操作间隔": 6,

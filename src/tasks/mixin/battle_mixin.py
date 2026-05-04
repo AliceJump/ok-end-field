@@ -50,10 +50,14 @@ class BattleMixin(BaseEfTask):
 
         self.last_no_number_action_time = 0
         self.exit_check_count = 0
+        self.config_type["技能释放"] = {
+            "type": "multi_selection",
+            "options": ["1", "2", "3", "4"],
+        }
         self.config_description.update({
             "技能释放": (
-                "「战技」释放角色顺序，比如123。\n"
-                "建议只放3个技能。"
+                "勾选要自动循环释放「战技」的角色编号。\n"
+                "按编号从小到大的顺序依次释放，至少勾选一个。"
             ),
             "启动技能点数": (
                 "当「技力条」达到该数值时，\n"
@@ -82,9 +86,12 @@ class BattleMixin(BaseEfTask):
         # 用于识别 LV 或等级文字
         self.lv_regex = re.compile(r"(?i)lv|\d{2}")
 
-    def _parse_skill_sequence(self, raw_config: str) -> list[str]:
+    def _parse_skill_sequence(self, raw_config) -> list[str]:
         """
-        解析技能释放顺序，兼容两种格式：
+        解析技能释放顺序，兼容三种格式：
+
+        0️⃣ 列表格式（multi_selection 配置值）：
+            ["1", "2", "3"] -> ["1", "2", "3"]
 
         1️⃣ 老格式（纯数字）：
             "123" -> ["1","2","3"]
@@ -92,6 +99,14 @@ class BattleMixin(BaseEfTask):
         2️⃣ 新格式（逗号分隔）：
             "ult_1,1,2,e,sleep_2,3"
         """
+
+        # =========================
+        # ✅ 列表格式（multi_selection 返回值）
+        # =========================
+        if isinstance(raw_config, list):
+            valid_skills = {"1", "2", "3", "4"}
+            sequence = [item for item in raw_config if str(item) in valid_skills]
+            return sequence if sequence else ["1", "2", "3"]
 
         if not raw_config:
             return ["1", "2", "3"]

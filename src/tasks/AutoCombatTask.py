@@ -21,7 +21,7 @@ class AutoCombatTask(BattleMixin, TriggerTask):
         # 下列代码在 daily_battle_mixin.py 中有部分重复。如有更新，请两边一起修改。
         # 不要试图归并，否则会影响『日常任务』中的选项顺序。
         self.default_config.update({
-            "技能释放": "123",
+            "技能释放": ["1", "2", "3"],
             "启动技能点数": 2,
             "后台结束战斗通知": True,
             "无数字操作间隔": 6,
@@ -30,10 +30,6 @@ class AutoCombatTask(BattleMixin, TriggerTask):
             "排轴序列": "ult_2,1,e,ult_3,sleep_8",
         })
         self.config_description.update({
-            "技能释放": (
-                "「战技」释放角色顺序，比如123。\n"
-                "建议只放3个技能。"
-            ),
             "启动技能点数": (
                 "当「技力条」达到该数值时，\n"
                 "开始执行技能序列。取值范围1-3。"

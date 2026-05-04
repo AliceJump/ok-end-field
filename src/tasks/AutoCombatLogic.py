@@ -48,7 +48,7 @@ class AutoCombatLogic:
         if not no_battle:
             task.log_info("检测到进入战斗,开始自动战斗流程")
 
-            raw_skill_config = task.config.get("技能释放", "123")
+            raw_skill_config = task.config.get("技能释放", ["1", "2", "3"])
             start_trigger_count = task.config.get("启动技能点数", 2)
             skill_sequence = task._parse_skill_sequence(raw_skill_config)
 
