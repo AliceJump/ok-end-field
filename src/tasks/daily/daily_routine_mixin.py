@@ -14,6 +14,7 @@ from src.data.characters_utils import get_contact_list_with_feature_list
 class DailyRoutineMixin(LiaisonMixin, Common):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.boat_stages = ['收集线索', '制造舱', '培养舱']
         self.default_config.update({
             "⭐收邮件": True,
             "⭐据点兑换": True,
@@ -25,12 +26,14 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             "⭐收信用": True,
             "尝试仅收培育室": True,
             "⭐帝江号收菜": True,
-            "收集线索": True,
-            "制造舱": True,
-            "培养舱": True,
+            "帝江号收菜操作": self.boat_stages,
             "⭐周常奖励": True,
             "⭐日常奖励": True,
         })
+        self.config_type["帝江号收菜操作"] = {
+            "type": "multi_selection",
+            "options": self.boat_stages,
+        }
         self.config_description.update({
             "⭐收邮件": "是否前往「邮箱」领取邮件。",
             "⭐据点兑换": (
@@ -62,18 +65,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             "⭐帝江号收菜": (
                 "是否前往好友的「帝江号」并在「访客终端」上进行收集线索、制造舱操作"
             ),
-            "收集线索": (
-                "是否前往「帝江号/会客室」收集全部线索。\n"
-                "若集齐线索，则开启情报交流。"
-            ),
-            "制造舱": (
-                "是否前往「帝江号/制造仓」收取培养材料。\n"
-                "收取后会补足待制造数量。"
-            ),
-            "培养舱": (
-                "是否前往「帝江号/培养仓」收取培养材料。\n"
-                "收取后会直接再次培养，自行保证有足够的培育材料。"
-            ),
+            "帝江号收菜操作": "勾选要在帝江号收菜时执行的操作。\n收集线索：前往「会客室」收集全部线索，若集齐则开启情报交流。\n制造舱：前往「制造仓」收取培养材料并补足待制造数量。\n培养舱：前往「培养仓」收取培养材料并直接再次培养。",
             "⭐周常奖励": (
                 "是否领取「活动中心/每周事物」中的奖励。"
             ),
@@ -84,7 +76,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.default_config_group.update({
             "⭐据点兑换": ["交易货品优先序列"],
             "⭐收信用": ["尝试仅收培育室"],
-            "⭐帝江号收菜": ["收集线索", "制造舱", "培养舱"]
+            "⭐帝江号收菜": ["帝江号收菜操作"]
         })
     def make_simply(self):
         self.info_set("current_task", "make_simply")
@@ -768,7 +760,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         return False
 
     def collect_clue(self, exchange_help_box):
-        if not self.config.get("收集线索"):
+        if "收集线索" not in self.config.get("帝江号收菜操作", []):
             self.logger.info("收集线索任务未启用，跳过")
             return True
         if self.wait_click_ocr(match=re.compile("会客室"), time_out=6, box=exchange_help_box):
@@ -817,7 +809,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             return False
 
     def up_make_room_num(self, exchange_help_box):
-        if not self.config.get("制造舱"):
+        if "制造舱" not in self.config.get("帝江号收菜操作", []):
             self.logger.info("制造舱助力任务未启用，跳过")
             return True
         results = self.wait_ocr(match=re.compile("制造"), time_out=4, box=exchange_help_box)
@@ -852,7 +844,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         return True
 
     def culture_room(self, exchange_help_box):
-        if not self.config.get("培养舱"):
+        if "培养舱" not in self.config.get("帝江号收菜操作", []):
             self.logger.info("培养舱任务未启用，跳过")
             return True
         results = self.wait_ocr(match=re.compile("制造"), time_out=4, box=exchange_help_box)
