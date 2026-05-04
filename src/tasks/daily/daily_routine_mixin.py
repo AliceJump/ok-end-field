@@ -12,9 +12,10 @@ from src.data.characters_utils import get_contact_list_with_feature_list
 
 
 class DailyRoutineMixin(LiaisonMixin, Common):
+    BOAT_STAGES = ['收集线索', '制造舱', '培养舱']
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.boat_stages = ['收集线索', '制造舱', '培养舱']
         self.default_config.update({
             "⭐收邮件": True,
             "⭐据点兑换": True,
@@ -26,13 +27,13 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             "⭐收信用": True,
             "尝试仅收培育室": True,
             "⭐帝江号收菜": True,
-            "帝江号收菜操作": self.boat_stages,
+            "帝江号收菜操作": self.BOAT_STAGES,
             "⭐周常奖励": True,
             "⭐日常奖励": True,
         })
         self.config_type["帝江号收菜操作"] = {
             "type": "multi_selection",
-            "options": self.boat_stages,
+            "options": self.BOAT_STAGES,
         }
         self.config_description.update({
             "⭐收邮件": "是否前往「邮箱」领取邮件。",
@@ -65,7 +66,12 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             "⭐帝江号收菜": (
                 "是否前往好友的「帝江号」并在「访客终端」上进行收集线索、制造舱操作"
             ),
-            "帝江号收菜操作": "勾选要在帝江号收菜时执行的操作。\n收集线索：前往「会客室」收集全部线索，若集齐则开启情报交流。\n制造舱：前往「制造仓」收取培养材料并补足待制造数量。\n培养舱：前往「培养仓」收取培养材料并直接再次培养。",
+            "帝江号收菜操作": (
+                "勾选要在帝江号收菜时执行的操作。\n"
+                "收集线索：前往「会客室」收集全部线索，若集齐则开启情报交流。\n"
+                "制造舱：前往「制造仓」收取培养材料并补足待制造数量。\n"
+                "培养舱：前往「培养仓」收取培养材料并直接再次培养。"
+            ),
             "⭐周常奖励": (
                 "是否领取「活动中心/每周事物」中的奖励。"
             ),
