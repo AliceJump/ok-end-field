@@ -88,63 +88,33 @@ class BattleMixin(BaseEfTask):
 
     def _parse_skill_sequence(self, raw_config) -> list[str]:
         """
-        解析技能释放顺序，兼容两种字符串格式（用于排轴序列）：
-
-        1️⃣ 老格式（纯数字）：
-            "123" -> ["1","2","3"]
-
-        2️⃣ 新格式（逗号分隔）：
+        解析技能释放顺序（逗号分隔格式，用于排轴序列）：
             "ult_1,1,2,e,sleep_2,3"
         """
-
         if not raw_config:
             return ["1", "2", "3"]
 
-        trimmed = raw_config.strip()
+        sequence = []
+        valid_skills = {"1", "2", "3", "4", "e"}
 
-        # =========================
-        # ✅ 新格式：逗号分隔（支持中文逗号）
-        # =========================
-        if "," in trimmed or "，" in trimmed:
-            sequence = []
-            tokens = parse_sequence(trimmed)
-
-            valid_skills = {"1", "2", "3", "4", "e"}
-
-            for token in tokens:
-                if token in valid_skills:
+        for token in parse_sequence(raw_config):
+            if token in valid_skills:
+                sequence.append(token)
+            elif token.startswith("ult_"):
+                if token[4:] in {"1", "2", "3", "4"}:
                     sequence.append(token)
-
-                elif token.startswith("ult_"):
-                    if token[4:] in {"1", "2", "3", "4"}:
-                        sequence.append(token)
-                    else:
-                        self.log_info(f"无效 ult 技能: {token}")
-
-                elif token.startswith("sleep_"):
-                    try:
-                        float(token[6:])
-                        sequence.append(token)
-                    except ValueError:
-                        self.log_info(f"无效 sleep 参数: {token}")
-
                 else:
-                    self.log_info(f"忽略无效技能: {token}")
+                    self.log_info(f"无效 ult 技能: {token}")
+            elif token.startswith("sleep_"):
+                try:
+                    float(token[6:])
+                    sequence.append(token)
+                except ValueError:
+                    self.log_info(f"无效 sleep 参数: {token}")
+            else:
+                self.log_info(f"忽略无效技能: {token}")
 
-            return sequence if sequence else ["1", "2", "3"]
-
-        # =========================
-        # ✅ 老格式：纯数字逐字符
-        # =========================
-        else:
-            sequence = []
-            valid_skills = {"1", "2", "3", "4"}
-
-            for char in trimmed:
-                if char in valid_skills:
-                    sequence.append(char)
-
-            return sequence if sequence else ["1", "2", "3"]
+        return sequence if sequence else ["1", "2", "3"]
 
     def use_ult(self, ult_sequence: str = None):
         """
