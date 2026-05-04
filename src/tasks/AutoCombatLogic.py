@@ -12,6 +12,9 @@ class AutoCombatLogic:
         self.rotation_enabled = None
         self.task = task
         self._normal_attack_hold_enabled = False
+        self.normal_skill_sequence: list = []
+        self.normal_start_trigger: int = 2
+        self.normal_skill_index: int = 0
 
     def _sync_normal_attack_hold(self):
         if self._normal_attack_hold_enabled:
@@ -19,6 +22,42 @@ class AutoCombatLogic:
             pyautogui.mouseDown()
         else:
             pyautogui.mouseUp()
+
+    def _do_normal_combat_frame(self):
+        """执行一帧普通战斗逻辑（非排轴模式 / normal_[n] 临时模式共用）。"""
+        task = self.task
+        if task.use_link_skill():
+            return
+        if task.use_ult():
+            return
+
+        skill_count = task.get_skill_bar_count()
+        if skill_count < self.normal_start_trigger:
+            task.approach_enemy()
+            task.next_frame()
+            return
+
+        if self.normal_skill_index >= len(self.normal_skill_sequence):
+            self.normal_skill_index = 0
+
+        current_points = task.get_skill_bar_count()
+        if current_points < 1:
+            if task.use_ult():
+                return
+            if current_points < 0 and (task.ocr_lv() or not task.in_team()):
+                self.normal_skill_index = 0
+                return
+            task.approach_enemy()
+            task.next_frame()
+            return
+
+        if not task.in_combat():
+            return
+
+        skill_key = self.normal_skill_sequence[self.normal_skill_index]
+        task.send_key(skill_key)
+        task.log_info(f"Used skill {skill_key}")
+        self.normal_skill_index += 1
 
     def run(self, start_sleep: float = None, no_battle: bool = False):
         self._last_exit_check_time = 0
@@ -32,6 +71,12 @@ class AutoCombatLogic:
                 task._last_no_combat_log_time = now
             task.sleep(0.5)
             return False
+
+        # 初始化普通战斗配置属性（排轴与普通模式共用）
+        self.normal_skill_sequence = task.config.get("技能释放", ["1", "2", "3"])
+        self.normal_start_trigger = task.config.get("启动技能点数", 2)
+        self.normal_skill_index = 0
+
         self.rotation_enabled = False
         self.rotation_active = True
         self.rotation_enabled = self.task.config.get("启用排轴", False)
@@ -47,11 +92,7 @@ class AutoCombatLogic:
 
         if not no_battle:
             task.log_info("检测到进入战斗,开始自动战斗流程")
-
-            skill_sequence = task.config.get("技能释放", ["1", "2", "3"])
-            start_trigger_count = task.config.get("启动技能点数", 2)
-
-            task.log_info(f"战斗配置: 技能序列={skill_sequence}, 启动点数={start_trigger_count}")
+            task.log_info(f"战斗配置: 技能序列={self.normal_skill_sequence}, 启动点数={self.normal_start_trigger}")
 
             if task.debug:
                 task.screenshot("enter_combat")
@@ -91,52 +132,7 @@ class AutoCombatLogic:
                 task.approach_enemy()
                 task.next_frame()
                 if not self.rotation_enabled or not self.rotation_active:
-                    # 初始化（只执行一次）
-                    if not hasattr(self, "normal_skill_index"):
-                        self.normal_skill_index = 0
-                        self.waiting_for_point = False
-                    if task.use_link_skill():
-                        continue
-                    if task.use_ult():
-                        continue
-
-                    skill_count = task.get_skill_bar_count()
-
-                    # 未达到启动条件 → 什么都不做（非阻塞）
-                    if skill_count < start_trigger_count:
-                        continue
-
-                    # 当前要释放的技能
-                    if self.normal_skill_index >= len(skill_sequence):
-                        self.normal_skill_index = 0
-
-                    skill_key = skill_sequence[self.normal_skill_index]
-
-                    # 👉 等点数（非阻塞版）
-                    current_points = task.get_skill_bar_count()
-
-                    if current_points < 1:
-                        # 仍然可以做别的事情
-                        if task.use_ult():
-                            continue
-
-                        if current_points < 0 and (task.ocr_lv() or not task.in_team()):
-                            self.normal_skill_index = 0
-                            continue
-
-                        task.approach_enemy()
-                        # ❗关键：直接返回下一帧，不阻塞
-                        continue
-
-                    # 👉 有点数 → 释放技能
-                    if not task.in_combat():
-                        continue
-
-                    task.send_key(skill_key)
-                    task.log_info(f"Used skill {skill_key}")
-
-                    # 👉 推进到下一个技能
-                    self.normal_skill_index += 1
+                    self._do_normal_combat_frame()
                 else:
                     if time.time() - self.last_rotation_ok_time >= 5:
                         self.rotation_active = False
@@ -159,10 +155,8 @@ class AutoCombatLogic:
                     elif now_skill.startswith("normal_"):
                         normal_duration = float(now_skill[7:])
                         task.log_info(f"排轴临时切换普通战斗 {normal_duration} 秒")
+                        self.normal_skill_index = 0
                         normal_end_time = time.time() + normal_duration
-                        normal_skill_index = 0
-                        normal_skill_sequence = task.config.get("技能释放", ["1", "2", "3"])
-                        normal_start_trigger = task.config.get("启动技能点数", 2)
                         while time.time() < normal_end_time:
                             self._sync_normal_attack_hold()
                             now_check = time.time()
@@ -171,32 +165,7 @@ class AutoCombatLogic:
                                 if task._check_single_exit_condition():
                                     self._end = True
                                     break
-                            if task.use_link_skill():
-                                continue
-                            if task.use_ult():
-                                continue
-                            skill_count = task.get_skill_bar_count()
-                            if skill_count < normal_start_trigger:
-                                task.approach_enemy()
-                                task.next_frame()
-                                continue
-                            if normal_skill_index >= len(normal_skill_sequence):
-                                normal_skill_index = 0
-                            current_points = task.get_skill_bar_count()
-                            if current_points < 1:
-                                if task.use_ult():
-                                    continue
-                                if current_points < 0 and (task.ocr_lv() or not task.in_team()):
-                                    normal_skill_index = 0
-                                    continue
-                                task.approach_enemy()
-                                task.next_frame()
-                                continue
-                            if not task.in_combat():
-                                continue
-                            task.send_key(normal_skill_sequence[normal_skill_index])
-                            task.log_info(f"普通模式释放技能 {normal_skill_sequence[normal_skill_index]}")
-                            normal_skill_index += 1
+                            self._do_normal_combat_frame()
                         if getattr(self, "_end", False):
                             break
                         task.log_info("普通战斗临时模式结束，恢复排轴")
