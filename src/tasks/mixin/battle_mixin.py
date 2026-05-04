@@ -88,10 +88,7 @@ class BattleMixin(BaseEfTask):
 
     def _parse_skill_sequence(self, raw_config) -> list[str]:
         """
-        解析技能释放顺序，兼容三种格式：
-
-        0️⃣ 列表格式（multi_selection 配置值）：
-            ["1", "2", "3"] -> ["1", "2", "3"]
+        解析技能释放顺序，兼容两种字符串格式（用于排轴序列）：
 
         1️⃣ 老格式（纯数字）：
             "123" -> ["1","2","3"]
@@ -99,14 +96,6 @@ class BattleMixin(BaseEfTask):
         2️⃣ 新格式（逗号分隔）：
             "ult_1,1,2,e,sleep_2,3"
         """
-
-        # =========================
-        # ✅ 列表格式（multi_selection 返回值）
-        # =========================
-        if isinstance(raw_config, list):
-            valid_skills = {"1", "2", "3", "4"}
-            sequence = [str(item) for item in raw_config if str(item) in valid_skills]
-            return sequence if sequence else ["1", "2", "3"]
 
         if not raw_config:
             return ["1", "2", "3"]
