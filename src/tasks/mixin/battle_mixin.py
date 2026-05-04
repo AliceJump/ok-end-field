@@ -105,7 +105,7 @@ class BattleMixin(BaseEfTask):
         # =========================
         if isinstance(raw_config, list):
             valid_skills = {"1", "2", "3", "4"}
-            sequence = [item for item in raw_config if str(item) in valid_skills]
+            sequence = [str(item) for item in raw_config if str(item) in valid_skills]
             return sequence if sequence else ["1", "2", "3"]
 
         if not raw_config:
