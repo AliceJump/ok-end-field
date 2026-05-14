@@ -866,6 +866,7 @@ def yolo_detect(
     box=None,
     conf=0.7,
     detections=None,
+    model_key=None,
 ) -> list[Box]
 ```
 
@@ -878,9 +879,24 @@ def yolo_detect(
 | `box` | `Box \| None` | 限制检测 ROI，`None` 为全屏 |
 | `conf` | `float` | 置信度阈值，默认 `0.7` |
 | `detections` | `list[Box] \| None` | 测试注入检测结果；传入后跳过模型推理，仅执行筛选与坐标映射 |
+| `model_key` | `str \| None` | 指定使用 `config['yolo']['models']` 中的模型键 |
 
 ```python
 boxes = self.yolo_detect("battle_end", box=self.box.center, conf=0.6)
+```
+
+推荐在 `config.py` 中使用以下结构管理多模型与 labels：
+
+```python
+"yolo": {
+    "default_model": "battle_end_default",
+    "models": {
+        "battle_end_default": {
+            "model_path": "assets/models/yolo/best.onnx",
+            "labels": {0: "battle_end"},
+        },
+    },
+}
 ```
 
 在 debug 模式下会自动画框：

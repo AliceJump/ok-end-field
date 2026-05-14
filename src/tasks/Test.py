@@ -1,30 +1,81 @@
-import re
+from qfluentwidgets import FluentIcon
 
+from src.config import config as app_config
 from src.tasks.BaseEfTask import BaseEfTask
-from src.tasks.daily.daily_liaison_mixin import DailyLiaisonMixin
-from src.data.FeatureList import FeatureList as fL
-from src.tasks.mixin.common import Common
-from src.tasks.mixin.login_mixin import LoginMixin
-from src.tasks.AutoCombatLogic import AutoCombatLogic
-from src.interaction.Mouse import run_at_window_pos
-import pyautogui
-from ok import TaskDisabledException
+from src.yolo.model_registry import build_yolo_model_settings
 
 
-class Test(LoginMixin):
+class Test(BaseEfTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.refresh_count = 0
-        self.refresh_cost_list = [80, 120, 160, 200]
-        self.credit_good_search_box = None
+        self.name = "YOLO实测扫描"
+        self.description = "用于实测 YOLO 模型：可选模型、可选目标、可设置信度并循环扫描。"
+        self.icon = FluentIcon.SEARCH
+
+        default_model, model_settings = build_yolo_model_settings(app_config.get("yolo", {}))
+        model_options = list(model_settings.keys())
+        target_options = sorted(
+            {
+                str(name)
+                for name in model_settings.get(default_model, {}).get("labels", {}).values()
+                if name is not None
+            }
+        )
+        default_target = target_options[0] if target_options else "battle_end"
+
+        self.default_config.update(
+            {
+                "YOLO模型": default_model,
+                "检测目标": default_target,
+                "检测置信度": 0.7,
+                "扫描次数": 20,
+                "扫描间隔(秒)": 0.2,
+            }
+        )
+        self.config_description.update(
+            {
+                "YOLO模型": "选择模型配置（来自 config['yolo']['models']）",
+                "检测目标": "选择模型 labels 的 value 作为目标类别",
+                "检测置信度": "0~1，值越高越严格",
+                "扫描次数": "循环检测次数",
+                "扫描间隔(秒)": "每次检测后的等待时间",
+            }
+        )
+        self.config_type["YOLO模型"] = {"type": "drop_down", "options": model_options}
+        self.config_type["检测目标"] = {"type": "drop_down", "options": target_options}
 
     def run(self):
-        self.wait_click_ocr(match=re.compile("立即刷新"), time_out=5, box=self.box.bottom_right, log=True)
-    def _type_text(self, text: str):
-        """
-        通用输入（支持中文）
-        """
-        import pyperclip
+        model_key = str(self.config.get("YOLO模型", self.default_config.get("YOLO模型", ""))).strip()
+        target_name = str(self.config.get("检测目标", self.default_config.get("检测目标", ""))).strip()
+        conf = float(self.config.get("检测置信度", 0.7) or 0.7)
+        conf = max(0.0, min(1.0, conf))
+        scan_times = max(1, int(self.config.get("扫描次数", 20) or 20))
+        interval = max(0.0, float(self.config.get("扫描间隔(秒)", 0.2) or 0.2))
 
-        pyperclip.copy(text)
-        pyautogui.hotkey("ctrl", "v")
+        self.set_yolo_model(model_key)
+        available_targets = self.list_yolo_targets(model_key)
+        if target_name not in available_targets:
+            raise ValueError(f"检测目标[{target_name}]不在模型[{model_key}]labels中，可选: {available_targets}")
+
+        self.log_info(
+            f"开始YOLO实测扫描: model={model_key}, target={target_name}, conf={conf:.2f}, scans={scan_times}",
+            notify=True,
+        )
+
+        found_count = 0
+        max_conf = 0.0
+        for i in range(scan_times):
+            results = self.yolo_detect(name=target_name, conf=conf, model_key=model_key)
+            if results:
+                found_count += 1
+                top_conf = float(results[0].confidence or 0.0)
+                max_conf = max(max_conf, top_conf)
+                self.log_info(f"[{i + 1}/{scan_times}] 检测到 {len(results)} 个目标, top_conf={top_conf:.3f}")
+            else:
+                self.log_info(f"[{i + 1}/{scan_times}] 未检测到目标")
+            self.sleep(interval)
+
+        self.log_info(
+            f"YOLO实测完成: 命中轮次={found_count}/{scan_times}, 最高置信度={max_conf:.3f}",
+            notify=True,
+        )

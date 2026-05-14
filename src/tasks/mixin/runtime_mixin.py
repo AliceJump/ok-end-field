@@ -12,7 +12,6 @@ from PIL import Image
 from ok import Box
 from skimage.metrics import structural_similarity as ssim
 
-from src.OpenVinoYolo8Detect import OpenVinoYolo8Detect
 from src.config import config as app_config
 from src.data.FeatureList import FeatureList as fL
 from src.image.frame_processes import isolate_by_hsv_ranges
@@ -22,6 +21,7 @@ from src.interaction.Mouse import (
     move_to_target_once as move_to_target_once_impl,
     run_at_window_pos,
 )
+from src.yolo.loader import YoloModelLoader
 
 feature_values = [f.value for f in fL]
 
@@ -156,8 +156,10 @@ class RuntimeMixin:
 
             try:
                 yolo_config = app_config.get("yolo", {})
-                model_path = yolo_config.get("model_path", "models/yolo/best.onnx")
-                self._detector = OpenVinoYolo8Detect(weights=model_path)
+                self._yolo_loader = YoloModelLoader(yolo_config)
+                if not self._yolo_model_key:
+                    self._yolo_model_key = self._yolo_loader.default_model_key
+                self._detector = self._yolo_loader.get_detector(self._yolo_model_key)
             finally:
                 self._detector_loading = False
                 self._detector_loaded_event.set()
@@ -178,6 +180,26 @@ class RuntimeMixin:
 
         return self._detector
 
+    def yolo_loader(self) -> YoloModelLoader:
+        if self._yolo_loader is not None:
+            return self._yolo_loader
+        self.detector
+        if self._yolo_loader is None:
+            raise RuntimeError("YOLO loader 初始化失败")
+        return self._yolo_loader
+
+    def list_yolo_models(self) -> list[str]:
+        return self.yolo_loader().available_models()
+
+    def list_yolo_targets(self, model_key: str | None = None) -> list[str]:
+        return self.yolo_loader().target_names(model_key or self._yolo_model_key)
+
+    def set_yolo_model(self, model_key: str):
+        loader = self.yolo_loader()
+        self._detector = loader.get_detector(model_key)
+        self._yolo_model_key = model_key
+        return self._detector
+
     def isolate_by_hsv_ranges(self, frame, ranges, invert=True, kernel_size=2):
         return isolate_by_hsv_ranges(frame, ranges, invert, kernel_size)
 
@@ -191,6 +213,7 @@ class RuntimeMixin:
             box: Box | None = None,
             conf: float = 0.7,
             detections: list[Box] | None = None,
+            model_key: str | None = None,
     ) -> list[Box]:
         if not name:
             raise ValueError("yolo_detect 至少需要传入一个 name")
@@ -215,10 +238,11 @@ class RuntimeMixin:
             offset_y = int(box.y)
 
         if detections is None:
-            if self.detector is None:
+            detector = self.detector if model_key is None else self.set_yolo_model(model_key)
+            if detector is None:
                 self.log_error("yolo_detect: detector is not available")
                 return []
-            detections = self.detector.detect(detect_frame, threshold=conf)
+            detections = detector.detect(detect_frame, threshold=conf)
         detections = detections or []
 
         self.log_info(f"yolo_detect: raw detections count = {len(detections)}")

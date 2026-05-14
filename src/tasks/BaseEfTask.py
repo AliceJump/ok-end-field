@@ -48,6 +48,8 @@ class BaseEfTask(
         self._detector = None
         self._detector_loading = False
         self._detector_loaded_event = threading.Event()
+        self._yolo_loader = None
+        self._yolo_model_key = None
         self._start_detector_loading()
     def handle_task_exception(self, e: Exception, prefix: str):
         """统一处理任务 run() 中的异常逻辑。
