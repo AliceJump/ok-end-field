@@ -137,19 +137,6 @@ class EndCommandMixin:
 
         return False
 
-    def can_run_accounts(self):
-        enable_cmd = self.config.get("⭐执行结尾外部命令", False)
-        cmd = self.config.get("结尾外部命令", "")
-        wait_exit = self.config.get("结尾外部命令等待退出", False)
-
-        if not enable_cmd:
-            return True
-        if not cmd:
-            return True
-        if wait_exit:
-            return True
-        return False
-
     @staticmethod
     def _normalize_process_token(value):
         return os.path.basename(str(value).strip().strip("\"'")).lower()

@@ -9,7 +9,7 @@ from ok import Box, TaskDisabledException
 from qfluentwidgets import FluentIcon
 
 from src.data.FeatureList import FeatureList as fL
-from src.tasks.mixin.login_mixin import LoginMixin
+from src.tasks.account.account_mixin import AccountMixin
 from src.tasks.sequence_parser import parse_int_sequence
 from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
@@ -30,7 +30,7 @@ class DeliveryRow:
     box: Tuple[float, float, float, float]  # (x1, y1, x2, y2)
 
 
-class DeliveryTask(ZipLineMixin, MapMixin, LoginMixin):
+class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
     """运输委托自动化任务类 - 处理游戏中的送货操作"""
 
     # 配置键名常量
@@ -500,7 +500,7 @@ class DeliveryTask(ZipLineMixin, MapMixin, LoginMixin):
                 self.wait_pop_up(after_sleep=2)
                 break
 
-    def run_one_account(self, account_info):
+    def _run_single_delivery_cycle(self):
         if self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE:
             ends_list_pattern_dict = {}
             for end in self.ends:
@@ -597,7 +597,16 @@ class DeliveryTask(ZipLineMixin, MapMixin, LoginMixin):
                 self.zip_line_list_go(zip_line_list, need_scroll=self.config.get(self.CFG_SCROLL_ENABLE))
 
     def run(self):
-        if self.multi_account_mode and self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE and (not self.config.get(self.CFG_ONLY_DELIVER) or not self.config.get(self.CFG_ONLY_ACCEPT)):
-            self.run_multi_account()
-        else:
-            self.run_one_account({"username": "default", "password": "", "account_id": ""})
+        """运输委托任务的主入口，支持与日常任务一致的多账号执行逻辑。"""
+        try:
+            allow_multi = self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE
+            for repeat_idx, repeat_times in self.iter_multi_account_context(
+                repeat_times=1,
+                empty_accounts_message="多账户模式已开启，但账号列表为空，自动送货任务结束",
+                account_log_suffix="自动送货",
+                allow_multi_account=allow_multi,
+            ):
+                self._run_single_delivery_cycle()
+
+        except Exception as e:
+            self.handle_task_exception(e, 'DeliveryTask_Exception')

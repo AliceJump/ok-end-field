@@ -173,7 +173,6 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                         self.press_key('f')
                         self.wait_ui_stable(refresh_interval=1)
                         left_exchange_time = 0
-                        scroll_count = 0
                         exchange_not_found = True
                         continue
                 elif left_help_time > 0:

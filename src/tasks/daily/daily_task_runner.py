@@ -64,45 +64,47 @@ class DailyTaskRunner:
         self.current_task_key = None
         return True
 
-    def run(self):
+    def run(self, repeat_times: int = 1):
         self.task.log_info("开始执行日常任务...", notify=True)
-
+        all_fail_tasks = []
+        actual_repeat_total = 0
         self._reset_task_status()
-        repeat_times = self.task.config.get("重复测试的次数", 1)
-        if self.task.debug:
-            all_fail_tasks = []
         try:
-            for repeat_idx in range(repeat_times):
-                # 确保在主界面
-                self.task.ensure_main(time_out=600)
+            for repeat_idx, repeat_total in self.task.iter_multi_account_context(
+                repeat_times=repeat_times,
+                empty_accounts_message="多账户模式已开启，但账号列表为空，日常任务结束",
+                account_log_suffix="任务执行",
+            ):
+                actual_repeat_total = repeat_total
+                if not self.task.config.get("多账户模式", False) and self.task.debug:
+                    self.task.log_info(f"调试模式，第 {repeat_idx + 1}/{repeat_total} 轮")
 
-                # 执行任务列表
+                if not self.task._logged_in:
+                    self.task.ensure_main(time_out=600)
+                else:
+                    self.task.ensure_main()
+                self.task.log_info(f"开始第 {repeat_idx + 1}/{repeat_total} 轮任务执行")
+
                 for key, func in self.task_items:
                     self.execute_task(key, func)
 
-                # 输出结果
                 if self.task_status["failed"]:
-                    self.task.log_info(
-                        f"失败任务: {self.task_status['failed']}",
-                        notify=True
-                    )
+                    all_fail_tasks.append((repeat_idx + 1, self.task_status["failed"]))
+                    self.task.log_info(f"第 {repeat_idx + 1} 轮 | 失败任务: {self.task_status['failed']}", notify=True)
                 else:
-                    self.task.log_info("日常完成!", notify=True)
+                    self.task.log_info(f"第 {repeat_idx + 1} 轮 | 日常完成!", notify=True)
 
-                if self.task.debug:
-                    if self.task_status["failed"]:
-                        all_fail_tasks.append((repeat_idx + 1, self.task_status["failed"]))
-                        self.task.log_info(f"第 {repeat_idx + 1} 轮 | 失败任务: {self.task_status['failed']}", notify=True)
-                    else:
-                        self.task.log_info(f"第 {repeat_idx + 1} 轮 | 日常完成!", notify=True)
-
-                # 同步状态
                 self._sync_task_status_info()
-            # 仅退出游戏逻辑
+
+            if actual_repeat_total > 1:
+                if all_fail_tasks:
+                    self.task.log_info(f"执行完成，失败统计: {all_fail_tasks}", notify=True)
+                else:
+                    self.task.log_info("所有任务均成功完成!", notify=True)
+
             if self.task.config.get("仅退出游戏", False):
                 self.task.kill_game()
                 raise Exception("任务完成，仅退出游戏, 终止其他过程")
-
         except Exception as e:
             self.handle_exception(e)
 

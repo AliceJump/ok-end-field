@@ -4,7 +4,7 @@
 #
 #    pip-compile '.\requirements.in'
 #
-ok-script-aj-patch==1.0.109.post5
+ok-script-aj-patch==1.0.109.post3
     # via -r .\requirements.in
 playwright==1.57.0
 onnxocr-ppocrv5==0.0.14

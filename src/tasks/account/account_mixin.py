@@ -21,7 +21,7 @@ class AccountMixin(LoginMixin):
             ),
             "账号列表": (
                 "账号列表，每行一个账号（手机号）。\n"
-                "兼容旧格式：每行可写成 `账号,密码`，密码可选且不会影响账号ID。\n"
+                "兼容旧格式：每行可写成 `账号,密码`，但密码字段会被忽略且不会被存储。\n"
                 "登录时也可使用手机号后四位进行匹配（若唯一）。"
             ),
         })
@@ -46,10 +46,8 @@ class AccountMixin(LoginMixin):
             if "," in line:
                 username_part, password_part = line.split(",", 1)
                 username = username_part.strip()
-                password = password_part.strip()
             else:
                 username = line.strip()  # ✅ 兼容只有账号的情况
-                password = ""
 
             if not username:
                 self.log_info(f"账号格式错误，已跳过: {line}")
@@ -60,7 +58,6 @@ class AccountMixin(LoginMixin):
                 {
                     "account_id": account_id,
                     "username": username,
-                    "password": password,
                 }
             )
 
