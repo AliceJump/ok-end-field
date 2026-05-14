@@ -28,7 +28,6 @@ class Test(BaseEfTask):
                 "YOLO模型": default_model,
                 "检测目标": default_target,
                 "检测置信度": 0.7,
-                "扫描次数": 20,
                 "扫描间隔(秒)": 0.2,
             }
         )
@@ -37,7 +36,6 @@ class Test(BaseEfTask):
                 "YOLO模型": "选择模型配置（来自 src/yolo/models.py）",
                 "检测目标": "选择模型 labels 的 value 作为目标类别",
                 "检测置信度": "0~1，值越高越严格",
-                "扫描次数": "循环检测次数",
                 "扫描间隔(秒)": "每次检测后的等待时间",
             }
         )
@@ -49,7 +47,6 @@ class Test(BaseEfTask):
         target_name = str(self.config.get("检测目标", self.default_config.get("检测目标", ""))).strip()
         conf = float(self.config.get("检测置信度", 0.7) or 0.7)
         conf = max(0.0, min(1.0, conf))
-        scan_times = max(1, int(self.config.get("扫描次数", 20) or 20))
         interval = max(0.0, float(self.config.get("扫描间隔(秒)", 0.2) or 0.2))
 
         self.set_yolo_model(model_key)
@@ -58,24 +55,27 @@ class Test(BaseEfTask):
             raise ValueError(f"检测目标[{target_name}]不在模型[{model_key}]labels中，可选: {available_targets}")
 
         self.log_info(
-            f"开始YOLO实测扫描: model={model_key}, target={target_name}, conf={conf:.2f}, scans={scan_times}",
+            f"开始YOLO实测扫描: model={model_key}, target={target_name}, conf={conf:.2f}",
             notify=True,
         )
 
+        scan_count = 0
         found_count = 0
         max_conf = 0.0
-        for i in range(scan_times):
-            results = self.yolo_detect(name=target_name, conf=conf, model_key=model_key)
-            if results:
-                found_count += 1
-                top_conf = float(results[0].confidence or 0.0)
-                max_conf = max(max_conf, top_conf)
-                self.log_info(f"[{i + 1}/{scan_times}] 检测到 {len(results)} 个目标, top_conf={top_conf:.3f}")
-            else:
-                self.log_info(f"[{i + 1}/{scan_times}] 未检测到目标")
-            self.sleep(interval)
-
-        self.log_info(
-            f"YOLO实测完成: 命中轮次={found_count}/{scan_times}, 最高置信度={max_conf:.3f}",
-            notify=True,
-        )
+        try:
+            while True:
+                scan_count += 1
+                results = self.yolo_detect(name=target_name, conf=conf, model_key=model_key)
+                if results:
+                    found_count += 1
+                    top_conf = float(results[0].confidence or 0.0)
+                    max_conf = max(max_conf, top_conf)
+                    self.log_info(f"[{scan_count}] 检测到 {len(results)} 个目标, top_conf={top_conf:.3f}")
+                else:
+                    self.log_info(f"[{scan_count}] 未检测到目标")
+                self.sleep(interval)
+        finally:
+            self.log_info(
+                f"YOLO实测结束: 总扫描={scan_count}, 命中轮次={found_count}, 最高置信度={max_conf:.3f}",
+                notify=True,
+            )
