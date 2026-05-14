@@ -28,8 +28,8 @@ class _DummyTask(RuntimeMixin):
 
 
 class TestYoloDetect(unittest.TestCase):
-    def test_yolo_detect_supports_injected_detections_and_debug_draw(self):
-        task = _DummyTask(debug=True, use_overlay=True)
+    def test_yolo_detect_supports_injected_detections_and_overlay_draw(self):
+        task = _DummyTask(debug=False, use_overlay=True)
         roi = Box(100, 200, 300, 200)
         detections = [
             Box(10, 20, 30, 40, name="battle_end", confidence=0.91),
@@ -48,7 +48,7 @@ class TestYoloDetect(unittest.TestCase):
         self.assertEqual("yolo_filtered_battle_end", task.draw_calls[1][0])
         self.assertEqual("red", task.draw_calls[1][2])
 
-    def test_yolo_detect_skips_debug_draw_when_overlay_hidden(self):
+    def test_yolo_detect_skips_draw_when_overlay_hidden(self):
         task = _DummyTask(debug=True, use_overlay=False)
         detections = [Box(10, 20, 30, 40, name="battle_end", confidence=0.91)]
 

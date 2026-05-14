@@ -903,7 +903,7 @@ YOLO_MODELS = {
 
 `config.py` 中 `yolo.default_model` 仅用于启动时预加载默认模型。
 
-在 debug 模式下，且开启「显示调试悬浮窗（Debug Overlay）」时会自动画框：
+开启「显示调试悬浮窗（Debug Overlay）」时会自动画框：
 - 黄色：YOLO 原始检测结果
 - 红色：按 `name` 过滤后的结果
 

@@ -207,9 +207,6 @@ class RuntimeMixin:
         return partial(self.isolate_by_hsv_ranges, ranges=ranges)
 
     def _is_debug_overlay_enabled(self) -> bool:
-        if not getattr(self, "debug", False):
-            return False
-
         config_holders = (
             getattr(self, "executor", None),
             self,
