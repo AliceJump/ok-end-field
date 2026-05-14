@@ -206,6 +206,35 @@ class RuntimeMixin:
     def make_hsv_isolator(self, ranges):
         return partial(self.isolate_by_hsv_ranges, ranges=ranges)
 
+    def _is_debug_overlay_enabled(self) -> bool:
+        if not getattr(self, "debug", False):
+            return False
+
+        config_holders = (
+            getattr(self, "executor", None),
+            self,
+        )
+        for holder in config_holders:
+            ok_config = getattr(holder, "ok_config", None)
+            if ok_config is None:
+                continue
+            getter = getattr(ok_config, "get", None)
+            if callable(getter):
+                return bool(getter("use_overlay", False))
+
+        try:
+            from ok import og  # type: ignore
+
+            app = getattr(og, "app", None)
+            ok_config = getattr(app, "ok_config", None)
+            getter = getattr(ok_config, "get", None)
+            if callable(getter):
+                return bool(getter("use_overlay", False))
+        except Exception:
+            pass
+
+        return False
+
     def yolo_detect(
             self,
             name: str | list[str],
@@ -280,10 +309,11 @@ class RuntimeMixin:
             if det_name in target_names:
                 filtered_results.append(new_box)
 
-        if self.debug:
+        debug_overlay_enabled = self._is_debug_overlay_enabled()
+        if debug_overlay_enabled:
             debug_tag = "_".join(sorted(target_names)) or "no_target"
-            self.draw_boxes(f"yolo_raw_{debug_tag}", raw_results, color="yellow")
-            self.draw_boxes(f"yolo_filtered_{debug_tag}", filtered_results, color="red")
+            self.draw_boxes(f"yolo_raw_{debug_tag}", raw_results, color="yellow", debug=debug_overlay_enabled)
+            self.draw_boxes(f"yolo_filtered_{debug_tag}", filtered_results, color="red", debug=debug_overlay_enabled)
 
         self.log_info(f"yolo_detect: filtered detections count = {len(filtered_results)}")
 

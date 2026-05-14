@@ -7,8 +7,9 @@ from src.tasks.mixin.runtime_mixin import RuntimeMixin
 
 
 class _DummyTask(RuntimeMixin):
-    def __init__(self, debug=True):
+    def __init__(self, debug=True, use_overlay=False):
         self.debug = debug
+        self.ok_config = {"use_overlay": use_overlay}
         self.draw_calls = []
         self.logs = []
 
@@ -28,7 +29,7 @@ class _DummyTask(RuntimeMixin):
 
 class TestYoloDetect(unittest.TestCase):
     def test_yolo_detect_supports_injected_detections_and_debug_draw(self):
-        task = _DummyTask(debug=True)
+        task = _DummyTask(debug=True, use_overlay=True)
         roi = Box(100, 200, 300, 200)
         detections = [
             Box(10, 20, 30, 40, name="battle_end", confidence=0.91),
@@ -46,6 +47,15 @@ class TestYoloDetect(unittest.TestCase):
         self.assertEqual("yellow", task.draw_calls[0][2])
         self.assertEqual("yolo_filtered_battle_end", task.draw_calls[1][0])
         self.assertEqual("red", task.draw_calls[1][2])
+
+    def test_yolo_detect_skips_debug_draw_when_overlay_hidden(self):
+        task = _DummyTask(debug=True, use_overlay=False)
+        detections = [Box(10, 20, 30, 40, name="battle_end", confidence=0.91)]
+
+        results = task.yolo_detect(name="battle_end", detections=detections)
+
+        self.assertEqual(1, len(results))
+        self.assertEqual(0, len(task.draw_calls))
 
     def test_yolo_detect_requires_name(self):
         task = _DummyTask(debug=False)
