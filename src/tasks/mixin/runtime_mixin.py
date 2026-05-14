@@ -216,6 +216,7 @@ class RuntimeMixin:
 
         if detections is None:
             if self.detector is None:
+                self.log_error("yolo_detect: detector is not available")
                 return []
             detections = self.detector.detect(detect_frame, threshold=conf)
         detections = detections or []
@@ -246,7 +247,7 @@ class RuntimeMixin:
                 filtered_results.append(new_box)
 
         if self.debug:
-            debug_tag = "_".join(sorted(target_names)) or "all_targets"
+            debug_tag = "_".join(sorted(target_names)) or "no_target"
             self.draw_boxes(f"yolo_raw_{debug_tag}", raw_results, color="yellow")
             self.draw_boxes(f"yolo_filtered_{debug_tag}", filtered_results, color="red")
 
