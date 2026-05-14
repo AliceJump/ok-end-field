@@ -137,7 +137,7 @@ config = {
         ["src.tasks.BattleTask", "BattleTask"],
         ["src.tasks.PeriodicScreenshotTask", "PeriodicScreenshotTask"],
         ["src.tasks.TestStartGame", "TestStartGame"],
-        ["src.tasks.Test", "Test"],
+        ["src.tasks.RealtimeDetectTask", "RealtimeDetectTask"],
         ["ok.task.DiagnosisTask", "DiagnosisTask"],
     ],
     "trigger_tasks": [  # 不断执行的触发式任务
