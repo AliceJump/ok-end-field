@@ -865,6 +865,7 @@ def yolo_detect(
     frame=None,
     box=None,
     conf=0.7,
+    detections=None,
 ) -> list[Box]
 ```
 
@@ -876,10 +877,15 @@ def yolo_detect(
 | `frame` | `ndarray \| None` | 指定帧，`None` 则自动截取 |
 | `box` | `Box \| None` | 限制检测 ROI，`None` 为全屏 |
 | `conf` | `float` | 置信度阈值，默认 `0.7` |
+| `detections` | `list[Box] \| None` | 测试注入检测结果；传入后跳过模型推理，仅执行筛选与坐标映射 |
 
 ```python
 boxes = self.yolo_detect("battle_end", box=self.box.center, conf=0.6)
 ```
+
+在 debug 模式下会自动画框：
+- 黄色：YOLO 原始检测结果
+- 红色：按 `name` 过滤后的结果
 
 ---
 

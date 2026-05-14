@@ -190,6 +190,7 @@ class RuntimeMixin:
             frame: np.ndarray | None = None,
             box: Box | None = None,
             conf: float = 0.7,
+            detections: list[Box] | None = None,
     ) -> list[Box]:
         if not name:
             raise ValueError("yolo_detect 至少需要传入一个 name")
@@ -213,13 +214,21 @@ class RuntimeMixin:
             offset_x = int(box.x)
             offset_y = int(box.y)
 
-        detections = self.detector.detect(detect_frame, threshold=conf)
+        if detections is None:
+            if self.detector is None:
+                return []
+            detections = self.detector.detect(detect_frame, threshold=conf)
+        detections = detections or []
+
         self.log_info(f"yolo_detect: raw detections count = {len(detections)}")
-        results: list[Box] = []
+        raw_results: list[Box] = []
+        filtered_results: list[Box] = []
 
         for det in detections:
-            self.log_info(f"Raw detection: name={getattr(det, 'name', None)}, conf={det.confidence:.3f}")
-            if getattr(det, "name", None) not in target_names:
+            det_name = getattr(det, "name", None)
+            det_conf = float(getattr(det, "confidence", 0.0) or 0.0)
+            self.log_info(f"Raw detection: name={det_name}, conf={det_conf:.3f}")
+            if not all(hasattr(det, attr) for attr in ("x", "y", "width", "height")):
                 continue
 
             new_box = Box(
@@ -229,14 +238,21 @@ class RuntimeMixin:
                 int(det.height),
             )
 
-            new_box.name = det.name
-            new_box.confidence = det.confidence
+            new_box.name = det_name
+            new_box.confidence = det_conf
+            raw_results.append(new_box)
 
-            results.append(new_box)
+            if det_name in target_names:
+                filtered_results.append(new_box)
 
-        self.log_info(f"yolo_detect: filtered detections count = {len(results)}")
+        if self.debug:
+            debug_tag = "_".join(sorted(target_names))
+            self.draw_boxes(f"yolo_raw_{debug_tag}", raw_results, color="yellow")
+            self.draw_boxes(f"yolo_filtered_{debug_tag}", filtered_results, color="red")
 
-        return sorted(results, key=lambda item: item.confidence, reverse=True)
+        self.log_info(f"yolo_detect: filtered detections count = {len(filtered_results)}")
+
+        return sorted(filtered_results, key=lambda item: item.confidence, reverse=True)
 
     def wait_ui_stable(
             self,
