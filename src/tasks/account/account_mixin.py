@@ -43,11 +43,7 @@ class AccountMixin(LoginMixin):
             if not line:
                 continue  # ✅ 跳过空行
 
-            if "," in line:
-                username_part, password_part = line.split(",", 1)
-                username = username_part.strip()
-            else:
-                username = line.strip()  # ✅ 兼容只有账号的情况
+            username = line.split(",", 1)[0].strip() if "," in line else line.strip()  # ✅ 兼容只有账号的情况
 
             if not username:
                 self.log_info(f"账号格式错误，已跳过: {line}")

@@ -107,6 +107,7 @@ class BaseEfTask(
             if accounts_bool:
                 account = accounts_list[repeat_idx]
                 username = str(account.get("username", "")).strip()
+                # 保持兼容：若外部提供了旧结构中的密码字段，则沿用；未提供时默认空字符串。
                 password = str(account.get("password", ""))
                 account_id = str(account.get("account_id", "")).strip() or username
                 if not username:
