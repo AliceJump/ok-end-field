@@ -218,11 +218,14 @@ class RuntimeMixin:
         if not name:
             raise ValueError("yolo_detect 至少需要传入一个 name")
         raw_names = [name] if isinstance(name, str) else name
-        target_names = {
+        ordered_target_names = [
             str(n.value) if isinstance(n, Enum) else str(n)
             for n in raw_names
             if n is not None
-        }
+        ]
+        target_names = {n for n in ordered_target_names}
+        if not ordered_target_names:
+            raise ValueError("yolo_detect 至少需要一个有效 name")
 
         frame = frame if frame is not None else self.next_frame()
         if frame is None:
@@ -238,7 +241,14 @@ class RuntimeMixin:
             offset_y = int(box.y)
 
         if detections is None:
-            detector = self.detector if model_key is None else self.set_yolo_model(model_key)
+            if model_key is None:
+                loader = self.yolo_loader()
+                first_name = ordered_target_names[0]
+                resolved_model_key, detector = loader.get_detector_for_name(first_name)
+                self._yolo_model_key = resolved_model_key
+                self._detector = detector
+            else:
+                detector = self.set_yolo_model(model_key)
             if detector is None:
                 self.log_error("yolo_detect: detector is not available")
                 return []

@@ -34,7 +34,7 @@ class Test(BaseEfTask):
         )
         self.config_description.update(
             {
-                "YOLO模型": "选择模型配置（来自 config['yolo']['models']）",
+                "YOLO模型": "选择模型配置（来自 src/yolo/models.py）",
                 "检测目标": "选择模型 labels 的 value 作为目标类别",
                 "检测置信度": "0~1，值越高越严格",
                 "扫描次数": "循环检测次数",
