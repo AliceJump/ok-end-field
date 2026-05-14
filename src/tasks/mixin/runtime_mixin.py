@@ -225,11 +225,11 @@ class RuntimeMixin:
         filtered_results: list[Box] = []
 
         for det in detections:
+            if not all(hasattr(det, attr) for attr in ("x", "y", "width", "height")):
+                continue
             det_name = getattr(det, "name", None)
             det_conf = float(getattr(det, "confidence", 0.0) or 0.0)
             self.log_info(f"Raw detection: name={det_name}, conf={det_conf:.3f}")
-            if not all(hasattr(det, attr) for attr in ("x", "y", "width", "height")):
-                continue
 
             new_box = Box(
                 int(det.x + offset_x),
@@ -246,7 +246,7 @@ class RuntimeMixin:
                 filtered_results.append(new_box)
 
         if self.debug:
-            debug_tag = "_".join(sorted(target_names))
+            debug_tag = "_".join(sorted(target_names)) or "all_targets"
             self.draw_boxes(f"yolo_raw_{debug_tag}", raw_results, color="yellow")
             self.draw_boxes(f"yolo_filtered_{debug_tag}", filtered_results, color="red")
 
