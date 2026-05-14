@@ -107,8 +107,6 @@ class BaseEfTask(
             if accounts_bool:
                 account = accounts_list[repeat_idx]
                 username = str(account.get("username", "")).strip()
-                # 保持兼容：若外部提供了旧结构中的密码字段，则沿用；未提供时默认空字符串。
-                password = str(account.get("password", ""))
                 account_id = str(account.get("account_id", "")).strip() or username
                 if not username:
                     self.log_info(f"第 {repeat_idx + 1}/{repeat_times} 个账号为空，已跳过")
@@ -116,7 +114,7 @@ class BaseEfTask(
 
                 self.set_current_account(username, account_id)
                 self.log_info(f"开始第 {repeat_idx + 1}/{repeat_times} 个账号({username[-4:]}){account_log_suffix}")
-                self.login_flow(username, password)
+                self.login_flow(username)
             else:
                 self.set_current_account("", "")
 
