@@ -409,6 +409,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         self.gather_near_transfer_point_dict.update({
             "枢纽区": self.box.top,
             "源石研究园": self.box.top,
+            "试验园区": self.box.top,
             "矿脉源区": self.box.right,
             "供能高地": self.box.bottom_right,
             "武陵城": self.box.top_left,
@@ -577,9 +578,13 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 # 高阶关卡，使用 feature_dict 查找位置
                 location = self.find_feature(feature_name=higher_order_feature_dict[stage_name])
             else:
+                stage_search_box = self.box.left
+                if stage_name == "试验园区":
+                    # 试验园区列表搜索区域：x 右半边，y 中间二分之一
+                    stage_search_box = self.box_of_screen(0.5, 0.25, 1, 0.75)
                 # 普通关卡
                 location = self.wait_ocr(match=re.compile(stage_name if stage_name != '源石研究园' else '源石研究'),
-                                         box=self.box.left, log=True, time_out=5)
+                                         box=stage_search_box, log=True, time_out=5)
                 # 「重度能量淤积点·源石研究园」会被居中指针挡住 “园”
 
             if location:
