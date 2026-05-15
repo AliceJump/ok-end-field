@@ -11,12 +11,16 @@ from qfluentwidgets import FluentIcon
 from src.data.delivery_area import (
     DEFAULT_DELIVERY_AREA,
     DELIVERY_AREA_CONFIG,
+    DELIVERY_TARGET_TICKET_NUM_OPTIONS,
 )
 from src.data.delivery_area_service import (
     extract_delivery_location,
+    get_accept_feature_labels,
     get_delivery_locations,
+    get_delivery_target_ocr_pattern,
     get_delivery_targets,
     get_full_cycle_targets,
+    get_task_model_area,
     get_transfer_search_area,
 )
 from src.data.FeatureList import FeatureList as fL
@@ -79,10 +83,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self.default_config.update({"_enabled": True})
         self.name = "自动送货"
         self.description = "根据地区配置自动送货,教程视频 BV1LLc7zFEF9"
-        selected_delivery_area = self.config.get(self.CFG_DELIVERY_AREA, DEFAULT_DELIVERY_AREA)
-        if selected_delivery_area not in DELIVERY_AREA_CONFIG:
-            selected_delivery_area = DEFAULT_DELIVERY_AREA
-        self._configure_delivery_area(selected_delivery_area)
+        self._configure_delivery_area(DEFAULT_DELIVERY_AREA)
         self.support_schedule_task = True
         self.support_multi_account = True
         self.config_description.update({
@@ -124,7 +125,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         }
         self.config_type[self.CFG_TARGET_TICKET_NUM] = {
             "type": "drop_down",
-            "options": ["119000","79800", "73100"],
+            "options": DELIVERY_TARGET_TICKET_NUM_OPTIONS,
         }
         self.config_type[self.CFG_FULL_CYCLE_LOCATION] = {
             "type": "drop_down",
@@ -417,11 +418,11 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self.try_time = 0
         self.ensure_main(time_out=120)
         self.log_info("前置操作：按Y，点击‘仓储节点’，点击‘运送委托列表’")
-        self.to_model_area("武陵", "仓储节点")
+        self.to_model_area(get_task_model_area(self.delivery_area), "仓储节点")
         delivery_box = self.wait_ocr(match="运送委托列表", time_out=5)
         if delivery_box:
             self.click(delivery_box[0], move_back=True, after_sleep=0.5)
-            self.switch_to_area_delivery_list("武陵")
+            self.switch_to_area_delivery_list(self.delivery_area)
         else:
             self.log_info("未找到‘运送委托列表’，退出")
             return False
@@ -456,15 +457,10 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                                 to_x / self.width,
                                 to_y / self.height,
                             )
-                            feature_list = [
-                                fL.wuling_7_31w,
-                            ]
-                            if target_num == "79800":
-                                for i in range(len(feature_list)):
-                                    feature_list[i] = feature_list[i].replace("7_31w", "7_98w")
-                            elif target_num == "119000":
-                                for i in range(len(feature_list)):
-                                    feature_list[i] = feature_list[i].replace("7_31w", "11_9w")
+                            feature_list = get_accept_feature_labels(self.delivery_area, target_num)
+                            if not feature_list:
+                                self.log_info(f"当前地区({self.delivery_area})未配置目标券数({target_num})对应接单特征")
+                                continue
                             result = None
                             for feature_name in feature_list:
                                 result = self.find_feature(
@@ -620,11 +616,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         if self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE:
             ends_list_pattern_dict = {}
             for end in self.ends:
-                if end == "常沄":
-                    pattern = re.compile(r"常[沄云汶运法]")
-                else:
-                    pattern = re.compile(end)
-
+                pattern = get_delivery_target_ocr_pattern(self.delivery_area, end)
                 ends_list_pattern_dict[pattern] = end
             for _ in range(3):
                 self._accepted_delivery_location = None
@@ -701,7 +693,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self._accepted_delivery_location = test_location
             for end in full_cycle_targets:
                 transfer_search_box = self._get_transfer_search_box_by_location(test_location) or self.box.bottom
-                self.task_to_transfer_point(transfer_search_box)
+                self.task_to_transfer_point(self.box.bottom)
                 self.to_storage_point_and_back_zip_line(only_zip_line=True)
                 if self.wait_click_ocr(
                     match="登上滑索架",
