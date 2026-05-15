@@ -34,6 +34,35 @@ class TestDeliveryAreaConfig(unittest.TestCase):
         finally:
             DELIVERY_AREA_CONFIG.pop(area_name, None)
 
+    def test_get_task_model_area_returns_configured_value(self):
+        self.assertEqual(
+            delivery_area_service.get_task_model_area("武陵"),
+            "武陵",
+        )
+
+    def test_get_delivery_target_ocr_pattern_applies_override(self):
+        pattern = delivery_area_service.get_delivery_target_ocr_pattern("武陵", "常沄")
+        self.assertIsNotNone(pattern.search("常云"))
+        self.assertIsNotNone(pattern.search("常沄"))
+
+    def test_get_accept_feature_labels_returns_mapping_by_target_ticket(self):
+        self.assertEqual(
+            delivery_area_service.get_accept_feature_labels("武陵", "73100"),
+            ["wuling_7_31w"],
+        )
+        self.assertEqual(
+            delivery_area_service.get_accept_feature_labels("武陵", "79800"),
+            ["wuling_7_98w"],
+        )
+        self.assertEqual(
+            delivery_area_service.get_accept_feature_labels("武陵", "119000"),
+            ["wuling_11_9w"],
+        )
+        self.assertEqual(
+            delivery_area_service.get_accept_feature_labels("武陵", "000000"),
+            [],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

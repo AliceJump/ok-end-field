@@ -1,3 +1,5 @@
+import re
+
 from src.data.delivery_area import DELIVERY_AREA_CONFIG
 
 
@@ -41,3 +43,17 @@ def get_transfer_search_area(location_name: str | None, area_name: str) -> dict 
     if location_name is None:
         return None
     return _get_area_config(area_name)["transfer_search_area"].get(location_name)
+
+
+def get_task_model_area(area_name: str) -> str:
+    return _get_area_config(area_name).get("task_model_area", area_name)
+
+
+def get_delivery_target_ocr_pattern(area_name: str, target_name: str) -> re.Pattern:
+    pattern_overrides = _get_area_config(area_name).get("target_ocr_pattern_overrides", {})
+    return re.compile(pattern_overrides.get(target_name, target_name))
+
+
+def get_accept_feature_labels(area_name: str, target_ticket_num: str) -> list[str]:
+    mapping = _get_area_config(area_name).get("accept_feature_labels_by_target_ticket", {})
+    return mapping.get(target_ticket_num, [])
