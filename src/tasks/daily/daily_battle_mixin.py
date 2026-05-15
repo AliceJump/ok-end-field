@@ -409,6 +409,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         self.gather_near_transfer_point_dict.update({
             "枢纽区": self.box.top,
             "源石研究园": self.box.top,
+            "试验园区": self.box_of_screen(0.5, 0.25, 1, 0.75),
             "矿脉源区": self.box.right,
             "供能高地": self.box.bottom_right,
             "武陵城": self.box.top_left,
