@@ -1,6 +1,9 @@
 import re
 
-from src.data.delivery_area import DELIVERY_AREA_CONFIG
+from src.data.FeatureList import FeatureList
+from src.data.delivery_area import DELIVERY_AREA_CONFIG, DELIVERY_TICKET_PRICE_CODE_MAP
+
+FEATURE_LIST_VALUES = {feature.value for feature in FeatureList}
 
 
 def _get_area_config(area_name: str) -> dict:
@@ -55,5 +58,11 @@ def get_delivery_target_ocr_pattern(area_name: str, target_name: str) -> re.Patt
 
 
 def get_accept_feature_labels(area_name: str, target_ticket_num: str) -> list[str]:
-    mapping = _get_area_config(area_name).get("accept_feature_labels_by_target_ticket", {})
-    return mapping.get(target_ticket_num, [])
+    area_code = _get_area_config(area_name).get("feature_label_area_code")
+    price_code = DELIVERY_TICKET_PRICE_CODE_MAP.get(target_ticket_num)
+    if not area_code or not price_code:
+        return []
+    label = f"{area_code}_{price_code}"
+    if label not in FEATURE_LIST_VALUES:
+        return []
+    return [label]

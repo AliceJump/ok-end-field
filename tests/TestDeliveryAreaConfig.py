@@ -63,6 +63,23 @@ class TestDeliveryAreaConfig(unittest.TestCase):
             [],
         )
 
+    def test_get_accept_feature_labels_returns_empty_when_composed_label_not_in_feature_list(self):
+        area_name = "测试区域"
+        DELIVERY_AREA_CONFIG[area_name] = {
+            "feature_label_area_code": "test_area",
+            "delivery_locations": ["测试点"],
+            "delivery_targets_by_location": {"测试点": []},
+            "transfer_search_area": {"测试点": {"preset": "top"}},
+            "ocr_priority_locations": ["测试点"],
+        }
+        try:
+            self.assertEqual(
+                delivery_area_service.get_accept_feature_labels(area_name, "73100"),
+                [],
+            )
+        finally:
+            DELIVERY_AREA_CONFIG.pop(area_name, None)
+
 
 if __name__ == "__main__":
     unittest.main()
