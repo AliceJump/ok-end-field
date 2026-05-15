@@ -63,7 +63,7 @@ class TestDeliveryAreaConfig(unittest.TestCase):
             [],
         )
 
-    def test_get_accept_feature_labels_returns_empty_when_composed_label_not_in_feature_list(self):
+    def test_get_accept_feature_labels_returns_empty_for_invalid_label(self):
         area_name = "测试区域"
         DELIVERY_AREA_CONFIG[area_name] = {
             "feature_label_area_code": "test_area",

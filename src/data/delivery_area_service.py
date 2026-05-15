@@ -3,7 +3,7 @@ import re
 from src.data.FeatureList import FeatureList
 from src.data.delivery_area import DELIVERY_AREA_CONFIG, DELIVERY_TICKET_PRICE_CODE_MAP
 
-FEATURE_LIST_VALUES = {feature.value for feature in FeatureList}
+VALID_FEATURE_LABELS = {feature.value for feature in FeatureList}
 
 
 def _get_area_config(area_name: str) -> dict:
@@ -63,6 +63,6 @@ def get_accept_feature_labels(area_name: str, target_ticket_num: str) -> list[st
     if not area_code or not price_code:
         return []
     label = f"{area_code}_{price_code}"
-    if label not in FEATURE_LIST_VALUES:
+    if label not in VALID_FEATURE_LABELS:
         return []
     return [label]
