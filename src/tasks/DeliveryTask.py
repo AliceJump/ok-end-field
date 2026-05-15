@@ -11,6 +11,7 @@ from qfluentwidgets import FluentIcon
 from src.data.delivery_area import (
     DEFAULT_DELIVERY_AREA,
     DELIVERY_AREA_CONFIG,
+    DELIVERY_TARGET_TICKET_NUM_OPTIONS,
 )
 from src.data.delivery_area_service import (
     extract_delivery_location,
@@ -82,10 +83,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self.default_config.update({"_enabled": True})
         self.name = "自动送货"
         self.description = "根据地区配置自动送货,教程视频 BV1LLc7zFEF9"
-        selected_delivery_area = self.config.get(self.CFG_DELIVERY_AREA, DEFAULT_DELIVERY_AREA)
-        if selected_delivery_area not in DELIVERY_AREA_CONFIG:
-            selected_delivery_area = DEFAULT_DELIVERY_AREA
-        self._configure_delivery_area(selected_delivery_area)
+        self._configure_delivery_area(DEFAULT_DELIVERY_AREA)
         self.support_schedule_task = True
         self.support_multi_account = True
         self.config_description.update({
@@ -127,7 +125,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         }
         self.config_type[self.CFG_TARGET_TICKET_NUM] = {
             "type": "drop_down",
-            "options": ["119000","79800", "73100"],
+            "options": DELIVERY_TARGET_TICKET_NUM_OPTIONS,
         }
         self.config_type[self.CFG_FULL_CYCLE_LOCATION] = {
             "type": "drop_down",
@@ -695,7 +693,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self._accepted_delivery_location = test_location
             for end in full_cycle_targets:
                 transfer_search_box = self._get_transfer_search_box_by_location(test_location) or self.box.bottom
-                self.task_to_transfer_point(transfer_search_box)
+                self.task_to_transfer_point(self.box.bottom)
                 self.to_storage_point_and_back_zip_line(only_zip_line=True)
                 if self.wait_click_ocr(
                     match="登上滑索架",

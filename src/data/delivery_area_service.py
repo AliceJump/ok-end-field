@@ -1,9 +1,32 @@
 import re
 
 from src.data.FeatureList import FeatureList
-from src.data.delivery_area import DELIVERY_AREA_CONFIG, DELIVERY_TICKET_PRICE_CODE_MAP
+from src.data.delivery_area import DELIVERY_AREA_CONFIG
 
 VALID_FEATURE_LABELS = {feature.value for feature in FeatureList}
+
+
+def format_delivery_ticket_price_code(target_ticket_num: str) -> str | None:
+    """把目标券数转换成接单特征里使用的价格码。
+
+    规则示例：
+    - 73100 -> 7_31w
+    - 79800 -> 7_98w
+    - 119000 -> 11_9w
+
+    返回 None 表示输入不是合法整数，或者无法转换成正的万券格式。
+    """
+    try:
+        ticket_num = int(str(target_ticket_num).strip())
+    except (TypeError, ValueError):
+        return None
+
+    if ticket_num <= 0:
+        return None
+
+    price_in_w = ticket_num / 10000
+    price_text = f"{price_in_w:.2f}".rstrip("0").rstrip(".")
+    return price_text.replace(".", "_") + "w"
 
 
 def _get_area_config(area_name: str) -> dict:
@@ -59,7 +82,7 @@ def get_delivery_target_ocr_pattern(area_name: str, target_name: str) -> re.Patt
 
 def get_accept_feature_labels(area_name: str, target_ticket_num: str) -> list[str]:
     area_code = _get_area_config(area_name).get("feature_label_area_code")
-    price_code = DELIVERY_TICKET_PRICE_CODE_MAP.get(target_ticket_num)
+    price_code = format_delivery_ticket_price_code(target_ticket_num)
     if not area_code or not price_code:
         return []
     label = f"{area_code}_{price_code}"
