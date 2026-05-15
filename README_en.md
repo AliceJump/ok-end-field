@@ -66,45 +66,10 @@ all potential risks.**
 
 ## 📥 Download Sources
 
-* **[GitHub](https://github.com/alicejump/ok-end-field/releases)**: Official release page with fast global access. (*
-  *Download the `setup.exe` installer, not the `Source Code` archive**)
-* **[Mirrorchyan](https://mirrorchyan.com/zh/projects?rid=ok-end-field&source=ok-ef-readme)**: China mirror (may require
-  a CD-KEY purchase).
-* **[Quark Drive](https://pan.quark.cn/s/a1052cec4d13)**: China cloud drive; free but requires account registration and
-  the client.
-
-## ✨ Features
-
-<img width="3200" height="2136"  src="./readme/1.jpg" />
-<img width="3200" height="2136"  src="./readme/2.jpg" />
-<img width="3200" height="2136"  src="./readme/3.jpg" />
-<img width="3200" height="2136"  src="./readme/4.jpg" />
-<img width="3200" height="2136"  src="./readme/5.jpg" />
-
-## Feature Overview (by task type)
-
-### One-time tasks (manual click to run)
-
-- Daily Task (see `docs/日常任务.md`, Chinese doc): gift giving, outpost exchange, delivery handling, market trading, stamina farming,
-  reward claim, and more
-- Stamina Farming (see `docs/体力本.md`, Chinese doc): normal/high-tier stages, danger stages, heavy energy nodes, skill timeline support
-- Delivery Commission Pickup (see `docs/运送委托接取.md`, Chinese doc): filter by ticket type + reward range and auto pickup
-- Auto Delivery (see `docs/自动送货.md`, Chinese doc): Wuling delivery automation with configurable route sequences (7.31w/7.98w)
-- Warehouse Transfer (see `docs/仓库物品转移.md`, Chinese doc): cross-warehouse batch transfer for selected items
-- Graduation Essence Scanner (see `docs/毕业基质识别.md`, Chinese doc): scan essence list and process lock/handling by
-  `assets/weapon_data.csv`
-- Periodic Screenshot: interval-based auto capture for data collection / training samples
-
-### Trigger tasks (background loop detection)
-
-- Auto Combat (see `docs/自动战斗.md`, Chinese doc): battle-state detection and automatic skill release
-- Auto Pickup: whitelist pickup + blacklist filtering
-- Auto Login: automatic relogin handling
-- Auto Skip Dialog: recognize and process skip/confirm flow
-
-### Scheduled tasks (Windows Task Scheduler management)
-
-- You can add one-time tasks into Windows Task Scheduler for automatic launch
+* **[GitHub](https://github.com/alicejump/ok-end-field/releases)**: Official release page with fast global access. (**Download the `setup.exe` installer, not the `Source Code` archive**)
+* **[Mirrorchyan](https://mirrorchyan.com/zh/projects?rid=ok-end-field&source=ok-ef-readme)**: China mirror (may require a CD-KEY purchase).
+* **[Baidu Pan](https://pan.baidu.com/s/1rxLRLkSx34xIL-nGib04sg?pwd=479z)**: Free download.
+* **[Quark Drive](https://pan.quark.cn/s/418018ddf7a0)**: Free download.
 
 ## Runtime Requirements & Recommendations
 
@@ -114,6 +79,31 @@ all potential risks.**
 - Privilege: run as Administrator recommended (required for source mode)
 - Path: prefer pure-English install/runtime path
 - Frame rate: stable 60 FPS recommended for combat and navigation tasks
+
+---
+
+## 🎮 Feature Overview (by task type)
+
+### One-time tasks (manual click to run)
+
+- [Daily Task](docs/日常任务.md): gift giving, outpost exchange, delivery handling, market trading, stamina farming, reward claim, and more
+- [Stamina Farming](docs/体力本.md): normal/high-tier stages, danger stages, heavy energy nodes, skill timeline support
+- [Delivery Commission Pickup](docs/运送委托接取.md): filter by ticket type + reward range and auto pickup
+- [Auto Delivery](docs/自动送货.md): Wuling delivery automation with configurable route sequences (7.31w/7.98w)
+- [Warehouse Transfer](docs/仓库物品转移.md): cross-warehouse batch transfer for selected items
+- [Graduation Essence Scanner](docs/毕业基质识别.md): scan essence list and process lock/handling by `assets/weapon_data.csv`
+- Periodic Screenshot: interval-based auto capture for data collection / training samples
+
+### Trigger tasks (background loop detection)
+
+- [Auto Combat](docs/自动战斗.md): battle-state detection and automatic skill release
+- Auto Pickup: whitelist pickup + blacklist filtering
+- Auto Login: automatic relogin handling
+- Auto Skip Dialog: recognize and process skip/confirm flow
+
+### Scheduled tasks (Windows Task Scheduler management)
+
+- You can add one-time tasks into Windows Task Scheduler for automatic launch
 
 ---
 
@@ -140,7 +130,28 @@ If you encounter issues, check the following in order:
 
 ---
 
+## 🛠 Maintenance Zone
+
+### Maintenance Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Auto Delivery Area Maintenance Workflow](docs/update/送货地区维护工作流.md) | Use when adding or adjusting delivery areas; explains how to maintain area data, template resources, and validation steps |
+| [Daily Gift Maintenance Workflow](docs/update/日常送礼维护工作流.md) | Use when adding character contacts or gift-giving features; explains how to add character data and contact templates |
+| [Master Data Maintenance Workflow](docs/update/主数据维护工作流.md) | Use when adding or adjusting game regions, stages, or product data; explains maintenance methods for all world data structures |
+
+---
+
 ## 💻 Developer Zone
+
+### Developer Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Quick Start Guide (QUICKSTART.md)](docs/dev/QUICKSTART.md) | Minimal workflow to run from source, launch the software, and create trigger/one-time tasks |
+| [Development Guide (DEVELOPMENT.md)](docs/dev/DEVELOPMENT.md) | Architecture overview, directory structure, development workflow, testing, CI/CD, and roadmap |
+| [API Reference (API.md)](docs/dev/API.md) | Detailed API docs for BaseEfTask, Mixin, ScreenPosition, KeyConfigManager, and more |
+| [Keyboard System (键盘操作体系.md)](docs/dev/键盘操作体系.md) | Hotkey mapping, key binding conventions, and send_key exception list |
 
 ### Run from source (Python)
 
@@ -164,12 +175,12 @@ python main_debug.py
 
 You can auto-start tasks via CLI:
 
-```bash
-# Example: start the first task and exit after completion
+```powershell
+# Start after automatically executing the 1st task 'Daily Task' and exit upon completion
 ok-ef.exe -t 1 -e
 ```
 
-* `-t` or `--task`: Automatically run the Nth task. `1` is the first task in the list（file [./src/config.py](./src/config.py) list `onetime_tasks`）as daily task.
+* `-t` or `--task`: Automatically run the Nth task. `1` is the first task in the list (file [./src/config.py](./src/config.py) list `onetime_tasks`) as daily task.
 * `-e` or `--exit`: Exit automatically after the task completes.
 
 ### Development debug & tests
