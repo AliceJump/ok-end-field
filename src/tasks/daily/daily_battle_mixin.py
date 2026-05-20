@@ -5,6 +5,7 @@ import traceback
 from datetime import datetime
 from dataclasses import dataclass
 
+from ok import TaskDisabledException
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import stages_cost, higher_order_feature_dict
 from src.data.world_map import stages_dict, stages_list
@@ -366,6 +367,8 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                             f"今日副本：{auto_stage}{tier_hint}。"
                         )
         except Exception as e:
+            if isinstance(e, TaskDisabledException):
+                raise
             self.log_info(f"刷体力自动选择异常: {e}\n{traceback.format_exc()}")
 
         if auto_stage:
@@ -506,6 +509,8 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                     try:
                         return self.battle_gather()
                     except Exception as e:
+                        if isinstance(e, TaskDisabledException):
+                            raise
                         self.log_info(f"battle_gather_extra 异常: {e}\n{traceback.format_exc()}")
                         self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyBattleMixin_battleGather_Extra_Exception_{self.battle_ctx.category_name}_{self.battle_ctx.stage_name}')
                         return False
@@ -518,6 +523,8 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 try:
                     return self.battle_gather()
                 except Exception as e:
+                    if isinstance(e, TaskDisabledException):
+                        raise
                     self.log_info(f"battle_gather 异常: {e}\n{traceback.format_exc()}")
                     self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyBattleMixin_battleGather_Exception_{self.battle_ctx.category_name}_{self.battle_ctx.stage_name}')
                     return False
@@ -525,6 +532,8 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 try:
                     return self.battle_space()
                 except Exception as e:
+                    if isinstance(e, TaskDisabledException):
+                        raise
                     self.log_info(f"battle_space 异常: {e}\n{traceback.format_exc()}")
                     self.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyBattleMixin_battleSpace_Exception_{self.battle_ctx.category_name}_{self.battle_ctx.stage_name}')
                     return False
@@ -863,6 +872,8 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 else:
                     self.move_keys('w', duration=0.25)
         except Exception as e:
+            if isinstance(e, TaskDisabledException):
+                raise
             if self.battle_ctx.category_name == "能量淤积点":
                 self.log_info(f"未找到奖励发放点，尝试二次寻路: {e}")
                 if self._gather_retry_navigate():
