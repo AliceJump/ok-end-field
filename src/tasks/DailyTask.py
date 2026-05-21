@@ -92,7 +92,7 @@ class DailyTask(
             self.default_config.update({"重复测试的次数": 1})
 
     def _bootstrap_daily_modules(self):
-        # 仅用于让模块把默认配置/描述注册到共享 context；实例本身不常驻。
+        # 仅用于让模块把默认配置/描述注册到共享 context； 实例本身不常驻。
         for module_cls in (
             DailyLiaisonModule,
             DailyRoutineModule,
@@ -116,9 +116,12 @@ class DailyTask(
     def _resolve_sequence_kwargs(self, raw_kwargs: dict | None):
         if not raw_kwargs:
             return {}
+        placeholder_value_map = {
+            BOX_RIGHT_PLACEHOLDER: self.box.right,
+        }
         resolved = {}
         for key, value in raw_kwargs.items():
-            resolved[key] = self.box.right if value == BOX_RIGHT_PLACEHOLDER else value
+            resolved[key] = placeholder_value_map.get(value, value)
         return resolved
 
     def build_task_plan(self):
