@@ -15,7 +15,13 @@ class WsPositionMixin:
         ws_host = getattr(self, "_ws_host", None)
         ws_port = getattr(self, "_ws_port", None)
         self._ws_host = ws_host if ws_host is not None else "127.0.0.1"
-        self._ws_port = int(ws_port) if ws_port is not None else 3001
+        if ws_port is None:
+            self._ws_port = 3001
+        else:
+            try:
+                self._ws_port = int(ws_port)
+            except (TypeError, ValueError):
+                self._ws_port = 3001
         self._ws_payload_queue = queue.Queue(maxsize=1)
         self._ws_server_thread = None
         self._ws_loop = None
