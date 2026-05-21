@@ -11,6 +11,7 @@ class DailyModuleBase:
         self.parent = parent
 
     def __getattr__(self, item):
+        """将未在模块实例上定义的共享能力（如OCR/导航/日志）委托给 DailyTask。"""
         return getattr(self.parent, item)
 
 

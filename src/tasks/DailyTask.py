@@ -33,6 +33,7 @@ class DailyTask(
         self.support_schedule_task = True
         self.support_multi_account = True
         self.daily_runner: DailyTaskRunner | None = None
+        # 按 build_task_plan 的执行顺序初始化业务模块，避免调度顺序与声明顺序脱节。
         self.daily_liaison = DailyLiaisonModule(self)
         self.daily_routine = DailyRoutineModule(self)
         self.daily_shop = DailyShopModule(self)
