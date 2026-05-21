@@ -92,7 +92,7 @@ class DailyTask(
             self.default_config.update({"重复测试的次数": 1})
 
     def _bootstrap_daily_modules(self):
-        # 仅用于让模块把默认配置/描述注册到共享 context； 实例本身不常驻。
+        # 仅用于让模块把默认配置/描述注册到共享 context; 实例本身不常驻。
         for module_cls in (
             DailyLiaisonModule,
             DailyRoutineModule,
