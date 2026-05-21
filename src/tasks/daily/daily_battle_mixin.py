@@ -64,6 +64,14 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         self.setup_daily_battle_module()
 
     def setup_daily_battle_module(self):
+        # 组合模式下不会执行 BattleMixin.__init__，这里补齐战斗运行时基础属性。
+        self.last_no_number_action_time = 0
+        self.exit_check_count = 0
+        self.lv_regex = re.compile(r"(?i)lv|\d{2}")
+        self.config_type["技能释放"] = {
+            "type": "multi_selection",
+            "options": ["1", "2", "3", "4"],
+        }
         self.gather_near_transfer_point_dict = dict()
         self.stages_list = stages_list
         self._reset_battle_state()
