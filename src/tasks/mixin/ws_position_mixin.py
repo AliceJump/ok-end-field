@@ -12,13 +12,19 @@ class WsPositionMixin:
     """提供本地 WS 位置消息接收能力（服务端模式）。"""
 
     def _init_ws_position_mixin(self):
-        self._ws_host = "127.0.0.1"
-        self._ws_port = 3001
+        ws_host = getattr(self, "_ws_host", None)
+        ws_port = getattr(self, "_ws_port", None)
+        self._ws_host = ws_host if ws_host is not None else "127.0.0.1"
+        self._ws_port = int(ws_port) if ws_port is not None else 3001
         self._ws_payload_queue = queue.Queue(maxsize=1)
         self._ws_server_thread = None
         self._ws_loop = None
         self._ws_stop_event = None
         self._ws_enabled = False
+
+    def _is_ws_position_server_enabled(self) -> bool:
+        thread = self._ws_server_thread
+        return bool(self._ws_enabled and thread and thread.is_alive())
 
     @staticmethod
     def _extract_position_payload(payload: dict[str, Any] | None):
@@ -99,8 +105,7 @@ class WsPositionMixin:
         if port:
             self._ws_port = int(port)
 
-        if self._ws_server_thread and self._ws_server_thread.is_alive():
-            self._ws_enabled = True
+        if self._is_ws_position_server_enabled():
             return
 
         self._ws_stop_event = None
