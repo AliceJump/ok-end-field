@@ -74,22 +74,15 @@ class DailyTask(
         ):
             module_cls(self)
 
-    def _run_daily_module(self, module_cls, method_name: str):
+    def _run_daily_module(self, module_cls, method_name: str, *args, **kwargs):
         module = module_cls(self)
         try:
-            return getattr(module, method_name)()
+            return getattr(module, method_name)(*args, **kwargs)
         finally:
             del module
 
-    def _build_module_task(self, key: str, module_cls, method_name: str):
-        return key, partial(self._run_daily_module, module_cls, method_name)
-
-    def _transfer_to_home_point_right(self):
-        module = DailyLiaisonModule(self)
-        try:
-            return module.transfer_to_home_point(box=self.box.right)
-        finally:
-            del module
+    def _build_module_task(self, key: str, module_cls, method_name: str, *args, **kwargs):
+        return key, partial(self._run_daily_module, module_cls, method_name, *args, **kwargs)
 
     def build_task_plan(self):
         return [
@@ -109,7 +102,7 @@ class DailyTask(
             self._build_module_task("⭐买物资", DailyBuyModule, "buy_staple_goods"),
             self._build_module_task("⭐活动奖励", DailyRoutineModule, "claim_activity_rewards"),
             self._build_module_task("⭐日常奖励", DailyRoutineModule, "claim_daily_rewards"),
-            ("⭐传送到帝江号右侧传送点", self._transfer_to_home_point_right),
+            self._build_module_task("⭐传送到帝江号右侧传送点", DailyLiaisonModule, "transfer_to_home_point", box=self.box.right),
             ("⭐执行结尾外部命令", self.launch_end_command_non_blocking),
         ]
 
