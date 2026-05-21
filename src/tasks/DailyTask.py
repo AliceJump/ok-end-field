@@ -22,6 +22,38 @@ from src.tasks.daily.finally_file import (
 from src.tasks.daily.daily_task_runner import DailyTaskRunner
 from src.tasks.mixin.end_command_mixin import EndCommandMixin
 
+DAILY_TASK_CONFIG_DESCRIPTION = {
+    "仅退出游戏": "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n开启发生异常时终止游戏时此选项不生效",
+    "发生异常时终止游戏": "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。",
+}
+
+DAILY_TASK_SEQUENCE = [
+    {"key": "⭐送礼", "module_cls": DailyLiaisonModule, "method_name": "execute_gift_task"},
+    {"key": "⭐帝江号一键存放", "module_cls": DailyLiaisonModule, "method_name": "boat_one_key_store"},
+    {"key": "⭐收邮件", "module_cls": DailyRoutineModule, "method_name": "claim_mail"},
+    {"key": "⭐据点兑换", "module_cls": DailyRoutineModule, "method_name": "exchange_outpost_goods"},
+    {"key": "⭐转交运送委托", "module_cls": DailyRoutineModule, "method_name": "delivery_send_others"},
+    {"key": "⭐转交委托奖励领取", "module_cls": DailyRoutineModule, "method_name": "claim_delivery_rewards"},
+    {"key": "⭐造装备", "module_cls": DailyRoutineModule, "method_name": "make_weapon"},
+    {"key": "⭐简易制作", "module_cls": DailyRoutineModule, "method_name": "make_simply"},
+    {"key": "⭐收信用", "module_cls": DailyRoutineModule, "method_name": "collect_credit"},
+    {"key": "⭐帝江号收菜", "module_cls": DailyRoutineModule, "method_name": "boat_claim_rewards"},
+    {"key": "⭐买信用商店", "module_cls": DailyShopModule, "method_name": "credit_shop"},
+    {"key": "⭐买卖货", "module_cls": DailyTradeModule, "method_name": "buy_sell"},
+    {"key": "⭐刷体力", "module_cls": DailyBattleModule, "method_name": "battle"},
+    {"key": "⭐买物资", "module_cls": DailyBuyModule, "method_name": "buy_staple_goods"},
+    {"key": "⭐活动奖励", "module_cls": DailyRoutineModule, "method_name": "claim_activity_rewards"},
+    {"key": "⭐日常奖励", "module_cls": DailyRoutineModule, "method_name": "claim_daily_rewards"},
+    {
+        "key": "⭐传送到帝江号右侧传送点",
+        "module_cls": DailyLiaisonModule,
+        "method_name": "transfer_to_home_point",
+        "kwargs": {"box": "box.right"},
+    },
+    {"key": "⭐执行结尾外部命令", "method_name": "launch_end_command_non_blocking"},
+]
+
+
 class DailyTask(
     AccountMixin,
     EndCommandMixin,
@@ -38,12 +70,7 @@ class DailyTask(
         self.support_multi_account = True
         self.daily_runner: DailyTaskRunner | None = None
         self._bootstrap_daily_modules()
-        self.config_description.update(
-            {
-                "仅退出游戏": "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n开启发生异常时终止游戏时此选项不生效",
-                "发生异常时终止游戏": "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。",
-            }
-        )
+        self.config_description.update(DAILY_TASK_CONFIG_DESCRIPTION)
         self.add_end_command_config(
             enable_description="是否在日常任务末尾执行一次外部命令行程序。",
             command_description=(
@@ -84,27 +111,26 @@ class DailyTask(
     def _build_module_task(self, key: str, module_cls, method_name: str, *args, **kwargs):
         return key, partial(self._run_daily_module, module_cls, method_name, *args, **kwargs)
 
+    def _resolve_sequence_kwargs(self, raw_kwargs: dict | None):
+        if not raw_kwargs:
+            return {}
+        resolved = {}
+        for key, value in raw_kwargs.items():
+            resolved[key] = self.box.right if value == "box.right" else value
+        return resolved
+
     def build_task_plan(self):
-        return [
-            self._build_module_task("⭐送礼", DailyLiaisonModule, "execute_gift_task"),
-            self._build_module_task("⭐帝江号一键存放", DailyLiaisonModule, "boat_one_key_store"),
-            self._build_module_task("⭐收邮件", DailyRoutineModule, "claim_mail"),
-            self._build_module_task("⭐据点兑换", DailyRoutineModule, "exchange_outpost_goods"),
-            self._build_module_task("⭐转交运送委托", DailyRoutineModule, "delivery_send_others"),
-            self._build_module_task("⭐转交委托奖励领取", DailyRoutineModule, "claim_delivery_rewards"),
-            self._build_module_task("⭐造装备", DailyRoutineModule, "make_weapon"),
-            self._build_module_task("⭐简易制作", DailyRoutineModule, "make_simply"),
-            self._build_module_task("⭐收信用", DailyRoutineModule, "collect_credit"),
-            self._build_module_task("⭐帝江号收菜", DailyRoutineModule, "boat_claim_rewards"),
-            self._build_module_task("⭐买信用商店", DailyShopModule, "credit_shop"),
-            self._build_module_task("⭐买卖货", DailyTradeModule, "buy_sell"),
-            self._build_module_task("⭐刷体力", DailyBattleModule, "battle"),
-            self._build_module_task("⭐买物资", DailyBuyModule, "buy_staple_goods"),
-            self._build_module_task("⭐活动奖励", DailyRoutineModule, "claim_activity_rewards"),
-            self._build_module_task("⭐日常奖励", DailyRoutineModule, "claim_daily_rewards"),
-            self._build_module_task("⭐传送到帝江号右侧传送点", DailyLiaisonModule, "transfer_to_home_point", box=self.box.right),
-            ("⭐执行结尾外部命令", self.launch_end_command_non_blocking),
-        ]
+        task_plan = []
+        for item in DAILY_TASK_SEQUENCE:
+            key = item["key"]
+            method_name = item["method_name"]
+            module_cls = item.get("module_cls")
+            kwargs = self._resolve_sequence_kwargs(item.get("kwargs"))
+            if module_cls:
+                task_plan.append(self._build_module_task(key, module_cls, method_name, **kwargs))
+            else:
+                task_plan.append((key, getattr(self, method_name)))
+        return task_plan
 
     def open_help_link(self, *_):
         webbrowser.open(self.LIAISON_HELP_LINK)
@@ -161,7 +187,7 @@ class DailyTask(
                 webbrowser.open(f"file://{summary_path}")
 
             self.log_info(f"日常执行情况汇总已创建并打开: {summary_path}")
-            
+
             return True
         except Exception as e:
             self.log_info(f"创建日常任务结尾文件失败: {e}", notify=True)
