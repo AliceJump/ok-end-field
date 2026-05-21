@@ -142,7 +142,6 @@ config = {
         ["src.tasks.BattleTask", "BattleTask"],
         ["src.tasks.PeriodicScreenshotTask", "PeriodicScreenshotTask"],
         ["src.tasks.TestStartGame", "TestStartGame"],
-        ["src.tasks.ItemNavigatorTask", "ItemNavigatorTask"],
         ["src.tasks.Test", "Test"],
         ["src.tasks.RealtimeDetectTask", "RealtimeDetectTask"],
         ["ok.task.DiagnosisTask", "DiagnosisTask"],
@@ -155,5 +154,6 @@ config = {
         ["src.tasks.AutoSkipDialogTask", "AutoSkipDialogTask"],
         ["src.tasks.AutoPickTask", "AutoPickTask"],
         ["src.tasks.AutoLoginTask", "AutoLoginTask"],
+        ["src.tasks.ItemNavigatorTask", "ItemNavigatorTask"],
     ],
 }
