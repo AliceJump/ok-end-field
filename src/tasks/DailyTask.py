@@ -92,6 +92,16 @@ class DailyTask(
         finally:
             self.run_daily_finally()
 
+    def _open_local_path_with_default_app(self, path: str | Path):
+        path_str = str(path)
+        try:
+            if os.name == "nt":
+                os.startfile(path_str)
+                return
+        except Exception:
+            pass
+        webbrowser.open(Path(path_str).resolve().as_uri())
+
     def run_daily_finally(self):
         try:
             # 在任务完成或停止时自动生成一个临时的汇总文件并打开（不再依赖配置项）
@@ -107,13 +117,7 @@ class DailyTask(
             summary_path = create_daily_summary_report(target_directory, summary_info)
 
             # 立即用系统默认程序打开临时汇总文件
-            try:
-                if os.name == "nt":
-                    os.startfile(summary_path)
-                else:
-                    webbrowser.open(f"file://{summary_path}")
-            except Exception:
-                webbrowser.open(f"file://{summary_path}")
+            self._open_local_path_with_default_app(summary_path)
 
             self.log_info(f"日常执行情况汇总已创建并打开: {summary_path}")
             
