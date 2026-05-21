@@ -93,14 +93,15 @@ class DailyTask(
             self.run_daily_finally()
 
     def _open_local_path_with_default_app(self, path: str | Path):
-        path_str = str(path)
-        try:
-            if os.name == "nt":
-                os.startfile(path_str)
+        normalized_path = Path(path).resolve()
+        file_uri = normalized_path.as_uri()
+        if os.name == "nt":
+            try:
+                os.startfile(str(normalized_path))
                 return
-        except Exception:
-            pass
-        webbrowser.open(Path(path_str).resolve().as_uri())
+            except OSError as error:
+                self.log_debug(f"使用 os.startfile 打开路径失败，改用浏览器回退: {error}")
+        webbrowser.open(file_uri)
 
     def run_daily_finally(self):
         try:
