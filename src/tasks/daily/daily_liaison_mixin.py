@@ -27,7 +27,7 @@ class DailyLiaisonMixin(LiaisonMixin):
         self.can_contact_dict = get_contact_list_with_feature_list()
         self.contact_name_patterns = {name: build_name_patterns(name) for name in self.can_contact_dict.keys()}
         # 组合模式下优先绑定 parent 回调，避免配置按钮持有短生命周期模块实例。
-        callback_target = self.parent if hasattr(self, "parent") else self
+        callback_target = self.parent if (hasattr(self, "parent") and self.parent) else self
         #
         self.config_type["优先送礼对象"] = {"type": "drop_down", "options": list(self.can_contact_dict.keys())}
         self.config_type["帮助"] = {
