@@ -84,6 +84,13 @@ class DailyTask(
     def _build_module_task(self, key: str, module_cls, method_name: str):
         return key, partial(self._run_daily_module, module_cls, method_name)
 
+    def _transfer_to_home_point_right(self):
+        module = DailyLiaisonModule(self)
+        try:
+            return module.transfer_to_home_point(box=self.box.right)
+        finally:
+            del module
+
     def build_task_plan(self):
         return [
             self._build_module_task("⭐送礼", DailyLiaisonModule, "execute_gift_task"),
@@ -102,7 +109,7 @@ class DailyTask(
             self._build_module_task("⭐买物资", DailyBuyModule, "buy_staple_goods"),
             self._build_module_task("⭐活动奖励", DailyRoutineModule, "claim_activity_rewards"),
             self._build_module_task("⭐日常奖励", DailyRoutineModule, "claim_daily_rewards"),
-            ("⭐传送到帝江号右侧传送点", lambda: self.transfer_to_home_point(box=self.box.right)),
+            ("⭐传送到帝江号右侧传送点", self._transfer_to_home_point_right),
             ("⭐执行结尾外部命令", self.launch_end_command_non_blocking),
         ]
 
