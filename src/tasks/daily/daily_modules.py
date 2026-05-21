@@ -11,41 +11,44 @@ class DailyModuleBase:
         self.parent = parent
 
     def __getattr__(self, item):
-        """将未在模块实例上定义的共享能力（如OCR/导航/日志）委托给 DailyTask。"""
-        return getattr(self.parent, item)
+        """将模块未定义的共享能力（如OCR/导航/日志）委托给 DailyTask。"""
+        try:
+            return getattr(self.parent, item)
+        except AttributeError as exc:
+            raise AttributeError(f"{self.__class__.__name__} 与 parent 均不存在属性: {item}") from exc
 
 
-class DailyBuyModule(DailyBuyMixin, DailyModuleBase):
+class DailyBuyModule(DailyModuleBase, DailyBuyMixin):
     def __init__(self, parent):
-        DailyModuleBase.__init__(self, parent)
+        super().__init__(parent)
         self.setup_daily_buy_module()
 
 
-class DailyBattleModule(DailyBattleMixin, DailyModuleBase):
+class DailyBattleModule(DailyModuleBase, DailyBattleMixin):
     def __init__(self, parent):
-        DailyModuleBase.__init__(self, parent)
+        super().__init__(parent)
         self.setup_daily_battle_module()
 
 
-class DailyTradeModule(DailyTradeMixin, DailyModuleBase):
+class DailyTradeModule(DailyModuleBase, DailyTradeMixin):
     def __init__(self, parent):
-        DailyModuleBase.__init__(self, parent)
+        super().__init__(parent)
         self.setup_daily_trade_module()
 
 
-class DailyShopModule(DailyShopMixin, DailyModuleBase):
+class DailyShopModule(DailyModuleBase, DailyShopMixin):
     def __init__(self, parent):
-        DailyModuleBase.__init__(self, parent)
+        super().__init__(parent)
         self.setup_daily_shop_module()
 
 
-class DailyRoutineModule(DailyRoutineMixin, DailyModuleBase):
+class DailyRoutineModule(DailyModuleBase, DailyRoutineMixin):
     def __init__(self, parent):
-        DailyModuleBase.__init__(self, parent)
+        super().__init__(parent)
         self.setup_daily_routine_module()
 
 
-class DailyLiaisonModule(DailyLiaisonMixin, DailyModuleBase):
+class DailyLiaisonModule(DailyModuleBase, DailyLiaisonMixin):
     def __init__(self, parent):
-        DailyModuleBase.__init__(self, parent)
+        super().__init__(parent)
         self.setup_daily_liaison_module()
