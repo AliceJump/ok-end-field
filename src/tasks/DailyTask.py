@@ -27,6 +27,8 @@ DAILY_TASK_CONFIG_DESCRIPTION = {
     "发生异常时终止游戏": "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。",
 }
 
+BOX_RIGHT_PLACEHOLDER = "box.right"
+
 DAILY_TASK_SEQUENCE = [
     {"key": "⭐送礼", "module_cls": DailyLiaisonModule, "method_name": "execute_gift_task"},
     {"key": "⭐帝江号一键存放", "module_cls": DailyLiaisonModule, "method_name": "boat_one_key_store"},
@@ -48,7 +50,7 @@ DAILY_TASK_SEQUENCE = [
         "key": "⭐传送到帝江号右侧传送点",
         "module_cls": DailyLiaisonModule,
         "method_name": "transfer_to_home_point",
-        "kwargs": {"box": "box.right"},
+        "kwargs": {"box": BOX_RIGHT_PLACEHOLDER},
     },
     {"key": "⭐执行结尾外部命令", "method_name": "launch_end_command_non_blocking"},
 ]
@@ -116,7 +118,7 @@ class DailyTask(
             return {}
         resolved = {}
         for key, value in raw_kwargs.items():
-            resolved[key] = self.box.right if value == "box.right" else value
+            resolved[key] = self.box.right if value == BOX_RIGHT_PLACEHOLDER else value
         return resolved
 
     def build_task_plan(self):
