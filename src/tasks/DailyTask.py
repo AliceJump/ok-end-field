@@ -10,6 +10,7 @@ from src.tasks.daily.daily_modules import (
     DailyTradeModule,
 )
 from src.tasks.daily.finally_file import (
+    DEFAULT_DAILY_FINALLY_CONTENT,
     create_daily_summary_report,
 )
 import tempfile
@@ -24,6 +25,7 @@ class DailyTask(
     EndCommandMixin,
 ):
     """日常任务聚合执行器。"""
+    LIAISON_HELP_LINK = "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/docs/日常任务.md"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -33,13 +35,7 @@ class DailyTask(
         self.support_schedule_task = True
         self.support_multi_account = True
         self.daily_runner: DailyTaskRunner | None = None
-        # 按 build_task_plan 的执行顺序初始化业务模块，避免调度顺序与声明顺序脱节。
-        self.daily_liaison = DailyLiaisonModule(self)
-        self.daily_routine = DailyRoutineModule(self)
-        self.daily_shop = DailyShopModule(self)
-        self.daily_trade = DailyTradeModule(self)
-        self.daily_battle = DailyBattleModule(self)
-        self.daily_buy = DailyBuyModule(self)
+        self._bootstrap_daily_modules()
         self.config_description.update(
             {
                 "仅退出游戏": "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n开启发生异常时终止游戏时此选项不生效",
@@ -64,27 +60,71 @@ class DailyTask(
         if self.debug:
             self.default_config.update({"重复测试的次数": 1})
 
+    def _bootstrap_daily_modules(self):
+        for module_cls in (
+            DailyLiaisonModule,
+            DailyRoutineModule,
+            DailyShopModule,
+            DailyTradeModule,
+            DailyBattleModule,
+            DailyBuyModule,
+        ):
+            module = module_cls(self)
+            del module
+
+    def _run_daily_module(self, module_cls, method_name: str):
+        module = module_cls(self)
+        try:
+            return getattr(module, method_name)()
+        finally:
+            del module
+
+    def _build_module_task(self, key: str, module_cls, method_name: str):
+        return key, lambda module_cls=module_cls, method_name=method_name: self._run_daily_module(module_cls, method_name)
+
     def build_task_plan(self):
         return [
-            ("⭐送礼", self.daily_liaison.execute_gift_task),
-            ("⭐帝江号一键存放", self.daily_liaison.boat_one_key_store),
-            ("⭐收邮件", self.daily_routine.claim_mail),
-            ("⭐据点兑换", self.daily_routine.exchange_outpost_goods),
-            ("⭐转交运送委托", self.daily_routine.delivery_send_others),
-            ("⭐转交委托奖励领取", self.daily_routine.claim_delivery_rewards),
-            ("⭐造装备", self.daily_routine.make_weapon),
-            ("⭐简易制作", self.daily_routine.make_simply),
-            ("⭐收信用", self.daily_routine.collect_credit),
-            ("⭐帝江号收菜", self.daily_routine.boat_claim_rewards),
-            ("⭐买信用商店", self.daily_shop.credit_shop),
-            ("⭐买卖货", self.daily_trade.buy_sell),
-            ("⭐刷体力", self.daily_battle.battle),
-            ("⭐买物资", self.daily_buy.buy_staple_goods),
-            ("⭐活动奖励", self.daily_routine.claim_activity_rewards),
-            ("⭐日常奖励", self.daily_routine.claim_daily_rewards),
+            self._build_module_task("⭐送礼", DailyLiaisonModule, "execute_gift_task"),
+            self._build_module_task("⭐帝江号一键存放", DailyLiaisonModule, "boat_one_key_store"),
+            self._build_module_task("⭐收邮件", DailyRoutineModule, "claim_mail"),
+            self._build_module_task("⭐据点兑换", DailyRoutineModule, "exchange_outpost_goods"),
+            self._build_module_task("⭐转交运送委托", DailyRoutineModule, "delivery_send_others"),
+            self._build_module_task("⭐转交委托奖励领取", DailyRoutineModule, "claim_delivery_rewards"),
+            self._build_module_task("⭐造装备", DailyRoutineModule, "make_weapon"),
+            self._build_module_task("⭐简易制作", DailyRoutineModule, "make_simply"),
+            self._build_module_task("⭐收信用", DailyRoutineModule, "collect_credit"),
+            self._build_module_task("⭐帝江号收菜", DailyRoutineModule, "boat_claim_rewards"),
+            self._build_module_task("⭐买信用商店", DailyShopModule, "credit_shop"),
+            self._build_module_task("⭐买卖货", DailyTradeModule, "buy_sell"),
+            self._build_module_task("⭐刷体力", DailyBattleModule, "battle"),
+            self._build_module_task("⭐买物资", DailyBuyModule, "buy_staple_goods"),
+            self._build_module_task("⭐活动奖励", DailyRoutineModule, "claim_activity_rewards"),
+            self._build_module_task("⭐日常奖励", DailyRoutineModule, "claim_daily_rewards"),
             ("⭐传送到帝江号右侧传送点", lambda: self.transfer_to_home_point(box=self.box.right)),
             ("⭐执行结尾外部命令", self.launch_end_command_non_blocking),
         ]
+
+    def open_help_link(self, *_):
+        webbrowser.open(self.LIAISON_HELP_LINK)
+
+    def open_surprise(self, *_):
+        try:
+            tf = tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="w", encoding="utf-8")
+            tf.write(DEFAULT_DAILY_FINALLY_CONTENT)
+            tf.flush()
+            tf.close()
+            path = tf.name
+            try:
+                if os.name == "nt":
+                    os.startfile(path)
+                else:
+                    webbrowser.open(f"file://{path}")
+            except Exception:
+                webbrowser.open(f"file://{path}")
+            self.log_info(f"已创建并打开临时惊喜文件: {path}")
+            self.info_set("最后惊喜文件", str(path))
+        except Exception as e:
+            self.log_info(f"创建或打开临时惊喜文件失败: {e}")
 
     def run(self):
         """日常任务主入口。"""

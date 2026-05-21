@@ -26,20 +26,21 @@ class DailyLiaisonMixin(LiaisonMixin):
     def setup_daily_liaison_module(self):
         self.can_contact_dict = get_contact_list_with_feature_list()
         self.contact_name_patterns = {name: build_name_patterns(name) for name in self.can_contact_dict.keys()}
+        callback_target = self.parent if hasattr(self, "parent") else self
         #
         self.config_type["优先送礼对象"] = {"type": "drop_down", "options": list(self.can_contact_dict.keys())}
         self.config_type["帮助"] = {
             "type": "button",
             "text": "打开帮助",
             "icon": FluentIcon.LINK,
-            "callback": self.open_help_link,
+            "callback": callback_target.open_help_link,
         }
         # 添加「惊喜」按钮：点击在桌面创建惊喜文件，内容为默认惊喜内容
         self.config_type["惊喜"] = {
             "type": "button",
             "text": "惊喜",
             "icon": FluentIcon.LINK,
-            "callback": self.open_surprise,
+            "callback": callback_target.open_surprise,
         }
         self.default_config.update({
             "⭐送礼": True,
