@@ -165,7 +165,10 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
         self.log_info("ItemNavigatorTask 启动")
 
         try:
-            self._start_ws_position_server(host='127.0.0.1', port=3001)
+            ws_thread = getattr(self, "_ws_server_thread", None)
+            ws_alive = bool(ws_thread and ws_thread.is_alive())
+            if (not getattr(self, "_ws_enabled", False)) or (not ws_alive):
+                self._start_ws_position_server(host='127.0.0.1', port=3001)
 
             # read current selected items from task config (this is user-facing)
             selected_items = list(self.config.get('选择物品') or [])
@@ -258,4 +261,3 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
 
         # lightweight sleep to avoid busy loop; polling interval intentionally not user-configured here
         self.sleep(0.2)
-

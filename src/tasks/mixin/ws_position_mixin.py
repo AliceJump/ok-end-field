@@ -18,6 +18,7 @@ class WsPositionMixin:
         self._ws_server_thread = None
         self._ws_loop = None
         self._ws_stop_event = None
+        self._ws_enabled = False
 
     @staticmethod
     def _extract_position_payload(payload: dict[str, Any] | None):
@@ -99,6 +100,7 @@ class WsPositionMixin:
             self._ws_port = int(port)
 
         if self._ws_server_thread and self._ws_server_thread.is_alive():
+            self._ws_enabled = True
             return
 
         self._ws_stop_event = None
@@ -124,6 +126,7 @@ class WsPositionMixin:
 
         self._ws_server_thread = threading.Thread(target=_runner, name="WsPositionServer", daemon=True)
         self._ws_server_thread.start()
+        self._ws_enabled = True
 
     def _recv_ws_position_payload(self, timeout: float = 0.5):
         try:
@@ -144,3 +147,4 @@ class WsPositionMixin:
         self._ws_server_thread = None
         self._ws_loop = None
         self._ws_stop_event = None
+        self._ws_enabled = False

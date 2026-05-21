@@ -54,6 +54,13 @@ class BaseEfTask(
         self._detector_lock = threading.Lock()
         self._yolo_loader = None
         self._yolo_model_key = None
+        # WS 运行时基础状态（供触发式任务复用）
+        self._ws_enabled = False
+        self._ws_host = None
+        self._ws_port = None
+        self._ws_server_thread = None
+        self._ws_loop = None
+        self._ws_stop_event = None
 
     def set_current_account(self, username, account_id):
         """设置当前账号信息，供账号覆盖功能使用。
