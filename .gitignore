@@ -5,7 +5,7 @@ my_key.txt
 md5.txt
 thread_dumps.txt
 labels
-
+marked_points.json
 ############################
 # 🗂 运行生成数据（仅忽略根目录）
 ############################

@@ -618,13 +618,20 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             return False
 
         try:
-            from src.data.delivery_area_service import extract_delivery_location
+            delivery_locations = get_delivery_locations(self.delivery_area)
+            if not delivery_locations:
+                return False
 
-            ocr_results = self.ocr(box=self.box.top_right)
+            ocr_results = self.wait_ocr(
+                match=delivery_locations,
+                box=self.box.top_right,
+                time_out=4,
+                log=True,
+            )
             if not ocr_results:
                 return False
 
-            location_text = " ".join(item.get("text", "") for item in ocr_results)
+            location_text = str(getattr(ocr_results[0], "name", "")).strip()
             if not location_text:
                 return False
 
@@ -766,7 +773,11 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 self.config_type[self.CFG_FULL_CYCLE_LOCATION]["options"] = self.full_cycle_locations
                 for key in self.to_delivery_point_config_keys + self.ends:
                     self.config.setdefault(key, "")
-            allow_multi = self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE
+            allow_multi = (
+                self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE
+                and not self.config.get(self.CFG_ONLY_ACCEPT)
+                and not self.config.get(self.CFG_ONLY_DELIVER)
+            )
             for repeat_idx, repeat_times in self.iter_multi_account_context(
                 repeat_times=1,
                 empty_accounts_message="多账户模式已开启，但账号列表为空，自动送货任务结束",

@@ -73,6 +73,11 @@ config = {
         # 标签枚举的相对路径
         'label_enum_relative_path': 'src/data/FeatureList',
     },
+    'item_map': {
+        # 物品地图数据的相对路径
+        'summary_json': os.path.join('assets', 'items', 'map', 'summary.json'),
+        'item_names_json': os.path.join('assets', 'items', 'map', 'item_names.json'),
+    },
     "windows": {  # Windows游戏请填写此设置
         "exe": ["Endfield.exe"],
         # 'hwnd_class': 'UnrealWindow', #增加重名检查准确度
@@ -149,5 +154,6 @@ config = {
         ["src.tasks.AutoSkipDialogTask", "AutoSkipDialogTask"],
         ["src.tasks.AutoPickTask", "AutoPickTask"],
         ["src.tasks.AutoLoginTask", "AutoLoginTask"],
+        ["src.tasks.ItemNavigatorTask", "ItemNavigatorTask"],
     ],
 }

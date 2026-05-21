@@ -10,6 +10,7 @@ from src.tasks.mixin.account_override_mixin import AccountOverrideMixin
 from src.tasks.mixin.game_flow_mixin import GameFlowMixin
 from src.tasks.mixin.process_manager import ProcessManager
 from src.tasks.mixin.runtime_mixin import RuntimeMixin
+from src.tasks.mixin.window_arrow_drawing_mixin import WindowArrowDrawingMixin
 
 
 def back_window(prev):
@@ -23,6 +24,7 @@ def back_window(prev):
 
 
 class BaseEfTask(
+    WindowArrowDrawingMixin,
     AccountOverrideMixin,
     GameFlowMixin,
     RuntimeMixin,
@@ -44,11 +46,20 @@ class BaseEfTask(
             "SingleActionWithDelay", 1.5
         )  # 获取全局配置的单次动作睡眠时间
         self.key_manager = KeyConfigManager(self.key_config)  # 初始化热键管理器
+        # 初始化窗口箭头绘制 Mixin
+        self._init_window_arrow_drawing_mixin()
 
         self._detector = None
         self._detector_lock = threading.Lock()
         self._yolo_loader = None
         self._yolo_model_key = None
+        # WS 运行时基础状态（供触发式任务复用）
+        self._ws_enabled = False
+        self._ws_host = None
+        self._ws_port = None
+        self._ws_server_thread = None
+        self._ws_loop = None
+        self._ws_stop_event = None
 
     def set_current_account(self, username, account_id):
         """设置当前账号信息，供账号覆盖功能使用。

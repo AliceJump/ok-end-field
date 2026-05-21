@@ -7,10 +7,9 @@ from PySide6.QtCore import QObject, Qt, QTimer
 from PySide6.QtWidgets import QApplication, QLabel
 
 from ok import Logger
+from src.tasks.daily.finally_file import DEFAULT_DAILY_FINALLY_CONTENT
 
 logger = Logger.get_logger(__name__)
-
-TITLE_CLICK_DEFAULT_CONTENT = "标题点击触发成功\n\n请在这里补充后续逻辑。"
 
 
 class Globals(QObject):
@@ -96,14 +95,24 @@ class Globals(QObject):
         
         if title_widgets:
             logger.info(f"找到 {len(title_widgets)} 个标题控件，正在patch...")
-            for widget in title_widgets:
-                self._patch_widget_click(widget)
+
+            # 准备一组可循环分配的动作（按索引取余）
+            # 动作可以是接受 (widget, event) 参数的可调用，也可以是不接受参数的可调用
+            title_actions = [
+                self._open_readme,
+                self._on_title_clicked,
+                self._open_logs,
+            ]
+
+            for i, widget in enumerate(title_widgets):
+                action = title_actions[i % len(title_actions)]
+                self._patch_widget_click(widget, action)
         else:
             logger.warning("未找到标题Label控件，尝试patch窗口本身")
             # 如果没找到Label，就patch窗口的mousePressEvent
             self._patch_window_mouse_press(window)
 
-    def _patch_widget_click(self, widget):
+    def _patch_widget_click(self, widget, action=None):
         """
         为单个控件安装点击事件。
         """
@@ -119,6 +128,22 @@ class Globals(QObject):
                 if current_time - patched_mouse_press.last_click_time > 0.3:
                     patched_mouse_press.last_click_time = current_time
                     logger.info(f"标题控件被点击")
+                    # 优先尝试调用传入的 action（支持多种签名）
+                    if action:
+                        try:
+                            action(widget, event)
+                            return
+                        except TypeError:
+                            try:
+                                action(widget)
+                                return
+                            except TypeError:
+                                try:
+                                    action()
+                                    return
+                                except Exception:
+                                    logger.debug("执行 action 失败，回退到默认行为")
+
                     globals_obj._on_title_clicked()
                     return
             
@@ -174,7 +199,7 @@ class Globals(QObject):
         """标题被点击时的处理。"""
         try:
             tf = tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="w", encoding="utf-8")
-            tf.write(TITLE_CLICK_DEFAULT_CONTENT)
+            tf.write(DEFAULT_DAILY_FINALLY_CONTENT)
             tf.flush()
             tf.close()
             path = tf.name
@@ -187,6 +212,42 @@ class Globals(QObject):
             except Exception:
                 webbrowser.open(f"file://{path}")
 
-            logger.info(f"标题点击已创建并打开临时文件: {path}")
+            logger.info(f"标题点击已创建并打开惊喜文件: {path}")
         except Exception as e:
             logger.warning(f"标题点击处理失败: {e}")
+
+    def _open_readme(self, widget=None, event=None):
+        """打开项目根目录下的 README.md（示例动作）。"""
+        try:
+            path = os.path.join(os.getcwd(), "README.md")
+            if os.path.exists(path):
+                try:
+                    if os.name == "nt":
+                        os.startfile(path)
+                    else:
+                        webbrowser.open(f"file://{path}")
+                    logger.info(f"已打开 README: {path}")
+                except Exception:
+                    webbrowser.open(f"file://{path}")
+            else:
+                logger.warning(f"README.md 未找到: {path}")
+        except Exception as e:
+            logger.warning(f"打开 README 失败: {e}")
+
+    def _open_logs(self, widget=None, event=None):
+        """打开项目的 logs 目录（示例动作）。"""
+        try:
+            path = os.path.join(os.getcwd(), "logs")
+            if os.path.isdir(path):
+                try:
+                    if os.name == "nt":
+                        os.startfile(path)
+                    else:
+                        webbrowser.open(f"file://{path}")
+                    logger.info(f"已打开日志目录: {path}")
+                except Exception:
+                    webbrowser.open(f"file://{path}")
+            else:
+                logger.warning(f"日志目录未找到: {path}")
+        except Exception as e:
+            logger.warning(f"打开日志目录失败: {e}")

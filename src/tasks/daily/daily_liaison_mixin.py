@@ -1,19 +1,12 @@
 import re
 import time
 import webbrowser
-import tempfile
-import os
 
 from qfluentwidgets import FluentIcon
 
 from src.data.characters_utils import get_contact_list_with_feature_list
 from src.tasks.mixin.common import LiaisonResult, build_name_patterns
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
-from src.tasks.daily.finally_file import (
-    create_daily_finally_note,
-    DEFAULT_DAILY_FINALLY_CONTENT,
-    resolve_daily_finally_directory,
-)
 
 
 class DailyLiaisonMixin(LiaisonMixin):
@@ -35,13 +28,6 @@ class DailyLiaisonMixin(LiaisonMixin):
             "text": "打开帮助",
             "icon": FluentIcon.LINK,
             "callback": callback_target.open_help_link,
-        }
-        # 添加「惊喜」按钮：点击在桌面创建惊喜文件，内容为默认惊喜内容
-        self.config_type["惊喜"] = {
-            "type": "button",
-            "text": "惊喜",
-            "icon": FluentIcon.LINK,
-            "callback": callback_target.open_surprise,
         }
         self.default_config.update({
             "⭐送礼": True,
@@ -67,29 +53,6 @@ class DailyLiaisonMixin(LiaisonMixin):
 
     def open_help_link(self, *_):
         webbrowser.open(self.HELP_LINK)
-
-    def open_surprise(self, *_):
-        """生成临时惊喜文件并直接用系统默认程序打开（不在桌面永久创建）。"""
-        try:
-            tf = tempfile.NamedTemporaryFile(delete=False, suffix=".txt", mode="w", encoding="utf-8")
-            tf.write(DEFAULT_DAILY_FINALLY_CONTENT)
-            tf.flush()
-            tf.close()
-            path = tf.name
-            # 在 Windows 上使用 os.startfile，其他平台使用默认浏览器打开文件 URL
-            try:
-                if os.name == "nt":
-                    os.startfile(path)
-                else:
-                    webbrowser.open(f"file://{path}")
-            except Exception:
-                # 作为后备，尝试用 webbrowser 打开
-                webbrowser.open(f"file://{path}")
-
-            self.log_info(f"已创建并打开临时惊喜文件: {path}")
-            self.info_set("最后惊喜文件", str(path))
-        except Exception as e:
-            self.log_info(f"创建或打开临时惊喜文件失败: {e}")
 
     def execute_gift_to_liaison(self):
         """传送至帝江号后执行联络与送礼链路。"""

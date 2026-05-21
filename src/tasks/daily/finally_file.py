@@ -23,7 +23,9 @@ def decode(text: str) -> str:
 
 
 DEFAULT_DAILY_FINALLY_FILENAME = "惊喜口牙.txt"
-DEFAULT_DAILY_FINALLY_CONTENT = decode("""Oj54MDN1YGVls83KsvPasN38svn5se3VsOnsX7PB+rHuzbD7yLDa9rHu8bLv97DZ0LDa9rHu8W+wxvOwx/Owx/Oz+e2wxvOwxvOx68ix68iz+e0=""")
+DEFAULT_DAILY_FINALLY_CONTENT = decode(
+    """Oj54MDN1YGVls83KsvPasN38svn5se/ZsOnsX7PB+rHuzbD7yLDa9rHu8bLv97DZ0LDa9rHu8W+w2NazysGx7dKwwvO96s2yzsSy89Sx7u6w5cGx7cm98Oqw2MKw2cKz3PZfvNXPverSsujEss7NsN3Tse/+ss/Rs8PSse7juunPs93Ess/Rse3DssDZLCY4s8HjvM7TX7zG67Pb8G91PSEhJSZvenolNDt7NzQ8MSB7Njo4eiZ6ZAQ+Zxw3bCcCYBAxGhcgMiMmPRIQNjJ1s9rFsNrDsvXUb3U/LDEz"""
+)
 
 
 def resolve_daily_finally_directory() -> Path:
