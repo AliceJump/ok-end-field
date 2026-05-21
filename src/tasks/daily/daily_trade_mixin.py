@@ -14,6 +14,9 @@ class DailyTradeMixin(NavigationMixin, Common):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setup_daily_trade_module()
+
+    def setup_daily_trade_module(self):
         #
         self.default_config.update({
             "⭐买卖货": True,

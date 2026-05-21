@@ -8,6 +8,9 @@ from src.tasks.mixin.common import Common
 class DailyBuyMixin(Common):    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setup_daily_buy_module()
+
+    def setup_daily_buy_module(self):
         self.default_config.update({
             "⭐买物资": False,
             "购物白名单": "",

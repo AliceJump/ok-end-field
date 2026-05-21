@@ -1,12 +1,14 @@
 from qfluentwidgets import FluentIcon
 
 from src.tasks.account.account_mixin import AccountMixin
-from src.tasks.daily.daily_battle_mixin import DailyBattleMixin
-from src.tasks.daily.daily_buy_mixin import DailyBuyMixin
-from src.tasks.daily.daily_liaison_mixin import DailyLiaisonMixin
-from src.tasks.daily.daily_routine_mixin import DailyRoutineMixin
-from src.tasks.daily.daily_shop_mixin import DailyShopMixin
-from src.tasks.daily.daily_trade_mixin import DailyTradeMixin
+from src.tasks.daily.daily_modules import (
+    DailyBattleModule,
+    DailyBuyModule,
+    DailyLiaisonModule,
+    DailyRoutineModule,
+    DailyShopModule,
+    DailyTradeModule,
+)
 from src.tasks.daily.finally_file import (
     create_daily_summary_report,
 )
@@ -18,14 +20,8 @@ from src.tasks.daily.daily_task_runner import DailyTaskRunner
 from src.tasks.mixin.end_command_mixin import EndCommandMixin
 
 class DailyTask(
-    DailyBuyMixin,  # 买物资
-    DailyBattleMixin,  # 刷体力
-    DailyTradeMixin,  # 买卖货
-    DailyShopMixin,  # 买信用商店
-    DailyRoutineMixin,  # 其它
-    DailyLiaisonMixin,  # 送礼
+    AccountMixin,
     EndCommandMixin,
-    AccountMixin
 ):
     """日常任务聚合执行器。"""
 
@@ -37,6 +33,12 @@ class DailyTask(
         self.support_schedule_task = True
         self.support_multi_account = True
         self.daily_runner: DailyTaskRunner | None = None
+        self.daily_liaison = DailyLiaisonModule(self)
+        self.daily_routine = DailyRoutineModule(self)
+        self.daily_shop = DailyShopModule(self)
+        self.daily_trade = DailyTradeModule(self)
+        self.daily_battle = DailyBattleModule(self)
+        self.daily_buy = DailyBuyModule(self)
         self.config_description.update(
             {
                 "仅退出游戏": "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n开启发生异常时终止游戏时此选项不生效",
@@ -63,22 +65,22 @@ class DailyTask(
 
     def build_task_plan(self):
         return [
-            ("⭐送礼", self.execute_gift_task),
-            ("⭐帝江号一键存放", self.boat_one_key_store),
-            ("⭐收邮件", self.claim_mail),
-            ("⭐据点兑换", self.exchange_outpost_goods),
-            ("⭐转交运送委托", self.delivery_send_others),
-            ("⭐转交委托奖励领取", self.claim_delivery_rewards),
-            ("⭐造装备", self.make_weapon),
-            ("⭐简易制作", self.make_simply),
-            ("⭐收信用", self.collect_credit),
-            ("⭐帝江号收菜", self.boat_claim_rewards),
-            ("⭐买信用商店", self.credit_shop),
-            ("⭐买卖货", self.buy_sell),
-            ("⭐刷体力", self.battle),
-            ("⭐买物资", self.buy_staple_goods),
-            ("⭐活动奖励", self.claim_activity_rewards),
-            ("⭐日常奖励", self.claim_daily_rewards),
+            ("⭐送礼", self.daily_liaison.execute_gift_task),
+            ("⭐帝江号一键存放", self.daily_liaison.boat_one_key_store),
+            ("⭐收邮件", self.daily_routine.claim_mail),
+            ("⭐据点兑换", self.daily_routine.exchange_outpost_goods),
+            ("⭐转交运送委托", self.daily_routine.delivery_send_others),
+            ("⭐转交委托奖励领取", self.daily_routine.claim_delivery_rewards),
+            ("⭐造装备", self.daily_routine.make_weapon),
+            ("⭐简易制作", self.daily_routine.make_simply),
+            ("⭐收信用", self.daily_routine.collect_credit),
+            ("⭐帝江号收菜", self.daily_routine.boat_claim_rewards),
+            ("⭐买信用商店", self.daily_shop.credit_shop),
+            ("⭐买卖货", self.daily_trade.buy_sell),
+            ("⭐刷体力", self.daily_battle.battle),
+            ("⭐买物资", self.daily_buy.buy_staple_goods),
+            ("⭐活动奖励", self.daily_routine.claim_activity_rewards),
+            ("⭐日常奖励", self.daily_routine.claim_daily_rewards),
             ("⭐传送到帝江号右侧传送点", lambda: self.transfer_to_home_point(box=self.box.right)),
             ("⭐执行结尾外部命令", self.launch_end_command_non_blocking),
         ]

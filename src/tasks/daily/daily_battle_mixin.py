@@ -61,6 +61,9 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setup_daily_battle_module()
+
+    def setup_daily_battle_module(self):
         self.gather_near_transfer_point_dict = dict()
         self.stages_list = stages_list
         self._reset_battle_state()

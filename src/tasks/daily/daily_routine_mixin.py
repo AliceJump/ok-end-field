@@ -17,6 +17,9 @@ class DailyRoutineMixin(LiaisonMixin, Common):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setup_daily_routine_module()
+
+    def setup_daily_routine_module(self):
         self.default_config.update({
             "⭐收邮件": True,
             "⭐据点兑换": True,

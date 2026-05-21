@@ -21,6 +21,9 @@ class DailyLiaisonMixin(LiaisonMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setup_daily_liaison_module()
+
+    def setup_daily_liaison_module(self):
         self.can_contact_dict = get_contact_list_with_feature_list()
         self.contact_name_patterns = {name: build_name_patterns(name) for name in self.can_contact_dict.keys()}
         #

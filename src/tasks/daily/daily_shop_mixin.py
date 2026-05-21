@@ -7,6 +7,9 @@ from src.tasks.mixin.common import Common
 class DailyShopMixin(Common):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.setup_daily_shop_module()
+
+    def setup_daily_shop_module(self):
         self.default_config.update({
             "⭐买信用商店": True,
             "信用商店保留信用": 300,
