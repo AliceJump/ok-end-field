@@ -11,7 +11,7 @@ class DailyModuleBase:
         self.parent = parent
 
     def __getattr__(self, item):
-        """将模块未定义的共享能力（如OCR/导航/日志）委托给 DailyTask。"""
+        """仅在属性未命中时，把共享能力（如OCR/导航/日志）委托给 DailyTask。"""
         try:
             return getattr(self.parent, item)
         except AttributeError as exc:

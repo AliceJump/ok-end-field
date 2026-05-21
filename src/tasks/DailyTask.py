@@ -1,3 +1,9 @@
+from functools import partial
+import os
+import tempfile
+import webbrowser
+from pathlib import Path
+
 from qfluentwidgets import FluentIcon
 
 from src.tasks.account.account_mixin import AccountMixin
@@ -13,10 +19,6 @@ from src.tasks.daily.finally_file import (
     DEFAULT_DAILY_FINALLY_CONTENT,
     create_daily_summary_report,
 )
-import tempfile
-import os
-import webbrowser
-from pathlib import Path
 from src.tasks.daily.daily_task_runner import DailyTaskRunner
 from src.tasks.mixin.end_command_mixin import EndCommandMixin
 
@@ -69,8 +71,7 @@ class DailyTask(
             DailyBattleModule,
             DailyBuyModule,
         ):
-            module = module_cls(self)
-            del module
+            module_cls(self)
 
     def _run_daily_module(self, module_cls, method_name: str):
         module = module_cls(self)
@@ -80,7 +81,7 @@ class DailyTask(
             del module
 
     def _build_module_task(self, key: str, module_cls, method_name: str):
-        return key, lambda module_cls=module_cls, method_name=method_name: self._run_daily_module(module_cls, method_name)
+        return key, partial(self._run_daily_module, module_cls, method_name)
 
     def build_task_plan(self):
         return [
