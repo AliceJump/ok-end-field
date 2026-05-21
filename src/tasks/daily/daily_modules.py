@@ -15,7 +15,7 @@ class DailyModuleBase:
         try:
             return getattr(self.parent, item)
         except AttributeError as exc:
-            raise AttributeError(f"{self.__class__.__name__} 与 parent 均不存在属性: {item}") from exc
+            raise AttributeError(f"{self.__class__.__name__} and parent both miss attribute: {item}") from exc
 
 
 class DailyBuyModule(DailyModuleBase, DailyBuyMixin):
