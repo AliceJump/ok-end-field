@@ -39,6 +39,11 @@ class WindowArrowOverlay(QWidget):
         self._sync_timer.timeout.connect(self._sync_geometry)
         self._sync_timer.start(50)
 
+        # 自动清除计时器：每次 set_arrows 后会启动，超时后清空箭头（最大停留时长）
+        self._auto_clear_timer = QTimer(self)
+        self._auto_clear_timer.setSingleShot(True)
+        self._auto_clear_timer.timeout.connect(self.clear_arrows)
+
         self.setWindowFlags(
             Qt.Tool |
             Qt.FramelessWindowHint |
@@ -74,6 +79,12 @@ class WindowArrowOverlay(QWidget):
         app = QApplication.instance()
         if app is not None:
             app.processEvents()
+        # 每次绘制后启动自动清除计时器，2s 后尝试清空
+        try:
+            self._auto_clear_timer.stop()
+            self._auto_clear_timer.start(2000)
+        except Exception:
+            pass
 
     def clear_arrows(self):
         self._arrows = []
@@ -81,6 +92,12 @@ class WindowArrowOverlay(QWidget):
         app = QApplication.instance()
         if app is not None:
             app.processEvents()
+        # 停止自动清除计时器（如果存在），避免计时器后续再触发清空
+        try:
+            if hasattr(self, '_auto_clear_timer') and self._auto_clear_timer is not None:
+                self._auto_clear_timer.stop()
+        except Exception:
+            pass
 
     def _sync_geometry(self):
         try:
@@ -237,6 +254,11 @@ class WindowArrowOverlayController(QObject):
     @Slot(object)
     def _on_arrows_requested(self, arrows: List[ArrowSpec]):
         overlay = self._ensure_overlay()
+        # 立即清空之前的绘制，保证新的绘制立刻生效
+        try:
+            overlay.clear_arrows()
+        except Exception:
+            pass
         overlay.set_arrows(arrows)
 
     @Slot()

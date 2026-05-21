@@ -36,6 +36,8 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
             '选择物品': [],
             # 标记按键（UI 映射），例如 'f'，当玩家按下且目标在阈值内时标记为已获取
             '标记按键': 'f',
+            # 标记时需要按住的最小时长（秒）
+            '标记按住时长': 0.8,
             # 接近提示的水平阈值（世界坐标单位）
             '接近阈值': 20.0,
         })
@@ -55,6 +57,8 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
         self._marked_store = Path('assets') / 'items' / 'map' / 'marked_points.json'
         self._marked_lock = threading.Lock()
         self._marked: Dict[str, set] = {}  # mapId -> set of point hashes
+        # WS 服务启动状态追踪（仅记录首次启动日志）
+        self._ws_server_start_logged = False
 
         # 箭头渲染可调参数（便于快速微调视觉）
         self._arrow_center_rel = (162/1920, 166/1080)  # 相对于窗口的箭头中心位置（比例），默认在左上角稍微偏右下   
@@ -70,8 +74,15 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
         # dirty-save 控制：标记后延迟合并写盘
         self._dirty = False
         self._last_save_time = 0.0
-        # 上一帧按键状态（用于边沿触发）
-        self._prev_mark_key_state = False
+        # 标记按键状态：记录本次按住期间是否已标记（防止按住期间反复标记）
+        self._mark_key_held_in_cycle = False
+        # 按键按下计时：用于判断按住持续时间（None 表示当前未按下）
+        self._mark_key_hold_start = None
+        # 锁定待标记的目标（在接近阈值内）
+        # 格式: {'map_id': str, 'hash': str, 'start_time': float | None}
+        self._mark_lock_target = None
+        # 标记所需的最短连续按住时长（秒）
+        self._mark_lock_required = 2.0
 
     # --- persistence for marked points ---
     def _load_marked(self):
@@ -118,10 +129,9 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
 
     def _draw_nav_arrow(self, dx: float, dz: float, tooltip: str):
         try:
-
-            width = getattr(self, 'width', None)
-            height = getattr(self, 'height', None)
-            if not width or not height:
+            # 使用 _get_window_arrow_size() 而不是查找 self.width/self.height
+            width, height = self._get_window_arrow_size()
+            if width <= 0 or height <= 0:
                 return
 
             center_x = width * self._arrow_center_rel[0]
@@ -131,7 +141,7 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
             # 纵向方向按当前导航坐标系翻转，避免上下显示反向。
             angle_deg = math.degrees(math.atan2(dx, dz))
 
-            self.draw_window_arrow_from_center(
+            success = self.draw_window_arrow_from_center(
                 center_x=center_x,
                 center_y=center_y,
                 max_length=max_length,
@@ -141,11 +151,15 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
                 alpha=self._arrow_alpha,
                 shaft_width_norm=self._arrow_shaft_width_norm,
             )
+            
+            if not success:
+                self.log_info(f"[箭头] 绘制失败")
+                return
 
             if tooltip:
                 self.info_set('导航箭头', tooltip)
-        except Exception:
-            pass
+        except Exception as e:
+            self.log_error(f"[箭头] 异常: {e}")
 
     # --- keyboard check (detect player pressing mark key) ---
     def _is_key_pressed(self, key: str) -> bool:
@@ -162,28 +176,33 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
             return False
 
     def run(self):
-        self.log_info("ItemNavigatorTask 启动")
-
         try:
             if not self._is_ws_position_server_enabled():
+                self.log_info("ItemNavigatorTask 启动 - 正在启动WS服务")
                 self._start_ws_position_server(host='127.0.0.1', port=3001)
+                self._ws_server_start_logged = False
+            elif not self._ws_server_start_logged:
+                # 首次检测到 WS 服务已启动，仅记录一次
+                self.log_info("ItemNavigatorTask: WS服务已启动 ws://127.0.0.1:3001")
+                self._ws_server_start_logged = True
 
             # read current selected items from task config (this is user-facing)
             selected_items = list(self.config.get('选择物品') or [])
 
             # fetch player position from local websocket service
+            # 优先获取最新数据，如果没有新数据则返回缓存的旧值（避免"数据不完整"错误）
             try:
-                payload = self._recv_ws_position_payload(timeout=0.5)
+                payload = self._recv_ws_position_payload_or_cached(timeout=0.1)
             except Exception:
                 self.info_set('导航', '无法读取WS位置')
-                self.sleep(0.5)
+                self.sleep(1.0)
                 return
 
             # parse payload (兼容扁平结构 / data 包裹)
             pos, map_id, px, py, pz = self._extract_position_payload(payload)
             if not pos or not map_id:
-                self.info_set('导航', 'WS位置数据不完整')
-                self.sleep(0.5)
+                self.info_set('导航', 'WS位置数据待接收... (需要客户端连接到 ws://127.0.0.1:3001)')
+                self.sleep(1.0)
                 return
 
             # build candidates for this map and selected items
@@ -201,7 +220,7 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
                 for pt in pts:
                     h = self._point_hash(pt, item_name)
                     if h in self._marked.get(map_id, set()):
-                        return
+                        continue  # 跳过已标记的物品，继续查找下一个
                     dxz = self._xy_dist((px, pz), (pt.get('x', 0), pt.get('z', 0)))
                     if dxz < best_dxz:
                         best_dxz = dxz
@@ -233,18 +252,39 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
             # overlay: 左上角矢量箭头（固定中心 + 最大长度 + 自由箭头结尾）
             self._draw_nav_arrow(dx, dz, tooltip=f"{best_meta} | XZ:{best_dxz:.1f} | Y:{dy_height:.1f}")
 
-            # handle marking: use edge-trigger (上一帧无按下，本帧按下) 来避免按住重复触发
+            # 标记逻辑：锁定目标并要求连续按住指定时长（_mark_lock_required）才能标记
             mark_key = str(self.config.get('标记按键') or '').strip() or 'f'
             cur_key = self._is_key_pressed(mark_key)
-            if cur_key and (not self._prev_mark_key_state) and best_dxz <= float(self.config.get('接近阈值', 5.0)):
+
+            if near_xz:
+                # 计算目标哈希并确保锁定目标为当前最近目标
                 h = self._point_hash(best, best_meta)
-                with self._marked_lock:
-                    self._marked.setdefault(map_id, set()).add(h)
-                    # 标记为脏，延迟写盘
-                    self._dirty = True
-                self.info_set('导航', f'已标记: {best_meta} ({h})')
-            # 更新上一帧按键状态
-            self._prev_mark_key_state = cur_key
+                if self._mark_lock_target is None or self._mark_lock_target.get('hash') != h:
+                    self._mark_lock_target = {'map_id': map_id, 'hash': h, 'start_time': None}
+
+                # 如果按键被按下，开始/继续计时；若连续保持足够长则标记
+                if cur_key:
+                    now = time.time()
+                    if self._mark_lock_target.get('start_time') is None:
+                        self._mark_lock_target['start_time'] = now
+                    else:
+                        elapsed = now - self._mark_lock_target['start_time']
+                        if elapsed >= float(self._mark_lock_required):
+                            # 最终确认未被提前标记
+                            if h not in self._marked.get(map_id, set()):
+                                with self._marked_lock:
+                                    self._marked.setdefault(map_id, set()).add(h)
+                                    self._dirty = True
+                                self.info_set('导航', f'已标记: {best_meta} ({h})')
+                            # 标记完成或已标记，清除锁定
+                            self._mark_lock_target = None
+                else:
+                    # 在按住计时期间若有一帧松开，则取消本次锁定
+                    if self._mark_lock_target and self._mark_lock_target.get('start_time') is not None:
+                        self._mark_lock_target = None
+            else:
+                # 离开接近阈值时清除任何锁定
+                self._mark_lock_target = None
 
         except Exception as e:
             self.log_error(f"ItemNavigatorTask 异常: {e}")

@@ -11,7 +11,6 @@ from src.tasks.mixin.game_flow_mixin import GameFlowMixin
 from src.tasks.mixin.process_manager import ProcessManager
 from src.tasks.mixin.runtime_mixin import RuntimeMixin
 from src.tasks.mixin.window_arrow_drawing_mixin import WindowArrowDrawingMixin
-from tasks.mixin.ws_position_mixin import WsPositionMixin
 
 
 def back_window(prev):

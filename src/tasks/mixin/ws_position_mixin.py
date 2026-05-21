@@ -21,6 +21,9 @@ class WsPositionMixin:
         self._ws_loop = None
         self._ws_stop_event = None
         self._ws_enabled = False
+        # 缓存最后接收的位置数据，用于在没有新数据时返回旧值
+        self._ws_last_position_payload = None
+        self._ws_position_lock = threading.Lock()
 
     def _is_ws_position_server_enabled(self) -> bool:
         thread = self._ws_server_thread
@@ -60,8 +63,15 @@ class WsPositionMixin:
 
     def _push_ws_payload(self, payload: dict[str, Any]):
         try:
+            # 缓存有效的位置数据
+            pos, map_id, px, py, pz = self._extract_position_payload(payload)
+            if pos is not None and map_id is not None:
+                with self._ws_position_lock:
+                    self._ws_last_position_payload = payload
+            # 放入队列
             self._ws_payload_queue.put_nowait(payload)
         except queue.Full:
+            # 队列已满，弹出旧数据后重试
             try:
                 self._ws_payload_queue.get_nowait()
             except queue.Empty:
@@ -69,10 +79,17 @@ class WsPositionMixin:
             try:
                 self._ws_payload_queue.put_nowait(payload)
             except queue.Full:
+                # 仍然满，放弃此消息
                 pass
 
     async def _ws_handler(self, ws):
+        log_info = getattr(self, "log_info", None)
+        log_error = getattr(self, "log_error", None)
+        
         try:
+            if callable(log_info):
+                log_info(f"[WS] 客户端已连接")
+            
             async for msg in ws:
                 if isinstance(msg, (bytes, bytearray)):
                     msg = msg.decode("utf-8", errors="ignore")
@@ -82,19 +99,26 @@ class WsPositionMixin:
 
                 try:
                     payload = json.loads(msg)
-                except Exception:
+                    self._push_ws_payload(payload)
+                    # 仅在有效位置数据时记录（避免过多日志）
+                    pos, map_id, px, py, pz = self._extract_position_payload(payload)
+                    if pos is not None and map_id is not None and callable(log_info):
+                        log_info(f"[WS] 收到位置: mapId={map_id} pos=({px:.1f},{py:.1f},{pz:.1f})")
+                except Exception as e:
+                    if callable(log_error):
+                        log_error(f"[WS] 处理消息异常: {e}")
                     continue
-
-                self._push_ws_payload(payload)
         except Exception as e:
-            log_error = getattr(self, "log_error", None)
             if callable(log_error):
-                log_error(f"WS handler异常: {e}")
+                log_error(f"[WS handler] 异常: {e}")
+        finally:
+            if callable(log_info):
+                log_info(f"[WS] 客户端已断开")
 
     async def _ws_server_main(self):
         log_info = getattr(self, "log_info", None)
         if callable(log_info):
-            log_info(f"WS监听启动: ws://{self._ws_host}:{self._ws_port}")
+            log_info(f"[WS] 监听启动: ws://{self._ws_host}:{self._ws_port}")
 
         async with websockets.serve(self._ws_handler, self._ws_host, self._ws_port):
             await self._ws_stop_event.wait()
@@ -108,8 +132,8 @@ class WsPositionMixin:
         if self._is_ws_position_server_enabled():
             return
 
-        self._ws_stop_event = None
-        self._ws_loop = None
+        log_info = getattr(self, "log_info", None)
+        log_error = getattr(self, "log_error", None)
 
         def _runner():
             loop = asyncio.new_event_loop()
@@ -117,17 +141,23 @@ class WsPositionMixin:
             self._ws_stop_event = asyncio.Event()
             asyncio.set_event_loop(loop)
             try:
+                if callable(log_info):
+                    log_info(f"[WS] 服务器启动: ws://{self._ws_host}:{self._ws_port}")
                 loop.run_until_complete(self._ws_server_main())
             except Exception as e:
-                log_error = getattr(self, "log_error", None)
                 if callable(log_error):
-                    log_error(f"WS服务异常: {e}")
+                    log_error(f"[WS] 服务器异常: {e}")
             finally:
                 try:
                     loop.stop()
                 except Exception:
                     pass
-                loop.close()
+                try:
+                    loop.close()
+                except Exception:
+                    pass
+                if callable(log_info):
+                    log_info(f"[WS] 服务器已关闭")
 
         self._ws_server_thread = threading.Thread(target=_runner, name="WsPositionServer", daemon=True)
         self._ws_server_thread.start()
@@ -139,17 +169,39 @@ class WsPositionMixin:
         except queue.Empty:
             return None
 
+    def _recv_ws_position_payload_or_cached(self, timeout: float = 0.5):
+        """获取最新的位置数据，如果没有新数据则返回缓存的上一次数据。
+        
+        返回：
+            - 新的位置数据（从队列获取）
+            - 或缓存的位置数据（如果队列为空）
+            - 或 None（如果从未接收过数据）
+        """
+        payload = self._recv_ws_position_payload(timeout=timeout)
+        if payload is not None:
+            return payload
+        # 队列为空，返回缓存的最后位置
+        with self._ws_position_lock:
+            return self._ws_last_position_payload
+
     def _stop_ws_position_server(self):
-        if self._ws_loop and self._ws_stop_event:
-            try:
+        log_info = getattr(self, "log_info", None)
+        log_error = getattr(self, "log_error", None)
+        
+        try:
+            if self._ws_loop and self._ws_stop_event:
                 self._ws_loop.call_soon_threadsafe(self._ws_stop_event.set)
-            except Exception:
-                pass
-
-        if self._ws_server_thread and self._ws_server_thread.is_alive():
-            self._ws_server_thread.join(timeout=2.0)
-
-        self._ws_server_thread = None
-        self._ws_loop = None
-        self._ws_stop_event = None
-        self._ws_enabled = False
+            
+            if self._ws_server_thread and self._ws_server_thread.is_alive():
+                self._ws_server_thread.join(timeout=2.0)
+                
+            if callable(log_info):
+                log_info("[WS] 服务器已停止")
+        except Exception as e:
+            if callable(log_error):
+                log_error(f"[WS] 停止服务异常: {e}")
+        finally:
+            self._ws_server_thread = None
+            self._ws_loop = None
+            self._ws_stop_event = None
+            self._ws_enabled = False
