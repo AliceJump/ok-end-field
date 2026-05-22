@@ -7,6 +7,188 @@ from typing import Iterable, Sequence
 import cv2
 from ok.feature.Box import Box
 
+try:
+    from opencc import OpenCC  # type: ignore[import-untyped]
+except ImportError:
+    OpenCC = None
+
+_T2S_FALLBACK_TRANSLATION_TABLE = str.maketrans(
+    {
+        "萬": "万",
+        "與": "与",
+        "業": "业",
+        "東": "东",
+        "兩": "两",
+        "個": "个",
+        "中": "中",
+        "為": "为",
+        "乘": "乘",
+        "亂": "乱",
+        "乾": "干",
+        "亂": "乱",
+        "亞": "亚",
+        "產": "产",
+        "眾": "众",
+        "優": "优",
+        "會": "会",
+        "傳": "传",
+        "傷": "伤",
+        "價": "价",
+        "關": "关",
+        "興": "兴",
+        "內": "内",
+        "擊": "击",
+        "別": "别",
+        "剛": "刚",
+        "劃": "划",
+        "動": "动",
+        "勵": "励",
+        "勢": "势",
+        "區": "区",
+        "協": "协",
+        "厭": "厌",
+        "參": "参",
+        "雙": "双",
+        "發": "发",
+        "變": "变",
+        "叢": "丛",
+        "後": "后",
+        "復": "复",
+        "從": "从",
+        "態": "态",
+        "總": "总",
+        "戰": "战",
+        "擁": "拥",
+        "擇": "择",
+        "據": "据",
+        "敵": "敌",
+        "數": "数",
+        "斷": "断",
+        "時": "时",
+        "晉": "晋",
+        "暫": "暂",
+        "機": "机",
+        "權": "权",
+        "極": "极",
+        "標": "标",
+        "檔": "档",
+        "殘": "残",
+        "氣": "气",
+        "減": "减",
+        "測": "测",
+        "濃": "浓",
+        "濺": "溅",
+        "無": "无",
+        "為": "为",
+        "獲": "获",
+        "環": "环",
+        "產": "产",
+        "當": "当",
+        "發": "发",
+        "盜": "盗",
+        "監": "监",
+        "盤": "盘",
+        "確": "确",
+        "礎": "础",
+        "碎": "碎",
+        "禦": "御",
+        "稀": "稀",
+        "稱": "称",
+        "種": "种",
+        "穩": "稳",
+        "簡": "简",
+        "級": "级",
+        "統": "统",
+        "續": "续",
+        "總": "总",
+        "網": "网",
+        "維": "维",
+        "罷": "罢",
+        "羅": "罗",
+        "聯": "联",
+        "脅": "胁",
+        "腦": "脑",
+        "與": "与",
+        "舊": "旧",
+        "艦": "舰",
+        "藝": "艺",
+        "蘊": "蕴",
+        "處": "处",
+        "視": "视",
+        "覺": "觉",
+        "觸": "触",
+        "計": "计",
+        "訓": "训",
+        "記": "记",
+        "設": "设",
+        "評": "评",
+        "試": "试",
+        "話": "话",
+        "該": "该",
+        "詳": "详",
+        "語": "语",
+        "誤": "误",
+        "說": "说",
+        "課": "课",
+        "調": "调",
+        "請": "请",
+        "護": "护",
+        "變": "变",
+        "讓": "让",
+        "貝": "贝",
+        "財": "财",
+        "責": "责",
+        "貢": "贡",
+        "貫": "贯",
+        "貴": "贵",
+        "資": "资",
+        "賦": "赋",
+        "質": "质",
+        "購": "购",
+        "轉": "转",
+        "輸": "输",
+        "還": "还",
+        "這": "这",
+        "進": "进",
+        "運": "运",
+        "過": "过",
+        "達": "达",
+        "選": "选",
+        "遞": "递",
+        "遙": "遥",
+        "適": "适",
+        "遺": "遗",
+        "醫": "医",
+        "邏": "逻",
+        "釋": "释",
+        "鐘": "钟",
+        "鎖": "锁",
+        "關": "关",
+        "門": "门",
+        "陣": "阵",
+        "際": "际",
+        "陰": "阴",
+        "陽": "阳",
+        "隊": "队",
+        "難": "难",
+        "雜": "杂",
+        "電": "电",
+        "靈": "灵",
+        "預": "预",
+        "類": "类",
+        "顯": "显",
+        "風": "风",
+        "飛": "飞",
+        "餘": "余",
+        "驗": "验",
+        "體": "体",
+        "點": "点",
+        "龜": "龟",
+        "號": "号",
+    }
+)
+_OPENCC_T2S = OpenCC("t2s") if OpenCC else None
+
 _PUNCT_TRANSLATION_TABLE = str.maketrans(
     {
         "·": "：",
@@ -63,8 +245,17 @@ class _EssencePanelParse:
 
 def _normalize_text(text: str) -> str:
     text = (text or "").strip().translate(_PUNCT_TRANSLATION_TABLE)
+    if _OPENCC_T2S:
+        text = _OPENCC_T2S.convert(text)
+    else:
+        text = text.translate(_T2S_FALLBACK_TRANSLATION_TABLE)
     # OCR 可能混入不可见空白（如 \r/\n/\t/不间断空格），统一移除避免输出断行/错位
     return re.sub(r"\s+", "", text)
+
+
+_NORMALIZED_ESSENCE = _normalize_text("基質")
+_NORMALIZED_AFFIX_LABEL = _normalize_text("附加技能")
+_GOLD_MARKERS = (_normalize_text("無暇"), _normalize_text("无瑕"))
 
 
 def _looks_like_noise(text: str) -> bool:
@@ -116,7 +307,8 @@ def _extract_source(text: str) -> str:
 
 def _is_gold_by_name(name: str) -> bool:
     # 第一版：用“无暇/无瑕”做金色判定（遍历时会再用图标色判定）
-    return "无暇" in name or "无瑕" in name
+    normalized_name = _normalize_text(name)
+    return any(marker in normalized_name for marker in _GOLD_MARKERS)
 
 
 def _parse_int(text: str) -> int | None:
@@ -152,7 +344,10 @@ def parse_essence_panel(
     name_candidates: list[tuple[Box, str]] = [
         (b, s)
         for b, s in normalized
-        if "基质" in s and s != "基质" and not _looks_like_noise(s) and len(s) >= 4
+        if _NORMALIZED_ESSENCE in s
+        and s != _NORMALIZED_ESSENCE
+        and not _looks_like_noise(s)
+        and len(s) >= 4
     ]
     if not name_candidates:
         return None
@@ -163,14 +358,14 @@ def parse_essence_panel(
         return None
 
     # 词条：优先使用“附加技能”标签定位
-    affix_label = next((b for b, s in normalized if s == "附加技能"), None)
+    affix_label = next((b for b, s in normalized if s == _NORMALIZED_AFFIX_LABEL), None)
     affix_start_y = affix_label.y if affix_label else name_box.y + name_box.height + 10
 
     entry_candidates: list[tuple[Box, str]] = []
     for b, s in normalized:
         if b.y < affix_start_y:
             continue
-        if s in {"附加技能", "基质"}:
+        if s in {_NORMALIZED_AFFIX_LABEL, _NORMALIZED_ESSENCE}:
             continue
         if _looks_like_noise(s):
             continue
@@ -205,11 +400,11 @@ def parse_essence_panel(
             continue
         if source_end_y is not None and b.y >= source_end_y:
             continue
-        if s in {"附加技能", "基质"}:
+        if s in {_NORMALIZED_AFFIX_LABEL, _NORMALIZED_ESSENCE}:
             continue
         if _looks_like_noise(s):
             continue
-        if "基质" in s:
+        if _NORMALIZED_ESSENCE in s:
             continue
         if (_extract_entry_name(s) or "") in entry_names:
             continue
