@@ -12,6 +12,7 @@ try:
 except ImportError:
     OpenCC = None
 
+# OpenCC 不可用时，至少覆盖基质面板识别里最常见的繁体字。
 _T2S_FALLBACK_TRANSLATION_TABLE = str.maketrans(
     {
         "擊": "击",
@@ -21,7 +22,13 @@ _T2S_FALLBACK_TRANSLATION_TABLE = str.maketrans(
         "號": "号",
     }
 )
-_OPENCC_T2S = OpenCC("t2s") if OpenCC else None
+if OpenCC:
+    try:
+        _OPENCC_T2S = OpenCC("t2s")
+    except Exception:
+        _OPENCC_T2S = None
+else:
+    _OPENCC_T2S = None
 
 _PUNCT_TRANSLATION_TABLE = str.maketrans(
     {
