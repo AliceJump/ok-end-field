@@ -89,7 +89,7 @@ def _normalize_text(text: str) -> str:
 
 _NORMALIZED_ESSENCE = _normalize_text("基質")
 _NORMALIZED_AFFIX_LABEL = _normalize_text("附加技能")
-_GOLD_MARKERS = (_normalize_text("無暇"), _normalize_text("无瑕"))
+_GOLD_MARKERS = (_normalize_text("无瑕"),)
 
 
 def _looks_like_noise(text: str) -> bool:
