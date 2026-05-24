@@ -155,7 +155,7 @@ def _extract_essence_name(text: str) -> str:
     text = text.replace("：", " ")
 
     match = re.search(
-        r"([\u4e00-\u9fff]+基质)\s*([\u4e00-\u9fff]+)?",
+        r"([\u4e00-\u9fff]{1,20}基质)(?:\s*([\u4e00-\u9fff]{1,20}))?",
         text,
     )
 
