@@ -19,12 +19,12 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 from src.data.FeatureList import FeatureList as fL
-from src.data.ocr_normalize_map import ocr_confusion_map
+from src.data.ocr_normalize_map import get_runtime_ocr_confusion_map
 from ok import Box
 from src.tasks.BaseEfTask import BaseEfTask
 
 
-def build_name_patterns(find_name: str):
+def build_name_patterns(find_name: str, *, context=None, locale: str | None = None):
     """
     根据角色名称生成 OCR 匹配模式（优化版：合并 regex，避免组合爆炸）
     """
@@ -36,6 +36,8 @@ def build_name_patterns(find_name: str):
         keys = [find_name]
 
     patterns = []
+
+    confusion_map = get_runtime_ocr_confusion_map(context=context, locale=locale)
 
     for key in keys:
         parts = []

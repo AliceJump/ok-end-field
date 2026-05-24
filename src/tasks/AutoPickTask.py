@@ -5,6 +5,7 @@ import numpy as np
 from qfluentwidgets import FluentIcon
 
 from ok import Logger, TriggerTask
+from src.data.lang import get_auto_pick_terms
 from src.tasks.BaseEfTask import BaseEfTask
 
 logger = Logger.get_logger(__name__)
@@ -20,12 +21,7 @@ class AutoPickTask(BaseEfTask, TriggerTask):
         self.default_config = {'_enabled': True}
         self.last_box_name = None
         self.last_pick_time = 0
-        self.white_list = {'采集', '萤壳虫', '打开', '荞花', '灰芦麦', '灼壳虫', '苦叶椒', "柱状菌", "酮化灌木",
-                           '柑实', "触碰", '激活', '芽针', '多齿叶', '砂叶'
-                           }
-        self.black_list = {
-            '协议核心', '激活箱子'
-        }
+        self.white_list, self.black_list = get_auto_pick_terms(context=self)
 
     def run(self):
         if self.in_combat_world():
