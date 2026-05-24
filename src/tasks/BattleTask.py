@@ -11,6 +11,16 @@ class BattleTask(DailyBattleMixin):
         self.icon = FluentIcon.BRIGHTNESS
         self.default_config_group.pop("⭐刷体力", None)
         self.default_config.pop("⭐刷体力", None)
+        task_group = {"隐藏": []}
+
+        # 合并两个分组字典
+        all_groups = {
+            **task_group,
+            **self.default_config_group,
+            **{"其他配置": ["多账户模式", "发生异常时终止游戏", "仅退出游戏"]},
+        }
+
+        self.register_config_groups(all_groups)
 
     def run(self):
         self.ensure_main(time_out=420)

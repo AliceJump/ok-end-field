@@ -13,6 +13,7 @@ from typing import Dict, Tuple
 from qfluentwidgets import FluentIcon
 
 from ok import Logger, TriggerTask
+from src.config import config
 from src.tasks.BaseEfTask import BaseEfTask
 from src.tasks.mixin.ws_position_mixin import WsPositionMixin
 from src.data import item_map_query
@@ -20,7 +21,7 @@ from src.data import item_map_query
 logger = Logger.get_logger(__name__)
 
 
-class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
+class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
     """实时从本地 WebSocket 拿玩家位置，指向已选物品的最近点，并支持按键标记已获取。
 
     设计原则：
@@ -33,7 +34,6 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
         # 初始化父类
         super().__init__(*args, **kwargs)
 
-        
         # 设置导航模块的基本信息
         self.name = "物品导航"  # 模块名称
         self.description = "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"  # 模块描述
@@ -48,16 +48,10 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
             '标记按住时长': 0.8,
         })
 
-        # config type: use button_list for multi-select UI
-        try:
-            self.config_type['选择物品'] = {
-                'type': 'button_list',
-                'options': item_map_query.get_supported_item_names()
-            }
-        except Exception:
-            # fallback to empty options if data unavailable
-            self.config_type['选择物品'] = {'type': 'button_list', 'options': []}
-
+        self.config_type["选择物品"] = {
+            "options_available": item_map_query.get_supported_item_names(),
+            "allow_duplication": False,
+        }
         self.config_type['油猴脚本帮助'] = {
             'type': 'button',
             'text': '浏览器油猴脚本帮助',
@@ -85,14 +79,15 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
 
         # internal constants (not user-facing)
         self._init_ws_position_mixin()
-        self._marked_store = Path('assets') / 'items' / 'map' / 'marked_points.json'
+        cfg_folder = Path(config.get('config_folder', 'configs'))
+        self._marked_store = cfg_folder / 'marked_points.json'
         self._marked_lock = threading.Lock()
         self._marked: Dict[str, set] = {}  # mapId -> set of point hashes
         # WS 服务启动状态追踪（仅记录首次启动日志）
         self._ws_server_start_logged = False
 
         # 箭头渲染可调参数（便于快速微调视觉）
-        self._arrow_center_rel = (162/1920, 166/1080)  # 相对于窗口的箭头中心位置（比例），默认在左上角稍微偏右下   
+        self._arrow_center_rel = (162 / 1920, 166 / 1080)  # 相对于窗口的箭头中心位置（比例），默认在左上角稍微偏右下
         self._arrow_max_len_ratio = 0.08
         self._arrow_min_len_px = 20.0
         self._arrow_scale = 3.0
@@ -168,10 +163,31 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
     # --- persistence for marked points ---
     def _load_marked(self):
         try:
+            # 先尝试加载新路径
             if self._marked_store.exists():
                 data = json.loads(self._marked_store.read_text(encoding='utf-8'))
                 for k, v in (data or {}).items():
                     self._marked[k] = set(v or [])
+                return
+
+            # 如果新路径不存在，检查旧路径并迁移
+            old_path = Path('assets') / 'items' / 'map' / 'marked_points.json'
+            if old_path.exists():
+                self.log_info(f"发现旧路径的 marked_points.json，正在迁移到新路径: {self._marked_store}")
+                try:
+                    data = json.loads(old_path.read_text(encoding='utf-8'))
+                    for k, v in (data or {}).items():
+                        self._marked[k] = set(v or [])
+                    # 自动保存到新路径
+                    self._save_marked()
+                    # 可选：删除旧文件
+                    try:
+                        old_path.unlink()
+                        self.log_info("旧文件已删除")
+                    except Exception:
+                        self.log_info("旧文件保留（删除失败）")
+                except Exception as e:
+                    self.log_error(f"迁移旧文件失败: {e}")
         except Exception as e:
             self.log_error(f"加载 marked_points 失败: {e}")
 
@@ -194,7 +210,7 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
     def _point_hash(pt: Dict[str, float], item_name: str | None = None) -> str:
         # 包含物品名以避免不同物品同坐标冲突
         name = item_name or ''
-        return f"{name}|{round(pt.get('x',0),3)}|{round(pt.get('y',0),3)}|{round(pt.get('z',0),3)}"
+        return f"{name}|{round(pt.get('x', 0), 3)}|{round(pt.get('y', 0), 3)}|{round(pt.get('z', 0), 3)}"
 
     # --- core helpers ---
     @staticmethod
@@ -233,7 +249,7 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
                 shaft_width_norm=self._arrow_shaft_width_norm,
                 arrow_type='default',
             )
-            
+
             if not success:
                 self.log_info(f"[箭头] 绘制失败")
                 return
@@ -252,7 +268,7 @@ class ItemNavigatorTask(WsPositionMixin,BaseEfTask, TriggerTask):
             max_abs_dy = max(1e-6, float(self._height_arrow_max_abs_dy))
             t = min(abs_dy / max_abs_dy, 1.0)
             draw_len_norm = self._height_arrow_min_len_norm + (
-                (self._height_arrow_max_len_norm - self._height_arrow_min_len_norm) * t
+                    (self._height_arrow_max_len_norm - self._height_arrow_min_len_norm) * t
             )
             draw_len_norm = max(self._height_arrow_min_len_norm, min(draw_len_norm, self._height_arrow_max_len_norm))
 

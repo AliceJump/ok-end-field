@@ -31,7 +31,7 @@ def build_name_patterns(find_name: str):
 
     # 1️⃣ 滑窗拆分
     if len(find_name) >= 2:
-        keys = [find_name[i : i + 2] for i in range(len(find_name) - 1)]
+        keys = [find_name[i: i + 2] for i in range(len(find_name) - 1)]
     else:
         keys = [find_name]
 
@@ -157,6 +157,7 @@ class Common(BaseEfTask):
         else:
             # OCR失败时默认返回最大值
             return 0
+
     def plus_max(self):
         for plus_button in [fL.plus_button, fL.market_plus_button]:
             plus_button = self.find_one(feature_name=plus_button, box=self.box.bottom_right, threshold=0.8)

@@ -17,6 +17,7 @@ from pathlib import Path
 from src.tasks.daily.daily_task_runner import DailyTaskRunner
 from src.tasks.mixin.end_command_mixin import EndCommandMixin
 
+
 class DailyTask(
     DailyBuyMixin,  # 买物资
     DailyBattleMixin,  # 刷体力
@@ -54,9 +55,16 @@ class DailyTask(
         )
         self.default_config.update({
             "⭐传送到帝江号右侧传送点": True,
+            "配置选择": "",
             "发生异常时终止游戏": False,
             "仅退出游戏": False,
         })
+        task_group = {"隐藏": [], "子任务配置": [i for i, _ in self.build_task_plan()]}
+
+        # 合并两个分组字典
+        all_groups = {**task_group, **self.default_config_group, **{"其他配置": ["发生异常时终止游戏", "仅退出游戏"]}}
+
+        self.register_config_groups(all_groups)
         self.add_exit_after_config()
         if self.debug:
             self.default_config.update({"重复测试的次数": 1})
@@ -121,7 +129,7 @@ class DailyTask(
             self._open_local_path_with_default_app(summary_path)
 
             self.log_info(f"日常执行情况汇总已创建并打开: {summary_path}")
-            
+
             return True
         except Exception as e:
             self.log_info(f"创建日常任务结尾文件失败: {e}", notify=True)

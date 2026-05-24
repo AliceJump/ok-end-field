@@ -148,6 +148,52 @@ class TestDailyTaskFinallyFile(unittest.TestCase):
             self.assertIn("第 1 轮: 任务A, 任务B", content)
             self.assertIn("第 2 轮: 任务C", content)
 
+    def test_create_daily_summary_report_with_failure_details_grouped_by_account(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            directory = Path(temp_dir)
+
+            summary_info = {
+                "actual_repeat_total": 2,
+                "per_round": [
+                    {
+                        "round": 1,
+                        "account_user": "Alice",
+                        "account_id": "alice-1",
+                        "success": [],
+                        "failed": ["任务A"],
+                        "skipped": [],
+                        "all": ["任务A"],
+                    },
+                    {
+                        "round": 2,
+                        "account_user": "Bob",
+                        "account_id": "bob-1",
+                        "success": [],
+                        "failed": ["任务B"],
+                        "skipped": [],
+                        "all": ["任务B"],
+                    },
+                ],
+                "failure_details": {
+                    "alice-1": {
+                        "任务A": "Alice 的失败消息",
+                    },
+                    "bob-1": {
+                        "任务B": "Bob 的失败消息",
+                    },
+                },
+            }
+
+            created_file = create_daily_summary_report(directory, summary_info)
+
+            self.assertTrue(created_file.exists())
+            content = created_file.read_text(encoding="utf-8")
+            self.assertIn("失败消息:", content)
+            self.assertIn("=== 账号: Alice ===", content)
+            self.assertIn("- 任务A : Alice 的失败消息", content)
+            self.assertIn("=== 账号: Bob ===", content)
+            self.assertIn("- 任务B : Bob 的失败消息", content)
+
     def test_create_daily_summary_report_deletes_old_files(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             directory = Path(temp_dir)

@@ -37,8 +37,9 @@ class DailyShopMixin(Common):
                 return False, sum_credit
             self.log_info(f"信用商店尝试刷新第{self.refresh_count + 1}次，预计消耗信用: {cost}，当前信用: {sum_credit}")
             shop_retry = 0
-            while not self.wait_click_ocr(match=re.compile("刷新"), time_out=1, box=self.box_of_screen(2/3, 0.5, 1, 1)):
-                if self.wait_ocr(match=re.compile("购买"),box=self.box.top_left, time_out=1):
+            while not self.wait_click_ocr(match=re.compile("刷新"), time_out=1,
+                                          box=self.box_of_screen(2 / 3, 0.5, 1, 1)):
+                if self.wait_ocr(match=re.compile("购买"), box=self.box.top_left, time_out=1):
                     self.back(after_sleep=1)
                 elif not self.back_shop():
                     self.log_info("信用商店刷新中断：未能返回采购页面")
@@ -48,7 +49,7 @@ class DailyShopMixin(Common):
                     if shop_retry >= 3:
                         return True, sum_credit
             if not self.wait_click_ocr(match=re.compile("确认"), time_out=5, box=self.box.bottom_right):
-                self.log_info("信用商店刷新失败：未找到确认按钮")
+                self.mark_task_failure("信用商店刷新失败：未找到确认按钮")
                 return False, sum_credit
             sum_credit -= cost
             self.refresh_count += 1
@@ -124,7 +125,7 @@ class DailyShopMixin(Common):
                     cost = 10
                 else:
                     self.info_set("信用商店警告", "购买优先商品前未能获取价格信息")
-                    self.log_info(f"购买失败: {item_name}，原因: 未识别到有效价格且非折扣商品")
+                    self.mark_task_failure(f"购买失败: {item_name}，原因: 未识别到有效价格且非折扣商品")
                     return False, sum_credit, False
             self.log_info(f"商品价格识别成功: {item_name}，价格: {cost}")
             result = self.wait_click_ocr(
@@ -134,14 +135,14 @@ class DailyShopMixin(Common):
                 self.log_info(f"购买流程中断: {item_name}，未找到确认/不足弹窗，尝试返回采购页")
                 if not self.back_shop():
                     return False, sum_credit, False
-                if cost==10:
+                if cost == 10:
                     self.log_info(f"折扣商品: {item_name}，同时也是抽卡道具,重复点击导致无法购买，继续购买下一个优先商品")
                     continue
                 return True, sum_credit, True
             else:
                 if "不足" in result[0].name:
                     self.info_set("信用商店警告", "购买优先商品时信用不足")
-                    self.log_info(f"购买失败: {item_name}，原因: 信用不足，当前信用: {sum_credit}，价格: {cost}")
+                    self.mark_task_failure(f"购买失败: {item_name}，原因: 信用不足，当前信用: {sum_credit}，价格: {cost}")
                     self.back_shop()
                     return False, sum_credit, False
             self.wait_pop_up(after_sleep=1)
@@ -167,7 +168,7 @@ class DailyShopMixin(Common):
                 return False
             success, sum_credit = self.refresh(sum_credit)
             if not success:
-                if sum_credit <=self.config.get('信用商店保留信用',300):
+                if sum_credit <= self.config.get('信用商店保留信用', 300):
                     return True
                 else:
                     return self.buy_left(sum_credit)
@@ -202,7 +203,7 @@ class DailyShopMixin(Common):
             else:
                 if "不足" in result[0].name:
                     self.info_set("信用商店警告", "购买剩余商品时信用不足")
-                    self.log_info(f"购买失败: {item_name}，原因: 信用不足，当前信用: {sum_credit}，价格: {cost}")
+                    self.mark_task_failure(f"购买失败: {item_name}，原因: 信用不足，当前信用: {sum_credit}，价格: {cost}")
                     self.back_shop()
                     return True
             self.wait_pop_up(after_sleep=1)

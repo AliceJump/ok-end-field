@@ -140,9 +140,9 @@ def _normalize_accounts_map(raw_accounts: Any) -> Dict[str, Dict[str, Dict[str, 
 
 
 def _find_account_id_by_username(
-    registry: Dict[str, Dict[str, Any]],
-    username: str,
-    include_aliases: bool = False,
+        registry: Dict[str, Dict[str, Any]],
+        username: str,
+        include_aliases: bool = False,
 ) -> str:
     if not username:
         return ""
@@ -175,9 +175,9 @@ def _generate_account_id(registry: Dict[str, Dict[str, Any]]) -> str:
 
 
 def _ensure_registry_entry(
-    registry: Dict[str, Dict[str, Any]],
-    username: str,
-    account_id: str | None = None,
+        registry: Dict[str, Dict[str, Any]],
+        username: str,
+        account_id: str | None = None,
 ) -> str:
     username = _clean_username(username)
     if not username:

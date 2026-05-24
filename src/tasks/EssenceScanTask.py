@@ -7,7 +7,12 @@ import pywintypes
 from qfluentwidgets import FluentIcon
 
 from src.data.FeatureList import FeatureList as fL
-from src.essence.weapon_data import load_weapon_data, match_weapon_requirements
+from src.essence.weapon_data import (
+    discover_weapon_data_language_options,
+    load_weapon_data,
+    match_weapon_requirements,
+    resolve_weapon_data_path,
+)
 from src.tasks.BaseEfTask import BaseEfTask
 
 
@@ -110,9 +115,13 @@ class EssenceScanSettings:
             except (TypeError, ValueError):
                 return default
 
-        weapon_csv = Path(
-            str(config.get("_武器数据CSV", Path("assets") / "weapon_data.csv"))
-        ).expanduser()
+        selected_language = str(config.get("武器数据语言", "") or "").strip()
+        if selected_language:
+            weapon_csv = resolve_weapon_data_path(Path("assets"), selected_language)
+        else:
+            weapon_csv = Path(
+                str(config.get("_武器数据CSV", Path("assets") / "weapon_data.csv"))
+            ).expanduser()
 
         ref_resolution = _parse_xy(config.get("_参考分辨率"), _DEFAULT_REF_RESOLUTION)
         grid_origin = _parse_xy(config.get("_网格起点"), _DEFAULT_GRID_ORIGIN)
@@ -181,11 +190,16 @@ class EssenceScanTask(BaseEfTask):
         self.icon = FluentIcon.SEARCH
         # 该 output 文本框默认会显示在“开始”按钮同一行，观感较差；此任务用实时日志 + 状态栏即可。
         self.show_info_panel = False
+        weapon_data_dir = Path("assets")
+        weapon_data_language_options = discover_weapon_data_language_options(weapon_data_dir)
+        weapon_data_language_labels = [option.label for option in weapon_data_language_options]
+        default_weapon_data_language = weapon_data_language_labels[0] if weapon_data_language_labels else "简体中文"
         self.default_config.update(
             {
                 "上锁毕业基质": True,
                 "非毕业基质取消上锁": False,
                 "非毕业基质弃置": False,
+                "武器数据语言": default_weapon_data_language,
                 # 以下为内部参数，前面加 "_" 以在 GUI 配置页隐藏
                 "_武器数据CSV": str(Path("assets") / "weapon_data.csv"),
                 "_参考分辨率": [str(_DEFAULT_REF_RESOLUTION[0]), str(_DEFAULT_REF_RESOLUTION[1])],
@@ -205,8 +219,13 @@ class EssenceScanTask(BaseEfTask):
             {
                 "上锁毕业基质": "命中毕业词条后自动点击右侧小锁上锁",
                 "非毕业基质取消上锁": "非毕业基质会尝试取消上锁（已上锁的会解锁）",
+                "武器数据语言": "根据 assets 目录下的 weapon_data*.csv 自动生成可选语言",
             }
         )
+        self.config_type["武器数据语言"] = {
+            "type": "drop_down",
+            "options": weapon_data_language_labels,
+        }
 
     def _ref_box(self, settings: EssenceScanSettings, x1: float, y1: float, x2: float, y2: float, *, name: str):
         ref_w, ref_h = settings.ref_resolution

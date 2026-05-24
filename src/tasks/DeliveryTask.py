@@ -30,7 +30,8 @@ from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
 secondary_objective_direction_dot = [fL.secondary_objective_direction_dot, fL.secondary_objective_direction_dot_light,
-                                     fL.secondary_objective_direction_dot_light_two, fL.secondary_objective_direction_dot_light_three]
+                                     fL.secondary_objective_direction_dot_light_two,
+                                     fL.secondary_objective_direction_dot_light_three]
 
 
 @dataclass
@@ -588,13 +589,13 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             if end_pattern == re.compile("资源"):
                 end_pattern = re.compile("交货")
             if self.wait_click_ocr(
-                match=end_pattern,
-                box=self.box.bottom_right,
-                settle_time=1,
-                time_out=2,
-                log=True,
-                after_sleep=2,
-                alt=True,
+                    match=end_pattern,
+                    box=self.box.bottom_right,
+                    settle_time=1,
+                    time_out=2,
+                    log=True,
+                    after_sleep=2,
+                    alt=True,
             ):
                 if not self.find_reward_ok():
                     self.skip_dialog()
@@ -736,19 +737,19 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 self.task_to_transfer_point(self.box.bottom)
                 self.to_storage_point_and_back_zip_line(only_zip_line=True)
                 if self.wait_click_ocr(
-                    match="登上滑索架",
-                    box=self.box.bottom_right,
-                    settle_time=1,
-                    time_out=2,
-                    log=True,
-                    after_sleep=2,
-                    alt=True,
+                        match="登上滑索架",
+                        box=self.box.bottom_right,
+                        settle_time=1,
+                        time_out=2,
+                        log=True,
+                        after_sleep=2,
+                        alt=True,
                 ):
                     self.log_info("未找到登上滑索架，测试失败")
                     self.on_zip_line_start(
                         end, need_v=False,
                         need_scroll=self.config.get(self.CFG_SCROLL_ENABLE)
-                        )
+                    )
                     self.sleep(2)
         else:
             zip_line_list_str = self.config.get(self.config.get(self.CFG_TEST_TARGET))
@@ -768,21 +769,21 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 if self.config.get(self.CFG_FULL_CYCLE_LOCATION) not in self.full_cycle_locations:
                     self.config[self.CFG_FULL_CYCLE_LOCATION] = self.full_cycle_locations[0]
                 self.config_type[self.CFG_TEST_TARGET]["options"] = (
-                    [self.TEST_NONE] + self.to_delivery_point_config_keys + self.ends + [self.TEST_FULL_CYCLE]
+                        [self.TEST_NONE] + self.to_delivery_point_config_keys + self.ends + [self.TEST_FULL_CYCLE]
                 )
                 self.config_type[self.CFG_FULL_CYCLE_LOCATION]["options"] = self.full_cycle_locations
                 for key in self.to_delivery_point_config_keys + self.ends:
                     self.config.setdefault(key, "")
             allow_multi = (
-                self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE
-                and not self.config.get(self.CFG_ONLY_ACCEPT)
-                and not self.config.get(self.CFG_ONLY_DELIVER)
+                    self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE
+                    and not self.config.get(self.CFG_ONLY_ACCEPT)
+                    and not self.config.get(self.CFG_ONLY_DELIVER)
             )
             for repeat_idx, repeat_times in self.iter_multi_account_context(
-                repeat_times=1,
-                empty_accounts_message="多账户模式已开启，但账号列表为空，自动送货任务结束",
-                account_log_suffix="自动送货",
-                allow_multi_account=allow_multi,
+                    repeat_times=1,
+                    empty_accounts_message="多账户模式已开启，但账号列表为空，自动送货任务结束",
+                    account_log_suffix="自动送货",
+                    allow_multi_account=allow_multi,
             ):
                 self._run_single_delivery_cycle()
 

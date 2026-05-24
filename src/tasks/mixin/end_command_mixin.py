@@ -8,7 +8,8 @@ import psutil
 class EndCommandMixin:
     """结尾外部命令能力。"""
 
-    def add_end_command_config(self, *, enable_description="是否在任务末尾执行一次外部命令行程序。", command_description=None):
+    def add_end_command_config(self, *, enable_description="是否在任务末尾执行一次外部命令行程序。",
+                               command_description=None):
         if command_description is None:
             command_description = (
                 "需要执行的命令行内容。\n"
@@ -34,7 +35,8 @@ class EndCommandMixin:
             }
         )
         self.default_config_group.update({
-            "⭐执行结尾外部命令": ["结尾外部命令", "结尾外部命令起始于", "结尾外部命令等待退出", "结尾外部命令已运行时跳过"],
+            "⭐执行结尾外部命令": ["结尾外部命令", "结尾外部命令起始于", "结尾外部命令等待退出",
+                                  "结尾外部命令已运行时跳过"],
         })
 
     def launch_end_command_non_blocking(self):

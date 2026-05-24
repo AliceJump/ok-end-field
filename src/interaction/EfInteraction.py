@@ -23,6 +23,7 @@ class EfInteraction(PostMessageInteraction):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cursor_position = None
+        self.activated = False
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.001, move=True, key="left"):
         self.try_activate()
@@ -64,12 +65,13 @@ class EfInteraction(PostMessageInteraction):
         self.send(win32con.WM_ACTIVATE, win32con.WA_ACTIVE, 0)
 
     def try_activate(self):
-        if not self.activated:
-            if not self.hwnd_window.is_foreground():
-                self.activated = True
-                self.cursor_position = GetCursorPos()
-                self.activate()
-                time.sleep(0.01)
+        if self.hwnd_window.is_foreground():
+            self.activated = False
+        elif not self.activated:
+            self.activated = True
+            self.cursor_position = GetCursorPos()
+            self.activate()
+            time.sleep(0.01)
         self.try_unclip()
 
     def try_unclip(self):

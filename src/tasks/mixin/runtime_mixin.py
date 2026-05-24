@@ -23,6 +23,7 @@ from src.interaction.Mouse import (
     run_at_window_pos,
 )
 from src.yolo.loader import YoloModelLoader
+from src.image.rotated_template import rotated_template_match
 
 feature_values = [f.value for f in fL]
 
@@ -327,6 +328,124 @@ class RuntimeMixin:
         self.log_info(f"yolo_detect: filtered detections count = {len(filtered_results)}")
 
         return sorted(filtered_results, key=lambda item: item.confidence, reverse=True)
+
+    def rotated_template_match_runtime(
+            self,
+            template_image,
+            target_image: np.ndarray | None = None,
+            target_center: tuple | None = None,
+            template_center: tuple | None = None,
+            angle_start: float = 0.0,
+            angle_end: float = 360.0,
+            angle_step: float = 5.0,
+            roi: tuple | None = None,
+            method: int = cv2.TM_CCORR_NORMED,
+    ):
+        """
+        运行时包装：在当前帧或给定 `target_image` 上执行旋转模板匹配。
+
+        参数:
+          template_image: 模板图像（ndarray，支持 alpha）或模板文件路径（string）
+          target_image: 可选，若为空则使用 `self.next_frame()`
+          target_center: (x,y)，若为 None 则使用目标图中心
+          template_center: (x,y)，若为 None 则使用模板中心
+          angle_start/angle_end/angle_step: 角度范围与步进
+          roi: (x,y,w,h) 可选裁剪目标区域以提高性能
+          method: cv2.matchTemplate 方法
+
+        返回: (best_angle, best_score)
+        """
+        # 加载/解析 template_image
+        tpl = template_image
+        if isinstance(template_image, str):
+            tpl = cv2.imread(template_image, cv2.IMREAD_UNCHANGED)
+            if tpl is None:
+                raise ValueError(f"无法读取模板文件: {template_image}")
+
+        # 获取目标帧
+        tgt = target_image if target_image is not None else self.next_frame()
+        if tgt is None:
+            raise ValueError("target_image is None and self.next_frame() 返回 None")
+
+        # 计算默认中心：如果未提供，则使用项目约定的归一化默认点 (215/2560, 222/1440)
+        if target_center is None:
+            # 传入归一化坐标，底层 rotated_template_match 会按目标尺寸反归一化
+            target_center = (215.0 / 2560.0, 222.0 / 1440.0)
+
+        if template_center is None:
+            th, tw = tpl.shape[:2]
+            template_center = (tw // 2, th // 2)
+
+        return rotated_template_match(
+            tgt,
+            tpl,
+            target_center,
+            template_center,
+            angle_start,
+            angle_end,
+            angle_step,
+            roi=roi,
+            method=method,
+        )
+
+    def get_arrow_angle(self, center: tuple | None = None, target_image: np.ndarray | None = None,
+                        two_stage: bool = True, benchmark_width: int = 2560, max_cache_scales: int = 10,
+                        smoothing_threshold: float = 0.35):
+        """
+        便捷 API：使用 ArrowAngleMatcher 检测 arrow.png 在目标图中的旋转角度（二阶段搜索）。
+        支持多分辨率自动适应（缓存键 (scale_key, angle)，scale_key 四舍五入避免浮点误差）。
+
+        参数:
+          center: 目标图中的中心坐标，若为 None 则使用默认 (215/2560, 222/1440)
+          target_image: 可选，若为空则使用 `self.next_frame()`
+          two_stage: 是否使用二阶段搜索（粗搜 10° + 精搜 0.5°），默认 True
+          benchmark_width: 基准分辨率宽度（默认 2560），用于计算模板缩放比例
+          max_cache_scales: 最多缓存多少个不同 scale（默认 10，防止 LRU 膨胀）
+
+        返回: (best_angle, best_score)
+        
+        说明: 
+          - 缓存键 (scale_key, angle)：scale_key = round(scale, 4) 避免浮点误差
+          - 不在每次 match() 中清空缓存，仅按需生成旋转结果
+          - scaled_template 缓存避免同一分辨率重复 resize
+          - 正常 ROI 提取返回 view 避免复制，仅越界时才 padding copy
+          - LRU 限制缓存大小，防止长期运行内存膨胀
+          - 粗搜阶段搜索 36 个角度，精搜阶段在最佳粗搜 ± 10° 范围以 0.5° 步长精细搜索
+          - 自动处理角度环绕（如 355° ± 10° 跨越 0/360° 边界）
+        """
+        from src.image.rotated_template import ArrowAngleMatcher
+
+        tgt = target_image if target_image is not None else self.next_frame()
+        if tgt is None:
+            raise ValueError("target_image is None and self.next_frame() 返回 None")
+
+        if center is None:
+            center = (215.0 / 2560.0, 222.0 / 1440.0)
+
+        # 使用缓存匹配器，支持多分辨率自适应与 LRU 限制
+        matcher = ArrowAngleMatcher(template_path=None, template_center=(12, 12),
+                                    benchmark_width=benchmark_width, max_cache_scales=max_cache_scales)
+
+        detected_angle, score = matcher.match(tgt, center=center, two_stage=two_stage)
+
+        # 角度平滑：当得分低于阈值时，继承上一帧角度
+        last_angle = getattr(self, "_last_arrow_angle", None)
+        last_score = getattr(self, "_last_arrow_score", None)
+
+        if score is None:
+            score = 0.0
+
+        if smoothing_threshold is not None and last_angle is not None and score < smoothing_threshold:
+            # 继承上一帧角度和得分（保留历史得分以便后续逻辑参考）
+            smoothed_angle = last_angle
+            smoothed_score = last_score if last_score is not None else score
+            # 不覆盖 _last_arrow_angle，使得低分连续时继续沿用上一帧
+            return smoothed_angle, smoothed_score
+
+        # 更新历史记录并返回检测结果
+        self._last_arrow_angle = detected_angle
+        self._last_arrow_score = score
+        return detected_angle, score
 
     def wait_ui_stable(
             self,

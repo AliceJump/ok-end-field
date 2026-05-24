@@ -153,6 +153,68 @@ class BaseEfTask(
             else:
                 self.log_info("发生异常，终止游戏", notify=True)
 
+    def mark_task_failure(self, message: str, task_name: str | None = None):
+        """统一标记任务失败消息。
+
+        在日常任务编排器可用时写入 runner.failure_details；
+        否则退化为普通日志，避免在独立任务中报错。
+        """
+        runner = getattr(self, "daily_runner", None)
+        if runner is not None and hasattr(runner, "set_task_failure"):
+            runner.set_task_failure(message, task_name=task_name)
+            return
+        self.log_info(str(message))
+
     def on_destroy(self):
         self.release_yolo_detector()
         super().on_destroy()
+
+    def register_config_groups(self, groups: dict, dropdown_name: str = "配置选择"):
+        """
+        注册配置分组，支持下拉切换 + 子配置折叠显示
+        """
+        # 初始化必要属性
+        if not hasattr(self, "default_config") or self.default_config is None:
+            self.default_config = {}
+
+        if not hasattr(self, "config_type") or self.config_type is None:
+            self.config_type = {}
+
+        # 1. 创建下拉选择框
+        dropdown_key = dropdown_name
+        group_names = list(groups.keys())
+
+        if not group_names:
+            print("警告: groups 为空")
+            return
+
+        # 注册下拉框配置类型
+        self.config_type[dropdown_key] = {
+            "type": "drop_down",
+            "options": group_names,
+            "sub_configs": groups,  # 关键：用于框架实现折叠逻辑
+        }
+
+        # 2. 设置默认选中第一个分组
+        self.default_config[dropdown_key] = group_names[0]
+
+        # 3. 为所有配置项补充默认值（安全处理）
+        for group_items in groups.values():
+            for item in group_items:
+                if isinstance(item, str):
+                    key = item
+                else:
+                    # 处理 self.CFG_XXX 常量的情况
+                    key = str(item)
+
+                # 关键修复：避免 NoneType 错误
+                if key not in self.default_config:
+                    if hasattr(self, "config") and self.config is not None and key in self.config:
+                        self.default_config[key] = self.config[key]
+                    else:
+                        # 给一个合理的默认值，后续 register_config 会根据类型覆盖
+                        self.default_config[key] = None
+
+        self.config_description.update({
+            dropdown_key: "配置默认隐藏，选择后展开对应配置项。"
+        })

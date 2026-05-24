@@ -8,7 +8,7 @@ class AccountMixin(LoginMixin):
         self.default_config.update({
             "多账户模式": False,
             "多账户独立配置": False,
-            "账号列表":"账号1\n账号2\n账号3",
+            "账号列表": "账号1\n账号2\n账号3",
         })
         self.config_description.update({
             "多账户模式": (
@@ -26,7 +26,7 @@ class AccountMixin(LoginMixin):
             ),
         })
         self.default_config_group.update({
-            "多账户模式":["多账户独立配置", "账号列表"],
+            "多账户模式": ["多账户模式", "多账户独立配置", "账号列表"],
         })
 
     def get_account_list(self):

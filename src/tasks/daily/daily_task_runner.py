@@ -20,6 +20,7 @@ class DailyTaskRunner:
         self.task_items = list(task_items)
         self.task_status = _new_task_status(self.task_items)
         self.current_task_key: str | None = None
+        self.failure_details: dict[str, dict[str, str]] = {}
         self.final_summary: dict = {
             "status": "未开始",
             "actual_repeat_total": 0,
@@ -27,9 +28,36 @@ class DailyTaskRunner:
             "per_round": [],
             "exception": "",
             "current_task": "",
+            "failure_details": self.failure_details,
         }
         self._current_round_index: int | None = None
         self._current_repeat_total: int = 0
+
+    def get_current_task_name(self) -> str:
+        return str(self.current_task_key or self.final_summary.get("current_task", "") or "")
+
+    def set_task_failure(self, message: str, task_name: str = None):
+        """手动标记当前任务失败消息。
+
+        Args:
+            message: 失败消息文本。
+            task_name: 任务名；为空时自动取当前正在执行的任务。
+        """
+        resolved_task_name = str(task_name or self.get_current_task_name() or "").strip()
+        if not resolved_task_name:
+            return
+        resolved_message = str(message)
+        # 按 account_id 分组存储失败消息
+        account_id = self._current_account_info().get("account_id", "")
+        if not account_id:
+            account_id = ""
+        if account_id not in self.failure_details:
+            self.failure_details[account_id] = {}
+        self.failure_details[account_id].setdefault(resolved_task_name, resolved_message)
+        try:
+            self.task.log_info(f"任务失败标记 | {resolved_task_name}: {resolved_message}")
+        except Exception:
+            pass
 
     def _current_account_info(self) -> dict[str, str]:
         return {
@@ -78,6 +106,7 @@ class DailyTaskRunner:
         return bool(
             self.final_summary.get("per_round")
             or self.final_summary.get("all_fail_tasks")
+            or self.failure_details
             or self.final_summary.get("actual_repeat_total", 0) > 0
             or self.final_summary.get("current_task")
         )
@@ -96,11 +125,16 @@ class DailyTaskRunner:
 
         if result is False:
             self.task_status["failed"].append(key)
+            self.set_task_failure("任务返回 False", task_name=key)
             self.task.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_FailTask_{key}')
             self.task.log_info(f"任务 {key} 执行失败", notify=True)
             return False
 
         self.task_status["success"].append(key)
+        # 任务成功，移除对应失败记录
+        account_id = self._current_account_info().get("account_id", "")
+        if account_id in self.failure_details:
+            self.failure_details[account_id].pop(key, None)
         self.current_task_key = None
         self.final_summary["current_task"] = ""
         return True
@@ -111,9 +145,9 @@ class DailyTaskRunner:
         self._reset_task_status()
         try:
             for repeat_idx, repeat_total in self.task.iter_multi_account_context(
-                repeat_times=repeat_times,
-                empty_accounts_message="多账户模式已开启，但账号列表为空，日常任务结束",
-                account_log_suffix="任务执行",
+                    repeat_times=repeat_times,
+                    empty_accounts_message="多账户模式已开启，但账号列表为空，日常任务结束",
+                    account_log_suffix="任务执行",
             ):
                 self._mark_round_context(repeat_idx + 1, repeat_total)
                 if not self.task.config.get("多账户模式", False) and self.task.debug:
@@ -154,6 +188,8 @@ class DailyTaskRunner:
         self.final_summary["status"] = "异常结束"
         self.final_summary["exception"] = str(e)
         self.final_summary["current_task"] = self.current_task_key or self.final_summary.get("current_task", "")
+        if self.current_task_key:
+            self.set_task_failure(f"异常: {e}", task_name=self.current_task_key)
         if self._current_round_index is not None:
             already_captured = any(
                 round_item.get("round") == self._current_round_index
@@ -165,7 +201,11 @@ class DailyTaskRunner:
 
         self._sync_task_status_info()
         if self.current_task_key:
-            self.task.info_set("当前失败的任务", self.current_task_key)
+            current_message = self.failure_details.get(self.current_task_key, "")
+            if current_message:
+                self.task.info_set("当前失败的任务", f"{self.current_task_key}: {current_message}")
+            else:
+                self.task.info_set("当前失败的任务", self.current_task_key)
 
         try:
             self.task.screenshot(f'{datetime.now().strftime("%Y%m%d")}_DailyTask_Exception')

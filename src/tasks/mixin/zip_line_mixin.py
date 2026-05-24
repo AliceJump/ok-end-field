@@ -59,7 +59,7 @@ class ZipLineMixin(NavigationMixin):
             start = time.time()
             while True:
                 self.next_frame()
-                self.send_key("e") # 游戏内无法修改此按键，故使用底层按键函数
+                self.send_key("e")  # 游戏内无法修改此按键，故使用底层按键函数
                 self.sleep(0.1)
                 result = self.ocr(
                     match=on_zip_line_stop,
@@ -74,23 +74,23 @@ class ZipLineMixin(NavigationMixin):
             self.sleep(1)
             self.click(key="right")
         if target:
-            result_name=target[0]
-            result_type=target[1]
+            result_name = target[0]
+            result_type = target[1]
             if result_type == "ocr":
-                ocr_bool=True
-                yolo_bool=False
+                ocr_bool = True
+                yolo_bool = False
             elif result_type == "yolo":
-                ocr_bool=False
-                yolo_bool=True
+                ocr_bool = False
+                yolo_bool = True
             else:
-                ocr_bool=False
-                yolo_bool=False
+                ocr_bool = False
+                yolo_bool = False
             if need_v:
                 self.ensure_main()
             keys = ["w", "a", "s", "d"]
             for i in range(4):
                 if result := (not need_v) or self.wait_ocr(
-                    match="登上滑索架", box=self.box.bottom_right, settle_time=1, time_out=4, log=True
+                        match="登上滑索架", box=self.box.bottom_right, settle_time=1, time_out=4, log=True
                 ):
                     if need_v:
                         self.press_key("v", after_sleep=1)

@@ -22,7 +22,8 @@ class GameFlowMixin:
         return capture_window_by_screen(self.hwnd.hwnd)
 
     def login_ocr(self, x=0, y=0, to_x=1, to_y=1, match=None, width=0, height=0, box=None, name=None, threshold=0,
-                  target_height=0, use_grayscale=False, log=False, frame_processor=None, lib='default', need_active=True):
+                  target_height=0, use_grayscale=False, log=False, frame_processor=None, lib='default',
+                  need_active=True):
         img = self.login_screenshot(need_active=need_active)
         if not isinstance(img, np.ndarray):
             img = np.array(img)
@@ -154,18 +155,18 @@ class GameFlowMixin:
                 run_at_window_pos(self.hwnd.hwnd, super().click, self.width // 2, self.height // 2, 1, 0.5, 0.5)
                 return False
             elif close := (
-                self.find_one(
-                    "reward_ok",
-                    horizontal_variance=0.1,
-                    vertical_variance=0.1,
-                )
-                or self.find_one("one_click_claim", horizontal_variance=0.1, vertical_variance=0.1)
-                or self.find_one(
-                    "check_in_close",
-                    horizontal_variance=0.1,
-                    vertical_variance=0.1,
-                    threshold=0.75,
-                )
+                    self.find_one(
+                        "reward_ok",
+                        horizontal_variance=0.1,
+                        vertical_variance=0.1,
+                    )
+                    or self.find_one("one_click_claim", horizontal_variance=0.1, vertical_variance=0.1)
+                    or self.find_one(
+                "check_in_close",
+                horizontal_variance=0.1,
+                vertical_variance=0.1,
+                threshold=0.75,
+            )
             ):
                 self.click(close, after_sleep=1)
                 return False
@@ -297,21 +298,21 @@ class GameFlowMixin:
                 break
         if need_change:
             if not self.wait_click_ocr(
-                match=re.compile("更换"), box=self.box.left, time_out=2, log=True
+                    match=re.compile("更换"), box=self.box.left, time_out=2, log=True
             ):
                 return False
             if not self.wait_click_ocr(
-                match=re.compile(area),
-                box=self.box_of_screen(
-                    648 / 1920, 196 / 1080, 648 / 1920 + 628 / 1920, 196 / 1080 + 192 / 1080
-                ),
-                time_out=4,
+                    match=re.compile(area),
+                    box=self.box_of_screen(
+                        648 / 1920, 196 / 1080, 648 / 1920 + 628 / 1920, 196 / 1080 + 192 / 1080
+                    ),
+                    time_out=4,
             ):
                 return False
             if not self.wait_click_ocr(
-                match=re.compile("确认"),
-                box=self.box.bottom_right,
-                time_out=2,
+                    match=re.compile("确认"),
+                    box=self.box.bottom_right,
+                    time_out=2,
             ):
                 return False
         box = self.wait_ocr(
@@ -325,15 +326,20 @@ class GameFlowMixin:
         else:
             self.log_error(f"未找到‘{model}’按钮，任务中止。")
             return False
+
     def switch_to_area_delivery_list(self, target_area):
         """切换到指定区域的交付列表。"""
-        if result:= self.wait_ocr(match=[re.compile(area) for area in areas_list], box=self.box_of_screen(0, 960 / 1080, 260 / 1920, 1),time_out=5):
+        if result := self.wait_ocr(match=[re.compile(area) for area in areas_list],
+                                   box=self.box_of_screen(0, 960 / 1080, 260 / 1920, 1), time_out=5):
             if target_area in result[0].name:
                 return True
             else:
                 self.click(result[0], move_back=True)
-                self.wait_click_ocr(match=re.compile(target_area), box=self.box_of_screen(0, (960-60*len(areas_list)) / 1080, 260 / 1920, 1), time_out=5)
+                self.wait_click_ocr(match=re.compile(target_area),
+                                    box=self.box_of_screen(0, (960 - 60 * len(areas_list)) / 1080, 260 / 1920, 1),
+                                    time_out=5)
                 return True
+
     def ensure_map(self, addtional_match=None, time_out=30):
         """确保进入地图界面。"""
         start_time = time.time()

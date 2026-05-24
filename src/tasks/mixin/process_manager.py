@@ -1,7 +1,8 @@
-
 import os
 import win32process, win32api, win32con
 import psutil
+
+
 class ProcessManager:
     def kill_game(self):
         try:

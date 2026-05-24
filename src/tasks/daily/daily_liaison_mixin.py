@@ -53,7 +53,7 @@ class DailyLiaisonMixin(LiaisonMixin):
         """传送至帝江号后执行联络与送礼链路。"""
         self.log_info("传送至帝江号指定点")
         if not self.transfer_to_home_point():
-            self.log_info("传送失败，无法开始送礼任务")
+            self.mark_task_failure("传送失败，无法开始送礼任务")
             return False
         wait_bridge_disappear_count = 0
         while self.ocr(match="舰桥", box=self.box.left):
@@ -81,14 +81,14 @@ class DailyLiaisonMixin(LiaisonMixin):
         retry = 0
         result = self.navigate_to_operator_liaison_station()
         while result == LiaisonResult.FIND_CHAT_ICON:
-            self.log_info(f"聊天界面处理 (第 {retry+1}/{max_retry} 次)")
+            self.log_info(f"聊天界面处理 (第 {retry + 1}/{max_retry} 次)")
 
             if self.collect_and_give_gifts():
                 return True
 
             retry += 1
             if retry >= max_retry:
-                self.log_info("多次收礼失败，停止重试")
+                self.mark_task_failure("多次收礼失败，停止重试")
                 return False
 
             result = self.navigate_to_operator_liaison_station()
@@ -98,11 +98,11 @@ class DailyLiaisonMixin(LiaisonMixin):
                 self.log_info("干员联络完成，开始收取或赠送礼物")
                 return self.collect_and_give_gifts()
             else:
-                self.log_info("干员联络任务失败")
+                self.mark_task_failure("干员联络任务失败")
                 return False
 
         else:
-            self.log_info("前往联络站失败")
+            self.mark_task_failure("前往联络站失败")
             return False
 
     def execute_gift_task(self):
@@ -122,14 +122,14 @@ class DailyLiaisonMixin(LiaisonMixin):
 
             self.log_info(f"第 {i + 1} 次送礼任务失败")
 
-        self.log_info("送礼任务最终失败")
+        self.mark_task_failure("送礼任务最终失败")
         return False
 
     def boat_one_key_store(self):
         """在帝江号执行背包一键存放。"""
         self.info_set("current_task", "boat_one_key_store")
         if not self.transfer_to_home_point(should_check_out_boat=True):
-            self.log_info("传送到帝江号失败，无法执行一键存放")
+            self.mark_task_failure("传送到帝江号失败，无法执行一键存放")
             return False
         self.press_key("b", after_sleep=1)
         store_btn = self.wait_ocr(

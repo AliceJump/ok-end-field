@@ -27,13 +27,14 @@ class NavigationMixin(BaseEfTask):
         if result := self.wait_ocr(match=re.compile("追踪"), box=self.box.bottom_right, time_out=5):
             if "追踪" in result[0].name and "取" not in result[0].name and "消" not in result[0].name:
                 self.log_info("点击追踪按钮")
-                self.click(result,after_sleep=0.5)
+                self.click(result, after_sleep=0.5)
 
         self.press_key("m", after_sleep=2)
         self.log_info("关闭地图界面 (按下 M)")
-        start_time= time.time()
-        while not self.find_feature(feature_name=target_feature_out_map, box=self.box_of_screen(0, 0, 1, 1), threshold=0.7
-        ):
+        start_time = time.time()
+        while not self.find_feature(feature_name=target_feature_out_map, box=self.box_of_screen(0, 0, 1, 1),
+                                    threshold=0.7
+                                    ):
             if time.time() - start_time > 5:
                 self.log_info("等待追踪图标超时")
                 return False

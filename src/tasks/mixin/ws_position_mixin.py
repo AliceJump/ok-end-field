@@ -91,11 +91,11 @@ class WsPositionMixin:
     async def _ws_handler(self, ws):
         log_info = getattr(self, "log_info", None)
         log_error = getattr(self, "log_error", None)
-        
+
         try:
             if callable(log_info):
                 log_info(f"[WS] 客户端已连接")
-            
+
             async for msg in ws:
                 if isinstance(msg, (bytes, bytearray)):
                     msg = msg.decode("utf-8", errors="ignore")
@@ -193,14 +193,14 @@ class WsPositionMixin:
     def _stop_ws_position_server(self):
         log_info = getattr(self, "log_info", None)
         log_error = getattr(self, "log_error", None)
-        
+
         try:
             if self._ws_loop and self._ws_stop_event:
                 self._ws_loop.call_soon_threadsafe(self._ws_stop_event.set)
-            
+
             if self._ws_server_thread and self._ws_server_thread.is_alive():
                 self._ws_server_thread.join(timeout=2.0)
-                
+
             if callable(log_info):
                 log_info("[WS] 服务器已停止")
         except Exception as e:

@@ -74,6 +74,25 @@ class TestEssenceRecognizer(unittest.TestCase):
         self.assertEqual(panel.entry_names, ("意志提升", "攻击提升", "流转"))
         self.assertEqual(len(panel.entry_boxes), 3)
 
+    def test_parse_panel_traditional_chinese(self):
+        boxes = [
+            _Box(100, 10, 300, 24, "無瑕基質：流轉"),
+            _Box(120, 55, 180, 20, "四號谷底"),
+            _Box(120, 85, 180, 20, "附加技能"),
+            _Box(120, 120, 260, 20, "意志提升"),
+            _Box(120, 150, 260, 20, "攻擊提升"),
+            _Box(120, 180, 260, 20, "流轉"),
+        ]
+
+        panel = parse_essence_panel(boxes)
+        self.assertIsNotNone(panel)
+        assert panel is not None
+
+        self.assertEqual(panel.name, "无瑕基质：流转")
+        self.assertEqual(panel.source, "四号谷底")
+        self.assertEqual(panel.entry_names, ("意志提升", "攻击提升", "流转"))
+        self.assertTrue(panel.is_gold)
+
 
 if __name__ == "__main__":
     unittest.main()

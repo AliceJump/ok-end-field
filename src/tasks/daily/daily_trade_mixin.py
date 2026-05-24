@@ -48,15 +48,14 @@ class DailyTradeMixin(NavigationMixin, Common):
             grouped_children.extend([
                 area,
             ])
-        area_grouped_children = {}
+        area_grouped_children = []
         for area in areas_list:
-            area_grouped_children[area] = [
+            area_grouped_children = area_grouped_children + [
                 f"{area}买入价",
                 f"{area}卖出价",
             ]
         self.default_config_group.update({
-            "⭐买卖货": grouped_children,
-            **area_grouped_children
+            "⭐买卖货": grouped_children + area_grouped_children,
         })
 
     def collect_market_goods_info(self):
@@ -88,7 +87,7 @@ class DailyTradeMixin(NavigationMixin, Common):
                 match=re.compile(r"\d+"),
                 box=self.box_of_screen(0, market_text_y / self.height, 1, 1),
                 frame_processor=self.make_hsv_isolator(hR.DARK_GRAY_TEXT),
-                log=True,       
+                log=True,
             )
 
             candidates = []
@@ -320,8 +319,8 @@ class DailyTradeMixin(NavigationMixin, Common):
                 self.log_info("未找到买入价或卖出价")
                 continue
             if self.config.get("只买不卖", False):
-                buy_good=good_infos
-                sell_goods=[]
+                buy_good = good_infos
+                sell_goods = []
                 can_buy = buy_good and (buy_good.good_price < buy_price)
             else:
                 buy_good, sell_goods, can_buy = self.analyze_goods_info(
@@ -405,7 +404,7 @@ class DailyTradeMixin(NavigationMixin, Common):
                     if time.time() > go_friend_deadline:
                         self.log_info("等待 '前往' 按钮超时，跳过该货物出售")
                         break
-                    self.click(c_x, c_y, after_sleep=1,move_back=False)
+                    self.click(c_x, c_y, after_sleep=1, move_back=False)
                 if time.time() > go_friend_deadline:
                     continue
                 if not self.ensure_in_friend_boat():

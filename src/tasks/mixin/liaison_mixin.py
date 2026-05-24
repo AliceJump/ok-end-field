@@ -487,7 +487,7 @@ class LiaisonMixin(NavigationMixin):
         """
         self.log_info("开始收取或赠送礼物")
         self.start_time = time.time()
-        while self.find_one(feature_name=fL.esc,vertical_variance=0.01, horizontal_variance=0.02):
+        while self.find_one(feature_name=fL.esc, vertical_variance=0.01, horizontal_variance=0.02):
             if time.time() - self.start_time > 5:
                 self.log_info("没能进入交流界面")
                 return False

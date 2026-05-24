@@ -5,7 +5,7 @@ from src.tasks.sequence_parser import parse_sequence
 from src.tasks.mixin.common import Common
 
 
-class DailyBuyMixin(Common):    
+class DailyBuyMixin(Common):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.default_config.update({
@@ -27,7 +27,7 @@ class DailyBuyMixin(Common):
             ),
         })
         self.default_config_group.update({
-            "⭐买物资": ["购物白名单", "是否买礼物"], 
+            "⭐买物资": ["购物白名单", "是否买礼物"],
         })
 
     def buy_staple_goods(self):
@@ -41,16 +41,16 @@ class DailyBuyMixin(Common):
             self.log_info(f"进入区域: {area}")
             self.to_model_area(area, "物资调度")
             #
-            self.click_relative(100/3840, 464/2160, after_sleep=2)
+            self.click_relative(100 / 3840, 464 / 2160, after_sleep=2)
             self.log_info("购买「日用消耗」")
             self.buy(pattern_list=pl)
             #
-            self.click_relative(100/3840, 718/2160, after_sleep=2)
+            self.click_relative(100 / 3840, 718 / 2160, after_sleep=2)
             self.log_info("购买「工业货品」")
             self.buy(pattern_list=pl)
             #
             if self.config.get("是否买礼物", True):
-                self.click_relative(100/3840, 972/2160, after_sleep=2)
+                self.click_relative(100 / 3840, 972 / 2160, after_sleep=2)
                 self.log_info("购买「人文物产」")
                 self.buy(pattern_list=pl)
 
@@ -59,7 +59,7 @@ class DailyBuyMixin(Common):
             self.click_relative(0.1, 0.4, after_sleep=2)
             self.log_info("未指定白名单，选择首行首个")
         else:
-            box_list = self.ocr(x=200/3840, y=520/2160, to_x=3680/3840, to_y=1140/2160, match=pattern_list);
+            box_list = self.ocr(x=200 / 3840, y=520 / 2160, to_x=3680 / 3840, to_y=1140 / 2160, match=pattern_list);
             if len(box_list) <= 0:
                 self.log_info("未找到白名单货品，跳过")
                 return
