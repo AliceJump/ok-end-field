@@ -3,14 +3,15 @@ import win32api
 import win32con
 from qfluentwidgets import FluentIcon
 
+from src.data.lang import (
+    compile_any_pattern,
+    get_warehouse_current_location_rules,
+    get_warehouse_location_labels,
+    get_warehouse_ocr_pattern_tokens,
+)
 from src.data.world_map import item_to_warehouse_dict
-from src.data.zh_en import ITEM_WAREHOUSE_CATEGORY_EN_BY_ZH, ITEM_TRANSLATION_DICT
+from src.data.zh_en import get_item_translation_dict, get_item_warehouse_category_map
 from src.tasks.BaseEfTask import BaseEfTask
-
-_LOCATIONS = {
-    "valley4": "四号谷地",
-    "wuling": "武陵",
-}
 
 
 class WarehouseTransferTask(BaseEfTask):
@@ -45,8 +46,9 @@ class WarehouseTransferTask(BaseEfTask):
                 # "最小保留数量": "当识别到当前数量小于该值时停止任务并通知",
             }
         )
-        self.config_type["发货仓库"] = {"type": "drop_down", "options": list(_LOCATIONS.keys())}
-        self.config_type["收货仓库"] = {"type": "drop_down", "options": list(_LOCATIONS.keys())}
+        warehouse_keys = list(self._warehouse_locations.keys())
+        self.config_type["发货仓库"] = {"type": "drop_down", "options": warehouse_keys}
+        self.config_type["收货仓库"] = {"type": "drop_down", "options": warehouse_keys}
         # self.config_type["物品"] = {"type": "drop_down", "options": self._load_item_keys_for_dropdown()}
         self.config_type["物品"] = {
             "type": "drop_down",
@@ -55,8 +57,24 @@ class WarehouseTransferTask(BaseEfTask):
         self._template_cache: dict[str, object] = {}
         self._item_name_cache: dict[str, str] | None = None
 
+    @property
+    def _warehouse_locations(self) -> dict[str, str]:
+        return get_warehouse_location_labels(context=self)
+
+    @property
+    def _warehouse_location_rules(self) -> dict[str, list[list[str]]]:
+        return get_warehouse_current_location_rules(context=self)
+
+    @property
+    def _warehouse_ocr_patterns(self) -> dict[str, re.Pattern]:
+        return {
+            key: compile_any_pattern(value)
+            for key, value in get_warehouse_ocr_pattern_tokens(context=self).items()
+        }
+
     def _to_one_type_page(self, item_name: str):
-        category_en_name = ITEM_WAREHOUSE_CATEGORY_EN_BY_ZH.get(item_to_warehouse_dict.get(item_name, ""), "")
+        category_map = get_item_warehouse_category_map(context=self)
+        category_en_name = category_map.get(item_to_warehouse_dict.get(item_name, ""), "")
         if not category_en_name:
             raise ValueError(f"物品 {item_name} 无法找到分类，无法定位图标")
         result = self.find_feature(feature_name=f"{category_en_name}_icon")
@@ -67,18 +85,21 @@ class WarehouseTransferTask(BaseEfTask):
 
     def _detect_current_location(self) -> str | None:
         boxes = self.ocr(box=self.box_of_screen(0.15, 0.18, 0.26, 0.22, name="current_location_area"))
+        rules = self._warehouse_location_rules
         for box in boxes or []:
             name = str(getattr(box, "name", "")).strip()
-            if "武陵仓库" in name:
-                return "wuling"
-            if "谷地" in name and "仓库" in name:
-                return "valley4"
+            for location_key, groups in rules.items():
+                if any(all(token in name for token in token_group) for token_group in groups):
+                    return location_key
         return None
 
     def _maybe_click_confirm(self) -> bool:
+        confirm_pattern = self._warehouse_ocr_patterns.get("confirm")
+        if confirm_pattern is None:
+            raise RuntimeError("缺少仓库确认按钮 OCR 配置")
         hits = self.ocr(
             box=self.box_of_screen(0.79, 0.79, 0.84, 0.82, name="bottom_right"),
-            match=re.compile(r"确认"),
+            match=confirm_pattern,
         )
         if hits:
             self.click(hits[0], move_back=True, after_sleep=0.3)
@@ -86,19 +107,23 @@ class WarehouseTransferTask(BaseEfTask):
         return False
 
     def _switch_location(self, target_key: str):
-        if target_key not in _LOCATIONS:
+        locations = self._warehouse_locations
+        if target_key not in locations:
             raise ValueError(f"未知 location key: {target_key}")
 
+        switch_pattern = self._warehouse_ocr_patterns.get("switch_button")
+        if switch_pattern is None:
+            raise RuntimeError("缺少仓库切换按钮 OCR 配置")
         btn = self.wait_ocr(
             box=self.box_of_screen(0.48, 0.18, 0.52, 0.215, name="switch_btn_area"),
-            match="仓库切换",
+            match=switch_pattern,
             time_out=5,
         )
         if not btn:
             raise RuntimeError("未找到“仓库切换”按钮")
         self.click(btn[0], move_back=True, after_sleep=0.5)
 
-        target_text = _LOCATIONS[target_key]
+        target_text = locations[target_key]
         option = self.wait_ocr(
             box=self.box_of_screen(0.4, 0.35, 0.75, 0.65, name="switch_menu"),
             match=target_text,
@@ -109,11 +134,14 @@ class WarehouseTransferTask(BaseEfTask):
         self.click(option[0], move_back=True, after_sleep=0.2)
 
         self._maybe_click_confirm()
+        connected_pattern = self._warehouse_ocr_patterns.get("connected")
+        if connected_pattern is None:
+            raise RuntimeError("缺少仓库连接状态 OCR 配置")
         for _ in range(50):
             self.next_frame()
             hits = self.ocr(
                 box=self.box.bottom_right,
-                match=re.compile(r"已连接"),
+                match=connected_pattern,
             )
             if hits:
                 self.sleep(0.3)
@@ -164,7 +192,8 @@ class WarehouseTransferTask(BaseEfTask):
 
             ROUND = 5
             icon = None
-            item_key_en = ITEM_TRANSLATION_DICT.get(item_key, "")
+            item_translation_map = get_item_translation_dict(context=self)
+            item_key_en = item_translation_map.get(item_key, "")
             if not item_key_en:
                 self.log_info(f"找不到的图标名 {item_key}")
             for round_idx in range(ROUND + 1):
@@ -193,9 +222,12 @@ class WarehouseTransferTask(BaseEfTask):
             self.log_info(f"切换到收货仓库={to_key}")
             self._switch_location(to_key)
 
+            store_pattern = self._warehouse_ocr_patterns.get("store")
+            if store_pattern is None:
+                raise RuntimeError("缺少仓库存放按钮 OCR 配置")
             store_btn = self.wait_ocr(
                 box=self.box_of_screen(0.64, 0.705, 0.69, 0.735, name="onekey_store_area"),
-                match=re.compile(r"存放"),
+                match=store_pattern,
                 time_out=5,
             )
             if not store_btn:

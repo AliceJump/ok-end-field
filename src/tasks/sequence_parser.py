@@ -1,4 +1,7 @@
-def parse_sequence(raw_config: str | list | None) -> list[str]:
+from src.data.lang import parser as lang_parser
+
+
+def parse_sequence(raw_config: str | list | None, *, context=None, locale: str | None = None) -> list[str]:
     """
     统一解析逗号分隔字符串序列或列表。
 
@@ -27,11 +30,13 @@ def parse_sequence(raw_config: str | list | None) -> list[str]:
     if isinstance(raw_config, (list, tuple)):
         return [str(item).strip() for item in raw_config if str(item).strip()]
 
-    normalized = str(raw_config).replace("，", ",")
+    normalized = str(raw_config)
+    for delimiter in lang_parser.get_sequence_delimiters(context=context, locale=locale):
+        normalized = normalized.replace(delimiter, ",")
     return [token.strip() for token in normalized.split(",") if token.strip()]
 
 
-def parse_int_sequence(raw_config: str | None) -> list[int]:
+def parse_int_sequence(raw_config: str | None, *, context=None, locale: str | None = None) -> list[int]:
     """
     将逗号分隔字符串序列解析为整数列表。
 
@@ -51,4 +56,4 @@ def parse_int_sequence(raw_config: str | None) -> list[int]:
     Example:
         " 36，14, ,108 " -> [36, 14, 108]
     """
-    return [int(token) for token in parse_sequence(raw_config)]
+    return [int(token) for token in parse_sequence(raw_config, context=context, locale=locale)]

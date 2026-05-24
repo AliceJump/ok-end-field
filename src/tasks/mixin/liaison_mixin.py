@@ -55,7 +55,7 @@ class LiaisonMixin(NavigationMixin):
 
         # 为每个干员构建 OCR 名称匹配规则
         self.contact_name_patterns = {
-            name: build_name_patterns(name)
+            name: build_name_patterns(name, context=self)
             for name in self.can_contact_dict.keys()
         }
 
@@ -301,7 +301,7 @@ class LiaisonMixin(NavigationMixin):
 
             find_name_patterns = self.contact_name_patterns.get(
                 find_name,
-                build_name_patterns(find_name)
+                build_name_patterns(find_name, context=self)
             )
 
             self.log_info("找到联络对象")
