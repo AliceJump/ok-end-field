@@ -1,4 +1,4 @@
-from src.data.lang import get_sequence_delimiters
+from src.data.lang import parser as lang_parser
 
 
 def parse_sequence(raw_config: str | list | None, *, context=None, locale: str | None = None) -> list[str]:
@@ -31,7 +31,7 @@ def parse_sequence(raw_config: str | list | None, *, context=None, locale: str |
         return [str(item).strip() for item in raw_config if str(item).strip()]
 
     normalized = str(raw_config)
-    for delimiter in get_sequence_delimiters(context=context, locale=locale):
+    for delimiter in lang_parser.get_sequence_delimiters(context=context, locale=locale):
         normalized = normalized.replace(delimiter, ",")
     return [token.strip() for token in normalized.split(",") if token.strip()]
 

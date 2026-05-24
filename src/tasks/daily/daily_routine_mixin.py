@@ -1,6 +1,8 @@
 import re
 import time
 
+from src.data.lang import ocr as lang_ocr
+
 from src.data.world_map import areas_list, outpost_dict, goods_dict
 from src.data.world_map_utils import get_area_by_outpost_name, get_goods_by_outpost_name
 from src.image.hsv_config import HSVRange as hR
@@ -273,7 +275,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.log_info("开始领取转交委托奖励")
 
         area = areas_list[0]
-        self.to_model_area(area, "仓储节点")
+        self.to_model_area(area, lang_ocr.get_primary_term("storage_node", context=self))
 
         if not self.wait_click_ocr(
                 match=re.compile("我转交的委托"),
@@ -315,18 +317,18 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             while True:
                 if 0 < activity_num <= count:
                     self.log_info(
-                        f"{area}仓储节点已完成{activity_num}次，停止继续"
+                        f"{area}节点已完成{activity_num}次，停止继续"
                     )
                     break
 
-                self.to_model_area(area, "仓储节点")
+                self.to_model_area(area, lang_ocr.get_primary_term("storage_node", context=self))
 
                 if not self.wait_click_ocr(
-                        match=re.compile("本地仓储节点"),
+                        match=lang_ocr.get_pattern("local_storage_node", context=self),
                         box=self.box.top_left,
                         time_out=5
                 ):
-                    self.log_info(f"{area}未找到本地仓储节点，返回主界面")
+                    self.log_info(f"{area}未找到本地节点，返回主界面")
                     self.ensure_main()
                     break
 

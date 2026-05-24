@@ -28,11 +28,17 @@ def get_locale_data(locale: str | None = None, context: Any = None) -> dict[str,
 
 
 def get_ocr_confusion_map(locale: str | None = None, context: Any = None) -> dict[str, list[str]]:
-    return dict(get_locale_data(locale=locale, context=context).get("ocr_confusion_map", {}))
+    payload = get_locale_data(locale=locale, context=context)
+    confusion = payload.get("normalize", {}).get("ocr_confusion_map") or payload.get("ocr_confusion_map", {})
+    return dict(confusion)
 
 
 def get_sequence_delimiters(locale: str | None = None, context: Any = None) -> list[str]:
-    return list(get_locale_data(locale=locale, context=context).get("sequence_delimiters", []))
+    payload = get_locale_data(locale=locale, context=context)
+    delimiters = payload.get("parser", {}).get("sequence", {}).get("delimiters", [])
+    if not delimiters:
+        delimiters = payload.get("sequence_delimiters", [])
+    return list(delimiters)
 
 
 def get_auto_pick_terms(locale: str | None = None, context: Any = None) -> tuple[set[str], set[str]]:

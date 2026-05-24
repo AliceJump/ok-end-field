@@ -94,7 +94,9 @@ class WarehouseTransferTask(BaseEfTask):
         return None
 
     def _maybe_click_confirm(self) -> bool:
-        confirm_pattern = self._warehouse_ocr_patterns.get("confirm", re.compile(r"确认"))
+        confirm_pattern = self._warehouse_ocr_patterns.get("confirm")
+        if confirm_pattern is None:
+            raise RuntimeError("缺少仓库确认按钮 OCR 配置")
         hits = self.ocr(
             box=self.box_of_screen(0.79, 0.79, 0.84, 0.82, name="bottom_right"),
             match=confirm_pattern,
@@ -109,7 +111,9 @@ class WarehouseTransferTask(BaseEfTask):
         if target_key not in locations:
             raise ValueError(f"未知 location key: {target_key}")
 
-        switch_pattern = self._warehouse_ocr_patterns.get("switch_button", re.compile(r"仓库切换"))
+        switch_pattern = self._warehouse_ocr_patterns.get("switch_button")
+        if switch_pattern is None:
+            raise RuntimeError("缺少仓库切换按钮 OCR 配置")
         btn = self.wait_ocr(
             box=self.box_of_screen(0.48, 0.18, 0.52, 0.215, name="switch_btn_area"),
             match=switch_pattern,
@@ -130,7 +134,9 @@ class WarehouseTransferTask(BaseEfTask):
         self.click(option[0], move_back=True, after_sleep=0.2)
 
         self._maybe_click_confirm()
-        connected_pattern = self._warehouse_ocr_patterns.get("connected", re.compile(r"已连接"))
+        connected_pattern = self._warehouse_ocr_patterns.get("connected")
+        if connected_pattern is None:
+            raise RuntimeError("缺少仓库连接状态 OCR 配置")
         for _ in range(50):
             self.next_frame()
             hits = self.ocr(
@@ -216,7 +222,9 @@ class WarehouseTransferTask(BaseEfTask):
             self.log_info(f"切换到收货仓库={to_key}")
             self._switch_location(to_key)
 
-            store_pattern = self._warehouse_ocr_patterns.get("store", re.compile(r"存放"))
+            store_pattern = self._warehouse_ocr_patterns.get("store")
+            if store_pattern is None:
+                raise RuntimeError("缺少仓库存放按钮 OCR 配置")
             store_btn = self.wait_ocr(
                 box=self.box_of_screen(0.64, 0.705, 0.69, 0.735, name="onekey_store_area"),
                 match=store_pattern,

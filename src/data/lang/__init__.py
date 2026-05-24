@@ -12,6 +12,7 @@ from src.data.lang.locale_data import (
     get_warehouse_ocr_pattern_tokens,
     resolve_supported_locale,
 )
+from src.data.lang import ocr, parser, normalize
 from src.data.lang.runtime_locale import canonicalize_locale, get_runtime_locale
 
 __all__ = [
@@ -29,4 +30,7 @@ __all__ = [
     "get_warehouse_location_labels",
     "get_warehouse_ocr_pattern_tokens",
     "resolve_supported_locale",
+    "ocr",
+    "parser",
+    "normalize",
 ]

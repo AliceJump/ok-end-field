@@ -3,6 +3,7 @@ import time
 from qfluentwidgets import FluentIcon
 
 from ok import TriggerTask, Logger
+from src.data.lang import ocr as lang_ocr
 from src.tasks.BaseEfTask import BaseEfTask
 
 logger = Logger.get_logger(__name__)
@@ -42,12 +43,15 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         rewards = []
         accept_btns = []
         refresh_btn = None
+        refresh_pattern = lang_ocr.get_pattern("refresh_button", context=self)
+        refresh_hint_pattern = lang_ocr.get_pattern("refresh_cooldown_hint", context=self)
+        accept_pattern = lang_ocr.get_pattern("accept_delivery_entrust", context=self)
 
         for t in full_texts:
             name = t.name.strip()
-            if ("刷新" in name or "秒后可刷新" in name) and t.y > self.height * 0.8:
+            if (refresh_pattern.search(name) or refresh_hint_pattern.search(name)) and t.y > self.height * 0.8:
                 refresh_btn = t
-            elif "接取运送委托" in name:
+            elif accept_pattern.search(name):
                 accept_btns.append(t)
             else:
                 match = reward_pattern.search(name)
@@ -118,19 +122,19 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         return None
 
     def run(self):
-        # 前置：按Y，点击“仓储节点”，点击“运送委托列表”
-        self.log_info("前置操作：按Y，点击‘仓储节点’，点击‘运送委托列表’")
+        # 前置：按Y，点击目标节点，点击委托列表
+        self.log_info("前置操作：按Y，点击目标节点，进入委托列表")
         self.press_key('y', down_time=0.05, after_sleep=0.5)
-        storage_box = self.wait_ocr(match="仓储节点", time_out=5)
+        storage_box = self.wait_ocr(match=lang_ocr.get_pattern("storage_node", context=self), time_out=5)
         if storage_box:
             self.click(storage_box[0], move_back=True, after_sleep=0.5)
         else:
-            self.log_error("未找到‘仓储节点’按钮，任务中止。")
+            self.log_error("未找到目标节点按钮，任务中止。")
             return
 
         enable_valley = self.config.get("接取谷地券", False)
         enable_wuling = self.config.get("接取武陵券", True)
-        delivery_box = self.wait_ocr(match="运送委托列表", time_out=5)
+        delivery_box = self.wait_ocr(match=lang_ocr.get_pattern("delivery_list", context=self), time_out=5)
         if delivery_box:
             self.click(delivery_box[0], move_back=True, after_sleep=0.5)
             # 点击后滚动到底部（多次大幅度向下滚动）
@@ -255,7 +259,11 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                         self.sleep(1.0)  # 等待1秒
 
                         # 检查是否出现"请尽快送达"
-                        delivery_text = self.wait_ocr(match="请尽快送达", time_out=1, raise_if_not_found=False)
+                        delivery_text = self.wait_ocr(
+                            match=lang_ocr.get_pattern("delivery_fast_prompt", context=self),
+                            time_out=1,
+                            raise_if_not_found=False
+                        )
                         if delivery_text:
                             self.log_info(f"抢单成功！(第 {attempt} 次尝试)")
                             success = True

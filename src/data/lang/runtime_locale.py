@@ -49,24 +49,19 @@ def _extract_locale_from_object(obj: Any) -> Any:
     if obj is None:
         return None
 
-    for field in ("locale", "language", "lang"):
-        if hasattr(obj, field):
-            value = getattr(obj, field)
-            if callable(value):
-                try:
-                    value = value()
-                except Exception:
-                    continue
-            if value:
-                return value
-
-    for parent_field in ("executor", "app"):
-        parent = getattr(obj, parent_field, None)
-        if parent is None:
-            continue
-        value = _extract_locale_from_object(parent)
-        if value:
-            return value
+    executor = getattr(obj, "executor", None)
+    locale_obj = getattr(executor, "locale", None) if executor is not None else getattr(obj, "locale", None)
+    if locale_obj is not None:
+        if hasattr(locale_obj, "name"):
+            try:
+                name_attr = getattr(locale_obj, "name")
+                value = name_attr() if callable(name_attr) else name_attr
+                if value:
+                    return value
+            except Exception:
+                pass
+        if locale_obj:
+            return locale_obj
 
     return None
 

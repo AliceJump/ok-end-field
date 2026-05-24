@@ -5,6 +5,45 @@ from src.data.lang.locales.zh_cn import DATA as ZH_CN_DATA
 
 DATA = {
     **ZH_CN_DATA,
+    "ocr": {
+        "terms": {
+            **ZH_CN_DATA["ocr"]["terms"],
+            "storage_node": ["倉儲節點", "仓储节点"],
+            "local_storage_node": ["本地倉儲節點", "本地仓储节点"],
+            "delivery_list": ["運送委託列表", "运送委托列表"],
+            "accept_delivery_entrust": ["接取運送委託", "接取运送委托"],
+            "refresh_button": ["刷新"],
+            "refresh_cooldown_hint": ["秒後可刷新", "秒后可刷新"],
+            "board_zipline": ["登上滑索架"],
+            "industrial_area": ["工業", "工业"],
+            "pickup_goods": ["取貨", "取货"],
+            "delivery_submit": ["交貨", "交货", "送達", "送达"],
+            "delivery_fast_prompt": ["請盡快送達", "请尽快送达"],
+        },
+    },
+    "parser": {
+        "sequence": {
+            "delimiters": ["，"],
+        },
+        "essence": {
+            "essence_keywords": ["基質", "基质"],
+            "affix_keywords": ["附加技能"],
+            "gold_keywords": ["無瑕", "無暇", "无瑕", "无暇"],
+            "name_regex": r"([\u4e00-\u9fff]+(?:基質|基质))\s*([\u4e00-\u9fff]+)?",
+        },
+    },
+    "normalize": {
+        "ocr_confusion_map": {
+            "别": ["別"],
+            "別": ["别"],
+        },
+        "punctuation_map": {
+            **ZH_CN_DATA["normalize"]["punctuation_map"],
+        },
+        "traditional_to_simplified_map": {
+            **ZH_CN_DATA["normalize"]["traditional_to_simplified_map"],
+        },
+    },
     "ocr_confusion_map": {
         "别": ["別"],
         "別": ["别"],

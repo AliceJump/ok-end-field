@@ -1,9 +1,65 @@
 from __future__ import annotations
 
 DATA = {
+    "ocr": {
+        "terms": {
+            "storage_node": ["仓储节点", "倉儲節點"],
+            "local_storage_node": ["本地仓储节点", "本地倉儲節點"],
+            "delivery_list": ["运送委托列表", "運送委託列表"],
+            "accept_delivery_entrust": ["接取运送委托", "接取運送委託"],
+            "refresh_button": ["刷新"],
+            "refresh_cooldown_hint": ["秒后可刷新", "秒後可刷新"],
+            "board_zipline": ["登上滑索架"],
+            "industrial_area": ["工业", "工業"],
+            "pickup_goods": ["取货", "取貨"],
+            "delivery_submit": ["交货", "交貨", "送达", "送達"],
+            "delivery_fast_prompt": ["请尽快送达", "請盡快送達"],
+        },
+    },
+    "parser": {
+        "sequence": {
+            "delimiters": ["，"],
+        },
+        "essence": {
+            "essence_keywords": ["基质", "基質"],
+            "affix_keywords": ["附加技能"],
+            "gold_keywords": ["无瑕", "无暇", "無瑕", "無暇"],
+            "name_regex": r"([\u4e00-\u9fff]+(?:基质|基質))\s*([\u4e00-\u9fff]+)?",
+        },
+    },
+    "normalize": {
+        "ocr_confusion_map": {
+            "别": ["別"],
+            "別": ["别"],
+        },
+        "punctuation_map": {
+            "·": "：",
+            ":": "：",
+            "[": "【",
+            "]": "】",
+            "(": "（",
+            ")": "）",
+            "\u3000": " ",
+        },
+        "traditional_to_simplified_map": {
+            "擊": "击",
+            "無": "无",
+            "質": "质",
+            "轉": "转",
+            "號": "号",
+            "襲": "袭",
+            "術": "术",
+            "傷": "伤",
+            "熱": "热",
+            "電": "电",
+            "終": "终",
+            "結": "结",
+            "識": "识",
+        },
+    },
     "ocr_confusion_map": {
         "别": ["別"],
-        "别": ["別"],
+        "別": ["别"],
     },
     "sequence_delimiters": ["，"],
     "auto_pick": {
