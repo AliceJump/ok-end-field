@@ -8,8 +8,6 @@ from src.data.lang.locale_data import get_locale_data
 def get_sequence_delimiters(*, locale: str | None = None, context: Any = None) -> list[str]:
     payload = get_locale_data(locale=locale, context=context)
     delimiters = payload.get("parser", {}).get("sequence", {}).get("delimiters", [])
-    if not delimiters:
-        delimiters = payload.get("sequence_delimiters", [])
     return [str(v) for v in delimiters if str(v).strip()]
 
 

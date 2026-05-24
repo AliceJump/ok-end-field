@@ -8,7 +8,7 @@ from src.data.lang.locale_data import get_locale_data
 def get_ocr_confusion_map(*, locale: str | None = None, context: Any = None) -> dict[str, list[str]]:
     payload = get_locale_data(locale=locale, context=context)
     normalize = payload.get("normalize", {})
-    confusion = normalize.get("ocr_confusion_map") or payload.get("ocr_confusion_map", {})
+    confusion = normalize.get("ocr_confusion_map", {})
     return {
         str(k): [str(v) for v in values]
         for k, values in confusion.items()

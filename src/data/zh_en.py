@@ -9,9 +9,9 @@ from src.data.lang import (
 )
 
 
-ITEM_CATEGORY_EN_BY_ZH = get_item_category_en_by_name(locale="zh_CN")
-ITEM_WAREHOUSE_CATEGORY_EN_BY_ZH = get_item_warehouse_category_en_by_name(locale="zh_CN")
-ITEM_TRANSLATION_DICT = get_item_translation_map(locale="zh_CN")
+ITEM_CATEGORY_EN_BY_ZH = get_item_category_en_by_name()
+ITEM_WAREHOUSE_CATEGORY_EN_BY_ZH = get_item_warehouse_category_en_by_name()
+ITEM_TRANSLATION_DICT = get_item_translation_map()
 
 
 def get_item_category_map(context: Any = None, locale: str | None = None) -> dict[str, str]:

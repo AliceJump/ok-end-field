@@ -3,6 +3,7 @@ import unittest
 
 from src.data.lang import (
     get_auto_pick_terms,
+    get_locale_data,
     get_item_translation_map,
     get_ocr_confusion_map,
     normalize as lang_normalize,
@@ -72,6 +73,17 @@ class TestLocaleData(unittest.TestCase):
     def test_get_item_translation_map(self):
         tw_map = get_item_translation_map(locale="zh_TW")
         self.assertEqual(tw_map.get("藍鐵礦"), "bluesteel_ore")
+
+    def test_locale_payload_is_layered_without_legacy_flat_keys(self):
+        payload = get_locale_data(locale="zh_CN")
+        self.assertIn("normalize", payload)
+        self.assertIn("parser", payload)
+        self.assertNotIn("ocr_confusion_map", payload)
+        self.assertNotIn("sequence_delimiters", payload)
+
+    def test_locale_terms_are_script_specific(self):
+        self.assertEqual(lang_ocr.get_terms("storage_node", locale="zh_CN"), ["仓储节点"])
+        self.assertEqual(lang_ocr.get_terms("storage_node", locale="zh_TW"), ["倉儲節點"])
 
 
 if __name__ == "__main__":
