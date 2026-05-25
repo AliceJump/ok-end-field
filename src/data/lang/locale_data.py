@@ -1,16 +1,29 @@
 from __future__ import annotations
 
+import json
 import re
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
-from src.data.lang.locales.zh_cn import DATA as ZH_CN_DATA
-from src.data.lang.locales.zh_tw import DATA as ZH_TW_DATA
 from src.data.lang.runtime_locale import canonicalize_locale, get_runtime_locale
+
+_LOCALES_DIR = Path(__file__).resolve().parent / "locales"
+_LOCALE_FILE_NAME = {
+    "zh_CN": "zh_cn.json",
+    "zh_TW": "zh_tw.json",
+}
+
+
+@lru_cache(maxsize=None)
+def _load_locale_data(locale: str) -> dict[str, Any]:
+    locale_file = _LOCALES_DIR / _LOCALE_FILE_NAME[locale]
+    return json.loads(locale_file.read_text(encoding="utf-8"))
 
 
 _LOCALE_DATA = {
-    "zh_CN": ZH_CN_DATA,
-    "zh_TW": ZH_TW_DATA,
+    "zh_CN": _load_locale_data("zh_CN"),
+    "zh_TW": _load_locale_data("zh_TW"),
 }
 
 _DEFAULT_LOCALE = "zh_CN"
