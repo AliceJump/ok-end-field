@@ -43,8 +43,8 @@ def build_name_patterns(find_name: str, *, context=None, locale: str | None = No
         parts = []
 
         for ch in key:
-            if ch in ocr_confusion_map:
-                options = [ch] + ocr_confusion_map[ch]
+            if ch in confusion_map:
+                options = [ch] + confusion_map[ch]
                 part = "(" + "|".join(map(re.escape, options)) + ")"
             else:
                 part = re.escape(ch)
