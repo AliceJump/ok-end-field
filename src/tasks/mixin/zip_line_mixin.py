@@ -6,9 +6,9 @@ from src.tasks.sequence_parser import parse_int_sequence
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.data.lang import ocr as lang_ocr
 
-on_zip_line_tip = ["向目标移动", "离开滑索架"]
-on_zip_line_stop = [re.compile(i) for i in on_zip_line_tip]
-continue_next = re.compile("下一连接点")
+on_zip_line_tip = ["ocr_text_107", "ocr_text_108"]
+on_zip_line_stop = [lang_ocr.get_pattern(i) for i in on_zip_line_tip]
+continue_next = lang_ocr.get_pattern("ocr_text_109")
 
 
 class ZipLineMixin(NavigationMixin):

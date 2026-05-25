@@ -231,7 +231,7 @@ class GameFlowMixin:
             return True
         if self.click_confirm(time_out=1):
             return False
-        rules = [[None, None, [lang_ocr.get_pattern("ocr_text_065"), re.compile("结束拜访")], self.box.bottom]]
+        rules = [[None, None, [lang_ocr.get_pattern("ocr_text_065"), lang_ocr.get_pattern("ocr_text_110")], self.box.bottom]]
         if not self.run_ocr_rules(rules):
             return False
         if esc:
@@ -345,10 +345,10 @@ class GameFlowMixin:
         """确保进入地图界面。"""
         start_time = time.time()
         if addtional_match:
-            match = [re.compile("事务")] + addtional_match if isinstance(addtional_match, list) else [
-                re.compile("事务"), re.compile(addtional_match)]
+            match = [lang_ocr.get_pattern("ocr_text_111")] + addtional_match if isinstance(addtional_match, list) else [
+                lang_ocr.get_pattern("ocr_text_111"), re.compile(addtional_match)]
         else:
-            match = [re.compile("事务")]
+            match = [lang_ocr.get_pattern("ocr_text_111")]
         self.press_key("m")
         while not self.wait_ocr(match=match, time_out=2, box=self.box.top_left):
             if time.time() - start_time > time_out:

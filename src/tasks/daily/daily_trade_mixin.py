@@ -70,7 +70,7 @@ class DailyTradeMixin(NavigationMixin, Common):
                 return int(stock_piece[0].name)
             return 0
 
-        test_goods_re = re.compile("货组")
+        test_goods_re = lang_ocr.get_pattern("ocr_text_112")
         market_text_y = None
         market_text = self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_031"), box=self.box.left)
         if not market_text:

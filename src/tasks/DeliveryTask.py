@@ -609,7 +609,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 0.5,
             )
             self.sleep(1)
-            if end_pattern == re.compile("资源"):
+            if end_pattern == lang_ocr.get_pattern("ocr_text_113", context=self):
                 end_pattern = lang_ocr.get_pattern("delivery_submit", context=self)
             if self.wait_click_ocr(
                     match=end_pattern,
