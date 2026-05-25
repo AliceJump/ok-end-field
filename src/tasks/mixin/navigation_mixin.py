@@ -6,6 +6,7 @@ import pyautogui
 
 from src.interaction.Mouse import active_and_send_mouse_delta
 from src.tasks.BaseEfTask import BaseEfTask
+from src.data.lang import ocr as lang_ocr
 
 TOLERANCE = 50
 
@@ -24,8 +25,12 @@ class NavigationMixin(BaseEfTask):
         self.log_info(f"找到{target_feature_in_map}图标，点击进入")
         self.click(result)
 
-        if result := self.wait_ocr(match=re.compile("追踪"), box=self.box.bottom_right, time_out=5):
-            if "追踪" in result[0].name and "取" not in result[0].name and "消" not in result[0].name:
+        if result := self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_093"), box=self.box.bottom_right, time_out=5):
+            if (
+                lang_ocr.get_primary_term("ocr_text_093") in result[0].name
+                and lang_ocr.get_primary_term("ocr_text_105") not in result[0].name
+                and lang_ocr.get_primary_term("ocr_text_106") not in result[0].name
+            ):
                 self.log_info("点击追踪按钮")
                 self.click(result, after_sleep=0.5)
 

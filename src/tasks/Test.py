@@ -3,6 +3,7 @@ import re
 from src.data.FeatureList import FeatureList as fL
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.BaseEfTask import BaseEfTask
+from src.data.lang import ocr as lang_ocr
 
 
 class Test(BaseEfTask):
@@ -19,4 +20,11 @@ class Test(BaseEfTask):
         self.interval = 0.3  # 读取间隔（秒）
 
     def run(self):
-        box_list = self.wait_ocr(x=0.20, y=0.45, to_x=0.88, to_y=0.66, match=re.compile(r"(\d+)(天|小时)"), log=True)
+        box_list = self.wait_ocr(
+            x=0.20,
+            y=0.45,
+            to_x=0.88,
+            to_y=0.66,
+            match=lang_ocr.get_regex_pattern("ocr_regex_003"),
+            log=True,
+        )

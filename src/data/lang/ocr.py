@@ -22,3 +22,9 @@ def get_pattern(key: str, *, locale: str | None = None, context: Any = None) -> 
 def get_primary_term(key: str, *, locale: str | None = None, context: Any = None) -> str:
     terms = get_terms(key, locale=locale, context=context)
     return terms[0] if terms else ""
+
+
+def get_regex_pattern(key: str, *, locale: str | None = None, context: Any = None) -> re.Pattern[str]:
+    payload = get_locale_data(locale=locale, context=context)
+    raw = payload.get("ocr", {}).get("regex", {}).get(key, "")
+    return re.compile(str(raw))
