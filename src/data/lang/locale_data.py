@@ -17,8 +17,16 @@ _LOCALE_FILE_NAME = {
 
 @lru_cache(maxsize=None)
 def _load_locale_data(locale: str) -> dict[str, Any]:
-    locale_file = _LOCALES_DIR / _LOCALE_FILE_NAME[locale]
-    return json.loads(locale_file.read_text(encoding="utf-8"))
+    file_name = _LOCALE_FILE_NAME.get(locale)
+    if file_name is None:
+        raise ValueError(f"Unsupported locale: {locale}")
+    locale_file = _LOCALES_DIR / file_name
+    try:
+        return json.loads(locale_file.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(f"Locale file not found for {locale}: {locale_file}") from exc
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid locale JSON for {locale}: {locale_file}") from exc
 
 
 _LOCALE_DATA = {

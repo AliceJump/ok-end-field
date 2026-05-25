@@ -35,9 +35,6 @@
       "delivery_fast_prompt": [
         "請盡快送達"
       ],
-      "ocr_text_001": [
-        "(\\d+)(天|小时)"
-      ],
       "ocr_text_002": [
         "一键领取"
       ],

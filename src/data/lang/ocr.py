@@ -26,5 +26,10 @@ def get_primary_term(key: str, *, locale: str | None = None, context: Any = None
 
 def get_regex_pattern(key: str, *, locale: str | None = None, context: Any = None) -> re.Pattern[str]:
     payload = get_locale_data(locale=locale, context=context)
-    raw = payload.get("ocr", {}).get("regex", {}).get(key, "")
-    return re.compile(str(raw))
+    raw = payload.get("ocr", {}).get("regex", {}).get(key)
+    if raw is None:
+        raise KeyError(f"Missing OCR regex key: {key}")
+    try:
+        return re.compile(str(raw))
+    except re.error as exc:
+        raise ValueError(f"Invalid OCR regex for key '{key}': {raw}") from exc
