@@ -1,11 +1,13 @@
 import threading
 from datetime import datetime
+from typing import Any
 
 import win32gui
 from ok import BaseTask, TaskDisabledException
 
 from src.interaction.KeyConfig import KeyConfigManager
 from src.interaction.ScreenPosition import ScreenPosition
+from src.data.lang import get_lang_accessor
 from src.tasks.mixin.account_override_mixin import AccountOverrideMixin
 from src.tasks.mixin.game_flow_mixin import GameFlowMixin
 from src.tasks.mixin.process_manager import ProcessManager
@@ -21,6 +23,39 @@ def back_window(prev):
             win32gui.SetForegroundWindow(prev)
         except Exception:
             pass
+
+
+def _extract_locale_from_object(obj: Any) -> str | None:
+    """统一获取运行时 UI 语言。"""
+
+    if obj is None:
+        return None
+
+    # 优先使用 executor.locale
+    executor = getattr(obj, "executor", None)
+
+    locale_obj = (
+        getattr(executor, "locale", None)
+        if executor is not None
+        else getattr(obj, "locale", None)
+    )
+
+    if locale_obj is None:
+        return None
+
+    # 支持 enum / QLocale / 自定义 Locale 类
+    if hasattr(locale_obj, "name"):
+        try:
+            name_attr = getattr(locale_obj, "name")
+            value = name_attr() if callable(name_attr) else name_attr
+
+            if value:
+                return str(value)
+
+        except Exception:
+            pass
+
+    return str(locale_obj)
 
 
 class BaseEfTask(
@@ -49,6 +84,12 @@ class BaseEfTask(
         # 初始化窗口箭头绘制 Mixin
         self._init_window_arrow_drawing_mixin()
 
+        # 语言访问器（按模块化 JSON 加载）
+        try:
+            self.lang = get_lang_accessor(self)
+        except Exception:
+            self.lang = get_lang_accessor(None)
+
         self._detector = None
         self._detector_lock = threading.Lock()
         self._yolo_loader = None
@@ -60,6 +101,10 @@ class BaseEfTask(
         self._ws_server_thread = None
         self._ws_loop = None
         self._ws_stop_event = None
+
+    @property
+    def runtime_locale(self) -> str | None:
+        return _extract_locale_from_object(self)
 
     def set_current_account(self, username, account_id):
         """设置当前账号信息，供账号覆盖功能使用。
