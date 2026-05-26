@@ -45,7 +45,7 @@ def get_stage_category(stage_name):
 
 @lru_cache(maxsize=1)
 def _world_map_zh_key_map() -> dict[str, str]:
-    """Build a reverse index from world_map zh text to lang keys."""
+    """Build and cache a reverse index from world_map zh text values to lang keys."""
     repo_root = Path(__file__).resolve().parents[2]
     path = repo_root / "lang" / "world_map" / "zh_CN.json"
     if not path.exists():
@@ -65,7 +65,7 @@ def _world_map_zh_key_map() -> dict[str, str]:
     return result
 
 
-def get_world_map_matcher(lang_accessor: Any, zh_text: str):
+def get_world_map_matcher(lang_accessor: Any, zh_text: str) -> re.Pattern | str | list | None:
     """Get world_map matcher for current locale, fallback to re.compile(zh_text)."""
     if not zh_text:
         return None
