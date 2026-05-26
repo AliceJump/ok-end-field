@@ -1290,3 +1290,174 @@ msgid ""
 "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n"
 "开启发生异常时终止游戏时此选项不生效"
 msgstr ""
+
+msgid "中容武陵电池"
+msgstr "中容武陵电池"
+
+msgid "中容谷地电池"
+msgstr "中容谷地电池"
+
+msgid "产物"
+msgstr "产物"
+
+msgid "优质柑实罐头"
+msgstr "优质柑实罐头"
+
+msgid "优质芽针针剂"
+msgstr "优质芽针针剂"
+
+msgid "优质荞愈胶囊"
+msgstr "优质荞愈胶囊"
+
+msgid "优质锦草软饮"
+msgstr "优质锦草软饮"
+
+msgid "低容武陵电池"
+msgstr "低容武陵电池"
+
+msgid "冬虫夏笋货组"
+msgstr "冬虫夏笋货组"
+
+msgid "卡契尔"
+msgstr "卡契尔"
+
+msgid "危境再现"
+msgstr "危境再现"
+
+msgid "危境预演"
+msgstr "危境预演"
+
+msgid "团结牌口服液货组"
+msgstr "团结牌口服液货组"
+
+msgid "基建前站"
+msgstr "基建前站"
+
+msgid "塞什卡髀石货组"
+msgstr "塞什卡髀石货组"
+
+msgid "天使罐头货组"
+msgstr "天使罐头货组"
+
+msgid "天师龙泡泡货组"
+msgstr "天师龙泡泡货组"
+
+msgid "天王坪援建点"
+msgstr "天王坪援建点"
+
+msgid "岳研避瘴茶货组"
+msgstr "岳研避瘴茶货组"
+
+msgid "巫术矿钻货组"
+msgstr "巫术矿钻货组"
+
+msgid "干员养成"
+msgstr "干员养成"
+
+msgid "庄方宜"
+msgstr "庄方宜"
+
+msgid "心脏修缮站"
+msgstr "心脏修缮站"
+
+msgid "息壤净水芯货组"
+msgstr "息壤净水芯货组"
+
+msgid "息壤玉葫芦"
+msgstr "息壤玉葫芦"
+
+msgid "息壤葫芦"
+msgstr "息壤葫芦"
+
+msgid "悬空鼷兽骨雕货组"
+msgstr "悬空鼷兽骨雕货组"
+
+msgid "星体晶块货组"
+msgstr "星体晶块货组"
+
+msgid "晶体外壳"
+msgstr "晶体外壳"
+
+msgid "柑实罐头"
+msgstr "柑实罐头"
+
+msgid "武侠电影货组"
+msgstr "武侠电影货组"
+
+msgid "武器养成"
+msgstr "武器养成"
+
+msgid "武陵冻梨货组"
+msgstr "武陵冻梨货组"
+
+msgid "清波筏货组"
+msgstr "清波筏货组"
+
+msgid "源石树幼苗货组"
+msgstr "源石树幼苗货组"
+
+msgid "矿物"
+msgstr "矿物"
+
+msgid "硬脑壳头盔货组"
+msgstr "硬脑壳头盔货组"
+
+msgid "管理员"
+msgstr "管理员"
+
+msgid "精选柑实罐头"
+msgstr "精选柑实罐头"
+
+msgid "精选荞愈胶囊"
+msgstr "精选荞愈胶囊"
+
+msgid "聂菲斯"
+msgstr "聂菲斯"
+
+msgid "能量淤积点"
+msgstr "能量淤积点"
+
+msgid "致密源石粉末"
+msgstr "致密源石粉末"
+
+msgid "芽针针剂"
+msgstr "芽针针剂"
+
+msgid "荞愈胶囊"
+msgstr "荞愈胶囊"
+
+msgid "警戒者矿镐货组"
+msgstr "警戒者矿镐货组"
+
+msgid "试验园区"
+msgstr "试验园区"
+
+msgid "谷地水培肉货组"
+msgstr "谷地水培肉货组"
+
+msgid "赫铜零件"
+msgstr "赫铜零件"
+
+msgid "边角料积木货组"
+msgstr "边角料积木货组"
+
+msgid "重建指挥部"
+msgstr "重建指挥部"
+
+msgid "重息壤"
+msgstr "重息壤"
+
+msgid "锚点厨具货组"
+msgstr "锚点厨具货组"
+
+msgid "锦草软饮"
+msgstr "锦草软饮"
+
+msgid "阮一"
+msgstr "阮一"
+
+msgid "难民暂居处"
+msgstr "难民暂居处"
+
+msgid "首墩"
+msgstr "首墩"

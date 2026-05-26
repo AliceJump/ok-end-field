@@ -789,3 +789,174 @@ msgid ""
 "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n"
 "开启发生异常时终止游戏时此选项不生效"
 msgstr ""
+
+msgid "中容武陵电池"
+msgstr "Batería Zhongrong Wuling"
+
+msgid "中容谷地电池"
+msgstr "Batería del valle de Zhongrong"
+
+msgid "产物"
+msgstr "producto"
+
+msgid "优质柑实罐头"
+msgstr "Cítricos enlatados de alta calidad."
+
+msgid "优质芽针针剂"
+msgstr "Inyección de cogollos de alta calidad"
+
+msgid "优质荞愈胶囊"
+msgstr "Cápsulas de trigo sarraceno de alta calidad."
+
+msgid "优质锦草软饮"
+msgstr "Refresco Premium Jincao"
+
+msgid "低容武陵电池"
+msgstr "Batería Wuling de baja capacidad"
+
+msgid "冬虫夏笋货组"
+msgstr "Grupo de cordyceps y brotes de bambú."
+
+msgid "卡契尔"
+msgstr ""
+
+msgid "危境再现"
+msgstr "El peligro reaparece"
+
+msgid "危境预演"
+msgstr "ensayo de crisis"
+
+msgid "团结牌口服液货组"
+msgstr "Grupo de productos líquidos orales de la marca Tuanjie"
+
+msgid "基建前站"
+msgstr "Estación frontal de infraestructura"
+
+msgid "塞什卡髀石货组"
+msgstr "Grupo de carga de piedra Seshka"
+
+msgid "天使罐头货组"
+msgstr "Grupo de productos enlatados Angel"
+
+msgid "天师龙泡泡货组"
+msgstr "Grupo de productos burbuja Tianshilong"
+
+msgid "天王坪援建点"
+msgstr "Sitio de construcción de ayuda de Tianwangping"
+
+msgid "岳研避瘴茶货组"
+msgstr "Grupo de productos de té para evitar el miasma de Yueyan"
+
+msgid "巫术矿钻货组"
+msgstr "Grupo de carga de diamantes de la mina de brujería"
+
+msgid "干员养成"
+msgstr "Desarrollo de operadores"
+
+msgid "庄方宜"
+msgstr ""
+
+msgid "心脏修缮站"
+msgstr "estación de reparación del corazón"
+
+msgid "息壤净水芯货组"
+msgstr "Grupo de productos básicos de purificación de agua Xirang"
+
+msgid "息壤玉葫芦"
+msgstr "Calabaza de jade del suelo Xi"
+
+msgid "息壤葫芦"
+msgstr "calabaza del suelo"
+
+msgid "悬空鼷兽骨雕货组"
+msgstr "Grupo de productos para tallar huesos de bestia topo colgante"
+
+msgid "星体晶块货组"
+msgstr "Grupo de carga de bloques de cristal estrella"
+
+msgid "晶体外壳"
+msgstr "concha de cristal"
+
+msgid "柑实罐头"
+msgstr "Cítricos enlatados"
+
+msgid "武侠电影货组"
+msgstr "Grupo de productos de películas de artes marciales."
+
+msgid "武器养成"
+msgstr "Desarrollo de armas"
+
+msgid "武陵冻梨货组"
+msgstr "Grupo de productos de peras congeladas de Wuling"
+
+msgid "清波筏货组"
+msgstr "Grupo de carga de balsas Qingbo"
+
+msgid "源石树幼苗货组"
+msgstr "Grupo de envío de plántulas de árboles Originium"
+
+msgid "矿物"
+msgstr "mineral"
+
+msgid "硬脑壳头盔货组"
+msgstr "Grupo de carga de casco de calavera dura"
+
+msgid "管理员"
+msgstr ""
+
+msgid "精选柑实罐头"
+msgstr "Cítricos enlatados seleccionados"
+
+msgid "精选荞愈胶囊"
+msgstr "Cápsulas de Trigo Sarraceno Seleccionadas"
+
+msgid "聂菲斯"
+msgstr "Nefeo"
+
+msgid "能量淤积点"
+msgstr "punto de acumulación de energía"
+
+msgid "致密源石粉末"
+msgstr "Polvo de piedra de origen denso"
+
+msgid "芽针针剂"
+msgstr "inyección de cogollos"
+
+msgid "荞愈胶囊"
+msgstr "Cápsulas de Qiaoyu"
+
+msgid "警戒者矿镐货组"
+msgstr "Conjunto de carga de pico de mina vigilante"
+
+msgid "试验园区"
+msgstr "Parque Experimental"
+
+msgid "谷地水培肉货组"
+msgstr "Grupo de carne hidropónica del valle"
+
+msgid "赫铜零件"
+msgstr "Piezas de cobre"
+
+msgid "边角料积木货组"
+msgstr "Grupo de carga de bloques de construcción de chatarra"
+
+msgid "重建指挥部"
+msgstr "Comando de Reconstrucción"
+
+msgid "重息壤"
+msgstr "suelo pesado"
+
+msgid "锚点厨具货组"
+msgstr "Grupo de menaje de cocina ancla"
+
+msgid "锦草软饮"
+msgstr "refresco jincao"
+
+msgid "阮一"
+msgstr "Ruan Yi"
+
+msgid "难民暂居处"
+msgstr "residencia temporal de refugiados"
+
+msgid "首墩"
+msgstr "primer muelle"

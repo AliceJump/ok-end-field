@@ -789,3 +789,174 @@ msgid ""
 "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n"
 "开启发生异常时终止游戏时此选项不生效"
 msgstr ""
+
+msgid "中容武陵电池"
+msgstr "Zhongrong Wuling 배터리"
+
+msgid "中容谷地电池"
+msgstr "종롱 밸리 배터리"
+
+msgid "产物"
+msgstr "제품"
+
+msgid "优质柑实罐头"
+msgstr "고품질 통조림 감귤류"
+
+msgid "优质芽针针剂"
+msgstr "고품질 새싹 주입"
+
+msgid "优质荞愈胶囊"
+msgstr "고품질 메밀 캡슐"
+
+msgid "优质锦草软饮"
+msgstr "프리미엄 진차오 청량음료"
+
+msgid "低容武陵电池"
+msgstr "저용량 Wuling 배터리"
+
+msgid "冬虫夏笋货组"
+msgstr "동충하초와 죽순군"
+
+msgid "卡契尔"
+msgstr ""
+
+msgid "危境再现"
+msgstr "다시 나타나는 위험"
+
+msgid "危境预演"
+msgstr "위기 리허설"
+
+msgid "团结牌口服液货组"
+msgstr "Tuanjie 브랜드 경구 액제 제품 그룹"
+
+msgid "基建前站"
+msgstr "인프라 프론트 스테이션"
+
+msgid "塞什卡髀石货组"
+msgstr "Seshka 스톤 화물 그룹"
+
+msgid "天使罐头货组"
+msgstr "엔젤 통조림 그룹"
+
+msgid "天师龙泡泡货组"
+msgstr "Tianshilong 거품 상품 그룹"
+
+msgid "天王坪援建点"
+msgstr "Tianwangping 구호 건설 현장"
+
+msgid "岳研避瘴茶货组"
+msgstr "Yueyan Miasma 회피 차 용품 그룹"
+
+msgid "巫术矿钻货组"
+msgstr "마법 광산 다이아몬드 화물 그룹"
+
+msgid "干员养成"
+msgstr "오퍼레이터 개발"
+
+msgid "庄方宜"
+msgstr ""
+
+msgid "心脏修缮站"
+msgstr "심장 수리소"
+
+msgid "息壤净水芯货组"
+msgstr "시랑정수 핵심제품군"
+
+msgid "息壤玉葫芦"
+msgstr "사이 흙 옥 조롱박"
+
+msgid "息壤葫芦"
+msgstr "토양 조롱박"
+
+msgid "悬空鼷兽骨雕货组"
+msgstr "매달아 두더지 짐승 뼈 조각품 그룹"
+
+msgid "星体晶块货组"
+msgstr "스타 크리스탈 블록 화물 그룹"
+
+msgid "晶体外壳"
+msgstr "크리스탈 쉘"
+
+msgid "柑实罐头"
+msgstr "통조림 감귤류"
+
+msgid "武侠电影货组"
+msgstr "무술영화상품그룹"
+
+msgid "武器养成"
+msgstr "무기 개발"
+
+msgid "武陵冻梨货组"
+msgstr "우링 냉동 배 상품 그룹"
+
+msgid "清波筏货组"
+msgstr "칭보 뗏목 화물 그룹"
+
+msgid "源石树幼苗货组"
+msgstr "오리지늄 묘목 출하 그룹"
+
+msgid "矿物"
+msgstr "광물"
+
+msgid "硬脑壳头盔货组"
+msgstr "하드 스컬 헬멧 카고 그룹"
+
+msgid "管理员"
+msgstr ""
+
+msgid "精选柑实罐头"
+msgstr "엄선된 통조림 감귤류"
+
+msgid "精选荞愈胶囊"
+msgstr "엄선된 메밀캡슐"
+
+msgid "聂菲斯"
+msgstr "네페우스"
+
+msgid "能量淤积点"
+msgstr "에너지 풀링 포인트"
+
+msgid "致密源石粉末"
+msgstr "조밀한 근원석 분말"
+
+msgid "芽针针剂"
+msgstr "새싹 주입"
+
+msgid "荞愈胶囊"
+msgstr "차오유 캡슐"
+
+msgid "警戒者矿镐货组"
+msgstr "경계하는 지뢰 곡괭이 화물 세트"
+
+msgid "试验园区"
+msgstr "실험공원"
+
+msgid "谷地水培肉货组"
+msgstr "밸리수경고기그룹"
+
+msgid "赫铜零件"
+msgstr "열동 부품"
+
+msgid "边角料积木货组"
+msgstr "스크랩 빌딩 블록 화물 그룹"
+
+msgid "重建指挥部"
+msgstr "재건 명령"
+
+msgid "重息壤"
+msgstr "무거운 토양"
+
+msgid "锚点厨具货组"
+msgstr "앵커 주방용품 그룹"
+
+msgid "锦草软饮"
+msgstr "진차오 청량음료"
+
+msgid "阮一"
+msgstr "루안 이"
+
+msgid "难民暂居处"
+msgstr "난민 임시 거주지"
+
+msgid "首墩"
+msgstr "첫 번째 부두"
