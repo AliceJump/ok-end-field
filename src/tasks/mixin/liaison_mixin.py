@@ -203,7 +203,7 @@ class LiaisonMixin(NavigationMixin):
             return None
 
         return self.navigate_until_target(
-            target_ocr_pattern=re.compile("联络"),
+            target_ocr_pattern=self.lang.liaison_mixin.k_4f35d7ac,
             nav_feature_name="operator_liaison_station_out_map",
             time_out=60,
             found_special_callback=special_chat_detect,
@@ -449,7 +449,7 @@ class LiaisonMixin(NavigationMixin):
         """仅执行收礼流程。"""
         self.log_info("开始仅收礼流程")
         result = self._loop_wait_click_ocr(
-            match=[re.compile("收下")],
+            match=[self.lang.liaison_mixin.k_ae0c20b5],
             box=self._gift_action_box(),
             timeout=timeout,
             log_msg="等待 收下 超时",
@@ -464,7 +464,7 @@ class LiaisonMixin(NavigationMixin):
         self.log_info("开始仅送礼流程")
         if not gift_entry_clicked:
             result = self._loop_wait_click_ocr(
-                match=[re.compile("赠送")],
+                match=[self.lang.liaison_mixin.k_662dc863],
                 box=self._gift_action_box(),
                 timeout=timeout,
                 log_msg="等待 赠送 超时",
@@ -489,7 +489,7 @@ class LiaisonMixin(NavigationMixin):
                 return False
             self.sleep(0.5)
         result = self._loop_wait_click_ocr(
-            match=[re.compile("收下"), re.compile("赠送")],
+            match=[self.lang.liaison_mixin.k_ae0c20b5, self.lang.liaison_mixin.k_662dc863],
             box=self._gift_action_box(),
             timeout=30,
             log_msg="等待 收下/赠送 超时",

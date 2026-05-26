@@ -285,7 +285,7 @@ class DailyTradeMixin(NavigationMixin, Common):
         ):
             return False
         result = self.navigate_until_target(
-            target_ocr_pattern=re.compile("物资调度终端"),
+            target_ocr_pattern=self.lang.daily_trade_mixin.k_fa04e4df,
             nav_feature_name=fL.market_dispatch_terminal_out,
             time_out=200,
         )
@@ -330,9 +330,9 @@ class DailyTradeMixin(NavigationMixin, Common):
             if buy_good:
                 if not can_buy:
                     if self.wait_ocr(
-                            match=[re.compile("即将"), re.compile("溢出")],
-                            box=self.box.top_left,
-                            time_out=3,
+                        match=[self.lang.daily_trade_mixin.k_f48bcfb6, self.lang.daily_trade_mixin.k_6174dac7],
+                        box=self.box.top_left,
+                        time_out=3,
                     ):
                         can_buy = True
                 if can_buy:

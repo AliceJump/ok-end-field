@@ -129,7 +129,7 @@ class DailyShopMixin(Common):
                     return False, sum_credit, False
             self.log_info(f"商品价格识别成功: {item_name}，价格: {cost}")
             result = self.wait_click_ocr(
-                match=[re.compile("确认"), re.compile("不足")], time_out=4, box=self.box.bottom_right
+                match=[self.lang.daily_shop_mixin.k_b56d9ac6, self.lang.daily_shop_mixin.k_8533f5f6], time_out=4, box=self.box.bottom_right
             )
             if not result:
                 self.log_info(f"购买流程中断: {item_name}，未找到确认/不足弹窗，尝试返回采购页")
@@ -194,7 +194,7 @@ class DailyShopMixin(Common):
                 continue
             self.log_info(f"商品价格识别成功: {item_name}，价格: {cost}")
             result = self.wait_click_ocr(
-                match=[re.compile("确认"), re.compile("不足")], time_out=4, box=self.box.bottom_right
+                match=[self.lang.daily_shop_mixin.k_b56d9ac6, self.lang.daily_shop_mixin.k_8533f5f6], time_out=4, box=self.box.bottom_right
             )
             if not result:
                 self.log_info(f"购买流程中断: {item_name}，未找到确认/不足弹窗，尝试返回采购页")

@@ -22,5 +22,14 @@
   },
   "k_7cf40bbd": {
     "pattern": "购买"
+  },
+  "k_f48bcfb6": {
+    "pattern": "即将"
+  },
+  "k_6174dac7": {
+    "pattern": "溢出"
+  },
+  "k_fa04e4df": {
+    "pattern": "物资调度终端"
   }
 }

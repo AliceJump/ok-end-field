@@ -1,9 +1,17 @@
 """
-自动扫描 src 中的字面 OCR match（区分裸字符串和 re.compile），为每个源文件生成模块化 lang/<module>/zh_CN.json，且只写入对应字段：
-- 来自 match="..." 的只生成 {"string": "..."}
-- 来自 match=re.compile("...") 的只生成 {"pattern": "..."}
+自动扫描 src 中的 OCR 字面量，并为每个源文件生成模块化 lang/<module>/zh_CN.json。
 
-随后仅在源文件中替换匹配为 match=self.lang.<module>.<key>
+规则：
+- 来自裸字符串匹配的，只生成 {"string": "..."}
+- 来自 re.compile("...") 的，只生成 {"pattern": "..."}
+
+替换规则：
+- match=...
+- target_ocr_pattern=...
+- success_match=...
+- OCR 调用里静态列表/元组中的 re.compile("...")
+
+不替换动态变量，例如 re.compile(area)、re.compile(str(i))。
 仅生成简中文件（zh_CN）。
 """
 import re
@@ -15,8 +23,41 @@ ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / 'src'
 
 # patterns to find: match="..." and match=re.compile("...")
-pat_str = re.compile(r'match\s*=\s*"([^"]+)"')
-pat_re = re.compile(r'match\s*=\s*re\.compile\(r?"([^"]+)"\)')
+pat_str = re.compile(r'\b(match|target_ocr_pattern|success_match)\s*=\s*"([^"]+)"')
+pat_re = re.compile(r'\b(match|target_ocr_pattern|success_match)\s*=\s*re\.compile\(r?"([^"]+)"\)')
+pat_compile = re.compile(r're\.compile\(r?"([^"]+)"\)')
+
+OCR_HINTS = (
+    'wait_ocr(',
+    'wait_click_ocr(',
+    'click_text(',
+    'navigate_until_target(',
+    'safe_back(',
+    'target_ocr_pattern=',
+    'success_match=',
+    'match=',
+)
+
+
+def line_has_ocr_hint(text: str, pos: int) -> bool:
+    start = text.rfind('\n', 0, pos) + 1
+    end = text.find('\n', pos)
+    if end == -1:
+        end = len(text)
+    window = text[start:end]
+    if any(h in window for h in OCR_HINTS):
+        return True
+    # 看前后两行，覆盖多行参数列表
+    prev_start = text.rfind('\n', 0, start - 2)
+    if prev_start == -1:
+        prev_start = 0
+    else:
+        prev_start += 1
+    next_end = text.find('\n', end + 1)
+    if next_end == -1:
+        next_end = len(text)
+    surrounding = text[prev_start:next_end]
+    return any(h in surrounding for h in OCR_HINTS)
 
 # skip if pattern contains regex metacharacters that indicate complex regex
 def is_simple_text(s: str) -> bool:
@@ -49,12 +90,16 @@ for f in files:
     strs = set()
     res = set()
     for m in pat_str.finditer(txt):
-        s = m.group(1)
+        s = m.group(2)
         if is_simple_text(s):
             strs.add(s)
     for m in pat_re.finditer(txt):
-        s = m.group(1)
+        s = m.group(2)
         if is_simple_text(s):
+            res.add(s)
+    for m in pat_compile.finditer(txt):
+        s = m.group(1)
+        if is_simple_text(s) and line_has_ocr_hint(txt, m.start()):
             res.add(s)
     if strs or res:
         per_file_literals[f] = {'str': strs, 're': res}
@@ -110,21 +155,33 @@ for f, groups in per_file_literals.items():
     new = txt
 
     def repl_str(m):
-        s = m.group(1)
+        s = m.group(2)
         key = mapping.get(('str', s))
         if key:
-            return f'match=self.lang.{module}.{key}'
+            return f'{m.group(1)}=self.lang.{module}.{key}'
         return m.group(0)
 
     def repl_re(m):
-        s = m.group(1)
+        s = m.group(2)
         key = mapping.get(('re', s))
         if key:
-            return f'match=self.lang.{module}.{key}'
+            return f'{m.group(1)}=self.lang.{module}.{key}'
+        return m.group(0)
+
+    def repl_compile(m):
+        s = m.group(1)
+        if not is_simple_text(s):
+            return m.group(0)
+        if not line_has_ocr_hint(new, m.start()):
+            return m.group(0)
+        key = mapping.get(('re', s)) or mapping.get(('str', s))
+        if key:
+            return f'self.lang.{module}.{key}'
         return m.group(0)
 
     new = pat_str.sub(repl_str, new)
     new = pat_re.sub(repl_re, new)
+    new = pat_compile.sub(repl_compile, new)
 
     if new != txt:
         f.write_text(new, encoding='utf-8')

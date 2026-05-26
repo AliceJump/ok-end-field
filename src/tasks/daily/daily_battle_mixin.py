@@ -213,7 +213,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         self._switch_team_before_reenter()
 
         deploy_results = self.wait_ocr(
-            match=[re.compile("已出战"), re.compile("出战")],
+            match=[self.lang.daily_battle_mixin.k_62b5b688, self.lang.daily_battle_mixin.k_12577cd1],
             box=self.box.bottom_right,
             time_out=3,
             raise_if_not_found=False,
@@ -559,7 +559,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         # 滑索移动
         self._navigate_via_zip_line()
         #
-        self.navigate_until_target(target_ocr_pattern=re.compile("激发|放弃"), nav_feature_name=fL.gather_icon_out_map,
+        self.navigate_until_target(target_ocr_pattern=self.lang.daily_battle_mixin.k_bfe73e18, nav_feature_name=fL.gather_icon_out_map,
                                    time_out=60)
         #
         if self.wait_ocr(match=self.lang.daily_battle_mixin.k_b8a81b7a, box=self.box.bottom_right, time_out=1):
@@ -613,7 +613,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         # 滑索移动
         self._navigate_via_zip_line()
         #
-        self.navigate_until_target(target_ocr_pattern=re.compile("领取"), nav_feature_name=fL.gather_icon_out_map,
+        self.navigate_until_target(target_ocr_pattern=self.lang.daily_battle_mixin.k_39d12e73_1, nav_feature_name=fL.gather_icon_out_map,
                                    time_out=60)
         click_key = "放弃" if self.battle_ctx.is_extra_mode else "领取"
         result = self.wait_ocr(match=re.compile(click_key), box=self.box.bottom_right, time_out=5)
@@ -775,7 +775,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         else:
             target_box = self.box.top if target_tier == self.REWARD_TIER_LOW else self.box.bottom
             candidates = self.wait_ocr(
-                match=[re.compile("当前"), re.compile("选择")],
+                match=[self.lang.daily_battle_mixin.k_25e74dce, self.lang.daily_battle_mixin.k_70b20820],
                 box=target_box,
                 time_out=4,
                 log=True,

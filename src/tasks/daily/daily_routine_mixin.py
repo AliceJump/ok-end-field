@@ -108,7 +108,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.info_set("current_task", "make_simply")
         self.transfer_to_home_point(should_check_out_boat=True)
         self.press_key("b")
-        self.wait_click_ocr(match=[re.compile("简易"), re.compile("制作")], box=self.box.top_right, time_out=5)
+        self.wait_click_ocr(match=[self.lang.daily_routine_mixin.k_e1c08f6a, self.lang.daily_routine_mixin.k_7d394484], box=self.box.top_right, time_out=5)
         self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_cdb1d49b, box=self.box.left, time_out=5)
         self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_7d394484, box=self.box.bottom_right, time_out=5)
         self.wait_pop_up()
@@ -126,7 +126,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.info_set("current_task", "collect_credit")
         self.press_key("f5")
         self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_7be4248b, box=self.box.top, time_out=5, recheck_time=1)
-        result = self.wait_click_ocr(match=[re.compile("收取信用"), re.compile("无待领取信用")],
+        result = self.wait_click_ocr(match=[self.lang.daily_routine_mixin.k_b693e51a, self.lang.daily_routine_mixin.k_f646bcd5],
                                      box=self.box.bottom_left,
                                      time_out=7, recheck_time=1)
         if not result:
@@ -331,7 +331,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                     break
 
                 results = self.wait_ocr(
-                    match=[re.compile("货物装箱"), re.compile("查看报价")],
+                    match=[self.lang.daily_routine_mixin.k_573c7c18, self.lang.daily_routine_mixin.k_8f2058a8],
                     box=self.box.bottom,
                     time_out=5,
                 )
@@ -927,7 +927,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             return False
         self.click(results[0])
         self.log_info("点击培育室")
-        results = self.wait_click_ocr(match=[re.compile("收取"), re.compile("培养")], time_out=3, box=exchange_help_box,
+        results = self.wait_click_ocr(match=[self.lang.daily_routine_mixin.k_ffb5655a, self.lang.daily_routine_mixin.k_31cceca8], time_out=3, box=exchange_help_box,
                                       recheck_time=1)
         if not results:
             self.mark_task_failure("未找到全部收取或培养中字样，任务失败")

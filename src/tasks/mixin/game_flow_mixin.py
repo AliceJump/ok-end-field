@@ -230,7 +230,7 @@ class GameFlowMixin:
             return True
         if self.click_confirm(time_out=1):
             return False
-        rules = [[None, None, [re.compile("点击空白处继续"), re.compile("结束拜访")], self.box.bottom]]
+        rules = [[None, None, [self.lang.game_flow_mixin.k_8b2ca27a, self.lang.game_flow_mixin.k_7cd2e0c0], self.box.bottom]]
         if not self.run_ocr_rules(rules):
             return False
         if esc:
@@ -258,7 +258,7 @@ class GameFlowMixin:
         self.press_key("i")
 
         exchange_help_box = self.box_of_screen(0.1, 561 / 861, 0.9, 0.9)
-        room_keywords = [re.compile("会客室"), re.compile("制造")]
+        room_keywords = [self.lang.game_flow_mixin.k_f546849b, self.lang.game_flow_mixin.k_04afbdcd]
 
         results = self.wait_ocr(match=room_keywords, time_out=timeout, box=exchange_help_box)
 
@@ -344,10 +344,10 @@ class GameFlowMixin:
         """确保进入地图界面。"""
         start_time = time.time()
         if addtional_match:
-            match = [re.compile("事务")] + addtional_match if isinstance(addtional_match, list) else [
-                re.compile("事务"), re.compile(addtional_match)]
+            match = [self.lang.game_flow_mixin.k_d3ade189] + addtional_match if isinstance(addtional_match, list) else [
+                self.lang.game_flow_mixin.k_d3ade189, re.compile(addtional_match)]
         else:
-            match = [re.compile("事务")]
+            match = [self.lang.game_flow_mixin.k_d3ade189]
         self.press_key("m")
         while not self.wait_ocr(match=match, time_out=2, box=self.box.top_left):
             if time.time() - start_time > time_out:
