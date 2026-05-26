@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 
 from src.data.world_map import areas_list
+from src.data.world_map_utils import get_world_map_matcher, get_world_map_text
 from src.essence.essence_recognizer import EssenceInfo, read_essence_info
 from src.image.login_screenshot import capture_window_by_screen
 from src.interaction.Mouse import run_at_window_pos
@@ -282,7 +283,7 @@ class GameFlowMixin:
             else:
                 self.log_info("未识别到区域且未检测到建设，重新尝试打开界面")
                 continue
-            result = self.wait_ocr(match=[re.compile(area) for area in areas_list], box=self.box.left, time_out=1)
+            result = self.wait_ocr(match=[get_world_map_matcher(self.lang, area) for area in areas_list], box=self.box.left, time_out=1)
             if result:
                 success = True
                 break
@@ -292,8 +293,9 @@ class GameFlowMixin:
         if not success:
             self.log_error("未能识别到区域列表")
             return False
+        expected_area_text = get_world_map_text(self.lang, area)
         for i in result:
-            if area in i.name:
+            if expected_area_text in i.name or area in i.name:
                 need_change = False
                 break
         if need_change:
@@ -302,7 +304,7 @@ class GameFlowMixin:
             ):
                 return False
             if not self.wait_click_ocr(
-                    match=re.compile(area),
+                    match=get_world_map_matcher(self.lang, area),
                     box=self.box_of_screen(
                         648 / 1920, 196 / 1080, 648 / 1920 + 628 / 1920, 196 / 1080 + 192 / 1080
                     ),
@@ -329,13 +331,14 @@ class GameFlowMixin:
 
     def switch_to_area_delivery_list(self, target_area):
         """切换到指定区域的交付列表。"""
-        if result := self.wait_ocr(match=[re.compile(area) for area in areas_list],
+        if result := self.wait_ocr(match=[get_world_map_matcher(self.lang, area) for area in areas_list],
                                    box=self.box_of_screen(0, 960 / 1080, 260 / 1920, 1), time_out=5):
-            if target_area in result[0].name:
+            expected_target_text = get_world_map_text(self.lang, target_area)
+            if expected_target_text in result[0].name or target_area in result[0].name:
                 return True
             else:
                 self.click(result[0], move_back=True)
-                self.wait_click_ocr(match=re.compile(target_area),
+                self.wait_click_ocr(match=get_world_map_matcher(self.lang, target_area),
                                     box=self.box_of_screen(0, (960 - 60 * len(areas_list)) / 1080, 260 / 1920, 1),
                                     time_out=5)
                 return True
