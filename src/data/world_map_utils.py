@@ -90,3 +90,11 @@ def get_world_map_text(lang_accessor: Any, zh_text: str) -> str:
     if hasattr(matcher, "pattern"):
         return matcher.pattern
     return zh_text
+
+
+def is_world_map_text(lang_accessor: Any, value: str | None, zh_text: str) -> bool:
+    """Check whether value equals zh_text or its current locale counterpart."""
+    if not value:
+        return False
+    locale_text = get_world_map_text(lang_accessor, zh_text)
+    return value == zh_text or value == locale_text
