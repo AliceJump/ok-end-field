@@ -1,0 +1,41 @@
+{
+  "parser": {
+    "sequence": {
+      "delimiters": [
+        ",",
+        "，"
+      ]
+    },
+    "essence": {
+      "essence_keywords": [
+        "Essence"
+      ],
+      "affix_keywords": [
+        "Affix Skill"
+      ],
+      "gold_keywords": [
+        "Flawless"
+      ],
+      "name_regex": "([A-Za-z\\u4e00-\\u9fff]+(?:Essence|基质|基質))\\\\s*([A-Za-z\\u4e00-\\u9fff]+)?"
+    }
+  },
+  "normalize": {
+    "ocr_confusion_map": {},
+    "punctuation_map": {
+      "·": ":"
+    },
+    "traditional_to_simplified_map": {}
+  },
+  "auto_pick": {
+    "white_list": [],
+    "black_list": []
+  },
+  "warehouse_transfer": {
+    "locations": {},
+    "current_location_rules": {},
+    "ocr_patterns": {}
+  },
+  "item_category_en_by_name": {},
+  "item_warehouse_category_en_by_name": {},
+  "item_translation_map": {}
+}

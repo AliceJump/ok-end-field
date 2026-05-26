@@ -1,0 +1,26 @@
+{
+  "world_map": {
+    "areas": {
+      "wuling": "Wuling",
+      "valley4": "Valley 4"
+    },
+    "aliases": {
+      "Wuling": "wuling",
+      "Valley 4": "valley4"
+    },
+    "stage_categories": {
+      "operator_training": "Operator Training",
+      "weapon_training": "Weapon Training",
+      "danger_playback": "Danger Playback",
+      "danger_preview": "Danger Preview",
+      "energy_silt_point": "Energy Silt Point"
+    },
+    "stage_category_aliases": {
+      "Operator Training": "operator_training",
+      "Weapon Training": "weapon_training",
+      "Danger Playback": "danger_playback",
+      "Danger Preview": "danger_preview",
+      "Energy Silt Point": "energy_silt_point"
+    }
+  }
+}

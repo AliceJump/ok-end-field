@@ -1,0 +1,593 @@
+{
+  "terms": {
+    "storage_node": [
+      "倉儲節點"
+    ],
+    "local_storage_node": [
+      "本地倉儲節點"
+    ],
+    "delivery_list": [
+      "運送委託列表"
+    ],
+    "accept_delivery_entrust": [
+      "接取運送委託"
+    ],
+    "refresh_button": [
+      "刷新"
+    ],
+    "refresh_cooldown_hint": [
+      "秒後可刷新"
+    ],
+    "board_zipline": [
+      "登上滑索架"
+    ],
+    "industrial_area": [
+      "工業"
+    ],
+    "pickup_goods": [
+      "取貨"
+    ],
+    "delivery_submit": [
+      "交貨",
+      "送達"
+    ],
+    "delivery_fast_prompt": [
+      "請盡快送達"
+    ],
+    "ocr_text_002": [
+      "一鍵領取"
+    ],
+    "ocr_text_003": [
+      "上次"
+    ],
+    "ocr_text_004": [
+      "不足"
+    ],
+    "ocr_text_005": [
+      "中央環廳"
+    ],
+    "ocr_text_006": [
+      "交易"
+    ],
+    "ocr_text_007": [
+      "會客室"
+    ],
+    "ocr_text_008": [
+      "傳送"
+    ],
+    "ocr_text_009": [
+      "使用"
+    ],
+    "ocr_text_010": [
+      "信用"
+    ],
+    "ocr_text_011": [
+      "信用交易所"
+    ],
+    "ocr_text_012": [
+      "信賴"
+    ],
+    "ocr_text_013": [
+      "全部接收"
+    ],
+    "ocr_text_014": [
+      "全部領取"
+    ],
+    "ocr_text_015": [
+      "再次"
+    ],
+    "ocr_text_016": [
+      "出售"
+    ],
+    "ocr_text_017": [
+      "出戰"
+    ],
+    "ocr_text_018": [
+      "製作"
+    ],
+    "ocr_text_019": [
+      "製造"
+    ],
+    "ocr_text_020": [
+      "前往"
+    ],
+    "ocr_text_021": [
+      "助力"
+    ],
+    "ocr_text_022": [
+      "即將"
+    ],
+    "ocr_text_023": [
+      "取消"
+    ],
+    "ocr_text_024": [
+      "可"
+    ],
+    "ocr_text_025": [
+      "可領取"
+    ],
+    "ocr_text_026": [
+      "地區建設"
+    ],
+    "ocr_text_027": [
+      "培養"
+    ],
+    "ocr_text_028": [
+      "好友"
+    ],
+    "ocr_text_029": [
+      "存放"
+    ],
+    "ocr_text_030": [
+      "已出戰"
+    ],
+    "ocr_text_031": [
+      "市場"
+    ],
+    "ocr_text_032": [
+      "帝江號"
+    ],
+    "ocr_text_033": [
+      "幹員"
+    ],
+    "ocr_text_034": [
+      "幹員聯絡"
+    ],
+    "ocr_text_035": [
+      "建設"
+    ],
+    "ocr_text_036": [
+      "開展交流"
+    ],
+    "ocr_text_037": [
+      "彈性"
+    ],
+    "ocr_text_038": [
+      "當前"
+    ],
+    "ocr_text_039": [
+      "總控"
+    ],
+    "ocr_text_040": [
+      "恢復理智"
+    ],
+    "ocr_text_041": [
+      "情報交流"
+    ],
+    "ocr_text_042": [
+      "我轉交的委託"
+    ],
+    "ocr_text_043": [
+      "挑戰"
+    ],
+    "ocr_text_044": [
+      "接收"
+    ],
+    "ocr_text_045": [
+      "撤離"
+    ],
+    "ocr_text_046": [
+      "收下"
+    ],
+    "ocr_text_047": [
+      "收取"
+    ],
+    "ocr_text_048": [
+      "收取信用"
+    ],
+    "ocr_text_049": [
+      "收集"
+    ],
+    "ocr_text_050": [
+      "放棄"
+    ],
+    "ocr_text_051": [
+      "無待領取信用"
+    ],
+    "ocr_text_052": [
+      "日常"
+    ],
+    "ocr_text_053": [
+      "是否取消"
+    ],
+    "ocr_text_054": [
+      "暫存區"
+    ],
+    "ocr_text_055": [
+      "更換"
+    ],
+    "ocr_text_056": [
+      "最近"
+    ],
+    "ocr_text_057": [
+      "查看好友價格"
+    ],
+    "ocr_text_058": [
+      "查看報價"
+    ],
+    "ocr_text_059": [
+      "標記顯示管理"
+    ],
+    "ocr_text_060": [
+      "武器補給"
+    ],
+    "ocr_text_061": [
+      "每週事務"
+    ],
+    "ocr_text_062": [
+      "清空選中"
+    ],
+    "ocr_text_063": [
+      "溢出"
+    ],
+    "ocr_text_064": [
+      "激發"
+    ],
+    "ocr_text_065": [
+      "點擊空白處繼續"
+    ],
+    "ocr_text_066": [
+      "物資調度終端"
+    ],
+    "ocr_text_067": [
+      "獨立"
+    ],
+    "ocr_text_068": [
+      "理智補給"
+    ],
+    "ocr_text_069": [
+      "生產助力"
+    ],
+    "ocr_text_070": [
+      "登錄"
+    ],
+    "ocr_text_071": [
+      "的線索"
+    ],
+    "ocr_text_072": [
+      "確認"
+    ],
+    "ocr_text_073": [
+      "確認聯絡"
+    ],
+    "ocr_text_074": [
+      "確認購買"
+    ],
+    "ocr_text_075": [
+      "確認贈送"
+    ],
+    "ocr_text_076": [
+      "離開"
+    ],
+    "ocr_text_077": [
+      "簡易"
+    ],
+    "ocr_text_078": [
+      "索引"
+    ],
+    "ocr_text_079": [
+      "結束會話"
+    ],
+    "ocr_text_080": [
+      "聯絡"
+    ],
+    "ocr_text_081": [
+      "自選"
+    ],
+    "ocr_text_082": [
+      "艦橋"
+    ],
+    "ocr_text_083": [
+      "獲得獎勵"
+    ],
+    "ocr_text_084": [
+      "裝備"
+    ],
+    "ocr_text_085": [
+      "觸碰"
+    ],
+    "ocr_text_086": [
+      "貨品"
+    ],
+    "ocr_text_087": [
+      "貨物裝箱"
+    ],
+    "ocr_text_088": [
+      "購買"
+    ],
+    "ocr_text_089": [
+      "贈送"
+    ],
+    "ocr_text_090": [
+      "轉交運送委託"
+    ],
+    "ocr_text_091": [
+      "運轉"
+    ],
+    "ocr_text_092": [
+      "進入"
+    ],
+    "ocr_text_093": [
+      "追蹤"
+    ],
+    "ocr_text_094": [
+      "選擇"
+    ],
+    "ocr_text_095": [
+      "選擇拜訪"
+    ],
+    "ocr_text_096": [
+      "通行證任務"
+    ],
+    "ocr_text_097": [
+      "通行證獎勵"
+    ],
+    "ocr_text_098": [
+      "採購"
+    ],
+    "ocr_text_099": [
+      "重新挑戰"
+    ],
+    "ocr_text_100": [
+      "鍵領取"
+    ],
+    "ocr_text_101": [
+      "領取"
+    ],
+    "ocr_text_102": [
+      "默認"
+    ],
+    "ocr_text_103": [
+      "設施"
+    ],
+    "ocr_text_104": [
+      "等級"
+    ],
+    "ocr_text_105": [
+      "取"
+    ],
+    "ocr_text_106": [
+      "消"
+    ],
+    "ocr_text_107": [
+      "向目標移動"
+    ],
+    "ocr_text_108": [
+      "離開滑索架"
+    ],
+    "ocr_text_109": [
+      "下一連接點"
+    ],
+    "ocr_text_110": [
+      "結束拜訪"
+    ],
+    "ocr_text_111": [
+      "事務"
+    ],
+    "ocr_text_112": [
+      "貨組"
+    ],
+    "ocr_text_113": [
+      "資源"
+    ],
+    "central_ring_hall": [
+      "中央環廳"
+    ],
+    "trade_menu": [
+      "交易"
+    ],
+    "liaison_room": [
+      "會客室"
+    ],
+    "teleport_action": [
+      "傳送"
+    ],
+    "credit_exchange": [
+      "信用交易所"
+    ],
+    "receive_all": [
+      "全部接收"
+    ],
+    "claim_all": [
+      "全部領取"
+    ],
+    "regional_construction": [
+      "地區建設"
+    ],
+    "dijiang_ship": [
+      "帝江號"
+    ],
+    "operator_liaison": [
+      "幹員聯絡"
+    ],
+    "intel_exchange": [
+      "情報交流"
+    ],
+    "switch_action": [
+      "更換"
+    ],
+    "clear_selection": [
+      "清空選中"
+    ],
+    "logistics_terminal": [
+      "物資調度終端"
+    ],
+    "confirm_action": [
+      "確認"
+    ],
+    "leave_action": [
+      "離開"
+    ],
+    "liaison_action": [
+      "聯絡"
+    ],
+    "reward_obtained": [
+      "獲得獎勵"
+    ],
+    "cargo_packaging": [
+      "貨物裝箱"
+    ],
+    "buy_action": [
+      "購買"
+    ],
+    "gift_action": [
+      "贈送"
+    ],
+    "handover_delivery_entrust": [
+      "轉交運送委託"
+    ],
+    "enter_action": [
+      "進入"
+    ],
+    "track_action": [
+      "追蹤"
+    ],
+    "pass_mission": [
+      "通行證任務"
+    ],
+    "pass_reward": [
+      "通行證獎勵"
+    ],
+    "procurement_action": [
+      "採購"
+    ],
+    "retry_challenge": [
+      "重新挑戰"
+    ],
+    "claim_action": [
+      "領取"
+    ],
+    "move_to_target": [
+      "向目標移動"
+    ],
+    "affairs_menu": [
+      "事務"
+    ],
+    "cargo_bundle": [
+      "貨組"
+    ],
+    "resource_category": [
+      "資源"
+    ]
+  },
+  "regex": {
+    "ocr_regex_001": "任務$",
+    "ocr_regex_002": "激發|放棄",
+    "ocr_regex_003": "(\\d+)(天|小時)",
+    "task_suffix": "任務$",
+    "battle_activate_or_abandon": "激發|放棄",
+    "time_remaining": "(\\d+)(天|小時)"
+  },
+  "aliases": {
+    "ocr_text_005": [
+      "central_ring_hall"
+    ],
+    "ocr_text_006": [
+      "trade_menu"
+    ],
+    "ocr_text_007": [
+      "liaison_room"
+    ],
+    "ocr_text_008": [
+      "teleport_action"
+    ],
+    "ocr_text_011": [
+      "credit_exchange"
+    ],
+    "ocr_text_013": [
+      "receive_all"
+    ],
+    "ocr_text_014": [
+      "claim_all"
+    ],
+    "ocr_text_026": [
+      "regional_construction"
+    ],
+    "ocr_text_032": [
+      "dijiang_ship"
+    ],
+    "ocr_text_034": [
+      "operator_liaison"
+    ],
+    "ocr_text_041": [
+      "intel_exchange"
+    ],
+    "ocr_text_055": [
+      "switch_action"
+    ],
+    "ocr_text_062": [
+      "clear_selection"
+    ],
+    "ocr_text_066": [
+      "logistics_terminal"
+    ],
+    "ocr_text_072": [
+      "confirm_action"
+    ],
+    "ocr_text_076": [
+      "leave_action"
+    ],
+    "ocr_text_080": [
+      "liaison_action"
+    ],
+    "ocr_text_083": [
+      "reward_obtained"
+    ],
+    "ocr_text_087": [
+      "cargo_packaging"
+    ],
+    "ocr_text_088": [
+      "buy_action"
+    ],
+    "ocr_text_089": [
+      "gift_action"
+    ],
+    "ocr_text_090": [
+      "handover_delivery_entrust"
+    ],
+    "ocr_text_092": [
+      "enter_action"
+    ],
+    "ocr_text_093": [
+      "track_action"
+    ],
+    "ocr_text_096": [
+      "pass_mission"
+    ],
+    "ocr_text_097": [
+      "pass_reward"
+    ],
+    "ocr_text_098": [
+      "procurement_action"
+    ],
+    "ocr_text_099": [
+      "retry_challenge"
+    ],
+    "ocr_text_101": [
+      "claim_action"
+    ],
+    "ocr_text_107": [
+      "move_to_target"
+    ],
+    "ocr_text_111": [
+      "affairs_menu"
+    ],
+    "ocr_text_112": [
+      "cargo_bundle"
+    ],
+    "ocr_text_113": [
+      "resource_category"
+    ]
+  },
+  "regex_aliases": {
+    "ocr_regex_001": [
+      "task_suffix"
+    ],
+    "ocr_regex_002": [
+      "battle_activate_or_abandon"
+    ],
+    "ocr_regex_003": [
+      "time_remaining"
+    ]
+  }
+}

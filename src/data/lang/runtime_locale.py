@@ -5,6 +5,11 @@ from typing import Any
 _DEFAULT_LOCALE = "zh_CN"
 
 _LOCALE_ALIASES = {
+    "en": "en",
+    "en_us": "en",
+    "en-us": "en",
+    "en_gb": "en",
+    "en-gb": "en",
     "zh": "zh_CN",
     "zh_cn": "zh_CN",
     "zh-hans": "zh_CN",
@@ -41,6 +46,8 @@ def canonicalize_locale(raw_locale: Any, fallback: str = _DEFAULT_LOCALE) -> str
         return "zh_TW"
     if key.startswith("zh"):
         return "zh_CN"
+    if key.startswith("en"):
+        return "en"
 
     return locale_text.replace("-", "_")
 

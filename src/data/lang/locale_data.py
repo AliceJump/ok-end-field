@@ -8,11 +8,42 @@ from typing import Any
 
 from src.data.lang.runtime_locale import canonicalize_locale, get_runtime_locale
 
-_LOCALES_DIR = Path(__file__).resolve().parent / "locales"
+_LANG_ROOT = Path(__file__).resolve().parent
+_LEGACY_LOCALES_DIR = _LANG_ROOT / "locales"
 _LOCALE_FILE_NAME = {
     "zh_CN": "zh_cn.json",
     "zh_TW": "zh_tw.json",
+    "en": "en.json",
 }
+_DEFAULT_LOCALE = "zh_CN"
+
+
+def _deep_merge_dict(base: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(base)
+    for key, value in incoming.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = _deep_merge_dict(merged[key], value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def _normalize_locale_fragment(path: Path, payload: dict[str, Any]) -> dict[str, Any]:
+    if path.parent.name == "ocr" and any(k in payload for k in ("terms", "regex", "aliases", "regex_aliases")):
+        return {"ocr": payload}
+    return payload
+
+
+def _load_json_file(path: Path) -> dict[str, Any]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise FileNotFoundError(f"Locale file not found: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Invalid locale JSON: {path}") from exc
+    if not isinstance(data, dict):
+        raise ValueError(f"Locale JSON root must be object: {path}")
+    return data
 
 
 @lru_cache(maxsize=None)
@@ -20,21 +51,27 @@ def _load_locale_data(locale: str) -> dict[str, Any]:
     file_name = _LOCALE_FILE_NAME.get(locale)
     if file_name is None:
         raise ValueError(f"Unsupported locale: {locale}")
-    locale_file = _LOCALES_DIR / file_name
-    try:
-        return json.loads(locale_file.read_text(encoding="utf-8"))
-    except FileNotFoundError as exc:
-        raise FileNotFoundError(f"Locale file not found for {locale}: {locale_file}") from exc
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"Invalid locale JSON for {locale}: {locale_file}") from exc
+
+    merged: dict[str, Any] = {}
+
+    legacy_file = _LEGACY_LOCALES_DIR / file_name
+    if legacy_file.exists():
+        merged = _deep_merge_dict(merged, _normalize_locale_fragment(legacy_file, _load_json_file(legacy_file)))
+
+    module_files = sorted(
+        path for path in _LANG_ROOT.rglob(file_name)
+        if path.parent.name != "locales"
+    )
+    for module_file in module_files:
+        merged = _deep_merge_dict(merged, _normalize_locale_fragment(module_file, _load_json_file(module_file)))
+
+    if not merged:
+        raise FileNotFoundError(f"Locale data not found for {locale} ({file_name}) under {_LANG_ROOT}")
+
+    return merged
 
 
-_LOCALE_DATA = {
-    "zh_CN": _load_locale_data("zh_CN"),
-    "zh_TW": _load_locale_data("zh_TW"),
-}
-
-_DEFAULT_LOCALE = "zh_CN"
+_LOCALE_DATA = {locale: _load_locale_data(locale) for locale in _LOCALE_FILE_NAME}
 
 
 def resolve_supported_locale(locale: str | None = None, context: Any = None) -> str:
@@ -48,21 +85,92 @@ def get_locale_data(locale: str | None = None, context: Any = None) -> dict[str,
     return _LOCALE_DATA[resolve_supported_locale(locale=locale, context=context)]
 
 
+def _coerce_str_list(values: Any) -> list[str]:
+    if isinstance(values, str):
+        return [values] if values.strip() else []
+    if not isinstance(values, list):
+        return []
+    result: list[str] = []
+    for value in values:
+        text = str(value)
+        if text.strip():
+            result.append(text)
+    return result
+
+
+def _iter_alias_related_keys(key: str, aliases: dict[str, list[str]]) -> list[str]:
+    discovered: list[str] = []
+    seen: set[str] = set()
+    queue: list[str] = [key]
+
+    while queue:
+        current = queue.pop(0)
+        if current in seen:
+            continue
+        seen.add(current)
+        discovered.append(current)
+
+        for nxt in aliases.get(current, []):
+            if nxt not in seen:
+                queue.append(nxt)
+
+        for alias_key, targets in aliases.items():
+            if current in targets and alias_key not in seen:
+                queue.append(alias_key)
+
+    return discovered
+
+
+def _get_ocr_terms(payload: dict[str, Any], key: str) -> list[str]:
+    ocr_payload = payload.get("ocr", {})
+    terms_map = ocr_payload.get("terms", {})
+    aliases = {
+        str(alias): _coerce_str_list(targets)
+        for alias, targets in ocr_payload.get("aliases", {}).items()
+    }
+
+    result: list[str] = []
+    seen_terms: set[str] = set()
+    for related_key in _iter_alias_related_keys(key, aliases):
+        for term in _coerce_str_list(terms_map.get(related_key, [])):
+            if term not in seen_terms:
+                seen_terms.add(term)
+                result.append(term)
+    return result
+
+
+def _get_ocr_regex_raw(payload: dict[str, Any], key: str) -> str | None:
+    ocr_payload = payload.get("ocr", {})
+    regex_map = ocr_payload.get("regex", {})
+    aliases = {
+        str(alias): _coerce_str_list(targets)
+        for alias, targets in ocr_payload.get("regex_aliases", {}).items()
+    }
+
+    for candidate in _iter_alias_related_keys(key, aliases):
+        if candidate in regex_map:
+            return str(regex_map[candidate])
+    return None
+
+
 def get_ocr_confusion_map(locale: str | None = None, context: Any = None) -> dict[str, list[str]]:
     payload = get_locale_data(locale=locale, context=context)
     confusion = payload.get("normalize", {}).get("ocr_confusion_map", {})
-    return dict(confusion)
+    return {
+        str(k): _coerce_str_list(values)
+        for k, values in confusion.items()
+    }
 
 
 def get_sequence_delimiters(locale: str | None = None, context: Any = None) -> list[str]:
     payload = get_locale_data(locale=locale, context=context)
     delimiters = payload.get("parser", {}).get("sequence", {}).get("delimiters", [])
-    return list(delimiters)
+    return _coerce_str_list(delimiters)
 
 
 def get_auto_pick_terms(locale: str | None = None, context: Any = None) -> tuple[set[str], set[str]]:
     payload = get_locale_data(locale=locale, context=context).get("auto_pick", {})
-    return set(payload.get("white_list", [])), set(payload.get("black_list", []))
+    return set(_coerce_str_list(payload.get("white_list", []))), set(_coerce_str_list(payload.get("black_list", [])))
 
 
 def get_warehouse_transfer_data(locale: str | None = None, context: Any = None) -> dict[str, Any]:
@@ -85,19 +193,19 @@ def get_warehouse_current_location_rules(locale: str | None = None, context: Any
 def get_warehouse_ocr_pattern_tokens(locale: str | None = None, context: Any = None) -> dict[str, list[str]]:
     payload = get_warehouse_transfer_data(locale=locale, context=context)
     return {
-        key: list(value) if isinstance(value, list) else [str(value)]
+        key: _coerce_str_list(value)
         for key, value in payload.get("ocr_patterns", {}).items()
     }
 
 
 def compile_any_pattern(patterns: list[str] | tuple[str, ...] | str) -> re.Pattern[str]:
     if isinstance(patterns, str):
-        tokens = [patterns]
+        tokens = _coerce_str_list(patterns)
     else:
         tokens = [str(token) for token in patterns if str(token).strip()]
     escaped = [re.escape(token) for token in tokens]
     joined = "|".join(escaped) if escaped else r"^$"
-    return re.compile(joined)
+    return re.compile(f"(?:{joined})")
 
 
 def get_item_category_en_by_name(locale: str | None = None, context: Any = None) -> dict[str, str]:
@@ -113,6 +221,18 @@ def get_item_warehouse_category_en_by_name(locale: str | None = None, context: A
 def get_item_translation_map(locale: str | None = None, context: Any = None) -> dict[str, str]:
     payload = get_locale_data(locale=locale, context=context)
     return dict(payload.get("item_translation_map", {}))
+
+
+def _get_text(payload: dict[str, Any], key: str, default: str | None = None) -> str:
+    value = payload.get("text", {}).get(key)
+    if isinstance(value, str) and value.strip():
+        return value
+    terms = _get_ocr_terms(payload, key)
+    if terms:
+        return terms[0]
+    if default is not None:
+        return default
+    return key
 
 
 class LangAccessor:
@@ -159,11 +279,7 @@ class LangAccessor:
 
     def terms(self, key: str, locale: str | None = None) -> list[str]:
         payload = self.data(locale=locale)
-        terms = payload.get("ocr", {}).get("terms", {})
-        values = terms.get(key, [])
-        if isinstance(values, str):
-            return [values]
-        return [str(v) for v in values if str(v).strip()]
+        return _get_ocr_terms(payload, key)
 
     def pattern(self, key: str, locale: str | None = None) -> re.Pattern[str]:
         return compile_any_pattern(self.terms(key, locale=locale))
@@ -172,9 +288,12 @@ class LangAccessor:
         values = self.terms(key, locale=locale)
         return values[0] if values else ""
 
+    def t(self, key: str, default: str | None = None, locale: str | None = None) -> str:
+        return _get_text(self.data(locale=locale), key, default=default)
+
     def regex(self, key: str, locale: str | None = None) -> re.Pattern[str]:
         payload = self.data(locale=locale)
-        raw = payload.get("ocr", {}).get("regex", {}).get(key)
+        raw = _get_ocr_regex_raw(payload, key)
         if raw is None:
             raise KeyError(f"Missing OCR regex key: {key}")
         try:
@@ -246,6 +365,9 @@ class _LocaleBoundLangAccessor:
 
     def term(self, key: str, _locale: str | None = None) -> str:
         return self._accessor.term(key, locale=self._locale if _locale is None else _locale)
+
+    def t(self, key: str, default: str | None = None, _locale: str | None = None) -> str:
+        return self._accessor.t(key, default=default, locale=self._locale if _locale is None else _locale)
 
     def regex(self, key: str, _locale: str | None = None) -> re.Pattern[str]:
         return self._accessor.regex(key, locale=self._locale if _locale is None else _locale)

@@ -1,0 +1,32 @@
+{
+  "world_map": {
+    "areas": {
+      "wuling": "武陵",
+      "valley4": "四号谷地"
+    },
+    "aliases": {
+      "武陵": "wuling",
+      "四号谷地": "valley4",
+      "四號谷地": "valley4"
+    },
+    "stage_categories": {
+      "operator_training": "干员养成",
+      "weapon_training": "武器养成",
+      "danger_playback": "危境再现",
+      "danger_preview": "危境预演",
+      "energy_silt_point": "能量淤积点"
+    },
+    "stage_category_aliases": {
+      "干员养成": "operator_training",
+      "幹員養成": "operator_training",
+      "武器养成": "weapon_training",
+      "武器養成": "weapon_training",
+      "危境再现": "danger_playback",
+      "危境再現": "danger_playback",
+      "危境预演": "danger_preview",
+      "危境預演": "danger_preview",
+      "能量淤积点": "energy_silt_point",
+      "能量淤積點": "energy_silt_point"
+    }
+  }
+}

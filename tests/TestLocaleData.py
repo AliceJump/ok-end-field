@@ -2,6 +2,7 @@
 import unittest
 
 from src.data.lang import (
+    get_lang_accessor,
     get_auto_pick_terms,
     get_locale_data,
     get_item_translation_map,
@@ -12,6 +13,7 @@ from src.data.lang import (
     get_sequence_delimiters,
     get_warehouse_location_labels,
     resolve_supported_locale,
+    world_map as lang_world_map,
 )
 from src.tasks.sequence_parser import parse_sequence
 
@@ -63,6 +65,33 @@ class TestLocaleData(unittest.TestCase):
         self.assertIn("仓储节点", lang_ocr.get_terms("storage_node", locale="zh_CN"))
         self.assertTrue(lang_ocr.get_pattern("storage_node", locale="zh_TW").search("倉儲節點"))
 
+    def test_lang_ocr_alias_compatibility_and_semantic_key(self):
+        terms = lang_ocr.get_terms("central_ring_hall", locale="zh_CN")
+        self.assertIn("中央环厅", terms)
+        self.assertTrue(lang_ocr.get_pattern("central_ring_hall", locale="zh_TW").search("中央環廳"))
+        self.assertIn("central_ring_hall", get_locale_data(locale="zh_CN").get("ocr", {}).get("aliases", {}).get("ocr_text_005", []))
+
+    def test_lang_ocr_regex_alias(self):
+        self.assertTrue(lang_ocr.get_regex_pattern("time_remaining", locale="zh_CN").search("12小时"))
+        self.assertTrue(lang_ocr.get_regex_pattern("ocr_regex_003", locale="zh_TW").search("3小時"))
+
+    def test_lang_accessor_t_api_kept(self):
+        accessor = get_lang_accessor(context=_MockContext("zh_CN"))
+        self.assertEqual(accessor.t("storage_node"), "仓储节点")
+        self.assertEqual(accessor.t("non_existing_key", default="fallback"), "fallback")
+
+    def test_world_map_identifier_conversion(self):
+        self.assertEqual(lang_world_map.canonicalize_area("四號谷地", locale="zh_TW"), "valley4")
+        self.assertEqual(lang_world_map.get_area_label("valley4", locale="zh_CN"), "四号谷地")
+        self.assertEqual(lang_world_map.canonicalize_stage_category("危境再现", locale="zh_CN"), "danger_playback")
+
+    def test_locale_data_recursive_merge_keeps_layered_schema(self):
+        payload = get_locale_data(locale="zh_CN")
+        self.assertIn("ocr", payload)
+        self.assertIn("world_map", payload)
+        self.assertIn("terms", payload.get("ocr", {}))
+        self.assertIn("aliases", payload.get("ocr", {}))
+
     def test_lang_normalize_namespace_tables(self):
         confusion = lang_normalize.get_ocr_confusion_map(locale="zh_CN")
         self.assertIn("别", confusion)
@@ -84,6 +113,9 @@ class TestLocaleData(unittest.TestCase):
     def test_locale_terms_are_script_specific(self):
         self.assertEqual(lang_ocr.get_terms("storage_node", locale="zh_CN"), ["仓储节点"])
         self.assertEqual(lang_ocr.get_terms("storage_node", locale="zh_TW"), ["倉儲節點"])
+
+    def test_resolve_supported_locale_supports_en(self):
+        self.assertEqual(resolve_supported_locale(locale="en-US"), "en")
 
 
 if __name__ == "__main__":

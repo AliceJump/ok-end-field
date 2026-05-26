@@ -1,0 +1,128 @@
+{
+  "terms": {
+    "central_ring_hall": [
+      "Central Ring Hall"
+    ],
+    "dijiang_ship": [
+      "Dijiang Ship"
+    ],
+    "operator_liaison": [
+      "Operator Liaison"
+    ]
+  },
+  "regex": {
+    "time_remaining": "(\\\\d+)(day|hour|days|hours)"
+  },
+  "aliases": {
+    "ocr_text_005": [
+      "central_ring_hall"
+    ],
+    "ocr_text_006": [
+      "trade_menu"
+    ],
+    "ocr_text_007": [
+      "liaison_room"
+    ],
+    "ocr_text_008": [
+      "teleport_action"
+    ],
+    "ocr_text_011": [
+      "credit_exchange"
+    ],
+    "ocr_text_013": [
+      "receive_all"
+    ],
+    "ocr_text_014": [
+      "claim_all"
+    ],
+    "ocr_text_026": [
+      "regional_construction"
+    ],
+    "ocr_text_032": [
+      "dijiang_ship"
+    ],
+    "ocr_text_034": [
+      "operator_liaison"
+    ],
+    "ocr_text_041": [
+      "intel_exchange"
+    ],
+    "ocr_text_055": [
+      "switch_action"
+    ],
+    "ocr_text_062": [
+      "clear_selection"
+    ],
+    "ocr_text_066": [
+      "logistics_terminal"
+    ],
+    "ocr_text_072": [
+      "confirm_action"
+    ],
+    "ocr_text_076": [
+      "leave_action"
+    ],
+    "ocr_text_080": [
+      "liaison_action"
+    ],
+    "ocr_text_083": [
+      "reward_obtained"
+    ],
+    "ocr_text_087": [
+      "cargo_packaging"
+    ],
+    "ocr_text_088": [
+      "buy_action"
+    ],
+    "ocr_text_089": [
+      "gift_action"
+    ],
+    "ocr_text_090": [
+      "handover_delivery_entrust"
+    ],
+    "ocr_text_092": [
+      "enter_action"
+    ],
+    "ocr_text_093": [
+      "track_action"
+    ],
+    "ocr_text_096": [
+      "pass_mission"
+    ],
+    "ocr_text_097": [
+      "pass_reward"
+    ],
+    "ocr_text_098": [
+      "procurement_action"
+    ],
+    "ocr_text_099": [
+      "retry_challenge"
+    ],
+    "ocr_text_101": [
+      "claim_action"
+    ],
+    "ocr_text_107": [
+      "move_to_target"
+    ],
+    "ocr_text_111": [
+      "affairs_menu"
+    ],
+    "ocr_text_112": [
+      "cargo_bundle"
+    ],
+    "ocr_text_113": [
+      "resource_category"
+    ]
+  },
+  "regex_aliases": {
+    "ocr_regex_001": [
+      "task_suffix"
+    ],
+    "ocr_regex_002": [
+      "battle_activate_or_abandon"
+    ],
+    "ocr_regex_003": [
+      "time_remaining"
+    ]
+  }
+}

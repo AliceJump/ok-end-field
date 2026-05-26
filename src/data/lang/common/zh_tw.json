@@ -1,0 +1,234 @@
+{
+  "parser": {
+    "sequence": {
+      "delimiters": [
+        "，"
+      ]
+    },
+    "essence": {
+      "essence_keywords": [
+        "基質"
+      ],
+      "affix_keywords": [
+        "附加技能"
+      ],
+      "gold_keywords": [
+        "無瑕",
+        "無暇"
+      ],
+      "name_regex": "([\\u4e00-\\u9fff]+(?:基質))\\s*([\\u4e00-\\u9fff]+)?"
+    }
+  },
+  "normalize": {
+    "ocr_confusion_map": {
+      "別": [
+        "別"
+      ],
+      "别": [
+        "別"
+      ]
+    },
+    "punctuation_map": {
+      "·": "：",
+      ":": "：",
+      "[": "【",
+      "]": "】",
+      "(": "（",
+      ")": "）",
+      "　": " "
+    },
+    "traditional_to_simplified_map": {
+      "擊": "擊",
+      "無": "無",
+      "質": "質",
+      "轉": "轉",
+      "號": "號",
+      "襲": "襲",
+      "術": "術",
+      "傷": "傷",
+      "熱": "熱",
+      "電": "電",
+      "終": "終",
+      "結": "結",
+      "識": "識"
+    }
+  },
+  "auto_pick": {
+    "white_list": [
+      "採集",
+      "螢殼蟲",
+      "打開",
+      "蕎花",
+      "灰蘆麥",
+      "灼殼蟲",
+      "苦葉椒",
+      "柱狀菌",
+      "酮化灌木",
+      "柑實",
+      "觸碰",
+      "激活",
+      "芽針",
+      "多齒葉",
+      "砂葉"
+    ],
+    "black_list": [
+      "協議核心",
+      "激活箱子"
+    ]
+  },
+  "warehouse_transfer": {
+    "locations": {
+      "valley4": "四號谷地",
+      "wuling": "武陵"
+    },
+    "current_location_rules": {
+      "wuling": [
+        [
+          "武陵倉庫"
+        ]
+      ],
+      "valley4": [
+        [
+          "谷地",
+          "倉庫"
+        ]
+      ]
+    },
+    "ocr_patterns": {
+      "switch_button": [
+        "倉庫切換"
+      ],
+      "confirm": [
+        "確認"
+      ],
+      "connected": [
+        "已連接"
+      ],
+      "store": [
+        "存放"
+      ]
+    }
+  },
+  "item_category_en_by_name": {
+    "自然資源": "natural_resources",
+    "採集材料": "gathering_materials",
+    "珍貴材料": "rare_materials",
+    "工業產物": "industrial_products",
+    "可用道具": "consumables",
+    "功能道具": "utility_items",
+    "珍貴物品": "valuables"
+  },
+  "item_warehouse_category_en_by_name": {
+    "礦物": "minerals",
+    "植物": "plants",
+    "產物": "products",
+    "採集材料": "gathering_materials",
+    "培養素材": "cultivation_materials",
+    "可用道具": "consumables",
+    "生產工具": "industrial_equipment"
+  },
+  "item_translation_map": {
+    "瓊葉參種子": "qiongleaf_ginseng_seeds",
+    "瓊葉參": "qiongleaf_ginseng",
+    "芽針": "bud_needle",
+    "金石稻種子": "goldstone_rice_seeds",
+    "金石稻": "goldstone_rice",
+    "荊刺芽針": "thorned_bud_needle",
+    "蓬茸錦草": "fluffy_brocade_grass",
+    "芽針種子": "bud_needle_seeds",
+    "錦草種子": "brocade_grass_seeds",
+    "苦葉椒種子": "bitterleaf_pepper_seeds",
+    "苦葉椒": "bitterleaf_pepper",
+    "錦草": "brocade_grass",
+    "砂葉種子": "sandleaf_seeds",
+    "清水": "fresh_water",
+    "砂葉": "sandleaf",
+    "藍鐵礦": "bluesteel_ore",
+    "蕎花種子": "buckwheat_flower_seeds",
+    "柑實種子": "citrusfruit_seeds",
+    "酮化樹種": "ketone_tree_seeds",
+    "灰蘆麥": "ash_reed_wheat",
+    "灰蘆麥種子": "ash_reed_wheat_seeds",
+    "紫晶礦": "amethyst_ore",
+    "源礦": "source_ore",
+    "酮化灌木": "ketone_shrub",
+    "原木": "raw_timber",
+    "黯銀柑實": "dusksilver_citrusfruit",
+    "柑實": "citrusfruit",
+    "映火蕎花": "emberlit_buckwheat_flower",
+    "蕎花": "buckwheat_flower",
+    "速成陳釀": "rapid_brew",
+    "球刺獸的肝臟": "spinebeast_liver",
+    "天然氣泡水": "natural_sparkling_water",
+    "堅韌的水": "toughened_water",
+    "新筍": "fresh_bamboo_shoot",
+    "導能肖像石": "conductive_portrait_stone",
+    "彪獸的長絨": "fierce_beast_long_fur",
+    "甜膩黑水": "sweet_blackwater",
+    "破城者拳甲": "citybreaker_gauntlet",
+    "天然晶城錠": "natural_crystal_ingot",
+    "苦澀麥粉": "bitter_grain_flour",
+    "灼殼蟲": "scorchshell_bug",
+    "浸霧大弩": "mist_soaked_great_crossbow",
+    "中空異香石": "hollow_aromatic_stone",
+    "刺鼻乾肉": "pungent_dried_meat",
+    "大斧角": "great_axe_horn",
+    "崩碎斧刃": "shattered_axe_blade",
+    "異色油脂": "iridescent_grease",
+    "水燈蟲的燈墜": "water_lantern_bug_pendant",
+    "蟲肉": "insect_meat",
+    "軟骨碎屑": "cartilage_fragments",
+    "虯獸的須": "beast_whiskers",
+    "堅硬異香石": "hard_aromatic_stone",
+    "高能異香石": "high_energy_aromatic_stone",
+    "獸肉": "beast_meat",
+    "草籽乾粉": "dried_grass_seed_powder",
+    "螢殼蟲": "glow_shell_bug",
+    "馱獸糞便": "pack_beast_dung",
+    "至晶多齒葉": "supreme_crystal_multitooth_leaf",
+    "血菌": "blood_fungus",
+    "中紅柱狀菌": "medium_red_column_fungus",
+    "重黯石": "heavy_duskstone",
+    "純晶多齒葉": "pure_crystal_multitooth_leaf",
+    "重紅柱狀菌": "heavy_red_column_fungus",
+    "中黯石": "medium_duskstone",
+    "受蝕玉化葉": "eroded_jade_leaf",
+    "巖天使葉": "rock_angel_leaf",
+    "星門菌": "star_gate_fungus",
+    "武陵石": "wuling_stone",
+    "燎石": "blazestone",
+    "輕黯石": "light_duskstone",
+    "晶化多齒葉": "crystallized_multitooth_leaf",
+    "輕紅柱狀菌": "light_red_column_fungus",
+    "液化息壤": "liquefied_xi_soil",
+    "息壤": "xi_soil",
+    "芽針溶液": "bud_needle_solution",
+    "低容武陵電池": "low_capacity_wuling_battery",
+    "中容谷地電池": "medium_capacity_valley_battery",
+    "高容谷地電池": "high_capacity_valley_battery",
+    "鋼塊": "steel_block",
+    "高晶纖維": "high_crystal_fiber",
+    "緻密碳粉末": "dense_carbon_powder",
+    "藍鐵塊": "bluesteel_block",
+    "紫晶纖維": "amethyst_fiber",
+    "碳塊": "carbon_block",
+    "晶體外殼": "crystal_shell",
+    "紫晶粉末": "amethyst_powder",
+    "竹筍炒肉": "stir_fried_bamboo_with_meat",
+    "熗炒時蔬": "quick_fried_seasonal_vegetables",
+    "武陵炒飯": "wuling_fried_rice",
+    "錦草涼茶": "brocade_grass_herbal_tea",
+    "神祕氣泡飲料": "mysterious_sparkling_drink",
+    "蕎愈膠囊": "buckheal_capsule",
+    "柑實沖劑": "citrusfruit_concentrate",
+    "工業爆炸物": "industrial_explosive",
+    "簡易鎮痛藥膏": "basic_pain_relief_ointment",
+    "祕方醒神茶": "secret_awakening_tea",
+    "高級航天建材": "advanced_aerospace_materials",
+    "基礎航天建材": "basic_aerospace_materials",
+    "武陵調度券": "wuling_dispatch_ticket",
+    "谷地調度券": "valley_dispatch_ticket",
+    "據點發展值": "outpost_development_points",
+    "信用": "credits"
+  }
+}
