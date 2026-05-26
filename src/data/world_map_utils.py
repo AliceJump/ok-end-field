@@ -71,9 +71,9 @@ def get_world_map_matcher(lang_accessor: Any, zh_text: str) -> re.Pattern | str 
 
     Returns:
         re.Pattern: most common matcher type from lang world_map pattern/string.
-        str | list: returned directly when locale entry defines these matcher payloads.
+        str | list: returned directly when build_matcher resolves to raw matcher payload.
         None: when zh_text is empty.
-    Falls back to re.compile(zh_text) when locale data is unavailable.
+    Falls back to re.compile(zh_text) when lang_accessor is None or locale data is unavailable.
     """
     if not zh_text:
         return None
@@ -107,6 +107,7 @@ def is_world_map_text(lang_accessor: Any, value: str | None, zh_text: str) -> bo
     Args:
         value: Runtime text value to compare (category/stage text from OCR or config).
         zh_text: Canonical zh_CN text key source used by world_map locale files.
+    When lang_accessor is None, comparison falls back to zh_text-only semantics.
     """
     if not value:
         return False
