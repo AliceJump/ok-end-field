@@ -265,10 +265,8 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
 
     def _click_track_and_transfer(self):
         """点击『追踪』按钮，进入地图并传送至最近传送点。"""
-        if result := self.wait_ocr(match=self.lang.daily_battle_mixin.k_8967d3c6, box=self.box.bottom_right, time_out=5):
-            if "追踪" in result[0].name and "取" not in result[0].name and "消" not in result[0].name:
-                self.log_info("点击追踪按钮")
-                self.click(result, after_sleep=1)
+        if result := self.wait_feature(feature=fL.start_flow, box=self.box.bottom_right, time_out=5):
+            self.click(result, after_sleep=1)
         self.to_near_transfer_point(self.gather_near_transfer_point_dict[self.battle_ctx.stage_name])
         self.ensure_main()
 
@@ -837,10 +835,8 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 if not self.to_stage():
                     self.mark_task_failure("二次寻路失败：无法进入『能量淤积点』详情页")
                     return False
-                if result := self.wait_ocr(match=self.lang.daily_battle_mixin.k_8967d3c6, box=self.box.bottom_right, time_out=5):
-                    if "追踪" in result[0].name and "取" not in result[0].name and "消" not in result[0].name:
-                        self.log_info("点击追踪按钮")
-                        self.click(result, after_sleep=2)
+                if result := self.wait_feature(feature=fL.start_flow, box=self.box.bottom_right, time_out=5):
+                    self.click(result, after_sleep=1)
                     self.ensure_main()
                 else:
                     raise Exception("未找到追踪按钮")

@@ -6,7 +6,7 @@ import pyautogui
 
 from src.interaction.Mouse import active_and_send_mouse_delta
 from src.tasks.BaseEfTask import BaseEfTask
-
+from src.data.FeatureList import FeatureList as fL
 TOLERANCE = 50
 
 
@@ -24,10 +24,8 @@ class NavigationMixin(BaseEfTask):
         self.log_info(f"找到{target_feature_in_map}图标，点击进入")
         self.click(result)
 
-        if result := self.wait_ocr(match=self.lang.navigation_mixin.k_8967d3c6, box=self.box.bottom_right, time_out=5):
-            if "追踪" in result[0].name and "取" not in result[0].name and "消" not in result[0].name:
-                self.log_info("点击追踪按钮")
-                self.click(result, after_sleep=0.5)
+        if result := self.wait_feature(feature=fL.start_flow, box=self.box.bottom_right, time_out=5):
+            self.click(result, after_sleep=1)
 
         self.press_key("m", after_sleep=2)
         self.log_info("关闭地图界面 (按下 M)")

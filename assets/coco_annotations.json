@@ -739,6 +739,11 @@
             "id": 145,
             "name": "give_gift",
             "supercategory": ""
+        },
+        {
+            "id": 147,
+            "name": "start_flow",
+            "supercategory": ""
         }
     ],
     "images": [
@@ -1444,6 +1449,12 @@
         {
             "id": 156,
             "file_name": "images/5.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 157,
+            "file_name": "images/6.png",
             "width": 1920,
             "height": 1080
         }
@@ -2466,6 +2477,19 @@
                 28
             ],
             "area": 840,
+            "iscrowd": 0
+        },
+        {
+            "id": 73,
+            "image_id": 157,
+            "category_id": 147,
+            "bbox": [
+                1826,
+                980,
+                16,
+                24
+            ],
+            "area": 384,
             "iscrowd": 0
         },
         {
