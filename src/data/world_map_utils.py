@@ -66,7 +66,15 @@ def _world_map_zh_key_map() -> dict[str, str]:
 
 
 def get_world_map_matcher(lang_accessor: Any, zh_text: str) -> re.Pattern | str | list | None:
-    """Get world_map matcher for current locale, fallback to re.compile(zh_text)."""
+    """
+    Get world_map matcher for current locale.
+
+    Returns:
+        re.Pattern: most common matcher type from lang world_map pattern/string.
+        str | list: returned directly when locale entry defines these matcher payloads.
+        None: when zh_text is empty.
+    Falls back to re.compile(zh_text) when locale data is unavailable.
+    """
     if not zh_text:
         return None
     key = _world_map_zh_key_map().get(zh_text)
@@ -93,7 +101,13 @@ def get_world_map_text(lang_accessor: Any, zh_text: str) -> str:
 
 
 def is_world_map_text(lang_accessor: Any, value: str | None, zh_text: str) -> bool:
-    """Check whether value equals zh_text or its current locale counterpart."""
+    """
+    Check whether a value equals zh_text or its current locale counterpart.
+
+    Args:
+        value: Runtime text value to compare (category/stage text from OCR or config).
+        zh_text: Canonical zh_CN text key source used by world_map locale files.
+    """
     if not value:
         return False
     locale_text = get_world_map_text(lang_accessor, zh_text)

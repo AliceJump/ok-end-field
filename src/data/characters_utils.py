@@ -1,8 +1,10 @@
+from typing import Any
+
 from src.data.characters import characters
 from src.data.FeatureList import FeatureList
 
 
-def _get_localized_character_name(lang_accessor, char_key: str, fallback: str) -> str:
+def _get_localized_character_name(lang_accessor: Any, char_key: str, fallback: str) -> str:
     """Get localized character name from self.lang.characters with fallback."""
     if lang_accessor is None:
         return fallback
