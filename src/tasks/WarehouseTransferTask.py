@@ -78,7 +78,7 @@ class WarehouseTransferTask(BaseEfTask):
     def _maybe_click_confirm(self) -> bool:
         hits = self.ocr(
             box=self.box_of_screen(0.79, 0.79, 0.84, 0.82, name="bottom_right"),
-            match=re.compile(r"确认"),
+            match=self.lang.WarehouseTransferTask.k_b56d9ac6,
         )
         if hits:
             self.click(hits[0], move_back=True, after_sleep=0.3)
@@ -91,7 +91,7 @@ class WarehouseTransferTask(BaseEfTask):
 
         btn = self.wait_ocr(
             box=self.box_of_screen(0.48, 0.18, 0.52, 0.215, name="switch_btn_area"),
-            match="仓库切换",
+            match=self.lang.WarehouseTransferTask.k_3cb6baa6,
             time_out=5,
         )
         if not btn:
@@ -113,7 +113,7 @@ class WarehouseTransferTask(BaseEfTask):
             self.next_frame()
             hits = self.ocr(
                 box=self.box.bottom_right,
-                match=re.compile(r"已连接"),
+                match=self.lang.WarehouseTransferTask.k_65fe35c4,
             )
             if hits:
                 self.sleep(0.3)
@@ -195,7 +195,7 @@ class WarehouseTransferTask(BaseEfTask):
 
             store_btn = self.wait_ocr(
                 box=self.box_of_screen(0.64, 0.705, 0.69, 0.735, name="onekey_store_area"),
-                match=re.compile(r"存放"),
+                match=self.lang.WarehouseTransferTask.k_d661f6da,
                 time_out=5,
             )
             if not store_btn:

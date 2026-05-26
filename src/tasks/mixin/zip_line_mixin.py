@@ -90,7 +90,7 @@ class ZipLineMixin(NavigationMixin):
             keys = ["w", "a", "s", "d"]
             for i in range(4):
                 if result := (not need_v) or self.wait_ocr(
-                        match="登上滑索架", box=self.box.bottom_right, settle_time=1, time_out=4, log=True
+                        match=self.lang.zip_line_mixin.k_b0e3a2da, box=self.box.bottom_right, settle_time=1, time_out=4, log=True
                 ):
                     if need_v:
                         self.press_key("v", after_sleep=1)

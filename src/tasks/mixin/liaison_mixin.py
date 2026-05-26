@@ -85,7 +85,7 @@ class LiaisonMixin(NavigationMixin):
 
         # 查找帝江号区域
         target_area = self.wait_ocr(
-            match=re.compile("帝江号"),
+            match=self.lang.liaison_mixin.k_ff0a81cd,
             box=self.box.top,
             time_out=8
         )
@@ -153,7 +153,7 @@ class LiaisonMixin(NavigationMixin):
             self.move_keys("w", duration=1)
 
             if self.wait_ocr(
-                    match="中央环厅",
+                    match=self.lang.liaison_mixin.k_80b758b9,
                     box=self.box.left,
                     log=True
             ):
@@ -318,7 +318,7 @@ class LiaisonMixin(NavigationMixin):
 
             wait_disappear_count = 0
 
-            while self.ocr(match=re.compile("干员联络"), box=self.box.top_left):
+            while self.ocr(match=self.lang.liaison_mixin.k_47eaf0c5, box=self.box.top_left):
 
                 wait_disappear_count += 1
 
@@ -429,7 +429,7 @@ class LiaisonMixin(NavigationMixin):
 
     def _finish_give_gift_after_clicked(self):
         """在已点击『赠送』后，完成选礼与确认赠送流程。"""
-        self.wait_ocr(match=re.compile("默认"), box=self.box.bottom_left, time_out=5)
+        self.wait_ocr(match=self.lang.liaison_mixin.k_c8d09cf9, box=self.box.bottom_left, time_out=5)
         self.click(144 / 1920, 855 / 1080)
         self.log_info("点击赠送礼物位置")
         if self.wait_click_feature(

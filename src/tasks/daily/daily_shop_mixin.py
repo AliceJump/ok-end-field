@@ -37,9 +37,9 @@ class DailyShopMixin(Common):
                 return False, sum_credit
             self.log_info(f"信用商店尝试刷新第{self.refresh_count + 1}次，预计消耗信用: {cost}，当前信用: {sum_credit}")
             shop_retry = 0
-            while not self.wait_click_ocr(match=re.compile("刷新"), time_out=1,
+            while not self.wait_click_ocr(match=self.lang.daily_shop_mixin.k_38108eaa, time_out=1,
                                           box=self.box_of_screen(2 / 3, 0.5, 1, 1)):
-                if self.wait_ocr(match=re.compile("购买"), box=self.box.top_left, time_out=1):
+                if self.wait_ocr(match=self.lang.daily_shop_mixin.k_7cf40bbd, box=self.box.top_left, time_out=1):
                     self.back(after_sleep=1)
                 elif not self.back_shop():
                     self.log_info("信用商店刷新中断：未能返回采购页面")
@@ -48,7 +48,7 @@ class DailyShopMixin(Common):
                     shop_retry += 1
                     if shop_retry >= 3:
                         return True, sum_credit
-            if not self.wait_click_ocr(match=re.compile("确认"), time_out=5, box=self.box.bottom_right):
+            if not self.wait_click_ocr(match=self.lang.daily_shop_mixin.k_b56d9ac6, time_out=5, box=self.box.bottom_right):
                 self.mark_task_failure("信用商店刷新失败：未找到确认按钮")
                 return False, sum_credit
             sum_credit -= cost
@@ -63,7 +63,7 @@ class DailyShopMixin(Common):
 
     def back_shop(self, max_retry=10):
         for _ in range(max_retry):
-            if self.wait_ocr(match=re.compile("采购"), time_out=1):
+            if self.wait_ocr(match=self.lang.daily_shop_mixin.k_b52d6a2a, time_out=1):
                 return True
             self.back(after_sleep=1)
         self.info_set("信用商店警告", f"返回采购页面失败，已重试{max_retry}次")
@@ -157,7 +157,7 @@ class DailyShopMixin(Common):
         self.credit_good_search_box = self.box_of_screen(200 / 3840, 280 / 2160, 3620 / 3840, 1550 / 2160)
         self.refresh_count = 0
         self.press_key("f5")
-        if not self.wait_click_ocr(match=re.compile("信用"), time_out=7, box=self.box.top_right, recheck_time=1):
+        if not self.wait_click_ocr(match=self.lang.daily_shop_mixin.k_9a0004ef, time_out=7, box=self.box.top_right, recheck_time=1):
             return False
         sum_credit = self.detect_ticket_number()
         while sum_credit > 0:

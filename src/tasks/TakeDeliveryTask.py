@@ -121,7 +121,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         # 前置：按Y，点击“仓储节点”，点击“运送委托列表”
         self.log_info("前置操作：按Y，点击‘仓储节点’，点击‘运送委托列表’")
         self.press_key('y', down_time=0.05, after_sleep=0.5)
-        storage_box = self.wait_ocr(match="仓储节点", time_out=5)
+        storage_box = self.wait_ocr(match=self.lang.TakeDeliveryTask.k_a72a252f, time_out=5)
         if storage_box:
             self.click(storage_box[0], move_back=True, after_sleep=0.5)
         else:
@@ -130,7 +130,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
 
         enable_valley = self.config.get("接取谷地券", False)
         enable_wuling = self.config.get("接取武陵券", True)
-        delivery_box = self.wait_ocr(match="运送委托列表", time_out=5)
+        delivery_box = self.wait_ocr(match=self.lang.TakeDeliveryTask.k_ae8fb114, time_out=5)
         if delivery_box:
             self.click(delivery_box[0], move_back=True, after_sleep=0.5)
             # 点击后滚动到底部（多次大幅度向下滚动）
@@ -255,7 +255,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                         self.sleep(1.0)  # 等待1秒
 
                         # 检查是否出现"请尽快送达"
-                        delivery_text = self.wait_ocr(match="请尽快送达", time_out=1, raise_if_not_found=False)
+                        delivery_text = self.wait_ocr(match=self.lang.TakeDeliveryTask.k_046ed3ab, time_out=1, raise_if_not_found=False)
                         if delivery_text:
                             self.log_info(f"抢单成功！(第 {attempt} 次尝试)")
                             success = True

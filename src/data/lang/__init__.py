@@ -20,9 +20,36 @@ class LangNode:
 
     def __getattr__(self, item: str):
         v = self._data.get(item)
+        # 如果是 dict，优先返回 string / pattern(编译) / terms
         if isinstance(v, dict):
+            if v.get("string") is not None:
+                return v.get("string")
+            if v.get("pattern") is not None:
+                try:
+                    return re.compile(v.get("pattern"))
+                except Exception:
+                    return None
+            if v.get("terms") is not None:
+                return v.get("terms")
             return LangNode(v)
         return v
+
+    def as_matcher(self):
+        """把当前节点转为 OCR 可接受的 matcher（string / re.Pattern / list），或返回 None"""
+        return build_matcher(self)
+
+    def __str__(self) -> str:
+        m = self.as_matcher()
+        if m is None:
+            return f"<LangNode {self._data}>"
+        if isinstance(m, str):
+            return m
+        if hasattr(m, 'pattern'):
+            return m.pattern
+        return str(m)
+
+    def __repr__(self) -> str:
+        return self.__str__()
 
     @property
     def string(self) -> str | None:
@@ -43,8 +70,30 @@ class LangModule:
 
     def __getattr__(self, item: str):
         v = self._data.get(item)
+        # 如果是 dict，优先返回 string / pattern(编译) / terms
         if isinstance(v, dict):
+            if v.get("string") is not None:
+                return v.get("string")
+            if v.get("pattern") is not None:
+                try:
+                    return re.compile(v.get("pattern"))
+                except Exception:
+                    return None
+            if v.get("terms") is not None:
+                return v.get("terms")
             return LangNode(v)
+        return v
+
+    def get(self, item: str, fallback=None):
+        """安全读取一个 key，返回 string / re.Pattern / list 或 fallback
+
+        用法: `self.lang.module.get('confirm', fallback='确认')`
+        """
+        v = self._data.get(item)
+        if isinstance(v, dict):
+            return build_matcher(LangNode(v))
+        if v is None:
+            return fallback
         return v
 
 

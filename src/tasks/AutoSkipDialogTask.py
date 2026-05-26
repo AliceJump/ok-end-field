@@ -34,7 +34,7 @@ class AutoSkipDialogTask(BaseEfTask, TriggerTask):
             self.next_frame()
             if result:= self.find_one(fL.baker_click, horizontal_variance=0.05, vertical_variance=0.05):
                 self.click(result, after_sleep=0.4)
-            if result:= self.ocr(match="结束会话", box=self.box_of_screen(1294/1920, 806/1080, 1412/1920, 860/1080)):
+            if result:= self.ocr(match=self.lang.AutoSkipDialogTask.k_92399078, box=self.box_of_screen(1294/1920, 806/1080, 1412/1920, 860/1080)):
                 self.click(result, after_sleep=0.4)
                 return
         

@@ -21,4 +21,6 @@ class Test(BaseEfTask):
     def run(self):
         temp=self.runtime_locale
         self.log_info(f"当前运行时语言环境: {temp}")
-        box_list = self.wait_ocr(x=0.20, y=0.45, to_x=0.88, to_y=0.66, match=re.compile(r"(\d+)(天|小时)"), log=True)
+        text=self.lang.daily_liaison_mixin.k_27d2b829
+        self.log_info(f"当前文本为{str(text)}")
+        self.log_info("开始")

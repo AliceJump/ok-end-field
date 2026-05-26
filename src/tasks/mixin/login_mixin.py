@@ -33,7 +33,7 @@ class LoginMixin(BaseEfTask):
         self._logged_in = False
         start_time = time.time()
         while time.time() - start_time < 3:
-            result = self.wait_ocr(match=re.compile("ms"), time_out=1, box=self.box.bottom_left)
+            result = self.wait_ocr(match=self.lang.login_mixin.ms, time_out=1, box=self.box.bottom_left)
             if result:
                 self._logged_in = True
                 break
@@ -63,7 +63,7 @@ class LoginMixin(BaseEfTask):
         self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True)
         self.wait_click_feature(feature=fL.log_out_confirm, time_out=5)
         self._logged_in = False
-        result = self.click_text(re.compile("最近"), box=self.box.center, success_match=re.compile("上次"),
+        result = self.click_text(re.compile("最近"), box=self.box.center, success_match=self.lang.login_mixin.k_20275ef2,
                                  need_wait_disappear=False)  # 点击当前账号（假设是唯一的）"最近", box=self.box.center, need_wait_disappear=False)  # 点击当前账号（假设是唯一的）
         if not result:
             self.log_error("未找到‘最近’按钮，可能未成功返回登录界面")

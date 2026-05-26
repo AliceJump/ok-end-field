@@ -138,7 +138,7 @@ class GameFlowMixin:
                 feature_name="reward_ok", box=self.box.bottom, threshold=0.8
             )
             if not result:
-                result = self.wait_ocr(match=re.compile("点击空白处继续"), time_out=1, box=self.box.bottom)
+                result = self.wait_ocr(match=self.lang.game_flow_mixin.k_8b2ca27a, time_out=1, box=self.box.bottom)
             if result:
                 self.click(result, after_sleep=after_sleep)
                 return True
@@ -276,7 +276,7 @@ class GameFlowMixin:
 
         for _ in range(3):
             self.press_key("y")
-            check = self.wait_ocr(match=re.compile("建设"), box=self.box.top_left, time_out=5)
+            check = self.wait_ocr(match=self.lang.game_flow_mixin.k_d6b103ab, box=self.box.top_left, time_out=5)
             if check:
                 success = True
             else:
@@ -298,7 +298,7 @@ class GameFlowMixin:
                 break
         if need_change:
             if not self.wait_click_ocr(
-                    match=re.compile("更换"), box=self.box.left, time_out=2, log=True
+                    match=self.lang.game_flow_mixin.k_b1a3fede, box=self.box.left, time_out=2, log=True
             ):
                 return False
             if not self.wait_click_ocr(
@@ -310,7 +310,7 @@ class GameFlowMixin:
             ):
                 return False
             if not self.wait_click_ocr(
-                    match=re.compile("确认"),
+                    match=self.lang.game_flow_mixin.k_b56d9ac6,
                     box=self.box.bottom_right,
                     time_out=2,
             ):
@@ -356,7 +356,7 @@ class GameFlowMixin:
 
     def in_friend_boat(self):
         """判断是否在好友的帝江号舰船中。"""
-        return self.wait_ocr(match=re.compile("离开"), box=self.box.top_left)
+        return self.wait_ocr(match=self.lang.game_flow_mixin.k_0ba18905, box=self.box.top_left)
 
     def ensure_in_friend_boat(self):
         """确保进入好友帝江号舰船。"""

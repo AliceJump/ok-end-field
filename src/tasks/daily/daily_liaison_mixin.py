@@ -56,7 +56,7 @@ class DailyLiaisonMixin(LiaisonMixin):
             self.mark_task_failure("传送失败，无法开始送礼任务")
             return False
         wait_bridge_disappear_count = 0
-        while self.ocr(match="舰桥", box=self.box.left):
+        while self.ocr(match=self.lang.daily_liaison_mixin.k_27d2b829, box=self.box.left):
             wait_bridge_disappear_count += 1
             if wait_bridge_disappear_count >= 120:
                 self.log_info("等待 '舰桥' 文案消失次数超限，送礼任务中断")
@@ -65,8 +65,8 @@ class DailyLiaisonMixin(LiaisonMixin):
             self.sleep(0.5)
         self.log_info("舰桥提示已经消失，等待信赖弹窗并消失")
         start_time = time.time()
-        if self.wait_ocr(match=re.compile("信赖"), box=self.box.left, time_out=5):
-            while self.ocr(match=re.compile("信赖"), box=self.box.left):
+        if self.wait_ocr(match=self.lang.daily_liaison_mixin.k_933056f0, box=self.box.left, time_out=5):
+            while self.ocr(match=self.lang.daily_liaison_mixin.k_933056f0, box=self.box.left):
                 if time.time() - start_time > 10:
                     self.log_info("等待 '信赖' 弹窗超时，进行下一步")
                 self.next_frame()
@@ -134,7 +134,7 @@ class DailyLiaisonMixin(LiaisonMixin):
         self.press_key("b", after_sleep=1)
         store_btn = self.wait_ocr(
             box=self.box_of_screen(0.64, 0.705, 0.69, 0.735, name="onekey_store_area"),
-            match=re.compile(r"存放"),
+            match=self.lang.daily_liaison_mixin.k_d661f6da,
             time_out=5,
         )
         if not store_btn:
