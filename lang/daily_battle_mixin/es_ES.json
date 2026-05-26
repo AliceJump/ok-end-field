@@ -1,0 +1,77 @@
+{
+  "k_4d0b4688": {
+    "pattern": "Cancelar"
+  },
+  "k_45ff3e5f": {
+    "pattern": "Disponible para colección"
+  },
+  "k_25e74dce": {
+    "pattern": "actual"
+  },
+  "k_a0d434d4": {
+    "pattern": "Operador"
+  },
+  "k_6c4d77af": {
+    "pattern": "recuperar la cordura"
+  },
+  "k_9294c931": {
+    "pattern": "desafío"
+  },
+  "k_6afbae72": {
+    "pattern": "Evacuar"
+  },
+  "k_b8a81b7a": {
+    "pattern": "abandonar"
+  },
+  "k_cd9eabf7": {
+    "pattern": "excitación"
+  },
+  "k_b0e3a2da": {
+    "pattern": "Sube a la tirolesa"
+  },
+  "k_b56d9ac6": {
+    "pattern": "confirmar"
+  },
+  "k_0ba18905": {
+    "pattern": "dejar"
+  },
+  "k_79f91106": {
+    "pattern": "índice"
+  },
+  "k_a6ee3a67": {
+    "pattern": "Opcional"
+  },
+  "k_60064e16": {
+    "pattern": "Obtener recompensa"
+  },
+  "k_4cc61900": {
+    "pattern": "tocar"
+  },
+  "k_0e25578e": {
+    "pattern": "Ingresar"
+  },
+  "k_8967d3c6": {
+    "pattern": "pista"
+  },
+  "k_55cfd979": {
+    "pattern": "Desafío de nuevo"
+  },
+  "k_39d12e73": {
+    "pattern": "recibir"
+  },
+  "k_39d12e73_1": {
+    "pattern": "recibir"
+  },
+  "k_4e1f3d8b": {
+    "pattern": "(\\d+)(cielo|Hora)"
+  },
+  "k_62b5b688": {
+    "pattern": "Ya en batalla"
+  },
+  "k_12577cd1": {
+    "pattern": "ir a la guerra"
+  },
+  "k_70b20820": {
+    "pattern": "elegir"
+  }
+}

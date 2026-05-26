@@ -1,0 +1,161 @@
+{
+  "k_dfe79994": {
+    "string": "交易"
+  },
+  "k_7d394484": {
+    "string": "製作"
+  },
+  "k_105cdd5a": {
+    "pattern": "任務$"
+  },
+  "k_39d12e73": {
+    "string": "領取"
+  },
+  "k_bf856c96": {
+    "pattern": "一鍵領取"
+  },
+  "k_f546849b": {
+    "pattern": "會客室"
+  },
+  "k_0e2d3a3c": {
+    "pattern": "使用"
+  },
+  "k_7be4248b": {
+    "pattern": "信用交易所"
+  },
+  "k_a63bb002": {
+    "pattern": "全部接收"
+  },
+  "k_3fef35d6": {
+    "pattern": "全部領取"
+  },
+  "k_a4cd21cc": {
+    "pattern": "再次"
+  },
+  "k_7d394484_1": {
+    "pattern": "製作"
+  },
+  "k_e1c08f6a": {
+    "pattern": "簡易"
+  },
+  "k_b693e51a": {
+    "pattern": "收取信用"
+  },
+  "k_f646bcd5": {
+    "pattern": "無待領取信用"
+  },
+  "k_573c7c18": {
+    "pattern": "貨物裝箱"
+  },
+  "k_8f2058a8": {
+    "pattern": "查看報價"
+  },
+  "k_04afbdcd": {
+    "pattern": "製造"
+  },
+  "k_23926d61": {
+    "pattern": "前往"
+  },
+  "k_1cdef26c": {
+    "pattern": "助力"
+  },
+  "k_4d0b4688": {
+    "pattern": "取消"
+  },
+  "k_cdb1d49b": {
+    "pattern": "可"
+  },
+  "k_31cceca8": {
+    "pattern": "培養"
+  },
+  "k_e84c3ae9": {
+    "pattern": "好友"
+  },
+  "k_0503d6d6": {
+    "pattern": "開展交流"
+  },
+  "k_449497e5": {
+    "pattern": "情報交流"
+  },
+  "k_41a9fd98": {
+    "pattern": "我轉交的委託"
+  },
+  "k_de7b4c9e": {
+    "pattern": "接收"
+  },
+  "k_ffb5655a": {
+    "pattern": "收取"
+  },
+  "k_3297422a": {
+    "pattern": "收集"
+  },
+  "k_8d0e83fc": {
+    "pattern": "日常"
+  },
+  "k_1c5ad36e": {
+    "pattern": "是否取消"
+  },
+  "k_4a2ece6a": {
+    "pattern": "暫存區"
+  },
+  "k_298d3284": {
+    "pattern": "本地倉儲節點"
+  },
+  "k_25d2b666": {
+    "pattern": "武器補給"
+  },
+  "k_13eea5dd": {
+    "pattern": "每週事務"
+  },
+  "k_557911d7": {
+    "pattern": "獨立"
+  },
+  "k_059a808c": {
+    "pattern": "理智補給"
+  },
+  "k_3e790a94": {
+    "pattern": "生產助力"
+  },
+  "k_401d58fa": {
+    "pattern": "的線索"
+  },
+  "k_3deed650": {
+    "pattern": "設施"
+  },
+  "k_5c42c048": {
+    "pattern": "等級"
+  },
+  "k_b56d9ac6": {
+    "pattern": "確認"
+  },
+  "k_1faf3321": {
+    "pattern": "裝備"
+  },
+  "k_bb6c696b": {
+    "pattern": "貨品"
+  },
+  "k_1dd73947": {
+    "pattern": "轉交運送委託"
+  },
+  "k_e39054a0": {
+    "pattern": "運轉"
+  },
+  "k_70b20820": {
+    "pattern": "選擇"
+  },
+  "k_a730d877": {
+    "pattern": "選擇拜訪"
+  },
+  "k_d7613f0e": {
+    "pattern": "通行證任務"
+  },
+  "k_727d1bec": {
+    "pattern": "通行證獎勵"
+  },
+  "k_3ecdd4bb": {
+    "pattern": "鍵領取"
+  },
+  "k_39d12e73_1": {
+    "pattern": "領取"
+  }
+}

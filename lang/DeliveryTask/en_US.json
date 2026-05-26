@@ -1,0 +1,32 @@
+{
+  "k_a72a252f": {
+    "string": "Warehousing node"
+  },
+  "k_38108eaa": {
+    "string": "refresh"
+  },
+  "k_96b876e3": {
+    "string": "industry"
+  },
+  "k_9d5535b7": {
+    "string": "Receive shipping order"
+  },
+  "k_b0e3a2da": {
+    "string": "Climb the zipline"
+  },
+  "k_ae8fb114": {
+    "string": "Shipping order list"
+  },
+  "k_f736eb3d": {
+    "pattern": "Pick up"
+  },
+  "k_c7b4d04e": {
+    "pattern": "service"
+  },
+  "k_6536f6f1": {
+    "pattern": "resource"
+  },
+  "k_0c1ef9f5": {
+    "pattern": "delivery"
+  }
+}

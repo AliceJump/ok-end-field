@@ -1,0 +1,77 @@
+{
+  "k_4d0b4688": {
+    "pattern": "取消"
+  },
+  "k_45ff3e5f": {
+    "pattern": "可領取"
+  },
+  "k_25e74dce": {
+    "pattern": "目前"
+  },
+  "k_a0d434d4": {
+    "pattern": "幹員"
+  },
+  "k_6c4d77af": {
+    "pattern": "恢復理智"
+  },
+  "k_9294c931": {
+    "pattern": "挑戰"
+  },
+  "k_6afbae72": {
+    "pattern": "撤離"
+  },
+  "k_b8a81b7a": {
+    "pattern": "放棄"
+  },
+  "k_cd9eabf7": {
+    "pattern": "激發"
+  },
+  "k_b0e3a2da": {
+    "pattern": "登上滑索架"
+  },
+  "k_b56d9ac6": {
+    "pattern": "確認"
+  },
+  "k_0ba18905": {
+    "pattern": "離開"
+  },
+  "k_79f91106": {
+    "pattern": "索引"
+  },
+  "k_a6ee3a67": {
+    "pattern": "自選"
+  },
+  "k_60064e16": {
+    "pattern": "獲得獎勵"
+  },
+  "k_4cc61900": {
+    "pattern": "觸碰"
+  },
+  "k_0e25578e": {
+    "pattern": "進入"
+  },
+  "k_8967d3c6": {
+    "pattern": "追蹤"
+  },
+  "k_55cfd979": {
+    "pattern": "重新挑戰"
+  },
+  "k_39d12e73": {
+    "pattern": "領取"
+  },
+  "k_39d12e73_1": {
+    "pattern": "領取"
+  },
+  "k_4e1f3d8b": {
+    "pattern": "(\\d+)(天|小時)"
+  },
+  "k_62b5b688": {
+    "pattern": "已出戰"
+  },
+  "k_12577cd1": {
+    "pattern": "出戰"
+  },
+  "k_70b20820": {
+    "pattern": "選擇"
+  }
+}

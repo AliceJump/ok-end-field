@@ -1,0 +1,77 @@
+{
+  "k_4d0b4688": {
+    "pattern": "취소"
+  },
+  "k_45ff3e5f": {
+    "pattern": "수집 가능"
+  },
+  "k_25e74dce": {
+    "pattern": "현재의"
+  },
+  "k_a0d434d4": {
+    "pattern": "연산자"
+  },
+  "k_6c4d77af": {
+    "pattern": "제정신을 되찾다"
+  },
+  "k_9294c931": {
+    "pattern": "도전"
+  },
+  "k_6afbae72": {
+    "pattern": "대피"
+  },
+  "k_b8a81b7a": {
+    "pattern": "포기하다"
+  },
+  "k_cd9eabf7": {
+    "pattern": "자극"
+  },
+  "k_b0e3a2da": {
+    "pattern": "짚라인을 타고 올라보세요"
+  },
+  "k_b56d9ac6": {
+    "pattern": "확인하다"
+  },
+  "k_0ba18905": {
+    "pattern": "떠나다"
+  },
+  "k_79f91106": {
+    "pattern": "색인"
+  },
+  "k_a6ee3a67": {
+    "pattern": "선택 과목"
+  },
+  "k_60064e16": {
+    "pattern": "보상 받기"
+  },
+  "k_4cc61900": {
+    "pattern": "만지다"
+  },
+  "k_0e25578e": {
+    "pattern": "입력하다"
+  },
+  "k_8967d3c6": {
+    "pattern": "길"
+  },
+  "k_55cfd979": {
+    "pattern": "다시 도전하세요"
+  },
+  "k_39d12e73": {
+    "pattern": "받다"
+  },
+  "k_39d12e73_1": {
+    "pattern": "받다"
+  },
+  "k_4e1f3d8b": {
+    "pattern": "(\\d+)(하늘|시간)"
+  },
+  "k_62b5b688": {
+    "pattern": "이미 전투 중"
+  },
+  "k_12577cd1": {
+    "pattern": "전쟁에 나가다"
+  },
+  "k_70b20820": {
+    "pattern": "선택하다"
+  }
+}

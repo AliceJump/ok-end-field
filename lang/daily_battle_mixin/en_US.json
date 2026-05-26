@@ -1,0 +1,77 @@
+{
+  "k_4d0b4688": {
+    "pattern": "Cancel"
+  },
+  "k_45ff3e5f": {
+    "pattern": "Available for collection"
+  },
+  "k_25e74dce": {
+    "pattern": "current"
+  },
+  "k_a0d434d4": {
+    "pattern": "Operator"
+  },
+  "k_6c4d77af": {
+    "pattern": "regain sanity"
+  },
+  "k_9294c931": {
+    "pattern": "challenge"
+  },
+  "k_6afbae72": {
+    "pattern": "Evacuate"
+  },
+  "k_b8a81b7a": {
+    "pattern": "give up"
+  },
+  "k_cd9eabf7": {
+    "pattern": "excitation"
+  },
+  "k_b0e3a2da": {
+    "pattern": "Climb the zipline"
+  },
+  "k_b56d9ac6": {
+    "pattern": "confirm"
+  },
+  "k_0ba18905": {
+    "pattern": "leave"
+  },
+  "k_79f91106": {
+    "pattern": "index"
+  },
+  "k_a6ee3a67": {
+    "pattern": "Optional"
+  },
+  "k_60064e16": {
+    "pattern": "Get rewarded"
+  },
+  "k_4cc61900": {
+    "pattern": "touch"
+  },
+  "k_0e25578e": {
+    "pattern": "Enter"
+  },
+  "k_8967d3c6": {
+    "pattern": "track"
+  },
+  "k_55cfd979": {
+    "pattern": "Challenge again"
+  },
+  "k_39d12e73": {
+    "pattern": "receive"
+  },
+  "k_39d12e73_1": {
+    "pattern": "receive"
+  },
+  "k_4e1f3d8b": {
+    "pattern": "(\\d+)(sky|Hour)"
+  },
+  "k_62b5b688": {
+    "pattern": "Already in battle"
+  },
+  "k_12577cd1": {
+    "pattern": "go to war"
+  },
+  "k_70b20820": {
+    "pattern": "choose"
+  }
+}

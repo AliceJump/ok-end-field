@@ -1,16 +1,56 @@
 import json
 import re
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
 
-def _normalize_locale(locale: str | None) -> str:
+def _discover_supported_locales() -> tuple[str, ...]:
+    repo_root = Path(__file__).resolve().parents[3]
+    i18n_root = repo_root / "i18n"
+    locales: list[str] = []
+
+    if i18n_root.exists():
+        for child in sorted(i18n_root.iterdir(), key=lambda p: p.name):
+            if child.is_dir() and (child / "LC_MESSAGES").exists():
+                locales.append(child.name)
+
+    # 兜底：保证至少有当前仓库已使用的标准名
+    if not locales:
+        locales = ["zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES"]
+
+    return tuple(locales)
+
+
+SUPPORTED_LOCALES = _discover_supported_locales()
+LocaleCode = Enum("LocaleCode", {name: name for name in SUPPORTED_LOCALES}, type=str)
+
+
+def get_supported_locales() -> tuple[str, ...]:
+    return SUPPORTED_LOCALES
+
+
+def _normalize_locale(locale: str | Enum | None) -> str:
     if not locale:
         return "zh_CN"
+    if isinstance(locale, Enum):
+        locale = locale.value
     locale = str(locale).replace("-", "_")
+    if locale in SUPPORTED_LOCALES:
+        return locale
+
+    lowered = locale.lower()
+    for supported in SUPPORTED_LOCALES:
+        if supported.lower() == lowered:
+            return supported
+
     parts = locale.split("_")
     if len(parts) == 2:
-        return parts[0].lower() + "_" + parts[1].upper()
+        candidate = parts[0].lower() + "_" + parts[1].upper()
+        for supported in SUPPORTED_LOCALES:
+            if supported.lower() == candidate.lower():
+                return supported
+        return candidate
     return locale
 
 
@@ -115,7 +155,11 @@ class LangAccessor:
     def _load_module(self, module_name: str) -> dict:
         # 优先在 repo_root/lang/{module}/{locale}.json 查找
         lang_root = self._repo_root / "lang"
-        locales_to_try = [self.locale, "en_US"]
+        locales_to_try = [self.locale]
+        for supported_locale in SUPPORTED_LOCALES:
+            if supported_locale not in locales_to_try:
+                locales_to_try.append(supported_locale)
+
         for loc in locales_to_try:
             p = lang_root / module_name / f"{loc}.json"
             if p.exists():
@@ -142,6 +186,9 @@ def get_lang_accessor(obj_or_locale: Any = None) -> LangAccessor:
                 else getattr(obj_or_locale, "locale", None)
             )
             if locale_obj is not None:
+                if isinstance(locale_obj, Enum):
+                    locale = str(locale_obj.value)
+                    return LangAccessor(locale)
                 if hasattr(locale_obj, "name"):
                     name_attr = getattr(locale_obj, "name")
                     value = name_attr() if callable(name_attr) else name_attr
@@ -153,6 +200,18 @@ def get_lang_accessor(obj_or_locale: Any = None) -> LangAccessor:
             locale = None
 
     return LangAccessor(locale)
+
+
+__all__ = [
+    "LangAccessor",
+    "LangModule",
+    "LangNode",
+    "LocaleCode",
+    "SUPPORTED_LOCALES",
+    "build_matcher",
+    "get_lang_accessor",
+    "get_supported_locales",
+]
 
 
 def build_matcher(node: Any):

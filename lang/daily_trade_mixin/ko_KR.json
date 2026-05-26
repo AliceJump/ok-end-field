@@ -1,0 +1,38 @@
+{
+  "k_b84e4cb0": {
+    "pattern": "팔다"
+  },
+  "k_23926d61": {
+    "pattern": "이동"
+  },
+  "k_d6bdcc47": {
+    "pattern": "지역 건설"
+  },
+  "k_930f2e66": {
+    "pattern": "시장"
+  },
+  "k_33fb3f9c": {
+    "pattern": "탄력"
+  },
+  "k_7907d90f": {
+    "pattern": "일반 통제"
+  },
+  "k_cd3a269a": {
+    "pattern": "친구 가격 보기"
+  },
+  "k_7cf40bbd": {
+    "pattern": "구입하다"
+  },
+  "k_13f2c5a1": {
+    "pattern": "화물 그룹"
+  },
+  "k_f48bcfb6": {
+    "pattern": "곧 출시 예정"
+  },
+  "k_6174dac7": {
+    "pattern": "과다"
+  },
+  "k_fa04e4df": {
+    "pattern": "자재발송터미널"
+  }
+}

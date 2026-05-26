@@ -1,0 +1,14 @@
+{
+  "k_b0e3a2da": {
+    "string": "Climb the zipline"
+  },
+  "k_55ef5a58": {
+    "pattern": "next connection point"
+  },
+  "k_2f4f4a2f": {
+    "pattern": "move towards target"
+  },
+  "k_0b1e4f35": {
+    "pattern": "Leaving the zipline"
+  }
+}
