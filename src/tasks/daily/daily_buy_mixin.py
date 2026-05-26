@@ -3,9 +3,6 @@ import re
 from src.data.world_map import areas_list
 from src.tasks.sequence_parser import parse_sequence
 from src.tasks.mixin.common import Common
-from src.data.lang import ocr as lang_ocr
-
-
 class DailyBuyMixin(Common):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -67,7 +64,7 @@ class DailyBuyMixin(Common):
             self.click(box_list[0], after_sleep=2)
             self.log_info(f"已选定货品：{box_list[0].name}")
         self.plus_max()
-        if self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_074"), box=self.box.bottom_right, time_out=2):
+        if self.wait_click_ocr(match=self.lang.pattern("ocr_text_074"), box=self.box.bottom_right, time_out=2):
             self.wait_pop_up(after_sleep=2)
         else:
             self.back(after_sleep=2)

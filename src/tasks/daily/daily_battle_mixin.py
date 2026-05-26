@@ -15,8 +15,6 @@ from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
-from src.data.lang import ocr as lang_ocr
-
 gather_list = stages_dict["能量淤积点"]
 
 
@@ -214,7 +212,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         self._switch_team_before_reenter()
 
         deploy_results = self.wait_ocr(
-            match=[lang_ocr.get_pattern("ocr_text_030"), lang_ocr.get_pattern("ocr_text_017")],
+            match=[self.lang.pattern("ocr_text_030"), self.lang.pattern("ocr_text_017")],
             box=self.box.bottom_right,
             time_out=3,
             raise_if_not_found=False,
@@ -225,7 +223,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
             return False
 
         deploy_text = deploy_results[0].name
-        if lang_ocr.get_primary_term("ocr_text_030") in deploy_text:
+        if self.lang.term("ocr_text_030") in deploy_text:
             self.log_info("当前为『已出战』状态，跳过点击出战")
         else:
             self.click(deploy_results[0], move_back=True, after_sleep=0.8)
@@ -262,15 +260,15 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         """F8 打开索引页面。"""
         self.ensure_main()
         self.press_key("f8")
-        self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_078"), time_out=7, after_sleep=2, box=self.box.top, log=True)
+        self.wait_click_ocr(match=self.lang.pattern("ocr_text_078"), time_out=7, after_sleep=2, box=self.box.top, log=True)
 
     def _click_track_and_transfer(self):
         """点击『追踪』按钮，进入地图并传送至最近传送点。"""
-        if result := self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_093"), box=self.box.bottom_right, time_out=5):
+        if result := self.wait_ocr(match=self.lang.pattern("ocr_text_093"), box=self.box.bottom_right, time_out=5):
             if (
-                lang_ocr.get_primary_term("ocr_text_093") in result[0].name
-                and lang_ocr.get_primary_term("ocr_text_105") not in result[0].name
-                and lang_ocr.get_primary_term("ocr_text_106") not in result[0].name
+                self.lang.term("ocr_text_093") in result[0].name
+                and self.lang.term("ocr_text_105") not in result[0].name
+                and self.lang.term("ocr_text_106") not in result[0].name
             ):
                 self.log_info("点击追踪按钮")
                 self.click(result, after_sleep=1)
@@ -281,7 +279,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         """若配置了滑索路线，则通过滑索移动至目标。"""
         zip_line_str = self.config.get(self.battle_ctx.stage_name)
         if zip_line_str:
-            self.wait_click_ocr(match=lang_ocr.get_pattern("board_zipline"), time_out=10, after_sleep=2, recheck_time=1,
+            self.wait_click_ocr(match=self.lang.pattern("board_zipline"), time_out=10, after_sleep=2, recheck_time=1,
                                 box=self.box.bottom_right, log=True, alt=True)
             zip_line_list = parse_int_sequence(zip_line_str)
             self.zip_line_list_go(
@@ -397,14 +395,14 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         self.wait_click_feature(feature=fL.stamina_plus_icon, vertical_variance=0.01, horizontal_variance=0.01,
                                 time_out=5,
                                 box=self.box_of_screen((3530 - 40) / 3840, 0, (3600) / 3840, (80 + 40) / 2160))  # 右上角加号
-        self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_040"), time_out=5, box=self.box.top_left)
+        self.wait_ocr(match=self.lang.pattern("ocr_text_040"), time_out=5, box=self.box.top_left)
         # 支持天和小时单位，按剩余时效升序消耗
         box_list = self.wait_ocr(
             x=0.20,
             y=0.45,
             to_x=0.88,
             to_y=0.66,
-            match=lang_ocr.get_regex_pattern("ocr_regex_003"),
+            match=self.lang.regex("ocr_regex_003"),
             log=True,
         )
         if not box_list:
@@ -424,7 +422,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 parsed_boxes.append((sort_key, box, validity_num, validity_unit))
             if not parsed_boxes:
                 self.log_warning("所有应急理智加强剂时效解析失败，无法消耗")
-                self.safe_back(lang_ocr.get_pattern("ocr_text_033"), box=self.box.top_left, time_out=10, ocr_time_out=2)
+                self.safe_back(self.lang.pattern("ocr_text_033"), box=self.box.top_left, time_out=10, ocr_time_out=2)
                 return True
             parsed_boxes.sort(key=lambda x: x[0])
             for _, box, validity_num, validity_unit in parsed_boxes:
@@ -448,7 +446,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                     self.log_info(f"找到 {count} 个限时 {validity_num} 天的 应急理智加强剂，本次预计使用 {consume} 个")
                 for _ in range(consume):
                     self.click(box, after_sleep=0.1)
-                if not self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_072"), box=self.box.bottom_right, after_sleep=2):
+                if not self.wait_click_ocr(match=self.lang.pattern("ocr_text_072"), box=self.box.bottom_right, after_sleep=2):
                     self.log_error("无法使用 应急理智加强剂")
                 else:
                     self.log_info(f"已使用 {consume} 个 应急理智加强剂")
@@ -456,7 +454,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 # 只消耗一种类型后退出（如需全部消耗可去掉break）
                 break
         # 统一出口，保证异常时也能返回主界面
-        if not self.safe_back(lang_ocr.get_pattern("ocr_text_033"), box=self.box.top_left, time_out=10, ocr_time_out=2):
+        if not self.safe_back(self.lang.pattern("ocr_text_033"), box=self.box.top_left, time_out=10, ocr_time_out=2):
             return False
         return True
 
@@ -571,24 +569,24 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         # 滑索移动
         self._navigate_via_zip_line()
         #
-        self.navigate_until_target(target_ocr_pattern=lang_ocr.get_regex_pattern("ocr_regex_002"), nav_feature_name=fL.gather_icon_out_map,
+        self.navigate_until_target(target_ocr_pattern=self.lang.regex("ocr_regex_002"), nav_feature_name=fL.gather_icon_out_map,
                                    time_out=60)
         #
-        if self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_050"), box=self.box.bottom_right, time_out=1):
+        if self.wait_ocr(match=self.lang.pattern("ocr_text_050"), box=self.box.bottom_right, time_out=1):
             self.log_info("放弃未领取的奖励")
-            self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_050"), box=self.box.bottom_right, time_out=5, recheck_time=1,
+            self.wait_click_ocr(match=self.lang.pattern("ocr_text_050"), box=self.box.bottom_right, time_out=5, recheck_time=1,
                                 alt=True)
             self.click_confirm()
         if not self._switch_team_before_activate_for_gather():
             self.mark_task_failure("淤积点激发前换队失败")
             return False
         #
-        result = self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_064"), box=self.box.bottom_right, time_out=5)
+        result = self.wait_ocr(match=self.lang.pattern("ocr_text_064"), box=self.box.bottom_right, time_out=5)
         if not result:
             self.log_info("没有找到『激发』按钮")
             return False
         self.sleep(1)
-        if not self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_064"), box=self.box.bottom_right, time_out=5, recheck_time=1,
+        if not self.wait_click_ocr(match=self.lang.pattern("ocr_text_064"), box=self.box.bottom_right, time_out=5, recheck_time=1,
                                    alt=True):
             self.log_info("没有找到『激发』按钮")
             return False
@@ -597,8 +595,8 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
 
     def battle_space(self):
         self.battle_ctx.enter_text = "进入"
-        self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_092"), time_out=5, after_sleep=2, box=self.box.bottom_right, log=True)
-        if self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_023"), time_out=5, box=self.box.bottom_left, log=True):
+        self.wait_click_ocr(match=self.lang.pattern("ocr_text_092"), time_out=5, after_sleep=2, box=self.box.bottom_right, log=True)
+        if self.wait_click_ocr(match=self.lang.pattern("ocr_text_023"), time_out=5, box=self.box.bottom_left, log=True):
             self.log_info("没有进入战斗，可能是因为已经没理智了")
             return True
         # 插入点：在首次『进入』之后、下一次『进入』之前执行换队。
@@ -625,7 +623,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         # 滑索移动
         self._navigate_via_zip_line()
         #
-        self.navigate_until_target(target_ocr_pattern=lang_ocr.get_pattern("ocr_text_101"), nav_feature_name=fL.gather_icon_out_map,
+        self.navigate_until_target(target_ocr_pattern=self.lang.pattern("ocr_text_101"), nav_feature_name=fL.gather_icon_out_map,
                                    time_out=60)
         click_key = "放弃" if self.battle_ctx.is_extra_mode else "领取"
         result = self.wait_ocr(match=re.compile(click_key), box=self.box.bottom_right, time_out=5)
@@ -651,16 +649,16 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         """
         if self.battle_ctx.is_extra_mode:
             # 放弃领取奖励后需要重新点击激发按钮
-            result = self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_064"), box=self.box.bottom_right, time_out=5)
+            result = self.wait_ocr(match=self.lang.pattern("ocr_text_064"), box=self.box.bottom_right, time_out=5)
             if not result:
                 self.log_info("未找到『激发』按钮，无法继续进行额外刷取")
                 return False
             self.click_with_alt(result[0], after_sleep=2)
-            self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_043"), time_out=10, after_sleep=2, box=self.box.bottom_right_quarter,
+            self.wait_click_ocr(match=self.lang.pattern("ocr_text_043"), time_out=10, after_sleep=2, box=self.box.bottom_right_quarter,
                                 log=True, recheck_time=1)
             self.click_confirm()
         else:
-            self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_099"), box=self.box.bottom_left, log=True, time_out=5,
+            self.wait_click_ocr(match=self.lang.pattern("ocr_text_099"), box=self.box.bottom_left, log=True, time_out=5,
                                 after_sleep=2, recheck_time=1)
         return True
 
@@ -701,7 +699,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 #
                 self.sleep(2)
                 if self.battle_ctx.left_ticket <= 0:
-                    self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_076"), box=self.box.bottom_right, log=True, recheck_time=1)
+                    self.wait_click_ocr(match=self.lang.pattern("ocr_text_076"), box=self.box.bottom_right, log=True, recheck_time=1)
 
                     # 如果体力耗尽但设置了额外刷取次数，则开始额外刷取
                     self.battle_ctx.is_extra_mode = self.battle_ctx.extra_run_limit > 0 and self.battle_ctx.extra_run_count < self.battle_ctx.extra_run_limit
@@ -755,9 +753,9 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         return False
 
     def _get_current_stage_reward_tier(self):
-        if self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_038"), box=self.box.top, time_out=1, log=True):
+        if self.wait_ocr(match=self.lang.pattern("ocr_text_038"), box=self.box.top, time_out=1, log=True):
             return self.REWARD_TIER_LOW
-        if self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_038"), box=self.box.bottom, time_out=1, log=True):
+        if self.wait_ocr(match=self.lang.pattern("ocr_text_038"), box=self.box.bottom, time_out=1, log=True):
             return self.REWARD_TIER_HIGH
         return None
 
@@ -777,7 +775,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         if target_tier == self.REWARD_TIER_KEEP:
             return True
 
-        if not self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_081"), box=self.box.bottom_right, time_out=6, after_sleep=1):
+        if not self.wait_click_ocr(match=self.lang.pattern("ocr_text_081"), box=self.box.bottom_right, time_out=6, after_sleep=1):
             self.log_info(f"{self.battle_ctx.stage_name} 未识别到『自选』，跳过奖励档位切换")
             return True
         self.wait_ui_stable(refresh_interval=0.5)
@@ -787,7 +785,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         else:
             target_box = self.box.top if target_tier == self.REWARD_TIER_LOW else self.box.bottom
             candidates = self.wait_ocr(
-                match=[lang_ocr.get_pattern("ocr_text_038"), lang_ocr.get_pattern("ocr_text_094")],
+                match=[self.lang.pattern("ocr_text_038"), self.lang.pattern("ocr_text_094")],
                 box=target_box,
                 time_out=4,
                 log=True,
@@ -798,7 +796,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
             else:
                 self.log_info(f"{self.battle_ctx.stage_name} 未识别到{target_tier}对应按钮，保持当前档位")
 
-        if not self.safe_back(match=lang_ocr.get_pattern("ocr_text_092"), box=self.box.bottom_right, time_out=10, ocr_time_out=1):
+        if not self.safe_back(match=self.lang.pattern("ocr_text_092"), box=self.box.bottom_right, time_out=10, ocr_time_out=1):
             self.log_info("切换奖励档位后未返回到『进入』界面")
             return False
         return True
@@ -807,18 +805,18 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         if self.battle_ctx.category_name != "能量淤积点":
             self.wait_pop_up(time_out=4)
             end_time = time.time()
-            while not self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_045"), time_out=1, box=self.box.top_left, log=True):
+            while not self.wait_ocr(match=self.lang.pattern("ocr_text_045"), time_out=1, box=self.box.top_left, log=True):
                 if time.time() - end_time > 300:
                     self.log_info("等待超时，进入协议空间超时")
                     return False
             self.move_keys("w", duration=0.25)
-            while not self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_085"), time_out=1, box=self.box.bottom_right, log=True):
+            while not self.wait_ocr(match=self.lang.pattern("ocr_text_085"), time_out=1, box=self.box.bottom_right, log=True):
                 self.move_keys('w', duration=0.25)
             self.press_key("f")
         else:
             self.wait_pop_up(time_out=4)
             end_time = time.time()
-            while not self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_043"), time_out=1, box=self.box.top_left, log=True):
+            while not self.wait_ocr(match=self.lang.pattern("ocr_text_043"), time_out=1, box=self.box.top_left, log=True):
                 if time.time() - end_time > 30:
                     self.log_info("等待超时，进入挑战超时")
                     return False
@@ -849,11 +847,11 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 if not self.to_stage():
                     self.mark_task_failure("二次寻路失败：无法进入『能量淤积点』详情页")
                     return False
-                if result := self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_093"), box=self.box.bottom_right, time_out=5):
+                if result := self.wait_ocr(match=self.lang.pattern("ocr_text_093"), box=self.box.bottom_right, time_out=5):
                     if (
-                        lang_ocr.get_primary_term("ocr_text_093") in result[0].name
-                        and lang_ocr.get_primary_term("ocr_text_105") not in result[0].name
-                        and lang_ocr.get_primary_term("ocr_text_106") not in result[0].name
+                        self.lang.term("ocr_text_093") in result[0].name
+                        and self.lang.term("ocr_text_105") not in result[0].name
+                        and self.lang.term("ocr_text_106") not in result[0].name
                     ):
                         self.log_info("点击追踪按钮")
                         self.click(result, after_sleep=2)
@@ -926,7 +924,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         start_time = time.time()
 
         # 等待界面出现“可领取”
-        while not self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_025"), box=self.box.top, time_out=1):
+        while not self.wait_ocr(match=self.lang.pattern("ocr_text_025"), box=self.box.top, time_out=1):
             if time.time() - start_time > 60:
                 return 0
             self.press_key("f", down_time=0.2)
@@ -937,7 +935,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
 
         # 尝试点击“获得奖励”，失败则本轮减少消耗理智
         if not self.wait_click_ocr(
-                match=lang_ocr.get_pattern("ocr_text_083"),
+                match=self.lang.pattern("ocr_text_083"),
                 box=self.box_of_screen(530 / 1920, 330 / 1080, 1400 / 1920, 570 / 1080),
                 time_out=2,
                 after_sleep=1,
@@ -954,7 +952,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
 
         # 点击“领取”，失败则返回0
         self.next_frame()
-        if not self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_101"), box=self.box.bottom_right, time_out=2, log=True):
+        if not self.wait_click_ocr(match=self.lang.pattern("ocr_text_101"), box=self.box.bottom_right, time_out=2, log=True):
             self.mark_task_failure("领取失败")
             return 0
         # 预测下一轮是否还能继续

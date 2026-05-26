@@ -10,7 +10,6 @@ from src.data.world_map import areas_list
 from src.essence.essence_recognizer import EssenceInfo, read_essence_info
 from src.image.login_screenshot import capture_window_by_screen
 from src.interaction.Mouse import run_at_window_pos
-from src.data.lang import ocr as lang_ocr
 
 
 class GameFlowMixin:
@@ -139,7 +138,7 @@ class GameFlowMixin:
                 feature_name="reward_ok", box=self.box.bottom, threshold=0.8
             )
             if not result:
-                result = self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_065"), time_out=1, box=self.box.bottom)
+                result = self.wait_ocr(match=self.lang.pattern("ocr_text_065"), time_out=1, box=self.box.bottom)
             if result:
                 self.click(result, after_sleep=after_sleep)
                 return True
@@ -231,7 +230,7 @@ class GameFlowMixin:
             return True
         if self.click_confirm(time_out=1):
             return False
-        rules = [[None, None, [lang_ocr.get_pattern("ocr_text_065"), lang_ocr.get_pattern("ocr_text_110")], self.box.bottom]]
+        rules = [[None, None, [self.lang.pattern("ocr_text_065"), self.lang.pattern("ocr_text_110")], self.box.bottom]]
         if not self.run_ocr_rules(rules):
             return False
         if esc:
@@ -259,7 +258,7 @@ class GameFlowMixin:
         self.press_key("i")
 
         exchange_help_box = self.box_of_screen(0.1, 561 / 861, 0.9, 0.9)
-        room_keywords = [lang_ocr.get_pattern("ocr_text_007"), lang_ocr.get_pattern("ocr_text_019")]
+        room_keywords = [self.lang.pattern("ocr_text_007"), self.lang.pattern("ocr_text_019")]
 
         results = self.wait_ocr(match=room_keywords, time_out=timeout, box=exchange_help_box)
 
@@ -277,7 +276,7 @@ class GameFlowMixin:
 
         for _ in range(3):
             self.press_key("y")
-            check = self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_035"), box=self.box.top_left, time_out=5)
+            check = self.wait_ocr(match=self.lang.pattern("ocr_text_035"), box=self.box.top_left, time_out=5)
             if check:
                 success = True
             else:
@@ -299,7 +298,7 @@ class GameFlowMixin:
                 break
         if need_change:
             if not self.wait_click_ocr(
-                    match=lang_ocr.get_pattern("ocr_text_055"), box=self.box.left, time_out=2, log=True
+                    match=self.lang.pattern("ocr_text_055"), box=self.box.left, time_out=2, log=True
             ):
                 return False
             if not self.wait_click_ocr(
@@ -311,7 +310,7 @@ class GameFlowMixin:
             ):
                 return False
             if not self.wait_click_ocr(
-                    match=lang_ocr.get_pattern("ocr_text_072"),
+                    match=self.lang.pattern("ocr_text_072"),
                     box=self.box.bottom_right,
                     time_out=2,
             ):
@@ -345,10 +344,10 @@ class GameFlowMixin:
         """确保进入地图界面。"""
         start_time = time.time()
         if addtional_match:
-            match = [lang_ocr.get_pattern("ocr_text_111")] + addtional_match if isinstance(addtional_match, list) else [
-                lang_ocr.get_pattern("ocr_text_111"), re.compile(addtional_match)]
+            match = [self.lang.pattern("ocr_text_111")] + addtional_match if isinstance(addtional_match, list) else [
+                self.lang.pattern("ocr_text_111"), re.compile(addtional_match)]
         else:
-            match = [lang_ocr.get_pattern("ocr_text_111")]
+            match = [self.lang.pattern("ocr_text_111")]
         self.press_key("m")
         while not self.wait_ocr(match=match, time_out=2, box=self.box.top_left):
             if time.time() - start_time > time_out:
@@ -357,7 +356,7 @@ class GameFlowMixin:
 
     def in_friend_boat(self):
         """判断是否在好友的帝江号舰船中。"""
-        return self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_076"), box=self.box.top_left)
+        return self.wait_ocr(match=self.lang.pattern("ocr_text_076"), box=self.box.top_left)
 
     def ensure_in_friend_boat(self):
         """确保进入好友帝江号舰船。"""
@@ -368,3 +367,4 @@ class GameFlowMixin:
                 return False
             if self.in_friend_boat():
                 return True
+

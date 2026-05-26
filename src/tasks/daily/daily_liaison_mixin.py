@@ -7,9 +7,6 @@ from qfluentwidgets import FluentIcon
 from src.data.characters_utils import get_contact_list_with_feature_list
 from src.tasks.mixin.common import LiaisonResult, build_name_patterns
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
-from src.data.lang import ocr as lang_ocr
-
-
 class DailyLiaisonMixin(LiaisonMixin):
     HELP_LINK = "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/docs/日常任务.md"
 
@@ -17,7 +14,7 @@ class DailyLiaisonMixin(LiaisonMixin):
         super().__init__(*args, **kwargs)
         self.can_contact_dict = get_contact_list_with_feature_list()
         self.contact_name_patterns = {
-            name: build_name_patterns(name, context=self)
+            name: self.name_patterns_for(name)
             for name in self.can_contact_dict.keys()
         }
         #
@@ -60,7 +57,7 @@ class DailyLiaisonMixin(LiaisonMixin):
             self.mark_task_failure("传送失败，无法开始送礼任务")
             return False
         wait_bridge_disappear_count = 0
-        while self.ocr(match=lang_ocr.get_pattern("ocr_text_082"), box=self.box.left):
+        while self.ocr(match=self.lang.pattern("ocr_text_082"), box=self.box.left):
             wait_bridge_disappear_count += 1
             if wait_bridge_disappear_count >= 120:
                 self.log_info("等待 '舰桥' 文案消失次数超限，送礼任务中断")
@@ -69,8 +66,8 @@ class DailyLiaisonMixin(LiaisonMixin):
             self.sleep(0.5)
         self.log_info("舰桥提示已经消失，等待信赖弹窗并消失")
         start_time = time.time()
-        if self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_012"), box=self.box.left, time_out=5):
-            while self.ocr(match=lang_ocr.get_pattern("ocr_text_012"), box=self.box.left):
+        if self.wait_ocr(match=self.lang.pattern("ocr_text_012"), box=self.box.left, time_out=5):
+            while self.ocr(match=self.lang.pattern("ocr_text_012"), box=self.box.left):
                 if time.time() - start_time > 10:
                     self.log_info("等待 '信赖' 弹窗超时，进行下一步")
                 self.next_frame()
@@ -138,7 +135,7 @@ class DailyLiaisonMixin(LiaisonMixin):
         self.press_key("b", after_sleep=1)
         store_btn = self.wait_ocr(
             box=self.box_of_screen(0.64, 0.705, 0.69, 0.735, name="onekey_store_area"),
-            match=lang_ocr.get_pattern("ocr_text_029"),
+            match=self.lang.pattern("ocr_text_029"),
             time_out=5,
         )
         if not store_btn:

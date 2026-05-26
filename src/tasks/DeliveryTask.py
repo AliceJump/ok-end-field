@@ -23,7 +23,6 @@ from src.data.delivery_area_service import (
     get_task_model_area,
     get_transfer_search_area,
 )
-from src.data.lang import ocr as lang_ocr
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.account.account_mixin import AccountMixin
 from src.tasks.sequence_parser import parse_int_sequence
@@ -419,8 +418,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         """
         self.try_time = 0
         self.ensure_main(time_out=120)
-        storage_node_term = lang_ocr.get_primary_term("storage_node", context=self)
-        delivery_list_pattern = lang_ocr.get_pattern("delivery_list", context=self)
+        storage_node_term = self.lang.term("storage_node")
+        delivery_list_pattern = self.lang.pattern("delivery_list")
         self.log_info("前置操作：按Y，点击目标节点，进入委托列表")
         self.to_model_area(get_task_model_area(self.delivery_area), storage_node_term)
         delivery_box = self.wait_ocr(match=delivery_list_pattern, time_out=5)
@@ -488,7 +487,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                                     return False
                                 self.next_frame()
                                 accepted_successfully = not self.wait_ocr(
-                                    match=lang_ocr.get_pattern("accept_delivery_entrust", context=self),
+                                    match=self.lang.pattern("accept_delivery_entrust"),
                                     box=self.box.bottom_right,
                                     time_out=1
                                 )
@@ -501,7 +500,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self.log_info("未找到符合条件(金额+类型)的委托，准备刷新重试")
             for i in range(2):
                 if last_refresh_box := self.wait_ocr(
-                        match=lang_ocr.get_pattern("refresh_button", context=self),
+                        match=self.lang.pattern("refresh_button"),
                         box=self.box.bottom_right
                 ):
                     now = time.time()
@@ -527,12 +526,12 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             bool: 成功返回True，失败返回False
         """
         if result := self.wait_ocr(
-                match=lang_ocr.get_pattern("board_zipline", context=self),
+                match=self.lang.pattern("board_zipline"),
                 box=self.box.bottom_right,
                 time_out=60,
                 log=True
         ):
-            if self.wait_ocr(match=lang_ocr.get_pattern("industrial_area", context=self), box=self.box.top_left,
+            if self.wait_ocr(match=self.lang.pattern("industrial_area"), box=self.box.top_left,
                              time_out=2, log=True):
                 self.press_key("tab", after_sleep=1)
             self.click_with_alt(result[0], after_sleep=2)
@@ -563,14 +562,14 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     1,
                 )
                 if self.wait_ocr(
-                        match=lang_ocr.get_pattern("storage_node", context=self),
+                        match=self.lang.pattern("storage_node"),
                         box=self.box.bottom_right,
                         settle_time=1,
                         time_out=2,
                         log=True
                 ):
                     self.wait_click_ocr(
-                        match=lang_ocr.get_pattern("pickup_goods", context=self),
+                        match=self.lang.pattern("pickup_goods"),
                         box=self.box.bottom_right,
                         time_out=2,
                         log=True,
@@ -580,7 +579,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     )
                     break
             while not self.wait_ocr(
-                    match=lang_ocr.get_pattern("board_zipline", context=self),
+                    match=self.lang.pattern("board_zipline"),
                     box=self.box.bottom_right,
                     time_out=2,
                     log=True
@@ -609,8 +608,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 0.5,
             )
             self.sleep(1)
-            if end_pattern == lang_ocr.get_pattern("ocr_text_113", context=self):
-                end_pattern = lang_ocr.get_pattern("delivery_submit", context=self)
+            if end_pattern == self.lang.pattern("ocr_text_113"):
+                end_pattern = self.lang.pattern("delivery_submit")
             if self.wait_click_ocr(
                     match=end_pattern,
                     box=self.box.bottom_right,
@@ -697,7 +696,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                         if not self.other_run():
                             return
                         self.wait_click_ocr(
-                            match=lang_ocr.get_pattern("delivery_submit", context=self),
+                            match=self.lang.pattern("delivery_submit"),
                             box=self.box.bottom_right,
                             settle_time=4,
                             time_out=10,
@@ -723,7 +722,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                         match=list(ends_list_pattern_dict.keys()), box=self.box.left, time_out=10, log=True
                     )
                     self.wait_click_ocr(
-                        match=lang_ocr.get_pattern("board_zipline", context=self),
+                        match=self.lang.pattern("board_zipline"),
                         box=self.box.bottom_right,
                         time_out=2,
                         log=True,
@@ -760,7 +759,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 self.task_to_transfer_point(self.box.bottom)
                 self.to_storage_point_and_back_zip_line(only_zip_line=True)
                 if self.wait_click_ocr(
-                        match=lang_ocr.get_pattern("board_zipline", context=self),
+                        match=self.lang.pattern("board_zipline"),
                         box=self.box.bottom_right,
                         settle_time=1,
                         time_out=2,
@@ -812,3 +811,4 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
 
         except Exception as e:
             self.handle_task_exception(e, 'DeliveryTask_Exception')
+

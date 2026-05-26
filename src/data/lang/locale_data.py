@@ -113,3 +113,142 @@ def get_item_warehouse_category_en_by_name(locale: str | None = None, context: A
 def get_item_translation_map(locale: str | None = None, context: Any = None) -> dict[str, str]:
     payload = get_locale_data(locale=locale, context=context)
     return dict(payload.get("item_translation_map", {}))
+
+
+class LangAccessor:
+    """Bind language payload access to a runtime task/context instance."""
+
+    def __init__(self, context: Any):
+        self._context = context
+
+    def locale(self, locale: str | None = None) -> str:
+        return resolve_supported_locale(locale=locale, context=self._context)
+
+    def data(self, locale: str | None = None) -> dict[str, Any]:
+        return get_locale_data(locale=locale, context=self._context)
+
+    def ocr_confusion_map(self, locale: str | None = None) -> dict[str, list[str]]:
+        return get_ocr_confusion_map(locale=locale, context=self._context)
+
+    def sequence_delimiters(self, locale: str | None = None) -> list[str]:
+        return get_sequence_delimiters(locale=locale, context=self._context)
+
+    def auto_pick_terms(self, locale: str | None = None) -> tuple[set[str], set[str]]:
+        return get_auto_pick_terms(locale=locale, context=self._context)
+
+    def warehouse_transfer_data(self, locale: str | None = None) -> dict[str, Any]:
+        return get_warehouse_transfer_data(locale=locale, context=self._context)
+
+    def warehouse_location_labels(self, locale: str | None = None) -> dict[str, str]:
+        return get_warehouse_location_labels(locale=locale, context=self._context)
+
+    def warehouse_current_location_rules(self, locale: str | None = None) -> dict[str, list[list[str]]]:
+        return get_warehouse_current_location_rules(locale=locale, context=self._context)
+
+    def warehouse_ocr_pattern_tokens(self, locale: str | None = None) -> dict[str, list[str]]:
+        return get_warehouse_ocr_pattern_tokens(locale=locale, context=self._context)
+
+    def item_category_en_by_name(self, locale: str | None = None) -> dict[str, str]:
+        return get_item_category_en_by_name(locale=locale, context=self._context)
+
+    def item_warehouse_category_en_by_name(self, locale: str | None = None) -> dict[str, str]:
+        return get_item_warehouse_category_en_by_name(locale=locale, context=self._context)
+
+    def item_translation_map(self, locale: str | None = None) -> dict[str, str]:
+        return get_item_translation_map(locale=locale, context=self._context)
+
+    def terms(self, key: str, locale: str | None = None) -> list[str]:
+        payload = self.data(locale=locale)
+        terms = payload.get("ocr", {}).get("terms", {})
+        values = terms.get(key, [])
+        if isinstance(values, str):
+            return [values]
+        return [str(v) for v in values if str(v).strip()]
+
+    def pattern(self, key: str, locale: str | None = None) -> re.Pattern[str]:
+        return compile_any_pattern(self.terms(key, locale=locale))
+
+    def term(self, key: str, locale: str | None = None) -> str:
+        values = self.terms(key, locale=locale)
+        return values[0] if values else ""
+
+    def regex(self, key: str, locale: str | None = None) -> re.Pattern[str]:
+        payload = self.data(locale=locale)
+        raw = payload.get("ocr", {}).get("regex", {}).get(key)
+        if raw is None:
+            raise KeyError(f"Missing OCR regex key: {key}")
+        try:
+            return re.compile(str(raw))
+        except re.error as exc:
+            raise ValueError(f"Invalid OCR regex for key '{key}': {raw}") from exc
+
+    def contains(self, key: str, text: str, locale: str | None = None) -> bool:
+        needle = self.term(key, locale=locale)
+        return bool(needle) and needle in str(text)
+
+    def with_locale(self, locale: str | None):
+        """Return a locale-bound accessor that calls methods with the given locale."""
+        return _LocaleBoundLangAccessor(self, locale)
+
+
+def get_lang_accessor(context: Any) -> LangAccessor:
+    return LangAccessor(context)
+
+
+class _LocaleBoundLangAccessor:
+    """A thin wrapper that binds a LangAccessor to a specific locale."""
+
+    def __init__(self, accessor: LangAccessor, locale: str | None):
+        self._accessor = accessor
+        self._locale = locale
+
+    def locale(self, _locale: str | None = None) -> str:
+        return self._accessor.locale(locale=self._locale if _locale is None else _locale)
+
+    def data(self, _locale: str | None = None) -> dict[str, Any]:
+        return self._accessor.data(locale=self._locale if _locale is None else _locale)
+
+    def ocr_confusion_map(self, _locale: str | None = None) -> dict[str, list[str]]:
+        return self._accessor.ocr_confusion_map(locale=self._locale if _locale is None else _locale)
+
+    def sequence_delimiters(self, _locale: str | None = None) -> list[str]:
+        return self._accessor.sequence_delimiters(locale=self._locale if _locale is None else _locale)
+
+    def auto_pick_terms(self, _locale: str | None = None) -> tuple[set[str], set[str]]:
+        return self._accessor.auto_pick_terms(locale=self._locale if _locale is None else _locale)
+
+    def warehouse_transfer_data(self, _locale: str | None = None) -> dict[str, Any]:
+        return self._accessor.warehouse_transfer_data(locale=self._locale if _locale is None else _locale)
+
+    def warehouse_location_labels(self, _locale: str | None = None) -> dict[str, str]:
+        return self._accessor.warehouse_location_labels(locale=self._locale if _locale is None else _locale)
+
+    def warehouse_current_location_rules(self, _locale: str | None = None) -> dict[str, list[list[str]]]:
+        return self._accessor.warehouse_current_location_rules(locale=self._locale if _locale is None else _locale)
+
+    def warehouse_ocr_pattern_tokens(self, _locale: str | None = None) -> dict[str, list[str]]:
+        return self._accessor.warehouse_ocr_pattern_tokens(locale=self._locale if _locale is None else _locale)
+
+    def item_category_en_by_name(self, _locale: str | None = None) -> dict[str, str]:
+        return self._accessor.item_category_en_by_name(locale=self._locale if _locale is None else _locale)
+
+    def item_warehouse_category_en_by_name(self, _locale: str | None = None) -> dict[str, str]:
+        return self._accessor.item_warehouse_category_en_by_name(locale=self._locale if _locale is None else _locale)
+
+    def item_translation_map(self, _locale: str | None = None) -> dict[str, str]:
+        return self._accessor.item_translation_map(locale=self._locale if _locale is None else _locale)
+
+    def terms(self, key: str, _locale: str | None = None) -> list[str]:
+        return self._accessor.terms(key, locale=self._locale if _locale is None else _locale)
+
+    def pattern(self, key: str, _locale: str | None = None) -> re.Pattern[str]:
+        return self._accessor.pattern(key, locale=self._locale if _locale is None else _locale)
+
+    def term(self, key: str, _locale: str | None = None) -> str:
+        return self._accessor.term(key, locale=self._locale if _locale is None else _locale)
+
+    def regex(self, key: str, _locale: str | None = None) -> re.Pattern[str]:
+        return self._accessor.regex(key, locale=self._locale if _locale is None else _locale)
+
+    def contains(self, key: str, text: str, _locale: str | None = None) -> bool:
+        return self._accessor.contains(key, text, locale=self._locale if _locale is None else _locale)

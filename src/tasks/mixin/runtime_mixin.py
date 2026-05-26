@@ -14,6 +14,7 @@ from ok import Box
 from skimage.metrics import structural_similarity as ssim
 
 from src.config import config as app_config
+from src.data.lang import get_lang_accessor
 from src.data.FeatureList import FeatureList as fL
 from src.image.frame_processes import isolate_by_hsv_ranges
 from src.interaction.Key import move_keys as send_move_keys
@@ -42,6 +43,30 @@ class RuntimeMixin:
     """视觉识别、按键输入、鼠标控制与模型加载能力。"""
     BASE_WIDTH = 1920
     BASE_HEIGHT = 1080
+
+    @property
+    def lang(self):
+        accessor = getattr(self, "_lang_accessor", None)
+        if accessor is None:
+            accessor = get_lang_accessor(self)
+            self._lang_accessor = accessor
+        return accessor
+
+    def lang_for(self, locale: str | None):
+        """Return a LangAccessor bound to a specific locale for convenient calls.
+
+        Usage: `self.lang_for('zh_TW').pattern('ocr_text_032')`
+        """
+        return self.lang.with_locale(locale)
+
+    def name_patterns_for(self, find_name: str, locale: str | None = None):
+        """Generate OCR name matching patterns for `find_name`, bound to this runtime context.
+
+        Uses a local import to avoid module-level circular imports.
+        """
+        from src.tasks.mixin.common import build_name_patterns
+
+        return build_name_patterns(find_name, context=self, locale=locale)
 
     def resolution_scale(self) -> float:
         width = getattr(self, "width", self.BASE_WIDTH) or self.BASE_WIDTH

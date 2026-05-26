@@ -1,8 +1,6 @@
 import re
 import time
 
-from src.data.lang import ocr as lang_ocr
-
 from src.data.world_map import areas_list, outpost_dict, goods_dict
 from src.data.world_map_utils import get_area_by_outpost_name, get_goods_by_outpost_name
 from src.image.hsv_config import HSVRange as hR
@@ -110,9 +108,9 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.info_set("current_task", "make_simply")
         self.transfer_to_home_point(should_check_out_boat=True)
         self.press_key("b")
-        self.wait_click_ocr(match=[lang_ocr.get_pattern("ocr_text_077"), lang_ocr.get_pattern("ocr_text_018")], box=self.box.top_right, time_out=5)
-        self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_024"), box=self.box.left, time_out=5)
-        self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_018"), box=self.box.bottom_right, time_out=5)
+        self.wait_click_ocr(match=[self.lang.pattern("ocr_text_077"), self.lang.pattern("ocr_text_018")], box=self.box.top_right, time_out=5)
+        self.wait_click_ocr(match=self.lang.pattern("ocr_text_024"), box=self.box.left, time_out=5)
+        self.wait_click_ocr(match=self.lang.pattern("ocr_text_018"), box=self.box.bottom_right, time_out=5)
         self.wait_pop_up()
 
     def wait_friend_list(self, end_icon_name="friend_chat_icon"):
@@ -127,14 +125,14 @@ class DailyRoutineMixin(LiaisonMixin, Common):
     def collect_credit(self):
         self.info_set("current_task", "collect_credit")
         self.press_key("f5")
-        self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_011"), box=self.box.top, time_out=5, recheck_time=1)
-        result = self.wait_click_ocr(match=[lang_ocr.get_pattern("ocr_text_048"), lang_ocr.get_pattern("ocr_text_051")],
+        self.wait_click_ocr(match=self.lang.pattern("ocr_text_011"), box=self.box.top, time_out=5, recheck_time=1)
+        result = self.wait_click_ocr(match=[self.lang.pattern("ocr_text_048"), self.lang.pattern("ocr_text_051")],
                                      box=self.box.bottom_left,
                                      time_out=7, recheck_time=1)
         if not result:
             self.log_info("未找到可收取信用或无待领取信用的选项")
             return False
-        if lang_ocr.get_primary_term("ocr_text_048") in result[0].name:
+        if self.lang.term("ocr_text_048") in result[0].name:
             self.wait_pop_up()
         self.ensure_main()
         self.back()
@@ -152,7 +150,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 self.log_info("循环过多次仍未找到交流或助力对象，可能出现异常，结束拜访")
                 return False
             if is_first_time:
-                self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_028"), box=self.box.right, time_out=7, recheck_time=1)
+                self.wait_click_ocr(match=self.lang.pattern("ocr_text_028"), box=self.box.right, time_out=7, recheck_time=1)
             else:
                 if left_exchange_time <= 0 and left_help_time <= 0:
                     if exchange_not_found:
@@ -198,7 +196,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             self.click_confirm(time_out=5, after_sleep=2, recheck_time=1)
             if not self.ensure_in_friend_boat():
                 self.log_info("未能进入好友帝江号")
-                if self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_095"), box=self.box.top_left, time_out=1):
+                if self.wait_click_ocr(match=self.lang.pattern("ocr_text_095"), box=self.box.top_left, time_out=1):
                     continue
                 else:
                     return False
@@ -212,13 +210,13 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             self.press_key("y")
             self.wait_ui_stable(refresh_interval=1)
             if left_exchange_time > 0:
-                if not self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_041"), box=exchange_help_box, time_out=5):
+                if not self.wait_click_ocr(match=self.lang.pattern("ocr_text_041"), box=exchange_help_box, time_out=5):
                     left_exchange_time = 0
                 else:
                     left_exchange_time -= 1
                     exchange_time += 1
             if left_help_time > 0:
-                result = self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_069"), box=exchange_help_box, time_out=5)
+                result = self.wait_ocr(match=self.lang.pattern("ocr_text_069"), box=exchange_help_box, time_out=5)
                 if not result and temp_exchange_time <= 0:
                     self.log_info("未找到可助力的对象")
                     left_help_time = 0
@@ -233,14 +231,14 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                         if res == result[-1]:
                             self.scroll_relative(res.x / self.width, res.y / self.height, count=-8)
                             self.wait_ui_stable(refresh_interval=0.5)
-                            if result := self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_069"), box=exchange_help_box, time_out=5):
+                            if result := self.wait_ocr(match=self.lang.pattern("ocr_text_069"), box=exchange_help_box, time_out=5):
                                 self.log_info("继续进行助力操作")
                                 self.click(result[-1])
                                 self.wait_pop_up(time_out=3)
                                 left_help_time -= 1
                                 help_time += 1
             select_visit_deadline = time.time() + 30
-            while not self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_095"), box=self.box.top_left, time_out=1):
+            while not self.wait_click_ocr(match=self.lang.pattern("ocr_text_095"), box=self.box.top_left, time_out=1):
                 if time.time() > select_visit_deadline:
                     self.log_info("等待 '选择拜访' 超时，结束本轮好友流程")
                     return False
@@ -253,16 +251,16 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.log_info("开始收邮件")
         self.press_key("k", after_sleep=2)
         #
-        stage_area = self.ocr(match=lang_ocr.get_pattern("ocr_text_054"), box=self.box.top_left)
+        stage_area = self.ocr(match=self.lang.pattern("ocr_text_054"), box=self.box.top_left)
         if len(stage_area) > 0:
             self.click(x=stage_area[0].x, y=stage_area[0].y + int(self.height * 0.25))
-            self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_014"), box=self.box.center, time_out=5)
+            self.wait_click_ocr(match=self.lang.pattern("ocr_text_014"), box=self.box.center, time_out=5)
             self.wait_pop_up(after_sleep=2)
         #
         if self.wait_click_ocr(
                 x=0, y=0.88,
                 to_x=0.25, to_y=0.95,
-                match=lang_ocr.get_pattern("ocr_text_047"),  # 全部收取
+                match=self.lang.pattern("ocr_text_047"),  # 全部收取
                 time_out=5,
                 after_sleep=2,
         ):
@@ -275,10 +273,10 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.log_info("开始领取转交委托奖励")
 
         area = areas_list[0]
-        self.to_model_area(area, lang_ocr.get_primary_term("storage_node", context=self))
+        self.to_model_area(area, self.lang.term("storage_node"))
 
         if not self.wait_click_ocr(
-                match=lang_ocr.get_pattern("ocr_text_042"),
+                match=self.lang.pattern("ocr_text_042"),
                 box=self.box.top_left,
                 time_out=5
         ):
@@ -286,7 +284,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             self.ensure_main()
 
         results = self.wait_ocr(
-            match=lang_ocr.get_pattern("ocr_text_002"),
+            match=self.lang.pattern("ocr_text_002"),
             box=self.box.bottom_right,
             time_out=5,
         )
@@ -321,10 +319,10 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                     )
                     break
 
-                self.to_model_area(area, lang_ocr.get_primary_term("storage_node", context=self))
+                self.to_model_area(area, self.lang.term("storage_node"))
 
                 if not self.wait_click_ocr(
-                        match=lang_ocr.get_pattern("local_storage_node", context=self),
+                        match=self.lang.pattern("local_storage_node"),
                         box=self.box.top_left,
                         time_out=5
                 ):
@@ -333,7 +331,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                     break
 
                 results = self.wait_ocr(
-                    match=[lang_ocr.get_pattern("ocr_text_087"), lang_ocr.get_pattern("ocr_text_058")],
+                    match=[self.lang.pattern("ocr_text_087"), self.lang.pattern("ocr_text_058")],
                     box=self.box.bottom,
                     time_out=5,
                 )
@@ -353,7 +351,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                     )
 
                 self.click(results[0], after_sleep=2)
-                start_index = 0 if not (lang_ocr.get_primary_term("ocr_text_058") in results[0].name) else 2
+                start_index = 0 if not (self.lang.term("ocr_text_058") in results[0].name) else 2
                 steps = [
                     ("下一步", self.box.bottom_right),
                     ("填充至满", self.box.top_right),
@@ -391,7 +389,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 self.press_key("j", after_sleep=1)
 
                 if not self.wait_click_ocr(
-                        match=lang_ocr.get_pattern("ocr_text_090"),
+                        match=self.lang.pattern("ocr_text_090"),
                         box=self.box.bottom_left,
                         time_out=5
                 ):
@@ -401,7 +399,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                     self.ensure_main()
                     break
                 if not self.wait_click_ocr(
-                        match=lang_ocr.get_pattern("ocr_text_072"),
+                        match=self.lang.pattern("ocr_text_072"),
                         box=self.box.bottom_right,
                         time_out=5
                 ):
@@ -444,7 +442,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             after_sleep=1
         )
         self.wait_ocr(
-            match=lang_ocr.get_pattern("ocr_text_086"), box=self.box_of_screen(1700 / 1920, 610 / 1080, 1, 710 / 1080), time_out=5
+            match=self.lang.pattern("ocr_text_086"), box=self.box_of_screen(1700 / 1920, 610 / 1080, 1, 710 / 1080), time_out=5
         )
         can_exchange_goods = goods_dict.get(
             get_area_by_outpost_name(outpost_name), []
@@ -466,13 +464,13 @@ class DailyRoutineMixin(LiaisonMixin, Common):
 
             self.log_info(f"尝试第 {attempt}/{max_attempts} 次更换货品")
             if not change_button:
-                change_button = self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_086"),
+                change_button = self.wait_click_ocr(match=self.lang.pattern("ocr_text_086"),
                                                     box=self.box_of_screen(1700 / 1920, 610 / 1080, 1, 710 / 1080),
                                                     time_out=5)
             else:
                 self.click(change_button)
             self.wait_ocr(
-                match=lang_ocr.get_pattern("ocr_text_094"),
+                match=self.lang.pattern("ocr_text_094"),
                 box=self.box.top_left,
                 time_out=5,
             )
@@ -531,7 +529,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             self.click(exchange_good)
             if not confirm_button:
                 self.wait_click_ocr(
-                    match=lang_ocr.get_pattern("ocr_text_072"),
+                    match=self.lang.pattern("ocr_text_072"),
                     box=self.box.bottom_right,
                     time_out=5,
                 )
@@ -552,7 +550,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 continue
 
             self.wait_click_ocr(
-                match=lang_ocr.get_pattern("ocr_text_006"),
+                match=self.lang.pattern("ocr_text_006"),
                 box=self.box.bottom_right,
                 time_out=5
             )
@@ -618,17 +616,17 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.log_info("打开终端界面")
 
         if not self.wait_click_ocr(
-                match=lang_ocr.get_pattern("ocr_text_084"),
+                match=self.lang.pattern("ocr_text_084"),
                 box=self.box.right,
                 time_out=5
         ):
             self.mark_task_failure("未找到装备按钮，任务失败")
             return False
         self.log_info("找到装备按钮并点击")
-        self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_067"), box=self.box_of_screen(0, 0, 0.5, 80 / 1080), time_out=5,
+        self.wait_click_ocr(match=self.lang.pattern("ocr_text_067"), box=self.box_of_screen(0, 0, 0.5, 80 / 1080), time_out=5,
                             recheck_time=1, after_sleep=1)
         if not self.wait_click_ocr(
-                match=lang_ocr.get_pattern("ocr_text_018"),
+                match=self.lang.pattern("ocr_text_018"),
                 box=self.box_of_screen(2050 / 2560, 1250 / 1440, 1, 1),
                 time_out=5,
                 recheck_time=1
@@ -657,10 +655,10 @@ class DailyRoutineMixin(LiaisonMixin, Common):
     def claim_weekly_rewards(self):
         self.log_info("开始领取每周事务")
 
-        if self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_061"), box=self.box.left, time_out=5, after_sleep=1):
+        if self.wait_click_ocr(match=self.lang.pattern("ocr_text_061"), box=self.box.left, time_out=5, after_sleep=1):
             self.log_info("进入『每周事务』页面")
-            if self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_101"), box=self.box.top_right, time_out=5, after_sleep=1):
-                if self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_002"), box=self.box.bottom_right, time_out=5,
+            if self.wait_click_ocr(match=self.lang.pattern("ocr_text_101"), box=self.box.top_right, time_out=5, after_sleep=1):
+                if self.wait_click_ocr(match=self.lang.pattern("ocr_text_002"), box=self.box.bottom_right, time_out=5,
                                        after_sleep=1):
                     self.wait_pop_up(after_sleep=2)
                     self.log_info("已领取『每周事务』奖励")
@@ -676,12 +674,12 @@ class DailyRoutineMixin(LiaisonMixin, Common):
     def claim_sanity_supply(self):
         self.log_info("开始领取理智补给")
 
-        if not self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_068"), box=self.box.left, time_out=5, after_sleep=1):
+        if not self.wait_click_ocr(match=self.lang.pattern("ocr_text_068"), box=self.box.left, time_out=5, after_sleep=1):
             self.log_info("未找到『活动中心/理智补给』入口")
             return False
 
         self.log_info("进入『理智补给』页面")
-        if self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_101"), box=self.box.bottom_right, time_out=5, after_sleep=1):
+        if self.wait_click_ocr(match=self.lang.pattern("ocr_text_101"), box=self.box.bottom_right, time_out=5, after_sleep=1):
             self.wait_pop_up(after_sleep=2)
             self.log_info("已领取『理智补给』奖励")
             return True
@@ -724,7 +722,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.log_info("按下 F8 打开日常奖励界面")
 
         if not self.wait_click_ocr(
-                match=lang_ocr.get_pattern("ocr_text_052"),
+                match=self.lang.pattern("ocr_text_052"),
                 box=self.box.top,
                 time_out=5,
                 after_sleep=2,
@@ -734,7 +732,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.log_info("找到日常奖励按钮并点击")
 
         self.wait_click_ocr(
-            match=lang_ocr.get_pattern("ocr_text_101"),
+            match=self.lang.pattern("ocr_text_101"),
             box=self.box.right,
             time_out=5,
             after_sleep=2,
@@ -753,7 +751,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         # 通行证
 
         if not self.wait_click_ocr(
-                match=lang_ocr.get_pattern("ocr_text_020"),
+                match=self.lang.pattern("ocr_text_020"),
                 box=self.box.bottom_right,
                 time_out=5,
                 after_sleep=2,
@@ -763,7 +761,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
 
         # 通行证任务
         if self.wait_click_ocr(
-                match=lang_ocr.get_pattern("ocr_text_096"),
+                match=self.lang.pattern("ocr_text_096"),
                 box=self.box.top,
                 time_out=5,
                 after_sleep=2,
@@ -771,18 +769,18 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             mission_boxes = self.ocr(
                 x=0.12, y=0.33,
                 to_x=0.31, to_y=0.80,
-                match=lang_ocr.get_regex_pattern("ocr_regex_001")
+                match=self.lang.regex("ocr_regex_001")
             )
             for box in mission_boxes:
                 self.click_box(box=box, after_sleep=2)
                 self.wait_click_ocr(
-                    match=lang_ocr.get_pattern("ocr_text_100"),  # 一键领取
+                    match=self.lang.pattern("ocr_text_100"),  # 一键领取
                     box=self.box.bottom,
                     time_out=5,
                     after_sleep=2,
                 )
             self.wait_click_ocr(
-                match=lang_ocr.get_pattern("ocr_text_097"),
+                match=self.lang.pattern("ocr_text_097"),
                 box=self.box.top,
                 time_out=5,
                 after_sleep=2,
@@ -790,18 +788,18 @@ class DailyRoutineMixin(LiaisonMixin, Common):
 
         # 通行证奖励
         self.wait_click_ocr(
-            match=lang_ocr.get_pattern("ocr_text_101"),  # 一键领取
+            match=self.lang.pattern("ocr_text_101"),  # 一键领取
             box=self.box.bottom,
             time_out=5,
             after_sleep=2,
         )
         self.wait_pop_up(after_sleep=2)
         self.send_key("esc", after_sleep=2)  # 确认使用send_key：esc为系统通用退出键，非游戏可配置热键
-        if len(self.ocr(match=lang_ocr.get_pattern("ocr_text_060"), box=self.box.top_right)) > 0:
+        if len(self.ocr(match=self.lang.pattern("ocr_text_060"), box=self.box.top_right)) > 0:
             # 暂不领取武器补给箱
             self.send_key("esc", after_sleep=2)  # 确认使用send_key：esc为系统通用退出键，非游戏可配置热键
-            self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_023"), time_out=5, after_sleep=2)
-            if len(self.ocr(match=lang_ocr.get_pattern("ocr_text_053"), box=self.box.center)) > 0:
+            self.wait_click_ocr(match=self.lang.pattern("ocr_text_023"), time_out=5, after_sleep=2)
+            if len(self.ocr(match=self.lang.pattern("ocr_text_053"), box=self.box.center)) > 0:
                 self.click_confirm(time_out=5, after_sleep=2)
 
         return True
@@ -815,7 +813,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         if not self.collect_clue(exchange_help_box):
             self.mark_task_failure("收集线索任务失败")
             ok_bool_clue = False
-        if not self.safe_back(match=lang_ocr.get_pattern("ocr_text_091"), box=self.box.top_left):
+        if not self.safe_back(match=self.lang.pattern("ocr_text_091"), box=self.box.top_left):
             self.log_info("无法返回到运转界面")
             return False
         if not self.up_make_room_num(exchange_help_box):
@@ -833,18 +831,18 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         if "收集线索" not in self.config.get("帝江号收菜操作", []):
             self.logger.info("收集线索任务未启用，跳过")
             return True
-        if self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_007"), time_out=6, box=exchange_help_box):
+        if self.wait_click_ocr(match=self.lang.pattern("ocr_text_007"), time_out=6, box=exchange_help_box):
             self.logger.info("进入会客室,准备处理收集线索")
-            self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_072"), time_out=6, box=self.box.bottom)
-            if self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_049"), time_out=4, box=self.box.right, after_sleep=1):
+            self.wait_click_ocr(match=self.lang.pattern("ocr_text_072"), time_out=6, box=self.box.bottom)
+            if self.wait_click_ocr(match=self.lang.pattern("ocr_text_049"), time_out=4, box=self.box.right, after_sleep=1):
                 self.logger.info("点击收集线索")
-                self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_101"), time_out=4, box=self.box.bottom_right, after_sleep=1)
+                self.wait_click_ocr(match=self.lang.pattern("ocr_text_101"), time_out=4, box=self.box.bottom_right, after_sleep=1)
                 self.back(after_sleep=1)
             else:
                 self.logger.info("未找到收集线索按钮")
 
-            if self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_044"), time_out=4, box=self.box.right, after_sleep=1):
-                self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_013"), time_out=4, box=self.box.right, after_sleep=1)
+            if self.wait_click_ocr(match=self.lang.pattern("ocr_text_044"), time_out=4, box=self.box.right, after_sleep=1):
+                self.wait_click_ocr(match=self.lang.pattern("ocr_text_013"), time_out=4, box=self.box.right, after_sleep=1)
                 self.back(after_sleep=1)
             else:
                 self.logger.info("未找到接收按钮")
@@ -867,14 +865,14 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             for result in results:
                 self.logger.info("点击线索框")
                 self.click(result)
-                self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_071"), time_out=4, box=self.box.top_right, after_sleep=1)
+                self.wait_click_ocr(match=self.lang.pattern("ocr_text_071"), time_out=4, box=self.box.top_right, after_sleep=1)
                 if not self.wait_ocr(
-                        match=[lang_ocr.get_pattern("ocr_text_103"), lang_ocr.get_pattern("ocr_text_104")],
+                        match=[self.lang.pattern("ocr_text_103"), self.lang.pattern("ocr_text_104")],
                         box=self.box.left,
                         time_out=1,
                 ):
                     self.back(after_sleep=1)
-            if self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_036"), time_out=4, box=self.box.bottom, after_sleep=1):
+            if self.wait_click_ocr(match=self.lang.pattern("ocr_text_036"), time_out=4, box=self.box.bottom, after_sleep=1):
                 self.wait_pop_up()
             self.log_info("收集线索任务完成")
             return True
@@ -886,7 +884,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         if "制造舱" not in self.config.get("帝江号收菜操作", []):
             self.logger.info("制造舱助力任务未启用，跳过")
             return True
-        results = self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_019"), time_out=4, box=exchange_help_box)
+        results = self.wait_ocr(match=self.lang.pattern("ocr_text_019"), time_out=4, box=exchange_help_box)
         if not results:
             self.mark_task_failure("未找到制造舱，任务失败")
             return False
@@ -896,22 +894,22 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             self.logger.info("点击制造室")
             for i in range(2):
                 if i == 1:
-                    if not self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_021"), time_out=3, box=self.box.top_right,
+                    if not self.wait_click_ocr(match=self.lang.pattern("ocr_text_021"), time_out=3, box=self.box.top_right,
                                                after_sleep=1):
                         continue
-                    if not self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_009"), time_out=3, box=self.box.bottom_right,
+                    if not self.wait_click_ocr(match=self.lang.pattern("ocr_text_009"), time_out=3, box=self.box.bottom_right,
                                                after_sleep=1):
                         continue
                 if icon := self.find_one(feature_name=fL.max_icon, horizontal_variance=0.1, vertical_variance=0.1):
                     self.click(icon)
-                self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_072"), time_out=2, box=self.box.bottom)
+                self.wait_click_ocr(match=self.lang.pattern("ocr_text_072"), time_out=2, box=self.box.bottom)
                 if i == 0:
                     if not self.wait_click_ocr(
-                            match=lang_ocr.get_pattern("ocr_text_047"), time_out=3, box=self.box.bottom
+                            match=self.lang.pattern("ocr_text_047"), time_out=3, box=self.box.bottom
                     ):
                         continue
                     self.wait_pop_up(after_sleep=1)
-            if not self.safe_back(match=lang_ocr.get_pattern("ocr_text_091"), box=self.box.top_left):
+            if not self.safe_back(match=self.lang.pattern("ocr_text_091"), box=self.box.top_left):
                 self.log_info("无法返回到运转界面")
                 return False
         self.log_info("制造舱助力任务完成")
@@ -921,41 +919,41 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         if "培养舱" not in self.config.get("帝江号收菜操作", []):
             self.logger.info("培养舱任务未启用，跳过")
             return True
-        results = self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_019"), time_out=4, box=exchange_help_box)
+        results = self.wait_ocr(match=self.lang.pattern("ocr_text_019"), time_out=4, box=exchange_help_box)
         if not results:
             self.mark_task_failure("未找到培养舱，任务失败")
             return False
         self.scroll_relative(results[0].x / self.width, results[0].y / self.height, count=-8)
         self.wait_ui_stable(refresh_interval=0.5)
-        results = self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_027"), time_out=4, box=exchange_help_box)
+        results = self.wait_ocr(match=self.lang.pattern("ocr_text_027"), time_out=4, box=exchange_help_box)
         if not results:
             self.mark_task_failure("未找到培养舱，任务失败")
             return False
         self.click(results[0])
         self.log_info("点击培育室")
-        results = self.wait_click_ocr(match=[lang_ocr.get_pattern("ocr_text_047"), lang_ocr.get_pattern("ocr_text_027")], time_out=3, box=exchange_help_box,
+        results = self.wait_click_ocr(match=[self.lang.pattern("ocr_text_047"), self.lang.pattern("ocr_text_027")], time_out=3, box=exchange_help_box,
                                       recheck_time=1)
         if not results:
             self.mark_task_failure("未找到全部收取或培养中字样，任务失败")
             return False
-        if not (lang_ocr.get_primary_term("ocr_text_047") in results[0].name):
+        if not (self.lang.term("ocr_text_047") in results[0].name):
             self.log_info("正在培养，任务结束")
             return True
         self.log_info("找到收取按钮")
         self.wait_pop_up(after_sleep=1)
-        if not self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_015"), time_out=3, box=self.box.bottom, after_sleep=1):
+        if not self.wait_click_ocr(match=self.lang.pattern("ocr_text_015"), time_out=3, box=self.box.bottom, after_sleep=1):
             self.mark_task_failure("未找到再次培养按钮，再次培养失败")
             return False
         self.click_confirm(time_out=3)
         self.log_info("再次培养成功")
-        if not self.safe_back(match=lang_ocr.get_pattern("ocr_text_091"), box=self.box.top_left):
+        if not self.safe_back(match=self.lang.pattern("ocr_text_091"), box=self.box.top_left):
             self.log_info("无法返回到运转界面")
             return False
         return True
 
     def use_help(self):
-        self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_021"), time_out=2, box=self.box.top_right, after_sleep=1)
-        self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_009"), time_out=2, box=self.box.bottom_right, after_sleep=1)
+        self.wait_click_ocr(match=self.lang.pattern("ocr_text_021"), time_out=2, box=self.box.top_right, after_sleep=1)
+        self.wait_click_ocr(match=self.lang.pattern("ocr_text_009"), time_out=2, box=self.box.bottom_right, after_sleep=1)
         char_list = list(get_contact_list_with_feature_list().values())
         count = 0
         for char in char_list:
@@ -964,5 +962,5 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 count += 1
             if count >= 2:
                 break
-        self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_072"), settle_time=1, time_out=2, box=self.box.bottom)
+        self.wait_click_ocr(match=self.lang.pattern("ocr_text_072"), settle_time=1, time_out=2, box=self.box.bottom)
         return True

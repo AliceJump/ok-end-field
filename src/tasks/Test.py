@@ -3,9 +3,6 @@ import re
 from src.data.FeatureList import FeatureList as fL
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.BaseEfTask import BaseEfTask
-from src.data.lang import ocr as lang_ocr
-
-
 class Test(BaseEfTask):
     """
     简单箭头角度读取测试
@@ -25,6 +22,6 @@ class Test(BaseEfTask):
             y=0.45,
             to_x=0.88,
             to_y=0.66,
-            match=lang_ocr.get_regex_pattern("ocr_regex_003"),
+            match=self.lang.regex("ocr_regex_003"),
             log=True,
         )

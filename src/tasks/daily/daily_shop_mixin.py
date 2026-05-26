@@ -2,9 +2,6 @@ import re
 
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.mixin.common import Common
-from src.data.lang import ocr as lang_ocr
-
-
 class DailyShopMixin(Common):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -38,9 +35,9 @@ class DailyShopMixin(Common):
                 return False, sum_credit
             self.log_info(f"信用商店尝试刷新第{self.refresh_count + 1}次，预计消耗信用: {cost}，当前信用: {sum_credit}")
             shop_retry = 0
-            while not self.wait_click_ocr(match=lang_ocr.get_pattern("refresh_button"), time_out=1,
+            while not self.wait_click_ocr(match=self.lang.pattern("refresh_button"), time_out=1,
                                           box=self.box_of_screen(2 / 3, 0.5, 1, 1)):
-                if self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_088"), box=self.box.top_left, time_out=1):
+                if self.wait_ocr(match=self.lang.pattern("ocr_text_088"), box=self.box.top_left, time_out=1):
                     self.back(after_sleep=1)
                 elif not self.back_shop():
                     self.log_info("信用商店刷新中断：未能返回采购页面")
@@ -49,7 +46,7 @@ class DailyShopMixin(Common):
                     shop_retry += 1
                     if shop_retry >= 3:
                         return True, sum_credit
-            if not self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_072"), time_out=5, box=self.box.bottom_right):
+            if not self.wait_click_ocr(match=self.lang.pattern("ocr_text_072"), time_out=5, box=self.box.bottom_right):
                 self.mark_task_failure("信用商店刷新失败：未找到确认按钮")
                 return False, sum_credit
             sum_credit -= cost
@@ -64,7 +61,7 @@ class DailyShopMixin(Common):
 
     def back_shop(self, max_retry=10):
         for _ in range(max_retry):
-            if self.wait_ocr(match=lang_ocr.get_pattern("ocr_text_098"), time_out=1):
+            if self.wait_ocr(match=self.lang.pattern("ocr_text_098"), time_out=1):
                 return True
             self.back(after_sleep=1)
         self.info_set("信用商店警告", f"返回采购页面失败，已重试{max_retry}次")
@@ -130,7 +127,7 @@ class DailyShopMixin(Common):
                     return False, sum_credit, False
             self.log_info(f"商品价格识别成功: {item_name}，价格: {cost}")
             result = self.wait_click_ocr(
-                match=[lang_ocr.get_pattern("ocr_text_072"), lang_ocr.get_pattern("ocr_text_004")], time_out=4, box=self.box.bottom_right
+                match=[self.lang.pattern("ocr_text_072"), self.lang.pattern("ocr_text_004")], time_out=4, box=self.box.bottom_right
             )
             if not result:
                 self.log_info(f"购买流程中断: {item_name}，未找到确认/不足弹窗，尝试返回采购页")
@@ -141,7 +138,7 @@ class DailyShopMixin(Common):
                     continue
                 return True, sum_credit, True
             else:
-                if lang_ocr.get_primary_term("ocr_text_004") in result[0].name:
+                if self.lang.term("ocr_text_004") in result[0].name:
                     self.info_set("信用商店警告", "购买优先商品时信用不足")
                     self.mark_task_failure(f"购买失败: {item_name}，原因: 信用不足，当前信用: {sum_credit}，价格: {cost}")
                     self.back_shop()
@@ -158,7 +155,7 @@ class DailyShopMixin(Common):
         self.credit_good_search_box = self.box_of_screen(200 / 3840, 280 / 2160, 3620 / 3840, 1550 / 2160)
         self.refresh_count = 0
         self.press_key("f5")
-        if not self.wait_click_ocr(match=lang_ocr.get_pattern("ocr_text_010"), time_out=7, box=self.box.top_right, recheck_time=1):
+        if not self.wait_click_ocr(match=self.lang.pattern("ocr_text_010"), time_out=7, box=self.box.top_right, recheck_time=1):
             return False
         sum_credit = self.detect_ticket_number()
         while sum_credit > 0:
@@ -195,14 +192,14 @@ class DailyShopMixin(Common):
                 continue
             self.log_info(f"商品价格识别成功: {item_name}，价格: {cost}")
             result = self.wait_click_ocr(
-                match=[lang_ocr.get_pattern("ocr_text_072"), lang_ocr.get_pattern("ocr_text_004")], time_out=4, box=self.box.bottom_right
+                match=[self.lang.pattern("ocr_text_072"), self.lang.pattern("ocr_text_004")], time_out=4, box=self.box.bottom_right
             )
             if not result:
                 self.log_info(f"购买流程中断: {item_name}，未找到确认/不足弹窗，尝试返回采购页")
                 self.back_shop()
                 return False
             else:
-                if lang_ocr.get_primary_term("ocr_text_004") in result[0].name:
+                if self.lang.term("ocr_text_004") in result[0].name:
                     self.info_set("信用商店警告", "购买剩余商品时信用不足")
                     self.mark_task_failure(f"购买失败: {item_name}，原因: 信用不足，当前信用: {sum_credit}，价格: {cost}")
                     self.back_shop()

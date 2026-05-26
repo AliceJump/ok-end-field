@@ -68,11 +68,11 @@ class AccountConfigTab(CustomTab):
 
     @property
     def add_after_default_tabs(self):
-        return False
+        return True
 
     @property
     def icon(self):
-        return FluentIcon.SETTING
+        return FluentIcon.PEOPLE
 
     def showEvent(self, event):
         super().showEvent(event)

@@ -4,14 +4,17 @@ import time
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.sequence_parser import parse_int_sequence
 from src.tasks.mixin.navigation_mixin import NavigationMixin
-from src.data.lang import ocr as lang_ocr
 
 on_zip_line_tip = ["ocr_text_107", "ocr_text_108"]
-on_zip_line_stop = [lang_ocr.get_pattern(i) for i in on_zip_line_tip]
-continue_next = lang_ocr.get_pattern("ocr_text_109")
 
 
 class ZipLineMixin(NavigationMixin):
+    def _on_zip_line_stop_patterns(self):
+        return [self.lang.pattern(i) for i in on_zip_line_tip]
+
+    def _continue_next_pattern(self):
+        return self.lang.pattern("ocr_text_109")
+
     def on_zip_line_start(self, delivery_to, need_scroll=None, target=None, need_v=True):
         """进入滑索后，根据配置对齐并滑行至送货点
 
@@ -26,7 +29,7 @@ class ZipLineMixin(NavigationMixin):
         start = time.time()
         self.sleep(1)
         self.next_frame()
-        while not self.ocr(match=on_zip_line_stop, frame=self.next_frame(), box="bottom", log=True):
+        while not self.ocr(match=self._on_zip_line_stop_patterns(), frame=self.next_frame(), box="bottom", log=True):
             self.sleep(0.1)
             if time.time() - start > 60:
                 raise Exception("滑索超时，强制退出")
@@ -63,7 +66,7 @@ class ZipLineMixin(NavigationMixin):
                 self.send_key("e")  # 游戏内无法修改此按键，故使用底层按键函数
                 self.sleep(0.1)
                 result = self.ocr(
-                    match=on_zip_line_stop,
+                    match=self._on_zip_line_stop_patterns(),
                     box="bottom",
                     log=True,
                 )
@@ -91,7 +94,7 @@ class ZipLineMixin(NavigationMixin):
             keys = ["w", "a", "s", "d"]
             for i in range(4):
                 if result := (not need_v) or self.wait_ocr(
-                        match=lang_ocr.get_pattern("board_zipline"), box=self.box.bottom_right, settle_time=1, time_out=4, log=True
+                    match=self.lang.pattern("board_zipline"), box=self.box.bottom_right, settle_time=1, time_out=4, log=True
                 ):
                     if need_v:
                         self.press_key("v", after_sleep=1)
@@ -107,7 +110,7 @@ class ZipLineMixin(NavigationMixin):
                     break
                 else:
                     self.move_keys(keys[i], 0.1)
-        if self.wait_ocr(match=on_zip_line_stop, box="bottom", log=True, time_out=2):
+        if self.wait_ocr(match=self._on_zip_line_stop_patterns(), box="bottom", log=True, time_out=2):
             self.click(key="right", after_sleep=2)
         self.log_info("滑索结束")
         self.ensure_main()

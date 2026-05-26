@@ -4,7 +4,6 @@ from qfluentwidgets import FluentIcon
 from src.data.FeatureList import FeatureList as fL
 from ok import TriggerTask, Logger
 from src.tasks.BaseEfTask import BaseEfTask
-from src.data.lang import ocr as lang_ocr
 
 logger = Logger.get_logger(__name__)
 
@@ -35,8 +34,9 @@ class AutoSkipDialogTask(BaseEfTask, TriggerTask):
             self.next_frame()
             if result:= self.find_one(fL.baker_click, horizontal_variance=0.05, vertical_variance=0.05):
                 self.click(result, after_sleep=0.4)
-            if result:= self.ocr(match=lang_ocr.get_pattern("ocr_text_079"), box=self.box_of_screen(1294/1920, 806/1080, 1412/1920, 860/1080)):
+            if result:= self.ocr(match=self.lang.pattern("ocr_text_079"), box=self.box_of_screen(1294/1920, 806/1080, 1412/1920, 860/1080)):
                 self.click(result, after_sleep=0.4)
                 return
         
             
+

@@ -5,7 +5,6 @@ import numpy as np
 from qfluentwidgets import FluentIcon
 
 from ok import Logger, TriggerTask
-from src.data.lang import get_auto_pick_terms
 from src.tasks.BaseEfTask import BaseEfTask
 
 logger = Logger.get_logger(__name__)
@@ -21,7 +20,7 @@ class AutoPickTask(BaseEfTask, TriggerTask):
         self.default_config = {'_enabled': True}
         self.last_box_name = None
         self.last_pick_time = 0
-        self.white_list, self.black_list = get_auto_pick_terms(context=self)
+        self.white_list, self.black_list = self.lang.auto_pick_terms()
 
     def run(self):
         if self.in_combat_world():

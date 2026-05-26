@@ -1,6 +1,8 @@
 from src.data.lang.locale_data import (
+    LangAccessor,
     compile_any_pattern,
     get_auto_pick_terms,
+    get_lang_accessor,
     get_item_category_en_by_name,
     get_item_translation_map,
     get_item_warehouse_category_en_by_name,
@@ -16,9 +18,11 @@ from src.data.lang import ocr, parser, normalize
 from src.data.lang.runtime_locale import canonicalize_locale, get_runtime_locale
 
 __all__ = [
+    "LangAccessor",
     "canonicalize_locale",
     "compile_any_pattern",
     "get_auto_pick_terms",
+    "get_lang_accessor",
     "get_item_category_en_by_name",
     "get_item_translation_map",
     "get_item_warehouse_category_en_by_name",
