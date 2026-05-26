@@ -586,8 +586,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 0.5,
             )
             self.sleep(1)
-            if end_pattern == re.compile("资源"):
-                end_pattern = re.compile("交货")
+            if end_pattern == self.lang.DeliveryTask.k_6536f6f1:
+                end_pattern = self.lang.DeliveryTask.k_0c1ef9f5
             if self.wait_click_ocr(
                     match=end_pattern,
                     box=self.box.bottom_right,

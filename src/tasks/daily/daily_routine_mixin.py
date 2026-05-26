@@ -769,7 +769,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             mission_boxes = self.ocr(
                 x=0.12, y=0.33,
                 to_x=0.31, to_y=0.80,
-                match=re.compile("任务$")
+                match=self.lang.daily_routine_mixin.k_105cdd5a
             )
             for box in mission_boxes:
                 self.click_box(box=box, after_sleep=2)
@@ -866,7 +866,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 self.logger.info("点击线索框")
                 self.click(result)
                 self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_401d58fa, time_out=4, box=self.box.top_right, after_sleep=1)
-                if not self.wait_ocr(match=[re.compile(i) for i in ["设施", "等级"]], box=self.box.left, time_out=1):
+                if not self.wait_ocr(match=[self.lang.daily_routine_mixin.k_3deed650, self.lang.daily_routine_mixin.k_5c42c048], box=self.box.left, time_out=1):
                     self.back(after_sleep=1)
             if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_0503d6d6, time_out=4, box=self.box.bottom, after_sleep=1):
                 self.wait_pop_up()

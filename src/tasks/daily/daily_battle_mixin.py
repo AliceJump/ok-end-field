@@ -394,7 +394,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                                 box=self.box_of_screen((3530 - 40) / 3840, 0, (3600) / 3840, (80 + 40) / 2160))  # 右上角加号
         self.wait_ocr(match=self.lang.daily_battle_mixin.k_6c4d77af, time_out=5, box=self.box.top_left)
         # 支持天和小时单位，按剩余时效升序消耗
-        box_list = self.wait_ocr(x=0.20, y=0.45, to_x=0.88, to_y=0.66, match=re.compile(r"(\d+)(天|小时)"), log=True)
+        box_list = self.wait_ocr(x=0.20, y=0.45, to_x=0.88, to_y=0.66, match=self.lang.daily_battle_mixin.k_4e1f3d8b, log=True)
         if not box_list:
             self.log_warning("未找到应急理智加强剂，剩余时效未识别")
         else:
@@ -412,7 +412,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 parsed_boxes.append((sort_key, box, validity_num, validity_unit))
             if not parsed_boxes:
                 self.log_warning("所有应急理智加强剂时效解析失败，无法消耗")
-                self.safe_back(re.compile("干员"), box=self.box.top_left, time_out=10, ocr_time_out=2)
+                self.safe_back(self.lang.daily_battle_mixin.k_a0d434d4, box=self.box.top_left, time_out=10, ocr_time_out=2)
                 return True
             parsed_boxes.sort(key=lambda x: x[0])
             for _, box, validity_num, validity_unit in parsed_boxes:
@@ -444,7 +444,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 # 只消耗一种类型后退出（如需全部消耗可去掉break）
                 break
         # 统一出口，保证异常时也能返回主界面
-        if not self.safe_back(re.compile("干员"), box=self.box.top_left, time_out=10, ocr_time_out=2):
+        if not self.safe_back(self.lang.daily_battle_mixin.k_a0d434d4, box=self.box.top_left, time_out=10, ocr_time_out=2):
             return False
         return True
 

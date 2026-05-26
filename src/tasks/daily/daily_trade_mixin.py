@@ -69,7 +69,6 @@ class DailyTradeMixin(NavigationMixin, Common):
                 return int(stock_piece[0].name)
             return 0
 
-        test_goods_re = re.compile("货组")
         market_text_y = None
         market_text = self.wait_ocr(match=self.lang.daily_trade_mixin.k_930f2e66, box=self.box.left)
         if not market_text:
@@ -124,7 +123,11 @@ class DailyTradeMixin(NavigationMixin, Common):
         # =========================
         # ✅ 正常模式：逐个点击采集
         # =========================
-        goods = self.ocr(match=test_goods_re, log=True, box=self.box_of_screen(0, market_text_y / self.height, 1, 1))
+        goods = self.ocr(
+            match=self.lang.daily_trade_mixin.k_13f2c5a1,
+            log=True,
+            box=self.box_of_screen(0, market_text_y / self.height, 1, 1),
+        )
 
         sum_good_info = []
         for good in goods:

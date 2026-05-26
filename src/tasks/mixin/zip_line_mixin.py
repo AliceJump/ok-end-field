@@ -1,14 +1,8 @@
-import re
 import time
 
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.sequence_parser import parse_int_sequence
 from src.tasks.mixin.navigation_mixin import NavigationMixin
-
-on_zip_line_tip = ["向目标移动", "离开滑索架"]
-on_zip_line_stop = [re.compile(i) for i in on_zip_line_tip]
-continue_next = re.compile("下一连接点")
-
 
 class ZipLineMixin(NavigationMixin):
     def on_zip_line_start(self, delivery_to, need_scroll=None, target=None, need_v=True):
@@ -25,6 +19,10 @@ class ZipLineMixin(NavigationMixin):
         start = time.time()
         self.sleep(1)
         self.next_frame()
+        on_zip_line_stop = [
+            self.lang.zip_line_mixin.k_2f4f4a2f,
+            self.lang.zip_line_mixin.k_0b1e4f35,
+        ]
         while not self.ocr(match=on_zip_line_stop, frame=self.next_frame(), box="bottom", log=True):
             self.sleep(0.1)
             if time.time() - start > 60:
@@ -43,9 +41,13 @@ class ZipLineMixin(NavigationMixin):
             need_v: 是否需要按V键追踪
 
         """
+        on_zip_line_stop = [
+            self.lang.zip_line_mixin.k_2f4f4a2f,
+            self.lang.zip_line_mixin.k_0b1e4f35,
+        ]
         for zip_line in zip_line_list:
             self.align_ocr_or_find_target_to_center(
-                re.compile(str(zip_line)),
+                str(zip_line),
                 is_num=True,
                 need_scroll=need_scroll,
                 ocr_frame_processor_list=[
