@@ -3,6 +3,7 @@ from src.data.FeatureList import FeatureList
 
 
 def _get_localized_character_name(lang_accessor, char_key: str, fallback: str) -> str:
+    """从 self.lang.characters 中读取干员本地化名称，失败时回退到原中文名。"""
     if lang_accessor is None:
         return fallback
     try:

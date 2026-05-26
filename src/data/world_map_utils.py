@@ -45,6 +45,7 @@ def get_stage_category(stage_name):
 
 @lru_cache(maxsize=1)
 def _world_map_zh_key_map() -> dict[str, str]:
+    """构建 world_map 中文文本到 lang key 的反向索引。"""
     repo_root = Path(__file__).resolve().parents[2]
     path = repo_root / "lang" / "world_map" / "zh_CN.json"
     if not path.exists():
@@ -65,6 +66,7 @@ def _world_map_zh_key_map() -> dict[str, str]:
 
 
 def get_world_map_matcher(lang_accessor: Any, zh_text: str):
+    """按当前 locale 获取 world_map 文本 matcher，缺失时回退 re.compile(中文)。"""
     if not zh_text:
         return None
     key = _world_map_zh_key_map().get(zh_text)
@@ -81,6 +83,7 @@ def get_world_map_matcher(lang_accessor: Any, zh_text: str):
 
 
 def get_world_map_text(lang_accessor: Any, zh_text: str) -> str:
+    """获取用于文本比较的 locale 文本（或 matcher.pattern），失败时回退中文。"""
     matcher = get_world_map_matcher(lang_accessor, zh_text)
     if isinstance(matcher, str):
         return matcher
