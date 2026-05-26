@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import Any
 
+from src.data.lang.lang_helpers import normalize_locale
+
 _DEFAULT_LOCALE = "zh_CN"
 
 _LOCALE_ALIASES = {
@@ -36,7 +38,7 @@ def canonicalize_locale(raw_locale: Any, fallback: str = _DEFAULT_LOCALE) -> str
     if not locale_text:
         return fallback
 
-    key = locale_text.replace("-", "_").lower()
+    key = normalize_locale(locale_text)
     if key in _LOCALE_ALIASES:
         return _LOCALE_ALIASES[key]
 

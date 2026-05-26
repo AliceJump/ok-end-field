@@ -6,6 +6,14 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from src.data.lang.lang_helpers import (
+    build_pattern,
+    collect_alias_terms,
+    get_alias_mapped_value,
+    get_locale_chain,
+    merge_locale_data,
+    to_str_list,
+)
 from src.data.lang.runtime_locale import canonicalize_locale, get_runtime_locale
 
 _LANG_ROOT = Path(__file__).resolve().parent
@@ -16,16 +24,6 @@ _LOCALE_FILE_NAME = {
     "en": "en.json",
 }
 _DEFAULT_LOCALE = "zh_CN"
-
-
-def _deep_merge_dict(base: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:
-    merged = dict(base)
-    for key, value in incoming.items():
-        if isinstance(value, dict) and isinstance(merged.get(key), dict):
-            merged[key] = _deep_merge_dict(merged[key], value)
-        else:
-            merged[key] = value
-    return merged
 
 
 def _normalize_locale_fragment(path: Path, payload: dict[str, Any]) -> dict[str, Any]:
@@ -52,18 +50,20 @@ def _load_locale_data(locale: str) -> dict[str, Any]:
     if file_name is None:
         raise ValueError(f"Unsupported locale: {locale}")
 
-    merged: dict[str, Any] = {}
+    parts: list[dict[str, Any]] = []
 
     legacy_file = _LEGACY_LOCALES_DIR / file_name
     if legacy_file.exists():
-        merged = _deep_merge_dict(merged, _normalize_locale_fragment(legacy_file, _load_json_file(legacy_file)))
+        parts.append(_normalize_locale_fragment(legacy_file, _load_json_file(legacy_file)))
 
     module_files = sorted(
         path for path in _LANG_ROOT.rglob(file_name)
         if path.parent.name != "locales"
     )
     for module_file in module_files:
-        merged = _deep_merge_dict(merged, _normalize_locale_fragment(module_file, _load_json_file(module_file)))
+        parts.append(_normalize_locale_fragment(module_file, _load_json_file(module_file)))
+
+    merged = merge_locale_data(parts)
 
     if not merged:
         raise FileNotFoundError(f"Locale data not found for {locale} ({file_name}) under {_LANG_ROOT}")
@@ -78,86 +78,39 @@ def resolve_supported_locale(locale: str | None = None, context: Any = None) -> 
     if locale is None:
         locale = get_runtime_locale(context=context, fallback=_DEFAULT_LOCALE)
     canonical = canonicalize_locale(locale, fallback=_DEFAULT_LOCALE)
-    return canonical if canonical in _LOCALE_DATA else _DEFAULT_LOCALE
+    return get_locale_chain(canonical, _DEFAULT_LOCALE, _LOCALE_DATA.keys())[0]
 
 
 def get_locale_data(locale: str | None = None, context: Any = None) -> dict[str, Any]:
     return _LOCALE_DATA[resolve_supported_locale(locale=locale, context=context)]
 
 
-def _coerce_str_list(values: Any) -> list[str]:
-    if isinstance(values, str):
-        return [values] if values.strip() else []
-    if not isinstance(values, list):
-        return []
-    result: list[str] = []
-    for value in values:
-        text = str(value)
-        if text.strip():
-            result.append(text)
-    return result
-
-
-def _iter_alias_related_keys(key: str, aliases: dict[str, list[str]]) -> list[str]:
-    discovered: list[str] = []
-    seen: set[str] = set()
-    queue: list[str] = [key]
-
-    while queue:
-        current = queue.pop(0)
-        if current in seen:
-            continue
-        seen.add(current)
-        discovered.append(current)
-
-        for nxt in aliases.get(current, []):
-            if nxt not in seen:
-                queue.append(nxt)
-
-        for alias_key, targets in aliases.items():
-            if current in targets and alias_key not in seen:
-                queue.append(alias_key)
-
-    return discovered
-
-
 def _get_ocr_terms(payload: dict[str, Any], key: str) -> list[str]:
     ocr_payload = payload.get("ocr", {})
     terms_map = ocr_payload.get("terms", {})
     aliases = {
-        str(alias): _coerce_str_list(targets)
+        str(alias): to_str_list(targets)
         for alias, targets in ocr_payload.get("aliases", {}).items()
     }
-
-    result: list[str] = []
-    seen_terms: set[str] = set()
-    for related_key in _iter_alias_related_keys(key, aliases):
-        for term in _coerce_str_list(terms_map.get(related_key, [])):
-            if term not in seen_terms:
-                seen_terms.add(term)
-                result.append(term)
-    return result
+    return collect_alias_terms(key, terms_map, aliases)
 
 
 def _get_ocr_regex_raw(payload: dict[str, Any], key: str) -> str | None:
     ocr_payload = payload.get("ocr", {})
     regex_map = ocr_payload.get("regex", {})
     aliases = {
-        str(alias): _coerce_str_list(targets)
+        str(alias): to_str_list(targets)
         for alias, targets in ocr_payload.get("regex_aliases", {}).items()
     }
-
-    for candidate in _iter_alias_related_keys(key, aliases):
-        if candidate in regex_map:
-            return str(regex_map[candidate])
-    return None
+    raw = get_alias_mapped_value(key, regex_map, aliases)
+    return str(raw) if raw is not None else None
 
 
 def get_ocr_confusion_map(locale: str | None = None, context: Any = None) -> dict[str, list[str]]:
     payload = get_locale_data(locale=locale, context=context)
     confusion = payload.get("normalize", {}).get("ocr_confusion_map", {})
     return {
-        str(k): _coerce_str_list(values)
+        str(k): to_str_list(values)
         for k, values in confusion.items()
     }
 
@@ -165,12 +118,12 @@ def get_ocr_confusion_map(locale: str | None = None, context: Any = None) -> dic
 def get_sequence_delimiters(locale: str | None = None, context: Any = None) -> list[str]:
     payload = get_locale_data(locale=locale, context=context)
     delimiters = payload.get("parser", {}).get("sequence", {}).get("delimiters", [])
-    return _coerce_str_list(delimiters)
+    return to_str_list(delimiters)
 
 
 def get_auto_pick_terms(locale: str | None = None, context: Any = None) -> tuple[set[str], set[str]]:
     payload = get_locale_data(locale=locale, context=context).get("auto_pick", {})
-    return set(_coerce_str_list(payload.get("white_list", []))), set(_coerce_str_list(payload.get("black_list", [])))
+    return set(to_str_list(payload.get("white_list", []))), set(to_str_list(payload.get("black_list", [])))
 
 
 def get_warehouse_transfer_data(locale: str | None = None, context: Any = None) -> dict[str, Any]:
@@ -193,19 +146,13 @@ def get_warehouse_current_location_rules(locale: str | None = None, context: Any
 def get_warehouse_ocr_pattern_tokens(locale: str | None = None, context: Any = None) -> dict[str, list[str]]:
     payload = get_warehouse_transfer_data(locale=locale, context=context)
     return {
-        key: _coerce_str_list(value)
+        key: to_str_list(value)
         for key, value in payload.get("ocr_patterns", {}).items()
     }
 
 
 def compile_any_pattern(patterns: list[str] | tuple[str, ...] | str) -> re.Pattern[str]:
-    if isinstance(patterns, str):
-        tokens = _coerce_str_list(patterns)
-    else:
-        tokens = [str(token) for token in patterns if str(token).strip()]
-    escaped = [re.escape(token) for token in tokens]
-    joined = "|".join(escaped) if escaped else r"^$"
-    return re.compile(f"(?:{joined})")
+    return build_pattern(patterns)
 
 
 def get_item_category_en_by_name(locale: str | None = None, context: Any = None) -> dict[str, str]:
