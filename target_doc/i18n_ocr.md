@@ -68,7 +68,7 @@ print(locale)
 语言资源必须按“模块”拆分，而不是按语言拆目录：
 
 ```text
-lang/
+assets/lang/
 ├── common/
 │   ├── zh_CN.json
 │   ├── zh_TW.json

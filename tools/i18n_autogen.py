@@ -1,5 +1,5 @@
 """
-自动扫描 src 中的 OCR 字面量，并为每个源文件生成模块化 lang/<module>/zh_CN.json。
+自动扫描 src 中的 OCR 字面量，并为每个源文件生成模块化 assets/lang/<module>/zh_CN.json。
 
 已支持：
 - match="xxx"
@@ -162,7 +162,7 @@ added_keys = []
 
 for f, groups in per_file_literals.items():
     module = f.stem
-    lang_dir = ROOT / 'lang' / module
+    lang_dir = ROOT / 'assets' / 'lang' / module
     lang_dir.mkdir(parents=True, exist_ok=True)
 
     zhf = lang_dir / 'zh_CN.json'

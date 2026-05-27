@@ -47,7 +47,7 @@ def get_stage_category(stage_name):
 def _world_map_zh_key_map() -> dict[str, str]:
     """Build and cache a reverse index from world_map zh text values to lang keys."""
     repo_root = Path(__file__).resolve().parents[2]
-    path = repo_root / "lang" / "world_map" / "zh_CN.json"
+    path = repo_root / "assets" / "lang" / "world_map" / "zh_CN.json"
     if not path.exists():
         return {}
     try:
