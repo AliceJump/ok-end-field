@@ -106,12 +106,19 @@ class DailyRoutineMixin(LiaisonMixin, Common):
 
     def make_simply(self):
         self.info_set("current_task", "make_simply")
-        self.transfer_to_home_point(should_check_out_boat=True)
+        if not self.transfer_to_home_point(should_check_out_boat=True):
+            self.log_info("未能传送到帝江号")
         self.press_key("b")
-        self.wait_click_ocr(match=[self.lang.daily_routine_mixin.k_e1c08f6a, self.lang.daily_routine_mixin.k_7d394484], box=self.box.top_right, time_out=5)
-        self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_cdb1d49b, box=self.box.left, time_out=5)
-        self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_7d394484, box=self.box.bottom_right, time_out=5)
-        self.wait_pop_up()
+        if not self.wait_click_feature(feature=fL.make_simply_entrance, time_out=5, raise_if_not_found=False):
+            self.mark_task_failure("未能找到简易制作入口")
+            return False
+        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_cdb1d49b, box=self.box.left, time_out=5, log=True):
+            self.log_info("未能选定可制作的物品")
+        if self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.938, 0.902, 0.964, 0.941), time_out=5, raise_if_not_found=False):
+            self.wait_pop_up()
+        else:
+            self.mark_task_failure("未能找到简易制作按钮")
+            return False
 
     def wait_friend_list(self, end_icon_name="friend_chat_icon"):
         start_time = time.time()
@@ -144,6 +151,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         exchange_help_box = self.box_of_screen(0.1, 561 / 861, 0.9, 0.9)
         exchange_not_found = False
         count = 0
+        self.log_info("开始好友拜访阶段")
         while True:
             temp_exchange_time = left_exchange_time
             if count >= 10:
@@ -526,13 +534,15 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 break
 
             self.log_info(f"选择货物进行兑换: {exchange_good.name}")
-            self.click(exchange_good)
+            self.click(exchange_good, after_sleep=0.1)
             if not confirm_button:
-                self.wait_click_ocr(
-                    match=self.lang.daily_routine_mixin.k_b56d9ac6,
-                    box=self.box.bottom_right,
+                confirm_button = self.wait_feature(
+                    feature=fL.select_confirm,
                     time_out=5,
+                    raise_if_not_found=False
                 )
+                if confirm_button:
+                    self.click(confirm_button)
             else:
                 self.click(confirm_button)
             self.wait_click_ocr(
@@ -549,13 +559,14 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                 self.log_info("未找到 '确认' 按钮，跳过本次活动")
                 continue
 
-            self.wait_click_ocr(
-                match=self.lang.daily_routine_mixin.k_dfe79994,
-                box=self.box.bottom_right,
-                time_out=5
-            )
+            if self.wait_click_feature(
+                feature=fL.to_max_produce_num,
+                box=self.box_of_screen(0.945, 0.894, 0.973, 0.944),
+                time_out=5,
+                raise_if_not_found=False
+            ):
 
-            self.wait_pop_up()
+                self.wait_pop_up()
 
         self.log_info(f"{outpost_name} 兑换操作完成")
 
@@ -625,11 +636,11 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.log_info("找到装备按钮并点击")
         self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_557911d7, box=self.box_of_screen(0, 0, 0.5, 80 / 1080), time_out=5,
                             recheck_time=1, after_sleep=1)
-        if not self.wait_click_ocr(
-                match=self.lang.daily_routine_mixin.k_7d394484_1,
-                box=self.box_of_screen(2050 / 2560, 1250 / 1440, 1, 1),
+        if not self.wait_click_feature(
+                feature=fL.select_confirm,
+                box=self.box_of_screen(0.938, 0.902, 0.964, 0.941),
                 time_out=5,
-                recheck_time=1
+                raise_if_not_found=False
         ):
             self.mark_task_failure("未找到制作按钮，任务失败")
             return False

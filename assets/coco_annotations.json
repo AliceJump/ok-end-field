@@ -754,6 +754,16 @@
             "id": 148,
             "name": "to_max_produce_num",
             "supercategory": ""
+        },
+        {
+            "id": 149,
+            "name": "select_confirm",
+            "supercategory": ""
+        },
+        {
+            "id": 150,
+            "name": "make_simply_entrance",
+            "supercategory": ""
         }
     ],
     "images": [
@@ -931,7 +941,7 @@
         {
             "license": 0,
             "url": null,
-            "file_name": "images/8.png",
+            "file_name": "images/9.png",
             "height": 1440,
             "width": 2560,
             "date_captured": null,
@@ -940,7 +950,7 @@
         {
             "license": 0,
             "url": null,
-            "file_name": "images/9.png",
+            "file_name": "images/10.png",
             "height": 1440,
             "width": 2560,
             "date_captured": null,
@@ -967,7 +977,7 @@
         {
             "license": 0,
             "url": null,
-            "file_name": "images/8.png",
+            "file_name": "images/9.png",
             "height": 1440,
             "width": 2560,
             "date_captured": null,
@@ -1228,7 +1238,7 @@
         {
             "license": 0,
             "url": null,
-            "file_name": "images/8.png",
+            "file_name": "images/9.png",
             "height": 1440,
             "width": 2560,
             "date_captured": null,
@@ -1237,7 +1247,7 @@
         {
             "license": 0,
             "url": null,
-            "file_name": "images/9.png",
+            "file_name": "images/10.png",
             "height": 1440,
             "width": 2560,
             "date_captured": null,
@@ -1246,7 +1256,7 @@
         {
             "license": 0,
             "url": null,
-            "file_name": "images/8.png",
+            "file_name": "images/9.png",
             "height": 1440,
             "width": 2560,
             "date_captured": null,
@@ -1255,7 +1265,7 @@
         {
             "license": 0,
             "url": null,
-            "file_name": "images/8.png",
+            "file_name": "images/9.png",
             "height": 1440,
             "width": 2560,
             "date_captured": null,
@@ -1264,7 +1274,7 @@
         {
             "license": 0,
             "url": null,
-            "file_name": "images/8.png",
+            "file_name": "images/9.png",
             "height": 1440,
             "width": 2560,
             "date_captured": null,
@@ -1273,7 +1283,7 @@
         {
             "license": 0,
             "url": null,
-            "file_name": "images/8.png",
+            "file_name": "images/9.png",
             "height": 1440,
             "width": 2560,
             "date_captured": null,
@@ -1369,7 +1379,7 @@
         {
             "license": 0,
             "url": null,
-            "file_name": "images/8.png",
+            "file_name": "images/9.png",
             "height": 1440,
             "width": 2560,
             "date_captured": null,
@@ -1378,7 +1388,7 @@
         {
             "license": 0,
             "url": null,
-            "file_name": "images/9.png",
+            "file_name": "images/10.png",
             "height": 1440,
             "width": 2560,
             "date_captured": null,
@@ -1416,7 +1426,7 @@
         },
         {
             "id": 148,
-            "file_name": "images/9.png",
+            "file_name": "images/10.png",
             "width": 2560,
             "height": 1440
         },
@@ -1477,6 +1487,18 @@
         {
             "id": 158,
             "file_name": "images/4.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 159,
+            "file_name": "images/5.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 160,
+            "file_name": "images/8.png",
             "width": 1920,
             "height": 1080
         }
@@ -2538,6 +2560,32 @@
                 32
             ],
             "area": 1056,
+            "iscrowd": 0
+        },
+        {
+            "id": 76,
+            "image_id": 159,
+            "category_id": 149,
+            "bbox": [
+                1624,
+                862,
+                22,
+                18
+            ],
+            "area": 396,
+            "iscrowd": 0
+        },
+        {
+            "id": 77,
+            "image_id": 160,
+            "category_id": 150,
+            "bbox": [
+                1465,
+                259,
+                65,
+                50
+            ],
+            "area": 3250,
             "iscrowd": 0
         },
         {
