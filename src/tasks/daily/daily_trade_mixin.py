@@ -306,7 +306,7 @@ class DailyTradeMixin(NavigationMixin, Common):
                 continue
             self.ensure_main()
             self.log_info(f"前往{area}")
-            self.to_model_area(area, "物资调度")
+            self.to_model_area(area, self.lang.daily_trade_mixin.k_02894ea7)
             self.wait_ui_stable(refresh_interval=1)
             self.wait_click_ocr(
                 match=self.lang.daily_trade_mixin.k_33fb3f9c, box=self.box.top, after_sleep=2

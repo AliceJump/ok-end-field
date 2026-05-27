@@ -141,6 +141,7 @@ class MapMixin(BaseEfTask):
         result = self.wait_feature(
             feature=fL.transfer_go,
             time_out=10,
+            raise_if_not_found=False
         )
 
         # 如果未找到传送按钮

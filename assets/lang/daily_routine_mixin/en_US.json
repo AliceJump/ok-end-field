@@ -157,5 +157,11 @@
   },
   "k_39d12e73_1": {
     "pattern": "receive"
+  },
+  "k_a72a252f": {
+    "string": "Warehousing node"
+  },
+  "k_9f929560": {
+    "string": "Site management"
   }
 }

@@ -266,7 +266,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
 
     def _click_track_and_transfer(self):
         """点击『追踪』按钮，进入地图并传送至最近传送点。"""
-        if result := self.wait_feature(feature=fL.start_flow, box=self.box.bottom_right, time_out=5):
+        if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False):
             self.click(result, after_sleep=1)
         self.to_near_transfer_point(self.gather_near_transfer_point_dict[self.battle_ctx.stage_name])
         self.ensure_main()
@@ -388,9 +388,12 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         if not self.config.get("消耗限时体力药", False):
             return True
 
-        self.wait_click_feature(feature=fL.stamina_plus_icon, vertical_variance=0.01, horizontal_variance=0.01,
-                                time_out=5,
-                                box=self.box_of_screen((3530 - 40) / 3840, 0, (3600) / 3840, (80 + 40) / 2160))  # 右上角加号
+        self.wait_click_feature(
+            feature=fL.stamina_plus_icon, vertical_variance=0.01, horizontal_variance=0.01,
+            time_out=5,
+            box=self.box_of_screen((3530 - 40) / 3840, 0, (3600) / 3840, (80 + 40) / 2160),
+            raise_if_not_found=False,
+        )  # 右上角加号
         self.wait_ocr(match=self.lang.daily_battle_mixin.k_6c4d77af, time_out=5, box=self.box.top_left)
         # 支持天和小时单位，按剩余时效升序消耗
         box_list = self.wait_ocr(x=0.20, y=0.45, to_x=0.88, to_y=0.66, match=self.lang.daily_battle_mixin.k_4e1f3d8b, log=True)
@@ -839,7 +842,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 if not self.to_stage():
                     self.mark_task_failure("二次寻路失败：无法进入『能量淤积点』详情页")
                     return False
-                if result := self.wait_feature(feature=fL.start_flow, box=self.box.bottom_right, time_out=5):
+                if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False):
                     self.click(result, after_sleep=1)
                     self.ensure_main()
                 else:

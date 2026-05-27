@@ -22,6 +22,7 @@ import re
 import time
 
 from src.data.FeatureList import FeatureList as fL
+from src.data.characters import characters
 from src.data.characters_utils import get_contact_list_with_feature_list
 from src.tasks.mixin.common import LiaisonResult, build_name_patterns
 from src.tasks.mixin.navigation_mixin import NavigationMixin
@@ -118,6 +119,7 @@ class LiaisonMixin(NavigationMixin):
         transfer_btn = self.wait_feature(
             feature=fL.transfer_go,
             time_out=10,
+            raise_if_not_found=False
         )
 
         if not transfer_btn:
@@ -209,6 +211,24 @@ class LiaisonMixin(NavigationMixin):
             found_special_callback=special_chat_detect,
         )
 
+    def _resolve_contact_feature_name(self, target_name: str | None) -> str | None:
+        if not target_name:
+            return None
+
+        if target_name in self.can_contact_dict:
+            return self.can_contact_dict[target_name]
+
+        if target_name in self.can_contact_dict.values():
+            return target_name
+
+        for info in characters.values():
+            if target_name == info.get("zh"):
+                feature_name = f"{info.get('en')}_contact"
+                if feature_name in self.can_contact_dict.values():
+                    return feature_name
+
+        return None
+
     def perform_operator_liaison(self):
         """
         执行一次干员联络流程。
@@ -219,7 +239,14 @@ class LiaisonMixin(NavigationMixin):
         self.log_info("开始执行干员联络任务")
 
         target_name = self.config.get("优先送礼对象")
-        target_feature_name = self.can_contact_dict[target_name]
+        target_feature_name = self._resolve_contact_feature_name(target_name)
+        if not target_feature_name:
+            self.log_info(f"未识别联络对象 {target_name}，改用默认联络对象")
+            target_name = next(iter(self.can_contact_dict.keys()), None)
+            if not target_name:
+                self.log_info("未找到任何可联络对象")
+                return False
+            target_feature_name = self.can_contact_dict[target_name]
 
         search_char_box = self.box_of_screen(
             795 / 1920,
@@ -310,6 +337,7 @@ class LiaisonMixin(NavigationMixin):
                     feature=fL.liaison_confirm,
                     time_out=5,
                     after_sleep=2,
+                    raise_if_not_found=False,
             ):
                 self.log_info("未找到确认联络按钮，任务失败")
                 return False
@@ -437,6 +465,7 @@ class LiaisonMixin(NavigationMixin):
                 box=self.box_of_screen(0.942, 0.898, 0.963, 0.937),
                 time_out=5,
                 after_sleep=0.5,
+                raise_if_not_found=False
         ):
             self.log_info("确认赠送按钮已出现")
             self.skip_dialog()

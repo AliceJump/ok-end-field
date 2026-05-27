@@ -3,8 +3,6 @@ Lang Batch Translator - 分阶段扫描 + 缺失key整合翻译版
 """
 
 import json
-import re
-import sys
 from pathlib import Path
 from typing import Any
 from collections import defaultdict

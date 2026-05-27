@@ -61,7 +61,9 @@ class LoginMixin(BaseEfTask):
             raise RuntimeError("未找到登出按钮，可能没有先登录，请先登录任意账号")
         self.click(result[0], after_sleep=1)
         self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True)
-        self.wait_click_feature(feature=fL.log_out_confirm, time_out=5)
+        if not self.wait_click_feature(feature=fL.log_out_confirm, time_out=5, raise_if_not_found=False):  # 点击登出确认
+            self.log_error("未找到登出确认按钮")
+            return False
         self._logged_in = False
         result = self.click_text(re.compile("最近"), box=self.box.center, success_match=self.lang.login_mixin.k_20275ef2,
                                  need_wait_disappear=False)  # 点击当前账号（假设是唯一的）"最近", box=self.box.center, need_wait_disappear=False)  # 点击当前账号（假设是唯一的）
