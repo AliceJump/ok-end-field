@@ -833,6 +833,11 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         if not self.culture_room(exchange_help_box):
             self.mark_task_failure("培养舱任务失败")
             ok_culture_room = False
+        self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_1cdef26c, time_out=3, box=self.box.top_right,after_sleep=1)
+        self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_0e2d3a3c, time_out=3, box=self.box.bottom_right,after_sleep=1)
+        if not self.safe_back(match=self.lang.daily_routine_mixin.k_e39054a0, box=self.box.top_left):
+            self.log_info("无法返回到运转界面")
+            return False
         self.use_help()
         if ok_bool_clue and ok_up_room and ok_culture_room:
             return True
@@ -953,9 +958,6 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             return False
         self.click_confirm(time_out=3)
         self.log_info("再次培养成功")
-        if not self.safe_back(match=self.lang.daily_routine_mixin.k_e39054a0, box=self.box.top_left):
-            self.log_info("无法返回到运转界面")
-            return False
         return True
 
     def use_help(self):
