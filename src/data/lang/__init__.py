@@ -144,7 +144,7 @@ class LangAccessor:
         return mod
 
     def _load_module(self, module_name: str) -> dict:
-        lang_root = self._repo_root / "lang"
+        lang_root = self._repo_root / "assets" / "lang"
         locales_to_try = [self.locale]
         for supported_locale in SUPPORTED_LOCALES:
             if supported_locale not in locales_to_try:

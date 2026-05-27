@@ -1,5 +1,5 @@
 """
-Batch-generate locale JSON files under lang/<module>/<locale>.json from zh_CN sources.
+Batch-generate locale JSON files under assets/lang/<module>/<locale>.json from zh_CN sources.
 
 Translation source:
 - External translator via deep-translator (GoogleTranslator by default)
@@ -29,7 +29,7 @@ if str(ROOT) not in sys.path:
 from src.data.lang import SUPPORTED_LOCALES
 
 
-LANG_ROOT = ROOT / "lang"
+LANG_ROOT = ROOT / "assets" / "lang"
 SOURCE_LOCALE = "zh_CN"
 TARGET_LOCALES = tuple(SUPPORTED_LOCALES)
 CHINESE_RUN = re.compile(r"[\u4e00-\u9fff]+")
@@ -186,7 +186,7 @@ def translate_node(node: Any, locale: str, translation_map: dict[str, str]) -> A
 def main() -> int:
     source_files = sorted(LANG_ROOT.glob("*/zh_CN.json"))
     if not source_files:
-        print("No zh_CN.json files found under lang/")
+        print("No zh_CN.json files found under assets/lang/")
         return 1
 
     module_sources: list[tuple[Path, Any]] = []
