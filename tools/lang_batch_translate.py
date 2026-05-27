@@ -29,9 +29,6 @@ LANG_MAP = {
 }
 
 
-# =============================
-# LOG
-# =============================
 def log(msg: str):
     print(f"[i18n] {msg}")
 
@@ -54,11 +51,10 @@ def save_json(path: Path, data: dict):
 
 
 # =============================
-# FLATTEN / UNFLATTEN (针对你的结构优化)
+# FLATTEN / UNFLATTEN
 # =============================
 def flatten(node, prefix=""):
     out = {}
-
     if isinstance(node, dict):
         for k, v in node.items():
             p = f"{prefix}.{k}" if prefix else k
@@ -68,11 +64,6 @@ def flatten(node, prefix=""):
                 out[p] = v
             else:
                 out[p] = str(v)
-    elif isinstance(node, list):
-        for i, v in enumerate(node):
-            p = f"{prefix}[{i}]"
-            out.update(flatten(v, p))
-
     return out
 
 
@@ -81,7 +72,7 @@ def unflatten(flat: Dict[str, str]):
     for path, value in flat.items():
         parts = path.split('.')
         cur = root
-        for i, p in enumerate(parts[:-1]):
+        for p in parts[:-1]:
             if p not in cur:
                 cur[p] = {}
             cur = cur[p]
@@ -90,7 +81,7 @@ def unflatten(flat: Dict[str, str]):
 
 
 # =============================
-# TRANSLATOR (分块 + 更稳定)
+# TRANSLATOR
 # =============================
 TRANSLATOR_CACHE = {}
 
@@ -101,8 +92,7 @@ def translate_batch(locale: str, texts: List[str], batch_size: int = 40) -> Dict
 
     if locale not in TRANSLATOR_CACHE:
         TRANSLATOR_CACHE[locale] = GoogleTranslator(
-            source="zh-CN",
-            target=LANG_MAP[locale]
+            source="zh-CN", target=LANG_MAP[locale]
         )
 
     translator = TRANSLATOR_CACHE[locale]
@@ -113,20 +103,16 @@ def translate_batch(locale: str, texts: List[str], batch_size: int = 40) -> Dict
         try:
             translated_chunk = translator.translate_batch(chunk)
             for orig, trans in zip(chunk, translated_chunk):
-                if isinstance(trans, str) and trans.strip():
-                    result[orig] = trans
-                else:
-                    result[orig] = orig
+                result[orig] = trans if isinstance(trans, str) and trans.strip() else orig
         except Exception as e:
-            log(f"Translate error {locale} chunk {i//batch_size}: {e}")
+            log(f"Translate error {locale}: {e}")
             for t in chunk:
                 result[t] = t
-
     return result
 
 
 # =============================
-# SCAN
+# SCAN（改进：同时记录已有翻译）
 # =============================
 def scan(lang_root: Path):
     log(f"LANG ROOT = {lang_root}")
@@ -138,7 +124,6 @@ def scan(lang_root: Path):
     for module_dir in modules:
         zh_file = module_dir / "zh_CN.json"
         if not zh_file.exists():
-            log(f"[SKIP] no zh_CN.json in {module_dir.name}")
             continue
 
         zh_data = load_json(zh_file)
@@ -146,8 +131,8 @@ def scan(lang_root: Path):
         module_name = module_dir.name
 
         module_store[module_name] = {
-            "base": zh_data,           # 原始中文结构
-            "translations": {}         # 各语言翻译
+            "base": zh_data,
+            "translations": {}
         }
 
         log(f"[SCAN] {module_name} base_keys = {len(zh_flat)}")
@@ -157,18 +142,24 @@ def scan(lang_root: Path):
                 continue
 
             target_file = module_dir / f"{locale}.json"
-            existing = flatten(load_json(target_file)) if target_file.exists() else {}
+            existing_data = load_json(target_file) if target_file.exists() else {}
+            existing_flat = flatten(existing_data)
 
-            missing = {k: v for k, v in zh_flat.items() if k not in existing}
+            # 记录缺失的（需要翻译的）
+            missing = {k: v for k, v in zh_flat.items() if k not in existing_flat}
 
             if missing:
                 missing_by_locale[locale][module_name].update(missing)
+
+            # 重要：把已有的翻译也存起来，防止后面被删
+            if existing_data:
+                module_store[module_name]["translations"][locale] = existing_data
 
     return missing_by_locale, module_store
 
 
 # =============================
-# APPLY RESULTS (关键修复)
+# APPLY（加强保留逻辑）
 # =============================
 def apply(module_store, results):
     for locale, items in results.items():
@@ -177,13 +168,15 @@ def apply(module_store, results):
             grouped[module][key] = text
 
         for module, new_trans in grouped.items():
-            # 合并已有翻译 + 新翻译
-            existing = module_store[module]["translations"].get(locale, {})
-            existing_flat = flatten(existing) if existing else {}
+            # 取出之前已有的翻译（最重要）
+            current_trans = module_store[module]["translations"].get(locale, {})
+            current_flat = flatten(current_trans)
 
-            merged_flat = {**existing_flat, **new_trans}
+            # 合并：已有 + 新翻译（新翻译覆盖同名key）
+            merged_flat = {**current_flat, **new_trans}
+
+            # 转回树结构
             translated_tree = unflatten(merged_flat)
-
             module_store[module]["translations"][locale] = translated_tree
 
 
@@ -194,35 +187,30 @@ def run(lang_root: Path):
     log("PIPELINE START")
 
     missing_by_locale, module_store = scan(lang_root)
-    batches = defaultdict(list)
 
+    batches = defaultdict(list)
     for locale, modules in missing_by_locale.items():
         for module, items in modules.items():
             for k, v in items.items():
                 batches[locale].append((module, k, v))
 
-    log(f"BATCH SUMMARY = {{k: len(v) for k, v in batches.items()}}")
+    log(f"BATCH SUMMARY = { {k: len(v) for k, v in batches.items()} }")
 
     results = {}
-
     for locale, items in batches.items():
         log(f"[{locale}] 待翻译数量 = {len(items)}")
-        texts = [t[2] for t in items]
+        if not items:
+            continue
 
+        texts = [t[2] for t in items]
         translated = translate_batch(locale, texts)
 
-        out = []
-        for (module, key, _), text in zip(items, translated.values()):
-            out.append((module, key, text))
-
+        out = [(module, key, translated.get(orig, orig)) for (module, key, orig) in items]
         results[locale] = out
-        log(f"[{locale}] 翻译完成")
 
     apply(module_store, results)
 
-    # =============================
     # WRITE BACK
-    # =============================
     for module, data in module_store.items():
         module_dir = lang_root / module
         module_dir.mkdir(parents=True, exist_ok=True)
@@ -231,20 +219,13 @@ def run(lang_root: Path):
             if locale == SOURCE_LOCALE:
                 continue
             if locale in data["translations"]:
-                save_json(
-                    module_dir / f"{locale}.json",
-                    data["translations"][locale]
-                )
+                save_json(module_dir / f"{locale}.json", data["translations"][locale])
                 log(f"[SAVE] {module}/{locale}.json")
 
     log("PIPELINE DONE")
 
 
-# =============================
-# ENTRY
-# =============================
 if __name__ == "__main__":
     ROOT = Path(__file__).resolve().parents[1]
     LANG_ROOT = ROOT / "lang"
-
     run(LANG_ROOT)
