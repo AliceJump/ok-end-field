@@ -24,7 +24,7 @@ class NavigationMixin(BaseEfTask):
         self.log_info(f"找到{target_feature_in_map}图标，点击进入")
         self.click(result)
 
-        if result := self.wait_feature(feature=fL.start_flow, box=self.box.bottom_right, time_out=5):
+        if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False):
             self.click(result, after_sleep=1)
 
         self.press_key("m", after_sleep=2)

@@ -2,7 +2,7 @@ import re
 import time
 
 from src.data.world_map import areas_list, outpost_dict, goods_dict
-from src.data.world_map_utils import get_area_by_outpost_name, get_goods_by_outpost_name
+from src.data.world_map_utils import get_area_by_outpost_name, get_goods_by_outpost_name, get_world_map_text
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
 from src.tasks.mixin.common import Common
@@ -436,7 +436,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.log_info(f"开始处理据点: {outpost_name}")
 
         self.wait_click_ocr(
-            match=outpost_name,
+            match=get_world_map_text(self.lang, outpost_name),
             box=self.box.top,
             time_out=5,
             after_sleep=1
@@ -444,12 +444,12 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.wait_ocr(
             match=self.lang.daily_routine_mixin.k_bb6c696b, box=self.box_of_screen(1700 / 1920, 610 / 1080, 1, 710 / 1080), time_out=5
         )
-        can_exchange_goods = goods_dict.get(
+        can_exchange_goods = [get_world_map_text(self.lang, good) for good in goods_dict.get(
             get_area_by_outpost_name(outpost_name), []
-        )
+        )]
 
         goods_patterns = [
-            re.compile(i) for i in get_goods_by_outpost_name(outpost_name)
+            re.compile(get_world_map_text(self.lang, good)) for good in get_goods_by_outpost_name(outpost_name)
         ]
 
         max_attempts = 7
@@ -536,7 +536,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
             else:
                 self.click(confirm_button)
             self.wait_click_ocr(
-                match=outpost_name,
+                match=get_world_map_text(self.lang, outpost_name),
                 box=self.box.top,
                 time_out=5
             )
@@ -898,10 +898,10 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                         continue
                 if icon := self.find_one(feature_name=fL.max_icon, horizontal_variance=0.1, vertical_variance=0.1):
                     self.click(icon)
-                self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_b56d9ac6, time_out=2, box=self.box.bottom)
+                    self.wait_click_feature(feature=fL.to_max_produce_num, time_out=2, box=self.box.bottom_right, raise_if_not_found=False)
                 if i == 0:
-                    if not self.wait_click_ocr(
-                            match=self.lang.daily_routine_mixin.k_ffb5655a, time_out=3, box=self.box.bottom
+                    if not self.wait_click_feature(
+                            feature=fL.skip_dialog_confirm, time_out=3, box=self.box.bottom_right, raise_if_not_found=False
                     ):
                         continue
                     self.wait_pop_up(after_sleep=1)
