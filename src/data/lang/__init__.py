@@ -15,7 +15,6 @@ def _discover_supported_locales() -> tuple[str, ...]:
             if child.is_dir() and (child / "LC_MESSAGES").exists():
                 locales.append(child.name)
 
-    # 兜底：保证至少有当前仓库已使用的标准名
     if not locales:
         locales = ["zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES"]
 
@@ -54,28 +53,34 @@ def _normalize_locale(locale: str | Enum | None) -> str:
     return locale
 
 
+def _parse_lang_value(v: Any) -> Any:
+    """统一解析语言节点（核心逻辑抽取）"""
+    if not isinstance(v, dict):
+        return v
+
+    if v.get("string") is not None:
+        return v.get("string")
+    if v.get("pattern") is not None:
+        try:
+            return re.compile(v.get("pattern"))
+        except Exception:
+            return None
+    if v.get("terms") is not None:
+        return v.get("terms")
+
+    return LangNode(v)
+
+
 class LangNode:
     def __init__(self, data: dict | None):
         self._data = data or {}
 
     def __getattr__(self, item: str):
         v = self._data.get(item)
-        # 如果是 dict，优先返回 string / pattern(编译) / terms
-        if isinstance(v, dict):
-            if v.get("string") is not None:
-                return v.get("string")
-            if v.get("pattern") is not None:
-                try:
-                    return re.compile(v.get("pattern"))
-                except Exception:
-                    return None
-            if v.get("terms") is not None:
-                return v.get("terms")
-            return LangNode(v)
-        return v
+        return _parse_lang_value(v)
 
     def as_matcher(self):
-        """把当前节点转为 OCR 可接受的 matcher（string / re.Pattern / list），或返回 None"""
+        """转为 matcher"""
         return build_matcher(self)
 
     def __str__(self) -> str:
@@ -110,27 +115,13 @@ class LangModule:
 
     def __getattr__(self, item: str):
         v = self._data.get(item)
-        # 如果是 dict，优先返回 string / pattern(编译) / terms
-        if isinstance(v, dict):
-            if v.get("string") is not None:
-                return v.get("string")
-            if v.get("pattern") is not None:
-                try:
-                    return re.compile(v.get("pattern"))
-                except Exception:
-                    return None
-            if v.get("terms") is not None:
-                return v.get("terms")
-            return LangNode(v)
-        return v
+        return _parse_lang_value(v)
 
     def get(self, item: str, fallback=None):
-        """安全读取一个 key，返回 string / re.Pattern / list 或 fallback
-
-        用法: `self.lang.module.get('confirm', fallback='确认')`
-        """
+        """安全读取"""
         v = self._data.get(item)
         if isinstance(v, dict):
+            # 严格保持原始行为：dict 时走 build_matcher(LangNode(v))
             return build_matcher(LangNode(v))
         if v is None:
             return fallback
@@ -153,7 +144,6 @@ class LangAccessor:
         return mod
 
     def _load_module(self, module_name: str) -> dict:
-        # 优先在 repo_root/lang/{module}/{locale}.json 查找
         lang_root = self._repo_root / "lang"
         locales_to_try = [self.locale]
         for supported_locale in SUPPORTED_LOCALES:
@@ -167,13 +157,45 @@ class LangAccessor:
                     return json.load(p.open(encoding="utf-8"))
                 except Exception:
                     pass
-
-        # 未找到时返回空 dict
         return {}
 
 
+def build_matcher(node: Any):
+    """构建 matcher，保持与原始一致"""
+    if node is None:
+        return None
+
+    if isinstance(node, LangNode):
+        # 优先使用 properties
+        if node.pattern:
+            try:
+                return re.compile(node.pattern)
+            except Exception:
+                return None
+        if node.string:
+            return node.string
+        if node.terms:
+            return node.terms
+        return node  # 返回 LangNode 本身作为 fallback
+
+    if isinstance(node, dict):
+        if node.get("pattern"):
+            try:
+                return re.compile(node.get("pattern"))
+            except Exception:
+                return None
+        if node.get("string"):
+            return node.get("string")
+        if node.get("terms"):
+            return node.get("terms")
+
+    if isinstance(node, str):
+        return node
+
+    return None
+
+
 def get_lang_accessor(obj_or_locale: Any = None) -> LangAccessor:
-    # 接受 task 对象或 locale 字符串
     locale = None
     if isinstance(obj_or_locale, str):
         locale = obj_or_locale
@@ -212,37 +234,3 @@ __all__ = [
     "get_lang_accessor",
     "get_supported_locales",
 ]
-
-
-def build_matcher(node: Any):
-    if node is None:
-        return None
-
-    # 支持 LangNode
-    if isinstance(node, LangNode):
-        if node.pattern:
-            try:
-                return re.compile(node.pattern)
-            except Exception:
-                return None
-        if node.string:
-            return node.string
-        if node.terms:
-            return node.terms
-
-    # 支持 dict/raw
-    if isinstance(node, dict):
-        if node.get("pattern"):
-            try:
-                return re.compile(node.get("pattern"))
-            except Exception:
-                return None
-        if node.get("string"):
-            return node.get("string")
-        if node.get("terms"):
-            return node.get("terms")
-
-    if isinstance(node, str):
-        return node
-
-    return None
