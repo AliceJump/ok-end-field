@@ -14,7 +14,7 @@ class DailyLiaisonMixin(LiaisonMixin):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.can_contact_dict = get_contact_list_with_feature_list()
+        self.can_contact_dict = get_contact_list_with_feature_list(self.lang)
         self.contact_name_patterns = {name: build_name_patterns(name) for name in self.can_contact_dict.keys()}
         #
         self.config_type["优先送礼对象"] = {"type": "drop_down", "options": list(self.can_contact_dict.keys())}

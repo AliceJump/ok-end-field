@@ -24,6 +24,8 @@ import time
 import cv2
 import numpy as np
 
+from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING
+from src.data.world_map_utils import is_world_map_text
 from src.tasks.sequence_parser import parse_sequence
 from src.tasks.AutoCombatLogic import AutoCombatLogic
 from src.tasks.BaseEfTask import BaseEfTask
@@ -400,7 +402,7 @@ class BattleMixin(BaseEfTask):
         start_time = time.time()
         last_battle_time = None
         # 能量淤积点特殊处理：初始sleep_time为0.1
-        if getattr(self.battle_ctx, 'category_name', None) == "能量淤积点":
+        if is_world_map_text(self.lang, getattr(self.battle_ctx, 'category_name', None), STAGE_CATEGORY_ENERGY_POOLING):
             sleep_time = 0.1
         else:
             sleep_time = self.config.get("进入战斗后的初始等待时间", 3)

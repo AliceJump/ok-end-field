@@ -4,6 +4,7 @@ from typing import List
 
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import areas_list
+from src.data.world_map_utils import get_world_map_matcher
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.common import GoodsInfo
 from src.tasks.mixin.navigation_mixin import NavigationMixin
@@ -414,7 +415,7 @@ class DailyTradeMixin(NavigationMixin, Common):
                     self.log_info("未进入好友船")
                     return False
                 self.navigate_to_friend_exchange()
-                self.wait_click_ocr(match=re.compile(area), box=self.box.top, after_sleep=2)
+                self.wait_click_ocr(match=get_world_map_matcher(self.lang, area), box=self.box.top, after_sleep=2)
                 if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:])) or
                         self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]))):
                     self.log_info("未找到卖出货物，无法出售")

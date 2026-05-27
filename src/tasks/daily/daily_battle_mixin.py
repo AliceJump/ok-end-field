@@ -7,16 +7,17 @@ from dataclasses import dataclass
 
 from ok import TaskDisabledException
 from src.data.FeatureList import FeatureList as fL
-from src.data.world_map import stages_cost, higher_order_feature_dict
+from src.data.world_map import stages_cost, higher_order_feature_dict, STAGE_CATEGORY_ENERGY_POOLING, \
+    STAGE_CATEGORY_DANGER_REHEARSAL
 from src.data.world_map import stages_dict, stages_list
-from src.data.world_map_utils import get_stage_category
+from src.data.world_map_utils import get_stage_category, get_world_map_matcher, is_world_map_text
 from src.tasks.sequence_parser import parse_int_sequence, parse_sequence
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
-gather_list = stages_dict["能量淤积点"]
+gather_list = stages_dict[STAGE_CATEGORY_ENERGY_POOLING]
 
 
 @dataclass
@@ -480,9 +481,9 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
 
             # 检查是否支持体力刷完后继续刷取
             if self.battle_ctx.extra_run_limit > 0:
-                if self.battle_ctx.category_name != "能量淤积点":
+                if not is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING):
                     self.log_warning(
-                        f"体力刷完后继续刷功能仅支持能量淤积点，当前副本为『{self.battle_ctx.category_name}』，已禁用此功能")
+                        f"体力刷完后继续刷功能仅支持{STAGE_CATEGORY_ENERGY_POOLING}，当前副本为『{self.battle_ctx.category_name}』，已禁用此功能")
                     self.battle_ctx.extra_run_limit = 0
                 else:
                     self.log_info(f"体力刷完后继续刷取次数: {self.battle_ctx.extra_run_limit}")
@@ -492,7 +493,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                     self.log_info("体力不足")
                     return True
                 else:
-                    if self.battle_ctx.category_name != "能量淤积点":
+                    if not is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING):
                         self.log_info(f"不支持无体力刷取的副本: {self.battle_ctx.category_name}")
                         return True
                     # 体力不足，执行额外刷取
@@ -513,7 +514,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
             if not self.to_stage():
                 return False
 
-            if self.battle_ctx.category_name == "能量淤积点":
+            if is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING):
                 try:
                     return self.battle_gather()
                 except Exception as e:
@@ -661,7 +662,10 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                 self.to_restart()
             else:
                 # 根据 enter_str 决定点击位置, 如果是「挑战」, 并且刷取的是「能量淤积点」, 则点击右下四分之一区域, 避免误触
-                enter_box = self.box.bottom_right_quarter if self.battle_ctx.enter_text == "挑战" and self.battle_ctx.category_name == "能量淤积点" else self.box.bottom_right
+                enter_box = self.box.bottom_right_quarter if (
+                        self.battle_ctx.enter_text == "挑战"
+                        and is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING)
+                ) else self.box.bottom_right
                 self.wait_click_ocr(match=re.compile(self.battle_ctx.enter_text), time_out=10, after_sleep=2,
                                     box=enter_box,
                                     log=True, recheck_time=1)
@@ -703,7 +707,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         """
         # 点击左侧关卡类别
         self.wait_click_ocr(
-            match=re.compile(self.battle_ctx.category_name),
+            match=get_world_map_matcher(self.lang, self.battle_ctx.category_name),
             box=self.box.left,
             log=True,
             after_sleep=2,
@@ -712,10 +716,10 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
 
         # 默认按钮文本
         to_text = "前往"
-        if self.battle_ctx.category_name == "能量淤积点":
+        if is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING):
             to_text = "查看"
         # 判断是否是高阶关卡
-        is_higher_order = self.battle_ctx.category_name == "危境预演"
+        is_higher_order = is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_DANGER_REHEARSAL)
         for _ in range(5):
             if is_higher_order:
                 # 高阶关卡，使用 feature_dict 查找位置
@@ -790,7 +794,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         return True
 
     def to_battle(self):
-        if self.battle_ctx.category_name != "能量淤积点":
+        if not is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING):
             self.wait_pop_up(time_out=4)
             end_time = time.time()
             while not self.wait_ocr(match=self.lang.daily_battle_mixin.k_6afbae72, time_out=1, box=self.box.top_left, log=True):
@@ -811,7 +815,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         return self.auto_battle(no_battle=self.battle_ctx.no_battle)
 
     def to_end(self):
-        if self.battle_ctx.category_name == "能量淤积点":
+        if is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING):
             end_feature_name = [fL.gather_icon_out_map2, fL.gather_icon_out_map]
             use_yolo = False
             search_box = None
@@ -857,7 +861,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
                                                           box=search_box,
                                                           only_x=True, threshold=0.5, tolerance=100):
                 if time.time() - start_time > 60:
-                    if self.battle_ctx.category_name == "能量淤积点":
+                    if is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING):
                         raise TimeoutError("等待奖励发放点超时")
                     else:
                         return False
@@ -876,7 +880,7 @@ class DailyBattleMixin(MapMixin, ZipLineMixin, BattleMixin, Common):
         except Exception as e:
             if isinstance(e, TaskDisabledException):
                 raise
-            if self.battle_ctx.category_name == "能量淤积点":
+            if is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING):
                 self.log_info(f"未找到奖励发放点，尝试二次寻路: {e}")
                 if self._gather_retry_navigate():
                     return True

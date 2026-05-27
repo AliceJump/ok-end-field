@@ -1,5 +1,11 @@
 from src.data.FeatureList import FeatureList as fL
 
+STAGE_CATEGORY_OPERATOR = "干员养成"
+STAGE_CATEGORY_WEAPON = "武器养成"
+STAGE_CATEGORY_DANGER_RECUR = "危境再现"
+STAGE_CATEGORY_DANGER_REHEARSAL = "危境预演"
+STAGE_CATEGORY_ENERGY_POOLING = "能量淤积点"
+
 areas_list = ["武陵", "四号谷地"]
 outpost_dict = {
     "武陵": ["天王坪援建点", "心脏修缮站"],
@@ -57,31 +63,31 @@ exchange_goods_dict = {
 }
 item_to_warehouse_dict = {"蓝铁矿": "矿物", "高容谷地电池": "产物", "源矿": "矿物", "致密源石粉末": "产物"}
 stages_dict = {
-    "干员养成": [
+    STAGE_CATEGORY_OPERATOR: [
         "干员经验",
         "干员进阶",
         "钱币收集",
         "技能提升",
     ],
-    "武器养成": [
+    STAGE_CATEGORY_WEAPON: [
         "武器经验",
         "武器进阶",
     ],
-    "危境再现": [
+    STAGE_CATEGORY_DANGER_RECUR: [
         "罗丹",
         "三位一体",
         "白垩界卫",
         "阮一",
         "聂菲斯",
     ],
-    "危境预演": [
+    STAGE_CATEGORY_DANGER_REHEARSAL: [
         "D96钢",
         "超距辉映管",
         "快子遴捡晶格",
         "象限拟合液",
         "三相纳米片",
     ],
-    "能量淤积点": [
+    STAGE_CATEGORY_ENERGY_POOLING: [
         "枢纽区",
         "源石研究园",
         "试验园区",
@@ -93,11 +99,11 @@ stages_dict = {
     ]
 }
 stages_cost = {
-    "干员养成": 80,
-    "武器养成": 80,
-    "危境再现": 120,
-    "危境预演": 80,
-    "能量淤积点": 80,
+    STAGE_CATEGORY_OPERATOR: 80,
+    STAGE_CATEGORY_WEAPON: 80,
+    STAGE_CATEGORY_DANGER_RECUR: 120,
+    STAGE_CATEGORY_DANGER_REHEARSAL: 80,
+    STAGE_CATEGORY_ENERGY_POOLING: 80,
 }
 stages_list = [stage for stages in stages_dict.values() for stage in stages]
 higher_order_feature_dict = {

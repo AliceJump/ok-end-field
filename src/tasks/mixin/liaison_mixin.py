@@ -51,7 +51,7 @@ class LiaisonMixin(NavigationMixin):
         super().__init__(*args, **kwargs)
 
         # 获取所有可联络干员
-        self.can_contact_dict = get_contact_list_with_feature_list()
+        self.can_contact_dict = get_contact_list_with_feature_list(self.lang)
 
         # 为每个干员构建 OCR 名称匹配规则
         self.contact_name_patterns = {
