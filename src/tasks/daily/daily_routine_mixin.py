@@ -273,7 +273,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
         self.log_info("开始领取转交委托奖励")
 
         area = areas_list[0]
-        self.to_model_area(area, "仓储节点")
+        self.to_model_area(area, self.lang.daily_routine_mixin.k_a72a252f)
 
         if not self.wait_click_ocr(
                 match=self.lang.daily_routine_mixin.k_41a9fd98,
@@ -319,7 +319,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
                     )
                     break
 
-                self.to_model_area(area, "仓储节点")
+                self.to_model_area(area, self.lang.daily_routine_mixin.k_a72a252f)
 
                 if not self.wait_click_ocr(
                         match=self.lang.daily_routine_mixin.k_298d3284,
@@ -591,7 +591,7 @@ class DailyRoutineMixin(LiaisonMixin, Common):
 
         for area in areas_list:
             self.log_info(f"进入区域: {area}")
-            self.to_model_area(area, "据点管理")
+            self.to_model_area(area, self.lang.daily_routine_mixin.k_9f929560)
 
             outposts = outpost_dict.get(area, [])
             if not outposts:

@@ -39,7 +39,7 @@ class DailyBuyMixin(Common):
         for area in areas_list:
             self.ensure_main()
             self.log_info(f"进入区域: {area}")
-            self.to_model_area(area, "物资调度")
+            self.to_model_area(area, self.lang.daily_buy_mixin.k_02894ea7)
             #
             self.click_relative(100 / 3840, 464 / 2160, after_sleep=2)
             self.log_info("购买「日用消耗」")
