@@ -1,5 +1,5 @@
 import time
-
+import re
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.sequence_parser import parse_int_sequence
 from src.tasks.mixin.navigation_mixin import NavigationMixin
@@ -47,7 +47,7 @@ class ZipLineMixin(NavigationMixin):
         ]
         for zip_line in zip_line_list:
             self.align_ocr_or_find_target_to_center(
-                str(zip_line),
+                re.compile(str(zip_line)),
                 is_num=True,
                 need_scroll=need_scroll,
                 ocr_frame_processor_list=[

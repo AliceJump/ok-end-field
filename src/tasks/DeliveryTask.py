@@ -419,7 +419,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self.try_time = 0
         self.ensure_main(time_out=120)
         self.log_info("前置操作：按Y，点击‘仓储节点’，点击‘运送委托列表’")
-        self.to_model_area(area, self.lang.DeliveryTask.k_a72a252f_1)
+        self.to_model_area(self.config.get(self.CFG_DELIVERY_AREA), self.lang.DeliveryTask.k_a72a252f_1)
         delivery_box = self.wait_ocr(match=self.lang.DeliveryTask.k_ae8fb114, time_out=5)
         if delivery_box:
             self.click(delivery_box[0], move_back=True, after_sleep=0.5)
