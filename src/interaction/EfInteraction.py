@@ -10,6 +10,8 @@ from ok.util.logger import Logger
 from win32api import GetCursorPos, GetSystemMetrics, SetCursorPos
 from pynput.keyboard import Controller, Key
 
+from src.interaction.Mouse import active_and_send_mouse_delta
+
 logger = Logger.get_logger(__name__)
 
 
@@ -98,18 +100,13 @@ class EfInteraction(PostMessageInteraction):
             pass
         finally:
             self.cursor_position = None
-    def send_key_down(self, key, activate=True):
-        if key == "esc":
-            return super().send_key_down(key)
+    def send_key_down(self, key, activate=True):        
         if activate:
             self.try_activate()
-
+        active_and_send_mouse_delta(self.hwnd, only_activate=True)
         self.keyboard.press(self._convert_key(key))
 
     def send_key_up(self, key):
-        if key == "esc":
-            return super().send_key_up(key)
-
         self.keyboard.release(self._convert_key(key))
 
     def _convert_key(self, key: str):
@@ -135,6 +132,8 @@ class EfInteraction(PostMessageInteraction):
             "space": Key.space,
             "backspace": Key.backspace,
             "delete": Key.delete,
+            "esc": Key.esc,
+            "escape": Key.esc,
 
             "up": Key.up,
             "down": Key.down,
