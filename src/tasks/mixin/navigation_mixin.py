@@ -49,7 +49,7 @@ class NavigationMixin(BaseEfTask):
     def navigate_until_target(
         self,
         target,
-        nav,
+        nav=None,
         target_is_ocr: bool = True,
         nav_is_ocr: bool = False,
         time_out: int = 60,
@@ -57,19 +57,46 @@ class NavigationMixin(BaseEfTask):
         found_special_callback=None,
         target_is_yolo: bool = False,
         nav_is_yolo: bool = False,
-        box = None,
+        box=None,
         target_vertical_variance: float = 0.0,
-        need_v : bool = False,
+        need_v: bool = False,
     ):
         """
-        持续沿导航标识移动，直到检测到目标。
+        持续导航移动直到检测到目标，支持 OCR / YOLO / 特征匹配三种方式。
+
+        当 nav 为 None 时，进入“纯奔跑搜索模式”，不进行导航识别与对齐，仅持续移动直到目标出现。
+
+        Args:
+            target: 目标识别对象（OCR文本 / YOLO类别 / 特征名）。
+            nav: 导航标识（OCR文本 / YOLO类别 / 特征名）。为 None 时禁用导航逻辑。
+            target_is_ocr (bool): target 是否使用 OCR 检测。
+            nav_is_ocr (bool): nav 是否使用 OCR 检测。
+            time_out (int): 最大运行时间（秒）。
+            pre_loop_callback (callable, optional): 每轮循环前执行的回调函数。
+            found_special_callback (callable, optional): 特殊状态检测回调，返回非 None 则中断并返回。
+            target_is_yolo (bool): target 是否使用 YOLO 检测。
+            nav_is_yolo (bool): nav 是否使用 YOLO 检测。
+            box (tuple, optional): target 检测区域（None 则使用默认区域）。
+            target_vertical_variance (float): 特征匹配时允许的垂直误差。
+            need_v (bool): 是否在导航丢失时周期性按 V 尝试重置视野。
 
         Returns:
-            True: 到达目标
-            False: 超时
-            Any: found_special_callback 返回非 None
+            bool | Any:
+                - True: 成功到达目标并稳定确认
+                - False: 超时未完成
+                - Any: found_special_callback 返回的非 None 结果
+
+        Behavior:
+            1. 持续按 W 移动
+            2. 检测 target 是否出现
+            3. 出现后进行稳定性确认
+            4. 若丢失目标则后退搜索
+            5. 若 nav 存在，则执行导航对齐逻辑
+            6. 若 nav 为 None，则仅执行直线奔跑搜索
+
         """
         last_click_v_time = 0
+
         def check_target():
             if target_is_ocr:
                 return self.ocr(
@@ -89,8 +116,8 @@ class NavigationMixin(BaseEfTask):
                     threshold=0.7,
                     vertical_variance=target_vertical_variance
                 )
-        run_bool = True
 
+        run_bool = True
         start_time = time.time()
 
         nav_box = self.box_of_screen(
@@ -103,62 +130,47 @@ class NavigationMixin(BaseEfTask):
         self.send_key_down("w")
 
         try:
-
             while True:
-
-                # 到达目标
                 reached = check_target()
 
                 if reached:
                     self.send_key_up("w")
+
                     if run_bool:
-                        self.log_info(f"找到目标，确认稳定中...")
+                        self.log_info("找到目标，确认稳定中...")
                         run_bool = False
                         self.press_key("ctrl")
 
-                    self.log_info("发现目标，开始稳定确认")
-
+                    settle_time = 2 if target_is_ocr else 1
                     stable = True
                     confirm_start = time.time()
-                    settle_time = 2 if target_is_ocr else 1
-                    while time.time() - confirm_start < settle_time:
 
+                    while time.time() - confirm_start < settle_time:
                         if not check_target():
                             stable = False
                             break
-
                         self.sleep(0.1)
 
                     if stable:
                         return True
 
                     self.log_info("确认期间目标丢失，开始后退搜索")
-
-
                     self.send_key_down("s")
 
                     search_start = time.time()
-
                     while time.time() - search_start < 10:
-
                         if check_target():
                             self.log_info("后退过程中重新找到目标")
-
                             self.send_key_up("s")
-
-                            # 再次确认稳定
                             break
-
                         self.sleep(0.05)
 
                     self.send_key_up("s")
 
-                # 超时
                 if time.time() - start_time > time_out:
                     self.log_info("导航超时")
                     return False
 
-                # 特殊状态
                 if found_special_callback:
                     special_result = found_special_callback()
                     if special_result is not None:
@@ -168,28 +180,26 @@ class NavigationMixin(BaseEfTask):
                 if pre_loop_callback:
                     pre_loop_callback()
 
-                # 导航识别
-                if nav_is_ocr:
-                    nav_result = self.ocr(
-                        match=nav,
-                        box=nav_box
-                    )
-                elif nav_is_yolo:
-                    nav_result = self.yolo_detect(
-                        name=nav,
-                        box=nav_box
-                    )
-                else:
-                    nav_result = self.find_feature(
-                        nav,
-                        box=nav_box,
-                        threshold=0.7,
-                    )
+                # ===== nav=None -> 纯奔跑模式 =====
+                if nav is None:
+                    if not run_bool:
+                        self.log_info("恢复奔跑模式")
+                        run_bool = True
+                        self.press_key("ctrl")
 
-                # 找到导航
+                    self.sleep(0.01)
+                    continue
+
+                if nav_is_ocr:
+                    nav_result = self.ocr(match=nav, box=nav_box)
+                elif nav_is_yolo:
+                    nav_result = self.yolo_detect(name=nav, box=nav_box)
+                else:
+                    nav_result = self.find_feature(nav, box=nav_box, threshold=0.7)
+
                 if nav_result:
                     if not run_bool:
-                        self.log_info("重新找到导航，恢复正常奔跑导航模式")
+                        self.log_info("重新找到导航，恢复奔跑模式")
                         run_bool = True
                         self.press_key("ctrl")
 
@@ -203,18 +213,16 @@ class NavigationMixin(BaseEfTask):
                         raise_if_fail=False,
                         allow_random_move=False
                     )
-
-                # 导航丢失
                 else:
                     if need_v and time.time() - last_click_v_time > 5:
-                        self.log_info(f"未找到导航标识，点击 V 进行尝试")
+                        self.log_info("未找到导航标识，点击 V 尝试")
                         self.press_key("v")
                         last_click_v_time = time.time()
+
                     if run_bool:
-                        self.log_info(f"未找到导航标识，进入短距离搜索模式")
+                        self.log_info("未找到导航标识，进入短距离搜索模式")
                         run_bool = False
                         self.press_key("ctrl")
-
 
                 self.sleep(0.01)
 

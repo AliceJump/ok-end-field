@@ -546,9 +546,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             if not self.navigate_until_target(
                 target=fL.receive_good,
                 target_is_ocr=False,
-                nav=secondary_objective_direction_dot,
                 target_vertical_variance=0.06,
-                need_v=True,
             ):
                 self.log_info("未能到达送货点，取货失败")
                 return False
