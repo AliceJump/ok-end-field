@@ -1,11 +1,11 @@
 from qfluentwidgets import FluentIcon
 
-from src.icons import Icons
-from src.tasks.daily.daily_battle_mixin import DailyBattleFeature
-from src.tasks.mixin.common import Common
-from src.tasks.mixin.map_mixin import MapMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
-from src.tasks.mixin.battle_mixin import BattleMixin
+from resources.icons import Icons
+from tasks.daily.daily_battle_mixin import DailyBattleFeature
+from tasks.mixin.common import Common
+from tasks.mixin.map_mixin import MapMixin
+from tasks.mixin.zip_line_mixin import ZipLineMixin
+from tasks.mixin.battle_mixin import BattleMixin
 
 
 class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):

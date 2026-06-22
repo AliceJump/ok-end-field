@@ -4,8 +4,8 @@ from pathlib import Path
 import cv2
 from ok.test.TaskTestCase import TaskTestCase
 
-from src.config import config
-from src.tasks.WarehouseTransferTask import WarehouseTransferTask
+from config import config
+from tasks.WarehouseTransferTask import WarehouseTransferTask
 
 
 class TestWarehouseSwitchOCR(TaskTestCase):

@@ -10,7 +10,7 @@ from ok.util.logger import Logger
 from win32api import GetCursorPos, GetSystemMetrics, SetCursorPos
 from pynput.keyboard import Controller, Key
 
-from src.interaction.Mouse import active_and_send_mouse_delta
+from interaction.Mouse import active_and_send_mouse_delta
 
 logger = Logger.get_logger(__name__)
 

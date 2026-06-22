@@ -6,20 +6,7 @@ from ctypes import create_unicode_buffer, windll
 from datetime import datetime
 from pathlib import Path
 
-import base64
-
-KEY = 0x55
-
-
-def encode(text: str) -> str:
-    data = bytes([b ^ KEY for b in text.encode()])
-    return base64.b64encode(data).decode()
-
-
-def decode(text: str) -> str:
-    raw = base64.b64decode(text)
-    data = bytes([b ^ KEY for b in raw])
-    return data.decode()
+from config.encoding import decode
 
 
 DEFAULT_DAILY_FINALLY_FILENAME = "惊喜口牙.txt"
@@ -102,7 +89,7 @@ def create_daily_summary_report(directory: Path, summary_info: dict, keep_days: 
         创建的文件路径
     """
     # 在指定目录下创建 "日常执行情况" 子目录
-    target_dir = directory / "日常执行情况" / "ok-ef" 
+    target_dir = directory / "日常执行情况" / "ok-ef"
     target_dir.mkdir(parents=True, exist_ok=True)
 
     # 删除超过指定天数的旧汇总文件

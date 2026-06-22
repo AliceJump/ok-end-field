@@ -1,8 +1,8 @@
 from qfluentwidgets import FluentIcon
 
-from src.config import config as app_config
-from src.tasks.BaseEfTask import BaseEfTask
-from src.yolo.model_registry import build_yolo_model_settings
+from config import config as app_config
+from base.BaseEfTask import BaseEfTask
+from detection.model_registry import build_yolo_model_settings
 
 
 class RealtimeYoloScanTask(BaseEfTask):
@@ -34,7 +34,7 @@ class RealtimeYoloScanTask(BaseEfTask):
         )
         self.config_description.update(
             {
-                "YOLO模型": "选择模型配置（来自 src/yolo/models.py）",
+                "YOLO模型": "选择模型配置（来自 src/detection/models.py）",
                 "检测目标": "选择模型 labels 的 value 作为目标类别",
                 "检测置信度": "0~1，值越高越严格",
                 "扫描间隔(秒)": "每次检测后的等待时间",

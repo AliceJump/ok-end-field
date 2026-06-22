@@ -1,9 +1,9 @@
 from ok import TaskDisabledException
 
-from src.tasks.BaseEfTask import BaseEfTask
+from base.BaseEfTask import BaseEfTask
 
 
-class TestStartGame(BaseEfTask):
+class StartGameTask(BaseEfTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "启动一次游戏,120s后自动关闭"

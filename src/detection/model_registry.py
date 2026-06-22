@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from copy import deepcopy
 
-from src.yolo.models import DEFAULT_MODEL_KEY, YOLO_MODELS
+from detection.models import DEFAULT_MODEL_KEY, YOLO_MODELS
 
 
 def _normalize_labels(labels) -> dict[int, str]:

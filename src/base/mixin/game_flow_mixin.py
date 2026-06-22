@@ -6,12 +6,12 @@ from datetime import datetime
 import cv2
 import numpy as np
 
-from src.data.world_map import areas_list
-from src.data.world_map_utils import get_world_map_matcher, get_world_map_text
-from src.essence.essence_recognizer import EssenceInfo, read_essence_info
-from src.image.login_screenshot import capture_window_by_screen
-from src.interaction.Mouse import run_at_window_pos
-from src.data.FeatureList import FeatureList as fL
+from data.world_map import areas_list
+from data.world_map_utils import get_world_map_matcher, get_world_map_text
+from essence.essence_recognizer import EssenceInfo, read_essence_info
+from image.login_screenshot import capture_window_by_screen
+from interaction.Mouse import run_at_window_pos
+from data.FeatureList import FeatureList as fL
 
 
 class GameFlowMixin:

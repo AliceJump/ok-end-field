@@ -9,8 +9,8 @@ from ok import ConfigOption
 from ok.util.config import Config
 from ok.util.file import get_relative_path, read_json_file, write_json_file
 
-from src.interaction.KeyConfig import DEFAULT_COMBAT_KEYS, DEFAULT_COMMON_KEYS, DEFAULT_INDUSTRY_KEYS
-from src.tasks.BattleConfig import (
+from interaction.KeyConfig import DEFAULT_COMBAT_KEYS, DEFAULT_COMMON_KEYS, DEFAULT_INDUSTRY_KEYS
+from config.BattleConfig import (
     BATTLE_CONFIG_DESCRIPTION,
     BATTLE_CONFIG_NAME,
     BATTLE_CONFIG_TYPE,

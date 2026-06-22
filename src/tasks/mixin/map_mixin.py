@@ -1,6 +1,6 @@
 import re
-from src.tasks.BaseEfTask import BaseEfTask
-from src.data.FeatureList import FeatureList as fL
+from base.BaseEfTask import BaseEfTask
+from data.FeatureList import FeatureList as fL
 
 class MapMixin(BaseEfTask):
     def task_to_transfer_point(self, test_target_box=None, search_box_resolver=None):

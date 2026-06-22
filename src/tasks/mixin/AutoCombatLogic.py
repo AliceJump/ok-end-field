@@ -2,7 +2,7 @@ import time
 import threading
 import pyautogui
 import traceback
-from src.tasks.BaseEfTask import BaseEfTask
+from base.BaseEfTask import BaseEfTask
 
 
 class AutoCombatLogic:
@@ -61,6 +61,7 @@ class AutoCombatLogic:
         task.send_key(skill_key)
         task.log_info(f"Used skill {skill_key}")
         self.normal_skill_index += 1
+
     def _periodic_search(self):
         now = time.time()
 
@@ -131,7 +132,8 @@ class AutoCombatLogic:
                         if task.debug:
                             task.screenshot("out_of_combat")
                         if task.is_combat_ended():
-                            task.log_info("自动战斗结束!", notify=task.get_battle_config("后台结束战斗通知") and task.in_bg())
+                            task.log_info("自动战斗结束!",
+                                          notify=task.get_battle_config("后台结束战斗通知") and task.in_bg())
                             task.log_info("退出战斗主循环")
                             self._end = True
                             self._normal_attack_hold_enabled = False

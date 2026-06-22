@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from src.essence.essence_recognizer import _attach_levels, parse_essence_panel
+from essence.essence_recognizer import _attach_levels, parse_essence_panel
 
 
 class _Box:

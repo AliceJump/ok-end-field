@@ -4,8 +4,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from src.data.lang import build_matcher, get_lang_module_value
-from src.data.world_map import outpost_dict, goods_dict, stages_dict
+from data.lang import build_matcher, get_lang_module_value
+from data.world_map import outpost_dict, goods_dict, stages_dict
 
 
 def get_area_by_outpost_name(outpost_name: str) -> str:

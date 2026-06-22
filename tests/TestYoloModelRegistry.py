@@ -1,6 +1,6 @@
 import unittest
 
-from src.yolo.model_registry import build_name_to_model_map, build_yolo_model_settings
+from detection.model_registry import build_name_to_model_map, build_yolo_model_settings
 
 
 class TestYoloModelRegistry(unittest.TestCase):

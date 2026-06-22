@@ -1,4 +1,4 @@
-from src.data.FeatureList import FeatureList as fL
+from data.FeatureList import FeatureList as fL
 
 STAGE_CATEGORY_OPERATOR = "干员养成"
 STAGE_CATEGORY_WEAPON = "武器养成"

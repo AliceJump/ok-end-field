@@ -1,8 +1,8 @@
 import re
 
-from src.data.world_map import areas_list
-from src.tasks.sequence_parser import parse_sequence
-from src.data.FeatureList import FeatureList as fL
+from data.world_map import areas_list
+from tasks.mixin.sequence_parser import parse_sequence
+from data.FeatureList import FeatureList as fL
 
 
 class DailyBuyFeature:
@@ -32,6 +32,7 @@ class DailyBuyFeature:
 
     def __getattr__(self, name):
         return getattr(self._task, name)
+
     def buy_staple_goods(self):
         self.info_set("current_task", "buy_staple_goods")
         self.log_info("开始买物资任务")
@@ -70,7 +71,9 @@ class DailyBuyFeature:
             else:
                 self.click_relative(0.1, 0.4)
                 self.log_info("未指定白名单，选择首行首个")
-            can_buy=self.wait_feature(feature=fL.skip_dialog_confirm, box=self.box_of_screen(0.825, 0.793, 0.851, 0.843), time_out=2, raise_if_not_found=False)
+            can_buy = self.wait_feature(feature=fL.skip_dialog_confirm,
+                                        box=self.box_of_screen(0.825, 0.793, 0.851, 0.843), time_out=2,
+                                        raise_if_not_found=False)
             if can_buy:
                 self.plus_max()
                 self.click(can_buy)

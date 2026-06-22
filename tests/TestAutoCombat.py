@@ -1,10 +1,10 @@
 # Test case
 import unittest
 
-from src.config import config
+from config import config
 from ok.test.TaskTestCase import TaskTestCase
 
-from src.tasks.AutoCombatTask import AutoCombatTask
+from tasks.AutoCombatTask import AutoCombatTask
 
 
 class TestMyOneTimeTask(TaskTestCase):

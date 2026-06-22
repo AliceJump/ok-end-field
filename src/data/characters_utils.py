@@ -1,8 +1,8 @@
 from typing import Any
 
-from src.data.characters import characters
-from src.data.lang import get_lang_module_value
-from src.data.FeatureList import FeatureList
+from data.characters import characters
+from data.lang import get_lang_module_value
+from data.FeatureList import FeatureList
 
 
 def _get_localized_character_name(lang_accessor: Any, char_key: str, fallback: str) -> str:

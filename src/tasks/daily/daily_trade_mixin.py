@@ -2,11 +2,11 @@ import re
 import time
 from typing import List
 
-from src.data.FeatureList import FeatureList as fL
-from src.data.world_map import areas_list
-from src.data.world_map_utils import get_world_map_matcher
-from src.image.hsv_config import HSVRange as hR
-from src.tasks.mixin.common import GoodsInfo
+from data.FeatureList import FeatureList as fL
+from data.world_map import areas_list
+from data.world_map_utils import get_world_map_matcher
+from image.hsv_config import HSVRange as hR
+from tasks.mixin.common import GoodsInfo
 
 
 class DailyTradeFeature:
@@ -336,9 +336,9 @@ class DailyTradeFeature:
             if buy_good:
                 if not can_buy:
                     if self.wait_ocr(
-                        match=[self.lang.daily_trade_mixin.k_f48bcfb6, self.lang.daily_trade_mixin.k_6174dac7],
-                        box=self.box.top_left,
-                        time_out=3,
+                            match=[self.lang.daily_trade_mixin.k_f48bcfb6, self.lang.daily_trade_mixin.k_6174dac7],
+                            box=self.box.top_left,
+                            time_out=3,
                     ):
                         can_buy = True
                 if can_buy:

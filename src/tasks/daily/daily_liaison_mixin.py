@@ -5,9 +5,9 @@ import threading
 from PySide6.QtCore import QTimer
 from qfluentwidgets import FluentIcon
 
-from src.data.characters_utils import get_contact_list_with_feature_list
-from src.data.characters import all_list
-from src.tasks.mixin.common import LiaisonResult, build_name_patterns
+from data.characters_utils import get_contact_list_with_feature_list
+from data.characters import all_list
+from tasks.mixin.common import LiaisonResult, build_name_patterns
 
 
 class DailyLiaisonFeature:
@@ -53,7 +53,7 @@ class DailyLiaisonFeature:
 
     def open_help_link(self, *_):
         """打开帮助链接，使用独立的内嵌 WebView 对话框。"""
-        from src.gui.WebViewDialog import WebViewDialog
+        from gui.WebViewDialog import WebViewDialog
 
         def _show_dialog():
             try:

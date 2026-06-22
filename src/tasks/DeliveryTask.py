@@ -8,14 +8,14 @@ from typing import List, Tuple
 from ok import Box, TaskDisabledException
 from qfluentwidgets import FluentIcon
 
-from src.interaction.Mouse import active_and_send_mouse_delta
-from src.icons import Icons
-from src.data.delivery_area import (
+from interaction.Mouse import active_and_send_mouse_delta
+from resources.icons import Icons
+from data.delivery_area import (
     DEFAULT_DELIVERY_AREA,
     DELIVERY_AREA_CONFIG,
     DELIVERY_TARGET_TICKET_NUM_OPTIONS,
 )
-from src.data.delivery_area_service import (
+from data.delivery_area_service import (
     extract_delivery_location,
     get_accept_feature_labels,
     get_delivery_locations,
@@ -25,11 +25,11 @@ from src.data.delivery_area_service import (
     get_task_model_area,
     get_transfer_search_area,
 )
-from src.data.FeatureList import FeatureList as fL
-from src.tasks.account.account_mixin import AccountMixin
-from src.tasks.sequence_parser import parse_int_sequence
-from src.tasks.mixin.map_mixin import MapMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from data.FeatureList import FeatureList as fL
+from tasks.account.account_mixin import AccountMixin
+from tasks.mixin.sequence_parser import parse_int_sequence
+from tasks.mixin.map_mixin import MapMixin
+from tasks.mixin.zip_line_mixin import ZipLineMixin
 
 secondary_objective_direction_dot = [
     fL.secondary_objective_direction_dot,
@@ -445,7 +445,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         if not ticket_types:
             self.log_info("警告: 未启用任何券种，任务退出")
             return None
-        active_and_send_mouse_delta(self.hwnd.hwnd, 0, self.height//2-20, activate=False)
+        active_and_send_mouse_delta(self.hwnd.hwnd, 0, self.height // 2 - 20, activate=False)
         start_time = time.time()
         while True:
             if time.time() - start_time > 600:
@@ -472,8 +472,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             if results:
                 for result in results:
                     self.click(
-                        (result.x + result.width)/self.width + (0.873 - 0.691),
-                        (result.y + result.height)/self.height,
+                        (result.x + result.width) / self.width + (0.873 - 0.691),
+                        (result.y + result.height) / self.height,
                         after_sleep=2,
                         down_time=0.1,
                     )
@@ -495,7 +495,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                         self.log_info("接取失败，可能委托被抢了，继续寻找")
             self.log_info("未找到符合条件(金额+类型)的委托，准备刷新重试")
             for i in range(2):
-                if last_refresh_box := self.wait_feature(feature=fL.refresh_order_list, vertical_variance=0.05, horizontal_variance=0.02):
+                if last_refresh_box := self.wait_feature(feature=fL.refresh_order_list, vertical_variance=0.05,
+                                                         horizontal_variance=0.02):
                     now = time.time()
                     last = getattr(self, "_last_refresh_ts", 0.0)
                     wait = max(0.0, 5.4 - (now - last))
@@ -518,7 +519,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         Returns:
             bool: 成功返回True，失败返回False
         """
-        if result := self.wait_ocr(match=self.lang.DeliveryTask.k_b0e3a2da, box=self.box.bottom_right, time_out=60, log=True):
+        if result := self.wait_ocr(match=self.lang.DeliveryTask.k_b0e3a2da, box=self.box.bottom_right, time_out=60,
+                                   log=True):
             if self.wait_ocr(match=self.lang.DeliveryTask.k_96b876e3, box=self.box.top_left, time_out=2, log=True):
                 self.press_key("tab", after_sleep=1)
             self.click_with_alt(result[0], after_sleep=2)
@@ -544,9 +546,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             )
             self.send_key("v", after_sleep=0.5)
             if not self.navigate_until_target(
-                target=fL.receive_good,
-                target_is_ocr=False,
-                target_vertical_variance=0.06,
+                    target=fL.receive_good,
+                    target_is_ocr=False,
+                    target_vertical_variance=0.06,
             ):
                 self.log_info("未能到达送货点，取货失败")
                 return False
@@ -555,7 +557,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 self.log_info("未能识别到取货界面，取货失败")
                 return False
             self.click_with_alt(result)
-            while not self.wait_ocr(match=self.lang.DeliveryTask.k_b0e3a2da, box=self.box.bottom_right, time_out=2, log=True):
+            while not self.wait_ocr(match=self.lang.DeliveryTask.k_b0e3a2da, box=self.box.bottom_right, time_out=2,
+                                    log=True):
                 self.move_keys("s", 0.5)
             return True
         return False
@@ -584,13 +587,13 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             need_v=True,
         )
         if self.wait_click_ocr(
-            match=end_pattern,
-            box=self.box.bottom_right,
-            settle_time=1,
-            time_out=2,
-            log=True,
-            after_sleep=2,
-            alt=True,
+                match=end_pattern,
+                box=self.box.bottom_right,
+                settle_time=1,
+                time_out=2,
+                log=True,
+                after_sleep=2,
+                alt=True,
         ):
             if not self.find_reward_ok():
                 self.skip_dialog()

@@ -1,11 +1,11 @@
 import time
 import re
-from src.data.FeatureList import FeatureList as fL
-from src.image.hsv_config import HSVRange as hR
-from src.tasks.BaseEfTask import BaseEfTask
-from src.tasks.mixin.navigation_mixin import NavigationMixin
-from src.tasks.daily.daily_demo_mixin import DailyDemoFeature
-from src.tasks.mixin.map_mixin import MapMixin
+from data.FeatureList import FeatureList as fL
+from image.hsv_config import HSVRange as hR
+from base.BaseEfTask import BaseEfTask
+from tasks.mixin.navigation_mixin import NavigationMixin
+from tasks.daily.daily_demo_mixin import DailyDemoFeature
+from tasks.mixin.map_mixin import MapMixin
 
 secondary_objective_direction_dot = [
     fL.secondary_objective_direction_dot,

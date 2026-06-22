@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from src.tasks.daily.finally_file import create_daily_finally_note, create_daily_summary_report, resolve_daily_finally_directory
+from tasks.daily.finally_file import create_daily_finally_note, create_daily_summary_report, resolve_daily_finally_directory
 
 
 class TestDailyTaskFinallyFile(unittest.TestCase):

@@ -1,8 +1,8 @@
 import os
 
 import numpy as np
-from src.interaction.EfInteraction import EfInteraction
-from src.tasks.daily.finally_file import decode
+from interaction.EfInteraction import EfInteraction
+from config.encoding import decode
 
 version = "dev"
 
@@ -113,7 +113,7 @@ config = {
     "log_upload_api": decode("PSEhJW96emFie2RlZHtgbHtkZWxvbWVlZXogJTk6NDE="),  # 日志上传接口, 留空表示不启用上传
     "yolo": {
         "default_model": "battle_end_default",
-    },  # YOLO 配置；模型与labels请维护在 src/yolo/models.py
+    },  # YOLO 配置；模型与labels请维护在 src/detection/models.py
     "gui_title": "ok-ef",  # 窗口名
     "template_matching": {  # 可选, 如使用OpenCV的模板匹配
         "coco_feature_json": os.path.join("assets", "coco_annotations.json"),
@@ -125,7 +125,7 @@ config = {
         "vcenter_features": ["default_link_skill", "skip_dialog_confirm"],
     },
     "version": version,  # 版本
-    "my_app": ["src.globals", "Globals"],  # 可选. 全局单例对象, 可以存放加载的模型, 使用og.my_app调用
+    "my_app": ["src.app.globals", "Globals"],  # 可选. 全局单例对象, 可以存放加载的模型, 使用og.my_app调用
     "onetime_tasks": [  # 用户点击触发的任务
         ["src.tasks.DailyTask", "DailyTask"],
         ["src.tasks.TakeDeliveryTask", "TakeDeliveryTask"],
@@ -133,9 +133,9 @@ config = {
         ["src.tasks.DeliveryTask", "DeliveryTask"],
         ["src.tasks.BattleTask", "BattleTask"],
         ["src.tasks.DemoDrawTask", "DemoDrawTask"],
-        ["src.tasks.Test", "Test"],
+        ["src.debug.Test", "Test"],
         ["src.tasks.YingTuoTask", "YingTuoTask"],
-        ["src.tasks.TestStartGame", "TestStartGame"],
+        ["src.tasks.StartGameTask", "StartGameTask"],
         ["src.tasks.RealtimeDetectTask", "RealtimeDetectTask"],
         ["src.tasks.DiagnosisTask", "DiagnosisTask"],
     ],

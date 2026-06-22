@@ -4,9 +4,10 @@ import time
 
 import pyautogui
 
-from src.interaction.Mouse import active_and_send_mouse_delta
-from src.tasks.BaseEfTask import BaseEfTask
-from src.data.FeatureList import FeatureList as fL
+from interaction.Mouse import active_and_send_mouse_delta
+from base.BaseEfTask import BaseEfTask
+from data.FeatureList import FeatureList as fL
+
 TOLERANCE = 50
 
 
@@ -24,15 +25,16 @@ class NavigationMixin(BaseEfTask):
         self.log_info(f"找到{target_feature_in_map}图标，点击进入")
         self.click(result)
 
-        if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False):
+        if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5,
+                                       raise_if_not_found=False):
             self.click(result, after_sleep=1)
 
         self.press_key("m", after_sleep=2)
         self.log_info("关闭地图界面 (按下 M)")
         start_time = time.time()
         while not self.find_feature(
-            feature=target_feature_out_map, box=self.box_of_screen(0, 0, 1, 1),
-            threshold=0.7
+                feature=target_feature_out_map, box=self.box_of_screen(0, 0, 1, 1),
+                threshold=0.7
         ):
             if time.time() - start_time > 5:
                 self.log_info("等待追踪图标超时")
@@ -47,19 +49,19 @@ class NavigationMixin(BaseEfTask):
         return True
 
     def navigate_until_target(
-        self,
-        target,
-        nav=None,
-        target_is_ocr: bool = True,
-        nav_is_ocr: bool = False,
-        time_out: int = 60,
-        pre_loop_callback=None,
-        found_special_callback=None,
-        target_is_yolo: bool = False,
-        nav_is_yolo: bool = False,
-        box=None,
-        target_vertical_variance: float = 0.0,
-        need_v: bool = False,
+            self,
+            target,
+            nav=None,
+            target_is_ocr: bool = True,
+            nav_is_ocr: bool = False,
+            time_out: int = 60,
+            pre_loop_callback=None,
+            found_special_callback=None,
+            target_is_yolo: bool = False,
+            nav_is_yolo: bool = False,
+            box=None,
+            target_vertical_variance: float = 0.0,
+            need_v: bool = False,
     ):
         """
         持续导航移动直到检测到目标，支持 OCR / YOLO / 特征匹配三种方式。
@@ -302,7 +304,7 @@ class NavigationMixin(BaseEfTask):
         sum_dx = 0
         sum_dy = 0
         move_bool = False
-        for i in range(max_time*2):
+        for i in range(max_time * 2):
             start_action_time = time.time()
             if ocr:
                 # 使用OCR模式识别目标，设置超时时间为2秒，并启用日志记录

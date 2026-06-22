@@ -7,7 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 
 try:
-    from src.config import config as app_config
+    from config import config as app_config
 except ModuleNotFoundError:
     app_config = {}
 

@@ -1,6 +1,6 @@
 from types import MethodType
 
-from src.tasks.account.account_scope_store import get_account_task_overrides
+from data.account_scope_store import get_account_task_overrides
 
 
 class AccountOverrideMixin:

@@ -2,9 +2,9 @@
 import unittest
 import re
 from unittest.mock import MagicMock
-from src.tasks.TakeDeliveryTask import TakeDeliveryTask
+from tasks.TakeDeliveryTask import TakeDeliveryTask
 from ok.test.TaskTestCase import TaskTestCase
-from src.config import config
+from config import config
 
 class MockText:
     def __init__(self, name, y=0, height=10):

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from src.data.item_map_query import (
+from data.item_map_query import (
     get_item_map,
     get_item_positions,
     get_supported_item_names,

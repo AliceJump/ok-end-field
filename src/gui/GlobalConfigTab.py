@@ -3,8 +3,8 @@ from qfluentwidgets import FluentIcon, NavigationItemPosition
 from ok.gui.tasks.ConfigCard import ConfigCard, og
 from ok.gui.widget.CustomTab import CustomTab
 
-from src.tasks.BattleConfig import BATTLE_CONFIG_NAME
-from src.tasks.global_config_store import get_all_visible_configs
+from config.BattleConfig import BATTLE_CONFIG_NAME
+from config.global_config_store import get_all_visible_configs
 
 
 GLOBAL_CONFIG_GROUPS = {
