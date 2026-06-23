@@ -85,7 +85,7 @@ class NavigationMixin(BaseEfTask):
             max_run_time (float): 最大累计奔跑（ctrl 状态）时间（秒），控制的是奔跑/步行切换，不影响 w 前进键。
                 - -1：不限制奔跑时间，保持原有行为
                 - 0：完全不奔跑，开局立即切换步行状态，全程按住 w 步行前进
-                - 大于0：允许累计奔跑指定秒数，达到后切换步行且不再恢复奔跑，但仍继续按住 w 前进
+                - 大于0：允许累计奔跑指定秒数，达到后在本次导航中切换步行且不再恢复奔跑，函数结束时恢复奔跑状态
 
         Returns:
             bool | Any:
@@ -113,7 +113,7 @@ class NavigationMixin(BaseEfTask):
                 )
             elif target_is_yolo:
                 return self.yolo_detect(
-                    match=target,
+                    name=target,
                     box=self.box_of_screen(0.635, 0.563, 0.724, 0.843)
                     if not box else box
                 )
@@ -155,6 +155,14 @@ class NavigationMixin(BaseEfTask):
             if max_run_time > 0 and run_accumulated_time >= max_run_time:
                 run_allowed = False
 
+        def enforce_max_run_time():
+            """达到最大奔跑时间后立即切换为步行。"""
+            if max_run_time <= 0 or not run_bool or not run_allowed or run_state_start_time is None:
+                return
+            if run_accumulated_time + time.time() - run_state_start_time >= max_run_time:
+                self.log_info("达到最大奔跑时间，切换为步行模式")
+                exit_run_mode()
+
         # 处理 max_run_time == 0：开局切换为步行，且全程禁止奔跑
         if max_run_time == 0:
             run_allowed = False
@@ -173,6 +181,7 @@ class NavigationMixin(BaseEfTask):
 
         try:
             while True:
+                enforce_max_run_time()
                 reached = check_target()
 
                 if reached:
@@ -266,7 +275,8 @@ class NavigationMixin(BaseEfTask):
 
         finally:
             if not run_bool:
-                self.press_key("ctrl")
+                self.log_info("导航结束，恢复奔跑模式")
+                self.press_key("ctrl", after_sleep=0.01)  # 确认使用send_key：ctrl为奔跑切换键，不属于游戏可配置热键
             self.send_key_up("w")  # 确认使用send_key：释放方向键
 
     def align_ocr_or_find_target_to_center(
