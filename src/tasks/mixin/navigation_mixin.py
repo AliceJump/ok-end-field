@@ -62,11 +62,12 @@ class NavigationMixin(BaseEfTask):
             box=None,
             target_vertical_variance: float = 0.0,
             need_v: bool = False,
+            max_run_time: float = -1,
     ):
         """
         持续导航移动直到检测到目标，支持 OCR / YOLO / 特征匹配三种方式。
 
-        当 nav 为 None 时，进入“纯奔跑搜索模式”，不进行导航识别与对齐，仅持续移动直到目标出现。
+        当 nav 为 None 时，进入纯前进搜索模式，不进行导航识别与对齐，仅持续移动直到目标出现。
 
         Args:
             target: 目标识别对象（OCR文本 / YOLO类别 / 特征名）。
@@ -81,6 +82,10 @@ class NavigationMixin(BaseEfTask):
             box (tuple, optional): target 检测区域（None 则使用默认区域）。
             target_vertical_variance (float): 特征匹配时允许的垂直误差。
             need_v (bool): 是否在导航丢失时周期性按 V 尝试重置视野。
+            max_run_time (float): 最大累计奔跑（ctrl 状态）时间（秒），控制的是奔跑/步行切换，不影响 w 前进键。
+                - -1：不限制奔跑时间，保持原有行为
+                - 0：完全不奔跑，开局立即切换步行状态，全程按住 w 步行前进
+                - 大于0：允许累计奔跑指定秒数，达到后切换步行且不再恢复奔跑，但仍继续按住 w 前进
 
         Returns:
             bool | Any:
@@ -94,7 +99,7 @@ class NavigationMixin(BaseEfTask):
             3. 出现后进行稳定性确认
             4. 若丢失目标则后退搜索
             5. 若 nav 存在，则执行导航对齐逻辑
-            6. 若 nav 为 None，则仅执行直线奔跑搜索
+            6. 若 nav 为 None，则仅执行直线前进搜索
 
         """
         last_click_v_time = 0
@@ -119,9 +124,44 @@ class NavigationMixin(BaseEfTask):
                     vertical_variance=target_vertical_variance
                 )
 
-        run_bool = True
+        # ========== 奔跑状态管理 ==========
+        run_bool = True  # 当前是否处于奔跑状态（ctrl 切换）
         start_time = time.time()
 
+        # max_run_time 状态变量
+        run_accumulated_time = 0.0
+        run_state_start_time = time.time() if max_run_time > 0 else None
+        run_allowed = True
+
+        def enter_run_mode():
+            """切换到奔跑状态（如果允许且尚未处于奔跑状态）。"""
+            nonlocal run_bool, run_state_start_time
+            if run_bool or not run_allowed:
+                return
+            run_bool = True
+            run_state_start_time = time.time()
+            self.press_key("ctrl")
+
+        def exit_run_mode():
+            """切换到步行状态，并累加本段奔跑时间。"""
+            nonlocal run_bool, run_state_start_time, run_accumulated_time, run_allowed
+            if not run_bool:
+                return
+            if run_state_start_time is not None:
+                run_accumulated_time += time.time() - run_state_start_time
+                run_state_start_time = None
+            run_bool = False
+            self.press_key("ctrl")
+            if max_run_time > 0 and run_accumulated_time >= max_run_time:
+                run_allowed = False
+
+        # 处理 max_run_time == 0：开局切换为步行，且全程禁止奔跑
+        if max_run_time == 0:
+            run_allowed = False
+            run_bool = False
+            self.press_key("ctrl")
+
+        # ========== 主循环 ==========
         nav_box = self.box_of_screen(
             (1920 - 1550) / 1920,
             150 / 1080,
@@ -140,8 +180,7 @@ class NavigationMixin(BaseEfTask):
 
                     if run_bool:
                         self.log_info("找到目标，确认稳定中...")
-                        run_bool = False
-                        self.press_key("ctrl")
+                        exit_run_mode()
 
                     settle_time = 2 if target_is_ocr else 1
                     stable = True
@@ -182,12 +221,11 @@ class NavigationMixin(BaseEfTask):
                 if pre_loop_callback:
                     pre_loop_callback()
 
-                # ===== nav=None -> 纯奔跑模式 =====
+                # ===== nav=None -> 纯前进搜索模式 =====
                 if nav is None:
-                    if not run_bool:
+                    if not run_bool and run_allowed:
                         self.log_info("恢复奔跑模式")
-                        run_bool = True
-                        self.press_key("ctrl")
+                        enter_run_mode()
 
                     self.sleep(0.01)
                     continue
@@ -200,10 +238,9 @@ class NavigationMixin(BaseEfTask):
                     nav_result = self.find_feature(nav, box=nav_box, threshold=0.7)
 
                 if nav_result:
-                    if not run_bool:
+                    if not run_bool and run_allowed:
                         self.log_info("重新找到导航，恢复奔跑模式")
-                        run_bool = True
-                        self.press_key("ctrl")
+                        enter_run_mode()
 
                     self.align_ocr_or_find_target_to_center(
                         ocr_match_or_feature_name_list=nav,
@@ -223,8 +260,7 @@ class NavigationMixin(BaseEfTask):
 
                     if run_bool:
                         self.log_info("未找到导航标识，进入短距离搜索模式")
-                        run_bool = False
-                        self.press_key("ctrl")
+                        exit_run_mode()
 
                 self.sleep(0.01)
 

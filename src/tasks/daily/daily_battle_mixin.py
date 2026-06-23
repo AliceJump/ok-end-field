@@ -992,6 +992,7 @@ class DailyBattleFeature:
                         target_is_ocr=True,
                         time_out=60,
                         box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
+                        max_run_time=3
                 ):
                     raise Exception("导航奖励点失败")
 
