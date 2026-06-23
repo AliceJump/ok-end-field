@@ -2897,3 +2897,6 @@ msgstr "キー設定"
 
 msgid "键位配置 / Game Hotkey Config"
 msgstr "キー設定 / Game Hotkey Config"
+
+msgid "藏剑谷"
+msgstr "ゾウジエン谷"

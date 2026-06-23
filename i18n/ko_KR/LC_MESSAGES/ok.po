@@ -2897,3 +2897,6 @@ msgstr "키 설정"
 
 msgid "键位配置 / Game Hotkey Config"
 msgstr "키 설정 / Game Hotkey Config"
+
+msgid "藏剑谷"
+msgstr "Zangjian Valley"

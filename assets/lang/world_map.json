@@ -1678,5 +1678,25 @@
     "es_ES": {
       "pattern": "Desterrado de la Tierra"
     }
+  },
+  "k_zangjiangu": {
+    "zh_CN": {
+      "pattern": "藏剑谷"
+    },
+    "zh_TW": {
+      "pattern": "藏劍谷"
+    },
+    "en_US": {
+      "pattern": "Zangjian Valley"
+    },
+    "ja_JP": {
+      "pattern": "ゾウジエン谷"
+    },
+    "ko_KR": {
+      "pattern": "장검곡"
+    },
+    "es_ES": {
+      "pattern": "Valle Zangjian"
+    }
   }
 }

@@ -2716,3 +2716,6 @@ msgstr "Key Bindings"
 
 msgid "键位配置 / Game Hotkey Config"
 msgstr "Key Bindings / Game Hotkey Config"
+
+msgid "藏剑谷"
+msgstr "Zangjian Valley"
