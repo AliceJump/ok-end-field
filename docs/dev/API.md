@@ -38,7 +38,7 @@
 所有任务与 Mixin 的公共基类，封装了截图、识别、交互等核心能力。
 
 ```python
-from src.tasks.BaseEfTask import BaseEfTask
+from src.base.BaseEfTask import BaseEfTask
 ```
 
 ### 1.1 截图与特征匹配
@@ -892,7 +892,7 @@ def yolo_detect(
 boxes = self.yolo_detect("battle_end", box=self.box.center, conf=0.6)
 ```
 
-推荐在 `src/yolo/models.py` 中集中维护多模型与 labels：
+推荐在 `src/detection/models.py` 中集中维护多模型与 labels：
 
 ```python
 DEFAULT_MODEL_KEY = "battle_end_default"
@@ -908,7 +908,7 @@ YOLO_MODELS = {
 }
 ```
 
-`config.py` 中 `yolo.default_model` 仅用于启动时预加载默认模型。
+`src/config/__init__.py` 中 `yolo.default_model` 仅用于启动时预加载默认模型。
 
 开启「显示调试悬浮窗（Debug Overlay）」时会自动画框：
 - 黄色：YOLO 原始检测结果

@@ -60,7 +60,7 @@ python main_debug.py
 
 ```python
 from ok import TriggerTask
-from src.tasks.BaseEfTask import BaseEfTask
+from src.base.BaseEfTask import BaseEfTask
 
 class MyTriggerTask(BaseEfTask, TriggerTask):
     def __init__(self, *args, **kwargs):
@@ -78,7 +78,7 @@ class MyTriggerTask(BaseEfTask, TriggerTask):
 
 ### 2.2 注册任务
 
-打开 `src/config.py`，将新任务加入 `trigger_tasks` 列表：
+打开 `src/config/__init__.py`，将新任务加入 `trigger_tasks` 列表：
 
 ```python
 config = {

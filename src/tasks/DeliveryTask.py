@@ -544,7 +544,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 ocr=False,
                 raise_if_fail=False,
             )
-            self.send_key("v", after_sleep=0.5)
+            self.send_key("v", after_sleep=0.5)  # 确认使用send_key：v为追踪键，在导航循环中用于重置视野，属于高频重复操作避免经过KeyConfigManager
             if not self.navigate_until_target(
                     target=fL.receive_good,
                     target_is_ocr=False,
@@ -578,7 +578,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             ocr=False,
             raise_if_fail=False,
         )
-        self.send_key("v", after_sleep=0.5)
+        self.send_key("v", after_sleep=0.5)  # 确认使用send_key：v为追踪键，在导航循环中用于重置视野，属于高频重复操作避免经过KeyConfigManager
         self.navigate_until_target(
             target=end_pattern,
             target_is_ocr=True,

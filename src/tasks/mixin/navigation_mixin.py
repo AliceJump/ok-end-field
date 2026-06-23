@@ -129,14 +129,14 @@ class NavigationMixin(BaseEfTask):
             (1080 - 150) / 1080,
         )
 
-        self.send_key_down("w")
+        self.send_key_down("w")  # 确认使用send_key：w为方向移动键，不属于游戏可配置热键，用于持续移动
 
         try:
             while True:
                 reached = check_target()
 
                 if reached:
-                    self.send_key_up("w")
+                    self.send_key_up("w")  # 确认使用send_key：释放方向键
 
                     if run_bool:
                         self.log_info("找到目标，确认稳定中...")
@@ -157,17 +157,17 @@ class NavigationMixin(BaseEfTask):
                         return True
 
                     self.log_info("确认期间目标丢失，开始后退搜索")
-                    self.send_key_down("s")
+                    self.send_key_down("s")  # 确认使用send_key：s为方向移动键，不属于游戏可配置热键，用于后退搜索
 
                     search_start = time.time()
                     while time.time() - search_start < 10:
                         if check_target():
                             self.log_info("后退过程中重新找到目标")
-                            self.send_key_up("s")
+                            self.send_key_up("s")  # 确认使用send_key：释放方向键
                             break
                         self.sleep(0.05)
 
-                    self.send_key_up("s")
+                    self.send_key_up("s")  # 确认使用send_key：释放方向键
 
                 if time.time() - start_time > time_out:
                     self.log_info("导航超时")
@@ -176,7 +176,7 @@ class NavigationMixin(BaseEfTask):
                 if found_special_callback:
                     special_result = found_special_callback()
                     if special_result is not None:
-                        self.send_key_up("w")
+                        self.send_key_up("w")  # 确认使用send_key：释放方向键
                         return special_result
 
                 if pre_loop_callback:
@@ -231,7 +231,7 @@ class NavigationMixin(BaseEfTask):
         finally:
             if not run_bool:
                 self.press_key("ctrl")
-            self.send_key_up("w")
+            self.send_key_up("w")  # 确认使用send_key：释放方向键
 
     def align_ocr_or_find_target_to_center(
             self,
