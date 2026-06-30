@@ -1,0 +1,639 @@
+{
+  "repo_notes": [
+    {
+      "content": ""
+    }
+  ],
+  "pages": [
+    {
+      "title": "Overview",
+      "purpose": "Introduce ok-ef as a Windows automation tool for the game End Field. Cover the non-invasive image-recognition approach, the ok-script framework foundation, main feature categories, system requirements, and installation and launch instructions.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Overview",
+        "zh": "项目概览"
+      },
+      "purpose_i18n": {
+        "en": "Introduce ok-ef as a Windows automation tool for the game End Field. Cover the non-invasive image-recognition approach, the ok-script framework foundation, main feature categories, system requirements, and installation and launch instructions.",
+        "zh": "介绍 ok-ef 作为《终末地》的 Windows 自动化工具，包括非侵入式图像识别方案、ok-script 框架基础、主要功能分类、系统需求以及安装与启动说明。"
+      }
+    },
+    {
+      "title": "Architecture",
+      "purpose": "High-level architectural overview showing how config.py drives the framework, how the screen capture and recognition pipeline feeds into the task system, and how the interaction layer sends input back to the game.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Architecture",
+        "zh": "总体架构"
+      },
+      "purpose_i18n": {
+        "en": "High-level architectural overview showing how config.py drives the framework, how the screen capture and recognition pipeline feeds into the task system, and how the interaction layer sends input back to the game.",
+        "zh": "提供系统整体架构概览，说明 config.py 如何驱动框架、屏幕捕获与识别流水线如何向任务系统提供数据，以及交互层如何向游戏发送输入。"
+      }
+    },
+    {
+      "title": "Configuration System",
+      "purpose": "Full reference for the config dictionary in src/config.py. Document every key including debug, use_gui, screenshot_processor, OCR lib and params, windows exe and interaction and capture_method and HDR flags, supported_resolution, template_matching parameters, onetime_tasks, trigger_tasks, custom_tabs, item_map, yolo, and my_app singleton with types and defaults.",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Configuration System",
+        "zh": "配置系统"
+      },
+      "purpose_i18n": {
+        "en": "Full reference for the config dictionary in src/config.py. Document every key including debug, use_gui, screenshot_processor, OCR lib and params, windows exe and interaction and capture_method and HDR flags, supported_resolution, template_matching parameters, onetime_tasks, trigger_tasks, custom_tabs, item_map, yolo, and my_app singleton with types and defaults.",
+        "zh": "完整说明 src/config.py 中的所有配置项，包括调试、GUI、OCR、截图、模板匹配、任务注册、YOLO 配置以及应用单例设置。"
+      },
+      "parent_i18n": {
+        "en": "Architecture",
+        "zh": "总体架构"
+      }
+    },
+    {
+      "title": "Task Framework",
+      "purpose": "Explain how onetime_tasks and trigger_tasks are registered via string references in config.py and dynamically loaded at runtime. Describe the TriggerTask lifecycle, how BaseEfTask fits in, and how tasks are configured through default_config. Cover the mixin-based composition pattern and MRO (method resolution order) used throughout the codebase.",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Task Framework",
+        "zh": "任务框架"
+      },
+      "purpose_i18n": {
+        "en": "Explain how onetime_tasks and trigger_tasks are registered via string references in config.py and dynamically loaded at runtime. Describe the TriggerTask lifecycle, how BaseEfTask fits in, and how tasks are configured through default_config. Cover the mixin-based composition pattern and MRO (method resolution order) used throughout the codebase.",
+        "zh": "说明任务注册与动态加载机制、TriggerTask 生命周期、BaseEfTask 继承体系、配置机制、Mixin 组合模式以及 MRO 的使用。"
+      },
+      "parent_i18n": {
+        "en": "Architecture",
+        "zh": "总体架构"
+      }
+    },
+    {
+      "title": "Visual Recognition Pipeline",
+      "purpose": "Describe the full recognition pipeline: frame capture and make_bottom_left_black preprocessing, OCR via onnxocr with OpenVINO, template matching against coco_annotations.json, HSV color isolation using HSVRange, YOLOv8 ONNX object detection via OpenVinoYolo8Detect, and frame processing utilities. Explain how BaseEfTask methods expose these to task logic. Cover the YOLO model registry (src/yolo/models.py, src/yolo/model_registry.py) and the RealtimeDetectTask debug tool.",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Visual Recognition Pipeline",
+        "zh": "视觉识别流水线"
+      },
+      "purpose_i18n": {
+        "en": "Describe the full recognition pipeline: frame capture and make_bottom_left_black preprocessing, OCR via onnxocr with OpenVINO, template matching against coco_annotations.json, HSV color isolation using HSVRange, YOLOv8 ONNX object detection via OpenVinoYolo8Detect, and frame processing utilities. Explain how BaseEfTask methods expose these to task logic. Cover the YOLO model registry (src/yolo/models.py, src/yolo/model_registry.py) and the RealtimeDetectTask debug tool.",
+        "zh": "介绍帧捕获、预处理、OCR、模板匹配、HSV 颜色识别、YOLO 检测、模型注册机制以及调试工具。"
+      },
+      "parent_i18n": {
+        "en": "Architecture",
+        "zh": "总体架构"
+      }
+    },
+    {
+      "title": "Screen Interaction Layer",
+      "purpose": "Document how ok-ef sends input to the game: EfInteraction click mechanics using Windows messages, cursor save and restore, try_unclip for cursor clip detection, Mouse.py functions for delta movement, and the ScreenPosition helper for defining screen regions. Cover KeyConfig and KeyConfigManager for hotkey abstraction. Also document WsPositionMixin and the ItemNavigatorTask WebSocket position relay (assets/scripts/endfield-ws-position-relay.user.js).",
+      "parent": "Architecture",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Screen Interaction Layer",
+        "zh": "屏幕交互层"
+      },
+      "purpose_i18n": {
+        "en": "Document how ok-ef sends input to the game: EfInteraction click mechanics using Windows messages, cursor save and restore, try_unclip for cursor clip detection, Mouse.py functions for delta movement, and the ScreenPosition helper for defining screen regions. Cover KeyConfig and KeyConfigManager for hotkey abstraction. Also document WsPositionMixin and the ItemNavigatorTask WebSocket position relay (assets/scripts/endfield-ws-position-relay.user.js).",
+        "zh": "说明 ok-ef 如何发送输入、管理光标状态、定义屏幕区域、处理热键以及支持 WebSocket 位置同步。"
+      },
+      "parent_i18n": {
+        "en": "Architecture",
+        "zh": "总体架构"
+      }
+    },
+    {
+      "title": "Task Reference",
+      "purpose": "Index page listing all registered tasks with their category (onetime vs trigger), a one-sentence description of each, and links to individual task pages. Covers DailyTask, BattleTask, DeliveryTask, TakeDeliveryTask, WarehouseTransferTask, DemoDrawTask, YingTuoTask, ItemNavigatorTask, AutoCombatTask, AutoInteractionTask, AutoPickTask, AutoLoginTask, and diagnostic/test tasks.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Task Reference",
+        "zh": "任务索引"
+      },
+      "purpose_i18n": {
+        "en": "Index page listing all registered tasks with their category (onetime vs trigger), a one-sentence description of each, and links to individual task pages. Covers DailyTask, BattleTask, DeliveryTask, TakeDeliveryTask, WarehouseTransferTask, DemoDrawTask, YingTuoTask, ItemNavigatorTask, AutoCombatTask, AutoInteractionTask, AutoPickTask, AutoLoginTask, and diagnostic/test tasks.",
+        "zh": "提供所有已注册任务的索引，包括一次性任务和触发任务，并附带说明与链接。"
+      }
+    },
+    {
+      "title": "BaseEfTask",
+      "purpose": "Complete reference for the BaseEfTask base class: all public methods grouped by category (interaction and movement, screen analysis, game state and navigation), parameters, return types, and usage notes. Cover move_keys, scroll, click_with_alt, isolate_by_hsv_ranges, wait_ui_stable, align_ocr_or_find_target_to_center, to_model_area, skip_dialog, ensure_main, is_main, wait_pop_up, and wait_login.",
+      "parent": "Task Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "BaseEfTask",
+        "zh": "BaseEfTask 基类"
+      },
+      "purpose_i18n": {
+        "en": "Complete reference for the BaseEfTask base class: all public methods grouped by category (interaction and movement, screen analysis, game state and navigation), parameters, return types, and usage notes. Cover move_keys, scroll, click_with_alt, isolate_by_hsv_ranges, wait_ui_stable, align_ocr_or_find_target_to_center, to_model_area, skip_dialog, ensure_main, is_main, wait_pop_up, and wait_login.",
+        "zh": "完整说明 BaseEfTask 的所有公共接口，包括移动、交互、识别、导航以及游戏状态辅助函数。"
+      },
+      "parent_i18n": {
+        "en": "Task Reference",
+        "zh": "任务索引"
+      }
+    },
+    {
+      "title": "Daily Task",
+      "purpose": "Detailed documentation of DailyTask: the run() orchestration flow, all configurable sub-tasks and their enable/disable keys, and each sub-task method in detail including collect_credit, claim_delivery_rewards, delivery_send_others, exchange_outpost_goods, make_weapon, claim_daily_rewards, execute_gift_task, buy_sell, collect_clue, and battle_demo (DailyDemoFeature). Cover the mixin composition (DailyBuyMixin, DailyBattleMixin, DailyTradeMixin, DailyShopMixin, DailyRoutineMixin, DailyLiaisonMixin, AccountMixin) and multi-account mode. Document the DailyTaskRunner and the HTML summary report generated by run_daily_finally.",
+      "parent": "Task Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Daily Task",
+        "zh": "日常任务"
+      },
+      "purpose_i18n": {
+        "en": "Detailed documentation of DailyTask: the run() orchestration flow, all configurable sub-tasks and their enable/disable keys, and each sub-task method in detail including collect_credit, claim_delivery_rewards, delivery_send_others, exchange_outpost_goods, make_weapon, claim_daily_rewards, execute_gift_task, buy_sell, collect_clue, and battle_demo (DailyDemoFeature). Cover the mixin composition (DailyBuyMixin, DailyBattleMixin, DailyTradeMixin, DailyShopMixin, DailyRoutineMixin, DailyLiaisonMixin, AccountMixin) and multi-account mode. Document the DailyTaskRunner and the HTML summary report generated by run_daily_finally.",
+        "zh": "说明 DailyTask 的执行流程、可配置子任务、Mixin 组合、多账号支持以及报告生成机制。"
+      },
+      "parent_i18n": {
+        "en": "Task Reference",
+        "zh": "任务索引"
+      }
+    },
+    {
+      "title": "Delivery Task",
+      "purpose": "Document the DeliveryTask class: the four run modes (full cycle, accept-only, deliver-only, zip line test), the other_run Wuling 7.31w acceptance flow, zip_line_list_go sequence execution, on_zip_line_start destination-based routing, task_to_transfer_point map navigation, to_storage_point_and_back_zip_line, predefined zip line sequences, and all configuration options.",
+      "parent": "Task Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Delivery Task",
+        "zh": "运输委托任务"
+      },
+      "purpose_i18n": {
+        "en": "Document the DeliveryTask class: the four run modes (full cycle, accept-only, deliver-only, zip line test), the other_run Wuling 7.31w acceptance flow, zip_line_list_go sequence execution, on_zip_line_start destination-based routing, task_to_transfer_point map navigation, to_storage_point_and_back_zip_line, predefined zip line sequences, and all configuration options.",
+        "zh": "说明运输任务的运行模式、乌灵接单流程、索道路线、传送点逻辑以及相关配置。"
+      },
+      "parent_i18n": {
+        "en": "Task Reference",
+        "zh": "任务索引"
+      }
+    },
+    {
+      "title": "Take Delivery Task",
+      "purpose": "Document TakeDeliveryTask: how it navigates to the delivery list, the main OCR scan loop, process_ocr_results extraction logic using reward_pattern and accept buttons and refresh button, detect_ticket_type icon-based ticket detection, the scroll-then-refresh cycle, and ticket type and min_reward configuration.",
+      "parent": "Task Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Take Delivery Task",
+        "zh": "接取委托任务"
+      },
+      "purpose_i18n": {
+        "en": "Document TakeDeliveryTask: how it navigates to the delivery list, the main OCR scan loop, process_ocr_results extraction logic using reward_pattern and accept buttons and refresh button, detect_ticket_type icon-based ticket detection, the scroll-then-refresh cycle, and ticket type and min_reward configuration.",
+        "zh": "说明委托列表导航、OCR 处理、奖励提取、票据识别以及刷新机制。"
+      },
+      "parent_i18n": {
+        "en": "Task Reference",
+        "zh": "任务索引"
+      }
+    },
+    {
+      "title": "Auto Combat Task",
+      "purpose": "Document AutoCombatTask: the skill sequence and start-skill-points configuration, the run() loop, in_combat detection logic, get_skill_bar_count HSV-based skill bar counting, ocr_lv out-of-combat detection, in_team check, last_op_time and last_skill_time cooldown tracking, and the background battle-end notification option. Cover AutoCombatLogic delegation pattern and the sequencing (排轴) mode.",
+      "parent": "Task Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Auto Combat Task",
+        "zh": "自动战斗任务"
+      },
+      "purpose_i18n": {
+        "en": "Document AutoCombatTask: the skill sequence and start-skill-points configuration, the run() loop, in_combat detection logic, get_skill_bar_count HSV-based skill bar counting, ocr_lv out-of-combat detection, in_team check, last_op_time and last_skill_time cooldown tracking, and the background battle-end notification option. Cover AutoCombatLogic delegation pattern and the sequencing (排轴) mode.",
+        "zh": "说明自动战斗逻辑、技能轴、战斗状态识别、冷却管理以及自动战斗模式。"
+      },
+      "parent_i18n": {
+        "en": "Task Reference",
+        "zh": "任务索引"
+      }
+    },
+    {
+      "title": "Auto Pick Task",
+      "purpose": "Document AutoPickTask: whitelist and blacklist configuration, the run() decision flow (in_combat_world check, find_f, text_zone OCR, blacklist/whitelist filter, icon_zone color analysis, pick), spatial zone construction relative to the F-button bounding box, and the pick key-press mechanic.",
+      "parent": "Task Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Auto Pick Task",
+        "zh": "自动拾取任务"
+      },
+      "purpose_i18n": {
+        "en": "Document AutoPickTask: whitelist and blacklist configuration, the run() decision flow (in_combat_world check, find_f, text_zone OCR, blacklist/whitelist filter, icon_zone color analysis, pick), spatial zone construction relative to the F-button bounding box, and the pick key-press mechanic.",
+        "zh": "介绍白名单/黑名单过滤、OCR 识别、物品分析以及拾取执行逻辑。"
+      },
+      "parent_i18n": {
+        "en": "Task Reference",
+        "zh": "任务索引"
+      }
+    },
+    {
+      "title": "Auto Login Task",
+      "purpose": "Document AutoLoginTask: trigger interval, how it detects the logged-out state via _logged_in flag, the wait_login flow for handling monthly card popups and check-in dialogs, and how it uses EfInteraction to reach the game world state. Cover LoginMixin and AccountMixin for multi-account support.",
+      "parent": "Task Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Auto Login Task",
+        "zh": "自动登录任务"
+      },
+      "purpose_i18n": {
+        "en": "Document AutoLoginTask: trigger interval, how it detects the logged-out state via _logged_in flag, the wait_login flow for handling monthly card popups and check-in dialogs, and how it uses EfInteraction to reach the game world state. Cover LoginMixin and AccountMixin for multi-account support.",
+        "zh": "说明登录状态检测、自动登录流程、弹窗处理以及多账号支持。"
+      },
+      "parent_i18n": {
+        "en": "Task Reference",
+        "zh": "任务索引"
+      }
+    },
+    {
+      "title": "Auto Interaction Task",
+      "purpose": "Document AutoInteractionTask (formerly AutoSkipDialogTask): the 自动跳过剧情 (auto-skip dialog) feature using ESC key and timed confirm-click loop, the 自动点击传送 (auto-click teleport) feature, baker page interaction logic, and the TriggerTask enable/disable lifecycle. Note the rename from AutoSkipDialogTask to AutoInteractionTask and the expanded scope.",
+      "parent": "Task Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Auto Interaction Task",
+        "zh": "自动交互任务"
+      },
+      "purpose_i18n": {
+        "en": "Document AutoInteractionTask (formerly AutoSkipDialogTask): the 自动跳过剧情 (auto-skip dialog) feature using ESC key and timed confirm-click loop, the 自动点击传送 (auto-click teleport) feature, baker page interaction logic, and the TriggerTask enable/disable lifecycle. Note the rename from AutoSkipDialogTask to AutoInteractionTask and the expanded scope.",
+        "zh": "说明自动跳过剧情、自动确认传送、交互自动化以及 TriggerTask 生命周期管理。"
+      },
+      "parent_i18n": {
+        "en": "Task Reference",
+        "zh": "任务索引"
+      }
+    },
+    {
+      "title": "Warehouse Transfer Task",
+      "purpose": "Document WarehouseTransferTask: how it identifies items using OCR and template matching, the safety reserve strategy, the item-to-warehouse-dict mapping, and how it orchestrates transfers between in-game warehouses.",
+      "parent": "Task Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Warehouse Transfer Task",
+        "zh": "仓库转运任务"
+      },
+      "purpose_i18n": {
+        "en": "Document WarehouseTransferTask: how it identifies items using OCR and template matching, the safety reserve strategy, the item-to-warehouse-dict mapping, and how it orchestrates transfers between in-game warehouses.",
+        "zh": "说明物品识别、仓库映射、安全库存策略以及转运流程。"
+      },
+      "parent_i18n": {
+        "en": "Task Reference",
+        "zh": "任务索引"
+      }
+    },
+    {
+      "title": "Yingtuo Monument Task",
+      "purpose": "Document YingTuoTask (影拓丰碑): the run() loop for automatically completing all normal Yingtuo Monument stages, enter_yingtuo() navigation flow using F8 and resident_icon, find_normal_challenge() detection logic using yingtuo_not_cleared_icon, the battle_and_exit() combat sequence, the permanent_dict and YINGTUO_MONUMENT data structures from world_map.py, and the support_schedule_task flag for scheduled execution.",
+      "parent": "Task Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Yingtuo Monument Task",
+        "zh": "影拓丰碑任务"
+      },
+      "purpose_i18n": {
+        "en": "Document YingTuoTask (影拓丰碑): the run() loop for automatically completing all normal Yingtuo Monument stages, enter_yingtuo() navigation flow using F8 and resident_icon, find_normal_challenge() detection logic using yingtuo_not_cleared_icon, the battle_and_exit() combat sequence, the permanent_dict and YINGTUO_MONUMENT data structures from world_map.py, and the support_schedule_task flag for scheduled execution.",
+        "zh": "介绍自动完成影拓丰碑挑战的流程、导航、战斗逻辑以及计划任务支持。"
+      },
+      "parent_i18n": {
+        "en": "Task Reference",
+        "zh": "任务索引"
+      }
+    },
+    {
+      "title": "Item Navigator Task",
+      "purpose": "Document ItemNavigatorTask (物品导航): the WebSocket position relay architecture using WsPositionMixin and the endfield-ws-position-relay.user.js Tampermonkey script, item selection from assets/items/map/ data, nearest-point calculation, the mark-key mechanic for flagging collected items, SPECIAL_ITEM_Y_OFFSET corrections, and the 选择物品 multi-select config type.",
+      "parent": "Task Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Item Navigator Task",
+        "zh": "物品导航任务"
+      },
+      "purpose_i18n": {
+        "en": "Document ItemNavigatorTask (物品导航): the WebSocket position relay architecture using WsPositionMixin and the endfield-ws-position-relay.user.js Tampermonkey script, item selection from assets/items/map/ data, nearest-point calculation, the mark-key mechanic for flagging collected items, SPECIAL_ITEM_Y_OFFSET corrections, and the 选择物品 multi-select config type.",
+        "zh": "说明 WebSocket 定位、物品选择、最近点计算、采集标记以及多选配置。"
+      },
+      "parent_i18n": {
+        "en": "Task Reference",
+        "zh": "任务索引"
+      }
+    },
+    {
+      "title": "Navigation and Movement System",
+      "purpose": "Overview of how tasks navigate the 3D game world: the NavigationMixin alignment pipeline, LiaisonMixin NPC interactions, MapMixin world-map teleportation, and ZipLineMixin aerial traversal. Links to child pages for details.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Navigation and Movement System",
+        "zh": "导航与移动系统"
+      },
+      "purpose_i18n": {
+        "en": "Overview of how tasks navigate the 3D game world: the NavigationMixin alignment pipeline, LiaisonMixin NPC interactions, MapMixin world-map teleportation, and ZipLineMixin aerial traversal. Links to child pages for details.",
+        "zh": "概述导航、NPC 交互、地图传送以及索道移动系统。"
+      }
+    },
+    {
+      "title": "Navigation Mixin and Alignment",
+      "purpose": "Deep dive into NavigationMixin: start_tracking_and_align_target, navigate_until_target loop with recovery logic, align_ocr_or_find_target_to_center PID-like alignment with deadzone and slow_radius, decay-based target prediction during occlusion, and the short-distance search mode. Cover BattleTask as a consumer of DailyBattleFeature with YOLO resource release.",
+      "parent": "Navigation and Movement System",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Navigation Mixin and Alignment",
+        "zh": "导航与对准系统"
+      },
+      "purpose_i18n": {
+        "en": "Deep dive into NavigationMixin: start_tracking_and_align_target, navigate_until_target loop with recovery logic, align_ocr_or_find_target_to_center PID-like alignment with deadzone and slow_radius, decay-based target prediction during occlusion, and the short-distance search mode. Cover BattleTask as a consumer of DailyBattleFeature with YOLO resource release.",
+        "zh": "说明目标追踪、对准算法、遮挡预测以及恢复策略。"
+      },
+      "parent_i18n": {
+        "en": "Navigation and Movement System",
+        "zh": "导航与移动系统"
+      }
+    },
+    {
+      "title": "Liaison Mixin and NPC Interaction",
+      "purpose": "Document LiaisonMixin: transfer_to_home_point teleportation to the Dijiang ship, navigate_to_operator_liaison_station with special_chat_detect interrupt callback, perform_operator_liaison state machine for character selection and proximity navigation, collect_and_give_gifts UI flow, and the find_name_patterns overhead name-tag detection.",
+      "parent": "Navigation and Movement System",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Liaison Mixin and NPC Interaction",
+        "zh": "联络员与NPC交互"
+      },
+      "purpose_i18n": {
+        "en": "Document LiaisonMixin: transfer_to_home_point teleportation to the Dijiang ship, navigate_to_operator_liaison_station with special_chat_detect interrupt callback, perform_operator_liaison state machine for character selection and proximity navigation, collect_and_give_gifts UI flow, and the find_name_patterns overhead name-tag detection.",
+        "zh": "说明 NPC 导航、交互状态机、赠礼流程以及名称识别。"
+      },
+      "parent_i18n": {
+        "en": "Navigation and Movement System",
+        "zh": "导航与移动系统"
+      }
+    },
+    {
+      "title": "Zip Line Mixin",
+      "purpose": "Document ZipLineMixin: zip_line_list_go sequence execution, zip-line alignment and view magnification mechanics, how DeliveryTask and DailyBattleFeature use predefined zip-line sequences, and the relationship between zip-line navigation and the delivery area data in src/data/delivery_area.py.",
+      "parent": "Navigation and Movement System",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Zip Line Mixin",
+        "zh": "索道系统"
+      },
+      "purpose_i18n": {
+        "en": "Document ZipLineMixin: zip_line_list_go sequence execution, zip-line alignment and view magnification mechanics, how DeliveryTask and DailyBattleFeature use predefined zip-line sequences, and the relationship between zip-line navigation and the delivery area data in src/data/delivery_area.py.",
+        "zh": "介绍索道执行流程、对准机制以及与运输导航的结合。"
+      },
+      "parent_i18n": {
+        "en": "Navigation and Movement System",
+        "zh": "导航与移动系统"
+      }
+    },
+    {
+      "title": "Data Reference",
+      "purpose": "Overview page linking to the static data modules used by tasks: world map geography, feature template definitions, character data, item name translations, and the essence recognizer library.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Data Reference",
+        "zh": "数据参考"
+      },
+      "purpose_i18n": {
+        "en": "Overview page linking to the static data modules used by tasks: world map geography, feature template definitions, character data, item name translations, and the essence recognizer library.",
+        "zh": "提供任务系统使用的所有静态数据模块索引。"
+      }
+    },
+    {
+      "title": "World Map Data",
+      "purpose": "Document the data structures in world_map.py: areas_list, outpost_dict mapping area to outpost names, default_goods, goods_dict, exchange_goods_dict mapping area to item lists, item_to_warehouse_dict mapping item to warehouse category, permanent_dict for permanent content like YINGTUO_MONUMENT, and delivery_area.py for transport commission area configs. Explain how DailyTask consumes these for outpost exchange and market operations. Cover world_map_utils.py helper functions.",
+      "parent": "Data Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "World Map Data",
+        "zh": "世界地图数据"
+      },
+      "purpose_i18n": {
+        "en": "Document the data structures in world_map.py: areas_list, outpost_dict mapping area to outpost names, default_goods, goods_dict, exchange_goods_dict mapping area to item lists, item_to_warehouse_dict mapping item to warehouse category, permanent_dict for permanent content like YINGTUO_MONUMENT, and delivery_area.py for transport commission area configs. Explain how DailyTask consumes these for outpost exchange and market operations. Cover world_map_utils.py helper functions.",
+        "zh": "说明世界地图结构、市场数据、仓库映射、永久内容定义以及辅助工具。"
+      },
+      "parent_i18n": {
+        "en": "Data Reference",
+        "zh": "数据参考"
+      }
+    },
+    {
+      "title": "Feature Definitions",
+      "purpose": "Document the FeatureList enum: all named features, how they map to entries in coco_annotations.json, how annotations in x-anylabeling-asset define bounding boxes, and how tasks reference FeatureList values in find_one and find_feature calls.",
+      "parent": "Data Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Feature Definitions",
+        "zh": "特征定义"
+      },
+      "purpose_i18n": {
+        "en": "Document the FeatureList enum: all named features, how they map to entries in coco_annotations.json, how annotations in x-anylabeling-asset define bounding boxes, and how tasks reference FeatureList values in find_one and find_feature calls.",
+        "zh": "说明 FeatureList、标注映射以及模板引用机制。"
+      },
+      "parent_i18n": {
+        "en": "Data Reference",
+        "zh": "数据参考"
+      }
+    },
+    {
+      "title": "Item and Character Data",
+      "purpose": "Document ITEM_CATEGORY_EN_BY_ZH, ITEM_WAREHOUSE_CATEGORY_EN_BY_ZH, and ITEM_TRANSLATION_DICT in zh_en.py for Chinese-to-English item name mapping, plus the characters.py data used for gift-giving tasks in DailyTask. Cover characters_utils.py helper functions and the ocr_normalize_map.py OCR correction dictionary. Also document the item map data (assets/items/map/summary.json and item_names.json) used by ItemNavigatorTask.",
+      "parent": "Data Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Item and Character Data",
+        "zh": "物品与角色数据"
+      },
+      "purpose_i18n": {
+        "en": "Document ITEM_CATEGORY_EN_BY_ZH, ITEM_WAREHOUSE_CATEGORY_EN_BY_ZH, and ITEM_TRANSLATION_DICT in zh_en.py for Chinese-to-English item name mapping, plus the characters.py data used for gift-giving tasks in DailyTask. Cover characters_utils.py helper functions and the ocr_normalize_map.py OCR correction dictionary. Also document the item map data (assets/items/map/summary.json and item_names.json) used by ItemNavigatorTask.",
+        "zh": "说明物品翻译、仓库分类、角色数据、OCR 修正以及导航物品地图。"
+      },
+      "parent_i18n": {
+        "en": "Data Reference",
+        "zh": "数据参考"
+      }
+    },
+    {
+      "title": "Essence Recognizer Library",
+      "purpose": "Document the src/essence/ module: EssenceEntry and EssenceInfo dataclasses, _normalize_text with OpenCC t2s conversion and punctuation normalization, EssenceRecognizer OCR-based affix parsing, weapon_data.py graduation affix definitions from weapon_data.csv, and how the library is used by tests (TestEssenceRecognizer, TestEssenceImageFeatures). Clarify that this is a utility library, not a registered task.",
+      "parent": "Data Reference",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Essence Recognizer Library",
+        "zh": "精华识别库"
+      },
+      "purpose_i18n": {
+        "en": "Document the src/essence/ module: EssenceEntry and EssenceInfo dataclasses, _normalize_text with OpenCC t2s conversion and punctuation normalization, EssenceRecognizer OCR-based affix parsing, weapon_data.py graduation affix definitions from weapon_data.csv, and how the library is used by tests (TestEssenceRecognizer, TestEssenceImageFeatures). Clarify that this is a utility library, not a registered task.",
+        "zh": "说明基于 OCR 的词条解析、文本归一化、毕业词条定义以及测试用途。"
+      },
+      "parent_i18n": {
+        "en": "Data Reference",
+        "zh": "数据参考"
+      }
+    },
+    {
+      "title": "Development Guide",
+      "purpose": "Overview for contributors: environment setup, running the application in debug mode, dependency management, project directory structure covering src/tasks, src/ui, src/scheduler, src/essence, src/data, assets, configs, and tests, with links to sub-pages.",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Development Guide",
+        "zh": "开发指南"
+      },
+      "purpose_i18n": {
+        "en": "Overview for contributors: environment setup, running the application in debug mode, dependency management, project directory structure covering src/tasks, src/ui, src/scheduler, src/essence, src/data, assets, configs, and tests, with links to sub-pages.",
+        "zh": "提供贡献者文档、环境配置说明、项目结构以及调试流程。"
+      }
+    },
+    {
+      "title": "CI/CD and Release Workflow",
+      "purpose": "Document the GitHub Actions pipeline: build.yml tag-triggered flow covering checkout with LFS, install dependencies, inline_ok_requirements, run tests, partial-sync-repo to ok-ef-update.git, pyappify packaging, GitHub Release creation, and MirrorChyan triggering. Also cover mirrorchyan_release_note.yml and mirrorchyan_uploading.yml and the three installer artifacts and the deploy.txt sync configuration. Cover the download_stats.yml workflow and the download_stats.py SVG generation script.",
+      "parent": "Development Guide",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "CI/CD and Release Workflow",
+        "zh": "CI/CD 与发布流程"
+      },
+      "purpose_i18n": {
+        "en": "Document the GitHub Actions pipeline: build.yml tag-triggered flow covering checkout with LFS, install dependencies, inline_ok_requirements, run tests, partial-sync-repo to ok-ef-update.git, pyappify packaging, GitHub Release creation, and MirrorChyan triggering. Also cover mirrorchyan_release_note.yml and mirrorchyan_uploading.yml and the three installer artifacts and the deploy.txt sync configuration. Cover the download_stats.yml workflow and the download_stats.py SVG generation script.",
+        "zh": "说明 GitHub Actions 工作流、打包、发布、镜像同步以及统计生成机制。"
+      },
+      "parent_i18n": {
+        "en": "Development Guide",
+        "zh": "开发指南"
+      }
+    },
+    {
+      "title": "Release Automation Scripts",
+      "purpose": "Document auto_release.py and auto_release.ps1: the VersionManager class structure, version parsing for vX.Y.Z format, the patch-first increment logic with MAX_PATCH 100 and MAX_MINOR 10 and MAX_MAJOR 10, dirty workspace check, dry-run mode, git tag creation and push, and the Python versus PowerShell implementation mapping.",
+      "parent": "Development Guide",
+      "page_notes": [
+        {
+          "content": ""
+        }
+      ],
+      "title_i18n": {
+        "en": "Release Automation Scripts",
+        "zh": "自动发布脚本"
+      },
+      "purpose_i18n": {
+        "en": "Document auto_release.py and auto_release.ps1: the VersionManager class structure, version parsing for vX.Y.Z format, the patch-first increment logic with MAX_PATCH 100 and MAX_MINOR 10 and MAX_MAJOR 10, dirty workspace check, dry-run mode, git tag creation and push, and the Python versus PowerShell implementation mapping.",
+        "zh": "说明版本管理、自动递增规则、工作区校验以及自动发布流程。"
+      },
+      "parent_i18n": {
+        "en": "Development Guide",
+        "zh": "开发指南"
+      }
+    }
+  ]
+}The content has been copied to your clipboard. Please paste it here to complete the file creation.
