@@ -47,9 +47,11 @@ class YingTuoTask(BattleMixin):
     def enter_yingtuo(self):
         self.log_info("开始影拓丰碑任务", notify=True)
         self.press_key("f8", after_sleep=2)
-        if not self.wait_click_feature(feature=fL.resident_icon, time_out=10, raise_if_not_found=False, after_sleep=2):
-            self.log_info("未能进入常驻战斗页，任务结束", notify=True)
-            return False
+        # 如果当前不在常驻战斗页，先进入常驻战斗页
+        if not self.find_feature(feature=fL.yingtuo_entrance):
+            if not self.wait_click_feature(feature=fL.resident_icon, time_out=10, raise_if_not_found=False, after_sleep=2):
+                self.log_info("未能进入常驻战斗页，任务结束", notify=True)
+                return False
         if not self.wait_click_feature(feature=fL.yingtuo_entrance, time_out=10, raise_if_not_found=False):
             self.log_info("未能找到影拓入口，任务结束", notify=True)
             return False
