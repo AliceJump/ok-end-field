@@ -14,7 +14,7 @@ class YingTuoTask(BattleMixin):
         self.description = "自动完成当前所有普通影拓丰碑关卡"
         self.icon = Icons.BATTLE
         self.index = 0
-        self.yingtuo_list = permanent_dict[YINGTUO_MONUMENT]
+        self.yingtuo_list = permanent_dict[YINGTUO_MONUMENT][::-1]
         self.support_schedule_task = True
     def run(self):
         self.ensure_main(time_out=400)
@@ -46,11 +46,15 @@ class YingTuoTask(BattleMixin):
         self.log_info("影拓丰碑任务完成", notify=True)
     def enter_yingtuo(self):
         self.log_info("开始影拓丰碑任务", notify=True)
-        self.press_key("f8", after_sleep=2)
-        if not self.wait_click_feature(feature=fL.resident_icon, time_out=10, raise_if_not_found=False, after_sleep=2):
-            self.log_info("未能进入常驻战斗页，任务结束", notify=True)
-            return False
-        if not self.wait_click_feature(feature=fL.yingtuo_entrance, time_out=10, raise_if_not_found=False):
+        self.press_key("f8", after_sleep=1)
+        find_yingtuo_entrance = False
+        for _ in range(6):
+            if self.wait_click_feature(feature=fL.yingtuo_entrance, time_out=2, raise_if_not_found=False):
+                self.log_info("找到影拓入口", notify=True)
+                find_yingtuo_entrance = True
+                break
+            self.send_key("e", after_sleep=0)
+        if not find_yingtuo_entrance:
             self.log_info("未能找到影拓入口，任务结束", notify=True)
             return False
         if not self.wait_feature(feature=fL.yingtuo_monument, time_out=10, raise_if_not_found=False):
@@ -65,7 +69,7 @@ class YingTuoTask(BattleMixin):
             return None
         self.target = get_world_map_text(self.lang, self.yingtuo_list[self.index])
         self.log_info(f"寻找{self.target}关卡")
-        for _ in range(3):  # 尝试多次寻找，增加成功率
+        for _ in range(len(self.yingtuo_list)//2):  # 尝试多次寻找，增加成功率
             if self.wait_click_ocr(match=self.target, box=self.box_of_screen(0.013, 0.759, 0.991, 0.824), time_out=2, raise_if_not_found=False, after_sleep=2):
                 self.log_info(f"找到{self.target}关卡")
                 self.index += 1

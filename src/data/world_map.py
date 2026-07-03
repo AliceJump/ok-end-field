@@ -8,10 +8,11 @@ STAGE_CATEGORY_ENERGY_POOLING = "能量淤积点"
 YINGTUO_MONUMENT = "影拓丰碑"
 permanent_dict = {
     YINGTUO_MONUMENT: [
-        "浊流具现",
-        "灼痛疤痕",
+        "大地的弃子",
         "无机造物",
-        "大地的弃子"
+        "灼痛疤痕",
+        "浊流具现",
+        "死寂争鸣"
     ]
 }
 areas_list = ["武陵", "四号谷地"]
