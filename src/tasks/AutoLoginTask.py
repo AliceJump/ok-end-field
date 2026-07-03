@@ -1,7 +1,7 @@
 from qfluentwidgets import FluentIcon
 
 from ok import TriggerTask, Logger
-from base.BaseEfTask import BaseEfTask
+from src.tasks.BaseEfTask import BaseEfTask
 
 logger = Logger.get_logger(__name__)
 

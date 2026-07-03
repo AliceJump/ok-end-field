@@ -17,7 +17,7 @@ from qfluentwidgets import (
 from ok.gui.tasks.ConfigCard import ConfigCard, og
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 from ok.gui.widget.CustomTab import CustomTab
-from data.account_scope_store import (
+from src.tasks.account.account_scope_store import (
     load_overrides,
     parse_account_list_text,
     save_overrides,

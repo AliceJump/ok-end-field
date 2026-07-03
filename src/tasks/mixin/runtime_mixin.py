@@ -13,17 +13,18 @@ from PIL import Image
 from ok import Box
 from skimage.metrics import structural_similarity as ssim
 
-from config import config as app_config
-from data.FeatureList import FeatureList as fL
-from image.frame_processes import isolate_by_hsv_ranges
-from interaction.Key import move_keys as send_move_keys
-from interaction.Mouse import (
+from src.config import config as app_config
+from src.data.FeatureList import FeatureList as fL
+from src.image.frame_processes import isolate_by_hsv_ranges
+from src.interaction.Key import move_keys as send_move_keys
+from src.interaction.Mouse import (
     active_and_send_mouse_delta as send_mouse_delta,
     move_to_target_once as move_to_target_once_impl,
     run_at_window_pos,
 )
-from detection.loader import YoloModelLoader
-from image.rotated_template import rotated_template_match
+from src.yolo.loader import YoloModelLoader
+from src.image.rotated_template import rotated_template_match
+from src.tasks import BaseEfTask
 
 feature_values = [f.value for f in fL]
 
@@ -271,8 +272,7 @@ class RuntimeMixin:
 
             # 检查 Feature
             if feature is not None:
-                if self.wait_feature(feature=feature, vertical_variance=0.05, horizontal_variance=0.05,
-                                     time_out=once_time_out, box=box, raise_if_not_found=False):
+                if self.wait_feature(feature=feature, vertical_variance=0.05, horizontal_variance=0.05, time_out=once_time_out, box=box, raise_if_not_found=False):
                     return True
 
             # 都没找到 → 点击返回
@@ -572,7 +572,7 @@ class RuntimeMixin:
           - 粗搜阶段搜索 36 个角度，精搜阶段在最佳粗搜 ± 10° 范围以 0.5° 步长精细搜索
           - 自动处理角度环绕（如 355° ± 10° 跨越 0/360° 边界）
         """
-        from image.rotated_template import ArrowAngleMatcher
+        from src.image.rotated_template import ArrowAngleMatcher
 
         tgt = target_image if target_image is not None else self.next_frame()
         if tgt is None:
@@ -632,7 +632,6 @@ class RuntimeMixin:
         Raises:
             ValueError: 当 method 不支持或 box 非法时抛出。
         """
-
         def parse_box(frame, box: Box | tuple | list | None):
             if box is None:
                 return frame
@@ -980,10 +979,10 @@ class RuntimeMixin:
         return int(self.width / 2), int(self.height / 2)
 
     def find_one(self, feature_name=None, horizontal_variance=0, vertical_variance=0, threshold=0,
-                 use_gray_scale=False, box=None, canny_lower=0, canny_higher=0,
-                 frame_processor=None, template=None, mask_function=None, frame=None,
-                 match_method=cv2.TM_CCOEFF_NORMED, screenshot=False, limit=1,
-                 target_height=0, feature=None):
+             use_gray_scale=False, box=None, canny_lower=0, canny_higher=0,
+             frame_processor=None, template=None, mask_function=None, frame=None,
+             match_method=cv2.TM_CCOEFF_NORMED, screenshot=False, limit=1,
+             target_height=0, feature=None):
         """
         按当前分辨率执行单个特征识别。
 

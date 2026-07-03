@@ -18,9 +18,9 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
-from data.FeatureList import FeatureList as fL
+from src.data.FeatureList import FeatureList as fL
 from ok import Box
-from base.BaseEfTask import BaseEfTask
+from src.tasks.BaseEfTask import BaseEfTask
 
 
 def build_name_patterns(find_name: str):

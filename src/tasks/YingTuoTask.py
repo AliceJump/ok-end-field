@@ -1,11 +1,11 @@
 import time
 from qfluentwidgets import FluentIcon
-from resources.icons import Icons
-from data.FeatureList import FeatureList as fL
-from base.BaseEfTask import BaseEfTask
-from tasks.mixin.battle_mixin import BattleMixin
-from data.world_map import permanent_dict, YINGTUO_MONUMENT
-from data.world_map_utils import get_world_map_text
+from src.icons import Icons
+from src.data.FeatureList import FeatureList as fL
+from src.tasks.BaseEfTask import BaseEfTask
+from src.tasks.mixin.battle_mixin import BattleMixin
+from src.data.world_map import permanent_dict, YINGTUO_MONUMENT
+from src.data.world_map_utils import get_world_map_text
 class YingTuoTask(BattleMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

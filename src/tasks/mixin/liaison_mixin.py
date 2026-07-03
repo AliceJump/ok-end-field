@@ -21,11 +21,11 @@ import random
 import re
 import time
 
-from data.FeatureList import FeatureList as fL
-from data.characters import characters
-from data.characters_utils import get_contact_list_with_feature_list, get_localized_name_by_canonical
-from tasks.mixin.common import LiaisonResult, build_name_patterns
-from tasks.mixin.navigation_mixin import NavigationMixin
+from src.data.FeatureList import FeatureList as fL
+from src.data.characters import characters
+from src.data.characters_utils import get_contact_list_with_feature_list, get_localized_name_by_canonical
+from src.tasks.mixin.common import LiaisonResult, build_name_patterns
+from src.tasks.mixin.navigation_mixin import NavigationMixin
 
 
 class LiaisonMixin(NavigationMixin):

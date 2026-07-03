@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ok import Logger
 
-from detection.model_registry import (
+from src.yolo.model_registry import (
     build_name_to_model_map,
     build_yolo_model_settings,
     list_model_keys,
@@ -37,7 +37,7 @@ class YoloModelLoader:
         model_key = self._name_to_model_key.get(target)
         if model_key:
             return model_key
-        raise ValueError(f"未找到目标[{target}]对应的YOLO模型，请检查 src/detection/models.py 中的 labels")
+        raise ValueError(f"未找到目标[{target}]对应的YOLO模型，请检查 src/yolo/models.py 中的 labels")
 
     def get_detector(self, model_key: str | None = None):
         key = model_key or self.default_model_key
@@ -48,7 +48,7 @@ class YoloModelLoader:
         model_path = model_info["model_path"]
         labels = model_info.get("labels", {})
 
-        from detection.openvino_detector import OpenVinoYolo8Detect
+        from src.yolo.openvino_detector import OpenVinoYolo8Detect
 
         logger.info(f"Loading YOLO model [{key}] from {model_path}")
         detector = OpenVinoYolo8Detect(weights=model_path, labels=labels)

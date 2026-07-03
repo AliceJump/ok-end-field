@@ -1,5 +1,5 @@
-from tasks.mixin.login_mixin import LoginMixin
-from data.account_scope_store import resolve_account_id
+from src.tasks.mixin.login_mixin import LoginMixin
+from src.tasks.account.account_scope_store import resolve_account_id
 
 
 class AccountMixin(LoginMixin):

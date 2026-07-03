@@ -1,6 +1,6 @@
 import re
 
-from data.FeatureList import FeatureList as fL
+from src.data.FeatureList import FeatureList as fL
 
 
 class DailyShopFeature:
@@ -42,7 +42,7 @@ class DailyShopFeature:
             while not self.wait_click_feature(
                     feature=fL.credit_shop_refresh, time_out=1,
                     raise_if_not_found=False, vertical_variance=0.005, horizontal_variance=0.01
-            ):
+                ):
                 if not self.back_shop():
                     self.log_info("信用商店刷新中断：未能返回采购页面")
                     return False, sum_credit
@@ -132,8 +132,7 @@ class DailyShopFeature:
                     return False, sum_credit, False
             self.log_info(f"商品价格识别成功: {item_name}，价格: {cost}")
             result = self.wait_click_feature(
-                feature=fL.skip_dialog_confirm, box=self.box_of_screen(0.816, 0.788, 0.855, 0.841), time_out=4,
-                raise_if_not_found=False
+                feature=fL.skip_dialog_confirm, box=self.box_of_screen(0.816, 0.788, 0.855, 0.841), time_out=4, raise_if_not_found=False
             )
             if not result:
                 self.log_info(f"购买流程中断: {item_name}，未找到确认/不足弹窗，尝试返回采购页")
@@ -157,8 +156,7 @@ class DailyShopFeature:
         self.credit_good_search_box = self.box_of_screen(200 / 3840, 280 / 2160, 3620 / 3840, 1550 / 2160)
         self.refresh_count = 0
         self.press_key("f5")
-        if not self.wait_click_ocr(match=self.lang.daily_shop_mixin.k_9a0004ef, time_out=7, box=self.box.top_right,
-                                   recheck_time=1):
+        if not self.wait_click_ocr(match=self.lang.daily_shop_mixin.k_9a0004ef, time_out=7, box=self.box.top_right, recheck_time=1):
             return False
         sum_credit = self.detect_ticket_number()
         while sum_credit > 0:
@@ -195,8 +193,7 @@ class DailyShopFeature:
                 continue
             self.log_info(f"商品价格识别成功: {item_name}，价格: {cost}")
             result = self.wait_click_feature(
-                feature=fL.skip_dialog_confirm, box=self.box_of_screen(0.816, 0.788, 0.855, 0.841), time_out=4,
-                raise_if_not_found=False
+                feature=fL.skip_dialog_confirm, box=self.box_of_screen(0.816, 0.788, 0.855, 0.841), time_out=4, raise_if_not_found=False
             )
             if not result:
                 self.log_info(f"购买流程中断: {item_name}，未找到确认/不足弹窗，尝试返回采购页")

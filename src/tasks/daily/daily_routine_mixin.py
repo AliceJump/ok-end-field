@@ -1,11 +1,11 @@
 import re
 import time
 
-from data.world_map import areas_list, outpost_dict, goods_dict
-from data.world_map_utils import get_area_by_outpost_name, get_goods_by_outpost_name, get_world_map_text
-from image.hsv_config import HSVRange as hR
-from data.FeatureList import FeatureList as fL
-from data.characters_utils import get_contact_list_with_feature_list
+from src.data.world_map import areas_list, outpost_dict, goods_dict
+from src.data.world_map_utils import get_area_by_outpost_name, get_goods_by_outpost_name, get_world_map_text
+from src.image.hsv_config import HSVRange as hR
+from src.data.FeatureList import FeatureList as fL
+from src.data.characters_utils import get_contact_list_with_feature_list
 
 
 class DailyRoutineFeature:
@@ -110,15 +110,12 @@ class DailyRoutineFeature:
         if not self.transfer_to_home_point(should_check_out_boat=True):
             self.log_info("未能传送到帝江号")
         self.press_key("b")
-        if not self.wait_click_feature(feature=fL.make_simply_entrance, settle_time=1, time_out=5,
-                                       raise_if_not_found=False):
+        if not self.wait_click_feature(feature=fL.make_simply_entrance, settle_time=1, time_out=5, raise_if_not_found=False):
             self.mark_task_failure("未能找到简易制作入口")
             return False
-        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_cdb1d49b, box=self.box.left, time_out=5,
-                                   log=True):
+        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_cdb1d49b, box=self.box.left, time_out=5, log=True):
             self.log_info("未能选定可制作的物品")
-        if self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.938, 0.902, 0.964, 0.941),
-                                   time_out=5, raise_if_not_found=False):
+        if self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.938, 0.902, 0.964, 0.941), time_out=5, raise_if_not_found=False):
             self.wait_pop_up()
         else:
             self.mark_task_failure("未能找到简易制作按钮")
@@ -136,12 +133,10 @@ class DailyRoutineFeature:
     def collect_credit(self):
         self.info_set("current_task", "collect_credit")
         self.press_key("f5")
-        self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_7be4248b, box=self.box.top, time_out=5,
-                            recheck_time=1)
-        result = self.wait_click_ocr(
-            match=[self.lang.daily_routine_mixin.k_b693e51a, self.lang.daily_routine_mixin.k_f646bcd5],
-            box=self.box.bottom_left,
-            time_out=7, recheck_time=1)
+        self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_7be4248b, box=self.box.top, time_out=5, recheck_time=1)
+        result = self.wait_click_ocr(match=[self.lang.daily_routine_mixin.k_b693e51a, self.lang.daily_routine_mixin.k_f646bcd5],
+                                     box=self.box.bottom_left,
+                                     time_out=7, recheck_time=1)
         if not result:
             self.log_info("未找到可收取信用或无待领取信用的选项")
             return False
@@ -164,8 +159,7 @@ class DailyRoutineFeature:
                 self.log_info("循环过多次仍未找到交流或助力对象，可能出现异常，结束拜访")
                 return False
             if is_first_time:
-                self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_e84c3ae9, box=self.box.right, time_out=7,
-                                    recheck_time=1)
+                self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_e84c3ae9, box=self.box.right, time_out=7, recheck_time=1)
             else:
                 if left_exchange_time <= 0 and left_help_time <= 0:
                     if exchange_not_found:
@@ -211,8 +205,7 @@ class DailyRoutineFeature:
             self.click_confirm(time_out=5, after_sleep=2, recheck_time=1)
             if not self.ensure_in_friend_boat():
                 self.log_info("未能进入好友帝江号")
-                if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_a730d877, box=self.box.top_left,
-                                       time_out=1):
+                if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_a730d877, box=self.box.top_left, time_out=1):
                     continue
                 else:
                     return False
@@ -226,8 +219,7 @@ class DailyRoutineFeature:
             self.press_key("y")
             self.wait_ui_stable(refresh_interval=1)
             if left_exchange_time > 0:
-                if not self.wait_click_feature(feature=fL.info_exchange, box=exchange_help_box, time_out=5,
-                                               click_after_delay=0.5, raise_if_not_found=False, after_sleep=0.5):
+                if not self.wait_click_feature(feature=fL.info_exchange, box=exchange_help_box, time_out=5,click_after_delay=0.5, raise_if_not_found=False, after_sleep=0.5):
                     left_exchange_time = 0
                 else:
                     left_exchange_time -= 1
@@ -382,10 +374,9 @@ class DailyRoutineFeature:
                     box = step[1]
                     after_sleep = step[2]
                     time_out = 12 if i > 2 else 5
-                    res = self.wait_click_feature(feature=feature, click_after_delay=0.5, box=box, time_out=time_out,
-                                                  raise_if_not_found=False, after_sleep=after_sleep)
+                    res = self.wait_click_feature(feature=feature, click_after_delay=0.5, box=box, time_out=time_out, raise_if_not_found=False, after_sleep=after_sleep)  
 
-                    optional_steps = {3}  # 特殊可选步骤序号
+                    optional_steps = {3} # 特殊可选步骤序号
 
                     if not res:
                         if i in optional_steps:
@@ -454,8 +445,7 @@ class DailyRoutineFeature:
             after_sleep=1
         )
         self.wait_ocr(
-            match=self.lang.daily_routine_mixin.k_bb6c696b,
-            box=self.box_of_screen(1700 / 1920, 610 / 1080, 1, 710 / 1080), time_out=5
+            match=self.lang.daily_routine_mixin.k_bb6c696b, box=self.box_of_screen(1700 / 1920, 610 / 1080, 1, 710 / 1080), time_out=5
         )
         can_exchange_goods = [get_world_map_text(self.lang, good) for good in goods_dict.get(
             get_area_by_outpost_name(outpost_name), []
@@ -565,11 +555,12 @@ class DailyRoutineFeature:
                 continue
 
             if self.wait_click_feature(
-                    feature=fL.to_max_produce_num,
-                    box=self.box_of_screen(0.945, 0.894, 0.973, 0.944),
-                    time_out=5,
-                    raise_if_not_found=False
+                feature=fL.to_max_produce_num,
+                box=self.box_of_screen(0.945, 0.894, 0.973, 0.944),
+                time_out=5,
+                raise_if_not_found=False
             ):
+
                 self.wait_pop_up()
 
         self.log_info(f"{outpost_name} 兑换操作完成")
@@ -638,8 +629,7 @@ class DailyRoutineFeature:
             self.mark_task_failure("未找到装备按钮，任务失败")
             return False
         self.log_info("找到装备按钮并点击")
-        self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_557911d7,
-                            box=self.box_of_screen(0, 0, 0.5, 80 / 1080), time_out=5,
+        self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_557911d7, box=self.box_of_screen(0, 0, 0.5, 80 / 1080), time_out=5,
                             recheck_time=1, after_sleep=1)
         if not self.wait_click_feature(
                 feature=fL.select_confirm,
@@ -671,13 +661,10 @@ class DailyRoutineFeature:
     def claim_weekly_rewards(self):
         self.log_info("开始领取每周事务")
 
-        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_13eea5dd, box=self.box.left, time_out=5,
-                               after_sleep=1):
+        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_13eea5dd, box=self.box.left, time_out=5, after_sleep=1):
             self.log_info("进入『每周事务』页面")
-            if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box.top_right, time_out=5,
-                                   after_sleep=1):
-                if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_bf856c96, box=self.box.bottom_right,
-                                       time_out=5,
+            if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box.top_right, time_out=5, after_sleep=1):
+                if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_bf856c96, box=self.box.bottom_right, time_out=5,
                                        after_sleep=1):
                     self.wait_pop_up(after_sleep=2)
                     self.log_info("已领取『每周事务』奖励")
@@ -693,14 +680,12 @@ class DailyRoutineFeature:
     def claim_sanity_supply(self):
         self.log_info("开始领取理智补给")
 
-        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_059a808c, box=self.box.left, time_out=5,
-                                   after_sleep=1):
+        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_059a808c, box=self.box.left, time_out=5, after_sleep=1):
             self.log_info("未找到『活动中心/理智补给』入口")
             return False
 
         self.log_info("进入『理智补给』页面")
-        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1,
-                               box=self.box_of_screen(0.894, 0.648, 0.995, 0.991), time_out=5, after_sleep=1):
+        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box_of_screen(0.894, 0.648, 0.995, 0.991), time_out=5, after_sleep=1):
             self.wait_pop_up(after_sleep=2)
             self.log_info("已领取『理智补给』奖励")
             return True
@@ -867,6 +852,7 @@ class DailyRoutineFeature:
         self.log_info("收集线索任务完成")
         return True
 
+
     def _enter_exchange_room(self, exchange_help_box):
         result = self.wait_feature(
             feature=fL.make_room,
@@ -888,16 +874,17 @@ class DailyRoutineFeature:
         self.wait_ui_stable(refresh_interval=0.5)
 
         if not self.wait_click_feature(
-                feature=fL.exchange_room,
-                time_out=6,
-                box=exchange_help_box,
-                raise_if_not_found=False,
+            feature=fL.exchange_room,
+            time_out=6,
+            box=exchange_help_box,
+            raise_if_not_found=False,
         ):
             self.log_info("未找到会客室，无法收集线索")
             return False
 
         self.log_info("进入会客室,准备处理收集线索")
         return True
+
 
     def _collect_clue(self):
         self.wait_click_feature(
@@ -908,11 +895,11 @@ class DailyRoutineFeature:
         )
 
         if not self.clue_safe(
-                self.wait_click_feature,
-                feature=fL.collect_clue_enter,
-                time_out=4,
-                after_sleep=1,
-                raise_if_not_found=False,
+            self.wait_click_feature,
+            feature=fL.collect_clue_enter,
+            time_out=4,
+            after_sleep=1,
+            raise_if_not_found=False,
         ):
             self.log_info("未找到收集线索按钮")
             return
@@ -930,14 +917,15 @@ class DailyRoutineFeature:
 
         self.back(after_sleep=1)
 
+
     def _receive_clue(self):
         if not self.clue_safe(
-                self.wait_click_feature,
-                feature=fL.receive_clue_enter,
-                time_out=4,
-                box=self.box.right,
-                after_sleep=1,
-                raise_if_not_found=False,
+            self.wait_click_feature,
+            feature=fL.receive_clue_enter,
+            time_out=4,
+            box=self.box.right,
+            after_sleep=1,
+            raise_if_not_found=False,
         ):
             self.log_info("未找到接收按钮")
             return
@@ -951,6 +939,7 @@ class DailyRoutineFeature:
         )
 
         self.back(after_sleep=1)
+
 
     def _give_clue(self):
         results = self._find_clue_icons()
@@ -974,13 +963,14 @@ class DailyRoutineFeature:
         self.clue_guard()
 
         if self.clue_safe(
-                self.wait_click_ocr,
-                match=self.lang.daily_routine_mixin.k_0503d6d6,
-                time_out=4,
-                box=self.box.bottom,
-                after_sleep=1,
+            self.wait_click_ocr,
+            match=self.lang.daily_routine_mixin.k_0503d6d6,
+            time_out=4,
+            box=self.box.bottom,
+            after_sleep=1,
         ):
             self.wait_pop_up()
+
 
     def _find_clue_icons(self):
         search_box = self.box_of_screen(
@@ -1006,21 +996,23 @@ class DailyRoutineFeature:
 
         return results
 
+
     def clue_guard(self):
         """
         会客室线索任务专用弹窗处理
         """
 
         if self.wait_click_feature(
-                feature=fL.to_max_produce_num,
-                box=self.box_of_screen(0.550, 0.885, 0.573, 0.920),
-                time_out=1,
-                raise_if_not_found=False,
+            feature=fL.to_max_produce_num,
+            box=self.box_of_screen(0.550, 0.885, 0.573, 0.920),
+            time_out=1,
+            raise_if_not_found=False,
         ):
             self.log_info("检测到线索弹窗并已处理")
             return True
 
         return False
+
 
     def clue_safe(self, func, *args, **kwargs):
         self.clue_guard()
@@ -1030,7 +1022,7 @@ class DailyRoutineFeature:
         self.clue_guard()
 
         return result
-
+    
     def up_make_room_num(self, exchange_help_box):
         if "制造舱" not in self.config.get("帝江号收菜操作", []):
             self.log_info("制造舱助力任务未启用，跳过")
@@ -1046,9 +1038,8 @@ class DailyRoutineFeature:
             self.log_info("点击制造室")
             if icon := self.find_one(feature=fL.max_icon, horizontal_variance=0.01, vertical_variance=0.01):
                 self.click(icon)
-                self.wait_click_feature(feature=fL.to_max_produce_num, time_out=2, box=self.box.bottom_right,
-                                        raise_if_not_found=False)
-
+                self.wait_click_feature(feature=fL.to_max_produce_num, time_out=2, box=self.box.bottom_right, raise_if_not_found=False)
+                
                 if self.wait_click_feature(
                         feature=fL.skip_dialog_confirm, time_out=3, box=self.box.bottom_right, raise_if_not_found=False
                 ):
@@ -1070,17 +1061,14 @@ class DailyRoutineFeature:
             return False
         self.scroll_relative(result.x / self.width, result.y / self.height, count=-8)
         self.wait_ui_stable(refresh_interval=0.5)
-        result = self.wait_feature(feature=fL.cultivation_room, time_out=4, box=exchange_help_box,
-                                   raise_if_not_found=False)
+        result = self.wait_feature(feature=fL.cultivation_room, time_out=4, box=exchange_help_box, raise_if_not_found=False)
         if not result:
             self.mark_task_failure("未找到培养舱，任务失败")
             return False
         self.click(result)
         self.log_info("点击培育室")
-        results = self.wait_click_ocr(
-            match=[self.lang.daily_routine_mixin.k_ffb5655a, self.lang.daily_routine_mixin.k_31cceca8], time_out=3,
-            box=exchange_help_box,
-            recheck_time=1)
+        results = self.wait_click_ocr(match=[self.lang.daily_routine_mixin.k_ffb5655a, self.lang.daily_routine_mixin.k_31cceca8], time_out=3, box=exchange_help_box,
+                                      recheck_time=1)
         if not results:
             self.mark_task_failure("未找到全部收取或培养中字样，任务失败")
             return False
@@ -1089,8 +1077,7 @@ class DailyRoutineFeature:
             return True
         self.log_info("找到收取按钮")
         self.wait_pop_up(after_sleep=1)
-        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_a4cd21cc, time_out=3, box=self.box.bottom,
-                                   after_sleep=1):
+        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_a4cd21cc, time_out=3, box=self.box.bottom, after_sleep=1):
             self.mark_task_failure("未找到再次培养按钮，再次培养失败")
             return False
         self.click_confirm(time_out=3)
@@ -1098,13 +1085,9 @@ class DailyRoutineFeature:
         return True
 
     def use_help(self, char=True):
-        if not self.wait_click_feature(feature=fL.can_use_help, time_out=2,
-                                       box=self.box_of_screen(0.890, 0.011, 0.941, 0.074), after_sleep=1,
-                                       raise_if_not_found=False):
+        if not self.wait_click_feature(feature=fL.can_use_help, time_out=2, box=self.box_of_screen(0.890, 0.011, 0.941, 0.074), after_sleep=1, raise_if_not_found=False):
             return
-        if not self.wait_click_feature(feature=fL.skip_dialog_confirm, time_out=2,
-                                       box=self.box_of_screen(0.818, 0.787, 0.865, 0.861), after_sleep=1,
-                                       raise_if_not_found=False):
+        if not self.wait_click_feature(feature=fL.skip_dialog_confirm, time_out=2, box=self.box_of_screen(0.818, 0.787, 0.865, 0.861), after_sleep=1, raise_if_not_found=False):
             return
         if char:
             char_list = list(get_contact_list_with_feature_list().values())
@@ -1116,9 +1099,6 @@ class DailyRoutineFeature:
                 if count >= 2:
                     break
         else:
-            self.wait_click_feature(feature=fL.max_icon, time_out=2, box=self.box_of_screen(0.699, 0.654, 0.732, 0.719),
-                                    raise_if_not_found=False)
-        self.wait_click_feature(feature=fL.skip_dialog_confirm, time_out=2,
-                                box=self.box_of_screen(0.818, 0.787, 0.865, 0.861), after_sleep=1,
-                                raise_if_not_found=False)
+            self.wait_click_feature(feature=fL.max_icon, time_out=2, box=self.box_of_screen(0.699, 0.654, 0.732, 0.719), raise_if_not_found=False)
+        self.wait_click_feature(feature=fL.skip_dialog_confirm, time_out=2, box=self.box_of_screen(0.818, 0.787, 0.865, 0.861), after_sleep=1, raise_if_not_found=False)
         return

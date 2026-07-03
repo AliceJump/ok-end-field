@@ -12,12 +12,12 @@ from pathlib import Path
 from typing import Dict, Tuple
 
 from qfluentwidgets import FluentIcon
-from resources.icons import Icons
+from src.icons import Icons
 from ok import Logger, TriggerTask
-from config import config
-from base.BaseEfTask import BaseEfTask
-from tasks.mixin.ws_position_mixin import WsPositionMixin
-from data import item_map_query
+from src.config import config
+from src.tasks.BaseEfTask import BaseEfTask
+from src.tasks.mixin.ws_position_mixin import WsPositionMixin
+from src.data import item_map_query
 
 logger = Logger.get_logger(__name__)
 # 特殊物品Y坐标修正

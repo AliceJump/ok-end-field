@@ -309,7 +309,6 @@ class WindowArrowOverlayController(QObject):
     def _apply_arrow_state(self):
         overlay = self._ensure_overlay()
         overlay.set_arrows(list(self._arrow_map.values()))
-
     @Slot(object)
     def _on_arrows_replaced(self, arrows: List[ArrowSpec]):
         self._arrow_map = {}

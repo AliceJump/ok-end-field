@@ -3,9 +3,9 @@ import win32api
 import win32con
 from qfluentwidgets import FluentIcon
 
-from data.world_map import item_to_warehouse_dict
-from data.zh_en import ITEM_WAREHOUSE_CATEGORY_EN_BY_ZH, ITEM_TRANSLATION_DICT
-from base.BaseEfTask import BaseEfTask
+from src.data.world_map import item_to_warehouse_dict
+from src.data.zh_en import ITEM_WAREHOUSE_CATEGORY_EN_BY_ZH, ITEM_TRANSLATION_DICT
+from src.tasks.BaseEfTask import BaseEfTask
 
 _LOCATIONS = {
     "valley4": "四号谷地",

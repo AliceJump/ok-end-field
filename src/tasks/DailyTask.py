@@ -1,28 +1,28 @@
 from qfluentwidgets import FluentIcon
 
-from tasks.account.account_mixin import AccountMixin
-from tasks.daily.daily_battle_mixin import DailyBattleFeature
-from tasks.daily.daily_buy_mixin import DailyBuyFeature
-from tasks.daily.daily_liaison_mixin import DailyLiaisonFeature
-from tasks.daily.daily_routine_mixin import DailyRoutineFeature
-from tasks.daily.daily_shop_mixin import DailyShopFeature
-from tasks.daily.daily_trade_mixin import DailyTradeFeature
-from tasks.daily.daily_demo_mixin import DailyDemoFeature
-from interaction.Mouse import active_and_send_mouse_delta
-from tasks.daily.finally_file import (
+from src.tasks.account.account_mixin import AccountMixin
+from src.tasks.daily.daily_battle_mixin import DailyBattleFeature
+from src.tasks.daily.daily_buy_mixin import DailyBuyFeature
+from src.tasks.daily.daily_liaison_mixin import DailyLiaisonFeature
+from src.tasks.daily.daily_routine_mixin import DailyRoutineFeature
+from src.tasks.daily.daily_shop_mixin import DailyShopFeature
+from src.tasks.daily.daily_trade_mixin import DailyTradeFeature
+from src.tasks.daily.daily_demo_mixin import DailyDemoFeature
+from src.interaction.Mouse import active_and_send_mouse_delta
+from src.tasks.daily.finally_file import (
     create_daily_summary_report,
 )
 import tempfile
 import os
 import webbrowser
 from pathlib import Path
-from tasks.daily.daily_task_runner import DailyTaskRunner
-from tasks.mixin.end_command_mixin import EndCommandMixin
-from tasks.mixin.common import Common
-from tasks.mixin.map_mixin import MapMixin
-from tasks.mixin.zip_line_mixin import ZipLineMixin
-from tasks.mixin.battle_mixin import BattleMixin
-from tasks.mixin.liaison_mixin import LiaisonMixin
+from src.tasks.daily.daily_task_runner import DailyTaskRunner
+from src.tasks.mixin.end_command_mixin import EndCommandMixin
+from src.tasks.mixin.common import Common
+from src.tasks.mixin.map_mixin import MapMixin
+from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.mixin.liaison_mixin import LiaisonMixin
 
 
 class DailyTask(

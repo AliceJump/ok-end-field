@@ -1,7 +1,7 @@
-from data.FeatureList import FeatureList as fL
-from resources.icons import Icons
-from tasks.daily.daily_demo_mixin import DailyDemoFeature
-from tasks.mixin.common import Common
+from src.data.FeatureList import FeatureList as fL
+from src.icons import Icons
+from src.tasks.daily.daily_demo_mixin import DailyDemoFeature
+from src.tasks.mixin.common import Common
 
 
 class DemoDrawTask(Common):

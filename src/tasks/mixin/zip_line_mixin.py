@@ -1,9 +1,8 @@
 import time
 import re
-from image.hsv_config import HSVRange as hR
-from tasks.mixin.sequence_parser import parse_int_sequence
-from tasks.mixin.navigation_mixin import NavigationMixin
-
+from src.image.hsv_config import HSVRange as hR
+from src.tasks.sequence_parser import parse_int_sequence
+from src.tasks.mixin.navigation_mixin import NavigationMixin
 
 class ZipLineMixin(NavigationMixin):
     def on_zip_line_start(self, delivery_to, need_scroll=None, target=None, need_v=True):
@@ -91,8 +90,7 @@ class ZipLineMixin(NavigationMixin):
             keys = ["w", "a", "s", "d"]
             for i in range(4):
                 if result := (not need_v) or self.wait_ocr(
-                        match=self.lang.zip_line_mixin.k_b0e3a2da, box=self.box.bottom_right, settle_time=1, time_out=4,
-                        log=True
+                        match=self.lang.zip_line_mixin.k_b0e3a2da, box=self.box.bottom_right, settle_time=1, time_out=4, log=True
                 ):
                     if need_v:
                         self.press_key("v", after_sleep=1)
@@ -109,9 +107,9 @@ class ZipLineMixin(NavigationMixin):
                 else:
                     self.move_keys(keys[i], 0.1)
         if self.wait_ocr(match=[
-            self.lang.zip_line_mixin.k_2f4f4a2f,
-            self.lang.zip_line_mixin.k_0b1e4f35,
-        ], box=self.box_of_screen(0.351, 0.943, 0.657, 0.981), log=True, time_out=2):
+                self.lang.zip_line_mixin.k_2f4f4a2f,
+                self.lang.zip_line_mixin.k_0b1e4f35,
+            ], box=self.box_of_screen(0.351, 0.943, 0.657, 0.981), log=True, time_out=2):
             self.click(key="right", after_sleep=2)
         self.log_info("滑索结束")
         self.ensure_main()
@@ -121,7 +119,7 @@ class ZipLineMixin(NavigationMixin):
             self.click(after_sleep=0.1)
             self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
             if not self.ocr(match=[
-                self.lang.zip_line_mixin.k_2f4f4a2f,
-                self.lang.zip_line_mixin.k_0b1e4f35,
-            ], frame=self.next_frame(), box=self.box_of_screen(0.351, 0.943, 0.657, 0.981)):
+                    self.lang.zip_line_mixin.k_2f4f4a2f,
+                    self.lang.zip_line_mixin.k_0b1e4f35,
+                ], frame=self.next_frame(), box=self.box_of_screen(0.351, 0.943, 0.657, 0.981)):
                 return True

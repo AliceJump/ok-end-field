@@ -1,8 +1,8 @@
 import re
 
-from data.FeatureList import FeatureList
-from data.delivery_area import DELIVERY_AREA_CONFIG
-from data.world_map_utils import get_world_map_matcher, get_world_map_text
+from src.data.FeatureList import FeatureList
+from src.data.delivery_area import DELIVERY_AREA_CONFIG
+from src.data.world_map_utils import get_world_map_matcher, get_world_map_text
 
 VALID_FEATURE_LABELS = {feature.value for feature in FeatureList}
 
