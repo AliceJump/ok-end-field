@@ -189,7 +189,7 @@ class LiaisonMixin(NavigationMixin):
             chat_box = self.find_feature("chat_icon_dark") or self.find_feature("chat_icon_2")
 
             if chat_box:
-                self.send_key_up("w")
+                self.send_key_up("w")  # 确认使用send_key：释放方向键（W为移动键，不属于可配置热键）
                 self.log_info("发现干员，点击交互图标")
 
                 self.send_key_down("alt")  # 确认使用send_key：alt为系统修饰键，用于alt+点击交互，非游戏可配置热键

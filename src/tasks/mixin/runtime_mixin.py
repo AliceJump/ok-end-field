@@ -162,9 +162,12 @@ class RuntimeMixin:
             feature_name = [self.get_feature_by_resolution(name) for name in feature_name]
         else:
             feature_name = self.get_feature_by_resolution(feature_name)
-        return super().find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale, x,
+        result = super().find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale, x,
                                     y, to_x, to_y, width, height, box, canny_lower, canny_higher, frame_processor,
                                     template, match_method, screenshot, mask_function, frame, limit, target_height)
+        if result:
+            self.log_info(f"find_feature: {feature_name} found at {result}")
+        return result
 
     def scroll(self, x: int, y: int, count: int) -> None:
         """按屏幕绝对像素坐标滚轮。

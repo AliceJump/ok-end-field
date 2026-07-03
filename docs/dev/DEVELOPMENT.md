@@ -46,19 +46,25 @@ main.py / main_debug.py
    ok.OK(config)          ← ok-script 框架主入口，负责窗口捕获、任务调度、GUI
         │
         ├── onetime_tasks  ← 用户点击触发的一次性任务
-        │       ├── DailyTask         (日常任务聚合)
-        │       ├── BattleTask        (刷体力)
-        │       ├── DeliveryTask      (自动送货)
-        │       ├── TakeDeliveryTask  (运送委托接取)
+        │       ├── DailyTask           (日常任务聚合)
+        │       ├── BattleTask          (刷体力)
+        │       ├── DeliveryTask        (自动送货)
+        │       ├── TakeDeliveryTask    (运送委托接取)
         │       ├── WarehouseTransferTask (仓库物品转移)
+        │       ├── DemoDrawTask        (演算抽牌)
+        │       ├── YingTuoTask         (影拓丰碑)
         │       ├── PeriodicScreenshotTask (定时截图)
-        │       └── Test / TestStartGame  (开发调试用)
+        │       ├── StartGameTask       (启动一次游戏)
+        │       ├── DiagnosisTask       (诊断)
+        │       ├── RealtimeDetectTask  (实时检测)
+        │       └── Test                (开发调试用)
         │
         └── trigger_tasks  ← 后台持续运行的触发式任务
-                ├── AutoCombatTask    (自动战斗)
-                ├── AutoInteractionTask(自动跳过剧情)
-                ├── AutoPickTask      (自动拾取)
-                └── AutoLoginTask     (自动登录/领月卡)
+                ├── AutoCombatTask     (自动战斗)
+                ├── AutoInteractionTask (自动跳过剧情)
+                ├── AutoPickTask       (自动拾取)
+                ├── AutoLoginTask      (自动登录/领月卡)
+                └── ItemNavigatorTask  (物品导航)
 ```
 
 ### Mixin 继承链（DailyTask 为例）
@@ -91,92 +97,145 @@ ok-end-field/
 ├── auto_release.py/.ps1       # 辅助打版本 tag 的脚本
 │
 ├── src/                       # 项目核心源码
-│   ├── config.py              # 全局配置字典（传给 ok.OK），定义所有任务列表、窗口参数、OCR 参数等
-│   ├── globals.py             # 全局单例（Globals），可存放跨任务共享状态（目前为空壳）
-│   ├── OpenVinoYolo8Detect.py # YOLOv8 ONNX + OpenVINO 推理封装（战斗结束检测等）
+│   ├── config/                # 全局配置
+│   │   ├── __init__.py        # 配置字典（传给 ok.OK），定义所有任务列表、窗口参数、OCR 参数等
+│   │   ├── BattleConfig.py    # 战斗通用配置管理与描述
+│   │   ├── encoding.py        # 配置值编码/解码工具
+│   │   └── global_config_store.py # 全局配置持久化存储
 │   │
+│   ├── app/
+│   │   └── globals.py         # 全局单例（Globals），可存放跨任务共享状态
+│   │
+│   ├── base/                  # 基类与 Mixin 核心
+│   │   ├── BaseEfTask.py      # 所有任务的公共基类（继承所有 Mixin）
+│   │   └── mixin/             # 通用能力 Mixin（跨任务复用）
+│   │       ├── account_override_mixin.py # 账号上下文配置覆盖
+│   │       ├── game_flow_mixin.py        # 登录弹窗与主界面流程
+│   │       ├── process_manager.py        # 进程管理
+│   │       ├── runtime_mixin.py          # 运行时能力：find_feature、按键、鼠标、YOLO
+│   │       └── window_arrow_drawing_mixin.py # 窗口箭头绘制
+│   │
+│   ├── config/encoding.py     # 配置编码
 │   ├── data/                  # 纯数据层，无 UI 无截图依赖
-│   │   ├── FeatureList.py     # 枚举：所有模板匹配特征名（对应 assets/images/ 里的图片文件名）
-│   │   ├── characters.py      # 干员数据字典（内部英文 key → 中文名/英文名/星级）
-│   │   ├── characters_utils.py# 干员数据工具函数（生成可联络列表等）
-│   │   ├── ocr_text_fix_patch.py # OCR 字符混淆补丁，加载 json 映射并动态转换 match pattern
-│   │   ├── world_map.py       # 地图数据：地区列表、据点字典、可交易货品、副本分类等
-│   │   ├── world_map_utils.py # 地图数据工具函数（按据点名获取地区等）
-│   │   └── zh_en.py           # 中英翻译字典（物品中文名 → 英文 feature 名、仓库分类映射）
-│   │
-│   ├── essence/               # 装备词条 OCR 解析轮子（无任务入口）
 │   │   ├── __init__.py
-│   │   ├── essence_recognizer.py # OCR 解析装备词条面板（名称、词条、等级），纯算法无截图
-│   │   └── weapon_data.py    # 武器词条数据 CSV 读取与匹配函数
+│   │   ├── FeatureList.py     # 枚举：所有模板匹配特征名
+│   │   ├── characters.py      # 干员数据字典
+│   │   ├── characters_utils.py# 干员数据工具函数
+│   │   ├── delivery_area.py   # 送货地区数据
+│   │   ├── delivery_area_service.py # 送货地区服务
+│   │   ├── item_map_query.py  # 物品地图查询
+│   │   ├── lang/              # 语言模块（统一 JSON 格式）
+│   │   ├── world_map.py       # 地图数据
+│   │   ├── world_map_utils.py # 地图数据工具
+│   │   ├── account_scope_store.py # 账号作用域配置文件读写
+│   │   └── zh_en.py           # 中英翻译字典
+│   │
+│   ├── detection/             # YOLO 目标检测
+│   │   ├── __init__.py
+│   │   ├── loader.py          # 模型加载器
+│   │   ├── model_registry.py  # 模型注册表
+│   │   ├── models.py          # 模型路径与 labels 统一维护
+│   │   └── openvino_detector.py # OpenVINO 推理封装
+│   │
+│   ├── essence/               # 装备词条 OCR 解析
+│   │   ├── __init__.py
+│   │   ├── essence_recognizer.py # OCR 解析装备词条面板
+│   │   └── weapon_data.py    # 武器词条数据 CSV
 │   │
 │   ├── image/                 # 图像处理工具层
-│   │   ├── frame_processes.py # isolate_by_hsv_ranges：通用 HSV 颜色掩码提取
-│   │   ├── hsv_config.py      # HSVRange 枚举：预定义颜色范围（白色、金色文字、深灰文字）
-│   │   └── login_screenshot.py# 通过 Win32 截取登录界面（绕过 WGC 限制）
+│   │   ├── __init__.py
+│   │   ├── frame_processes.py # HSV 颜色掩码提取
+│   │   ├── hsv_config.py      # HSVRange 枚举
+│   │   ├── login_screenshot.py# 登录界面截图
+│   │   └── rotated_template.py# 旋转模板匹配
 │   │
 │   ├── interaction/           # 游戏交互层（Windows 专用）
-│   │   ├── EfInteraction.py   # 继承 PostMessageInteraction，实现点击/滚动/键盘（后台可用）
-│   │   ├── Key.py             # 移动方向键映射（WASD 等）
-│   │   ├── KeyConfig.py       # 游戏热键配置（DEFAULT_COMMON_KEYS 等）及 KeyConfigManager
-│   │   ├── Mouse.py           # 鼠标辅助函数（active_and_send_mouse_delta、run_at_window_pos 等）
-│   │   └── ScreenPosition.py  # ScreenPosition：按屏幕比例生成 Box（top/bottom/left/right 等）
+│   │   ├── __init__.py
+│   │   ├── EfInteraction.py   # 后台交互实现
+│   │   ├── Key.py             # 方向键映射
+│   │   ├── KeyConfig.py       # 热键配置
+│   │   ├── Mouse.py           # 鼠标辅助
+│   │   └── ScreenPosition.py  # 屏幕坐标工具
 │   │
-│   ├── gui/
-│   │   └── AccountConfigTab.py # 账号配置页：多账号列表编辑、账号作用域覆盖配置入口
+│   ├── gui/                   # 自定义 UI 页面
+│   │   ├── __init__.py
+│   │   ├── AccountConfigTab.py # 账号配置页
+│   │   ├── GlobalConfigTab.py  # 全局配置页
+│   │   └── WebViewDialog.py    # WebView 对话框
+│   │
+│   ├── patches/               # 启动补丁
+│   │   ├── __init__.py
+│   │   ├── cascade_dropdown.py # 级联下拉框补丁
+│   │   ├── log_upload.py       # 日志上传补丁
+│   │   ├── ocr_text_fix.py     # OCR 文字混淆修正
+│   │   └── startup.py          # 补丁安装入口
+│   │
+│   ├── resources/
+│   │   ├── __init__.py
+│   │   └── icons.py           # 图标资源
+│   │
+│   ├── debug/
+│   │   ├── __init__.py
+│   │   └── Test.py            # 开发调试用任务
 │   │
 │   └── tasks/                 # 任务层（业务逻辑核心）
-│       ├── BaseEfTask.py      # 所有任务的公共基类：封装特征查找、传送、导航、战斗状态判断等
-│       ├── AutoCombatLogic.py # 自动战斗核心算法（独立于 Task，可被多个任务复用）
-│       ├── AutoCombatTask.py  # 触发任务：后台自动战斗（使用 AutoCombatLogic）
-│       ├── AutoLoginTask.py   # 触发任务：自动登录/领取月卡奖励
-│       ├── AutoPickTask.py    # 触发任务：大世界自动拾取（白名单/黑名单）
-│       ├── AutoInteractionTask.py # 触发任务：自动跳过剧情对话
-│       ├── BattleTask.py      # 一次性任务：单独刷体力（复用 DailyBattleMixin）
-│       ├── DailyTask.py       # 一次性任务：日常任务聚合执行器（MRO 组合各子 Mixin）
-│       ├── DeliveryTask.py    # 一次性任务：自动送货（武陵，含滑索路径）
-│       ├── PeriodicScreenshotTask.py # 一次性任务：定时截图（用于样本采集）
-│       ├── sequence_parser.py  # 排轴字符串解析器：将 "ult_2,1,e,sleep_8" 转为可执行动作序列
-│       ├── TakeDeliveryTask.py# 一次性任务：自动接取高价值运送委托（OCR+模板匹配）
-│       ├── Test.py            # 开发调试用任务（随时可改，不上生产）
-│       ├── TestStartGame.py   # 测试启动游戏流程（调试用）
-│       ├── WarehouseTransferTask.py # 一次性任务：跨仓库物品转移
+│       ├── __init__.py
+│       ├── AutoCombatTask.py      # 触发任务：后台自动战斗
+│       ├── AutoInteractionTask.py # 触发任务：自动跳过剧情
+│       ├── AutoLoginTask.py       # 触发任务：自动登录/领月卡
+│       ├── AutoPickTask.py        # 触发任务：大世界自动拾取
+│       ├── BattleTask.py          # 一次性任务：单独刷体力
+│       ├── DailyTask.py           # 一次性任务：日常任务聚合
+│       ├── DeliveryTask.py        # 一次性任务：自动送货
+│       ├── DemoDrawTask.py        # 一次性任务：演算抽牌
+│       ├── DiagnosisTask.py       # 一次性任务：诊断
+│       ├── ItemNavigatorTask.py   # 触发任务：物品导航
+│       ├── PeriodicScreenshotTask.py # 一次性任务：定时截图
+│       ├── RealtimeDetectTask.py  # 一次性任务：YOLO 实时检测
+│       ├── StartGameTask.py       # 一次性任务：启动游戏
+│       ├── TakeDeliveryTask.py    # 一次性任务：运送委托接取
+│       ├── WarehouseTransferTask.py # 一次性任务：仓库物品转移
+│       └── YingTuoTask.py         # 一次性任务：影拓丰碑
 │       │
 │       ├── account/
-│       │   ├── account_mixin.py        # 多账号模式：账号列表解析、切号逻辑
-│       │   └── account_scope_store.py  # 账号作用域配置文件读写（JSON 持久化）
-│       │
-│       ├── daily/             # DailyTask 的子 Mixin，每个文件对应一组日常子任务
 │       │   ├── __init__.py
-│       │   ├── daily_battle_mixin.py  # 刷体力（副本选择、能量淤积点导航）
-│       │   ├── daily_buy_mixin.py     # 买物资（稳定物资需求、白名单过滤）
-│       │   ├── daily_liaison_mixin.py # 送礼（干员联络台完整流程）
-│       │   ├── daily_routine_mixin.py # 其它日常（邮件/委托/装备/收信用/线索/制造舱等）
-│       │   ├── daily_shop_mixin.py    # 买信用商店（信用交易所、自动刷新）
-│       │   ├── daily_task_runner.py   # 日常任务执行器：串联子任务计划、处理异常与重复执行
-│       │   └── daily_trade_mixin.py   # 买卖货（弹性需求物资、价格判断）
+│       │   └── account_mixin.py   # 多账号模式
+│       │
+│       ├── daily/             # DailyTask 的子 Mixin
+│       │   ├── __init__.py
+│       │   ├── daily_battle_mixin.py  # 刷体力
+│       │   ├── daily_buy_mixin.py     # 买物资
+│       │   ├── daily_demo_mixin.py    # 演算相关
+│       │   ├── daily_liaison_mixin.py # 送礼
+│       │   ├── daily_routine_mixin.py # 其它日常
+│       │   ├── daily_shop_mixin.py    # 买信用商店
+│       │   ├── daily_task_runner.py   # 日常任务执行器
+│       │   ├── daily_trade_mixin.py   # 买卖货
+│       │   └── finally_file.py        # 结尾写入文件
 │       │
 │       └── mixin/             # 通用能力 Mixin（跨任务复用）
 │           ├── __init__.py
-│           ├── account_override_mixin.py # 账号上下文配置覆盖：按账号动态替换任务配置项
-│           ├── battle_mixin.py    # 战斗能力：技能释放、必杀、连携技、战斗结束检测、排轴
-│           ├── common.py          # 公共数据结构与工具：LiaisonResult、GoodsInfo、build_name_patterns
-│           ├── end_command_mixin.py # 结尾外部命令：任务完成后执行自定义命令行程序
-│           ├── game_flow_mixin.py # 登录弹窗与主界面流程：login_screenshot/ocr、ensure_main、场景判断
-│           ├── liaison_mixin.py   # 干员联络：传送帝江号、导航联络站、送礼交互
-│           ├── login_mixin.py     # 登录流程：登出→密码登录→等待进入主界面
-│           ├── map_mixin.py       # 地图操作：打开任务界面→定位传送点→执行传送
-│           ├── navigation_mixin.py# 导航循环：持续前进+动态对齐目标直到到达
-│           ├── process_manager.py # 进程管理：kill_game / kill_all_related_processes
-│           ├── runtime_mixin.py   # 运行时能力：find_feature、按键、鼠标、YOLO、UI 稳定检测等
-│           └── zip_line_mixin.py  # 滑索操作：对齐滑索距离标识→按 E 连续移动
+│           ├── AutoCombatLogic.py     # 自动战斗核心算法
+│           ├── battle_mixin.py        # 战斗能力
+│           ├── common.py              # 公共数据结构
+│           ├── end_command_mixin.py   # 结尾外部命令
+│           ├── liaison_mixin.py       # 干员联络
+│           ├── login_mixin.py         # 登录流程
+│           ├── map_mixin.py           # 地图操作
+│           ├── navigation_mixin.py    # 导航循环
+│           ├── sequence_parser.py     # 排轴字符串解析
+│           ├── ws_position_mixin.py   # WebSocket 位置
+│           └── zip_line_mixin.py      # 滑索操作
 │
-├── assets/                    # 静态资源（由 ok-script debug 模式自动裁剪生成）
-│   ├── coco_annotations.json  # COCO 格式标注，定义模板图片在游戏截图中的位置
-│   ├── images/                # 模板匹配图片（文件名对应 FeatureList 枚举值）
-│   ├── items/images/          # 物品图标模板（用于仓库转移物品识别）
-│   └── models/yolo/best.onnx  # YOLOv8 战斗结束检测模型
+├── assets/                    # 静态资源
+│   ├── coco_annotations.json  # COCO 格式标注
+│   ├── images/                # 模板匹配图片
+│   ├── items/                 # 物品图标
+│   ├── lang/                  # 语言 JSON 文件
+│   ├── models/yolo/best.onnx  # YOLOv8 ONNX 模型
+│   └── ocr_fix/               # OCR 混淆映射
 │
-├── docs/                      # 面向用户的功能说明文档
+├── docs/                      # 功能说明文档
 │   ├── 日常任务.md
 │   ├── 体力本.md
 │   ├── 排轴.md
@@ -187,6 +246,7 @@ ok-end-field/
 │   ├── 物品导航与实时检测.md
 │   ├── 账号配置用户指南.md
 │   ├── 账号唯一ID与多账户覆盖默认逻辑.md
+│   ├── Windows 计划任务.md
 │   └── dev/                   # 面向开发者的技术文档
 │       ├── QUICKSTART.md
 │       ├── DEVELOPMENT.md
@@ -197,6 +257,7 @@ ok-end-field/
 │       ├── 图像模板匹配示例.md
 │       ├── 滑索与送货逻辑.md
 │       ├── 键盘操作体系.md
+│       ├── 切换账户流程分析.md
 │       └── 账号唯一ID与多账户覆盖默认逻辑.md
 │
 ├── target_doc/                # 待补充文档（需开发者填写）
@@ -276,7 +337,7 @@ python main_debug.py
 1. 在 `src/tasks/` 下新建 `MyTask.py`，继承 `BaseEfTask`（或已有的 Mixin 组合）：
 
    ```python
-   from src.tasks.BaseEfTask import BaseEfTask
+   from src.base.BaseEfTask import BaseEfTask
 
    class MyTask(BaseEfTask):
        def __init__(self, *args, **kwargs):
@@ -291,7 +352,7 @@ python main_debug.py
            # 业务逻辑
    ```
 
-2. 在 `src/config.py` 的 `onetime_tasks` 列表中注册：
+2. 在 `src/config/__init__.py` 的 `onetime_tasks` 列表中注册：
 
    ```python
    ["src.tasks.MyTask", "MyTask"],
@@ -301,7 +362,7 @@ python main_debug.py
 
 ### 5.2 新增触发式任务
 
-继承 `BaseEfTask` 和 `TriggerTask`，并在 `config.py` 的 `trigger_tasks` 列表中注册，其余同上。
+继承 `BaseEfTask` 和 `TriggerTask`，并在 `src/config/__init__.py` 的 `trigger_tasks` 列表中注册，其余同上。
 
 ### 5.3 编写 Mixin 扩展
 
@@ -385,7 +446,7 @@ self.move_keys(keys, duration, need_back=False)
 - 方法注释使用中文或中英双语。
 - 不要在 Mixin 中直接定义 `name`/`description`（它们属于 Task）。
 - 所有新 Mixin 需继承自 `BaseEfTask` 以保证类型正确，即使不直接使用其方法。
-- 涉及战斗的配置（如 `技能释放`、`启动技能点数` 等）在 `AutoCombatTask` 和 `DailyBattleMixin` 中各维护一份，两处同步修改（代码中已有注释提示）。
+- 战斗配置（如 `技能释放`、`启动技能点数`、`排轴` 等）已统一集中在 **全局配置 → 战斗配置** 中管理，通过 `src/config/BattleConfig.py` 的 `DEFAULT_BATTLE_CONFIG` 定义。所有任务通过 `get_battle_config()` 读取同一份配置，不再需多处维护。新增加战斗配置项时只需修改 `BattleConfig.py` 一处。
 
 ---
 
@@ -582,7 +643,7 @@ python auto_release.py
 ### 日志规范（与当前实现对齐）
 
 1. 任务与 Mixin 代码优先使用 `self.log_info/self.log_debug/self.log_error`。
-2. 非任务模块（如 `src/interaction`、`src/config.py`）使用模块级 logger：`Logger.get_logger(__name__)`。
+2. 非任务模块（如 `src/interaction`、`src/config/__init__.py`）使用模块级 logger：`Logger.get_logger(__name__)`。
 3. 运行时代码避免使用 `print` 输出日志；`print` 仅建议用于测试脚本或一次性工具脚本。
 4. 账号列表解析中的非法行会直接忽略，不再逐行输出格式错误日志，避免日志噪声。
 

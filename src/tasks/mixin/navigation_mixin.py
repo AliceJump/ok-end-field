@@ -49,7 +49,7 @@ class NavigationMixin(BaseEfTask):
     def navigate_until_target(
         self,
         target,
-        nav,
+        nav=None,
         target_is_ocr: bool = True,
         nav_is_ocr: bool = False,
         time_out: int = 60,
@@ -57,19 +57,51 @@ class NavigationMixin(BaseEfTask):
         found_special_callback=None,
         target_is_yolo: bool = False,
         nav_is_yolo: bool = False,
-        box = None,
+        box=None,
         target_vertical_variance: float = 0.0,
-        need_v : bool = False,
+        need_v: bool = False,
+        max_run_time: float = -1,
     ):
         """
-        持续沿导航标识移动，直到检测到目标。
+        持续导航移动直到检测到目标，支持 OCR / YOLO / 特征匹配三种方式。
+
+        当 nav 为 None 时，进入纯前进搜索模式，不进行导航识别与对齐，仅持续移动直到目标出现。
+
+        Args:
+            target: 目标识别对象（OCR文本 / YOLO类别 / 特征名）。
+            nav: 导航标识（OCR文本 / YOLO类别 / 特征名）。为 None 时禁用导航逻辑。
+            target_is_ocr (bool): target 是否使用 OCR 检测。
+            nav_is_ocr (bool): nav 是否使用 OCR 检测。
+            time_out (int): 最大运行时间（秒）。
+            pre_loop_callback (callable, optional): 每轮循环前执行的回调函数。
+            found_special_callback (callable, optional): 特殊状态检测回调，返回非 None 则中断并返回。
+            target_is_yolo (bool): target 是否使用 YOLO 检测。
+            nav_is_yolo (bool): nav 是否使用 YOLO 检测。
+            box (tuple, optional): target 检测区域（None 则使用默认区域）。
+            target_vertical_variance (float): 特征匹配时允许的垂直误差。
+            need_v (bool): 是否在导航丢失时周期性按 V 尝试重置视野。
+            max_run_time (float): 最大累计奔跑（ctrl 状态）时间（秒），控制的是奔跑/步行切换，不影响 w 前进键。
+                - -1：不限制奔跑时间，保持原有行为
+                - 0：完全不奔跑，开局立即切换步行状态，全程按住 w 步行前进
+                - 大于0：允许累计奔跑指定秒数，达到后在本次导航中切换步行且不再恢复奔跑，函数结束时恢复奔跑状态
 
         Returns:
-            True: 到达目标
-            False: 超时
-            Any: found_special_callback 返回非 None
+            bool | Any:
+                - True: 成功到达目标并稳定确认
+                - False: 超时未完成
+                - Any: found_special_callback 返回的非 None 结果
+
+        Behavior:
+            1. 持续按 W 移动
+            2. 检测 target 是否出现
+            3. 出现后进行稳定性确认
+            4. 若丢失目标则后退搜索
+            5. 若 nav 存在，则执行导航对齐逻辑
+            6. 若 nav 为 None，则仅执行直线前进搜索
+
         """
         last_click_v_time = 0
+
         def check_target():
             if target_is_ocr:
                 return self.ocr(
@@ -79,7 +111,7 @@ class NavigationMixin(BaseEfTask):
                 )
             elif target_is_yolo:
                 return self.yolo_detect(
-                    match=target,
+                    name=target,
                     box=self.box_of_screen(0.635, 0.563, 0.724, 0.843)
                     if not box else box
                 )
@@ -89,10 +121,53 @@ class NavigationMixin(BaseEfTask):
                     threshold=0.7,
                     vertical_variance=target_vertical_variance
                 )
-        run_bool = True
 
+        # ========== 奔跑状态管理 ==========
+        run_bool = True  # 当前是否处于奔跑状态（ctrl 切换）
         start_time = time.time()
 
+        # max_run_time 状态变量
+        run_accumulated_time = 0.0
+        run_state_start_time = time.time() if max_run_time > 0 else None
+        run_allowed = True
+
+        def enter_run_mode():
+            """切换到奔跑状态（如果允许且尚未处于奔跑状态）。"""
+            nonlocal run_bool, run_state_start_time
+            if run_bool or not run_allowed:
+                return
+            run_bool = True
+            run_state_start_time = time.time()
+            self.press_key("ctrl")
+
+        def exit_run_mode():
+            """切换到步行状态，并累加本段奔跑时间。"""
+            nonlocal run_bool, run_state_start_time, run_accumulated_time, run_allowed
+            if not run_bool:
+                return
+            if run_state_start_time is not None:
+                run_accumulated_time += time.time() - run_state_start_time
+                run_state_start_time = None
+            run_bool = False
+            self.press_key("ctrl")
+            if max_run_time > 0 and run_accumulated_time >= max_run_time:
+                run_allowed = False
+
+        def enforce_max_run_time():
+            """达到最大奔跑时间后立即切换为步行。"""
+            if max_run_time <= 0 or not run_bool or not run_allowed or run_state_start_time is None:
+                return
+            if run_accumulated_time + time.time() - run_state_start_time >= max_run_time:
+                self.log_info("达到最大奔跑时间，切换为步行模式")
+                exit_run_mode()
+
+        # 处理 max_run_time == 0：开局切换为步行，且全程禁止奔跑
+        if max_run_time == 0:
+            run_allowed = False
+            run_bool = False
+            self.press_key("ctrl")
+
+        # ========== 主循环 ==========
         nav_box = self.box_of_screen(
             (1920 - 1550) / 1920,
             150 / 1080,
@@ -100,98 +175,79 @@ class NavigationMixin(BaseEfTask):
             (1080 - 150) / 1080,
         )
 
-        self.send_key_down("w")
+        self.send_key_down("w")  # 确认使用send_key：w为方向移动键，不属于游戏可配置热键，用于持续移动
 
         try:
-
             while True:
-
-                # 到达目标
+                enforce_max_run_time()
                 reached = check_target()
 
                 if reached:
-                    self.send_key_up("w")
+                    self.send_key_up("w")  # 确认使用send_key：释放方向键
+
                     if run_bool:
-                        self.log_info(f"找到目标，确认稳定中...")
-                        run_bool = False
-                        self.press_key("ctrl")
+                        self.log_info("找到目标，确认稳定中...")
+                        exit_run_mode()
 
-                    self.log_info("发现目标，开始稳定确认")
-
+                    settle_time = 2 if target_is_ocr else 1
                     stable = True
                     confirm_start = time.time()
-                    settle_time = 2 if target_is_ocr else 1
-                    while time.time() - confirm_start < settle_time:
 
+                    while time.time() - confirm_start < settle_time:
                         if not check_target():
                             stable = False
                             break
-
                         self.sleep(0.1)
 
                     if stable:
                         return True
 
                     self.log_info("确认期间目标丢失，开始后退搜索")
-
-
-                    self.send_key_down("s")
+                    self.send_key_down("s")  # 确认使用send_key：s为方向移动键，不属于游戏可配置热键，用于后退搜索
 
                     search_start = time.time()
-
                     while time.time() - search_start < 10:
-
                         if check_target():
                             self.log_info("后退过程中重新找到目标")
-
-                            self.send_key_up("s")
-
-                            # 再次确认稳定
+                            self.send_key_up("s")  # 确认使用send_key：释放方向键
                             break
-
                         self.sleep(0.05)
 
-                    self.send_key_up("s")
+                    self.send_key_up("s")  # 确认使用send_key：释放方向键
 
-                # 超时
                 if time.time() - start_time > time_out:
                     self.log_info("导航超时")
                     return False
 
-                # 特殊状态
                 if found_special_callback:
                     special_result = found_special_callback()
                     if special_result is not None:
-                        self.send_key_up("w")
+                        self.send_key_up("w")  # 确认使用send_key：释放方向键
                         return special_result
 
                 if pre_loop_callback:
                     pre_loop_callback()
 
-                # 导航识别
-                if nav_is_ocr:
-                    nav_result = self.ocr(
-                        match=nav,
-                        box=nav_box
-                    )
-                elif nav_is_yolo:
-                    nav_result = self.yolo_detect(
-                        name=nav,
-                        box=nav_box
-                    )
-                else:
-                    nav_result = self.find_feature(
-                        nav,
-                        box=nav_box,
-                        threshold=0.7,
-                    )
+                # ===== nav=None -> 纯前进搜索模式 =====
+                if nav is None:
+                    if not run_bool and run_allowed:
+                        self.log_info("恢复奔跑模式")
+                        enter_run_mode()
 
-                # 找到导航
+                    self.sleep(0.01)
+                    continue
+
+                if nav_is_ocr:
+                    nav_result = self.ocr(match=nav, box=nav_box)
+                elif nav_is_yolo:
+                    nav_result = self.yolo_detect(name=nav, box=nav_box)
+                else:
+                    nav_result = self.find_feature(nav, box=nav_box, threshold=0.7)
+
                 if nav_result:
-                    if not run_bool:
-                        self.log_info("重新找到导航，恢复正常奔跑导航模式")
-                        run_bool = True
-                        self.press_key("ctrl")
+                    if not run_bool and run_allowed:
+                        self.log_info("重新找到导航，恢复奔跑模式")
+                        enter_run_mode()
 
                     self.align_ocr_or_find_target_to_center(
                         ocr_match_or_feature_name_list=nav,
@@ -203,25 +259,23 @@ class NavigationMixin(BaseEfTask):
                         raise_if_fail=False,
                         allow_random_move=False
                     )
-
-                # 导航丢失
                 else:
                     if need_v and time.time() - last_click_v_time > 5:
-                        self.log_info(f"未找到导航标识，点击 V 进行尝试")
+                        self.log_info("未找到导航标识，点击 V 尝试")
                         self.press_key("v")
                         last_click_v_time = time.time()
-                    if run_bool:
-                        self.log_info(f"未找到导航标识，进入短距离搜索模式")
-                        run_bool = False
-                        self.press_key("ctrl")
 
+                    if run_bool:
+                        self.log_info("未找到导航标识，进入短距离搜索模式")
+                        exit_run_mode()
 
                 self.sleep(0.01)
 
         finally:
             if not run_bool:
-                self.press_key("ctrl")
-            self.send_key_up("w")
+                self.log_info("导航结束，恢复奔跑模式")
+                self.press_key("ctrl", after_sleep=0.01)  # 确认使用send_key：ctrl为奔跑切换键，不属于游戏可配置热键
+            self.send_key_up("w")  # 确认使用send_key：释放方向键
 
     def align_ocr_or_find_target_to_center(
             self,

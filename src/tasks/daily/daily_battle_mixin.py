@@ -562,7 +562,7 @@ class DailyBattleFeature:
         self._init_gather_transfer_points()
         # 点击追踪按钮，进入地图并传送
         self._click_track_and_transfer()
-        
+
         if (not self._navigate_via_zip_line()) or (not self.wait_ocr(match=self.lang.daily_battle_mixin.k_bfe73e18, box=self.box_of_screen(0.679, 0.620, 0.714, 0.769), time_out=3, raise_if_not_found=False)):
             self.align_ocr_or_find_target_to_center(
                     [fL.gather_icon_out_map, fL.gather_icon_out_map2],
@@ -573,7 +573,7 @@ class DailyBattleFeature:
                 )
             self.navigate_until_target(target=self.lang.daily_battle_mixin.k_bfe73e18, box=self.box_of_screen(0.679, 0.620, 0.714, 0.769), nav=[fL.gather_icon_out_map],
                                     time_out=60)
-        
+
         if self.wait_ocr(match=self.lang.daily_battle_mixin.k_b8a81b7a, box=self.box.bottom_right, time_out=1):
             self.log_info("放弃未领取的奖励")
             self.wait_click_ocr(match=self.lang.daily_battle_mixin.k_b8a81b7a, box=self.box.bottom_right, time_out=5, recheck_time=1,
@@ -615,7 +615,7 @@ class DailyBattleFeature:
             return False
         # 点击追踪按钮，进入地图并传送
         self._click_track_and_transfer()
-        
+
         if (not self._navigate_via_zip_line()) or (not self.wait_ocr(match=self.lang.daily_battle_mixin.k_bfe73e18, box=self.box_of_screen(0.679, 0.620, 0.714, 0.769), time_out=3, raise_if_not_found=False)):
             self.align_ocr_or_find_target_to_center(
                     [fL.gather_icon_out_map, fL.gather_icon_out_map2],
@@ -972,6 +972,7 @@ class DailyBattleFeature:
                     target_is_ocr=True,
                     time_out=60,
                     box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
+                    max_run_time=1,
                 ):
                     raise Exception("导航奖励点失败")
 

@@ -117,7 +117,7 @@ class ZipLineMixin(NavigationMixin):
     def ensure_click_on_zip_line(self, max_attempts=5):
         for _ in range(max_attempts):
             self.click(after_sleep=0.1)
-            self.send_key("e")
+            self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
             if not self.ocr(match=[
                     self.lang.zip_line_mixin.k_2f4f4a2f,
                     self.lang.zip_line_mixin.k_0b1e4f35,

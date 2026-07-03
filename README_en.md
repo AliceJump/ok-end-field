@@ -101,12 +101,24 @@ all potential risks.**
 
 - [Auto Combat](docs/自动战斗.md): battle-state detection and automatic skill release
 - Auto Pickup: whitelist pickup + blacklist filtering
-- Auto Login: automatic relogin handling
-- Auto Skip Dialog: recognize and process skip/confirm flow
-- [Item Navigation & Realtime Detection](docs/物品导航与实时检测.md): local WebSocket item navigation and realtime YOLO detection debugging
+- Auto Interaction: auto skip dialog + auto click teleport
+- Auto Login: automatic relogin + monthly card claim
+- [Item Navigation](docs/物品导航与实时检测.md): WebSocket-driven item gathering point navigation
 
-### Scheduled tasks (Windows Task Scheduler management)
+### One-time tasks (full list)
+- [Daily Task](docs/日常任务.md): gift giving, outpost exchange, delivery handling, market trading, stamina farming, reward claim, and more
+- [Stamina Farming](docs/体力本.md): normal/high-tier stages, danger stages, heavy energy nodes, skill timeline support
+- [Delivery Commission Pickup](docs/运送委托接取.md): filter by ticket type + reward range and auto pickup
+- [Auto Delivery](docs/自动送货.md): Wuling delivery automation with configurable route sequences (7.31w/7.98w)
+- [Warehouse Transfer](docs/仓库物品转移.md): cross-warehouse batch transfer for selected items
+- Demo Draw: auto enter demo draw page, loop until level change condition met
+- Yingtuo Monument: auto complete all normal Yingtuo Monument stages
+- [Periodic Screenshot](docs/物品导航与实时检测.md): interval-based auto capture for data collection
+- [Realtime Detection](docs/物品导航与实时检测.md): loop YOLO detection for online model observation
+- Start Game: pre-launch game with Windows Task Scheduler and auto exit
+- Diagnosis: simple wrapper around the built-in framework diagnosis task
 
+### Scheduled tasks
 - You can add one-time tasks into Windows Task Scheduler for automatic launch
 
 ---
@@ -181,14 +193,14 @@ python main_debug.py
 
 You can auto-start tasks via CLI:
 
-CLI arguments are parsed by the underlying `ok-script` launcher. The project entry point `main.py` passes task configuration from `src/config.py`.
+CLI arguments are parsed by the underlying `ok-script` launcher. The project entry point `main.py` passes task configuration from `src/config/__init__.py`.
 
 ```powershell
 # Start after automatically executing the 1st task 'Daily Task' and exit upon completion
 ok-ef.exe -t 1 -e
 ```
 
-* `-t` or `--task`: Automatically run the Nth task. `1` is the first task in the list (file [./src/config.py](./src/config.py) list `onetime_tasks`) as daily task.
+* `-t` or `--task`: Automatically run the Nth task. `1` is the first task in the list (file [./src/config/__init__.py](./src/config/__init__.py) list `onetime_tasks`) as daily task.
 * `-e` or `--exit`: Exit automatically after the task completes.
 
 ### Development debug & tests

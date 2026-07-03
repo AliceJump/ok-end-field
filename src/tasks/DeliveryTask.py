@@ -542,13 +542,11 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 ocr=False,
                 raise_if_fail=False,
             )
-            self.send_key("v", after_sleep=0.5)
+            self.send_key("v", after_sleep=0.5)  # 确认使用send_key：v为追踪键，在导航循环中用于重置视野，属于高频重复操作避免经过KeyConfigManager
             if not self.navigate_until_target(
                 target=fL.receive_good,
                 target_is_ocr=False,
-                nav=secondary_objective_direction_dot,
                 target_vertical_variance=0.06,
-                need_v=True,
             ):
                 self.log_info("未能到达送货点，取货失败")
                 return False
@@ -577,7 +575,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             ocr=False,
             raise_if_fail=False,
         )
-        self.send_key("v", after_sleep=0.5)
+        self.send_key("v", after_sleep=0.5)  # 确认使用send_key：v为追踪键，在导航循环中用于重置视野，属于高频重复操作避免经过KeyConfigManager
         self.navigate_until_target(
             target=end_pattern,
             target_is_ocr=True,

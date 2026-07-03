@@ -1,0 +1,4 @@
+interface:
+  display_name: "OK Script Codegen"
+  short_description: "Generate ok-script run automation code"
+  default_prompt: "Use $ok-script-codegen to generate ok-script automation code for a task run method."

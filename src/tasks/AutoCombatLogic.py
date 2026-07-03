@@ -58,7 +58,7 @@ class AutoCombatLogic:
             return
 
         skill_key = self.normal_skill_sequence[self.normal_skill_index]
-        task.send_key(skill_key)
+        task.send_key(skill_key)  # 确认使用send_key：技能键为游戏固定不可配置键，不经过KeyConfigManager管理
         task.log_info(f"Used skill {skill_key}")
         self.normal_skill_index += 1
     def _periodic_search(self):
