@@ -259,12 +259,7 @@ class GameFlowMixin:
                 run_at_window_pos(self.hwnd.hwnd, super().click, self.width // 2, self.height // 2, 1, 0.5, 0.5)
                 return False
             elif close := (
-                    self.find_one(
-                        "reward_ok",
-                        horizontal_variance=0.1,
-                        vertical_variance=0.1,
-                    )
-                    or self.find_one("one_click_claim", horizontal_variance=0.1, vertical_variance=0.1)
+                    self.find_one("one_click_claim", horizontal_variance=0.1, vertical_variance=0.1)
                     or self.find_one(
                 "check_in_close",
                 horizontal_variance=0.1,
@@ -411,6 +406,11 @@ class GameFlowMixin:
             or self.find_one(
                 feature=fL.log_out_confirm,
                 box=self.box_of_screen(0.451, 0.572, 0.553, 0.620)
+            )
+            or self.find_one(
+                feature=fL.reward_ok,
+                horizontal_variance=0.1,
+                vertical_variance=0.1,
             )
         ):
             self.log_info("检测到特定弹窗，尝试点击确认")
