@@ -28,6 +28,7 @@ class DailyLiaisonFeature:
         }
         self._task.default_config.update({
             "⭐送礼": True,
+            "一次送礼个数": 2,
             "⭐帝江号一键存放": False,
             "送礼任务最多尝试次数": 2,
             "优先送礼对象": all_list[0],
@@ -45,7 +46,7 @@ class DailyLiaisonFeature:
             "帮助": "打开日常任务使用说明网页。",
         })
         self._task.default_config_group.update({
-            "⭐送礼": ["送礼任务最多尝试次数", "优先送礼对象"],
+            "⭐送礼": ["送礼任务最多尝试次数", "一次送礼个数", "优先送礼对象"],
         })
 
     def __getattr__(self, name):

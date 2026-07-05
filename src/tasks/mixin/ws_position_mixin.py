@@ -61,7 +61,7 @@ class WsPositionMixin:
         self._map_ws_account = None
         self._map_ws_last_error_at = 0.0
         self._map_ws_last_consume_at = 0.0
-        self._map_ws_consumer_idle_timeout = 30.0
+        self._map_ws_consumer_idle_timeout = 10.0
 
     def _is_ws_position_server_enabled(self) -> bool:
         thread = self._ws_server_thread
