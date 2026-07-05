@@ -60,6 +60,8 @@ class WsPositionMixin:
         self._map_ws_auth_source = ""
         self._map_ws_account = None
         self._map_ws_last_error_at = 0.0
+        self._map_ws_last_consume_at = 0.0
+        self._map_ws_consumer_idle_timeout = 30.0
 
     def _is_ws_position_server_enabled(self) -> bool:
         thread = self._ws_server_thread
@@ -296,6 +298,21 @@ class WsPositionMixin:
             info_set('导航', '游戏窗口不存在，地图WS已停止')
         return True
 
+    def _map_ws_should_stop_for_idle_consumer(self) -> bool:
+        last_consume_at = float(getattr(self, "_map_ws_last_consume_at", 0.0) or 0.0)
+        timeout = float(getattr(self, "_map_ws_consumer_idle_timeout", 30.0) or 30.0)
+        if last_consume_at <= 0 or time.time() - last_consume_at < timeout:
+            return False
+
+        log_info = getattr(self, "log_info", None)
+        if callable(log_info):
+            log_info(f"[地图WS] {timeout:.0f}秒内没有任务读取位置，客户端自动停止")
+
+        info_set = getattr(self, "info_set", None)
+        if callable(info_set):
+            info_set('导航', '地图WS已停止：长时间无任务读取位置')
+        return True
+
     async def _map_ws_client_main(self):
         log_info = getattr(self, "log_info", None)
         log_error = getattr(self, "log_error", None)
@@ -303,7 +320,7 @@ class WsPositionMixin:
         while not self._map_ws_stop_event.is_set():
             try:
                 if await asyncio.to_thread(self._map_ws_should_stop_for_game_window):
-                    break
+                    return
 
                 account = await asyncio.to_thread(self._resolve_map_account_from_cred)
                 self._map_ws_account = account
@@ -334,7 +351,9 @@ class WsPositionMixin:
 
                     while not self._map_ws_stop_event.is_set():
                         if await asyncio.to_thread(self._map_ws_should_stop_for_game_window):
-                            break
+                            return
+                        if await asyncio.to_thread(self._map_ws_should_stop_for_idle_consumer):
+                            return
 
                         now = time.time()
                         if auth_ok and now - last_heartbeat_at >= 10.0:
@@ -408,6 +427,7 @@ class WsPositionMixin:
         self._map_ws_device_id = device_id
         self._map_ws_user_id = user_id
         self._map_ws_auth_source = auth_source
+        self._map_ws_last_consume_at = time.time()
 
         log_info = getattr(self, "log_info", None)
         log_error = getattr(self, "log_error", None)
@@ -578,7 +598,9 @@ class WsPositionMixin:
 
     def _recv_ws_position_payload(self, timeout: float = 0.5):
         try:
-            return self._ws_payload_queue.get(timeout=timeout)
+            payload = self._ws_payload_queue.get(timeout=timeout)
+            self._map_ws_last_consume_at = time.time()
+            return payload
         except queue.Empty:
             return None
 
@@ -595,7 +617,10 @@ class WsPositionMixin:
             return payload
         # 队列为空，返回缓存的最后位置
         with self._ws_position_lock:
-            return self._ws_last_position_payload
+            payload = self._ws_last_position_payload
+        if payload is not None:
+            self._map_ws_last_consume_at = time.time()
+        return payload
 
     def _stop_ws_position_server(self):
         log_info = getattr(self, "log_info", None)
@@ -646,3 +671,4 @@ class WsPositionMixin:
             self._map_ws_device_id = ""
             self._map_ws_user_id = ""
             self._map_ws_auth_source = ""
+            self._map_ws_last_consume_at = 0.0
