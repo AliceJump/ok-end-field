@@ -14,6 +14,7 @@ _EMPTY_STORE: Dict[str, Any] = {
     "account_list_text": "",
     "account_registry": {},
     "accounts": {},
+    "map_contents": {},
 }
 _CACHE_DATA: Dict[str, Any] = copy.deepcopy(_EMPTY_STORE)
 
@@ -139,6 +140,21 @@ def _normalize_accounts_map(raw_accounts: Any) -> Dict[str, Dict[str, Dict[str, 
     return normalized_accounts
 
 
+def _normalize_map_contents(raw_map_contents: Any) -> Dict[str, str]:
+    if not isinstance(raw_map_contents, dict):
+        return {}
+
+    normalized: Dict[str, str] = {}
+    for raw_account_key, raw_content in raw_map_contents.items():
+        if not isinstance(raw_account_key, str):
+            continue
+        account_key = raw_account_key.strip()
+        content = _clean_text(raw_content).strip()
+        if account_key and content:
+            normalized[account_key] = content
+    return normalized
+
+
 def _find_account_id_by_username(
         registry: Dict[str, Dict[str, Any]],
         username: str,
@@ -215,6 +231,7 @@ def _normalize(data: Any) -> Dict[str, Any]:
     account_list_text = _clean_text(data.get("account_list_text", ""))
     registry = _normalize_registry(data.get("account_registry"))
     raw_accounts = _normalize_accounts_map(data.get("accounts"))
+    raw_map_contents = _normalize_map_contents(data.get("map_contents"))
 
     normalized_accounts: Dict[str, Dict[str, Dict[str, Any]]] = {}
     for raw_account_key, task_map in raw_accounts.items():
@@ -234,10 +251,26 @@ def _normalize(data: Any) -> Dict[str, Any]:
         merged_task_map = normalized_accounts.setdefault(account_id, {})
         _merge_task_maps(merged_task_map, task_map)
 
+    normalized_map_contents: Dict[str, str] = {}
+    for raw_account_key, content in raw_map_contents.items():
+        account_id = ""
+        if raw_account_key in registry:
+            account_id = raw_account_key
+        else:
+            username = _clean_username(raw_account_key)
+            if username:
+                account_id = _find_account_id_by_username(registry, username, include_aliases=True)
+                if not account_id:
+                    account_id = _ensure_registry_entry(registry, username)
+
+        if account_id:
+            normalized_map_contents[account_id] = content
+
     return {
         "account_list_text": account_list_text,
         "account_registry": registry,
         "accounts": normalized_accounts,
+        "map_contents": normalized_map_contents,
     }
 
 
@@ -266,7 +299,8 @@ def _sync_account_list_text_on_data(data: Dict[str, Any], text: str) -> Tuple[Di
         _ensure_registry_entry(registry, username, account_id=account_id)
         assigned_ids.append(account_id)
 
-    keep_ids = set(assigned_ids) | set(accounts.keys())
+    map_contents = normalized.setdefault("map_contents", {})
+    keep_ids = set(assigned_ids) | set(accounts.keys()) | set(map_contents.keys())
     for account_id in list(registry.keys()):
         if account_id not in keep_ids and not accounts.get(account_id):
             registry.pop(account_id, None)
@@ -385,6 +419,63 @@ def get_account_task_overrides(account: str, task_name: str, account_name: str =
         return dict(accounts.get(legacy_key, {}).get(task_name, {}))
 
     return {}
+
+
+def _resolve_account_id_for_read(data: Dict[str, Any], account: str, account_name: str = "") -> str:
+    account_key = _clean_username(account)
+    account_name = _clean_username(account_name)
+    registry = data.get("account_registry") or {}
+    accounts = data.get("accounts") or {}
+    map_contents = data.get("map_contents") or {}
+
+    if account_key in registry or account_key in accounts or account_key in map_contents:
+        return account_key
+    if account_key:
+        resolved = _find_account_id_by_username(registry, account_key)
+        if resolved:
+            return resolved
+    if account_name:
+        resolved = _find_account_id_by_username(registry, account_name)
+        if resolved:
+            return resolved
+    return ""
+
+
+def get_account_map_content(account: str, account_name: str = "") -> str:
+    account_key = _clean_username(account)
+    account_name = _clean_username(account_name)
+    if not account_key and not account_name:
+        return ""
+
+    data = load_overrides()
+    map_contents = data.get("map_contents") or {}
+    resolved_key = _resolve_account_id_for_read(data, account_key, account_name)
+    if resolved_key and isinstance(map_contents.get(resolved_key), str):
+        return str(map_contents.get(resolved_key) or "").strip()
+
+    legacy_key = account_name or account_key
+    if legacy_key and isinstance(map_contents.get(legacy_key), str):
+        return str(map_contents.get(legacy_key) or "").strip()
+    return ""
+
+
+def set_account_map_content(account: str, content: str) -> None:
+    if not account:
+        return
+
+    data = load_overrides()
+    account_id = _resolve_account_id_for_write(data, account)
+    if not account_id:
+        return
+
+    map_contents = data.setdefault("map_contents", {})
+    content = _clean_text(content).strip()
+    if content:
+        map_contents[account_id] = content
+    else:
+        map_contents.pop(account_id, None)
+
+    save_overrides(data)
 
 
 def _resolve_account_id_for_write(data: Dict[str, Any], account: str) -> str:

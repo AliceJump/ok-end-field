@@ -11,11 +11,13 @@ import re
 from pathlib import Path
 from typing import Dict, Tuple
 
+import win32gui
 from qfluentwidgets import FluentIcon
 from src.icons import Icons
 from ok import Logger, TriggerTask
 from src.config import config
 from src.tasks.BaseEfTask import BaseEfTask
+from src.tasks.account.account_scope_store import get_account_map_content, load_overrides, resolve_account_id
 from src.tasks.mixin.ws_position_mixin import WsPositionMixin
 from src.data import item_map_query
 
@@ -48,6 +50,10 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
         self.icon = Icons.ItemNavigator  # 模块图标
         # 只把面向用户的选项放在 default_config
         self.default_config.update({
+            # 可选：直接填写 hg/check 的 data.content。为空时按“地图账号”读取账户配置页 content。
+            'content': '',
+            # 可选：从账号配置页读取对应账号的地图同步 content。
+            '地图账号': '',
             # 由用户在 UI 中配置要导航的物品名列表（可空）
             '选择物品': [],
             # 标记按键（UI 映射），例如 'f'，当玩家按下且目标在阈值内时标记为已获取
@@ -60,6 +66,10 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
             "options_available": item_map_query.get_supported_item_names(),
             "allow_duplication": False,
         }
+        self.config_type['地图账号'] = {
+            'type': 'drop_down',
+            'options': self._get_map_account_options(),
+        }
         self.config_type['油猴脚本帮助'] = {
             'type': 'button',
             'text': '浏览器油猴脚本帮助',
@@ -67,6 +77,14 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
             'callback': self.open_userscript_help,
         }
         self.config_description.update({
+            'content': (
+                '可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n'
+                '此项有值时优先使用，不再读取账号配置页。'
+            ),
+            '地图账号': (
+                '可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n'
+                '账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。'
+            ),
             '选择物品': (
                 '选择要参与导航的物品列表。\n'
                 '只会在当前地图里匹配这些物品。'
@@ -84,6 +102,9 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
                 '同时打开油猴脚本目录。'
             ),
         })
+        self.default_config_group.update({
+            '网页地图同步': ['content', '地图账号', '油猴脚本帮助'],
+        })
 
         # internal constants (not user-facing)
         self._init_ws_position_mixin()
@@ -93,6 +114,7 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
         self._marked: Dict[str, set] = {}  # mapId -> set of point hashes
         # WS 服务启动状态追踪（仅记录首次启动日志）
         self._ws_server_start_logged = False
+        self._navigator_window_missing_logged = False
 
         # 箭头渲染可调参数（便于快速微调视觉）
         self._arrow_center_rel = (162 / 1920, 166 / 1080)  # 相对于窗口的箭头中心位置（比例），默认在左上角稍微偏右下
@@ -124,6 +146,67 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
         self._mark_lock_target = None
         # 标记所需的最短连续按住时长（秒）
         self._mark_lock_required = 2.0
+
+    @staticmethod
+    def _get_map_account_options() -> list[str]:
+        data = load_overrides()
+        registry = data.get('account_registry') or {}
+        account_list_text = str(data.get('account_list_text') or '')
+        names: list[str] = ['']
+
+        for raw in account_list_text.splitlines():
+            name = raw.strip().split(',', 1)[0].strip()
+            if name and name not in names:
+                names.append(name)
+
+        for meta in registry.values():
+            if isinstance(meta, dict):
+                name = str(meta.get('username') or '').strip()
+                if name and name not in names:
+                    names.append(name)
+
+        return names
+
+    def _is_game_window_alive(self) -> bool:
+        hwnd_window = getattr(getattr(self, 'executor', None), 'device_manager', None)
+        hwnd_window = getattr(hwnd_window, 'hwnd_window', None)
+        hwnd = getattr(hwnd_window, 'hwnd', None)
+        if not hwnd:
+            return False
+        try:
+            return bool(win32gui.IsWindow(hwnd) and win32gui.IsWindowVisible(hwnd))
+        except Exception:
+            return False
+
+    def _cleanup_navigator_runtime(self):
+        if self._is_map_ws_client_enabled():
+            self._stop_map_ws_client()
+        if self._is_ws_position_server_enabled():
+            self._stop_ws_position_server()
+        self.clear_window_arrows()
+        self._ws_server_start_logged = False
+
+    def _get_account_map_content(self) -> str:
+        direct_content = str(self.config.get('content') or '').strip()
+        if direct_content:
+            return direct_content
+
+        selected_account = str(self.config.get('地图账号') or '').strip()
+        if selected_account:
+            account_id = resolve_account_id(selected_account, create_if_missing=False) or selected_account
+            return get_account_map_content(account_id, account_name=selected_account)
+
+        account_id = str(getattr(self, 'current_account_id', '') or '').strip()
+        account_name = str(getattr(self, 'current_user', '') or '').strip()
+
+        executor = getattr(self, 'executor', None)
+        current_task = getattr(executor, 'current_task', None) if executor is not None else None
+        if current_task is not None and current_task is not self:
+            account_id = account_id or str(getattr(current_task, 'current_account_id', '') or '').strip()
+            account_name = account_name or str(getattr(current_task, 'current_user', '') or '').strip()
+
+        return get_account_map_content(account_id or account_name, account_name=account_name)
+
     def _draw_nearby_markers(
             self,
             px: float,
@@ -367,14 +450,38 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
 
     def run(self):
         try:
-            if not self._is_ws_position_server_enabled():
-                self.log_info("ItemNavigatorTask 启动 - 正在启动WS服务")
-                self._start_ws_position_server(host='127.0.0.1', port=3001)
-                self._ws_server_start_logged = False
-            elif not self._ws_server_start_logged:
-                # 首次检测到 WS 服务已启动，仅记录一次
-                self.log_info("ItemNavigatorTask: WS服务已启动 ws://127.0.0.1:3001")
-                self._ws_server_start_logged = True
+            if not self._is_game_window_alive():
+                self._cleanup_navigator_runtime()
+                if not self._navigator_window_missing_logged:
+                    self.log_info("物品导航：游戏窗口不存在或不可见，已暂停地图同步")
+                    self._navigator_window_missing_logged = True
+                self.info_set('导航', '游戏窗口不存在，等待重新选择/启动游戏')
+                return
+
+            self._navigator_window_missing_logged = False
+            map_cred = self._get_account_map_content()
+
+            if map_cred:
+                if self._is_ws_position_server_enabled():
+                    self._stop_ws_position_server()
+                if (
+                        not self._is_map_ws_client_enabled()
+                        or self._map_ws_auth_source != map_cred
+                ):
+                    self.log_info("ItemNavigatorTask 启动 - 正在启动官方地图WS客户端")
+                    self._start_map_ws_client(map_cred)
+                    self._ws_server_start_logged = False
+            else:
+                if self._is_map_ws_client_enabled():
+                    self._stop_map_ws_client()
+                if not self._is_ws_position_server_enabled():
+                    self.log_info("ItemNavigatorTask 启动 - 正在启动WS服务")
+                    self._start_ws_position_server(host='127.0.0.1', port=3001)
+                    self._ws_server_start_logged = False
+                elif not self._ws_server_start_logged:
+                    # 首次检测到 WS 服务已启动，仅记录一次
+                    self.log_info("ItemNavigatorTask: WS服务已启动 ws://127.0.0.1:3001")
+                    self._ws_server_start_logged = True
 
             # read current selected items from task config (this is user-facing)
             selected_items = list(self.config.get('选择物品') or [])
@@ -391,7 +498,10 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
             # parse payload (兼容扁平结构 / data 包裹)
             pos, map_id, px, py, pz = self._extract_position_payload(payload)
             if not pos or not map_id:
-                self.info_set('导航', 'WS位置数据待接收... (需要客户端连接到 ws://127.0.0.1:3001)')
+                if map_cred:
+                    self.info_set('导航', '地图WS位置数据待接收...')
+                else:
+                    self.info_set('导航', 'WS位置数据待接收... (需要客户端连接到 ws://127.0.0.1:3001)')
                 self.sleep(1.0)
                 return
 

@@ -18,9 +18,11 @@ from ok.gui.tasks.ConfigCard import ConfigCard, og
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 from ok.gui.widget.CustomTab import CustomTab
 from src.tasks.account.account_scope_store import (
+    get_account_map_content,
     load_overrides,
     parse_account_list_text,
     save_overrides,
+    set_account_map_content,
     sync_account_list_text,
 )
 
@@ -136,6 +138,26 @@ class AccountConfigTab(CustomTab):
         account_selector_row.add_layout(account_selector_layout, stretch=1)
         selector_layout.addWidget(account_selector_row)
 
+        map_content_row = LabelAndWidget(
+            og.app.tr("地图同步 content"),
+            og.app.tr("当前账号的 hg/check data.content 值，用于官方地图位置同步")
+        )
+        self.map_content_edit = TextEdit()
+        self.map_content_edit.setMinimumHeight(70)
+        self.map_content_edit.setPlaceholderText(og.app.tr("只填写 data.content 的字符串值"))
+        map_content_row.add_widget(self.map_content_edit, stretch=1)
+        selector_layout.addWidget(map_content_row)
+
+        map_content_action_row = LabelAndWidget(og.app.tr("地图同步操作"))
+        map_content_action_layout = QHBoxLayout()
+        self.save_map_content_button = PrimaryPushButton(og.app.tr("保存当前账号 content"))
+        self.clear_map_content_button = PushButton(og.app.tr("清空当前账号 content"))
+        map_content_action_layout.addWidget(self.save_map_content_button)
+        map_content_action_layout.addWidget(self.clear_map_content_button)
+        map_content_action_layout.addStretch(1)
+        map_content_action_row.add_layout(map_content_action_layout, stretch=1)
+        selector_layout.addWidget(map_content_action_row)
+
         task_selector_row = LabelAndWidget(og.app.tr("任务"), og.app.tr("选择任务后自动渲染属性控件"))
         task_selector_layout = QHBoxLayout()
         self.task_selector = ComboBox()
@@ -192,6 +214,8 @@ class AccountConfigTab(CustomTab):
         self.save_task_override_button.clicked.connect(self.save_current_task_override)
         self.clear_task_override_button.clicked.connect(self.clear_current_task_override)
         self.clear_account_override_button.clicked.connect(self.clear_current_account_overrides)
+        self.save_map_content_button.clicked.connect(self.save_current_map_content)
+        self.clear_map_content_button.clicked.connect(self.clear_current_map_content)
 
     def _set_status(self, text: str):
         self.status_label.setText(text)
@@ -325,6 +349,7 @@ class AccountConfigTab(CustomTab):
 
             self.rebuild_account_selector(keep_selection=False)
             self.rebuild_task_selector(keep_selection=False)
+            self.load_current_map_content()
             self.render_task_editor()
 
             if not tasks:
@@ -344,6 +369,7 @@ class AccountConfigTab(CustomTab):
         self.overrides_data = load_overrides(force=True)
 
         self.rebuild_account_selector()
+        self.load_current_map_content()
         status = (
             og.app.tr("账号列表已保存")
             + og.app.tr("（复用ID {reused}，新建ID {created}）").format(
@@ -359,6 +385,36 @@ class AccountConfigTab(CustomTab):
             status += og.app.tr("；忽略无效行 {count} 条").format(count=invalid_count)
 
         self._set_status(status)
+
+    def save_current_map_content(self):
+        account_key = self._current_account_key()
+        account_name = self._current_account_name()
+        if not account_key:
+            self._set_status(og.app.tr("请先选择账号"))
+            return
+
+        set_account_map_content(account_key, self.map_content_edit.toPlainText())
+        self.overrides_data = load_overrides(force=True)
+        self.rebuild_account_selector()
+        self.load_current_map_content()
+        self._set_status(og.app.tr("已保存当前账号地图同步 content：{account}").format(
+            account=account_name or account_key
+        ))
+
+    def clear_current_map_content(self):
+        account_key = self._current_account_key()
+        account_name = self._current_account_name()
+        if not account_key:
+            self._set_status(og.app.tr("请先选择账号"))
+            return
+
+        set_account_map_content(account_key, "")
+        self.overrides_data = load_overrides(force=True)
+        self.map_content_edit.setPlainText("")
+        self.rebuild_account_selector()
+        self._set_status(og.app.tr("已清空当前账号地图同步 content：{account}").format(
+            account=account_name or account_key
+        ))
 
     def _current_account_key(self) -> str:
         display = self.account_selector.currentText().strip()
@@ -384,6 +440,10 @@ class AccountConfigTab(CustomTab):
             raw_items.append((account_key, username))
 
         for account_key in (self.overrides_data.get("accounts") or {}).keys():
+            display_name = self._get_account_name_by_key(account_key)
+            raw_items.append((str(account_key), display_name))
+
+        for account_key in (self.overrides_data.get("map_contents") or {}).keys():
             display_name = self._get_account_name_by_key(account_key)
             raw_items.append((str(account_key), display_name))
 
@@ -452,7 +512,16 @@ class AccountConfigTab(CustomTab):
     def on_account_changed(self, _):
         if self._building:
             return
+        self.load_current_map_content()
         self.render_task_editor()
+
+    def load_current_map_content(self):
+        account_key = self._current_account_key()
+        account_name = self._current_account_name()
+        if not account_key:
+            self.map_content_edit.setPlainText("")
+            return
+        self.map_content_edit.setPlainText(get_account_map_content(account_key, account_name=account_name))
 
     def on_task_changed(self, _):
         if self._building:

@@ -24,6 +24,7 @@ marked_points.json
 /tests/configs
 /tests/logs
 label_class
+/cache/
 ############################
 # 🧠 OCR / 标注输出
 ############################
