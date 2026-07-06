@@ -56,7 +56,7 @@ python main_debug.py
 
 ### 2.1 创建任务文件
 
-在 `src/tasks/` 下新建文件，例如 `MyTriggerTask.py`：
+在 `src/tasks/trigger/` 下新建文件，例如 `MyTriggerTask.py`：
 
 ```python
 from ok import TriggerTask
@@ -78,7 +78,7 @@ class MyTriggerTask(BaseEfTask, TriggerTask):
 
 ### 2.2 注册任务
 
-打开 `src/config/__init__.py`，将新任务加入 `trigger_tasks` 列表：
+打开 `src/config.py`，将新任务加入 `trigger_tasks` 列表：
 
 ```python
 config = {

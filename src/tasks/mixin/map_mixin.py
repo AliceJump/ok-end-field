@@ -1,5 +1,5 @@
 import re
-from src.tasks.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
 
 class MapMixin(BaseEfTask):

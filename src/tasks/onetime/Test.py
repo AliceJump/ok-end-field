@@ -2,7 +2,7 @@ import time
 import re
 from src.data.FeatureList import FeatureList as fL
 from src.image.hsv_config import HSVRange as hR
-from src.tasks.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.daily.daily_demo_mixin import DailyDemoFeature
 from src.tasks.mixin.map_mixin import MapMixin

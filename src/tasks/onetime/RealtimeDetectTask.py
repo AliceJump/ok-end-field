@@ -1,7 +1,7 @@
 from qfluentwidgets import FluentIcon
 
 from src.config import config as app_config
-from src.tasks.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 from src.yolo.model_registry import build_yolo_model_settings
 
 

@@ -5,7 +5,7 @@ import time
 import pyautogui
 
 from src.interaction.Mouse import active_and_send_mouse_delta
-from src.tasks.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
 TOLERANCE = 50
 

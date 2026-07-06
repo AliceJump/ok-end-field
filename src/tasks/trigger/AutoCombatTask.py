@@ -2,8 +2,8 @@ import re
 from qfluentwidgets import FluentIcon
 from ok import TriggerTask, Logger
 
-from src.tasks.AutoCombatLogic import AutoCombatLogic
-from src.tasks.BaseEfTask import BaseEfTask
+from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
+from src.core.BaseEfTask import BaseEfTask
 from src.tasks.mixin.battle_mixin import BattleMixin
 
 logger = Logger.get_logger(__name__)

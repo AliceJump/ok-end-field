@@ -1,6 +1,6 @@
 from ok import TaskDisabledException
 
-from src.tasks.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 
 
 class TestStartGame(BaseEfTask):

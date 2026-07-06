@@ -26,11 +26,11 @@ import numpy as np
 
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING
 from src.data.world_map_utils import is_world_map_text
-from src.tasks.sequence_parser import parse_sequence
-from src.tasks.AutoCombatLogic import AutoCombatLogic
-from src.tasks.BaseEfTask import BaseEfTask
-from src.tasks.BattleConfig import BATTLE_CONFIG_NAME, BattleConfigManager, DEFAULT_BATTLE_CONFIG
-from src.tasks.global_config_store import get_global_config
+from src.core.sequence_parser import parse_sequence
+from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
+from src.core.BaseEfTask import BaseEfTask
+from src.core.BattleConfig import BATTLE_CONFIG_NAME, BattleConfigManager, DEFAULT_BATTLE_CONFIG
+from src.core.global_config_store import get_global_config
 
 
 class BattleMixin(BaseEfTask):

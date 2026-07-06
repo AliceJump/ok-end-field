@@ -20,7 +20,7 @@ from enum import Enum
 from typing import Optional
 from src.data.FeatureList import FeatureList as fL
 from ok import Box
-from src.tasks.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 
 
 def build_name_patterns(find_name: str):

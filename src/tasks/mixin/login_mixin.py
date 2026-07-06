@@ -1,7 +1,7 @@
 import re
 import time
 import pyautogui
-from src.tasks.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
 from src.interaction.Mouse import run_at_window_pos
 from ok import Box

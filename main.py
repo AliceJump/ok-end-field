@@ -1,5 +1,5 @@
 from src.config import config
-from src.startup_patches import install_startup_patches
+from src.patches.startup_patches import install_startup_patches
 
 if __name__ == '__main__':
     config = config

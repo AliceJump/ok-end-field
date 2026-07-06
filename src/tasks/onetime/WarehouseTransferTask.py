@@ -5,7 +5,7 @@ from qfluentwidgets import FluentIcon
 
 from src.data.world_map import item_to_warehouse_dict
 from src.data.zh_en import ITEM_WAREHOUSE_CATEGORY_EN_BY_ZH, ITEM_TRANSLATION_DICT
-from src.tasks.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 
 _LOCATIONS = {
     "valley4": "四号谷地",

@@ -27,7 +27,7 @@ from src.data.delivery_area_service import (
 )
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.account.account_mixin import AccountMixin
-from src.tasks.sequence_parser import parse_int_sequence
+from src.core.sequence_parser import parse_int_sequence
 from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 

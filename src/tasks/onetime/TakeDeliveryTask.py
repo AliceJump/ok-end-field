@@ -3,7 +3,7 @@ import time
 from qfluentwidgets import FluentIcon
 from src.icons import Icons
 from ok import TriggerTask, Logger
-from src.tasks.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 
 logger = Logger.get_logger(__name__)
 

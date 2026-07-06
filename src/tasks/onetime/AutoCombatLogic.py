@@ -2,7 +2,7 @@ import time
 import threading
 import pyautogui
 import traceback
-from src.tasks.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 
 
 class AutoCombatLogic:

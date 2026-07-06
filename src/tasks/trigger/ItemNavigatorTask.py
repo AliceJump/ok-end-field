@@ -16,7 +16,7 @@ from qfluentwidgets import FluentIcon
 from src.icons import Icons
 from ok import Logger, TriggerTask
 from src.config import config
-from src.tasks.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 from src.tasks.account.account_scope_store import get_account_map_content, load_overrides, resolve_account_id
 from src.tasks.mixin.ws_position_mixin import WsPositionMixin
 from src.data import item_map_query

@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import unittest
 
-from src.tasks.sequence_parser import parse_int_sequence, parse_sequence
+from src.core.sequence_parser import parse_int_sequence, parse_sequence
 
 
 class TestSequenceParser(unittest.TestCase):

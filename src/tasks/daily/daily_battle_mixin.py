@@ -11,7 +11,7 @@ from src.data.world_map import stages_cost, higher_order_feature_dict, STAGE_CAT
     STAGE_CATEGORY_DANGER_REHEARSAL
 from src.data.world_map import stages_dict, stages_list
 from src.data.world_map_utils import get_stage_category, get_world_map_matcher, is_world_map_text
-from src.tasks.sequence_parser import parse_int_sequence, parse_sequence
+from src.core.sequence_parser import parse_int_sequence, parse_sequence
 MAX_STORAGE_TICKET = 1000
 ONE_MEDICINE_RESTORE_ENERGY = 40
 

@@ -2,7 +2,7 @@
 import unittest
 import re
 from unittest.mock import MagicMock
-from src.tasks.TakeDeliveryTask import TakeDeliveryTask
+from src.tasks.onetime.TakeDeliveryTask import TakeDeliveryTask
 from ok.test.TaskTestCase import TaskTestCase
 from src.config import config
 

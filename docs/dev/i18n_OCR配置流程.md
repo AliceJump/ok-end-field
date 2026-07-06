@@ -42,7 +42,7 @@ main.py
 
 相关实现：
 
-- `src/base/BaseEfTask.py`：`_extract_locale_from_object()`、`runtime_locale`、`self.lang = get_lang_accessor(self)`。
+- `src/core/BaseEfTask.py`：`_extract_locale_from_object()`、`runtime_locale`、`self.lang = get_lang_accessor(self)`。
 - `src/data/lang/__init__.py`：`get_lang_accessor()`、`_normalize_locale()`、`LangAccessor`。
 
 ---
@@ -175,7 +175,7 @@ assets/ocr_fix/ocr_text_fix.json
 加载位置：
 
 ```text
-src/patches/ocr_text_fix.py
+src/patches/ocr_text_fix_patch.py
 ```
 
 启动时会把 JSON 中的 `错误文本 -> 正确文本` 注入 `ok-script` 的 `TaskExecutor.text_fix`。

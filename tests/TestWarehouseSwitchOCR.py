@@ -5,7 +5,7 @@ import cv2
 from ok.test.TaskTestCase import TaskTestCase
 
 from src.config import config
-from src.tasks.WarehouseTransferTask import WarehouseTransferTask
+from src.tasks.onetime.WarehouseTransferTask import WarehouseTransferTask
 
 
 class TestWarehouseSwitchOCR(TaskTestCase):

@@ -5,7 +5,7 @@ from pathlib import Path
 import cv2
 from qfluentwidgets import FluentIcon
 from ok import Logger
-from src.tasks.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 from src.config import make_bottom_left_black
 
 logger = Logger.get_logger(__name__)

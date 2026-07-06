@@ -1,7 +1,7 @@
 import re
 
 from src.data.world_map import areas_list
-from src.tasks.sequence_parser import parse_sequence
+from src.core.sequence_parser import parse_sequence
 from src.data.FeatureList import FeatureList as fL
 
 

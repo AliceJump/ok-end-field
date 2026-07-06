@@ -4,7 +4,7 @@ import unittest
 from src.config import config
 from ok.test.TaskTestCase import TaskTestCase
 
-from src.tasks.AutoCombatTask import AutoCombatTask
+from src.tasks.trigger.AutoCombatTask import AutoCombatTask
 
 
 class TestMyOneTimeTask(TaskTestCase):

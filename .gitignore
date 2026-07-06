@@ -25,6 +25,7 @@ marked_points.json
 /tests/logs
 label_class
 /cache/
+/endfield_map_marks/
 ############################
 # 🧠 OCR / 标注输出
 ############################

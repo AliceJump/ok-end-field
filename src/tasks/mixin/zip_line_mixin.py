@@ -1,7 +1,7 @@
 import time
 import re
 from src.image.hsv_config import HSVRange as hR
-from src.tasks.sequence_parser import parse_int_sequence
+from src.core.sequence_parser import parse_int_sequence
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 
 class ZipLineMixin(NavigationMixin):

@@ -2,7 +2,7 @@ import time
 from qfluentwidgets import FluentIcon
 from src.icons import Icons
 from src.data.FeatureList import FeatureList as fL
-from src.tasks.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.data.world_map import permanent_dict, YINGTUO_MONUMENT
 from src.data.world_map_utils import get_world_map_text
