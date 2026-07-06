@@ -243,7 +243,7 @@ class DailyRoutineFeature:
                             if result := self.find_feature(feature=fL.assist_friend, box=exchange_help_box):
                                 self.log_info("继续进行助力操作")
                                 self.click(result[-1])
-                                self.wait_pop_up(time_out=3)
+                                self.wait_pop_up(time_out=5)
                                 left_help_time -= 1
                                 help_time += 1
             if not self.safe_back(feature=fL.friend_page, time_out=5):
