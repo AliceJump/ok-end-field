@@ -24,7 +24,6 @@ from src.interaction.Mouse import (
 )
 from src.yolo.loader import YoloModelLoader
 from src.image.rotated_template import rotated_template_match
-from src.tasks import BaseEfTask
 
 feature_values = [f.value for f in fL]
 
