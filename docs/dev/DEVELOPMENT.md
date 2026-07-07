@@ -1,5 +1,7 @@
 # ok-ef 开发文档
 
+返回：[文档索引](../README.md) / [README](../../README.md)
+
 > 本文档面向希望参与或了解 ok-ef 项目开发的开发者，涵盖项目架构、目录结构、各文件职责、开发流程、测试与发布，以及已完成功能与建议计划表。
 
 ---
@@ -14,7 +16,7 @@
 6. [测试](#6-测试)
 7. [CI / CD 与发布流程](#7-ci--cd-与发布流程)
 8. [已完成功能一览](#8-已完成功能一览)
-9. [建议计划表（路线图）](#9-建议计划表路线图)
+9. [文档同步维护](#9-文档同步维护)
 
 ---
 
@@ -53,8 +55,7 @@ main.py / main_debug.py
         │       ├── WarehouseTransferTask (仓库物品转移)
         │       ├── DemoDrawTask        (演算抽牌)
         │       ├── YingTuoTask         (影拓丰碑)
-        │       ├── PeriodicScreenshotTask (定时截图)
-        │       ├── StartGameTask       (启动一次游戏)
+        │       ├── TestStartGame       (启动一次游戏)
         │       ├── DiagnosisTask       (诊断)
         │       ├── RealtimeDetectTask  (实时检测)
         │       └── Test                (开发调试用)
@@ -77,7 +78,7 @@ DailyTask
  ├── DailyShopMixin       (买信用商店)
  ├── DailyRoutineMixin    (其它日常) ── LiaisonMixin ─── NavigationMixin
  ├── DailyLiaisonMixin    (送礼)    ─── LiaisonMixin
- ├── EndCommandMixin      (结尾外部命令)
+ ├── EndCommandMixin      (外部命令)
  └── AccountMixin         (多账号)  ─── LoginMixin
 ```
 
@@ -175,7 +176,6 @@ ok-end-field/
 │       │   ├── Test.py                # 开发调试用任务
 │       │   ├── TestStartGame.py       # 启动游戏
 │       │   ├── RealtimeDetectTask.py  # YOLO 实时检测
-│       │   ├── PeriodicScreenshotTask.py # 定时截图
 │       │   └── DiagnosisTask.py       # 诊断
 │       │
 │       ├── trigger/           # 🔁 触发式任务（后台循环执行）
@@ -207,7 +207,7 @@ ok-end-field/
 │           ├── __init__.py
 │           ├── battle_mixin.py        # 战斗能力
 │           ├── common.py              # 公共数据结构
-│           ├── end_command_mixin.py   # 结尾外部命令
+│           ├── end_command_mixin.py   # 外部命令
 │           ├── game_flow_mixin.py     # 登录弹窗与主界面流程
 │           ├── liaison_mixin.py       # 干员联络
 │           ├── login_mixin.py         # 登录流程
@@ -252,8 +252,7 @@ ok-end-field/
 │       ├── 切换账户流程分析.md
 │       └── 账号唯一ID与多账户覆盖默认逻辑.md
 │
-├── target_doc/                # 待补充文档（需开发者填写）
-│   └── 自动大世界收菜.md
+├── target_doc/                # 历史草稿区，不作为正式功能文档入口
 │
 ├── configs/                   # 任务/全局配置（JSON）：各任务默认选项、设备配置、UI 配置、账号覆盖
 │
@@ -483,16 +482,16 @@ python -m unittest tests/TestAutoCombat.py
 
 ### CI 步骤
 
-```
-1. 配置 git UTF-8 编码
-2. checkout（含 LFS）
-3. 安装 Python 3.12 + requirements.txt
-4. 内联 ok-script 源码（inline_ok_requirements）—— 减小用户更新包体积
-5. 运行 `./run_tests.ps1` 中的全部单元测试
-6. 按 `deploy.txt` 同步部分文件到更新库（cnb.cool + GitHub）—— 供已安装用户增量更新；其中 `ok` 目录由上一步内联 ok-script 源码生成
-7. PyAppify 打包 exe（China / Global 两个 Profile）
-8. 发布 GitHub Release（附带更新日志 + 安装包）
-9. 触发 Mirror 酱上传 & 发布说明 workflow
+```mermaid
+flowchart TD
+    A[推送 v 开头 tag] --> B[checkout 含 LFS]
+    B --> C[安装 Python 3.12 和 requirements.txt]
+    C --> D[内联 ok-script 依赖]
+    D --> E[运行 run_tests.ps1]
+    E --> F[按 deploy.txt 同步更新库]
+    F --> G[PyAppify 打包 China/Global]
+    G --> H[发布 GitHub Release]
+    H --> I[触发 Mirror 酱上传与发布说明]
 ```
 
 ### 下载统计 workflow
@@ -533,8 +532,7 @@ python auto_release.py
 - [x] **自动跳过剧情**：识别跳过按钮并自动确认
 - [x] **自动拾取**：大世界白名单/黑名单过滤自动采集
 - [x] **自动登录**：自动完成登录流程并领取月卡奖励
-- [x] **物品导航**：通过本地 WebSocket 位置数据指向已选物品最近点，支持按键标记已获取
-- [x] **实时检测**：循环执行 YOLO 检测，用于在线观察模型和目标识别结果
+- [x] **物品导航**：通过官方地图 WebSocket 或本地 WebSocket 位置数据指向已选物品最近点，支持按键标记已获取
 
 ### 一次性任务
 
@@ -546,18 +544,18 @@ python auto_release.py
   - [x] 造装备（套组制造）
   - [x] 简易制作
   - [x] 收信用（好友助力 + 信用交易所领取）
-  - [x] 帝江号收菜（线索收集 + 制造仓收取）
+  - [x] 帝江号收菜（线索收集 + 制造舱 + 培养舱）
   - [x] 买信用商店（武库配额、嵌晶玉，自动刷新）
   - [x] 买卖货（弹性需求物资，价格上下限自动判断）
   - [x] 刷体力（全副本类型，含能量淤积点滑索导航）
   - [x] 买物资（稳定物资，白名单过滤）
-  - [x] 周常奖励 & 日常奖励领取
+  - [x] 活动奖励（周常奖励、理智补给）& 日常奖励领取
   - [x] 多账号模式
 - [x] **刷体力**（独立任务，复用日常任务刷体力逻辑）
 - [x] **自动送货**（武陵，滑索路径配置化，支持多目标 NPC）
 - [x] **运送委托接取**（OCR 识别奖励金额 + 图标识别券种，自动抢单）
 - [x] **仓库物品转移**（发货仓库 → 收货仓库，支持多轮次）
-- [x] **定时截图**（数据采集 / YOLO 样本收集辅助工具）
+- [x] **YOLO 实测扫描 / 实时检测**（循环执行 YOLO 检测，用于在线观察模型和目标识别结果）
 
 ### 底层能力
 
@@ -572,40 +570,29 @@ python auto_release.py
 
 ---
 
-## 9. 建议计划表（路线图）
+## 9. 文档同步维护
 
-> 优先级：🔴 高 / 🟡 中 / 🟢 低  
-> 状态：⬜ 未开始 / 🔄 进行中 / ✅ 已完成
+新增或修改代码时，按下面顺序同步文档，避免 README、功能文档和开发文档漂移。
 
-### 功能扩展
+```mermaid
+flowchart TD
+    A[修改任务/配置/数据] --> B{是否改变用户可见行为}
+    B -->|是| C[更新 README 和 docs/README.md]
+    B -->|否| D{是否改变开发接口或数据结构}
+    C --> E[更新对应功能文档]
+    D -->|是| F[更新 docs/dev 或 docs/update]
+    D -->|否| G[无需文档变更]
+    E --> H[检查相对链接和锚点]
+    F --> H
+    H --> I[运行相关测试或导入检查]
+```
 
-| 优先级 | 功能 | 说明 | 状态 |
-|--------|------|------|------|
-| 🔴 | 更多副本支持 | 扩充 `stages_dict` 并适配进入/退出流程 | ⬜ |
-| 🔴 | 大世界自动巡逻采集 | 按预设路线自动移动并触发 AutoPickTask | ⬜ |
-| 🔴 | 更多据点/地区支持 | 随版本更新扩充 `world_map.py`（地区、据点、货品） | 🔄 |
-| 🟡 | 更多干员联络支持 | 持续更新 `characters.py` 以支持新干员 | 🔄 |
-| 🟢 | 装备词条识别轮子维护 | 按后续需求扩充 `src/essence` 的 OCR 解析与 CSV 匹配能力 | ⬜ |
-| 🟡 | 仓库转移：更多物品 | 扩充 `item_to_warehouse_dict` 和 `ITEM_TRANSLATION_DICT` | ⬜ |
+维护原则：
 
-### 工程质量
-
-| 优先级 | 项目 | 说明 | 状态 |
-|--------|------|------|------|
-| 🔴 | 补充核心模块单元测试 | 优先覆盖 `daily_trade_mixin`、`daily_battle_mixin` 的纯逻辑部分 | ⬜ |
-| 🔴 | 完善用户文档 | `target_doc/` 下待补充的功能文档 | 🔄 |
-| 🟡 | 统一错误处理规范 | 定义标准异常类型，减少裸 `except` | ⬜ |
-| 🟡 | 配置项校验 | 对用户输入的配置项（如价格、券数）做范围/格式校验并给出友好提示 | ⬜ |
-| 🟡 | 战斗结束 YOLO 模型扩充 | 增加更多战斗结束/失败场景的训练样本 | ⬜ |
-| 🟢 | 重构 AutoCombatTask/DailyBattleMixin 重复代码 | 当前有注释说明两处需同步修改，应抽取共用基类 | ⬜ |
-| 🟢 | 多语言内容补全 | 完善 `i18n/` 下英文等语言的翻译条目 | ⬜ |
-
-### 基础设施
-
-| 优先级 | 项目 | 说明 | 状态 |
-|--------|------|------|------|
-| 🟡 | 测试截图样本库扩充 | 覆盖更多分辨率（2K/4K）和游戏版本的样本图 | ⬜ |
-| 🟢 | 自动化集成测试 | 基于录制回放的端到端测试（模拟截图序列） | ⬜ |
+- 任务列表以 [src/config.py](../../src/config.py) 为准。
+- 任务配置项以任务类、Mixin 和 [BattleConfig.py](../../src/core/BattleConfig.py) 为准。
+- 主数据以 [world_map.py](../../src/data/world_map.py)、[delivery_area.py](../../src/data/delivery_area.py)、[characters.py](../../src/data/characters.py) 为准。
+- 草稿内容放在 `target_doc/` 时必须标明不是正式入口，并在正式文档中链接到已实现功能。
 
 ---
 
@@ -639,7 +626,7 @@ python auto_release.py
 3. 运行时代码避免使用 `print` 输出日志；`print` 仅建议用于测试脚本或一次性工具脚本。
 4. 账号列表解析中的非法行会直接忽略，不再逐行输出格式错误日志，避免日志噪声。
 
-[更多API](API.md)
+更多 API：[API 参考](API.md)
 
 ### ScreenPosition（self.box）
 

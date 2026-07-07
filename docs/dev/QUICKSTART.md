@@ -1,5 +1,7 @@
 # ok-ef 开发者快速开始
 
+返回：[文档索引](../README.md) / [README](../../README.md)
+
 > 目标读者：希望为 ok-ef 贡献代码的开发者。
 
 ---
@@ -60,7 +62,7 @@ python main_debug.py
 
 ```python
 from ok import TriggerTask
-from src.base.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 
 class MyTriggerTask(BaseEfTask, TriggerTask):
     def __init__(self, *args, **kwargs):
@@ -85,7 +87,7 @@ config = {
     ...
     "trigger_tasks": [
         ...,
-        ["src.tasks.MyTriggerTask", "MyTriggerTask"],  # 新增
+        ["src.tasks.trigger.MyTriggerTask", "MyTriggerTask"],  # 新增
     ],
     ...
 }
@@ -107,8 +109,10 @@ config = {
 
 ---
 
-## 后续阅读
+## 相关文档
 
 | 文档 | 说明 |
 |------|------|
 | [文字识别示例.md](文字识别示例.md) | ocr / wait_ocr / click / wait_click_ocr 完整示例任务 |
+| [图像模板匹配示例.md](图像模板匹配示例.md) | find_feature / wait_feature / 模板资源使用示例 |
+| [开发指南](DEVELOPMENT.md) | 目录结构、任务注册、测试和发布流程 |

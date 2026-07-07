@@ -1,5 +1,7 @@
 # i18n 与 OCR 配置流程
 
+返回：[文档索引](../README.md) / [README](../../README.md)
+
 本文记录当前项目中运行时语言、模块化语言资源、OCR 文本匹配和 OCR 纠错的实际链路，适用于新增任务、补充翻译、维护 OCR 匹配文本时参考。
 
 ---
@@ -278,4 +280,4 @@ python tools/lang_batch_translate.py
 
 ### 是否还需要 `target_doc/i18n_ocr.md`
 
-`target_doc/i18n_ocr.md` 是早期重构草稿。正式流程以本文为准；草稿仅保留为历史设计记录。
+历史草稿状态页：[target_doc/i18n_ocr.md](../../target_doc/i18n_ocr.md)。正式流程以本文为准。

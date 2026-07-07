@@ -1,5 +1,7 @@
 # ok-ef API 参考文档
 
+返回：[文档索引](../README.md) / [README](../../README.md)
+
 > 面向开发者的详细 API 参考，涵盖核心基类、Mixin 能力层、工具类及数据层的所有公共接口。
 
 ---
@@ -38,7 +40,7 @@
 所有任务与 Mixin 的公共基类，封装了截图、识别、交互等核心能力。
 
 ```python
-from src.base.BaseEfTask import BaseEfTask
+from src.core.BaseEfTask import BaseEfTask
 ```
 
 ### 1.1 截图与特征匹配
@@ -892,7 +894,7 @@ def yolo_detect(
 boxes = self.yolo_detect("battle_end", box=self.box.center, conf=0.6)
 ```
 
-推荐在 `src/detection/models.py` 中集中维护多模型与 labels：
+推荐在 [src/yolo/models.py](../../src/yolo/models.py) 中集中维护多模型与 labels：
 
 ```python
 DEFAULT_MODEL_KEY = "battle_end_default"

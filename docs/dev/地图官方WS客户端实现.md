@@ -1,5 +1,7 @@
 # 地图官方 WebSocket 客户端实现
 
+返回：[文档索引](../README.md) / [README](../../README.md)
+
 ## 概述
 
 替换油猴脚本转发方案，直接在项目内集成终末地官方地图的 `wss://ws.skland.com` WebSocket 客户端。
@@ -13,7 +15,7 @@
 
 ### 方式二：账号配置页（推荐）
 `AccountConfigTab` 中的"地图同步 content"区域，每个账号存储一份 `data.content`。
-数据持久化在 `account_scope_store.json` 的 `map_contents` 字段中。
+数据持久化在 `configs/account_scoped_overrides.json` 的 `map_contents` 字段中。
 
 ### 凭证解析优先级
 1. 任务 `content` 非空 → 直接使用
@@ -25,32 +27,15 @@
 
 ## OAuth → WebSocket 登录全链路
 
-```
-用户输入: hg/check 返回的 data.content 原始字符串
-                        │
-                        ▼
-  POST https://as.hypergryph.com/user/oauth2/v2/grant
-  body: { token: content, appCode: "4ca99fa6b56cc2ba", type: 0 }
-  返回: { status: 0, data: { code: "xxx" } }
-                        │
-                        ▼
-  POST https://zonai.skland.com/web/v1/user/auth/generate_cred_by_code
-  body: { kind: 1, code: oauth_code }
-  返回: { code: 0, data: { cred: "xxx", token: "yyy", userId: "zzz" } }
-                        │
-            ┌───────────┴───────────┐
-            ▼                       ▼
-        cred (凭证)            sign_token (签名密钥)
-        headers["cred"]       用于 HTTP 接口签名
-                        │
-                        ▼
-  GET https://zonai.skland.com/api/v1/websocket/token
-  headers: { cred, platform, timestamp, dId, sign }
-  返回: { code: 0, data: { token: "wss_token" } }
-                        │
-                        ▼
-  WSS → wss://ws.skland.com/ws/v1/game/endfield/map
-  发送 type=1: { token: wss_token }
+```mermaid
+flowchart TD
+    A[hg/check data.content] --> B[POST Hypergryph OAuth grant]
+    B --> C[取得 oauth code]
+    C --> D[POST generate_cred_by_code]
+    D --> E[取得 cred / sign token / userId]
+    E --> F[GET websocket token]
+    F --> G[连接 wss://ws.skland.com]
+    G --> H[发送 type=1 token 鉴权]
 ```
 
 ## HTTP 签名算法
@@ -92,8 +77,8 @@ headers["sign"] = sign
 ## 多账号架构
 
 ### 数据流
-```
-account_scope_store.json
+```text
+configs/account_scoped_overrides.json
 ├── map_contents          ← 账号 → hg/check content 映射
 │   ├── "acc_xxx": "data.content string"
 │   └── ...
@@ -135,15 +120,21 @@ WS 客户端线程检查 `_map_ws_should_stop_for_idle_consumer()`，若超过 `
 | `地图账号` | dropdown | 可选。从账号配置页选择已保存 content 的账号 |
 
 ### `run()` 流程
-```
-1. _is_game_window_alive() → 失败则 cleanup + return
-2. _get_account_map_content() → 获取凭证
-3. 有凭证 → stop WS server (if running) → start map WS client
-4. 无凭证 → stop map WS client (if running) → start WS server
-5. _recv_ws_position_payload_or_cached() → 解析位置
-6. 匹配物品 → 画箭头 + 高差箭头 + 附近标记点
-7. 标记按键处理
-8. _save_marked() (延迟合并 3s)
+```mermaid
+flowchart TD
+    A[ItemNavigatorTask.run] --> B{游戏窗口是否存在}
+    B -->|否| C[清理 WS 和箭头]
+    B -->|是| D[读取 content 或地图账号 content]
+    D --> E{有凭证}
+    E -->|是| F[停止本地 WS 服务]
+    F --> G[启动官方地图 WS 客户端]
+    E -->|否| H[停止官方 WS 客户端]
+    H --> I[启动本地 WS 服务]
+    G --> J[读取位置 payload 或缓存]
+    I --> J
+    J --> K[匹配物品点位并绘制箭头]
+    K --> L[处理标记按键]
+    L --> M[延迟保存 marked_points.json]
 ```
 
 ## 相关文件
@@ -154,3 +145,5 @@ WS 客户端线程检查 `_map_ws_should_stop_for_idle_consumer()`，若超过 `
 | `src/tasks/trigger/ItemNavigatorTask.py` | 导航任务：凭证解析、位置消费、箭头渲染、标记逻辑 |
 | `src/tasks/account/account_scope_store.py` | 持久化：`map_contents` 字段的读写、账号解析 |
 | `src/gui/AccountConfigTab.py` | UI：账号配置页，包含地图 content 编辑 |
+
+相关文档：[物品导航与实时检测](../物品导航与实时检测.md) / [账号配置用户指南](../账号配置用户指南.md)

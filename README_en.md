@@ -86,6 +86,15 @@ all potential risks.**
 
 ---
 
+## Documentation
+
+- Documentation index: [docs/README.md](docs/README.md)
+- Developer quick start: [docs/dev/QUICKSTART.md](docs/dev/QUICKSTART.md)
+- API reference: [docs/dev/API.md](docs/dev/API.md)
+- Windows Task Scheduler: [docs/Windows%20计划任务.md](docs/Windows%20计划任务.md)
+
+---
+
 ## 🎮 Feature Overview (by task type)
 
 ### One-time tasks (manual click to run)
@@ -103,7 +112,7 @@ all potential risks.**
 - Auto Pickup: whitelist pickup + blacklist filtering
 - Auto Interaction: auto skip dialog + auto click teleport
 - Auto Login: automatic relogin + monthly card claim
-- [Item Navigation](docs/物品导航与实时检测.md): WebSocket-driven item gathering point navigation
+- [Item Navigation](docs/物品导航与实时检测.md): official-map WebSocket or local WebSocket driven item gathering point navigation
 
 ### One-time tasks (full list)
 - [Daily Task](docs/日常任务.md): gift giving, outpost exchange, delivery handling, market trading, stamina farming, reward claim, and more
@@ -113,7 +122,6 @@ all potential risks.**
 - [Warehouse Transfer](docs/仓库物品转移.md): cross-warehouse batch transfer for selected items
 - Demo Draw: auto enter demo draw page, loop until level change condition met
 - Yingtuo Monument: auto complete all normal Yingtuo Monument stages
-- [Periodic Screenshot](docs/物品导航与实时检测.md): interval-based auto capture for data collection
 - [Realtime Detection](docs/物品导航与实时检测.md): loop YOLO detection for online model observation
 - Start Game: pre-launch game with Windows Task Scheduler and auto exit
 - Diagnosis: simple wrapper around the built-in framework diagnosis task
@@ -165,7 +173,7 @@ If you encounter issues, check the following in order:
 | Document | Description |
 |----------|-------------|
 | [Quick Start Guide (QUICKSTART.md)](docs/dev/QUICKSTART.md) | Minimal workflow to run from source, launch the software, and create trigger/one-time tasks |
-| [Development Guide (DEVELOPMENT.md)](docs/dev/DEVELOPMENT.md) | Architecture overview, directory structure, development workflow, testing, CI/CD, and roadmap |
+| [Development Guide (DEVELOPMENT.md)](docs/dev/DEVELOPMENT.md) | Architecture overview, directory structure, development workflow, testing, CI/CD, and documentation sync maintenance |
 | [API Reference (API.md)](docs/dev/API.md) | Detailed API docs for BaseEfTask, Mixin, ScreenPosition, KeyConfigManager, and more |
 | [i18n & OCR Configuration](docs/dev/i18n_OCR配置流程.md) | Runtime locale, language JSON, OCR matching, and text-fix workflow |
 | [Equipment Affix Recognition Toolkit](docs/dev/装备词条识别轮子.md) | Reusable OCR parser, CSV matcher, and template assets after task removal |
@@ -193,14 +201,14 @@ python main_debug.py
 
 You can auto-start tasks via CLI:
 
-CLI arguments are parsed by the underlying `ok-script` launcher. The project entry point `main.py` passes task configuration from `src/config/__init__.py`.
+CLI arguments are parsed by the underlying `ok-script` launcher. The project entry point `main.py` passes task configuration from [src/config.py](src/config.py).
 
 ```powershell
 # Start after automatically executing the 1st task 'Daily Task' and exit upon completion
 ok-ef.exe -t 1 -e
 ```
 
-* `-t` or `--task`: Automatically run the Nth task. `1` is the first task in the list (file [./src/config/__init__.py](./src/config/__init__.py) list `onetime_tasks`) as daily task.
+* `-t` or `--task`: Automatically run the Nth task. `1` is the first task in the list [src/config.py](src/config.py) `onetime_tasks`, which is Daily Task.
 * `-e` or `--exit`: Exit automatically after the task completes.
 
 ### Development debug & tests

@@ -1,6 +1,8 @@
 # Windows 计划任务
 
-ok-ef 提供了 [日常任务开始时执行结尾外部命令](./日常任务.md#执行结尾外部命令) 和 内置计划任务 功能。
+返回：[文档索引](README.md) / [README](../README.md)
+
+ok-ef 提供了 [日常任务外部命令](./日常任务.md#执行外部命令) 和内置计划任务功能。
 
 如果想要更高的自由度，可以使用 Windows 计划任务。
 
@@ -223,17 +225,17 @@ if ((Test-Path "screenshots") && (Get-ChildItem -Path "screenshots" -Force -Erro
     <Exec>
       <Command>powershell</Command>
       <Arguments>-WindowStyle Hidden 终末地.pre.ps1</Arguments>
-      <WorkingDirectory>TODO_PATH_TO_PRE_SCRIPT_DIRECTORY</WorkingDirectory>
+      <WorkingDirectory>PLACEHOLDER_PATH_TO_PRE_SCRIPT_DIRECTORY</WorkingDirectory>
     </Exec>
     <Exec>
       <Command>cmd</Command>
       <Arguments>/c start "" ok-ef.exe -t 1 -e</Arguments>
-      <WorkingDirectory>TODO_PATH_TO_OK_EF_APP_DIRECTORY</WorkingDirectory>
+      <WorkingDirectory>PLACEHOLDER_PATH_TO_OK_EF_APP_DIRECTORY</WorkingDirectory>
     </Exec>
     <Exec>
       <Command>powershell</Command>
       <Arguments>-WindowStyle Hidden 终末地.post.ps1</Arguments>
-      <WorkingDirectory>TODO_PATH_TO_POST_SCRIPT_DIRECTORY</WorkingDirectory>
+      <WorkingDirectory>PLACEHOLDER_PATH_TO_POST_SCRIPT_DIRECTORY</WorkingDirectory>
     </Exec>
   </Actions>
 </Task>
@@ -241,9 +243,9 @@ if ((Test-Path "screenshots") && (Get-ChildItem -Path "screenshots" -Force -Erro
 
 复制内容到新 xml 文件，进行下列修改并保存：
 
-1. 修改 TODO_PATH_TO_OK_EF_APP_DIRECTORY 为 ok-ef app 的绝对路径。
-2. 修改 TODO_PATH_TO_PRE_SCRIPT_DIRECTORY 为 `终末地.pre.ps1` 文件所在位置。
-3. 修改 TODO_PATH_TO_POST_SCRIPT_DIRECTORY 为 `终末地.post.ps1` 文件所在位置。
+1. 修改 `PLACEHOLDER_PATH_TO_OK_EF_APP_DIRECTORY` 为 ok-ef app 的绝对路径。
+2. 修改 `PLACEHOLDER_PATH_TO_PRE_SCRIPT_DIRECTORY` 为 `终末地.pre.ps1` 文件所在位置。
+3. 修改 `PLACEHOLDER_PATH_TO_POST_SCRIPT_DIRECTORY` 为 `终末地.post.ps1` 文件所在位置。
 
 使用 `Win + R` 运行 `taskschd.msc` 打开计划任务程序。点击 `操作 > 导入任务` 加入上述 xml 文件。修改 `名称` 后点击 `确认`。
 
@@ -279,11 +281,11 @@ if ((Test-Path "screenshots") && (Get-ChildItem -Path "screenshots" -Force -Erro
 ``` xml
 <QueryList>
   <Query Id="0" Path="Microsoft-Windows-TaskScheduler/Operational">
-    <Select Path="Microsoft-Windows-TaskScheduler/Operational">*[System[(EventID=102)]] and *[EventData[Data[@Name='TaskName'] and (Data='TODO_TASK_PATH')]]</Select>
+    <Select Path="Microsoft-Windows-TaskScheduler/Operational">*[System[(EventID=102)]] and *[EventData[Data[@Name='TaskName'] and (Data='PLACEHOLDER_TASK_PATH')]]</Select>
   </Query>
 </QueryList>
 ```
 
-将 TODO_TASK_PATH 替换成前序任务的路径（可以在对应计划任务的详情页 `常规` 中找到，是 `位置` 和 `名称` 用反斜杠拼接）。
+将 `PLACEHOLDER_TASK_PATH` 替换成前序任务的路径（可以在对应计划任务的详情页 `常规` 中找到，是 `位置` 和 `名称` 用反斜杠拼接）。
 
 一路点击 `确定` 关闭所有弹出窗口。
