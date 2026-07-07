@@ -143,7 +143,7 @@ class DailyShopFeature:
                     self.mark_task_failure(f"购买失败: {item_name}，原因: 信用不足，当前信用: {sum_credit}，价格: {cost}")
                     self.back_shop()
                     return False, sum_credit, False
-                return True, sum_credit, True
+                return False, sum_credit, True
             self.wait_pop_up(after_sleep=1)
             sum_credit -= cost
             self.log_info(f"购买成功: {item_name}，消耗信用: {cost}，剩余信用: {sum_credit}")
