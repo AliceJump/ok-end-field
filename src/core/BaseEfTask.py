@@ -121,8 +121,13 @@ class BaseEfTask(
 
     # ── 配置键迁移 ─────────────────────────────────────────
     def load_config(self):
-        """加载配置前先迁移 JSON 文件中的旧 key → 新 key。"""
-        migrate_config_file_keys(self.__class__.__name__)
+        """走 MRO 收集各 mixin/任务的迁移表，执行后再加载配置。"""
+        migrations = {}
+        for klass in type(self).__mro__:
+            table = getattr(klass, 'config_key_migrations', None)
+            if table:
+                migrations.update(table)
+        migrate_config_file_keys(self.__class__.__name__, migrations)
         super().load_config()
 
     def box_of_screen(

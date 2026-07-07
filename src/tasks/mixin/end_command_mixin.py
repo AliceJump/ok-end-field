@@ -10,6 +10,15 @@ class EndCommandMixin:
 
     _SWITCH_KEY = "⭐执行外部命令"
 
+    config_key_migrations = {
+        "⭐执行结尾外部命令": "⭐执行外部命令",
+        "结尾外部命令": "外部命令",
+        "结尾外部命令起始于": "外部命令起始于",
+        "结尾外部命令等待退出": "外部命令等待退出",
+        "结尾外部命令已运行时跳过": "外部命令已运行时跳过",
+        "结尾外部命令执行时机": "外部命令执行时机",
+    }
+
     def add_end_command_config(self, *, enable_description="是否执行一次外部命令行程序。",
                                command_description=None):
         if command_description is None:
