@@ -66,6 +66,12 @@ class EfInteraction(PostMessageInteraction):
     def send(self, msg, wparam, lparam):
         win32gui.SendMessage(self.hwnd, msg, wparam, lparam)
 
+    def _foreground_hwnd(self):
+        hwnd = getattr(getattr(self, "hwnd_window", None), "hwnd", 0)
+        if hwnd and win32gui.IsWindow(hwnd):
+            return hwnd
+        return self.hwnd
+
     def activate(self):
         self.send(win32con.WM_ACTIVATE, win32con.WA_ACTIVE, 0)
 
@@ -103,7 +109,7 @@ class EfInteraction(PostMessageInteraction):
     def send_key_down(self, key, activate=True):        
         if activate:
             self.try_activate()
-        active_and_send_mouse_delta(self.hwnd, only_activate=True)
+        active_and_send_mouse_delta(self._foreground_hwnd(), only_activate=True)
         self.keyboard.press(self._convert_key(key))
 
     def send_key_up(self, key):

@@ -882,6 +882,40 @@ class RuntimeMixin:
                    after_sleep=after_sleep, key=key)
         self.send_key_up("alt")
 
+    def wait_click_feature(self, feature, horizontal_variance=0, vertical_variance=0, threshold=0, relative_x=0.5,
+                           relative_y=0.5, time_out=0, pre_action=None, post_action=None, box=None,
+                           raise_if_not_found=True, use_gray_scale=False, canny_lower=0, canny_higher=0,
+                           click_after_delay=0, settle_time=-1, after_sleep=0, target_height=0,
+                           alt: bool = False):
+        result = self.wait_until(
+            lambda: self.find_one(
+                feature,
+                horizontal_variance,
+                vertical_variance,
+                threshold,
+                box=box,
+                use_gray_scale=use_gray_scale,
+                canny_lower=canny_lower,
+                canny_higher=canny_higher,
+                target_height=target_height,
+            ),
+            time_out=time_out,
+            pre_action=pre_action,
+            post_action=post_action,
+            raise_if_not_found=raise_if_not_found,
+            settle_time=settle_time,
+        )
+        if result is not None:
+            if click_after_delay > 0:
+                self.sleep(click_after_delay)
+            if alt:
+                x, y = result.relative_with_variance(relative_x, relative_y)
+                self.click_with_alt(x, y, name=result.name, after_sleep=after_sleep)
+            else:
+                self.click_box(result, relative_x, relative_y, after_sleep=after_sleep)
+            return True
+        return False
+
     def wait_click_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box=None, name=None, match=None,
                        threshold=0, frame=None, target_height=0, time_out=0, raise_if_not_found=False,
                        recheck_time=0, after_sleep=0, post_action=None, log=False, screenshot=False,

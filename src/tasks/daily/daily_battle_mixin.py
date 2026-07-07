@@ -583,11 +583,9 @@ class DailyBattleFeature:
             self.mark_task_failure("淤积点激发前换队失败")
             return False
         #
-        result = self.wait_feature(feature=fL.trigger_gather_button, vertical_variance=0.2, horizontal_variance=0.05, time_out=5, settle_time=1, raise_if_not_found=False)
-        if not result:
+        if not self.wait_click_feature(feature=fL.trigger_gather_button, vertical_variance=0.2, horizontal_variance=0.05, time_out=5, settle_time=1, raise_if_not_found=False, after_sleep=2, alt=True):
             self.log_info("没有找到『激发』按钮")
             return False
-        self.click_with_alt(result, after_sleep=2)
         # 开战
         return self.battle_recycle()
 
@@ -652,11 +650,9 @@ class DailyBattleFeature:
         """
         if self.battle_ctx.is_extra_mode:
             # 放弃领取奖励后需要重新点击激发按钮
-            result = self.wait_feature(feature=fL.trigger_gather_button, vertical_variance=0.2, horizontal_variance=0.05, time_out=5, raise_if_not_found=False, settle_time=1)
-            if not result:
+            if not self.wait_click_feature(feature=fL.trigger_gather_button, vertical_variance=0.2, horizontal_variance=0.05, time_out=5, raise_if_not_found=False, settle_time=1, after_sleep=2, alt=True):
                 self.log_info("未找到『激发』按钮，无法继续进行额外刷取")
                 return False
-            self.click_with_alt(result, after_sleep=2)
             self.wait_click_feature(feature=fL.to_max_produce_num, time_out=10, box=self.box_of_screen(0.946, 0.902, 0.966, 0.937),
                                 settle_time=1)
             self.click_confirm()

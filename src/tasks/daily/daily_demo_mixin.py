@@ -130,11 +130,9 @@ class DailyDemoFeature:
 
     def enter_page(self):
         """进入关卡选择界面，等待UI稳定。"""
-        result= self.wait_feature(feature=fL.enter_demo, time_out=10, raise_if_not_found=False, box=self.box_of_screen(0.653, 0.574, 0.679, 0.817), settle_time=1)
-        if not result:
+        if not self.wait_click_feature(feature=fL.enter_demo, time_out=10, raise_if_not_found=False, box=self.box_of_screen(0.653, 0.574, 0.679, 0.817), settle_time=1, after_sleep=1, alt=True):
             self.mark_task_failure("未找到『进入演算』按钮，可能还没到关卡入口页")
             return False
-        self.click_with_alt(result, after_sleep=1)
         self.wait_ui_stable(refresh_interval=1)
         return True
 

@@ -50,15 +50,14 @@ from src.core.BaseEfTask import BaseEfTask
 ```python
 def find_feature(
     self,
-    feature_name,
-    *,
-    box=None,
-    threshold=0,
-    use_gray_scale=False,
+    feature_name=None,
     horizontal_variance=0,
     vertical_variance=0,
+    threshold=0,
+    use_gray_scale=False,
     x=-1, y=-1, to_x=-1, to_y=-1,
     width=-1, height=-1,
+    box=None,
     canny_lower=0, canny_higher=0,
     frame_processor=None,
     template=None,
@@ -68,6 +67,7 @@ def find_feature(
     frame=None,
     limit=0,
     target_height=0,
+    feature=None,
 )
 ```
 
@@ -79,7 +79,7 @@ def find_feature(
 
 | 参数 | 类型 | 说明 |
 |------|------|------|
-| `feature_name` | `FeatureList` \| `str` \| `list[FeatureList \| str]` | 特征名（单个或列表） |
+| `feature_name` / `feature` | `FeatureList` \| `str` \| `list[FeatureList \| str]` | 特征名（单个或列表）。`feature` 是兼容别名，常用于调用处提升可读性 |
 | `box` | `Box \| None` | 限制搜索区域；`None` 时框架从 `coco_annotations.json` 读取该模板的标注位置作为默认搜索范围 |
 | `threshold` | `float` | 匹配阈值，默认 `0`（使用框架默认值） |
 | `use_gray_scale` | `bool` | 是否转灰度匹配 |
@@ -100,13 +100,28 @@ if boxes:
 ```python
 def find_one(
     self,
-    feature_name,
-    **kwargs,
+    feature_name=None,
+    horizontal_variance=0,
+    vertical_variance=0,
+    threshold=0,
+    use_gray_scale=False,
+    box=None,
+    canny_lower=0,
+    canny_higher=0,
+    frame_processor=None,
+    template=None,
+    mask_function=None,
+    frame=None,
+    match_method=cv2.TM_CCOEFF_NORMED,
+    screenshot=False,
+    limit=1,
+    target_height=0,
+    feature=None,
 ) -> Box | None
 ```
 
 `find_feature` 的简化版：返回第一个匹配的 `Box`，未匹配时返回 `None`。参数同 `find_feature`。
-同样支持单个特征名或特征名列表。
+同样支持单个特征名或特征名列表，也支持 `feature=` 作为 `feature_name` 别名。
 
 ```python
 box = self.find_one(fL.confirm_btn)
@@ -228,16 +243,16 @@ self.wait_click_ocr(match="开始", box=self.box.bottom, time_out=8)
 
 ---
 
-#### `run_ocr_rules`
+#### `handle_ocr_rules`
 
 ```python
-def run_ocr_rules(
+def handle_ocr_rules(
     self,
     rules: list[list],
 ) -> bool
 ```
 
-顺序执行一批「OCR 匹配 → 点击」规则，适合处理多步流程。`rules` 为规则列表，每项 `[match, box, ...]`，内部自动等待并点击。返回全部规则均成功时为 `True`。
+顺序执行一批「前置 OCR 条件 → 目标 OCR 命中 → Alt+点击」规则，适合处理一次性引导或弹窗流程。`rules` 为规则列表，每项 `[need, need_box, match, box]`：`need` 不为空时会先在 `need_box` 中做前置 OCR 判断；命中 `match` 后点击目标 OCR 结果。命中并处理任一规则返回 `True`，没有命中返回 `False`。
 
 ---
 
@@ -305,18 +320,50 @@ self.click(box=confirm_box)   # 点击 Box 中心
 ```python
 def click_with_alt(
     self,
-    x=-1, y=-1,
-    move_back=False,
-    name=None,
-    interval=-1,
-    move=True,
-    down_time=0.01,
-    after_sleep=0,
-    key='left',
+    x: int | float | Box | list[Box] = -1,
+    y: int | float = -1,
+    move_back: bool = False,
+    name: str | None = None,
+    interval: int = -1,
+    move: bool = True,
+    down_time: float = 0.01,
+    after_sleep: float = 0,
+    key: str = 'left',
 )
 ```
 
 按住 `Alt` 键再点击，常用于游戏内物品转移等需要组合键的操作。参数同 `click`。
+
+---
+
+#### `wait_click_feature`
+
+```python
+def wait_click_feature(
+    self,
+    feature,
+    horizontal_variance=0,
+    vertical_variance=0,
+    threshold=0,
+    relative_x=0.5,
+    relative_y=0.5,
+    time_out=0,
+    pre_action=None,
+    post_action=None,
+    box=None,
+    raise_if_not_found=True,
+    use_gray_scale=False,
+    canny_lower=0,
+    canny_higher=0,
+    click_after_delay=0,
+    settle_time=-1,
+    after_sleep=0,
+    target_height=0,
+    alt: bool = False,
+) -> bool
+```
+
+等待指定特征出现后点击。普通点击走 `click_box`；`alt=True` 时按 `relative_x/relative_y` 计算特征框内坐标后执行 `click_with_alt`。成功点击返回 `True`，未找到返回 `False`。
 
 ---
 
@@ -367,10 +414,11 @@ def click_confirm(
     self,
     after_sleep=0.5,
     time_out=5,
+    recheck_time=0,
 ) -> bool
 ```
 
-等待「确认」按钮出现并点击。
+等待「确认」按钮出现并点击。`recheck_time > 0` 时会在首次点击后等待并复检一次确认按钮。
 
 ---
 
@@ -668,7 +716,7 @@ def transfer_to_home_point(
 def to_model_area(
     self,
     area,
-    model,
+    model=None,
 )
 ```
 
@@ -681,7 +729,7 @@ def to_model_area(
 ```python
 def enter_home_room_list(
     self,
-    timeout=6,
+    time_out=6,
 ) -> bool
 ```
 

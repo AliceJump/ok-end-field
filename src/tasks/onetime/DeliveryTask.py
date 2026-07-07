@@ -550,11 +550,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             ):
                 self.log_info("未能到达送货点，取货失败")
                 return False
-            result = self.wait_feature(feature=fL.receive_good, time_out=10, raise_if_not_found=False)
-            if not result:
+            if not self.wait_click_feature(feature=fL.receive_good, time_out=10, raise_if_not_found=False, alt=True):
                 self.log_info("未能识别到取货界面，取货失败")
                 return False
-            self.click_with_alt(result)
             while not self.wait_ocr(match=self.lang.DeliveryTask.k_b0e3a2da, box=self.box.bottom_right, time_out=2, log=True):
                 self.move_keys("s", 0.5)
             return True
