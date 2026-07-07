@@ -41,6 +41,21 @@
 
 ## 2. 架构总览
 
+```mermaid
+flowchart TD
+    A[main.py / main_debug.py] --> B[src.config.config]
+    B --> C[install_startup_patches]
+    C --> D["ok.OK(config)"]
+    D --> E[TaskManager]
+    E --> F[onetime_tasks]
+    E --> G[trigger_tasks]
+    E --> H[custom_tabs]
+    F --> I[BaseEfTask / Mixin 组合]
+    G --> I
+    H --> J[GlobalConfigTab / AccountConfigTab]
+    I --> K[OCR / Template / YOLO / Windows Interaction]
+```
+
 ```
 main.py / main_debug.py
         │
@@ -322,6 +337,20 @@ python main_debug.py
 ---
 
 ## 5. 开发流程
+
+```mermaid
+flowchart TD
+    A[确认任务类型] --> B{一次性任务或触发式任务}
+    B -->|一次性| C[src/tasks/onetime 新建任务]
+    B -->|触发式| D[src/tasks/trigger 新建任务]
+    C --> E[继承 BaseEfTask 或现有 Mixin]
+    D --> F[继承 BaseEfTask + TriggerTask]
+    E --> G[补充 name / description / default_config]
+    F --> G
+    G --> H[在 src/config.py 注册]
+    H --> I[python main_debug.py 验证 UI]
+    I --> J[补充测试和文档]
+```
 
 ### 5.1 新增一次性任务
 

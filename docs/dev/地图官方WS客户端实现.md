@@ -63,6 +63,23 @@ headers["sign"] = sign
 
 ## WebSocket 协议
 
+```mermaid
+sequenceDiagram
+    participant C as ok-ef WS Client
+    participant S as skland WS
+    C->>S: type=1 token 鉴权
+    S-->>C: type=2 auth 成功
+    loop 每 10 秒
+        C->>S: type=3 心跳
+    end
+    loop 直到收到位置数据
+        C->>S: type=1011 roleId/serverId 初始化
+        S-->>C: type=1012 pos/mapId/levelId
+    end
+    S-->>C: type=6 token 过期
+    C->>S: type=1 新 token 鉴权
+```
+
 | type | 方向 | 说明 |
 |------|------|------|
 | 1 | C→S | token 鉴权：`{token: wss_token}` |
@@ -76,7 +93,27 @@ headers["sign"] = sign
 
 ## 多账号架构
 
+```mermaid
+flowchart TD
+    A[AccountConfigTab 保存地图同步 content] --> B[account_scope_store.set_account_map_content]
+    B --> C[configs/account_scoped_overrides.json]
+    C --> D[map_contents account_id -> content]
+    E[ItemNavigatorTask 地图账号配置] --> F[get_account_map_content]
+    G[当前任务账号上下文] --> F
+    D --> F
+    F --> H[官方地图 WS 凭证解析]
+```
+
 ### 数据流
+```mermaid
+flowchart TD
+    A[account_registry] --> B[account_id]
+    C[accounts] --> B
+    D[map_contents] --> B
+    B --> E[读取账号任务覆盖]
+    B --> F[读取地图同步 content]
+```
+
 ```text
 configs/account_scoped_overrides.json
 ├── map_contents          ← 账号 → hg/check content 映射

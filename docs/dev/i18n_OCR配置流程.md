@@ -8,6 +8,18 @@
 
 ## 总体链路
 
+```mermaid
+flowchart TD
+    A[ok-script executor.locale / task.locale] --> B[BaseEfTask.runtime_locale]
+    B --> C[get_lang_accessor]
+    C --> D[assets/lang/module/locale.json]
+    D --> E[self.lang.module.key]
+    E --> F[ocr / wait_ocr / wait_click_ocr]
+    G[assets/ocr_fix/ocr_text_fix.json] --> H[startup_patches]
+    H --> I[TaskExecutor.text_fix]
+    I --> F
+```
+
 ```text
 ok-script executor.locale / task.locale
         ↓
@@ -214,6 +226,20 @@ src/patches/ocr_text_fix_patch.py
 ---
 
 ## 新增/修改语言文本流程
+
+```mermaid
+flowchart TD
+    A[确认代码模块名] --> B[更新 assets/lang/module/zh_CN.json]
+    B --> C{节点类型}
+    C -->|string| D[固定 OCR 文本]
+    C -->|pattern| E[正则匹配]
+    C -->|terms| F[多候选文本]
+    D --> G[代码引用 self.lang.module.key]
+    E --> G
+    F --> G
+    G --> H[补齐其他 locale 同名 key]
+    H --> I[运行 TestCheckLang]
+```
 
 1. 确认代码模块名，例如 `DeliveryTask`、`daily_battle_mixin`、`world_map`。
 2. 在 `assets/lang/<module>/zh_CN.json` 添加新 key。

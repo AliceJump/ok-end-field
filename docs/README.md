@@ -45,7 +45,7 @@
 flowchart TD
     A[python main.py 或 main_debug.py] --> B[加载 src.config.config]
     B --> C[安装 startup patches]
-    C --> D[ok.OK(config)]
+    C --> D["ok.OK(config)"]
     D --> E[加载 GUI 与配置]
     E --> F{任务类型}
     F --> G[onetime_tasks 手动或 CLI 执行]
