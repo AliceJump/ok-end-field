@@ -63,7 +63,7 @@ class DailyTask(
             }
         )
         self.add_end_command_config(
-            enable_description="是否在日常任务末尾执行一次外部命令行程序。",
+            enable_description="是否执行一次外部命令行程序（可在「结尾外部命令执行时机」选择在最开始或最后执行）。",
             command_description=(
                 "需要执行的命令行内容。\n"
                 "建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。\n"
@@ -107,7 +107,6 @@ class DailyTask(
             ("⭐日常奖励", self.daily_routine.claim_daily_rewards),
             ("⭐演算", self.daily_demo.battle_demo),
             ("⭐传送到帝江号右侧传送点", lambda: self.transfer_to_home_point(box=self.box.right)),
-            ("⭐执行结尾外部命令", self.launch_end_command_non_blocking),
         ]
 
     def run(self):
@@ -115,7 +114,14 @@ class DailyTask(
         active_and_send_mouse_delta(self.hwnd.hwnd, only_activate=True)
         repeat_times = self.config.get("重复测试的次数", 1) if self.debug else 1
         try:
-            self.daily_runner = DailyTaskRunner(self, self.build_task_plan())
+            task_plan = self.build_task_plan()
+            # 根据配置决定结尾外部命令的执行时机
+            end_cmd_task=("⭐执行结尾外部命令", self.launch_end_command_non_blocking)
+            if self.config.get("结尾外部命令执行时机", "任务最后") == "任务最开始":
+                task_plan.insert(0, end_cmd_task)
+            else:
+                task_plan.append(end_cmd_task)
+            self.daily_runner = DailyTaskRunner(self, task_plan)
             self.daily_runner.run(repeat_times=repeat_times)
         finally:
             self.run_daily_finally()

@@ -1153,8 +1153,8 @@ msgstr ""
 "Purchase at Credit Exchange.\n"
 "Auto-refresh, only buy Arsenal Quota and Embedded Jade."
 
-msgid "是否在日常任务末尾执行一次外部命令行程序。"
-msgstr "Execute external command at end of daily tasks."
+msgid "是否执行一次外部命令行程序（可在「结尾外部命令执行时机」选择在最开始或最后执行）。"
+msgstr "Ejecutar comando externo (elegir posición mediante «End Command Timing»: al inicio o al final de las tareas diarias)."
 
 msgid "是否购买「人文物产」（同样应用购物白名单序列）。"
 msgstr "Purchase Cultural Products (applies whitelist)."
@@ -2900,3 +2900,15 @@ msgstr "Configuración de Teclas / Game Hotkey Config"
 
 msgid "藏剑谷"
 msgstr "Zangjian Valley"
+
+msgid "结尾外部命令执行时机"
+msgstr "Momento del Comando Externo"
+
+msgid "选择执行时机：任务最开始时最先执行，或任务最后执行。"
+msgstr "Elegir momento: ejecutar al inicio o al final de las tareas diarias."
+
+msgid "任务最开始"
+msgstr "Inicio de Tareas"
+
+msgid "任务最后"
+msgstr "Final de Tareas"

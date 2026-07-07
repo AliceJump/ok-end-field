@@ -1153,8 +1153,8 @@ msgstr ""
 "Purchase at Credit Exchange.\n"
 "Auto-refresh, only buy Arsenal Quota and Embedded Jade."
 
-msgid "是否在日常任务末尾执行一次外部命令行程序。"
-msgstr "デイリータスク終了時に外部コマンドを実行。"
+msgid "是否执行一次外部命令行程序（可在「结尾外部命令执行时机」选择在最开始或最后执行）。"
+msgstr "外部コマンドを実行する（「外部コマンド実行タイミング」で開始時または終了時を選択可能）。"
 
 msgid "是否购买「人文物产」（同样应用购物白名单序列）。"
 msgstr "文化製品を購入（ショッピングホワイトリスト適用）。"
@@ -2900,3 +2900,15 @@ msgstr "キー設定 / Game Hotkey Config"
 
 msgid "藏剑谷"
 msgstr "ゾウジエン谷"
+
+msgid "结尾外部命令执行时机"
+msgstr "外部コマンド実行タイミング"
+
+msgid "选择执行时机：任务最开始时最先执行，或任务最后执行。"
+msgstr "実行タイミングを選択：タスクの最初または最後に実行。"
+
+msgid "任务最开始"
+msgstr "タスク開始時"
+
+msgid "任务最后"
+msgstr "タスク終了時"
