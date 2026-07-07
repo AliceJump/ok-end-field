@@ -14,6 +14,7 @@ from src.tasks.mixin.process_manager import ProcessManager
 from src.tasks.mixin.runtime_mixin import RuntimeMixin
 from src.tasks.mixin.window_arrow_drawing_mixin import WindowArrowDrawingMixin
 from src.core.global_config_store import ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME, KEY_CONFIG_NAME, get_global_config
+from src.core.config_migration import migrate_config_file_keys
 
 # 覆写框架截图时间戳格式：日期_时分秒（无毫秒）
 import ok.gui.debug.Screenshot as _ok_screenshot
@@ -117,6 +118,12 @@ class BaseEfTask(
         self._ws_server_thread = None
         self._ws_loop = None
         self._ws_stop_event = None
+
+    # ── 配置键迁移 ─────────────────────────────────────────
+    def load_config(self):
+        """加载配置前先迁移 JSON 文件中的旧 key → 新 key。"""
+        migrate_config_file_keys(self.__class__.__name__)
+        super().load_config()
 
     def box_of_screen(
             self,

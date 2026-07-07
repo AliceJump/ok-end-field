@@ -63,12 +63,12 @@ class DailyTask(
             }
         )
         self.add_end_command_config(
-            enable_description="是否执行一次外部命令行程序（可在「结尾外部命令执行时机」选择在最开始或最后执行）。",
+            enable_description="是否执行一次外部命令行程序（可在「外部命令执行时机」选择在最开始或最后执行）。",
             command_description=(
                 "需要执行的命令行内容。\n"
                 "建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。\n"
-                "开启『结尾外部命令等待退出』可支持多账户模式。\n"
-                "可选填写『结尾外部命令起始于』作为命令工作目录。"
+                "开启『外部命令等待退出』可支持多账户模式。\n"
+                "可选填写『外部命令起始于』作为命令工作目录。"
             ),
         )
         self.default_config.update({
@@ -77,7 +77,7 @@ class DailyTask(
             "发生异常时终止游戏": False,
             "仅退出游戏": False,
         })
-        task_group = {"⭐⭐⭐ 默认": [i for i, _ in self.build_task_plan()]}
+        task_group = {"⭐⭐⭐ 默认": [i for i, _ in self.build_task_plan()] + ["⭐执行外部命令"]}
 
         # 合并两个分组字典
         all_groups = {**task_group, **self.default_config_group, **{"其他配置": ["发生异常时终止游戏", "仅退出游戏"]}}
@@ -115,9 +115,9 @@ class DailyTask(
         repeat_times = self.config.get("重复测试的次数", 1) if self.debug else 1
         try:
             task_plan = self.build_task_plan()
-            # 根据配置决定结尾外部命令的执行时机
-            end_cmd_task=("⭐执行结尾外部命令", self.launch_end_command_non_blocking)
-            if self.config.get("结尾外部命令执行时机", "任务最后") == "任务最开始":
+            # 根据配置决定外部命令的执行时机
+            end_cmd_task=("⭐执行外部命令", self.launch_end_command_non_blocking)
+            if self.config.get("外部命令执行时机", "任务最后") == "任务最开始":
                 task_plan.insert(0, end_cmd_task)
             else:
                 task_plan.append(end_cmd_task)
