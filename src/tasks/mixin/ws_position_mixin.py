@@ -22,8 +22,9 @@ ENDFIELD_MAP_REFERER = "https://game.skland.com/map/endfield"
 
 
 def _make_msg_id() -> str:
+    """生成协议消息 ID，仅用于请求-响应匹配，非安全用途。"""  # NOSONAR (python:S2245)
     alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    return "".join(random.choice(alphabet) for _ in range(8))
+    return "".join(random.choice(alphabet) for _ in range(8))  # NOSONAR
 
 
 class WsPositionMixin:
@@ -195,7 +196,9 @@ class WsPositionMixin:
             query = parsed.query or ""
             sign_payload = self._map_sign_payload(parsed.path, method, headers, query, body)
             digest = hmac.new(token.encode("utf-8"), sign_payload.encode("utf-8"), hashlib.sha256).hexdigest()
-            headers["sign"] = hashlib.md5(digest.encode("utf-8")).hexdigest()
+            # MD5 仅用于协议输出格式兼容；实际安全校验由上一行的 HMAC-SHA256 保证。
+            # NOSONAR (python:S4790)
+            headers["sign"] = hashlib.md5(digest.encode("utf-8")).hexdigest()  # NOSONAR
 
         return headers
 
