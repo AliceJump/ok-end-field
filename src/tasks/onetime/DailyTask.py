@@ -10,7 +10,7 @@ from src.tasks.daily.daily_trade_mixin import DailyTradeFeature
 from src.tasks.daily.daily_demo_mixin import DailyDemoFeature
 from src.interaction.Mouse import active_and_send_mouse_delta
 from src.tasks.daily.finally_file import (
-    create_daily_summary_report,
+    create_task_summary_report,
 )
 import tempfile
 import os
@@ -76,11 +76,15 @@ class DailyTask(
             "配置选择": "⭐⭐⭐ 默认",
             "发生异常时终止游戏": False,
             "仅退出游戏": False,
+            "自动打开汇总文件": True,
+        })
+        self.config_description.update({
+            "自动打开汇总文件": "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。",
         })
         task_group = {"⭐⭐⭐ 默认": [i for i, _ in self.build_task_plan()] + ["⭐执行外部命令"]}
 
         # 合并两个分组字典
-        all_groups = {**task_group, **self.default_config_group, **{"其他配置": ["发生异常时终止游戏", "仅退出游戏"]}}
+        all_groups = {**task_group, **self.default_config_group, **{"其他配置": ["发生异常时终止游戏", "仅退出游戏", "自动打开汇总文件"]}}
 
         self.register_config_groups(all_groups)
         self.add_exit_after_config()
@@ -139,7 +143,7 @@ class DailyTask(
 
     def run_daily_finally(self):
         try:
-            # 在任务完成或停止时自动生成一个临时的汇总文件并打开（不再依赖配置项）
+            # 在任务完成或停止时自动生成一个临时的汇总文件（不再依赖配置项）
             target_directory = Path(tempfile.gettempdir())
 
             # 仅在 runner 产生了有效汇总数据时才创建临时文件
@@ -149,12 +153,14 @@ class DailyTask(
                 return True
 
             summary_info = self.daily_runner.final_summary
-            summary_path = create_daily_summary_report(target_directory, summary_info)
+            summary_path = create_task_summary_report(self, target_directory, summary_info)
 
-            # 立即用系统默认程序打开临时汇总文件
-            self._open_local_path_with_default_app(summary_path)
-
-            self.log_info(f"日常执行情况汇总已创建并打开: {summary_path}")
+            # 根据开关决定是否打开汇总文件
+            if self.config.get("自动打开汇总文件", True):
+                self._open_local_path_with_default_app(summary_path)
+                self.log_info(f"日常执行情况汇总已创建并打开: {summary_path}")
+            else:
+                self.log_info(f"日常执行情况汇总已创建（未打开）: {summary_path}")
 
             return True
         except Exception as e:

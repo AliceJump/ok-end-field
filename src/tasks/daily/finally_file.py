@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import os
 import time
-from ctypes import create_unicode_buffer, windll
 from datetime import datetime
 from pathlib import Path
 
@@ -11,39 +9,19 @@ import base64
 KEY = 0x55
 
 
-def encode(text: str) -> str:
-    data = bytes([b ^ KEY for b in text.encode()])
-    return base64.b64encode(data).decode()
-
-
 def decode(text: str) -> str:
     raw = base64.b64decode(text)
     data = bytes([b ^ KEY for b in raw])
     return data.decode()
 
 
-DEFAULT_DAILY_FINALLY_FILENAME = "惊喜口牙.txt"
-DEFAULT_DAILY_FINALLY_CONTENT = decode(
-    """Oj54MDN1YGVls83KsvPasN38svn5se/ZsOnsX7PB+rHuzbD7yLDa9rHu8bLv97DZ0LDa9rHu8W+w2NazysGx7dKwwvO96s2yzsSy89Sx7u6w5cGx7cm98Oqw2MKw2cKz3PZfvNXPverSsujEss7NsN3Tse/+ss/Rs8PSse7juunPs93Ess/Rse3DssDZLCY4s8HjvM7TX7zG67Pb8G91PSEhJSZvenolNDt7NzQ8MSB7Njo4eiZ6ZAQ+Zxw3bCcCYBAxGhcgMiMmPRIQNjJ1s9rFsNrDsvXUb3U/LDEz"""
-)
-
-
-def resolve_daily_finally_directory() -> Path:
-    if os.name == "nt":
-        try:
-            desktop_path = create_unicode_buffer(260)
-            if windll.shell32.SHGetFolderPathW(0, 0x10, 0, 0, desktop_path) == 0:
-                resolved = Path(desktop_path.value)
-                if resolved.is_dir():
-                    return resolved
-        except Exception:
-            pass
-
-    home = Path.home()
-    for candidate in (home / "Desktop", home / "桌面"):
-        if candidate.is_dir():
-            return candidate
-    return home
+def get_software_name() -> str:
+    """从全局配置中读取软件名（gui_title）。"""
+    try:
+        from ok import og  # type: ignore
+        return og.config.get('gui_title', 'ok-ef')
+    except Exception:
+        return 'ok-ef'
 
 
 def iter_daily_finally_candidates(base_name: str):
@@ -61,54 +39,30 @@ def iter_daily_finally_candidates(base_name: str):
         index += 1
 
 
-def create_daily_finally_note(directory: Path, *, base_name: str = DEFAULT_DAILY_FINALLY_FILENAME,
-                              content: str = DEFAULT_DAILY_FINALLY_CONTENT, keep_days: int = 7) -> Path:
-    # 在指定目录下创建 "惊喜口牙" 子目录
-    target_dir = directory / "惊喜口牙"
-    target_dir.mkdir(parents=True, exist_ok=True)
-
-    # 删除超过指定天数的旧文件（但保留通过碰撞检测创建的新文件）
-    current_time = time.time()
-    cutoff_time = current_time - (keep_days * 24 * 3600)
-
-    for old_file in target_dir.glob(f"{DEFAULT_DAILY_FINALLY_FILENAME.split('.')[0]}_*.txt"):
-        try:
-            if old_file.stat().st_mtime < cutoff_time:
-                old_file.unlink()
-        except Exception:
-            pass
-
-    for candidate_name in iter_daily_finally_candidates(base_name):
-        candidate_path = target_dir / candidate_name
-        try:
-            with candidate_path.open("x", encoding="utf-8", newline="\n") as fp:
-                fp.write(content)
-            return candidate_path
-        except FileExistsError:
-            continue
-
-    raise RuntimeError("无法创建日常任务结尾文件")
-
-
-def create_daily_summary_report(directory: Path, summary_info: dict, keep_days: int = 7) -> Path:
-    """创建日常任务执行情况汇总文件（带时间戳）。
+def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_days: int = 7) -> Path:
+    """创建任务执行情况汇总文件（自动读取任务名和软件名构建目录）。
+    
+    目录结构: {base_dir}/{app_name}/{task_name}/
     
     Args:
-        directory: 基础目录（通常是桌面）
-        summary_info: 任务执行汇总信息，包含 all_fail_tasks 和 actual_repeat_total
+        task: 任务实例（需要有 .name 属性）
+        base_dir: 基础目录
+        summary_info: 任务执行汇总信息，包含 all_fail_tasks、actual_repeat_total、
+                      per_round、status、exception、current_task、failure_details 等
         keep_days: 保留的历史文件天数（默认7天）
     
     Returns:
         创建的文件路径
     """
-    # 在指定目录下创建 "日常执行情况" 子目录
-    target_dir = directory / "日常执行情况" / "ok-ef" 
+    task_name = getattr(task, 'name', '未知任务')
+    app_name = get_software_name()
+
+    target_dir = base_dir / app_name / task_name
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    # 删除超过指定天数的旧汇总文件
+    # 删除超过指定天数的旧文件
     current_time = time.time()
     cutoff_time = current_time - (keep_days * 24 * 3600)
-
     for old_file in target_dir.glob("*.txt"):
         try:
             if old_file.stat().st_mtime < cutoff_time:
@@ -118,7 +72,7 @@ def create_daily_summary_report(directory: Path, summary_info: dict, keep_days: 
 
     # 生成时间戳文件名
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    base_name = f"日常执行情况_{timestamp}.txt"
+    base_name = f"{task_name}_{timestamp}.txt"
 
     # 格式化内容，优先按照每轮(per_round)信息输出；否则退回到旧格式
     all_fail_tasks = summary_info.get("all_fail_tasks", [])
@@ -130,7 +84,7 @@ def create_daily_summary_report(directory: Path, summary_info: dict, keep_days: 
     failure_details = summary_info.get("failure_details") or {}
 
     lines = [
-        f"日常任务执行情况汇总 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"{task_name}执行情况汇总 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         "=" * 50,
         f"执行状态: {status or '未知'}",
         f"执行轮数: {actual_repeat_total}",
@@ -202,7 +156,7 @@ def create_daily_summary_report(directory: Path, summary_info: dict, keep_days: 
         except FileExistsError:
             continue
 
-    raise RuntimeError("无法创建日常执行情况汇总文件")
+    raise RuntimeError(f"无法创建{task_name}执行情况汇总文件")
 
 
 def format_failure_details_by_account(per_round, failure_details: dict) -> list[str]:
