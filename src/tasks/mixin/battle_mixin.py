@@ -24,6 +24,7 @@ import time
 import cv2
 import numpy as np
 
+from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING
 from src.data.world_map_utils import is_world_map_text
 from src.core.sequence_parser import parse_sequence
@@ -382,9 +383,18 @@ class BattleMixin(BaseEfTask):
                 return False
 
             # 战斗结束判定
-            if last_battle_time and time.time() - last_battle_time > 5:
-                self.log_info("战斗完成")
-                return True
+            if last_battle_time:
+                battle_elapsed = time.time() - last_battle_time
+
+                if battle_elapsed > 5:
+                    if battle_elapsed > 15 or (
+                        self.find_feature(feature=fL.battle_space_left)
+                        or self.find_feature(feature=fL.b)
+                    ):
+                        self.log_info("战斗完成")
+                        return True
+
+                    continue
 
             # 检测战斗
             battle_detected = AutoCombatLogic(self).run(start_sleep=sleep_time, no_battle=no_battle)

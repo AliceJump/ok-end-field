@@ -1046,6 +1046,11 @@
             "supercategory": ""
         },
         {
+            "id": 207,
+            "name": "b_2k",
+            "supercategory": ""
+        },
+        {
             "id": 208,
             "name": "can_use_help",
             "supercategory": ""
@@ -1068,6 +1073,16 @@
         {
             "id": 212,
             "name": "view_location",
+            "supercategory": ""
+        },
+        {
+            "id": 213,
+            "name": "b",
+            "supercategory": ""
+        },
+        {
+            "id": 214,
+            "name": "b_4k",
             "supercategory": ""
         }
     ],
@@ -2307,9 +2322,7 @@
                 28
             ],
             "area": 700,
-            "iscrowd": 0,
-            "ignore": 0,
-            "segmentation": []
+            "iscrowd": 0
         },
         {
             "id": 21,
@@ -2322,9 +2335,7 @@
                 23
             ],
             "area": 1219,
-            "iscrowd": 0,
-            "ignore": 0,
-            "segmentation": []
+            "iscrowd": 0
         },
         {
             "id": 22,
@@ -4345,9 +4356,7 @@
                 11
             ],
             "area": 286,
-            "iscrowd": 0,
-            "ignore": 0,
-            "segmentation": []
+            "iscrowd": 0
         },
         {
             "id": 171,
@@ -4376,6 +4385,19 @@
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
+        },
+        {
+            "id": 173,
+            "image_id": 110,
+            "category_id": 39,
+            "bbox": [
+                2463,
+                14,
+                34,
+                14
+            ],
+            "area": 476,
+            "iscrowd": 0
         },
         {
             "id": 174,
@@ -4408,17 +4430,15 @@
         {
             "id": 176,
             "image_id": 110,
-            "category_id": 39,
+            "category_id": 207,
             "bbox": [
-                2463,
+                2261,
                 14,
-                34,
-                14
+                12,
+                15
             ],
-            "area": 476,
-            "iscrowd": 0,
-            "ignore": 0,
-            "segmentation": []
+            "area": 180,
+            "iscrowd": 0
         },
         {
             "id": 177,
@@ -4559,6 +4579,32 @@
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
+        },
+        {
+            "id": 187,
+            "image_id": 104,
+            "category_id": 213,
+            "bbox": [
+                1696,
+                10,
+                9,
+                12
+            ],
+            "area": 108,
+            "iscrowd": 0
+        },
+        {
+            "id": 188,
+            "image_id": 18,
+            "category_id": 214,
+            "bbox": [
+                3392,
+                21,
+                17,
+                22
+            ],
+            "area": 374,
+            "iscrowd": 0
         },
         {
             "id": 210,
