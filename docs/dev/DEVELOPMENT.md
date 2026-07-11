@@ -216,7 +216,7 @@ ok-end-field/
 │       │   ├── daily_shop_mixin.py    # 买信用商店
 │       │   ├── daily_task_runner.py   # 日常任务执行器
 │       │   ├── daily_trade_mixin.py   # 买卖货
-│       │   └── finally_file.py        # 结尾写入文件
+│       │   └── finally_file.py        # 任务执行情况汇总报告
 │       │
 │       └── mixin/             # 通用能力 Mixin（跨任务复用）
 │           ├── __init__.py
@@ -666,3 +666,4 @@ flowchart TD
 | `self.box.left` | 左半屏幕 Box |
 | `self.box.right` | 右半屏幕 Box |
 | `self.box.top_left/top_right/bottom_left/bottom_right` | 四象限 Box |
+

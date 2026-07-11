@@ -741,22 +741,22 @@
   },
   "k_059a808c": {
     "zh_CN": {
-      "pattern": "危机筹备"
+      "pattern": "理智补给|危机筹备"
     },
     "zh_TW": {
-      "pattern": "危機籌備"
+      "pattern": "理智補給|危機籌備"
     },
     "en_US": {
-      "pattern": "sanity supply"
+      "pattern": "sanity supply|crisis preparation"
     },
     "ja_JP": {
-      "pattern": "正気の供給"
+      "pattern": "正気の供給|危機準備"
     },
     "ko_KR": {
-      "pattern": "정신 공급"
+      "pattern": "정신 공급|위기 준비"
     },
     "es_ES": {
-      "pattern": "suministro de cordura"
+      "pattern": "suministro de cordura|preparación de crisis"
     }
   },
   "k_3e790a94": {
