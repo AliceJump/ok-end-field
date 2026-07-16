@@ -1048,3 +1048,41 @@ class RuntimeMixin:
                                 use_gray_scale, box, canny_lower, canny_higher, frame_processor,
                                 template, mask_function, frame, match_method, screenshot,
                                 limit, target_height)
+    def send_key(
+        self,
+        key,
+        down_time=0.1,
+        interval=0,
+        after_sleep=0
+    ):
+        """
+        Sends a key event.
+
+        发送键事件。
+
+        Parameters
+        ----------
+        key:
+            Key to send. 要发送的键。
+
+        down_time:
+            Down time. 按下时间。
+
+        interval:
+            Interval check. 间隔检查。
+
+        after_sleep:
+            Sleep after. 后睡眠。
+
+        Returns
+        -------
+        bool:
+            True if sent. 如果发送返回 True。
+        """
+        send_mouse_delta(self.hwnd.hwnd, only_activate=True)
+        return super().send_key(
+            key,
+            down_time,
+            interval,
+            after_sleep
+        )

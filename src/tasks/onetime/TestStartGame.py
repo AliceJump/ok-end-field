@@ -7,7 +7,7 @@ class TestStartGame(BaseEfTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "启动一次游戏,120s后自动关闭"
-        self.group_name = "工具与调试"
+        self.group_name = "日常任务"
         self.description = "配合任务计划程序提前启动游戏,防止游戏更新/弹公告导致的后续问题"
         self.add_exit_after_config()
         self.default_config.update({"回到主页后等待的时间": 15, "Exit After Task": True})

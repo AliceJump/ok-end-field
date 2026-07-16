@@ -109,7 +109,6 @@ class EfInteraction(PostMessageInteraction):
     def send_key_down(self, key, activate=True):        
         if activate:
             self.try_activate()
-        active_and_send_mouse_delta(self._foreground_hwnd(), only_activate=True)
         self.keyboard.press(self._convert_key(key))
 
     def send_key_up(self, key):
