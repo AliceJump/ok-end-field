@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from collections import defaultdict
 import argparse
 import getpass
 import hashlib
@@ -234,6 +235,64 @@ def write_json(path: Path, data: Any):
 def safe_name(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", value)
 
+EXCLUDE_MARKS = {
+    "长距滑索架",
+    "滑索架",
+}
+
+
+def generate_simple_marks(out_dir: Path):
+    """将 mark_list__*.json 转换为按地图+名称分类的格式"""
+    target_dir = Path(__file__).resolve().parent.parent / "assets" / "items" / "map"
+    target_dir.mkdir(parents=True, exist_ok=True)
+    all_maps = defaultdict(lambda: defaultdict(list))
+    all_names = set()
+
+    for file in out_dir.glob("mark_list__server_*__role_*__map_*.json"):
+        with file.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        data = data.get("data", {})
+
+        # templateId -> 名称
+        template_map = {
+            t["id"]: t["name"]
+            for t in data.get("markTemplates", [])
+        }
+
+        # 收集所有物品名称
+        for name in template_map.values():
+            if name not in EXCLUDE_MARKS:
+                all_names.add(name)
+
+        for mark in data.get("marks", []):
+            name = template_map.get(mark["templateId"])
+            if not name or name in EXCLUDE_MARKS:
+                continue
+
+            map_id = mark["mapId"]
+
+            all_maps[map_id][name].append({
+                "x": mark["pos"]["x"],
+                "y": mark["pos"]["y"],
+                "z": mark["pos"]["z"],
+            })
+
+    # 导出坐标
+    export = {
+        map_id: dict(groups)
+        for map_id, groups in all_maps.items()
+    }
+    write_json(target_dir / "summary.json", export)
+
+    # 导出所有物品名单（排序）
+    write_json(
+        target_dir / "item_names.json",
+        sorted(all_names),
+    )
+
+    print("saved marks_simple.json")
+    print("saved mark_names.json")
 
 def main():
     parser = argparse.ArgumentParser(description="Dump Endfield map mark/list JSON by hg/check data.content")
@@ -294,6 +353,9 @@ def main():
             print(f"saved {filename}")
 
     write_json(out_dir / "index.json", index)
+    print(f"done: {out_dir}")
+    write_json(out_dir / "index.json", index)
+    generate_simple_marks(out_dir)
     print(f"done: {out_dir}")
 
 
