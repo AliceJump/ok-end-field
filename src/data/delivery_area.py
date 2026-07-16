@@ -3,7 +3,7 @@ DEFAULT_DELIVERY_AREA = "武陵"
 
 # 目标券数下拉框选项。
 # 这些值会直接用于接单特征标签生成和任务界面下拉展示。
-DELIVERY_TARGET_TICKET_NUM_OPTIONS = ["119000", "79800", "73100"]
+DELIVERY_TARGET_TICKET_NUM_OPTIONS = ["163000" ,"159000", "119000", "79800", "73100"]
 
 # 按“地区”组织的送货配置。
 # 结构说明：

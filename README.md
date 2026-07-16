@@ -10,9 +10,9 @@
 <h1 align="center">ok-ef</h1>
 
 <p>
-一个基于图像识别的终末地自动化程序，部分功能支持后台运行，基于 <a href="https://github.com/ok-oldking/ok-script">ok-script</a> 开发。
+一个基于图像识别的终末地自动化程序，部分功能支持后台运行，基于 <a href="https://github.com/alicejump/ok-script">ok-script</a> 开发。
 <br />
-An image-recognition-based automation tool for End Field, with background mode support, developed with <a href="https://github.com/ok-oldking/ok-script">ok-script</a>.
+An image-recognition-based automation tool for End Field, with background mode support, developed with <a href="https://github.com/alicejump/ok-script">ok-script</a>.
 </p>
 
 <p><i>通过模拟 Windows 用户接口进行操作，无内存读取、无文件修改</i></p>
@@ -25,7 +25,6 @@ An image-recognition-based automation tool for End Field, with background mode s
 [![GitHub release](https://img.shields.io/github/v/release/alicejump/ok-end-field)](https://github.com/alicejump/ok-end-field/releases)
 [![总下载量](https://img.shields.io/github/downloads/alicejump/ok-end-field/total)](https://github.com/alicejump/ok-end-field/releases)
 [![Discord](https://img.shields.io/discord/296598043787132928?color=5865f2&label=%20Discord)](https://discord.gg/vVyCatEBgA)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/AliceJump/ok-end-field)
 
 </div>
 
@@ -84,36 +83,25 @@ An image-recognition-based automation tool for End Field, with background mode s
 ---
 
 
-## 文档入口
-
-- 文档索引：[docs/README.md](docs/README.md)
-- 开发快速开始：[docs/dev/QUICKSTART.md](docs/dev/QUICKSTART.md)
-- API 参考：[docs/dev/API.md](docs/dev/API.md)
-- Windows 计划任务：[docs/Windows%20计划任务.md](docs/Windows%20计划任务.md)
-
 ## 功能一览（按任务类型）
 
-
-- [自动战斗](docs/自动战斗.md)：检测战斗状态并按技能序列自动释放
-- 自动拾取：大世界白名单拾取 + 黑名单过滤
-- 自动交互：自动跳过剧情 + 自动点击传送
-- 自动登录：自动处理掉线/登出流程 + 领取月卡
-- [物品导航](docs/物品导航与实时检测.md)：官方地图 WebSocket 或本地 WebSocket 驱动的物品采集点导航
-
-### 一次性任务（完整列表）
+### 一次性任务（手动点击执行）
 - [日常任务](docs/日常任务.md)：送礼、据点兑换、委托处理、买卖货、刷体力、奖励领取等一条龙
 - [刷体力](docs/体力本.md)：普通/高阶/危境/能量淤积点，支持排轴和刷本序列
 - [运送委托接取](docs/运送委托接取.md)：按券种与金额筛选并自动抢单
 - [自动送货](docs/自动送货.md)：武陵委托自动接取与送货路径执行（7.31w/7.98w）
 - [仓库物品转移](docs/仓库物品转移.md)：跨仓库批量转移指定物品
-- 演算抽牌：自动进入演武集算页，循环抽取直到满足等级变化条件
-- 影拓丰碑：自动完成当前所有普通影拓丰碑关卡
-- [实时检测](docs/物品导航与实时检测.md)：循环运行 YOLO 检测，用于在线观察模型表现
-- 启动一次游戏：配合任务计划程序提前启动游戏并自动退出
-- 诊断：框架内置诊断任务的简单封装
+- [毕业基质识别](docs/毕业基质识别.md)：识别毕业基质并自动上锁/处理
+- 定时截图：按间隔自动截图，便于数据采集/样本收集
+
+### 触发式任务（后台循环检测）
+- [自动战斗](docs/自动战斗.md)：检测战斗状态并按技能序列自动释放
+- 自动拾取：白名单拾取 + 黑名单过滤
+- 自动登录：自动处理掉线/登出流程
+- 自动跳过剧情：识别并执行跳过/确认流程
 
 ### 定时任务
-- 支持将声明 `support_schedule_task = True` 的一次性任务加入 Windows 任务计划，按设定时间自动启动执行。相关文档：[Windows 计划任务](docs/Windows%20计划任务.md)
+- 支持将一次性任务加入 Windows 任务计划，按设定时间自动启动执行
 
 ### 辅助能力
 - OCR 识别、模板匹配、HSV 颜色识别
@@ -158,10 +146,8 @@ An image-recognition-based automation tool for End Field, with background mode s
 | 文档 | 说明 |
 |------|------|
 | [快速开始（QUICKSTART.md）](docs/dev/QUICKSTART.md) | 从源码运行项目、启动软件、新建触发式/一次性任务的最简流程 |
-| [开发指南（DEVELOPMENT.md）](docs/dev/DEVELOPMENT.md) | 架构总览、目录结构、开发流程、测试、CI/CD、文档同步维护 |
+| [开发指南（DEVELOPMENT.md）](docs/dev/DEVELOPMENT.md) | 架构总览、目录结构、开发流程、测试、CI/CD、路线图 |
 | [API 参考（API.md）](docs/dev/API.md) | BaseEfTask、Mixin、ScreenPosition、KeyConfigManager 等详细 API |
-| [i18n 与 OCR 配置流程](docs/dev/i18n_OCR配置流程.md) | runtime locale、语言 JSON、OCR 匹配与纠错配置流程 |
-| [装备词条识别轮子](docs/dev/装备词条识别轮子.md) | 已移除任务后的 OCR parser、CSV matcher 与模板资产复用说明 |
 | [键盘操作体系（键盘操作体系.md）](docs/dev/键盘操作体系.md) | 热键映射、按键封装规范、send_key 例外清单 |
 
 ### 从源码运行 (Python)
@@ -186,14 +172,12 @@ python main_debug.py
 
 您可以通过命令行参数实现自动化启动。
 
-命令行参数由底层 `ok-script` 启动器解析，项目入口 `main.py` 负责传入 [src/config.py](src/config.py) 中的任务配置。
-
 ``` pwsh
 # 启动后自动执行第1个任务『日常任务』，并在任务完成后退出程序
 ok-ef.exe -t 1 -e
 ```
 
-* `-t` 或 `--task`: 启动后自动执行第N个任务。`1` 代表任务列表（文件 [src/config.py](src/config.py) 中的 `onetime_tasks`）中的第1个（也就是『日常任务』）。
+* `-t` 或 `--task`: 启动后自动执行第N个任务。`1` 代表任务列表（文件 [./src/config.py](./src/config.py) 列表 `onetime_tasks`）中的第1个（也就是『日常任务』）。
 * `-e` 或 `--exit`: 任务执行完毕后自动退出程序。
 
 ### 开发调试与测试
