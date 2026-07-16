@@ -722,7 +722,7 @@ class DailyRoutineFeature:
             return False
         self.wait_ui_stable(refresh_interval=1)
         self.log_info("开始刮")
-        self.drag_scan_area((354/1920,382/1080),(1526/1920,768/1080))
+        self.drag_scan_area((0.218, 0.376),(0.787, 0.700))
         self.wait_pop_up()
 
 
