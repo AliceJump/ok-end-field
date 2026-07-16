@@ -155,6 +155,7 @@ class FeatureList(str, Enum):
     reward_ok = 'reward_ok'
     rossi_contact = 'rossi_contact'
     scratch_card_icon = 'scratch_card_icon'
+    scratching_icon = 'scratching_icon'
     secondary_objective_direction_dot = 'secondary_objective_direction_dot'
     secondary_objective_direction_dot_light = 'secondary_objective_direction_dot_light'
     secondary_objective_direction_dot_light_fourth = 'secondary_objective_direction_dot_light_fourth'

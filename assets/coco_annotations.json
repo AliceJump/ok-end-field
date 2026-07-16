@@ -1134,6 +1134,11 @@
             "id": 224,
             "name": "wuling_16_3w",
             "supercategory": ""
+        },
+        {
+            "id": 225,
+            "name": "scratching_icon",
+            "supercategory": ""
         }
     ],
     "images": [
@@ -2094,6 +2099,12 @@
         {
             "id": 206,
             "file_name": "images/8.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 207,
+            "file_name": "images/4.png",
             "width": 1920,
             "height": 1080
         },
@@ -4754,12 +4765,12 @@
             "image_id": 206,
             "category_id": 218,
             "bbox": [
-                1177,
-                286,
-                97,
+                595,
+                217,
+                32,
                 99
             ],
-            "area": 9603,
+            "area": 3168,
             "iscrowd": 0
         },
         {
@@ -4838,6 +4849,19 @@
                 13
             ],
             "area": 390,
+            "iscrowd": 0
+        },
+        {
+            "id": 199,
+            "image_id": 207,
+            "category_id": 225,
+            "bbox": [
+                376,
+                326,
+                45,
+                53
+            ],
+            "area": 2385,
             "iscrowd": 0
         },
         {

@@ -21,6 +21,7 @@ from src.interaction.Mouse import (
     active_and_send_mouse_delta as send_mouse_delta,
     move_to_target_once as move_to_target_once_impl,
     run_at_window_pos,
+    smooth_drag
 )
 from src.yolo.loader import YoloModelLoader
 from src.image.rotated_template import rotated_template_match
@@ -42,7 +43,34 @@ class RuntimeMixin:
     """视觉识别、按键输入、鼠标控制与模型加载能力。"""
     BASE_WIDTH = 1920
     BASE_HEIGHT = 1080
+    def normalize_pos(self, pos):
+        """
+        将归一化坐标转换为当前窗口坐标。
 
+        Args:
+            pos: (x, y)，范围 [0, 1]
+
+        Returns:
+            tuple[int, int]
+        """
+        x, y = pos
+
+        width = getattr(self, "width", self.BASE_WIDTH) or self.BASE_WIDTH
+        height = getattr(self, "height", self.BASE_HEIGHT) or self.BASE_HEIGHT
+
+        return (
+            round(x * width),
+            round(y * height),
+        )
+    
+    def smooth_drag(self, start, end, duration=0.12):
+        smooth_drag(
+            self.hwnd.hwnd,
+            self.normalize_pos(start),
+            self.normalize_pos(end),
+            duration,
+        )
+        
     def resolution_scale(self) -> float:
         """
         返回当前分辨率相对于基准分辨率的缩放系数。

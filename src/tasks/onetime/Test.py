@@ -6,6 +6,7 @@ from src.core.BaseEfTask import BaseEfTask
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 from src.tasks.daily.daily_demo_mixin import DailyDemoFeature
 from src.tasks.mixin.map_mixin import MapMixin
+from src.tasks.mixin.mouse_scan_mixin import MouseScanMixin
 
 secondary_objective_direction_dot = [
     fL.secondary_objective_direction_dot,
@@ -14,7 +15,7 @@ secondary_objective_direction_dot = [
     fL.secondary_objective_direction_dot_light_three
 ]
 
-class Test(NavigationMixin, MapMixin):
+class Test(MouseScanMixin):
     """
     简单箭头角度读取测试
     直接调用 get_arrow_angle() 并持续输出当前角度
@@ -23,11 +24,7 @@ class Test(NavigationMixin, MapMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "测试"
-        self.group_name = "工具与调试"
-        self.description = "蓝点归中测试"
-
-        self.interval = 0.3  # 读取间隔（秒）
 
     def run(self):
-        DailyDemoFeature(self).go_to_DemoGraphic()
+        self.drag_scan_area((354/1920,382/1080),(1526/1920,768/1080))
         

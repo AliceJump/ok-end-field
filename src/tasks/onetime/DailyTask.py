@@ -23,6 +23,7 @@ from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
+from src.tasks.mixin.mouse_scan_mixin import MouseScanMixin
 
 
 class DailyTask(
@@ -32,7 +33,8 @@ class DailyTask(
     BattleMixin,
     LiaisonMixin,
     EndCommandMixin,
-    AccountMixin
+    AccountMixin,
+    MouseScanMixin
 ):
     """日常任务聚合执行器。"""
 

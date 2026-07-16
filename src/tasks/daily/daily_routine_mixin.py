@@ -10,7 +10,7 @@ from src.data.characters_utils import get_contact_list_with_feature_list
 
 class DailyRoutineFeature:
     BOAT_STAGES = ['收集线索', '制造舱', '培养舱']
-    ACTIVITY_REWARDS = ['周常奖励', '理智补给']
+    ACTIVITY_REWARDS = ['周常奖励', '理智补给', '刮刮乐']
 
     def __init__(self, task):
         self._task = task
@@ -692,6 +692,39 @@ class DailyRoutineFeature:
 
         self.log_info("未找到『理智补给/领取』按钮")
         return False
+    
+    def scratch_reward(self):
+
+        start_time = time.time()
+
+        while True:
+            if self.wait_feature(feature=fL.in_scratch_card_page, raise_if_not_found=False, time_out=4):
+                break
+
+            if time.time() - start_time > 20:
+                self.log_info("进入刮刮卡页面超时")
+                return False
+
+            if not self.wait_click_feature(
+                feature=fL.scratch_card_icon,
+                box=self.box_of_screen(0.089, 0.130, 0.176, 0.983),
+                raise_if_not_found=False,
+                time_out=2,
+                after_sleep=1
+            ):
+                return False
+
+        if not self.wait_click_feature(feature=fL.start_scratch_card, raise_if_not_found=False, time_out=5):
+            self.log_info("没找到开始刮刮乐的按钮")
+            return False
+        if not self.wait_feature(feature=fL.scratching_icon, raise_if_not_found=False, time_out=5):
+            self.log_info("没点到刮刮乐")
+            return False
+        self.wait_ui_stable(refresh_interval=1)
+        self.log_info("开始刮")
+        self.drag_scan_area((354/1920,382/1080),(1526/1920,768/1080))
+        self.wait_pop_up()
+
 
     def claim_activity_rewards(self):
         self.info_set("current_task", "claim_activity_rewards")
@@ -704,6 +737,12 @@ class DailyRoutineFeature:
         enabled_rewards = set(self.config.get("活动奖励", []))
         weekly_enabled = "周常奖励" in enabled_rewards
         sanity_enabled = "理智补给" in enabled_rewards
+        scratch_enabled = "刮刮乐" in enabled_rewards
+
+        if scratch_enabled:
+            self.scratch_reward()
+        else:
+            self.log_info("已关闭『周常奖励』，跳过")
 
         if weekly_enabled:
             self.claim_weekly_rewards()

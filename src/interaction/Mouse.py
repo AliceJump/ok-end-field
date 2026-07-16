@@ -9,6 +9,48 @@ user32 = ctypes.windll.user32
 MOUSEEVENTF_MOVE = 0x0001
 
 
+import math
+import time
+import win32gui
+
+
+def smooth_drag(
+        hwnd,
+        start,
+        end,
+        duration=0.12,
+):
+    """
+    平滑拖动鼠标（保持按下状态）。
+
+    Args:
+        hwnd: 窗口句柄
+        start: 客户区起点 (x, y)
+        end: 客户区终点 (x, y)
+        duration: 本次拖动耗时
+    """
+
+    sx, sy = win32gui.ClientToScreen(hwnd, start)
+    ex, ey = win32gui.ClientToScreen(hwnd, end)
+
+    distance = math.hypot(ex - sx, ey - sy)
+
+    # 大约每5像素一个采样点
+    steps = max(2, int(distance / 5))
+
+    sleep_time = duration / steps
+
+    for i in range(steps + 1):
+        t = i / steps
+
+        x = round(sx + (ex - sx) * t)
+        y = round(sy + (ey - sy) * t)
+
+        user32.SetCursorPos(x, y)
+
+        if sleep_time > 0:
+            time.sleep(sleep_time)
+
 def _safe_print(message):
     try:
         print(message)
@@ -76,6 +118,7 @@ def click_down(hwnd, x, y, key="left"):
         user32.mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
     elif key == "right":
         user32.mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0)
+        
 def click_up(hwnd, key="left"):
     """
     在指定窗口内模拟鼠标抬起事件。
