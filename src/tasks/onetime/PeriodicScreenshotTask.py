@@ -18,7 +18,6 @@ class PeriodicScreenshotTask(BaseEfTask):
         super().__init__(*args, **kwargs)
         self.name = "定时截图"
         self.group_name = "工具与调试"
-        self.group_icon = FluentIcon.CAMERA
         self.description = "每隔指定秒数截图保存，用于数据采集 / YOLO 样本收集"
         self.icon = FluentIcon.CAMERA
         self.default_config = {

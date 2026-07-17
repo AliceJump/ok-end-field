@@ -1,5 +1,6 @@
 import time
 import re
+from qfluentwidgets import FluentIcon
 from src.data.FeatureList import FeatureList as fL
 from src.image.hsv_config import HSVRange as hR
 from src.core.BaseEfTask import BaseEfTask
@@ -25,6 +26,7 @@ class Test(MouseScanMixin):
         super().__init__(*args, **kwargs)
         self.name = "测试"
         self.group_name = "工具与调试"
+        self.group_icon = FluentIcon.DEVELOPER_TOOLS
 
     def run(self):
         self.drag_scan_area((354/1920,382/1080),(1526/1920,768/1080))
