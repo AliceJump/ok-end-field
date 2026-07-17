@@ -15,8 +15,6 @@ class AutoPickTask(BaseEfTask, TriggerTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "自动拾取"
-        self.group_name = "大世界与探索"
-        self.group_icon = FluentIcon.SHOPPING_CART
         self.description = "大世界自动拾取"
         self.icon = FluentIcon.SHOPPING_CART
         self.default_config = {'_enabled': True}

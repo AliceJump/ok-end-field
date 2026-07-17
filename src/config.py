@@ -147,7 +147,6 @@ config = {
         ["src.tasks.trigger.AutoCombatTask", "AutoCombatTask"],
         ["src.tasks.trigger.AutoInteractionTask", "AutoInteractionTask"],
         ["src.tasks.trigger.AutoPickTask", "AutoPickTask"],
-        ["src.tasks.trigger.AutoLoginTask", "AutoLoginTask"],
         ["src.tasks.trigger.ItemNavigatorTask", "ItemNavigatorTask"],
     ],
 }

@@ -66,7 +66,7 @@ class AccountConfigTab(CustomTab):
 
     @property
     def position(self):
-        return NavigationItemPosition.BOTTOM
+        return NavigationItemPosition.TOP
 
     @property
     def add_after_default_tabs(self):
@@ -74,7 +74,7 @@ class AccountConfigTab(CustomTab):
 
     @property
     def icon(self):
-        return FluentIcon.SETTING
+        return FluentIcon.PEOPLE
 
     def showEvent(self, event):
         super().showEvent(event)

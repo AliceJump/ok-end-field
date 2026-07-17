@@ -24,6 +24,7 @@ class Test(MouseScanMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "测试"
+        self.group_name = "工具与调试"
 
     def run(self):
         self.drag_scan_area((354/1920,382/1080),(1526/1920,768/1080))

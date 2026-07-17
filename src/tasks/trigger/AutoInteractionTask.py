@@ -18,7 +18,6 @@ class AutoInteractionTask(BaseEfTask, TriggerTask):
             '自动点击传送': True,
         }
         self.name = "自动交互"
-        self.group_name = "登录与交互"
         self.icon = FluentIcon.ACCEPT
 
     def run(self):

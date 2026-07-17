@@ -45,7 +45,6 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
 
         # 设置导航模块的基本信息
         self.name = "物品导航"  # 模块名称
-        self.group_name = "大世界与探索"
         self.description = "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"  # 模块描述
         self.icon = Icons.ItemNavigator  # 模块图标
         # 只把面向用户的选项放在 default_config
