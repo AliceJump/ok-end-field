@@ -44,7 +44,7 @@ class TestOutpostExchange(unittest.TestCase):
         )
 
         with patch(
-            "src.tasks.daily.daily_routine_mixin.get_world_map_text",
+            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(
@@ -65,7 +65,7 @@ class TestOutpostExchange(unittest.TestCase):
         )
 
         with patch(
-            "src.tasks.daily.daily_routine_mixin.get_world_map_text",
+            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(
@@ -94,11 +94,11 @@ class TestOutpostExchange(unittest.TestCase):
 
         with (
             patch(
-                "src.tasks.daily.daily_routine_mixin.areas_list",
+                "src.tasks.daily.misc.daily_outpost_mixin.areas_list",
                 ["地区甲", "地区乙"],
             ),
             patch(
-                "src.tasks.daily.daily_routine_mixin.outpost_dict",
+                "src.tasks.daily.misc.daily_outpost_mixin.outpost_dict",
                 {"地区甲": ["据点甲", "据点乙"], "地区乙": ["据点丙"]},
             ),
         ):
@@ -114,7 +114,7 @@ class TestOutpostExchange(unittest.TestCase):
         excluded_goods = set()
 
         with patch(
-            "src.tasks.daily.daily_routine_mixin.get_world_map_text",
+            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(
@@ -131,7 +131,7 @@ class TestOutpostExchange(unittest.TestCase):
         excluded_goods = set()
 
         with patch(
-            "src.tasks.daily.daily_routine_mixin.get_world_map_text",
+            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(
@@ -149,7 +149,7 @@ class TestOutpostExchange(unittest.TestCase):
         excluded_goods = set()
 
         with patch(
-            "src.tasks.daily.daily_routine_mixin.get_world_map_text",
+            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(
@@ -166,7 +166,7 @@ class TestOutpostExchange(unittest.TestCase):
         excluded_goods = set()
 
         with patch(
-            "src.tasks.daily.daily_routine_mixin.get_world_map_text",
+            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(

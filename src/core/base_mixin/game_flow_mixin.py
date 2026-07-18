@@ -628,6 +628,15 @@ class GameFlowMixin:
         """
         return self.wait_feature(feature=fL.left_button, vertical_variance=0.1, horizontal_variance=0.1, raise_if_not_found=False, time_out=1) is not None
 
+    def wait_friend_list(self, end_icon_name="friend_chat_icon"):
+        start_time = time.time()
+        while True:
+            if time.time() - start_time > 20:
+                self.log_info("加载好友列表超时")
+                return False
+            if self.find_feature(feature=end_icon_name):
+                return True
+
     def ensure_in_friend_boat(self):
         """
         确保进入好友帝江号舰船。
