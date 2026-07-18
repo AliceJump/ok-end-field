@@ -64,8 +64,8 @@ all potential risks.**
 
 ## 🚀 Quick Start
 
-1. **Download the installer**: Choose a source below and download the latest `ok-ef-win32-China-setup.exe` installer.
-2. **Install**: Double-click `ok-ef-win32-China-setup.exe` and follow the setup wizard.
+1. **Download the installer**: From GitHub Releases, download the latest `ok-ef-win32-Global-setup.exe` installer.
+2. **Install**: Double-click `ok-ef-win32-Global-setup.exe` and follow the setup wizard.
 3. **Run**: Launch `ok-ef` from the desktop shortcut or Start Menu after installation.
 
 ## 📥 Download Sources
@@ -102,32 +102,26 @@ all potential risks.**
 - [Daily Task](docs/日常任务.md): gift giving, outpost exchange, delivery handling, market trading, stamina farming, reward claim, and more
 - [Stamina Farming](docs/体力本.md): normal/high-tier stages, danger stages, heavy energy nodes, skill timeline support
 - [Delivery Commission Pickup](docs/运送委托接取.md): filter by ticket type + reward range and auto pickup
-- [Auto Delivery](docs/自动送货.md): Wuling delivery automation with configurable route sequences (7.31w/7.98w)
+- [Auto Delivery](docs/自动送货.md): Wuling delivery automation for 73.1k/79.8k/119k/159k/163k ticket targets
 - [Warehouse Transfer](docs/仓库物品转移.md): cross-warehouse batch transfer for selected items
-- Periodic Screenshot: interval-based auto capture for data collection / training samples
+- Demo Draw: repeat draws at the demo platform until the level-change condition is met
+- Yingtuo Monument: complete all currently available normal stages
+- `启动一次游戏,120s后自动关闭`: exact registered visible task name; scheduled pre-launch/check task. The `120s` is the timeout for reaching the main screen; actual default behavior waits 15 seconds after reaching it, then exits
+- Realtime Detection: loop YOLO detection for model debugging
+- Test and Diagnosis: development and framework diagnostic tools
+
+> `PeriodicScreenshotTask` remains in the source tree but is not currently registered. The former Graduation Essence task has been removed.
 
 ### Trigger tasks (background loop detection)
 
 - [Auto Combat](docs/自动战斗.md): battle-state detection and automatic skill release
-- Auto Pickup: whitelist pickup + blacklist filtering
 - Auto Interaction: auto skip dialog + auto click teleport
-- Auto Login: automatic relogin + monthly card claim
+- Auto Pickup: whitelist pickup + blacklist filtering
 - [Item Navigation](docs/物品导航与实时检测.md): official-map WebSocket or local WebSocket driven item gathering point navigation
 
-### One-time tasks (full list)
-- [Daily Task](docs/日常任务.md): gift giving, outpost exchange, delivery handling, market trading, stamina farming, reward claim, and more
-- [Stamina Farming](docs/体力本.md): normal/high-tier stages, danger stages, heavy energy nodes, skill timeline support
-- [Delivery Commission Pickup](docs/运送委托接取.md): filter by ticket type + reward range and auto pickup
-- [Auto Delivery](docs/自动送货.md): Wuling delivery automation with configurable route sequences (7.31w/7.98w)
-- [Warehouse Transfer](docs/仓库物品转移.md): cross-warehouse batch transfer for selected items
-- Demo Draw: auto enter demo draw page, loop until level change condition met
-- Yingtuo Monument: auto complete all normal Yingtuo Monument stages
-- [Realtime Detection](docs/物品导航与实时检测.md): loop YOLO detection for online model observation
-- Start Game: pre-launch game with Windows Task Scheduler and auto exit
-- Diagnosis: simple wrapper around the built-in framework diagnosis task
-
 ### Scheduled tasks
-- You can add one-time tasks into Windows Task Scheduler for automatic launch
+- Daily Task, Auto Delivery, Yingtuo Monument, and `启动一次游戏,120s后自动关闭` declare built-in scheduling support
+- [Windows Task Scheduler](docs/Windows%20计划任务.md) can also invoke any registered one-time task by its list index
 
 ---
 
@@ -173,7 +167,7 @@ If you encounter issues, check the following in order:
 | Document | Description |
 |----------|-------------|
 | [Quick Start Guide (QUICKSTART.md)](docs/dev/QUICKSTART.md) | Minimal workflow to run from source, launch the software, and create trigger/one-time tasks |
-| [Development Guide (DEVELOPMENT.md)](docs/dev/DEVELOPMENT.md) | Architecture overview, directory structure, development workflow, testing, CI/CD, and documentation sync maintenance |
+| [Development Guide (DEVELOPMENT.md)](docs/dev/DEVELOPMENT.md) | Architecture, repository structure, task registration, testing, and release workflow |
 | [API Reference (API.md)](docs/dev/API.md) | Detailed API docs for BaseEfTask, Mixin, ScreenPosition, KeyConfigManager, and more |
 | [i18n & OCR Configuration](docs/dev/i18n_OCR配置流程.md) | Runtime locale, language JSON, OCR matching, and text-fix workflow |
 | [Equipment Affix Recognition Toolkit](docs/dev/装备词条识别轮子.md) | Reusable OCR parser, CSV matcher, and template assets after task removal |

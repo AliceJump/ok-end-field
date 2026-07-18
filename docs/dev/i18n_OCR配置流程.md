@@ -2,183 +2,138 @@
 
 返回：[文档索引](../README.md) / [README](../../README.md)
 
-本文记录当前项目中运行时语言、模块化语言资源、OCR 文本匹配和 OCR 纠错的实际链路，适用于新增任务、补充翻译、维护 OCR 匹配文本时参考。
+本文区分两套用途不同的语言资源：
 
----
+- `i18n/<locale>/LC_MESSAGES/ok.po`：GUI/gettext 翻译。
+- `assets/lang/<module>.json`：任务 OCR 匹配器和本地化业务文本。
 
-## 总体链路
+两者不能互相替代。
+
+## 1. 运行链路
 
 ```mermaid
 flowchart TD
-    A[ok-script executor.locale / task.locale] --> B[BaseEfTask.runtime_locale]
-    B --> C[get_lang_accessor]
-    C --> D[assets/lang/module/locale.json]
-    D --> E[self.lang.module.key]
-    E --> F[ocr / wait_ocr / wait_click_ocr]
-    G[assets/ocr_fix/ocr_text_fix.json] --> H[startup_patches]
-    H --> I[TaskExecutor.text_fix]
-    I --> F
+    A[executor.locale 或 task.locale] --> B[BaseEfTask.runtime_locale]
+    A --> C[get_lang_accessor]
+    C --> D[规范化为活动 locale]
+    D --> E[assets/lang/module.json]
+    E --> F[选择 key 下的 locale 节点]
+    F --> G[self.lang.module.key]
+    G --> H[ocr / wait_ocr / 业务比较]
+    I[assets/ocr_fix/ocr_text_fix.json] --> J[install_ocr_text_fix_patch]
+    J --> K[扩展 OCR match 参数]
+    K --> H
 ```
+
+入口 `main.py`/`main_debug.py` 在导入并启动 `ok` 应用前调用 `install_startup_patches()`。OCR 补丁对 `TaskExecutor.__init__` 和 `OCR.fix_match_regex` 安装一次性 monkey patch。
+
+## 2. 活动 locale
+
+活动 OCR locale 由 `src/data/lang/__init__.py` 的 `ACTIVE_LOCALES_CONFIG` 明确控制：
+
+```python
+ACTIVE_LOCALES_CONFIG = {
+    "zh_CN": True,
+    "zh_TW": True,
+    "en_US": False,
+    "ja_JP": False,
+    "ko_KR": False,
+    "es_ES": False,
+}
+```
+
+因此当前 `SUPPORTED_LOCALES == ("zh_CN", "zh_TW")`。JSON 和 gettext 目录中存在英语、日语、韩语、西班牙语内容，不代表这些语言已启用为任务 OCR locale。
+
+locale 来源和规范化规则：
+
+1. 有 executor 时读取 `self.executor.locale`；否则读取 `self.locale`。
+2. 支持 `Enum`、带 `name` 属性/方法的 locale 对象和字符串。
+3. `-` 转为 `_`，并对活动 locale 做大小写宽容匹配。
+4. 非活动、未知或空 locale 回退 `zh_CN`。
+
+`BaseEfTask.runtime_locale` 只暴露提取到的原始字符串；真正的活动 locale 规范化发生在 `LangAccessor` 中。
+
+## 3. 统一 JSON schema
+
+资源路径是单文件：
 
 ```text
-ok-script executor.locale / task.locale
-        ↓
-BaseEfTask.runtime_locale
-        ↓
-get_lang_accessor(self)
-        ↓
-assets/lang/<module>/<locale>.json
-        ↓
-self.lang.<module>.<key>
-        ↓
-ocr / wait_ocr / wait_click_ocr / 业务比较
+assets/lang/<module>.json
 ```
 
-启动时还会安装 OCR 文本纠错补丁：
-
-```text
-main.py
-  → install_startup_patches()
-  → install_ocr_text_fix_patch()
-  → assets/ocr_fix/ocr_text_fix.json 注入 ok-script TaskExecutor.text_fix
-```
-
----
-
-## 运行时语言来源
-
-`BaseEfTask` 通过 `runtime_locale` 统一暴露当前 UI 语言：
-
-1. 优先读取 `self.executor.locale`。
-2. 若没有 executor，则读取 `self.locale`。
-3. 支持 enum、Qt `QLocale` 风格对象和普通字符串。
-4. 无法识别时交给 `get_lang_accessor(None)`，默认回退为 `zh_CN`。
-
-相关实现：
-
-- `src/core/BaseEfTask.py`：`_extract_locale_from_object()`、`runtime_locale`、`self.lang = get_lang_accessor(self)`。
-- `src/data/lang/__init__.py`：`get_lang_accessor()`、`_normalize_locale()`、`LangAccessor`。
-
----
-
-## 支持语言与资源目录
-
-支持语言由 `i18n/<locale>/LC_MESSAGES/` 目录自动发现；如果目录不存在，则使用默认列表：
-
-- `zh_CN`
-- `zh_TW`
-- `en_US`
-- `ja_JP`
-- `ko_KR`
-- `es_ES`
-
-模块化语言资源存放在：
-
-```text
-assets/lang/<module>/<locale>.json
-```
-
-示例：
-
-```text
-assets/lang/AutoSkipDialogTask/zh_CN.json
-assets/lang/AutoSkipDialogTask/en_US.json
-assets/lang/daily_battle_mixin/zh_CN.json
-```
-
-加载规则：
-
-1. 先加载当前 locale 的 `<locale>.json`。
-2. 如果当前 locale 文件不存在或读取失败，回退到 `zh_CN.json`。
-3. 找不到模块或 key 时返回空模块/空值，调用处需要提供 fallback 或让测试发现缺失。
-
----
-
-## 语言 JSON 节点格式
-
-每个 key 通常使用自动生成的 `k_xxxxxxxx` 命名，节点支持三种匹配形式。
-
-### 固定字符串
+不存在运行时使用的 `assets/lang/<module>/<locale>.json` 目录结构。统一文件以业务 key 为第一层，以 locale 为第二层：
 
 ```json
 {
   "k_confirm": {
-    "string": "确认"
+    "zh_CN": {"string": "确认"},
+    "zh_TW": {"string": "確認"},
+    "en_US": {"string": "Confirm"}
+  },
+  "k_number": {
+    "zh_CN": {"pattern": "^\\d+$"},
+    "zh_TW": {"pattern": "^\\d+$"}
+  },
+  "k_accept": {
+    "zh_CN": {"terms": ["接取", "接受"]},
+    "zh_TW": {"terms": ["接取", "接受"]}
   }
 }
 ```
 
-访问：
+每个 locale 节点应只使用一种值：
+
+| 节点 | 访问结果 | 用途 |
+|------|----------|------|
+| `{"string": "确认"}` | `str` | 固定文本或业务显示文本 |
+| `{"pattern": "^\\d+$"}` | 编译后的 `re.Pattern` | 正则 OCR 匹配 |
+| `{"terms": ["A", "B"]}` | `list` | 多个候选值 |
+
+如果 locale 节点本身不是字典，则原样返回。直接属性解析检查顺序为 `string`、`pattern`、`terms`；`build_matcher` 检查顺序为 `pattern`、`string`、`terms`。不要在同一个 locale 节点混放这些字段。
+
+加载一个 key 时的值回退顺序：
+
+1. 当前规范化 locale。
+2. 当前为 `zh_TW` 时仍回退 `zh_TW`，否则回退 `zh_CN`。
+3. 该 key 下第一个可用 locale 值。
+
+模块文件不存在、JSON 读取失败或 key 不存在时返回空模块/`None`；不会按旧目录结构寻找其它文件。
+
+## 4. 代码访问
 
 ```python
-self.lang.common.k_confirm
+result = self.wait_ocr(
+    match=self.lang.DeliveryTask.k_ae8fb114,
+    box=self.box.bottom,
+    time_out=5,
+)
+
+self.wait_click_ocr(
+    match=self.lang.daily_battle_mixin.k_b56d9ac6,
+    box=self.box.bottom_right,
+    time_out=5,
+)
 ```
 
-返回值为字符串，可直接传给 `self.ocr(match=...)`。
-
-### 正则表达式
-
-```json
-{
-  "k_amount": {
-    "pattern": "\\d+"
-  }
-}
-```
-
-访问后会编译为 `re.Pattern`，适合 OCR 数字、模糊文本、变体文本。
-
-### 词条列表
-
-```json
-{
-  "k_confirm_terms": {
-    "terms": ["确认", "確定"]
-  }
-}
-```
-
-返回值为列表，适合多个可接受 OCR 文本。
-
-优先级：`pattern` → `string` → `terms`。如果节点不是 dict，则原样返回。
-
----
-
-## 代码中如何使用
-
-### OCR 匹配
-
-推荐：
+安全读取并提供代码级 fallback：
 
 ```python
-self.wait_ocr(match=self.lang.DeliveryTask.k_ae8fb114, time_out=5)
-self.wait_click_ocr(match=self.lang.daily_battle_mixin.k_b56d9ac6, box=self.box.bottom_right)
+from src.data.lang import get_lang_module_value
+
+matcher = get_lang_module_value(
+    self.lang,
+    "DeliveryTask",
+    "k_ae8fb114",
+    fallback="确认",
+)
 ```
 
-不推荐：
+业务数据仍以中文 canonical key 保存时，使用现有工具转换：
 
-```python
-self.wait_ocr(match="确认", time_out=5)
-```
+- `src/data/world_map_utils.py`：`get_world_map_matcher`、`get_world_map_text`、`is_world_map_text`。
+- `src/data/characters_utils.py`：`get_localized_name_by_canonical`、`get_contact_list_with_feature_list`。
 
-新增 OCR 文本时，应先在 `assets/lang/<module>/zh_CN.json` 中添加 key，再在代码中引用 `self.lang.<module>.<key>`。
-
-### 业务数据本地化
-
-当业务数据仍以中文为 canonical key 时，使用工具函数转换：
-
-- `src/data/world_map_utils.py`：`get_world_map_matcher()`、`get_world_map_text()`、`is_world_map_text()`。
-- `src/data/characters_utils.py`：`get_localized_name_by_canonical()`。
-
-这些工具会从 `assets/lang/world_map`、`assets/lang/characters` 中查找当前语言对应文本，并在缺失时回退中文。
-
----
-
-## OCR 纠错配置
-
-项目有两层 OCR 纠错机制。
-
-### 全局 OCR 文本替换
+## 5. OCR 混淆补丁
 
 配置文件：
 
@@ -186,20 +141,7 @@ self.wait_ocr(match="确认", time_out=5)
 assets/ocr_fix/ocr_text_fix.json
 ```
 
-加载位置：
-
-```text
-src/patches/ocr_text_fix_patch.py
-```
-
-启动时会把 JSON 中的 `错误文本 -> 正确文本` 注入 `ok-script` 的 `TaskExecutor.text_fix`。
-
-适用场景：
-
-- OCR 引擎稳定把某个完整文本识别错。
-- 多个任务都会受同一个误识别影响。
-
-示例：
+schema 是完整文本的 `OCR 错误文本 -> 正确文本`：
 
 ```json
 {
@@ -207,103 +149,77 @@ src/patches/ocr_text_fix_patch.py
 }
 ```
 
-### 业务级混淆字符映射（已迁移）
+当前补丁 **不会替换 OCR 输出文本，也不会写入 `TaskExecutor.text_fix`**。实际行为是：
 
-> ⚠️ **旧机制 `src/data/ocr_normalize_map.py` 已移除。**
-> 改用新机制：在 `assets/ocr_fix/ocr_text_fix.json` 中添加 OCR 错误→正确的文本对。
+1. 只读取长度相同的错误/正确文本对。
+2. 对每个不同字符构建 `正确字符 -> OCR 错误字符`，例如 `幹 -> 乾`。
+3. 同一正确字符映射到多个不同错字时，保留先前映射并跳过冲突。
+4. 在框架原有 `OCR.fix_match_regex` 处理后，扩展调用方的 `match`。
 
-示例：
+不同 `match` 类型的行为：
 
-```json
-{"錯誤文本": "正確文本"}
-```
+| 输入 | 补丁行为 |
+|------|----------|
+| `str` | 生成原文和混淆变体，最多 4 个；有多个时返回列表 |
+| `re.Pattern` | 只扩展安全的字面字符；字符类内追加错字，保留 flags |
+| `list` | 递归扩展并摊平结果 |
+| 其它 | 原样返回 |
 
-系统在运行时自动提取字符级混淆（如"幹"↔"乾"），并动态扩展 match pattern，无需手动写入代码映射。
+正则转义、量词、分组和其它结构标记不会被重写；混淆字符本身是正则元字符时跳过。编译或处理失败会返回原始 match。这是一层匹配兼容，不是 OCR 结果标准化，因此业务代码读取 `box.name` 时仍可能看到原始误识文本。
 
-- 业务解析时需要把某些字形视为等价。
-- 只影响特定算法或解析流程，不适合全局替换。
+旧 `src/data/ocr_normalize_map.py` 机制已不存在。若需要业务输出标准化，应在明确的业务解析层实现，不能假定全局补丁已改写文本。
 
----
+## 6. 新增 OCR 文本
 
-## 新增/修改语言文本流程
-
-```mermaid
-flowchart TD
-    A[确认代码模块名] --> B[更新 assets/lang/module/zh_CN.json]
-    B --> C{节点类型}
-    C -->|string| D[固定 OCR 文本]
-    C -->|pattern| E[正则匹配]
-    C -->|terms| F[多候选文本]
-    D --> G[代码引用 self.lang.module.key]
-    E --> G
-    F --> G
-    G --> H[补齐其他 locale 同名 key]
-    H --> I[运行 TestCheckLang]
-```
-
-1. 确认代码模块名，例如 `DeliveryTask`、`daily_battle_mixin`、`world_map`。
-2. 在 `assets/lang/<module>/zh_CN.json` 添加新 key。
-3. 根据使用场景选择 `string`、`pattern` 或 `terms`。
-4. 在代码中使用 `self.lang.<module>.<key>`，不要写裸中文 OCR 文本。
-5. 为其他 locale 添加同名 key；可以先复制中文，后续再翻译。
-6. 运行语言资源检查：
+1. 确定模块名，通常与使用它的任务类或 Python 模块一致，例如 `DeliveryTask`、`login_mixin`。
+2. 编辑 `assets/lang/<module>.json`，新增顶层 key。
+3. 至少为当前活动 locale `zh_CN`、`zh_TW` 增加同名节点。
+4. 节点只选 `string`、`pattern`、`terms` 之一。
+5. 在代码中引用 `self.lang.<module>.<key>`。
+6. 运行语言引用测试并实测 OCR 区域。
 
 ```powershell
-python -m unittest tests/TestCheckLang.py
+.\.venv\Scripts\python.exe -m unittest tests.TestCheckLang
 ```
 
-`TestCheckLang` 会扫描源码中的 `self.lang.<module>.k_xxx` 引用：
+`TestCheckLang` 当前只扫描形如 `self.lang.<module>.k_xxx` 的引用，只校验 `zh_CN` 和 `zh_TW`：
 
-- 所有语言都缺失时测试失败。
-- 部分语言缺失时只打印 warning，不阻止测试通过。
+- 模块文件不存在或两个 locale 都缺 key：失败。
+- 只缺一个活动 locale：记录 warning，不导致失败。
+- 非 `k_` 命名的访问（例如 `self.lang.login_mixin.ms`）不在该测试正则的覆盖范围内，需要人工检查。
 
----
+## 7. GUI gettext
 
-## 批量补齐翻译
+GUI 文本使用：
 
-辅助脚本：
+```text
+i18n/<locale>/LC_MESSAGES/ok.po
+```
+
+当前仓库有 `zh_CN`、`zh_TW`、`en_US`、`ja_JP`、`ko_KR`、`es_ES` catalog。相关验证：
 
 ```powershell
-python tools/lang_batch_translate.py
+.\.venv\Scripts\python.exe -m unittest tests.TestGuiI18n
+.\.venv\Scripts\python.exe -m unittest tests.TestPoLocaleConsistency
 ```
 
-脚本行为：
+`TestPoLocaleConsistency` 检查 catalog 重复/空翻译、占位符一致性、部分语言不应复制英文 fallback，以及已知运行时污染 msgid。它不决定 OCR `SUPPORTED_LOCALES`。
 
-1. 扫描 `assets/lang/*/zh_CN.json`。
-2. 对比 `SUPPORTED_LOCALES` 中其他 locale 的 JSON key。
-3. 找出缺失 key。
-4. 使用 `deep_translator.GoogleTranslator` 尝试批量翻译文本。
-5. 写回目标 locale JSON。
+## 8. 工具状态
 
-注意：该脚本依赖网络和 `deep_translator`，翻译结果需要人工复核，尤其是游戏专有名词、正则表达式和 OCR 变体词。
+`tools/lang_batch_translate.py` 当前仍按旧的 `assets/lang/<module>/<locale>.json` 目录结构扫描，并且只枚举目录；它与运行时统一单文件 schema 不兼容。不要对当前资源运行该脚本，否则不能正确发现或更新模块。`scripts/migrate_lang.py` 是旧格式迁移用途，也不是日常维护入口。
 
----
+当前可靠流程是手工编辑统一 JSON，使用 `TestCheckLang` 校验引用，再人工复核正则和游戏专有名词。
 
-## 常见问题
+## 9. 排查清单
 
-### 语言文件存在但运行时没有生效
+语言节点未生效时依次检查：
 
-检查：
+1. 文件是否为 `assets/lang/<module>.json`。
+2. 顶层 key 和代码属性是否完全一致。
+3. 运行时 locale 是否在 `ACTIVE_LOCALES_CONFIG` 中启用。
+4. locale 节点是否只包含一个合法类型字段。
+5. 正则字符串是否为有效 Python 正则。
+6. `TestCheckLang` 未覆盖的非 `k_` key 是否人工补齐。
 
-1. `i18n/<locale>/LC_MESSAGES/` 是否存在，用于让 locale 被发现。
-2. `assets/lang/<module>/<locale>.json` 是否存在。
-3. JSON key 是否与代码中的 `self.lang.<module>.<key>` 完全一致。
-4. 运行时 `executor.locale` 或 `task.locale` 是否为预期 locale。
-
-### OCR 匹配在某语言下失败
-
-优先检查语言 JSON：
-
-- 固定按钮文本用 `string`。
-- 有繁简、空格、数字或 OCR 变体时用 `pattern`。
-- 多个可接受词时用 `terms`。
-
-如果 OCR 原始结果本身稳定错误，再考虑加入 `assets/ocr_fix/ocr_text_fix.json`。
-
-### 什么时候用 `zh_CN` 兜底
-
-`zh_CN` 是 canonical fallback。任何 locale 缺文件或读文件失败时，语言访问器都会回退到 `zh_CN`，保证任务不会因为缺翻译直接崩溃。
-
-### 是否还需要 `target_doc/i18n_ocr.md`
-
-历史草稿状态页：[target_doc/i18n_ocr.md](../../target_doc/i18n_ocr.md)。正式流程以本文为准。
+OCR 稳定误识时，先确认是否只是匹配问题。只有等长字符混淆适合加入 `ocr_text_fix.json`；长度变化、词序变化或仅某一业务成立的纠错应在语言 pattern 或业务解析中处理。

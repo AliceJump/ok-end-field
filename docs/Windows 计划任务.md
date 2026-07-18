@@ -8,170 +8,103 @@ ok-ef 提供了 [日常任务外部命令](./日常任务.md#执行外部命令)
 
 ### 1. 从模版创建 pre-hook 和 post-hook 文件
 
-模板文件 `终末地.pre.ps1` 执行前的行为，按需修改 `input` 和 `自定义代码` 部分并保存到新文件，记住位置后面会用到：
+下面的 `终末地.pre.ps1` 用于执行前清理旧日志，并可选地提前启动游戏等待热更新。修改路径后保存；示例兼容系统自带的 Windows PowerShell 5.1：
 
 ``` pwsh
-# input
-#
-# 游戏位置
-$ef_dir = "C:\Program Files\Hypergryph Launcher\games\Endfield Game"
-# ok-ef app 位置
-$okef_dir = "C:\ok-ef" 
-# 最大执行时间
-$minute = 44
-# 热更新预留时间，包含在最大执行时间内，若需关闭热更新则设0
-$hot_update_minute = 5
+$ErrorActionPreference = "Stop"
+$efDir = "C:\Program Files\Hypergryph Launcher\games\Endfield Game"
+$okefDir = "C:\ok-ef"
+$workingDir = Join-Path $okefDir "data\apps\ok-ef\working"
+$hotUpdateMinutes = 5 # 设为 0 可跳过提前启动
 
-# display
-Write-Output "$minute minute(s) will be used"
-
-# clean log
-$wkdir = $okef_dir + "\data\apps\ok-ef\working";
-$log_file_list = Get-ChildItem -Path ".\logs" -File
-if ($log_file_list -and $log_file_list.Count -gt 15) {
-  $death_date = (Get-Date).AddDays(-30)
-  $log_file_list | Where-Object { $_.CreationTime -lt $death_date } | Remove-Item -Force
+if (-not (Test-Path -LiteralPath $workingDir -PathType Container)) {
+  throw "ok-ef 工作目录不存在: $workingDir"
 }
 
-# move log
-Set-Location $wkdir;
-if (Test-Path -Path '.\logs\ok-script.log') {
-  Move-Item -Force '.\logs\ok-script.log' ('.\logs\ok-script.log.' + (Get-Item '.\logs\ok-script.log').CreationTime.ToString('yyyy-MM-dd.HH-mm-ss') + '.log');
-}
+$logDir = Join-Path $workingDir "logs"
+if (Test-Path -LiteralPath $logDir -PathType Container) {
+  $logs = @(Get-ChildItem -LiteralPath $logDir -File)
+  if ($logs.Count -gt 15) {
+    $cutoff = (Get-Date).AddDays(-30)
+    $logs | Where-Object { $_.CreationTime -lt $cutoff } | Remove-Item -Force
+  }
 
-# update game if needed
-if ($hot_update_minute -gt 0) {
-  Set-Location $ef_dir
-  Start-Process -FilePath "Endfield.exe"
-  Start-Sleep($hot_update_minute  * 60);
-  $ef_pid = (Get-Process | Where-Object { $_.Name -match 'Endfield' } | Select-Object -First 1).Id;
-  if($ef_pid) {
-    Stop-Process -Force $ef_pid;
+  $currentLog = Join-Path $logDir "ok-script.log"
+  if (Test-Path -LiteralPath $currentLog -PathType Leaf) {
+    $timestamp = (Get-Item -LiteralPath $currentLog).CreationTime.ToString("yyyy-MM-dd.HH-mm-ss")
+    Move-Item -LiteralPath $currentLog -Destination "$currentLog.$timestamp.log" -Force
   }
 }
 
-# 在这里加入 自定义代码（比如消息通知）
+if ($hotUpdateMinutes -gt 0) {
+  $gameExe = Join-Path $efDir "Endfield.exe"
+  if (-not (Test-Path -LiteralPath $gameExe -PathType Leaf)) {
+    throw "游戏程序不存在: $gameExe"
+  }
+  Start-Process -FilePath $gameExe -WorkingDirectory $efDir
+  Start-Sleep -Seconds ($hotUpdateMinutes * 60)
+  Get-Process -Name "Endfield" -ErrorAction SilentlyContinue | Stop-Process -Force
+}
+
+# 在这里加入自定义代码（例如消息通知）
 
 ```
 
-模板文件 `终末地.post.ps1` 执行后的行为，按需修改 `input` 和 `自定义代码` 部分并保存到新文件，记住位置后面会用到：
+下面的 `终末地.post.ps1` 等待任务退出，超时后结束相关进程，并归档日志与截图。`$maxMinutes` 包含前置脚本的热更新时间：
 
 ``` pwsh
-# input
-#
-# 游戏位置
-$ef_dir = "C:\Program Files\Hypergryph Launcher\games\Endfield Game"
-# ok-ef app 位置
-$okef_dir = "C:\ok-ef"
-# 最大执行时间
-$minute = 44
-# 热更新预留时间，包含在最大执行时间内，若需关闭热更新则设0
-$hot_update_minute = 5
+$okefDir = "C:\ok-ef"
+$workingDir = Join-Path $okefDir "data\apps\ok-ef\working"
+$maxMinutes = 44
+$hotUpdateMinutes = 5
+$deadline = (Get-Date).AddMinutes([Math]::Max(1, $maxMinutes - $hotUpdateMinutes))
 
-# display
-Write-Output "game locates at '$ef_dir'"
+# `cmd /c start` 非阻塞，给 ok-ef 和游戏进程预留启动时间。
+Start-Sleep -Seconds 5
+do {
+  $gameProcesses = @(Get-Process -Name "Endfield" -ErrorAction SilentlyContinue)
+  $okefProcesses = @(Get-Process -Name "ok-ef" -ErrorAction SilentlyContinue)
+  if ($gameProcesses.Count -eq 0 -and $okefProcesses.Count -eq 0) { break }
+  Start-Sleep -Seconds 1
+} while ((Get-Date) -lt $deadline)
 
-# stop
-$timeout = ($minute - $hot_update_minute) * 60 - 120;
-Start-Sleep(120);
-while ($timeout -gt 0) { # 命令 `cmd /c start` 是非阻塞执行，启动程序后立即完成，所以需要轮询 pid 判断 ok-ef 是否执行结束
-  $ef_process_list = (Get-Process | Where-Object { $_.Name -match 'Endfield' });
-  $okef_process_list = (Get-Process | Where-Object { $_.MainWindowTitle -match 'ok-ef' });
-  if (!($ef_process_list -or $okef_process_list)) {
-    break;
-  }
-  Start-Sleep(1);
-  $timeout -= 1;
-}
-$ef_process_list = (Get-Process | Where-Object { $_.Name -match 'Endfield' });
-if ($ef_process_list) {
-  Stop-Process -Force $ef_process_list;
-  Start-Sleep(1);
-}
-$okef_process_list = (Get-Process | Where-Object { $_.MainWindowTitle -match 'ok-ef' });
-if ($okef_process_list) {
-  Stop-Process -Force $okef_process_list;
-  Start-Sleep(1);
-}
-
-# get error message
-$wkdir = $okef_dir + "\data\apps\ok-ef\working";
-Set-Location $wkdir;
-function Get-Message {
-  if ($ef_process_list -or $okef_process_list) {
-    # screenshot
-    Add-Type -AssemblyName System.Windows.Forms
-    $screen = [System.Windows.Forms.Screen]::PrimaryScreen
-    $bitmap = New-Object System.Drawing.Bitmap $screen.Bounds.Width, $screen.Bounds.Height
-    $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-    $graphics.CopyFromScreen($screen.Bounds.X, $screen.Bounds.Y, 0, 0, $bitmap.Size)
-    $time = Get-Date -Format "yyyyMMdd_HHmmss_fff"
-    $bitmap.Save(".\screenshots\$time.png")
-    $graphics.Dispose()
-    $bitmap.Dispose()
-    #
-    return "执行超时。\n\n" + ($ef_process_list ? "游戏未关闭。" : "") + ($okef_process_list ? "ok-ef 未关闭。" : "");
-  }
-  #
-  $success = (Get-Content -Encoding UTF8 '.\logs\ok-script.log' | Select-String -Pattern '已完成的任务列表' | Select-Object -Last 1);
-  $failure = (Get-Content -Encoding UTF8 '.\logs\ok-script.log' | Select-String -Pattern '已失败的任务列表' | Select-Object -Last 1);
-  $skipped = (Get-Content -Encoding UTF8 '.\logs\ok-script.log' | Select-String -Pattern '已跳过的任务列表' | Select-Object -Last 1);
-  $unhandled = (Get-Content -Encoding UTF8 '.\logs\ok-script.log' | Select-String -Pattern '未处理的任务列表' | Select-Object -Last 1);
-  $current = (Get-Content -Encoding UTF8 '.\logs\ok-script.log' | Select-String -Pattern '当前失败的任务' | Select-Object -Last 1);
-  $exception = (Get-Content -Encoding UTF8 '.\logs\ok-script.log' | Select-String -Pattern '发生异常，终止游戏' | Select-Object -Last 1);
-  if ([string]::IsNullOrWhiteSpace($current) -and [string]::IsNullOrWhiteSpace($failure) -and [string]::IsNullOrWhiteSpace($exception)) {
-    $message = "执行成功。"
-  } else {
-    $message = "执行失败。"
-  }
-  if (-not [string]::IsNullOrWhiteSpace($success)) {
-    $message += ("\n\n" + $success)
-  }
-  if (-not [string]::IsNullOrWhiteSpace($failure)) {
-    $message += ("\n\n" + $failure)
-  }
-    if (-not [string]::IsNullOrWhiteSpace($skipped)) {
-    $message += ("\n\n" + $skipped)
-  }
-  if (-not [string]::IsNullOrWhiteSpace($unhandled)) {
-    $message += ("\n\n" + $unhandled)
-  }
-  if (-not [string]::IsNullOrWhiteSpace($current)) {
-    $message += ("\n\n" + $current)
-  }
-  return $message
-}
-$message = Get-Message
-
-# get version
-$version_line = (Get-Content -Encoding UTF8 '.\logs\ok-script.log' | Select-String -Pattern 'app_version:([^,]+)' | Select-Object -Last 1)
-if ($version_line -match 'app_version:([^,]+)') {
-  $version = " " + $matches[1]
+$timedOut = $gameProcesses.Count -gt 0 -or $okefProcesses.Count -gt 0
+if ($timedOut) {
+  $gameProcesses | Stop-Process -Force
+  $okefProcesses | Stop-Process -Force
+  $message = "执行超时；已终止仍在运行的游戏或 ok-ef 进程。"
 } else {
-  $version = ""
+  $message = "执行结束。"
 }
 
-# move log
-Set-Location $wkdir;
-if (Test-Path -Path '.\logs\ok-script.log') {
-  Move-Item -Force '.\logs\ok-script.log' ('.\logs\ok-script.log.' + (Get-Item '.\logs\ok-script.log').CreationTime.ToString('yyyy-MM-dd.HH-mm-ss') + '.log');
-}
-
-# move screenshot
-Set-Location $wkdir;
-if ((Test-Path "screenshots") && (Get-ChildItem -Path "screenshots" -Force -ErrorAction SilentlyContinue)) {
-  if (!(Test-Path "screenshots.backup")) {
-    New-Item -ItemType Directory -Path "screenshots.backup" | Out-Null;
+$logPath = Join-Path $workingDir "logs\ok-script.log"
+$version = ""
+if (Test-Path -LiteralPath $logPath -PathType Leaf) {
+  $logLines = Get-Content -LiteralPath $logPath -Encoding UTF8
+  $summaryPatterns = @("已完成的任务列表", "已失败的任务列表", "已跳过的任务列表", "未处理的任务列表", "当前失败的任务")
+  foreach ($pattern in $summaryPatterns) {
+    $line = $logLines | Select-String -Pattern $pattern | Select-Object -Last 1
+    if ($null -ne $line) { $message += "`n`n$line" }
   }
-  Move-Item -Path (Join-Path "screenshots" "*") -Destination "screenshots.backup" -Force;
+  $versionLine = $logLines | Select-String -Pattern "app_version:([^,]+)" | Select-Object -Last 1
+  if ($null -ne $versionLine -and $versionLine -match "app_version:([^,]+)") {
+    $version = " " + $matches[1]
+  }
+  $timestamp = (Get-Item -LiteralPath $logPath).CreationTime.ToString("yyyy-MM-dd.HH-mm-ss")
+  Move-Item -LiteralPath $logPath -Destination "$logPath.$timestamp.log" -Force
 }
 
-# 在这里加入 自定义代码（比如消息通知）
-#
-# 1. $message 为从日志中提取的信息。
-# 2. $version 为 ok-ef 版本号。
-# 3. 日志移动到 <ok-ef-app>\data\apps\ok-ef\working\logs\ok-script.<creation-time>.log 。（如果日志文件超过15个，30天前创建的日志将会删除。）
-# 4. 错误截图保存在 <ok-ef-app>\data\apps\ok-ef\working\screenshots.backup 。
+$screenshotDir = Join-Path $workingDir "screenshots"
+$backupDir = Join-Path $workingDir "screenshots.backup"
+if (Test-Path -LiteralPath $screenshotDir -PathType Container) {
+  $screenshots = @(Get-ChildItem -LiteralPath $screenshotDir -File -ErrorAction SilentlyContinue)
+  if ($screenshots.Count -gt 0) {
+    New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+    $screenshots | Move-Item -Destination $backupDir -Force
+  }
+}
+
+# 在这里加入自定义代码（例如使用 $message 和 $version 发送通知）
 
 ```
 
@@ -223,18 +156,18 @@ if ((Test-Path "screenshots") && (Get-ChildItem -Path "screenshots" -Force -Erro
   </Settings>
   <Actions Context="Author">
     <Exec>
-      <Command>powershell</Command>
-      <Arguments>-WindowStyle Hidden 终末地.pre.ps1</Arguments>
+      <Command>powershell.exe</Command>
+      <Arguments>-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "终末地.pre.ps1"</Arguments>
       <WorkingDirectory>PLACEHOLDER_PATH_TO_PRE_SCRIPT_DIRECTORY</WorkingDirectory>
     </Exec>
     <Exec>
       <Command>cmd</Command>
-      <Arguments>/c start "" ok-ef.exe -t 1 -e</Arguments>
+      <Arguments>/c start "" "ok-ef.exe" -t 1 -e</Arguments>
       <WorkingDirectory>PLACEHOLDER_PATH_TO_OK_EF_APP_DIRECTORY</WorkingDirectory>
     </Exec>
     <Exec>
-      <Command>powershell</Command>
-      <Arguments>-WindowStyle Hidden 终末地.post.ps1</Arguments>
+      <Command>powershell.exe</Command>
+      <Arguments>-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "终末地.post.ps1"</Arguments>
       <WorkingDirectory>PLACEHOLDER_PATH_TO_POST_SCRIPT_DIRECTORY</WorkingDirectory>
     </Exec>
   </Actions>
@@ -246,6 +179,8 @@ if ((Test-Path "screenshots") && (Get-ChildItem -Path "screenshots" -Force -Erro
 1. 修改 `PLACEHOLDER_PATH_TO_OK_EF_APP_DIRECTORY` 为 ok-ef app 的绝对路径。
 2. 修改 `PLACEHOLDER_PATH_TO_PRE_SCRIPT_DIRECTORY` 为 `终末地.pre.ps1` 文件所在位置。
 3. 修改 `PLACEHOLDER_PATH_TO_POST_SCRIPT_DIRECTORY` 为 `终末地.post.ps1` 文件所在位置。
+
+`-t 1` 表示执行 [src/config.py](../src/config.py) 中 `onetime_tasks` 的第 1 项，即日常任务。列表顺序变化时编号也会变化；改成其他编号前应先核对当前注册顺序。`-e` 表示任务结束后退出 ok-ef。
 
 使用 `Win + R` 运行 `taskschd.msc` 打开计划任务程序。点击 `操作 > 导入任务` 加入上述 xml 文件。修改 `名称` 后点击 `确认`。
 

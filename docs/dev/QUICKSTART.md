@@ -2,117 +2,145 @@
 
 返回：[文档索引](../README.md) / [README](../../README.md)
 
-> 目标读者：希望为 ok-ef 贡献代码的开发者。
+## 1. 从源码运行
 
----
+| 项目 | 当前要求 |
+|------|----------|
+| 操作系统 | Windows 10/11；交互、截图和登录流程依赖 Win32 |
+| Python | 3.12；CI 和 China 打包配置均固定为 3.12 |
+| 权限 | 建议管理员权限运行终端/IDE，以与游戏权限一致 |
+| 游戏窗口 | 16:9，最低 `1600x900`；见 `src/config.py` |
 
-## 1. 从源码运行项目
-
-### 1.1 环境要求
-
-| 项目 | 要求 |
-|------|------|
-| 操作系统 | Windows |
-| Python | **3.12**（仅支持此版本） |
-| 运行权限 | **管理员权限**（必须；需以管理员身份启动 CMD / PyCharm / VSCode） |
-| 安装路径 | 纯英文路径（例如 `D:\dev\ok-end-field`），不要含中文或空格 |
-
-### 1.2 克隆仓库
-
-```bash
+```powershell
 git clone --recurse-submodules https://github.com/AliceJump/ok-end-field.git
-cd ok-end-field
+Set-Location ok-end-field
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install --upgrade pip
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe main_debug.py
 ```
 
-> 项目包含子模块，务必加上 `--recurse-submodules`。
+若 clone 时漏了子模块：
 
-若你已 clone 但忘记带 `--recurse-submodules`，可补执行：
-
-```bash
+```powershell
 git submodule update --init --recursive
 ```
 
-### 1.3 安装依赖
+`main.py` 和 `main_debug.py` 都会先调用 `install_startup_patches()`，再构造 `ok.OK(config)`；Debug 入口只额外设置 `config["debug"] = True`。
 
-```bash
-pip install -r requirements.txt --upgrade
+## 2. 新增一次性任务
+
+最小任务放在 `src/tasks/onetime/MyTask.py`：
+
+```python
+from src.core.BaseEfTask import BaseEfTask
+
+
+class MyTask(BaseEfTask):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "我的任务"
+        self.description = "执行一个可重复验证的步骤"
+        self.default_config.update({"等待秒数": 1})
+        self.config_description.update({
+            "等待秒数": "操作完成后的等待时间。",
+        })
+
+    def run(self):
+        self.ensure_main()
+        self.log_info("任务开始")
+        self.sleep(self.config.get("等待秒数", 1))
 ```
 
-### 1.4 启动程序
+在 `src/config.py` 的 `config["onetime_tasks"]` 中注册模块路径和类名：
 
-```bash
-# Release 模式
-python main.py
-
-# Debug 模式（截图/日志更详细，推荐开发时使用）
-python main_debug.py
+```python
+["src.tasks.onetime.MyTask", "MyTask"],
 ```
 
-程序启动后会打开 GUI 窗口，左侧列出所有可用任务。
+不要直接赋值 `self.default_config = {...}`；多重继承任务需要保留 MRO 中其它 Mixin 已注册的配置。
 
----
-
-## 2. 新建一个触发式任务
-
-触发式任务（`TriggerTask`）在后台持续运行，满足条件时自动激活。以下示例新增一个最小化的触发式任务。
-
-### 2.1 创建任务文件
-
-在 `src/tasks/trigger/` 下新建文件，例如 `MyTriggerTask.py`：
+## 3. 新增触发式任务
 
 ```python
 from ok import TriggerTask
+
 from src.core.BaseEfTask import BaseEfTask
+
 
 class MyTriggerTask(BaseEfTask, TriggerTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "我的触发任务"
-        self.description = "在此描述任务功能"
+        self.description = "后台检查条件并执行动作"
 
     def run(self):
-        # 在此编写触发后执行的逻辑
-        self.log_info("触发任务已执行")
+        if self.find_one("some_feature"):
+            self.log_info("检测到目标")
 ```
 
-> **提示**：若任务需要战斗能力，可额外继承 `BattleMixin`；需要地图导航则继承 `MapMixin`。
-> 日志建议统一使用 `self.log_info/self.log_debug/self.log_error`，避免在运行时代码中使用 `print`。
-
-### 2.2 注册任务
-
-打开 `src/config.py`，将新任务加入 `trigger_tasks` 列表：
+注册到 `config["trigger_tasks"]`：
 
 ```python
-config = {
-    ...
-    "trigger_tasks": [
-        ...,
-        ["src.tasks.trigger.MyTriggerTask", "MyTriggerTask"],  # 新增
-    ],
-    ...
-}
+["src.tasks.trigger.MyTriggerTask", "MyTriggerTask"],
 ```
 
-### 2.3 运行与验证
+现有组合可作为 MRO 参考：`AutoCombatTask(BattleMixin, TriggerTask)`、`ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask)`。业务 Mixin 已继承 `BaseEfTask` 时不需要再次显式列出 `BaseEfTask`。
 
-重新启动程序（`python main_debug.py`），在 GUI 右侧的触发任务列表中即可看到并启用新任务。
+## 4. 复用现有能力
 
----
+核心能力现在位于 `src/core/base_mixin/`，业务能力位于 `src/tasks/mixin/`：
 
-## 3. 新建一次性任务（可选）
+```python
+from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.mixin.map_mixin import MapMixin
 
-一次性任务由用户点击触发，执行完毕后自动停止。流程与触发式任务相同，区别在于：
 
-- 推荐继承 `BaseEfTask`（如需最小实现，也可直接继承 `BaseTask`）
-- 不继承 `TriggerTask`
-- 注册到 `config["onetime_tasks"]` 列表
+class MyBattleTask(MapMixin, BattleMixin):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "地图战斗任务"
 
----
+    def run(self):
+        self.ensure_main()
+        self.ensure_map()
+```
+
+常用规则：
+
+- Feature 使用 `FeatureList` 或其中存在的字符串名称；`find_feature` 返回列表，`find_one` 返回首项。
+- OCR 文本使用 `self.lang.<module>.<key>`，资源写入统一的 `assets/lang/<module>.json`。
+- 可改键操作用 `press_key`、`press_industry_key` 或 `press_combat_key`；参数传默认按键值。
+- `self.click(box)` 可点击识别框；当前项目封装不使用 `click(box=...)` 示例。
+- `login_flow(username)` 选择登录界面的最近账号，不输入密码。
+
+## 5. 验证
+
+运行全部测试：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -p "Test*.py"
+```
+
+仓库的 `run_tests.ps1` 会逐个运行 `tests/*.py`，也可使用：
+
+```powershell
+.\run_tests.ps1
+```
+
+新增语言引用后至少运行：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.TestCheckLang
+.\.venv\Scripts\python.exe -m unittest tests.TestPoLocaleConsistency
+```
+
+涉及窗口、OCR 或游戏状态的行为仍需用 `main_debug.py` 实机验证；测试集中既有纯离线测试，也有依赖样本图片和 `ok-script` 测试工具的测试，不能概括为全部不需要项目资源。
 
 ## 相关文档
 
-| 文档 | 说明 |
-|------|------|
-| [文字识别示例.md](文字识别示例.md) | ocr / wait_ocr / click / wait_click_ocr 完整示例任务 |
-| [图像模板匹配示例.md](图像模板匹配示例.md) | find_feature / wait_feature / 模板资源使用示例 |
-| [开发指南](DEVELOPMENT.md) | 目录结构、任务注册、测试和发布流程 |
+- [开发指南](DEVELOPMENT.md)：架构、目录、任务注册、配置、测试和发布
+- [API 参考](API.md)：项目自有基类和 Mixin 接口
+- [i18n 与 OCR 配置流程](i18n_OCR配置流程.md)：统一语言 JSON 与 OCR 混淆补丁
+- [文字识别示例](文字识别示例.md)
+- [图像模板匹配示例](图像模板匹配示例.md)

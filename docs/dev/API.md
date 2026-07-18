@@ -1,1699 +1,555 @@
-# ok-ef API 参考文档
+# ok-ef API 参考
 
 返回：[文档索引](../README.md) / [README](../../README.md)
 
-> 面向开发者的详细 API 参考，涵盖核心基类、Mixin 能力层、工具类及数据层的所有公共接口。
+本文只记录 **ok-end-field 自己定义并由任务复用的接口**。`ocr`、`wait_ocr`、`wait_feature`、`wait_until`、`back`、`sleep`、`send_key` 等框架接口来自 `ok-script`，其完整参数和返回类型应以当前安装版本为准，不在此复制。
 
----
+源码权威位置：
 
-## 目录
+- 基类组合：[BaseEfTask.py](../../src/core/BaseEfTask.py)
+- 核心能力：[src/core/base_mixin/](../../src/core/base_mixin/)
+- 业务能力：[src/tasks/mixin/](../../src/tasks/mixin/)
+- 配置：[global_config_store.py](../../src/core/global_config_store.py)、[BattleConfig.py](../../src/core/BattleConfig.py)、[KeyConfig.py](../../src/interaction/KeyConfig.py)
 
-1. [BaseEfTask](#1-baseeftask)
-   - [截图与特征匹配](#11-截图与特征匹配)
-   - [OCR 识别](#12-ocr-识别)
-   - [点击与交互](#13-点击与交互)
-   - [按键操作](#14-按键操作)
-   - [移动与闪避](#15-移动与闪避)
-   - [场景判断](#16-场景判断)
-   - [导航与传送](#17-导航与传送)
-   - [UI 等待](#18-ui-等待)
-   - [日志与状态](#19-日志与状态)
-   - [图像处理](#110-图像处理)
-   - [YOLO 检测](#111-yolo-检测)
-   - [登录界面专用](#112-登录界面专用)
-   - [其它工具](#113-其它工具)
-2. [ScreenPosition](#2-screenposition)
-3. [KeyConfigManager](#3-keyconfigmanager)
-4. [BattleMixin](#4-battlemixin)
-5. [MapMixin](#5-mapmixin)
-6. [NavigationMixin](#6-navigationmixin)
-7. [LiaisonMixin](#7-liaisonmixin)
-8. [ZipLineMixin](#8-ziplinemixin)
-9. [LoginMixin](#9-loginmixin)
-10. [EssenceRecognizer（纯算法层）](#10-essencerecognizer纯算法层)
-11. [数据工具函数](#11-数据工具函数)
-
----
-
-## 1. BaseEfTask
-
-所有任务与 Mixin 的公共基类，封装了截图、识别、交互等核心能力。
+## 1. BaseEfTask 与 MRO
 
 ```python
 from src.core.BaseEfTask import BaseEfTask
 ```
 
-### 1.1 截图与特征匹配
+`BaseEfTask` 的实际基类顺序为：
 
-#### `find_feature`
+```text
+BaseEfTask
+├── WindowArrowDrawingMixin       src/core/base_mixin/window_arrow_drawing_mixin.py
+├── AccountOverrideMixin         src/core/base_mixin/account_override_mixin.py
+├── GameFlowMixin                src/core/base_mixin/game_flow_mixin.py
+├── RuntimeMixin                 src/core/base_mixin/runtime_mixin.py
+├── ok.BaseTask
+└── ProcessManager               src/core/base_mixin/process_manager.py
+```
+
+任务层 Mixin 通常最终继承 `BaseEfTask`：
+
+```text
+BattleMixin ────────────────> BaseEfTask
+MapMixin ───────────────────> BaseEfTask
+NavigationMixin ────────────> BaseEfTask
+├── LiaisonMixin
+└── ZipLineMixin
+LoginMixin ─────────────────> BaseEfTask
+└── AccountMixin
+```
+
+所有参与多重继承的 `__init__` 必须调用 `super().__init__(*args, **kwargs)`。任务配置应使用 `self.default_config.update(...)` 等增量方式，避免覆盖前序 Mixin 已注册的数据。
+
+初始化后常用属性：
+
+| 属性 | 含义 |
+|------|------|
+| `self.box` | `ScreenPosition(self)`，提供常用屏幕区域 |
+| `self.key_config` | 全局 `Game Hotkey Config` 的持久化 `Config` |
+| `self.key_manager` | `KeyConfigManager(self.key_config)` |
+| `self.lang` | 按运行时 locale 加载 `assets/lang/<module>.json` 的访问器 |
+| `self.current_user` / `self.current_account_id` | 当前账号上下文 |
+| `self.once_sleep_time` | 全局 `Ensure Main Once Action Sleep.SingleActionWithDelay` |
+
+### 1.1 坐标
+
+```text
+def box_of_screen(
+    self, x=0, y=0, to_x=1.0, to_y=1.0,
+    width=0.0, height=0.0, name=None,
+    hcenter=False, vcenter=False, confidence=1.0,
+)
+
+def box_of_screen_scaled(
+    self, original_screen_width, original_screen_height,
+    x_original, y_original, to_x=0, to_y=0,
+    width_original=0, height_original=0, name=None,
+    hcenter=False, vcenter=False, confidence=1.0,
+)
+```
+
+前者使用当前屏幕的比例坐标；后者将参考分辨率坐标缩放到当前窗口。`BaseEfTask` 会将传入的比例值统一保留三位小数后交给框架。
 
 ```python
+left_panel = self.box_of_screen(0.0, 0.1, 0.35, 0.9)
+button = self.box_of_screen_scaled(1920, 1080, 1600, 900, 1800, 1020)
+```
+
+`ScreenPosition` 当前提供：`top_left`、`top_right`、`bottom_left`、`bottom_right`、`bottom_right_quarter`、`left`、`right`、`top`、`bottom`、`center`，以及 `nav_b/nav_c/nav_esc/nav_panel`、`interact_pick_f`、`combat_skill_1..4`、`combat_ult_1..4`、`combat_default_link_skill`、`combat_skill_bar`、`combat_ult_bar`。
+
+### 1.2 特征匹配
+
+定义于 `src/core/base_mixin/runtime_mixin.py`。
+
+```text
 def find_feature(
-    self,
-    feature_name=None,
-    horizontal_variance=0,
-    vertical_variance=0,
-    threshold=0,
-    use_gray_scale=False,
-    x=-1, y=-1, to_x=-1, to_y=-1,
-    width=-1, height=-1,
-    box=None,
-    canny_lower=0, canny_higher=0,
-    frame_processor=None,
-    template=None,
-    match_method=cv2.TM_CCOEFF_NORMED,
-    screenshot=False,
-    mask_function=None,
-    frame=None,
-    limit=0,
-    target_height=0,
+    self, feature_name=None, horizontal_variance=0, vertical_variance=0,
+    threshold=0, use_gray_scale=False,
+    x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1,
+    box=None, canny_lower=0, canny_higher=0,
+    frame_processor=None, template=None,
+    match_method=cv2.TM_CCOEFF_NORMED, screenshot=False,
+    mask_function=None, frame=None, limit=0, target_height=0,
     feature=None,
 )
-```
 
-`feature_name` 可传入单个特征名，也可传入由特征名组成的列表。代码会先按当前分辨率解析每个特征名，再逐个执行模板匹配。
-
-在当前帧中进行模板匹配，返回匹配到的 `Box` 列表（未匹配时返回空列表）。
-`feature_name` 可传入 `FeatureList` 枚举成员、字符串（图片文件名，不含 `.png`），或由它们组成的列表。
-会根据当前分辨率自动选择 `_2k` / `_4k` 后缀图片。
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `feature_name` / `feature` | `FeatureList` \| `str` \| `list[FeatureList \| str]` | 特征名（单个或列表）。`feature` 是兼容别名，常用于调用处提升可读性 |
-| `box` | `Box \| None` | 限制搜索区域；`None` 时框架从 `coco_annotations.json` 读取该模板的标注位置作为默认搜索范围 |
-| `threshold` | `float` | 匹配阈值，默认 `0`（使用框架默认值） |
-| `use_gray_scale` | `bool` | 是否转灰度匹配 |
-| `horizontal_variance` | `float` | 在默认搜索区域基础上向 x 方向扩展的相对比例偏差（如 `0.01` 表示屏幕宽度的 1%） |
-| `vertical_variance` | `float` | 在默认搜索区域基础上向 y 方向扩展的相对比例偏差（如 `0.01` 表示屏幕高度的 1%） |
-| `frame` | `ndarray \| None` | 传入指定帧，`None` 则自动截取最新帧 |
-
-```python
-boxes = self.find_feature(fL.main_menu_icon, box=self.box.top_right)
-if boxes:
-    self.click(boxes[0])
-```
-
----
-
-#### `find_one`
-
-```python
 def find_one(
-    self,
-    feature_name=None,
-    horizontal_variance=0,
-    vertical_variance=0,
-    threshold=0,
-    use_gray_scale=False,
-    box=None,
-    canny_lower=0,
-    canny_higher=0,
-    frame_processor=None,
-    template=None,
-    mask_function=None,
-    frame=None,
-    match_method=cv2.TM_CCOEFF_NORMED,
-    screenshot=False,
-    limit=1,
-    target_height=0,
-    feature=None,
-) -> Box | None
-```
-
-`find_feature` 的简化版：返回第一个匹配的 `Box`，未匹配时返回 `None`。参数同 `find_feature`。
-同样支持单个特征名或特征名列表，也支持 `feature=` 作为 `feature_name` 别名。
-
-```python
-box = self.find_one(fL.confirm_btn)
-if box:
-    self.click(box)
-```
-
----
-
-#### `get_feature_by_resolution`
-
-```python
-def get_feature_by_resolution(
-    self,
-    base_name: str,
+    self, feature_name=None, horizontal_variance=0, vertical_variance=0,
+    threshold=0, use_gray_scale=False, box=None,
+    canny_lower=0, canny_higher=0, frame_processor=None,
+    template=None, mask_function=None, frame=None,
+    match_method=cv2.TM_CCOEFF_NORMED, screenshot=False,
+    limit=1, target_height=0, feature=None,
 )
 ```
 
-根据当前窗口宽度（1080p / 2K / 4K）返回最合适的特征名字符串。
-
-- `width >= 3800`：优先 `_4k`，其次 `_2k`，最后无后缀
-- `2500 ≤ width < 3800`：优先 `_2k`，其次 `_4k`，最后无后缀
-- `width < 2500`：无后缀、`_2k`、`_4k` 顺序查找
-
-若找不到任何可用资源，抛出 `AttributeError`。
-
-> 说明：如果 `feature_name` 是列表，框架会对列表中的每个元素分别执行分辨率适配；因此列表内元素仍应使用同一套命名约定（如 `xxx` / `xxx_2k` / `xxx_4k`）。
-
----
-
-### 1.2 OCR 识别
-
-> 以下方法继承自 `ok-script` 框架的 `BaseTask`，`BaseEfTask` 直接转发，行为一致。
-
-#### `ocr`
+- `feature=` 是 `feature_name=` 的别名。
+- `find_feature` 接受单个特征或 `list/tuple`；每个名称都会先经过分辨率适配。
+- 返回语义沿用框架：`find_feature` 返回结果列表，`find_one` 返回首个结果或空值。
+- 未显式传 `box` 时，框架可使用 `assets/coco_annotations.json` 的标注区域及 `src/config.py` 中的默认 variance/threshold。
 
 ```python
-def ocr(
-    self,
-    box=None,
-    match=None,
-    name=None,
-    threshold=0,
-    target_height=0,
-    use_grayscale=False,
-    log=False,
-    frame_processor=None,
-    lib='default',
-) -> list[dict]
+from src.data.FeatureList import FeatureList as fL
+
+results = self.find_feature([fL.monthly_card, fL.monthly_card2])
+confirm = self.find_one(fL.skip_dialog_confirm, threshold=0.8)
+if confirm:
+    self.click(confirm)
 ```
 
-对指定区域进行 OCR 识别，返回结果列表，每项包含 `text`、`box` 等字段。
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `box` | `Box \| None` | 识别区域；`None` 为全屏 |
-| `match` | `str \| re.Pattern \| None` | 文本过滤条件（字符串子串或正则） |
-| `name` | `str \| None` | 日志标签 |
-| `threshold` | `float` | 置信度阈值 |
-
-```python
-result = self.ocr(box=self.box.bottom, match=re.compile(r"\d+"))
+```text
+def get_feature_by_resolution(self, base_name: str)
 ```
 
----
+根据 `self.width` 和 `FeatureList` 中实际存在的枚举值选择名称：
 
-#### `wait_ocr`
+| 窗口宽度 | 尝试顺序 |
+|----------|----------|
+| `>= 3800` | `_4k`、`_2k`、无后缀 |
+| `>= 2500` | `_2k`、`_4k`、无后缀 |
+| 其它 | 无后缀、`_2k`、`_4k` |
 
-```python
-def wait_ocr(
-    self,
-    match,
-    box=None,
-    time_out=5,
-    **kwargs,
-) -> list[dict] | None
-```
+全部不存在时抛出 `AttributeError`。传入值必须能与字符串拼接，通常使用 `FeatureList`（其成员是字符串枚举）或字符串。
 
-阻塞等待直到 OCR 匹配成功或超时。成功返回结果列表，超时返回 `None`。
-
-```python
-result = self.wait_ocr(match="确认", box=self.box.center, time_out=10)
-```
-
----
-
-#### `wait_click_ocr`
-
-```python
-def wait_click_ocr(
-    self,
-    x=0, y=0,
-    to_x=1, to_y=1,
-    width=0, height=0,
-    box=None,
-    name=None,
-    match=None,
-    threshold=0,
-    frame=None,
-    target_height=0,
-    time_out=0,
-    raise_if_not_found=False,
-    recheck_time=0,
-    after_sleep=0,
-    post_action=None,
-    log=False,
-    screenshot=False,
-    settle_time=-1,
-    lib='default',
-    alt: bool = False,
-)
-```
-
-等待 OCR 匹配成功后点击匹配区域。成功返回匹配结果，超时返回 `None`。`alt=True` 时使用 Alt+点击。
-
-```python
-self.wait_click_ocr(match="开始", box=self.box.bottom, time_out=8)
-```
-
----
-
-#### `handle_ocr_rules`
-
-```python
-def handle_ocr_rules(
-    self,
-    rules: list[list],
-) -> bool
-```
-
-顺序执行一批「前置 OCR 条件 → 目标 OCR 命中 → Alt+点击」规则，适合处理一次性引导或弹窗流程。`rules` 为规则列表，每项 `[need, need_box, match, box]`：`need` 不为空时会先在 `need_box` 中做前置 OCR 判断；命中 `match` 后点击目标 OCR 结果。命中并处理任一规则返回 `True`，没有命中返回 `False`。
-
----
-
-#### `login_ocr`
-
-```python
-def login_ocr(
-    self,
-    x=0,
-    y=0,
-    to_x=1,
-    to_y=1,
-    match=None,
-    width=0,
-    height=0,
-    box=None,
-    name=None,
-    threshold=0,
-    target_height=0,
-    use_grayscale=False,
-    log=False,
-    frame_processor=None,
-    lib='default',
-)
-```
-
-与 `ocr` 参数相同，但针对**登录界面截图**（`login_screenshot()`）进行识别，绕过 WGC 限制。
-
----
-
-### 1.3 点击与交互
-
-> 基础 `click` / `back` 等方法继承自 `ok-script` 框架。
-
-#### `click`
-
-```python
-def click(
-    self,
-    x=-1, y=-1,
-    *,
-    box=None,
-    name=None,
-    interval=-1,
-    move=True,
-    down_time=0.01,
-    after_sleep=0,
-    key='left',
-    hcenter=False,
-    vcenter=False,
-)
-```
-
-点击指定坐标或 `Box` 中心。`x`/`y` 为 `0~1` 时视为比例坐标，否则为像素坐标；也可直接传 `Box` 对象。
-
-```python
-self.click(0.5, 0.5)          # 屏幕中心（比例）
-self.click(box=confirm_box)   # 点击 Box 中心
-```
-
----
-
-#### `click_with_alt`
-
-```python
-def click_with_alt(
-    self,
-    x: int | float | Box | list[Box] = -1,
-    y: int | float = -1,
-    move_back: bool = False,
-    name: str | None = None,
-    interval: int = -1,
-    move: bool = True,
-    down_time: float = 0.01,
-    after_sleep: float = 0,
-    key: str = 'left',
-)
-```
-
-按住 `Alt` 键再点击，常用于游戏内物品转移等需要组合键的操作。参数同 `click`。
-
----
-
-#### `wait_click_feature`
-
-```python
+```text
 def wait_click_feature(
-    self,
-    feature,
-    horizontal_variance=0,
-    vertical_variance=0,
-    threshold=0,
-    relative_x=0.5,
-    relative_y=0.5,
-    time_out=0,
-    pre_action=None,
-    post_action=None,
-    box=None,
-    raise_if_not_found=True,
-    use_gray_scale=False,
-    canny_lower=0,
-    canny_higher=0,
-    click_after_delay=0,
-    settle_time=-1,
-    after_sleep=0,
-    target_height=0,
+    self, feature, horizontal_variance=0, vertical_variance=0,
+    threshold=0, relative_x=0.5, relative_y=0.5,
+    time_out=0, pre_action=None, post_action=None, box=None,
+    raise_if_not_found=True, use_gray_scale=False,
+    canny_lower=0, canny_higher=0, click_after_delay=0,
+    settle_time=-1, after_sleep=0, target_height=0,
     alt: bool = False,
-) -> bool
-```
-
-等待指定特征出现后点击。普通点击走 `click_box`；`alt=True` 时按 `relative_x/relative_y` 计算特征框内坐标后执行 `click_with_alt`。成功点击返回 `True`，未找到返回 `False`。
-
----
-
-#### `scroll`
-
-```python
-def scroll(
-    self,
-    x: int,
-    y: int,
-    count: int,
-) -> None
-```
-
-在像素坐标 `(x, y)` 处滚动鼠标滚轮。`count` 正数向上，负数向下(仅UI界面有效,游戏视角放大无效**需要使用pyautogui.scroll**)
-
----
-
-#### `scroll_relative`
-
-```python
-def scroll_relative(
-    self,
-    x: float,
-    y: float,
-    count: int,
-) -> None
-```
-
-在比例坐标 `(x, y)` 处滚动鼠标滚轮，坐标范围 `0~1`。
-
----
-
-#### `find_confirm`
-
-```python
-def find_confirm(self) -> Box | None
-```
-
-在屏幕中查找「确认」按钮，返回 `Box` 或 `None`。
-
----
-
-#### `click_confirm`
-
-```python
-def click_confirm(
-    self,
-    after_sleep=0.5,
-    time_out=5,
-    recheck_time=0,
-) -> bool
-```
-
-等待「确认」按钮出现并点击。`recheck_time > 0` 时会在首次点击后等待并复检一次确认按钮。
-
----
-
-#### `find_f`
-
-```python
-def find_f(self) -> Box | None
-```
-
-查找 `F` 键交互提示图标，返回 `Box` 或 `None`。用于判断当前场景是否可与 NPC / 物品互动。
-
----
-
-#### `find_reward_ok`
-
-```python
-def find_reward_ok(self) -> Box | None
-```
-
-查找奖励领取确认按钮，返回 `Box` 或 `None`。
-
----
-
-#### `active_and_send_mouse_delta`
-
-```python
-def active_and_send_mouse_delta(
-    self,
-    dx=1, dy=1,
-    activate=True,
-    only_activate=False,
-    delay=0.02,
-    steps=3,
 )
 ```
 
-激活游戏窗口并发送鼠标增量移动，用于旋转视角。
+命中后点击框内相对位置，成功返回 `True`，未命中且不抛异常时返回 `False`。`alt=True` 走 `click_with_alt`。
 
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `dx` | `int` | 水平像素增量 |
-| `dy` | `int` | 垂直像素增量 |
-| `activate` | `bool` | 是否先激活窗口 |
-| `only_activate` | `bool` | 仅激活，不发送鼠标事件 |
-| `delay` | `float` | 每步延迟（秒） |
-| `steps` | `int` | 分多步发送 |
+### 1.3 OCR 与登录截图
 
----
+普通 `ocr`、`wait_ocr` 来自 `ok-script`。项目覆盖了点击等待和登录截图入口：
 
-### 1.4 按键操作
-
-#### `press_key`
-
-```python
-def press_key(
-    self,
-    key: str,
-    down_time: float = 0.02,
-    after_sleep: float = 0,
-    interval: int = -1,
+```text
+def wait_click_ocr(
+    self, x=0, y=0, to_x=1, to_y=1, width=0, height=0,
+    box=None, name=None, match=None, threshold=0, frame=None,
+    target_height=0, time_out=0, raise_if_not_found=False,
+    recheck_time=0, after_sleep=0, post_action=None, log=False,
+    screenshot=False, settle_time=-1, lib="default", alt=False,
 )
 ```
 
-发送通用热键（`DEFAULT_COMMON_KEYS` 中定义的按键，如交互键、背包键等）。`key` 为默认按键字面值，框架通过 `KeyConfigManager.resolve_key()` 自动替换为用户自定义值。
+它调用 `wait_ocr`，命中后点击并返回 OCR 结果；否则记录日志并返回 `None`。注意：`recheck_time > 0` 当前会固定等待 1 秒后重新 OCR，而不是使用该数值作为等待秒数。
 
-```python
-self.press_key('f')          # 交互键，默认 'f'，支持用户自定义
-self.press_key('m')          # 地图键，默认 'm'
-```
+```text
+def login_screenshot(self, need_active=True)
 
----
-
-#### `press_industry_key`
-
-```python
-def press_industry_key(
-    self,
-    key: str,
-    down_time: float = 0.02,
-    after_sleep: float = 0,
-    interval: int = -1,
-)
-```
-
-发送集成工业专用热键（`DEFAULT_INDUSTRY_KEYS`），经 `resolve_industry_key()` 转换。
-
----
-
-#### `press_combat_key`
-
-```python
-def press_combat_key(
-    self,
-    key: str,
-    down_time: float = 0.02,
-    after_sleep: float = 0,
-    interval: int = -1,
-)
-```
-
-发送战斗专用热键（`DEFAULT_COMBAT_KEYS`），经 `resolve_combat_key()` 转换。
-
----
-
-#### `move_keys`
-
-```python
-def move_keys(
-    self,
-    keys,
-    duration,
-    need_back=False,
-)
-```
-
-同时按住多个方向键并持续 `duration` 秒后松开。`need_back=True` 时会先执行一次返回之前窗口的操作。
-
-```python
-self.move_keys(['w', 'd'], duration=1.5)   # 向右前方移动 1.5 秒
-```
-
----
-
-### 1.5 移动与闪避
-
-#### `dodge_forward`
-
-```python
-def dodge_forward(
-    self,
-    pre_hold: float = 0.004,
-    dodge_down_time: float = 0.003,
-    after_sleep: float = 0.005,
-)
-```
-
-向前闪避（先短暂按住 `W` 键，再按闪避键）。
-
-#### `dodge_backward`
-
-```python
-def dodge_backward(
-    self,
-    pre_hold: float = 0.004,
-    dodge_down_time: float = 0.003,
-    after_sleep: float = 0.005,
-)
-```
-
-向后闪避（先短暂按住 `S` 键，再按闪避键）。
-
----
-
-#### `move_to_target_once`
-
-```python
-def move_to_target_once(
-    self,
-    ocr_obj,
-    max_step=100,
-    min_step=20,
-    slow_radius=200,
-)
-```
-
-根据 OCR 对象所在位置，单步移动鼠标使目标朝向屏幕中心。`max_step` / `min_step` 控制步长，`slow_radius` 为减速半径（像素）。
-
----
-
-### 1.6 场景判断
-
-#### `is_main`
-
-```python
-def is_main(
-    self,
-    esc=False,
-    need_active=True,
-) -> bool
-```
-
-判断当前是否处于游戏主界面（大世界）。`esc=True` 时会先尝试按 ESC 关闭弹窗。
-
----
-
-#### `ensure_main`
-
-```python
-def ensure_main(
-    self,
-    esc=True,
-    time_out=60,
-    after_sleep=2,
-    need_active=True,
-)
-```
-
-阻塞等待直到进入主界面，超时则抛出异常。
-
----
-
-#### `in_world`
-
-```python
-def in_world(self) -> bool
-```
-
-判断当前是否在大世界（战斗界面除外）。与 `in_combat_world()` 区别：后者还排除了副本/战斗状态。
-
----
-
-#### `in_combat_world`
-
-```python
-def in_combat_world(self) -> bool
-```
-
-判断是否处于大世界战斗状态。
-
----
-
-#### `in_bg`
-
-```python
-def in_bg(self) -> bool
-```
-
-判断游戏是否在后台运行（窗口最小化或非激活）。
-
----
-
-#### `in_friend_boat`
-
-```python
-def in_friend_boat(self) -> bool
-```
-
-判断当前是否处于帝江号（好友船）场景。
-
----
-
-#### `ensure_in_friend_boat`
-
-```python
-def ensure_in_friend_boat(self)
-```
-
-等待确保进入好友帝江号场景。
-
----
-
-#### `skip_dialog`
-
-```python
-def skip_dialog(self)
-```
-
-检测并跳过当前对话框（点击跳过按钮并确认）。
-
----
-
-### 1.7 导航与传送
-
-#### `ensure_map`
-
-```python
-def ensure_map(
-    self,
-    addtional_feature=None,
-    time_out=30,
-)
-```
-
-等待并确保地图界面已打开。`addtional_feature` 为额外的特征名，可以是单个特征名或特征名列表。
-
----
-
-#### `transfer_to_home_point`
-
-```python
-def transfer_to_home_point(
-    self,
-    box=None,
-    should_check_out_boat=False,
-)
-```
-
-传送到帝江号右侧传送点。`should_check_out_boat=True` 时会先检查是否在帝江号,在则退出。（由 `LiaisonMixin` 实现，参见第 7 节）
-
----
-
-#### `to_model_area`
-
-```python
-def to_model_area(
-    self,
-    area,
-    model=None,
-)
-```
-
-导航到指定地区的指定模块区域（如「武陵」→「仓库」）。`area` 为地区名，`model` 为模块名。
-
----
-
-#### `enter_home_room_list`
-
-```python
-def enter_home_room_list(
-    self,
-    time_out=6,
-) -> bool
-```
-
-进入基地房间列表页面（按 `i` 键）。返回是否成功进入。
-
----
-
-### 1.8 UI 等待
-
-#### `wait_ui_stable`
-
-```python
-def wait_ui_stable(
-    self,
-    method='phash',
-    threshold=5,
-    stable_time=0.5,
-    max_wait=5,
-    refresh_interval=0.2,
-) -> bool
-```
-
-等待 UI 界面停止变化（动画结束等）后再继续执行。
-
-| 参数 | 说明 |
-|------|------|
-| `method` | 帧比较算法：`'phash'`（感知哈希）、`'dhash'`（差分哈希）、`'pixel'`（像素差）、`'ssim'`（结构相似度） |
-| `threshold` | phash/dhash 为汉明距离（默认 5）；pixel 为平均像素差（默认 5）；ssim 为相似度（默认 0.98） |
-| `stable_time` | 连续稳定所需时间（秒），默认 `0.5` |
-| `max_wait` | 最大等待时间（秒），默认 `5` |
-| `refresh_interval` | 截帧间隔（秒），默认 `0.2` |
-
-返回 `True` 表示已稳定，`False` 表示超时。
-
----
-
-#### `wait_pop_up`
-
-```python
-def wait_pop_up(
-    self,
-    time_out=15,
-    after_sleep=0,
-)
-```
-
-等待弹窗出现并自动关闭，常用于等待奖励弹窗。
-
----
-
-#### `safe_back`
-
-```python
-def safe_back(
-    self,
-    match,
-    box=None,
-    time_out: float = 30,
-    once_time_out: float = 2,
-)
-```
-
-在 `time_out` 秒内等待 OCR 匹配出现；若未出现则持续按 `Back` 键直到匹配或超时。
-
----
-
-#### `wait_login`
-
-```python
-def wait_login(self)
-```
-
-阻塞等待登录完成，进入主界面后返回。
-
----
-
-### 1.9 日志与状态
-
-> 以下日志方法继承自 `ok-script` 框架的 `BaseTask`，`BaseEfTask` 未在本仓库重新定义。
-
-#### `log_info`
-
-```python
-def log_info(
-    self,
-    msg: str,
-)
-```
-
-输出 INFO 级别日志，显示在 GUI 日志面板和控制台。
-
-#### `log_debug`
-
-```python
-def log_debug(
-    self,
-    msg: str,
-)
-```
-
-输出 DEBUG 级别日志（仅在 debug 模式下显示）。
-
-#### `log_error`
-
-```python
-def log_error(
-    self,
-    msg: str,
-)
-```
-
-输出 ERROR 级别日志。
-
-#### 日志使用约定
-
-1. 在任务类 / Mixin 内，优先使用 `self.log_info/self.log_debug/self.log_error`。
-2. 在非任务模块中，使用模块级 logger（`Logger.get_logger(__name__)`）。
-3. 运行时代码中避免使用 `print` 作为日志输出。
-
----
-
-#### `info_set`
-
-```python
-def info_set(
-    self,
-    key,
-    value,
-)
-```
-
-在 GUI 状态栏显示当前进度信息。多账号模式下会自动在 `key` 后追加账号后缀。
-
-```python
-self.info_set("当前据点", "武陵-西城")
-self.info_set("剩余体力", remaining_stamina)
-```
-
----
-
-### 1.10 图像处理
-
-#### `isolate_by_hsv_ranges`
-
-```python
-def isolate_by_hsv_ranges(
-    self,
-    frame,
-    ranges,
-    invert=True,
-    kernel_size=2,
-) -> ndarray
-```
-
-使用 HSV 颜色掩码提取指定颜色区域。`ranges` 为 `HSVRange` 枚举列表。`invert=True` 时将目标颜色区域以外设为黑色（常用于 OCR 前处理）。
-
-```python
-from src.image.hsv_config import HSVRange
-white_only = self.isolate_by_hsv_ranges(frame, [HSVRange.WHITE_TEXT])
-```
-
----
-
-#### `make_hsv_isolator`
-
-```python
-def make_hsv_isolator(
-    self,
-    ranges,
-) -> Callable
-```
-
-返回一个闭包函数 `frame_processor`，可直接传给 `find_feature` 或 `ocr` 的 `frame_processor` 参数。
-
-```python
-processor = self.make_hsv_isolator([HSVRange.GOLD_TEXT])
-result = self.ocr(box=price_box, frame_processor=processor)
-```
-
----
-
-### 1.11 YOLO 检测
-
-#### `yolo_detect`
-
-```python
-def yolo_detect(
-    self,
-    name: str | list[str],
-    frame=None,
-    box=None,
-    conf=0.7,
-    detections=None,
-    model_key=None,
-) -> list[Box]
-```
-
-使用 YOLOv8 ONNX 模型检测目标，按置信度降序返回 `Box` 列表。
-
-| 参数 | 类型 | 说明 |
-|------|------|------|
-| `name` | `str \| list[str]` | 目标类别名称（单个或多个） |
-| `frame` | `ndarray \| None` | 指定帧，`None` 则自动截取 |
-| `box` | `Box \| None` | 限制检测 ROI，`None` 为全屏 |
-| `conf` | `float` | 置信度阈值，默认 `0.7` |
-| `detections` | `list[Box] \| None` | 测试注入检测结果；传入后跳过模型推理，仅执行筛选与坐标映射 |
-| `model_key` | `str \| None` | 可选强制指定模型；不传时根据 `name` 自动路由模型 |
-
-```python
-boxes = self.yolo_detect("battle_end", box=self.box.center, conf=0.6)
-```
-
-推荐在 [src/yolo/models.py](../../src/yolo/models.py) 中集中维护多模型与 labels：
-
-```python
-DEFAULT_MODEL_KEY = "battle_end_default"
-YOLO_MODELS = {
-    "battle_end_default": {
-        "model_path": "assets/models/yolo/best.onnx",
-        "labels": {0: "battle_end"},
-    },
-    "another_model": {
-        "model_path": "assets/models/yolo/another.onnx",
-        "labels": {0: "target_a", 1: "target_b"},
-    },
-}
-```
-
-`src/config.py` 中 `yolo.default_model` 仅用于启动时预加载默认模型。
-
-开启「显示调试悬浮窗（Debug Overlay）」时会自动画框：
-- 黄色：YOLO 原始检测结果
-- 红色：按 `name` 过滤后的结果
-
----
-
-### 1.12 登录界面专用
-
-以下方法使用 Win32 直接截取登录界面（绕过 WGC 不截取登录界面的限制）。
-
-#### `login_screenshot`
-
-```python
-def login_screenshot(self) -> ndarray
-```
-
-截取当前登录界面截图并返回。
-
-#### `login_ocr`
-
-```python
 def login_ocr(
-    self,
-    x=0,
-    y=0,
-    to_x=1,
-    to_y=1,
-    match=None,
-    width=0,
-    height=0,
-    box=None,
-    name=None,
-    threshold=0,
-    target_height=0,
-    use_grayscale=False,
-    log=False,
-    frame_processor=None,
-    lib='default',
+    self, x=0, y=0, to_x=1, to_y=1, match=None,
+    width=0, height=0, box=None, name=None, threshold=0,
+    target_height=0, use_grayscale=False, log=False,
+    frame_processor=None, lib="default", need_active=True,
 )
-```
 
-参数同 `ocr`，但基于 `login_screenshot()` 的截图。
-
-#### `login_find_feature`
-
-```python
 def login_find_feature(
-    self,
-    feature=None,
-    horizontal_variance=0,
-    vertical_variance=0,
-    threshold=0,
-    use_gray_scale=False,
-    x=-1,
-    y=-1,
-    to_x=-1,
-    to_y=-1,
-    width=-1,
-    height=-1,
-    box=None,
-    canny_lower=0,
-    canny_higher=0,
-    frame_processor=None,
-    template=None,
-    match_method=cv2.TM_CCOEFF_NORMED,
-    screenshot=False,
-    mask_function=None,
-    frame=None,
+    self, feature=None, horizontal_variance=0, vertical_variance=0,
+    threshold=0, use_gray_scale=False,
+    x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1,
+    box=None, canny_lower=0, canny_higher=0,
+    frame_processor=None, template=None,
+    match_method=cv2.TM_CCOEFF_NORMED, screenshot=False,
+    mask_function=None, frame=None, limit=0, target_height=0,
+    need_active=True,
 )
 ```
 
-参数同 `find_feature`，但基于 `login_screenshot()` 的截图。
+这些入口使用 Win32 屏幕捕获绕过登录界面无法由常规 WGC 帧可靠捕获的问题。`login_find_feature` 总会获取新的登录截图，传入的 `frame` 不会成为最终识别帧。
 
----
+### 1.4 点击、按键和移动
 
-### 1.13 其它工具
-
-#### `screen_center`
-
-```python
-def screen_center(self) -> tuple[int, int]
-```
-
-返回游戏窗口的中心像素坐标 `(cx, cy)`。
-
----
-
-#### `kill_game`
-
-```python
-def kill_game(self)
-```
-
-强制终止游戏进程（用于异常恢复）。
-
----
-
-## 2. ScreenPosition
-
-`self.box` 属性类型，按当前窗口分辨率生成各位置的 `Box`。
-
-```python
-from src.interaction.ScreenPosition import ScreenPosition
-# 在 Task 内通过 self.box 访问
-```
-
-### 固定区域
-
-| 属性 | 说明 |
-|------|------|
-| `self.box.top` | 上半屏幕（全宽） |
-| `self.box.bottom` | 下半屏幕（全宽） |
-| `self.box.left` | 左半屏幕（全高） |
-| `self.box.right` | 右半屏幕（全高） |
-| `self.box.top_left` | 左上四分之一 |
-| `self.box.top_right` | 右上四分之一 |
-| `self.box.bottom_left` | 左下四分之一 |
-| `self.box.bottom_right` | 右下四分之一 |
-| `self.box.center` | 中心区域（宽高各 50%） |
-
-### 导航面板
-
-| 属性 | 说明 |
-|------|------|
-| `self.box.nav_b` | 背包键（B）图标位置 |
-| `self.box.nav_c` | 角色键（C）图标位置 |
-| `self.box.nav_esc` | ESC 菜单图标位置 |
-| `self.box.nav_panel` | 导航面板整体区域 |
-
-### 战斗技能栏
-
-| 属性 | 说明 |
-|------|------|
-| `self.box.combat_skill_1` ~ `combat_skill_4` | 技能 1-4 图标位置 |
-| `self.box.combat_ult_1` ~ `combat_ult_4` | 终极技能 1-4 图标位置 |
-| `self.box.combat_default_link_skill` | 连携技（E键）图标位置 |
-| `self.box.combat_skill_bar` | 技能栏整体区域 |
-| `self.box.combat_ult_bar` | 终极技能栏整体区域 |
-
-### 交互
-
-| 属性 | 说明 |
-|------|------|
-| `self.box.interact_pick_f` | F 键拾取提示图标位置 |
-
-### 自定义区域
-
-使用 `self.box_of_screen(x1, y1, x2, y2)` 按比例创建任意 `Box`（均为 `0~1`）：
-
-```python
-price_area = self.box_of_screen(0.4, 0.6, 0.8, 0.8)
-```
-
----
-
-## 3. KeyConfigManager
-
-管理游戏热键与用户自定义按键的映射关系。通过 `self.key_manager` 访问。
-
-```python
-from src.interaction.KeyConfig import KeyConfigManager, DEFAULT_COMMON_KEYS, DEFAULT_INDUSTRY_KEYS, DEFAULT_COMBAT_KEYS
-```
-
-### 默认按键表
-
-**通用（DEFAULT_COMMON_KEYS）**
-
-| 配置键名 | 默认按键 | 说明 |
-|---------|---------|------|
-| `Dodge Key` | `lshift` | 闪避 |
-| `Jump Key` | `space` | 跳跃 |
-| `Interact Key` | `f` | 交互 |
-| `Backpack Key` | `b` | 背包 |
-| `Valuables Key` | `n` | 贵重品 |
-| `Team Key` | `u` | 队伍 |
-| `Operator Key` | `c` | 干员 |
-| `Mission Key` | `j` | 任务 |
-| `Track Key` | `v` | 追踪 |
-| `Map Key` | `m` | 地图 |
-| `Baker Key` | `h` | 帝江号 |
-| `Mail Key` | `k` | 邮件 |
-| `Quick Tool Key` | `r` | 快捷工具 |
-
-**集成工业（DEFAULT_INDUSTRY_KEYS）**
-
-| 配置键名 | 默认按键 | 说明 |
-|---------|---------|------|
-| `Industry Plan Key` | `t` | 工业规划 |
-| `Place Belt Key` | `e` | 放置传送带 |
-| `Place Pipeline Key` | `q` | 放置管道 |
-| `Equipment List Key` | `z` | 设备列表 |
-| `Overview Mode Key` | `capslock` | 全局视图 |
-| `Storage Mode Key` | `x` | 仓库模式 |
-
-**战斗（DEFAULT_COMBAT_KEYS）**
-
-| 配置键名 | 默认按键 | 说明 |
-|---------|---------|------|
-| `Link Skill Key` | `e` | 连携技 |
-
-### 方法
-
-#### `resolve_common_key`
-
-```python
-def resolve_common_key(
-    self,
-    key: str,
-) -> str
-```
-
-将默认通用按键值映射为用户自定义值。若用户未自定义，返回原值。
-
-```python
-actual = self.key_manager.resolve_common_key('m')  # 返回用户设置的地图键
-```
-
-#### `resolve_industry_key`
-
-```python
-def resolve_industry_key(
-    self,
-    key: str,
-) -> str
-```
-
-将默认工业按键值映射为用户自定义值。
-
-#### `resolve_combat_key`
-
-```python
-def resolve_combat_key(
-    self,
-    key: str,
-) -> str
-```
-
-将默认战斗按键值映射为用户自定义值。
-
-#### `update_config`
-
-```python
-def update_config(
-    self,
-    key_config: dict,
+```text
+def click(
+    self, x=-1, y=-1, move_back=False, name=None, interval=-1,
+    move=True, down_time=0.01, after_sleep=0,
+    key="left", hcenter=False, vcenter=False,
 )
 ```
 
-更新用户按键配置（通常在任务初始化时由框架自动调用）。
+`click` 在调用框架点击前先做危险状态检查；检测到危险图标会终止游戏并抛异常。可将 `Box` 作为第一个位置参数传入：
 
----
+```python
+self.click(confirm_box, after_sleep=0.5)
+self.click(0.5, 0.5)
+```
 
-## 4. BattleMixin
+```text
+def click_with_alt(
+    self, x=-1, y=-1, move_back=False, name=None, interval=-1,
+    move=True, down_time=0.01, after_sleep=0, key="left",
+)
 
-战斗能力 Mixin，提供技能释放、战斗状态检测、排轴等能力。
+def scroll(self, x: int, y: int, count: int) -> None
+def scroll_relative(self, x: float, y: float, count: int) -> None
+```
+
+`scroll` 使用窗口内像素位置；`scroll_relative` 使用 `0..1` 比例位置。正数向上、负数向下。需要控制游戏视角滚轮的代码当前另有直接调用 `pyautogui.scroll` 的场景，不能假定 UI 滚动封装适合所有视角操作。
+
+```text
+def press_key(self, key: str, down_time=0.02, after_sleep=0, interval=-1)
+def press_industry_key(self, key: str, down_time=0.02, after_sleep=0, interval=-1)
+def press_combat_key(self, key: str, down_time=0.02, after_sleep=0, interval=-1)
+def move_keys(self, keys, duration, need_back=False)
+```
+
+前三个方法分别以 `common`、`industry`、`combat` 类型调用 `KeyConfigManager.resolve_key`，参数传默认按键值，例如 `self.press_key("m")`。`move_keys` 用于 `w/a/s/d` 等持续移动；当前实现不使用 `need_back` 参数。
+
+```text
+def dodge_forward(self, pre_hold=0.004, dodge_down_time=0.003, after_sleep=0.005)
+def dodge_backward(self, pre_hold=0.004, dodge_down_time=0.003, after_sleep=0.005)
+
+def move_to_target_once(
+    self, ocr_obj, max_step=100, min_step=20,
+    slow_radius=200, deadzone=4,
+)
+```
+
+步长、减速半径和死区会按当前分辨率缩放。
+
+### 1.5 场景与 UI
+
+```text
+def is_main(self, esc=False, need_active=True) -> bool
+def ensure_main(self, esc=True, time_out=90, after_sleep=2, need_active=True)
+def in_world(self)
+def in_combat_world(self)
+```
+
+- `in_world` 通过 `esc` 特征判断处于大世界，并设置 `_logged_in=True`。
+- `in_combat_world` 通过 `top_left_tab` 特征判断战斗场景；它不是“非战斗大世界”判断。
+- `is_main` 会依次尝试大世界检测、登录奖励/月卡弹窗处理、已知确认弹窗和 OCR 规则；`esc=True` 时最后按返回。
+- `ensure_main` 反复调用 `is_main`，默认超时为 90 秒，失败抛异常。
+
+```text
+def ensure_map(self, addtional_feature=None, time_out=30)
+```
+
+反复发送配置化地图键 `m`，通过 `in_map`、`transaction_icon`、`main_centre_icon` 或附加特征确认地图。参数名源码中保留拼写 `addtional_feature`。
+
+```text
+def wait_ui_stable(
+    self, method="phash", threshold=5, stable_time=0.5,
+    max_wait=5, refresh_interval=1, box=None,
+)
+```
+
+支持 `phash`、`dhash`、`pixel`、`ssim`。`box` 可为 `Box` 或 `(x, y, width, height)`。对于 `ssim`，`threshold` 是相似度，调用方通常应传如 `0.98` 的浮点值，而不是默认整数 `5`。
+
+```text
+def safe_back(self, match=None, feature=None, box=None,
+              time_out=30, once_time_out=2) -> bool
+```
+
+至少提供 `match` 或 `feature`；目标未出现时持续返回，成功返回 `True`，总超时返回 `False`。
+
+### 1.6 YOLO
+
+```text
+def yolo_detect(
+    self, name: str | list[str], frame=None, box=None, conf=0.7,
+    detections=None, model_key=None,
+) -> list[Box]
+
+def list_yolo_models(self) -> list[str]
+def list_yolo_targets(self, model_key: str | None = None) -> list[str]
+def set_yolo_model(self, model_key: str)
+def release_yolo_detector(self)
+```
+
+模型注册以 [src/yolo/models.py](../../src/yolo/models.py) 为准。未传 `model_key` 时，根据第一个目标名称路由模型；传 `detections` 可跳过推理用于测试。ROI 检测结果会映射回全屏坐标，按置信度降序返回。空 `name` 抛 `ValueError`。开启框架 `use_overlay` 后，原始结果画黄色框、筛选结果画红色框。
+
+## 2. 配置 API
+
+### 2.1 任务配置
+
+任务通过框架属性增量注册配置：
+
+```python
+self.default_config.update({"启用功能": True})
+self.config_description.update({"启用功能": "控制是否执行该步骤。"})
+self.config_type["模式"] = {
+    "type": "drop_down",
+    "options": ["快速", "稳定"],
+}
+self.default_config_group.update({"常用": ["启用功能", "模式"]})
+```
+
+运行时使用 `self.config.get(key, default)`。`BaseEfTask.load_config()` 会按完整 MRO 收集各类的 `config_key_migrations`，先迁移 `configs/<TaskClass>.json` 的旧键，再调用框架加载。
+
+```text
+def register_config_groups(self, groups: dict, dropdown_name="配置选择")
+```
+
+该方法创建带 `sub_configs` 的下拉配置，并为分组内尚无默认值的键补 `None`。它会直接使用 `self.config_description.update(...)`，调用前应确保任务已按框架惯例初始化配置字典。
+
+### 2.2 全局配置
+
+```python
+from src.core.global_config_store import (
+    KEY_CONFIG_NAME,
+    get_global_config,
+)
+
+hotkeys = get_global_config(KEY_CONFIG_NAME)
+map_key = hotkeys.get("Map Key", "m")
+```
+
+当前全局配置项：
+
+| 常量/名称 | 内容 |
+|-----------|------|
+| `Game Hotkey Config` | 通用、工业、战斗键位 |
+| `Battle Config` | `DEFAULT_BATTLE_CONFIG` 战斗参数 |
+| `Ensure Main Once Action Sleep` | `SingleActionWithDelay` |
+
+`get_global_config(name)` 返回持久化 `ok.util.config.Config`。未知名称只有在已加载配置中能找到对应键时才回退返回该配置，否则抛 `RuntimeError`。全局配置页由 `get_all_visible_configs()` 和 `GlobalConfigTab` 构建。
+
+### 2.3 按键配置
+
+```python
+class KeyConfigManager:
+    def __init__(self, key_config: dict = None): ...
+    def update_config(self, key_config: dict): ...
+    def resolve_key(self, key: str, key_type: str = "common") -> str: ...
+```
+
+不存在 `resolve_common_key`、`resolve_industry_key` 或 `resolve_combat_key`。`resolve_key` 在指定默认表中按默认值反查配置名称，再读取用户值；找不到时原样返回。
+
+当前默认表比旧文档多出以下键：
+
+- 通用：`Handbook Key=f8`、`Recruitment Key=f9`
+- 工业：`Area Build Key=y`、`Blueprint Key=f1`、`Product Icon Toggle Key=f4`
+
+所有可改键操作应走 `press_key`/`press_industry_key`/`press_combat_key`。固定技能数字、方向键和系统修饰键等代码可按其明确语义使用底层发送接口。
+
+### 2.4 战斗配置与账号覆盖
+
+```text
+def get_battle_config(self, key: str, default=None)
+```
+
+`BattleMixin` 的读取顺序：
+
+1. `BattleConfigManager` 从全局 `Battle Config` 取值。
+2. 任务配置 `战斗配置` 为 `使用全局配置` 时直接返回全局值。
+3. 为 `使用独立配置` 时读取当前任务配置，以全局值兜底。
+4. `AccountOverrideMixin` 绑定后的 `self.config.get` 可再按当前稳定账号 ID 应用账号任务覆盖；账号覆盖优先级最高。
+
+账号上下文通过以下接口设置：
+
+```text
+def set_current_account(self, username, account_id)
+
+def iter_multi_account_context(
+    self, repeat_times=1, empty_accounts_message=None,
+    account_log_suffix="", allow_multi_account=True,
+)
+```
+
+`iter_multi_account_context` 在多账户模式下解析账号列表、绑定账号覆盖并调用 `login_flow(username)`；单账号模式清空账号上下文。账号列表每行只需要账号，旧 `账号, 密码` 格式仅取逗号前账号，密码被忽略。
+
+## 3. 业务 Mixin
+
+### 3.1 BattleMixin
 
 ```python
 from src.tasks.mixin.battle_mixin import BattleMixin
 ```
 
-#### `in_combat`
-
-```python
-def in_combat(
-    self,
-    required_yellow=0,
-) -> bool
-```
-
-判断是否处于战斗状态。`required_yellow` 为必要的黄色格子数（用于更严格的判定）。
-
-#### `in_team`
-
-```python
-def in_team(self) -> bool
-```
-
-判断是否已组队（队伍成员 > 1）。
-
-#### `is_combat_ended`
-
-```python
-def is_combat_ended(self) -> bool
-```
-
-判断战斗是否结束（检测结算/奖励界面）。
-
-#### `wait_in_combat`
-
-```python
-def wait_in_combat(
-    self,
-    time_out=3,
-    click=False,
-) -> bool
-```
-
-等待进入战斗状态。`click=True` 时会同时持续点击鼠标触发攻击。
-
-#### `use_ult`
-
-```python
-def use_ult(
-    self,
-    ult_sequence: str = None,
-)
-```
-
-释放终极技能。`ult_sequence` 为角色序列字符串（如 `'1234'`），`None` 时使用配置值。
-
-#### `use_link_skill`
-
-```python
+```text
+def in_combat(self, required_yellow=0)
+def in_team(self)
+def is_combat_ended(self)
+def wait_in_combat(self, time_out=3, click=False)
+def get_skill_bar_count(self)
+def ocr_lv(self)
+def use_ult(self, ult_sequence: str = None)
 def use_link_skill(self)
-```
-
-释放连携技（按 `Link Skill Key`）。
-
-#### `perform_attack_weave`
-
-```python
-def perform_attack_weave(self)
-```
-
-执行普攻排轴（按配置的技能序列持续输出）。
-
-#### `approach_enemy`
-
-```python
 def approach_enemy(self)
+def auto_battle(self, no_battle: bool = False)
 ```
 
-向最近敌人靠近（移动至攻击范围内）。
+关键语义：
 
-#### `auto_battle`
+- `in_team` 要求四个 `skill_1..4` 中至少三个特征存在。
+- `in_combat` 要求技能条数量达到阈值、处于队伍且没有等级 UI。
+- `is_combat_ended` 要求内部退出条件连续命中两次；该条件是“出现等级 UI 或不在队伍”。
+- `use_ult(None)` 按 `1..4` 寻找可用终极技；传值时只尝试该角色。返回是否释放成功。
+- `use_link_skill` 仅在识别到连携技特征后发送配置化战斗键 `e`。
+- `auto_battle` 每轮委托 `AutoCombatLogic.run`，全局保护超时 420 秒；`no_battle=True` 传给战斗逻辑，使其等待而不主动战斗。成功/失败返回布尔值。
+- 战斗结束并非通过 YOLO 单一判断；当前循环还结合战斗时间和 `battle_space_left`/`b` 特征。
 
-```python
-def auto_battle(
-    self,
-    no_battle: bool = False,
-)
-```
+### 3.2 MapMixin
 
-完整自动战斗循环：持续普攻/技能/终极，直到战斗结束。`no_battle=True` 时仅等待战斗结束而不主动攻击。
-
-#### `get_skill_bar_count`
-
-```python
-def get_skill_bar_count(self) -> int
-```
-
-通过图像识别获取当前技能槽数量。
-
-#### `ocr_lv`
-
-```python
-def ocr_lv(self) -> int | None
-```
-
-OCR 识别当前角色等级，返回整数或 `None`。
-
----
-
-## 5. MapMixin
-
-地图操作 Mixin，提供传送点导航能力。
-
-```python
+```text
 from src.tasks.mixin.map_mixin import MapMixin
+
+def task_to_transfer_point(self, test_target_box=None, search_box_resolver=None)
+def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False)
+def to_near_transfer_point(self, test_target_box)
 ```
 
-#### `task_to_transfer_point`
+`task_to_transfer_point` 从任务界面定位地图，地图稳定后可通过回调重新计算搜索区域，再调用 `to_near_transfer_point`。`to_near_transfer_point` 清理地图筛选、最多循环 16 次寻找传送点并点击传送按钮。各方法以布尔值报告流程是否完成。
 
-```python
-def task_to_transfer_point(
-    self,
-    test_target_box=None,
-)
-```
+### 3.3 NavigationMixin
 
-打开任务追踪界面，定位并执行传送点传送。`test_target_box` 用于测试时指定目标 Box。
-
-#### `to_near_transfer_point`
-
-```python
-def to_near_transfer_point(
-    self,
-    test_target_box,
-)
-```
-
-导航至附近传送点（短距离）。
-
----
-
-## 6. NavigationMixin
-
-导航循环 Mixin，提供目标追踪与自动对齐能力。
-
-```python
+```text
 from src.tasks.mixin.navigation_mixin import NavigationMixin
-```
 
-#### `navigate_until_target`
-
-```python
 def navigate_until_target(
-    self,
-    target_ocr_pattern,
-    nav_feature_name,
-    time_out: int = 60,
-    pre_loop_callback=None,
+    self, target, nav=None,
+    target_is_ocr=True, nav_is_ocr=False,
+    time_out=60, pre_loop_callback=None,
     found_special_callback=None,
+    target_is_yolo=False, nav_is_yolo=False,
+    box=None, target_vertical_variance=0.0,
+    need_v=False, max_run_time=-1,
 )
 ```
 
-持续导航直到目标 Feature 出现（到达目标点）。
+持续按 `W` 前进，目标和导航标识分别可用 OCR、YOLO 或 Feature。`nav=None` 表示纯直线搜索；`found_special_callback` 返回非 `None` 时该值直接作为函数结果。目标需持续稳定 2 秒（OCR）或 1 秒（其它方式）才返回 `True`。超时返回 `False`。`max_run_time` 只限制 `ctrl` 切换的奔跑累计时间，不限制按住 `W`：`-1` 不限制，`0` 全程步行，正数达到上限后切步行。
 
-| 参数 | 说明 |
-|------|------|
-| `target_feature_in_map` | 地图上的目标特征（小地图图标等） |
-| `target_feature_out_map` | 到达目标后屏幕上出现的特征（如 NPC 交互框） |
-| `time_out` | 最大等待秒数 |
-
-#### `start_tracking_and_align_target`
-
-```python
+```text
 def start_tracking_and_align_target(
-    self,
-    target_feature_in_map,
-    target_feature_out_map,
+    self, target_feature_in_map, target_feature_out_map,
 )
 ```
 
-启动追踪：循环对齐目标方向并前进，直到发现目标出现在地图外（即已到达）。
+在地图点击目标并启动追踪，关闭地图，等待地图外图标并做水平对齐；返回布尔值。
 
-#### `align_ocr_or_find_target_to_center`
-
-```python
+```text
 def align_ocr_or_find_target_to_center(
-    self,
-    ocr_match_or_feature_name_list,
-    only_x=False,
-    only_y=False,
-    box=None,
-    threshold=0.8,
-    max_time=50,
-    ocr=True,
-    use_yolo=False,
-    back_prev=False,
-    raise_if_fail=True,
-    is_num=False,
-    need_scroll=False,
-    max_step=100,
-    min_step=20,
-    slow_radius=200,
-    once_time=0.5,
-    tolerance=TOLERANCE,
-    ocr_frame_processor_list=None,
+    self, ocr_match_or_feature_name_list,
+    only_x=False, only_y=False, box=None, threshold=0.8,
+    max_time=50, ocr=True, use_yolo=False, back_prev=False,
+    raise_if_fail=True, is_num=False, need_scroll=False,
+    max_step=120, min_step=20, slow_radius=350, deadzone=8,
+    once_time=0.05, tolerance=50,
+    ocr_frame_processor_list=None, allow_random_move=True,
 )
 ```
 
-旋转视角（水平鼠标移动）使目标特征或 OCR 文字居中。
+在 OCR、Feature 或 YOLO 模式下将目标对齐屏幕中心。`max_time` 是算法尝试尺度，内部最多循环 `max_time * 2`，不是秒数。失败时默认抛异常；`raise_if_fail=False` 返回 `False`。`back_prev` 参数当前未被方法体使用。
 
-| 参数 | 说明 |
-|------|------|
-| `target_feature` | 目标特征名（优先使用） |
-| `ocr_match` | OCR 匹配条件（`target_feature` 为 `None` 时使用） |
-| `box` | 搜索区域 |
-| `max_step` | 每步最大像素偏移 |
-| `min_step` | 减速阶段最小步长 |
-| `slow_radius` | 距中心多少像素内开始减速 |
+### 3.4 LiaisonMixin
 
----
-
-## 7. LiaisonMixin
-
-干员联络 Mixin，提供帝江号导航、联络站寻路、送礼完整流程。继承自 `NavigationMixin`。
-
-```python
+```text
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
-```
 
-#### `transfer_to_home_point`
-
-```python
-def transfer_to_home_point(
-    self,
-    box=None,
-    should_check_out_boat=False,
-)
-```
-
-传送到帝江号右侧传送点（使用大地图传送）。`should_check_out_boat=True` 时若当前在好友船则先退出。
-
-#### `navigate_to_main_hall`
-
-```python
+def transfer_to_home_point(self, box=None, should_check_out_boat=False)
 def navigate_to_main_hall(self) -> bool
-```
-
-从传送点导航至帝江号主厅。返回是否成功。
-
-#### `navigate_to_operator_liaison_station`
-
-```python
 def navigate_to_operator_liaison_station(self)
-```
-
-从主厅导航至干员联络站（自动追踪并对齐 NPC）。
-
-#### `perform_operator_liaison`
-
-```python
 def perform_operator_liaison(self)
-```
-
-执行完整的干员联络流程：寻路 → 交互 → 送礼 → 领奖 → 退出。
-
-#### `collect_and_give_gifts`
-
-```python
+def collect_gifts(self, time_out=30)
+def give_gifts(self, time_out=30, gift_entry_clicked=False)
 def collect_and_give_gifts(self)
 ```
 
-在联络站内遍历所有可送礼干员并完成送礼。
+- `transfer_to_home_point` 默认在地图左半屏找传送点；调用方传 `box=self.box.right` 才是右侧点。`should_check_out_boat=True` 的实际语义是：若点击不到帝江号入口，则认为已经在帝江号区域并直接返回主界面，不会执行“退出好友船”。
+- `navigate_to_main_hall` 最多向前移动两次并 OCR 区域名；即使未识别到也记录日志后返回 `True`，是宽松检查。
+- `navigate_to_operator_liaison_station` 使用地图追踪和 `navigate_until_target`；途中发现聊天图标可返回 `LiaisonResult.FIND_CHAT_ICON`，因此返回值不只布尔值。
+- `perform_operator_liaison` 选择配置的优先对象，找不到时回退任一可联络对象，完成联络界面、目标对齐和聊天交互；它不包含收礼/送礼步骤。
+- `collect_and_give_gifts` 处理当前交流界面中的收礼或送礼入口；收礼成功后继续尝试送礼。
 
----
+### 3.5 ZipLineMixin
 
-## 8. ZipLineMixin
-
-滑索操作 Mixin，提供滑索距离识别与连续移动能力。继承自 `NavigationMixin`。
-
-```python
+```text
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
-```
 
-#### `on_zip_line_start`
-
-```python
 def on_zip_line_start(
-    self,
-    delivery_to,
-    need_scroll=None,
+    self, delivery_to, need_scroll=None, target=None, need_v=True,
 )
-```
 
-启动单段滑索：等待出现滑索距离标识 → OCR 识别距离 → 对齐 → 按 `E` 发射。`delivery_to` 为目标位置描述。
-
-#### `zip_line_list_go`
-
-```python
 def zip_line_list_go(
-    self,
-    zip_line_list,
-    need_scroll=None,
+    self, zip_line_list, need_scroll=None, target=None, need_v=False,
 )
+
+def ensure_click_on_zip_line(self, max_attempts=5)
 ```
 
-顺序执行多段滑索列表 `zip_line_list`，每段调用 `on_zip_line_start`。
+`on_zip_line_start` 先等待滑索 UI，随后从 `self.config[delivery_to]` 读取整数序列并调用 `zip_line_list_go`；它不是接收距离列表的入口。每段距离通过金色/白色 HSV 预处理 OCR 并居中，点击进入滑索后持续发送固定键 `e`，直到滑索 UI 再次出现。单段等待上限 240 秒；初始滑索 UI 等待上限 60 秒，超时抛异常。
 
----
+`target` 为 `(目标, "ocr" | "yolo" | 其它)`，用于最后一段后的目标对齐；其它类型按 Feature 处理。流程末尾确保回到主界面。
 
-## 9. LoginMixin
+### 3.6 LoginMixin
 
-登录流程 Mixin，提供自动登出、密码登录完整流程。
-
-```python
+```text
 from src.tasks.mixin.login_mixin import LoginMixin
-```
 
-#### `login_flow`
-
-```python
-def login_flow(
-    self,
-    username: str,
-    password: str,
+def login_flow(self, username: str, password: str | None = None)
+def click_text(
+    self, match: str, box=None,
+    need_wait_disappear=True, success_match=None,
 )
 ```
 
-完整登录流程：登出当前账号 → 输入用户名/密码 → 等待进入主界面。
+`login_flow` 不是用户名密码输入流程。它用于切换到登录界面的“最近账号”：
 
----
+1. 判断当前是否已登录，必要时回到主界面并退出当前账号。
+2. 等待登录界面的 `logout` 特征并确认登出。
+3. 点击“最近”，再用 `username` 后四位 OCR 点击最近账号。
+4. 点击“登录”，通过重新出现 `logout` 特征确认成功。
 
-## 10. 装备词条识别轮子（纯算法层）
+`password` 仅为旧调用兼容参数，当前不存储、不输入、也不参与账号判定。失败路径可能返回 `False` 或抛 `RuntimeError`；成功无显式返回值。后四位匹配要求最近账号列表中后四位唯一。
 
-装备词条识别模块保留为可复用轮子。当前不再提供旧的一次性任务入口；自动遍历、上锁、弃置等 UI 自动化逻辑已移除。
-
-```python
-from src.essence.essence_recognizer import parse_essence_panel, read_essence_info, EssenceInfo, EssenceEntry
-from src.essence.weapon_data import load_weapon_data, match_weapon_requirements
-```
-
-### 数据类
-
-#### `EssenceEntry`
+## 4. 语言资源 API
 
 ```python
-@dataclass
-class EssenceEntry:
-    name: str       # 词条名称
-    level: int | None = None      # 词条强化等级
+from src.data.lang import (
+    ACTIVE_LOCALES_CONFIG,
+    SUPPORTED_LOCALES,
+    get_lang_accessor,
+    get_lang_module_value,
+)
 ```
 
-#### `EssenceInfo`
+每个模块对应单个 `assets/lang/<module>.json`：
 
-```python
-@dataclass
-class EssenceInfo:
-    name: str                  # 基质名称
-    source: str | None          # 来源标注（如装备类型）
-    entries: tuple[EssenceEntry, ...] # 词条列表
-    is_gold: bool               # 是否为金色/高阶词条面板
-
-    @property
-    def entry_names(self) -> tuple[str, ...]: ...   # 所有词条名元组
-    def key(self) -> str: ...                       # 用于匹配规则的唯一键
+```json
+{
+  "k_confirm": {
+    "zh_CN": {"string": "确认"},
+    "zh_TW": {"string": "確認"}
+  },
+  "k_amount": {
+    "zh_CN": {"pattern": "^\\d+$"},
+    "zh_TW": {"pattern": "^\\d+$"}
+  }
+}
 ```
 
-### 函数
+访问 `self.lang.<module>.<key>` 时，`string` 返回字符串、`pattern` 返回编译后的正则、`terms` 返回列表。直接属性解析的优先级是 `string`、`pattern`、`terms`；`LangNode.as_matcher()`/`build_matcher()` 的优先级是 `pattern`、`string`、`terms`。正常资源节点应只设置其中一种，避免依赖该差异。
 
-#### `parse_essence_panel`
-
-```python
-def parse_essence_panel(texts: Sequence[Box]) -> EssenceInfo | None
-```
-
-从 OCR 结果列表（`task.ocr()` 返回值）中解析装备词条面板，返回 `EssenceInfo` 或 `None`。纯算法，无截图依赖。
-
-#### `attach_essence_levels`
-
-```python
-def attach_essence_levels(info: EssenceInfo, level_boxes: Sequence[Box]) -> tuple[EssenceEntry, ...]
-```
-
-将单独 OCR 到的等级 Box 按垂直顺序附加到已解析词条，适合等级数字与词条名称分开识别的场景。
-
-#### `read_essence_info`
-
-```python
-def read_essence_info(task) -> EssenceInfo | None
-```
-
-高层封装：截图 → OCR → `parse_essence_panel`，直接返回当前屏幕的装备词条信息。该函数只作为后续任务复用入口，不再对应独立任务。
-
-#### `ocr_essence_panel`
-
-```python
-def ocr_essence_panel(task) -> list[Box]
-```
-
-对当前屏幕进行装备词条面板 OCR，返回原始 OCR Box 列表。
-
-#### `load_weapon_data` / `match_weapon_requirements`
-
-```python
-requirements = load_weapon_data("assets/weapon_data.csv")
-matches = match_weapon_requirements(requirements, info.entry_names)
-```
-
-CSV 读取与词条集合匹配能力保留，供后续任务或离线分析复用。
-
----
-
-## 11. 数据工具函数
-
-### world_map_utils
-
-```python
-from src.data.world_map_utils import get_area_by_outpost_name, get_goods_by_outpost_name, get_stage_category
-```
-
-#### `get_area_by_outpost_name`
-
-```python
-def get_area_by_outpost_name(outpost_name: str) -> str
-```
-
-根据据点名称返回所属地区名。
-
-```python
-area = get_area_by_outpost_name("武陵-西城")  # → "武陵"
-```
-
-#### `get_goods_by_outpost_name`
-
-```python
-def get_goods_by_outpost_name(outpost_name: str) -> list[str]
-```
-
-返回指定据点可交易的货品列表。
-
-#### `get_stage_category`
-
-```python
-def get_stage_category(stage_name: str) -> str
-```
-
-根据副本名称返回副本类型分类（如「普通」「高阶」「能量淤积点」）。
-
----
-
-### characters_utils
-
-```python
-from src.data.characters_utils import get_contact_list_with_feature_list
-```
-
-#### `get_contact_list_with_feature_list`
-
-```python
-def get_contact_list_with_feature_list() -> dict[str, str]
-```
-
-返回当前可联络干员的字典：`{内部英文 key: Feature 图片名}`，用于联络站寻路时的模板匹配。
-
----
-
-### build_name_patterns
-
-```python
-from src.tasks.mixin.common import build_name_patterns
-```
-
-#### `build_name_patterns`
-
-```python
-def build_name_patterns(find_name: str) -> list[re.Pattern]
-```
-
-将干员名称（中文或英文）转换为 OCR 匹配用的正则列表，自动处理常见 OCR 误识字符。
-
-```python
-patterns = build_name_patterns("凯尔希")
-result = self.wait_ocr(match=patterns[0], box=name_box)
-```
+当前活动 OCR locale 只有 `zh_CN` 和 `zh_TW`；其它四种 locale 虽可存在于 JSON 和 gettext 目录，但在 `ACTIVE_LOCALES_CONFIG` 中关闭，不会进入 `SUPPORTED_LOCALES`。完整维护流程见 [i18n 与 OCR 配置流程](i18n_OCR配置流程.md)。

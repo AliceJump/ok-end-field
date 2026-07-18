@@ -4,7 +4,7 @@
 
 ## 概述
 
-替换油猴脚本转发方案，直接在项目内集成终末地官方地图的 `wss://ws.skland.com` WebSocket 客户端。
+在保留油猴脚本转发兼容模式的同时，项目内集成终末地官方地图的 `wss://ws.skland.com/ws/v1/game/endfield/map` WebSocket 客户端。
 每个账号（玩家角色）需要独立的 `hg/check` credential 才能建立连接。
 凭证可填写在任务直接输入（`content` 字段）或存储在账号配置页（`map_contents` 中），项目自动执行 OAuth 换取流程。
 
@@ -20,7 +20,7 @@
 ### 凭证解析优先级
 1. 任务 `content` 非空 → 直接使用
 2. 任务 `地图账号` 非空 → 从 `map_contents` 读取该账号的 content
-3. 任务当前登录账号 context → 从 `map_contents` 读取
+3. 任务当前登录账号 context → 从 `map_contents` 读取；触发任务自身没有 context 时，还会读取 executor 当前运行任务的 `current_account_id/current_user`
 
 ### 不带凭证时的回退
 `content` 和 `地图账号` 均为空时，自动启动旧的本地 WS 服务端模式（监听 `ws://127.0.0.1:3001`），兼容油猴脚本或其他外部来源。
@@ -31,11 +31,13 @@
 flowchart TD
     A[hg/check data.content] --> B[POST Hypergryph OAuth grant]
     B --> C[取得 oauth code]
-    C --> D[POST generate_cred_by_code]
+    C --> D[POST zonai.skland.com/web/v1/user/auth/generate_cred_by_code]
     D --> E[取得 cred / sign token / userId]
-    E --> F[GET websocket token]
-    F --> G[连接 wss://ws.skland.com]
-    G --> H[发送 type=1 token 鉴权]
+    E --> F[GET user 和 player binding]
+    F --> G[解析默认终末地角色]
+    G --> H[GET websocket token]
+    H --> I[连接官方地图 WS endpoint]
+    I --> J[发送 type=1 token 鉴权]
 ```
 
 ## HTTP 签名算法
@@ -72,8 +74,8 @@ sequenceDiagram
     loop 每 10 秒
         C->>S: type=3 心跳
     end
-    loop 直到收到位置数据
-        C->>S: type=1011 roleId/serverId 初始化
+    loop 鉴权后每 5 秒
+        C->>S: type=1011 roleId/serverId 初始化/刷新
         S-->>C: type=1012 pos/mapId/levelId
     end
     S-->>C: type=6 token 过期
@@ -86,10 +88,17 @@ sequenceDiagram
 | 2 | S→C | auth 成功确认 |
 | 3 | C→S | 心跳（每 10s） |
 | 6 | S→C | token 过期（`code=10002`），需重新获取 ws token 后发 type=1 |
-| 1011 | C→S | 初始化：`{roleId, serverId}`（每 5s 发送一次直到收到 1012） |
+| 1011 | C→S | 初始化/刷新：`{roleId, serverId}`（鉴权后每 5s 发送一次） |
 | 1012 | S→C | 位置数据：`{data: {pos: {x,y,z}, mapId, levelId}}` |
 
 客户端收到的位置数据通过 `_push_ws_payload()` 放入统一队列，与本地 WS 服务端模式共用同一套消费逻辑。
+
+### 角色解析规则
+
+1. 先请求 `/web/v1/user`；再请求 `/api/v1/game/player/binding`。若后者失败且 cred 响应带 `userId`，则以 `uid=userId` 重试。
+2. 优先读取 `data.gameMap.endfield`；缺失时在 `data.list` 中查找 `appCode == "endfield"`。
+3. `bindingList` 优先选择 `isDefault` 项，否则取第一项。
+4. 角色优先取该项的 `defaultRole`，否则取 `roles[0]`；最终必须同时有 `roleId` 与 `serverId`。
 
 ## 多账号架构
 
@@ -130,7 +139,7 @@ configs/account_scoped_overrides.json
 
 ### UI (`AccountConfigTab.py`)
 - 重新构建账户下拉时，从 `map_contents` 键集合中也拉入账号列表
-- 地图 content 编辑区：TextEdit + 保存/清空按钮，绑定 `save_current_map_content` / `clear_current_map_content`
+- 地图 content 编辑区：单行 `LineEdit`，随当前账号配置统一保存
 
 ## 安全退出机制
 
@@ -141,7 +150,7 @@ configs/account_scoped_overrides.json
 
 ### 2. 消费者空闲超时
 导航任务每次通过 `_recv_ws_position_payload()` 或 `_recv_ws_position_payload_or_cached()` 读取位置时，更新 `_map_ws_last_consume_at = time.time()`。
-WS 客户端线程检查 `_map_ws_should_stop_for_idle_consumer()`，若超过 `_map_ws_consumer_idle_timeout`（默认 30s）未被读取，则主动退出。
+WS 客户端线程检查 `_map_ws_should_stop_for_idle_consumer()`，若超过 `_map_ws_consumer_idle_timeout`（初始化默认 10s）未被读取，则主动退出。每次从队列取得新位置，或在队列为空时返回有效缓存位置，都会刷新消费时间。
 解决 executor disable 任务后 WS 线程继续空转的问题。
 
 ## ItemNavigatorTask 关键变更

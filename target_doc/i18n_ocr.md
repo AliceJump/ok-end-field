@@ -11,11 +11,13 @@
 
 当前链路：
 
+任务 OCR 与本地化业务文本的目标路径为 `assets/lang/<module>.json`。
+
 ```mermaid
 flowchart TD
     A[ok-script locale] --> B[BaseEfTask.runtime_locale]
     B --> C[get_lang_accessor]
-    C --> D[assets/lang/module/locale.json]
+    C --> D[assets/lang/module.json]
     D --> E[self.lang.module.key]
     E --> F[OCR match / wait_ocr / wait_click_ocr]
     G[assets/ocr_fix/ocr_text_fix.json] --> H[startup patches]
