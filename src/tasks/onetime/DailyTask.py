@@ -38,6 +38,14 @@ class DailyTask(
 ):
     """日常任务聚合执行器。"""
 
+    account_config_blacklist = {
+        "发生异常时终止游戏",
+        "仅退出游戏",
+        "自动打开汇总文件",
+        "Exit After Task",
+        "重复测试的次数",
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "日常任务"

@@ -68,6 +68,15 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
     TUTORIAL_LINK = "https://www.bilibili.com/video/BV1LLc7zFEF9"
     TUTORIAL_TIPS = "游戏内开启全屏模式时请确保游戏内分辨率与你的屏幕分辨率一致"
 
+    account_config_blacklist = {
+        CFG_TEST_TARGET,
+        CFG_ONLY_ACCEPT,
+        CFG_ONLY_DELIVER,
+        CFG_FULL_CYCLE_LOCATION,
+        "发生异常时终止游戏",
+        "Exit After Task",
+    }
+
     # 配置值常量
     TEST_NONE = "无"
     TEST_FULL_CYCLE = "完整循环测试"
