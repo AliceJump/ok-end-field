@@ -61,7 +61,10 @@ class _AccountConfigHarness:
     _account_config_base_value = staticmethod(AccountConfigTab._account_config_base_value)
     _coerce_like = staticmethod(AccountConfigTab._coerce_like)
     _build_virtual_config = AccountConfigTab._build_virtual_config
-    save_current_task_override = AccountConfigTab.save_current_task_override
+    _apply_current_task_override = AccountConfigTab._apply_current_task_override
+    _apply_current_map_content = AccountConfigTab._apply_current_map_content
+    _has_current_task_changes = AccountConfigTab._has_current_task_changes
+    _save_pending_changes = AccountConfigTab._save_pending_changes
 
 
 class TestAccountConfigRules(unittest.TestCase):
@@ -95,32 +98,123 @@ class TestAccountConfigRules(unittest.TestCase):
         self.assertEqual(base_values["额外配置"], 9)
         self.assertEqual(total, 4)
 
-    def test_saving_visible_values_preserves_hidden_overrides(self):
+    def test_saving_visible_values_removes_blacklisted_overrides(self):
         tab = _AccountConfigHarness()
         tab.current_virtual_config = {"普通配置": 5}
         tab.current_task = _DummyTask()
         tab.current_account_key = "acc"
         tab.current_editable_keys = ["普通配置"]
+        tab.current_base_values = {"普通配置": 1}
+        tab.current_original_values = {"普通配置": 1}
         tab.overrides_data = {
             "accounts": {
                 "acc": {
                     "_DummyTask": {
                         "隐藏配置": 8,
+                        "未显示合法配置": 9,
                     }
                 }
             }
         }
-        tab.rebuild_account_selector = Mock()
+        changed = tab._apply_current_task_override(cleanup_blacklist=True)
+
+        self.assertTrue(changed)
+        saved = tab.overrides_data["accounts"]["acc"]["_DummyTask"]
+        self.assertEqual(saved, {"未显示合法配置": 9, "普通配置": 5})
+
+    def test_unchanged_visible_values_do_not_write_overrides(self):
+        tab = _AccountConfigHarness()
+        tab.current_virtual_config = {"普通配置": 5}
+        tab.current_task = _DummyTask()
+        tab.current_account_key = "acc"
+        tab.current_editable_keys = ["普通配置"]
+        tab.current_base_values = {"普通配置": 1}
+        tab.current_original_values = {"普通配置": 5}
+        tab.overrides_data = {
+            "accounts": {
+                "acc": {
+                    "_DummyTask": {
+                        "普通配置": 5,
+                    }
+                }
+            }
+        }
+
+        changed = tab._apply_current_task_override(cleanup_blacklist=True)
+        self.assertFalse(changed)
+
+    def test_restoring_base_value_removes_existing_override(self):
+        tab = _AccountConfigHarness()
+        tab.current_virtual_config = {"普通配置": 1}
+        tab.current_task = _DummyTask()
+        tab.current_account_key = "acc"
+        tab.current_editable_keys = ["普通配置"]
+        tab.current_base_values = {"普通配置": 1}
+        tab.current_original_values = {"普通配置": 5}
+        tab.overrides_data = {
+            "accounts": {
+                "acc": {
+                    "_DummyTask": {
+                        "普通配置": 5,
+                    }
+                }
+            }
+        }
+
+        changed = tab._apply_current_task_override(cleanup_blacklist=True)
+
+        self.assertTrue(changed)
+        self.assertNotIn("acc", tab.overrides_data["accounts"])
+
+    def test_pending_save_merges_latest_external_overrides(self):
+        tab = _AccountConfigHarness()
+        tab.current_virtual_config = {"普通配置": 6}
+        tab.current_task = _DummyTask()
+        tab.current_account_key = "acc"
+        tab.current_editable_keys = ["普通配置"]
+        tab.current_base_values = {"普通配置": 1}
+        tab.current_original_values = {"普通配置": 5}
+        tab.current_map_account_key = ""
+        tab.overrides_data = {"accounts": {"acc": {"_DummyTask": {"普通配置": 5}}}}
+        latest = {
+            "accounts": {
+                "acc": {"_DummyTask": {"普通配置": 5}},
+                "other": {"OtherTask": {"值": 9}},
+            }
+        }
 
         with patch(
-            "src.gui.AccountConfigTab.save_overrides",
-            side_effect=lambda data: data,
+            "src.gui.AccountConfigTab.update_overrides",
+            side_effect=lambda updater: updater(latest),
         ):
-            tab.save_current_task_override()
+            tab._save_pending_changes()
 
-        saved = tab.overrides_data["accounts"]["acc"]["_DummyTask"]
-        self.assertEqual(saved, {"隐藏配置": 8, "普通配置": 5})
+        self.assertEqual(
+            tab.overrides_data["accounts"]["acc"]["_DummyTask"]["普通配置"],
+            6,
+        )
+        self.assertEqual(tab.overrides_data["accounts"]["other"]["OtherTask"]["值"], 9)
 
+    def test_external_convergence_advances_local_dirty_baseline(self):
+        tab = _AccountConfigHarness()
+        tab.current_virtual_config = {"普通配置": 6}
+        tab.current_task = _DummyTask()
+        tab.current_account_key = "acc"
+        tab.current_editable_keys = ["普通配置"]
+        tab.current_base_values = {"普通配置": 1}
+        tab.current_original_values = {"普通配置": 5}
+        tab.current_map_account_key = ""
+        latest = {"accounts": {"acc": {"_DummyTask": {"普通配置": 6}}}}
+
+        with patch(
+            "src.gui.AccountConfigTab.update_overrides",
+            side_effect=lambda updater: updater(latest),
+        ):
+            tab._save_pending_changes()
+
+        self.assertEqual(tab.current_original_values["普通配置"], 6)
+        tab.current_virtual_config["普通配置"] = 5
+        self.assertTrue(tab._has_current_task_changes())
 
 class TestBattleConfigOverrides(unittest.TestCase):
     def make_battle_task(self, config):

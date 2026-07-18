@@ -3,7 +3,7 @@ import json
 import os
 import threading
 import uuid
-from typing import Any, Dict, List, Tuple
+from typing import Any, Callable, Dict, List, Tuple
 
 from ok.util.file import ensure_dir_for_file, get_relative_path
 
@@ -366,10 +366,46 @@ def save_overrides(data: Dict[str, Any]) -> Dict[str, Any]:
     return copy.deepcopy(normalized)
 
 
+def update_overrides(updater: Callable[[Dict[str, Any]], Dict[str, Any]]) -> Dict[str, Any]:
+    global _CACHE_MTIME
+    global _CACHE_DATA
+
+    with _LOCK:
+        if os.path.exists(_STORE_PATH):
+            current_mtime: Any = os.path.getmtime(_STORE_PATH)
+            try:
+                with open(_STORE_PATH, "r", encoding="utf-8") as fp:
+                    current = _normalize(json.load(fp))
+            except Exception:
+                current = _new_store()
+        else:
+            current_mtime = None
+            current = _new_store()
+
+        updated = _normalize(updater(copy.deepcopy(current)))
+        if updated != current:
+            ensure_dir_for_file(_STORE_PATH)
+            with open(_STORE_PATH, "w", encoding="utf-8") as fp:
+                json.dump(updated, fp, ensure_ascii=False, indent=2)
+            current_mtime = os.path.getmtime(_STORE_PATH)
+
+        _CACHE_DATA = updated
+        _CACHE_MTIME = current_mtime
+        return copy.deepcopy(updated)
+
+
 def sync_account_list_text(text: str) -> Dict[str, Any]:
-    data = load_overrides(force=True)
-    updated, summary = _sync_account_list_text_on_data(data, text if isinstance(text, str) else str(text))
-    save_overrides(updated)
+    summary: Dict[str, Any] = {}
+
+    def apply(data):
+        updated, sync_summary = _sync_account_list_text_on_data(
+            data,
+            text if isinstance(text, str) else str(text),
+        )
+        summary.update(sync_summary)
+        return updated
+
+    update_overrides(apply)
     return summary
 
 
@@ -378,15 +414,22 @@ def resolve_account_id(username: str, create_if_missing: bool = False) -> str:
     if not account_name:
         return ""
 
-    data = load_overrides(force=create_if_missing)
-    registry = data.setdefault("account_registry", {})
-    account_id = _find_account_id_by_username(registry, account_name)
-    if account_id or not create_if_missing:
-        return account_id
+    if not create_if_missing:
+        data = load_overrides()
+        return _find_account_id_by_username(data.setdefault("account_registry", {}), account_name)
 
-    account_id = _ensure_registry_entry(registry, account_name)
-    save_overrides(data)
-    return account_id
+    result = {"account_id": ""}
+
+    def apply(data):
+        registry = data.setdefault("account_registry", {})
+        result["account_id"] = (
+            _find_account_id_by_username(registry, account_name)
+            or _ensure_registry_entry(registry, account_name)
+        )
+        return data
+
+    update_overrides(apply)
+    return result["account_id"]
 
 
 def get_account_task_overrides(account: str, task_name: str, account_name: str = "") -> Dict[str, Any]:
@@ -463,19 +506,20 @@ def set_account_map_content(account: str, content: str) -> None:
     if not account:
         return
 
-    data = load_overrides()
-    account_id = _resolve_account_id_for_write(data, account)
-    if not account_id:
-        return
-
-    map_contents = data.setdefault("map_contents", {})
     content = _clean_text(content).strip()
-    if content:
-        map_contents[account_id] = content
-    else:
-        map_contents.pop(account_id, None)
 
-    save_overrides(data)
+    def apply(data):
+        account_id = _resolve_account_id_for_write(data, account)
+        if not account_id:
+            return data
+        map_contents = data.setdefault("map_contents", {})
+        if content:
+            map_contents[account_id] = content
+        else:
+            map_contents.pop(account_id, None)
+        return data
+
+    update_overrides(apply)
 
 
 def _resolve_account_id_for_write(data: Dict[str, Any], account: str) -> str:
@@ -498,44 +542,41 @@ def set_account_task_overrides(account: str, task_name: str, values: Dict[str, A
     if not account or not task_name:
         return
 
-    data = load_overrides()
-    account_id = _resolve_account_id_for_write(data, account)
-    if not account_id:
-        return
+    def apply(data):
+        account_id = _resolve_account_id_for_write(data, account)
+        if not account_id:
+            return data
+        accounts = data.setdefault("accounts", {})
+        task_map = accounts.setdefault(account_id, {})
+        if values:
+            task_map[task_name] = dict(values)
+        else:
+            task_map.pop(task_name, None)
+        if not task_map:
+            accounts.pop(account_id, None)
+        return data
 
-    accounts = data.setdefault("accounts", {})
-    task_map = accounts.setdefault(account_id, {})
-
-    if values:
-        task_map[task_name] = dict(values)
-    else:
-        task_map.pop(task_name, None)
-
-    if not task_map:
-        accounts.pop(account_id, None)
-
-    save_overrides(data)
+    update_overrides(apply)
 
 
 def remove_account_task_overrides(account: str, task_name: str) -> None:
     if not account or not task_name:
         return
 
-    data = load_overrides()
-    account_id = _resolve_account_id_for_write(data, account)
-    if not account_id:
-        return
+    def apply(data):
+        account_id = _resolve_account_id_for_write(data, account)
+        if not account_id:
+            return data
+        accounts = data.get("accounts", {})
+        task_map = accounts.get(account_id)
+        if not isinstance(task_map, dict):
+            return data
+        task_map.pop(task_name, None)
+        if not task_map:
+            accounts.pop(account_id, None)
+        return data
 
-    accounts = data.get("accounts", {})
-    task_map = accounts.get(account_id)
-    if not isinstance(task_map, dict):
-        return
-
-    task_map.pop(task_name, None)
-    if not task_map:
-        accounts.pop(account_id, None)
-
-    save_overrides(data)
+    update_overrides(apply)
 
 
 def list_accounts() -> list[str]:
