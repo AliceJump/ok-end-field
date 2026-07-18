@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 from ok import Box
 
-from src.tasks.mixin.runtime_mixin import RuntimeMixin
+from src.core.base_mixin.runtime_mixin import RuntimeMixin
 
 
 class _DummyTask(RuntimeMixin):

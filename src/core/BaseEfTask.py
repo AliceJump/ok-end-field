@@ -8,11 +8,11 @@ from ok import BaseTask, TaskDisabledException
 from src.interaction.KeyConfig import KeyConfigManager
 from src.interaction.ScreenPosition import ScreenPosition
 from src.data.lang import get_lang_accessor
-from src.tasks.mixin.account_override_mixin import AccountOverrideMixin
-from src.tasks.mixin.game_flow_mixin import GameFlowMixin
-from src.tasks.mixin.process_manager import ProcessManager
-from src.tasks.mixin.runtime_mixin import RuntimeMixin
-from src.tasks.mixin.window_arrow_drawing_mixin import WindowArrowDrawingMixin
+from src.core.base_mixin.account_override_mixin import AccountOverrideMixin
+from src.core.base_mixin.game_flow_mixin import GameFlowMixin
+from src.core.base_mixin.process_manager import ProcessManager
+from src.core.base_mixin.runtime_mixin import RuntimeMixin
+from src.core.base_mixin.window_arrow_drawing_mixin import WindowArrowDrawingMixin
 from src.core.global_config_store import ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME, KEY_CONFIG_NAME, get_global_config
 from src.core.config_migration import migrate_config_file_keys
 
