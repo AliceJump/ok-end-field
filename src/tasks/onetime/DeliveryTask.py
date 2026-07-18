@@ -110,7 +110,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self.CFG_TEST_TARGET: "默认是无，表示正常执行相关任务\n也可以选择特定的滑索分叉序列来测试滑索功能\n选择完整循环测试则会依次测试每个送货目标的完整流程\n(需要锁定次要任务在送货任务上或附近)",
             self.CFG_ONLY_ACCEPT: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n仅接取当前地区委托，不送货',
             self.CFG_ONLY_DELIVER: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n接取当前地区委托后启动自动识别送货',
-            self.CFG_TARGET_TICKET_NUM: "目标券数优先级序列，用逗号分隔多个券数。按列表中顺序优先抢前面的券数。\n默认：119000。可选：73100、79800、119000",
+            self.CFG_TARGET_TICKET_NUM: "目标券数优先级序列，用逗号分隔多个券数。按列表中顺序优先抢前面的券数。\n默认：119000。可选：73100、79800、119000、159000、163000",
             self.CFG_FULL_CYCLE_LOCATION: "仅在“完整循环测试”时生效，用于限定测试的小区域（当前地区可选地点）",
             self.CFG_TUTORIAL: self.TUTORIAL_TIPS,
             "发生异常时终止游戏": "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。",
@@ -428,6 +428,22 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self.log_info(f"委托地点({location_name})未配置送货点滑索参数: {location_key}")
         return None
 
+    def _find_accept_order_results(self, target_nums, box):
+        has_configured_feature = False
+        for target_num in target_nums:
+            labels = get_accept_feature_labels(self.delivery_area, str(target_num))
+            if labels:
+                has_configured_feature = True
+            for feature_name in labels:
+                results = self.find_feature(
+                    feature=feature_name,
+                    box=box,
+                    threshold=0.98,
+                )
+                if results:
+                    return results, has_configured_feature
+        return [], has_configured_feature
+
     def accept_order(self):
         """接取运输委托的主流程
         
@@ -464,20 +480,10 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             box = self.box_of_screen(
                 0.654, 0.230, 0.699, 0.900
             )
-            feature_list = []
-            for target_num in target_nums:
-                labels = get_accept_feature_labels(self.delivery_area, str(target_num))
-                feature_list.extend(labels)
-            if not feature_list:
+            results, has_configured_feature = self._find_accept_order_results(target_nums, box)
+            if not has_configured_feature:
                 self.log_info(f"当前地区({self.delivery_area})未配置目标券数({target_nums})对应接单特征")
-                continue
-            results = None
-            for feature_name in feature_list:
-                results = self.find_feature(
-                    feature=feature_name,
-                    box=box,
-                    threshold=0.98,
-                )
+                return False
             if results:
                 for result in results:
                     self.click(
