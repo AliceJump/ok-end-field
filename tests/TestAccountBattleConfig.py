@@ -98,7 +98,7 @@ class TestAccountConfigRules(unittest.TestCase):
         self.assertEqual(base_values["额外配置"], 9)
         self.assertEqual(total, 4)
 
-    def test_saving_visible_values_removes_blacklisted_overrides(self):
+    def test_saving_writes_full_schema_and_removes_invalid_overrides(self):
         tab = _AccountConfigHarness()
         tab.current_virtual_config = {"普通配置": 5}
         tab.current_task = _DummyTask()
@@ -120,9 +120,14 @@ class TestAccountConfigRules(unittest.TestCase):
 
         self.assertTrue(changed)
         saved = tab.overrides_data["accounts"]["acc"]["_DummyTask"]
-        self.assertEqual(saved, {"未显示合法配置": 9, "普通配置": 5})
+        self.assertEqual(saved, {
+            "普通配置": 5,
+            "强制配置": 3,
+            "配置选择": "常用配置",
+            "额外配置": 9,
+        })
 
-    def test_unchanged_visible_values_do_not_write_overrides(self):
+    def test_unchanged_visible_values_still_complete_full_snapshot(self):
         tab = _AccountConfigHarness()
         tab.current_virtual_config = {"普通配置": 5}
         tab.current_task = _DummyTask()
@@ -141,9 +146,18 @@ class TestAccountConfigRules(unittest.TestCase):
         }
 
         changed = tab._apply_current_task_override(cleanup_blacklist=True)
-        self.assertFalse(changed)
+        self.assertTrue(changed)
+        self.assertEqual(
+            tab.overrides_data["accounts"]["acc"]["_DummyTask"],
+            {
+                "普通配置": 5,
+                "强制配置": 3,
+                "配置选择": "常用配置",
+                "额外配置": 9,
+            },
+        )
 
-    def test_restoring_base_value_removes_existing_override(self):
+    def test_base_value_is_persisted_in_full_snapshot(self):
         tab = _AccountConfigHarness()
         tab.current_virtual_config = {"普通配置": 1}
         tab.current_task = _DummyTask()
@@ -164,7 +178,72 @@ class TestAccountConfigRules(unittest.TestCase):
         changed = tab._apply_current_task_override(cleanup_blacklist=True)
 
         self.assertTrue(changed)
-        self.assertNotIn("acc", tab.overrides_data["accounts"])
+        saved = tab.overrides_data["accounts"]["acc"]["_DummyTask"]
+        self.assertEqual(saved["普通配置"], 1)
+        self.assertEqual(saved["强制配置"], 3)
+
+    def test_diff_view_save_preserves_hidden_snapshot_values(self):
+        tab = _AccountConfigHarness()
+        tab.current_virtual_config = {"普通配置": 5}
+        tab.current_task = _DummyTask()
+        tab.current_account_key = "acc"
+        tab.current_account_name = ""
+        tab.current_editable_keys = ["普通配置"]
+        tab.current_base_values = {"普通配置": 1}
+        tab.current_original_values = {"普通配置": 4}
+        tab.overrides_data = {
+            "accounts": {
+                "acc": {
+                    "_DummyTask": {
+                        "普通配置": 4,
+                        "强制配置": 8,
+                        "配置选择": "其他配置",
+                        "额外配置": 11,
+                    }
+                }
+            }
+        }
+
+        tab._apply_current_task_override(cleanup_blacklist=True)
+
+        self.assertEqual(
+            tab.overrides_data["accounts"]["acc"]["_DummyTask"],
+            {
+                "普通配置": 5,
+                "强制配置": 8,
+                "配置选择": "其他配置",
+                "额外配置": 11,
+            },
+        )
+
+    def test_explicit_save_without_edits_writes_full_snapshot(self):
+        tab = _AccountConfigHarness()
+        tab.current_virtual_config = {"普通配置": 1}
+        tab.current_task = _DummyTask()
+        tab.current_account_key = "acc"
+        tab.current_account_name = ""
+        tab.current_editable_keys = ["普通配置"]
+        tab.current_base_values = {"普通配置": 1}
+        tab.current_original_values = {"普通配置": 1}
+        tab.current_map_account_key = ""
+        tab.overrides_data = {"accounts": {}}
+
+        with patch(
+            "src.gui.AccountConfigTab.update_overrides",
+            side_effect=lambda updater: updater({"accounts": {}}),
+        ):
+            changed = tab._save_pending_changes(cleanup_blacklist=True)
+
+        self.assertTrue(changed)
+        self.assertEqual(
+            tab.overrides_data["accounts"]["acc"]["_DummyTask"],
+            {
+                "普通配置": 1,
+                "强制配置": 3,
+                "配置选择": "常用配置",
+                "额外配置": 9,
+            },
+        )
 
     def test_pending_save_merges_latest_external_overrides(self):
         tab = _AccountConfigHarness()

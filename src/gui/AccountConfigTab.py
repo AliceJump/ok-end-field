@@ -717,7 +717,7 @@ class AccountConfigTab(CustomTab):
                 None,
                 task.name,
                 virtual_config,
-                "按当前账号覆盖该任务配置。未覆盖的项将使用任务原配置。",
+                "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。",
                 {},
                 config_description,
                 config_type,
@@ -760,21 +760,21 @@ class AccountConfigTab(CustomTab):
 
         task_class = self.current_task.__class__.__name__
         existing_config = account_map.get(task_class, {})
-        full_config = dict(existing_config) if isinstance(existing_config, dict) else {}
-        if cleanup_blacklist:
-            blacklist, _ = self._account_config_rules(self.current_task)
-            for key in blacklist:
-                full_config.pop(key, None)
+        snapshot, snapshot_keys, _, _ = self._build_virtual_config(
+            self.current_task,
+            self.current_account_key,
+            getattr(self, "current_account_name", ""),
+            only_diff=False,
+        )
+        full_config = {
+            key: copy.deepcopy(snapshot[key])
+            for key in snapshot_keys
+            if key in snapshot
+        }
         for key in self.current_editable_keys:
             if key not in self.current_virtual_config:
                 continue
-            value = self.current_virtual_config[key]
-            if value == self.current_original_values.get(key, value):
-                continue
-            if value == self.current_base_values.get(key):
-                full_config.pop(key, None)
-            else:
-                full_config[key] = value
+            full_config[key] = copy.deepcopy(self.current_virtual_config[key])
 
         changed = full_config != existing_config
         if full_config:
