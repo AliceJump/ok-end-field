@@ -434,16 +434,20 @@ class DailyRoutineFeature:
         self.log_info(f"{outpost_name} 据点当前券数量: {num}")
         return num
 
-    def perform_outpost_exchange(self, outpost_name, priority_list=[]):
+    def perform_outpost_exchange(self, outpost_name, priority_list=None, excluded_goods=None):
         """据点内循环尝试更换货品并兑换。"""
         self.log_info(f"开始处理据点: {outpost_name}")
 
-        self.wait_click_ocr(
+        priority_list = priority_list or []
+        excluded_goods = excluded_goods if excluded_goods is not None else set()
+
+        if not self.wait_click_ocr(
             match=get_world_map_text(self.lang, outpost_name),
             box=self.box.top,
             time_out=5,
             after_sleep=1
-        )
+        ):
+            return False
         self.wait_ocr(
             match=self.lang.daily_routine_mixin.k_bb6c696b, box=self.box_of_screen(1700 / 1920, 610 / 1080, 1, 710 / 1080), time_out=5
         )
@@ -486,15 +490,7 @@ class DailyRoutineFeature:
                 self.log_info(f"{outpost_name} 没有可兑换的货物")
                 break
 
-            def priority_score(name):
-                for i, p in enumerate(priority_list):
-                    if re.search(p, name):
-                        return i
-                return len(priority_list)
-
-            goods.sort(key=lambda g: (priority_score(g.name), -len(g.name)))
-
-            exchange_good = None
+            normalized_goods = []
             for good in goods:
                 standard_name = next(
                     (
@@ -515,7 +511,24 @@ class DailyRoutineFeature:
                     )
                     good.name = standard_name
 
-                if standard_name in skip_goods:
+                normalized_goods.append(good)
+
+            def priority_score(name):
+                for i, pattern in enumerate(priority_list):
+                    if pattern in can_exchange_goods:
+                        if pattern == name:
+                            return i
+                    elif re.search(pattern, name):
+                        return i
+                return len(priority_list)
+
+            normalized_goods.sort(key=lambda g: (priority_score(g.name), -len(g.name)))
+
+            exchange_good = None
+            for good in normalized_goods:
+                standard_name = good.name
+
+                if standard_name in skip_goods or standard_name in excluded_goods:
                     self.log_info(f"跳过已处理货物: {standard_name}")
                     continue
 
@@ -545,23 +558,29 @@ class DailyRoutineFeature:
                 box=self.box.top,
                 time_out=5
             )
-            num = self.read_outpost_ticket_num(outpost_name)
-            if num < 1000:
-                self.log_info(f"{outpost_name} 据点当前券数量不足 (<1000)，停止兑换")
-                break
-
             if not self.plus_max():
-                self.log_info("未找到 '确认' 按钮，跳过本次活动")
+                excluded_goods.add(exchange_good.name)
+                self.log_info(f"货物不可交易，加入地区排除列表: {exchange_good.name}")
                 continue
 
-            if self.wait_click_feature(
+            if not self.wait_click_feature(
                 feature=fL.to_max_produce_num,
                 box=self.box_of_screen(0.945, 0.894, 0.973, 0.944),
                 time_out=5,
                 raise_if_not_found=False
             ):
+                excluded_goods.add(exchange_good.name)
+                self.log_info(f"货物不可交易，加入地区排除列表: {exchange_good.name}")
+                continue
 
-                self.wait_pop_up()
+            self.wait_pop_up()
+            num = self.read_outpost_ticket_num(outpost_name)
+            if num < 1000:
+                self.log_info(f"{outpost_name} 据点当前券数量不足 (<1000)，停止兑换")
+                break
+
+            excluded_goods.add(exchange_good.name)
+            self.log_info(f"货物已兑换完，加入地区排除列表: {exchange_good.name}")
 
         self.log_info(f"{outpost_name} 兑换操作完成")
 
@@ -594,6 +613,7 @@ class DailyRoutineFeature:
         self.log_info("开始据点兑换任务")
 
         priority_list = self.config.get("交易货品优先序列", [])
+        excluded_goods_by_area = {area: set() for area in areas_list}
 
         for area in areas_list:
             self.log_info(f"进入区域: {area}")
@@ -606,7 +626,11 @@ class DailyRoutineFeature:
 
             for outpost_name in outposts:
                 self.log_info(f"开始兑换据点: {outpost_name}")
-                self.perform_outpost_exchange(outpost_name, priority_list)
+                self.perform_outpost_exchange(
+                    outpost_name,
+                    priority_list,
+                    excluded_goods_by_area[area],
+                )
                 self.log_info(f"完成兑换据点: {outpost_name}")
 
             self.log_info(f"{area} 区域据点兑换完成，返回主界面")
