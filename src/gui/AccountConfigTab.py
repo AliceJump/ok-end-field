@@ -42,6 +42,8 @@ class InMemoryConfig(dict):
 
 
 class AccountConfigTab(CustomTab):
+    ALWAYS_HIDDEN_CONFIG_KEYS = {"多账户模式", "多账户独立配置", "账号列表"}
+
     def __init__(self):
         super().__init__()
         self._loaded_once = False
@@ -268,6 +270,67 @@ class AccountConfigTab(CustomTab):
     @staticmethod
     def _is_supported_value(value: Any) -> bool:
         return isinstance(value, (bool, int, float, str, list))
+
+    @staticmethod
+    def _config_key_set(task, attribute: str) -> set[str]:
+        value = getattr(task, attribute, None)
+        if isinstance(value, str):
+            return {value}
+        if isinstance(value, (list, tuple, set)):
+            return {str(key) for key in value}
+        return set()
+
+    def _account_config_schema(self, task, task_override: Dict[str, Any]) -> Dict[str, Any]:
+        schema = dict(task.default_config)
+        extra_defaults = getattr(task, "account_config_defaults", None)
+        if isinstance(extra_defaults, dict):
+            schema.update(extra_defaults)
+
+        whitelist = self._config_key_set(task, "account_config_whitelist")
+        for key in whitelist:
+            if key in schema:
+                continue
+            if key in task_override:
+                schema[key] = task_override[key]
+            elif key in task.config:
+                schema[key] = dict.get(task.config, key)
+        return schema
+
+    def _account_config_rules(self, task) -> tuple[set[str], set[str]]:
+        blacklist = self.ALWAYS_HIDDEN_CONFIG_KEYS | self._config_key_set(task, "account_config_blacklist")
+        whitelist = self._config_key_set(task, "account_config_whitelist")
+
+        config_types = dict(task.config_type or {})
+        config_types.update(getattr(task, "account_config_type", {}) or {})
+        for key, type_meta in config_types.items():
+            if not isinstance(type_meta, dict):
+                continue
+            if type_meta.get("type") == "button" or (
+                "type" not in type_meta and ("buttons" in type_meta or "callback" in type_meta)
+            ):
+                blacklist.add(key)
+            sub_configs = type_meta.get("sub_configs")
+            if isinstance(sub_configs, dict):
+                other_keys = sub_configs.get("其他配置", [])
+                if isinstance(other_keys, str):
+                    blacklist.add(other_keys)
+                elif isinstance(other_keys, (list, tuple, set)):
+                    blacklist.update(str(item) for item in other_keys)
+
+        if "配置选择" in task.default_config or "配置选择" in config_types:
+            whitelist.add("配置选择")
+
+        whitelist -= blacklist
+        return blacklist, whitelist
+
+    @staticmethod
+    def _account_config_base_value(task, key: str, default_value: Any) -> Any:
+        if key in task.config:
+            return dict.get(task.config, key, default_value)
+        provider = getattr(task, "get_account_config_base_value", None)
+        if callable(provider):
+            return provider(key, default_value)
+        return default_value
 
     @staticmethod
     def _coerce_like(base_value: Any, value: Any) -> Any:
@@ -550,15 +613,20 @@ class AccountConfigTab(CustomTab):
         base_values = {}
         editable_keys = []
         total_supported_keys = 0
+        blacklist, whitelist = self._account_config_rules(task)
 
-        for key, default_value in task.default_config.items():
-            if str(key).startswith("_"):
+        for key, default_value in self._account_config_schema(task, task_override).items():
+            forced = key in whitelist
+            if key in blacklist:
                 continue
-            if key in {"多账户模式", "多账户独立配置", "账号列表"}:
+            if str(key).startswith("_") and not forced:
                 continue
 
             type_meta = task.config_type.get(key) if task.config_type else None
-            if type_meta and type_meta.get("type") in {"global", "button"}:
+            account_config_type = getattr(task, "account_config_type", None)
+            if isinstance(account_config_type, dict) and key in account_config_type:
+                type_meta = account_config_type.get(key)
+            if type_meta and type_meta.get("type") in {"global", "button"} and not forced:
                 continue
 
             if not self._is_supported_value(default_value):
@@ -566,11 +634,11 @@ class AccountConfigTab(CustomTab):
 
             total_supported_keys += 1
 
-            base_value = dict.get(task.config, key, default_value)
+            base_value = self._account_config_base_value(task, key, default_value)
             override_value = task_override.get(key, base_value)
             value = self._coerce_like(base_value, override_value)
 
-            if only_diff and value == base_value:
+            if only_diff and value == base_value and not forced:
                 continue
 
             defaults[key] = default_value
@@ -621,14 +689,20 @@ class AccountConfigTab(CustomTab):
         )
         self.editor_layout.addWidget(BodyLabel(summary_text))
 
+        config_description = dict(task.config_description or {})
+        config_description.update(getattr(task, "account_config_description", {}) or {})
+        config_type = dict(task.config_type or {})
+        config_type.update(getattr(task, "account_config_type", {}) or {})
+        config_type = {key: value for key, value in config_type.items() if key in editable_keys}
+
         card = ConfigCard(
             None,
             f"{og.app.tr(task.name)} - {account_name or account_key}",
             virtual_config,
             og.app.tr("按当前账号覆盖该任务配置。未覆盖的项将使用任务原配置。"),
             {},
-            task.config_description,
-            task.config_type,
+            config_description,
+            config_type,
             task.icon,
         )
         self.editor_layout.addWidget(card)
@@ -645,27 +719,16 @@ class AccountConfigTab(CustomTab):
             self._set_status(og.app.tr("请先选择账号与任务"))
             return
 
-        full_config = {}
-
-        for key, default_value in self.current_task.default_config.items():
-            if str(key).startswith("_"):
-                continue
-            if key in {"多账户模式", "多账户独立配置", "账号列表"}:
-                continue
-            type_meta = self.current_task.config_type.get(key) if self.current_task.config_type else None
-            if type_meta and type_meta.get("type") in {"global", "button"}:
-                continue
-            if not self._is_supported_value(default_value):
-                continue
-            if key in self.current_virtual_config:
-                full_config[key] = self.current_virtual_config[key]
-            else:
-                full_config[key] = dict.get(self.current_task.config, key, default_value)
-
         accounts = self.overrides_data.setdefault("accounts", {})
         account_map = accounts.setdefault(self.current_account_key, {})
 
         task_class = self.current_task.__class__.__name__
+        existing_config = account_map.get(task_class, {})
+        full_config = dict(existing_config) if isinstance(existing_config, dict) else {}
+        for key in self.current_editable_keys:
+            if key in self.current_virtual_config:
+                full_config[key] = self.current_virtual_config[key]
+
         if full_config:
             account_map[task_class] = full_config
         else:

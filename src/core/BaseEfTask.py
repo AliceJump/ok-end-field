@@ -92,6 +92,11 @@ class BaseEfTask(
         self.current_account_id = ""  # 记录当前账号稳定ID（优先用于账号覆盖）
         self.support_multi_account = False  # 明确标识该任务是否支持多账号执行逻辑
         self.default_config_group = {}  # 配置项分组信息，格式为 { "分组名称": ["配置项1", "配置项2"] }
+        self.account_config_blacklist = set(getattr(self, "account_config_blacklist", ()))
+        self.account_config_whitelist = set(getattr(self, "account_config_whitelist", ()))
+        self.account_config_defaults = dict(getattr(self, "account_config_defaults", {}))
+        self.account_config_description = dict(getattr(self, "account_config_description", {}))
+        self.account_config_type = dict(getattr(self, "account_config_type", {}))
         self.box = ScreenPosition(self)  # 屏幕位置辅助对象，提供top/bottom/left/right等边界
         self.key_config = get_global_config(KEY_CONFIG_NAME)  # 获取全局热键配置
         self.once_sleep_time = get_global_config(ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME).get(

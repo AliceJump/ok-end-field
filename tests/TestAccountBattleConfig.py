@@ -1,0 +1,202 @@
+# -*- coding: utf-8 -*-
+import unittest
+from unittest.mock import Mock, patch
+
+from src.core.BattleConfig import (
+    BATTLE_CONFIG_MODE_GLOBAL,
+    BATTLE_CONFIG_MODE_INDEPENDENT,
+    BATTLE_CONFIG_MODE_KEY,
+    BattleConfigManager,
+)
+from src.gui.AccountConfigTab import AccountConfigTab
+from src.tasks.mixin.battle_mixin import BattleMixin
+
+
+class _DummyTask:
+    name = "测试任务"
+    icon = None
+    default_config = {
+        "普通配置": 1,
+        "隐藏配置": 2,
+        "强制配置": 3,
+        "多账户模式": True,
+        "配置选择": "常用配置",
+        "其他配置项": 6,
+        "打开帮助": "帮助",
+    }
+    config = dict(default_config)
+    config_description = {}
+    config_type = {
+        "隐藏配置": {"type": "drop_down", "options": [1, 2]},
+        "强制配置": {"type": "global"},
+        "配置选择": {
+            "type": "drop_down",
+            "options": ["常用配置", "其他配置"],
+            "sub_configs": {
+                "常用配置": ["普通配置"],
+                "其他配置": ["其他配置项"],
+            },
+        },
+        "打开帮助": {"type": "button"},
+    }
+    account_config_blacklist = {"隐藏配置"}
+    account_config_whitelist = {"隐藏配置", "强制配置", "额外配置"}
+    account_config_defaults = {"额外配置": 7}
+    account_config_description = {}
+    account_config_type = {}
+
+    @staticmethod
+    def get_account_config_base_value(key, default=None):
+        if key == "额外配置":
+            return 9
+        return default
+
+
+class _AccountConfigHarness:
+    ALWAYS_HIDDEN_CONFIG_KEYS = AccountConfigTab.ALWAYS_HIDDEN_CONFIG_KEYS
+    _is_supported_value = staticmethod(AccountConfigTab._is_supported_value)
+    _config_key_set = staticmethod(AccountConfigTab._config_key_set)
+    _account_config_schema = AccountConfigTab._account_config_schema
+    _account_config_rules = AccountConfigTab._account_config_rules
+    _account_config_base_value = staticmethod(AccountConfigTab._account_config_base_value)
+    _coerce_like = staticmethod(AccountConfigTab._coerce_like)
+    _build_virtual_config = AccountConfigTab._build_virtual_config
+    save_current_task_override = AccountConfigTab.save_current_task_override
+
+
+class TestAccountConfigRules(unittest.TestCase):
+    def test_blacklist_wins_and_whitelist_always_displays(self):
+        tab = _AccountConfigHarness()
+        tab.overrides_data = {
+            "accounts": {
+                "acc": {
+                    "_DummyTask": {
+                        "普通配置": 4,
+                    }
+                }
+            }
+        }
+
+        config, editable_keys, base_values, total = tab._build_virtual_config(
+            _DummyTask(),
+            "acc",
+            "",
+            only_diff=True,
+        )
+
+        self.assertEqual(editable_keys, ["普通配置", "强制配置", "配置选择", "额外配置"])
+        self.assertNotIn("隐藏配置", config)
+        self.assertNotIn("多账户模式", config)
+        self.assertNotIn("其他配置项", config)
+        self.assertNotIn("打开帮助", config)
+        self.assertEqual(config["强制配置"], 3)
+        self.assertEqual(config["配置选择"], "常用配置")
+        self.assertEqual(config["额外配置"], 9)
+        self.assertEqual(base_values["额外配置"], 9)
+        self.assertEqual(total, 4)
+
+    def test_saving_visible_values_preserves_hidden_overrides(self):
+        tab = _AccountConfigHarness()
+        tab.current_virtual_config = {"普通配置": 5}
+        tab.current_task = _DummyTask()
+        tab.current_account_key = "acc"
+        tab.current_editable_keys = ["普通配置"]
+        tab.overrides_data = {
+            "accounts": {
+                "acc": {
+                    "_DummyTask": {
+                        "隐藏配置": 8,
+                    }
+                }
+            }
+        }
+        tab.rebuild_account_selector = Mock()
+
+        with patch(
+            "src.gui.AccountConfigTab.save_overrides",
+            side_effect=lambda data: data,
+        ):
+            tab.save_current_task_override()
+
+        saved = tab.overrides_data["accounts"]["acc"]["_DummyTask"]
+        self.assertEqual(saved, {"隐藏配置": 8, "普通配置": 5})
+
+
+class TestBattleConfigOverrides(unittest.TestCase):
+    def make_battle_task(self, config):
+        task = object.__new__(BattleMixin)
+        task.config = config
+        task.battle_config_manager = BattleConfigManager({"启动技能点数": 2})
+        return task
+
+    def test_battle_account_config_uses_conditional_dropdown(self):
+        task = object.__new__(BattleMixin)
+        task.account_config_whitelist = set()
+        task.account_config_defaults = {}
+        task.account_config_description = {}
+        task.account_config_type = {}
+
+        task._register_account_battle_config()
+
+        mode_type = task.account_config_type[BATTLE_CONFIG_MODE_KEY]
+        self.assertEqual(
+            mode_type["options"],
+            [BATTLE_CONFIG_MODE_GLOBAL, BATTLE_CONFIG_MODE_INDEPENDENT],
+        )
+        self.assertEqual(mode_type["sub_configs"][BATTLE_CONFIG_MODE_GLOBAL], [])
+        self.assertEqual(
+            mode_type["sub_configs"][BATTLE_CONFIG_MODE_INDEPENDENT],
+            list(task.account_config_defaults)[1:],
+        )
+
+    def test_task_config_overrides_global_battle_config(self):
+        task = self.make_battle_task({
+            BATTLE_CONFIG_MODE_KEY: BATTLE_CONFIG_MODE_INDEPENDENT,
+            "启动技能点数": 3,
+        })
+
+        self.assertEqual(task.get_battle_config("启动技能点数"), 3)
+
+    def test_global_mode_ignores_independent_battle_value(self):
+        task = self.make_battle_task({
+            BATTLE_CONFIG_MODE_KEY: BATTLE_CONFIG_MODE_GLOBAL,
+            "启动技能点数": 3,
+        })
+
+        self.assertEqual(task.get_battle_config("启动技能点数"), 2)
+
+    def test_global_battle_config_is_fallback_for_task(self):
+        task = self.make_battle_task({})
+
+        self.assertEqual(task.get_battle_config("启动技能点数"), 2)
+
+    def test_account_aware_config_receives_global_value_as_fallback(self):
+        config = Mock()
+        config.get.side_effect = [BATTLE_CONFIG_MODE_INDEPENDENT, 1]
+        task = self.make_battle_task(config)
+
+        self.assertEqual(task.get_battle_config("启动技能点数"), 1)
+        self.assertEqual(config.get.call_args_list[0].args, (BATTLE_CONFIG_MODE_KEY, BATTLE_CONFIG_MODE_GLOBAL))
+        self.assertEqual(config.get.call_args_list[1].args, ("启动技能点数", 2))
+
+    def test_account_task_override_has_highest_priority(self):
+        class Config(dict):
+            pass
+
+        task = self.make_battle_task(Config({"多账户独立配置": True}))
+        task.current_account_id = "acc"
+        task.current_user = "user"
+
+        with patch(
+            "src.core.base_mixin.account_override_mixin.get_account_task_overrides",
+            return_value={
+                BATTLE_CONFIG_MODE_KEY: BATTLE_CONFIG_MODE_INDEPENDENT,
+                "启动技能点数": 1,
+            },
+        ):
+            task._bind_account_aware_config_get()
+            self.assertEqual(task.get_battle_config("启动技能点数"), 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

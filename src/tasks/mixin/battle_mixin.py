@@ -30,7 +30,16 @@ from src.data.world_map_utils import is_world_map_text
 from src.core.sequence_parser import parse_sequence
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 from src.core.BaseEfTask import BaseEfTask
-from src.core.BattleConfig import BATTLE_CONFIG_NAME, BattleConfigManager, DEFAULT_BATTLE_CONFIG
+from src.core.BattleConfig import (
+    BATTLE_CONFIG_DESCRIPTION,
+    BATTLE_CONFIG_MODE_GLOBAL,
+    BATTLE_CONFIG_MODE_INDEPENDENT,
+    BATTLE_CONFIG_MODE_KEY,
+    BATTLE_CONFIG_NAME,
+    BATTLE_CONFIG_TYPE,
+    BattleConfigManager,
+    DEFAULT_BATTLE_CONFIG,
+)
 from src.core.global_config_store import get_global_config
 
 
@@ -56,11 +65,40 @@ class BattleMixin(BaseEfTask):
         self.last_no_number_action_time = 0
         self.exit_check_count = 0
         self.battle_config_manager = BattleConfigManager(get_global_config(BATTLE_CONFIG_NAME))
+        self._register_account_battle_config()
         # 用于识别 LV 或等级文字
         self.lv_regex = re.compile(r"(?i)lv|\d{2}")
 
+    def _register_account_battle_config(self):
+        battle_keys = list(DEFAULT_BATTLE_CONFIG)
+        self.account_config_whitelist.update([BATTLE_CONFIG_MODE_KEY, *battle_keys])
+        self.account_config_defaults.update({
+            BATTLE_CONFIG_MODE_KEY: BATTLE_CONFIG_MODE_GLOBAL,
+            **DEFAULT_BATTLE_CONFIG,
+        })
+        self.account_config_description.update(BATTLE_CONFIG_DESCRIPTION)
+        self.account_config_description[BATTLE_CONFIG_MODE_KEY] = "选择当前账号在该任务中使用全局或独立战斗配置。"
+        self.account_config_type.update(BATTLE_CONFIG_TYPE)
+        self.account_config_type[BATTLE_CONFIG_MODE_KEY] = {
+            "type": "drop_down",
+            "options": [BATTLE_CONFIG_MODE_GLOBAL, BATTLE_CONFIG_MODE_INDEPENDENT],
+            "sub_configs": {
+                BATTLE_CONFIG_MODE_GLOBAL: [],
+                BATTLE_CONFIG_MODE_INDEPENDENT: battle_keys,
+            },
+        }
+
     def get_battle_config(self, key: str, default=None):
-        return self.battle_config_manager.get(key, DEFAULT_BATTLE_CONFIG.get(key, default))
+        global_value = self.battle_config_manager.get(key, DEFAULT_BATTLE_CONFIG.get(key, default))
+        mode = self.config.get(BATTLE_CONFIG_MODE_KEY, BATTLE_CONFIG_MODE_GLOBAL)
+        if mode != BATTLE_CONFIG_MODE_INDEPENDENT:
+            return global_value
+        return self.config.get(key, global_value)
+
+    def get_account_config_base_value(self, key: str, default=None):
+        if key in self.account_config_defaults:
+            return self.battle_config_manager.get(key, default)
+        return dict.get(self.config, key, default)
 
     def _parse_skill_sequence(self, raw_config) -> list[str]:
         """
