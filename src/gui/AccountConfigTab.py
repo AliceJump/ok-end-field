@@ -9,6 +9,7 @@ from qfluentwidgets import (
     BodyLabel,
     ComboBox,
     FluentIcon,
+    LineEdit,
     NavigationItemPosition,
     PrimaryPushButton,
     PushButton,
@@ -131,16 +132,17 @@ class AccountConfigTab(CustomTab):
 
         account_list_row = LabelAndWidget("账号列表", "每行一个账号名（手机号），无需密码")
         self.account_list_edit = TextEdit()
+        self.account_list_edit.setFixedWidth(420)
         self.account_list_edit.setMinimumHeight(120)
         self.account_list_edit.setPlaceholderText(og.app.tr("手机号A\n手机号B"))
-        account_list_row.add_widget(self.account_list_edit, stretch=1)
+        account_list_row.add_widget(self.account_list_edit, stretch=0)
         base_layout.addWidget(account_list_row)
 
         base_action_row = LabelAndWidget("账号列表操作")
         base_action_layout = QHBoxLayout()
+        base_action_layout.addStretch(1)
         self.save_base_button = PrimaryPushButton(og.app.tr("保存账号列表"))
         base_action_layout.addWidget(self.save_base_button)
-        base_action_layout.addStretch(1)
         base_action_row.add_layout(base_action_layout, stretch=1)
         base_layout.addWidget(base_action_row)
 
@@ -152,31 +154,25 @@ class AccountConfigTab(CustomTab):
         selector_layout.setSpacing(8)
 
         account_selector_row = LabelAndWidget("账号", "从账号列表或已有覆盖中选择")
-        account_selector_layout = QHBoxLayout()
         self.account_selector = ComboBox()
         self.account_selector.setMinimumWidth(220)
-        account_selector_layout.addWidget(self.account_selector)
-        account_selector_layout.addStretch(1)
-        account_selector_row.add_layout(account_selector_layout, stretch=1)
+        account_selector_row.add_widget(self.account_selector, stretch=0)
         selector_layout.addWidget(account_selector_row)
 
         map_content_row = LabelAndWidget(
             "地图同步 content",
             "当前账号的 hg/check data.content 值，用于官方地图位置同步",
         )
-        self.map_content_edit = TextEdit()
-        self.map_content_edit.setMinimumHeight(70)
+        self.map_content_edit = LineEdit()
+        self.map_content_edit.setFixedWidth(420)
         self.map_content_edit.setPlaceholderText(og.app.tr("只填写 data.content 的字符串值"))
-        map_content_row.add_widget(self.map_content_edit, stretch=1)
+        map_content_row.add_widget(self.map_content_edit, stretch=0)
         selector_layout.addWidget(map_content_row)
 
         task_selector_row = LabelAndWidget("任务", "选择任务后自动渲染属性控件")
-        task_selector_layout = QHBoxLayout()
         self.task_selector = ComboBox()
         self.task_selector.setMinimumWidth(280)
-        task_selector_layout.addWidget(self.task_selector)
-        task_selector_layout.addStretch(1)
-        task_selector_row.add_layout(task_selector_layout, stretch=1)
+        task_selector_row.add_widget(self.task_selector, stretch=0)
         selector_layout.addWidget(task_selector_row)
 
         view_row = LabelAndWidget("视图", "开启后仅显示与原配置不同的项")
@@ -188,13 +184,13 @@ class AccountConfigTab(CustomTab):
 
         action_row = LabelAndWidget("账号任务覆盖操作")
         action_layout = QHBoxLayout()
+        action_layout.addStretch(1)
         self.save_current_config_button = PrimaryPushButton(og.app.tr("保存当前账号配置"))
         self.clear_task_override_button = PushButton(og.app.tr("清空当前任务覆盖"))
         self.clear_account_override_button = PushButton(og.app.tr("清空当前账号全部覆盖"))
         action_layout.addWidget(self.save_current_config_button)
         action_layout.addWidget(self.clear_task_override_button)
         action_layout.addWidget(self.clear_account_override_button)
-        action_layout.addStretch(1)
         action_row.add_layout(action_layout, stretch=1)
         selector_layout.addWidget(action_row)
 
@@ -572,10 +568,10 @@ class AccountConfigTab(CustomTab):
         self.current_map_account_key = account_key
         if not account_key:
             self.current_map_value = ""
-            self.map_content_edit.setPlainText("")
+            self.map_content_edit.setText("")
             return
         self.current_map_value = get_account_map_content(account_key, account_name=account_name)
-        self.map_content_edit.setPlainText(self.current_map_value)
+        self.map_content_edit.setText(self.current_map_value)
 
     def on_task_changed(self, _):
         if self._building:
@@ -790,7 +786,7 @@ class AccountConfigTab(CustomTab):
         if not self.current_map_account_key:
             return False
 
-        content = self.map_content_edit.toPlainText().strip()
+        content = self.map_content_edit.text().strip()
         map_contents = self.overrides_data.setdefault("map_contents", {})
         previous = str(map_contents.get(self.current_map_account_key, self.current_map_value) or "").strip()
         if content == previous:
@@ -816,7 +812,7 @@ class AccountConfigTab(CustomTab):
         task_dirty = self._has_current_task_changes()
         map_dirty = bool(
             self.current_map_account_key
-            and self.map_content_edit.toPlainText().strip() != self.current_map_value
+            and self.map_content_edit.text().strip() != self.current_map_value
         )
         if not task_dirty and not map_dirty and not cleanup_blacklist:
             if show_status:
@@ -840,7 +836,7 @@ class AccountConfigTab(CustomTab):
         if task_dirty and self.current_virtual_config is not None:
             self.current_original_values = copy.deepcopy(dict(self.current_virtual_config))
         if map_dirty:
-            self.current_map_value = self.map_content_edit.toPlainText().strip()
+            self.current_map_value = self.map_content_edit.text().strip()
 
         if show_status:
             account = self.current_account_name or self._get_account_name_by_key(self.current_map_account_key)
@@ -864,7 +860,7 @@ class AccountConfigTab(CustomTab):
 
         map_dirty = bool(
             self.current_map_account_key
-            and self.map_content_edit.toPlainText().strip() != self.current_map_value
+            and self.map_content_edit.text().strip() != self.current_map_value
         )
         task_class = task.__class__.__name__
 
@@ -889,7 +885,7 @@ class AccountConfigTab(CustomTab):
 
         self.overrides_data = update_overrides(clear_task)
         if map_dirty:
-            self.current_map_value = self.map_content_edit.toPlainText().strip()
+            self.current_map_value = self.map_content_edit.text().strip()
         self.rebuild_account_selector()
         self.load_current_map_content()
         self.render_task_editor()
@@ -906,7 +902,7 @@ class AccountConfigTab(CustomTab):
 
         map_dirty = bool(
             self.current_map_account_key
-            and self.map_content_edit.toPlainText().strip() != self.current_map_value
+            and self.map_content_edit.text().strip() != self.current_map_value
         )
 
         def clear_account(latest):
@@ -922,7 +918,7 @@ class AccountConfigTab(CustomTab):
 
         self.overrides_data = update_overrides(clear_account)
         if map_dirty:
-            self.current_map_value = self.map_content_edit.toPlainText().strip()
+            self.current_map_value = self.map_content_edit.text().strip()
 
         self.rebuild_account_selector()
         self.load_current_map_content()
