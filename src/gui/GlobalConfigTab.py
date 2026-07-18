@@ -49,27 +49,32 @@ class GlobalConfigTab(CustomTab):
                     continue
                 config, option = config_and_option
                 shown.add(config_name)
-                self.add_widget(ConfigCard(
+                card = ConfigCard(
                     None,
-                    f"{og.app.tr(group_name)} / {option.name}",
+                    group_name,
                     config,
                     option.description,
                     option.default_config,
                     option.config_description,
                     option.config_type,
                     option.icon,
-                ))
+                )
+                card.card.setTitle(f"{og.app.tr(group_name)} / {og.app.tr(option.name)}")
+                self.add_widget(card)
 
         for config_name, (config, option) in visible_configs.items():
             if config_name in shown:
                 continue
-            self.add_widget(ConfigCard(
+            group_name = "其他配置"
+            card = ConfigCard(
                 None,
-                f"{og.app.tr('其他配置')} / {option.name}",
+                group_name,
                 config,
                 option.description,
                 option.default_config,
                 option.config_description,
                 option.config_type,
                 option.icon,
-            ))
+            )
+            card.card.setTitle(f"{og.app.tr(group_name)} / {og.app.tr(option.name)}")
+            self.add_widget(card)

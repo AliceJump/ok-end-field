@@ -129,14 +129,14 @@ class AccountConfigTab(CustomTab):
         base_layout.setContentsMargins(0, 0, 0, 0)
         base_layout.setSpacing(8)
 
-        account_list_row = LabelAndWidget(og.app.tr("账号列表"), og.app.tr("每行一个账号名（手机号），无需密码"))
+        account_list_row = LabelAndWidget("账号列表", "每行一个账号名（手机号），无需密码")
         self.account_list_edit = TextEdit()
         self.account_list_edit.setMinimumHeight(120)
         self.account_list_edit.setPlaceholderText(og.app.tr("手机号A\n手机号B"))
         account_list_row.add_widget(self.account_list_edit, stretch=1)
         base_layout.addWidget(account_list_row)
 
-        base_action_row = LabelAndWidget(og.app.tr("账号列表操作"))
+        base_action_row = LabelAndWidget("账号列表操作")
         base_action_layout = QHBoxLayout()
         self.save_base_button = PrimaryPushButton(og.app.tr("保存账号列表"))
         base_action_layout.addWidget(self.save_base_button)
@@ -151,7 +151,7 @@ class AccountConfigTab(CustomTab):
         selector_layout.setContentsMargins(0, 0, 0, 0)
         selector_layout.setSpacing(8)
 
-        account_selector_row = LabelAndWidget(og.app.tr("账号"), og.app.tr("从账号列表或已有覆盖中选择"))
+        account_selector_row = LabelAndWidget("账号", "从账号列表或已有覆盖中选择")
         account_selector_layout = QHBoxLayout()
         self.account_selector = ComboBox()
         self.account_selector.setMinimumWidth(220)
@@ -161,8 +161,8 @@ class AccountConfigTab(CustomTab):
         selector_layout.addWidget(account_selector_row)
 
         map_content_row = LabelAndWidget(
-            og.app.tr("地图同步 content"),
-            og.app.tr("当前账号的 hg/check data.content 值，用于官方地图位置同步")
+            "地图同步 content",
+            "当前账号的 hg/check data.content 值，用于官方地图位置同步",
         )
         self.map_content_edit = TextEdit()
         self.map_content_edit.setMinimumHeight(70)
@@ -170,7 +170,7 @@ class AccountConfigTab(CustomTab):
         map_content_row.add_widget(self.map_content_edit, stretch=1)
         selector_layout.addWidget(map_content_row)
 
-        task_selector_row = LabelAndWidget(og.app.tr("任务"), og.app.tr("选择任务后自动渲染属性控件"))
+        task_selector_row = LabelAndWidget("任务", "选择任务后自动渲染属性控件")
         task_selector_layout = QHBoxLayout()
         self.task_selector = ComboBox()
         self.task_selector.setMinimumWidth(280)
@@ -179,14 +179,14 @@ class AccountConfigTab(CustomTab):
         task_selector_row.add_layout(task_selector_layout, stretch=1)
         selector_layout.addWidget(task_selector_row)
 
-        view_row = LabelAndWidget(og.app.tr("视图"), og.app.tr("开启后仅显示与原配置不同的项"))
+        view_row = LabelAndWidget("视图", "开启后仅显示与原配置不同的项")
         self.only_diff_switch = SwitchButton()
         self.only_diff_switch.setOnText(og.app.tr("仅差异"))
         self.only_diff_switch.setOffText(og.app.tr("全部"))
         view_row.add_widget(self.only_diff_switch, stretch=0)
         selector_layout.addWidget(view_row)
 
-        action_row = LabelAndWidget(og.app.tr("账号任务覆盖操作"))
+        action_row = LabelAndWidget("账号任务覆盖操作")
         action_layout = QHBoxLayout()
         self.save_current_config_button = PrimaryPushButton(og.app.tr("保存当前账号配置"))
         self.clear_task_override_button = PushButton(og.app.tr("清空当前任务覆盖"))
@@ -715,14 +715,15 @@ class AccountConfigTab(CustomTab):
         if card is None:
             card = ConfigCard(
                 None,
-                f"{og.app.tr(task.name)} - {account_name or account_key}",
+                task.name,
                 virtual_config,
-                og.app.tr("按当前账号覆盖该任务配置。未覆盖的项将使用任务原配置。"),
+                "按当前账号覆盖该任务配置。未覆盖的项将使用任务原配置。",
                 {},
                 config_description,
                 config_type,
                 task.icon,
             )
+            card.card.setTitle(f"{og.app.tr(task.name)} - {account_name or account_key}")
             self._editor_cards[cache_key] = card
             self.editor_layout.addWidget(card)
             while len(self._editor_cards) > 8:
@@ -843,10 +844,8 @@ class AccountConfigTab(CustomTab):
 
         if show_status:
             account = self.current_account_name or self._get_account_name_by_key(self.current_map_account_key)
-            message = "已保存当前账号配置" if changed else "当前账号配置没有变化"
-            if account:
-                message += f"：{account}"
-            self._set_status(og.app.tr(message))
+            message = og.app.tr("已保存当前账号配置" if changed else "当前账号配置没有变化")
+            self._set_status(f"{message}：{account}" if account else message)
         return changed
 
     def save_current_account_config(self):

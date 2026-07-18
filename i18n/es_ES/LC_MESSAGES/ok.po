@@ -9,12 +9,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "73100"
-msgstr "73100"
-
-msgid "79800"
-msgstr "79800"
-
 msgid "Area Build Key"
 msgstr "Tecla Construcción Área"
 
@@ -28,7 +22,7 @@ msgid "Blueprint Key"
 msgstr "Tecla Plano"
 
 msgid "D96钢"
-msgstr "D96 Steel"
+msgstr "Acero D96"
 
 msgid "Dodge Key"
 msgstr "Tecla Esquivar"
@@ -106,7 +100,7 @@ msgid "Team Key"
 msgstr "Tecla Equipo"
 
 msgid "Test"
-msgstr "Test"
+msgstr "Prueba"
 
 msgid "Track Key"
 msgstr "Tecla Rastrear"
@@ -130,10 +124,10 @@ msgid "三位一体"
 msgstr "Trinidad"
 
 msgid "三相纳米片"
-msgstr "Triphase Nanosheet"
+msgstr "Nanolámina trifásica"
 
 msgid "上锁毕业基质"
-msgstr "Lock Graduated Essence"
+msgstr "Bloquear esencia óptima"
 
 msgid "买信用商店"
 msgstr "Comprar Tienda de Crédito"
@@ -145,7 +139,7 @@ msgid "仅接取"
 msgstr "Solo Aceptar"
 
 msgid "仅武陵7.98w/7.31w送货,教程视频 BV1LLc7zFEF9"
-msgstr "Wuling 7.98w/7.31w delivery only, tutorial BV1LLc7zFEF9"
+msgstr "Solo entregas de Wuling de 7.98w/7.31w, tutorial BV1LLc7zFEF9"
 
 msgid "仅送货"
 msgstr "Solo Entregar"
@@ -154,13 +148,13 @@ msgid "从发货仓库取出指定物品，切到收货仓库后一键存放 （
 msgstr "Transferir objetos del almacén origen al destino (solo chino)"
 
 msgid "从这个仓库拿货"
-msgstr "Take goods from this warehouse"
+msgstr "Recoger mercancía de este almacén"
 
 msgid "仓库物品转移"
 msgstr "Transferencia de Almacén"
 
 msgid "优先送礼对象"
-msgstr "Priority Gift Recipient"
+msgstr "Destinatario prioritario de regalos"
 
 msgid "体力本"
 msgstr "Mazmorra de Estamina"
@@ -172,13 +166,13 @@ msgid "佩丽卡"
 msgstr "Perica"
 
 msgid "供能高地"
-msgstr "Power Highland"
+msgstr "Altiplano energético"
 
 msgid "保存目录"
-msgstr "Save Directory"
+msgstr "Directorio de guardado"
 
 msgid "倒货的轮次"
-msgstr "Goods Transfer Rounds"
+msgstr "Rondas de traslado de mercancía"
 
 msgid "别礼"
 msgstr "despedida"
@@ -187,60 +181,61 @@ msgid "刷体力"
 msgstr "Farmear Estamina"
 
 msgid "刷体力任务"
-msgstr "Stamina Farming Task"
+msgstr "Tarea de farmeo de estamina"
 
 msgid ""
 "前置是选择测试对象部分选择\"无\"\n"
 "仅接取7.31w武陵委托，不送货"
 msgstr ""
-"Prerequisite: Select \"None\" for test target\n"
-"Only accept 7.31w Wuling commission, no delivery"
+"Requisito: seleccionar \"Ninguno\" como objetivo de prueba\n"
+"Aceptar solo encargos de Wuling de 7.31w, sin entregar"
 
 msgid ""
 "前置是选择测试对象部分选择\"无\"\n"
 "接取武陵委托后启动自动识别送货"
 msgstr ""
-"Prerequisite: Select \"None\" for test target\n"
-"Auto-detect delivery after accepting Wuling commission"
+"Requisito: seleccionar \"Ninguno\" como objetivo de prueba\n"
+"Detectar automáticamente la entrega tras aceptar un encargo de Wuling"
 
 msgid "发货仓库"
-msgstr "Source Warehouse"
+msgstr "Almacén de origen"
 
 msgid "后台结束战斗通知"
-msgstr "Background Battle End Notification"
+msgstr "Aviso de fin de combate en segundo plano"
 
 msgid "启动技能点数"
-msgstr "Starting Skill Points"
+msgstr "Puntos de habilidad iniciales"
 
 msgid ""
 "启用后在对齐滑索时会自动滚动放大视角\n"
 "可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
 "建议启用此项时不要使用非白发或有白帽角色"
 msgstr ""
-"Auto-scroll zoom when aligning zipline\n"
-"May improve or reduce alignment success\n"
-"Avoid non-white hair or white hat characters"
+"Amplía automáticamente la vista al alinear la tirolina\n"
+"Puede aumentar o reducir notablemente la tasa de acierto\n"
+"No se recomiendan personajes sin pelo blanco o con sombrero blanco"
 
 msgid "命中毕业词条后自动点击右侧小锁上锁"
-msgstr "Auto-lock upon hitting graduated affix"
+msgstr "Bloquear al obtener un atributo óptimo"
 
 msgid "四号谷地"
-msgstr "Valley No.4"
+msgstr "Valle n.º 4"
 
 msgid "四号谷地买入价"
-msgstr "Valley No.4 Buy Price"
+msgstr "Precio de compra del Valle n.º 4"
 
 msgid "四号谷地卖出价"
-msgstr "Valley No.4 Sell Price"
+msgstr "Precio de venta del Valle n.º 4"
 
 msgid "在好友交流助力时，优先尝试仅收取培育室的助力,但每次至少助力一次舱室"
-msgstr "Prioritize cultivation room support, assist at least one chamber each time"
+msgstr ""
+"Priorizar la cámara de cultivo y ayudar al menos a una cámara cada vez"
 
 msgid "埃特拉"
 msgstr "Etra"
 
 msgid "大世界自动拾取"
-msgstr "Auto Recoger Mundo Abierto"
+msgstr "Recogida automática en el mundo abierto"
 
 msgid "大潘"
 msgstr "dapán"
@@ -249,16 +244,16 @@ msgid "安塔尔"
 msgstr "Antal"
 
 msgid "完整循环测试"
-msgstr "Full Cycle Test"
+msgstr "Prueba de ciclo completo"
 
 msgid "定时截图"
-msgstr "Periodic Screenshot"
+msgstr "Capturas periódicas"
 
 msgid "尝试仅收培育室"
-msgstr "Try Cultivation Room Only"
+msgstr "Intentar recoger solo la cámara de cultivo"
 
 msgid "常沄"
-msgstr "Chang Yun"
+msgstr "Cháng Yún"
 
 msgid "干员经验"
 msgstr "EXP de Operador"
@@ -270,64 +265,65 @@ msgid "弧光"
 msgstr "arco"
 
 msgid "当技能点达到该数值时，开始执行技能序列, 1-3"
-msgstr "Start skill sequence when skill points reach this value (1-3)"
+msgstr "Iniciar la secuencia al alcanzar estos puntos de habilidad, 1-3"
 
 msgid "彦宁"
-msgstr "Yan Ning"
+msgstr "Yàn Níng"
 
 msgid "快子遴捡晶格"
-msgstr "Tachyon Selection Lattice"
+msgstr "Retícula de selección de taquiones"
 
 msgid "战斗中周期触发锁敌+向前闪避的最小间隔(秒，最少6秒)"
-msgstr "Min interval (seconds, min 6s) for lock-on + forward dodge"
+msgstr ""
+"Intervalo mínimo para fijar objetivo + esquivar hacia delante (mín. 6 s)"
 
 msgid "截图保存路径（相对于项目根目录）"
-msgstr "Screenshot save path (relative to project root)"
+msgstr "Ruta de capturas (relativa a la raíz del proyecto)"
 
 msgid "技能提升"
-msgstr "Skill Upgrade"
+msgstr "Mejora de habilidad"
 
 msgid "技能释放"
-msgstr "Skill Release"
+msgstr "Uso de habilidades"
 
 msgid "据点兑换"
-msgstr "Outpost Exchange"
+msgstr "Intercambio del puesto"
 
 msgid "接取武陵券"
-msgstr "Accept Wuling Ticket"
+msgstr "Aceptar vale de Wuling"
 
 msgid "接取武陵券最低金额(万)"
-msgstr "Wuling Ticket Min Amount (10k)"
+msgstr "Importe mínimo del vale de Wuling (10k)"
 
 msgid "接取武陵券最高金额(万)"
-msgstr "Wuling Ticket Max Amount (10k)"
+msgstr "Importe máximo del vale de Wuling (10k)"
 
 msgid "接取谷地券"
-msgstr "Accept Valley Ticket"
+msgstr "Aceptar vale del Valle"
 
 msgid "接取谷地券最低金额(万)"
-msgstr "Valley Ticket Min Amount (10k)"
+msgstr "Importe mínimo del vale del Valle (10k)"
 
 msgid "接取谷地券最高金额(万)"
-msgstr "Valley Ticket Max Amount (10k)"
+msgstr "Importe máximo del vale del Valle (10k)"
 
 msgid "收信用"
 msgstr "Recoger Crédito"
 
 msgid "收货仓库"
-msgstr "Destination Warehouse"
+msgstr "Almacén de destino"
 
 msgid "收集线索"
 msgstr "Recoger Pistas"
 
 msgid "教程"
-msgstr "Tutorial"
+msgstr "Guía"
 
 msgid "无"
 msgstr "Ninguno"
 
 msgid "无数字操作间隔"
-msgstr "No Numeric Action Interval"
+msgstr "Intervalo sin acciones numéricas"
 
 msgid "日常任务"
 msgstr "Tareas Diarias"
@@ -336,13 +332,13 @@ msgid "日常奖励"
 msgstr "Recompensas Diarias"
 
 msgid "是否启用滚动放大视角"
-msgstr "Enable Scroll Zoom View"
+msgstr "Activar ampliación de vista con la rueda"
 
 msgid "昼雪"
 msgstr "dia nieve"
 
 msgid "枢纽区"
-msgstr "Hub Area"
+msgstr "Zona central"
 
 msgid "武器经验"
 msgstr "EXP de Arma"
@@ -351,22 +347,23 @@ msgid "武器进阶"
 msgstr "Promoción de Arma"
 
 msgid "武陵"
-msgstr "Wuling"
+msgstr "Wǔlíng"
 
 msgid "武陵买入价"
-msgstr "Wuling Buy Price"
+msgstr "Precio de compra de Wuling"
 
 msgid "武陵卖出价"
-msgstr "Wuling Sell Price"
+msgstr "Precio de venta de Wuling"
 
 msgid "武陵城"
-msgstr "Wuling City"
+msgstr "Ciudad de Wuling"
 
 msgid "每次截图的间隔时间（秒），最小 1 秒"
-msgstr "Interval between screenshots (seconds), minimum 1"
+msgstr "Intervalo entre capturas (segundos), mínimo 1"
 
 msgid "每隔指定秒数截图保存，用于数据采集 / YOLO 样本收集"
-msgstr "Save screenshots every N seconds for data / YOLO sample collection"
+msgstr ""
+"Guardar capturas cada N segundos para recopilar datos / muestras de YOLO"
 
 msgid "毕业基质识别"
 msgstr "Reconocimiento de Esencia"
@@ -375,13 +372,13 @@ msgid "洁尔佩塔"
 msgstr "Gerpeta"
 
 msgid "源石研究园"
-msgstr "Originium Research Park"
+msgstr "Parque de investigación de Originium"
 
 msgid "源矿"
-msgstr "Source Ore"
+msgstr "Mineral de origen"
 
 msgid "满技能时, 开始释放技能, 如123, 建议只放3个技能"
-msgstr "When skill is full, start releasing (e.g. 123); recommend only 3"
+msgstr "Usar habilidades al llenarse, p. ej. 123; se recomiendan solo 3"
 
 msgid "物品"
 msgstr "Objeto"
@@ -390,43 +387,43 @@ msgid "狼卫"
 msgstr "Guardia del lobo"
 
 msgid "白垩界卫"
-msgstr "Cretaceous Guardian"
+msgstr "Guardián cretácico"
 
 msgid "目标券数"
-msgstr "Target Ticket Count"
+msgstr "Cantidad objetivo de vales"
 
 msgid "矿脉源区"
-msgstr "Vein Source Area"
+msgstr "Zona de origen de la veta"
 
 msgid "秋栗"
 msgstr "Qiuri"
 
 msgid "罗丹"
-msgstr "Rodin"
+msgstr "Luó Dān"
 
 msgid "自动战斗"
-msgstr "Auto Combate"
+msgstr "Combate automático"
 
 msgid "自动战斗(进入战斗后自动战斗直到结束)"
-msgstr "Auto Combate (hasta terminar)"
+msgstr "Combate automático (hasta el final)"
 
 msgid "自动抢单"
-msgstr "Auto Aceptar Pedidos"
+msgstr "Aceptación automática de pedidos"
 
 msgid "自动拾取"
-msgstr "Auto Recoger"
+msgstr "Recogida automática"
 
 msgid "自动登录"
-msgstr "Auto Inicio de Sesión"
+msgstr "Inicio de sesión automático"
 
 msgid "自动登录领月卡"
-msgstr "Auto Login Reclamar Tarjeta Mensual"
+msgstr "Inicio automático y recogida de tarjeta mensual"
 
 msgid "自动跳过剧情"
-msgstr "Auto Saltar Diálogo"
+msgstr "Omitir diálogos automáticamente"
 
 msgid "自动送货"
-msgstr "Auto Entrega"
+msgstr "Entrega automática"
 
 msgid "艾尔黛拉"
 msgstr "eldela"
@@ -441,10 +438,10 @@ msgid "萤石"
 msgstr "fluorita"
 
 msgid "蓝铁矿"
-msgstr "Blue Iron Ore"
+msgstr "Mineral de hierro azul"
 
 msgid "象限拟合液"
-msgstr "Quadrant Fitting Solution"
+msgstr "Solución de ajuste de cuadrante"
 
 msgid "资源"
 msgstr "Recursos"
@@ -453,40 +450,40 @@ msgid "赛希"
 msgstr "Saihi"
 
 msgid "超距辉映管"
-msgstr "Ultra-Distance Luminescent Tube"
+msgstr "Tubo luminiscente de ultradistancia"
 
 msgid "转交委托奖励领取"
-msgstr "Claim Delegated Commission Rewards"
+msgstr "Recoger recompensas de encargos transferidos"
 
 msgid "转交运送委托"
-msgstr "Transfer Delivery Commission"
+msgstr "Transferir encargos de entrega"
 
 msgid "转移轮次"
-msgstr "Transfer Rounds"
+msgstr "Rondas de traslado"
 
 msgid "转运到这个仓库"
-msgstr "Transfer to This Warehouse"
+msgstr "Trasladar a este almacén"
 
 msgid "运送委托接取"
-msgstr "Auto Aceptar Pedidos de Entrega"
+msgstr "Aceptación automática de encargos de entrega"
 
 msgid "进入战斗后的初始等待时间"
-msgstr "Initial wait time after entering battle"
+msgstr "Espera inicial tras entrar en combate"
 
 msgid "送礼"
 msgstr "Regalar"
 
 msgid "送礼任务最多尝试次数"
-msgstr "Max Gift Task Attempts"
+msgstr "Intentos máximos de la tarea de regalos"
 
 msgid "选择测试对象"
-msgstr "Select Test Target"
+msgstr "Seleccionar objetivo de prueba"
 
 msgid "选择要转移的物品"
-msgstr "Select Items to Transfer"
+msgstr "Seleccionar objetos que trasladar"
 
 msgid "通向送货点"
-msgstr "To Delivery Point"
+msgstr "Hacia el punto de entrega"
 
 msgid "造装备"
 msgstr "Fabricar Equipo"
@@ -495,13 +492,13 @@ msgid "遍历武器基质列表，匹配 weapon_data.csv 并处理毕业基质�
 msgstr "Recorrer lista de esencias, coincidir weapon_data.csv y bloquear"
 
 msgid "重复测试的次数"
-msgstr "Number of Test Repetitions"
+msgstr "Número de repeticiones de la prueba"
 
 msgid "钱币收集"
-msgstr "Currency Collection"
+msgstr "Recogida de monedas"
 
 msgid "间隔秒数"
-msgstr "Interval (seconds)"
+msgstr "Intervalo (segundos)"
 
 msgid "阿列什"
 msgstr "Ares"
@@ -510,19 +507,19 @@ msgid "陈千语"
 msgstr "Chen Qianyu"
 
 msgid "非毕业基质会尝试取消上锁（已上锁的会解锁）"
-msgstr "Non-graduated essences will attempt to unlock"
+msgstr "Se intentarán desbloquear las esencias no óptimas"
 
 msgid "非毕业基质取消上锁"
-msgstr "Unlock Non-Graduated Essences"
+msgstr "Desbloquear esencias no óptimas"
 
 msgid "非毕业基质弃置"
-msgstr "Discard Non-Graduated Essences"
+msgstr "Descartar esencias no óptimas"
 
 msgid "骏卫"
 msgstr "Shun Wei"
 
 msgid "高容谷地电池"
-msgstr "High-Capacity Valley Battery"
+msgstr "Batería de alta capacidad del Valle"
 
 msgid "黎风"
 msgstr "Li Feng"
@@ -533,13 +530,13 @@ msgid ""
 "选择完整循环测试则会依次测试每个送货目标的完整流程\n"
 "(需要锁定次要任务在送货任务上或附近)"
 msgstr ""
-"Default is None (normal task)\n"
-"Select zipline fork sequences to test\n"
-"Full Cycle Test tests each delivery target's complete flow\n"
-"(Requires locking sub-task on or near delivery task)"
+"El valor predeterminado es Ninguno (tarea normal)\n"
+"Seleccione secuencias de bifurcación para probar la tirolina\n"
+"La prueba de ciclo completo comprueba el flujo de cada destino de entrega\n"
+"(Requiere fijar la subtarea en la tarea de entrega o cerca de ella)"
 
 msgid "齐纶"
-msgstr "Qi Lun"
+msgstr "Qí Lún"
 
 msgid "⭐买信用商店"
 msgstr "⭐ Comprar Tienda de Crédito"
@@ -551,7 +548,7 @@ msgid "⭐买物资"
 msgstr "⭐ Comprar Suministros"
 
 msgid "⭐传送到帝江号右侧传送点"
-msgstr "⭐ Teleport to Right Waypoint of Dijiang"
+msgstr "⭐ Teletransportarse al punto derecho del Dijiang"
 
 msgid "⭐刷体力"
 msgstr "⭐ Farmear Estamina"
@@ -560,10 +557,10 @@ msgid "⭐周常奖励"
 msgstr "⭐ Recompensas Semanales"
 
 msgid "⭐帝江号收菜"
-msgstr "⭐ Dijiang Harvest"
+msgstr "⭐ Recolección del Dijiang"
 
 msgid "⭐据点兑换"
-msgstr "⭐ Outpost Exchange"
+msgstr "⭐ Intercambio del puesto"
 
 msgid "⭐收信用"
 msgstr "⭐ Recoger Crédito"
@@ -575,13 +572,13 @@ msgid "⭐日常奖励"
 msgstr "⭐ Recompensas Diarias"
 
 msgid "⭐简易制作"
-msgstr "⭐ Simple Crafting"
+msgstr "⭐ Fabricación sencilla"
 
 msgid "⭐转交委托奖励领取"
-msgstr "⭐ Claim Delegated Rewards"
+msgstr "⭐ Recoger recompensas transferidas"
 
 msgid "⭐转交运送委托"
-msgstr "⭐ Transfer Delivery Commission"
+msgstr "⭐ Transferir encargos de entrega"
 
 msgid "⭐送礼"
 msgstr "⭐ Regalar"
@@ -590,10 +587,10 @@ msgid "⭐造装备"
 msgstr "⭐ Fabricar Equipo"
 
 msgid "「战技」释放角色顺序，比如123。建议只放3个技能。"
-msgstr "Skill release order, e.g. 123. Recommend only 3 skills."
+msgstr "Orden de uso de habilidades, p. ej. 123. Se recomiendan solo 3."
 
 msgid "交易货品优先序列"
-msgstr "Trade Goods Priority Sequence"
+msgstr "Prioridad de mercancías"
 
 msgid ""
 "仅接受'1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n]'这些值的逗号分隔字符串，代表技能释放优先级顺序\n"
@@ -601,28 +598,30 @@ msgid ""
 "启用排轴功能后，系统会按照该配置的顺序尝试释放技能，一旦成功释放一个技能，就会等待下一个技能，而不是继续尝试后续技能\n"
 "这可以用于更精细地控制技能释放顺序，例如优先释放某个干员的技能来配合特定的战术需求。"
 msgstr ""
-"Comma-separated values: '1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n]' for skill priority\n"
-"e.g. 'ult_2,1,e,ult_1'\n"
-"With rotation, system tries skills in order, waits after success\n"
-"Use for fine-grained control."
+"Valores separados por comas: '1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n]', según la prioridad\n"
+"P. ej. 'ult_2,1,e,ult_1'\n"
+"Con rotación, el sistema prueba las habilidades en orden y espera tras cada acierto\n"
+"Permite controlar con precisión el orden de uso."
 
 msgid "仅站桩"
-msgstr "Stand Still Only"
+msgstr "Permanecer inmóvil"
 
 msgid "伊冯"
-msgstr "yvonne"
+msgstr "Yvonne"
 
 msgid "使用说明参见选项，更多用法参见 ./docs/日常任务.md"
-msgstr "See options for instructions, more in ./docs/日常任务.md"
+msgstr "Consulte las opciones y ./docs/日常任务.md para más información"
 
 msgid "信用商店保留信用"
-msgstr "Credit Store Reserved Credit"
+msgstr "Crédito reservado en la tienda"
 
 msgid "制造舱"
 msgstr "Bahía de Fabricación"
 
 msgid "刷取哪个副本。所选副本必须领完所有等级的首通奖励。"
-msgstr "Which dungeon to farm. Must have claimed all first-clear rewards."
+msgstr ""
+"Mazmorra que farmear. Deben haberse recogido todas las recompensas "
+"iniciales."
 
 msgid "发生异常时终止游戏"
 msgstr "Terminar Juego en Excepción"
@@ -631,47 +630,52 @@ msgid "只买不卖"
 msgstr "Solo Comprar, No Vender"
 
 msgid "启动一次游戏,120s后自动关闭"
-msgstr "Launch game once, auto-close after 120s"
+msgstr "Iniciar el juego una vez y cerrarlo tras 120s"
 
 msgid "启用后将只进行购买操作，不进行出售操作。"
-msgstr "When enabled, only purchase, no selling."
+msgstr "Al activarlo, solo se compra y no se vende."
 
 msgid "启用排轴"
 msgstr "Activar Rotación de Habilidades"
 
 msgid "四号谷地物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
-msgstr "Valley No.4 buy price cap. Set high if must buy."
+msgstr ""
+"Precio máximo de compra del Valle n.º 4. Use un valor alto para comprar "
+"siempre."
 
 msgid "四号谷地物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
-msgstr "Valley No.4 sell price floor. Set to 1 if must sell."
+msgstr "Precio mínimo de venta del Valle n.º 4. Use 1 para vender siempre."
 
 msgid "回到主页后等待的时间"
-msgstr "Wait time after returning to main page"
+msgstr "Espera tras volver a la página principal"
 
 msgid "多账户模式"
 msgstr "Modo Multi-Cuenta"
 
 msgid "多账户模式下，账号密码列表，每行一个账号，账号密码用逗号分隔"
-msgstr "Account/password list, one per line, comma-separated"
+msgstr "Lista de cuentas y contraseñas, una por línea y separadas por comas"
 
 msgid "如果勾选，那么对于随机某项 m 个限时 n 天的体力药，使用其中的 2*m/n 个（向上取整）。"
-msgstr "If checked, use 2*m/n of limited-time stamina potions (rounded up)."
+msgstr ""
+"Si se marca, usar 2*m/n pociones de estamina con límite de n días "
+"(redondeando hacia arriba)."
 
 msgid ""
 "子任务开关用⭐标出，自上而下顺序执行，最后执行『日常奖励』。\n"
 "如果出现反复按ESC的情形，请调高『设置/主界面单次动作后延迟』（建议1.5以上）。"
 msgstr ""
-"Sub-tasks marked with ⭐, top to bottom, Daily Rewards last.\n"
-"If ESC repeats, increase Action Delay (recommended 1.5+)."
+"Las subtareas marcadas con ⭐ se ejecutan de arriba abajo; Recompensas diarias va al final.\n"
+"Si se pulsa ESC repetidamente, aumente Ajustes/Retraso tras acción (se recomienda 1.5 o más)."
 
 msgid "帮助"
 msgstr "Ayuda"
 
 msgid "当「技力条」达到该数值时，开始执行技能序列。取值范围1-3。"
-msgstr "Start skill sequence when skill gauge reaches this value. Range: 1-3."
+msgstr "Iniciar la secuencia al alcanzar este valor de energía. Rango: 1-3."
 
 msgid "战斗中周期触发锁敌+向前闪避的最小间隔秒数。取值不小于1。"
-msgstr "Min interval (seconds) for lock-on + forward dodge. Min 6."
+msgstr ""
+"Intervalo mínimo para fijar objetivo + esquivar hacia delante. Mínimo: 1 s."
 
 msgid "排轴序列"
 msgstr "Secuencia de Rotación"
@@ -680,73 +684,102 @@ msgid "是否买礼物"
 msgstr "Comprar Regalos"
 
 msgid "是否前往「帝江号/会客室」收集全部线索。若集齐线索，则开启情报交流。"
-msgstr "Go to Dijiang/Reception Room to collect all clues."
+msgstr ""
+"Ir a Dijiang/Sala de recepción, recoger todas las pistas e iniciar el "
+"intercambio si se completan."
 
 msgid "是否前往「帝江号/制造仓」收取培养材料。收取后会补足待制造数量。"
-msgstr "Go to Dijiang/Manufacturing Bay to collect materials."
+msgstr ""
+"Ir a Dijiang/Bahía de fabricación, recoger materiales y reponer la cantidad "
+"pendiente."
 
 msgid "是否前往「装备制造/套组装备制造」并制作一件列表首位的装备。请确保有足够的装备原件和调度券。"
-msgstr "Go to Equipment Crafting and craft the first item."
+msgstr ""
+"Ir a Fabricación de equipo y fabricar el primer objeto. Requiere piezas y "
+"vales suficientes."
 
 msgid "是否前往「邮箱」领取邮件。"
-msgstr "Go to mailbox to collect mail."
+msgstr "Ir al buzón y recoger el correo."
 
 msgid "是否前往好友的「帝江号」并在「访客终端」上进行助力获得信用。助力结束后，前往「采购中心/信用交易所」收取全部助力。"
-msgstr "Visit friend's Dijiang, assist at Visitor Terminal, then collect at Credit Exchange."
+msgstr ""
+"Ayudar en el Terminal de visitantes del Dijiang de un amigo y recoger el "
+"crédito en la Tienda de crédito."
 
 msgid "是否前往好友的「帝江号」并在「访客终端」上进行收集线索、制造舱操作"
-msgstr "Visit friend's Dijiang for clue collection and manufacturing"
+msgstr ""
+"Visitar el Dijiang de un amigo para recoger pistas y operar la bahía de "
+"fabricación"
 
 msgid "是否启用「地区建设/四号谷地物资调度/弹性需求物资」交易。"
-msgstr "Enable Region Building/Valley No.4/Flexible Demand trading."
+msgstr ""
+"Activar el comercio en Construcción regional/Valle n.º 4/Demanda flexible."
 
 msgid "是否启用「地区建设/武陵物资调度/弹性需求物资」交易。"
-msgstr "Enable Region Building/Wuling/Flexible Demand trading."
+msgstr "Activar el comercio en Construcción regional/Wuling/Demanda flexible."
 
 msgid "是否启用多账户模式"
-msgstr "Enable Multi-Account Mode"
+msgstr "Activar modo multicuenta"
 
 msgid "是否启用排轴功能。启用后会根据「排轴序列」配置的顺序优先释放对应角色的技能,当排轴失败时回退到非排轴状态"
-msgstr "Enable skill rotation. Falls back on failure."
+msgstr ""
+"Activar la rotación según la secuencia configurada; si falla, volver al modo"
+" normal."
 
 msgid "是否在「地区建设/仓储结点」中转交全部运送委托。"
-msgstr "Transfer all delivery commissions at Storage Node."
+msgstr ""
+"Transferir todos los encargos de entrega en Construcción regional/Nodo de "
+"almacenamiento."
 
 msgid "是否在「地区建设/据点管理」中通过交易获得调度券。"
-msgstr "Obtain dispatch tickets via trading at Outpost Management."
+msgstr ""
+"Obtener vales mediante comercio en Construcción regional/Gestión del puesto."
 
 msgid "是否在「地区建设/物资调度/稳定物资需求」中通过调度券购买物资。依次购买「日用消耗」「工业货品」「人文物产」首行某个物品。"
-msgstr "Purchase supplies via dispatch tickets at Stable Supply Demand."
+msgstr ""
+"Comprar con vales el primer objeto de cada categoría en Demanda estable de "
+"suministros."
 
-msgid "是否在「弹性需求物资」与好友交易赚取调度券。自动选择利润最高的方案，然后用价格上下限判定是否交易。（除非可购买数量即将溢出，这种情况下必定交易。）"
-msgstr "Trade with friends for dispatch tickets. Auto-selects highest profit."
+msgid ""
+"是否在「弹性需求物资」与好友交易赚取调度券。自动选择利润最高的方案，然后用价格上下限判定是否交易。（除非可购买数量即将溢出，这种情况下必定交易。）"
+msgstr ""
+"Comerciar con amigos para obtener vales, eligiendo el mayor beneficio dentro"
+" de los límites de precio."
 
 msgid "是否在「采购中心/信用交易所」采购。自动刷新 且 仅购买「武库配额」「嵌晶玉」。"
-msgstr "Purchase at Credit Exchange. Only buy Arsenal Quota and Embedded Jade."
+msgstr ""
+"Comprar en la Tienda de crédito con actualización automática; solo Cuota de "
+"arsenal y Jade incrustado."
 
 msgid "是否消耗所有「理智」刷取培养材料。"
-msgstr "Consume all Sanity to farm materials."
+msgstr "Consumir toda la Cordura para farmear materiales."
 
 msgid "是否购买「人文物产」。"
-msgstr "Purchase Cultural Products."
+msgstr "Comprar Productos culturales."
 
-msgid "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。如果途中偶遇干员，则直接交互完成送礼。任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
-msgstr "Raise operator affinity via gifts. Cannot start near Cambridge waypoint."
+msgid ""
+"是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。如果途中偶遇干员，则直接交互完成送礼。任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
+msgstr ""
+"Aumentar la afinidad regalando en Dijiang/Contacto de operadores. No iniciar"
+" cerca del punto de Cambridge."
 
 msgid "是否领取「地区建设/仓储结点/我转交的委托」。超时委托也会被领取。"
-msgstr "Claim delegated commissions. Expired ones will also be claimed."
+msgstr ""
+"Recoger encargos transferidos en el Nodo de almacenamiento, incluidos los "
+"caducados."
 
 msgid "是否领取「活动中心/每周事物」中的奖励。"
-msgstr "Claim rewards from Activity Center/Weekly Tasks."
+msgstr "Recoger recompensas del Centro de eventos/Tareas semanales."
 
 msgid "是否领取「行动手册/日常」和「通行证」中的奖励。"
-msgstr "Claim rewards from Handbook/Daily and Battle Pass."
+msgstr "Recoger recompensas de Manual/Diarias y del Pase."
 
 msgid "武陵物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
-msgstr "Wuling buy price cap. Set high if must buy."
+msgstr ""
+"Precio máximo de compra de Wuling. Use un valor alto para comprar siempre."
 
 msgid "武陵物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
-msgstr "Wuling sell price floor. Set to 1 if must sell."
+msgstr "Precio mínimo de venta de Wuling. Use 1 para vender siempre."
 
 msgid "汤汤"
 msgstr "tantang"
@@ -755,40 +788,52 @@ msgid "洛茜"
 msgstr "Rosie"
 
 msgid "消耗限时体力药"
-msgstr "Use Limited-Time Stamina Potions"
+msgstr "Usar pociones de estamina temporales"
 
 msgid "清波寨"
-msgstr "Qingbo Village"
+msgstr "Aldea Qingbo"
 
 msgid "自动检测战斗开始和结束，使用说明参见选项"
-msgstr "Auto-detect battle start/end. See options."
+msgstr ""
+"Detectar automáticamente el inicio y fin del combate; consulte las opciones."
 
 msgid "若剩余信用小于这个数值，则终止采购。"
-msgstr "Stop purchasing if credit is below this value."
+msgstr "Detener las compras si el crédito restante es inferior a este valor."
 
 msgid "若启用，则开始挑战后角色原地不动（不输出），仅对「重度能量淤积点」生效。可以用于建好防御塔情形，避免角色离开副本区域。"
-msgstr "Character stays still after challenge. Only for Heavy Stagnation."
+msgstr ""
+"El personaje permanece inmóvil al iniciar. Solo funciona en Acumulación "
+"intensa de energía."
 
 msgid "若选项开启，则优先尝试仅助力好友「帝江号」上的「培养仓」。如果不能，至少助力一次其它舱室。"
-msgstr "Prioritize assisting friend's Cultivation Chamber."
+msgstr ""
+"Priorizar la cámara de cultivo del Dijiang de un amigo; si no es posible, "
+"ayudar en otra cámara."
 
 msgid "账号列表"
-msgstr "Account List"
+msgstr "Lista de cuentas"
 
 msgid "购物白名单"
-msgstr "Shopping Whitelist"
+msgstr "Lista blanca de compras"
 
 msgid "配合任务计划程序提前启动游戏,防止游戏更新/弹公告导致的后续问题"
-msgstr "Launch game early via Task Scheduler to prevent update issues"
+msgstr ""
+"Iniciar antes el juego con el Programador de tareas para evitar problemas de"
+" actualización o avisos"
 
 msgid "需要设好「预刻写属性」。默认留空表示直线前往，更多用法参见 ./docs/体力本.md > 能量淤积点 。"
-msgstr "Set Pre-Inscription attribute first. See ./docs for more."
+msgstr ""
+"Configure «Atributo preinscrito». Vacío indica ruta directa. Consulte "
+"./docs/体力本.md > 能量淤积点 ."
 
 msgid "默认留空，交易货品顺序随机。更多用法参见 ./docs/日常任务.md > 优先货品交易序列 。"
-msgstr "Leave empty for random trade order. See docs."
+msgstr ""
+"Déjelo vacío para un orden aleatorio. Consulte ./docs/日常任务.md > 优先货品交易序列 ."
 
 msgid "默认留空，表示购买「日用消耗」「工业货品」首行首个物资。更多用法参见 ./docs/日常任务.md > 买物资 。"
-msgstr "Leave empty to buy first item of each category. See docs."
+msgstr ""
+"Déjelo vacío para comprar el primer objeto de cada categoría. Consulte "
+"./docs/日常任务.md > 买物资 ."
 
 msgid "Backpack Key"
 msgstr "Tecla Mochila"
@@ -806,30 +851,11 @@ msgid ""
 "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n"
 "开启发生异常时终止游戏时此选项不生效"
 msgstr ""
-"Exit game only after all tasks\n"
-"Auto-closes game but not software\n"
-"Ignored when Terminate on Exception is on"
+"Salir solo del juego tras completar todas las tareas; cierra el juego, pero no la aplicación\n"
+"No se aplica si está activado Terminar el juego tras una excepción"
 
 msgid "0~1，值越高越严格"
 msgstr "0~1, más alto = más estricto"
-
-msgid "1"
-msgstr "1"
-
-msgid "119000"
-msgstr "119000"
-
-msgid "2"
-msgstr "2"
-
-msgid "3"
-msgstr "3"
-
-msgid "4"
-msgstr "4"
-
-msgid "5"
-msgstr "5"
 
 msgid "YOLO模型"
 msgstr "Modelo YOLO"
@@ -856,10 +882,11 @@ msgid "不换队伍"
 msgstr "No Cambiar Equipo"
 
 msgid "中容武陵电池"
-msgstr "Mid-Capacity Wuling Battery"
+msgstr "Batería de capacidad media de Wuling"
 
 msgid "仅在“完整循环测试”时生效，用于限定测试的小区域（当前地区可选地点）"
-msgstr "Only effective during Full Cycle Test to limit test area"
+msgstr ""
+"Solo se aplica a Prueba de ciclo completo para limitar la zona de prueba"
 
 msgid ""
 "仅接受'1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n],normal_[n]'这些值的逗号分隔字符串，\n"
@@ -873,37 +900,43 @@ msgid ""
 "这可以用于更精细地控制技能释放顺序，\n"
 "例如优先释放某个干员的技能来配合特定的战术需求。"
 msgstr ""
-"Comma-separated values for skill priority\n"
-"normal_[n] = switch to normal combat for n seconds, then resume rotation\n"
-"With rotation, system tries in order, waits after success\n"
-"Use for fine-grained control."
+"Solo se aceptan cadenas separadas por comas con '1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n],normal_[n]',\n"
+"que indican la prioridad de uso de habilidades\n"
+"Por ejemplo, 'ult_2,1,e,ult_1' prioriza la definitiva del operador 2 y la habilidad del 1,\n"
+"después el enlace y la definitiva del operador 1\n"
+"normal_[n] activa el combate normal durante n segundos según «Uso de habilidades»;\n"
+"después de n segundos, reanuda la rotación desde la siguiente habilidad\n"
+"Con la rotación, el sistema prueba las habilidades en el orden configurado;\n"
+"cuando usa una, espera a la siguiente en vez de probar las posteriores\n"
+"Esto permite controlar con precisión el orden de uso,\n"
+"por ejemplo, para priorizar un operador según la táctica."
 
 msgid "从账号列表或已有覆盖中选择"
-msgstr "Select from account list or existing overrides"
+msgstr "Seleccionar de la lista de cuentas o anulaciones existentes"
 
 msgid "任务"
 msgstr "Tarea"
 
 msgid "优质芽针针剂"
-msgstr "Premium Sprout Needle Injection"
+msgstr "Inyección prémium de aguja brote"
 
 msgid "会根据开始日期自动轮换，留空表示不启用自动轮换。"
-msgstr "Auto-rotates based on start date. Leave empty to disable."
+msgstr "Rota según la fecha inicial. Déjelo vacío para desactivarlo."
 
 msgid "低阶"
 msgstr "Nivel Bajo"
 
 msgid "体力刷完后继续刷取次数"
-msgstr "Extra runs after stamina depleted"
+msgstr "Intentos extra tras agotar la estamina"
 
 msgid "体力本奖励档位"
-msgstr "Stamina Dungeon Reward Tier"
+msgstr "Nivel de recompensa de la mazmorra de estamina"
 
 msgid "体力本配置"
-msgstr "Stamina Dungeon Config"
+msgstr "Configuración de mazmorra de estamina"
 
 msgid "使用说明参见选项，更多用法参见 ./docs/体力本.md"
-msgstr "See options for instructions, more in ./docs"
+msgstr "Consulte las opciones y ./docs/体力本.md para más información"
 
 msgid "保持当前"
 msgstr "Mantener Actual"
@@ -924,31 +957,31 @@ msgid "其他配置"
 msgstr "Otras Configuraciones"
 
 msgid "刷体力开始日期"
-msgstr "Stamina Farm Start Date"
+msgstr "Fecha inicial de farmeo de estamina"
 
 msgid ""
 "刷体力自动切换的起始日期，格式如2026-04-05。\n"
 "用于计算今天是第几天，配合刷本序列使用。"
 msgstr ""
-"Start date for auto rotation, format: 2026-04-05.\n"
-"Used to calculate day number for dungeon sequence."
+"Fecha inicial de la rotación automática, formato: 2026-04-05.\n"
+"Se usa para calcular el día de la secuencia de mazmorras."
 
 msgid "刷本序列"
-msgstr "Dungeon Sequence"
+msgstr "Secuencia de mazmorras"
 
 msgid ""
 "前置是选择测试对象部分选择\"无\"\n"
 "仅接取当前地区委托，不送货"
 msgstr ""
-"Prerequisite: Select \"None\"\n"
-"Accept current region commission only, no delivery"
+"Requisito: seleccionar \"Ninguno\"\n"
+"Aceptar solo encargos de la región actual, sin entregar"
 
 msgid ""
 "前置是选择测试对象部分选择\"无\"\n"
 "接取当前地区委托后启动自动识别送货"
 msgstr ""
-"Prerequisite: Select \"None\"\n"
-"Auto-detect delivery after accepting commission"
+"Requisito: seleccionar \"Ninguno\"\n"
+"Detectar automáticamente la entrega tras aceptar el encargo"
 
 msgid ""
 "勾选要在帝江号收菜时执行的操作。\n"
@@ -956,96 +989,103 @@ msgid ""
 "制造舱：前往「制造仓」收取培养材料并补足待制造数量。\n"
 "培养舱：前往「培养仓」收取培养材料并直接再次培养。"
 msgstr ""
-"Select operations during Dijiang harvest.\n"
-"Collect Clues: Go to Reception Room.\n"
-"Manufacturing Bay: Collect and restock.\n"
-"Cultivation Chamber: Collect and restart."
+"Seleccione las operaciones de recolección del Dijiang.\n"
+"Recoger pistas: ir a la Sala de recepción.\n"
+"Bahía de fabricación: recoger y reponer.\n"
+"Cámara de cultivo: recoger y reiniciar."
 
 msgid ""
 "勾选要在活动中心里领取的奖励。\n"
 "周常奖励：领取「每周事务」中的奖励。\n"
 "理智补给：领取「理智补给」中的奖励。"
 msgstr ""
-"Select rewards at Activity Center.\n"
-"Weekly Rewards: Claim from Weekly Tasks.\n"
-"Sanity Supply: Claim Sanity rewards."
+"Seleccione las recompensas del Centro de eventos.\n"
+"Recompensas semanales: recoger las Tareas semanales.\n"
+"Suministro de Cordura: recoger sus recompensas."
 
 msgid ""
 "勾选要自动循环释放「战技」的角色编号。\n"
 "按编号从小到大的顺序依次释放，至少勾选一个。"
 msgstr ""
-"Select characters for auto skill cycling.\n"
-"Released in ascending order. Select at least one."
+"Seleccione los personajes para el ciclo automático de habilidades.\n"
+"Se usan en orden ascendente. Seleccione al menos uno."
 
 msgid "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。"
-msgstr "If Auto-Exit is selected, exceptions will also exit game and app."
+msgstr ""
+"Si está marcado Salir al terminar, una excepción también cerrará el juego y "
+"la aplicación."
 
 msgid "可选。设置外部命令的起始目录（工作目录）；留空则使用默认目录。"
-msgstr "Optional. Set working directory for external command."
+msgstr ""
+"Opcional. Directorio de trabajo del comando externo; vacío usa el "
+"predeterminado."
 
 msgid "周常奖励"
 msgstr "Recompensas Semanales"
 
 msgid "地区切换"
-msgstr "Region Switch"
+msgstr "Cambio de región"
 
 msgid "培养舱"
 msgstr "Cámara de Cultivo"
 
 msgid "多账户独立配置"
-msgstr "Per-Account Config"
+msgstr "Configuración por cuenta"
 
 msgid ""
 "如果勾选，将优先全部用掉限时为‘小时’的体力药，\n"
 "如有‘天’单位的体力药，则按 2*m/n（向上取整）消耗。"
 msgstr ""
-"If checked, use hourly potions first.\n"
-"For daily potions, consume 2*m/n (rounded up)."
+"Si se marca, usar primero todas las pociones con límite en horas.\n"
+"Para las limitadas en días, consumir 2*m/n (redondeando hacia arriba)."
 
 msgid ""
 "子任务开关用⭐标出，自上而下顺序执行，默认展开在最前面的『⭐⭐⭐ 默认』分组，最后执行『日常奖励』。\n"
 "如果出现反复按ESC的情形，请调高『设置/主界面单次动作后延迟』（建议1.5以上）。"
 msgstr ""
-"Sub-tasks marked with ⭐, Default group first, Daily Rewards last.\n"
-"If ESC repeats, increase Action Delay (recommended 1.5+)."
+"Las subtareas marcadas con ⭐ se ejecutan de arriba abajo; Predeterminado va primero y Recompensas diarias al final.\n"
+"Si se pulsa ESC repetidamente, aumente Ajustes/Retraso tras acción (se recomienda 1.5 o más)."
 
 msgid "完整循环测试区域"
-msgstr "Full Cycle Test Area"
+msgstr "Zona de prueba de ciclo completo"
 
 msgid "实时循环执行 YOLO 检测，用于在线观察目标识别结果。"
-msgstr "Run YOLO detection in real-time loop."
+msgstr ""
+"Ejecutar YOLO en bucle para observar el reconocimiento en tiempo real."
 
 msgid "实时检测"
 msgstr "Detección en Tiempo Real"
 
 msgid "帝江号收菜操作"
-msgstr "Dijiang Harvest Operations"
+msgstr "Operaciones de recolección del Dijiang"
 
 msgid "庄方宜"
 msgstr "Zhuang Fangyi"
 
 msgid "开启后仅显示与原配置不同的项"
-msgstr "Show only items differing from default config"
+msgstr "Mostrar solo los valores distintos de la configuración original"
 
 msgid "开启后等待外部命令执行完成；关闭则后台启动后立即继续。开启此选项可支持多账户模式。"
-msgstr "Wait for external command to finish. Required for multi-account."
+msgstr ""
+"Esperar a que termine el comando externo; necesario para el modo "
+"multicuenta."
 
 msgid "开启后若检测到目标命令已在运行，将跳过本次启动。"
-msgstr "Skip if target command is already running."
+msgstr "Omitir el inicio si el comando objetivo ya está en ejecución."
 
 msgid ""
 "当「技力条」达到该数值时，\n"
 "开始执行技能序列。取值范围1-3。"
 msgstr ""
-"Start skill sequence when gauge reaches this value.\n"
-"Range: 1-3."
+"Iniciar la secuencia al alcanzar este valor de energía.\n"
+"Rango: 1-3."
 
 msgid ""
 "战斗中周期触发锁敌+向前闪避的最小间隔秒数。\n"
 "取值不小于1。"
 msgstr ""
-"Min interval for lock-on + forward dodge.\n"
-"Min 6."
+"Intervalo mínimo para fijar objetivo + esquivar hacia delante.\n"
+"Mínimo: 1 s."
 
 msgid "战斗相关选项"
 msgstr "Opciones de Combate"
@@ -1054,8 +1094,8 @@ msgid ""
 "打开临时帮助文档。\n"
 "同时打开油猴脚本目录。"
 msgstr ""
-"Open temporary help doc.\n"
-"Also open Tampermonkey script directory."
+"Abrir el documento de ayuda temporal.\n"
+"Abrir también el directorio del script de Tampermonkey."
 
 msgid "打开帮助"
 msgstr "Abrir Ayuda"
@@ -1067,7 +1107,7 @@ msgid "打开日常任务使用说明网页。"
 msgstr "Abrir página de instrucciones de tareas diarias."
 
 msgid "扫描间隔(秒)"
-msgstr "Scan Interval (seconds)"
+msgstr "Intervalo de escaneo (segundos)"
 
 msgid "持续读取并显示当前箭头的角度"
 msgstr "Leer y mostrar continuamente el ángulo de la flecha"
@@ -1078,105 +1118,112 @@ msgstr "Número de Equipo Especificado"
 msgid ""
 "按住标记按键并持续达到这个时长后，\n"
 "才会把当前目标标记为已获取。"
-msgstr "Hold mark key for this duration to mark target as collected."
+msgstr ""
+"Mantenga pulsada la tecla durante este tiempo\n"
+"para marcar el objetivo como recogido."
 
 msgid ""
 "接近目标后用于标记“已获取”的键位。\n"
 "默认按键为 f。"
 msgstr ""
-"Key to mark target as collected when approaching.\n"
-"Default: F."
+"Tecla para marcar el objetivo como recogido al acercarse.\n"
+"Predeterminada: f."
 
 msgid ""
 "是否前往「装备制造/套组装备制造」并制作一件列表首位的装备。\n"
 "请确保有足够的装备原件和调度券。"
 msgstr ""
-"Go to Equipment Crafting and craft first item.\n"
-"Ensure enough parts and dispatch tickets."
+"Ir a Fabricación de equipo y fabricar el primer objeto.\n"
+"Asegúrese de tener suficientes piezas y vales."
 
 msgid ""
 "是否前往好友的「帝江号」并在「访客终端」上进行助力获得信用。\n"
 "助力结束后，前往「采购中心/信用交易所」收取全部助力。"
 msgstr ""
-"Visit friend's Dijiang, assist at Visitor Terminal.\n"
-"Then collect at Credit Exchange."
+"Ayudar en el Terminal de visitantes del Dijiang de un amigo.\n"
+"Después, recoger el crédito en la Tienda de crédito."
 
 msgid ""
 "是否启用多账户模式\n"
 "需要已登录任意账号,可能不支持全屏游戏"
 msgstr ""
-"Enable multi-account mode\n"
-"Requires logged-in account; fullscreen may not work"
+"Activar el modo multicuenta\n"
+"Requiere una cuenta conectada; puede no funcionar a pantalla completa"
 
 msgid ""
 "是否启用排轴功能。\n"
 "启用后会根据「排轴序列」配置的顺序优先释放对应角色的技能，\n"
 "当排轴失败时回退到非排轴状态"
 msgstr ""
-"Enable skill rotation.\n"
-"Prioritizes skills per sequence; falls back on failure."
+"Activar la rotación de habilidades.\n"
+"Prioriza las habilidades según la secuencia configurada.\n"
+"Si falla, vuelve al modo normal."
 
 msgid ""
 "是否启用账号独立配置覆盖\n"
 "开启后同一任务可按账号使用不同参数"
 msgstr ""
-"Enable per-account config override\n"
-"Different parameters per account for same task"
+"Activar la configuración individual por cuenta\n"
+"Permite distintos parámetros por cuenta para una misma tarea"
 
 msgid ""
 "是否在「地区建设/物资调度/稳定物资需求」中通过调度券购买物资。\n"
 "依次购买「日用消耗」「工业货品」「人文物产」首行某个物品。"
 msgstr ""
-"Purchase supplies via dispatch tickets.\n"
-"Buys first item of each category."
+"Comprar suministros mediante vales.\n"
+"Compra el primer objeto de cada categoría."
 
 msgid ""
 "是否在「帝江号」打开背包并点击「一键存放」。\n"
 "确认不会自动存可用道具导致治疗药被存入后再开启"
 msgstr ""
-"Open backpack and click One-Click Store at Dijiang.\n"
-"Ensure usable items won't be auto-stored."
+"Abrir la mochila en el Dijiang y pulsar Almacenar todo.\n"
+"Compruebe antes que no se guarden objetos utilizables."
 
 msgid ""
 "是否在「弹性需求物资」与好友交易赚取调度券。\n"
 "自动选择利润最高的方案，然后用价格上下限判定是否交易。\n"
 "（除非可购买数量即将溢出，这种情况下必定交易。）"
 msgstr ""
-"Trade with friends for dispatch tickets.\n"
-"Auto-selects highest profit within price limits.\n"
-"(Always trades if quantity about to overflow.)"
+"Comerciar con amigos para obtener vales.\n"
+"Selecciona el mayor beneficio dentro de los límites de precio.\n"
+"(Siempre comercia si la cantidad está a punto de desbordarse.)"
 
 msgid ""
 "是否在「采购中心/信用交易所」采购。\n"
 "自动刷新 且 仅购买「武库配额」「嵌晶玉」。"
 msgstr ""
-"Purchase at Credit Exchange.\n"
-"Auto-refresh, only buy Arsenal Quota and Embedded Jade."
+"Comprar en la Tienda de crédito.\n"
+"Actualiza automáticamente y solo compra Cuota de arsenal y Jade incrustado."
 
 msgid "是否执行一次外部命令行程序（可在「结尾外部命令执行时机」选择在最开始或最后执行）。"
-msgstr "Ejecutar comando externo (elegir posición mediante «End Command Timing»: al inicio o al final de las tareas diarias)."
+msgstr ""
+"Ejecutar un comando externo al inicio o al final, según «Momento del comando"
+" final»."
 
 msgid "是否购买「人文物产」（同样应用购物白名单序列）。"
-msgstr "Purchase Cultural Products (applies whitelist)."
+msgstr "Comprar Productos culturales aplicando también la lista blanca."
 
 msgid ""
 "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。\n"
 "如果途中偶遇干员，则直接交互完成送礼。\n"
 "任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
 msgstr ""
-"Raise operator affinity via gifts.\n"
-"Direct interaction if operator encountered.\n"
-"Cannot start near Cambridge waypoint."
+"Aumentar la afinidad de operadores mediante regalos.\n"
+"Interactuar directamente si se encuentra un operador.\n"
+"No iniciar cerca del punto de Cambridge."
 
 msgid ""
 "是否领取「地区建设/仓储结点/我转交的委托」。\n"
 "超时委托也会被领取。"
 msgstr ""
-"Claim delegated commissions at Storage Node.\n"
-"Expired ones will also be claimed."
+"Recoger encargos transferidos en el Nodo de almacenamiento.\n"
+"También se recogen los caducados."
 
 msgid "是否领取「活动中心」中的每周事务和理智补给奖励。"
-msgstr "Claim weekly tasks and sanity supply rewards."
+msgstr ""
+"Recoger las recompensas semanales y de Suministro de Cordura del Centro de "
+"eventos."
 
 msgid "标记按住时长"
 msgstr "Duración de Sostener Marca"
@@ -1185,10 +1232,10 @@ msgid "标记按键"
 msgstr "Tecla de Marca"
 
 msgid "根据 assets 目录下的 weapon_data*.csv 自动生成可选语言"
-msgstr "Auto-generate languages from weapon_data*.csv in assets"
+msgstr "Generar idiomas disponibles desde weapon_data*.csv en assets"
 
 msgid "根据地区配置自动送货,教程视频 BV1LLc7zFEF9"
-msgstr "Auto-deliver by region, tutorial BV1LLc7zFEF9"
+msgstr "Entregar según la región, tutorial BV1LLc7zFEF9"
 
 msgid "检测目标"
 msgstr "Objetivo de Detección"
@@ -1197,28 +1244,30 @@ msgid "检测置信度"
 msgstr "Confianza de Detección"
 
 msgid "武器数据语言"
-msgstr "Weapon Data Language"
+msgstr "Idioma de datos de armas"
 
 msgid "每次检测后的等待时间"
-msgstr "Wait time after each detection"
+msgstr "Espera tras cada detección"
 
 msgid "每行一个账号名（手机号），无需密码"
-msgstr "One account (phone) per line, no password needed"
+msgstr "Una cuenta (teléfono) por línea, sin contraseña"
 
 msgid "油猴脚本帮助"
-msgstr "Tampermonkey Script Help"
+msgstr "Ayuda del script de Tampermonkey"
 
 msgid "活动奖励"
 msgstr "Recompensas de Evento"
 
 msgid "浏览器油猴脚本帮助"
-msgstr "Browser Tampermonkey Script Help"
+msgstr "Ayuda del script de Tampermonkey del navegador"
 
 msgid "淤积点相关选项"
-msgstr "Stagnation Point Options"
+msgstr "Opciones de puntos de acumulación"
 
 msgid "游戏内开启全屏模式时请确保游戏内分辨率与你的屏幕分辨率一致"
-msgstr "Ensure game resolution matches screen in fullscreen"
+msgstr ""
+"En pantalla completa, asegúrese de que la resolución del juego coincida con "
+"la pantalla"
 
 msgid "物品导航"
 msgstr "Navegación de Objetos"
@@ -1231,138 +1280,142 @@ msgid ""
 "保持当前：不切换。\n"
 "低阶/高阶：点击『前往』后自动打开『自选』并切换。"
 msgstr ""
-"Reward tier for Operator/Weapon EXP and upgrades.\n"
-"Keep Current: don't switch.\n"
-"Low/High Tier: auto-open Selection and switch."
+"Nivel de recompensa para EXP y mejoras de operadores y armas.\n"
+"Mantener actual: no cambiar.\n"
+"Nivel bajo/alto: abrir Selección y cambiar automáticamente."
 
 msgid "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"
-msgstr "Listen to WebSocket location data, point to nearest item and support key marking"
+msgstr ""
+"Leer posiciones del WebSocket local, señalar el objeto más cercano y "
+"permitir marcarlo con una tecla"
 
 msgid "简体中文"
 msgstr "Chino Simplificado"
 
 msgid "箭头角度实时读取"
-msgstr "Real-time Arrow Angle Reading"
+msgstr "Lectura del ángulo de la flecha en tiempo real"
 
 msgid "精选荞愈胶囊"
-msgstr "Premium Buckwheat Capsule"
+msgstr "Cápsula prémium de alforfón"
 
 msgid "结尾外部命令"
-msgstr "End External Command"
+msgstr "Comando externo final"
 
 msgid "结尾外部命令已运行时跳过"
-msgstr "Skip End Command If Already Run"
+msgstr "Omitir si el comando final ya se ejecuta"
 
 msgid "结尾外部命令等待退出"
-msgstr "Wait For End Command Exit"
+msgstr "Esperar al comando final"
 
 msgid "结尾外部命令起始于"
-msgstr "End Command Working Directory"
+msgstr "Directorio del comando final"
 
 msgid ""
 "结算时点击「放弃」而非「领取」，不消耗体力。\n"
 "只支持能量淤积点。\n"
 "0 表示不启用。"
 msgstr ""
-"Click Abandon instead of Claim. No stamina consumed.\n"
-"Only for Energy Stagnation.\n"
-"0 = disabled."
+"Pulsar Abandonar en vez de Recoger, sin consumir estamina.\n"
+"Solo para Acumulación de energía.\n"
+"0 = desactivado."
 
 msgid "聂菲斯"
-msgstr "Nephi"
+msgstr "Nefi"
 
 msgid "致密源石粉末"
-msgstr "Dense Originium Powder"
+msgstr "Polvo denso de Originium"
 
 msgid ""
 "若启用，则开始挑战后角色原地不动（不输出），\n"
 "仅对「重度能量淤积点」生效。可以用于建好防御塔情形，避免角色离开副本区域。"
 msgstr ""
-"Character stays still after challenge.\n"
-"Only for Heavy Energy Stagnation."
+"El personaje permanece inmóvil al iniciar el desafío.\n"
+"Solo funciona en Acumulación intensa de energía."
 
 msgid ""
 "若选项开启，则优先尝试仅助力好友「帝江号」上的「培养仓」。\n"
 "如果不能，至少助力一次其它舱室。"
 msgstr ""
-"Prioritize friend's Cultivation Chamber.\n"
-"Otherwise, assist at least one other chamber."
+"Priorizar la cámara de cultivo del Dijiang de un amigo.\n"
+"Si no es posible, ayudar en al menos otra cámara."
 
 msgid "裴令容"
-msgstr "Pei Lingrong"
+msgstr "Péi Língróng"
 
 msgid "视图"
 msgstr "Vista"
 
 msgid "试验园区"
-msgstr "Test Zone"
+msgstr "Zona de pruebas"
 
 msgid "账号"
 msgstr "Cuenta"
 
 msgid "账号任务覆盖操作"
-msgstr "Account Task Override Operations"
+msgstr "Operaciones de anulación de tareas por cuenta"
 
 msgid "账号列表操作"
-msgstr "Account List Operations"
+msgstr "Operaciones de la lista de cuentas"
 
 msgid ""
 "账号列表，每行一个账号（手机号）。\n"
 "兼容旧格式：每行可写成 `账号, 密码`，但密码字段会被忽略且不会被存储。\n"
 "登录时也可使用手机号后四位进行匹配（若唯一）。"
 msgstr ""
-"Account list, one per line (phone number).\n"
-"Legacy format: `account, password` (password ignored).\n"
-"Last 4 digits can be used for matching."
+"Lista de cuentas, una por línea (teléfono).\n"
+"Formato antiguo: `cuenta, contraseña` (la contraseña se ignora).\n"
+"También pueden usarse los últimos 4 dígitos si son únicos."
 
 msgid "赫铜零件"
 msgstr "Piezas de Cobre"
 
 msgid "赵昭"
-msgstr "Zhao Zhao"
+msgstr "Zhào Zhāo"
 
 msgid "选择任务后自动渲染属性控件"
-msgstr "Auto-render attribute controls after selecting task"
+msgstr "Mostrar los controles de atributos al seleccionar una tarea"
 
 msgid "选择模型 labels 的 value 作为目标类别"
-msgstr "Select model labels value as target class"
+msgstr "Seleccionar el value de labels del modelo como clase objetivo"
 
 msgid "选择模型配置（来自 src/yolo/models.py）"
-msgstr "Select model config (from src/yolo/models.py)"
+msgstr "Seleccionar configuración del modelo (de src/yolo/models.py)"
 
 msgid "选择物品"
-msgstr "Select Items"
+msgstr "Seleccionar objetos"
 
 msgid ""
 "选择要参与导航的物品列表。\n"
 "只会在当前地图里匹配这些物品。"
 msgstr ""
-"Select items for navigation.\n"
-"Only matched on current map."
+"Seleccione los objetos para la navegación.\n"
+"Solo se buscan en el mapa actual."
 
 msgid "选择要更换的队伍编号。"
 msgstr "Seleccionar número de equipo para cambiar."
 
 msgid "通向送货点试验园区"
-msgstr "To Delivery Point: Test Zone"
+msgstr "Hacia el punto de entrega: Zona de pruebas"
 
 msgid "通过下拉框切换送货地区配置"
-msgstr "Switch delivery region via dropdown"
+msgstr "Cambiar la región de entrega con el desplegable"
 
 msgid "配置选择"
 msgstr "Selección de Configuración"
 
 msgid "配置默认隐藏，选择后展开对应配置项。"
-msgstr "Config oculta por defecto; se expande al seleccionar."
+msgstr ""
+"La configuración está oculta de forma predeterminada y se expande al "
+"seleccionarla."
 
 msgid "重息壤"
 msgstr "Limo Pesado"
 
 msgid "阮一"
-msgstr "Ruan Yi"
+msgstr "Ruǎn Yī"
 
 msgid "阿禾"
-msgstr "A He"
+msgstr "Ā Hé"
 
 msgid "隐藏"
 msgstr "Ocultar"
@@ -1373,19 +1426,20 @@ msgid ""
 "开启『结尾外部命令等待退出』可支持多账户模式。\n"
 "可选填写『结尾外部命令起始于』作为命令工作目录。"
 msgstr ""
-"Command line to execute.\n"
-"Tip: Use absolute paths; quote paths with spaces.\n"
-"Enable Wait For End Command for multi-account mode."
+"Línea de comandos que se ejecutará.\n"
+"Consejo: use rutas absolutas y entrecomille las que contengan espacios.\n"
+"Active Esperar al comando final para admitir el modo multicuenta.\n"
+"Opcionalmente, indique el Directorio del comando final como directorio de trabajo."
 
 msgid ""
 "需要设好「预刻写属性」。默认留空表示不使用滑索前往，\n"
 "更多用法参见 ./docs/体力本.md > 能量淤积点 。"
 msgstr ""
-"Set Pre-Inscription attribute first. Leave empty for no zipline.\n"
-"See docs for more."
+"Configure «Atributo preinscrito». Déjelo vacío para no usar la tirolina.\n"
+"Consulte ./docs/体力本.md > 能量淤积点 para más información."
 
 msgid "首墩"
-msgstr "Shoudun"
+msgstr "Shǒudūn"
 
 msgid "高阶"
 msgstr "Nivel Alto"
@@ -1394,15 +1448,15 @@ msgid ""
 "默认留空，交易货品顺序随机。\n"
 "更多用法参见 ./docs/日常任务.md > 优先货品交易序列 。"
 msgstr ""
-"Leave empty for random trade order.\n"
-"See docs for more."
+"Déjelo vacío para usar un orden comercial aleatorio.\n"
+"Consulte ./docs/日常任务.md > 优先货品交易序列 para más información."
 
 msgid ""
 "默认留空，表示购买「日用消耗」「工业货品」「人文物产」首行首个物资。\n"
 "更多用法参见 ./docs/日常任务.md > 买物资 。"
 msgstr ""
-"Leave empty to buy first item of each category.\n"
-"See docs for more."
+"Déjelo vacío para comprar el primer objeto de cada categoría.\n"
+"Consulte ./docs/日常任务.md > 买物资 para más información."
 
 msgid "Upload Logs"
 msgstr "Subir Registros"
@@ -1410,8 +1464,18 @@ msgstr "Subir Registros"
 msgid "Log"
 msgstr "Registro"
 
-msgid "['送礼', '帝江号一键存放', '收邮件', '据点兑换', '转交运送委托', '转交委托奖励领取', '造装备', '简易制作', '收信用', '帝江号收菜', '买信用商店', '买卖货', '刷体力', '买物资', '活动奖励', '日常奖励', '传送到帝江号右侧传送点', '执行结尾外部命令']"
-msgstr "['Regalar', 'Dijiang Almacenar con 1 Clic', 'Recoger Correo', 'Outpost Exchange', 'Transfer Delivery Commission', 'Claim Delegated Rewards', 'Fabricar Equipo', 'Simple Crafting', 'Recoger Crédito', 'Dijiang Harvest', 'Comprar Tienda de Crédito', 'Comprar y Vender', 'Farmear Estamina', 'Comprar Suministros', 'Recompensas de Evento', 'Recompensas Diarias', 'Teleport to Right Waypoint of Dijiang', 'Ejecutar Comando Final']"
+msgid ""
+"['送礼', '帝江号一键存放', '收邮件', '据点兑换', '转交运送委托', '转交委托奖励领取', '造装备', '简易制作', '收信用',"
+" '帝江号收菜', '买信用商店', '买卖货', '刷体力', '买物资', '活动奖励', '日常奖励', '传送到帝江号右侧传送点', "
+"'执行结尾外部命令']"
+msgstr ""
+"['Regalar', 'Almacenar todo en Dijiang', 'Recoger correo', 'Intercambio del "
+"puesto', 'Transferir encargos de entrega', 'Recoger recompensas "
+"transferidas', 'Fabricar equipo', 'Fabricación sencilla', 'Recoger crédito',"
+" 'Recolección del Dijiang', 'Comprar en la tienda de crédito', 'Comprar y "
+"vender', 'Farmear estamina', 'Comprar suministros', 'Recompensas de "
+"eventos', 'Recompensas diarias', 'Teletransportarse al punto derecho del "
+"Dijiang', 'Ejecutar comando final']"
 
 msgid "current task"
 msgstr "tarea actual"
@@ -1435,7 +1499,8 @@ msgid "管理员"
 msgstr "administrador"
 
 msgid "自动完成当前所有普通影拓丰碑关卡"
-msgstr "Completar automáticamente todos los niveles normales de Estela Sombría"
+msgstr ""
+"Completar automáticamente todos los niveles normales de Estela Sombría"
 
 msgid "Auto"
 msgstr "Auto"
@@ -1464,7 +1529,8 @@ msgstr "Salir del juego y la app tras ejecutar la tarea con éxito"
 msgid "HotKey"
 msgstr "Tecla rápida"
 
-msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgid ""
+"Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
 msgstr "Aumentar la demora entre tareas para reducir uso de CPU/GPU (ms)"
 
 msgid "Kill Launcher after Start"
@@ -1510,13 +1576,15 @@ msgid "⭐演算"
 msgstr "⭐Cálculo"
 
 msgid "于施"
-msgstr "Yushi"
+msgstr "Yú Shī"
 
 msgid "仓库与物资"
 msgstr "Almacén y Suministros"
 
 msgid "在演武台面前自动进入演算抽牌页，循环抽取直到满足等级变化条件"
-msgstr "Entrar automáticamente a la página de robo de cartas y robar hasta cumplir condiciones de subida de nivel."
+msgstr ""
+"Entrar automáticamente a la página de robo de cartas y robar hasta cumplir "
+"condiciones de subida de nivel."
 
 msgid "工具与调试"
 msgstr "Herramientas y Depuración"
@@ -1528,13 +1596,15 @@ msgid "是否执行演武集算任务"
 msgstr "Ejecutar tarea de simulación de combate"
 
 msgid "普里莫"
-msgstr "Primo"
+msgstr "Prímo"
 
 msgid "最多重开次数"
 msgstr "Máximo de reinicios"
 
 msgid "每轮最多抽牌5次；未满足条件时点击左下角『放弃』并重新开始。"
-msgstr "Máximo 5 robos por ronda; si no se cumplen las condiciones, haga clic en \"Rendirse\" y reinicie."
+msgstr ""
+"Máximo 5 robos por ronda; si no se cumplen las condiciones, haga clic en "
+"\"Rendirse\" y reinicie."
 
 msgid "测试"
 msgstr "Prueba"
@@ -1549,7 +1619,7 @@ msgid "自动点击传送"
 msgstr "Teletransporte automático"
 
 msgid "苏白易"
-msgstr "Subaiyi"
+msgstr "Sū Báiyì"
 
 msgid "蓝点归中测试"
 msgstr "Prueba de centrado de punto azul"
@@ -1560,35 +1630,8 @@ msgstr "Comisión de Entrega"
 msgid "醚质"
 msgstr "Éter"
 
-msgid "Account"
-msgstr "Cuenta"
-
-msgid "Account List"
-msgstr "Lista de cuentas"
-
-msgid "Account List Operations"
-msgstr "Operaciones de lista de cuentas"
-
-msgid "Account Task Override Operations"
-msgstr "Operaciones de anulación de tarea de cuenta"
-
-msgid "Auto-render attribute controls after selecting task"
-msgstr "Renderizar controles automáticamente al seleccionar tarea"
-
-msgid "One account (phone) per line, no password needed"
-msgstr "Una cuenta (teléfono) por línea, sin necesidad de contraseña"
-
-msgid "Select from account list or existing overrides"
-msgstr "Seleccionar de lista de cuentas o anulaciones existentes"
-
-msgid "Show only items differing from default config"
-msgstr "Mostrar solo elementos diferentes de la configuración predeterminada"
-
 msgid "Task"
 msgstr "Tarea"
-
-msgid "View"
-msgstr "Vista"
 
 msgid "仅差异"
 msgstr "Solo diferencias"
@@ -1624,12 +1667,24 @@ msgid ""
 "手机号A\n"
 "手机号B"
 msgstr ""
+"Telefono A\n"
+"Telefono B"
 
 msgid "按当前账号覆盖该任务配置。未覆盖的项将使用任务原配置。"
-msgstr "Anular esta configuración de tarea por cuenta. Los elementos no anulados usarán la configuración original."
+msgstr ""
+"Anular esta configuración de tarea por cuenta. Los elementos no anulados "
+"usarán la configuración original."
 
-msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr "Configure parámetros independientes por cuenta y tarea. Seleccione primero la cuenta, luego la tarea, y los controles aparecerán automáticamente. Solo necesita el nombre de cuenta (teléfono), sin contraseña. Compatible con formato antiguo `cuenta,contraseña` pero no se guardan contraseñas. También puede usar los últimos 4 dígitos del teléfono para iniciar sesión (si es único)."
+msgid ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
+"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr ""
+"Configure parámetros independientes por cuenta y tarea. Seleccione primero "
+"la cuenta, luego la tarea, y los controles aparecerán automáticamente. Solo "
+"necesita el nombre de cuenta (teléfono), sin contraseña. Compatible con "
+"formato antiguo `cuenta,contraseña` pero no se guardan contraseñas. También "
+"puede usar los últimos 4 dígitos del teléfono para iniciar sesión (si es "
+"único)."
 
 msgid "清空当前任务覆盖"
 msgstr "Borrar anulación de tarea actual"
@@ -1973,67 +2028,67 @@ msgstr "Componente de Xiranita"
 
 # auto-translated
 msgid "item_fbottle_glass_grass_1"
-msgstr "Amethyst Bottle"
+msgstr "Frasco de Amatista (Jincao)"
 
 # auto-translated
 msgid "item_fbottle_glass_grass_2"
-msgstr "Amethyst Bottle"
+msgstr "Frasco de Amatista (Yazhen)"
 
 # auto-translated
 msgid "item_fbottle_glass_water"
-msgstr "Amethyst Bottle"
+msgstr "Frasco de Amatista (Agua Limpia)"
 
 # auto-translated
 msgid "item_fbottle_glass_xiranite"
-msgstr "Amethyst Bottle"
+msgstr "Frasco de Amatista (Xiranita Líquida)"
 
 # auto-translated
 msgid "item_fbottle_glassenr_grass_1"
-msgstr "Cryston Bottle"
+msgstr "Frasco de Cryston (Jincao)"
 
 # auto-translated
 msgid "item_fbottle_glassenr_grass_2"
-msgstr "Cryston Bottle"
+msgstr "Frasco de Cryston (Yazhen)"
 
 # auto-translated
 msgid "item_fbottle_glassenr_water"
-msgstr "Cryston Bottle"
+msgstr "Frasco de Cryston (Agua Limpia)"
 
 # auto-translated
 msgid "item_fbottle_glassenr_xiranite"
-msgstr "Cryston Bottle"
+msgstr "Frasco de Cryston (Xiranita Líquida)"
 
 # auto-translated
 msgid "item_fbottle_iron_grass_1"
-msgstr "Ferrium Bottle"
+msgstr "Frasco de Ferrium (Jincao)"
 
 # auto-translated
 msgid "item_fbottle_iron_grass_2"
-msgstr "Ferrium Bottle"
+msgstr "Frasco de Ferrium (Yazhen)"
 
 # auto-translated
 msgid "item_fbottle_iron_water"
-msgstr "Ferrium Bottle"
+msgstr "Frasco de Ferrium (Agua Limpia)"
 
 # auto-translated
 msgid "item_fbottle_iron_xiranite"
-msgstr "Ferrium Bottle"
+msgstr "Frasco de Ferrium (Xiranita Líquida)"
 
 # auto-translated
 msgid "item_fbottle_ironenr_grass_1"
-msgstr "Steel Bottle"
+msgstr "Frasco de Acero (Jincao)"
 
 # auto-translated
 msgid "item_fbottle_ironenr_grass_2"
-msgstr "Steel Bottle"
+msgstr "Frasco de Acero (Yazhen)"
 
 # auto-translated
 msgid "item_fbottle_ironenr_water"
-msgstr "Steel Bottle"
+msgstr "Frasco de Acero (Agua Limpia)"
 
 # auto-translated
 msgid "item_fbottle_ironenr_xiranite"
-msgstr "Steel Bottle"
+msgstr "Frasco de Acero (Xiranita Líquida)"
 
 # auto-translated
 msgid "item_glass_bottle"
@@ -2285,103 +2340,103 @@ msgstr "Xiranita"
 
 # auto-translated
 msgid "一键日常"
-msgstr "One-click Dailies"
+msgstr "Rutina diaria con un clic"
 
 # auto-translated
 msgid "仅武陵7.31w送货,教程视频 BV1LLc7zFEF9"
-msgstr "Only supports Wuling 7.31w delivery, tutorial video BV1LLc7zFEF9"
+msgstr "Solo entregas de Wuling de 7.31w, tutorial BV1LLc7zFEF9"
 
 # auto-translated
 msgid "从要推的图的最左边开始"
-msgstr "Start from the leftmost stage to clear"
+msgstr "Empezar por la fase situada más a la izquierda"
 
 # auto-translated
 msgid "公共区"
-msgstr "Public Area"
+msgstr "Zona pública"
 
 # auto-translated
 msgid "兵棋推演"
-msgstr "War Chess Simulation"
+msgstr "Simulación táctica"
 
 # auto-translated
 msgid "军备解析"
-msgstr "Armament Analysis"
+msgstr "Análisis de armamento"
 
 # auto-translated
 msgid "冲锋"
-msgstr "SMG & MG"
+msgstr "Subfusiles y ametralladoras"
 
 # auto-translated
 msgid "决策构象"
-msgstr "Decision Configuration"
+msgstr "Configuración de decisiones"
 
 # auto-translated
 msgid "刷钱本"
-msgstr "Gold Farming Stage"
+msgstr "Fase de farmeo de dinero"
 
 # auto-translated
 msgid "大月卡"
-msgstr "Premium Monthly Card"
+msgstr "Tarjeta mensual prémium"
 
 # auto-translated
 msgid "尘烟"
-msgstr "Dust Smoke"
+msgstr "Humo de polvo"
 
 # auto-translated
 msgid "手枪"
-msgstr "HG"
+msgstr "Pistolas"
 
 # auto-translated
 msgid "推图"
-msgstr "Clear Stages"
+msgstr "Completar fases"
 
 # auto-translated
 msgid "收菜"
-msgstr "Collect Resources"
+msgstr "Recoger recursos"
 
 # auto-translated
 msgid "活动情报补给"
-msgstr "Event Intel Supply"
+msgstr "Suministro de información del evento"
 
 # auto-translated
 msgid "活动自律"
-msgstr "Event Auto-Battle"
+msgstr "Combate automático del evento"
 
 # auto-translated
 msgid "深度搜索"
-msgstr "Deep Search"
+msgstr "Búsqueda profunda"
 
 # auto-translated
 msgid "狙击"
-msgstr "RF & BLD"
+msgstr "Fusiles y espadas"
 
 # auto-translated
 msgid "班组"
-msgstr "Squad"
+msgstr "Escuadrón"
 
 # auto-translated
 msgid "突击"
-msgstr "AR & SG"
+msgstr "Fusiles de asalto y escopetas"
 
 # auto-translated
 msgid "竞技场"
-msgstr "Arena"
+msgstr "Campo de combate"
 
 # auto-translated
 msgid "自动刷体力"
-msgstr "Auto-Farm Stamina"
+msgstr "Farmeo automático de estamina"
 
 # auto-translated
 msgid "购买免费礼包"
-msgstr "Claim Free Pack"
+msgstr "Recoger paquete gratuito"
 
 # auto-translated
 msgid "邮件"
-msgstr "Mail"
+msgstr "Correo"
 
 # auto-translated
 msgid "领任务"
-msgstr "Claim Missions"
+msgstr "Recoger misiones"
 
 msgid ""
 "按列表顺序自动循环释放「战技」。\n"
@@ -2391,10 +2446,14 @@ msgstr ""
 "Seleccione de 1/2/3/4 y ordene, mantenga al menos uno."
 
 msgid "后台运行时，战斗结束后发送通知。"
-msgstr "Enviar notificación cuando termine la batalla mientras se ejecuta en segundo plano."
+msgstr ""
+"Enviar notificación cuando termine la batalla mientras se ejecuta en segundo"
+" plano."
 
 msgid "进入战斗后开始自动操作前的等待秒数。"
-msgstr "Tiempo de espera en segundos antes de que comience la operación automática después de entrar en batalla."
+msgstr ""
+"Tiempo de espera en segundos antes de que comience la operación automática "
+"después de entrar en batalla."
 
 msgid ""
 "是否启用排轴功能。\n"
@@ -2402,7 +2461,8 @@ msgid ""
 "当排轴失败时回退到非排轴状态。"
 msgstr ""
 "Habilitar rotación de habilidades.\n"
-"Prioriza habilidades según secuencia; retrocede al estado normal si falla."
+"Prioriza habilidades según la secuencia configurada.\n"
+"Vuelve al estado normal si falla."
 
 msgid ""
 "仅接受'1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n],normal_[n]'这些值的逗号分隔字符串，\n"
@@ -2436,7 +2496,9 @@ msgid "未找到 support_multi_account=True 的任务"
 msgstr "No se encontraron tareas con support_multi_account=True"
 
 msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
-msgstr "Config. de cuenta y tarea actualizada (lista de cuentas independiente de lista de tareas)"
+msgstr ""
+"Configuración de cuentas y tareas actualizada (las listas son "
+"independientes)"
 
 msgid "账号列表已保存"
 msgstr "Lista de cuentas guardada"
@@ -2445,10 +2507,14 @@ msgid "（复用ID {reused}，新建ID {created}）"
 msgstr "({reused} IDs reutilizados, {created} IDs nuevos)"
 
 msgid "；账号名（手机号）是唯一ID，密码变化不影响ID，账号名变化会新建ID"
-msgstr "; El nombre de cuenta (teléfono) es el ID único. Cambiar contraseña no afecta ID, cambiar nombre crea nuevo ID"
+msgstr ""
+"; El nombre de cuenta (teléfono) es el ID único. Cambiar contraseña no "
+"afecta ID, cambiar nombre crea nuevo ID"
 
 msgid "；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）"
-msgstr "; No se necesita contraseña. La información de contraseña se elimina al guardar (solo nombre de usuario)"
+msgstr ""
+"; No se necesita contraseña. La información de contraseña se elimina al "
+"guardar (solo nombre de usuario)"
 
 msgid "；忽略无效行 {count} 条"
 msgstr "; {count} líneas inválidas ignoradas"
@@ -2837,26 +2903,14 @@ msgstr "Cultivo Avanzado V"
 msgid "黯银柑实"
 msgstr "Fruto Cítrico Plata Oscura"
 
-msgid "Account Config"
-msgstr "Configuración de Cuenta"
-
 msgid "Battle Config"
 msgstr "Configuración de Combate"
 
 msgid "Daily Task"
 msgstr "Tarea Diaria"
 
-msgid "Daily Tasks - 0705"
-msgstr "Tareas Diarias - 0705"
-
-msgid "Global Config"
-msgstr "Configuración Global"
-
 msgid "Kill Launcher After Start"
 msgstr "Cerrar Lanzador Tras Inicio"
-
-msgid "Override this task config per account. Unset items will use the original task config."
-msgstr "Sobrescribir esta configuración de tarea por cuenta. Los elementos no establecidos usarán la configuración original."
 
 msgid "危境再现"
 msgstr "Reaparición de Crisis"
@@ -2870,17 +2924,11 @@ msgstr "Semanal"
 msgid "基础配置"
 msgstr "Configuración Básica"
 
-msgid "基础配置 / Ensure Main Once Action Sleep"
-msgstr "Configuración Básica / Ensure Main Once Action Sleep"
-
 msgid "干员养成"
 msgstr "Entrenamiento de Operadores"
 
 msgid "战斗配置"
 msgstr "Configuración de Combate"
-
-msgid "战斗配置 / Battle Config"
-msgstr "Configuración de Combate / Battle Config"
 
 msgid "武器养成"
 msgstr "Entrenamiento de Armas"
@@ -2895,11 +2943,8 @@ msgstr ""
 msgid "键位配置"
 msgstr "Configuración de Teclas"
 
-msgid "键位配置 / Game Hotkey Config"
-msgstr "Configuración de Teclas / Game Hotkey Config"
-
 msgid "藏剑谷"
-msgstr "Zangjian Valley"
+msgstr "Valle Zangjian"
 
 msgid "结尾外部命令执行时机"
 msgstr "Momento del Comando Externo"
@@ -2912,3 +2957,169 @@ msgstr "Inicio de Tareas"
 
 msgid "任务最后"
 msgstr "Final de Tareas"
+
+msgid "YOLO实测扫描"
+msgstr "Escaneo de prueba YOLO"
+
+msgid "content"
+msgstr "content"
+
+msgid "⭐执行外部命令"
+msgstr "⭐Ejecutar comando externo"
+
+msgid "一次送礼个数"
+msgstr "Regalos Por Lote"
+
+msgid "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。"
+msgstr ""
+"Al terminar la tarea, abre el archivo de resumen con la aplicación "
+"predeterminada del sistema. Si se desactiva, solo se crea el archivo."
+
+msgid "使用全局配置"
+msgstr "Usar Configuracion Global"
+
+msgid "使用独立配置"
+msgstr "Usar Configuracion Independiente"
+
+msgid "保存当前账号配置"
+msgstr "Guardar Configuracion De La Cuenta Actual"
+
+msgid "刮刮乐"
+msgstr "Tarjeta Raspable"
+
+msgid "协议纹石\n"
+msgstr "Piedra De Patron De Protocolo\n"
+
+msgid "只填写 data.content 的字符串值"
+msgstr "Introduce solo el valor de cadena de data.content"
+
+msgid ""
+"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
+"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
+msgstr ""
+"Opcional. Cuando content está vacío, lee desde la página de configuración de cuentas el content de sincronización de mapa guardado para esa cuenta.\n"
+"La lista de cuentas viene de la página de configuración de cuentas. Déjalo vacío para intentar usar el contexto de cuenta de la tarea actual."
+
+msgid ""
+"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
+"此项有值时优先使用，不再读取账号配置页。"
+msgstr ""
+"Opcional. Pega directamente el valor data.content del JSON devuelto por web-api.skland.com/account/info/hg/check.\n"
+"Si este campo tiene valor, se usa primero y no se lee la página de configuración de cuentas."
+
+msgid "地图同步 content"
+msgstr "content de sincronizacion del mapa"
+
+msgid "地图账号"
+msgstr "Cuenta del mapa"
+
+msgid "塔晶"
+msgstr "Cristal De Torre"
+
+msgid "塔罗斯菌"
+msgstr "Hongo Talos"
+
+msgid "外部命令"
+msgstr "Comando externo"
+
+msgid "外部命令已运行时跳过"
+msgstr "Omitir si el comando externo ya se ejecuta"
+
+msgid "外部命令执行时机"
+msgstr "Momento del comando externo"
+
+msgid "外部命令等待退出"
+msgstr "Esperar comando externo"
+
+msgid "外部命令起始于"
+msgstr "Iniciar comando externo en"
+
+msgid "当前账号的 hg/check data.content 值，用于官方地图位置同步"
+msgstr ""
+"Valor hg/check data.content de la cuenta actual para sincronizar la posicion"
+" del mapa oficial"
+
+msgid "待回收物品"
+msgstr "Objetos Por Recuperar"
+
+msgid "息壤气"
+msgstr "Gas Xirang"
+
+msgid "惰气"
+msgstr "Gas Inerte"
+
+msgid "战争回响"
+msgstr "Eco De Guerra"
+
+msgid "是否执行一次外部命令行程序。"
+msgstr ""
+"Indica si se ejecuta una vez un programa de línea de comandos externo."
+
+msgid "是否执行一次外部命令行程序（可在「外部命令执行时机」选择在最开始或最后执行）。"
+msgstr ""
+"Indica si se ejecuta una vez un comando externo. Usa Momento del comando "
+"externo para ejecutarlo al inicio o al final."
+
+msgid "滑索配置"
+msgstr "Configuración de tirolina"
+
+msgid "用于实测 YOLO 模型：可选模型、可选目标、可设置信度并循环扫描。"
+msgstr ""
+"Para probar modelos YOLO en vivo: elige modelo, objetivo, confianza y "
+"escanea en bucle."
+
+msgid "红矛叶"
+msgstr "Hoja De Lanza Roja"
+
+msgid "网页地图同步"
+msgstr "Sincronización del mapa web"
+
+msgid "自动打开汇总文件"
+msgstr "Abrir resumen automáticamente"
+
+msgid "荞愈胶囊"
+msgstr "Capsula De Alforfon"
+
+msgid "蚀影噪雷"
+msgstr "Trueno Ruidoso De Sombra Erosionada"
+
+msgid "蚀影应龙尖兵"
+msgstr "Vanguardia Yinglong De Sombra Erosionada"
+
+msgid "蚀影牙兽"
+msgstr "Bestia Dentada De Sombra Erosionada"
+
+msgid ""
+"账号1\n"
+"账号2\n"
+"账号3"
+msgstr ""
+"Cuenta 1\n"
+"Cuenta 2\n"
+"Cuenta 3"
+
+msgid "选择当前账号在该任务中使用全局或独立战斗配置。"
+msgstr ""
+"Elige si esta cuenta usa la configuracion de combate global o independiente "
+"para esta tarea."
+
+msgid "阿莱克琉斯，千夫长"
+msgstr "Alekleus, centurión"
+
+msgid ""
+"需要执行的命令行内容。\n"
+"建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。"
+msgstr ""
+"Contenido de la línea de comandos que se ejecutará.\n"
+"Se recomiendan rutas absolutas. Si una ruta o argumento contiene espacios, usa comillas según las reglas del shell del sistema."
+
+msgid ""
+"需要执行的命令行内容。\n"
+"建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。\n"
+"开启『外部命令等待退出』可支持多账户模式。\n"
+"可选填写『外部命令起始于』作为命令工作目录。"
+msgstr ""
+"Contenido de la línea de comandos que se ejecutará.\n"
+"Se recomiendan rutas absolutas. Si una ruta o argumento contiene espacios, usa comillas según las reglas del shell del sistema.\n"
+"Activa Esperar comando externo para admitir el modo multicuenta.\n"
+"Opcionalmente, usa Iniciar comando externo en como directorio de trabajo."

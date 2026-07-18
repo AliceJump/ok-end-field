@@ -19,13 +19,13 @@ msgid "wuling"
 msgstr "武陵"
 
 msgid "一键日常"
-msgstr "一鍵日常"
+msgstr "一键日常"
 
 msgid "邮件"
 msgstr "邮件"
 
 msgid "领任务"
-msgstr "领任務"
+msgstr "领任务"
 
 msgid "item_bottled_food_1"
 msgstr "柑实罐头"
@@ -581,12 +581,6 @@ msgstr "蓝图键"
 
 msgid "Product Icon Toggle Key"
 msgstr "产物图标切换键"
-
-msgid "73100"
-msgstr "73100"
-
-msgid "79800"
-msgstr "79800"
 
 msgid "BitBlt_RenderFull"
 msgstr "BitBlt_RenderFull"
@@ -1159,8 +1153,10 @@ msgstr "是否在「地区建设/据点管理」中通过交易获得调度券�
 msgid "是否在「地区建设/物资调度/稳定物资需求」中通过调度券购买物资。依次购买「日用消耗」「工业货品」「人文物产」首行某个物品。"
 msgstr "是否在「地区建设/物资调度/稳定物资需求」中通过调度券购买物资。依次购买「日用消耗」「工业货品」「人文物产」首行某个物品。"
 
-msgid "是否在「弹性需求物资」与好友交易赚取调度券。自动选择利润最高的方案，然后用价格上下限判定是否交易。（除非可购买数量即将溢出，这种情况下必定交易。）"
-msgstr "是否在「弹性需求物资」与好友交易赚取调度券。自动选择利润最高的方案，然后用价格上下限判定是否交易。（除非可购买数量即将溢出，这种情况下必定交易。）"
+msgid ""
+"是否在「弹性需求物资」与好友交易赚取调度券。自动选择利润最高的方案，然后用价格上下限判定是否交易。（除非可购买数量即将溢出，这种情况下必定交易。）"
+msgstr ""
+"是否在「弹性需求物资」与好友交易赚取调度券。自动选择利润最高的方案，然后用价格上下限判定是否交易。（除非可购买数量即将溢出，这种情况下必定交易。）"
 
 msgid "是否在「采购中心/信用交易所」采购。自动刷新 且 仅购买「武库配额」「嵌晶玉」。"
 msgstr "是否在「采购中心/信用交易所」采购。自动刷新 且 仅购买「武库配额」「嵌晶玉」。"
@@ -1171,8 +1167,10 @@ msgstr "是否消耗所有「理智」刷取培养材料。"
 msgid "是否购买「人文物产」。"
 msgstr "是否购买「人文物产」。"
 
-msgid "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。如果途中偶遇干员，则直接交互完成送礼。任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
-msgstr "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。如果途中偶遇干员，则直接交互完成送礼。任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
+msgid ""
+"是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。如果途中偶遇干员，则直接交互完成送礼。任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
+msgstr ""
+"是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。如果途中偶遇干员，则直接交互完成送礼。任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
 
 msgid "是否领取「地区建设/仓储结点/我转交的委托」。超时委托也会被领取。"
 msgstr "是否领取「地区建设/仓储结点/我转交的委托」。超时委托也会被领取。"
@@ -1246,24 +1244,6 @@ msgstr ""
 
 msgid "0~1，值越高越严格"
 msgstr "0~1，值越高越严格"
-
-msgid "1"
-msgstr "1"
-
-msgid "119000"
-msgstr "119000"
-
-msgid "2"
-msgstr "2"
-
-msgid "3"
-msgstr "3"
-
-msgid "4"
-msgstr "4"
-
-msgid "5"
-msgstr "5"
 
 msgid "YOLO模型"
 msgstr "YOLO模型"
@@ -1854,8 +1834,14 @@ msgstr "上传日志"
 msgid "Log"
 msgstr "日志"
 
-msgid "['送礼', '帝江号一键存放', '收邮件', '据点兑换', '转交运送委托', '转交委托奖励领取', '造装备', '简易制作', '收信用', '帝江号收菜', '买信用商店', '买卖货', '刷体力', '买物资', '活动奖励', '日常奖励', '传送到帝江号右侧传送点', '执行结尾外部命令']"
-msgstr "['送礼', '帝江号一键存放', '收邮件', '据点兑换', '转交运送委托', '转交委托奖励领取', '造装备', '简易制作', '收信用', '帝江号收菜', '买信用商店', '买卖货', '刷体力', '买物资', '活动奖励', '日常奖励', '传送到帝江号右侧传送点', '执行结尾外部命令']"
+msgid ""
+"['送礼', '帝江号一键存放', '收邮件', '据点兑换', '转交运送委托', '转交委托奖励领取', '造装备', '简易制作', '收信用',"
+" '帝江号收菜', '买信用商店', '买卖货', '刷体力', '买物资', '活动奖励', '日常奖励', '传送到帝江号右侧传送点', "
+"'执行结尾外部命令']"
+msgstr ""
+"['送礼', '帝江号一键存放', '收邮件', '据点兑换', '转交运送委托', '转交委托奖励领取', '造装备', '简易制作', '收信用',"
+" '帝江号收菜', '买信用商店', '买卖货', '刷体力', '买物资', '活动奖励', '日常奖励', '传送到帝江号右侧传送点', "
+"'执行结尾外部命令']"
 
 msgid "current task"
 msgstr "当前任务"
@@ -1908,7 +1894,8 @@ msgstr "任务执行成功后退出游戏和应用程序"
 msgid "HotKey"
 msgstr "快捷键"
 
-msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgid ""
+"Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
 msgstr "增加任务触发间隔以减少 CPU/GPU 使用率（毫秒）"
 
 msgid "Kill Launcher after Start"
@@ -2004,35 +1991,8 @@ msgstr "运输委托"
 msgid "醚质"
 msgstr "醚质"
 
-msgid "Account"
-msgstr "账号"
-
-msgid "Account List"
-msgstr "账号列表"
-
-msgid "Account List Operations"
-msgstr "账号列表操作"
-
-msgid "Account Task Override Operations"
-msgstr "账号任务覆盖操作"
-
-msgid "Auto-render attribute controls after selecting task"
-msgstr "选择任务后自动渲染属性控件"
-
-msgid "One account (phone) per line, no password needed"
-msgstr "每行一个账号名（手机号），无需密码"
-
-msgid "Select from account list or existing overrides"
-msgstr "从账号列表或已有覆盖中选择"
-
-msgid "Show only items differing from default config"
-msgstr "开启后仅显示与原配置不同的项"
-
 msgid "Task"
 msgstr "任务"
-
-msgid "View"
-msgstr "视图"
 
 msgid "仅差异"
 msgstr "仅差异"
@@ -2068,12 +2028,18 @@ msgid ""
 "手机号A\n"
 "手机号B"
 msgstr ""
+"手机号A\n"
+"手机号B"
 
 msgid "按当前账号覆盖该任务配置。未覆盖的项将使用任务原配置。"
 msgstr "按当前账号覆盖该任务配置。未覆盖的项将使用任务原配置。"
 
-msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgid ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
+"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
+"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
 
 msgid "清空当前任务覆盖"
 msgstr "清空当前任务覆盖"
@@ -2101,151 +2067,151 @@ msgstr "账号配置中心"
 
 # auto-translated
 msgid "item_fbottle_glass_grass_1"
-msgstr "紫晶瓶（錦草）"
+msgstr "紫晶瓶 (锦草)"
 
 # auto-translated
 msgid "item_fbottle_glass_grass_2"
-msgstr "紫晶瓶（芽針）"
+msgstr "紫晶瓶 (芽针)"
 
 # auto-translated
 msgid "item_fbottle_glass_water"
-msgstr "紫晶瓶（清水）"
+msgstr "紫晶瓶 (清水)"
 
 # auto-translated
 msgid "item_fbottle_glass_xiranite"
-msgstr "紫晶瓶（液化息壤）"
+msgstr "紫晶瓶 (液化息壤)"
 
 # auto-translated
 msgid "item_fbottle_glassenr_grass_1"
-msgstr "高晶瓶（錦草）"
+msgstr "高晶瓶 (锦草)"
 
 # auto-translated
 msgid "item_fbottle_glassenr_grass_2"
-msgstr "高晶瓶（芽針）"
+msgstr "高晶瓶 (芽针)"
 
 # auto-translated
 msgid "item_fbottle_glassenr_water"
-msgstr "高晶瓶（清水）"
+msgstr "高晶瓶 (清水)"
 
 # auto-translated
 msgid "item_fbottle_glassenr_xiranite"
-msgstr "高晶瓶（液化息壤）"
+msgstr "高晶瓶 (液化息壤)"
 
 # auto-translated
 msgid "item_fbottle_iron_grass_1"
-msgstr "藍鐵瓶（錦草）"
+msgstr "蓝铁瓶 (锦草)"
 
 # auto-translated
 msgid "item_fbottle_iron_grass_2"
-msgstr "藍鐵瓶（芽針）"
+msgstr "蓝铁瓶 (芽针)"
 
 # auto-translated
 msgid "item_fbottle_iron_water"
-msgstr "藍鐵瓶（清水）"
+msgstr "蓝铁瓶 (清水)"
 
 # auto-translated
 msgid "item_fbottle_iron_xiranite"
-msgstr "藍鐵瓶（液化息壤）"
+msgstr "蓝铁瓶 (液化息壤)"
 
 # auto-translated
 msgid "item_fbottle_ironenr_grass_1"
-msgstr "鋼瓶（錦草）"
+msgstr "钢瓶 (锦草)"
 
 # auto-translated
 msgid "item_fbottle_ironenr_grass_2"
-msgstr "鋼瓶（芽針）"
+msgstr "钢瓶 (芽针)"
 
 # auto-translated
 msgid "item_fbottle_ironenr_water"
-msgstr "鋼瓶（清水）"
+msgstr "钢瓶 (清水)"
 
 # auto-translated
 msgid "item_fbottle_ironenr_xiranite"
-msgstr "鋼瓶（液化息壤）"
+msgstr "钢瓶 (液化息壤)"
 
 # auto-translated
 msgid "从要推的图的最左边开始"
-msgstr "Start from the leftmost stage to clear"
+msgstr "从要推的图的最左边开始"
 
 # auto-translated
 msgid "公共区"
-msgstr "Public Area"
+msgstr "公共区"
 
 # auto-translated
 msgid "兵棋推演"
-msgstr "War Chess Simulation"
+msgstr "兵棋推演"
 
 # auto-translated
 msgid "军备解析"
-msgstr "Armament Analysis"
+msgstr "军备解析"
 
 # auto-translated
 msgid "冲锋"
-msgstr "SMG & MG"
+msgstr "冲锋"
 
 # auto-translated
 msgid "决策构象"
-msgstr "Decision Configuration"
+msgstr "决策构象"
 
 # auto-translated
 msgid "刷钱本"
-msgstr "Gold Farming Stage"
+msgstr "刷钱本"
 
 # auto-translated
 msgid "大月卡"
-msgstr "Premium Monthly Card"
+msgstr "大月卡"
 
 # auto-translated
 msgid "尘烟"
-msgstr "Dust Smoke"
+msgstr "尘烟"
 
 # auto-translated
 msgid "手枪"
-msgstr "HG"
+msgstr "手枪"
 
 # auto-translated
 msgid "推图"
-msgstr "Clear Stages"
+msgstr "推图"
 
 # auto-translated
 msgid "收菜"
-msgstr "Collect Resources"
+msgstr "收菜"
 
 # auto-translated
 msgid "活动情报补给"
-msgstr "Event Intel Supply"
+msgstr "活动情报补给"
 
 # auto-translated
 msgid "活动自律"
-msgstr "Event Auto-Battle"
+msgstr "活动自律"
 
 # auto-translated
 msgid "深度搜索"
-msgstr "Deep Search"
+msgstr "深度搜索"
 
 # auto-translated
 msgid "狙击"
-msgstr "RF & BLD"
+msgstr "狙击"
 
 # auto-translated
 msgid "班组"
-msgstr "Squad"
+msgstr "班组"
 
 # auto-translated
 msgid "突击"
-msgstr "AR & SG"
+msgstr "突击"
 
 # auto-translated
 msgid "竞技场"
-msgstr "Arena"
+msgstr "竞技场"
 
 # auto-translated
 msgid "自动刷体力"
-msgstr "Auto-Farm Stamina"
+msgstr "自动刷体力"
 
 # auto-translated
 msgid "购买免费礼包"
-msgstr "Claim Free Pack"
+msgstr "购买免费礼包"
 
 msgid ""
 "按列表顺序自动循环释放「战技」。\n"
@@ -2702,26 +2668,14 @@ msgstr "高阶培养V"
 msgid "黯银柑实"
 msgstr "黯银柑实"
 
-msgid "Account Config"
-msgstr "账号配置"
-
 msgid "Battle Config"
 msgstr "战斗配置"
 
 msgid "Daily Task"
 msgstr "日常任务"
 
-msgid "Daily Tasks - 0705"
-msgstr "日常任务 - 0705"
-
-msgid "Global Config"
-msgstr "全局配置"
-
 msgid "Kill Launcher After Start"
 msgstr "启动后关闭启动器"
-
-msgid "Override this task config per account. Unset items will use the original task config."
-msgstr "按当前账号覆盖该任务配置。未覆盖的项将使用任务原配置。"
 
 msgid "危境再现"
 msgstr "危境再现"
@@ -2735,17 +2689,11 @@ msgstr "周常"
 msgid "基础配置"
 msgstr "基础配置"
 
-msgid "基础配置 / Ensure Main Once Action Sleep"
-msgstr "基础配置 / Ensure Main Once Action Sleep"
-
 msgid "干员养成"
 msgstr "干员养成"
 
 msgid "战斗配置"
 msgstr "战斗配置"
-
-msgid "战斗配置 / Battle Config"
-msgstr "战斗配置 / Battle Config"
 
 msgid "武器养成"
 msgstr "武器养成"
@@ -2759,9 +2707,6 @@ msgstr ""
 
 msgid "键位配置"
 msgstr "键位配置"
-
-msgid "键位配置 / Game Hotkey Config"
-msgstr "键位配置 / Game Hotkey Config"
 
 msgid "藏剑谷"
 msgstr "藏剑谷"
@@ -2777,3 +2722,158 @@ msgstr "任务最开始"
 
 msgid "任务最后"
 msgstr "任务最后"
+
+msgid "YOLO实测扫描"
+msgstr "YOLO实测扫描"
+
+msgid "content"
+msgstr "content"
+
+msgid "⭐执行外部命令"
+msgstr "⭐执行外部命令"
+
+msgid "一次送礼个数"
+msgstr "一次送礼个数"
+
+msgid "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。"
+msgstr "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。"
+
+msgid "使用全局配置"
+msgstr "使用全局配置"
+
+msgid "使用独立配置"
+msgstr "使用独立配置"
+
+msgid "保存当前账号配置"
+msgstr "保存当前账号配置"
+
+msgid "刮刮乐"
+msgstr "刮刮乐"
+
+msgid "协议纹石\n"
+msgstr "协议纹石\n"
+
+msgid "只填写 data.content 的字符串值"
+msgstr "只填写 data.content 的字符串值"
+
+msgid ""
+"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
+"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
+msgstr ""
+"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
+"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
+
+msgid ""
+"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
+"此项有值时优先使用，不再读取账号配置页。"
+msgstr ""
+"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
+"此项有值时优先使用，不再读取账号配置页。"
+
+msgid "地图同步 content"
+msgstr "地图同步 content"
+
+msgid "地图账号"
+msgstr "地图账号"
+
+msgid "塔晶"
+msgstr "塔晶"
+
+msgid "塔罗斯菌"
+msgstr "塔罗斯菌"
+
+msgid "外部命令"
+msgstr "外部命令"
+
+msgid "外部命令已运行时跳过"
+msgstr "外部命令已运行时跳过"
+
+msgid "外部命令执行时机"
+msgstr "外部命令执行时机"
+
+msgid "外部命令等待退出"
+msgstr "外部命令等待退出"
+
+msgid "外部命令起始于"
+msgstr "外部命令起始于"
+
+msgid "当前账号的 hg/check data.content 值，用于官方地图位置同步"
+msgstr "当前账号的 hg/check data.content 值，用于官方地图位置同步"
+
+msgid "待回收物品"
+msgstr "待回收物品"
+
+msgid "息壤气"
+msgstr "息壤气"
+
+msgid "惰气"
+msgstr "惰气"
+
+msgid "战争回响"
+msgstr "战争回响"
+
+msgid "是否执行一次外部命令行程序。"
+msgstr "是否执行一次外部命令行程序。"
+
+msgid "是否执行一次外部命令行程序（可在「外部命令执行时机」选择在最开始或最后执行）。"
+msgstr "是否执行一次外部命令行程序（可在「外部命令执行时机」选择在最开始或最后执行）。"
+
+msgid "滑索配置"
+msgstr "滑索配置"
+
+msgid "用于实测 YOLO 模型：可选模型、可选目标、可设置信度并循环扫描。"
+msgstr "用于实测 YOLO 模型：可选模型、可选目标、可设置信度并循环扫描。"
+
+msgid "红矛叶"
+msgstr "红矛叶"
+
+msgid "网页地图同步"
+msgstr "网页地图同步"
+
+msgid "自动打开汇总文件"
+msgstr "自动打开汇总文件"
+
+msgid "荞愈胶囊"
+msgstr "荞愈胶囊"
+
+msgid "蚀影噪雷"
+msgstr "蚀影噪雷"
+
+msgid "蚀影应龙尖兵"
+msgstr "蚀影应龙尖兵"
+
+msgid "蚀影牙兽"
+msgstr "蚀影牙兽"
+
+msgid ""
+"账号1\n"
+"账号2\n"
+"账号3"
+msgstr ""
+"账号1\n"
+"账号2\n"
+"账号3"
+
+msgid "选择当前账号在该任务中使用全局或独立战斗配置。"
+msgstr "选择当前账号在该任务中使用全局或独立战斗配置。"
+
+msgid "阿莱克琉斯，千夫长"
+msgstr "阿莱克琉斯，千夫长"
+
+msgid ""
+"需要执行的命令行内容。\n"
+"建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。"
+msgstr ""
+"需要执行的命令行内容。\n"
+"建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。"
+
+msgid ""
+"需要执行的命令行内容。\n"
+"建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。\n"
+"开启『外部命令等待退出』可支持多账户模式。\n"
+"可选填写『外部命令起始于』作为命令工作目录。"
+msgstr ""
+"需要执行的命令行内容。\n"
+"建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。\n"
+"开启『外部命令等待退出』可支持多账户模式。\n"
+"可选填写『外部命令起始于』作为命令工作目录。"
