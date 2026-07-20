@@ -58,12 +58,13 @@ class DailyOutpostMixin:
         skip_goods = set()
         change_button = None
         confirm_button = None
-        for attempt in range(1, max_attempts + 1):
-            num = self.read_outpost_ticket_num(outpost_name)
-            if num < 1000:
-                self.log_info(f"{outpost_name} 据点当前券数量不足 (<1000)，停止兑换")
-                break
 
+        num = self.read_outpost_ticket_num(outpost_name)
+        if num < 1000:
+            self.log_info(f"{outpost_name} 据点当前券数量不足 (<1000)，停止兑换")
+            max_attempts = 0
+
+        for attempt in range(1, max_attempts + 1):
             self.log_info(f"尝试第 {attempt}/{max_attempts} 次更换货品")
             if not change_button:
                 change_button = self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_bb6c696b,

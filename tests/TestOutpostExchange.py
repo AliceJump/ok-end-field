@@ -9,6 +9,7 @@ from src.tasks.daily.daily_routine_mixin import DailyRoutineFeature
 class TestOutpostExchange(unittest.TestCase):
     def make_exchange_feature(self, ticket_numbers, goods=None):
         feature = object.__new__(DailyRoutineFeature)
+        available_goods = goods or [SimpleNamespace(name="息壤玉葫芦")]
         feature.lang = SimpleNamespace(
             daily_routine_mixin=SimpleNamespace(
                 k_bb6c696b="更换",
@@ -23,7 +24,9 @@ class TestOutpostExchange(unittest.TestCase):
             side_effect=[
                 [],
                 [],
-                goods or [SimpleNamespace(name="息壤玉葫芦")],
+                available_goods,
+                [],
+                available_goods,
             ]
         )
         feature.read_outpost_ticket_num = Mock(side_effect=ticket_numbers)
@@ -111,6 +114,13 @@ class TestOutpostExchange(unittest.TestCase):
 
     def test_clicked_exchange_is_excluded_even_when_popup_is_not_confirmed(self):
         feature = self.make_exchange_feature([1000, 1000, 0])
+        feature.wait_ocr.side_effect = [
+            [],
+            [],
+            [SimpleNamespace(name="息壤玉葫芦")],
+            [],
+            [SimpleNamespace(name="息壤玉葫芦")],
+        ]
         excluded_goods = set()
 
         with patch(
@@ -123,6 +133,7 @@ class TestOutpostExchange(unittest.TestCase):
             )
 
         self.assertEqual(excluded_goods, {"息壤玉葫芦"})
+        self.assertEqual(feature.read_outpost_ticket_num.call_count, 2)
         feature.plus_max.assert_called_once()
         feature.wait_click_feature.assert_called_once()
 
@@ -158,6 +169,7 @@ class TestOutpostExchange(unittest.TestCase):
             )
 
         self.assertEqual(excluded_goods, {"息壤玉葫芦"})
+        feature.read_outpost_ticket_num.assert_called_once_with("天王坪援建点")
         feature.wait_pop_up.assert_not_called()
 
     def test_good_is_excluded_when_trade_amount_is_not_available(self):
@@ -175,6 +187,7 @@ class TestOutpostExchange(unittest.TestCase):
             )
 
         self.assertEqual(excluded_goods, {"息壤玉葫芦"})
+        feature.read_outpost_ticket_num.assert_called_once_with("天王坪援建点")
         feature.wait_click_feature.assert_not_called()
 
 
