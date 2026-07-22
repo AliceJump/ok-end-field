@@ -1107,7 +1107,6 @@ class RuntimeMixin:
         bool:
             True if sent. 如果发送返回 True。
         """
-        send_mouse_delta(self.get_game_hwnd(), only_activate=True)
         return super().send_key(
             key,
             down_time,

@@ -10,6 +10,7 @@ from ok.util.logger import Logger
 from win32api import GetCursorPos, GetSystemMetrics, SetCursorPos
 from pynput.keyboard import Controller, Key
 
+from src.core.game_window import find_game_hwnd
 from src.interaction.Mouse import active_and_send_mouse_delta
 
 logger = Logger.get_logger(__name__)
@@ -28,6 +29,7 @@ class EfInteraction(PostMessageInteraction):
         super().__init__(*args, **kwargs)
         self.cursor_position = None
         self.activated = False
+        self._esc_hwnd = 0
         self.keyboard = Controller()
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.001, move=True, key="left"):
@@ -66,29 +68,31 @@ class EfInteraction(PostMessageInteraction):
     def send(self, msg, wparam, lparam):
         win32gui.SendMessage(self.hwnd, msg, wparam, lparam)
 
-    def _foreground_hwnd(self):
-        hwnd = getattr(getattr(self, "hwnd_window", None), "hwnd", 0)
-        if hwnd and win32gui.IsWindow(hwnd):
-            return hwnd
-        return self.hwnd
+    @staticmethod
+    def _game_hwnd():
+        # Lazy import avoids the config -> EfInteraction import cycle.
+        from src.config import config
 
-    def activate(self):
-        self.send(win32con.WM_ACTIVATE, win32con.WA_ACTIVE, 0)
+        return find_game_hwnd(config.get("windows", {}))
+
+    def activate(self, hwnd=None):
+        win32gui.SendMessage(hwnd or self._game_hwnd(), win32con.WM_ACTIVATE, win32con.WA_ACTIVE, 0)
 
     def try_activate(self):
-        if self.hwnd_window.is_foreground():
+        hwnd = self._game_hwnd()
+        if win32gui.GetForegroundWindow() == hwnd:
             self.activated = False
         elif not self.activated:
             self.activated = True
             self.cursor_position = GetCursorPos()
-            self.activate()
+            self.activate(hwnd)
             time.sleep(0.01)
-        self.try_unclip()
+        self.try_unclip(hwnd)
 
-    def try_unclip(self):
+    def try_unclip(self, hwnd=None):
         try:
             # 只有在窗口存在、处于后台且有历史坐标时才进行检查
-            if not self.hwnd_window.is_foreground():
+            if win32gui.GetForegroundWindow() != (hwnd or self._game_hwnd()):
                 rect = RECT()
                 ctypes.windll.user32.GetClipCursor(ctypes.byref(rect))
                 sx, sy = GetSystemMetrics(0), GetSystemMetrics(1)
@@ -106,12 +110,35 @@ class EfInteraction(PostMessageInteraction):
             pass
         finally:
             self.cursor_position = None
-    def send_key_down(self, key, activate=True):        
+
+    def send_key_down(self, key, activate=True):
+        if str(key).lower() in ("esc", "escape"):
+            self._esc_hwnd = self._game_hwnd()
+            vk_code = win32con.VK_ESCAPE
+            win32gui.SendMessage(self._esc_hwnd, win32con.WM_ACTIVATE, win32con.WA_ACTIVE, 0)
+            win32gui.PostMessage(
+                self._esc_hwnd,
+                win32con.WM_KEYDOWN,
+                vk_code,
+                self.make_lparam(vk_code, is_up=False),
+            )
+            return
         if activate:
-            self.try_activate()
+            active_and_send_mouse_delta(self._game_hwnd(), only_activate=True)
         self.keyboard.press(self._convert_key(key))
 
     def send_key_up(self, key):
+        if str(key).lower() in ("esc", "escape"):
+            hwnd = self._esc_hwnd or self._game_hwnd()
+            vk_code = win32con.VK_ESCAPE
+            win32gui.PostMessage(
+                hwnd,
+                win32con.WM_KEYUP,
+                vk_code,
+                self.make_lparam(vk_code, is_up=True),
+            )
+            self._esc_hwnd = 0
+            return
         self.keyboard.release(self._convert_key(key))
 
     def _convert_key(self, key: str):
