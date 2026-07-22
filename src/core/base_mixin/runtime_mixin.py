@@ -71,6 +71,22 @@ class RuntimeMixin:
             duration,
         )
         
+    _resolution_warned = False
+
+    def check_resolution(self):
+        if RuntimeMixin._resolution_warned:
+            return
+        width = getattr(self, "width", self.BASE_WIDTH) or self.BASE_WIDTH
+        height = getattr(self, "height", self.BASE_HEIGHT) or self.BASE_HEIGHT
+        min_size = app_config.get("supported_resolution", {}).get("min_size", (1600, 900))
+        min_w, min_h = min_size
+        if width < min_w or height < min_h:
+            self.log_info(
+                f"当前分辨率 {width}x{height} 低于推荐最小值 {min_w}x{min_h}，脚本可能无法正常运行",
+                notify=True
+            )
+        RuntimeMixin._resolution_warned = True
+
     def resolution_scale(self) -> float:
         """
         返回当前分辨率相对于基准分辨率的缩放系数。

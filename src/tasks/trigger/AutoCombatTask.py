@@ -21,4 +21,5 @@ class AutoCombatTask(BattleMixin, TriggerTask):
         self._combat_logic = AutoCombatLogic(self)
 
     def run(self):
+        self.check_resolution()
         self._combat_logic.run()

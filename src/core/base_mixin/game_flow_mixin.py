@@ -338,6 +338,7 @@ class GameFlowMixin:
         Raises:
             Exception: 当无法回到主界面时抛出。
         """
+        self.check_resolution()
         self.info_set("current task", f"wait main esc={esc}")
         if not self.wait_until(
                 lambda: self.is_main(esc=esc, need_active=need_active), time_out=time_out, raise_if_not_found=False

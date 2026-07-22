@@ -21,6 +21,7 @@ class AutoInteractionTask(BaseEfTask, TriggerTask):
         self.icon = FluentIcon.ACCEPT
 
     def run(self):
+        self.check_resolution()
         now = self.next_frame()
         if self.config.get('自动跳过剧情', True):
             if self.find_one(fL.skip_dialog_esc, horizontal_variance=0.05, frame=now):

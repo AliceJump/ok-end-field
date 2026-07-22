@@ -448,6 +448,7 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
             return False
 
     def run(self):
+        self.check_resolution()
         try:
             if not self._is_game_window_alive():
                 self._cleanup_navigator_runtime()
