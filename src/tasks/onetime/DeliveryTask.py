@@ -8,7 +8,6 @@ from typing import List, Tuple
 from ok import Box, TaskDisabledException
 from qfluentwidgets import FluentIcon
 
-from src.interaction.Mouse import active_and_send_mouse_delta
 from src.icons import Icons
 from src.data.delivery_area import (
     DEFAULT_DELIVERY_AREA,
@@ -470,7 +469,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         if not ticket_types:
             self.log_info("警告: 未启用任何券种，任务退出")
             return None
-        active_and_send_mouse_delta(self.hwnd.hwnd, 0, self.height//2-20, activate=False)
+        self.active_and_send_mouse_delta(0, self.height//2-20, activate=False)
         start_time = time.time()
         while True:
             if time.time() - start_time > 600:

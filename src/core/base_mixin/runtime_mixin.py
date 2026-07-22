@@ -65,7 +65,7 @@ class RuntimeMixin:
     
     def smooth_drag(self, start, end, duration=0.12):
         smooth_drag(
-            self.hwnd.hwnd,
+            self.get_game_hwnd(),
             self.normalize_pos(start),
             self.normalize_pos(end),
             duration,
@@ -208,7 +208,7 @@ class RuntimeMixin:
         - 地图 UI：已确定地图中心/图标附近的像素坐标时，精确缩放或平移视角。
         - 列表 UI：已通过 OCR/特征拿到某一行条目的绝对坐标时，在该条目处滚动翻页。
         """
-        run_at_window_pos(self.hwnd.hwnd, super().scroll, x, y, 0.5, x, y, count)
+        run_at_window_pos(self.get_game_hwnd(), super().scroll, x, y, 0.5, x, y, count)
 
     def scroll_relative(self, x: float, y: float, count: int) -> None:
         """按屏幕相对坐标比例滚轮（x/y 范围 0~1）。
@@ -224,7 +224,7 @@ class RuntimeMixin:
         - 地图 UI：用 (0.5, 0.5) 等比例坐标在地图中心连续缩放，适配不同分辨率。
         - 列表 UI：在固定相对区域（如左侧列表 0.1/0.5）滚动查找条目，避免硬编码像素。
         """
-        run_at_window_pos(self.hwnd.hwnd, super().scroll_relative, int(x * self.width), int(y * self.height), 0.5, x,
+        run_at_window_pos(self.get_game_hwnd(), super().scroll_relative, int(x * self.width), int(y * self.height), 0.5, x,
                           y, count)
 
     def get_feature_by_resolution(self, base_name: str):
@@ -875,7 +875,7 @@ class RuntimeMixin:
         scaled_slow_radius = self.scale_distance(slow_radius)
         scaled_deadzone = self.scale_distance(deadzone)
         return move_to_target_once_impl(
-            self.hwnd.hwnd,
+            self.get_game_hwnd(),
             ocr_obj,
             self.screen_center,
             max_step=scaled_max_step,
@@ -899,7 +899,7 @@ class RuntimeMixin:
         Returns:
             Any: send_mouse_delta 的返回值。
         """
-        return send_mouse_delta(self.hwnd.hwnd, dx, dy, activate, only_activate, delay, steps)
+        return send_mouse_delta(self.get_game_hwnd(), dx, dy, activate, only_activate, delay, steps)
 
     def click_with_alt(self, x: int | float | Box | List[Box] = -1, y: int | float = -1, move_back: bool = False,
                        name: str | None = None, interval: int = -1, move: bool = True, down_time: float = 0.01,
@@ -1107,7 +1107,7 @@ class RuntimeMixin:
         bool:
             True if sent. 如果发送返回 True。
         """
-        send_mouse_delta(self.hwnd.hwnd, only_activate=True)
+        send_mouse_delta(self.get_game_hwnd(), only_activate=True)
         return super().send_key(
             key,
             down_time,

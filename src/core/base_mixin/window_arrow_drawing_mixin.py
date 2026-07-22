@@ -374,11 +374,6 @@ class WindowArrowDrawingMixin:
         self._window_arrow_overlay: Optional[WindowArrowOverlay] = None
         self._window_arrow_controller: Optional[WindowArrowOverlayController] = None
 
-    def _get_game_hwnd(self) -> int:
-        """返回游戏主窗口句柄，优先使用 self.hwnd.hwnd。"""
-        hwnd = self.hwnd.hwnd if hasattr(self.hwnd, 'hwnd') else self.hwnd
-        return int(hwnd)
-
     def _ensure_window_arrow_controller(self):
         if self._window_arrow_controller is not None:
             return self._window_arrow_controller
@@ -395,7 +390,7 @@ class WindowArrowDrawingMixin:
             logger.error("无法创建箭头叠层：未找到 QApplication 实例")
             return None
 
-        hwnd = self._get_game_hwnd()
+        hwnd = self.get_game_hwnd()
         self._window_arrow_controller = WindowArrowOverlayController(hwnd)
         self._window_arrow_controller.moveToThread(app.thread())
         self._window_arrow_controller.style_requested.emit(
@@ -413,7 +408,7 @@ class WindowArrowDrawingMixin:
             if overlay is not None and overlay.width() > 0 and overlay.height() > 0:
                 return overlay.width(), overlay.height()
 
-            hwnd = self.hwnd.hwnd if hasattr(self.hwnd, 'hwnd') else self.hwnd
+            hwnd = self.get_game_hwnd()
             left, top, right, bottom = win32gui.GetClientRect(hwnd)
             return right - left, bottom - top
         except Exception as e:

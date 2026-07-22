@@ -90,7 +90,7 @@ class MouseScanMixin(BaseEfTask):
             )
 
         click_down(
-            self.hwnd.hwnd,
+            self.get_game_hwnd(),
             int(scan_start[0]*self.width),
             int(scan_start[1]*self.height),
             key,
@@ -148,7 +148,7 @@ class MouseScanMixin(BaseEfTask):
 
         finally:
 
-            click_up(self.hwnd.hwnd,key)
+            click_up(self.get_game_hwnd(), key)
 
             self.log_info(
                 f"区域扫描完成，共扫描 {line} 行。"

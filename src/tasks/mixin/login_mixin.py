@@ -164,7 +164,7 @@ class LoginMixin(BaseEfTask):
             target = ocr_result[0]
 
             run_at_window_pos(
-                self.hwnd.hwnd,
+                self.get_game_hwnd(),
                 pyautogui.click,
                 target.x + target.width // 2,
                 target.y + target.height // 2,

@@ -8,7 +8,6 @@ from src.tasks.daily.daily_routine_mixin import DailyRoutineFeature
 from src.tasks.daily.daily_shop_mixin import DailyShopFeature
 from src.tasks.daily.daily_trade_mixin import DailyTradeFeature
 from src.tasks.daily.daily_demo_mixin import DailyDemoFeature
-from src.interaction.Mouse import active_and_send_mouse_delta
 from src.tasks.daily.finally_file import (
     create_task_summary_report,
 )
@@ -125,7 +124,7 @@ class DailyTask(
 
     def run(self):
         """日常任务主入口。"""
-        active_and_send_mouse_delta(self.hwnd.hwnd, only_activate=True)
+        self.active_and_send_mouse_delta(only_activate=True)
         repeat_times = self.config.get("重复测试的次数", 1) if self.debug else 1
         try:
             task_plan = self.build_task_plan()

@@ -30,7 +30,7 @@ class GameFlowMixin:
         if need_active:
             self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True)
         self.sleep(0.1)
-        return capture_window_by_screen(self.hwnd.hwnd)
+        return capture_window_by_screen(self.get_game_hwnd())
 
     def login_ocr(self, x=0, y=0, to_x=1, to_y=1, match=None, width=0, height=0, box=None, name=None, threshold=0,
                   target_height=0, use_grayscale=False, log=False, frame_processor=None, lib='default',
@@ -256,7 +256,7 @@ class GameFlowMixin:
                 self._logged_in = True
                 return True
             elif self.find_one(fL.monthly_card) or self.find_one(fL.monthly_card2) or self.find_one(fL.logout) or self.find_one(fL.login_reward_icon):
-                run_at_window_pos(self.hwnd.hwnd, super().click, self.width // 2, self.height // 2, 1, 0.5, 0.5)
+                run_at_window_pos(self.get_game_hwnd(), super().click, self.width // 2, self.height // 2, 1, 0.5, 0.5)
                 return False
             elif close := (
                     self.find_one("one_click_claim", horizontal_variance=0.1, vertical_variance=0.1)

@@ -15,6 +15,8 @@ from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.core.base_mixin.window_arrow_drawing_mixin import WindowArrowDrawingMixin
 from src.core.global_config_store import ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME, KEY_CONFIG_NAME, get_global_config
 from src.core.config_migration import migrate_config_file_keys
+from src.core.game_window import find_game_hwnd
+from src.config import config as app_config
 
 # 覆写框架截图时间戳格式：日期_时分秒（无毫秒）
 import ok.gui.debug.Screenshot as _ok_screenshot
@@ -123,6 +125,10 @@ class BaseEfTask(
         self._ws_server_thread = None
         self._ws_loop = None
         self._ws_stop_event = None
+
+    def get_game_hwnd(self) -> int:
+        """Return the game hwnd resolved from the configured window features."""
+        return find_game_hwnd(app_config.get("windows", {}))
 
     # ── 配置键迁移 ─────────────────────────────────────────
     def load_config(self):

@@ -4,7 +4,6 @@ import time
 
 import pyautogui
 
-from src.interaction.Mouse import active_and_send_mouse_delta
 from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
 TOLERANCE = 50
@@ -482,8 +481,7 @@ class NavigationMixin(BaseEfTask):
                         dy = random.randint(-max_offset, max_offset)
 
                     # 移动鼠标
-                    active_and_send_mouse_delta(
-                        self.hwnd.hwnd,
+                    self.active_and_send_mouse_delta(
                         dx,
                         dy,
                         activate=True,
