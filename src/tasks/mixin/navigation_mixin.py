@@ -1,6 +1,5 @@
 import random
 import re
-import time
 
 import pyautogui
 
@@ -28,12 +27,12 @@ class NavigationMixin(BaseEfTask):
 
         self.press_key("m", after_sleep=2)
         self.log_info("关闭地图界面 (按下 M)")
-        start_time = time.time()
+        start_time = self.active_time()
         while not self.find_feature(
             feature=target_feature_out_map, box=self.box_of_screen(0, 0, 1, 1),
             threshold=0.7
         ):
-            if time.time() - start_time > 5:
+            if self.active_time() - start_time > 5:
                 self.log_info("等待追踪图标超时")
                 return False
         self.align_ocr_or_find_target_to_center(
@@ -123,11 +122,11 @@ class NavigationMixin(BaseEfTask):
 
         # ========== 奔跑状态管理 ==========
         run_bool = True  # 当前是否处于奔跑状态（ctrl 切换）
-        start_time = time.time()
+        start_time = self.active_time()
 
         # max_run_time 状态变量
         run_accumulated_time = 0.0
-        run_state_start_time = time.time() if max_run_time > 0 else None
+        run_state_start_time = self.active_time() if max_run_time > 0 else None
         run_allowed = True
 
         def enter_run_mode():
@@ -136,7 +135,7 @@ class NavigationMixin(BaseEfTask):
             if run_bool or not run_allowed:
                 return
             run_bool = True
-            run_state_start_time = time.time()
+            run_state_start_time = self.active_time()
             self.press_key("ctrl")
 
         def exit_run_mode():
@@ -145,7 +144,7 @@ class NavigationMixin(BaseEfTask):
             if not run_bool:
                 return
             if run_state_start_time is not None:
-                run_accumulated_time += time.time() - run_state_start_time
+                run_accumulated_time += self.active_time() - run_state_start_time
                 run_state_start_time = None
             run_bool = False
             self.press_key("ctrl")
@@ -156,7 +155,7 @@ class NavigationMixin(BaseEfTask):
             """达到最大奔跑时间后立即切换为步行。"""
             if max_run_time <= 0 or not run_bool or not run_allowed or run_state_start_time is None:
                 return
-            if run_accumulated_time + time.time() - run_state_start_time >= max_run_time:
+            if run_accumulated_time + self.active_time() - run_state_start_time >= max_run_time:
                 self.log_info("达到最大奔跑时间，切换为步行模式")
                 exit_run_mode()
 
@@ -190,9 +189,9 @@ class NavigationMixin(BaseEfTask):
 
                     settle_time = 2 if target_is_ocr else 1
                     stable = True
-                    confirm_start = time.time()
+                    confirm_start = self.active_time()
 
-                    while time.time() - confirm_start < settle_time:
+                    while self.active_time() - confirm_start < settle_time:
                         if not check_target():
                             stable = False
                             break
@@ -204,8 +203,8 @@ class NavigationMixin(BaseEfTask):
                     self.log_info("确认期间目标丢失，开始后退搜索")
                     self.send_key_down("s")  # 确认使用send_key：s为方向移动键，不属于游戏可配置热键，用于后退搜索
 
-                    search_start = time.time()
-                    while time.time() - search_start < 10:
+                    search_start = self.active_time()
+                    while self.active_time() - search_start < 10:
                         if check_target():
                             self.log_info("后退过程中重新找到目标")
                             self.send_key_up("s")  # 确认使用send_key：释放方向键
@@ -214,7 +213,7 @@ class NavigationMixin(BaseEfTask):
 
                     self.send_key_up("s")  # 确认使用send_key：释放方向键
 
-                if time.time() - start_time > time_out:
+                if self.active_time() - start_time > time_out:
                     self.log_info("导航超时")
                     return False
 
@@ -259,10 +258,10 @@ class NavigationMixin(BaseEfTask):
                         allow_random_move=False
                     )
                 else:
-                    if need_v and time.time() - last_click_v_time > 5:
+                    if need_v and self.active_time() - last_click_v_time > 5:
                         self.log_info("未找到导航标识，点击 V 尝试")
                         self.press_key("v")
-                        last_click_v_time = time.time()
+                        last_click_v_time = self.active_time()
 
                     if run_bool:
                         self.log_info("未找到导航标识，进入短距离搜索模式")
@@ -348,12 +347,12 @@ class NavigationMixin(BaseEfTask):
         sum_dy = 0
         move_bool = False
         for i in range(max_time*2):
-            start_action_time = time.time()
+            start_action_time = self.active_time()
             if ocr:
                 # 使用OCR模式识别目标，设置超时时间为2秒，并启用日志记录
-                start_time = time.time()
+                start_time = self.active_time()
                 result = None
-                while time.time() - start_time < 0.15:
+                while self.active_time() - start_time < 0.15:
                     frame = self.next_frame()
                     if not isinstance(ocr_frame_processor_list, list):
                         ocr_frame_processor_list = [ocr_frame_processor_list]
@@ -373,10 +372,10 @@ class NavigationMixin(BaseEfTask):
             else:
                 if isinstance(ocr_match_or_feature_name_list, str):
                     ocr_match_or_feature_name_list = [ocr_match_or_feature_name_list]
-                start_time = time.time()
+                start_time = self.active_time()
                 result = None
                 while True:
-                    if time.time() - start_time >= 1:
+                    if self.active_time() - start_time >= 1:
                         break
                     frame = self.next_frame()
                     if use_yolo:
@@ -388,7 +387,7 @@ class NavigationMixin(BaseEfTask):
                         )
                     else:
                         for feature_name in ocr_match_or_feature_name_list:
-                            if time.time() - start_time >= 1:
+                            if self.active_time() - start_time >= 1:
                                 break
 
                             result = self.find_feature(
@@ -496,8 +495,8 @@ class NavigationMixin(BaseEfTask):
                         success = False
                         random_move_count = 0
 
-            if time.time() - start_action_time < once_time:
-                self.sleep(once_time - (time.time() - start_action_time))  # OCR 成功后不需要处理，下一次失败仍然随机
+            if self.active_time() - start_action_time < once_time:
+                self.sleep(once_time - (self.active_time() - start_action_time))  # OCR 成功后不需要处理，下一次失败仍然随机
             if need_scroll:
                 # 初始放大（只执行一次）
                 if not scroll_bool:

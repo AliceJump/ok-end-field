@@ -578,7 +578,7 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
 
                 # 如果按键被按下，开始/继续计时；若连续保持足够长则标记
                 if cur_key:
-                    now = time.time()
+                    now = self.active_time()
                     if self._mark_lock_target.get('start_time') is None:
                         self._mark_lock_target['start_time'] = now
                     else:

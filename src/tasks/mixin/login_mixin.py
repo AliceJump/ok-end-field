@@ -1,5 +1,4 @@
 import re
-import time
 import pyautogui
 from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
@@ -31,8 +30,8 @@ class LoginMixin(BaseEfTask):
             - 由于 OCR/界面识别的不确定性，使用后四位匹配存在点击到错误账号的风险；建议确保最近账号列表中后四位唯一。
         """
         self._logged_in = False
-        start_time = time.time()
-        while time.time() - start_time < 3:
+        start_time = self.active_time()
+        while self.active_time() - start_time < 3:
             result = self.wait_ocr(match=self.lang.login_mixin.ms, time_out=1, box=self.box.bottom_left)
             if result:
                 self._logged_in = True
@@ -51,8 +50,8 @@ class LoginMixin(BaseEfTask):
                 self.click_confirm()
             else:
                 self.log_error("未找到主界面退出按钮，可能未成功返回登录界面")
-        start_time = time.time()
-        while time.time() - start_time < 120:
+        start_time = self.active_time()
+        while self.active_time() - start_time < 120:
             result = self.find_feature(feature=fL.logout)
             self.sleep(1)
             if result:
@@ -90,8 +89,8 @@ class LoginMixin(BaseEfTask):
         Notes:
             - 该方法会在检测到登出按钮后立即返回 True；未检测到则记录错误日志并返回 False。
         """
-        start_time = time.time()
-        while time.time() - start_time < time_out:
+        start_time = self.active_time()
+        while self.active_time() - start_time < time_out:
             result = self.find_feature(feature=fL.logout)
             if result:
                 self.log_info("登录成功")
@@ -138,10 +137,10 @@ class LoginMixin(BaseEfTask):
         if box is None:
             box = self.box.bottom
 
-        start_time = time.time()
+        start_time = self.active_time()
         clicked_result = None
 
-        while time.time() - start_time < 60:
+        while self.active_time() - start_time < 60:
 
             ocr_result = self.login_ocr(
                 match=match,

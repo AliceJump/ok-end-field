@@ -1,5 +1,3 @@
-import time
-
 import cv2
 import numpy as np
 from qfluentwidgets import FluentIcon
@@ -48,12 +46,12 @@ class AutoPickTask(BaseEfTask, TriggerTask):
                     self.pick()
                     self.sleep(0.2)
                     return
-                start = time.time()
+                start = self.active_time()
                 icon_zone = button_f.copy(x_offset=button_f.width * 3.3, width_offset=button_f.width * 0.8,
                                           y_offset=-button_f.height * 0.2, height_offset=button_f.height * 0.85,
                                           name='choice')
                 white_percent = 0
-                while time.time() - start < 0.3:
+                while self.active_time() - start < 0.3:
                     white_percent = self.calculate_color_percentage(white_color, icon_zone)
                     if white_percent > 0.1:
                         break

@@ -1,4 +1,3 @@
-import time
 import threading
 import pyautogui
 import traceback
@@ -62,7 +61,7 @@ class AutoCombatLogic:
         task.log_info(f"Used skill {skill_key}")
         self.normal_skill_index += 1
     def _periodic_search(self):
-        now = time.time()
+        now = self.task.active_time()
 
         if now - self._last_search_time < 1:
             return
@@ -76,7 +75,7 @@ class AutoCombatLogic:
         self._exit_check_interval = 0.5
         task = self.task
         if not task.in_combat(required_yellow=1):
-            now = time.time()
+            now = task.active_time()
             last = getattr(task, '_last_no_combat_log_time', 0)
             if now - last >= 5:
                 task._last_no_combat_log_time = now
@@ -99,7 +98,7 @@ class AutoCombatLogic:
             if not self.skill_sequence:
                 self.rotation_active = False
             self.task.log_info(f"解析后的排轴技能序列: {self.skill_sequence}")
-            self.last_rotation_ok_time = time.time()
+            self.last_rotation_ok_time = task.active_time()
 
         if not no_battle:
             task.log_info("检测到进入战斗,开始自动战斗流程")
@@ -113,17 +112,17 @@ class AutoCombatLogic:
             self._normal_attack_hold_enabled = True
             self._sync_normal_attack_hold()
             if start_sleep is not None:
-                time.sleep(start_sleep)
+                task.sleep(start_sleep)
             else:
                 wait_time = task.get_battle_config("进入战斗后的初始等待时间", 3)
-                time.sleep(wait_time)
+                task.sleep(wait_time)
 
         try:
             while True:
                 self._periodic_search()
                 self._sync_normal_attack_hold()
 
-                now = time.time()
+                now = task.active_time()
                 if now - self._last_exit_check_time >= self._exit_check_interval:
                     self._last_exit_check_time = now
 
@@ -147,7 +146,7 @@ class AutoCombatLogic:
                 if not self.rotation_enabled or not self.rotation_active:
                     self._do_normal_combat_frame()
                 else:
-                    if time.time() - self.last_rotation_ok_time >= 5:
+                    if task.active_time() - self.last_rotation_ok_time >= 5:
                         self.rotation_active = False
                         task.log_info("排轴超时，切换为普通模式")
                     now_skill = self.skill_sequence[self.skill_index]
@@ -156,24 +155,24 @@ class AutoCombatLogic:
                         if task.use_ult(ult_sequence=ult_sequence):
                             task.log_info(f"排轴释放终极技 {now_skill}")
                             self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
-                            self.last_rotation_ok_time = time.time()
+                            self.last_rotation_ok_time = task.active_time()
                             continue
                     elif now_skill.startswith("sleep_"):
                         sleep_time = float(now_skill[6:])
                         task.log_info(f"排轴等待 {sleep_time:.3f} 秒")
-                        time.sleep(sleep_time)
+                        task.sleep(sleep_time)
                         self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
-                        self.last_rotation_ok_time = time.time()
+                        self.last_rotation_ok_time = task.active_time()
                         continue
                     elif now_skill.startswith("normal_"):
                         normal_duration = float(now_skill[7:])
                         task.log_info(f"排轴临时切换普通战斗 {normal_duration:.3f} 秒")
                         self.normal_skill_index = 0
-                        normal_end_time = time.time() + normal_duration
-                        while time.time() < normal_end_time:
+                        normal_end_time = task.active_time() + normal_duration
+                        while task.active_time() < normal_end_time:
                             self._periodic_search()
                             self._sync_normal_attack_hold()
-                            now_check = time.time()
+                            now_check = task.active_time()
                             if now_check - self._last_exit_check_time >= self._exit_check_interval:
                                 self._last_exit_check_time = now_check
                                 if task._check_single_exit_condition():
@@ -184,20 +183,20 @@ class AutoCombatLogic:
                             break
                         task.log_info("普通战斗临时模式结束，恢复排轴")
                         self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
-                        self.last_rotation_ok_time = time.time()
+                        self.last_rotation_ok_time = task.active_time()
                         continue
                     elif now_skill == 'e':
                         if task.use_link_skill():
                             task.log_info(f"排轴释放连携技 {now_skill}")
                             self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
-                            self.last_rotation_ok_time = time.time()
+                            self.last_rotation_ok_time = task.active_time()
                             continue
                     else:
                         if task.get_skill_bar_count() >= 1:
                             task.send_key(now_skill)  # 确认使用send_key：技能键为游戏固定不可配置键，不经过KeyConfigManager管理
                             task.log_info(f"排轴释放技能 {now_skill}")
                             self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
-                            self.last_rotation_ok_time = time.time()
+                            self.last_rotation_ok_time = task.active_time()
                             continue
         except Exception as exc:
             task.log_info(f"自动战斗发生异常: {exc}")

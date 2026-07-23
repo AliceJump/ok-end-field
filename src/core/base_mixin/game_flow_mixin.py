@@ -1,5 +1,4 @@
 import re
-import time
 import os
 from datetime import datetime
 
@@ -151,16 +150,16 @@ class GameFlowMixin:
         Returns:
             bool: 成功处理返回 True，超时返回 False。
         """
-        start_time = time.time()
+        start_time = self.active_time()
         while True:
-            if time.time() - start_time > 60:
+            if self.active_time() - start_time > 60:
                 self.log_info("skip_dialog 超时退出")
                 return False
             if self.find_one("skip_dialog_esc", horizontal_variance=0.05):
                 self.send_key("esc", after_sleep=0.1)
-                start = time.time()
+                start = self.active_time()
                 clicked_confirm = False
-                while time.time() - start < 3:
+                while self.active_time() - start < 3:
                     confirm = self.find_confirm()
                     if confirm:
                         self.click(confirm, after_sleep=0.4)
@@ -194,7 +193,7 @@ class GameFlowMixin:
         Returns:
             bool: 找到并点击确认按钮返回 True，超时返回 False。
         """
-        start_time = time.time()
+        start_time = self.active_time()
         while True:
             self.next_frame()
             confirm = self.find_confirm()
@@ -209,7 +208,7 @@ class GameFlowMixin:
 
                 return True
             # 超时检测
-            if time.time() - start_time > time_out:
+            if self.active_time() - start_time > time_out:
                 self.log_info("点击确认超时")
                 return False
 
@@ -227,9 +226,9 @@ class GameFlowMixin:
             bool: 找到并点击返回 True，超时返回 False。
         """
         count = 0
-        start_time = time.time()
+        start_time = self.active_time()
         while True:
-            if time.time() - start_time > time_out:
+            if self.active_time() - start_time > time_out:
                 return False
             if count > 30:
                 return False
@@ -601,7 +600,7 @@ class GameFlowMixin:
         Raises:
             Exception: 当超时仍未进入地图时抛出。
         """
-        start_time = time.time()
+        start_time = self.active_time()
         default_features = [fL.transaction_icon, fL.main_centre_icon]
         if addtional_feature:
             features = default_features + addtional_feature if isinstance(addtional_feature, list) else default_features + [addtional_feature]
@@ -609,7 +608,7 @@ class GameFlowMixin:
             features = default_features
         in_map = False
         while not in_map:
-            if time.time() - start_time > time_out:
+            if self.active_time() - start_time > time_out:
                 raise Exception("进入地图失败")
             self.press_key("m", after_sleep=1)
             if self.find_one(fL.in_map, box=self.box_of_screen(0.027, 0.531, 0.051, 0.896)):
@@ -630,9 +629,9 @@ class GameFlowMixin:
         return self.wait_feature(feature=fL.left_button, vertical_variance=0.1, horizontal_variance=0.1, raise_if_not_found=False, time_out=1) is not None
 
     def wait_friend_list(self, end_icon_name="friend_chat_icon"):
-        start_time = time.time()
+        start_time = self.active_time()
         while True:
-            if time.time() - start_time > 20:
+            if self.active_time() - start_time > 20:
                 self.log_info("加载好友列表超时")
                 return False
             if self.find_feature(feature=end_icon_name):
@@ -645,9 +644,9 @@ class GameFlowMixin:
         Returns:
             bool: 成功进入返回 True，超时返回 False。
         """
-        start_time = time.time()
+        start_time = self.active_time()
         while True:
-            if time.time() - start_time > 60:
+            if self.active_time() - start_time > 60:
                 self.log_info("进入好友帝江号超时")
                 return False
             if self.in_friend_boat():

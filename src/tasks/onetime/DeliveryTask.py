@@ -1,5 +1,4 @@
 import re
-import time
 import webbrowser
 from datetime import datetime
 from dataclasses import dataclass
@@ -245,7 +244,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         total_ratio = sum(expected_ratio)
 
         results = {name: [] for name, _, _ in areas}
-        start_time = time.time()
+        start_time = self.active_time()
 
         while True:
             self.next_frame()  # 拿到最新截图
@@ -263,7 +262,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             counts = [len(results[name]) for name, _, _ in areas]
 
             # 超时退出
-            if time.time() - start_time > 2:
+            if self.active_time() - start_time > 2:
                 break
 
             # 检查最小项数
@@ -470,9 +469,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self.log_info("警告: 未启用任何券种，任务退出")
             return None
         self.active_and_send_mouse_delta(0, self.height//2-20, activate=False)
-        start_time = time.time()
+        start_time = self.active_time()
         while True:
-            if time.time() - start_time > 600:
+            if self.active_time() - start_time > 600:
                 self.log_info("接单尝试时间过长，退出")
                 return False
             target_nums = parse_int_sequence(self.config.get(self.CFG_TARGET_TICKET_NUM, ["119000"]))
@@ -510,13 +509,13 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self.log_info("未找到符合条件(金额+类型)的委托，准备刷新重试")
             for i in range(2):
                 if last_refresh_box := self.wait_feature(feature=fL.refresh_order_list, vertical_variance=0.05, horizontal_variance=0.02):
-                    now = time.time()
+                    now = self.active_time()
                     last = getattr(self, "_last_refresh_ts", 0.0)
                     wait = max(0.0, 5.4 - (now - last))
                     if wait > 0:
                         self.sleep(wait)
                     self.click(last_refresh_box)
-                    self._last_refresh_ts = time.time()
+                    self._last_refresh_ts = self.active_time()
                     self.wait_ui_stable(refresh_interval=1)  # 刷新后界面稳定的时间可能会比平常长一些，尤其是网络较慢的时候
                     break
                 else:

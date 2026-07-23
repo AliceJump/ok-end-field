@@ -1,4 +1,3 @@
-import time
 from qfluentwidgets import FluentIcon
 from src.icons import Icons
 from src.data.FeatureList import FeatureList as fL
@@ -77,9 +76,9 @@ class YingTuoTask(BattleMixin):
             self.scroll_relative(0.5, 0.5, -5)
         return None
     def battle_and_exit(self):
-        end_time = time.time()
+        end_time = self.active_time()
         while not self.wait_feature(feature=fL.battle_space_left, time_out=1, raise_if_not_found=False):
-            if time.time() - end_time > 300:
+            if self.active_time() - end_time > 300:
                 self.log_info("等待超时，进入协议空间超时")
                 return False
         self.auto_battle()

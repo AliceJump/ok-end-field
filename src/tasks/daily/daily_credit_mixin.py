@@ -1,4 +1,3 @@
-import time
 
 from src.data.FeatureList import FeatureList as fL
 
@@ -44,14 +43,14 @@ class DailyCreditMixin:
 
             result = None
             self.wait_ui_stable(refresh_interval=1)
-            start_time = time.time()
+            start_time = self.active_time()
             scroll_count = 0
             while not result:
                 if is_first_time or scroll_count > 0:
                     span_box = self.box_of_screen(3400 / 3840, 301 / 2160, 3692 / 3840, 1883 / 2160)
                 else:
                     span_box = self.box_of_screen(3400 / 3840, 615 / 2160, 3692 / 3840, 1883 / 2160)
-                if time.time() - start_time > 40:
+                if self.active_time() - start_time > 40:
                     self.log_info("找不到可交流或助力的玩家")
                     return False
                 if left_exchange_time > 0:

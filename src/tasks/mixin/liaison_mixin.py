@@ -19,7 +19,6 @@ LiaisonMixin
 
 import random
 import re
-import time
 
 from src.data.FeatureList import FeatureList as fL
 from src.data.characters import characters
@@ -408,7 +407,7 @@ class LiaisonMixin(NavigationMixin):
 
         self.log_info("开始寻找干员进行交互")
 
-        start_time = time.time()
+        start_time = self.active_time()
         chat_box = None
 
         while chat_box is None:
@@ -426,7 +425,7 @@ class LiaisonMixin(NavigationMixin):
 
             self.log_info("未找到干员，继续前进移动")
 
-            if time.time() - start_time > 5:
+            if self.active_time() - start_time > 5:
                 self.log_info("长时间未找到干员，任务超时")
                 return False
 
@@ -523,9 +522,9 @@ class LiaisonMixin(NavigationMixin):
             bool: 是否成功完成
         """
         self.log_info("开始收取或赠送礼物")
-        self.start_time = time.time()
+        self.start_time = self.active_time()
         while self.find_one(feature=fL.esc, vertical_variance=0.01, horizontal_variance=0.02):
-            if time.time() - self.start_time > 5:
+            if self.active_time() - self.start_time > 5:
                 self.log_info("没能进入交流界面")
                 return False
             self.sleep(0.5)
@@ -551,10 +550,10 @@ class LiaisonMixin(NavigationMixin):
         return self.give_gifts(time_out=30, gift_entry_clicked=True)
 
     def _loop_wait_click_ocr(self, match, box, time_out, log_msg=None):
-        start_time = time.time()
+        start_time = self.active_time()
 
         while True:
-            if time.time() - start_time > time_out:
+            if self.active_time() - start_time > time_out:
                 if log_msg:
                     self.log_info(log_msg)
                 return None
@@ -566,10 +565,10 @@ class LiaisonMixin(NavigationMixin):
             if result:
                 return result
     def _loop_wait_click_feature(self, feature, box, time_out, log_msg=None):
-        start_time = time.time()
+        start_time = self.active_time()
 
         while True:
-            if time.time() - start_time > time_out:
+            if self.active_time() - start_time > time_out:
                 if log_msg:
                     self.log_info(log_msg)
                 return None

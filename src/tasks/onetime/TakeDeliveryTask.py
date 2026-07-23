@@ -1,5 +1,4 @@
 import re
-import time
 from qfluentwidgets import FluentIcon
 from src.icons import Icons
 from ok import TriggerTask, Logger
@@ -302,7 +301,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                     if last_refresh_box:
 
                         last_click = getattr(self, 'last_refresh_time', 0)
-                        elapsed = time.time() - last_click
+                        elapsed = self.active_time() - last_click
 
                         if elapsed < 5.6:
                             # CD未好
@@ -312,7 +311,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                         # CD已好（或睡醒），执行点击
                         self.log_info(f"执行刷新 (坐标: {int(last_refresh_box.x)}, {int(last_refresh_box.y)})")
                         self.click(last_refresh_box,  )
-                        self.last_refresh_time = time.time()
+                        self.last_refresh_time = self.active_time()
 
                         # 刷新成功后，滚动状态反转
                         scroll_direction *= -1

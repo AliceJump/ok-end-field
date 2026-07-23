@@ -1,5 +1,4 @@
 import re
-import time
 
 from src.data.FeatureList import FeatureList as fL
 
@@ -54,13 +53,13 @@ class DailyRewardMixin:
         return False
 
     def scratch_reward(self):
-        start_time = time.time()
+        start_time = self.active_time()
 
         while True:
             if self.wait_feature(feature=fL.in_scratch_card_page, raise_if_not_found=False, time_out=4):
                 break
 
-            if time.time() - start_time > 20:
+            if self.active_time() - start_time > 20:
                 self.log_info("进入刮刮卡页面超时")
                 return False
 

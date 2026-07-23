@@ -1,5 +1,4 @@
 import re
-import time
 import threading
 
 from PySide6.QtCore import QTimer
@@ -89,10 +88,10 @@ class DailyLiaisonFeature:
             self.next_frame()
             self.sleep(0.5)
         self.log_info("舰桥提示已经消失，等待信赖弹窗并消失")
-        start_time = time.time()
+        start_time = self.active_time()
         if self.wait_ocr(match=self.lang.daily_liaison_mixin.k_933056f0, box=self.box.left, time_out=5):
             while self.ocr(match=self.lang.daily_liaison_mixin.k_933056f0, box=self.box.left):
-                if time.time() - start_time > 10:
+                if self.active_time() - start_time > 10:
                     self.log_info("等待 '信赖' 弹窗超时，进行下一步")
                 self.next_frame()
                 self.sleep(0.5)

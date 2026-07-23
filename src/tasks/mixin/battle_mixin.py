@@ -19,7 +19,6 @@ BattleMixin
 """
 
 import re
-import time
 
 import cv2
 import numpy as np
@@ -295,9 +294,9 @@ class BattleMixin(BaseEfTask):
         等待进入战斗状态。
         """
 
-        start = time.time()
+        start = self.active_time()
 
-        while time.time() - start < time_out:
+        while self.active_time() - start < time_out:
 
             if self.in_combat():
                 return True
@@ -313,12 +312,12 @@ class BattleMixin(BaseEfTask):
         """战斗中周期触发操作（无伤害数字）"""
         interval = self.get_battle_config("无数字操作间隔", 6)
         interval = max(1.0, min(float(interval), 30.0))
-        if time.time() - getattr(self, 'last_no_number_action_time', 0) < interval:
+        if self.active_time() - getattr(self, 'last_no_number_action_time', 0) < interval:
             return
         self.log_info("战斗中周期触发：执行索敌+向前闪避（贴近敌人）")
         self.click(key='middle', down_time=0.002)
         self.dodge_forward(pre_hold=0.05, dodge_down_time=0.03, after_sleep=0.02)
-        self.last_no_number_action_time = time.time()
+        self.last_no_number_action_time = self.active_time()
 
     def get_skill_bar_count(self):
         """
@@ -409,20 +408,20 @@ class BattleMixin(BaseEfTask):
         自动战斗主循环
         """
 
-        start_time = time.time()
+        start_time = self.active_time()
         last_battle_time = None
         sleep_time = self.get_battle_config("进入战斗后的初始等待时间", 3)
 
         while True:
 
             # 全局超时保护
-            if time.time() - start_time > 420:
+            if self.active_time() - start_time > 420:
                 self.log_info("自动战斗超时")
                 return False
 
             # 战斗结束判定
             if last_battle_time:
-                battle_elapsed = time.time() - last_battle_time
+                battle_elapsed = self.active_time() - last_battle_time
 
                 if battle_elapsed > 5:
                     if battle_elapsed > 15 or (
@@ -438,7 +437,7 @@ class BattleMixin(BaseEfTask):
             battle_detected = AutoCombatLogic(self).run(start_sleep=sleep_time, no_battle=no_battle)
 
             if battle_detected:
-                last_battle_time = time.time()
+                last_battle_time = self.active_time()
                 sleep_time = 0.1
             else:
                 self.sleep(0.1)

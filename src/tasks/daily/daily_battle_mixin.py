@@ -1,6 +1,5 @@
 import math
 import re
-import time
 import traceback
 from datetime import datetime
 from dataclasses import dataclass
@@ -807,9 +806,9 @@ class DailyBattleFeature:
     def to_battle(self):
         if not is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING):
             self.wait_pop_up(time_out=4)
-            end_time = time.time()
+            end_time = self.active_time()
             while not self.wait_feature(feature=fL.battle_space_left, time_out=1, raise_if_not_found=False):
-                if time.time() - end_time > 300:
+                if self.active_time() - end_time > 300:
                     self.log_info("等待超时，进入协议空间超时")
                     return False
             self.move_keys("w", duration=0.25)
@@ -1009,11 +1008,11 @@ class DailyBattleFeature:
         self.log_info(
             "领取奖励,当前理智: {}, 本轮消耗理智: {}".format(self.battle_ctx.left_ticket, self._battle_stage_cost))
         self.wait_ui_stable(refresh_interval=1)
-        start_time = time.time()
+        start_time = self.active_time()
 
         # 等待界面出现“可领取”
         while not self.wait_feature(feature=fL.get_claim_page, time_out=1, raise_if_not_found=False):
-            if time.time() - start_time > 60:
+            if self.active_time() - start_time > 60:
                 return 0
             self.press_key("f", down_time=0.2)
             self.wait_ui_stable(refresh_interval=1)

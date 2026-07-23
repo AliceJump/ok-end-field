@@ -1,4 +1,3 @@
-import time
 import re
 from src.image.hsv_config import HSVRange as hR
 from src.core.sequence_parser import parse_int_sequence
@@ -16,7 +15,7 @@ class ZipLineMixin(NavigationMixin):
         Raises:
             Exception: 滑索超时时抛出异常
         """
-        start = time.time()
+        start = self.active_time()
         self.sleep(1)
         self.next_frame()
         on_zip_line_stop = [
@@ -25,7 +24,7 @@ class ZipLineMixin(NavigationMixin):
         ]
         while not self.ocr(match=on_zip_line_stop, frame=self.next_frame(), box="bottom", log=True):
             self.sleep(0.1)
-            if time.time() - start > 60:
+            if self.active_time() - start > 60:
                 raise Exception("滑索超时，强制退出")
         zip_line_list_str = self.config.get(delivery_to)
         zip_line_list = parse_int_sequence(zip_line_list_str)
@@ -54,7 +53,7 @@ class ZipLineMixin(NavigationMixin):
             )
             self.log_info(f"成功将滑索调整到{zip_line}的中心")
             self.ensure_click_on_zip_line()
-            start = time.time()
+            start = self.active_time()
             while True:
                 self.next_frame()
                 self.send_key("e")  # 游戏内无法修改此按键，故使用底层按键函数
@@ -69,7 +68,7 @@ class ZipLineMixin(NavigationMixin):
                 )
                 if result:
                     break
-                if time.time() - start > 240:
+                if self.active_time() - start > 240:
                     raise Exception("滑索超时，强制退出")
         if need_v:
             self.click(key="right", after_sleep=2)

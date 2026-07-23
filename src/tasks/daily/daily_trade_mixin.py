@@ -1,5 +1,4 @@
 import re
-import time
 from typing import List
 
 from src.data.FeatureList import FeatureList as fL
@@ -184,9 +183,9 @@ class DailyTradeFeature:
             )
 
             # 返回地区建设
-            back_to_area_deadline = time.time() + 20
+            back_to_area_deadline = self.active_time() + 20
             while not self.wait_ocr(match=self.lang.daily_trade_mixin.k_d6bdcc47, box=self.box.top_left, time_out=1):
-                if time.time() > back_to_area_deadline:
+                if self.active_time() > back_to_area_deadline:
                     self.log_info("等待返回 '地区建设' 界面超时，结束当前市场采集")
                     return sum_good_info, market_text_y
                 self.back(after_sleep=0.5)
@@ -342,13 +341,13 @@ class DailyTradeFeature:
                     ):
                         can_buy = True
                 if can_buy:
-                    back_to_area_deadline = time.time() + 20
+                    back_to_area_deadline = self.active_time() + 20
                     while not self.wait_ocr(
                             match=self.lang.daily_trade_mixin.k_d6bdcc47,
                             box=self.box.top_left,
                             time_out=1,
                     ):
-                        if time.time() > back_to_area_deadline:
+                        if self.active_time() > back_to_area_deadline:
                             self.log_info(
                                 "等待返回 '地区建设' 界面超时，结束买卖货任务"
                             )
@@ -376,11 +375,11 @@ class DailyTradeFeature:
                 if sell_good.stock_quantity <= 0:
                     self.log_info(f"跳过出售 {sell_good.good_name}，存货数量<=0")
                     continue
-                back_to_area_deadline = time.time() + 20
+                back_to_area_deadline = self.active_time() + 20
                 while not self.wait_ocr(
                         match=self.lang.daily_trade_mixin.k_d6bdcc47, box=self.box.top_left, time_out=1
                 ):
-                    if time.time() > back_to_area_deadline:
+                    if self.active_time() > back_to_area_deadline:
                         self.log_info("等待返回 '地区建设' 界面超时，结束买卖货任务")
                         return False
                     self.back(after_sleep=0.5)
@@ -403,15 +402,15 @@ class DailyTradeFeature:
                     self.log_info("未找到好友价格，无法出售")
                     continue
                 self.click(c_x, c_y, after_sleep=1)
-                go_friend_deadline = time.time() + 20
+                go_friend_deadline = self.active_time() + 20
                 while not self.wait_click_ocr(
                         match=self.lang.daily_trade_mixin.k_23926d61, box=self.box.center
                 ):
-                    if time.time() > go_friend_deadline:
+                    if self.active_time() > go_friend_deadline:
                         self.log_info("等待 '前往' 按钮超时，跳过该货物出售")
                         break
                     self.click(c_x, c_y, after_sleep=1, move_back=False)
-                if time.time() > go_friend_deadline:
+                if self.active_time() > go_friend_deadline:
                     continue
                 if not self.ensure_in_friend_boat():
                     self.log_info("未进入好友船")

@@ -1,6 +1,5 @@
 import gc
 import threading
-import time
 from enum import Enum
 from functools import partial
 from typing import List
@@ -298,11 +297,11 @@ class RuntimeMixin:
             self.log_warning("safe_back 被调用时 match 和 feature 都为空")
             return False
 
-        self.start_time = time.time()
+        self.start_time = self.active_time()
 
         while True:
             # 检查是否已超时
-            if time.time() - self.start_time > time_out:
+            if self.active_time() - self.start_time > time_out:
                 self.log_info(f"safe_back 超时（{time_out}s），目标未出现")
                 return False
 
@@ -690,7 +689,7 @@ class RuntimeMixin:
 
             raise ValueError("box must be None / (x,y,w,h) / object(x,y,width,height)")
 
-        start_time = time.time()
+        start_time = self.active_time()
         last_frame = parse_box(self.next_frame(), box)
         stable_start = None
 
@@ -728,13 +727,13 @@ class RuntimeMixin:
 
             if is_stable:
                 if stable_start is None:
-                    stable_start = time.time()
-                elif time.time() - stable_start >= stable_time:
+                    stable_start = self.active_time()
+                elif self.active_time() - stable_start >= stable_time:
                     return True
             else:
                 stable_start = None
 
-            if time.time() - start_time > max_wait:
+            if self.active_time() - start_time > max_wait:
                 return False
 
             last_frame = current_frame
