@@ -1,9 +1,10 @@
 import threading
+import time
 from datetime import datetime
 from typing import Any
 
 import win32gui
-from ok import BaseTask, TaskDisabledException
+from ok import BaseTask, TaskDisabledException, TriggerTask, WaitFailedException
 
 from src.interaction.KeyConfig import KeyConfigManager
 from src.interaction.ScreenPosition import ScreenPosition
@@ -125,6 +126,89 @@ class BaseEfTask(
         self._ws_server_thread = None
         self._ws_loop = None
         self._ws_stop_event = None
+        self._active_time_paused_total = 0.0
+        self._task_pause_started_at = None
+        self._seen_executor_pause_start = getattr(self.executor, "pause_start", None)
+
+    def active_time(self) -> float:
+        """Return monotonic task time with framework pauses excluded."""
+        now = time.monotonic()
+        executor = self.executor
+        executor_pause_start = getattr(executor, "pause_start", None)
+        current_executor_pause = 0.0
+
+        if executor_pause_start != self._seen_executor_pause_start:
+            pause_duration = max(0.0, time.time() - executor_pause_start)
+            if executor.paused:
+                current_executor_pause = pause_duration
+            else:
+                self._active_time_paused_total += pause_duration
+                self._seen_executor_pause_start = executor_pause_start
+
+        current_task_pause = 0.0
+        if self._task_pause_started_at is not None:
+            current_task_pause = max(0.0, now - self._task_pause_started_at)
+
+        return now - self._active_time_paused_total - current_executor_pause - current_task_pause
+
+    def sleep(self, timeout):
+        """Sleep for active task time, keeping the deadline across pauses."""
+        if timeout <= 0:
+            return True
+
+        deadline = self.active_time() + timeout
+        while True:
+            remaining = deadline - self.active_time()
+            if remaining <= 0:
+                return True
+            super().sleep(min(remaining, 0.1))
+
+    def pause(self):
+        if not isinstance(self, TriggerTask) and self._task_pause_started_at is None:
+            self._task_pause_started_at = time.monotonic()
+        return super().pause()
+
+    def unpause(self):
+        if self._task_pause_started_at is not None:
+            self._active_time_paused_total += max(0.0, time.monotonic() - self._task_pause_started_at)
+            self._task_pause_started_at = None
+        return super().unpause()
+
+    def wait_until(self, condition, time_out=0, pre_action=None, post_action=None, settle_time=-1,
+                   raise_if_not_found=False):
+        """Framework wait_until variant whose timeout freezes while paused."""
+        self.executor.reset_scene()
+        start = self.active_time()
+        if time_out == 0:
+            time_out = self.executor.wait_scene_timeout
+        settled = None
+
+        while not self.executor.exit_event.is_set():
+            if pre_action is not None:
+                pre_action()
+            self.next_frame()
+            result = condition()
+            if result:
+                if settle_time == -1:
+                    settle_time = self.executor.wait_until_settle_time
+                if settle_time <= 0:
+                    return result
+                now = self.active_time()
+                if settled is None:
+                    settled = now
+                elif now - settled > settle_time:
+                    return result
+                continue
+
+            settled = None
+            if post_action is not None:
+                post_action()
+            if self.active_time() - start > time_out:
+                break
+
+        if raise_if_not_found:
+            raise WaitFailedException()
+        return None
 
     def get_game_hwnd(self) -> int:
         """Return the game hwnd resolved from the configured window features."""
