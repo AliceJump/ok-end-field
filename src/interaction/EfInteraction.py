@@ -68,12 +68,11 @@ class EfInteraction(PostMessageInteraction):
     def send(self, msg, wparam, lparam):
         win32gui.SendMessage(self.hwnd, msg, wparam, lparam)
 
-    @staticmethod
-    def _game_hwnd():
+    def _game_hwnd(self):
         # Lazy import avoids the config -> EfInteraction import cycle.
         from src.config import config
 
-        return find_game_hwnd(config.get("windows", {}))
+        return find_game_hwnd(config.get("windows", {})) or getattr(self.hwnd_window, "hwnd", 0)
 
     def activate(self, hwnd=None):
         win32gui.SendMessage(hwnd or self._game_hwnd(), win32con.WM_ACTIVATE, win32con.WA_ACTIVE, 0)

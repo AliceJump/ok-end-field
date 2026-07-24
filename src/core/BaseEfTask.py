@@ -212,7 +212,12 @@ class BaseEfTask(
 
     def get_game_hwnd(self) -> int:
         """Return the game hwnd resolved from the configured window features."""
-        return find_game_hwnd(app_config.get("windows", {}))
+        hwnd = find_game_hwnd(app_config.get("windows", {}))
+        if hwnd:
+            return hwnd
+        device_manager = getattr(getattr(self, "executor", None), "device_manager", None)
+        hwnd_window = getattr(device_manager, "hwnd_window", None)
+        return getattr(hwnd_window, "hwnd", 0)
 
     # ── 配置键迁移 ─────────────────────────────────────────
     def load_config(self):

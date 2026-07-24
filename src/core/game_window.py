@@ -1,14 +1,13 @@
+import time
+
 import psutil
 import pywintypes
 import win32gui
 import win32process
 
 
-import time
-
 def find_game_hwnd(window_config: dict, timeout: float = 10.0, interval: float = 0.2) -> int:
     """Find the visible top-level game window matching the configured features."""
-
     exe_config = window_config.get("exe", ())
     if isinstance(exe_config, str):
         exe_config = (exe_config,)
@@ -20,7 +19,7 @@ def find_game_hwnd(window_config: dict, timeout: float = 10.0, interval: float =
     class_names = {str(name) for name in class_config if name}
 
     if not exe_names and not class_names:
-        raise RuntimeError("config.windows 未配置 exe 或 hwnd_class，无法定位游戏窗口")
+        return 0
 
     deadline = time.monotonic() + timeout
 
@@ -54,6 +53,6 @@ def find_game_hwnd(window_config: dict, timeout: float = 10.0, interval: float =
             return max(candidates)[2]
 
         if time.monotonic() >= deadline:
-            raise RuntimeError("等待游戏窗口超时（10 秒），未找到符合 config.windows 特征的窗口")
+            return 0
 
         time.sleep(interval)
