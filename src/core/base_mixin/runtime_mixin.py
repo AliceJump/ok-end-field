@@ -297,11 +297,11 @@ class RuntimeMixin:
             self.log_warning("safe_back 被调用时 match 和 feature 都为空")
             return False
 
-        self.start_time = self.active_time()
+        start_time = self.active_time()
 
         while True:
             # 检查是否已超时
-            if self.active_time() - self.start_time > time_out:
+            if self.active_time() - start_time > time_out:
                 self.log_info(f"safe_back 超时（{time_out}s），目标未出现")
                 return False
 

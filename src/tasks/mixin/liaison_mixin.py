@@ -522,9 +522,9 @@ class LiaisonMixin(NavigationMixin):
             bool: 是否成功完成
         """
         self.log_info("开始收取或赠送礼物")
-        self.start_time = self.active_time()
+        start_time = self.active_time()
         while self.find_one(feature=fL.esc, vertical_variance=0.01, horizontal_variance=0.02):
-            if self.active_time() - self.start_time > 5:
+            if self.active_time() - start_time > 5:
                 self.log_info("没能进入交流界面")
                 return False
             self.sleep(0.5)

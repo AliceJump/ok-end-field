@@ -1,4 +1,6 @@
+import ast
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from ok import BaseTask
@@ -32,6 +34,24 @@ def _make_task():
 
 
 class TestPauseAwareTimeout(unittest.TestCase):
+    def test_project_does_not_overwrite_framework_start_time(self):
+        src_dir = Path(__file__).parents[1] / "src"
+        assignments = []
+
+        for path in src_dir.rglob("*.py"):
+            tree = ast.parse(path.read_text(encoding="utf-8-sig"), filename=str(path))
+            for node in ast.walk(tree):
+                if (
+                    isinstance(node, ast.Attribute)
+                    and isinstance(node.ctx, ast.Store)
+                    and isinstance(node.value, ast.Name)
+                    and node.value.id == "self"
+                    and node.attr == "start_time"
+                ):
+                    assignments.append(f"{path.relative_to(src_dir)}:{node.lineno}")
+
+        self.assertEqual(assignments, [], f"Framework task.start_time overwritten at {assignments}")
+
     def test_active_time_excludes_executor_pause(self):
         task = _make_task()
 
