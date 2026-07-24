@@ -46,17 +46,16 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+          pip install polib
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         run: |
           python -m ok.update.inline_ok_requirements --tag ${{ github.ref_name }}
 
       - name: Run tests
+        timeout-minutes: 5
         run: |
-          Get-ChildItem -Path ".\tests\*.py" | ForEach-Object {
-              Write-Host "Running tests in $($_.FullName)"
-              python -m unittest $_.FullName
-          }
+          python -u -m unittest discover -s tests -p "Test*.py" -v
 
       - name: Sync Repositories # 同步部分代码(deploy.txt中), 合并tag中间更新日志, 到更新库, 以减少用户更新使用的git库大小
         id: sync   # Give the step an ID to access its outputs

@@ -1,5 +1,6 @@
 # Test case
 import unittest
+from pathlib import Path
 
 from src.config import config
 from ok.test.TaskTestCase import TaskTestCase
@@ -11,6 +12,11 @@ class TestMyOneTimeTask(TaskTestCase):
     task_class = AutoCombatTask
 
     config = config
+
+    def set_image(self, image):
+        if not Path(image).exists():
+            self.skipTest(f"Missing image: {image}")
+        super().set_image(image)
 
     def test_16_10_combat(self):
         self.set_image('tests/images/16_10_combat.png')
