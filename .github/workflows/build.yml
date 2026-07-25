@@ -6,12 +6,11 @@ on:
     tags:
       - 'v*'
 
-permissions:
-  contents: read
-
 jobs:
   test:
     runs-on: windows-latest
+    permissions:
+      contents: read
 
     env:
       PYTHONIOENCODING: 'UTF-8'
@@ -36,7 +35,7 @@ jobs:
           lfs: true
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Set UTF-8 encoding
@@ -58,6 +57,8 @@ jobs:
   build:
     needs: test
     runs-on: windows-latest
+    permissions:
+      contents: read
     outputs:
       start_tag: ${{ steps.sync.outputs.start_tag }}
       end_tag: ${{ steps.sync.outputs.end_tag }}
@@ -86,7 +87,7 @@ jobs:
           lfs: true
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
       - name: Set UTF-8 encoding
@@ -103,6 +104,11 @@ jobs:
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         run: |
           python -m ok.update.inline_ok_requirements --tag ${{ github.ref_name }}
+
+      - name: Run tests against inlined sources
+        timeout-minutes: 5
+        run: |
+          python -u -m unittest discover -s tests -p "Test*.py" -v
 
       - name: Sync Repositories # 同步部分代码(deploy.txt中), 合并tag中间更新日志, 到更新库, 以减少用户更新使用的git库大小
         id: sync   # Give the step an ID to access its outputs
