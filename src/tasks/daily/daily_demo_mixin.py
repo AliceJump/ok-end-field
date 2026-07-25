@@ -51,7 +51,12 @@ class DailyDemoFeature:
                 return False
             self.ensure_main()
             self.auto_battle()
-            if not self.wait_click_feature(feature=fL.restart_battle, vertical_variance=0.1, time_out=10, raise_if_not_found=False):
+            if not self.wait_click_feature(feature=fL.restart_battle, vertical_variance=0.1, time_out=5, raise_if_not_found=False) and not self.wait_click_feature(
+                    feature=fL.restart_battle,
+                    box=self.box_of_screen(0.550, 0.885, 0.573, 0.950),
+                    time_out=5,
+                    raise_if_not_found=False,
+            ):
                 self.mark_task_failure("未找到『重新挑战』按钮，可能战斗尚未结束")
                 return False
         self.click_confirm(time_out=3)

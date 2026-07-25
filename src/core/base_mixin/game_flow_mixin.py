@@ -397,7 +397,7 @@ class GameFlowMixin:
             )
             or self.find_one(
                 feature=fL.to_max_produce_num,
-                box=self.box_of_screen(0.550, 0.885, 0.573, 0.920)
+                box=self.box_of_screen(0.550, 0.885, 0.573, 0.950)
             )
             or self.find_one(
                 feature=fL.left_battle,
