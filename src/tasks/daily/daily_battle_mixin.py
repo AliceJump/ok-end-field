@@ -837,7 +837,7 @@ class DailyBattleFeature:
             STAGE_CATEGORY_ENERGY_POOLING,
         )
 
-        def try_click_reward():
+        def try_click_reward(allow_middle_click=True):
             if result := self.wait_ocr(
                 match=re.compile(click_key),
                 time_out=1,
@@ -851,7 +851,8 @@ class DailyBattleFeature:
                     self.log_info("已放弃未领取的奖励")
 
                 return True
-            self.click(key="middle", after_sleep=2)
+            if allow_middle_click:
+                self.click(key="middle", after_sleep=2)
             return False
 
         def search_gather_reward():
@@ -892,6 +893,8 @@ class DailyBattleFeature:
             return False
 
         try:
+            target_found_by_yolo = False
+
             # 已经到领奖点
             if try_click_reward():
                 return True
@@ -939,18 +942,18 @@ class DailyBattleFeature:
                     (1080 - 150) / 1080,
                 )
 
-                search_normal_reward(
+                target_found_by_yolo = search_normal_reward(
                     end_feature_name,
                     search_box,
                 )
 
             # 搜索过程中可能已经到达
-            if try_click_reward():
+            if try_click_reward(allow_middle_click=not target_found_by_yolo):
                 return True
 
             # 对准领奖点
 
-            if self.align_ocr_or_find_target_to_center(
+            target_aligned = self.align_ocr_or_find_target_to_center(
                 end_feature_name,
                 ocr=False,
                 use_yolo=use_yolo,
@@ -959,7 +962,9 @@ class DailyBattleFeature:
                 threshold=0.7,
                 tolerance=100,
                 raise_if_fail=False,
-            ):
+            )
+            if target_aligned:
+                target_found_by_yolo = target_found_by_yolo or use_yolo
                 if not self.navigate_until_target(
                     target=click_key,
                     nav=end_feature_name,
@@ -971,7 +976,7 @@ class DailyBattleFeature:
                 ):
                     raise Exception("导航奖励点失败")
 
-            return try_click_reward() or True
+            return try_click_reward(allow_middle_click=not target_found_by_yolo) or True
 
         except Exception as e:
             if isinstance(e, TaskDisabledException):
