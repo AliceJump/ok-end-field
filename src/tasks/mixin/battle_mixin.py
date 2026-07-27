@@ -64,39 +64,56 @@ class BattleMixin(BaseEfTask):
         self.last_no_number_action_time = 0
         self.exit_check_count = 0
         self.battle_config_manager = BattleConfigManager(get_global_config(BATTLE_CONFIG_NAME))
-        self._register_account_battle_config()
+        self._register_battle_config()
         # 用于识别 LV 或等级文字
         self.lv_regex = re.compile(r"(?i)lv|\d{2}")
 
-    def _register_account_battle_config(self):
-        battle_keys = list(DEFAULT_BATTLE_CONFIG)
-        self.account_config_whitelist.update([BATTLE_CONFIG_MODE_KEY, *battle_keys])
-        self.account_config_defaults.update({
-            BATTLE_CONFIG_MODE_KEY: BATTLE_CONFIG_MODE_GLOBAL,
-            **DEFAULT_BATTLE_CONFIG,
-        })
-        self.account_config_description.update(BATTLE_CONFIG_DESCRIPTION)
-        self.account_config_description[BATTLE_CONFIG_MODE_KEY] = "选择当前账号在该任务中使用全局或独立战斗配置。"
-        self.account_config_type.update(BATTLE_CONFIG_TYPE)
-        self.account_config_type[BATTLE_CONFIG_MODE_KEY] = {
+    def _register_battle_config(self):
+        if not hasattr(self, "default_config") or self.default_config is None:
+            self.default_config = {}
+        if not hasattr(self, "config_description") or self.config_description is None:
+            self.config_description = {}
+        if not hasattr(self, "config_type") or self.config_type is None:
+            self.config_type = {}
+        battle_mode_type = {
             "type": "drop_down",
             "options": [BATTLE_CONFIG_MODE_GLOBAL, BATTLE_CONFIG_MODE_INDEPENDENT],
             "sub_configs": {
                 BATTLE_CONFIG_MODE_GLOBAL: [],
-                BATTLE_CONFIG_MODE_INDEPENDENT: battle_keys,
+                BATTLE_CONFIG_MODE_INDEPENDENT: list(DEFAULT_BATTLE_CONFIG),
             },
         }
 
+        # 每个使用战斗能力的任务都可以选择自己的战斗参数来源。
+        self.default_config.update({
+            BATTLE_CONFIG_MODE_KEY: BATTLE_CONFIG_MODE_GLOBAL,
+            **DEFAULT_BATTLE_CONFIG,
+        })
+        self.config_description.update(BATTLE_CONFIG_DESCRIPTION)
+        self.config_description[BATTLE_CONFIG_MODE_KEY] = "选择当前任务使用全局或独立战斗配置。"
+        self.config_type.update(BATTLE_CONFIG_TYPE)
+        self.config_type[BATTLE_CONFIG_MODE_KEY] = battle_mode_type
+
     def get_battle_config(self, key: str, default=None):
         global_value = self.battle_config_manager.get(key, DEFAULT_BATTLE_CONFIG.get(key, default))
-        mode = self.config.get(BATTLE_CONFIG_MODE_KEY, BATTLE_CONFIG_MODE_GLOBAL)
+        raw_config_get = getattr(self, "_raw_cfg_get", None)
+        if callable(raw_config_get):
+            try:
+                mode = raw_config_get(BATTLE_CONFIG_MODE_KEY, BATTLE_CONFIG_MODE_GLOBAL)
+            except (TypeError, AttributeError):
+                mode = self.config.get(BATTLE_CONFIG_MODE_KEY, BATTLE_CONFIG_MODE_GLOBAL)
+        else:
+            mode = self.config.get(BATTLE_CONFIG_MODE_KEY, BATTLE_CONFIG_MODE_GLOBAL)
         if mode != BATTLE_CONFIG_MODE_INDEPENDENT:
             return global_value
+        if callable(raw_config_get):
+            try:
+                return raw_config_get(key, global_value)
+            except (TypeError, AttributeError):
+                pass
         return self.config.get(key, global_value)
 
     def get_account_config_base_value(self, key: str, default=None):
-        if key in self.account_config_defaults:
-            return self.battle_config_manager.get(key, default)
         return dict.get(self.config, key, default)
 
     def _parse_skill_sequence(self, raw_config) -> list[str]:

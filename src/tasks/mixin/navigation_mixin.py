@@ -195,7 +195,7 @@ class NavigationMixin(BaseEfTask):
                         if not check_target():
                             stable = False
                             break
-                        self.sleep(0.1)
+                        self.sleep(0.03)
 
                     if stable:
                         return True
@@ -209,7 +209,7 @@ class NavigationMixin(BaseEfTask):
                             self.log_info("后退过程中重新找到目标")
                             self.send_key_up("s")  # 确认使用send_key：释放方向键
                             break
-                        self.sleep(0.05)
+                        self.sleep(0.02)
 
                     self.send_key_up("s")  # 确认使用send_key：释放方向键
 
@@ -232,7 +232,7 @@ class NavigationMixin(BaseEfTask):
                         self.log_info("恢复奔跑模式")
                         enter_run_mode()
 
-                    self.sleep(0.01)
+                    self.sleep(0.005)
                     continue
 
                 if nav_is_ocr:
@@ -267,7 +267,7 @@ class NavigationMixin(BaseEfTask):
                         self.log_info("未找到导航标识，进入短距离搜索模式")
                         exit_run_mode()
 
-                self.sleep(0.01)
+                self.sleep(0.005)
 
         finally:
             if not run_bool:
@@ -293,7 +293,7 @@ class NavigationMixin(BaseEfTask):
             min_step=20,
             slow_radius=350,
             deadzone=8,
-            once_time=0.05,
+            once_time=0.02,
             tolerance=TOLERANCE,
             ocr_frame_processor_list=None,
             allow_random_move=True,
@@ -368,7 +368,7 @@ class NavigationMixin(BaseEfTask):
                             break
                     if result:
                         break
-                    self.sleep(0.1)
+                    self.sleep(0.03)
             else:
                 if isinstance(ocr_match_or_feature_name_list, str):
                     ocr_match_or_feature_name_list = [ocr_match_or_feature_name_list]
@@ -399,7 +399,7 @@ class NavigationMixin(BaseEfTask):
                                 break
                     if result:
                         break
-                    self.sleep(0.1)
+                    self.sleep(0.03)
             if result:
                 success = True
                 random_move_count = 0
