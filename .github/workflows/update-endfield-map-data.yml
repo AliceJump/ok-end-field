@@ -53,11 +53,6 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Upgrade pip
-        if: steps.schedule.outputs.run == 'true'
-        run: |
-          python -m pip install --upgrade pip
-
       - name: Backup current data
         if: steps.schedule.outputs.run == 'true'
         run: |
