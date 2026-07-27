@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import unittest
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 from src.core.BattleConfig import (
     BATTLE_CONFIG_MODE_GLOBAL,
@@ -302,16 +302,15 @@ class TestBattleConfigOverrides(unittest.TestCase):
         task.battle_config_manager = BattleConfigManager({"启动技能点数": 2})
         return task
 
-    def test_battle_account_config_uses_conditional_dropdown(self):
+    def test_task_config_uses_conditional_battle_dropdown(self):
         task = object.__new__(BattleMixin)
-        task.account_config_whitelist = set()
-        task.account_config_defaults = {}
-        task.account_config_description = {}
-        task.account_config_type = {}
+        task.default_config = {}
+        task.config_description = {}
+        task.config_type = {}
 
-        task._register_account_battle_config()
+        task._register_battle_config()
 
-        mode_type = task.account_config_type[BATTLE_CONFIG_MODE_KEY]
+        mode_type = task.config_type[BATTLE_CONFIG_MODE_KEY]
         self.assertEqual(
             mode_type["options"],
             [BATTLE_CONFIG_MODE_GLOBAL, BATTLE_CONFIG_MODE_INDEPENDENT],
@@ -319,7 +318,7 @@ class TestBattleConfigOverrides(unittest.TestCase):
         self.assertEqual(mode_type["sub_configs"][BATTLE_CONFIG_MODE_GLOBAL], [])
         self.assertEqual(
             mode_type["sub_configs"][BATTLE_CONFIG_MODE_INDEPENDENT],
-            list(task.account_config_defaults)[1:],
+            list(task.default_config)[1:],
         )
 
     def test_task_config_overrides_global_battle_config(self):
@@ -342,34 +341,6 @@ class TestBattleConfigOverrides(unittest.TestCase):
         task = self.make_battle_task({})
 
         self.assertEqual(task.get_battle_config("启动技能点数"), 2)
-
-    def test_account_aware_config_receives_global_value_as_fallback(self):
-        config = Mock()
-        config.get.side_effect = [BATTLE_CONFIG_MODE_INDEPENDENT, 1]
-        task = self.make_battle_task(config)
-
-        self.assertEqual(task.get_battle_config("启动技能点数"), 1)
-        self.assertEqual(config.get.call_args_list[0].args, (BATTLE_CONFIG_MODE_KEY, BATTLE_CONFIG_MODE_GLOBAL))
-        self.assertEqual(config.get.call_args_list[1].args, ("启动技能点数", 2))
-
-    def test_account_task_override_has_highest_priority(self):
-        class Config(dict):
-            pass
-
-        task = self.make_battle_task(Config({"多账户独立配置": True}))
-        task.current_account_id = "acc"
-        task.current_user = "user"
-
-        with patch(
-            "src.core.base_mixin.account_override_mixin.get_account_task_overrides",
-            return_value={
-                BATTLE_CONFIG_MODE_KEY: BATTLE_CONFIG_MODE_INDEPENDENT,
-                "启动技能点数": 1,
-            },
-        ):
-            task._bind_account_aware_config_get()
-            self.assertEqual(task.get_battle_config("启动技能点数"), 1)
-
 
 if __name__ == "__main__":
     unittest.main()
