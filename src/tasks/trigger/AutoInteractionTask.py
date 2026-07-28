@@ -1,5 +1,4 @@
 from qfluentwidgets import FluentIcon
-from pynput.keyboard import Controller, Key
 from src.data.FeatureList import FeatureList as fL
 from ok import TriggerTask, Logger
 from src.core.BaseEfTask import BaseEfTask
@@ -16,7 +15,6 @@ class AutoInteractionTask(BaseEfTask, TriggerTask):
             '自动跳过剧情': True,
             '自动点击传送': True,
         }
-        self.keyboard = Controller()
         self.name = "自动交互"
         self.icon = FluentIcon.ACCEPT
 
@@ -25,9 +23,7 @@ class AutoInteractionTask(BaseEfTask, TriggerTask):
         now = self.next_frame()
         if self.config.get('自动跳过剧情', True):
             if self.find_one(fL.skip_dialog_esc, horizontal_variance=0.05, frame=now):
-                self.log_info("检测到可跳过对话，发送 ESC")
-                self.keyboard.press(Key.esc)
-                self.keyboard.release(Key.esc)
+                self.press_esc()
                 start = self.active_time()
                 while self.active_time() - start < 3:
                     self.next_frame()
