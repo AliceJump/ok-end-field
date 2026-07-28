@@ -88,7 +88,6 @@ class DailyBoatMixin:
             self.wait_click_feature,
             feature=fL.collect_clue_enter,
             time_out=4,
-            after_sleep=1,
             raise_if_not_found=False,
         ):
             self.log_info("未找到收集线索按钮")
@@ -101,11 +100,10 @@ class DailyBoatMixin:
             feature=fL.give_gift,
             time_out=4,
             box=self.box_of_screen(0.938, 0.641, 0.957, 0.669),
-            after_sleep=1,
             raise_if_not_found=False,
         )
 
-        self.back(after_sleep=1)
+        self.back()
 
     def _receive_clue(self):
         if not self.clue_safe(
@@ -113,7 +111,6 @@ class DailyBoatMixin:
             feature=fL.receive_clue_enter,
             time_out=4,
             box=self.box.right,
-            after_sleep=1,
             raise_if_not_found=False,
         ):
             self.log_info("未找到接收按钮")
@@ -123,11 +120,10 @@ class DailyBoatMixin:
             self.wait_click_feature,
             feature=fL.all_receive,
             time_out=4,
-            after_sleep=1,
             raise_if_not_found=False,
         )
 
-        self.back(after_sleep=1)
+        self.back()
 
     def _give_clue(self):
         results = self._find_clue_icons()
@@ -144,9 +140,8 @@ class DailyBoatMixin:
                 match=self.lang.daily_routine_mixin.k_401d58fa,
                 time_out=4,
                 box=self.box.top_right,
-                after_sleep=1,
             )
-            self.back(after_sleep=1)
+            self.back()
 
         self.clue_guard()
 
@@ -155,7 +150,6 @@ class DailyBoatMixin:
             match=self.lang.daily_routine_mixin.k_0503d6d6,
             time_out=4,
             box=self.box.bottom,
-            after_sleep=1,
         ):
             self.wait_pop_up()
 
@@ -217,17 +211,22 @@ class DailyBoatMixin:
             self.mark_task_failure("未找到制造舱，任务失败")
             return False
         for result in results:
-            self.sleep(0.5)
-            self.click(result, after_sleep=2)
+            self.click(result)
             self.log_info("点击制造室")
-            if icon := self.find_one(feature=fL.max_icon, horizontal_variance=0.01, vertical_variance=0.01):
+            if icon := self.wait_feature(
+                    feature=fL.max_icon,
+                    horizontal_variance=0.01,
+                    vertical_variance=0.01,
+                    time_out=3,
+                    raise_if_not_found=False,
+            ):
                 self.click(icon)
                 self.wait_click_feature(feature=fL.to_max_produce_num, time_out=2, box=self.box.bottom_right, raise_if_not_found=False)
 
                 if self.wait_click_feature(
                         feature=fL.skip_dialog_confirm, time_out=3, box=self.box.bottom_right, raise_if_not_found=False
                 ):
-                    self.wait_pop_up(after_sleep=1)
+                    self.wait_pop_up()
             self.use_help(char=False)
             if not self.safe_back(feature=fL.operation_report_icon):
                 self.log_info("无法返回到运转界面")
@@ -260,8 +259,8 @@ class DailyBoatMixin:
             self.log_info("正在培养，任务结束")
             return True
         self.log_info("找到收取按钮")
-        self.wait_pop_up(after_sleep=1)
-        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_a4cd21cc, time_out=3, box=self.box.bottom, after_sleep=1):
+        self.wait_pop_up()
+        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_a4cd21cc, time_out=3, box=self.box.bottom):
             self.mark_task_failure("未找到再次培养按钮，再次培养失败")
             return False
         self.click_confirm(time_out=3)
@@ -269,9 +268,9 @@ class DailyBoatMixin:
         return True
 
     def use_help(self, char=True):
-        if not self.wait_click_feature(feature=fL.can_use_help, time_out=2, box=self.box_of_screen(0.890, 0.011, 0.941, 0.074), after_sleep=1, raise_if_not_found=False):
+        if not self.wait_click_feature(feature=fL.can_use_help, time_out=2, box=self.box_of_screen(0.890, 0.011, 0.941, 0.074), raise_if_not_found=False):
             return
-        if not self.wait_click_feature(feature=fL.skip_dialog_confirm, time_out=2, box=self.box_of_screen(0.818, 0.787, 0.865, 0.861), after_sleep=1, raise_if_not_found=False):
+        if not self.wait_click_feature(feature=fL.skip_dialog_confirm, time_out=2, box=self.box_of_screen(0.818, 0.787, 0.865, 0.861), raise_if_not_found=False):
             return
         if char:
             char_list = list(get_contact_list_with_feature_list().values())
@@ -284,5 +283,5 @@ class DailyBoatMixin:
                     break
         else:
             self.wait_click_feature(feature=fL.max_icon, time_out=2, box=self.box_of_screen(0.699, 0.654, 0.732, 0.719), raise_if_not_found=False)
-        self.wait_click_feature(feature=fL.skip_dialog_confirm, time_out=2, box=self.box_of_screen(0.818, 0.787, 0.865, 0.861), after_sleep=1, raise_if_not_found=False)
+        self.wait_click_feature(feature=fL.skip_dialog_confirm, time_out=2, box=self.box_of_screen(0.818, 0.787, 0.865, 0.861), raise_if_not_found=False)
         return

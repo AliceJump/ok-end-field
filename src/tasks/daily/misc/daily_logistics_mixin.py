@@ -6,21 +6,25 @@ class DailyLogisticsMixin:
     def claim_mail(self):
         self.info_set("current_task", "claim_delivery_rewards")
         self.log_info("开始收邮件")
-        self.press_key("k", after_sleep=2)
-        stage_area = self.ocr(match=self.lang.daily_routine_mixin.k_4a2ece6a, box=self.box.top_left)
+        self.press_key("k")
+        stage_area = self.wait_ocr(
+            match=self.lang.daily_routine_mixin.k_4a2ece6a,
+            box=self.box.top_left,
+            time_out=4,
+            raise_if_not_found=False,
+        ) or []
         if len(stage_area) > 0:
             self.click(x=stage_area[0].x, y=stage_area[0].y + int(self.height * 0.25))
             self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_3fef35d6, box=self.box.center, time_out=5)
-            self.wait_pop_up(after_sleep=2)
+            self.wait_pop_up()
         if self.wait_click_ocr(
                 x=0, y=0.88,
                 to_x=0.25, to_y=0.95,
                 match=self.lang.daily_routine_mixin.k_ffb5655a,
                 time_out=5,
-                after_sleep=2,
         ):
-            self.wait_pop_up(after_sleep=2)
-        self.press_key("esc", after_sleep=2)
+            self.wait_pop_up()
+        self.press_key("esc")
         return True
 
     def claim_delivery_rewards(self):
@@ -49,11 +53,10 @@ class DailyLogisticsMixin:
             self.ensure_main()
 
         if results:
-            self.click(results, after_sleep=2)
+            self.click(results)
             if not self.wait_pop_up():
                 self.log_info("未找到 '确认' 按钮，可能未成功领取奖励")
                 self.ensure_main()
-            self.sleep(2)
 
         self.log_info("转交委托奖励领取完成，返回主界面")
         self.ensure_main()
@@ -107,7 +110,7 @@ class DailyLogisticsMixin:
                         notify=True,
                     )
 
-                self.click(results[0], after_sleep=2)
+                self.click(results[0])
                 start_index = 0 if not (self.lang.daily_routine_mixin.k_view_quote in results[0].name) else 2
                 steps = [
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 0),

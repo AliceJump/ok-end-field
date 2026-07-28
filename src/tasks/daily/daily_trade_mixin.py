@@ -188,7 +188,7 @@ class DailyTradeFeature:
                 if self.active_time() > back_to_area_deadline:
                     self.log_info("等待返回 '地区建设' 界面超时，结束当前市场采集")
                     return sum_good_info, market_text_y
-                self.back(after_sleep=0.5)
+                self.back()
 
         return sum_good_info, market_text_y
 
@@ -320,7 +320,7 @@ class DailyTradeFeature:
             if not result:
                 self.log_info("未找到货物")
                 continue
-            self.click(result, after_sleep=1)
+            self.click(result)
             good_infos, _ = self.collect_market_goods_info()
             buy_price = self.config.get(f"{area}买入价", 0)
             sell_price = self.config.get(f"{area}卖出价", 0)
@@ -405,7 +405,7 @@ class DailyTradeFeature:
                 except AttributeError:
                     self.log_info("未找到好友价格，无法出售")
                     continue
-                self.click(c_x, c_y, after_sleep=1)
+                self.click(c_x, c_y)
                 go_friend_deadline = self.active_time() + 20
                 while not self.wait_click_ocr(
                         match=self.lang.daily_trade_mixin.k_23926d61, box=self.box.center
@@ -413,7 +413,7 @@ class DailyTradeFeature:
                     if self.active_time() > go_friend_deadline:
                         self.log_info("等待 '前往' 按钮超时，跳过该货物出售")
                         break
-                    self.click(c_x, c_y, after_sleep=1, move_back=False)
+                    self.click(c_x, c_y, move_back=False)
                 if self.active_time() > go_friend_deadline:
                     continue
                 if not self.ensure_in_friend_boat():

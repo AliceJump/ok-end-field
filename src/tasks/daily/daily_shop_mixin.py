@@ -68,7 +68,7 @@ class DailyShopFeature:
         for _ in range(max_retry):
             if self.wait_feature(feature=fL.credit_shop_icon, raise_if_not_found=False, time_out=1):
                 return True
-            self.back(after_sleep=1)
+            self.back()
         self.info_set("信用商店警告", f"返回采购页面失败，已重试{max_retry}次")
         return False
 
@@ -144,7 +144,7 @@ class DailyShopFeature:
                     self.back_shop()
                     return False, sum_credit, False
                 return False, sum_credit, True
-            self.wait_pop_up(after_sleep=1)
+            self.wait_pop_up()
             sum_credit -= cost
             self.log_info(f"购买成功: {item_name}，消耗信用: {cost}，剩余信用: {sum_credit}")
         if sum_credit <= reserve_credit:
@@ -199,7 +199,7 @@ class DailyShopFeature:
                 self.log_info(f"购买流程中断: {item_name}，未找到确认/不足弹窗，尝试返回采购页")
                 self.back_shop()
                 return False
-            self.wait_pop_up(after_sleep=1)
+            self.wait_pop_up()
             sum_credit -= cost
             self.log_info(f"购买成功: {item_name}，消耗信用: {cost}，剩余信用: {sum_credit}")
             if sum_credit <= reserve_credit:

@@ -39,7 +39,6 @@ class DailyOutpostMixin:
             match=get_world_map_text(self.lang, outpost_name),
             box=self.box.top,
             time_out=5,
-            after_sleep=1
         ):
             return False
 

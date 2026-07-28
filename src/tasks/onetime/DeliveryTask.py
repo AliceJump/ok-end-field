@@ -454,7 +454,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self.to_model_area(self.config.get(self.CFG_DELIVERY_AREA), "仓储节点")
         delivery_box = self.wait_ocr(match=self.lang.DeliveryTask.k_ae8fb114, time_out=5)
         if delivery_box:
-            self.click(delivery_box[0], after_sleep=0.5)
+            self.click(delivery_box[0])
             self.switch_to_area_delivery_list(self.delivery_area)
         else:
             self.log_info("未找到‘运送委托列表’，退出")
@@ -487,7 +487,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     self.click(
                         (result.x + result.width)/self.width + (0.873 - 0.691),
                         (result.y + result.height)/self.height,
-                        after_sleep=2,
                         down_time=0.1,
                     )
                     self.log_info("疑似已经接取委托")
@@ -495,12 +494,12 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     if self.try_time > 5:
                         self.log_info("尝试次数过多，退出")
                         return False
-                    self.next_frame()
-                    accepted_successfully = not self.wait_ocr(
-                        match=self.lang.DeliveryTask.k_9d5535b7,
+                    accepted_successfully = bool(self.wait_ocr(
+                        match=self.lang.DeliveryTask.k_c7b4d04e,
                         box=self.box.bottom_right,
-                        time_out=1
-                    )
+                        time_out=3,
+                        raise_if_not_found=False,
+                    ))
                     if accepted_successfully:
                         self.log_info("接取成功")
                         return True
@@ -533,7 +532,15 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         """
         if result := self.wait_ocr(match=self.lang.DeliveryTask.k_b0e3a2da, box=self.box.bottom_right, time_out=60, log=True):
             if self.wait_ocr(match=self.lang.DeliveryTask.k_96b876e3, box=self.box.top_left, time_out=2, log=True):
-                self.press_key("tab", after_sleep=1)
+                self.press_key("tab")
+                self.wait_until(
+                    lambda: not self.ocr(
+                        match=self.lang.DeliveryTask.k_96b876e3,
+                        box=self.box.top_left,
+                    ),
+                    time_out=2,
+                    raise_if_not_found=False,
+                )
             self.click_with_alt(result[0], after_sleep=2)
             to_delivery_point_key = self._resolve_to_delivery_point_config_key()
             if not to_delivery_point_key:
@@ -600,7 +607,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             settle_time=1,
             time_out=2,
             log=True,
-            after_sleep=2,
             alt=True,
         ):
             if not self.find_reward_ok():
@@ -669,7 +675,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     self.ensure_main(time_out=600)
                 else:
                     self.ensure_main()
-                self.back(after_sleep=2)
+                self.back()
                 self.ensure_main()
                 if self.config.get(self.CFG_ONLY_ACCEPT):
                     self.accept_order()
@@ -681,7 +687,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                         self.wait_click_ocr(
                             match=self.lang.DeliveryTask.k_c7b4d04e,
                             box=self.box.bottom_right,
-                            settle_time=4,
+                            settle_time=0.5,
                             time_out=10,
                             log=True,
                         )

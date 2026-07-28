@@ -20,12 +20,15 @@ class DailyRewardMixin:
     def claim_weekly_rewards(self):
         self.log_info("开始领取每周事务")
 
-        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_13eea5dd, box=self.box.left, time_out=5, after_sleep=1):
+        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_13eea5dd, box=self.box.left, time_out=5):
             self.log_info("进入『每周事务』页面")
-            if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box.top_right, time_out=5, after_sleep=1):
-                if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_bf856c96, box=self.box.bottom_right, time_out=5,
-                                       after_sleep=1):
-                    self.wait_pop_up(after_sleep=2)
+            if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box.top_right, time_out=5):
+                if self.wait_click_ocr(
+                        match=self.lang.daily_routine_mixin.k_bf856c96,
+                        box=self.box.bottom_right,
+                        time_out=5,
+                ):
+                    self.wait_pop_up()
                     self.log_info("已领取『每周事务』奖励")
                 else:
                     self.log_info("未找到『每周事务/一键领取』按钮")
@@ -39,13 +42,13 @@ class DailyRewardMixin:
     def claim_sanity_supply(self):
         self.log_info("开始领取理智补给")
 
-        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_059a808c, box=self.box.left, time_out=5, after_sleep=1):
+        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_059a808c, box=self.box.left, time_out=5):
             self.log_info("未找到『活动中心/理智补给』入口")
             return False
 
         self.log_info("进入『理智补给』页面")
-        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box_of_screen(0.894, 0.648, 0.995, 0.991), time_out=5, after_sleep=1):
-            self.wait_pop_up(after_sleep=2)
+        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box_of_screen(0.894, 0.648, 0.995, 0.991), time_out=5):
+            self.wait_pop_up()
             self.log_info("已领取『理智补给』奖励")
             return True
 
@@ -68,7 +71,6 @@ class DailyRewardMixin:
                 box=self.box_of_screen(0.089, 0.130, 0.176, 0.983),
                 raise_if_not_found=False,
                 time_out=2,
-                after_sleep=1
             ):
                 return False
 

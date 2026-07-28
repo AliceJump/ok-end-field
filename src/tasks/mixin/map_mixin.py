@@ -36,13 +36,15 @@ class MapMixin(BaseEfTask):
         self.ensure_main()
 
         # 打开任务界面
-        self.press_key("j", after_sleep=2)
+        self.press_key("j")
 
         # 查找“任务定位到地图”按钮
-        result = self.find_feature(
+        result = self.wait_feature(
             feature="one_task_to_map",
             threshold=0.8,
-            box=self.box.bottom_right
+            box=self.box.bottom_right,
+            time_out=4,
+            raise_if_not_found=False,
         )
 
         # 如果没有找到按钮，则流程失败
@@ -50,9 +52,21 @@ class MapMixin(BaseEfTask):
             return False
 
         # 点击按钮跳转到地图
-        self.click(result, after_sleep=2)
+        self.click(result)
 
-        # 等待 UI 稳定（地图加载完成）
+        map_loaded = self.wait_until(
+            lambda: (
+                self.find_one(fL.in_map, box=self.box_of_screen(0.027, 0.531, 0.051, 0.896))
+                or self.find_one(fL.transaction_icon)
+                or self.find_one(fL.main_centre_icon)
+            ),
+            time_out=10,
+            raise_if_not_found=False,
+        )
+        if not map_loaded:
+            return False
+
+        # 地图状态出现后，再等待本帧 UI 稳定。
         self.wait_ui_stable(refresh_interval=1)
 
         if search_box_resolver is not None:
@@ -79,7 +93,6 @@ class MapMixin(BaseEfTask):
         if not self.wait_click_feature(
                 feature=fL.map_filter_icon,
                 time_out=10,
-                after_sleep=2,
                 raise_if_not_found=False,
         ):
             return False
@@ -90,9 +103,9 @@ class MapMixin(BaseEfTask):
                 box=self.box_of_screen(0.117, 0.902, 0.141, 0.941),
                 time_out=10,
                 raise_if_not_found=False,
-                after_sleep=0.5,
         ):
             return False
+        self.wait_ui_stable(refresh_interval=0.2)
 
         # 如需保留特定标记，则尝试查找并勾选
         if need_reserve_icon_name:
@@ -103,7 +116,6 @@ class MapMixin(BaseEfTask):
                         box=self.box_of_screen(0.003, 0.993, 0.281, 0.063),
                         time_out=2,
                         log=True,
-                        after_sleep=2,
                     )
                 else:
                     result = self.wait_click_feature(
@@ -111,7 +123,6 @@ class MapMixin(BaseEfTask):
                         box=self.box_of_screen(0.003, 0.993, 0.281, 0.063),
                         time_out=2,
                         raise_if_not_found=False,
-                        after_sleep=2,
                     )
 
                 if result:
@@ -120,7 +131,8 @@ class MapMixin(BaseEfTask):
                 self.scroll_relative(0.1, 0.5, -1)
 
         # 退出标记管理界面
-        self.back(after_sleep=2)
+        self.back()
+        self.wait_ui_stable(refresh_interval=0.2)
 
         return True
 
@@ -175,7 +187,7 @@ class MapMixin(BaseEfTask):
             return False
 
         # 点击传送点
-        self.click(result, after_sleep=2)
+        self.click(result)
 
         # 查找“传送”按钮
         result = self.wait_feature(
@@ -189,6 +201,6 @@ class MapMixin(BaseEfTask):
             return False
 
         # 点击传送按钮
-        self.click(result, after_sleep=2)
+        self.click(result)
 
         return True

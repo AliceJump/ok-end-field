@@ -121,10 +121,10 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
     def run(self):
         # 前置：按Y，点击“仓储节点”，点击“运送委托列表”
         self.log_info("前置操作：按Y，点击‘仓储节点’，点击‘运送委托列表’")
-        self.press_key('y', down_time=0.05, after_sleep=0.5)
+        self.press_key('y', down_time=0.05)
         storage_box = self.wait_ocr(match=self.lang.TakeDeliveryTask.k_a72a252f, time_out=5)
         if storage_box:
-            self.click(storage_box[0], after_sleep=0.5)
+            self.click(storage_box[0])
         else:
             self.log_error("未找到‘仓储节点’按钮，任务中止。")
             return
@@ -133,7 +133,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         enable_wuling = self.config.get("接取武陵券", True)
         delivery_box = self.wait_ocr(match=self.lang.TakeDeliveryTask.k_ae8fb114, time_out=5)
         if delivery_box:
-            self.click(delivery_box[0], after_sleep=0.5)
+            self.click(delivery_box[0])
             # 点击后滚动到底部（多次大幅度向下滚动）
             if enable_wuling:
                 self.switch_to_area_delivery_list("武陵")
@@ -253,10 +253,9 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                     for attempt in range(1, 4):  # 尝试3次
                         self.log_debug(f"接取运送委托 (尝试 {attempt}/3)")
                         self.click(target_btn, after_sleep=0)  # 点击后不等待
-                        self.sleep(1.0)  # 等待1秒
 
                         # 检查是否出现"请尽快送达"
-                        delivery_text = self.wait_ocr(match=self.lang.TakeDeliveryTask.k_046ed3ab, time_out=1, raise_if_not_found=False)
+                        delivery_text = self.wait_ocr(match=self.lang.TakeDeliveryTask.k_046ed3ab, time_out=2, raise_if_not_found=False)
                         if delivery_text:
                             self.log_info(f"抢单成功！(第 {attempt} 次尝试)")
                             success = True
@@ -266,8 +265,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
 
                     # 3次都失败
                     if not success:
-                        self.log_info("抢单失败（可能已被抢走），等待4秒后继续检测...")
-                        self.sleep(4)
+                        self.log_info("抢单失败（可能已被抢走），继续检测列表状态...")
                         # 继续循环，不返回，让后面的刷新逻辑处理
 
                 else:

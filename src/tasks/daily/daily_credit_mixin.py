@@ -75,7 +75,7 @@ class DailyCreditMixin:
                     self.wait_ui_stable(refresh_interval=1)
 
             self.click(result)
-            self.click_confirm(time_out=5, after_sleep=2, recheck_time=1)
+            self.click_confirm(time_out=5, recheck_time=1)
             if not self.ensure_in_friend_boat():
                 self.log_info("未能进入好友帝江号")
                 if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_a730d877, box=self.box.top_left, time_out=1):

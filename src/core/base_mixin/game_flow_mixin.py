@@ -189,7 +189,7 @@ class GameFlowMixin:
             "skip_dialog_confirm", horizontal_variance=0.05, vertical_variance=0.05
         )
 
-    def click_confirm(self, after_sleep=0.5, time_out=5, recheck_time=0):
+    def click_confirm(self, after_sleep=0, time_out=5, recheck_time=0, disappear_time_out=0.8):
         """
         点击对话框中的确认按钮。
 
@@ -197,6 +197,7 @@ class GameFlowMixin:
             after_sleep: 点击后的延迟时间。
             time_out: 总超时时间。
             recheck_time: 点击后重新检测的等待时间。
+            disappear_time_out: 等待确认按钮消失的最大时间。
 
         Returns:
             bool: 找到并点击确认按钮返回 True，超时返回 False。
@@ -206,13 +207,30 @@ class GameFlowMixin:
             self.next_frame()
             confirm = self.find_confirm()
             if confirm:
-                self.click(confirm, after_sleep=after_sleep)
+                self.click(confirm)
+
+                if disappear_time_out > 0:
+                    self.wait_until(
+                        lambda: not self.find_confirm(),
+                        time_out=disappear_time_out,
+                        raise_if_not_found=False,
+                    )
+                if after_sleep > 0:
+                    self.sleep(after_sleep)
 
                 if recheck_time > 0:
                     self.sleep(recheck_time)
 
                     if confirm := self.find_confirm():
-                        self.click(confirm, after_sleep=after_sleep)
+                        self.click(confirm)
+                        if disappear_time_out > 0:
+                            self.wait_until(
+                                lambda: not self.find_confirm(),
+                                time_out=disappear_time_out,
+                                raise_if_not_found=False,
+                            )
+                        if after_sleep > 0:
+                            self.sleep(after_sleep)
 
                 return True
             # 超时检测
@@ -274,7 +292,7 @@ class GameFlowMixin:
                 threshold=0.75,
             )
             ):
-                self.click(close, after_sleep=1)
+                self.click(close)
                 return False
         return False
 
@@ -570,7 +588,6 @@ class GameFlowMixin:
 
         if not model:
             self.wait_ui_stable()
-            self.sleep(0.5)
             return True
 
         models = {

@@ -155,7 +155,7 @@ class DailyLiaisonFeature:
         if not self.transfer_to_home_point(should_check_out_boat=True):
             self.mark_task_failure("传送到帝江号失败，无法执行一键存放")
             return False
-        self.press_key("b", after_sleep=1)
+        self.press_key("b")
         store_btn = self.wait_ocr(
             box=self.box_of_screen(0.64, 0.705, 0.69, 0.735, name="onekey_store_area"),
             match=self.lang.daily_liaison_mixin.k_d661f6da,

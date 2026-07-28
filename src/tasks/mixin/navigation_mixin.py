@@ -23,9 +23,9 @@ class NavigationMixin(BaseEfTask):
         self.click(result)
 
         if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False):
-            self.click(result, after_sleep=1)
+            self.click(result)
 
-        self.press_key("m", after_sleep=2)
+        self.press_key("m")
         self.log_info("关闭地图界面 (按下 M)")
         start_time = self.active_time()
         while not self.find_feature(
