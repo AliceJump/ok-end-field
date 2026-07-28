@@ -221,10 +221,13 @@ def scroll_relative(self, x: float, y: float, count: int) -> None
 def press_key(self, key: str, down_time=0.02, after_sleep=0, interval=-1)
 def press_industry_key(self, key: str, down_time=0.02, after_sleep=0, interval=-1)
 def press_combat_key(self, key: str, down_time=0.02, after_sleep=0, interval=-1)
+def press_esc(self)
 def move_keys(self, keys, duration, need_back=False)
 ```
 
 前三个方法分别以 `common`、`industry`、`combat` 类型调用 `KeyConfigManager.resolve_key`，参数传默认按键值，例如 `self.press_key("m")`。`move_keys` 用于 `w/a/s/d` 等持续移动；当前实现不使用 `need_back` 参数。
+
+`press_esc()` 仅用于过剧情（对话时）触发 ESC，底层使用 `BaseEfTask` 统一初始化的键盘控制器。其他返回主界面、关闭页面等流程不得使用该函数。
 
 ```text
 def dodge_forward(self, pre_hold=0.004, dodge_down_time=0.003, after_sleep=0.005)

@@ -4,6 +4,7 @@ from datetime import datetime
 from typing import Any
 
 import win32gui
+from pynput.keyboard import Controller
 from ok import BaseTask, TaskDisabledException, TriggerTask, WaitFailedException
 
 from src.interaction.KeyConfig import KeyConfigManager
@@ -90,6 +91,7 @@ class BaseEfTask(
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.keyboard = Controller()
         self._logged_in = False  # 记录是否已登录游戏
         self.current_user = ""  # 记录当前用户
         self.current_account_id = ""  # 记录当前账号稳定ID（优先用于账号覆盖）
