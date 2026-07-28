@@ -218,14 +218,17 @@ class BattleMixin(BaseEfTask):
 
         return sum(self.find_one(f"skill_{i}") is not None for i in range(1, 5)) >= 3
 
-    def is_combat_ended(self):
+    def is_combat_ended(self, exit_condition=None):
         """
         检查战斗是否结束。
 
         需要 **连续两次检测成功** 才判定结束。
         """
 
-        if self._check_single_exit_condition():
+        if exit_condition is None:
+            exit_condition = self._check_single_exit_condition()
+
+        if exit_condition:
             self.exit_check_count += 1
 
             if self.exit_check_count >= 2:

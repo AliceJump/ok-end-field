@@ -34,8 +34,11 @@ class _ToEndTaskHarness:
         self.events.append("align")
         return False
 
+    def move_keys(self, *args, **kwargs):
+        self.events.append("move")
+
     def sleep(self, timeout):
-        return None
+        self.events.append(("sleep", timeout))
 
 
 class TestDailyBattleToEnd(unittest.TestCase):
@@ -60,6 +63,22 @@ class TestDailyBattleToEnd(unittest.TestCase):
         self.assertEqual(1, len(middle_click_indexes))
         self.assertLess(middle_click_indexes[0], task.events.index("yolo_hit"))
         self.assertEqual(3, task.events.count("ocr_miss"))
+
+    def test_normal_reward_search_has_no_redundant_one_second_sleep(self):
+        task = _ToEndTaskHarness()
+        task.yolo_detect = lambda *args, **kwargs: []
+        feature = DailyBattleFeature.__new__(DailyBattleFeature)
+        feature._task = task
+        feature.battle_ctx = BattleContext(category_name="normal")
+
+        with patch(
+            "src.tasks.daily.daily_battle_mixin.is_world_map_text",
+            return_value=False,
+        ):
+            result = feature.to_end()
+
+        self.assertTrue(result)
+        self.assertNotIn(("sleep", 1), task.events)
 
 
 if __name__ == "__main__":

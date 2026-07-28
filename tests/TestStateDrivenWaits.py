@@ -108,6 +108,14 @@ class _BattleHarness:
         raise AssertionError("settlement success must not use a fixed sleep")
 
 
+class _CombatExitHarness:
+    def __init__(self):
+        self.exit_check_count = 0
+
+    def _check_single_exit_condition(self):
+        raise AssertionError("existing exit condition must be reused")
+
+
 class TestStateDrivenWaits(unittest.TestCase):
     def test_ensure_main_observes_before_enabling_recovery(self):
         task = _EnsureMainHarness([None, True])
@@ -157,6 +165,13 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(task.wait_timeouts, [15])
         self.assertIn("检测到战斗结算状态，战斗完成", task.logs)
+
+    def test_combat_exit_counter_reuses_existing_detection(self):
+        task = _CombatExitHarness()
+
+        self.assertFalse(BattleMixin.is_combat_ended(task, True))
+        self.assertTrue(BattleMixin.is_combat_ended(task, True))
+        self.assertEqual(task.exit_check_count, 0)
 
 
 if __name__ == "__main__":

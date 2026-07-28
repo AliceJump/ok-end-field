@@ -177,12 +177,13 @@ class DailyRewardMixin:
                 time_out=5,
             )
 
-        self.wait_click_ocr(
+        reward_clicked = self.wait_click_ocr(
             match=self.lang.daily_routine_mixin.k_39d12e73_1,
             box=self.box.bottom,
             time_out=5,
         )
-        self.wait_pop_up()
+        if reward_clicked:
+            self.wait_pop_up()
         self.send_key("esc")
         pass_page = self.wait_until(
             lambda: self.ocr(match=self.lang.daily_routine_mixin.k_25d2b666, box=self.box.top_right),

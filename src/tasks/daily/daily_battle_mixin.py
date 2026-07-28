@@ -888,7 +888,6 @@ class DailyBattleFeature:
 
                 self.click(key="middle", after_sleep=2)
                 self.move_keys("aw", duration=0.1)
-                self.sleep(1)
 
             return False
 
