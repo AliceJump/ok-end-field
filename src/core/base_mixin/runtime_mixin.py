@@ -305,19 +305,30 @@ class RuntimeMixin:
                 self.log_info(f"safe_back 超时（{time_out}s），目标未出现")
                 return False
 
-            # 优先检查 OCR（match）
-            if match is not None:
-                if self.wait_ocr(match=match, time_out=once_time_out, box=box, raise_if_not_found=False):
-                    return True
+            remaining = time_out - (self.active_time() - start_time)
 
-            # 检查 Feature
-            if feature is not None:
-                if self.wait_feature(feature=feature, vertical_variance=0.05, horizontal_variance=0.05, time_out=once_time_out, box=box, raise_if_not_found=False):
+            def target_visible():
+                if match is not None and self.ocr(match=match, box=box):
                     return True
+                if feature is not None and self.find_one(
+                        feature,
+                        vertical_variance=0.05,
+                        horizontal_variance=0.05,
+                        box=box,
+                ):
+                    return True
+                return False
 
-            # 都没找到 → 点击返回
+            if self.wait_until(
+                    target_visible,
+                    time_out=max(0.01, min(once_time_out, remaining)),
+                    raise_if_not_found=False,
+            ):
+                return True
+
+            # Only recover after the target had time to appear naturally.
+            self.log_info("safe_back 观察超时，发送返回键")
             self.back()
-            self.sleep(0.3)  # 建议加上短暂间隔，避免点击过快
 
     def yolo_loader(self) -> YoloModelLoader:
         """
@@ -1015,7 +1026,7 @@ class RuntimeMixin:
             lib=lib,
         )
         if recheck_time > 0:
-            self.sleep(1)
+            self.sleep(recheck_time)
             result = self.ocr(
                 x,
                 y,

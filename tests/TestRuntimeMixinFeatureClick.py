@@ -65,6 +65,17 @@ class TestRuntimeMixinFeatureClick(unittest.TestCase):
         self.assertEqual(args[1], 0.2)
         self.assertEqual(args[2], 0.3)
 
+    def test_wait_click_ocr_uses_requested_recheck_time(self):
+        task = _RuntimeFeatureClickHarness(result=object())
+        task.wait_ocr = lambda *args, **kwargs: task.result
+        task.ocr = lambda *args, **kwargs: task.result
+        task.click = lambda *args, **kwargs: None
+
+        result = task.wait_click_ocr(match="confirm", recheck_time=0.25)
+
+        self.assertIs(result, task.result)
+        self.assertEqual(task.sleeps, [0.25])
+
 
 if __name__ == "__main__":
     unittest.main()

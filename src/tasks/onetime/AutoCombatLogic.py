@@ -70,7 +70,7 @@ class AutoCombatLogic:
 
         self.task.click(key="middle")
 
-    def run(self, start_sleep: float = None, no_battle: bool = False):
+    def run(self, start_sleep: float = None, no_battle: bool = False, deadline: float = None):
         self._last_exit_check_time = 0
         self._exit_check_interval = 0.5
         task = self.task
@@ -119,6 +119,9 @@ class AutoCombatLogic:
 
         try:
             while True:
+                if deadline is not None and task.active_time() >= deadline:
+                    task.log_info("自动战斗达到最大等待时间")
+                    return False
                 self._periodic_search()
                 self._sync_normal_attack_hold()
 
@@ -170,6 +173,9 @@ class AutoCombatLogic:
                         self.normal_skill_index = 0
                         normal_end_time = task.active_time() + normal_duration
                         while task.active_time() < normal_end_time:
+                            if deadline is not None and task.active_time() >= deadline:
+                                task.log_info("自动战斗达到最大等待时间")
+                                return False
                             self._periodic_search()
                             self._sync_normal_attack_hold()
                             now_check = task.active_time()
