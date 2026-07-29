@@ -149,7 +149,7 @@ class GameFlowMixin:
             target_height,
         )
 
-    def skip_dialog(self):
+    def skip_dialog(self, time_out=60):
         """
         跳过对话框，自动点击确认或跳过按钮。
 
@@ -158,7 +158,7 @@ class GameFlowMixin:
         """
         start_time = self.active_time()
         while True:
-            if self.active_time() - start_time > 60:
+            if self.active_time() - start_time > time_out:
                 self.log_info("skip_dialog 超时退出")
                 return False
             if self.find_one("skip_dialog_esc", horizontal_variance=0.05):

@@ -442,8 +442,7 @@ class BattleMixin(BaseEfTask):
                 battle_elapsed = self.active_time() - last_battle_time
                 settlement = self.wait_until(
                     lambda: (
-                        self.find_feature(feature=fL.battle_space_left)
-                        or self.find_feature(feature=fL.b)
+                        self.find_feature(feature=fL.b)
                     ),
                     time_out=max(0.01, 15 - battle_elapsed),
                     raise_if_not_found=False,
