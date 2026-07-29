@@ -1,5 +1,3 @@
-import time
-
 from qfluentwidgets import FluentIcon
 from src.data.FeatureList import FeatureList as fL
 from ok import TriggerTask, Logger
@@ -26,18 +24,11 @@ class AutoInteractionTask(BaseEfTask, TriggerTask):
         if self.config.get('自动跳过剧情', True):
             if self.find_one(fL.skip_dialog_esc, horizontal_variance=0.05, frame=now):
                 self.press_esc()
-                time.sleep(0.1)
                 start = self.active_time()
-                clicked_confirm = False
                 while self.active_time() - start < 3:
-                    confirm = self.find_confirm()
-                    if confirm:
-                        self.click(confirm, after_sleep=0.4)
-                        clicked_confirm = True
-                    elif clicked_confirm:
-                        self.log_debug('AutoSkipDialogTask no confirm break')
-                        return
                     self.next_frame()
+                    if self.click_confirm():
+                        return
             if self.find_one([fL.baker_icon, fL.baker_page_icon], horizontal_variance=0.05, vertical_variance=0.05, frame=now):
                 now = self.next_frame()
                 if result:= self.find_one(fL.baker_click, horizontal_variance=0.05, vertical_variance=0.1, frame=now):

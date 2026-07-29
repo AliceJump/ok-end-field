@@ -310,9 +310,13 @@ class DailyTradeFeature:
             self.to_model_area(area, "物资调度")
             self.wait_ui_stable(refresh_interval=1)
             self.wait_click_ocr(
-                match=self.lang.daily_trade_mixin.k_33fb3f9c, box=self.box.top, after_sleep=2
+                match=self.lang.daily_trade_mixin.k_33fb3f9c, box=self.box.top
             )
-            result = self.find_feature(fL.market_good_icon)
+            result = self.wait_feature(
+                feature=fL.market_good_icon,
+                time_out=2,
+                raise_if_not_found=False,
+            )
             if not result:
                 self.log_info("未找到货物")
                 continue
@@ -352,7 +356,7 @@ class DailyTradeFeature:
                                 "等待返回 '地区建设' 界面超时，结束买卖货任务"
                             )
                             return False
-                        self.back(after_sleep=0.5)
+                        self.back()
                     self.click(buy_good.name_box)
                     self.wait_ui_stable(refresh_interval=1)
                     if self.plus_max():
@@ -382,7 +386,7 @@ class DailyTradeFeature:
                     if self.active_time() > back_to_area_deadline:
                         self.log_info("等待返回 '地区建设' 界面超时，结束买卖货任务")
                         return False
-                    self.back(after_sleep=0.5)
+                    self.back()
                 if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:]), log=True) or
                         self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]), log=True)):
                     self.log_info("未找到卖出货物，无法出售")
@@ -416,7 +420,7 @@ class DailyTradeFeature:
                     self.log_info("未进入好友船")
                     return False
                 self.navigate_to_friend_exchange()
-                self.wait_click_ocr(match=get_world_map_matcher(self.lang, area), box=self.box.top, after_sleep=2)
+                self.wait_click_ocr(match=get_world_map_matcher(self.lang, area), box=self.box.top)
                 if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:])) or
                         self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]))):
                     self.log_info("未找到卖出货物，无法出售")
@@ -426,7 +430,6 @@ class DailyTradeFeature:
                     self.wait_click_ocr(
                         match=self.lang.daily_trade_mixin.k_b84e4cb0,
                         box=self.box.bottom_right,
-                        after_sleep=2,
                     )
                     self.wait_pop_up()
                 else:

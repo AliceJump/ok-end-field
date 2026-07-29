@@ -149,7 +149,7 @@ class GameFlowMixin:
             target_height,
         )
 
-    def skip_dialog(self):
+    def skip_dialog(self, time_out=60):
         """
         跳过对话框，自动点击确认或跳过按钮。
 
@@ -158,23 +158,28 @@ class GameFlowMixin:
         """
         start_time = self.active_time()
         while True:
-            if self.active_time() - start_time > 60:
+            if self.active_time() - start_time > time_out:
                 self.log_info("skip_dialog 超时退出")
                 return False
             if self.find_one("skip_dialog_esc", horizontal_variance=0.05):
                 self.press_esc()
                 self.sleep(0.1)
                 start = self.active_time()
-                clicked_confirm = False
                 while self.active_time() - start < 3:
+                    self.next_frame()
                     confirm = self.find_confirm()
                     if confirm:
-                        self.click(confirm, after_sleep=0.4)
-                        clicked_confirm = True
-                    elif clicked_confirm:
+                        self.click(confirm)
+                        if self.wait_until(
+                                lambda: not self.find_confirm(),
+                                time_out=max(0.01, min(0.8, 3 - (self.active_time() - start))),
+                                raise_if_not_found=False,
+                        ):
+                            self.log_debug("AutoSkipDialogTask confirm disappeared")
+                            return True
+                    else:
                         self.log_debug("AutoSkipDialogTask no confirm break")
                         return True
-                    self.next_frame()
             self.sleep(0.5)
 
     def find_confirm(self):
@@ -219,7 +224,7 @@ class GameFlowMixin:
                 self.log_info("点击确认超时")
                 return False
 
-            self.sleep(0.1)
+            self.sleep(0.01)
 
     def wait_pop_up(self, time_out=15, after_sleep=0):
         """
@@ -328,7 +333,7 @@ class GameFlowMixin:
             self._logged_in = True
         return in_combat_world
 
-    def ensure_main(self, esc=True, time_out=90, after_sleep=2, need_active=True):
+    def ensure_main(self, esc=True, time_out=90, after_sleep=0, need_active=True):
         """
         确保回到主界面（游戏世界）。
 
@@ -346,11 +351,29 @@ class GameFlowMixin:
         """
         self.check_resolution()
         self.info_set("current task", f"wait main esc={esc}")
-        if not self.wait_until(
-                lambda: self.is_main(esc=esc, need_active=need_active), time_out=time_out, raise_if_not_found=False
-        ):
+        start = self.active_time()
+        observe_time = min(2.0, time_out)
+
+        # Give loading and return animations a chance to finish before recovery input.
+        result = self.wait_until(
+            lambda: self.is_main(esc=False, need_active=need_active),
+            time_out=observe_time,
+            settle_time=0.5,
+            raise_if_not_found=False,
+        )
+        if not result and self.active_time() - start < time_out:
+            self._next_main_recovery_time = self.active_time()
+            result = self.wait_until(
+                lambda: self.is_main(esc=esc, need_active=need_active),
+                time_out=max(0.01, time_out - (self.active_time() - start)),
+                settle_time=0.5,
+                raise_if_not_found=False,
+            )
+
+        if not result:
             raise Exception("Please start in game world and in team!")
-        self.sleep(after_sleep)
+        if after_sleep > 0:
+            self.sleep(after_sleep)
         self.info_set("current task", f"in main esc={esc}")
 
     def in_world(self):
@@ -386,8 +409,8 @@ class GameFlowMixin:
         if not self._logged_in and need_active:
             self.active_and_send_mouse_delta(activate=True, only_activate=True)
 
-        # 已进入世界
-        if self.wait_until(self.in_world, time_out=1, settle_time=1):
+        # Stability is handled by ensure_main's outer wait.
+        if self.in_world():
             self._logged_in = True
             return True
 
@@ -421,7 +444,8 @@ class GameFlowMixin:
             )
         ):
             self.log_info("检测到特定弹窗，尝试点击确认")
-            self.click(result, after_sleep=self.once_sleep_time)
+            self.click(result)
+            self._next_main_recovery_time = self.active_time() + self.once_sleep_time
             return False
 
         # 命中 OCR 干扰并进行了处理，当前不视为稳定主界面
@@ -435,8 +459,10 @@ class GameFlowMixin:
         if self.handle_ocr_rules(rules):
             return False
 
-        if esc:
-            self.back(after_sleep=self.once_sleep_time)
+        if esc and self.active_time() >= getattr(self, "_next_main_recovery_time", 0):
+            self.log_info("主界面自然恢复等待结束，发送返回键")
+            self.back()
+            self._next_main_recovery_time = self.active_time() + self.once_sleep_time
 
         return False
 
@@ -613,18 +639,22 @@ class GameFlowMixin:
             features = default_features + addtional_feature if isinstance(addtional_feature, list) else default_features + [addtional_feature]
         else:
             features = default_features
-        in_map = False
-        while not in_map:
-            if self.active_time() - start_time > time_out:
-                raise Exception("进入地图失败")
-            self.press_key("m", after_sleep=1)
+        def in_map():
             if self.find_one(fL.in_map, box=self.box_of_screen(0.027, 0.531, 0.051, 0.896)):
-                in_map = True
-                break
-            for feature in features:
-                if self.find_one(feature):
-                    in_map = True
-                    break
+                return True
+            return any(self.find_one(feature) for feature in features)
+
+        if self.wait_until(in_map, time_out=min(0.5, time_out), raise_if_not_found=False):
+            return
+
+        while self.active_time() - start_time < time_out:
+            self.log_info("未检测到地图状态，发送地图按键")
+            self.press_key("m")
+            remaining = time_out - (self.active_time() - start_time)
+            if self.wait_until(in_map, time_out=max(0.01, min(2.0, remaining)), raise_if_not_found=False):
+                return
+
+        raise Exception("进入地图失败")
 
     def in_friend_boat(self):
         """

@@ -426,32 +426,39 @@ class BattleMixin(BaseEfTask):
         """
 
         start_time = self.active_time()
+        deadline = start_time + 420
         last_battle_time = None
         sleep_time = self.get_battle_config("进入战斗后的初始等待时间", 3)
 
         while True:
 
             # 全局超时保护
-            if self.active_time() - start_time > 420:
+            if self.active_time() >= deadline:
                 self.log_info("自动战斗超时")
                 return False
 
-            # 战斗结束判定
+            # 战斗结束后轮询结算状态，成功路径不再固定等待 5 秒。
             if last_battle_time:
                 battle_elapsed = self.active_time() - last_battle_time
-
-                if battle_elapsed > 5:
-                    if battle_elapsed > 15 or (
-                        self.find_feature(feature=fL.battle_space_left)
-                        or self.find_feature(feature=fL.b)
-                    ):
-                        self.log_info("战斗完成")
-                        return True
-
-                    continue
+                settlement = self.wait_until(
+                    lambda: (
+                        self.find_feature(feature=fL.b)
+                    ),
+                    time_out=max(0.01, 15 - battle_elapsed),
+                    raise_if_not_found=False,
+                )
+                if settlement:
+                    self.log_info("检测到战斗结算状态，战斗完成")
+                else:
+                    self.log_info("战斗结束状态等待超时，继续后续结算检测")
+                return True
 
             # 检测战斗
-            battle_detected = AutoCombatLogic(self).run(start_sleep=sleep_time, no_battle=no_battle)
+            battle_detected = AutoCombatLogic(self).run(
+                start_sleep=sleep_time,
+                no_battle=no_battle,
+                deadline=deadline,
+            )
 
             if battle_detected:
                 last_battle_time = self.active_time()
