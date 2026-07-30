@@ -66,6 +66,7 @@ python/
 # 🧰 IDE
 .idea/
 .vscode/
+.workbuddy/
 
 ############################
 # 🖥 PyInstaller
