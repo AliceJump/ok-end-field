@@ -5,6 +5,7 @@ from ok.gui.widget.CustomTab import CustomTab
 
 from src.core.BattleConfig import BATTLE_CONFIG_NAME
 from src.core.global_config_store import get_all_visible_configs
+from src.gui.ConditionalRotationPanel import ConditionalRotationPanel
 
 
 GLOBAL_CONFIG_GROUPS = {
@@ -61,6 +62,17 @@ class GlobalConfigTab(CustomTab):
                 )
                 card.card.setTitle(f"{og.app.tr(group_name)} / {og.app.tr(option.name)}")
                 self.add_widget(card)
+                # 「实时条件」面板：内嵌于战斗配置卡片内，排在「排轴序列」之后
+                if config_name == BATTLE_CONFIG_NAME:
+                    panel = ConditionalRotationPanel(card)
+                    ref = card.config_widget_by_key.get("排轴序列")
+                    if ref is not None:
+                        idx = card.viewLayout.indexOf(ref)
+                        card.viewLayout.insertWidget(idx + 1, panel)
+                    else:
+                        card.viewLayout.addWidget(panel)
+                    # 重新计算卡片展开高度，确保面板不被裁剪
+                    card._adjust_config_content_size()
 
         for config_name, (config, option) in visible_configs.items():
             if config_name in shown:

@@ -7,6 +7,9 @@ DEFAULT_BATTLE_CONFIG = {
     "进入战斗后的初始等待时间": 3,
     "启用排轴": False,
     "排轴序列": "ult_2,1,e,ult_3,sleep_8",
+    # 「实时条件」(条件排轴) —— 与「普通 / 排轴」完全正交，由独立面板编辑
+    "启用条件排轴": False,
+    "条件排轴序列": [],
 }
 
 BATTLE_CONFIG_NAME = "Battle Config"
@@ -18,6 +21,9 @@ BATTLE_CONFIG_TYPE = {
         "options_available": ["1", "2", "3", "4"],
         "allow_duplication": False,
     },
+    # 这两个 key 由「实时条件」面板接管，不让 ConfigCard 自动渲染
+    "启用条件排轴": {"hidden": True},
+    "条件排轴序列": {"hidden": True},
 }
 BATTLE_CONFIG_DESCRIPTION = {
     "技能释放": (
@@ -42,6 +48,15 @@ BATTLE_CONFIG_DESCRIPTION = {
     "排轴序列": (
         "仅接受'1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n],normal_[n]'这些值的逗号分隔字符串，\n"
         "normal_[n] 表示临时切换为普通战斗模式 n 秒，期间按「技能释放」顺序自动出技。"
+    ),
+    "启用条件排轴": (
+        "是否启用「实时条件」战斗逻辑（条件排轴）。\n"
+        "启用后自动忽略普通排轴（条件排轴优先）。\n"
+        "由「实时条件」面板可视化编辑。"
+    ),
+    "条件排轴序列": (
+        "实时条件的结构化序列（JSON AST）。\n"
+        "由「实时条件」面板编辑，不直接手写。"
     ),
 }
 
