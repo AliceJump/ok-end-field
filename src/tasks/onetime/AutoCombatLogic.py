@@ -122,6 +122,16 @@ class AutoCombatLogic:
 
         if token.startswith("sleep_"):
             sleep_time = float(token[6:])
+            if deadline is not None:
+                remaining = deadline - task.active_time()
+                if remaining <= 0:
+                    task.log_info("自动战斗达到最大等待时间")
+                    return True, "return_false"
+                if sleep_time > remaining:
+                    task.log_info(f"等待被截断至截止时间（原 {sleep_time:.3f} 秒，剩余 {remaining:.3f} 秒）")
+                    task.sleep(remaining)
+                    task.log_info("自动战斗达到最大等待时间")
+                    return True, "return_false"
             task.log_info(f"等待 {sleep_time:.3f} 秒")
             task.sleep(sleep_time)
             return True, ""
@@ -143,6 +153,8 @@ class AutoCombatLogic:
                     if task._check_single_exit_condition():
                         self._end = True
                         return True, "break"
+                task.approach_enemy()
+                task.next_frame()
                 self._do_normal_combat_frame()
             task.log_info("普通战斗临时模式结束")
             return True, ""

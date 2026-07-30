@@ -196,6 +196,7 @@ class _ActionListEditor(QWidget):
 
     def load(self, tokens: list):
         for row in self._rows:
+            self._rows_box.removeWidget(row)
             row.deleteLater()
         self._rows = []
         for t in (tokens if isinstance(tokens, list) else []):
@@ -257,24 +258,30 @@ class _ConditionEditor(QWidget):
         if isinstance(cond, str):
             self.type_combo.setCurrentIndex(0)
             self._set_atoms([cond])
+            self.add_atom_btn.setVisible(False)
         elif isinstance(cond, dict):
             if "all" in cond and isinstance(cond.get("all"), list):
                 self.type_combo.setCurrentIndex(1)
                 atoms = [c for c in cond["all"] if isinstance(c, str)]
                 self._set_atoms(atoms or ["link"])
+                self.add_atom_btn.setVisible(True)
             elif "any" in cond and isinstance(cond.get("any"), list):
                 self.type_combo.setCurrentIndex(2)
                 atoms = [c for c in cond["any"] if isinstance(c, str)]
                 self._set_atoms(atoms or ["link"])
+                self.add_atom_btn.setVisible(True)
             else:
                 self.type_combo.setCurrentIndex(0)
                 self._set_atoms(["link"])
+                self.add_atom_btn.setVisible(False)
         else:
             self.type_combo.setCurrentIndex(0)
             self._set_atoms(["link"])
+            self.add_atom_btn.setVisible(False)
 
     def _set_atoms(self, atoms: list):
         for row in self._atom_rows:
+            self._atom_layout.removeWidget(row["widget"])
             row["widget"].deleteLater()
         self._atom_rows = []
         for a in atoms:
@@ -367,12 +374,16 @@ class _ConditionEditor(QWidget):
 
     def to_cond(self):
         typ = self.type_combo.currentData()
-        atoms = [self._atom_to_value(r) for r in self._atom_rows]
         if typ == "all":
+            atoms = [self._atom_to_value(r) for r in self._atom_rows]
             return {"all": atoms}
         if typ == "any":
+            atoms = [self._atom_to_value(r) for r in self._atom_rows]
             return {"any": atoms}
-        return atoms[0] if atoms else "link"
+        # atom mode: use only the first row
+        if self._atom_rows:
+            return self._atom_to_value(self._atom_rows[0])
+        return "link"
 
 
 # ── 编辑弹窗 ─────────────────────────────────────────────
@@ -445,9 +456,11 @@ class _ConditionDisplayCard(QFrame):
         )
 
     def _build(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(10, 6, 10, 6)
-        layout.setSpacing(0)
+        layout = self.layout()
+        if layout is None:
+            layout = QVBoxLayout(self)
+            layout.setContentsMargins(10, 6, 10, 6)
+            layout.setSpacing(0)
 
         node = self._node if isinstance(self._node, dict) else {}
         cond = node.get("if", "link")
@@ -475,9 +488,9 @@ class _ConditionDisplayCard(QFrame):
     def update_node(self, node: dict):
         """更新节点数据并刷新显示。"""
         self._node = node
-        lay = self.layout()
-        while lay.count():
-            item = lay.takeAt(0)
+        layout = self.layout()
+        while layout.count():
+            item = layout.takeAt(0)
             w = item.widget()
             if w is not None:
                 w.deleteLater()
