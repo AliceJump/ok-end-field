@@ -42,7 +42,7 @@ class DailyRewardMixin:
     def claim_sanity_supply(self):
         self.log_info("开始领取理智补给")
 
-        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_059a808c, box=self.box.left, time_out=5):
+        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_059a808c, box=self.box.left, time_out=2):
             self.log_info("未找到『活动中心/理智补给』入口")
             return False
 
@@ -59,7 +59,7 @@ class DailyRewardMixin:
         start_time = self.active_time()
 
         while True:
-            if self.wait_feature(feature=fL.in_scratch_card_page, raise_if_not_found=False, time_out=4):
+            if self.wait_feature(feature=fL.in_scratch_card_page, raise_if_not_found=False, time_out=2):
                 break
 
             if self.active_time() - start_time > 20:
@@ -97,15 +97,16 @@ class DailyRewardMixin:
         sanity_enabled = "理智补给" in enabled_rewards
         scratch_enabled = "刮刮乐" in enabled_rewards
 
-        if scratch_enabled:
-            self.scratch_reward()
-        else:
-            self.log_info("已关闭『周常奖励』，跳过")
 
         if weekly_enabled:
             self.claim_weekly_rewards()
         else:
             self.log_info("已关闭『周常奖励』，跳过")
+            
+        if scratch_enabled:
+            self.scratch_reward()
+        else:
+            self.log_info("已关闭『刮刮乐』，跳过")
 
         if sanity_enabled:
             self.claim_sanity_supply()
@@ -171,7 +172,7 @@ class DailyRewardMixin:
                 self.wait_click_ocr(
                     match=self.lang.daily_routine_mixin.k_3ecdd4bb,
                     box=self.box.bottom,
-                    time_out=5,
+                    time_out=2,
                 )
             self.wait_click_ocr(
                 match=self.lang.daily_routine_mixin.k_727d1bec,
@@ -182,7 +183,7 @@ class DailyRewardMixin:
         reward_clicked = self.wait_click_ocr(
             match=self.lang.daily_routine_mixin.k_39d12e73_1,
             box=self.box.bottom,
-            time_out=5,
+            time_out=2,
         )
         if reward_clicked:
             self.wait_pop_up()
