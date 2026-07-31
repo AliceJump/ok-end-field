@@ -609,9 +609,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             log=True,
             alt=True,
         ):
-            if not self.find_reward_ok():
-                self.skip_dialog()
-            self.wait_pop_up()
+            self.skip_dialog(time_out=1)
+            self.ensure_main()
+
 
     def _resolve_transfer_point_search_box(self):
         """根据当前委托区域选择传送点搜索区域。"""

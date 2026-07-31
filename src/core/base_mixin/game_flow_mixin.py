@@ -17,6 +17,11 @@ from src.data.FeatureList import FeatureList as fL
 class GameFlowMixin:
     """登录弹窗、主界面状态与场景导航流程能力。"""
 
+    def press_esc(self):
+        """仅过剧情（对话时）使用的 ESC 触发函数。"""
+        self.keyboard.press(Key.esc)
+        self.keyboard.release(Key.esc)
+
     def login_screenshot(self, need_active=True):
         """
         截取登录或弹窗场景下的窗口截图。
@@ -144,7 +149,7 @@ class GameFlowMixin:
             target_height,
         )
 
-    def skip_dialog(self):
+    def skip_dialog(self, time_out=60):
         """
         跳过对话框，自动点击确认或跳过按钮。
 
@@ -153,13 +158,12 @@ class GameFlowMixin:
         """
         start_time = self.active_time()
         while True:
-            if self.active_time() - start_time > 60:
+            if self.active_time() - start_time > time_out:
                 self.log_info("skip_dialog 超时退出")
                 return False
             if self.find_one("skip_dialog_esc", horizontal_variance=0.05):
-                self.log_info("检测到可跳过对话，发送 ESC")
-                self.keyboard.press(Key.esc)
-                self.keyboard.release(Key.esc)
+                self.press_esc()
+                self.sleep(0.1)
                 start = self.active_time()
                 while self.active_time() - start < 3:
                     self.next_frame()
