@@ -21,9 +21,9 @@ from typing import Iterator, Protocol
 _ULT_ATOMS = {"ult1", "ult2", "ult3", "ult4"}
 _LINK_ATOM = "link"
 _SKILL_RE = re.compile(r"^skill>=(\d+)$")
-_SKILL_MIN, _SKILL_MAX = 1, 3  # 技力条最多 3 点（get_skill_bar_count 的 bars 仅 3 项）
+_SKILL_MIN, _SKILL_MAX = 1, 3  # 技力条最多 3 点 (get_skill_bar_count 的 bars 仅 3 项)
 
-# 动作 token（与 battle_mixin._parse_skill_sequence 对齐）
+# 动作 token (与 battle_mixin._parse_skill_sequence 对齐)
 _PLAIN_ACTIONS = {"1", "2", "3", "4", "e"}
 _ULT_ACTION_RE = re.compile(r"^ult_([1-4])$")
 _SLEEP_RE = re.compile(r"^sleep_(\d+(?:\.\d+)?)$")

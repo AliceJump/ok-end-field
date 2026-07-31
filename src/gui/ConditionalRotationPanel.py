@@ -174,9 +174,9 @@ def _combo_display(key, spin) -> str:
     return key
 
 
-# 弹窗内：单行动作编辑
+# 弹窗内: 单行动作编辑
 class _ActionRow(QWidget):
-    """弹窗内一行动作编辑：拖拽手柄 + ComboBox + SpinBox + 删除按钮。"""
+    """弹窗内一行动作编辑: 拖拽手柄 + ComboBox + SpinBox + 删除按钮。"""
 
     changed = Signal()
     remove_requested = Signal(object)

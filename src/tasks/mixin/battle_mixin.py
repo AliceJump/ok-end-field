@@ -94,8 +94,13 @@ class BattleMixin(BaseEfTask):
         self.config_type.update(BATTLE_CONFIG_TYPE)
         self.config_type[BATTLE_CONFIG_MODE_KEY] = battle_mode_type
 
+    # 实时条件相关配置始终使用全局值
+    _GLOBAL_ONLY_KEYS = {"启用实时条件", "实时条件序列", "立即释放终结技", "立即释放连携技"}
+
     def get_battle_config(self, key: str, default=None):
         global_value = self.battle_config_manager.get(key, DEFAULT_BATTLE_CONFIG.get(key, default))
+        if key in self._GLOBAL_ONLY_KEYS:
+            return global_value
         raw_config_get = getattr(self, "_raw_cfg_get", None)
         if callable(raw_config_get):
             try:
