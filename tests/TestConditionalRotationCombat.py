@@ -119,14 +119,14 @@ class _FakeTask:
 
 
 class TestConditionalRotationCombat(unittest.TestCase):
-    """AutoCombatLogic.run() 条件排轴路径集成测试（mock task）。"""
+    """AutoCombatLogic.run() 实时条件路径集成测试（mock task）。"""
 
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
     def test_conditional_rotation_executes_then_branch(self, _mu, _md):
         cfg = {
-            "启用条件排轴": True,
-            "条件排轴序列": ["1", {"if": "link", "then": ["e"]}],
+            "启用实时条件": True,
+            "实时条件序列": ["1", {"if": "link", "then": ["e"]}],
         }
         task = _FakeTask(cfg, ults=(), link=True, skill=3)
         logic = AutoCombatLogic(task)
@@ -138,8 +138,8 @@ class TestConditionalRotationCombat(unittest.TestCase):
     @patch.object(pyautogui, "mouseUp")
     def test_conditional_rotation_else_branch(self, _mu, _md):
         cfg = {
-            "启用条件排轴": True,
-            "条件排轴序列": [{"if": "link", "then": ["e"], "else": ["2"]}],
+            "启用实时条件": True,
+            "实时条件序列": [{"if": "link", "then": ["e"], "else": ["2"]}],
         }
         task = _FakeTask(cfg, ults=(), link=False, skill=3)
         logic = AutoCombatLogic(task)
@@ -151,8 +151,8 @@ class TestConditionalRotationCombat(unittest.TestCase):
     @patch.object(pyautogui, "mouseUp")
     def test_conditional_rotation_empty_falls_back_to_normal(self, _mu, _md):
         cfg = {
-            "启用条件排轴": True,
-            "条件排轴序列": [],
+            "启用实时条件": True,
+            "实时条件序列": [],
             "技能释放": ["1", "2", "3"],
             "启动技能点数": 2,
         }
@@ -167,8 +167,8 @@ class TestConditionalRotationCombat(unittest.TestCase):
     @patch.object(pyautogui, "mouseUp")
     def test_conditional_rotation_no_match_runs_clean(self, _mu, _md):
         cfg = {
-            "启用条件排轴": True,
-            "条件排轴序列": [{"if": "link", "then": ["e"]}],
+            "启用实时条件": True,
+            "实时条件序列": [{"if": "link", "then": ["e"]}],
         }
         task = _FakeTask(cfg, ults=(), link=False, skill=3)
         logic = AutoCombatLogic(task)
@@ -180,8 +180,8 @@ class TestConditionalRotationCombat(unittest.TestCase):
     @patch.object(pyautogui, "mouseUp")
     def test_conditional_rotation_ult_action(self, _mu, _md):
         cfg = {
-            "启用条件排轴": True,
-            "条件排轴序列": [{"if": "ult2", "then": ["ult_2"]}],
+            "启用实时条件": True,
+            "实时条件序列": [{"if": "ult2", "then": ["ult_2"]}],
         }
         task = _FakeTask(cfg, ults=[2], link=False, skill=3)
         logic = AutoCombatLogic(task)
@@ -193,8 +193,8 @@ class TestConditionalRotationCombat(unittest.TestCase):
     def test_instant_ult_release_when_no_cond_action(self, _mu, _md):
         """条件不满足、本帧无动作时，立即释放终结技生效。"""
         cfg = {
-            "启用条件排轴": True,
-            "条件排轴序列": [{"if": "link", "then": ["e"]}],  # link 不可用 → 无动作
+            "启用实时条件": True,
+            "实时条件序列": [{"if": "link", "then": ["e"]}],  # link 不可用 → 无动作
             "立即释放终结技": True,
         }
         task = _FakeTask(cfg, ults=[2], link=False, skill=3)
@@ -208,8 +208,8 @@ class TestConditionalRotationCombat(unittest.TestCase):
     def test_instant_link_release_when_no_cond_action(self, _mu, _md):
         """条件不满足、本帧无动作时，立即释放连携技生效。"""
         cfg = {
-            "启用条件排轴": True,
-            "条件排轴序列": [{"if": "ult2", "then": ["ult_2"]}],  # ult2 不可用 → 无动作
+            "启用实时条件": True,
+            "实时条件序列": [{"if": "ult2", "then": ["ult_2"]}],  # ult2 不可用 → 无动作
             "立即释放连携技": True,
         }
         task = _FakeTask(cfg, ults=(), link=True, skill=3)
@@ -220,10 +220,10 @@ class TestConditionalRotationCombat(unittest.TestCase):
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
     def test_instant_release_disabled_when_rotation_off(self, _mu, _md):
-        """条件排轴回退普通模式时，立即释放开关不生效。"""
+        """实时条件回退普通模式时，立即释放开关不生效。"""
         cfg = {
-            "启用条件排轴": True,
-            "条件排轴序列": [],  # 空 → 回退普通
+            "启用实时条件": True,
+            "实时条件序列": [],  # 空 → 回退普通
             "立即释放终结技": True,
             "技能释放": ["1", "2", "3"],
             "启动技能点数": 2,

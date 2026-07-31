@@ -38,12 +38,12 @@ class AutoCombatLogic:
         self.normal_skill_index: int = 0
         self._last_search_time = 0
         self._search_interval = 1.0
-        # 条件排轴（实时条件）状态
+        # 实时条件状态
         self.cond_rotation_enabled = False
         self.cond_ast: list = []
         self._cond_iter = None
         self._cond_probe = None
-        # 立即释放开关（条件排轴本帧无动作时生效）
+        # 立即释放开关（本帧无动作时生效）
         self.instant_ult_enabled = False
         self.instant_link_enabled = False
         # 战技失败暂存：技力不足时保留 token 下帧重试，不推进生成器
@@ -103,7 +103,7 @@ class AutoCombatLogic:
         self.task.click(key="middle")
 
     def _exec_rotation_token(self, token: str, deadline):
-        """执行单个排轴 token（普通排轴与条件排轴共用）。
+        """执行单个排轴 token（普通排轴与实时条件共用）。
 
         Args:
             token: 动作 token（ult_N / sleep_N / normal_N / e / 1~4）。
@@ -112,7 +112,7 @@ class AutoCombatLogic:
         Returns:
             tuple[bool, str]: (success, signal)。
                 success —— 是否成功执行动作（普通排轴据此推进并刷新 5 秒计时；
-                           条件排轴不卡住，无论成败都取下一 token）。
+                           实时条件不卡住，无论成败都取下一 token）。
                 signal —— "" 正常 / "break" 战斗结束需跳出主循环 /
                           "return_false" deadline 到达需 return False。
         """
@@ -178,7 +178,7 @@ class AutoCombatLogic:
         return False, ""
 
     def _do_conditional_rotation_step(self, deadline) -> tuple[str, bool]:
-        """执行条件排轴的一个动作 token。
+        """执行实时条件的一个动作 token。
 
         - 生成器耗尽（一轮遍历完）→ 重建（新一轮，重新求值所有条件）。
         - 战技 digit token 失败（技力不足）→ 暂存，下帧重试同一 token。
@@ -248,9 +248,9 @@ class AutoCombatLogic:
         self.normal_start_trigger = task.get_battle_config("启动技能点数", 2)
         self.normal_skill_index = 0
 
-        # ── 模式初始化：条件排轴 > 普通排轴 > 普通 ──────────────
-        # 条件排轴优先：启用时自动忽略普通排轴
-        self.cond_rotation_enabled = task.get_battle_config("启用条件排轴", False)
+        # 模式初始化：实时条件 > 排轴 > 普通
+        # 实时条件优先：启用时自动忽略普通排轴
+        self.cond_rotation_enabled = task.get_battle_config("启用实时条件", False)
         self.rotation_enabled = False
         self.rotation_active = True
         self._cond_iter = None
@@ -258,20 +258,20 @@ class AutoCombatLogic:
         self._pending_skill_token = None
 
         if self.cond_rotation_enabled:
-            raw_ast = task.get_battle_config("条件排轴序列", [])
+            raw_ast = task.get_battle_config("实时条件序列", [])
             self.cond_ast, warnings = normalize_ast(raw_ast)
             for w in warnings:
-                task.log_info(f"条件排轴配置警告: {w}")
+                task.log_info(f"实时条件配置警告: {w}")
             if not self.cond_ast:
-                task.log_info("条件排轴序列为空或全部非法，回退普通模式")
+                task.log_info("实时条件序列为空或全部非法，回退普通模式")
                 self.cond_rotation_enabled = False
 
-        # 立即释放开关（仅在条件排轴启用时生效）
+        # 立即释放开关（仅在实时条件启用时生效）
         self.instant_ult_enabled = self.cond_rotation_enabled and task.get_battle_config("立即释放终结技", False)
         self.instant_link_enabled = self.cond_rotation_enabled and task.get_battle_config("立即释放连携技", False)
 
         if self.cond_rotation_enabled:
-            task.log_info(f"条件排轴已启用，AST 节点数={len(self.cond_ast)}（忽略普通排轴）")
+            task.log_info(f"实时条件已启用，AST 节点数={len(self.cond_ast)}（忽略普通排轴）")
             if self.instant_ult_enabled:
                 task.log_info("立即释放终结技 已启用")
             if self.instant_link_enabled:
@@ -335,7 +335,7 @@ class AutoCombatLogic:
                 task.approach_enemy()
                 task.next_frame()
 
-                # ── 模式分发：条件排轴 > 普通排轴 > 普通 ──────────────
+                # ── 模式分发：实时条件 > 普通排轴 > 普通 ──────────────
                 if self.cond_rotation_enabled:
                     signal, had_action = self._do_conditional_rotation_step(deadline)
                     if signal == "return_false":
