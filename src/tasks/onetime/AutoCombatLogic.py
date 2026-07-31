@@ -46,6 +46,8 @@ class AutoCombatLogic:
         # 立即释放开关（条件排轴本帧无动作时生效）
         self.instant_ult_enabled = False
         self.instant_link_enabled = False
+        # 战技失败暂存：技力不足时保留 token 下帧重试，不推进生成器
+        self._pending_skill_token = None
 
     def _sync_normal_attack_hold(self):
         if self._normal_attack_hold_enabled:
@@ -179,7 +181,8 @@ class AutoCombatLogic:
         """执行条件排轴的一个动作 token。
 
         - 生成器耗尽（一轮遍历完）→ 重建（新一轮，重新求值所有条件）。
-        - 不卡住：动作失败即取下一 token（生成器 next）。
+        - 战技 digit token 失败（技力不足）→ 暂存，下帧重试同一 token。
+        - 其他 token（ult/e/sleep/normal）失败即跳过，不重试。
         - 无超时回退：持续运行至战斗结束。
 
         Returns:
@@ -187,6 +190,17 @@ class AutoCombatLogic:
                 signal —— "" 正常 / "break" / "return_false"（来自 normal_ 内嵌循环）。
                 had_action —— 本帧是否产出了条件动作（供立即释放判断）。
         """
+        # 战技重试：上一帧 digit token 因技力不足失败，本帧重试同一 token
+        if self._pending_skill_token is not None:
+            token = self._pending_skill_token
+            self._pending_skill_token = None
+            success, signal = self._exec_rotation_token(token, deadline)
+            if not success and signal == "":
+                # 仍然技力不足，继续暂存等待下帧
+                self._pending_skill_token = token
+                return "", True  # had_action=True 阻断立即释放
+            return signal, True
+
         if self._cond_iter is None:
             self._cond_probe = _TaskProbe(self.task)
             self._cond_iter = iter_actions(self.cond_ast, self._cond_probe)
@@ -199,7 +213,9 @@ class AutoCombatLogic:
             return "", False
 
         success, signal = self._exec_rotation_token(token, deadline)
-        # 条件排轴：生成器已 next 即「推进」，不维护 last_rotation_ok_time，不超时回退
+        # 战技失败且非 fatal signal → 暂存重试，不推进生成器
+        if not success and signal == "" and token.isdigit():
+            self._pending_skill_token = token
         return signal, True
 
     def _do_instant_release(self):
@@ -239,6 +255,7 @@ class AutoCombatLogic:
         self.rotation_active = True
         self._cond_iter = None
         self._cond_probe = None
+        self._pending_skill_token = None
 
         if self.cond_rotation_enabled:
             raw_ast = task.get_battle_config("条件排轴序列", [])
