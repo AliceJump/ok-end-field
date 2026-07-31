@@ -183,7 +183,7 @@ def _normalize_cond(cond, warnings: list[str]):
         if "all" in cond:
             subs = cond["all"]
             if not isinstance(subs, list):
-                warnings.append(f"all 非列表，已丢弃整个 all")
+                warnings.append("all 非列表，已丢弃整个 all")
                 return None
             cleaned = []
             for c in subs:

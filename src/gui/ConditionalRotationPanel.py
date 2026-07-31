@@ -436,6 +436,7 @@ class _ConditionEditDialog(MessageBoxBase):
         node = node if isinstance(node, dict) else {}
         cond = node.get("if", "link")
         then_nodes = node.get("then", []) if isinstance(node.get("then"), list) else []
+        else_nodes = node.get("else", []) if isinstance(node.get("else"), list) else []
 
         self.titleLabel = SubtitleLabel(_tr("编辑条件块"), self)
         self.viewLayout.addWidget(self.titleLabel)
@@ -447,6 +448,10 @@ class _ConditionEditDialog(MessageBoxBase):
         self.then_editor.load(then_nodes)
         self.viewLayout.addWidget(self.then_editor)
 
+        self.else_editor = _ActionListEditor(_tr("否则："))
+        self.else_editor.load(else_nodes)
+        self.viewLayout.addWidget(self.else_editor)
+
         self.yesButton.setText(_tr("确定"))
         self.cancelButton.setText(_tr("取消"))
         # 固定 centerWidget 宽度 + 预计算尺寸，避免 exec() 时尺寸跳变闪屏
@@ -454,7 +459,11 @@ class _ConditionEditDialog(MessageBoxBase):
         self.widget.adjustSize()
 
     def to_node(self) -> dict:
-        return {"if": self.cond_editor.to_cond(), "then": self.then_editor.to_list()}
+        result = {"if": self.cond_editor.to_cond(), "then": self.then_editor.to_list()}
+        else_list = self.else_editor.to_list()
+        if else_list:
+            result["else"] = else_list
+        return result
 
 
 # ── 只读显示卡片 ─────────────────────────────────────────

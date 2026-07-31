@@ -98,14 +98,14 @@ class TestConditionEditDialog(unittest.TestCase):
         self.assertNotIn("else", result)
 
     @patch("src.gui.ConditionalRotationPanel._tr", side_effect=lambda x: x)
-    def test_dialog_drops_else(self, _):
-        # 编辑弹窗不再支持 else：传入含 else 的 node，to_node 应丢弃 else
+    def test_dialog_roundtrip_with_else(self, _):
+        # 编辑弹窗现在支持 else：传入含 else 的 node，to_node 应保留 else
         node = {"if": {"all": ["ult1", "link"]}, "then": ["1", "2"], "else": ["3"]}
         dlg = _ConditionEditDialog(node, self.parent)
         result = dlg.to_node()
         self.assertEqual(result["if"], {"all": ["ult1", "link"]})
         self.assertEqual(result["then"], ["1", "2"])
-        self.assertNotIn("else", result)
+        self.assertEqual(result["else"], ["3"])
 
     @patch("src.gui.ConditionalRotationPanel._tr", side_effect=lambda x: x)
     def test_dialog_skill_cond(self, _):
