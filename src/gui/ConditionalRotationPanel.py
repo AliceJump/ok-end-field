@@ -23,7 +23,7 @@ def _tr(text: str) -> str:
     return og.app.tr(text)
 
 
-# ── 友好名映射 ───────────────────────────────────────────
+# 友好名映射
 _ACTION_DISPLAY = {
     "1": "战技 1", "2": "战技 2", "3": "战技 3", "4": "战技 4", "e": "连携技",
     "ult_1": "终结技 1", "ult_2": "终结技 2", "ult_3": "终结技 3", "ult_4": "终结技 4",
@@ -142,7 +142,7 @@ def _fmt_actions(actions) -> str:
     return ";".join(_fmt_action(a) for a in actions if isinstance(a, str))
 
 
-# ── 动作选项的显示名模板 ────────────────────────────────
+# 动作选项的显示名模板
 _ACTION_LABELS = {
     _SKILL_ACTION_KEY: "战技",
     _ULT_ACTION_KEY: "终结技",
@@ -150,7 +150,7 @@ _ACTION_LABELS = {
     _NORMAL_KEY: "普通战斗",
 }
 
-# ── 条件原子的显示名模板 ────────────────────────────────
+# 条件原子的显示名模板
 _ATOM_LABELS = {
     _ULT_KEY: "终结技",
     _SKILL_KEY: "技力≥",
@@ -174,7 +174,7 @@ def _combo_display(key, spin) -> str:
     return key
 
 
-# ── 弹窗内：单行动作编辑 ─────────────────────────────────
+# 弹窗内：单行动作编辑
 class _ActionRow(QWidget):
     """弹窗内一行动作编辑：拖拽手柄 + ComboBox + SpinBox + 删除按钮。"""
 
@@ -376,7 +376,7 @@ class _ActionListEditor(QWidget):
         return result
 
 
-# ── 弹窗内：条件编辑器 ───────────────────────────────────
+# 弹窗内：条件编辑器
 class _ConditionEditor(QWidget):
     """条件编辑器：原子 / 且(all) / 或(any)，且/或支持多个原子。"""
 
@@ -575,7 +575,7 @@ class _ConditionEditor(QWidget):
         return "link"
 
 
-# ── 编辑弹窗 ─────────────────────────────────────────────
+# 编辑弹窗
 class _ConditionEditDialog(MessageBoxBase):
     """条件块编辑弹窗（项目 MessageBoxBase 范式）。"""
 
@@ -607,7 +607,7 @@ class _ConditionEditDialog(MessageBoxBase):
         return {"if": self.cond_editor.to_cond(), "then": self.then_editor.to_list()}
 
 
-# ── 只读显示卡片 ─────────────────────────────────────────
+# 只读显示卡片
 class _ConditionDisplayCard(QFrame):
     """只读显示卡片：两行（条件行 / 动作行），行间浅色线，右键菜单。"""
 
@@ -676,7 +676,7 @@ class _ConditionDisplayCard(QFrame):
         self.style().polish(self)
 
 
-# ── 主面板 ───────────────────────────────────────────────
+# 主面板
 class ConditionalRotationPanel(QWidget):
     """
     实时条件面板

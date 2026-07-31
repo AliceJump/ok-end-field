@@ -17,13 +17,13 @@ import re
 from typing import Iterator, Protocol
 
 
-# ── 条件原子 ────────────────────────────────────────────────
+# 条件原子
 _ULT_ATOMS = {"ult1", "ult2", "ult3", "ult4"}
 _LINK_ATOM = "link"
 _SKILL_RE = re.compile(r"^skill>=(\d+)$")
 _SKILL_MIN, _SKILL_MAX = 1, 3  # 技力条最多 3 点（get_skill_bar_count 的 bars 仅 3 项）
 
-# ── 动作 token（与 battle_mixin._parse_skill_sequence 对齐） ──
+# 动作 token（与 battle_mixin._parse_skill_sequence 对齐）
 _PLAIN_ACTIONS = {"1", "2", "3", "4", "e"}
 _ULT_ACTION_RE = re.compile(r"^ult_([1-4])$")
 _SLEEP_RE = re.compile(r"^sleep_(\d+(?:\.\d+)?)$")
@@ -49,7 +49,7 @@ class CondProbe(Protocol):
         ...
 
 
-# ── 动作 token 校验 ─────────────────────────────────────────
+# 动作 token 校验
 def _valid_action(token: str) -> bool:
     """校验动作 token 合法性（与 battle_mixin._parse_skill_sequence 对齐）。"""
     if token in _PLAIN_ACTIONS:
@@ -65,7 +65,7 @@ def _valid_action(token: str) -> bool:
     return False
 
 
-# ── 条件原子校验 ────────────────────────────────────────────
+# 条件原子校验
 def _valid_atom(atom: str) -> bool:
     """校验条件原子合法性。"""
     if atom in _ULT_ATOMS:
@@ -79,7 +79,7 @@ def _valid_atom(atom: str) -> bool:
     return False
 
 
-# ── 规范化 ─────────────────────────────────────────────────
+# 规范化
 def normalize_ast(data) -> tuple[list, list[str]]:
     """递归校验并规范化 AST。
 
@@ -216,7 +216,7 @@ def _normalize_cond(cond, warnings: list[str]):
     return None
 
 
-# ── 条件求值 ───────────────────────────────────────────────
+# 条件求值
 def eval_cond(cond, probe: CondProbe) -> bool:
     """递归求值条件。
 
@@ -248,7 +248,7 @@ def _eval_atom(atom: str, probe: CondProbe) -> bool:
     return False
 
 
-# ── 动作遍历生成器 ─────────────────────────────────────────
+# 动作遍历生成器
 def iter_actions(nodes: list, probe: CondProbe) -> Iterator[str]:
     """递归遍历 AST，按条件求值产出动作 token。
 
