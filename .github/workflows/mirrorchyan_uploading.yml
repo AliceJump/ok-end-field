@@ -18,7 +18,7 @@ jobs:
       - uses: MirrorChyan/uploading-action@v1
         with:
           filetype: latest-release
-          filename: "ok-ef-win32-China-setup.exe"
+          filename: "ok-ef-win32-China-setup-${{ inputs.tag }}.exe"
           mirrorchyan_rid: ok-end-field
           tag: ${{ inputs.tag }}
 
