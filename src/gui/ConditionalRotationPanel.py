@@ -14,7 +14,14 @@ from ok import og
 from ok.gui.common.design_system import DesignToken
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
-from src.core.BattleConfig import BATTLE_CONFIG_DESCRIPTION, BATTLE_CONFIG_NAME
+from src.core.BattleConfig import (
+    BATTLE_CONFIG_DESCRIPTION,
+    BATTLE_CONFIG_NAME,
+    KEY_COND_ENABLED,
+    KEY_COND_SEQUENCE,
+    KEY_INSTANT_LINK,
+    KEY_INSTANT_ULT,
+)
 from src.core.global_config_store import get_global_config
 from src.core.rotation_ast import normalize_ast
 
@@ -691,7 +698,7 @@ class ConditionalRotationPanel(QWidget):
         self._setup_ui()
         self._load()
 
-    # ------------------------------------------------------------------ UI
+    # UI
     def _setup_ui(self):
         self.setObjectName("ConditionalRotationPanel")
         layout = QVBoxLayout(self)
@@ -700,37 +707,37 @@ class ConditionalRotationPanel(QWidget):
 
         # 标题行：实时条件
         header = LabelAndWidget(
-            "启用实时条件",
-            BATTLE_CONFIG_DESCRIPTION["启用实时条件"],
+            KEY_COND_ENABLED,
+            BATTLE_CONFIG_DESCRIPTION[KEY_COND_ENABLED],
         )
         self.switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
         self.switch.setOnText(_tr("是"))
         self.switch.setOffText(_tr("否"))
-        self.switch.checkedChanged.connect(lambda c: self._set_config("启用实时条件", c))
+        self.switch.checkedChanged.connect(lambda c: self._set_config(KEY_COND_ENABLED, c))
         header.add_widget(self.switch, stretch=0)
         layout.addWidget(header)
 
         # 立即释放终结技
         ult_row = LabelAndWidget(
-            "立即释放终结技",
-            BATTLE_CONFIG_DESCRIPTION["立即释放终结技"],
+            KEY_INSTANT_ULT,
+            BATTLE_CONFIG_DESCRIPTION[KEY_INSTANT_ULT],
         )
         self.ult_switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
         self.ult_switch.setOnText(_tr("是"))
         self.ult_switch.setOffText(_tr("否"))
-        self.ult_switch.checkedChanged.connect(lambda c: self._set_config("立即释放终结技", c))
+        self.ult_switch.checkedChanged.connect(lambda c: self._set_config(KEY_INSTANT_ULT, c))
         ult_row.add_widget(self.ult_switch, stretch=0)
         layout.addWidget(ult_row)
 
         # 立即释放连携技
         link_row = LabelAndWidget(
-            "立即释放连携技",
-            BATTLE_CONFIG_DESCRIPTION["立即释放连携技"],
+            KEY_INSTANT_LINK,
+            BATTLE_CONFIG_DESCRIPTION[KEY_INSTANT_LINK],
         )
         self.link_switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
         self.link_switch.setOnText(_tr("是"))
         self.link_switch.setOffText(_tr("否"))
-        self.link_switch.checkedChanged.connect(lambda c: self._set_config("立即释放连携技", c))
+        self.link_switch.checkedChanged.connect(lambda c: self._set_config(KEY_INSTANT_LINK, c))
         link_row.add_widget(self.link_switch, stretch=0)
         layout.addWidget(link_row)
 
@@ -775,13 +782,13 @@ class ConditionalRotationPanel(QWidget):
 
         layout.addWidget(body)
 
-    # -------------------------------------------------------------- 数据绑定
+    # 数据绑定
     def _load(self):
         self._loading = True
-        self.switch.setChecked(bool(self.config.get("启用实时条件", False)))
-        self.ult_switch.setChecked(bool(self.config.get("立即释放终结技", False)))
-        self.link_switch.setChecked(bool(self.config.get("立即释放连携技", False)))
-        raw_ast = self.config.get("实时条件序列", [])
+        self.switch.setChecked(bool(self.config.get(KEY_COND_ENABLED, False)))
+        self.ult_switch.setChecked(bool(self.config.get(KEY_INSTANT_ULT, False)))
+        self.link_switch.setChecked(bool(self.config.get(KEY_INSTANT_LINK, False)))
+        raw_ast = self.config.get(KEY_COND_SEQUENCE, [])
         clean_ast, warnings = normalize_ast(raw_ast)
         for w in warnings:
             self._log(w)
@@ -834,7 +841,7 @@ class ConditionalRotationPanel(QWidget):
         menu.addAction(Action(FluentIcon.DELETE, _tr("删除"), triggered=self._on_delete))
         menu.exec(global_pos)
 
-    # -------------------------------------------------------------- 工具栏
+    # 工具栏
     def _on_add(self):
         # 直接添加条件块，弹窗编辑
         new_node = {"if": "link", "then": []}
@@ -877,7 +884,7 @@ class ConditionalRotationPanel(QWidget):
             return
         self.config[key] = value
 
-    # -------------------------------------------------------------- 写盘 / 布局
+    # 写盘
     def _save(self):
         if self._loading:
             return
@@ -885,7 +892,7 @@ class ConditionalRotationPanel(QWidget):
         for card in self._cards:
             node = card._node
             ast.append(node)
-        self.config["实时条件序列"] = ast
+        self.config[KEY_COND_SEQUENCE] = ast
 
     def _notify_resize(self):
         """内容增删后通知祖先 ConfigCard 重新计算展开高度。"""

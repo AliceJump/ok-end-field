@@ -2,6 +2,12 @@ import threading
 import pyautogui
 import traceback
 from src.core.BaseEfTask import BaseEfTask
+from src.core.BattleConfig import (
+    KEY_COND_ENABLED,
+    KEY_COND_SEQUENCE,
+    KEY_INSTANT_LINK,
+    KEY_INSTANT_ULT,
+)
 from src.core.rotation_ast import iter_actions, normalize_ast
 
 
@@ -250,7 +256,7 @@ class AutoCombatLogic:
 
         # 模式初始化：实时条件 > 排轴 > 普通
         # 实时条件优先：启用时自动忽略普通排轴
-        self.cond_rotation_enabled = task.get_battle_config("启用实时条件", False)
+        self.cond_rotation_enabled = task.get_battle_config(KEY_COND_ENABLED, False)
         self.rotation_enabled = False
         self.rotation_active = True
         self._cond_iter = None
@@ -258,7 +264,7 @@ class AutoCombatLogic:
         self._pending_skill_token = None
 
         if self.cond_rotation_enabled:
-            raw_ast = task.get_battle_config("实时条件序列", [])
+            raw_ast = task.get_battle_config(KEY_COND_SEQUENCE, [])
             self.cond_ast, warnings = normalize_ast(raw_ast)
             for w in warnings:
                 task.log_info(f"实时条件配置警告: {w}")
@@ -267,8 +273,8 @@ class AutoCombatLogic:
                 self.cond_rotation_enabled = False
 
         # 立即释放开关（仅在实时条件启用时生效）
-        self.instant_ult_enabled = self.cond_rotation_enabled and task.get_battle_config("立即释放终结技", False)
-        self.instant_link_enabled = self.cond_rotation_enabled and task.get_battle_config("立即释放连携技", False)
+        self.instant_ult_enabled = self.cond_rotation_enabled and task.get_battle_config(KEY_INSTANT_ULT, False)
+        self.instant_link_enabled = self.cond_rotation_enabled and task.get_battle_config(KEY_INSTANT_LINK, False)
 
         if self.cond_rotation_enabled:
             task.log_info(f"实时条件已启用，AST 节点数={len(self.cond_ast)}（忽略普通排轴）")

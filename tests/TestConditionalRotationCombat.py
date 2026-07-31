@@ -219,21 +219,17 @@ class TestConditionalRotationCombat(unittest.TestCase):
 
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
-    def test_instant_release_disabled_when_rotation_off(self, _mu, _md):
-        """实时条件回退普通模式时，立即释放开关不生效。"""
+    def test_conditional_rotation_sleep_truncated_by_deadline(self, _mu, _md):
         cfg = {
             "启用实时条件": True,
-            "实时条件序列": [],  # 空 → 回退普通
-            "立即释放终结技": True,
+            "实时条件序列": ["sleep_5"],
             "技能释放": ["1", "2", "3"],
             "启动技能点数": 2,
         }
-        task = _FakeTask(cfg, ults=[2], link=False, skill=3)
+        task = _FakeTask(cfg, ults=[], link=False, skill=0)
         logic = AutoCombatLogic(task)
-        logic.run(start_sleep=0)
-        # 回退普通模式后，立即释放开关被禁用；普通模式自身的 use_ult 仍可能触发
-        self.assertFalse(logic.cond_rotation_enabled)
-        self.assertFalse(logic.instant_ult_enabled)
+        result = logic.run(start_sleep=0, deadline=1.0)
+        self.assertFalse(result)
 
 
 if __name__ == "__main__":

@@ -89,6 +89,14 @@ class TestNormalizeAst(unittest.TestCase):
         self.assertEqual(ast, [{"if": {"all": ["ult1"]}, "then": ["1"]}])
         self.assertTrue(any("非法条件原子" in x for x in w))
 
+    def test_normalize_all_fully_invalid_dropped(self):
+        ast, w = normalize_ast([{"if": {"all": ["bad1", "bad2"]}, "then": ["1"]}])
+        self.assertEqual(ast, [])
+
+    def test_normalize_any_fully_invalid_kept_empty(self):
+        ast, w = normalize_ast([{"if": {"any": ["bad1", "bad2"]}, "then": ["1"]}])
+        self.assertEqual(ast, [{"if": {"any": []}, "then": ["1"]}])
+
 
 class TestEvalCond(unittest.TestCase):
     def test_eval_atom_ult(self):

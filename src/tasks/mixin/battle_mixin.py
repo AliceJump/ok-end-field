@@ -38,6 +38,10 @@ from src.core.BattleConfig import (
     BATTLE_CONFIG_TYPE,
     BattleConfigManager,
     DEFAULT_BATTLE_CONFIG,
+    KEY_COND_ENABLED,
+    KEY_COND_SEQUENCE,
+    KEY_INSTANT_LINK,
+    KEY_INSTANT_ULT,
 )
 from src.core.global_config_store import get_global_config
 
@@ -94,8 +98,8 @@ class BattleMixin(BaseEfTask):
         self.config_type.update(BATTLE_CONFIG_TYPE)
         self.config_type[BATTLE_CONFIG_MODE_KEY] = battle_mode_type
 
-    # 实时条件相关配置始终使用全局值
-    _GLOBAL_ONLY_KEYS = {"启用实时条件", "实时条件序列", "立即释放终结技", "立即释放连携技"}
+    # 实时条件相关配置始终使用全局值（设计决策：仅全局配置）
+    _GLOBAL_ONLY_KEYS = frozenset({KEY_COND_ENABLED, KEY_COND_SEQUENCE, KEY_INSTANT_ULT, KEY_INSTANT_LINK})
 
     def get_battle_config(self, key: str, default=None):
         global_value = self.battle_config_manager.get(key, DEFAULT_BATTLE_CONFIG.get(key, default))
