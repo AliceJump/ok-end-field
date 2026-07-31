@@ -422,7 +422,23 @@ class BattleMixin(BaseEfTask):
             else:
                 consecutive_matches = 0
         return False
+    
+    def is_battle_settlement(self) -> bool:
+        """
+        判断是否进入战斗结算状态
+        """
 
+        return any((
+            self.find_feature(feature=fL.b),
+            self.find_feature(feature=fL.battle_space_ok),
+            self.find_feature(feature=fL.battle_gather_ok),
+            self.find_feature(feature=fL.restart_battle),
+            self.find_feature(
+                feature=fL.restart_battle,
+                box=self.box_of_screen(0.550, 0.896, 0.574, 0.943)
+            ),
+        ))
+    
     def auto_battle(self, no_battle: bool = False):
         """
         自动战斗主循环
@@ -444,9 +460,7 @@ class BattleMixin(BaseEfTask):
             if last_battle_time:
                 battle_elapsed = self.active_time() - last_battle_time
                 settlement = self.wait_until(
-                    lambda: (
-                        self.find_feature(feature=fL.battle_space_left)
-                    ),
+                    self.is_battle_settlement,
                     time_out=max(0.01, 15 - battle_elapsed),
                     raise_if_not_found=False,
                 )
