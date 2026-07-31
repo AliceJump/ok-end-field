@@ -188,6 +188,53 @@ class TestConditionalRotationCombat(unittest.TestCase):
         logic.run(start_sleep=0)
         self.assertIn("ult_2", task.actions)
 
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_instant_ult_release_when_no_cond_action(self, _mu, _md):
+        """条件不满足、本帧无动作时，立即释放终结技生效。"""
+        cfg = {
+            "启用条件排轴": True,
+            "条件排轴序列": [{"if": "link", "then": ["e"]}],  # link 不可用 → 无动作
+            "立即释放终结技": True,
+        }
+        task = _FakeTask(cfg, ults=[2], link=False, skill=3)
+        logic = AutoCombatLogic(task)
+        logic.run(start_sleep=0)
+        self.assertIn("ult_2", task.actions)
+        self.assertNotIn("e", task.actions)
+
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_instant_link_release_when_no_cond_action(self, _mu, _md):
+        """条件不满足、本帧无动作时，立即释放连携技生效。"""
+        cfg = {
+            "启用条件排轴": True,
+            "条件排轴序列": [{"if": "ult2", "then": ["ult_2"]}],  # ult2 不可用 → 无动作
+            "立即释放连携技": True,
+        }
+        task = _FakeTask(cfg, ults=(), link=True, skill=3)
+        logic = AutoCombatLogic(task)
+        logic.run(start_sleep=0)
+        self.assertIn("e", task.actions)
+
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_instant_release_disabled_when_rotation_off(self, _mu, _md):
+        """条件排轴回退普通模式时，立即释放开关不生效。"""
+        cfg = {
+            "启用条件排轴": True,
+            "条件排轴序列": [],  # 空 → 回退普通
+            "立即释放终结技": True,
+            "技能释放": ["1", "2", "3"],
+            "启动技能点数": 2,
+        }
+        task = _FakeTask(cfg, ults=[2], link=False, skill=3)
+        logic = AutoCombatLogic(task)
+        logic.run(start_sleep=0)
+        # 回退普通模式后，立即释放开关被禁用；普通模式自身的 use_ult 仍可能触发
+        self.assertFalse(logic.cond_rotation_enabled)
+        self.assertFalse(logic.instant_ult_enabled)
+
 
 if __name__ == "__main__":
     unittest.main()

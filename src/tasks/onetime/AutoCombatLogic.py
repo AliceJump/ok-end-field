@@ -43,6 +43,9 @@ class AutoCombatLogic:
         self.cond_ast: list = []
         self._cond_iter = None
         self._cond_probe = None
+        # 立即释放开关（条件排轴本帧无动作时生效）
+        self.instant_ult_enabled = False
+        self.instant_link_enabled = False
 
     def _sync_normal_attack_hold(self):
         if self._normal_attack_hold_enabled:
@@ -172,7 +175,7 @@ class AutoCombatLogic:
             return True, ""
         return False, ""
 
-    def _do_conditional_rotation_step(self, deadline) -> str:
+    def _do_conditional_rotation_step(self, deadline) -> tuple[str, bool]:
         """执行条件排轴的一个动作 token。
 
         - 生成器耗尽（一轮遍历完）→ 重建（新一轮，重新求值所有条件）。
@@ -180,7 +183,9 @@ class AutoCombatLogic:
         - 无超时回退：持续运行至战斗结束。
 
         Returns:
-            signal: "" 正常 / "break" / "return_false"（来自 normal_ 内嵌循环）。
+            tuple[signal, had_action]:
+                signal —— "" 正常 / "break" / "return_false"（来自 normal_ 内嵌循环）。
+                had_action —— 本帧是否产出了条件动作（供立即释放判断）。
         """
         if self._cond_iter is None:
             self._cond_probe = _TaskProbe(self.task)
@@ -191,11 +196,24 @@ class AutoCombatLogic:
         except StopIteration:
             # 新一轮：重新求值（场上状态可能已变）；本帧不动作，下帧再取
             self._cond_iter = iter_actions(self.cond_ast, self._cond_probe)
-            return ""
+            return "", False
 
         success, signal = self._exec_rotation_token(token, deadline)
         # 条件排轴：生成器已 next 即「推进」，不维护 last_rotation_ok_time，不超时回退
-        return signal
+        return signal, True
+
+    def _do_instant_release(self):
+        """本帧无条件动作时，按开关尝试立即释放终结技 / 连携技。
+
+        优先级：终结技 > 连携技。与 _do_normal_combat_frame 一致使用无参检测+释放。
+        """
+        task = self.task
+        if self.instant_ult_enabled and task.use_ult():
+            task.log_info("立即释放终结技")
+            return
+        if self.instant_link_enabled and task.use_link_skill():
+            task.log_info("立即释放连携技")
+            return
 
     def run(self, start_sleep: float = None, no_battle: bool = False, deadline: float = None):
         self._last_exit_check_time = 0
@@ -231,8 +249,16 @@ class AutoCombatLogic:
                 task.log_info("条件排轴序列为空或全部非法，回退普通模式")
                 self.cond_rotation_enabled = False
 
+        # 立即释放开关（仅在条件排轴启用时生效）
+        self.instant_ult_enabled = self.cond_rotation_enabled and task.get_battle_config("立即释放终结技", False)
+        self.instant_link_enabled = self.cond_rotation_enabled and task.get_battle_config("立即释放连携技", False)
+
         if self.cond_rotation_enabled:
             task.log_info(f"条件排轴已启用，AST 节点数={len(self.cond_ast)}（忽略普通排轴）")
+            if self.instant_ult_enabled:
+                task.log_info("立即释放终结技 已启用")
+            if self.instant_link_enabled:
+                task.log_info("立即释放连携技 已启用")
         else:
             self.rotation_enabled = task.get_battle_config("启用排轴", False)
             if self.rotation_enabled:
@@ -294,11 +320,14 @@ class AutoCombatLogic:
 
                 # ── 模式分发：条件排轴 > 普通排轴 > 普通 ──────────────
                 if self.cond_rotation_enabled:
-                    signal = self._do_conditional_rotation_step(deadline)
+                    signal, had_action = self._do_conditional_rotation_step(deadline)
                     if signal == "return_false":
                         return False
                     if signal == "break":
                         break
+                    # 本帧无条件动作产出时，按开关尝试立即释放终结技 / 连携技
+                    if not had_action:
+                        self._do_instant_release()
                 elif self.rotation_enabled and self.rotation_active:
                     if task.active_time() - self.last_rotation_ok_time >= 5:
                         self.rotation_active = False

@@ -10,6 +10,9 @@ DEFAULT_BATTLE_CONFIG = {
     # 「实时条件」(条件排轴) —— 与「普通 / 排轴」完全正交，由独立面板编辑
     "启用条件排轴": False,
     "条件排轴序列": [],
+    # 立即释放：当一轮条件动作跑完、本帧无动作时，按开关尝试释放
+    "立即释放终结技": False,
+    "立即释放连携技": False,
 }
 
 BATTLE_CONFIG_NAME = "Battle Config"
@@ -24,6 +27,9 @@ BATTLE_CONFIG_TYPE = {
     # 这两个 key 由「实时条件」面板接管，不让 ConfigCard 自动渲染
     "启用条件排轴": {"hidden": True},
     "条件排轴序列": {"hidden": True},
+    # 这两个 key 同样由「实时条件」面板接管
+    "立即释放终结技": {"hidden": True},
+    "立即释放连携技": {"hidden": True},
 }
 BATTLE_CONFIG_DESCRIPTION = {
     "技能释放": (
@@ -57,6 +63,14 @@ BATTLE_CONFIG_DESCRIPTION = {
     "条件排轴序列": (
         "实时条件的结构化序列（JSON AST）。\n"
         "由「实时条件」面板编辑，不直接手写。"
+    ),
+    "立即释放终结技": (
+        "在没有运行任何条件动作时生效\n"
+        "当终结技可释放时立刻释放终结技"
+    ),
+    "立即释放连携技": (
+        "在没有运行任何条件动作时生效\n"
+        "当连携技可释放时立刻释放连携技"
     ),
 }
 

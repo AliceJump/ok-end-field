@@ -18,15 +18,15 @@ class TestFormatters(unittest.TestCase):
 
     @patch("src.gui.ConditionalRotationPanel._tr", side_effect=lambda x: x)
     def test_fmt_action(self, _):
-        self.assertEqual(_fmt_action("1"), "战技1")
+        self.assertEqual(_fmt_action("1"), "战技 1")
         self.assertEqual(_fmt_action("e"), "连携技")
-        self.assertEqual(_fmt_action("ult_2"), "终极技2")
+        self.assertEqual(_fmt_action("ult_2"), "终结技 2")
         self.assertEqual(_fmt_action("sleep_5"), "等待5秒")
         self.assertEqual(_fmt_action("normal_3"), "普通3秒")
 
     @patch("src.gui.ConditionalRotationPanel._tr", side_effect=lambda x: x)
     def test_fmt_atom(self, _):
-        self.assertEqual(_fmt_atom("ult1"), "终极技1可用")
+        self.assertEqual(_fmt_atom("ult1"), "终结技 1 可用")
         self.assertEqual(_fmt_atom("link"), "连携技可用")
         self.assertEqual(_fmt_atom("skill>=2"), "技力≥2")
 
@@ -40,7 +40,7 @@ class TestFormatters(unittest.TestCase):
     def test_fmt_cond_all_any(self, _):
         typ, desc = _fmt_cond({"all": ["ult1", "link"]})
         self.assertEqual(typ, "全部满足")
-        self.assertEqual(desc, "终极技1可用;连携技可用")
+        self.assertEqual(desc, "终结技 1 可用;连携技可用")
 
         typ, desc = _fmt_cond({"any": ["skill>=2"]})
         self.assertEqual(typ, "任一满足")
@@ -48,7 +48,7 @@ class TestFormatters(unittest.TestCase):
 
     @patch("src.gui.ConditionalRotationPanel._tr", side_effect=lambda x: x)
     def test_fmt_actions(self, _):
-        self.assertEqual(_fmt_actions(["1", "e", "ult_2"]), "战技1;连携技;终极技2")
+        self.assertEqual(_fmt_actions(["1", "e", "ult_2"]), "战技 1;连携技;终结技 2")
         self.assertEqual(_fmt_actions([]), "无")
         self.assertEqual(_fmt_actions("notalist"), "无")
 
@@ -98,13 +98,14 @@ class TestConditionEditDialog(unittest.TestCase):
         self.assertNotIn("else", result)
 
     @patch("src.gui.ConditionalRotationPanel._tr", side_effect=lambda x: x)
-    def test_dialog_roundtrip_with_else(self, _):
+    def test_dialog_drops_else(self, _):
+        # 编辑弹窗不再支持 else：传入含 else 的 node，to_node 应丢弃 else
         node = {"if": {"all": ["ult1", "link"]}, "then": ["1", "2"], "else": ["3"]}
         dlg = _ConditionEditDialog(node, self.parent)
         result = dlg.to_node()
         self.assertEqual(result["if"], {"all": ["ult1", "link"]})
         self.assertEqual(result["then"], ["1", "2"])
-        self.assertEqual(result["else"], ["3"])
+        self.assertNotIn("else", result)
 
     @patch("src.gui.ConditionalRotationPanel._tr", side_effect=lambda x: x)
     def test_dialog_skill_cond(self, _):

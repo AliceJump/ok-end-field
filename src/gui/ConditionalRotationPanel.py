@@ -1,10 +1,14 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QPoint, Signal
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtCore import Qt, QPoint, QSize, Signal
+from PySide6.QtWidgets import (
+    QAbstractItemView, QFrame, QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
+    QListView, QVBoxLayout, QWidget,
+)
 from qfluentwidgets import (
-    Action, BodyLabel, ComboBox, FluentIcon, IndicatorPosition, MessageBox,
-    MessageBoxBase, PushButton, RoundMenu, SpinBox, SubtitleLabel, SwitchButton,
+    Action, ComboBox, FluentIcon, IndicatorPosition, MessageBox, MessageBoxBase,
+    PushButton, RoundMenu, SpinBox, SubtitleLabel, SwitchButton,
+    TransparentToolButton,
 )
 from ok import og
 from ok.gui.common.design_system import DesignToken
@@ -21,25 +25,25 @@ def _tr(text: str) -> str:
 
 # ── 友好名映射 ───────────────────────────────────────────
 _ACTION_DISPLAY = {
-    "1": "战技1", "2": "战技2", "3": "战技3", "4": "战技4", "e": "连携技",
-    "ult_1": "终极技1", "ult_2": "终极技2", "ult_3": "终极技3", "ult_4": "终极技4",
+    "1": "战技 1", "2": "战技 2", "3": "战技 3", "4": "战技 4", "e": "连携技",
+    "ult_1": "终结技 1", "ult_2": "终结技 2", "ult_3": "终结技 3", "ult_4": "终结技 4",
 }
 _ATOM_DISPLAY = {
-    "ult1": "终极技1可用", "ult2": "终极技2可用",
-    "ult3": "终极技3可用", "ult4": "终极技4可用",
+    "ult1": "终结技 1 可用", "ult2": "终结技 2 可用",
+    "ult3": "终结技 3 可用", "ult4": "终结技 4 可用",
     "link": "连携技可用",
 }
 
 _ACTION_OPTIONS = [  # (token, 显示名)
-    ("1", "战技1"), ("2", "战技2"), ("3", "战技3"), ("4", "战技4"), ("e", "连携技"),
-    ("ult_1", "终极技1"), ("ult_2", "终极技2"), ("ult_3", "终极技3"), ("ult_4", "终极技4"),
+    ("1", "战技 1"), ("2", "战技 2"), ("3", "战技 3"), ("4", "战技 4"), ("e", "连携技"),
+    ("ult_1", "终结技 1"), ("ult_2", "终结技 2"), ("ult_3", "终结技 3"), ("ult_4", "终结技 4"),
 ]
 _SLEEP_KEY = "__sleep__"
 _NORMAL_KEY = "__normal__"
 
 _ATOM_OPTIONS = [  # (原子值, 显示名)
-    ("ult1", "终极技1可用"), ("ult2", "终极技2可用"),
-    ("ult3", "终极技3可用"), ("ult4", "终极技4可用"), ("link", "连携技可用"),
+    ("ult1", "终结技 1 可用"), ("ult2", "终结技 2 可用"),
+    ("ult3", "终结技 3 可用"), ("ult4", "终结技 4 可用"), ("link", "连携技可用"),
 ]
 _SKILL_KEY = "__skill__"
 
@@ -54,8 +58,29 @@ QFrame#condCard[selected="true"] {
     background-color: rgba(0, 120, 215, 0.08);
 }
 QFrame#divider {
-    color: rgba(255, 255, 255, 0.06);
-    background-color: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.08);
+    background-color: rgba(255, 255, 255, 0.08);
+}
+QLabel#condLine, QLabel#actionLine {
+    color: rgba(255, 255, 255, 0.90);
+    font-size: 14px;
+}
+"""
+
+_LIST_STYLE = """
+QListWidget {
+    background: transparent;
+    border: none;
+    outline: none;
+}
+QListWidget::item {
+    background: transparent;
+    padding: 0px;
+    margin: 0px;
+}
+QListWidget::item:selected {
+    background: rgba(0, 120, 215, 0.12);
+    border-radius: 4px;
 }
 """
 
@@ -127,8 +152,8 @@ class _ActionRow(QWidget):
         self.spin.valueChanged.connect(lambda *_: self.changed.emit())
         row.addWidget(self.spin)
 
-        del_btn = PushButton(FluentIcon.DELETE, "")
-        del_btn.setFixedHeight(28)
+        del_btn = TransparentToolButton(FluentIcon.DELETE)
+        del_btn.setFixedSize(30, 30)
         del_btn.setToolTip(_tr("删除"))
         del_btn.clicked.connect(lambda: self.remove_requested.emit(self))
         row.addWidget(del_btn)
@@ -169,57 +194,72 @@ class _ActionRow(QWidget):
         return data if isinstance(data, str) else "1"
 
 
-# ── 弹窗内：动作列表编辑 ─────────────────────────────────
+# ── 弹窗内：动作列表编辑（QListWidget 支持拖拽排序） ──────
 class _ActionListEditor(QWidget):
-    """弹窗内动作列表编辑：标签 + 动作行列表 + 添加按钮。"""
+    """弹窗内动作列表编辑：标签 + 可拖拽列表 + 添加按钮。"""
 
     changed = Signal()
 
     def __init__(self, label: str, parent=None):
         super().__init__(parent)
-        self._rows: list[_ActionRow] = []
         self._layout = QVBoxLayout(self)
         self._layout.setContentsMargins(0, 0, 0, 0)
-        self._layout.setSpacing(4)
+        self._layout.setSpacing(6)
 
         self.label = QLabel(label)
         self.label.setStyleSheet("color: rgba(255,255,255,0.6); font-size: 12px;")
         self._layout.addWidget(self.label)
 
-        self._rows_box = QVBoxLayout()
-        self._rows_box.setSpacing(4)
-        self._layout.addLayout(self._rows_box)
+        self._list = QListWidget()
+        self._list.setDragDropMode(QAbstractItemView.InternalMove)
+        self._list.setSelectionMode(QAbstractItemView.SingleSelection)
+        self._list.setDefaultDropAction(Qt.MoveAction)
+        self._list.setMovement(QListView.Static)
+        self._list.setFrameShape(QFrame.NoFrame)
+        self._list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._list.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self._list.setSpacing(2)
+        self._list.setStyleSheet(_LIST_STYLE)
+        self._list.model().rowsMoved.connect(lambda *_: self.changed.emit())
+        self._layout.addWidget(self._list)
 
         self.add_btn = PushButton(FluentIcon.ADD, _tr("添加动作"))
         self.add_btn.clicked.connect(lambda: self._add_row("1"))
         self._layout.addWidget(self.add_btn)
 
     def load(self, tokens: list):
-        for row in self._rows:
-            self._rows_box.removeWidget(row)
-            row.deleteLater()
-        self._rows = []
+        self._list.clear()
         for t in (tokens if isinstance(tokens, list) else []):
             self._add_row(t, emit=False)
 
     def _add_row(self, token: str, emit: bool = True):
         row = _ActionRow(token)
         row.changed.connect(self.changed)
-        row.remove_requested.connect(self._remove_row)
-        self._rows_box.addWidget(row)
-        self._rows.append(row)
+        row.remove_requested.connect(self._remove_row_widget)
+        item = QListWidgetItem()
+        # 固定行高，确保内容完整可见
+        item.setSizeHint(QSize(0, 36))
+        self._list.addItem(item)
+        self._list.setItemWidget(item, row)
         if emit:
             self.changed.emit()
 
-    def _remove_row(self, row: _ActionRow):
-        if row in self._rows:
-            self._rows.remove(row)
-            self._rows_box.removeWidget(row)
-            row.deleteLater()
-            self.changed.emit()
+    def _remove_row_widget(self, row_widget: _ActionRow):
+        for i in range(self._list.count()):
+            item = self._list.item(i)
+            if self._list.itemWidget(item) is row_widget:
+                self._list.takeItem(i)
+                row_widget.deleteLater()
+                self.changed.emit()
+                return
 
     def to_list(self) -> list:
-        return [row.to_token() for row in self._rows]
+        result = []
+        for i in range(self._list.count()):
+            row = self._list.itemWidget(self._list.item(i))
+            if row is not None:
+                result.append(row.to_token())
+        return result
 
 
 # ── 弹窗内：条件编辑器 ───────────────────────────────────
@@ -312,8 +352,8 @@ class _ConditionEditor(QWidget):
         spin.valueChanged.connect(lambda *_: self.changed.emit())
         self._apply_atom_value(combo, spin, value)
 
-        del_btn = PushButton(FluentIcon.DELETE, "")
-        del_btn.setFixedHeight(28)
+        del_btn = TransparentToolButton(FluentIcon.DELETE)
+        del_btn.setFixedSize(30, 30)
         del_btn.setToolTip(_tr("删除条件"))
         del_btn.clicked.connect(lambda: self._remove_atom(widget))
 
@@ -396,8 +436,6 @@ class _ConditionEditDialog(MessageBoxBase):
         node = node if isinstance(node, dict) else {}
         cond = node.get("if", "link")
         then_nodes = node.get("then", []) if isinstance(node.get("then"), list) else []
-        else_nodes = node.get("else", None)
-        has_else = else_nodes is not None
 
         self.titleLabel = SubtitleLabel(_tr("编辑条件块"), self)
         self.viewLayout.addWidget(self.titleLabel)
@@ -409,31 +447,14 @@ class _ConditionEditDialog(MessageBoxBase):
         self.then_editor.load(then_nodes)
         self.viewLayout.addWidget(self.then_editor)
 
-        self.else_editor = _ActionListEditor(_tr("否则："))
-        self.else_editor.load(else_nodes if else_nodes is not None else [])
-        self._has_else = has_else
-        self.else_editor.setVisible(has_else)
-        self.viewLayout.addWidget(self.else_editor)
-
-        self.add_else_btn = PushButton(_tr("添加「否则」分支"))
-        self.add_else_btn.clicked.connect(self._toggle_else)
-        self.add_else_btn.setVisible(not has_else)
-        self.viewLayout.addWidget(self.add_else_btn)
-
         self.yesButton.setText(_tr("确定"))
         self.cancelButton.setText(_tr("取消"))
-        self.widget.setMinimumWidth(420)
-
-    def _toggle_else(self):
-        self._has_else = True
-        self.else_editor.setVisible(True)
-        self.add_else_btn.setVisible(False)
+        # 固定 centerWidget 宽度 + 预计算尺寸，避免 exec() 时尺寸跳变闪屏
+        self.widget.setFixedWidth(460)
+        self.widget.adjustSize()
 
     def to_node(self) -> dict:
-        result = {"if": self.cond_editor.to_cond(), "then": self.then_editor.to_list()}
-        if self._has_else:
-            result["else"] = self.else_editor.to_list()
-        return result
+        return {"if": self.cond_editor.to_cond(), "then": self.then_editor.to_list()}
 
 
 # ── 只读显示卡片 ─────────────────────────────────────────
@@ -459,16 +480,16 @@ class _ConditionDisplayCard(QFrame):
         layout = self.layout()
         if layout is None:
             layout = QVBoxLayout(self)
-            layout.setContentsMargins(10, 6, 10, 6)
-            layout.setSpacing(0)
+            layout.setContentsMargins(14, 10, 14, 10)
+            layout.setSpacing(8)
 
         node = self._node if isinstance(self._node, dict) else {}
         cond = node.get("if", "link")
         then_nodes = node.get("then", [])
-        else_nodes = node.get("else", None)
 
         type_label, cond_desc = _fmt_cond(cond)
         self.cond_label = QLabel(f"{type_label}  {cond_desc}  {_tr('时')}")
+        self.cond_label.setObjectName("condLine")
         self.cond_label.setWordWrap(True)
         layout.addWidget(self.cond_label)
 
@@ -479,9 +500,8 @@ class _ConditionDisplayCard(QFrame):
         layout.addWidget(divider)
 
         action_text = _tr("运行") + " " + _fmt_actions(then_nodes)
-        if else_nodes is not None:
-            action_text += f"   {_tr('否则')} " + _fmt_actions(else_nodes)
         self.action_label = QLabel(action_text)
+        self.action_label.setObjectName("actionLine")
         self.action_label.setWordWrap(True)
         layout.addWidget(self.action_label)
 
@@ -511,6 +531,7 @@ class ConditionalRotationPanel(QWidget):
     """「实时条件」(条件排轴) 可视化面板。
 
     - 标题行：LabelAndWidget + SwitchButton（文字「是/否」跟随语言）。
+    - 立即释放终结技 / 立即释放连携技 两个开关行。
     - 工具栏：添加 / 编辑 / 删除 / 清空（删除与清空二次确认）。
     - 卡片流：只读显示卡片（两行：条件行 + 动作行），右键弹操作菜单。
     - 编辑经弹窗（_ConditionEditDialog）完成。
@@ -533,7 +554,7 @@ class ConditionalRotationPanel(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
 
-        # 标题行
+        # 标题行：实时条件
         header = LabelAndWidget(
             "实时条件",
             "根据实时情况释放技能\n启用时自动忽略排轴配置",
@@ -541,9 +562,33 @@ class ConditionalRotationPanel(QWidget):
         self.switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
         self.switch.setOnText(_tr("是"))
         self.switch.setOffText(_tr("否"))
-        self.switch.checkedChanged.connect(self._on_switch_changed)
+        self.switch.checkedChanged.connect(lambda c: self._set_config("启用条件排轴", c))
         header.add_widget(self.switch, stretch=0)
         layout.addWidget(header)
+
+        # 立即释放终结技
+        ult_row = LabelAndWidget(
+            "立即释放终结技",
+            "在没有运行任何条件动作时生效\n当终结技可释放时立刻释放终结技",
+        )
+        self.ult_switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
+        self.ult_switch.setOnText(_tr("是"))
+        self.ult_switch.setOffText(_tr("否"))
+        self.ult_switch.checkedChanged.connect(lambda c: self._set_config("立即释放终结技", c))
+        ult_row.add_widget(self.ult_switch, stretch=0)
+        layout.addWidget(ult_row)
+
+        # 立即释放连携技
+        link_row = LabelAndWidget(
+            "立即释放连携技",
+            "在没有运行任何条件动作时生效\n当连携技可释放时立刻释放连携技",
+        )
+        self.link_switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
+        self.link_switch.setOnText(_tr("是"))
+        self.link_switch.setOffText(_tr("否"))
+        self.link_switch.checkedChanged.connect(lambda c: self._set_config("立即释放连携技", c))
+        link_row.add_widget(self.link_switch, stretch=0)
+        layout.addWidget(link_row)
 
         # 工具栏 + 卡片流
         body = QWidget()
@@ -589,8 +634,9 @@ class ConditionalRotationPanel(QWidget):
     # -------------------------------------------------------------- 数据绑定
     def _load(self):
         self._loading = True
-        enabled = bool(self.config.get("启用条件排轴", False))
-        self.switch.setChecked(enabled)
+        self.switch.setChecked(bool(self.config.get("启用条件排轴", False)))
+        self.ult_switch.setChecked(bool(self.config.get("立即释放终结技", False)))
+        self.link_switch.setChecked(bool(self.config.get("立即释放连携技", False)))
         raw_ast = self.config.get("条件排轴序列", [])
         clean_ast, warnings = normalize_ast(raw_ast)
         for w in warnings:
@@ -682,8 +728,10 @@ class ConditionalRotationPanel(QWidget):
             self._notify_resize()
             self._save()
 
-    def _on_switch_changed(self, checked: bool):
-        self.config["启用条件排轴"] = checked
+    def _set_config(self, key: str, value):
+        if self._loading:
+            return
+        self.config[key] = value
 
     # -------------------------------------------------------------- 写盘 / 布局
     def _save(self):
