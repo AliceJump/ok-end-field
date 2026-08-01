@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, QPoint, QSize, Signal
+from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QSize, Qt, Signal
 from PySide6.QtWidgets import (
-    QAbstractItemView, QDoubleSpinBox, QFrame, QHBoxLayout, QLabel,
-    QListWidget, QListWidgetItem, QListView, QScrollArea, QVBoxLayout, QWidget,
+    QAbstractItemView, QDialog, QDoubleSpinBox, QFrame, QGraphicsOpacityEffect,
+    QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QListView,
+    QVBoxLayout, QWidget,
 )
 from qfluentwidgets import (
     Action, ComboBox, FluentIcon, IndicatorPosition,
@@ -587,6 +588,7 @@ class _ConditionEditDialog(MessageBoxBase):
 
     def __init__(self, node: dict, parent=None):
         super().__init__(parent)
+        self.widget.hide()
         self.setUpdatesEnabled(False)
         self.setWindowTitle(_tr("编辑条件块"))
         node = node if isinstance(node, dict) else {}
@@ -608,6 +610,41 @@ class _ConditionEditDialog(MessageBoxBase):
         self.widget.setFixedWidth(460)
         self.widget.adjustSize()
         self.setUpdatesEnabled(True)
+        self.widget.show()
+
+    def showEvent(self, event):
+        opacityEffect = QGraphicsOpacityEffect(self.widget)
+        self.widget.setGraphicsEffect(opacityEffect)
+        opacityEffect.setOpacity(0.0)
+        QDialog.showEvent(self, event)
+        self.widget.adjustSize()
+        ani = QPropertyAnimation(opacityEffect, b'opacity', self)
+        ani.setStartValue(0.0)
+        ani.setEndValue(1.0)
+        ani.setDuration(150)
+        ani.setEasingCurve(QEasingCurve.InSine)
+        ani.finished.connect(lambda: self._onShowAniFinished())
+        ani.start()
+
+    def _onShowAniFinished(self):
+        self.widget.setGraphicsEffect(None)
+        self.setShadowEffect()
+
+    def done(self, code):
+        self.widget.setGraphicsEffect(None)
+        opacityEffect = QGraphicsOpacityEffect(self.widget)
+        self.widget.setGraphicsEffect(opacityEffect)
+        ani = QPropertyAnimation(opacityEffect, b'opacity', self)
+        ani.setStartValue(1.0)
+        ani.setEndValue(0.0)
+        ani.setDuration(100)
+        ani.setEasingCurve(QEasingCurve.InSine)
+        ani.finished.connect(lambda c=code: self._onCloseAniFinished(c))
+        ani.start()
+
+    def _onCloseAniFinished(self, code):
+        self.widget.setGraphicsEffect(None)
+        QDialog.done(self, code)
 
     def to_node(self) -> dict:
         return {"if": self.cond_editor.to_cond(), "then": self.then_editor.to_list()}
@@ -703,21 +740,27 @@ class _ConditionListEditDialog(MessageBoxBase):
         self.titleLabel = SubtitleLabel(_tr("实时条件"), self)
         self.viewLayout.addWidget(self.titleLabel)
 
-        # 卡片滚动区
-        self._scroll = QScrollArea()
-        self._scroll.setWidgetResizable(True)
-        self._scroll.setFrameShape(QFrame.NoFrame)
-        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self._scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
-        self._scroll.setMinimumHeight(200)
-
-        self._scroll_widget = QWidget()
-        self._scroll_widget.setStyleSheet("background-color: #2b2b2b;")
-        self._cards_box = QVBoxLayout(self._scroll_widget)
-        self._cards_box.setContentsMargins(0, 0, 0, 0)
-        self._cards_box.setSpacing(6)
-        self._scroll.setWidget(self._scroll_widget)
-        self.viewLayout.addWidget(self._scroll)
+        # 卡片列表（QListWidget viewport 跟随父级渲染管线，不会割裂）
+        self._card_list = QListWidget()
+        self._card_list.setSelectionMode(QAbstractItemView.NoSelection)
+        self._card_list.setFrameShape(QFrame.NoFrame)
+        self._card_list.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._card_list.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self._card_list.setSpacing(6)
+        self._card_list.setMinimumHeight(200)
+        self._card_list.setStyleSheet("""
+            QListWidget {
+                background-color: #2b2b2b;
+                border: none;
+                outline: none;
+            }
+            QListWidget::item {
+                background: transparent;
+                padding: 0px;
+                margin: 0px;
+            }
+        """)
+        self.viewLayout.addWidget(self._card_list)
 
         # 按钮行: 增删清 + 排序
         btn_row = QHBoxLayout()
@@ -751,11 +794,60 @@ class _ConditionListEditDialog(MessageBoxBase):
         self.widget.setFixedHeight(520)
         self.setUpdatesEnabled(True)
 
+    def showEvent(self, event):
+        opacityEffect = QGraphicsOpacityEffect(self.widget)
+        self.widget.setGraphicsEffect(opacityEffect)
+        opacityEffect.setOpacity(0.0)
+        QDialog.showEvent(self, event)
+        self.widget.adjustSize()
+        ani = QPropertyAnimation(opacityEffect, b'opacity', self)
+        ani.setStartValue(0.0)
+        ani.setEndValue(1.0)
+        ani.setDuration(150)
+        ani.setEasingCurve(QEasingCurve.InSine)
+        ani.finished.connect(lambda: self._onShowAniFinished())
+        ani.start()
+
+    def _onShowAniFinished(self):
+        self.widget.setGraphicsEffect(None)
+        self.setShadowEffect()  # 恢复构建时被替换的阴影
+
+    def done(self, code):
+        self.widget.setGraphicsEffect(None)  # 清除阴影
+        opacityEffect = QGraphicsOpacityEffect(self.widget)
+        self.widget.setGraphicsEffect(opacityEffect)
+        ani = QPropertyAnimation(opacityEffect, b'opacity', self)
+        ani.setStartValue(1.0)
+        ani.setEndValue(0.0)
+        ani.setDuration(100)
+        ani.setEasingCurve(QEasingCurve.InSine)
+        ani.finished.connect(lambda c=code: self._onCloseAniFinished(c))
+        ani.start()
+
+    def _onCloseAniFinished(self, code):
+        self.widget.setGraphicsEffect(None)
+        QDialog.done(self, code)
+
+    @staticmethod
+    def _est_card_height(node: dict) -> int:
+        """根据文本内容估算卡高，供 QListWidgetItem.setSizeHint 使用。"""
+        node = node if isinstance(node, dict) else {}
+        type_label, cond_desc = _fmt_cond(node.get("if", "link"))
+        cond_text = f"{type_label}  {cond_desc}  时"
+        actions = node.get("then", [])
+        action_text = "运行 " + _fmt_actions(actions)
+
+        chars_per_line = 40
+        cond_lines = max(1, -(-len(cond_text) // chars_per_line))
+        action_lines = max(1, -(-len(action_text) // chars_per_line))
+
+        line_h = 20  # 14px 字体的近似行高
+        h = 10 + cond_lines * line_h + 8 + 1 + action_lines * line_h + 10
+        return max(74, h)
+
     def _render_cards(self):
         prev_idx = self._selected_idx
-        for card in self._cards:
-            self._cards_box.removeWidget(card)
-            card.deleteLater()
+        self._card_list.clear()
         self._cards = []
         self._selected_idx = -1
 
@@ -764,10 +856,11 @@ class _ConditionListEditDialog(MessageBoxBase):
             card.selected.connect(lambda c, idx=i: self._on_card_selected(c, idx))
             card.double_clicked.connect(lambda c: self._on_edit())
             card.right_clicked.connect(self._on_card_right_clicked)
-            self._cards_box.addWidget(card)
+            item = QListWidgetItem()
+            item.setSizeHint(QSize(0, self._est_card_height(node)))
+            self._card_list.addItem(item)
+            self._card_list.setItemWidget(item, card)
             self._cards.append(card)
-
-        self._cards_box.addStretch(1)
 
         # 恢复选中
         if 0 <= prev_idx < len(self._cards):

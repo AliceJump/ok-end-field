@@ -204,7 +204,6 @@ class AutoCombatLogic:
             token = self._pending_skill_token
             self._pending_skill_frames += 1
             if self._pending_skill_frames >= self._SKILL_RETRY_MAX_FRAMES:
-                # ponytail: 15 帧（≈1.5s）仍未恢复 → 跳过该 token，推进生成器
                 self.task.log_info(f"技力不足超时 {self._pending_skill_frames} 帧，跳过战技 {token}")
                 self._pending_skill_token = None
                 self._pending_skill_frames = 0
