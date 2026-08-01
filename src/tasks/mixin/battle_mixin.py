@@ -38,6 +38,10 @@ from src.core.BattleConfig import (
     BATTLE_CONFIG_TYPE,
     BattleConfigManager,
     DEFAULT_BATTLE_CONFIG,
+    KEY_COND_ENABLED,
+    KEY_COND_SEQUENCE,
+    KEY_INSTANT_LINK,
+    KEY_INSTANT_ULT,
 )
 from src.core.global_config_store import get_global_config
 
@@ -80,7 +84,12 @@ class BattleMixin(BaseEfTask):
             "options": [BATTLE_CONFIG_MODE_GLOBAL, BATTLE_CONFIG_MODE_INDEPENDENT],
             "sub_configs": {
                 BATTLE_CONFIG_MODE_GLOBAL: [],
-                BATTLE_CONFIG_MODE_INDEPENDENT: list(DEFAULT_BATTLE_CONFIG),
+                # 实时条件的 3 个内部数据 key（序列/立即释放开关）不单独展开为行——
+                # 它们由「启用实时条件」面板承载（KEY_COND_ENABLED 渲染为面板行，随模式显隐）
+                BATTLE_CONFIG_MODE_INDEPENDENT: [
+                    key for key in DEFAULT_BATTLE_CONFIG
+                    if key not in (KEY_COND_SEQUENCE, KEY_INSTANT_ULT, KEY_INSTANT_LINK)
+                ],
             },
         }
 
