@@ -84,7 +84,12 @@ class BattleMixin(BaseEfTask):
             "options": [BATTLE_CONFIG_MODE_GLOBAL, BATTLE_CONFIG_MODE_INDEPENDENT],
             "sub_configs": {
                 BATTLE_CONFIG_MODE_GLOBAL: [],
-                BATTLE_CONFIG_MODE_INDEPENDENT: list(DEFAULT_BATTLE_CONFIG),
+                # 实时条件的 3 个内部数据 key（序列/立即释放开关）不单独展开为行——
+                # 它们由「启用实时条件」面板承载（KEY_COND_ENABLED 渲染为面板行，随模式显隐）
+                BATTLE_CONFIG_MODE_INDEPENDENT: [
+                    key for key in DEFAULT_BATTLE_CONFIG
+                    if key not in (KEY_COND_SEQUENCE, KEY_INSTANT_ULT, KEY_INSTANT_LINK)
+                ],
             },
         }
 
@@ -98,13 +103,8 @@ class BattleMixin(BaseEfTask):
         self.config_type.update(BATTLE_CONFIG_TYPE)
         self.config_type[BATTLE_CONFIG_MODE_KEY] = battle_mode_type
 
-    # 实时条件相关配置始终使用全局值（设计决策：仅全局配置）
-    _GLOBAL_ONLY_KEYS = frozenset({KEY_COND_ENABLED, KEY_COND_SEQUENCE, KEY_INSTANT_ULT, KEY_INSTANT_LINK})
-
     def get_battle_config(self, key: str, default=None):
         global_value = self.battle_config_manager.get(key, DEFAULT_BATTLE_CONFIG.get(key, default))
-        if key in self._GLOBAL_ONLY_KEYS:
-            return global_value
         raw_config_get = getattr(self, "_raw_cfg_get", None)
         if callable(raw_config_get):
             try:

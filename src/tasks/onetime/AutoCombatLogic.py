@@ -54,6 +54,9 @@ class AutoCombatLogic:
         self.instant_link_enabled = False
         # 战技失败暂存：技力不足时保留 token 下帧重试，不推进生成器
         self._pending_skill_token = None
+        self._pending_skill_frames = 0  # 已重试帧数
+
+    _SKILL_RETRY_MAX_FRAMES = 5  # 技力不足最大等待帧数（≈0.5s）
 
     def _sync_normal_attack_hold(self):
         if self._normal_attack_hold_enabled:
@@ -196,15 +199,29 @@ class AutoCombatLogic:
                 signal —— "" 正常 / "break" / "return_false"（来自 normal_ 内嵌循环）。
                 had_action —— 本帧是否产出了条件动作（供立即释放判断）。
         """
-        # 战技重试：上一帧 digit token 因技力不足失败，本帧重试同一 token
+        # 战技重试：上一帧 digit token 因技力不足失败，本帧重试同一 token（上限 15 帧）
         if self._pending_skill_token is not None:
             token = self._pending_skill_token
-            self._pending_skill_token = None
+            self._pending_skill_frames += 1
+            if self._pending_skill_frames >= self._SKILL_RETRY_MAX_FRAMES:
+                # ponytail: 15 帧（≈1.5s）仍未恢复 → 跳过该 token，推进生成器
+                self.task.log_info(f"技力不足超时 {self._pending_skill_frames} 帧，跳过战技 {token}")
+                self._pending_skill_token = None
+                self._pending_skill_frames = 0
+                # 推进生成器（不返回 had_action，让立即释放有机会触发）
+                try:
+                    next(self._cond_iter)
+                except StopIteration:
+                    self._cond_iter = iter_actions(self.cond_ast, self._cond_probe)
+                return "", False
+
+            self._pending_skill_token = None  # 先清掉，若仍失败下面会重设
             success, signal = self._exec_rotation_token(token, deadline)
             if not success and signal == "":
                 # 仍然技力不足，继续暂存等待下帧
                 self._pending_skill_token = token
                 return "", True  # had_action=True 阻断立即释放
+            self._pending_skill_frames = 0
             return signal, True
 
         if self._cond_iter is None:
@@ -222,6 +239,7 @@ class AutoCombatLogic:
         # 战技失败且非 fatal signal → 暂存重试，不推进生成器
         if not success and signal == "" and token.isdigit():
             self._pending_skill_token = token
+            self._pending_skill_frames = 0
         return signal, True
 
     def _do_instant_release(self):

@@ -3,15 +3,14 @@ from __future__ import annotations
 from PySide6.QtCore import Qt, QPoint, QSize, Signal
 from PySide6.QtWidgets import (
     QAbstractItemView, QDoubleSpinBox, QFrame, QHBoxLayout, QLabel,
-    QListWidget, QListWidgetItem, QListView, QVBoxLayout, QWidget,
+    QListWidget, QListWidgetItem, QListView, QScrollArea, QVBoxLayout, QWidget,
 )
 from qfluentwidgets import (
-    Action, ComboBox, FluentIcon, IndicatorPosition, MessageBox, MessageBoxBase,
-    PushButton, RoundMenu, SpinBox, SubtitleLabel, SwitchButton,
-    TransparentToolButton,
+    Action, ComboBox, FluentIcon, IndicatorPosition,
+    MessageBox, MessageBoxBase, PushButton, RoundMenu, SpinBox,
+    SubtitleLabel, SwitchButton, TransparentToolButton,
 )
 from ok import og
-from ok.gui.common.design_system import DesignToken
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 
 from src.core.BattleConfig import (
@@ -69,7 +68,6 @@ _CARD_STYLE = """
 QFrame#condCard {
     border: 1px solid rgba(255, 255, 255, 0.10);
     border-radius: 6px;
-    background-color: rgba(255, 255, 255, 0.03);
 }
 QFrame#condCard[selected="true"] {
     border: 1px solid rgba(0, 120, 215, 0.85);
@@ -82,6 +80,7 @@ QFrame#divider {
 QLabel#condLine, QLabel#actionLine {
     color: rgba(255, 255, 255, 0.90);
     font-size: 14px;
+    background: transparent;
 }
 """
 
@@ -620,6 +619,7 @@ class _ConditionDisplayCard(QFrame):
 
     selected = Signal(object)      # emit self
     right_clicked = Signal(object, QPoint)  # emit self, global_pos
+    double_clicked = Signal(object)  # emit self
 
     def __init__(self, node: dict, parent=None):
         super().__init__(parent)
@@ -678,237 +678,243 @@ class _ConditionDisplayCard(QFrame):
             self.selected.emit(self)
         super().mousePressEvent(event)
 
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.double_clicked.emit(self)
+        super().mouseDoubleClickEvent(event)
+
     def set_selected(self, selected: bool):
         self.setProperty("selected", selected)
         self.style().polish(self)
 
 
-# 主面板
-class ConditionalRotationPanel(QWidget):
-    """
-    实时条件面板
-    """
+# ── 条件列表编辑弹窗 ──────
+class _ConditionListEditDialog(MessageBoxBase):
+    """条件列表编辑弹窗: 卡片列表 + 工具栏, 固定高度滚动."""
 
-    def __init__(self, parent=None):
+    def __init__(self, ast: list, parent=None):
         super().__init__(parent)
-        self.config = get_global_config(BATTLE_CONFIG_NAME)
+        self.setUpdatesEnabled(False)
+        self.setWindowTitle(_tr("编辑条件列表"))
+        self._ast = [dict(n) if isinstance(n, dict) else n for n in (ast if isinstance(ast, list) else [])]
+        self._selected_idx = -1
         self._cards: list[_ConditionDisplayCard] = []
-        self._selected_card: _ConditionDisplayCard | None = None
-        self._loading = False
-        self._setup_ui()
-        self._load()
 
-    # UI
-    def _setup_ui(self):
-        self.setObjectName("ConditionalRotationPanel")
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        self.titleLabel = SubtitleLabel(_tr("实时条件"), self)
+        self.viewLayout.addWidget(self.titleLabel)
 
-        # 标题行：实时条件
-        header = LabelAndWidget(
-            KEY_COND_ENABLED,
-            BATTLE_CONFIG_DESCRIPTION[KEY_COND_ENABLED],
-        )
-        self.switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
-        self.switch.setOnText(_tr("是"))
-        self.switch.setOffText(_tr("否"))
-        self.switch.checkedChanged.connect(lambda c: self._set_config(KEY_COND_ENABLED, c))
-        header.add_widget(self.switch, stretch=0)
-        layout.addWidget(header)
+        # 卡片滚动区
+        self._scroll = QScrollArea()
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setFrameShape(QFrame.NoFrame)
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self._scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        self._scroll.setMinimumHeight(200)
 
-        # 立即释放终结技
-        ult_row = LabelAndWidget(
-            KEY_INSTANT_ULT,
-            BATTLE_CONFIG_DESCRIPTION[KEY_INSTANT_ULT],
-        )
-        self.ult_switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
-        self.ult_switch.setOnText(_tr("是"))
-        self.ult_switch.setOffText(_tr("否"))
-        self.ult_switch.checkedChanged.connect(lambda c: self._set_config(KEY_INSTANT_ULT, c))
-        ult_row.add_widget(self.ult_switch, stretch=0)
-        layout.addWidget(ult_row)
-
-        # 立即释放连携技
-        link_row = LabelAndWidget(
-            KEY_INSTANT_LINK,
-            BATTLE_CONFIG_DESCRIPTION[KEY_INSTANT_LINK],
-        )
-        self.link_switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
-        self.link_switch.setOnText(_tr("是"))
-        self.link_switch.setOffText(_tr("否"))
-        self.link_switch.checkedChanged.connect(lambda c: self._set_config(KEY_INSTANT_LINK, c))
-        link_row.add_widget(self.link_switch, stretch=0)
-        layout.addWidget(link_row)
-
-        # 工具栏 + 卡片流
-        body = QWidget()
-        body_layout = QHBoxLayout(body)
-        body_layout.setContentsMargins(
-            DesignToken.ROW_HORIZONTAL_PADDING, 8,
-            DesignToken.ROW_HORIZONTAL_PADDING, 8,
-        )
-        body_layout.setSpacing(12)
-
-        # 左侧工具栏
-        toolbar = QVBoxLayout()
-        toolbar.setSpacing(8)
-
-        self.add_btn = PushButton(FluentIcon.ADD, _tr("添加"))
-        self.add_btn.clicked.connect(self._on_add)
-        toolbar.addWidget(self.add_btn)
-
-        self.edit_btn = PushButton(FluentIcon.EDIT, _tr("编辑"))
-        self.edit_btn.clicked.connect(self._on_edit)
-        toolbar.addWidget(self.edit_btn)
-
-        self.del_btn = PushButton(FluentIcon.DELETE, _tr("删除"))
-        self.del_btn.clicked.connect(self._on_delete)
-        toolbar.addWidget(self.del_btn)
-
-        self.clear_btn = PushButton(FluentIcon.BROOM, _tr("清空"))
-        self.clear_btn.clicked.connect(self._on_clear)
-        toolbar.addWidget(self.clear_btn)
-
-        toolbar.addStretch(1)
-        body_layout.addLayout(toolbar)
-
-        # 右侧卡片流容器
-        self._cards_box = QVBoxLayout()
+        self._scroll_widget = QWidget()
+        self._scroll_widget.setStyleSheet("background-color: #2b2b2b;")
+        self._cards_box = QVBoxLayout(self._scroll_widget)
         self._cards_box.setContentsMargins(0, 0, 0, 0)
         self._cards_box.setSpacing(6)
-        self._cards_box.addStretch(1)
-        body_layout.addLayout(self._cards_box, 1)
+        self._scroll.setWidget(self._scroll_widget)
+        self.viewLayout.addWidget(self._scroll)
 
-        layout.addWidget(body)
+        # 按钮行: 增删清 + 排序
+        btn_row = QHBoxLayout()
+        btn_row.setSpacing(6)
+        self.add_btn = PushButton(FluentIcon.ADD, _tr("添加"))
+        self.add_btn.clicked.connect(self._on_add)
+        btn_row.addWidget(self.add_btn)
+        self.edit_btn = PushButton(FluentIcon.EDIT, _tr("编辑"))
+        self.edit_btn.clicked.connect(self._on_edit)
+        btn_row.addWidget(self.edit_btn)
+        self.del_btn = PushButton(FluentIcon.DELETE, _tr("删除"))
+        self.del_btn.clicked.connect(self._on_delete)
+        btn_row.addWidget(self.del_btn)
+        self.clear_btn = PushButton(FluentIcon.BROOM, _tr("清空"))
+        self.clear_btn.clicked.connect(self._on_clear)
+        btn_row.addWidget(self.clear_btn)
+        self.up_btn = PushButton(FluentIcon.UP, _tr("上移"))
+        self.up_btn.clicked.connect(lambda: self._move(-1))
+        btn_row.addWidget(self.up_btn)
+        self.down_btn = PushButton(FluentIcon.DOWN, _tr("下移"))
+        self.down_btn.clicked.connect(lambda: self._move(1))
+        btn_row.addWidget(self.down_btn)
+        btn_row.addStretch(1)
+        self.viewLayout.addLayout(btn_row)
 
-    # 数据绑定
-    def _load(self):
-        self._loading = True
-        self.switch.setChecked(bool(self.config.get(KEY_COND_ENABLED, False)))
-        self.ult_switch.setChecked(bool(self.config.get(KEY_INSTANT_ULT, False)))
-        self.link_switch.setChecked(bool(self.config.get(KEY_INSTANT_LINK, False)))
-        raw_ast = self.config.get(KEY_COND_SEQUENCE, [])
-        clean_ast, warnings = normalize_ast(raw_ast)
-        for w in warnings:
-            self._log(w)
-        self._render(clean_ast)
-        self._loading = False
-        self._notify_resize()
+        self._render_cards()
 
-    def _render(self, ast: list):
-        # 清空旧卡片
+        self.yesButton.setText(_tr("确定"))
+        self.cancelButton.setText(_tr("取消"))
+        self.widget.setMinimumWidth(520)
+        self.widget.setFixedHeight(520)
+        self.setUpdatesEnabled(True)
+
+    def _render_cards(self):
+        prev_idx = self._selected_idx
         for card in self._cards:
             self._cards_box.removeWidget(card)
             card.deleteLater()
         self._cards = []
-        self._selected_card = None
-        for node in (ast if isinstance(ast, list) else []):
-            self._add_card_widget(node, notify=False)
-        self._notify_resize()
+        self._selected_idx = -1
 
-    def _add_card_widget(self, node, notify: bool = True) -> _ConditionDisplayCard:
-        card = _ConditionDisplayCard(node)
-        card.selected.connect(self._on_card_selected)
-        card.right_clicked.connect(self._on_card_right_clicked)
-        # 插在 stretch 之前
-        self._cards_box.insertWidget(self._cards_box.count() - 1, card)
-        self._cards.append(card)
-        if notify:
-            self._notify_resize()
-        return card
+        for i, node in enumerate(self._ast):
+            card = _ConditionDisplayCard(node)
+            card.selected.connect(lambda c, idx=i: self._on_card_selected(c, idx))
+            card.double_clicked.connect(lambda c: self._on_edit())
+            card.right_clicked.connect(self._on_card_right_clicked)
+            self._cards_box.addWidget(card)
+            self._cards.append(card)
 
-    def _remove_card(self, card: _ConditionDisplayCard, notify: bool = True):
-        if card in self._cards:
-            self._cards.remove(card)
-            self._cards_box.removeWidget(card)
-            card.deleteLater()
-            if self._selected_card is card:
-                self._selected_card = None
-            if notify:
-                self._notify_resize()
+        self._cards_box.addStretch(1)
 
-    def _on_card_selected(self, card: _ConditionDisplayCard):
+        # 恢复选中
+        if 0 <= prev_idx < len(self._cards):
+            self._selected_idx = prev_idx
+            self._cards[prev_idx].set_selected(True)
+
+    def _on_card_selected(self, card: _ConditionDisplayCard, idx: int):
         for c in self._cards:
             c.set_selected(c is card)
-        self._selected_card = card
+        self._selected_idx = idx
 
     def _on_card_right_clicked(self, card: _ConditionDisplayCard, global_pos: QPoint):
-        self._on_card_selected(card)
+        for i, c in enumerate(self._cards):
+            if c is card:
+                self._on_card_selected(card, i)
+                break
         menu = RoundMenu()
         menu.addAction(Action(FluentIcon.ADD, _tr("添加"), triggered=self._on_add))
         menu.addAction(Action(FluentIcon.EDIT, _tr("编辑"), triggered=self._on_edit))
         menu.addAction(Action(FluentIcon.DELETE, _tr("删除"), triggered=self._on_delete))
         menu.exec(global_pos)
 
-    # 工具栏
     def _on_add(self):
-        # 直接添加条件块，弹窗编辑
         new_node = {"if": "link", "then": []}
         dlg = _ConditionEditDialog(new_node, self.window())
         if dlg.exec():
-            node = dlg.to_node()
-            self._add_card_widget(node)
-            self._save()
+            self._ast.append(dlg.to_node())
+            self._render_cards()
 
     def _on_edit(self):
-        if self._selected_card is None:
+        if self._selected_idx < 0 or self._selected_idx >= len(self._ast):
             return
-        dlg = _ConditionEditDialog(self._selected_card._node, self.window())
+        dlg = _ConditionEditDialog(self._ast[self._selected_idx], self.window())
         if dlg.exec():
-            node = dlg.to_node()
-            self._selected_card.update_node(node)
-            self._save()
+            self._ast[self._selected_idx] = dlg.to_node()
+            if self._selected_idx < len(self._cards):
+                self._cards[self._selected_idx].update_node(self._ast[self._selected_idx])
 
     def _on_delete(self):
-        if self._selected_card is None:
+        if self._selected_idx < 0:
             return
-        card = self._selected_card
         box = MessageBox(_tr("确认删除"), _tr("确定删除选中的条件块？"), self.window())
         if box.exec():
-            self._remove_card(card)
-            self._save()
+            self._ast.pop(self._selected_idx)
+            self._render_cards()
 
     def _on_clear(self):
-        if not self._cards:
+        if not self._ast:
             return
         box = MessageBox(_tr("确认清空"), _tr("确定清空所有条件块？"), self.window())
         if box.exec():
-            for card in list(self._cards):
-                self._remove_card(card, notify=False)
-            self._notify_resize()
-            self._save()
+            self._ast.clear()
+            self._render_cards()
+
+    def _move(self, direction: int):
+        idx = self._selected_idx
+        if idx < 0 or idx >= len(self._ast):
+            return
+        new_idx = idx + direction
+        if new_idx < 0 or new_idx >= len(self._ast):
+            return
+        self._ast[idx], self._ast[new_idx] = self._ast[new_idx], self._ast[idx]
+        self._selected_idx = new_idx
+        self._render_cards()
+
+    def to_ast(self) -> list:
+        return list(self._ast)
+
+
+# 主面板: 4 行配置项 (无折叠, 与其他配置行样式一致)
+class ConditionalRotationPanel(QWidget):
+    """实时条件面板: 四行配置项.
+
+    启用实时条件 / 立即释放终结技 / 立即释放连携技 / 动作列表(编辑按钮).
+    """
+
+    def __init__(self, parent=None, config=None):
+        super().__init__(parent)
+        self.config = config or get_global_config(BATTLE_CONFIG_NAME)
+        self._loading = False
+        self._setup_ui()
+        self._load()
+
+    def _setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+
+        # Row 1: 启用实时条件
+        self._row1 = LabelAndWidget(KEY_COND_ENABLED, BATTLE_CONFIG_DESCRIPTION[KEY_COND_ENABLED])
+        self.enable_switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
+        self.enable_switch.setOnText(_tr("是"))
+        self.enable_switch.setOffText(_tr("否"))
+        self.enable_switch.checkedChanged.connect(lambda c: self._set_config(KEY_COND_ENABLED, c))
+        self._row1.add_widget(self.enable_switch, stretch=0)
+        layout.addWidget(self._row1)
+
+        # Row 2: 立即释放终结技
+        self._row2 = LabelAndWidget(KEY_INSTANT_ULT, BATTLE_CONFIG_DESCRIPTION[KEY_INSTANT_ULT])
+        self.ult_switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
+        self.ult_switch.setOnText(_tr("是"))
+        self.ult_switch.setOffText(_tr("否"))
+        self.ult_switch.checkedChanged.connect(lambda c: self._set_config(KEY_INSTANT_ULT, c))
+        self._row2.add_widget(self.ult_switch, stretch=0)
+        layout.addWidget(self._row2)
+
+        # Row 3: 立即释放连携技
+        self._row3 = LabelAndWidget(KEY_INSTANT_LINK, BATTLE_CONFIG_DESCRIPTION[KEY_INSTANT_LINK])
+        self.link_switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
+        self.link_switch.setOnText(_tr("是"))
+        self.link_switch.setOffText(_tr("否"))
+        self.link_switch.checkedChanged.connect(lambda c: self._set_config(KEY_INSTANT_LINK, c))
+        self._row3.add_widget(self.link_switch, stretch=0)
+        layout.addWidget(self._row3)
+
+        # Row 4: 动作列表 + 编辑按钮
+        self._row4 = LabelAndWidget(_tr("动作列表"), _tr("当条件符合时使用技能组"))
+        self._row4.contentLabel.setWordWrap(False)
+        self.edit_btn = PushButton(FluentIcon.EDIT, _tr("编辑"))
+        self.edit_btn.clicked.connect(self._on_edit)
+        self._row4.add_widget(self.edit_btn, stretch=0)
+        layout.addWidget(self._row4)
+
+    def _load(self):
+        self._loading = True
+        self.enable_switch.setChecked(bool(self.config.get(KEY_COND_ENABLED, False)))
+        self.ult_switch.setChecked(bool(self.config.get(KEY_INSTANT_ULT, False)))
+        self.link_switch.setChecked(bool(self.config.get(KEY_INSTANT_LINK, False)))
+        self._loading = False
+
+    def update_value(self):
+        """供 ConfigCard.update_config 调用."""
+        self._load()
 
     def _set_config(self, key: str, value):
         if self._loading:
             return
         self.config[key] = value
 
-    # 写盘
-    def _save(self):
-        if self._loading:
-            return
-        ast = []
-        for card in self._cards:
-            node = card._node
-            ast.append(node)
-        self.config[KEY_COND_SEQUENCE] = ast
-
-    def _notify_resize(self):
-        """内容增删后通知祖先 ConfigCard 重新计算展开高度。"""
-        self.updateGeometry()
-        p = self.parent()
-        while p is not None:
-            if hasattr(p, "_adjust_config_content_size"):
-                try:
-                    p._adjust_config_content_size()
-                except Exception:
-                    pass
-                break
-            p = p.parent()
-
-    def _log(self, msg: str):
-        try:
-            og.app.logger.info(f"实时条件面板: {msg}")
-        except Exception:
-            pass
+    def _on_edit(self):
+        raw_ast = self.config.get(KEY_COND_SEQUENCE, [])
+        clean_ast, warnings = normalize_ast(raw_ast)
+        for w in warnings:
+            try:
+                og.app.logger.info(f"实时条件: {w}")
+            except Exception:
+                pass
+        dlg = _ConditionListEditDialog(clean_ast, self.window())
+        if dlg.exec():
+            self.config[KEY_COND_SEQUENCE] = dlg.to_ast()
