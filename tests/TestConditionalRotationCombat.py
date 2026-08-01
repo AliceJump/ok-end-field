@@ -219,6 +219,19 @@ class TestConditionalRotationCombat(unittest.TestCase):
 
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
+    def test_conditional_rotation_skill_timeout_keeps_next_token(self, _mu, _md):
+        """战技技力不足重试超时后，继续下一个动作。"""
+        cfg = {
+            "启用实时条件": True,
+            "实时条件序列": ["1", "e"],
+        }
+        task = _FakeTask(cfg, ults=(), link=True, skill=0)
+        logic = AutoCombatLogic(task)
+        logic.run(start_sleep=0)
+        self.assertIn("e", task.actions)
+
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
     def test_conditional_rotation_sleep_truncated_by_deadline(self, _mu, _md):
         cfg = {
             "启用实时条件": True,

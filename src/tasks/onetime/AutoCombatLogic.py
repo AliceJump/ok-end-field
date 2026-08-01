@@ -207,11 +207,6 @@ class AutoCombatLogic:
                 self.task.log_info(f"技力不足超时 {self._pending_skill_frames} 帧，跳过战技 {token}")
                 self._pending_skill_token = None
                 self._pending_skill_frames = 0
-                # 推进生成器（不返回 had_action，让立即释放有机会触发）
-                try:
-                    next(self._cond_iter)
-                except StopIteration:
-                    self._cond_iter = iter_actions(self.cond_ast, self._cond_probe)
                 return "", False
 
             self._pending_skill_token = None  # 先清掉，若仍失败下面会重设
