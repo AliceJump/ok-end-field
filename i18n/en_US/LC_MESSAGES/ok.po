@@ -764,7 +764,7 @@ msgid "佩丽卡"
 msgstr "perlica"
 
 msgid "供能高地"
-msgstr "Power Highland"
+msgstr "Power Plateau"
 
 msgid "保存目录"
 msgstr "Save Directory"
@@ -817,13 +817,13 @@ msgid "命中毕业词条后自动点击右侧小锁上锁"
 msgstr "Auto-lock upon hitting graduated affix"
 
 msgid "四号谷地"
-msgstr "Valley No.4"
+msgstr "Valley IV"
 
 msgid "四号谷地买入价"
-msgstr "Valley No.4 Buy Price"
+msgstr "Valley IV Buy Price"
 
 msgid "四号谷地卖出价"
-msgstr "Valley No.4 Sell Price"
+msgstr "Valley IV Sell Price"
 
 msgid "在好友交流助力时，优先尝试仅收取培育室的助力,但每次至少助力一次舱室"
 msgstr ""
@@ -929,7 +929,7 @@ msgid "昼雪"
 msgstr "snowshine"
 
 msgid "枢纽区"
-msgstr "Hub Area"
+msgstr "The Hub"
 
 msgid "武器经验"
 msgstr "Weapon EXP"
@@ -959,7 +959,7 @@ msgid "洁尔佩塔"
 msgstr "gilberta"
 
 msgid "源石研究园"
-msgstr "Originium Research Park"
+msgstr "Originium Science Park"
 
 msgid "源矿"
 msgstr "Source Ore"
@@ -980,7 +980,7 @@ msgid "目标券数"
 msgstr "Target Ticket Count"
 
 msgid "矿脉源区"
-msgstr "Vein Source Area"
+msgstr "Origin Lodespring"
 
 msgid "秋栗"
 msgstr "akekuri"
@@ -1042,8 +1042,8 @@ msgstr "Select Test Target"
 msgid "选择要转移的物品"
 msgstr "Select Items to Transfer"
 
-msgid "通向送货点"
-msgstr "To Delivery Point"
+msgid "通向武陵城送货点"
+msgstr "To Wuling City Delivery Point"
 
 msgid "造装备"
 msgstr "Craft Equipment"
@@ -1194,10 +1194,10 @@ msgid "启用排轴"
 msgstr "Enable Skill Rotation"
 
 msgid "四号谷地物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
-msgstr "Valley No.4 buy price cap. Set high if must buy."
+msgstr "Valley IV buy price cap. Set high if must buy."
 
 msgid "四号谷地物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
-msgstr "Valley No.4 sell price floor. Set to 1 if must sell."
+msgstr "Valley IV sell price floor. Set to 1 if must sell."
 
 msgid "回到主页后等待的时间"
 msgstr "Wait time after returning to main page"
@@ -1254,7 +1254,7 @@ msgid "是否前往好友的「帝江号」并在「访客终端」上进行收�
 msgstr "Visit friend's Dijiang for clue collection and manufacturing"
 
 msgid "是否启用「地区建设/四号谷地物资调度/弹性需求物资」交易。"
-msgstr "Enable Region Building/Valley No.4/Flexible Demand trading."
+msgstr "Enable Region Building/Valley IV/Flexible Demand trading."
 
 msgid "是否启用「地区建设/武陵物资调度/弹性需求物资」交易。"
 msgstr "Enable Region Building/Wuling/Flexible Demand trading."
@@ -1318,7 +1318,7 @@ msgid "消耗限时体力药"
 msgstr "Use Limited-Time Stamina Potions"
 
 msgid "清波寨"
-msgstr "Qingbo Village"
+msgstr "Qingbo Stockade"
 
 msgid "自动检测战斗开始和结束，使用说明参见选项"
 msgstr "Auto-detect battle start/end. See options."
@@ -1835,7 +1835,7 @@ msgid "视图"
 msgstr "View"
 
 msgid "试验园区"
-msgstr "Test Zone"
+msgstr "Test Area"
 
 msgid "账号"
 msgstr "Account"
@@ -1883,8 +1883,8 @@ msgstr ""
 msgid "选择要更换的队伍编号。"
 msgstr "Select team number to switch to."
 
-msgid "通向送货点试验园区"
-msgstr "To Delivery Point: Test Zone"
+msgid "通向试验园区送货点"
+msgstr "To Test Area Delivery Point"
 
 msgid "通过下拉框切换送货地区配置"
 msgstr "Switch delivery region via dropdown"
@@ -1925,7 +1925,7 @@ msgstr ""
 "See docs for more."
 
 msgid "首墩"
-msgstr "Shoudun"
+msgstr "Marker Stone"
 
 msgid "高阶"
 msgstr "High Tier"
@@ -2287,7 +2287,7 @@ msgid "仿生翅天使"
 msgstr "Bionic Wing Angel"
 
 msgid "会客室"
-msgstr "Lounge"
+msgstr "Reception Room"
 
 msgid "传送台"
 msgstr "Teleport Pad"
@@ -2687,7 +2687,7 @@ msgid "键位配置"
 msgstr "Key Bindings"
 
 msgid "藏剑谷"
-msgstr "Zangjian Valley"
+msgstr "Sword Vault Dale"
 
 msgid "结尾外部命令执行时机"
 msgstr "End Command Timing"

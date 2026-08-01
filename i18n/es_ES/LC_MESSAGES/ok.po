@@ -166,7 +166,7 @@ msgid "佩丽卡"
 msgstr "Perica"
 
 msgid "供能高地"
-msgstr "Altiplano energético"
+msgstr "Meseta de poder"
 
 msgid "保存目录"
 msgstr "Directorio de guardado"
@@ -219,13 +219,13 @@ msgid "命中毕业词条后自动点击右侧小锁上锁"
 msgstr "Bloquear al obtener un atributo óptimo"
 
 msgid "四号谷地"
-msgstr "Valle n.º 4"
+msgstr "Valle IV"
 
 msgid "四号谷地买入价"
-msgstr "Precio de compra del Valle n.º 4"
+msgstr "Precio de compra del Valle IV"
 
 msgid "四号谷地卖出价"
-msgstr "Precio de venta del Valle n.º 4"
+msgstr "Precio de venta del Valle IV"
 
 msgid "在好友交流助力时，优先尝试仅收取培育室的助力,但每次至少助力一次舱室"
 msgstr ""
@@ -338,7 +338,7 @@ msgid "昼雪"
 msgstr "dia nieve"
 
 msgid "枢纽区"
-msgstr "Zona central"
+msgstr "La Base"
 
 msgid "武器经验"
 msgstr "EXP de Arma"
@@ -347,7 +347,7 @@ msgid "武器进阶"
 msgstr "Promoción de Arma"
 
 msgid "武陵"
-msgstr "Wǔlíng"
+msgstr "Wuling"
 
 msgid "武陵买入价"
 msgstr "Precio de compra de Wuling"
@@ -372,7 +372,7 @@ msgid "洁尔佩塔"
 msgstr "Gerpeta"
 
 msgid "源石研究园"
-msgstr "Parque de investigación de Originium"
+msgstr "Parque científico de Originio"
 
 msgid "源矿"
 msgstr "Mineral de origen"
@@ -393,7 +393,7 @@ msgid "目标券数"
 msgstr "Cantidad objetivo de vales"
 
 msgid "矿脉源区"
-msgstr "Zona de origen de la veta"
+msgstr "Veta de origen"
 
 msgid "秋栗"
 msgstr "Qiuri"
@@ -482,8 +482,8 @@ msgstr "Seleccionar objetivo de prueba"
 msgid "选择要转移的物品"
 msgstr "Seleccionar objetos que trasladar"
 
-msgid "通向送货点"
-msgstr "Hacia el punto de entrega"
+msgid "通向武陵城送货点"
+msgstr "Hacia el punto de entrega de Wuling"
 
 msgid "造装备"
 msgstr "Fabricar Equipo"
@@ -640,11 +640,11 @@ msgstr "Activar Rotación de Habilidades"
 
 msgid "四号谷地物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
 msgstr ""
-"Precio máximo de compra del Valle n.º 4. Use un valor alto para comprar "
+"Precio máximo de compra del Valle IV. Use un valor alto para comprar "
 "siempre."
 
 msgid "四号谷地物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
-msgstr "Precio mínimo de venta del Valle n.º 4. Use 1 para vender siempre."
+msgstr "Precio mínimo de venta del Valle IV. Use 1 para vender siempre."
 
 msgid "回到主页后等待的时间"
 msgstr "Espera tras volver a la página principal"
@@ -713,7 +713,7 @@ msgstr ""
 
 msgid "是否启用「地区建设/四号谷地物资调度/弹性需求物资」交易。"
 msgstr ""
-"Activar el comercio en Construcción regional/Valle n.º 4/Demanda flexible."
+"Activar el comercio en Construcción regional/Valle IV/Demanda flexible."
 
 msgid "是否启用「地区建设/武陵物资调度/弹性需求物资」交易。"
 msgstr "Activar el comercio en Construcción regional/Wuling/Demanda flexible."
@@ -791,7 +791,7 @@ msgid "消耗限时体力药"
 msgstr "Usar pociones de estamina temporales"
 
 msgid "清波寨"
-msgstr "Aldea Qingbo"
+msgstr "Empalizada Qingbo"
 
 msgid "自动检测战斗开始和结束，使用说明参见选项"
 msgstr ""
@@ -1346,7 +1346,7 @@ msgid "视图"
 msgstr "Vista"
 
 msgid "试验园区"
-msgstr "Zona de pruebas"
+msgstr "Área de pruebas"
 
 msgid "账号"
 msgstr "Cuenta"
@@ -1394,8 +1394,8 @@ msgstr ""
 msgid "选择要更换的队伍编号。"
 msgstr "Seleccionar número de equipo para cambiar."
 
-msgid "通向送货点试验园区"
-msgstr "Hacia el punto de entrega: Zona de pruebas"
+msgid "通向试验园区送货点"
+msgstr "Hacia el punto de entrega de la zona de pruebas"
 
 msgid "通过下拉框切换送货地区配置"
 msgstr "Cambiar la región de entrega con el desplegable"
@@ -1439,7 +1439,7 @@ msgstr ""
 "Consulte ./docs/体力本.md > 能量淤积点 para más información."
 
 msgid "首墩"
-msgstr "Shǒudūn"
+msgstr "Piedra Marcadora"
 
 msgid "高阶"
 msgstr "Nivel Alto"
@@ -2539,7 +2539,7 @@ msgid "仿生翅天使"
 msgstr "Ángel de Alas Biónicas"
 
 msgid "会客室"
-msgstr "Sala de Estar"
+msgstr "Sala de recepción"
 
 msgid "传送台"
 msgstr "Plataforma de Teletransporte"
@@ -2939,7 +2939,7 @@ msgid "键位配置"
 msgstr "Configuración de Teclas"
 
 msgid "藏剑谷"
-msgstr "Valle Zangjian"
+msgstr "Valle Ocultaespadas"
 
 msgid "结尾外部命令执行时机"
 msgstr "Momento del Comando Externo"

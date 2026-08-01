@@ -1,0 +1,127 @@
+name: Update World Map Translations
+
+on:
+  schedule:
+    # 每天 UTC 01:00（北京时间 09:00）
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-world-map-langs
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install polib
+
+      - name: Sync translations from official API
+        run: |
+          python scripts/sync_world_map_langs.py
+
+      - name: Validate data
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          import polib
+
+          with open("assets/lang/world_map.json", encoding="utf-8") as f:
+              world_map = json.load(f)
+
+          with open("tools/official_five_lang.json", encoding="utf-8") as f:
+              snapshot = json.load(f)
+
+          # ---------- 绝对校验 ----------
+
+          assert len(world_map) >= 80, "world_map.json lost keys."
+
+          for key, node in world_map.items():
+              zh = node.get("zh_CN", {}).get("pattern")
+              assert zh, f"{key} missing zh_CN.pattern"
+              # en_US 必须是纯 ASCII（官方英文名）；其余语言仅要求非空
+              en = node.get("en_US", {}).get("pattern")
+              if en:
+                  assert en.isascii(), f"{key}.en_US non-ASCII: {en!r}"
+              for lang in ("ja_JP", "ko_KR", "es_ES"):
+                  if lang in node:
+                      assert node[lang].get("pattern"), f"{key}.{lang} empty"
+
+          # 已知错误译名黑名单（禁止回退出现）
+          blacklist = ("Wulingcheng", "Experimental Park", "valley four",
+                       "Qingbo Village", "first pier", "Zangjian Valley")
+          raw = open("assets/lang/world_map.json", encoding="utf-8").read()
+          for bad in blacklist:
+              assert bad not in raw, f"Blacklisted translation reappeared: {bad}"
+
+          # 快照完整性
+          maps = snapshot["maps"]
+          assert len(maps) == 3, "Snapshot must contain 3 maps."
+          for mp in maps:
+              assert mp["name"]["zh"], f"{mp['id']} missing zh name"
+              for lv in mp["levels"]:
+                  for site in lv["sites"]:
+                      for lang in ("zh", "en", "ja", "ko"):
+                          assert site[lang] != "?", \
+                              f"{mp['id']}/{lv['id']} site {site['zh']} missing {lang}"
+
+          # 语言不得少于 4 语（zh/en/ja/ko 为官方 API 硬保证）
+          for mp in maps:
+              assert len(mp["name"]) >= 5, f"{mp['id']} missing languages"
+
+          # ---------- ok.po 完整性 ----------
+
+          placeholder_re = re.compile(r"\{[^{}]+\}")
+          for po_path in Path("i18n").glob("*/LC_MESSAGES/ok.po"):
+              locale = po_path.parents[1].name
+              po = polib.pofile(str(po_path))
+              seen = set()
+              for entry in po:
+                  assert entry.msgid, f"{locale}: empty msgid"
+                  assert entry.msgid not in seen, f"{locale}: duplicate {entry.msgid!r}"
+                  seen.add(entry.msgid)
+                  assert entry.msgstr, f"{locale}: empty {entry.msgid!r}"
+                  assert set(placeholder_re.findall(entry.msgid)) == \
+                      set(placeholder_re.findall(entry.msgstr)), \
+                      f"{locale}: placeholders {entry.msgid!r}"
+              assert (po_path.parent / "ok.mo").exists(), \
+                  f"{locale}: ok.mo missing"
+
+          print("Validation passed.")
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add assets/lang/world_map.json tools/official_five_lang.json i18n
+
+          if git diff --cached --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+
+          git commit -m "chore(lang): sync world map translations from official API"
+
+      - name: Push
+        run: |
+          git push

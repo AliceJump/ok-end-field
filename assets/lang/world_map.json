@@ -227,16 +227,16 @@
       "pattern": "供能高地"
     },
     "en_US": {
-      "pattern": "Energy supply highland"
+      "pattern": "Power Plateau"
     },
     "ja_JP": {
-      "pattern": "エネルギー供給高原"
+      "pattern": "エネルギー高地"
     },
     "ko_KR": {
-      "pattern": "에너지 공급고지"
+      "pattern": "에너지 공급 고지"
     },
     "es_ES": {
-      "pattern": "Suministro de energía en las tierras altas"
+      "pattern": "Meseta de poder"
     }
   },
   "k_afba31e6": {
@@ -307,16 +307,16 @@
       "pattern": "四號谷地"
     },
     "en_US": {
-      "pattern": "valley four"
+      "pattern": "Valley IV"
     },
     "ja_JP": {
-      "pattern": "谷4"
+      "pattern": "四号谷地"
     },
     "ko_KR": {
-      "pattern": "밸리 4"
+      "pattern": "4번 협곡"
     },
     "es_ES": {
-      "pattern": "valle cuatro"
+      "pattern": "Valle IV"
     }
   },
   "k_c8cc877d": {
@@ -347,16 +347,16 @@
       "pattern": "基建前站"
     },
     "en_US": {
-      "pattern": "Infrastructure front station"
+      "pattern": "Infra-Station"
     },
     "ja_JP": {
-      "pattern": "インフラフロント駅"
+      "pattern": "建設基地"
     },
     "ko_KR": {
-      "pattern": "인프라 프론트 스테이션"
+      "pattern": "기초 건설 주둔지"
     },
     "es_ES": {
-      "pattern": "Estación frontal de infraestructura"
+      "pattern": "Infraestación"
     }
   },
   "k_0b813891": {
@@ -727,16 +727,16 @@
       "pattern": "樞紐區"
     },
     "en_US": {
-      "pattern": "hub area"
+      "pattern": "The Hub"
     },
     "ja_JP": {
-      "pattern": "ハブエリア"
+      "pattern": "中枢エリア"
     },
     "ko_KR": {
-      "pattern": "허브 지역"
+      "pattern": "거점 지역"
     },
     "es_ES": {
-      "pattern": "área central"
+      "pattern": "La Base"
     }
   },
   "k_e1635e13": {
@@ -853,7 +853,7 @@
       "pattern": "武陵"
     },
     "ko_KR": {
-      "pattern": "우링"
+      "pattern": "무릉"
     },
     "es_ES": {
       "pattern": "Wuling"
@@ -887,16 +887,16 @@
       "pattern": "武陵城"
     },
     "en_US": {
-      "pattern": "Wulingcheng"
+      "pattern": "Wuling City"
     },
     "ja_JP": {
       "pattern": "武陵城"
     },
     "ko_KR": {
-      "pattern": "우링청"
+      "pattern": "무릉성"
     },
     "es_ES": {
-      "pattern": "Wulingcheng"
+      "pattern": "Ciudad de Wuling"
     }
   },
   "k_ece5ec1b": {
@@ -907,16 +907,16 @@
       "pattern": "清波寨"
     },
     "en_US": {
-      "pattern": "Qingbo Village"
+      "pattern": "Qingbo Stockade"
     },
     "ja_JP": {
-      "pattern": "青波村"
+      "pattern": "清波砦"
     },
     "ko_KR": {
-      "pattern": "칭보 마을"
+      "pattern": "청파채"
     },
     "es_ES": {
-      "pattern": "Pueblo de Qingbo"
+      "pattern": "Empalizada Qingbo"
     }
   },
   "k_0383e694": {
@@ -967,16 +967,16 @@
       "pattern": "源石研究園"
     },
     "en_US": {
-      "pattern": "Origin Stone Research Park"
+      "pattern": "Originium Science Park"
     },
     "ja_JP": {
-      "pattern": "原石リサーチパーク"
+      "pattern": "源石研究パーク"
     },
     "ko_KR": {
-      "pattern": "오리진스톤연구단지"
+      "pattern": "오리지늄 연구 구역"
     },
     "es_ES": {
-      "pattern": "Parque de investigación de piedra de origen"
+      "pattern": "Parque científico de Originio"
     }
   },
   "k_37ad1f84": {
@@ -1047,16 +1047,16 @@
       "pattern": "礦脈源區"
     },
     "en_US": {
-      "pattern": "Mine source area"
+      "pattern": "Origin Lodespring"
     },
     "ja_JP": {
-      "pattern": "鉱山源地域"
+      "pattern": "鉱山エリア"
     },
     "ko_KR": {
-      "pattern": "광산 지역"
+      "pattern": "광맥 구역"
     },
     "es_ES": {
-      "pattern": "Área de origen de la mina"
+      "pattern": "Veta de origen"
     }
   },
   "k_55ed0a7b": {
@@ -1287,16 +1287,16 @@
       "pattern": "試驗園區"
     },
     "en_US": {
-      "pattern": "Experimental Park"
+      "pattern": "Test Area"
     },
     "ja_JP": {
-      "pattern": "実験公園"
+      "pattern": "実験区域"
     },
     "ko_KR": {
-      "pattern": "실험공원"
+      "pattern": "실험 구역"
     },
     "es_ES": {
-      "pattern": "Parque Experimental"
+      "pattern": "Área de pruebas"
     }
   },
   "k_783931ed": {
@@ -1547,16 +1547,16 @@
       "pattern": "首墩"
     },
     "en_US": {
-      "pattern": "first pier"
+      "pattern": "Marker Stone"
     },
     "ja_JP": {
-      "pattern": "最初の桟橋"
+      "pattern": "首礎"
     },
     "ko_KR": {
-      "pattern": "첫 번째 부두"
+      "pattern": "수돈"
     },
     "es_ES": {
-      "pattern": "primer muelle"
+      "pattern": "Piedra Marcadora"
     }
   },
   "k_d5586b4b": {
@@ -1687,16 +1687,16 @@
       "pattern": "藏劍谷"
     },
     "en_US": {
-      "pattern": "Zangjian Valley"
+      "pattern": "Sword Vault Dale"
     },
     "ja_JP": {
-      "pattern": "ゾウジエン谷"
+      "pattern": "蔵剣谷"
     },
     "ko_KR": {
-      "pattern": "장검곡"
+      "pattern": "장검 골짜기"
     },
     "es_ES": {
-      "pattern": "Valle Zangjian"
+      "pattern": "Valle Ocultaespadas"
     }
   }
 }
