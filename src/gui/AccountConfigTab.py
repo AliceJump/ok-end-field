@@ -20,6 +20,7 @@ from qfluentwidgets import (
 from ok.gui.tasks.ConfigCard import ConfigCard, og
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 from ok.gui.widget.CustomTab import CustomTab
+from ok.gui.Communicate import communicate
 from src.tasks.account.account_scope_store import (
     get_account_map_content,
     load_overrides,
@@ -70,6 +71,7 @@ class AccountConfigTab(CustomTab):
         self.account_display_to_name: Dict[str, str] = {}
 
         self._build_ui()
+        communicate.task.connect(self._on_task_state_changed)
 
     @property
     def name(self):
@@ -648,6 +650,20 @@ class AccountConfigTab(CustomTab):
         self.editor_summary_label.hide()
         self.editor_empty_label.hide()
 
+    def _set_current_task_editor_enabled(self, enabled: bool):
+        if self.current_editor_card is not None:
+            for widget in self.current_editor_card.config_widgets:
+                widget.setEnabled(enabled)
+            if self.current_editor_card.reset_config is not None:
+                self.current_editor_card.reset_config.setEnabled(enabled)
+        self.save_current_config_button.setEnabled(enabled)
+        self.clear_task_override_button.setEnabled(enabled)
+        self.clear_account_override_button.setEnabled(enabled)
+
+    def _on_task_state_changed(self, _):
+        task = self.current_task
+        self._set_current_task_editor_enabled(not bool(task and task.running))
+
     def render_task_editor(self):
         self._hide_task_editor()
         self.current_virtual_config = None
@@ -746,6 +762,7 @@ class AccountConfigTab(CustomTab):
         self.current_base_values = base_values
         self.current_original_values = copy.deepcopy(dict(card.config))
         self.current_editor_card = card
+        self._set_current_task_editor_enabled(not bool(task.running))
 
     def _apply_current_task_override(self, cleanup_blacklist: bool = False) -> bool:
         if self.current_virtual_config is None or self.current_task is None or not self.current_account_key:

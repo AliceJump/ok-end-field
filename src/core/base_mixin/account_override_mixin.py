@@ -93,6 +93,12 @@ class AccountOverrideMixin:
     def _config_get_with_account_override(self, key, default, raw_get):
         base_value = raw_get(key, default)
 
+        # ConfigCard also reads config.get() to update drop-down sub-config
+        # visibility. Account overrides are runtime-only; leaving them active
+        # after a task completes makes the UI ignore the value the user picks.
+        if not getattr(self, "running", False):
+            return base_value
+
         if not self._is_account_override_enabled():
             return base_value
 

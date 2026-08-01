@@ -1,5 +1,6 @@
 import gc
 import threading
+import time
 from enum import Enum
 from functools import partial
 from typing import List
@@ -42,6 +43,9 @@ class RuntimeMixin:
     """视觉识别、按键输入、鼠标控制与模型加载能力。"""
     BASE_WIDTH = 1920
     BASE_HEIGHT = 1080
+    RESOLUTION_STABLE_SECONDS = 2.0
+    RESOLUTION_STABLE_TIMEOUT = 6.0
+    RESOLUTION_STABLE_INTERVAL = 0.1
     def normalize_pos(self, pos):
         """
         将归一化坐标转换为当前窗口坐标。
@@ -72,11 +76,48 @@ class RuntimeMixin:
         
     _resolution_warned = False
 
+    def _wait_for_stable_resolution(self):
+        """等待捕获帧尺寸稳定，避免启动阶段的中间帧触发误报。"""
+        next_frame = getattr(self, "next_frame", None)
+        if not callable(next_frame):
+            width = getattr(self, "width", self.BASE_WIDTH) or self.BASE_WIDTH
+            height = getattr(self, "height", self.BASE_HEIGHT) or self.BASE_HEIGHT
+            return int(width), int(height)
+
+        deadline = time.monotonic() + self.RESOLUTION_STABLE_TIMEOUT
+        last_resolution = None
+        stable_since = None
+        resolution = None
+
+        while time.monotonic() < deadline:
+            try:
+                frame = next_frame()
+                if frame is not None and getattr(frame, "ndim", 0) >= 2:
+                    resolution = (int(frame.shape[1]), int(frame.shape[0]))
+            except Exception:
+                # Resolution checking should not stop a task when a startup frame is unavailable.
+                pass
+
+            if resolution is None:
+                width = getattr(self, "width", self.BASE_WIDTH) or self.BASE_WIDTH
+                height = getattr(self, "height", self.BASE_HEIGHT) or self.BASE_HEIGHT
+                resolution = (int(width), int(height))
+
+            now = time.monotonic()
+            if resolution != last_resolution:
+                last_resolution = resolution
+                stable_since = now
+            elif stable_since is not None and now - stable_since >= self.RESOLUTION_STABLE_SECONDS:
+                return resolution
+
+            time.sleep(self.RESOLUTION_STABLE_INTERVAL)
+
+        return resolution or (self.BASE_WIDTH, self.BASE_HEIGHT)
+
     def check_resolution(self):
         if RuntimeMixin._resolution_warned:
             return
-        width = getattr(self, "width", self.BASE_WIDTH) or self.BASE_WIDTH
-        height = getattr(self, "height", self.BASE_HEIGHT) or self.BASE_HEIGHT
+        width, height = self._wait_for_stable_resolution()
         min_size = app_config.get("supported_resolution", {}).get("min_size", (1600, 900))
         min_w, min_h = min_size
         if width < min_w or height < min_h:
