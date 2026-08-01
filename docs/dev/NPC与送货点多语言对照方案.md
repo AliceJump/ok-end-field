@@ -216,7 +216,7 @@
 | # | 文件 | 内容 | 状态 | 问题 |
 |---|---|---|---|---|
 | A1 | `assets/data/delivery_area.json`（加载器 `src/data/delivery_area.py`） | 地区/地点/NPC | 半本地化 | 10 个 NPC 无语言节点；`DeliveryTask._configure_delivery_area:92-93` 未传 lang_accessor |
-| A2 | `assets/data/world_map.json`（加载器 `src/data/world_map.py`） | 地点/据点/货物/关卡/仓库映射 | 半本地化 | 3 词缺 world_map.json 键：`死寂争鸣`(L15)、`灼铜零件`(L46)、`盈天台建设站`(L20) |
+| A2 | `assets/data/world_map.json`（加载器 `src/data/world_map.py`） | 地点/据点/货物/关卡/仓库映射 | 已本地化 | 主数据全名自动补 lang 节点（`sync_world_map_langs.py` sync_canon），官方有译名则填；官方新增名打印 MANUAL 提示人工决定是否入主数据 |
 | A3 | `assets/data/characters.json`（加载器 `src/data/characters.py`） | 30 干员名 | 已本地化 | 官方六语已同步（endfield.wiki.gg 自动同步）；canonical `en` 为内部 ID（FeatureList 绑定），不与官方名一致属设计 |
 | A4 | `src/data/zh_en.py:19-130` | 103 物品中→英 feature 名 | 未本地化（设计如此） | 仅模板匹配（WarehouseTransferTask.py:61,176），无需 lang |
 | A5 | `assets/items/map/item_names.json` | 154 地图实体中文名 | 未本地化 | ItemNavigatorTask.py:22,65,365 纯中文读取 |

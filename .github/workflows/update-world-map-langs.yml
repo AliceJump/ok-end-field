@@ -48,6 +48,9 @@ jobs:
           with open("assets/lang/world_map.json", encoding="utf-8") as f:
               world_map = json.load(f)
 
+          with open("assets/data/world_map.json", encoding="utf-8") as f:
+              world_map_canon = json.load(f)
+
           with open("tools/official_five_lang.json", encoding="utf-8") as f:
               snapshot = json.load(f)
 
@@ -70,6 +73,26 @@ jobs:
                   f"{key} canonical zh mismatch"
 
           assert len(world_map) >= 80, "world_map.json lost keys."
+
+          # 主数据每个中文名在 lang 中必须有节点
+          canon_zh = set(world_map_canon.get("areas_list", []))
+          for vals in world_map_canon.get("outpost_dict", {}).values():
+              canon_zh.update(vals)
+          for vals in world_map_canon.get("goods_dict", {}).values():
+              canon_zh.update(vals)
+          for vals in world_map_canon.get("exchange_goods_dict", {}).values():
+              canon_zh.update(vals)
+          canon_zh.update(world_map_canon.get("item_to_warehouse_dict", {}).keys())
+          for vals in world_map_canon.get("stages_dict", {}).values():
+              canon_zh.update(vals)
+          for vals in world_map_canon.get("permanent_dict", {}).values():
+              canon_zh.update(vals)
+          lang_zh = {
+              node.get("zh_CN", {}).get("pattern")
+              for node in world_map.values()
+          }
+          missing = sorted(canon_zh - lang_zh)
+          assert not missing, f"canonical names missing lang nodes: {missing}"
 
           for key, node in world_map.items():
               zh = node.get("zh_CN", {}).get("pattern")

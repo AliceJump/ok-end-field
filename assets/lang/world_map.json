@@ -1698,5 +1698,29 @@
     "es_ES": {
       "pattern": "Valle Ocultaespadas"
     }
+  },
+  "k_727bb38b": {
+    "zh_CN": {
+      "pattern": "死寂争鸣"
+    }
+  },
+  "k_825cdc26": {
+    "zh_CN": {
+      "pattern": "灼铜零件"
+    }
+  },
+  "k_871bc220": {
+    "zh_CN": {
+      "pattern": "盈天台建设站"
+    },
+    "en_US": {
+      "pattern": "Xiranflow Cloudseeder Station"
+    },
+    "ja_JP": {
+      "pattern": "満天台建設基地"
+    },
+    "ko_KR": {
+      "pattern": "영천대 건설 기지"
+    }
   }
 }

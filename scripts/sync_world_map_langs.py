@@ -16,6 +16,7 @@
 4. 输出变更统计；无变更时退出码 0（CI 据此跳过提交）。
 """
 
+import hashlib
 import json
 import re
 import sys
@@ -42,6 +43,7 @@ HEADERS = {
 
 ROOT = Path(__file__).resolve().parent.parent
 WORLD_MAP_JSON = ROOT / "assets" / "lang" / "world_map.json"
+CANON_WORLD_MAP_JSON = ROOT / "assets" / "data" / "world_map.json"
 SNAPSHOT_JSON = ROOT / "tools" / "official_five_lang.json"
 I18N_DIR = ROOT / "i18n"
 
@@ -114,31 +116,31 @@ def build_official(langs):
 
     for i, m_zh in enumerate(zh_data["maps"]):
         m = {l: langs[l]["maps"][i] for l in langs}
-        name_map.setdefault(m_zh["name"], {})["en"] = m["en"]["name"]
-        name_map[m_zh["name"]]["ja"] = m["ja"]["name"]
-        name_map[m_zh["name"]]["ko"] = m["ko"]["name"]
+        name_map.setdefault(m_zh["name"].strip(), {})["en"] = m["en"]["name"].strip()
+        name_map[m_zh["name"].strip()]["ja"] = m["ja"]["name"].strip()
+        name_map[m_zh["name"].strip()]["ko"] = m["ko"]["name"].strip()
 
         level_list = []
         for j, lv_zh in enumerate(m_zh.get("levels", [])):
             lv = {l: m[l]["levels"][j] for l in langs}
-            name_map.setdefault(lv_zh["name"], {})["en"] = lv["en"]["name"]
-            name_map[lv_zh["name"]]["ja"] = lv["ja"]["name"]
-            name_map[lv_zh["name"]]["ko"] = lv["ko"]["name"]
+            name_map.setdefault(lv_zh["name"].strip(), {})["en"] = lv["en"]["name"].strip()
+            name_map[lv_zh["name"].strip()]["ja"] = lv["ja"]["name"].strip()
+            name_map[lv_zh["name"].strip()]["ko"] = lv["ko"]["name"].strip()
 
             sites = []
             for k2, s_zh in enumerate(lv_zh.get("subLevels", [])):
                 s = {}
                 for l in langs:
                     subs = lv[l].get("subLevels", [])
-                    s[l] = subs[k2]["name"] if k2 < len(subs) else "?"
-                if s_zh["name"]:
-                    name_map.setdefault(s_zh["name"], {})
+                    s[l] = subs[k2]["name"].strip() if k2 < len(subs) else "?"
+                if s_zh["name"].strip():
+                    name_map.setdefault(s_zh["name"].strip(), {})
                     for l in ("en", "ja", "ko"):
                         if s[l] != "?":
-                            name_map[s_zh["name"]][l] = s[l]
+                            name_map[s_zh["name"].strip()][l] = s[l]
                 sites.append({
                     "id": s_zh["id"],
-                    "zh": s_zh["name"],
+                    "zh": s_zh["name"].strip(),
                     "en": s["en"], "ja": s["ja"], "ko": s["ko"],
                 })
             level_list.append({
@@ -264,6 +266,92 @@ def sync_world_map(name_map, es_site_by_slug, es_sub_by_lv, es_main_by_en):
     return stats, touched
 
 
+def collect_canon_names() -> dict:
+    """主数据 assets/data/world_map.json 的全部中文名 -> (类别, 所属地区/类别)。
+
+    返回 {名称: 说明}，说明用于日志。覆盖 areas/outposts/goods/exchange/
+    item_to_warehouse/stages/permanent。
+    """
+    data = json.loads(CANON_WORLD_MAP_JSON.read_text(encoding="utf-8"))
+    names = {}
+    for area in data.get("areas_list", []):
+        names[area] = "area"
+    for area, outposts in data.get("outpost_dict", {}).items():
+        for op in outposts:
+            names[op] = f"outpost[{area}]"
+    for area, goods in data.get("goods_dict", {}).items():
+        for g in goods:
+            names[g] = f"goods[{area}]"
+    for area, goods in data.get("exchange_goods_dict", {}).items():
+        for g in goods:
+            names[g] = f"exchange_goods[{area}]"
+    for item in data.get("item_to_warehouse_dict", {}):
+        names[item] = "item_to_warehouse"
+    for cat, stages in data.get("stages_dict", {}).items():
+        names[cat] = "stage_category"
+        for s in stages:
+            names[s] = f"stage[{cat}]"
+    for cat, permanent in data.get("permanent_dict", {}).items():
+        names[cat] = "permanent_category"
+        for p in permanent:
+            names[p] = f"permanent[{cat}]"
+    return names
+
+
+def sync_canon(name_map, catalog_map):
+    """主数据中的中文名缺 lang 节点时自动补齐（官方有译名则填，无则仅 zh_CN）。
+
+    同时打印官方新增（对比上次快照、且主数据无对应）的名称，提示人工决定
+    是否加入主数据。返回 (新增节点列表, 官方新增提示列表)。
+    """
+    lang = json.loads(WORLD_MAP_JSON.read_text(encoding="utf-8"))
+    official = {**name_map}
+    for zh, vals in catalog_map.items():
+        official.setdefault(zh, {}).update(vals)
+    existing_zh = {
+        (node.get("zh_CN") or {}).get("pattern"): key
+        for key, node in lang.items()
+        if (node.get("zh_CN") or {}).get("pattern")
+    }
+
+    added = []
+    for zh, where in sorted(collect_canon_names().items()):
+        if zh in existing_zh:
+            continue
+        key = "k_" + hashlib.md5(zh.encode("utf-8")).hexdigest()[:8]
+        node = {"zh_CN": {"pattern": zh}}
+        off = official.get(zh) or {}
+        for lang_key, out_key in (("en", "en_US"), ("ja", "ja_JP"), ("ko", "ko_KR"), ("es", "es_ES")):
+            val = off.get(lang_key)
+            if val and val != "?" and (out_key != "en_US" or val.isascii()):
+                node[out_key] = {"pattern": val}
+        lang[key] = node
+        added.append((key, zh, where, node))
+
+    if added:
+        write_json(WORLD_MAP_JSON, lang)
+
+    # 官方新增（上次快照没有）且主数据无对应 → 人工提示
+    snapshot_zh = set()
+    if SNAPSHOT_JSON.exists():
+        try:
+            snap = json.loads(SNAPSHOT_JSON.read_text(encoding="utf-8"))
+            for mp in snap.get("maps", []):
+                snapshot_zh.add(mp["name"]["zh"])
+                for lv in mp.get("levels", []):
+                    snapshot_zh.add(lv["name"]["zh"])
+                    for s in lv.get("sites", []):
+                        if s.get("zh"):
+                            snapshot_zh.add(s["zh"].strip())
+            for c in snap.get("catalog", []):
+                snapshot_zh.add(c["zh"])
+        except Exception:
+            pass
+    canon_zh = set(collect_canon_names())
+    manual = sorted((set(official) - snapshot_zh - set(existing_zh) - canon_zh))
+    return added, manual
+
+
 def sync_po(name_map, catalog_map, es_main_by_en, es_sub_by_lv, es_site_by_slug):
     """把官方译名同步进 i18n/*/LC_MESSAGES/ok.po。
 
@@ -385,6 +473,19 @@ def main():
     for key, out_key, old, val in touched:
         print(f"  {key} {out_key}: {old!r} -> {val!r}")
 
+    # 主数据新名称 -> lang 缺节点自动补齐
+    canon_added, canon_manual = sync_canon(name_map, catalog_map)
+    if canon_added:
+        print()
+        print(f"canonical -> lang new nodes ({len(canon_added)}):")
+        for key, zh, where, node in canon_added:
+            print(f"  {key} {zh} [{where}]: {node}")
+    if canon_manual:
+        print()
+        print(f"MANUAL (official name not in canonical master data, decide whether to add):")
+        for zh in canon_manual:
+            print(f"  {zh}")
+
     # 快照（含 es site/level/map 级）
     for mp in levels:
         mp["name"]["es"] = es_main_by_en.get(slug(mp["name"]["en"]), "?")
@@ -402,7 +503,7 @@ def main():
     print()
     print(f"Snapshot saved: {SNAPSHOT_JSON}")
 
-    if not touched:
+    if not touched and not canon_added:
         print("No world_map.json changes.")
 
     print()

@@ -27,13 +27,10 @@ STAGE_CATEGORY_ENERGY_POOLING = "能量淤积点"
 YINGTUO_MONUMENT = "影拓丰碑"
 
 permanent_dict = {
-    YINGTUO_MONUMENT: _DATA.get("permanent_dict", {}).get(YINGTUO_MONUMENT, [
-        "大地的弃子",
-        "无机造物",
-        "灼痛疤痕",
-        "浊流具现",
-        "死寂争鸣"
-    ])
+    YINGTUO_MONUMENT: _DATA.get("permanent_dict", {}).get(
+        YINGTUO_MONUMENT,
+        ["大地的弃子", "无机造物", "灼痛疤痕", "浊流具现", "死寂争鸣"],
+    )
 }
 
 areas_list = _DATA["areas_list"]
