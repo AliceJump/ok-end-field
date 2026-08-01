@@ -1,4 +1,4 @@
-name: Update World Map Translations
+name: Update World Map & Character Translations
 
 on:
   schedule:
@@ -33,6 +33,7 @@ jobs:
       - name: Sync translations from official API
         run: |
           python scripts/sync_world_map_langs.py
+          python scripts/sync_character_langs.py
 
       - name: Validate data
         shell: bash
@@ -50,7 +51,23 @@ jobs:
           with open("tools/official_five_lang.json", encoding="utf-8") as f:
               snapshot = json.load(f)
 
+          with open("assets/lang/characters.json", encoding="utf-8") as f:
+              characters = json.load(f)
+
+          with open("assets/data/characters.json", encoding="utf-8") as f:
+              characters_canon = json.load(f)
+
           # ---------- 绝对校验 ----------
+
+          # characters.json：节点完整（6 语言非空）且与 canonical 一致
+          assert len(characters) >= 26, "characters.json lost keys."
+          for key, node in characters.items():
+              for lang in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES"):
+                  assert node.get(lang, {}).get("string"), \
+                      f"{key} missing {lang}"
+              assert key in characters_canon, f"{key} missing in assets/data/characters.json"
+              assert characters_canon[key]["zh"] == node["zh_CN"]["string"], \
+                  f"{key} canonical zh mismatch"
 
           assert len(world_map) >= 80, "world_map.json lost keys."
 
@@ -113,14 +130,14 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add assets/lang/world_map.json tools/official_five_lang.json i18n
+          git add assets/lang/world_map.json assets/lang/characters.json assets/data/characters.json tools/official_five_lang.json i18n
 
           if git diff --cached --quiet; then
             echo "No changes."
             exit 0
           fi
 
-          git commit -m "chore(lang): sync world map translations from official API"
+          git commit -m "chore(lang): sync world map & character translations from official API"
 
       - name: Push
         run: |
