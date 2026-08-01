@@ -121,7 +121,7 @@ msgid "一键收菜"
 msgstr "一括収穫"
 
 msgid "三位一体"
-msgstr "トリニティ"
+msgstr "トリアンゲロス"
 
 msgid "三相纳米片"
 msgstr "三相ナノシート"
@@ -258,7 +258,7 @@ msgid "干员经验"
 msgstr "オペレーター経験値"
 
 msgid "干员进阶"
-msgstr "オペレーター昇格"
+msgstr "昇進素材"
 
 msgid "弧光"
 msgstr "アーク"
@@ -342,7 +342,7 @@ msgid "武器经验"
 msgstr "武器経験値"
 
 msgid "武器进阶"
-msgstr "武器昇格"
+msgstr "武器突破"
 
 msgid "武陵"
 msgstr "武陵"
@@ -384,7 +384,7 @@ msgid "狼卫"
 msgstr "ウルフガード"
 
 msgid "白垩界卫"
-msgstr "白亜界衛"
+msgstr "白亜・アンゲロミラ"
 
 msgid "目标券数"
 msgstr "目標券数"
@@ -613,7 +613,7 @@ msgid "信用商店保留信用"
 msgstr "クレジットストア保留クレジット"
 
 msgid "制造舱"
-msgstr "製造ベイ"
+msgstr "製造室"
 
 msgid "刷取哪个副本。所选副本必须领完所有等级的首通奖励。"
 msgstr "周回するダンジョン。選択したダンジョンの初回クリア報酬を全て受け取っている必要があります。"
@@ -893,16 +893,16 @@ msgid "保持当前"
 msgstr "現状維持"
 
 msgid "储藏箱I"
-msgstr "収納ボックスI"
+msgstr "資源箱Ⅰ"
 
 msgid "储藏箱II"
-msgstr "収納ボックスII"
+msgstr "資源箱Ⅱ"
 
 msgid "储藏箱III"
-msgstr "収納ボックスIII"
+msgstr "資源箱Ⅲ"
 
 msgid "储藏箱IV"
-msgstr "収納ボックスIV"
+msgstr "資源箱Ⅳ"
 
 msgid "其他配置"
 msgstr "その他の設定"
@@ -974,7 +974,7 @@ msgid "地区切换"
 msgstr "エリア切替"
 
 msgid "培养舱"
-msgstr "育成チャンバー"
+msgstr "培養室"
 
 msgid "多账户独立配置"
 msgstr "アカウント別設定"
@@ -1256,7 +1256,7 @@ msgstr ""
 "0で無効。"
 
 msgid "聂菲斯"
-msgstr "ネフィス"
+msgstr "ネファリス"
 
 msgid "致密源石粉末"
 msgstr "緻密源石粉末"
@@ -1417,7 +1417,7 @@ msgid "卡契尔"
 msgstr "カッヘル"
 
 msgid "影拓丰碑"
-msgstr "影拓の碑"
+msgstr "映像の記念碑"
 
 msgid "未处理的任务列表"
 msgstr "未処理タスクリスト"
@@ -1553,7 +1553,7 @@ msgid "运输委托"
 msgstr "輸送依頼"
 
 msgid "醚质"
-msgstr "エーテル"
+msgstr "オーリレン"
 
 msgid "Task"
 msgstr "タスク"
@@ -2431,22 +2431,22 @@ msgid "已清空账号全部覆盖：{account}"
 msgstr "アカウントの全上書き設定をクリア: {account}"
 
 msgid "Delta型机器人"
-msgstr "デルタ型ロボット"
+msgstr "Deltaロボット"
 
 msgid "“碾骨之拳”罗丹"
-msgstr "「骨砕きの拳」ローダン"
+msgstr "「ボーンクラッシャーの拳」ロダン"
 
 msgid "中红柱状菌"
-msgstr "中型紅柱菌"
+msgstr "紅色茸"
 
 msgid "中黯石"
-msgstr "中型暗色石"
+msgstr "中闇石"
 
 msgid "仓储节点"
-msgstr "倉庫ノード"
+msgstr "保管ボックス"
 
 msgid "仿生翅天使"
-msgstr "生体翅天使"
+msgstr "擬翼アンゲロス"
 
 msgid "会客室"
 msgstr "応接室"
@@ -2458,58 +2458,58 @@ msgid "供电终端"
 msgstr "給電端末"
 
 msgid "充能球刺兽"
-msgstr "充能球刺獣"
+msgstr "チャージ球刺獣"
 
 msgid "净水节点"
-msgstr "浄水ノード"
+msgstr "浄水装置"
 
 msgid "分层入口"
-msgstr "層状入口"
+msgstr "階層入口"
 
 msgid "刚角天使"
-msgstr "剛角天使"
+msgstr "剛角アンゲロス"
 
 msgid "割云翁"
-msgstr "雲切りの翁"
+msgstr "切雲老"
 
 msgid "劫云客"
-msgstr "雲刧の客"
+msgstr "盗雲客"
 
 msgid "协议传送点"
-msgstr "プロトコル転送点"
+msgstr "協約転送ポイント"
 
 msgid "协议奇点"
-msgstr "プロトコル特異点"
+msgstr "協約特異点"
 
 msgid "协议核心"
-msgstr "プロトコルコア"
+msgstr "協約核心"
 
 msgid "协议采录桩"
-msgstr "プロトコル採録杭"
+msgstr "協約測定装置"
 
 msgid "原生钳兽"
-msgstr "原生鋏獣"
+msgstr "原生鉗獣"
 
 msgid "受蚀玉化叶"
-msgstr "侵食されし玉化葉"
+msgstr "侵蝕玉化葉"
 
 msgid "大角天使"
-msgstr "大角天使"
+msgstr "巨角アンゲロス"
 
 msgid "大角天使α"
-msgstr "大角天使α"
+msgstr "巨角アンゲロスα"
 
 msgid "展示区"
-msgstr "展示エリア"
+msgstr "展示スペース"
 
 msgid "岩天使叶"
-msgstr "岩天使葉"
+msgstr "岩アンゲロス葉"
 
 msgid "巨山犼兽"
-msgstr "巨山吼獣"
+msgstr "大山吼獣"
 
 msgid "干员联络台"
-msgstr "オペレーター連絡台"
+msgstr "連絡カウンター"
 
 msgid "开天将"
 msgstr "開天将"
@@ -2518,163 +2518,163 @@ msgid "怒目彪兽"
 msgstr "怒目彪獣"
 
 msgid "总控中枢"
-msgstr "総制御中枢"
+msgstr "指揮中枢"
 
 msgid "战术训练"
 msgstr "戦術訓練"
 
 msgid "摧山将"
-msgstr "摧山将"
+msgstr "砕山将"
 
 msgid "斧甲兽"
 msgstr "斧甲獣"
 
 msgid "断云叟"
-msgstr "雲断ちの翁"
+msgstr "断雲翁"
 
 msgid "星门菌"
-msgstr "星門菌"
+msgstr "星門茸"
 
 msgid "映火荞花"
-msgstr "映火蕎花"
+msgstr "火映蕎花"
 
 msgid "晶化多齿叶"
-msgstr "晶化多歯葉"
+msgstr "結晶鋭葉"
 
 msgid "晶锥天使"
-msgstr "晶錐天使"
+msgstr "錐晶アンゲロス"
 
 msgid "晶锥天使δ"
-msgstr "晶錐天使δ"
+msgstr "錐晶アンゲロスδ"
 
 msgid "柑实"
-msgstr "柑橘実"
+msgstr "シトローム"
 
 msgid "棱镜天使"
-msgstr "プリズム天使"
+msgstr "稜鏡アンゲロス"
 
 msgid "次级核心"
-msgstr "下位コア"
+msgstr "サブ協約核心"
 
 msgid "武陵石"
 msgstr "武陵石"
 
 msgid "残暴原生钳兽"
-msgstr "残暴原生鋏獣"
+msgstr "凶暴原生鉗獣"
 
 msgid "水灯虫"
 msgstr "水灯虫"
 
 msgid "浊流天使"
-msgstr "濁流天使"
+msgstr "濁流アンゲロス"
 
 msgid "浊流天使δ"
-msgstr "濁流天使δ"
+msgstr "濁流アンゲロスδ"
 
 msgid "源矿矿点"
-msgstr "源鉱採掘場"
+msgstr "源石鉱物スポット"
 
 msgid "演武平台"
-msgstr "演武台"
+msgstr "演武プラットフォーム"
 
 msgid "潜地虬兽"
-msgstr "潜地虯獣"
+msgstr "潜地蛟獣"
 
 msgid "潮行天使"
-msgstr "潮行天使"
+msgstr "潮進アンゲロス"
 
 msgid "潮行天使δ"
-msgstr "潮行天使δ"
+msgstr "潮進アンゲロスδ"
 
 msgid "火雾源石虫"
-msgstr "火霧源石蟲"
+msgstr "熱霧オリジムシ"
 
 msgid "灰芦麦"
-msgstr "灰芦麦"
+msgstr "灰麦"
 
 msgid "灼壳虫"
-msgstr "灼殼蟲"
+msgstr "アブリムシ"
 
 msgid "焚雾源石虫"
-msgstr "焚霧源石蟲"
+msgstr "焔霧オリジムシ"
 
 msgid "燎石"
 msgstr "燎石"
 
 msgid "物资调度终端"
-msgstr "物資調度端末"
+msgstr "商品取引端末"
 
 msgid "环境监测终端"
-msgstr "環境監測端末"
+msgstr "環境観測端末"
 
 msgid "球刺兽"
 msgstr "球刺獣"
 
 msgid "琼叶参"
-msgstr "瓊葉参"
+msgstr "玉葉人参"
 
 msgid "百眼彪兽"
 msgstr "百眼彪獣"
 
 msgid "砂叶"
-msgstr "砂葉"
+msgstr "サンドリーフ"
 
 msgid "碾骨伏击射手"
-msgstr "骨砕き伏撃射手"
+msgstr "ボーンクラッシャーの潜伏狙撃手"
 
 msgid "碾骨先锋"
-msgstr "骨砕き先锋"
+msgstr "ボーンクラッシャーの先鋒"
 
 msgid "碾骨劫掠者"
-msgstr "骨砕き略奪者"
+msgstr "ボーンクラッシャーの略奪者"
 
 msgid "碾骨撕裂牙兽"
-msgstr "骨砕き裂牙獣"
+msgstr "骨砕牙獣"
 
 msgid "碾骨清道夫"
-msgstr "骨砕き掃討者"
+msgstr "ボーンクラッシャーの始末屋"
 
 msgid "碾骨渗透者"
-msgstr "骨砕き浸透者"
+msgstr "ボーンクラッシャーの潜入者"
 
 msgid "碾骨焰术师"
-msgstr "骨砕き焔術師"
+msgstr "ボーンクラッシャーの炎術師"
 
 msgid "碾骨行刑人"
-msgstr "骨砕き行刑人"
+msgstr "ボーンクラッシャーの処刑人"
 
 msgid "穿林箭"
-msgstr "林穿ちの矢"
+msgstr "穿林矢"
 
 msgid "精锐伏击射手"
-msgstr "精鋭伏撃射手"
+msgstr "潜伏狙撃手・精鋭"
 
 msgid "精锐劫掠者"
-msgstr "精鋭略奪者"
+msgstr "略奪者・精鋭"
 
 msgid "精锐撕裂牙兽"
-msgstr "精鋭裂牙獣"
+msgstr "凶猛牙獣・精鋭"
 
 msgid "精锐行刑人"
-msgstr "精鋭行刑人"
+msgstr "処刑人・精鋭"
 
 msgid "紫晶矿矿点"
-msgstr "紫晶鉱採掘場"
+msgstr "紫晶鉱物スポット"
 
 msgid "纯晶多齿叶"
-msgstr "純晶多歯葉"
+msgstr "純晶鋭葉"
 
 msgid "维修灵感点"
-msgstr "修理インスピレーション"
+msgstr "修理部品スポット"
 
 msgid "肖像天使"
 msgstr "肖像天使"
 
 msgid "能量淤积点"
-msgstr "エネルギー堆積点"
+msgstr "超域活性点"
 
 msgid "至晶多齿叶"
-msgstr "至晶多歯葉"
+msgstr "至晶鋭葉"
 
 msgid "芽针"
 msgstr "芽針"
@@ -2683,97 +2683,97 @@ msgid "苦叶椒"
 msgstr "苦葉椒"
 
 msgid "荆刺芽针"
-msgstr "荊刺芽針"
+msgstr "茨芽針"
 
 msgid "荞花"
 msgstr "蕎花"
 
 msgid "莫惜命"
-msgstr "命を惜しまず"
+msgstr "不惜命"
 
 msgid "莫留财"
-msgstr "財を残さず"
+msgstr "不残財"
 
 msgid "萤壳虫"
-msgstr "蛍殻虫"
+msgstr "ホタルムシ"
 
 msgid "蓝铁矿矿点"
-msgstr "藍鉄鉱採掘場"
+msgstr "青鉄鉱物スポット"
 
 msgid "蓬茸锦草"
-msgstr "蓬茸錦草"
+msgstr "毛羽錦草"
 
 msgid "蚀像寻遗"
-msgstr "蝕像遺跡"
+msgstr "蝕像探索"
 
 msgid "血菌"
-msgstr "血菌"
+msgstr "血潮茸"
 
 msgid "行迹高塔"
-msgstr "行跡の塔"
+msgstr "実績展示"
 
 msgid "表象"
-msgstr "表層"
+msgstr "イーサルー"
 
 msgid "袭击预警终端"
-msgstr "襲撃予警端末"
+msgstr "襲撃警備端末"
 
 msgid "装备模板箱"
-msgstr "装備テンプレート箱"
+msgstr "装備設計ボックス"
 
 msgid "见闻辑录"
-msgstr "見聞録"
+msgstr "見聞集録"
 
 msgid "访客终端"
-msgstr "来訪者端末"
+msgstr "訪問端末"
 
 msgid "资源回收站"
 msgstr "資源回収所"
 
 msgid "赤铜矿"
-msgstr "赤銅鉱"
+msgstr "赤銅鉱物"
 
 msgid "轻红柱状菌"
-msgstr "軽紅柱菌"
+msgstr "薄紅茸"
 
 msgid "轻黯石"
-msgstr "軽暗色石"
+msgstr "軽闇石"
 
 msgid "过堂风"
-msgstr "通り風"
+msgstr "過堂風"
 
 msgid "酮化灌木"
-msgstr "酮化低木"
+msgstr "アケトン樹木"
 
 msgid "酸液源石虫"
-msgstr "酸液源石蟲"
+msgstr "酸液オリジムシ"
 
 msgid "酸液源石虫·α"
-msgstr "酸液源石蟲·α"
+msgstr "酸液オリジムシα"
 
 msgid "重刺天使"
-msgstr "重刺天使"
+msgstr "槍棘アンゲロス"
 
 msgid "重刺天使α"
-msgstr "重刺天使α"
+msgstr "槍棘アンゲロスα"
 
 msgid "重红柱状菌"
-msgstr "重紅柱菌"
+msgstr "深紅茸"
 
 msgid "重黯石"
-msgstr "重暗色石"
+msgstr "重闇石"
 
 msgid "金石稻"
 msgstr "金石稲"
 
 msgid "钉刺天使"
-msgstr "釘刺天使"
+msgstr "針棘アンゲロス"
 
 msgid "钉刺天使α"
-msgstr "釘刺天使α"
+msgstr "針棘アンゲロスα"
 
 msgid "锁闭储藏箱"
-msgstr "施錠収納箱"
+msgstr "ロック資源箱"
 
 msgid "锦草"
 msgstr "錦草"
@@ -2782,7 +2782,7 @@ msgid "雾火斧甲兽"
 msgstr "霧火斧甲獣"
 
 msgid "雾火爪牙"
-msgstr "霧火爪牙"
+msgstr "霧火ランドブレーカー"
 
 msgid "雾火牙兽"
 msgstr "霧火牙獣"
@@ -2791,22 +2791,22 @@ msgid "音像存档"
 msgstr "音像記録"
 
 msgid "高阶培养I"
-msgstr "高階培養I"
+msgstr "上級人材育成Ⅰ"
 
 msgid "高阶培养II"
-msgstr "高階培養II"
+msgstr "上級人材育成Ⅱ"
 
 msgid "高阶培养III"
-msgstr "高階培養III"
+msgstr "上級人材育成Ⅲ"
 
 msgid "高阶培养IV"
-msgstr "高階培養IV"
+msgstr "上級人材育成Ⅳ"
 
 msgid "高阶培养V"
-msgstr "高階培養V"
+msgstr "上級人材育成V"
 
 msgid "黯银柑实"
-msgstr "黯銀柑橘実"
+msgstr "黒銀シトローム"
 
 msgid "Battle Config"
 msgstr "戦闘設定"
@@ -2891,7 +2891,7 @@ msgid "刮刮乐"
 msgstr "スクラッチカード"
 
 msgid "协议纹石\n"
-msgstr "プロトコル紋石\n"
+msgstr "協約紋石"
 
 msgid "只填写 data.content 的字符串值"
 msgstr "data.content の文字列値のみ入力"
@@ -2917,10 +2917,10 @@ msgid "地图账号"
 msgstr "マップアカウント"
 
 msgid "塔晶"
-msgstr "塔晶"
+msgstr "タロサイト"
 
 msgid "塔罗斯菌"
-msgstr "タロス菌"
+msgstr "タロス茸"
 
 msgid "外部命令"
 msgstr "外部コマンド"
@@ -2941,7 +2941,7 @@ msgid "当前账号的 hg/check data.content 值，用于官方地图位置同�
 msgstr "公式マップ位置同期に使用する現在アカウントの hg/check data.content 値"
 
 msgid "待回收物品"
-msgstr "回収待ちアイテム"
+msgstr "未回収アイテム"
 
 msgid "息壤气"
 msgstr "息壌ガス"
@@ -2950,7 +2950,7 @@ msgid "惰气"
 msgstr "不活性ガス"
 
 msgid "战争回响"
-msgstr "戦争の残響"
+msgstr "戦争残響"
 
 msgid "是否执行一次外部命令行程序。"
 msgstr "外部コマンドラインプログラムを1回実行するかどうか。"
@@ -2965,7 +2965,7 @@ msgid "用于实测 YOLO 模型：可选模型、可选目标、可设置信度�
 msgstr "YOLOモデルの実測用です。モデル、対象、信頼度を選択してループスキャンできます。"
 
 msgid "红矛叶"
-msgstr "紅槍葉"
+msgstr "赤槍葉"
 
 msgid "网页地图同步"
 msgstr "Webマップ同期"
@@ -2977,13 +2977,13 @@ msgid "荞愈胶囊"
 msgstr "ソバ癒やしカプセル"
 
 msgid "蚀影噪雷"
-msgstr "蝕影ノイズ雷"
+msgstr "噪雷の蝕影"
 
 msgid "蚀影应龙尖兵"
-msgstr "蝕影応龍先兵"
+msgstr "応龍精鋭先鋒の蝕影"
 
 msgid "蚀影牙兽"
-msgstr "蝕影牙獣"
+msgstr "牙獣の蝕影"
 
 msgid ""
 "账号1\n"
@@ -2998,13 +2998,7 @@ msgid "选择当前账号在该任务中使用全局或独立战斗配置。"
 msgstr "このタスクで現在のアカウントがグローバル戦闘設定または個別戦闘設定を使用するか選択します。"
 
 msgid "阿莱克琉斯，千夫长"
-msgstr "アレクリウス、百人隊長"
-
-msgid "据点兑换仅购买优先商品"
-msgstr "拠点交換では優先商品だけを購入"
-
-msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
-msgstr "有効にすると、「取引商品優先順位」が空でない場合のみ、拠点交換でその中の商品だけを購入します。空の場合は従来どおり交換します。"
+msgstr "千人隊長アレイクレウス"
 
 msgid ""
 "需要执行的命令行内容。\n"
@@ -3028,47 +3022,5 @@ msgid "保存当前账号的完整任务配置快照。任务默认值变化不�
 msgstr ""
 "現在のアカウントのタスク設定を完全なスナップショットとして保存します。タスクのデフォルト値が変更されても、保存済みのアカウントには影響しません。"
 
-msgid "区域扫描测试"
-msgstr "エリアスキャンテスト"
-
-msgid "暂停计时验证"
-msgstr "一時停止タイミング検証"
-
-msgid "等级读取测试"
-msgstr "レベル読み取りテスト"
-
-msgid "演算入口导航测试"
-msgstr "演算入口ナビゲーションテスト"
-
-msgid "按住鼠标蛇形扫描指定矩形区域"
-msgstr "マウスを押したまま指定の矩形領域を蛇行スキャンします"
-
-msgid "验证暂停任务期间活动计时是否冻结"
-msgstr "タスク一時停止中にアクティブタイマーが停止するかを確認します"
-
-msgid "将次要目标方向蓝点对齐到屏幕中心"
-msgstr "サブ目標の方向の青い点を画面中央に合わせます"
-
-msgid "读取演武集算关卡界面的当前等级"
-msgstr "演武集算ステージ画面の現在のレベルを読み取ります"
-
-msgid "导航到演武集算『演算』入口"
-msgstr "演武集算の『演算』入口へ移動します"
-
-msgid "测试模式"
-msgstr "テストモード"
-
-msgid "测试超时(秒)"
-msgstr "テストタイムアウト(秒)"
-
-msgid "选择要运行的暂停计时测试"
-msgstr "実行する一時停止タイミングテストを選択します"
-
-msgid "暂停时间应超过此值，用于观察恢复后的行为"
-msgstr "再開後の動作を確認するため、一時停止時間はこの値を超える必要があります"
-
-msgid "自写循环"
-msgstr "自前ループ"
-
-msgid "两者"
-msgstr "両方"
+msgid "炽燃！竞技大会！"
+msgstr "燃えよ！アリーナ！"

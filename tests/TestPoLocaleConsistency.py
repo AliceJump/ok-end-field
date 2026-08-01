@@ -26,9 +26,20 @@ POLLUTED_MSGIDS = {
 }
 
 # 官方 API/Atlos 提供、且官方各语言译名与英文相同（非英文回退）的条目。
-# 由 scripts/sync_world_map_langs.py 同步，保持与官方一致。
+# 由 scripts/sync_world_map_langs.py / sync_map_mark_langs.py 同步，保持与官方一致。
 OFFICIAL_SAME_AS_ENGLISH = {
     "武陵",  # es 官方 = "Wuling"
+    # mark 模板名（es_MX 官方未本地化，与英文同名）
+    "三位一体",  # Triaggelos
+    "钱币收集",  # T-Creds
+    "聂菲斯",  # Nefarith
+    "阮一",  # Ruan Yi
+    "晶锥天使",  # Hedron
+    "晶锥天使δ",  # Hedron δ
+    "芽针",  # Yazhen
+    "锦草",  # Jincao
+    "息壤气",  # Xiragen
+    "惰气",  # Inergen
 }
 
 

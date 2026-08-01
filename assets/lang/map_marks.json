@@ -1,0 +1,3402 @@
+{
+  "00dca15c471f55509c51e7c5bdec35fb": {
+    "zh_CN": {
+      "string": "萤壳虫"
+    },
+    "en_US": {
+      "string": "Glowbug"
+    },
+    "ja_JP": {
+      "string": "ホタルムシ"
+    },
+    "ko_KR": {
+      "string": "야광 풍뎅이"
+    },
+    "es_ES": {
+      "string": "Luciérnaga"
+    },
+    "zh_TW": {
+      "string": "螢殼蟲"
+    }
+  },
+  "01b71a3ce6d8c2eb695363e39f6bd4ca": {
+    "zh_CN": {
+      "string": "展示区"
+    },
+    "en_US": {
+      "string": "Display Section"
+    },
+    "ja_JP": {
+      "string": "展示スペース"
+    },
+    "ko_KR": {
+      "string": "전시 구역"
+    },
+    "es_ES": {
+      "string": "Área de exhibición"
+    },
+    "zh_TW": {
+      "string": "展示區"
+    }
+  },
+  "027836e8662dd2b3514e2acc931f53cb": {
+    "zh_CN": {
+      "string": "晶锥天使δ"
+    },
+    "en_US": {
+      "string": "Hedron δ"
+    },
+    "ja_JP": {
+      "string": "錐晶アンゲロスδ"
+    },
+    "ko_KR": {
+      "string": "수정아겔로스 · δ"
+    },
+    "es_ES": {
+      "string": "Hedron δ"
+    },
+    "zh_TW": {
+      "string": "晶錐天使δ"
+    }
+  },
+  "0533c2a05162b48752eb545e01dca50b": {
+    "zh_CN": {
+      "string": "潜地虬兽"
+    },
+    "en_US": {
+      "string": "Tunneling Nidwyrm"
+    },
+    "ja_JP": {
+      "string": "潜地蛟獣"
+    },
+    "ko_KR": {
+      "string": "터널링 니드웜"
+    },
+    "es_ES": {
+      "string": "Nidwyrm Subterráneo"
+    },
+    "zh_TW": {
+      "string": "潛地虯獸"
+    }
+  },
+  "078f633dee92378719691a268d37a9e6": {
+    "zh_CN": {
+      "string": "斧甲兽"
+    },
+    "en_US": {
+      "string": "Axe Armorbeast"
+    },
+    "ja_JP": {
+      "string": "斧甲獣"
+    },
+    "ko_KR": {
+      "string": "엑스 아머비스트"
+    },
+    "es_ES": {
+      "string": "Bestia armadura con hacha"
+    },
+    "zh_TW": {
+      "string": "斧甲獸"
+    }
+  },
+  "0a8463aff1c717d9b0a3d9caadd75b13": {
+    "zh_CN": {
+      "string": "袭击预警终端"
+    },
+    "en_US": {
+      "string": "EW Terminal"
+    },
+    "ja_JP": {
+      "string": "襲撃警備端末"
+    },
+    "ko_KR": {
+      "string": "습격 경보 단말기"
+    },
+    "es_ES": {
+      "string": "Terminal de A.T."
+    },
+    "zh_TW": {
+      "string": "襲擊預警終端"
+    }
+  },
+  "0cddb04259637e9847b1001d38b10cd8": {
+    "zh_CN": {
+      "string": "精锐伏击射手"
+    },
+    "en_US": {
+      "string": "Elite Ambusher"
+    },
+    "ja_JP": {
+      "string": "潜伏狙撃手・精鋭"
+    },
+    "ko_KR": {
+      "string": "저격수 · 정예"
+    },
+    "es_ES": {
+      "string": "Emboscador de élite"
+    },
+    "zh_TW": {
+      "string": "精銳伏擊射手"
+    }
+  },
+  "0d021153e22b9ec73320490f7ebb9de6": {
+    "zh_CN": {
+      "string": "割云翁"
+    },
+    "en_US": {
+      "string": "Nimbus Razor"
+    },
+    "ja_JP": {
+      "string": "切雲老"
+    },
+    "ko_KR": {
+      "string": "할운옹"
+    },
+    "es_ES": {
+      "string": "Navaja de Nimbus"
+    },
+    "zh_TW": {
+      "string": "割雲翁"
+    }
+  },
+  "0d8736517fd4e72870db860fbfbed75a": {
+    "zh_CN": {
+      "string": "雾火牙兽"
+    },
+    "en_US": {
+      "string": "Hazefyre Tuskbeast"
+    },
+    "ja_JP": {
+      "string": "霧火牙獣"
+    },
+    "ko_KR": {
+      "string": "안갯불에 물든 터스크비스트"
+    },
+    "es_ES": {
+      "string": "Bestia colmilluda de bruma ardiente"
+    },
+    "zh_TW": {
+      "string": "霧火牙獸"
+    }
+  },
+  "101da00f05371630918f4b22099c1dbe": {
+    "zh_CN": {
+      "string": "精锐行刑人"
+    },
+    "en_US": {
+      "string": "Elite Executioner"
+    },
+    "ja_JP": {
+      "string": "処刑人・精鋭"
+    },
+    "ko_KR": {
+      "string": "처형자 · 정예"
+    },
+    "es_ES": {
+      "string": "Ejecutor de élite"
+    },
+    "zh_TW": {
+      "string": "精銳行刑人"
+    }
+  },
+  "102167948a50d81f59873c1f1d542d4a": {
+    "zh_CN": {
+      "string": "蚀像寻遗"
+    },
+    "en_US": {
+      "string": "Etchspace Salvage"
+    },
+    "ja_JP": {
+      "string": "蝕像探索"
+    },
+    "ko_KR": {
+      "string": "침식된 유산을 찾아서"
+    },
+    "es_ES": {
+      "string": "Rescate de grabaespacio"
+    },
+    "zh_TW": {
+      "string": "蝕像尋遺"
+    }
+  },
+  "1290aebe2c902eed7b72c87c4b5308f7": {
+    "zh_CN": {
+      "string": "见闻辑录"
+    },
+    "en_US": {
+      "string": "Findings"
+    },
+    "ja_JP": {
+      "string": "見聞集録"
+    },
+    "ko_KR": {
+      "string": "기록집"
+    },
+    "es_ES": {
+      "string": "Hallazgos"
+    },
+    "zh_TW": {
+      "string": "見聞輯錄"
+    }
+  },
+  "13b1263ef95dd41e7df48f7e3bf71824": {
+    "zh_CN": {
+      "string": "火雾源石虫"
+    },
+    "en_US": {
+      "string": "Firemist Originium Slug"
+    },
+    "ja_JP": {
+      "string": "熱霧オリジムシ"
+    },
+    "ko_KR": {
+      "string": "화염원석충"
+    },
+    "es_ES": {
+      "string": "Babosa de Originio de brumafuego"
+    },
+    "zh_TW": {
+      "string": "火霧源石蟲"
+    }
+  },
+  "13ce388b7619c5dd27a887db8860bdd5": {
+    "zh_CN": {
+      "string": "三位一体"
+    },
+    "en_US": {
+      "string": "Triaggelos"
+    },
+    "ja_JP": {
+      "string": "トリアンゲロス"
+    },
+    "ko_KR": {
+      "string": "트리아겔로스"
+    },
+    "es_ES": {
+      "string": "Triaggelos"
+    },
+    "zh_TW": {
+      "string": "三位一體"
+    }
+  },
+  "1464aaa27a50de4740090476f47ea167": {
+    "zh_CN": {
+      "string": "百眼彪兽"
+    },
+    "en_US": {
+      "string": "Spotted Rakerbeast"
+    },
+    "ja_JP": {
+      "string": "百眼彪獣"
+    },
+    "ko_KR": {
+      "string": "백안의 레이커비스트"
+    },
+    "es_ES": {
+      "string": "Bestia rastrera manchada"
+    },
+    "zh_TW": {
+      "string": "百眼彪獸"
+    }
+  },
+  "169026a3f6b9b491bf596f90ee4a0b8e": {
+    "zh_CN": {
+      "string": "阿莱克琉斯，千夫长"
+    },
+    "en_US": {
+      "string": "Alleikhreos, Chiliarch"
+    },
+    "ja_JP": {
+      "string": "千人隊長アレイクレウス"
+    },
+    "ko_KR": {
+      "string": "알레이크레오스, 천부장"
+    },
+    "es_ES": {
+      "string": "Alleikhreos, Quiliarca"
+    },
+    "zh_TW": {
+      "string": "阿萊克琉斯，千夫長"
+    }
+  },
+  "17b5c63cd81ee1bde01b6639c96dfc6a": {
+    "zh_CN": {
+      "string": "重刺天使α"
+    },
+    "en_US": {
+      "string": "Heavy Sting α"
+    },
+    "ja_JP": {
+      "string": "槍棘アンゲロスα"
+    },
+    "ko_KR": {
+      "string": "삼미아겔로스 · α"
+    },
+    "es_ES": {
+      "string": "Aguijón fuerte α"
+    },
+    "zh_TW": {
+      "string": "重刺天使α"
+    }
+  },
+  "17fcaf308737555959adeade0d6ca95d": {
+    "zh_CN": {
+      "string": "钉刺天使"
+    },
+    "en_US": {
+      "string": "Sting"
+    },
+    "ja_JP": {
+      "string": "針棘アンゲロス"
+    },
+    "ko_KR": {
+      "string": "일미아겔로스"
+    },
+    "es_ES": {
+      "string": "Aguijón"
+    },
+    "zh_TW": {
+      "string": "釘刺天使"
+    }
+  },
+  "19c21346830d2d4ee694e0fdfefbab9f": {
+    "zh_CN": {
+      "string": "源矿矿点"
+    },
+    "en_US": {
+      "string": "Originium Mining Spot"
+    },
+    "ja_JP": {
+      "string": "源石鉱物スポット"
+    },
+    "ko_KR": {
+      "string": "오리지늄 광물 광산 지점"
+    },
+    "es_ES": {
+      "string": "Punto de minería de originio"
+    },
+    "zh_TW": {
+      "string": "源礦礦點"
+    }
+  },
+  "1c4c67ee6767711f98ee476bdb35569c": {
+    "zh_CN": {
+      "string": "武陵石"
+    },
+    "en_US": {
+      "string": "Wulingstone"
+    },
+    "ja_JP": {
+      "string": "武陵石"
+    },
+    "ko_KR": {
+      "string": "무릉석"
+    },
+    "es_ES": {
+      "string": "Piedra de Wuling"
+    },
+    "zh_TW": {
+      "string": "武陵石"
+    }
+  },
+  "1f15a1f903fd0c7952ce2cd92ec650e7": {
+    "zh_CN": {
+      "string": "充能球刺兽"
+    },
+    "en_US": {
+      "string": "Imbued Quillbeast"
+    },
+    "ja_JP": {
+      "string": "チャージ球刺獣"
+    },
+    "ko_KR": {
+      "string": "활성화된 프릭비스트"
+    },
+    "es_ES": {
+      "string": "Bestia pluma imbuida"
+    },
+    "zh_TW": {
+      "string": "蓄能球刺獸"
+    }
+  },
+  "202a6c78b3c6c90a426f54201cd35536": {
+    "zh_CN": {
+      "string": "重黯石"
+    },
+    "en_US": {
+      "string": "Umbronyx"
+    },
+    "ja_JP": {
+      "string": "重闇石"
+    },
+    "ko_KR": {
+      "string": "진한 흑암석"
+    },
+    "es_ES": {
+      "string": "Umbrónix"
+    },
+    "zh_TW": {
+      "string": "重黯石"
+    }
+  },
+  "2072475f2129875503a84d3c632c5197": {
+    "zh_CN": {
+      "string": "储藏箱III"
+    },
+    "en_US": {
+      "string": "Storage Crate III"
+    },
+    "ja_JP": {
+      "string": "資源箱Ⅲ"
+    },
+    "ko_KR": {
+      "string": "보물 상자 III"
+    },
+    "es_ES": {
+      "string": "Caja de almacenamiento III"
+    },
+    "zh_TW": {
+      "string": "儲藏箱III"
+    }
+  },
+  "22188c1191dc58280372cd56113ae064": {
+    "zh_CN": {
+      "string": "断云叟"
+    },
+    "en_US": {
+      "string": "Breaking Gust"
+    },
+    "ja_JP": {
+      "string": "断雲翁"
+    },
+    "ko_KR": {
+      "string": "단운수"
+    },
+    "es_ES": {
+      "string": "Ráfaga devastadora"
+    },
+    "zh_TW": {
+      "string": "斷雲叟"
+    }
+  },
+  "221ff6c7f565526b8e75643f114a5ef0": {
+    "zh_CN": {
+      "string": "见闻辑录"
+    },
+    "en_US": {
+      "string": "Findings"
+    },
+    "ja_JP": {
+      "string": "見聞集録"
+    },
+    "ko_KR": {
+      "string": "기록집"
+    },
+    "es_ES": {
+      "string": "Hallazgos"
+    },
+    "zh_TW": {
+      "string": "見聞輯錄"
+    }
+  },
+  "2288cb7b08658466ca67ac78c9d1c781": {
+    "zh_CN": {
+      "string": "维修灵感点"
+    },
+    "en_US": {
+      "string": "Repair Logic"
+    },
+    "ja_JP": {
+      "string": "修理部品スポット"
+    },
+    "ko_KR": {
+      "string": "수리 영감 포인트"
+    },
+    "es_ES": {
+      "string": "Lógica de reparación"
+    },
+    "zh_TW": {
+      "string": "維修靈感點"
+    }
+  },
+  "28d80eeded9074ed3918f6c9a22fa12d": {
+    "zh_CN": {
+      "string": "黯银柑实"
+    },
+    "en_US": {
+      "string": "Umbraline"
+    },
+    "ja_JP": {
+      "string": "黒銀シトローム"
+    },
+    "ko_KR": {
+      "string": "다크 시트론"
+    },
+    "es_ES": {
+      "string": "Umbralina"
+    },
+    "zh_TW": {
+      "string": "黯銀柑實"
+    }
+  },
+  "2a074fc66030253dbd462a5a34f30f64": {
+    "zh_CN": {
+      "string": "碾骨劫掠者"
+    },
+    "en_US": {
+      "string": "Bonekrusher Raider"
+    },
+    "ja_JP": {
+      "string": "ボーンクラッシャーの略奪者"
+    },
+    "ko_KR": {
+      "string": "본 크러셔 약탈자"
+    },
+    "es_ES": {
+      "string": "Asaltante Rompehuesos"
+    },
+    "zh_TW": {
+      "string": "碾骨劫掠者"
+    }
+  },
+  "2a45c9d65943540495df92f8df4adc58": {
+    "zh_CN": {
+      "string": "中红柱状菌"
+    },
+    "en_US": {
+      "string": "Red Bolete"
+    },
+    "ja_JP": {
+      "string": "紅色茸"
+    },
+    "ko_KR": {
+      "string": "보통 붉은 기둥 버섯"
+    },
+    "es_ES": {
+      "string": "Bolete rojo"
+    },
+    "zh_TW": {
+      "string": "中紅柱狀菌"
+    }
+  },
+  "2b4bdec8e2536fbef037f241fd935f1e": {
+    "zh_CN": {
+      "string": "总控中枢"
+    },
+    "en_US": {
+      "string": "Control Nexus"
+    },
+    "ja_JP": {
+      "string": "指揮中枢"
+    },
+    "ko_KR": {
+      "string": "핵심 제어 중추"
+    },
+    "es_ES": {
+      "string": "Nexus de control"
+    },
+    "zh_TW": {
+      "string": "總控中樞"
+    }
+  },
+  "2d6ff84905c7b5902591595f012ba0b4": {
+    "zh_CN": {
+      "string": "血菌"
+    },
+    "en_US": {
+      "string": "Bloodcap"
+    },
+    "ja_JP": {
+      "string": "血潮茸"
+    },
+    "ko_KR": {
+      "string": "피버섯"
+    },
+    "es_ES": {
+      "string": "Fungisangre"
+    },
+    "zh_TW": {
+      "string": "血菌"
+    }
+  },
+  "2ea7229fc1e5e62a7a6cbc0f6ca7feff": {
+    "zh_CN": {
+      "string": "高阶培养II"
+    },
+    "en_US": {
+      "string": "Advanced Progression II"
+    },
+    "ja_JP": {
+      "string": "上級人材育成Ⅱ"
+    },
+    "ko_KR": {
+      "string": "고급 육성 II"
+    },
+    "es_ES": {
+      "string": "Progresión avanzada II"
+    },
+    "zh_TW": {
+      "string": "高階培養II"
+    }
+  },
+  "306eb4c145864ce408d6135a6265465c": {
+    "zh_CN": {
+      "string": "柑实"
+    },
+    "en_US": {
+      "string": "Citrome"
+    },
+    "ja_JP": {
+      "string": "シトローム"
+    },
+    "ko_KR": {
+      "string": "시트론"
+    },
+    "es_ES": {
+      "string": "Citroma"
+    },
+    "zh_TW": {
+      "string": "柑實"
+    }
+  },
+  "33fe73b514d11e68be1ab08bdeecf29c": {
+    "zh_CN": {
+      "string": "燎石"
+    },
+    "en_US": {
+      "string": "Igneosite"
+    },
+    "ja_JP": {
+      "string": "燎石"
+    },
+    "ko_KR": {
+      "string": "화염석"
+    },
+    "es_ES": {
+      "string": "Igneosita"
+    },
+    "zh_TW": {
+      "string": "燎石"
+    }
+  },
+  "354545e2a68493b56e73b0b84ff9826d": {
+    "zh_CN": {
+      "string": "中黯石"
+    },
+    "en_US": {
+      "string": "Auronyx"
+    },
+    "ja_JP": {
+      "string": "中闇石"
+    },
+    "ko_KR": {
+      "string": "일반 흑암석"
+    },
+    "es_ES": {
+      "string": "Auronix"
+    },
+    "zh_TW": {
+      "string": "中黯石"
+    }
+  },
+  "35a3c89c0484980b45b27131eca69d86": {
+    "zh_CN": {
+      "string": "见闻辑录"
+    },
+    "en_US": {
+      "string": "Findings"
+    },
+    "ja_JP": {
+      "string": "見聞集録"
+    },
+    "ko_KR": {
+      "string": "기록집"
+    },
+    "es_ES": {
+      "string": "Hallazgos"
+    },
+    "zh_TW": {
+      "string": "見聞輯錄"
+    }
+  },
+  "35d245971d2df1069e83229e9e9571f4": {
+    "zh_CN": {
+      "string": "金石稻"
+    },
+    "en_US": {
+      "string": "Amber Rice"
+    },
+    "ja_JP": {
+      "string": "金石稲"
+    },
+    "ko_KR": {
+      "string": "금석벼"
+    },
+    "es_ES": {
+      "string": "Arroz ámbar"
+    },
+    "zh_TW": {
+      "string": "金石稻"
+    }
+  },
+  "36058795c0425157ec814002e6c6b5d7": {
+    "zh_CN": {
+      "string": "塔晶"
+    },
+    "en_US": {
+      "string": "Talosite"
+    },
+    "ja_JP": {
+      "string": "タロサイト"
+    },
+    "ko_KR": {
+      "string": "유령수정"
+    },
+    "es_ES": {
+      "string": "Talosita"
+    },
+    "zh_TW": {
+      "string": "塔晶"
+    }
+  },
+  "378f41e052c2aac74eec292d143ab7d7": {
+    "zh_CN": {
+      "string": "物资调度终端"
+    },
+    "en_US": {
+      "string": "Stock Redistribution Terminal"
+    },
+    "ja_JP": {
+      "string": "商品取引端末"
+    },
+    "ko_KR": {
+      "string": "물자 관리 단말기"
+    },
+    "es_ES": {
+      "string": "Terminal de redistribución de existencias"
+    },
+    "zh_TW": {
+      "string": "物資調度終端"
+    }
+  },
+  "386f788e7c1828476e254bc51d67b5a8": {
+    "zh_CN": {
+      "string": "影拓丰碑"
+    },
+    "en_US": {
+      "string": "Umbral Monument"
+    },
+    "ja_JP": {
+      "string": "映像の記念碑"
+    },
+    "ko_KR": {
+      "string": "그림자 이정표"
+    },
+    "es_ES": {
+      "string": "Monumento del umbral"
+    },
+    "zh_TW": {
+      "string": "影拓豐碑"
+    }
+  },
+  "38931c92a0f10eab4d73952a7483afb7": {
+    "zh_CN": {
+      "string": "“碾骨之拳”罗丹"
+    },
+    "en_US": {
+      "string": "Rhodagn the Bonekrushing Fist"
+    },
+    "ja_JP": {
+      "string": "「ボーンクラッシャーの拳」ロダン"
+    },
+    "ko_KR": {
+      "string": "'본 크러셔의 주먹' 로댄"
+    },
+    "es_ES": {
+      "string": "Rhodagn el puño Rompehuesos"
+    },
+    "zh_TW": {
+      "string": "「碾骨之拳」羅丹"
+    }
+  },
+  "3ad8f3b32a7c921f50c369cae51c77a1": {
+    "zh_CN": {
+      "string": "能量淤积点"
+    },
+    "en_US": {
+      "string": "Energy Alluvium"
+    },
+    "ja_JP": {
+      "string": "超域活性点"
+    },
+    "ko_KR": {
+      "string": "에너지 응집점"
+    },
+    "es_ES": {
+      "string": "Aluvión energético"
+    },
+    "zh_TW": {
+      "string": "能量淤積點"
+    }
+  },
+  "3c4def3fc4cc4f2654d066a3c2ab969f": {
+    "zh_CN": {
+      "string": "物资调度终端"
+    },
+    "en_US": {
+      "string": "Stock Redistribution Terminal"
+    },
+    "ja_JP": {
+      "string": "商品取引端末"
+    },
+    "ko_KR": {
+      "string": "물자 관리 단말기"
+    },
+    "es_ES": {
+      "string": "Terminal de redistribución de existencias"
+    },
+    "zh_TW": {
+      "string": "物資調度終端"
+    }
+  },
+  "3df8c83ae1232628efc1c0a0da814b3c": {
+    "zh_CN": {
+      "string": "醚质"
+    },
+    "en_US": {
+      "string": "Aurylene"
+    },
+    "ja_JP": {
+      "string": "オーリレン"
+    },
+    "ko_KR": {
+      "string": "오리렌"
+    },
+    "es_ES": {
+      "string": "Aurileno"
+    },
+    "zh_TW": {
+      "string": "醚質"
+    }
+  },
+  "3f2a41a932d0645beadc319bad088231": {
+    "zh_CN": {
+      "string": "储藏箱II"
+    },
+    "en_US": {
+      "string": "Storage Crate II"
+    },
+    "ja_JP": {
+      "string": "資源箱Ⅱ"
+    },
+    "ko_KR": {
+      "string": "보물 상자 II"
+    },
+    "es_ES": {
+      "string": "Caja de almacenamiento II"
+    },
+    "zh_TW": {
+      "string": "儲藏箱II"
+    }
+  },
+  "3fe5dce139f3d55ff7a9df886c58e29e": {
+    "zh_CN": {
+      "string": "资源回收站"
+    },
+    "en_US": {
+      "string": "Recycling Station"
+    },
+    "ja_JP": {
+      "string": "資源回収所"
+    },
+    "ko_KR": {
+      "string": "재활용센터"
+    },
+    "es_ES": {
+      "string": "Estación de reciclaje"
+    },
+    "zh_TW": {
+      "string": "資源回收站"
+    }
+  },
+  "40d5917cedfbbaac09f10d8ae6012355": {
+    "zh_CN": {
+      "string": "次级核心"
+    },
+    "en_US": {
+      "string": "Sub-PAC"
+    },
+    "ja_JP": {
+      "string": "サブ協約核心"
+    },
+    "ko_KR": {
+      "string": "서브 코어"
+    },
+    "es_ES": {
+      "string": "Sub-NAP"
+    },
+    "zh_TW": {
+      "string": "次級核心"
+    }
+  },
+  "41169880cd5d65728c2136f2c92c3039": {
+    "zh_CN": {
+      "string": "苦叶椒"
+    },
+    "en_US": {
+      "string": "Tartpepper"
+    },
+    "ja_JP": {
+      "string": "苦葉椒"
+    },
+    "ko_KR": {
+      "string": "쓴맛 나는 고추"
+    },
+    "es_ES": {
+      "string": "Pimienta ácida"
+    },
+    "zh_TW": {
+      "string": "苦葉椒"
+    }
+  },
+  "41487e22d00aa085351420fd2448f7f7": {
+    "zh_CN": {
+      "string": "灰芦麦"
+    },
+    "en_US": {
+      "string": "Reed Rye"
+    },
+    "ja_JP": {
+      "string": "灰麦"
+    },
+    "ko_KR": {
+      "string": "회보리"
+    },
+    "es_ES": {
+      "string": "Centeno de caña"
+    },
+    "zh_TW": {
+      "string": "灰蘆麥"
+    }
+  },
+  "41693134adb94ec884b7744bc2e3acea": {
+    "zh_CN": {
+      "string": "蓝铁矿矿点"
+    },
+    "en_US": {
+      "string": "Ferrium Mining Spot"
+    },
+    "ja_JP": {
+      "string": "青鉄鉱物スポット"
+    },
+    "ko_KR": {
+      "string": "페리움 광석 광산 지점"
+    },
+    "es_ES": {
+      "string": "Punto de minería de ferrio"
+    },
+    "zh_TW": {
+      "string": "藍鐵礦礦點"
+    }
+  },
+  "4250285b671ce27c07acbb15e638308e": {
+    "zh_CN": {
+      "string": "协议纹石\n"
+    },
+    "en_US": {
+      "string": "Protocolith"
+    },
+    "ja_JP": {
+      "string": "協約紋石"
+    },
+    "ko_KR": {
+      "string": "프로토콜 문양석"
+    },
+    "es_ES": {
+      "string": "Protocolito"
+    },
+    "zh_TW": {
+      "string": "協議紋石"
+    }
+  },
+  "42a88878d8486d23aa5aab858362d5c3": {
+    "zh_CN": {
+      "string": "焚雾源石虫"
+    },
+    "en_US": {
+      "string": "Blazemist Originium Slug"
+    },
+    "ja_JP": {
+      "string": "焔霧オリジムシ"
+    },
+    "ko_KR": {
+      "string": "용암원석충"
+    },
+    "es_ES": {
+      "string": "Babosa de Originio de niebla ardiente"
+    },
+    "zh_TW": {
+      "string": "焚霧源石蟲"
+    }
+  },
+  "43bec29bdd54f988e1835e2307fcc118": {
+    "zh_CN": {
+      "string": "砂叶"
+    },
+    "en_US": {
+      "string": "Sandleaf"
+    },
+    "ja_JP": {
+      "string": "サンドリーフ"
+    },
+    "ko_KR": {
+      "string": "샌드리프"
+    },
+    "es_ES": {
+      "string": "Hojarena"
+    },
+    "zh_TW": {
+      "string": "砂葉"
+    }
+  },
+  "463da988226ee104fb03e53ed0b9a7c4": {
+    "zh_CN": {
+      "string": "锦草"
+    },
+    "en_US": {
+      "string": "Jincao"
+    },
+    "ja_JP": {
+      "string": "錦草"
+    },
+    "ko_KR": {
+      "string": "금초"
+    },
+    "es_ES": {
+      "string": "Jincao"
+    },
+    "zh_TW": {
+      "string": "錦草"
+    }
+  },
+  "46d6a88c6fb6db31c6c6f73f9d43b6f5": {
+    "zh_CN": {
+      "string": "储藏箱IV"
+    },
+    "en_US": {
+      "string": "Storage Crate IV"
+    },
+    "ja_JP": {
+      "string": "資源箱Ⅳ"
+    },
+    "ko_KR": {
+      "string": "보물 상자 IV"
+    },
+    "es_ES": {
+      "string": "Caja de almacenamiento IV"
+    },
+    "zh_TW": {
+      "string": "儲藏箱IV"
+    }
+  },
+  "475c7b556e59f251741c80501b36028d": {
+    "zh_CN": {
+      "string": "表象"
+    },
+    "en_US": {
+      "string": "Æthillu"
+    },
+    "ja_JP": {
+      "string": "イーサルー"
+    },
+    "ko_KR": {
+      "string": "잔영"
+    },
+    "es_ES": {
+      "string": "Éthillu"
+    },
+    "zh_TW": {
+      "string": "表象"
+    }
+  },
+  "4806a70341862a9679173aaac1916043": {
+    "zh_CN": {
+      "string": "武器进阶"
+    },
+    "en_US": {
+      "string": "Weapon Tune"
+    },
+    "ja_JP": {
+      "string": "武器突破"
+    },
+    "ko_KR": {
+      "string": "무기 돌파"
+    },
+    "es_ES": {
+      "string": "Afinación de armas"
+    },
+    "zh_TW": {
+      "string": "武器進階"
+    }
+  },
+  "4ac93c95966e3df6c5e8e54568efe9a7": {
+    "zh_CN": {
+      "string": "息壤气"
+    },
+    "en_US": {
+      "string": "Xiragen"
+    },
+    "ja_JP": {
+      "string": "息壌ガス"
+    },
+    "ko_KR": {
+      "string": "식양 기체"
+    },
+    "es_ES": {
+      "string": "Xiragen"
+    },
+    "zh_TW": {
+      "string": "息壤氣"
+    }
+  },
+  "4bca951b277fb97c372e997c0b660abf": {
+    "zh_CN": {
+      "string": "炽燃！竞技大会！"
+    },
+    "en_US": {
+      "string": "HEAT RAGE! MEGA ARENA!"
+    },
+    "ja_JP": {
+      "string": "燃えよ！アリーナ！"
+    },
+    "ko_KR": {
+      "string": "타올라라! 경기 대회!"
+    },
+    "es_ES": {
+      "string": "¡FURIA ARDIENTE! ¡MEGA ARENA!"
+    },
+    "zh_TW": {
+      "string": "熾燃！競技大會！"
+    }
+  },
+  "5079ff5183c248ee3106c2f1bdf8b56e": {
+    "zh_CN": {
+      "string": "见闻辑录"
+    },
+    "en_US": {
+      "string": "Findings"
+    },
+    "ja_JP": {
+      "string": "見聞集録"
+    },
+    "ko_KR": {
+      "string": "기록집"
+    },
+    "es_ES": {
+      "string": "Hallazgos"
+    },
+    "zh_TW": {
+      "string": "見聞輯錄"
+    }
+  },
+  "51756afae15b812d3f535c84ad0767c5": {
+    "zh_CN": {
+      "string": "摧山将"
+    },
+    "en_US": {
+      "string": "Hill Smasher"
+    },
+    "ja_JP": {
+      "string": "砕山将"
+    },
+    "ko_KR": {
+      "string": "최산장"
+    },
+    "es_ES": {
+      "string": "Demoledor de colinas"
+    },
+    "zh_TW": {
+      "string": "摧山將"
+    }
+  },
+  "527e307758bd5473474f3142c8eae623": {
+    "zh_CN": {
+      "string": "能量淤积点"
+    },
+    "en_US": {
+      "string": "Energy Alluvium"
+    },
+    "ja_JP": {
+      "string": "超域活性点"
+    },
+    "ko_KR": {
+      "string": "에너지 응집점"
+    },
+    "es_ES": {
+      "string": "Aluvión energético"
+    },
+    "zh_TW": {
+      "string": "能量淤積點"
+    }
+  },
+  "5537623b30191215f654afe44db3f6fe": {
+    "zh_CN": {
+      "string": "醚质"
+    },
+    "en_US": {
+      "string": "Aurylene"
+    },
+    "ja_JP": {
+      "string": "オーリレン"
+    },
+    "ko_KR": {
+      "string": "오리렌"
+    },
+    "es_ES": {
+      "string": "Aurileno"
+    },
+    "zh_TW": {
+      "string": "醚質"
+    }
+  },
+  "558efd7959bed65683cc47709b16689a": {
+    "zh_CN": {
+      "string": "净水节点"
+    },
+    "en_US": {
+      "string": "Purification Node"
+    },
+    "ja_JP": {
+      "string": "浄水装置"
+    },
+    "ko_KR": {
+      "string": "정수 노드"
+    },
+    "es_ES": {
+      "string": "Nodo de purificación"
+    },
+    "zh_TW": {
+      "string": "淨水節點"
+    }
+  },
+  "59a8b4fbc727bc199dc7925af8f13ce5": {
+    "zh_CN": {
+      "string": "大角天使"
+    },
+    "en_US": {
+      "string": "Ram"
+    },
+    "ja_JP": {
+      "string": "巨角アンゲロス"
+    },
+    "ko_KR": {
+      "string": "큰뿔아겔로스"
+    },
+    "es_ES": {
+      "string": "Carnero"
+    },
+    "zh_TW": {
+      "string": "大角天使"
+    }
+  },
+  "5a0249a60f3c1cf1d7d2c700e7479788": {
+    "zh_CN": {
+      "string": "干员经验"
+    },
+    "en_US": {
+      "string": "Operator EXP"
+    },
+    "ja_JP": {
+      "string": "オペレーター経験値"
+    },
+    "ko_KR": {
+      "string": "오퍼레이터 경험치"
+    },
+    "es_ES": {
+      "string": "EXP de operador"
+    },
+    "zh_TW": {
+      "string": "幹員經驗"
+    }
+  },
+  "5a935c4088380dab806208464b631ff7": {
+    "zh_CN": {
+      "string": "见闻辑录"
+    },
+    "en_US": {
+      "string": "Findings"
+    },
+    "ja_JP": {
+      "string": "見聞集録"
+    },
+    "ko_KR": {
+      "string": "기록집"
+    },
+    "es_ES": {
+      "string": "Hallazgos"
+    },
+    "zh_TW": {
+      "string": "見聞輯錄"
+    }
+  },
+  "5ace8a67bba5a295b28ad45edef0f175": {
+    "zh_CN": {
+      "string": "潮行天使δ"
+    },
+    "en_US": {
+      "string": "Tidewalker δ"
+    },
+    "ja_JP": {
+      "string": "潮進アンゲロスδ"
+    },
+    "ko_KR": {
+      "string": "조류아겔로스 · δ"
+    },
+    "es_ES": {
+      "string": "Caminante de mareas δ"
+    },
+    "zh_TW": {
+      "string": "潮行天使δ"
+    }
+  },
+  "5bc4dd6c5804218276a9c7d4781966ac": {
+    "zh_CN": {
+      "string": "白垩界卫"
+    },
+    "en_US": {
+      "string": "Marble Aggelomoirai"
+    },
+    "ja_JP": {
+      "string": "白亜・アンゲロミラ"
+    },
+    "ko_KR": {
+      "string": "마블 아겔로미레"
+    },
+    "es_ES": {
+      "string": "Aggelomoirai de mármol"
+    },
+    "zh_TW": {
+      "string": "白堊界衛"
+    }
+  },
+  "5c0d41ec1a7a95ec3891622ba0f4bd3f": {
+    "zh_CN": {
+      "string": "钉刺天使α"
+    },
+    "en_US": {
+      "string": "Sting α"
+    },
+    "ja_JP": {
+      "string": "針棘アンゲロスα"
+    },
+    "ko_KR": {
+      "string": "일미아겔로스 · α"
+    },
+    "es_ES": {
+      "string": "Aguijón α"
+    },
+    "zh_TW": {
+      "string": "釘刺天使α"
+    }
+  },
+  "5c49369d784b180080bedac8073c9d35": {
+    "zh_CN": {
+      "string": "Delta型机器人"
+    },
+    "en_US": {
+      "string": "Delta Bot"
+    },
+    "ja_JP": {
+      "string": "Deltaロボット"
+    },
+    "ko_KR": {
+      "string": "델타 로봇"
+    },
+    "es_ES": {
+      "string": "Bot Delta"
+    },
+    "zh_TW": {
+      "string": "Delta型機器人"
+    }
+  },
+  "5e42abee480672a37fdc1b8230b672b1": {
+    "zh_CN": {
+      "string": "巨山犼兽"
+    },
+    "en_US": {
+      "string": "Craghowler"
+    },
+    "ja_JP": {
+      "string": "大山吼獣"
+    },
+    "ko_KR": {
+      "string": "거대한 록하울러"
+    },
+    "es_ES": {
+      "string": "Aullador del peñasco"
+    },
+    "zh_TW": {
+      "string": "巨山犼獸"
+    }
+  },
+  "5f1940375f346382e8880000e982dacd": {
+    "zh_CN": {
+      "string": "塔晶"
+    },
+    "en_US": {
+      "string": "Talosite"
+    },
+    "ja_JP": {
+      "string": "タロサイト"
+    },
+    "ko_KR": {
+      "string": "유령수정"
+    },
+    "es_ES": {
+      "string": "Talosita"
+    },
+    "zh_TW": {
+      "string": "塔晶"
+    }
+  },
+  "600e171aa9e765d0442031e3545340f6": {
+    "zh_CN": {
+      "string": "碾骨伏击射手"
+    },
+    "en_US": {
+      "string": "Bonekrusher Ambusher"
+    },
+    "ja_JP": {
+      "string": "ボーンクラッシャーの潜伏狙撃手"
+    },
+    "ko_KR": {
+      "string": "본 크러셔 저격수"
+    },
+    "es_ES": {
+      "string": "Emboscador Rompehuesos"
+    },
+    "zh_TW": {
+      "string": "碾骨伏擊射手"
+    }
+  },
+  "607191ddcd761964feb9bef40a88b9e0": {
+    "zh_CN": {
+      "string": "岩天使叶"
+    },
+    "en_US": {
+      "string": "False Aggela"
+    },
+    "ja_JP": {
+      "string": "岩アンゲロス葉"
+    },
+    "ko_KR": {
+      "string": "바위아겔로스 잎"
+    },
+    "es_ES": {
+      "string": "Aggela falsa"
+    },
+    "zh_TW": {
+      "string": "岩天使葉"
+    }
+  },
+  "6445e8149d6257b79dbadf22f1167492": {
+    "zh_CN": {
+      "string": "见闻辑录"
+    },
+    "en_US": {
+      "string": "Findings"
+    },
+    "ja_JP": {
+      "string": "見聞集録"
+    },
+    "ko_KR": {
+      "string": "기록집"
+    },
+    "es_ES": {
+      "string": "Hallazgos"
+    },
+    "zh_TW": {
+      "string": "見聞輯錄"
+    }
+  },
+  "65913a7d33353cafc4c42c4e007824cb": {
+    "zh_CN": {
+      "string": "碾骨清道夫"
+    },
+    "en_US": {
+      "string": "Bonekrusher Arsonist"
+    },
+    "ja_JP": {
+      "string": "ボーンクラッシャーの始末屋"
+    },
+    "ko_KR": {
+      "string": "본 크러셔 집행자"
+    },
+    "es_ES": {
+      "string": "Rompehuesos Pirómano"
+    },
+    "zh_TW": {
+      "string": "碾骨清道夫"
+    }
+  },
+  "66014b9f11a01471bbe7741e85dada51": {
+    "zh_CN": {
+      "string": "浊流天使δ"
+    },
+    "en_US": {
+      "string": "Mudflow δ"
+    },
+    "ja_JP": {
+      "string": "濁流アンゲロスδ"
+    },
+    "ko_KR": {
+      "string": "탁류아겔로스 · δ"
+    },
+    "es_ES": {
+      "string": "Flujo de lodo δ"
+    },
+    "zh_TW": {
+      "string": "濁流天使δ"
+    }
+  },
+  "67cf91a7d2c66719a11eb53ac8f60630": {
+    "zh_CN": {
+      "string": "大角天使α"
+    },
+    "en_US": {
+      "string": "Ram α"
+    },
+    "ja_JP": {
+      "string": "巨角アンゲロスα"
+    },
+    "ko_KR": {
+      "string": "큰뿔아겔로스 · α"
+    },
+    "es_ES": {
+      "string": "Carnero α"
+    },
+    "zh_TW": {
+      "string": "大角天使α"
+    }
+  },
+  "69cbe7f3b65f307b3b4c31daa4294e75": {
+    "zh_CN": {
+      "string": "储藏箱I"
+    },
+    "en_US": {
+      "string": "Storage Crate I"
+    },
+    "ja_JP": {
+      "string": "資源箱Ⅰ"
+    },
+    "ko_KR": {
+      "string": "보물 상자 I"
+    },
+    "es_ES": {
+      "string": "Caja de almacenamiento I"
+    },
+    "zh_TW": {
+      "string": "儲藏箱I"
+    }
+  },
+  "69d9759bde0647d93feec2e1d6f0a18c": {
+    "zh_CN": {
+      "string": "酸液源石虫"
+    },
+    "en_US": {
+      "string": "Acid Originium Slug"
+    },
+    "ja_JP": {
+      "string": "酸液オリジムシ"
+    },
+    "ko_KR": {
+      "string": "산성원석충"
+    },
+    "es_ES": {
+      "string": "Babosa de Originio ácida"
+    },
+    "zh_TW": {
+      "string": "酸液源石蟲"
+    }
+  },
+  "6a0d3aab98dfdf3a2543dd32cabfe163": {
+    "zh_CN": {
+      "string": "见闻辑录"
+    },
+    "en_US": {
+      "string": "Findings"
+    },
+    "ja_JP": {
+      "string": "見聞集録"
+    },
+    "ko_KR": {
+      "string": "기록집"
+    },
+    "es_ES": {
+      "string": "Hallazgos"
+    },
+    "zh_TW": {
+      "string": "見聞輯錄"
+    }
+  },
+  "6c1c876682a80d2b8bdfc08bf35aca54": {
+    "zh_CN": {
+      "string": "红矛叶"
+    },
+    "en_US": {
+      "string": "Crimson Spearleaf"
+    },
+    "ja_JP": {
+      "string": "赤槍葉"
+    },
+    "ko_KR": {
+      "string": "붉은 창 잎"
+    },
+    "es_ES": {
+      "string": "Hojalanza carmesí"
+    },
+    "zh_TW": {
+      "string": "紅矛葉"
+    }
+  },
+  "6c5e933f7ff98b435018a7ba128d9e5a": {
+    "zh_CN": {
+      "string": "仓储节点"
+    },
+    "en_US": {
+      "string": "Depot Node"
+    },
+    "ja_JP": {
+      "string": "保管ボックス"
+    },
+    "ko_KR": {
+      "string": "저장고 노드"
+    },
+    "es_ES": {
+      "string": "Nodo de depósito"
+    },
+    "zh_TW": {
+      "string": "倉儲節點"
+    }
+  },
+  "6dc84ba1f310db1fa70d51ef16ed10c4": {
+    "zh_CN": {
+      "string": "残暴原生钳兽"
+    },
+    "en_US": {
+      "string": "Brutal Pincerbeast"
+    },
+    "ja_JP": {
+      "string": "凶暴原生鉗獣"
+    },
+    "ko_KR": {
+      "string": "브루탈 핀서비스트"
+    },
+    "es_ES": {
+      "string": "Bestia pinza brutal"
+    },
+    "zh_TW": {
+      "string": "殘暴原生鉗獸"
+    }
+  },
+  "6de64a17d73518f5ee7800de95d3c523": {
+    "zh_CN": {
+      "string": "锁闭储藏箱"
+    },
+    "en_US": {
+      "string": "Sealed Crate"
+    },
+    "ja_JP": {
+      "string": "ロック資源箱"
+    },
+    "ko_KR": {
+      "string": "잠긴 보물 상자"
+    },
+    "es_ES": {
+      "string": "Caja sellada"
+    },
+    "zh_TW": {
+      "string": "鎖閉儲藏箱"
+    }
+  },
+  "6ed6d6ea08c3c3ceb339332f29e7d9e0": {
+    "zh_CN": {
+      "string": "高阶培养IV"
+    },
+    "en_US": {
+      "string": "Advanced Progression IV"
+    },
+    "ja_JP": {
+      "string": "上級人材育成Ⅳ"
+    },
+    "ko_KR": {
+      "string": "고급 육성 IV"
+    },
+    "es_ES": {
+      "string": "Progresión avanzada IV"
+    },
+    "zh_TW": {
+      "string": "高階培養IV"
+    }
+  },
+  "6f6b6ca598dba0b54d5f64cb63e2d1c2": {
+    "zh_CN": {
+      "string": "战术训练"
+    },
+    "en_US": {
+      "string": "Tactical Training Cabin"
+    },
+    "ja_JP": {
+      "string": "戦術訓練"
+    },
+    "ko_KR": {
+      "string": "전술 훈련"
+    },
+    "es_ES": {
+      "string": "Cabina de entrenamiento táctico"
+    },
+    "zh_TW": {
+      "string": "戰術訓練"
+    }
+  },
+  "723670b12bc3a2a092b69f0a397d9200": {
+    "zh_CN": {
+      "string": "原生钳兽"
+    },
+    "en_US": {
+      "string": "Indigenous Pincerbeast"
+    },
+    "ja_JP": {
+      "string": "原生鉗獣"
+    },
+    "ko_KR": {
+      "string": "원시 핀서비스트"
+    },
+    "es_ES": {
+      "string": "Bestia pinza indígena"
+    },
+    "zh_TW": {
+      "string": "原生鉗獸"
+    }
+  },
+  "757157ef178c9e2160765c60e150b94a": {
+    "zh_CN": {
+      "string": "碾骨行刑人"
+    },
+    "en_US": {
+      "string": "Bonekrusher Executioner"
+    },
+    "ja_JP": {
+      "string": "ボーンクラッシャーの処刑人"
+    },
+    "ko_KR": {
+      "string": "본 크러셔 처형자"
+    },
+    "es_ES": {
+      "string": "Verdugo Rompehuesos"
+    },
+    "zh_TW": {
+      "string": "碾骨行刑人"
+    }
+  },
+  "76491b6d949fc850e287892d09894f71": {
+    "zh_CN": {
+      "string": "灼壳虫"
+    },
+    "en_US": {
+      "string": "Scorchbug"
+    },
+    "ja_JP": {
+      "string": "アブリムシ"
+    },
+    "ko_KR": {
+      "string": "화염 풍뎅이"
+    },
+    "es_ES": {
+      "string": "Escarabajo abrasador"
+    },
+    "zh_TW": {
+      "string": "灼殼蟲"
+    }
+  },
+  "7777d50f33391bc179c126df55b53d73": {
+    "zh_CN": {
+      "string": "培养舱"
+    },
+    "en_US": {
+      "string": "Growth Chamber"
+    },
+    "ja_JP": {
+      "string": "培養室"
+    },
+    "ko_KR": {
+      "string": "재배실"
+    },
+    "es_ES": {
+      "string": "Cámara de crecimiento"
+    },
+    "zh_TW": {
+      "string": "培養艙"
+    }
+  },
+  "7bf3c5ec5f1c73f56b1d56c834138afd": {
+    "zh_CN": {
+      "string": "制造舱"
+    },
+    "en_US": {
+      "string": "Manufacturing Cabin"
+    },
+    "ja_JP": {
+      "string": "製造室"
+    },
+    "ko_KR": {
+      "string": "제조실"
+    },
+    "es_ES": {
+      "string": "Cabina de manufactura"
+    },
+    "zh_TW": {
+      "string": "製造艙"
+    }
+  },
+  "809589dba5dfd4ab2c5de354c38ea365": {
+    "zh_CN": {
+      "string": "球刺兽"
+    },
+    "en_US": {
+      "string": "Quillbeast"
+    },
+    "ja_JP": {
+      "string": "球刺獣"
+    },
+    "ko_KR": {
+      "string": "프릭비스트"
+    },
+    "es_ES": {
+      "string": "Bestia pluma"
+    },
+    "zh_TW": {
+      "string": "球刺獸"
+    }
+  },
+  "80f87c99898d49f8746a715406ff0937": {
+    "zh_CN": {
+      "string": "高阶培养III"
+    },
+    "en_US": {
+      "string": "Advanced Progression III"
+    },
+    "ja_JP": {
+      "string": "上級人材育成Ⅲ"
+    },
+    "ko_KR": {
+      "string": "고급 육성 III"
+    },
+    "es_ES": {
+      "string": "Progresión avanzada III"
+    },
+    "zh_TW": {
+      "string": "高階培養III"
+    }
+  },
+  "826f145abdd1717c750a7241c8e95f1c": {
+    "zh_CN": {
+      "string": "棱镜天使"
+    },
+    "en_US": {
+      "string": "Prism"
+    },
+    "ja_JP": {
+      "string": "稜鏡アンゲロス"
+    },
+    "ko_KR": {
+      "string": "굴절아겔로스"
+    },
+    "es_ES": {
+      "string": "Prisma"
+    },
+    "zh_TW": {
+      "string": "稜鏡天使"
+    }
+  },
+  "84d059f9b221ea46a1104919d125470b": {
+    "zh_CN": {
+      "string": "蓬茸锦草"
+    },
+    "en_US": {
+      "string": "Fluffed Jincao"
+    },
+    "ja_JP": {
+      "string": "毛羽錦草"
+    },
+    "ko_KR": {
+      "string": "우거진 금초"
+    },
+    "es_ES": {
+      "string": "Jincao esponjado"
+    },
+    "zh_TW": {
+      "string": "蓬茸錦草"
+    }
+  },
+  "8784a47e18a2cc4e30706c2d0580502d": {
+    "zh_CN": {
+      "string": "星门菌"
+    },
+    "en_US": {
+      "string": "Cosmagaric"
+    },
+    "ja_JP": {
+      "string": "星門茸"
+    },
+    "ko_KR": {
+      "string": "스타게이트 버섯"
+    },
+    "es_ES": {
+      "string": "Cosmagárico"
+    },
+    "zh_TW": {
+      "string": "星門菌"
+    }
+  },
+  "87fbd7e0a9c0b9ab7a315e406fbfb069": {
+    "zh_CN": {
+      "string": "浊流天使"
+    },
+    "en_US": {
+      "string": "Mudflow"
+    },
+    "ja_JP": {
+      "string": "濁流アンゲロス"
+    },
+    "ko_KR": {
+      "string": "탁류아겔로스"
+    },
+    "es_ES": {
+      "string": "Flujo de lodo"
+    },
+    "zh_TW": {
+      "string": "濁流天使"
+    }
+  },
+  "8b171b6b65ad749185233e072fee1abf": {
+    "zh_CN": {
+      "string": "见闻辑录"
+    },
+    "en_US": {
+      "string": "Findings"
+    },
+    "ja_JP": {
+      "string": "見聞集録"
+    },
+    "ko_KR": {
+      "string": "기록집"
+    },
+    "es_ES": {
+      "string": "Hallazgos"
+    },
+    "zh_TW": {
+      "string": "見聞輯錄"
+    }
+  },
+  "8d8a490ad5f3929902e6ae4f7c7a2c2a": {
+    "zh_CN": {
+      "string": "受蚀玉化叶"
+    },
+    "en_US": {
+      "string": "Blighted Jadeleaf"
+    },
+    "ja_JP": {
+      "string": "侵蝕玉化葉"
+    },
+    "ko_KR": {
+      "string": "침식된 옥 잎"
+    },
+    "es_ES": {
+      "string": "Hoja de jade contaminada"
+    },
+    "zh_TW": {
+      "string": "受蝕玉化葉"
+    }
+  },
+  "937422dc8944c0f01aa2bbbd97cd6460": {
+    "zh_CN": {
+      "string": "协议采录桩"
+    },
+    "en_US": {
+      "string": "Protocol Datalogger"
+    },
+    "ja_JP": {
+      "string": "協約測定装置"
+    },
+    "ko_KR": {
+      "string": "프로토콜 데이터 수집기"
+    },
+    "es_ES": {
+      "string": "Registrador de datos de protocolo"
+    },
+    "zh_TW": {
+      "string": "協議採錄樁"
+    }
+  },
+  "95748d438a10b3926205e88dc39daba1": {
+    "zh_CN": {
+      "string": "行迹高塔"
+    },
+    "en_US": {
+      "string": "Tower of Trails"
+    },
+    "ja_JP": {
+      "string": "実績展示"
+    },
+    "ko_KR": {
+      "string": "궤적의 고탑"
+    },
+    "es_ES": {
+      "string": "Torre de senderos"
+    },
+    "zh_TW": {
+      "string": "行跡高塔"
+    }
+  },
+  "95c1ae36f4a5c9065a42ba09748e3830": {
+    "zh_CN": {
+      "string": "碾骨焰术师"
+    },
+    "en_US": {
+      "string": "Bonekrusher Pyromancer"
+    },
+    "ja_JP": {
+      "string": "ボーンクラッシャーの炎術師"
+    },
+    "ko_KR": {
+      "string": "본 크러셔 염술사"
+    },
+    "es_ES": {
+      "string": "Piromante Rompehuesos"
+    },
+    "zh_TW": {
+      "string": "碾骨焰術師"
+    }
+  },
+  "9a1da7b02ea63b66ec5af07b2c0051a4": {
+    "zh_CN": {
+      "string": "干员联络台"
+    },
+    "en_US": {
+      "string": "Operator Contact Panel"
+    },
+    "ja_JP": {
+      "string": "連絡カウンター"
+    },
+    "ko_KR": {
+      "string": "오퍼레이터 호출 패널"
+    },
+    "es_ES": {
+      "string": "Panel de contacto con operador"
+    },
+    "zh_TW": {
+      "string": "幹員聯絡台"
+    }
+  },
+  "9b5367a348906ecb5ae45830e0b866c0": {
+    "zh_CN": {
+      "string": "晶锥天使"
+    },
+    "en_US": {
+      "string": "Hedron"
+    },
+    "ja_JP": {
+      "string": "錐晶アンゲロス"
+    },
+    "ko_KR": {
+      "string": "수정아겔로스"
+    },
+    "es_ES": {
+      "string": "Hedron"
+    },
+    "zh_TW": {
+      "string": "晶錐天使"
+    }
+  },
+  "9b5c483bdb3e79ae1f4d2d8c0a172d72": {
+    "zh_CN": {
+      "string": "至晶多齿叶"
+    },
+    "en_US": {
+      "string": "Vitrodendra"
+    },
+    "ja_JP": {
+      "string": "至晶鋭葉"
+    },
+    "ko_KR": {
+      "string": "비트로덴드라"
+    },
+    "es_ES": {
+      "string": "Vitrodendro"
+    },
+    "zh_TW": {
+      "string": "至晶多齒葉"
+    }
+  },
+  "9bb5a3f7bf4a4c086c7cb2721856c1b0": {
+    "zh_CN": {
+      "string": "醚质"
+    },
+    "en_US": {
+      "string": "Aurylene"
+    },
+    "ja_JP": {
+      "string": "オーリレン"
+    },
+    "ko_KR": {
+      "string": "오리렌"
+    },
+    "es_ES": {
+      "string": "Aurileno"
+    },
+    "zh_TW": {
+      "string": "醚質"
+    }
+  },
+  "9c7252a186b833b68b74ab8ddd8a6e61": {
+    "zh_CN": {
+      "string": "醚质"
+    },
+    "en_US": {
+      "string": "Aurylene"
+    },
+    "ja_JP": {
+      "string": "オーリレン"
+    },
+    "ko_KR": {
+      "string": "오리렌"
+    },
+    "es_ES": {
+      "string": "Aurileno"
+    },
+    "zh_TW": {
+      "string": "醚質"
+    }
+  },
+  "9f5f3c8baa5407cb1a091c1c55085964": {
+    "zh_CN": {
+      "string": "酮化灌木"
+    },
+    "en_US": {
+      "string": "Aketine"
+    },
+    "ja_JP": {
+      "string": "アケトン樹木"
+    },
+    "ko_KR": {
+      "string": "아케톤"
+    },
+    "es_ES": {
+      "string": "Aketina"
+    },
+    "zh_TW": {
+      "string": "酮化灌木"
+    }
+  },
+  "a57ede5e637e3889b62a301ca1c1c81b": {
+    "zh_CN": {
+      "string": "轻红柱状菌"
+    },
+    "en_US": {
+      "string": "Pink Bolete"
+    },
+    "ja_JP": {
+      "string": "薄紅茸"
+    },
+    "ko_KR": {
+      "string": "연한 붉은 기둥 버섯"
+    },
+    "es_ES": {
+      "string": "Bolete rosa"
+    },
+    "zh_TW": {
+      "string": "輕紅柱狀菌"
+    }
+  },
+  "a965c241baddaaeb8ca012ff165df591": {
+    "zh_CN": {
+      "string": "协议奇点"
+    },
+    "en_US": {
+      "string": "Protocol Singularity"
+    },
+    "ja_JP": {
+      "string": "協約特異点"
+    },
+    "ko_KR": {
+      "string": "프로토콜 특이점"
+    },
+    "es_ES": {
+      "string": "Singularidad del protocolo"
+    },
+    "zh_TW": {
+      "string": "協議奇異點"
+    }
+  },
+  "a9695b0ca6908887b8d56d813f6d3559": {
+    "zh_CN": {
+      "string": "蚀影牙兽"
+    },
+    "en_US": {
+      "string": "Tuskbeast Blightshade"
+    },
+    "ja_JP": {
+      "string": "牙獣の蝕影"
+    },
+    "ko_KR": {
+      "string": "그림자에 물든 터스크비스트"
+    },
+    "es_ES": {
+      "string": "Sombra contaminada de Bestia colmilluda"
+    },
+    "zh_TW": {
+      "string": "蝕影牙獸"
+    }
+  },
+  "a98cc8dcbfffe4a3b038c69b59101f64": {
+    "zh_CN": {
+      "string": "传送台"
+    },
+    "en_US": {
+      "string": "TP Platform"
+    },
+    "ja_JP": {
+      "string": "転送台"
+    },
+    "ko_KR": {
+      "string": "전송대"
+    },
+    "es_ES": {
+      "string": "Plataforma de TP"
+    },
+    "zh_TW": {
+      "string": "傳送台"
+    }
+  },
+  "a9b92740ea43983b8f5b406615fde29b": {
+    "zh_CN": {
+      "string": "紫晶矿矿点"
+    },
+    "en_US": {
+      "string": "Amethyst Mining Spot"
+    },
+    "ja_JP": {
+      "string": "紫晶鉱物スポット"
+    },
+    "ko_KR": {
+      "string": "자수정 광석 광산 지점"
+    },
+    "es_ES": {
+      "string": "Punto de minería de amatista"
+    },
+    "zh_TW": {
+      "string": "紫晶礦礦點"
+    }
+  },
+  "ac8cb6f85ad50535f2f73863a0e09823": {
+    "zh_CN": {
+      "string": "晶化多齿叶"
+    },
+    "en_US": {
+      "string": "Kalkodendra"
+    },
+    "ja_JP": {
+      "string": "結晶鋭葉"
+    },
+    "ko_KR": {
+      "string": "칼코덴드라"
+    },
+    "es_ES": {
+      "string": "Kalkodendro"
+    },
+    "zh_TW": {
+      "string": "晶化多齒葉"
+    }
+  },
+  "ad9996b91e7e5fa4da5751dc87dc34c9": {
+    "zh_CN": {
+      "string": "重刺天使"
+    },
+    "en_US": {
+      "string": "Heavy Sting"
+    },
+    "ja_JP": {
+      "string": "槍棘アンゲロス"
+    },
+    "ko_KR": {
+      "string": "삼미아겔로스"
+    },
+    "es_ES": {
+      "string": "Aguijón fuerte"
+    },
+    "zh_TW": {
+      "string": "重刺天使"
+    }
+  },
+  "adbdfbf8da1c1c72f1466dcc7adaae26": {
+    "zh_CN": {
+      "string": "水灯虫"
+    },
+    "en_US": {
+      "string": "Waterlamp"
+    },
+    "ja_JP": {
+      "string": "水灯虫"
+    },
+    "ko_KR": {
+      "string": "수등충"
+    },
+    "es_ES": {
+      "string": "Lámpara de agua"
+    },
+    "zh_TW": {
+      "string": "水燈蟲"
+    }
+  },
+  "addc21f53e45176959947ef59cc2c7bf": {
+    "zh_CN": {
+      "string": "碾骨渗透者"
+    },
+    "en_US": {
+      "string": "Bonekrusher Infiltrator"
+    },
+    "ja_JP": {
+      "string": "ボーンクラッシャーの潜入者"
+    },
+    "ko_KR": {
+      "string": "본 크러셔 침투자"
+    },
+    "es_ES": {
+      "string": "Rompehuesos Infiltrado"
+    },
+    "zh_TW": {
+      "string": "碾骨滲透者"
+    }
+  },
+  "aecf1103539909f77d103da90c240984": {
+    "zh_CN": {
+      "string": "荆刺芽针"
+    },
+    "en_US": {
+      "string": "Thorny Yazhen"
+    },
+    "ja_JP": {
+      "string": "茨芽針"
+    },
+    "ko_KR": {
+      "string": "가시 야침"
+    },
+    "es_ES": {
+      "string": "Yazhen espinoso"
+    },
+    "zh_TW": {
+      "string": "荊刺芽針"
+    }
+  },
+  "b084fd2fe0d015411da42fdb9c9b8d5c": {
+    "zh_CN": {
+      "string": "刚角天使"
+    },
+    "en_US": {
+      "string": "Heavy Ram"
+    },
+    "ja_JP": {
+      "string": "剛角アンゲロス"
+    },
+    "ko_KR": {
+      "string": "쌍뿔아겔로스"
+    },
+    "es_ES": {
+      "string": "Carnero grande"
+    },
+    "zh_TW": {
+      "string": "剛角天使"
+    }
+  },
+  "b18a71bfeff581c8285a75bdc4bb9c83": {
+    "zh_CN": {
+      "string": "高阶培养I"
+    },
+    "en_US": {
+      "string": "Advanced Progression I"
+    },
+    "ja_JP": {
+      "string": "上級人材育成Ⅰ"
+    },
+    "ko_KR": {
+      "string": "고급 육성 I"
+    },
+    "es_ES": {
+      "string": "Progresión avanzada I"
+    },
+    "zh_TW": {
+      "string": "高階培養I"
+    }
+  },
+  "b2145a8db2715889f74e79cec46ed5be": {
+    "zh_CN": {
+      "string": "会客室"
+    },
+    "en_US": {
+      "string": "Reception Room"
+    },
+    "ja_JP": {
+      "string": "応接室"
+    },
+    "ko_KR": {
+      "string": "응접실"
+    },
+    "es_ES": {
+      "string": "Sala de recepción"
+    },
+    "zh_TW": {
+      "string": "會客室"
+    }
+  },
+  "b21b6610589ef2fc64256c866708c7c9": {
+    "zh_CN": {
+      "string": "见闻辑录"
+    },
+    "en_US": {
+      "string": "Findings"
+    },
+    "ja_JP": {
+      "string": "見聞集録"
+    },
+    "ko_KR": {
+      "string": "기록집"
+    },
+    "es_ES": {
+      "string": "Hallazgos"
+    },
+    "zh_TW": {
+      "string": "見聞輯錄"
+    }
+  },
+  "b76eb48ba6ef12b0bb069db2f97c53a9": {
+    "zh_CN": {
+      "string": "重红柱状菌"
+    },
+    "en_US": {
+      "string": "Ruby Bolete"
+    },
+    "ja_JP": {
+      "string": "深紅茸"
+    },
+    "ko_KR": {
+      "string": "진한 붉은 기둥 버섯"
+    },
+    "es_ES": {
+      "string": "Bolete rubí"
+    },
+    "zh_TW": {
+      "string": "重紅柱狀菌"
+    }
+  },
+  "b82651bb5b1e36fb3e49947f1f4a2695": {
+    "zh_CN": {
+      "string": "技能提升"
+    },
+    "en_US": {
+      "string": "Skill Up"
+    },
+    "ja_JP": {
+      "string": "スキル強化"
+    },
+    "ko_KR": {
+      "string": "스킬 업그레이드"
+    },
+    "es_ES": {
+      "string": "Maestría de habilidades"
+    },
+    "zh_TW": {
+      "string": "技能提升"
+    }
+  },
+  "b86c62f2703a033d396b70954ac772bb": {
+    "zh_CN": {
+      "string": "高阶培养V"
+    },
+    "en_US": {
+      "string": "Advanced Progression V"
+    },
+    "ja_JP": {
+      "string": "上級人材育成V"
+    },
+    "ko_KR": {
+      "string": "고급 육성 V"
+    },
+    "es_ES": {
+      "string": "Progresión avanzada V"
+    },
+    "zh_TW": {
+      "string": "高階培養V"
+    }
+  },
+  "b8a5630095a554cf1379c8012f66be6b": {
+    "zh_CN": {
+      "string": "聂菲斯"
+    },
+    "en_US": {
+      "string": "Nefarith"
+    },
+    "ja_JP": {
+      "string": "ネファリス"
+    },
+    "ko_KR": {
+      "string": "네파리스"
+    },
+    "es_ES": {
+      "string": "Nefarith"
+    },
+    "zh_TW": {
+      "string": "聶菲斯"
+    }
+  },
+  "b8cc74a906a6ad65df8a0a755ab35e8d": {
+    "zh_CN": {
+      "string": "供电终端"
+    },
+    "en_US": {
+      "string": "Electric Nexus"
+    },
+    "ja_JP": {
+      "string": "給電端末"
+    },
+    "ko_KR": {
+      "string": "전력 단말기"
+    },
+    "es_ES": {
+      "string": "Nexus eléctrico"
+    },
+    "zh_TW": {
+      "string": "供電終端"
+    }
+  },
+  "b94362f1ed01ac2d563c3fe57f9029ff": {
+    "zh_CN": {
+      "string": "阮一"
+    },
+    "en_US": {
+      "string": "Ruan Yi"
+    },
+    "ja_JP": {
+      "string": "ルアン・イー"
+    },
+    "ko_KR": {
+      "string": "원일"
+    },
+    "es_ES": {
+      "string": "Ruan Yi"
+    },
+    "zh_TW": {
+      "string": "阮一"
+    }
+  },
+  "b97bf09686ec69bb5447e2b0ef8991c7": {
+    "zh_CN": {
+      "string": "蚀影噪雷"
+    },
+    "en_US": {
+      "string": "Blitzcrash Blightshade"
+    },
+    "ja_JP": {
+      "string": "噪雷の蝕影"
+    },
+    "ko_KR": {
+      "string": "그림자에 물든 진뢰"
+    },
+    "es_ES": {
+      "string": "Sombra contaminada de Blitzcrash"
+    },
+    "zh_TW": {
+      "string": "蝕影噪雷"
+    }
+  },
+  "b9a02632af1726c8f767addcbcdb1441": {
+    "zh_CN": {
+      "string": "精锐撕裂牙兽"
+    },
+    "en_US": {
+      "string": "Elite Ripptusk"
+    },
+    "ja_JP": {
+      "string": "凶猛牙獣・精鋭"
+    },
+    "ko_KR": {
+      "string": "립터스크 · 정예"
+    },
+    "es_ES": {
+      "string": "Colmillo desgarrador de élite"
+    },
+    "zh_TW": {
+      "string": "精銳撕裂牙獸"
+    }
+  },
+  "bb05f385a2f820a7e88377d92fdf2422": {
+    "zh_CN": {
+      "string": "穿林箭"
+    },
+    "en_US": {
+      "string": "Grove Archer"
+    },
+    "ja_JP": {
+      "string": "穿林矢"
+    },
+    "ko_KR": {
+      "string": "천림전"
+    },
+    "es_ES": {
+      "string": "Arquero de arboleda"
+    },
+    "zh_TW": {
+      "string": "穿林箭"
+    }
+  },
+  "bce363e3dfd8cef1ac7a61389e0d8c41": {
+    "zh_CN": {
+      "string": "过堂风"
+    },
+    "en_US": {
+      "string": "Sweeping Wind"
+    },
+    "ja_JP": {
+      "string": "過堂風"
+    },
+    "ko_KR": {
+      "string": "과당풍"
+    },
+    "es_ES": {
+      "string": "Viento arrasador"
+    },
+    "zh_TW": {
+      "string": "過堂風"
+    }
+  },
+  "bfe93ce593f96b596de3c3d285242e98": {
+    "zh_CN": {
+      "string": "映火荞花"
+    },
+    "en_US": {
+      "string": "Firebuckle"
+    },
+    "ja_JP": {
+      "string": "火映蕎花"
+    },
+    "ko_KR": {
+      "string": "화염 메밀꽃"
+    },
+    "es_ES": {
+      "string": "Hebilla de fuego"
+    },
+    "zh_TW": {
+      "string": "映火蕎花"
+    }
+  },
+  "c09a25a61a5ec2d75e8705e718a8eafe": {
+    "zh_CN": {
+      "string": "碾骨撕裂牙兽"
+    },
+    "en_US": {
+      "string": "Bonekrusher Ripptusk"
+    },
+    "ja_JP": {
+      "string": "骨砕牙獣"
+    },
+    "ko_KR": {
+      "string": "본 크러셔 립터스크"
+    },
+    "es_ES": {
+      "string": "Colmillo desgarrador Rompehuesos"
+    },
+    "zh_TW": {
+      "string": "碾骨撕裂牙獸"
+    }
+  },
+  "c2e37309cada70a5eac4c1fd05d8daa4": {
+    "zh_CN": {
+      "string": "塔罗斯菌"
+    },
+    "en_US": {
+      "string": "Talos Cap"
+    },
+    "ja_JP": {
+      "string": "タロス茸"
+    },
+    "ko_KR": {
+      "string": "탈로스 버섯"
+    },
+    "es_ES": {
+      "string": "Sombrero de Talos"
+    },
+    "zh_TW": {
+      "string": "塔羅斯菌"
+    }
+  },
+  "c60011bfe65a4e7752c2d8a6e6eb581c": {
+    "zh_CN": {
+      "string": "见闻辑录"
+    },
+    "en_US": {
+      "string": "Findings"
+    },
+    "ja_JP": {
+      "string": "見聞集録"
+    },
+    "ko_KR": {
+      "string": "기록집"
+    },
+    "es_ES": {
+      "string": "Hallazgos"
+    },
+    "zh_TW": {
+      "string": "見聞輯錄"
+    }
+  },
+  "c8716543f5381e62f1229ed2645a80ad": {
+    "zh_CN": {
+      "string": "开天将"
+    },
+    "en_US": {
+      "string": "Cloud Obliterator"
+    },
+    "ja_JP": {
+      "string": "開天将"
+    },
+    "ko_KR": {
+      "string": "개천장"
+    },
+    "es_ES": {
+      "string": "Destructor de nubes"
+    },
+    "zh_TW": {
+      "string": "開天將"
+    }
+  },
+  "ca65717addcd70bd7196e7ecfec29680": {
+    "zh_CN": {
+      "string": "见闻辑录"
+    },
+    "en_US": {
+      "string": "Findings"
+    },
+    "ja_JP": {
+      "string": "見聞集録"
+    },
+    "ko_KR": {
+      "string": "기록집"
+    },
+    "es_ES": {
+      "string": "Hallazgos"
+    },
+    "zh_TW": {
+      "string": "見聞輯錄"
+    }
+  },
+  "cb9aafb0cfe55692d2120daa8bfe32a3": {
+    "zh_CN": {
+      "string": "赤铜矿"
+    },
+    "en_US": {
+      "string": "Cuprium Ore"
+    },
+    "ja_JP": {
+      "string": "赤銅鉱物"
+    },
+    "ko_KR": {
+      "string": "적동 광석"
+    },
+    "es_ES": {
+      "string": "Mineral de cuprio"
+    },
+    "zh_TW": {
+      "string": "赤銅礦"
+    }
+  },
+  "cc6e8e6be587104edd09e24e24731123": {
+    "zh_CN": {
+      "string": "雾火爪牙"
+    },
+    "en_US": {
+      "string": "Hazefyre Claw"
+    },
+    "ja_JP": {
+      "string": "霧火ランドブレーカー"
+    },
+    "ko_KR": {
+      "string": "안갯불에 물든 랜드브레이커"
+    },
+    "es_ES": {
+      "string": "Garra de bruma ardiente"
+    },
+    "zh_TW": {
+      "string": "霧火爪牙"
+    }
+  },
+  "cd78d7836805c60c64d610b8ab03d3b3": {
+    "zh_CN": {
+      "string": "武器经验"
+    },
+    "en_US": {
+      "string": "Weapon EXP"
+    },
+    "ja_JP": {
+      "string": "武器経験値"
+    },
+    "ko_KR": {
+      "string": "무기 경험치"
+    },
+    "es_ES": {
+      "string": "EXP de arma"
+    },
+    "zh_TW": {
+      "string": "武器經驗"
+    }
+  },
+  "d298eaec95773e7644ef9180c7e6949e": {
+    "zh_CN": {
+      "string": "莫惜命"
+    },
+    "en_US": {
+      "string": "Highway Reaver"
+    },
+    "ja_JP": {
+      "string": "不惜命"
+    },
+    "ko_KR": {
+      "string": "막석명"
+    },
+    "es_ES": {
+      "string": "Bandido de autopistas"
+    },
+    "zh_TW": {
+      "string": "莫惜命"
+    }
+  },
+  "d2c79a1a00c3a3e03312a810451d4fc6": {
+    "zh_CN": {
+      "string": "轻黯石"
+    },
+    "en_US": {
+      "string": "Kalkonyx"
+    },
+    "ja_JP": {
+      "string": "軽闇石"
+    },
+    "ko_KR": {
+      "string": "연한 흑암석"
+    },
+    "es_ES": {
+      "string": "Kalkonix"
+    },
+    "zh_TW": {
+      "string": "輕黯石"
+    }
+  },
+  "d3ab6cbf674d66df08172e4818e9fefc": {
+    "zh_CN": {
+      "string": "莫留财"
+    },
+    "en_US": {
+      "string": "Road Plunderer"
+    },
+    "ja_JP": {
+      "string": "不残財"
+    },
+    "ko_KR": {
+      "string": "막류재"
+    },
+    "es_ES": {
+      "string": "Saqueador de caminos"
+    },
+    "zh_TW": {
+      "string": "莫留財"
+    }
+  },
+  "d5c4b2bea5c049db02a32cb76a5f1110": {
+    "zh_CN": {
+      "string": "演武平台"
+    },
+    "en_US": {
+      "string": "Trial Arena"
+    },
+    "ja_JP": {
+      "string": "演武プラットフォーム"
+    },
+    "ko_KR": {
+      "string": "연무 플랫폼"
+    },
+    "es_ES": {
+      "string": "Arena de pruebas"
+    },
+    "zh_TW": {
+      "string": "演武平台"
+    }
+  },
+  "d5c6641efaa80700d60b105d757ef758": {
+    "zh_CN": {
+      "string": "钱币收集"
+    },
+    "en_US": {
+      "string": "T-Creds"
+    },
+    "ja_JP": {
+      "string": "通貨収集"
+    },
+    "ko_KR": {
+      "string": "화폐 수집"
+    },
+    "es_ES": {
+      "string": "T-Creds"
+    },
+    "zh_TW": {
+      "string": "錢幣收集"
+    }
+  },
+  "dbb96310163e9fb6de48dc0958ecbbd3": {
+    "zh_CN": {
+      "string": "酸液源石虫·α"
+    },
+    "en_US": {
+      "string": "Acid Originium Slug α"
+    },
+    "ja_JP": {
+      "string": "酸液オリジムシα"
+    },
+    "ko_KR": {
+      "string": "산성원석충 · α"
+    },
+    "es_ES": {
+      "string": "Babosa de Originio ácida α"
+    },
+    "zh_TW": {
+      "string": "酸液源石蟲·α"
+    }
+  },
+  "dc74e59ef348d370bb8007181214cab3": {
+    "zh_CN": {
+      "string": "惰气"
+    },
+    "en_US": {
+      "string": "Inergen"
+    },
+    "ja_JP": {
+      "string": "不活性ガス"
+    },
+    "ko_KR": {
+      "string": "비활성 기체"
+    },
+    "es_ES": {
+      "string": "Inergen"
+    },
+    "zh_TW": {
+      "string": "惰氣"
+    }
+  },
+  "df9cf56bc5139aa64c15ff09d23d16be": {
+    "zh_CN": {
+      "string": "协议核心"
+    },
+    "en_US": {
+      "string": "Automation-Core"
+    },
+    "ja_JP": {
+      "string": "協約核心"
+    },
+    "ko_KR": {
+      "string": "프로토콜 코어"
+    },
+    "es_ES": {
+      "string": "Núcleo de automatización"
+    },
+    "zh_TW": {
+      "string": "協議核心"
+    }
+  },
+  "e0527506b50a26c2ea7511ef08b63650": {
+    "zh_CN": {
+      "string": "环境监测终端"
+    },
+    "en_US": {
+      "string": "Environment Monitoring Terminal"
+    },
+    "ja_JP": {
+      "string": "環境観測端末"
+    },
+    "ko_KR": {
+      "string": "환경 관측 단말기"
+    },
+    "es_ES": {
+      "string": "Terminal de monitoreo ambiental"
+    },
+    "zh_TW": {
+      "string": "環境監測終端"
+    }
+  },
+  "e1a9f2aa3f25808b87b0f011d011b8e2": {
+    "zh_CN": {
+      "string": "待回收物品"
+    },
+    "en_US": {
+      "string": "Salvageable"
+    },
+    "ja_JP": {
+      "string": "未回収アイテム"
+    },
+    "ko_KR": {
+      "string": "회수 대기 아이템"
+    },
+    "es_ES": {
+      "string": "Recuperable"
+    },
+    "zh_TW": {
+      "string": "待回收物品"
+    }
+  },
+  "e1bdc95ab11f31ccd7a8336d7fb79726": {
+    "zh_CN": {
+      "string": "仿生翅天使"
+    },
+    "en_US": {
+      "string": "Falsewings"
+    },
+    "ja_JP": {
+      "string": "擬翼アンゲロス"
+    },
+    "ko_KR": {
+      "string": "모방아겔로스"
+    },
+    "es_ES": {
+      "string": "Alas falsas"
+    },
+    "zh_TW": {
+      "string": "仿生翅天使"
+    }
+  },
+  "e4401c255103bfe0bf976cc5511f5612": {
+    "zh_CN": {
+      "string": "协议传送点"
+    },
+    "en_US": {
+      "string": "TP Point"
+    },
+    "ja_JP": {
+      "string": "協約転送ポイント"
+    },
+    "ko_KR": {
+      "string": "프로토콜 전송 지점"
+    },
+    "es_ES": {
+      "string": "Punto de TP"
+    },
+    "zh_TW": {
+      "string": "協議傳送點"
+    }
+  },
+  "e7d2614feb608b6a81a9d5378f2c51b0": {
+    "zh_CN": {
+      "string": "潮行天使"
+    },
+    "en_US": {
+      "string": "Tidewalker"
+    },
+    "ja_JP": {
+      "string": "潮進アンゲロス"
+    },
+    "ko_KR": {
+      "string": "조류아겔로스"
+    },
+    "es_ES": {
+      "string": "Caminante de mareas"
+    },
+    "zh_TW": {
+      "string": "潮行天使"
+    }
+  },
+  "eb87f6a992c3fec9f383337eb0ac0903": {
+    "zh_CN": {
+      "string": "战争回响"
+    },
+    "en_US": {
+      "string": "Echoes of War"
+    },
+    "ja_JP": {
+      "string": "戦争残響"
+    },
+    "ko_KR": {
+      "string": "전쟁의 메아리"
+    },
+    "es_ES": {
+      "string": "Ecos de guerra"
+    },
+    "zh_TW": {
+      "string": "戰爭迴響"
+    }
+  },
+  "f5179ac1c49f834a8fa5ab12f3edda36": {
+    "zh_CN": {
+      "string": "见闻辑录"
+    },
+    "en_US": {
+      "string": "Findings"
+    },
+    "ja_JP": {
+      "string": "見聞集録"
+    },
+    "ko_KR": {
+      "string": "기록집"
+    },
+    "es_ES": {
+      "string": "Hallazgos"
+    },
+    "zh_TW": {
+      "string": "見聞輯錄"
+    }
+  },
+  "f5d17460f435c2081c06ac88e3ad53c3": {
+    "zh_CN": {
+      "string": "琼叶参"
+    },
+    "en_US": {
+      "string": "Redjade Ginseng"
+    },
+    "ja_JP": {
+      "string": "玉葉人参"
+    },
+    "ko_KR": {
+      "string": "홍옥 인삼"
+    },
+    "es_ES": {
+      "string": "Ginseng de jade rojo"
+    },
+    "zh_TW": {
+      "string": "瓊葉蔘"
+    }
+  },
+  "f6f952d644b35defe26a777ddd0bfd74": {
+    "zh_CN": {
+      "string": "干员进阶"
+    },
+    "en_US": {
+      "string": "Operator Promotions"
+    },
+    "ja_JP": {
+      "string": "昇進素材"
+    },
+    "ko_KR": {
+      "string": "오퍼레이터 돌파"
+    },
+    "es_ES": {
+      "string": "Ascensos de operador"
+    },
+    "zh_TW": {
+      "string": "幹員進階"
+    }
+  },
+  "f8a8a75fb5724e78737c5491afbb59df": {
+    "zh_CN": {
+      "string": "访客终端"
+    },
+    "en_US": {
+      "string": "Guest Terminal"
+    },
+    "ja_JP": {
+      "string": "訪問端末"
+    },
+    "ko_KR": {
+      "string": "방문자 단말기"
+    },
+    "es_ES": {
+      "string": "Terminal de invitados"
+    },
+    "zh_TW": {
+      "string": "訪客終端"
+    }
+  },
+  "f8dd766bbb8abcccffb9cc75d0500f8a": {
+    "zh_CN": {
+      "string": "芽针"
+    },
+    "en_US": {
+      "string": "Yazhen"
+    },
+    "ja_JP": {
+      "string": "芽針"
+    },
+    "ko_KR": {
+      "string": "야침"
+    },
+    "es_ES": {
+      "string": "Yazhen"
+    },
+    "zh_TW": {
+      "string": "芽針"
+    }
+  },
+  "f8f6f256f8d6ddf6ab44a9ec8e5ee39f": {
+    "zh_CN": {
+      "string": "精锐劫掠者"
+    },
+    "en_US": {
+      "string": "Elite Raider"
+    },
+    "ja_JP": {
+      "string": "略奪者・精鋭"
+    },
+    "ko_KR": {
+      "string": "약탈자 · 정예"
+    },
+    "es_ES": {
+      "string": "Asaltante de élite"
+    },
+    "zh_TW": {
+      "string": "精銳劫掠者"
+    }
+  },
+  "f9787bf76e6e7eb5fb53583f5f99f403": {
+    "zh_CN": {
+      "string": "劫云客"
+    },
+    "en_US": {
+      "string": "Cloud Stalker"
+    },
+    "ja_JP": {
+      "string": "盗雲客"
+    },
+    "ko_KR": {
+      "string": "겁운객"
+    },
+    "es_ES": {
+      "string": "Acechador de nubes"
+    },
+    "zh_TW": {
+      "string": "劫雲客"
+    }
+  },
+  "f9dddf836eb1974c8e7714dd6f8572a1": {
+    "zh_CN": {
+      "string": "碾骨先锋"
+    },
+    "en_US": {
+      "string": "Bonekrusher Vanguard"
+    },
+    "ja_JP": {
+      "string": "ボーンクラッシャーの先鋒"
+    },
+    "ko_KR": {
+      "string": "본 크러셔 돌격수"
+    },
+    "es_ES": {
+      "string": "Vanguardia Rompehuesos"
+    },
+    "zh_TW": {
+      "string": "碾骨先鋒"
+    }
+  },
+  "fa73584286a5227d7a497b08689b4d0d": {
+    "zh_CN": {
+      "string": "纯晶多齿叶"
+    },
+    "en_US": {
+      "string": "Chrysodendra"
+    },
+    "ja_JP": {
+      "string": "純晶鋭葉"
+    },
+    "ko_KR": {
+      "string": "크리소덴드라"
+    },
+    "es_ES": {
+      "string": "Crisodendro"
+    },
+    "zh_TW": {
+      "string": "純晶多齒葉"
+    }
+  },
+  "fb3292c99f68b7309fd40140b721fb08": {
+    "zh_CN": {
+      "string": "荞花"
+    },
+    "en_US": {
+      "string": "Buckflower"
+    },
+    "ja_JP": {
+      "string": "蕎花"
+    },
+    "ko_KR": {
+      "string": "메밀꽃"
+    },
+    "es_ES": {
+      "string": "Floracina"
+    },
+    "zh_TW": {
+      "string": "蕎花"
+    }
+  },
+  "fb3c156904f753bc55faffff85596c02": {
+    "zh_CN": {
+      "string": "蚀影应龙尖兵"
+    },
+    "en_US": {
+      "string": "YSTF Elite Blightshade"
+    },
+    "ja_JP": {
+      "string": "応龍精鋭先鋒の蝕影"
+    },
+    "ko_KR": {
+      "string": "그림자에 물든 응룡 대원 · 정예"
+    },
+    "es_ES": {
+      "string": "Sombra contaminada de élite del EFEY"
+    },
+    "zh_TW": {
+      "string": "蝕影應龍尖兵"
+    }
+  },
+  "fc5fdd8cc5b2b77f9a1fdf1c94d5f738": {
+    "zh_CN": {
+      "string": "装备模板箱"
+    },
+    "en_US": {
+      "string": "Gear Template Crate"
+    },
+    "ja_JP": {
+      "string": "装備設計ボックス"
+    },
+    "ko_KR": {
+      "string": "장비 템플릿 상자"
+    },
+    "es_ES": {
+      "string": "Caja de molde de equipamiento"
+    },
+    "zh_TW": {
+      "string": "裝備模板箱"
+    }
+  },
+  "feec2fbd748b3d10131a07971b25baf2": {
+    "zh_CN": {
+      "string": "分层入口"
+    },
+    "en_US": {
+      "string": "Level Access"
+    },
+    "ja_JP": {
+      "string": "階層入口"
+    },
+    "ko_KR": {
+      "string": "층별 입구"
+    },
+    "es_ES": {
+      "string": "Acceso a nivel"
+    },
+    "zh_TW": {
+      "string": "分層入口"
+    }
+  }
+}

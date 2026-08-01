@@ -121,7 +121,7 @@ msgid "一键收菜"
 msgstr "Recolección Rápida"
 
 msgid "三位一体"
-msgstr "Trinidad"
+msgstr "Triaggelos"
 
 msgid "三相纳米片"
 msgstr "Nanolámina trifásica"
@@ -256,10 +256,10 @@ msgid "常沄"
 msgstr "Cháng Yún"
 
 msgid "干员经验"
-msgstr "EXP de Operador"
+msgstr "EXP de operador"
 
 msgid "干员进阶"
-msgstr "Promoción de Operador"
+msgstr "Ascensos de operador"
 
 msgid "弧光"
 msgstr "arco"
@@ -281,7 +281,7 @@ msgid "截图保存路径（相对于项目根目录）"
 msgstr "Ruta de capturas (relativa a la raíz del proyecto)"
 
 msgid "技能提升"
-msgstr "Mejora de habilidad"
+msgstr "Maestría de habilidades"
 
 msgid "技能释放"
 msgstr "Uso de habilidades"
@@ -341,10 +341,10 @@ msgid "枢纽区"
 msgstr "La Base"
 
 msgid "武器经验"
-msgstr "EXP de Arma"
+msgstr "EXP de arma"
 
 msgid "武器进阶"
-msgstr "Promoción de Arma"
+msgstr "Afinación de armas"
 
 msgid "武陵"
 msgstr "Wuling"
@@ -387,7 +387,7 @@ msgid "狼卫"
 msgstr "Guardia del lobo"
 
 msgid "白垩界卫"
-msgstr "Guardián cretácico"
+msgstr "Aggelomoirai de mármol"
 
 msgid "目标券数"
 msgstr "Cantidad objetivo de vales"
@@ -495,7 +495,7 @@ msgid "重复测试的次数"
 msgstr "Número de repeticiones de la prueba"
 
 msgid "钱币收集"
-msgstr "Recogida de monedas"
+msgstr "T-Creds"
 
 msgid "间隔秒数"
 msgstr "Intervalo (segundos)"
@@ -616,7 +616,7 @@ msgid "信用商店保留信用"
 msgstr "Crédito reservado en la tienda"
 
 msgid "制造舱"
-msgstr "Bahía de Fabricación"
+msgstr "Cabina de manufactura"
 
 msgid "刷取哪个副本。所选副本必须领完所有等级的首通奖励。"
 msgstr ""
@@ -942,16 +942,16 @@ msgid "保持当前"
 msgstr "Mantener Actual"
 
 msgid "储藏箱I"
-msgstr "Caja de Almacenamiento I"
+msgstr "Caja de almacenamiento I"
 
 msgid "储藏箱II"
-msgstr "Caja de Almacenamiento II"
+msgstr "Caja de almacenamiento II"
 
 msgid "储藏箱III"
-msgstr "Caja de Almacenamiento III"
+msgstr "Caja de almacenamiento III"
 
 msgid "储藏箱IV"
-msgstr "Caja de Almacenamiento IV"
+msgstr "Caja de almacenamiento IV"
 
 msgid "其他配置"
 msgstr "Otras Configuraciones"
@@ -1027,7 +1027,7 @@ msgid "地区切换"
 msgstr "Cambio de región"
 
 msgid "培养舱"
-msgstr "Cámara de Cultivo"
+msgstr "Cámara de crecimiento"
 
 msgid "多账户独立配置"
 msgstr "Configuración por cuenta"
@@ -1320,7 +1320,7 @@ msgstr ""
 "0 = desactivado."
 
 msgid "聂菲斯"
-msgstr "Nefi"
+msgstr "Nefarith"
 
 msgid "致密源石粉末"
 msgstr "Polvo denso de Originium"
@@ -1412,7 +1412,7 @@ msgid "重息壤"
 msgstr "Limo Pesado"
 
 msgid "阮一"
-msgstr "Ruǎn Yī"
+msgstr "Ruan Yi"
 
 msgid "阿禾"
 msgstr "Ā Hé"
@@ -1487,7 +1487,7 @@ msgid "卡契尔"
 msgstr "Kachel"
 
 msgid "影拓丰碑"
-msgstr "Estela Sombría"
+msgstr "Monumento del umbral"
 
 msgid "未处理的任务列表"
 msgstr "Lista de tareas pendientes"
@@ -1628,7 +1628,7 @@ msgid "运输委托"
 msgstr "Comisión de Entrega"
 
 msgid "醚质"
-msgstr "Éter"
+msgstr "Aurileno"
 
 msgid "Task"
 msgstr "Tarea"
@@ -2521,382 +2521,382 @@ msgid "已清空账号全部覆盖：{account}"
 msgstr "Borradas todas las anulaciones para la cuenta: {account}"
 
 msgid "Delta型机器人"
-msgstr "Robot Tipo Delta"
+msgstr "Bot Delta"
 
 msgid "“碾骨之拳”罗丹"
-msgstr "\"Puño Triturador\" Rodan"
+msgstr "Rhodagn el puño Rompehuesos"
 
 msgid "中红柱状菌"
-msgstr "Hongo Columna Rojo Medio"
+msgstr "Bolete rojo"
 
 msgid "中黯石"
-msgstr "Piedra Oscura Media"
+msgstr "Auronix"
 
 msgid "仓储节点"
-msgstr "Nodo de Almacenamiento"
+msgstr "Nodo de depósito"
 
 msgid "仿生翅天使"
-msgstr "Ángel de Alas Biónicas"
+msgstr "Alas falsas"
 
 msgid "会客室"
 msgstr "Sala de recepción"
 
 msgid "传送台"
-msgstr "Plataforma de Teletransporte"
+msgstr "Plataforma de TP"
 
 msgid "供电终端"
-msgstr "Terminal de Energía"
+msgstr "Nexus eléctrico"
 
 msgid "充能球刺兽"
-msgstr "Bestia Espina Cargada"
+msgstr "Bestia pluma imbuida"
 
 msgid "净水节点"
-msgstr "Nodo de Purificación"
+msgstr "Nodo de purificación"
 
 msgid "分层入口"
-msgstr "Entrada de Capas"
+msgstr "Acceso a nivel"
 
 msgid "刚角天使"
-msgstr "Ángel de Cuerno Duro"
+msgstr "Carnero grande"
 
 msgid "割云翁"
-msgstr "Segador de Nubes"
+msgstr "Navaja de Nimbus"
 
 msgid "劫云客"
-msgstr "Asaltante de Nubes"
+msgstr "Acechador de nubes"
 
 msgid "协议传送点"
-msgstr "Teletransporte de Protocolo"
+msgstr "Punto de TP"
 
 msgid "协议奇点"
-msgstr "Singularidad de Protocolo"
+msgstr "Singularidad del protocolo"
 
 msgid "协议核心"
-msgstr "Núcleo de Protocolo"
+msgstr "Núcleo de automatización"
 
 msgid "协议采录桩"
-msgstr "Estaca de Grabación de Protocolo"
+msgstr "Registrador de datos de protocolo"
 
 msgid "原生钳兽"
-msgstr "Bestia Pinza Nativa"
+msgstr "Bestia pinza indígena"
 
 msgid "受蚀玉化叶"
-msgstr "Hoja de Jade Erosionada"
+msgstr "Hoja de jade contaminada"
 
 msgid "大角天使"
-msgstr "Ángel de Cuerno Grande"
+msgstr "Carnero"
 
 msgid "大角天使α"
-msgstr "Ángel de Cuerno Grande α"
+msgstr "Carnero α"
 
 msgid "展示区"
-msgstr "Área de Exhibición"
+msgstr "Área de exhibición"
 
 msgid "岩天使叶"
-msgstr "Hoja de Ángel de Roca"
+msgstr "Aggela falsa"
 
 msgid "巨山犼兽"
-msgstr "Bestia Aulladora de Montaña"
+msgstr "Aullador del peñasco"
 
 msgid "干员联络台"
-msgstr "Estación de Contacto de Operadores"
+msgstr "Panel de contacto con operador"
 
 msgid "开天将"
-msgstr "Abrecielos"
+msgstr "Destructor de nubes"
 
 msgid "怒目彪兽"
 msgstr "Bestia Mirada Feroz"
 
 msgid "总控中枢"
-msgstr "Centro de Control Central"
+msgstr "Nexus de control"
 
 msgid "战术训练"
-msgstr "Entrenamiento Táctico"
+msgstr "Cabina de entrenamiento táctico"
 
 msgid "摧山将"
-msgstr "Rompe Montañas"
+msgstr "Demoledor de colinas"
 
 msgid "斧甲兽"
-msgstr "Bestia Hacha de Caparazón"
+msgstr "Bestia armadura con hacha"
 
 msgid "断云叟"
-msgstr "Cortanubes"
+msgstr "Ráfaga devastadora"
 
 msgid "星门菌"
-msgstr "Hongo Puerta Estelar"
+msgstr "Cosmagárico"
 
 msgid "映火荞花"
-msgstr "Flor de Alforfón de Fuego"
+msgstr "Hebilla de fuego"
 
 msgid "晶化多齿叶"
-msgstr "Hoja Multidentada Cristalizada"
+msgstr "Kalkodendro"
 
 msgid "晶锥天使"
-msgstr "Ángel de Cono de Cristal"
+msgstr "Hedron"
 
 msgid "晶锥天使δ"
-msgstr "Ángel de Cono de Cristal δ"
+msgstr "Hedron δ"
 
 msgid "柑实"
-msgstr "Fruto Cítrico"
+msgstr "Citroma"
 
 msgid "棱镜天使"
-msgstr "Ángel Prisma"
+msgstr "Prisma"
 
 msgid "次级核心"
-msgstr "Núcleo Secundario"
+msgstr "Sub-NAP"
 
 msgid "武陵石"
-msgstr "Piedra Wuling"
+msgstr "Piedra de Wuling"
 
 msgid "残暴原生钳兽"
-msgstr "Bestia Pinza Nativa Feroc"
+msgstr "Bestia pinza brutal"
 
 msgid "水灯虫"
-msgstr "Insecto Linterna de Agua"
+msgstr "Lámpara de agua"
 
 msgid "浊流天使"
-msgstr "Ángel de Corriente Turbia"
+msgstr "Flujo de lodo"
 
 msgid "浊流天使δ"
-msgstr "Ángel de Corriente Turbia δ"
+msgstr "Flujo de lodo δ"
 
 msgid "源矿矿点"
-msgstr "Depósito de Mineral de Origen"
+msgstr "Punto de minería de originio"
 
 msgid "演武平台"
-msgstr "Plataforma de Entrenamiento"
+msgstr "Arena de pruebas"
 
 msgid "潜地虬兽"
-msgstr "Bestia Dragón Excavadora"
+msgstr "Nidwyrm Subterráneo"
 
 msgid "潮行天使"
-msgstr "Ángel Caminante de Mareas"
+msgstr "Caminante de mareas"
 
 msgid "潮行天使δ"
-msgstr "Ángel Caminante de Mareas δ"
+msgstr "Caminante de mareas δ"
 
 msgid "火雾源石虫"
-msgstr "Babosa de Origen Niebla de Fuego"
+msgstr "Babosa de Originio de brumafuego"
 
 msgid "灰芦麦"
-msgstr "Trigo de Caña Gris"
+msgstr "Centeno de caña"
 
 msgid "灼壳虫"
-msgstr "Insecto de Caparazón Quemado"
+msgstr "Escarabajo abrasador"
 
 msgid "焚雾源石虫"
-msgstr "Babosa de Origen Niebla Ardiente"
+msgstr "Babosa de Originio de niebla ardiente"
 
 msgid "燎石"
-msgstr "Piedra Ardiente"
+msgstr "Igneosita"
 
 msgid "物资调度终端"
-msgstr "Terminal de Envío de Materiales"
+msgstr "Terminal de redistribución de existencias"
 
 msgid "环境监测终端"
-msgstr "Terminal de Monitoreo Ambiental"
+msgstr "Terminal de monitoreo ambiental"
 
 msgid "球刺兽"
-msgstr "Bestia Espina Esférica"
+msgstr "Bestia pluma"
 
 msgid "琼叶参"
-msgstr "Ginseng de Hoja de Jade"
+msgstr "Ginseng de jade rojo"
 
 msgid "百眼彪兽"
-msgstr "Bestia de Cien Ojos"
+msgstr "Bestia rastrera manchada"
 
 msgid "砂叶"
-msgstr "Hoja de Arena"
+msgstr "Hojarena"
 
 msgid "碾骨伏击射手"
-msgstr "Francotirador Emboscador Triturador"
+msgstr "Emboscador Rompehuesos"
 
 msgid "碾骨先锋"
-msgstr "Vanguardia Trituradora"
+msgstr "Vanguardia Rompehuesos"
 
 msgid "碾骨劫掠者"
-msgstr "Asaltante Triturador"
+msgstr "Asaltante Rompehuesos"
 
 msgid "碾骨撕裂牙兽"
-msgstr "Bestia Colmillo Desgarrador Trituradora"
+msgstr "Colmillo desgarrador Rompehuesos"
 
 msgid "碾骨清道夫"
-msgstr "Carroñero Triturador"
+msgstr "Rompehuesos Pirómano"
 
 msgid "碾骨渗透者"
-msgstr "Infiltrador Triturador"
+msgstr "Rompehuesos Infiltrado"
 
 msgid "碾骨焰术师"
-msgstr "Piromante Triturador"
+msgstr "Piromante Rompehuesos"
 
 msgid "碾骨行刑人"
-msgstr "Verdugo Triturador"
+msgstr "Verdugo Rompehuesos"
 
 msgid "穿林箭"
-msgstr "Flecha Perforabosques"
+msgstr "Arquero de arboleda"
 
 msgid "精锐伏击射手"
-msgstr "Francotirador Emboscador Élite"
+msgstr "Emboscador de élite"
 
 msgid "精锐劫掠者"
-msgstr "Asaltante Élite"
+msgstr "Asaltante de élite"
 
 msgid "精锐撕裂牙兽"
-msgstr "Bestia Colmillo Desgarrador Élite"
+msgstr "Colmillo desgarrador de élite"
 
 msgid "精锐行刑人"
-msgstr "Verdugo Élite"
+msgstr "Ejecutor de élite"
 
 msgid "紫晶矿矿点"
-msgstr "Depósito de Mineral Amatista"
+msgstr "Punto de minería de amatista"
 
 msgid "纯晶多齿叶"
-msgstr "Hoja Multidentada de Cristal Puro"
+msgstr "Crisodendro"
 
 msgid "维修灵感点"
-msgstr "Punto de Inspiración de Reparación"
+msgstr "Lógica de reparación"
 
 msgid "肖像天使"
 msgstr "Ángel Retrato"
 
 msgid "能量淤积点"
-msgstr "Punto de Acumulación de Energía"
+msgstr "Aluvión energético"
 
 msgid "至晶多齿叶"
-msgstr "Hoja Multidentada de Cristal Supremo"
+msgstr "Vitrodendro"
 
 msgid "芽针"
-msgstr "Aguja Brote"
+msgstr "Yazhen"
 
 msgid "苦叶椒"
-msgstr "Pimienta de Hoja Amarga"
+msgstr "Pimienta ácida"
 
 msgid "荆刺芽针"
-msgstr "Aguja Brote Espinosa"
+msgstr "Yazhen espinoso"
 
 msgid "荞花"
-msgstr "Flor de Alforfón"
+msgstr "Floracina"
 
 msgid "莫惜命"
-msgstr "Sin Reserva Vital"
+msgstr "Bandido de autopistas"
 
 msgid "莫留财"
-msgstr "Sin Reserva de Riqueza"
+msgstr "Saqueador de caminos"
 
 msgid "萤壳虫"
-msgstr "Insecto de Caparazón de Luciérnaga"
+msgstr "Luciérnaga"
 
 msgid "蓝铁矿矿点"
-msgstr "Depósito de Mineral de Hierro Azul"
+msgstr "Punto de minería de ferrio"
 
 msgid "蓬茸锦草"
-msgstr "Hierba Brocado Esponjosa"
+msgstr "Jincao esponjado"
 
 msgid "蚀像寻遗"
-msgstr "Reliquia de Imagen Erosionada"
+msgstr "Rescate de grabaespacio"
 
 msgid "血菌"
-msgstr "Hongo de Sangre"
+msgstr "Fungisangre"
 
 msgid "行迹高塔"
-msgstr "Torre de Rastros"
+msgstr "Torre de senderos"
 
 msgid "表象"
-msgstr "Apariencia"
+msgstr "Éthillu"
 
 msgid "袭击预警终端"
-msgstr "Terminal de Alerta de Incursión"
+msgstr "Terminal de A.T."
 
 msgid "装备模板箱"
-msgstr "Caja de Plantilla de Equipo"
+msgstr "Caja de molde de equipamiento"
 
 msgid "见闻辑录"
-msgstr "Archivo de Conocimiento"
+msgstr "Hallazgos"
 
 msgid "访客终端"
-msgstr "Terminal de Visitante"
+msgstr "Terminal de invitados"
 
 msgid "资源回收站"
-msgstr "Estación de Reciclaje de Recursos"
+msgstr "Estación de reciclaje"
 
 msgid "赤铜矿"
-msgstr "Mineral de Cobre Rojo"
+msgstr "Mineral de cuprio"
 
 msgid "轻红柱状菌"
-msgstr "Hongo Columna Rojo Ligero"
+msgstr "Bolete rosa"
 
 msgid "轻黯石"
-msgstr "Piedra Oscura Ligera"
+msgstr "Kalkonix"
 
 msgid "过堂风"
-msgstr "Viento de Paso"
+msgstr "Viento arrasador"
 
 msgid "酮化灌木"
-msgstr "Arbusto de Cetona"
+msgstr "Aketina"
 
 msgid "酸液源石虫"
-msgstr "Babosa de Origen Ácida"
+msgstr "Babosa de Originio ácida"
 
 msgid "酸液源石虫·α"
-msgstr "Babosa de Origen Ácida · α"
+msgstr "Babosa de Originio ácida α"
 
 msgid "重刺天使"
-msgstr "Ángel de Espina Pesada"
+msgstr "Aguijón fuerte"
 
 msgid "重刺天使α"
-msgstr "Ángel de Espina Pesada α"
+msgstr "Aguijón fuerte α"
 
 msgid "重红柱状菌"
-msgstr "Hongo Columna Rojo Pesado"
+msgstr "Bolete rubí"
 
 msgid "重黯石"
-msgstr "Piedra Oscura Pesada"
+msgstr "Umbrónix"
 
 msgid "金石稻"
-msgstr "Arroz de Piedra Dorada"
+msgstr "Arroz ámbar"
 
 msgid "钉刺天使"
-msgstr "Ángel de Púa"
+msgstr "Aguijón"
 
 msgid "钉刺天使α"
-msgstr "Ángel de Púa α"
+msgstr "Aguijón α"
 
 msgid "锁闭储藏箱"
-msgstr "Caja de Almacenamiento Cerrada"
+msgstr "Caja sellada"
 
 msgid "锦草"
-msgstr "Hierba Brocado"
+msgstr "Jincao"
 
 msgid "雾火斧甲兽"
 msgstr "Bestia Hacha de Caparazón de Niebla de Fuego"
 
 msgid "雾火爪牙"
-msgstr "Esbirro de Niebla de Fuego"
+msgstr "Garra de bruma ardiente"
 
 msgid "雾火牙兽"
-msgstr "Bestia Colmillo de Niebla de Fuego"
+msgstr "Bestia colmilluda de bruma ardiente"
 
 msgid "音像存档"
 msgstr "Archivo de Audio"
 
 msgid "高阶培养I"
-msgstr "Cultivo Avanzado I"
+msgstr "Progresión avanzada I"
 
 msgid "高阶培养II"
-msgstr "Cultivo Avanzado II"
+msgstr "Progresión avanzada II"
 
 msgid "高阶培养III"
-msgstr "Cultivo Avanzado III"
+msgstr "Progresión avanzada III"
 
 msgid "高阶培养IV"
-msgstr "Cultivo Avanzado IV"
+msgstr "Progresión avanzada IV"
 
 msgid "高阶培养V"
-msgstr "Cultivo Avanzado V"
+msgstr "Progresión avanzada V"
 
 msgid "黯银柑实"
-msgstr "Fruto Cítrico Plata Oscura"
+msgstr "Umbralina"
 
 msgid "Battle Config"
 msgstr "Configuración de Combate"
@@ -2983,7 +2983,7 @@ msgid "刮刮乐"
 msgstr "Tarjeta Raspable"
 
 msgid "协议纹石\n"
-msgstr "Piedra De Patron De Protocolo\n"
+msgstr "Protocolito"
 
 msgid "只填写 data.content 的字符串值"
 msgstr "Introduce solo el valor de cadena de data.content"
@@ -3009,10 +3009,10 @@ msgid "地图账号"
 msgstr "Cuenta del mapa"
 
 msgid "塔晶"
-msgstr "Cristal De Torre"
+msgstr "Talosita"
 
 msgid "塔罗斯菌"
-msgstr "Hongo Talos"
+msgstr "Sombrero de Talos"
 
 msgid "外部命令"
 msgstr "Comando externo"
@@ -3035,16 +3035,16 @@ msgstr ""
 " del mapa oficial"
 
 msgid "待回收物品"
-msgstr "Objetos Por Recuperar"
+msgstr "Recuperable"
 
 msgid "息壤气"
-msgstr "Gas Xirang"
+msgstr "Xiragen"
 
 msgid "惰气"
-msgstr "Gas Inerte"
+msgstr "Inergen"
 
 msgid "战争回响"
-msgstr "Eco De Guerra"
+msgstr "Ecos de guerra"
 
 msgid "是否执行一次外部命令行程序。"
 msgstr ""
@@ -3064,7 +3064,7 @@ msgstr ""
 "escanea en bucle."
 
 msgid "红矛叶"
-msgstr "Hoja De Lanza Roja"
+msgstr "Hojalanza carmesí"
 
 msgid "网页地图同步"
 msgstr "Sincronización del mapa web"
@@ -3076,13 +3076,13 @@ msgid "荞愈胶囊"
 msgstr "Capsula De Alforfon"
 
 msgid "蚀影噪雷"
-msgstr "Trueno Ruidoso De Sombra Erosionada"
+msgstr "Sombra contaminada de Blitzcrash"
 
 msgid "蚀影应龙尖兵"
-msgstr "Vanguardia Yinglong De Sombra Erosionada"
+msgstr "Sombra contaminada de élite del EFEY"
 
 msgid "蚀影牙兽"
-msgstr "Bestia Dentada De Sombra Erosionada"
+msgstr "Sombra contaminada de Bestia colmilluda"
 
 msgid ""
 "账号1\n"
@@ -3099,7 +3099,7 @@ msgstr ""
 "para esta tarea."
 
 msgid "阿莱克琉斯，千夫长"
-msgstr "Alekleus, centurión"
+msgstr "Alleikhreos, Quiliarca"
 
 msgid ""
 "需要执行的命令行内容。\n"
@@ -3125,53 +3125,5 @@ msgstr ""
 "cuenta actual. Los cambios en los valores predeterminados no afectarán a las"
 " cuentas guardadas."
 
-msgid "据点兑换仅购买优先商品"
-msgstr "El intercambio del puesto solo compra bienes prioritarios"
-
-msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
-msgstr "Al activarlo, el intercambio del puesto solo compra bienes de la secuencia de prioridad cuando no está vacía; si está vacía, mantiene el comportamiento original."
-
-msgid "区域扫描测试"
-msgstr "Prueba de escaneo de área"
-
-msgid "暂停计时验证"
-msgstr "Verificación de temporización de pausa"
-
-msgid "等级读取测试"
-msgstr "Prueba de lectura de nivel"
-
-msgid "演算入口导航测试"
-msgstr "Prueba de navegación a la entrada de simulación"
-
-msgid "按住鼠标蛇形扫描指定矩形区域"
-msgstr "Mantenga presionado el mouse y escanee en zigzag el área rectangular especificada"
-
-msgid "验证暂停任务期间活动计时是否冻结"
-msgstr "Verifique si el temporizador activo se congela mientras la tarea está en pausa"
-
-msgid "将次要目标方向蓝点对齐到屏幕中心"
-msgstr "Alinee el punto azul de la dirección del objetivo secundario al centro de la pantalla"
-
-msgid "读取演武集算关卡界面的当前等级"
-msgstr "Lea el nivel actual de la pantalla de la etapa de la simulación"
-
-msgid "导航到演武集算『演算』入口"
-msgstr "Navegue a la entrada de la simulación"
-
-msgid "测试模式"
-msgstr "Modo de prueba"
-
-msgid "测试超时(秒)"
-msgstr "Tiempo de espera de prueba (segundos)"
-
-msgid "选择要运行的暂停计时测试"
-msgstr "Seleccione la prueba de temporización de pausa a ejecutar"
-
-msgid "暂停时间应超过此值，用于观察恢复后的行为"
-msgstr "La duración de la pausa debe superar este valor para observar el comportamiento tras reanudar"
-
-msgid "自写循环"
-msgstr "Bucle escrito a mano"
-
-msgid "两者"
-msgstr "Ambos"
+msgid "炽燃！竞技大会！"
+msgstr "¡FURIA ARDIENTE! ¡MEGA ARENA!"

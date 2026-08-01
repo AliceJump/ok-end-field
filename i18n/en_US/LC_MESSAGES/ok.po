@@ -728,7 +728,7 @@ msgid "wuling"
 msgstr "wuling"
 
 msgid "三位一体"
-msgstr "Trinity"
+msgstr "Triaggelos"
 
 msgid "三相纳米片"
 msgstr "Triphase Nanosheet"
@@ -854,7 +854,7 @@ msgid "干员经验"
 msgstr "Operator EXP"
 
 msgid "干员进阶"
-msgstr "Operator Promotion"
+msgstr "Operator Promotions"
 
 msgid "弧光"
 msgstr "arclight"
@@ -875,7 +875,7 @@ msgid "截图保存路径（相对于项目根目录）"
 msgstr "Screenshot save path (relative to project root)"
 
 msgid "技能提升"
-msgstr "Skill Upgrade"
+msgstr "Skill Up"
 
 msgid "技能释放"
 msgstr "Skill Release"
@@ -935,7 +935,7 @@ msgid "武器经验"
 msgstr "Weapon EXP"
 
 msgid "武器进阶"
-msgstr "Weapon Promotion"
+msgstr "Weapon Tune"
 
 msgid "武陵"
 msgstr "Wuling"
@@ -974,7 +974,7 @@ msgid "狼卫"
 msgstr "wulfgard"
 
 msgid "白垩界卫"
-msgstr "Cretaceous Guardian"
+msgstr "Marble Aggelomoirai"
 
 msgid "目标券数"
 msgstr "Target Ticket Count"
@@ -1052,7 +1052,7 @@ msgid "重复测试的次数"
 msgstr "Number of Test Repetitions"
 
 msgid "钱币收集"
-msgstr "Currency Collection"
+msgstr "T-Creds"
 
 msgid "间隔秒数"
 msgstr "Interval (seconds)"
@@ -1173,7 +1173,7 @@ msgid "信用商店保留信用"
 msgstr "Credit Store Reserved Credit"
 
 msgid "制造舱"
-msgstr "Manufacturing Bay"
+msgstr "Manufacturing Cabin"
 
 msgid "刷取哪个副本。所选副本必须领完所有等级的首通奖励。"
 msgstr "Which dungeon to farm. Must have claimed all first-clear rewards."
@@ -1445,16 +1445,16 @@ msgid "保持当前"
 msgstr "Keep Current"
 
 msgid "储藏箱I"
-msgstr "Storage Box I"
+msgstr "Storage Crate I"
 
 msgid "储藏箱II"
-msgstr "Storage Box II"
+msgstr "Storage Crate II"
 
 msgid "储藏箱III"
-msgstr "Storage Box III"
+msgstr "Storage Crate III"
 
 msgid "储藏箱IV"
-msgstr "Storage Box IV"
+msgstr "Storage Crate IV"
 
 msgid "其他配置"
 msgstr "Other Settings"
@@ -1526,7 +1526,7 @@ msgid "地区切换"
 msgstr "Region Switch"
 
 msgid "培养舱"
-msgstr "Cultivation Chamber"
+msgstr "Growth Chamber"
 
 msgid "多账户独立配置"
 msgstr "Per-Account Config"
@@ -1809,7 +1809,7 @@ msgstr ""
 "0 = disabled."
 
 msgid "聂菲斯"
-msgstr "Nephi"
+msgstr "Nefarith"
 
 msgid "致密源石粉末"
 msgstr "Dense Originium Powder"
@@ -1972,7 +1972,7 @@ msgid "卡契尔"
 msgstr "catcher"
 
 msgid "影拓丰碑"
-msgstr "Shadow Monument"
+msgstr "Umbral Monument"
 
 msgid "未处理的任务列表"
 msgstr "Unprocessed Task List"
@@ -2110,7 +2110,7 @@ msgid "运输委托"
 msgstr "Delivery Commission"
 
 msgid "醚质"
-msgstr "Ether"
+msgstr "Aurylene"
 
 msgid "Task"
 msgstr "Task"
@@ -2269,220 +2269,220 @@ msgid "已清空账号全部覆盖：{account}"
 msgstr "Cleared all overrides for account: {account}"
 
 msgid "Delta型机器人"
-msgstr "Delta-type Robot"
+msgstr "Delta Bot"
 
 msgid "“碾骨之拳”罗丹"
-msgstr "\"Bone-Crushing Fist\" Rodan"
+msgstr "Rhodagn the Bonekrushing Fist"
 
 msgid "中红柱状菌"
-msgstr "Medium Red Column Fungus"
+msgstr "Red Bolete"
 
 msgid "中黯石"
-msgstr "Medium Dimstone"
+msgstr "Auronyx"
 
 msgid "仓储节点"
-msgstr "Storage Node"
+msgstr "Depot Node"
 
 msgid "仿生翅天使"
-msgstr "Bionic Wing Angel"
+msgstr "Falsewings"
 
 msgid "会客室"
 msgstr "Reception Room"
 
 msgid "传送台"
-msgstr "Teleport Pad"
+msgstr "TP Platform"
 
 msgid "供电终端"
-msgstr "Power Terminal"
+msgstr "Electric Nexus"
 
 msgid "充能球刺兽"
-msgstr "Charged Spike Beast"
+msgstr "Imbued Quillbeast"
 
 msgid "净水节点"
-msgstr "Water Purification Node"
+msgstr "Purification Node"
 
 msgid "分层入口"
-msgstr "Layered Entrance"
+msgstr "Level Access"
 
 msgid "刚角天使"
-msgstr "Hardhorn Angel"
+msgstr "Heavy Ram"
 
 msgid "割云翁"
-msgstr "Cloud Reaper"
+msgstr "Nimbus Razor"
 
 msgid "劫云客"
-msgstr "Cloud Raider"
+msgstr "Cloud Stalker"
 
 msgid "协议传送点"
-msgstr "Protocol Teleport"
+msgstr "TP Point"
 
 msgid "协议奇点"
 msgstr "Protocol Singularity"
 
 msgid "协议核心"
-msgstr "Protocol Core"
+msgstr "Automation-Core"
 
 msgid "协议采录桩"
-msgstr "Protocol Recording Stake"
+msgstr "Protocol Datalogger"
 
 msgid "原生钳兽"
-msgstr "Native Pincer Beast"
+msgstr "Indigenous Pincerbeast"
 
 msgid "受蚀玉化叶"
-msgstr "Eroded Jade Leaf"
+msgstr "Blighted Jadeleaf"
 
 msgid "大角天使"
-msgstr "Large Horn Angel"
+msgstr "Ram"
 
 msgid "大角天使α"
-msgstr "Large Horn Angel α"
+msgstr "Ram α"
 
 msgid "展示区"
-msgstr "Display Area"
+msgstr "Display Section"
 
 msgid "岩天使叶"
-msgstr "Rock Angel Leaf"
+msgstr "False Aggela"
 
 msgid "巨山犼兽"
-msgstr "Mountain Howler Beast"
+msgstr "Craghowler"
 
 msgid "干员联络台"
-msgstr "Operator Contact Station"
+msgstr "Operator Contact Panel"
 
 msgid "开天将"
-msgstr "Sky Opener"
+msgstr "Cloud Obliterator"
 
 msgid "怒目彪兽"
 msgstr "Glaring Beast"
 
 msgid "总控中枢"
-msgstr "Central Control Hub"
+msgstr "Control Nexus"
 
 msgid "战术训练"
-msgstr "Tactical Training"
+msgstr "Tactical Training Cabin"
 
 msgid "摧山将"
-msgstr "Mountain Crusher"
+msgstr "Hill Smasher"
 
 msgid "斧甲兽"
-msgstr "Axe Shell Beast"
+msgstr "Axe Armorbeast"
 
 msgid "断云叟"
-msgstr "Cloud Cutter"
+msgstr "Breaking Gust"
 
 msgid "星门菌"
-msgstr "Star Gate Fungus"
+msgstr "Cosmagaric"
 
 msgid "映火荞花"
-msgstr "Fire Buckwheat Flower"
+msgstr "Firebuckle"
 
 msgid "晶化多齿叶"
-msgstr "Crystallized Multi-Serrated Leaf"
+msgstr "Kalkodendra"
 
 msgid "晶锥天使"
-msgstr "Crystal Cone Angel"
+msgstr "Hedron"
 
 msgid "晶锥天使δ"
-msgstr "Crystal Cone Angel δ"
+msgstr "Hedron δ"
 
 msgid "柑实"
-msgstr "Citrus Fruit"
+msgstr "Citrome"
 
 msgid "棱镜天使"
-msgstr "Prism Angel"
+msgstr "Prism"
 
 msgid "次级核心"
-msgstr "Secondary Core"
+msgstr "Sub-PAC"
 
 msgid "武陵石"
-msgstr "Wuling Stone"
+msgstr "Wulingstone"
 
 msgid "残暴原生钳兽"
-msgstr "Ferocious Native Pincer Beast"
+msgstr "Brutal Pincerbeast"
 
 msgid "水灯虫"
-msgstr "Water Lantern Bug"
+msgstr "Waterlamp"
 
 msgid "浊流天使"
-msgstr "Turbid Stream Angel"
+msgstr "Mudflow"
 
 msgid "浊流天使δ"
-msgstr "Turbid Stream Angel δ"
+msgstr "Mudflow δ"
 
 msgid "源矿矿点"
-msgstr "Originium Ore Deposit"
+msgstr "Originium Mining Spot"
 
 msgid "演武平台"
-msgstr "Training Platform"
+msgstr "Trial Arena"
 
 msgid "潜地虬兽"
-msgstr "Burrowing Dragon Beast"
+msgstr "Tunneling Nidwyrm"
 
 msgid "潮行天使"
-msgstr "Tide Walker Angel"
+msgstr "Tidewalker"
 
 msgid "潮行天使δ"
-msgstr "Tide Walker Angel δ"
+msgstr "Tidewalker δ"
 
 msgid "火雾源石虫"
-msgstr "Fire Mist Originium Slug"
+msgstr "Firemist Originium Slug"
 
 msgid "灰芦麦"
-msgstr "Grey Reed Wheat"
+msgstr "Reed Rye"
 
 msgid "灼壳虫"
-msgstr "Scorched Shell Bug"
+msgstr "Scorchbug"
 
 msgid "焚雾源石虫"
-msgstr "Burning Mist Originium Slug"
+msgstr "Blazemist Originium Slug"
 
 msgid "燎石"
-msgstr "Blazing Stone"
+msgstr "Igneosite"
 
 msgid "物资调度终端"
-msgstr "Material Dispatch Terminal"
+msgstr "Stock Redistribution Terminal"
 
 msgid "环境监测终端"
-msgstr "Environment Monitor Terminal"
+msgstr "Environment Monitoring Terminal"
 
 msgid "球刺兽"
-msgstr "Spike Ball Beast"
+msgstr "Quillbeast"
 
 msgid "琼叶参"
-msgstr "Jade Leaf Ginseng"
+msgstr "Redjade Ginseng"
 
 msgid "百眼彪兽"
-msgstr "Hundred-Eyed Beast"
+msgstr "Spotted Rakerbeast"
 
 msgid "砂叶"
-msgstr "Sand Leaf"
+msgstr "Sandleaf"
 
 msgid "碾骨伏击射手"
-msgstr "Bone-Crushing Ambusher"
+msgstr "Bonekrusher Ambusher"
 
 msgid "碾骨先锋"
-msgstr "Bone-Crushing Vanguard"
+msgstr "Bonekrusher Vanguard"
 
 msgid "碾骨劫掠者"
-msgstr "Bone-Crushing Raider"
+msgstr "Bonekrusher Raider"
 
 msgid "碾骨撕裂牙兽"
-msgstr "Bone-Crushing Rending Fang Beast"
+msgstr "Bonekrusher Ripptusk"
 
 msgid "碾骨清道夫"
-msgstr "Bone-Crushing Scavenger"
+msgstr "Bonekrusher Arsonist"
 
 msgid "碾骨渗透者"
-msgstr "Bone-Crushing Infiltrator"
+msgstr "Bonekrusher Infiltrator"
 
 msgid "碾骨焰术师"
-msgstr "Bone-Crushing Pyromancer"
+msgstr "Bonekrusher Pyromancer"
 
 msgid "碾骨行刑人"
-msgstr "Bone-Crushing Executioner"
+msgstr "Bonekrusher Executioner"
 
 msgid "穿林箭"
-msgstr "Forest Piercer"
+msgstr "Grove Archer"
 
 msgid "精锐伏击射手"
 msgstr "Elite Ambusher"
@@ -2491,160 +2491,160 @@ msgid "精锐劫掠者"
 msgstr "Elite Raider"
 
 msgid "精锐撕裂牙兽"
-msgstr "Elite Rending Fang Beast"
+msgstr "Elite Ripptusk"
 
 msgid "精锐行刑人"
 msgstr "Elite Executioner"
 
 msgid "紫晶矿矿点"
-msgstr "Amethyst Ore Deposit"
+msgstr "Amethyst Mining Spot"
 
 msgid "纯晶多齿叶"
-msgstr "Pure Crystal Multi-Serrated Leaf"
+msgstr "Chrysodendra"
 
 msgid "维修灵感点"
-msgstr "Repair Inspiration Point"
+msgstr "Repair Logic"
 
 msgid "肖像天使"
 msgstr "Portrait Angel"
 
 msgid "能量淤积点"
-msgstr "Energy Accumulation Point"
+msgstr "Energy Alluvium"
 
 msgid "至晶多齿叶"
-msgstr "Supreme Crystal Multi-Serrated Leaf"
+msgstr "Vitrodendra"
 
 msgid "芽针"
-msgstr "Sprout Needle"
+msgstr "Yazhen"
 
 msgid "苦叶椒"
-msgstr "Bitter Leaf Pepper"
+msgstr "Tartpepper"
 
 msgid "荆刺芽针"
-msgstr "Thorn Sprout Needle"
+msgstr "Thorny Yazhen"
 
 msgid "荞花"
-msgstr "Buckwheat Flower"
+msgstr "Buckflower"
 
 msgid "莫惜命"
-msgstr "Spare No Life"
+msgstr "Highway Reaver"
 
 msgid "莫留财"
-msgstr "Spare No Wealth"
+msgstr "Road Plunderer"
 
 msgid "萤壳虫"
-msgstr "Firefly Shell Bug"
+msgstr "Glowbug"
 
 msgid "蓝铁矿矿点"
-msgstr "Blue Iron Ore Deposit"
+msgstr "Ferrium Mining Spot"
 
 msgid "蓬茸锦草"
-msgstr "Fluffy Brocade Grass"
+msgstr "Fluffed Jincao"
 
 msgid "蚀像寻遗"
-msgstr "Eroded Image Relic"
+msgstr "Etchspace Salvage"
 
 msgid "血菌"
-msgstr "Blood Fungus"
+msgstr "Bloodcap"
 
 msgid "行迹高塔"
-msgstr "Trace Tower"
+msgstr "Tower of Trails"
 
 msgid "表象"
-msgstr "Appearance"
+msgstr "Æthillu"
 
 msgid "袭击预警终端"
-msgstr "Raid Warning Terminal"
+msgstr "EW Terminal"
 
 msgid "装备模板箱"
-msgstr "Equipment Template Box"
+msgstr "Gear Template Crate"
 
 msgid "见闻辑录"
-msgstr "Knowledge Archive"
+msgstr "Findings"
 
 msgid "访客终端"
-msgstr "Visitor Terminal"
+msgstr "Guest Terminal"
 
 msgid "资源回收站"
-msgstr "Resource Recycling Station"
+msgstr "Recycling Station"
 
 msgid "赤铜矿"
-msgstr "Red Copper Ore"
+msgstr "Cuprium Ore"
 
 msgid "轻红柱状菌"
-msgstr "Light Red Column Fungus"
+msgstr "Pink Bolete"
 
 msgid "轻黯石"
-msgstr "Light Dimstone"
+msgstr "Kalkonyx"
 
 msgid "过堂风"
-msgstr "Draft Wind"
+msgstr "Sweeping Wind"
 
 msgid "酮化灌木"
-msgstr "Ketone Shrub"
+msgstr "Aketine"
 
 msgid "酸液源石虫"
 msgstr "Acid Originium Slug"
 
 msgid "酸液源石虫·α"
-msgstr "Acid Originium Slug · α"
+msgstr "Acid Originium Slug α"
 
 msgid "重刺天使"
-msgstr "Heavy Thorn Angel"
+msgstr "Heavy Sting"
 
 msgid "重刺天使α"
-msgstr "Heavy Thorn Angel α"
+msgstr "Heavy Sting α"
 
 msgid "重红柱状菌"
-msgstr "Heavy Red Column Fungus"
+msgstr "Ruby Bolete"
 
 msgid "重黯石"
-msgstr "Heavy Dimstone"
+msgstr "Umbronyx"
 
 msgid "金石稻"
-msgstr "Gold Stone Rice"
+msgstr "Amber Rice"
 
 msgid "钉刺天使"
-msgstr "Spike Thorn Angel"
+msgstr "Sting"
 
 msgid "钉刺天使α"
-msgstr "Spike Thorn Angel α"
+msgstr "Sting α"
 
 msgid "锁闭储藏箱"
-msgstr "Locked Storage Box"
+msgstr "Sealed Crate"
 
 msgid "锦草"
-msgstr "Brocade Grass"
+msgstr "Jincao"
 
 msgid "雾火斧甲兽"
 msgstr "Mistfire Axe Shell Beast"
 
 msgid "雾火爪牙"
-msgstr "Mistfire Minion"
+msgstr "Hazefyre Claw"
 
 msgid "雾火牙兽"
-msgstr "Mistfire Fang Beast"
+msgstr "Hazefyre Tuskbeast"
 
 msgid "音像存档"
 msgstr "Audio Archive"
 
 msgid "高阶培养I"
-msgstr "Advanced Cultivation I"
+msgstr "Advanced Progression I"
 
 msgid "高阶培养II"
-msgstr "Advanced Cultivation II"
+msgstr "Advanced Progression II"
 
 msgid "高阶培养III"
-msgstr "Advanced Cultivation III"
+msgstr "Advanced Progression III"
 
 msgid "高阶培养IV"
-msgstr "Advanced Cultivation IV"
+msgstr "Advanced Progression IV"
 
 msgid "高阶培养V"
-msgstr "Advanced Cultivation V"
+msgstr "Advanced Progression V"
 
 msgid "黯银柑实"
-msgstr "Dark Silver Citrus"
+msgstr "Umbraline"
 
 msgid "Battle Config"
 msgstr "Battle Config"
@@ -2732,7 +2732,7 @@ msgid "刮刮乐"
 msgstr "Scratch Card"
 
 msgid "协议纹石\n"
-msgstr "Protocol Pattern Stone\n"
+msgstr "Protocolith"
 
 msgid "只填写 data.content 的字符串值"
 msgstr "Enter only the string value of data.content"
@@ -2758,10 +2758,10 @@ msgid "地图账号"
 msgstr "Map Account"
 
 msgid "塔晶"
-msgstr "Tower Crystal"
+msgstr "Talosite"
 
 msgid "塔罗斯菌"
-msgstr "Talos Fungus"
+msgstr "Talos Cap"
 
 msgid "外部命令"
 msgstr "External Command"
@@ -2783,16 +2783,16 @@ msgstr ""
 "Current account hg/check data.content value for official map position sync"
 
 msgid "待回收物品"
-msgstr "Items to Recover"
+msgstr "Salvageable"
 
 msgid "息壤气"
-msgstr "Xirang Gas"
+msgstr "Xiragen"
 
 msgid "惰气"
-msgstr "Inert Gas"
+msgstr "Inergen"
 
 msgid "战争回响"
-msgstr "War Echo"
+msgstr "Echoes of War"
 
 msgid "是否执行一次外部命令行程序。"
 msgstr "Whether to run an external command once."
@@ -2811,7 +2811,7 @@ msgstr ""
 "in a loop."
 
 msgid "红矛叶"
-msgstr "Red Spear Leaf"
+msgstr "Crimson Spearleaf"
 
 msgid "网页地图同步"
 msgstr "Web Map Sync"
@@ -2823,13 +2823,13 @@ msgid "荞愈胶囊"
 msgstr "Buckwheat Capsule"
 
 msgid "蚀影噪雷"
-msgstr "Eclipsed-Shadow Noisy Thunder"
+msgstr "Blitzcrash Blightshade"
 
 msgid "蚀影应龙尖兵"
-msgstr "Eclipsed-Shadow Yinglong Vanguard"
+msgstr "YSTF Elite Blightshade"
 
 msgid "蚀影牙兽"
-msgstr "Eclipsed-Shadow Fanged Beast"
+msgstr "Tuskbeast Blightshade"
 
 msgid ""
 "账号1\n"
@@ -2846,7 +2846,7 @@ msgstr ""
 " this task."
 
 msgid "阿莱克琉斯，千夫长"
-msgstr "Alekleus, Centurion"
+msgstr "Alleikhreos, Chiliarch"
 
 msgid ""
 "需要执行的命令行内容。\n"
@@ -2871,53 +2871,5 @@ msgstr ""
 "Save a complete task configuration snapshot for the current account. Changes"
 " to task defaults will not affect saved accounts."
 
-msgid "据点兑换仅购买优先商品"
-msgstr "Outpost Exchange Only Buy Priority Goods"
-
-msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
-msgstr "When enabled, outpost exchange only buys goods from the Trade Goods Priority Sequence when it is non-empty; an empty sequence keeps the original exchange behavior."
-
-msgid "区域扫描测试"
-msgstr "Region Scan Test"
-
-msgid "暂停计时验证"
-msgstr "Pause Timing Verification"
-
-msgid "等级读取测试"
-msgstr "Level Read Test"
-
-msgid "演算入口导航测试"
-msgstr "Demo Entry Navigation Test"
-
-msgid "按住鼠标蛇形扫描指定矩形区域"
-msgstr "Press and hold the mouse to serpentine-scan the specified rectangular area"
-
-msgid "验证暂停任务期间活动计时是否冻结"
-msgstr "Verify whether the active timer freezes while the task is paused"
-
-msgid "将次要目标方向蓝点对齐到屏幕中心"
-msgstr "Align the blue dot of the secondary objective direction to the screen center"
-
-msgid "读取演武集算关卡界面的当前等级"
-msgstr "Read the current level from the Demo battle stage screen"
-
-msgid "导航到演武集算『演算』入口"
-msgstr "Navigate to the Demo battle entry"
-
-msgid "测试模式"
-msgstr "Test Mode"
-
-msgid "测试超时(秒)"
-msgstr "Test Timeout (seconds)"
-
-msgid "选择要运行的暂停计时测试"
-msgstr "Select the pause timing test to run"
-
-msgid "暂停时间应超过此值，用于观察恢复后的行为"
-msgstr "The pause duration should exceed this value to observe behavior after resume"
-
-msgid "自写循环"
-msgstr "Self-Written Loop"
-
-msgid "两者"
-msgstr "Both"
+msgid "炽燃！竞技大会！"
+msgstr "HEAT RAGE! MEGA ARENA!"

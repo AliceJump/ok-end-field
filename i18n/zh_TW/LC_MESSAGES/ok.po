@@ -2454,13 +2454,13 @@ msgid "会客室"
 msgstr "會客室"
 
 msgid "传送台"
-msgstr "傳送臺"
+msgstr "傳送台"
 
 msgid "供电终端"
 msgstr "供電終端"
 
 msgid "充能球刺兽"
-msgstr "充能球刺獸"
+msgstr "蓄能球刺獸"
 
 msgid "净水节点"
 msgstr "淨水節點"
@@ -2481,7 +2481,7 @@ msgid "协议传送点"
 msgstr "協議傳送點"
 
 msgid "协议奇点"
-msgstr "協議奇點"
+msgstr "協議奇異點"
 
 msgid "协议核心"
 msgstr "協議核心"
@@ -2505,13 +2505,13 @@ msgid "展示区"
 msgstr "展示區"
 
 msgid "岩天使叶"
-msgstr "巖天使葉"
+msgstr "岩天使葉"
 
 msgid "巨山犼兽"
 msgstr "巨山犼獸"
 
 msgid "干员联络台"
-msgstr "幹員聯絡臺"
+msgstr "幹員聯絡台"
 
 msgid "开天将"
 msgstr "開天將"
@@ -2577,7 +2577,7 @@ msgid "源矿矿点"
 msgstr "源礦礦點"
 
 msgid "演武平台"
-msgstr "演武平臺"
+msgstr "演武平台"
 
 msgid "潜地虬兽"
 msgstr "潛地虯獸"
@@ -2604,7 +2604,7 @@ msgid "燎石"
 msgstr "燎石"
 
 msgid "物资调度终端"
-msgstr "物資排程終端"
+msgstr "物資調度終端"
 
 msgid "环境监测终端"
 msgstr "環境監測終端"
@@ -2613,7 +2613,7 @@ msgid "球刺兽"
 msgstr "球刺獸"
 
 msgid "琼叶参"
-msgstr "瓊葉參"
+msgstr "瓊葉蔘"
 
 msgid "百眼彪兽"
 msgstr "百眼彪獸"
@@ -2893,7 +2893,7 @@ msgid "刮刮乐"
 msgstr "刮刮樂"
 
 msgid "协议纹石\n"
-msgstr "協議紋石\n"
+msgstr "協議紋石"
 
 msgid "只填写 data.content 的字符串值"
 msgstr "只填寫 data.content 的字串值"
@@ -3023,53 +3023,5 @@ msgstr ""
 msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
 msgstr "儲存目前帳號的完整任務設定快照。任務預設值變更不會影響已儲存的帳號。"
 
-msgid "据点兑换仅购买优先商品"
-msgstr "據點兌換僅購買優先商品"
-
-msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
-msgstr "啟用後，僅當「交易貨品優先序列」不為空時，據點兌換才只購買其中的商品；序列為空時按原邏輯兌換。"
-
-msgid "区域扫描测试"
-msgstr "區域掃描測試"
-
-msgid "暂停计时验证"
-msgstr "暫停計時驗證"
-
-msgid "等级读取测试"
-msgstr "等級讀取測試"
-
-msgid "演算入口导航测试"
-msgstr "演算入口導航測試"
-
-msgid "按住鼠标蛇形扫描指定矩形区域"
-msgstr "按住滑鼠蛇形掃描指定矩形區域"
-
-msgid "验证暂停任务期间活动计时是否冻结"
-msgstr "驗證暫停任務期間活動計時是否凍結"
-
-msgid "将次要目标方向蓝点对齐到屏幕中心"
-msgstr "將次要目標方向藍點對齊到螢幕中心"
-
-msgid "读取演武集算关卡界面的当前等级"
-msgstr "讀取演武集算關卡介面的當前等級"
-
-msgid "导航到演武集算『演算』入口"
-msgstr "導航到演武集算『演算』入口"
-
-msgid "测试模式"
-msgstr "測試模式"
-
-msgid "测试超时(秒)"
-msgstr "測試逾時(秒)"
-
-msgid "选择要运行的暂停计时测试"
-msgstr "選擇要執行的暫停計時測試"
-
-msgid "暂停时间应超过此值，用于观察恢复后的行为"
-msgstr "暫停時間應超過此值，用於觀察恢復後的行為"
-
-msgid "自写循环"
-msgstr "自寫迴圈"
-
-msgid "两者"
-msgstr "兩者"
+msgid "炽燃！竞技大会！"
+msgstr "熾燃！競技大會！"

@@ -121,7 +121,7 @@ msgid "一键收菜"
 msgstr "일괄 수확"
 
 msgid "三位一体"
-msgstr "트리니티"
+msgstr "트리아겔로스"
 
 msgid "三相纳米片"
 msgstr "삼상 나노시트"
@@ -258,7 +258,7 @@ msgid "干员经验"
 msgstr "오퍼레이터 경험치"
 
 msgid "干员进阶"
-msgstr "오퍼레이터 승급"
+msgstr "오퍼레이터 돌파"
 
 msgid "弧光"
 msgstr "호"
@@ -279,7 +279,7 @@ msgid "截图保存路径（相对于项目根目录）"
 msgstr "스크린샷 저장 경로(프로젝트 루트 기준)"
 
 msgid "技能提升"
-msgstr "스킬 강화"
+msgstr "스킬 업그레이드"
 
 msgid "技能释放"
 msgstr "스킬 사용"
@@ -342,7 +342,7 @@ msgid "武器经验"
 msgstr "무기 경험치"
 
 msgid "武器进阶"
-msgstr "무기 승급"
+msgstr "무기 돌파"
 
 msgid "武陵"
 msgstr "무릉"
@@ -384,7 +384,7 @@ msgid "狼卫"
 msgstr "울프 가드"
 
 msgid "白垩界卫"
-msgstr "백악계 수호자"
+msgstr "마블 아겔로미레"
 
 msgid "目标券数"
 msgstr "목표 티켓 수"
@@ -613,7 +613,7 @@ msgid "信用商店保留信用"
 msgstr "신용 상점 보유 신용"
 
 msgid "制造舱"
-msgstr "제조 베이"
+msgstr "제조실"
 
 msgid "刷取哪个副本。所选副本必须领完所有等级的首通奖励。"
 msgstr "파밍할 던전. 선택한 던전은 모든 난이도의 최초 클리어 보상을 수령해야 합니다."
@@ -903,16 +903,16 @@ msgid "保持当前"
 msgstr "현재 유지"
 
 msgid "储藏箱I"
-msgstr "보관함 I"
+msgstr "보물 상자 I"
 
 msgid "储藏箱II"
-msgstr "보관함 II"
+msgstr "보물 상자 II"
 
 msgid "储藏箱III"
-msgstr "보관함 III"
+msgstr "보물 상자 III"
 
 msgid "储藏箱IV"
-msgstr "보관함 IV"
+msgstr "보물 상자 IV"
 
 msgid "其他配置"
 msgstr "기타 설정"
@@ -984,7 +984,7 @@ msgid "地区切换"
 msgstr "지역 전환"
 
 msgid "培养舱"
-msgstr "육성 챔버"
+msgstr "재배실"
 
 msgid "多账户独立配置"
 msgstr "계정별 독립 설정"
@@ -1268,7 +1268,7 @@ msgstr ""
 "0은 비활성화입니다."
 
 msgid "聂菲斯"
-msgstr "네피스"
+msgstr "네파리스"
 
 msgid "致密源石粉末"
 msgstr "조밀 오리지늄 분말"
@@ -1358,7 +1358,7 @@ msgid "重息壤"
 msgstr "중식양"
 
 msgid "阮一"
-msgstr "루안이"
+msgstr "원일"
 
 msgid "阿禾"
 msgstr "아허"
@@ -1429,7 +1429,7 @@ msgid "卡契尔"
 msgstr "카첼"
 
 msgid "影拓丰碑"
-msgstr "영탁 비석"
+msgstr "그림자 이정표"
 
 msgid "未处理的任务列表"
 msgstr "미처리 작업 목록"
@@ -1565,7 +1565,7 @@ msgid "运输委托"
 msgstr "운송 위탁"
 
 msgid "醚质"
-msgstr "에테르"
+msgstr "오리렌"
 
 msgid "Task"
 msgstr "작업"
@@ -2444,22 +2444,22 @@ msgid "已清空账号全部覆盖：{account}"
 msgstr "계정의 모든 재정의 삭제됨: {account}"
 
 msgid "Delta型机器人"
-msgstr "델타형 로봇"
+msgstr "델타 로봇"
 
 msgid "“碾骨之拳”罗丹"
-msgstr "\"뼈를 부수는 주먹\" 로단"
+msgstr "'본 크러셔의 주먹' 로댄"
 
 msgid "中红柱状菌"
-msgstr "중형 붉은 기둥 균"
+msgstr "보통 붉은 기둥 버섯"
 
 msgid "中黯石"
-msgstr "중형 암석"
+msgstr "일반 흑암석"
 
 msgid "仓储节点"
-msgstr "창고 노드"
+msgstr "저장고 노드"
 
 msgid "仿生翅天使"
-msgstr "생체 날개 천사"
+msgstr "모방아겔로스"
 
 msgid "会客室"
 msgstr "응접실"
@@ -2468,25 +2468,25 @@ msgid "传送台"
 msgstr "전송대"
 
 msgid "供电终端"
-msgstr "전원 공급 단말"
+msgstr "전력 단말기"
 
 msgid "充能球刺兽"
-msgstr "충전 구체 가시수"
+msgstr "활성화된 프릭비스트"
 
 msgid "净水节点"
 msgstr "정수 노드"
 
 msgid "分层入口"
-msgstr "층형 입구"
+msgstr "층별 입구"
 
 msgid "刚角天使"
-msgstr "강각 천사"
+msgstr "쌍뿔아겔로스"
 
 msgid "割云翁"
-msgstr "구름 베는 노인"
+msgstr "할운옹"
 
 msgid "劫云客"
-msgstr "구름 약탈자"
+msgstr "겁운객"
 
 msgid "协议传送点"
 msgstr "프로토콜 전송 지점"
@@ -2498,31 +2498,31 @@ msgid "协议核心"
 msgstr "프로토콜 코어"
 
 msgid "协议采录桩"
-msgstr "프로토콜 채록 말뚝"
+msgstr "프로토콜 데이터 수집기"
 
 msgid "原生钳兽"
-msgstr "원생 집게수"
+msgstr "원시 핀서비스트"
 
 msgid "受蚀玉化叶"
-msgstr "침식된 옥화 잎"
+msgstr "침식된 옥 잎"
 
 msgid "大角天使"
-msgstr "대각 천사"
+msgstr "큰뿔아겔로스"
 
 msgid "大角天使α"
-msgstr "대각 천사 α"
+msgstr "큰뿔아겔로스 · α"
 
 msgid "展示区"
 msgstr "전시 구역"
 
 msgid "岩天使叶"
-msgstr "암천사 잎"
+msgstr "바위아겔로스 잎"
 
 msgid "巨山犼兽"
-msgstr "거산 후수"
+msgstr "거대한 록하울러"
 
 msgid "干员联络台"
-msgstr "오퍼레이터 연락대"
+msgstr "오퍼레이터 호출 패널"
 
 msgid "开天将"
 msgstr "개천장"
@@ -2531,7 +2531,7 @@ msgid "怒目彪兽"
 msgstr "노목표수"
 
 msgid "总控中枢"
-msgstr "총괄 제어 중추"
+msgstr "핵심 제어 중추"
 
 msgid "战术训练"
 msgstr "전술 훈련"
@@ -2540,142 +2540,142 @@ msgid "摧山将"
 msgstr "최산장"
 
 msgid "斧甲兽"
-msgstr "도끼갑수"
+msgstr "엑스 아머비스트"
 
 msgid "断云叟"
-msgstr "구름 끊는 노인"
+msgstr "단운수"
 
 msgid "星门菌"
-msgstr "성문 균"
+msgstr "스타게이트 버섯"
 
 msgid "映火荞花"
-msgstr "불꽃 메밀꽃"
+msgstr "화염 메밀꽃"
 
 msgid "晶化多齿叶"
-msgstr "결정화 다치엽"
+msgstr "칼코덴드라"
 
 msgid "晶锥天使"
-msgstr "수정 원뿔 천사"
+msgstr "수정아겔로스"
 
 msgid "晶锥天使δ"
-msgstr "수정 원뿔 천사 δ"
+msgstr "수정아겔로스 · δ"
 
 msgid "柑实"
-msgstr "감귤 열매"
+msgstr "시트론"
 
 msgid "棱镜天使"
-msgstr "프리즘 천사"
+msgstr "굴절아겔로스"
 
 msgid "次级核心"
-msgstr "차급 코어"
+msgstr "서브 코어"
 
 msgid "武陵石"
 msgstr "무릉석"
 
 msgid "残暴原生钳兽"
-msgstr "잔폭 원생 집게수"
+msgstr "브루탈 핀서비스트"
 
 msgid "水灯虫"
 msgstr "수등충"
 
 msgid "浊流天使"
-msgstr "탁류 천사"
+msgstr "탁류아겔로스"
 
 msgid "浊流天使δ"
-msgstr "탁류 천사 δ"
+msgstr "탁류아겔로스 · δ"
 
 msgid "源矿矿点"
-msgstr "원광 채굴 지점"
+msgstr "오리지늄 광물 광산 지점"
 
 msgid "演武平台"
 msgstr "연무 플랫폼"
 
 msgid "潜地虬兽"
-msgstr "잠지 규수"
+msgstr "터널링 니드웜"
 
 msgid "潮行天使"
-msgstr "조행 천사"
+msgstr "조류아겔로스"
 
 msgid "潮行天使δ"
-msgstr "조행 천사 δ"
+msgstr "조류아겔로스 · δ"
 
 msgid "火雾源石虫"
-msgstr "화무 원석충"
+msgstr "화염원석충"
 
 msgid "灰芦麦"
-msgstr "회로맥"
+msgstr "회보리"
 
 msgid "灼壳虫"
-msgstr "작각충"
+msgstr "화염 풍뎅이"
 
 msgid "焚雾源石虫"
-msgstr "분무 원석충"
+msgstr "용암원석충"
 
 msgid "燎石"
-msgstr "요석"
+msgstr "화염석"
 
 msgid "物资调度终端"
-msgstr "물자 조달 단말"
+msgstr "물자 관리 단말기"
 
 msgid "环境监测终端"
-msgstr "환경 감시 단말"
+msgstr "환경 관측 단말기"
 
 msgid "球刺兽"
-msgstr "구자수"
+msgstr "프릭비스트"
 
 msgid "琼叶参"
-msgstr "경엽삼"
+msgstr "홍옥 인삼"
 
 msgid "百眼彪兽"
-msgstr "백안표수"
+msgstr "백안의 레이커비스트"
 
 msgid "砂叶"
-msgstr "사엽"
+msgstr "샌드리프"
 
 msgid "碾骨伏击射手"
-msgstr "골분쇄 복격 사수"
+msgstr "본 크러셔 저격수"
 
 msgid "碾骨先锋"
-msgstr "골분쇄 선봉"
+msgstr "본 크러셔 돌격수"
 
 msgid "碾骨劫掠者"
-msgstr "골분쇄 약탈자"
+msgstr "본 크러셔 약탈자"
 
 msgid "碾骨撕裂牙兽"
-msgstr "골분쇄 열아수"
+msgstr "본 크러셔 립터스크"
 
 msgid "碾骨清道夫"
-msgstr "골분쇄 청소부"
+msgstr "본 크러셔 집행자"
 
 msgid "碾骨渗透者"
-msgstr "골분쇄 침투자"
+msgstr "본 크러셔 침투자"
 
 msgid "碾骨焰术师"
-msgstr "골분쇄 염술사"
+msgstr "본 크러셔 염술사"
 
 msgid "碾骨行刑人"
-msgstr "골분쇄 형집행인"
+msgstr "본 크러셔 처형자"
 
 msgid "穿林箭"
-msgstr "관림전"
+msgstr "천림전"
 
 msgid "精锐伏击射手"
-msgstr "정예 복격 사수"
+msgstr "저격수 · 정예"
 
 msgid "精锐劫掠者"
-msgstr "정예 약탈자"
+msgstr "약탈자 · 정예"
 
 msgid "精锐撕裂牙兽"
-msgstr "정예 열아수"
+msgstr "립터스크 · 정예"
 
 msgid "精锐行刑人"
-msgstr "정예 형집행인"
+msgstr "처형자 · 정예"
 
 msgid "紫晶矿矿点"
-msgstr "자정광 채굴 지점"
+msgstr "자수정 광석 광산 지점"
 
 msgid "纯晶多齿叶"
-msgstr "순정 다치엽"
+msgstr "크리소덴드라"
 
 msgid "维修灵感点"
 msgstr "수리 영감 포인트"
@@ -2684,109 +2684,109 @@ msgid "肖像天使"
 msgstr "초상 천사"
 
 msgid "能量淤积点"
-msgstr "에너지 퇴적 지점"
+msgstr "에너지 응집점"
 
 msgid "至晶多齿叶"
-msgstr "지정 다치엽"
+msgstr "비트로덴드라"
 
 msgid "芽针"
-msgstr "아침"
+msgstr "야침"
 
 msgid "苦叶椒"
-msgstr "고엽초"
+msgstr "쓴맛 나는 고추"
 
 msgid "荆刺芽针"
-msgstr "형자아침"
+msgstr "가시 야침"
 
 msgid "荞花"
 msgstr "메밀꽃"
 
 msgid "莫惜命"
-msgstr "목석명"
+msgstr "막석명"
 
 msgid "莫留财"
-msgstr "막유재"
+msgstr "막류재"
 
 msgid "萤壳虫"
-msgstr "형각충"
+msgstr "야광 풍뎅이"
 
 msgid "蓝铁矿矿点"
-msgstr "남철광 채굴 지점"
+msgstr "페리움 광석 광산 지점"
 
 msgid "蓬茸锦草"
-msgstr "방용금초"
+msgstr "우거진 금초"
 
 msgid "蚀像寻遗"
-msgstr "식상심유"
+msgstr "침식된 유산을 찾아서"
 
 msgid "血菌"
-msgstr "혈균"
+msgstr "피버섯"
 
 msgid "行迹高塔"
-msgstr "행적 고탑"
+msgstr "궤적의 고탑"
 
 msgid "表象"
-msgstr "표상"
+msgstr "잔영"
 
 msgid "袭击预警终端"
-msgstr "습격 예경 단말"
+msgstr "습격 경보 단말기"
 
 msgid "装备模板箱"
 msgstr "장비 템플릿 상자"
 
 msgid "见闻辑录"
-msgstr "견문 집록"
+msgstr "기록집"
 
 msgid "访客终端"
-msgstr "방객 단말"
+msgstr "방문자 단말기"
 
 msgid "资源回收站"
-msgstr "자원 회수소"
+msgstr "재활용센터"
 
 msgid "赤铜矿"
-msgstr "적동광"
+msgstr "적동 광석"
 
 msgid "轻红柱状菌"
-msgstr "경홍주상균"
+msgstr "연한 붉은 기둥 버섯"
 
 msgid "轻黯石"
-msgstr "경암석"
+msgstr "연한 흑암석"
 
 msgid "过堂风"
 msgstr "과당풍"
 
 msgid "酮化灌木"
-msgstr "동화 관목"
+msgstr "아케톤"
 
 msgid "酸液源石虫"
-msgstr "산액 원석충"
+msgstr "산성원석충"
 
 msgid "酸液源石虫·α"
-msgstr "산액 원석충 · α"
+msgstr "산성원석충 · α"
 
 msgid "重刺天使"
-msgstr "중자천사"
+msgstr "삼미아겔로스"
 
 msgid "重刺天使α"
-msgstr "중자천사 α"
+msgstr "삼미아겔로스 · α"
 
 msgid "重红柱状菌"
-msgstr "중홍주상균"
+msgstr "진한 붉은 기둥 버섯"
 
 msgid "重黯石"
-msgstr "중암석"
+msgstr "진한 흑암석"
 
 msgid "金石稻"
-msgstr "금석도"
+msgstr "금석벼"
 
 msgid "钉刺天使"
-msgstr "정자천사"
+msgstr "일미아겔로스"
 
 msgid "钉刺天使α"
-msgstr "정자천사 α"
+msgstr "일미아겔로스 · α"
 
 msgid "锁闭储藏箱"
-msgstr "잠금 저장함"
+msgstr "잠긴 보물 상자"
 
 msgid "锦草"
 msgstr "금초"
@@ -2795,31 +2795,31 @@ msgid "雾火斧甲兽"
 msgstr "무화부갑수"
 
 msgid "雾火爪牙"
-msgstr "무화조아"
+msgstr "안갯불에 물든 랜드브레이커"
 
 msgid "雾火牙兽"
-msgstr "무화아수"
+msgstr "안갯불에 물든 터스크비스트"
 
 msgid "音像存档"
 msgstr "음상 기록"
 
 msgid "高阶培养I"
-msgstr "고급 배양 I"
+msgstr "고급 육성 I"
 
 msgid "高阶培养II"
-msgstr "고급 배양 II"
+msgstr "고급 육성 II"
 
 msgid "高阶培养III"
-msgstr "고급 배양 III"
+msgstr "고급 육성 III"
 
 msgid "高阶培养IV"
-msgstr "고급 배양 IV"
+msgstr "고급 육성 IV"
 
 msgid "高阶培养V"
-msgstr "고급 배양 V"
+msgstr "고급 육성 V"
 
 msgid "黯银柑实"
-msgstr "암은감실"
+msgstr "다크 시트론"
 
 msgid "Battle Config"
 msgstr "전투 설정"
@@ -2904,7 +2904,7 @@ msgid "刮刮乐"
 msgstr "스크래치 카드"
 
 msgid "协议纹石\n"
-msgstr "프로토콜 문양석\n"
+msgstr "프로토콜 문양석"
 
 msgid "只填写 data.content 的字符串值"
 msgstr "data.content의 문자열 값만 입력"
@@ -2930,10 +2930,10 @@ msgid "地图账号"
 msgstr "지도 계정"
 
 msgid "塔晶"
-msgstr "탑 수정"
+msgstr "유령수정"
 
 msgid "塔罗斯菌"
-msgstr "탈로스균"
+msgstr "탈로스 버섯"
 
 msgid "外部命令"
 msgstr "외부 명령"
@@ -2954,13 +2954,13 @@ msgid "当前账号的 hg/check data.content 值，用于官方地图位置同�
 msgstr "공식 지도 위치 동기화에 사용할 현재 계정의 hg/check data.content 값"
 
 msgid "待回收物品"
-msgstr "회수 대기 물품"
+msgstr "회수 대기 아이템"
 
 msgid "息壤气"
-msgstr "식양 가스"
+msgstr "식양 기체"
 
 msgid "惰气"
-msgstr "불활성 기체"
+msgstr "비활성 기체"
 
 msgid "战争回响"
 msgstr "전쟁의 메아리"
@@ -2978,7 +2978,7 @@ msgid "用于实测 YOLO 模型：可选模型、可选目标、可设置信度�
 msgstr "YOLO 모델 실측용입니다. 모델, 대상, 신뢰도를 선택하고 반복 스캔할 수 있습니다."
 
 msgid "红矛叶"
-msgstr "붉은 창잎"
+msgstr "붉은 창 잎"
 
 msgid "网页地图同步"
 msgstr "웹 지도 동기화"
@@ -2990,13 +2990,13 @@ msgid "荞愈胶囊"
 msgstr "메밀 치유 캡슐"
 
 msgid "蚀影噪雷"
-msgstr "식영 노이즈 번개"
+msgstr "그림자에 물든 진뢰"
 
 msgid "蚀影应龙尖兵"
-msgstr "식영 응룡 첨병"
+msgstr "그림자에 물든 응룡 대원 · 정예"
 
 msgid "蚀影牙兽"
-msgstr "식영 엄니수"
+msgstr "그림자에 물든 터스크비스트"
 
 msgid ""
 "账号1\n"
@@ -3011,7 +3011,7 @@ msgid "选择当前账号在该任务中使用全局或独立战斗配置。"
 msgstr "이 작업에서 현재 계정이 전역 또는 독립 전투 설정을 사용할지 선택합니다."
 
 msgid "阿莱克琉斯，千夫长"
-msgstr "알레클리우스, 백인대장"
+msgstr "알레이크레오스, 천부장"
 
 msgid ""
 "需要执行的命令行内容。\n"
@@ -3034,53 +3034,5 @@ msgstr ""
 msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
 msgstr "현재 계정의 전체 작업 설정 스냅샷을 저장합니다. 작업 기본값이 변경되어도 저장된 계정에는 영향을 주지 않습니다."
 
-msgid "据点兑换仅购买优先商品"
-msgstr "거점 교환에서 우선 상품만 구매"
-
-msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
-msgstr "활성화하면 거래 상품 우선 순서가 비어 있지 않을 때만 해당 상품을 구매하고, 비어 있으면 기존 방식으로 교환합니다."
-
-msgid "区域扫描测试"
-msgstr "영역 스캔 테스트"
-
-msgid "暂停计时验证"
-msgstr "일시 정지 타이밍 검증"
-
-msgid "等级读取测试"
-msgstr "레벨 읽기 테스트"
-
-msgid "演算入口导航测试"
-msgstr "연산 입구 내비게이션 테스트"
-
-msgid "按住鼠标蛇形扫描指定矩形区域"
-msgstr "마우스를 누른 채 지정된 사각 영역을 지그재그로 스캔합니다"
-
-msgid "验证暂停任务期间活动计时是否冻结"
-msgstr "작업 일시 정지 중 활성 타이머가 동결되는지 확인합니다"
-
-msgid "将次要目标方向蓝点对齐到屏幕中心"
-msgstr "보조 목표 방향의 파란 점을 화면 중앙에 맞춥니다"
-
-msgid "读取演武集算关卡界面的当前等级"
-msgstr "연무집산 스테이지 화면의 현재 레벨을 읽습니다"
-
-msgid "导航到演武集算『演算』入口"
-msgstr "연무집산의 『演算』 입구로 이동합니다"
-
-msgid "测试模式"
-msgstr "테스트 모드"
-
-msgid "测试超时(秒)"
-msgstr "테스트 시간 제한(초)"
-
-msgid "选择要运行的暂停计时测试"
-msgstr "실행할 일시 정지 타이밍 테스트를 선택합니다"
-
-msgid "暂停时间应超过此值，用于观察恢复后的行为"
-msgstr "재개 후 동작을 관찰하려면 일시 정지 시간이 이 값을 초과해야 합니다"
-
-msgid "自写循环"
-msgstr "직접 작성 루프"
-
-msgid "两者"
-msgstr "둘 다"
+msgid "炽燃！竞技大会！"
+msgstr "타올라라! 경기 대회!"
