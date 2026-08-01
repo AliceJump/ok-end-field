@@ -171,10 +171,10 @@ def sync_po(merged: dict[str, dict[str, str]]) -> tuple[dict, list]:
 
 
 def sync_other_lang_jsons(merged: dict[str, dict[str, str]]) -> tuple[dict, list]:
-    """以 map_marks 官方表为准，覆盖其他 lang JSON 中相同中文的 string 节点。
+    """以 map_marks 官方表为准，覆盖其他 lang JSON 中相同中文的 string/pattern 节点。
 
-    - 匹配键：节点 zh_CN.string == 官方 zh_CN 名（相同中文）；
-    - 只覆盖值为 ``{"string": ...}`` 的节点（world_map.json 的 pattern 型不动）；
+    - 匹配键：节点 zh_CN 值（string 或 pattern）== 官方 zh_CN 名（相同中文）；
+    - 内容相同即替换：string/pattern 类型不限，目标语言节点含哪个键就替换哪个值；
     - zh_CN 不覆盖；仅官方有值且与现有不同时写入。
     返回 (每文件统计, 变更列表)。
     """
@@ -198,17 +198,26 @@ def sync_other_lang_jsons(merged: dict[str, dict[str, str]]) -> tuple[dict, list
         stats = 0
         touched = []
         for key, node in data.items():
-            zh = ((node.get("zh_CN") or {}).get("string") or "").strip()
+            zh_node = node.get("zh_CN")
+            if not isinstance(zh_node, dict):
+                continue
+            zh = ""
+            for sub in ("string", "pattern"):
+                val = zh_node.get(sub)
+                if isinstance(val, str):
+                    zh = val.strip()
+                    break
             if not zh or zh not in official:
                 continue
             for lang, val in official[zh].items():
                 cur = node.get(lang)
-                if not isinstance(cur, dict) or "string" not in cur:
-                    continue  # 仅覆盖 string 类型（pattern 型跳过）
-                if cur["string"] != val:
-                    cur["string"] = val
-                    stats += 1
-                    touched.append((key, zh, lang, val))
+                if not isinstance(cur, dict):
+                    continue
+                for sub in ("string", "pattern"):
+                    if sub in cur and isinstance(cur[sub], str) and cur[sub] != val:
+                        cur[sub] = val
+                        stats += 1
+                        touched.append((key, zh, lang, val))
         if stats:
             write_json(path, data)
         all_stats[path.name] = stats

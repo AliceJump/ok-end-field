@@ -27,16 +27,16 @@
       "pattern": "三位一體"
     },
     "en_US": {
-      "pattern": "Trinity"
+      "pattern": "Triaggelos"
     },
     "ja_JP": {
-      "pattern": "三位一体"
+      "pattern": "トリアンゲロス"
     },
     "ko_KR": {
-      "pattern": "삼위 일체"
+      "pattern": "트리아겔로스"
     },
     "es_ES": {
-      "pattern": "Trinidad"
+      "pattern": "Triaggelos"
     }
   },
   "k_a4f9b7a1": {
@@ -507,16 +507,16 @@
       "pattern": "幹員經驗"
     },
     "en_US": {
-      "pattern": "Operator experience"
+      "pattern": "Operator EXP"
     },
     "ja_JP": {
-      "pattern": "オペレーターの経験"
+      "pattern": "オペレーター経験値"
     },
     "ko_KR": {
-      "pattern": "운영자 경험"
+      "pattern": "오퍼레이터 경험치"
     },
     "es_ES": {
-      "pattern": "Experiencia del operador"
+      "pattern": "EXP de operador"
     }
   },
   "k_216c7def": {
@@ -527,16 +527,16 @@
       "pattern": "幹員進階"
     },
     "en_US": {
-      "pattern": "Operator advancement"
+      "pattern": "Operator Promotions"
     },
     "ja_JP": {
-      "pattern": "オペレーターの昇進"
+      "pattern": "昇進素材"
     },
     "ko_KR": {
-      "pattern": "운영자 발전"
+      "pattern": "오퍼레이터 돌파"
     },
     "es_ES": {
-      "pattern": "Avance del operador"
+      "pattern": "Ascensos de operador"
     }
   },
   "k_7dfd1882": {
@@ -667,16 +667,16 @@
       "pattern": "技能提升"
     },
     "en_US": {
-      "pattern": "Skill improvement"
+      "pattern": "Skill Up"
     },
     "ja_JP": {
-      "pattern": "スキル向上"
+      "pattern": "スキル強化"
     },
     "ko_KR": {
-      "pattern": "스킬향상"
+      "pattern": "스킬 업그레이드"
     },
     "es_ES": {
-      "pattern": "Mejora de habilidades"
+      "pattern": "Maestría de habilidades"
     }
   },
   "k_854f8a4f": {
@@ -807,16 +807,16 @@
       "pattern": "武器經驗"
     },
     "en_US": {
-      "pattern": "Weapon experience"
+      "pattern": "Weapon EXP"
     },
     "ja_JP": {
-      "pattern": "武器経験"
+      "pattern": "武器経験値"
     },
     "ko_KR": {
-      "pattern": "무기 체험"
+      "pattern": "무기 경험치"
     },
     "es_ES": {
-      "pattern": "Experiencia con armas"
+      "pattern": "EXP de arma"
     }
   },
   "k_0903c052": {
@@ -827,16 +827,16 @@
       "pattern": "武器進階"
     },
     "en_US": {
-      "pattern": "Weapon upgrade"
+      "pattern": "Weapon Tune"
     },
     "ja_JP": {
-      "pattern": "武器のアップグレード"
+      "pattern": "武器突破"
     },
     "ko_KR": {
-      "pattern": "무기 업그레이드"
+      "pattern": "무기 돌파"
     },
     "es_ES": {
-      "pattern": "Mejora de arma"
+      "pattern": "Afinación de armas"
     }
   },
   "k_a4410e3f": {
@@ -1007,16 +1007,16 @@
       "pattern": "白堊界衛"
     },
     "en_US": {
-      "pattern": "Chalk Wardens"
+      "pattern": "Marble Aggelomoirai"
     },
     "ja_JP": {
-      "pattern": "チョーク監視員"
+      "pattern": "白亜・アンゲロミラ"
     },
     "ko_KR": {
-      "pattern": "분필 감시자"
+      "pattern": "마블 아겔로미레"
     },
     "es_ES": {
-      "pattern": "Guardianes de tiza"
+      "pattern": "Aggelomoirai de mármol"
     }
   },
   "k_d26e1bbe": {
@@ -1147,16 +1147,16 @@
       "pattern": "聶菲斯"
     },
     "en_US": {
-      "pattern": "Nepheus"
+      "pattern": "Nefarith"
     },
     "ja_JP": {
-      "pattern": "ネフェウス"
+      "pattern": "ネファリス"
     },
     "ko_KR": {
-      "pattern": "네페우스"
+      "pattern": "네파리스"
     },
     "es_ES": {
-      "pattern": "Nefeo"
+      "pattern": "Nefarith"
     }
   },
   "k_e0c9b138": {
@@ -1167,16 +1167,16 @@
       "pattern": "能量淤積點"
     },
     "en_US": {
-      "pattern": "energy pooling point"
+      "pattern": "Energy Alluvium"
     },
     "ja_JP": {
-      "pattern": "エネルギープールポイント"
+      "pattern": "超域活性点"
     },
     "ko_KR": {
-      "pattern": "에너지 풀링 포인트"
+      "pattern": "에너지 응집점"
     },
     "es_ES": {
-      "pattern": "punto de acumulación de energía"
+      "pattern": "Aluvión energético"
     }
   },
   "k_ccdf2110": {
@@ -1447,16 +1447,16 @@
       "pattern": "錢幣收集"
     },
     "en_US": {
-      "pattern": "coin collection"
+      "pattern": "T-Creds"
     },
     "ja_JP": {
-      "pattern": "コインコレクション"
+      "pattern": "通貨収集"
     },
     "ko_KR": {
-      "pattern": "동전 수집"
+      "pattern": "화폐 수집"
     },
     "es_ES": {
-      "pattern": "colección de monedas"
+      "pattern": "T-Creds"
     }
   },
   "k_ff00a312": {
@@ -1513,7 +1513,7 @@
       "pattern": "ルアン・イー"
     },
     "ko_KR": {
-      "pattern": "루안 이"
+      "pattern": "원일"
     },
     "es_ES": {
       "pattern": "Ruan Yi"
@@ -1587,16 +1587,16 @@
       "pattern": "影拓豐碑"
     },
     "en_US": {
-      "pattern": "Yingtuo Monument"
+      "pattern": "Umbral Monument"
     },
     "ja_JP": {
-      "pattern": "影拓記念碑"
+      "pattern": "映像の記念碑"
     },
     "ko_KR": {
-      "pattern": "영탁 비석"
+      "pattern": "그림자 이정표"
     },
     "es_ES": {
-      "pattern": "Monumento Yingtuo"
+      "pattern": "Monumento del umbral"
     }
   },
   "k_zhuoliu": {
