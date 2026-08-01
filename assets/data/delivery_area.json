@@ -1,0 +1,48 @@
+{
+  "default_delivery_area": "武陵",
+  "delivery_target_ticket_num_options": [
+    "163000",
+    "159000",
+    "119000",
+    "79800",
+    "73100"
+  ],
+  "delivery_area_config": {
+    "武陵": {
+      "task_model_area": "武陵",
+      "feature_label_area_code": "wuling",
+      "delivery_locations": [
+        "武陵城",
+        "试验园区"
+      ],
+      "delivery_targets_by_location": {
+        "武陵城": [
+          "常沄",
+          "资源",
+          "彦宁",
+          "齐纶",
+          "于施",
+          "苏白易",
+          "普里莫"
+        ],
+        "试验园区": [
+          "赵昭",
+          "裴令容",
+          "阿禾"
+        ]
+      },
+      "transfer_search_area": {
+        "武陵城": {
+          "preset": "top"
+        },
+        "试验园区": {
+          "preset": "right"
+        }
+      },
+      "ocr_priority_locations": [
+        "试验园区",
+        "武陵城"
+      ]
+    }
+  }
+}
