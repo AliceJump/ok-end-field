@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""从第三方 wiki（endfield.wiki.gg）同步干员（Operator）官方多语言译名。
+"""从第三方 wiki（endfield.wiki.gg）同步干员（Operator）西语译名（es_ES）。
 
 数据源：
 - endfield.wiki.gg 的 ``{{Operator infobox}}`` 模板（经 MediaWiki API 抓取 wikitext）：
@@ -9,11 +9,13 @@
 
 行为：
 1. 分页抓取 wiki Category:Operators 全部干员 infobox；
-2. 更新 assets/lang/characters.json 的 en_US/ja_JP/ko_KR/es_ES 为官方名
-   （zh_CN/zh_TW 保持代码内 canonical 中文不变，仅打印差异）；
-3. 已知 key 的新角色自动新增节点（assets/data/characters.json + assets/lang/characters.json）；
+2. 只回写 es_ES（西语）到 assets/lang/characters.json——wiki_items（skport
+   官方 7 语）负责 en_US/ja_JP/ko_KR 等其余语言，zh_CN/zh_TW 以本地
+   canonical 为准（仅打印差异）；本脚本是西语的唯一官方来源；
+3. 已知 key 的新角色自动新增节点（assets/data/characters.json + assets/lang/characters.json），
+   新节点先以 wiki.gg 全字段补全，后续由 wiki_items 覆盖其余语言；
    未知 key 的新角色打印提示（ZH_KEY_MAP 需人工补充）。
-4. 幂等：官方名已是最新时不产生任何变更。
+4. 幂等：西语已是最新时不产生任何变更。
 
 注：assets/data/characters.json 的 ``en`` 是内部 ID（与 FeatureList 的 ``xxx_contact``
 枚举绑定），不随本脚本改动。
@@ -45,8 +47,11 @@ FIELD_TO_LANG = {
     "spname": "es_ES",
 }
 
-# 实际同步到 JSON 的节点（zh_CN/zh_TW 以本地 canonical 为准，不回写）
-SYNC_LANGS = ("en_US", "ja_JP", "ko_KR", "es_ES")
+# 已有节点仅同步 es_ES（其余语言由 wiki_items 官方 7 语覆盖）
+SYNC_LANGS = ("es_ES",)
+
+# 新角色节点补全用语言（保证节点完整，随后由 wiki_items 覆盖其余语言）
+NEW_OP_LANGS = ("en_US", "ja_JP", "ko_KR", "es_ES")
 
 # 中文 canonical 名 -> characters.json 内部 key（程序 ID，人工维护）
 ZH_KEY_MAP = {
@@ -149,8 +154,9 @@ def sync_characters(wiki: dict) -> tuple:
         if is_new:
             node.setdefault("zh_CN", {}).setdefault("string", wiki_vals.get("zh_CN", zh))
             node.setdefault("zh_TW", {}).setdefault("string", wiki_vals.get("zh_TW", zh))
-            # es/spname 缺失时用官方英文名回退（保证节点完整，wiki 补录后自动覆盖）
-            for lang_key in SYNC_LANGS:
+            # 新节点以 wiki.gg 全字段补全（es/spname 缺失时用官方英文名回退，
+            # 保证节点完整；其余语言随后由 wiki_items 官方 7 语覆盖）
+            for lang_key in NEW_OP_LANGS:
                 if lang_key not in node and wiki_vals.get(lang_key, "").strip():
                     node[lang_key] = {"string": wiki_vals[lang_key].strip()}
             if "es_ES" not in node and wiki_vals.get("en_US", "").strip():
