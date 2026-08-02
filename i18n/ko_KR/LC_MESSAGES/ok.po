@@ -2987,7 +2987,7 @@ msgid "自动打开汇总文件"
 msgstr "요약 파일 자동 열기"
 
 msgid "荞愈胶囊"
-msgstr "메밀 치유 캡슐"
+msgstr "메밀꽃 치유 캡슐"
 
 msgid "蚀影噪雷"
 msgstr "그림자에 물든 진뢰"
@@ -5835,3 +5835,18 @@ msgstr "오퍼레이터 스토리 [진천우: 검을 든 자]"
 
 msgid "开服贺图"
 msgstr "서비스 오픈 기념 일러스트"
+
+msgid "工业爆炸物"
+msgstr "공업 폭발물"
+
+msgid "低容量谷地电池"
+msgstr "저용량 협곡 배터리"
+
+msgid "柑实罐头"
+msgstr "시트론 통조림"
+
+msgid "紫晶质瓶"
+msgstr "자수정 병"
+
+msgid "紫晶纤维"
+msgstr "자수정 섬유"
