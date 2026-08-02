@@ -20,12 +20,15 @@ class DailyRewardMixin:
     def claim_weekly_rewards(self):
         self.log_info("开始领取每周事务")
 
-        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_13eea5dd, box=self.box.left, time_out=5, after_sleep=1):
+        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_13eea5dd, box=self.box.left, time_out=5):
             self.log_info("进入『每周事务』页面")
-            if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box.top_right, time_out=5, after_sleep=1):
-                if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_bf856c96, box=self.box.bottom_right, time_out=5,
-                                       after_sleep=1):
-                    self.wait_pop_up(after_sleep=2)
+            if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box.top_right, time_out=5):
+                if self.wait_click_ocr(
+                        match=self.lang.daily_routine_mixin.k_bf856c96,
+                        box=self.box.bottom_right,
+                        time_out=5,
+                ):
+                    self.wait_pop_up()
                     self.log_info("已领取『每周事务』奖励")
                 else:
                     self.log_info("未找到『每周事务/一键领取』按钮")
@@ -39,13 +42,13 @@ class DailyRewardMixin:
     def claim_sanity_supply(self):
         self.log_info("开始领取理智补给")
 
-        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_059a808c, box=self.box.left, time_out=5, after_sleep=1):
+        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_059a808c, box=self.box.left, time_out=2):
             self.log_info("未找到『活动中心/理智补给』入口")
             return False
 
         self.log_info("进入『理智补给』页面")
-        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box_of_screen(0.894, 0.648, 0.995, 0.991), time_out=5, after_sleep=1):
-            self.wait_pop_up(after_sleep=2)
+        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box_of_screen(0.894, 0.648, 0.995, 0.991), time_out=5):
+            self.wait_pop_up()
             self.log_info("已领取『理智补给』奖励")
             return True
 
@@ -56,7 +59,7 @@ class DailyRewardMixin:
         start_time = self.active_time()
 
         while True:
-            if self.wait_feature(feature=fL.in_scratch_card_page, raise_if_not_found=False, time_out=4):
+            if self.wait_feature(feature=fL.in_scratch_card_page, raise_if_not_found=False, time_out=2):
                 break
 
             if self.active_time() - start_time > 20:
@@ -68,7 +71,6 @@ class DailyRewardMixin:
                 box=self.box_of_screen(0.089, 0.130, 0.176, 0.983),
                 raise_if_not_found=False,
                 time_out=2,
-                after_sleep=1
             ):
                 return False
 
@@ -95,15 +97,16 @@ class DailyRewardMixin:
         sanity_enabled = "理智补给" in enabled_rewards
         scratch_enabled = "刮刮乐" in enabled_rewards
 
-        if scratch_enabled:
-            self.scratch_reward()
-        else:
-            self.log_info("已关闭『周常奖励』，跳过")
 
         if weekly_enabled:
             self.claim_weekly_rewards()
         else:
             self.log_info("已关闭『周常奖励』，跳过")
+            
+        if scratch_enabled:
+            self.scratch_reward()
+        else:
+            self.log_info("已关闭『刮刮乐』，跳过")
 
         if sanity_enabled:
             self.claim_sanity_supply()
@@ -169,7 +172,7 @@ class DailyRewardMixin:
                 self.wait_click_ocr(
                     match=self.lang.daily_routine_mixin.k_3ecdd4bb,
                     box=self.box.bottom,
-                    time_out=5,
+                    time_out=2,
                 )
             self.wait_click_ocr(
                 match=self.lang.daily_routine_mixin.k_727d1bec,
@@ -177,12 +180,13 @@ class DailyRewardMixin:
                 time_out=5,
             )
 
-        self.wait_click_ocr(
+        reward_clicked = self.wait_click_ocr(
             match=self.lang.daily_routine_mixin.k_39d12e73_1,
             box=self.box.bottom,
-            time_out=5,
+            time_out=2,
         )
-        self.wait_pop_up()
+        if reward_clicked:
+            self.wait_pop_up()
         self.send_key("esc")
         pass_page = self.wait_until(
             lambda: self.ocr(match=self.lang.daily_routine_mixin.k_25d2b666, box=self.box.top_right),

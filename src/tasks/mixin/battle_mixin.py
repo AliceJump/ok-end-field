@@ -227,14 +227,17 @@ class BattleMixin(BaseEfTask):
 
         return sum(self.find_one(f"skill_{i}") is not None for i in range(1, 5)) >= 3
 
-    def is_combat_ended(self):
+    def is_combat_ended(self, exit_condition=None):
         """
         检查战斗是否结束。
 
         需要 **连续两次检测成功** 才判定结束。
         """
 
-        if self._check_single_exit_condition():
+        if exit_condition is None:
+            exit_condition = self._check_single_exit_condition()
+
+        if exit_condition:
             self.exit_check_count += 1
 
             if self.exit_check_count >= 2:
@@ -428,7 +431,23 @@ class BattleMixin(BaseEfTask):
             else:
                 consecutive_matches = 0
         return False
+    
+    def is_battle_settlement(self) -> bool:
+        """
+        判断是否进入战斗结算状态
+        """
 
+        return any((
+            self.find_feature(feature=fL.b),
+            self.find_feature(feature=fL.battle_space_ok),
+            self.find_feature(feature=fL.battle_gather_ok),
+            self.find_feature(feature=fL.restart_battle),
+            self.find_feature(
+                feature=fL.restart_battle,
+                box=self.box_of_screen(0.550, 0.896, 0.574, 0.943)
+            ),
+        ))
+    
     def auto_battle(self, no_battle: bool = False):
         """
         自动战斗主循环
@@ -450,9 +469,7 @@ class BattleMixin(BaseEfTask):
             if last_battle_time:
                 battle_elapsed = self.active_time() - last_battle_time
                 settlement = self.wait_until(
-                    lambda: (
-                        self.find_feature(feature=fL.b)
-                    ),
+                    self.is_battle_settlement,
                     time_out=max(0.01, 15 - battle_elapsed),
                     raise_if_not_found=False,
                 )

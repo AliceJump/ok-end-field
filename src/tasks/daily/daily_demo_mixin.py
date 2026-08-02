@@ -38,7 +38,7 @@ class DailyDemoFeature:
                     return False
                 refresh_times += 1
                 if refresh_times == 3:
-                    self.click_confirm(time_out=2, after_sleep=1)
+                    self.click_confirm(time_out=2)
                 if ((refresh_times == 2 and level >=8) or once_double_reward) and not this_time_double_reward:
                     self.log_info("已刷新2次，当前关卡较高，开启双倍奖励")
                     self.wait_click_feature(feature=fL.demo_double_open, time_out=10, raise_if_not_found=False)
@@ -46,7 +46,7 @@ class DailyDemoFeature:
             if not this_time_double_reward:
                 once_double_reward = True
             self.wait_click_feature(feature=fL.start_demo, time_out=10, raise_if_not_found=False, click_after_delay=0.5)
-            if not self.wait_click_feature(feature=fL.give_gift, time_out=10, raise_if_not_found=False, click_after_delay=0.5, box=self.box_of_screen(0.944, 0.900, 0.969, 0.941), after_sleep=2):
+            if not self.wait_click_feature(feature=fL.give_gift, time_out=10, raise_if_not_found=False, click_after_delay=0.5, box=self.box_of_screen(0.944, 0.900, 0.969, 0.941)):
                 self.mark_task_failure("未找到进入战斗按钮")
                 return False
             self.ensure_main()
@@ -69,15 +69,12 @@ class DailyDemoFeature:
                     time_out=10,
                     raise_if_not_found=False,
                     click_after_delay=0.5,
-                    after_sleep=1,
             ):
                 self.log_warning("未找到演算随机按钮")
                 return -1
 
-            current_level = self.read_level()
-            if current_level < 0:
-                return -1
-            if current_level != previous_level:
+            current_level = self.wait_level_change(previous_level, time_out=4)
+            if current_level is not None:
                 return current_level
 
             self.log_warning(f"第 {retry_index + 1} 次点击随机按钮后等级未变化，重试点击")
@@ -109,14 +106,14 @@ class DailyDemoFeature:
         for _ in range(2):
             if self.wait_click_feature(feature=fL.view_location, time_out=10, raise_if_not_found=False, click_after_delay=0.5, box=self.box_of_screen(0.5, demo_enter.y/self.height, 1, demo_enter.y/self.height + (0.272 - 0.109))):
                 break
-            self.click(demo_enter, after_sleep=2)
+            self.click(demo_enter)
         return True
     
         
     def _demo_click_track_and_transfer(self):
         """点击『追踪』按钮，进入地图并传送至最近传送点。"""
         if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False):
-            self.click(result, after_sleep=1)
+            self.click(result)
         else:
             self.log_info("未找到『追踪』按钮，继续尝试自动寻路")
         if not self.to_near_transfer_point(self.box.bottom_left):
@@ -135,20 +132,49 @@ class DailyDemoFeature:
 
     def enter_page(self):
         """进入关卡选择界面，等待UI稳定。"""
-        if not self.wait_click_feature(feature=fL.enter_demo, time_out=10, raise_if_not_found=False, box=self.box_of_screen(0.653, 0.574, 0.679, 0.817), settle_time=1, after_sleep=1, alt=True):
+        if not self.wait_click_feature(feature=fL.enter_demo, time_out=10, raise_if_not_found=False, box=self.box_of_screen(0.653, 0.574, 0.679, 0.817), settle_time=1, alt=True):
             self.mark_task_failure("未找到『进入演算』按钮，可能还没到关卡入口页")
             return False
         self.wait_ui_stable(refresh_interval=1)
         return True
 
     def read_level(self):
-        start_x = 0.125 #等级信息区域左边界占屏幕宽度的比例
-        end_x = 0.802 #等级信息区域右边界占屏幕宽度的比例
-        level_all = 11 #总共的等级数，从0级到10级
-        result= self.wait_feature(feature=fL.level_tip, time_out=10, raise_if_not_found=False, box=self.box_of_screen(0.120, 0.724, 0.803, 0.750), settle_time=1)
+        result = self.wait_feature(
+            feature=fL.level_tip,
+            time_out=10,
+            raise_if_not_found=False,
+            box=self._level_tip_box(),
+            settle_time=1,
+        )
         if not result:
             self.mark_task_failure("未找到等级信息标志，可能没有进入演武集算关卡界面")
             return -1
+        return self._level_from_tip(result)
+
+    def wait_level_change(self, previous_level, time_out=4):
+        changed = {"level": None}
+
+        def level_changed():
+            result = self.find_one(feature=fL.level_tip, box=self._level_tip_box())
+            if not result:
+                return False
+            current = self._level_from_tip(result)
+            if current == previous_level:
+                return False
+            changed["level"] = current
+            return True
+
+        if self.wait_until(level_changed, time_out=time_out, settle_time=0.2, raise_if_not_found=False):
+            return changed["level"]
+        return None
+
+    def _level_tip_box(self):
+        return self.box_of_screen(0.120, 0.724, 0.803, 0.750)
+
+    def _level_from_tip(self, result):
+        start_x = 0.125 #等级信息区域左边界占屏幕宽度的比例
+        end_x = 0.802 #等级信息区域右边界占屏幕宽度的比例
+        level_all = 11 #总共的等级数，从0级到10级
         level_x = result.x 
         one_level_width = (end_x - start_x) / level_all #每个等级占的宽度占屏幕宽度的比例
         level = int((level_x - self.screen_width * start_x) / (self.screen_width * one_level_width)) #根据等级信息标志的x坐标计算当前等级

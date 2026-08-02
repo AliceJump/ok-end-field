@@ -86,25 +86,31 @@ class ZipLineMixin(NavigationMixin):
                 yolo_bool = False
             if need_v:
                 self.ensure_main()
-            keys = ["w", "a", "s", "d"]
-            for i in range(4):
-                if result := (not need_v) or self.wait_ocr(
-                        match=self.lang.zip_line_mixin.k_b0e3a2da, box=self.box.bottom_right, settle_time=1, time_out=4, log=True
-                ):
-                    if need_v:
-                        self.press_key("v", after_sleep=1)
-                        self.click_with_alt(result[0], after_sleep=2)
-                    self.align_ocr_or_find_target_to_center(
-                        ocr_match_or_feature_name_list=result_name,
-                        threshold=0.8,
-                        ocr=ocr_bool,
-                        use_yolo=yolo_bool,
-                        raise_if_fail=False,
-                    )
-                    self.click(key="right")
-                    break
-                else:
-                    self.move_keys(keys[i], 0.1)
+                result = self.strafe_search(
+                    lambda: self.wait_ocr(
+                        match=self.lang.zip_line_mixin.k_b0e3a2da,
+                        box=self.box.bottom_right,
+                        settle_time=1,
+                        time_out=4,
+                        log=True,
+                    ),
+                    passes=1,
+                    duration=0.1,
+                )
+                if result:
+                    self.press_key("v", after_sleep=1)
+                    self.click_with_alt(result[0], after_sleep=2)
+            else:
+                result = True
+            if result:
+                self.align_ocr_or_find_target_to_center(
+                    ocr_match_or_feature_name_list=result_name,
+                    threshold=0.8,
+                    ocr=ocr_bool,
+                    use_yolo=yolo_bool,
+                    raise_if_fail=False,
+                )
+                self.click(key="right")
         if self.wait_ocr(match=[
                 self.lang.zip_line_mixin.k_2f4f4a2f,
                 self.lang.zip_line_mixin.k_0b1e4f35,

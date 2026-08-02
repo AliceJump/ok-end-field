@@ -4,6 +4,7 @@ from unittest.mock import patch
 from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.mixin.map_mixin import MapMixin
 
 
 class _EnsureMainHarness(GameFlowMixin):
@@ -101,11 +102,92 @@ class _BattleHarness:
     def find_feature(self, **kwargs):
         return True
 
+    def is_battle_settlement(self):
+        return True
+
     def log_info(self, message):
         self.logs.append(message)
 
     def sleep(self, timeout):
         raise AssertionError("settlement success must not use a fixed sleep")
+
+
+class _CombatExitHarness:
+    def __init__(self):
+        self.exit_check_count = 0
+
+    def _check_single_exit_condition(self):
+        raise AssertionError("existing exit condition must be reused")
+
+
+class _ConfirmHarness(GameFlowMixin):
+    def __init__(self):
+        self.confirm_visible = True
+        self.wait_timeouts = []
+        self.clicks = []
+        self.sleeps = []
+
+    def next_frame(self):
+        pass
+
+    def active_time(self):
+        return 0
+
+    def find_confirm(self):
+        return object() if self.confirm_visible else None
+
+    def click(self, target, **kwargs):
+        self.clicks.append(kwargs)
+        self.confirm_visible = False
+
+    def wait_until(self, condition, **kwargs):
+        self.wait_timeouts.append(kwargs["time_out"])
+        return condition()
+
+    def sleep(self, timeout):
+        self.sleeps.append(timeout)
+
+
+class _RepeatingConfirmHarness(_ConfirmHarness):
+    def sleep(self, timeout):
+        self.sleeps.append(timeout)
+        if timeout == 1:
+            self.confirm_visible = True
+
+
+class _TaskMapHarness:
+    def __init__(self):
+        self.box = type("Box", (), {"bottom_right": object(), "top": object()})()
+        self.keys = []
+        self.click_kwargs = []
+        self.stable_waits = 0
+
+    def ensure_main(self):
+        pass
+
+    def press_key(self, key, **kwargs):
+        self.keys.append((key, kwargs))
+
+    def wait_feature(self, **kwargs):
+        return object()
+
+    def wait_until(self, condition, **kwargs):
+        return condition()
+
+    def find_one(self, *args, **kwargs):
+        return object()
+
+    def box_of_screen(self, *args):
+        return object()
+
+    def click(self, target, **kwargs):
+        self.click_kwargs.append(kwargs)
+
+    def wait_ui_stable(self, **kwargs):
+        self.stable_waits += 1
+
+    def to_near_transfer_point(self, target_box):
+        return True
 
 
 class TestStateDrivenWaits(unittest.TestCase):
@@ -157,6 +239,51 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertTrue(result)
         self.assertEqual(task.wait_timeouts, [15])
         self.assertIn("检测到战斗结算状态，战斗完成", task.logs)
+
+    def test_combat_exit_counter_reuses_existing_detection(self):
+        task = _CombatExitHarness()
+
+        self.assertFalse(BattleMixin.is_combat_ended(task, True))
+        self.assertTrue(BattleMixin.is_combat_ended(task, True))
+        self.assertEqual(task.exit_check_count, 0)
+
+    def test_click_confirm_waits_for_disappearance_without_fixed_sleep(self):
+        task = _ConfirmHarness()
+
+        result = task.click_confirm(disappear_time_out=2)
+
+        self.assertTrue(result)
+        self.assertEqual(task.clicks, [{}])
+        self.assertEqual(task.wait_timeouts, [2])
+        self.assertEqual(task.sleeps, [])
+
+    def test_click_confirm_keeps_explicit_after_sleep_contract(self):
+        task = _ConfirmHarness()
+
+        result = task.click_confirm(after_sleep=0.5, disappear_time_out=0)
+
+        self.assertTrue(result)
+        self.assertEqual(task.wait_timeouts, [])
+        self.assertEqual(task.sleeps, [0.5])
+
+    def test_click_confirm_keeps_delay_after_rechecked_confirmation(self):
+        task = _RepeatingConfirmHarness()
+
+        result = task.click_confirm(after_sleep=0.5, recheck_time=1)
+
+        self.assertTrue(result)
+        self.assertEqual(len(task.clicks), 2)
+        self.assertEqual(task.sleeps, [0.5, 1, 0.5])
+
+    def test_task_map_transition_uses_feature_and_stability_waits(self):
+        task = _TaskMapHarness()
+
+        result = MapMixin.task_to_transfer_point(task, test_target_box=object())
+
+        self.assertTrue(result)
+        self.assertEqual(task.keys, [("j", {})])
+        self.assertEqual(task.click_kwargs, [{}])
+        self.assertEqual(task.stable_waits, 1)
 
 
 if __name__ == "__main__":

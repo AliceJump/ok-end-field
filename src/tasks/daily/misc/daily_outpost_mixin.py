@@ -28,7 +28,13 @@ class DailyOutpostMixin:
         self.log_info(f"{outpost_name} 据点当前券数量: {num}")
         return num
 
-    def perform_outpost_exchange(self, outpost_name, priority_list=None, excluded_goods=None):
+    def perform_outpost_exchange(
+        self,
+        outpost_name,
+        priority_list=None,
+        excluded_goods=None,
+        only_priority_goods=False,
+    ):
         """据点内循环尝试更换货品并兑换。"""
         self.log_info(f"开始处理据点: {outpost_name}")
 
@@ -39,7 +45,6 @@ class DailyOutpostMixin:
             match=get_world_map_text(self.lang, outpost_name),
             box=self.box.top,
             time_out=5,
-            after_sleep=1
         ):
             return False
 
@@ -117,6 +122,17 @@ class DailyOutpostMixin:
                     elif re.search(pattern, name):
                         return i
                 return len(priority_list)
+
+            if only_priority_goods and priority_list:
+                normalized_goods = [
+                    good for good in normalized_goods
+                    if priority_score(good.name) < len(priority_list)
+                ]
+                if not normalized_goods:
+                    self.log_info(
+                        f"{outpost_name} 没有匹配优先商品序列的可兑换货物"
+                    )
+                    break
 
             normalized_goods.sort(key=lambda g: (priority_score(g.name), -len(g.name)))
 
@@ -209,6 +225,7 @@ class DailyOutpostMixin:
         self.log_info("开始据点兑换任务")
 
         priority_list = self.config.get("交易货品优先序列", [])
+        only_priority_goods = self.config.get("据点兑换仅购买优先商品", False)
         excluded_goods_by_area = {area: set() for area in areas_list}
 
         for area in areas_list:
@@ -226,6 +243,7 @@ class DailyOutpostMixin:
                     outpost_name,
                     priority_list,
                     excluded_goods_by_area[area],
+                    only_priority_goods,
                 )
                 self.log_info(f"完成兑换据点: {outpost_name}")
 

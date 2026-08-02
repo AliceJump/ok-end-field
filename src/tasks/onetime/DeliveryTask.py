@@ -61,10 +61,16 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
     CFG_ONLY_DELIVER = "仅送货"
     CFG_TUTORIAL = "教程"
     CFG_DELIVERY_AREA = "地区切换"
-    CFG_TO_DELIVERY_POINT = "通向送货点"
+    CFG_TO_DELIVERY_POINT = "通向武陵城送货点"
     CFG_FULL_CYCLE_LOCATION = "完整循环测试区域"
     TUTORIAL_LINK = "https://www.bilibili.com/video/BV1LLc7zFEF9"
     TUTORIAL_TIPS = "游戏内开启全屏模式时请确保游戏内分辨率与你的屏幕分辨率一致"
+
+    # 滑索配置键迁移：旧键 → 新键
+    config_key_migrations = {
+        "通向送货点": "通向武陵城送货点",
+        "通向送货点试验园区": "通向试验园区送货点",
+    }
 
     account_config_blacklist = {
         CFG_TEST_TARGET,
@@ -411,7 +417,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         default_location = self.full_cycle_locations[0] if self.full_cycle_locations else None
         if location_name == default_location:
             return self.CFG_TO_DELIVERY_POINT
-        return f"{self.CFG_TO_DELIVERY_POINT}{location_name}"
+        return f"通向{location_name}送货点"
 
     def _resolve_to_delivery_point_config_key(self) -> str | None:
         location_name = self._accepted_delivery_location
@@ -454,7 +460,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self.to_model_area(self.config.get(self.CFG_DELIVERY_AREA), "仓储节点")
         delivery_box = self.wait_ocr(match=self.lang.DeliveryTask.k_ae8fb114, time_out=5)
         if delivery_box:
-            self.click(delivery_box[0], after_sleep=0.5)
+            self.click(delivery_box[0])
             self.switch_to_area_delivery_list(self.delivery_area)
         else:
             self.log_info("未找到‘运送委托列表’，退出")
@@ -487,7 +493,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     self.click(
                         (result.x + result.width)/self.width + (0.873 - 0.691),
                         (result.y + result.height)/self.height,
-                        after_sleep=2,
                         down_time=0.1,
                     )
                     self.log_info("疑似已经接取委托")
@@ -495,12 +500,11 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     if self.try_time > 5:
                         self.log_info("尝试次数过多，退出")
                         return False
-                    self.next_frame()
-                    accepted_successfully = not self.wait_ocr(
-                        match=self.lang.DeliveryTask.k_9d5535b7,
-                        box=self.box.bottom_right,
-                        time_out=1
-                    )
+                    accepted_successfully = bool(self.wait_click_feature(
+                        feature=fL.get_exchange_ticket,
+                        time_out=3,
+                        raise_if_not_found=False,
+                    ))
                     if accepted_successfully:
                         self.log_info("接取成功")
                         return True
@@ -533,7 +537,15 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         """
         if result := self.wait_ocr(match=self.lang.DeliveryTask.k_b0e3a2da, box=self.box.bottom_right, time_out=60, log=True):
             if self.wait_ocr(match=self.lang.DeliveryTask.k_96b876e3, box=self.box.top_left, time_out=2, log=True):
-                self.press_key("tab", after_sleep=1)
+                self.press_key("tab")
+                self.wait_until(
+                    lambda: not self.ocr(
+                        match=self.lang.DeliveryTask.k_96b876e3,
+                        box=self.box.top_left,
+                    ),
+                    time_out=2,
+                    raise_if_not_found=False,
+                )
             self.click_with_alt(result[0], after_sleep=2)
             to_delivery_point_key = self._resolve_to_delivery_point_config_key()
             if not to_delivery_point_key:
@@ -566,8 +578,17 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             if not self.wait_click_feature(feature=fL.receive_good, time_out=10, raise_if_not_found=False, alt=True):
                 self.log_info("未能识别到取货界面，取货失败")
                 return False
-            while not self.wait_ocr(match=self.lang.DeliveryTask.k_b0e3a2da, box=self.box.bottom_right, time_out=2, log=True):
-                self.move_keys("s", 0.5)
+            self.strafe_search(
+                lambda: self.wait_ocr(
+                    match=self.lang.DeliveryTask.k_b0e3a2da,
+                    box=self.box.bottom_right,
+                    time_out=2,
+                    log=True,
+                ),
+                keys=("s",),
+                duration=0.5,
+                passes=None,
+            )
             return True
         return False
 
@@ -600,10 +621,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             settle_time=1,
             time_out=2,
             log=True,
-            after_sleep=2,
             alt=True,
         ):
-            self.skip_dialog(time_out=1)
+            self.skip_dialog(time_out=5)
             self.ensure_main()
 
 
@@ -669,7 +689,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     self.ensure_main(time_out=600)
                 else:
                     self.ensure_main()
-                self.back(after_sleep=2)
+                self.back()
                 self.ensure_main()
                 if self.config.get(self.CFG_ONLY_ACCEPT):
                     self.accept_order()
@@ -678,13 +698,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     if not self.config.get(self.CFG_ONLY_DELIVER):
                         if not self.accept_order():
                             return
-                        self.wait_click_ocr(
-                            match=self.lang.DeliveryTask.k_c7b4d04e,
-                            box=self.box.bottom_right,
-                            settle_time=4,
-                            time_out=10,
-                            log=True,
-                        )
                     success = None
                     for attempt in range(3):
                         success = self.task_to_transfer_point(

@@ -3,12 +3,12 @@ import re
 
 import pyautogui
 
-from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
+from src.tasks.mixin.search_mixin import SearchMixin
 TOLERANCE = 50
 
 
-class NavigationMixin(BaseEfTask):
+class NavigationMixin(SearchMixin):
     def start_tracking_and_align_target(self, target_feature_in_map, target_feature_out_map):
         """在地图中开启追踪并在地图外完成朝向对齐。"""
         result = self.find_one(
@@ -23,9 +23,9 @@ class NavigationMixin(BaseEfTask):
         self.click(result)
 
         if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False):
-            self.click(result, after_sleep=1)
+            self.click(result)
 
-        self.press_key("m", after_sleep=2)
+        self.press_key("m")
         self.log_info("关闭地图界面 (按下 M)")
         start_time = self.active_time()
         while not self.find_feature(
@@ -99,6 +99,9 @@ class NavigationMixin(BaseEfTask):
 
         """
         last_click_v_time = 0
+        nav_missing_start_time = None
+        nav_missing_recovered = False
+        nav_not_found_time_out = 3
 
         def check_target():
             if target_is_ocr:
@@ -173,6 +176,13 @@ class NavigationMixin(BaseEfTask):
             (1080 - 150) / 1080,
         )
 
+        def check_nav():
+            if nav_is_ocr:
+                return self.ocr(match=nav, box=nav_box)
+            if nav_is_yolo:
+                return self.yolo_detect(name=nav, box=nav_box)
+            return self.find_feature(nav, box=nav_box, threshold=0.7)
+
         self.send_key_down("w")  # 确认使用send_key：w为方向移动键，不属于游戏可配置热键，用于持续移动
 
         try:
@@ -235,14 +245,11 @@ class NavigationMixin(BaseEfTask):
                     self.sleep(0.005)
                     continue
 
-                if nav_is_ocr:
-                    nav_result = self.ocr(match=nav, box=nav_box)
-                elif nav_is_yolo:
-                    nav_result = self.yolo_detect(name=nav, box=nav_box)
-                else:
-                    nav_result = self.find_feature(nav, box=nav_box, threshold=0.7)
+                nav_result = check_nav()
 
                 if nav_result:
+                    nav_missing_start_time = None
+                    nav_missing_recovered = False
                     if not run_bool and run_allowed:
                         self.log_info("重新找到导航，恢复奔跑模式")
                         enter_run_mode()
@@ -258,12 +265,29 @@ class NavigationMixin(BaseEfTask):
                         allow_random_move=False
                     )
                 else:
+                    if nav_missing_start_time is None:
+                        nav_missing_start_time = self.active_time()
+                    elif (
+                        not nav_missing_recovered
+                        and self.active_time() - nav_missing_start_time >= nav_not_found_time_out
+                    ):
+                        self.log_info(f"导航目标连续丢失超过 {nav_not_found_time_out} 秒，旋转一圈搜索")
+                        self.send_key_up("w")
+                        self.sleep(0.1)
+                        nav_result = self.rotate_search(check_nav, between_delay=0.1)
+                        if nav_result:
+                            self.log_info("旋转搜索中重新找到导航")
+                        else:
+                            self.click(key="middle", after_sleep=1)
+                        self.send_key_down("w")
+                        nav_missing_recovered = True
+
                     if need_v and self.active_time() - last_click_v_time > 5:
                         self.log_info("未找到导航标识，点击 V 尝试")
                         self.press_key("v")
                         last_click_v_time = self.active_time()
 
-                    if run_bool:
+                    if not nav_result and run_bool:
                         self.log_info("未找到导航标识，进入短距离搜索模式")
                         exit_run_mode()
 

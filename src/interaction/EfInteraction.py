@@ -15,6 +15,10 @@ from src.interaction.Mouse import active_and_send_mouse_delta
 
 logger = Logger.get_logger(__name__)
 
+# 真实鼠标事件标志（pywin32 未提供常量）
+MOUSEEVENTF_MIDDLEDOWN = 0x0020
+MOUSEEVENTF_MIDDLEUP = 0x0040
+
 
 class RECT(ctypes.Structure):
     _fields_ = [("left", ctypes.c_long),
@@ -33,6 +37,9 @@ class EfInteraction(PostMessageInteraction):
         self.keyboard = Controller()
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.001, move=True, key="left"):
+        if key == "middle":
+            self._click_middle(x, y, down_time)
+            return
         self.try_activate()
         move_Cursor = False
         if x < 0:
@@ -48,10 +55,6 @@ class EfInteraction(PostMessageInteraction):
             btn_down = win32con.WM_LBUTTONDOWN
             btn_mk = win32con.MK_LBUTTON
             btn_up = win32con.WM_LBUTTONUP
-        elif key == "middle":
-            btn_down = win32con.WM_MBUTTONDOWN
-            btn_mk = win32con.MK_MBUTTON
-            btn_up = win32con.WM_MBUTTONUP
         else:
             btn_down = win32con.WM_RBUTTONDOWN
             btn_mk = win32con.MK_RBUTTON
@@ -64,6 +67,24 @@ class EfInteraction(PostMessageInteraction):
         if x >= 0 and move_Cursor:
             time.sleep(0.1)
             SetCursorPos(self.cursor_position)
+
+    def _click_middle(self, x=-1, y=-1, down_time=0.001):
+        """真实鼠标事件点击中键。
+
+        PostMessage 的鼠标消息在游戏窗口未真实激活时可能被游戏丢弃，
+        真实鼠标事件直接投递到当前前台窗口，可靠性更高。
+        游戏通常处于鼠标捕获模式，点击后无需恢复光标位置。
+        """
+        active_and_send_mouse_delta(self._game_hwnd(), only_activate=True)
+        if x < 0:
+            x = round(self.capture.width * 0.5)
+            y = round(self.capture.height * 0.5)
+        abs_x, abs_y = self.capture.get_abs_cords(x, y)
+        win32api.SetCursorPos((abs_x, abs_y))
+        time.sleep(0.001)
+        ctypes.windll.user32.mouse_event(MOUSEEVENTF_MIDDLEDOWN, 0, 0, 0, 0)
+        time.sleep(max(down_time, 0.02))
+        ctypes.windll.user32.mouse_event(MOUSEEVENTF_MIDDLEUP, 0, 0, 0, 0)
 
     def send(self, msg, wparam, lparam):
         win32gui.SendMessage(self.hwnd, msg, wparam, lparam)

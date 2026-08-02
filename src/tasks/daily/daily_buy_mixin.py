@@ -43,16 +43,19 @@ class DailyBuyFeature:
             self.log_info(f"进入区域: {area}")
             self.to_model_area(area, "物资调度")
             #
-            self.click_relative(100 / 3840, 464 / 2160, after_sleep=2)
+            self.click_relative(100 / 3840, 464 / 2160)
+            self.wait_ui_stable(refresh_interval=0.2)
             self.log_info("购买「日用消耗」")
             self.buy(pattern_list=pl)
             #
-            self.click_relative(100 / 3840, 718 / 2160, after_sleep=2)
+            self.click_relative(100 / 3840, 718 / 2160)
+            self.wait_ui_stable(refresh_interval=0.2)
             self.log_info("购买「工业货品」")
             self.buy(pattern_list=pl)
             #
             if self.config.get("是否买礼物", True):
-                self.click_relative(100 / 3840, 972 / 2160, after_sleep=2)
+                self.click_relative(100 / 3840, 972 / 2160)
+                self.wait_ui_stable(refresh_interval=0.2)
                 self.log_info("购买「人文物产」")
                 self.buy(pattern_list=pl)
 
