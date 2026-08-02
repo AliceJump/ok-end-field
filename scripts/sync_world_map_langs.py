@@ -499,9 +499,22 @@ def main():
         "maps": levels,
         "catalog": list(catalog_map.values()),
     }
-    write_json(SNAPSHOT_JSON, snapshot)
-    print()
-    print(f"Snapshot saved: {SNAPSHOT_JSON}")
+    # 仅内容变化时写入（排除 updated 日期戳，避免每日无实质变更提交）
+    old_snap = None
+    if SNAPSHOT_JSON.exists():
+        try:
+            old_snap = json.loads(SNAPSHOT_JSON.read_text(encoding="utf-8"))
+        except Exception:
+            old_snap = None
+    old_body = None
+    if isinstance(old_snap, dict):
+        old_body = {k: v for k, v in old_snap.items() if k != "updated"}
+    new_body = {k: v for k, v in snapshot.items() if k != "updated"}
+    if old_body != new_body:
+        write_json(SNAPSHOT_JSON, snapshot)
+        print(f"Snapshot saved: {SNAPSHOT_JSON}")
+    else:
+        print("Snapshot unchanged (content identical); skipping write.")
 
     if not touched and not canon_added:
         print("No world_map.json changes.")
