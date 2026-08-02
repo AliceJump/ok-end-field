@@ -306,8 +306,11 @@ def sync_canon(name_map, catalog_map):
     """
     lang = json.loads(WORLD_MAP_JSON.read_text(encoding="utf-8"))
     official = {**name_map}
-    for zh, vals in catalog_map.items():
-        official.setdefault(zh, {}).update(vals)
+    for vals in catalog_map.values():
+        zh = (vals.get("zh") or "").strip()
+        if not zh:
+            continue
+        official.setdefault(zh, {}).update({k: v for k, v in vals.items() if k != "zh"})
     existing_zh = {
         (node.get("zh_CN") or {}).get("pattern"): key
         for key, node in lang.items()
