@@ -137,10 +137,11 @@ def sync_zh_cn_self_patch(zh_names, i18n_dir: Path, update_existing: bool = True
 
 def sync_lang_jsons(official: dict, lang_dir: Path, skip_files: tuple = ()
                     ) -> tuple[dict, list]:
-    """以官方表覆盖 assets/lang/*.json 中相同中文的 string/pattern 节点。
+    """以官方表覆盖/补齐 assets/lang/*.json 中相同中文的 string/pattern 节点。
 
     - 匹配键：节点 zh_CN 值（string 或 pattern）== 官方简中名（相同中文）；
     - string/pattern 类型不限，目标语言节点含哪个键就替换哪个值；
+    - 语言节点缺失时新建（按 zh_CN 节点的 string/pattern 风格）；
     - zh_CN 不覆盖；仅官方有值且与现有不同时写入。
     返回 (每文件统计, 变更列表)。
     """
@@ -157,22 +158,34 @@ def sync_lang_jsons(official: dict, lang_dir: Path, skip_files: tuple = ()
             if not isinstance(zh_node, dict):
                 continue
             zh = ""
+            sub_style = "pattern"
             for sub in ("string", "pattern"):
                 val = zh_node.get(sub)
                 if isinstance(val, str):
                     zh = val.strip()
+                    sub_style = sub
                     break
             if not zh or zh not in official:
                 continue
             for lang, val in official[zh].items():
                 cur = node.get(lang)
-                if not isinstance(cur, dict):
-                    continue
-                for sub in ("string", "pattern"):
-                    if sub in cur and isinstance(cur[sub], str) and cur[sub] != val:
-                        cur[sub] = val
-                        stats += 1
-                        touched.append((key, zh, lang, val))
+                has_val = (
+                    isinstance(cur, dict)
+                    and (
+                        isinstance(cur.get("string"), str)
+                        or isinstance(cur.get("pattern"), str)
+                    )
+                )
+                if has_val:
+                    for sub in ("string", "pattern"):
+                        if isinstance(cur.get(sub), str) and cur[sub] != val:
+                            cur[sub] = val
+                            stats += 1
+                            touched.append((key, zh, lang, val))
+                else:
+                    node[lang] = {sub_style: val}
+                    stats += 1
+                    touched.append((key, zh, lang, val))
         if stats:
             write_json(path, data)
         all_stats[path.name] = stats
