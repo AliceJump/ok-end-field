@@ -29,6 +29,16 @@ class DailyLogisticsMixin:
         self.info_set("current_task", "claim_delivery_rewards")
         self.log_info("开始收邮件")
         self.press_key("k")
+        if not self.wait_click_ocr(
+                x=0, y=0.88,
+                to_x=0.25, to_y=0.95,
+                match=self.lang.daily_routine_mixin.k_ffb5655a,
+                time_out=5,
+        ):
+            self.log_info("未识别到领取按钮，直接退出收邮件")
+            self.press_key("esc")
+            return True
+        self.wait_pop_up()
         stage_area = self.wait_ocr(
             match=self.lang.daily_routine_mixin.k_4a2ece6a,
             box=self.box.top_left,
@@ -38,13 +48,6 @@ class DailyLogisticsMixin:
         if len(stage_area) > 0:
             self.click(x=stage_area[0].x, y=stage_area[0].y + int(self.height * 0.25))
             self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_3fef35d6, box=self.box.center, time_out=5)
-            self.wait_pop_up()
-        if self.wait_click_ocr(
-                x=0, y=0.88,
-                to_x=0.25, to_y=0.95,
-                match=self.lang.daily_routine_mixin.k_ffb5655a,
-                time_out=5,
-        ):
             self.wait_pop_up()
         self.press_key("esc")
         return True
