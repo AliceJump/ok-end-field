@@ -17,6 +17,15 @@
     },
     "es_ES": {
       "string": "Zhuang Fangyi"
+    },
+    "id_ID": {
+      "string": "Zhuang Fangyi"
+    },
+    "ru_RU": {
+      "string": "Чжуан Фанъи"
+    },
+    "th_TH": {
+      "string": "จวงฟางอี้"
     }
   },
   "luo_qian": {
@@ -37,6 +46,15 @@
     },
     "es_ES": {
       "string": "Rossi"
+    },
+    "id_ID": {
+      "string": "Rossi"
+    },
+    "ru_RU": {
+      "string": "Росси"
+    },
+    "th_TH": {
+      "string": "รอสซี"
     }
   },
   "tang_tang": {
@@ -57,6 +75,15 @@
     },
     "es_ES": {
       "string": "Tangtang"
+    },
+    "id_ID": {
+      "string": "TangTang"
+    },
+    "ru_RU": {
+      "string": "Тантан"
+    },
+    "th_TH": {
+      "string": "ถังถัง"
     }
   },
   "guan_li_yuan": {
@@ -97,6 +124,15 @@
     },
     "es_ES": {
       "string": "Lifeng"
+    },
+    "id_ID": {
+      "string": "Lifeng"
+    },
+    "ru_RU": {
+      "string": "Лифэн"
+    },
+    "th_TH": {
+      "string": "หลี​เ​ฟิง"
     }
   },
   "yu_jin": {
@@ -117,6 +153,15 @@
     },
     "es_ES": {
       "string": "Ember"
+    },
+    "id_ID": {
+      "string": "Ember"
+    },
+    "ru_RU": {
+      "string": "Эмбер"
+    },
+    "th_TH": {
+      "string": "เอ็มเบอร์"
     }
   },
   "jie_er_pei_ta": {
@@ -137,6 +182,15 @@
     },
     "es_ES": {
       "string": "Gilberta"
+    },
+    "id_ID": {
+      "string": "Gilberta"
+    },
+    "ru_RU": {
+      "string": "Гилберта"
+    },
+    "th_TH": {
+      "string": "กิล​เบอร์​ตา"
     }
   },
   "ai_er_dai_la": {
@@ -157,6 +211,15 @@
     },
     "es_ES": {
       "string": "Ardelia"
+    },
+    "id_ID": {
+      "string": "Ardelia"
+    },
+    "ru_RU": {
+      "string": "Арделия"
+    },
+    "th_TH": {
+      "string": "อาร์​เด​เลีย"
     }
   },
   "jun_wei": {
@@ -176,6 +239,15 @@
       "string": "포그라니치니크"
     },
     "es_ES": {
+      "string": "Pogranichnik"
+    },
+    "id_ID": {
+      "string": "Pogranichnik"
+    },
+    "ru_RU": {
+      "string": "Пограничник"
+    },
+    "th_TH": {
       "string": "Pogranichnik"
     }
   },
@@ -197,6 +269,15 @@
     },
     "es_ES": {
       "string": "Laevatain"
+    },
+    "id_ID": {
+      "string": "Laevatain"
+    },
+    "ru_RU": {
+      "string": "Лэватейн"
+    },
+    "th_TH": {
+      "string": "ลาวา​เทน"
     }
   },
   "yi_feng": {
@@ -217,6 +298,15 @@
     },
     "es_ES": {
       "string": "Yvonne"
+    },
+    "id_ID": {
+      "string": "Yvonne"
+    },
+    "ru_RU": {
+      "string": "Ивонна"
+    },
+    "th_TH": {
+      "string": "อี​วอน"
     }
   },
   "bie_li": {
@@ -237,6 +327,15 @@
     },
     "es_ES": {
       "string": "Last Rite"
+    },
+    "id_ID": {
+      "string": "Last Rite"
+    },
+    "ru_RU": {
+      "string": "Панихида"
+    },
+    "th_TH": {
+      "string": "ลาสท์ไรท์"
     }
   },
   "chen_qian_yu": {
@@ -257,6 +356,15 @@
     },
     "es_ES": {
       "string": "Chen Qianyu"
+    },
+    "id_ID": {
+      "string": "Chen Qianyu"
+    },
+    "ru_RU": {
+      "string": "Чэнь Цяньюй"
+    },
+    "th_TH": {
+      "string": "เฉิน​ ​เชียน​ยู"
     }
   },
   "zhou_xue": {
@@ -277,6 +385,15 @@
     },
     "es_ES": {
       "string": "Snowshine"
+    },
+    "id_ID": {
+      "string": "Snowshine"
+    },
+    "ru_RU": {
+      "string": "Светоснежка"
+    },
+    "th_TH": {
+      "string": "ส​โน​ว์​ไชน์"
     }
   },
   "sai_xi": {
@@ -297,6 +414,15 @@
     },
     "es_ES": {
       "string": "Xaihi"
+    },
+    "id_ID": {
+      "string": "Xaihi"
+    },
+    "ru_RU": {
+      "string": "Сайхи"
+    },
+    "th_TH": {
+      "string": "ไซ​ฮี"
     }
   },
   "lang_wei": {
@@ -317,6 +443,15 @@
     },
     "es_ES": {
       "string": "Wulfgard"
+    },
+    "id_ID": {
+      "string": "Wulfgard"
+    },
+    "ru_RU": {
+      "string": "Вулфгард"
+    },
+    "th_TH": {
+      "string": "วู​ล์​ฟ​การ์ด"
     }
   },
   "pei_li_ka": {
@@ -337,6 +472,15 @@
     },
     "es_ES": {
       "string": "Perlica"
+    },
+    "id_ID": {
+      "string": "Perlica"
+    },
+    "ru_RU": {
+      "string": "Перлика"
+    },
+    "th_TH": {
+      "string": "เพอ​ริ​กา"
     }
   },
   "hu_guang": {
@@ -357,6 +501,15 @@
     },
     "es_ES": {
       "string": "Arclight"
+    },
+    "id_ID": {
+      "string": "Arclight"
+    },
+    "ru_RU": {
+      "string": "Арклайт"
+    },
+    "th_TH": {
+      "string": "อาร์ค​ไลท์"
     }
   },
   "a_lie_shi": {
@@ -377,6 +530,15 @@
     },
     "es_ES": {
       "string": "Alesh"
+    },
+    "id_ID": {
+      "string": "Alesh"
+    },
+    "ru_RU": {
+      "string": "Алеш"
+    },
+    "th_TH": {
+      "string": "อา​เลช"
     }
   },
   "ai_wei_wen_na": {
@@ -397,6 +559,15 @@
     },
     "es_ES": {
       "string": "Avywenna"
+    },
+    "id_ID": {
+      "string": "Avywenna"
+    },
+    "ru_RU": {
+      "string": "Авивенна"
+    },
+    "th_TH": {
+      "string": "เอ​วิ​เวน​นา"
     }
   },
   "da_pan": {
@@ -417,6 +588,15 @@
     },
     "es_ES": {
       "string": "Da pan"
+    },
+    "id_ID": {
+      "string": "Da Pan"
+    },
+    "ru_RU": {
+      "string": "Да Пан"
+    },
+    "th_TH": {
+      "string": "ต้า​ปัน"
     }
   },
   "ai_te_la": {
@@ -437,6 +617,15 @@
     },
     "es_ES": {
       "string": "Estella"
+    },
+    "id_ID": {
+      "string": "Estella"
+    },
+    "ru_RU": {
+      "string": "Эстелла"
+    },
+    "th_TH": {
+      "string": "เอส​เต​ญ่า"
     }
   },
   "ka_qi_er": {
@@ -457,6 +646,15 @@
     },
     "es_ES": {
       "string": "Catcher"
+    },
+    "id_ID": {
+      "string": "Catcher"
+    },
+    "ru_RU": {
+      "string": "Кэтчер"
+    },
+    "th_TH": {
+      "string": "แคท​เชอร์"
     }
   },
   "an_ta_er": {
@@ -477,6 +675,15 @@
     },
     "es_ES": {
       "string": "Antal"
+    },
+    "id_ID": {
+      "string": "Antal"
+    },
+    "ru_RU": {
+      "string": "Антал"
+    },
+    "th_TH": {
+      "string": "แอน​ทาล"
     }
   },
   "ying_shi": {
@@ -497,6 +704,15 @@
     },
     "es_ES": {
       "string": "Fluorite"
+    },
+    "id_ID": {
+      "string": "Fluorite"
+    },
+    "ru_RU": {
+      "string": "Флюорит"
+    },
+    "th_TH": {
+      "string": "ฟลู​โอ​ไรต์"
     }
   },
   "qiu_li": {
@@ -517,6 +733,15 @@
     },
     "es_ES": {
       "string": "Akekuri"
+    },
+    "id_ID": {
+      "string": "Akekuri"
+    },
+    "ru_RU": {
+      "string": "Акэкури"
+    },
+    "th_TH": {
+      "string": "อา​เค​คู​ริ"
     }
   },
   "jue": {
@@ -537,6 +762,15 @@
     },
     "es_ES": {
       "string": "Arcane"
+    },
+    "id_ID": {
+      "string": "Arcane"
+    },
+    "ru_RU": {
+      "string": "Премудрость"
+    },
+    "th_TH": {
+      "string": "ปริศนา"
     }
   },
   "ka_miao": {
@@ -557,6 +791,15 @@
     },
     "es_ES": {
       "string": "Camille"
+    },
+    "id_ID": {
+      "string": "Camille"
+    },
+    "ru_RU": {
+      "string": "Камиль"
+    },
+    "th_TH": {
+      "string": "คามิลล์"
     }
   },
   "mi_fu": {
@@ -577,6 +820,15 @@
     },
     "es_ES": {
       "string": "Mi Fu"
+    },
+    "id_ID": {
+      "string": "Mi Fu"
+    },
+    "ru_RU": {
+      "string": "Ми Фу"
+    },
+    "th_TH": {
+      "string": "หมี่ฟู่"
     }
   },
   "li_nuo": {
@@ -597,6 +849,15 @@
     },
     "es_ES": {
       "string": "Liino"
+    },
+    "id_ID": {
+      "string": "Liino"
+    },
+    "ru_RU": {
+      "string": "Лиино"
+    },
+    "th_TH": {
+      "string": "หลีนั่ว"
     }
   }
 }

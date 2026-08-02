@@ -137,6 +137,12 @@
     },
     "es_ES": {
       "pattern": "Cítricos enlatados de alta calidad."
+    },
+    "ru_RU": {
+      "pattern": "Консервированный цитром [B]"
+    },
+    "th_TH": {
+      "pattern": "ส้ม​ซิ​โตร​มก​ระ​ป๋อง​ [B]"
     }
   },
   "k_fd92a736": {
@@ -157,6 +163,9 @@
     },
     "es_ES": {
       "pattern": "Inyección de cogollos de alta calidad"
+    },
+    "ru_RU": {
+      "pattern": "Инъектор ячжэня [A]"
     }
   },
   "k_85ad4a7c": {
@@ -177,6 +186,12 @@
     },
     "es_ES": {
       "pattern": "Cápsulas de trigo sarraceno de alta calidad."
+    },
+    "ru_RU": {
+      "pattern": "Гречекапсула [B]"
+    },
+    "th_TH": {
+      "pattern": "แคปซูล​บัค​ [B]"
     }
   },
   "k_5209de4f": {
@@ -617,6 +632,15 @@
     },
     "es_ES": {
       "pattern": "Calabaza de jade del suelo Xi"
+    },
+    "id_ID": {
+      "pattern": "Botol Cembung Giok Xiranite"
+    },
+    "ru_RU": {
+      "pattern": "Нефритовая фляга с ксиранитом"
+    },
+    "th_TH": {
+      "pattern": "ฝัก​หยก​ซี​เรน​ไนต์"
     }
   },
   "k_49b013b4": {
@@ -637,6 +661,15 @@
     },
     "es_ES": {
       "pattern": "calabaza del suelo"
+    },
+    "id_ID": {
+      "pattern": "Botol Cembung Xiranite"
+    },
+    "ru_RU": {
+      "pattern": "Тыквенная фляга с ксиранитом"
+    },
+    "th_TH": {
+      "pattern": "ฝัก​ซี​เรน​ไนต์"
     }
   },
   "k_015b12ba": {
@@ -717,6 +750,12 @@
     },
     "es_ES": {
       "pattern": "concha de cristal"
+    },
+    "ru_RU": {
+      "pattern": "Ориджеода"
+    },
+    "th_TH": {
+      "pattern": "ออ​ริ​โก​ค​รัส"
     }
   },
   "k_90252af0": {
@@ -757,6 +796,9 @@
     },
     "es_ES": {
       "pattern": "Cítricos enlatados"
+    },
+    "ru_RU": {
+      "pattern": "Консервированный цитром [C]"
     }
   },
   "k_4ce45095": {
@@ -997,6 +1039,12 @@
     },
     "es_ES": {
       "pattern": "fuente mía"
+    },
+    "ru_RU": {
+      "pattern": "Ориджиниевая руда"
+    },
+    "th_TH": {
+      "pattern": "แร่​ออ​ริ​จิ​เนียม"
     }
   },
   "k_5af845da": {
@@ -1097,6 +1145,12 @@
     },
     "es_ES": {
       "pattern": "Cítricos enlatados seleccionados"
+    },
+    "ru_RU": {
+      "pattern": "Консервированный цитром [A]"
+    },
+    "th_TH": {
+      "pattern": "ส้ม​ซิ​โตร​มก​ระ​ป๋อง​ [A]"
     }
   },
   "k_adb42389": {
@@ -1117,6 +1171,12 @@
     },
     "es_ES": {
       "pattern": "Cápsulas de Trigo Sarraceno Seleccionadas"
+    },
+    "ru_RU": {
+      "pattern": "Гречекапсула [A]"
+    },
+    "th_TH": {
+      "pattern": "แคปซูล​บัค​ [A]"
     }
   },
   "k_0d158460": {
@@ -1197,6 +1257,12 @@
     },
     "es_ES": {
       "pattern": "Polvo de piedra de origen denso"
+    },
+    "ru_RU": {
+      "pattern": "Мелкомолотый ориджиний"
+    },
+    "th_TH": {
+      "pattern": "ผง​ออ​ริ​จิ​เนียม​เข้มข้น"
     }
   },
   "k_9aca6716": {
@@ -1217,6 +1283,9 @@
     },
     "es_ES": {
       "pattern": "inyección de cogollos"
+    },
+    "ru_RU": {
+      "pattern": "Инъектор ячжэня [C]"
     }
   },
   "k_710b0237": {
@@ -1237,6 +1306,9 @@
     },
     "es_ES": {
       "pattern": "Cápsulas de Qiaoyu"
+    },
+    "ru_RU": {
+      "pattern": "Гречекапсула [C]"
     }
   },
   "k_a3c507b8": {
@@ -1257,6 +1329,12 @@
     },
     "es_ES": {
       "pattern": "mineral de hierro azul"
+    },
+    "ru_RU": {
+      "pattern": "Ферриевая руда"
+    },
+    "th_TH": {
+      "pattern": "แร่​เฟอร์​เรียม"
     }
   },
   "k_308fd0c3": {
@@ -1337,6 +1415,15 @@
     },
     "es_ES": {
       "pattern": "Líquido de ajuste de cuadrante"
+    },
+    "id_ID": {
+      "pattern": "Cairan Penyesuai Kuadran"
+    },
+    "ru_RU": {
+      "pattern": "Квадрантная жидкость"
+    },
+    "th_TH": {
+      "pattern": "น้ำยา​ขึ้น​รูป​ควอ​แด​รน​ท์"
     }
   },
   "k_ffeba46d": {
@@ -1357,6 +1444,9 @@
     },
     "es_ES": {
       "pattern": "Piezas de cobre"
+    },
+    "ru_RU": {
+      "pattern": "Гетонитовая деталь"
     }
   },
   "k_e82c9392": {
@@ -1377,6 +1467,15 @@
     },
     "es_ES": {
       "pattern": "tubo de teleobjetivo"
+    },
+    "id_ID": {
+      "pattern": "Tabung Fotoemisi Metadiastima"
+    },
+    "ru_RU": {
+      "pattern": "Внепредельная фотоэмиссионная трубка"
+    },
+    "th_TH": {
+      "pattern": "หลอด​ปล่อยแสง​เม​ทา​ได​แอส​ทิมา"
     }
   },
   "k_d75af357": {
@@ -1437,6 +1536,9 @@
     },
     "es_ES": {
       "pattern": "suelo pesado"
+    },
+    "ru_RU": {
+      "pattern": "Тяжелый ксиранит"
     }
   },
   "k_c18b3249": {
@@ -1707,6 +1809,15 @@
   "k_825cdc26": {
     "zh_CN": {
       "pattern": "灼铜零件"
+    },
+    "en_US": {
+      "pattern": "Pyrrolite Part"
+    },
+    "ko_KR": {
+      "pattern": "작동 부품"
+    },
+    "zh_TW": {
+      "pattern": "灼銅零件"
     }
   },
   "k_871bc220": {

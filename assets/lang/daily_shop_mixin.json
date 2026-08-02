@@ -17,6 +17,12 @@
     },
     "es_ES": {
       "pattern": "Crédito"
+    },
+    "id_ID": {
+      "pattern": "Kredit"
+    },
+    "ru_RU": {
+      "pattern": "Кредиты"
     }
   },
   "k_38108eaa": {
