@@ -28,7 +28,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install polib
+          pip install --only-binary :all: polib==1.2.0
 
       - name: Sync translations from official API
         run: |

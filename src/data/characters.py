@@ -1,133 +1,24 @@
-characters = {
-    "zhuang_fang_yi":{
-        "zh":"庄方宜",
-        "en":"zhuang_fangyi",
-        "stars":6
-    },
-    "luo_qian":{
-        "zh":"洛茜",
-        "en":"rossi",
-        "stars":6
-    },
-    "tang_tang":{
-        "zh":"汤汤",
-        "en":"tangtang",
-        "stars":6
-    },
-    "guan_li_yuan": {
-        "zh": "管理员",
-        "en": "endministrator",
-        "stars": 6
-    },
-    "li_feng": {
-        "zh": "黎风",
-        "en": "lifeng",
-        "stars": 6
-    },
-    "yu_jin": {
-        "zh": "余烬",
-        "en": "ember",
-        "stars": 6
-    },
-    "jie_er_pei_ta": {
-        "zh": "洁尔佩塔",
-        "en": "gilberta",
-        "stars": 6
-    },
-    "ai_er_dai_la": {
-        "zh": "艾尔黛拉",
-        "en": "ardelia",
-        "stars": 6
-    },
-    "jun_wei": {
-        "zh": "骏卫",
-        "en": "pogranichnik",
-        "stars": 6
-    },
-    "lai_wan_ting": {
-        "zh": "莱万汀",
-        "en": "laevatain",
-        "stars": 6
-    },
-    "yi_feng": {
-        "zh": "伊冯",
-        "en": "yvonne",
-        "stars": 6
-    },
-    "bie_li": {
-        "zh": "别礼",
-        "en": "last_rite",
-        "stars": 6
-    },
-    "chen_qian_yu": {
-        "zh": "陈千语",
-        "en": "chen_qianyu",
-        "stars": 5
-    },
-    "zhou_xue": {
-        "zh": "昼雪",
-        "en": "snowshine",
-        "stars": 5
-    },
-    "sai_xi": {
-        "zh": "赛希",
-        "en": "xaihi",
-        "stars": 5
-    },
-    "lang_wei": {
-        "zh": "狼卫",
-        "en": "wulfgard",
-        "stars": 5
-    },
-    "pei_li_ka": {
-        "zh": "佩丽卡",
-        "en": "perlica",
-        "stars": 5
-    },
-    "hu_guang": {
-        "zh": "弧光",
-        "en": "arclight",
-        "stars": 5
-    },
-    "a_lie_shi": {
-        "zh": "阿列什",
-        "en": "alesh",
-        "stars": 5
-    },
-    "ai_wei_wen_na": {
-        "zh": "艾维文娜",
-        "en": "avywenna",
-        "stars": 5
-    },
-    "da_pan": {
-        "zh": "大潘",
-        "en": "da_pan",
-        "stars": 5
-    },
-    "ai_te_la": {
-        "zh": "埃特拉",
-        "en": "estella",
-        "stars": 4
-    },
-    "ka_qi_er": {
-        "zh": "卡契尔",
-        "en": "catcher",
-        "stars": 4
-    },
-    "an_ta_er": {
-        "zh": "安塔尔",
-        "en": "antal",
-        "stars": 4
-    },
-    "ying_shi": {
-        "zh": "萤石",
-        "en": "fluorite",
-        "stars": 4
-    },
-    "qiu_li": {
-        "zh": "秋栗",
-        "en": "akekuri",
-        "stars": 4
-    }
-}
+# -*- coding: utf-8 -*-
+
+"""干员（Operator）canonical 数据（剥离自内嵌字典，见 assets/data/characters.json）。
+
+数据在 assets/data/characters.json（JSON），本模块仅作薄加载器，
+保持原有导入路径兼容：``from src.data.characters import characters, all_list``。
+
+字段说明：
+- ``zh``：简中 canonical 名（用于 OCR 匹配与本地化回退）
+- ``en``：内部 ID（用于 FeatureList 的 ``xxx_contact`` 枚举匹配，非官方英文名）
+- ``stars``：稀有度（4/5/6）
+
+6 语言显示名见 assets/lang/characters.json；官方多语言同步见
+scripts/sync_character_langs.py（数据源 endfield.wiki.gg）。
+"""
+
+import json
+from pathlib import Path
+
+characters = json.loads(
+    (Path(__file__).resolve().parent.parent.parent / "assets" / "data" / "characters.json")
+    .read_text(encoding="utf-8")
+)
 all_list = [i["zh"] for i in characters.values()]

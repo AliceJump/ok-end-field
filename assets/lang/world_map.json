@@ -27,16 +27,16 @@
       "pattern": "三位一體"
     },
     "en_US": {
-      "pattern": "Trinity"
+      "pattern": "Triaggelos"
     },
     "ja_JP": {
-      "pattern": "三位一体"
+      "pattern": "トリアンゲロス"
     },
     "ko_KR": {
-      "pattern": "삼위 일체"
+      "pattern": "트리아겔로스"
     },
     "es_ES": {
-      "pattern": "Trinidad"
+      "pattern": "Triaggelos"
     }
   },
   "k_a4f9b7a1": {
@@ -127,13 +127,13 @@
       "pattern": "優質柑實罐頭"
     },
     "en_US": {
-      "pattern": "High quality canned citrus fruits"
+      "pattern": "Canned Citrome [B]"
     },
     "ja_JP": {
-      "pattern": "高品質の柑橘類の缶詰"
+      "pattern": "シトロームの缶詰Ⅱ"
     },
     "ko_KR": {
-      "pattern": "고품질 통조림 감귤류"
+      "pattern": "시트론 통조림(중)"
     },
     "es_ES": {
       "pattern": "Cítricos enlatados de alta calidad."
@@ -147,13 +147,13 @@
       "pattern": "優質芽針針劑"
     },
     "en_US": {
-      "pattern": "High quality bud injection"
+      "pattern": "Yazhen Syringe [A]"
     },
     "ja_JP": {
       "pattern": "高品質の芽注入"
     },
     "ko_KR": {
-      "pattern": "고품질 새싹 주입"
+      "pattern": "고급 야침 주사약"
     },
     "es_ES": {
       "pattern": "Inyección de cogollos de alta calidad"
@@ -167,13 +167,13 @@
       "pattern": "優質蕎癒膠囊"
     },
     "en_US": {
-      "pattern": "High quality buckwheat capsules"
+      "pattern": "Buck Capsule [B]"
     },
     "ja_JP": {
-      "pattern": "高品質そば粉カプセル"
+      "pattern": "蕎花カプセルⅡ"
     },
     "ko_KR": {
-      "pattern": "고품질 메밀 캡슐"
+      "pattern": "메밀꽃 치유 캡슐(중)"
     },
     "es_ES": {
       "pattern": "Cápsulas de trigo sarraceno de alta calidad."
@@ -227,16 +227,16 @@
       "pattern": "供能高地"
     },
     "en_US": {
-      "pattern": "Energy supply highland"
+      "pattern": "Power Plateau"
     },
     "ja_JP": {
-      "pattern": "エネルギー供給高原"
+      "pattern": "エネルギー高地"
     },
     "ko_KR": {
-      "pattern": "에너지 공급고지"
+      "pattern": "에너지 공급 고지"
     },
     "es_ES": {
-      "pattern": "Suministro de energía en las tierras altas"
+      "pattern": "Meseta de poder"
     }
   },
   "k_afba31e6": {
@@ -307,16 +307,16 @@
       "pattern": "四號谷地"
     },
     "en_US": {
-      "pattern": "valley four"
+      "pattern": "Valley IV"
     },
     "ja_JP": {
-      "pattern": "谷4"
+      "pattern": "四号谷地"
     },
     "ko_KR": {
-      "pattern": "밸리 4"
+      "pattern": "4번 협곡"
     },
     "es_ES": {
-      "pattern": "valle cuatro"
+      "pattern": "Valle IV"
     }
   },
   "k_c8cc877d": {
@@ -347,16 +347,16 @@
       "pattern": "基建前站"
     },
     "en_US": {
-      "pattern": "Infrastructure front station"
+      "pattern": "Infra-Station"
     },
     "ja_JP": {
-      "pattern": "インフラフロント駅"
+      "pattern": "建設基地"
     },
     "ko_KR": {
-      "pattern": "인프라 프론트 스테이션"
+      "pattern": "기초 건설 주둔지"
     },
     "es_ES": {
-      "pattern": "Estación frontal de infraestructura"
+      "pattern": "Infraestación"
     }
   },
   "k_0b813891": {
@@ -507,16 +507,16 @@
       "pattern": "幹員經驗"
     },
     "en_US": {
-      "pattern": "Operator experience"
+      "pattern": "Operator EXP"
     },
     "ja_JP": {
-      "pattern": "オペレーターの経験"
+      "pattern": "オペレーター経験値"
     },
     "ko_KR": {
-      "pattern": "운영자 경험"
+      "pattern": "오퍼레이터 경험치"
     },
     "es_ES": {
-      "pattern": "Experiencia del operador"
+      "pattern": "EXP de operador"
     }
   },
   "k_216c7def": {
@@ -527,16 +527,16 @@
       "pattern": "幹員進階"
     },
     "en_US": {
-      "pattern": "Operator advancement"
+      "pattern": "Operator Promotions"
     },
     "ja_JP": {
-      "pattern": "オペレーターの昇進"
+      "pattern": "昇進素材"
     },
     "ko_KR": {
-      "pattern": "운영자 발전"
+      "pattern": "오퍼레이터 돌파"
     },
     "es_ES": {
-      "pattern": "Avance del operador"
+      "pattern": "Ascensos de operador"
     }
   },
   "k_7dfd1882": {
@@ -607,13 +607,13 @@
       "pattern": "息壤玉葫蘆"
     },
     "en_US": {
-      "pattern": "Xi soil jade gourd"
+      "pattern": "Xiranite Jade Gourd"
     },
     "ja_JP": {
-      "pattern": "西土玉瓢箪"
+      "pattern": "息壌玉ひょうたん"
     },
     "ko_KR": {
-      "pattern": "사이 흙 옥 조롱박"
+      "pattern": "식양 옥 호리병"
     },
     "es_ES": {
       "pattern": "Calabaza de jade del suelo Xi"
@@ -627,13 +627,13 @@
       "pattern": "息壤葫蘆"
     },
     "en_US": {
-      "pattern": "Soil gourd"
+      "pattern": "Xiranite Gourd"
     },
     "ja_JP": {
-      "pattern": "土ひょうたん"
+      "pattern": "息壌ひょうたん"
     },
     "ko_KR": {
-      "pattern": "토양 조롱박"
+      "pattern": "식양 호리병"
     },
     "es_ES": {
       "pattern": "calabaza del suelo"
@@ -667,16 +667,16 @@
       "pattern": "技能提升"
     },
     "en_US": {
-      "pattern": "Skill improvement"
+      "pattern": "Skill Up"
     },
     "ja_JP": {
-      "pattern": "スキル向上"
+      "pattern": "スキル強化"
     },
     "ko_KR": {
-      "pattern": "스킬향상"
+      "pattern": "스킬 업그레이드"
     },
     "es_ES": {
-      "pattern": "Mejora de habilidades"
+      "pattern": "Maestría de habilidades"
     }
   },
   "k_854f8a4f": {
@@ -707,13 +707,13 @@
       "pattern": "晶體外殼"
     },
     "en_US": {
-      "pattern": "crystal shell"
+      "pattern": "Origocrust"
     },
     "ja_JP": {
-      "pattern": "クリスタルシェル"
+      "pattern": "結晶外殻"
     },
     "ko_KR": {
-      "pattern": "크리스탈 쉘"
+      "pattern": "오리고 크러스트"
     },
     "es_ES": {
       "pattern": "concha de cristal"
@@ -727,16 +727,16 @@
       "pattern": "樞紐區"
     },
     "en_US": {
-      "pattern": "hub area"
+      "pattern": "The Hub"
     },
     "ja_JP": {
-      "pattern": "ハブエリア"
+      "pattern": "中枢エリア"
     },
     "ko_KR": {
-      "pattern": "허브 지역"
+      "pattern": "거점 지역"
     },
     "es_ES": {
-      "pattern": "área central"
+      "pattern": "La Base"
     }
   },
   "k_e1635e13": {
@@ -747,7 +747,7 @@
       "pattern": "柑實罐頭"
     },
     "en_US": {
-      "pattern": "Canned citrus fruits"
+      "pattern": "Canned Citrome [C]"
     },
     "ja_JP": {
       "pattern": "柑橘類の缶詰"
@@ -807,16 +807,16 @@
       "pattern": "武器經驗"
     },
     "en_US": {
-      "pattern": "Weapon experience"
+      "pattern": "Weapon EXP"
     },
     "ja_JP": {
-      "pattern": "武器経験"
+      "pattern": "武器経験値"
     },
     "ko_KR": {
-      "pattern": "무기 체험"
+      "pattern": "무기 경험치"
     },
     "es_ES": {
-      "pattern": "Experiencia con armas"
+      "pattern": "EXP de arma"
     }
   },
   "k_0903c052": {
@@ -827,16 +827,16 @@
       "pattern": "武器進階"
     },
     "en_US": {
-      "pattern": "Weapon upgrade"
+      "pattern": "Weapon Tune"
     },
     "ja_JP": {
-      "pattern": "武器のアップグレード"
+      "pattern": "武器突破"
     },
     "ko_KR": {
-      "pattern": "무기 업그레이드"
+      "pattern": "무기 돌파"
     },
     "es_ES": {
-      "pattern": "Mejora de arma"
+      "pattern": "Afinación de armas"
     }
   },
   "k_a4410e3f": {
@@ -853,7 +853,7 @@
       "pattern": "武陵"
     },
     "ko_KR": {
-      "pattern": "우링"
+      "pattern": "무릉"
     },
     "es_ES": {
       "pattern": "Wuling"
@@ -887,16 +887,16 @@
       "pattern": "武陵城"
     },
     "en_US": {
-      "pattern": "Wulingcheng"
+      "pattern": "Wuling City"
     },
     "ja_JP": {
       "pattern": "武陵城"
     },
     "ko_KR": {
-      "pattern": "우링청"
+      "pattern": "무릉성"
     },
     "es_ES": {
-      "pattern": "Wulingcheng"
+      "pattern": "Ciudad de Wuling"
     }
   },
   "k_ece5ec1b": {
@@ -907,16 +907,16 @@
       "pattern": "清波寨"
     },
     "en_US": {
-      "pattern": "Qingbo Village"
+      "pattern": "Qingbo Stockade"
     },
     "ja_JP": {
-      "pattern": "青波村"
+      "pattern": "清波砦"
     },
     "ko_KR": {
-      "pattern": "칭보 마을"
+      "pattern": "청파채"
     },
     "es_ES": {
-      "pattern": "Pueblo de Qingbo"
+      "pattern": "Empalizada Qingbo"
     }
   },
   "k_0383e694": {
@@ -967,16 +967,16 @@
       "pattern": "源石研究園"
     },
     "en_US": {
-      "pattern": "Origin Stone Research Park"
+      "pattern": "Originium Science Park"
     },
     "ja_JP": {
-      "pattern": "原石リサーチパーク"
+      "pattern": "源石研究パーク"
     },
     "ko_KR": {
-      "pattern": "오리진스톤연구단지"
+      "pattern": "오리지늄 연구 구역"
     },
     "es_ES": {
-      "pattern": "Parque de investigación de piedra de origen"
+      "pattern": "Parque científico de Originio"
     }
   },
   "k_37ad1f84": {
@@ -987,13 +987,13 @@
       "pattern": "源礦"
     },
     "en_US": {
-      "pattern": "source mine"
+      "pattern": "Originium Ore"
     },
     "ja_JP": {
-      "pattern": "ソース鉱山"
+      "pattern": "源石鉱物"
     },
     "ko_KR": {
-      "pattern": "소스 광산"
+      "pattern": "오리지늄 광물"
     },
     "es_ES": {
       "pattern": "fuente mía"
@@ -1007,16 +1007,16 @@
       "pattern": "白堊界衛"
     },
     "en_US": {
-      "pattern": "Chalk Wardens"
+      "pattern": "Marble Aggelomoirai"
     },
     "ja_JP": {
-      "pattern": "チョーク監視員"
+      "pattern": "白亜・アンゲロミラ"
     },
     "ko_KR": {
-      "pattern": "분필 감시자"
+      "pattern": "마블 아겔로미레"
     },
     "es_ES": {
-      "pattern": "Guardianes de tiza"
+      "pattern": "Aggelomoirai de mármol"
     }
   },
   "k_d26e1bbe": {
@@ -1047,16 +1047,16 @@
       "pattern": "礦脈源區"
     },
     "en_US": {
-      "pattern": "Mine source area"
+      "pattern": "Origin Lodespring"
     },
     "ja_JP": {
-      "pattern": "鉱山源地域"
+      "pattern": "鉱山エリア"
     },
     "ko_KR": {
-      "pattern": "광산 지역"
+      "pattern": "광맥 구역"
     },
     "es_ES": {
-      "pattern": "Área de origen de la mina"
+      "pattern": "Veta de origen"
     }
   },
   "k_55ed0a7b": {
@@ -1087,13 +1087,13 @@
       "pattern": "精選柑實罐頭"
     },
     "en_US": {
-      "pattern": "Selected canned citrus fruits"
+      "pattern": "Canned Citrome [A]"
     },
     "ja_JP": {
-      "pattern": "厳選された柑橘類の缶詰"
+      "pattern": "シトロームの缶詰Ⅲ"
     },
     "ko_KR": {
-      "pattern": "엄선된 통조림 감귤류"
+      "pattern": "시트론 통조림(대)"
     },
     "es_ES": {
       "pattern": "Cítricos enlatados seleccionados"
@@ -1107,13 +1107,13 @@
       "pattern": "精選蕎癒膠囊"
     },
     "en_US": {
-      "pattern": "Selected Buckwheat Capsules"
+      "pattern": "Buck Capsule [A]"
     },
     "ja_JP": {
-      "pattern": "厳選そばカプセル"
+      "pattern": "蕎花カプセルⅢ"
     },
     "ko_KR": {
-      "pattern": "엄선된 메밀캡슐"
+      "pattern": "메밀꽃 치유 캡슐(대)"
     },
     "es_ES": {
       "pattern": "Cápsulas de Trigo Sarraceno Seleccionadas"
@@ -1147,16 +1147,16 @@
       "pattern": "聶菲斯"
     },
     "en_US": {
-      "pattern": "Nepheus"
+      "pattern": "Nefarith"
     },
     "ja_JP": {
-      "pattern": "ネフェウス"
+      "pattern": "ネファリス"
     },
     "ko_KR": {
-      "pattern": "네페우스"
+      "pattern": "네파리스"
     },
     "es_ES": {
-      "pattern": "Nefeo"
+      "pattern": "Nefarith"
     }
   },
   "k_e0c9b138": {
@@ -1167,16 +1167,16 @@
       "pattern": "能量淤積點"
     },
     "en_US": {
-      "pattern": "energy pooling point"
+      "pattern": "Energy Alluvium"
     },
     "ja_JP": {
-      "pattern": "エネルギープールポイント"
+      "pattern": "超域活性点"
     },
     "ko_KR": {
-      "pattern": "에너지 풀링 포인트"
+      "pattern": "에너지 응집점"
     },
     "es_ES": {
-      "pattern": "punto de acumulación de energía"
+      "pattern": "Aluvión energético"
     }
   },
   "k_ccdf2110": {
@@ -1187,13 +1187,13 @@
       "pattern": "緻密源石粉末"
     },
     "en_US": {
-      "pattern": "Dense source stone powder"
+      "pattern": "Dense Originium Powder"
     },
     "ja_JP": {
-      "pattern": "濃厚な源石粉末"
+      "pattern": "高密度源石粉末"
     },
     "ko_KR": {
-      "pattern": "조밀한 근원석 분말"
+      "pattern": "고밀도 오리지늄 가루"
     },
     "es_ES": {
       "pattern": "Polvo de piedra de origen denso"
@@ -1207,13 +1207,13 @@
       "pattern": "芽針針劑"
     },
     "en_US": {
-      "pattern": "Bud injection"
+      "pattern": "Yazhen Syringe [C]"
     },
     "ja_JP": {
       "pattern": "芽注入"
     },
     "ko_KR": {
-      "pattern": "새싹 주입"
+      "pattern": "야침 주사약"
     },
     "es_ES": {
       "pattern": "inyección de cogollos"
@@ -1227,10 +1227,10 @@
       "pattern": "蕎癒膠囊"
     },
     "en_US": {
-      "pattern": "Qiaoyu Capsules"
+      "pattern": "Buck Capsule [C]"
     },
     "ja_JP": {
-      "pattern": "チャオユウカプセル"
+      "pattern": "蕎花カプセルⅠ"
     },
     "ko_KR": {
       "pattern": "차오유 캡슐"
@@ -1247,13 +1247,13 @@
       "pattern": "藍鐵礦"
     },
     "en_US": {
-      "pattern": "blue iron ore"
+      "pattern": "Ferrium Ore"
     },
     "ja_JP": {
-      "pattern": "青い鉄鉱石"
+      "pattern": "青鉄鉱物"
     },
     "ko_KR": {
-      "pattern": "푸른 철광석"
+      "pattern": "페리움 광석"
     },
     "es_ES": {
       "pattern": "mineral de hierro azul"
@@ -1287,16 +1287,16 @@
       "pattern": "試驗園區"
     },
     "en_US": {
-      "pattern": "Experimental Park"
+      "pattern": "Test Area"
     },
     "ja_JP": {
-      "pattern": "実験公園"
+      "pattern": "実験区域"
     },
     "ko_KR": {
-      "pattern": "실험공원"
+      "pattern": "실험 구역"
     },
     "es_ES": {
-      "pattern": "Parque Experimental"
+      "pattern": "Área de pruebas"
     }
   },
   "k_783931ed": {
@@ -1327,13 +1327,13 @@
       "pattern": "象限擬合液"
     },
     "en_US": {
-      "pattern": "Quadrant fitting fluid"
+      "pattern": "Quadrant Fitting Fluid"
     },
     "ja_JP": {
-      "pattern": "象限フィッティング液"
+      "pattern": "象限適合液"
     },
     "ko_KR": {
-      "pattern": "사분면 피팅 유체"
+      "pattern": "정합용 유체"
     },
     "es_ES": {
       "pattern": "Líquido de ajuste de cuadrante"
@@ -1347,13 +1347,13 @@
       "pattern": "赫銅零件"
     },
     "en_US": {
-      "pattern": "Hetcopper parts"
+      "pattern": "Hetonite Part"
     },
     "ja_JP": {
       "pattern": "ヘト銅部品"
     },
     "ko_KR": {
-      "pattern": "열동 부품"
+      "pattern": "혁동 부품"
     },
     "es_ES": {
       "pattern": "Piezas de cobre"
@@ -1367,13 +1367,13 @@
       "pattern": "超距輝映管"
     },
     "en_US": {
-      "pattern": "telephoto tube"
+      "pattern": "Metadiastima Photoemission Tube"
     },
     "ja_JP": {
-      "pattern": "望遠鏡"
+      "pattern": "超距離分光管"
     },
     "ko_KR": {
-      "pattern": "망원 튜브"
+      "pattern": "초거리 빛 반사 파이프"
     },
     "es_ES": {
       "pattern": "tubo de teleobjetivo"
@@ -1427,13 +1427,13 @@
       "pattern": "重息壤"
     },
     "en_US": {
-      "pattern": "Heavy soil"
+      "pattern": "Heavy Xiranite"
     },
     "ja_JP": {
       "pattern": "重い土壌"
     },
     "ko_KR": {
-      "pattern": "무거운 토양"
+      "pattern": "중식양"
     },
     "es_ES": {
       "pattern": "suelo pesado"
@@ -1447,16 +1447,16 @@
       "pattern": "錢幣收集"
     },
     "en_US": {
-      "pattern": "coin collection"
+      "pattern": "T-Creds"
     },
     "ja_JP": {
-      "pattern": "コインコレクション"
+      "pattern": "通貨収集"
     },
     "ko_KR": {
-      "pattern": "동전 수집"
+      "pattern": "화폐 수집"
     },
     "es_ES": {
-      "pattern": "colección de monedas"
+      "pattern": "T-Creds"
     }
   },
   "k_ff00a312": {
@@ -1513,7 +1513,7 @@
       "pattern": "ルアン・イー"
     },
     "ko_KR": {
-      "pattern": "루안 이"
+      "pattern": "원일"
     },
     "es_ES": {
       "pattern": "Ruan Yi"
@@ -1547,16 +1547,16 @@
       "pattern": "首墩"
     },
     "en_US": {
-      "pattern": "first pier"
+      "pattern": "Marker Stone"
     },
     "ja_JP": {
-      "pattern": "最初の桟橋"
+      "pattern": "首礎"
     },
     "ko_KR": {
-      "pattern": "첫 번째 부두"
+      "pattern": "수돈"
     },
     "es_ES": {
-      "pattern": "primer muelle"
+      "pattern": "Piedra Marcadora"
     }
   },
   "k_d5586b4b": {
@@ -1587,16 +1587,16 @@
       "pattern": "影拓豐碑"
     },
     "en_US": {
-      "pattern": "Yingtuo Monument"
+      "pattern": "Umbral Monument"
     },
     "ja_JP": {
-      "pattern": "影拓記念碑"
+      "pattern": "映像の記念碑"
     },
     "ko_KR": {
-      "pattern": "영탁 비석"
+      "pattern": "그림자 이정표"
     },
     "es_ES": {
-      "pattern": "Monumento Yingtuo"
+      "pattern": "Monumento del umbral"
     }
   },
   "k_zhuoliu": {
@@ -1687,16 +1687,40 @@
       "pattern": "藏劍谷"
     },
     "en_US": {
-      "pattern": "Zangjian Valley"
+      "pattern": "Sword Vault Dale"
     },
     "ja_JP": {
-      "pattern": "ゾウジエン谷"
+      "pattern": "蔵剣谷"
     },
     "ko_KR": {
-      "pattern": "장검곡"
+      "pattern": "장검 골짜기"
     },
     "es_ES": {
-      "pattern": "Valle Zangjian"
+      "pattern": "Valle Ocultaespadas"
+    }
+  },
+  "k_727bb38b": {
+    "zh_CN": {
+      "pattern": "死寂争鸣"
+    }
+  },
+  "k_825cdc26": {
+    "zh_CN": {
+      "pattern": "灼铜零件"
+    }
+  },
+  "k_871bc220": {
+    "zh_CN": {
+      "pattern": "盈天台建设站"
+    },
+    "en_US": {
+      "pattern": "Xiranflow Cloudseeder Station"
+    },
+    "ja_JP": {
+      "pattern": "満天台建設基地"
+    },
+    "ko_KR": {
+      "pattern": "영천대 건설 기지"
     }
   }
 }

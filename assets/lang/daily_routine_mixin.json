@@ -107,7 +107,7 @@
       "pattern": "會客室"
     },
     "en_US": {
-      "pattern": "reception room"
+      "pattern": "Reception Room"
     },
     "ja_JP": {
       "pattern": "応接室"
@@ -116,7 +116,7 @@
       "pattern": "응접실"
     },
     "es_ES": {
-      "pattern": "sala de recepción"
+      "pattern": "Sala de recepción"
     }
   },
   "k_0e2d3a3c": {
@@ -1067,16 +1067,16 @@
       "string": "倉儲節點"
     },
     "en_US": {
-      "string": "Warehousing node"
+      "string": "Depot Node"
     },
     "ja_JP": {
-      "string": "倉庫ノード"
+      "string": "保管ボックス"
     },
     "ko_KR": {
-      "string": "창고 노드"
+      "string": "저장고 노드"
     },
     "es_ES": {
-      "string": "Nodo de almacenamiento"
+      "string": "Nodo de depósito"
     }
   },
   "k_9f929560": {

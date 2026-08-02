@@ -7,13 +7,13 @@
       "pattern": "信用"
     },
     "en_US": {
-      "pattern": "Credit"
+      "pattern": "Credits"
     },
     "ja_JP": {
-      "pattern": "クレジット"
+      "pattern": "FP"
     },
     "ko_KR": {
-      "pattern": "신용 거래"
+      "pattern": "크레딧"
     },
     "es_ES": {
       "pattern": "Crédito"

@@ -25,6 +25,28 @@ POLLUTED_MSGIDS = {
     "グローバル設定",
 }
 
+# 官方 API/Atlos 提供、且官方各语言译名与英文相同（非英文回退）的条目。
+# 由 scripts/sync_world_map_langs.py / sync_map_mark_langs.py 同步，保持与官方一致。
+OFFICIAL_SAME_AS_ENGLISH = {
+    "武陵",  # es 官方 = "Wuling"
+    # mark 模板名（es_MX 官方未本地化，与英文同名）
+    "三位一体",  # Triaggelos
+    "钱币收集",  # T-Creds
+    "聂菲斯",  # Nefarith
+    "阮一",  # Ruan Yi
+    "晶锥天使",  # Hedron
+    "晶锥天使δ",  # Hedron δ
+    "芽针",  # Yazhen
+    "锦草",  # Jincao
+    "息壤气",  # Xiragen
+    "惰气",  # Inergen
+    # 干员名（wiki 官方 es 译名与英文相同）
+    "安塔尔",  # Antal
+    "陈千语",  # Chen Qianyu
+    "伊冯",  # Yvonne
+    "庄方宜",  # Zhuang Fangyi
+}
+
 
 class PoLocaleConsistencyTestCase(unittest.TestCase):
     @classmethod
@@ -61,7 +83,12 @@ class PoLocaleConsistencyTestCase(unittest.TestCase):
                 if not HAN_RE.search(entry.msgid):
                     continue
                 english_text = english.get(entry.msgid, "")
-                if english_text and entry.msgstr == english_text and entry.msgstr != entry.msgid:
+                if (
+                    english_text
+                    and entry.msgstr == english_text
+                    and entry.msgstr != entry.msgid
+                    and entry.msgid not in OFFICIAL_SAME_AS_ENGLISH
+                ):
                     errors.append(f"{locale}: English fallback {entry.msgid!r}")
                 if locale in {"es_ES", "ko_KR"} and entry.msgstr == entry.msgid:
                     errors.append(f"{locale}: untranslated source {entry.msgid!r}")

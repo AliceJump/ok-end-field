@@ -227,16 +227,16 @@
       "pattern": "物資調度終端"
     },
     "en_US": {
-      "pattern": "Material dispatch terminal"
+      "pattern": "Stock Redistribution Terminal"
     },
     "ja_JP": {
-      "pattern": "資材発送端末"
+      "pattern": "商品取引端末"
     },
     "ko_KR": {
-      "pattern": "자재발송터미널"
+      "pattern": "물자 관리 단말기"
     },
     "es_ES": {
-      "pattern": "Terminal de despacho de materiales"
+      "pattern": "Terminal de redistribución de existencias"
     }
   },
   "k_02894ea7": {

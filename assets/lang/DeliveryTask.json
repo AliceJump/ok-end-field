@@ -7,16 +7,16 @@
       "string": "倉儲節點"
     },
     "en_US": {
-      "string": "Warehousing node"
+      "string": "Depot Node"
     },
     "ja_JP": {
-      "string": "倉庫ノード"
+      "string": "保管ボックス"
     },
     "ko_KR": {
-      "string": "창고 노드"
+      "string": "저장고 노드"
     },
     "es_ES": {
-      "string": "Nodo de almacenamiento"
+      "string": "Nodo de depósito"
     }
   },
   "k_38108eaa": {
@@ -207,16 +207,16 @@
       "string": "倉儲節點"
     },
     "en_US": {
-      "string": "Warehousing node"
+      "string": "Depot Node"
     },
     "ja_JP": {
-      "string": "倉庫ノード"
+      "string": "保管ボックス"
     },
     "ko_KR": {
-      "string": "창고 노드"
+      "string": "저장고 노드"
     },
     "es_ES": {
-      "string": "Nodo de almacenamiento"
+      "string": "Nodo de depósito"
     }
   },
   "k_view_location": {

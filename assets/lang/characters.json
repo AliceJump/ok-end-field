@@ -7,13 +7,13 @@
       "string": "莊方宜"
     },
     "en_US": {
-      "string": "zhuang_fangyi"
+      "string": "Zhuang Fangyi"
     },
     "ja_JP": {
-      "string": "荘方儀"
+      "string": "ゾアン・ファンイ"
     },
     "ko_KR": {
-      "string": "주앙 팡이"
+      "string": "장방이"
     },
     "es_ES": {
       "string": "Zhuang Fangyi"
@@ -24,19 +24,19 @@
       "string": "洛茜"
     },
     "zh_TW": {
-      "string": "洛茜"
+      "string": "洛西"
     },
     "en_US": {
-      "string": "rossi"
+      "string": "Rossi"
     },
     "ja_JP": {
-      "string": "ロージー"
+      "string": "ロッシ"
     },
     "ko_KR": {
-      "string": "로지"
+      "string": "로시"
     },
     "es_ES": {
-      "string": "Rosie"
+      "string": "Rossi"
     }
   },
   "tang_tang": {
@@ -47,7 +47,7 @@
       "string": "湯湯"
     },
     "en_US": {
-      "string": "tangtang"
+      "string": "Tangtang"
     },
     "ja_JP": {
       "string": "タンタン"
@@ -56,7 +56,7 @@
       "string": "탕탕"
     },
     "es_ES": {
-      "string": "tantang"
+      "string": "Tangtang"
     }
   },
   "guan_li_yuan": {
@@ -67,16 +67,16 @@
       "string": "管理員"
     },
     "en_US": {
-      "string": "administrator"
+      "string": "Endministrator"
     },
     "ja_JP": {
-      "string": "管理者"
+      "string": "管理人"
     },
     "ko_KR": {
       "string": "관리자"
     },
     "es_ES": {
-      "string": "administrador"
+      "string": "Endministrator"
     }
   },
   "li_feng": {
@@ -87,16 +87,16 @@
       "string": "黎風"
     },
     "en_US": {
-      "string": "lifeng"
+      "string": "Lifeng"
     },
     "ja_JP": {
-      "string": "李峰"
+      "string": "リーフォン"
     },
     "ko_KR": {
-      "string": "리펑"
+      "string": "여풍"
     },
     "es_ES": {
-      "string": "Li Feng"
+      "string": "Lifeng"
     }
   },
   "yu_jin": {
@@ -107,16 +107,16 @@
       "string": "餘燼"
     },
     "en_US": {
-      "string": "ember"
+      "string": "Ember"
     },
     "ja_JP": {
-      "string": "残り火"
+      "string": "エンバー"
     },
     "ko_KR": {
-      "string": "타다 남은 것"
+      "string": "엠버"
     },
     "es_ES": {
-      "string": "ascua"
+      "string": "Ember"
     }
   },
   "jie_er_pei_ta": {
@@ -127,16 +127,16 @@
       "string": "潔爾佩塔"
     },
     "en_US": {
-      "string": "gilberta"
+      "string": "Gilberta"
     },
     "ja_JP": {
-      "string": "ゲルペタ"
+      "string": "ギルベルタ"
     },
     "ko_KR": {
-      "string": "게르페타"
+      "string": "질베르타"
     },
     "es_ES": {
-      "string": "Gerpeta"
+      "string": "Gilberta"
     }
   },
   "ai_er_dai_la": {
@@ -147,16 +147,16 @@
       "string": "艾爾黛拉"
     },
     "en_US": {
-      "string": "ardelia"
+      "string": "Ardelia"
     },
     "ja_JP": {
-      "string": "エルデラ"
+      "string": "アルデリア"
     },
     "ko_KR": {
-      "string": "엘델라"
+      "string": "아델리아"
     },
     "es_ES": {
-      "string": "eldela"
+      "string": "Ardelia"
     }
   },
   "jun_wei": {
@@ -167,16 +167,16 @@
       "string": "駿衛"
     },
     "en_US": {
-      "string": "pogranichnik"
+      "string": "Pogranichnik"
     },
     "ja_JP": {
-      "string": "順威"
+      "string": "ポグラニチニク"
     },
     "ko_KR": {
-      "string": "순웨이"
+      "string": "포그라니치니크"
     },
     "es_ES": {
-      "string": "Shun Wei"
+      "string": "Pogranichnik"
     }
   },
   "lai_wan_ting": {
@@ -187,16 +187,16 @@
       "string": "萊萬汀"
     },
     "en_US": {
-      "string": "laevatain"
+      "string": "Laevatain"
     },
     "ja_JP": {
-      "string": "ルウォンティン"
+      "string": "レーヴァテイン"
     },
     "ko_KR": {
-      "string": "르원틴"
+      "string": "레바테인"
     },
     "es_ES": {
-      "string": "lewontin"
+      "string": "Laevatain"
     }
   },
   "yi_feng": {
@@ -207,7 +207,7 @@
       "string": "伊馮"
     },
     "en_US": {
-      "string": "yvonne"
+      "string": "Yvonne"
     },
     "ja_JP": {
       "string": "イヴォンヌ"
@@ -216,7 +216,7 @@
       "string": "이본"
     },
     "es_ES": {
-      "string": "yvonne"
+      "string": "Yvonne"
     }
   },
   "bie_li": {
@@ -227,16 +227,16 @@
       "string": "別禮"
     },
     "en_US": {
-      "string": "last_rite"
+      "string": "Last Rite"
     },
     "ja_JP": {
-      "string": "別れ"
+      "string": "ラストライト"
     },
     "ko_KR": {
-      "string": "작별"
+      "string": "라스트 라이트"
     },
     "es_ES": {
-      "string": "despedida"
+      "string": "Last Rite"
     }
   },
   "chen_qian_yu": {
@@ -247,13 +247,13 @@
       "string": "陳千語"
     },
     "en_US": {
-      "string": "chen_qianyu"
+      "string": "Chen Qianyu"
     },
     "ja_JP": {
-      "string": "チェン・チエンユー"
+      "string": "チェン・センユー"
     },
     "ko_KR": {
-      "string": "첸 첸위"
+      "string": "진천우"
     },
     "es_ES": {
       "string": "Chen Qianyu"
@@ -264,19 +264,19 @@
       "string": "昼雪"
     },
     "zh_TW": {
-      "string": "日雪"
+      "string": "晝雪"
     },
     "en_US": {
-      "string": "snowshine"
+      "string": "Snowshine"
     },
     "ja_JP": {
-      "string": "日中の雪"
+      "string": "スノーシャイン"
     },
     "ko_KR": {
-      "string": "일 눈"
+      "string": "스노우샤인"
     },
     "es_ES": {
-      "string": "dia nieve"
+      "string": "Snowshine"
     }
   },
   "sai_xi": {
@@ -287,16 +287,16 @@
       "string": "賽希"
     },
     "en_US": {
-      "string": "xaihi"
+      "string": "Xaihi"
     },
     "ja_JP": {
-      "string": "サイヒ"
+      "string": "ザイヒ"
     },
     "ko_KR": {
-      "string": "사이히"
+      "string": "자이히"
     },
     "es_ES": {
-      "string": "Saihi"
+      "string": "Xaihi"
     }
   },
   "lang_wei": {
@@ -307,16 +307,16 @@
       "string": "狼衛"
     },
     "en_US": {
-      "string": "wulfgard"
+      "string": "Wulfgard"
     },
     "ja_JP": {
       "string": "ウルフガード"
     },
     "ko_KR": {
-      "string": "울프 가드"
+      "string": "울프가드"
     },
     "es_ES": {
-      "string": "Guardia del lobo"
+      "string": "Wulfgard"
     }
   },
   "pei_li_ka": {
@@ -327,16 +327,16 @@
       "string": "佩麗卡"
     },
     "en_US": {
-      "string": "perlica"
+      "string": "Perlica"
     },
     "ja_JP": {
       "string": "ペリカ"
     },
     "ko_KR": {
-      "string": "페리카"
+      "string": "펠리카"
     },
     "es_ES": {
-      "string": "Perica"
+      "string": "Perlica"
     }
   },
   "hu_guang": {
@@ -347,16 +347,16 @@
       "string": "弧光"
     },
     "en_US": {
-      "string": "arclight"
+      "string": "Arclight"
     },
     "ja_JP": {
-      "string": "アーク"
+      "string": "アークライト"
     },
     "ko_KR": {
-      "string": "호"
+      "string": "아크라이트"
     },
     "es_ES": {
-      "string": "arco"
+      "string": "Arclight"
     }
   },
   "a_lie_shi": {
@@ -367,16 +367,16 @@
       "string": "阿列什"
     },
     "en_US": {
-      "string": "alesh"
+      "string": "Alesh"
     },
     "ja_JP": {
-      "string": "アレス"
+      "string": "アレッシュ"
     },
     "ko_KR": {
-      "string": "아레스"
+      "string": "알레쉬"
     },
     "es_ES": {
-      "string": "Ares"
+      "string": "Alesh"
     }
   },
   "ai_wei_wen_na": {
@@ -387,16 +387,16 @@
       "string": "艾維文娜"
     },
     "en_US": {
-      "string": "avywenna"
+      "string": "Avywenna"
     },
     "ja_JP": {
-      "string": "アビバ"
+      "string": "アイビーエナ"
     },
     "ko_KR": {
-      "string": "아비바"
+      "string": "아비웨나"
     },
     "es_ES": {
-      "string": "Aviva"
+      "string": "Avywenna"
     }
   },
   "da_pan": {
@@ -407,16 +407,16 @@
       "string": "大潘"
     },
     "en_US": {
-      "string": "da_pan"
+      "string": "Da Pan"
     },
     "ja_JP": {
       "string": "ダパン"
     },
     "ko_KR": {
-      "string": "다판"
+      "string": "판"
     },
     "es_ES": {
-      "string": "dapán"
+      "string": "Da pan"
     }
   },
   "ai_te_la": {
@@ -427,16 +427,16 @@
       "string": "埃特拉"
     },
     "en_US": {
-      "string": "estella"
+      "string": "Estella"
     },
     "ja_JP": {
-      "string": "エトラ"
+      "string": "エステーラ"
     },
     "ko_KR": {
-      "string": "에트라"
+      "string": "에스텔라"
     },
     "es_ES": {
-      "string": "Etra"
+      "string": "Estella"
     }
   },
   "ka_qi_er": {
@@ -447,16 +447,16 @@
       "string": "卡契爾"
     },
     "en_US": {
-      "string": "catcher"
+      "string": "Catcher"
     },
     "ja_JP": {
-      "string": "カッヘル"
+      "string": "キャッチャー"
     },
     "ko_KR": {
-      "string": "카첼"
+      "string": "카치르"
     },
     "es_ES": {
-      "string": "Kachel"
+      "string": "Catcher"
     }
   },
   "an_ta_er": {
@@ -467,7 +467,7 @@
       "string": "安塔爾"
     },
     "en_US": {
-      "string": "antal"
+      "string": "Antal"
     },
     "ja_JP": {
       "string": "アンタル"
@@ -487,16 +487,16 @@
       "string": "螢石"
     },
     "en_US": {
-      "string": "fluorite"
+      "string": "Fluorite"
     },
     "ja_JP": {
-      "string": "蛍石"
+      "string": "フローライト"
     },
     "ko_KR": {
-      "string": "형석"
+      "string": "플루라이트"
     },
     "es_ES": {
-      "string": "fluorita"
+      "string": "Fluorite"
     }
   },
   "qiu_li": {
@@ -507,16 +507,96 @@
       "string": "秋栗"
     },
     "en_US": {
-      "string": "akekuri"
+      "string": "Akekuri"
     },
     "ja_JP": {
-      "string": "九里"
+      "string": "アケクリ"
     },
     "ko_KR": {
-      "string": "큐리"
+      "string": "아케쿠리"
     },
     "es_ES": {
-      "string": "Qiuri"
+      "string": "Akekuri"
+    }
+  },
+  "jue": {
+    "zh_CN": {
+      "string": "诀"
+    },
+    "zh_TW": {
+      "string": "訣"
+    },
+    "en_US": {
+      "string": "Arcane"
+    },
+    "ja_JP": {
+      "string": "オクギ"
+    },
+    "ko_KR": {
+      "string": "결"
+    },
+    "es_ES": {
+      "string": "Arcane"
+    }
+  },
+  "ka_miao": {
+    "zh_CN": {
+      "string": "卡缪"
+    },
+    "zh_TW": {
+      "string": "卡繆"
+    },
+    "en_US": {
+      "string": "Camille"
+    },
+    "ja_JP": {
+      "string": "カミーユ"
+    },
+    "ko_KR": {
+      "string": "카뮤"
+    },
+    "es_ES": {
+      "string": "Camille"
+    }
+  },
+  "mi_fu": {
+    "zh_CN": {
+      "string": "弭弗"
+    },
+    "zh_TW": {
+      "string": "弭弗"
+    },
+    "en_US": {
+      "string": "Mi Fu"
+    },
+    "ja_JP": {
+      "string": "ミ・フ"
+    },
+    "ko_KR": {
+      "string": "미브"
+    },
+    "es_ES": {
+      "string": "Mi Fu"
+    }
+  },
+  "li_nuo": {
+    "zh_CN": {
+      "string": "梨诺"
+    },
+    "zh_TW": {
+      "string": "梨諾"
+    },
+    "en_US": {
+      "string": "Liino"
+    },
+    "ja_JP": {
+      "string": "リーノ"
+    },
+    "ko_KR": {
+      "string": "리노"
+    },
+    "es_ES": {
+      "string": "Liino"
     }
   }
 }
