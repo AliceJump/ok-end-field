@@ -152,26 +152,28 @@ jobs:
           for mp in maps:
               assert len(mp["name"]) >= 5, f"{mp['id']} missing languages"
 
-          # ---------- wiki_items.json 校验（次级可信指标） ----------
+          # ---------- wiki_items.json 校验（次级可信指标；CI 无本地捕获数据时跳过） ----------
 
-          with open("assets/data/wiki_items.json", encoding="utf-8") as f:
-              wiki_items = json.load(f)
-          assert len(wiki_items) >= 800, "wiki_items.json lost keys."
-          for zh, node in wiki_items.items():
-              # 各语言存在则必须非空（官方源有缺口，不做必填断言）
-              for lang in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"):
-                  val = node.get(lang, {}).get("string")
-                  assert val is None or val, f"wiki item {zh} empty {lang}"
+          wiki_items_path = Path("assets/data/wiki_items.json")
+          if wiki_items_path.exists():
+              with open(wiki_items_path, encoding="utf-8") as f:
+                  wiki_items = json.load(f)
+              assert len(wiki_items) >= 800, "wiki_items.json lost keys."
+              for zh, node in wiki_items.items():
+                  # 各语言存在则必须非空（官方源有缺口，不做必填断言）
+                  for lang in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"):
+                      val = node.get(lang, {}).get("string")
+                      assert val is None or val, f"wiki item {zh} empty {lang}"
 
-          # zh_CN 条目占比（简中来源 skland，为次级指标，不强制全覆盖）
-          with_zhcn = sum(1 for n in wiki_items.values() if n.get("zh_CN", {}).get("string"))
-          assert with_zhcn >= 800, f"too few zh_CN entries: {with_zhcn}"
-          # 键必须为官方简中名（非 itemId）；有 zh_CN 节点时须与键一致
-          for zh, node in wiki_items.items():
-              node_zh = node.get("zh_CN", {}).get("string")
-              if node_zh:
-                  assert zh == node_zh.strip(), \
-                      f"wiki_items key not its zh_CN name: {zh!r}"
+              # zh_CN 条目占比（简中来源 skland，为次级指标，不强制全覆盖）
+              with_zhcn = sum(1 for n in wiki_items.values() if n.get("zh_CN", {}).get("string"))
+              assert with_zhcn >= 800, f"too few zh_CN entries: {with_zhcn}"
+              # 键必须为官方简中名（非 itemId）；有 zh_CN 节点时须与键一致
+              for zh, node in wiki_items.items():
+                  node_zh = node.get("zh_CN", {}).get("string")
+                  if node_zh:
+                      assert zh == node_zh.strip(), \
+                          f"wiki_items key not its zh_CN name: {zh!r}"
 
           # ---------- ok.po 完整性 ----------
 
