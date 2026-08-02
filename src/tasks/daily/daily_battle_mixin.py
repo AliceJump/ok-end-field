@@ -730,7 +730,9 @@ class DailyBattleFeature:
         for _ in range(5):
             if is_higher_order:
                 # 高阶关卡，使用 feature_dict 查找位置
-                location = [self.wait_feature(feature=higher_order_feature_dict[self.battle_ctx.stage_name], raise_if_not_found=False, box=self.box_of_screen(0.364, 0.328, 0.431, 0.781), time_out=2)]
+                location = self.wait_feature(feature=higher_order_feature_dict[self.battle_ctx.stage_name], raise_if_not_found=False, box=self.box_of_screen(0.364, 0.328, 0.431, 0.781), time_out=2)
+                if location:
+                    location = [location]
             else:
                 # 普通关卡
                 location = self.wait_ocr(match=re.compile(
