@@ -131,14 +131,18 @@ def get_operator_infoboxes() -> dict:
     return out
 
 
-def load_json(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8"))
+def load_lang_characters() -> dict:
+    return json.loads(LANG_CHARACTERS_JSON.read_text(encoding="utf-8"))
+
+
+def load_canon_characters() -> dict:
+    return json.loads(CANON_CHARACTERS_JSON.read_text(encoding="utf-8"))
 
 
 def sync_characters(wiki: dict) -> tuple:
     """同步 lang + canonical characters JSON；返回 (变更, 新增, 需人工处理的wiki独有)。"""
-    lang = load_json(LANG_CHARACTERS_JSON)
-    canon = load_json(CANON_CHARACTERS_JSON)
+    lang = load_lang_characters()
+    canon = load_canon_characters()
     zh_to_key = {v["zh_CN"]["string"]: k for k, v in lang.items()}
 
     changed, added, manual = [], [], []
