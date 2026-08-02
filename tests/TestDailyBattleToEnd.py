@@ -8,6 +8,7 @@ from src.tasks.daily.daily_battle_mixin import BattleContext, DailyBattleFeature
 class _ToEndTaskHarness:
     def __init__(self):
         self.events = []
+        self.width = 1920
         self.box = SimpleNamespace(bottom_right=object())
         self.lang = SimpleNamespace(
             daily_battle_mixin=SimpleNamespace(
@@ -34,8 +35,22 @@ class _ToEndTaskHarness:
         self.events.append("align")
         return False
 
+    def move_keys(self, *args, **kwargs):
+        self.events.append("move")
+
+    def active_and_send_mouse_delta(self, *args, **kwargs):
+        self.events.append("mouse_delta")
+
+    def rotate_search(self, check_func, **kwargs):
+        self.events.append("rotate")
+        return check_func()
+
+    def strafe_search(self, check_func, **kwargs):
+        self.events.append("strafe")
+        return check_func()
+
     def sleep(self, timeout):
-        return None
+        self.events.append(("sleep", timeout))
 
 
 class TestDailyBattleToEnd(unittest.TestCase):
@@ -59,7 +74,25 @@ class TestDailyBattleToEnd(unittest.TestCase):
         ]
         self.assertEqual(1, len(middle_click_indexes))
         self.assertLess(middle_click_indexes[0], task.events.index("yolo_hit"))
-        self.assertEqual(3, task.events.count("ocr_miss"))
+        self.assertEqual(6, task.events.count("ocr_miss"))
+        self.assertEqual(1, task.events.count("rotate"))
+        self.assertEqual(3, task.events.count("strafe"))
+
+    def test_normal_reward_search_has_no_redundant_one_second_sleep(self):
+        task = _ToEndTaskHarness()
+        task.yolo_detect = lambda *args, **kwargs: []
+        feature = DailyBattleFeature.__new__(DailyBattleFeature)
+        feature._task = task
+        feature.battle_ctx = BattleContext(category_name="normal")
+
+        with patch(
+            "src.tasks.daily.daily_battle_mixin.is_world_map_text",
+            return_value=False,
+        ):
+            result = feature.to_end()
+
+        self.assertTrue(result)
+        self.assertNotIn(("sleep", 1), task.events)
 
 
 if __name__ == "__main__":
