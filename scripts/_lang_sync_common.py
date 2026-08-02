@@ -22,6 +22,22 @@ def write_json(path: Path, data) -> None:
     )
 
 
+# 仓库数据支持的 6 种语言（wiki 官方表另有 ru_RU/th_TH/id_ID，不写入仓库 lang JSON）
+REPO_LANGS = ("zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES")
+
+# 名称规范化映射：键名差异（全角罗马数字/括号/空格）归一到官方简中名，
+# 如 储藏箱Ⅳ -> 储藏箱IV，避免因写法差异匹配不上官方译名
+_ZH_NORM = str.maketrans({
+    "Ⅰ": "I", "Ⅱ": "II", "Ⅲ": "III", "Ⅳ": "IV", "Ⅴ": "V", "Ⅵ": "VI",
+    "（": "(", "）": ")", "，": ",", "；": ";", "　": "",
+})
+
+
+def norm_zh_name(name: str) -> str:
+    """官方名键名差异归一（全角罗马数字/括号/空白）。"""
+    return name.translate(_ZH_NORM).strip()
+
+
 def build_official(merged: dict, zh_of) -> dict:
     """把合并表转为 {简中名: {lang: 官方译名}}，重复简中名取首次。
 
@@ -139,12 +155,20 @@ def sync_lang_jsons(official: dict, lang_dir: Path, skip_files: tuple = ()
                     ) -> tuple[dict, list]:
     """以官方表覆盖/补齐 assets/lang/*.json 中相同中文的 string/pattern 节点。
 
-    - 匹配键：节点 zh_CN 值（string 或 pattern）== 官方简中名（相同中文）；
+    - 匹配键：节点 zh_CN 值（string 或 pattern）== 官方简中名
+      （经 norm_zh_name 归一，全角罗马数字/括号等写法差异也能命中）；
     - string/pattern 类型不限，目标语言节点含哪个键就替换哪个值；
     - 语言节点缺失时新建（按 zh_CN 节点的 string/pattern 风格）；
+    - 只补仓库支持的 6 种语言（REPO_LANGS），wiki 官方表的 ru_RU/th_TH/id_ID
+      不写入仓库 lang JSON，已有这类节点也不动；
     - zh_CN 不覆盖；仅官方有值且与现有不同时写入。
     返回 (每文件统计, 变更列表)。
     """
+    # 官方名查找表：原始键 + 归一化键都指向同一份译名（原始键优先）
+    lookup = {}
+    for zh, vals in official.items():
+        lookup.setdefault(zh, vals)
+        lookup.setdefault(norm_zh_name(zh), vals)
     all_stats = {}
     all_touched = []
     for path in sorted(lang_dir.glob("*.json")):
@@ -165,9 +189,17 @@ def sync_lang_jsons(official: dict, lang_dir: Path, skip_files: tuple = ()
                     zh = val.strip()
                     sub_style = sub
                     break
-            if not zh or zh not in official:
+            if not zh:
                 continue
-            for lang, val in official[zh].items():
+            vals = lookup.get(zh)
+            if vals is None:
+                vals = lookup.get(norm_zh_name(zh))
+            if not vals:
+                continue
+            for lang in REPO_LANGS:
+                val = (vals.get(lang) or "").strip()
+                if not val:
+                    continue
                 cur = node.get(lang)
                 has_val = (
                     isinstance(cur, dict)
