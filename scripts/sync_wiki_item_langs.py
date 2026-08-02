@@ -220,7 +220,8 @@ def sync_po(merged: dict[str, dict[str, str]], zhcn: dict[str, str]) -> tuple[di
         official.pop(zh, None)
         zhcn.pop(zh, None)
     all_stats, all_touched = sync_po_entries(official, PO_LOCALES, I18N_DIR, quiet=True)
-    zh_stats, zh_touched = sync_zh_cn_self_patch(zhcn.values(), I18N_DIR, quiet=True)
+    zh_stats, zh_touched = sync_zh_cn_self_patch(zhcn.values(), I18N_DIR,
+                                                 update_existing=True, quiet=True)
     all_stats = {**all_stats, **zh_stats}
     all_touched.extend(zh_touched)
     return all_stats, all_touched

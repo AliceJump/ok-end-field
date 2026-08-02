@@ -113,7 +113,7 @@ def sync_po(merged: dict[str, dict[str, str]]) -> tuple[dict, list]:
 
     all_stats, all_touched = sync_po_entries(official, ("zh_TW", *PO_LANGS), I18N_DIR)
     zh_stats, zh_touched = sync_zh_cn_self_patch(
-        official.keys(), I18N_DIR, update_existing=False
+        official.keys(), I18N_DIR, update_existing=True
     )
     all_stats = {**zh_stats, **all_stats}
     all_touched = zh_touched + all_touched
