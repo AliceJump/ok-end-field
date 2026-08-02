@@ -63,7 +63,7 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = time.strftime("%Y%m%d_%H%M%S")
 
-    launch_kwargs = {"channel": "chrome"}
+    launch_kwargs = {}
     if not args.headless:
         launch_kwargs["headless"] = False
     if args.proxy:
@@ -71,7 +71,11 @@ def main():
 
     summary = {}
     with sync_playwright() as p:
-        browser = p.chromium.launch(**launch_kwargs)
+        try:
+            browser = p.chromium.launch(channel="chrome", **launch_kwargs)
+        except Exception as e:
+            print("system chrome unavailable, using bundled chromium:", e, flush=True)
+            browser = p.chromium.launch(**launch_kwargs)
         context = browser.new_context(locale="zh-CN")
         page = context.new_page()
         page.set_default_timeout(60000)
