@@ -27,6 +27,8 @@ import sys
 from pathlib import Path
 from urllib import request, parse
 
+from pypinyin import pinyin, Style
+
 ROOT = Path(__file__).resolve().parent.parent
 LANG_CHARACTERS_JSON = ROOT / "assets" / "lang" / "characters.json"
 CANON_CHARACTERS_JSON = ROOT / "assets" / "data" / "characters.json"
@@ -53,7 +55,9 @@ SYNC_LANGS = ("es_ES",)
 # 新角色节点补全用语言（保证节点完整，随后由 wiki_items 覆盖其余语言）
 NEW_OP_LANGS = ("en_US", "ja_JP", "ko_KR", "es_ES")
 
-# 中文 canonical 名 -> characters.json 内部 key（程序 ID，人工维护）
+# 中文 canonical 名 -> characters.json 内部 key（程序 ID）。
+# 新角色默认由 pypinyin 自动生成拼音 key；此处仅保留已验证的
+# 官方拼写与多音字例外（如 什/缪/茜 等，拼音库默认读音可能错误）。
 ZH_KEY_MAP = {
     "庄方宜": "zhuang_fang_yi", "洛茜": "luo_qian", "汤汤": "tang_tang",
     "管理员": "guan_li_yuan", "黎风": "li_feng", "余烬": "yu_jin",
@@ -139,17 +143,25 @@ def load_canon_characters() -> dict:
     return json.loads(CANON_CHARACTERS_JSON.read_text(encoding="utf-8"))
 
 
+def zh_to_key(zh: str) -> str:
+    """中文名转程序 key：已验证映射优先，否则 pypinyin 自动生成拼音 key。"""
+    key = ZH_KEY_MAP.get(zh)
+    if key:
+        return key
+    return "_".join(x[0] for x in pinyin(zh, style=Style.NORMAL))
+
+
 def sync_characters(wiki: dict) -> tuple:
     """同步 lang + canonical characters JSON；返回 (变更, 新增, 需人工处理的wiki独有)。"""
     lang = load_lang_characters()
     canon = load_canon_characters()
-    zh_to_key = {v["zh_CN"]["string"]: k for k, v in lang.items()}
+    key_by_zh = {v["zh_CN"]["string"]: k for k, v in lang.items()}
 
     changed, added, manual = [], [], []
     for zh, wiki_vals in sorted(wiki.items()):
-        key = zh_to_key.get(zh)
+        key = key_by_zh.get(zh)
         if key is None:
-            key = ZH_KEY_MAP.get(zh)
+            key = zh_to_key(zh)
         if key is None:
             manual.append(zh)
             continue

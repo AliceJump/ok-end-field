@@ -29,6 +29,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --only-binary :all: polib==1.2.0
+          pip install --only-binary :all: pypinyin==0.55.0
 
       - name: Sync translations from official API
         run: |
