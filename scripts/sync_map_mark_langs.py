@@ -25,10 +25,15 @@ import time
 from pathlib import Path
 from urllib import parse, request
 
-try:
-    import polib
-except ImportError:
-    polib = None
+from _lang_sync_common import (
+    build_official,
+    print_json_result,
+    print_po_result,
+    sync_lang_jsons,
+    sync_po_entries,
+    sync_zh_cn_self_patch,
+    write_json,
+)
 
 SKPORT = "https://zonai.skport.com"
 
@@ -96,13 +101,6 @@ def fetch_templates(lang: str, map_id: str, level_id: str | None) -> dict[str, s
     }
 
 
-def write_json(path: Path, data):
-    path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-
-
 def sync_po(merged: dict[str, dict[str, str]]) -> tuple[dict, list]:
     """把官方译名同步进 i18n/*/LC_MESSAGES/ok.po。
 
@@ -110,63 +108,15 @@ def sync_po(merged: dict[str, dict[str, str]]) -> tuple[dict, list]:
     - 缺失条目：新增（zh_CN 外全部官方译名；缺官方值的语言保持空待补）。
     返回 (每语言统计, 变更列表)。
     """
-    if polib is None:
-        print("  [po] polib not installed; skipping ok.po sync")
-        return {}, []
-
     # zh -> {en_US, ja_JP, ko_KR, es_ES}（重复 zh 名取首次，官方同名）
-    official = {}
-    for tid, langs in merged.items():
-        zh = (langs.get("zh_CN") or "").strip()
-        if not zh or zh in official:
-            continue
-        official[zh] = {l: langs.get(l) for l in PO_LANGS}
+    official = build_official(merged, lambda _tid, langs: langs.get("zh_CN"))
 
-    all_stats = {}
-    all_touched = []
-    for loc in ("zh_CN", "zh_TW", *PO_LANGS):
-        po_path = I18N_DIR / loc / "LC_MESSAGES" / "ok.po"
-        if not po_path.exists():
-            print(f"  [po] missing {po_path}")
-            continue
-        po = polib.pofile(str(po_path))
-        stats = 0
-        touched = []
-
-        by_mid = {}
-        for entry in po:
-            by_mid[entry.msgid.rstrip("\n")] = entry
-
-        for zh, vals in official.items():
-            entry = by_mid.get(zh)
-            if loc == "zh_CN":
-                new = zh
-                if entry is None:
-                    po.append(polib.POEntry(msgid=zh, msgstr=zh))
-                    stats += 1
-                    touched.append((zh, "", zh))
-                continue
-            new = (vals.get(loc) or "").strip()
-            if not new:
-                continue
-            if entry is None:
-                po.append(polib.POEntry(msgid=zh, msgstr=new))
-                stats += 1
-                touched.append((zh, "", new))
-            elif entry.msgstr != new:
-                touched.append((zh, entry.msgstr, new))
-                entry.msgstr = new
-                stats += 1
-
-        if stats:
-            po.save(str(po_path))
-            po.save_as_mofile(str(po_path).replace(".po", ".mo"))
-            print(f"  [po] {loc}: {stats} entries updated")
-        else:
-            print(f"  [po] {loc}: no changes")
-        all_stats[loc] = stats
-        all_touched.extend(touched)
-
+    all_stats, all_touched = sync_po_entries(official, ("zh_TW", *PO_LANGS), I18N_DIR)
+    zh_stats, zh_touched = sync_zh_cn_self_patch(
+        official.keys(), I18N_DIR, update_existing=False
+    )
+    all_stats = {**zh_stats, **all_stats}
+    all_touched = zh_touched + all_touched
     return all_stats, all_touched
 
 
@@ -178,52 +128,8 @@ def sync_other_lang_jsons(merged: dict[str, dict[str, str]]) -> tuple[dict, list
     - zh_CN 不覆盖；仅官方有值且与现有不同时写入。
     返回 (每文件统计, 变更列表)。
     """
-    official = {}
-    for tid, langs in merged.items():
-        zh = (langs.get("zh_CN") or "").strip()
-        if not zh or zh in official:
-            continue
-        official[zh] = {
-            l: (v or "").strip()
-            for l, v in langs.items()
-            if l != "zh_CN" and (v or "").strip()
-        }
-
-    all_stats = {}
-    all_touched = []
-    for path in sorted((ROOT / "assets" / "lang").glob("*.json")):
-        if path.name == "map_marks.json":
-            continue
-        data = json.loads(path.read_text(encoding="utf-8"))
-        stats = 0
-        touched = []
-        for key, node in data.items():
-            zh_node = node.get("zh_CN")
-            if not isinstance(zh_node, dict):
-                continue
-            zh = ""
-            for sub in ("string", "pattern"):
-                val = zh_node.get(sub)
-                if isinstance(val, str):
-                    zh = val.strip()
-                    break
-            if not zh or zh not in official:
-                continue
-            for lang, val in official[zh].items():
-                cur = node.get(lang)
-                if not isinstance(cur, dict):
-                    continue
-                for sub in ("string", "pattern"):
-                    if sub in cur and isinstance(cur[sub], str) and cur[sub] != val:
-                        cur[sub] = val
-                        stats += 1
-                        touched.append((key, zh, lang, val))
-        if stats:
-            write_json(path, data)
-        all_stats[path.name] = stats
-        all_touched.extend(touched)
-
-    return all_stats, all_touched
+    official = build_official(merged, lambda _tid, langs: langs.get("zh_CN"))
+    return sync_lang_jsons(official, ROOT / "assets" / "lang", skip_files=("map_marks.json",))
 
 
 def main():
@@ -305,19 +211,12 @@ def main():
     print()
     print("Syncing official mark names into ok.po...")
     po_stats, po_touched = sync_po(merged)
-    for loc, n in po_stats.items():
-        print(f"  {loc}: {n} entries updated")
-    for mid, old, val in po_touched:
-        print(f"  {mid!r}: {old!r} -> {val!r}")
+    print_po_result(po_stats, po_touched)
 
     print()
     print("Overwriting other lang JSON string nodes with official names...")
     json_stats, json_touched = sync_other_lang_jsons(merged)
-    for fname, n in json_stats.items():
-        if n:
-            print(f"  {fname}: {n} values updated")
-    for key, zh, lang, val in json_touched:
-        print(f"  {key} ({zh}) {lang}: {val!r}")
+    print_json_result(json_stats, json_touched)
 
     print("=" * 60)
     return 0

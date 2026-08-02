@@ -33,14 +33,19 @@ import sys
 from pathlib import Path
 
 try:
-    import polib
-except ImportError:
-    polib = None
-
-try:
     from zhconv import convert as zhconvert
 except ImportError:
     zhconvert = None
+
+from _lang_sync_common import (
+    build_official,
+    print_json_result,
+    print_po_result,
+    sync_lang_jsons,
+    sync_po_entries,
+    sync_zh_cn_self_patch,
+    write_json,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 RAW_DIR = ROOT / "tools" / "wiki_catalog" / "by_lang"
@@ -189,11 +194,13 @@ def merge_zh_cn(merged: dict[str, dict[str, str]], zhcn_batch: Path) -> dict:
     return matched
 
 
-def write_json(path: Path, data):
-    path.write_text(
-        json.dumps(data, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+def _zh_of(iid: str, langs: dict[str, str], zhcn: dict[str, str]) -> str:
+    """条目简中名：skland 官方简中优先，否则 zh_TW 繁转简兜底。"""
+    zh = (zhcn.get(iid) or "").strip()
+    if zh:
+        return zh
+    tw = (langs.get("zh_TW") or "").strip()
+    return zhconvert(tw, "zh-cn") if (zhconvert and tw) else tw
 
 
 def sync_po(merged: dict[str, dict[str, str]], zhcn: dict[str, str]) -> tuple[dict, list]:
@@ -202,84 +209,20 @@ def sync_po(merged: dict[str, dict[str, str]], zhcn: dict[str, str]) -> tuple[di
     msgid 统一用简中名：优先 skland 官方简中（zhcn），否则 zh_TW 名繁转简；
     各语言 msgstr 用对应官方译名。zh_CN 用官方简中自补（msgid == msgstr）。
     """
-    if polib is None:
-        print("  [po] polib not installed; skipping")
-        return {}, []
-
-    # 简中名 -> {locale: 官方译名}
-    official = {}
-    for iid, langs in merged.items():
-        tw = (langs.get("zh_TW") or "").strip()
-        if not tw:
-            continue
-        key = zhcn.get(iid, "").strip() or (zhconvert(tw, "zh-cn") if zhconvert else tw)
-        if not key or key in official:
-            continue
-        official[key] = {l: langs.get(l) for l in PO_LOCALES}
-
     # map_marks 优先：跳过其已有的简中名（由 sync_map_mark_langs.py 先行同步）
     marks_json = ROOT / "assets" / "data" / "map_marks.json"
+    marks_names = ()
     if marks_json.exists():
-        marks = json.loads(marks_json.read_text(encoding="utf-8"))
-        for zh in marks:
-            official.pop(zh, None)
-            zhcn.pop(zh, None)
+        marks_names = tuple(json.loads(marks_json.read_text(encoding="utf-8")))
 
-    all_stats = {}
-    all_touched = []
-    for loc in PO_LOCALES:
-        po_path = I18N_DIR / loc / "LC_MESSAGES" / "ok.po"
-        if not po_path.exists():
-            continue
-        po = polib.pofile(str(po_path))
-        by_mid = {e.msgid.rstrip("\n"): e for e in po}
-        stats = 0
-        touched = []
-        for zh, vals in official.items():
-            new = (vals.get(loc) or "").strip()
-            if not new:
-                continue
-            entry = by_mid.get(zh)
-            if entry is None:
-                po.append(polib.POEntry(msgid=zh, msgstr=new))
-                stats += 1
-                touched.append((zh, "", new))
-            elif entry.msgstr != new:
-                touched.append((zh, entry.msgstr, new))
-                entry.msgstr = new
-                stats += 1
-        if stats:
-            po.save(str(po_path))
-            po.save_as_mofile(str(po_path.with_suffix(".mo")))
-        all_stats[loc] = stats
-        all_touched.extend(touched)
-
-    # zh_CN：官方简中名自补（msgid == msgstr）
-    po_path = I18N_DIR / "zh_CN" / "LC_MESSAGES" / "ok.po"
-    if po_path.exists():
-        po = polib.pofile(str(po_path))
-        by_mid = {e.msgid.rstrip("\n"): e for e in po}
-        stats = 0
-        touched = []
-        for iid in sorted(zhcn):
-            zh = zhcn[iid].strip()
-            if not zh:
-                continue
-            entry = by_mid.get(zh)
-            if entry is None:
-                po.append(polib.POEntry(msgid=zh, msgstr=zh))
-                stats += 1
-                touched.append((zh, "", zh))
-            elif entry.msgstr != zh:
-                touched.append((zh, entry.msgstr, zh))
-                entry.msgstr = zh
-                stats += 1
-        if stats:
-            po.save(str(po_path))
-            po.save_as_mofile(str(po_path.with_suffix(".mo")))
-        all_stats["zh_CN"] = stats
-        all_touched.extend(touched)
-
+    official = build_official(merged, lambda iid, langs: _zh_of(iid, langs, zhcn))
+    for zh in marks_names:
+        official.pop(zh, None)
+        zhcn.pop(zh, None)
+    all_stats, all_touched = sync_po_entries(official, PO_LOCALES, I18N_DIR, quiet=True)
+    zh_stats, zh_touched = sync_zh_cn_self_patch(zhcn.values(), I18N_DIR, quiet=True)
+    all_stats = {**all_stats, **zh_stats}
+    all_touched.extend(zh_touched)
     return all_stats, all_touched
 
 
@@ -293,19 +236,7 @@ def sync_other_lang_jsons(merged: dict[str, dict[str, str]], zhcn: dict[str, str
     - zh_CN 不覆盖；仅官方有值且与现有不同时写入。
     返回 (每文件统计, 变更列表)。
     """
-    official = {}
-    for iid, langs in merged.items():
-        tw = (langs.get("zh_TW") or "").strip()
-        if not tw:
-            continue
-        zh = zhcn.get(iid, "").strip() or (zhconvert(tw, "zh-cn") if zhconvert else tw)
-        if not zh or zh in official:
-            continue
-        official[zh] = {
-            l: (v or "").strip()
-            for l, v in langs.items()
-            if l != "zh_CN" and (v or "").strip()
-        }
+    official = build_official(merged, lambda iid, langs: _zh_of(iid, langs, zhcn))
 
     # map_marks 优先：跳过其已有的简中名（由 sync_map_mark_langs.py 先行覆盖）
     marks_json = ROOT / "assets" / "data" / "map_marks.json"
@@ -314,41 +245,8 @@ def sync_other_lang_jsons(merged: dict[str, dict[str, str]], zhcn: dict[str, str
         for zh in marks:
             official.pop(zh, None)
 
-    all_stats = {}
-    all_touched = []
-    for path in sorted((ROOT / "assets" / "lang").glob("*.json")):
-        if path.name in ("map_marks.json", "wiki_items.json"):
-            continue
-        data = json.loads(path.read_text(encoding="utf-8"))
-        stats = 0
-        touched = []
-        for key, node in data.items():
-            zh_node = node.get("zh_CN")
-            if not isinstance(zh_node, dict):
-                continue
-            zh = ""
-            for sub in ("string", "pattern"):
-                val = zh_node.get(sub)
-                if isinstance(val, str):
-                    zh = val.strip()
-                    break
-            if not zh or zh not in official:
-                continue
-            for lang, val in official[zh].items():
-                cur = node.get(lang)
-                if not isinstance(cur, dict):
-                    continue
-                for sub in ("string", "pattern"):
-                    if sub in cur and isinstance(cur[sub], str) and cur[sub] != val:
-                        cur[sub] = val
-                        stats += 1
-                        touched.append((key, zh, lang, val))
-        if stats:
-            write_json(path, data)
-        all_stats[path.name] = stats
-        all_touched.extend(touched)
-
-    return all_stats, all_touched
+    return sync_lang_jsons(official, ROOT / "assets" / "lang",
+                           skip_files=("map_marks.json", "wiki_items.json"))
 
 
 def main():
@@ -416,19 +314,12 @@ def main():
     print()
     print("Syncing official names into ok.po...")
     po_stats, po_touched = sync_po(merged, zhcn_map)
-    for loc, n in po_stats.items():
-        print(f"  {loc}: {n} entries updated")
-    for mid, old_v, new_v in po_touched:
-        print(f"  {mid!r}: {old_v!r} -> {new_v!r}")
+    print_po_result(po_stats, po_touched)
 
     print()
     print("Overwriting other lang JSON string nodes with official names...")
     json_stats, json_touched = sync_other_lang_jsons(merged, zhcn_map)
-    for fname, n in json_stats.items():
-        if n:
-            print(f"  {fname}: {n} values updated")
-    for key, zh, lang, val in json_touched:
-        print(f"  {key} ({zh}) {lang}: {val!r}")
+    print_json_result(json_stats, json_touched)
 
     return 0
 
