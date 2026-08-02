@@ -843,7 +843,7 @@ class DailyBattleFeature:
             STAGE_CATEGORY_ENERGY_POOLING,
         )
 
-        def try_click_reward(allow_middle_click=True):
+        def try_click_reward(allow_middle_click=True, deep_search=False):
             def check():
                 return self.wait_ocr(
                     match=re.compile(click_key),
@@ -852,7 +852,7 @@ class DailyBattleFeature:
                 )
 
             result = check()
-            if not result:
+            if deep_search and (not result):
                 result = self.strafe_search(check)
 
             if result:
@@ -982,7 +982,7 @@ class DailyBattleFeature:
                 ):
                     raise Exception("导航奖励点失败")
 
-            return try_click_reward(allow_middle_click=not target_found_by_yolo) or True
+            return try_click_reward(allow_middle_click=not target_found_by_yolo, deep_search=True) or True
 
         except Exception as e:
             if isinstance(e, TaskDisabledException):
