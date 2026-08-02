@@ -20,6 +20,7 @@ class PeriodicScreenshotTask(BaseEfTask):
         self.group_name = "工具与调试"
         self.description = "每隔指定秒数截图保存，用于数据采集 / YOLO 样本收集"
         self.icon = FluentIcon.CAMERA
+        self.visible = self.debug
         self.default_config = {
             '间隔秒数': 5,
             '保存目录': 'screenshots/periodic',

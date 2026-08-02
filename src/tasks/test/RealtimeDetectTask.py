@@ -12,6 +12,7 @@ class RealtimeYoloScanTask(BaseEfTask):
         self.group_name = "工具与调试"
         self.description = "用于实测 YOLO 模型：可选模型、可选目标、可设置信度并循环扫描。"
         self.icon = FluentIcon.SEARCH
+        self.visible = self.debug
 
         default_model, model_settings = build_yolo_model_settings(app_config.get("yolo", {}))
         model_options = list(model_settings.keys())
@@ -93,3 +94,4 @@ class RealtimeDetectTask(RealtimeYoloScanTask):
         self.name = "实时检测"
         self.group_name = "工具与调试"
         self.description = "实时循环执行 YOLO 检测，用于在线观察目标识别结果。"
+        self.visible = self.debug
