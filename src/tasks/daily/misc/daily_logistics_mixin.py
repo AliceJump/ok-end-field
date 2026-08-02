@@ -3,24 +3,50 @@ from src.data.world_map import areas_list
 
 
 class DailyLogisticsMixin:
+    def blind_spot_speed_up(self, feature, box=None, time_out=12, click_interval=0.05):
+        """装货过场动画期间快速连点屏幕中心，直到目标按钮出现。
+
+        Args:
+            feature: 目标按钮特征名。
+            box: 特征识别区域。
+            time_out: 总超时时间。
+            click_interval: 每次连点后的等待间隔。
+
+        Returns:
+            bool: 找到目标按钮返回 True，超时返回 False。
+        """
+        start_time = self.active_time()
+        while True:
+            if self.active_time() - start_time > time_out:
+                self.log_info(f"盲点加速超时，未找到 {feature}")
+                return False
+            if self.find_feature(feature=feature, box=box):
+                return True
+            self.click(x=0.5, y=0.5, down_time=0.01)
+            self.sleep(click_interval)
+
     def claim_mail(self):
         self.info_set("current_task", "claim_delivery_rewards")
         self.log_info("开始收邮件")
-        self.press_key("k", after_sleep=2)
-        stage_area = self.ocr(match=self.lang.daily_routine_mixin.k_4a2ece6a, box=self.box.top_left)
+        self.press_key("k")
+        stage_area = self.wait_ocr(
+            match=self.lang.daily_routine_mixin.k_4a2ece6a,
+            box=self.box.top_left,
+            time_out=4,
+            raise_if_not_found=False,
+        ) or []
         if len(stage_area) > 0:
             self.click(x=stage_area[0].x, y=stage_area[0].y + int(self.height * 0.25))
             self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_3fef35d6, box=self.box.center, time_out=5)
-            self.wait_pop_up(after_sleep=2)
+            self.wait_pop_up()
         if self.wait_click_ocr(
                 x=0, y=0.88,
                 to_x=0.25, to_y=0.95,
                 match=self.lang.daily_routine_mixin.k_ffb5655a,
                 time_out=5,
-                after_sleep=2,
         ):
-            self.wait_pop_up(after_sleep=2)
-        self.press_key("esc", after_sleep=2)
+            self.wait_pop_up()
+        self.press_key("esc")
         return True
 
     def claim_delivery_rewards(self):
@@ -49,11 +75,10 @@ class DailyLogisticsMixin:
             self.ensure_main()
 
         if results:
-            self.click(results, after_sleep=2)
+            self.click(results)
             if not self.wait_pop_up():
                 self.log_info("未找到 '确认' 按钮，可能未成功领取奖励")
                 self.ensure_main()
-            self.sleep(2)
 
         self.log_info("转交委托奖励领取完成，返回主界面")
         self.ensure_main()
@@ -107,15 +132,17 @@ class DailyLogisticsMixin:
                         notify=True,
                     )
 
-                self.click(results[0], after_sleep=2)
+                self.click(results[0])
                 start_index = 0 if not (self.lang.daily_routine_mixin.k_view_quote in results[0].name) else 2
                 steps = [
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 0),
                     (fL.fill_max, None, 0),
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 1),
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 0),
-                    (fL.get_exchange_ticket, None, 0)
+                    (fL.esc, None, 0)
                 ]
+                optional_steps = {3}
+                blind_spot_steps = {3, 4}
 
                 for i in range(start_index, len(steps)):
                     step = steps[i]
@@ -123,9 +150,16 @@ class DailyLogisticsMixin:
                     box = step[1]
                     after_sleep = step[2]
                     time_out = 12 if i > 2 else 5
+                    if i in blind_spot_steps:
+                        self.log_info("盲点加速：装货过场动画期间快速连点屏幕中心")
+                        if not self.blind_spot_speed_up(feature=feature, box=box, time_out=time_out):
+                            if i in optional_steps:
+                                continue
+                            self.log_info(f"步骤 {feature} 未找到，跳过本次活动")
+                            break
+                        if i == len(steps) - 1:
+                            continue
                     res = self.wait_click_feature(feature=feature, click_after_delay=0.5, box=box, time_out=time_out, raise_if_not_found=False, after_sleep=after_sleep)
-
-                    optional_steps = {3}
 
                     if not res:
                         if i in optional_steps:
@@ -136,7 +170,6 @@ class DailyLogisticsMixin:
                         )
                         break
                 self.ensure_main()
-                self.press_key("v", after_sleep=1)
                 self.press_key("j", after_sleep=1)
 
                 if not self.wait_click_ocr(

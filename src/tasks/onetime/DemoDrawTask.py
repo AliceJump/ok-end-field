@@ -36,7 +36,7 @@ class DemoDrawTask(Common):
 
     def enter_draw_page(self):
         self.ensure_main()
-        self.press_key("f", after_sleep=1)
+        self.press_key("f")
         self.wait_ui_stable(refresh_interval=1)
         if self.daily_demo.read_level() < 0:
             self.log_warning("按 F 后未进入演算抽牌页面")
@@ -56,12 +56,12 @@ class DemoDrawTask(Common):
                     time_out=10,
                     raise_if_not_found=False,
                     click_after_delay=0.5,
-                    after_sleep=1,
             ):
                 self.log_warning("未找到演算抽牌按钮")
                 return False
-            current_level = self.daily_demo.read_level()
-            if current_level < 0:
+            current_level = self.daily_demo.wait_level_change(previous_level, time_out=4)
+            if current_level is None:
+                self.log_warning("抽牌后等级未变化")
                 return False
             level_diff = current_level - previous_level
             if -level_diff > 0:
@@ -86,7 +86,6 @@ class DemoDrawTask(Common):
                 box=self.box.bottom_left,
                 time_out=5,
                 raise_if_not_found=False,
-                after_sleep=1,
         ):
             self.log_warning("未找到左下角『放弃』按钮")
             return False

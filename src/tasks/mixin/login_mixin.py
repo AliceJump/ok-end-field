@@ -36,29 +36,26 @@ class LoginMixin(BaseEfTask):
             if result:
                 self._logged_in = True
                 break
-            self.sleep(1)
         if self._logged_in:
             self.ensure_main()
-            self.back(after_sleep=2)
-            for _ in range(5):
-                result = self.find_one(fL.main_out, vertical_variance=0.05, horizontal_variance=0.1, threshold=0.6)
-                if result:
-                    break
-                self.sleep(1)
+            self.back()
+            result = self.wait_feature(
+                feature=fL.main_out,
+                vertical_variance=0.05,
+                horizontal_variance=0.1,
+                threshold=0.6,
+                time_out=5,
+                raise_if_not_found=False,
+            )
             if result:
-                self.click(result, after_sleep=1)
+                self.click(result)
                 self.click_confirm()
             else:
                 self.log_error("未找到主界面退出按钮，可能未成功返回登录界面")
-        start_time = self.active_time()
-        while self.active_time() - start_time < 120:
-            result = self.find_feature(feature=fL.logout)
-            self.sleep(1)
-            if result:
-                break
+        result = self.wait_feature(feature=fL.logout, time_out=120, raise_if_not_found=False)
         if not result:
             raise RuntimeError("未找到登出按钮，可能没有先登录，请先登录任意账号")
-        self.click(result[0], after_sleep=1)
+        self.click(result)
         self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True)
         if not self.wait_click_feature(feature=fL.log_out_confirm, time_out=5, raise_if_not_found=False):  # 点击登出确认
             self.log_error("未找到登出确认按钮")
@@ -170,8 +167,6 @@ class LoginMixin(BaseEfTask):
             )
 
             clicked_result = ocr_result
-
-            self.sleep(1)
 
             # 不需要等待
             if not need_wait_disappear and not success_match:

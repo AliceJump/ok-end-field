@@ -65,7 +65,8 @@ class WarehouseTransferTask(BaseEfTask):
         if not result:
             self.log_info(f"物品 {item_name} 无法找到分类图标,可能已经进入该分类页")
         if result:
-            self.click(result[0],   after_sleep=2)
+            self.click(result[0])
+            self.wait_ui_stable(refresh_interval=0.2)
 
     def _detect_current_location(self) -> str | None:
         boxes = self.ocr(box=self.box_of_screen(0.15, 0.18, 0.26, 0.22, name="current_location_area"))
@@ -78,12 +79,14 @@ class WarehouseTransferTask(BaseEfTask):
         return None
 
     def _maybe_click_confirm(self) -> bool:
-        hits = self.ocr(
+        hits = self.wait_ocr(
             box=self.box_of_screen(0.79, 0.79, 0.84, 0.82, name="bottom_right"),
             match=self.lang.WarehouseTransferTask.k_b56d9ac6,
+            time_out=1,
+            raise_if_not_found=False,
         )
         if hits:
-            self.click(hits[0],   after_sleep=0.3)
+            self.click(hits[0])
             return True
         return False
 
@@ -98,7 +101,7 @@ class WarehouseTransferTask(BaseEfTask):
         )
         if not btn:
             raise RuntimeError("未找到“仓库切换”按钮")
-        self.click(btn[0],   after_sleep=0.5)
+        self.click(btn[0])
 
         target_text = _LOCATIONS[target_key]
         option = self.wait_ocr(
@@ -108,7 +111,7 @@ class WarehouseTransferTask(BaseEfTask):
         )
         if not option:
             raise RuntimeError(f"未找到仓库选项：{target_text}")
-        self.click(option[0],   after_sleep=0.2)
+        self.click(option[0])
 
         self._maybe_click_confirm()
         for _ in range(50):
@@ -118,8 +121,7 @@ class WarehouseTransferTask(BaseEfTask):
                 match=self.lang.WarehouseTransferTask.k_65fe35c4,
             )
             if hits:
-                self.sleep(0.3)
-                self.send_key("esc", after_sleep=0.2)  # 确认使用send_key：esc为系统通用退出键，非游戏可配置热键
+                self.send_key("esc")  # 确认使用send_key：esc为系统通用退出键，非游戏可配置热键
                 self.log_info(f"仓库切换成功")
                 return
             self.sleep(0.5)
@@ -149,7 +151,12 @@ class WarehouseTransferTask(BaseEfTask):
         if not item_key:
             raise RuntimeError("未选择物品")
         max_times = int(self.config.get("转移轮次", 10))
-        self.press_key("b", after_sleep=1)
+        self.press_key("b")
+        self.wait_until(
+            lambda: self._detect_current_location() is not None,
+            time_out=5,
+            raise_if_not_found=False,
+        )
         search_box = self.box_of_screen(0.12, 0.30, 0.55, 0.68)
         while True:
             current = self._detect_current_location()
@@ -202,7 +209,7 @@ class WarehouseTransferTask(BaseEfTask):
             )
             if not store_btn:
                 raise RuntimeError("未找到“一键存放”按钮")
-            self.click(store_btn[0],   after_sleep=0.5)
+            self.click(store_btn[0])
             self._maybe_click_confirm()
             max_times -= 1
             if max_times <= 0:

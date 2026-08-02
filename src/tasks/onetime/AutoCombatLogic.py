@@ -335,10 +335,11 @@ class AutoCombatLogic:
                 if now - self._last_exit_check_time >= self._exit_check_interval:
                     self._last_exit_check_time = now
 
-                    if task._check_single_exit_condition():
+                    exit_condition = task._check_single_exit_condition()
+                    if exit_condition:
                         if task.debug:
                             task.screenshot("out_of_combat")
-                        if task.is_combat_ended():
+                        if task.is_combat_ended(exit_condition):
                             task.log_info("自动战斗结束!", notify=task.get_battle_config("后台结束战斗通知") and task.in_bg())
                             task.log_info("退出战斗主循环")
                             self._end = True

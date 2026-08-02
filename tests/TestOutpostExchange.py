@@ -79,6 +79,46 @@ class TestOutpostExchange(unittest.TestCase):
         selected_good = feature.click.call_args_list[0].args[0]
         self.assertEqual(selected_good.name, "精选荞愈胶囊")
 
+    def test_only_priority_goods_filters_other_goods(self):
+        feature = self.make_exchange_feature(
+            [1000, 999],
+            [
+                SimpleNamespace(name="息壤玉葫芦"),
+                SimpleNamespace(name="荞愈胶囊"),
+            ],
+        )
+
+        with patch(
+            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+            side_effect=lambda lang, text: text,
+        ):
+            feature.perform_outpost_exchange(
+                "难民暂居处",
+                priority_list=["荞愈胶囊"],
+                only_priority_goods=True,
+            )
+
+        selected_good = feature.click.call_args_list[0].args[0]
+        self.assertEqual(selected_good.name, "荞愈胶囊")
+
+    def test_empty_priority_list_ignores_only_priority_setting(self):
+        feature = self.make_exchange_feature(
+            [1000, 999],
+            [SimpleNamespace(name="息壤玉葫芦")],
+        )
+
+        with patch(
+            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+            side_effect=lambda lang, text: text,
+        ):
+            feature.perform_outpost_exchange(
+                "天王坪援建点",
+                only_priority_goods=True,
+            )
+
+        selected_good = feature.click.call_args_list[0].args[0]
+        self.assertEqual(selected_good.name, "息壤玉葫芦")
+
     def test_exchange_outposts_share_exclusions_only_within_area(self):
         feature = object.__new__(DailyRoutineFeature)
         feature.info_set = Mock()
@@ -89,7 +129,7 @@ class TestOutpostExchange(unittest.TestCase):
 
         exclusion_sets = {}
 
-        def perform(outpost_name, priority_list, excluded_goods):
+        def perform(outpost_name, priority_list, excluded_goods, only_priority_goods):
             exclusion_sets[outpost_name] = excluded_goods
             excluded_goods.add(outpost_name)
 

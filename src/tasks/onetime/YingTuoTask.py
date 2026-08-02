@@ -24,9 +24,9 @@ class YingTuoTask(BattleMixin):
             self.wait_ocr(match=self.target, time_out=3, box=self.box.top_left, log=True)
             results = self.find_feature(feature=fL.yingtuo_not_cleared_icon, box=self.box_of_screen(0.033, 0.133, 0.058, 0.778))
             for result in results:
-                self.click(result, after_sleep=0.5)
+                self.click(result)
                 self.log_info("进入挑战页面，开始挑战")
-                if not self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=10, raise_if_not_found=False, after_sleep=2):
+                if not self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=10, raise_if_not_found=False):
                     self.log_info("未能找到挑战开始按钮")
                     raise Exception("未能找到挑战开始按钮")
                 if not self.wait_click_feature(feature=fL.give_gift, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=10, raise_if_not_found=False):
@@ -45,7 +45,7 @@ class YingTuoTask(BattleMixin):
         self.log_info("影拓丰碑任务完成", notify=True)
     def enter_yingtuo(self):
         self.log_info("开始影拓丰碑任务", notify=True)
-        self.press_key("f8", after_sleep=1)
+        self.press_key("f8")
         find_yingtuo_entrance = False
         for _ in range(6):
             if self.wait_click_feature(feature=fL.yingtuo_entrance, time_out=2, raise_if_not_found=False):
@@ -59,7 +59,6 @@ class YingTuoTask(BattleMixin):
         if not self.wait_feature(feature=fL.yingtuo_monument, time_out=10, raise_if_not_found=False):
             self.log_info("未能找到影拓丰碑活动页标志，任务结束", notify=True)
             return False
-        self.sleep(1)
         self.log_info("成功进入影拓丰碑页面")
         return True
     def find_normal_challenge(self):
@@ -69,7 +68,7 @@ class YingTuoTask(BattleMixin):
         self.target = get_world_map_text(self.lang, self.yingtuo_list[self.index])
         self.log_info(f"寻找{self.target}关卡")
         for _ in range(len(self.yingtuo_list)//2):  # 尝试多次寻找，增加成功率
-            if self.wait_click_ocr(match=self.target, box=self.box_of_screen(0.013, 0.759, 0.991, 0.824), time_out=2, raise_if_not_found=False, after_sleep=2):
+            if self.wait_click_ocr(match=self.target, box=self.box_of_screen(0.013, 0.759, 0.991, 0.824), time_out=2, raise_if_not_found=False):
                 self.log_info(f"找到{self.target}关卡")
                 self.index += 1
                 return self.target

@@ -4,6 +4,12 @@ from qfluentwidgets import FluentIcon
 
 from ok import Logger, TriggerTask
 from src.core.BaseEfTask import BaseEfTask
+from src.tasks.trigger.auto_pick_rules import (
+    BLACK_LIST,
+    CFG_SKIP_PRODUCIBLE,
+    WHITE_LIST,
+    should_skip_pick,
+)
 
 logger = Logger.get_logger(__name__)
 
@@ -15,15 +21,20 @@ class AutoPickTask(BaseEfTask, TriggerTask):
         self.name = "自动拾取"
         self.description = "大世界自动拾取"
         self.icon = FluentIcon.SHOPPING_CART
-        self.default_config = {'_enabled': True}
+        self.default_config = {
+            '_enabled': True,
+            CFG_SKIP_PRODUCIBLE: True,
+        }
+        self.config_description = {
+            CFG_SKIP_PRODUCIBLE: (
+                '不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、'
+                '苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。'
+            ),
+        }
         self.last_box_name = None
         self.last_pick_time = 0
-        self.white_list = {'采集', '萤壳虫', '打开', '荞花', '灰芦麦', '灼壳虫', '苦叶椒', "柱状菌", "酮化灌木",
-                           '柑实', "触碰", '激活', '芽针', '多齿叶', '砂叶'
-                           }
-        self.black_list = {
-            '协议核心', '激活箱子'
-        }
+        self.white_list = set(WHITE_LIST)
+        self.black_list = set(BLACK_LIST)
 
     def run(self):
         self.check_resolution()
@@ -36,7 +47,7 @@ class AutoPickTask(BaseEfTask, TriggerTask):
                     self.log_error('pick can not ocr texts')
                     return
 
-                if any(text in texts[0].name for text in self.black_list):
+                if should_skip_pick(texts[0].name, self.black_list, self.config.get(CFG_SKIP_PRODUCIBLE, True)):
                     return
 
                 if any(text in texts[0].name for text in self.white_list):

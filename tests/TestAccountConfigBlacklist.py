@@ -26,7 +26,7 @@ class TestAccountConfigBlacklist(unittest.TestCase):
         self.assertNotIn("配置选择", DailyTask.account_config_blacklist)
         self.assertNotIn("⭐执行外部命令", DailyTask.account_config_blacklist)
         self.assertNotIn("外部命令", DailyTask.account_config_blacklist)
-        self.assertNotIn("通向送货点", DeliveryTask.account_config_blacklist)
+        self.assertNotIn("通向武陵城送货点", DeliveryTask.account_config_blacklist)
 
 
 if __name__ == "__main__":
