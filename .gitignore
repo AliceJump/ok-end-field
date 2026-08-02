@@ -27,6 +27,9 @@ label_class
 /cache/
 /endfield_map_marks/
 /tools/wiki_catalog/
+/tools/official_five_lang.json
+/assets/data/map_marks.json
+/assets/data/wiki_items.json
 ############################
 # 🧠 OCR / 标注输出
 ############################
