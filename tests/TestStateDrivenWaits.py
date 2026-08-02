@@ -102,6 +102,9 @@ class _BattleHarness:
     def find_feature(self, **kwargs):
         return True
 
+    def is_battle_settlement(self):
+        return True
+
     def log_info(self, message):
         self.logs.append(message)
 

@@ -730,18 +730,18 @@ class DailyBattleFeature:
         for _ in range(5):
             if is_higher_order:
                 # 高阶关卡，使用 feature_dict 查找位置
-                location = self.find_feature(feature=higher_order_feature_dict[self.battle_ctx.stage_name])
+                location = [self.wait_feature(feature=higher_order_feature_dict[self.battle_ctx.stage_name], raise_if_not_found=False, box=self.box_of_screen(0.364, 0.328, 0.431, 0.781), time_out=2)]
             else:
                 # 普通关卡
                 location = self.wait_ocr(match=re.compile(
                     get_world_map_matcher(self.lang,self.battle_ctx.stage_name)),
-                    box=self.box_of_screen(0.331, 0.272, 0.621, 0.844), log=True, time_out=5)
+                    box=self.box_of_screen(0.331, 0.272, 0.621, 0.844), log=True, time_out=2)
 
             if location:
                 enter_bool = self.wait_click_feature(
                     feature=to_text,
                     box=self.box_of_screen(0.808, location[0].y / self.height, 0.834, location[0].y / self.height + 0.15),
-                    time_out=6,
+                    time_out=2,
                     raise_if_not_found=False,
                 )
                 if enter_bool:
@@ -807,9 +807,17 @@ class DailyBattleFeature:
                 if self.active_time() - end_time > 300:
                     self.log_info("等待超时，进入协议空间超时")
                     return False
-            self.move_keys("w", duration=0.25)
-            while not self.wait_ocr(match=self.lang.daily_battle_mixin.k_4cc61900, time_out=1, box=self.box.bottom_right, log=True):
-                self.move_keys('w', duration=0.25)
+            self.strafe_search(
+                lambda: self.wait_ocr(
+                    match=self.lang.daily_battle_mixin.k_4cc61900,
+                    time_out=1,
+                    box=self.box.bottom_right,
+                    log=True,
+                ),
+                keys=("w",),
+                duration=0.25,
+                passes=None,
+            )
             self.press_key("f")
         else:
             self.wait_pop_up(time_out=4)
@@ -834,11 +842,18 @@ class DailyBattleFeature:
         )
 
         def try_click_reward(allow_middle_click=True):
-            if result := self.wait_ocr(
-                match=re.compile(click_key),
-                time_out=1,
-                box=self.box.bottom_right,
-            ):
+            def check():
+                return self.wait_ocr(
+                    match=re.compile(click_key),
+                    time_out=1,
+                    box=self.box.bottom_right,
+                )
+
+            result = check()
+            if not result:
+                result = self.strafe_search(check)
+
+            if result:
                 self.click_with_alt(result[0])
 
                 if self.battle_ctx.is_extra_mode:
@@ -863,28 +878,23 @@ class DailyBattleFeature:
                 fL.gather_icon_out_map,
             ]
 
-            for _ in range(9):
+            def check():
                 for feature in end_features:
                     if self.find_feature(
                         feature=feature,
                         box=feature_box,
                     ):
                         return True
+                return False
 
-                self.click(key="middle")
-                self.move_keys("aw", duration=0.1)
-
-            return False
+            return bool(self.rotate_search(check))
 
         def search_normal_reward(end_feature_name, search_box):
-            for _ in range(9):
-                if self.yolo_detect(end_feature_name, box=search_box):
-                    return True
-
-                self.click(key="middle", after_sleep=0.3)
-                self.move_keys("aw", duration=0.1)
-
-            return False
+            return bool(
+                self.rotate_search(
+                    lambda: self.yolo_detect(end_feature_name, box=search_box)
+                )
+            )
 
         try:
             target_found_by_yolo = False

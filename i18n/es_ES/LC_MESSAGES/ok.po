@@ -3124,3 +3124,54 @@ msgstr ""
 "Guarda una instantánea completa de la configuración de la tarea para la "
 "cuenta actual. Los cambios en los valores predeterminados no afectarán a las"
 " cuentas guardadas."
+
+msgid "据点兑换仅购买优先商品"
+msgstr "El intercambio del puesto solo compra bienes prioritarios"
+
+msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
+msgstr "Al activarlo, el intercambio del puesto solo compra bienes de la secuencia de prioridad cuando no está vacía; si está vacía, mantiene el comportamiento original."
+
+msgid "区域扫描测试"
+msgstr "Prueba de escaneo de área"
+
+msgid "暂停计时验证"
+msgstr "Verificación de temporización de pausa"
+
+msgid "等级读取测试"
+msgstr "Prueba de lectura de nivel"
+
+msgid "演算入口导航测试"
+msgstr "Prueba de navegación a la entrada de simulación"
+
+msgid "按住鼠标蛇形扫描指定矩形区域"
+msgstr "Mantenga presionado el mouse y escanee en zigzag el área rectangular especificada"
+
+msgid "验证暂停任务期间活动计时是否冻结"
+msgstr "Verifique si el temporizador activo se congela mientras la tarea está en pausa"
+
+msgid "将次要目标方向蓝点对齐到屏幕中心"
+msgstr "Alinee el punto azul de la dirección del objetivo secundario al centro de la pantalla"
+
+msgid "读取演武集算关卡界面的当前等级"
+msgstr "Lea el nivel actual de la pantalla de la etapa de la simulación"
+
+msgid "导航到演武集算『演算』入口"
+msgstr "Navegue a la entrada de la simulación"
+
+msgid "测试模式"
+msgstr "Modo de prueba"
+
+msgid "测试超时(秒)"
+msgstr "Tiempo de espera de prueba (segundos)"
+
+msgid "选择要运行的暂停计时测试"
+msgstr "Seleccione la prueba de temporización de pausa a ejecutar"
+
+msgid "暂停时间应超过此值，用于观察恢复后的行为"
+msgstr "La duración de la pausa debe superar este valor para observar el comportamiento tras reanudar"
+
+msgid "自写循环"
+msgstr "Bucle escrito a mano"
+
+msgid "两者"
+msgstr "Ambos"

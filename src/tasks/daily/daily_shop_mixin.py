@@ -86,6 +86,16 @@ class DailyShopFeature:
                     return int(m.group())
         return 0
 
+    def _discount_near_priority(self, discount_box, priority_box):
+        """折扣框与优先商品框距离过近时判定为误识别。
+
+        比较折扣框左下角与优先商品框右上角的 xy 距离，
+        两者都小于阈值时丢弃该折扣框，避免点击到优先商品上的误识别数字。
+        """
+        dx = abs(discount_box.x - (priority_box.x + priority_box.width))
+        dy = abs((discount_box.y + discount_box.height) - priority_box.y)
+        return dx < priority_box.width * 0.5 and dy < priority_box.height
+
     def buy_once(self, sum_credit):
         self.wait_ui_stable(refresh_interval=0.5)
         normal_results = []
@@ -109,6 +119,15 @@ class DailyShopFeature:
             ),
             time_out=2
         )
+
+        if discount_results:
+            filtered_discounts = []
+            for discount in discount_results:
+                if any(self._discount_near_priority(discount, priority) for priority in normal_results):
+                    self.log_info(f"丢弃与优先商品邻近的折扣框: {discount.name}")
+                    continue
+                filtered_discounts.append(discount)
+            discount_results = filtered_discounts
 
         candidates = []
         candidates.extend((item, False) for item in normal_results)

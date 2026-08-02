@@ -6,6 +6,9 @@ from src.core.BattleConfig import (
     BATTLE_CONFIG_MODE_GLOBAL,
     BATTLE_CONFIG_MODE_INDEPENDENT,
     BATTLE_CONFIG_MODE_KEY,
+    KEY_COND_SEQUENCE,
+    KEY_INSTANT_LINK,
+    KEY_INSTANT_ULT,
     BattleConfigManager,
 )
 from src.gui.AccountConfigTab import AccountConfigTab
@@ -316,10 +319,11 @@ class TestBattleConfigOverrides(unittest.TestCase):
             [BATTLE_CONFIG_MODE_GLOBAL, BATTLE_CONFIG_MODE_INDEPENDENT],
         )
         self.assertEqual(mode_type["sub_configs"][BATTLE_CONFIG_MODE_GLOBAL], [])
-        self.assertEqual(
-            mode_type["sub_configs"][BATTLE_CONFIG_MODE_INDEPENDENT],
-            list(task.default_config)[1:],
-        )
+        # 修复A：3 个 hidden key 不在下拉列表中独立展开为行
+        independent_keys = mode_type["sub_configs"][BATTLE_CONFIG_MODE_INDEPENDENT]
+        expected = [k for k in list(task.default_config)[1:]
+                    if k not in (KEY_COND_SEQUENCE, KEY_INSTANT_ULT, KEY_INSTANT_LINK)]
+        self.assertEqual(independent_keys, expected)
 
     def test_task_config_overrides_global_battle_config(self):
         task = self.make_battle_task({

@@ -115,8 +115,10 @@ class DailyCreditMixin:
                             self.wait_ui_stable(refresh_interval=0.5)
                             if result := self.find_feature(feature=fL.assist_friend, box=exchange_help_box):
                                 self.log_info("继续进行助力操作")
-                                self.click(result[-1])
-                                self.wait_pop_up(time_out=5)
+                                last_help = result[-1]
+                                self.click(last_help)
+                                if (last_help.x / self.width > 0.7):
+                                    self.wait_pop_up(time_out=5)
                                 left_help_time -= 1
                                 help_time += 1
             if not self.safe_back(feature=fL.friend_page, time_out=5):

@@ -3,6 +3,28 @@ from src.data.world_map import areas_list
 
 
 class DailyLogisticsMixin:
+    def blind_spot_speed_up(self, feature, box=None, time_out=12, click_interval=0.05):
+        """装货过场动画期间快速连点屏幕中心，直到目标按钮出现。
+
+        Args:
+            feature: 目标按钮特征名。
+            box: 特征识别区域。
+            time_out: 总超时时间。
+            click_interval: 每次连点后的等待间隔。
+
+        Returns:
+            bool: 找到目标按钮返回 True，超时返回 False。
+        """
+        start_time = self.active_time()
+        while True:
+            if self.active_time() - start_time > time_out:
+                self.log_info(f"盲点加速超时，未找到 {feature}")
+                return False
+            if self.find_feature(feature=feature, box=box):
+                return True
+            self.click(x=0.5, y=0.5, down_time=0.01)
+            self.sleep(click_interval)
+
     def claim_mail(self):
         self.info_set("current_task", "claim_delivery_rewards")
         self.log_info("开始收邮件")
@@ -117,8 +139,10 @@ class DailyLogisticsMixin:
                     (fL.fill_max, None, 0),
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 1),
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 0),
-                    (fL.get_exchange_ticket, None, 0)
+                    (fL.esc, None, 0)
                 ]
+                optional_steps = {3}
+                blind_spot_steps = {3, 4}
 
                 for i in range(start_index, len(steps)):
                     step = steps[i]
@@ -126,9 +150,16 @@ class DailyLogisticsMixin:
                     box = step[1]
                     after_sleep = step[2]
                     time_out = 12 if i > 2 else 5
+                    if i in blind_spot_steps:
+                        self.log_info("盲点加速：装货过场动画期间快速连点屏幕中心")
+                        if not self.blind_spot_speed_up(feature=feature, box=box, time_out=time_out):
+                            if i in optional_steps:
+                                continue
+                            self.log_info(f"步骤 {feature} 未找到，跳过本次活动")
+                            break
+                        if i == len(steps) - 1:
+                            continue
                     res = self.wait_click_feature(feature=feature, click_after_delay=0.5, box=box, time_out=time_out, raise_if_not_found=False, after_sleep=after_sleep)
-
-                    optional_steps = {3}
 
                     if not res:
                         if i in optional_steps:
@@ -139,7 +170,6 @@ class DailyLogisticsMixin:
                         )
                         break
                 self.ensure_main()
-                self.press_key("v", after_sleep=1)
                 self.press_key("j", after_sleep=1)
 
                 if not self.wait_click_ocr(

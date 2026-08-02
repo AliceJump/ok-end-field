@@ -2870,3 +2870,54 @@ msgid "保存当前账号的完整任务配置快照。任务默认值变化不�
 msgstr ""
 "Save a complete task configuration snapshot for the current account. Changes"
 " to task defaults will not affect saved accounts."
+
+msgid "据点兑换仅购买优先商品"
+msgstr "Outpost Exchange Only Buy Priority Goods"
+
+msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
+msgstr "When enabled, outpost exchange only buys goods from the Trade Goods Priority Sequence when it is non-empty; an empty sequence keeps the original exchange behavior."
+
+msgid "区域扫描测试"
+msgstr "Region Scan Test"
+
+msgid "暂停计时验证"
+msgstr "Pause Timing Verification"
+
+msgid "等级读取测试"
+msgstr "Level Read Test"
+
+msgid "演算入口导航测试"
+msgstr "Demo Entry Navigation Test"
+
+msgid "按住鼠标蛇形扫描指定矩形区域"
+msgstr "Press and hold the mouse to serpentine-scan the specified rectangular area"
+
+msgid "验证暂停任务期间活动计时是否冻结"
+msgstr "Verify whether the active timer freezes while the task is paused"
+
+msgid "将次要目标方向蓝点对齐到屏幕中心"
+msgstr "Align the blue dot of the secondary objective direction to the screen center"
+
+msgid "读取演武集算关卡界面的当前等级"
+msgstr "Read the current level from the Demo battle stage screen"
+
+msgid "导航到演武集算『演算』入口"
+msgstr "Navigate to the Demo battle entry"
+
+msgid "测试模式"
+msgstr "Test Mode"
+
+msgid "测试超时(秒)"
+msgstr "Test Timeout (seconds)"
+
+msgid "选择要运行的暂停计时测试"
+msgstr "Select the pause timing test to run"
+
+msgid "暂停时间应超过此值，用于观察恢复后的行为"
+msgstr "The pause duration should exceed this value to observe behavior after resume"
+
+msgid "自写循环"
+msgstr "Self-Written Loop"
+
+msgid "两者"
+msgstr "Both"

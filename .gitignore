@@ -66,6 +66,7 @@ python/
 # 🧰 IDE
 .idea/
 .vscode/
+.workbuddy/
 
 ############################
 # 🖥 PyInstaller
@@ -73,9 +74,9 @@ python/
 
 ############################
 # 📦 临时 / 测试
-test/
-test_scripts/
-test_ocr/
+/test/
+/test_scripts/
+/test_ocr/
 downloads/
 autohelper
 

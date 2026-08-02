@@ -407,28 +407,22 @@ class LiaisonMixin(NavigationMixin):
 
         self.log_info("开始寻找干员进行交互")
 
-        start_time = self.active_time()
-        chat_box = None
-
-        while chat_box is None:
-
-            chat_box = self.wait_ocr(
+        chat_box = self.strafe_search(
+            lambda: self.wait_ocr(
                 match=find_name_patterns,
                 box=self.box.bottom_right,
                 time_out=1,
-            )
+            ),
+            duration=0.5,
+            keys=("w",),
+            passes=None,
+            time_out=5,
+        )
 
-            if chat_box:
-                return self.click_chat_box(find_name_patterns, chat_box)
+        if chat_box:
+            return self.click_chat_box(find_name_patterns, chat_box)
 
-            self.move_keys("w", duration=0.5)
-
-            self.log_info("未找到干员，继续前进移动")
-
-            if self.active_time() - start_time > 5:
-                self.log_info("长时间未找到干员，任务超时")
-                return False
-
+        self.log_info("长时间未找到干员，任务超时")
         return False
 
     def click_chat_box(self, find_name_patterns, chat_box):

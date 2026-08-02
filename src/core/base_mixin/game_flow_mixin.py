@@ -436,6 +436,13 @@ class GameFlowMixin:
         if self.wait_login():
             return True
 
+        # # 对话/剧情中：右上角跳过图标，使用与 skip_dialog 一致的 ESC 返回键
+        # if self.find_one(fL.skip_dialog_esc, horizontal_variance=0.05):
+        #     self.log_info("检测到对话跳过图标，按 ESC 退出对话")
+        #     self.press_esc()
+        #     self._next_main_recovery_time = self.active_time() + self.once_sleep_time
+        #     return False                                                                                                        
+
         # 某些弹窗状态不视为主界面
         if result := (
             self.find_one(
