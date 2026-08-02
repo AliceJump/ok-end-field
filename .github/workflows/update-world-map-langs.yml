@@ -1,0 +1,213 @@
+name: Update World Map & Character Translations
+
+on:
+  schedule:
+    # 每天 UTC 01:00（北京时间 09:00）
+    - cron: "0 1 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-world-map-langs
+  cancel-in-progress: true
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install polib
+
+      - name: Sync translations from official API
+        run: |
+          python scripts/sync_world_map_langs.py
+          python scripts/sync_character_langs.py
+          python scripts/sync_map_mark_langs.py
+          python scripts/sync_wiki_item_langs.py
+
+      - name: Validate data
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          import polib
+
+          with open("assets/lang/world_map.json", encoding="utf-8") as f:
+              world_map = json.load(f)
+
+          with open("assets/data/world_map.json", encoding="utf-8") as f:
+              world_map_canon = json.load(f)
+
+          with open("tools/official_five_lang.json", encoding="utf-8") as f:
+              snapshot = json.load(f)
+
+          with open("assets/lang/characters.json", encoding="utf-8") as f:
+              characters = json.load(f)
+
+          with open("assets/data/characters.json", encoding="utf-8") as f:
+              characters_canon = json.load(f)
+
+          with open("assets/data/map_marks.json", encoding="utf-8") as f:
+              map_marks = json.load(f)
+
+          # ---------- 绝对校验 ----------
+
+          # characters.json：节点完整（6 语言非空）且与 canonical 一致
+          assert len(characters) >= 26, "characters.json lost keys."
+          for key, node in characters.items():
+              for lang in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES"):
+                  assert node.get(lang, {}).get("string"), \
+                      f"{key} missing {lang}"
+              assert key in characters_canon, f"{key} missing in assets/data/characters.json"
+              assert characters_canon[key]["zh"] == node["zh_CN"]["string"], \
+                  f"{key} canonical zh mismatch"
+
+          assert len(world_map) >= 80, "world_map.json lost keys."
+
+          # ---------- map_marks.json 校验 ----------
+
+          assert len(map_marks) >= 150, "map_marks.json lost keys."
+          for zh, node in map_marks.items():
+              assert isinstance(zh, str) and zh.strip(), \
+                  f"map_marks key not a zh_CN name: {zh!r}"
+              for lang in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES"):
+                  assert node.get(lang, {}).get("string"), \
+                      f"{zh} missing {lang}"
+          with open("assets/items/map/item_names.json", encoding="utf-8") as f:
+              item_names = json.load(f)
+          marks_zh = {
+              node["zh_CN"]["string"].strip()
+              for node in map_marks.values()
+          }
+          assert len(item_names) >= 100, "item_names.json lost keys."
+          uncovered = [n for n in item_names if n.strip() not in marks_zh]
+          assert len(uncovered) <= 5, \
+              f"too many item_names uncovered by official marks: {uncovered[:10]}"
+
+          # 主数据每个中文名在 lang 中必须有节点
+          canon_zh = set(world_map_canon.get("areas_list", []))
+          for vals in world_map_canon.get("outpost_dict", {}).values():
+              canon_zh.update(vals)
+          for vals in world_map_canon.get("goods_dict", {}).values():
+              canon_zh.update(vals)
+          for vals in world_map_canon.get("exchange_goods_dict", {}).values():
+              canon_zh.update(vals)
+          canon_zh.update(world_map_canon.get("item_to_warehouse_dict", {}).keys())
+          for vals in world_map_canon.get("stages_dict", {}).values():
+              canon_zh.update(vals)
+          for vals in world_map_canon.get("permanent_dict", {}).values():
+              canon_zh.update(vals)
+          lang_zh = {
+              node.get("zh_CN", {}).get("pattern")
+              for node in world_map.values()
+          }
+          missing = sorted(canon_zh - lang_zh)
+          assert not missing, f"canonical names missing lang nodes: {missing}"
+
+          for key, node in world_map.items():
+              zh = node.get("zh_CN", {}).get("pattern")
+              assert zh, f"{key} missing zh_CN.pattern"
+              # en_US 必须是纯 ASCII（官方英文名）；其余语言仅要求非空
+              en = node.get("en_US", {}).get("pattern")
+              if en:
+                  assert en.isascii(), f"{key}.en_US non-ASCII: {en!r}"
+              for lang in ("ja_JP", "ko_KR", "es_ES"):
+                  if lang in node:
+                      assert node[lang].get("pattern"), f"{key}.{lang} empty"
+
+          # 已知错误译名黑名单（禁止回退出现）
+          blacklist = ("Wulingcheng", "Experimental Park", "valley four",
+                       "Qingbo Village", "first pier", "Zangjian Valley")
+          raw = open("assets/lang/world_map.json", encoding="utf-8").read()
+          for bad in blacklist:
+              assert bad not in raw, f"Blacklisted translation reappeared: {bad}"
+
+          # 快照完整性
+          maps = snapshot["maps"]
+          assert len(maps) == 3, "Snapshot must contain 3 maps."
+          for mp in maps:
+              assert mp["name"]["zh"], f"{mp['id']} missing zh name"
+              for lv in mp["levels"]:
+                  for site in lv["sites"]:
+                      for lang in ("zh", "en", "ja", "ko"):
+                          assert site[lang] != "?", \
+                              f"{mp['id']}/{lv['id']} site {site['zh']} missing {lang}"
+
+          # 语言不得少于 4 语（zh/en/ja/ko 为官方 API 硬保证）
+          for mp in maps:
+              assert len(mp["name"]) >= 5, f"{mp['id']} missing languages"
+
+          # ---------- wiki_items.json 校验（次级可信指标） ----------
+
+          with open("assets/data/wiki_items.json", encoding="utf-8") as f:
+              wiki_items = json.load(f)
+          assert len(wiki_items) >= 800, "wiki_items.json lost keys."
+          for zh, node in wiki_items.items():
+              # 各语言存在则必须非空（官方源有缺口，不做必填断言）
+              for lang in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"):
+                  val = node.get(lang, {}).get("string")
+                  assert val is None or val, f"wiki item {zh} empty {lang}"
+
+          # zh_CN 条目占比（简中来源 skland，为次级指标，不强制全覆盖）
+          with_zhcn = sum(1 for n in wiki_items.values() if n.get("zh_CN", {}).get("string"))
+          assert with_zhcn >= 800, f"too few zh_CN entries: {with_zhcn}"
+          # 键必须为官方简中名（非 itemId）；有 zh_CN 节点时须与键一致
+          for zh, node in wiki_items.items():
+              node_zh = node.get("zh_CN", {}).get("string")
+              if node_zh:
+                  assert zh == node_zh.strip(), \
+                      f"wiki_items key not its zh_CN name: {zh!r}"
+
+          # ---------- ok.po 完整性 ----------
+
+          placeholder_re = re.compile(r"\{[^{}]+\}")
+          for po_path in Path("i18n").glob("*/LC_MESSAGES/ok.po"):
+              locale = po_path.parents[1].name
+              po = polib.pofile(str(po_path))
+              seen = set()
+              for entry in po:
+                  assert entry.msgid, f"{locale}: empty msgid"
+                  assert entry.msgid not in seen, f"{locale}: duplicate {entry.msgid!r}"
+                  seen.add(entry.msgid)
+                  assert entry.msgstr, f"{locale}: empty {entry.msgid!r}"
+                  assert set(placeholder_re.findall(entry.msgid)) == \
+                      set(placeholder_re.findall(entry.msgstr)), \
+                      f"{locale}: placeholders {entry.msgid!r}"
+              assert (po_path.parent / "ok.mo").exists(), \
+                  f"{locale}: ok.mo missing"
+
+          print("Validation passed.")
+          PY
+
+      - name: Commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add assets/lang/world_map.json assets/lang/characters.json assets/data/map_marks.json assets/data/wiki_items.json assets/data/characters.json tools/official_five_lang.json i18n assets/lang/*.json
+
+          if git diff --cached --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+
+          git commit -m "chore(lang): sync world map & character translations from official API"
+
+      - name: Push
+        run: |
+          git push
