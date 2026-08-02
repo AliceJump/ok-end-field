@@ -30,6 +30,14 @@ jobs:
         run: |
           pip install --only-binary :all: polib==1.2.0
           pip install --only-binary :all: pypinyin==0.55.0
+          pip install --only-binary :all: zhconv==1.4.3
+          pip install --only-binary :all: playwright==1.57.0
+          python -m playwright install --with-deps chromium
+
+      - name: Capture wiki catalog (playwright)
+        run: |
+          python scripts/capture_wiki_catalog.py || echo "::warning::wiki catalog (skport) capture failed; wiki_items validation will be skipped"
+          python scripts/capture_wiki_zhcn.py || echo "::warning::wiki zh-cn (skland) capture failed"
 
       - name: Sync translations from official API
         run: |
