@@ -17,13 +17,15 @@ skland 有 15 个类型子类（skport 只有 13 类，缺武器基质/任务/�
 
 import argparse
 import json
-import os
 import sys
 import time
+from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
 
 from playwright.sync_api import sync_playwright
+
+ROOT = Path(__file__).resolve().parent.parent
 
 PREFIX = "https://zonai.skland.com/web/v1/wiki/item/catalog"
 
@@ -38,11 +40,13 @@ def main():
     ap.add_argument("--headless", action="store_true", default=True)
     args = ap.parse_args()
 
-    root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    out_dir = os.path.join(root, args.out)
+    root = Path(__file__).resolve().parent.parent
+    out_dir = (root / args.out).resolve()
+    if not out_dir.is_relative_to(root):
+        ap.error(f"--out must be inside the repo root: {args.out}")
     stamp = time.strftime("%Y%m%d_%H%M%S")
-    lang_dir = os.path.join(out_dir, stamp)
-    os.makedirs(lang_dir, exist_ok=True)
+    lang_dir = out_dir / stamp
+    lang_dir.mkdir(parents=True, exist_ok=True)
 
     launch_kwargs = {"channel": "chrome"}
     if not args.headless:
@@ -81,7 +85,7 @@ def main():
                 subs = [s for c in d["data"]["catalog"] for s in c["typeSub"]]
                 items = [i for s in subs for i in s.get("items", [])]
                 counts[sub] = len(items)
-                path = os.path.join(lang_dir, f"m1_s{sub}.json")
+                path = lang_dir / f"m1_s{sub}.json"
                 with open(path, "w", encoding="utf-8") as f:
                     f.write(body)
             except Exception as e:
@@ -90,7 +94,7 @@ def main():
 
         browser.close()
 
-    meta = os.path.join(out_dir, f"{stamp}_summary.json")
+    meta = out_dir / f"{stamp}_summary.json"
     with open(meta, "w", encoding="utf-8") as f:
         json.dump(counts, f, ensure_ascii=False, indent=2)
     print("summary:", meta, flush=True)
