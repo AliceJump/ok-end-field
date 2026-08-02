@@ -2,8 +2,7 @@ import ctypes
 import win32gui
 import win32ui
 import win32con
-from PIL import Image
-import pyautogui
+from PIL import Image, ImageGrab
 
 def capture_window(hwnd):
     """
@@ -55,7 +54,12 @@ def capture_window(hwnd):
 
 def capture_window_by_screen(hwnd):
     """
-    通过“全屏截图 + 裁剪窗口客户区”的方式获取窗口截图
+    通过“全虚拟桌面截图 + 裁剪窗口客户区”的方式获取窗口截图
+
+    支持多显示器：窗口位于主屏原点左侧/上方（屏幕坐标为负值）时，
+    pyautogui.screenshot() 只截主屏会导致裁剪越界全黑，
+    因此改用 ImageGrab.grab(all_screens=True) 截取整个虚拟桌面，
+    再按虚拟桌面原点偏移裁剪出窗口客户区。
 
     Args:
         hwnd (int): 窗口句柄
@@ -71,10 +75,13 @@ def capture_window_by_screen(hwnd):
     width = right - left
     height = bottom - top
 
-    # 2️⃣ 全屏截图
-    screen = pyautogui.screenshot()
+    # 2️⃣ 全虚拟桌面截图（包含主屏以外的负坐标区域）
+    screen = ImageGrab.grab(all_screens=True)
 
-    # 3️⃣ 裁剪窗口客户区
-    cropped = screen.crop((left, top, left + width, top + height))
+    # 3️⃣ 虚拟桌面原点偏移后裁剪窗口客户区
+    virtual_x = ctypes.windll.user32.GetSystemMetrics(76)  # SM_XVIRTUALSCREEN
+    virtual_y = ctypes.windll.user32.GetSystemMetrics(77)  # SM_YVIRTUALSCREEN
+    cropped = screen.crop((left - virtual_x, top - virtual_y,
+                           left - virtual_x + width, top - virtual_y + height))
 
     return cropped
