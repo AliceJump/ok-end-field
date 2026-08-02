@@ -10,7 +10,7 @@
 行为：
 1. 抓取 map/tree 得到全部 mapId/levelId 组合；
 2. 对每个组合拉取六语 mark/list，按 markTemplates 的 templateId（md5）合并；
-3. 更新 assets/lang/map_marks.json（zh_CN/zh_TW/en_US/ja_JP/ko_KR/es_ES 六语），
+3. 更新 assets/data/map_marks.json（zh_CN 简中名为键，zh_CN/zh_TW/en_US/ja_JP/ko_KR/es_ES 六语），
    结构与 characters.json 一致（{lang: {"string": ...}}）；
 4. 同步官方译名进 i18n/*/LC_MESSAGES/ok.po 并编译 .mo；
 5. 幂等：官方名称无变化时不产生任何写入。
@@ -52,7 +52,7 @@ HEADERS = {
 }
 
 ROOT = Path(__file__).resolve().parent.parent
-LANG_MARKS_JSON = ROOT / "assets" / "lang" / "map_marks.json"
+LANG_MARKS_JSON = ROOT / "assets" / "data" / "map_marks.json"
 ITEM_NAMES_JSON = ROOT / "assets" / "items" / "map" / "item_names.json"
 I18N_DIR = ROOT / "i18n"
 
@@ -254,7 +254,7 @@ def main():
             for tid, name in templates.items():
                 merged.setdefault(tid, {})[lang] = name
 
-    # 读旧 JSON，仅写有变化的语言值
+    # 读旧 JSON，仅写有变化的语言值（键：zh_CN 简中名，同名合并）
     old = {}
     if LANG_MARKS_JSON.exists():
         old = json.loads(LANG_MARKS_JSON.read_text(encoding="utf-8"))
@@ -262,19 +262,29 @@ def main():
     changed = 0
     added = 0
     for tid in sorted(merged):
-        node = old.setdefault(tid, {})
+        zh = (merged[tid].get("zh_CN") or "").strip()
+        if not zh:
+            continue
+        node = old.setdefault(zh, {})
         for lang, name in merged[tid].items():
+            if lang == "zh_CN":
+                continue
+            name = (name or "").strip()
             old_val = (node.get(lang) or {}).get("string")
             if old_val != name:
                 node[lang] = {"string": name}
-                if tid in old and lang in node and old.get(tid, {}).get(lang, {}).get("string") is not None:
+                if old_val is not None:
                     changed += 1
                 else:
                     added += 1
+        old_val = (node.get("zh_CN") or {}).get("string")
+        if old_val != zh:
+            node["zh_CN"] = {"string": zh}
+            added += 1
 
     if changed or added:
         write_json(LANG_MARKS_JSON, old)
-    print(f"templates: {len(merged)}  added: {added}  changed: {changed}")
+    print(f"templates: {len(merged)}  merged zh_CN keys: {len(old)}  added: {added}  changed: {changed}")
 
     # 覆盖统计：item_names.json 中哪些名称官方模板已覆盖
     if ITEM_NAMES_JSON.exists():

@@ -40,6 +40,11 @@ OFFICIAL_SAME_AS_ENGLISH = {
     "锦草",  # Jincao
     "息壤气",  # Xiragen
     "惰气",  # Inergen
+    # 干员名（wiki 官方 es 译名与英文相同）
+    "安塔尔",  # Antal
+    "陈千语",  # Chen Qianyu
+    "伊冯",  # Yvonne
+    "庄方宜",  # Zhuang Fangyi
 }
 
 

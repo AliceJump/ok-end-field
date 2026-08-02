@@ -35,6 +35,7 @@ jobs:
           python scripts/sync_world_map_langs.py
           python scripts/sync_character_langs.py
           python scripts/sync_map_mark_langs.py
+          python scripts/sync_wiki_item_langs.py
 
       - name: Validate data
         shell: bash
@@ -61,7 +62,7 @@ jobs:
           with open("assets/data/characters.json", encoding="utf-8") as f:
               characters_canon = json.load(f)
 
-          with open("assets/lang/map_marks.json", encoding="utf-8") as f:
+          with open("assets/data/map_marks.json", encoding="utf-8") as f:
               map_marks = json.load(f)
 
           # ---------- 绝对校验 ----------
@@ -81,11 +82,12 @@ jobs:
           # ---------- map_marks.json 校验 ----------
 
           assert len(map_marks) >= 150, "map_marks.json lost keys."
-          for tid, node in map_marks.items():
-              assert len(tid) == 32, f"map_marks key not a templateId: {tid}"
+          for zh, node in map_marks.items():
+              assert isinstance(zh, str) and zh.strip(), \
+                  f"map_marks key not a zh_CN name: {zh!r}"
               for lang in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES"):
                   assert node.get(lang, {}).get("string"), \
-                      f"{tid} missing {lang}"
+                      f"{zh} missing {lang}"
           with open("assets/items/map/item_names.json", encoding="utf-8") as f:
               item_names = json.load(f)
           marks_zh = {
@@ -150,6 +152,27 @@ jobs:
           for mp in maps:
               assert len(mp["name"]) >= 5, f"{mp['id']} missing languages"
 
+          # ---------- wiki_items.json 校验（次级可信指标） ----------
+
+          with open("assets/data/wiki_items.json", encoding="utf-8") as f:
+              wiki_items = json.load(f)
+          assert len(wiki_items) >= 800, "wiki_items.json lost keys."
+          for zh, node in wiki_items.items():
+              # 各语言存在则必须非空（官方源有缺口，不做必填断言）
+              for lang in ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR"):
+                  val = node.get(lang, {}).get("string")
+                  assert val is None or val, f"wiki item {zh} empty {lang}"
+
+          # zh_CN 条目占比（简中来源 skland，为次级指标，不强制全覆盖）
+          with_zhcn = sum(1 for n in wiki_items.values() if n.get("zh_CN", {}).get("string"))
+          assert with_zhcn >= 800, f"too few zh_CN entries: {with_zhcn}"
+          # 键必须为官方简中名（非 itemId）；有 zh_CN 节点时须与键一致
+          for zh, node in wiki_items.items():
+              node_zh = node.get("zh_CN", {}).get("string")
+              if node_zh:
+                  assert zh == node_zh.strip(), \
+                      f"wiki_items key not its zh_CN name: {zh!r}"
+
           # ---------- ok.po 完整性 ----------
 
           placeholder_re = re.compile(r"\{[^{}]+\}")
@@ -176,7 +199,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add assets/lang/world_map.json assets/lang/characters.json assets/lang/map_marks.json assets/data/characters.json tools/official_five_lang.json i18n assets/lang/*.json
+          git add assets/lang/world_map.json assets/lang/characters.json assets/data/map_marks.json assets/data/wiki_items.json assets/data/characters.json tools/official_five_lang.json i18n assets/lang/*.json
 
           if git diff --cached --quiet; then
             echo "No changes."
