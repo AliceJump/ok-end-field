@@ -8,6 +8,7 @@ from src.tasks.daily.daily_battle_mixin import BattleContext, DailyBattleFeature
 class _ToEndTaskHarness:
     def __init__(self):
         self.events = []
+        self._now = 0.0
         self.width = 1920
         self.box = SimpleNamespace(bottom_right=object())
         self.lang = SimpleNamespace(
@@ -50,7 +51,14 @@ class _ToEndTaskHarness:
         return check_func()
 
     def sleep(self, timeout):
+        self._now += timeout
         self.events.append(("sleep", timeout))
+
+    def active_time(self):
+        return self._now
+
+    def log_info(self, *args, **kwargs):
+        pass
 
 
 class TestDailyBattleToEnd(unittest.TestCase):
@@ -74,9 +82,9 @@ class TestDailyBattleToEnd(unittest.TestCase):
         ]
         self.assertEqual(1, len(middle_click_indexes))
         self.assertLess(middle_click_indexes[0], task.events.index("yolo_hit"))
-        self.assertEqual(6, task.events.count("ocr_miss"))
+        self.assertEqual(4, task.events.count("ocr_miss"))
         self.assertEqual(1, task.events.count("rotate"))
-        self.assertEqual(3, task.events.count("strafe"))
+        self.assertEqual(1, task.events.count("strafe"))
 
     def test_normal_reward_search_has_no_redundant_one_second_sleep(self):
         task = _ToEndTaskHarness()

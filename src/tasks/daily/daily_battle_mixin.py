@@ -939,6 +939,7 @@ class DailyBattleFeature:
                 self.click(key="middle", after_sleep=0.3)
 
             else:
+                # 协议空间战斗结束后最多等两秒让界面特征刷新，找到或超时后继续
                 end_feature_name = "battle_end"
                 use_yolo = True
                 search_box = self.box_of_screen(
@@ -947,6 +948,13 @@ class DailyBattleFeature:
                     1550 / 1920,
                     (1080 - 150) / 1080,
                 )
+
+                refresh_start = self.active_time()
+                while self.active_time() - refresh_start <= 2:
+                    if self.yolo_detect(name=end_feature_name, box=search_box):
+                        self.log_info("协议空间战斗结束，界面特征已刷新")
+                        break
+                    self.sleep(0.1)
 
                 target_found_by_yolo = search_normal_reward(
                     end_feature_name,
