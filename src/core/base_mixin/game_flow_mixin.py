@@ -123,7 +123,7 @@ class GameFlowMixin:
             list: 特征识别结果列表。
         """
         img = self.login_screenshot(need_active=need_active)
-        frame = img if isinstance(img, np.ndarray) else np.array(img)
+        screenshot_frame = img if isinstance(img, np.ndarray) else np.array(img)
         return super().find_feature(
             feature,
             horizontal_variance,
@@ -144,7 +144,7 @@ class GameFlowMixin:
             match_method,
             screenshot,
             mask_function,
-            frame,
+            screenshot_frame,
             limit,
             target_height,
         )

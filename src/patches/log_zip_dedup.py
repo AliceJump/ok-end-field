@@ -23,7 +23,7 @@ DEDUP_INFO_FORMAT = 1
 
 def md5_hex(data: bytes) -> str:
     """计算图片内容 MD5，用于判断两张图是否完全相同。"""
-    return hashlib.md5(data).hexdigest()
+    return hashlib.md5(data, usedforsecurity=False).hexdigest()
 
 
 def collect_image_duplicates(entries):

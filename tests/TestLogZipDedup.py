@@ -37,8 +37,10 @@ class TestLogZipDedup(unittest.TestCase):
         self.assertEqual(duplicates[0]["kept"], "screenshots/a_original.png")
         self.assertEqual(duplicates[0]["duplicate"], "screenshots/c_original.png")
         self.assertEqual(duplicates[1]["duplicate"], "screenshots/d_original.png")
-        for record in duplicates:
-            self.assertEqual(record["hash"], md5_hex(b"same"))
+        self.assertEqual(
+            {record["hash"] for record in duplicates},
+            {md5_hex(b"same")},
+        )
 
     def test_build_and_read_dedup_info_roundtrip(self):
         duplicates = [{"hash": "h1", "kept": "a.png", "duplicate": "b.png"}]
