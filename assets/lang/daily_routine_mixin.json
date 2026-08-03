@@ -1179,6 +1179,26 @@
       "string": "Obtener cupón de despacho"
     }
   },
+  "k_culture_stopped": {
+    "zh_CN": {
+      "pattern": "停工"
+    },
+    "zh_TW": {
+      "pattern": "停工"
+    },
+    "en_US": {
+      "pattern": "stop"
+    },
+    "ja_JP": {
+      "pattern": "停止"
+    },
+    "ko_KR": {
+      "pattern": "중지"
+    },
+    "es_ES": {
+      "pattern": "detener"
+    }
+  },
   "k_view_quote": {
     "zh_CN": {
       "string": "查看报价"

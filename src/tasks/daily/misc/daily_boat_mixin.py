@@ -221,13 +221,16 @@ class DailyBoatMixin:
             return False
         self.click(result)
         self.log_info("点击培育室")
-        results = self.wait_click_ocr(match=[self.lang.daily_routine_mixin.k_ffb5655a, self.lang.daily_routine_mixin.k_31cceca8], time_out=3, box=exchange_help_box,
+        results = self.wait_click_ocr(match=[self.lang.daily_routine_mixin.k_ffb5655a, self.lang.daily_routine_mixin.k_31cceca8, self.lang.daily_routine_mixin.k_culture_stopped], time_out=3, box=exchange_help_box,
                                       recheck_time=1)
         if not results:
-            self.mark_task_failure("未找到全部收取或培养中字样，任务失败")
+            self.mark_task_failure("未找到全部收取、培养或停工字样，任务失败")
             return False
         if not (self.lang.daily_routine_mixin.k_ffb5655a.search(results[0].name)):
-            self.log_info("正在培养，任务结束")
+            if self.lang.daily_routine_mixin.k_culture_stopped.search(results[0].name):
+                self.log_info("培育室停工中，任务结束")
+            else:
+                self.log_info("正在培养，任务结束")
             return True
         self.log_info("找到收取按钮")
         self.wait_pop_up()
