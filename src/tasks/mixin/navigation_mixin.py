@@ -200,11 +200,17 @@ class NavigationMixin(SearchMixin):
                     settle_time = 2 if target_is_ocr else 1
                     stable = True
                     confirm_start = self.active_time()
+                    confirm_miss_count = 0
+                    confirm_miss_limit = 4
 
                     while self.active_time() - confirm_start < settle_time:
                         if not check_target():
-                            stable = False
-                            break
+                            confirm_miss_count += 1
+                            if confirm_miss_count >= confirm_miss_limit:
+                                stable = False
+                                break
+                        else:
+                            confirm_miss_count = 0
                         self.sleep(0.03)
 
                     if stable:
