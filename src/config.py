@@ -144,6 +144,7 @@ config = {
         ["src.tasks.onetime.TestStartGame", "TestStartGame"],
         ["src.tasks.test.RealtimeDetectTask", "RealtimeDetectTask"],
         ["src.tasks.test.DiagnosisTask", "DiagnosisTask"],
+        ["src.tasks.test.TestBattleSlotDetect", "TestBattleSlotDetect"],
     ],
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],

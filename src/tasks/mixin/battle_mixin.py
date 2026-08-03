@@ -22,6 +22,7 @@ import re
 
 import cv2
 import numpy as np
+from ok import Box
 
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING
@@ -67,6 +68,7 @@ class BattleMixin(BaseEfTask):
 
         self.last_no_number_action_time = 0
         self.exit_check_count = 0
+        self._battle_member_count = 0
         self.battle_config_manager = BattleConfigManager(get_global_config(BATTLE_CONFIG_NAME))
         self._register_battle_config()
         # 用于识别 LV 或等级文字
@@ -181,7 +183,7 @@ class BattleMixin(BaseEfTask):
             ults = [ult_sequence]
 
         for ult in ults:
-            if self.find_one("ult_" + ult):
+            if self._find_battle_ult("ult_" + ult):
                 self.send_key_down(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，不经过KeyConfigManager管理
                 # 等待技能释放导致战斗状态变化
                 self.wait_until(lambda: not self.in_combat(), time_out=1)
@@ -225,7 +227,107 @@ class BattleMixin(BaseEfTask):
         判断当前是否处于队伍状态。
         """
 
-        return sum(self.find_one(f"skill_{i}") is not None for i in range(1, 5)) >= 3
+        skill_bar_count = self.get_skill_bar_count()
+        expected_skill = 1
+        found_skills = 0
+        skill_checks = []
+        for box_index, box in enumerate(self._battle_feature_boxes("skill"), start=1):
+            if expected_skill > 4:
+                break
+            feature = f"skill_{expected_skill}"
+            result = self.find_one(feature, box=box)
+            match_position = f"({result.x},{result.y})" if result is not None else "-"
+            skill_checks.append(
+                f"{feature}->框{box_index}({box.x},{box.y},{box.width},{box.height}) "
+                f"{'命中' if result is not None else '未命中'}@{match_position}"
+            )
+            if result is not None:
+                found_skills += 1
+                expected_skill += 1
+        self._battle_member_count = found_skills
+        has_yellow_skill_bar = skill_bar_count >= 1
+        self.log_debug(
+            f"队伍人数检测: {found_skills} 人，黄色技能条={skill_bar_count}，"
+            f"检查结果: {'; '.join(skill_checks)}"
+        )
+        return found_skills >= 1 and has_yellow_skill_bar
+
+    def _battle_feature_boxes(self, prefix: str):
+        """按模板初始位置的 x 坐标返回四个独立搜索框。"""
+        initial_boxes = []
+        for index in range(1, 5):
+            try:
+                initial_boxes.append(self.get_box_by_name(f"{prefix}_{index}"))
+            except (ValueError, AttributeError):
+                continue
+
+        if not initial_boxes:
+            return []
+
+        max_width = max(box.width for box in initial_boxes)
+        max_height = max(box.height for box in initial_boxes)
+        for index in range(1, 5):
+            try:
+                template = self.get_feature_by_name(f"{prefix}_{index}")
+            except (ValueError, AttributeError):
+                continue
+            if template is not None:
+                max_width = max(max_width, template.width)
+                max_height = max(max_height, template.height)
+
+        if prefix == "skill":
+            max_width = round(max_width * 1.25)
+
+        boxes = []
+        for initial_box in sorted(initial_boxes, key=lambda box: box.x):
+            center_x = initial_box.x + initial_box.width // 2
+            center_y = initial_box.y + initial_box.height // 2
+            x = max(0, center_x - max_width // 2)
+            y = max(0, center_y - max_height // 2)
+            x = min(x, max(0, self.width - max_width))
+            y = min(y, max(0, self.height - max_height))
+            boxes.append(Box(x, y, width=max_width, height=max_height))
+        return boxes
+
+    def _find_battle_feature(self, feature: str):
+        """在按 x 排序的独立模板框中查找技能，避免跨框误匹配。"""
+        prefix, _, _ = feature.rpartition("_")
+        if prefix not in ("skill", "ult"):
+            return self.find_one(feature)
+        for box in self._battle_feature_boxes(prefix):
+            if result := self.find_one(feature, box=box):
+                return result
+        return None
+
+    def _find_battle_ult(self, feature: str):
+        """根据本次队伍人数，将终结技模板映射到实际技能框。"""
+        boxes = self._battle_feature_boxes("ult")
+        if len(boxes) != 4 or not self._battle_member_count:
+            return self._find_battle_feature(feature)
+
+        try:
+            original_index = int(feature.rsplit("_", 1)[1])
+        except (IndexError, ValueError):
+            return self._find_battle_feature(feature)
+
+        current_index = original_index + (4 - self._battle_member_count) - 1
+        if current_index < 0 or current_index >= len(boxes):
+            self.log_debug(
+                f"终结技目标映射失败: {feature}, 队伍人数={self._battle_member_count}, "
+                f"计算框索引={current_index + 1}"
+            )
+            return None
+        self.log_debug(
+            f"终结技目标映射: {feature}, 队伍人数={self._battle_member_count}, "
+            f"检测第 {current_index + 1} 个框(x={boxes[current_index].x})"
+        )
+        result = self.find_one(feature, box=boxes[current_index])
+        match_position = f"({result.x},{result.y})" if result is not None else "-"
+        self.log_debug(
+            f"模板匹配结果: {feature}->框{current_index + 1}, "
+            f"{'命中' if result is not None else '未命中'}@{match_position}"
+        )
+        return result
 
     def is_combat_ended(self, exit_condition=None):
         """
