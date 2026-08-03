@@ -1,11 +1,19 @@
 from __future__ import annotations
 
 import calendar
+import io
+import json
 import subprocess
 import threading
 import time
 import zipfile
 from pathlib import Path
+
+from src.patches.log_zip_dedup import (
+    DEDUP_INFO_FILENAME,
+    build_dedup_info,
+    collect_image_duplicates,
+)
 
 import requests
 from PIL import Image
@@ -65,21 +73,22 @@ def _build_logs_zip(note_text: str = ""):
 
         return True
 
-    def _write_snapshot_file(zipf: zipfile.ZipFile, file_path: Path, arcname: Path):
+    def _read_snapshot_file(file_path: Path) -> bytes | None:
         if not _wait_file_settled(file_path):
             logger.debug(f"skip unstable file: {file_path}")
-            return
+            return None
+
+        data = file_path.read_bytes()
 
         if _is_image_file(file_path):
             try:
-                with Image.open(file_path) as img:
+                with Image.open(io.BytesIO(data)) as img:
                     img.verify()
             except Exception as exc:
                 logger.warning(f"skip invalid image file: {file_path} ({exc})")
-                return
+                return None
 
-        with file_path.open("rb") as src:
-            zipf.writestr(str(arcname).replace("\\", "/"), src.read())
+        return data
 
     downloads_path.mkdir(parents=True, exist_ok=True)
     try:
@@ -87,13 +96,36 @@ def _build_logs_zip(note_text: str = ""):
             # 将用户输入写入 info.txt，方便查看上传时的说明
             zipf.writestr("info.txt", note_text or "")
 
+            image_entries = []
             for folder in ["screenshots", "logs"]:
                 source_dir = Path.cwd() / folder
                 if not source_dir.is_dir():
                     continue
                 for file_path in source_dir.rglob("*"):
-                    if file_path.is_file():
-                        _write_snapshot_file(zipf, file_path, file_path.relative_to(Path.cwd()))
+                    if not file_path.is_file():
+                        continue
+                    data = _read_snapshot_file(file_path)
+                    if data is None:
+                        continue
+                    arcname = str(file_path.relative_to(Path.cwd())).replace("\\", "/")
+                    if _is_image_file(file_path):
+                        image_entries.append((arcname, data))
+                    else:
+                        zipf.writestr(arcname, data)
+
+            # 仅导出/上传日志时对完全相同的图片去重，重复项记录到信息文件，可恢复
+            unique_entries, duplicates = collect_image_duplicates(image_entries)
+            for arcname, data in unique_entries:
+                zipf.writestr(arcname, data)
+            if duplicates:
+                zipf.writestr(
+                    DEDUP_INFO_FILENAME,
+                    json.dumps(build_dedup_info(duplicates), ensure_ascii=False, indent=2),
+                )
+                logger.info(
+                    f"deduplicated {len(duplicates)} identical images, "
+                    f"details in {DEDUP_INFO_FILENAME}"
+                )
 
         # 本地先做一次完整性校验，避免把损坏的 zip 继续上传到服务器
         try:
