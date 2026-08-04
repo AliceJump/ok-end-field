@@ -28,6 +28,32 @@ from src.tasks.account.account_scope_store import (
     sync_account_list_text,
     update_overrides,
 )
+from src.core.global_config_store import (
+    ZIP_LINE_CONFIG_NAME,
+    ZIP_LINE_CONFIG_TYPE,
+    ZIP_LINE_CONFIG_DESCRIPTION,
+    ZIP_LINE_DEFAULT_CONFIG,
+    get_global_config,
+)
+
+
+class GlobalZipLineConfigProxy:
+    """Expose the global zipline schema in the per-account editor."""
+
+    name = "滑索配置"
+    icon = FluentIcon.SETTING
+    account_override_name = ZIP_LINE_CONFIG_NAME
+    support_multi_account = True
+    running = False
+    default_config = ZIP_LINE_DEFAULT_CONFIG
+    config = get_global_config(ZIP_LINE_CONFIG_NAME)
+    config_description = ZIP_LINE_CONFIG_DESCRIPTION
+    config_type = ZIP_LINE_CONFIG_TYPE
+    account_config_blacklist = set()
+    account_config_whitelist = set()
+    account_config_defaults = {}
+    account_config_description = {}
+    account_config_type = {}
 
 
 class InMemoryConfig(dict):
@@ -287,6 +313,10 @@ class AccountConfigTab(CustomTab):
             return {str(key) for key in value}
         return set()
 
+    @staticmethod
+    def _task_storage_name(task) -> str:
+        return str(getattr(task, "account_override_name", task.__class__.__name__))
+
     def _account_config_schema(self, task, task_override: Dict[str, Any]) -> Dict[str, Any]:
         schema = dict(task.default_config)
         extra_defaults = getattr(task, "account_config_defaults", None)
@@ -392,11 +422,12 @@ class AccountConfigTab(CustomTab):
         for task in list(getattr(self.executor, "onetime_tasks", [])) + list(getattr(self.executor, "trigger_tasks", [])):
             if not getattr(task, "support_multi_account", False):
                 continue
-            class_name = task.__class__.__name__
+            class_name = AccountConfigTab._task_storage_name(task)
             if class_name in seen:
                 continue
             seen.add(class_name)
             tasks.append(task)
+        tasks.append(GlobalZipLineConfigProxy)
         return tasks
 
     def refresh_from_source(self):
@@ -527,19 +558,19 @@ class AccountConfigTab(CustomTab):
 
     def rebuild_task_selector(self, keep_selection: bool = True):
         current_task = self._current_task()
-        current_class_name = current_task.__class__.__name__ if keep_selection and current_task else ""
+        current_class_name = AccountConfigTab._task_storage_name(current_task) if keep_selection and current_task else ""
 
         task_map = {}
         displays = []
         for task in self._collect_tasks():
-            display = f"{og.app.tr(task.name)} ({task.__class__.__name__})"
+            display = f"{og.app.tr(task.name)} ({AccountConfigTab._task_storage_name(task)})"
             task_map[display] = task
             displays.append(display)
 
         selected_display = next(
             (
                 display for display, task in task_map.items()
-                if task.__class__.__name__ == current_class_name
+                if AccountConfigTab._task_storage_name(task) == current_class_name
             ),
             displays[0] if displays else "",
         )
@@ -588,7 +619,7 @@ class AccountConfigTab(CustomTab):
         self.render_task_editor()
 
     def _build_virtual_config(self, task, account_key: str, account_name: str, only_diff: bool = False):
-        task_class = task.__class__.__name__
+        task_class = AccountConfigTab._task_storage_name(task)
         accounts = self.overrides_data.get("accounts") or {}
         account_map = accounts.get(account_key, {})
         if account_name and (
@@ -642,7 +673,7 @@ class AccountConfigTab(CustomTab):
     def _hide_task_editor(self):
         if self.current_editor_card is not None:
             if self.current_task is not None:
-                self._task_expand_state[self.current_task.__class__.__name__] = bool(
+                self._task_expand_state[AccountConfigTab._task_storage_name(self.current_task)] = bool(
                     self.current_editor_card.isExpand
                 )
             self.current_editor_card.hide()
@@ -750,7 +781,7 @@ class AccountConfigTab(CustomTab):
             card.card.setTitle(f"{og.app.tr(task.name)} - {account_name or account_key}")
             card.update_config()
 
-        desired_expand_state = self._task_expand_state.get(task.__class__.__name__, card.isExpand)
+        desired_expand_state = self._task_expand_state.get(AccountConfigTab._task_storage_name(task), card.isExpand)
         card.setExpand(desired_expand_state)
         card.show()
 
@@ -771,7 +802,7 @@ class AccountConfigTab(CustomTab):
         accounts = self.overrides_data.setdefault("accounts", {})
         account_map = accounts.setdefault(self.current_account_key, {})
 
-        task_class = self.current_task.__class__.__name__
+        task_class = AccountConfigTab._task_storage_name(self.current_task)
         existing_config = account_map.get(task_class, {})
         snapshot, snapshot_keys, _, _ = self._build_virtual_config(
             self.current_task,
@@ -879,7 +910,7 @@ class AccountConfigTab(CustomTab):
             self.current_map_account_key
             and self.map_content_edit.text().strip() != self.current_map_value
         )
-        task_class = task.__class__.__name__
+        task_class = AccountConfigTab._task_storage_name(task)
 
         def clear_task(latest):
             self.overrides_data = latest
