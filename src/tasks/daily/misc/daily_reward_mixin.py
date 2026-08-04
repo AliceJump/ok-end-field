@@ -92,7 +92,10 @@ class DailyRewardMixin:
         self.press_key("f7")
         self.log_info("按下 F7 打开活动中心")
 
-        enabled_rewards = set(self.config.get("活动奖励", []))
+        enabled_rewards = self.config.get("⭐活动奖励", [])
+        if isinstance(enabled_rewards, bool):
+            enabled_rewards = self.ACTIVITY_REWARDS if enabled_rewards else []
+        enabled_rewards = set(enabled_rewards)
         weekly_enabled = "周常奖励" in enabled_rewards
         sanity_enabled = "理智补给" in enabled_rewards
         scratch_enabled = "刮刮乐" in enabled_rewards
