@@ -50,7 +50,7 @@ class SearchMixin(BaseEfTask):
         keys=("w", "a", "s", "d"),
         time_out: float = -1,
     ):
-        """WASD 轻微移动搜索，每次移动后调用一次 check_func，命中即返回其结果。
+        """WASD 轻微移动搜索，先检测再移动，命中即返回其结果。
 
         Args:
             check_func: 无参回调，返回真值表示命中（可直接返回检测结果）。
@@ -66,11 +66,11 @@ class SearchMixin(BaseEfTask):
         count = 0
         while passes is None or count < passes * len(keys):
             for key in keys:
-                self.move_keys(key, duration=duration)
                 result = check_func()
                 if result:
                     return result
                 count += 1
                 if start is not None and self.active_time() - start >= time_out:
                     return None
+                self.move_keys(key, duration=duration)
         return None
