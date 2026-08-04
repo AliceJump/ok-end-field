@@ -1056,9 +1056,6 @@ msgstr ""
 msgid "实时检测"
 msgstr "Detección en Tiempo Real"
 
-msgid "帝江号收菜操作"
-msgstr "Operaciones de recolección del Dijiang"
-
 msgid "庄方宜"
 msgstr "Zhuang Fangyi"
 
@@ -1254,9 +1251,6 @@ msgstr "Una cuenta (teléfono) por línea, sin contraseña"
 
 msgid "油猴脚本帮助"
 msgstr "Ayuda del script de Tampermonkey"
-
-msgid "活动奖励"
-msgstr "Recompensas de Evento"
 
 msgid "浏览器油猴脚本帮助"
 msgstr "Ayuda del script de Tampermonkey del navegador"

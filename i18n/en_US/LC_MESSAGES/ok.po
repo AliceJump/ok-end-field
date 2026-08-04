@@ -1554,9 +1554,6 @@ msgstr "Run YOLO detection in real-time loop."
 msgid "实时检测"
 msgstr "Real-time Detection"
 
-msgid "帝江号收菜操作"
-msgstr "Dijiang Harvest Operations"
-
 msgid "庄方宜"
 msgstr "Zhuang Fangyi"
 
@@ -1745,9 +1742,6 @@ msgstr "One account (phone) per line, no password needed"
 
 msgid "油猴脚本帮助"
 msgstr "Tampermonkey Script Help"
-
-msgid "活动奖励"
-msgstr "Activity Rewards"
 
 msgid "浏览器油猴脚本帮助"
 msgstr "Browser Tampermonkey Script Help"

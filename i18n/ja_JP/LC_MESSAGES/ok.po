@@ -1002,9 +1002,6 @@ msgstr "YOLO検出をリアルタイムでループ実行。"
 msgid "实时检测"
 msgstr "リアルタイム検出"
 
-msgid "帝江号收菜操作"
-msgstr "帝江号回収操作"
-
 msgid "庄方宜"
 msgstr "ゾアン・ファンイ"
 
@@ -1194,9 +1191,6 @@ msgstr "1行1アカウント名（電話番号）、パスワード不要"
 
 msgid "油猴脚本帮助"
 msgstr "Tampermonkeyスクリプトヘルプ"
-
-msgid "活动奖励"
-msgstr "イベント報酬"
 
 msgid "浏览器油猴脚本帮助"
 msgstr "ブラウザTampermonkeyスクリプトヘルプ"

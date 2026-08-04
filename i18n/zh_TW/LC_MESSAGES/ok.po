@@ -1003,9 +1003,6 @@ msgstr "實時迴圈執行 YOLO 檢測，用於線上觀察目標識別結果。
 msgid "实时检测"
 msgstr "實時檢測"
 
-msgid "帝江号收菜操作"
-msgstr "帝江號收菜操作"
-
 msgid "庄方宜"
 msgstr "莊方宜"
 
@@ -1195,9 +1192,6 @@ msgstr "每行一個帳號名（手機號），無需密碼"
 
 msgid "油猴脚本帮助"
 msgstr "油猴指令碼幫助"
-
-msgid "活动奖励"
-msgstr "活動獎勵"
 
 msgid "浏览器油猴脚本帮助"
 msgstr "瀏覽器油猴指令碼幫助"
