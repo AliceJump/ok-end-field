@@ -44,6 +44,11 @@ class DailyTask(
         "⭐简易制作",
         "⭐帝江号收菜",
     })
+    MULTI_SELECTION_TASK_KEYS = frozenset({
+        "⭐地区建设",
+        "⭐帝江号收菜",
+        "⭐活动奖励",
+    })
 
     account_config_blacklist = {
         "发生异常时终止游戏",
@@ -99,15 +104,21 @@ class DailyTask(
         })
         self.config_description.update({
             "⭐地区建设": (
-                "按地区执行据点兑换、买物资和买卖货，减少重复切换地区。"
+                "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
             ),
+            "⭐传送到帝江号右侧传送点": "是否在日常任务结束后传送到帝江号右侧传送点。",
             "自动打开汇总文件": "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。",
         })
         self.config_type["⭐地区建设"] = {
             "type": "multi_selection",
             "options": DailyRegionalRunner.OPTIONS,
         }
-        task_group = {"⭐⭐⭐ 默认": [i for i, _ in self.build_task_plan()] + ["⭐执行外部命令"]}
+        task_group = {
+            "⭐⭐⭐ 默认": [
+                i for i, _ in self.build_task_plan()
+                if i not in self.MULTI_SELECTION_TASK_KEYS
+            ] + ["⭐地区建设", "⭐帝江号收菜", "⭐活动奖励", "⭐执行外部命令"],
+        }
 
         # 合并两个分组字典
         all_groups = {**task_group, **self.default_config_group, **{"其他配置": ["发生异常时终止游戏", "仅退出游戏", "自动打开汇总文件"]}}
