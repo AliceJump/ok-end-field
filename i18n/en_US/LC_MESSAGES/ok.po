@@ -1131,9 +1131,6 @@ msgstr "⭐ Daily Rewards"
 msgid "⭐简易制作"
 msgstr "⭐ Simple Crafting"
 
-msgid "⭐转交委托奖励领取"
-msgstr "⭐ Claim Delegated Rewards"
-
 msgid "⭐转交运送委托"
 msgstr "⭐ Transfer Delivery Commission"
 

@@ -1012,9 +1012,6 @@ msgstr "⭐日常奖励"
 msgid "⭐简易制作"
 msgstr "⭐简易制作"
 
-msgid "⭐转交委托奖励领取"
-msgstr "⭐转交委托奖励领取"
-
 msgid "⭐转交运送委托"
 msgstr "⭐转交运送委托"
 

@@ -571,9 +571,6 @@ msgstr "⭐日常獎勵"
 msgid "⭐简易制作"
 msgstr "⭐簡易製作"
 
-msgid "⭐转交委托奖励领取"
-msgstr "⭐轉交委託獎勵領取"
-
 msgid "⭐转交运送委托"
 msgstr "⭐轉交運送委託"
 

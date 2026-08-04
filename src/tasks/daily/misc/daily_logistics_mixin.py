@@ -52,20 +52,16 @@ class DailyLogisticsMixin:
         self.press_key("esc")
         return True
 
-    def claim_delivery_rewards(self):
-        self.info_set("current_task", "claim_delivery_rewards")
+    def _claim_delivery_rewards_in_current_node(self):
+        """在已进入的仓储节点中领取一次转交委托奖励。"""
         self.log_info("开始领取转交委托奖励")
-
-        area = areas_list[0]
-        self.to_model_area(area, "仓储节点")
-
         if not self.wait_click_ocr(
                 match=self.lang.daily_routine_mixin.k_41a9fd98,
                 box=self.box.top_left,
                 time_out=5
         ):
-            self.log_info(f"'未找到我转交的委托'节点，返回主界面")
-            self.ensure_main()
+            self.log_info("未找到‘我转交的委托’节点，跳过领取")
+            return
 
         results = self.wait_ocr(
             match=self.lang.daily_routine_mixin.k_bf856c96,
@@ -74,23 +70,21 @@ class DailyLogisticsMixin:
         )
 
         if not results:
-            self.log_info(f"当前没有可领取的转交委托奖励，返回主界面")
-            self.ensure_main()
+            self.log_info("当前没有可领取的转交委托奖励")
 
         if results:
             self.click(results)
             if not self.wait_pop_up():
                 self.log_info("未找到 '确认' 按钮，可能未成功领取奖励")
-                self.ensure_main()
 
-        self.log_info("转交委托奖励领取完成，返回主界面")
-        self.ensure_main()
-        self.log_info("转交委托奖励领取任务完成")
+        # 返回仓储节点总览，让后续转交委托复用已经完成的地区导航。
+        self.log_info("转交委托奖励领取完成")
 
     def delivery_send_others(self):
         self.info_set("current_task", "delivery_send_others")
 
         send_count = 0
+        claim_rewards_done = False
 
         for area in areas_list:
             activity_num = 0
@@ -105,6 +99,10 @@ class DailyLogisticsMixin:
                     break
 
                 self.to_model_area(area, "仓储节点")
+
+                if not claim_rewards_done:
+                    self._claim_delivery_rewards_in_current_node()
+                    claim_rewards_done = True
 
                 if not self.wait_click_ocr(
                         match=self.lang.daily_routine_mixin.k_298d3284,
