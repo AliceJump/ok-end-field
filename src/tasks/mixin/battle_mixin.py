@@ -203,7 +203,7 @@ class BattleMixin(BaseEfTask):
 
         return False
 
-    def in_combat(self, required_yellow=0):
+    def in_combat(self, required_yellow=1):
         """
         判断当前是否处于战斗中。
 
@@ -227,30 +227,45 @@ class BattleMixin(BaseEfTask):
         判断当前是否处于队伍状态。
         """
 
-        skill_bar_count = self.get_skill_bar_count()
-        expected_skill = 1
         found_skills = 0
+        sequence_valid = True
         skill_checks = []
-        for box_index, box in enumerate(self._battle_feature_boxes("skill"), start=1):
-            if expected_skill > 4:
-                break
-            feature = f"skill_{expected_skill}"
-            result = self.find_one(feature, box=box)
+        boxes = self._battle_feature_boxes("skill")
+        for box_index, box in enumerate(boxes, start=1):
+            result = self.find_one("skill_1", box=box)
             match_position = f"({result.x},{result.y})" if result is not None else "-"
             skill_checks.append(
-                f"{feature}->框{box_index}({box.x},{box.y},{box.width},{box.height}) "
+                f"skill_1->框{box_index}({box.x},{box.y},{box.width},{box.height}) "
                 f"{'命中' if result is not None else '未命中'}@{match_position}"
             )
-            if result is not None:
-                found_skills += 1
-                expected_skill += 1
+            if result is None:
+                continue
+
+            if box_index == len(boxes):
+                found_skills = 1
+                break
+
+            next_box = boxes[box_index]
+            next_result = self.find_one("skill_2", box=next_box)
+            next_position = f"({next_result.x},{next_result.y})" if next_result is not None else "-"
+            skill_checks.append(
+                f"skill_2->框{box_index + 1}({next_box.x},{next_box.y},"
+                f"{next_box.width},{next_box.height}) "
+                f"{'命中' if next_result is not None else '未命中'}@{next_position}"
+            )
+            if next_result is None:
+                sequence_valid = False
+                break
+
+            # skill_1 的起始位置决定剩余可用技能槽数量，匹配 skill_2 后短路。
+            found_skills = 4 - box_index + 1
+            break
         self._battle_member_count = found_skills
-        has_yellow_skill_bar = skill_bar_count >= 1
         self.log_debug(
-            f"队伍人数检测: {found_skills} 人，黄色技能条={skill_bar_count}，"
+            f"队伍人数检测: {found_skills} 人，"
             f"检查结果: {'; '.join(skill_checks)}"
         )
-        return found_skills >= 1 and has_yellow_skill_bar
+        return sequence_valid and found_skills >= 1
 
     def _battle_feature_boxes(self, prefix: str):
         """按模板初始位置的 x 坐标返回四个独立搜索框。"""
