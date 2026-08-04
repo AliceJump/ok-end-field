@@ -4451,7 +4451,7 @@ msgid "阿伯莉感测芯片"
 msgstr "아부레이 센서 칩"
 
 msgid "动火用手甲I"
-msgstr "열 작업용 건틀릿 · I"
+msgstr "열 작업용 금속 장갑 · I"
 
 msgid "阿伯莉照明器"
 msgstr "아부레이 조명 장치"
