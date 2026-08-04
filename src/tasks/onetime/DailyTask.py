@@ -115,7 +115,6 @@ class DailyTask(
             ("⭐收邮件", self.daily_routine.claim_mail),
             ("⭐据点兑换", self.daily_routine.exchange_outpost_goods),
             ("⭐转交运送委托", self.daily_routine.delivery_send_others),
-            ("⭐转交委托奖励领取", self.daily_routine.claim_delivery_rewards),
             ("⭐造装备", self.daily_routine.make_weapon),
             ("⭐收信用", self.daily_routine.collect_credit),
             ("⭐买信用商店", self.daily_shop.credit_shop),

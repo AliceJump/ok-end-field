@@ -574,9 +574,6 @@ msgstr "⭐ Recompensas Diarias"
 msgid "⭐简易制作"
 msgstr "⭐ Fabricación sencilla"
 
-msgid "⭐转交委托奖励领取"
-msgstr "⭐ Recoger recompensas transferidas"
-
 msgid "⭐转交运送委托"
 msgstr "⭐ Transferir encargos de entrega"
 

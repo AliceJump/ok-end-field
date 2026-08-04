@@ -571,9 +571,6 @@ msgstr "⭐일일 보상"
 msgid "⭐简易制作"
 msgstr "⭐ 간단 제작"
 
-msgid "⭐转交委托奖励领取"
-msgstr "⭐ 전달 의뢰 보상 수령"
-
 msgid "⭐转交运送委托"
 msgstr "⭐ 운송 의뢰 전달"
 
