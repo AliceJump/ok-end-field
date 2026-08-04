@@ -32,18 +32,23 @@ class DailyBuyFeature:
 
     def __getattr__(self, name):
         return getattr(self._task, name)
-    def buy_staple_goods(self):
+    def buy_staple_goods(self, target_areas=None, keep_area_context=False):
         self.info_set("current_task", "buy_staple_goods")
         self.log_info("开始买物资任务")
         #
         pl = [re.compile(i) for i in self.config.get("购物白名单", [])]
         #
-        for area in areas_list:
-            self.ensure_main()
+        for area in target_areas or areas_list:
+            if not keep_area_context:
+                self.ensure_main()
             self.log_info(f"进入区域: {area}")
-            self.to_model_area(area, "物资调度")
             #
-            self.click_relative(100 / 3840, 464 / 2160)
+            self.wait_click_ocr(
+                match=self.lang.daily_buy_mixin.stable_materials_tab,
+                box=self.box.left,
+                time_out=5,
+                after_sleep=0.5,
+            )
             self.wait_ui_stable(refresh_interval=0.2)
             self.log_info("购买「日用消耗」")
             self.buy(pattern_list=pl)

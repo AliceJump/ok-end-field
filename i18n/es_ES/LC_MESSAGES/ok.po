@@ -562,6 +562,9 @@ msgstr "⭐ Recolección del Dijiang"
 msgid "⭐据点兑换"
 msgstr "⭐ Intercambio del puesto"
 
+msgid "⭐地区建设"
+msgstr "⭐ Operaciones regionales"
+
 msgid "⭐收信用"
 msgstr "⭐ Recoger Crédito"
 

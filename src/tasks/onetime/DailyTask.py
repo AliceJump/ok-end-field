@@ -1,4 +1,6 @@
 from qfluentwidgets import FluentIcon
+from src.data.FeatureList import FeatureList as fL
+from src.data.world_map import areas_list
 
 from src.tasks.account.account_mixin import AccountMixin
 from src.tasks.daily.daily_battle_mixin import DailyBattleFeature
@@ -87,6 +89,7 @@ class DailyTask(
             ),
         )
         self.default_config.update({
+            "⭐地区建设": True,
             "⭐传送到帝江号右侧传送点": True,
             "配置选择": "⭐⭐⭐ 默认",
             "发生异常时终止游戏": False,
@@ -94,6 +97,9 @@ class DailyTask(
             "自动打开汇总文件": True,
         })
         self.config_description.update({
+            "⭐地区建设": (
+                "按地区执行据点兑换、买物资和买卖货，减少重复切换地区。"
+            ),
             "自动打开汇总文件": "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。",
         })
         task_group = {"⭐⭐⭐ 默认": [i for i, _ in self.build_task_plan()] + ["⭐执行外部命令"]}
@@ -113,19 +119,53 @@ class DailyTask(
             ("⭐简易制作", self.daily_routine.make_simply),
             ("⭐帝江号收菜", self.daily_routine.boat_claim_rewards),
             ("⭐收邮件", self.daily_routine.claim_mail),
-            ("⭐据点兑换", self.daily_routine.exchange_outpost_goods),
+            ("⭐地区建设", self.run_regional_tasks),
             ("⭐转交运送委托", self.daily_routine.delivery_send_others),
             ("⭐造装备", self.daily_routine.make_weapon),
             ("⭐收信用", self.daily_routine.collect_credit),
             ("⭐买信用商店", self.daily_shop.credit_shop),
-            ("⭐买卖货", self.daily_trade.buy_sell),
             ("⭐刷体力", self.daily_battle.battle),
-            ("⭐买物资", self.daily_buy.buy_staple_goods),
             ("⭐活动奖励", self.daily_routine.claim_activity_rewards),
             ("⭐日常奖励", self.daily_routine.claim_daily_rewards),
             ("⭐演算", self.daily_demo.battle_demo),
             ("⭐传送到帝江号右侧传送点", lambda: self.transfer_to_home_point(box=self.box.right)),
         ]
+
+    def run_regional_tasks(self):
+        """按地区合并执行据点兑换、买物资和买卖货。"""
+        enabled_outpost = self.config.get("⭐据点兑换", True)
+        enabled_buy = self.config.get("⭐买物资", False)
+        enabled_trade = self.config.get("⭐买卖货", True)
+
+        for area in areas_list:
+            self.log_info(f"开始处理地区建设: {area}")
+            if enabled_outpost:
+                self.daily_routine.exchange_outpost_goods(
+                    target_areas=[area],
+                    keep_area_context=True,
+                )
+            if enabled_trade:
+                self.daily_trade.buy_sell(
+                    target_areas=[area],
+                    keep_area_context=True,
+                    after_buy=(
+                        lambda current_area: self.daily_buy.buy_staple_goods(
+                            target_areas=[current_area],
+                            keep_area_context=True,
+                        )
+                        if enabled_buy
+                        else None
+                    ),
+                )
+            elif enabled_buy:
+                self.daily_buy.buy_staple_goods(
+                    target_areas=[area],
+                    keep_area_context=True,
+                )
+            self.safe_back(feature=fL.transaction_overview, once_time_out=3)
+            self.log_info(f"完成地区建设: {area}")
+
+        return True
 
     def run(self):
         """日常任务主入口。"""
