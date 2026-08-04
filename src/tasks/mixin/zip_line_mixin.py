@@ -1,9 +1,39 @@
 import re
 from src.image.hsv_config import HSVRange as hR
 from src.core.sequence_parser import parse_int_sequence
+from src.core.global_config_store import ZIP_LINE_CONFIG_NAME, ZIP_LINE_SCROLL_KEY, get_global_config
+from src.tasks.account.account_scope_store import get_account_task_overrides
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 
 class ZipLineMixin(NavigationMixin):
+    @property
+    def zip_line_config(self):
+        return get_global_config(ZIP_LINE_CONFIG_NAME)
+
+    def get_zip_line_config_value(self, key, default=None):
+        base_value = self.zip_line_config.get(key, default)
+        if not getattr(self, "running", False):
+            return base_value
+        if hasattr(self, "_is_account_override_enabled") and not self._is_account_override_enabled():
+            return base_value
+
+        account_id = (getattr(self, "current_account_id", "") or "").strip()
+        account_name = (getattr(self, "current_user", "") or "").strip()
+        if not account_id and not account_name:
+            return base_value
+
+        override = get_account_task_overrides(
+            account_id or account_name,
+            ZIP_LINE_CONFIG_NAME,
+            account_name=account_name,
+        )
+        if key not in override:
+            return base_value
+        return self._coerce_override_value(base_value, override[key])
+
+    def zip_line_scroll_enabled(self):
+        return self.get_zip_line_config_value(ZIP_LINE_SCROLL_KEY, False)
+
     def on_zip_line_start(self, delivery_to, need_scroll=None, target=None, need_v=True):
         """进入滑索后，根据配置对齐并滑行至送货点
 
@@ -26,7 +56,7 @@ class ZipLineMixin(NavigationMixin):
             self.sleep(0.1)
             if self.active_time() - start > 60:
                 raise Exception("滑索超时，强制退出")
-        zip_line_list_str = self.config.get(delivery_to)
+        zip_line_list_str = self.get_zip_line_config_value(delivery_to)
         zip_line_list = parse_int_sequence(zip_line_list_str)
         self.zip_line_list_go(zip_line_list, need_scroll, target, need_v=need_v)
 

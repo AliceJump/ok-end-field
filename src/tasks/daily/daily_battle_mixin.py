@@ -14,7 +14,6 @@ from src.core.sequence_parser import parse_int_sequence, parse_sequence
 MAX_STORAGE_TICKET = 1000
 ONE_MEDICINE_RESTORE_ENERGY = 40
 
-gather_list = stages_dict[STAGE_CATEGORY_ENERGY_POOLING]
 
 
 @dataclass
@@ -44,7 +43,6 @@ class DailyBattleFeature:
     日常战斗功能类，用于处理日常战斗任务，包括刷取体力副本、处理奖励档位切换等功能。
     """
     # 配置项常量定义
-    CFG_SCROLL_ENABLE = "是否启用滚动放大视角"  # 是否启用滚动放大视角的配置项名称
     CFG_STAGE_REWARD_TIER = "体力本奖励档位"
     REWARD_TIER_KEEP = "保持当前"
     REWARD_TIER_LOW = "低阶"
@@ -69,8 +67,6 @@ class DailyBattleFeature:
             "刷本序列": [],  # 为空表示不启用自动轮换
             "仅站桩": False,
             "体力刷完后继续刷取次数": 0,
-            self.CFG_SCROLL_ENABLE: False,
-            **{key: "" for key in gather_list},
             self.CFG_PRE_ENTER_TEAM_SWITCH: self.PRE_ENTER_TEAM_SWITCH_NONE,
         })
         self._task.default_config_group.update(
@@ -79,13 +75,10 @@ class DailyBattleFeature:
                     "消耗限时体力药",
                     "体力本",
                     "体力本配置",
-                    # 如果要把 gather_list 里的 key 也折叠
                     "战斗相关选项",
-                    "淤积点相关选项",
                 ],
                 "体力本配置": [self.CFG_STAGE_REWARD_TIER, "刷体力开始日期", "刷本序列"],
-                "淤积点相关选项": ["仅站桩", "体力刷完后继续刷取次数", self.CFG_SCROLL_ENABLE]
-                                  + [key for key in gather_list],
+                "淤积点相关选项": ["仅站桩", "体力刷完后继续刷取次数"],
                 "战斗相关选项": [
                     self.CFG_PRE_ENTER_TEAM_SWITCH,
                 ],
@@ -124,18 +117,9 @@ class DailyBattleFeature:
                 "只支持能量淤积点。\n"
                 "0 表示不启用。"
             ),
-            self.CFG_SCROLL_ENABLE: (
-                "启用后在对齐滑索时会自动滚动放大视角\n"
-                "可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
-                "建议启用此项时不要使用非白发或有白帽角色"
-            ),
             self.CFG_PRE_ENTER_TEAM_SWITCH: (
                 "选择要更换的队伍编号。"
             ),
-            **{key: (
-                "需要设好「预刻写属性」。默认留空表示不使用滑索前往，\n"
-                "更多用法参见 ./docs/体力本.md > 能量淤积点 。"
-            ) for key in gather_list},
         })
         # 刷本序列选项：包括基础副本名 + 支持档位调整的副本的高阶/低阶版本
         stage_options_with_tiers = []
@@ -249,14 +233,14 @@ class DailyBattleFeature:
 
     def _navigate_via_zip_line(self):
         """若配置了滑索路线，则通过滑索移动至目标。"""
-        zip_line_str = self.config.get(self.battle_ctx.stage_name)
+        zip_line_str = self.get_zip_line_config_value(self.battle_ctx.stage_name)
         if zip_line_str:
             self.wait_click_ocr(match=self.lang.daily_battle_mixin.k_b0e3a2da, time_out=10, after_sleep=2, recheck_time=1,
                                 box=self.box.bottom_right, log=True, alt=True)
             zip_line_list = parse_int_sequence(zip_line_str)
             self.zip_line_list_go(
                 zip_line_list,
-                need_scroll=self.config.get(self.CFG_SCROLL_ENABLE),
+                need_scroll=self.zip_line_scroll_enabled(),
                 target=([fL.gather_icon_out_map, fL.gather_icon_out_map2], "feature")
             )
             return True
