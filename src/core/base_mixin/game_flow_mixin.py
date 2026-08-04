@@ -554,8 +554,19 @@ class GameFlowMixin:
         success = False
 
         for _ in range(3):
-            self.press_key("y")
-            check = self.wait_feature(feature=fL.transaction_overview, time_out=5, raise_if_not_found=False)
+            # safe_back 可能已经把页面留在地区建设总览，先复用现有页面，避免再次按 Y 将其关闭。
+            check = self.wait_feature(
+                feature=fL.transaction_overview,
+                time_out=0.5,
+                raise_if_not_found=False,
+            )
+            if not check:
+                self.press_key("y")
+                check = self.wait_feature(
+                    feature=fL.transaction_overview,
+                    time_out=5,
+                    raise_if_not_found=False,
+                )
             if check:
                 success = True
             else:

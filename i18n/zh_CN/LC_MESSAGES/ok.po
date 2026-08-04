@@ -1000,6 +1000,9 @@ msgstr "⭐帝江号收菜"
 msgid "⭐据点兑换"
 msgstr "⭐据点兑换"
 
+msgid "⭐地区建设"
+msgstr "⭐地区建设"
+
 msgid "⭐收信用"
 msgstr "⭐收信用"
 

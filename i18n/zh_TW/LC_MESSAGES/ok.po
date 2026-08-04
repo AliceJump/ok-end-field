@@ -559,6 +559,9 @@ msgstr "⭐帝江號收菜"
 msgid "⭐据点兑换"
 msgstr "⭐據點兌換"
 
+msgid "⭐地区建设"
+msgstr "⭐地區建設"
+
 msgid "⭐收信用"
 msgstr "⭐收信用"
 

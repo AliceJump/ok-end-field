@@ -220,7 +220,7 @@ class DailyOutpostMixin:
             log=True,
         )
 
-    def exchange_outpost_goods(self):
+    def exchange_outpost_goods(self, target_areas=None, keep_area_context=False):
         self.info_set("current_task", "exchange_outpost_goods")
         self.log_info("开始据点兑换任务")
 
@@ -228,13 +228,17 @@ class DailyOutpostMixin:
         only_priority_goods = self.config.get("据点兑换仅购买优先商品", False)
         excluded_goods_by_area = {area: set() for area in areas_list}
 
-        for area in areas_list:
+        for area in target_areas or areas_list:
             self.log_info(f"进入区域: {area}")
             self.to_model_area(area, "据点管理")
 
             outposts = outpost_dict.get(area, [])
             if not outposts:
                 self.log_info(f"{area} 没有据点可兑换")
+                if keep_area_context:
+                    self.safe_back(feature=fL.transaction_overview, once_time_out=3)
+                else:
+                    self.ensure_main()
                 continue
 
             for outpost_name in outposts:
@@ -247,7 +251,10 @@ class DailyOutpostMixin:
                 )
                 self.log_info(f"完成兑换据点: {outpost_name}")
 
-            self.log_info(f"{area} 区域据点兑换完成，返回主界面")
-            self.ensure_main()
+            self.log_info(f"{area} 区域据点兑换完成")
+            if keep_area_context:
+                self.safe_back(feature=fL.transaction_overview, once_time_out=3)
+            else:
+                self.ensure_main()
 
         self.log_info("据点兑换任务完成")

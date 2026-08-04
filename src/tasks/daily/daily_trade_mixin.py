@@ -300,15 +300,14 @@ class DailyTradeFeature:
             self.wait_ui_stable(refresh_interval=1)
         return result
 
-    def buy_sell(self):
-        for area in areas_list:
+    def buy_sell(self, target_areas=None, keep_area_context=False, after_buy=None):
+        for area in target_areas or areas_list:
             if not self.config.get(area, False):
                 self.log_info(f"跳过{area}，因为配置中未启用")
                 continue
-            self.ensure_main()
-            self.log_info(f"前往{area}")
+            if not keep_area_context:
+                self.ensure_main()
             self.to_model_area(area, "物资调度")
-            self.wait_ui_stable(refresh_interval=1)
             self.wait_click_ocr(
                 match=self.lang.daily_trade_mixin.k_33fb3f9c, box=self.box.top
             )
@@ -374,6 +373,17 @@ class DailyTradeFeature:
                                 break
                     else:
                         self.log_info("未找到加号按钮，无法购买")
+
+            if after_buy is not None:
+                after_buy(area)
+                if sell_goods:
+                    if not self.wait_click_ocr(
+                            match=self.lang.daily_trade_mixin.k_33fb3f9c,
+                            box=self.box.top,
+                            time_out=5,
+                    ):
+                        self.log_info("未能切回弹性需求物资，跳过卖出操作")
+                        continue
 
             for sell_good in sell_goods:
                 if sell_good.stock_quantity <= 0:

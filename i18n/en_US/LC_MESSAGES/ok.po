@@ -1119,6 +1119,9 @@ msgstr "⭐ Dijiang Harvest"
 msgid "⭐据点兑换"
 msgstr "⭐ Outpost Exchange"
 
+msgid "⭐地区建设"
+msgstr "⭐ Regional Operations"
+
 msgid "⭐收信用"
 msgstr "⭐ Collect Credit"
 
