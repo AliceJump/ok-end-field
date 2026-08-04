@@ -23,7 +23,7 @@ class NavigationMixin(SearchMixin):
         self.click(result)
 
         if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False):
-            self.click(result)
+            self.click(result, after_sleep=0.5)
 
         self.press_key("m")
         self.log_info("关闭地图界面 (按下 M)")
@@ -32,6 +32,7 @@ class NavigationMixin(SearchMixin):
             feature=target_feature_out_map, box=self.box_of_screen(0, 0, 1, 1),
             threshold=0.7
         ):
+            self.next_frame()
             if self.active_time() - start_time > 5:
                 self.log_info("等待追踪图标超时")
                 return False
@@ -59,6 +60,7 @@ class NavigationMixin(SearchMixin):
         target_vertical_variance: float = 0.0,
         need_v: bool = False,
         max_run_time: float = -1,
+        allow_rotate_search: bool = True,
     ):
         """
         持续导航移动直到检测到目标，支持 OCR / YOLO / 特征匹配三种方式。
@@ -82,6 +84,7 @@ class NavigationMixin(SearchMixin):
                 - -1：不限制奔跑时间，保持原有行为
                 - 0：完全不奔跑，开局立即切换步行状态，全程按住 w 步行前进
                 - 大于0：允许累计奔跑指定秒数，达到后在本次导航中切换步行且不再恢复奔跑，函数结束时恢复奔跑状态
+            allow_rotate_search (bool): 导航连续丢失时是否允许旋转视角整圈搜索，默认 True；送礼等不应转动视角的场景传 False。
 
         Returns:
             bool | Any:
@@ -93,15 +96,16 @@ class NavigationMixin(SearchMixin):
             1. 持续按 W 移动
             2. 检测 target 是否出现
             3. 出现后进行稳定性确认
-            4. 若丢失目标则后退搜索
+            4. 确认期间丢失目标则先 WASD 小幅度移动搜索，未命中再按住 S 后退搜索
             5. 若 nav 存在，则执行导航对齐逻辑
             6. 若 nav 为 None，则仅执行直线前进搜索
+            7. 导航连续丢失时旋转搜索，未命中则按中键并按住 S 后退搜索
 
         """
         last_click_v_time = 0
         nav_missing_start_time = None
         nav_missing_recovered = False
-        nav_not_found_time_out = 3
+        nav_not_found_time_out = 5
 
         def check_target():
             if target_is_ocr:
@@ -189,7 +193,6 @@ class NavigationMixin(SearchMixin):
             while True:
                 enforce_max_run_time()
                 reached = check_target()
-
                 if reached:
                     self.send_key_up("w")  # 确认使用send_key：释放方向键
 
@@ -216,18 +219,22 @@ class NavigationMixin(SearchMixin):
                     if stable:
                         return True
 
-                    self.log_info("确认期间目标丢失，开始后退搜索")
-                    self.send_key_down("s")  # 确认使用send_key：s为方向移动键，不属于游戏可配置热键，用于后退搜索
-
-                    search_start = self.active_time()
-                    while self.active_time() - search_start < 10:
-                        if check_target():
-                            self.log_info("后退过程中重新找到目标")
-                            self.send_key_up("s")  # 确认使用send_key：释放方向键
-                            break
-                        self.sleep(0.02)
-
-                    self.send_key_up("s")  # 确认使用send_key：释放方向键
+                    self.log_info("确认期间目标丢失，开始小幅度 WASD 移动搜索")
+                    if self.strafe_search(
+                        check_target, passes=3, duration=0.2, time_out=10
+                    ):
+                        self.log_info("WASD 移动过程中重新找到目标")
+                    else:
+                        self.log_info("小幅度移动未找到目标，开始后退搜索")
+                        self.send_key_down("s")  # 确认使用send_key：s为方向移动键，不属于游戏可配置热键，用于后退搜索
+                        search_start = self.active_time()
+                        while self.active_time() - search_start < 10:
+                            if check_target():
+                                self.log_info("后退过程中重新找到目标")
+                                self.send_key_up("s")  # 确认使用send_key：释放方向键
+                                break
+                            self.sleep(0.02)
+                        self.send_key_up("s")  # 确认使用send_key：释放方向键
 
                 if self.active_time() - start_time > time_out:
                     self.log_info("导航超时")
@@ -277,14 +284,30 @@ class NavigationMixin(SearchMixin):
                         not nav_missing_recovered
                         and self.active_time() - nav_missing_start_time >= nav_not_found_time_out
                     ):
-                        self.log_info(f"导航目标连续丢失超过 {nav_not_found_time_out} 秒，旋转一圈搜索")
+                        self.log_info(f"导航目标连续丢失超过 {nav_not_found_time_out} 秒，进入兜底搜索")
                         self.send_key_up("w")
                         self.sleep(0.1)
-                        nav_result = self.rotate_search(check_nav, between_delay=0.1)
-                        if nav_result:
-                            self.log_info("旋转搜索中重新找到导航")
+                        nav_result = None
+                        if allow_rotate_search:
+                            self.log_info("旋转一圈搜索")
+                            nav_result = self.rotate_search(check_nav, between_delay=0.1)
+                            if nav_result:
+                                self.log_info("旋转搜索中重新找到导航")
                         else:
+                            self.log_info("旋转搜索已禁用，跳过旋转直接后退搜索")
+
+                        if not nav_result:
                             self.click(key="middle", after_sleep=1)
+                            self.log_info("按下中键后开始后退搜索")
+                            self.send_key_down("s")  # 确认使用send_key：s为方向移动键，用于后退搜索
+                            search_start = self.active_time()
+                            while self.active_time() - search_start < 10:
+                                if check_nav():
+                                    nav_result = True
+                                    self.log_info("后退搜索中重新找到导航")
+                                    break
+                                self.sleep(0.02)
+                            self.send_key_up("s")  # 确认使用send_key：释放方向键
                         self.send_key_down("w")
                         nav_missing_recovered = True
 

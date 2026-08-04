@@ -208,6 +208,7 @@ class LiaisonMixin(NavigationMixin):
             box=self.box_of_screen(0.653, 0.596, 0.681, 0.809),
             target_is_ocr=False,
             time_out=60,
+            allow_rotate_search=False,
             found_special_callback=special_chat_detect,
         )
 

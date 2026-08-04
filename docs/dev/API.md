@@ -439,10 +439,11 @@ def navigate_until_target(
     target_is_yolo=False, nav_is_yolo=False,
     box=None, target_vertical_variance=0.0,
     need_v=False, max_run_time=-1,
+    allow_rotate_search=True,
 )
 ```
 
-持续按 `W` 前进，目标和导航标识分别可用 OCR、YOLO 或 Feature。`nav=None` 表示纯直线搜索；`found_special_callback` 返回非 `None` 时该值直接作为函数结果。目标需持续稳定 2 秒（OCR）或 1 秒（其它方式）才返回 `True`。超时返回 `False`。`max_run_time` 只限制 `ctrl` 切换的奔跑累计时间，不限制按住 `W`：`-1` 不限制，`0` 全程步行，正数达到上限后切步行。
+持续按 `W` 前进，目标和导航标识分别可用 OCR、YOLO 或 Feature。`nav=None` 表示纯直线搜索；`found_special_callback` 返回非 `None` 时该值直接作为函数结果。目标需持续稳定 2 秒（OCR）或 1 秒（其它方式）才返回 `True`。超时返回 `False`。`max_run_time` 只限制 `ctrl` 切换的奔跑累计时间，不限制按住 `W`：`-1` 不限制，`0` 全程步行，正数达到上限后切步行。`allow_rotate_search` 默认 `True`，导航连续丢失时旋转视角整圈搜索；送礼等不应转动视角的场景传 `False` 跳过旋转直接按中键并后退搜索。
 
 ```text
 def start_tracking_and_align_target(
