@@ -77,6 +77,14 @@ class LiaisonMixin(NavigationMixin):
             box = self.box.left
         self.ensure_main()
 
+        if should_check_out_boat and getattr(self, "_daily_boat_state_confirmed", False):
+            self.log_info("已共享帝江号状态，跳过重复传送确认")
+            return True
+
+        if not should_check_out_boat:
+            # 特定地点传送不读取共享状态，但成功后可供后续帝江号任务复用。
+            self._daily_boat_state_confirmed = False
+
         self.log_info("开始传送到帝江号")
 
         # 打开地图
@@ -130,6 +138,7 @@ class LiaisonMixin(NavigationMixin):
         self.log_info("等待传送完成，检查舰桥界面")
         self.ensure_main()
         self.log_info("传送完成，已到达帝江号舰桥")
+        self._daily_boat_state_confirmed = True
         return True
 
     def navigate_to_main_hall(self) -> bool:

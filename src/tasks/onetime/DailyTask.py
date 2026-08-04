@@ -37,6 +37,12 @@ class DailyTask(
 ):
     """日常任务聚合执行器。"""
 
+    BOAT_STATE_TASK_KEYS = frozenset({
+        "⭐帝江号一键存放",
+        "⭐简易制作",
+        "⭐帝江号收菜",
+    })
+
     account_config_blacklist = {
         "发生异常时终止游戏",
         "仅退出游戏",
@@ -104,14 +110,14 @@ class DailyTask(
         return [
             ("⭐送礼", self.daily_liaison.execute_gift_task),
             ("⭐帝江号一键存放", self.daily_liaison.boat_one_key_store),
+            ("⭐简易制作", self.daily_routine.make_simply),
+            ("⭐帝江号收菜", self.daily_routine.boat_claim_rewards),
             ("⭐收邮件", self.daily_routine.claim_mail),
             ("⭐据点兑换", self.daily_routine.exchange_outpost_goods),
             ("⭐转交运送委托", self.daily_routine.delivery_send_others),
             ("⭐转交委托奖励领取", self.daily_routine.claim_delivery_rewards),
             ("⭐造装备", self.daily_routine.make_weapon),
-            ("⭐简易制作", self.daily_routine.make_simply),
             ("⭐收信用", self.daily_routine.collect_credit),
-            ("⭐帝江号收菜", self.daily_routine.boat_claim_rewards),
             ("⭐买信用商店", self.daily_shop.credit_shop),
             ("⭐买卖货", self.daily_trade.buy_sell),
             ("⭐刷体力", self.daily_battle.battle),
@@ -134,7 +140,11 @@ class DailyTask(
                 task_plan.insert(0, end_cmd_task)
             else:
                 task_plan.append(end_cmd_task)
-            self.daily_runner = DailyTaskRunner(self, task_plan)
+            self.daily_runner = DailyTaskRunner(
+                self,
+                task_plan,
+                shared_state_task_keys=self.BOAT_STATE_TASK_KEYS,
+            )
             self.daily_runner.run(repeat_times=repeat_times)
         finally:
             self.run_daily_finally()
