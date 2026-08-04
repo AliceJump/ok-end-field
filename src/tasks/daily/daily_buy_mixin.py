@@ -9,15 +9,10 @@ class DailyBuyFeature:
     def __init__(self, task):
         self._task = task
         task.default_config.update({
-            "⭐买物资": False,
             "购物白名单": [],
             "是否买礼物": True,
         })
         task.config_description.update({
-            "⭐买物资": (
-                "是否在「地区建设/物资调度/稳定物资需求」中通过调度券购买物资。\n"
-                "依次购买「日用消耗」「工业货品」「人文物产」首行某个物品。"
-            ),
             "购物白名单": (
                 "默认留空，表示购买「日用消耗」「工业货品」「人文物产」首行首个物资。\n"
                 "更多用法参见 ./docs/日常任务.md > 买物资 。"

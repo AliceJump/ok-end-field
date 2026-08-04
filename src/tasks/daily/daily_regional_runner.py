@@ -15,14 +15,7 @@ class DailyRegionalRunner:
         return getattr(self._task, name)
 
     def run(self):
-        selected = self.config.get("⭐地区建设", self.DEFAULT_OPTIONS)
-        if isinstance(selected, bool):
-            selected = [
-                option
-                for option in self.OPTIONS
-                if self.config.get(f"⭐{option}", selected)
-            ]
-        selected = set(selected or [])
+        selected = set(self.config.get("⭐地区建设", self.DEFAULT_OPTIONS) or [])
         enabled_outpost = "据点兑换" in selected
         enabled_buy = "买物资" in selected
         enabled_trade = "买卖货" in selected
