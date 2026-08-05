@@ -56,8 +56,8 @@ class DailyLogisticsMixin:
         """在已进入的仓储节点中领取一次转交委托奖励。
 
         Returns:
-            bool: 领取流程到达完成状态返回 True（已领取或确认无奖励）；
-                  未找到节点、无奖励结果或确认失败返回 False，
+            bool: 领取流程到达完成状态返回 True（已领取或确认无奖励，且已回到仓储节点总览）；
+                  未找到节点、无奖励结果、确认失败或返回总览失败返回 False，
                   便于调用方在后续地区重试。
         """
         self.log_info("开始领取转交委托奖励")
@@ -76,18 +76,40 @@ class DailyLogisticsMixin:
         )
 
         if not results:
-            # 已进入节点且确认无奖励，视为该节点的领取流程完成。
+            # 无奖励可领：显式回到仓储节点总览，让 delivery_send_others
+            # 在正确的视图上继续搜索「本地仓储节点」。
             self.log_info("当前没有可领取的转交委托奖励")
+            if not self._back_to_warehouse_overview():
+                return False
             return True
 
         self.click(results)
         if not self.wait_pop_up():
             self.log_info("未找到 '确认' 按钮，可能未成功领取奖励")
+            # 弹窗失败：同样回到仓储节点总览，避免停留在弹窗/委托列表状态。
+            self._back_to_warehouse_overview()
             return False
 
-        # 返回仓储节点总览，让后续转交委托复用已经完成的地区导航。
+        # 领取完成：返回仓储节点总览，让后续转交委托复用已经完成的地区导航。
         self.log_info("转交委托奖励领取完成")
+        if not self._back_to_warehouse_overview():
+            return False
         return True
+
+    def _back_to_warehouse_overview(self):
+        """回到仓储节点总览（以「本地仓储节点」节点出现为标志）。
+
+        Returns:
+            bool: 是否成功回到仓储节点总览。
+        """
+        if self.safe_back(
+                match=self.lang.daily_routine_mixin.k_298d3284,
+                box=self.box.top_left,
+                time_out=10,
+        ):
+            return True
+        self.log_info("返回仓储节点总览失败")
+        return False
 
     def delivery_send_others(self):
         self.info_set("current_task", "delivery_send_others")

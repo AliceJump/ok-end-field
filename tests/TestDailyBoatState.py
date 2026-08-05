@@ -42,6 +42,7 @@ class _LiaisonHarness(LiaisonMixin):
         self.main_calls = 0
         self.logs = []
         self.map_calls = 0
+        self.no_boat_entrance = False
 
     def ensure_main(self):
         self.main_calls += 1
@@ -53,6 +54,9 @@ class _LiaisonHarness(LiaisonMixin):
         self.map_calls += 1
 
     def wait_click_feature(self, **kwargs):
+        # 模拟未找到帝江号入口（已在帝江号区域内时地图上无入口图标）。
+        if self.no_boat_entrance:
+            return None
         return object()
 
     def find_feature(self, **kwargs):
@@ -131,6 +135,17 @@ class TestDailyBoatState(unittest.TestCase):
         self.assertTrue(task.transfer_to_home_point(box=object()))
         self.assertTrue(task._daily_boat_state_confirmed)
         self.assertEqual(task.map_calls, 1)
+
+    def test_already_in_boat_publishes_boat_state(self):
+        # 线程7：已在帝江号区域内（wait_click_feature 找不到入口）时提前返回，
+        # 仍需置位共享状态，避免后续共享帝江号状态的任务重复传送确认。
+        task = _LiaisonHarness()
+        task._daily_boat_state_confirmed = False
+        task.no_boat_entrance = True
+
+        self.assertTrue(task.transfer_to_home_point(box=object(), should_check_out_boat=True))
+        self.assertTrue(task._daily_boat_state_confirmed)
+        self.assertTrue(any("已在帝江号区域内" in log for log in task.logs))
 
 
 if __name__ == "__main__":
