@@ -6,9 +6,12 @@ from src.data.world_map import areas_list
 from src.data.world_map_utils import get_world_map_matcher
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.common import GoodsInfo
+from src.data.lang import LangAccessor
 
 
 class DailyTradeFeature:
+    # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
+    lang: LangAccessor
 
     def __init__(self, task):
         self._task = task

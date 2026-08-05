@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from ok import TaskDisabledException
 from src.data.FeatureList import FeatureList as fL
+from src.data.lang import LangAccessor
 from src.data.world_map import stages_cost, higher_order_feature_dict, STAGE_CATEGORY_ENERGY_POOLING, \
     STAGE_CATEGORY_DANGER_REHEARSAL
 from src.data.world_map import stages_dict, stages_list
@@ -43,6 +44,8 @@ class DailyBattleFeature:
     """
     日常战斗功能类，用于处理日常战斗任务，包括刷取体力副本、处理奖励档位切换等功能。
     """
+    # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
+    lang: LangAccessor
     # 配置项常量定义
     CFG_SCROLL_ENABLE = "是否启用滚动放大视角"  # 是否启用滚动放大视角的配置项名称
     CFG_STAGE_REWARD_TIER = "体力本奖励档位"

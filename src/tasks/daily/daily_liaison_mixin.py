@@ -6,10 +6,13 @@ from qfluentwidgets import FluentIcon
 
 from src.data.characters_utils import get_contact_list_with_feature_list
 from src.data.characters import all_list
+from src.data.lang import LangAccessor
 from src.tasks.mixin.common import LiaisonResult, build_name_patterns
 
 
 class DailyLiaisonFeature:
+    # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task，此处声明仅为 IDE/类型检查
+    lang: LangAccessor
     HELP_LINK = "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/docs/日常任务.md"
 
     def __init__(self, task):

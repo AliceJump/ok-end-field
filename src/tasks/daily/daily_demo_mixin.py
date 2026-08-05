@@ -1,6 +1,10 @@
 from src.data.FeatureList import FeatureList as fL
+from src.data.lang import LangAccessor
 
-class DailyDemoFeature:    
+class DailyDemoFeature:
+    # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
+    lang: LangAccessor
+
     def __init__(self, task):
         self._task = task
         task.default_config.update({
