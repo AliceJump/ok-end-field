@@ -5,8 +5,9 @@ from src.data.characters_utils import get_contact_list_with_feature_list
 class DailyBoatMixin:
     def _boat_stages(self):
         stages = self.config.get("⭐帝江号收菜", [])
-        if isinstance(stages, bool):
-            return self.BOAT_STAGES if stages else []
+        # 迁移后 ⭐帝江号收菜 恒为列表；非列表时按未启用处理，不再应用旧布尔开关值。
+        if not isinstance(stages, list):
+            return []
         return stages
 
     def boat_claim_rewards(self):
