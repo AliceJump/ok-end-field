@@ -335,6 +335,17 @@ class DailyTradeFeature:
                 buy_good, sell_goods, can_buy = self.analyze_goods_info(
                     good_infos, buy_price, sell_price
                 )
+            # 「即将溢出」状态强制购买：该商品即将溢出、必须买入，
+            # 即使不满足价格上限。实际 OCR 文本为「即将溢出」四字，
+            # 用一个「即将|溢出」合并正则匹配以便容错：OCR 可能把
+            # 四字识别为一个文本块，也可能拆成「即将」「溢出」两个块，
+            # 任一命中即视为即将溢出（见 find_boxes_by_name 的 OR 语义）。
+            if buy_good and not can_buy and self.wait_ocr(
+                match=self.lang.daily_trade_mixin.impending_overflow,
+                box=self.box.top_left,
+                time_out=3,
+            ):
+                can_buy = True
             if buy_good:
                 if can_buy:
                     back_to_area_deadline = self.active_time() + 20

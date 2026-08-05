@@ -219,6 +219,26 @@
       "pattern": "rebosar"
     }
   },
+  "impending_overflow": {
+    "zh_CN": {
+      "pattern": "即将|溢出"
+    },
+    "zh_TW": {
+      "pattern": "即將|溢出"
+    },
+    "en_US": {
+      "pattern": "Coming soon|overflow"
+    },
+    "ja_JP": {
+      "pattern": "近日公開|オーバーフロー"
+    },
+    "ko_KR": {
+      "pattern": "곧 출시 예정|과다"
+    },
+    "es_ES": {
+      "pattern": "Muy pronto|rebosar"
+    }
+  },
   "k_fa04e4df": {
     "zh_CN": {
       "pattern": "物资调度终端"

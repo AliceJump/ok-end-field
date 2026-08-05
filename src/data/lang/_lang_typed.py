@@ -505,6 +505,9 @@ class DailyTradeMixinModule(_LangModuleBaseT):
     k_6174dac7: re.Pattern[str]
     """溢出"""
 
+    impending_overflow: re.Pattern[str]
+    """即将|溢出"""
+
     k_fa04e4df: re.Pattern[str]
     """物资调度终端"""
 
