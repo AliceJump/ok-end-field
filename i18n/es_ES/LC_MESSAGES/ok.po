@@ -562,6 +562,9 @@ msgstr "⭐ Recolección del Dijiang"
 msgid "⭐据点兑换"
 msgstr "⭐ Intercambio del puesto"
 
+msgid "⭐地区建设"
+msgstr "⭐ Operaciones regionales"
+
 msgid "⭐收信用"
 msgstr "⭐ Recoger Crédito"
 
@@ -573,9 +576,6 @@ msgstr "⭐ Recompensas Diarias"
 
 msgid "⭐简易制作"
 msgstr "⭐ Fabricación sencilla"
-
-msgid "⭐转交委托奖励领取"
-msgstr "⭐ Recoger recompensas transferidas"
 
 msgid "⭐转交运送委托"
 msgstr "⭐ Transferir encargos de entrega"
@@ -1056,9 +1056,6 @@ msgstr ""
 msgid "实时检测"
 msgstr "Detección en Tiempo Real"
 
-msgid "帝江号收菜操作"
-msgstr "Operaciones de recolección del Dijiang"
-
 msgid "庄方宜"
 msgstr "Zhuang Fangyi"
 
@@ -1254,9 +1251,6 @@ msgstr "Una cuenta (teléfono) por línea, sin contraseña"
 
 msgid "油猴脚本帮助"
 msgstr "Ayuda del script de Tampermonkey"
-
-msgid "活动奖励"
-msgstr "Recompensas de Evento"
 
 msgid "浏览器油猴脚本帮助"
 msgstr "Ayuda del script de Tampermonkey del navegador"
@@ -3127,3 +3121,276 @@ msgstr ""
 
 msgid "炽燃！竞技大会！"
 msgstr "¡FURIA ARDIENTE! ¡MEGA ARENA!"
+
+msgid "wait_until"
+msgstr "wait_until"
+
+msgid "不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
+msgstr ""
+"No recoger cultivos producibles en masa por granjas o líneas de "
+"siembra/cosecha: 琼叶参, 金石稻, 芽针, 锦草, 苦叶椒, 砂叶, 灰芦麦, 柑实, 荞花, 酮化灌木."
+
+msgid "两者"
+msgstr "Ambos"
+
+msgid "买物资"
+msgstr "Comprar suministros"
+
+msgid "关卡名"
+msgstr "Nombre de etapa"
+
+msgid "动作列表"
+msgstr "Lista de acciones"
+
+msgid "区域扫描测试"
+msgstr "Prueba de escaneo de región"
+
+msgid "卡缪"
+msgstr "卡缪"
+
+msgid "否"
+msgstr "No"
+
+msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
+msgstr ""
+"Al activarlo, solo cuando la \"Secuencia prioritaria de mercancías "
+"comerciales\" no esté vacía, el intercambio de puesto solo comprará los "
+"productos de ella; si la secuencia está vacía, usa la lógica original."
+
+msgid "启用实时条件"
+msgstr "Habilitar condiciones en tiempo real"
+
+msgid ""
+"在没有运行任何条件动作时生效\n"
+"当终结技可释放时立刻释放终结技"
+msgstr ""
+"Válido cuando no se ejecuta ninguna acción condicionada\n"
+"Liberar el ultimate inmediatamente cuando esté disponible"
+
+msgid ""
+"在没有运行任何条件动作时生效\n"
+"当连携技可释放时立刻释放连携技"
+msgstr ""
+"Válido cuando no se ejecuta ninguna acción condicionada\n"
+"Liberar la habilidad de enlace inmediatamente cuando esté disponible"
+
+msgid "导航到演武集算『演算』入口"
+msgstr "Navegar a la entrada \"演算\" de 演武集算"
+
+msgid "将次要目标方向蓝点对齐到屏幕中心"
+msgstr ""
+"Alinear el punto azul de la dirección del objetivo secundario al centro de "
+"la pantalla"
+
+msgid "屏蔽可量产植物"
+msgstr "Filtrar plantas producibles en masa"
+
+msgid "弭弗"
+msgstr "弭弗"
+
+msgid "当条件符合时使用技能组"
+msgstr "Usar el conjunto de habilidades cuando se cumplan las condiciones"
+
+msgid "战斗技能位置检测"
+msgstr "Detección de posición de habilidades de combate"
+
+msgid "按住鼠标蛇形扫描指定矩形区域"
+msgstr ""
+"Mantener presionado el ratón y escanear en zigzag el área rectangular "
+"especificada"
+
+msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
+msgstr ""
+"Ejecutar la operación seleccionada por región: primero intercambio de "
+"puesto, luego la compra del comercio; si \"Comprar suministros\" está "
+"activado, tras comprar cambia a la compra de demanda de suministros estable,"
+" y finalmente vuelve a la venta de suministros de demanda flexible."
+
+msgid "据点兑换仅购买优先商品"
+msgstr "El intercambio de puesto solo compra productos prioritarios"
+
+msgid "是"
+msgstr "Sí"
+
+msgid "是否前往「帝江号/简易制作」制作物品。"
+msgstr "Si ir a \"帝江号/简易制作\" para fabricar objetos."
+
+msgid "是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"
+msgstr ""
+"Si transferir todas las comisiones de envío en \"地区建设/仓储结点\" y reclamar una "
+"vez la recompensa de transferencia."
+
+msgid "是否在日常任务结束后传送到帝江号右侧传送点。"
+msgstr ""
+"Si teletransportarse al punto de teletransporte derecho de 帝江号 tras terminar"
+" las tareas diarias."
+
+msgid "暂停时间应超过此值，用于观察恢复后的行为"
+msgstr ""
+"La duración de la pausa debe superar este valor, para observar el "
+"comportamiento tras la recuperación"
+
+msgid "暂停计时验证"
+msgstr "Verificación de sincronización de pausa"
+
+msgid ""
+"根据实时情况释放技能\n"
+"启用时自动忽略排轴配置"
+msgstr ""
+"Liberar habilidades según la situación en tiempo real\n"
+"Al activarlo, ignora automáticamente la configuración de rotación"
+
+msgid "梨诺"
+msgstr "梨诺"
+
+msgid "测试模式"
+msgstr "Modo de prueba"
+
+msgid "测试超时(秒)"
+msgstr "Tiempo de espera de prueba (s)"
+
+msgid "演算入口导航测试"
+msgstr "Prueba de navegación de entrada 演算"
+
+msgid ""
+"目标券数优先级序列，用逗号分隔多个券数。按列表中顺序优先抢前面的券数。\n"
+"默认：119000。可选：73100、79800、119000、159000、163000"
+msgstr ""
+"Secuencia de prioridad de cantidades objetivo de cupones, separadas por comas. Se prioriza agarrar las cantidades anteriores según el orden de la lista.\n"
+"Predeterminado: 119000. Opciones: 73100, 79800, 119000, 159000, 163000"
+
+msgid "立即释放终结技"
+msgstr "Liberar ultimate inmediatamente"
+
+msgid "立即释放连携技"
+msgstr "Liberar habilidad de enlace inmediatamente"
+
+msgid "等级读取测试"
+msgstr "Prueba de lectura de nivel"
+
+msgid "编辑"
+msgstr "Editar"
+
+msgid "自写循环"
+msgstr "Bucle personalizado"
+
+msgid "诀"
+msgstr "诀"
+
+msgid "读取演武集算关卡界面的当前等级"
+msgstr "Leer el nivel actual de la interfaz de etapa de 演武集算"
+
+msgid ""
+"选择帝江号收菜内容：\n"
+"收集线索：前往会客室收集线索，集齐后开启情报交流。\n"
+"制造舱：收取培养材料并补足待制造数量。\n"
+"培养舱：收取培养材料并直接再次培养。"
+msgstr ""
+"Seleccionar el contenido de recolección de 帝江号:\n"
+"Recolectar pistas: ir a la sala de recepción para recolectar pistas, y abrir el intercambio de información al completarlas.\n"
+"Bahía de fabricación: recibir materiales de cultivo y completar la cantidad pendiente.\n"
+"Bahía de cultivo: recibir materiales de cultivo y volver a cultivar directamente."
+
+msgid "选择当前任务使用全局或独立战斗配置。"
+msgstr ""
+"Elegir si la tarea actual usa la configuración de combate global o "
+"independiente."
+
+msgid "选择要运行的暂停计时测试"
+msgstr "Elegir la prueba de sincronización de pausa a ejecutar"
+
+msgid ""
+"选择要领取的活动奖励：\n"
+"周常奖励：领取每周事务奖励。\n"
+"理智补给：领取理智补给。\n"
+"刮刮乐：执行刮刮乐。"
+msgstr ""
+"Seleccionar las recompensas de evento a reclamar:\n"
+"Recompensa semanal: reclamar la recompensa de asuntos semanales.\n"
+"Suministro de cordura: reclamar el suministro de cordura.\n"
+"Rasca y gana: ejecutar el rasca y gana."
+
+msgid "逐个检测四个技能位置并输出模板匹配结果"
+msgstr ""
+"Detectar una a una las cuatro posiciones de habilidades y mostrar los "
+"resultados de coincidencia de plantillas"
+
+msgid "验证暂停任务期间活动计时是否冻结"
+msgstr ""
+"Verificar si el temporizador de actividad se congela durante la pausa de la "
+"tarea"
+
+msgid "每个键对应一条滑索路线，值为距离序列，用英文逗号分隔"
+msgstr ""
+"Cada clave es una ruta de tirolesa; el valor es una secuencia de distancias "
+"separadas por comas"
+
+msgid "任务会按顺序依次对齐并滑行每段距离"
+msgstr "La tarea se alinea y recorre cada distancia en orden"
+
+msgid "例：「{key}」= {raw} → 依次滑行 {seq}"
+msgstr "ej. \"{key}\" = {raw} → tirolesa {seq}"
+
+msgid "留空表示该路线不乘滑索"
+msgstr "Déjalo vacío para omitir la tirolesa en esa ruta"
+
+msgid "{keys}：出发滑索距离"
+msgstr "{keys}: distancia de tirolesa de salida"
+
+msgid "{keys}：各送货目标滑索序列"
+msgstr "{keys}: secuencias de tirolesa hacia cada objetivo de entrega"
+
+msgid "{keys}：能量淤积点滑索序列"
+msgstr "{keys}: secuencias de tirolesa hacia los puntos de energía"
+
+msgid "对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低"
+msgstr ""
+"Amplía automáticamente al alinear; puede mejorar o reducir claramente la "
+"tasa de éxito"
+
+msgid "建议启用时不要使用非白发或有白帽角色"
+msgstr "Evita personajes sin pelo blanco o con sombrero blanco al activarlo"
+
+msgid "滑索配置说明"
+msgstr "Configuración de la tirolesa"
+
+msgid "滑索距离序列在「全局配置 → 滑索配置」中设置"
+msgstr ""
+"Configura las secuencias de distancia en Configuración global → "
+"Configuración de tirolesa"
+
+msgid "填写规则"
+msgstr "Cómo rellenar"
+
+msgid "送货相关键"
+msgstr "Claves de entrega"
+
+msgid "淤积点相关键"
+msgstr "Claves de puntos de energía"
+
+msgid "Zip Line Config"
+msgstr "Zip Line Config"
+
+msgid "淤积点滑索"
+msgstr "Tirolina de punto de acumulación de energía"
+
+msgid "滑索距离序列，用逗号分隔。"
+msgstr "Secuencia de distancia de tirolina, separada por comas."
+
+msgid "滑索配置分类"
+msgstr "Categoría de configuración de tirolina"
+
+msgid "送货滑索"
+msgstr "Tirolina de entrega"
+
+msgid "选择要显示的滑索配置分类。"
+msgstr "Elegir la categoría de configuración de tirolina a mostrar."
+
+msgid "⭐转交委托奖励领取"
+msgstr "⭐ Recoger recompensas transferidas"
+
+msgid "帝江号收菜操作"
+msgstr "Operaciones de recolección del Dijiang"
+
+msgid "活动奖励"
+msgstr "Recompensas de Evento"

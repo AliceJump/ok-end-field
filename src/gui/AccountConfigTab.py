@@ -101,7 +101,10 @@ class AccountConfigTab(CustomTab):
 
     @property
     def name(self):
-        return og.app.tr("账号配置")
+        # MainWindow 会对 tab 的 name 统一调用 self.app.tr(name)，
+        # 这里必须返回源 key（"账号配置"）而非已翻译文本，
+        # 否则会对翻译结果二次 tr()，把繁体 key 当作待翻译字符串收集进 ok.po。
+        return "账号配置"
 
     @property
     def position(self):
