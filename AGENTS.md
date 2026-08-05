@@ -23,3 +23,15 @@
 - 任务类基于 ok-script：`BaseTask` / `TriggerTask`，见 `.agents/skills/ok-script-tasks`。
 - 任务字符串国际化见 `.agents/skills/ok-script-i18n`。
 - 生成任务代码见 `.agents/skills/ok-script-codegen`。
+
+## lang JSON key 命名约定（重要）
+
+`assets/lang/` 下的语言 JSON 中：
+
+- **新增 key 用语义化命名**（如 `inst_title`、`inst_delivery_targets`），不要沿用旧的 `k_<md5前8位>` hash 风格。
+- 旧的 `k_*` hash key 保持不动，无需迁移/统一为新风格（两种风格可共存）。
+- 每个 key 下为 6 种语言节点（`zh_CN`/`zh_TW`/`en_US`/`ja_JP`/`ko_KR`/`es_ES`），格式 `{"string": "..."}` 或 `{"pattern": "..."}`。
+- 代码通过 `self.lang.<模块名>.<语义化key>` 读取，自动按当前 UI 语言选择（见 `src/data/lang/`）。
+- **lang JSON 只放 OCR 匹配文本**（`k_*` hash 与语义化 key 均可）。UI 说明（如 `instructions` 富文本）**不用 lang JSON**，改用 `self.tr("中文msgid")` 走 ok 的 gettext i18n：msgid 写入 `i18n/*/LC_MESSAGES/ok.po`（msgid 必须与代码字符串逐字一致，含全角标点/`{占位符}`），再用 `task_i18n_helper.py compile` 编译 `ok.mo` 生效。
+- **最小原则**：emoji（`📍` `⚙️` `🖱️` 等）、`└─`/`├─`、HTML 标签/颜色等无需翻译的内容一律留在代码里拼（如 `"📍 " + self.tr("滑索配置说明")`），只把需翻译的纯文本放进 i18n 数据（msgid/msgstr 不含 emoji 等装饰符）。
+- **动态键名翻译**：`instructions` 里动态读取的配置键名（如送货点/目标名/淤积点名）显示时也要经 `self.tr(键名)` 翻译，msgid 写入 ok.po（zh_TW 填繁体，其余语言可保留简体原文便于对照配置 JSON 键名）。注意查配置值用原始键名，显示才用翻译后的键名（见 `src/tasks/mixin/zip_line_mixin.py`）。

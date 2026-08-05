@@ -4,20 +4,24 @@ from ok.gui.tasks.ConfigCard import ConfigCard, og
 from ok.gui.widget.CustomTab import CustomTab
 
 from src.core.BattleConfig import BATTLE_CONFIG_NAME
-from src.core.global_config_store import get_all_visible_configs
+from src.core.global_config_store import ZIP_LINE_CONFIG_NAME, get_all_visible_configs
 
 
 GLOBAL_CONFIG_GROUPS = {
     "战斗配置": [BATTLE_CONFIG_NAME],
     "键位配置": ["Game Hotkey Config"],
     "基础配置": ["Ensure Main Once Action Sleep"],
+    "滑索配置": [ZIP_LINE_CONFIG_NAME],
 }
 
 
 class GlobalConfigTab(CustomTab):
     @property
     def name(self):
-        return og.app.tr("全局配置")
+        # MainWindow 会对 tab 的 name 统一调用 self.app.tr(name)，
+        # 这里必须返回源 key（"全局配置"）而非已翻译文本，
+        # 否则会对翻译结果二次 tr()，把繁体 key 当作待翻译字符串收集进 ok.po。
+        return "全局配置"
 
     @property
     def position(self):

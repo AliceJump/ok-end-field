@@ -55,7 +55,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
 
     # 配置键名常量
     CFG_TARGET_TICKET_NUM = "目标券数"
-    CFG_SCROLL_ENABLE = "是否启用滚动放大视角"
     CFG_TEST_TARGET = "选择测试对象"
     CFG_ONLY_ACCEPT = "仅接取"
     CFG_ONLY_DELIVER = "仅送货"
@@ -96,7 +95,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 [self._to_delivery_point_config_key(location_name) for location_name in self.full_cycle_locations]
             )
         )
-        self.default_config_group.update({"滑索配置": self.to_delivery_point_config_keys + self.ends})
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -109,7 +107,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self.support_schedule_task = True
         self.support_multi_account = True
         self.config_description.update({
-            self.CFG_SCROLL_ENABLE: "启用后在对齐滑索时会自动滚动放大视角\n可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n建议启用此项时不要使用非白发或有白帽角色",
             self.CFG_DELIVERY_AREA: "通过下拉框切换送货地区配置",
             self.CFG_TEST_TARGET: "默认是无，表示正常执行相关任务\n也可以选择特定的滑索分叉序列来测试滑索功能\n选择完整循环测试则会依次测试每个送货目标的完整流程\n(需要锁定次要任务在送货任务上或附近)",
             self.CFG_ONLY_ACCEPT: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n仅接取当前地区委托，不送货',
@@ -122,8 +119,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self.default_config.update(
             {
                 self.CFG_TARGET_TICKET_NUM: ["119000"],
-                **{x: "" for x in self.to_delivery_point_config_keys + self.ends},
-                self.CFG_SCROLL_ENABLE: False,
                 self.CFG_DELIVERY_AREA: self.delivery_area,
                 self.CFG_ONLY_ACCEPT: False,
                 self.CFG_ONLY_DELIVER: False,
@@ -426,7 +421,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             return None
 
         location_key = self._to_delivery_point_config_key(location_name)
-        if self.config.get(location_key):
+        if self.get_zip_line_config_value(location_key):
             return location_key
 
         self.log_info(f"委托地点({location_name})未配置送货点滑索参数: {location_key}")
@@ -550,12 +545,12 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             to_delivery_point_key = self._resolve_to_delivery_point_config_key()
             if not to_delivery_point_key:
                 return False
-            zip_line_list = parse_int_sequence(self.config.get(to_delivery_point_key))
+            zip_line_list = parse_int_sequence(self.get_zip_line_config_value(to_delivery_point_key))
             if not zip_line_list:
                 self.log_info(f"送货点滑索配置为空: {to_delivery_point_key}")
                 return False
             self.zip_line_list_go(zip_line_list,
-                                  need_scroll=self.config.get(self.CFG_SCROLL_ENABLE),
+                                  need_scroll=self.zip_line_scroll_enabled(),
                                   target=(secondary_objective_direction_dot, "feature"),
                                   need_v=True)  # 需要在配置里指定出发点的滑索距离,这里默认是36m的滑索
             if only_zip_line:
@@ -735,7 +730,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                                 end_pattern = pattern
                                 self.on_zip_line_start(
                                     ends_list_pattern_dict[pattern],
-                                    need_scroll=self.config.get(self.CFG_SCROLL_ENABLE),
+                                     need_scroll=self.zip_line_scroll_enabled(),
                                     target=(secondary_objective_direction_dot, "feature")
                                 )
                                 break
@@ -765,14 +760,17 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     self.log_info("未找到登上滑索架，测试失败")
                     self.on_zip_line_start(
                         end, need_v=False,
-                        need_scroll=self.config.get(self.CFG_SCROLL_ENABLE)
+                        need_scroll=self.zip_line_scroll_enabled()
                     )
                     self.sleep(2)
         else:
-            zip_line_list_str = self.config.get(self.config.get(self.CFG_TEST_TARGET))
+            zip_line_list_str = self.get_zip_line_config_value(self.config.get(self.CFG_TEST_TARGET))
             if zip_line_list_str:
                 zip_line_list = parse_int_sequence(zip_line_list_str)
-                self.zip_line_list_go(zip_line_list, need_scroll=self.config.get(self.CFG_SCROLL_ENABLE))
+                self.zip_line_list_go(
+                    zip_line_list,
+                    need_scroll=self.zip_line_scroll_enabled(),
+                )
 
     def run(self):
         """运输委托任务的主入口，支持与日常任务一致的多账号执行逻辑。"""
@@ -789,8 +787,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                         [self.TEST_NONE] + self.to_delivery_point_config_keys + self.ends + [self.TEST_FULL_CYCLE]
                 )
                 self.config_type[self.CFG_FULL_CYCLE_LOCATION]["options"] = self.full_cycle_locations
-                for key in self.to_delivery_point_config_keys + self.ends:
-                    self.config.setdefault(key, "")
             allow_multi = (
                     self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE
                     and not self.config.get(self.CFG_ONLY_ACCEPT)
