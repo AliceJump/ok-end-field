@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
+# ruff: noqa: RUF002
 """由 tools/gen_lang_stubs.py 自动生成，请勿手改。
 
 为 self.lang.<模块>.<key> 提供静态类型提示：
   - 自动补全：输入 self.lang.<模块>. 时列出全部 key
   - 悬浮提示：hover 显示该 key 在基准语言下的对应值
 
-string 节点 -> Literal[值]；pattern 节点 -> re.Pattern[str]（docstring 显示文本）。
+string 节点 -> str（运行时按当前 UI 语言取值，docstring 显示基准值）；
+pattern 节点 -> re.Pattern[str]（docstring 显示文本）。
 """
 import re
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from . import LangModule as _LangModuleBase
@@ -19,102 +21,104 @@ else:
 class AutoSkipDialogTaskModule(_LangModuleBaseT):
     """AutoSkipDialogTask — OCR 语言节点（值取自 zh_CN）"""
 
-    k_92399078: Literal["结束会话"]
+    k_92399078: str
     """结束会话"""
+
 
 
 class CharactersModule(_LangModuleBaseT):
     """characters — OCR 语言节点（值取自 zh_CN）"""
 
-    zhuang_fang_yi: Literal["庄方宜"]
+    zhuang_fang_yi: str
     """庄方宜"""
 
-    luo_qian: Literal["洛茜"]
+    luo_qian: str
     """洛茜"""
 
-    tang_tang: Literal["汤汤"]
+    tang_tang: str
     """汤汤"""
 
-    guan_li_yuan: Literal["管理员"]
+    guan_li_yuan: str
     """管理员"""
 
-    li_feng: Literal["黎风"]
+    li_feng: str
     """黎风"""
 
-    yu_jin: Literal["余烬"]
+    yu_jin: str
     """余烬"""
 
-    jie_er_pei_ta: Literal["洁尔佩塔"]
+    jie_er_pei_ta: str
     """洁尔佩塔"""
 
-    ai_er_dai_la: Literal["艾尔黛拉"]
+    ai_er_dai_la: str
     """艾尔黛拉"""
 
-    jun_wei: Literal["骏卫"]
+    jun_wei: str
     """骏卫"""
 
-    lai_wan_ting: Literal["莱万汀"]
+    lai_wan_ting: str
     """莱万汀"""
 
-    yi_feng: Literal["伊冯"]
+    yi_feng: str
     """伊冯"""
 
-    bie_li: Literal["别礼"]
+    bie_li: str
     """别礼"""
 
-    chen_qian_yu: Literal["陈千语"]
+    chen_qian_yu: str
     """陈千语"""
 
-    zhou_xue: Literal["昼雪"]
+    zhou_xue: str
     """昼雪"""
 
-    sai_xi: Literal["赛希"]
+    sai_xi: str
     """赛希"""
 
-    lang_wei: Literal["狼卫"]
+    lang_wei: str
     """狼卫"""
 
-    pei_li_ka: Literal["佩丽卡"]
+    pei_li_ka: str
     """佩丽卡"""
 
-    hu_guang: Literal["弧光"]
+    hu_guang: str
     """弧光"""
 
-    a_lie_shi: Literal["阿列什"]
+    a_lie_shi: str
     """阿列什"""
 
-    ai_wei_wen_na: Literal["艾维文娜"]
+    ai_wei_wen_na: str
     """艾维文娜"""
 
-    da_pan: Literal["大潘"]
+    da_pan: str
     """大潘"""
 
-    ai_te_la: Literal["埃特拉"]
+    ai_te_la: str
     """埃特拉"""
 
-    ka_qi_er: Literal["卡契尔"]
+    ka_qi_er: str
     """卡契尔"""
 
-    an_ta_er: Literal["安塔尔"]
+    an_ta_er: str
     """安塔尔"""
 
-    ying_shi: Literal["萤石"]
+    ying_shi: str
     """萤石"""
 
-    qiu_li: Literal["秋栗"]
+    qiu_li: str
     """秋栗"""
 
-    jue: Literal["诀"]
+    jue: str
     """诀"""
 
-    ka_miao: Literal["卡缪"]
+    ka_miao: str
     """卡缪"""
 
-    mi_fu: Literal["弭弗"]
+    mi_fu: str
     """弭弗"""
 
-    li_nuo: Literal["梨诺"]
+    li_nuo: str
     """梨诺"""
+
 
 
 class DailyBattleMixinModule(_LangModuleBaseT):
@@ -198,14 +202,15 @@ class DailyBattleMixinModule(_LangModuleBaseT):
     k_70b20820: re.Pattern[str]
     """选择"""
 
-    k_unit_day: Literal["天"]
+    k_unit_day: str
     """天"""
 
-    k_unit_hour: Literal["小时"]
+    k_unit_hour: str
     """小时"""
 
-    k_reward_select: Literal["奖励选择"]
+    k_reward_select: str
     """奖励选择"""
+
 
 
 class DailyBuyMixinModule(_LangModuleBaseT):
@@ -214,8 +219,12 @@ class DailyBuyMixinModule(_LangModuleBaseT):
     k_8f834df1: re.Pattern[str]
     """确认购买"""
 
-    k_02894ea7: Literal["物资调度"]
+    k_02894ea7: str
     """物资调度"""
+
+    stable_materials_tab: re.Pattern[str]
+    """稳定"""
+
 
 
 class DailyDemoMixinModule(_LangModuleBaseT):
@@ -224,20 +233,7 @@ class DailyDemoMixinModule(_LangModuleBaseT):
     double_reward: re.Pattern[str]
     """开"""
 
-    k_27d2b829: Literal["bridge"]
-    """bridge"""
-
-    k_933056f0: re.Pattern[str]
-    """trust"""
-
-    k_d661f6da: re.Pattern[str]
-    """store"""
-
-
-class DailyLiaisonMixinModule(_LangModuleBaseT):
-    """daily_liaison_mixin — OCR 语言节点（值取自 zh_CN）"""
-
-    k_27d2b829: Literal["舰桥"]
+    k_27d2b829: str
     """舰桥"""
 
     k_933056f0: re.Pattern[str]
@@ -247,19 +243,34 @@ class DailyLiaisonMixinModule(_LangModuleBaseT):
     """存放"""
 
 
+
+class DailyLiaisonMixinModule(_LangModuleBaseT):
+    """daily_liaison_mixin — OCR 语言节点（值取自 zh_CN）"""
+
+    k_27d2b829: str
+    """舰桥"""
+
+    k_933056f0: re.Pattern[str]
+    """信赖"""
+
+    k_d661f6da: re.Pattern[str]
+    """存放"""
+
+
+
 class DailyRoutineMixinModule(_LangModuleBaseT):
     """daily_routine_mixin — OCR 语言节点（值取自 zh_CN）"""
 
-    k_dfe79994: Literal["交易"]
+    k_dfe79994: str
     """交易"""
 
-    k_7d394484: Literal["制作"]
+    k_7d394484: str
     """制作"""
 
     k_105cdd5a: re.Pattern[str]
     """任务$"""
 
-    k_39d12e73: Literal["领取"]
+    k_39d12e73: str
     """领取"""
 
     k_bf856c96: re.Pattern[str]
@@ -409,29 +420,30 @@ class DailyRoutineMixinModule(_LangModuleBaseT):
     k_39d12e73_1: re.Pattern[str]
     """领取"""
 
-    k_a72a252f: Literal["仓储节点"]
+    k_a72a252f: str
     """仓储节点"""
 
-    k_9f929560: Literal["据点管理"]
+    k_9f929560: str
     """据点管理"""
 
-    k_next_step: Literal["下一步"]
+    k_next_step: str
     """下一步"""
 
-    k_fill_to_max: Literal["填充至满"]
+    k_fill_to_max: str
     """填充至满"""
 
-    k_start_shipping: Literal["开始运送"]
+    k_start_shipping: str
     """开始运送"""
 
-    k_get_dispatch_ticket: Literal["获得调度券"]
+    k_get_dispatch_ticket: str
     """获得调度券"""
 
     k_culture_stopped: re.Pattern[str]
     """停工"""
 
-    k_view_quote: Literal["查看报价"]
+    k_view_quote: str
     """查看报价"""
+
 
 
 class DailyShopMixinModule(_LangModuleBaseT):
@@ -454,6 +466,7 @@ class DailyShopMixinModule(_LangModuleBaseT):
 
     k_b52d6a2a: re.Pattern[str]
     """采购"""
+
 
 
 class DailyTradeMixinModule(_LangModuleBaseT):
@@ -495,29 +508,30 @@ class DailyTradeMixinModule(_LangModuleBaseT):
     k_fa04e4df: re.Pattern[str]
     """物资调度终端"""
 
-    k_02894ea7: Literal["物资调度"]
+    k_02894ea7: str
     """物资调度"""
+
 
 
 class DeliveryTaskModule(_LangModuleBaseT):
     """DeliveryTask — OCR 语言节点（值取自 zh_CN）"""
 
-    k_a72a252f: Literal["仓储节点"]
+    k_a72a252f: str
     """仓储节点"""
 
-    k_38108eaa: Literal["刷新"]
+    k_38108eaa: str
     """刷新"""
 
-    k_96b876e3: Literal["工业"]
+    k_96b876e3: str
     """工业"""
 
-    k_9d5535b7: Literal["接取运送委托"]
+    k_9d5535b7: str
     """接取运送委托"""
 
-    k_b0e3a2da: Literal["登上滑索架"]
+    k_b0e3a2da: str
     """登上滑索架"""
 
-    k_ae8fb114: Literal["运送委托列表"]
+    k_ae8fb114: str
     """运送委托列表"""
 
     k_f736eb3d: re.Pattern[str]
@@ -532,20 +546,21 @@ class DeliveryTaskModule(_LangModuleBaseT):
     k_0c1ef9f5: re.Pattern[str]
     """交货"""
 
-    k_a72a252f_1: Literal["仓储节点"]
+    k_a72a252f_1: str
     """仓储节点"""
 
-    k_view_location: Literal["查看位置"]
+    k_view_location: str
     """查看位置"""
 
-    k_accept_delivery: Literal["接取运送委托"]
+    k_accept_delivery: str
     """接取运送委托"""
 
-    k_fragile: Literal["易损"]
+    k_fragile: str
     """易损"""
 
-    k_not_fragile: Literal["不易损"]
+    k_not_fragile: str
     """不易损"""
+
 
 
 class GameFlowMixinModule(_LangModuleBaseT):
@@ -579,10 +594,11 @@ class GameFlowMixinModule(_LangModuleBaseT):
     """离开"""
 
 
+
 class LiaisonMixinModule(_LangModuleBaseT):
     """liaison_mixin — OCR 语言节点（值取自 zh_CN）"""
 
-    k_80b758b9: Literal["中央环厅"]
+    k_80b758b9: str
     """中央环厅"""
 
     k_ff0a81cd: re.Pattern[str]
@@ -604,6 +620,7 @@ class LiaisonMixinModule(_LangModuleBaseT):
     """赠送"""
 
 
+
 class LoginMixinModule(_LangModuleBaseT):
     """login_mixin — OCR 语言节点（值取自 zh_CN）"""
 
@@ -617,14 +634,16 @@ class LoginMixinModule(_LangModuleBaseT):
     """最近"""
 
 
+
 class MapMixinModule(_LangModuleBaseT):
     """map_mixin — OCR 语言节点（值取自 zh_CN）"""
 
-    k_3da67d44: Literal["标记显示管理"]
+    k_3da67d44: str
     """标记显示管理"""
 
-    k_5d879e98: Literal["清空选中"]
+    k_5d879e98: str
     """清空选中"""
+
 
 
 class NavigationMixinModule(_LangModuleBaseT):
@@ -634,23 +653,25 @@ class NavigationMixinModule(_LangModuleBaseT):
     """追踪"""
 
 
+
 class TakeDeliveryTaskModule(_LangModuleBaseT):
     """TakeDeliveryTask — OCR 语言节点（值取自 zh_CN）"""
 
-    k_a72a252f: Literal["仓储节点"]
+    k_a72a252f: str
     """仓储节点"""
 
-    k_046ed3ab: Literal["请尽快送达"]
+    k_046ed3ab: str
     """请尽快送达"""
 
-    k_ae8fb114: Literal["运送委托列表"]
+    k_ae8fb114: str
     """运送委托列表"""
+
 
 
 class WarehouseTransferTaskModule(_LangModuleBaseT):
     """WarehouseTransferTask — OCR 语言节点（值取自 zh_CN）"""
 
-    k_3cb6baa6: Literal["仓库切换"]
+    k_3cb6baa6: str
     """仓库切换"""
 
     k_d661f6da: re.Pattern[str]
@@ -661,6 +682,7 @@ class WarehouseTransferTaskModule(_LangModuleBaseT):
 
     k_b56d9ac6: re.Pattern[str]
     """确认"""
+
 
 
 class WorldMapModule(_LangModuleBaseT):
@@ -931,10 +953,11 @@ class WorldMapModule(_LangModuleBaseT):
     """盈天台建设站"""
 
 
+
 class ZipLineMixinModule(_LangModuleBaseT):
     """zip_line_mixin — OCR 语言节点（值取自 zh_CN）"""
 
-    k_b0e3a2da: Literal["登上滑索架"]
+    k_b0e3a2da: str
     """登上滑索架"""
 
     k_55ef5a58: re.Pattern[str]
@@ -945,6 +968,7 @@ class ZipLineMixinModule(_LangModuleBaseT):
 
     k_0b1e4f35: re.Pattern[str]
     """离开滑索架"""
+
 
 
 

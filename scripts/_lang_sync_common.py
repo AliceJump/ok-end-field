@@ -51,9 +51,9 @@ def build_official(merged: dict, zh_of) -> dict:
         if not zh or zh in official:
             continue
         official[zh] = {
-            l: (v or "").strip()
-            for l, v in langs.items()
-            if l != "zh_CN" and (v or "").strip()
+            lang: (v or "").strip()
+            for lang, v in langs.items()
+            if lang != "zh_CN" and (v or "").strip()
         }
     return official
 
@@ -332,7 +332,7 @@ def fill_missing_from_index(data: dict, index: dict,
         if not zh:
             continue
         have = node_have_langs(node, langs + ("zh_CN",))
-        missing = [l for l in langs if l not in have]
+        missing = [lang for lang in langs if lang not in have]
         if not missing:
             continue
         candidates = []
@@ -381,12 +381,14 @@ def fill_missing_cross_files(data_map: dict, langs: tuple = REPO_LANGS
     index = defaultdict(list)
     for i, (_, _, _, have, _, _) in enumerate(loaded):
         for lang, val in have.items():
+            if val == "?":
+                continue
             index[(lang, normalize_value(val))].append(i)
 
     stats = defaultdict(int)
     all_touched = []
     for i, (path, key, node, have, style, zh) in enumerate(loaded):
-        missing = [l for l in all_langs if l not in have]
+        missing = [lang for lang in all_langs if lang not in have]
         if not missing:
             continue
         candidates = []
@@ -403,7 +405,7 @@ def fill_missing_cross_files(data_map: dict, langs: tuple = REPO_LANGS
             vals = {
                 cand[3].get(lang)
                 for cand in candidates
-                if cand[3].get(lang)
+                if cand[3].get(lang) and cand[3].get(lang) != "?"
             }
             if len(vals) == 1:
                 val = vals.pop()

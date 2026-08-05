@@ -335,12 +335,6 @@ class DailyTradeFeature:
                 buy_good, sell_goods, can_buy = self.analyze_goods_info(
                     good_infos, buy_price, sell_price
                 )
-            if buy_good and not can_buy and self.wait_ocr(
-                match=[self.lang.daily_trade_mixin.k_f48bcfb6, self.lang.daily_trade_mixin.k_6174dac7],
-                box=self.box.top_left,
-                time_out=3,
-            ):
-                can_buy = True
             if buy_good:
                 if can_buy:
                     back_to_area_deadline = self.active_time() + 20
@@ -375,14 +369,15 @@ class DailyTradeFeature:
 
             if after_buy is not None:
                 after_buy(area)
-                if sell_goods:
-                    if not self.wait_click_ocr(
-                            match=self.lang.daily_trade_mixin.k_33fb3f9c,
-                            box=self.box.top,
-                            time_out=5,
-                    ):
-                        self.log_info("未能切回弹性需求物资，跳过卖出操作")
-                        continue
+
+            if sell_goods:
+                if not self.wait_click_ocr(
+                        match=self.lang.daily_trade_mixin.k_33fb3f9c,
+                        box=self.box.top,
+                        time_out=5,
+                ):
+                    self.log_info("未能切回弹性需求物资，跳过卖出操作")
+                    continue
 
             for sell_good in sell_goods:
                 if sell_good.stock_quantity <= 0:

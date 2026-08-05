@@ -130,10 +130,11 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--dry-run", action="store_true",
                     help="只打印变更，不写回文件")
-    ap.add_argument("--sources-only", action="store_true",
-                    help="只跑阶段 A（数据源 → lang）")
-    ap.add_argument("--cross-only", action="store_true",
-                    help="只跑阶段 B（lang 内部互相补全）")
+    mode_group = ap.add_mutually_exclusive_group()
+    mode_group.add_argument("--sources-only", action="store_true",
+                            help="只跑阶段 A (数据源到 lang)")
+    mode_group.add_argument("--cross-only", action="store_true",
+                            help="只跑阶段 B (lang 内部互相补全)")
     args = ap.parse_args()
 
     # 一次性加载全部 lang JSON 到内存
