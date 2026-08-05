@@ -3132,11 +3132,11 @@ msgstr ""
 
 msgid "是否在日常任务结束后传送到帝江号右侧传送点。"
 msgstr ""
-"Si teletransportarse al punto derecho del Dijiang después de que finalice la"
+"Teletransportarse al punto derecho del Dijiang después de que finalice la"
 " tarea diaria."
 
 msgid "是否前往「帝江号/简易制作」制作物品。"
-msgstr "Si ir a \"Dijiang / Fabricación sencilla\" para fabricar artículos."
+msgstr "Ir a \"Dijiang / Fabricación sencilla\" para fabricar artículos."
 
 msgid "是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"
 msgstr ""

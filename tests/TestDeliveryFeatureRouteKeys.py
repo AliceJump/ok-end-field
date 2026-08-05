@@ -37,13 +37,21 @@ class TestDeliveryFeatureRouteKeys(unittest.TestCase):
 
     def test_register_route_keys_fills_runtime_config(self):
         """运行时 config 已就绪时补齐路线键与滚动开关，且不覆盖用户已有键。"""
-        task = SimpleNamespace(default_config={}, config={"已有键": 1})
+        task = SimpleNamespace(
+            default_config={self.ROUTE_KEY: "default-route"},
+            config={
+                "已有键": 1,
+                self.ROUTE_KEY: "custom-route",
+                DeliveryTask.CFG_SCROLL_ENABLE: True,
+            },
+        )
         feature = self.make_feature(task)
         feature._register_route_keys()
-        self.assertEqual(task.config[self.ROUTE_KEY], "")
+        self.assertEqual(task.config[self.ROUTE_KEY], "custom-route")
         self.assertEqual(task.config[self.END_KEY], "")
-        self.assertIs(task.config[DeliveryTask.CFG_SCROLL_ENABLE], False)
+        self.assertIs(task.config[DeliveryTask.CFG_SCROLL_ENABLE], True)
         self.assertEqual(task.config["已有键"], 1)
+        self.assertEqual(task.default_config[self.ROUTE_KEY], "default-route")
 
     def test_run_daily_registers_route_keys(self):
         """run_daily 无条件注册路线键（即使未切换地区）。"""
