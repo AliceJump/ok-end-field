@@ -18,6 +18,7 @@ import os
 import webbrowser
 from pathlib import Path
 from src.tasks.daily.daily_task_runner import DailyTaskRunner
+from src.tasks.onetime.DeliveryTask import DeliveryFeature
 from src.tasks.mixin.end_command_mixin import EndCommandMixin
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.map_mixin import MapMixin
@@ -78,6 +79,7 @@ class DailyTask(
         self.daily_liaison = DailyLiaisonFeature(self)
         self.daily_demo = DailyDemoFeature(self)
         self.daily_regional = DailyRegionalRunner(self)
+        self.delivery = DeliveryFeature(self)
 
         self.config_description.update(
             {
@@ -136,6 +138,7 @@ class DailyTask(
             ("⭐帝江号收菜", self.daily_routine.boat_claim_rewards),
             ("⭐收邮件", self.daily_routine.claim_mail),
             ("⭐转交运送委托", self.daily_routine.delivery_send_others),
+            ("⭐自动送货", self.delivery.run_daily),
             ("⭐地区建设", self.daily_regional.run),
             ("⭐造装备", self.daily_routine.make_weapon),
             ("⭐收信用", self.daily_routine.collect_credit),
