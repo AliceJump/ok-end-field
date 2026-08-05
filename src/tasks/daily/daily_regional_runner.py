@@ -25,10 +25,12 @@ class DailyRegionalRunner:
         for area in areas_list:
             self.log_info(f"开始处理地区建设: {area}")
             if enabled_outpost:
-                self._task.daily_routine.exchange_outpost_goods(
+                if not self._task.daily_routine.exchange_outpost_goods(
                     target_areas=[area],
                     keep_area_context=True,
-                )
+                ):
+                    self.log_info(f"据点兑换失败: {area}")
+                    return False
 
             if enabled_trade:
                 # 买卖货：买入后通过 after_buy 回调执行「买物资」。
@@ -45,10 +47,12 @@ class DailyRegionalRunner:
                     return False
                 if enabled_buy and not self._buy_ran:
                     self.log_info("买卖货未执行买物资回调，单独执行买物资")
-                    self._buy_staple_in_area(area)
+                    if not self._buy_staple_in_area(area):
+                        return False
             elif enabled_buy:
                 # 仅买物资：先进入物资调度，再执行购买。
-                self._buy_staple_in_area(area)
+                if not self._buy_staple_in_area(area):
+                    return False
 
             self.safe_back(feature=fL.transaction_overview, once_time_out=3)
             self.log_info(f"完成地区建设: {area}")
@@ -58,7 +62,7 @@ class DailyRegionalRunner:
     def _buy_staple_after_trade(self, current_area):
         """买卖货买入后的「买物资」回调。"""
         self._buy_ran = True
-        self._task.daily_buy.buy_staple_goods(
+        return self._task.daily_buy.buy_staple_goods(
             target_areas=[current_area],
             keep_area_context=True,
         )
@@ -68,8 +72,10 @@ class DailyRegionalRunner:
         if not self._task.to_model_area(area, "物资调度"):
             self.log_info(f"无法进入{area}物资调度，跳过买物资")
             return False
-        self._task.daily_buy.buy_staple_goods(
+        if not self._task.daily_buy.buy_staple_goods(
             target_areas=[area],
             keep_area_context=True,
-        )
+        ):
+            self.log_info(f"买物资失败: {area}")
+            return False
         return True

@@ -560,7 +560,7 @@ msgid "⭐据点兑换"
 msgstr "⭐ 거점 교환"
 
 msgid "⭐地区建设"
-msgstr "⭐ 지역 운영"
+msgstr "⭐ 지역 건설"
 
 msgid "⭐收信用"
 msgstr "⭐크레딧 수령"

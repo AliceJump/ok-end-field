@@ -230,7 +230,9 @@ class DailyOutpostMixin:
 
         for area in target_areas or areas_list:
             self.log_info(f"进入区域: {area}")
-            self.to_model_area(area, "据点管理")
+            if not self.to_model_area(area, "据点管理"):
+                self.log_info(f"无法进入{area}据点管理，据点兑换失败")
+                return False
 
             outposts = outpost_dict.get(area, [])
             if not outposts:
@@ -258,3 +260,4 @@ class DailyOutpostMixin:
                 self.ensure_main()
 
         self.log_info("据点兑换任务完成")
+        return True

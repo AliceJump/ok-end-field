@@ -59,6 +59,8 @@ class DailyBuyFeature:
                 self.log_info("购买「人文物产」")
                 self.buy(pattern_list=pl)
 
+        return True
+
     def buy(self, pattern_list=[]):
         good_list = [None]
         if len(pattern_list) > 0:

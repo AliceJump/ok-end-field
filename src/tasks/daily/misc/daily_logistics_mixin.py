@@ -60,7 +60,7 @@ class DailyLogisticsMixin:
 
         Returns:
             bool: 领取流程到达完成状态返回 True（已领取或确认无奖励）；
-                  未找到节点、无奖励结果或确认失败返回 False，
+                  未找到节点或确认失败返回 False，
                   便于调用方在后续地区重试。
         """
         self.log_info("开始领取转交委托奖励")

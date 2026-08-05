@@ -6,7 +6,8 @@ from unittest.mock import Mock, patch
 from src.tasks.daily.daily_regional_runner import DailyRegionalRunner
 
 
-def _make_task(config_options, buy_sell_result=True, after_buy_called=True):
+def _make_task(config_options, buy_sell_result=True, after_buy_called=True,
+               exchange_result=True, buy_staple_result=True, to_model_area_result=True):
     """构造一个带 mock 的 task，用于 DailyRegionalRunner 分支测试。
 
     after_buy_called: buy_sell 是否真的触发 after_buy 回调
@@ -14,9 +15,9 @@ def _make_task(config_options, buy_sell_result=True, after_buy_called=True):
     """
     task = SimpleNamespace()
     task.config = SimpleNamespace(get=lambda key, default=None: config_options)
-    task.daily_routine = SimpleNamespace(exchange_outpost_goods=Mock())
-    task.daily_buy = SimpleNamespace(buy_staple_goods=Mock())
-    task.to_model_area = Mock(return_value=True)
+    task.daily_routine = SimpleNamespace(exchange_outpost_goods=Mock(return_value=exchange_result))
+    task.daily_buy = SimpleNamespace(buy_staple_goods=Mock(return_value=buy_staple_result))
+    task.to_model_area = Mock(return_value=to_model_area_result)
     task.safe_back = Mock()
     task.log_info = Mock()
 
@@ -81,6 +82,35 @@ class TestDailyRegionalRunner(unittest.TestCase):
     # ── 买卖货失败 → run 返回 False ──
     def test_trade_failure_returns_false(self):
         task = _make_task(["买卖货"], buy_sell_result=False)
+        result = self.run_runner(task)
+
+        self.assertFalse(result)
+
+    # ── 据点兑换失败 → run 返回 False ──
+    def test_outpost_failure_returns_false(self):
+        task = _make_task(["据点兑换"], exchange_result=False)
+        result = self.run_runner(task)
+
+        self.assertFalse(result)
+
+    # ── 仅买物资时无法进入物资调度 → run 返回 False ──
+    def test_buy_only_fails_when_to_model_area_fails(self):
+        task = _make_task(["买物资"], to_model_area_result=False)
+        result = self.run_runner(task)
+
+        self.assertFalse(result)
+
+    # ── 仅买物资时购买失败 → run 返回 False ──
+    def test_buy_only_fails_when_buy_staple_fails(self):
+        task = _make_task(["买物资"], buy_staple_result=False)
+        result = self.run_runner(task)
+
+        self.assertFalse(result)
+
+    # ── 买物资 + 买卖货，回调被跳过且补充购买失败 → run 返回 False ──
+    def test_fallback_buy_failure_returns_false(self):
+        task = _make_task(["买物资", "买卖货"], after_buy_called=False,
+                          buy_staple_result=False)
         result = self.run_runner(task)
 
         self.assertFalse(result)
