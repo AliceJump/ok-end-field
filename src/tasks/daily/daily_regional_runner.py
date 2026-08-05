@@ -30,12 +30,12 @@ class DailyRegionalRunner:
                     keep_area_context=True,
                 ):
                     self.log_info(f"据点兑换失败: {area}")
-                    return False
 
             if enabled_trade:
                 # 买卖货：买入后通过 after_buy 回调执行「买物资」。
                 # buy_sell 在地区未启用/未找到货物/缺少买卖价时会跳过回调，
                 # 因此用 _buy_ran 标记，回调未执行时单独补一次买物资。
+                # 任一步骤失败均只记录日志，继续处理下一地区。
                 self._buy_ran = False
                 trade_ok = self._task.daily_trade.buy_sell(
                     target_areas=[area],
@@ -44,15 +44,12 @@ class DailyRegionalRunner:
                 )
                 if not trade_ok:
                     self.log_info(f"买卖货失败: {area}")
-                    return False
                 if enabled_buy and not self._buy_ran:
                     self.log_info("买卖货未执行买物资回调，单独执行买物资")
-                    if not self._buy_staple_in_area(area):
-                        return False
+                    self._buy_staple_in_area(area)
             elif enabled_buy:
                 # 仅买物资：先进入物资调度，再执行购买。
-                if not self._buy_staple_in_area(area):
-                    return False
+                self._buy_staple_in_area(area)
 
             self.safe_back(feature=fL.transaction_overview, once_time_out=3)
             self.log_info(f"完成地区建设: {area}")
@@ -77,5 +74,4 @@ class DailyRegionalRunner:
             keep_area_context=True,
         ):
             self.log_info(f"买物资失败: {area}")
-            return False
         return True

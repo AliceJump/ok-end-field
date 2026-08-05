@@ -303,7 +303,6 @@ class DailyTradeFeature:
                 self.ensure_main()
             if not self.to_model_area(area, "物资调度"):
                 self.log_info(f"无法进入{area}物资调度，买卖货失败")
-                return False
             self.wait_click_ocr(
                 match=self.lang.daily_trade_mixin.k_33fb3f9c, box=self.box.top
             )

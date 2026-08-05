@@ -79,41 +79,51 @@ class TestDailyRegionalRunner(unittest.TestCase):
         self.assertEqual(task.to_model_area.call_count, 2)
         self.assertEqual(task.daily_buy.buy_staple_goods.call_count, 2)
 
-    # ── 买卖货失败 → run 返回 False ──
-    def test_trade_failure_returns_false(self):
+    # ── 买卖货失败 → 记录日志并继续下一地区 ──
+    def test_trade_failure_logs_and_continues(self):
         task = _make_task(["买卖货"], buy_sell_result=False)
         result = self.run_runner(task)
 
-        self.assertFalse(result)
+        self.assertTrue(result)
+        logged = " ".join(call.args[0] for call in task.log_info.call_args_list)
+        self.assertIn("买卖货失败", logged)
 
-    # ── 据点兑换失败 → run 返回 False ──
-    def test_outpost_failure_returns_false(self):
+    # ── 据点兑换失败 → 记录日志并继续下一地区 ──
+    def test_outpost_failure_logs_and_continues(self):
         task = _make_task(["据点兑换"], exchange_result=False)
         result = self.run_runner(task)
 
-        self.assertFalse(result)
+        self.assertTrue(result)
+        logged = " ".join(call.args[0] for call in task.log_info.call_args_list)
+        self.assertIn("据点兑换失败", logged)
 
-    # ── 仅买物资时无法进入物资调度 → run 返回 False ──
-    def test_buy_only_fails_when_to_model_area_fails(self):
+    # ── 仅买物资时无法进入物资调度 → 记录日志并继续 ──
+    def test_buy_only_to_model_area_failure_logs_and_continues(self):
         task = _make_task(["买物资"], to_model_area_result=False)
         result = self.run_runner(task)
 
-        self.assertFalse(result)
+        self.assertTrue(result)
+        logged = " ".join(call.args[0] for call in task.log_info.call_args_list)
+        self.assertIn("无法进入", logged)
 
-    # ── 仅买物资时购买失败 → run 返回 False ──
-    def test_buy_only_fails_when_buy_staple_fails(self):
+    # ── 仅买物资时购买失败 → 记录日志并继续 ──
+    def test_buy_only_buy_staple_failure_logs_and_continues(self):
         task = _make_task(["买物资"], buy_staple_result=False)
         result = self.run_runner(task)
 
-        self.assertFalse(result)
+        self.assertTrue(result)
+        logged = " ".join(call.args[0] for call in task.log_info.call_args_list)
+        self.assertIn("买物资失败", logged)
 
-    # ── 买物资 + 买卖货，回调被跳过且补充购买失败 → run 返回 False ──
-    def test_fallback_buy_failure_returns_false(self):
+    # ── 买物资 + 买卖货，回调被跳过且补充购买失败 → 记录日志并继续 ──
+    def test_fallback_buy_failure_logs_and_continues(self):
         task = _make_task(["买物资", "买卖货"], after_buy_called=False,
                           buy_staple_result=False)
         result = self.run_runner(task)
 
-        self.assertFalse(result)
+        self.assertTrue(result)
+        logged = " ".join(call.args[0] for call in task.log_info.call_args_list)
+        self.assertIn("买物资失败", logged)
 
     # ── 买物资 + 买卖货 + 据点兑换：回调正常，不重复补充 ──
     def test_all_options_callback_not_duplicated(self):

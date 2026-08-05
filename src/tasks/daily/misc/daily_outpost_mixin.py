@@ -232,7 +232,6 @@ class DailyOutpostMixin:
             self.log_info(f"进入区域: {area}")
             if not self.to_model_area(area, "据点管理"):
                 self.log_info(f"无法进入{area}据点管理，据点兑换失败")
-                return False
 
             outposts = outpost_dict.get(area, [])
             if not outposts:
