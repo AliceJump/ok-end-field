@@ -33,7 +33,9 @@ class DailyBuyFeature:
         #
         pl = [re.compile(i) for i in self.config.get("购物白名单", [])]
         #
-        for area in target_areas or areas_list:
+        if target_areas is None:
+            target_areas = areas_list
+        for area in target_areas:
             if not keep_area_context:
                 self.ensure_main()
             self.log_info(f"进入区域: {area}")
