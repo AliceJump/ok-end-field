@@ -598,7 +598,7 @@ class BattleMixin(BaseEfTask):
 
             # 内层退出后继续走战斗检测：结算模板立即结束，
             # 未检测到战斗时最多等待 15 秒。
-            if last_battle_time:
+            if last_battle_time is not None:
                 battle_elapsed = self.active_time() - last_battle_time
                 self.next_frame()
 
