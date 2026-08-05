@@ -71,7 +71,8 @@ python/
 ############################
 # 🧰 IDE
 .idea/
-.vscode/
+.vscode/*
+!.vscode/extensions.json
 .workbuddy/
 
 ############################
