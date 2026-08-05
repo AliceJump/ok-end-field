@@ -88,6 +88,9 @@ class _BattleHarness:
     def __init__(self):
         self.wait_timeouts = []
         self.logs = []
+        self.frames = 0
+        self.combat = False
+        self.settlement_results = [True]
 
     def active_time(self):
         return 1
@@ -95,15 +98,17 @@ class _BattleHarness:
     def get_battle_config(self, key, default=None):
         return default
 
-    def wait_until(self, condition, **kwargs):
-        self.wait_timeouts.append(kwargs["time_out"])
-        return condition()
+    def next_frame(self):
+        self.frames += 1
+
+    def in_combat(self, required_yellow=0):
+        return self.combat
 
     def find_feature(self, **kwargs):
         return True
 
     def is_battle_settlement(self):
-        return True
+        return self.settlement_results.pop(0)
 
     def log_info(self, message):
         self.logs.append(message)
@@ -237,8 +242,21 @@ class TestStateDrivenWaits(unittest.TestCase):
         result = BattleMixin.auto_battle(task)
 
         self.assertTrue(result)
-        self.assertEqual(task.wait_timeouts, [15])
+        self.assertEqual(task.frames, 1)
         self.assertIn("检测到战斗结算状态，战斗完成", task.logs)
+
+    @patch("src.tasks.mixin.battle_mixin.AutoCombatLogic")
+    def test_battle_restarts_when_combat_returns_during_settlement_wait(self, combat_logic):
+        combat_logic.return_value.run.side_effect = [True, True]
+        task = _BattleHarness()
+        task.combat = True
+        task.settlement_results = [False, True]
+
+        result = BattleMixin.auto_battle(task)
+
+        self.assertTrue(result)
+        self.assertEqual(combat_logic.return_value.run.call_count, 2)
+        self.assertEqual(task.frames, 2)
 
     def test_combat_exit_counter_reuses_existing_detection(self):
         task = _CombatExitHarness()

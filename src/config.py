@@ -145,6 +145,7 @@ config = {
         ["src.tasks.test.RealtimeDetectTask", "RealtimeDetectTask"],
         ["src.tasks.test.DiagnosisTask", "DiagnosisTask"],
         ["src.tasks.test.TestBattleSlotDetect", "TestBattleSlotDetect"],
+        ["src.tasks.test.TestCombatTemplateMatch", "TestCombatTemplateMatch"],
     ],
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],
