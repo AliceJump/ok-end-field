@@ -23,8 +23,8 @@ class DailyTradeFeature:
             "⭐买卖货": True,
             "只买不卖": False,
         })
-        buy_sell_dict = dict()
-        buy_sell_desc_dict = dict()
+        buy_sell_dict = {}
+        buy_sell_desc_dict = {}
         for area in areas_list:
             buy_sell_dict[f"{area}买入价"] = 900
             buy_sell_dict[f"{area}卖出价"] = 4500

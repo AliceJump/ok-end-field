@@ -62,7 +62,7 @@ class DailyBattleFeature:
 
     def __init__(self, task):
         self._task = task
-        self.gather_near_transfer_point_dict = dict()
+        self.gather_near_transfer_point_dict = {}
         self.stages_list = stages_list
         self._reset_battle_state()
         today_str = datetime.now().strftime("%Y-%m-%d")
