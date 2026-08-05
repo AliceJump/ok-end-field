@@ -1,4 +1,4 @@
-# Config option: Ensure Main Once Action Sleep
+#
 msgid ""
 msgstr ""
 "Project-Id-Version: 1.0\n"
@@ -5693,3 +5693,249 @@ msgstr "Operator Story [Chen Qianyu: The Swordbearer]"
 
 msgid "开服贺图"
 msgstr "Launch Celebration Artwork"
+
+msgid "⭐地区建设"
+msgstr "⭐ Regional Operations"
+
+msgid "wait_until"
+msgstr "wait_until"
+
+msgid "不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
+msgstr ""
+"Do not pick crops mass-produced by farms or planting/harvesting lines: 琼叶参, "
+"金石稻, 芽针, 锦草, 苦叶椒, 砂叶, 灰芦麦, 柑实, 荞花, 酮化灌木."
+
+msgid "两者"
+msgstr "Both"
+
+msgid "买物资"
+msgstr "Buy Supplies"
+
+msgid "关卡名"
+msgstr "Stage Name"
+
+msgid "动作列表"
+msgstr "Action List"
+
+msgid "区域扫描测试"
+msgstr "Region Scan Test"
+
+msgid "否"
+msgstr "No"
+
+msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
+msgstr ""
+"When enabled, stronghold exchange only buys items in the \"Trading Goods "
+"Priority List\" when it is not empty; if the list is empty, the original "
+"exchange logic is used."
+
+msgid "启用实时条件"
+msgstr "Enable Real-Time Conditions"
+
+msgid ""
+"在没有运行任何条件动作时生效\n"
+"当终结技可释放时立刻释放终结技"
+msgstr ""
+"Takes effect when no conditional actions are running\n"
+"Release the Ultimate immediately when it is available"
+
+msgid ""
+"在没有运行任何条件动作时生效\n"
+"当连携技可释放时立刻释放连携技"
+msgstr ""
+"Takes effect when no conditional actions are running\n"
+"Release the Link Skill immediately when it is available"
+
+msgid "导航到演武集算『演算』入口"
+msgstr "Navigate to the \"演算\" entrance of 演武集算"
+
+msgid "将次要目标方向蓝点对齐到屏幕中心"
+msgstr ""
+"Align the secondary target direction blue dot to the center of the screen"
+
+msgid "屏蔽可量产植物"
+msgstr "Filter Mass-Produced Plants"
+
+msgid "当条件符合时使用技能组"
+msgstr "Use the skill set when conditions are met"
+
+msgid "战斗技能位置检测"
+msgstr "Battle Skill Slot Detection"
+
+msgid "按住鼠标蛇形扫描指定矩形区域"
+msgstr "Hold the mouse and snake-scan the specified rectangular area"
+
+msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
+msgstr ""
+"Execute the selected operations by region: first outpost exchange, then buy "
+"in buy & sell; when buy supplies is enabled, switch to stable supply needs "
+"to buy after buying, then switch back to flexible supply needs to sell."
+
+msgid "据点兑换仅购买优先商品"
+msgstr "Stronghold Exchange Buys Priority Goods Only"
+
+msgid "是"
+msgstr "Yes"
+
+msgid "是否前往「帝江号/简易制作」制作物品。"
+msgstr "Whether to go to \"Dijiang / Simple Crafting\" to craft items."
+
+msgid "是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"
+msgstr ""
+"Whether to transfer all delivery commissions in \"Regional Operations / "
+"Warehouse Node\" and claim the transfer commission rewards once."
+
+msgid "是否在日常任务结束后传送到帝江号右侧传送点。"
+msgstr ""
+"Whether to teleport to the right waypoint of Dijiang after the daily task "
+"ends."
+
+msgid "暂停时间应超过此值，用于观察恢复后的行为"
+msgstr ""
+"The pause duration should exceed this value, to observe the behavior after "
+"recovery"
+
+msgid "暂停计时验证"
+msgstr "Pause Timing Verification"
+
+msgid ""
+"根据实时情况释放技能\n"
+"启用时自动忽略排轴配置"
+msgstr ""
+"Release skills based on real-time situations\n"
+"When enabled, the rotation/schedule config is ignored automatically"
+
+msgid "测试模式"
+msgstr "Test Mode"
+
+msgid "测试超时(秒)"
+msgstr "Test Timeout (sec)"
+
+msgid "演算入口导航测试"
+msgstr "演算 Entrance Navigation Test"
+
+msgid ""
+"目标券数优先级序列，用逗号分隔多个券数。按列表中顺序优先抢前面的券数。\n"
+"默认：119000。可选：73100、79800、119000、159000、163000"
+msgstr ""
+"Priority sequence of target coupon counts, separated by commas. Earlier counts in the list are grabbed first.\n"
+"Default: 119000. Options: 73100, 79800, 119000, 159000, 163000"
+
+msgid "立即释放终结技"
+msgstr "Release Ultimate Immediately"
+
+msgid "立即释放连携技"
+msgstr "Release Link Skill Immediately"
+
+msgid "等级读取测试"
+msgstr "Level Read Test"
+
+msgid "编辑"
+msgstr "Edit"
+
+msgid "自写循环"
+msgstr "Custom Loop"
+
+msgid "读取演武集算关卡界面的当前等级"
+msgstr "Read the current level from the 演武集算 stage interface"
+
+msgid ""
+"选择帝江号收菜内容：\n"
+"收集线索：前往会客室收集线索，集齐后开启情报交流。\n"
+"制造舱：收取培养材料并补足待制造数量。\n"
+"培养舱：收取培养材料并直接再次培养。"
+msgstr ""
+"Select the Dijiang harvest contents:\n"
+"Collect clues: go to the reception room to collect clues, and start intel exchange when complete.\n"
+"Manufacturing bay: collect cultivation materials and replenish the quantity to be manufactured.\n"
+"Cultivation bay: collect cultivation materials and directly cultivate again."
+
+msgid "选择当前任务使用全局或独立战斗配置。"
+msgstr ""
+"Choose whether the current task uses the global or the independent battle "
+"config."
+
+msgid "选择要运行的暂停计时测试"
+msgstr "Choose the pause timing test to run"
+
+msgid ""
+"选择要领取的活动奖励：\n"
+"周常奖励：领取每周事务奖励。\n"
+"理智补给：领取理智补给。\n"
+"刮刮乐：执行刮刮乐。"
+msgstr ""
+"Select the event rewards to claim:\n"
+"Weekly rewards: claim the weekly affairs rewards.\n"
+"Sanity Supply: claim the sanity supply.\n"
+"Scratch-off: perform the scratch-off."
+
+msgid "逐个检测四个技能位置并输出模板匹配结果"
+msgstr ""
+"Detect the four skill slots one by one and output template matching results"
+
+msgid "验证暂停任务期间活动计时是否冻结"
+msgstr "Verify whether the activity timer freezes while the task is paused"
+
+msgid "每个键对应一条滑索路线，值为距离序列，用英文逗号分隔"
+msgstr ""
+"Each key is a zip line route; the value is a distance sequence, comma-"
+"separated"
+
+msgid "任务会按顺序依次对齐并滑行每段距离"
+msgstr "The task aligns and zips through each distance in order"
+
+msgid "例：「{key}」= {raw} → 依次滑行 {seq}"
+msgstr "e.g. \"{key}\" = {raw} → zip {seq}"
+
+msgid "留空表示该路线不乘滑索"
+msgstr "Leave empty to skip the zip line on that route"
+
+msgid "{keys}：出发滑索距离"
+msgstr "{keys}: starting zip line distance"
+
+msgid "{keys}：各送货目标滑索序列"
+msgstr "{keys}: zip line sequences to each delivery target"
+
+msgid "{keys}：能量淤积点滑索序列"
+msgstr "{keys}: zip line sequences to energy pools"
+
+msgid "对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低"
+msgstr ""
+"Auto-zooms in when aligning zip lines; may improve or clearly reduce success"
+" rate"
+
+msgid "建议启用时不要使用非白发或有白帽角色"
+msgstr "Avoid non-white-hair or white-hat characters when enabled"
+
+msgid "滑索配置说明"
+msgstr "Zip Line Config"
+
+msgid "滑索距离序列在「全局配置 → 滑索配置」中设置"
+msgstr "Set zip line distance sequences in Global Config → Zip Line Config"
+
+msgid "填写规则"
+msgstr "How to fill"
+
+msgid "送货相关键"
+msgstr "Delivery keys"
+
+msgid "淤积点相关键"
+msgstr "Energy pool keys"
+
+msgid "Zip Line Config"
+msgstr "Zip Line Config"
+
+msgid "淤积点滑索"
+msgstr "Energy Pool Zipline"
+
+msgid "滑索距离序列，用逗号分隔。"
+msgstr "Zipline distance sequence, separated by commas."
+
+msgid "滑索配置分类"
+msgstr "Zipline Config Category"
+
+msgid "送货滑索"
+msgstr "Delivery Zipline"
+
+msgid "选择要显示的滑索配置分类。"
+msgstr "Choose the zipline config category to display."

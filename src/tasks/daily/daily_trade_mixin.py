@@ -20,7 +20,6 @@ class DailyTradeFeature:
         self._task = task
         #
         task.default_config.update({
-            "⭐买卖货": True,
             "只买不卖": False,
         })
         buy_sell_dict = {}
@@ -35,11 +34,6 @@ class DailyTradeFeature:
             buy_sell_desc_dict[area] = f"是否启用「地区建设/{area}物资调度/弹性需求物资」交易。"
         task.default_config.update(buy_sell_dict)
         task.config_description.update({
-            "⭐买卖货": (
-                "是否在「弹性需求物资」与好友交易赚取调度券。\n"
-                "自动选择利润最高的方案，然后用价格上下限判定是否交易。\n"
-                "（除非可购买数量即将溢出，这种情况下必定交易。）"
-            ),
             "只买不卖": (
                 "启用后将只进行购买操作，不进行出售操作。"
             ),
@@ -306,15 +300,15 @@ class DailyTradeFeature:
             self.wait_ui_stable(refresh_interval=1)
         return result
 
-    def buy_sell(self):
-        for area in areas_list:
+    def buy_sell(self, target_areas=None, keep_area_context=False, after_buy=None):
+        for area in target_areas or areas_list:
             if not self.config.get(area, False):
                 self.log_info(f"跳过{area}，因为配置中未启用")
                 continue
-            self.ensure_main()
-            self.log_info(f"前往{area}")
-            self.to_model_area(area, "物资调度")
-            self.wait_ui_stable(refresh_interval=1)
+            if not keep_area_context:
+                self.ensure_main()
+            if not self.to_model_area(area, "物资调度"):
+                self.log_info(f"无法进入{area}物资调度，买卖货失败")
             self.wait_click_ocr(
                 match=self.lang.daily_trade_mixin.k_33fb3f9c, box=self.box.top
             )
@@ -378,6 +372,17 @@ class DailyTradeFeature:
                                 break
                     else:
                         self.log_info("未找到加号按钮，无法购买")
+
+            if after_buy is not None:
+                after_buy(area)
+                if sell_goods:
+                    if not self.wait_click_ocr(
+                            match=self.lang.daily_trade_mixin.k_33fb3f9c,
+                            box=self.box.top,
+                            time_out=5,
+                    ):
+                        self.log_info("未能切回弹性需求物资，跳过卖出操作")
+                        continue
 
             for sell_good in sell_goods:
                 if sell_good.stock_quantity <= 0:

@@ -15,15 +15,10 @@ class DailyBuyFeature:
     def __init__(self, task):
         self._task = task
         task.default_config.update({
-            "⭐买物资": False,
             self.CFG_SHOP_WHITELIST: [],
             self.CFG_BUY_GIFT: True,
         })
         task.config_description.update({
-            "⭐买物资": (
-                "是否在「地区建设/物资调度/稳定物资需求」中通过调度券购买物资。\n"
-                "依次购买「日用消耗」「工业货品」「人文物产」首行某个物品。"
-            ),
             self.CFG_SHOP_WHITELIST: (
                 "默认留空，表示购买「日用消耗」「工业货品」「人文物产」首行首个物资。\n"
                 "更多用法参见 ./docs/日常任务.md > 买物资 。"
@@ -38,18 +33,25 @@ class DailyBuyFeature:
 
     def __getattr__(self, name):
         return getattr(self._task, name)
-    def buy_staple_goods(self):
+    def buy_staple_goods(self, target_areas=None, keep_area_context=False):
         self.info_set("current_task", "buy_staple_goods")
         self.log_info("开始买物资任务")
         #
         pl = [re.compile(i) for i in self.config.get(self.CFG_SHOP_WHITELIST, [])]
         #
-        for area in areas_list:
-            self.ensure_main()
+        if target_areas is None:
+            target_areas = areas_list
+        for area in target_areas:
+            if not keep_area_context:
+                self.ensure_main()
             self.log_info(f"进入区域: {area}")
-            self.to_model_area(area, "物资调度")
             #
-            self.click_relative(100 / 3840, 464 / 2160)
+            self.wait_click_ocr(
+                match=self.lang.daily_buy_mixin.stable_materials_tab,
+                box=self.box.left,
+                time_out=5,
+                after_sleep=0.5,
+            )
             self.wait_ui_stable(refresh_interval=0.2)
             self.log_info("购买「日用消耗」")
             self.buy(pattern_list=pl)
@@ -64,6 +66,8 @@ class DailyBuyFeature:
                 self.wait_ui_stable(refresh_interval=0.2)
                 self.log_info("购买「人文物产」")
                 self.buy(pattern_list=pl)
+
+        return True
 
     def buy(self, pattern_list=[]):
         good_list = [None]

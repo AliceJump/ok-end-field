@@ -29,7 +29,6 @@ class DailyRoutineFeature(
             self.CFG_TRADE_PRIORITY: [],
             self.CFG_POINT_EXCHANGE_PRIORITY_ONLY: False,
             "⭐转交运送委托": True,
-            "⭐转交委托奖励领取": True,
             "⭐造装备": True,
             "⭐简易制作": True,
             "⭐收信用": True,
@@ -69,11 +68,7 @@ class DailyRoutineFeature(
                 "序列为空时按原逻辑兑换。"
             ),
             "⭐转交运送委托": (
-                "是否在「地区建设/仓储结点」中转交全部运送委托。"
-            ),
-            "⭐转交委托奖励领取": (
-                "是否领取「地区建设/仓储结点/我转交的委托」。\n"
-                "超时委托也会被领取。"
+                "是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"
             ),
             "⭐造装备": (
                 "是否前往「装备制造/套组装备制造」并制作一件列表首位的装备。\n"
