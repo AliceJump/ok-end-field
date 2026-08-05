@@ -167,27 +167,13 @@ def _iter_legacy_config_data(option: ConfigOption):
             yield data, mtime
 
 
-def _iter_legacy_zip_line_data():
+def _iter_legacy_zip_line_task_data():
+    """遍历 legacy 任务配置文件中的滑索键值（不含账号覆盖，避免账号路线污染全局迁移）。"""
     for task_config_name in _ZIP_LINE_LEGACY_TASK_CONFIGS:
         config_path = Path(get_relative_path("configs", f"{task_config_name}.json"))
         data = read_json_file(str(config_path))
         if isinstance(data, dict):
             yield data, config_path.stat().st_mtime if config_path.is_file() else -1
-
-    overrides_path = Path(get_relative_path("configs", "account_scoped_overrides.json"))
-    data = read_json_file(str(overrides_path))
-    if not isinstance(data, dict):
-        return
-    accounts = data.get("accounts") or {}
-    if not isinstance(accounts, dict):
-        return
-    mtime = overrides_path.stat().st_mtime if overrides_path.is_file() else -1
-    for account_tasks in accounts.values():
-        if not isinstance(account_tasks, dict):
-            continue
-        for task_config in account_tasks.values():
-            if isinstance(task_config, dict):
-                yield task_config, mtime
 
 
 def _collect_legacy_values(option: ConfigOption) -> dict[str, Any]:
@@ -208,7 +194,7 @@ def _collect_legacy_values(option: ConfigOption) -> dict[str, Any]:
 
 def _collect_legacy_zip_line_values() -> dict[str, Any]:
     candidates_by_key: dict[str, list[tuple[float, Any]]] = {}
-    for data, mtime in _iter_legacy_zip_line_data() or []:
+    for data, mtime in _iter_legacy_zip_line_task_data() or []:
         for raw_key, value in data.items():
             key = _ZIP_LINE_KEY_MIGRATIONS.get(raw_key, raw_key)
             default_value = ZIP_LINE_DEFAULT_CONFIG.get(key)
