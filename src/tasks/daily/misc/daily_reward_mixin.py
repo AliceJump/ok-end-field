@@ -92,7 +92,11 @@ class DailyRewardMixin:
         self.press_key("f7")
         self.log_info("按下 F7 打开活动中心")
 
-        enabled_rewards = set(self.config.get("活动奖励", []))
+        enabled_rewards = self.config.get("⭐活动奖励", [])
+        # 迁移后 ⭐活动奖励 恒为列表；非列表时按未启用处理，不再应用旧布尔开关值。
+        if not isinstance(enabled_rewards, list):
+            enabled_rewards = []
+        enabled_rewards = set(enabled_rewards)
         weekly_enabled = "周常奖励" in enabled_rewards
         sanity_enabled = "理智补给" in enabled_rewards
         scratch_enabled = "刮刮乐" in enabled_rewards

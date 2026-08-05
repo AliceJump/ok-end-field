@@ -562,9 +562,6 @@ msgstr "⭐ Recolección del Dijiang"
 msgid "⭐据点兑换"
 msgstr "⭐ Intercambio del puesto"
 
-msgid "⭐地区建设"
-msgstr "⭐ Operaciones regionales"
-
 msgid "⭐收信用"
 msgstr "⭐ Recoger Crédito"
 
@@ -576,6 +573,9 @@ msgstr "⭐ Recompensas Diarias"
 
 msgid "⭐简易制作"
 msgstr "⭐ Fabricación sencilla"
+
+msgid "⭐转交委托奖励领取"
+msgstr "⭐ Recoger recompensas transferidas"
 
 msgid "⭐转交运送委托"
 msgstr "⭐ Transferir encargos de entrega"
@@ -1056,6 +1056,9 @@ msgstr ""
 msgid "实时检测"
 msgstr "Detección en Tiempo Real"
 
+msgid "帝江号收菜操作"
+msgstr "Operaciones de recolección del Dijiang"
+
 msgid "庄方宜"
 msgstr "Zhuang Fangyi"
 
@@ -1251,6 +1254,9 @@ msgstr "Una cuenta (teléfono) por línea, sin contraseña"
 
 msgid "油猴脚本帮助"
 msgstr "Ayuda del script de Tampermonkey"
+
+msgid "活动奖励"
+msgstr "Recompensas de Evento"
 
 msgid "浏览器油猴脚本帮助"
 msgstr "Ayuda del script de Tampermonkey del navegador"
@@ -3122,6 +3128,9 @@ msgstr ""
 msgid "炽燃！竞技大会！"
 msgstr "¡FURIA ARDIENTE! ¡MEGA ARENA!"
 
+msgid "⭐地区建设"
+msgstr "⭐ Operaciones regionales"
+
 msgid "wait_until"
 msgstr "wait_until"
 
@@ -3201,10 +3210,11 @@ msgstr ""
 
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
 msgstr ""
-"Ejecutar la operación seleccionada por región: primero intercambio de "
-"puesto, luego la compra del comercio; si \"Comprar suministros\" está "
-"activado, tras comprar cambia a la compra de demanda de suministros estable,"
-" y finalmente vuelve a la venta de suministros de demanda flexible."
+"Ejecutar las operaciones seleccionadas por región: primero intercambio de "
+"puestos, luego la compra en comprar y vender; cuando la compra de "
+"suministros esté habilitada, cambiar a necesidades de suministro estable "
+"para comprar después de comprar, y luego volver a necesidades de suministro "
+"flexible para vender."
 
 msgid "据点兑换仅购买优先商品"
 msgstr "El intercambio de puesto solo compra productos prioritarios"
@@ -3213,17 +3223,17 @@ msgid "是"
 msgstr "Sí"
 
 msgid "是否前往「帝江号/简易制作」制作物品。"
-msgstr "Si ir a \"帝江号/简易制作\" para fabricar objetos."
+msgstr "Ir a \"Dijiang / Fabricación sencilla\" para fabricar artículos."
 
 msgid "是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"
 msgstr ""
-"Si transferir todas las comisiones de envío en \"地区建设/仓储结点\" y reclamar una "
-"vez la recompensa de transferencia."
+"Si transferir todos los encargos de entrega en \"Operaciones regionales / "
+"Nodo de almacén\" y reclamar las recompensas de transferencia una vez."
 
 msgid "是否在日常任务结束后传送到帝江号右侧传送点。"
 msgstr ""
-"Si teletransportarse al punto de teletransporte derecho de 帝江号 tras terminar"
-" las tareas diarias."
+"Teletransportarse al punto derecho del Dijiang después de que finalice la "
+"tarea diaria."
 
 msgid "暂停时间应超过此值，用于观察恢复后的行为"
 msgstr ""
@@ -3286,10 +3296,10 @@ msgid ""
 "制造舱：收取培养材料并补足待制造数量。\n"
 "培养舱：收取培养材料并直接再次培养。"
 msgstr ""
-"Seleccionar el contenido de recolección de 帝江号:\n"
-"Recolectar pistas: ir a la sala de recepción para recolectar pistas, y abrir el intercambio de información al completarlas.\n"
-"Bahía de fabricación: recibir materiales de cultivo y completar la cantidad pendiente.\n"
-"Bahía de cultivo: recibir materiales de cultivo y volver a cultivar directamente."
+"Seleccione el contenido de recolección del Dijiang:\n"
+"Recolectar pistas: ir a la sala de recepción para recolectar pistas e iniciar el intercambio de inteligencia al completarlas.\n"
+"Compartimento de fabricación: recoger materiales de cultivo y reponer la cantidad a fabricar.\n"
+"Compartimento de cultivo: recoger materiales de cultivo y cultivar de nuevo directamente."
 
 msgid "选择当前任务使用全局或独立战斗配置。"
 msgstr ""
@@ -3305,10 +3315,10 @@ msgid ""
 "理智补给：领取理智补给。\n"
 "刮刮乐：执行刮刮乐。"
 msgstr ""
-"Seleccionar las recompensas de evento a reclamar:\n"
-"Recompensa semanal: reclamar la recompensa de asuntos semanales.\n"
+"Seleccione las recompensas de evento a reclamar:\n"
+"Recompensas semanales: reclamar las recompensas de asuntos semanales.\n"
 "Suministro de cordura: reclamar el suministro de cordura.\n"
-"Rasca y gana: ejecutar el rasca y gana."
+"Rasca y gana: realizar el rasca y gana."
 
 msgid "逐个检测四个技能位置并输出模板匹配结果"
 msgstr ""
@@ -3385,12 +3395,3 @@ msgstr "Tirolina de entrega"
 
 msgid "选择要显示的滑索配置分类。"
 msgstr "Elegir la categoría de configuración de tirolina a mostrar."
-
-msgid "⭐转交委托奖励领取"
-msgstr "⭐ Recoger recompensas transferidas"
-
-msgid "帝江号收菜操作"
-msgstr "Operaciones de recolección del Dijiang"
-
-msgid "活动奖励"
-msgstr "Recompensas de Evento"

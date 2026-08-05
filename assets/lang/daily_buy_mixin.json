@@ -38,5 +38,25 @@
     "es_ES": {
       "string": "Despacho de materiales"
     }
+  },
+  "stable_materials_tab": {
+    "zh_CN": {
+      "pattern": "稳定"
+    },
+    "zh_TW": {
+      "pattern": "穩定"
+    },
+    "en_US": {
+      "pattern": "Stable"
+    },
+    "ja_JP": {
+      "pattern": "安定"
+    },
+    "ko_KR": {
+      "pattern": "안정"
+    },
+    "es_ES": {
+      "pattern": "Estable"
+    }
   }
 }

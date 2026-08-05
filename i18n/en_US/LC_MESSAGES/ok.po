@@ -1119,9 +1119,6 @@ msgstr "⭐ Dijiang Harvest"
 msgid "⭐据点兑换"
 msgstr "⭐ Outpost Exchange"
 
-msgid "⭐地区建设"
-msgstr "⭐ Regional Operations"
-
 msgid "⭐收信用"
 msgstr "⭐ Collect Credit"
 
@@ -1133,6 +1130,9 @@ msgstr "⭐ Daily Rewards"
 
 msgid "⭐简易制作"
 msgstr "⭐ Simple Crafting"
+
+msgid "⭐转交委托奖励领取"
+msgstr "⭐ Claim Delegated Rewards"
 
 msgid "⭐转交运送委托"
 msgstr "⭐ Transfer Delivery Commission"
@@ -1554,6 +1554,9 @@ msgstr "Run YOLO detection in real-time loop."
 msgid "实时检测"
 msgstr "Real-time Detection"
 
+msgid "帝江号收菜操作"
+msgstr "Dijiang Harvest Operations"
+
 msgid "庄方宜"
 msgstr "Zhuang Fangyi"
 
@@ -1742,6 +1745,9 @@ msgstr "One account (phone) per line, no password needed"
 
 msgid "油猴脚本帮助"
 msgstr "Tampermonkey Script Help"
+
+msgid "活动奖励"
+msgstr "Activity Rewards"
 
 msgid "浏览器油猴脚本帮助"
 msgstr "Browser Tampermonkey Script Help"
@@ -5688,6 +5694,9 @@ msgstr "Operator Story [Chen Qianyu: The Swordbearer]"
 msgid "开服贺图"
 msgstr "Launch Celebration Artwork"
 
+msgid "⭐地区建设"
+msgstr "⭐ Regional Operations"
+
 msgid "wait_until"
 msgstr "wait_until"
 
@@ -5758,10 +5767,9 @@ msgstr "Hold the mouse and snake-scan the specified rectangular area"
 
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
 msgstr ""
-"Execute the selected operation by region: first stronghold exchange, then "
-"the buy of trading; when \"Buy Supplies\" is enabled, switch to stable-"
-"supply purchasing after buying, and finally switch back to flexible-supply "
-"selling."
+"Execute the selected operations by region: first outpost exchange, then buy "
+"in buy & sell; when buy supplies is enabled, switch to stable supply needs "
+"to buy after buying, then switch back to flexible supply needs to sell."
 
 msgid "据点兑换仅购买优先商品"
 msgstr "Stronghold Exchange Buys Priority Goods Only"
@@ -5770,17 +5778,17 @@ msgid "是"
 msgstr "Yes"
 
 msgid "是否前往「帝江号/简易制作」制作物品。"
-msgstr "Whether to go to \"帝江号/简易制作\" to craft items."
+msgstr "Whether to go to \"Dijiang / Simple Crafting\" to craft items."
 
 msgid "是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"
 msgstr ""
-"Whether to transfer all delivery commissions at \"地区建设/仓储结点\" and claim the "
-"transfer reward once."
+"Whether to transfer all delivery commissions in \"Regional Operations / "
+"Warehouse Node\" and claim the transfer commission rewards once."
 
 msgid "是否在日常任务结束后传送到帝江号右侧传送点。"
 msgstr ""
-"Whether to teleport to the right teleporter of 帝江号 after the daily tasks "
-"finish."
+"Whether to teleport to the right waypoint of Dijiang after the daily task "
+"ends."
 
 msgid "暂停时间应超过此值，用于观察恢复后的行为"
 msgstr ""
@@ -5837,10 +5845,10 @@ msgid ""
 "制造舱：收取培养材料并补足待制造数量。\n"
 "培养舱：收取培养材料并直接再次培养。"
 msgstr ""
-"Select the 帝江号 collection content:\n"
-"Collect Clues: go to the reception room to collect clues, and open intelligence exchange when complete.\n"
-"Manufacturing Bay: collect cultivation materials and top up the pending manufacturing count.\n"
-"Cultivation Bay: collect cultivation materials and cultivate again directly."
+"Select the Dijiang harvest contents:\n"
+"Collect clues: go to the reception room to collect clues, and start intel exchange when complete.\n"
+"Manufacturing bay: collect cultivation materials and replenish the quantity to be manufactured.\n"
+"Cultivation bay: collect cultivation materials and directly cultivate again."
 
 msgid "选择当前任务使用全局或独立战斗配置。"
 msgstr ""
@@ -5857,9 +5865,9 @@ msgid ""
 "刮刮乐：执行刮刮乐。"
 msgstr ""
 "Select the event rewards to claim:\n"
-"Weekly Reward: claim the weekly affairs reward.\n"
+"Weekly rewards: claim the weekly affairs rewards.\n"
 "Sanity Supply: claim the sanity supply.\n"
-"Scratch-off: run the scratch-off."
+"Scratch-off: perform the scratch-off."
 
 msgid "逐个检测四个技能位置并输出模板匹配结果"
 msgstr ""
@@ -5931,12 +5939,3 @@ msgstr "Delivery Zipline"
 
 msgid "选择要显示的滑索配置分类。"
 msgstr "Choose the zipline config category to display."
-
-msgid "⭐转交委托奖励领取"
-msgstr "⭐ Claim Delegated Rewards"
-
-msgid "帝江号收菜操作"
-msgstr "Dijiang Harvest Operations"
-
-msgid "活动奖励"
-msgstr "Activity Rewards"
