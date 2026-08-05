@@ -4,6 +4,8 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
+from ._lang_typed import _LangAccessorTyped
+
 
 # ============================================================
 # Locale activation config
@@ -130,7 +132,7 @@ class LangModule:
         return v
 
 
-class LangAccessor:
+class LangAccessor(_LangAccessorTyped):
     def __init__(self, locale: str | None = None):
         self.locale = _normalize_locale(locale)
         self._cache: dict[str, LangModule] = {}
