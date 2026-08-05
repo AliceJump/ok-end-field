@@ -16,7 +16,7 @@ from src.core.base_mixin.process_manager import ProcessManager
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.core.base_mixin.window_arrow_drawing_mixin import WindowArrowDrawingMixin
 from src.core.global_config_store import ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME, KEY_CONFIG_NAME, get_global_config
-from src.core.config_migration import migrate_config_file_keys
+from src.core.config_migration import migrate_config_file_keys, migrate_config_values
 from src.core.game_window import find_game_hwnd
 from src.config import config as app_config
 
@@ -223,13 +223,22 @@ class BaseEfTask(
 
     # ── 配置键迁移 ─────────────────────────────────────────
     def load_config(self):
-        """走 MRO 收集各 mixin/任务的迁移表，执行后再加载配置。"""
-        migrations = {}
+        """走 MRO 收集各 mixin/任务的迁移表，执行键名复制与值转换迁移，再加载配置。
+
+        先做纯键名复制（config_key_migrations），再做值转换（config_value_migrations），
+        确保旧格式值（如布尔开关）在复制后仍能被正确转换为新格式（如列表）。
+        """
+        key_migrations = {}
+        value_migrations = {}
         for klass in type(self).__mro__:
             table = getattr(klass, 'config_key_migrations', None)
             if table:
-                migrations.update(table)
-        migrate_config_file_keys(self.__class__.__name__, migrations)
+                key_migrations.update(table)
+            vtable = getattr(klass, 'config_value_migrations', None)
+            if vtable:
+                value_migrations.update(vtable)
+        migrate_config_file_keys(self.__class__.__name__, key_migrations)
+        migrate_config_values(self.__class__.__name__, value_migrations)
         super().load_config()
 
     def box_of_screen(
