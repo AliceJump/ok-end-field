@@ -607,7 +607,7 @@ class BattleMixin(BaseEfTask):
                     return True
 
                 if battle_elapsed >= 15:
-                    self.log_info("战斗结束状态等待超时，继续后续结算检测")
+                    self.log_info("战斗结束状态等待超时，视为战斗已结束")
                     return True
 
             # 检测战斗

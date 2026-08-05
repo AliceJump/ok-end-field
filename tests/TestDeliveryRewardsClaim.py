@@ -9,18 +9,23 @@ from src.tasks.daily.misc.daily_logistics_mixin import DailyLogisticsMixin
 class TestClaimDeliveryRewardsStatus(unittest.TestCase):
     """_claim_delivery_rewards_in_current_node 的显式返回状态（线程5）。"""
 
-    def make_claim_feature(self, node_found=True, results=None, pop_up=True):
+    def make_claim_feature(
+        self, node_found=True, results=None, pop_up=True, back_ok=True
+    ):
         feature = object.__new__(DailyLogisticsMixin)
         feature.log_info = Mock()
         feature.wait_click_ocr = Mock(return_value=node_found)
         feature.wait_ocr = Mock(return_value=results or [])
         feature.click = Mock()
         feature.wait_pop_up = Mock(return_value=pop_up)
+        # 线程6：各路径都会通过 safe_back 显式返回仓储节点总览
+        feature.safe_back = Mock(return_value=back_ok)
         feature.box = SimpleNamespace(top_left=object(), bottom_right=object())
         feature.lang = SimpleNamespace(
             daily_routine_mixin=SimpleNamespace(
                 k_41a9fd98="我转交的委托",
                 k_bf856c96="确认",
+                k_298d3284="本地仓储节点",
             )
         )
         return feature
@@ -33,18 +38,39 @@ class TestClaimDeliveryRewardsStatus(unittest.TestCase):
         feature = self.make_claim_feature(node_found=True, results=[])
         self.assertTrue(feature._claim_delivery_rewards_in_current_node())
         feature.click.assert_not_called()
+        # 线程6：空结果路径也要显式返回仓储节点总览
+        feature.safe_back.assert_called_once()
+
+    def test_claim_no_results_back_fail_returns_false(self):
+        feature = self.make_claim_feature(
+            node_found=True, results=[], back_ok=False
+        )
+        self.assertFalse(feature._claim_delivery_rewards_in_current_node())
 
     def test_claim_confirm_failure_returns_false(self):
         feature = self.make_claim_feature(
             node_found=True, results=[SimpleNamespace(name="奖励")], pop_up=False
         )
         self.assertFalse(feature._claim_delivery_rewards_in_current_node())
+        # 线程6：弹窗失败路径也尝试返回仓储节点总览
+        feature.safe_back.assert_called_once()
 
     def test_claim_success_returns_true(self):
         feature = self.make_claim_feature(
             node_found=True, results=[SimpleNamespace(name="奖励")], pop_up=True
         )
         self.assertTrue(feature._claim_delivery_rewards_in_current_node())
+        # 线程6：成功路径显式返回仓储节点总览后再判定完成
+        feature.safe_back.assert_called_once()
+
+    def test_claim_success_back_fail_returns_false(self):
+        feature = self.make_claim_feature(
+            node_found=True,
+            results=[SimpleNamespace(name="奖励")],
+            pop_up=True,
+            back_ok=False,
+        )
+        self.assertFalse(feature._claim_delivery_rewards_in_current_node())
 
 
 class TestDeliverySendOthersClaimRetry(unittest.TestCase):

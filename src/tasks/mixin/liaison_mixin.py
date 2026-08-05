@@ -103,6 +103,8 @@ class LiaisonMixin(NavigationMixin):
             if not target_area:
                 self.log_info("已在帝江号区域内，无需传送")
                 self.ensure_main()
+                # 已在帝江号区域即视为已确认，后续共享帝江号状态的任务不必重复传送确认。
+                self._daily_boat_state_confirmed = True
                 return True
         self.log_info("找到帝江号区域，点击进入")
 
