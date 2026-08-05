@@ -200,6 +200,7 @@ class TestZipLineConfig(unittest.TestCase):
             backup_dir = os.path.join(tmp, "configs", "global_config_migration_backup")
             store_path = os.path.join(tmp, "configs", "account_scoped_overrides.json")
 
+            previous_configs = global_config_store._CONFIGS.copy()
             global_config_store._CONFIGS.clear()
             try:
                 with patch.object(
@@ -233,6 +234,7 @@ class TestZipLineConfig(unittest.TestCase):
                 self.assertIn(ZIP_LINE_CONFIG_NAME, state.get("global_config_store_v2_task_scoped", []))
             finally:
                 global_config_store._CONFIGS.clear()
+                global_config_store._CONFIGS.update(previous_configs)
 
 
 if __name__ == "__main__":
