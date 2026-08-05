@@ -533,8 +533,7 @@ msgid "仓库物品转移"
 msgstr "Warehouse Item Transfer"
 
 msgid "从发货仓库取出指定物品，切到收货仓库后一键存放 （目前只支持中文版）"
-msgstr ""
-"Transfer specified items from warehouse to another warehouse (Chinese only)"
+msgstr "Transfer specified items from warehouse to another warehouse (Chinese only)"
 
 msgid "自动送货"
 msgstr "Auto Delivery"
@@ -546,9 +545,7 @@ msgid "毕业基质识别"
 msgstr "Weapon Essence Recognition"
 
 msgid "遍历武器基质列表，匹配 weapon_data.csv 并处理毕业基质上锁"
-msgstr ""
-"Traverse weapon essence list, match weapon_data.csv and handle essence "
-"locking"
+msgstr "Traverse weapon essence list, match weapon_data.csv and handle essence locking"
 
 msgid "测试"
 msgstr "Test"
@@ -826,8 +823,7 @@ msgid "四号谷地卖出价"
 msgstr "Valley IV Sell Price"
 
 msgid "在好友交流助力时，优先尝试仅收取培育室的助力,但每次至少助力一次舱室"
-msgstr ""
-"Prioritize cultivation room support, assist at least one chamber each time"
+msgstr "Prioritize cultivation room support, assist at least one chamber each time"
 
 msgid "埃特拉"
 msgstr "Estella"
@@ -1246,9 +1242,7 @@ msgid "是否前往「邮箱」领取邮件。"
 msgstr "Go to mailbox to collect mail."
 
 msgid "是否前往好友的「帝江号」并在「访客终端」上进行助力获得信用。助力结束后，前往「采购中心/信用交易所」收取全部助力。"
-msgstr ""
-"Visit friend's Dijiang, assist at Visitor Terminal, then collect at Credit "
-"Exchange."
+msgstr "Visit friend's Dijiang, assist at Visitor Terminal, then collect at Credit Exchange."
 
 msgid "是否前往好友的「帝江号」并在「访客终端」上进行收集线索、制造舱操作"
 msgstr "Visit friend's Dijiang for clue collection and manufacturing"
@@ -1274,13 +1268,11 @@ msgstr "Obtain dispatch tickets via trading at Outpost Management."
 msgid "是否在「地区建设/物资调度/稳定物资需求」中通过调度券购买物资。依次购买「日用消耗」「工业货品」「人文物产」首行某个物品。"
 msgstr "Purchase supplies via dispatch tickets at Stable Supply Demand."
 
-msgid ""
-"是否在「弹性需求物资」与好友交易赚取调度券。自动选择利润最高的方案，然后用价格上下限判定是否交易。（除非可购买数量即将溢出，这种情况下必定交易。）"
+msgid "是否在「弹性需求物资」与好友交易赚取调度券。自动选择利润最高的方案，然后用价格上下限判定是否交易。（除非可购买数量即将溢出，这种情况下必定交易。）"
 msgstr "Trade with friends for dispatch tickets. Auto-selects highest profit."
 
 msgid "是否在「采购中心/信用交易所」采购。自动刷新 且 仅购买「武库配额」「嵌晶玉」。"
-msgstr ""
-"Purchase at Credit Exchange. Only buy Arsenal Quota and Embedded Jade."
+msgstr "Purchase at Credit Exchange. Only buy Arsenal Quota and Embedded Jade."
 
 msgid "是否消耗所有「理智」刷取培养材料。"
 msgstr "Consume all Sanity to farm materials."
@@ -1288,10 +1280,8 @@ msgstr "Consume all Sanity to farm materials."
 msgid "是否购买「人文物产」。"
 msgstr "Purchase Cultural Products."
 
-msgid ""
-"是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。如果途中偶遇干员，则直接交互完成送礼。任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
-msgstr ""
-"Raise operator affinity via gifts. Cannot start near Cambridge waypoint."
+msgid "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。如果途中偶遇干员，则直接交互完成送礼。任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
+msgstr "Raise operator affinity via gifts. Cannot start near Cambridge waypoint."
 
 msgid "是否领取「地区建设/仓储结点/我转交的委托」。超时委托也会被领取。"
 msgstr "Claim delegated commissions. Expired ones will also be claimed."
@@ -1687,9 +1677,7 @@ msgstr ""
 "Auto-refresh, only buy Arsenal Quota and Embedded Jade."
 
 msgid "是否执行一次外部命令行程序（可在「结尾外部命令执行时机」选择在最开始或最后执行）。"
-msgstr ""
-"Execute external command (choose position via 「End Command Timing」: start or"
-" end of daily tasks)."
+msgstr "Execute external command (choose position via 「End Command Timing」: start or end of daily tasks)."
 
 msgid "是否购买「人文物产」（同样应用购物白名单序列）。"
 msgstr "Purchase Cultural Products (applies whitelist)."
@@ -1768,9 +1756,7 @@ msgstr ""
 "Low/High Tier: auto-open Selection and switch."
 
 msgid "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"
-msgstr ""
-"Listen to WebSocket location data, point to nearest item and support key "
-"marking"
+msgstr "Listen to WebSocket location data, point to nearest item and support key marking"
 
 msgid "简体中文"
 msgstr "Simplified Chinese"
@@ -1944,17 +1930,8 @@ msgstr "Upload Logs"
 msgid "Log"
 msgstr "Log"
 
-msgid ""
-"['送礼', '帝江号一键存放', '收邮件', '据点兑换', '转交运送委托', '转交委托奖励领取', '造装备', '简易制作', '收信用',"
-" '帝江号收菜', '买信用商店', '买卖货', '刷体力', '买物资', '活动奖励', '日常奖励', '传送到帝江号右侧传送点', "
-"'执行结尾外部命令']"
-msgstr ""
-"['Gift', 'Dijiang One-Click Store', 'Collect Mail', 'Outpost Exchange', "
-"'Transfer Delivery Commission', 'Claim Delegated Rewards', 'Craft "
-"Equipment', 'Simple Craft', 'Collect Credit', 'Dijiang Harvest', 'Buy Credit"
-" Store', 'Buy and Sell', 'Farm Stamina', 'Buy Supplies', 'Event Rewards', "
-"'Daily Rewards', 'Teleport to Dijiang Right Waypoint', 'Execute End "
-"Command']"
+msgid "['送礼', '帝江号一键存放', '收邮件', '据点兑换', '转交运送委托', '转交委托奖励领取', '造装备', '简易制作', '收信用', '帝江号收菜', '买信用商店', '买卖货', '刷体力', '买物资', '活动奖励', '日常奖励', '传送到帝江号右侧传送点', '执行结尾外部命令']"
+msgstr "['Gift', 'Dijiang One-Click Store', 'Collect Mail', 'Outpost Exchange', 'Transfer Delivery Commission', 'Claim Delegated Rewards', 'Craft Equipment', 'Simple Craft', 'Collect Credit', 'Dijiang Harvest', 'Buy Credit Store', 'Buy and Sell', 'Farm Stamina', 'Buy Supplies', 'Event Rewards', 'Daily Rewards', 'Teleport to Dijiang Right Waypoint', 'Execute End Command']"
 
 msgid "current task"
 msgstr "Current Task"
@@ -2007,10 +1984,8 @@ msgstr "Exit the Game and the App after Successfully Executing the Task"
 msgid "HotKey"
 msgstr "HotKey"
 
-msgid ""
-"Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
-msgstr ""
-"Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgstr "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
 
 msgid "Kill Launcher after Start"
 msgstr "Kill Launcher after Start"
@@ -2061,9 +2036,7 @@ msgid "仓库与物资"
 msgstr "Warehouse & Supplies"
 
 msgid "在演武台面前自动进入演算抽牌页，循环抽取直到满足等级变化条件"
-msgstr ""
-"Auto-enter the card draw page at the Combat Stage, keep drawing until level-"
-"up conditions are met."
+msgstr "Auto-enter the card draw page at the Combat Stage, keep drawing until level-up conditions are met."
 
 msgid "工具与调试"
 msgstr "Tools & Debug"
@@ -2081,9 +2054,7 @@ msgid "最多重开次数"
 msgstr "Max Restart Count"
 
 msgid "每轮最多抽牌5次；未满足条件时点击左下角『放弃』并重新开始。"
-msgstr ""
-"Max 5 draws per round; if conditions are not met, click \"Give Up\" at "
-"bottom-left and restart."
+msgstr "Max 5 draws per round; if conditions are not met, click \"Give Up\" at bottom-left and restart."
 
 msgid "演算抽牌"
 msgstr "Simulation Card Draw"
@@ -2146,15 +2117,8 @@ msgstr ""
 "Phone A\n"
 "Phone B"
 
-msgid ""
-"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
-"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr ""
-"Configure independent parameters per account and task. Select account first,"
-" then task, and the attribute controls will appear automatically. Only the "
-"account name (phone) is needed, no password. Compatible with legacy "
-"`account,password` format but passwords are not saved. Login also accepts "
-"the last 4 digits of the phone number for matching (if unique)."
+msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr "Configure independent parameters per account and task. Select account first, then task, and the attribute controls will appear automatically. Only the account name (phone) is needed, no password. Compatible with legacy `account,password` format but passwords are not saved. Login also accepts the last 4 digits of the phone number for matching (if unique)."
 
 msgid "清空当前任务覆盖"
 msgstr "Clear Current Task Override"
@@ -2191,8 +2155,7 @@ msgid "后台运行时，战斗结束后发送通知。"
 msgstr "Send notification when battle ends while running in background."
 
 msgid "进入战斗后开始自动操作前的等待秒数。"
-msgstr ""
-"Wait time in seconds before auto-operation starts after entering battle."
+msgstr "Wait time in seconds before auto-operation starts after entering battle."
 
 msgid ""
 "是否启用排轴功能。\n"
@@ -2234,9 +2197,7 @@ msgid "未找到 support_multi_account=True 的任务"
 msgstr "No tasks found with support_multi_account=True"
 
 msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
-msgstr ""
-"Account & task config refreshed (account page list is independent from task "
-"account list)"
+msgstr "Account & task config refreshed (account page list is independent from task account list)"
 
 msgid "账号列表已保存"
 msgstr "Account list saved"
@@ -2245,13 +2206,10 @@ msgid "（复用ID {reused}，新建ID {created}）"
 msgstr "({reused} reused IDs, {created} new IDs)"
 
 msgid "；账号名（手机号）是唯一ID，密码变化不影响ID，账号名变化会新建ID"
-msgstr ""
-"; Account name (phone) is the unique ID. Password change does not affect ID,"
-" name change creates new ID"
+msgstr "; Account name (phone) is the unique ID. Password change does not affect ID, name change creates new ID"
 
 msgid "；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）"
-msgstr ""
-"; No password needed. Password info is removed on save (username only)"
+msgstr "; No password needed. Password info is removed on save (username only)"
 
 msgid "；忽略无效行 {count} 条"
 msgstr "; {count} invalid lines ignored"
@@ -2687,8 +2645,7 @@ msgid "结尾外部命令执行时机"
 msgstr "End Command Timing"
 
 msgid "选择执行时机：任务最开始时最先执行，或任务最后执行。"
-msgstr ""
-"Choose timing: execute at the very start or at the end of the daily tasks."
+msgstr "Choose timing: execute at the very start or at the end of the daily tasks."
 
 msgid "任务最开始"
 msgstr "Start of Tasks"
@@ -2709,9 +2666,7 @@ msgid "一次送礼个数"
 msgstr "Gifts Per Batch"
 
 msgid "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。"
-msgstr ""
-"After the task finishes, open the summary file with the system default app. "
-"If disabled, only create the file."
+msgstr "After the task finishes, open the summary file with the system default app. If disabled, only create the file."
 
 msgid "使用全局配置"
 msgstr "Use Global Config"
@@ -2773,8 +2728,7 @@ msgid "外部命令起始于"
 msgstr "External Command Start In"
 
 msgid "当前账号的 hg/check data.content 值，用于官方地图位置同步"
-msgstr ""
-"Current account hg/check data.content value for official map position sync"
+msgstr "Current account hg/check data.content value for official map position sync"
 
 msgid "待回收物品"
 msgstr "Salvageable"
@@ -2792,17 +2746,13 @@ msgid "是否执行一次外部命令行程序。"
 msgstr "Whether to run an external command once."
 
 msgid "是否执行一次外部命令行程序（可在「外部命令执行时机」选择在最开始或最后执行）。"
-msgstr ""
-"Whether to run an external command once. Use External Command Timing to run "
-"it at the start or end."
+msgstr "Whether to run an external command once. Use External Command Timing to run it at the start or end."
 
 msgid "滑索配置"
 msgstr "Zipline Config"
 
 msgid "用于实测 YOLO 模型：可选模型、可选目标、可设置信度并循环扫描。"
-msgstr ""
-"For field testing YOLO models: choose a model, target, confidence, and scan "
-"in a loop."
+msgstr "For field testing YOLO models: choose a model, target, confidence, and scan in a loop."
 
 msgid "红矛叶"
 msgstr "Crimson Spearleaf"
@@ -2835,9 +2785,7 @@ msgstr ""
 "Account 3"
 
 msgid "选择当前账号在该任务中使用全局或独立战斗配置。"
-msgstr ""
-"Choose whether this account uses the global or independent battle config for"
-" this task."
+msgstr "Choose whether this account uses the global or independent battle config for this task."
 
 msgid "阿莱克琉斯，千夫长"
 msgstr "Alleikhreos, Chiliarch"
@@ -2861,9 +2809,7 @@ msgstr ""
 "Optionally set External Command Start In as the working directory."
 
 msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
-msgstr ""
-"Save a complete task configuration snapshot for the current account. Changes"
-" to task defaults will not affect saved accounts."
+msgstr "Save a complete task configuration snapshot for the current account. Changes to task defaults will not affect saved accounts."
 
 msgid "炽燃！竞技大会！"
 msgstr "HEAT RAGE! MEGA ARENA!"
@@ -5614,9 +5560,7 @@ msgid "弭弗EP -“与光同游”"
 msgstr "EP - Mi Fu [Forevermore]"
 
 msgid "版本情报 | 危机合约先导PV与“寻遗散记”更新"
-msgstr ""
-"Arknights: Endfield Version Intel | Contingency Contract PV & [Sketches of "
-"Lost Heirlooms] Update"
+msgstr "Arknights: Endfield Version Intel | Contingency Contract PV & [Sketches of Lost Heirlooms] Update"
 
 msgid "先导预告PV | 重返北境"
 msgstr "Arknights: Endfield Preview Trailer | Back to the North"
@@ -5625,8 +5569,7 @@ msgid "干员叙事“弭弗：煞星”"
 msgstr "Operator Story [Mi Fu: Hexeress]"
 
 msgid "干员叙事“庄方宜：总有春风归故里”"
-msgstr ""
-"Operator Story [Zhuang Fangyi: Spring Wind Always Finds Its Way Back Home]"
+msgstr "Operator Story [Zhuang Fangyi: Spring Wind Always Finds Its Way Back Home]"
 
 msgid "庄方宜EP -“宜”"
 msgstr "EP - Zhuang Fangyi [Yi]"
@@ -5687,3 +5630,224 @@ msgstr "Operator Story [Chen Qianyu: The Swordbearer]"
 
 msgid "开服贺图"
 msgstr "Launch Celebration Artwork"
+
+msgid "wait_until"
+msgstr "wait_until"
+
+msgid "不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
+msgstr "Do not pick crops mass-produced by farms or planting/harvesting lines: 琼叶参, 金石稻, 芽针, 锦草, 苦叶椒, 砂叶, 灰芦麦, 柑实, 荞花, 酮化灌木."
+
+msgid "两者"
+msgstr "Both"
+
+msgid "买物资"
+msgstr "Buy Supplies"
+
+msgid "关卡名"
+msgstr "Stage Name"
+
+msgid "动作列表"
+msgstr "Action List"
+
+msgid "区域扫描测试"
+msgstr "Region Scan Test"
+
+msgid "否"
+msgstr "No"
+
+msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
+msgstr "When enabled, stronghold exchange only buys items in the \"Trading Goods Priority List\" when it is not empty; if the list is empty, the original exchange logic is used."
+
+msgid "启用实时条件"
+msgstr "Enable Real-Time Conditions"
+
+msgid ""
+"在没有运行任何条件动作时生效\n"
+"当终结技可释放时立刻释放终结技"
+msgstr ""
+"Takes effect when no conditional actions are running\n"
+"Release the Ultimate immediately when it is available"
+
+msgid ""
+"在没有运行任何条件动作时生效\n"
+"当连携技可释放时立刻释放连携技"
+msgstr ""
+"Takes effect when no conditional actions are running\n"
+"Release the Link Skill immediately when it is available"
+
+msgid "导航到演武集算『演算』入口"
+msgstr "Navigate to the \"演算\" entrance of 演武集算"
+
+msgid "将次要目标方向蓝点对齐到屏幕中心"
+msgstr "Align the secondary target direction blue dot to the center of the screen"
+
+msgid "屏蔽可量产植物"
+msgstr "Filter Mass-Produced Plants"
+
+msgid "当条件符合时使用技能组"
+msgstr "Use the skill set when conditions are met"
+
+msgid "战斗技能位置检测"
+msgstr "Battle Skill Slot Detection"
+
+msgid "按住鼠标蛇形扫描指定矩形区域"
+msgstr "Hold the mouse and snake-scan the specified rectangular area"
+
+msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
+msgstr "Execute the selected operation by region: first stronghold exchange, then the buy of trading; when \"Buy Supplies\" is enabled, switch to stable-supply purchasing after buying, and finally switch back to flexible-supply selling."
+
+msgid "据点兑换仅购买优先商品"
+msgstr "Stronghold Exchange Buys Priority Goods Only"
+
+msgid "是"
+msgstr "Yes"
+
+msgid "是否前往「帝江号/简易制作」制作物品。"
+msgstr "Whether to go to \"帝江号/简易制作\" to craft items."
+
+msgid "是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"
+msgstr "Whether to transfer all delivery commissions at \"地区建设/仓储结点\" and claim the transfer reward once."
+
+msgid "是否在日常任务结束后传送到帝江号右侧传送点。"
+msgstr "Whether to teleport to the right teleporter of 帝江号 after the daily tasks finish."
+
+msgid "暂停时间应超过此值，用于观察恢复后的行为"
+msgstr "The pause duration should exceed this value, to observe the behavior after recovery"
+
+msgid "暂停计时验证"
+msgstr "Pause Timing Verification"
+
+msgid ""
+"根据实时情况释放技能\n"
+"启用时自动忽略排轴配置"
+msgstr ""
+"Release skills based on real-time situations\n"
+"When enabled, the rotation/schedule config is ignored automatically"
+
+msgid "测试模式"
+msgstr "Test Mode"
+
+msgid "测试超时(秒)"
+msgstr "Test Timeout (sec)"
+
+msgid "演算入口导航测试"
+msgstr "演算 Entrance Navigation Test"
+
+msgid ""
+"目标券数优先级序列，用逗号分隔多个券数。按列表中顺序优先抢前面的券数。\n"
+"默认：119000。可选：73100、79800、119000、159000、163000"
+msgstr ""
+"Priority sequence of target coupon counts, separated by commas. Earlier counts in the list are grabbed first.\n"
+"Default: 119000. Options: 73100, 79800, 119000, 159000, 163000"
+
+msgid "立即释放终结技"
+msgstr "Release Ultimate Immediately"
+
+msgid "立即释放连携技"
+msgstr "Release Link Skill Immediately"
+
+msgid "等级读取测试"
+msgstr "Level Read Test"
+
+msgid "编辑"
+msgstr "Edit"
+
+msgid "自写循环"
+msgstr "Custom Loop"
+
+msgid "读取演武集算关卡界面的当前等级"
+msgstr "Read the current level from the 演武集算 stage interface"
+
+msgid ""
+"选择帝江号收菜内容：\n"
+"收集线索：前往会客室收集线索，集齐后开启情报交流。\n"
+"制造舱：收取培养材料并补足待制造数量。\n"
+"培养舱：收取培养材料并直接再次培养。"
+msgstr ""
+"Select the 帝江号 collection content:\n"
+"Collect Clues: go to the reception room to collect clues, and open intelligence exchange when complete.\n"
+"Manufacturing Bay: collect cultivation materials and top up the pending manufacturing count.\n"
+"Cultivation Bay: collect cultivation materials and cultivate again directly."
+
+msgid "选择当前任务使用全局或独立战斗配置。"
+msgstr "Choose whether the current task uses the global or the independent battle config."
+
+msgid "选择要运行的暂停计时测试"
+msgstr "Choose the pause timing test to run"
+
+msgid ""
+"选择要领取的活动奖励：\n"
+"周常奖励：领取每周事务奖励。\n"
+"理智补给：领取理智补给。\n"
+"刮刮乐：执行刮刮乐。"
+msgstr ""
+"Select the event rewards to claim:\n"
+"Weekly Reward: claim the weekly affairs reward.\n"
+"Sanity Supply: claim the sanity supply.\n"
+"Scratch-off: run the scratch-off."
+
+msgid "逐个检测四个技能位置并输出模板匹配结果"
+msgstr "Detect the four skill slots one by one and output template matching results"
+
+msgid "验证暂停任务期间活动计时是否冻结"
+msgstr "Verify whether the activity timer freezes while the task is paused"
+
+msgid "每个键对应一条滑索路线，值为距离序列，用英文逗号分隔"
+msgstr "Each key is a zip line route; the value is a distance sequence, comma-separated"
+
+msgid "任务会按顺序依次对齐并滑行每段距离"
+msgstr "The task aligns and zips through each distance in order"
+
+msgid "例：「{key}」= {raw} → 依次滑行 {seq}"
+msgstr "e.g. \"{key}\" = {raw} → zip {seq}"
+
+msgid "留空表示该路线不乘滑索"
+msgstr "Leave empty to skip the zip line on that route"
+
+msgid "{keys}：出发滑索距离"
+msgstr "{keys}: starting zip line distance"
+
+msgid "{keys}：各送货目标滑索序列"
+msgstr "{keys}: zip line sequences to each delivery target"
+
+msgid "{keys}：能量淤积点滑索序列"
+msgstr "{keys}: zip line sequences to energy pools"
+
+msgid "对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低"
+msgstr "Auto-zooms in when aligning zip lines; may improve or clearly reduce success rate"
+
+msgid "建议启用时不要使用非白发或有白帽角色"
+msgstr "Avoid non-white-hair or white-hat characters when enabled"
+
+msgid "滑索配置说明"
+msgstr "Zip Line Config"
+
+msgid "滑索距离序列在「全局配置 → 滑索配置」中设置"
+msgstr "Set zip line distance sequences in Global Config → Zip Line Config"
+
+msgid "填写规则"
+msgstr "How to fill"
+
+msgid "送货相关键"
+msgstr "Delivery keys"
+
+msgid "淤积点相关键"
+msgstr "Energy pool keys"
+
+msgid "Zip Line Config"
+msgstr "Zip Line Config"
+
+msgid "淤积点滑索"
+msgstr "Energy Pool Zipline"
+
+msgid "滑索距离序列，用逗号分隔。"
+msgstr "Zipline distance sequence, separated by commas."
+
+msgid "滑索配置分类"
+msgstr "Zipline Config Category"
+
+msgid "送货滑索"
+msgstr "Delivery Zipline"
+
+msgid "选择要显示的滑索配置分类。"
+msgstr "Choose the zipline config category to display."
