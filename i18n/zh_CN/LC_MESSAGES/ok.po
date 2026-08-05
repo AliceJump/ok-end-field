@@ -1000,6 +1000,9 @@ msgstr "⭐帝江号收菜"
 msgid "⭐据点兑换"
 msgstr "⭐据点兑换"
 
+msgid "⭐地区建设"
+msgstr "⭐地区建设"
+
 msgid "⭐收信用"
 msgstr "⭐收信用"
 
@@ -1011,9 +1014,6 @@ msgstr "⭐日常奖励"
 
 msgid "⭐简易制作"
 msgstr "⭐简易制作"
-
-msgid "⭐转交委托奖励领取"
-msgstr "⭐转交委托奖励领取"
 
 msgid "⭐转交运送委托"
 msgstr "⭐转交运送委托"
@@ -1438,9 +1438,6 @@ msgstr "实时循环执行 YOLO 检测，用于在线观察目标识别结果。
 msgid "实时检测"
 msgstr "实时检测"
 
-msgid "帝江号收菜操作"
-msgstr "帝江号收菜操作"
-
 msgid "庄方宜"
 msgstr "庄方宜"
 
@@ -1630,9 +1627,6 @@ msgstr "每行一个账号名（手机号），无需密码"
 
 msgid "油猴脚本帮助"
 msgstr "油猴脚本帮助"
-
-msgid "活动奖励"
-msgstr "活动奖励"
 
 msgid "浏览器油猴脚本帮助"
 msgstr "浏览器油猴脚本帮助"

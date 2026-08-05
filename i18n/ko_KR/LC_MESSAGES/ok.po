@@ -559,6 +559,9 @@ msgstr "⭐ 제강호 수확"
 msgid "⭐据点兑换"
 msgstr "⭐ 거점 교환"
 
+msgid "⭐地区建设"
+msgstr "⭐ 지역 건설"
+
 msgid "⭐收信用"
 msgstr "⭐크레딧 수령"
 
@@ -570,9 +573,6 @@ msgstr "⭐일일 보상"
 
 msgid "⭐简易制作"
 msgstr "⭐ 간단 제작"
-
-msgid "⭐转交委托奖励领取"
-msgstr "⭐ 전달 의뢰 보상 수령"
 
 msgid "⭐转交运送委托"
 msgstr "⭐ 운송 의뢰 전달"
@@ -1012,9 +1012,6 @@ msgstr "YOLO 감지를 실시간 반복 실행하여 대상 인식 결과를 확
 msgid "实时检测"
 msgstr "실시간 감지"
 
-msgid "帝江号收菜操作"
-msgstr "제강호 수확 작업"
-
 msgid "庄方宜"
 msgstr "장방이"
 
@@ -1206,9 +1203,6 @@ msgstr "한 줄에 계정명(휴대폰 번호) 하나, 비밀번호 불필요"
 
 msgid "油猴脚本帮助"
 msgstr "Tampermonkey 스크립트 도움말"
-
-msgid "活动奖励"
-msgstr "이벤트 보상"
 
 msgid "浏览器油猴脚本帮助"
 msgstr "브라우저 Tampermonkey 스크립트 도움말"

@@ -3,6 +3,13 @@ from src.data.characters_utils import get_contact_list_with_feature_list
 
 
 class DailyBoatMixin:
+    def _boat_stages(self):
+        stages = self.config.get("⭐帝江号收菜", [])
+        # 迁移后 ⭐帝江号收菜 恒为列表；非列表时按未启用处理，不再应用旧布尔开关值。
+        if not isinstance(stages, list):
+            return []
+        return stages
+
     def boat_claim_rewards(self):
         self.enter_home_room_list()
         exchange_help_box = self.box_of_screen(0.1, 561 / 861, 0.9, 0.9)
@@ -30,7 +37,7 @@ class DailyBoatMixin:
         return False
 
     def collect_clue(self, exchange_help_box):
-        if "收集线索" not in self.config.get("帝江号收菜操作", []):
+        if "收集线索" not in self._boat_stages():
             self.log_info("收集线索任务未启用，跳过")
             return True
 
@@ -45,7 +52,7 @@ class DailyBoatMixin:
         return True
 
     def _enter_exchange_room(self, exchange_help_box):
-        if "培养舱" in self.config.get("帝江号收菜操作", []):
+        if "培养舱" in self._boat_stages():
             result = self.wait_feature(
                 feature=fL.make_room,
                 time_out=4,
@@ -173,7 +180,7 @@ class DailyBoatMixin:
         return None
 
     def up_make_room_num(self, exchange_help_box):
-        if "制造舱" not in self.config.get("帝江号收菜操作", []):
+        if "制造舱" not in self._boat_stages():
             self.log_info("制造舱助力任务未启用，跳过")
             return True
         self.wait_ui_stable()
@@ -206,7 +213,7 @@ class DailyBoatMixin:
         return True
 
     def culture_room(self, exchange_help_box):
-        if "培养舱" not in self.config.get("帝江号收菜操作", []):
+        if "培养舱" not in self._boat_stages():
             self.log_info("培养舱任务未启用，跳过")
             return True
         result = self.wait_feature(feature=fL.make_room, time_out=4, box=exchange_help_box, raise_if_not_found=False)

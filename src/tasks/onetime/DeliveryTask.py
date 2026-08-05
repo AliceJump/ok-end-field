@@ -678,7 +678,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         return self._resolve_transfer_point_search_box() or fallback_box
 
     def _run_single_delivery_cycle(self):
-        if self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE:
+        if getattr(self, "_daily_delivery_mode", False) or self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE:
             ends_list_pattern_dict = {}
             for end in self.ends:
                 pattern = get_delivery_target_ocr_pattern(self.delivery_area, end, self.lang)
@@ -806,3 +806,73 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
 
         except Exception as e:
             self.handle_task_exception(e, 'DeliveryTask_Exception')
+
+
+class DeliveryFeature(DeliveryTask):
+    """日常任务使用的自动送货功能。"""
+
+    DAILY_ENABLE_KEY = "⭐自动送货"
+
+    def __init__(self, task):
+        self._task = task
+        self._daily_delivery_mode = False
+        self._accepted_delivery_location = None
+        self._last_refresh_ts = 0
+        self.try_time = 0
+        self._configure_delivery_area(DEFAULT_DELIVERY_AREA)
+
+        task.default_config.update({
+            self.DAILY_ENABLE_KEY: True,
+            self.CFG_TARGET_TICKET_NUM: ["119000"],
+            self.CFG_DELIVERY_AREA: DEFAULT_DELIVERY_AREA,
+            **{x: "" for x in self.to_delivery_point_config_keys + self.ends},
+        })
+        task.config_description.update({
+            self.DAILY_ENABLE_KEY: "是否执行自动接取并完成运输委托。",
+            self.CFG_TARGET_TICKET_NUM: (
+                "目标券数优先级序列，用逗号分隔多个券数。"
+            ),
+            self.CFG_DELIVERY_AREA: "通过下拉框切换送货地区配置。",
+        })
+        task.config_type[self.CFG_DELIVERY_AREA] = {
+            "type": "drop_down",
+            "options": list(DELIVERY_AREA_CONFIG.keys()),
+        }
+        task.config_type[self.CFG_TARGET_TICKET_NUM] = {
+            "options_available": DELIVERY_TARGET_TICKET_NUM_OPTIONS,
+            "allow_duplication": False,
+        }
+        task.default_config_group.update({
+            self.DAILY_ENABLE_KEY: [self.CFG_TARGET_TICKET_NUM, self.CFG_DELIVERY_AREA],
+        })
+        self._register_route_keys()
+
+    def _register_route_keys(self):
+        """把当前地区的滑索路线键注册到任务配置（default_config + 运行时 config）。"""
+        for key in self.to_delivery_point_config_keys + self.ends:
+            default_value = ""
+            if key not in self._task.default_config:
+                self._task.default_config[key] = default_value
+            # 初始化阶段 task.config 尚未创建（load_config 时才实例化），此时只注册 default_config；
+            # 运行时由 run_daily() 在 config 就绪后调用本方法补齐。
+            if self._task.config is not None and key not in self._task.config:
+                self._task.config.setdefault(key, default_value)
+
+    def __getattr__(self, name):
+        return getattr(self._task, name)
+
+    def run_daily(self):
+        """执行一轮日常自动送货，由 DailyTask 负责多账号循环。"""
+        current_area = self.config.get(self.CFG_DELIVERY_AREA, DEFAULT_DELIVERY_AREA)
+        if current_area not in DELIVERY_AREA_CONFIG:
+            current_area = DEFAULT_DELIVERY_AREA
+        if current_area != self.delivery_area:
+            self._configure_delivery_area(current_area)
+        self._register_route_keys()
+
+        self._daily_delivery_mode = True
+        try:
+            self._run_single_delivery_cycle()
+            return True
+        finally:
+            self._daily_delivery_mode = False

@@ -14,9 +14,10 @@ def _new_task_status(task_items: Iterable[TaskItem]) -> dict[str, list[str]]:
 class DailyTaskRunner:
     """DailyTask 的编排执行器。"""
 
-    def __init__(self, task, task_items: Iterable[TaskItem]):
+    def __init__(self, task, task_items: Iterable[TaskItem], shared_state_task_keys: Iterable[str] = ()):
         self.task = task
         self.task_items = list(task_items)
+        self.shared_state_task_keys = set(shared_state_task_keys)
         self.task_status = _new_task_status(self.task_items)
         self.current_task_key: str | None = None
         self.failure_details: dict[str, dict[str, str]] = {}
@@ -32,6 +33,13 @@ class DailyTaskRunner:
         }
         self._current_round_index: int | None = None
         self._current_repeat_total: int = 0
+
+    def _reset_shared_task_state(self):
+        self.task._daily_boat_state_confirmed = False
+
+    def _prepare_shared_task_state(self, key):
+        if key not in self.shared_state_task_keys:
+            self._reset_shared_task_state()
 
     def get_current_task_name(self) -> str:
         return str(self.current_task_key or self.final_summary.get("current_task", "") or "")
@@ -115,6 +123,7 @@ class DailyTaskRunner:
 
     def execute_task(self, key, func):
         self.task_status["all"].remove(key)
+        self._prepare_shared_task_state(key)
         if isinstance(key, str) and not self.task.config.get(key, False):
             self.task_status["skipped"].append(key)
             return True
@@ -162,6 +171,7 @@ class DailyTaskRunner:
                     self.task.ensure_main(time_out=600)
                 else:
                     self.task.ensure_main()
+                self._reset_shared_task_state()
                 self.task.log_info(f"开始第 {repeat_idx + 1}/{repeat_total} 轮任务执行")
 
                 for key, func in self.task_items:
