@@ -5169,3 +5169,6 @@ msgstr "醚质晶块"
 
 msgid "灯火使命"
 msgstr "灯火使命"
+
+msgid "诀的信物"
+msgstr "诀的信物"
