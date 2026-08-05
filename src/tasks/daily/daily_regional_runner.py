@@ -10,6 +10,8 @@ class DailyRegionalRunner:
 
     def __init__(self, task):
         self._task = task
+        # 标记买卖货流程中「买物资」回调是否真的被触发（buy_sell 可能跳过回调）
+        self._buy_ran = False
 
     def __getattr__(self, name):
         return getattr(self._task, name)
@@ -28,26 +30,46 @@ class DailyRegionalRunner:
                     keep_area_context=True,
                 )
 
-            materials_after_trade_buy = None
-            if enabled_buy and enabled_trade:
-                materials_after_trade_buy = lambda current_area: self._task.daily_buy.buy_staple_goods(
-                    target_areas=[current_area],
-                    keep_area_context=True,
-                )
-
             if enabled_trade:
-                self._task.daily_trade.buy_sell(
+                # 买卖货：买入后通过 after_buy 回调执行「买物资」。
+                # buy_sell 在地区未启用/未找到货物/缺少买卖价时会跳过回调，
+                # 因此用 _buy_ran 标记，回调未执行时单独补一次买物资。
+                self._buy_ran = False
+                trade_ok = self._task.daily_trade.buy_sell(
                     target_areas=[area],
                     keep_area_context=True,
-                    after_buy=materials_after_trade_buy,
+                    after_buy=self._buy_staple_after_trade if enabled_buy else None,
                 )
+                if not trade_ok:
+                    self.log_info(f"买卖货失败: {area}")
+                    return False
+                if enabled_buy and not self._buy_ran:
+                    self.log_info("买卖货未执行买物资回调，单独执行买物资")
+                    self._buy_staple_in_area(area)
             elif enabled_buy:
-                self._task.daily_buy.buy_staple_goods(
-                    target_areas=[area],
-                    keep_area_context=True,
-                )
+                # 仅买物资：先进入物资调度，再执行购买。
+                self._buy_staple_in_area(area)
 
             self.safe_back(feature=fL.transaction_overview, once_time_out=3)
             self.log_info(f"完成地区建设: {area}")
 
+        return True
+
+    def _buy_staple_after_trade(self, current_area):
+        """买卖货买入后的「买物资」回调。"""
+        self._buy_ran = True
+        self._task.daily_buy.buy_staple_goods(
+            target_areas=[current_area],
+            keep_area_context=True,
+        )
+
+    def _buy_staple_in_area(self, area):
+        """进入物资调度后执行「买物资」。"""
+        if not self._task.to_model_area(area, "物资调度"):
+            self.log_info(f"无法进入{area}物资调度，跳过买物资")
+            return False
+        self._task.daily_buy.buy_staple_goods(
+            target_areas=[area],
+            keep_area_context=True,
+        )
         return True
