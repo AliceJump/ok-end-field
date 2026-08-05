@@ -216,33 +216,48 @@ def build_matcher(node: Any):
     return None
 
 
+def _locale_from_obj(obj: Any) -> str | None:
+    """从执行器/对象中提取 locale 字符串，提取失败时返回 None。"""
+    executor = getattr(obj, "executor", None)
+    locale_obj = (
+        getattr(executor, "locale", None)
+        if executor is not None
+        else getattr(obj, "locale", None)
+    )
+    if locale_obj is None:
+        return None
+    if isinstance(locale_obj, Enum):
+        return str(locale_obj.value)
+    name_attr = getattr(locale_obj, "name", None)
+    if name_attr is not None:
+        value = name_attr() if callable(name_attr) else name_attr
+        if value:
+            return str(value)
+    return str(locale_obj)
+
+
 def get_lang_accessor(obj_or_locale: Any = None) -> LangAccessor:
     locale = None
     if isinstance(obj_or_locale, str):
         locale = obj_or_locale
     elif obj_or_locale is not None:
         try:
-            executor = getattr(obj_or_locale, "executor", None)
-            locale_obj = (
-                getattr(executor, "locale", None)
-                if executor is not None
-                else getattr(obj_or_locale, "locale", None)
-            )
-            if locale_obj is not None:
-                if isinstance(locale_obj, Enum):
-                    locale = str(locale_obj.value)
-                    return LangAccessor(locale)
-                if hasattr(locale_obj, "name"):
-                    name_attr = getattr(locale_obj, "name")
-                    value = name_attr() if callable(name_attr) else name_attr
-                    if value:
-                        locale = str(value)
-                else:
-                    locale = str(locale_obj)
+            locale = _locale_from_obj(obj_or_locale)
         except Exception:
             locale = None
 
     return LangAccessor(locale)
+
+
+def _resolve_module_value(data: dict, item: str, fallback):
+    """从语言模块数据中解析单个键值，dict 节点走 build_matcher 转换。"""
+    value = data.get(item)
+    if value is None:
+        return fallback
+    if isinstance(value, dict):
+        localized = build_matcher(LangNode(value))
+        return fallback if localized is None else localized
+    return value
 
 
 def get_lang_module_value(lang_accessor: Any, module_name: str, item: str, fallback=None):
@@ -261,14 +276,7 @@ def get_lang_module_value(lang_accessor: Any, module_name: str, item: str, fallb
         data = getattr(module, "_data", {})
         if not isinstance(data, dict):
             return fallback
-
-        value = data.get(item)
-        if value is None:
-            return fallback
-        if isinstance(value, dict):
-            localized = build_matcher(LangNode(value))
-            return fallback if localized is None else localized
-        return value
+        return _resolve_module_value(data, item, fallback)
     except Exception:
         return fallback
 

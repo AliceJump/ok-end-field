@@ -21,4 +21,4 @@ class TestDemoGraphic(Common, MapMixin, ZipLineMixin):
         self.daily_demo._task = self
 
     def run(self):
-        return self.daily_demo.go_to_DemoGraphic()
+        return self.daily_demo.go_to_demo_graphic()

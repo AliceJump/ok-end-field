@@ -1804,25 +1804,49 @@
   "k_727bb38b": {
     "zh_CN": {
       "pattern": "死寂争鸣"
+    },
+    "zh_TW": {
+      "pattern": "死寂爭鳴"
+    },
+    "en_US": {
+      "pattern": "Silent Discord"
+    },
+    "ja_JP": {
+      "pattern": "静寂の共鳴"
+    },
+    "ko_KR": {
+      "pattern": "고요한 논쟁"
+    },
+    "es_ES": {
+      "pattern": "Discordia Silenciosa"
     }
   },
   "k_825cdc26": {
     "zh_CN": {
       "pattern": "灼铜零件"
     },
+    "zh_TW": {
+      "pattern": "灼銅零件"
+    },
     "en_US": {
       "pattern": "Pyrrolite Part"
+    },
+    "ja_JP": {
+      "pattern": "灼銅部品"
     },
     "ko_KR": {
       "pattern": "작동 부품"
     },
-    "zh_TW": {
-      "pattern": "灼銅零件"
+    "es_ES": {
+      "pattern": "Pieza de pirrolita"
     }
   },
   "k_871bc220": {
     "zh_CN": {
       "pattern": "盈天台建设站"
+    },
+    "zh_TW": {
+      "pattern": "盈天臺建設站"
     },
     "en_US": {
       "pattern": "Xiranflow Cloudseeder Station"
@@ -1832,6 +1856,9 @@
     },
     "ko_KR": {
       "pattern": "영천대 건설 기지"
+    },
+    "es_ES": {
+      "pattern": "Estación Xiranflow Cloudseeder"
     }
   }
 }

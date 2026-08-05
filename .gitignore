@@ -7,6 +7,8 @@ md5.txt
 thread_dumps.txt
 labels
 marked_points.json
+ok-lang-hints
+tmp
 ############################
 # 🗂 运行生成数据（仅忽略根目录）
 ############################

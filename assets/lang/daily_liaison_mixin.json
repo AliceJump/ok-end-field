@@ -14,11 +14,17 @@
     },
     "es_ES": {
       "string": "puente"
+    },
+    "en_US": {
+      "string": "Bridge"
     }
   },
   "k_933056f0": {
     "zh_CN": {
       "pattern": "信赖"
+    },
+    "en_US": {
+      "pattern": "trust"
     },
     "zh_TW": {
       "pattern": "信賴"
@@ -48,6 +54,9 @@
     },
     "es_ES": {
       "pattern": "almacenar"
+    },
+    "en_US": {
+      "pattern": "store"
     }
   }
 }

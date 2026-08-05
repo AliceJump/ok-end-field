@@ -19,7 +19,7 @@ class DailyDemoFeature:
         return getattr(self._task, name)
 
     def battle_demo(self):
-        if not self.go_to_DemoGraphic():
+        if not self.go_to_demo_graphic():
             return False
         if not self.left_time:
             self.log_info("没有次数了，结束任务")
@@ -30,7 +30,7 @@ class DailyDemoFeature:
             return False
         max_time = 3
         once_double_reward = False
-        for i in range(max_time):
+        for _ in range(max_time):
             level = self.read_level()
             if level < 0:
                 return False
@@ -86,7 +86,7 @@ class DailyDemoFeature:
         self.mark_task_failure("点击随机按钮后等级未变化，可能未点中按钮")
         return -1
 
-    def go_to_DemoGraphic(self):
+    def go_to_demo_graphic(self):
         self.ensure_main()
         self.to_model_area("武陵")
         if not self.wait_click_feature(fL.transaction_overview, time_out=5, raise_if_not_found=False):

@@ -5,21 +5,78 @@
     },
     "zh_TW": {
       "pattern": "開"
+    },
+    "en_US": {
+      "pattern": "Open"
+    },
+    "ja_JP": {
+      "pattern": "開く"
+    },
+    "ko_KR": {
+      "pattern": "열기"
+    },
+    "es_ES": {
+      "pattern": "Abrir"
     }
   },
   "k_27d2b829": {
     "en_US": {
       "string": "bridge"
+    },
+    "zh_CN": {
+      "string": "舰桥"
+    },
+    "zh_TW": {
+      "string": "艦橋"
+    },
+    "ja_JP": {
+      "string": "橋"
+    },
+    "ko_KR": {
+      "string": "다리"
+    },
+    "es_ES": {
+      "string": "puente"
     }
   },
   "k_933056f0": {
     "en_US": {
       "pattern": "trust"
+    },
+    "zh_CN": {
+      "pattern": "信赖"
+    },
+    "zh_TW": {
+      "pattern": "信賴"
+    },
+    "ja_JP": {
+      "pattern": "信頼"
+    },
+    "ko_KR": {
+      "pattern": "신뢰하다"
+    },
+    "es_ES": {
+      "pattern": "confianza"
     }
   },
   "k_d661f6da": {
     "en_US": {
       "pattern": "store"
+    },
+    "zh_CN": {
+      "pattern": "存放"
+    },
+    "zh_TW": {
+      "pattern": "存放"
+    },
+    "ja_JP": {
+      "pattern": "店"
+    },
+    "ko_KR": {
+      "pattern": "가게"
+    },
+    "es_ES": {
+      "pattern": "almacenar"
     }
   }
 }
