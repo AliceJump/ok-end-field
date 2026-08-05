@@ -25,66 +25,7 @@ from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
 from src.tasks.mixin.mouse_scan_mixin import MouseScanMixin
-
-
-def migrate_legacy_daily_config(config, boat_stages=None, activity_rewards=None):
-    """把旧版日常任务配置键迁移为新的多选列表键（CodeRabbit 线程4/8）。
-
-    旧版结构（键名已从 default_config 移除）：
-      - ⭐据点兑换 / ⭐买物资 / ⭐买卖货: bool → 合并为 ⭐地区建设 列表
-      - ⭐帝江号收菜: bool 开关 + 帝江号收菜操作: list → ⭐帝江号收菜 列表
-      - ⭐活动奖励: bool 开关 + 活动奖励: list → ⭐活动奖励 列表
-
-    Args:
-        config: 从 DailyTask.json 读取的配置字典（就地修改）。
-        boat_stages: ⭐帝江号收菜 的可用选项列表（默认取 DailyRoutineFeature.BOAT_STAGES）。
-        activity_rewards: ⭐活动奖励 的可用选项列表（默认取 DailyRoutineFeature.ACTIVITY_REWARDS）。
-
-    Returns:
-        (config, modified): 修改后的配置与是否有改动。
-    """
-    boat_stages = boat_stages or DailyRoutineFeature.BOAT_STAGES
-    activity_rewards = activity_rewards or DailyRoutineFeature.ACTIVITY_REWARDS
-    modified = False
-
-    # 地区建设：三个旧布尔开关 → 新的多选列表。
-    # 只有在新键缺失且存在任意旧键时才生成，避免覆盖用户的新配置。
-    if "⭐地区建设" not in config:
-        legacy_regional = {
-            "据点兑换": config.get("⭐据点兑换"),
-            "买物资": config.get("⭐买物资"),
-            "买卖货": config.get("⭐买卖货"),
-        }
-        if any(v is not None for v in legacy_regional.values()):
-            config["⭐地区建设"] = [
-                name for name, enabled in legacy_regional.items() if enabled
-            ]
-            modified = True
-
-    # 帝江号收菜：旧布尔开关 + 操作列表 → 新列表。
-    # 开关为 True 但缺少操作列表时回退到全部默认选项。
-    boat = config.get("⭐帝江号收菜")
-    if isinstance(boat, bool):
-        boat_ops = config.get("帝江号收菜操作")
-        config["⭐帝江号收菜"] = (
-            list(boat_ops)
-            if boat and isinstance(boat_ops, list)
-            else list(boat_stages) if boat else []
-        )
-        modified = True
-
-    # 活动奖励：旧布尔开关 + 列表 → 新列表。
-    reward = config.get("⭐活动奖励")
-    if isinstance(reward, bool):
-        reward_ops = config.get("活动奖励")
-        config["⭐活动奖励"] = (
-            list(reward_ops)
-            if reward and isinstance(reward_ops, list)
-            else list(activity_rewards) if reward else []
-        )
-        modified = True
-
-    return config, modified
+from src.core.config_migration import legacy_bool_switch_to_list, merge_bool_options
 
 
 class DailyTask(
@@ -99,14 +40,30 @@ class DailyTask(
 ):
     """日常任务聚合执行器。"""
 
-    # 旧版日常配置键迁移（CodeRabbit 线程4）：
-    # 纯键名复制由 BaseEfTask.load_config 的 config_key_migrations 机制处理；
-    # ⭐据点兑换 / ⭐买物资 / ⭐买卖货 三个布尔键合并为 ⭐地区建设 列表，
-    # 以及 ⭐帝江号收菜 / ⭐活动奖励 的布尔开关 → 列表转换，
-    # 由 migrate_legacy_daily_config 在 load_config 中处理。
+    # 旧版日常配置键迁移（CodeRabbit 线程4/8）：
+    # 纯键名复制（config_key_migrations）由 BaseEfTask.load_config 走 MRO 自动收集；
+    # 值转换（config_value_migrations）处理旧布尔开关 → 多选列表，
+    # 两类迁移均为类属性声明方式，逻辑集中在 src/core/config_migration.py。
     config_key_migrations = {
         "帝江号收菜操作": "⭐帝江号收菜",
         "活动奖励": "⭐活动奖励",
+    }
+    config_value_migrations = {
+        # 旧版三个地区布尔开关 → 新的多选列表键。
+        "⭐地区建设": merge_bool_options({
+            "据点兑换": "⭐据点兑换",
+            "买物资": "⭐买物资",
+            "买卖货": "⭐买卖货",
+        }),
+        # 旧布尔开关 + 操作列表 → 新多选列表键。
+        "⭐帝江号收菜": legacy_bool_switch_to_list(
+            ops_key="帝江号收菜操作",
+            defaults=DailyRoutineFeature.BOAT_STAGES,
+        ),
+        "⭐活动奖励": legacy_bool_switch_to_list(
+            ops_key="活动奖励",
+            defaults=DailyRoutineFeature.ACTIVITY_REWARDS,
+        ),
     }
 
     BOAT_STATE_TASK_KEYS = frozenset({
@@ -127,27 +84,6 @@ class DailyTask(
         "Exit After Task",
         "重复测试的次数",
     }
-
-    def load_config(self):
-        # 先迁移旧版键（含布尔 → 列表的值转换），再走基类的迁移表与配置加载。
-        self._migrate_legacy_daily_config()
-        super().load_config()
-
-    def _migrate_legacy_daily_config(self):
-        """迁移旧版日常配置键（线程4/8），在加载配置前改写 JSON。"""
-        from ok.util.file import get_relative_path, read_json_file, write_json_file
-
-        config_file = get_relative_path("configs", f"{self.__class__.__name__}.json")
-        config = read_json_file(config_file)
-        if not isinstance(config, dict):
-            return
-        config, modified = migrate_legacy_daily_config(
-            config,
-            boat_stages=DailyRoutineFeature.BOAT_STAGES,
-            activity_rewards=DailyRoutineFeature.ACTIVITY_REWARDS,
-        )
-        if modified:
-            write_json_file(config_file, config)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
