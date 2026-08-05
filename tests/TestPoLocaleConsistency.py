@@ -45,6 +45,15 @@ OFFICIAL_SAME_AS_ENGLISH = {
     "陈千语",  # Chen Qianyu
     "伊冯",  # Yvonne
     "庄方宜",  # Zhuang Fangyi
+    "否",  # 西英同形词 "No"
+}
+
+# es_ES 官方未本地化的角色名，保留中文源文本（msgstr == msgid）是允许的。
+ES_UNTRANSLATED_OK = {
+    "卡缪",  # Camille
+    "弭弗",  # Mi Fu
+    "梨诺",  # Liino
+    "诀",  # Arcane
 }
 
 
@@ -91,7 +100,8 @@ class PoLocaleConsistencyTestCase(unittest.TestCase):
                 ):
                     errors.append(f"{locale}: English fallback {entry.msgid!r}")
                 if locale in {"es_ES", "ko_KR"} and entry.msgstr == entry.msgid:
-                    errors.append(f"{locale}: untranslated source {entry.msgid!r}")
+                    if entry.msgid not in ES_UNTRANSLATED_OK:
+                        errors.append(f"{locale}: untranslated source {entry.msgid!r}")
 
         self.assertEqual(errors, [], "\n".join(errors))
 
