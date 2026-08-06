@@ -821,7 +821,6 @@ class DeliveryFeature(DeliveryTask):
             self.DAILY_ENABLE_KEY: True,
             self.CFG_TARGET_TICKET_NUM: ["119000"],
             self.CFG_DELIVERY_AREA: DEFAULT_DELIVERY_AREA,
-            **{x: "" for x in self.to_delivery_point_config_keys + self.ends},
         })
         task.config_description.update({
             self.DAILY_ENABLE_KEY: "是否执行自动接取并完成运输委托。",
@@ -841,18 +840,6 @@ class DeliveryFeature(DeliveryTask):
         task.default_config_group.update({
             self.DAILY_ENABLE_KEY: [self.CFG_TARGET_TICKET_NUM, self.CFG_DELIVERY_AREA],
         })
-        self._register_route_keys()
-
-    def _register_route_keys(self):
-        """把当前地区的滑索路线键注册到任务配置（default_config + 运行时 config）。"""
-        for key in self.to_delivery_point_config_keys + self.ends:
-            default_value = ""
-            if key not in self._task.default_config:
-                self._task.default_config[key] = default_value
-            # 初始化阶段 task.config 尚未创建（load_config 时才实例化），此时只注册 default_config；
-            # 运行时由 run_daily() 在 config 就绪后调用本方法补齐。
-            if self._task.config is not None and key not in self._task.config:
-                self._task.config.setdefault(key, default_value)
 
     def __getattr__(self, name):
         return getattr(self._task, name)
@@ -864,7 +851,6 @@ class DeliveryFeature(DeliveryTask):
             current_area = DEFAULT_DELIVERY_AREA
         if current_area != self.delivery_area:
             self._configure_delivery_area(current_area)
-        self._register_route_keys()
 
         self._daily_delivery_mode = True
         try:
