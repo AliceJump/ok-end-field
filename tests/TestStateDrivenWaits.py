@@ -296,7 +296,7 @@ class TestStateDrivenWaits(unittest.TestCase):
     def test_task_map_transition_uses_feature_and_stability_waits(self):
         task = _TaskMapHarness()
 
-        result = MapMixin.task_to_transfer_point(task)
+        result = MapMixin.task_to_transfer_point(task, test_target_box=object())
 
         self.assertTrue(result)
         self.assertEqual(task.keys, [("j", {})])

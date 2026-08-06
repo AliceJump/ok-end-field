@@ -419,7 +419,7 @@ def auto_battle(self, no_battle: bool = False)
 ```text
 from src.tasks.mixin.map_mixin import MapMixin
 
-def task_to_transfer_point(self)
+def task_to_transfer_point(self, need_location_list=None)
 def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False)
 def to_near_transfer_point(self, after_track, need_location_list=None)
 ```
