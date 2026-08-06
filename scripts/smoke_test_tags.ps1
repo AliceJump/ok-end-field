@@ -4,6 +4,12 @@
 #   检出 tag -> pip install -r requirements.txt -> 启动 python main.py
 #   -> 等待 WaitSeconds 秒：进程仍存活 => 可启动(ok)；进程退出/启动失败 => 坏 tag(fail)
 #
+# 计时说明：
+#   duration_s 是整个 tag 的总处理时间（含检出/安装/等待），不是等待时间。
+#   结果行会拆分为 检出(prepare_s) + 安装(install_s) + 等待(wait_s) 三段，
+#   其中「等待」才是 WaitSeconds 的判定阶段；安装阶段为每个 tag 独立 pip
+#   install，首个 tag 冷启动安装约 1-2 分钟，后续 tag 走缓存秒级完成。
+#
 # 用法:
 #   ./scripts/smoke_test_tags.ps1 -Tags "v1.0.18,v1.0.17" -WaitSeconds 90 `
 #       -ResultFile tmp/smoke_results.csv -Python ".venv/Scripts/python.exe"
@@ -58,8 +64,14 @@ foreach ($tag in $tagList) {
         reason      = ""
         exit_code   = ""
         duration_s  = ""
+        prepare_s   = ""
+        install_s   = ""
+        wait_s      = ""
     }
     $sw = [System.Diagnostics.Stopwatch]::StartNew()
+    $prepareSw = [System.Diagnostics.Stopwatch]::StartNew()
+    $installSw = $null
+    $waitSw = $null
     $safeTag = $tag -replace '[^a-zA-Z0-9]', '_'
     try {
         # 1) 检出 tag，清理工作区（含上次 tag 的未跟踪产物）
@@ -71,12 +83,16 @@ foreach ($tag in $tagList) {
         Ensure-TmpDir
         $rc = Invoke-Git "checkout --force $tag"
         if ($rc -ne 0) { throw "git checkout $tag 失败(exit=$rc)" }
+        $prepareSw.Stop()
 
         # 2) 安装该 tag 的依赖
+        $installSw = [System.Diagnostics.Stopwatch]::StartNew()
         if (-not $SkipInstall) {
+            Write-Output "  -- 正在安装 $tag 依赖（首次约1-2分钟，之后走 pip 缓存/已装依赖秒级完成）..."
             & $Python -m pip install --disable-pip-version-check -q -r requirements.txt *> "$tmpDir\pip_$safeTag.log"
             if ($LASTEXITCODE -ne 0) { throw "pip install 失败(exit=$LASTEXITCODE), 详见 tmp/pip_$safeTag.log" }
         }
+        $installSw.Stop()
 
         # 3) 启动 main.py（后台）
         $outLog = Join-Path $tmpDir "run_$safeTag.log"
@@ -86,11 +102,13 @@ foreach ($tag in $tagList) {
             -RedirectStandardOutput $outLog -RedirectStandardError $errLog
 
         # 4) 等待并判定：进程存活 => 可启动
+        $waitSw = [System.Diagnostics.Stopwatch]::StartNew()
         $deadline = (Get-Date).AddSeconds($WaitSeconds)
         while ((Get-Date) -lt $deadline) {
             Start-Sleep -Seconds 3
             if ($p.HasExited) { break }
         }
+        $waitSw.Stop()
 
         if ($p.HasExited) {
             $entry.reason = "进程在 ${WaitSeconds}s 内退出"
@@ -108,9 +126,17 @@ foreach ($tag in $tagList) {
     }
     finally {
         $sw.Stop()
+        foreach ($stageSw in @($prepareSw, $installSw, $waitSw)) {
+            if ($null -ne $stageSw -and $stageSw.IsRunning) { $stageSw.Stop() }
+        }
         $entry.duration_s = [math]::Round($sw.Elapsed.TotalSeconds, 1)
+        $entry.prepare_s = [math]::Round($prepareSw.Elapsed.TotalSeconds, 1)
+        $entry.install_s = if ($null -ne $installSw) { [math]::Round($installSw.Elapsed.TotalSeconds, 1) } else { "" }
+        $entry.wait_s = if ($null -ne $waitSw) { [math]::Round($waitSw.Elapsed.TotalSeconds, 1) } else { "" }
         $results += [pscustomobject]$entry
-        Write-Output ("[{0}] {1}  {2}  ({3}s)" -f $entry.status, $entry.tag, $entry.reason, $entry.duration_s)
+        Write-Output ("[{0}] {1}  {2}  (总{3}s = 检出{4}s + 安装{5}s + 等待{6}s)" -f `
+            $entry.status, $entry.tag, $entry.reason, $entry.duration_s, `
+            $entry.prepare_s, $entry.install_s, $entry.wait_s)
     }
 }
 
