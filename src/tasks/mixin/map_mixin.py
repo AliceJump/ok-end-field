@@ -126,8 +126,8 @@ class MapMixin(BaseEfTask):
         1. 打开“标记显示管理”。
         2. 清空当前地图选中标记。
         3. 重新点击屏幕中心（淤积点/物资调度终端/演武平台）。
-        4. 在地图上搜索传送点图标。若找到则点击[前往传送]。
-        5. 在地图上搜索传送点图标。若找到则点击[传送]。
+        4. 在地图上搜索传送点图标。若找到则点击”前往传送“按钮。
+        5. 在地图上搜索传送点图标。若找到则点击”传送“按钮。
 
         Returns:
             bool:
@@ -142,7 +142,7 @@ class MapMixin(BaseEfTask):
         # 点击屏幕中心的淤积点/物资调度终端/演武平台
         self.click(0.5, 0.5, after_sleep=1)
 
-        # 点击前往传送
+        # 点击”前往传送“按钮
         result = self.wait_feature(
             feature=fL.transfer_go,
             time_out=10,
@@ -153,7 +153,7 @@ class MapMixin(BaseEfTask):
             return False
         self.click(result, after_sleep=1)
 
-        # 点击传送
+        # 点击”传送“按钮
         result = self.wait_feature(
             feature=fL.transfer,
             time_out=10,
@@ -162,5 +162,5 @@ class MapMixin(BaseEfTask):
         if not result:
             return False
         self.click(result, after_sleep=1)
-        
+
         return True
