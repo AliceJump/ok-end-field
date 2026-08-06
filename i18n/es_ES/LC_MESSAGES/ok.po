@@ -336,7 +336,8 @@ msgstr ""
 
 msgid "刷取哪个副本。所选副本必须领完所有等级的首通奖励。"
 msgstr ""
-"Mazmorra que farmear. Deben haberse recogido todas las recompensas iniciales."
+"Mazmorra que farmear. Deben haberse recogido todas las recompensas "
+"iniciales."
 
 msgid "刷本序列"
 msgstr "Secuencia de mazmorras"
@@ -408,8 +409,8 @@ msgstr "Aviso de fin de combate en segundo plano"
 
 msgid "后台运行时，战斗结束后发送通知。"
 msgstr ""
-"Enviar notificación cuando termine la batalla mientras se ejecuta en segundo "
-"plano."
+"Enviar notificación cuando termine la batalla mientras se ejecuta en segundo"
+" plano."
 
 msgid "否"
 msgstr "No"
@@ -449,7 +450,8 @@ msgstr "Precio de venta del Valle IV"
 
 msgid "四号谷地物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
 msgstr ""
-"Precio máximo de compra del Valle IV. Use un valor alto para comprar siempre."
+"Precio máximo de compra del Valle IV. Use un valor alto para comprar "
+"siempre."
 
 msgid "四号谷地物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
 msgstr "Precio mínimo de venta del Valle IV. Use 1 para vender siempre."
@@ -545,23 +547,24 @@ msgid "完整循环测试区域"
 msgstr "Zona de prueba de ciclo completo"
 
 msgid "实时循环执行 YOLO 检测，用于在线观察目标识别结果。"
-msgstr "Ejecutar YOLO en bucle para observar el reconocimiento en tiempo real."
+msgstr ""
+"Ejecutar YOLO en bucle para observar el reconocimiento en tiempo real."
 
 msgid "实时检测"
 msgstr "Detección en Tiempo Real"
 
 msgid "对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低"
 msgstr ""
-"Amplía automáticamente al alinear; puede mejorar o reducir claramente la tasa"
-" de éxito"
+"Amplía automáticamente al alinear; puede mejorar o reducir claramente la "
+"tasa de éxito"
 
 msgid "导航到演武集算『演算』入口"
 msgstr "Navegar a la entrada \"演算\" de 演武集算"
 
 msgid "将次要目标方向蓝点对齐到屏幕中心"
 msgstr ""
-"Alinear el punto azul de la dirección del objetivo secundario al centro de la"
-" pantalla"
+"Alinear el punto azul de la dirección del objetivo secundario al centro de "
+"la pantalla"
 
 msgid "尝试仅收培育室"
 msgstr "Intentar recoger solo la cámara de cultivo"
@@ -598,7 +601,8 @@ msgstr "Mostrar solo los valores distintos de la configuración original"
 
 msgid "开启后等待外部命令执行完成；关闭则后台启动后立即继续。开启此选项可支持多账户模式。"
 msgstr ""
-"Esperar a que termine el comando externo; necesario para el modo multicuenta."
+"Esperar a que termine el comando externo; necesario para el modo "
+"multicuenta."
 
 msgid "开启后若检测到目标命令已在运行，将跳过本次启动。"
 msgstr "Omitir el inicio si el comando objetivo ya está en ejecución."
@@ -618,8 +622,8 @@ msgstr ""
 
 msgid "当前账号的 hg/check data.content 值，用于官方地图位置同步"
 msgstr ""
-"Valor hg/check data.content de la cuenta actual para sincronizar la posicion "
-"del mapa oficial"
+"Valor hg/check data.content de la cuenta actual para sincronizar la posicion"
+" del mapa oficial"
 
 msgid "当条件符合时使用技能组"
 msgstr "Usar el conjunto de habilidades cuando se cumplan las condiciones"
@@ -689,8 +693,8 @@ msgstr "Uso de habilidades"
 
 msgid "持续检测 skill 和 ult 模板并输出命中位置与匹配分数"
 msgstr ""
-"Detecta continuamente las plantillas de skill y ult y muestra las posiciones "
-"de acierto y las puntuaciones de coincidencia"
+"Detecta continuamente las plantillas de skill y ult y muestra las posiciones"
+" de acierto y las puntuaciones de coincidencia"
 
 msgid "持续读取并显示当前箭头的角度"
 msgstr "Leer y mostrar continuamente el ángulo de la flecha"
@@ -720,17 +724,17 @@ msgstr ""
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
 msgstr ""
 "Ejecutar las operaciones seleccionadas por región: primero intercambio de "
-"puestos, luego la compra en comprar y vender; cuando la compra de suministros"
-" esté habilitada, cambiar a necesidades de suministro estable para comprar "
-"después de comprar, y luego volver a necesidades de suministro flexible para "
-"vender."
+"puestos, luego la compra en comprar y vender; cuando la compra de "
+"suministros esté habilitada, cambiar a necesidades de suministro estable "
+"para comprar después de comprar, y luego volver a necesidades de suministro "
+"flexible para vender."
 
 msgid ""
 "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
 "`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
 msgstr ""
-"Configure parámetros independientes por cuenta y tarea. Seleccione primero la"
-" cuenta, luego la tarea, y los controles aparecerán automáticamente. Solo "
+"Configure parámetros independientes por cuenta y tarea. Seleccione primero "
+"la cuenta, luego la tarea, y los controles aparecerán automáticamente. Solo "
 "necesita el nombre de cuenta (teléfono), sin contraseña. Compatible con "
 "formato antiguo `cuenta,contraseña` pero no se guardan contraseñas. También "
 "puede usar los últimos 4 dígitos del teléfono para iniciar sesión (si es "
@@ -1056,8 +1060,8 @@ msgstr "Mineral de origen"
 
 msgid "滑索距离序列在「全局配置 → 滑索配置」中设置"
 msgstr ""
-"Configura las secuencias de distancia en Configuración global → Configuración"
-" de tirolesa"
+"Configura las secuencias de distancia en Configuración global → "
+"Configuración de tirolesa"
 
 msgid "滑索配置说明"
 msgstr "Configuración de la tirolesa"
@@ -1100,8 +1104,8 @@ msgstr "Aggelomoirai de mármol"
 
 msgid "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"
 msgstr ""
-"Leer posiciones del WebSocket local, señalar el objeto más cercano y permitir"
-" marcarlo con una tecla"
+"Leer posiciones del WebSocket local, señalar el objeto más cercano y "
+"permitir marcarlo con una tecla"
 
 msgid "目标券数"
 msgstr "Cantidad objetivo de vales"
@@ -1167,7 +1171,8 @@ msgid "自动交互"
 msgstr "Interacción automática"
 
 msgid "自动完成当前所有普通影拓丰碑关卡"
-msgstr "Completar automáticamente todos los niveles normales de Estela Sombría"
+msgstr ""
+"Completar automáticamente todos los niveles normales de Estela Sombría"
 
 msgid "自动战斗"
 msgstr "Combate automático"
@@ -1419,8 +1424,8 @@ msgstr "Cambiar la región de entrega con el desplegable."
 
 msgid "配合任务计划程序提前启动游戏,防止游戏更新/弹公告导致的后续问题"
 msgstr ""
-"Iniciar antes el juego con el Programador de tareas para evitar problemas de "
-"actualización o avisos"
+"Iniciar antes el juego con el Programador de tareas para evitar problemas de"
+" actualización o avisos"
 
 msgid "配置选择"
 msgstr "Selección de Configuración"
@@ -1515,3 +1520,408 @@ msgstr ""
 
 msgid "齐纶"
 msgstr "Qí Lún"
+
+msgid "战术训练"
+msgstr "Cabina de entrenamiento táctico"
+
+msgid "协议传送点"
+msgstr "Punto de TP"
+
+msgid "蚀像寻遗"
+msgstr "Rescate de grabaespacio"
+
+msgid "物资调度终端"
+msgstr "Terminal de redistribución de existencias"
+
+msgid "行迹高塔"
+msgstr "Torre de senderos"
+
+msgid "会客室"
+msgstr "Sala de recepción"
+
+msgid "展示区"
+msgstr "Área de exhibición"
+
+msgid "访客终端"
+msgstr "Terminal de invitados"
+
+msgid "协议奇点"
+msgstr "Singularidad del protocolo"
+
+msgid "总控中枢"
+msgstr "Nexus de control"
+
+msgid "干员联络台"
+msgstr "Panel de contacto con operador"
+
+msgid "传送台"
+msgstr "Plataforma de TP"
+
+msgid "映火荞花"
+msgstr "Hebilla de fuego"
+
+msgid "源矿矿点"
+msgstr "Punto de minería de originio"
+
+msgid "见闻辑录"
+msgstr "Hallazgos"
+
+msgid "灼壳虫"
+msgstr "Escarabajo abrasador"
+
+msgid "中红柱状菌"
+msgstr "Bolete rojo"
+
+msgid "蓝铁矿矿点"
+msgstr "Punto de minería de ferrio"
+
+msgid "中黯石"
+msgstr "Auronix"
+
+msgid "柑实"
+msgstr "Citroma"
+
+msgid "锁闭储藏箱"
+msgstr "Caja sellada"
+
+msgid "纯晶多齿叶"
+msgstr "Crisodendro"
+
+msgid "紫晶矿矿点"
+msgstr "Punto de minería de amatista"
+
+msgid "酮化灌木"
+msgstr "Aketina"
+
+msgid "荞花"
+msgstr "Floracina"
+
+msgid "晶化多齿叶"
+msgstr "Kalkodendro"
+
+msgid "苦叶椒"
+msgstr "Pimienta ácida"
+
+msgid "灰芦麦"
+msgstr "Centeno de caña"
+
+msgid "砂叶"
+msgstr "Hojarena"
+
+msgid "黯银柑实"
+msgstr "Umbralina"
+
+msgid "萤壳虫"
+msgstr "Luciérnaga"
+
+msgid "轻红柱状菌"
+msgstr "Bolete rosa"
+
+msgid "轻黯石"
+msgstr "Kalkonix"
+
+msgid "酸液源石虫"
+msgstr "Babosa de Originio ácida"
+
+msgid "碾骨劫掠者"
+msgstr "Asaltante Rompehuesos"
+
+msgid "刚角天使"
+msgstr "Carnero grande"
+
+msgid "酸液源石虫·α"
+msgstr "Babosa de Originio ácida α"
+
+msgid "仿生翅天使"
+msgstr "Alas falsas"
+
+msgid "原生钳兽"
+msgstr "Bestia pinza indígena"
+
+msgid "残暴原生钳兽"
+msgstr "Bestia pinza brutal"
+
+msgid "斧甲兽"
+msgstr "Bestia armadura con hacha"
+
+msgid "大角天使α"
+msgstr "Carnero α"
+
+msgid "重刺天使α"
+msgstr "Aguijón fuerte α"
+
+msgid "潜地虬兽"
+msgstr "Nidwyrm Subterráneo"
+
+msgid "碾骨撕裂牙兽"
+msgstr "Colmillo desgarrador Rompehuesos"
+
+msgid "大角天使"
+msgstr "Carnero"
+
+msgid "碾骨行刑人"
+msgstr "Verdugo Rompehuesos"
+
+msgid "精锐撕裂牙兽"
+msgstr "Colmillo desgarrador de élite"
+
+msgid "钉刺天使"
+msgstr "Aguijón"
+
+msgid "碾骨清道夫"
+msgstr "Rompehuesos Pirómano"
+
+msgid "精锐劫掠者"
+msgstr "Asaltante de élite"
+
+msgid "碾骨先锋"
+msgstr "Vanguardia Rompehuesos"
+
+msgid "雾火牙兽"
+msgstr "Bestia colmilluda de bruma ardiente"
+
+msgid "碾骨伏击射手"
+msgstr "Emboscador Rompehuesos"
+
+msgid "雾火爪牙"
+msgstr "Garra de bruma ardiente"
+
+msgid "钉刺天使α"
+msgstr "Aguijón α"
+
+msgid "碾骨渗透者"
+msgstr "Rompehuesos Infiltrado"
+
+msgid "重刺天使"
+msgstr "Aguijón fuerte"
+
+msgid "碾骨焰术师"
+msgstr "Piromante Rompehuesos"
+
+msgid "精锐伏击射手"
+msgstr "Emboscador de élite"
+
+msgid "精锐行刑人"
+msgstr "Ejecutor de élite"
+
+msgid "Delta型机器人"
+msgstr "Bot Delta"
+
+msgid "仓储节点"
+msgstr "Nodo de depósito"
+
+msgid "资源回收站"
+msgstr "Estación de reciclaje"
+
+msgid "维修灵感点"
+msgstr "Lógica de reparación"
+
+msgid "高阶培养II"
+msgstr "Progresión avanzada II"
+
+msgid "“碾骨之拳”罗丹"
+msgstr "Rhodagn el puño Rompehuesos"
+
+msgid "能量淤积点"
+msgstr "Aluvión energético"
+
+msgid "战争回响"
+msgstr "Ecos de guerra"
+
+msgid "袭击预警终端"
+msgstr "Terminal de A.T."
+
+msgid "协议采录桩"
+msgstr "Registrador de datos de protocolo"
+
+msgid "高阶培养I"
+msgstr "Progresión avanzada I"
+
+msgid "炽燃！竞技大会！"
+msgstr "¡FURIA ARDIENTE! ¡MEGA ARENA!"
+
+msgid "协议核心"
+msgstr "Núcleo de automatización"
+
+msgid "供电终端"
+msgstr "Nexus eléctrico"
+
+msgid "次级核心"
+msgstr "Sub-NAP"
+
+msgid "分层入口"
+msgstr "Acceso a nivel"
+
+msgid "荆刺芽针"
+msgstr "Yazhen espinoso"
+
+msgid "蓬茸锦草"
+msgstr "Jincao esponjado"
+
+msgid "星门菌"
+msgstr "Cosmagárico"
+
+msgid "赤铜矿"
+msgstr "Mineral de cuprio"
+
+msgid "塔晶"
+msgstr "Talosita"
+
+msgid "惰气"
+msgstr "Inergen"
+
+msgid "金石稻"
+msgstr "Arroz ámbar"
+
+msgid "重黯石"
+msgstr "Umbrónix"
+
+msgid "武陵石"
+msgstr "Piedra de Wuling"
+
+msgid "至晶多齿叶"
+msgstr "Vitrodendro"
+
+msgid "协议纹石"
+msgstr "Protocolito"
+
+msgid "芽针"
+msgstr "Yazhen"
+
+msgid "岩天使叶"
+msgstr "Aggela falsa"
+
+msgid "琼叶参"
+msgstr "Ginseng de jade rojo"
+
+msgid "血菌"
+msgstr "Fungisangre"
+
+msgid "息壤气"
+msgstr "Xiragen"
+
+msgid "受蚀玉化叶"
+msgstr "Hoja de jade contaminada"
+
+msgid "重红柱状菌"
+msgstr "Bolete rubí"
+
+msgid "燎石"
+msgstr "Igneosita"
+
+msgid "塔罗斯菌"
+msgstr "Sombrero de Talos"
+
+msgid "锦草"
+msgstr "Jincao"
+
+msgid "红矛叶"
+msgstr "Hojalanza carmesí"
+
+msgid "晶锥天使"
+msgstr "Hedron"
+
+msgid "晶锥天使δ"
+msgstr "Hedron δ"
+
+msgid "浊流天使δ"
+msgstr "Flujo de lodo δ"
+
+msgid "潮行天使δ"
+msgstr "Caminante de mareas δ"
+
+msgid "穿林箭"
+msgstr "Arquero de arboleda"
+
+msgid "水灯虫"
+msgstr "Lámpara de agua"
+
+msgid "割云翁"
+msgstr "Navaja de Nimbus"
+
+msgid "莫惜命"
+msgstr "Bandido de autopistas"
+
+msgid "充能球刺兽"
+msgstr "Bestia pluma imbuida"
+
+msgid "开天将"
+msgstr "Destructor de nubes"
+
+msgid "劫云客"
+msgstr "Acechador de nubes"
+
+msgid "过堂风"
+msgstr "Viento arrasador"
+
+msgid "球刺兽"
+msgstr "Bestia pluma"
+
+msgid "焚雾源石虫"
+msgstr "Babosa de Originio de niebla ardiente"
+
+msgid "蚀影牙兽"
+msgstr "Sombra contaminada de Bestia colmilluda"
+
+msgid "火雾源石虫"
+msgstr "Babosa de Originio de brumafuego"
+
+msgid "浊流天使"
+msgstr "Flujo de lodo"
+
+msgid "棱镜天使"
+msgstr "Prisma"
+
+msgid "蚀影应龙尖兵"
+msgstr "Sombra contaminada de élite del EFEY"
+
+msgid "潮行天使"
+msgstr "Caminante de mareas"
+
+msgid "莫留财"
+msgstr "Saqueador de caminos"
+
+msgid "百眼彪兽"
+msgstr "Bestia rastrera manchada"
+
+msgid "断云叟"
+msgstr "Ráfaga devastadora"
+
+msgid "摧山将"
+msgstr "Demoledor de colinas"
+
+msgid "表象"
+msgstr "Éthillu"
+
+msgid "装备模板箱"
+msgstr "Caja de molde de equipamiento"
+
+msgid "高阶培养III"
+msgstr "Progresión avanzada III"
+
+msgid "净水节点"
+msgstr "Nodo de purificación"
+
+msgid "高阶培养V"
+msgstr "Progresión avanzada V"
+
+msgid "高阶培养IV"
+msgstr "Progresión avanzada IV"
+
+msgid "待回收物品"
+msgstr "Recuperable"
+
+msgid "阿莱克琉斯，千夫长"
+msgstr "Alleikhreos, Quiliarca"
+
+msgid "蚀影噪雷"
+msgstr "Sombra contaminada de Blitzcrash"
+
+msgid "环境监测终端"
+msgstr "Terminal de monitoreo ambiental"
+
+msgid "巨山犼兽"
+msgstr "Aullador del peñasco"
+
+msgid "演武平台"
+msgstr "Arena de pruebas"
