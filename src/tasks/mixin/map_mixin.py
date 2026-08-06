@@ -155,7 +155,7 @@ class MapMixin(BaseEfTask):
 
         # 点击”传送“按钮
         result = self.wait_feature(
-            feature=fL.transfer,
+            feature=fL.transfer_go,
             time_out=10,
             raise_if_not_found=False,
         )
