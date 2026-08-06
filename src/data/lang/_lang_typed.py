@@ -949,6 +949,9 @@ class WorldMapModule(_LangModuleBaseT):
     k_727bb38b: re.Pattern[str]
     """死寂争鸣"""
 
+    k_shanzhongjianhou: re.Pattern[str]
+    """山中见犼"""
+
     k_825cdc26: re.Pattern[str]
     """灼铜零件"""
 
