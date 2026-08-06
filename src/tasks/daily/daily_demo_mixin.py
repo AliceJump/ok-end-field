@@ -116,7 +116,7 @@ class DailyDemoFeature:
             self.click(result)
         else:
             self.log_info("未找到『追踪』按钮，继续尝试自动寻路")
-        if not self.to_near_transfer_point(self.box.bottom_left):
+        if not self.to_near_transfer_point():
             self.mark_task_failure("未能找到传送点，无法继续")
             return False
         self.ensure_main()

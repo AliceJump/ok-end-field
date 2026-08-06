@@ -54,7 +54,6 @@ class DailyBattleFeature:
 
     def __init__(self, task):
         self._task = task
-        self.gather_near_transfer_point_dict = dict()
         self.stages_list = stages_list
         self._reset_battle_state()
         today_str = datetime.now().strftime("%Y-%m-%d")
@@ -227,8 +226,8 @@ class DailyBattleFeature:
     def _click_track_and_transfer(self):
         """点击『追踪』按钮，进入地图并传送至最近传送点。"""
         if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False):
-            self.click(result)
-        self.to_near_transfer_point(self.gather_near_transfer_point_dict[self.battle_ctx.stage_name])
+            self.click(result, after_sleep=1)
+        self.to_near_transfer_point()
         self.ensure_main()
 
     def _navigate_via_zip_line(self):
@@ -527,22 +526,8 @@ class DailyBattleFeature:
         finally:
             self.release_yolo_detector()
 
-    def _init_gather_transfer_points(self):
-        """设置传送点特征搜索区。"""
-        self.gather_near_transfer_point_dict.update({
-            "枢纽区": self.box.top,
-            "源石研究园": self.box.top,
-            "试验园区": self.box_of_screen(0.5, 0.25, 1, 0.75),
-            "矿脉源区": self.box.right,
-            "供能高地": self.box.bottom_right,
-            "武陵城": self.box.top_left,
-            "清波寨": self.box.top,
-            "首墩": self.box.top,
-        })
-
     def battle_gather(self):
         self.battle_ctx.enter_text = "挑战"
-        self._init_gather_transfer_points()
         # 点击追踪按钮，进入地图并传送
         self._click_track_and_transfer()
 

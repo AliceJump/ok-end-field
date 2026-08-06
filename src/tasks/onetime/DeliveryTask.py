@@ -695,9 +695,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                             return
                     success = None
                     for attempt in range(3):
-                        success = self.task_to_transfer_point(
-                            search_box_resolver=self._resolve_transfer_point_search_box_after_map_open,
-                        )
+                        success = self.task_to_transfer_point()
                         if success:
                             break
                     if not success:
@@ -745,8 +743,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 return
             self._accepted_delivery_location = test_location
             for end in full_cycle_targets:
-                transfer_search_box = self._get_transfer_search_box_by_location(test_location) or self.box.bottom
-                self.task_to_transfer_point(self.box.bottom)
+                self.task_to_transfer_point()
                 self.to_storage_point_and_back_zip_line(only_zip_line=True)
                 if self.wait_click_ocr(
                         match=self.lang.DeliveryTask.k_b0e3a2da,
