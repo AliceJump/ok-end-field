@@ -506,7 +506,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     else:
                         self.log_info("接取失败，可能委托被抢了，继续寻找")
             self.log_info("未找到符合条件(金额+类型)的委托，准备刷新重试")
-            for i in range(2):
+            refresh_btn_start = self.active_time()
+            while True:
                 if last_refresh_box := self.wait_feature(feature=fL.refresh_order_list, vertical_variance=0.05, horizontal_variance=0.02):
                     now = self.active_time()
                     last = getattr(self, "_last_refresh_ts", 0.0)
@@ -517,9 +518,11 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     self._last_refresh_ts = self.active_time()
                     self.wait_ui_stable(refresh_interval=1)  # 刷新后界面稳定的时间可能会比平常长一些，尤其是网络较慢的时候
                     break
-                else:
-                    self.log_info("警告: 尚未定位到刷新按钮位置，无法刷新，重试...")
-                    self.sleep(1.0)
+                if self.active_time() - refresh_btn_start > 10:
+                    self.log_info("长时间未定位到刷新按钮，无法刷新，结束任务")
+                    return False
+                self.log_info("警告: 尚未定位到刷新按钮位置，无法刷新，重试...")
+                self.sleep(1.0)
 
     def to_storage_point_and_back_zip_line(self, only_zip_line=False):
         """从仓储点出发，乘坐滑索到送货点
@@ -818,7 +821,7 @@ class DeliveryFeature(DeliveryTask):
         self._configure_delivery_area(DEFAULT_DELIVERY_AREA)
 
         task.default_config.update({
-            self.DAILY_ENABLE_KEY: True,
+            self.DAILY_ENABLE_KEY: False,
             self.CFG_TARGET_TICKET_NUM: ["119000"],
             self.CFG_DELIVERY_AREA: DEFAULT_DELIVERY_AREA,
         })
