@@ -17,9 +17,9 @@ class DailyDemoFeature:
     def battle_demo(self):
         if not self.go_to_DemoGraphic():
             return False
-        # if not self.left_time:
-        #     self.log_info("没有次数了，结束任务")
-        #     return True
+        if not self.left_time:
+            self.log_info("没有次数了，结束任务")
+            return True
         if not self._demo_click_track_and_transfer():
             return False
         if not self.enter_page():
