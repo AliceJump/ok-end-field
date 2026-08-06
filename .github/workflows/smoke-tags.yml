@@ -1,0 +1,164 @@
+# 逐个 tag 检出并实际启动 main.py 的冒烟测试 workflow
+#
+# 判定标准：检出 tag -> pip install -r requirements.txt -> 启动 python main.py
+#   -> 等待 N 秒（默认 90s）：进程仍存活 => 可启动；进程退出/启动失败 => 坏 tag
+#
+# 触发：手动（workflow_dispatch），可调分片数、等待秒数、tag 过滤前缀
+# 所有 v* tag 默认全测，通过 matrix 分片并行控制总时长（每个 shard 一个 runner）
+
+name: Smoke Test Tags
+
+on:
+  workflow_dispatch:
+    inputs:
+      shards:
+        description: '并行分片数（越大越快，但受并发上限约束）'
+        required: true
+        default: '16'
+      wait_seconds:
+        description: '判定「可启动」的等待秒数（进程存活即视为可启动）'
+        required: true
+        default: '90'
+      tag_filter:
+        description: '只测试匹配的 tag 前缀（如 v1.0. 或 v0.3.，留空=全部 v*）'
+        required: false
+        default: ''
+
+permissions:
+  contents: read
+
+concurrency:
+  group: smoke-tags
+  cancel-in-progress: true
+
+jobs:
+  # 收集所有 v* tag 并按 shards 均分（round-robin），输出每个分片的 tag 逗号串
+  collect:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.collect.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Collect and split tags into shards
+        id: collect
+        env:
+          SHARDS: ${{ inputs.shards }}
+          TAG_FILTER: ${{ inputs.tag_filter }}
+        run: |
+          set -euo pipefail
+          tags=$(git tag -l 'v*' | sort -V || true)
+          if [ -n "$TAG_FILTER" ]; then
+            tags=$(printf '%s\n' "$tags" | grep "^$TAG_FILTER" || true)
+          fi
+          if [ -z "$tags" ]; then
+            echo "未找到匹配的 v* tag" >&2
+            echo "matrix=[]" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          TAGS="$tags" SHARDS="$SHARDS" python3 - <<'EOF' > matrix.json
+          import json, os
+          shards = int(os.environ['SHARDS'])
+          tags = [t for t in os.environ['TAGS'].splitlines() if t]
+          groups = [[] for _ in range(shards)]
+          for i, t in enumerate(tags):
+              groups[i % shards].append(t)
+          print(f"total tags: {len(tags)}", file=os.sys.stderr, flush=True)
+          print(json.dumps([",".join(g) for g in groups if g]))
+          EOF
+          echo "matrix=$(cat matrix.json)" >> "$GITHUB_OUTPUT"
+
+  # 每个分片一个 runner：依次检出并启动测试本分片的 tag
+  smoke:
+    needs: collect
+    if: ${{ needs.collect.outputs.matrix != '[]' }}
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.collect.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Smoke test tags in this shard
+        shell: pwsh
+        continue-on-error: true
+        timeout-minutes: 300
+        env:
+          PYTHONIOENCODING: 'UTF-8'
+        run: |
+          ./scripts/smoke_test_tags.ps1 -Tags "${{ matrix.shard }}" `
+            -WaitSeconds ${{ inputs.wait_seconds }} `
+            -ResultFile "smoke_${{ strategy.job-index }}.csv" `
+            -BadTagsFile "bad_${{ strategy.job-index }}.txt"
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-results-${{ strategy.job-index }}
+          path: |
+            smoke_*.csv
+            bad_*.txt
+          if-no-files-found: warn
+
+  # 汇总所有分片结果，输出坏 tag 报告（不删除）
+  report:
+    needs: smoke
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Merge results and report bad tags
+        run: |
+          python3 - <<'EOF'
+          import glob, os, csv
+
+          ok, bad = [], []
+          for f in glob.glob('artifacts/**/*.csv', recursive=True):
+              try:
+                  with open(f, encoding='utf-8-sig') as fh:
+                      for row in csv.DictReader(fh):
+                          tag = (row.get('tag') or '').strip()
+                          if not tag:
+                              continue
+                          status = (row.get('status') or '').strip()
+                          reason = (row.get('reason') or '').strip()
+                          (bad if status == 'fail' else ok).append((tag, reason))
+              except Exception as e:
+                  print(f'parse error {f}: {e}')
+
+          bad = sorted(set(bad))
+          ok = sorted(set(ok))
+
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as f:
+              f.write('## 🔍 Tag 冒烟测试汇总\n\n')
+              f.write(f'- 可启动（进程存活）: **{len(ok)}** 个\n')
+              f.write(f'- 无法启动（坏 tag）: **{len(bad)}** 个\n\n')
+              if bad:
+                  f.write('### ⚠ 无法启动 main.py 的 tag（仅报告，未删除）\n\n')
+                  f.write('| tag | 原因 |\n|---|---|\n')
+                  for t, r in bad:
+                      f.write(f'| {t} | {r} |\n')
+                  f.write('\n> 如需删除，人工确认后执行：`git push origin --delete <tag>`\n')
+              else:
+                  f.write('✅ 所有 tag 均能启动\n')
+
+          print(f'ok={len(ok)} bad={len(bad)}')
+          for t, r in sorted(bad):
+              print(f'  BAD {t}: {r}')
+          EOF
