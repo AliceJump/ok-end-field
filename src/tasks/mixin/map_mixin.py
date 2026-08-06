@@ -61,7 +61,7 @@ class MapMixin(BaseEfTask):
         self.wait_ui_stable(refresh_interval=1)
 
         # 执行附近传送点传送
-        return self.to_near_transfer_point(need_location_list=need_location_list)
+        return self.to_near_transfer_point(after_track=False, need_location_list=need_location_list)
 
     def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False):
         """
@@ -122,18 +122,19 @@ class MapMixin(BaseEfTask):
 
         return True
 
-    def to_near_transfer_point(self, need_location_list=None):
+    def to_near_transfer_point(self, after_track, need_location_list=None):
         """
         在地图上寻找最近的传送点并执行传送。
 
         流程：
         1. 打开“标记显示管理”。
         2. 清空当前地图选中标记。
-        3. 重新点击屏幕中心（淤积点/物资调度终端/演武平台）。
+        3. 重新点击屏幕中心（淤积点/演武平台需要点击，物资调度终端不需要）。
         4. 在地图上搜索传送点图标。若找到则点击”前往传送“按钮。
         5. 在地图上搜索传送点图标。若找到则点击”传送“按钮。
 
         Args:
+            after_track: 调用函数前是否需要点击”追踪“按钮。
             need_location_list: 需要记录的候选地名列表（本地化名称）；
                 命中则把地图右上角显示的当前地区名记录到 self.location，供调用方回填缓存
 
@@ -152,6 +153,10 @@ class MapMixin(BaseEfTask):
                 log=True,
             ):
                 self.location = location[0].name
+
+        # 调用函数前如果点击”追踪“按钮，需要再次点击屏幕中心图标。
+        if after_track:
+            self.click(0.5, 0.5, after_sleep=1)
 
         # 点击”前往传送“按钮
         result = self.wait_feature(

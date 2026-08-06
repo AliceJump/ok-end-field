@@ -421,7 +421,7 @@ from src.tasks.mixin.map_mixin import MapMixin
 
 def task_to_transfer_point(self)
 def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False)
-def to_near_transfer_point(self)
+def to_near_transfer_point(self, need_track)
 ```
 
 `task_to_transfer_point` 从任务界面定位地图，地图稳定后再调用 `to_near_transfer_point`。`to_near_transfer_point` 传送至附近传送点。
