@@ -420,7 +420,6 @@ def auto_battle(self, no_battle: bool = False)
 from src.tasks.mixin.map_mixin import MapMixin
 
 def task_to_transfer_point(self)
-def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False)
 def to_near_transfer_point(self)
 ```
 

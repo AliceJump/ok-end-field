@@ -699,10 +699,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                         if success:
                             break
                     if not success:
-                        if self._accepted_delivery_location:
-                            self.log_info("未能确定传送点搜索区域（地点未缓存或配置缺失），终止本轮送货")
-                        else:
-                            self.log_info("未缓存委托地点，送货失败")
+                        self.log_info("传送失败（未找到传送按钮），终止本轮送货")
                         return
                     if not self.to_storage_point_and_back_zip_line():
                         return
