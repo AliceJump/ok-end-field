@@ -3395,3 +3395,33 @@ msgstr "Tirolina de entrega"
 
 msgid "选择要显示的滑索配置分类。"
 msgstr "Elegir la categoría de configuración de tirolina a mostrar."
+
+msgid "⭐自动送货"
+msgstr "⭐Entrega automática"
+
+msgid "战斗模板持续检测"
+msgstr "Detección continua de plantillas de combate"
+
+msgid "持续检测 skill 和 ult 模板并输出命中位置与匹配分数"
+msgstr ""
+"Detecta continuamente las plantillas de skill y ult y muestra las posiciones"
+" de acierto y las puntuaciones de coincidencia"
+
+msgid "是否执行自动接取并完成运输委托。"
+msgstr "Si aceptar y completar automáticamente las comisiones de entrega."
+
+msgid "检测间隔(秒)"
+msgstr "Intervalo de detección (s)"
+
+msgid "每轮模板检测之间的等待时间，最小 0.05 秒"
+msgstr ""
+"Tiempo de espera entre cada ronda de detección de plantillas, mínimo 0.05 "
+"segundos"
+
+msgid "目标券数优先级序列，用逗号分隔多个券数。"
+msgstr ""
+"Secuencia de prioridad de cantidades objetivo de cupones, separadas por "
+"comas."
+
+msgid "通过下拉框切换送货地区配置。"
+msgstr "Cambiar la región de entrega con el desplegable."
