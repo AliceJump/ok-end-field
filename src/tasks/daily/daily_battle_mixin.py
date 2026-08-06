@@ -639,8 +639,23 @@ class DailyBattleFeature:
                                 settle_time=1)
             self.click_confirm()
         else:
-            self.wait_click_feature(feature=fL.restart_battle, vertical_variance=0.1, time_out=5,
-                                click_after_delay=1, raise_if_not_found=False)
+            # 一个循环：先等『重新挑战』按钮出现，出现后点击，再等按钮消失
+            restart_deadline = self.active_time() + 15
+            found = False  # 是否已检测到『重新挑战』按钮
+            while True:
+                restart_boxes = self.find_feature(feature=fL.restart_battle, vertical_variance=0.1)
+                if restart_boxes:
+                    # 按钮出现 → 点击
+                    self.click(restart_boxes[0], after_sleep=0.5)
+                    found = True
+                elif found:
+                    # 已点击过且按钮消失 → 完成
+                    break
+                if self.active_time() > restart_deadline:
+                    self.log_info("『重新挑战』按钮处理超时，结束本轮")
+                    return False
+                self.next_frame()
+                self.sleep(0.5)  # 防止空转
         return True
 
     def battle_recycle(self):
@@ -683,7 +698,23 @@ class DailyBattleFeature:
                 self.battle_ctx.left_ticket = self.get_claim()
                 #
                 if self.battle_ctx.left_ticket <= 0:
-                    self.wait_click_feature(feature=fL.left_battle, vertical_variance=0.1, time_out=10, raise_if_not_found=False, settle_time=1)
+                    # 一个循环：先等『离开战斗』按钮出现，出现后点击，再等按钮消失
+                    left_battle_deadline = self.active_time() + 15
+                    left_found = False  # 是否已检测到『离开战斗』按钮
+                    while True:
+                        left_battle_boxes = self.find_feature(feature=fL.left_battle, vertical_variance=0.1)
+                        if left_battle_boxes:
+                            # 按钮出现 → 点击
+                            self.click(left_battle_boxes[0], after_sleep=0.5)
+                            left_found = True
+                        elif left_found:
+                            # 已点击过且按钮消失 → 完成
+                            break
+                        if self.active_time() > left_battle_deadline:
+                            self.log_info("『离开战斗』按钮处理超时，结束本轮")
+                            return False
+                        self.next_frame()
+                        self.sleep(0.5)  # 防止空转
 
                     # 如果体力耗尽但设置了额外刷取次数，则开始额外刷取
                     self.battle_ctx.is_extra_mode = self.battle_ctx.extra_run_limit > 0 and self.battle_ctx.extra_run_count < self.battle_ctx.extra_run_limit
