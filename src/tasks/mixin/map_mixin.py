@@ -134,10 +134,14 @@ class MapMixin(BaseEfTask):
                 True  - 成功执行传送
                 False - 未找到传送点或传送失败
         """
+
         # 清空当前地图选中标记避免误触
-        self.clear_icon_in_map()
+        if not self.clear_icon_in_map():
+            return False
+
         # 点击屏幕中心的淤积点/物资调度终端/演武平台
         self.click(0.5, 0.5, after_sleep=1)
+
         # 点击前往传送
         result = self.wait_feature(
             feature=fL.transfer_go,
@@ -148,6 +152,7 @@ class MapMixin(BaseEfTask):
         if not result:
             return False
         self.click(result, after_sleep=1)
+
         # 点击传送
         result = self.wait_feature(
             feature=fL.transfer,
@@ -157,4 +162,5 @@ class MapMixin(BaseEfTask):
         if not result:
             return False
         self.click(result, after_sleep=1)
+        
         return True
