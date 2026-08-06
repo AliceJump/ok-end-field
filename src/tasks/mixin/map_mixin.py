@@ -158,25 +158,33 @@ class MapMixin(BaseEfTask):
         if after_track:
             self.click(0.5, 0.5, after_sleep=1)
 
-        # 点击”前往传送“按钮
+        # 查找“前往传送”按钮
         result = self.wait_feature(
             feature=fL.transfer_go,
             time_out=10,
             raise_if_not_found=False,
             horizontal_variance=0.2,
         )
+
+        # 如果未找到“前往传送”按钮
         if not result:
             return False
+
+        # 点击”前往传送“按钮
         self.click(result, after_sleep=1)
 
-        # 点击”传送“按钮
+        # 查找“传送”按钮
         result = self.wait_feature(
             feature=fL.transfer_go,
             time_out=10,
             raise_if_not_found=False,
         )
+
+        # 如果未找到传送按钮
         if not result:
             return False
+
+        # 点击”传送“按钮
         self.click(result, after_sleep=1)
 
         return True
