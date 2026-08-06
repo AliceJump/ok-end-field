@@ -3,7 +3,7 @@ from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
 
 class MapMixin(BaseEfTask):
-    def task_to_transfer_point(self):
+    def task_to_transfer_point(self, need_location_list=None):
         """
         传送到运输委托对应的出发传送点。
 
@@ -13,6 +13,10 @@ class MapMixin(BaseEfTask):
         3. 点击“任务定位到地图”的按钮。
         4. 等待地图稳定。
         5. 传送至附近传送点。
+
+        Args:
+            need_location_list: 需要记录的候选地名列表（本地化名称）；
+                地图稳定后 OCR 右上角，命中则把当前地区名记录到 self.location
 
         Returns:
             bool:
@@ -57,7 +61,7 @@ class MapMixin(BaseEfTask):
         self.wait_ui_stable(refresh_interval=1)
 
         # 执行附近传送点传送
-        return self.to_near_transfer_point()
+        return self.to_near_transfer_point(need_location_list=need_location_list)
 
     def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False):
         """
@@ -118,7 +122,7 @@ class MapMixin(BaseEfTask):
 
         return True
 
-    def to_near_transfer_point(self):
+    def to_near_transfer_point(self, need_location_list=None):
         """
         在地图上寻找最近的传送点并执行传送。
 
@@ -129,18 +133,25 @@ class MapMixin(BaseEfTask):
         4. 在地图上搜索传送点图标。若找到则点击”前往传送“按钮。
         5. 在地图上搜索传送点图标。若找到则点击”传送“按钮。
 
+        Args:
+            need_location_list: 需要记录的候选地名列表（本地化名称）；
+                命中则把地图右上角显示的当前地区名记录到 self.location，供调用方回填缓存
+
         Returns:
             bool:
                 True  - 成功执行传送
                 False - 未找到传送点或传送失败
         """
 
-        # 清空当前地图选中标记避免误触
-        if not self.clear_icon_in_map():
-            return False
-
-        # 点击屏幕中心的淤积点/物资调度终端/演武平台
-        self.click(0.5, 0.5, after_sleep=1)
+        # 地图右上角显示当前地区名，命中候选地名则记录到 self.location
+        if need_location_list:
+            if location := self.wait_ocr(
+                match=need_location_list,
+                box=self.box.top_right,
+                time_out=4,
+                log=True,
+            ):
+                self.location = location[0].name
 
         # 点击”前往传送“按钮
         result = self.wait_feature(
