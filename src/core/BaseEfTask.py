@@ -15,7 +15,12 @@ from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.process_manager import ProcessManager
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.core.base_mixin.window_arrow_drawing_mixin import WindowArrowDrawingMixin
-from src.core.global_config_store import ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME, KEY_CONFIG_NAME, get_global_config
+from src.core.global_config_store import (
+    ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME,
+    KEY_CONFIG_NAME,
+    get_global_config,
+    migrate_task_zip_line_values_to_global,
+)
 from src.core.config_migration import migrate_config_file_keys, migrate_config_values
 from src.core.game_window import find_game_hwnd
 from src.config import config as app_config
@@ -239,6 +244,10 @@ class BaseEfTask(
                 value_migrations.update(vtable)
         migrate_config_file_keys(self.__class__.__name__, key_migrations)
         migrate_config_values(self.__class__.__name__, value_migrations)
+        # 在框架 Config 构造（verify_config 会删除任务文件中不在 default 的滑索键）之前，
+        # 把任务文件中的滑索旧值转存到全局 Zip Line Config.json，避免全局侧 legacy 收集
+        # 在任务文件滑索键已被删除后读不到值。
+        migrate_task_zip_line_values_to_global(self.__class__.__name__)
         super().load_config()
 
     def box_of_screen(

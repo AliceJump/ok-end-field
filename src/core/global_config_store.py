@@ -347,6 +347,41 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
     _write_migration_state(state)
 
 
+def migrate_task_zip_line_values_to_global(task_class_name: str) -> None:
+    """任务侧 load_config 时调用：在框架 verify_config 删除任务文件滑索键之前，
+    把任务文件中的滑索键值转存到全局 Zip Line Config.json。
+
+    背景：任务 default_config 不含滑索键，框架 Config 构造（verify_config）会
+    丢弃并写回删除任务文件中不在 default 的键。若先让任务加载，全局侧
+    _collect_legacy_zip_line_values 就再也读不到这些滑索值。
+
+    本函数在 super().load_config()（触发框架删键）之前执行，把滑索值写入
+    全局（setdefault 语义：全局已有非默认值则不覆盖）。不依赖迁移标记，
+    因此迁移标记已打的历史场景也能兜底继承。
+    """
+    config_file = get_relative_path("configs", f"{task_class_name}.json")
+    data = read_json_file(config_file)
+    if not isinstance(data, dict):
+        return
+
+    candidates = {}
+    for raw_key, value in data.items():
+        key = _ZIP_LINE_KEY_MIGRATIONS.get(raw_key, raw_key)
+        default_value = ZIP_LINE_DEFAULT_CONFIG.get(key)
+        if key not in ZIP_LINE_DEFAULT_CONFIG:
+            continue
+        if type(value) is type(default_value) and value != default_value:
+            candidates[key] = value
+    if not candidates:
+        return
+
+    zlc = get_global_config(ZIP_LINE_CONFIG_NAME)
+    for key, value in candidates.items():
+        default_value = ZIP_LINE_DEFAULT_CONFIG.get(key)
+        if key not in zlc or zlc.get(key) == default_value:
+            zlc[key] = value
+
+
 def get_global_config(name: str) -> Config:
     with _LOCK:
         option = _OPTIONS.get(name)
