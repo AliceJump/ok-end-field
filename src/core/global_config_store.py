@@ -123,6 +123,7 @@ def _same_type(value: Any, default_value: Any) -> bool:
 
 def _coerce_legacy_value(key: str, value: Any, default_value: Any) -> Any:
     if key == "技能释放" and isinstance(default_value, list) and isinstance(value, str):
+        # 旧格式为无逗号连续字符（如 "31" → ["3", "1"]）。
         skills = [char for char in value if char.strip()]
         return skills or default_value
     return value
@@ -250,7 +251,56 @@ def _migrate_legacy_zip_line_account_overrides() -> None:
     update_overrides(apply)
 
 
-def _migrate_legacy_task_config(config: Config, option: ConfigOption) -> None:
+def _migrate_key_names_in_file(
+    option_name: str, migrations: dict[str, str], defaults: dict[str, Any]
+) -> None:
+    """文件级键名迁移：旧键值复制到新键，旧键保留（回滚安全）。
+
+    - 旧键存在且值非默认，新键缺失或为默认值 → 用旧值填充新键。
+      这样即使文件里新键已被框架补全成空默认值，旧值也能搬入。
+    - 反向（新键 → 旧键）：旧键缺失时补一份，保证回滚安全。
+
+    使用本模块的 get_relative_path，避免跨模块补丁遗漏读写真实 configs 目录。
+    """
+    if not migrations:
+        return
+
+    config_file = get_relative_path("configs", f"{option_name}.json")
+    config = read_json_file(config_file)
+    if not isinstance(config, dict):
+        return
+
+    reverse = {v: k for k, v in migrations.items()}
+    modified = False
+    for json_key in list(config.keys()):
+        if json_key in migrations:
+            new_key = migrations[json_key]
+            old_value = config[json_key]
+            new_value = config.get(new_key)
+            default_value = defaults.get(new_key)
+            if old_value != default_value and (
+                new_key not in config or new_value == default_value
+            ):
+                config[new_key] = old_value
+                modified = True
+        elif json_key in reverse:
+            old_key = reverse[json_key]
+            if old_key not in config:
+                config[old_key] = config[json_key]
+                modified = True
+
+    if modified:
+        write_json_file(config_file, config)
+
+
+def _migrate_legacy_config_file(option: ConfigOption) -> None:
+    """在框架 Config 构造之前，对配置文件做文件级迁移。
+
+    先做键名复制（旧键值 → 新键，旧键保留），再从 legacy 任务配置文件
+    收集旧值写入新键，最后写回文件。这样框架 Config 构造（verify_config
+    会删除文件中不在 default 的键并写回）读到的是已迁移好的文件，
+    避免「先删后迁移」导致旧值丢失。
+    """
     state = _read_migration_state()
     if option.name == BATTLE_CONFIG_NAME:
         _backup_legacy_task_configs(state)
@@ -266,14 +316,32 @@ def _migrate_legacy_task_config(config: Config, option: ConfigOption) -> None:
     if option.name in migrated_options:
         return
 
+    # 1. 键名迁移：把配置文件中不在 default 的旧键值复制到新键（旧键保留，回滚安全）
+    if option.name == ZIP_LINE_CONFIG_NAME:
+        _migrate_key_names_in_file(
+            option.name, _ZIP_LINE_KEY_MIGRATIONS, ZIP_LINE_DEFAULT_CONFIG
+        )
+
+    # 2. 读取当前配置文件（键名复制后）
+    config_file = get_relative_path("configs", f"{option.name}.json")
+    config = read_json_file(config_file)
+    if not isinstance(config, dict):
+        config = {}
+
+    # 3. 从 legacy 任务配置文件收集旧值写入新键（仅当前值缺失或等于默认值时覆盖）
     values = (
         _collect_legacy_zip_line_values()
         if option.name == ZIP_LINE_CONFIG_NAME
         else _collect_legacy_values(option)
     )
+    modified = False
     for key, value in values.items():
-        if config.get(key) == option.default_config.get(key):
+        default_value = option.default_config.get(key)
+        if key not in config or config.get(key) == default_value:
             config[key] = value
+            modified = True
+    if modified:
+        write_json_file(config_file, config)
 
     migrated_options.append(option.name)
     _write_migration_state(state)
@@ -290,8 +358,10 @@ def get_global_config(name: str) -> Config:
 
         config = _CONFIGS.get(option.name)
         if config is None:
+            # 先做文件级迁移，再让框架 Config 构造（verify_config 会删掉不在 default 的键）。
+            # 这样旧键值在框架删除前就已复制到新键，避免「先删后迁移」导致旧值丢失。
+            _migrate_legacy_config_file(option)
             config = Config(option.name, option.default_config, validator=option.validator)
-            _migrate_legacy_task_config(config, option)
             _CONFIGS[option.name] = config
         return config
 
