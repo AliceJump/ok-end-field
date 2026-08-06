@@ -1,3 +1,4 @@
+import re
 from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
 
@@ -61,9 +62,11 @@ class MapMixin(BaseEfTask):
     def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False):
         """
         清理地图标记筛选，并可选择保留指定标记类型。
+
         Args:
             need_reserve_icon_name: 需要保留的标记名称(OCR文本或Feature名称)
             ocr: True使用OCR查找标记，False使用Feature匹配
+
         Returns:
             bool: 操作成功返回True，否则返回False
         """
@@ -116,15 +119,29 @@ class MapMixin(BaseEfTask):
         return True
 
     def to_near_transfer_point(self):
+        """
+        在地图上寻找最近的传送点并执行传送。
+
+        流程：
+        1. 打开“标记显示管理”。
+        2. 清空当前地图选中标记。
+        3. 在地图上搜索传送点图标。若找到则点击[前往传送]。
+        4. 在地图上搜索传送点图标。若找到则点击[传送]。
+
+        Returns:
+            bool:
+                True  - 成功执行传送
+                False - 未找到传送点或传送失败
+        """
         # 清空当前地图选中标记避免误触
         self.clear_icon_in_map()
         # 点击屏幕中心的淤积点/物资调度终端/演武平台
         self.click(0.5, 0.5, after_sleep=1)
         # 点击前往传送
         result = self.wait_feature(
-            feature=fL.transfer_go, 
-            time_out=10, 
-            raise_if_not_found=False, 
+            feature=fL.transfer_go,
+            time_out=10,
+            raise_if_not_found=False,
             horizontal_variance=0.2,
         )
         if not result:
@@ -132,8 +149,8 @@ class MapMixin(BaseEfTask):
         self.click(result, after_sleep=1)
         # 点击传送
         result = self.wait_feature(
-            feature=fL.transfer_go, 
-            time_out=10, 
+            feature=fL.transfer,
+            time_out=10,
             raise_if_not_found=False,
         )
         if not result:
