@@ -691,12 +691,8 @@ msgstr ""
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
 msgstr "按地區執行所選操作：先據點兌換，再執行買賣貨的買；啟用買物資時，買完後切換到穩定物資需求購買，最後切回彈性需求物資執行賣。"
 
-msgid ""
-"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
-"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr ""
-"按帳號和任務配置獨立引數。先選帳號，再選任務，下面會自動出現該任務的屬性控制項。帳號頁只需填寫帳號名（手機號），無需填寫密碼。系統相容舊格式 "
-"`帳號,密碼` 但不會儲存密碼。登入時也可只使用手機號後四碼進行匹配（若唯一）。"
+msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr "按帳號和任務配置獨立引數。先選帳號，再選任務，下面會自動出現該任務的屬性控制項。帳號頁只需填寫帳號名（手機號），無需填寫密碼。系統相容舊格式 `帳號,密碼` 但不會儲存密碼。登入時也可只使用手機號後四碼進行匹配（若唯一）。"
 
 msgid "据点兑换"
 msgstr "據點兌換"
@@ -1440,3 +1436,222 @@ msgstr ""
 
 msgid "齐纶"
 msgstr "齊綸"
+
+msgid "滑索配置"
+msgstr "滑索配置"
+
+msgid "键位配置"
+msgstr "鍵位配置"
+
+msgid "基础配置"
+msgstr "基礎配置"
+
+msgid "游戏内快捷键配置"
+msgstr "遊戲內快捷鍵配置"
+
+msgid "全局战斗配置"
+msgstr "全域戰鬥配置"
+
+msgid "主界面单次动作后延迟"
+msgstr "主介面單次動作後延遲"
+
+msgid "滑索路线与距离序列配置"
+msgstr "滑索路線與距離序列配置"
+
+msgid "Action List"
+msgstr "動作列表"
+
+msgid "Area Build Key"
+msgstr "區域建造鍵"
+
+msgid "Auto"
+msgstr "自動"
+
+msgid "Auto Resize Game Window"
+msgstr "自動調整遊戲視窗"
+
+msgid "Auto Start Game When App Starts"
+msgstr "啟動時自動啟動遊戲"
+
+msgid "Backpack Key"
+msgstr "背包鍵"
+
+msgid "Baker Key"
+msgstr "烘焙師鍵"
+
+msgid "Basic Options"
+msgstr "基礎選項"
+
+msgid "Blueprint Key"
+msgstr "藍圖鍵"
+
+msgid "Diagnosis"
+msgstr "診斷"
+
+msgid "Dodge Key"
+msgstr "閃避鍵"
+
+msgid "Equipment List Key"
+msgstr "裝備清單鍵"
+
+msgid "Exit After Task"
+msgstr "完成後退出"
+
+msgid "Exit App when Game Exits"
+msgstr "遊戲退出時退出應用程式"
+
+msgid "Exit the Game and the App after Successfully Executing the Task"
+msgstr "任務執行成功後退出遊戲和應用程式"
+
+msgid "Handbook Key"
+msgstr "手冊鍵"
+
+msgid "HotKey"
+msgstr "快速鍵"
+
+msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgstr "增加任務觸發間隔以減少 CPU/GPU 使用率（毫秒）"
+
+msgid "Industry Plan Key"
+msgstr "產業計畫鍵"
+
+msgid "Interact Key"
+msgstr "互動鍵"
+
+msgid "Jump Key"
+msgstr "跳躍鍵"
+
+msgid "Kill Launcher After Start"
+msgstr "啟動後關閉啟動器"
+
+msgid "Launch with DX11"
+msgstr "使用 DX11 啟動"
+
+msgid "Link Skill Key"
+msgstr "連攜技能鍵"
+
+msgid "Mail Key"
+msgstr "郵件鍵"
+
+msgid "Map Key"
+msgstr "地圖鍵"
+
+msgid "Minimize Window to System Tray when Closing"
+msgstr "關閉時最小化到系統匣"
+
+msgid "Mission Key"
+msgstr "任務鍵"
+
+msgid "Mute Game while in Background"
+msgstr "背景執行時靜音遊戲"
+
+msgid "No"
+msgstr "否"
+
+msgid "None"
+msgstr "無"
+
+msgid "Operation"
+msgstr "操作"
+
+msgid "Operator Key"
+msgstr "操作員鍵"
+
+msgid "Overview Mode Key"
+msgstr "總覽模式鍵"
+
+msgid "Performance Test"
+msgstr "效能測試"
+
+msgid "Place Belt Key"
+msgstr "放置傳送帶鍵"
+
+msgid "Place Pipeline Key"
+msgstr "放置管線鍵"
+
+msgid "Product Icon Toggle Key"
+msgstr "產品圖示切換鍵"
+
+msgid "Quick Tool Key"
+msgstr "快速工具鍵"
+
+msgid "Recruitment Key"
+msgstr "招募鍵"
+
+msgid "SingleActionWithDelay"
+msgstr "SingleActionWithDelay"
+
+msgid "Start/Stop"
+msgstr "啟動/停止"
+
+msgid "Storage Mode Key"
+msgstr "倉儲模式鍵"
+
+msgid "Team Key"
+msgstr "隊伍鍵"
+
+msgid "Track Key"
+msgstr "追蹤鍵"
+
+msgid "Trigger Interval"
+msgstr "觸發間隔"
+
+msgid "Use DirectML"
+msgstr "使用 DirectML"
+
+msgid "Use GPU to Improve Performance"
+msgstr "使用 GPU 提升效能"
+
+msgid "Use the skill set when conditions are met"
+msgstr "當條件符合時使用技能組"
+
+msgid "Valuables Key"
+msgstr "貴重品鍵"
+
+msgid "Yes"
+msgstr "是"
+
+msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
+msgstr "儲存目前帳號的完整任務設定快照。任務預設值變更不會影響已儲存的帳號。"
+
+msgid "全部配置"
+msgstr "全部配置"
+
+msgid ""
+"启用后在对齐滑索时会自动滚动放大视角\n"
+"可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
+"建议启用此项时不要使用非白发或有白帽角色"
+msgstr ""
+"啟用後在對齊滑索時會自動滾動放大視角\n"
+"可能會提高對齊成功率，但也可能導致對齊成功率下降較為明顯\n"
+"建議啟用此項時不要使用非白發或有白帽角色"
+
+msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
+msgstr "已重新整理帳號與任務配置（帳號頁帳號列表與任務帳號列表獨立）"
+
+msgid "当前视图：{view_mode} | 展示 {count} / {total} 项"
+msgstr "當前檢視：{view_mode} | 顯示 {count} / {total} 項"
+
+msgid "淤积点滑索"
+msgstr "淤積點滑索"
+
+msgid "滑索距离序列，用逗号分隔。"
+msgstr "滑索距離序列，用逗號分隔。"
+
+msgid "滑索配置分类"
+msgstr "滑索配置分類"
+
+msgid "送货滑索"
+msgstr "送貨滑索"
+
+msgid "选择要显示的滑索配置分类。"
+msgstr "選擇要顯示的滑索配置分類。"
+
+msgid "已保存当前账号配置"
+msgstr "已保存當前帳號配置"
+
+msgid "当前账号配置没有变化"
+msgstr "當前帳號配置沒有變化"
+
+msgid "仅差异项"
+msgstr "僅差異項"

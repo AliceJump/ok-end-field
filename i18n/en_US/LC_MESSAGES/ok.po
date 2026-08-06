@@ -139,9 +139,7 @@ msgid "三相纳米片"
 msgstr "Triphase Nanosheet"
 
 msgid "不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
-msgstr ""
-"Do not pick crops mass-produced by farms or planting/harvesting lines: 琼叶参, "
-"金石稻, 芽针, 锦草, 苦叶椒, 砂叶, 灰芦麦, 柑实, 荞花, 酮化灌木."
+msgstr "Do not pick crops mass-produced by farms or planting/harvesting lines: 琼叶参, 金石稻, 芽针, 锦草, 苦叶椒, 砂叶, 灰芦麦, 柑实, 荞花, 酮化灌木."
 
 msgid "不换队伍"
 msgstr "Don't Change Team"
@@ -190,8 +188,7 @@ msgid "仅送货"
 msgstr "Deliver Only"
 
 msgid "从发货仓库取出指定物品，切到收货仓库后一键存放 （目前只支持中文版）"
-msgstr ""
-"Transfer specified items from warehouse to another warehouse (Chinese only)"
+msgstr "Transfer specified items from warehouse to another warehouse (Chinese only)"
 
 msgid "从账号列表或已有覆盖中选择"
 msgstr "Select from account list or existing overrides"
@@ -212,9 +209,7 @@ msgid "任务会按顺序依次对齐并滑行每段距离"
 msgstr "The task aligns and zips through each distance in order"
 
 msgid "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。"
-msgstr ""
-"After the task finishes, open the summary file with the system default app. "
-"If disabled, only create the file."
+msgstr "After the task finishes, open the summary file with the system default app. If disabled, only create the file."
 
 msgid "任务属性配置"
 msgstr "Task Attribute Config"
@@ -417,10 +412,7 @@ msgid "启用后将只进行购买操作，不进行出售操作。"
 msgstr "When enabled, only purchase, no selling."
 
 msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
-msgstr ""
-"When enabled, stronghold exchange only buys items in the \"Trading Goods "
-"Priority List\" when it is not empty; if the list is empty, the original "
-"exchange logic is used."
+msgstr "When enabled, stronghold exchange only buys items in the \"Trading Goods Priority List\" when it is not empty; if the list is empty, the original exchange logic is used."
 
 msgid "启用实时条件"
 msgstr "Enable Real-Time Conditions"
@@ -464,9 +456,7 @@ msgstr ""
 "Release the Link Skill immediately when it is available"
 
 msgid "在演武台面前自动进入演算抽牌页，循环抽取直到满足等级变化条件"
-msgstr ""
-"Auto-enter the card draw page at the Combat Stage, keep drawing until level-"
-"up conditions are met."
+msgstr "Auto-enter the card draw page at the Combat Stage, keep drawing until level-up conditions are met."
 
 msgid "地区切换"
 msgstr "Region Switch"
@@ -543,16 +533,13 @@ msgid "实时检测"
 msgstr "Real-time Detection"
 
 msgid "对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低"
-msgstr ""
-"Auto-zooms in when aligning zip lines; may improve or clearly reduce success "
-"rate"
+msgstr "Auto-zooms in when aligning zip lines; may improve or clearly reduce success rate"
 
 msgid "导航到演武集算『演算』入口"
 msgstr "Navigate to the \"演算\" entrance of 演武集算"
 
 msgid "将次要目标方向蓝点对齐到屏幕中心"
-msgstr ""
-"Align the secondary target direction blue dot to the center of the screen"
+msgstr "Align the secondary target direction blue dot to the center of the screen"
 
 msgid "尝试仅收培育室"
 msgstr "Try Cultivation Room Only"
@@ -607,8 +594,7 @@ msgstr ""
 "Range: 1-3."
 
 msgid "当前账号的 hg/check data.content 值，用于官方地图位置同步"
-msgstr ""
-"Current account hg/check data.content value for official map position sync"
+msgstr "Current account hg/check data.content value for official map position sync"
 
 msgid "当条件符合时使用技能组"
 msgstr "Use the skill set when conditions are met"
@@ -677,9 +663,7 @@ msgid "技能释放"
 msgstr "Skill Release"
 
 msgid "持续检测 skill 和 ult 模板并输出命中位置与匹配分数"
-msgstr ""
-"Continuously detect skill and ult templates and output hit positions and "
-"match scores"
+msgstr "Continuously detect skill and ult templates and output hit positions and match scores"
 
 msgid "持续读取并显示当前箭头的角度"
 msgstr "Continuously read and display arrow angle"
@@ -703,20 +687,10 @@ msgstr ""
 "Select from 1/2/3/4 and sort, keep at least one."
 
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
-msgstr ""
-"Execute the selected operations by region: first outpost exchange, then buy "
-"in buy & sell; when buy supplies is enabled, switch to stable supply needs to"
-" buy after buying, then switch back to flexible supply needs to sell."
+msgstr "Execute the selected operations by region: first outpost exchange, then buy in buy & sell; when buy supplies is enabled, switch to stable supply needs to buy after buying, then switch back to flexible supply needs to sell."
 
-msgid ""
-"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
-"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr ""
-"Configure independent parameters per account and task. Select account first, "
-"then task, and the attribute controls will appear automatically. Only the "
-"account name (phone) is needed, no password. Compatible with legacy "
-"`account,password` format but passwords are not saved. Login also accepts the"
-" last 4 digits of the phone number for matching (if unique)."
+msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr "Configure independent parameters per account and task. Select account first, then task, and the attribute controls will appear automatically. Only the account name (phone) is needed, no password. Compatible with legacy `account,password` format but passwords are not saved. Login also accepts the last 4 digits of the phone number for matching (if unique)."
 
 msgid "据点兑换"
 msgstr "Outpost Exchange"
@@ -828,9 +802,7 @@ msgstr ""
 "Different parameters per account for same task"
 
 msgid "是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"
-msgstr ""
-"Whether to transfer all delivery commissions in \"Regional Operations / "
-"Warehouse Node\" and claim the transfer commission rewards once."
+msgstr "Whether to transfer all delivery commissions in \"Regional Operations / Warehouse Node\" and claim the transfer commission rewards once."
 
 msgid ""
 "是否在「帝江号」打开背包并点击「一键存放」。\n"
@@ -855,14 +827,10 @@ msgstr ""
 "Ignored when Terminate on Exception is on"
 
 msgid "是否在日常任务结束后传送到帝江号右侧传送点。"
-msgstr ""
-"Whether to teleport to the right waypoint of Dijiang after the daily task "
-"ends."
+msgstr "Whether to teleport to the right waypoint of Dijiang after the daily task ends."
 
 msgid "是否执行一次外部命令行程序（可在「外部命令执行时机」选择在最开始或最后执行）。"
-msgstr ""
-"Whether to run an external command once. Use External Command Timing to run "
-"it at the start or end."
+msgstr "Whether to run an external command once. Use External Command Timing to run it at the start or end."
 
 msgid "是否执行演武集算任务"
 msgstr "Execute Combat Simulation Task"
@@ -895,9 +863,7 @@ msgid "普里莫"
 msgstr "Primo"
 
 msgid "暂停时间应超过此值，用于观察恢复后的行为"
-msgstr ""
-"The pause duration should exceed this value, to observe the behavior after "
-"recovery"
+msgstr "The pause duration should exceed this value, to observe the behavior after recovery"
 
 msgid "暂停计时验证"
 msgstr "Pause Timing Verification"
@@ -961,9 +927,7 @@ msgid "武陵物资卖出价格下限，不足则拒绝卖出。若必卖，则�
 msgstr "Wuling sell price floor. Set to 1 if must sell."
 
 msgid "每个键对应一条滑索路线，值为距离序列，用英文逗号分隔"
-msgstr ""
-"Each key is a zip line route; the value is a distance sequence, comma-"
-"separated"
+msgstr "Each key is a zip line route; the value is a distance sequence, comma-separated"
 
 msgid "每次检测后的等待时间"
 msgstr "Wait time after each detection"
@@ -972,13 +936,10 @@ msgid "每行一个账号名（手机号），无需密码"
 msgstr "One account (phone) per line, no password needed"
 
 msgid "每轮最多抽牌5次；未满足条件时点击左下角『放弃』并重新开始。"
-msgstr ""
-"Max 5 draws per round; if conditions are not met, click \"Give Up\" at "
-"bottom-left and restart."
+msgstr "Max 5 draws per round; if conditions are not met, click \"Give Up\" at bottom-left and restart."
 
 msgid "每轮模板检测之间的等待时间，最小 0.05 秒"
-msgstr ""
-"Wait time between each round of template detection, minimum 0.05 seconds"
+msgstr "Wait time between each round of template detection, minimum 0.05 seconds"
 
 msgid "汤汤"
 msgstr "Tangtang"
@@ -1074,9 +1035,7 @@ msgid "白垩界卫"
 msgstr "Marble Aggelomoirai"
 
 msgid "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"
-msgstr ""
-"Listen to WebSocket location data, point to nearest item and support key "
-"marking"
+msgstr "Listen to WebSocket location data, point to nearest item and support key marking"
 
 msgid "目标券数"
 msgstr "Target Ticket Count"
@@ -1298,8 +1257,7 @@ msgid "运送委托接取"
 msgstr "Auto Accept Delivery Orders"
 
 msgid "进入战斗后开始自动操作前的等待秒数。"
-msgstr ""
-"Wait time in seconds before auto-operation starts after entering battle."
+msgstr "Wait time in seconds before auto-operation starts after entering battle."
 
 msgid "进入战斗后的初始等待时间"
 msgstr "Initial wait time after entering battle"
@@ -1325,13 +1283,10 @@ msgstr ""
 "Cultivation bay: collect cultivation materials and directly cultivate again."
 
 msgid "选择当前任务使用全局或独立战斗配置。"
-msgstr ""
-"Choose whether the current task uses the global or the independent battle "
-"config."
+msgstr "Choose whether the current task uses the global or the independent battle config."
 
 msgid "选择执行时机：任务最开始时最先执行，或任务最后执行。"
-msgstr ""
-"Choose timing: execute at the very start or at the end of the daily tasks."
+msgstr "Choose timing: execute at the very start or at the end of the daily tasks."
 
 msgid "选择模型 labels 的 value 作为目标类别"
 msgstr "Select model labels value as target class"
@@ -1373,8 +1328,7 @@ msgstr ""
 "Scratch-off: perform the scratch-off."
 
 msgid "逐个检测四个技能位置并输出模板匹配结果"
-msgstr ""
-"Detect the four skill slots one by one and output template matching results"
+msgstr "Detect the four skill slots one by one and output template matching results"
 
 msgid "通向武陵城送货点"
 msgstr "To Wuling City Delivery Point"
@@ -1480,3 +1434,222 @@ msgstr ""
 
 msgid "齐纶"
 msgstr "Qi Lun"
+
+msgid "滑索配置"
+msgstr "Zipline Settings"
+
+msgid "键位配置"
+msgstr "Key Settings"
+
+msgid "基础配置"
+msgstr "Basic Settings"
+
+msgid "游戏内快捷键配置"
+msgstr "In-Game Hotkey Settings"
+
+msgid "全局战斗配置"
+msgstr "Global Battle Config"
+
+msgid "主界面单次动作后延迟"
+msgstr "Main UI Single-Action Delay"
+
+msgid "滑索路线与距离序列配置"
+msgstr "Zipline Routes & Distance Sequences"
+
+msgid "Action List"
+msgstr "Action List"
+
+msgid "Area Build Key"
+msgstr "Area Build Key"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Auto Resize Game Window"
+msgstr "Auto Resize Game Window"
+
+msgid "Auto Start Game When App Starts"
+msgstr "Auto Start Game When App Starts"
+
+msgid "Backpack Key"
+msgstr "Backpack Key"
+
+msgid "Baker Key"
+msgstr "Baker Key"
+
+msgid "Basic Options"
+msgstr "Basic Options"
+
+msgid "Blueprint Key"
+msgstr "Blueprint Key"
+
+msgid "Diagnosis"
+msgstr "Diagnosis"
+
+msgid "Dodge Key"
+msgstr "Dodge Key"
+
+msgid "Equipment List Key"
+msgstr "Equipment List Key"
+
+msgid "Exit After Task"
+msgstr "Exit After Task"
+
+msgid "Exit App when Game Exits"
+msgstr "Exit App when Game Exits"
+
+msgid "Exit the Game and the App after Successfully Executing the Task"
+msgstr "Exit the Game and the App after Successfully Executing the Task"
+
+msgid "Handbook Key"
+msgstr "Handbook Key"
+
+msgid "HotKey"
+msgstr "HotKey"
+
+msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgstr "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+
+msgid "Industry Plan Key"
+msgstr "Industry Plan Key"
+
+msgid "Interact Key"
+msgstr "Interact Key"
+
+msgid "Jump Key"
+msgstr "Jump Key"
+
+msgid "Kill Launcher After Start"
+msgstr "Kill Launcher After Start"
+
+msgid "Launch with DX11"
+msgstr "Launch with DX11"
+
+msgid "Link Skill Key"
+msgstr "Link Skill Key"
+
+msgid "Mail Key"
+msgstr "Mail Key"
+
+msgid "Map Key"
+msgstr "Map Key"
+
+msgid "Minimize Window to System Tray when Closing"
+msgstr "Minimize Window to System Tray when Closing"
+
+msgid "Mission Key"
+msgstr "Mission Key"
+
+msgid "Mute Game while in Background"
+msgstr "Mute Game while in Background"
+
+msgid "No"
+msgstr "No"
+
+msgid "None"
+msgstr "None"
+
+msgid "Operation"
+msgstr "Operation"
+
+msgid "Operator Key"
+msgstr "Operator Key"
+
+msgid "Overview Mode Key"
+msgstr "Overview Mode Key"
+
+msgid "Performance Test"
+msgstr "Performance Test"
+
+msgid "Place Belt Key"
+msgstr "Place Belt Key"
+
+msgid "Place Pipeline Key"
+msgstr "Place Pipeline Key"
+
+msgid "Product Icon Toggle Key"
+msgstr "Product Icon Toggle Key"
+
+msgid "Quick Tool Key"
+msgstr "Quick Tool Key"
+
+msgid "Recruitment Key"
+msgstr "Recruitment Key"
+
+msgid "SingleActionWithDelay"
+msgstr "SingleActionWithDelay"
+
+msgid "Start/Stop"
+msgstr "Start/Stop"
+
+msgid "Storage Mode Key"
+msgstr "Storage Mode Key"
+
+msgid "Team Key"
+msgstr "Team Key"
+
+msgid "Track Key"
+msgstr "Track Key"
+
+msgid "Trigger Interval"
+msgstr "Trigger Interval"
+
+msgid "Use DirectML"
+msgstr "Use DirectML"
+
+msgid "Use GPU to Improve Performance"
+msgstr "Use GPU to Improve Performance"
+
+msgid "Use the skill set when conditions are met"
+msgstr "Use the skill set when conditions are met"
+
+msgid "Valuables Key"
+msgstr "Valuables Key"
+
+msgid "Yes"
+msgstr "Yes"
+
+msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
+msgstr "Save a complete task configuration snapshot for the current account. Changes to task defaults will not affect saved accounts."
+
+msgid "全部配置"
+msgstr "All Config"
+
+msgid ""
+"启用后在对齐滑索时会自动滚动放大视角\n"
+"可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
+"建议启用此项时不要使用非白发或有白帽角色"
+msgstr ""
+"Auto-scroll zoom when aligning zipline\n"
+"May improve or reduce alignment success\n"
+"Avoid non-white hair or white hat characters"
+
+msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
+msgstr "Account & task config refreshed (account page list is independent from task account list)"
+
+msgid "当前视图：{view_mode} | 展示 {count} / {total} 项"
+msgstr "Current View: {view_mode} | Showing {count} / {total} items"
+
+msgid "淤积点滑索"
+msgstr "Energy Pool Zipline"
+
+msgid "滑索距离序列，用逗号分隔。"
+msgstr "Zipline distance sequence, separated by commas."
+
+msgid "滑索配置分类"
+msgstr "Zipline Config Category"
+
+msgid "送货滑索"
+msgstr "Delivery Zipline"
+
+msgid "选择要显示的滑索配置分类。"
+msgstr "Choose the zipline config category to display."
+
+msgid "已保存当前账号配置"
+msgstr "Account configuration saved"
+
+msgid "当前账号配置没有变化"
+msgstr "Account configuration is unchanged"
+
+msgid "仅差异项"
+msgstr "Diff Only"

@@ -139,9 +139,7 @@ msgid "三相纳米片"
 msgstr "삼상 나노시트"
 
 msgid "不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
-msgstr ""
-"농장이나 파종/수확 라인에서 대량 생산되는 작물은 줍지 않음：홍옥 인삼、금석벼、야침、금초、쓴맛 나는 "
-"고추、샌드리프、회보리、시트론、메밀꽃、아케톤。"
+msgstr "농장이나 파종/수확 라인에서 대량 생산되는 작물은 줍지 않음：홍옥 인삼、금석벼、야침、금초、쓴맛 나는 고추、샌드리프、회보리、시트론、메밀꽃、아케톤。"
 
 msgid "不换队伍"
 msgstr "팀 변경 없음"
@@ -414,9 +412,7 @@ msgid "启用后将只进行购买操作，不进行出售操作。"
 msgstr "활성화하면 구매만 하고 판매하지 않습니다."
 
 msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
-msgstr ""
-"활성화하면 「거래 상품 우선 순서」가 비어 있지 않을 때만 거점 교환은 그중의 상품만 구매합니다. 순서가 비어 있으면 원래 로직으로 "
-"교환합니다."
+msgstr "활성화하면 「거래 상품 우선 순서」가 비어 있지 않을 때만 거점 교환은 그중의 상품만 구매합니다. 순서가 비어 있으면 원래 로직으로 교환합니다."
 
 msgid "启用实时条件"
 msgstr "실시간 조건 활성화"
@@ -579,8 +575,7 @@ msgid "开启后仅显示与原配置不同的项"
 msgstr "활성화하면 기본 설정과 다른 항목만 표시"
 
 msgid "开启后等待外部命令执行完成；关闭则后台启动后立即继续。开启此选项可支持多账户模式。"
-msgstr ""
-"활성화하면 외부 명령이 끝날 때까지 대기하고, 비활성화하면 백그라운드 실행 후 즉시 계속합니다. 다중 계정 모드를 지원하려면 활성화하세요."
+msgstr "활성화하면 외부 명령이 끝날 때까지 대기하고, 비활성화하면 백그라운드 실행 후 즉시 계속합니다. 다중 계정 모드를 지원하려면 활성화하세요."
 
 msgid "开启后若检测到目标命令已在运行，将跳过本次启动。"
 msgstr "활성화하면 대상 명령이 이미 실행 중일 때 이번 실행을 건너뜁니다."
@@ -694,17 +689,10 @@ msgstr ""
 "1/2/3/4에서 선택하고 정렬하며, 최소 하나는 유지하세요."
 
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
-msgstr ""
-"지역별로 선택한 작업 실행：먼저 거점 교환, 다음으로 매매의 매수를 실행. 「물자 구매」를 활성화하면 구매 후 안정 물자 수요 구매로 "
-"전환하고, 마지막에 탄력 수요 물자 매도로 복귀."
+msgstr "지역별로 선택한 작업 실행：먼저 거점 교환, 다음으로 매매의 매수를 실행. 「물자 구매」를 활성화하면 구매 후 안정 물자 수요 구매로 전환하고, 마지막에 탄력 수요 물자 매도로 복귀."
 
-msgid ""
-"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
-"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr ""
-"계정 및 작업별로 독립적인 매개변수를 설정합니다. 계정을 선택하고 작업을 선택하면 속성 컨트롤이 자동으로 나타납니다. 계정 "
-"이름(전화번호)만 필요하며 비밀번호는 필요하지 않습니다. 레거시 형식 `계정,비밀번호`와 호환되지만 비밀번호는 저장되지 않습니다. 로그인 "
-"시 전화번호 끝 4자리로도 일치 가능합니다(고유한 경우)."
+msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr "계정 및 작업별로 독립적인 매개변수를 설정합니다. 계정을 선택하고 작업을 선택하면 속성 컨트롤이 자동으로 나타납니다. 계정 이름(전화번호)만 필요하며 비밀번호는 필요하지 않습니다. 레거시 형식 `계정,비밀번호`와 호환되지만 비밀번호는 저장되지 않습니다. 로그인 시 전화번호 끝 4자리로도 일치 가능합니다(고유한 경우)."
 
 msgid "据点兑换"
 msgstr "거점 교환"
@@ -1447,3 +1435,222 @@ msgstr ""
 
 msgid "齐纶"
 msgstr "치룬"
+
+msgid "滑索配置"
+msgstr "짚라인 설정"
+
+msgid "键位配置"
+msgstr "키 설정"
+
+msgid "基础配置"
+msgstr "기본 설정"
+
+msgid "游戏内快捷键配置"
+msgstr "게임 내 단축키 설정"
+
+msgid "全局战斗配置"
+msgstr "전역 전투 설정"
+
+msgid "主界面单次动作后延迟"
+msgstr "메인 화면 단일 동작 후 지연"
+
+msgid "滑索路线与距离序列配置"
+msgstr "짚라인 경로 및 거리 시퀀스"
+
+msgid "Action List"
+msgstr "동작 목록"
+
+msgid "Area Build Key"
+msgstr "지역 건설 키"
+
+msgid "Auto"
+msgstr "자동"
+
+msgid "Auto Resize Game Window"
+msgstr "게임 창 자동 크기 조정"
+
+msgid "Auto Start Game When App Starts"
+msgstr "앱 시작 시 게임 자동 시작"
+
+msgid "Backpack Key"
+msgstr "배낭 키"
+
+msgid "Baker Key"
+msgstr "베이커 키"
+
+msgid "Basic Options"
+msgstr "기본 옵션"
+
+msgid "Blueprint Key"
+msgstr "청사진 키"
+
+msgid "Diagnosis"
+msgstr "진단"
+
+msgid "Dodge Key"
+msgstr "회피 키"
+
+msgid "Equipment List Key"
+msgstr "장비 목록 키"
+
+msgid "Exit After Task"
+msgstr "작업 종료 후 종료"
+
+msgid "Exit App when Game Exits"
+msgstr "게임 종료 시 앱 종료"
+
+msgid "Exit the Game and the App after Successfully Executing the Task"
+msgstr "작업 성공 실행 후 게임 및 앱 종료"
+
+msgid "Handbook Key"
+msgstr "핸드북 키"
+
+msgid "HotKey"
+msgstr "단축키"
+
+msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgstr "작업 트리거 간격 증가로 CPU/GPU 사용량 감소(밀리초)"
+
+msgid "Industry Plan Key"
+msgstr "산업 계획 키"
+
+msgid "Interact Key"
+msgstr "상호작용 키"
+
+msgid "Jump Key"
+msgstr "점프 키"
+
+msgid "Kill Launcher After Start"
+msgstr "시작 후 런처 종료"
+
+msgid "Launch with DX11"
+msgstr "DX11로 시작"
+
+msgid "Link Skill Key"
+msgstr "링크 스킬 키"
+
+msgid "Mail Key"
+msgstr "우편 키"
+
+msgid "Map Key"
+msgstr "지도 키"
+
+msgid "Minimize Window to System Tray when Closing"
+msgstr "닫을 때 시스템 트레이로 최소화"
+
+msgid "Mission Key"
+msgstr "임무 키"
+
+msgid "Mute Game while in Background"
+msgstr "백그라운드에서 게임 음소거"
+
+msgid "No"
+msgstr "아니요"
+
+msgid "None"
+msgstr "없음"
+
+msgid "Operation"
+msgstr "작업"
+
+msgid "Operator Key"
+msgstr "오퍼레이터 키"
+
+msgid "Overview Mode Key"
+msgstr "개요 모드 키"
+
+msgid "Performance Test"
+msgstr "성능 테스트"
+
+msgid "Place Belt Key"
+msgstr "벨트 배치 키"
+
+msgid "Place Pipeline Key"
+msgstr "파이프라인 배치 키"
+
+msgid "Product Icon Toggle Key"
+msgstr "제품 아이콘 전환 키"
+
+msgid "Quick Tool Key"
+msgstr "빠른 도구 키"
+
+msgid "Recruitment Key"
+msgstr "모집 키"
+
+msgid "SingleActionWithDelay"
+msgstr "SingleActionWithDelay"
+
+msgid "Start/Stop"
+msgstr "시작/중지"
+
+msgid "Storage Mode Key"
+msgstr "저장 모드 키"
+
+msgid "Team Key"
+msgstr "팀 키"
+
+msgid "Track Key"
+msgstr "추적 키"
+
+msgid "Trigger Interval"
+msgstr "트리거 간격"
+
+msgid "Use DirectML"
+msgstr "DirectML 사용"
+
+msgid "Use GPU to Improve Performance"
+msgstr "GPU를 사용하여 성능 향상"
+
+msgid "Use the skill set when conditions are met"
+msgstr "조건이 맞으면 스킬 세트 사용"
+
+msgid "Valuables Key"
+msgstr "귀중품 키"
+
+msgid "Yes"
+msgstr "예"
+
+msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
+msgstr "현재 계정의 전체 작업 설정 스냅샷을 저장합니다. 작업 기본값이 변경되어도 저장된 계정에는 영향을 주지 않습니다."
+
+msgid "全部配置"
+msgstr "전체 설정"
+
+msgid ""
+"启用后在对齐滑索时会自动滚动放大视角\n"
+"可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
+"建议启用此项时不要使用非白发或有白帽角色"
+msgstr ""
+"집라인 정렬 시 자동으로 스크롤하여 화면을 확대합니다\n"
+"정렬 성공률이 높아지거나 크게 낮아질 수 있습니다\n"
+"활성화 시 흰 머리가 아니거나 흰 모자를 쓴 캐릭터는 사용하지 마세요"
+
+msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
+msgstr "계정 및 작업 설정 새로고침 (계정 페이지 목록은 작업 계정 목록과 독립적)"
+
+msgid "当前视图：{view_mode} | 展示 {count} / {total} 项"
+msgstr "현재 보기: {view_mode} | {count} / {total}개 항목 표시"
+
+msgid "淤积点滑索"
+msgstr "에너지 침적 지점 집라인"
+
+msgid "滑索距离序列，用逗号分隔。"
+msgstr "집라인 거리 시퀀스. 쉼표로 구분."
+
+msgid "滑索配置分类"
+msgstr "집라인 설정 분류"
+
+msgid "送货滑索"
+msgstr "배송 집라인"
+
+msgid "选择要显示的滑索配置分类。"
+msgstr "표시할 집라인 설정 분류 선택."
+
+msgid "已保存当前账号配置"
+msgstr "현재 계정 설정이 저장되었습니다"
+
+msgid "当前账号配置没有变化"
+msgstr "계정 설정에 변경 사항이 없습니다"
+
+msgid "仅差异项"
+msgstr "차이점만"

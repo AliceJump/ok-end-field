@@ -139,8 +139,7 @@ msgid "三相纳米片"
 msgstr "三相ナノシート"
 
 msgid "不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
-msgstr ""
-"農場や採種/植え付けラインで量産できる作物は拾わない：玉葉人参、金石稲、芽針、錦草、苦葉椒、サンドリーフ、灰麦、シトローム、蕎花、アケトン樹木。"
+msgstr "農場や採種/植え付けラインで量産できる作物は拾わない：玉葉人参、金石稲、芽針、錦草、苦葉椒、サンドリーフ、灰麦、シトローム、蕎花、アケトン樹木。"
 
 msgid "不换队伍"
 msgstr "チーム変更なし"
@@ -690,14 +689,10 @@ msgstr ""
 "1/2/3/4から選択して並べ替え、最低1つは保持。"
 
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
-msgstr ""
-"地域ごとに選択した操作を実行：まず拠点交換、次に売買の「買い」を実行。「物資を購入」を有効にすると、購入後は安定物資需要の購入に切り替え、最後に変動需要物資の売却に戻します。"
+msgstr "地域ごとに選択した操作を実行：まず拠点交換、次に売買の「買い」を実行。「物資を購入」を有効にすると、購入後は安定物資需要の購入に切り替え、最後に変動需要物資の売却に戻します。"
 
-msgid ""
-"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
-"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr ""
-"アカウントとタスクごとに独立したパラメーターを設定します。アカウントを選択し、タスクを選択すると、属性コントロールが自動表示されます。アカウント名（電話番号）のみ必要で、パスワードは不要です。レガシー形式「アカウント,パスワード」も互換性がありますが、パスワードは保存されません。ログイン時は電話番号下4桁での照合も可能です（一意の場合）。"
+msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr "アカウントとタスクごとに独立したパラメーターを設定します。アカウントを選択し、タスクを選択すると、属性コントロールが自動表示されます。アカウント名（電話番号）のみ必要で、パスワードは不要です。レガシー形式「アカウント,パスワード」も互換性がありますが、パスワードは保存されません。ログイン時は電話番号下4桁での照合も可能です（一意の場合）。"
 
 msgid "据点兑换"
 msgstr "拠点交換"
@@ -1441,3 +1436,222 @@ msgstr ""
 
 msgid "齐纶"
 msgstr "チールン"
+
+msgid "滑索配置"
+msgstr "ジップライン設定"
+
+msgid "键位配置"
+msgstr "キー設定"
+
+msgid "基础配置"
+msgstr "基本設定"
+
+msgid "游戏内快捷键配置"
+msgstr "ゲーム内ホットキー設定"
+
+msgid "全局战斗配置"
+msgstr "グローバル戦闘設定"
+
+msgid "主界面单次动作后延迟"
+msgstr "メイン画面の単一動作後遅延"
+
+msgid "滑索路线与距离序列配置"
+msgstr "ジップライン経路と距離シーケンス"
+
+msgid "Action List"
+msgstr "アクションリスト"
+
+msgid "Area Build Key"
+msgstr "エリア建築キー"
+
+msgid "Auto"
+msgstr "自動"
+
+msgid "Auto Resize Game Window"
+msgstr "ゲームウィンドウを自動リサイズ"
+
+msgid "Auto Start Game When App Starts"
+msgstr "アプリ起動時にゲームを自動起動"
+
+msgid "Backpack Key"
+msgstr "バックパックキー"
+
+msgid "Baker Key"
+msgstr "ベーカーキー"
+
+msgid "Basic Options"
+msgstr "基本オプション"
+
+msgid "Blueprint Key"
+msgstr "設計図キー"
+
+msgid "Diagnosis"
+msgstr "診断"
+
+msgid "Dodge Key"
+msgstr "回避キー"
+
+msgid "Equipment List Key"
+msgstr "装備リストキー"
+
+msgid "Exit After Task"
+msgstr "タスク終了後に終了"
+
+msgid "Exit App when Game Exits"
+msgstr "ゲーム終了時にアプリも終了"
+
+msgid "Exit the Game and the App after Successfully Executing the Task"
+msgstr "タスク成功実行後にゲームとアプリを終了"
+
+msgid "Handbook Key"
+msgstr "ハンドブックキー"
+
+msgid "HotKey"
+msgstr "ホットキー"
+
+msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgstr "タスク間遅延を増やしてCPU/GPU使用率を低減（ミリ秒）"
+
+msgid "Industry Plan Key"
+msgstr "産業計画キー"
+
+msgid "Interact Key"
+msgstr "インタラクトキー"
+
+msgid "Jump Key"
+msgstr "ジャンプキー"
+
+msgid "Kill Launcher After Start"
+msgstr "起動後にランチャーを終了"
+
+msgid "Launch with DX11"
+msgstr "DX11で起動"
+
+msgid "Link Skill Key"
+msgstr "リンクスキルキー"
+
+msgid "Mail Key"
+msgstr "メールキー"
+
+msgid "Map Key"
+msgstr "マップキー"
+
+msgid "Minimize Window to System Tray when Closing"
+msgstr "閉じる時にシステムトレイに最小化"
+
+msgid "Mission Key"
+msgstr "ミッションキー"
+
+msgid "Mute Game while in Background"
+msgstr "バックグラウンド時にゲームをミュート"
+
+msgid "No"
+msgstr "いいえ"
+
+msgid "None"
+msgstr "なし"
+
+msgid "Operation"
+msgstr "操作"
+
+msgid "Operator Key"
+msgstr "オペレーターキー"
+
+msgid "Overview Mode Key"
+msgstr "概観モードキー"
+
+msgid "Performance Test"
+msgstr "パフォーマンステスト"
+
+msgid "Place Belt Key"
+msgstr "ベルト設置キー"
+
+msgid "Place Pipeline Key"
+msgstr "パイプライン設置キー"
+
+msgid "Product Icon Toggle Key"
+msgstr "製品アイコン切替キー"
+
+msgid "Quick Tool Key"
+msgstr "クイックツールキー"
+
+msgid "Recruitment Key"
+msgstr "採用キー"
+
+msgid "SingleActionWithDelay"
+msgstr "SingleActionWithDelay"
+
+msgid "Start/Stop"
+msgstr "開始/停止"
+
+msgid "Storage Mode Key"
+msgstr "ストレージモードキー"
+
+msgid "Team Key"
+msgstr "チームキー"
+
+msgid "Track Key"
+msgstr "トラックキー"
+
+msgid "Trigger Interval"
+msgstr "トリガー間隔"
+
+msgid "Use DirectML"
+msgstr "DirectMLを使用"
+
+msgid "Use GPU to Improve Performance"
+msgstr "GPUを使用してパフォーマンス向上"
+
+msgid "Use the skill set when conditions are met"
+msgstr "条件が一致したらスキルセットを使用"
+
+msgid "Valuables Key"
+msgstr "貴重品キー"
+
+msgid "Yes"
+msgstr "はい"
+
+msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
+msgstr "現在のアカウントのタスク設定を完全なスナップショットとして保存します。タスクのデフォルト値が変更されても、保存済みのアカウントには影響しません。"
+
+msgid "全部配置"
+msgstr "全設定"
+
+msgid ""
+"启用后在对齐滑索时会自动滚动放大视角\n"
+"可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
+"建议启用此项时不要使用非白发或有白帽角色"
+msgstr ""
+"ジップライン調整時に自動でスクロールしてズームします\n"
+"調整成功率が上がる場合も、大きく下がる場合もあります\n"
+"有効時は白髪以外または白い帽子のキャラクターを避けてください"
+
+msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
+msgstr "アカウント・タスク設定を更新（アカウントページ一覧はタスクアカウント一覧と独立）"
+
+msgid "当前视图：{view_mode} | 展示 {count} / {total} 项"
+msgstr "現在の表示：{view_mode} | {count} / {total} 項目を表示"
+
+msgid "淤积点滑索"
+msgstr "超域活性点ジップライン"
+
+msgid "滑索距离序列，用逗号分隔。"
+msgstr "ジップライン距離シーケンス。カンマ区切り。"
+
+msgid "滑索配置分类"
+msgstr "ジップライン設定カテゴリ"
+
+msgid "送货滑索"
+msgstr "配送ジップライン"
+
+msgid "选择要显示的滑索配置分类。"
+msgstr "表示するジップライン設定カテゴリを選択。"
+
+msgid "已保存当前账号配置"
+msgstr "現在のアカウント設定を保存しました"
+
+msgid "当前账号配置没有变化"
+msgstr "アカウント設定に変更はありません"
+
+msgid "仅差异项"
+msgstr "差分のみ"
