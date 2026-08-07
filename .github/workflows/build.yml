@@ -38,6 +38,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: true
+          # 拉全量历史与 tag：repository_dispatch 触发时默认只拉单次提交，
+          # 后续 partial-sync-repo 需要本地 tag 执行 git rev-parse
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -104,6 +108,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: true
+          # 拉全量历史与 tag：repository_dispatch 触发时默认只拉单次提交，
+          # 后续 partial-sync-repo 需要本地 tag 执行 git rev-parse
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
@@ -173,6 +181,10 @@ jobs:
       - uses: actions/checkout@v4
         with:
           lfs: true
+          # 拉全量历史与 tag：repository_dispatch 触发时默认只拉单次提交，
+          # 后续 partial-sync-repo 需要本地 tag 执行 git rev-parse
+          fetch-depth: 0
+          fetch-tags: true
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
