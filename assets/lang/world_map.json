@@ -3715,6 +3715,94 @@
       "pattern": "Cốc Tàng Kiếm"
     }
   },
+  "k_yinglongguan": {
+    "zh_CN": {
+      "pattern": "应龙关"
+    },
+    "zh_TW": {
+      "pattern": "應龍關"
+    },
+    "en_US": {
+      "pattern": "Yinglung Pass"
+    },
+    "ja_JP": {
+      "pattern": "応龍関"
+    },
+    "ko_KR": {
+      "pattern": "응룡 관문"
+    },
+    "es_ES": {
+      "pattern": "Paso de Yinglung"
+    },
+    "pt_BR": {
+      "pattern": "Passagem de Yinglung"
+    },
+    "de_DE": {
+      "pattern": "Yinglung-Pass"
+    },
+    "fr_FR": {
+      "pattern": "Col de Yinglung"
+    },
+    "id_ID": {
+      "pattern": "Terusan Yinglung"
+    },
+    "it_IT": {
+      "pattern": "Valico di Yinglung"
+    },
+    "ru_RU": {
+      "pattern": "Застава «Инлуна»"
+    },
+    "th_TH": {
+      "pattern": "ทางผ่าน​ห​ยิง​หลง"
+    },
+    "vi_VN": {
+      "pattern": "Đèo Yinglung"
+    }
+  },
+  "k_beibujinqu": {
+    "zh_CN": {
+      "pattern": "北部禁区"
+    },
+    "zh_TW": {
+      "pattern": "北部禁區"
+    },
+    "en_US": {
+      "pattern": "North Wuling Exclusion Zone"
+    },
+    "ja_JP": {
+      "pattern": "武陵北部封鎖区域"
+    },
+    "ko_KR": {
+      "pattern": "북쪽 금지 구역"
+    },
+    "es_ES": {
+      "pattern": "Zona de exclusión norte de Wuling"
+    },
+    "pt_BR": {
+      "pattern": "Zona de Exclusão do Norte de Wuling"
+    },
+    "de_DE": {
+      "pattern": "Sperrzone Nord-Wuling"
+    },
+    "fr_FR": {
+      "pattern": "Zone d'exclusion du nord de Wuling"
+    },
+    "id_ID": {
+      "pattern": "Zona Eksklusi Wuling Utara"
+    },
+    "it_IT": {
+      "pattern": "Area interdetta di Wuling Nord"
+    },
+    "ru_RU": {
+      "pattern": "Зона отчуждения северного Улина"
+    },
+    "th_TH": {
+      "pattern": "เขต​พิเศษ​อู่​หลิง​เหนือ"
+    },
+    "vi_VN": {
+      "pattern": "Khu Cấm Bắc Võ Lăng"
+    }
+  },
   "k_727bb38b": {
     "zh_CN": {
       "pattern": "死寂争鸣"
