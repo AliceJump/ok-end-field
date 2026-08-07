@@ -57,6 +57,8 @@ class AutoCombatLogic:
         self._pending_skill_frames = 0  # 已重试帧数
 
     _SKILL_RETRY_MAX_FRAMES = 5  # 技力不足最大等待帧数（≈0.5s）
+    _LOW_RES_WARN_INTERVAL = 5.0  # 低分辨率未进入战斗时警告间隔（秒）
+    _SECOND_EXIT_THRESHOLD = 1.0  # 进入战斗后该秒数内退出视为“秒退”（等同未进入战斗）
 
     def _sync_normal_attack_hold(self):
         if self._normal_attack_hold_enabled:
@@ -249,6 +251,29 @@ class AutoCombatLogic:
             task.log_info("立即释放连携技")
             return
 
+    def _is_low_resolution(self) -> bool:
+        """当前画面分辨率是否低于 1080p。"""
+        try:
+            height = self.task.height
+        except (AttributeError, TypeError):
+            return False
+        return bool(height) and height < 1080
+
+    def _warn_low_resolution_if_due(self):
+        """分辨率低于 1080p 且处于“未进入战斗”（含秒退）状态时，每 5 秒警告一次。
+
+        计时状态挂在 task 上，保证触发式调度（AutoCombatTask）与 auto_battle 循环
+        （每次新建本实例）都能跨次持续计时。
+        """
+        task = self.task
+        if not self._is_low_resolution():
+            return
+        now = task.active_time()
+        last_warn = getattr(task, "_last_low_res_warn_time", 0.0)
+        if now - last_warn >= self._LOW_RES_WARN_INTERVAL:
+            task._last_low_res_warn_time = now
+            task.log_warning("1080p以下自动战斗匹配不良，请切换1080p以及以上分辨率", notify=True)
+
     def run(self, start_sleep: float = None, no_battle: bool = False, deadline: float = None):
         self._last_exit_check_time = 0
         self._exit_check_interval = 0.5
@@ -258,8 +283,13 @@ class AutoCombatLogic:
             last = getattr(task, '_last_no_combat_log_time', 0)
             if now - last >= 5:
                 task._last_no_combat_log_time = now
+            # 一直未进入战斗：分辨率低于 1080p 时每 5 秒警告一次
+            self._warn_low_resolution_if_due()
             task.sleep(0.5)
             return False
+
+        # 已确认进入战斗，记录进入时刻（用于“秒退”判定）
+        combat_enter_time = task.active_time()
 
         # 初始化普通战斗配置属性（排轴与普通模式共用）
         self.normal_skill_sequence = task.get_battle_config("技能释放", ["1", "2", "3"])
@@ -340,6 +370,9 @@ class AutoCombatLogic:
                         if task.debug:
                             task.screenshot("out_of_combat")
                         if task.is_combat_ended(exit_condition):
+                            # 秒退：进入战斗后很快退出，同样视为未进入战斗，低分辨率警告继续
+                            if task.active_time() - combat_enter_time < self._SECOND_EXIT_THRESHOLD:
+                                self._warn_low_resolution_if_due()
                             task.log_info("自动战斗结束!", notify=task.get_battle_config("后台结束战斗通知") and task.in_bg())
                             task.log_info("退出战斗主循环")
                             self._end = True
