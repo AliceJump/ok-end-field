@@ -1,4 +1,4 @@
-import json
+import json5
 import re
 from enum import Enum
 from pathlib import Path
@@ -155,7 +155,7 @@ class LangAccessor(_LangAccessorTyped):
             return {}
 
         try:
-            raw_data = json.load(unified_path.open(encoding="utf-8"))
+            raw_data = json5.load(unified_path.open(encoding="utf-8"))
         except Exception:
             return {}
 

@@ -1,4 +1,4 @@
-import json
+import json5
 import re
 from functools import lru_cache
 from pathlib import Path
@@ -51,7 +51,7 @@ def _world_map_zh_key_map() -> dict[str, str]:
     if not path.exists():
         return {}
     try:
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json5.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return {}
 

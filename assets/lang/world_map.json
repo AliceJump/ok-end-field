@@ -37,6 +37,30 @@
     },
     "es_ES": {
       "pattern": "Triaggelos"
+    },
+    "pt_BR": {
+      "pattern": "Triaggelos"
+    },
+    "de_DE": {
+      "pattern": "Triaggelos"
+    },
+    "fr_FR": {
+      "pattern": "Triaggelos"
+    },
+    "id_ID": {
+      "pattern": "Triaggelos"
+    },
+    "it_IT": {
+      "pattern": "Triaggelos"
+    },
+    "ru_RU": {
+      "pattern": "Триаггел"
+    },
+    "th_TH": {
+      "pattern": "ไตร​แอง​เกลอ​ย"
+    },
+    "vi_VN": {
+      "pattern": "Triaggelos"
     }
   },
   "k_a4f9b7a1": {
@@ -47,16 +71,40 @@
       "pattern": "三相奈米片"
     },
     "en_US": {
-      "pattern": "Three-phase nanosheets"
+      "pattern": "Triphasic Nanoflake"
     },
     "ja_JP": {
-      "pattern": "三相ナノシート"
+      "pattern": "三相ナノフレーク"
     },
     "ko_KR": {
-      "pattern": "3상 나노시트"
+      "pattern": "3상 나노 플레이크 칩"
     },
     "es_ES": {
-      "pattern": "Nanohojas trifásicas"
+      "pattern": "Nanohoja trifásica"
+    },
+    "pt_BR": {
+      "pattern": "Nanofloco Trifásico"
+    },
+    "de_DE": {
+      "pattern": "Dreiphasige Nanoflocke"
+    },
+    "fr_FR": {
+      "pattern": "Nanoflocon triphasique"
+    },
+    "id_ID": {
+      "pattern": "Nanoflake Tiga Fase"
+    },
+    "it_IT": {
+      "pattern": "Nanoscheggia trifase"
+    },
+    "ru_RU": {
+      "pattern": "Трехфазная нанопластина"
+    },
+    "th_TH": {
+      "pattern": "นา​โน​เฟล​ค​สาม​เฟส"
+    },
+    "vi_VN": {
+      "pattern": "Mảnh Nano Ba Pha"
     }
   },
   "k_2b6994c2": {
@@ -64,19 +112,43 @@
       "pattern": "中容武陵电池"
     },
     "zh_TW": {
-      "pattern": "中容武陵電池"
+      "pattern": "中容量武陵電池"
     },
     "en_US": {
-      "pattern": "Zhongrong Wuling battery"
+      "pattern": "SC Wuling Battery"
     },
     "ja_JP": {
-      "pattern": "中栄武陵バッテリー"
+      "pattern": "中容量武陵バッテリー"
     },
     "ko_KR": {
-      "pattern": "Zhongrong Wuling 배터리"
+      "pattern": "중용량 무릉 배터리"
     },
     "es_ES": {
-      "pattern": "Batería Zhongrong Wuling"
+      "pattern": "Batería de CS de Wuling"
+    },
+    "pt_BR": {
+      "pattern": "Bateria CP de Wuling"
+    },
+    "de_DE": {
+      "pattern": "Wuling-SC-Batterie"
+    },
+    "fr_FR": {
+      "pattern": "Batterie de Wuling CS"
+    },
+    "id_ID": {
+      "pattern": "Baterai KS Wuling"
+    },
+    "it_IT": {
+      "pattern": "Batteria CS di Wuling"
+    },
+    "ru_RU": {
+      "pattern": "Батарея СЕ Улина"
+    },
+    "th_TH": {
+      "pattern": "แบตเตอรี่​อู่​หลิง​มาตรฐาน"
+    },
+    "vi_VN": {
+      "pattern": "Pin Võ Lăng Dung Lượng Tiêu Chuẩn"
     }
   },
   "k_f87e5ddb": {
@@ -87,16 +159,40 @@
       "pattern": "中容量谷地電池"
     },
     "en_US": {
-      "pattern": "Zhongrong Valley Battery"
+      "pattern": "SC Valley Battery"
     },
     "ja_JP": {
-      "pattern": "中栄谷砲台"
+      "pattern": "中容量谷地バッテリー"
     },
     "ko_KR": {
-      "pattern": "종롱 밸리 배터리"
+      "pattern": "중용량 협곡 배터리"
     },
     "es_ES": {
-      "pattern": "Batería del valle de Zhongrong"
+      "pattern": "Batería de CS del Valle"
+    },
+    "pt_BR": {
+      "pattern": "Bateria CP do Vale"
+    },
+    "de_DE": {
+      "pattern": "Tal-SC-Batterie"
+    },
+    "fr_FR": {
+      "pattern": "Batterie de la Vallée CS"
+    },
+    "id_ID": {
+      "pattern": "Baterai KS Lembah"
+    },
+    "it_IT": {
+      "pattern": "Batteria CS della Valle"
+    },
+    "ru_RU": {
+      "pattern": "Батарея СЕ Долины"
+    },
+    "th_TH": {
+      "pattern": "แบตเตอรี่​หุบเขา​มาตรฐาน"
+    },
+    "vi_VN": {
+      "pattern": "Pin Thung Lũng Dung Lượng Tiêu Chuẩn"
     }
   },
   "k_0fc6c7ff": {
@@ -107,16 +203,40 @@
       "pattern": "產物"
     },
     "en_US": {
-      "pattern": "product"
+      "pattern": "Products"
     },
     "ja_JP": {
       "pattern": "製品"
     },
     "ko_KR": {
-      "pattern": "제품"
+      "pattern": "생산품"
     },
     "es_ES": {
-      "pattern": "producto"
+      "pattern": "Productos"
+    },
+    "pt_BR": {
+      "pattern": "Produtos"
+    },
+    "de_DE": {
+      "pattern": "Produkte"
+    },
+    "fr_FR": {
+      "pattern": "Produits"
+    },
+    "id_ID": {
+      "pattern": "Produk"
+    },
+    "it_IT": {
+      "pattern": "Prodotti"
+    },
+    "ru_RU": {
+      "pattern": "Изделия"
+    },
+    "th_TH": {
+      "pattern": "ผลิตภัณฑ์"
+    },
+    "vi_VN": {
+      "pattern": "Sản phẩm"
     }
   },
   "k_1205977f": {
@@ -136,13 +256,31 @@
       "pattern": "시트론 통조림(중)"
     },
     "es_ES": {
-      "pattern": "Cítricos enlatados de alta calidad."
+      "pattern": "Citroma enlatado [B]"
     },
     "ru_RU": {
       "pattern": "Консервированный цитром [B]"
     },
     "th_TH": {
       "pattern": "ส้ม​ซิ​โตร​มก​ระ​ป๋อง​ [B]"
+    },
+    "pt_BR": {
+      "pattern": "Citroma Enlatada [B]"
+    },
+    "de_DE": {
+      "pattern": "Dosen-Zitromen [B]"
+    },
+    "fr_FR": {
+      "pattern": "Citromes en conserve [B]"
+    },
+    "id_ID": {
+      "pattern": "Citrome Kalengan [B]"
+    },
+    "it_IT": {
+      "pattern": "Citromi in scatola (B)"
+    },
+    "vi_VN": {
+      "pattern": "Cam Đóng Hộp [B]"
     }
   },
   "k_fd92a736": {
@@ -156,16 +294,37 @@
       "pattern": "Yazhen Syringe [A]"
     },
     "ja_JP": {
-      "pattern": "高品質の芽注入"
+      "pattern": "芽針注射剤Ⅱ"
     },
     "ko_KR": {
       "pattern": "고급 야침 주사약"
     },
     "es_ES": {
-      "pattern": "Inyección de cogollos de alta calidad"
+      "pattern": "Jeringa de Yazhen [A]"
     },
     "ru_RU": {
       "pattern": "Инъектор ячжэня [A]"
+    },
+    "pt_BR": {
+      "pattern": "Seringa de Broto-Agulha [A]"
+    },
+    "de_DE": {
+      "pattern": "Yazhen-Spritze [A]"
+    },
+    "fr_FR": {
+      "pattern": "Seringue de chardille [A]"
+    },
+    "id_ID": {
+      "pattern": "Alat Suntik Yazhen [A]"
+    },
+    "it_IT": {
+      "pattern": "Siringa di yazhen (A)"
+    },
+    "th_TH": {
+      "pattern": "เข็ม​ฉีด​หน่อ​เข็ม​ [A]"
+    },
+    "vi_VN": {
+      "pattern": "Ống Tiêm Mầm Lá Kim [A]"
     }
   },
   "k_85ad4a7c": {
@@ -185,13 +344,31 @@
       "pattern": "메밀꽃 치유 캡슐(중)"
     },
     "es_ES": {
-      "pattern": "Cápsulas de trigo sarraceno de alta calidad."
+      "pattern": "Cápsulas de floracina [B]"
     },
     "ru_RU": {
       "pattern": "Гречекапсула [B]"
     },
     "th_TH": {
       "pattern": "แคปซูล​บัค​ [B]"
+    },
+    "pt_BR": {
+      "pattern": "Cápsula de Cervina [B]"
+    },
+    "de_DE": {
+      "pattern": "Buchweizen-Pille [B]"
+    },
+    "fr_FR": {
+      "pattern": "Capsule Revigor [B]"
+    },
+    "id_ID": {
+      "pattern": "Kapsul Buck [B]"
+    },
+    "it_IT": {
+      "pattern": "Capsula di arcofiore (B)"
+    },
+    "vi_VN": {
+      "pattern": "Thuốc Kiều Mạch [B]"
     }
   },
   "k_5209de4f": {
@@ -199,19 +376,43 @@
       "pattern": "优质锦草软饮"
     },
     "zh_TW": {
-      "pattern": "優質錦草軟飲"
+      "pattern": "優質錦草飲料"
     },
     "en_US": {
-      "pattern": "Premium Jincao Soft Drink"
+      "pattern": "Jincao Tea"
     },
     "ja_JP": {
-      "pattern": "プレミアム金草ソフトドリンク"
+      "pattern": "錦草ソーダⅡ"
     },
     "ko_KR": {
-      "pattern": "프리미엄 진차오 청량음료"
+      "pattern": "고급 금초 청량음료"
     },
     "es_ES": {
-      "pattern": "Refresco Premium Jincao"
+      "pattern": "Té de Jincao"
+    },
+    "pt_BR": {
+      "pattern": "Chá de Capim-Seda"
+    },
+    "de_DE": {
+      "pattern": "Jincao-Tee"
+    },
+    "fr_FR": {
+      "pattern": "Thé à l'astéracée"
+    },
+    "id_ID": {
+      "pattern": "Teh Jincao"
+    },
+    "it_IT": {
+      "pattern": "Tè di jincao"
+    },
+    "ru_RU": {
+      "pattern": "Чай с цзиньцао"
+    },
+    "th_TH": {
+      "pattern": "ชา​หญ้า​ไหม"
+    },
+    "vi_VN": {
+      "pattern": "Trà Cỏ Sao Lụa"
     }
   },
   "k_3673bddf": {
@@ -219,19 +420,43 @@
       "pattern": "低容武陵电池"
     },
     "zh_TW": {
-      "pattern": "低容武陵電池"
+      "pattern": "低容量武陵電池"
     },
     "en_US": {
-      "pattern": "Low capacity Wuling battery"
+      "pattern": "LC Wuling Battery"
     },
     "ja_JP": {
-      "pattern": "低容量五陵バッテリー"
+      "pattern": "小容量武陵バッテリー"
     },
     "ko_KR": {
-      "pattern": "저용량 Wuling 배터리"
+      "pattern": "저용량 무릉 배터리"
     },
     "es_ES": {
-      "pattern": "Batería Wuling de baja capacidad"
+      "pattern": "Batería de CB de Wuling"
+    },
+    "pt_BR": {
+      "pattern": "Bateria CB de Wuling"
+    },
+    "de_DE": {
+      "pattern": "Wuling-LC-Batterie"
+    },
+    "fr_FR": {
+      "pattern": "Batterie de Wuling FC"
+    },
+    "id_ID": {
+      "pattern": "Baterai KR Wuling"
+    },
+    "it_IT": {
+      "pattern": "Batteria BC di Wuling"
+    },
+    "ru_RU": {
+      "pattern": "Батарея МЕ Улина"
+    },
+    "th_TH": {
+      "pattern": "แบตเตอรี่​อู่​หลิง​ขนาดเล็ก"
+    },
+    "vi_VN": {
+      "pattern": "Pin Võ Lăng Dung Lượng Thấp"
     }
   },
   "k_2181d9cd": {
@@ -252,6 +477,30 @@
     },
     "es_ES": {
       "pattern": "Meseta de poder"
+    },
+    "pt_BR": {
+      "pattern": "Platô de Energia"
+    },
+    "de_DE": {
+      "pattern": "Energieplateau"
+    },
+    "fr_FR": {
+      "pattern": "Plateau électrique"
+    },
+    "id_ID": {
+      "pattern": "Dataran Tinggi Daya"
+    },
+    "it_IT": {
+      "pattern": "Altopiano elettrico"
+    },
+    "ru_RU": {
+      "pattern": "Плато Энергии"
+    },
+    "th_TH": {
+      "pattern": "ที่ราบสูง​พลังงาน"
+    },
+    "vi_VN": {
+      "pattern": "Cao Nguyên Năng Lượng"
     }
   },
   "k_afba31e6": {
@@ -262,16 +511,40 @@
       "pattern": "冬蟲夏筍貨組"
     },
     "en_US": {
-      "pattern": "Cordyceps and bamboo shoots group"
+      "pattern": "Nymphsprout [pkg]"
     },
     "ja_JP": {
-      "pattern": "冬虫夏草とタケノコのグループ"
+      "pattern": "冬虫夏筍セット"
     },
     "ko_KR": {
-      "pattern": "동충하초와 죽순군"
+      "pattern": "동충하순 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de cordyceps y brotes de bambú."
+      "pattern": "Brote de ninfa [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Ninfobroto [pct]"
+    },
+    "de_DE": {
+      "pattern": "Nymphenspross [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Germenymphe [colis]"
+    },
+    "id_ID": {
+      "pattern": "Nymphsprout [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Germogli di ninfa (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Нимфопобег [упак.]"
+    },
+    "th_TH": {
+      "pattern": "หน่อ​นิม​ฟ์​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Đông Trùng Hạ Thảo [bộ]"
     }
   },
   "k_3917d839": {
@@ -282,16 +555,40 @@
       "pattern": "危境再現"
     },
     "en_US": {
-      "pattern": "Danger reappears"
+      "pattern": "RE-Crisis"
     },
     "ja_JP": {
-      "pattern": "危険が再び現れる"
+      "pattern": "危境再現"
     },
     "ko_KR": {
-      "pattern": "다시 나타나는 위험"
+      "pattern": "위험한 재현"
     },
     "es_ES": {
-      "pattern": "El peligro reaparece"
+      "pattern": "RE-crisis"
+    },
+    "pt_BR": {
+      "pattern": "RE-Crise"
+    },
+    "de_DE": {
+      "pattern": "RE-Krise"
+    },
+    "fr_FR": {
+      "pattern": "Crise X"
+    },
+    "id_ID": {
+      "pattern": "Krisis Ulangan"
+    },
+    "it_IT": {
+      "pattern": "RE-Crisi"
+    },
+    "ru_RU": {
+      "pattern": "Реванш"
+    },
+    "th_TH": {
+      "pattern": "วิกฤต​หวนคืน"
+    },
+    "vi_VN": {
+      "pattern": "Tái Chiến"
     }
   },
   "k_9d89b819": {
@@ -302,16 +599,40 @@
       "pattern": "危境預演"
     },
     "en_US": {
-      "pattern": "crisis rehearsal"
+      "pattern": "Crisis Drills"
     },
     "ja_JP": {
-      "pattern": "危機のリハーサル"
+      "pattern": "危境演習"
     },
     "ko_KR": {
-      "pattern": "위기 리허설"
+      "pattern": "위험한 리허설"
     },
     "es_ES": {
-      "pattern": "ensayo de crisis"
+      "pattern": "Simulacros de crisis"
+    },
+    "pt_BR": {
+      "pattern": "Treinamentos de Crise"
+    },
+    "de_DE": {
+      "pattern": "Krisenübung"
+    },
+    "fr_FR": {
+      "pattern": "Simulations de crise"
+    },
+    "id_ID": {
+      "pattern": "Latihan Krisis"
+    },
+    "it_IT": {
+      "pattern": "Esercitazioni di emergenza"
+    },
+    "ru_RU": {
+      "pattern": "Кризисные учения"
+    },
+    "th_TH": {
+      "pattern": "การฝึกซ้อม​รับมือ​วิกฤต"
+    },
+    "vi_VN": {
+      "pattern": "Diễn Tập Ứng Phó Nguy Cơ"
     }
   },
   "k_214efec8": {
@@ -332,6 +653,30 @@
     },
     "es_ES": {
       "pattern": "Valle IV"
+    },
+    "pt_BR": {
+      "pattern": "Vale IV"
+    },
+    "de_DE": {
+      "pattern": "Tal IV"
+    },
+    "fr_FR": {
+      "pattern": "Vallée-IV"
+    },
+    "id_ID": {
+      "pattern": "Lembah IV"
+    },
+    "it_IT": {
+      "pattern": "Valle IV"
+    },
+    "ru_RU": {
+      "pattern": "Долина IV"
+    },
+    "th_TH": {
+      "pattern": "หุบเขา​ IV"
+    },
+    "vi_VN": {
+      "pattern": "Thung Lũng IV"
     }
   },
   "k_c8cc877d": {
@@ -342,16 +687,40 @@
       "pattern": "團結牌口服液貨組"
     },
     "en_US": {
-      "pattern": "Tuanjie brand oral liquid product group"
+      "pattern": "Unity Syrup [pkg]"
     },
     "ja_JP": {
-      "pattern": "Tuanjieブランドの経口液体製品グループ"
+      "pattern": "ユナイト製のシロップ剤セット"
     },
     "ko_KR": {
-      "pattern": "Tuanjie 브랜드 경구 액제 제품 그룹"
+      "pattern": "단결 브랜드 물약 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de productos líquidos orales de la marca Tuanjie"
+      "pattern": "Jarabe de la unidad [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Xarope da Unidade [pct]"
+    },
+    "de_DE": {
+      "pattern": "Einheitssirup [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Sirop d'unité [colis]"
+    },
+    "id_ID": {
+      "pattern": "Sirop Unity [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Sciroppo dell'unità (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Сироп «Единство» [упак.]"
+    },
+    "th_TH": {
+      "pattern": "ยาน้ำ​เชื่อม​ยู​นิ​ตี้​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Siro Tỉnh Táo [bộ]"
     }
   },
   "k_b3748114": {
@@ -372,6 +741,30 @@
     },
     "es_ES": {
       "pattern": "Infraestación"
+    },
+    "pt_BR": {
+      "pattern": "Estação Infra"
+    },
+    "de_DE": {
+      "pattern": "Infra-Station"
+    },
+    "fr_FR": {
+      "pattern": "Infrastation"
+    },
+    "id_ID": {
+      "pattern": "Stasiun Infrastruktur"
+    },
+    "it_IT": {
+      "pattern": "Infra-Stazione"
+    },
+    "ru_RU": {
+      "pattern": "Инфрастанция"
+    },
+    "th_TH": {
+      "pattern": "สถานี​อิน​ฟรา"
+    },
+    "vi_VN": {
+      "pattern": "Trạm Hạ Tầng"
     }
   },
   "k_0b813891": {
@@ -382,16 +775,40 @@
       "pattern": "塞什卡髀石貨組"
     },
     "en_US": {
-      "pattern": "Seshka Stone Cargo Group"
+      "pattern": "Seš'qamam Knucklebones [pkg]"
     },
     "ja_JP": {
-      "pattern": "セシュカ ストーン カーゴ グループ"
+      "pattern": "セシュカ製のアシュクセット"
     },
     "ko_KR": {
-      "pattern": "Seshka 스톤 화물 그룹"
+      "pattern": "세쉬카 동물 뼈 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de carga de piedra Seshka"
+      "pattern": "Nudillos de Seš'qamam [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Ossos dos Dedos Seš'qanos [pct]"
+    },
+    "de_DE": {
+      "pattern": "Seš’qarier-Knöchel [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Osselets Seš'qamams [colis]"
+    },
+    "id_ID": {
+      "pattern": "Tulang Kaki Seš’qamam [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Astragali dei Seš'qamam (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Набор для сеш’камамской игры [упак.]"
+    },
+    "th_TH": {
+      "pattern": "หมากเก็บ​เซ​ซ​กา​มัม​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Xương Khuỷu Seš'qa [bộ]"
     }
   },
   "k_916bfc88": {
@@ -402,16 +819,40 @@
       "pattern": "天使罐頭貨組"
     },
     "en_US": {
-      "pattern": "Angel Canned Goods Group"
+      "pattern": "Aggeloi War Tins [pkg]"
     },
     "ja_JP": {
-      "pattern": "エンジェル缶詰グループ"
+      "pattern": "アンゲロスの缶詰セット"
     },
     "ko_KR": {
-      "pattern": "엔젤 통조림 그룹"
+      "pattern": "아겔로스 통조림 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de productos enlatados Angel"
+      "pattern": "Latas de Guerra de Aggeloi [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Latas da Guerra dos Aggeloi [pct]"
+    },
+    "de_DE": {
+      "pattern": "Dosen aus dem Aggeloi-Krieg [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Boîtes de conserve de la Guerre des Aggeloi [colis]"
+    },
+    "id_ID": {
+      "pattern": "Kaleng Perang Aggelos [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Provviste della Guerra degli Aggeloi (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Консервы времен войны с аггелами [упак.]"
+    },
+    "th_TH": {
+      "pattern": "กระป๋อง​สงคราม​แอง​เกลอ​ย​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Đồ Hộp Aggeloi [bộ]"
     }
   },
   "k_be2958a8": {
@@ -422,16 +863,40 @@
       "pattern": "天師龍泡泡貨組"
     },
     "en_US": {
-      "pattern": "Tianshilong bubble goods group"
+      "pattern": "Chubby Lung Tianshi [pkg]"
     },
     "ja_JP": {
-      "pattern": "天石龍バブルグッズグループ"
+      "pattern": "天師龍泡泡セット"
     },
     "ko_KR": {
-      "pattern": "Tianshilong 거품 상품 그룹"
+      "pattern": "천사 드래곤 버블 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de productos burbuja Tianshilong"
+      "pattern": "Lung regordete de Tianshi [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Tianshi Chubby Lung [pct]"
+    },
+    "de_DE": {
+      "pattern": "Chubby-Lung-Tianshi [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Tianshi Choupi Lung [colis]"
+    },
+    "id_ID": {
+      "pattern": "Tianshi Lung Gembul [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Cicciodraghi Tianshi (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Пухлик-лун Тяньши [упак.]"
+    },
+    "th_TH": {
+      "pattern": "เทียน​ซือ​หลง​จ้ำม่ำ​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Lô Thiên Sư Chubby Lung [bộ]"
     }
   },
   "k_9ee92701": {
@@ -442,16 +907,40 @@
       "pattern": "天王坪援助點"
     },
     "en_US": {
-      "pattern": "Tianwangping aid construction site"
+      "pattern": "Sky King Flats Construction Site"
     },
     "ja_JP": {
-      "pattern": "天望坪援助建設現場"
+      "pattern": "天王原建設支援拠点"
     },
     "ko_KR": {
-      "pattern": "Tianwangping 구호 건설 현장"
+      "pattern": "천왕 평지 건설 지원소"
     },
     "es_ES": {
-      "pattern": "Sitio de construcción de ayuda de Tianwangping"
+      "pattern": "Zona de cons.de las Llan.del Rey Cel."
+    },
+    "pt_BR": {
+      "pattern": "Local de Construção das Planícies do Rei Celestial"
+    },
+    "de_DE": {
+      "pattern": "Baustelle auf den Himmelskönigebenen"
+    },
+    "fr_FR": {
+      "pattern": "Chantier des plaines du Roi des cieux"
+    },
+    "id_ID": {
+      "pattern": "Lokasi Konstruksi Dataran Raja Langit"
+    },
+    "it_IT": {
+      "pattern": "Cantiere delle Pianure del Re celeste"
+    },
+    "ru_RU": {
+      "pattern": "Стройплощадка на равнине Небесного Царя"
+    },
+    "th_TH": {
+      "pattern": "พื้นที่​ก่อสร้าง​ที่ราบ​ราชัน​แห่ง​ท้องฟ้า"
+    },
+    "vi_VN": {
+      "pattern": "Công Trường Xây Dựng Bình Nguyên Thiên Vương"
     }
   },
   "k_cb171c77": {
@@ -462,16 +951,40 @@
       "pattern": "岳研避瘴茶貨組"
     },
     "en_US": {
-      "pattern": "Yueyan Miasma Avoidance Tea Goods Group"
+      "pattern": "Eureka Anti-smog Tincture [pkg]"
     },
     "ja_JP": {
-      "pattern": "岳岩瘴気回避茶道具グループ"
+      "pattern": "岳研瘴気除け茶セット"
     },
     "ko_KR": {
-      "pattern": "Yueyan Miasma 회피 차 용품 그룹"
+      "pattern": "악연 피장차 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de productos de té para evitar el miasma de Yueyan"
+      "pattern": "Tintura antiesmog Eureka [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Chá Bom para Praga Eureka [pct]"
+    },
+    "de_DE": {
+      "pattern": "Eureka-Anti-Rauch-Tinktur [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Teintures antibrouillard d'Eurêka [colis]"
+    },
+    "id_ID": {
+      "pattern": "Ramuan Antiasap Eureka [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Tintura anti-smog di Eureka (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Противодымный настой «Эврика» [упак.]"
+    },
+    "th_TH": {
+      "pattern": "ทิงเจอร์​ป้องกัน​หมอก​ควัน​ยู​เร​ก้า​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Trà Chống Độc Eureka [bộ]"
     }
   },
   "k_f146718d": {
@@ -482,16 +995,40 @@
       "pattern": "巫術礦鑽貨組"
     },
     "en_US": {
-      "pattern": "Witchcraft Mine Diamond Cargo Group"
+      "pattern": "Witchcraft Mining Drill [pkg]"
     },
     "ja_JP": {
-      "pattern": "ウィッチクラフト マイン ダイヤモンド カーゴ グループ"
+      "pattern": "巫術ドリルセット"
     },
     "ko_KR": {
-      "pattern": "마법 광산 다이아몬드 화물 그룹"
+      "pattern": "주술 광산 다이아 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de carga de diamantes de la mina de brujería"
+      "pattern": "Taladro minero de hechicería [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Perfuradora de Mineração Witchcraft [pct]"
+    },
+    "de_DE": {
+      "pattern": "Zauber-Abbaubohrer [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Foreuses ensorcelées [colis]"
+    },
+    "id_ID": {
+      "pattern": "Bor Tambang Sihir [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Trivelle di estrazione stregonesche (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Колдовской бур [упак.]"
+    },
+    "th_TH": {
+      "pattern": "สว่าน​มนตรา​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Khoan Phù Thủy [bộ]"
     }
   },
   "k_e8648639": {
@@ -502,16 +1039,40 @@
       "pattern": "幹員養成"
     },
     "en_US": {
-      "pattern": "Operator development"
+      "pattern": "Upgrade Operator"
     },
     "ja_JP": {
-      "pattern": "オペレーターの開発"
+      "pattern": "人材育成"
     },
     "ko_KR": {
-      "pattern": "오퍼레이터 개발"
+      "pattern": "오퍼레이터 육성"
     },
     "es_ES": {
-      "pattern": "Desarrollo de operadores"
+      "pattern": "Mejorar operador"
+    },
+    "pt_BR": {
+      "pattern": "Upgrade do Operador"
+    },
+    "de_DE": {
+      "pattern": "Operator verbessern"
+    },
+    "fr_FR": {
+      "pattern": "Progression d'opérateur"
+    },
+    "id_ID": {
+      "pattern": "Upgrade Operator"
+    },
+    "it_IT": {
+      "pattern": "Potenzia operatore"
+    },
+    "ru_RU": {
+      "pattern": "Улучшить оперативника"
+    },
+    "th_TH": {
+      "pattern": "อัป​เกรด​โอเปอเรเตอร์"
+    },
+    "vi_VN": {
+      "pattern": "Nâng Cấp Cán Viên"
     }
   },
   "k_8c63385b": {
@@ -519,19 +1080,43 @@
       "pattern": "干员经验"
     },
     "zh_TW": {
-      "pattern": "幹員經驗"
+      "pattern": "幹員經驗材料"
     },
     "en_US": {
       "pattern": "Operator EXP"
     },
     "ja_JP": {
-      "pattern": "オペレーター経験値"
+      "pattern": "経験値素材"
     },
     "ko_KR": {
-      "pattern": "오퍼레이터 경험치"
+      "pattern": "오퍼레이터 경험치 재료"
     },
     "es_ES": {
-      "pattern": "EXP de operador"
+      "pattern": "Puntos de EXP de operador"
+    },
+    "pt_BR": {
+      "pattern": "EXP de Operador"
+    },
+    "de_DE": {
+      "pattern": "Operator-EP"
+    },
+    "fr_FR": {
+      "pattern": "EXP de l'opérateur"
+    },
+    "id_ID": {
+      "pattern": "EXP Operator"
+    },
+    "it_IT": {
+      "pattern": "ESP operatore"
+    },
+    "ru_RU": {
+      "pattern": "Опыт оперативника"
+    },
+    "th_TH": {
+      "pattern": "EXP โอเปอเรเตอร์"
+    },
+    "vi_VN": {
+      "pattern": "EXP Cán Viên"
     }
   },
   "k_216c7def": {
@@ -542,7 +1127,7 @@
       "pattern": "幹員進階"
     },
     "en_US": {
-      "pattern": "Operator Promotions"
+      "pattern": "Promotions"
     },
     "ja_JP": {
       "pattern": "昇進素材"
@@ -551,7 +1136,31 @@
       "pattern": "오퍼레이터 돌파"
     },
     "es_ES": {
-      "pattern": "Ascensos de operador"
+      "pattern": "Ascensos"
+    },
+    "pt_BR": {
+      "pattern": "Promoções"
+    },
+    "de_DE": {
+      "pattern": "Beförderungen"
+    },
+    "fr_FR": {
+      "pattern": "Promotions"
+    },
+    "id_ID": {
+      "pattern": "Promosi"
+    },
+    "it_IT": {
+      "pattern": "Promozioni"
+    },
+    "ru_RU": {
+      "pattern": "Повышение"
+    },
+    "th_TH": {
+      "pattern": "เลื่อนขั้น"
+    },
+    "vi_VN": {
+      "pattern": "Thăng bậc"
     }
   },
   "k_7dfd1882": {
@@ -562,16 +1171,40 @@
       "pattern": "心臟修繕站"
     },
     "en_US": {
-      "pattern": "heart repair station"
+      "pattern": "Cardiac Remediation Station"
     },
     "ja_JP": {
-      "pattern": "心臓修復ステーション"
+      "pattern": "心臓修復施設"
     },
     "ko_KR": {
-      "pattern": "심장 수리소"
+      "pattern": "심장 수복실"
     },
     "es_ES": {
-      "pattern": "estación de reparación del corazón"
+      "pattern": "Estación de rehabilitación cardíaca"
+    },
+    "pt_BR": {
+      "pattern": "Estação de Correção Cardíaca"
+    },
+    "de_DE": {
+      "pattern": "Kardiologische Sanierungsstation"
+    },
+    "fr_FR": {
+      "pattern": "Station de restauration cardiaque"
+    },
+    "id_ID": {
+      "pattern": "Stasiun Remediasi Jantung"
+    },
+    "it_IT": {
+      "pattern": "Stazione di risanamento cardiaco"
+    },
+    "ru_RU": {
+      "pattern": "Станция восстановления сердца"
+    },
+    "th_TH": {
+      "pattern": "สถานี​ฟื้นฟู​หัวใจ"
+    },
+    "vi_VN": {
+      "pattern": "Trạm Điều Trị Tim Mạch"
     }
   },
   "k_c2d3c6f9": {
@@ -579,19 +1212,43 @@
       "pattern": "快子遴捡晶格"
     },
     "zh_TW": {
-      "pattern": "快子遴撿晶格"
+      "pattern": "迅子遴撿晶格"
     },
     "en_US": {
-      "pattern": "Tachyon picking lattice"
+      "pattern": "Tachyon Screening Lattice"
     },
     "ja_JP": {
-      "pattern": "タキオンピッキング格子"
+      "pattern": "タキオン精選格子"
     },
     "ko_KR": {
-      "pattern": "타키온 피킹 격자"
+      "pattern": "타키온 차폐 구조체"
     },
     "es_ES": {
-      "pattern": "Red de recolección de taquiones"
+      "pattern": "Entramado de proyección de taquiones"
+    },
+    "pt_BR": {
+      "pattern": "Cristalização de Triagem de Táquions"
+    },
+    "de_DE": {
+      "pattern": "Tachyonen-Sensorgitter"
+    },
+    "fr_FR": {
+      "pattern": "Grille de tri de tachyon"
+    },
+    "id_ID": {
+      "pattern": "Kisi Penyaring Takhion"
+    },
+    "it_IT": {
+      "pattern": "Reticolo rileva-tachioni"
+    },
+    "ru_RU": {
+      "pattern": "Решетка для экранирования тахионов"
+    },
+    "th_TH": {
+      "pattern": "ตาข่าย​คัด​กรอง​แทค​ยอน"
+    },
+    "vi_VN": {
+      "pattern": "Lưới Chắn Tachyon"
     }
   },
   "k_ae13a460": {
@@ -599,19 +1256,43 @@
       "pattern": "息壤净水芯货组"
     },
     "zh_TW": {
-      "pattern": "息壤淨水芯貨組"
+      "pattern": "息壤淨水濾心貨組"
     },
     "en_US": {
-      "pattern": "Xirang water purification core goods group"
+      "pattern": "Xiranite Filter Cores [pkg]"
     },
     "ja_JP": {
-      "pattern": "西良浄水核心財グループ"
+      "pattern": "息壌浄水カートリッジセット"
     },
     "ko_KR": {
-      "pattern": "시랑정수 핵심제품군"
+      "pattern": "식양 정수 필터 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de productos básicos de purificación de agua Xirang"
+      "pattern": "Núcleos de filtro de Xiranita [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Miolos de Filtro de Xiranita [pct]"
+    },
+    "de_DE": {
+      "pattern": "Xiranit-Filterkerne [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Noyaux de filtre en xiranite [colis]"
+    },
+    "id_ID": {
+      "pattern": "Inti Filter Xiranite [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Nuclei filtranti di xiranite (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Ксиранитовые фильтрующие элементы [упак.]"
+    },
+    "th_TH": {
+      "pattern": "แกน​กรอง​ซี​เรน​ไนต์​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Lõi Lọc Xiranite [bộ]"
     }
   },
   "k_d316ae88": {
@@ -631,7 +1312,7 @@
       "pattern": "식양 옥 호리병"
     },
     "es_ES": {
-      "pattern": "Calabaza de jade del suelo Xi"
+      "pattern": "Calabaza de jade de Xiranita"
     },
     "id_ID": {
       "pattern": "Botol Cembung Giok Xiranite"
@@ -641,6 +1322,21 @@
     },
     "th_TH": {
       "pattern": "ฝัก​หยก​ซี​เรน​ไนต์"
+    },
+    "pt_BR": {
+      "pattern": "Cabaça de Jade de Xiranita"
+    },
+    "de_DE": {
+      "pattern": "Xiranit-Jadekalebasse"
+    },
+    "fr_FR": {
+      "pattern": "Gourde de jade en xiranite"
+    },
+    "it_IT": {
+      "pattern": "Fiasco di giada e xiranite"
+    },
+    "vi_VN": {
+      "pattern": "Quả Bầu Ngọc Xiranite"
     }
   },
   "k_49b013b4": {
@@ -660,7 +1356,7 @@
       "pattern": "식양 호리병"
     },
     "es_ES": {
-      "pattern": "calabaza del suelo"
+      "pattern": "Calabaza de Xiranita"
     },
     "id_ID": {
       "pattern": "Botol Cembung Xiranite"
@@ -670,6 +1366,21 @@
     },
     "th_TH": {
       "pattern": "ฝัก​ซี​เรน​ไนต์"
+    },
+    "pt_BR": {
+      "pattern": "Cabaça de Xiranita"
+    },
+    "de_DE": {
+      "pattern": "Xiranit-Kalebasse"
+    },
+    "fr_FR": {
+      "pattern": "Gourde en xiranite"
+    },
+    "it_IT": {
+      "pattern": "Fiasco di xiranite"
+    },
+    "vi_VN": {
+      "pattern": "Quả Bầu Xiranite"
     }
   },
   "k_015b12ba": {
@@ -680,16 +1391,40 @@
       "pattern": "懸空鼷獸骨雕貨組"
     },
     "en_US": {
-      "pattern": "Hanging mole beast bone carving goods group"
+      "pattern": "Musbeast Scrimshaw Dangles [pkg]"
     },
     "ja_JP": {
-      "pattern": "ぶら下がりモグラ獣骨彫刻グッズグループ"
+      "pattern": "浮かぶ骨彫刻セット"
     },
     "ko_KR": {
-      "pattern": "매달아 두더지 짐승 뼈 조각품 그룹"
+      "pattern": "공중 무스비스트 뼈 조각상 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de productos para tallar huesos de bestia topo colgante"
+      "pattern": "Colgantes grabados de bestia mostaza [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Pingentes de Dentes Esculpidos de Esquilo [pct]"
+    },
+    "de_DE": {
+      "pattern": "Meusbiest-Schnitzerei-Anhänger [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Pendentifs en os de musquots gravés [colis]"
+    },
+    "id_ID": {
+      "pattern": "Juntaian Pahatan Musbeast [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Pendagli d'osso scolpito di topide (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Резные подвески из кости мышезверей [упак.]"
+    },
+    "th_TH": {
+      "pattern": "เครื่องประดับ​ตกแต่ง​แกะสลัก​จาก​กระดูก​มัส​บี​ส​ต์​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Trang Trí Khắc Thú Nhắt [bộ]"
     }
   },
   "k_d4f9d913": {
@@ -709,7 +1444,31 @@
       "pattern": "스킬 업그레이드"
     },
     "es_ES": {
-      "pattern": "Maestría de habilidades"
+      "pattern": "Mej.de habil."
+    },
+    "pt_BR": {
+      "pattern": "Upgrade de Habilidade"
+    },
+    "de_DE": {
+      "pattern": "Fertigkeitsverbesserung"
+    },
+    "fr_FR": {
+      "pattern": "Amélioration des compétences"
+    },
+    "id_ID": {
+      "pattern": "Kenaikan Skill"
+    },
+    "it_IT": {
+      "pattern": "Potenziamento abilità"
+    },
+    "ru_RU": {
+      "pattern": "Навыки+"
+    },
+    "th_TH": {
+      "pattern": "อัป​เกรด​ทักษะ"
+    },
+    "vi_VN": {
+      "pattern": "Nâng Cấp Kỹ Năng"
     }
   },
   "k_854f8a4f": {
@@ -720,16 +1479,40 @@
       "pattern": "星體晶塊貨組"
     },
     "en_US": {
-      "pattern": "Star crystal block cargo group"
+      "pattern": "Astarron Crystals [pkg]"
     },
     "ja_JP": {
-      "pattern": "スタークリスタルブロック貨物群"
+      "pattern": "アスタロン結晶セット"
     },
     "ko_KR": {
-      "pattern": "스타 크리스탈 블록 화물 그룹"
+      "pattern": "별체 결정 조각 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de carga de bloques de cristal estrella"
+      "pattern": "Cristales de Astarron [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Cristais de Astarron [pct]"
+    },
+    "de_DE": {
+      "pattern": "Astarron-Kristalle [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Cristaux d'Astarron [colis]"
+    },
+    "id_ID": {
+      "pattern": "Kristal Astarron [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Cristalli di Astarron (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Кристаллы Астаррона [упак.]"
+    },
+    "th_TH": {
+      "pattern": "คริสตัล​แอส​ตาร์​รอน​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Tinh Thể Astarron [bộ]"
     }
   },
   "k_c55c669c": {
@@ -749,13 +1532,31 @@
       "pattern": "오리고 크러스트"
     },
     "es_ES": {
-      "pattern": "concha de cristal"
+      "pattern": "Origocorteza"
     },
     "ru_RU": {
       "pattern": "Ориджеода"
     },
     "th_TH": {
       "pattern": "ออ​ริ​โก​ค​รัส"
+    },
+    "pt_BR": {
+      "pattern": "Origocrosta"
+    },
+    "de_DE": {
+      "pattern": "Origo-Kruste"
+    },
+    "fr_FR": {
+      "pattern": "Origécorce"
+    },
+    "id_ID": {
+      "pattern": "Origocrust"
+    },
+    "it_IT": {
+      "pattern": "Oribasamento"
+    },
+    "vi_VN": {
+      "pattern": "Vỏ Originium"
     }
   },
   "k_90252af0": {
@@ -776,6 +1577,30 @@
     },
     "es_ES": {
       "pattern": "La Base"
+    },
+    "pt_BR": {
+      "pattern": "A Base"
+    },
+    "de_DE": {
+      "pattern": "Der Hub"
+    },
+    "fr_FR": {
+      "pattern": "Le Hub"
+    },
+    "id_ID": {
+      "pattern": "Hub"
+    },
+    "it_IT": {
+      "pattern": "Polo centrale"
+    },
+    "ru_RU": {
+      "pattern": "Центр"
+    },
+    "th_TH": {
+      "pattern": "ศูนย์​ส่วนกลาง"
+    },
+    "vi_VN": {
+      "pattern": "Trung Tâm"
     }
   },
   "k_e1635e13": {
@@ -789,16 +1614,37 @@
       "pattern": "Canned Citrome [C]"
     },
     "ja_JP": {
-      "pattern": "柑橘類の缶詰"
+      "pattern": "シトロームの缶詰Ⅰ"
     },
     "ko_KR": {
       "pattern": "시트론 통조림"
     },
     "es_ES": {
-      "pattern": "Cítricos enlatados"
+      "pattern": "Citroma enlatado [C]"
     },
     "ru_RU": {
       "pattern": "Консервированный цитром [C]"
+    },
+    "pt_BR": {
+      "pattern": "Citroma Enlatada [C]"
+    },
+    "de_DE": {
+      "pattern": "Dosen-Zitromen [C]"
+    },
+    "fr_FR": {
+      "pattern": "Citromes en conserve [C]"
+    },
+    "id_ID": {
+      "pattern": "Citrome Kalengan [C]"
+    },
+    "it_IT": {
+      "pattern": "Citromi in scatola (C)"
+    },
+    "th_TH": {
+      "pattern": "ส้ม​ซิ​โตร​มก​ระ​ป๋อง​ [C]"
+    },
+    "vi_VN": {
+      "pattern": "Cam Đóng Hộp [C]"
     }
   },
   "k_4ce45095": {
@@ -809,16 +1655,40 @@
       "pattern": "武俠電影貨組"
     },
     "en_US": {
-      "pattern": "Martial arts movie goods group"
+      "pattern": "Wuxia Movies [pkg]"
     },
     "ja_JP": {
-      "pattern": "武侠映画グッズグループ"
+      "pattern": "武侠映画セット"
     },
     "ko_KR": {
-      "pattern": "무술영화상품그룹"
+      "pattern": "무협 영화 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de productos de películas de artes marciales."
+      "pattern": "Películas Wuxia [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Filmes de Wuxia [pct]"
+    },
+    "de_DE": {
+      "pattern": "Wuxia-Filme [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Films de Wuxia [colis]"
+    },
+    "id_ID": {
+      "pattern": "Film Wuxia [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Film wuxia (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Фильмы в жанре уся [упак.]"
+    },
+    "th_TH": {
+      "pattern": "หนัง​กำลังภายใน​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Phim Võ Hiệp [bộ]"
     }
   },
   "k_5c6514da": {
@@ -829,16 +1699,40 @@
       "pattern": "武器養成"
     },
     "en_US": {
-      "pattern": "Weapon development"
+      "pattern": "Weapon Progression"
     },
     "ja_JP": {
-      "pattern": "兵器の開発"
+      "pattern": "武器強化"
     },
     "ko_KR": {
-      "pattern": "무기 개발"
+      "pattern": "무기 육성"
     },
     "es_ES": {
-      "pattern": "Desarrollo de armas"
+      "pattern": "Progresión de arma"
+    },
+    "pt_BR": {
+      "pattern": "Progressão de Arma"
+    },
+    "de_DE": {
+      "pattern": "Waffen-\nfortschritt"
+    },
+    "fr_FR": {
+      "pattern": "Progression de l'arme"
+    },
+    "id_ID": {
+      "pattern": "Progresi Senjata"
+    },
+    "it_IT": {
+      "pattern": "Sviluppo armi"
+    },
+    "ru_RU": {
+      "pattern": "Развитие оружия"
+    },
+    "th_TH": {
+      "pattern": "ความก้าวหน้า​ของ​อาวุธ"
+    },
+    "vi_VN": {
+      "pattern": "Thăng Cấp Vũ Khí"
     }
   },
   "k_3e316505": {
@@ -846,19 +1740,43 @@
       "pattern": "武器经验"
     },
     "zh_TW": {
-      "pattern": "武器經驗"
+      "pattern": "武器經驗材料"
     },
     "en_US": {
       "pattern": "Weapon EXP"
     },
     "ja_JP": {
-      "pattern": "武器経験値"
+      "pattern": "武器強化素材"
     },
     "ko_KR": {
-      "pattern": "무기 경험치"
+      "pattern": "무기 경험치 재료"
     },
     "es_ES": {
       "pattern": "EXP de arma"
+    },
+    "pt_BR": {
+      "pattern": "EXP de Arma"
+    },
+    "de_DE": {
+      "pattern": "Waffen-EP"
+    },
+    "fr_FR": {
+      "pattern": "EXP d'arme"
+    },
+    "id_ID": {
+      "pattern": "EXP Senjata"
+    },
+    "it_IT": {
+      "pattern": "ESP arma"
+    },
+    "ru_RU": {
+      "pattern": "Опыт оружия"
+    },
+    "th_TH": {
+      "pattern": "EXP ของ​อาวุธ"
+    },
+    "vi_VN": {
+      "pattern": "EXP Vũ Khí"
     }
   },
   "k_0903c052": {
@@ -878,7 +1796,31 @@
       "pattern": "무기 돌파"
     },
     "es_ES": {
-      "pattern": "Afinación de armas"
+      "pattern": "Aum. del arma"
+    },
+    "pt_BR": {
+      "pattern": "Ajuste Fino de Arma"
+    },
+    "de_DE": {
+      "pattern": "Waffenoptimierung"
+    },
+    "fr_FR": {
+      "pattern": "Optimisation des armes"
+    },
+    "id_ID": {
+      "pattern": "Penyetelan Senjata"
+    },
+    "it_IT": {
+      "pattern": "Ottimizzazione armi"
+    },
+    "ru_RU": {
+      "pattern": "Калибровка"
+    },
+    "th_TH": {
+      "pattern": "จูน​อาวุธ"
+    },
+    "vi_VN": {
+      "pattern": "Tinh Chỉnh Vũ Khí"
     }
   },
   "k_a4410e3f": {
@@ -899,6 +1841,30 @@
     },
     "es_ES": {
       "pattern": "Wuling"
+    },
+    "pt_BR": {
+      "pattern": "Wuling"
+    },
+    "de_DE": {
+      "pattern": "Wuling"
+    },
+    "fr_FR": {
+      "pattern": "Wuling"
+    },
+    "id_ID": {
+      "pattern": "Wuling"
+    },
+    "it_IT": {
+      "pattern": "Wuling"
+    },
+    "ru_RU": {
+      "pattern": "Улин"
+    },
+    "th_TH": {
+      "pattern": "อู่​หลิง"
+    },
+    "vi_VN": {
+      "pattern": "Võ Lăng"
     }
   },
   "k_e128b089": {
@@ -909,16 +1875,40 @@
       "pattern": "武陵凍梨貨組"
     },
     "en_US": {
-      "pattern": "Wuling frozen pear goods group"
+      "pattern": "Wuling Frozen Pears [pkg]"
     },
     "ja_JP": {
-      "pattern": "武陵冷凍梨商品グループ"
+      "pattern": "武陵冷凍梨セット"
     },
     "ko_KR": {
-      "pattern": "우링 냉동 배 상품 그룹"
+      "pattern": "무릉 얼린 배 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de productos de peras congeladas de Wuling"
+      "pattern": "Peras congeladas de Wuling [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Peras Congeladas de Wuling [pct]"
+    },
+    "de_DE": {
+      "pattern": "Wuling-Tiefkühlerbsen [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Poires glacées de Wuling [colis]"
+    },
+    "id_ID": {
+      "pattern": "Pir Beku Wuling [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Pere di Wuling surgelate (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Улинские замороженные груши [упак.]"
+    },
+    "th_TH": {
+      "pattern": "ลูก​แพ​ร์​แช่แข็ง​อู่​หลิง​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Lê Đông Lạnh Võ Lăng [bộ]"
     }
   },
   "k_93e2bdac": {
@@ -939,6 +1929,30 @@
     },
     "es_ES": {
       "pattern": "Ciudad de Wuling"
+    },
+    "pt_BR": {
+      "pattern": "Cidade de Wuling"
+    },
+    "de_DE": {
+      "pattern": "Wuling City"
+    },
+    "fr_FR": {
+      "pattern": "Ville de Wuling"
+    },
+    "id_ID": {
+      "pattern": "Kota Wuling"
+    },
+    "it_IT": {
+      "pattern": "Wuling City"
+    },
+    "ru_RU": {
+      "pattern": "Улин"
+    },
+    "th_TH": {
+      "pattern": "เมือง​อู่​หลิง"
+    },
+    "vi_VN": {
+      "pattern": "Thành Phố Võ Lăng"
     }
   },
   "k_ece5ec1b": {
@@ -958,7 +1972,31 @@
       "pattern": "청파채"
     },
     "es_ES": {
-      "pattern": "Empalizada Qingbo"
+      "pattern": "Empalizada de Qingbo"
+    },
+    "pt_BR": {
+      "pattern": "Paliçada de Qingbo"
+    },
+    "de_DE": {
+      "pattern": "Qingbo-Palisade"
+    },
+    "fr_FR": {
+      "pattern": "Palanque de Qingbo"
+    },
+    "id_ID": {
+      "pattern": "Kampung Benteng Qingbo"
+    },
+    "it_IT": {
+      "pattern": "Palizzata di Qingbo"
+    },
+    "ru_RU": {
+      "pattern": "Лагерь Циньбо"
+    },
+    "th_TH": {
+      "pattern": "ค่าย​ชิง​ป๋อ"
+    },
+    "vi_VN": {
+      "pattern": "Trại Thanh Ba"
     }
   },
   "k_0383e694": {
@@ -969,16 +2007,40 @@
       "pattern": "清波筏貨組"
     },
     "en_US": {
-      "pattern": "Qingbo Raft Cargo Group"
+      "pattern": "Qingbo Rafts [pkg]"
     },
     "ja_JP": {
-      "pattern": "青波筏貨物グループ"
+      "pattern": "清波いかだセット"
     },
     "ko_KR": {
-      "pattern": "칭보 뗏목 화물 그룹"
+      "pattern": "청파벌 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de carga de balsas Qingbo"
+      "pattern": "Balsas de Qingbo [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Jangadas de Qingbo [pct]"
+    },
+    "de_DE": {
+      "pattern": "Qingbo-Flöße [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Radeaux de Qingbo [colis]"
+    },
+    "id_ID": {
+      "pattern": "Rakit Qingbo [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Zattere di Qingbo (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Плоты Циньбо [упак.]"
+    },
+    "th_TH": {
+      "pattern": "แพ​ชิง​ป๋อ​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Bè Thanh Ba [bộ]"
     }
   },
   "k_ae7b2918": {
@@ -989,16 +2051,40 @@
       "pattern": "源石樹幼苗貨組"
     },
     "en_US": {
-      "pattern": "Originium tree seedlings shipment group"
+      "pattern": "Originium Saplings [pkg]"
     },
     "ja_JP": {
-      "pattern": "オリジニウム苗木出荷グループ"
+      "pattern": "源石の枝の苗セット"
     },
     "ko_KR": {
-      "pattern": "오리지늄 묘목 출하 그룹"
+      "pattern": "작은 오리지늄 나무 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de envío de plántulas de árboles Originium"
+      "pattern": "Retoños de Originio [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Mudas de Originium [pct]"
+    },
+    "de_DE": {
+      "pattern": "Originium-Setzlinge [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Arbrisseaux d'originium [colis]"
+    },
+    "id_ID": {
+      "pattern": "Bibit Originium [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Alberelli di Originium (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Ориджиниевые ростки [упак.]"
+    },
+    "th_TH": {
+      "pattern": "ต้นอ่อน​ออ​ริ​จิ​เนียม​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Chồi Originium [bộ]"
     }
   },
   "k_dff480f9": {
@@ -1019,6 +2105,30 @@
     },
     "es_ES": {
       "pattern": "Parque científico de Originio"
+    },
+    "pt_BR": {
+      "pattern": "Parque Científico de Originium"
+    },
+    "de_DE": {
+      "pattern": "Originium-Wissenschaftspark"
+    },
+    "fr_FR": {
+      "pattern": "Parc des sciences de l'originium"
+    },
+    "id_ID": {
+      "pattern": "Taman Sains Originium"
+    },
+    "it_IT": {
+      "pattern": "Parco scientifico dell'Originium"
+    },
+    "ru_RU": {
+      "pattern": "Центр исследования ориджиния"
+    },
+    "th_TH": {
+      "pattern": "สวน​วิทยาศาสตร์​ออ​ริ​จิ​เนียม"
+    },
+    "vi_VN": {
+      "pattern": "Công Viên Khoa Học Originium"
     }
   },
   "k_37ad1f84": {
@@ -1038,13 +2148,31 @@
       "pattern": "오리지늄 광물"
     },
     "es_ES": {
-      "pattern": "fuente mía"
+      "pattern": "Mineral de Originio"
     },
     "ru_RU": {
       "pattern": "Ориджиниевая руда"
     },
     "th_TH": {
       "pattern": "แร่​ออ​ริ​จิ​เนียม"
+    },
+    "pt_BR": {
+      "pattern": "Minério de Originium"
+    },
+    "de_DE": {
+      "pattern": "Originium-Erz"
+    },
+    "fr_FR": {
+      "pattern": "Minerai d'originium"
+    },
+    "id_ID": {
+      "pattern": "Bijih Originium"
+    },
+    "it_IT": {
+      "pattern": "Minerale di Originium"
+    },
+    "vi_VN": {
+      "pattern": "Quặng Originium"
     }
   },
   "k_5af845da": {
@@ -1065,6 +2193,30 @@
     },
     "es_ES": {
       "pattern": "Aggelomoirai de mármol"
+    },
+    "pt_BR": {
+      "pattern": "Aggelomoirai de Mármore"
+    },
+    "de_DE": {
+      "pattern": "Marmor-Aggelomoirai"
+    },
+    "fr_FR": {
+      "pattern": "Aggelomoires de marbre"
+    },
+    "id_ID": {
+      "pattern": "Marble Aggelomoirai"
+    },
+    "it_IT": {
+      "pattern": "Aggelomoira marmorea"
+    },
+    "ru_RU": {
+      "pattern": "Мраморная аггел-мойра"
+    },
+    "th_TH": {
+      "pattern": "มาร์​เบิล​ แอง​เจ​โลม​อ​ย​เร"
+    },
+    "vi_VN": {
+      "pattern": "Aggelomoirai Cẩm Thạch"
     }
   },
   "k_d26e1bbe": {
@@ -1075,16 +2227,40 @@
       "pattern": "礦物"
     },
     "en_US": {
-      "pattern": "mineral"
+      "pattern": "Ore"
     },
     "ja_JP": {
-      "pattern": "ミネラル"
+      "pattern": "鉱物"
     },
     "ko_KR": {
       "pattern": "광물"
     },
     "es_ES": {
-      "pattern": "mineral"
+      "pattern": "Mineral"
+    },
+    "pt_BR": {
+      "pattern": "Minério"
+    },
+    "de_DE": {
+      "pattern": "Erz"
+    },
+    "fr_FR": {
+      "pattern": "Minerai"
+    },
+    "id_ID": {
+      "pattern": "Bijih"
+    },
+    "it_IT": {
+      "pattern": "Minerali"
+    },
+    "ru_RU": {
+      "pattern": "Руда"
+    },
+    "th_TH": {
+      "pattern": "แร่"
+    },
+    "vi_VN": {
+      "pattern": "Quặng"
     }
   },
   "k_2b92fbc9": {
@@ -1105,6 +2281,30 @@
     },
     "es_ES": {
       "pattern": "Veta de origen"
+    },
+    "pt_BR": {
+      "pattern": "Veio de Origin"
+    },
+    "de_DE": {
+      "pattern": "Mineralquell"
+    },
+    "fr_FR": {
+      "pattern": "Veine originelle"
+    },
+    "id_ID": {
+      "pattern": "Lodespring Asal"
+    },
+    "it_IT": {
+      "pattern": "Giacimento originario"
+    },
+    "ru_RU": {
+      "pattern": "Первое месторождение"
+    },
+    "th_TH": {
+      "pattern": "ต้นสาย​กำเนิด​แร่"
+    },
+    "vi_VN": {
+      "pattern": "Khởi Nguồn Lodespring"
     }
   },
   "k_55ed0a7b": {
@@ -1112,19 +2312,43 @@
       "pattern": "硬脑壳头盔货组"
     },
     "zh_TW": {
-      "pattern": "硬腦殼安全帽貨組"
+      "pattern": "硬頭殼安全帽貨組"
     },
     "en_US": {
-      "pattern": "Hard skull helmet cargo group"
+      "pattern": "Hard Noggin Helmets [pkg]"
     },
     "ja_JP": {
-      "pattern": "ハードスカルヘルメット貨物グループ"
+      "pattern": "石頭ヘルメットセット"
     },
     "ko_KR": {
-      "pattern": "하드 스컬 헬멧 카고 그룹"
+      "pattern": "단단한 헬멧 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de carga de casco de calavera dura"
+      "pattern": "Cascos para cabeza dura [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Capacetes de Casco Rígido [pct]"
+    },
+    "de_DE": {
+      "pattern": "Dickschädel-Helme [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Casques Tête-Dure [colis]"
+    },
+    "id_ID": {
+      "pattern": "Helm Kepala Batu [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Caschetti zuccadura (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Шлемы «Крепкий котелок» [упак.]"
+    },
+    "th_TH": {
+      "pattern": "หมวก​กัน​น็อค​แบบ​แข็ง​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Mũ Cứng Đầu [bộ]"
     }
   },
   "k_3cdec45b": {
@@ -1144,13 +2368,31 @@
       "pattern": "시트론 통조림(대)"
     },
     "es_ES": {
-      "pattern": "Cítricos enlatados seleccionados"
+      "pattern": "Citroma enlatado [A]"
     },
     "ru_RU": {
-      "pattern": "Консервированный цитром [A]"
+      "pattern": "Консерв. цитром [A]"
     },
     "th_TH": {
       "pattern": "ส้ม​ซิ​โตร​มก​ระ​ป๋อง​ [A]"
+    },
+    "pt_BR": {
+      "pattern": "Citroma Enlatada [A]"
+    },
+    "de_DE": {
+      "pattern": "Dosen-Zitromen [A]"
+    },
+    "fr_FR": {
+      "pattern": "Citromes en conserve [A]"
+    },
+    "id_ID": {
+      "pattern": "Citrome Kalengan [A]"
+    },
+    "it_IT": {
+      "pattern": "Citromi in scatola (A)"
+    },
+    "vi_VN": {
+      "pattern": "Cam Đóng Hộp [A]"
     }
   },
   "k_adb42389": {
@@ -1170,13 +2412,31 @@
       "pattern": "메밀꽃 치유 캡슐(대)"
     },
     "es_ES": {
-      "pattern": "Cápsulas de Trigo Sarraceno Seleccionadas"
+      "pattern": "Cápsulas de floracina [A]"
     },
     "ru_RU": {
       "pattern": "Гречекапсула [A]"
     },
     "th_TH": {
       "pattern": "แคปซูล​บัค​ [A]"
+    },
+    "pt_BR": {
+      "pattern": "Cápsula de Cervina [A]"
+    },
+    "de_DE": {
+      "pattern": "Buchweizen-Pille [A]"
+    },
+    "fr_FR": {
+      "pattern": "Capsule Revigor [A]"
+    },
+    "id_ID": {
+      "pattern": "Kapsul Buck [A]"
+    },
+    "it_IT": {
+      "pattern": "Capsula di arcofiore (A)"
+    },
+    "vi_VN": {
+      "pattern": "Thuốc Kiều Mạch [A]"
     }
   },
   "k_0d158460": {
@@ -1187,16 +2447,40 @@
       "pattern": "羅丹"
     },
     "en_US": {
-      "pattern": "Rodin"
+      "pattern": "Rhodagn"
     },
     "ja_JP": {
       "pattern": "ロダン"
     },
     "ko_KR": {
-      "pattern": "로댕"
+      "pattern": "로댄"
     },
     "es_ES": {
-      "pattern": "rodin"
+      "pattern": "Rhodagn"
+    },
+    "pt_BR": {
+      "pattern": "Rhodagn"
+    },
+    "de_DE": {
+      "pattern": "Rhodagn"
+    },
+    "fr_FR": {
+      "pattern": "Rhodagn"
+    },
+    "id_ID": {
+      "pattern": "Rhodagn"
+    },
+    "it_IT": {
+      "pattern": "Rhodagn"
+    },
+    "ru_RU": {
+      "pattern": "Родан"
+    },
+    "th_TH": {
+      "pattern": "โรด​อ​น"
+    },
+    "vi_VN": {
+      "pattern": "Rhodagn"
     }
   },
   "k_fadfef4b": {
@@ -1216,6 +2500,30 @@
       "pattern": "네파리스"
     },
     "es_ES": {
+      "pattern": "Nefarith"
+    },
+    "pt_BR": {
+      "pattern": "Nefarith"
+    },
+    "de_DE": {
+      "pattern": "Nefarith"
+    },
+    "fr_FR": {
+      "pattern": "Nefarith"
+    },
+    "id_ID": {
+      "pattern": "Nefarith"
+    },
+    "it_IT": {
+      "pattern": "Nefarith"
+    },
+    "ru_RU": {
+      "pattern": "Неферит"
+    },
+    "th_TH": {
+      "pattern": "เน​ฟา​ริธ"
+    },
+    "vi_VN": {
       "pattern": "Nefarith"
     }
   },
@@ -1237,6 +2545,30 @@
     },
     "es_ES": {
       "pattern": "Aluvión energético"
+    },
+    "pt_BR": {
+      "pattern": "Aluvião de Energia"
+    },
+    "de_DE": {
+      "pattern": "Energie-Alluvium"
+    },
+    "fr_FR": {
+      "pattern": "Alluvion d'énergie"
+    },
+    "id_ID": {
+      "pattern": "Aluvium Energi"
+    },
+    "it_IT": {
+      "pattern": "Sedimento energetico"
+    },
+    "ru_RU": {
+      "pattern": "Аллювий энергии"
+    },
+    "th_TH": {
+      "pattern": "อัล​ลู​เวีย​ม​พลังงาน"
+    },
+    "vi_VN": {
+      "pattern": "Năng Lượng Bồi Tích"
     }
   },
   "k_ccdf2110": {
@@ -1256,13 +2588,31 @@
       "pattern": "고밀도 오리지늄 가루"
     },
     "es_ES": {
-      "pattern": "Polvo de piedra de origen denso"
+      "pattern": "Polvo de Originio denso"
     },
     "ru_RU": {
       "pattern": "Мелкомолотый ориджиний"
     },
     "th_TH": {
       "pattern": "ผง​ออ​ริ​จิ​เนียม​เข้มข้น"
+    },
+    "pt_BR": {
+      "pattern": "Pó de Originium Denso"
+    },
+    "de_DE": {
+      "pattern": "Verdichtetes Originium-Pulver"
+    },
+    "fr_FR": {
+      "pattern": "Poudre d'originium dense"
+    },
+    "id_ID": {
+      "pattern": "Bubuk Originium Padat"
+    },
+    "it_IT": {
+      "pattern": "Polvere densa di Originium"
+    },
+    "vi_VN": {
+      "pattern": "Bột Originium Đặc"
     }
   },
   "k_9aca6716": {
@@ -1276,16 +2626,37 @@
       "pattern": "Yazhen Syringe [C]"
     },
     "ja_JP": {
-      "pattern": "芽注入"
+      "pattern": "芽針注射剤Ⅰ"
     },
     "ko_KR": {
       "pattern": "야침 주사약"
     },
     "es_ES": {
-      "pattern": "inyección de cogollos"
+      "pattern": "Jeringa de Yazhen [C]"
     },
     "ru_RU": {
       "pattern": "Инъектор ячжэня [C]"
+    },
+    "pt_BR": {
+      "pattern": "Seringa de Broto-Agulha [C]"
+    },
+    "de_DE": {
+      "pattern": "Yazhen-Spritze [C]"
+    },
+    "fr_FR": {
+      "pattern": "Seringue de chardille [C]"
+    },
+    "id_ID": {
+      "pattern": "Alat Suntik Yazhen [C]"
+    },
+    "it_IT": {
+      "pattern": "Siringa di yazhen (C)"
+    },
+    "th_TH": {
+      "pattern": "เข็ม​ฉีด​หน่อ​เข็ม​ [C]"
+    },
+    "vi_VN": {
+      "pattern": "Ống Tiêm Mầm Lá Kim [C]"
     }
   },
   "k_710b0237": {
@@ -1305,10 +2676,31 @@
       "pattern": "메밀꽃 치유 캡슐"
     },
     "es_ES": {
-      "pattern": "Cápsulas de Qiaoyu"
+      "pattern": "Cápsulas de floracina [C]"
     },
     "ru_RU": {
       "pattern": "Гречекапсула [C]"
+    },
+    "pt_BR": {
+      "pattern": "Cápsula de Cervina [C]"
+    },
+    "de_DE": {
+      "pattern": "Buchweizen-Pille [C]"
+    },
+    "fr_FR": {
+      "pattern": "Capsule Revigor [C]"
+    },
+    "id_ID": {
+      "pattern": "Kapsul Buck [C]"
+    },
+    "it_IT": {
+      "pattern": "Capsula di arcofiore (C)"
+    },
+    "th_TH": {
+      "pattern": "แคปซูล​บัค​ [C]"
+    },
+    "vi_VN": {
+      "pattern": "Thuốc Kiều Mạch [C]"
     }
   },
   "k_a3c507b8": {
@@ -1328,13 +2720,31 @@
       "pattern": "페리움 광석"
     },
     "es_ES": {
-      "pattern": "mineral de hierro azul"
+      "pattern": "Mineral de ferrio"
     },
     "ru_RU": {
       "pattern": "Ферриевая руда"
     },
     "th_TH": {
       "pattern": "แร่​เฟอร์​เรียม"
+    },
+    "pt_BR": {
+      "pattern": "Minério de Ferrium"
+    },
+    "de_DE": {
+      "pattern": "Ferrium-Erz"
+    },
+    "fr_FR": {
+      "pattern": "Minerai de ferrium"
+    },
+    "id_ID": {
+      "pattern": "Bijih Ferrium"
+    },
+    "it_IT": {
+      "pattern": "Minerale di ferrium"
+    },
+    "vi_VN": {
+      "pattern": "Quặng Sắt"
     }
   },
   "k_308fd0c3": {
@@ -1345,16 +2755,40 @@
       "pattern": "警戒者礦鎬貨組"
     },
     "en_US": {
-      "pattern": "Vigilant Mine Pickaxe Cargo Set"
+      "pattern": "Vigilant Pickaxes [pkg]"
     },
     "ja_JP": {
-      "pattern": "警戒鉱山のつるはしカーゴ セット"
+      "pattern": "警戒者のツルハシセット"
     },
     "ko_KR": {
-      "pattern": "경계하는 지뢰 곡괭이 화물 세트"
+      "pattern": "경계자의 곡괭이 상품군"
     },
     "es_ES": {
-      "pattern": "Conjunto de carga de pico de mina vigilante"
+      "pattern": "Picos Vigilantes [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Picaretas Vigilante [pct]"
+    },
+    "de_DE": {
+      "pattern": "Bürgerwehr-Spitzhacken [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Pioches vigilantes [colis]"
+    },
+    "id_ID": {
+      "pattern": "Beliung Waspada [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Picconi sentinella (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Сенсорные кирки [упак.]"
+    },
+    "th_TH": {
+      "pattern": "อีเต้อ​ระวัง​ภัย​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Cuốc Báo Động [bộ]"
     }
   },
   "k_ba83829f": {
@@ -1362,7 +2796,7 @@
       "pattern": "试验园区"
     },
     "zh_TW": {
-      "pattern": "試驗園區"
+      "pattern": "實驗園區"
     },
     "en_US": {
       "pattern": "Test Area"
@@ -1375,6 +2809,30 @@
     },
     "es_ES": {
       "pattern": "Área de pruebas"
+    },
+    "pt_BR": {
+      "pattern": "Área de Testes"
+    },
+    "de_DE": {
+      "pattern": "Testzone"
+    },
+    "fr_FR": {
+      "pattern": "Zone de test"
+    },
+    "id_ID": {
+      "pattern": "Area Uji Coba"
+    },
+    "it_IT": {
+      "pattern": "Area dei test"
+    },
+    "ru_RU": {
+      "pattern": "Область испытаний"
+    },
+    "th_TH": {
+      "pattern": "เขต​ทดสอบ"
+    },
+    "vi_VN": {
+      "pattern": "Khu Thử Nghiệm"
     }
   },
   "k_783931ed": {
@@ -1382,19 +2840,43 @@
       "pattern": "谷地水培肉货组"
     },
     "zh_TW": {
-      "pattern": "谷地水耕肉貨組"
+      "pattern": "谷地水培肉貨組"
     },
     "en_US": {
-      "pattern": "Valley hydroponic meat group"
+      "pattern": "Valley Hydroculture Fillets [pkg]"
     },
     "ja_JP": {
-      "pattern": "バレー水耕肉グループ"
+      "pattern": "谷地水培養肉セット"
     },
     "ko_KR": {
-      "pattern": "밸리수경고기그룹"
+      "pattern": "협곡 수경 배양육 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de carne hidropónica del valle"
+      "pattern": "Filetes de hidrocultivo del Valle [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Filés de Hidrocultura do Vale [pct]"
+    },
+    "de_DE": {
+      "pattern": "Hydrokultur-Filet aus dem Tal [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Filets hydroponiques de la Vallée [colis]"
+    },
+    "id_ID": {
+      "pattern": "Filet Hidrokultur Lembah [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Filetti da idrocoltura della Valle (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Долинные гидропонные стейки [упак.]"
+    },
+    "th_TH": {
+      "pattern": "เนื้อ​แล่​ไฮ​โดร​คัล​เจอร์​หุบเขา​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Thịt Thủy Canh Thung Lũng [bộ]"
     }
   },
   "k_2cbc9cb6": {
@@ -1414,7 +2896,7 @@
       "pattern": "정합용 유체"
     },
     "es_ES": {
-      "pattern": "Líquido de ajuste de cuadrante"
+      "pattern": "Fluido de Ajuste de Cuadrante"
     },
     "id_ID": {
       "pattern": "Cairan Penyesuai Kuadran"
@@ -1424,6 +2906,21 @@
     },
     "th_TH": {
       "pattern": "น้ำยา​ขึ้น​รูป​ควอ​แด​รน​ท์"
+    },
+    "pt_BR": {
+      "pattern": "Fluido de Ajuste de Quadrante"
+    },
+    "de_DE": {
+      "pattern": "Quadrantenfüll-\nflüssigkeit"
+    },
+    "fr_FR": {
+      "pattern": "Fluide d'ajustage de quadrant"
+    },
+    "it_IT": {
+      "pattern": "Liquido di assestamento per quadranti"
+    },
+    "vi_VN": {
+      "pattern": "Chất Lỏng Điều Chỉnh Phân Vùng"
     }
   },
   "k_ffeba46d": {
@@ -1437,16 +2934,37 @@
       "pattern": "Hetonite Part"
     },
     "ja_JP": {
-      "pattern": "ヘト銅部品"
+      "pattern": "緋銅部品"
     },
     "ko_KR": {
       "pattern": "혁동 부품"
     },
     "es_ES": {
-      "pattern": "Piezas de cobre"
+      "pattern": "Pieza de hetonita"
     },
     "ru_RU": {
       "pattern": "Гетонитовая деталь"
+    },
+    "pt_BR": {
+      "pattern": "Peça de Hetonita"
+    },
+    "de_DE": {
+      "pattern": "Hetonit-Teil"
+    },
+    "fr_FR": {
+      "pattern": "Pièce en hétonite"
+    },
+    "id_ID": {
+      "pattern": "Bagian Hetonite"
+    },
+    "it_IT": {
+      "pattern": "Parte di etonite"
+    },
+    "th_TH": {
+      "pattern": "ชิ้นส่วน​เฮ​โท​ไนต์"
+    },
+    "vi_VN": {
+      "pattern": "Mảnh Huyết Đồng"
     }
   },
   "k_e82c9392": {
@@ -1466,7 +2984,7 @@
       "pattern": "초거리 빛 반사 파이프"
     },
     "es_ES": {
-      "pattern": "tubo de teleobjetivo"
+      "pattern": "Tubo de fotoemisión de metadiástima"
     },
     "id_ID": {
       "pattern": "Tabung Fotoemisi Metadiastima"
@@ -1476,6 +2994,21 @@
     },
     "th_TH": {
       "pattern": "หลอด​ปล่อยแสง​เม​ทา​ได​แอส​ทิมา"
+    },
+    "pt_BR": {
+      "pattern": "Tubo de Fotoemissão Metadiastima"
+    },
+    "de_DE": {
+      "pattern": "Metadiastima-Photoemissions-\nröhre"
+    },
+    "fr_FR": {
+      "pattern": "Tube de photoémission en métadiastema"
+    },
+    "it_IT": {
+      "pattern": "Tubo a fotoemissione metaspaziale"
+    },
+    "vi_VN": {
+      "pattern": "Ống Phát Quang Metadiastima"
     }
   },
   "k_d75af357": {
@@ -1483,19 +3016,43 @@
       "pattern": "边角料积木货组"
     },
     "zh_TW": {
-      "pattern": "邊角料積木貨組"
+      "pattern": "碎料積木貨組"
     },
     "en_US": {
-      "pattern": "Scrap building block cargo group"
+      "pattern": "Scrap Toy Blocks [pkg]"
     },
     "ja_JP": {
-      "pattern": "スクラップビルディングブロック貨物グループ"
+      "pattern": "端材ブロックセット"
     },
     "ko_KR": {
-      "pattern": "스크랩 빌딩 블록 화물 그룹"
+      "pattern": "재활용 블록 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de carga de bloques de construcción de chatarra"
+      "pattern": "Bloques de juguetes chatarra [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Blocos de Brinquedo de Sucata [pct]"
+    },
+    "de_DE": {
+      "pattern": "Ausrangierte Bauklötze [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Blocs de construction [colis]"
+    },
+    "id_ID": {
+      "pattern": "Balok Mainan Rongsok [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Mattoncini giocattolo improvvisati (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Кубики из утильсырья [упак.]"
+    },
+    "th_TH": {
+      "pattern": "เศษ​บล็อก​ของเล่น​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Gạch Xếp Vụn [bộ]"
     }
   },
   "k_5a72ba02": {
@@ -1506,16 +3063,40 @@
       "pattern": "重建指揮部"
     },
     "en_US": {
-      "pattern": "Reconstruction Command"
+      "pattern": "Reconstruction HQ"
     },
     "ja_JP": {
-      "pattern": "復興コマンド"
+      "pattern": "再建管理本部"
     },
     "ko_KR": {
-      "pattern": "재건 명령"
+      "pattern": "재건 지휘부"
     },
     "es_ES": {
-      "pattern": "Comando de Reconstrucción"
+      "pattern": "CG de Reconstrucción"
+    },
+    "pt_BR": {
+      "pattern": "QG da Reconstrução"
+    },
+    "de_DE": {
+      "pattern": "Wiederaufbau-HQ"
+    },
+    "fr_FR": {
+      "pattern": "QG de reconstruction"
+    },
+    "id_ID": {
+      "pattern": "Mabes Rekonstruksi"
+    },
+    "it_IT": {
+      "pattern": "QG per la ricostruzione"
+    },
+    "ru_RU": {
+      "pattern": "Штаб реконструкции"
+    },
+    "th_TH": {
+      "pattern": "การ​สร้าง​สำนักงานใหญ่​ขึ้น​ใหม่"
+    },
+    "vi_VN": {
+      "pattern": "Tổng Bộ Tái Thiết"
     }
   },
   "k_428c533a": {
@@ -1529,16 +3110,37 @@
       "pattern": "Heavy Xiranite"
     },
     "ja_JP": {
-      "pattern": "重い土壌"
+      "pattern": "重息壌"
     },
     "ko_KR": {
       "pattern": "중식양"
     },
     "es_ES": {
-      "pattern": "suelo pesado"
+      "pattern": "Xiranita pesada"
     },
     "ru_RU": {
       "pattern": "Тяжелый ксиранит"
+    },
+    "pt_BR": {
+      "pattern": "Xiranita Pesada"
+    },
+    "de_DE": {
+      "pattern": "Schweres Xiranit"
+    },
+    "fr_FR": {
+      "pattern": "Xiranite lourde"
+    },
+    "id_ID": {
+      "pattern": "Xiranite Berat"
+    },
+    "it_IT": {
+      "pattern": "Xiranite pesante"
+    },
+    "th_TH": {
+      "pattern": "ซี​เรน​ไนต์​หนัก"
+    },
+    "vi_VN": {
+      "pattern": "Xiranite Nặng"
     }
   },
   "k_c18b3249": {
@@ -1552,13 +3154,37 @@
       "pattern": "T-Creds"
     },
     "ja_JP": {
-      "pattern": "通貨収集"
+      "pattern": "通貨"
     },
     "ko_KR": {
       "pattern": "화폐 수집"
     },
     "es_ES": {
       "pattern": "T-Creds"
+    },
+    "pt_BR": {
+      "pattern": "T-Creds"
+    },
+    "de_DE": {
+      "pattern": "T-Kreditscheine"
+    },
+    "fr_FR": {
+      "pattern": "Crédits T"
+    },
+    "id_ID": {
+      "pattern": "T-Cred"
+    },
+    "it_IT": {
+      "pattern": "Crediti-T"
+    },
+    "ru_RU": {
+      "pattern": "Т-креды"
+    },
+    "th_TH": {
+      "pattern": "ที​-​เครดิต"
+    },
+    "vi_VN": {
+      "pattern": "T-Cred"
     }
   },
   "k_ff00a312": {
@@ -1569,16 +3195,40 @@
       "pattern": "錨點廚具貨組"
     },
     "en_US": {
-      "pattern": "Anchor kitchenware group"
+      "pattern": "Ankhorilling Kitchenware [pkg]"
     },
     "ja_JP": {
-      "pattern": "アンカーキッチン用品グループ"
+      "pattern": "アンカー製調理器具セット"
     },
     "ko_KR": {
-      "pattern": "앵커 주방용품 그룹"
+      "pattern": "앵커 주방 도구 상품군"
     },
     "es_ES": {
-      "pattern": "Grupo de menaje de cocina ancla"
+      "pattern": "Utensilios de cocina Ankhorilling [paq.]"
+    },
+    "pt_BR": {
+      "pattern": "Utensílios de Cozinha Ankhorilling [pct]"
+    },
+    "de_DE": {
+      "pattern": "Ankhor-Küchenzubehör [Paket]"
+    },
+    "fr_FR": {
+      "pattern": "Ustensiles de cuisine ankhoriliens [colis]"
+    },
+    "id_ID": {
+      "pattern": "Peralatan Dapur Ankhorilling [pkt]"
+    },
+    "it_IT": {
+      "pattern": "Ankhoreria da cucina (pacco)"
+    },
+    "ru_RU": {
+      "pattern": "Кухонная утварь из анкеров [упак.]"
+    },
+    "th_TH": {
+      "pattern": "เครื่องครัว​แอง​เคอ​ริล​ลิง​ [แพ็ก​]"
+    },
+    "vi_VN": {
+      "pattern": "Đồ Dùng Bếp Ankhorilling [bộ]"
     }
   },
   "k_b6666941": {
@@ -1586,19 +3236,43 @@
       "pattern": "锦草软饮"
     },
     "zh_TW": {
-      "pattern": "錦草軟飲"
+      "pattern": "錦草飲料"
     },
     "en_US": {
-      "pattern": "Jincao soft drink"
+      "pattern": "Jincao Drink"
     },
     "ja_JP": {
-      "pattern": "金草ソフトドリンク"
+      "pattern": "錦草ソーダⅠ"
     },
     "ko_KR": {
-      "pattern": "진차오 청량음료"
+      "pattern": "금초 청량음료"
     },
     "es_ES": {
-      "pattern": "refresco jincao"
+      "pattern": "Bebida de Jincao"
+    },
+    "pt_BR": {
+      "pattern": "Bebida de Capim-Seda"
+    },
+    "de_DE": {
+      "pattern": "Jincao-Limonade"
+    },
+    "fr_FR": {
+      "pattern": "Boisson à l'astéracée"
+    },
+    "id_ID": {
+      "pattern": "Minuman Jincao"
+    },
+    "it_IT": {
+      "pattern": "Bevanda di jincao"
+    },
+    "ru_RU": {
+      "pattern": "Напиток с цзиньцао"
+    },
+    "th_TH": {
+      "pattern": "เครื่องดื่ม​หญ้า​ไหม"
+    },
+    "vi_VN": {
+      "pattern": "Nước Cỏ Sao Lụa"
     }
   },
   "k_de7be865": {
@@ -1619,6 +3293,30 @@
     },
     "es_ES": {
       "pattern": "Ruan Yi"
+    },
+    "pt_BR": {
+      "pattern": "Ruan Yi"
+    },
+    "de_DE": {
+      "pattern": "Ruan Yi"
+    },
+    "fr_FR": {
+      "pattern": "Ruan Yi"
+    },
+    "id_ID": {
+      "pattern": "Ruan Yi"
+    },
+    "it_IT": {
+      "pattern": "Ruan Yi"
+    },
+    "ru_RU": {
+      "pattern": "Жуань И"
+    },
+    "th_TH": {
+      "pattern": "เรือน​ยี่"
+    },
+    "vi_VN": {
+      "pattern": "Ruan Yi"
     }
   },
   "k_7a5505d0": {
@@ -1629,16 +3327,40 @@
       "pattern": "難民暫居處"
     },
     "en_US": {
-      "pattern": "refugee temporary residence"
+      "pattern": "Refugee Camp"
     },
     "ja_JP": {
-      "pattern": "難民の一時滞在"
+      "pattern": "仮設居住地"
     },
     "ko_KR": {
-      "pattern": "난민 임시 거주지"
+      "pattern": "유랑자 임시 거주지"
     },
     "es_ES": {
-      "pattern": "residencia temporal de refugiados"
+      "pattern": "Campamento de refugiados"
+    },
+    "pt_BR": {
+      "pattern": "Acampamento de Refugiados"
+    },
+    "de_DE": {
+      "pattern": "Flüchtlingscamp"
+    },
+    "fr_FR": {
+      "pattern": "Camp de réfugiés"
+    },
+    "id_ID": {
+      "pattern": "Kamp Pengungsi"
+    },
+    "it_IT": {
+      "pattern": "Accampamento dei rifugiati"
+    },
+    "ru_RU": {
+      "pattern": "Лагерь беженцев"
+    },
+    "th_TH": {
+      "pattern": "ค่าย​ผู้ลี้ภัย"
+    },
+    "vi_VN": {
+      "pattern": "Trại Tị Nạn"
     }
   },
   "k_50917f2a": {
@@ -1659,6 +3381,30 @@
     },
     "es_ES": {
       "pattern": "Piedra Marcadora"
+    },
+    "pt_BR": {
+      "pattern": "Pedra de Marcação"
+    },
+    "de_DE": {
+      "pattern": "Grenzstein"
+    },
+    "fr_FR": {
+      "pattern": "Pierre de marquage"
+    },
+    "id_ID": {
+      "pattern": "Batu Penanda"
+    },
+    "it_IT": {
+      "pattern": "Pietra di demarcazione"
+    },
+    "ru_RU": {
+      "pattern": "Межевой камень"
+    },
+    "th_TH": {
+      "pattern": "หิน​นำทาง"
+    },
+    "vi_VN": {
+      "pattern": "Đá Ranh Giới"
     }
   },
   "k_d5586b4b": {
@@ -1669,16 +3415,40 @@
       "pattern": "高容量谷地電池"
     },
     "en_US": {
-      "pattern": "High capacity valley battery"
+      "pattern": "HC Valley Battery"
     },
     "ja_JP": {
-      "pattern": "大容量バレーバッテリー"
+      "pattern": "大容量谷地バッテリー"
     },
     "ko_KR": {
-      "pattern": "고용량 밸리 배터리"
+      "pattern": "대용량 협곡 배터리"
     },
     "es_ES": {
-      "pattern": "Batería de valle de alta capacidad"
+      "pattern": "Batería de CA del Valle"
+    },
+    "pt_BR": {
+      "pattern": "Bateria CA do Vale"
+    },
+    "de_DE": {
+      "pattern": "Tal-HC-Batterie"
+    },
+    "fr_FR": {
+      "pattern": "Batterie de la Vallée HC"
+    },
+    "id_ID": {
+      "pattern": "Baterai KT Lembah"
+    },
+    "it_IT": {
+      "pattern": "Batteria AC della Valle"
+    },
+    "ru_RU": {
+      "pattern": "Батарея ВЕ Долины"
+    },
+    "th_TH": {
+      "pattern": "แบตเตอรี่​หุบเขา​ขนาดใหญ่"
+    },
+    "vi_VN": {
+      "pattern": "Pin Thung Lũng Dung Lượng Cao"
     }
   },
   "yingtuo_monument": {
@@ -1699,6 +3469,30 @@
     },
     "es_ES": {
       "pattern": "Monumento del umbral"
+    },
+    "pt_BR": {
+      "pattern": "Monumento Umbral"
+    },
+    "de_DE": {
+      "pattern": "Schattenmonument"
+    },
+    "fr_FR": {
+      "pattern": "Monument de l'ombre"
+    },
+    "id_ID": {
+      "pattern": "Monumen Umbra"
+    },
+    "it_IT": {
+      "pattern": "Monumento d'ombra"
+    },
+    "ru_RU": {
+      "pattern": "Сумрачный монумент"
+    },
+    "th_TH": {
+      "pattern": "อนุสาวรีย์​แห่ง​เงามืด"
+    },
+    "vi_VN": {
+      "pattern": "Đài Bóng Tối"
     }
   },
   "k_zhuoliu": {
@@ -1709,7 +3503,7 @@
       "pattern": "濁流具現"
     },
     "en_US": {
-      "pattern": "Turbid Manifestation"
+      "pattern": "Turbidity Manifest"
     },
     "ja_JP": {
       "pattern": "濁流具現"
@@ -1718,7 +3512,31 @@
       "pattern": "탁류 구현"
     },
     "es_ES": {
-      "pattern": "Manifestación Turbia"
+      "pattern": "Manifestación de turbiedad"
+    },
+    "pt_BR": {
+      "pattern": "Manifesto de Turbidez"
+    },
+    "de_DE": {
+      "pattern": "Trübungsverzeichnis"
+    },
+    "fr_FR": {
+      "pattern": "Manifeste de la Turbidité"
+    },
+    "id_ID": {
+      "pattern": "Manifestasi Kekeruhan"
+    },
+    "it_IT": {
+      "pattern": "Manifesto di torbidità"
+    },
+    "ru_RU": {
+      "pattern": "Образ помутнения"
+    },
+    "th_TH": {
+      "pattern": "ภูต​สำแดง​สับสน"
+    },
+    "vi_VN": {
+      "pattern": "Sương Đục Hiện Thể"
     }
   },
   "k_zhuotong": {
@@ -1729,16 +3547,40 @@
       "pattern": "灼痛疤痕"
     },
     "en_US": {
-      "pattern": "Scorching Scar"
+      "pattern": "Searing Scars"
     },
     "ja_JP": {
-      "pattern": "灼熱の傷跡"
+      "pattern": "灼ける傷跡"
     },
     "ko_KR": {
-      "pattern": "작열의 상처"
+      "pattern": "작열의 흉터"
     },
     "es_ES": {
-      "pattern": "Cicatriz Ardiente"
+      "pattern": "Marcas de calcinación"
+    },
+    "pt_BR": {
+      "pattern": "Cicatrizes Ardentes"
+    },
+    "de_DE": {
+      "pattern": "Brennende Narben"
+    },
+    "fr_FR": {
+      "pattern": "Cicatrices brûlantes"
+    },
+    "id_ID": {
+      "pattern": "Luka Panas"
+    },
+    "it_IT": {
+      "pattern": "Cicatrici roventi"
+    },
+    "ru_RU": {
+      "pattern": "Жгучие шрамы"
+    },
+    "th_TH": {
+      "pattern": "แผลเก่า​ปะทุ"
+    },
+    "vi_VN": {
+      "pattern": "Sẹo Bỏng Rát"
     }
   },
   "k_wuji": {
@@ -1749,16 +3591,40 @@
       "pattern": "無機造物"
     },
     "en_US": {
-      "pattern": "Inorganic Creation"
+      "pattern": "Inorganic Construct"
     },
     "ja_JP": {
-      "pattern": "無機造物"
+      "pattern": "無機的造物"
     },
     "ko_KR": {
-      "pattern": "무기 창조물"
+      "pattern": "무기물"
     },
     "es_ES": {
-      "pattern": "Creación Inorgánica"
+      "pattern": "Constructo inorgánico"
+    },
+    "pt_BR": {
+      "pattern": "Construção Inorgânica"
+    },
+    "de_DE": {
+      "pattern": "Anorganisches Konstrukt"
+    },
+    "fr_FR": {
+      "pattern": "Construction non organique"
+    },
+    "id_ID": {
+      "pattern": "Konstruksi Anorganik"
+    },
+    "it_IT": {
+      "pattern": "Costrutto inorganico"
+    },
+    "ru_RU": {
+      "pattern": "Неорганическая постройка"
+    },
+    "th_TH": {
+      "pattern": "โครงสร้าง​อนินทรีย์"
+    },
+    "vi_VN": {
+      "pattern": "Thực Thể Vô Cơ"
     }
   },
   "k_dadiqizi": {
@@ -1769,16 +3635,40 @@
       "pattern": "大地的棄子"
     },
     "en_US": {
-      "pattern": "Castaway of the Earth"
+      "pattern": "Those Forsaken by the Land"
     },
     "ja_JP": {
-      "pattern": "大地の棄て子"
+      "pattern": "大地に見捨てられし者"
     },
     "ko_KR": {
-      "pattern": "대지의 버려진 자"
+      "pattern": "대지에게 버림받은 존재"
     },
     "es_ES": {
-      "pattern": "Desterrado de la Tierra"
+      "pattern": "Los abandonados por la tierra"
+    },
+    "pt_BR": {
+      "pattern": "Os Abandonados pela Terra"
+    },
+    "de_DE": {
+      "pattern": "Die vom Land Verstoßenen"
+    },
+    "fr_FR": {
+      "pattern": "Les oubliés des Terres"
+    },
+    "id_ID": {
+      "pattern": "Yang Ditelantarkan Negeri"
+    },
+    "it_IT": {
+      "pattern": "Rinnegati da Terra"
+    },
+    "ru_RU": {
+      "pattern": "Отвергнутые землей"
+    },
+    "th_TH": {
+      "pattern": "ผู้​ถูก​ทอดทิ้ง​โดย​แผ่นดิน"
+    },
+    "vi_VN": {
+      "pattern": "Kẻ Bị Vùng Đất Ruồng Bỏ"
     }
   },
   "k_zangjiangu": {
@@ -1799,6 +3689,30 @@
     },
     "es_ES": {
       "pattern": "Valle Ocultaespadas"
+    },
+    "pt_BR": {
+      "pattern": "Vale do Cofre de Espadas"
+    },
+    "de_DE": {
+      "pattern": "Tal des Schwertverlieses"
+    },
+    "fr_FR": {
+      "pattern": "Val du caveau des lames"
+    },
+    "id_ID": {
+      "pattern": "Lembah Benteng Pedang"
+    },
+    "it_IT": {
+      "pattern": "Valletta di Voltaspada"
+    },
+    "ru_RU": {
+      "pattern": "Долина Залежи Клинков"
+    },
+    "th_TH": {
+      "pattern": "เดล​คลัง​ดาบ"
+    },
+    "vi_VN": {
+      "pattern": "Cốc Tàng Kiếm"
     }
   },
   "k_727bb38b": {
@@ -1809,49 +3723,133 @@
       "pattern": "死寂爭鳴"
     },
     "en_US": {
-      "pattern": "Silent Discord"
+      "pattern": "Contention of Deathly Silences"
     },
     "ja_JP": {
-      "pattern": "静寂の共鳴"
+      "pattern": "死の争鳴"
     },
     "ko_KR": {
-      "pattern": "고요한 논쟁"
+      "pattern": "적막 속의 외침"
     },
     "es_ES": {
-      "pattern": "Discordia Silenciosa"
+      "pattern": "Contienda de silencios mortales"
+    },
+    "pt_BR": {
+      "pattern": "Disputa dos Silêncios Mortais"
+    },
+    "de_DE": {
+      "pattern": "Streitgespräche in tödlicher Stille"
+    },
+    "fr_FR": {
+      "pattern": "Discorde des silences mortels"
+    },
+    "id_ID": {
+      "pattern": "Pertikaian Hening Mematikan"
+    },
+    "it_IT": {
+      "pattern": "Contesa dei silenzi tombali"
+    },
+    "ru_RU": {
+      "pattern": "Отпор смертельному безмолвию"
+    },
+    "th_TH": {
+      "pattern": "การ​ห้ำหั่น​แห่ง​ความ​เงียบ​มรณะ"
+    },
+    "vi_VN": {
+      "pattern": "Sóng Ngầm Nơi Biển Lặng Tăm Tối"
     }
   },
   "k_shanzhongjianhou": {
     "zh_CN": {
       "pattern": "山中见犼"
+    },
+    "zh_TW": {
+      "pattern": "山中見犼"
+    },
+    "en_US": {
+      "pattern": "Howlers of the Crag"
+    },
+    "ja_JP": {
+      "pattern": "山の獣吼"
+    },
+    "ko_KR": {
+      "pattern": "산을 울리는 외침"
+    },
+    "es_ES": {
+      "pattern": "Aulladores del peñasco"
+    },
+    "pt_BR": {
+      "pattern": "Uivantes do Penhasco"
+    },
+    "de_DE": {
+      "pattern": "Heuler der Klippe"
+    },
+    "fr_FR": {
+      "pattern": "Hurleurs du pic"
+    },
+    "id_ID": {
+      "pattern": "Peraung Tebing"
+    },
+    "it_IT": {
+      "pattern": "Ulularocce della rupe"
+    },
+    "ru_RU": {
+      "pattern": "Ревуны скал"
+    },
+    "th_TH": {
+      "pattern": "ผู้​โหยหวน​แห่ง​ผา​หิน"
+    },
+    "vi_VN": {
+      "pattern": "Thú Gầm Vách Đá"
     }
   },
   "k_825cdc26": {
     "zh_CN": {
       "pattern": "灼铜零件"
     },
-    "zh_TW": {
-      "pattern": "灼銅零件"
-    },
     "en_US": {
       "pattern": "Pyrrolite Part"
-    },
-    "ja_JP": {
-      "pattern": "灼銅部品"
     },
     "ko_KR": {
       "pattern": "작동 부품"
     },
+    "zh_TW": {
+      "pattern": "灼銅零件"
+    },
+    "ja_JP": {
+      "pattern": "焔銅部品"
+    },
     "es_ES": {
       "pattern": "Pieza de pirrolita"
+    },
+    "pt_BR": {
+      "pattern": "Peça de Pirrolita"
+    },
+    "de_DE": {
+      "pattern": "Pyrrolit-Teil"
+    },
+    "fr_FR": {
+      "pattern": "Pièce en pyrrolite"
+    },
+    "id_ID": {
+      "pattern": "Bagian Pyrrolite"
+    },
+    "it_IT": {
+      "pattern": "Parte di pirrolite"
+    },
+    "ru_RU": {
+      "pattern": "Пирролитовая деталь"
+    },
+    "th_TH": {
+      "pattern": "ชิ้นส่วน​ไพร์​โร​ไลท์"
+    },
+    "vi_VN": {
+      "pattern": "Mảnh Nham Đồng"
     }
   },
   "k_871bc220": {
     "zh_CN": {
       "pattern": "盈天台建设站"
-    },
-    "zh_TW": {
-      "pattern": "盈天臺建設站"
     },
     "en_US": {
       "pattern": "Xiranflow Cloudseeder Station"
@@ -1862,8 +3860,35 @@
     "ko_KR": {
       "pattern": "영천대 건설 기지"
     },
+    "zh_TW": {
+      "pattern": "盈天台建設站"
+    },
     "es_ES": {
-      "pattern": "Estación Xiranflow Cloudseeder"
+      "pattern": "Estación del Siembranubes de Flujo Xiran"
+    },
+    "pt_BR": {
+      "pattern": "Estação Semeadora de Nuvens de Fluxo de Xiranita"
+    },
+    "de_DE": {
+      "pattern": "Xiranfluss-Wolkensäer-Station"
+    },
+    "fr_FR": {
+      "pattern": "Station du séminimbus à Xiranflux"
+    },
+    "id_ID": {
+      "pattern": "Stasiun Pengisi Awan Xiranflow"
+    },
+    "it_IT": {
+      "pattern": "Stazione di semina delle nuvole di Xiranflow"
+    },
+    "ru_RU": {
+      "pattern": "Станция засева облаков"
+    },
+    "th_TH": {
+      "pattern": "สถานี​โปรย​เมฆ​ซี​เรน​โฟลว์"
+    },
+    "vi_VN": {
+      "pattern": "Trạm Gieo Mây Xiranflow"
     }
   }
 }

@@ -7,16 +7,40 @@
       "string": "中央環廳"
     },
     "en_US": {
-      "string": "Central Ring Hall"
+      "string": "Central Ring"
     },
     "ja_JP": {
-      "string": "中央リングホール"
+      "string": "中央ホール"
     },
     "ko_KR": {
-      "string": "중앙 링 홀"
+      "string": "중앙 홀"
     },
     "es_ES": {
-      "string": "Salón del Anillo Central"
+      "string": "Anillo Central"
+    },
+    "pt_BR": {
+      "string": "Anel Central"
+    },
+    "de_DE": {
+      "string": "Zentralring"
+    },
+    "fr_FR": {
+      "string": "Espace central"
+    },
+    "id_ID": {
+      "string": "Ring Pusat"
+    },
+    "it_IT": {
+      "string": "Anello centrale"
+    },
+    "ru_RU": {
+      "string": "Центральное кольцо"
+    },
+    "th_TH": {
+      "string": "วงแหวน​ส่วนกลาง"
+    },
+    "vi_VN": {
+      "string": "Khoang Trung Tâm"
     }
   },
   "k_ff0a81cd": {
@@ -27,16 +51,40 @@
       "pattern": "帝江號"
     },
     "en_US": {
-      "pattern": "Dijianghao"
+      "pattern": "Dijiang"
     },
     "ja_JP": {
-      "pattern": "地江豪"
+      "pattern": "帝江号"
     },
     "ko_KR": {
-      "pattern": "디장하오"
+      "pattern": "제강호"
     },
     "es_ES": {
-      "pattern": "dijianghao"
+      "pattern": "Dijiang"
+    },
+    "pt_BR": {
+      "pattern": "Dijiang"
+    },
+    "de_DE": {
+      "pattern": "Dijiang"
+    },
+    "fr_FR": {
+      "pattern": "Dijiang"
+    },
+    "id_ID": {
+      "pattern": "Dijiang"
+    },
+    "it_IT": {
+      "pattern": "Dijiang"
+    },
+    "ru_RU": {
+      "pattern": "Дицзян"
+    },
+    "th_TH": {
+      "pattern": "ตี้​เจียง"
+    },
+    "vi_VN": {
+      "pattern": "Dijiang"
     }
   },
   "k_47eaf0c5": {
@@ -47,16 +95,40 @@
       "pattern": "幹員聯絡"
     },
     "en_US": {
-      "pattern": "Operator contact"
+      "pattern": "Operator Contact"
     },
     "ja_JP": {
-      "pattern": "オペレーター連絡先"
+      "pattern": "オペレーターの呼び出し"
     },
     "ko_KR": {
-      "pattern": "운영자 연락처"
+      "pattern": "오퍼레이터 호출"
     },
     "es_ES": {
-      "pattern": "Contacto del operador"
+      "pattern": "Contacto con operador"
+    },
+    "pt_BR": {
+      "pattern": "Contato do Operador"
+    },
+    "de_DE": {
+      "pattern": "Operator-Kontakt"
+    },
+    "fr_FR": {
+      "pattern": "Contacter un opérateur"
+    },
+    "id_ID": {
+      "pattern": "Kontak Operator"
+    },
+    "it_IT": {
+      "pattern": "Contatto operatore"
+    },
+    "ru_RU": {
+      "pattern": "Вызов оперативника"
+    },
+    "th_TH": {
+      "pattern": "ติดต่อ​โอเปอเรเตอร์"
+    },
+    "vi_VN": {
+      "pattern": "Liên Lạc Cán Viên"
     }
   },
   "k_c8d09cf9": {
@@ -67,7 +139,7 @@
       "pattern": "預設"
     },
     "en_US": {
-      "pattern": "default"
+      "pattern": "Default"
     },
     "ja_JP": {
       "pattern": "デフォルト"
@@ -76,7 +148,31 @@
       "pattern": "기본"
     },
     "es_ES": {
-      "pattern": "por defecto"
+      "pattern": "Predeterminado"
+    },
+    "pt_BR": {
+      "pattern": "Padrão"
+    },
+    "de_DE": {
+      "pattern": "Standard"
+    },
+    "fr_FR": {
+      "pattern": "Par défaut"
+    },
+    "id_ID": {
+      "pattern": "Default"
+    },
+    "it_IT": {
+      "pattern": "Predefinito"
+    },
+    "ru_RU": {
+      "pattern": "По умолчанию"
+    },
+    "th_TH": {
+      "pattern": "ค่า​เริ่มต้น"
+    },
+    "vi_VN": {
+      "pattern": "Mặc định"
     }
   },
   "k_4f35d7ac": {
@@ -127,16 +223,40 @@
       "pattern": "贈送"
     },
     "en_US": {
-      "pattern": "give away"
+      "pattern": "Gift"
     },
     "ja_JP": {
-      "pattern": "譲る"
+      "pattern": "贈呈"
     },
     "ko_KR": {
-      "pattern": "포기하다"
+      "pattern": "증정"
     },
     "es_ES": {
-      "pattern": "donar"
+      "pattern": "Obsequio"
+    },
+    "pt_BR": {
+      "pattern": "Presente"
+    },
+    "de_DE": {
+      "pattern": "Geschenk"
+    },
+    "fr_FR": {
+      "pattern": "Cadeau"
+    },
+    "id_ID": {
+      "pattern": "Hadiah"
+    },
+    "it_IT": {
+      "pattern": "Regala"
+    },
+    "ru_RU": {
+      "pattern": "Подарок"
+    },
+    "th_TH": {
+      "pattern": "ของขวัญ"
+    },
+    "vi_VN": {
+      "pattern": "Quà"
     }
   }
 }

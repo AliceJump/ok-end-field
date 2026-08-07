@@ -7,16 +7,40 @@
       "pattern": "追蹤"
     },
     "en_US": {
-      "pattern": "track"
+      "pattern": "Track"
     },
     "ja_JP": {
       "pattern": "追跡"
     },
     "ko_KR": {
-      "pattern": "길"
+      "pattern": "추적하기"
     },
     "es_ES": {
-      "pattern": "pista"
+      "pattern": "Seguir"
+    },
+    "pt_BR": {
+      "pattern": "Rastrear"
+    },
+    "de_DE": {
+      "pattern": "Markieren"
+    },
+    "fr_FR": {
+      "pattern": "Suivre"
+    },
+    "id_ID": {
+      "pattern": "Lacak"
+    },
+    "it_IT": {
+      "pattern": "Traccia"
+    },
+    "ru_RU": {
+      "pattern": "Отслеживать"
+    },
+    "th_TH": {
+      "pattern": "ติดตาม"
+    },
+    "vi_VN": {
+      "pattern": "Theo dõi"
     }
   }
 }

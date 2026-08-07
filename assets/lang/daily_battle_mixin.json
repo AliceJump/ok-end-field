@@ -17,6 +17,30 @@
     },
     "es_ES": {
       "pattern": "Cancelar"
+    },
+    "pt_BR": {
+      "pattern": "Cancelar"
+    },
+    "de_DE": {
+      "pattern": "Abbrechen"
+    },
+    "fr_FR": {
+      "pattern": "Annuler"
+    },
+    "id_ID": {
+      "pattern": "Batalkan"
+    },
+    "it_IT": {
+      "pattern": "Annulla"
+    },
+    "ru_RU": {
+      "pattern": "Отмена"
+    },
+    "th_TH": {
+      "pattern": "ยกเลิก"
+    },
+    "vi_VN": {
+      "pattern": "Hủy"
     }
   },
   "k_45ff3e5f": {
@@ -27,16 +51,40 @@
       "pattern": "可領取"
     },
     "en_US": {
-      "pattern": "Available for collection"
+      "pattern": "Claimable"
     },
     "ja_JP": {
-      "pattern": "コレクション可能"
+      "pattern": "受取可"
     },
     "ko_KR": {
-      "pattern": "수집 가능"
+      "pattern": "획득 가능"
     },
     "es_ES": {
-      "pattern": "Disponible para colección"
+      "pattern": "Reclamable"
+    },
+    "pt_BR": {
+      "pattern": "Resgatável"
+    },
+    "de_DE": {
+      "pattern": "Abholbar"
+    },
+    "fr_FR": {
+      "pattern": "À récupérer"
+    },
+    "id_ID": {
+      "pattern": "Bisa Diambil"
+    },
+    "it_IT": {
+      "pattern": "Riscattabile"
+    },
+    "ru_RU": {
+      "pattern": "Можно получить"
+    },
+    "th_TH": {
+      "pattern": "สามารถ​รับได้"
+    },
+    "vi_VN": {
+      "pattern": "Có thể nhận"
     }
   },
   "k_25e74dce": {
@@ -47,16 +95,40 @@
       "pattern": "目前"
     },
     "en_US": {
-      "pattern": "current"
+      "pattern": "Current"
     },
     "ja_JP": {
-      "pattern": "現在"
+      "pattern": "選択中"
     },
     "ko_KR": {
-      "pattern": "현재의"
+      "pattern": "현재"
     },
     "es_ES": {
-      "pattern": "actual"
+      "pattern": "Actual"
+    },
+    "pt_BR": {
+      "pattern": "Atual"
+    },
+    "de_DE": {
+      "pattern": "Aktuell"
+    },
+    "fr_FR": {
+      "pattern": "Actuelle"
+    },
+    "id_ID": {
+      "pattern": "Saat Ini"
+    },
+    "it_IT": {
+      "pattern": "Attuale"
+    },
+    "ru_RU": {
+      "pattern": "Сейчас"
+    },
+    "th_TH": {
+      "pattern": "ปัจจุบัน"
+    },
+    "vi_VN": {
+      "pattern": "Hiện tại"
     }
   },
   "k_a0d434d4": {
@@ -67,16 +139,40 @@
       "pattern": "幹員"
     },
     "en_US": {
-      "pattern": "Operator"
+      "pattern": "Operator Overview"
     },
     "ja_JP": {
-      "pattern": "オペレーター"
+      "pattern": "人事"
     },
     "ko_KR": {
-      "pattern": "연산자"
+      "pattern": "오퍼레이터"
     },
     "es_ES": {
-      "pattern": "Operador"
+      "pattern": "Resumen del operador"
+    },
+    "pt_BR": {
+      "pattern": "Visão Geral do Operador"
+    },
+    "de_DE": {
+      "pattern": "Operator-Übersicht"
+    },
+    "fr_FR": {
+      "pattern": "Aperçu de l'opérateur"
+    },
+    "id_ID": {
+      "pattern": "Gambaran Umum Operator"
+    },
+    "it_IT": {
+      "pattern": "Panoramica operatore"
+    },
+    "ru_RU": {
+      "pattern": "Обзор оперативника"
+    },
+    "th_TH": {
+      "pattern": "ภาพรวม​โอเปอเรเตอร์"
+    },
+    "vi_VN": {
+      "pattern": "Tổng Quan Cán Viên"
     }
   },
   "k_6c4d77af": {
@@ -87,16 +183,40 @@
       "pattern": "恢復理智"
     },
     "en_US": {
-      "pattern": "regain sanity"
+      "pattern": "Sanity Recovery"
     },
     "ja_JP": {
-      "pattern": "正気を取り戻す"
+      "pattern": "理性回復"
     },
     "ko_KR": {
-      "pattern": "제정신을 되찾다"
+      "pattern": "이성 회복"
     },
     "es_ES": {
-      "pattern": "recuperar la cordura"
+      "pattern": "Recuperación de Cordura"
+    },
+    "pt_BR": {
+      "pattern": "Recuperação de Sanidade"
+    },
+    "de_DE": {
+      "pattern": "Verstandswiederherstellung"
+    },
+    "fr_FR": {
+      "pattern": "Restauration de lucidité"
+    },
+    "id_ID": {
+      "pattern": "Pemulihan Sanity"
+    },
+    "it_IT": {
+      "pattern": "Recupero Lucidità"
+    },
+    "ru_RU": {
+      "pattern": "Восстановление рассудка"
+    },
+    "th_TH": {
+      "pattern": "ฟื้นฟู​ค่า​สติ"
+    },
+    "vi_VN": {
+      "pattern": "Phục Hồi Tỉnh Táo"
     }
   },
   "k_9294c931": {
@@ -107,16 +227,40 @@
       "pattern": "挑戰"
     },
     "en_US": {
-      "pattern": "challenge"
+      "pattern": "The Pugilist's Challenge"
     },
     "ja_JP": {
-      "pattern": "チャレンジ"
+      "pattern": "挑戦"
     },
     "ko_KR": {
       "pattern": "도전"
     },
     "es_ES": {
-      "pattern": "desafío"
+      "pattern": "El desafío de la pugilista"
+    },
+    "pt_BR": {
+      "pattern": "O Desafio da Pugilista"
+    },
+    "de_DE": {
+      "pattern": "Die Herausforderung der Faustkämpferin"
+    },
+    "fr_FR": {
+      "pattern": "Le défi du pugilat"
+    },
+    "id_ID": {
+      "pattern": "Tantangan si Petinju Bayaran"
+    },
+    "it_IT": {
+      "pattern": "La sfida pugilistica"
+    },
+    "ru_RU": {
+      "pattern": "Вызов на бой"
+    },
+    "th_TH": {
+      "pattern": "ศึก​ท้าทาย​แห่ง​นักมวย"
+    },
+    "vi_VN": {
+      "pattern": "Thử Thách của Quyền Sư"
     }
   },
   "k_6afbae72": {
@@ -127,16 +271,40 @@
       "pattern": "撤離"
     },
     "en_US": {
-      "pattern": "Evacuate"
+      "pattern": "Retreat"
     },
     "ja_JP": {
-      "pattern": "避難する"
+      "pattern": "離脱"
     },
     "ko_KR": {
-      "pattern": "대피"
+      "pattern": "떠나기"
     },
     "es_ES": {
-      "pattern": "Evacuar"
+      "pattern": "Retirarse"
+    },
+    "pt_BR": {
+      "pattern": "Recuar"
+    },
+    "de_DE": {
+      "pattern": "Zurückziehen"
+    },
+    "fr_FR": {
+      "pattern": "Se replier"
+    },
+    "id_ID": {
+      "pattern": "Mundur"
+    },
+    "it_IT": {
+      "pattern": "Ritirata"
+    },
+    "ru_RU": {
+      "pattern": "Отступить"
+    },
+    "th_TH": {
+      "pattern": "ล่าถอย"
+    },
+    "vi_VN": {
+      "pattern": "Rút lui"
     }
   },
   "k_b8a81b7a": {
@@ -147,16 +315,40 @@
       "pattern": "放棄"
     },
     "en_US": {
-      "pattern": "give up"
+      "pattern": "Abandon"
     },
     "ja_JP": {
-      "pattern": "あきらめる"
+      "pattern": "破棄"
     },
     "ko_KR": {
-      "pattern": "포기하다"
+      "pattern": "포기하기"
     },
     "es_ES": {
-      "pattern": "abandonar"
+      "pattern": "Abandonar"
+    },
+    "pt_BR": {
+      "pattern": "Abandonar"
+    },
+    "de_DE": {
+      "pattern": "Abbrechen"
+    },
+    "fr_FR": {
+      "pattern": "Abandonner"
+    },
+    "id_ID": {
+      "pattern": "Tinggalkan"
+    },
+    "it_IT": {
+      "pattern": "Abbandona"
+    },
+    "ru_RU": {
+      "pattern": "Отступить"
+    },
+    "th_TH": {
+      "pattern": "ละทิ้ง"
+    },
+    "vi_VN": {
+      "pattern": "Bỏ"
     }
   },
   "k_cd9eabf7": {
@@ -167,36 +359,84 @@
       "pattern": "激發"
     },
     "en_US": {
-      "pattern": "excitation"
+      "pattern": "Activate"
     },
     "ja_JP": {
-      "pattern": "励起"
+      "pattern": "解放"
     },
     "ko_KR": {
-      "pattern": "자극"
+      "pattern": "활성화"
     },
     "es_ES": {
-      "pattern": "excitación"
+      "pattern": "Activar"
+    },
+    "pt_BR": {
+      "pattern": "Ativar"
+    },
+    "de_DE": {
+      "pattern": "Aktivieren"
+    },
+    "fr_FR": {
+      "pattern": "Activer"
+    },
+    "id_ID": {
+      "pattern": "Aktifkan"
+    },
+    "it_IT": {
+      "pattern": "Attiva"
+    },
+    "ru_RU": {
+      "pattern": "Активировать"
+    },
+    "th_TH": {
+      "pattern": "เปิด​ใช้งาน"
+    },
+    "vi_VN": {
+      "pattern": "Kích hoạt"
     }
   },
   "k_bfe73e18": {
     "zh_CN": {
-      "pattern": "激发|放弃"
+      "pattern": "激发|放弃奖励并重置"
     },
     "zh_TW": {
-      "pattern": "激發|放棄"
+      "pattern": "激發|放棄獎勵並重置"
     },
     "en_US": {
-      "pattern": "excitation|give up"
+      "pattern": "Activate|Abandon Rewards and Reset"
     },
     "ja_JP": {
-      "pattern": "励起|あきらめる"
+      "pattern": "解放|受取せずにリセット"
     },
     "ko_KR": {
-      "pattern": "자극|포기하다"
+      "pattern": "활성화|보상 포기 및 초기화"
     },
     "es_ES": {
-      "pattern": "excitación|abandonar"
+      "pattern": "Activar|Abandonar recompensas y reiniciar"
+    },
+    "pt_BR": {
+      "pattern": "Ativar|Abandonar Recompensas e Redefinir"
+    },
+    "de_DE": {
+      "pattern": "Aktivieren|Belohnungen zurücklassen und zurücksetzen"
+    },
+    "fr_FR": {
+      "pattern": "Activer|Renoncer aux récompenses et réinitialiser"
+    },
+    "id_ID": {
+      "pattern": "Aktifkan|Tinggalkan Imbalan dan Reset"
+    },
+    "it_IT": {
+      "pattern": "Attiva|Abbandona ricompense e ripristina"
+    },
+    "ru_RU": {
+      "pattern": "Активировать|Оставить награды и начать заново"
+    },
+    "th_TH": {
+      "pattern": "เปิด​ใช้งาน|สละ​รางวัล​และ​รีเซ็ต"
+    },
+    "vi_VN": {
+      "pattern": "Kích hoạt|Hủy Phần Thưởng Và Đặt Lại"
     }
   },
   "k_b0e3a2da": {
@@ -207,16 +447,40 @@
       "pattern": "登上滑索架"
     },
     "en_US": {
-      "pattern": "Climb the zipline"
+      "pattern": "Latch to Zipline Facility"
     },
     "ja_JP": {
-      "pattern": "ジップラインを登る"
+      "pattern": "乗る"
     },
     "ko_KR": {
-      "pattern": "짚라인을 타고 올라보세요"
+      "pattern": "집라인 후크 타기"
     },
     "es_ES": {
-      "pattern": "Sube a la tirolesa"
+      "pattern": "Enganchar a la instalación de tirolesa"
+    },
+    "pt_BR": {
+      "pattern": "Prenda na instalação de tirolesa"
+    },
+    "de_DE": {
+      "pattern": "An Seilbahnanlage einhängen"
+    },
+    "fr_FR": {
+      "pattern": "S'accrocher à l'installation de tyrolienne"
+    },
+    "id_ID": {
+      "pattern": "Berpegangan pada Fasilitas Luncur Gantung"
+    },
+    "it_IT": {
+      "pattern": "Aggancia alla teleferica"
+    },
+    "ru_RU": {
+      "pattern": "Зацепиться за зиплайн-сооружение"
+    },
+    "th_TH": {
+      "pattern": "ใส่​ล็อก​เข้ากับ​สิ่งปลูกสร้าง​ซิป​ไลน์"
+    },
+    "vi_VN": {
+      "pattern": "Chốt vào Công Trình Zipline"
     }
   },
   "k_b56d9ac6": {
@@ -227,16 +491,40 @@
       "pattern": "確定"
     },
     "en_US": {
-      "pattern": "confirm"
+      "pattern": "Confirm"
     },
     "ja_JP": {
-      "pattern": "確認する"
+      "pattern": "確定"
     },
     "ko_KR": {
-      "pattern": "확인하다"
+      "pattern": "확인"
     },
     "es_ES": {
-      "pattern": "confirmar"
+      "pattern": "Confirmar"
+    },
+    "pt_BR": {
+      "pattern": "Confirmar"
+    },
+    "de_DE": {
+      "pattern": "Bestätigen"
+    },
+    "fr_FR": {
+      "pattern": "Confirmer"
+    },
+    "id_ID": {
+      "pattern": "Konfirmasi"
+    },
+    "it_IT": {
+      "pattern": "Conferma"
+    },
+    "ru_RU": {
+      "pattern": "Подтвердить"
+    },
+    "th_TH": {
+      "pattern": "ยืนยัน"
+    },
+    "vi_VN": {
+      "pattern": "Xác nhận"
     }
   },
   "k_0ba18905": {
@@ -247,16 +535,40 @@
       "pattern": "離開"
     },
     "en_US": {
-      "pattern": "leave"
+      "pattern": "Leave"
     },
     "ja_JP": {
       "pattern": "離れる"
     },
     "ko_KR": {
-      "pattern": "떠나다"
+      "pattern": "떠나기."
     },
     "es_ES": {
-      "pattern": "dejar"
+      "pattern": "Salir"
+    },
+    "pt_BR": {
+      "pattern": "Sair"
+    },
+    "de_DE": {
+      "pattern": "Verlassen"
+    },
+    "fr_FR": {
+      "pattern": "Quitter"
+    },
+    "id_ID": {
+      "pattern": "Tinggalkan"
+    },
+    "it_IT": {
+      "pattern": "Esci"
+    },
+    "ru_RU": {
+      "pattern": "Уйти"
+    },
+    "th_TH": {
+      "pattern": "ออก"
+    },
+    "vi_VN": {
+      "pattern": "Rời"
     }
   },
   "k_79f91106": {
@@ -267,16 +579,40 @@
       "pattern": "索引"
     },
     "en_US": {
-      "pattern": "index"
+      "pattern": "Index"
     },
     "ja_JP": {
-      "pattern": "索引"
+      "pattern": "周回"
     },
     "ko_KR": {
-      "pattern": "색인"
+      "pattern": "가이드 목록"
     },
     "es_ES": {
-      "pattern": "índice"
+      "pattern": "Índice"
+    },
+    "pt_BR": {
+      "pattern": "Índice"
+    },
+    "de_DE": {
+      "pattern": "Index"
+    },
+    "fr_FR": {
+      "pattern": "Répertoire"
+    },
+    "id_ID": {
+      "pattern": "Indeks"
+    },
+    "it_IT": {
+      "pattern": "Indice"
+    },
+    "ru_RU": {
+      "pattern": "Индекс"
+    },
+    "th_TH": {
+      "pattern": "ดัชนี"
+    },
+    "vi_VN": {
+      "pattern": "Chỉ số"
     }
   },
   "k_a6ee3a67": {
@@ -287,16 +623,40 @@
       "pattern": "自選"
     },
     "en_US": {
-      "pattern": "Optional"
+      "pattern": "Options"
     },
     "ja_JP": {
-      "pattern": "オプション"
+      "pattern": "選択"
     },
     "ko_KR": {
-      "pattern": "선택 과목"
+      "pattern": "자유 선택"
     },
     "es_ES": {
-      "pattern": "Opcional"
+      "pattern": "Opciones"
+    },
+    "pt_BR": {
+      "pattern": "Opções"
+    },
+    "de_DE": {
+      "pattern": "Optionen"
+    },
+    "fr_FR": {
+      "pattern": "Options"
+    },
+    "id_ID": {
+      "pattern": "Opsi"
+    },
+    "it_IT": {
+      "pattern": "Opzioni"
+    },
+    "ru_RU": {
+      "pattern": "Варианты"
+    },
+    "th_TH": {
+      "pattern": "ตัวเลือก"
+    },
+    "vi_VN": {
+      "pattern": "Tùy Chọn"
     }
   },
   "k_60064e16": {
@@ -307,16 +667,40 @@
       "pattern": "獲得獎勵"
     },
     "en_US": {
-      "pattern": "Get rewarded"
+      "pattern": "Rewards Acquired"
     },
     "ja_JP": {
-      "pattern": "報酬を得る"
+      "pattern": "報酬一覧"
     },
     "ko_KR": {
-      "pattern": "보상 받기"
+      "pattern": "보상 획득"
     },
     "es_ES": {
-      "pattern": "Obtener recompensa"
+      "pattern": "Recompensas obtenidas"
+    },
+    "pt_BR": {
+      "pattern": "Recompensas Obtidas"
+    },
+    "de_DE": {
+      "pattern": "Belohnungen erhalten"
+    },
+    "fr_FR": {
+      "pattern": "Récompenses obtenues"
+    },
+    "id_ID": {
+      "pattern": "Imbalan Didapatkan"
+    },
+    "it_IT": {
+      "pattern": "Ricompense ottenute"
+    },
+    "ru_RU": {
+      "pattern": "Награды получены"
+    },
+    "th_TH": {
+      "pattern": "ได้รับ​รางวัล​แล้ว"
+    },
+    "vi_VN": {
+      "pattern": "Đã Nhận Phần Thưởng"
     }
   },
   "k_4cc61900": {
@@ -327,16 +711,40 @@
       "pattern": "觸碰"
     },
     "en_US": {
-      "pattern": "touch"
+      "pattern": "Touch"
     },
     "ja_JP": {
-      "pattern": "触る"
+      "pattern": "触れる"
     },
     "ko_KR": {
-      "pattern": "만지다"
+      "pattern": "접촉하기"
     },
     "es_ES": {
-      "pattern": "tocar"
+      "pattern": "Tocar"
+    },
+    "pt_BR": {
+      "pattern": "Tocar"
+    },
+    "de_DE": {
+      "pattern": "Berühren"
+    },
+    "fr_FR": {
+      "pattern": "Toucher"
+    },
+    "id_ID": {
+      "pattern": "Sentuh"
+    },
+    "it_IT": {
+      "pattern": "Tocca"
+    },
+    "ru_RU": {
+      "pattern": "Коснуться"
+    },
+    "th_TH": {
+      "pattern": "แตะ"
+    },
+    "vi_VN": {
+      "pattern": "Chạm"
     }
   },
   "k_0e25578e": {
@@ -350,13 +758,37 @@
       "pattern": "Enter"
     },
     "ja_JP": {
-      "pattern": "入力"
+      "pattern": "開始"
     },
     "ko_KR": {
-      "pattern": "입력하다"
+      "pattern": "진입"
     },
     "es_ES": {
       "pattern": "Ingresar"
+    },
+    "pt_BR": {
+      "pattern": "Entrar"
+    },
+    "de_DE": {
+      "pattern": "Betreten"
+    },
+    "fr_FR": {
+      "pattern": "Entrer"
+    },
+    "id_ID": {
+      "pattern": "Masuk"
+    },
+    "it_IT": {
+      "pattern": "Entra"
+    },
+    "ru_RU": {
+      "pattern": "Войти"
+    },
+    "th_TH": {
+      "pattern": "เข้า"
+    },
+    "vi_VN": {
+      "pattern": "Vào"
     }
   },
   "k_8967d3c6": {
@@ -367,16 +799,40 @@
       "pattern": "追蹤"
     },
     "en_US": {
-      "pattern": "track"
+      "pattern": "Track"
     },
     "ja_JP": {
       "pattern": "追跡"
     },
     "ko_KR": {
-      "pattern": "길"
+      "pattern": "추적하기"
     },
     "es_ES": {
-      "pattern": "pista"
+      "pattern": "Seguir"
+    },
+    "pt_BR": {
+      "pattern": "Rastrear"
+    },
+    "de_DE": {
+      "pattern": "Markieren"
+    },
+    "fr_FR": {
+      "pattern": "Suivre"
+    },
+    "id_ID": {
+      "pattern": "Lacak"
+    },
+    "it_IT": {
+      "pattern": "Traccia"
+    },
+    "ru_RU": {
+      "pattern": "Отслеживать"
+    },
+    "th_TH": {
+      "pattern": "ติดตาม"
+    },
+    "vi_VN": {
+      "pattern": "Theo dõi"
     }
   },
   "k_55cfd979": {
@@ -387,16 +843,40 @@
       "pattern": "重新挑戰"
     },
     "en_US": {
-      "pattern": "Challenge again"
+      "pattern": "Try Again"
     },
     "ja_JP": {
-      "pattern": "もう一度挑戦してください"
+      "pattern": "もう一度"
     },
     "ko_KR": {
-      "pattern": "다시 도전하세요"
+      "pattern": "다시 도전하기"
     },
     "es_ES": {
-      "pattern": "Desafío de nuevo"
+      "pattern": "Intentar de nuevo"
+    },
+    "pt_BR": {
+      "pattern": "Tentar Novamente"
+    },
+    "de_DE": {
+      "pattern": "Erneut versuchen"
+    },
+    "fr_FR": {
+      "pattern": "Réessayer"
+    },
+    "id_ID": {
+      "pattern": "Coba Lagi"
+    },
+    "it_IT": {
+      "pattern": "Riprova"
+    },
+    "ru_RU": {
+      "pattern": "Повторить"
+    },
+    "th_TH": {
+      "pattern": "ลอง​อีกครั้ง"
+    },
+    "vi_VN": {
+      "pattern": "Thử Lại"
     }
   },
   "k_39d12e73": {
@@ -407,16 +887,40 @@
       "pattern": "領取"
     },
     "en_US": {
-      "pattern": "receive"
+      "pattern": "Claim"
     },
     "ja_JP": {
-      "pattern": "受け取る"
+      "pattern": "受取"
     },
     "ko_KR": {
-      "pattern": "받다"
+      "pattern": "획득"
     },
     "es_ES": {
-      "pattern": "recibir"
+      "pattern": "Reclamar"
+    },
+    "pt_BR": {
+      "pattern": "Resgatar"
+    },
+    "de_DE": {
+      "pattern": "Abholen"
+    },
+    "fr_FR": {
+      "pattern": "Récupérer"
+    },
+    "id_ID": {
+      "pattern": "Ambil"
+    },
+    "it_IT": {
+      "pattern": "Riscatta"
+    },
+    "ru_RU": {
+      "pattern": "Забрать"
+    },
+    "th_TH": {
+      "pattern": "รับ"
+    },
+    "vi_VN": {
+      "pattern": "Nhận"
     }
   },
   "k_39d12e73_1": {
@@ -427,36 +931,40 @@
       "pattern": "領取"
     },
     "en_US": {
-      "pattern": "receive"
+      "pattern": "Claim"
     },
     "ja_JP": {
-      "pattern": "受け取る"
+      "pattern": "受取"
     },
     "ko_KR": {
-      "pattern": "받다"
+      "pattern": "획득"
     },
     "es_ES": {
-      "pattern": "recibir"
-    }
-  },
-  "k_4e1f3d8b": {
-    "zh_CN": {
-      "pattern": "(天|小时)"
+      "pattern": "Reclamar"
     },
-    "zh_TW": {
-      "pattern": "(天|小時)"
+    "pt_BR": {
+      "pattern": "Resgatar"
     },
-    "en_US": {
-      "pattern": "(\\d+)(day|hour)"
+    "de_DE": {
+      "pattern": "Abholen"
     },
-    "ja_JP": {
-      "pattern": "(\\d+)(日|時間)"
+    "fr_FR": {
+      "pattern": "Récupérer"
     },
-    "ko_KR": {
-      "pattern": "(\\d+)(일|시간)"
+    "id_ID": {
+      "pattern": "Ambil"
     },
-    "es_ES": {
-      "pattern": "(\\d+)(día|hora)"
+    "it_IT": {
+      "pattern": "Riscatta"
+    },
+    "ru_RU": {
+      "pattern": "Забрать"
+    },
+    "th_TH": {
+      "pattern": "รับ"
+    },
+    "vi_VN": {
+      "pattern": "Nhận"
     }
   },
   "k_62b5b688": {
@@ -467,16 +975,40 @@
       "pattern": "已出戰"
     },
     "en_US": {
-      "pattern": "Already in battle"
+      "pattern": "Deployed"
     },
     "ja_JP": {
-      "pattern": "すでに戦闘中"
+      "pattern": "行動中"
     },
     "ko_KR": {
-      "pattern": "이미 전투 중"
+      "pattern": "출전 중"
     },
     "es_ES": {
-      "pattern": "Ya en batalla"
+      "pattern": "Desplegado"
+    },
+    "pt_BR": {
+      "pattern": "Mobilizado"
+    },
+    "de_DE": {
+      "pattern": "Im Einsatz"
+    },
+    "fr_FR": {
+      "pattern": "Déployé(e)"
+    },
+    "id_ID": {
+      "pattern": "Dikerahkan"
+    },
+    "it_IT": {
+      "pattern": "Schierato"
+    },
+    "ru_RU": {
+      "pattern": "В команде"
+    },
+    "th_TH": {
+      "pattern": "ใช้แล้ว"
+    },
+    "vi_VN": {
+      "pattern": "Đã triển khai"
     }
   },
   "k_12577cd1": {
@@ -487,16 +1019,40 @@
       "pattern": "出戰"
     },
     "en_US": {
-      "pattern": "go to war"
+      "pattern": "To Battle"
     },
     "ja_JP": {
-      "pattern": "戦争に行く"
+      "pattern": "行動開始"
     },
     "ko_KR": {
-      "pattern": "전쟁에 나가다"
+      "pattern": "출전"
     },
     "es_ES": {
-      "pattern": "ir a la guerra"
+      "pattern": "A la batalla"
+    },
+    "pt_BR": {
+      "pattern": "Para Batalha"
+    },
+    "de_DE": {
+      "pattern": "In den Kampf"
+    },
+    "fr_FR": {
+      "pattern": "Au combat"
+    },
+    "id_ID": {
+      "pattern": "Ke Pertarungan"
+    },
+    "it_IT": {
+      "pattern": "Combatti"
+    },
+    "ru_RU": {
+      "pattern": "В бой"
+    },
+    "th_TH": {
+      "pattern": "ไป​ต่อสู้"
+    },
+    "vi_VN": {
+      "pattern": "Để Chiến Đấu"
     }
   },
   "k_70b20820": {
@@ -507,16 +1063,40 @@
       "pattern": "選擇"
     },
     "en_US": {
-      "pattern": "choose"
+      "pattern": "Select"
     },
     "ja_JP": {
-      "pattern": "選ぶ"
+      "pattern": "選択"
     },
     "ko_KR": {
-      "pattern": "선택하다"
+      "pattern": "선택"
     },
     "es_ES": {
-      "pattern": "elegir"
+      "pattern": "Seleccionar"
+    },
+    "pt_BR": {
+      "pattern": "Selecionar"
+    },
+    "de_DE": {
+      "pattern": "Auswählen"
+    },
+    "fr_FR": {
+      "pattern": "Sélectionner"
+    },
+    "id_ID": {
+      "pattern": "Pilih"
+    },
+    "it_IT": {
+      "pattern": "Seleziona"
+    },
+    "ru_RU": {
+      "pattern": "Выбрать"
+    },
+    "th_TH": {
+      "pattern": "เลือก"
+    },
+    "vi_VN": {
+      "pattern": "Chọn"
     }
   },
   "k_unit_day": {
@@ -527,7 +1107,7 @@
       "string": "天"
     },
     "en_US": {
-      "string": "day"
+      "string": "d"
     },
     "ja_JP": {
       "string": "日"
@@ -536,7 +1116,31 @@
       "string": "일"
     },
     "es_ES": {
-      "string": "día"
+      "string": "d"
+    },
+    "pt_BR": {
+      "string": "d"
+    },
+    "de_DE": {
+      "string": "d"
+    },
+    "fr_FR": {
+      "string": "j"
+    },
+    "id_ID": {
+      "string": "h"
+    },
+    "it_IT": {
+      "string": "g"
+    },
+    "ru_RU": {
+      "string": "д."
+    },
+    "th_TH": {
+      "string": "d"
+    },
+    "vi_VN": {
+      "string": "d"
     }
   },
   "k_unit_hour": {
@@ -557,6 +1161,30 @@
     },
     "es_ES": {
       "string": "hora"
+    },
+    "pt_BR": {
+      "string": "hora"
+    },
+    "de_DE": {
+      "string": "Stunde"
+    },
+    "fr_FR": {
+      "string": "heure"
+    },
+    "id_ID": {
+      "string": "jam"
+    },
+    "it_IT": {
+      "string": "ora"
+    },
+    "ru_RU": {
+      "string": "ч"
+    },
+    "th_TH": {
+      "string": "ชั่วโมง"
+    },
+    "vi_VN": {
+      "string": "giờ"
     }
   },
   "k_reward_select": {
@@ -567,7 +1195,7 @@
       "string": "獎勵選擇"
     },
     "en_US": {
-      "string": "Reward Selection"
+      "string": "Rewards Options"
     },
     "ja_JP": {
       "string": "報酬選択"
@@ -576,7 +1204,31 @@
       "string": "보상 선택"
     },
     "es_ES": {
-      "string": "Selección de recompensa"
+      "string": "Opciones de recompensas"
+    },
+    "pt_BR": {
+      "string": "Opções de Recompensas"
+    },
+    "de_DE": {
+      "string": "Belohnungsoptionen"
+    },
+    "fr_FR": {
+      "string": "Options de récompenses"
+    },
+    "id_ID": {
+      "string": "Opsi Imbalan"
+    },
+    "it_IT": {
+      "string": "Opzioni ricompense"
+    },
+    "ru_RU": {
+      "string": "Варианты наград"
+    },
+    "th_TH": {
+      "string": "ตัวเลือก​รางวัล"
+    },
+    "vi_VN": {
+      "string": "Tùy Chọn Phần Thưởng"
     }
   }
 }

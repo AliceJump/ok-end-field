@@ -7,16 +7,40 @@
       "string": "標記顯示管理"
     },
     "en_US": {
-      "string": "Tag display management"
+      "string": "Marker Tags"
     },
     "ja_JP": {
-      "string": "タグ表示管理"
+      "string": "フィルタ"
     },
     "ko_KR": {
-      "string": "태그 표시 관리"
+      "string": "표식 관리"
     },
     "es_ES": {
-      "string": "Gestión de visualización de etiquetas"
+      "string": "Etiquetas de marcador"
+    },
+    "pt_BR": {
+      "string": "Tags de marcador"
+    },
+    "de_DE": {
+      "string": "Markierungsabzeichen"
+    },
+    "fr_FR": {
+      "string": "Icônes des marqueurs"
+    },
+    "id_ID": {
+      "string": "Tag Penanda"
+    },
+    "it_IT": {
+      "string": "Etichette marcatore"
+    },
+    "ru_RU": {
+      "string": "Метки"
+    },
+    "th_TH": {
+      "string": "แท็ก​ทำเครื่องหมาย"
+    },
+    "vi_VN": {
+      "string": "Thẻ đánh dấu"
     }
   },
   "k_5d879e98": {
@@ -27,16 +51,40 @@
       "string": "清除選取"
     },
     "en_US": {
-      "string": "Clear selection"
+      "string": "Clear All"
     },
     "ja_JP": {
-      "string": "選択をクリア"
+      "string": "一括解除"
     },
     "ko_KR": {
-      "string": "선택 취소"
+      "string": "선택 초기화"
     },
     "es_ES": {
-      "string": "Borrar selección"
+      "string": "Limpiar todo"
+    },
+    "pt_BR": {
+      "string": "Limpar Tudo"
+    },
+    "de_DE": {
+      "string": "Alle entfernen"
+    },
+    "fr_FR": {
+      "string": "Tout supprimer"
+    },
+    "id_ID": {
+      "string": "Hapus Semua"
+    },
+    "it_IT": {
+      "string": "Cancella tutto"
+    },
+    "ru_RU": {
+      "string": "Очистить все"
+    },
+    "th_TH": {
+      "string": "ล้าง​ทั้งหมด"
+    },
+    "vi_VN": {
+      "string": "Xóa Tất Cả"
     }
   }
 }

@@ -6,6 +6,7 @@
 """
 
 import json
+import json5
 import re
 import sys
 from collections import defaultdict
@@ -59,11 +60,12 @@ def build_official(merged: dict, zh_of) -> dict:
 
 
 def sync_po_entries(official: dict, locales: tuple, i18n_dir: Path,
-                    quiet: bool = False) -> tuple[dict, list]:
+                    quiet: bool = False,
+                    create_missing: bool = True) -> tuple[dict, list]:
     """把官方译名同步进 i18n/*/LC_MESSAGES/ok.po 并编译 .mo。
 
     - 精确匹配：msgid == 简中名 → 覆盖 msgstr 为官方译名（官方有值时）；
-    - 缺失条目：新增；
+    - 缺失条目：create_missing=True 时新增；False 时跳过（只更新已有 msgid）；
     - 官方无值 / 语言无变化时不写入。
     返回 (每语言统计, 变更列表)。
     """
@@ -92,6 +94,8 @@ def sync_po_entries(official: dict, locales: tuple, i18n_dir: Path,
                 continue
             entry = by_mid.get(zh)
             if entry is None:
+                if not create_missing:
+                    continue
                 po.append(polib.POEntry(msgid=zh, msgstr=new))
                 stats += 1
                 touched.append((zh, "", new))
@@ -176,7 +180,7 @@ def sync_lang_jsons(official: dict, lang_dir: Path, skip_files: tuple = ()
     for path in sorted(lang_dir.glob("*.json")):
         if path.name in skip_files:
             continue
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = json5.loads(path.read_text(encoding="utf-8"))
         stats = 0
         touched = []
         for key, node in data.items():

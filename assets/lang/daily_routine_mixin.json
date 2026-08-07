@@ -7,16 +7,40 @@
       "string": "交易"
     },
     "en_US": {
-      "string": "trade"
+      "string": "Trade"
     },
     "ja_JP": {
-      "string": "貿易"
+      "string": "取引"
     },
     "ko_KR": {
       "string": "거래"
     },
     "es_ES": {
-      "string": "comercio"
+      "string": "Intercambio"
+    },
+    "pt_BR": {
+      "string": "Negociação"
+    },
+    "de_DE": {
+      "string": "Handel"
+    },
+    "fr_FR": {
+      "string": "Échanger"
+    },
+    "id_ID": {
+      "string": "Berdagang"
+    },
+    "it_IT": {
+      "string": "Scambio"
+    },
+    "ru_RU": {
+      "string": "Сделка"
+    },
+    "th_TH": {
+      "string": "ค้าขาย"
+    },
+    "vi_VN": {
+      "string": "Giao Dịch"
     }
   },
   "k_7d394484": {
@@ -27,16 +51,40 @@
       "string": "製作"
     },
     "en_US": {
-      "string": "make"
+      "string": "Craft"
     },
     "ja_JP": {
-      "string": "作る"
+      "string": "確定"
     },
     "ko_KR": {
-      "string": "만들다"
+      "string": "제작"
     },
     "es_ES": {
-      "string": "hacer"
+      "string": "Fabricar"
+    },
+    "pt_BR": {
+      "string": "Confeccionar"
+    },
+    "de_DE": {
+      "string": "Herstellen"
+    },
+    "fr_FR": {
+      "string": "Fabriquer"
+    },
+    "id_ID": {
+      "string": "Buat"
+    },
+    "it_IT": {
+      "string": "Crea"
+    },
+    "ru_RU": {
+      "string": "Создать"
+    },
+    "th_TH": {
+      "string": "สร้าง"
+    },
+    "vi_VN": {
+      "string": "Chế tạo"
     }
   },
   "k_105cdd5a": {
@@ -57,6 +105,30 @@
     },
     "es_ES": {
       "pattern": "Tarea$"
+    },
+    "pt_BR": {
+      "pattern": "Missão$"
+    },
+    "de_DE": {
+      "pattern": "Mission$"
+    },
+    "fr_FR": {
+      "pattern": "Mission$"
+    },
+    "id_ID": {
+      "pattern": "Misi$"
+    },
+    "it_IT": {
+      "pattern": "Missione$"
+    },
+    "ru_RU": {
+      "pattern": "Миссия$"
+    },
+    "th_TH": {
+      "pattern": "ภารกิจ$"
+    },
+    "vi_VN": {
+      "pattern": "Nhiệm vụ$"
     }
   },
   "k_39d12e73": {
@@ -67,16 +139,40 @@
       "string": "領取"
     },
     "en_US": {
-      "string": "receive"
+      "string": "Claim"
     },
     "ja_JP": {
-      "string": "受け取る"
+      "string": "受取"
     },
     "ko_KR": {
-      "string": "받다"
+      "string": "획득"
     },
     "es_ES": {
-      "string": "recibir"
+      "string": "Reclamar"
+    },
+    "pt_BR": {
+      "string": "Resgatar"
+    },
+    "de_DE": {
+      "string": "Abholen"
+    },
+    "fr_FR": {
+      "string": "Récupérer"
+    },
+    "id_ID": {
+      "string": "Ambil"
+    },
+    "it_IT": {
+      "string": "Riscatta"
+    },
+    "ru_RU": {
+      "string": "Забрать"
+    },
+    "th_TH": {
+      "string": "รับ"
+    },
+    "vi_VN": {
+      "string": "Nhận"
     }
   },
   "k_bf856c96": {
@@ -84,19 +180,43 @@
       "pattern": "一键领取"
     },
     "zh_TW": {
-      "pattern": "一鍵領取"
+      "pattern": "快速領取"
     },
     "en_US": {
-      "pattern": "Get it with one click"
+      "pattern": "Claim All"
     },
     "ja_JP": {
-      "pattern": "ワンクリックで入手"
+      "pattern": "一括受取"
     },
     "ko_KR": {
-      "pattern": "클릭 한 번으로 받아보세요"
+      "pattern": "일괄 획득"
     },
     "es_ES": {
-      "pattern": "Consíguelo con un clic"
+      "pattern": "Reclamar todo"
+    },
+    "pt_BR": {
+      "pattern": "Resgatar Tudo"
+    },
+    "de_DE": {
+      "pattern": "Alle abholen"
+    },
+    "fr_FR": {
+      "pattern": "Tout récupérer"
+    },
+    "id_ID": {
+      "pattern": "Ambil Semua"
+    },
+    "it_IT": {
+      "pattern": "Riscatta tutto"
+    },
+    "ru_RU": {
+      "pattern": "Забрать все"
+    },
+    "th_TH": {
+      "pattern": "รับ​ทั้งหมด"
+    },
+    "vi_VN": {
+      "pattern": "Nhận Tất Cả"
     }
   },
   "k_f546849b": {
@@ -117,6 +237,30 @@
     },
     "es_ES": {
       "pattern": "Sala de recepción"
+    },
+    "pt_BR": {
+      "pattern": "Sala da Recepção"
+    },
+    "de_DE": {
+      "pattern": "Empfang"
+    },
+    "fr_FR": {
+      "pattern": "Salle de réception"
+    },
+    "id_ID": {
+      "pattern": "Ruang Resepsionis"
+    },
+    "it_IT": {
+      "pattern": "Sala di ricevimento"
+    },
+    "ru_RU": {
+      "pattern": "Приемная"
+    },
+    "th_TH": {
+      "pattern": "ห้อง​รับรอง​แขก"
+    },
+    "vi_VN": {
+      "pattern": "Phòng Tiếp Khách"
     }
   },
   "k_0e2d3a3c": {
@@ -127,7 +271,7 @@
       "pattern": "使用"
     },
     "en_US": {
-      "pattern": "use"
+      "pattern": "Use"
     },
     "ja_JP": {
       "pattern": "使用"
@@ -136,7 +280,31 @@
       "pattern": "사용"
     },
     "es_ES": {
-      "pattern": "usar"
+      "pattern": "Usar"
+    },
+    "pt_BR": {
+      "pattern": "Usar"
+    },
+    "de_DE": {
+      "pattern": "Verwenden"
+    },
+    "fr_FR": {
+      "pattern": "Utiliser"
+    },
+    "id_ID": {
+      "pattern": "Gunakan"
+    },
+    "it_IT": {
+      "pattern": "Usa"
+    },
+    "ru_RU": {
+      "pattern": "Использовать"
+    },
+    "th_TH": {
+      "pattern": "ใช้"
+    },
+    "vi_VN": {
+      "pattern": "Dùng"
     }
   },
   "k_7be4248b": {
@@ -147,16 +315,40 @@
       "pattern": "信用交易所"
     },
     "en_US": {
-      "pattern": "credit exchange"
+      "pattern": "Credit Store"
     },
     "ja_JP": {
-      "pattern": "信用取引"
+      "pattern": "FP商店"
     },
     "ko_KR": {
-      "pattern": "신용 교환"
+      "pattern": "크레딧 거래소"
     },
     "es_ES": {
-      "pattern": "intercambio de credito"
+      "pattern": "Tienda de créditos"
+    },
+    "pt_BR": {
+      "pattern": "Loja de Créditos"
+    },
+    "de_DE": {
+      "pattern": "Credit-Laden"
+    },
+    "fr_FR": {
+      "pattern": "Boutique de crédits"
+    },
+    "id_ID": {
+      "pattern": "Toko Kredit"
+    },
+    "it_IT": {
+      "pattern": "Negozio Crediti"
+    },
+    "ru_RU": {
+      "pattern": "Магазин кредитов"
+    },
+    "th_TH": {
+      "pattern": "ร้าน​เครดิต"
+    },
+    "vi_VN": {
+      "pattern": "CH Tín Dụng"
     }
   },
   "k_a63bb002": {
@@ -167,16 +359,40 @@
       "pattern": "全部接收"
     },
     "en_US": {
-      "pattern": "Receive all"
+      "pattern": "Receive All"
     },
     "ja_JP": {
-      "pattern": "すべて受信する"
+      "pattern": "一括受取"
     },
     "ko_KR": {
-      "pattern": "모두 수신"
+      "pattern": "전체 받기"
     },
     "es_ES": {
-      "pattern": "Recibe todo"
+      "pattern": "Recibir todo"
+    },
+    "pt_BR": {
+      "pattern": "Receber Todas"
+    },
+    "de_DE": {
+      "pattern": "Alle erhalten"
+    },
+    "fr_FR": {
+      "pattern": "Tout recevoir"
+    },
+    "id_ID": {
+      "pattern": "Terima Semua"
+    },
+    "it_IT": {
+      "pattern": "Ricevi tutti"
+    },
+    "ru_RU": {
+      "pattern": "Получить все"
+    },
+    "th_TH": {
+      "pattern": "รับ​ทั้งหมด"
+    },
+    "vi_VN": {
+      "pattern": "Nhận tất cả"
     }
   },
   "k_3fef35d6": {
@@ -187,16 +403,40 @@
       "pattern": "全部領取"
     },
     "en_US": {
-      "pattern": "Collect them all"
+      "pattern": "Claim All"
     },
     "ja_JP": {
-      "pattern": "全部集めてね"
+      "pattern": "一括受取"
     },
     "ko_KR": {
-      "pattern": "모두 모아보세요"
+      "pattern": "모두 획득"
     },
     "es_ES": {
-      "pattern": "Colecciónalos todos"
+      "pattern": "Reclamar todo"
+    },
+    "pt_BR": {
+      "pattern": "Resgatar Tudo"
+    },
+    "de_DE": {
+      "pattern": "Alle abholen"
+    },
+    "fr_FR": {
+      "pattern": "Tout récupérer"
+    },
+    "id_ID": {
+      "pattern": "Ambil Semua"
+    },
+    "it_IT": {
+      "pattern": "Riscatta tutto"
+    },
+    "ru_RU": {
+      "pattern": "Забрать все"
+    },
+    "th_TH": {
+      "pattern": "รับ​ทั้งหมด"
+    },
+    "vi_VN": {
+      "pattern": "Nhận Tất Cả"
     }
   },
   "k_a4cd21cc": {
@@ -227,16 +467,40 @@
       "pattern": "製作"
     },
     "en_US": {
-      "pattern": "make"
+      "pattern": "Craft"
     },
     "ja_JP": {
-      "pattern": "作る"
+      "pattern": "確定"
     },
     "ko_KR": {
-      "pattern": "만들다"
+      "pattern": "제작"
     },
     "es_ES": {
-      "pattern": "hacer"
+      "pattern": "Fabricar"
+    },
+    "pt_BR": {
+      "pattern": "Confeccionar"
+    },
+    "de_DE": {
+      "pattern": "Herstellen"
+    },
+    "fr_FR": {
+      "pattern": "Fabriquer"
+    },
+    "id_ID": {
+      "pattern": "Buat"
+    },
+    "it_IT": {
+      "pattern": "Crea"
+    },
+    "ru_RU": {
+      "pattern": "Создать"
+    },
+    "th_TH": {
+      "pattern": "สร้าง"
+    },
+    "vi_VN": {
+      "pattern": "Chế tạo"
     }
   },
   "k_e1c08f6a": {
@@ -267,16 +531,40 @@
       "pattern": "收取信用"
     },
     "en_US": {
-      "pattern": "collect credit"
+      "pattern": "Collect Credits"
     },
     "ja_JP": {
-      "pattern": "クレジットを集める"
+      "pattern": "FP受取"
     },
     "ko_KR": {
-      "pattern": "신용을 모으다"
+      "pattern": "크레딧 받기"
     },
     "es_ES": {
-      "pattern": "cobrar crédito"
+      "pattern": "Recoger créditos"
+    },
+    "pt_BR": {
+      "pattern": "Coletar Créditos"
+    },
+    "de_DE": {
+      "pattern": "Credits sammeln"
+    },
+    "fr_FR": {
+      "pattern": "Récupérer des crédits"
+    },
+    "id_ID": {
+      "pattern": "Ambil Kredit"
+    },
+    "it_IT": {
+      "pattern": "Raccogli crediti"
+    },
+    "ru_RU": {
+      "pattern": "Получите кредиты"
+    },
+    "th_TH": {
+      "pattern": "เก็บ​เครดิต"
+    },
+    "vi_VN": {
+      "pattern": "Thu Thập Tín Dụng"
     }
   },
   "k_f646bcd5": {
@@ -287,16 +575,40 @@
       "pattern": "無待領取信用"
     },
     "en_US": {
-      "pattern": "No credit to be claimed"
+      "pattern": "No credits to claim"
     },
     "ja_JP": {
-      "pattern": "クレジットを請求する必要はありません"
+      "pattern": "FP未獲得"
     },
     "ko_KR": {
-      "pattern": "청구할 크레딧 없음"
+      "pattern": "수령할 수 있는 크레딧 없음"
     },
     "es_ES": {
-      "pattern": "No hay crédito para reclamar"
+      "pattern": "No hay créditos para reclamar"
+    },
+    "pt_BR": {
+      "pattern": "Nenhum crédito para resgatar"
+    },
+    "de_DE": {
+      "pattern": "Keine abholbaren Credits"
+    },
+    "fr_FR": {
+      "pattern": "Aucun crédit à récupérer"
+    },
+    "id_ID": {
+      "pattern": "Tidak ada kredit yang bisa diambil"
+    },
+    "it_IT": {
+      "pattern": "Nessun credito da riscattare."
+    },
+    "ru_RU": {
+      "pattern": "Нет доступных кредитов"
+    },
+    "th_TH": {
+      "pattern": "ไม่มี​เครดิต​ให้​รับ"
+    },
+    "vi_VN": {
+      "pattern": "Không có điểm tín dụng để nhận"
     }
   },
   "k_573c7c18": {
@@ -307,16 +619,40 @@
       "pattern": "貨物裝箱"
     },
     "en_US": {
-      "pattern": "Cargo packing"
+      "pattern": "Pack Goods"
     },
     "ja_JP": {
-      "pattern": "貨物の梱包"
+      "pattern": "パッキング"
     },
     "ko_KR": {
       "pattern": "화물 포장"
     },
     "es_ES": {
-      "pattern": "Embalaje de carga"
+      "pattern": "Empacar mercancía"
+    },
+    "pt_BR": {
+      "pattern": "Embalar Mercadorias"
+    },
+    "de_DE": {
+      "pattern": "Waren packen"
+    },
+    "fr_FR": {
+      "pattern": "Emballer les marchandises"
+    },
+    "id_ID": {
+      "pattern": "Kemas Barang"
+    },
+    "it_IT": {
+      "pattern": "Confeziona articoli"
+    },
+    "ru_RU": {
+      "pattern": "Упаковка товаров"
+    },
+    "th_TH": {
+      "pattern": "บรรจุภัณฑ์​สินค้า"
+    },
+    "vi_VN": {
+      "pattern": "Lô Hàng Hóa"
     }
   },
   "k_8f2058a8": {
@@ -327,16 +663,40 @@
       "pattern": "查看報價"
     },
     "en_US": {
-      "pattern": "View quote"
+      "pattern": "Check Bid"
     },
     "ja_JP": {
-      "pattern": "見積書を見る"
+      "pattern": "希望価格確認"
     },
     "ko_KR": {
-      "pattern": "견적 보기"
+      "pattern": "입찰 보기"
     },
     "es_ES": {
-      "pattern": "Ver cotización"
+      "pattern": "Ver oferta"
+    },
+    "pt_BR": {
+      "pattern": "Verificar Lance"
+    },
+    "de_DE": {
+      "pattern": "Gebot überprüfen"
+    },
+    "fr_FR": {
+      "pattern": "Consulter l'offre"
+    },
+    "id_ID": {
+      "pattern": "Periksa Tawaran"
+    },
+    "it_IT": {
+      "pattern": "Controlla offerta"
+    },
+    "ru_RU": {
+      "pattern": "Проверка ставки"
+    },
+    "th_TH": {
+      "pattern": "ตรวจสอบ​การ​เสนอ​ราคา"
+    },
+    "vi_VN": {
+      "pattern": "Xem Trả Giá"
     }
   },
   "k_04afbdcd": {
@@ -347,16 +707,40 @@
       "pattern": "製造"
     },
     "en_US": {
-      "pattern": "manufacture"
+      "pattern": "Assemble"
     },
     "ja_JP": {
       "pattern": "製造"
     },
     "ko_KR": {
-      "pattern": "제조"
+      "pattern": "제작"
     },
     "es_ES": {
-      "pattern": "fabricar"
+      "pattern": "Ensamblar"
+    },
+    "pt_BR": {
+      "pattern": "Montar"
+    },
+    "de_DE": {
+      "pattern": "Montieren"
+    },
+    "fr_FR": {
+      "pattern": "Assembler"
+    },
+    "id_ID": {
+      "pattern": "Rakit"
+    },
+    "it_IT": {
+      "pattern": "Assembla"
+    },
+    "ru_RU": {
+      "pattern": "Собрать"
+    },
+    "th_TH": {
+      "pattern": "ประกอบ"
+    },
+    "vi_VN": {
+      "pattern": "Lắp ráp"
     }
   },
   "k_23926d61": {
@@ -367,16 +751,40 @@
       "pattern": "前往"
     },
     "en_US": {
-      "pattern": "Go to"
+      "pattern": "Go"
     },
     "ja_JP": {
-      "pattern": "に行く"
+      "pattern": "移動"
     },
     "ko_KR": {
-      "pattern": "이동"
+      "pattern": "바로가기"
     },
     "es_ES": {
-      "pattern": "Ir a"
+      "pattern": "Ir"
+    },
+    "pt_BR": {
+      "pattern": "Ir"
+    },
+    "de_DE": {
+      "pattern": "Los"
+    },
+    "fr_FR": {
+      "pattern": "Y aller"
+    },
+    "id_ID": {
+      "pattern": "Buka"
+    },
+    "it_IT": {
+      "pattern": "Vai"
+    },
+    "ru_RU": {
+      "pattern": "Перейти"
+    },
+    "th_TH": {
+      "pattern": "ไป"
+    },
+    "vi_VN": {
+      "pattern": "Đến"
     }
   },
   "k_1cdef26c": {
@@ -417,6 +825,30 @@
     },
     "es_ES": {
       "pattern": "Cancelar"
+    },
+    "pt_BR": {
+      "pattern": "Cancelar"
+    },
+    "de_DE": {
+      "pattern": "Abbrechen"
+    },
+    "fr_FR": {
+      "pattern": "Annuler"
+    },
+    "id_ID": {
+      "pattern": "Batalkan"
+    },
+    "it_IT": {
+      "pattern": "Annulla"
+    },
+    "ru_RU": {
+      "pattern": "Отмена"
+    },
+    "th_TH": {
+      "pattern": "ยกเลิก"
+    },
+    "vi_VN": {
+      "pattern": "Hủy"
     }
   },
   "k_cdb1d49b": {
@@ -447,16 +879,40 @@
       "pattern": "培養"
     },
     "en_US": {
-      "pattern": "nourish"
+      "pattern": "Grow"
     },
     "ja_JP": {
-      "pattern": "栄養を与える"
+      "pattern": "培養"
     },
     "ko_KR": {
-      "pattern": "키우다"
+      "pattern": "육성"
     },
     "es_ES": {
-      "pattern": "nutrir"
+      "pattern": "Cultivar"
+    },
+    "pt_BR": {
+      "pattern": "Cultivar"
+    },
+    "de_DE": {
+      "pattern": "Wachsen"
+    },
+    "fr_FR": {
+      "pattern": "Cultiver"
+    },
+    "id_ID": {
+      "pattern": "Tumbuhkan"
+    },
+    "it_IT": {
+      "pattern": "Coltiva"
+    },
+    "ru_RU": {
+      "pattern": "Вырастить"
+    },
+    "th_TH": {
+      "pattern": "เพาะเลี้ยง"
+    },
+    "vi_VN": {
+      "pattern": "Phát triển"
     }
   },
   "k_e84c3ae9": {
@@ -467,16 +923,40 @@
       "pattern": "好友"
     },
     "en_US": {
-      "pattern": "friends"
+      "pattern": "Friends"
     },
     "ja_JP": {
-      "pattern": "友達"
+      "pattern": "フレンド"
     },
     "ko_KR": {
       "pattern": "친구"
     },
     "es_ES": {
-      "pattern": "amigos"
+      "pattern": "Amigos"
+    },
+    "pt_BR": {
+      "pattern": "Amigos"
+    },
+    "de_DE": {
+      "pattern": "Freunde"
+    },
+    "fr_FR": {
+      "pattern": "Amis"
+    },
+    "id_ID": {
+      "pattern": "Teman"
+    },
+    "it_IT": {
+      "pattern": "Amici"
+    },
+    "ru_RU": {
+      "pattern": "Друзья"
+    },
+    "th_TH": {
+      "pattern": "เพื่อน"
+    },
+    "vi_VN": {
+      "pattern": "Bạn Bè"
     }
   },
   "k_0503d6d6": {
@@ -487,16 +967,40 @@
       "pattern": "開展交流"
     },
     "en_US": {
-      "pattern": "Communicate"
+      "pattern": "Start Exchange"
     },
     "ja_JP": {
-      "pattern": "通信する"
+      "pattern": "情報共有"
     },
     "ko_KR": {
-      "pattern": "의사소통하다"
+      "pattern": "교류 진행"
     },
     "es_ES": {
-      "pattern": "Comunicar"
+      "pattern": "Iniciar intercambio"
+    },
+    "pt_BR": {
+      "pattern": "Iniciar Troca"
+    },
+    "de_DE": {
+      "pattern": "Austausch starten"
+    },
+    "fr_FR": {
+      "pattern": "Lancer l'échange"
+    },
+    "id_ID": {
+      "pattern": "Mulai Pertukaran"
+    },
+    "it_IT": {
+      "pattern": "Avvia scambio"
+    },
+    "ru_RU": {
+      "pattern": "Начать обмен"
+    },
+    "th_TH": {
+      "pattern": "เริ่ม​แลกเปลี่ยน"
+    },
+    "vi_VN": {
+      "pattern": "Bắt đầu Trao đổi"
     }
   },
   "k_449497e5": {
@@ -507,16 +1011,40 @@
       "pattern": "情報交流"
     },
     "en_US": {
-      "pattern": "information exchange"
+      "pattern": "Clue Exchange"
     },
     "ja_JP": {
-      "pattern": "情報交換"
+      "pattern": "情報共有"
     },
     "ko_KR": {
-      "pattern": "정보 교환"
+      "pattern": "정보 교류"
     },
     "es_ES": {
-      "pattern": "intercambio de información"
+      "pattern": "Intercambio de pistas"
+    },
+    "pt_BR": {
+      "pattern": "Troca de Pistas"
+    },
+    "de_DE": {
+      "pattern": "Hinweisaustausch"
+    },
+    "fr_FR": {
+      "pattern": "Échange d'indice"
+    },
+    "id_ID": {
+      "pattern": "Pertukaran Petunjuk"
+    },
+    "it_IT": {
+      "pattern": "Scambio di indizi"
+    },
+    "ru_RU": {
+      "pattern": "Обмен зацепками"
+    },
+    "th_TH": {
+      "pattern": "แลกเปลี่ยน​เบาะแส"
+    },
+    "vi_VN": {
+      "pattern": "Trao Đổi Manh Mối"
     }
   },
   "k_41a9fd98": {
@@ -527,16 +1055,40 @@
       "pattern": "我轉交的委託"
     },
     "en_US": {
-      "pattern": "The commission I forwarded"
+      "pattern": "Jobs I Transferred"
     },
     "ja_JP": {
-      "pattern": "私が転送したコミッション"
+      "pattern": "外部委託"
     },
     "ko_KR": {
-      "pattern": "내가 전달한 커미션"
+      "pattern": "내가 위탁한 의뢰"
     },
     "es_ES": {
-      "pattern": "La comisión que envié"
+      "pattern": "Trabajos que transferí"
+    },
+    "pt_BR": {
+      "pattern": "Trabalhos que Eu Transferi"
+    },
+    "de_DE": {
+      "pattern": "Von mir übertragene Aufträge"
+    },
+    "fr_FR": {
+      "pattern": "Tâches transférées"
+    },
+    "id_ID": {
+      "pattern": "Tugas yang Kutransfer"
+    },
+    "it_IT": {
+      "pattern": "Lavori trasferiti"
+    },
+    "ru_RU": {
+      "pattern": "Переданные мной поручения"
+    },
+    "th_TH": {
+      "pattern": "งาน​ที่​ฉัน​ได้​ถ่ายโอน"
+    },
+    "vi_VN": {
+      "pattern": "Công Việc Tôi Đã Giao"
     }
   },
   "k_de7b4c9e": {
@@ -547,16 +1099,40 @@
       "pattern": "接收"
     },
     "en_US": {
-      "pattern": "take over"
+      "pattern": "Receive"
     },
     "ja_JP": {
-      "pattern": "引き継ぐ"
+      "pattern": "受け取る"
     },
     "ko_KR": {
-      "pattern": "인수하다"
+      "pattern": "받기"
     },
     "es_ES": {
-      "pattern": "tomar el control"
+      "pattern": "Recibir"
+    },
+    "pt_BR": {
+      "pattern": "Receber"
+    },
+    "de_DE": {
+      "pattern": "Erhalten"
+    },
+    "fr_FR": {
+      "pattern": "Recevoir"
+    },
+    "id_ID": {
+      "pattern": "Terima"
+    },
+    "it_IT": {
+      "pattern": "Ricevi"
+    },
+    "ru_RU": {
+      "pattern": "Получить"
+    },
+    "th_TH": {
+      "pattern": "รับ"
+    },
+    "vi_VN": {
+      "pattern": "Nhận"
     }
   },
   "k_ffb5655a": {
@@ -567,16 +1143,40 @@
       "pattern": "收取"
     },
     "en_US": {
-      "pattern": "charge"
+      "pattern": "Collect"
     },
     "ja_JP": {
-      "pattern": "充電"
+      "pattern": "受取"
     },
     "ko_KR": {
-      "pattern": "요금"
+      "pattern": "받기"
     },
     "es_ES": {
-      "pattern": "cargar"
+      "pattern": "Recoger"
+    },
+    "pt_BR": {
+      "pattern": "Coletar"
+    },
+    "de_DE": {
+      "pattern": "Sammeln"
+    },
+    "fr_FR": {
+      "pattern": "Récupérer"
+    },
+    "id_ID": {
+      "pattern": "Ambil"
+    },
+    "it_IT": {
+      "pattern": "Raccogli"
+    },
+    "ru_RU": {
+      "pattern": "Забрать"
+    },
+    "th_TH": {
+      "pattern": "เก็บ"
+    },
+    "vi_VN": {
+      "pattern": "Thu thập"
     }
   },
   "k_3297422a": {
@@ -587,16 +1187,40 @@
       "pattern": "收集"
     },
     "en_US": {
-      "pattern": "collect"
+      "pattern": "Collected"
     },
     "ja_JP": {
-      "pattern": "集める"
+      "pattern": "記録"
     },
     "ko_KR": {
-      "pattern": "모으다"
+      "pattern": "수집"
     },
     "es_ES": {
-      "pattern": "recolectar"
+      "pattern": "Recolectado"
+    },
+    "pt_BR": {
+      "pattern": "Coletou"
+    },
+    "de_DE": {
+      "pattern": "Gesammelt"
+    },
+    "fr_FR": {
+      "pattern": "Récupérés"
+    },
+    "id_ID": {
+      "pattern": "Diambil"
+    },
+    "it_IT": {
+      "pattern": "Raccolti"
+    },
+    "ru_RU": {
+      "pattern": "Собрано"
+    },
+    "th_TH": {
+      "pattern": "รวบรวม​แล้ว"
+    },
+    "vi_VN": {
+      "pattern": "Đã thu thập"
     }
   },
   "k_8d0e83fc": {
@@ -607,16 +1231,40 @@
       "pattern": "日常"
     },
     "en_US": {
-      "pattern": "daily"
+      "pattern": "Daily"
     },
     "ja_JP": {
-      "pattern": "毎日"
+      "pattern": "日常"
     },
     "ko_KR": {
-      "pattern": "일일"
+      "pattern": "일상"
     },
     "es_ES": {
-      "pattern": "a diario"
+      "pattern": "Diario"
+    },
+    "pt_BR": {
+      "pattern": "Diária"
+    },
+    "de_DE": {
+      "pattern": "Täglich"
+    },
+    "fr_FR": {
+      "pattern": "Quotidien"
+    },
+    "id_ID": {
+      "pattern": "Harian"
+    },
+    "it_IT": {
+      "pattern": "Generici"
+    },
+    "ru_RU": {
+      "pattern": "Ежедн."
+    },
+    "th_TH": {
+      "pattern": "รายวัน"
+    },
+    "vi_VN": {
+      "pattern": "Hàng ngày"
     }
   },
   "k_1c5ad36e": {
@@ -647,16 +1295,40 @@
       "pattern": "暫存區"
     },
     "en_US": {
-      "pattern": "Staging area"
+      "pattern": "Cache"
     },
     "ja_JP": {
-      "pattern": "ステージングエリア"
+      "pattern": "一時保管所"
     },
     "ko_KR": {
-      "pattern": "대기 장소"
+      "pattern": "임시 보관소"
     },
     "es_ES": {
-      "pattern": "Área de preparación"
+      "pattern": "Almacenaje"
+    },
+    "pt_BR": {
+      "pattern": "Cache"
+    },
+    "de_DE": {
+      "pattern": "Speicher"
+    },
+    "fr_FR": {
+      "pattern": "Cache"
+    },
+    "id_ID": {
+      "pattern": "Cache"
+    },
+    "it_IT": {
+      "pattern": "Riserva"
+    },
+    "ru_RU": {
+      "pattern": "Буфер"
+    },
+    "th_TH": {
+      "pattern": "ที่เก็บ​ชั่วคราว"
+    },
+    "vi_VN": {
+      "pattern": "Kho Lưu Tạm"
     }
   },
   "k_298d3284": {
@@ -667,16 +1339,40 @@
       "pattern": "本地區倉儲節點"
     },
     "en_US": {
-      "pattern": "Local storage node"
+      "pattern": "Local Depot Node"
     },
     "ja_JP": {
-      "pattern": "ローカルストレージノード"
+      "pattern": "地域保管ボックス"
     },
     "ko_KR": {
-      "pattern": "로컬 스토리지 노드"
+      "pattern": "현재 지역 저장고 노드"
     },
     "es_ES": {
-      "pattern": "Nodo de almacenamiento local"
+      "pattern": "Nodo de depósito local"
+    },
+    "pt_BR": {
+      "pattern": "Nó de Depósito Local"
+    },
+    "de_DE": {
+      "pattern": "Lokaler Depotknoten"
+    },
+    "fr_FR": {
+      "pattern": "Nœud de dépôt local"
+    },
+    "id_ID": {
+      "pattern": "Nodus Depot Lokal"
+    },
+    "it_IT": {
+      "pattern": "Nodo logistico locale"
+    },
+    "ru_RU": {
+      "pattern": "Местный узел склада"
+    },
+    "th_TH": {
+      "pattern": "โหนด​คลังสินค้า​ใน​เขต"
+    },
+    "vi_VN": {
+      "pattern": "Nút Kho Nội Bộ"
     }
   },
   "k_25d2b666": {
@@ -707,16 +1403,40 @@
       "pattern": "每週事務"
     },
     "en_US": {
-      "pattern": "weekly affairs"
+      "pattern": "Weekly Routine"
     },
     "ja_JP": {
-      "pattern": "毎週の事"
+      "pattern": "ウィークリークエスト"
     },
     "ko_KR": {
       "pattern": "주간 업무"
     },
     "es_ES": {
-      "pattern": "asuntos semanales"
+      "pattern": "Rutina semanal"
+    },
+    "pt_BR": {
+      "pattern": "Rotina Semanal"
+    },
+    "de_DE": {
+      "pattern": "Wöchentliche Routine"
+    },
+    "fr_FR": {
+      "pattern": "Routine hebdomadaire"
+    },
+    "id_ID": {
+      "pattern": "Rutinitas Mingguan"
+    },
+    "it_IT": {
+      "pattern": "Routine settimanale"
+    },
+    "ru_RU": {
+      "pattern": "Распорядок недели"
+    },
+    "th_TH": {
+      "pattern": "กิจวัตร​รายสัปดาห์"
+    },
+    "vi_VN": {
+      "pattern": "Lịch Tuần"
     }
   },
   "k_557911d7": {
@@ -757,6 +1477,30 @@
     },
     "es_ES": {
       "pattern": "suministro de cordura|preparación de crisis"
+    },
+    "pt_BR": {
+      "pattern": "Suprimento de Sanidade|Preparação de Contingência"
+    },
+    "de_DE": {
+      "pattern": "Verstandsversorgung|Krisenbereitschaft"
+    },
+    "fr_FR": {
+      "pattern": "Approvisionnement en lucidité|Parer à toute éventualité"
+    },
+    "id_ID": {
+      "pattern": "Pasokan Sanity|Kesiagaan Kontingensi"
+    },
+    "it_IT": {
+      "pattern": "Fornitura di Lucidità|Reattività alle emergenze"
+    },
+    "ru_RU": {
+      "pattern": "Поставка рассудка|Чрезвычайная подготовка"
+    },
+    "th_TH": {
+      "pattern": "เสบียง​ค่า​สติ|ความพร้อม​ฉุกเฉิน"
+    },
+    "vi_VN": {
+      "pattern": "Tiếp Tế Tinh Chất Tỉnh Táo|Sẵn Sàng Ứng Biến"
     }
   },
   "k_3e790a94": {
@@ -767,16 +1511,40 @@
       "pattern": "生產助力"
     },
     "en_US": {
-      "pattern": "Production assistance"
+      "pattern": "Production Assist"
     },
     "ja_JP": {
-      "pattern": "制作協力"
+      "pattern": "生産サポート"
     },
     "ko_KR": {
       "pattern": "생산 지원"
     },
     "es_ES": {
       "pattern": "Asistencia de producción"
+    },
+    "pt_BR": {
+      "pattern": "Assistência de Produção"
+    },
+    "de_DE": {
+      "pattern": "Produktions-\nunterstützung"
+    },
+    "fr_FR": {
+      "pattern": "Aide à la production"
+    },
+    "id_ID": {
+      "pattern": "Bantuan Produksi"
+    },
+    "it_IT": {
+      "pattern": "Ausilio alla produzione"
+    },
+    "ru_RU": {
+      "pattern": "Помощь с производством"
+    },
+    "th_TH": {
+      "pattern": "ตัว​ช่วย​การผลิต"
+    },
+    "vi_VN": {
+      "pattern": "Hỗ Trợ Sản Xuất"
     }
   },
   "k_401d58fa": {
@@ -784,10 +1552,10 @@
       "pattern": "的线索"
     },
     "zh_TW": {
-      "pattern": "的線索"
+      "pattern": "線索"
     },
     "en_US": {
-      "pattern": "clues"
+      "pattern": "Clues"
     },
     "ja_JP": {
       "pattern": "手がかり"
@@ -796,7 +1564,31 @@
       "pattern": "단서"
     },
     "es_ES": {
-      "pattern": "pistas"
+      "pattern": "Pistas"
+    },
+    "pt_BR": {
+      "pattern": "Pistas"
+    },
+    "de_DE": {
+      "pattern": "Hinweise"
+    },
+    "fr_FR": {
+      "pattern": "Indices"
+    },
+    "id_ID": {
+      "pattern": "Petunjuk"
+    },
+    "it_IT": {
+      "pattern": "Indizi"
+    },
+    "ru_RU": {
+      "pattern": "Зацепки"
+    },
+    "th_TH": {
+      "pattern": "เบาะแส"
+    },
+    "vi_VN": {
+      "pattern": "Manh Mối"
     }
   },
   "k_3deed650": {
@@ -827,16 +1619,40 @@
       "pattern": "等級"
     },
     "en_US": {
-      "pattern": "grade"
+      "pattern": "Level"
     },
     "ja_JP": {
-      "pattern": "学年"
+      "pattern": "レベル"
     },
     "ko_KR": {
-      "pattern": "등급"
+      "pattern": "레벨"
     },
     "es_ES": {
-      "pattern": "calificación"
+      "pattern": "Nivel"
+    },
+    "pt_BR": {
+      "pattern": "Nível"
+    },
+    "de_DE": {
+      "pattern": "Level"
+    },
+    "fr_FR": {
+      "pattern": "Niveau"
+    },
+    "id_ID": {
+      "pattern": "Level"
+    },
+    "it_IT": {
+      "pattern": "Livello"
+    },
+    "ru_RU": {
+      "pattern": "Уровень"
+    },
+    "th_TH": {
+      "pattern": "เล​เวล​"
+    },
+    "vi_VN": {
+      "pattern": "Cấp"
     }
   },
   "k_b56d9ac6": {
@@ -847,16 +1663,40 @@
       "pattern": "確定"
     },
     "en_US": {
-      "pattern": "confirm"
+      "pattern": "Confirm"
     },
     "ja_JP": {
-      "pattern": "確認する"
+      "pattern": "確定"
     },
     "ko_KR": {
-      "pattern": "확인하다"
+      "pattern": "확인"
     },
     "es_ES": {
-      "pattern": "confirmar"
+      "pattern": "Confirmar"
+    },
+    "pt_BR": {
+      "pattern": "Confirmar"
+    },
+    "de_DE": {
+      "pattern": "Bestätigen"
+    },
+    "fr_FR": {
+      "pattern": "Confirmer"
+    },
+    "id_ID": {
+      "pattern": "Konfirmasi"
+    },
+    "it_IT": {
+      "pattern": "Conferma"
+    },
+    "ru_RU": {
+      "pattern": "Подтвердить"
+    },
+    "th_TH": {
+      "pattern": "ยืนยัน"
+    },
+    "vi_VN": {
+      "pattern": "Xác nhận"
     }
   },
   "k_1faf3321": {
@@ -867,16 +1707,40 @@
       "pattern": "裝備"
     },
     "en_US": {
-      "pattern": "equipment"
+      "pattern": "Gear"
     },
     "ja_JP": {
-      "pattern": "装置"
+      "pattern": "装備"
     },
     "ko_KR": {
       "pattern": "장비"
     },
     "es_ES": {
-      "pattern": "equipo"
+      "pattern": "Equipamiento"
+    },
+    "pt_BR": {
+      "pattern": "Equipamento"
+    },
+    "de_DE": {
+      "pattern": "Ausrüstung"
+    },
+    "fr_FR": {
+      "pattern": "Équipement"
+    },
+    "id_ID": {
+      "pattern": "Gear"
+    },
+    "it_IT": {
+      "pattern": "Equipaggiamento"
+    },
+    "ru_RU": {
+      "pattern": "Снаряжение"
+    },
+    "th_TH": {
+      "pattern": "อุปกรณ์"
+    },
+    "vi_VN": {
+      "pattern": "Trang Bị"
     }
   },
   "k_bb6c696b": {
@@ -907,16 +1771,40 @@
       "pattern": "轉交運送委託"
     },
     "en_US": {
-      "pattern": "Transfer shipping order"
+      "pattern": "Delivery Job Transfer"
     },
     "ja_JP": {
-      "pattern": "配送注文を転送する"
+      "pattern": "外部委託"
     },
     "ko_KR": {
-      "pattern": "배송주문 이전"
+      "pattern": "운송 의뢰 위탁"
     },
     "es_ES": {
-      "pattern": "Transferir orden de envío"
+      "pattern": "Transferencia de trabajos de entrega"
+    },
+    "pt_BR": {
+      "pattern": "Transferência de Trabalho de Entrega"
+    },
+    "de_DE": {
+      "pattern": "Lieferauftrag übertragen"
+    },
+    "fr_FR": {
+      "pattern": "Transfert de tâche de livraison"
+    },
+    "id_ID": {
+      "pattern": "Transfer Tugas Pengantaran"
+    },
+    "it_IT": {
+      "pattern": "Trasferimento dei lavori di consegna"
+    },
+    "ru_RU": {
+      "pattern": "Передача поручения по доставке"
+    },
+    "th_TH": {
+      "pattern": "การ​โอน​งาน​จัดส่ง"
+    },
+    "vi_VN": {
+      "pattern": "Chuyển Giao Nhiệm Vụ Giao Hàng"
     }
   },
   "k_e39054a0": {
@@ -947,16 +1835,40 @@
       "pattern": "選擇"
     },
     "en_US": {
-      "pattern": "choose"
+      "pattern": "Select"
     },
     "ja_JP": {
-      "pattern": "選ぶ"
+      "pattern": "選択"
     },
     "ko_KR": {
-      "pattern": "선택하다"
+      "pattern": "선택"
     },
     "es_ES": {
-      "pattern": "elegir"
+      "pattern": "Seleccionar"
+    },
+    "pt_BR": {
+      "pattern": "Selecionar"
+    },
+    "de_DE": {
+      "pattern": "Auswählen"
+    },
+    "fr_FR": {
+      "pattern": "Sélectionner"
+    },
+    "id_ID": {
+      "pattern": "Pilih"
+    },
+    "it_IT": {
+      "pattern": "Seleziona"
+    },
+    "ru_RU": {
+      "pattern": "Выбрать"
+    },
+    "th_TH": {
+      "pattern": "เลือก"
+    },
+    "vi_VN": {
+      "pattern": "Chọn"
     }
   },
   "k_a730d877": {
@@ -987,16 +1899,40 @@
       "pattern": "通行證任務"
     },
     "en_US": {
-      "pattern": "Pass mission"
+      "pattern": "Pass Missions"
     },
     "ja_JP": {
-      "pattern": "パスミッション"
+      "pattern": "通行証クエスト"
     },
     "ko_KR": {
-      "pattern": "미션 통과"
+      "pattern": "통행증 임무"
     },
     "es_ES": {
-      "pattern": "Pase la misión"
+      "pattern": "Misiones del Pase"
+    },
+    "pt_BR": {
+      "pattern": "Missões do Passe"
+    },
+    "de_DE": {
+      "pattern": "Passmissionen"
+    },
+    "fr_FR": {
+      "pattern": "Missions de Pass"
+    },
+    "id_ID": {
+      "pattern": "Misi Tiket"
+    },
+    "it_IT": {
+      "pattern": "Missioni Pass"
+    },
+    "ru_RU": {
+      "pattern": "Миссии пропуска"
+    },
+    "th_TH": {
+      "pattern": "ภารกิจ​บัตร​ผ่าน"
+    },
+    "vi_VN": {
+      "pattern": "Nhiệm Vụ Hoàn Thành"
     }
   },
   "k_727d1bec": {
@@ -1007,16 +1943,40 @@
       "pattern": "通行證獎勵"
     },
     "en_US": {
-      "pattern": "Pass rewards"
+      "pattern": "Pass Rewards"
     },
     "ja_JP": {
-      "pattern": "パス報酬"
+      "pattern": "通行証報酬"
     },
     "ko_KR": {
-      "pattern": "패스 보상"
+      "pattern": "통행증 보상"
     },
     "es_ES": {
-      "pattern": "Pase recompensas"
+      "pattern": "Recompensas del Pase"
+    },
+    "pt_BR": {
+      "pattern": "Recompensas do Passe"
+    },
+    "de_DE": {
+      "pattern": "Passbelohnungen"
+    },
+    "fr_FR": {
+      "pattern": "Récompenses de Pass"
+    },
+    "id_ID": {
+      "pattern": "Imbalan Tiket Akses"
+    },
+    "it_IT": {
+      "pattern": "Ricompense Pass"
+    },
+    "ru_RU": {
+      "pattern": "Награды пропуска"
+    },
+    "th_TH": {
+      "pattern": "รางวัล​บัตร​ผ่าน"
+    },
+    "vi_VN": {
+      "pattern": "Phần Thưởng Hoàn Thành"
     }
   },
   "k_3ecdd4bb": {
@@ -1047,16 +2007,40 @@
       "pattern": "領取"
     },
     "en_US": {
-      "pattern": "receive"
+      "pattern": "Claim"
     },
     "ja_JP": {
-      "pattern": "受け取る"
+      "pattern": "受取"
     },
     "ko_KR": {
-      "pattern": "받다"
+      "pattern": "획득"
     },
     "es_ES": {
-      "pattern": "recibir"
+      "pattern": "Reclamar"
+    },
+    "pt_BR": {
+      "pattern": "Resgatar"
+    },
+    "de_DE": {
+      "pattern": "Abholen"
+    },
+    "fr_FR": {
+      "pattern": "Récupérer"
+    },
+    "id_ID": {
+      "pattern": "Ambil"
+    },
+    "it_IT": {
+      "pattern": "Riscatta"
+    },
+    "ru_RU": {
+      "pattern": "Забрать"
+    },
+    "th_TH": {
+      "pattern": "รับ"
+    },
+    "vi_VN": {
+      "pattern": "Nhận"
     }
   },
   "k_a72a252f": {
@@ -1077,6 +2061,30 @@
     },
     "es_ES": {
       "string": "Nodo de depósito"
+    },
+    "pt_BR": {
+      "string": "Nó de Depósito"
+    },
+    "de_DE": {
+      "string": "Depotknoten"
+    },
+    "fr_FR": {
+      "string": "Nœud de dépôt"
+    },
+    "id_ID": {
+      "string": "Nodus Depot"
+    },
+    "it_IT": {
+      "string": "Nodo logistico"
+    },
+    "ru_RU": {
+      "string": "Узел склада"
+    },
+    "th_TH": {
+      "string": "โหนด​คลัง​เก็บ"
+    },
+    "vi_VN": {
+      "string": "Nút Kho Hàng"
     }
   },
   "k_9f929560": {
@@ -1087,16 +2095,40 @@
       "string": "據點管理"
     },
     "en_US": {
-      "string": "Site management"
+      "string": "Outpost Management"
     },
     "ja_JP": {
-      "string": "サイト管理"
+      "string": "拠点管理"
     },
     "ko_KR": {
-      "string": "사이트 관리"
+      "string": "거점 관리"
     },
     "es_ES": {
-      "string": "Gestión del sitio"
+      "string": "Gestión del puesto de avanzada"
+    },
+    "pt_BR": {
+      "string": "Gerenciamento de Posto Avançado"
+    },
+    "de_DE": {
+      "string": "Außenposten-Verwaltung"
+    },
+    "fr_FR": {
+      "string": "Gestion d'avant-poste"
+    },
+    "id_ID": {
+      "string": "Pengelolaan Pos Depan"
+    },
+    "it_IT": {
+      "string": "Gestione degli avamposti"
+    },
+    "ru_RU": {
+      "string": "Управление аванпостом"
+    },
+    "th_TH": {
+      "string": "การ​จัดการ​ด่าน​หน้า"
+    },
+    "vi_VN": {
+      "string": "Quản Lý Tiền Đồn"
     }
   },
   "k_next_step": {
@@ -1113,10 +2145,34 @@
       "string": "次へ"
     },
     "ko_KR": {
-      "string": "다음"
+      "string": "다음 단계"
     },
     "es_ES": {
       "string": "Siguiente"
+    },
+    "pt_BR": {
+      "string": "Próximo"
+    },
+    "de_DE": {
+      "string": "Weiter"
+    },
+    "fr_FR": {
+      "string": "Suivant"
+    },
+    "id_ID": {
+      "string": "Berikutnya"
+    },
+    "it_IT": {
+      "string": "Avanti"
+    },
+    "ru_RU": {
+      "string": "Далее"
+    },
+    "th_TH": {
+      "string": "ถัดไป"
+    },
+    "vi_VN": {
+      "string": "Tiếp"
     }
   },
   "k_fill_to_max": {
@@ -1127,16 +2183,40 @@
       "string": "填充到滿"
     },
     "en_US": {
-      "string": "Fill to max"
+      "string": "Top it Up"
     },
     "ja_JP": {
-      "string": "最大まで埋める"
+      "string": "上限容量"
     },
     "ko_KR": {
-      "string": "최대까지 채우기"
+      "string": "최대 수량"
     },
     "es_ES": {
-      "string": "Llenar al máximo"
+      "string": "Rellenar"
+    },
+    "pt_BR": {
+      "string": "Completar"
+    },
+    "de_DE": {
+      "string": "Vollpacken"
+    },
+    "fr_FR": {
+      "string": "Remplir"
+    },
+    "id_ID": {
+      "string": "Isi Penuh"
+    },
+    "it_IT": {
+      "string": "Carica"
+    },
+    "ru_RU": {
+      "string": "Пополнить"
+    },
+    "th_TH": {
+      "string": "เติม​ให้​เต็ม"
+    },
+    "vi_VN": {
+      "string": "Nạp Thêm"
     }
   },
   "k_start_shipping": {
@@ -1147,16 +2227,40 @@
       "string": "開始運送"
     },
     "en_US": {
-      "string": "Start shipping"
+      "string": "Start Delivery"
     },
     "ja_JP": {
-      "string": "配送開始"
+      "string": "配達開始"
     },
     "ko_KR": {
-      "string": "배송 시작"
+      "string": "운송 시작"
     },
     "es_ES": {
-      "string": "Iniciar envío"
+      "string": "Iniciar entrega"
+    },
+    "pt_BR": {
+      "string": "Iniciar Entrega"
+    },
+    "de_DE": {
+      "string": "Lieferung starten"
+    },
+    "fr_FR": {
+      "string": "Commencer la livraison"
+    },
+    "id_ID": {
+      "string": "Mulai Antar"
+    },
+    "it_IT": {
+      "string": "Inizia consegna"
+    },
+    "ru_RU": {
+      "string": "Начать доставку"
+    },
+    "th_TH": {
+      "string": "เริ่ม​การจัดส่ง"
+    },
+    "vi_VN": {
+      "string": "Bắt đầu giao hàng"
     }
   },
   "k_get_dispatch_ticket": {
@@ -1167,16 +2271,40 @@
       "string": "獲得調度券"
     },
     "en_US": {
-      "string": "Get dispatch ticket"
+      "string": "Stock Bills Acquired"
     },
     "ja_JP": {
-      "string": "配達券を獲得"
+      "string": "取引券報酬"
     },
     "ko_KR": {
-      "string": "배송권 획득"
+      "string": "관리권 획득"
     },
     "es_ES": {
-      "string": "Obtener cupón de despacho"
+      "string": "Vales de crédito adquiridos"
+    },
+    "pt_BR": {
+      "string": "Letras de Câmbio Adquiridas"
+    },
+    "de_DE": {
+      "string": "Aktiennoten erhalten"
+    },
+    "fr_FR": {
+      "string": "Billets de réserves obtenus"
+    },
+    "id_ID": {
+      "string": "Surat Saham Didapatkan"
+    },
+    "it_IT": {
+      "string": "Buoni acquisto ottenuti"
+    },
+    "ru_RU": {
+      "string": "Получены облигации"
+    },
+    "th_TH": {
+      "string": "ได้รับ​ธนบัตร​คลัง​แล้ว"
+    },
+    "vi_VN": {
+      "string": "Phiếu Hàng đã nhận"
     }
   },
   "k_culture_stopped": {
@@ -1184,19 +2312,43 @@
       "pattern": "停工"
     },
     "zh_TW": {
-      "pattern": "停工"
+      "pattern": "阻塞"
     },
     "en_US": {
-      "pattern": "stop"
+      "pattern": "Clogged"
     },
     "ja_JP": {
       "pattern": "停止"
     },
     "ko_KR": {
-      "pattern": "중지"
+      "pattern": "막힘"
     },
     "es_ES": {
-      "pattern": "detener"
+      "pattern": "Obstruido"
+    },
+    "pt_BR": {
+      "pattern": "Obstruída"
+    },
+    "de_DE": {
+      "pattern": "Verstopft"
+    },
+    "fr_FR": {
+      "pattern": "Bloquée"
+    },
+    "id_ID": {
+      "pattern": "Tersumbat"
+    },
+    "it_IT": {
+      "pattern": "Ostruzione"
+    },
+    "ru_RU": {
+      "pattern": "Застопорено"
+    },
+    "th_TH": {
+      "pattern": "ขัดข้อง"
+    },
+    "vi_VN": {
+      "pattern": "Bị tắc nghẽn"
     }
   },
   "k_view_quote": {
@@ -1207,16 +2359,40 @@
       "string": "查看報價"
     },
     "en_US": {
-      "string": "View quote"
+      "string": "Check Bid"
     },
     "ja_JP": {
-      "string": "見積書を見る"
+      "string": "希望価格確認"
     },
     "ko_KR": {
-      "string": "견적 보기"
+      "string": "입찰 보기"
     },
     "es_ES": {
-      "string": "Ver cotización"
+      "string": "Ver oferta"
+    },
+    "pt_BR": {
+      "string": "Verificar Lance"
+    },
+    "de_DE": {
+      "string": "Gebot überprüfen"
+    },
+    "fr_FR": {
+      "string": "Consulter l'offre"
+    },
+    "id_ID": {
+      "string": "Periksa Tawaran"
+    },
+    "it_IT": {
+      "string": "Controlla offerta"
+    },
+    "ru_RU": {
+      "string": "Проверка ставки"
+    },
+    "th_TH": {
+      "string": "ตรวจสอบ​การ​เสนอ​ราคา"
+    },
+    "vi_VN": {
+      "string": "Xem Trả Giá"
     }
   }
 }

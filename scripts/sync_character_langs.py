@@ -22,6 +22,7 @@
 """
 
 import json
+import json5
 import re
 import sys
 from pathlib import Path
@@ -136,7 +137,7 @@ def get_operator_infoboxes() -> dict:
 
 
 def load_lang_characters() -> dict:
-    return json.loads(LANG_CHARACTERS_JSON.read_text(encoding="utf-8"))
+    return json5.loads(LANG_CHARACTERS_JSON.read_text(encoding="utf-8"))
 
 
 def load_canon_characters() -> dict:

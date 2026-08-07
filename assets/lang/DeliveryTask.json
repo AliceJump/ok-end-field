@@ -17,6 +17,30 @@
     },
     "es_ES": {
       "string": "Nodo de depósito"
+    },
+    "pt_BR": {
+      "string": "Nó de Depósito"
+    },
+    "de_DE": {
+      "string": "Depotknoten"
+    },
+    "fr_FR": {
+      "string": "Nœud de dépôt"
+    },
+    "id_ID": {
+      "string": "Nodus Depot"
+    },
+    "it_IT": {
+      "string": "Nodo logistico"
+    },
+    "ru_RU": {
+      "string": "Узел склада"
+    },
+    "th_TH": {
+      "string": "โหนด​คลัง​เก็บ"
+    },
+    "vi_VN": {
+      "string": "Nút Kho Hàng"
     }
   },
   "k_38108eaa": {
@@ -27,16 +51,40 @@
       "string": "更新"
     },
     "en_US": {
-      "string": "refresh"
+      "string": "Refresh"
     },
     "ja_JP": {
-      "string": "リフレッシュする"
+      "string": "更新"
     },
     "ko_KR": {
-      "string": "새로 고치다"
+      "string": "새로고침"
     },
     "es_ES": {
-      "string": "refrescar"
+      "string": "Actualizar"
+    },
+    "pt_BR": {
+      "string": "Atualizar"
+    },
+    "de_DE": {
+      "string": "Aktualisieren"
+    },
+    "fr_FR": {
+      "string": "Actualiser"
+    },
+    "id_ID": {
+      "string": "Muat ulang"
+    },
+    "it_IT": {
+      "string": "Aggiorna"
+    },
+    "ru_RU": {
+      "string": "Обновить"
+    },
+    "th_TH": {
+      "string": "รี​เฟรช"
+    },
+    "vi_VN": {
+      "string": "Làm mới"
     }
   },
   "k_96b876e3": {
@@ -47,16 +95,40 @@
       "string": "工業"
     },
     "en_US": {
-      "string": "industry"
+      "string": "Factory"
     },
     "ja_JP": {
-      "string": "業界"
+      "string": "工業"
     },
     "ko_KR": {
-      "string": "산업"
+      "string": "공업"
     },
     "es_ES": {
-      "string": "industria"
+      "string": "Fábrica"
+    },
+    "pt_BR": {
+      "string": "Fábrica"
+    },
+    "de_DE": {
+      "string": "Fabrik"
+    },
+    "fr_FR": {
+      "string": "Usine"
+    },
+    "id_ID": {
+      "string": "Pabrik"
+    },
+    "it_IT": {
+      "string": "Fabbrica"
+    },
+    "ru_RU": {
+      "string": "Завод"
+    },
+    "th_TH": {
+      "string": "โรงงาน"
+    },
+    "vi_VN": {
+      "string": "Nhà Máy"
     }
   },
   "k_9d5535b7": {
@@ -67,16 +139,40 @@
       "string": "接取運送委託"
     },
     "en_US": {
-      "string": "Receive shipping order"
+      "string": "Accept Delivery Job"
     },
     "ja_JP": {
-      "string": "発送注文を受け取る"
+      "string": "配達依頼を受ける"
     },
     "ko_KR": {
-      "string": "배송주문 받기"
+      "string": "운송 의뢰 수령"
     },
     "es_ES": {
-      "string": "Recibir orden de envío"
+      "string": "Aceptar trabajo de entrega"
+    },
+    "pt_BR": {
+      "string": "Aceitar Trabalho de Entrega"
+    },
+    "de_DE": {
+      "string": "Lieferauftrag annehmen"
+    },
+    "fr_FR": {
+      "string": "Accepter la tâche de livraison"
+    },
+    "id_ID": {
+      "string": "Terima Tugas Pengantaran"
+    },
+    "it_IT": {
+      "string": "Accetta lavoro di consegna"
+    },
+    "ru_RU": {
+      "string": "Принять поручение по доставке"
+    },
+    "th_TH": {
+      "string": "ยอมรับ​งาน​จัดส่ง"
+    },
+    "vi_VN": {
+      "string": "Chấp Nhận Nhiệm Vụ Giao Hàng"
     }
   },
   "k_b0e3a2da": {
@@ -87,16 +183,40 @@
       "string": "登上滑索架"
     },
     "en_US": {
-      "string": "Climb the zipline"
+      "string": "Latch to Zipline Facility"
     },
     "ja_JP": {
-      "string": "ジップラインを登る"
+      "string": "乗る"
     },
     "ko_KR": {
-      "string": "짚라인을 타고 올라보세요"
+      "string": "집라인 후크 타기"
     },
     "es_ES": {
-      "string": "Sube a la tirolesa"
+      "string": "Enganchar a la instalación de tirolesa"
+    },
+    "pt_BR": {
+      "string": "Prenda na instalação de tirolesa"
+    },
+    "de_DE": {
+      "string": "An Seilbahnanlage einhängen"
+    },
+    "fr_FR": {
+      "string": "S'accrocher à l'installation de tyrolienne"
+    },
+    "id_ID": {
+      "string": "Berpegangan pada Fasilitas Luncur Gantung"
+    },
+    "it_IT": {
+      "string": "Aggancia alla teleferica"
+    },
+    "ru_RU": {
+      "string": "Зацепиться за зиплайн-сооружение"
+    },
+    "th_TH": {
+      "string": "ใส่​ล็อก​เข้ากับ​สิ่งปลูกสร้าง​ซิป​ไลน์"
+    },
+    "vi_VN": {
+      "string": "Chốt vào Công Trình Zipline"
     }
   },
   "k_ae8fb114": {
@@ -104,19 +224,43 @@
       "string": "运送委托列表"
     },
     "zh_TW": {
-      "string": "運送委託列表"
+      "string": "運送委託清單"
     },
     "en_US": {
-      "string": "Shipping order list"
+      "string": "List of Delivery Jobs"
     },
     "ja_JP": {
-      "string": "発送注文リスト"
+      "string": "配達依頼一覧"
     },
     "ko_KR": {
-      "string": "배송주문 목록"
+      "string": "운송 의뢰 목록"
     },
     "es_ES": {
-      "string": "Lista de pedidos de envío"
+      "string": "Lista de trabajos de entrega"
+    },
+    "pt_BR": {
+      "string": "Lista de Trabalhos de Entrega"
+    },
+    "de_DE": {
+      "string": "Liste der Lieferaufträge"
+    },
+    "fr_FR": {
+      "string": "Liste des tâches de livraison"
+    },
+    "id_ID": {
+      "string": "Daftar Tugas Pengantaran"
+    },
+    "it_IT": {
+      "string": "Elenco dei lavori di consegna"
+    },
+    "ru_RU": {
+      "string": "Список поручений по доставке"
+    },
+    "th_TH": {
+      "string": "รายการ​งาน​จัดส่ง"
+    },
+    "vi_VN": {
+      "string": "Danh Sách Nhiệm Vụ Giao Hàng"
     }
   },
   "k_f736eb3d": {
@@ -127,16 +271,40 @@
       "pattern": "取貨"
     },
     "en_US": {
-      "pattern": "Pick up"
+      "pattern": "Pick Up Goods"
     },
     "ja_JP": {
-      "pattern": "選び出す"
+      "pattern": "受け取る"
     },
     "ko_KR": {
-      "pattern": "찾다"
+      "pattern": "화물 수령"
     },
     "es_ES": {
-      "pattern": "Levantar"
+      "pattern": "Recoger mercancías"
+    },
+    "pt_BR": {
+      "pattern": "Pegar Mercadorias"
+    },
+    "de_DE": {
+      "pattern": "Waren einsammeln"
+    },
+    "fr_FR": {
+      "pattern": "Récupérer les marchandises"
+    },
+    "id_ID": {
+      "pattern": "Ambil Barang"
+    },
+    "it_IT": {
+      "pattern": "Raccogli articoli"
+    },
+    "ru_RU": {
+      "pattern": "Забрать товары"
+    },
+    "th_TH": {
+      "pattern": "รับ​สินค้า"
+    },
+    "vi_VN": {
+      "pattern": "Nhặt Hàng"
     }
   },
   "k_c7b4d04e": {
@@ -167,16 +335,40 @@
       "pattern": "資源"
     },
     "en_US": {
-      "pattern": "resource"
+      "pattern": "Resource"
     },
     "ja_JP": {
-      "pattern": "リソース"
+      "pattern": "資源"
     },
     "ko_KR": {
-      "pattern": "의지"
+      "pattern": "자원"
     },
     "es_ES": {
-      "pattern": "recurso"
+      "pattern": "Recurso"
+    },
+    "pt_BR": {
+      "pattern": "Recurso"
+    },
+    "de_DE": {
+      "pattern": "Ressource"
+    },
+    "fr_FR": {
+      "pattern": "Ressource"
+    },
+    "id_ID": {
+      "pattern": "Sumber Daya"
+    },
+    "it_IT": {
+      "pattern": "Risorsa"
+    },
+    "ru_RU": {
+      "pattern": "Ресурс"
+    },
+    "th_TH": {
+      "pattern": "ทรัพยากร"
+    },
+    "vi_VN": {
+      "pattern": "Tài Nguyên"
     }
   },
   "k_0c1ef9f5": {
@@ -187,16 +379,40 @@
       "pattern": "交貨"
     },
     "en_US": {
-      "pattern": "delivery"
+      "pattern": "Deliver"
     },
     "ja_JP": {
-      "pattern": "配達"
+      "pattern": "引き渡す"
     },
     "ko_KR": {
-      "pattern": "배달"
+      "pattern": "화물 제출"
     },
     "es_ES": {
-      "pattern": "entrega"
+      "pattern": "Entregar"
+    },
+    "pt_BR": {
+      "pattern": "Entregar"
+    },
+    "de_DE": {
+      "pattern": "Liefern"
+    },
+    "fr_FR": {
+      "pattern": "Livrer"
+    },
+    "id_ID": {
+      "pattern": "Antar"
+    },
+    "it_IT": {
+      "pattern": "Consegna"
+    },
+    "ru_RU": {
+      "pattern": "Доставить"
+    },
+    "th_TH": {
+      "pattern": "ส่งมอบ"
+    },
+    "vi_VN": {
+      "pattern": "Giao"
     }
   },
   "k_a72a252f_1": {
@@ -217,6 +433,30 @@
     },
     "es_ES": {
       "string": "Nodo de depósito"
+    },
+    "pt_BR": {
+      "string": "Nó de Depósito"
+    },
+    "de_DE": {
+      "string": "Depotknoten"
+    },
+    "fr_FR": {
+      "string": "Nœud de dépôt"
+    },
+    "id_ID": {
+      "string": "Nodus Depot"
+    },
+    "it_IT": {
+      "string": "Nodo logistico"
+    },
+    "ru_RU": {
+      "string": "Узел склада"
+    },
+    "th_TH": {
+      "string": "โหนด​คลัง​เก็บ"
+    },
+    "vi_VN": {
+      "string": "Nút Kho Hàng"
     }
   },
   "k_view_location": {
@@ -227,16 +467,40 @@
       "string": "查看位置"
     },
     "en_US": {
-      "string": "View location"
+      "string": "Check Location"
     },
     "ja_JP": {
-      "string": "場所を確認"
+      "string": "位置確認"
     },
     "ko_KR": {
-      "string": "위치 확인"
+      "string": "위치 보기"
     },
     "es_ES": {
-      "string": "Ver ubicación"
+      "string": "Verificar ubicación"
+    },
+    "pt_BR": {
+      "string": "Verificar Local"
+    },
+    "de_DE": {
+      "string": "Ort überprüfen"
+    },
+    "fr_FR": {
+      "string": "Emplacement"
+    },
+    "id_ID": {
+      "string": "Periksa Lokasi"
+    },
+    "it_IT": {
+      "string": "Controlla posizione"
+    },
+    "ru_RU": {
+      "string": "См. местоположение"
+    },
+    "th_TH": {
+      "string": "ตรวจสอบ​ตำแหน่ง"
+    },
+    "vi_VN": {
+      "string": "Kiểm Tra Vị Trí"
     }
   },
   "k_accept_delivery": {
@@ -247,16 +511,40 @@
       "string": "接取運送委託"
     },
     "en_US": {
-      "string": "Accept delivery order"
+      "string": "Accept Delivery Job"
     },
     "ja_JP": {
-      "string": "配送注文を受け取る"
+      "string": "配達依頼を受ける"
     },
     "ko_KR": {
-      "string": "배송 주문 수락"
+      "string": "운송 의뢰 수령"
     },
     "es_ES": {
-      "string": "Aceptar orden de envío"
+      "string": "Aceptar trabajo de entrega"
+    },
+    "pt_BR": {
+      "string": "Aceitar Trabalho de Entrega"
+    },
+    "de_DE": {
+      "string": "Lieferauftrag annehmen"
+    },
+    "fr_FR": {
+      "string": "Accepter la tâche de livraison"
+    },
+    "id_ID": {
+      "string": "Terima Tugas Pengantaran"
+    },
+    "it_IT": {
+      "string": "Accetta lavoro di consegna"
+    },
+    "ru_RU": {
+      "string": "Принять поручение по доставке"
+    },
+    "th_TH": {
+      "string": "ยอมรับ​งาน​จัดส่ง"
+    },
+    "vi_VN": {
+      "string": "Chấp Nhận Nhiệm Vụ Giao Hàng"
     }
   },
   "k_fragile": {
@@ -270,13 +558,37 @@
       "string": "Fragile"
     },
     "ja_JP": {
-      "string": "壊れやすい"
+      "string": "取扱注意"
     },
     "ko_KR": {
-      "string": "파손되기 쉬운"
+      "string": "보통"
     },
     "es_ES": {
       "string": "Frágil"
+    },
+    "pt_BR": {
+      "string": "Frágil"
+    },
+    "de_DE": {
+      "string": "Zerbrechlich"
+    },
+    "fr_FR": {
+      "string": "Fragile"
+    },
+    "id_ID": {
+      "string": "Ringkih"
+    },
+    "it_IT": {
+      "string": "Fragile"
+    },
+    "ru_RU": {
+      "string": "Хрупкие"
+    },
+    "th_TH": {
+      "string": "เปราะบาง"
+    },
+    "vi_VN": {
+      "string": "Dễ Vỡ"
     }
   },
   "k_not_fragile": {
@@ -287,16 +599,40 @@
       "string": "不易損"
     },
     "en_US": {
-      "string": "Non-fragile"
+      "string": "Durable"
     },
     "ja_JP": {
-      "string": "壊れにくい"
+      "string": "一般荷物"
     },
     "ko_KR": {
-      "string": "파손되지 않는"
+      "string": "낮음"
     },
     "es_ES": {
-      "string": "No frágil"
+      "string": "Duradera"
+    },
+    "pt_BR": {
+      "string": "Durável"
+    },
+    "de_DE": {
+      "string": "Haltbar"
+    },
+    "fr_FR": {
+      "string": "Durable"
+    },
+    "id_ID": {
+      "string": "Tahan Lama"
+    },
+    "it_IT": {
+      "string": "Resistente"
+    },
+    "ru_RU": {
+      "string": "Прочные"
+    },
+    "th_TH": {
+      "string": "ทนทาน"
+    },
+    "vi_VN": {
+      "string": "Bền bỉ"
     }
   }
 }

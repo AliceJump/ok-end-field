@@ -4,19 +4,43 @@
       "string": "结束会话"
     },
     "zh_TW": {
-      "string": "結束會話"
+      "string": "結束對話"
     },
     "en_US": {
-      "string": "end session"
+      "string": "End Chat"
     },
     "ja_JP": {
-      "string": "セッションを終了する"
+      "string": "会話を終了"
     },
     "ko_KR": {
-      "string": "세션 종료"
+      "string": "대화 종료"
     },
     "es_ES": {
-      "string": "finalizar sesión"
+      "string": "Finalizar chat"
+    },
+    "pt_BR": {
+      "string": "Encerrar chat"
+    },
+    "de_DE": {
+      "string": "Chat beenden"
+    },
+    "fr_FR": {
+      "string": "Arrêter la discussion"
+    },
+    "id_ID": {
+      "string": "Akhiri Obrolan"
+    },
+    "it_IT": {
+      "string": "Chiudi chat"
+    },
+    "ru_RU": {
+      "string": "Завершить общение"
+    },
+    "th_TH": {
+      "string": "จบ​การ​สนทนา"
+    },
+    "vi_VN": {
+      "string": "Kết thúc trò chuyện"
     }
   }
 }

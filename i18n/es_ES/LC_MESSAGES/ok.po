@@ -12,11 +12,29 @@ msgstr ""
 msgid "0~1，值越高越严格"
 msgstr "0~1, más alto = más estricto"
 
+msgid "Area Build Key"
+msgstr "Tecla Construcción Área"
+
+msgid "Backpack Key"
+msgstr "Tecla Mochila"
+
+msgid "Baker Key"
+msgstr "Tecla Panadero"
+
+msgid "Blueprint Key"
+msgstr "Tecla Plano"
+
 msgid "D96钢"
 msgstr "Acero D96"
 
 msgid "Daily Task"
 msgstr "Tarea Diaria"
+
+msgid "Dodge Key"
+msgstr "Tecla Esquivar"
+
+msgid "Equipment List Key"
+msgstr "Tecla Lista Equipamiento"
 
 msgid "F10"
 msgstr "F10"
@@ -30,8 +48,68 @@ msgstr "F12"
 msgid "F9"
 msgstr "F9"
 
+msgid "Handbook Key"
+msgstr "Tecla Manual"
+
+msgid "Industry Plan Key"
+msgstr "Tecla Plan Industrial"
+
+msgid "Interact Key"
+msgstr "Tecla Interactuar"
+
+msgid "Jump Key"
+msgstr "Tecla Saltar"
+
+msgid "Link Skill Key"
+msgstr "Tecla de Habilidad Vinculada"
+
+msgid "Mail Key"
+msgstr "Tecla Correo"
+
+msgid "Map Key"
+msgstr "Tecla Mapa"
+
+msgid "Mission Key"
+msgstr "Tecla Misión"
+
+msgid "Operator Key"
+msgstr "Tecla Operador"
+
+msgid "Overview Mode Key"
+msgstr "Tecla Vista General"
+
+msgid "Place Belt Key"
+msgstr "Tecla Colocar Cinta"
+
+msgid "Place Pipeline Key"
+msgstr "Tecla Colocar Tubería"
+
+msgid "Product Icon Toggle Key"
+msgstr "Tecla Icono Producto"
+
+msgid "Quick Tool Key"
+msgstr "Tecla Herramienta Rápida"
+
+msgid "Recruitment Key"
+msgstr "Tecla Reclutamiento"
+
+msgid "SingleActionWithDelay"
+msgstr "SingleActionWithDelay"
+
+msgid "Storage Mode Key"
+msgstr "Tecla Modo Almacén"
+
+msgid "Team Key"
+msgstr "Tecla Equipo"
+
+msgid "Track Key"
+msgstr "Tecla Rastrear"
+
 msgid "Upload Logs"
 msgstr "Subir Registros"
+
+msgid "Valuables Key"
+msgstr "Tecla Valiosos"
 
 msgid "YOLO模型"
 msgstr "Modelo YOLO"
@@ -136,10 +214,12 @@ msgid "三位一体"
 msgstr "Triaggelos"
 
 msgid "三相纳米片"
-msgstr "Nanolámina trifásica"
+msgstr "Nanohoja trifásica"
 
 msgid "不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
-msgstr "No recoger cultivos producibles en masa por granjas o líneas de siembra/cosecha: 琼叶参, 金石稻, 芽针, 锦草, 苦叶椒, 砂叶, 灰芦麦, 柑实, 荞花, 酮化灌木."
+msgstr ""
+"No recoger cultivos producibles en masa por granjas o líneas de "
+"siembra/cosecha: 琼叶参, 金石稻, 芽针, 锦草, 苦叶椒, 砂叶, 灰芦麦, 柑实, 荞花, 酮化灌木."
 
 msgid "不换队伍"
 msgstr "No Cambiar Equipo"
@@ -148,7 +228,10 @@ msgid "两者"
 msgstr "Ambos"
 
 msgid "中容武陵电池"
-msgstr "Batería de capacidad media de Wuling"
+msgstr "Batería de CS de Wuling"
+
+msgid "主界面单次动作后延迟"
+msgstr "Retraso tras una sola acción en la interfaz principal"
 
 msgid "买卖货"
 msgstr "Comprar y Vender Bienes"
@@ -163,7 +246,8 @@ msgid "交易货品优先序列"
 msgstr "Prioridad de mercancías"
 
 msgid "仅在“完整循环测试”时生效，用于限定测试的小区域（当前地区可选地点）"
-msgstr "Solo se aplica a Prueba de ciclo completo para limitar la zona de prueba"
+msgstr ""
+"Solo se aplica a Prueba de ciclo completo para limitar la zona de prueba"
 
 msgid "仅差异"
 msgstr "Solo diferencias"
@@ -203,13 +287,15 @@ msgid "仓库物品转移"
 msgstr "Transferencia de Almacén"
 
 msgid "任务"
-msgstr "Tarea"
+msgstr "Misión"
 
 msgid "任务会按顺序依次对齐并滑行每段距离"
 msgstr "La tarea se alinea y recorre cada distancia en orden"
 
 msgid "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。"
-msgstr "Al terminar la tarea, abre el archivo de resumen con la aplicación predeterminada del sistema. Si se desactiva, solo se crea el archivo."
+msgstr ""
+"Al terminar la tarea, abre el archivo de resumen con la aplicación "
+"predeterminada del sistema. Si se desactiva, solo se crea el archivo."
 
 msgid "任务属性配置"
 msgstr "Configuración de atributos de tarea"
@@ -227,7 +313,7 @@ msgid "优先送礼对象"
 msgstr "Destinatario prioritario de regalos"
 
 msgid "优质芽针针剂"
-msgstr "Inyección prémium de aguja brote"
+msgstr "Jeringa de Yazhen [A]"
 
 msgid "会根据开始日期自动轮换，留空表示不启用自动轮换。"
 msgstr "Rota según la fecha inicial. Déjelo vacío para desactivarlo."
@@ -248,10 +334,10 @@ msgid "体力本配置"
 msgstr "Configuración de mazmorra de estamina"
 
 msgid "余烬"
-msgstr "ascua"
+msgstr "Ember"
 
 msgid "佩丽卡"
-msgstr "Perica"
+msgstr "Perlica"
 
 msgid "使用全局配置"
 msgstr "Usar Configuracion Global"
@@ -267,6 +353,12 @@ msgstr "ej. \"{key}\" = {raw} → tirolesa {seq}"
 
 msgid "供能高地"
 msgstr "Meseta de poder"
+
+msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
+msgstr ""
+"Guarda una instantánea completa de la configuración de la tarea para la "
+"cuenta actual. Los cambios en los valores predeterminados no afectarán a las"
+" cuentas guardadas."
 
 msgid "保存当前账号配置"
 msgstr "Guardar Configuracion De La Cuenta Actual"
@@ -295,11 +387,17 @@ msgstr "Caja de almacenamiento III"
 msgid "储藏箱IV"
 msgstr "Caja de almacenamiento IV"
 
+msgid "全局战斗配置"
+msgstr "Configuración de combate global"
+
 msgid "全局配置"
 msgstr "Configuración global"
 
 msgid "全部"
 msgstr "Todo"
+
+msgid "全部配置"
+msgstr "Toda la configuración"
 
 msgid "关卡名"
 msgstr "Nombre de etapa"
@@ -308,7 +406,7 @@ msgid "其他配置"
 msgstr "Otras Configuraciones"
 
 msgid "别礼"
-msgstr "despedida"
+msgstr "Last Rite"
 
 msgid "刮刮乐"
 msgstr "Tarjeta Raspable"
@@ -330,7 +428,9 @@ msgstr ""
 "Se usa para calcular el día de la secuencia de mazmorras."
 
 msgid "刷取哪个副本。所选副本必须领完所有等级的首通奖励。"
-msgstr "Mazmorra que farmear. Deben haberse recogido todas las recompensas iniciales."
+msgstr ""
+"Mazmorra que farmear. Deben haberse recogido todas las recompensas "
+"iniciales."
 
 msgid "刷本序列"
 msgstr "Secuencia de mazmorras"
@@ -353,16 +453,18 @@ msgid "动作列表"
 msgstr "Lista de acciones"
 
 msgid "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。"
-msgstr "Si está marcado Salir al terminar, una excepción también cerrará el juego y la aplicación."
+msgstr ""
+"Si está marcado Salir al terminar, una excepción también cerrará el juego y "
+"la aplicación."
 
 msgid "区域扫描测试"
 msgstr "Prueba de escaneo de región"
 
 msgid "卡契尔"
-msgstr "Kachel"
+msgstr "Catcher"
 
 msgid "卡缪"
-msgstr "卡缪"
+msgstr "Camille"
 
 msgid "发生异常时终止游戏"
 msgstr "Terminar Juego en Excepción"
@@ -391,13 +493,17 @@ msgstr ""
 "Si este campo tiene valor, se usa primero y no se lee la página de configuración de cuentas."
 
 msgid "可选。设置外部命令的起始目录（工作目录）；留空则使用默认目录。"
-msgstr "Opcional. Directorio de trabajo del comando externo; vacío usa el predeterminado."
+msgstr ""
+"Opcional. Directorio de trabajo del comando externo; vacío usa el "
+"predeterminado."
 
 msgid "后台结束战斗通知"
 msgstr "Aviso de fin de combate en segundo plano"
 
 msgid "后台运行时，战斗结束后发送通知。"
-msgstr "Enviar notificación cuando termine la batalla mientras se ejecuta en segundo plano."
+msgstr ""
+"Enviar notificación cuando termine la batalla mientras se ejecuta en segundo"
+" plano."
 
 msgid "否"
 msgstr "No"
@@ -408,11 +514,23 @@ msgstr "Iniciar el juego una vez y cerrarlo tras 120s"
 msgid "启动技能点数"
 msgstr "Puntos de habilidad iniciales"
 
+msgid ""
+"启用后在对齐滑索时会自动滚动放大视角\n"
+"可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
+"建议启用此项时不要使用非白发或有白帽角色"
+msgstr ""
+"Amplía automáticamente la vista al alinear la tirolina\n"
+"Puede aumentar o reducir notablemente la tasa de acierto\n"
+"No se recomiendan personajes sin pelo blanco o con sombrero blanco"
+
 msgid "启用后将只进行购买操作，不进行出售操作。"
 msgstr "Al activarlo, solo se compra y no se vende."
 
 msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
-msgstr "Al activarlo, solo cuando la \"Secuencia prioritaria de mercancías comerciales\" no esté vacía, el intercambio de puesto solo comprará los productos de ella; si la secuencia está vacía, usa la lógica original."
+msgstr ""
+"Al activarlo, solo cuando la \"Secuencia prioritaria de mercancías "
+"comerciales\" no esté vacía, el intercambio de puesto solo comprará los "
+"productos de ella; si la secuencia está vacía, usa la lógica original."
 
 msgid "启用实时条件"
 msgstr "Habilitar condiciones en tiempo real"
@@ -433,7 +551,9 @@ msgid "四号谷地卖出价"
 msgstr "Precio de venta del Valle IV"
 
 msgid "四号谷地物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
-msgstr "Precio máximo de compra del Valle IV. Use un valor alto para comprar siempre."
+msgstr ""
+"Precio máximo de compra del Valle IV. Use un valor alto para comprar "
+"siempre."
 
 msgid "四号谷地物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
 msgstr "Precio mínimo de venta del Valle IV. Use 1 para vender siempre."
@@ -456,7 +576,9 @@ msgstr ""
 "Liberar la habilidad de enlace inmediatamente cuando esté disponible"
 
 msgid "在演武台面前自动进入演算抽牌页，循环抽取直到满足等级变化条件"
-msgstr "Entrar automáticamente a la página de robo de cartas y robar hasta cumplir condiciones de subida de nivel."
+msgstr ""
+"Entrar automáticamente a la página de robo de cartas y robar hasta cumplir "
+"condiciones de subida de nivel."
 
 msgid "地区切换"
 msgstr "Cambio de región"
@@ -468,10 +590,13 @@ msgid "地图账号"
 msgstr "Cuenta del mapa"
 
 msgid "埃特拉"
-msgstr "Etra"
+msgstr "Estella"
 
 msgid "培养舱"
 msgstr "Cámara de crecimiento"
+
+msgid "基础配置"
+msgstr "Configuración Básica"
 
 msgid "填写规则"
 msgstr "Cómo rellenar"
@@ -501,7 +626,7 @@ msgid "大世界自动拾取"
 msgstr "Recogida automática en el mundo abierto"
 
 msgid "大潘"
-msgstr "dapán"
+msgstr "Da Pan"
 
 msgid ""
 "如果勾选，将优先全部用掉限时为‘小时’的体力药，\n"
@@ -527,19 +652,24 @@ msgid "完整循环测试区域"
 msgstr "Zona de prueba de ciclo completo"
 
 msgid "实时循环执行 YOLO 检测，用于在线观察目标识别结果。"
-msgstr "Ejecutar YOLO en bucle para observar el reconocimiento en tiempo real."
+msgstr ""
+"Ejecutar YOLO en bucle para observar el reconocimiento en tiempo real."
 
 msgid "实时检测"
 msgstr "Detección en Tiempo Real"
 
 msgid "对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低"
-msgstr "Amplía automáticamente al alinear; puede mejorar o reducir claramente la tasa de éxito"
+msgstr ""
+"Amplía automáticamente al alinear; puede mejorar o reducir claramente la "
+"tasa de éxito"
 
 msgid "导航到演武集算『演算』入口"
 msgstr "Navegar a la entrada \"演算\" de 演武集算"
 
 msgid "将次要目标方向蓝点对齐到屏幕中心"
-msgstr "Alinear el punto azul de la dirección del objetivo secundario al centro de la pantalla"
+msgstr ""
+"Alinear el punto azul de la dirección del objetivo secundario al centro de "
+"la pantalla"
 
 msgid "尝试仅收培育室"
 msgstr "Intentar recoger solo la cámara de cultivo"
@@ -553,6 +683,14 @@ msgstr "Filtrar plantas producibles en masa"
 msgid "工具与调试"
 msgstr "Herramientas y Depuración"
 
+msgid "已保存当前账号配置"
+msgstr "Configuración de cuenta guardada"
+
+msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
+msgstr ""
+"Configuración de cuentas y tareas actualizada (las listas son "
+"independientes)"
+
 msgid "帮助"
 msgstr "Ayuda"
 
@@ -560,10 +698,10 @@ msgid "常沄"
 msgstr "Cháng Yún"
 
 msgid "干员经验"
-msgstr "EXP de operador"
+msgstr "Puntos de EXP de operador"
 
 msgid "干员进阶"
-msgstr "Ascensos de operador"
+msgstr "Ascensos"
 
 msgid "庄方宜"
 msgstr "Zhuang Fangyi"
@@ -575,16 +713,18 @@ msgid "开启后仅显示与原配置不同的项"
 msgstr "Mostrar solo los valores distintos de la configuración original"
 
 msgid "开启后等待外部命令执行完成；关闭则后台启动后立即继续。开启此选项可支持多账户模式。"
-msgstr "Esperar a que termine el comando externo; necesario para el modo multicuenta."
+msgstr ""
+"Esperar a que termine el comando externo; necesario para el modo "
+"multicuenta."
 
 msgid "开启后若检测到目标命令已在运行，将跳过本次启动。"
 msgstr "Omitir el inicio si el comando objetivo ya está en ejecución."
 
 msgid "弧光"
-msgstr "arco"
+msgstr "Arclight"
 
 msgid "弭弗"
-msgstr "弭弗"
+msgstr "Mi Fu"
 
 msgid ""
 "当「技力条」达到该数值时，\n"
@@ -593,8 +733,16 @@ msgstr ""
 "Iniciar la secuencia al alcanzar este valor de energía.\n"
 "Rango: 1-3."
 
+msgid "当前视图：{view_mode} | 展示 {count} / {total} 项"
+msgstr "Vista actual: {view_mode} | Mostrando {count} / {total} elementos"
+
 msgid "当前账号的 hg/check data.content 值，用于官方地图位置同步"
-msgstr "Valor hg/check data.content de la cuenta actual para sincronizar la posicion del mapa oficial"
+msgstr ""
+"Valor hg/check data.content de la cuenta actual para sincronizar la posicion"
+" del mapa oficial"
+
+msgid "当前账号配置没有变化"
+msgstr "La configuración de cuenta no ha cambiado"
 
 msgid "当条件符合时使用技能组"
 msgstr "Usar el conjunto de habilidades cuando se cumplan las condiciones"
@@ -606,7 +754,7 @@ msgid "影拓丰碑"
 msgstr "Monumento del umbral"
 
 msgid "快子遴捡晶格"
-msgstr "Retícula de selección de taquiones"
+msgstr "Entramado de proyección de taquiones"
 
 msgid "战斗"
 msgstr "Combate"
@@ -657,13 +805,15 @@ msgid "扫描间隔(秒)"
 msgstr "Intervalo de escaneo (segundos)"
 
 msgid "技能提升"
-msgstr "Maestría de habilidades"
+msgstr "Mej.de habil."
 
 msgid "技能释放"
 msgstr "Uso de habilidades"
 
 msgid "持续检测 skill 和 ult 模板并输出命中位置与匹配分数"
-msgstr "Detecta continuamente las plantillas de skill y ult y muestra las posiciones de acierto y las puntuaciones de coincidencia"
+msgstr ""
+"Detecta continuamente las plantillas de skill y ult y muestra las posiciones"
+" de acierto y las puntuaciones de coincidencia"
 
 msgid "持续读取并显示当前箭头的角度"
 msgstr "Leer y mostrar continuamente el ángulo de la flecha"
@@ -679,7 +829,9 @@ msgstr ""
 "para marcar el objetivo como recogido."
 
 msgid "按住鼠标蛇形扫描指定矩形区域"
-msgstr "Mantener presionado el ratón y escanear en zigzag el área rectangular especificada"
+msgstr ""
+"Mantener presionado el ratón y escanear en zigzag el área rectangular "
+"especificada"
 
 msgid ""
 "按列表顺序自动循环释放「战技」。\n"
@@ -689,10 +841,23 @@ msgstr ""
 "Seleccione de 1/2/3/4 y ordene, mantenga al menos uno."
 
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
-msgstr "Ejecutar las operaciones seleccionadas por región: primero intercambio de puestos, luego la compra en comprar y vender; cuando la compra de suministros esté habilitada, cambiar a necesidades de suministro estable para comprar después de comprar, y luego volver a necesidades de suministro flexible para vender."
+msgstr ""
+"Ejecutar las operaciones seleccionadas por región: primero intercambio de "
+"puestos, luego la compra en comprar y vender; cuando la compra de "
+"suministros esté habilitada, cambiar a necesidades de suministro estable "
+"para comprar después de comprar, y luego volver a necesidades de suministro "
+"flexible para vender."
 
-msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr "Configure parámetros independientes por cuenta y tarea. Seleccione primero la cuenta, luego la tarea, y los controles aparecerán automáticamente. Solo necesita el nombre de cuenta (teléfono), sin contraseña. Compatible con formato antiguo `cuenta,contraseña` pero no se guardan contraseñas. También puede usar los últimos 4 dígitos del teléfono para iniciar sesión (si es único)."
+msgid ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
+"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr ""
+"Configure parámetros independientes por cuenta y tarea. Seleccione primero "
+"la cuenta, luego la tarea, y los controles aparecerán automáticamente. Solo "
+"necesita el nombre de cuenta (teléfono), sin contraseña. Compatible con "
+"formato antiguo `cuenta,contraseña` pero no se guardan contraseñas. También "
+"puede usar los últimos 4 dígitos del teléfono para iniciar sesión (si es "
+"único)."
 
 msgid "据点兑换"
 msgstr "Intercambio del puesto"
@@ -773,7 +938,8 @@ msgstr ""
 "Después, recoger el crédito en la Tienda de crédito."
 
 msgid "是否启用「地区建设/四号谷地物资调度/弹性需求物资」交易。"
-msgstr "Activar el comercio en Construcción regional/Valle IV/Demanda flexible."
+msgstr ""
+"Activar el comercio en Construcción regional/Valle IV/Demanda flexible."
 
 msgid "是否启用「地区建设/武陵物资调度/弹性需求物资」交易。"
 msgstr "Activar el comercio en Construcción regional/Wuling/Demanda flexible."
@@ -805,7 +971,9 @@ msgstr ""
 "Permite distintos parámetros por cuenta para una misma tarea"
 
 msgid "是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"
-msgstr "Si transferir todos los encargos de entrega en \"Operaciones regionales / Nodo de almacén\" y reclamar las recompensas de transferencia una vez."
+msgstr ""
+"Si transferir todos los encargos de entrega en \"Operaciones regionales / "
+"Nodo de almacén\" y reclamar las recompensas de transferencia una vez."
 
 msgid ""
 "是否在「帝江号」打开背包并点击「一键存放」。\n"
@@ -829,10 +997,14 @@ msgstr ""
 "No se aplica si está activado Terminar el juego tras una excepción"
 
 msgid "是否在日常任务结束后传送到帝江号右侧传送点。"
-msgstr "Teletransportarse al punto derecho del Dijiang después de que finalice la tarea diaria."
+msgstr ""
+"Teletransportarse al punto derecho del Dijiang después de que finalice la "
+"tarea diaria."
 
 msgid "是否执行一次外部命令行程序（可在「外部命令执行时机」选择在最开始或最后执行）。"
-msgstr "Indica si se ejecuta una vez un comando externo. Usa Momento del comando externo para ejecutarlo al inicio o al final."
+msgstr ""
+"Indica si se ejecuta una vez un comando externo. Usa Momento del comando "
+"externo para ejecutarlo al inicio o al final."
 
 msgid "是否执行演武集算任务"
 msgstr "Ejecutar tarea de simulación de combate"
@@ -859,13 +1031,15 @@ msgid "是否领取「行动手册/日常」和「通行证」中的奖励。"
 msgstr "Recoger recompensas de Manual/Diarias y del Pase."
 
 msgid "昼雪"
-msgstr "dia nieve"
+msgstr "Snowshine"
 
 msgid "普里莫"
 msgstr "Prímo"
 
 msgid "暂停时间应超过此值，用于观察恢复后的行为"
-msgstr "La duración de la pausa debe superar este valor, para observar el comportamiento tras la recuperación"
+msgstr ""
+"La duración de la pausa debe superar este valor, para observar el "
+"comportamiento tras la recuperación"
 
 msgid "暂停计时验证"
 msgstr "Verificación de sincronización de pausa"
@@ -893,7 +1067,7 @@ msgstr ""
 "Al activarlo, ignora automáticamente la configuración de rotación"
 
 msgid "梨诺"
-msgstr "梨诺"
+msgstr "Liino"
 
 msgid "检测目标"
 msgstr "Objetivo de Detección"
@@ -908,7 +1082,7 @@ msgid "武器经验"
 msgstr "EXP de arma"
 
 msgid "武器进阶"
-msgstr "Afinación de armas"
+msgstr "Aum. del arma"
 
 msgid "武陵"
 msgstr "Wuling"
@@ -923,13 +1097,16 @@ msgid "武陵城"
 msgstr "Ciudad de Wuling"
 
 msgid "武陵物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
-msgstr "Precio máximo de compra de Wuling. Use un valor alto para comprar siempre."
+msgstr ""
+"Precio máximo de compra de Wuling. Use un valor alto para comprar siempre."
 
 msgid "武陵物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
 msgstr "Precio mínimo de venta de Wuling. Use 1 para vender siempre."
 
 msgid "每个键对应一条滑索路线，值为距离序列，用英文逗号分隔"
-msgstr "Cada clave es una ruta de tirolesa; el valor es una secuencia de distancias separadas por comas"
+msgstr ""
+"Cada clave es una ruta de tirolesa; el valor es una secuencia de distancias "
+"separadas por comas"
 
 msgid "每次检测后的等待时间"
 msgstr "Espera tras cada detección"
@@ -938,22 +1115,26 @@ msgid "每行一个账号名（手机号），无需密码"
 msgstr "Una cuenta (teléfono) por línea, sin contraseña"
 
 msgid "每轮最多抽牌5次；未满足条件时点击左下角『放弃』并重新开始。"
-msgstr "Máximo 5 robos por ronda; si no se cumplen las condiciones, haga clic en \"Rendirse\" y reinicie."
+msgstr ""
+"Máximo 5 robos por ronda; si no se cumplen las condiciones, haga clic en "
+"\"Rendirse\" y reinicie."
 
 msgid "每轮模板检测之间的等待时间，最小 0.05 秒"
-msgstr "Tiempo de espera entre cada ronda de detección de plantillas, mínimo 0.05 segundos"
+msgstr ""
+"Tiempo de espera entre cada ronda de detección de plantillas, mínimo 0.05 "
+"segundos"
 
 msgid "汤汤"
-msgstr "tantang"
+msgstr "Tangtang"
 
 msgid "油猴脚本帮助"
 msgstr "Ayuda del script de Tampermonkey"
 
 msgid "洁尔佩塔"
-msgstr "Gerpeta"
+msgstr "Gilberta"
 
 msgid "洛茜"
-msgstr "Rosie"
+msgstr "Rossi"
 
 msgid "测试"
 msgstr "Prueba"
@@ -970,6 +1151,9 @@ msgstr "Ayuda del script de Tampermonkey del navegador"
 msgid "消耗限时体力药"
 msgstr "Usar pociones de estamina temporales"
 
+msgid "淤积点滑索"
+msgstr "Tirolina de punto de acumulación de energía"
+
 msgid "淤积点相关选项"
 msgstr "Opciones de puntos de acumulación"
 
@@ -977,7 +1161,7 @@ msgid "淤积点相关键"
 msgstr "Claves de puntos de energía"
 
 msgid "清波寨"
-msgstr "Empalizada Qingbo"
+msgstr "Empalizada de Qingbo"
 
 msgid "清空当前任务覆盖"
 msgstr "Borrar anulación de tarea actual"
@@ -986,16 +1170,35 @@ msgid "清空当前账号全部覆盖"
 msgstr "Borrar todas las anulaciones de la cuenta actual"
 
 msgid "游戏内开启全屏模式时请确保游戏内分辨率与你的屏幕分辨率一致"
-msgstr "En pantalla completa, asegúrese de que la resolución del juego coincida con la pantalla"
+msgstr ""
+"En pantalla completa, asegúrese de que la resolución del juego coincida con "
+"la pantalla"
+
+msgid "游戏内快捷键配置"
+msgstr "Configuración de teclas del juego"
 
 msgid "源石研究园"
 msgstr "Parque científico de Originio"
 
 msgid "源矿"
-msgstr "Mineral de origen"
+msgstr "Mineral de Originio"
 
 msgid "滑索距离序列在「全局配置 → 滑索配置」中设置"
-msgstr "Configura las secuencias de distancia en Configuración global → Configuración de tirolesa"
+msgstr ""
+"Configura las secuencias de distancia en Configuración global → "
+"Configuración de tirolesa"
+
+msgid "滑索距离序列，用逗号分隔。"
+msgstr "Secuencia de distancia de tirolina, separada por comas."
+
+msgid "滑索路线与距离序列配置"
+msgstr "Rutas de tirolina y secuencias de distancia"
+
+msgid "滑索配置"
+msgstr "Configuración de tirolina"
+
+msgid "滑索配置分类"
+msgstr "Categoría de configuración de tirolina"
 
 msgid "滑索配置说明"
 msgstr "Configuración de la tirolesa"
@@ -1016,7 +1219,7 @@ msgid "状态"
 msgstr "Estado"
 
 msgid "狼卫"
-msgstr "Guardia del lobo"
+msgstr "Wulfgard"
 
 msgid "理智补给"
 msgstr "Suministro de Cordura"
@@ -1037,13 +1240,17 @@ msgid "白垩界卫"
 msgstr "Aggelomoirai de mármol"
 
 msgid "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"
-msgstr "Leer posiciones del WebSocket local, señalar el objeto más cercano y permitir marcarlo con una tecla"
+msgstr ""
+"Leer posiciones del WebSocket local, señalar el objeto más cercano y "
+"permitir marcarlo con una tecla"
 
 msgid "目标券数"
 msgstr "Cantidad objetivo de vales"
 
 msgid "目标券数优先级序列，用逗号分隔多个券数。"
-msgstr "Secuencia de prioridad de cantidades objetivo de cupones, separadas por comas."
+msgstr ""
+"Secuencia de prioridad de cantidades objetivo de cupones, separadas por "
+"comas."
 
 msgid ""
 "目标券数优先级序列，用逗号分隔多个券数。按列表中顺序优先抢前面的券数。\n"
@@ -1056,7 +1263,7 @@ msgid "矿脉源区"
 msgstr "Veta de origen"
 
 msgid "秋栗"
-msgstr "Qiuri"
+msgstr "Akekuri"
 
 msgid "立即释放终结技"
 msgstr "Liberar ultimate inmediatamente"
@@ -1068,13 +1275,13 @@ msgid "等级读取测试"
 msgstr "Prueba de lectura de nivel"
 
 msgid "管理员"
-msgstr "administrador"
+msgstr "Endministrator"
 
 msgid "箭头角度实时读取"
 msgstr "Lectura del ángulo de la flecha en tiempo real"
 
 msgid "精选荞愈胶囊"
-msgstr "Cápsula prémium de alforfón"
+msgstr "Cápsulas de floracina [A]"
 
 msgid ""
 "结算时点击「放弃」而非「领取」，不消耗体力。\n"
@@ -1089,7 +1296,7 @@ msgid "编辑"
 msgstr "Editar"
 
 msgid "罗丹"
-msgstr "Luó Dān"
+msgstr "Rhodagn"
 
 msgid "聂菲斯"
 msgstr "Nefarith"
@@ -1101,7 +1308,8 @@ msgid "自动交互"
 msgstr "Interacción automática"
 
 msgid "自动完成当前所有普通影拓丰碑关卡"
-msgstr "Completar automáticamente todos los niveles normales de Estela Sombría"
+msgstr ""
+"Completar automáticamente todos los niveles normales de Estela Sombría"
 
 msgid "自动战斗"
 msgstr "Combate automático"
@@ -1116,7 +1324,8 @@ msgid "自动拾取"
 msgstr "Recogida automática"
 
 msgid "自动检测战斗开始和结束，使用说明参见选项"
-msgstr "Detectar automáticamente el inicio y fin del combate; consulte las opciones."
+msgstr ""
+"Detectar automáticamente el inicio y fin del combate; consulte las opciones."
 
 msgid "自动点击传送"
 msgstr "Teletransporte automático"
@@ -1128,13 +1337,13 @@ msgid "自动送货"
 msgstr "Entrega automática"
 
 msgid "致密源石粉末"
-msgstr "Polvo denso de Originium"
+msgstr "Polvo de Originio denso"
 
 msgid "艾尔黛拉"
-msgstr "eldela"
+msgstr "Ardelia"
 
 msgid "艾维文娜"
-msgstr "Aviva"
+msgstr "Avywenna"
 
 msgid "苏白易"
 msgstr "Sū Báiyì"
@@ -1157,19 +1366,19 @@ msgstr ""
 "Si no es posible, ayudar en al menos otra cámara."
 
 msgid "荞愈胶囊"
-msgstr "Capsula De Alforfon"
+msgstr "Cápsulas de floracina [C]"
 
 msgid "莱万汀"
-msgstr "lewontin"
+msgstr "Laevatain"
 
 msgid "萤石"
-msgstr "fluorita"
+msgstr "Fluorite"
 
 msgid "蓝点归中测试"
 msgstr "Prueba de centrado de punto azul"
 
 msgid "蓝铁矿"
-msgstr "Mineral de hierro azul"
+msgstr "Mineral de ferrio"
 
 msgid "藏剑谷"
 msgstr "Valle Ocultaespadas"
@@ -1181,7 +1390,7 @@ msgid "视图"
 msgstr "Vista"
 
 msgid "诀"
-msgstr "诀"
+msgstr "Arcane"
 
 msgid "试验园区"
 msgstr "Área de pruebas"
@@ -1193,7 +1402,7 @@ msgid "读取演武集算关卡界面的当前等级"
 msgstr "Leer el nivel actual de la interfaz de etapa de 演武集算"
 
 msgid "象限拟合液"
-msgstr "Solución de ajuste de cuadrante"
+msgstr "Fluido de Ajuste de Cuadrante"
 
 msgid "账号"
 msgstr "Cuenta"
@@ -1232,19 +1441,19 @@ msgid "购物白名单"
 msgstr "Lista blanca de compras"
 
 msgid "资源"
-msgstr "Recursos"
+msgstr "Recurso"
 
 msgid "赛希"
-msgstr "Saihi"
+msgstr "Xaihi"
 
 msgid "赫铜零件"
-msgstr "Piezas de Cobre"
+msgstr "Pieza de hetonita"
 
 msgid "赵昭"
 msgstr "Zhào Zhāo"
 
 msgid "超距辉映管"
-msgstr "Tubo luminiscente de ultradistancia"
+msgstr "Tubo de fotoemisión de metadiástima"
 
 msgid "转移轮次"
 msgstr "Rondas de traslado"
@@ -1259,13 +1468,18 @@ msgid "运送委托接取"
 msgstr "Aceptación automática de encargos de entrega"
 
 msgid "进入战斗后开始自动操作前的等待秒数。"
-msgstr "Tiempo de espera en segundos antes de que comience la operación automática después de entrar en batalla."
+msgstr ""
+"Tiempo de espera en segundos antes de que comience la operación automática "
+"después de entrar en batalla."
 
 msgid "进入战斗后的初始等待时间"
 msgstr "Espera inicial tras entrar en combate"
 
 msgid "送礼任务最多尝试次数"
 msgstr "Intentos máximos de la tarea de regalos"
+
+msgid "送货滑索"
+msgstr "Tirolina de entrega"
 
 msgid "送货相关键"
 msgstr "Claves de entrega"
@@ -1285,7 +1499,9 @@ msgstr ""
 "Compartimento de cultivo: recoger materiales de cultivo y cultivar de nuevo directamente."
 
 msgid "选择当前任务使用全局或独立战斗配置。"
-msgstr "Elegir si la tarea actual usa la configuración de combate global o independiente."
+msgstr ""
+"Elegir si la tarea actual usa la configuración de combate global o "
+"independiente."
 
 msgid "选择执行时机：任务最开始时最先执行，或任务最后执行。"
 msgstr "Elegir momento: ejecutar al inicio o al final de las tareas diarias."
@@ -1309,6 +1525,9 @@ msgstr ""
 "Seleccione los objetos para la navegación.\n"
 "Solo se buscan en el mapa actual."
 
+msgid "选择要显示的滑索配置分类。"
+msgstr "Elegir la categoría de configuración de tirolina a mostrar."
+
 msgid "选择要更换的队伍编号。"
 msgstr "Seleccionar número de equipo para cambiar."
 
@@ -1330,7 +1549,9 @@ msgstr ""
 "Rasca y gana: realizar el rasca y gana."
 
 msgid "逐个检测四个技能位置并输出模板匹配结果"
-msgstr "Detectar una a una las cuatro posiciones de habilidades y mostrar los resultados de coincidencia de plantillas"
+msgstr ""
+"Detectar una a una las cuatro posiciones de habilidades y mostrar los "
+"resultados de coincidencia de plantillas"
 
 msgid "通向武陵城送货点"
 msgstr "Hacia el punto de entrega de Wuling"
@@ -1345,13 +1566,17 @@ msgid "通过下拉框切换送货地区配置。"
 msgstr "Cambiar la región de entrega con el desplegable."
 
 msgid "配合任务计划程序提前启动游戏,防止游戏更新/弹公告导致的后续问题"
-msgstr "Iniciar antes el juego con el Programador de tareas para evitar problemas de actualización o avisos"
+msgstr ""
+"Iniciar antes el juego con el Programador de tareas para evitar problemas de"
+" actualización o avisos"
 
 msgid "配置选择"
 msgstr "Selección de Configuración"
 
 msgid "配置默认隐藏，选择后展开对应配置项。"
-msgstr "La configuración está oculta de forma predeterminada y se expande al seleccionarla."
+msgstr ""
+"La configuración está oculta de forma predeterminada y se expande al "
+"seleccionarla."
 
 msgid "醚质"
 msgstr "Aurileno"
@@ -1360,16 +1585,19 @@ msgid "重复测试的次数"
 msgstr "Número de repeticiones de la prueba"
 
 msgid "重息壤"
-msgstr "Limo Pesado"
+msgstr "Xiranita pesada"
 
 msgid "钱币收集"
 msgstr "T-Creds"
+
+msgid "键位配置"
+msgstr "Configuración de Teclas"
 
 msgid "阮一"
 msgstr "Ruan Yi"
 
 msgid "阿列什"
-msgstr "Ares"
+msgstr "Alesh"
 
 msgid "阿禾"
 msgstr "Ā Hé"
@@ -1395,19 +1623,21 @@ msgid "首墩"
 msgstr "Piedra Marcadora"
 
 msgid "验证暂停任务期间活动计时是否冻结"
-msgstr "Verificar si el temporizador de actividad se congela durante la pausa de la tarea"
+msgstr ""
+"Verificar si el temporizador de actividad se congela durante la pausa de la "
+"tarea"
 
 msgid "骏卫"
-msgstr "Shun Wei"
+msgstr "Pogranichnik"
 
 msgid "高容谷地电池"
-msgstr "Batería de alta capacidad del Valle"
+msgstr "Batería de CA del Valle"
 
 msgid "高阶"
 msgstr "Nivel Alto"
 
 msgid "黎风"
-msgstr "Li Feng"
+msgstr "Lifeng"
 
 msgid ""
 "默认是无，表示正常执行相关任务\n"
@@ -1436,222 +1666,3 @@ msgstr ""
 
 msgid "齐纶"
 msgstr "Qí Lún"
-
-msgid "滑索配置"
-msgstr "Configuración de tirolina"
-
-msgid "键位配置"
-msgstr "Configuración de Teclas"
-
-msgid "基础配置"
-msgstr "Configuración Básica"
-
-msgid "游戏内快捷键配置"
-msgstr "Configuración de teclas del juego"
-
-msgid "全局战斗配置"
-msgstr "Configuración de combate global"
-
-msgid "主界面单次动作后延迟"
-msgstr "Retraso tras una sola acción en la interfaz principal"
-
-msgid "滑索路线与距离序列配置"
-msgstr "Rutas de tirolina y secuencias de distancia"
-
-msgid "Action List"
-msgstr "Lista de acciones"
-
-msgid "Area Build Key"
-msgstr "Tecla Construcción Área"
-
-msgid "Auto"
-msgstr "Auto"
-
-msgid "Auto Resize Game Window"
-msgstr "Redimensionar ventana automáticamente"
-
-msgid "Auto Start Game When App Starts"
-msgstr "Iniciar juego al iniciar la aplicación"
-
-msgid "Backpack Key"
-msgstr "Tecla Mochila"
-
-msgid "Baker Key"
-msgstr "Tecla Panadero"
-
-msgid "Basic Options"
-msgstr "Opciones básicas"
-
-msgid "Blueprint Key"
-msgstr "Tecla Plano"
-
-msgid "Diagnosis"
-msgstr "Diagnóstico"
-
-msgid "Dodge Key"
-msgstr "Tecla Esquivar"
-
-msgid "Equipment List Key"
-msgstr "Tecla Lista Equipamiento"
-
-msgid "Exit After Task"
-msgstr "Salir después de la tarea"
-
-msgid "Exit App when Game Exits"
-msgstr "Salir de la app al salir del juego"
-
-msgid "Exit the Game and the App after Successfully Executing the Task"
-msgstr "Salir del juego y la app tras ejecutar la tarea con éxito"
-
-msgid "Handbook Key"
-msgstr "Tecla Manual"
-
-msgid "HotKey"
-msgstr "Tecla rápida"
-
-msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
-msgstr "Aumentar la demora entre tareas para reducir uso de CPU/GPU (ms)"
-
-msgid "Industry Plan Key"
-msgstr "Tecla Plan Industrial"
-
-msgid "Interact Key"
-msgstr "Tecla Interactuar"
-
-msgid "Jump Key"
-msgstr "Tecla Saltar"
-
-msgid "Kill Launcher After Start"
-msgstr "Cerrar Lanzador Tras Inicio"
-
-msgid "Launch with DX11"
-msgstr "Iniciar con DX11"
-
-msgid "Link Skill Key"
-msgstr "Tecla de Habilidad Vinculada"
-
-msgid "Mail Key"
-msgstr "Tecla Correo"
-
-msgid "Map Key"
-msgstr "Tecla Mapa"
-
-msgid "Minimize Window to System Tray when Closing"
-msgstr "Minimizar a la bandeja al cerrar"
-
-msgid "Mission Key"
-msgstr "Tecla Misión"
-
-msgid "Mute Game while in Background"
-msgstr "Silenciar juego en segundo plano"
-
-msgid "No"
-msgstr "No"
-
-msgid "None"
-msgstr "Ninguno"
-
-msgid "Operation"
-msgstr "Operación"
-
-msgid "Operator Key"
-msgstr "Tecla Operador"
-
-msgid "Overview Mode Key"
-msgstr "Tecla Vista General"
-
-msgid "Performance Test"
-msgstr "Prueba de rendimiento"
-
-msgid "Place Belt Key"
-msgstr "Tecla Colocar Cinta"
-
-msgid "Place Pipeline Key"
-msgstr "Tecla Colocar Tubería"
-
-msgid "Product Icon Toggle Key"
-msgstr "Tecla Icono Producto"
-
-msgid "Quick Tool Key"
-msgstr "Tecla Herramienta Rápida"
-
-msgid "Recruitment Key"
-msgstr "Tecla Reclutamiento"
-
-msgid "SingleActionWithDelay"
-msgstr "SingleActionWithDelay"
-
-msgid "Start/Stop"
-msgstr "Iniciar/Detener"
-
-msgid "Storage Mode Key"
-msgstr "Tecla Modo Almacén"
-
-msgid "Team Key"
-msgstr "Tecla Equipo"
-
-msgid "Track Key"
-msgstr "Tecla Rastrear"
-
-msgid "Trigger Interval"
-msgstr "Intervalo de activación"
-
-msgid "Use DirectML"
-msgstr "Usar DirectML"
-
-msgid "Use GPU to Improve Performance"
-msgstr "Usar GPU para mejorar rendimiento"
-
-msgid "Use the skill set when conditions are met"
-msgstr "Usar el conjunto de habilidades cuando se cumplan las condiciones"
-
-msgid "Valuables Key"
-msgstr "Tecla Valiosos"
-
-msgid "Yes"
-msgstr "Sí"
-
-msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
-msgstr "Guarda una instantánea completa de la configuración de la tarea para la cuenta actual. Los cambios en los valores predeterminados no afectarán a las cuentas guardadas."
-
-msgid "全部配置"
-msgstr "Toda la configuración"
-
-msgid ""
-"启用后在对齐滑索时会自动滚动放大视角\n"
-"可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
-"建议启用此项时不要使用非白发或有白帽角色"
-msgstr ""
-"Amplía automáticamente la vista al alinear la tirolina\n"
-"Puede aumentar o reducir notablemente la tasa de acierto\n"
-"No se recomiendan personajes sin pelo blanco o con sombrero blanco"
-
-msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
-msgstr "Configuración de cuentas y tareas actualizada (las listas son independientes)"
-
-msgid "当前视图：{view_mode} | 展示 {count} / {total} 项"
-msgstr "Vista actual: {view_mode} | Mostrando {count} / {total} elementos"
-
-msgid "淤积点滑索"
-msgstr "Tirolina de punto de acumulación de energía"
-
-msgid "滑索距离序列，用逗号分隔。"
-msgstr "Secuencia de distancia de tirolina, separada por comas."
-
-msgid "滑索配置分类"
-msgstr "Categoría de configuración de tirolina"
-
-msgid "送货滑索"
-msgstr "Tirolina de entrega"
-
-msgid "选择要显示的滑索配置分类。"
-msgstr "Elegir la categoría de configuración de tirolina a mostrar."
-
-msgid "已保存当前账号配置"
-msgstr "Configuración de cuenta guardada"
-
-msgid "当前账号配置没有变化"
-msgstr "La configuración de cuenta no ha cambiado"
-
-msgid "仅差异项"
-msgstr "Solo diferencias"

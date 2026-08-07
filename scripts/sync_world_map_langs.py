@@ -18,6 +18,7 @@
 
 import hashlib
 import json
+import json5
 import re
 import sys
 from pathlib import Path
@@ -226,7 +227,7 @@ def match_es_main(levels, es_main_by_key, es_sites_by_key):
 
 
 def sync_world_map(name_map, es_site_by_slug, es_sub_by_lv, es_main_by_en):
-    data = json.loads(WORLD_MAP_JSON.read_text(encoding="utf-8"))
+    data = json5.loads(WORLD_MAP_JSON.read_text(encoding="utf-8"))
     stats = {l: 0 for l in ("en", "ja", "ko", "es")}
     touched = []
     for key, node in data.items():
@@ -304,7 +305,7 @@ def sync_canon(name_map, catalog_map):
     同时打印官方新增（对比上次快照、且主数据无对应）的名称，提示人工决定
     是否加入主数据。返回 (新增节点列表, 官方新增提示列表)。
     """
-    lang = json.loads(WORLD_MAP_JSON.read_text(encoding="utf-8"))
+    lang = json5.loads(WORLD_MAP_JSON.read_text(encoding="utf-8"))
     official = {**name_map}
     for vals in catalog_map.values():
         zh = (vals.get("zh") or "").strip()

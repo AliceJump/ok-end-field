@@ -7,16 +7,40 @@
       "pattern": "確定購買"
     },
     "en_US": {
-      "pattern": "Confirm purchase"
+      "pattern": "Purchase"
     },
     "ja_JP": {
-      "pattern": "購入を確認する"
+      "pattern": "確定"
     },
     "ko_KR": {
-      "pattern": "구매 확인"
+      "pattern": "구매"
     },
     "es_ES": {
-      "pattern": "Confirmar compra"
+      "pattern": "Comprar"
+    },
+    "pt_BR": {
+      "pattern": "Comprar"
+    },
+    "de_DE": {
+      "pattern": "Kaufen"
+    },
+    "fr_FR": {
+      "pattern": "Acheter"
+    },
+    "id_ID": {
+      "pattern": "Beli"
+    },
+    "it_IT": {
+      "pattern": "Acquista"
+    },
+    "ru_RU": {
+      "pattern": "Купить"
+    },
+    "th_TH": {
+      "pattern": "ซื้อ"
+    },
+    "vi_VN": {
+      "pattern": "Mua"
     }
   },
   "k_02894ea7": {
@@ -27,16 +51,40 @@
       "string": "物資調度"
     },
     "en_US": {
-      "string": "Material dispatch"
+      "string": "Stock Redistribution"
     },
     "ja_JP": {
-      "string": "資材の発送"
+      "string": "商品取引"
     },
     "ko_KR": {
-      "string": "자재 파견"
+      "string": "물자 관리"
     },
     "es_ES": {
-      "string": "Despacho de materiales"
+      "string": "Redistribución de existencias"
+    },
+    "pt_BR": {
+      "string": "Redistribuição do Estoque"
+    },
+    "de_DE": {
+      "string": "Vorratneuverteilung"
+    },
+    "fr_FR": {
+      "string": "Magasin de redistribution"
+    },
+    "id_ID": {
+      "string": "Redistribusi Stok"
+    },
+    "it_IT": {
+      "string": "Ridistribuzione scorte"
+    },
+    "ru_RU": {
+      "string": "Система перераспределения резервов"
+    },
+    "th_TH": {
+      "string": "ศูนย์​กระจาย​ของ"
+    },
+    "vi_VN": {
+      "string": "Điều Phối Vật Tư"
     }
   },
   "stable_materials_tab": {
@@ -57,6 +105,30 @@
     },
     "es_ES": {
       "pattern": "Estable"
+    },
+    "pt_BR": {
+      "pattern": "Estável"
+    },
+    "de_DE": {
+      "pattern": "Stabil"
+    },
+    "fr_FR": {
+      "pattern": "Stable"
+    },
+    "id_ID": {
+      "pattern": "Stabil"
+    },
+    "it_IT": {
+      "pattern": "Stabile"
+    },
+    "ru_RU": {
+      "pattern": "Стабильная"
+    },
+    "th_TH": {
+      "pattern": "เสถียร"
+    },
+    "vi_VN": {
+      "pattern": "Ổn Định"
     }
   }
 }

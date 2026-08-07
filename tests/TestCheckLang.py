@@ -1,6 +1,6 @@
 import os
 import re
-import json
+import json5
 import unittest
 from pathlib import Path
 
@@ -60,7 +60,7 @@ class LangTestCase(unittest.TestCase):
 
         try:
             with open(file_path, "r", encoding="utf-8") as f:
-                raw = json.load(f)
+                raw = json5.load(f)
         except Exception as e:
             print(f"[JSON ERROR] {file_path} -> {e}")
             return None

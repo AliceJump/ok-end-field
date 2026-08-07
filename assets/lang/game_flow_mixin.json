@@ -4,19 +4,43 @@
       "pattern": "建设"
     },
     "zh_TW": {
-      "pattern": "建設"
+      "pattern": "建造"
     },
     "en_US": {
-      "pattern": "construction"
+      "pattern": "Construct"
     },
     "ja_JP": {
-      "pattern": "工事"
+      "pattern": "建造"
     },
     "ko_KR": {
       "pattern": "건설"
     },
     "es_ES": {
-      "pattern": "construcción"
+      "pattern": "Construir"
+    },
+    "pt_BR": {
+      "pattern": "Construir"
+    },
+    "de_DE": {
+      "pattern": "Bauen"
+    },
+    "fr_FR": {
+      "pattern": "Construire"
+    },
+    "id_ID": {
+      "pattern": "Bangun"
+    },
+    "it_IT": {
+      "pattern": "Costruisci"
+    },
+    "ru_RU": {
+      "pattern": "Построить"
+    },
+    "th_TH": {
+      "pattern": "ก่อสร้าง"
+    },
+    "vi_VN": {
+      "pattern": "Xây dựng"
     }
   },
   "k_b1a3fede": {
@@ -27,16 +51,40 @@
       "pattern": "更換"
     },
     "en_US": {
-      "pattern": "replace"
+      "pattern": "Switch"
     },
     "ja_JP": {
-      "pattern": "交換する"
+      "pattern": "変更"
     },
     "ko_KR": {
-      "pattern": "바꾸다"
+      "pattern": "교체"
     },
     "es_ES": {
-      "pattern": "reemplazar"
+      "pattern": "Cambiar"
+    },
+    "pt_BR": {
+      "pattern": "Trocar"
+    },
+    "de_DE": {
+      "pattern": "Wechseln"
+    },
+    "fr_FR": {
+      "pattern": "Changer"
+    },
+    "id_ID": {
+      "pattern": "Beralih"
+    },
+    "it_IT": {
+      "pattern": "Cambia"
+    },
+    "ru_RU": {
+      "pattern": "Сменить"
+    },
+    "th_TH": {
+      "pattern": "สลับ"
+    },
+    "vi_VN": {
+      "pattern": "Chuyển"
     }
   },
   "k_8b2ca27a": {
@@ -44,19 +92,43 @@
       "pattern": "点击空白处继续"
     },
     "zh_TW": {
-      "pattern": "點擊空白處繼續"
+      "pattern": "按下空白處繼續"
     },
     "en_US": {
-      "pattern": "Click on the blank space to continue"
+      "pattern": "Click to continue"
     },
     "ja_JP": {
-      "pattern": "続行するには空白をクリックしてください"
+      "pattern": "クリックして続ける"
     },
     "ko_KR": {
-      "pattern": "계속하려면 빈 공간을 클릭하세요."
+      "pattern": "빈 곳을 눌러 계속하기"
     },
     "es_ES": {
-      "pattern": "Haga clic en el espacio en blanco para continuar"
+      "pattern": "Haz clic para continuar"
+    },
+    "pt_BR": {
+      "pattern": "Clique para continuar"
+    },
+    "de_DE": {
+      "pattern": "Zum Fortfahren klicken"
+    },
+    "fr_FR": {
+      "pattern": "Cliquer pour continuer"
+    },
+    "id_ID": {
+      "pattern": "Klik untuk melanjutkan"
+    },
+    "it_IT": {
+      "pattern": "Fai clic per continuare"
+    },
+    "ru_RU": {
+      "pattern": "Нажмите, чтобы продолжить"
+    },
+    "th_TH": {
+      "pattern": "คลิก​เพื่อ​ดำเนินการ​ต่อ"
+    },
+    "vi_VN": {
+      "pattern": "Nhấn để tiếp tục"
     }
   },
   "k_b56d9ac6": {
@@ -67,16 +139,40 @@
       "pattern": "確定"
     },
     "en_US": {
-      "pattern": "confirm"
+      "pattern": "Confirm"
     },
     "ja_JP": {
-      "pattern": "確認する"
+      "pattern": "確定"
     },
     "ko_KR": {
-      "pattern": "확인하다"
+      "pattern": "확인"
     },
     "es_ES": {
-      "pattern": "confirmar"
+      "pattern": "Confirmar"
+    },
+    "pt_BR": {
+      "pattern": "Confirmar"
+    },
+    "de_DE": {
+      "pattern": "Bestätigen"
+    },
+    "fr_FR": {
+      "pattern": "Confirmer"
+    },
+    "id_ID": {
+      "pattern": "Konfirmasi"
+    },
+    "it_IT": {
+      "pattern": "Conferma"
+    },
+    "ru_RU": {
+      "pattern": "Подтвердить"
+    },
+    "th_TH": {
+      "pattern": "ยืนยัน"
+    },
+    "vi_VN": {
+      "pattern": "Xác nhận"
     }
   },
   "k_7cd2e0c0": {
@@ -87,16 +183,40 @@
       "pattern": "結束拜訪"
     },
     "en_US": {
-      "pattern": "end visit"
+      "pattern": "End Visit"
     },
     "ja_JP": {
-      "pattern": "訪問を終了する"
+      "pattern": "訪問終了"
     },
     "ko_KR": {
-      "pattern": "방문 종료"
+      "pattern": "방문을 종료하기"
     },
     "es_ES": {
-      "pattern": "finalizar la visita"
+      "pattern": "Terminar visita"
+    },
+    "pt_BR": {
+      "pattern": "Encerrar Visita"
+    },
+    "de_DE": {
+      "pattern": "Besuch beenden"
+    },
+    "fr_FR": {
+      "pattern": "Terminer la visite"
+    },
+    "id_ID": {
+      "pattern": "Akhiri Kunjungan"
+    },
+    "it_IT": {
+      "pattern": "Termina visita"
+    },
+    "ru_RU": {
+      "pattern": "Завершить посещение"
+    },
+    "th_TH": {
+      "pattern": "สิ้นสุด​การเยี่ยม​เยียน"
+    },
+    "vi_VN": {
+      "pattern": "Kết thúc thăm"
     }
   },
   "k_f546849b": {
@@ -117,6 +237,30 @@
     },
     "es_ES": {
       "pattern": "Sala de recepción"
+    },
+    "pt_BR": {
+      "pattern": "Sala da Recepção"
+    },
+    "de_DE": {
+      "pattern": "Empfang"
+    },
+    "fr_FR": {
+      "pattern": "Salle de réception"
+    },
+    "id_ID": {
+      "pattern": "Ruang Resepsionis"
+    },
+    "it_IT": {
+      "pattern": "Sala di ricevimento"
+    },
+    "ru_RU": {
+      "pattern": "Приемная"
+    },
+    "th_TH": {
+      "pattern": "ห้อง​รับรอง​แขก"
+    },
+    "vi_VN": {
+      "pattern": "Phòng Tiếp Khách"
     }
   },
   "k_04afbdcd": {
@@ -127,16 +271,40 @@
       "pattern": "製造"
     },
     "en_US": {
-      "pattern": "manufacture"
+      "pattern": "Assemble"
     },
     "ja_JP": {
       "pattern": "製造"
     },
     "ko_KR": {
-      "pattern": "제조"
+      "pattern": "제작"
     },
     "es_ES": {
-      "pattern": "fabricar"
+      "pattern": "Ensamblar"
+    },
+    "pt_BR": {
+      "pattern": "Montar"
+    },
+    "de_DE": {
+      "pattern": "Montieren"
+    },
+    "fr_FR": {
+      "pattern": "Assembler"
+    },
+    "id_ID": {
+      "pattern": "Rakit"
+    },
+    "it_IT": {
+      "pattern": "Assembla"
+    },
+    "ru_RU": {
+      "pattern": "Собрать"
+    },
+    "th_TH": {
+      "pattern": "ประกอบ"
+    },
+    "vi_VN": {
+      "pattern": "Lắp ráp"
     }
   },
   "k_d3ade189": {
@@ -167,16 +335,40 @@
       "pattern": "離開"
     },
     "en_US": {
-      "pattern": "leave"
+      "pattern": "Leave"
     },
     "ja_JP": {
       "pattern": "離れる"
     },
     "ko_KR": {
-      "pattern": "떠나다"
+      "pattern": "떠나기."
     },
     "es_ES": {
-      "pattern": "dejar"
+      "pattern": "Salir"
+    },
+    "pt_BR": {
+      "pattern": "Sair"
+    },
+    "de_DE": {
+      "pattern": "Verlassen"
+    },
+    "fr_FR": {
+      "pattern": "Quitter"
+    },
+    "id_ID": {
+      "pattern": "Tinggalkan"
+    },
+    "it_IT": {
+      "pattern": "Esci"
+    },
+    "ru_RU": {
+      "pattern": "Уйти"
+    },
+    "th_TH": {
+      "pattern": "ออก"
+    },
+    "vi_VN": {
+      "pattern": "Rời"
     }
   }
 }

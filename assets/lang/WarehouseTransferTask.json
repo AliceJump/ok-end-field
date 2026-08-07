@@ -7,16 +7,40 @@
       "string": "倉庫切換"
     },
     "en_US": {
-      "string": "Warehouse switching"
+      "string": "Switch Depot"
     },
     "ja_JP": {
-      "string": "倉庫切り替え"
+      "string": "倉庫切替"
     },
     "ko_KR": {
       "string": "창고 전환"
     },
     "es_ES": {
-      "string": "Cambio de almacén"
+      "string": "Cambiar Depósito"
+    },
+    "pt_BR": {
+      "string": "Trocar Depósito"
+    },
+    "de_DE": {
+      "string": "Depot wechseln"
+    },
+    "fr_FR": {
+      "string": "Changer d'entrepôt"
+    },
+    "id_ID": {
+      "string": "Beralih Depot"
+    },
+    "it_IT": {
+      "string": "Cambia deposito"
+    },
+    "ru_RU": {
+      "string": "Сменить склад"
+    },
+    "th_TH": {
+      "string": "สลับ​คลังสินค้า"
+    },
+    "vi_VN": {
+      "string": "Chuyển Đổi Kho Hàng"
     }
   },
   "k_d661f6da": {
@@ -24,19 +48,43 @@
       "pattern": "存放"
     },
     "zh_TW": {
-      "pattern": "存放"
+      "pattern": "快速存放"
     },
     "en_US": {
-      "pattern": "store"
+      "pattern": "Quick Stash"
     },
     "ja_JP": {
-      "pattern": "店"
+      "pattern": "一括収納"
     },
     "ko_KR": {
-      "pattern": "가게"
+      "pattern": "일괄 보관"
     },
     "es_ES": {
-      "pattern": "almacenar"
+      "pattern": "Guardado rápido"
+    },
+    "pt_BR": {
+      "pattern": "Reserva Rápida"
+    },
+    "de_DE": {
+      "pattern": "Schnelllager"
+    },
+    "fr_FR": {
+      "pattern": "Ajout rapide (coffre)"
+    },
+    "id_ID": {
+      "pattern": "Simpan Cepat"
+    },
+    "it_IT": {
+      "pattern": "Deposito rapido"
+    },
+    "ru_RU": {
+      "pattern": "Все в запасник"
+    },
+    "th_TH": {
+      "pattern": "เก็บ​ด่วน"
+    },
+    "vi_VN": {
+      "pattern": "Lưu Trữ Nhanh"
     }
   },
   "k_65fe35c4": {
@@ -57,6 +105,30 @@
     },
     "es_ES": {
       "pattern": "Conectado"
+    },
+    "pt_BR": {
+      "pattern": "Conectado"
+    },
+    "de_DE": {
+      "pattern": "Verbunden"
+    },
+    "fr_FR": {
+      "pattern": "Connecté"
+    },
+    "id_ID": {
+      "pattern": "Terhubung"
+    },
+    "it_IT": {
+      "pattern": "Collegato"
+    },
+    "ru_RU": {
+      "pattern": "Есть соединение"
+    },
+    "th_TH": {
+      "pattern": "เชื่อมต่อ​แล้ว"
+    },
+    "vi_VN": {
+      "pattern": "Đã kết nối"
     }
   },
   "k_b56d9ac6": {
@@ -67,16 +139,40 @@
       "pattern": "確定"
     },
     "en_US": {
-      "pattern": "confirm"
+      "pattern": "Confirm"
     },
     "ja_JP": {
-      "pattern": "確認する"
+      "pattern": "確定"
     },
     "ko_KR": {
-      "pattern": "확인하다"
+      "pattern": "확인"
     },
     "es_ES": {
-      "pattern": "confirmar"
+      "pattern": "Confirmar"
+    },
+    "pt_BR": {
+      "pattern": "Confirmar"
+    },
+    "de_DE": {
+      "pattern": "Bestätigen"
+    },
+    "fr_FR": {
+      "pattern": "Confirmer"
+    },
+    "id_ID": {
+      "pattern": "Konfirmasi"
+    },
+    "it_IT": {
+      "pattern": "Conferma"
+    },
+    "ru_RU": {
+      "pattern": "Подтвердить"
+    },
+    "th_TH": {
+      "pattern": "ยืนยัน"
+    },
+    "vi_VN": {
+      "pattern": "Xác nhận"
     }
   }
 }

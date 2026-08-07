@@ -7,16 +7,40 @@
       "string": "登上滑索架"
     },
     "en_US": {
-      "string": "Climb the zipline"
+      "string": "Latch to Zipline Facility"
     },
     "ja_JP": {
-      "string": "ジップラインを登る"
+      "string": "乗る"
     },
     "ko_KR": {
-      "string": "짚라인을 타고 올라보세요"
+      "string": "집라인 후크 타기"
     },
     "es_ES": {
-      "string": "Sube a la tirolesa"
+      "string": "Enganchar a la instalación de tirolesa"
+    },
+    "pt_BR": {
+      "string": "Prenda na instalação de tirolesa"
+    },
+    "de_DE": {
+      "string": "An Seilbahnanlage einhängen"
+    },
+    "fr_FR": {
+      "string": "S'accrocher à l'installation de tyrolienne"
+    },
+    "id_ID": {
+      "string": "Berpegangan pada Fasilitas Luncur Gantung"
+    },
+    "it_IT": {
+      "string": "Aggancia alla teleferica"
+    },
+    "ru_RU": {
+      "string": "Зацепиться за зиплайн-сооружение"
+    },
+    "th_TH": {
+      "string": "ใส่​ล็อก​เข้ากับ​สิ่งปลูกสร้าง​ซิป​ไลน์"
+    },
+    "vi_VN": {
+      "string": "Chốt vào Công Trình Zipline"
     }
   },
   "k_55ef5a58": {
@@ -47,16 +71,40 @@
       "pattern": "向目標移動"
     },
     "en_US": {
-      "pattern": "move towards target"
+      "pattern": "Move towards the target"
     },
     "ja_JP": {
-      "pattern": "目標に向かって動く"
+      "pattern": "目的地へ移動"
     },
     "ko_KR": {
-      "pattern": "목표를 향해 이동"
+      "pattern": "목표 지점으로 이동"
     },
     "es_ES": {
-      "pattern": "avanzar hacia el objetivo"
+      "pattern": "Avanza hacia el objetivo"
+    },
+    "pt_BR": {
+      "pattern": "Mover na direção ao alvo"
+    },
+    "de_DE": {
+      "pattern": "Bewege dich zum Ziel"
+    },
+    "fr_FR": {
+      "pattern": "Déplacer vers la cible"
+    },
+    "id_ID": {
+      "pattern": "Bergerak mendekati target"
+    },
+    "it_IT": {
+      "pattern": "Muoviti verso il bersaglio"
+    },
+    "ru_RU": {
+      "pattern": "Переместить к цели"
+    },
+    "th_TH": {
+      "pattern": "เคลื่อนย้าย​ไป​ยัง​เป้าหมาย"
+    },
+    "vi_VN": {
+      "pattern": "Di chuyển về phía mục tiêu"
     }
   },
   "k_0b1e4f35": {
@@ -67,16 +115,40 @@
       "pattern": "離開滑索架"
     },
     "en_US": {
-      "pattern": "Leaving the zipline"
+      "pattern": "Unlatch"
     },
     "ja_JP": {
-      "pattern": "ジップラインから離れる"
+      "pattern": "ジップラインから降りる"
     },
     "ko_KR": {
-      "pattern": "짚라인을 떠나며"
+      "pattern": "집라인 후크 내리기"
     },
     "es_ES": {
-      "pattern": "Saliendo de la tirolesa"
+      "pattern": "Desenganchar"
+    },
+    "pt_BR": {
+      "pattern": "Desafivelar"
+    },
+    "de_DE": {
+      "pattern": "Loslassen"
+    },
+    "fr_FR": {
+      "pattern": "Lâcher"
+    },
+    "id_ID": {
+      "pattern": "Lepas Pegangan"
+    },
+    "it_IT": {
+      "pattern": "Scendi"
+    },
+    "ru_RU": {
+      "pattern": "Отцепиться"
+    },
+    "th_TH": {
+      "pattern": "ปลด"
+    },
+    "vi_VN": {
+      "pattern": "Mở chốt"
     }
   }
 }

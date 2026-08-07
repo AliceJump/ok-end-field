@@ -46,15 +46,42 @@ OFFICIAL_SAME_AS_ENGLISH = {
     "伊冯",  # Yvonne
     "庄方宜",  # Zhuang Fangyi
     "否",  # 西英同形词 "No"
+    # ---- 以下由 scripts/sync_official_i18n_langs.py 从官方解包数据同步 ----
+    # 官方 es_MX 未本地化，直接沿用英文译名（与英文相同，非回退）
+    "余烬",  # Ember
+    "佩丽卡",  # Perlica
+    "别礼",  # Last Rite
+    "卡契尔",  # Catcher
+    "卡缪",  # Camille
+    "埃特拉",  # Estella
+    "弧光",  # Arclight
+    "弭弗",  # Mi Fu
+    "昼雪",  # Snowshine
+    "梨诺",  # Liino
+    "汤汤",  # Tangtang
+    "洁尔佩塔",  # Gilberta
+    "洛茜",  # Rossi
+    "狼卫",  # Wulfgard
+    "秋栗",  # Akekuri
+    "管理员",  # Endministrator
+    "罗丹",  # Rhodagn
+    "艾尔黛拉",  # Ardelia
+    "艾维文娜",  # Avywenna
+    "莱万汀",  # Laevatain
+    "萤石",  # Fluorite
+    "诀",  # Arcane
+    "赛希",  # Xaihi
+    "阿列什",  # Alesh
+    "骏卫",  # Pogranichnik
+    "黎风",  # Lifeng
+    "大潘",  # Da Pan
+    "天",  # d（官方 MX 缩写）
+    "开",  # ON（开关）
+    "帝江号",  # Dijiang
 }
 
 # es_ES 官方未本地化的角色名，保留中文源文本（msgstr == msgid）是允许的。
-ES_UNTRANSLATED_OK = {
-    "卡缪",  # Camille
-    "弭弗",  # Mi Fu
-    "梨诺",  # Liino
-    "诀",  # Arcane
-}
+ES_UNTRANSLATED_OK = set()
 
 
 class PoLocaleConsistencyTestCase(unittest.TestCase):

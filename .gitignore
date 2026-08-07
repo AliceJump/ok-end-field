@@ -33,6 +33,7 @@ label_class
 /tools/official_five_lang.json
 /assets/data/map_marks.json
 /assets/data/wiki_items.json
+/assets/data/i18n_texts/
 ############################
 # 🧠 OCR / 标注输出
 ############################

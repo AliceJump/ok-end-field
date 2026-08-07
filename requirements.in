@@ -4,3 +4,4 @@ openvino
 opencv-python
 websocket-client
 websockets
+json5

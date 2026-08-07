@@ -7,24 +7,45 @@
       "string": "艦橋"
     },
     "ja_JP": {
-      "string": "橋"
+      "string": "ブリッジ"
     },
     "ko_KR": {
-      "string": "다리"
+      "string": "갑판"
     },
     "es_ES": {
-      "string": "puente"
+      "string": "Puente"
     },
     "en_US": {
       "string": "Bridge"
+    },
+    "pt_BR": {
+      "string": "Ponte"
+    },
+    "de_DE": {
+      "string": "Brücke"
+    },
+    "fr_FR": {
+      "string": "Pont"
+    },
+    "id_ID": {
+      "string": "Anjungan Komando"
+    },
+    "it_IT": {
+      "string": "Ponte"
+    },
+    "ru_RU": {
+      "string": "Мостик"
+    },
+    "th_TH": {
+      "string": "สะพาน"
+    },
+    "vi_VN": {
+      "string": "Cầu Tàu"
     }
   },
   "k_933056f0": {
     "zh_CN": {
       "pattern": "信赖"
-    },
-    "en_US": {
-      "pattern": "trust"
     },
     "zh_TW": {
       "pattern": "信賴"
@@ -33,10 +54,37 @@
       "pattern": "信頼"
     },
     "ko_KR": {
-      "pattern": "신뢰하다"
+      "pattern": "신뢰도"
     },
     "es_ES": {
-      "pattern": "confianza"
+      "pattern": "Confianza"
+    },
+    "en_US": {
+      "pattern": "Trust"
+    },
+    "pt_BR": {
+      "pattern": "Confiança"
+    },
+    "de_DE": {
+      "pattern": "Vertrauen"
+    },
+    "fr_FR": {
+      "pattern": "Confiance"
+    },
+    "id_ID": {
+      "pattern": "Kepercayaan"
+    },
+    "it_IT": {
+      "pattern": "Fiducia"
+    },
+    "ru_RU": {
+      "pattern": "Доверие"
+    },
+    "th_TH": {
+      "pattern": "ความ​ไว้ใจ"
+    },
+    "vi_VN": {
+      "pattern": "Tín Nhiệm"
     }
   },
   "k_d661f6da": {
@@ -44,19 +92,43 @@
       "pattern": "存放"
     },
     "zh_TW": {
-      "pattern": "存放"
-    },
-    "ja_JP": {
-      "pattern": "店"
-    },
-    "ko_KR": {
-      "pattern": "가게"
-    },
-    "es_ES": {
-      "pattern": "almacenar"
+      "pattern": "快速存放"
     },
     "en_US": {
-      "pattern": "store"
+      "pattern": "Quick Stash"
+    },
+    "ja_JP": {
+      "pattern": "一括収納"
+    },
+    "ko_KR": {
+      "pattern": "일괄 보관"
+    },
+    "es_ES": {
+      "pattern": "Guardado rápido"
+    },
+    "pt_BR": {
+      "pattern": "Reserva Rápida"
+    },
+    "de_DE": {
+      "pattern": "Schnelllager"
+    },
+    "fr_FR": {
+      "pattern": "Ajout rapide (coffre)"
+    },
+    "id_ID": {
+      "pattern": "Simpan Cepat"
+    },
+    "it_IT": {
+      "pattern": "Deposito rapido"
+    },
+    "ru_RU": {
+      "pattern": "Все в запасник"
+    },
+    "th_TH": {
+      "pattern": "เก็บ​ด่วน"
+    },
+    "vi_VN": {
+      "pattern": "Lưu Trữ Nhanh"
     }
   }
 }

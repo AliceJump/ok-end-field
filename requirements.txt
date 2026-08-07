@@ -81,6 +81,8 @@ websocket-client==1.9.0
     # via -r .\requirements.in
 websockets==15.0.1
     # via -r .\requirements.in
+json5==0.15.0
+    # via -r .\requirements.in
 pyautogui==0.9.54
 imagehash==4.3.2
 scikit-image==0.26.0

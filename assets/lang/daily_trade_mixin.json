@@ -7,16 +7,40 @@
       "pattern": "出售"
     },
     "en_US": {
-      "pattern": "sell"
+      "pattern": "Sell"
     },
     "ja_JP": {
-      "pattern": "売る"
+      "pattern": "販売"
     },
     "ko_KR": {
-      "pattern": "팔다"
+      "pattern": "판매"
     },
     "es_ES": {
-      "pattern": "vender"
+      "pattern": "Vender"
+    },
+    "pt_BR": {
+      "pattern": "Vender"
+    },
+    "de_DE": {
+      "pattern": "Verkauf"
+    },
+    "fr_FR": {
+      "pattern": "Vendre"
+    },
+    "id_ID": {
+      "pattern": "Jual"
+    },
+    "it_IT": {
+      "pattern": "Vendi"
+    },
+    "ru_RU": {
+      "pattern": "Продать"
+    },
+    "th_TH": {
+      "pattern": "ขาย"
+    },
+    "vi_VN": {
+      "pattern": "Bán"
     }
   },
   "k_23926d61": {
@@ -27,16 +51,40 @@
       "pattern": "前往"
     },
     "en_US": {
-      "pattern": "Go to"
+      "pattern": "Go"
     },
     "ja_JP": {
-      "pattern": "に行く"
+      "pattern": "移動"
     },
     "ko_KR": {
-      "pattern": "이동"
+      "pattern": "바로가기"
     },
     "es_ES": {
-      "pattern": "Ir a"
+      "pattern": "Ir"
+    },
+    "pt_BR": {
+      "pattern": "Ir"
+    },
+    "de_DE": {
+      "pattern": "Los"
+    },
+    "fr_FR": {
+      "pattern": "Y aller"
+    },
+    "id_ID": {
+      "pattern": "Buka"
+    },
+    "it_IT": {
+      "pattern": "Vai"
+    },
+    "ru_RU": {
+      "pattern": "Перейти"
+    },
+    "th_TH": {
+      "pattern": "ไป"
+    },
+    "vi_VN": {
+      "pattern": "Đến"
     }
   },
   "k_d6bdcc47": {
@@ -47,7 +95,7 @@
       "pattern": "地區建設"
     },
     "en_US": {
-      "pattern": "Regional construction"
+      "pattern": "Regional Development"
     },
     "ja_JP": {
       "pattern": "地域建設"
@@ -56,7 +104,31 @@
       "pattern": "지역 건설"
     },
     "es_ES": {
-      "pattern": "Construcción regional"
+      "pattern": "Desarrollo regional"
+    },
+    "pt_BR": {
+      "pattern": "Desenvolvimento Regional"
+    },
+    "de_DE": {
+      "pattern": "Regionsentwicklung"
+    },
+    "fr_FR": {
+      "pattern": "Développement régional"
+    },
+    "id_ID": {
+      "pattern": "Pengembangan Regional"
+    },
+    "it_IT": {
+      "pattern": "Sviluppo regionale"
+    },
+    "ru_RU": {
+      "pattern": "Развитие региона"
+    },
+    "th_TH": {
+      "pattern": "การพัฒนา​ระดับ​ภูมิภาค"
+    },
+    "vi_VN": {
+      "pattern": "Phát Triển Khu Vực"
     }
   },
   "k_930f2e66": {
@@ -67,7 +139,7 @@
       "pattern": "市場"
     },
     "en_US": {
-      "pattern": "market"
+      "pattern": "Market"
     },
     "ja_JP": {
       "pattern": "市場"
@@ -76,7 +148,31 @@
       "pattern": "시장"
     },
     "es_ES": {
-      "pattern": "mercado"
+      "pattern": "Mercado"
+    },
+    "pt_BR": {
+      "pattern": "Mercado"
+    },
+    "de_DE": {
+      "pattern": "Markt"
+    },
+    "fr_FR": {
+      "pattern": "Marché"
+    },
+    "id_ID": {
+      "pattern": "Pasar"
+    },
+    "it_IT": {
+      "pattern": "Mercato"
+    },
+    "ru_RU": {
+      "pattern": "Рынок"
+    },
+    "th_TH": {
+      "pattern": "ตลาด"
+    },
+    "vi_VN": {
+      "pattern": "Thị Trường"
     }
   },
   "k_33fb3f9c": {
@@ -127,16 +223,40 @@
       "pattern": "查看好友價格"
     },
     "en_US": {
-      "pattern": "View friends prices"
+      "pattern": "Friend's Price"
     },
     "ja_JP": {
-      "pattern": "友達の価格を見る"
+      "pattern": "フレンドの価格を確認"
     },
     "ko_KR": {
-      "pattern": "친구 가격 보기"
+      "pattern": "친구의 가격 보기"
     },
     "es_ES": {
-      "pattern": "Ver precios de amigos"
+      "pattern": "Precio del amigo"
+    },
+    "pt_BR": {
+      "pattern": "Preço do Amigo"
+    },
+    "de_DE": {
+      "pattern": "Preis des Freundes"
+    },
+    "fr_FR": {
+      "pattern": "Prix d'ami"
+    },
+    "id_ID": {
+      "pattern": "Harga Teman"
+    },
+    "it_IT": {
+      "pattern": "Prezzo amico"
+    },
+    "ru_RU": {
+      "pattern": "Цена друга"
+    },
+    "th_TH": {
+      "pattern": "ราคา​ของ​เพื่อน"
+    },
+    "vi_VN": {
+      "pattern": "Giá Bạn Bè"
     }
   },
   "k_7cf40bbd": {
@@ -147,16 +267,40 @@
       "pattern": "購買"
     },
     "en_US": {
-      "pattern": "Buy"
+      "pattern": "Purchase"
     },
     "ja_JP": {
-      "pattern": "買う"
+      "pattern": "購入"
     },
     "ko_KR": {
-      "pattern": "구입하다"
+      "pattern": "구매"
     },
     "es_ES": {
       "pattern": "Comprar"
+    },
+    "pt_BR": {
+      "pattern": "Comprar"
+    },
+    "de_DE": {
+      "pattern": "Kaufen"
+    },
+    "fr_FR": {
+      "pattern": "Acheter"
+    },
+    "id_ID": {
+      "pattern": "Beli"
+    },
+    "it_IT": {
+      "pattern": "Acquista"
+    },
+    "ru_RU": {
+      "pattern": "Купить"
+    },
+    "th_TH": {
+      "pattern": "ซื้อ"
+    },
+    "vi_VN": {
+      "pattern": "Mua"
     }
   },
   "k_13f2c5a1": {
@@ -257,6 +401,30 @@
     },
     "es_ES": {
       "pattern": "Terminal de redistribución de existencias"
+    },
+    "pt_BR": {
+      "pattern": "Terminal de Redistribuição do Estoque"
+    },
+    "de_DE": {
+      "pattern": "Vorratneuverteilungsterminal"
+    },
+    "fr_FR": {
+      "pattern": "Terminal du magasin de redistribution"
+    },
+    "id_ID": {
+      "pattern": "Terminal Redistribusi Stok"
+    },
+    "it_IT": {
+      "pattern": "Terminale di ridistribuzione scorte"
+    },
+    "ru_RU": {
+      "pattern": "Терминал перераспределения резервов"
+    },
+    "th_TH": {
+      "pattern": "เทอร์​มิ​นัล​ศูนย์​กระจาย​ของ"
+    },
+    "vi_VN": {
+      "pattern": "Trạm Điều Phối Vật Tư"
     }
   },
   "k_02894ea7": {
@@ -267,16 +435,40 @@
       "string": "物資調度"
     },
     "en_US": {
-      "string": "Material dispatch"
+      "string": "Stock Redistribution"
     },
     "ja_JP": {
-      "string": "資材の発送"
+      "string": "商品取引"
     },
     "ko_KR": {
-      "string": "자재 파견"
+      "string": "물자 관리"
     },
     "es_ES": {
-      "string": "Despacho de materiales"
+      "string": "Redistribución de existencias"
+    },
+    "pt_BR": {
+      "string": "Redistribuição do Estoque"
+    },
+    "de_DE": {
+      "string": "Vorratneuverteilung"
+    },
+    "fr_FR": {
+      "string": "Magasin de redistribution"
+    },
+    "id_ID": {
+      "string": "Redistribusi Stok"
+    },
+    "it_IT": {
+      "string": "Ridistribuzione scorte"
+    },
+    "ru_RU": {
+      "string": "Система перераспределения резервов"
+    },
+    "th_TH": {
+      "string": "ศูนย์​กระจาย​ของ"
+    },
+    "vi_VN": {
+      "string": "Điều Phối Vật Tư"
     }
   }
 }

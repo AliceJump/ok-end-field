@@ -17,6 +17,30 @@
     },
     "es_ES": {
       "string": "Nodo de depósito"
+    },
+    "pt_BR": {
+      "string": "Nó de Depósito"
+    },
+    "de_DE": {
+      "string": "Depotknoten"
+    },
+    "fr_FR": {
+      "string": "Nœud de dépôt"
+    },
+    "id_ID": {
+      "string": "Nodus Depot"
+    },
+    "it_IT": {
+      "string": "Nodo logistico"
+    },
+    "ru_RU": {
+      "string": "Узел склада"
+    },
+    "th_TH": {
+      "string": "โหนด​คลัง​เก็บ"
+    },
+    "vi_VN": {
+      "string": "Nút Kho Hàng"
     }
   },
   "k_046ed3ab": {
@@ -24,19 +48,43 @@
       "string": "请尽快送达"
     },
     "zh_TW": {
-      "string": "請盡快送達"
+      "string": "請儘快送達"
     },
     "en_US": {
-      "string": "Please deliver as soon as possible"
+      "string": "Deliver Quickly"
     },
     "ja_JP": {
-      "string": "できるだけ早く配達してください"
+      "string": "早めに配達してください"
     },
     "ko_KR": {
-      "string": "최대한 빨리 배송해주세요"
+      "string": "최대한 빨리 배달하세요."
     },
     "es_ES": {
-      "string": "Por favor entregue lo antes posible"
+      "string": "Entrega rápida"
+    },
+    "pt_BR": {
+      "string": "Entregar Rapidamente"
+    },
+    "de_DE": {
+      "string": "Liefere schnell"
+    },
+    "fr_FR": {
+      "string": "Livraison rapide"
+    },
+    "id_ID": {
+      "string": "Cepat Antarkan"
+    },
+    "it_IT": {
+      "string": "Consegna rapidamente"
+    },
+    "ru_RU": {
+      "string": "Срочная доставка"
+    },
+    "th_TH": {
+      "string": "จัดส่ง​โดยด่วน"
+    },
+    "vi_VN": {
+      "string": "Giao Ngay"
     }
   },
   "k_ae8fb114": {
@@ -44,19 +92,43 @@
       "string": "运送委托列表"
     },
     "zh_TW": {
-      "string": "運送委託列表"
+      "string": "運送委託清單"
     },
     "en_US": {
-      "string": "Shipping order list"
+      "string": "List of Delivery Jobs"
     },
     "ja_JP": {
-      "string": "発送注文リスト"
+      "string": "配達依頼一覧"
     },
     "ko_KR": {
-      "string": "배송주문 목록"
+      "string": "운송 의뢰 목록"
     },
     "es_ES": {
-      "string": "Lista de pedidos de envío"
+      "string": "Lista de trabajos de entrega"
+    },
+    "pt_BR": {
+      "string": "Lista de Trabalhos de Entrega"
+    },
+    "de_DE": {
+      "string": "Liste der Lieferaufträge"
+    },
+    "fr_FR": {
+      "string": "Liste des tâches de livraison"
+    },
+    "id_ID": {
+      "string": "Daftar Tugas Pengantaran"
+    },
+    "it_IT": {
+      "string": "Elenco dei lavori di consegna"
+    },
+    "ru_RU": {
+      "string": "Список поручений по доставке"
+    },
+    "th_TH": {
+      "string": "รายการ​งาน​จัดส่ง"
+    },
+    "vi_VN": {
+      "string": "Danh Sách Nhiệm Vụ Giao Hàng"
     }
   }
 }

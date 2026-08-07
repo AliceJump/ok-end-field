@@ -47,16 +47,40 @@
       "pattern": "最近"
     },
     "en_US": {
-      "pattern": "recent"
+      "pattern": "Recent"
     },
     "ja_JP": {
-      "pattern": "最近の"
+      "pattern": "最近"
     },
     "ko_KR": {
-      "pattern": "최근의"
+      "pattern": "최근"
     },
     "es_ES": {
-      "pattern": "reciente"
+      "pattern": "Recientes"
+    },
+    "pt_BR": {
+      "pattern": "Recente"
+    },
+    "de_DE": {
+      "pattern": "Aktuell"
+    },
+    "fr_FR": {
+      "pattern": "Récent"
+    },
+    "id_ID": {
+      "pattern": "Terkini"
+    },
+    "it_IT": {
+      "pattern": "Recente"
+    },
+    "ru_RU": {
+      "pattern": "Недавние"
+    },
+    "th_TH": {
+      "pattern": "ล่าสุด"
+    },
+    "vi_VN": {
+      "pattern": "Gần đây"
     }
   }
 }

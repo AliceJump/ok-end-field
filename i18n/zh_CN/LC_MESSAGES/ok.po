@@ -12,11 +12,29 @@ msgstr ""
 msgid "0~1，值越高越严格"
 msgstr "0~1，值越高越严格"
 
+msgid "Area Build Key"
+msgstr "地区建设键"
+
+msgid "Backpack Key"
+msgstr "背包键"
+
+msgid "Baker Key"
+msgstr "Baker键"
+
+msgid "Blueprint Key"
+msgstr "蓝图键"
+
 msgid "D96钢"
 msgstr "D96钢"
 
 msgid "Daily Task"
 msgstr "日常任务"
+
+msgid "Dodge Key"
+msgstr "闪避键"
+
+msgid "Equipment List Key"
+msgstr "设备列表键"
 
 msgid "F10"
 msgstr "F10"
@@ -30,8 +48,68 @@ msgstr "F12"
 msgid "F9"
 msgstr "F9"
 
+msgid "Handbook Key"
+msgstr "行动手册键"
+
+msgid "Industry Plan Key"
+msgstr "工业发展规划键"
+
+msgid "Interact Key"
+msgstr "交互键"
+
+msgid "Jump Key"
+msgstr "跳跃键"
+
+msgid "Link Skill Key"
+msgstr "连携技键"
+
+msgid "Mail Key"
+msgstr "邮箱键"
+
+msgid "Map Key"
+msgstr "地图键"
+
+msgid "Mission Key"
+msgstr "任务键"
+
+msgid "Operator Key"
+msgstr "干员键"
+
+msgid "Overview Mode Key"
+msgstr "俯瞰模式键"
+
+msgid "Place Belt Key"
+msgstr "放置传送带键"
+
+msgid "Place Pipeline Key"
+msgstr "放置管道键"
+
+msgid "Product Icon Toggle Key"
+msgstr "产物图标切换键"
+
+msgid "Quick Tool Key"
+msgstr "快捷工具键"
+
+msgid "Recruitment Key"
+msgstr "寻访键"
+
+msgid "SingleActionWithDelay"
+msgstr "单次返回后睡眠时间"
+
+msgid "Storage Mode Key"
+msgstr "收纳模式键"
+
+msgid "Team Key"
+msgstr "编队键"
+
+msgid "Track Key"
+msgstr "追踪键"
+
 msgid "Upload Logs"
 msgstr "上传日志"
+
+msgid "Valuables Key"
+msgstr "贵重品库键"
 
 msgid "YOLO模型"
 msgstr "YOLO模型"
@@ -149,6 +227,9 @@ msgstr "两者"
 
 msgid "中容武陵电池"
 msgstr "中容武陵电池"
+
+msgid "主界面单次动作后延迟"
+msgstr "主界面单次动作后延迟"
 
 msgid "买卖货"
 msgstr "买卖货"
@@ -268,6 +349,9 @@ msgstr "例：「{key}」= {raw} → 依次滑行 {seq}"
 msgid "供能高地"
 msgstr "供能高地"
 
+msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
+msgstr "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
+
 msgid "保存当前账号配置"
 msgstr "保存当前账号配置"
 
@@ -295,11 +379,17 @@ msgstr "储藏箱III"
 msgid "储藏箱IV"
 msgstr "储藏箱IV"
 
+msgid "全局战斗配置"
+msgstr "全局战斗配置"
+
 msgid "全局配置"
 msgstr "全局配置"
 
 msgid "全部"
 msgstr "全部"
+
+msgid "全部配置"
+msgstr "全部配置"
 
 msgid "关卡名"
 msgstr "关卡名"
@@ -408,6 +498,15 @@ msgstr "启动一次游戏,120s后自动关闭"
 msgid "启动技能点数"
 msgstr "启动技能点数"
 
+msgid ""
+"启用后在对齐滑索时会自动滚动放大视角\n"
+"可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
+"建议启用此项时不要使用非白发或有白帽角色"
+msgstr ""
+"启用后在对齐滑索时会自动滚动放大视角\n"
+"可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
+"建议启用此项时不要使用非白发或有白帽角色"
+
 msgid "启用后将只进行购买操作，不进行出售操作。"
 msgstr "启用后将只进行购买操作，不进行出售操作。"
 
@@ -472,6 +571,9 @@ msgstr "埃特拉"
 
 msgid "培养舱"
 msgstr "培养舱"
+
+msgid "基础配置"
+msgstr "基础配置"
 
 msgid "填写规则"
 msgstr "填写规则"
@@ -553,6 +655,12 @@ msgstr "屏蔽可量产植物"
 msgid "工具与调试"
 msgstr "工具与调试"
 
+msgid "已保存当前账号配置"
+msgstr "已保存当前账号配置"
+
+msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
+msgstr "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
+
 msgid "帮助"
 msgstr "帮助"
 
@@ -593,8 +701,14 @@ msgstr ""
 "当「技力条」达到该数值时，\n"
 "开始执行技能序列。取值范围1-3。"
 
+msgid "当前视图：{view_mode} | 展示 {count} / {total} 项"
+msgstr "当前视图：{view_mode} | 展示 {count} / {total} 项"
+
 msgid "当前账号的 hg/check data.content 值，用于官方地图位置同步"
 msgstr "当前账号的 hg/check data.content 值，用于官方地图位置同步"
+
+msgid "当前账号配置没有变化"
+msgstr "当前账号配置没有变化"
 
 msgid "当条件符合时使用技能组"
 msgstr "当条件符合时使用技能组"
@@ -691,8 +805,12 @@ msgstr ""
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
 msgstr "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
 
-msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgid ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
+"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
+"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
 
 msgid "据点兑换"
 msgstr "据点兑换"
@@ -970,6 +1088,9 @@ msgstr "浏览器油猴脚本帮助"
 msgid "消耗限时体力药"
 msgstr "消耗限时体力药"
 
+msgid "淤积点滑索"
+msgstr "淤积点滑索"
+
 msgid "淤积点相关选项"
 msgstr "淤积点相关选项"
 
@@ -988,6 +1109,9 @@ msgstr "清空当前账号全部覆盖"
 msgid "游戏内开启全屏模式时请确保游戏内分辨率与你的屏幕分辨率一致"
 msgstr "游戏内开启全屏模式时请确保游戏内分辨率与你的屏幕分辨率一致"
 
+msgid "游戏内快捷键配置"
+msgstr "游戏内快捷键配置"
+
 msgid "源石研究园"
 msgstr "源石研究园"
 
@@ -996,6 +1120,18 @@ msgstr "源矿"
 
 msgid "滑索距离序列在「全局配置 → 滑索配置」中设置"
 msgstr "滑索距离序列在「全局配置 → 滑索配置」中设置"
+
+msgid "滑索距离序列，用逗号分隔。"
+msgstr "滑索距离序列，用逗号分隔。"
+
+msgid "滑索路线与距离序列配置"
+msgstr "滑索路线与距离序列配置"
+
+msgid "滑索配置"
+msgstr "滑索配置"
+
+msgid "滑索配置分类"
+msgstr "滑索配置分类"
 
 msgid "滑索配置说明"
 msgstr "滑索配置说明"
@@ -1267,6 +1403,9 @@ msgstr "进入战斗后的初始等待时间"
 msgid "送礼任务最多尝试次数"
 msgstr "送礼任务最多尝试次数"
 
+msgid "送货滑索"
+msgstr "送货滑索"
+
 msgid "送货相关键"
 msgstr "送货相关键"
 
@@ -1308,6 +1447,9 @@ msgid ""
 msgstr ""
 "选择要参与导航的物品列表。\n"
 "只会在当前地图里匹配这些物品。"
+
+msgid "选择要显示的滑索配置分类。"
+msgstr "选择要显示的滑索配置分类。"
 
 msgid "选择要更换的队伍编号。"
 msgstr "选择要更换的队伍编号。"
@@ -1364,6 +1506,9 @@ msgstr "重息壤"
 
 msgid "钱币收集"
 msgstr "钱币收集"
+
+msgid "键位配置"
+msgstr "键位配置"
 
 msgid "阮一"
 msgstr "阮一"
@@ -1436,222 +1581,3 @@ msgstr ""
 
 msgid "齐纶"
 msgstr "齐纶"
-
-msgid "滑索配置"
-msgstr "滑索配置"
-
-msgid "键位配置"
-msgstr "键位配置"
-
-msgid "基础配置"
-msgstr "基础配置"
-
-msgid "游戏内快捷键配置"
-msgstr "游戏内快捷键配置"
-
-msgid "全局战斗配置"
-msgstr "全局战斗配置"
-
-msgid "主界面单次动作后延迟"
-msgstr "主界面单次动作后延迟"
-
-msgid "滑索路线与距离序列配置"
-msgstr "滑索路线与距离序列配置"
-
-msgid "Action List"
-msgstr "动作列表"
-
-msgid "Area Build Key"
-msgstr "地区建设键"
-
-msgid "Auto"
-msgstr "自动"
-
-msgid "Auto Resize Game Window"
-msgstr "自动调整游戏窗口"
-
-msgid "Auto Start Game When App Starts"
-msgstr "启动时自动启动游戏"
-
-msgid "Backpack Key"
-msgstr "背包键"
-
-msgid "Baker Key"
-msgstr "Baker键"
-
-msgid "Basic Options"
-msgstr "基础选项"
-
-msgid "Blueprint Key"
-msgstr "蓝图键"
-
-msgid "Diagnosis"
-msgstr "诊断"
-
-msgid "Dodge Key"
-msgstr "闪避键"
-
-msgid "Equipment List Key"
-msgstr "设备列表键"
-
-msgid "Exit After Task"
-msgstr "完成后退出"
-
-msgid "Exit App when Game Exits"
-msgstr "游戏退出时退出应用"
-
-msgid "Exit the Game and the App after Successfully Executing the Task"
-msgstr "任务执行成功后退出游戏和应用程序"
-
-msgid "Handbook Key"
-msgstr "行动手册键"
-
-msgid "HotKey"
-msgstr "快捷键"
-
-msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
-msgstr "增加任务触发间隔以减少 CPU/GPU 使用率（毫秒）"
-
-msgid "Industry Plan Key"
-msgstr "工业发展规划键"
-
-msgid "Interact Key"
-msgstr "交互键"
-
-msgid "Jump Key"
-msgstr "跳跃键"
-
-msgid "Kill Launcher After Start"
-msgstr "启动后关闭启动器"
-
-msgid "Launch with DX11"
-msgstr "使用 DX11 启动"
-
-msgid "Link Skill Key"
-msgstr "连携技键"
-
-msgid "Mail Key"
-msgstr "邮箱键"
-
-msgid "Map Key"
-msgstr "地图键"
-
-msgid "Minimize Window to System Tray when Closing"
-msgstr "关闭时最小化到系统托盘"
-
-msgid "Mission Key"
-msgstr "任务键"
-
-msgid "Mute Game while in Background"
-msgstr "后台时静音游戏"
-
-msgid "No"
-msgstr "否"
-
-msgid "None"
-msgstr "无"
-
-msgid "Operation"
-msgstr "操作"
-
-msgid "Operator Key"
-msgstr "干员键"
-
-msgid "Overview Mode Key"
-msgstr "俯瞰模式键"
-
-msgid "Performance Test"
-msgstr "性能测试"
-
-msgid "Place Belt Key"
-msgstr "放置传送带键"
-
-msgid "Place Pipeline Key"
-msgstr "放置管道键"
-
-msgid "Product Icon Toggle Key"
-msgstr "产物图标切换键"
-
-msgid "Quick Tool Key"
-msgstr "快捷工具键"
-
-msgid "Recruitment Key"
-msgstr "寻访键"
-
-msgid "SingleActionWithDelay"
-msgstr "单次返回后睡眠时间"
-
-msgid "Start/Stop"
-msgstr "启动/停止"
-
-msgid "Storage Mode Key"
-msgstr "收纳模式键"
-
-msgid "Team Key"
-msgstr "编队键"
-
-msgid "Track Key"
-msgstr "追踪键"
-
-msgid "Trigger Interval"
-msgstr "触发间隔"
-
-msgid "Use DirectML"
-msgstr "使用 DirectML"
-
-msgid "Use GPU to Improve Performance"
-msgstr "使用 GPU 提升性能"
-
-msgid "Use the skill set when conditions are met"
-msgstr "当条件符合时使用技能组"
-
-msgid "Valuables Key"
-msgstr "贵重品库键"
-
-msgid "Yes"
-msgstr "是"
-
-msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
-msgstr "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
-
-msgid "全部配置"
-msgstr "全部配置"
-
-msgid ""
-"启用后在对齐滑索时会自动滚动放大视角\n"
-"可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
-"建议启用此项时不要使用非白发或有白帽角色"
-msgstr ""
-"启用后在对齐滑索时会自动滚动放大视角\n"
-"可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
-"建议启用此项时不要使用非白发或有白帽角色"
-
-msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
-msgstr "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
-
-msgid "当前视图：{view_mode} | 展示 {count} / {total} 项"
-msgstr "当前视图：{view_mode} | 展示 {count} / {total} 项"
-
-msgid "淤积点滑索"
-msgstr "淤积点滑索"
-
-msgid "滑索距离序列，用逗号分隔。"
-msgstr "滑索距离序列，用逗号分隔。"
-
-msgid "滑索配置分类"
-msgstr "滑索配置分类"
-
-msgid "送货滑索"
-msgstr "送货滑索"
-
-msgid "选择要显示的滑索配置分类。"
-msgstr "选择要显示的滑索配置分类。"
-
-msgid "已保存当前账号配置"
-msgstr "已保存当前账号配置"
-
-msgid "当前账号配置没有变化"
-msgstr "当前账号配置没有变化"
-
-msgid "仅差异项"
-msgstr "仅差异项"

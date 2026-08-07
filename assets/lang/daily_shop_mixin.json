@@ -16,13 +16,31 @@
       "pattern": "크레딧"
     },
     "es_ES": {
-      "pattern": "Crédito"
+      "pattern": "Créditos"
     },
     "id_ID": {
       "pattern": "Kredit"
     },
     "ru_RU": {
       "pattern": "Кредиты"
+    },
+    "pt_BR": {
+      "pattern": "Créditos"
+    },
+    "de_DE": {
+      "pattern": "Credits"
+    },
+    "fr_FR": {
+      "pattern": "Crédits"
+    },
+    "it_IT": {
+      "pattern": "Crediti"
+    },
+    "th_TH": {
+      "pattern": "เครดิต"
+    },
+    "vi_VN": {
+      "pattern": "Tín Dụng"
     }
   },
   "k_38108eaa": {
@@ -33,16 +51,40 @@
       "pattern": "更新"
     },
     "en_US": {
-      "pattern": "refresh"
+      "pattern": "Refresh"
     },
     "ja_JP": {
-      "pattern": "リフレッシュする"
+      "pattern": "更新"
     },
     "ko_KR": {
-      "pattern": "새로 고치다"
+      "pattern": "새로고침"
     },
     "es_ES": {
-      "pattern": "refrescar"
+      "pattern": "Actualizar"
+    },
+    "pt_BR": {
+      "pattern": "Atualizar"
+    },
+    "de_DE": {
+      "pattern": "Aktualisieren"
+    },
+    "fr_FR": {
+      "pattern": "Actualiser"
+    },
+    "id_ID": {
+      "pattern": "Muat ulang"
+    },
+    "it_IT": {
+      "pattern": "Aggiorna"
+    },
+    "ru_RU": {
+      "pattern": "Обновить"
+    },
+    "th_TH": {
+      "pattern": "รี​เฟรช"
+    },
+    "vi_VN": {
+      "pattern": "Làm mới"
     }
   },
   "k_b56d9ac6": {
@@ -53,16 +95,40 @@
       "pattern": "確定"
     },
     "en_US": {
-      "pattern": "confirm"
+      "pattern": "Confirm"
     },
     "ja_JP": {
-      "pattern": "確認する"
+      "pattern": "確定"
     },
     "ko_KR": {
-      "pattern": "확인하다"
+      "pattern": "확인"
     },
     "es_ES": {
-      "pattern": "confirmar"
+      "pattern": "Confirmar"
+    },
+    "pt_BR": {
+      "pattern": "Confirmar"
+    },
+    "de_DE": {
+      "pattern": "Bestätigen"
+    },
+    "fr_FR": {
+      "pattern": "Confirmer"
+    },
+    "id_ID": {
+      "pattern": "Konfirmasi"
+    },
+    "it_IT": {
+      "pattern": "Conferma"
+    },
+    "ru_RU": {
+      "pattern": "Подтвердить"
+    },
+    "th_TH": {
+      "pattern": "ยืนยัน"
+    },
+    "vi_VN": {
+      "pattern": "Xác nhận"
     }
   },
   "k_7cf40bbd": {
@@ -73,16 +139,40 @@
       "pattern": "購買"
     },
     "en_US": {
-      "pattern": "Buy"
+      "pattern": "Purchase"
     },
     "ja_JP": {
-      "pattern": "買う"
+      "pattern": "購入"
     },
     "ko_KR": {
-      "pattern": "구입하다"
+      "pattern": "구매"
     },
     "es_ES": {
       "pattern": "Comprar"
+    },
+    "pt_BR": {
+      "pattern": "Comprar"
+    },
+    "de_DE": {
+      "pattern": "Kaufen"
+    },
+    "fr_FR": {
+      "pattern": "Acheter"
+    },
+    "id_ID": {
+      "pattern": "Beli"
+    },
+    "it_IT": {
+      "pattern": "Acquista"
+    },
+    "ru_RU": {
+      "pattern": "Купить"
+    },
+    "th_TH": {
+      "pattern": "ซื้อ"
+    },
+    "vi_VN": {
+      "pattern": "Mua"
     }
   },
   "k_8533f5f6": {
@@ -113,16 +203,40 @@
       "pattern": "採購"
     },
     "en_US": {
-      "pattern": "purchase"
+      "pattern": "Shop"
     },
     "ja_JP": {
       "pattern": "購入"
     },
     "ko_KR": {
-      "pattern": "구입"
+      "pattern": "구매"
     },
     "es_ES": {
-      "pattern": "compra"
+      "pattern": "Tienda"
+    },
+    "pt_BR": {
+      "pattern": "Loja"
+    },
+    "de_DE": {
+      "pattern": "Laden"
+    },
+    "fr_FR": {
+      "pattern": "Boutique"
+    },
+    "id_ID": {
+      "pattern": "Toko"
+    },
+    "it_IT": {
+      "pattern": "Negozio"
+    },
+    "ru_RU": {
+      "pattern": "Магазин"
+    },
+    "th_TH": {
+      "pattern": "ร้านค้า"
+    },
+    "vi_VN": {
+      "pattern": "Cửa hàng"
     }
   }
 }
