@@ -33,6 +33,8 @@ class FeatureList(str, Enum):
     check_in_close = 'check_in_close'
     chen_qianyu_contact = 'chen_qianyu_contact'
     claim_gift = 'claim_gift'
+    clear_page_demo_battle = 'clear_page_demo_battle'
+    clear_page_gather = 'clear_page_gather'
     close = 'close'
     clue_1_icon = 'clue_1_icon'
     clue_2_icon = 'clue_2_icon'

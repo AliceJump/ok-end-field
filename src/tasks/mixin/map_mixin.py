@@ -91,7 +91,6 @@ class MapMixin(BaseEfTask):
                 raise_if_not_found=False,
         ):
             return False
-        self.wait_ui_stable(refresh_interval=0.2)
 
         # 如需保留特定标记，则尝试查找并勾选
         if need_reserve_icon_name:
@@ -99,14 +98,14 @@ class MapMixin(BaseEfTask):
                 if ocr:
                     result = self.wait_click_ocr(
                         match=re.compile(need_reserve_icon_name),
-                        box=self.box_of_screen(0.003, 0.993, 0.281, 0.063),
+                        box=self.box_of_screen(0.003, 0.063, 0.281, 0.993),
                         time_out=2,
                         log=True,
                     )
                 else:
                     result = self.wait_click_feature(
                         feature=need_reserve_icon_name,
-                        box=self.box_of_screen(0.003, 0.993, 0.281, 0.063),
+                        box=self.box_of_screen(0.003, 0.063, 0.281, 0.993),
                         time_out=2,
                         raise_if_not_found=False,
                     )
@@ -122,7 +121,7 @@ class MapMixin(BaseEfTask):
 
         return True
 
-    def to_near_transfer_point(self, after_track, need_location_list=None):
+    def to_near_transfer_point(self, after_track, need_location_list=None, need_reserve_icon_name=None):
         """
         在地图上寻找最近的传送点并执行传送。
 
@@ -156,6 +155,8 @@ class MapMixin(BaseEfTask):
 
         # 调用函数前如果点击”追踪“按钮，需要再次点击屏幕中心图标。
         if after_track:
+            if need_reserve_icon_name:
+                self.clear_icon_in_map(need_reserve_icon_name=need_reserve_icon_name)
             self.click(0.5, 0.5, after_sleep=1)
 
         # 查找“前往传送”按钮
