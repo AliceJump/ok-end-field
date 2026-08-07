@@ -1,0 +1,642 @@
+{
+  "影拓丰碑": {
+    "zh_CN": {
+      "string": "影拓丰碑"
+    },
+    "zh_TW": {
+      "string": "影拓豐碑"
+    },
+    "en_US": {
+      "string": "Umbral Monument"
+    },
+    "ja_JP": {
+      "string": "映像の記念碑"
+    },
+    "ko_KR": {
+      "string": "그림자 이정표"
+    },
+    "es_ES": {
+      "string": "Monumento del umbral"
+    }
+  },
+  "仪式旋流": {
+    "zh_CN": {
+      "string": "仪式旋流"
+    },
+    "zh_TW": {
+      "string": "儀式旋流"
+    },
+    "en_US": {
+      "string": "Ritual Vortex"
+    },
+    "ja_JP": {
+      "string": "渦巻く儀式"
+    },
+    "ko_KR": {
+      "string": "의식의 소용돌이"
+    },
+    "es_ES": {
+      "string": "Vórtice ritual"
+    }
+  },
+  "兽群把戏": {
+    "zh_CN": {
+      "string": "兽群把戏"
+    },
+    "zh_TW": {
+      "string": "獸群把戲"
+    },
+    "en_US": {
+      "string": "Mangler and Friends"
+    },
+    "ja_JP": {
+      "string": "獣群戯画"
+    },
+    "ko_KR": {
+      "string": "비스트 무리의 유희"
+    },
+    "es_ES": {
+      "string": "La mutiladora y sus amigos"
+    }
+  },
+  "冯河断水": {
+    "zh_CN": {
+      "string": "冯河断水"
+    },
+    "zh_TW": {
+      "string": "馮河斷水"
+    },
+    "en_US": {
+      "string": "Wading in Raker Turf"
+    },
+    "ja_JP": {
+      "string": "川断つ猛進"
+    },
+    "ko_KR": {
+      "string": "강을 가르는 결단"
+    },
+    "es_ES": {
+      "string": "Vadeando el territorio del Rastrero"
+    }
+  },
+  "刺痛盾阵": {
+    "zh_CN": {
+      "string": "刺痛盾阵"
+    },
+    "zh_TW": {
+      "string": "刺痛盾陣"
+    },
+    "en_US": {
+      "string": "Phalanx of Thorns"
+    },
+    "ja_JP": {
+      "string": "攻守一体"
+    },
+    "ko_KR": {
+      "string": "고통의 방패벽"
+    },
+    "es_ES": {
+      "string": "Falange de espinas"
+    }
+  },
+  "呼吼炽焰": {
+    "zh_CN": {
+      "string": "呼吼炽焰"
+    },
+    "zh_TW": {
+      "string": "呼吼熾焰"
+    },
+    "en_US": {
+      "string": "Howling Flame"
+    },
+    "ja_JP": {
+      "string": "烈火咆哮"
+    },
+    "ko_KR": {
+      "string": "포효의 화염"
+    },
+    "es_ES": {
+      "string": "Llama aullante"
+    }
+  },
+  "大地的弃子": {
+    "zh_CN": {
+      "string": "大地的弃子"
+    },
+    "zh_TW": {
+      "string": "大地的棄子"
+    },
+    "en_US": {
+      "string": "Those Forsaken by the Land"
+    },
+    "ja_JP": {
+      "string": "大地に見捨てられし者"
+    },
+    "ko_KR": {
+      "string": "대지에게 버림받은 존재"
+    },
+    "es_ES": {
+      "string": "Los abandonados por la tierra"
+    }
+  },
+  "安于磐石": {
+    "zh_CN": {
+      "string": "安于磐石"
+    },
+    "zh_TW": {
+      "string": "安於磐石"
+    },
+    "en_US": {
+      "string": "Rock Solid"
+    },
+    "ja_JP": {
+      "string": "盤石安定"
+    },
+    "ko_KR": {
+      "string": "흔들림 없는 기반"
+    },
+    "es_ES": {
+      "string": "Sólido como una roca"
+    }
+  },
+  "山中见犼": {
+    "zh_CN": {
+      "string": "山中见犼"
+    },
+    "zh_TW": {
+      "string": "山中見犼"
+    },
+    "en_US": {
+      "string": "Howlers of the Crag"
+    },
+    "ja_JP": {
+      "string": "山の獣吼"
+    },
+    "ko_KR": {
+      "string": "산을 울리는 외침"
+    },
+    "es_ES": {
+      "string": "Aulladores del peñasco"
+    }
+  },
+  "山犼争王": {
+    "zh_CN": {
+      "string": "山犼争王"
+    },
+    "zh_TW": {
+      "string": "山犼爭王"
+    },
+    "en_US": {
+      "string": "King of the Crag"
+    },
+    "ja_JP": {
+      "string": "決勝！山吼王"
+    },
+    "ko_KR": {
+      "string": "하울러 전쟁"
+    },
+    "es_ES": {
+      "string": "Rey del peñasco"
+    }
+  },
+  "弩斧相应": {
+    "zh_CN": {
+      "string": "弩斧相应"
+    },
+    "zh_TW": {
+      "string": "弩斧相應"
+    },
+    "en_US": {
+      "string": "Ballista and Axe"
+    },
+    "ja_JP": {
+      "string": "弩斧連携"
+    },
+    "ko_KR": {
+      "string": "활과 도끼의 연계"
+    },
+    "es_ES": {
+      "string": "Balista y hacha"
+    }
+  },
+  "忿鼓咆声": {
+    "zh_CN": {
+      "string": "忿鼓咆声"
+    },
+    "zh_TW": {
+      "string": "忿鼓咆聲"
+    },
+    "en_US": {
+      "string": "Raging Drummer"
+    },
+    "ja_JP": {
+      "string": "天鼓咆哮"
+    },
+    "ko_KR": {
+      "string": "분노의 포효"
+    },
+    "es_ES": {
+      "string": "Tamborilero enfurecido"
+    }
+  },
+  "怨憎雾海": {
+    "zh_CN": {
+      "string": "怨憎雾海"
+    },
+    "zh_TW": {
+      "string": "怨憎霧海"
+    },
+    "en_US": {
+      "string": "Sea of Loathing"
+    },
+    "ja_JP": {
+      "string": "憎悪海原"
+    },
+    "ko_KR": {
+      "string": "원한의 장막"
+    },
+    "es_ES": {
+      "string": "Mar del aborrecimiento"
+    }
+  },
+  "撼山雾火": {
+    "zh_CN": {
+      "string": "撼山雾火"
+    },
+    "zh_TW": {
+      "string": "撼山霧火"
+    },
+    "en_US": {
+      "string": "Earthshaking Hazefyre"
+    },
+    "ja_JP": {
+      "string": "山震わす霧火"
+    },
+    "ko_KR": {
+      "string": "산을 흔드는 안갯불"
+    },
+    "es_ES": {
+      "string": "Bruma ardiente sacudetierras"
+    }
+  },
+  "旁门外道": {
+    "zh_CN": {
+      "string": "旁门外道"
+    },
+    "zh_TW": {
+      "string": "旁門外道"
+    },
+    "en_US": {
+      "string": "Unorthodox Tactics"
+    },
+    "ja_JP": {
+      "string": "異端外道"
+    },
+    "ko_KR": {
+      "string": "이단의 길"
+    },
+    "es_ES": {
+      "string": "Tácticas no convencionales"
+    }
+  },
+  "无机造物": {
+    "zh_CN": {
+      "string": "无机造物"
+    },
+    "zh_TW": {
+      "string": "無機造物"
+    },
+    "en_US": {
+      "string": "Inorganic Construct"
+    },
+    "ja_JP": {
+      "string": "無機的造物"
+    },
+    "ko_KR": {
+      "string": "무기물"
+    },
+    "es_ES": {
+      "string": "Constructo inorgánico"
+    }
+  },
+  "枯竭海退": {
+    "zh_CN": {
+      "string": "枯竭海退"
+    },
+    "zh_TW": {
+      "string": "枯竭海退"
+    },
+    "en_US": {
+      "string": "Withered Sea"
+    },
+    "ja_JP": {
+      "string": "枯海干潮"
+    },
+    "ko_KR": {
+      "string": "메마른 바다"
+    },
+    "es_ES": {
+      "string": "Mar marchito"
+    }
+  },
+  "死寂争鸣": {
+    "zh_CN": {
+      "string": "死寂争鸣"
+    },
+    "zh_TW": {
+      "string": "死寂爭鳴"
+    },
+    "en_US": {
+      "string": "Contention of Deathly Silences"
+    },
+    "ja_JP": {
+      "string": "死の争鳴"
+    },
+    "ko_KR": {
+      "string": "적막 속의 외침"
+    },
+    "es_ES": {
+      "string": "Contienda de silencios mortales"
+    }
+  },
+  "死寂表象": {
+    "zh_CN": {
+      "string": "死寂表象"
+    },
+    "zh_TW": {
+      "string": "死寂表象"
+    },
+    "en_US": {
+      "string": "Harrowing Æthillu"
+    },
+    "ja_JP": {
+      "string": "死の表象"
+    },
+    "ko_KR": {
+      "string": "적막의 가면"
+    },
+    "es_ES": {
+      "string": "Éthillu desgarrador"
+    }
+  },
+  "毒雾求生": {
+    "zh_CN": {
+      "string": "毒雾求生"
+    },
+    "zh_TW": {
+      "string": "毒霧求生"
+    },
+    "en_US": {
+      "string": "Survive the Gas"
+    },
+    "ja_JP": {
+      "string": "毒霧生存"
+    },
+    "ko_KR": {
+      "string": "독 안개 탈출"
+    },
+    "es_ES": {
+      "string": "Sobrevive al gas"
+    }
+  },
+  "污浊血脉": {
+    "zh_CN": {
+      "string": "污浊血脉"
+    },
+    "zh_TW": {
+      "string": "汙濁血脈"
+    },
+    "en_US": {
+      "string": "Blood Debased"
+    },
+    "ja_JP": {
+      "string": "汚れた血筋"
+    },
+    "ko_KR": {
+      "string": "오염된 혈맥"
+    },
+    "es_ES": {
+      "string": "Sangre corrompida"
+    }
+  },
+  "沉寂视界": {
+    "zh_CN": {
+      "string": "沉寂视界"
+    },
+    "zh_TW": {
+      "string": "沉寂視界"
+    },
+    "en_US": {
+      "string": "Silent Horizon"
+    },
+    "ja_JP": {
+      "string": "静寂域"
+    },
+    "ko_KR": {
+      "string": "고요의 영역"
+    },
+    "es_ES": {
+      "string": "Horizonte silencioso"
+    }
+  },
+  "浊流具现": {
+    "zh_CN": {
+      "string": "浊流具现"
+    },
+    "zh_TW": {
+      "string": "濁流具現"
+    },
+    "en_US": {
+      "string": "Turbidity Manifest"
+    },
+    "ja_JP": {
+      "string": "濁流具現"
+    },
+    "ko_KR": {
+      "string": "탁류 구현"
+    },
+    "es_ES": {
+      "string": "Manifestación de turbiedad"
+    }
+  },
+  "清波访客": {
+    "zh_CN": {
+      "string": "清波访客"
+    },
+    "zh_TW": {
+      "string": "清波訪客"
+    },
+    "en_US": {
+      "string": "Visitors of Qingbo"
+    },
+    "ja_JP": {
+      "string": "清波来たれり"
+    },
+    "ko_KR": {
+      "string": "청파의 방문객"
+    },
+    "es_ES": {
+      "string": "Visitantes de Qingbo"
+    }
+  },
+  "溶解窥看": {
+    "zh_CN": {
+      "string": "溶解窥看"
+    },
+    "zh_TW": {
+      "string": "溶解窺看"
+    },
+    "en_US": {
+      "string": "Eyes of Solvent-Kind"
+    },
+    "ja_JP": {
+      "string": "溶けゆく視線"
+    },
+    "ko_KR": {
+      "string": "스며드는 시선"
+    },
+    "es_ES": {
+      "string": "Ojos de la estirpe disolvente"
+    }
+  },
+  "潜流绝窟": {
+    "zh_CN": {
+      "string": "潜流绝窟"
+    },
+    "zh_TW": {
+      "string": "潛流絕窟"
+    },
+    "en_US": {
+      "string": "Underflow Chasm"
+    },
+    "ja_JP": {
+      "string": "暗流洞窟"
+    },
+    "ko_KR": {
+      "string": "보이지 않는 흐름의 심연"
+    },
+    "es_ES": {
+      "string": "Sima subacuática"
+    }
+  },
+  "潮涌遗恨": {
+    "zh_CN": {
+      "string": "潮涌遗恨"
+    },
+    "zh_TW": {
+      "string": "潮湧遺恨"
+    },
+    "en_US": {
+      "string": "Tidal Grief"
+    },
+    "ja_JP": {
+      "string": "潮の断末魔"
+    },
+    "ko_KR": {
+      "string": "조류가 남긴 잔념"
+    },
+    "es_ES": {
+      "string": "Duelo de las mareas"
+    }
+  },
+  "灼痛疤痕": {
+    "zh_CN": {
+      "string": "灼痛疤痕"
+    },
+    "zh_TW": {
+      "string": "灼痛疤痕"
+    },
+    "en_US": {
+      "string": "Searing Scars"
+    },
+    "ja_JP": {
+      "string": "灼ける傷跡"
+    },
+    "ko_KR": {
+      "string": "작열의 흉터"
+    },
+    "es_ES": {
+      "string": "Marcas de calcinación"
+    }
+  },
+  "狂冲盾止": {
+    "zh_CN": {
+      "string": "狂冲盾止"
+    },
+    "zh_TW": {
+      "string": "狂衝盾止"
+    },
+    "en_US": {
+      "string": "Rampaging Shields"
+    },
+    "ja_JP": {
+      "string": "突進阻止"
+    },
+    "ko_KR": {
+      "string": "돌격의 방패"
+    },
+    "es_ES": {
+      "string": "Escudos desenfrenados"
+    }
+  },
+  "矢影环伺": {
+    "zh_CN": {
+      "string": "矢影环伺"
+    },
+    "zh_TW": {
+      "string": "矢影環伺"
+    },
+    "en_US": {
+      "string": "Bolts and Shadows"
+    },
+    "ja_JP": {
+      "string": "矢影包囲"
+    },
+    "ko_KR": {
+      "string": "다가오는 위협"
+    },
+    "es_ES": {
+      "string": "Rayos y sombras"
+    }
+  },
+  "血肉熔点": {
+    "zh_CN": {
+      "string": "血肉熔点"
+    },
+    "zh_TW": {
+      "string": "血肉熔點"
+    },
+    "en_US": {
+      "string": "Melting Point of Flesh"
+    },
+    "ja_JP": {
+      "string": "身体融解"
+    },
+    "ko_KR": {
+      "string": "혈육의 융해점"
+    },
+    "es_ES": {
+      "string": "Punto de fusión de la carne"
+    }
+  },
+  "霜冻联结": {
+    "zh_CN": {
+      "string": "霜冻联结"
+    },
+    "zh_TW": {
+      "string": "霜凍聯結"
+    },
+    "en_US": {
+      "string": "Cryostatic Connection"
+    },
+    "ja_JP": {
+      "string": "氷霜リンク"
+    },
+    "ko_KR": {
+      "string": "서리 공명"
+    },
+    "es_ES": {
+      "string": "Conexión criostática"
+    }
+  }
+}
