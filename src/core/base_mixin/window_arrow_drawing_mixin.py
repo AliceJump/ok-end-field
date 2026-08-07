@@ -129,15 +129,17 @@ class WindowArrowOverlay(QWidget):
             width = max(1, right - left)
             height = max(1, bottom - top)
 
-            screen = QGuiApplication.screenAt(QPoint(left, top)) or QGuiApplication.primaryScreen()
-            ratio = float(screen.devicePixelRatio()) if screen is not None else 1.0
-            ratio = ratio if ratio > 0 else 1.0
+            # 物理像素 -> Qt 逻辑坐标。不能简单用 物理/该屏DPR：
+            # 混合 DPI 多屏下 Qt 的屏幕逻辑 origin 不等于 物理origin/DPR，
+            # 否则 overlay 会向 x 正方向偏移（见 src/core/screen_coords.py 注释）。
+            from src.core.screen_coords import physical_rect_to_logical
+            lx, ly, lw, lh = physical_rect_to_logical(left, top, width, height)
 
             self.setGeometry(
-                int(round(left / ratio)),
-                int(round(top / ratio)),
-                max(1, int(round(width / ratio))),
-                max(1, int(round(height / ratio))),
+                int(round(lx)),
+                int(round(ly)),
+                max(1, int(round(lw))),
+                max(1, int(round(lh))),
             )
             if self._arrows and self._should_show_overlay():
                 self.show()

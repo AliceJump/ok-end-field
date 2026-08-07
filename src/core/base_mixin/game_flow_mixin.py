@@ -376,7 +376,7 @@ class GameFlowMixin:
         result = self.wait_until(
             lambda: self.is_main(esc=False, need_active=need_active),
             time_out=observe_time,
-            settle_time=0.5,
+            settle_time=1.0,
             raise_if_not_found=False,
         )
         if not result and self.active_time() - start < time_out:
@@ -384,7 +384,7 @@ class GameFlowMixin:
             result = self.wait_until(
                 lambda: self.is_main(esc=esc, need_active=need_active),
                 time_out=max(0.01, time_out - (self.active_time() - start)),
-                settle_time=0.5,
+                settle_time=1.0,
                 raise_if_not_found=False,
             )
 

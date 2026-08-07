@@ -16,12 +16,14 @@ def install_startup_patches():
     from src.patches.startup_window_patch import install_startup_window_patch
     from src.patches.task_config_lock_patch import install_task_config_lock_patch
     from src.patches.screenshot_sidecar_patch import install_screenshot_sidecar_patch
+    from src.patches.overlay_dpi_patch import install_overlay_dpi_patch
 
     install_cascade_dropdown_patch()
     install_conditional_rotation_patch()
     install_i18n_collection_patch()
     install_log_upload_patch()
     install_ocr_text_fix_patch()
+    install_overlay_dpi_patch()
     install_screenshot_sidecar_patch()
     install_startup_window_patch()
     install_task_config_lock_patch()
