@@ -63,6 +63,65 @@ class MapMixin(BaseEfTask):
         # 执行附近传送点传送
         return self.to_near_transfer_point(after_track=False, need_location_list=need_location_list)
 
+    def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False):
+        """
+        清理地图标记筛选，并可选择保留指定标记类型。
+
+        Args:
+            need_reserve_icon_name: 需要保留的标记名称(OCR文本或Feature名称)
+            ocr: True使用OCR查找标记，False使用Feature匹配
+
+        Returns:
+            bool: 操作成功返回True，否则返回False
+        """
+
+        # 打开标记显示管理
+        if not self.wait_click_feature(
+                feature=fL.map_filter_icon,
+                time_out=10,
+                raise_if_not_found=False,
+        ):
+            return False
+
+        # 点击清空选中，避免地图筛选导致传送点不显示
+        if not self.wait_click_feature(
+                feature=fL.to_max_produce_num,
+                box=self.box_of_screen(0.117, 0.902, 0.141, 0.941),
+                time_out=10,
+                raise_if_not_found=False,
+        ):
+            return False
+        self.wait_ui_stable(refresh_interval=0.2)
+
+        # 如需保留特定标记，则尝试查找并勾选
+        if need_reserve_icon_name:
+            for _ in range(2):
+                if ocr:
+                    result = self.wait_click_ocr(
+                        match=re.compile(need_reserve_icon_name),
+                        box=self.box_of_screen(0.003, 0.993, 0.281, 0.063),
+                        time_out=2,
+                        log=True,
+                    )
+                else:
+                    result = self.wait_click_feature(
+                        feature=need_reserve_icon_name,
+                        box=self.box_of_screen(0.003, 0.993, 0.281, 0.063),
+                        time_out=2,
+                        raise_if_not_found=False,
+                    )
+
+                if result:
+                    break
+
+                self.scroll_relative(0.1, 0.5, -1)
+
+        # 退出标记管理界面
+        self.back()
+        self.wait_ui_stable(refresh_interval=0.2)
+
+        return True
+
     def to_near_transfer_point(self, after_track, need_location_list=None):
         """
         在地图上寻找最近的传送点并执行传送。
