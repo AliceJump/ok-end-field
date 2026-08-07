@@ -162,7 +162,7 @@ def wait_click_ocr(
 )
 ```
 
-它调用 `wait_ocr`，命中后点击并返回 OCR 结果；否则记录日志并返回 `None`。注意：`recheck_time > 0` 当前会固定等待 1 秒后重新 OCR，而不是使用该数值作为等待秒数。
+它调用 `wait_ocr`，命中后点击并返回 OCR 结果；否则记录日志并返回 `None`。注意：`recheck_time > 0` 时会等待 `recheck_time` 秒后重新 OCR，以新坐标再执行点击。
 
 ```text
 def login_screenshot(self, need_active=True)
@@ -336,6 +336,7 @@ map_key = hotkeys.get("Map Key", "m")
 | `Game Hotkey Config` | 通用、工业、战斗键位 |
 | `Battle Config` | `DEFAULT_BATTLE_CONFIG` 战斗参数 |
 | `Ensure Main Once Action Sleep` | `SingleActionWithDelay` |
+| `Zip Line Config` | 送货/淤积点滑索路线与滚动设置 |
 
 `get_global_config(name)` 返回持久化 `ok.util.config.Config`。未知名称只有在已加载配置中能找到对应键时才回退返回该配置，否则抛 `RuntimeError`。全局配置页由 `get_all_visible_configs()` 和 `GlobalConfigTab` 构建。
 
@@ -406,7 +407,7 @@ def auto_battle(self, no_battle: bool = False)
 
 关键语义：
 
-- `in_team` 要求四个 `skill_1..4` 中至少三个特征存在。
+- `in_team` 从首个框开始匹配 `skill_1`，随后再命中一个连续技能即确认队伍状态（至少 2 个特征；`skill_1` 位于最后一个框时为单人队伍，1 个即可）。
 - `in_combat` 要求技能条数量达到阈值、处于队伍且没有等级 UI。
 - `is_combat_ended` 要求内部退出条件连续命中两次；该条件是“出现等级 UI 或不在队伍”。
 - `use_ult(None)` 按 `1..4` 寻找可用终极技；传值时只尝试该角色。返回是否释放成功。

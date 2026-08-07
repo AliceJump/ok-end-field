@@ -119,11 +119,19 @@ ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask)
 | 4 | `DeliveryTask` | `src.tasks.onetime.DeliveryTask` |
 | 5 | `BattleTask` | `src.tasks.onetime.BattleTask` |
 | 6 | `DemoDrawTask` | `src.tasks.onetime.DemoDrawTask` |
-| 7 | `Test` | `src.tasks.onetime.Test` |
-| 8 | `YingTuoTask` | `src.tasks.onetime.YingTuoTask` |
-| 9 | `TestStartGame` | `src.tasks.onetime.TestStartGame` |
-| 10 | `RealtimeDetectTask` | `src.tasks.onetime.RealtimeDetectTask` |
-| 11 | `DiagnosisTask` | `src.tasks.onetime.DiagnosisTask` |
+| 7 | `TestBattleToEnd` | `src.tasks.test.TestBattleToEnd` |
+| 8 | `TestArrowAngle` | `src.tasks.test.TestArrowAngle` |
+| 9 | `TestDragScan` | `src.tasks.test.TestDragScan` |
+| 10 | `TestPauseTiming` | `src.tasks.test.TestPauseTiming` |
+| 11 | `TestBlueDotAlign` | `src.tasks.test.TestBlueDotAlign` |
+| 12 | `TestLevelRead` | `src.tasks.test.TestLevelRead` |
+| 13 | `TestDemoGraphic` | `src.tasks.test.TestDemoGraphic` |
+| 14 | `YingTuoTask` | `src.tasks.onetime.YingTuoTask` |
+| 15 | `TestStartGame` | `src.tasks.onetime.TestStartGame` |
+| 16 | `RealtimeDetectTask` | `src.tasks.test.RealtimeDetectTask` |
+| 17 | `DiagnosisTask` | `src.tasks.test.DiagnosisTask` |
+| 18 | `TestBattleSlotDetect` | `src.tasks.test.TestBattleSlotDetect` |
+| 19 | `TestCombatTemplateMatch` | `src.tasks.test.TestCombatTemplateMatch` |
 
 `PeriodicScreenshotTask.py` 存在但未注册。`TakeDeliveryTask` 的类声明还包含 `TriggerTask`，但它当前只注册在一次性任务列表中。
 
@@ -284,6 +292,7 @@ self.default_config_group.update({...})
 - `Game Hotkey Config`
 - `Battle Config`
 - `Ensure Main Once Action Sleep`
+- `Zip Line Config`
 
 战斗任务通过 `BattleMixin.get_battle_config()` 读取。任务可选择全局或独立战斗配置；绑定账号上下文后，账号任务覆盖优先级最高。不要在多个任务中复制全局战斗默认值。
 
@@ -330,28 +339,46 @@ self.press_combat_key("e")      # combat
 
 ## 7. 测试清单
 
-当前 `tests/` 有 18 个测试模块：
+当前 `tests/` 有 36 个测试模块：
 
 | 文件 | 主要覆盖 |
 |------|----------|
 | `TestAccountBattleConfig.py` | 账号配置可见性、快照合并、战斗配置优先级 |
 | `TestAccountConfigBlacklist.py` | 任务账号配置黑名单 |
+| `TestAccountOverrideMixin.py` | 账号覆盖 Mixin：仅任务运行时启用覆盖、其余回退默认 |
 | `TestAutoCombat.py` | 战斗图片识别、技能条、等级和排轴解析 |
+| `TestAutoPick.py` | 自动拾取规则（可生产植物默认跳过与开关） |
 | `TestCheckLang.py` | 源码语言 key 与统一 JSON 的 `zh_CN/zh_TW` 引用 |
+| `TestConditionalRotation.py` | 排轴条件旋转 AST 归一化 |
+| `TestConditionalRotationCombat.py` | 条件旋转战斗执行（if/else 分支） |
+| `TestConditionalRotationGui.py` | 条件旋转 GUI 动作/条件格式化 |
+| `TestDailyBattleToEnd.py` | 日常刷本到结束：YOLO 命中禁用中键点击、奖励等待 |
+| `TestDailyBoatState.py` | 日常联运状态共享范围 |
+| `TestDailyConfigMigration.py` | 日常地区布尔键合并迁移 |
+| `TestDailyRegionalRunner.py` | 日常地区执行器（仅购买/回调/重试） |
+| `TestDailyRewardWaits.py` | 日常奖励领取等待逻辑 |
 | `TestDailyTaskFinallyFile.py` | 日常汇总文件生成和清理 |
 | `TestDeliveryAreaConfig.py` | 送货地区、搜索区域、目标和券种配置 |
+| `TestDeliveryRewardsClaim.py` | 送货奖励领取状态处理 |
+| `TestEfInteraction.py` | 窗口激活与后台消息交互 |
 | `TestEssenceImageFeatures.py` | 装备词条 Feature 资产存在性 |
 | `TestEssenceRecognizer.py` | 装备词条 OCR 纯解析和等级附加 |
+| `TestGameWindow.py` | 游戏窗口查找（类名与可执行文件匹配） |
 | `TestGuiI18n.py` | GUI 翻译调用和运行时采集污染 |
 | `TestItemMapQuery.py` | 物品地图查询和筛选 |
+| `TestLogZipDedup.py` | 日志打包图片去重 |
 | `TestOutpostExchange.py` | 据点兑换优先级与排除逻辑 |
 | `TestPoLocaleConsistency.py` | gettext catalog 完整性和一致性 |
+| `TestPressEsc.py` | `press_esc` 走任务键盘控制器 |
 | `TestRuntimeMixinFeatureClick.py` | 普通/Alt Feature 点击路径 |
+| `TestScreenshotSidecar.py` | 截图侧边数据序列化 |
 | `TestSequenceParser.py` | 中英文逗号序列和整数序列解析 |
+| `TestStateDrivenWaits.py` | 状态驱动的等待（ensure_main/ensure_map/safe_back 等） |
 | `TestTakeDeliveryFunctions.py` | 运送委托 OCR 样本处理 |
 | `TestWarehouseSwitchOCR.py` | 仓库状态 OCR 样本 |
 | `TestYoloDetect.py` | 检测注入、ROI/overlay 和参数验证 |
 | `TestYoloModelRegistry.py` | 模型配置合并及目标路由 |
+| `TestZipLineConfig.py` | 滑索全局配置分组与旧配置迁移 |
 
 推荐从仓库根目录运行：
 
