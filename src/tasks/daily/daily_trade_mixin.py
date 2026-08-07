@@ -6,9 +6,15 @@ from src.data.world_map import areas_list
 from src.data.world_map_utils import get_world_map_matcher
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.common import GoodsInfo
+from src.data.lang import LangAccessor
+
+# 匹配纯数字文本（存货/价格 OCR）
+_DIGITS_ONLY_RE = re.compile(r"^\d+$")
 
 
 class DailyTradeFeature:
+    # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
+    lang: LangAccessor
 
     def __init__(self, task):
         self._task = task
@@ -16,8 +22,8 @@ class DailyTradeFeature:
         task.default_config.update({
             "只买不卖": False,
         })
-        buy_sell_dict = dict()
-        buy_sell_desc_dict = dict()
+        buy_sell_dict = {}
+        buy_sell_desc_dict = {}
         for area in areas_list:
             buy_sell_dict[f"{area}买入价"] = 900
             buy_sell_dict[f"{area}卖出价"] = 4500
@@ -56,7 +62,7 @@ class DailyTradeFeature:
     def collect_market_goods_info(self):
         def ocr_stock_quantity() -> int:
             stock_piece = self.ocr(
-                match=re.compile(r"^\d+$"),
+                match=_DIGITS_ONLY_RE,
                 box=self.box_of_screen(353 / 1920, 607 / 1080, 613 / 1920, 635 / 1080),
                 log=True,
             )
@@ -131,14 +137,14 @@ class DailyTradeFeature:
             self.next_frame()
             stock_quantity = ocr_stock_quantity()
             good_piece = self.ocr(
-                match=re.compile(r"^\d+$"),
+                match=_DIGITS_ONLY_RE,
                 box=self.box_of_screen(1527 / 1920, 324 / 1080, 1600 / 1920, 400 / 1080),
                 frame_processor=self.make_hsv_isolator(hR.DARK_GRAY_TEXT),
                 log=True,
             )
             if not good_piece:
                 good_piece = self.ocr(
-                    match=re.compile(r"^\d+$"),
+                    match=_DIGITS_ONLY_RE,
                     box=self.box_of_screen(1527 / 1920, 324 / 1080, 1600 / 1920, 400 / 1080),
                     log=True,
                 )
@@ -241,7 +247,7 @@ class DailyTradeFeature:
         buy_good = min(processed_goods, key=lambda x: x.good_price)
 
         self.log_info(
-            f"推荐购买 | 名称:{buy_good.good_name} " f"| 价格:{buy_good.good_price}"
+            f"推荐购买 | 名称:{buy_good.good_name} | 价格:{buy_good.good_price}"
         )
 
         try:
@@ -256,7 +262,7 @@ class DailyTradeFeature:
             self.log_info("===== 推荐出售列表 =====")
             for good in sell_goods:
                 self.log_info(
-                    f"推荐出售 | 名称:{good.good_name} " f"| 卖价:{good.friend_price}"
+                    f"推荐出售 | 名称:{good.good_name} | 卖价:{good.friend_price}"
                 )
         else:
             self.log_info("没有符合出售条件的货物")
@@ -329,15 +335,18 @@ class DailyTradeFeature:
                 buy_good, sell_goods, can_buy = self.analyze_goods_info(
                     good_infos, buy_price, sell_price
                 )
-            puls_minus_box = self.box_of_screen(0.36, 0.6630, 0.592, 0.8019)
+            # 「即将溢出」状态强制购买：该商品即将溢出、必须买入，
+            # 即使不满足价格上限。实际 OCR 文本为「即将溢出」四字，
+            # 用一个「即将|溢出」合并正则匹配以便容错：OCR 可能把
+            # 四字识别为一个文本块，也可能拆成「即将」「溢出」两个块，
+            # 任一命中即视为即将溢出（见 find_boxes_by_name 的 OR 语义）。
+            if buy_good and not can_buy and self.wait_ocr(
+                match=self.lang.daily_trade_mixin.impending_overflow,
+                box=self.box.top_left,
+                time_out=3,
+            ):
+                can_buy = True
             if buy_good:
-                if not can_buy:
-                    if self.wait_ocr(
-                        match=[self.lang.daily_trade_mixin.k_f48bcfb6, self.lang.daily_trade_mixin.k_6174dac7],
-                        box=self.box.top_left,
-                        time_out=3,
-                    ):
-                        can_buy = True
                 if can_buy:
                     back_to_area_deadline = self.active_time() + 20
                     while not self.wait_ocr(
@@ -371,14 +380,15 @@ class DailyTradeFeature:
 
             if after_buy is not None:
                 after_buy(area)
-                if sell_goods:
-                    if not self.wait_click_ocr(
-                            match=self.lang.daily_trade_mixin.k_33fb3f9c,
-                            box=self.box.top,
-                            time_out=5,
-                    ):
-                        self.log_info("未能切回弹性需求物资，跳过卖出操作")
-                        continue
+
+            if sell_goods:
+                if not self.wait_click_ocr(
+                        match=self.lang.daily_trade_mixin.k_33fb3f9c,
+                        box=self.box.top,
+                        time_out=5,
+                ):
+                    self.log_info("未能切回弹性需求物资，跳过卖出操作")
+                    continue
 
             for sell_good in sell_goods:
                 if sell_good.stock_quantity <= 0:

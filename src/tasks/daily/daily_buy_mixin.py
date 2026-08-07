@@ -3,26 +3,32 @@ import re
 from src.data.world_map import areas_list
 from src.core.sequence_parser import parse_sequence
 from src.data.FeatureList import FeatureList as fL
+from src.data.lang import LangAccessor
 
 
 class DailyBuyFeature:
+    # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
+    lang: LangAccessor
+    CFG_SHOP_WHITELIST = "购物白名单"
+    CFG_BUY_GIFT = "是否买礼物"
+
     def __init__(self, task):
         self._task = task
         task.default_config.update({
-            "购物白名单": [],
-            "是否买礼物": True,
+            self.CFG_SHOP_WHITELIST: [],
+            self.CFG_BUY_GIFT: True,
         })
         task.config_description.update({
-            "购物白名单": (
+            self.CFG_SHOP_WHITELIST: (
                 "默认留空，表示购买「日用消耗」「工业货品」「人文物产」首行首个物资。\n"
                 "更多用法参见 ./docs/日常任务.md > 买物资 。"
             ),
-            "是否买礼物": (
+            self.CFG_BUY_GIFT: (
                 "是否购买「人文物产」（同样应用购物白名单序列）。"
             ),
         })
         task.default_config_group.update({
-            "⭐买物资": ["购物白名单", "是否买礼物"],
+            "⭐买物资": [self.CFG_SHOP_WHITELIST, self.CFG_BUY_GIFT],
         })
 
     def __getattr__(self, name):
@@ -31,7 +37,7 @@ class DailyBuyFeature:
         self.info_set("current_task", "buy_staple_goods")
         self.log_info("开始买物资任务")
         #
-        pl = [re.compile(i) for i in self.config.get("购物白名单", [])]
+        pl = [re.compile(i) for i in self.config.get(self.CFG_SHOP_WHITELIST, [])]
         #
         if target_areas is None:
             target_areas = areas_list
@@ -55,7 +61,7 @@ class DailyBuyFeature:
             self.log_info("购买「工业货品」")
             self.buy(pattern_list=pl)
             #
-            if self.config.get("是否买礼物", True):
+            if self.config.get(self.CFG_BUY_GIFT, True):
                 self.click_relative(100 / 3840, 972 / 2160)
                 self.wait_ui_stable(refresh_interval=0.2)
                 self.log_info("购买「人文物产」")
@@ -71,7 +77,7 @@ class DailyBuyFeature:
                 self.log_info("未找到白名单货品，跳过")
                 return
         for good in good_list:
-            self.log_info(f"找到白名单货品点击购买")
+            self.log_info("找到白名单货品点击购买")
             if good:
                 self.click(good)
             else:

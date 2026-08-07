@@ -1,4 +1,5 @@
 from src.data.world_map import goods_dict
+from src.data.lang import LangAccessor
 from src.tasks.daily.daily_credit_mixin import DailyCreditMixin
 from src.tasks.daily.misc.daily_boat_mixin import DailyBoatMixin
 from src.tasks.daily.misc.daily_craft_mixin import DailyCraftMixin
@@ -15,6 +16,8 @@ class DailyRoutineFeature(
     DailyRewardMixin,
     DailyBoatMixin,
 ):
+    # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
+    lang: LangAccessor
     BOAT_STAGES = ['收集线索', '制造舱', '培养舱']
     ACTIVITY_REWARDS = ['周常奖励', '理智补给', '刮刮乐']
 

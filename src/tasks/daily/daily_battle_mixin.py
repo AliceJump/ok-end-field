@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from ok import TaskDisabledException
 from src.data.FeatureList import FeatureList as fL
+from src.data.lang import LangAccessor
 from src.data.world_map import stages_cost, higher_order_feature_dict, STAGE_CATEGORY_ENERGY_POOLING, \
     STAGE_CATEGORY_DANGER_REHEARSAL
 from src.data.world_map import stages_dict, stages_list
@@ -42,6 +43,8 @@ class DailyBattleFeature:
     """
     日常战斗功能类，用于处理日常战斗任务，包括刷取体力副本、处理奖励档位切换等功能。
     """
+    # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
+    lang: LangAccessor
     # 配置项常量定义
     CFG_STAGE_REWARD_TIER = "体力本奖励档位"
     REWARD_TIER_KEEP = "保持当前"
@@ -51,6 +54,9 @@ class DailyBattleFeature:
     CFG_PRE_ENTER_TEAM_SWITCH = "指定的队伍编号"
     PRE_ENTER_TEAM_SWITCH_NONE = "不换队伍"
     PRE_ENTER_TEAM_SWITCH_TEAM_OPTIONS = ["1", "2", "3", "4", "5"]
+    CFG_USE_LIMITED_STAMINA_POTION = "消耗限时体力药"
+    CFG_STAMINA_START_DATE = "刷体力开始日期"
+    CFG_STAMINA_CONTINUE_COUNT = "体力刷完后继续刷取次数"
 
     def __init__(self, task):
         self._task = task
@@ -59,25 +65,25 @@ class DailyBattleFeature:
         today_str = datetime.now().strftime("%Y-%m-%d")
         self._task.default_config.update({
             "⭐刷体力": True,
-            "消耗限时体力药": False,
+            self.CFG_USE_LIMITED_STAMINA_POTION: False,
             "体力本": "干员经验",
             self.CFG_STAGE_REWARD_TIER: self.REWARD_TIER_KEEP,
-            "刷体力开始日期": today_str,  # 默认当天，可自定义
+            self.CFG_STAMINA_START_DATE: today_str,  # 默认当天，可自定义
             "刷本序列": [],  # 为空表示不启用自动轮换
             "仅站桩": False,
-            "体力刷完后继续刷取次数": 0,
+            self.CFG_STAMINA_CONTINUE_COUNT: 0,
             self.CFG_PRE_ENTER_TEAM_SWITCH: self.PRE_ENTER_TEAM_SWITCH_NONE,
         })
         self._task.default_config_group.update(
             {
                 "⭐刷体力": [
-                    "消耗限时体力药",
+                    self.CFG_USE_LIMITED_STAMINA_POTION,
                     "体力本",
                     "体力本配置",
                     "战斗相关选项",
                 ],
-                "体力本配置": [self.CFG_STAGE_REWARD_TIER, "刷体力开始日期", "刷本序列"],
-                "淤积点相关选项": ["仅站桩", "体力刷完后继续刷取次数"],
+                "体力本配置": [self.CFG_STAGE_REWARD_TIER, self.CFG_STAMINA_START_DATE, "刷本序列"],
+                "淤积点相关选项": ["仅站桩", self.CFG_STAMINA_CONTINUE_COUNT],
                 "战斗相关选项": [
                     self.CFG_PRE_ENTER_TEAM_SWITCH,
                 ],
@@ -88,7 +94,7 @@ class DailyBattleFeature:
             "⭐刷体力": (
                 "是否消耗所有「理智」刷取培养材料。"
             ),
-            "消耗限时体力药": (
+            self.CFG_USE_LIMITED_STAMINA_POTION: (
                 "如果勾选，将优先全部用掉限时为‘小时’的体力药，\n"
                 "如有‘天’单位的体力药，则按 2*m/n（向上取整）消耗。"
             ),
@@ -104,14 +110,14 @@ class DailyBattleFeature:
                 "若启用，则开始挑战后角色原地不动（不输出），\n"
                 "仅对「重度能量淤积点」生效。可以用于建好防御塔情形，避免角色离开副本区域。"
             ),
-            "刷体力开始日期": (
+            self.CFG_STAMINA_START_DATE: (
                 "刷体力自动切换的起始日期，格式如2026-04-05。\n"
                 "用于计算今天是第几天，配合刷本序列使用。"
             ),
             "刷本序列": (
-                f"会根据开始日期自动轮换，留空表示不启用自动轮换。"
+                "会根据开始日期自动轮换，留空表示不启用自动轮换。"
             ),
-            "体力刷完后继续刷取次数": (
+            self.CFG_STAMINA_CONTINUE_COUNT: (
                 "结算时点击「放弃」而非「领取」，不消耗体力。\n"
                 "只支持能量淤积点。\n"
                 "0 表示不启用。"
@@ -174,7 +180,7 @@ class DailyBattleFeature:
     def _switch_team_before_activate_for_gather(self):
         mode = str(self.config.get(self.CFG_PRE_ENTER_TEAM_SWITCH, self.PRE_ENTER_TEAM_SWITCH_NONE) or "").strip()
         if mode == self.PRE_ENTER_TEAM_SWITCH_NONE:
-            return True
+            return
 
         self.ensure_main()
         self.press_key("u")
@@ -191,7 +197,6 @@ class DailyBattleFeature:
         )
 
         self.ensure_main()
-        return True
 
     def _reset_battle_state(self):
         self.battle_ctx = BattleContext(today_reward_tier=self.REWARD_TIER_KEEP)
@@ -259,7 +264,7 @@ class DailyBattleFeature:
 
         seq = self.config.get("刷本序列", [])
         self.log_info(f"检测到刷本序列配置: {seq if seq else '(空)'}")
-        start_date = self.config.get("刷体力开始日期", "2026-04-05")
+        start_date = self.config.get(self.CFG_STAMINA_START_DATE, "2026-04-05")
         auto_stage = None
         explain = ""
 
@@ -278,9 +283,10 @@ class DailyBattleFeature:
                 invalid_stages = []
                 for raw_stage in seq_list:
                     parsed_stage_name, parsed_tier = self._split_stage_name_and_reward_tier(raw_stage)
-                    if parsed_stage_name not in self.stages_list:
-                        invalid_stages.append(raw_stage)
-                    elif parsed_tier and parsed_stage_name not in self.REWARD_TIER_STAGE_SET:
+                    if (
+                        parsed_stage_name not in self.stages_list
+                        or (parsed_tier and parsed_stage_name not in self.REWARD_TIER_STAGE_SET)
+                    ):
                         invalid_stages.append(raw_stage)
 
                 if invalid_stages:
@@ -346,7 +352,7 @@ class DailyBattleFeature:
         返回:
             bool: 成功（或不需要消耗）时返回 True，失败返回 False。
         """
-        if not self.config.get("消耗限时体力药", False):
+        if not self.config.get(self.CFG_USE_LIMITED_STAMINA_POTION, False):
             return True
         now_ticket = self.detect_ticket_number()
         max_eat = (MAX_STORAGE_TICKET - now_ticket) // ONE_MEDICINE_RESTORE_ENERGY
@@ -466,7 +472,7 @@ class DailyBattleFeature:
             else:
                 self.battle_ctx.no_battle = False
 
-            self.battle_ctx.extra_run_limit = max(0, int(self.config.get("体力刷完后继续刷取次数", 0) or 0))
+            self.battle_ctx.extra_run_limit = max(0, int(self.config.get(self.CFG_STAMINA_CONTINUE_COUNT, 0) or 0))
 
             # 检查是否支持体力刷完后继续刷取
             if self.battle_ctx.extra_run_limit > 0:
@@ -547,9 +553,7 @@ class DailyBattleFeature:
             self.wait_click_ocr(match=self.lang.daily_battle_mixin.k_b8a81b7a, box=self.box.bottom_right, time_out=5, recheck_time=1,
                                 alt=True)
             self.click_confirm()
-        if not self._switch_team_before_activate_for_gather():
-            self.mark_task_failure("淤积点激发前换队失败")
-            return False
+        self._switch_team_before_activate_for_gather()
         #
         if not self.wait_click_feature(feature=fL.trigger_gather_button, vertical_variance=0.2, horizontal_variance=0.05, time_out=5, settle_time=1, raise_if_not_found=False, alt=True):
             self.log_info("没有找到『激发』按钮")
@@ -823,11 +827,6 @@ class DailyBattleFeature:
             self.press_key("f")
         else:
             self.wait_pop_up(time_out=4)
-            # end_time = time.time()
-            # while not self.wait_ocr(match=self.lang.daily_battle_mixin.k_9294c931, time_out=1, box=self.box.top_left, log=True):
-            #     if time.time() - end_time > 30:
-            #         self.log_info("等待超时，进入挑战超时")
-            #         return False
         return self.auto_battle(no_battle=self.battle_ctx.no_battle)
 
     def to_end(self):
@@ -934,7 +933,7 @@ class DailyBattleFeature:
                         self.click(result)
                         self.ensure_main()
                     else:
-                        raise Exception("未找到追踪按钮")
+                        raise RuntimeError("未找到追踪按钮")
 
                 self.click(key="middle", after_sleep=0.3)
 
@@ -988,7 +987,7 @@ class DailyBattleFeature:
                     box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
                     max_run_time=1,
                 ):
-                    raise Exception("导航奖励点失败")
+                    raise RuntimeError("导航奖励点失败")
 
             return try_click_reward(allow_middle_click=not target_found_by_yolo, deep_search=True) or True
 

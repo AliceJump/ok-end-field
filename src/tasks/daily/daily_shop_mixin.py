@@ -1,21 +1,28 @@
 import re
 
 from src.data.FeatureList import FeatureList as fL
+from src.data.lang import LangAccessor
 
 
 class DailyShopFeature:
+    # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
+    lang: LangAccessor
+    CFG_BUY_CREDIT_SHOP = "⭐买信用商店"
+    CFG_KEEP_CREDIT = "信用商店保留信用"
+    CFG_CREDIT_SHOP_WARNING = "信用商店警告"
+
     def __init__(self, task):
         self._task = task
         task.default_config.update({
-            "⭐买信用商店": True,
-            "信用商店保留信用": 300,
+            self.CFG_BUY_CREDIT_SHOP: True,
+            self.CFG_KEEP_CREDIT: 300,
         })
         task.config_description.update({
-            "⭐买信用商店": (
+            self.CFG_BUY_CREDIT_SHOP: (
                 "是否在「采购中心/信用交易所」采购。\n"
                 "自动刷新 且 仅购买「武库配额」「嵌晶玉」。"
             ),
-            "信用商店保留信用": (
+            self.CFG_KEEP_CREDIT: (
                 "若剩余信用小于这个数值，则终止采购。"
             ),
         })
@@ -23,7 +30,7 @@ class DailyShopFeature:
         self.refresh_cost_list = [80, 120, 160, 201]
         self.credit_good_search_box = None
         task.default_config_group.update({
-            "⭐买信用商店": ["信用商店保留信用"],
+            self.CFG_BUY_CREDIT_SHOP: [self.CFG_KEEP_CREDIT],
         })
 
     def __getattr__(self, name):
@@ -69,7 +76,7 @@ class DailyShopFeature:
             if self.wait_feature(feature=fL.credit_shop_icon, raise_if_not_found=False, time_out=1):
                 return True
             self.back()
-        self.info_set("信用商店警告", f"返回采购页面失败，已重试{max_retry}次")
+        self.info_set(self.CFG_CREDIT_SHOP_WARNING, f"返回采购页面失败，已重试{max_retry}次")
         return False
 
     def get_cost(self):
@@ -99,7 +106,7 @@ class DailyShopFeature:
     def buy_once(self, sum_credit):
         self.wait_ui_stable(refresh_interval=0.5)
         normal_results = []
-        reserve_credit = self.config.get('信用商店保留信用', 300)
+        reserve_credit = self.config.get(self.CFG_KEEP_CREDIT, 300)
         self.log_info(f"开始信用商店优先购买，当前信用: {sum_credit}，保留信用: {reserve_credit}")
         if not self.back_shop():
             return False, sum_credit, False
@@ -136,7 +143,7 @@ class DailyShopFeature:
             item_name = getattr(item, "name", None) or f"未知商品#{idx}"
             self.log_info(f"尝试购买优先商品: {item_name}，当前信用: {sum_credit}")
             if not self.back_shop():
-                self.info_set("信用商店警告", "购买优先商品前未能返回采购页面")
+                self.info_set(self.CFG_CREDIT_SHOP_WARNING, "购买优先商品前未能返回采购页面")
                 return False, sum_credit, False
             self.click(item)
             self.wait_ui_stable(refresh_interval=0.5)
@@ -146,7 +153,7 @@ class DailyShopFeature:
                     self.log_info(f"商品: {item_name}，未识别到有效价格，折扣商品设置价格为10.000")
                     cost = 10
                 else:
-                    self.info_set("信用商店警告", "购买优先商品前未能获取价格信息")
+                    self.info_set(self.CFG_CREDIT_SHOP_WARNING, "购买优先商品前未能获取价格信息")
                     self.mark_task_failure(f"购买失败: {item_name}，原因: 未识别到有效价格且非折扣商品")
                     return False, sum_credit, False
             self.log_info(f"商品价格识别成功: {item_name}，价格: {cost}")
@@ -158,7 +165,7 @@ class DailyShopFeature:
                 if not self.back_shop():
                     return False, sum_credit, False
                 if cost != 10:
-                    self.info_set("信用商店警告", "购买优先商品时信用不足")
+                    self.info_set(self.CFG_CREDIT_SHOP_WARNING, "购买优先商品时信用不足")
                     self.mark_task_failure(f"购买失败: {item_name}，原因: 信用不足，当前信用: {sum_credit}，价格: {cost}")
                     self.back_shop()
                     return False, sum_credit, False
@@ -186,14 +193,14 @@ class DailyShopFeature:
                 return False
             success, sum_credit = self.refresh(sum_credit)
             if not success:
-                if sum_credit <= self.config.get('信用商店保留信用', 300):
+                if sum_credit <= self.config.get(self.CFG_KEEP_CREDIT, 300):
                     return True
                 else:
                     return self.buy_left(sum_credit)
         return True
 
     def buy_left(self, sum_credit):
-        reserve_credit = self.config.get('信用商店保留信用', 300)
+        reserve_credit = self.config.get(self.CFG_KEEP_CREDIT, 300)
         self.log_info(f"开始购买剩余可购商品，当前信用: {sum_credit}，保留信用: {reserve_credit}")
         if not self.back_shop():
             return False
@@ -202,7 +209,7 @@ class DailyShopFeature:
             item_name = getattr(item, "name", None) or f"未知商品#{idx}"
             self.log_info(f"尝试购买剩余商品: {item_name}，当前信用: {sum_credit}")
             if not self.back_shop():
-                self.info_set("信用商店警告", "购买剩余商品前未能返回采购页面")
+                self.info_set(self.CFG_CREDIT_SHOP_WARNING, "购买剩余商品前未能返回采购页面")
                 return False
             self.click(item)
             self.wait_ui_stable(refresh_interval=0.5)
