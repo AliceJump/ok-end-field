@@ -495,11 +495,13 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     if self.try_time > 5:
                         self.log_info("尝试次数过多，退出")
                         return False
-                    accepted_successfully = bool(self.wait_click_feature(
+                    accepted_successfully = self.wait_click_feature(
                         feature=fL.get_exchange_ticket,
                         time_out=3,
                         raise_if_not_found=False,
-                    ))
+                    ) or (
+                        self.wait_feature(feature=fL.one_task_to_map)
+                    )
                     if accepted_successfully:
                         self.log_info("接取成功")
                         return True

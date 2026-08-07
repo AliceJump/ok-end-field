@@ -365,15 +365,18 @@ class DailyBattleFeature:
         )  # 右上角加号
         self.wait_feature(feature=fL.rationality_supplement_page, time_out=5, raise_if_not_found=False)
         # 支持天和小时单位，按剩余时效升序消耗
-        box_list = self.wait_ocr(x=0.20, y=0.45, to_x=0.88, to_y=0.66, match=self.lang.daily_battle_mixin.k_4e1f3d8b, log=True)
+        unit_day = self.lang.daily_battle_mixin.k_unit_day
+        unit_hour = self.lang.daily_battle_mixin.k_unit_hour
+        validity_pattern = re.compile(
+            rf"\d+({re.escape(unit_day)}|{re.escape(unit_hour)})"
+        )
+        box_list = self.wait_ocr(x=0.20, y=0.45, to_x=0.88, to_y=0.66, match=validity_pattern, log=True)
         if not box_list:
             self.log_warning("未找到应急理智加强剂，剩余时效未识别")
         else:
             # 解析所有药品的时效，排序后依次消耗
             parsed_boxes = []
             for box in box_list:
-                unit_day = self.lang.daily_battle_mixin.k_unit_day
-                unit_hour = self.lang.daily_battle_mixin.k_unit_hour
                 if unit_day in box.name:
                     validity_unit = unit_day
                 elif unit_hour in box.name:
@@ -545,7 +548,7 @@ class DailyBattleFeature:
                     threshold=0.7,
                     tolerance=100,
                 )
-            self.navigate_until_target(target=self.lang.daily_battle_mixin.k_bfe73e18, box=self.box_of_screen(0.679, 0.620, 0.714, 0.769), nav=[fL.gather_icon_out_map],
+            self.navigate_until_target(target=self.lang.daily_battle_mixin.k_bfe73e18, box=self.box_of_screen(0.679, 0.620, 0.714, 0.769), nav=[fL.gather_icon_out_map2, fL.gather_icon_out_map],
                                     time_out=60)
 
         if self.wait_ocr(match=self.lang.daily_battle_mixin.k_b8a81b7a, box=self.box.bottom_right, time_out=1):
