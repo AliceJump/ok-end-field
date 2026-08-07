@@ -5,6 +5,11 @@ on:
     # Sequence of patterns matched against refs/tags
     tags:
       - 'v*'
+  repository_dispatch:
+    # Auto Release 用 GITHUB_TOKEN 推 tag 不会产生 push 事件，
+    # 改为发 repository_dispatch（GITHUB_TOKEN 可触发的事件之一）来触发构建
+    types:
+      - auto-release
 
 jobs:
   test:
@@ -49,9 +54,19 @@ jobs:
           pip install -r requirements.txt
           pip install polib
 
+      - name: Resolve release tag
+        id: tag
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "repository_dispatch") {
+            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          } else {
+            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         run: |
-          python -m ok.update.inline_ok_requirements --tag ${{ github.ref_name }}
+          python -m ok.update.inline_ok_requirements --tag ${{ steps.tag.outputs.tag }}
 
       - name: Run tests
         timeout-minutes: 5
@@ -105,9 +120,19 @@ jobs:
           pip install -r requirements.txt
           pip install polib
 
+      - name: Resolve release tag
+        id: tag
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "repository_dispatch") {
+            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          } else {
+            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         run: |
-          python -m ok.update.inline_ok_requirements --tag ${{ github.ref_name }}
+          python -m ok.update.inline_ok_requirements --tag ${{ steps.tag.outputs.tag }}
 
       - name: Sync Repositories # 同步部分代码(deploy.txt中), 合并tag中间更新日志, 到更新库, 以减少用户更新使用的git库大小
         id: sync   # Give the step an ID to access its outputs
@@ -117,7 +142,7 @@ jobs:
             https://cnb:${{ secrets.CNB_TOKEN }}@cnb.cool/ok-oldking/ok-ef-update.git
             https://AliceJump:${{ secrets.OK_GH }}@github.com/AliceJump/ok-ef-update.git
           sync_list: 'deploy.txt'
-          tag: ${{ github.ref_name }}
+          tag: ${{ steps.tag.outputs.tag }}
           gitignore_file: '.update_repo_gitignore'
           show_author: true #在更新日志中加入作者
 
@@ -164,9 +189,19 @@ jobs:
           pip install -r requirements.txt
           pip install polib
 
+      - name: Resolve release tag
+        id: tag
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "repository_dispatch") {
+            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          } else {
+            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         run: |
-          python -m ok.update.inline_ok_requirements --tag ${{ github.ref_name }}
+          python -m ok.update.inline_ok_requirements --tag ${{ steps.tag.outputs.tag }}
 
       - name: Build with PyAppify Action
         id: build-app
@@ -175,7 +210,7 @@ jobs:
       - name: Add version to build filenames
         shell: pwsh
         run: |
-          $version = "${{ github.ref_name }}"
+          $version = "${{ steps.tag.outputs.tag }}"
           Get-ChildItem -Path pyappify_dist -File | ForEach-Object {
             Rename-Item -LiteralPath $_.FullName -NewName "$($_.BaseName)-$version$($_.Extension)"
           }
@@ -183,33 +218,44 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pyappify_dist-${{ github.ref_name }}
+          name: pyappify_dist-${{ steps.tag.outputs.tag }}
           path: pyappify_dist/*
 
   release:
     needs: [build, sync]
     runs-on: windows-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'repository_dispatch'
     permissions:
       contents: write
     steps:
+      - name: Resolve release tag
+        id: tag
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "repository_dispatch") {
+            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          } else {
+            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: pyappify_dist-${{ github.ref_name }}
+          name: pyappify_dist-${{ steps.tag.outputs.tag }}
           path: pyappify_dist
 
       - name: Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: ${{ steps.tag.outputs.tag }}
           draft: false
           body: |
             ###  更新日志 ${{ needs.sync.outputs.start_tag }} -> ${{ needs.sync.outputs.end_tag }}:
               ${{ needs.sync.outputs.changes_with_asterisk }}
             ### 下载包说明
-              * [ok-ef-win32-China-setup-${{ github.ref_name }}.exe](https://github.com/AliceJump/ok-end-field/releases/download/${{ github.ref_name }}/ok-ef-win32-China-setup-${{ github.ref_name }}.exe) 完整安装包, 更新使用阿里云+腾讯CNB.
-              * [ok-ef-win32-Global-setup-${{ github.ref_name }}.exe](https://github.com/AliceJump/ok-end-field/releases/download/${{ github.ref_name }}/ok-ef-win32-Global-setup-${{ github.ref_name }}.exe) full package with dependencies, using GitHub and PyPi as update source
-              * 不要下载ok-ef-win32-${{ github.ref_name }}.zip,和SourceCode.zip, Do Not Download the SourceCode, ok-ef-win32-${{ github.ref_name }}.zip
+              * [ok-ef-win32-China-setup-${{ steps.tag.outputs.tag }}.exe](https://github.com/AliceJump/ok-end-field/releases/download/${{ steps.tag.outputs.tag }}/ok-ef-win32-China-setup-${{ steps.tag.outputs.tag }}.exe) 完整安装包, 更新使用阿里云+腾讯CNB.
+              * [ok-ef-win32-Global-setup-${{ steps.tag.outputs.tag }}.exe](https://github.com/AliceJump/ok-end-field/releases/download/${{ steps.tag.outputs.tag }}/ok-ef-win32-Global-setup-${{ steps.tag.outputs.tag }}.exe) full package with dependencies, using GitHub and PyPi as update source
+              * 不要下载ok-ef-win32-${{ steps.tag.outputs.tag }}.zip,和SourceCode.zip, Do Not Download the SourceCode, ok-ef-win32-${{ steps.tag.outputs.tag }}.zip
             ### 如果无法下载或下载慢, 可以使用其他下载源
               * [Mirror酱下载渠道](https://mirrorchyan.com/zh/projects?rid=ok-end-field&source=ok-ef-release), 国内网页直链, 下载需要购买CD-KEY, 已有Mirror酱CD-KEY可免费下载
               * [OneDrive](https://1drv.ms/f/c/0c7567d06cc5b5f3/IgAudOtrzHPVT6sJgWeWSiByAZNvwAzcehIdj3hEcprRlP0)
@@ -220,15 +266,25 @@ jobs:
   trigger_mirrorchyan:
     needs: release
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/')
+    if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'repository_dispatch'
     permissions:
       actions: write
       contents: read
     steps:
+      - name: Resolve release tag
+        id: tag
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "tag=${{ github.event.client_payload.tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Trigger MirrorChyanUploading
         shell: bash
         run: |
-          gh workflow run --repo $GITHUB_REPOSITORY mirrorchyan_uploading.yml -f tag=${{ github.ref_name }}
-          gh workflow run --repo $GITHUB_REPOSITORY mirrorchyan_release_note.yml -f tag=${{ github.ref_name }}
+          gh workflow run --repo $GITHUB_REPOSITORY mirrorchyan_uploading.yml -f tag=${{ steps.tag.outputs.tag }}
+          gh workflow run --repo $GITHUB_REPOSITORY mirrorchyan_release_note.yml -f tag=${{ steps.tag.outputs.tag }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

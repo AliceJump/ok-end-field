@@ -102,3 +102,19 @@ jobs:
           git tag -a "$next" -m "$next"
           git push origin "$next"
           echo "Released $next"
+
+      - name: Trigger Build via repository_dispatch
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          next="${{ steps.version.outputs.next }}"
+          # GITHUB_TOKEN 推送的 tag 不会触发 push 事件（官方限制），
+          # 改用 repository_dispatch（GITHUB_TOKEN 可触发的事件之一）通知 Build 构建该 tag
+          curl -sS -X POST \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/dispatches" \
+            -d "{\"event_type\":\"auto-release\",\"client_payload\":{\"tag\":\"$next\"}}"
+          echo "Dispatched build for $next"
