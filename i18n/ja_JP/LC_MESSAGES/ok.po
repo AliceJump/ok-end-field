@@ -1583,3 +1583,9 @@ msgstr ""
 
 msgid "齐纶"
 msgstr "チールン"
+
+msgid "应龙关"
+msgstr "応龍関"
+
+msgid "北部禁区"
+msgstr "武陵北部封鎖区域"

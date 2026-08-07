@@ -383,6 +383,11 @@ class BattleMixin(BaseEfTask):
         """
         单次战斗结束判定。
         """
+        # 结算模板优先检查：检测到 fL.b 结算模板同样判定战斗结束
+        if self.find_feature(feature=fL.b):
+            self.log_info("退出检查通过: 检测到结算模板 fL.b")
+            return True
+
         # UI状态检测
         has_lv = self.ocr_lv()
         in_team = self.in_team()

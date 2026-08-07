@@ -946,6 +946,12 @@ class WorldMapModule(_LangModuleBaseT):
     k_zangjiangu: re.Pattern[str]
     """藏剑谷"""
 
+    yinglongguan: re.Pattern[str]
+    """应龙关"""
+
+    beibujinqu: re.Pattern[str]
+    """北部禁区"""
+
     k_727bb38b: re.Pattern[str]
     """死寂争鸣"""
 

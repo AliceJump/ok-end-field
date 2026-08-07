@@ -397,16 +397,16 @@
   },
   "k_bfe73e18": {
     "zh_CN": {
-      "pattern": "激发|放弃奖励并重置"
+      "pattern": "激发|放弃"
     },
     "zh_TW": {
-      "pattern": "激發|放棄獎勵並重置"
+      "pattern": "激發|放棄"
     },
     "en_US": {
       "pattern": "Activate|Abandon Rewards and Reset"
     },
     "ja_JP": {
-      "pattern": "解放|受取せずにリセット"
+      "pattern": "解放|受取"
     },
     "ko_KR": {
       "pattern": "활성화|보상 포기 및 초기화"

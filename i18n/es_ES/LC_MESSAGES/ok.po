@@ -1666,3 +1666,9 @@ msgstr ""
 
 msgid "齐纶"
 msgstr "Qí Lún"
+
+msgid "应龙关"
+msgstr "Paso de Yinglung"
+
+msgid "北部禁区"
+msgstr "Zona de exclusión norte de Wuling"

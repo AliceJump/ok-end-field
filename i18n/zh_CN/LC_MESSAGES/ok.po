@@ -1581,3 +1581,9 @@ msgstr ""
 
 msgid "齐纶"
 msgstr "齐纶"
+
+msgid "应龙关"
+msgstr "应龙关"
+
+msgid "北部禁区"
+msgstr "北部禁区"

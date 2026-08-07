@@ -1589,3 +1589,9 @@ msgstr ""
 
 msgid "齐纶"
 msgstr "치룬"
+
+msgid "应龙关"
+msgstr "응룡 관문"
+
+msgid "北部禁区"
+msgstr "북쪽 금지 구역"
