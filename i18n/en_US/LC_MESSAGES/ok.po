@@ -9,696 +9,14 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-msgid "Ensure Main Once Action Sleep"
-msgstr "Ensure Main Once Action Sleep"
-
-msgid "一键日常"
-msgstr "One-click Dailies"
-
-msgid "从要推的图的最左边开始"
-msgstr "Start from the leftmost stage to clear"
-
-msgid "体力本"
-msgstr "Stamina Stage"
-
-msgid "公共区"
-msgstr "Public Area"
-
-msgid "兵棋推演"
-msgstr "War Chess Simulation"
-
-msgid "军备解析"
-msgstr "Armament Analysis"
-
-msgid "冲锋"
-msgstr "SMG & MG"
-
-msgid "决策构象"
-msgstr "Decision Configuration"
-
-msgid "刷钱本"
-msgstr "Gold Farming Stage"
-
-msgid "大月卡"
-msgstr "Premium Monthly Card"
-
-msgid "尘烟"
-msgstr "Dust Smoke"
-
-msgid "手枪"
-msgstr "HG"
-
-msgid "推图"
-msgstr "Clear Stages"
-
-msgid "收菜"
-msgstr "Collect Resources"
-
-msgid "活动情报补给"
-msgstr "Event Intel Supply"
-
-msgid "活动自律"
-msgstr "Event Auto-Battle"
-
-msgid "深度搜索"
-msgstr "Deep Search"
-
-msgid "狙击"
-msgstr "RF & BLD"
-
-msgid "班组"
-msgstr "Squad"
-
-msgid "突击"
-msgstr "AR & SG"
-
-msgid "竞技场"
-msgstr "Arena"
-
-msgid "自动刷体力"
-msgstr "Auto-Farm Stamina"
-
-msgid "购买免费礼包"
-msgstr "Claim Free Pack"
-
-msgid "邮件"
-msgstr "Mail"
-
-msgid "领任务"
-msgstr "Claim Missions"
-
-# Item names from endfield-calc en/item.json
-msgid "item_bottled_food_1"
-msgstr "Canned Citrome [C]"
-
-msgid "item_bottled_food_2"
-msgstr "Canned Citrome [B]"
-
-msgid "item_bottled_food_3"
-msgstr "Canned Citrome [A]"
-
-msgid "item_bottled_food_4"
-msgstr "Jincao Drink"
-
-msgid "item_bottled_rec_hp_1"
-msgstr "Buck Capsule [C]"
-
-msgid "item_bottled_rec_hp_2"
-msgstr "Buck Capsule [B]"
-
-msgid "item_bottled_rec_hp_3"
-msgstr "Buck Capsule [A]"
-
-msgid "item_bottled_rec_hp_4"
-msgstr "Yazhen Syringe [C]"
-
-msgid "item_carbon_enr"
-msgstr "Stabilized Carbon"
-
-msgid "item_carbon_enr_powder"
-msgstr "Dense Carbon Powder"
-
-msgid "item_carbon_mtl"
-msgstr "Carbon"
-
-msgid "item_carbon_powder"
-msgstr "Carbon Powder"
-
-msgid "item_crystal_enr"
-msgstr "Packed Origocrust"
-
-msgid "item_crystal_enr_powder"
-msgstr "Dense Origocrust Powder"
-
-msgid "item_crystal_powder"
-msgstr "Origocrust Powder"
-
-msgid "item_crystal_shell"
-msgstr "Origocrust"
-
-msgid "item_equip_script_1"
-msgstr "Amethyst Component"
-
-msgid "item_equip_script_2"
-msgstr "Ferrium Component"
-
-msgid "item_equip_script_3"
-msgstr "Cryston Component"
-
-msgid "item_equip_script_4"
-msgstr "Xiranite Component"
-
-msgid "item_fbottle_glass_grass_1"
-msgstr "Amethyst Bottle (Jincao)"
-
-msgid "item_fbottle_glass_grass_2"
-msgstr "Amethyst Bottle (Yazhen)"
-
-msgid "item_fbottle_glass_water"
-msgstr "Amethyst Bottle (Clean Water)"
-
-msgid "item_fbottle_glass_xiranite"
-msgstr "Amethyst Bottle (Liquid Xiranite)"
-
-msgid "item_fbottle_glassenr_grass_1"
-msgstr "Cryston Bottle (Jincao)"
-
-msgid "item_fbottle_glassenr_grass_2"
-msgstr "Cryston Bottle (Yazhen)"
-
-msgid "item_fbottle_glassenr_water"
-msgstr "Cryston Bottle (Clean Water)"
-
-msgid "item_fbottle_glassenr_xiranite"
-msgstr "Cryston Bottle (Liquid Xiranite)"
-
-msgid "item_fbottle_iron_grass_1"
-msgstr "Ferrium Bottle (Jincao)"
-
-msgid "item_fbottle_iron_grass_2"
-msgstr "Ferrium Bottle (Yazhen)"
-
-msgid "item_fbottle_iron_water"
-msgstr "Ferrium Bottle (Clean Water)"
-
-msgid "item_fbottle_iron_xiranite"
-msgstr "Ferrium Bottle (Liquid Xiranite)"
-
-msgid "item_fbottle_ironenr_grass_1"
-msgstr "Steel Bottle (Jincao)"
-
-msgid "item_fbottle_ironenr_grass_2"
-msgstr "Steel Bottle (Yazhen)"
-
-msgid "item_fbottle_ironenr_water"
-msgstr "Steel Bottle (Clean Water)"
-
-msgid "item_fbottle_ironenr_xiranite"
-msgstr "Steel Bottle (Liquid Xiranite)"
-
-msgid "item_glass_bottle"
-msgstr "Amethyst Bottle"
-
-msgid "item_glass_cmpt"
-msgstr "Amethyst Part"
-
-msgid "item_glass_enr_bottle"
-msgstr "Cryston Bottle"
-
-msgid "item_glass_enr_cmpt"
-msgstr "Cryston Part"
-
-msgid "item_iron_bottle"
-msgstr "Ferrium Bottle"
-
-msgid "item_iron_cmpt"
-msgstr "Ferrium Part"
-
-msgid "item_iron_enr"
-msgstr "Steel"
-
-msgid "item_iron_enr_bottle"
-msgstr "Steel Bottle"
-
-msgid "item_iron_enr_cmpt"
-msgstr "Steel Part"
-
-msgid "item_iron_enr_powder"
-msgstr "Dense Ferrium Powder"
-
-msgid "item_iron_nugget"
-msgstr "Ferrium"
-
-msgid "item_iron_ore"
-msgstr "Ferrium Ore"
-
-msgid "item_iron_powder"
-msgstr "Ferrium Powder"
-
-msgid "item_liquid_plant_grass_1"
-msgstr "Jincao Solution"
-
-msgid "item_liquid_plant_grass_2"
-msgstr "Yazhen Solution"
-
-msgid "item_liquid_water"
-msgstr "Clean Water"
-
-msgid "item_liquid_xiranite"
-msgstr "Liquid Xiranite"
-
-msgid "item_muck_feces_1"
-msgstr "Burdo-Muck"
-
-msgid "item_muck_xiranite_1"
-msgstr "Bumper-Rich"
-
-msgid "item_originium_enr_powder"
-msgstr "Dense Originium Powder"
-
-msgid "item_originium_ore"
-msgstr "Originium Ore"
-
-msgid "item_originium_powder"
-msgstr "Originium Powder"
-
-msgid "item_plant_bbflower_1"
-msgstr "Aketine"
-
-msgid "item_plant_bbflower_powder_1"
-msgstr "Aketine Powder"
-
-msgid "item_plant_bbflower_seed_1"
-msgstr "Aketine Seed"
-
-msgid "item_plant_grass_1"
-msgstr "Jincao"
-
-msgid "item_plant_grass_2"
-msgstr "Yazhen"
-
-msgid "item_plant_grass_powder_1"
-msgstr "Jincao Powder"
-
-msgid "item_plant_grass_powder_2"
-msgstr "Yazhen Powder"
-
-msgid "item_plant_grass_seed_1"
-msgstr "Jincao Seed"
-
-msgid "item_plant_grass_seed_2"
-msgstr "Yazhen Seed"
-
-msgid "item_plant_moss_1"
-msgstr "Buckflower"
-
-msgid "item_plant_moss_2"
-msgstr "Citrome"
-
-msgid "item_plant_moss_3"
-msgstr "Sandleaf"
-
-msgid "item_plant_moss_enr_powder_1"
-msgstr "Ground Buckflower Powder"
-
-msgid "item_plant_moss_enr_powder_2"
-msgstr "Ground Citrome Powder"
-
-msgid "item_plant_moss_powder_1"
-msgstr "Buckflower Powder"
-
-msgid "item_plant_moss_powder_2"
-msgstr "Citrome Powder"
-
-msgid "item_plant_moss_powder_3"
-msgstr "Sandleaf Powder"
-
-msgid "item_plant_moss_seed_1"
-msgstr "Buckflower Seed"
-
-msgid "item_plant_moss_seed_2"
-msgstr "Citrome Seed"
-
-msgid "item_plant_moss_seed_3"
-msgstr "Sandleaf Seed"
-
-msgid "item_plant_sp_1"
-msgstr "Reed Rye"
-
-msgid "item_plant_sp_2"
-msgstr "Tartpepper"
-
-msgid "item_plant_sp_3"
-msgstr "Redjade Ginseng"
-
-msgid "item_plant_sp_4"
-msgstr "Amber Rice"
-
-msgid "item_plant_sp_seed_1"
-msgstr "Reed Rye Seed"
-
-msgid "item_plant_sp_seed_2"
-msgstr "Tartpepper Seed"
-
-msgid "item_plant_sp_seed_3"
-msgstr "Redjade Ginseng Seed"
-
-msgid "item_plant_sp_seed_4"
-msgstr "Amber Rice Seed"
-
-msgid "item_plant_tundra_wood"
-msgstr "Wood"
-
-msgid "item_proc_battery_1"
-msgstr "LC Valley Battery"
-
-msgid "item_proc_battery_2"
-msgstr "SC Valley Battery"
-
-msgid "item_proc_battery_3"
-msgstr "HC Valley Battery"
-
-msgid "item_proc_battery_4"
-msgstr "LC Wuling Battery"
-
-msgid "item_proc_bomb_1"
-msgstr "Industrial Explosive"
-
-msgid "item_quartz_enr"
-msgstr "Cryston Fiber"
-
-msgid "item_quartz_enr_powder"
-msgstr "Cryston Powder"
-
-msgid "item_quartz_glass"
-msgstr "Amethyst Fiber"
-
-msgid "item_quartz_powder"
-msgstr "Amethyst Powder"
-
-msgid "item_quartz_sand"
-msgstr "Amethyst Ore"
-
-msgid "item_xiranite_powder"
-msgstr "Xiranite"
-
-msgid "Task Schedule"
-msgstr "Task Schedule"
-
-msgid "Task Name"
-msgstr "Task Name"
-
-msgid "Status"
-msgstr "Status"
-
-msgid "Trigger Type"
-msgstr "Trigger Type"
-
-msgid "Next Run"
-msgstr "Next Run"
-
-msgid "Enabled"
-msgstr "Enabled"
-
-msgid "Actions"
-msgstr "Actions"
-
-msgid "Modify"
-msgstr "Modify"
-
-msgid "Delete"
-msgstr "Delete"
-
-msgid "Create Schedule Task"
-msgstr "Create Schedule Task"
-
-msgid "Select Task"
-msgstr "Select Task"
-
-msgid "No tasks available"
-msgstr "No tasks available"
-
-msgid "Hour"
-msgstr "Hour"
-
-msgid "Minute"
-msgstr "Minute"
-
-msgid "24h"
-msgstr "24h"
-
-msgid "Timeout"
-msgstr "Timeout"
-
-msgid "hours (0 = unlimited)"
-msgstr "hours (0 = unlimited)"
-
-msgid "Auto exit after task done (-e)"
-msgstr "Auto exit after task done (-e)"
-
-msgid "Startup Options"
-msgstr "Startup Options"
-
-msgid "Create"
-msgstr "Create"
-
-msgid "Cancel"
-msgstr "Cancel"
-
-msgid "Modify Schedule Task"
-msgstr "Modify Schedule Task"
-
-msgid "Task Index (-t)"
-msgstr "Task Index (-t)"
-
-msgid "Start Time"
-msgstr "Start Time"
-
-msgid "Refresh"
-msgstr "Refresh"
-
-msgid "Create Task"
-msgstr "Create Task"
-
-msgid "Schedule Tasks"
-msgstr "Schedule Tasks"
-
-msgid "Task deleted successfully"
-msgstr "Task deleted successfully"
-
-msgid "Failed to delete task"
-msgstr "Failed to delete task"
-
-msgid "Task enabled"
-msgstr "Task enabled"
-
-msgid "Task disabled"
-msgstr "Task disabled"
-
-msgid "Failed to toggle task"
-msgstr "Failed to toggle task"
-
-msgid "Success"
-msgstr "Success"
-
-msgid "Error"
-msgstr "Error"
-
-msgid "Tasks refreshed"
-msgstr "Tasks refreshed"
-
-msgid "Refresh failed"
-msgstr "Refresh failed"
-
-msgid "Task not found in cache"
-msgstr "Task not found in cache"
-
-msgid "Failed to open modify dialog"
-msgstr "Failed to open modify dialog"
-
-msgid "Task modified successfully"
-msgstr "Task modified successfully"
-
-msgid "Failed to modify task"
-msgstr "Failed to modify task"
-
-msgid "Failed to modify task: cannot delete old task"
-msgstr "Failed to modify task: cannot delete old task"
-
-msgid "Task created successfully"
-msgstr "Task created successfully"
-
-msgid "Failed to create task"
-msgstr "Failed to create task"
-
-msgid "Delete Task"
-msgstr "Delete Task"
-
-msgid "Are you sure you want to delete task"
-msgstr "Are you sure you want to delete task"
-
-msgid "日常任务"
-msgstr "Daily Tasks"
-
-msgid "一键收菜"
-msgstr "One-click Farming"
-
-msgid "运送委托接取"
-msgstr "Auto Accept Delivery Orders"
-
-msgid "自动抢单"
-msgstr "Auto Accept Orders"
-
-msgid "仓库物品转移"
-msgstr "Warehouse Item Transfer"
-
-msgid "从发货仓库取出指定物品，切到收货仓库后一键存放 （目前只支持中文版）"
-msgstr ""
-"Transfer specified items from warehouse to another warehouse (Chinese only)"
-
-msgid "自动送货"
-msgstr "Auto Delivery"
-
-msgid "仅武陵7.31w送货,教程视频 BV1LLc7zFEF9"
-msgstr "Only supports Wuling 7.31w delivery, tutorial video BV1LLc7zFEF9"
-
-msgid "毕业基质识别"
-msgstr "Weapon Essence Recognition"
-
-msgid "遍历武器基质列表，匹配 weapon_data.csv 并处理毕业基质上锁"
-msgstr ""
-"Traverse weapon essence list, match weapon_data.csv and handle essence "
-"locking"
-
-msgid "测试"
-msgstr "Test"
-
-msgid "自动跳过剧情"
-msgstr "Auto Skip Dialog"
-
-msgid "自动拾取"
-msgstr "Auto Pick"
-
-msgid "大世界自动拾取"
-msgstr "Auto pick in open world"
-
-msgid "自动登录"
-msgstr "Auto Login"
-
-msgid "自动登录领月卡"
-msgstr "Auto login to claim monthly card"
-
-msgid "自动战斗"
-msgstr "Auto Combat"
-
-msgid "自动战斗(进入战斗后自动战斗直到结束)"
-msgstr "Auto combat (auto combat until battle ends)"
-
-msgid "Daily"
-msgstr "Daily"
-
-msgid "Weekly"
-msgstr "Weekly"
-
-msgid "Monthly"
-msgstr "Monthly"
-
-msgid "Once"
-msgstr "Once"
-
-msgid "Ready"
-msgstr "Ready"
-
-msgid "Running"
-msgstr "Running"
-
-msgid "Disabled"
-msgstr "Disabled"
-
-msgid "Unknown"
-msgstr "Unknown"
-
-msgid "Custom Interval"
-msgstr "Custom Interval"
-
-msgid "Custom"
-msgstr "Custom"
-
-msgid "Days"
-msgstr "Days"
-
-msgid "Hours"
-msgstr "Hours"
-
-msgid "(0 = disabled)"
-msgstr "(0 = disabled)"
-
-msgid "Interact Key"
-msgstr "Interact Key"
-
-msgid "Game Hotkey Config"
-msgstr "Game Hotkey Config"
-
-msgid "In Game Hotkey for Skills"
-msgstr "In Game Hotkey for Skills"
-
-msgid "In Game Hotkey Config"
-msgstr "In Game Hotkey Config"
-
-msgid "Dodge Key"
-msgstr "Dodge Key"
-
-msgid "Jump Key"
-msgstr "Jump Key"
-
-msgid "Backpack Key"
-msgstr "Backpack Key"
-
-msgid "Valuables Key"
-msgstr "Valuables Key"
-
-msgid "Team Key"
-msgstr "Team Key"
-
-msgid "Operator Key"
-msgstr "Operator Key"
-
-msgid "Mission Key"
-msgstr "Mission Key"
-
-msgid "Track Key"
-msgstr "Track Key"
-
-msgid "Map Key"
-msgstr "Map Key"
-
-msgid "Baker Key"
-msgstr "Baker Key"
-
-msgid "Mail Key"
-msgstr "Mail Key"
-
-msgid "Handbook Key"
-msgstr "Handbook Key"
-
-msgid "Recruitment Key"
-msgstr "Recruitment Key"
-
-msgid "Quick Tool Key"
-msgstr "Quick Tool Key"
-
-msgid "Industry Plan Key"
-msgstr "Industry Plan Key"
-
-msgid "Place Belt Key"
-msgstr "Place Belt Key"
-
-msgid "Place Pipeline Key"
-msgstr "Place Pipeline Key"
-
-msgid "Equipment List Key"
-msgstr "Equipment List Key"
-
-msgid "Overview Mode Key"
-msgstr "Overview Mode Key"
-
-msgid "Storage Mode Key"
-msgstr "Storage Mode Key"
-
-msgid "Area Build Key"
-msgstr "Area Build Key"
-
-msgid "Blueprint Key"
-msgstr "Blueprint Key"
-
-msgid "Product Icon Toggle Key"
-msgstr "Product Icon Toggle Key"
-
-msgid "BitBlt_RenderFull"
-msgstr "BitBlt_RenderFull"
+msgid "0~1，值越高越严格"
+msgstr "0~1, higher = stricter"
 
 msgid "D96钢"
 msgstr "D96 Steel"
+
+msgid "Daily Task"
+msgstr "Daily Task"
 
 msgid "F10"
 msgstr "F10"
@@ -712,388 +30,41 @@ msgstr "F12"
 msgid "F9"
 msgstr "F9"
 
-msgid "SingleActionWithDelay"
-msgstr "SingleActionWithDelay"
+msgid "Upload Logs"
+msgstr "Upload Logs"
 
-msgid "Test"
-msgstr "Test"
+msgid "YOLO模型"
+msgstr "YOLO Model"
 
-msgid "WGC"
-msgstr "WGC"
+msgid "battle_end"
+msgstr "battle_end"
+
+msgid "battle_end_default"
+msgstr "battle_end_default"
+
+msgid "content"
+msgstr "content"
 
 msgid "valley4"
 msgstr "valley4"
 
+msgid "wait_until"
+msgstr "wait_until"
+
 msgid "wuling"
 msgstr "wuling"
 
-msgid "三位一体"
-msgstr "Triaggelos"
+msgid "{keys}：出发滑索距离"
+msgstr "{keys}: starting zip line distance"
 
-msgid "三相纳米片"
-msgstr "Triphase Nanosheet"
+msgid "{keys}：各送货目标滑索序列"
+msgstr "{keys}: zip line sequences to each delivery target"
 
-msgid "上锁毕业基质"
-msgstr "Lock Graduated Essence"
+msgid "{keys}：能量淤积点滑索序列"
+msgstr "{keys}: zip line sequences to energy pools"
 
-msgid "买信用商店"
-msgstr "Buy Credit Store"
-
-msgid "买卖货"
-msgstr "Buy & Sell Goods"
-
-msgid "仅接取"
-msgstr "Accept Only"
-
-msgid "仅武陵7.98w/7.31w送货,教程视频 BV1LLc7zFEF9"
-msgstr "Wuling 7.98w/7.31w delivery only, tutorial BV1LLc7zFEF9"
-
-msgid "仅送货"
-msgstr "Deliver Only"
-
-msgid "从这个仓库拿货"
-msgstr "Take goods from this warehouse"
-
-msgid "优先送礼对象"
-msgstr "Priority Gift Recipient"
-
-msgid "余烬"
-msgstr "Ember"
-
-msgid "佩丽卡"
-msgstr "Perlica"
-
-msgid "供能高地"
-msgstr "Power Plateau"
-
-msgid "保存目录"
-msgstr "Save Directory"
-
-msgid "倒货的轮次"
-msgstr "Goods Transfer Rounds"
-
-msgid "别礼"
-msgstr "Last Rite"
-
-msgid "刷体力"
-msgstr "Farm Stamina"
-
-msgid "刷体力任务"
-msgstr "Stamina Farming Task"
-
-msgid ""
-"前置是选择测试对象部分选择\"无\"\n"
-"仅接取7.31w武陵委托，不送货"
-msgstr ""
-"Prerequisite: Select \"None\" for test target\n"
-"Only accept 7.31w Wuling commission, no delivery"
-
-msgid ""
-"前置是选择测试对象部分选择\"无\"\n"
-"接取武陵委托后启动自动识别送货"
-msgstr ""
-"Prerequisite: Select \"None\" for test target\n"
-"Auto-detect delivery after accepting Wuling commission"
-
-msgid "发货仓库"
-msgstr "Source Warehouse"
-
-msgid "后台结束战斗通知"
-msgstr "Background Battle End Notification"
-
-msgid "启动技能点数"
-msgstr "Starting Skill Points"
-
-msgid ""
-"启用后在对齐滑索时会自动滚动放大视角\n"
-"可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
-"建议启用此项时不要使用非白发或有白帽角色"
-msgstr ""
-"Auto-scroll zoom when aligning zipline\n"
-"May improve or reduce alignment success\n"
-"Avoid non-white hair or white hat characters"
-
-msgid "命中毕业词条后自动点击右侧小锁上锁"
-msgstr "Auto-lock upon hitting graduated affix"
-
-msgid "四号谷地"
-msgstr "Valley IV"
-
-msgid "四号谷地买入价"
-msgstr "Valley IV Buy Price"
-
-msgid "四号谷地卖出价"
-msgstr "Valley IV Sell Price"
-
-msgid "在好友交流助力时，优先尝试仅收取培育室的助力,但每次至少助力一次舱室"
-msgstr ""
-"Prioritize cultivation room support, assist at least one chamber each time"
-
-msgid "埃特拉"
-msgstr "Estella"
-
-msgid "大潘"
-msgstr "Da Pan"
-
-msgid "安塔尔"
-msgstr "Antal"
-
-msgid "完整循环测试"
-msgstr "Full Cycle Test"
-
-msgid "定时截图"
-msgstr "Periodic Screenshot"
-
-msgid "尝试仅收培育室"
-msgstr "Try Cultivation Room Only"
-
-msgid "常沄"
-msgstr "Chang Yun"
-
-msgid "干员经验"
-msgstr "Operator EXP"
-
-msgid "干员进阶"
-msgstr "Operator Promotions"
-
-msgid "弧光"
-msgstr "Arclight"
-
-msgid "当技能点达到该数值时，开始执行技能序列, 1-3"
-msgstr "Start skill sequence when skill points reach this value (1-3)"
-
-msgid "彦宁"
-msgstr "Yan Ning"
-
-msgid "快子遴捡晶格"
-msgstr "Tachyon Selection Lattice"
-
-msgid "战斗中周期触发锁敌+向前闪避的最小间隔(秒，最少6秒)"
-msgstr "Min interval (seconds, min 6s) for lock-on + forward dodge"
-
-msgid "截图保存路径（相对于项目根目录）"
-msgstr "Screenshot save path (relative to project root)"
-
-msgid "技能提升"
-msgstr "Skill Up"
-
-msgid "技能释放"
-msgstr "Skill Release"
-
-msgid "据点兑换"
-msgstr "Outpost Exchange"
-
-msgid "接取武陵券"
-msgstr "Accept Wuling Ticket"
-
-msgid "接取武陵券最低金额(万)"
-msgstr "Wuling Ticket Min Amount (10k)"
-
-msgid "接取武陵券最高金额(万)"
-msgstr "Wuling Ticket Max Amount (10k)"
-
-msgid "接取谷地券"
-msgstr "Accept Valley Ticket"
-
-msgid "接取谷地券最低金额(万)"
-msgstr "Valley Ticket Min Amount (10k)"
-
-msgid "接取谷地券最高金额(万)"
-msgstr "Valley Ticket Max Amount (10k)"
-
-msgid "收信用"
-msgstr "Collect Credit"
-
-msgid "收货仓库"
-msgstr "Destination Warehouse"
-
-msgid "收集线索"
-msgstr "Collect Clues"
-
-msgid "教程"
-msgstr "Tutorial"
-
-msgid "无"
-msgstr "None"
-
-msgid "无数字操作间隔"
-msgstr "No Numeric Action Interval"
-
-msgid "日常奖励"
-msgstr "Daily Rewards"
-
-msgid "是否启用滚动放大视角"
-msgstr "Enable Scroll Zoom View"
-
-msgid "昼雪"
-msgstr "Snowshine"
-
-msgid "枢纽区"
-msgstr "The Hub"
-
-msgid "武器经验"
-msgstr "Weapon EXP"
-
-msgid "武器进阶"
-msgstr "Weapon Tune"
-
-msgid "武陵"
-msgstr "Wuling"
-
-msgid "武陵买入价"
-msgstr "Wuling Buy Price"
-
-msgid "武陵卖出价"
-msgstr "Wuling Sell Price"
-
-msgid "武陵城"
-msgstr "Wuling City"
-
-msgid "每次截图的间隔时间（秒），最小 1 秒"
-msgstr "Interval between screenshots (seconds), minimum 1"
-
-msgid "每隔指定秒数截图保存，用于数据采集 / YOLO 样本收集"
-msgstr "Save screenshots every N seconds for data / YOLO sample collection"
-
-msgid "洁尔佩塔"
-msgstr "Gilberta"
-
-msgid "源石研究园"
-msgstr "Originium Science Park"
-
-msgid "源矿"
-msgstr "Originium Ore"
-
-msgid "满技能时, 开始释放技能, 如123, 建议只放3个技能"
-msgstr "When skill is full, start releasing (e.g. 123); recommend only 3"
-
-msgid "物品"
-msgstr "Item"
-
-msgid "狼卫"
-msgstr "Wulfgard"
-
-msgid "白垩界卫"
-msgstr "Marble Aggelomoirai"
-
-msgid "目标券数"
-msgstr "Target Ticket Count"
-
-msgid "矿脉源区"
-msgstr "Origin Lodespring"
-
-msgid "秋栗"
-msgstr "Akekuri"
-
-msgid "罗丹"
-msgstr "Rodin"
-
-msgid "艾尔黛拉"
-msgstr "Ardelia"
-
-msgid "艾维文娜"
-msgstr "Avywenna"
-
-msgid "莱万汀"
-msgstr "Laevatain"
-
-msgid "萤石"
-msgstr "Fluorite"
-
-msgid "蓝铁矿"
-msgstr "Ferrium Ore"
-
-msgid "象限拟合液"
-msgstr "Quadrant Fitting Fluid"
-
-msgid "资源"
-msgstr "Resources"
-
-msgid "赛希"
-msgstr "Xaihi"
-
-msgid "超距辉映管"
-msgstr "Metadiastima Photoemission Tube"
-
-msgid "转交委托奖励领取"
-msgstr "Claim Delegated Commission Rewards"
-
-msgid "转交运送委托"
-msgstr "Transfer Delivery Commission"
-
-msgid "转移轮次"
-msgstr "Transfer Rounds"
-
-msgid "转运到这个仓库"
-msgstr "Transfer to This Warehouse"
-
-msgid "进入战斗后的初始等待时间"
-msgstr "Initial wait time after entering battle"
-
-msgid "送礼"
-msgstr "Gift Giving"
-
-msgid "送礼任务最多尝试次数"
-msgstr "Max Gift Task Attempts"
-
-msgid "选择测试对象"
-msgstr "Select Test Target"
-
-msgid "选择要转移的物品"
-msgstr "Select Items to Transfer"
-
-msgid "通向武陵城送货点"
-msgstr "To Wuling City Delivery Point"
-
-msgid "造装备"
-msgstr "Craft Equipment"
-
-msgid "重复测试的次数"
-msgstr "Number of Test Repetitions"
-
-msgid "钱币收集"
-msgstr "T-Creds"
-
-msgid "间隔秒数"
-msgstr "Interval (seconds)"
-
-msgid "阿列什"
-msgstr "Alesh"
-
-msgid "陈千语"
-msgstr "Chen Qianyu"
-
-msgid "非毕业基质会尝试取消上锁（已上锁的会解锁）"
-msgstr "Non-graduated essences will attempt to unlock"
-
-msgid "非毕业基质取消上锁"
-msgstr "Unlock Non-Graduated Essences"
-
-msgid "非毕业基质弃置"
-msgstr "Discard Non-Graduated Essences"
-
-msgid "骏卫"
-msgstr "Pogranichnik"
-
-msgid "高容谷地电池"
-msgstr "High-Capacity Valley Battery"
-
-msgid "黎风"
-msgstr "Lifeng"
-
-msgid ""
-"默认是无，表示正常执行相关任务\n"
-"也可以选择特定的滑索分叉序列来测试滑索功能\n"
-"选择完整循环测试则会依次测试每个送货目标的完整流程\n"
-"(需要锁定次要任务在送货任务上或附近)"
-msgstr ""
-"Default is None (normal task)\n"
-"Select zipline fork sequences to test\n"
-"Full Cycle Test tests each delivery target's complete flow\n"
-"(Requires locking sub-task on or near delivery task)"
-
-msgid "齐纶"
-msgstr "Qi Lun"
+msgid "⭐⭐⭐ 默认"
+msgstr "⭐⭐⭐ Default"
 
 msgid "⭐买信用商店"
 msgstr "⭐ Buy Credit Store"
@@ -1110,11 +81,17 @@ msgstr "⭐ Teleport to Right Waypoint of Dijiang"
 msgid "⭐刷体力"
 msgstr "⭐ Farm Stamina"
 
-msgid "⭐周常奖励"
-msgstr "⭐ Weekly Rewards"
+msgid "⭐地区建设"
+msgstr "⭐ Regional Operations"
+
+msgid "⭐帝江号一键存放"
+msgstr "⭐ Dijiang One-Click Store"
 
 msgid "⭐帝江号收菜"
 msgstr "⭐ Dijiang Harvest"
+
+msgid "⭐执行外部命令"
+msgstr "⭐Run External Command"
 
 msgid "⭐据点兑换"
 msgstr "⭐ Outpost Exchange"
@@ -1128,11 +105,17 @@ msgstr "⭐ Collect Mail"
 msgid "⭐日常奖励"
 msgstr "⭐ Daily Rewards"
 
+msgid "⭐活动奖励"
+msgstr "⭐ Activity Rewards"
+
+msgid "⭐演算"
+msgstr "⭐Calculation"
+
 msgid "⭐简易制作"
 msgstr "⭐ Simple Crafting"
 
-msgid "⭐转交委托奖励领取"
-msgstr "⭐ Claim Delegated Rewards"
+msgid "⭐自动送货"
+msgstr "⭐Auto Delivery"
 
 msgid "⭐转交运送委托"
 msgstr "⭐ Transfer Delivery Commission"
@@ -1143,282 +126,105 @@ msgstr "⭐ Gift Giving"
 msgid "⭐造装备"
 msgstr "⭐ Craft Equipment"
 
-msgid "「战技」释放角色顺序，比如123。建议只放3个技能。"
-msgstr "Skill release order, e.g. 123. Recommend only 3 skills."
+msgid "一次送礼个数"
+msgstr "Gifts Per Batch"
 
-msgid "交易货品优先序列"
-msgstr "Trade Goods Priority Sequence"
+msgid "一键日常"
+msgstr "One-click Dailies"
 
-msgid ""
-"仅接受'1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n]'这些值的逗号分隔字符串，代表技能释放优先级顺序\n"
-"例如'ult_2,1,e,ult_1'表示优先尝试干员2的终结技，再干员1的战技，再尝试连携，再干员1的终极技\n"
-"启用排轴功能后，系统会按照该配置的顺序尝试释放技能，一旦成功释放一个技能，就会等待下一个技能，而不是继续尝试后续技能\n"
-"这可以用于更精细地控制技能释放顺序，例如优先释放某个干员的技能来配合特定的战术需求。"
-msgstr ""
-"Comma-separated values: '1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n]' for skill priority\n"
-"e.g. 'ult_2,1,e,ult_1'\n"
-"With rotation, system tries skills in order, waits after success\n"
-"Use for fine-grained control."
+msgid "三位一体"
+msgstr "Triaggelos"
 
-msgid "仅站桩"
-msgstr "Stand Still Only"
+msgid "三相纳米片"
+msgstr "Triphase Nanosheet"
 
-msgid "伊冯"
-msgstr "Yvonne"
-
-msgid "使用说明参见选项，更多用法参见 ./docs/日常任务.md"
-msgstr "See options for instructions, more in ./docs/日常任务.md"
-
-msgid "信用商店保留信用"
-msgstr "Credit Store Reserved Credit"
-
-msgid "制造舱"
-msgstr "Manufacturing Cabin"
-
-msgid "刷取哪个副本。所选副本必须领完所有等级的首通奖励。"
-msgstr "Which dungeon to farm. Must have claimed all first-clear rewards."
-
-msgid "发生异常时终止游戏"
-msgstr "Terminate Game on Exception"
-
-msgid "只买不卖"
-msgstr "Buy Only, No Selling"
-
-msgid "启动一次游戏,120s后自动关闭"
-msgstr "Launch game once, auto-close after 120s"
-
-msgid "启用后将只进行购买操作，不进行出售操作。"
-msgstr "When enabled, only purchase, no selling."
-
-msgid "启用排轴"
-msgstr "Enable Skill Rotation"
-
-msgid "四号谷地物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
-msgstr "Valley IV buy price cap. Set high if must buy."
-
-msgid "四号谷地物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
-msgstr "Valley IV sell price floor. Set to 1 if must sell."
-
-msgid "回到主页后等待的时间"
-msgstr "Wait time after returning to main page"
-
-msgid "多账户模式"
-msgstr "Multi-Account Mode"
-
-msgid "多账户模式下，账号密码列表，每行一个账号，账号密码用逗号分隔"
-msgstr "Account/password list, one per line, comma-separated"
-
-msgid "如果勾选，那么对于随机某项 m 个限时 n 天的体力药，使用其中的 2*m/n 个（向上取整）。"
-msgstr "If checked, use 2*m/n of limited-time stamina potions (rounded up)."
-
-msgid ""
-"子任务开关用⭐标出，自上而下顺序执行，最后执行『日常奖励』。\n"
-"如果出现反复按ESC的情形，请调高『设置/主界面单次动作后延迟』（建议1.5以上）。"
-msgstr ""
-"Sub-tasks marked with ⭐, top to bottom, Daily Rewards last.\n"
-"If ESC repeats, increase Action Delay (recommended 1.5+)."
-
-msgid "帮助"
-msgstr "Help"
-
-msgid "当「技力条」达到该数值时，开始执行技能序列。取值范围1-3。"
-msgstr "Start skill sequence when skill gauge reaches this value. Range: 1-3."
-
-msgid "战斗中周期触发锁敌+向前闪避的最小间隔秒数。取值不小于1。"
-msgstr "Min interval (seconds) for lock-on + forward dodge. Min 6."
-
-msgid "排轴序列"
-msgstr "Skill Rotation Sequence"
-
-msgid "是否买礼物"
-msgstr "Buy Gifts"
-
-msgid "是否前往「帝江号/会客室」收集全部线索。若集齐线索，则开启情报交流。"
-msgstr "Go to Dijiang/Reception Room to collect all clues."
-
-msgid "是否前往「帝江号/制造仓」收取培养材料。收取后会补足待制造数量。"
-msgstr "Go to Dijiang/Manufacturing Bay to collect materials."
-
-msgid "是否前往「装备制造/套组装备制造」并制作一件列表首位的装备。请确保有足够的装备原件和调度券。"
-msgstr "Go to Equipment Crafting and craft the first item."
-
-msgid "是否前往「邮箱」领取邮件。"
-msgstr "Go to mailbox to collect mail."
-
-msgid "是否前往好友的「帝江号」并在「访客终端」上进行助力获得信用。助力结束后，前往「采购中心/信用交易所」收取全部助力。"
-msgstr ""
-"Visit friend's Dijiang, assist at Visitor Terminal, then collect at Credit "
-"Exchange."
-
-msgid "是否前往好友的「帝江号」并在「访客终端」上进行收集线索、制造舱操作"
-msgstr "Visit friend's Dijiang for clue collection and manufacturing"
-
-msgid "是否启用「地区建设/四号谷地物资调度/弹性需求物资」交易。"
-msgstr "Enable Region Building/Valley IV/Flexible Demand trading."
-
-msgid "是否启用「地区建设/武陵物资调度/弹性需求物资」交易。"
-msgstr "Enable Region Building/Wuling/Flexible Demand trading."
-
-msgid "是否启用多账户模式"
-msgstr "Enable Multi-Account Mode"
-
-msgid "是否启用排轴功能。启用后会根据「排轴序列」配置的顺序优先释放对应角色的技能,当排轴失败时回退到非排轴状态"
-msgstr "Enable skill rotation. Falls back on failure."
-
-msgid "是否在「地区建设/仓储结点」中转交全部运送委托。"
-msgstr "Transfer all delivery commissions at Storage Node."
-
-msgid "是否在「地区建设/据点管理」中通过交易获得调度券。"
-msgstr "Obtain dispatch tickets via trading at Outpost Management."
-
-msgid "是否在「地区建设/物资调度/稳定物资需求」中通过调度券购买物资。依次购买「日用消耗」「工业货品」「人文物产」首行某个物品。"
-msgstr "Purchase supplies via dispatch tickets at Stable Supply Demand."
-
-msgid ""
-"是否在「弹性需求物资」与好友交易赚取调度券。自动选择利润最高的方案，然后用价格上下限判定是否交易。（除非可购买数量即将溢出，这种情况下必定交易。）"
-msgstr "Trade with friends for dispatch tickets. Auto-selects highest profit."
-
-msgid "是否在「采购中心/信用交易所」采购。自动刷新 且 仅购买「武库配额」「嵌晶玉」。"
-msgstr ""
-"Purchase at Credit Exchange. Only buy Arsenal Quota and Embedded Jade."
-
-msgid "是否消耗所有「理智」刷取培养材料。"
-msgstr "Consume all Sanity to farm materials."
-
-msgid "是否购买「人文物产」。"
-msgstr "Purchase Cultural Products."
-
-msgid ""
-"是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。如果途中偶遇干员，则直接交互完成送礼。任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
-msgstr ""
-"Raise operator affinity via gifts. Cannot start near Cambridge waypoint."
-
-msgid "是否领取「地区建设/仓储结点/我转交的委托」。超时委托也会被领取。"
-msgstr "Claim delegated commissions. Expired ones will also be claimed."
-
-msgid "是否领取「活动中心/每周事物」中的奖励。"
-msgstr "Claim rewards from Activity Center/Weekly Tasks."
-
-msgid "是否领取「行动手册/日常」和「通行证」中的奖励。"
-msgstr "Claim rewards from Handbook/Daily and Battle Pass."
-
-msgid "武陵物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
-msgstr "Wuling buy price cap. Set high if must buy."
-
-msgid "武陵物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
-msgstr "Wuling sell price floor. Set to 1 if must sell."
-
-msgid "汤汤"
-msgstr "Tangtang"
-
-msgid "洛茜"
-msgstr "Rossi"
-
-msgid "消耗限时体力药"
-msgstr "Use Limited-Time Stamina Potions"
-
-msgid "清波寨"
-msgstr "Qingbo Stockade"
-
-msgid "自动检测战斗开始和结束，使用说明参见选项"
-msgstr "Auto-detect battle start/end. See options."
-
-msgid "若剩余信用小于这个数值，则终止采购。"
-msgstr "Stop purchasing if credit is below this value."
-
-msgid "若启用，则开始挑战后角色原地不动（不输出），仅对「重度能量淤积点」生效。可以用于建好防御塔情形，避免角色离开副本区域。"
-msgstr "Character stays still after challenge. Only for Heavy Stagnation."
-
-msgid "若选项开启，则优先尝试仅助力好友「帝江号」上的「培养仓」。如果不能，至少助力一次其它舱室。"
-msgstr "Prioritize assisting friend's Cultivation Chamber."
-
-msgid "账号列表"
-msgstr "Account List"
-
-msgid "购物白名单"
-msgstr "Shopping Whitelist"
-
-msgid "配合任务计划程序提前启动游戏,防止游戏更新/弹公告导致的后续问题"
-msgstr "Launch game early via Task Scheduler to prevent update issues"
-
-msgid "需要设好「预刻写属性」。默认留空表示直线前往，更多用法参见 ./docs/体力本.md > 能量淤积点 。"
-msgstr "Set Pre-Inscription attribute first. See ./docs for more."
-
-msgid "默认留空，交易货品顺序随机。更多用法参见 ./docs/日常任务.md > 优先货品交易序列 。"
-msgstr "Leave empty for random trade order. See docs."
-
-msgid "默认留空，表示购买「日用消耗」「工业货品」首行首个物资。更多用法参见 ./docs/日常任务.md > 买物资 。"
-msgstr "Leave empty to buy first item of each category. See docs."
-
-msgid "Link Skill Key"
-msgstr "Link Skill Key"
-
-msgid "仅退出游戏"
-msgstr "Exit Game Only"
-
-msgid ""
-"是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n"
-"开启发生异常时终止游戏时此选项不生效"
-msgstr ""
-"Exit game only after all tasks\n"
-"Auto-closes game but not software\n"
-"Ignored when Terminate on Exception is on"
-
-msgid "0~1，值越高越严格"
-msgstr "0~1, higher = stricter"
-
-msgid "YOLO模型"
-msgstr "YOLO Model"
-
-msgid "battle_end"
-msgstr "battle_end"
-
-msgid "battle_end_default"
-msgstr "battle_end_default"
-
-msgid "⭐⭐⭐ 默认"
-msgstr "⭐⭐⭐ Default"
-
-msgid "⭐帝江号一键存放"
-msgstr "⭐ Dijiang One-Click Store"
-
-msgid "⭐执行结尾外部命令"
-msgstr "⭐ Execute End Command"
-
-msgid "⭐活动奖励"
-msgstr "⭐ Activity Rewards"
+msgid "不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
+msgstr "Do not pick crops mass-produced by farms or planting/harvesting lines: 琼叶参, 金石稻, 芽针, 锦草, 苦叶椒, 砂叶, 灰芦麦, 柑实, 荞花, 酮化灌木."
 
 msgid "不换队伍"
 msgstr "Don't Change Team"
 
+msgid "两者"
+msgstr "Both"
+
 msgid "中容武陵电池"
 msgstr "Mid-Capacity Wuling Battery"
+
+msgid "买卖货"
+msgstr "Buy & Sell Goods"
+
+msgid "买物资"
+msgstr "Buy Supplies"
+
+msgid "于施"
+msgstr "Yushi"
+
+msgid "交易货品优先序列"
+msgstr "Trade Goods Priority Sequence"
 
 msgid "仅在“完整循环测试”时生效，用于限定测试的小区域（当前地区可选地点）"
 msgstr "Only effective during Full Cycle Test to limit test area"
 
+msgid "仅差异"
+msgstr "Diff Only"
+
+msgid "仅接取"
+msgstr "Accept Only"
+
 msgid ""
 "仅接受'1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n],normal_[n]'这些值的逗号分隔字符串，\n"
-"代表技能释放优先级顺序\n"
-"例如'ult_2,1,e,ult_1'表示优先尝试干员2的终结技，再干员1的战技，\n"
-"再尝试连携，再干员1的终极技\n"
-"normal_[n] 表示临时切换为普通战斗模式 n 秒，期间按「技能释放」顺序自动出技，\n"
-"n 秒结束后自动恢复排轴模式（从下一个排轴技能继续）\n"
-"启用排轴功能后，系统会按照该配置的顺序尝试释放技能，\n"
-"一旦成功释放一个技能，就会等待下一个技能，而不是继续尝试后续技能\n"
-"这可以用于更精细地控制技能释放顺序，\n"
-"例如优先释放某个干员的技能来配合特定的战术需求。"
+"normal_[n] 表示临时切换为普通战斗模式 n 秒，期间按「技能释放」顺序自动出技。"
 msgstr ""
-"Comma-separated values for skill priority\n"
-"normal_[n] = switch to normal combat for n seconds, then resume rotation\n"
-"With rotation, system tries in order, waits after success\n"
-"Use for fine-grained control."
+"Comma-separated values: '1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n],normal_[n]'.\n"
+"normal_[n] = temporary normal combat for n seconds, using skill release order."
+
+msgid "仅站桩"
+msgstr "Stand Still Only"
+
+msgid "仅退出游戏"
+msgstr "Exit Game Only"
+
+msgid "仅送货"
+msgstr "Deliver Only"
+
+msgid "从发货仓库取出指定物品，切到收货仓库后一键存放 （目前只支持中文版）"
+msgstr "Transfer specified items from warehouse to another warehouse (Chinese only)"
 
 msgid "从账号列表或已有覆盖中选择"
 msgstr "Select from account list or existing overrides"
 
+msgid "从这个仓库拿货"
+msgstr "Take goods from this warehouse"
+
+msgid "仓库与物资"
+msgstr "Warehouse & Supplies"
+
+msgid "仓库物品转移"
+msgstr "Warehouse Item Transfer"
+
 msgid "任务"
 msgstr "Task"
+
+msgid "任务会按顺序依次对齐并滑行每段距离"
+msgstr "The task aligns and zips through each distance in order"
+
+msgid "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。"
+msgstr "After the task finishes, open the summary file with the system default app. If disabled, only create the file."
+
+msgid "任务属性配置"
+msgstr "Task Attribute Config"
+
+msgid "任务最后"
+msgstr "End of Tasks"
+
+msgid "任务最开始"
+msgstr "Start of Tasks"
+
+msgid "伊冯"
+msgstr "Yvonne"
+
+msgid "优先送礼对象"
+msgstr "Priority Gift Recipient"
 
 msgid "优质芽针针剂"
 msgstr "Yazhen Syringe [A]"
@@ -1432,17 +238,50 @@ msgstr "Low Tier"
 msgid "体力刷完后继续刷取次数"
 msgstr "Extra runs after stamina depleted"
 
+msgid "体力本"
+msgstr "Stamina Stage"
+
 msgid "体力本奖励档位"
 msgstr "Stamina Dungeon Reward Tier"
 
 msgid "体力本配置"
 msgstr "Stamina Dungeon Config"
 
+msgid "余烬"
+msgstr "Ember"
+
+msgid "佩丽卡"
+msgstr "Perlica"
+
+msgid "使用全局配置"
+msgstr "Use Global Config"
+
+msgid "使用独立配置"
+msgstr "Use Independent Config"
+
 msgid "使用说明参见选项，更多用法参见 ./docs/体力本.md"
 msgstr "See options for instructions, more in ./docs"
 
+msgid "例：「{key}」= {raw} → 依次滑行 {seq}"
+msgstr "e.g. \"{key}\" = {raw} → zip {seq}"
+
+msgid "供能高地"
+msgstr "Power Plateau"
+
+msgid "保存当前账号配置"
+msgstr "Save Current Account Config"
+
+msgid "保存账号列表"
+msgstr "Save Account List"
+
 msgid "保持当前"
 msgstr "Keep Current"
+
+msgid "信用商店保留信用"
+msgstr "Credit Store Reserved Credit"
+
+msgid "倒货的轮次"
+msgstr "Goods Transfer Rounds"
 
 msgid "储藏箱I"
 msgstr "Storage Crate I"
@@ -1456,8 +295,29 @@ msgstr "Storage Crate III"
 msgid "储藏箱IV"
 msgstr "Storage Crate IV"
 
+msgid "全局配置"
+msgstr "Global Config"
+
+msgid "全部"
+msgstr "All"
+
+msgid "关卡名"
+msgstr "Stage Name"
+
 msgid "其他配置"
 msgstr "Other Settings"
+
+msgid "别礼"
+msgstr "Last Rite"
+
+msgid "刮刮乐"
+msgstr "Scratch Card"
+
+msgid "制造舱"
+msgstr "Manufacturing Cabin"
+
+msgid "刷体力"
+msgstr "Farm Stamina"
 
 msgid "刷体力开始日期"
 msgstr "Stamina Farm Start Date"
@@ -1468,6 +328,9 @@ msgid ""
 msgstr ""
 "Start date for auto rotation, format: 2026-04-05.\n"
 "Used to calculate day number for dungeon sequence."
+
+msgid "刷取哪个副本。所选副本必须领完所有等级的首通奖励。"
+msgstr "Which dungeon to farm. Must have claimed all first-clear rewards."
 
 msgid "刷本序列"
 msgstr "Dungeon Sequence"
@@ -1486,50 +349,159 @@ msgstr ""
 "Prerequisite: Select \"None\"\n"
 "Auto-detect delivery after accepting commission"
 
-msgid ""
-"勾选要在帝江号收菜时执行的操作。\n"
-"收集线索：前往「会客室」收集全部线索，若集齐则开启情报交流。\n"
-"制造舱：前往「制造仓」收取培养材料并补足待制造数量。\n"
-"培养舱：前往「培养仓」收取培养材料并直接再次培养。"
-msgstr ""
-"Select operations during Dijiang harvest.\n"
-"Collect Clues: Go to Reception Room.\n"
-"Manufacturing Bay: Collect and restock.\n"
-"Cultivation Chamber: Collect and restart."
-
-msgid ""
-"勾选要在活动中心里领取的奖励。\n"
-"周常奖励：领取「每周事务」中的奖励。\n"
-"理智补给：领取「理智补给」中的奖励。"
-msgstr ""
-"Select rewards at Activity Center.\n"
-"Weekly Rewards: Claim from Weekly Tasks.\n"
-"Sanity Supply: Claim Sanity rewards."
-
-msgid ""
-"勾选要自动循环释放「战技」的角色编号。\n"
-"按编号从小到大的顺序依次释放，至少勾选一个。"
-msgstr ""
-"Select characters for auto skill cycling.\n"
-"Released in ascending order. Select at least one."
+msgid "动作列表"
+msgstr "Action List"
 
 msgid "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。"
 msgstr "If Auto-Exit is selected, exceptions will also exit game and app."
 
+msgid "区域扫描测试"
+msgstr "Region Scan Test"
+
+msgid "卡契尔"
+msgstr "Catcher"
+
+msgid "卡缪"
+msgstr "Camille"
+
+msgid "发生异常时终止游戏"
+msgstr "Terminate Game on Exception"
+
+msgid "发货仓库"
+msgstr "Source Warehouse"
+
+msgid "只买不卖"
+msgstr "Buy Only, No Selling"
+
+msgid "只填写 data.content 的字符串值"
+msgstr "Enter only the string value of data.content"
+
+msgid ""
+"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
+"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
+msgstr ""
+"Optional. When content is empty, read the saved map sync content for this account from the account config page.\n"
+"The account list comes from the account config page. Leave blank to try the current task account context."
+
+msgid ""
+"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
+"此项有值时优先使用，不再读取账号配置页。"
+msgstr ""
+"Optional. Paste the data.content value from the JSON returned by web-api.skland.com/account/info/hg/check.\n"
+"When this has a value, it is used first and the account config page is not read."
+
 msgid "可选。设置外部命令的起始目录（工作目录）；留空则使用默认目录。"
 msgstr "Optional. Set working directory for external command."
+
+msgid "后台结束战斗通知"
+msgstr "Background Battle End Notification"
+
+msgid "后台运行时，战斗结束后发送通知。"
+msgstr "Send notification when battle ends while running in background."
+
+msgid "否"
+msgstr "No"
+
+msgid "启动一次游戏,120s后自动关闭"
+msgstr "Launch game once, auto-close after 120s"
+
+msgid "启动技能点数"
+msgstr "Starting Skill Points"
+
+msgid "启用后将只进行购买操作，不进行出售操作。"
+msgstr "When enabled, only purchase, no selling."
+
+msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
+msgstr "When enabled, stronghold exchange only buys items in the \"Trading Goods Priority List\" when it is not empty; if the list is empty, the original exchange logic is used."
+
+msgid "启用实时条件"
+msgstr "Enable Real-Time Conditions"
+
+msgid "启用排轴"
+msgstr "Enable Skill Rotation"
 
 msgid "周常奖励"
 msgstr "Weekly Rewards"
 
+msgid "四号谷地"
+msgstr "Valley IV"
+
+msgid "四号谷地买入价"
+msgstr "Valley IV Buy Price"
+
+msgid "四号谷地卖出价"
+msgstr "Valley IV Sell Price"
+
+msgid "四号谷地物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
+msgstr "Valley IV buy price cap. Set high if must buy."
+
+msgid "四号谷地物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
+msgstr "Valley IV sell price floor. Set to 1 if must sell."
+
+msgid "回到主页后等待的时间"
+msgstr "Wait time after returning to main page"
+
+msgid ""
+"在没有运行任何条件动作时生效\n"
+"当终结技可释放时立刻释放终结技"
+msgstr ""
+"Takes effect when no conditional actions are running\n"
+"Release the Ultimate immediately when it is available"
+
+msgid ""
+"在没有运行任何条件动作时生效\n"
+"当连携技可释放时立刻释放连携技"
+msgstr ""
+"Takes effect when no conditional actions are running\n"
+"Release the Link Skill immediately when it is available"
+
+msgid "在演武台面前自动进入演算抽牌页，循环抽取直到满足等级变化条件"
+msgstr "Auto-enter the card draw page at the Combat Stage, keep drawing until level-up conditions are met."
+
 msgid "地区切换"
 msgstr "Region Switch"
+
+msgid "地图同步 content"
+msgstr "Map Sync content"
+
+msgid "地图账号"
+msgstr "Map Account"
+
+msgid "埃特拉"
+msgstr "Estella"
 
 msgid "培养舱"
 msgstr "Growth Chamber"
 
+msgid "填写规则"
+msgstr "How to fill"
+
+msgid "外部命令"
+msgstr "External Command"
+
+msgid "外部命令已运行时跳过"
+msgstr "Skip if External Command Is Running"
+
+msgid "外部命令执行时机"
+msgstr "External Command Timing"
+
+msgid "外部命令等待退出"
+msgstr "Wait for External Command"
+
+msgid "外部命令起始于"
+msgstr "External Command Start In"
+
+msgid "多账户模式"
+msgstr "Multi-Account Mode"
+
 msgid "多账户独立配置"
 msgstr "Per-Account Config"
+
+msgid "大世界自动拾取"
+msgstr "Auto pick in open world"
+
+msgid "大潘"
+msgstr "Da Pan"
 
 msgid ""
 "如果勾选，将优先全部用掉限时为‘小时’的体力药，\n"
@@ -1545,6 +517,12 @@ msgstr ""
 "Sub-tasks marked with ⭐, Default group first, Daily Rewards last.\n"
 "If ESC repeats, increase Action Delay (recommended 1.5+)."
 
+msgid "安塔尔"
+msgstr "Antal"
+
+msgid "完整循环测试"
+msgstr "Full Cycle Test"
+
 msgid "完整循环测试区域"
 msgstr "Full Cycle Test Area"
 
@@ -1554,11 +532,44 @@ msgstr "Run YOLO detection in real-time loop."
 msgid "实时检测"
 msgstr "Real-time Detection"
 
-msgid "帝江号收菜操作"
-msgstr "Dijiang Harvest Operations"
+msgid "对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低"
+msgstr "Auto-zooms in when aligning zip lines; may improve or clearly reduce success rate"
+
+msgid "导航到演武集算『演算』入口"
+msgstr "Navigate to the \"演算\" entrance of 演武集算"
+
+msgid "将次要目标方向蓝点对齐到屏幕中心"
+msgstr "Align the secondary target direction blue dot to the center of the screen"
+
+msgid "尝试仅收培育室"
+msgstr "Try Cultivation Room Only"
+
+msgid "就绪"
+msgstr "Ready"
+
+msgid "屏蔽可量产植物"
+msgstr "Filter Mass-Produced Plants"
+
+msgid "工具与调试"
+msgstr "Tools & Debug"
+
+msgid "帮助"
+msgstr "Help"
+
+msgid "常沄"
+msgstr "Chang Yun"
+
+msgid "干员经验"
+msgstr "Operator EXP"
+
+msgid "干员进阶"
+msgstr "Operator Promotions"
 
 msgid "庄方宜"
 msgstr "Zhuang Fangyi"
+
+msgid "建议启用时不要使用非白发或有白帽角色"
+msgstr "Avoid non-white-hair or white-hat characters when enabled"
 
 msgid "开启后仅显示与原配置不同的项"
 msgstr "Show only items differing from default config"
@@ -1569,12 +580,36 @@ msgstr "Wait for external command to finish. Required for multi-account."
 msgid "开启后若检测到目标命令已在运行，将跳过本次启动。"
 msgstr "Skip if target command is already running."
 
+msgid "弧光"
+msgstr "Arclight"
+
+msgid "弭弗"
+msgstr "Mi Fu"
+
 msgid ""
 "当「技力条」达到该数值时，\n"
 "开始执行技能序列。取值范围1-3。"
 msgstr ""
 "Start skill sequence when gauge reaches this value.\n"
 "Range: 1-3."
+
+msgid "当前账号的 hg/check data.content 值，用于官方地图位置同步"
+msgstr "Current account hg/check data.content value for official map position sync"
+
+msgid "当条件符合时使用技能组"
+msgstr "Use the skill set when conditions are met"
+
+msgid "彦宁"
+msgstr "Yan Ning"
+
+msgid "影拓丰碑"
+msgstr "Umbral Monument"
+
+msgid "快子遴捡晶格"
+msgstr "Tachyon Selection Lattice"
+
+msgid "战斗"
+msgstr "Battle"
 
 msgid ""
 "战斗中周期触发锁敌+向前闪避的最小间隔秒数。\n"
@@ -1583,8 +618,24 @@ msgstr ""
 "Min interval for lock-on + forward dodge.\n"
 "Min 6."
 
+msgid "战斗技能位置检测"
+msgstr "Battle Skill Slot Detection"
+
+msgid "战斗模板持续检测"
+msgstr "Continuous Battle Template Detection"
+
 msgid "战斗相关选项"
 msgstr "Battle Options"
+
+msgid "战斗配置"
+msgstr "Battle Config"
+
+msgid ""
+"手机号A\n"
+"手机号B"
+msgstr ""
+"Phone A\n"
+"Phone B"
 
 msgid ""
 "打开临时帮助文档。\n"
@@ -1605,6 +656,15 @@ msgstr "Open daily task usage instructions webpage."
 msgid "扫描间隔(秒)"
 msgstr "Scan Interval (seconds)"
 
+msgid "技能提升"
+msgstr "Skill Up"
+
+msgid "技能释放"
+msgstr "Skill Release"
+
+msgid "持续检测 skill 和 ult 模板并输出命中位置与匹配分数"
+msgstr "Continuously detect skill and ult templates and output hit positions and match scores"
+
 msgid "持续读取并显示当前箭头的角度"
 msgstr "Continuously read and display arrow angle"
 
@@ -1616,12 +676,82 @@ msgid ""
 "才会把当前目标标记为已获取。"
 msgstr "Hold mark key for this duration to mark target as collected."
 
+msgid "按住鼠标蛇形扫描指定矩形区域"
+msgstr "Hold the mouse and snake-scan the specified rectangular area"
+
+msgid ""
+"按列表顺序自动循环释放「战技」。\n"
+"可从 1/2/3/4 中选择并排序，至少保留一个。"
+msgstr ""
+"Auto-cycle through combat skills in list order.\n"
+"Select from 1/2/3/4 and sort, keep at least one."
+
+msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
+msgstr "Execute the selected operations by region: first outpost exchange, then buy in buy & sell; when buy supplies is enabled, switch to stable supply needs to buy after buying, then switch back to flexible supply needs to sell."
+
+msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr "Configure independent parameters per account and task. Select account first, then task, and the attribute controls will appear automatically. Only the account name (phone) is needed, no password. Compatible with legacy `account,password` format but passwords are not saved. Login also accepts the last 4 digits of the phone number for matching (if unique)."
+
+msgid "据点兑换"
+msgstr "Outpost Exchange"
+
+msgid "据点兑换仅购买优先商品"
+msgstr "Stronghold Exchange Buys Priority Goods Only"
+
+msgid "排轴序列"
+msgstr "Skill Rotation Sequence"
+
+msgid "接取武陵券"
+msgstr "Accept Wuling Ticket"
+
+msgid "接取武陵券最低金额(万)"
+msgstr "Wuling Ticket Min Amount (10k)"
+
+msgid "接取武陵券最高金额(万)"
+msgstr "Wuling Ticket Max Amount (10k)"
+
+msgid "接取谷地券"
+msgstr "Accept Valley Ticket"
+
+msgid "接取谷地券最低金额(万)"
+msgstr "Valley Ticket Min Amount (10k)"
+
+msgid "接取谷地券最高金额(万)"
+msgstr "Valley Ticket Max Amount (10k)"
+
 msgid ""
 "接近目标后用于标记“已获取”的键位。\n"
 "默认按键为 f。"
 msgstr ""
 "Key to mark target as collected when approaching.\n"
 "Default: F."
+
+msgid "收货仓库"
+msgstr "Destination Warehouse"
+
+msgid "收集线索"
+msgstr "Collect Clues"
+
+msgid "教程"
+msgstr "Tutorial"
+
+msgid "无"
+msgstr "None"
+
+msgid "无数字操作间隔"
+msgstr "No Numeric Action Interval"
+
+msgid "日常任务"
+msgstr "Daily Tasks"
+
+msgid "是"
+msgstr "Yes"
+
+msgid "是否买礼物"
+msgstr "Buy Gifts"
+
+msgid "是否前往「帝江号/简易制作」制作物品。"
+msgstr "Whether to go to \"Dijiang / Simple Crafting\" to craft items."
 
 msgid ""
 "是否前往「装备制造/套组装备制造」并制作一件列表首位的装备。\n"
@@ -1630,12 +760,21 @@ msgstr ""
 "Go to Equipment Crafting and craft first item.\n"
 "Ensure enough parts and dispatch tickets."
 
+msgid "是否前往「邮箱」领取邮件。"
+msgstr "Go to mailbox to collect mail."
+
 msgid ""
 "是否前往好友的「帝江号」并在「访客终端」上进行助力获得信用。\n"
 "助力结束后，前往「采购中心/信用交易所」收取全部助力。"
 msgstr ""
 "Visit friend's Dijiang, assist at Visitor Terminal.\n"
 "Then collect at Credit Exchange."
+
+msgid "是否启用「地区建设/四号谷地物资调度/弹性需求物资」交易。"
+msgstr "Enable Region Building/Valley IV/Flexible Demand trading."
+
+msgid "是否启用「地区建设/武陵物资调度/弹性需求物资」交易。"
+msgstr "Enable Region Building/Wuling/Flexible Demand trading."
 
 msgid ""
 "是否启用多账户模式\n"
@@ -1647,10 +786,13 @@ msgstr ""
 msgid ""
 "是否启用排轴功能。\n"
 "启用后会根据「排轴序列」配置的顺序优先释放对应角色的技能，\n"
-"当排轴失败时回退到非排轴状态"
+"当排轴失败时回退到非排轴状态。"
 msgstr ""
 "Enable skill rotation.\n"
-"Prioritizes skills per sequence; falls back on failure."
+"Prioritizes skills per rotation sequence; falls back to non-rotation state on failure."
+
+msgid "是否启用滚动放大视角"
+msgstr "Enable Scroll Zoom View"
 
 msgid ""
 "是否启用账号独立配置覆盖\n"
@@ -1659,12 +801,8 @@ msgstr ""
 "Enable per-account config override\n"
 "Different parameters per account for same task"
 
-msgid ""
-"是否在「地区建设/物资调度/稳定物资需求」中通过调度券购买物资。\n"
-"依次购买「日用消耗」「工业货品」「人文物产」首行某个物品。"
-msgstr ""
-"Purchase supplies via dispatch tickets.\n"
-"Buys first item of each category."
+msgid "是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"
+msgstr "Whether to transfer all delivery commissions in \"Regional Operations / Warehouse Node\" and claim the transfer commission rewards once."
 
 msgid ""
 "是否在「帝江号」打开背包并点击「一键存放」。\n"
@@ -1674,25 +812,34 @@ msgstr ""
 "Ensure usable items won't be auto-stored."
 
 msgid ""
-"是否在「弹性需求物资」与好友交易赚取调度券。\n"
-"自动选择利润最高的方案，然后用价格上下限判定是否交易。\n"
-"（除非可购买数量即将溢出，这种情况下必定交易。）"
-msgstr ""
-"Trade with friends for dispatch tickets.\n"
-"Auto-selects highest profit within price limits.\n"
-"(Always trades if quantity about to overflow.)"
-
-msgid ""
 "是否在「采购中心/信用交易所」采购。\n"
 "自动刷新 且 仅购买「武库配额」「嵌晶玉」。"
 msgstr ""
 "Purchase at Credit Exchange.\n"
 "Auto-refresh, only buy Arsenal Quota and Embedded Jade."
 
-msgid "是否执行一次外部命令行程序（可在「结尾外部命令执行时机」选择在最开始或最后执行）。"
+msgid ""
+"是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n"
+"开启发生异常时终止游戏时此选项不生效"
 msgstr ""
-"Execute external command (choose position via 「End Command Timing」: start or"
-" end of daily tasks)."
+"Exit game only after all tasks\n"
+"Auto-closes game but not software\n"
+"Ignored when Terminate on Exception is on"
+
+msgid "是否在日常任务结束后传送到帝江号右侧传送点。"
+msgstr "Whether to teleport to the right waypoint of Dijiang after the daily task ends."
+
+msgid "是否执行一次外部命令行程序（可在「外部命令执行时机」选择在最开始或最后执行）。"
+msgstr "Whether to run an external command once. Use External Command Timing to run it at the start or end."
+
+msgid "是否执行演武集算任务"
+msgstr "Execute Combat Simulation Task"
+
+msgid "是否执行自动接取并完成运输委托。"
+msgstr "Whether to automatically accept and complete delivery commissions."
+
+msgid "是否消耗所有「理智」刷取培养材料。"
+msgstr "Consume all Sanity to farm materials."
 
 msgid "是否购买「人文物产」（同样应用购物白名单序列）。"
 msgstr "Purchase Cultural Products (applies whitelist)."
@@ -1706,15 +853,26 @@ msgstr ""
 "Direct interaction if operator encountered.\n"
 "Cannot start near Cambridge waypoint."
 
-msgid ""
-"是否领取「地区建设/仓储结点/我转交的委托」。\n"
-"超时委托也会被领取。"
-msgstr ""
-"Claim delegated commissions at Storage Node.\n"
-"Expired ones will also be claimed."
+msgid "是否领取「行动手册/日常」和「通行证」中的奖励。"
+msgstr "Claim rewards from Handbook/Daily and Battle Pass."
 
-msgid "是否领取「活动中心」中的每周事务和理智补给奖励。"
-msgstr "Claim weekly tasks and sanity supply rewards."
+msgid "昼雪"
+msgstr "Snowshine"
+
+msgid "普里莫"
+msgstr "Primo"
+
+msgid "暂停时间应超过此值，用于观察恢复后的行为"
+msgstr "The pause duration should exceed this value, to observe the behavior after recovery"
+
+msgid "暂停计时验证"
+msgstr "Pause Timing Verification"
+
+msgid "最多重开次数"
+msgstr "Max Restart Count"
+
+msgid "枢纽区"
+msgstr "The Hub"
 
 msgid "标记按住时长"
 msgstr "Mark Hold Duration"
@@ -1722,11 +880,18 @@ msgstr "Mark Hold Duration"
 msgid "标记按键"
 msgstr "Mark Key"
 
-msgid "根据 assets 目录下的 weapon_data*.csv 自动生成可选语言"
-msgstr "Auto-generate languages from weapon_data*.csv in assets"
-
 msgid "根据地区配置自动送货,教程视频 BV1LLc7zFEF9"
 msgstr "Auto-deliver by region, tutorial BV1LLc7zFEF9"
+
+msgid ""
+"根据实时情况释放技能\n"
+"启用时自动忽略排轴配置"
+msgstr ""
+"Release skills based on real-time situations\n"
+"When enabled, the rotation/schedule config is ignored automatically"
+
+msgid "梨诺"
+msgstr "Liino"
 
 msgid "检测目标"
 msgstr "Detection Target"
@@ -1734,8 +899,35 @@ msgstr "Detection Target"
 msgid "检测置信度"
 msgstr "Detection Confidence"
 
-msgid "武器数据语言"
-msgstr "Weapon Data Language"
+msgid "检测间隔(秒)"
+msgstr "Detection interval (s)"
+
+msgid "武器经验"
+msgstr "Weapon EXP"
+
+msgid "武器进阶"
+msgstr "Weapon Tune"
+
+msgid "武陵"
+msgstr "Wuling"
+
+msgid "武陵买入价"
+msgstr "Wuling Buy Price"
+
+msgid "武陵卖出价"
+msgstr "Wuling Sell Price"
+
+msgid "武陵城"
+msgstr "Wuling City"
+
+msgid "武陵物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
+msgstr "Wuling buy price cap. Set high if must buy."
+
+msgid "武陵物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
+msgstr "Wuling sell price floor. Set to 1 if must sell."
+
+msgid "每个键对应一条滑索路线，值为距离序列，用英文逗号分隔"
+msgstr "Each key is a zip line route; the value is a distance sequence, comma-separated"
 
 msgid "每次检测后的等待时间"
 msgstr "Wait time after each detection"
@@ -1743,23 +935,86 @@ msgstr "Wait time after each detection"
 msgid "每行一个账号名（手机号），无需密码"
 msgstr "One account (phone) per line, no password needed"
 
+msgid "每轮最多抽牌5次；未满足条件时点击左下角『放弃』并重新开始。"
+msgstr "Max 5 draws per round; if conditions are not met, click \"Give Up\" at bottom-left and restart."
+
+msgid "每轮模板检测之间的等待时间，最小 0.05 秒"
+msgstr "Wait time between each round of template detection, minimum 0.05 seconds"
+
+msgid "汤汤"
+msgstr "Tangtang"
+
 msgid "油猴脚本帮助"
 msgstr "Tampermonkey Script Help"
 
-msgid "活动奖励"
-msgstr "Activity Rewards"
+msgid "洁尔佩塔"
+msgstr "Gilberta"
+
+msgid "洛茜"
+msgstr "Rossi"
+
+msgid "测试"
+msgstr "Test"
+
+msgid "测试模式"
+msgstr "Test Mode"
+
+msgid "测试超时(秒)"
+msgstr "Test Timeout (sec)"
 
 msgid "浏览器油猴脚本帮助"
 msgstr "Browser Tampermonkey Script Help"
 
+msgid "消耗限时体力药"
+msgstr "Use Limited-Time Stamina Potions"
+
 msgid "淤积点相关选项"
 msgstr "Stagnation Point Options"
+
+msgid "淤积点相关键"
+msgstr "Energy pool keys"
+
+msgid "清波寨"
+msgstr "Qingbo Stockade"
+
+msgid "清空当前任务覆盖"
+msgstr "Clear Current Task Override"
+
+msgid "清空当前账号全部覆盖"
+msgstr "Clear All Overrides for Current Account"
 
 msgid "游戏内开启全屏模式时请确保游戏内分辨率与你的屏幕分辨率一致"
 msgstr "Ensure game resolution matches screen in fullscreen"
 
+msgid "源石研究园"
+msgstr "Originium Science Park"
+
+msgid "源矿"
+msgstr "Originium Ore"
+
+msgid "滑索距离序列在「全局配置 → 滑索配置」中设置"
+msgstr "Set zip line distance sequences in Global Config → Zip Line Config"
+
+msgid "滑索配置说明"
+msgstr "Zip Line Config"
+
+msgid "演算入口导航测试"
+msgstr "演算 Entrance Navigation Test"
+
+msgid "演算抽牌"
+msgstr "Simulation Card Draw"
+
+msgid "物品"
+msgstr "Item"
+
 msgid "物品导航"
 msgstr "Item Navigation"
+
+msgid "状态"
+msgstr "Status"
+
+msgid "狼卫"
+msgstr "Wulfgard"
 
 msgid "理智补给"
 msgstr "Sanity Supply"
@@ -1773,31 +1028,51 @@ msgstr ""
 "Keep Current: don't switch.\n"
 "Low/High Tier: auto-open Selection and switch."
 
-msgid "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"
-msgstr ""
-"Listen to WebSocket location data, point to nearest item and support key "
-"marking"
+msgid "留空表示该路线不乘滑索"
+msgstr "Leave empty to skip the zip line on that route"
 
-msgid "简体中文"
-msgstr "Simplified Chinese"
+msgid "白垩界卫"
+msgstr "Marble Aggelomoirai"
+
+msgid "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"
+msgstr "Listen to WebSocket location data, point to nearest item and support key marking"
+
+msgid "目标券数"
+msgstr "Target Ticket Count"
+
+msgid "目标券数优先级序列，用逗号分隔多个券数。"
+msgstr "Priority sequence of target coupon counts, separated by commas."
+
+msgid ""
+"目标券数优先级序列，用逗号分隔多个券数。按列表中顺序优先抢前面的券数。\n"
+"默认：119000。可选：73100、79800、119000、159000、163000"
+msgstr ""
+"Priority sequence of target coupon counts, separated by commas. Earlier counts in the list are grabbed first.\n"
+"Default: 119000. Options: 73100, 79800, 119000, 159000, 163000"
+
+msgid "矿脉源区"
+msgstr "Origin Lodespring"
+
+msgid "秋栗"
+msgstr "Akekuri"
+
+msgid "立即释放终结技"
+msgstr "Release Ultimate Immediately"
+
+msgid "立即释放连携技"
+msgstr "Release Link Skill Immediately"
+
+msgid "等级读取测试"
+msgstr "Level Read Test"
+
+msgid "管理员"
+msgstr "administrator"
 
 msgid "箭头角度实时读取"
 msgstr "Real-time Arrow Angle Reading"
 
 msgid "精选荞愈胶囊"
 msgstr "Buck Capsule [A]"
-
-msgid "结尾外部命令"
-msgstr "End External Command"
-
-msgid "结尾外部命令已运行时跳过"
-msgstr "Skip End Command If Already Run"
-
-msgid "结尾外部命令等待退出"
-msgstr "Wait For End Command Exit"
-
-msgid "结尾外部命令起始于"
-msgstr "End Command Working Directory"
 
 msgid ""
 "结算时点击「放弃」而非「领取」，不消耗体力。\n"
@@ -1808,11 +1083,62 @@ msgstr ""
 "Only for Energy Stagnation.\n"
 "0 = disabled."
 
+msgid "编辑"
+msgstr "Edit"
+
+msgid "罗丹"
+msgstr "Rodin"
+
 msgid "聂菲斯"
 msgstr "Nefarith"
 
+msgid "自写循环"
+msgstr "Custom Loop"
+
+msgid "自动交互"
+msgstr "Auto Interact"
+
+msgid "自动完成当前所有普通影拓丰碑关卡"
+msgstr "Auto-complete all normal Shadow Monument stages"
+
+msgid "自动战斗"
+msgstr "Auto Combat"
+
+msgid "自动打开汇总文件"
+msgstr "Open Summary Automatically"
+
+msgid "自动抢单"
+msgstr "Auto Accept Orders"
+
+msgid "自动拾取"
+msgstr "Auto Pick"
+
+msgid "自动检测战斗开始和结束，使用说明参见选项"
+msgstr "Auto-detect battle start/end. See options."
+
+msgid "自动点击传送"
+msgstr "Auto Click Teleport"
+
+msgid "自动跳过剧情"
+msgstr "Auto Skip Dialog"
+
+msgid "自动送货"
+msgstr "Auto Delivery"
+
 msgid "致密源石粉末"
 msgstr "Dense Originium Powder"
+
+msgid "艾尔黛拉"
+msgstr "Ardelia"
+
+msgid "艾维文娜"
+msgstr "Avywenna"
+
+msgid "苏白易"
+msgstr "Subaiyi"
+
+msgid "若剩余信用小于这个数值，则终止采购。"
+msgstr "Stop purchasing if credit is below this value."
 
 msgid ""
 "若启用，则开始挑战后角色原地不动（不输出），\n"
@@ -1828,20 +1154,56 @@ msgstr ""
 "Prioritize friend's Cultivation Chamber.\n"
 "Otherwise, assist at least one other chamber."
 
+msgid "荞愈胶囊"
+msgstr "Buck Capsule [C]"
+
+msgid "莱万汀"
+msgstr "Laevatain"
+
+msgid "萤石"
+msgstr "Fluorite"
+
+msgid "蓝点归中测试"
+msgstr "Blue Dot Centering Test"
+
+msgid "蓝铁矿"
+msgstr "Ferrium Ore"
+
+msgid "藏剑谷"
+msgstr "Sword Vault Dale"
+
 msgid "裴令容"
 msgstr "Pei Lingrong"
 
 msgid "视图"
 msgstr "View"
 
+msgid "诀"
+msgstr "Arcane"
+
 msgid "试验园区"
 msgstr "Test Area"
+
+msgid "请先选择账号与任务"
+msgstr "Please select account and task first"
+
+msgid "读取演武集算关卡界面的当前等级"
+msgstr "Read the current level from the 演武集算 stage interface"
+
+msgid "象限拟合液"
+msgstr "Quadrant Fitting Fluid"
 
 msgid "账号"
 msgstr "Account"
 
 msgid "账号任务覆盖操作"
 msgstr "Account Task Override Operations"
+
+msgid "账号任务选择"
+msgstr "Account Task Selection"
+
+msgid "账号列表"
+msgstr "Account List"
 
 msgid "账号列表操作"
 msgstr "Account List Operations"
@@ -1855,20 +1217,85 @@ msgstr ""
 "Legacy format: `account, password` (password ignored).\n"
 "Last 4 digits can be used for matching."
 
+msgid "账号基础设置"
+msgstr "Account Basic Settings"
+
+msgid "账号配置"
+msgstr "Account Config"
+
+msgid "账号配置中心"
+msgstr "Account Config Center"
+
+msgid "购物白名单"
+msgstr "Shopping Whitelist"
+
+msgid "资源"
+msgstr "Resources"
+
+msgid "赛希"
+msgstr "Xaihi"
+
 msgid "赫铜零件"
 msgstr "Hetonite Part"
 
 msgid "赵昭"
 msgstr "Zhao Zhao"
 
+msgid "超距辉映管"
+msgstr "Metadiastima Photoemission Tube"
+
+msgid "转移轮次"
+msgstr "Transfer Rounds"
+
+msgid "转运到这个仓库"
+msgstr "Transfer to This Warehouse"
+
+msgid "运输委托"
+msgstr "Delivery Commission"
+
+msgid "运送委托接取"
+msgstr "Auto Accept Delivery Orders"
+
+msgid "进入战斗后开始自动操作前的等待秒数。"
+msgstr "Wait time in seconds before auto-operation starts after entering battle."
+
+msgid "进入战斗后的初始等待时间"
+msgstr "Initial wait time after entering battle"
+
+msgid "送礼任务最多尝试次数"
+msgstr "Max Gift Task Attempts"
+
+msgid "送货相关键"
+msgstr "Delivery keys"
+
 msgid "选择任务后自动渲染属性控件"
 msgstr "Auto-render attribute controls after selecting task"
+
+msgid ""
+"选择帝江号收菜内容：\n"
+"收集线索：前往会客室收集线索，集齐后开启情报交流。\n"
+"制造舱：收取培养材料并补足待制造数量。\n"
+"培养舱：收取培养材料并直接再次培养。"
+msgstr ""
+"Select the Dijiang harvest contents:\n"
+"Collect clues: go to the reception room to collect clues, and start intel exchange when complete.\n"
+"Manufacturing bay: collect cultivation materials and replenish the quantity to be manufactured.\n"
+"Cultivation bay: collect cultivation materials and directly cultivate again."
+
+msgid "选择当前任务使用全局或独立战斗配置。"
+msgstr "Choose whether the current task uses the global or the independent battle config."
+
+msgid "选择执行时机：任务最开始时最先执行，或任务最后执行。"
+msgstr "Choose timing: execute at the very start or at the end of the daily tasks."
 
 msgid "选择模型 labels 的 value 作为目标类别"
 msgstr "Select model labels value as target class"
 
 msgid "选择模型配置（来自 src/yolo/models.py）"
 msgstr "Select model config (from src/yolo/models.py)"
+
+msgid "选择测试对象"
+msgstr "Select Test Target"
 
 msgid "选择物品"
 msgstr "Select Items"
@@ -1883,3977 +1310,8 @@ msgstr ""
 msgid "选择要更换的队伍编号。"
 msgstr "Select team number to switch to."
 
-msgid "通向试验园区送货点"
-msgstr "To Test Area Delivery Point"
-
-msgid "通过下拉框切换送货地区配置"
-msgstr "Switch delivery region via dropdown"
-
-msgid "配置选择"
-msgstr "Config Selection"
-
-msgid "配置默认隐藏，选择后展开对应配置项。"
-msgstr "Config hidden by default; expands after selection."
-
-msgid "重息壤"
-msgstr "Heavy Xiranite"
-
-msgid "阮一"
-msgstr "Ruan Yi"
-
-msgid "阿禾"
-msgstr "A He"
-
-msgid "隐藏"
-msgstr "Hidden"
-
-msgid ""
-"需要执行的命令行内容。\n"
-"建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。\n"
-"开启『结尾外部命令等待退出』可支持多账户模式。\n"
-"可选填写『结尾外部命令起始于』作为命令工作目录。"
-msgstr ""
-"Command line to execute.\n"
-"Tip: Use absolute paths; quote paths with spaces.\n"
-"Enable Wait For End Command for multi-account mode."
-
-msgid ""
-"需要设好「预刻写属性」。默认留空表示不使用滑索前往，\n"
-"更多用法参见 ./docs/体力本.md > 能量淤积点 。"
-msgstr ""
-"Set Pre-Inscription attribute first. Leave empty for no zipline.\n"
-"See docs for more."
-
-msgid "首墩"
-msgstr "Marker Stone"
-
-msgid "高阶"
-msgstr "High Tier"
-
-msgid ""
-"默认留空，交易货品顺序随机。\n"
-"更多用法参见 ./docs/日常任务.md > 优先货品交易序列 。"
-msgstr ""
-"Leave empty for random trade order.\n"
-"See docs for more."
-
-msgid ""
-"默认留空，表示购买「日用消耗」「工业货品」「人文物产」首行首个物资。\n"
-"更多用法参见 ./docs/日常任务.md > 买物资 。"
-msgstr ""
-"Leave empty to buy first item of each category.\n"
-"See docs for more."
-
-msgid "Upload Logs"
-msgstr "Upload Logs"
-
-msgid "Log"
-msgstr "Log"
-
-msgid ""
-"['送礼', '帝江号一键存放', '收邮件', '据点兑换', '转交运送委托', '转交委托奖励领取', '造装备', '简易制作', '收信用',"
-" '帝江号收菜', '买信用商店', '买卖货', '刷体力', '买物资', '活动奖励', '日常奖励', '传送到帝江号右侧传送点', "
-"'执行结尾外部命令']"
-msgstr ""
-"['Gift', 'Dijiang One-Click Store', 'Collect Mail', 'Outpost Exchange', "
-"'Transfer Delivery Commission', 'Claim Delegated Rewards', 'Craft "
-"Equipment', 'Simple Craft', 'Collect Credit', 'Dijiang Harvest', 'Buy Credit"
-" Store', 'Buy and Sell', 'Farm Stamina', 'Buy Supplies', 'Event Rewards', "
-"'Daily Rewards', 'Teleport to Dijiang Right Waypoint', 'Execute End "
-"Command']"
-
-msgid "current task"
-msgstr "Current Task"
-
-msgid "wait main esc=True"
-msgstr "Wait Main esc=True"
-
-msgid "卡契尔"
-msgstr "Catcher"
-
-msgid "影拓丰碑"
-msgstr "Umbral Monument"
-
-msgid "未处理的任务列表"
-msgstr "Unprocessed Task List"
-
-msgid "点击确认超时"
-msgstr "Confirm Click Timeout"
-
-msgid "管理员"
-msgstr "administrator"
-
-msgid "自动完成当前所有普通影拓丰碑关卡"
-msgstr "Auto-complete all normal Shadow Monument stages"
-
-msgid "Auto"
-msgstr "Auto"
-
-msgid "Auto Resize Game Window"
-msgstr "Auto Resize Game Window"
-
-msgid "Auto Start Game When App Starts"
-msgstr "Auto Start Game When App Starts"
-
-msgid "Basic Options"
-msgstr "Basic Options"
-
-msgid "Diagnosis"
-msgstr "Diagnosis"
-
-msgid "Exit After Task"
-msgstr "Exit After Task"
-
-msgid "Exit App when Game Exits"
-msgstr "Exit App when Game Exits"
-
-msgid "Exit the Game and the App after Successfully Executing the Task"
-msgstr "Exit the Game and the App after Successfully Executing the Task"
-
-msgid "HotKey"
-msgstr "HotKey"
-
-msgid ""
-"Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
-msgstr ""
-"Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
-
-msgid "Kill Launcher after Start"
-msgstr "Kill Launcher after Start"
-
-msgid "Launch with DX11"
-msgstr "Launch with DX11"
-
-msgid "Minimize Window to System Tray when Closing"
-msgstr "Minimize Window to System Tray when Closing"
-
-msgid "Mute Game while in Background"
-msgstr "Mute Game while in Background"
-
-msgid "No"
-msgstr "No"
-
-msgid "None"
-msgstr "None"
-
-msgid "Operation"
-msgstr "Operation"
-
-msgid "Performance Test"
-msgstr "Performance Test"
-
-msgid "Start/Stop"
-msgstr "Start/Stop"
-
-msgid "Trigger Interval"
-msgstr "Trigger Interval"
-
-msgid "Use DirectML"
-msgstr "Use DirectML"
-
-msgid "Use GPU to Improve Performance"
-msgstr "Use GPU to Improve Performance"
-
-msgid "Yes"
-msgstr "Yes"
-
-msgid "⭐演算"
-msgstr "⭐Calculation"
-
-msgid "于施"
-msgstr "Yushi"
-
-msgid "仓库与物资"
-msgstr "Warehouse & Supplies"
-
-msgid "在演武台面前自动进入演算抽牌页，循环抽取直到满足等级变化条件"
-msgstr ""
-"Auto-enter the card draw page at the Combat Stage, keep drawing until level-"
-"up conditions are met."
-
-msgid "工具与调试"
-msgstr "Tools & Debug"
-
-msgid "战斗"
-msgstr "Battle"
-
-msgid "是否执行演武集算任务"
-msgstr "Execute Combat Simulation Task"
-
-msgid "普里莫"
-msgstr "Primo"
-
-msgid "最多重开次数"
-msgstr "Max Restart Count"
-
-msgid "每轮最多抽牌5次；未满足条件时点击左下角『放弃』并重新开始。"
-msgstr ""
-"Max 5 draws per round; if conditions are not met, click \"Give Up\" at "
-"bottom-left and restart."
-
-msgid "演算抽牌"
-msgstr "Simulation Card Draw"
-
-msgid "自动交互"
-msgstr "Auto Interact"
-
-msgid "自动点击传送"
-msgstr "Auto Click Teleport"
-
-msgid "苏白易"
-msgstr "Subaiyi"
-
-msgid "蓝点归中测试"
-msgstr "Blue Dot Centering Test"
-
-msgid "运输委托"
-msgstr "Delivery Commission"
-
-msgid "醚质"
-msgstr "Aurylene"
-
-msgid "Task"
-msgstr "Task"
-
-msgid "仅差异"
-msgstr "Diff Only"
-
-msgid "任务属性配置"
-msgstr "Task Attribute Config"
-
-msgid "保存当前账号任务覆盖"
-msgstr "Save Current Account Task Override"
-
-msgid "保存账号列表"
-msgstr "Save Account List"
-
-msgid "全局配置"
-msgstr "Global Config"
-
-msgid "全部"
-msgstr "All"
-
-msgid "刷新"
-msgstr "Refresh"
-
-msgid "刷新任务下拉"
-msgstr "Refresh Task Dropdown"
-
-msgid "刷新账号下拉"
-msgstr "Refresh Account Dropdown"
-
-msgid "就绪"
-msgstr "Ready"
-
-msgid ""
-"手机号A\n"
-"手机号B"
-msgstr ""
-"Phone A\n"
-"Phone B"
-
-msgid ""
-"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
-"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr ""
-"Configure independent parameters per account and task. Select account first,"
-" then task, and the attribute controls will appear automatically. Only the "
-"account name (phone) is needed, no password. Compatible with legacy "
-"`account,password` format but passwords are not saved. Login also accepts "
-"the last 4 digits of the phone number for matching (if unique)."
-
-msgid "清空当前任务覆盖"
-msgstr "Clear Current Task Override"
-
-msgid "清空当前账号全部覆盖"
-msgstr "Clear All Overrides for Current Account"
-
-msgid "状态"
-msgstr "Status"
-
-msgid "请先选择账号与任务"
-msgstr "Please select account and task first"
-
-msgid "账号任务选择"
-msgstr "Account Task Selection"
-
-msgid "账号基础设置"
-msgstr "Account Basic Settings"
-
-msgid "账号配置"
-msgstr "Account Config"
-
-msgid "账号配置中心"
-msgstr "Account Config Center"
-
-msgid ""
-"按列表顺序自动循环释放「战技」。\n"
-"可从 1/2/3/4 中选择并排序，至少保留一个。"
-msgstr ""
-"Auto-cycle through combat skills in list order.\n"
-"Select from 1/2/3/4 and sort, keep at least one."
-
-msgid "后台运行时，战斗结束后发送通知。"
-msgstr "Send notification when battle ends while running in background."
-
-msgid "进入战斗后开始自动操作前的等待秒数。"
-msgstr ""
-"Wait time in seconds before auto-operation starts after entering battle."
-
-msgid ""
-"是否启用排轴功能。\n"
-"启用后会根据「排轴序列」配置的顺序优先释放对应角色的技能，\n"
-"当排轴失败时回退到非排轴状态。"
-msgstr ""
-"Enable skill rotation.\n"
-"Prioritizes skills per rotation sequence; falls back to non-rotation state on failure."
-
-msgid ""
-"仅接受'1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n],normal_[n]'这些值的逗号分隔字符串，\n"
-"normal_[n] 表示临时切换为普通战斗模式 n 秒，期间按「技能释放」顺序自动出技。"
-msgstr ""
-"Comma-separated values: '1,2,3,4,ult_1,ult_2,ult_3,ult_4,e,sleep_[n],normal_[n]'.\n"
-"normal_[n] = temporary normal combat for n seconds, using skill release order."
-
-msgid "请先选择账号"
-msgstr "Please select an account first"
-
-msgid "请先选择任务"
-msgstr "Please select a task first"
-
-msgid "当前账号在该任务下没有差异项"
-msgstr "No differences for this account under this task"
-
-msgid "该任务暂无可编辑配置项"
-msgstr "No editable config items for this task"
-
-msgid "仅差异项"
-msgstr "Diff Only"
-
-msgid "全部配置"
-msgstr "All Config"
-
-msgid "当前视图：{view_mode} | 展示 {count} / {total} 项"
-msgstr "Current View: {view_mode} | Showing {count} / {total} items"
-
-msgid "未找到 support_multi_account=True 的任务"
-msgstr "No tasks found with support_multi_account=True"
-
-msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
-msgstr ""
-"Account & task config refreshed (account page list is independent from task "
-"account list)"
-
-msgid "账号列表已保存"
-msgstr "Account list saved"
-
-msgid "（复用ID {reused}，新建ID {created}）"
-msgstr "({reused} reused IDs, {created} new IDs)"
-
-msgid "；账号名（手机号）是唯一ID，密码变化不影响ID，账号名变化会新建ID"
-msgstr ""
-"; Account name (phone) is the unique ID. Password change does not affect ID,"
-" name change creates new ID"
-
-msgid "；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）"
-msgstr ""
-"; No password needed. Password info is removed on save (username only)"
-
-msgid "；忽略无效行 {count} 条"
-msgstr "; {count} invalid lines ignored"
-
-msgid "已清空：{account} / {task} 覆盖"
-msgstr "Cleared: {account} / {task} override"
-
-msgid "已清空账号全部覆盖：{account}"
-msgstr "Cleared all overrides for account: {account}"
-
-msgid "Delta型机器人"
-msgstr "Delta Bot"
-
-msgid "“碾骨之拳”罗丹"
-msgstr "Rhodagn the Bonekrushing Fist"
-
-msgid "中红柱状菌"
-msgstr "Red Bolete"
-
-msgid "中黯石"
-msgstr "Auronyx"
-
-msgid "仓储节点"
-msgstr "Depot Node"
-
-msgid "仿生翅天使"
-msgstr "Falsewings"
-
-msgid "会客室"
-msgstr "Reception Room"
-
-msgid "传送台"
-msgstr "TP Platform"
-
-msgid "供电终端"
-msgstr "Electric Nexus"
-
-msgid "充能球刺兽"
-msgstr "Imbued Quillbeast"
-
-msgid "净水节点"
-msgstr "Purification Node"
-
-msgid "分层入口"
-msgstr "Level Access"
-
-msgid "刚角天使"
-msgstr "Heavy Ram"
-
-msgid "割云翁"
-msgstr "Nimbus Razor"
-
-msgid "劫云客"
-msgstr "Cloud Stalker"
-
-msgid "协议传送点"
-msgstr "TP Point"
-
-msgid "协议奇点"
-msgstr "Protocol Singularity"
-
-msgid "协议核心"
-msgstr "Automation-Core"
-
-msgid "协议采录桩"
-msgstr "Protocol Datalogger"
-
-msgid "原生钳兽"
-msgstr "Indigenous Pincerbeast"
-
-msgid "受蚀玉化叶"
-msgstr "Blighted Jadeleaf"
-
-msgid "大角天使"
-msgstr "Ram"
-
-msgid "大角天使α"
-msgstr "Ram α"
-
-msgid "展示区"
-msgstr "Display Section"
-
-msgid "岩天使叶"
-msgstr "False Aggela"
-
-msgid "巨山犼兽"
-msgstr "Craghowler"
-
-msgid "干员联络台"
-msgstr "Operator Contact Panel"
-
-msgid "开天将"
-msgstr "Cloud Obliterator"
-
-msgid "怒目彪兽"
-msgstr "Glaring Rakerbeast"
-
-msgid "总控中枢"
-msgstr "Control Nexus"
-
-msgid "战术训练"
-msgstr "Tactical Training Cabin"
-
-msgid "摧山将"
-msgstr "Hill Smasher"
-
-msgid "斧甲兽"
-msgstr "Axe Armorbeast"
-
-msgid "断云叟"
-msgstr "Breaking Gust"
-
-msgid "星门菌"
-msgstr "Cosmagaric"
-
-msgid "映火荞花"
-msgstr "Firebuckle"
-
-msgid "晶化多齿叶"
-msgstr "Kalkodendra"
-
-msgid "晶锥天使"
-msgstr "Hedron"
-
-msgid "晶锥天使δ"
-msgstr "Hedron δ"
-
-msgid "柑实"
-msgstr "Citrome"
-
-msgid "棱镜天使"
-msgstr "Prism"
-
-msgid "次级核心"
-msgstr "Sub-PAC"
-
-msgid "武陵石"
-msgstr "Wulingstone"
-
-msgid "残暴原生钳兽"
-msgstr "Brutal Pincerbeast"
-
-msgid "水灯虫"
-msgstr "Waterlamp"
-
-msgid "浊流天使"
-msgstr "Mudflow"
-
-msgid "浊流天使δ"
-msgstr "Mudflow δ"
-
-msgid "源矿矿点"
-msgstr "Originium Mining Spot"
-
-msgid "演武平台"
-msgstr "Trial Arena"
-
-msgid "潜地虬兽"
-msgstr "Tunneling Nidwyrm"
-
-msgid "潮行天使"
-msgstr "Tidewalker"
-
-msgid "潮行天使δ"
-msgstr "Tidewalker δ"
-
-msgid "火雾源石虫"
-msgstr "Firemist Originium Slug"
-
-msgid "灰芦麦"
-msgstr "Reed Rye"
-
-msgid "灼壳虫"
-msgstr "Scorchbug"
-
-msgid "焚雾源石虫"
-msgstr "Blazemist Originium Slug"
-
-msgid "燎石"
-msgstr "Igneosite"
-
-msgid "物资调度终端"
-msgstr "Stock Redistribution Terminal"
-
-msgid "环境监测终端"
-msgstr "Environment Monitoring Terminal"
-
-msgid "球刺兽"
-msgstr "Quillbeast"
-
-msgid "琼叶参"
-msgstr "Redjade Ginseng"
-
-msgid "百眼彪兽"
-msgstr "Spotted Rakerbeast"
-
-msgid "砂叶"
-msgstr "Sandleaf"
-
-msgid "碾骨伏击射手"
-msgstr "Bonekrusher Ambusher"
-
-msgid "碾骨先锋"
-msgstr "Bonekrusher Vanguard"
-
-msgid "碾骨劫掠者"
-msgstr "Bonekrusher Raider"
-
-msgid "碾骨撕裂牙兽"
-msgstr "Bonekrusher Ripptusk"
-
-msgid "碾骨清道夫"
-msgstr "Bonekrusher Arsonist"
-
-msgid "碾骨渗透者"
-msgstr "Bonekrusher Infiltrator"
-
-msgid "碾骨焰术师"
-msgstr "Bonekrusher Pyromancer"
-
-msgid "碾骨行刑人"
-msgstr "Bonekrusher Executioner"
-
-msgid "穿林箭"
-msgstr "Grove Archer"
-
-msgid "精锐伏击射手"
-msgstr "Elite Ambusher"
-
-msgid "精锐劫掠者"
-msgstr "Elite Raider"
-
-msgid "精锐撕裂牙兽"
-msgstr "Elite Ripptusk"
-
-msgid "精锐行刑人"
-msgstr "Elite Executioner"
-
-msgid "紫晶矿矿点"
-msgstr "Amethyst Mining Spot"
-
-msgid "纯晶多齿叶"
-msgstr "Chrysodendra"
-
-msgid "维修灵感点"
-msgstr "Repair Logic"
-
-msgid "肖像天使"
-msgstr "Effigy"
-
-msgid "能量淤积点"
-msgstr "Energy Alluvium"
-
-msgid "至晶多齿叶"
-msgstr "Vitrodendra"
-
-msgid "芽针"
-msgstr "Yazhen"
-
-msgid "苦叶椒"
-msgstr "Tartpepper"
-
-msgid "荆刺芽针"
-msgstr "Thorny Yazhen"
-
-msgid "荞花"
-msgstr "Buckflower"
-
-msgid "莫惜命"
-msgstr "Highway Reaver"
-
-msgid "莫留财"
-msgstr "Road Plunderer"
-
-msgid "萤壳虫"
-msgstr "Glowbug"
-
-msgid "蓝铁矿矿点"
-msgstr "Ferrium Mining Spot"
-
-msgid "蓬茸锦草"
-msgstr "Fluffed Jincao"
-
-msgid "蚀像寻遗"
-msgstr "Etchspace Salvage"
-
-msgid "血菌"
-msgstr "Bloodcap"
-
-msgid "行迹高塔"
-msgstr "Tower of Trails"
-
-msgid "表象"
-msgstr "Æthillu"
-
-msgid "袭击预警终端"
-msgstr "EW Terminal"
-
-msgid "装备模板箱"
-msgstr "Gear Template Crate"
-
-msgid "见闻辑录"
-msgstr "Findings"
-
-msgid "访客终端"
-msgstr "Guest Terminal"
-
-msgid "资源回收站"
-msgstr "Recycling Station"
-
-msgid "赤铜矿"
-msgstr "Cuprium Ore"
-
-msgid "轻红柱状菌"
-msgstr "Pink Bolete"
-
-msgid "轻黯石"
-msgstr "Kalkonyx"
-
-msgid "过堂风"
-msgstr "Sweeping Wind"
-
-msgid "酮化灌木"
-msgstr "Aketine"
-
-msgid "酸液源石虫"
-msgstr "Acid Originium Slug"
-
-msgid "酸液源石虫·α"
-msgstr "Acid Originium Slug α"
-
-msgid "重刺天使"
-msgstr "Heavy Sting"
-
-msgid "重刺天使α"
-msgstr "Heavy Sting α"
-
-msgid "重红柱状菌"
-msgstr "Ruby Bolete"
-
-msgid "重黯石"
-msgstr "Umbronyx"
-
-msgid "金石稻"
-msgstr "Amber Rice"
-
-msgid "钉刺天使"
-msgstr "Sting"
-
-msgid "钉刺天使α"
-msgstr "Sting α"
-
-msgid "锁闭储藏箱"
-msgstr "Sealed Crate"
-
-msgid "锦草"
-msgstr "Jincao"
-
-msgid "雾火斧甲兽"
-msgstr "Hazefyre Axe Armorbeast"
-
-msgid "雾火爪牙"
-msgstr "Hazefyre Claw"
-
-msgid "雾火牙兽"
-msgstr "Hazefyre Tuskbeast"
-
-msgid "音像存档"
-msgstr "Audio Archive"
-
-msgid "高阶培养I"
-msgstr "Advanced Progression I"
-
-msgid "高阶培养II"
-msgstr "Advanced Progression II"
-
-msgid "高阶培养III"
-msgstr "Advanced Progression III"
-
-msgid "高阶培养IV"
-msgstr "Advanced Progression IV"
-
-msgid "高阶培养V"
-msgstr "Advanced Progression V"
-
-msgid "黯银柑实"
-msgstr "Umbraline"
-
-msgid "Battle Config"
-msgstr "Battle Config"
-
-msgid "Daily Task"
-msgstr "Daily Task"
-
-msgid "Kill Launcher After Start"
-msgstr "Kill Launcher After Start"
-
-msgid "危境再现"
-msgstr "Crisis Recurrence"
-
-msgid "危境预演"
-msgstr "Crisis Rehearsal"
-
-msgid "周常"
-msgstr "Weekly"
-
-msgid "基础配置"
-msgstr "Basic Config"
-
-msgid "干员养成"
-msgstr "Operator Training"
-
-msgid "战斗配置"
-msgstr "Battle Config"
-
-msgid "武器养成"
-msgstr "Weapon Training"
-
-msgid ""
-"目标券数优先级序列，用逗号分隔多个券数。按列表中顺序优先抢前面的券数。\n"
-"默认：119000。可选：73100、79800、119000"
-msgstr ""
-"Target ticket count priority sequence. Separate multiple counts with commas.\n"
-"Default: 119000. Options: 73100, 79800, 119000"
-
-msgid "键位配置"
-msgstr "Key Bindings"
-
-msgid "藏剑谷"
-msgstr "Sword Vault Dale"
-
-msgid "结尾外部命令执行时机"
-msgstr "End Command Timing"
-
-msgid "选择执行时机：任务最开始时最先执行，或任务最后执行。"
-msgstr ""
-"Choose timing: execute at the very start or at the end of the daily tasks."
-
-msgid "任务最开始"
-msgstr "Start of Tasks"
-
-msgid "任务最后"
-msgstr "End of Tasks"
-
-msgid "YOLO实测扫描"
-msgstr "YOLO Field Scan"
-
-msgid "content"
-msgstr "content"
-
-msgid "⭐执行外部命令"
-msgstr "⭐Run External Command"
-
-msgid "一次送礼个数"
-msgstr "Gifts Per Batch"
-
-msgid "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。"
-msgstr ""
-"After the task finishes, open the summary file with the system default app. "
-"If disabled, only create the file."
-
-msgid "使用全局配置"
-msgstr "Use Global Config"
-
-msgid "使用独立配置"
-msgstr "Use Independent Config"
-
-msgid "保存当前账号配置"
-msgstr "Save Current Account Config"
-
-msgid "刮刮乐"
-msgstr "Scratch Card"
-
-msgid "协议纹石\n"
-msgstr "Protocolith"
-
-msgid "只填写 data.content 的字符串值"
-msgstr "Enter only the string value of data.content"
-
-msgid ""
-"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
-"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
-msgstr ""
-"Optional. When content is empty, read the saved map sync content for this account from the account config page.\n"
-"The account list comes from the account config page. Leave blank to try the current task account context."
-
-msgid ""
-"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
-"此项有值时优先使用，不再读取账号配置页。"
-msgstr ""
-"Optional. Paste the data.content value from the JSON returned by web-api.skland.com/account/info/hg/check.\n"
-"When this has a value, it is used first and the account config page is not read."
-
-msgid "地图同步 content"
-msgstr "Map Sync content"
-
-msgid "地图账号"
-msgstr "Map Account"
-
-msgid "塔晶"
-msgstr "Talosite"
-
-msgid "塔罗斯菌"
-msgstr "Talos Cap"
-
-msgid "外部命令"
-msgstr "External Command"
-
-msgid "外部命令已运行时跳过"
-msgstr "Skip if External Command Is Running"
-
-msgid "外部命令执行时机"
-msgstr "External Command Timing"
-
-msgid "外部命令等待退出"
-msgstr "Wait for External Command"
-
-msgid "外部命令起始于"
-msgstr "External Command Start In"
-
-msgid "当前账号的 hg/check data.content 值，用于官方地图位置同步"
-msgstr ""
-"Current account hg/check data.content value for official map position sync"
-
-msgid "待回收物品"
-msgstr "Salvageable"
-
-msgid "息壤气"
-msgstr "Xiragen"
-
-msgid "惰气"
-msgstr "Inergen"
-
-msgid "战争回响"
-msgstr "Echoes of War"
-
-msgid "是否执行一次外部命令行程序。"
-msgstr "Whether to run an external command once."
-
-msgid "是否执行一次外部命令行程序（可在「外部命令执行时机」选择在最开始或最后执行）。"
-msgstr ""
-"Whether to run an external command once. Use External Command Timing to run "
-"it at the start or end."
-
-msgid "滑索配置"
-msgstr "Zipline Config"
-
-msgid "用于实测 YOLO 模型：可选模型、可选目标、可设置信度并循环扫描。"
-msgstr ""
-"For field testing YOLO models: choose a model, target, confidence, and scan "
-"in a loop."
-
-msgid "红矛叶"
-msgstr "Crimson Spearleaf"
-
-msgid "网页地图同步"
-msgstr "Web Map Sync"
-
-msgid "自动打开汇总文件"
-msgstr "Open Summary Automatically"
-
-msgid "荞愈胶囊"
-msgstr "Buck Capsule [C]"
-
-msgid "蚀影噪雷"
-msgstr "Blitzcrash Blightshade"
-
-msgid "蚀影应龙尖兵"
-msgstr "YSTF Elite Blightshade"
-
-msgid "蚀影牙兽"
-msgstr "Tuskbeast Blightshade"
-
-msgid ""
-"账号1\n"
-"账号2\n"
-"账号3"
-msgstr ""
-"Account 1\n"
-"Account 2\n"
-"Account 3"
-
-msgid "选择当前账号在该任务中使用全局或独立战斗配置。"
-msgstr ""
-"Choose whether this account uses the global or independent battle config for"
-" this task."
-
-msgid "阿莱克琉斯，千夫长"
-msgstr "Alleikhreos, Chiliarch"
-
-msgid ""
-"需要执行的命令行内容。\n"
-"建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。"
-msgstr ""
-"Command line to run.\n"
-"Prefer absolute paths. Quote paths or arguments with spaces according to your system shell rules."
-
-msgid ""
-"需要执行的命令行内容。\n"
-"建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。\n"
-"开启『外部命令等待退出』可支持多账户模式。\n"
-"可选填写『外部命令起始于』作为命令工作目录。"
-msgstr ""
-"Command line to run.\n"
-"Prefer absolute paths. Quote paths or arguments with spaces according to your system shell rules.\n"
-"Enable Wait for External Command to support multi-account mode.\n"
-"Optionally set External Command Start In as the working directory."
-
-msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
-msgstr ""
-"Save a complete task configuration snapshot for the current account. Changes"
-" to task defaults will not affect saved accounts."
-
-msgid "炽燃！竞技大会！"
-msgstr "HEAT RAGE! MEGA ARENA!"
-
-msgid "梨诺"
-msgstr "Liino"
-
-msgid "诀"
-msgstr "Arcane"
-
-msgid "卡缪"
-msgstr "Camille"
-
-msgid "弭弗"
-msgstr "Mi Fu"
-
-msgid "管理员 (男)"
-msgstr "Endministrator (M)"
-
-msgid "管理员 (女)"
-msgstr "Endministrator (F)"
-
-msgid "无瑕基质·残暴"
-msgstr "Flawless Essence: Brutality"
-
-msgid "无瑕基质·附术"
-msgstr "Flawless Essence: Infliction"
-
-msgid "无瑕基质·迸发"
-msgstr "Flawless Essence: Detonate"
-
-msgid "无瑕基质·强攻"
-msgstr "Flawless Essence: Assault"
-
-msgid "无瑕基质·效益"
-msgstr "Flawless Essence: Efficacy"
-
-msgid "无瑕基质·追袭"
-msgstr "Flawless Essence: Pursuit"
-
-msgid "无瑕基质·巧技"
-msgstr "Flawless Essence: Combative"
-
-msgid "无瑕基质·切骨"
-msgstr "Flawless Essence: Fracture"
-
-msgid "无瑕基质·医疗"
-msgstr "Flawless Essence: Medicant"
-
-msgid "无瑕基质·粉碎"
-msgstr "Flawless Essence: Crusher"
-
-msgid "无瑕基质·夜幕"
-msgstr "Flawless Essence: Twilight"
-
-msgid "无瑕基质·昂扬"
-msgstr "Flawless Essence: Inspiring"
-
-msgid "无瑕基质"
-msgstr "Flawless Essence"
-
-msgid "无瑕基质·流转"
-msgstr "Flawless Essence: Flow"
-
-msgid "高纯基质"
-msgstr "Pure Essence"
-
-msgid "净态基质"
-msgstr "Clean Essence"
-
-msgid "无瑕基质·压制"
-msgstr "Flawless Essence: Suppression"
-
-msgid "稳定基质"
-msgstr "Stable Essence"
-
-msgid "理智"
-msgstr "Sanity"
-
-msgid "诀的信物"
-msgstr "Arcane's Token"
-
-msgid "二色环流灯"
-msgstr "Dichromo-Light"
-
-msgid "武陵塔晶探针"
-msgstr "Wuling Talosite Probe"
-
-msgid "ID资讯更新卡"
-msgstr "ID Info Update Card"
-
-msgid "补充武库箱·军列"
-msgstr "Arms OC: Military Grade"
-
-msgid "武器补给·蚀海"
-msgstr "Weapon Supply: Blighted Sea"
-
-msgid "桂花米糕"
-msgstr "Osmanthus Rice Cake"
-
-msgid "手工星星糖"
-msgstr "Handmade Star Candy"
-
-msgid "第一年的生日蛋糕"
-msgstr "Year 1 Birthday Cake"
-
-msgid "踞渊北眺寻访凭证"
-msgstr "Gaze North to the Rift HH Permit"
-
-msgid "补充武库箱·疾行"
-msgstr "Arms OC: Swift Walker"
-
-msgid "补充武库箱·熔灼"
-msgstr "Arms OC: Smelting Fire"
-
-msgid "武器补给·唤醒"
-msgstr "Weapon Supply: Awakening"
-
-msgid "卡缪的信物"
-msgstr "Camille's Token"
-
-msgid "补充武库箱·染赤"
-msgstr "Arms OC: Crimson Hued"
-
-msgid "夜趋逐罪寻访凭证"
-msgstr "Peacekeeper's Nocturne HH Permit"
-
-msgid "晶化硬币"
-msgstr "Vitrified Coin"
-
-msgid "魔甘草糖果"
-msgstr "Devil's Licorice Drops"
-
-msgid "龙爪能量饮料"
-msgstr "Lungclaw Ultra-E"
-
-msgid "武器补给·苍山"
-msgstr "Weapon Supply: Viridian Mont"
-
-msgid "补充武库箱·绛结"
-msgstr "Arms OC: Scarlet Knot"
-
-msgid "拳与心合寻访凭证"
-msgstr "One with Her Fists HH Permit"
-
-msgid "弭弗的信物"
-msgstr "Mi Fu's Token"
-
-msgid "一截微型石像"
-msgstr "Piece of a Mini Stone Statue"
-
-msgid "醚质晶块"
-msgstr "Aurylene Crystal"
-
-msgid "行动资历"
-msgstr "Operational EXP"
-
-msgid "流光庆时寻访凭证"
-msgstr "Shimmering Moment HH Permit"
-
-msgid "流光庆时调用凭证"
-msgstr "Shimmering Moment Designation Permit"
-
-msgid "流光庆时信物补给"
-msgstr "Shimmering Moment Token Supply"
-
-msgid "同行者的小雕像"
-msgstr "Companions Figurine"
-
-msgid "息壤玉葫芦样品"
-msgstr "Xiranite Jade Gourd Sample"
-
-msgid "像差雾火残块"
-msgstr "Aberrant Hazefyre Fragment"
-
-msgid "战术装具残块"
-msgstr "Tactical Equipment Fragment"
-
-msgid "不灭晶壁残块"
-msgstr "Unbreachable Crystal Fragment"
-
-msgid "重岩残块"
-msgstr "Densolite Fragment"
-
-msgid "灼热弩箭残块"
-msgstr "Scorching Hot Bolt Fragment"
-
-msgid "罐装碾骨布偶"
-msgstr "Specimen: Bonekrusher Dolls"
-
-msgid "罐装施术单元"
-msgstr "Specimen: Arts Unit"
-
-msgid "罐装充气教授"
-msgstr "Specimen: Tube Professor"
-
-msgid "佩丽卡金雕像"
-msgstr "Gold Statuette: Perlica"
-
-msgid "老暴鸰金雕像"
-msgstr "Gold Statuette: Old Bombtail"
-
-msgid "罗丹的密档"
-msgstr "Classified: Rhodagn"
-
-msgid "安全局成员的密档"
-msgstr "Classified: Security Bureau Staff"
-
-msgid "璀璨的大结核"
-msgstr "Sparkling Nodule [L]"
-
-msgid "璀璨的中结核"
-msgstr "Sparkling Nodule [M]"
-
-msgid "璀璨的小结核"
-msgstr "Sparkling Nodule [S]"
-
-msgid "珍贵的大结核"
-msgstr "Precious Nodule [L]"
-
-msgid "珍贵的中结核"
-msgstr "Precious Nodule [M]"
-
-msgid "珍贵的小结核"
-msgstr "Precious Nodule [S]"
-
-msgid "援助成果券"
-msgstr "Fruits of Altruism Certs"
-
-msgid "息壤葫芦样品"
-msgstr "Xiranite Gourd Sample"
-
-msgid "启明驻留平台模型"
-msgstr "Qiming Station Model"
-
-msgid "轨道羽兽翅"
-msgstr "Orbital Wings"
-
-msgid "补充武库箱·崇山"
-msgstr "Arms OC: Rising Mount"
-
-msgid "补充武库箱·坚冰"
-msgstr "Arms OC: Solid Ice"
-
-msgid "补充武库箱·雷鸣"
-msgstr "Arms OC: Thunderous Peal"
-
-msgid "补充武库箱·远途"
-msgstr "Arms OC: Far Expedition"
-
-msgid "补充武库箱·星声"
-msgstr "Arms OC: Cosmic Voice"
-
-msgid "补充武库箱·绯珀"
-msgstr "Arms OC: Scarlet Pearl"
-
-msgid "补充武库箱·迅行"
-msgstr "Arms OC: Express Delivery"
-
-msgid "补充武库箱·绘涂"
-msgstr "Arms OC: Graffiti"
-
-msgid "天师桩模型"
-msgstr "Tianshi Pillar Model"
-
-msgid "生机盆景"
-msgstr "Bonsai of Life"
-
-msgid "冠军钻探器"
-msgstr "Champion Drill Crawler"
-
-msgid "弧线2000模型"
-msgstr "Arc 2000 Model"
-
-msgid "爆破单元残块"
-msgstr "Detonation Unit Fragment"
-
-msgid "罐装源石树枝"
-msgstr "Specimen: Originium Branch"
-
-msgid "阿伯莉的密档"
-msgstr "Classified: Aburrey"
-
-msgid "塔塔金雕像"
-msgstr "Gold Statuette: Tata"
-
-msgid "肉品工厂的密档"
-msgstr "Classified: Meat-Packing Plant"
-
-msgid "罐装面包"
-msgstr "Specimen: Bread"
-
-msgid "巨大胖鸟金雕像"
-msgstr "Gold Statuette: Bigfowl"
-
-msgid "天使腐草的密档"
-msgstr "Classified: Aggelos Rotreed"
-
-msgid "陈千语金雕像"
-msgstr "Gold Statuette: Chen Qianyu"
-
-msgid "臻品龙泡泡"
-msgstr "Deluxe Chubby Lung"
-
-msgid "庄方宜的信物"
-msgstr "Zhuang Fangyi's Token"
-
-msgid "油焖整笋罐头"
-msgstr "Wholly-Braised Sprout [can]"
-
-msgid "补充武库箱·行舟"
-msgstr "Arms OC: Drifting Raft"
-
-msgid "武器补给·怒潮"
-msgstr "Weapon Supply: Wrothful Tide"
-
-msgid "大号循环惊喜箱"
-msgstr "Cycling Crate-o-Surprise [L]"
-
-msgid "中号循环惊喜箱"
-msgstr "Cycling Crate-o-Surprise [M]"
-
-msgid "春雷醒物寻访凭证"
-msgstr "Blitz of Verdance HH Permit"
-
-msgid "软管残块"
-msgstr "Tubular Fragment"
-
-msgid "巨型武器的密档"
-msgstr "Classified: Giant Weaponry"
-
-msgid "伊冯金雕像"
-msgstr "Gold Statuette: Yvonne"
-
-msgid "谷地多痕刻写箱"
-msgstr "Valley Multi-Line Engraving Kit"
-
-msgid "鳞肉干"
-msgstr "Dried Fin"
-
-msgid "苹果切盘"
-msgstr "Apple Slices"
-
-msgid "补充武库箱·新芽"
-msgstr "Arms OC: Budding Anew"
-
-msgid "武器补给·暗流"
-msgstr "Weapon Supply: Dark Currents"
-
-msgid "清波静流寻访凭证"
-msgstr "Gently Flows Qingbo HH Permit"
-
-msgid "汤汤的信物"
-msgstr "Tangtang's Token"
-
-msgid "洛西的信物"
-msgstr "Rossi's Token"
-
-msgid "狼群瑰宝十连凭证"
-msgstr "Pearl of the Pack 10×Permit"
-
-msgid "狼群瑰宝寻访凭证"
-msgstr "Pearl of the Pack HH Permit"
-
-msgid "兰姆先生"
-msgstr "Mr. Rammu"
-
-msgid "春时酥点（财）"
-msgstr "Springfest Pastry (Wealth)"
-
-msgid "春时酥点（福）"
-msgstr "Springfest Pastry (Fortune)"
-
-msgid "连连看·福气款"
-msgstr "Connect-and-Win: Auspice"
-
-msgid "春时酥点（喜）"
-msgstr "Springfest Pastry (Joy)"
-
-msgid "连连看·好运款"
-msgstr "Connect-and-Win: Luck"
-
-msgid "琥珀色岩残块"
-msgstr "Amberite Fragment"
-
-msgid "斧甲残块"
-msgstr "Axe Armor Fragment"
-
-msgid "烙石残块"
-msgstr "Refractorite Fragment"
-
-msgid "面具残块"
-msgstr "Mask Fragment"
-
-msgid "锈铁残块"
-msgstr "Rust Fragment"
-
-msgid "罐装DELTA天使"
-msgstr "Specimen: DELTA Aggelos"
-
-msgid "狼卫金雕像"
-msgstr "Gold Statuette: Wulfgard"
-
-msgid "狼群的密档"
-msgstr "Classified: The Pack"
-
-msgid "附晶体残块"
-msgstr "Crystal-Embedded Fragment"
-
-msgid "罐装侵蚀甲片"
-msgstr "Specimen: Blighted Armorscale"
-
-msgid "精良的小结核"
-msgstr "Fine Nodule [S]"
-
-msgid "普通的大结核"
-msgstr "Common Nodule [L]"
-
-msgid "粗糙的小结核"
-msgstr "Rough Nodule [S]"
-
-msgid "粗糙的大结核"
-msgstr "Rough Nodule [L]"
-
-msgid "粗糙的中结核"
-msgstr "Rough Nodule [M]"
-
-msgid "普通的中结核"
-msgstr "Common Nodule [M]"
-
-msgid "不成型的中结核"
-msgstr "Malformed Nodule [M]"
-
-msgid "精良的中结核"
-msgstr "Fine Nodule [M]"
-
-msgid "不成型的大结核"
-msgstr "Malformed Nodule [L]"
-
-msgid "不成型的小结核"
-msgstr "Malformed Nodule [S]"
-
-msgid "普通的小结核"
-msgstr "Common Nodule [S]"
-
-msgid "信用"
-msgstr "Credits"
-
-msgid "大号兑换惊喜箱"
-msgstr "Exchange Crate-o-Surprise [L]"
-
-msgid "中号兑换惊喜箱"
-msgstr "Exchange Crate-o-Surprise [M]"
-
-msgid "通行证经验"
-msgstr "Pass EXP"
-
-msgid "通行证申请·源石"
-msgstr "Pass Application: Originium"
-
-msgid "通行证申请·客制化"
-msgstr "Pass Application: Customized"
-
-msgid "自选调用凭证"
-msgstr "Designation Selection Permit"
-
-msgid "理智精粹药剂"
-msgstr "Sanity Essence"
-
-msgid "终点配额"
-msgstr "Endpoint Quota"
-
-msgid "武库配额"
-msgstr "Arsenal Ticket"
-
-msgid "折金票"
-msgstr "T-Creds"
-
-msgid "衍质源石"
-msgstr "Origeometry"
-
-msgid "嵌晶玉"
-msgstr "Oroberyl"
-
-msgid "基础寻访凭证"
-msgstr "Basic HH Permit"
-
-msgid "特许寻访凭证"
-msgstr "Chartered HH Permit"
-
-msgid "十连启程寻访凭证"
-msgstr "New Horizons HH-10×Permit"
-
-msgid "集成配额"
-msgstr "AIC Quota"
-
-msgid "十连特许寻访凭证"
-msgstr "Chartered HH-10×Permit"
-
-msgid "行火留烬寻访凭证"
-msgstr "Firewalker's Trail HH Permit"
-
-msgid "保障配额"
-msgstr "Bond Quota"
-
-msgid "异彩斑斓寻访凭证"
-msgstr "Spectral Splendor HH Permit"
-
-msgid "灵动信使寻访凭证"
-msgstr "Messenger Express HH Permit"
-
-msgid "行火留烬十连凭证"
-msgstr "Firewalker's Trail 10×Permit"
-
-msgid "理智消耗许可"
-msgstr "Sanity Usage Permit"
-
-msgid "异彩斑斓十连凭证"
-msgstr "Spectral Splendor 10×Permit"
-
-msgid "灵动信使十连凭证"
-msgstr "Messenger Express 10×Permit"
-
-msgid "寻访情报书"
-msgstr "Headhunting Dossier"
-
-msgid "补充武库箱·熔铸"
-msgstr "Arms OC: Smelting Forge"
-
-msgid "臻选武器补给"
-msgstr "Curated Weapon Supply"
-
-msgid "启程武器补给"
-msgstr "New Horizons Weapon Supply"
-
-msgid "草莓可丽饼"
-msgstr "Strawberry Crepe"
-
-msgid "海盐冰淇淋"
-msgstr "Seasalt Ice Cream"
-
-msgid "理智萃取器"
-msgstr "Sanity Extractor"
-
-msgid "理智恢复液"
-msgstr "Sanity Syrup"
-
-msgid "艾维文娜的信物"
-msgstr "Avywenna's Token"
-
-msgid "新锐谷地罗盘"
-msgstr "Keen Valley Compass"
-
-msgid "管理员的信物"
-msgstr "Endministrator's Token"
-
-msgid "佩丽卡的信物"
-msgstr "Perlica's Token"
-
-msgid "陈千语的信物"
-msgstr "Chen Qianyu's Token"
-
-msgid "狼卫的信物"
-msgstr "Wulfgard's Token"
-
-msgid "弧光的信物"
-msgstr "Arclight's Token"
-
-msgid "余烬的信物"
-msgstr "Ember's Token"
-
-msgid "赛希的信物"
-msgstr "Xaihi's Token"
-
-msgid "洁尔佩塔的信物"
-msgstr "Gilberta's Token"
-
-msgid "昼雪的信物"
-msgstr "Snowshine's Token"
-
-msgid "黎风的信物"
-msgstr "Lifeng's Token"
-
-msgid "莱万汀的信物"
-msgstr "Laevatain's Token"
-
-msgid "伊冯的信物"
-msgstr "Yvonne's Token"
-
-msgid "大潘的信物"
-msgstr "Da Pan's Token"
-
-msgid "秋栗的信物"
-msgstr "Akekuri's Token"
-
-msgid "卡契尔的信物"
-msgstr "Catcher's Token"
-
-msgid "埃特拉的信物"
-msgstr "Estella's Token"
-
-msgid "萤石的信物"
-msgstr "Fluorite's Token"
-
-msgid "安塔尔的信物"
-msgstr "Antal's Token"
-
-msgid "阿列什的信物"
-msgstr "Alesh's Token"
-
-msgid "艾尔黛拉的信物"
-msgstr "Ardelia's Token"
-
-msgid "别礼的信物"
-msgstr "Last Rite's Token"
-
-msgid "骏卫的信物"
-msgstr "Pogranichnik's Token"
-
-msgid "新锐谷地探测器"
-msgstr "Keen Valley Detector"
-
-msgid "新锐武陵罗盘"
-msgstr "Keen Wuling Compass"
-
-msgid "新锐武陵探测器"
-msgstr "Keen Wuling Detector"
-
-msgid "紧急理智加强剂"
-msgstr "Emergency Sanity Booster"
-
-msgid "稀有的小结核"
-msgstr "Rare Nodule [S]"
-
-msgid "稀有的中结核"
-msgstr "Rare Nodule [M]"
-
-msgid "稀有的大结核"
-msgstr "Rare Nodule [L]"
-
-msgid "精良的大结核"
-msgstr "Fine Nodule [L]"
-
-msgid "栗花蜜"
-msgstr "Chestnut Honey"
-
-msgid "高效息壤"
-msgstr "Efficient Xiranite"
-
-msgid "通用固体转气体"
-msgstr "General Solid-to-Gas"
-
-msgid "通用液体转气体"
-msgstr "General Fluid-to-Gas"
-
-msgid "重息壤气提纯"
-msgstr "Heavy Xiragen Purification"
-
-msgid "气态灼铜"
-msgstr "Pyrrolite Gas"
-
-msgid "通用气体转固体"
-msgstr "General Gas-to-Solid"
-
-msgid "分离芯"
-msgstr "Separator Core"
-
-msgid "息壤装备与电池"
-msgstr "Xiranite Components and Batteries"
-
-msgid "息壤气灌装"
-msgstr "Xiragen Bottling"
-
-msgid "赤铜耐压罐"
-msgstr "Cuprium Canister"
-
-msgid "赫铜溶液"
-msgstr "Hetonite Solution"
-
-msgid "赫铜装备原件"
-msgstr "Hetonite Component"
-
-msgid "壤晶"
-msgstr "Xircon"
-
-msgid "中容量武陵电池"
-msgstr "SC Wuling Battery"
-
-msgid "赤铜瓶"
-msgstr "Cuprium Bottle"
-
-msgid "赤铜零件"
-msgstr "Cuprium Part"
-
-msgid "赤铜装备原件"
-msgstr "Cuprium Component"
-
-msgid "通用水培种植"
-msgstr "General Hydroponics"
-
-msgid "锦草饮料"
-msgstr "Jincao Drink"
-
-msgid "芽针针剂"
-msgstr "Yazhen Syringe [C]"
-
-msgid "芽针溶液"
-msgstr "Yazhen Solution"
-
-msgid "通用植物溶液"
-msgstr "General Plant Solution"
-
-msgid "通用种植生产"
-msgstr "General Plant Farming"
-
-msgid "工业爆炸物"
-msgstr "Industrial Explosive"
-
-msgid "低容量谷地电池"
-msgstr "LC Valley Battery"
-
-msgid "柑实罐头"
-msgstr "Canned Citrome [C]"
-
-msgid "紫晶质瓶"
-msgstr "Amethyst Bottle"
-
-msgid "紫晶纤维"
-msgstr "Amethyst Fiber"
-
-msgid "四二式·肃阵"
-msgstr "Type 42: Solemn Phalanx"
-
-msgid "黄金时代"
-msgstr "Golden Age"
-
-msgid "联结点"
-msgstr "Junction Point"
-
-msgid "遥望"
-msgstr "Farsight"
-
-msgid "镀红祝福"
-msgstr "Blessing of Lustrous Carmine"
-
-msgid "赤缨"
-msgstr "Amaranthine Tassel"
-
-msgid "幻想苦痛"
-msgstr "Phantom Pain"
-
-msgid "灯火使命"
-msgstr "Beacon of Duty"
-
-msgid "孤舟"
-msgstr "Lone Barge"
-
-msgid "雾中微光"
-msgstr "Flickers in the Mist"
-
-msgid "狼之绯"
-msgstr "Lupine Scarlet"
-
-msgid "落草"
-msgstr "Brigand's Calling"
-
-msgid "望乡"
-msgstr "Home Longing"
-
-msgid "光荣记忆"
-msgstr "Glorious Memory"
-
-msgid "艺术暴君"
-msgstr "Artzy Tyrannical"
-
-msgid "使命必达"
-msgstr "Delivery Guaranteed"
-
-msgid "熔铸火焰"
-msgstr "Forgeborn Scathe"
-
-msgid "骑士精神"
-msgstr "Chivalric Virtues"
-
-msgid "遗忘"
-msgstr "Oblivion"
-
-msgid "爆破单元"
-msgstr "Detonation Unit"
-
-msgid "作品：蚀迹"
-msgstr "Opus: Etch Figure"
-
-msgid "沧溟星梦"
-msgstr "Dreams of the Starry Beach"
-
-msgid "同类相食"
-msgstr "Clannibal"
-
-msgid "楔子"
-msgstr "Wedge"
-
-msgid "领航者"
-msgstr "Navigator"
-
-msgid "J.E.T."
-msgstr "JET"
-
-msgid "骁勇"
-msgstr "Valiant"
-
-msgid "负山"
-msgstr "Mountain Bearer"
-
-msgid "破碎君王"
-msgstr "Sundered Prince"
-
-msgid "昔日精品"
-msgstr "Former Finery"
-
-msgid "典范"
-msgstr "Exemplar"
-
-msgid "赫拉芬格"
-msgstr "Khravengger"
-
-msgid "大雷斑"
-msgstr "Thunderberge"
-
-msgid "白夜新星"
-msgstr "White Night Nova"
-
-msgid "显赫声名"
-msgstr "Eminent Repute"
-
-msgid "热熔切割器"
-msgstr "Thermite Cutter"
-
-msgid "扶摇"
-msgstr "Rapid Ascent"
-
-msgid "黯色火炬"
-msgstr "Umbral Torch"
-
-msgid "不知归"
-msgstr "Never Rest"
-
-msgid "宏愿"
-msgstr "Grand Vision"
-
-msgid "O.B.J.术识"
-msgstr "OBJ Arts Identifier"
-
-msgid "布道自由"
-msgstr "Freedom to Proselytize"
-
-msgid "向心之引"
-msgstr "Cohesive Traction"
-
-msgid "莫奈何"
-msgstr "Monaihe"
-
-msgid "悼亡诗"
-msgstr "Stanza of Memorials"
-
-msgid "嵌合正义"
-msgstr "Chimeric Justice"
-
-msgid "十二问"
-msgstr "Twelve Questions"
-
-msgid "O.B.J.尖峰"
-msgstr "OBJ Razorhorn"
-
-msgid "迷失荒野"
-msgstr "Wild Wanderer"
-
-msgid "理性告别"
-msgstr "Rational Farewell"
-
-msgid "坚城铸造者"
-msgstr "Fortmaker"
-
-msgid "O.B.J.迅极"
-msgstr "OBJ Velocitous"
-
-msgid "O.B.J.重荷"
-msgstr "OBJ Heavy Burden"
-
-msgid "逐鳞3.0"
-msgstr "Finchaser 3.0"
-
-msgid "钢铁余音"
-msgstr "Sundering Steel"
-
-msgid "古渠"
-msgstr "Ancient Canal"
-
-msgid "仰止"
-msgstr "Aspirant"
-
-msgid "终点之声"
-msgstr "Finishing Call"
-
-msgid "O.B.J.轻芒"
-msgstr "OBJ Edge of Lightness"
-
-msgid "探骊"
-msgstr "Seeker of Dark Lung"
-
-msgid "作品：众生"
-msgstr "Opus: The Living"
-
-msgid "浪潮"
-msgstr "Wave Tide"
-
-msgid "长路"
-msgstr "Long Road"
-
-msgid "呼啸守卫"
-msgstr "Howling Guard"
-
-msgid "寻路者道标"
-msgstr "Pathfinder's Beacon"
-
-msgid "显锋"
-msgstr "Prominent Edge"
-
-msgid "全自动骇新星"
-msgstr "Hypernova Auto"
-
-msgid "萤光雷羽"
-msgstr "Fluorescent Roc"
-
-msgid "天使杀手"
-msgstr "Aggeloslayer"
-
-msgid "淬火者"
-msgstr "Quencher"
-
-msgid "工业零点一"
-msgstr "Industry 0.1"
-
-msgid "达尔霍夫7"
-msgstr "Darhoff 7"
-
-msgid "奥佩罗77"
-msgstr "Opero 77"
-
-msgid "吉米尼12"
-msgstr "Jiminy 12"
-
-msgid "佩科5"
-msgstr "Peco 5"
-
-msgid "塔尔11"
-msgstr "Tarr 11"
-
-msgid "蚀影应龙队长"
-msgstr "YSTF Captain Blightshade"
-
-msgid "蚀影应龙破阵手"
-msgstr "YSTF Glaiver Blightshade"
-
-msgid "蚀影应龙前锋"
-msgstr "YSTF Vanguard Blightshade"
-
-msgid "蚀影彪兽"
-msgstr "Rakerbeast Blightshade"
-
-msgid "蚀影球刺兽"
-msgstr "Quillbeast Blightshade"
-
-msgid "披甲裂兽"
-msgstr "Armored Manglerbeast"
-
-msgid "山犼兽"
-msgstr "Rockhowler"
-
-msgid "天鼓"
-msgstr "Skydrummer"
-
-msgid "聂菲斯，“征服者”"
-msgstr "Nefarith, \"Conqueror\""
-
-msgid "聂菲斯，“碾骨”"
-msgstr "Nefarith, \"Bonekrusher\""
-
-msgid "白垩附肢"
-msgstr "Marble Appendage"
-
-msgid "破潮之像"
-msgstr "Tidalklast"
-
-msgid "碾骨破城者"
-msgstr "Bonekrusher Siegeknuckles"
-
-msgid "碾骨射手"
-msgstr "Bonekrusher Ballista"
-
-msgid "蓄能球刺兽"
-msgstr "Imbued Quillbeast"
-
-msgid "跂步晶城"
-msgstr "Walking Chrysopolis"
-
-msgid "仿生翅天使α"
-msgstr "Falsewings α"
-
-msgid "岗哨天使"
-msgstr "Sentinel"
-
-msgid "刚角天使α"
-msgstr "Heavy Ram α"
-
-msgid "涉渊重甲"
-msgstr "Rift Trekker Heavy Armor"
-
-msgid "旧锋装甲"
-msgstr "Grizzled Edge Armor"
-
-msgid "旧锋装甲·壹型"
-msgstr "Grizzled Edge Armor T1"
-
-msgid "旧锋手甲"
-msgstr "Grizzled Edge Gauntlets"
-
-msgid "旧锋手甲·壹型"
-msgstr "Grizzled Edge Gauntlets T1"
-
-msgid "旧锋刺刃"
-msgstr "Grizzled Edge Push Knife"
-
-msgid "旧锋刺刃·壹型"
-msgstr "Grizzled Edge Push Knife T1"
-
-msgid "壤流轻甲"
-msgstr "Xiranflow Light Armor"
-
-msgid "壤流护手"
-msgstr "Xiranflow Gloves"
-
-msgid "壤流短棍"
-msgstr "Xiranflow Baton"
-
-msgid "清波重甲"
-msgstr "Qingbo Heavy Armor"
-
-msgid "清波轻甲"
-msgstr "Qingbo Light Armor"
-
-msgid "清波手甲"
-msgstr "Qingbo Gauntlets"
-
-msgid "清波护手"
-msgstr "Qingbo Gloves"
-
-msgid "清波竹刃"
-msgstr "Qingbo Bamboo Cutter"
-
-msgid "清波定位仪"
-msgstr "Qingbo Positioning Kit"
-
-msgid "清波水罐"
-msgstr "Qingbo Cask"
-
-msgid "点剑重装甲·壹型"
-msgstr "Swordmancer Heavy Armor T1"
-
-msgid "点剑战术手甲·壹型"
-msgstr "Swordmancer TAC Gauntlets T1"
-
-msgid "点剑短刃"
-msgstr "Swordmancer Dagger"
-
-msgid "碾骨手套"
-msgstr "Bonekrusha Gloves"
-
-msgid "碾骨小雕像II"
-msgstr "Bonekrusha Figurine T2"
-
-msgid "拓荒纤维手套I"
-msgstr "Frontiers Fiber Gloves T1"
-
-msgid "拓荒增量供氧栓I"
-msgstr "Frontiers Extra O2 Tube T1"
-
-msgid "纾难重甲"
-msgstr "Redeemer Plates"
-
-msgid "纾难护甲"
-msgstr "Redeemer Armor"
-
-msgid "纾难护手"
-msgstr "Redeemer Gloves"
-
-msgid "纾难手套"
-msgstr "Redeemer Hands"
-
-msgid "点剑定位信标"
-msgstr "Swordmancer NAV Beacon"
-
-msgid "点剑微型滤芯"
-msgstr "Swordmancer Micro Filter"
-
-msgid "点剑轻装甲"
-msgstr "Swordmancer Light Armor"
-
-msgid "生物辅助接驳器II"
-msgstr "LYNX Connector T2"
-
-msgid "轻超域轻护手"
-msgstr "Æthertech Light Gloves"
-
-msgid "轻超域稳定器I"
-msgstr "Æthertech Stabilizer T1"
-
-msgid "轻超域腕表"
-msgstr "Æthertech Watch"
-
-msgid "碾骨重护甲II"
-msgstr "Bonekrusha Heavy Armor T2"
-
-msgid "碾骨腕带I"
-msgstr "Bonekrusha Wristband T1"
-
-msgid "碾骨腕带"
-msgstr "Bonekrusha Wristband"
-
-msgid "碾骨面具II"
-msgstr "Bonekrusha Mask T2"
-
-msgid "脉冲式探针"
-msgstr "Pulser Labs Probe"
-
-msgid "脉冲式侵入核"
-msgstr "Pulser Labs Invasion Core"
-
-msgid "拓荒纤维手套"
-msgstr "Frontiers Fiber Gloves"
-
-msgid "拓荒分析仪"
-msgstr "Frontiers Analyzer"
-
-msgid "拓荒护服"
-msgstr "Frontiers Protection Suit"
-
-msgid "拓荒供氧栓"
-msgstr "Frontiers O2 Tube"
-
-msgid "动火用辅助骨骼"
-msgstr "Hot Work Exo-Rig"
-
-msgid "动火用手套"
-msgstr "Hot Work Gloves"
-
-msgid "M. I.警用护甲I"
-msgstr "MI Security Armor T1"
-
-msgid "M. I.警用手套I"
-msgstr "MI Security Gloves T1"
-
-msgid "M. I.警用瞄具I"
-msgstr "MI Security Scope T1"
-
-msgid "50式应龙重甲·贰型"
-msgstr "Type 50 Yinglung Heavy Armor T2"
-
-msgid "50式应龙重甲·壹型"
-msgstr "Type 50 Yinglung Heavy Armor T1"
-
-msgid "50式应龙雷达·贰型"
-msgstr "Type 50 Yinglung Radar T2"
-
-msgid "50式应龙雷达·壹型"
-msgstr "Type 50 Yinglung Radar T1"
-
-msgid "5​0​式应龙护手"
-msgstr "Type 50 Yinglung Gloves"
-
-msgid "碾骨小雕像"
-msgstr "Bonekrusha Figurine"
-
-msgid "碾骨面具I"
-msgstr "Bonekrusha Mask T1"
-
-msgid "碾骨面具"
-msgstr "Bonekrusha Mask"
-
-msgid "碾骨披巾I"
-msgstr "Bonekrusha Poncho T1"
-
-msgid "碾骨披巾"
-msgstr "Bonekrusha Poncho"
-
-msgid "碾骨重护甲I"
-msgstr "Bonekrusha Heavy Armor T1"
-
-msgid "碾骨重护甲"
-msgstr "Bonekrusha Heavy Armor"
-
-msgid "轻超域稳定器"
-msgstr "Æthertech Stabilizer"
-
-msgid "轻超域分析环"
-msgstr "Æthertech Analysis Band"
-
-msgid "轻超域护手"
-msgstr "Æthertech Gloves"
-
-msgid "轻超域护板"
-msgstr "Æthertech Plating"
-
-msgid "生物辅助护盾针"
-msgstr "LYNX Aegis Injector"
-
-msgid "生物辅助护板"
-msgstr "LYNX Slab"
-
-msgid "生物辅助接驳器I"
-msgstr "LYNX Connector T1"
-
-msgid "生物辅助接驳器"
-msgstr "LYNX Connector"
-
-msgid "生物辅助手甲"
-msgstr "LYNX Gauntlets"
-
-msgid "生物辅助臂甲"
-msgstr "LYNX Gloves"
-
-msgid "生物辅助胸甲"
-msgstr "LYNX Cuirass"
-
-msgid "生物辅助重甲"
-msgstr "LYNX Heavy Armor"
-
-msgid "点剑火石"
-msgstr "Swordmancer Flint"
-
-msgid "点剑战术手甲"
-msgstr "Swordmancer TAC Gauntlets"
-
-msgid "点剑战术手套"
-msgstr "Swordmancer TAC Gloves"
-
-msgid "点剑重装甲"
-msgstr "Swordmancer Heavy Armor"
-
-msgid "碾骨小雕像I"
-msgstr "Bonekrusha Figurine T1"
-
-msgid "脉冲式干扰服"
-msgstr "Pulser Labs Disruptor Suit"
-
-msgid "50式应龙重甲"
-msgstr "Type 50 Yinglung Heavy Armor"
-
-msgid "纾难识别证"
-msgstr "Redeemer Tag"
-
-msgid "纾难识别证I"
-msgstr "Redeemer Tag T1"
-
-msgid "纾难印章"
-msgstr "Redeemer Seal"
-
-msgid "纾难印章I"
-msgstr "Redeemer Seal T1"
-
-msgid "50式应龙轻甲"
-msgstr "Type 50 Yinglung Light Armor"
-
-msgid "50式应龙护手·壹型"
-msgstr "Type 50 Yinglung Gloves T1"
-
-msgid "50式应龙雷达"
-msgstr "Type 50 Yinglung Radar"
-
-msgid "50式应龙短刃"
-msgstr "Type 50 Yinglung Knife"
-
-msgid "50式应龙短刃·壹型"
-msgstr "Type 50 Yinglung Knife T1"
-
-msgid "脉冲式手套"
-msgstr "Pulser Labs Gloves"
-
-msgid "落潮轻甲"
-msgstr "Tide Fall Light Armor"
-
-msgid "潮涌手甲"
-msgstr "Tide Surge Gauntlets"
-
-msgid "脉冲式校准器"
-msgstr "Pulser Labs Calibrator"
-
-msgid "长息辅助臂"
-msgstr "Eternal Xiranite Auxiliary Arm"
-
-msgid "长息蓄电核·壹型"
-msgstr "Eternal Xiranite Power Core T1"
-
-msgid "蚀电防护电池I"
-msgstr "Mordvolt Resistant Battery T1"
-
-msgid "长息蓄电核"
-msgstr "Eternal Xiranite Power Core"
-
-msgid "蚀电防护扳手I"
-msgstr "Mordvolt Resistant Wrench T1"
-
-msgid "长息护手·壹型"
-msgstr "Eternal Xiranite Gloves T1"
-
-msgid "蚀电防护手套I"
-msgstr "Mordvolt Resistant Gloves T1"
-
-msgid "长息护手"
-msgstr "Eternal Xiranite Gloves"
-
-msgid "蚀电防护背心I"
-msgstr "Mordvolt Resistant Vest T1"
-
-msgid "长息护甲"
-msgstr "Eternal Xiranite Armor"
-
-msgid "蚀电绝缘电池I"
-msgstr "Mordvolt Insulation Battery T1"
-
-msgid "浊流切割炬"
-msgstr "Turbid Cutting Torch"
-
-msgid "悬河供氧栓"
-msgstr "Hanging River O2 Tube"
-
-msgid "蚀电绝缘扳手II"
-msgstr "Mordvolt Insulation Wrench T2"
-
-msgid "蚀电绝缘手套I"
-msgstr "Mordvolt Insulation Gloves T1"
-
-msgid "蚀电绝缘背心I"
-msgstr "Mordvolt Insulation Vest T1"
-
-msgid "蚀电绝缘背心II"
-msgstr "Mordvolt Insulation Vest T2"
-
-msgid "巡行信使陀螺I"
-msgstr "Roving MSGR Gyro T1"
-
-msgid "巡行信使手电筒I"
-msgstr "Roving MSGR Flashlight T1"
-
-msgid "巡行信使手电筒II"
-msgstr "Roving MSGR Flashlight T2"
-
-msgid "巡行信使手套I"
-msgstr "Roving MSGR Fists T1"
-
-msgid "巡行信使夹克I"
-msgstr "Roving MSGR Jacket T1"
-
-msgid "重装信使陀螺I"
-msgstr "Armored MSGR Gyro T1"
-
-msgid "重装信使手电筒I"
-msgstr "Armored MSGR Flashlight T1"
-
-msgid "重装信使手套I"
-msgstr "Armored MSGR Gloves T1"
-
-msgid "拓荒护甲"
-msgstr "Frontiers Armor"
-
-msgid "重装信使手套II"
-msgstr "Armored MSGR Gloves T2"
-
-msgid "拓荒护甲I"
-msgstr "Frontiers Armor T1"
-
-msgid "重装信使夹克I"
-msgstr "Armored MSGR Jacket T1"
-
-msgid "拓荒护甲II"
-msgstr "Frontiers Armor T2"
-
-msgid "天灾防护滤心"
-msgstr "Catastrophe Filter"
-
-msgid "拓荒护甲III"
-msgstr "Frontiers Armor T3"
-
-msgid "天灾防护净芯I"
-msgstr "Catastrophe Gauze Cartridge T1"
-
-msgid "拓荒耐蚀手套"
-msgstr "Frontiers Blight RES Gloves"
-
-msgid "天灾防护净芯"
-msgstr "Catastrophe Gauze Cartridge"
-
-msgid "拓荒通讯器"
-msgstr "Frontiers Comm"
-
-msgid "天灾防护手套"
-msgstr "Catastrophe Gloves"
-
-msgid "拓荒通讯器I"
-msgstr "Frontiers Comm T1"
-
-msgid "天灾防护重甲I"
-msgstr "Catastrophe Heavy Armor T1"
-
-msgid "拓荒增量供氧栓"
-msgstr "Frontiers Extra O2 Tube"
-
-msgid "天灾防护重甲"
-msgstr "Catastrophe Heavy Armor"
-
-msgid "动火用外骨骼"
-msgstr "Hot Work Exoskeleton"
-
-msgid "阿伯莉感测芯片I"
-msgstr "Aburrey Sensor Chip T1"
-
-msgid "动火用手甲"
-msgstr "Hot Work Gauntlets"
-
-msgid "阿伯莉感测芯片"
-msgstr "Aburrey Sensor Chip"
-
-msgid "动火用手甲I"
-msgstr "Hot Work Gauntlets T1"
-
-msgid "阿伯莉照明器"
-msgstr "Aburrey Flashlight"
-
-msgid "动火用储能匣"
-msgstr "Hot Work Power Bank"
-
-msgid "阿伯莉侦听芯片I"
-msgstr "Aburrey Auditory Chip T1"
-
-msgid "动火用测温镜"
-msgstr "Hot Work Pyrometer"
-
-msgid "阿伯莉紫光灯"
-msgstr "Aburrey UV Lamp"
-
-msgid "动火用电力匣"
-msgstr "Hot Work Power Cartridge"
-
-msgid "阿伯莉侦听芯片"
-msgstr "Aburrey Auditory Chip"
-
-msgid "蚀电防护电池"
-msgstr "Mordvolt Resistant Battery"
-
-msgid "M.I.警用护甲"
-msgstr "MI Security Armor"
-
-msgid "阿伯莉手甲"
-msgstr "Aburrey Gauntlets"
-
-msgid "蚀电防护扳手"
-msgstr "Mordvolt Resistant Wrench"
-
-msgid "M.I.警用罩衣"
-msgstr "MI Security Overalls"
-
-msgid "阿伯莉轻甲I"
-msgstr "Aburrey Light Armor T1"
-
-msgid "蚀电防护手套"
-msgstr "Mordvolt Resistant Gloves"
-
-msgid "M. I.警用罩衣I"
-msgstr "MI Security Overalls T1"
-
-msgid "阿伯莉轻甲"
-msgstr "Aburrey Light Armor"
-
-msgid "阿伯莉重甲I"
-msgstr "Aburrey Heavy Armor T1"
-
-msgid "蚀电防护背心"
-msgstr "Mordvolt Resistant Vest"
-
-msgid "M. I.警用罩衣II"
-msgstr "MI Security Overalls T2"
-
-msgid "阿伯莉重甲"
-msgstr "Aburrey Heavy Armor"
-
-msgid "M.I.警用手套"
-msgstr "MI Security Gloves"
-
-msgid "矿场联络仪I"
-msgstr "Miner Comm T1"
-
-msgid "蚀电绝缘电池"
-msgstr "Mordvolt Insulation Battery"
-
-msgid "矿场压缩核I"
-msgstr "Miner Compression Core T1"
-
-msgid "M.I.警用手环"
-msgstr "MI Security Hands PPE"
-
-msgid "蚀电绝缘扳手I"
-msgstr "Mordvolt Insulation Wrench T1"
-
-msgid "矿场传动轮I"
-msgstr "Miner Drive Wheel T1"
-
-msgid "M. I.警用手环I"
-msgstr "MI Security Hands PPE T1"
-
-msgid "矿场增压轮I"
-msgstr "Miner Turbine T1"
-
-msgid "蚀电绝缘扳手"
-msgstr "Mordvolt Insulation Wrench"
-
-msgid "M.I.警用臂环"
-msgstr "MI Security Armband"
-
-msgid "矿场护手I"
-msgstr "Miner Fists T1"
-
-msgid "蚀电绝缘手套"
-msgstr "Mordvolt Insulation Gloves"
-
-msgid "矿场手套II"
-msgstr "Miner Gloves T2"
-
-msgid "M.I.警用瞄具"
-msgstr "MI Security Scope"
-
-msgid "蚀电绝缘背心"
-msgstr "Mordvolt Insulation Vest"
-
-msgid "矿场防护服I"
-msgstr "Miner Overalls T1"
-
-msgid "M.I.警用工具组"
-msgstr "MI Security Toolkit"
-
-msgid "矿场护甲I"
-msgstr "Miner Armor T1"
-
-msgid "M.I.警用刺刃"
-msgstr "MI Security Push Knife"
-
-msgid "巡行信使陀螺"
-msgstr "Roving MSGR Gyro"
-
-msgid "M. I.警用刺刃I"
-msgstr "MI Security Push Knife T1"
-
-msgid "巡行信使手电筒"
-msgstr "Roving MSGR Flashlight"
-
-msgid "巡行信使手套"
-msgstr "Roving MSGR Fists"
-
-msgid "巡行信使夹克"
-msgstr "Roving MSGR Jacket"
-
-msgid "重装信使陀螺"
-msgstr "Armored MSGR Gyro"
-
-msgid "重装信使手电筒"
-msgstr "Armored MSGR Flashlight"
-
-msgid "重装信使手套"
-msgstr "Armored MSGR Gloves"
-
-msgid "重装信使夹克"
-msgstr "Armored MSGR Jacket"
-
-msgid "矿场联络仪"
-msgstr "Miner Comm"
-
-msgid "矿场压缩核"
-msgstr "Miner Compression Core"
-
-msgid "矿场传动轮"
-msgstr "Miner Drive Wheel"
-
-msgid "矿场增压轮"
-msgstr "Miner Turbine"
-
-msgid "矿场手套I"
-msgstr "Miner Gloves T1"
-
-msgid "矿场手甲I"
-msgstr "Miner Gauntlets T1"
-
-msgid "整合化陶瓷板"
-msgstr "AIC Ceramic Plate"
-
-msgid "整合化轻甲片"
-msgstr "AIC Light Plate"
-
-msgid "整合化战术手套"
-msgstr "AIC Tactical Gloves"
-
-msgid "整合化轻甲"
-msgstr "AIC Light Armor"
-
-msgid "整合化合金板"
-msgstr "AIC Alloy Plate"
-
-msgid "整合化重甲片"
-msgstr "AIC Heavy Plate"
-
-msgid "整合化手甲"
-msgstr "AIC Gauntlets"
-
-msgid "整合化重甲"
-msgstr "AIC Heavy Armor"
-
-msgid "矿场护手"
-msgstr "Miner Fists"
-
-msgid "矿场护腕"
-msgstr "Miner Wrists"
-
-msgid "矿场滤尘衣"
-msgstr "Miner Cleansuit"
-
-msgid "矿场轻甲"
-msgstr "Miner Vest"
-
-msgid "测试型重甲I"
-msgstr "Prototype Heavy Armor T1"
-
-msgid "测试型重甲"
-msgstr "Prototype Heavy Armor"
-
-msgid "紧急压缩核"
-msgstr "Emergency Compression Core"
-
-msgid "紧急联络仪"
-msgstr "Emergency Comm"
-
-msgid "矿场手套"
-msgstr "Miner Gloves"
-
-msgid "矿场手甲"
-msgstr "Miner Gauntlets"
-
-msgid "矿场防护服"
-msgstr "Miner Overalls"
-
-msgid "矿场护甲"
-msgstr "Miner Armor"
-
-msgid "简易护手"
-msgstr "Basic Gloves"
-
-msgid "简易手甲"
-msgstr "Basic Gauntlets"
-
-msgid "简易护服"
-msgstr "Basic PPE"
-
-msgid "简易护甲"
-msgstr "Basic Armor"
-
-msgid "气体散布机"
-msgstr "Gas Dispersing Unit"
-
-msgid "固气转化机"
-msgstr "Solid-Gas Transmuting Unit"
-
-msgid "液气转化机"
-msgstr "Fluid-Gas Transmuting Unit"
-
-msgid "气体反应炉"
-msgstr "Gas Reactor Globe"
-
-msgid "储气罐"
-msgstr "Gas Tank"
-
-msgid "气体收集泵"
-msgstr "Gas Extractor"
-
-msgid "“暴雨”铳械塔"
-msgstr "Torrent Gun Tower"
-
-msgid "甲二型“电荷”"
-msgstr "Electrocharger Model A-2"
-
-msgid "震撼美味！"
-msgstr "Shockingly Delish!"
-
-msgid "小咆兽活动架"
-msgstr "Howlerbeast Playground"
-
-msgid "猩红记忆"
-msgstr "Sanguine Memories"
-
-msgid "龙泡泡气球"
-msgstr "Chubby Lung Balloon"
-
-msgid "虎·牢·关"
-msgstr "Tiger Cage"
-
-msgid "山樆小景"
-msgstr "Miniature Tree on a Hill"
-
-msgid "龙泡泡石墩"
-msgstr "Chubby Lung Bollard"
-
-msgid "充气教授"
-msgstr "Tube Professor"
-
-msgid "重锤迫击炮"
-msgstr "Sledgehammer Mortar"
-
-msgid "“酸洗”MK-I"
-msgstr "Acid Soaker Mk I"
-
-msgid "高能射线塔"
-msgstr "Hyper Beam Tower"
-
-msgid "二型耐酸水泵"
-msgstr "Acid Resistant Pump Mk II"
-
-msgid "多口暗管出口"
-msgstr "Conduit Outlet Manifold"
-
-msgid "多口暗管入口"
-msgstr "Conduit Inlet Manifold"
-
-msgid "提纯机"
-msgstr "Purification Unit"
-
-msgid "扩容反应池"
-msgstr "Expanded Crucible"
-
-msgid "管道"
-msgstr "Pipe"
-
-msgid "AF1“熔甲者”"
-msgstr "AF1 Armor Fragger"
-
-msgid "激流塔"
-msgstr "Deluge Tower"
-
-msgid "废水处理机"
-msgstr "Water Treatment Unit"
-
-msgid "水驱矿机"
-msgstr "Hydro Mining Rig"
-
-msgid "暗管出口"
-msgstr "Conduit Outlet"
-
-msgid "暗管入口"
-msgstr "Conduit Inlet"
-
-msgid "传送带"
-msgstr "Transport Belt"
-
-msgid "铳械塔"
-msgstr "Gun Tower"
-
-msgid "医疗塔"
-msgstr "Medical Tower"
-
-msgid "榴弹塔"
-msgstr "Grenade Tower"
-
-msgid "液态氮塔"
-msgstr "LN Tower"
-
-msgid "扩装铳械塔"
-msgstr "Heavy Gun Tower"
-
-msgid "全向声波塔"
-msgstr "Omnidirectional Sonic Tower"
-
-msgid "射线塔"
-msgstr "Beam Tower"
-
-msgid "电涌塔"
-msgstr "Surge Tower"
-
-msgid "哨戒塔"
-msgstr "Sentry Tower"
-
-msgid "高爆榴弹塔"
-msgstr "HE Grenade Tower"
-
-msgid "液体供给器"
-msgstr "Fluid Supply Unit"
-
-msgid "“毒沼”MK-I"
-msgstr "Marsh Gas Mk I"
-
-msgid "洒水机"
-msgstr "Sprinkler"
-
-msgid "长距滑索架"
-msgstr "Zipline Tower"
-
-msgid "滑索架"
-msgstr "Zipline Pylon"
-
-msgid "留言信标"
-msgstr "Memo Beacon"
-
-msgid "便利存取站"
-msgstr "Easy Stash"
-
-msgid "热能池"
-msgstr "Thermal Bank"
-
-msgid "息壤中继器"
-msgstr "Xiranite Relay"
-
-msgid "中继器"
-msgstr "Relay Tower"
-
-msgid "息壤供电桩"
-msgstr "Xiranite Pylon"
-
-msgid "供电桩"
-msgstr "Electric Pylon"
-
-msgid "拆解机"
-msgstr "Separating Unit"
-
-msgid "天有洪炉"
-msgstr "Forge of the Sky"
-
-msgid "反应池"
-msgstr "Reactor Crucible"
-
-msgid "研磨机"
-msgstr "Grinding Unit"
-
-msgid "封装机"
-msgstr "Packaging Unit"
-
-msgid "灌装机"
-msgstr "Filling Unit"
-
-msgid "装备原件机"
-msgstr "Gearing Unit"
-
-msgid "采种机"
-msgstr "Seed-Picking Unit"
-
-msgid "种植机"
-msgstr "Planting Unit"
-
-msgid "金石稻田块"
-msgstr "Amber Rice Plot"
-
-msgid "塑形机"
-msgstr "Moulding Unit"
-
-msgid "琼叶参田块"
-msgstr "Redjade Ginseng Plot"
-
-msgid "苦叶椒田块"
-msgstr "Tartpepper Plot"
-
-msgid "配件机"
-msgstr "Fitting Unit"
-
-msgid "灰芦麦田块"
-msgstr "Reed Rye Plot"
-
-msgid "粉碎机"
-msgstr "Shredding Unit"
-
-msgid "芽针田块"
-msgstr "Yazhen Plot"
-
-msgid "锦草田块"
-msgstr "Jincao Plot"
-
-msgid "酮化灌木田块"
-msgstr "Aketine Plot"
-
-msgid "砂叶田块"
-msgstr "Sandleaf Plot"
-
-msgid "柑实田块"
-msgstr "Citrome Plot"
-
-msgid "精炼炉"
-msgstr "Refining Unit"
-
-msgid "荞花田块"
-msgstr "Buckflower Plot"
-
-msgid "仓库存取线源桩"
-msgstr "Depot Bus Port"
-
-msgid "仓库存取线基段"
-msgstr "Depot Bus Section"
-
-msgid "储液罐"
-msgstr "Fluid Tank"
-
-msgid "仓库取货口"
-msgstr "Depot Unloader"
-
-msgid "仓库存货口"
-msgstr "Depot Loader"
-
-msgid "协议储存箱"
-msgstr "Protocol Stash"
-
-msgid "管道汇流器"
-msgstr "Pipe Converger"
-
-msgid "管道桥"
-msgstr "Pipe Bridge"
-
-msgid "管道分流器"
-msgstr "Pipe Splitter"
-
-msgid "管道准入口"
-msgstr "Pipe Control Port"
-
-msgid "汇流器"
-msgstr "Converger"
-
-msgid "物流桥"
-msgstr "Belt Bridge"
-
-msgid "分流器"
-msgstr "Splitter"
-
-msgid "物品准入口"
-msgstr "Item Control Port"
-
-msgid "水泵"
-msgstr "Fluid Pump"
-
-msgid "电驱矿机II"
-msgstr "Electric Mining Rig Mk II"
-
-msgid "电驱矿机"
-msgstr "Electric Mining Rig"
-
-msgid "便携式源石矿机"
-msgstr "Portable Originium Rig"
-
-msgid "协议纹石子簇"
-msgstr "Protocolith Seed"
-
-msgid "塔罗斯菌块"
-msgstr "Talos Cap Mycelia"
-
-msgid "红矛叶根茎"
-msgstr "Crimson Spearleaf Tuber"
-
-msgid "影兽衔石"
-msgstr "Blightshade Bezoar"
-
-msgid "破阵刀碎片"
-msgstr "Glaive Fragment"
-
-msgid "残影露滴"
-msgstr "Shadow Dew"
-
-msgid "重息壤气"
-msgstr "Heavy Xiragen"
-
-msgid "水蒸气"
-msgstr "Aquagen"
-
-msgid "气态赫铜"
-msgstr "Hetonite Gas"
-
-msgid "气态赤铜"
-msgstr "Cuprium Gas"
-
-msgid "酸气"
-msgstr "Acridgen"
-
-msgid "灼铜装备原件"
-msgstr "Pyrrolite Component"
-
-msgid "灼铜零件"
-msgstr "Pyrrolite Part"
-
-msgid "灼铜块"
-msgstr "Pyrrolite"
-
-msgid "侵蚀瘴扫描零件"
-msgstr "Blight Miasma Scanner Plugin"
-
-msgid "枢壤仪·扩容II型"
-msgstr "Xiranite Nexus XC-II"
-
-msgid "枢壤仪·扩容I型"
-msgstr "Xiranite Nexus XC-I"
-
-msgid "枢壤仪"
-msgstr "Xiranite Nexus"
-
-msgid "浮空回收器III"
-msgstr "Aero-Salvager III"
-
-msgid "浮空回收器II"
-msgstr "Aero-Salvager II"
-
-msgid "浮空回收器I"
-msgstr "Aero-Salvager I"
-
-msgid "蓄石秘剂"
-msgstr "Stonehold Remedy"
-
-msgid "洗灾秘剂"
-msgstr "Ruin-Purger Remedy"
-
-msgid "《摇摆绅士古典特辑》"
-msgstr "Der Schwingende Gentleman Classical Album"
-
-msgid "羽兽剪纸风筝"
-msgstr "Fowlbeast Paper Kite"
-
-msgid "速成陈酿"
-msgstr "Instant Vintage"
-
-msgid "尾尖金甲"
-msgstr "Caudal Goldscale"
-
-msgid "百年陈皮"
-msgstr "Century Rind"
-
-msgid "陈皮拌笋"
-msgstr "Rind-Flavored Sprouts"
-
-msgid "田家特色烂肉面"
-msgstr "Tian's Braised Meat Noodles"
-
-msgid "怪味杯子蛋糕"
-msgstr "Bizarro Cupcake"
-
-msgid "炸鳞薯条"
-msgstr "Fin-n-Chips"
-
-msgid "罗德岛特制口粮"
-msgstr "Rhodes Island Special Ration"
-
-msgid "咆兽的辫束"
-msgstr "Howlerbeast Braid"
-
-msgid "实验重息壤瓶"
-msgstr "Experimental Heavy Xiranite Bottle"
-
-msgid "实验重息壤零件"
-msgstr "Experimental Heavy Xiranite Part"
-
-msgid "实验玉铜发散器"
-msgstr "Experimental Xiran-Hue Atomizer"
-
-msgid "息壤玉葫芦"
-msgstr "Xiranite Jade Gourd"
-
-msgid "实验息壤瓶"
-msgstr "Experimental Xiranite Bottle"
-
-msgid "实验息壤零件"
-msgstr "Experimental Xiranite Part"
-
-msgid "息壤葫芦"
-msgstr "Xiranite Gourd"
-
-msgid "回响尘埃"
-msgstr "Echoing Dust"
-
-msgid "沉积酸"
-msgstr "Precipitation Acid"
-
-msgid "赫铜块"
-msgstr "Hetonite"
-
-msgid "赫铜瓶"
-msgstr "Hetonite Bottle"
-
-msgid "液化重息壤"
-msgstr "Liquid Heavy Xiranite"
-
-msgid "赤铜溶液"
-msgstr "Cuprium Solution"
-
-msgid "回响秘剂"
-msgstr "Echoing Remedy"
-
-msgid "龙泡泡·方兴纪念"
-msgstr "Chubby Lung Fangxing Memorabilia"
-
-msgid "协议化武器原型"
-msgstr "Protocolized Weapon Pattern"
-
-msgid "惰性壤晶废液"
-msgstr "Inert Xircon Effluent"
-
-msgid "优质锦草饮料"
-msgstr "Jincao Tea"
-
-msgid "狼群骨雕"
-msgstr "Scrimshaw of the Pack"
-
-msgid "草编天使"
-msgstr "Woven Aggelos"
-
-msgid "潘师傅蒸蛋"
-msgstr "Master Pan's Egg Pudding"
-
-msgid "污水"
-msgstr "Sewage"
-
-msgid "壤晶废液"
-msgstr "Xircon Effluent"
-
-msgid "清波竹铃"
-msgstr "Qingbo Bamboo Chimes"
-
-msgid "竹林虫蛹"
-msgstr "Grovenymph Pupa"
-
-msgid "赤铜粉末"
-msgstr "Cuprium Powder"
-
-msgid "赤铜块"
-msgstr "Cuprium"
-
-msgid "竹笋炒肉"
-msgstr "Bamboo Sprouts and Meat"
-
-msgid "炝炒时蔬"
-msgstr "Garden Stir-Fry"
-
-msgid "初级作战纪录"
-msgstr "Elementary Combat Record"
-
-msgid "中级作战纪录"
-msgstr "Intermediate Combat Record"
-
-msgid "高级作战纪录"
-msgstr "Advanced Combat Record"
-
-msgid "应龙哑铃"
-msgstr "Yinglung Dumbbells"
-
-msgid "岳研茶盒"
-msgstr "Eureka Teabox"
-
-msgid "《前沿瞭望》"
-msgstr "Frontiers Watch"
-
-msgid "塞梦珂披巾"
-msgstr "Simonch Shawl"
-
-msgid "浪潮海石"
-msgstr "Tidestone Specimen"
-
-msgid "耶尔什微风"
-msgstr "Breeze of Kjersch"
-
-msgid "冲浪大赛门票"
-msgstr "Surfing Festival Ticket"
-
-msgid "星门锁"
-msgstr "Cosmic Gate Puzzle"
-
-msgid "醚质相机"
-msgstr "Aurylene Camera"
-
-msgid "扩容演算芯片"
-msgstr "Algorithm Expansion Chip"
-
-msgid "武陵拓展核心"
-msgstr "Wuling Expansion Core"
-
-msgid "基础拓展核心"
-msgstr "Basic Expansion Core"
-
-msgid "武陵调度券"
-msgstr "Wuling Stock Bill"
-
-msgid "谷地调度券"
-msgstr "Valley Stock Bill"
-
-msgid "武陵工业点数"
-msgstr "Wuling AIC Index"
-
-msgid "基础工业点数"
-msgstr "Basic AIC Index"
-
-msgid "高级航太建材"
-msgstr "Aerospace Material II"
-
-msgid "基础航太建材"
-msgstr "Aerospace Material I"
-
-msgid "武陵炒饭"
-msgstr "Wuling Fried Rice"
-
-msgid "清炖兽排参须汤"
-msgstr "Ginseng Meat Stew"
-
-msgid "辣炒肉丁"
-msgstr "Meat Stir-Fry"
-
-msgid "谷地馅饼"
-msgstr "Valley Pie"
-
-msgid "清炖息壤球"
-msgstr "Simmered Xiranite Ball"
-
-msgid "武陵乱炒"
-msgstr "Wuling Flame-Boyance"
-
-msgid "油爆“双脆”"
-msgstr "Pan-Fried Double Crisp"
-
-msgid "龙泡泡蔬菜冻"
-msgstr "Chubby Lung Jellied Greens"
-
-msgid "手撕虫肉"
-msgstr "Pulled Slug Meat"
-
-msgid "爆辣腌渍水果"
-msgstr "Superhot Fruit Preserves"
-
-msgid "枢纽区紧急餐"
-msgstr "Hub Emergency Ration"
-
-msgid "锦素炒饭"
-msgstr "Garden Fried Rice"
-
-msgid "正本补元汤剂"
-msgstr "Fortifying Infusion"
-
-msgid "怪味肉酱"
-msgstr "Bizarro Chili"
-
-msgid "简易镇痛药膏"
-msgstr "Simple Pain Relief Salve"
-
-msgid "秘方醒神茶"
-msgstr "Secret Stimulating Tisane"
-
-msgid "爆辣焗烤源石虫"
-msgstr "Superhot Slug Gratin"
-
-msgid "小糖画"
-msgstr "Mini Sugar Painting"
-
-msgid "神秘气泡饮料"
-msgstr "Mystery Soda"
-
-msgid "星融果冻"
-msgstr "Cosmo-Melto Jelly"
-
-msgid "约翰老爹汉堡"
-msgstr "Old Man John's Burger"
-
-msgid "雾火之花"
-msgstr "Hazefyre Blossom"
-
-msgid "可食用巢雕"
-msgstr "Edible Denstack"
-
-msgid "软骨饼干"
-msgstr "Cartilage Tack"
-
-msgid "雅各的遗产"
-msgstr "Jakub's Legacy"
-
-msgid "开工日肉汤"
-msgstr "Sod-Turning Meat Soup"
-
-msgid "小蜜虫布丁"
-msgstr "Mini Honey Slugpudding"
-
-msgid "炖肉会议"
-msgstr "Stew Meeting"
-
-msgid "即食骨汤"
-msgstr "Instant Bone Soup"
-
-msgid "塞什卡风肉排"
-msgstr "Seš'qa Style Fillet"
-
-msgid "手工怪味酸糖"
-msgstr "Handmade Weirdrop"
-
-msgid "仿荤烩荞花"
-msgstr "Meaty Buckflower Stew"
-
-msgid "附术铁瓶"
-msgstr "Kunst Tube"
-
-msgid "刻术铁瓶"
-msgstr "Arts Tube"
-
-msgid "意乱药剂"
-msgstr "Perplexing Medication"
-
-msgid "附术瓶"
-msgstr "Kunst Vial"
-
-msgid "刻术瓶"
-msgstr "Arts Vial"
-
-msgid "大瓶芽针喷剂"
-msgstr "Yazhen Spray [L]"
-
-msgid "大碗锦草凉茶"
-msgstr "Jincao Infusion"
-
-msgid "精选柑实冲泡剂"
-msgstr "Citromix [Rf.]"
-
-msgid "精选荞复锭剂"
-msgstr "Buckpill [Rf.]"
-
-msgid "芽针喷剂"
-msgstr "Yazhen Spray [S]"
-
-msgid "锦草凉茶"
-msgstr "Jincao Tisane"
-
-msgid "大瓶柑实冲泡剂"
-msgstr "Citromix [L]"
-
-msgid "小瓶柑实冲泡剂"
-msgstr "Citromix [S]"
-
-msgid "大瓶荞复锭剂"
-msgstr "Buckpill [L]"
-
-msgid "小瓶荞复锭剂"
-msgstr "Buckpill [S]"
-
-msgid "精选柑实罐头"
-msgstr "Canned Citrome [A]"
-
-msgid "优质柑实罐头"
-msgstr "Canned Citrome [B]"
-
-msgid "优质荞愈胶囊"
-msgstr "Buck Capsule [B]"
-
-msgid "荆刺芽针粉末"
-msgstr "Thorny Yazhen Powder"
-
-msgid "蓬茸锦草粉末"
-msgstr "Fluffed Jincao Powder"
-
-msgid "柑实冲泡剂"
-msgstr "Citromix"
-
-msgid "荞愈药粉"
-msgstr "Firebuckle Powder"
-
-msgid "芽针粉末"
-msgstr "Yazhen Powder"
-
-msgid "锦草粉末"
-msgstr "Jincao Powder"
-
-msgid "柑实粉末"
-msgstr "Citrome Powder"
-
-msgid "荞花粉末"
-msgstr "Buckflower Powder"
-
-msgid "低容量武陵电池"
-msgstr "LC Wuling Battery"
-
-msgid "高容量谷地电池"
-msgstr "HC Valley Battery"
-
-msgid "中容量谷地电池"
-msgstr "SC Valley Battery"
-
-msgid "息壤装备原件"
-msgstr "Xiranite Component"
-
-msgid "高晶装备原件"
-msgstr "Cryston Component"
-
-msgid "蓝铁装备原件"
-msgstr "Ferrium Component"
-
-msgid "紫晶装备原件"
-msgstr "Amethyst Component"
-
-msgid "钢制零件"
-msgstr "Steel Part"
-
-msgid "高晶零件"
-msgstr "Cryston Part"
-
-msgid "铁制零件"
-msgstr "Ferrium Part"
-
-msgid "紫晶零件"
-msgstr "Amethyst Part"
-
-msgid "钢质瓶"
-msgstr "Steel Bottle"
-
-msgid "高晶质瓶"
-msgstr "Cryston Bottle"
-
-msgid "蓝铁瓶"
-msgstr "Ferrium Bottle"
-
-msgid "致密蓝铁粉末"
-msgstr "Dense Ferrium Powder"
-
-msgid "高晶粉末"
-msgstr "Cryston Powder"
-
-msgid "致密晶体粉末"
-msgstr "Dense Origocrust Powder"
-
-msgid "致密碳粉末"
-msgstr "Dense Carbon Powder"
-
-msgid "细磨柑实粉末"
-msgstr "Ground Citrome Powder"
-
-msgid "细磨荞花粉末"
-msgstr "Ground Buckflower Powder"
-
-msgid "酮化灌木粉末"
-msgstr "Aketine Powder"
-
-msgid "砂叶粉末"
-msgstr "Sandleaf Powder"
-
-msgid "蓝铁粉末"
-msgstr "Ferrium Powder"
-
-msgid "紫晶粉末"
-msgstr "Amethyst Powder"
-
-msgid "晶体外壳粉末"
-msgstr "Origocrust Powder"
-
-msgid "源石粉末"
-msgstr "Originium Powder"
-
-msgid "碳粉末"
-msgstr "Carbon Powder"
-
-msgid "息壤"
-msgstr "Xiranite"
-
-msgid "膨地啪"
-msgstr "Bumper-Rich"
-
-msgid "钢块"
-msgstr "Steel"
-
-msgid "高晶纤维"
-msgstr "Cryston Fiber"
-
-msgid "密制晶体"
-msgstr "Packed Origocrust"
-
-msgid "稳定碳块"
-msgstr "Stabilized Carbon"
-
-msgid "蓝铁块"
-msgstr "Ferrium"
-
-msgid "晶体外壳"
-msgstr "Origocrust"
-
-msgid "碳块"
-msgstr "Carbon"
-
-msgid "液化息壤"
-msgstr "Liquid Xiranite"
-
-msgid "锦草溶液"
-msgstr "Jincao Solution"
-
-msgid "金石稻种子"
-msgstr "Amber Rice Seed"
-
-msgid "琼叶参种子"
-msgstr "Redjade Ginseng Seed"
-
-msgid "苦叶椒种子"
-msgstr "Tartpepper Seed"
-
-msgid "灰芦麦种子"
-msgstr "Reed Rye Seed"
-
-msgid "清水"
-msgstr "Clean Water"
-
-msgid "原木"
-msgstr "Wood"
-
-msgid "芽针种子"
-msgstr "Yazhen Seed"
-
-msgid "锦草种子"
-msgstr "Jincao Seed"
-
-msgid "酮化树种"
-msgstr "Aketine Seed"
-
-msgid "砂叶种子"
-msgstr "Sandleaf Seed"
-
-msgid "柑实种子"
-msgstr "Citrome Seed"
-
-msgid "荞花种子"
-msgstr "Buckflower Seed"
-
-msgid "紫晶矿"
-msgstr "Amethyst Ore"
-
-msgid "天然晶城锭"
-msgstr "Natural Chrysopolis Ingot"
-
-msgid "彪兽的长绒"
-msgstr "Rakerbeast Longfur"
-
-msgid "大斧角"
-msgstr "Axehorn"
-
-msgid "导能肖像石"
-msgstr "Conductive Effigy Stone"
-
-msgid "浸雾大弩"
-msgstr "Haze-Soaked Ballista"
-
-msgid "崩碎斧刃"
-msgstr "Shattered Axe Blade"
-
-msgid "球刺兽的肝脏"
-msgstr "Quillbeast Liver"
-
-msgid "甜腻黑水"
-msgstr "Black Treacle"
-
-msgid "异色油脂"
-msgstr "Chromatic Lipids"
-
-msgid "软骨碎屑"
-msgstr "Cartilage Bit"
-
-msgid "虬兽的须"
-msgstr "Nidwyrm Whiskers"
-
-msgid "水灯虫的灯坠"
-msgstr "Waterlamp Glowbulb"
-
-msgid "天然气泡水"
-msgstr "Natural Sparkling Water"
-
-msgid "坚韧的水"
-msgstr "Resilient Water"
-
-msgid "中空异香石"
-msgstr "Hollow Aggagrit"
-
-msgid "苦涩麦粉"
-msgstr "Bitter Flour"
-
-msgid "虫肉"
-msgstr "Slug Meat"
-
-msgid "兽肉"
-msgstr "Fillet"
-
-msgid "新笋"
-msgstr "Young Bamboo Shoot"
-
-msgid "刺鼻干肉"
-msgstr "Pungent Jerky"
-
-msgid "草籽干粉"
-msgstr "Powdered Grass Seed"
-
-msgid "高能异香石"
-msgstr "Energized Aggagrit"
-
-msgid "坚硬异香石"
-msgstr "Hard Aggagrit"
-
-msgid "驮兽粪便"
-msgstr "Burdo-Muck"
-
-msgid "武陵刻写券"
-msgstr "Wuling Engraving Permit"
-
-msgid "谷地刻写券"
-msgstr "Valley Engraving Permit"
-
-msgid "纯晶多齿叶根茎"
-msgstr "Chrysodendra Tuber"
-
-msgid "至晶多齿叶根茎"
-msgstr "Vitrodendra Tuber"
-
-msgid "晶化多齿叶根茎"
-msgstr "Kalkodendra Tuber"
-
-msgid "轻黯石子簇"
-msgstr "Kalkonyx Seed"
-
-msgid "中黯石子簇"
-msgstr "Auronyx Seed"
-
-msgid "重红柱状菌块"
-msgstr "Ruby Bolete Mycelia"
-
-msgid "重黯石子簇"
-msgstr "Umbronyx Seed"
-
-msgid "中红柱状菌块"
-msgstr "Red Bolete Mycelia"
-
-msgid "血菌块"
-msgstr "Bloodcap Mycelia"
-
-msgid "轻红柱状菌块"
-msgstr "Pink Bolete Mycelia"
-
-msgid "受蚀玉化叶根茎"
-msgstr "Blighted Jadeleaf Tuber"
-
-msgid "冷却脂"
-msgstr "Coolant Gel"
-
-msgid "燎石子簇"
-msgstr "Igneosite Seed"
-
-msgid "重型强固模具"
-msgstr "Heavy Cast Die"
-
-msgid "强固模具"
-msgstr "Cast Die"
-
-msgid "星门菌块"
-msgstr "Cosmagaric Mycelia"
-
-msgid "武器检查套组"
-msgstr "Arms INSP Set"
-
-msgid "武器检查装置"
-msgstr "Arms INSP Kit"
-
-msgid "岩天使叶根茎"
-msgstr "False Aggela Tuber"
-
-msgid "武器检查单元"
-msgstr "Arms Inspector"
-
-msgid "存续的痕迹"
-msgstr "Mark of Perseverance"
-
-msgid "武陵石子簇"
-msgstr "Wulingstone Seed"
-
-msgid "迅子遴捡晶格"
-msgstr "Tachyon Screening Lattice"
-
-msgid "协议棱柱组"
-msgstr "Protohedron"
-
-msgid "协议棱柱"
-msgstr "Protoprism"
-
-msgid "协议圆盘组"
-msgstr "Protoset"
-
-msgid "协议圆盘"
-msgstr "Protodisk"
-
-msgid "高级认知载体"
-msgstr "Advanced Cognitive Carrier"
-
-msgid "初级认知载体"
-msgstr "Elementary Cognitive Carrier"
-
-msgid "三相奈米片"
-msgstr "Triphasic Nanoflake"
-
-msgid "D96钢样品四"
-msgstr "D96 Steel Sample 4"
-
-msgid "破城者拳甲"
-msgstr "Siegeknuckles Gauntlets"
-
-msgid "【干员攻略】诀"
-msgstr "[Operator Guide] Arcane"
-
-msgid "【干员攻略】卡缪"
-msgstr "[Operator Guide] Camille"
-
-msgid "【干员攻略】弭弗"
-msgstr "[Operator Guide] Mi Fu"
-
-msgid "【干员攻略】庄方宜"
-msgstr "[Operator Guide] Zhuang Fangyi"
-
-msgid "【干员攻略】洛西"
-msgstr "[Operator Guide] Rossi"
-
-msgid "【干员攻略】汤汤"
-msgstr "[Operator Guide] Tangtang"
-
-msgid "诀EP -“Guided by Echoes”"
-msgstr "EP - Arcane [Guided by Echoes]"
-
-msgid "干员叙事 “诀：履旧尘”"
-msgstr "Operator Story [Arcane: Dust of Forgotten Steps]"
-
-msgid "相伴庆典印象曲《Vermilion》"
-msgstr "Companionship Celebration Image Song - Vermilion"
-
-msgid "相伴庆典&核心章节“向渊行”版本PV"
-msgstr "Companionship Celebration & Core Chapter [Homecoming] Version Trailer"
-
-msgid "卡缪EP -“Under My Breath”"
-msgstr "EP - Camille [Under My Breath]"
-
-msgid "干员叙事“卡缪：猎血的看护人”"
-msgstr "Operator Story [Camille: Keeper on a Bloodhunt]"
-
-msgid "弭弗EP -“与光同游”"
-msgstr "EP - Mi Fu [Forevermore]"
-
-msgid "版本情报 | 危机合约先导PV与“寻遗散记”更新"
-msgstr ""
-"Arknights: Endfield Version Intel | Contingency Contract PV & [Sketches of "
-"Lost Heirlooms] Update"
-
-msgid "先导预告PV | 重返北境"
-msgstr "Arknights: Endfield Preview Trailer | Back to the North"
-
-msgid "干员叙事“弭弗：煞星”"
-msgstr "Operator Story [Mi Fu: Hexeress]"
-
-msgid "干员叙事“庄方宜：总有春风归故里”"
-msgstr ""
-"Operator Story [Zhuang Fangyi: Spring Wind Always Finds Its Way Back Home]"
-
-msgid "庄方宜EP -“宜”"
-msgstr "EP - Zhuang Fangyi [Yi]"
-
-msgid "洛西EP - My World (Blood Oath)"
-msgstr "EP - Rossi [My World (Blood Oath)]"
-
-msgid "干员叙事 “洛西：追随英雄的背影”"
-msgstr "Operator Story [Rossi: Where Heroes Walked]"
-
-msgid "干员叙事 “汤汤：大当家，大气概”"
-msgstr "Operator Story [Tangtang: Supreme Chief, Supreme Presence]"
-
-msgid "伊冯EP - Lollipop Neo-nista"
-msgstr "EP - Yvonne [Lollipop Neo-nista]"
-
-msgid "干员叙事 “伊冯：完美笑容算法”"
-msgstr "Operator Story [Yvonne: The Algorithm of Joy]"
-
-msgid "洁尔佩塔EP - Snap Shot"
-msgstr "EP - Gilberta [Snap Shot]"
-
-msgid "干员叙事 “洁尔佩塔：信使的礼物”"
-msgstr "Operator Story [Gilberta: The Messenger's Offering]"
-
-msgid "《假面滑索侠》第5话"
-msgstr "Zip-Mask Episode 5"
-
-msgid "《假面滑索侠》第4话"
-msgstr "Zip-Mask Episode 4"
-
-msgid "《假面滑索侠》第3话"
-msgstr "Zip-Mask Episode 3"
-
-msgid "《假面滑索侠》第2话"
-msgstr "Zip-Mask Episode 2"
-
-msgid "《假面滑索侠》第1话"
-msgstr "Zip-Mask Episode 1"
-
-msgid "铁痕电台#01|讯号仍在跳动"
-msgstr "Metal Scar Radio #01 | The Signal Is Still Pulsing"
-
-msgid "莱万汀EP - Blurring"
-msgstr "EP - Laevatain [Blurring]"
-
-msgid "干员叙事 “莱万汀：觉醒”"
-msgstr "Operator Story [Laevatain: The Awakening]"
-
-msgid "干员叙事 “群像：暗夜星火”"
-msgstr "Operator Story [The Five: Sparks that Shatter the Darkness]"
-
-msgid "游戏定档PV"
-msgstr "Arknights: Endfield Official Release PV"
-
-msgid "干员叙事 “陈千语：执剑者”"
-msgstr "Operator Story [Chen Qianyu: The Swordbearer]"
-
-msgid "开服贺图"
-msgstr "Launch Celebration Artwork"
-
-msgid "⭐地区建设"
-msgstr "⭐ Regional Operations"
-
-msgid "wait_until"
-msgstr "wait_until"
-
-msgid "不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
-msgstr ""
-"Do not pick crops mass-produced by farms or planting/harvesting lines: 琼叶参, "
-"金石稻, 芽针, 锦草, 苦叶椒, 砂叶, 灰芦麦, 柑实, 荞花, 酮化灌木."
-
-msgid "两者"
-msgstr "Both"
-
-msgid "买物资"
-msgstr "Buy Supplies"
-
-msgid "关卡名"
-msgstr "Stage Name"
-
-msgid "动作列表"
-msgstr "Action List"
-
-msgid "区域扫描测试"
-msgstr "Region Scan Test"
-
-msgid "否"
-msgstr "No"
-
-msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
-msgstr ""
-"When enabled, stronghold exchange only buys items in the \"Trading Goods "
-"Priority List\" when it is not empty; if the list is empty, the original "
-"exchange logic is used."
-
-msgid "启用实时条件"
-msgstr "Enable Real-Time Conditions"
-
-msgid ""
-"在没有运行任何条件动作时生效\n"
-"当终结技可释放时立刻释放终结技"
-msgstr ""
-"Takes effect when no conditional actions are running\n"
-"Release the Ultimate immediately when it is available"
-
-msgid ""
-"在没有运行任何条件动作时生效\n"
-"当连携技可释放时立刻释放连携技"
-msgstr ""
-"Takes effect when no conditional actions are running\n"
-"Release the Link Skill immediately when it is available"
-
-msgid "导航到演武集算『演算』入口"
-msgstr "Navigate to the \"演算\" entrance of 演武集算"
-
-msgid "将次要目标方向蓝点对齐到屏幕中心"
-msgstr ""
-"Align the secondary target direction blue dot to the center of the screen"
-
-msgid "屏蔽可量产植物"
-msgstr "Filter Mass-Produced Plants"
-
-msgid "当条件符合时使用技能组"
-msgstr "Use the skill set when conditions are met"
-
-msgid "战斗技能位置检测"
-msgstr "Battle Skill Slot Detection"
-
-msgid "按住鼠标蛇形扫描指定矩形区域"
-msgstr "Hold the mouse and snake-scan the specified rectangular area"
-
-msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
-msgstr ""
-"Execute the selected operations by region: first outpost exchange, then buy "
-"in buy & sell; when buy supplies is enabled, switch to stable supply needs "
-"to buy after buying, then switch back to flexible supply needs to sell."
-
-msgid "据点兑换仅购买优先商品"
-msgstr "Stronghold Exchange Buys Priority Goods Only"
-
-msgid "是"
-msgstr "Yes"
-
-msgid "是否前往「帝江号/简易制作」制作物品。"
-msgstr "Whether to go to \"Dijiang / Simple Crafting\" to craft items."
-
-msgid "是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"
-msgstr ""
-"Whether to transfer all delivery commissions in \"Regional Operations / "
-"Warehouse Node\" and claim the transfer commission rewards once."
-
-msgid "是否在日常任务结束后传送到帝江号右侧传送点。"
-msgstr ""
-"Whether to teleport to the right waypoint of Dijiang after the daily task "
-"ends."
-
-msgid "暂停时间应超过此值，用于观察恢复后的行为"
-msgstr ""
-"The pause duration should exceed this value, to observe the behavior after "
-"recovery"
-
-msgid "暂停计时验证"
-msgstr "Pause Timing Verification"
-
-msgid ""
-"根据实时情况释放技能\n"
-"启用时自动忽略排轴配置"
-msgstr ""
-"Release skills based on real-time situations\n"
-"When enabled, the rotation/schedule config is ignored automatically"
-
-msgid "测试模式"
-msgstr "Test Mode"
-
-msgid "测试超时(秒)"
-msgstr "Test Timeout (sec)"
-
-msgid "演算入口导航测试"
-msgstr "演算 Entrance Navigation Test"
-
-msgid ""
-"目标券数优先级序列，用逗号分隔多个券数。按列表中顺序优先抢前面的券数。\n"
-"默认：119000。可选：73100、79800、119000、159000、163000"
-msgstr ""
-"Priority sequence of target coupon counts, separated by commas. Earlier counts in the list are grabbed first.\n"
-"Default: 119000. Options: 73100, 79800, 119000, 159000, 163000"
-
-msgid "立即释放终结技"
-msgstr "Release Ultimate Immediately"
-
-msgid "立即释放连携技"
-msgstr "Release Link Skill Immediately"
-
-msgid "等级读取测试"
-msgstr "Level Read Test"
-
-msgid "编辑"
-msgstr "Edit"
-
-msgid "自写循环"
-msgstr "Custom Loop"
-
-msgid "读取演武集算关卡界面的当前等级"
-msgstr "Read the current level from the 演武集算 stage interface"
-
-msgid ""
-"选择帝江号收菜内容：\n"
-"收集线索：前往会客室收集线索，集齐后开启情报交流。\n"
-"制造舱：收取培养材料并补足待制造数量。\n"
-"培养舱：收取培养材料并直接再次培养。"
-msgstr ""
-"Select the Dijiang harvest contents:\n"
-"Collect clues: go to the reception room to collect clues, and start intel exchange when complete.\n"
-"Manufacturing bay: collect cultivation materials and replenish the quantity to be manufactured.\n"
-"Cultivation bay: collect cultivation materials and directly cultivate again."
-
-msgid "选择当前任务使用全局或独立战斗配置。"
-msgstr ""
-"Choose whether the current task uses the global or the independent battle "
-"config."
+msgid "选择要转移的物品"
+msgstr "Select Items to Transfer"
 
 msgid "选择要运行的暂停计时测试"
 msgstr "Choose the pause timing test to run"
@@ -5870,60 +1328,307 @@ msgstr ""
 "Scratch-off: perform the scratch-off."
 
 msgid "逐个检测四个技能位置并输出模板匹配结果"
+msgstr "Detect the four skill slots one by one and output template matching results"
+
+msgid "通向武陵城送货点"
+msgstr "To Wuling City Delivery Point"
+
+msgid "通向试验园区送货点"
+msgstr "To Test Area Delivery Point"
+
+msgid "通过下拉框切换送货地区配置"
+msgstr "Switch delivery region via dropdown"
+
+msgid "通过下拉框切换送货地区配置。"
+msgstr "Switch delivery region via dropdown."
+
+msgid "配合任务计划程序提前启动游戏,防止游戏更新/弹公告导致的后续问题"
+msgstr "Launch game early via Task Scheduler to prevent update issues"
+
+msgid "配置选择"
+msgstr "Config Selection"
+
+msgid "配置默认隐藏，选择后展开对应配置项。"
+msgstr "Config hidden by default; expands after selection."
+
+msgid "醚质"
+msgstr "Aurylene"
+
+msgid "重复测试的次数"
+msgstr "Number of Test Repetitions"
+
+msgid "重息壤"
+msgstr "Heavy Xiranite"
+
+msgid "钱币收集"
+msgstr "T-Creds"
+
+msgid "阮一"
+msgstr "Ruan Yi"
+
+msgid "阿列什"
+msgstr "Alesh"
+
+msgid "阿禾"
+msgstr "A He"
+
+msgid "陈千语"
+msgstr "Chen Qianyu"
+
+msgid "隐藏"
+msgstr "Hidden"
+
+msgid ""
+"需要执行的命令行内容。\n"
+"建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。\n"
+"开启『外部命令等待退出』可支持多账户模式。\n"
+"可选填写『外部命令起始于』作为命令工作目录。"
 msgstr ""
-"Detect the four skill slots one by one and output template matching results"
+"Command line to run.\n"
+"Prefer absolute paths. Quote paths or arguments with spaces according to your system shell rules.\n"
+"Enable Wait for External Command to support multi-account mode.\n"
+"Optionally set External Command Start In as the working directory."
+
+msgid "首墩"
+msgstr "Marker Stone"
 
 msgid "验证暂停任务期间活动计时是否冻结"
 msgstr "Verify whether the activity timer freezes while the task is paused"
 
-msgid "每个键对应一条滑索路线，值为距离序列，用英文逗号分隔"
+msgid "骏卫"
+msgstr "Pogranichnik"
+
+msgid "高容谷地电池"
+msgstr "High-Capacity Valley Battery"
+
+msgid "高阶"
+msgstr "High Tier"
+
+msgid "黎风"
+msgstr "Lifeng"
+
+msgid ""
+"默认是无，表示正常执行相关任务\n"
+"也可以选择特定的滑索分叉序列来测试滑索功能\n"
+"选择完整循环测试则会依次测试每个送货目标的完整流程\n"
+"(需要锁定次要任务在送货任务上或附近)"
 msgstr ""
-"Each key is a zip line route; the value is a distance sequence, comma-"
-"separated"
+"Default is None (normal task)\n"
+"Select zipline fork sequences to test\n"
+"Full Cycle Test tests each delivery target's complete flow\n"
+"(Requires locking sub-task on or near delivery task)"
 
-msgid "任务会按顺序依次对齐并滑行每段距离"
-msgstr "The task aligns and zips through each distance in order"
-
-msgid "例：「{key}」= {raw} → 依次滑行 {seq}"
-msgstr "e.g. \"{key}\" = {raw} → zip {seq}"
-
-msgid "留空表示该路线不乘滑索"
-msgstr "Leave empty to skip the zip line on that route"
-
-msgid "{keys}：出发滑索距离"
-msgstr "{keys}: starting zip line distance"
-
-msgid "{keys}：各送货目标滑索序列"
-msgstr "{keys}: zip line sequences to each delivery target"
-
-msgid "{keys}：能量淤积点滑索序列"
-msgstr "{keys}: zip line sequences to energy pools"
-
-msgid "对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低"
+msgid ""
+"默认留空，交易货品顺序随机。\n"
+"更多用法参见 ./docs/日常任务.md > 优先货品交易序列 。"
 msgstr ""
-"Auto-zooms in when aligning zip lines; may improve or clearly reduce success"
-" rate"
+"Leave empty for random trade order.\n"
+"See docs for more."
 
-msgid "建议启用时不要使用非白发或有白帽角色"
-msgstr "Avoid non-white-hair or white-hat characters when enabled"
+msgid ""
+"默认留空，表示购买「日用消耗」「工业货品」「人文物产」首行首个物资。\n"
+"更多用法参见 ./docs/日常任务.md > 买物资 。"
+msgstr ""
+"Leave empty to buy first item of each category.\n"
+"See docs for more."
 
-msgid "滑索配置说明"
-msgstr "Zip Line Config"
+msgid "齐纶"
+msgstr "Qi Lun"
 
-msgid "滑索距离序列在「全局配置 → 滑索配置」中设置"
-msgstr "Set zip line distance sequences in Global Config → Zip Line Config"
+msgid "滑索配置"
+msgstr "Zipline Settings"
 
-msgid "填写规则"
-msgstr "How to fill"
+msgid "键位配置"
+msgstr "Key Settings"
 
-msgid "送货相关键"
-msgstr "Delivery keys"
+msgid "基础配置"
+msgstr "Basic Settings"
 
-msgid "淤积点相关键"
-msgstr "Energy pool keys"
+msgid "游戏内快捷键配置"
+msgstr "In-Game Hotkey Settings"
 
-msgid "Zip Line Config"
-msgstr "Zip Line Config"
+msgid "全局战斗配置"
+msgstr "Global Battle Config"
+
+msgid "主界面单次动作后延迟"
+msgstr "Main UI Single-Action Delay"
+
+msgid "滑索路线与距离序列配置"
+msgstr "Zipline Routes & Distance Sequences"
+
+msgid "Action List"
+msgstr "Action List"
+
+msgid "Area Build Key"
+msgstr "Area Build Key"
+
+msgid "Auto"
+msgstr "Auto"
+
+msgid "Auto Resize Game Window"
+msgstr "Auto Resize Game Window"
+
+msgid "Auto Start Game When App Starts"
+msgstr "Auto Start Game When App Starts"
+
+msgid "Backpack Key"
+msgstr "Backpack Key"
+
+msgid "Baker Key"
+msgstr "Baker Key"
+
+msgid "Basic Options"
+msgstr "Basic Options"
+
+msgid "Blueprint Key"
+msgstr "Blueprint Key"
+
+msgid "Diagnosis"
+msgstr "Diagnosis"
+
+msgid "Dodge Key"
+msgstr "Dodge Key"
+
+msgid "Equipment List Key"
+msgstr "Equipment List Key"
+
+msgid "Exit After Task"
+msgstr "Exit After Task"
+
+msgid "Exit App when Game Exits"
+msgstr "Exit App when Game Exits"
+
+msgid "Exit the Game and the App after Successfully Executing the Task"
+msgstr "Exit the Game and the App after Successfully Executing the Task"
+
+msgid "Handbook Key"
+msgstr "Handbook Key"
+
+msgid "HotKey"
+msgstr "HotKey"
+
+msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgstr "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+
+msgid "Industry Plan Key"
+msgstr "Industry Plan Key"
+
+msgid "Interact Key"
+msgstr "Interact Key"
+
+msgid "Jump Key"
+msgstr "Jump Key"
+
+msgid "Kill Launcher After Start"
+msgstr "Kill Launcher After Start"
+
+msgid "Launch with DX11"
+msgstr "Launch with DX11"
+
+msgid "Link Skill Key"
+msgstr "Link Skill Key"
+
+msgid "Mail Key"
+msgstr "Mail Key"
+
+msgid "Map Key"
+msgstr "Map Key"
+
+msgid "Minimize Window to System Tray when Closing"
+msgstr "Minimize Window to System Tray when Closing"
+
+msgid "Mission Key"
+msgstr "Mission Key"
+
+msgid "Mute Game while in Background"
+msgstr "Mute Game while in Background"
+
+msgid "No"
+msgstr "No"
+
+msgid "None"
+msgstr "None"
+
+msgid "Operation"
+msgstr "Operation"
+
+msgid "Operator Key"
+msgstr "Operator Key"
+
+msgid "Overview Mode Key"
+msgstr "Overview Mode Key"
+
+msgid "Performance Test"
+msgstr "Performance Test"
+
+msgid "Place Belt Key"
+msgstr "Place Belt Key"
+
+msgid "Place Pipeline Key"
+msgstr "Place Pipeline Key"
+
+msgid "Product Icon Toggle Key"
+msgstr "Product Icon Toggle Key"
+
+msgid "Quick Tool Key"
+msgstr "Quick Tool Key"
+
+msgid "Recruitment Key"
+msgstr "Recruitment Key"
+
+msgid "SingleActionWithDelay"
+msgstr "SingleActionWithDelay"
+
+msgid "Start/Stop"
+msgstr "Start/Stop"
+
+msgid "Storage Mode Key"
+msgstr "Storage Mode Key"
+
+msgid "Team Key"
+msgstr "Team Key"
+
+msgid "Track Key"
+msgstr "Track Key"
+
+msgid "Trigger Interval"
+msgstr "Trigger Interval"
+
+msgid "Use DirectML"
+msgstr "Use DirectML"
+
+msgid "Use GPU to Improve Performance"
+msgstr "Use GPU to Improve Performance"
+
+msgid "Use the skill set when conditions are met"
+msgstr "Use the skill set when conditions are met"
+
+msgid "Valuables Key"
+msgstr "Valuables Key"
+
+msgid "Yes"
+msgstr "Yes"
+
+msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
+msgstr "Save a complete task configuration snapshot for the current account. Changes to task defaults will not affect saved accounts."
+
+msgid "全部配置"
+msgstr "All Config"
+
+msgid ""
+"启用后在对齐滑索时会自动滚动放大视角\n"
+"可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
+"建议启用此项时不要使用非白发或有白帽角色"
+msgstr ""
+"Auto-scroll zoom when aligning zipline\n"
+"May improve or reduce alignment success\n"
+"Avoid non-white hair or white hat characters"
+
+msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
+msgstr "Account & task config refreshed (account page list is independent from task account list)"
+
+msgid "当前视图：{view_mode} | 展示 {count} / {total} 项"
+msgstr "Current View: {view_mode} | Showing {count} / {total} items"
 
 msgid "淤积点滑索"
 msgstr "Energy Pool Zipline"
@@ -5939,3 +1644,12 @@ msgstr "Delivery Zipline"
 
 msgid "选择要显示的滑索配置分类。"
 msgstr "Choose the zipline config category to display."
+
+msgid "已保存当前账号配置"
+msgstr "Account configuration saved"
+
+msgid "当前账号配置没有变化"
+msgstr "Account configuration is unchanged"
+
+msgid "仅差异项"
+msgstr "Diff Only"

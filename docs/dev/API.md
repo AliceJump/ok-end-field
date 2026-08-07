@@ -419,12 +419,12 @@ def auto_battle(self, no_battle: bool = False)
 ```text
 from src.tasks.mixin.map_mixin import MapMixin
 
-def task_to_transfer_point(self, test_target_box=None, search_box_resolver=None)
+def task_to_transfer_point(self, need_location_list=None)
 def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False)
-def to_near_transfer_point(self, test_target_box)
+def to_near_transfer_point(self, after_track, need_location_list=None)
 ```
 
-`task_to_transfer_point` 从任务界面定位地图，地图稳定后可通过回调重新计算搜索区域，再调用 `to_near_transfer_point`。`to_near_transfer_point` 清理地图筛选、最多循环 16 次寻找传送点并点击传送按钮。各方法以布尔值报告流程是否完成。
+`task_to_transfer_point` 从任务界面定位地图，地图稳定后再调用 `to_near_transfer_point`。`to_near_transfer_point` 传送至附近传送点。
 
 ### 3.3 NavigationMixin
 

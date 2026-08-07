@@ -3,7 +3,7 @@ from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
 
 class MapMixin(BaseEfTask):
-    def task_to_transfer_point(self, test_target_box=None, search_box_resolver=None):
+    def task_to_transfer_point(self, need_location_list=None):
         """
         传送到运输委托对应的出发传送点。
 
@@ -12,26 +12,17 @@ class MapMixin(BaseEfTask):
         2. 按 J 打开任务界面。
         3. 点击“任务定位到地图”的按钮。
         4. 等待地图稳定。
-        5. 在地图上寻找附近传送点并执行传送。
+        5. 传送至附近传送点。
 
         Args:
-            test_target_box (Box, optional):
-                查找传送点的屏幕区域。
-                如果为 None，则默认使用 self.box.top 区域。
-            search_box_resolver (callable, optional):
-                地图加载完成后用于重新解析传送点搜索区域的回调。
-                入参为当前的 test_target_box，返回值为新的 Box 或 None。
+            need_location_list: 需要记录的候选地名列表（本地化名称）；
+                地图稳定后 OCR 右上角，命中则把当前地区名记录到 self.location
 
         Returns:
             bool:
                 True  - 成功执行传送
                 False - 任一步骤失败
         """
-
-        # 如果没有指定搜索区域，则默认使用屏幕上半区域
-        if test_target_box is None:
-            test_target_box = self.box.top
-
         # 确保当前处于主界面
         self.ensure_main()
 
@@ -69,13 +60,8 @@ class MapMixin(BaseEfTask):
         # 地图状态出现后，再等待本帧 UI 稳定。
         self.wait_ui_stable(refresh_interval=1)
 
-        if search_box_resolver is not None:
-            resolved_box = search_box_resolver(test_target_box)
-            if resolved_box is not None:
-                test_target_box = resolved_box
-
         # 执行附近传送点传送
-        return self.to_near_transfer_point(test_target_box)
+        return self.to_near_transfer_point(after_track=False, need_location_list=need_location_list)
 
     def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False):
         """
@@ -136,71 +122,69 @@ class MapMixin(BaseEfTask):
 
         return True
 
-    def to_near_transfer_point(self, test_target_box):
+    def to_near_transfer_point(self, after_track, need_location_list=None):
         """
         在地图上寻找最近的传送点并执行传送。
 
         流程：
         1. 打开“标记显示管理”。
         2. 清空当前地图选中标记。
-        3. 关闭设置界面。
-        4. 在地图上搜索传送点图标。
-        5. 若未找到，则滚动地图继续查找。
-        6. 找到传送点后点击。
-        7. 点击“传送”按钮完成传送。
+        3. 重新点击屏幕中心（淤积点/演武平台需要点击，物资调度终端不需要）。
+        4. 在地图上搜索传送点图标。若找到则点击”前往传送“按钮。
+        5. 在地图上搜索传送点图标。若找到则点击”传送“按钮。
 
         Args:
-            test_target_box (Box):
-                搜索传送点的地图区域。
+            after_track: 调用函数前是否需要点击”追踪“按钮。
+            need_location_list: 需要记录的候选地名列表（本地化名称）；
+                命中则把地图右上角显示的当前地区名记录到 self.location，供调用方回填缓存
 
         Returns:
             bool:
                 True  - 成功执行传送
                 False - 未找到传送点或传送失败
         """
-        self.clear_icon_in_map()
-        result = None
 
-        # 最多尝试 8 次寻找传送点
-        for _ in range(16):
+        # 地图右上角显示当前地区名，命中候选地名则记录到 self.location
+        if need_location_list:
+            if location := self.wait_ocr(
+                match=need_location_list,
+                box=self.box.top_right,
+                time_out=4,
+                log=True,
+            ):
+                self.location = location[0].name
 
-            # 查找传送点图标
-            result = self.find_feature(
-                feature="transfer_point",
-                box=test_target_box,
-                threshold=0.8
-            )
+        # 调用函数前如果点击”追踪“按钮，需要再次点击屏幕中心图标。
+        if after_track:
+            self.click(0.5, 0.5, after_sleep=1)
 
-            # 找到则跳出循环
-            if result:
-                break
+        # 查找“前往传送”按钮
+        result = self.wait_feature(
+            feature=fL.transfer_go,
+            time_out=10,
+            raise_if_not_found=False,
+            horizontal_variance=0.2,
+        )
 
-            # 刷新一帧（防止识别缓存）
-            self.next_frame()
-
-            # 向下滚动地图继续查找
-            self.scroll_relative(0.5, 0.5, -2)
-            self.sleep(0.5)
-
-        # 如果最终仍然没有找到传送点
+        # 如果未找到“前往传送”按钮
         if not result:
             return False
 
-        # 点击传送点
-        self.click(result)
+        # 点击”前往传送“按钮
+        self.click(result, after_sleep=1)
 
         # 查找“传送”按钮
         result = self.wait_feature(
             feature=fL.transfer_go,
             time_out=10,
-            raise_if_not_found=False
+            raise_if_not_found=False,
         )
 
         # 如果未找到传送按钮
         if not result:
             return False
 
-        # 点击传送按钮
-        self.click(result)
+        # 点击”传送“按钮
+        self.click(result, after_sleep=1)
 
         return True

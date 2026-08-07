@@ -60,7 +60,6 @@ class DailyBattleFeature:
 
     def __init__(self, task):
         self._task = task
-        self.gather_near_transfer_point_dict = {}
         self.stages_list = stages_list
         self._reset_battle_state()
         today_str = datetime.now().strftime("%Y-%m-%d")
@@ -232,8 +231,8 @@ class DailyBattleFeature:
     def _click_track_and_transfer(self):
         """点击『追踪』按钮，进入地图并传送至最近传送点。"""
         if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False):
-            self.click(result)
-        self.to_near_transfer_point(self.gather_near_transfer_point_dict[self.battle_ctx.stage_name])
+            self.click(result, after_sleep=1)
+        self.to_near_transfer_point(after_track=True)
         self.ensure_main()
 
     def _navigate_via_zip_line(self):
@@ -533,22 +532,8 @@ class DailyBattleFeature:
         finally:
             self.release_yolo_detector()
 
-    def _init_gather_transfer_points(self):
-        """设置传送点特征搜索区。"""
-        self.gather_near_transfer_point_dict.update({
-            "枢纽区": self.box.top,
-            "源石研究园": self.box.top,
-            "试验园区": self.box_of_screen(0.5, 0.25, 1, 0.75),
-            "矿脉源区": self.box.right,
-            "供能高地": self.box.bottom_right,
-            "武陵城": self.box.top_left,
-            "清波寨": self.box.top,
-            "首墩": self.box.top,
-        })
-
     def battle_gather(self):
         self.battle_ctx.enter_text = "挑战"
-        self._init_gather_transfer_points()
         # 点击追踪按钮，进入地图并传送
         self._click_track_and_transfer()
 
@@ -643,8 +628,23 @@ class DailyBattleFeature:
                                 settle_time=1)
             self.click_confirm()
         else:
-            self.wait_click_feature(feature=fL.restart_battle, vertical_variance=0.1, time_out=5,
-                                click_after_delay=1, raise_if_not_found=False)
+            # 一个循环：先等『重新挑战』按钮出现，出现后点击，再等按钮消失
+            restart_deadline = self.active_time() + 15
+            found = False  # 是否已检测到『重新挑战』按钮
+            while True:
+                restart_boxes = self.find_feature(feature=fL.restart_battle, vertical_variance=0.1)
+                if restart_boxes:
+                    # 按钮出现 → 点击
+                    self.click(restart_boxes[0], after_sleep=0.5)
+                    found = True
+                elif found:
+                    # 已点击过且按钮消失 → 完成
+                    break
+                if self.active_time() > restart_deadline:
+                    self.log_info("『重新挑战』按钮处理超时，结束本轮")
+                    return False
+                self.next_frame()
+                self.sleep(0.5)  # 防止空转
         return True
 
     def battle_recycle(self):
@@ -687,7 +687,23 @@ class DailyBattleFeature:
                 self.battle_ctx.left_ticket = self.get_claim()
                 #
                 if self.battle_ctx.left_ticket <= 0:
-                    self.wait_click_feature(feature=fL.left_battle, vertical_variance=0.1, time_out=10, raise_if_not_found=False, settle_time=1)
+                    # 一个循环：先等『离开战斗』按钮出现，出现后点击，再等按钮消失
+                    left_battle_deadline = self.active_time() + 15
+                    left_found = False  # 是否已检测到『离开战斗』按钮
+                    while True:
+                        left_battle_boxes = self.find_feature(feature=fL.left_battle, vertical_variance=0.1)
+                        if left_battle_boxes:
+                            # 按钮出现 → 点击
+                            self.click(left_battle_boxes[0], after_sleep=0.5)
+                            left_found = True
+                        elif left_found:
+                            # 已点击过且按钮消失 → 完成
+                            break
+                        if self.active_time() > left_battle_deadline:
+                            self.log_info("『离开战斗』按钮处理超时，结束本轮")
+                            return False
+                        self.next_frame()
+                        self.sleep(0.5)  # 防止空转
 
                     # 如果体力耗尽但设置了额外刷取次数，则开始额外刷取
                     self.battle_ctx.is_extra_mode = self.battle_ctx.extra_run_limit > 0 and self.battle_ctx.extra_run_count < self.battle_ctx.extra_run_limit

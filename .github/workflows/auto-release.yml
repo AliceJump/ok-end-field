@@ -1,0 +1,104 @@
+name: Auto Release
+
+on:
+  schedule:
+    # 每日北京时间 0:00（= UTC 16:00，GitHub Actions 的 cron 使用 UTC）
+    - cron: "0 16 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-release
+  cancel-in-progress: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check changes in deploy.txt paths since last tag
+        id: check
+        run: |
+          set -euo pipefail
+
+          # deploy.txt 每行一个「发版关注路径」（目录或文件）
+          mapfile -t paths < deploy.txt
+          echo "watched paths: ${paths[*]}"
+
+          # 找到最新的 vX.Y.Z tag
+          last_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -n 1 || true)
+          echo "last_tag=${last_tag:-<none>}"
+
+          if [ -z "$last_tag" ]; then
+            # 从未发过版 → 视为有更改，发首个版本
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "last_tag=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "last_tag=$last_tag" >> "$GITHUB_OUTPUT"
+
+          # 上次 tag 之后的所有变更文件
+          changed_all=$(git diff --name-only "$last_tag" HEAD || true)
+
+          hit=false
+          while IFS= read -r line; do
+            line=${line%$'\r'}
+            [ -z "$line" ] && continue
+            # 精确匹配：路径本身（文件）或以 路径/ 开头（目录内文件）
+            while IFS= read -r f; do
+              [ -z "$f" ] && continue
+              case "$f" in
+                "$line"|"$line/"*)
+                  hit=true
+                  echo "  changed: $f (matches $line)"
+                  ;;
+              esac
+            done <<< "$changed_all"
+            [ "$hit" = true ] && break
+          done < deploy.txt
+
+          if [ "$hit" = true ]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "no changes in watched paths; skip release"
+          fi
+
+      - name: Compute next version
+        id: version
+        if: steps.check.outputs.changed == 'true'
+        run: |
+          set -euo pipefail
+          last_tag="${{ steps.check.outputs.last_tag }}"
+          if [ -z "$last_tag" ]; then
+            next="v0.1.0"
+          else
+            version="${last_tag#v}"
+            IFS='.' read -r major minor patch <<< "$version"
+            if [ "$patch" -ge 99 ]; then
+              patch=0
+              minor=$((minor + 1))
+            else
+              patch=$((patch + 1))
+            fi
+            next="v${major}.${minor}.${patch}"
+          fi
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+
+      - name: Create and push version tag
+        if: steps.check.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          next="${{ steps.version.outputs.next }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$next" -m "$next"
+          git push origin "$next"
+          echo "Released $next"

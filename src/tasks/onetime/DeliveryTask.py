@@ -506,7 +506,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     else:
                         self.log_info("接取失败，可能委托被抢了，继续寻找")
             self.log_info("未找到符合条件(金额+类型)的委托，准备刷新重试")
-            for i in range(2):
+            refresh_btn_start = self.active_time()
+            while True:
                 if last_refresh_box := self.wait_feature(feature=fL.refresh_order_list, vertical_variance=0.05, horizontal_variance=0.02):
                     now = self.active_time()
                     last = getattr(self, "_last_refresh_ts", 0.0)
@@ -517,9 +518,11 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     self._last_refresh_ts = self.active_time()
                     self.wait_ui_stable(refresh_interval=1)  # 刷新后界面稳定的时间可能会比平常长一些，尤其是网络较慢的时候
                     break
-                else:
-                    self.log_info("警告: 尚未定位到刷新按钮位置，无法刷新，重试...")
-                    self.sleep(1.0)
+                if self.active_time() - refresh_btn_start > 10:
+                    self.log_info("长时间未定位到刷新按钮，无法刷新，结束任务")
+                    return False
+                self.log_info("警告: 尚未定位到刷新按钮位置，无法刷新，重试...")
+                self.sleep(1.0)
 
     def to_storage_point_and_back_zip_line(self, only_zip_line=False):
         """从仓储点出发，乘坐滑索到送货点
@@ -680,6 +683,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 ends_list_pattern_dict[pattern] = end
             for _ in range(3):
                 self._accepted_delivery_location = None
+                self.location = None
                 if not self._logged_in:
                     self.ensure_main(time_out=600)
                 else:
@@ -696,16 +700,20 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     success = None
                     for attempt in range(3):
                         success = self.task_to_transfer_point(
-                            search_box_resolver=self._resolve_transfer_point_search_box_after_map_open,
+                            need_location_list=get_delivery_locations(self.delivery_area, self.lang),
                         )
                         if success:
                             break
                     if not success:
-                        if self._accepted_delivery_location:
-                            self.log_info("未能确定传送点搜索区域（地点未缓存或配置缺失），终止本轮送货")
-                        else:
-                            self.log_info("未缓存委托地点，送货失败")
+                        self.log_info("传送失败（未找到传送按钮），终止本轮送货")
                         return
+                    # 缓存为空时用地图上记录的地区回填（覆盖仅送货模式等未接取委托的场景）
+                    if not self._accepted_delivery_location and self.location:
+                        self._accepted_delivery_location = extract_delivery_location(
+                            self.location, self.delivery_area, self.lang
+                        )
+                        if self._accepted_delivery_location:
+                            self.log_info(f"通过地图自动回填送货地点: {self._accepted_delivery_location}")
                     if not self.to_storage_point_and_back_zip_line():
                         return
                     results = self.wait_ocr(
@@ -745,8 +753,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 return
             self._accepted_delivery_location = test_location
             for end in full_cycle_targets:
-                transfer_search_box = self._get_transfer_search_box_by_location(test_location) or self.box.bottom
-                self.task_to_transfer_point(self.box.bottom)
+                self.task_to_transfer_point()
                 self.to_storage_point_and_back_zip_line(only_zip_line=True)
                 if self.wait_click_ocr(
                         match=self.lang.DeliveryTask.k_b0e3a2da,
@@ -818,10 +825,9 @@ class DeliveryFeature(DeliveryTask):
         self._configure_delivery_area(DEFAULT_DELIVERY_AREA)
 
         task.default_config.update({
-            self.DAILY_ENABLE_KEY: True,
+            self.DAILY_ENABLE_KEY: False,
             self.CFG_TARGET_TICKET_NUM: ["119000"],
             self.CFG_DELIVERY_AREA: DEFAULT_DELIVERY_AREA,
-            **{x: "" for x in self.to_delivery_point_config_keys + self.ends},
         })
         task.config_description.update({
             self.DAILY_ENABLE_KEY: "是否执行自动接取并完成运输委托。",
@@ -841,18 +847,6 @@ class DeliveryFeature(DeliveryTask):
         task.default_config_group.update({
             self.DAILY_ENABLE_KEY: [self.CFG_TARGET_TICKET_NUM, self.CFG_DELIVERY_AREA],
         })
-        self._register_route_keys()
-
-    def _register_route_keys(self):
-        """把当前地区的滑索路线键注册到任务配置（default_config + 运行时 config）。"""
-        for key in self.to_delivery_point_config_keys + self.ends:
-            default_value = ""
-            if key not in self._task.default_config:
-                self._task.default_config[key] = default_value
-            # 初始化阶段 task.config 尚未创建（load_config 时才实例化），此时只注册 default_config；
-            # 运行时由 run_daily() 在 config 就绪后调用本方法补齐。
-            if self._task.config is not None and key not in self._task.config:
-                self._task.config.setdefault(key, default_value)
 
     def __getattr__(self, name):
         return getattr(self._task, name)
@@ -864,7 +858,6 @@ class DeliveryFeature(DeliveryTask):
             current_area = DEFAULT_DELIVERY_AREA
         if current_area != self.delivery_area:
             self._configure_delivery_area(current_area)
-        self._register_route_keys()
 
         self._daily_delivery_mode = True
         try:

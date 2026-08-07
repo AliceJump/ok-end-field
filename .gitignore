@@ -13,6 +13,7 @@ tmp
 # 🗂 运行生成数据（仅忽略根目录）
 ############################
 /data/
+/tmp/
 /data2/
 /data_export/
 /data_import/

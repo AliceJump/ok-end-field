@@ -63,7 +63,7 @@ class GlobalConfigTab(CustomTab):
                     option.config_type,
                     option.icon,
                 )
-                card.card.setTitle(f"{og.app.tr(group_name)} / {og.app.tr(option.name)}")
+                # 标题即分组名（如「滑索配置」），ConfigCard 构造时已用 group_name 作为卡片标题
                 self.add_widget(card)
 
         for config_name, (config, option) in visible_configs.items():
@@ -80,5 +80,5 @@ class GlobalConfigTab(CustomTab):
                 option.config_type,
                 option.icon,
             )
-            card.card.setTitle(f"{og.app.tr(group_name)} / {og.app.tr(option.name)}")
+            # 标题即分组名（如「滑索配置」），ConfigCard 构造时已用 group_name 作为卡片标题
             self.add_widget(card)
