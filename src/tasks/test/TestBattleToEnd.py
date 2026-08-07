@@ -28,7 +28,6 @@ class TestBattleToEnd(Common, MapMixin, ZipLineMixin):
         # to_end 只依赖这些 DailyBattleFeature 实例状态，避免注册完整刷体力配置。
         self.daily_battle = DailyBattleFeature.__new__(DailyBattleFeature)
         self.daily_battle._task = self
-        self.daily_battle.gather_near_transfer_point_dict = {}
         self.daily_battle.stages_list = stages_list
         self.daily_battle._reset_battle_state()
 

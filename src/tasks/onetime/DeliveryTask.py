@@ -683,6 +683,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 ends_list_pattern_dict[pattern] = end
             for _ in range(3):
                 self._accepted_delivery_location = None
+                self.location = None
                 if not self._logged_in:
                     self.ensure_main(time_out=600)
                 else:
@@ -699,16 +700,20 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     success = None
                     for attempt in range(3):
                         success = self.task_to_transfer_point(
-                            search_box_resolver=self._resolve_transfer_point_search_box_after_map_open,
+                            need_location_list=get_delivery_locations(self.delivery_area, self.lang),
                         )
                         if success:
                             break
                     if not success:
-                        if self._accepted_delivery_location:
-                            self.log_info("未能确定传送点搜索区域（地点未缓存或配置缺失），终止本轮送货")
-                        else:
-                            self.log_info("未缓存委托地点，送货失败")
+                        self.log_info("传送失败（未找到传送按钮），终止本轮送货")
                         return
+                    # 缓存为空时用地图上记录的地区回填（覆盖仅送货模式等未接取委托的场景）
+                    if not self._accepted_delivery_location and self.location:
+                        self._accepted_delivery_location = extract_delivery_location(
+                            self.location, self.delivery_area, self.lang
+                        )
+                        if self._accepted_delivery_location:
+                            self.log_info(f"通过地图自动回填送货地点: {self._accepted_delivery_location}")
                     if not self.to_storage_point_and_back_zip_line():
                         return
                     results = self.wait_ocr(
@@ -748,8 +753,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 return
             self._accepted_delivery_location = test_location
             for end in full_cycle_targets:
-                transfer_search_box = self._get_transfer_search_box_by_location(test_location) or self.box.bottom
-                self.task_to_transfer_point(self.box.bottom)
+                self.task_to_transfer_point()
                 self.to_storage_point_and_back_zip_line(only_zip_line=True)
                 if self.wait_click_ocr(
                         match=self.lang.DeliveryTask.k_b0e3a2da,
