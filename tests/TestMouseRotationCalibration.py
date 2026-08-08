@@ -8,7 +8,6 @@ from src.tasks.test.MouseRotationCalibration import (
     angle_delta,
 )
 
-
 class TestAngleDelta(unittest.TestCase):
     """angle_delta 纯函数测试（含 0/360 边界）。"""
 
@@ -44,6 +43,33 @@ class TestMouseRotationCalibrationTask(unittest.TestCase):
         self.assertEqual(MouseRotationCalibration.REPEAT_COUNT, 4)
         self.assertEqual(MouseRotationCalibration.ANGLE_REFRESH_DELAY, 0.1)
         self.assertEqual(MouseRotationCalibration.MIN_SCORE, 0.6)
+        self.assertEqual(MouseRotationCalibration.VERIFY_PAIR_LR, True)
+
+
+class TestPairLeftRight(unittest.TestCase):
+    """_pair_left_right 纯函数测试。"""
+
+    def test_pairs_positive_angles(self):
+        self.assertEqual(
+            MouseRotationCalibration._pair_left_right([44.0, 55.0]),
+            [44.0, -44.0, 55.0, -55.0],
+        )
+
+    def test_mixed_angles_deduplicated(self):
+        # 已含相反方向的不重复添加，顺序保留
+        self.assertEqual(
+            MouseRotationCalibration._pair_left_right([44.0, -44.0, 77.0]),
+            [44.0, -44.0, 77.0, -77.0],
+        )
+
+    def test_single_angle(self):
+        self.assertEqual(
+            MouseRotationCalibration._pair_left_right([-90.0]),
+            [-90.0, 90.0],
+        )
+
+    def test_empty(self):
+        self.assertEqual(MouseRotationCalibration._pair_left_right([]), [])
 
 
 if __name__ == "__main__":
