@@ -445,6 +445,9 @@ msgstr "動作列表"
 msgid "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。"
 msgstr "勾選這個選項：如果「完成後退出」被選定，那麼丟擲異常也會退出遊戲和App。"
 
+msgid "北部禁区"
+msgstr "北部禁區"
+
 msgid "区域扫描测试"
 msgstr "區域掃描測試"
 
@@ -459,6 +462,9 @@ msgstr "發生異常時終止遊戲"
 
 msgid "发货仓库"
 msgstr "發貨倉庫"
+
+msgid "发送已知鼠标位移实测并标定 yaw_per_pixel 旋转系数"
+msgstr "發送已知滑鼠位移實測並標定 yaw_per_pixel 旋轉係數"
 
 msgid "只买不卖"
 msgstr "只買不賣"
@@ -676,6 +682,9 @@ msgstr "幹員進階"
 msgid "庄方宜"
 msgstr "莊方宜"
 
+msgid "应龙关"
+msgstr "應龍關"
+
 msgid "建议启用时不要使用非白发或有白帽角色"
 msgstr "建議啟用時不要使用非白髮或有白帽角色"
 
@@ -784,6 +793,9 @@ msgstr "持續讀取並顯示當前箭頭的角度"
 
 msgid "指定的队伍编号"
 msgstr "指定的隊伍編號"
+
+msgid "按 W 刷新朝向后的画面等待时间"
+msgstr "按 W 刷新朝向後的畫面等待時間"
 
 msgid ""
 "按住标记按键并持续达到这个时长后，\n"
@@ -988,11 +1000,20 @@ msgstr "暫停時間應超過此值，用於觀察恢復後的行為"
 msgid "暂停计时验证"
 msgstr "暫停計時驗證"
 
+msgid "最低置信度"
+msgstr "最低信賴度"
+
 msgid "最多重开次数"
 msgstr "最多重開次數"
 
 msgid "枢纽区"
 msgstr "樞紐區"
+
+msgid "标定位移dx"
+msgstr "標定位移dx"
+
+msgid "标定采样次数，正负方向交替"
+msgstr "標定取樣次數，正負方向交替"
 
 msgid "标记按住时长"
 msgstr "標記按住時長"
@@ -1045,6 +1066,9 @@ msgstr "武陵物資買入價格上限，超出則拒絕買入。若必買，則
 
 msgid "武陵物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
 msgstr "武陵物資賣出價格下限，不足則拒絕賣出。若必賣，則設1。"
+
+msgid "每个 sample 的测试方向位移量，正负交替测试"
+msgstr "每個 sample 的測試方向位移量，正負交替測試"
 
 msgid "每个键对应一条滑索路线，值为距离序列，用英文逗号分隔"
 msgstr "每個鍵對應一條滑索路線，值為距離序列，用英文逗號分隔"
@@ -1209,6 +1233,9 @@ msgstr "管理員"
 msgid "箭头角度实时读取"
 msgstr "箭頭角度實時讀取"
 
+msgid "箭头角度检测的最低置信度，低于此值该 sample 作废"
+msgstr "箭頭角度偵測的最低信賴度，低於此值該 sample 作廢"
+
 msgid "精选荞愈胶囊"
 msgstr "精選蕎癒膠囊"
 
@@ -1315,6 +1342,9 @@ msgstr "裴令容"
 
 msgid "视图"
 msgstr "檢視"
+
+msgid "角度刷新等待(秒)"
+msgstr "角度刷新等待(秒)"
 
 msgid "诀"
 msgstr "訣"
@@ -1498,6 +1528,9 @@ msgstr "設定預設隱藏，選擇後展開對應設定項。"
 msgid "醚质"
 msgstr "醚質"
 
+msgid "重复次数"
+msgstr "重複次數"
+
 msgid "重复测试的次数"
 msgstr "重復測試的次數"
 
@@ -1579,11 +1612,8 @@ msgstr ""
 "預設留空，表示購買「日用消耗」「工業貨品」「人文物產」首行首個物資。\n"
 "更多用法參見 ./docs/日常任務.md > 買物資 。"
 
+msgid "鼠标视角旋转系数标定"
+msgstr "滑鼠視角旋轉係數標定"
+
 msgid "齐纶"
 msgstr "齊綸"
-
-msgid "应龙关"
-msgstr "應龍關"
-
-msgid "北部禁区"
-msgstr "北部禁區"

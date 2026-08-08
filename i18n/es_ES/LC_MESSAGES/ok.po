@@ -457,6 +457,9 @@ msgstr ""
 "Si está marcado Salir al terminar, una excepción también cerrará el juego y "
 "la aplicación."
 
+msgid "北部禁区"
+msgstr "Zona de exclusión norte de Wuling"
+
 msgid "区域扫描测试"
 msgstr "Prueba de escaneo de región"
 
@@ -471,6 +474,11 @@ msgstr "Terminar Juego en Excepción"
 
 msgid "发货仓库"
 msgstr "Almacén de origen"
+
+msgid "发送已知鼠标位移实测并标定 yaw_per_pixel 旋转系数"
+msgstr ""
+"Envía desplazamientos de ratón conocidos para medir y calibrar el "
+"coeficiente de rotación yaw_per_pixel"
 
 msgid "只买不卖"
 msgstr "Solo Comprar, No Vender"
@@ -706,6 +714,9 @@ msgstr "Ascensos"
 msgid "庄方宜"
 msgstr "Zhuang Fangyi"
 
+msgid "应龙关"
+msgstr "Paso de Yinglung"
+
 msgid "建议启用时不要使用非白发或有白帽角色"
 msgstr "Evita personajes sin pelo blanco o con sombrero blanco al activarlo"
 
@@ -820,6 +831,10 @@ msgstr "Leer y mostrar continuamente el ángulo de la flecha"
 
 msgid "指定的队伍编号"
 msgstr "Número de Equipo Especificado"
+
+msgid "按 W 刷新朝向后的画面等待时间"
+msgstr ""
+"Tiempo de espera de pantalla tras pulsar W para refrescar la orientación"
 
 msgid ""
 "按住标记按键并持续达到这个时长后，\n"
@@ -1044,11 +1059,20 @@ msgstr ""
 msgid "暂停计时验证"
 msgstr "Verificación de sincronización de pausa"
 
+msgid "最低置信度"
+msgstr "Confianza mínima"
+
 msgid "最多重开次数"
 msgstr "Máximo de reinicios"
 
 msgid "枢纽区"
 msgstr "La Base"
+
+msgid "标定位移dx"
+msgstr "Desplazamiento dx de calibración"
+
+msgid "标定采样次数，正负方向交替"
+msgstr "Número de muestras de calibración; se alterna positivo y negativo"
 
 msgid "标记按住时长"
 msgstr "Duración de Sostener Marca"
@@ -1102,6 +1126,9 @@ msgstr ""
 
 msgid "武陵物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
 msgstr "Precio mínimo de venta de Wuling. Use 1 para vender siempre."
+
+msgid "每个 sample 的测试方向位移量，正负交替测试"
+msgstr "Desplazamiento de prueba por muestra; se alterna positivo y negativo"
 
 msgid "每个键对应一条滑索路线，值为距离序列，用英文逗号分隔"
 msgstr ""
@@ -1280,6 +1307,11 @@ msgstr "Endministrator"
 msgid "箭头角度实时读取"
 msgstr "Lectura del ángulo de la flecha en tiempo real"
 
+msgid "箭头角度检测的最低置信度，低于此值该 sample 作废"
+msgstr ""
+"Confianza mínima para detectar el ángulo de la flecha; las muestras por "
+"debajo se descartan"
+
 msgid "精选荞愈胶囊"
 msgstr "Cápsulas de floracina [A]"
 
@@ -1388,6 +1420,9 @@ msgstr "Péi Língróng"
 
 msgid "视图"
 msgstr "Vista"
+
+msgid "角度刷新等待(秒)"
+msgstr "Espera de actualización del ángulo (s)"
 
 msgid "诀"
 msgstr "Arcane"
@@ -1581,6 +1616,9 @@ msgstr ""
 msgid "醚质"
 msgstr "Aurileno"
 
+msgid "重复次数"
+msgstr "Número de repeticiones"
+
 msgid "重复测试的次数"
 msgstr "Número de repeticiones de la prueba"
 
@@ -1664,11 +1702,8 @@ msgstr ""
 "Déjelo vacío para comprar el primer objeto de cada categoría.\n"
 "Consulte ./docs/日常任务.md > 买物资 para más información."
 
+msgid "鼠标视角旋转系数标定"
+msgstr "Calibración del coeficiente de rotación del ratón"
+
 msgid "齐纶"
 msgstr "Qí Lún"
-
-msgid "应龙关"
-msgstr "Paso de Yinglung"
-
-msgid "北部禁区"
-msgstr "Zona de exclusión norte de Wuling"

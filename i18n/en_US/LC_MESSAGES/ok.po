@@ -452,6 +452,9 @@ msgstr "Action List"
 msgid "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。"
 msgstr "If Auto-Exit is selected, exceptions will also exit game and app."
 
+msgid "北部禁区"
+msgstr "North Wuling Exclusion Zone"
+
 msgid "区域扫描测试"
 msgstr "Region Scan Test"
 
@@ -466,6 +469,11 @@ msgstr "Terminate Game on Exception"
 
 msgid "发货仓库"
 msgstr "Source Warehouse"
+
+msgid "发送已知鼠标位移实测并标定 yaw_per_pixel 旋转系数"
+msgstr ""
+"Send known mouse deltas to measure and calibrate the yaw_per_pixel rotation "
+"coefficient"
 
 msgid "只买不卖"
 msgstr "Buy Only, No Selling"
@@ -693,6 +701,9 @@ msgstr "Promotions"
 msgid "庄方宜"
 msgstr "Zhuang Fangyi"
 
+msgid "应龙关"
+msgstr "Yinglung Pass"
+
 msgid "建议启用时不要使用非白发或有白帽角色"
 msgstr "Avoid non-white-hair or white-hat characters when enabled"
 
@@ -804,6 +815,9 @@ msgstr "Continuously read and display arrow angle"
 
 msgid "指定的队伍编号"
 msgstr "Specified Team Number"
+
+msgid "按 W 刷新朝向后的画面等待时间"
+msgstr "Frame wait time after pressing W to refresh heading"
 
 msgid ""
 "按住标记按键并持续达到这个时长后，\n"
@@ -1020,11 +1034,20 @@ msgstr ""
 msgid "暂停计时验证"
 msgstr "Pause Timing Verification"
 
+msgid "最低置信度"
+msgstr "Minimum Confidence"
+
 msgid "最多重开次数"
 msgstr "Max Restart Count"
 
 msgid "枢纽区"
 msgstr "The Hub"
+
+msgid "标定位移dx"
+msgstr "Calibration dx"
+
+msgid "标定采样次数，正负方向交替"
+msgstr "Number of calibration samples; positive and negative alternate"
 
 msgid "标记按住时长"
 msgstr "Mark Hold Duration"
@@ -1077,6 +1100,9 @@ msgstr "Wuling buy price cap. Set high if must buy."
 
 msgid "武陵物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
 msgstr "Wuling sell price floor. Set to 1 if must sell."
+
+msgid "每个 sample 的测试方向位移量，正负交替测试"
+msgstr "Test displacement per sample; positive and negative alternate"
 
 msgid "每个键对应一条滑索路线，值为距离序列，用英文逗号分隔"
 msgstr ""
@@ -1248,6 +1274,10 @@ msgstr "Endministrator"
 msgid "箭头角度实时读取"
 msgstr "Real-time Arrow Angle Reading"
 
+msgid "箭头角度检测的最低置信度，低于此值该 sample 作废"
+msgstr ""
+"Minimum confidence for arrow angle detection; samples below it are discarded"
+
 msgid "精选荞愈胶囊"
 msgstr "Buck Capsule [A]"
 
@@ -1354,6 +1384,9 @@ msgstr "Pei Lingrong"
 
 msgid "视图"
 msgstr "View"
+
+msgid "角度刷新等待(秒)"
+msgstr "Angle Refresh Delay (sec)"
 
 msgid "诀"
 msgstr "Arcane"
@@ -1542,6 +1575,9 @@ msgstr "Config hidden by default; expands after selection."
 msgid "醚质"
 msgstr "Aurylene"
 
+msgid "重复次数"
+msgstr "Repeat Count"
+
 msgid "重复测试的次数"
 msgstr "Number of Test Repetitions"
 
@@ -1623,11 +1659,8 @@ msgstr ""
 "Leave empty to buy first item of each category.\n"
 "See docs for more."
 
+msgid "鼠标视角旋转系数标定"
+msgstr "Mouse Rotation Calibration"
+
 msgid "齐纶"
 msgstr "Qi Lun"
-
-msgid "应龙关"
-msgstr "Yinglung Pass"
-
-msgid "北部禁区"
-msgstr "North Wuling Exclusion Zone"
