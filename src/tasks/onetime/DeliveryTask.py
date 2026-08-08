@@ -1,10 +1,9 @@
 import re
 import webbrowser
-from datetime import datetime
 from dataclasses import dataclass
 from typing import List, Tuple
 
-from ok import Box, TaskDisabledException
+from ok import Box
 from qfluentwidgets import FluentIcon
 
 from src.icons import Icons
@@ -41,7 +40,7 @@ secondary_objective_direction_dot = [
 @dataclass
 class DeliveryRow:
     """运输委托行对象 - 包含OCR元素和坐标信息
-    
+
     Attributes:
         elems: OCR识别的元素列表
         box: 行的边界框(x1, y1, x2, y2)
@@ -100,9 +99,10 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         super().__init__(*args, **kwargs)
         self.default_config.update({"_enabled": True})
         self.name = "自动送货"
+        self.icon = Icons.Deliver
         self.group_name = "运输委托"
-        self.description = "根据地区配置自动送货,教程视频 BV1LLc7zFEF9"
-        self.icon = Icons.DELIVERY
+        self.description = "根据地区配置自动送货，教程视频 BV1LLc7zFEF9"
+
         self._configure_delivery_area(DEFAULT_DELIVERY_AREA)
         self.support_schedule_task = True
         self.support_multi_account = True
@@ -159,7 +159,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
 
     def merge_left_right_groups(self) -> List[DeliveryRow]:
         """合并OCR左右区域结果，按规则分组为行对象
-        
+
         Returns:
             list[DeliveryRow]: 运输委托行列表
         """
@@ -167,11 +167,11 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         def split_items_by_marker(items: list, marker: str):
             """
             按item.name中的marker分组，marker归入上一组
-            
+
             Args:
                 items: OCRItem列表
                 marker: 分组标记字符串
-            
+
             Returns:
                 list: 分组后的OCRItem列表
             """
@@ -359,10 +359,10 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
 
     def detect_ticket_type(self, row: DeliveryRow) -> str | None:
         """检测行对象中的票券类型
-        
+
         Args:
             row: DeliveryRow运输委托行对象
-        
+
         Returns:
             str: 票券类型("ticket_delivery_area")或None
         """
@@ -445,7 +445,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
 
     def accept_order(self):
         """接取运输委托的主流程
-        
+
         Returns:
             bool: 成功返回True，失败返回False
         """
@@ -528,10 +528,10 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
 
     def to_storage_point_and_back_zip_line(self, only_zip_line=False):
         """从仓储点出发，乘坐滑索到送货点
-        
+
         Args:
             only_zip_line: True时仅乘坐出发滑索，False时乘至仓储点
-        
+
         Returns:
             bool: 成功返回True，失败返回False
         """
@@ -594,7 +594,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
 
     def to_end_and_submit(self, end_pattern):
         """从仓储点出发到目标点并提交委托
-        
+
         Args:
             end_pattern: 目标点的正则匹配模式
         """

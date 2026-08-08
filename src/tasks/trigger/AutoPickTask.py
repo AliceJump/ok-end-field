@@ -1,9 +1,9 @@
 import cv2
 import numpy as np
-from qfluentwidgets import FluentIcon
-
 from ok import Logger, TriggerTask
+
 from src.core.BaseEfTask import BaseEfTask
+from src.icons import Icons
 from src.tasks.trigger.auto_pick_rules import (
     BLACK_LIST,
     CFG_SKIP_PRODUCIBLE,
@@ -15,12 +15,12 @@ logger = Logger.get_logger(__name__)
 
 
 class AutoPickTask(BaseEfTask, TriggerTask):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "自动拾取"
-        self.description = "大世界自动拾取"
-        self.icon = FluentIcon.SHOPPING_CART
+        self.description = "大世界探索时自动拾取"
+        self.icon = Icons.Collect
+
         self.default_config = {
             '_enabled': True,
             CFG_SKIP_PRODUCIBLE: True,
