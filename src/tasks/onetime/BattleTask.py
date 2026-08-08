@@ -1,5 +1,3 @@
-from qfluentwidgets import FluentIcon
-
 from src.icons import Icons
 from src.tasks.daily.daily_battle_mixin import DailyBattleFeature
 from src.tasks.mixin.common import Common
@@ -13,9 +11,9 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         super().__init__(*args, **kwargs)
         self.name = "刷体力"
         self.group_name = "战斗"
-        self.group_icon = Icons.BATTLE
+        self.group_icon = Icons.Battle
         self.description = "使用说明参见选项，更多用法参见 ./docs/体力本.md"
-        self.icon = Icons.BATTLE
+        self.icon = Icons.Battle
         self.daily_battle = DailyBattleFeature(self)
         self.default_config_group.pop("⭐刷体力", None)
         self.default_config.pop("⭐刷体力", None)

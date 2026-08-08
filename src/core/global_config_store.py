@@ -8,7 +8,9 @@ from typing import Any
 from ok import ConfigOption
 from ok.util.config import Config
 from ok.util.file import get_relative_path, read_json_file, write_json_file
+from qfluentwidgets import FluentIcon
 
+from src.icons import Icons
 from src.interaction.KeyConfig import DEFAULT_COMBAT_KEYS, DEFAULT_COMMON_KEYS, DEFAULT_INDUSTRY_KEYS
 from src.core.BattleConfig import (
     BATTLE_CONFIG_DESCRIPTION,
@@ -73,6 +75,7 @@ key_config_option = ConfigOption(
     KEY_CONFIG_NAME,
     {**DEFAULT_COMMON_KEYS, **DEFAULT_INDUSTRY_KEYS, **DEFAULT_COMBAT_KEYS},
     description="游戏内快捷键配置",
+    icon=Icons.Keyboard
 )
 battle_config_option = ConfigOption(
     BATTLE_CONFIG_NAME,
@@ -80,11 +83,13 @@ battle_config_option = ConfigOption(
     description="全局战斗配置",
     config_description=BATTLE_CONFIG_DESCRIPTION,
     config_type=BATTLE_CONFIG_TYPE,
+    icon=Icons.Battle
 )
 ensure_main_once_action_sleep_option = ConfigOption(
     ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME,
     {"SingleActionWithDelay": 1.5},
     description="主界面单次动作后延迟",
+    icon=FluentIcon.DATE_TIME
 )
 zip_line_config_option = ConfigOption(
     ZIP_LINE_CONFIG_NAME,
@@ -92,6 +97,7 @@ zip_line_config_option = ConfigOption(
     description="滑索路线与距离序列配置",
     config_description=ZIP_LINE_CONFIG_DESCRIPTION,
     config_type=ZIP_LINE_CONFIG_TYPE,
+    icon=Icons.Zipline
 )
 
 GLOBAL_CONFIG_OPTIONS = [

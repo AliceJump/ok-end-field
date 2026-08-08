@@ -1,5 +1,4 @@
 from qfluentwidgets import FluentIcon
-from src.data.FeatureList import FeatureList as fL
 
 from src.tasks.account.account_mixin import AccountMixin
 from src.tasks.daily.daily_battle_mixin import DailyBattleFeature
@@ -89,10 +88,11 @@ class DailyTask(
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "日常任务"
+        self.icon = FluentIcon.CALENDAR
         self.group_name = "日常任务"
         self.group_icon = FluentIcon.CALENDAR
         self.description = "子任务开关用⭐标出，自上而下顺序执行，默认展开在最前面的『⭐⭐⭐ 默认』分组，最后执行『日常奖励』。\n如果出现反复按ESC的情形，请调高『设置/主界面单次动作后延迟』（建议1.5以上）。"
-        self.icon = FluentIcon.SYNC
+
         self.support_schedule_task = True
         self.support_multi_account = True
         self.daily_runner: DailyTaskRunner | None = None
