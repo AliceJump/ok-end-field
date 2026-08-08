@@ -26,48 +26,47 @@ jobs:
         run: |
           set -euo pipefail
 
-          # deploy.txt 每行一个「发版关注路径」（目录或文件）
+          # deploy.txt 每行一个「发版关注路径」（目录或文件），支持 CRLF，空行忽略
           mapfile -t paths < deploy.txt
-          echo "watched paths: ${paths[*]}"
+          watched=()
+          for line in "${paths[@]}"; do
+            line=${line%$'\r'}
+            [ -z "$line" ] && continue
+            watched+=("$line")
+          done
+          echo "watched paths: ${watched[*]}"
 
           # 找到最新的 vX.Y.Z tag
           last_tag=$(git tag -l 'v[0-9]*.[0-9]*.[0-9]*' | sort -V | tail -n 1 || true)
           echo "last_tag=${last_tag:-<none>}"
-
-          if [ -z "$last_tag" ]; then
-            # 从未发过版 → 视为有更改，发首个版本
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-            echo "last_tag=" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
           echo "last_tag=$last_tag" >> "$GITHUB_OUTPUT"
 
-          # 上次 tag 之后的所有变更文件
-          changed_all=$(git diff --name-only "$last_tag" HEAD || true)
-
-          hit=false
-          while IFS= read -r line; do
-            line=${line%$'\r'}
-            [ -z "$line" ] && continue
-            # 精确匹配：路径本身（文件）或以 路径/ 开头（目录内文件）
-            while IFS= read -r f; do
-              [ -z "$f" ] && continue
-              case "$f" in
-                "$line"|"$line/"*)
-                  hit=true
-                  echo "  changed: $f (matches $line)"
-                  ;;
-              esac
-            done <<< "$changed_all"
-            [ "$hit" = true ] && break
-          done < deploy.txt
-
-          if [ "$hit" = true ]; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          else
+          if [ "${#watched[@]}" -eq 0 ]; then
             echo "changed=false" >> "$GITHUB_OUTPUT"
-            echo "no changes in watched paths; skip release"
+            echo "latest_commit=" >> "$GITHUB_OUTPUT"
+            echo "no watched paths in deploy.txt; skip release"
+            exit 0
           fi
+
+          # 找出关注路径中「最后一次修改的 commit」。
+          # 以 Git 历史顺序（git log 输出顺序）为准，不依赖 Unix timestamp；
+          # 多个关注路径 / 同一路径多次修改 / 文件或目录均由此统一处理。
+          # 有历史 tag：只看 last_tag..HEAD；无历史 tag（首次发版）：看全部历史。
+          if [ -z "$last_tag" ]; then
+            latest_commit=$(git log --topo-order --format=%H -- "${watched[@]}" | head -n 1 || true)
+          else
+            latest_commit=$(git log --topo-order --format=%H "$last_tag"..HEAD -- "${watched[@]}" | head -n 1 || true)
+          fi
+
+          if [ -z "$latest_commit" ]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "latest_commit=" >> "$GITHUB_OUTPUT"
+            echo "no changes in watched paths; skip release"
+            exit 0
+          fi
+
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "latest_commit=$latest_commit" >> "$GITHUB_OUTPUT"
 
       - name: Compute next version
         id: version
@@ -97,11 +96,13 @@ jobs:
         run: |
           set -euo pipefail
           next="${{ steps.version.outputs.next }}"
+          target="${{ steps.check.outputs.latest_commit }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git tag -a "$next" -m "$next"
+          # tag 必须指向关注路径最后一次修改的 commit（latest_commit），而不是 HEAD
+          git tag -a "$next" "$target" -m "$next"
           git push origin "$next"
-          echo "Released $next"
+          echo "Released $next -> $target"
 
       - name: Trigger Build via repository_dispatch
         if: steps.check.outputs.changed == 'true'

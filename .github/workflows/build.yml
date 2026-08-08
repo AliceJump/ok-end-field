@@ -35,8 +35,21 @@ jobs:
           echo "action_state=yellow" >> $env:GITHUB_ENV
           echo "${{ env.action_state }}"
 
+      - name: Resolve release tag
+        id: tag
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "repository_dispatch") {
+            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          } else {
+            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+
       - uses: actions/checkout@v4
         with:
+          # 必须显式 checkout 到解析出的 tag；repository_dispatch 的 client_payload.tag
+          # 只是事件携带的数据，GitHub 不会自动 checkout 该 tag
+          ref: ${{ steps.tag.outputs.tag }}
           lfs: true
           # 拉全量历史与 tag：repository_dispatch 触发时默认只拉单次提交，
           # 后续 partial-sync-repo 需要本地 tag 执行 git rev-parse
@@ -57,16 +70,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install polib
-
-      - name: Resolve release tag
-        id: tag
-        shell: pwsh
-        run: |
-          if ("${{ github.event_name }}" -eq "repository_dispatch") {
-            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          } else {
-            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          }
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         run: |
@@ -105,8 +108,21 @@ jobs:
           echo "action_state=yellow" >> $env:GITHUB_ENV
           echo "${{ env.action_state }}"
 
+      - name: Resolve release tag
+        id: tag
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "repository_dispatch") {
+            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          } else {
+            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+
       - uses: actions/checkout@v4
         with:
+          # 必须显式 checkout 到解析出的 tag；repository_dispatch 的 client_payload.tag
+          # 只是事件携带的数据，GitHub 不会自动 checkout 该 tag
+          ref: ${{ steps.tag.outputs.tag }}
           lfs: true
           # 拉全量历史与 tag：repository_dispatch 触发时默认只拉单次提交，
           # 后续 partial-sync-repo 需要本地 tag 执行 git rev-parse
@@ -127,16 +143,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install polib
-
-      - name: Resolve release tag
-        id: tag
-        shell: pwsh
-        run: |
-          if ("${{ github.event_name }}" -eq "repository_dispatch") {
-            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          } else {
-            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          }
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         run: |
@@ -178,8 +184,21 @@ jobs:
           echo "action_state=yellow" >> $env:GITHUB_ENV
           echo "${{ env.action_state }}"
 
+      - name: Resolve release tag
+        id: tag
+        shell: pwsh
+        run: |
+          if ("${{ github.event_name }}" -eq "repository_dispatch") {
+            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          } else {
+            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          }
+
       - uses: actions/checkout@v4
         with:
+          # 必须显式 checkout 到解析出的 tag；repository_dispatch 的 client_payload.tag
+          # 只是事件携带的数据，GitHub 不会自动 checkout 该 tag
+          ref: ${{ steps.tag.outputs.tag }}
           lfs: true
           # 拉全量历史与 tag：repository_dispatch 触发时默认只拉单次提交，
           # 后续 partial-sync-repo 需要本地 tag 执行 git rev-parse
@@ -200,16 +219,6 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install polib
-
-      - name: Resolve release tag
-        id: tag
-        shell: pwsh
-        run: |
-          if ("${{ github.event_name }}" -eq "repository_dispatch") {
-            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          } else {
-            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
-          }
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         run: |
