@@ -175,20 +175,20 @@ If you encounter issues, check the following in order:
 
 ### Run from source (Python)
 
-This project supports **Python 3.12 only**. Run CMD, PyCharm, or VSCode as **Administrator**.
+This project supports **Python 3.12 only**. Run CMD, PyCharm, or VSCode as **Administrator**. Dependencies are managed with [uv](https://docs.astral.sh/uv/) (install uv first).
 
 ```bash
 # If your first clone did not include submodules, initialize them first
 git submodule update --init --recursive
 
-# Install or update dependencies
-pip install -r requirements.txt --upgrade
+# Create the virtual environment and install/update dependencies
+uv sync
 
 # Run Release version
-python main.py
+uv run python main.py
 
 # Run Debug version
-python main_debug.py
+uv run python main_debug.py
 ```
 
 ### Command-line arguments
