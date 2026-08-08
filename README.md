@@ -160,20 +160,20 @@ An image-recognition-based automation tool for End Field, with background mode s
 
 ### 从源码运行 (Python)
 
-本项目仅支持 Python 3.12 版本, 必须以管理员权限启动CMD, PyCharm, VSCode。
+本项目仅支持 Python 3.12 版本, 必须以管理员权限启动CMD, PyCharm, VSCode。依赖管理使用 [uv](https://docs.astral.sh/uv/)（需先安装 uv）。
 
 ```bash
 # 若首次 clone 未带子模块参数，请先执行
 git submodule update --init --recursive
 
-# 安装或更新依赖
-pip install -r requirements.txt --upgrade
+# 创建虚拟环境并安装/更新依赖
+uv sync
 
 # 运行 Release 版本
-python main.py
+uv run python main.py
 
 # 运行 Debug 版本
-python main_debug.py
+uv run python main_debug.py
 ```
 
 ### 命令行参数

@@ -14,10 +14,13 @@
 ```powershell
 git clone --recurse-submodules https://github.com/AliceJump/ok-end-field.git
 Set-Location ok-end-field
-python -m venv .venv
-.\.venv\Scripts\python.exe -m pip install --upgrade pip
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe main_debug.py
+```
+
+经上述命令克隆后，确保安装了 [uv](https://docs.astral.sh/uv/) 这一依赖管理程序，随后：
+
+```powershell
+uv sync
+uv run python main_debug.py
 ```
 
 若 clone 时漏了子模块：
@@ -119,7 +122,7 @@ class MyBattleTask(MapMixin, BattleMixin):
 运行全部测试：
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -p "Test*.py"
+uv run python -m unittest discover -s tests -p "Test*.py"
 ```
 
 仓库的 `run_tests.ps1` 会逐个运行 `tests/*.py`，也可使用：
@@ -131,8 +134,8 @@ class MyBattleTask(MapMixin, BattleMixin):
 新增语言引用后至少运行：
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest tests.TestCheckLang
-.\.venv\Scripts\python.exe -m unittest tests.TestPoLocaleConsistency
+uv run python -m unittest tests.TestCheckLang
+uv run python -m unittest tests.TestPoLocaleConsistency
 ```
 
 涉及窗口、OCR 或游戏状态的行为仍需用 `main_debug.py` 实机验证；测试集中既有纯离线测试，也有依赖样本图片和 `ok-script` 测试工具的测试，不能概括为全部不需要项目资源。

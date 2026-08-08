@@ -9,6 +9,8 @@ description: Prefer the repository-local Python virtual environment for coding-a
 
 Use the project `.venv` for Python commands so agent work uses the same dependencies as the repository instead of the global Python installation.
 
+The `.venv` is created and synced by `uv sync` from `pyproject.toml` and `uv.lock`. Prefer running commands with `uv run python ...` (uv auto-selects the `.venv`); the direct interpreter paths below also work.
+
 ## Rule
 
 - Before running Python, check for a local virtual environment at the repository root.
