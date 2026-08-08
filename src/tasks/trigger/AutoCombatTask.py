@@ -1,9 +1,7 @@
-import re
-from qfluentwidgets import FluentIcon
 from ok import TriggerTask, Logger
 
+from src.icons import Icons
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
-from src.core.BaseEfTask import BaseEfTask
 from src.tasks.mixin.battle_mixin import BattleMixin
 
 logger = Logger.get_logger(__name__)
@@ -17,7 +15,8 @@ class AutoCombatTask(BattleMixin, TriggerTask):
         super().__init__(*args, **kwargs)
         self.name = "自动战斗"
         self.description = "自动检测战斗开始和结束，使用说明参见选项"
-        self.icon = FluentIcon.ACCEPT
+        self.icon = Icons.Battle
+
         self._combat_logic = AutoCombatLogic(self)
 
     def run(self):

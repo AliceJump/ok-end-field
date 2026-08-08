@@ -1,20 +1,22 @@
-from qfluentwidgets import FluentIcon
 from src.icons import Icons
 from src.data.FeatureList import FeatureList as fL
-from src.core.BaseEfTask import BaseEfTask
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.data.world_map import permanent_dict, YINGTUO_MONUMENT
 from src.data.world_map_utils import get_world_map_text
+
+
 class YingTuoTask(BattleMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "影拓丰碑"
+        self.icon = Icons.YingTuo
         self.group_name = "战斗"
         self.description = "自动完成当前所有普通影拓丰碑关卡"
-        self.icon = Icons.BATTLE
+
         self.index = 0
         self.yingtuo_list = permanent_dict[YINGTUO_MONUMENT][::-1]
         self.support_schedule_task = True
+
     def run(self):
         self.ensure_main(time_out=400)
         if not self.enter_yingtuo():
@@ -43,6 +45,7 @@ class YingTuoTask(BattleMixin):
                 self.log_info("未能安全返回，任务结束")
                 return
         self.log_info("影拓丰碑任务完成", notify=True)
+
     def enter_yingtuo(self):
         self.log_info("开始影拓丰碑任务", notify=True)
         self.press_key("f8")
@@ -61,6 +64,7 @@ class YingTuoTask(BattleMixin):
             return False
         self.log_info("成功进入影拓丰碑页面")
         return True
+
     def find_normal_challenge(self):
         if self.index >= len(self.yingtuo_list):
             self.log_info("已完成所有普通关卡")
@@ -74,6 +78,7 @@ class YingTuoTask(BattleMixin):
                 return self.target
             self.scroll_relative(0.5, 0.5, -5)
         return None
+
     def battle_and_exit(self):
         end_time = self.active_time()
         while not self.wait_feature(feature=fL.battle_space_left, time_out=1, raise_if_not_found=False):
@@ -85,4 +90,3 @@ class YingTuoTask(BattleMixin):
             self.log_info("未能退出按钮")
             return False
         return True
-        

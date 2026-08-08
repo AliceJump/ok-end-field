@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import json
 import math
 import os
@@ -38,15 +37,13 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
     - 轮询使用固定内部 WS 端点（可在部署时改代码），物品选择从任务配置读取
     """
 
-    # minimal, user-facing defaults only (用户可见/配置)
     def __init__(self, *args, **kwargs):
-        # 初始化父类
         super().__init__(*args, **kwargs)
 
-        # 设置导航模块的基本信息
-        self.name = "物品导航"  # 模块名称
-        self.description = "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"  # 模块描述
-        self.icon = Icons.ItemNavigator  # 模块图标
+        self.name = "物品导航"
+        self.description = "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"
+        self.icon = Icons.Navigation
+
         # 只把面向用户的选项放在 default_config
         self.default_config.update({
             # 可选：直接填写 hg/check 的 data.content。为空时按“地图账号”读取账户配置页 content。

@@ -1,7 +1,7 @@
 import re
-from qfluentwidgets import FluentIcon
-from src.icons import Icons
 from ok import TriggerTask, Logger
+
+from src.icons import Icons
 from src.core.BaseEfTask import BaseEfTask
 
 logger = Logger.get_logger(__name__)
@@ -21,11 +21,12 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.name = "运送委托接取"
+        self.name = "接取委托"
+        self.icon = Icons.Fetch
         self.group_name = "运输委托"
-        self.group_icon = Icons.DELIVERY
-        self.description = "自动抢单"
-        self.icon = FluentIcon.ACCEPT
+        self.group_icon = Icons.Deliver
+        self.description = "自动抢送货委托单"
+
         self.default_config = {
             '接取谷地券': False,
             '接取谷地券最低金额(万)': 5.0,

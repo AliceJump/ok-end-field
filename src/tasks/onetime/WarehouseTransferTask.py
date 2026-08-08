@@ -1,11 +1,11 @@
-﻿import re
-import win32api
+﻿import win32api
 import win32con
 from qfluentwidgets import FluentIcon
 
 from src.data.world_map import item_to_warehouse_dict
 from src.data.zh_en import ITEM_WAREHOUSE_CATEGORY_EN_BY_ZH, ITEM_TRANSLATION_DICT
 from src.core.BaseEfTask import BaseEfTask
+from src.icons import Icons
 
 _LOCATIONS = {
     "valley4": "四号谷地",
@@ -25,10 +25,11 @@ class WarehouseTransferTask(BaseEfTask):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "仓库物品转移"
-        self.group_name = "仓库与物资"
-        self.group_icon = FluentIcon.SYNC
+        self.icon = Icons.ItemTransfer
+        self.group_name = "仓储管理"
+        self.group_icon = FluentIcon.FOLDER
         self.description = "从发货仓库取出指定物品，切到收货仓库后一键存放 （目前只支持中文版）"
-        self.icon = FluentIcon.SYNC
+
         self.default_config.update(
             {
                 "发货仓库": "valley4",

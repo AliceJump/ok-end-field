@@ -1,7 +1,8 @@
-from qfluentwidgets import FluentIcon
-from src.data.FeatureList import FeatureList as fL
 from ok import TriggerTask, Logger
+
 from src.core.BaseEfTask import BaseEfTask
+from src.data.FeatureList import FeatureList as fL
+from src.icons import Icons
 
 logger = Logger.get_logger(__name__)
 
@@ -10,13 +11,15 @@ class AutoInteractionTask(BaseEfTask, TriggerTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.name = "自动交互"
+        self.description = "自动跳过剧情和点击传送按钮"
+        self.icon = Icons.Interact
+
         self.default_config = {
             '_enabled': True,
             '自动跳过剧情': True,
             '自动点击传送': True,
         }
-        self.name = "自动交互"
-        self.icon = FluentIcon.ACCEPT
 
     def run(self):
         self.check_resolution()

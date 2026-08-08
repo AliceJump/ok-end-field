@@ -8,9 +8,10 @@ class DemoDrawTask(Common):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "演算抽牌"
+        self.icon = Icons.SwordChallenge
         self.group_name = "战斗"
         self.description = "在演武台面前自动进入演算抽牌页，循环抽取直到满足等级变化条件"
-        self.icon = Icons.BATTLE
+
         self.daily_demo = DailyDemoFeature(self)
         self.default_config.update({
             "最多重开次数": 30,

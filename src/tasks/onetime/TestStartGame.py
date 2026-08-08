@@ -1,4 +1,5 @@
 from ok import TaskDisabledException
+from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
 
@@ -8,10 +9,13 @@ class TestStartGame(BaseEfTask):
         super().__init__(*args, **kwargs)
         self.name = "启动一次游戏,120s后自动关闭"
         self.group_name = "日常任务"
+        self.icon = FluentIcon.DATE_TIME
         self.description = "配合任务计划程序提前启动游戏,防止游戏更新/弹公告导致的后续问题"
+
         self.add_exit_after_config()
         self.default_config.update({"回到主页后等待的时间": 15, "Exit After Task": True})
         self.support_schedule_task = True
+
     def run(self):
         try:
             self.ensure_main(time_out=120, need_active=False)
