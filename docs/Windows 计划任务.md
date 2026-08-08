@@ -182,6 +182,8 @@ if (Test-Path -LiteralPath $screenshotDir -PathType Container) {
 
 `-t 1` 表示执行 [src/config.py](../src/config.py) 中 `onetime_tasks` 的第 1 项，即日常任务。列表顺序变化时编号也会变化；改成其他编号前应先核对当前注册顺序。`-e` 表示任务结束后退出 ok-ef。
 
+> **启动时自动校正索引**：通过 ok-ef 内置「计划任务」功能创建的任务（GUI 中「计划任务」标签页），其 `-t` 参数保存在 `configs/schedule_tasks_cache.json` 与 Windows 计划任务中。应用每次启动时会读取缓存里本应用（`\ok-ef\`）的任务，用其名称对照当前 `onetime_tasks` 顺序，自动把 `-t` 改写为正确的当前索引，并同步更新 Windows 计划任务。因此重排 `onetime_tasks` 后无需手动改编号——下次启动即自动校正；若本次是由计划任务触发的，启动瞬间也会先校正再运行，保证运行到正确的任务。其余 ok-* 应用（如 `\ok-gf2\`）的任务不会被改动。
+
 使用 `Win + R` 运行 `taskschd.msc` 打开计划任务程序。点击 `操作 > 导入任务` 加入上述 xml 文件。修改 `名称` 后点击 `确认`。
 
 （计划任务创建后不能重命名和移动，如果想要修改，可以右键任务删除后重新导入。上述 xml 文件导入后就不再需要，可以删除。）
