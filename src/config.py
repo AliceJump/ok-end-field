@@ -126,13 +126,15 @@ config = {
     },
     "version": version,  # 版本
     "my_app": ["src.globals", "Globals"],  # 可选. 全局单例对象, 可以存放加载的模型, 使用og.my_app调用
-    "onetime_tasks": [  # 用户点击触发的任务
+    "onetime_tasks": [  # 用户点击触发的任务（一次性业务任务在前，调试/测试任务在后）
         ["src.tasks.onetime.DailyTask", "DailyTask"],
         ["src.tasks.onetime.TakeDeliveryTask", "TakeDeliveryTask"],
         ["src.tasks.onetime.WarehouseTransferTask", "WarehouseTransferTask"],
         ["src.tasks.onetime.DeliveryTask", "DeliveryTask"],
         ["src.tasks.onetime.BattleTask", "BattleTask"],
         ["src.tasks.onetime.DemoDrawTask", "DemoDrawTask"],
+        ["src.tasks.onetime.YingTuoTask", "YingTuoTask"],
+        ["src.tasks.onetime.TestStartGame", "TestStartGame"],
         ["src.tasks.test.TestBattleToEnd", "TestBattleToEnd"],
         ["src.tasks.test.TestArrowAngle", "TestArrowAngle"],
         ["src.tasks.test.TestDragScan", "TestDragScan"],
@@ -140,12 +142,11 @@ config = {
         ["src.tasks.test.TestBlueDotAlign", "TestBlueDotAlign"],
         ["src.tasks.test.TestLevelRead", "TestLevelRead"],
         ["src.tasks.test.TestDemoGraphic", "TestDemoGraphic"],
-        ["src.tasks.onetime.YingTuoTask", "YingTuoTask"],
-        ["src.tasks.onetime.TestStartGame", "TestStartGame"],
         ["src.tasks.test.RealtimeDetectTask", "RealtimeDetectTask"],
         ["src.tasks.test.DiagnosisTask", "DiagnosisTask"],
         ["src.tasks.test.TestBattleSlotDetect", "TestBattleSlotDetect"],
         ["src.tasks.test.TestCombatTemplateMatch", "TestCombatTemplateMatch"],
+        ["src.tasks.test.MouseRotationCalibration", "MouseRotationCalibration"],
     ],
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],

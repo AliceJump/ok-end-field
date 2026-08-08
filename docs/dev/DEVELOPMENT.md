@@ -119,19 +119,22 @@ ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask)
 | 4 | `DeliveryTask` | `src.tasks.onetime.DeliveryTask` |
 | 5 | `BattleTask` | `src.tasks.onetime.BattleTask` |
 | 6 | `DemoDrawTask` | `src.tasks.onetime.DemoDrawTask` |
-| 7 | `TestBattleToEnd` | `src.tasks.test.TestBattleToEnd` |
-| 8 | `TestArrowAngle` | `src.tasks.test.TestArrowAngle` |
-| 9 | `TestDragScan` | `src.tasks.test.TestDragScan` |
-| 10 | `TestPauseTiming` | `src.tasks.test.TestPauseTiming` |
-| 11 | `TestBlueDotAlign` | `src.tasks.test.TestBlueDotAlign` |
-| 12 | `TestLevelRead` | `src.tasks.test.TestLevelRead` |
-| 13 | `TestDemoGraphic` | `src.tasks.test.TestDemoGraphic` |
-| 14 | `YingTuoTask` | `src.tasks.onetime.YingTuoTask` |
-| 15 | `TestStartGame` | `src.tasks.onetime.TestStartGame` |
+| 7 | `YingTuoTask` | `src.tasks.onetime.YingTuoTask` |
+| 8 | `TestStartGame` | `src.tasks.onetime.TestStartGame` |
+| 9 | `TestBattleToEnd` | `src.tasks.test.TestBattleToEnd` |
+| 10 | `TestArrowAngle` | `src.tasks.test.TestArrowAngle` |
+| 11 | `TestDragScan` | `src.tasks.test.TestDragScan` |
+| 12 | `TestPauseTiming` | `src.tasks.test.TestPauseTiming` |
+| 13 | `TestBlueDotAlign` | `src.tasks.test.TestBlueDotAlign` |
+| 14 | `TestLevelRead` | `src.tasks.test.TestLevelRead` |
+| 15 | `TestDemoGraphic` | `src.tasks.test.TestDemoGraphic` |
 | 16 | `RealtimeDetectTask` | `src.tasks.test.RealtimeDetectTask` |
 | 17 | `DiagnosisTask` | `src.tasks.test.DiagnosisTask` |
 | 18 | `TestBattleSlotDetect` | `src.tasks.test.TestBattleSlotDetect` |
 | 19 | `TestCombatTemplateMatch` | `src.tasks.test.TestCombatTemplateMatch` |
+| 20 | `MouseRotationCalibration` | `src.tasks.test.MouseRotationCalibration` |
+
+一次性任务按「业务任务（`src.tasks.onetime.*`）→ 调试/测试任务（`src.tasks.test.*`）」分组排列。
 
 `PeriodicScreenshotTask.py` 存在但未注册。`TakeDeliveryTask` 的类声明还包含 `TriggerTask`，但它当前只注册在一次性任务列表中。
 
@@ -339,7 +342,7 @@ self.press_combat_key("e")      # combat
 
 ## 7. 测试清单
 
-当前 `tests/` 有 36 个测试模块：
+当前 `tests/` 有 37 个测试模块：
 
 | 文件 | 主要覆盖 |
 |------|----------|
@@ -367,6 +370,7 @@ self.press_combat_key("e")      # combat
 | `TestGuiI18n.py` | GUI 翻译调用和运行时采集污染 |
 | `TestItemMapQuery.py` | 物品地图查询和筛选 |
 | `TestLogZipDedup.py` | 日志打包图片去重 |
+| `TestMouseRotationCalibration.py` | 鼠标视角旋转系数标定角度差纯函数与任务注册 |
 | `TestOutpostExchange.py` | 据点兑换优先级与排除逻辑 |
 | `TestPoLocaleConsistency.py` | gettext catalog 完整性和一致性 |
 | `TestPressEsc.py` | `press_esc` 走任务键盘控制器 |
