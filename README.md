@@ -10,9 +10,9 @@
 <h1 align="center">ok-ef</h1>
 
 <p>
-一个基于图像识别的终末地自动化程序，部分功能支持后台运行，基于 <a href="https://ok-script.com/">ok-script</a> 开发。
+一个基于图像识别的终末地自动化程序，部分功能支持后台运行（不完全支持，涉及键盘操作的部分暂不支持），基于 <a href="https://ok-script.com/">ok-script</a> 开发。
 <br />
-An image-recognition-based automation tool for End Field, with background mode support, developed with <a href="https://ok-script.com/">ok-script</a>.
+An image-recognition-based automation tool for End Field, with partial background mode support (keyboard-operated actions are not supported in the background), developed with <a href="https://ok-script.com/">ok-script</a>.
 </p>
 
 <p><i>通过模拟 Windows 用户接口进行操作，无内存读取、无文件修改</i></p>
@@ -77,7 +77,7 @@ An image-recognition-based automation tool for End Field, with background mode s
 ## 运行要求与推荐设置
 
 - 系统：Windows
-- 游戏分辨率：推荐 16:9（1920×1080 最佳），最低 1600×900（低于该分辨率可能导致识别与定位异常）
+- 游戏分辨率：要求 16:9 且 1920×1080（1080P）及以上；低于 1080P 不保证正常运行
 - 语言：当前部分功能仅支持简体中文
 - 运行权限：建议管理员权限运行（源码模式必须）
 - 路径：安装/运行路径尽量使用纯英文
@@ -102,7 +102,7 @@ An image-recognition-based automation tool for End Field, with background mode s
 
 > `PeriodicScreenshotTask`（定时截图）源码仍在仓库中，但当前未注册；历史“毕业基质识别”任务已移除。
 
-### 触发式任务（后台循环检测）
+### 触发式任务（后台循环检测，不完全支持）
 - [自动战斗](docs/zh-CN/自动战斗.md)：检测战斗状态并按技能序列自动释放
 - 自动交互：自动跳过剧情并点击地图传送
 - 自动拾取：白名单拾取 + 黑名单过滤

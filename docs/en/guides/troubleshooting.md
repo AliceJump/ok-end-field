@@ -4,7 +4,7 @@
 
 Check the following in order:
 
-1. The game uses a 16:9 resolution of at least 1600×900.
+1. The game uses a 16:9 resolution of at least 1920×1080 (1080P).
 2. The game uses default brightness, and graphics filters, sharpening, and overlays are disabled.
 3. The game window is not minimized, and the computer is neither locked nor asleep.
 4. The mouse and manual input are not interfering with a foreground game window.

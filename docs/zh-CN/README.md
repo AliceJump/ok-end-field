@@ -57,7 +57,7 @@ flowchart TD
     D --> E[加载 GUI 与配置]
     E --> F{任务类型}
     F --> G[onetime_tasks 手动或 CLI 执行]
-    F --> H[trigger_tasks 后台轮询]
+    F --> H[trigger_tasks 轮询检测]
     G --> I[任务完成后停止]
     H --> J[启用期间持续检测]
 ```

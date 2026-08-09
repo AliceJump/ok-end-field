@@ -33,7 +33,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         try:
             ok = self.daily_battle.battle()
             if ok:
-                self.log_info("刷体力结束!", notify=self.get_battle_config("后台结束战斗通知") and self.in_bg())
+                self.log_info("刷体力结束!", notify=self.get_battle_config("完成通知"))
             else:
                 self.log_info("未检测到刷体力正常结束,可能未进入战斗或战斗异常,请检查")
         finally:

@@ -489,11 +489,11 @@ msgstr ""
 msgid "可选。设置外部命令的起始目录（工作目录）；留空则使用默认目录。"
 msgstr "Opcional. Directorio de trabajo del comando externo; vacío usa el predeterminado."
 
-msgid "后台结束战斗通知"
-msgstr "Aviso de fin de combate en segundo plano"
+msgid "完成通知"
+msgstr "Notificación de finalización"
 
-msgid "后台运行时，战斗结束后发送通知。"
-msgstr "Enviar notificación cuando termine la batalla mientras se ejecuta en segundo plano."
+msgid "战斗结束后发送系统通知。"
+msgstr "Enviar una notificación del sistema cuando termine la batalla."
 
 msgid "否"
 msgstr "No"

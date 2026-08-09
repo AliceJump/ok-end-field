@@ -118,11 +118,11 @@ class RuntimeMixin:
         if RuntimeMixin._resolution_warned:
             return
         width, height = self._wait_for_stable_resolution()
-        min_size = app_config.get("supported_resolution", {}).get("min_size", (1600, 900))
+        min_size = app_config.get("supported_resolution", {}).get("min_size", (1920, 1080))
         min_w, min_h = min_size
         if width < min_w or height < min_h:
             self.log_info(
-                f"当前分辨率 {width}x{height} 低于推荐最小值 {min_w}x{min_h}，脚本可能无法正常运行",
+                f"当前分辨率 {width}x{height} 低于要求最小值 {min_w}x{min_h}（1080P），不保证正常运行",
                 notify=True
             )
         RuntimeMixin._resolution_warned = True

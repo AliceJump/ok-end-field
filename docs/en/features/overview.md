@@ -8,7 +8,9 @@ Available functionality can change between releases. Refer to the task list in t
 - Combat farming for normal, advanced, crisis, and energy-silt stages, including battle configurations and action sequences.
 - Delivery commission pickup, Auto Delivery, and warehouse item transfers.
 
-## Background triggers
+## Background triggers (partial support)
+
+> Background mode is only partially supported; keyboard-operated actions are not supported in the background.
 
 - Auto Combat releases skills using normal, action-sequence, or real-time conditional logic.
 - Auto Interaction skips dialogue and handles map-transfer interactions.

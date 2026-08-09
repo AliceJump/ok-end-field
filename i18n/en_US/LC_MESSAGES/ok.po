@@ -489,11 +489,11 @@ msgstr ""
 msgid "可选。设置外部命令的起始目录（工作目录）；留空则使用默认目录。"
 msgstr "Optional. Set working directory for external command."
 
-msgid "后台结束战斗通知"
-msgstr "Background Battle End Notification"
+msgid "完成通知"
+msgstr "Completion Notification"
 
-msgid "后台运行时，战斗结束后发送通知。"
-msgstr "Send notification when battle ends while running in background."
+msgid "战斗结束后发送系统通知。"
+msgstr "Send a system notification when the battle ends."
 
 msgid "否"
 msgstr "No"

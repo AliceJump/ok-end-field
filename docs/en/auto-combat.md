@@ -12,7 +12,7 @@ The combat logic is identical to the one used by Stamina Farming; see [Stamina F
 
 ```mermaid
 flowchart TD
-    A[Enable auto combat trigger task] --> B[Background polling screenshots]
+    A[Enable auto combat trigger task] --> B[Polling screenshots]
     B --> C{Battle state detected}
     C -->|No| B
     C -->|Yes| D[AutoCombatLogic takes over]
@@ -28,7 +28,7 @@ flowchart TD
 
 ## Requirements
 
-> Make sure the resolution is at least **1600x900**, otherwise it may not work properly
+> Make sure the resolution is at least **1920x1080 (1080P)**; below 1080P is not guaranteed to work
 
 ## Battle configuration (shared globally)
 
@@ -47,9 +47,9 @@ When the 「Skill Point Bar」 reaches this value, the skill sequence starts. Va
 
 ---
 
-### Background battle-end notification
+### Completion notification
 
-Whether to send a system notification when the battle ends (only effective when running in the background).
+Whether to send a system notification when the battle ends.
 
 ---
 

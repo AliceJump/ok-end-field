@@ -14,7 +14,7 @@
 <h1 align="center">ok-ef</h1>
 
 <p>
-An image-recognition-based automation tool for End Field, some actions support background mode, developed with <a href="https://ok-script.com/">ok-script</a>.
+An image-recognition-based automation tool for End Field, some actions support background mode (partial support; keyboard-operated actions are not supported), developed with <a href="https://ok-script.com/">ok-script</a>.
 <br />
 Automates parts of End Field via screen recognition and simulated user inputs.
 </p>
@@ -81,7 +81,7 @@ all potential risks.**
 ## Runtime Requirements & Recommendations
 
 - OS: Windows
-- Game resolution: 16:9 recommended (1920×1080 optimal), minimum 1600×900 (lower resolutions may cause recognition/positioning failures)
+- Game resolution: 16:9 at 1920×1080 (1080P) or above required; lower than 1080P is not guaranteed to work
 - Language: some features currently support Simplified Chinese only
 - Privilege: run as Administrator recommended (required for source mode)
 - Path: prefer pure-English install/runtime path
@@ -115,7 +115,7 @@ all potential risks.**
 
 > `PeriodicScreenshotTask` remains in the source tree but is not currently registered. The former Graduation Essence task has been removed.
 
-### Trigger tasks (background loop detection)
+### Trigger tasks (background loop detection, partial support)
 
 - [Auto Combat](docs/zh-CN/自动战斗.md): battle-state detection and automatic skill release
 - Auto Interaction: auto skip dialog + auto click teleport

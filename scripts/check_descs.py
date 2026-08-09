@@ -25,7 +25,7 @@ print('\n=== Now checking ALL descriptions ===')
 # Show all unique msgids that contain Chinese description-like content
 for lang in ['en_US']:
     po = polib.pofile(f'i18n/{lang}/LC_MESSAGES/ok.po')
-    battle_keys = ['技能释放', '启动技能点数', '后台结束战斗通知', '无数字操作间隔',
+    battle_keys = ['技能释放', '启动技能点数', '完成通知', '无数字操作间隔',
                    '进入战斗后的初始等待时间', '启用排轴', '排轴序列']
     for key in battle_keys:
         entry = po.find(key)

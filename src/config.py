@@ -86,7 +86,7 @@ config = {
     "window_size": {"width": 1200, "height": 800, "min_width": 600, "min_height": 450},  # ok-script窗口大小
     "supported_resolution": {
         "ratio": "16:9",  # 支持的游戏分辨率
-        "min_size": (1600, 900),  # 支持的最低游戏分辨率
+        "min_size": (1920, 1080),  # 支持的最低游戏分辨率（1080P）
         # 'resize_to': [(2560, 1440), (1920, 1080), (1600, 900), (1280, 720)],  # 可选, 如果非16:9自动缩放为 resize_to
     },
     "links": {  # 关于里显示的链接, 可选

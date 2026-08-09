@@ -4,7 +4,7 @@ Complete these checks before starting automation. They directly affect recogniti
 
 ## Game graphics
 
-- Use a 16:9 resolution; 1920×1080 is recommended and 1600×900 is the minimum.
+- Use a 16:9 resolution; 1920×1080 (1080P) or above is required.
 - Use the game's default brightness. Disable NVIDIA Freestyle, AMD image filters, sharpening, and overlays.
 - Do not minimize the game, lock the computer, or turn off the display while a task is running.
 - Keep a stable 60 FPS for combat and navigation tasks where possible.

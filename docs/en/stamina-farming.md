@@ -4,7 +4,7 @@ Back: [Documentation home](index.md) / [README](../../README.md)
 
 ## Configuration requirements
 
-> Make sure the resolution is at least **1600x900**, otherwise it may not work properly
+> Make sure the resolution is at least **1920x1080 (1080P)**; below 1080P is not guaranteed to work
 
 ## Combat logic
 

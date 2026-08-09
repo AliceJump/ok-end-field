@@ -373,7 +373,7 @@ class AutoCombatLogic:
                             # 秒退：进入战斗后很快退出，同样视为未进入战斗，低分辨率警告继续
                             if task.active_time() - combat_enter_time < self._SECOND_EXIT_THRESHOLD:
                                 self._warn_low_resolution_if_due()
-                            task.log_info("自动战斗结束!", notify=task.get_battle_config("后台结束战斗通知") and task.in_bg())
+                            task.log_info("自动战斗结束!", notify=task.get_battle_config("完成通知"))
                             task.log_info("退出战斗主循环")
                             self._end = True
                             self._normal_attack_hold_enabled = False

@@ -235,7 +235,7 @@ uv run python main_debug.py
 - 依赖通过 [uv](https://docs.astral.sh/uv/) 管理：`uv sync` 依照 `uv.lock` 创建 `.venv`；`uv run python ...` 在该环境中执行 Python。`requirements.txt` 是面向发布流水线的派生产物，不要手动编辑。
 - Windows 交互需要进程权限不低于游戏，开发时通常以管理员权限启动 IDE/终端。
 - 从仓库根目录运行，资源和配置路径大量以当前工作目录解析。
-- 游戏窗口配置要求 16:9，最低 `1600x900`。
+- 游戏窗口配置要求 16:9，最低 `1920x1080`（1080P）。
 - WGC 常规截图不适合登录界面；登录 Mixin 使用 Win32 屏幕捕获，通常需要窗口可见并可激活。
 
 ## 6. 开发流程

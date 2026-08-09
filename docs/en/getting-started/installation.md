@@ -3,7 +3,7 @@
 ## System requirements
 
 - Operating system: Windows 10 or Windows 11.
-- Game resolution: 16:9 is recommended; 1920×1080 is best and 1600×900 is the minimum supported resolution.
+- Game resolution: 16:9 at 1920×1080 (1080P) or above is required; below 1080P is not guaranteed to work.
 - Installation path: use a directory without Chinese characters or restrictive special permissions.
 - Game language: some recognition features currently support Simplified Chinese only.
 

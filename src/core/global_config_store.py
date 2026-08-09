@@ -121,6 +121,10 @@ _ZIP_LINE_KEY_MIGRATIONS = {
     "通向送货点": "通向武陵城送货点",
     "通向送货点试验园区": "通向试验园区送货点",
 }
+_BATTLE_KEY_MIGRATIONS = {
+    # 历史全局战斗配置键名：后台结束战斗通知 → 完成通知（不限前后台）。
+    "后台结束战斗通知": "完成通知",
+}
 
 
 def _same_type(value: Any, default_value: Any) -> bool:
@@ -310,6 +314,13 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
     state = _read_migration_state()
     if option.name == BATTLE_CONFIG_NAME:
         _backup_legacy_task_configs(state)
+
+    # Battle Config 键名迁移：幂等执行（旧键值复制到新键，旧键保留），
+    # 放在迁移状态标记检查之前，保证已迁移过的安装也能完成本次键名重命名。
+    if option.name == BATTLE_CONFIG_NAME:
+        _migrate_key_names_in_file(
+            option.name, _BATTLE_KEY_MIGRATIONS, DEFAULT_BATTLE_CONFIG
+        )
 
     migrated_options = state.setdefault(_MIGRATION_MARKER, [])
     if not isinstance(migrated_options, list):
