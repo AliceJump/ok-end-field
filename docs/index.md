@@ -10,7 +10,7 @@
         <a class="ef-button" href="https://github.com/AliceJump/ok-end-field">查看源码</a>
       </div>
       <div class="ef-alternatives"><span>GitHub 下载不可用？</span><a href="https://mirrorchyan.com/zh/projects?rid=ok-end-field&source=ok-ef-readme">Mirror酱</a><a href="https://pan.baidu.com/s/1rxLRLkSx34xIL-nGib04sg?pwd=479z">百度网盘</a><a href="https://pan.quark.cn/s/418018ddf7a0">夸克网盘</a></div>
-      <div class="ef-community"><span>◎ 加入社区</span><a href="https://discord.gg/vVyCatEBgA">Discord</a><span>群 940581952</span><a href="https://pd.qq.com/s/djmm6l44y">QQ Channel</a><a class="ef-stars" href="https://github.com/AliceJump/ok-end-field">★ GitHub</a></div>
+      <div class="ef-community"><span>◎ 加入社区</span><a href="https://discord.gg/vVyCatEBgA">Discord</a><span>群 940581952</span><a href="https://pd.qq.com/s/djmm6l44y">QQ Channel</a><a href="https://ok-script.com/">ok-script 生态</a><a class="ef-stars" href="https://github.com/AliceJump/ok-end-field">★ GitHub</a></div>
     </div>
   </section>
 

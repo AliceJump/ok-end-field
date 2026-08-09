@@ -10,12 +10,14 @@
 <h1 align="center">ok-ef</h1>
 
 <p>
-一个基于图像识别的终末地自动化程序，部分功能支持后台运行，基于 <a href="https://github.com/alicejump/ok-script">ok-script</a> 开发。
+一个基于图像识别的终末地自动化程序，部分功能支持后台运行，基于 <a href="https://ok-script.com/">ok-script</a> 开发。
 <br />
-An image-recognition-based automation tool for End Field, with background mode support, developed with <a href="https://github.com/alicejump/ok-script">ok-script</a>.
+An image-recognition-based automation tool for End Field, with background mode support, developed with <a href="https://ok-script.com/">ok-script</a>.
 </p>
 
 <p><i>通过模拟 Windows 用户接口进行操作，无内存读取、无文件修改</i></p>
+
+<p align="center"><b>官方网站：</b><a href="https://alicejump.github.io/ok-end-field/">https://alicejump.github.io/ok-end-field/</a>（中英双语文档 · 功能指南 · 开发维护）</p>
 
 
 <!-- Badges -->
@@ -25,6 +27,7 @@ An image-recognition-based automation tool for End Field, with background mode s
 [![GitHub release](https://img.shields.io/github/v/release/alicejump/ok-end-field)](https://github.com/alicejump/ok-end-field/releases)
 [![总下载量](https://img.shields.io/github/downloads/alicejump/ok-end-field/total)](https://github.com/alicejump/ok-end-field/releases)
 [![Discord](https://img.shields.io/discord/296598043787132928?color=5865f2&label=%20Discord)](https://discord.gg/vVyCatEBgA)
+[![官网/文档](https://img.shields.io/badge/官网文档-在线站点-1aa6a9)](https://alicejump.github.io/ok-end-field/)
 
 </div>
 
@@ -86,11 +89,11 @@ An image-recognition-based automation tool for End Field, with background mode s
 ## 功能一览（按任务类型）
 
 ### 一次性任务（手动点击执行）
-- [日常任务](docs/日常任务.md)：送礼、据点兑换、委托处理、买卖货、刷体力、奖励领取等一条龙
-- [刷体力](docs/体力本.md)：普通/高阶/危境/能量淤积点，支持排轴和刷本序列
-- [运送委托接取](docs/运送委托接取.md)：按券种与金额筛选并自动抢单
-- [自动送货](docs/自动送货.md)：武陵委托自动接取与送货路径执行，支持 7.31w/7.98w/11.9w/15.9w/16.3w 券数
-- [仓库物品转移](docs/仓库物品转移.md)：跨仓库批量转移指定物品
+- [日常任务](docs/zh-CN/日常任务.md)：送礼、据点兑换、委托处理、买卖货、刷体力、奖励领取等一条龙
+- [刷体力](docs/zh-CN/体力本.md)：普通/高阶/危境/能量淤积点，支持排轴和刷本序列
+- [运送委托接取](docs/zh-CN/运送委托接取.md)：按券种与金额筛选并自动抢单
+- [自动送货](docs/zh-CN/自动送货.md)：武陵委托自动接取与送货路径执行，支持 7.31w/7.98w/11.9w/15.9w/16.3w 券数
+- [仓库物品转移](docs/zh-CN/仓库物品转移.md)：跨仓库批量转移指定物品
 - 演算抽牌：在演武台前循环抽牌，满足等级变化条件后停止
 - 影拓丰碑：自动完成当前所有普通影拓丰碑关卡
 - `启动一次游戏,120s后自动关闭`：当前注册的可见任务名；供计划任务提前启动并检查游戏，其中 `120s` 是进入主页的超时，实际默认在回到主页后等待 15 秒再退出
@@ -100,14 +103,14 @@ An image-recognition-based automation tool for End Field, with background mode s
 > `PeriodicScreenshotTask`（定时截图）源码仍在仓库中，但当前未注册；历史“毕业基质识别”任务已移除。
 
 ### 触发式任务（后台循环检测）
-- [自动战斗](docs/自动战斗.md)：检测战斗状态并按技能序列自动释放
+- [自动战斗](docs/zh-CN/自动战斗.md)：检测战斗状态并按技能序列自动释放
 - 自动交互：自动跳过剧情并点击地图传送
 - 自动拾取：白名单拾取 + 黑名单过滤
-- [物品导航](docs/物品导航与实时检测.md)：使用官方地图或本地 WebSocket 坐标指向最近采集点
+- [物品导航](docs/zh-CN/物品导航与实时检测.md)：使用官方地图或本地 WebSocket 坐标指向最近采集点
 
 ### 定时任务
 - 日常任务、自动送货、影拓丰碑和“`启动一次游戏,120s后自动关闭`”声明支持内置计划任务
-- 也可参照 [Windows 计划任务](docs/Windows%20计划任务.md) 调用任意已注册的一次性任务
+- 也可参照 [Windows 计划任务](docs/zh-CN/Windows%20计划任务.md) 调用任意已注册的一次性任务
 
 ### 辅助能力
 - OCR 识别、模板匹配、HSV 颜色识别
@@ -207,8 +210,8 @@ python -m unittest tests/TestEssenceRecognizer.py
 * **开发者群**: `1079581542` ( **注意**:
   此群仅面向有开发能力、拥有Github账号、希望参与贡献的开发者，入群前请确保您已能够从源码成功运行项目。)
 
-本项目基于 [ok-script](https://github.com/ok-oldking/ok-script)
-框架开发，简单易维护。欢迎有兴趣的开发者使用 [ok-script](https://github.com/ok-oldking/ok-script) 开发您自己的自动化项目。
+本项目基于 [ok-script](https://ok-script.com/)
+框架开发，简单易维护。欢迎有兴趣的开发者使用 [ok-script](https://ok-script.com/) 开发您自己的自动化项目。
 
 ## 🔗 使用ok-script的项目：
 
@@ -221,6 +224,8 @@ python -m unittest tests/TestEssenceRecognizer.py
 * 星铁 [https://github.com/Shasnow/ok-starrailassistant](https://github.com/Shasnow/ok-starrailassistant)
 * 星痕共鸣 [https://github.com/Sanheiii/ok-star-resonance](https://github.com/Sanheiii/ok-star-resonance)
 * 二重螺旋 [https://github.com/BnanZ0/ok-duet-night-abyss](https://github.com/BnanZ0/ok-duet-night-abyss)
+* 异环 [https://github.com/BnanZ0/ok-nte](https://github.com/BnanZ0/ok-nte)
+* 卡厄思梦境 [https://github.com/baoxin1100/ok-kes](https://github.com/baoxin1100/ok-kes)
 * 白荆回廊(停止更新) [https://github.com/ok-oldking/ok-baijing](https://github.com/ok-oldking/ok-baijing)
 
 ## ❤️ 赞助与致谢

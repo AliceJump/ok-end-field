@@ -14,12 +14,14 @@
 <h1 align="center">ok-ef</h1>
 
 <p>
-An image-recognition-based automation tool for End Field, some actions support background mode, developed with <a href="https://github.com/ok-oldking/ok-script">ok-script</a>.
+An image-recognition-based automation tool for End Field, some actions support background mode, developed with <a href="https://ok-script.com/">ok-script</a>.
 <br />
 Automates parts of End Field via screen recognition and simulated user inputs.
 </p>
 
 <p><i>Operates by simulating Windows user input. No memory reading, no file modification.</i></p>
+
+<p align="center"><b>Official Website:</b> <a href="https://alicejump.github.io/ok-end-field/">https://alicejump.github.io/ok-end-field/</a> (bilingual docs, feature guides, development & maintenance)</p>
 
 
 <!-- Badges -->
@@ -29,6 +31,7 @@ Automates parts of End Field via screen recognition and simulated user inputs.
 [![GitHub release](https://img.shields.io/github/v/release/alicejump/ok-end-field)](https://github.com/alicejump/ok-end-field/releases)
 [![Total downloads](https://img.shields.io/github/downloads/alicejump/ok-end-field/total)](https://github.com/alicejump/ok-end-field/releases)
 [![Discord](https://img.shields.io/discord/296598043787132928?color=5865f2&label=%20Discord)](https://discord.gg/vVyCatEBgA)
+[![Website/Docs](https://img.shields.io/badge/Website-Docs-1aa6a9)](https://alicejump.github.io/ok-end-field/)
 
 </div>
 
@@ -88,10 +91,10 @@ all potential risks.**
 
 ## Documentation
 
-- Documentation index: [docs/README.md](docs/README.md)
+- Documentation index: [docs/README.md](docs/zh-CN/README.md)
 - Developer quick start: [docs/dev/QUICKSTART.md](docs/dev/QUICKSTART.md)
 - API reference: [docs/dev/API.md](docs/dev/API.md)
-- Windows Task Scheduler: [docs/Windows%20计划任务.md](docs/Windows%20计划任务.md)
+- Windows Task Scheduler: [docs/Windows%20计划任务.md](docs/zh-CN/Windows%20计划任务.md)
 
 ---
 
@@ -99,11 +102,11 @@ all potential risks.**
 
 ### One-time tasks (manual click to run)
 
-- [Daily Task](docs/日常任务.md): gift giving, outpost exchange, delivery handling, market trading, stamina farming, reward claim, and more
-- [Stamina Farming](docs/体力本.md): normal/high-tier stages, danger stages, heavy energy nodes, skill timeline support
-- [Delivery Commission Pickup](docs/运送委托接取.md): filter by ticket type + reward range and auto pickup
-- [Auto Delivery](docs/自动送货.md): Wuling delivery automation for 73.1k/79.8k/119k/159k/163k ticket targets
-- [Warehouse Transfer](docs/仓库物品转移.md): cross-warehouse batch transfer for selected items
+- [Daily Task](docs/zh-CN/日常任务.md): gift giving, outpost exchange, delivery handling, market trading, stamina farming, reward claim, and more
+- [Stamina Farming](docs/zh-CN/体力本.md): normal/high-tier stages, danger stages, heavy energy nodes, skill timeline support
+- [Delivery Commission Pickup](docs/zh-CN/运送委托接取.md): filter by ticket type + reward range and auto pickup
+- [Auto Delivery](docs/zh-CN/自动送货.md): Wuling delivery automation for 73.1k/79.8k/119k/159k/163k ticket targets
+- [Warehouse Transfer](docs/zh-CN/仓库物品转移.md): cross-warehouse batch transfer for selected items
 - Demo Draw: repeat draws at the demo platform until the level-change condition is met
 - Yingtuo Monument: complete all currently available normal stages
 - `启动一次游戏,120s后自动关闭`: exact registered visible task name; scheduled pre-launch/check task. The `120s` is the timeout for reaching the main screen; actual default behavior waits 15 seconds after reaching it, then exits
@@ -114,14 +117,14 @@ all potential risks.**
 
 ### Trigger tasks (background loop detection)
 
-- [Auto Combat](docs/自动战斗.md): battle-state detection and automatic skill release
+- [Auto Combat](docs/zh-CN/自动战斗.md): battle-state detection and automatic skill release
 - Auto Interaction: auto skip dialog + auto click teleport
 - Auto Pickup: whitelist pickup + blacklist filtering
-- [Item Navigation](docs/物品导航与实时检测.md): official-map WebSocket or local WebSocket driven item gathering point navigation
+- [Item Navigation](docs/zh-CN/物品导航与实时检测.md): official-map WebSocket or local WebSocket driven item gathering point navigation
 
 ### Scheduled tasks
 - Daily Task, Auto Delivery, Yingtuo Monument, and `启动一次游戏,120s后自动关闭` declare built-in scheduling support
-- [Windows Task Scheduler](docs/Windows%20计划任务.md) can also invoke any registered one-time task by its list index
+- [Windows Task Scheduler](docs/zh-CN/Windows%20计划任务.md) can also invoke any registered one-time task by its list index
 
 ---
 
@@ -224,7 +227,7 @@ faster diagnosis.
 * **QQ Channel**: [Click to join](https://pd.qq.com/s/djmm6l44y) (full or updates)
 * **Developer Group**: `1079581542` (**Note**: for developers with GitHub accounts who can run the project from source.)
 
-This project is built on [ok-script](https://github.com/ok-oldking/ok-script), which is easy to maintain. Developers are
+This project is built on [ok-script](https://ok-script.com/), which is easy to maintain. Developers are
 welcome to build their own automation projects with ok-script.
 
 ## 🔗 Projects using ok-script
@@ -238,6 +241,8 @@ welcome to build their own automation projects with ok-script.
 * Star Rail [https://github.com/Shasnow/ok-starrailassistant](https://github.com/Shasnow/ok-starrailassistant)
 * Star Resonance [https://github.com/Sanheiii/ok-star-resonance](https://github.com/Sanheiii/ok-star-resonance)
 * Duet Night Abyss [https://github.com/BnanZ0/ok-duet-night-abyss](https://github.com/BnanZ0/ok-duet-night-abyss)
+* Neverness to Everness [https://github.com/BnanZ0/ok-nte](https://github.com/BnanZ0/ok-nte)
+* Kaersi Dream [https://github.com/baoxin1100/ok-kes](https://github.com/baoxin1100/ok-kes)
 * Bai Jing Corridor (maintenance
   stopped) [https://github.com/ok-oldking/ok-baijing](https://github.com/ok-oldking/ok-baijing)
 
