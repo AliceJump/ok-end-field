@@ -130,4 +130,16 @@ nav:
       - Quick start: en/guides/quick-start.md
     - Features:
       - Overview: en/features/overview.md
+      - Daily Tasks: en/daily-tasks.md
+      - Stamina Farming: en/stamina-farming.md
+      - Auto Combat: en/auto-combat.md
+      - Action Sequences: en/action-sequence.md
+      - Delivery Commission Pickup: en/delivery-pickup.md
+      - Auto Delivery: en/auto-delivery.md
+      - Warehouse Transfer: en/warehouse-transfer.md
+      - Item Navigation & Realtime Detection: en/item-navigation.md
+      - Account Configuration: en/account-configuration.md
+      - Account Overview & Multi-Account Overrides: en/account-overview.md
+      - Windows Task Scheduler: en/windows-task-scheduler.md
+      - Mouse Rotation Calibration: en/mouse-rotation-calibration.md
       - FAQ and feedback: en/guides/troubleshooting.md

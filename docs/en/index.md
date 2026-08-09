@@ -11,6 +11,16 @@ ok-ef is a Windows automation tool for *Arknights: Endfield*. It uses screen rec
 ## Features and support
 
 - [Feature overview](features/overview.md)
+- [Daily Tasks](daily-tasks.md)
+- [Stamina Farming](stamina-farming.md)
+- [Auto Combat](auto-combat.md)
+- [Action Sequences](action-sequence.md)
+- [Delivery Commission Pickup](delivery-pickup.md)
+- [Auto Delivery](auto-delivery.md)
+- [Warehouse Transfer](warehouse-transfer.md)
+- [Item Navigation & Realtime Detection](item-navigation.md)
+- [Account Configuration](account-configuration.md)
+- [Windows Task Scheduler](windows-task-scheduler.md)
 - [FAQ and feedback](guides/troubleshooting.md)
 - [Development documentation](../dev/DEVELOPMENT.md)
 
