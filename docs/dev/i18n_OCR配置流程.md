@@ -1,6 +1,6 @@
 # i18n 与 OCR 配置流程
 
-返回：[文档索引](../README.md) / [README](../../README.md)
+返回：[文档索引](../zh-CN/README.md) / [README](../../README.md)
 
 本文区分两套用途不同的语言资源：
 

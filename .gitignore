@@ -58,6 +58,7 @@ __pycache__/
 # 🏗 构建产物
 build/
 dist/
+site/
 develop-eggs/
 .eggs/
 *.egg-info/

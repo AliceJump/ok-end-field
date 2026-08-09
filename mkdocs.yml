@@ -1,0 +1,133 @@
+site_name: ok-ef
+site_description: "Documentation for the ok-ef Arknights: Endfield automation tool"
+site_url: https://alicejump.github.io/ok-end-field/
+repo_name: AliceJump/ok-end-field
+repo_url: https://github.com/AliceJump/ok-end-field
+edit_uri: edit/master/docs/
+exclude_docs: README.md
+
+validation:
+  links:
+    not_found: ignore
+    unrecognized_links: ignore
+
+strict: true
+
+theme:
+  name: material
+  icon:
+    logo: material/book-open-page-variant
+    repo: fontawesome/brands/github
+  features:
+    - content.action.edit
+    - navigation.footer
+    - navigation.indexes
+    - navigation.sections
+    - navigation.top
+    - search.highlight
+    - search.suggest
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: 切换至深色模式
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: 切换至浅色模式
+
+plugins:
+  - search:
+      lang:
+        - zh
+        - en
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink
+  - pymdownx.smartsymbols
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid-diagram
+          format: !!python/name:mkdocs_mermaid.format_mermaid
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js
+  - javascripts/mermaid.js
+
+nav:
+  - 项目首页: index.md
+  - 简体中文:
+    - 文档首页: zh-CN/index.md
+    - 开始使用:
+      - 安装: zh-CN/getting-started/installation.md
+      - 使用前配置: zh-CN/getting-started/configuration.md
+      - 快速上手: zh-CN/guides/quick-start.md
+      - 常见问题: zh-CN/guides/troubleshooting.md
+    - 功能指南:
+      - 功能概览: zh-CN/features/overview.md
+      - 日常任务: zh-CN/日常任务.md
+      - 刷体力: zh-CN/体力本.md
+      - 自动战斗: zh-CN/自动战斗.md
+      - 排轴: zh-CN/排轴.md
+      - 运送委托接取: zh-CN/运送委托接取.md
+      - 自动送货: zh-CN/自动送货.md
+      - 仓库物品转移: zh-CN/仓库物品转移.md
+      - 物品导航与实时检测: zh-CN/物品导航与实时检测.md
+      - 账号配置: zh-CN/账号配置用户指南.md
+      - 账号唯一 ID 与覆盖逻辑: zh-CN/账号唯一ID与多账户覆盖默认逻辑.md
+      - Windows 计划任务: zh-CN/Windows 计划任务.md
+      - 鼠标转向标定: zh-CN/鼠标转向标定汇总.md
+    - 开发与维护:
+      - 主数据维护: update/主数据维护工作流.md
+      - 送货地区维护: update/送货地区维护工作流.md
+      - 日常送礼维护: update/日常送礼维护工作流.md
+      - 从源码运行: dev/QUICKSTART.md
+      - 开发指南: dev/DEVELOPMENT.md
+      - API 参考: dev/API.md
+      - i18n 与 OCR: dev/i18n_OCR配置流程.md
+      - 键盘操作体系: dev/键盘操作体系.md
+      - 滑索与送货逻辑: dev/滑索与送货逻辑.md
+      - NPC 与送货点多语言: dev/NPC与送货点多语言对照方案.md
+      - 地图 WebSocket 客户端: dev/地图官方WS客户端实现.md
+      - 图像模板匹配示例: dev/图像模板匹配示例.md
+      - 文字识别示例: dev/文字识别示例.md
+      - 装备词条识别: dev/装备词条识别轮子.md
+      - 账户切换流程: dev/切换账户流程分析.md
+      - 账号唯一 ID 实现: dev/账号唯一ID与多账户覆盖默认逻辑.md
+      - 任务执行情况汇总: dev/任务执行情况汇总报告.md
+  - English:
+    - Documentation home: en/index.md
+    - Getting started:
+      - Installation: en/getting-started/installation.md
+      - Before you start: en/getting-started/configuration.md
+      - Quick start: en/guides/quick-start.md
+    - Features:
+      - Overview: en/features/overview.md
+      - FAQ and feedback: en/guides/troubleshooting.md

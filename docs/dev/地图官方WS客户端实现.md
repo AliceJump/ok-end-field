@@ -1,6 +1,6 @@
 # 地图官方 WebSocket 客户端实现
 
-返回：[文档索引](../README.md) / [README](../../README.md)
+返回：[文档索引](../zh-CN/README.md) / [README](../../README.md)
 
 ## 概述
 
@@ -192,4 +192,4 @@ flowchart TD
 | `src/tasks/account/account_scope_store.py` | 持久化：`map_contents` 字段的读写、账号解析 |
 | `src/gui/AccountConfigTab.py` | UI：账号配置页，包含地图 content 编辑 |
 
-相关文档：[物品导航与实时检测](../物品导航与实时检测.md) / [账号配置用户指南](../账号配置用户指南.md)
+相关文档：[物品导航与实时检测](../zh-CN/物品导航与实时检测.md) / [账号配置用户指南](../zh-CN/账号配置用户指南.md)

@@ -1,6 +1,6 @@
 # ok-ef API 参考
 
-返回：[文档索引](../README.md) / [README](../../README.md)
+返回：[文档索引](../zh-CN/README.md) / [README](../../README.md)
 
 本文只记录 **ok-end-field 自己定义并由任务复用的接口**。`ocr`、`wait_ocr`、`wait_feature`、`wait_until`、`back`、`sleep`、`send_key` 等框架接口来自 `ok-script`，其完整参数和返回类型应以当前安装版本为准，不在此复制。
 

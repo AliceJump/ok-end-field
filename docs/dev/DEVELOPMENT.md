@@ -1,6 +1,6 @@
 # ok-ef 开发指南
 
-返回：[文档索引](../README.md) / [README](../../README.md)
+返回：[文档索引](../zh-CN/README.md) / [README](../../README.md)
 
 本文以当前源码、`src/config.py`、测试目录和 workflow 为准，说明项目结构和贡献流程。具体项目自有接口见 [API 参考](API.md)。
 

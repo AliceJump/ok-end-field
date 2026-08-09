@@ -1,8 +1,8 @@
 # Windows 计划任务
 
-返回：[文档索引](README.md) / [README](../README.md)
+返回：[文档索引](README.md) / [README](../../README.md)
 
-ok-ef 提供了 [日常任务外部命令](./日常任务.md#执行外部命令) 和内置计划任务功能。
+ok-ef 提供了 [日常任务外部命令](./日常任务.md) 和内置计划任务功能。
 
 如果想要更高的自由度，可以使用 Windows 计划任务。
 
@@ -180,7 +180,7 @@ if (Test-Path -LiteralPath $screenshotDir -PathType Container) {
 2. 修改 `PLACEHOLDER_PATH_TO_PRE_SCRIPT_DIRECTORY` 为 `终末地.pre.ps1` 文件所在位置。
 3. 修改 `PLACEHOLDER_PATH_TO_POST_SCRIPT_DIRECTORY` 为 `终末地.post.ps1` 文件所在位置。
 
-`-t 1` 表示执行 [src/config.py](../src/config.py) 中 `onetime_tasks` 的第 1 项，即日常任务。列表顺序变化时编号也会变化；改成其他编号前应先核对当前注册顺序。`-e` 表示任务结束后退出 ok-ef。
+`-t 1` 表示执行 [src/config.py](../../src/config.py) 中 `onetime_tasks` 的第 1 项，即日常任务。列表顺序变化时编号也会变化；改成其他编号前应先核对当前注册顺序。`-e` 表示任务结束后退出 ok-ef。
 
 > **启动时自动校正索引**：通过 ok-ef 内置「计划任务」功能创建的任务（GUI 中「计划任务」标签页），其 `-t` 参数保存在 `configs/schedule_tasks_cache.json` 与 Windows 计划任务中。应用每次启动时会读取缓存里本应用（`\ok-ef\`）的任务，用其名称对照当前 `onetime_tasks` 顺序，自动把 `-t` 改写为正确的当前索引，并同步更新 Windows 计划任务。因此重排 `onetime_tasks` 后无需手动改编号——下次启动即自动校正；若本次是由计划任务触发的，启动瞬间也会先校正再运行，保证运行到正确的任务。其余 ok-* 应用（如 `\ok-gf2\`）的任务不会被改动。
 
