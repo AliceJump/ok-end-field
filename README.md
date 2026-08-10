@@ -17,7 +17,7 @@ An image-recognition-based automation tool for End Field, with partial backgroun
 
 <p><i>通过模拟 Windows 用户接口进行操作，无内存读取、无文件修改</i></p>
 
-<p align="center"><b>官方网站：</b><a href="https://ok-script.com/ok-end-field/">ok-ef 终末地自动化</a>（中英双语文档 · 功能指南 · 开发维护）</p>
+<p align="center"><b>官方网站：</b><a href="https://ok-script.com/ok-end-field/">ok-ef 终末地自动化</a>（中英繁三语文档 · 功能指南 · 开发维护）</p>
 
 
 <!-- Badges -->
