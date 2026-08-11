@@ -123,10 +123,14 @@ class LiaisonMixin(NavigationMixin):
         self.click(tp_icon)
 
         # 查找传送按钮
+        # canny 边缘匹配：对传送按钮反色/主题变化不敏感（按钮可能呈现为模板的反色状态）
         transfer_btn = self.wait_feature(
             feature=fL.transfer_go,
             time_out=10,
-            raise_if_not_found=False
+            raise_if_not_found=False,
+            canny_lower=50,
+            canny_higher=150,
+            threshold=0.9
         )
 
         if not transfer_btn:
