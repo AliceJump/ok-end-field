@@ -566,7 +566,10 @@ class DailyBattleFeature:
 
     def battle_space(self):
         self.battle_ctx.enter_text = "进入"
-        self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.942, 0.896, 0.967, 0.938), settle_time=1, time_out=5)
+        # 先普通匹配；超时后再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感
+        if not self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.942, 0.896, 0.967, 0.938), settle_time=1, time_out=5, raise_if_not_found=False):
+            self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.942, 0.896, 0.967, 0.938), settle_time=1, time_out=2,
+                                    canny_lower=50, canny_higher=150, threshold=0.8)
         # 插入点：在首次『进入』之后、下一次『进入』之前执行换队。
         # 若上面已经点击到『取消』，则直接结束，不会触发该逻辑。
         self._switch_team_before_reenter()
@@ -627,8 +630,11 @@ class DailyBattleFeature:
             if not self.wait_click_feature(feature=fL.trigger_gather_button, vertical_variance=0.2, horizontal_variance=0.05, time_out=5, raise_if_not_found=False, settle_time=1, alt=True):
                 self.log_info("未找到『激发』按钮，无法继续进行额外刷取")
                 return False
-            self.wait_click_feature(feature=fL.to_max_produce_num, time_out=10, box=self.box_of_screen(0.946, 0.902, 0.966, 0.937),
-                                settle_time=1)
+            # 先普通匹配；超时后再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感
+            if not self.wait_click_feature(feature=fL.to_max_produce_num, time_out=10, box=self.box_of_screen(0.946, 0.902, 0.966, 0.937),
+                                settle_time=1, raise_if_not_found=False):
+                self.wait_click_feature(feature=fL.to_max_produce_num, time_out=3, box=self.box_of_screen(0.946, 0.902, 0.966, 0.937),
+                                settle_time=1, canny_lower=50, canny_higher=150, threshold=0.8)
             self.click_confirm()
         else:
             # 一个循环：先等『重新挑战』按钮出现，出现后点击，再等按钮消失

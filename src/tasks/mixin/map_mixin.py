@@ -160,16 +160,23 @@ class MapMixin(BaseEfTask):
             self.click(0.5, 0.5, after_sleep=1)
 
         # 查找“前往传送”按钮
-        # canny 边缘匹配：对传送按钮反色/主题变化不敏感（按钮可能呈现为模板的反色状态）
+        # 先普通匹配；未找到时再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感
         result = self.wait_feature(
             feature=fL.transfer_go,
             time_out=10,
             raise_if_not_found=False,
             horizontal_variance=0.2,
-            canny_lower=50,
-            canny_higher=150,
-            threshold=0.9,
         )
+        if not result:
+            result = self.wait_feature(
+                feature=fL.transfer_go,
+                time_out=3,
+                raise_if_not_found=False,
+                horizontal_variance=0.2,
+                canny_lower=50,
+                canny_higher=150,
+                threshold=0.8,
+            )
 
         # 如果未找到“前往传送”按钮
         if not result:
@@ -179,15 +186,21 @@ class MapMixin(BaseEfTask):
         self.click(result, after_sleep=1)
 
         # 查找“传送”按钮
-        # canny 边缘匹配：对传送按钮反色/主题变化不敏感（按钮可能呈现为模板的反色状态）
+        # 先普通匹配；未找到时再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感
         result = self.wait_feature(
             feature=fL.transfer_go,
             time_out=10,
             raise_if_not_found=False,
-            canny_lower=50,
-            canny_higher=150,
-            threshold=0.9,
         )
+        if not result:
+            result = self.wait_feature(
+                feature=fL.transfer_go,
+                time_out=3,
+                raise_if_not_found=False,
+                canny_lower=50,
+                canny_higher=150,
+                threshold=0.8,
+            )
 
         # 如果未找到传送按钮
         if not result:
