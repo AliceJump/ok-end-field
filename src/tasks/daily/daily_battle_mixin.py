@@ -864,7 +864,18 @@ class DailyBattleFeature:
                 result = self.strafe_search(check)
 
             if result:
-                self.click_with_alt(result[0])
+                # 战斗结束瞬间界面可能仍在变化，『领取/放弃』按钮可能只是闪现。
+                # 只有按钮稳定持续显示才点击，避免点击落空后直接跳过后续寻路逻辑。
+                stable = self.wait_ocr(
+                    match=re.compile(click_key),
+                    box=self.box.bottom_right,
+                    time_out=3,
+                    settle_time=1.0,
+                )
+                if not stable:
+                    self.log_info(f"『{click_key}』按钮未稳定显示，跳过直接点击，继续寻路")
+                    return False
+                self.click_with_alt(stable[0])
 
                 if self.battle_ctx.is_extra_mode:
                     self.click_confirm()
