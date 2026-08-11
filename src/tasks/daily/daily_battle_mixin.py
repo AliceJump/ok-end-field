@@ -566,9 +566,7 @@ class DailyBattleFeature:
 
     def battle_space(self):
         self.battle_ctx.enter_text = "进入"
-        # canny 边缘匹配：对按钮反色/主题变化不敏感（按钮可能呈现为模板的反色状态）
-        self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.942, 0.896, 0.967, 0.938), settle_time=1, time_out=5,
-                                canny_lower=50, canny_higher=150, threshold=0.9)
+        self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.942, 0.896, 0.967, 0.938), settle_time=1, time_out=5)
         # 插入点：在首次『进入』之后、下一次『进入』之前执行换队。
         # 若上面已经点击到『取消』，则直接结束，不会触发该逻辑。
         self._switch_team_before_reenter()
@@ -629,9 +627,8 @@ class DailyBattleFeature:
             if not self.wait_click_feature(feature=fL.trigger_gather_button, vertical_variance=0.2, horizontal_variance=0.05, time_out=5, raise_if_not_found=False, settle_time=1, alt=True):
                 self.log_info("未找到『激发』按钮，无法继续进行额外刷取")
                 return False
-            # canny 边缘匹配：对按钮反色/主题变化不敏感（按钮可能呈现为模板的反色状态）
             self.wait_click_feature(feature=fL.to_max_produce_num, time_out=10, box=self.box_of_screen(0.946, 0.902, 0.966, 0.937),
-                                settle_time=1, canny_lower=50, canny_higher=150, threshold=0.9)
+                                settle_time=1)
             self.click_confirm()
         else:
             # 一个循环：先等『重新挑战』按钮出现，出现后点击，再等按钮消失
@@ -663,23 +660,15 @@ class DailyBattleFeature:
                 # 开始下一轮刷取
                 self.to_restart()
             else:
-                # 挑战模式下使用『进入协议空间』（to_max_produce_num）按钮，否则使用『送礼物』按钮。
-                # to_max_produce_num 可能呈现为模板反色/主题变化状态，
-                # 使用 canny 边缘匹配：对反色/主题变化不敏感（与 transfer_go 修复一致）。
-                if (self.battle_ctx.enter_text == "挑战"
-                        and is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING)):
-                    self.wait_click_feature(
-                        feature=fL.to_max_produce_num, time_out=10,
-                        box=self.box_of_screen(0.946, 0.904, 0.970, 0.943),
-                        click_after_delay=1, raise_if_not_found=False,
-                        canny_lower=50, canny_higher=150, threshold=0.9,
-                    )
-                else:
-                    self.wait_click_feature(
-                        feature=fL.give_gift, time_out=10,
-                        box=self.box_of_screen(0.946, 0.904, 0.970, 0.943),
-                        click_after_delay=1, raise_if_not_found=False
-                    )
+                enter_feature = fL.to_max_produce_num  if (
+                    self.battle_ctx.enter_text == "挑战"
+                    and is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING)
+                ) else fL.give_gift
+                self.wait_click_feature(
+                    feature=enter_feature, time_out=10,
+                    box=self.box_of_screen(0.946, 0.904, 0.970, 0.943),
+                    click_after_delay=1, raise_if_not_found=False
+                )
                 # 如果无体力，点击放弃领奖后需要点击确认
                 if self.battle_ctx.extra_run_limit > 0 and self.battle_ctx.left_ticket < self._battle_stage_cost:
                     self.click_confirm()
