@@ -24,7 +24,7 @@ from pathlib import Path
 _PATCH_INSTALLED = False
 
 # 安全限制：字符串变体的最大数量（防止笛卡尔积爆炸）
-_MAX_VARIANTS = 4
+_MAX_VARIANTS = 32
 
 # 安全过滤：混淆字符若为正则元字符，跳过该替换
 _REGEX_METACHARS = set(r".^$*+?{}()[]\|")
@@ -58,24 +58,22 @@ def _load_fix_map() -> dict[str, str]:
     return fix_map
 
 
-def _build_char_confusion(fix_map: dict[str, str]) -> dict[str, str]:
+def _build_char_confusion(fix_map: dict[str, str]) -> dict[str, tuple[str, ...]]:
     """从 {错误→正确} 文本对中提取字符级混淆映射。
 
     例: {"乾員養成": "幹員養成"} → {"幹": "乾"}
     含义: 正确的"幹"在 OCR 结果中被识别为错误的"乾"。
 
-    返回: {正确字符: OCR错误字符}
+    返回: {正确字符: (OCR错误字符, ...)}
     """
-    char_map: dict[str, str] = {}
+    char_map: dict[str, set[str]] = {}
     for wrong, correct in fix_map.items():
         if len(wrong) != len(correct):
             continue
         for wc, cc in zip(wrong, correct):
             if wc != cc:
-                if cc in char_map and char_map[cc] != wc:
-                    continue  # 歧义冲突，跳过
-                char_map[cc] = wc
-    return char_map
+                char_map.setdefault(cc, set()).add(wc)
+    return {correct_char: tuple(sorted(wrong_chars)) for correct_char, wrong_chars in char_map.items()}
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -144,12 +142,12 @@ def _tokenize_pattern(pattern: str) -> list[tuple[str, str]]:
 # ═══════════════════════════════════════════════════════════════════════
 
 
-def _apply_confusion_to_str(text: str, char_confusion: dict[str, str]) -> str | list[str]:
+def _apply_confusion_to_str(text: str, char_confusion: dict[str, tuple[str, ...]]) -> str | list[str]:
     """对字符串应用字符混淆：笛卡尔积生成所有变体，上限 _MAX_VARIANTS。"""
     char_options: list[tuple[str, ...]] = []
     for ch in text:
         if ch in char_confusion:
-            char_options.append((ch, char_confusion[ch]))
+            char_options.append((ch, *char_confusion[ch]))
         else:
             char_options.append((ch,))
 
@@ -169,7 +167,7 @@ def _apply_confusion_to_str(text: str, char_confusion: dict[str, str]) -> str | 
 
 
 def _apply_confusion_to_regex(
-    pattern: re.Pattern, char_confusion: dict[str, str]
+    pattern: re.Pattern, char_confusion: dict[str, tuple[str, ...]]
 ) -> re.Pattern:
     """对 regex pattern 应用字符混淆。
 
@@ -195,13 +193,16 @@ def _apply_confusion_to_regex(
     for typ, val in tokens:
         if typ == "LITERAL":
             if val in char_confusion:
-                confused = char_confusion[val]
-                # 安全守卫：混淆字符含正则元字符时跳过
-                if confused in _REGEX_METACHARS:
-                    result_parts.append(val)
-                else:
-                    result_parts.append(f"[{confused}{val}]")
+                confused_chars = "".join(
+                    confused
+                    for confused in char_confusion[val]
+                    if confused not in _REGEX_METACHARS
+                )
+                if confused_chars:
+                    result_parts.append(f"[{confused_chars}{val}]")
                     modified = True
+                else:
+                    result_parts.append(val)
             else:
                 result_parts.append(val)
 
@@ -218,10 +219,13 @@ def _apply_confusion_to_regex(
                     continue
                 new_inner.append(c)
                 if c in char_confusion:
-                    confused = char_confusion[c]
-                    # 安全守卫：混淆字符含正则元字符时跳过
-                    if confused not in _REGEX_METACHARS:
-                        new_inner.append(confused)
+                    confused_chars = "".join(
+                        confused
+                        for confused in char_confusion[c]
+                        if confused not in _REGEX_METACHARS
+                    )
+                    if confused_chars:
+                        new_inner.append(confused_chars)
                         modified = True
                 j += 1
             result_parts.append("[" + "".join(new_inner) + "]")
@@ -239,7 +243,7 @@ def _apply_confusion_to_regex(
         return pattern
 
 
-def _apply_confusion_to_match(match, char_confusion: dict[str, str]):
+def _apply_confusion_to_match(match, char_confusion: dict[str, tuple[str, ...]]):
     """对 match 应用字符级混淆，让 match 也能匹配 OCR 识别错的文本。
 
     支持三种输入:
