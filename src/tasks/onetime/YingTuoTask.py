@@ -18,6 +18,7 @@ class YingTuoTask(BattleMixin):
         self.support_schedule_task = True
 
     def run(self):
+        self.index = 0
         self.ensure_main(time_out=400)
         if not self.enter_yingtuo():
             return
