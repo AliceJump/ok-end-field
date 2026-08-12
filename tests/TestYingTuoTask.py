@@ -20,8 +20,8 @@ class _FakeYingTuoTask:
     def scroll_relative(self, *_args):
         self.scroll_count += 1
 
-    def click_relative(self, x, y):
-        self.clicks.append((x, y))
+    def click_relative(self, x, y, **kwargs):
+        self.clicks.append((x, y, kwargs))
 
     def detect_normal_challenge_bars(self, frame):
         return YingTuoTask.detect_normal_challenge_bars(self, frame)
@@ -40,7 +40,7 @@ class TestYingTuoTask(unittest.TestCase):
         with patch("src.tasks.onetime.YingTuoTask.detect_gray_bars", return_value=[leftmost]):
             self.assertTrue(YingTuoTask.find_normal_challenge(task))
         self.assertEqual(task.scroll_count, 0)
-        self.assertEqual(task.clicks, [(0.25, 0.25)])
+        self.assertEqual(task.clicks, [(0.25, 0.25, {"after_sleep": 0.25})])
 
     def test_stops_after_four_empty_scrolls(self):
         task = _FakeYingTuoTask()

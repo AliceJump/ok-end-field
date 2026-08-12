@@ -21,22 +21,33 @@ class YingTuoTask(BattleMixin):
             return
         while self.find_normal_challenge():
             self.log_info("检测到普通关卡灰条，处理本屏未通关关卡")
-            results = self.find_feature(feature=fL.yingtuo_not_cleared_icon, box=self.box_of_screen(0.033, 0.133, 0.058, 0.778))
+            results = (
+                self.wait_until(
+                    lambda: self.find_feature(
+                        feature=fL.yingtuo_not_cleared_icon,
+                        box=self.box_of_screen(0.033, 0.133, 0.058, 0.778),
+                    ),
+                    time_out=10,
+                    settle_time=0.5,
+                    raise_if_not_found=False,
+                )
+                or []
+            )
             if not results:
                 self.log_info("检测到关卡灰条，但本屏没有未通关图标，继续向下滚动")
             for result in results:
-                self.click(result)
+                self.click(result, after_sleep=0.25)
                 self.log_info("进入挑战页面，开始挑战")
-                if not self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=10, raise_if_not_found=False):
+                if not self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=10, settle_time=0.5, raise_if_not_found=False):
                     self.log_info("未能找到挑战开始按钮")
                     raise Exception("未能找到挑战开始按钮")
-                if not self.wait_click_feature(feature=fL.give_gift, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=10, settle_time=1, raise_if_not_found=False):
+                if not self.wait_click_feature(feature=fL.give_gift, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=10, settle_time=0.5, raise_if_not_found=False):
                     self.log_info("未能进入战斗")
                     raise Exception("未能进入战斗")
                 if not self.battle_and_exit():
                     self.log_info("战斗过程中发生错误，返回失败")
                     raise Exception("战斗过程中发生错误")
-                if not self.wait_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=60, raise_if_not_found=False):
+                if not self.wait_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=60, settle_time=0.5, raise_if_not_found=False):
                     self.log_info("未能找到挑战开始按钮，返回失败")
                     raise Exception("未能找到挑战开始按钮")
                 self.log_info("挑战完成，继续寻找下一个普通关卡")
@@ -76,6 +87,7 @@ class YingTuoTask(BattleMixin):
                 self.click_relative(
                     leftmost_bar.center_x / frame_width,
                     leftmost_bar.center_y / frame_height,
+                    after_sleep=0.25,
                 )
                 return True
             self.log_info(f"未检测到普通关卡灰条，继续向下滚动 ({empty_scrolls + 1}/4)")
