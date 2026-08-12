@@ -1,8 +1,8 @@
 from src.icons import Icons
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.mixin.battle_mixin import BattleMixin
-from src.data.world_map import permanent_dict, YINGTUO_MONUMENT
-from src.data.world_map_utils import get_world_map_text
+from src.image.gray_bar_detector import detect_gray_bars
+from ok import Box
 
 
 class YingTuoTask(BattleMixin):
@@ -13,19 +13,17 @@ class YingTuoTask(BattleMixin):
         self.group_name = "战斗"
         self.description = "自动完成当前所有普通影拓丰碑关卡"
 
-        self.index = 0
-        self.yingtuo_list = permanent_dict[YINGTUO_MONUMENT][::-1]
         self.support_schedule_task = True
 
     def run(self):
-        self.index = 0
         self.ensure_main(time_out=400)
         if not self.enter_yingtuo():
             return
         while self.find_normal_challenge():
-            self.log_info("找到普通关卡，进入挑战页面")
-            self.wait_ocr(match=self.target, time_out=3, box=self.box.top_left, log=True)
+            self.log_info("检测到普通关卡灰条，处理本屏未通关关卡")
             results = self.find_feature(feature=fL.yingtuo_not_cleared_icon, box=self.box_of_screen(0.033, 0.133, 0.058, 0.778))
+            if not results:
+                self.log_info("检测到关卡灰条，但本屏没有未通关图标，继续向下滚动")
             for result in results:
                 self.click(result)
                 self.log_info("进入挑战页面，开始挑战")
@@ -67,18 +65,36 @@ class YingTuoTask(BattleMixin):
         return True
 
     def find_normal_challenge(self):
-        if self.index >= len(self.yingtuo_list):
-            self.log_info("已完成所有普通关卡")
-            return None
-        self.target = get_world_map_text(self.lang, self.yingtuo_list[self.index])
-        self.log_info(f"寻找{self.target}关卡")
-        for _ in range(len(self.yingtuo_list)//2):  # 尝试多次寻找，增加成功率
-            if self.wait_click_ocr(match=self.target, box=self.box_of_screen(0.013, 0.759, 0.991, 0.824), time_out=2, raise_if_not_found=False, log=True):
-                self.log_info(f"找到{self.target}关卡")
-                self.index += 1
-                return self.target
+        """寻找当前可打关卡；连续四次滚动后无灰条时结束。"""
+        for empty_scrolls in range(4):
+            frame = self.next_frame()
+            bars = self.detect_normal_challenge_bars(frame)
+            if bars:
+                leftmost_bar = bars[0]
+                frame_height, frame_width = frame.shape[:2]
+                self.log_info(f"检测到 {len(bars)} 条普通关卡灰条，点击最左侧灰条")
+                self.click_relative(
+                    leftmost_bar.center_x / frame_width,
+                    leftmost_bar.center_y / frame_height,
+                )
+                return True
+            self.log_info(f"未检测到普通关卡灰条，继续向下滚动 ({empty_scrolls + 1}/4)")
             self.scroll_relative(0.5, 0.5, -5)
+        self.log_info("连续 4 次滚动未检测到普通关卡灰条")
         return None
+
+    def detect_normal_challenge_bars(self, frame):
+        """检测普通关卡灰条；启用调试叠加层时按 YOLO 的方式绘制检测框。"""
+        bars = detect_gray_bars(frame, min_aspect_ratio=3.5)
+        if self._is_debug_overlay_enabled():
+            debug_boxes = []
+            for index, bar in enumerate(bars, start=1):
+                box = Box(bar.x, bar.y, bar.width, bar.height)
+                box.name = f"yingtuo_gray_bar_{index}"
+                box.confidence = 1.0
+                debug_boxes.append(box)
+            self.draw_boxes("yingtuo_gray_bars", debug_boxes, color="green", debug=True)
+        return bars
 
     def battle_and_exit(self):
         end_time = self.active_time()

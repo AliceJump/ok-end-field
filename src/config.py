@@ -143,6 +143,7 @@ config = {
         ["src.tasks.test.TestLevelRead", "TestLevelRead"],
         ["src.tasks.test.TestDemoGraphic", "TestDemoGraphic"],
         ["src.tasks.test.RealtimeDetectTask", "RealtimeDetectTask"],
+        ["src.tasks.test.RealtimeGrayBarDetectTask", "RealtimeGrayBarDetectTask"],
         ["src.tasks.test.DiagnosisTask", "DiagnosisTask"],
         ["src.tasks.test.TestBattleSlotDetect", "TestBattleSlotDetect"],
         ["src.tasks.test.TestCombatTemplateMatch", "TestCombatTemplateMatch"],
