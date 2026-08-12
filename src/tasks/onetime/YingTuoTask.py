@@ -72,7 +72,7 @@ class YingTuoTask(BattleMixin):
         self.target = get_world_map_text(self.lang, self.yingtuo_list[self.index])
         self.log_info(f"寻找{self.target}关卡")
         for _ in range(len(self.yingtuo_list)//2):  # 尝试多次寻找，增加成功率
-            if self.wait_click_ocr(match=self.target, box=self.box_of_screen(0.013, 0.759, 0.991, 0.824), time_out=2, raise_if_not_found=False):
+            if self.wait_click_ocr(match=self.target, box=self.box_of_screen(0.013, 0.759, 0.991, 0.824), time_out=2, raise_if_not_found=False, log=True):
                 self.log_info(f"找到{self.target}关卡")
                 self.index += 1
                 return self.target
