@@ -173,8 +173,10 @@ class MapMixin(BaseEfTask):
                 # 点击追踪
                 self.click(tracked, after_sleep=1)
                 # 若需要清空标记筛选时，清空标记筛选并点击屏幕中心
-                if need_reserve_icon_name:
-                    self.clear_icon_in_map(need_reserve_icon_name=need_reserve_icon_name)
+                if need_reserve_icon_name and not self.clear_icon_in_map(
+                    need_reserve_icon_name=need_reserve_icon_name
+                ):
+                    return False
                 # 点击追踪后，需要重新点击屏幕中心激活按钮准备点击传送按钮
                 self.click(0.5, 0.5, after_sleep=1)
 
