@@ -50,7 +50,7 @@ class DailyDemoFeature:
             if not this_time_double_reward:
                 once_double_reward = True
             self.wait_click_feature(feature=fL.start_demo, time_out=10, raise_if_not_found=False, click_after_delay=0.5)
-            if not self.wait_click_feature(feature=fL.give_gift, time_out=10, raise_if_not_found=False, click_after_delay=0.5, settle_time=1, box=self.box_of_screen(0.944, 0.900, 0.969, 0.941)):
+            if not self.wait_click_feature(feature=fL.give_gift, time_out=10, raise_if_not_found=False, settle_time=1, box=self.box_of_screen(0.944, 0.900, 0.969, 0.941)):
                 self.mark_task_failure("未找到进入战斗按钮")
                 return False
             self.ensure_main()
