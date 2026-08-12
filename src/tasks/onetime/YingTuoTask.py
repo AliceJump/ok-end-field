@@ -31,7 +31,7 @@ class YingTuoTask(BattleMixin):
                 if not self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=10, raise_if_not_found=False):
                     self.log_info("未能找到挑战开始按钮")
                     raise Exception("未能找到挑战开始按钮")
-                if not self.wait_click_feature(feature=fL.give_gift, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=10, raise_if_not_found=False):
+                if not self.wait_click_feature(feature=fL.give_gift, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=10, settle_time=1, raise_if_not_found=False):
                     self.log_info("未能进入战斗")
                     raise Exception("未能进入战斗")
                 if not self.battle_and_exit():

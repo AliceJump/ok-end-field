@@ -671,7 +671,9 @@ class DailyBattleFeature:
                 self.wait_click_feature(
                     feature=enter_feature, time_out=10,
                     box=self.box_of_screen(0.946, 0.904, 0.970, 0.943),
-                    click_after_delay=1, raise_if_not_found=False
+                    click_after_delay=1,
+                    settle_time=1 if enter_feature == fL.give_gift else -1,
+                    raise_if_not_found=False,
                 )
                 # 如果无体力，点击放弃领奖后需要点击确认
                 if self.battle_ctx.extra_run_limit > 0 and self.battle_ctx.left_ticket < self._battle_stage_cost:
