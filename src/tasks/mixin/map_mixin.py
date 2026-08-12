@@ -61,7 +61,7 @@ class MapMixin(BaseEfTask):
         self.wait_ui_stable(refresh_interval=1)
 
         # 执行附近传送点传送
-        return self.to_near_transfer_point(after_track=False, need_location_list=need_location_list)
+        return self.to_near_transfer_point(need_track=False, need_location_list=need_location_list)
 
     def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False):
         """
@@ -121,19 +121,25 @@ class MapMixin(BaseEfTask):
 
         return True
 
-    def to_near_transfer_point(self, after_track, need_location_list=None, need_reserve_icon_name=None):
+    def to_near_transfer_point(self, need_track, need_location_list=None, need_reserve_icon_name=None):
         """
         在地图上寻找最近的传送点并执行传送。
 
         流程：
-        1. 打开“标记显示管理”。
-        2. 清空当前地图选中标记。
-        3. 重新点击屏幕中心（淤积点/演武平台需要点击，物资调度终端不需要）。
-        4. 在地图上搜索传送点图标。若找到则点击”前往传送“按钮。
-        5. 在地图上搜索传送点图标。若找到则点击”传送“按钮。
+        1. 需要追踪时：查找『追踪』按钮。（淤积点/演武平台需要追踪，物资调度终端不需要）
+           - 未找到『追踪』按钮
+             - 应已追踪，由后续『前往传送』逻辑查看『传送』按钮是否存在。
+           - 找到『追踪』按钮
+             - 点击『追踪』按钮进入地图；
+             - （可选）清空标记筛选；
+             - 点击屏幕中心。
+        2. 在地图上搜索传送点图标。若找到则点击『前往传送』按钮。
+        3. 在地图上搜索传送点图标。若找到则点击『传送』按钮。
 
         Args:
-            after_track: 调用函数前是否需要点击”追踪“按钮。
+            need_track: 调用函数前是否需要点击『追踪』按钮。需要时在函数内查找
+                该按钮：找到则点击，并执行清空标记筛选、点击屏幕中心；
+                未找到则跳过这些步骤（无需追踪时调用方应直接传 False）。
             need_location_list: 需要记录的候选地名列表（本地化名称）；
                 命中则把地图右上角显示的当前地区名记录到 self.location，供调用方回填缓存
 
@@ -153,50 +159,59 @@ class MapMixin(BaseEfTask):
             ):
                 self.location = location[0].name
 
-        # 调用函数前如果点击”追踪“按钮，需要再次点击屏幕中心图标。
-        if after_track:
-            if need_reserve_icon_name:
-                self.clear_icon_in_map(need_reserve_icon_name=need_reserve_icon_name)
-            self.click(0.5, 0.5, after_sleep=1)
-
-        # 查找“前往传送”按钮
-        # 先普通匹配；未找到时再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感
-        result = self.wait_feature(
-            feature=fL.transfer_go,
-            time_out=10,
-            raise_if_not_found=False,
-            horizontal_variance=0.2,
-        )
-        if not result:
-            result = self.wait_feature(
-                feature=fL.transfer_go,
-                time_out=3,
+        if need_track:
+            # 需要追踪时：点击『追踪』按钮
+            tracked = self.wait_feature(
+                feature=fL.start_follow,
+                box=self.box.bottom_right,
+                time_out=5,
                 raise_if_not_found=False,
-                horizontal_variance=0.2,
-                canny_lower=50,
-                canny_higher=150,
-                threshold=0.8,
             )
+            if not tracked:
+                self.log_info("未找到『追踪』按钮，应该已追踪，尝试直接传送")
+            else:
+                # 点击追踪
+                self.click(tracked, after_sleep=1)
+                # 若需要清空标记筛选时，清空标记筛选并点击屏幕中心
+                if need_reserve_icon_name and not self.clear_icon_in_map(
+                    need_reserve_icon_name=need_reserve_icon_name
+                ):
+                    return False
+                # 点击追踪后，需要重新点击屏幕中心激活按钮准备点击传送按钮
+                self.click(0.5, 0.5, after_sleep=1)
 
-        # 如果未找到“前往传送”按钮
-        if not result:
+        # 点击『前往传送』按钮（『前往传送』按钮与『传送』按钮一致但需要横向容差）
+        if not self._wait_click_transfer_go(horizontal_variance=0.2):
             return False
+        # 点击『传送』按钮
+        return self._wait_click_transfer_go()
 
-        # 点击”前往传送“按钮
-        self.click(result, after_sleep=1)
+    def _wait_click_transfer_go(self, horizontal_variance=0):
+        """
+        查找并点击『传送』按钮。
 
-        # 查找“传送”按钮
-        # 先普通匹配；未找到时再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感
+        先普通匹配；未找到时再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感。
+
+        Args:
+            horizontal_variance: 模板匹配的横向容差，默认 0（不启用）。
+
+        Returns:
+            bool: 找到并点击返回 True，否则 False。
+        """
+        # 查找『传送』按钮
         result = self.wait_feature(
             feature=fL.transfer_go,
             time_out=10,
             raise_if_not_found=False,
+            horizontal_variance=horizontal_variance,
         )
+        # 未找到时再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感
         if not result:
             result = self.wait_feature(
                 feature=fL.transfer_go,
                 time_out=3,
                 raise_if_not_found=False,
+                horizontal_variance=horizontal_variance,
                 canny_lower=50,
                 canny_higher=150,
                 threshold=0.8,
@@ -206,7 +221,7 @@ class MapMixin(BaseEfTask):
         if not result:
             return False
 
-        # 点击”传送“按钮
+        # 点击『传送』按钮
         self.click(result, after_sleep=1)
 
         return True

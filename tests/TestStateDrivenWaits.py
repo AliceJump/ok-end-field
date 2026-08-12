@@ -191,7 +191,7 @@ class _TaskMapHarness:
     def wait_ui_stable(self, **kwargs):
         self.stable_waits += 1
 
-    def to_near_transfer_point(self, after_track, need_location_list=None):
+    def to_near_transfer_point(self, need_track, need_location_list=None, need_reserve_icon_name=None):
         return True
 
 
