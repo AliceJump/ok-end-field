@@ -230,9 +230,7 @@ class DailyBattleFeature:
 
     def _click_track_and_transfer(self):
         """点击『追踪』按钮，进入地图并传送至最近传送点。"""
-        if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False):
-            self.click(result, after_sleep=1)
-        self.to_near_transfer_point(after_track=True, need_reserve_icon_name=fL.clear_page_gather)
+        self.to_near_transfer_point(need_track=True, need_reserve_icon_name=fL.clear_page_gather)
         self.ensure_main()
 
     def _navigate_via_zip_line(self):

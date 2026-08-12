@@ -116,11 +116,7 @@ class DailyDemoFeature:
         
     def _demo_click_track_and_transfer(self):
         """点击『追踪』按钮，进入地图并传送至最近传送点。"""
-        if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False):
-            self.click(result)
-        else:
-            self.log_info("未找到『追踪』按钮，继续尝试自动寻路")
-        if not self.to_near_transfer_point(after_track=True, need_reserve_icon_name=fL.clear_page_demo_battle):
+        if not self.to_near_transfer_point(need_track=True, need_reserve_icon_name=fL.clear_page_demo_battle):
             self.mark_task_failure("未能找到传送点，无法继续")
             return False
         self.ensure_main()
