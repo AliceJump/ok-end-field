@@ -9,6 +9,7 @@ labels
 marked_points.json
 ok-lang-hints
 tmp
+.agents/skills/log-watcher-ops/
 ############################
 # 🗂 运行生成数据（仅忽略根目录）
 ############################

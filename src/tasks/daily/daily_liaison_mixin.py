@@ -45,6 +45,7 @@ class DailyLiaisonFeature:
             ),
             "⭐帝江号一键存放": (
                 "是否在「帝江号」打开背包并点击「一键存放」。\n"
+                "与「简易制作」合并执行，共享传送与开背包。\n"
                 "确认不会自动存可用道具导致治疗药被存入后再开启"
             ),
             "帮助": "打开日常任务使用说明网页。",
@@ -153,21 +154,3 @@ class DailyLiaisonFeature:
 
         self.mark_task_failure("送礼任务最终失败")
         return False
-
-    def boat_one_key_store(self):
-        """在帝江号执行背包一键存放。"""
-        self.info_set("current_task", "boat_one_key_store")
-        if not self.transfer_to_home_point(should_check_out_boat=True):
-            self.mark_task_failure("传送到帝江号失败，无法执行一键存放")
-            return False
-        self.press_key("b")
-        store_btn = self.wait_ocr(
-            box=self.box_of_screen(0.64, 0.705, 0.69, 0.735, name="onekey_store_area"),
-            match=self.lang.daily_liaison_mixin.k_d661f6da,
-            time_out=5,
-        )
-        if not store_btn:
-            self.log_info("未找到“存放”按钮")
-            return False
-        self.click(store_btn[0], after_sleep=0.5)
-        return True

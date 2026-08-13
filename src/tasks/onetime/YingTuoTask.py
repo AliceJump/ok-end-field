@@ -115,7 +115,13 @@ class YingTuoTask(BattleMixin):
                 self.log_info("等待超时，进入协议空间超时")
                 return False
         self.auto_battle()
-        if not self.wait_click_ocr(match=self.lang.daily_battle_mixin.k_0ba18905, box=self.box.bottom_right, log=True, recheck_time=1):
+        if not self.wait_click_feature(
+            feature=fL.left_battle,
+            vertical_variance=0.1,
+            time_out=10,
+            settle_time=0.5,
+            raise_if_not_found=False,
+        ):
             self.log_info("未能退出按钮")
             return False
         return True

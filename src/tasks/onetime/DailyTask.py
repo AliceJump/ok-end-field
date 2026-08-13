@@ -67,8 +67,7 @@ class DailyTask(
     }
 
     BOAT_STATE_TASK_KEYS = frozenset({
-        "⭐帝江号一键存放",
-        "⭐简易制作",
+        "⭐帝江号整理",
         "⭐帝江号收菜",
     })
     MULTI_SELECTION_TASK_KEYS = frozenset({
@@ -144,9 +143,9 @@ class DailyTask(
         }
         task_group = {
             "⭐⭐⭐ 默认": [
-                i for i, _ in self.build_task_plan()
-                if i not in self.MULTI_SELECTION_TASK_KEYS
-            ] + ["⭐地区建设", "⭐帝江号收菜", "⭐活动奖励", "⭐执行外部命令"],
+                item[0] for item in self.build_task_plan()
+                if item[0] not in self.MULTI_SELECTION_TASK_KEYS
+            ] + ["⭐帝江号一键存放", "⭐简易制作", "⭐地区建设", "⭐帝江号收菜", "⭐活动奖励", "⭐执行外部命令"],
         }
 
         # 合并两个分组字典
@@ -160,8 +159,8 @@ class DailyTask(
     def build_task_plan(self):
         return [
             ("⭐送礼", self.daily_liaison.execute_gift_task),
-            ("⭐帝江号一键存放", self.daily_liaison.boat_one_key_store),
-            ("⭐简易制作", self.daily_routine.make_simply),
+            ("⭐帝江号整理", self.daily_routine.boat_organize,
+             lambda: self.config.get("⭐帝江号一键存放", False) or self.config.get("⭐简易制作", False)),
             ("⭐帝江号收菜", self.daily_routine.boat_claim_rewards),
             ("⭐收邮件", self.daily_routine.claim_mail),
             ("⭐转交运送委托", self.daily_routine.delivery_send_others),

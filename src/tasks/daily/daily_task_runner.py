@@ -5,10 +5,12 @@ from typing import Callable, Iterable
 from ok import TaskDisabledException
 
 TaskItem = tuple[str, Callable[[], object]]
+# 可选的第三元素：开关谓词。提供时替代默认的 config.get(key) 判断（例如多开关 OR 逻辑）。
+TaskItemWithSwitch = tuple[str, Callable[[], object], Callable[[], bool]]
 
 
-def _new_task_status(task_items: Iterable[TaskItem]) -> dict[str, list[str]]:
-    return {"success": [], "failed": [], "skipped": [], "all": [key for key, _ in task_items]}
+def _new_task_status(task_items: Iterable[TaskItem | TaskItemWithSwitch]) -> dict[str, list[str]]:
+    return {"success": [], "failed": [], "skipped": [], "all": [item[0] for item in task_items]}
 
 
 class DailyTaskRunner:
@@ -121,10 +123,14 @@ class DailyTaskRunner:
             or self.final_summary.get("current_task")
         )
 
-    def execute_task(self, key, func):
+    def execute_task(self, key, func, predicate=None):
         self.task_status["all"].remove(key)
         self._prepare_shared_task_state(key)
-        if isinstance(key, str) and not self.task.config.get(key, False):
+        if predicate is not None:
+            enabled = bool(predicate())
+        else:
+            enabled = self.task.config.get(key, False) if isinstance(key, str) else False
+        if not enabled:
             self.task_status["skipped"].append(key)
             return True
 
@@ -174,8 +180,10 @@ class DailyTaskRunner:
                 self._reset_shared_task_state()
                 self.task.log_info(f"开始第 {repeat_idx + 1}/{repeat_total} 轮任务执行")
 
-                for key, func in self.task_items:
-                    self.execute_task(key, func)
+                for item in self.task_items:
+                    key, func = item[0], item[1]
+                    predicate = item[2] if len(item) > 2 else None
+                    self.execute_task(key, func, predicate)
 
                 if self.task_status["failed"]:
                     self.task.log_info(f"第 {repeat_idx + 1} 轮 | 失败任务: {self.task_status['failed']}", notify=True)

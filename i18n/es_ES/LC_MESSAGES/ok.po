@@ -197,6 +197,9 @@ msgstr "⭐ Operaciones regionales"
 msgid "⭐帝江号一键存放"
 msgstr "⭐ Dijiang Almacenar con 1 Clic"
 
+msgid "⭐帝江号整理"
+msgstr "⭐ Organizar Dijiang"
+
 msgid "⭐帝江号收菜"
 msgstr "⭐ Recolección del Dijiang"
 
@@ -910,8 +913,12 @@ msgstr "Sí"
 msgid "是否买礼物"
 msgstr "Comprar Regalos"
 
-msgid "是否前往「帝江号/简易制作」制作物品。"
-msgstr "Ir a \"Dijiang / Fabricación sencilla\" para fabricar artículos."
+msgid ""
+"是否前往「帝江号/简易制作」制作物品。\n"
+"与「帝江号一键存放」合并执行，共享传送与开背包。"
+msgstr ""
+"Ir a \"Dijiang / Fabricación sencilla\" para fabricar artículos.\n"
+"Se ejecuta junto con Almacenar con 1 clic, compartiendo teletransporte y mochila."
 
 msgid ""
 "是否前往「装备制造/套组装备制造」并制作一件列表首位的装备。\n"
@@ -967,9 +974,11 @@ msgstr "Si transferir todos los encargos de entrega en \"Operaciones regionales 
 
 msgid ""
 "是否在「帝江号」打开背包并点击「一键存放」。\n"
+"与「简易制作」合并执行，共享传送与开背包。\n"
 "确认不会自动存可用道具导致治疗药被存入后再开启"
 msgstr ""
 "Abrir la mochila en el Dijiang y pulsar Almacenar todo.\n"
+"Se ejecuta junto con Fabricación sencilla, compartiendo teletransporte y mochila.\n"
 "Compruebe antes que no se guarden objetos utilizables."
 
 msgid ""
