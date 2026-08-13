@@ -76,6 +76,104 @@ class RuntimeMixin:
         
     _resolution_warned = False
 
+    def feature_stable(self, feature, box, duration):
+        if duration <= 0:
+            return True
+
+        end_time = time.time() + duration
+        while time.time() < end_time:
+            if not self.find_feature(
+                feature_name=feature, box=box, frame=self.next_frame()
+            ):
+                return False
+            self.sleep(0.05)
+
+        return True
+
+    def click_feature(
+        self,
+        feature,
+        boxes=None,
+        time_out=5,
+        after_sleep=0,
+        click_after_delay=0,
+        settle_time=0,
+        blind_point=None,
+        blind_delay=1,
+        verify_disappear=True,
+        verify_timeout=0.5,
+        max_click_retry=3
+    ):
+        boxes = [None] + (boxes or [])
+
+        start_time = time.time()
+        last_blind_time = 0
+
+        while time.time() - start_time < time_out:
+            frame = self.next_frame()
+
+            for box in boxes:
+                result = self.find_feature(
+                    feature_name=feature,
+                    box=box,
+                    frame=frame,
+                )
+
+                if result and self.feature_stable(feature, box, settle_time):
+                    retry_count = 0
+
+                    while retry_count < max_click_retry:
+                        self.sleep(click_after_delay)
+
+                        self.click(result, after_sleep=after_sleep)
+
+                        if not verify_disappear:
+                            return True
+
+                        if self.wait_feature_disappear(
+                            feature,
+                            box,
+                            verify_timeout,
+                        ):
+                            return True
+
+                        self.log_warning(
+                            f"{feature} 点击后未消失，重试 {retry_count + 1}/{max_click_retry}"
+                        )
+
+                        retry_count += 1
+
+            if blind_point and (time.time() - last_blind_time >= blind_delay):
+                self.click(
+                    blind_point[0],
+                    blind_point[1],
+                    after_sleep=after_sleep,
+                )
+                last_blind_time = time.time()
+
+        return False
+    
+    def wait_feature_disappear(
+        self,
+        feature,
+        box=None,
+        timeout=1,
+    ):
+        start = time.time()
+
+        while time.time() - start < timeout:
+            frame = self.next_frame()
+
+            if not self.find_feature(
+                feature_name=feature,
+                box=box,
+                frame=frame,
+            ):
+                return True
+
+        return False
+    
+
     def _wait_for_stable_resolution(self):
         """等待捕获帧尺寸稳定，避免启动阶段的中间帧触发误报。"""
         next_frame = getattr(self, "next_frame", None)

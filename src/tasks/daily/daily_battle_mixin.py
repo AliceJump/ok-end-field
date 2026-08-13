@@ -668,11 +668,10 @@ class DailyBattleFeature:
                     self.battle_ctx.enter_text == "挑战"
                     and is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING)
                 ) else fL.give_gift
-                self.wait_click_feature(
+                self.click_feature(
                     feature=enter_feature, time_out=10,
-                    box=self.box_of_screen(0.946, 0.904, 0.970, 0.943),
-                    settle_time=1 if enter_feature == fL.give_gift else -1,
-                    raise_if_not_found=False,
+                    boxes=[self.box_of_screen(0.946, 0.904, 0.970, 0.943)],
+                    settle_time=1
                 )
                 # 如果无体力，点击放弃领奖后需要点击确认
                 if self.battle_ctx.extra_run_limit > 0 and self.battle_ctx.left_ticket < self._battle_stage_cost:
