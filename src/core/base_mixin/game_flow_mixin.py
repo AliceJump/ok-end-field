@@ -567,19 +567,16 @@ class GameFlowMixin:
                     time_out=5,
                     raise_if_not_found=False,
                 )
-            if check:
-                success = True
-            else:
+            if not check:
                 self.log_info("未识别到区域且未检测到建设，重新尝试打开界面")
                 continue
             result = self.wait_ocr(match=[get_world_map_matcher(self.lang, area) for area in areas_list], box=self.box.left, time_out=1)
             if result:
                 success = True
                 break
-            else:
-                self.log_info("未识别到区域且未检测到建设，重新尝试打开界面")
+            self.log_info("未识别到区域且未检测到建设，重新尝试打开界面")
 
-        if not success:
+        if not success or not result:
             self.log_error("未能识别到区域列表")
             return False
         expected_area_text = get_world_map_text(self.lang, area)
