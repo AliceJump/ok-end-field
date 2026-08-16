@@ -59,7 +59,9 @@ class DailyRewardMixin:
         start_time = self.active_time()
 
         while True:
-            if self.wait_feature(feature=fL.in_scratch_card_page, raise_if_not_found=False, time_out=2):
+            # 页面判断模板允许横向偏移，纵向不需要放宽（vertical_variance 保持默认 0）
+            if self.wait_feature(feature=fL.in_scratch_card_page, horizontal_variance=0.1,
+                                 raise_if_not_found=False, time_out=2):
                 break
 
             if self.active_time() - start_time > 20:
