@@ -15,6 +15,13 @@
 
         * {
             box-sizing: border-box;
+            /* 显式指定字体，避免被浏览器/手机的系统默认字体修改影响 */
+            font-family:
+                "Inter",
+                "HarmonyOS Sans",
+                "Helvetica Neue",
+                Arial,
+                sans-serif;
         }
 
         body {
@@ -36,8 +43,7 @@
 
             font-family:
                 "Inter",
-                "PingFang SC",
-                "Microsoft YaHei",
+                "HarmonyOS Sans",
                 Arial,
                 sans-serif;
 
@@ -397,6 +403,126 @@
         }
 
         /* =========================================================
+         * 失败任务明细模块
+         * ========================================================= */
+
+        .failed-block {
+            position: relative;
+
+            margin: 26px 0;
+
+            background: #1e1e1c;
+            border: 1px solid #2e2e2c;
+            border-left: 4px solid #b05a5a;
+        }
+
+        .failed-block::before {
+            content: "FAILED TASKS";
+
+            position: absolute;
+
+            top: -10px;
+            left: 14px;
+
+            padding: 0 6px;
+
+            background: #efeee9;
+
+            color: #b05a5a;
+
+            font-size: 8px;
+            font-weight: 700;
+
+            letter-spacing: 0.12em;
+        }
+
+        .failed-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 10px 16px;
+
+            background: #252523;
+            border-bottom: 1px solid #2e2e2c;
+        }
+
+        .failed-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+
+            color: #c9c8c2;
+
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .failed-icon {
+            width: 7px;
+            height: 7px;
+
+            background: #b05a5a;
+
+            display: inline-block;
+        }
+
+        .failed-status {
+            color: #888780;
+
+            font-size: 9px;
+            letter-spacing: 0.1em;
+        }
+
+        .failed-body {
+            padding: 12px 20px 16px;
+        }
+
+        .failed-row {
+            display: flex;
+
+            padding: 8px 0;
+
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .failed-row:last-child {
+            border-bottom: none;
+        }
+
+        .failed-account {
+            width: 110px;
+            flex-shrink: 0;
+
+            color: #c9c8c2;
+            font-weight: 700;
+        }
+
+        .failed-task {
+            width: 170px;
+            flex-shrink: 0;
+
+            color: #e7e6df;
+            font-weight: 600;
+        }
+
+        .failed-reason {
+            flex: 1;
+
+            color: #b5b4ae;
+        }
+
+        .failed-empty {
+            color: #777772;
+            font-size: 12px;
+        }
+
+        /* =========================================================
          * 统计模块
          * ========================================================= */
 
@@ -743,6 +869,37 @@
         </div>
 
 
+        <!-- 失败任务明细 -->
+        <div class="failed-block">
+            <div class="failed-header">
+                <div class="failed-title">
+                    <span class="failed-icon"></span>
+                    失败任务明细
+                </div>
+                <div class="failed-status">
+                    FAILED TASKS / 3
+                </div>
+            </div>
+            <div class="failed-body">
+                <div class="failed-row">
+                    <div class="failed-account">无</div>
+                    <div class="failed-task">转交运送委托</div>
+                    <div class="failed-reason">未完成任何转交运送委托操作</div>
+                </div>
+                <div class="failed-row">
+                    <div class="failed-account">无</div>
+                    <div class="failed-task">造装备</div>
+                    <div class="failed-reason">未找到装备按钮，任务失败</div>
+                </div>
+                <div class="failed-row">
+                    <div class="failed-account">无</div>
+                    <div class="failed-task">演算</div>
+                    <div class="failed-reason">未能找到传送点，无法继续</div>
+                </div>
+            </div>
+        </div>
+
+
         <!-- 任务日志终端 -->
         <div class="terminal-block">
             <div class="terminal-header">
@@ -764,21 +921,21 @@
 
 === 账号: 无 ===
 失败任务:
-  - ⭐转交运送委托 : 未完成任何转交运送委托操作
-  - ⭐造装备 : 未找到装备按钮，任务失败
-  - ⭐演算 : 未能找到传送点，无法继续
+  - 转交运送委托 : 未完成任何转交运送委托操作
+  - 造装备 : 未找到装备按钮，任务失败
+  - 演算 : 未能找到传送点，无法继续
 
 --- 第 1 轮 (账号: 无) ---
 总任务数: 0 | 成功: 11 | 失败: 3 | 跳过: 2
 
 成功任务:
-  ⭐送礼, ⭐帝江号整理, ⭐帝江号收菜, ⭐收邮件, ⭐地区建设, ⭐收信用, ⭐买信用商店, ⭐刷体力, ⭐活动奖励, ⭐日常奖励, ⭐传送到帝江号右侧传送点
+  送礼, 帝江号整理, 帝江号收菜, 收邮件, 地区建设, 收信用, 买信用商店, 刷体力, 活动奖励, 日常奖励, 传送到帝江号右侧传送点
 
 失败任务:
-  ⭐转交运送委托, ⭐造装备, ⭐演算
+  转交运送委托, 造装备, 演算
 
 跳过任务:
-  ⭐自动送货, ⭐执行外部命令</pre>
+  自动送货, 执行外部命令</pre>
             </div>
         </div>
 

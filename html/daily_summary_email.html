@@ -15,6 +15,13 @@
 
         * {
             box-sizing: border-box;
+            /* 显式指定字体，避免被浏览器/手机的系统默认字体修改影响 */
+            font-family:
+                "Inter",
+                "HarmonyOS Sans",
+                "Helvetica Neue",
+                Arial,
+                sans-serif;
         }
 
         body {
@@ -36,8 +43,7 @@
 
             font-family:
                 "Inter",
-                "PingFang SC",
-                "Microsoft YaHei",
+                "HarmonyOS Sans",
                 Arial,
                 sans-serif;
 
@@ -397,6 +403,126 @@
         }
 
         /* =========================================================
+         * 失败任务明细模块
+         * ========================================================= */
+
+        .failed-block {
+            position: relative;
+
+            margin: 26px 0;
+
+            background: #1e1e1c;
+            border: 1px solid #2e2e2c;
+            border-left: 4px solid #b05a5a;
+        }
+
+        .failed-block::before {
+            content: "FAILED TASKS";
+
+            position: absolute;
+
+            top: -10px;
+            left: 14px;
+
+            padding: 0 6px;
+
+            background: #efeee9;
+
+            color: #b05a5a;
+
+            font-size: 8px;
+            font-weight: 700;
+
+            letter-spacing: 0.12em;
+        }
+
+        .failed-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 10px 16px;
+
+            background: #252523;
+            border-bottom: 1px solid #2e2e2c;
+        }
+
+        .failed-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+
+            color: #c9c8c2;
+
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .failed-icon {
+            width: 7px;
+            height: 7px;
+
+            background: #b05a5a;
+
+            display: inline-block;
+        }
+
+        .failed-status {
+            color: #888780;
+
+            font-size: 9px;
+            letter-spacing: 0.1em;
+        }
+
+        .failed-body {
+            padding: 12px 20px 16px;
+        }
+
+        .failed-row {
+            display: flex;
+
+            padding: 8px 0;
+
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .failed-row:last-child {
+            border-bottom: none;
+        }
+
+        .failed-account {
+            width: 110px;
+            flex-shrink: 0;
+
+            color: #c9c8c2;
+            font-weight: 700;
+        }
+
+        .failed-task {
+            width: 170px;
+            flex-shrink: 0;
+
+            color: #e7e6df;
+            font-weight: 600;
+        }
+
+        .failed-reason {
+            flex: 1;
+
+            color: #b5b4ae;
+        }
+
+        .failed-empty {
+            color: #777772;
+            font-size: 12px;
+        }
+
+        /* =========================================================
          * 统计模块
          * ========================================================= */
 
@@ -739,6 +865,23 @@
                     <div class="stat-label">状态码</div>
                     <div class="stat-value">{{status_en}}</div>
                 </div>
+            </div>
+        </div>
+
+
+        <!-- 失败任务明细 -->
+        <div class="failed-block">
+            <div class="failed-header">
+                <div class="failed-title">
+                    <span class="failed-icon"></span>
+                    失败任务明细
+                </div>
+                <div class="failed-status">
+                    FAILED TASKS / {{failed_count}}
+                </div>
+            </div>
+            <div class="failed-body">
+                {{failed_details_html}}
             </div>
         </div>
 

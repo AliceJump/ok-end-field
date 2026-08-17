@@ -15,6 +15,7 @@ from src.tasks.daily.finally_file import (
 from src.core.email_service import send_daily_summary_email
 import tempfile
 import os
+import threading
 import webbrowser
 from pathlib import Path
 from src.tasks.daily.daily_task_runner import DailyTaskRunner
@@ -212,14 +213,17 @@ class DailyTask(
         webbrowser.open(file_uri)
 
     def _send_daily_summary_email(self, summary_path: str | Path):
-        """将日常汇总文件内容通过邮件发送（失败仅记录日志，不影响任务结果）。"""
-        try:
-            summary_text = Path(summary_path).read_text(encoding="utf-8")
-            status_data = self._build_summary_status_data()
-            recipient = send_daily_summary_email(summary_text, status_data=status_data)
-            self.log_info(f"日常汇总邮件已发送至: {recipient}", notify=True)
-        except Exception as e:
-            self.log_info(f"日常汇总邮件发送失败: {e}", notify=True)
+        """后台发送日常汇总邮件，不阻塞任务结束；失败仅记录日志。"""
+        def _run():
+            try:
+                summary_text = Path(summary_path).read_text(encoding="utf-8")
+                status_data = self._build_summary_status_data()
+                recipient = send_daily_summary_email(summary_text, status_data=status_data)
+                self.log_info(f"日常汇总邮件已发送至: {recipient}", notify=True)
+            except Exception as e:
+                self.log_info(f"日常汇总邮件发送失败: {e}", notify=True)
+
+        threading.Thread(target=_run, daemon=True, name="DailySummaryEmailSender").start()
 
     def _build_summary_status_data(self) -> dict:
         """从 daily_runner.final_summary 提取邮件状态展示数据。"""
@@ -240,6 +244,8 @@ class DailyTask(
         }
         status_en = status_en_map.get(status, "COMPLETED")
 
+        failed_details = self._build_failed_details()
+
         return {
             "status": status,
             "status_en": status_en,
@@ -247,9 +253,38 @@ class DailyTask(
             "success_count": success_count,
             "failed_count": failed_count,
             "skipped_count": skipped_count,
+            "failed_details": failed_details,
             "system_name": "OK-EF",
             "report_type": "DAILY",
         }
+
+    def _build_failed_details(self) -> list[dict]:
+        """从 final_summary 的 failure_details 构建失败任务明细列表。"""
+        summary = self.daily_runner.final_summary if self.daily_runner else {}
+        failure_details = summary.get("failure_details") or {}
+        per_round = summary.get("per_round") or []
+
+        # account_id -> account_user 映射（用于显示账号名）
+        id_to_user = {}
+        for r in per_round:
+            aid = str(r.get("account_id", "") or "")
+            user = str(r.get("account_user", "") or "")
+            if aid:
+                id_to_user[aid] = user
+
+        details = []
+        for account_id, tasks in failure_details.items():
+            if not isinstance(tasks, dict):
+                continue
+            account_name = id_to_user.get(str(account_id), "") or (str(account_id) if account_id else "无")
+            for task_name, reason in tasks.items():
+                display_task = str(task_name).lstrip("⭐").strip()
+                details.append({
+                    "account": account_name,
+                    "task": display_task,
+                    "reason": str(reason or ""),
+                })
+        return details
 
     def run_daily_finally(self):
         try:

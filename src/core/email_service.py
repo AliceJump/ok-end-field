@@ -10,8 +10,10 @@
 from __future__ import annotations
 
 import base64
+import html
 import re
 import smtplib
+import threading
 from datetime import datetime
 from email.header import Header
 from email.mime.application import MIMEApplication
@@ -29,6 +31,16 @@ from src.core.email_config import DEFAULT_EMAIL_CONFIG, EMAIL_CONFIG_NAME
 ROOT = Path(__file__).resolve().parents[2]
 HTML_DIR = ROOT / "html"
 DEFAULT_TEMPLATE_NAME = "test_email.html"
+
+
+def _safe_int(value, default: int) -> int:
+    """把配置值安全转成 int；非数字/None/空串时回退默认值，避免阻塞或报错。"""
+    if value is None:
+        return default
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def ensure_email_config_file() -> Path:
@@ -220,11 +232,11 @@ def send_email(
     settings = settings or get_email_settings()
 
     smtp_host = str(settings.get("SMTP服务器", "") or "").strip()
-    smtp_port = int(settings.get("SMTP端口", 465) or 465)
+    smtp_port = _safe_int(settings.get("SMTP端口", 465), 465)
     use_ssl = bool(settings.get("启用SSL", True))
     sender = str(settings.get("发件邮箱", "") or "").strip()
     password = str(settings.get("授权码", "") or "").strip()
-    timeout = int(settings.get("连接超时秒数", 30) or 30)
+    timeout = _safe_int(settings.get("连接超时秒数", 30), 30)
 
     if not smtp_host or not sender or not password:
         raise ValueError(
@@ -310,17 +322,20 @@ def send_test_email(to_user: str | None = None, settings: dict | None = None) ->
 def send_test_email_from_settings() -> None:
     """设置页“发送测试邮件”按钮回调：读取当前设置并发送测试邮件。
 
-    发送结果通过 ok 的弹窗提示给用户。
+    发送在网络线程中执行，避免 SMTP 连接/超时阻塞设置页 UI；
+    结果通过 ok 的弹窗提示给用户。
     """
     from ok.gui.util.Alert import alert_error, alert_info
 
-    try:
-        recipient = send_test_email()
-    except Exception as exc:  # noqa: BLE001
-        alert_error(f"测试邮件发送失败: {exc}")
-        return
+    def _run():
+        try:
+            recipient = send_test_email()
+        except Exception as exc:  # noqa: BLE001
+            alert_error(f"测试邮件发送失败: {exc}")
+            return
+        alert_info(f"测试邮件已发送至: {recipient}")
 
-    alert_info(f"测试邮件已发送至: {recipient}")
+    threading.Thread(target=_run, daemon=True).start()
 
 
 def send_daily_summary_email(
@@ -351,9 +366,15 @@ def send_daily_summary_email(
     else:
         status_class = "fail"
 
+    failed_details = status_data.get("failed_details") or []
+    failed_details_html = _render_failed_details(failed_details)
+
+    # 邮件内不显示 ⭐ 前缀（本地汇总文件保持原样）
+    clean_summary = str(summary_text).replace("⭐", "")
+
     html_body = (
         load_email_template("daily_summary_email.html")
-        .replace("{{summary_text}}", summary_text)
+        .replace("{{summary_text}}", clean_summary)
         .replace("{{send_time}}", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
         .replace("{{status_text}}", status)
         .replace("{{status_en}}", status_en)
@@ -364,11 +385,32 @@ def send_daily_summary_email(
         .replace("{{skipped_count}}", str(status_data.get("skipped_count", 0)))
         .replace("{{system_name}}", str(status_data.get("system_name", "OK-EF")))
         .replace("{{report_type}}", str(status_data.get("report_type", "DAILY")))
+        .replace("{{failed_details_html}}", failed_details_html)
     )
     return send_email(
         to_user=None,
         subject=subject,
-        body=summary_text,
+        body=clean_summary,
         settings=settings,
         html_body=html_body,
     )
+
+
+def _render_failed_details(failed_details) -> str:
+    """把失败任务明细渲染为 HTML 行。"""
+    if not failed_details:
+        return '<div class="failed-empty">无失败任务</div>'
+
+    rows = []
+    for item in failed_details:
+        account = html.escape(str(item.get("account", "无") or "无"))
+        task = html.escape(str(item.get("task", "") or "").lstrip("⭐").strip())
+        reason = html.escape(str(item.get("reason", "") or ""))
+        rows.append(
+            '<div class="failed-row">'
+            f'<div class="failed-account">{account}</div>'
+            f'<div class="failed-task">{task}</div>'
+            f'<div class="failed-reason">{reason}</div>'
+            '</div>'
+        )
+    return "\n".join(rows)
