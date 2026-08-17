@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+from src.core.email_config import email_config_option
 from src.interaction.EfInteraction import EfInteraction
 from src.tasks.daily.finally_file import decode
 
@@ -45,6 +46,8 @@ config = {
     "custom_tasks": True,
     "debug": False,  # Optional, default: False
     "use_gui": True,  # 目前只支持True
+    # 注册到 ok 的“设置”页（可调整 UI 颜色/主题的页面），邮件配置显示在那里。
+    "global_configs": [email_config_option],
     "config_folder": "configs",  # 最好不要修改
     "screenshot_processor": make_bottom_left_black,  # 在截图的时候对frame进行修改, 可选
     "gui_icon": "icons/icon.png",  # 窗口图标, 最好不需要修改文件名

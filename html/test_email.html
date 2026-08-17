@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OK-EF · 测试邮件</title>
+
+    <style>
+        /*
+         * =========================================================
+         * OK-EF MAIL
+         * Endfield Inspired Industrial Terminal Style
+         * =========================================================
+         */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #151515;
+            background-image:
+                linear-gradient(
+                    90deg,
+                    rgba(255, 255, 255, 0.018) 1px,
+                    transparent 1px
+                ),
+                linear-gradient(
+                    0deg,
+                    rgba(255, 255, 255, 0.012) 1px,
+                    transparent 1px
+                );
+            background-size: 40px 40px;
+
+            font-family:
+                "Inter",
+                "PingFang SC",
+                "Microsoft YaHei",
+                Arial,
+                sans-serif;
+
+            color: #2a2a2a;
+        }
+
+        /* =========================================================
+         * 主容器
+         * ========================================================= */
+
+        .email-shell {
+            width: calc(100% - 32px);
+            max-width: 680px;
+            margin: 48px auto;
+
+            background: #e9e8e4;
+
+            border: 1px solid rgba(255, 255, 255, 0.16);
+
+            box-shadow:
+                0 20px 60px rgba(0, 0, 0, 0.45),
+                0 0 0 1px rgba(0, 0, 0, 0.5);
+        }
+
+        /* =========================================================
+         * 顶部系统状态栏
+         * ========================================================= */
+
+        .system-bar {
+            height: 34px;
+
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 24px;
+
+            background: #1b1b1b;
+            border-bottom: 1px solid #383838;
+
+            color: #8d8d89;
+
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.14em;
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+
+            display: inline-block;
+
+            background: #d6d05a;
+        }
+
+        .system-id {
+            color: #666;
+        }
+
+        /* =========================================================
+         * Header
+         * ========================================================= */
+
+        .header {
+            position: relative;
+
+            padding: 34px 40px 30px;
+
+            background:
+                linear-gradient(
+                    135deg,
+                    rgba(255, 255, 255, 0.025),
+                    transparent 45%
+                ),
+                #20201f;
+
+            color: #f0efe9;
+
+            overflow: hidden;
+        }
+
+        /* 右侧工业斜线装饰 */
+        .header::after {
+            content: "";
+
+            position: absolute;
+
+            top: 0;
+            right: 0;
+
+            width: 180px;
+            height: 100%;
+
+            background:
+                repeating-linear-gradient(
+                    135deg,
+                    transparent 0,
+                    transparent 12px,
+                    rgba(255, 255, 255, 0.025) 12px,
+                    rgba(255, 255, 255, 0.025) 13px
+                );
+
+            pointer-events: none;
+        }
+
+        /* 品牌区域 */
+        .brand-row {
+            position: relative;
+            z-index: 1;
+
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+
+            gap: 4px;
+
+            margin-bottom: 24px;
+
+            padding-left: 14px;
+
+            border-left: 3px solid #d6d05a;
+        }
+
+        .brand-name {
+            color: #e7e6df;
+
+            font-size: 16px;
+            font-weight: 800;
+
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+
+            line-height: 1.2;
+        }
+
+        .brand-code {
+            color: #777772;
+
+            font-size: 9px;
+
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+        }
+
+        /* Header 标签 */
+        .header-tag {
+            position: relative;
+            z-index: 1;
+
+            display: inline-flex;
+            align-items: center;
+
+            height: 24px;
+
+            padding: 0 10px;
+
+            margin-bottom: 14px;
+
+            background: #d6d05a;
+
+            color: #191919;
+
+            font-size: 10px;
+            font-weight: 800;
+
+            letter-spacing: 0.12em;
+
+            text-transform: uppercase;
+        }
+
+        .header-tag::after {
+            content: "";
+
+            width: 0;
+            height: 0;
+
+            position: absolute;
+
+            right: -12px;
+
+            border-top: 12px solid transparent;
+            border-bottom: 12px solid transparent;
+            border-left: 12px solid #d6d05a;
+        }
+
+        /* 标题 */
+        .header h1 {
+            position: relative;
+            z-index: 1;
+
+            margin: 0;
+
+            color: #f2f1eb;
+
+            font-size: 30px;
+            font-weight: 700;
+
+            letter-spacing: 0.04em;
+
+            line-height: 1.2;
+        }
+
+        .header-sub {
+            position: relative;
+            z-index: 1;
+
+            margin: 10px 0 0;
+
+            color: #85857f;
+
+            font-size: 10px;
+
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        /* =========================================================
+         * 内容区域
+         * ========================================================= */
+
+        .content {
+            padding: 38px 40px 42px;
+
+            background:
+                linear-gradient(
+                    90deg,
+                    rgba(0, 0, 0, 0.018) 1px,
+                    transparent 1px
+                ),
+                #efeee9;
+
+            background-size: 32px 32px;
+
+            font-size: 14px;
+            line-height: 1.9;
+
+            color: #3b3b37;
+        }
+
+        .content p {
+            margin: 0 0 18px;
+        }
+
+        .content strong {
+            color: #181818;
+            font-weight: 700;
+        }
+
+        /* =========================================================
+         * 信息模块
+         * ========================================================= */
+
+        .info-block {
+            position: relative;
+
+            margin: 26px 0;
+
+            padding: 20px 22px 20px 24px;
+
+            background: #e5e4df;
+
+            border-top: 1px solid #c9c8c2;
+            border-right: 1px solid #c9c8c2;
+            border-bottom: 1px solid #c9c8c2;
+
+            border-left: 4px solid #d6d05a;
+        }
+
+        .info-block::before {
+            content: "SYSTEM STATUS";
+
+            position: absolute;
+
+            top: -10px;
+            left: 14px;
+
+            padding: 0 6px;
+
+            background: #e5e4df;
+
+            color: #7b7b75;
+
+            font-size: 8px;
+            font-weight: 700;
+
+            letter-spacing: 0.12em;
+        }
+
+        .info-title {
+            display: flex;
+            align-items: center;
+
+            gap: 9px;
+
+            margin-bottom: 8px;
+
+            color: #202020;
+
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .info-icon {
+            width: 7px;
+            height: 7px;
+
+            background: #d6d05a;
+
+            display: inline-block;
+        }
+
+        .info-block p {
+            margin: 0;
+
+            color: #555550;
+
+            font-size: 13px;
+            line-height: 1.8;
+        }
+
+        /* =========================================================
+         * Meta 信息
+         * ========================================================= */
+
+        .meta {
+            margin-top: 30px;
+
+            padding-top: 20px;
+
+            border-top: 1px solid #c7c6c0;
+        }
+
+        .meta-label {
+            margin-bottom: 10px;
+
+            color: #8a8982;
+
+            font-size: 9px;
+            font-weight: 700;
+
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        .meta-row {
+            display: flex;
+
+            padding: 7px 0;
+
+            border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+            font-size: 12px;
+        }
+
+        .meta-key {
+            width: 90px;
+
+            flex-shrink: 0;
+
+            color: #888780;
+        }
+
+        .meta-value {
+            color: #292925;
+
+            font-weight: 600;
+        }
+
+        /* =========================================================
+         * Footer
+         * ========================================================= */
+
+        .footer {
+            padding: 22px 40px 26px;
+
+            background: #191919;
+
+            border-top: 1px solid #373737;
+
+            text-align: left;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+
+            gap: 10px;
+
+            margin-bottom: 12px;
+        }
+
+        .footer-line {
+            width: 28px;
+            height: 1px;
+
+            background: #d6d05a;
+        }
+
+        .footer-name {
+            color: #deddd6;
+
+            font-size: 11px;
+            font-weight: 700;
+
+            letter-spacing: 0.18em;
+
+            text-transform: uppercase;
+        }
+
+        .footer-text {
+            margin: 0;
+
+            color: #6e6e69;
+
+            font-size: 10px;
+
+            line-height: 1.8;
+
+            letter-spacing: 0.04em;
+        }
+
+        /* =========================================================
+         * Mobile
+         * ========================================================= */
+
+        @media screen and (max-width: 600px) {
+
+            .email-shell {
+                width: calc(100% - 20px);
+                margin: 20px auto;
+            }
+
+            .header {
+                padding: 28px 24px;
+            }
+
+            .content {
+                padding: 30px 24px;
+            }
+
+            .footer {
+                padding: 20px 24px;
+            }
+
+            .system-bar {
+                padding: 0 16px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .meta-row {
+                flex-direction: column;
+                gap: 2px;
+            }
+
+            .meta-key {
+                width: auto;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+
+<div class="email-shell">
+
+    <!-- 顶部系统状态栏 -->
+    <div class="system-bar">
+        <div class="system-status">
+            <span class="status-dot"></span>
+            <span>MAIL SYSTEM ONLINE</span>
+        </div>
+
+        <div class="system-id">
+            OK-EF / NOTIFICATION
+        </div>
+    </div>
+
+
+    <!-- Header -->
+    <div class="header">
+
+        <!-- 纯文字品牌，不使用任何图片 -->
+        <div class="brand-row">
+            <div class="brand-name">OK-EF</div>
+            <div class="brand-code">
+                ENDFIELD AUTOMATION TERMINAL
+            </div>
+        </div>
+
+        <div class="header-tag">
+            SYSTEM NOTIFICATION
+        </div>
+
+        <h1>测试邮件</h1>
+
+        <p class="header-sub">
+            SMTP CONFIGURATION VERIFICATION
+        </p>
+
+    </div>
+
+
+    <!-- Content -->
+    <div class="content">
+
+        <p>你好，Endministrator</p>
+
+        <p>
+            这是一封来自 <strong>OK-EF</strong> 的系统测试邮件，
+            用于验证当前邮件通知服务是否已正确完成配置。
+        </p>
+
+
+        <!-- 状态模块 -->
+        <div class="info-block">
+
+            <div class="info-title">
+                <span class="info-icon"></span>
+                配置验证通过
+            </div>
+
+            <p>
+                已成功建立邮件服务连接。
+                SMTP 服务器、发件邮箱、授权信息以及收件人配置均已通过验证。
+            </p>
+
+            <p style="margin-top:10px;">
+                邮件通知模块现已处于正常工作状态。
+            </p>
+
+        </div>
+
+
+        <p>
+            后续 OK-EF 将可以通过该邮件服务向你发送相关系统通知。
+        </p>
+
+
+        <!-- Meta -->
+        <div class="meta">
+
+            <div class="meta-label">
+                TRANSMISSION RECORD
+            </div>
+
+            <div class="meta-row">
+                <div class="meta-key">发送时间</div>
+                <div class="meta-value">{{send_time}}</div>
+            </div>
+
+            <div class="meta-row">
+                <div class="meta-key">发送系统</div>
+                <div class="meta-value">
+                    OK-EF · 终末地自动化工具
+                </div>
+            </div>
+
+            <div class="meta-row">
+                <div class="meta-key">邮件状态</div>
+                <div class="meta-value">
+                    SMTP DELIVERY VERIFIED
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Footer -->
+    <div class="footer">
+
+        <div class="footer-brand">
+            <span class="footer-line"></span>
+            <span class="footer-name">OK-EF</span>
+        </div>
+
+        <p class="footer-text">
+            ENDFIELD AUTOMATION TOOL / SYSTEM NOTIFICATION
+            <br>
+            本邮件由系统自动发送，请勿直接回复。
+        </p>
+
+    </div>
+
+</div>
+
+</body>
+</html>
