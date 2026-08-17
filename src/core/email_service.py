@@ -13,6 +13,7 @@ import base64
 import html
 import re
 import smtplib
+import ssl
 import threading
 from datetime import datetime
 from email.header import Header
@@ -255,15 +256,25 @@ def send_email(
         prefix=prefix,
     )
 
+    # 校验服务器证书，避免降级/中间人风险（SonarQube S4830）
+    ssl_context = ssl.create_default_context()
+
     if use_ssl:
-        server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=timeout)
+        server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=timeout, context=ssl_context)
     else:
         server = smtplib.SMTP(smtp_host, smtp_port, timeout=timeout)
-        # 非 SSL 模式尝试 STARTTLS，失败不阻断（部分服务器可能不要求）
+        # 非 SSL 模式必须通过 STARTTLS 升级为加密连接，失败即中止，
+        # 避免 SMTP 授权码在明文连接上传输。
         try:
-            server.starttls()
-        except smtplib.SMTPException:
-            pass
+            server.starttls(context=ssl_context)
+        except smtplib.SMTPException as exc:
+            try:
+                server.quit()
+            except Exception:
+                pass
+            raise ValueError(
+                f"STARTTLS 升级失败（服务器不支持加密连接），已中止发送: {exc}"
+            ) from exc
 
     try:
         server.login(sender, password)
@@ -338,6 +349,11 @@ def send_test_email_from_settings() -> None:
     threading.Thread(target=_run, daemon=True).start()
 
 
+def _esc(value) -> str:
+    """HTML 转义后写入邮件模板，避免不可信文本被当作标记解析。"""
+    return html.escape(str(value), quote=True)
+
+
 def send_daily_summary_email(
     summary_text: str,
     subject: str = "日常任务汇总",
@@ -374,17 +390,18 @@ def send_daily_summary_email(
 
     html_body = (
         load_email_template("daily_summary_email.html")
-        .replace("{{summary_text}}", clean_summary)
+        .replace("{{summary_text}}", _esc(clean_summary))
         .replace("{{send_time}}", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
-        .replace("{{status_text}}", status)
-        .replace("{{status_en}}", status_en)
+        .replace("{{status_text}}", _esc(status))
+        .replace("{{status_en}}", _esc(status_en))
         .replace("{{status_class}}", status_class)
-        .replace("{{total_rounds}}", str(status_data.get("total_rounds", 0)))
-        .replace("{{success_count}}", str(status_data.get("success_count", 0)))
-        .replace("{{failed_count}}", str(status_data.get("failed_count", 0)))
-        .replace("{{skipped_count}}", str(status_data.get("skipped_count", 0)))
-        .replace("{{system_name}}", str(status_data.get("system_name", "OK-EF")))
-        .replace("{{report_type}}", str(status_data.get("report_type", "DAILY")))
+        .replace("{{total_rounds}}", _esc(status_data.get("total_rounds", 0)))
+        .replace("{{success_count}}", _esc(status_data.get("success_count", 0)))
+        .replace("{{failed_count}}", _esc(status_data.get("failed_count", 0)))
+        .replace("{{skipped_count}}", _esc(status_data.get("skipped_count", 0)))
+        .replace("{{system_name}}", _esc(status_data.get("system_name", "OK-EF")))
+        .replace("{{report_type}}", _esc(status_data.get("report_type", "DAILY")))
+        # failed_details_html 内部已逐字段转义，不能整体再转义，否则会破坏生成的 HTML 结构。
         .replace("{{failed_details_html}}", failed_details_html)
     )
     return send_email(

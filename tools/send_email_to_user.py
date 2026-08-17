@@ -81,7 +81,9 @@ def main() -> int:
         print("当前配置项：")
         data = read_json_file(str(path)) or DEFAULT_EMAIL_CONFIG
         for key, value in data.items():
-            print(f"  {key}: {value}")
+            # 授权码是 SMTP 密码，输出时遮盖，避免凭据暴露到终端/CI 日志
+            display_value = "***" if key == "授权码" and value else value
+            print(f"  {key}: {display_value}")
         return 0
 
     body = args.body
