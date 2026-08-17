@@ -480,41 +480,38 @@
             padding: 12px 20px 16px;
         }
 
+        /* 每条失败记录为一张卡片：背景 + 左侧黄色竖条 + 圆角，
+           记录间留空隙；原因多行时保留换行，卡片边界一眼可辨 */
         .failed-row {
-            display: flex;
+            background: #262624;
 
-            padding: 8px 0;
+            border-left: 3px solid #d6d05a;
+            border-radius: 4px;
 
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 10px 14px;
+
+            margin-bottom: 8px;
 
             font-size: 12px;
             line-height: 1.6;
         }
 
         .failed-row:last-child {
-            border-bottom: none;
+            margin-bottom: 0;
         }
 
-        .failed-account {
-            width: 110px;
-            flex-shrink: 0;
-
-            color: #c9c8c2;
-            font-weight: 700;
-        }
-
-        .failed-task {
-            width: 170px;
-            flex-shrink: 0;
-
+        .failed-head {
             color: #e7e6df;
-            font-weight: 600;
+            font-weight: 700;
+
+            margin-bottom: 4px;
         }
 
         .failed-reason {
-            flex: 1;
-
             color: #b5b4ae;
+
+            white-space: pre-line;
+            word-wrap: break-word;
         }
 
         .failed-empty {

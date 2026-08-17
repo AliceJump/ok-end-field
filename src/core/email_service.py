@@ -423,10 +423,10 @@ def _render_failed_details(failed_details) -> str:
         account = html.escape(str(item.get("account", "无") or "无"))
         task = html.escape(str(item.get("task", "") or "").lstrip("⭐").strip())
         reason = html.escape(str(item.get("reason", "") or ""))
+        head = account if not task else f"{account} · {task}"
         rows.append(
             '<div class="failed-row">'
-            f'<div class="failed-account">{account}</div>'
-            f'<div class="failed-task">{task}</div>'
+            f'<div class="failed-head">{head}</div>'
             f'<div class="failed-reason">{reason}</div>'
             '</div>'
         )
