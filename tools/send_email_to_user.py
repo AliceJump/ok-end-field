@@ -8,23 +8,23 @@
 用法示例::
 
     # 生成/查看邮件配置（配置项会自动补齐）
-    python tools/send_email_to_user.py --init-config
+    uv run python tools/send_email_to_user.py --init-config
 
     # 直接发送给某个邮箱
-    python tools/send_email_to_user.py --to user@example.com --subject "测试" --body "你好"
+    uv run python tools/send_email_to_user.py --to user@example.com --subject "测试" --body "你好"
 
     # 使用设置中的“收件人列表”别名发送
-    python tools/send_email_to_user.py --to 小明 --subject "测试" --body "你好"
+    uv run python tools/send_email_to_user.py --to 小明 --subject "测试" --body "你好"
 
     # 从文件读取正文并附带附件
-    python tools/send_email_to_user.py --to user@example.com --subject "报告" \
+    uv run python tools/send_email_to_user.py --to user@example.com --subject "报告" \
         --body-file report.txt --attachment a.png --attachment b.png
 
     # 使用 html/test_email.html 模板发送测试邮件
-    python tools/send_email_to_user.py --test-email
+    uv run python tools/send_email_to_user.py --test-email
 
     # 不使用 SSL（例如使用 587 STARTTLS）
-    python tools/send_email_to_user.py --to user@example.com --subject "测试" --body "你好" --no-ssl
+    uv run python tools/send_email_to_user.py --to user@example.com --subject "测试" --body "你好" --no-ssl
 """
 from __future__ import annotations
 
@@ -35,17 +35,24 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from src.core.email_config import (  # noqa: E402
-    DEFAULT_EMAIL_CONFIG,
-    EMAIL_CONFIG_NAME,
-)
 from src.core.email_service import (  # noqa: E402
     ensure_email_config_file,
     get_email_settings,
     send_email,
     send_test_email,
 )
-from ok.util.file import read_json_file  # noqa: E402
+
+
+def _resolve_body_file(raw: str) -> Path:
+    """解析并校验正文文件路径。
+
+    展开用户目录并解析为绝对路径，确认存在且为普通文件后再读取，
+    避免路径注入/越界访问（SonarQube S2083）。
+    """
+    path = Path(raw).expanduser().resolve()
+    if not path.is_file():
+        raise OSError(f"正文文件不存在或不是普通文件: {path}")
+    return path
 
 
 def main() -> int:
@@ -79,7 +86,8 @@ def main() -> int:
         path = ensure_email_config_file()
         print(f"邮件配置文件: {path}")
         print("当前配置项：")
-        data = read_json_file(str(path)) or DEFAULT_EMAIL_CONFIG
+        # 用 get_email_settings() 归一化展示，缺失配置项按默认值补齐（与发送流程一致）
+        data = get_email_settings()
         for key, value in data.items():
             # 授权码是 SMTP 密码，输出时遮盖，避免凭据暴露到终端/CI 日志
             display_value = "***" if key == "授权码" and value else value
@@ -88,7 +96,11 @@ def main() -> int:
 
     body = args.body
     if args.body_file:
-        body = Path(args.body_file).read_text(encoding="utf-8")
+        try:
+            body = _resolve_body_file(args.body_file).read_text(encoding="utf-8")
+        except OSError as exc:
+            print(f"[错误] 读取正文文件失败: {exc}", file=sys.stderr)
+            return 1
 
     settings = get_email_settings()
     if args.no_ssl:

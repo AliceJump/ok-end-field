@@ -193,7 +193,10 @@ class DailyTaskRunner:
                 self._append_round_summary(repeat_idx + 1, repeat_total)
                 self._sync_task_status_info()
 
-            self.final_summary["status"] = "完成"
+            if self.final_summary.get("all_fail_tasks"):
+                self.final_summary["status"] = "部分失败"
+            else:
+                self.final_summary["status"] = "完成"
             if self.final_summary["actual_repeat_total"] > 1:
                 if self.final_summary["all_fail_tasks"]:
                     self.task.log_info(f"执行完成，失败统计: {self.final_summary['all_fail_tasks']}", notify=True)

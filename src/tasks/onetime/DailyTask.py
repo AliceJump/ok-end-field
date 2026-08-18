@@ -238,11 +238,16 @@ class DailyTask(
         status_en_map = {
             "完成": "COMPLETED",
             "完成后退出": "COMPLETED",
+            "部分失败": "PARTIAL",
             "运行中": "RUNNING",
             "异常结束": "FAILED",
             "未开始": "IDLE",
         }
-        status_en = status_en_map.get(status, "COMPLETED")
+        # 未知状态不默认当作成功，避免邮件把异常/新增状态误标为绿色完成
+        status_en = status_en_map.get(status, "WARN")
+        # 存在失败任务时，即使状态为完成也降级为 PARTIAL，与统计数字保持一致
+        if status_en == "COMPLETED" and failed_count > 0:
+            status_en = "PARTIAL"
 
         failed_details = self._build_failed_details()
 
