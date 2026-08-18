@@ -945,9 +945,12 @@ class ConditionalRotationPanel(QWidget):
         self._load()
 
     def _setup_ui(self):
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
+        # 与 LabelAnd* 控件保持一致的约定：把主布局存为 self.layout 属性（遮蔽 Qt 的
+        # layout() 方法），使 ConfigCard 的子配置缩进处理（widget.layout 直接取布局
+        # 实例）对本面板同样成立，无需框架侧额外兼容。
+        self.layout = QVBoxLayout(self)
+        self.layout.setContentsMargins(0, 0, 0, 0)
+        self.layout.setSpacing(0)
 
         # Row 1: 启用实时条件
         self._row1 = LabelAndWidget(KEY_COND_ENABLED, BATTLE_CONFIG_DESCRIPTION[KEY_COND_ENABLED])
@@ -956,7 +959,7 @@ class ConditionalRotationPanel(QWidget):
         self.enable_switch.setOffText(_tr("否"))
         self.enable_switch.checkedChanged.connect(lambda c: self._set_config(KEY_COND_ENABLED, c))
         self._row1.add_widget(self.enable_switch, stretch=0)
-        layout.addWidget(self._row1)
+        self.layout.addWidget(self._row1)
 
         # Row 2: 立即释放终结技
         self._row2 = LabelAndWidget(KEY_INSTANT_ULT, BATTLE_CONFIG_DESCRIPTION[KEY_INSTANT_ULT])
@@ -965,7 +968,7 @@ class ConditionalRotationPanel(QWidget):
         self.ult_switch.setOffText(_tr("否"))
         self.ult_switch.checkedChanged.connect(lambda c: self._set_config(KEY_INSTANT_ULT, c))
         self._row2.add_widget(self.ult_switch, stretch=0)
-        layout.addWidget(self._row2)
+        self.layout.addWidget(self._row2)
 
         # Row 3: 立即释放连携技
         self._row3 = LabelAndWidget(KEY_INSTANT_LINK, BATTLE_CONFIG_DESCRIPTION[KEY_INSTANT_LINK])
@@ -974,7 +977,7 @@ class ConditionalRotationPanel(QWidget):
         self.link_switch.setOffText(_tr("否"))
         self.link_switch.checkedChanged.connect(lambda c: self._set_config(KEY_INSTANT_LINK, c))
         self._row3.add_widget(self.link_switch, stretch=0)
-        layout.addWidget(self._row3)
+        self.layout.addWidget(self._row3)
 
         # Row 4: 动作列表 + 编辑按钮
         self._row4 = LabelAndWidget(_tr("动作列表"), _tr("当条件符合时使用技能组"))
@@ -982,7 +985,7 @@ class ConditionalRotationPanel(QWidget):
         self.edit_btn = PushButton(FluentIcon.EDIT, _tr("编辑"))
         self.edit_btn.clicked.connect(self._on_edit)
         self._row4.add_widget(self.edit_btn, stretch=0)
-        layout.addWidget(self._row4)
+        self.layout.addWidget(self._row4)
 
     def _load(self):
         self._loading = True
