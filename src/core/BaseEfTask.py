@@ -26,7 +26,9 @@ from src.core.game_window import find_game_hwnd
 from src.config import config as app_config
 
 # 覆写框架截图时间戳格式：日期_时分秒（无毫秒）
-import ok.gui.debug.Screenshot as _ok_screenshot
+# 注意：ok-script 新版中 ok.gui.debug.Screenshot 只是 ok.core.screenshot 的
+# 兼容别名模块，修改别名不会影响运行时内部引用，必须直接 patch 核心模块。
+import ok.core.screenshot as _ok_screenshot
 _ok_screenshot.get_current_time_formatted = lambda: datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
