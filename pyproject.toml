@@ -5,6 +5,7 @@ description = "Endfield game automation built on ok-script"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "ok-script==1.0.180",
+    "PySide6-Fluent-Widgets==1.10.5",
     "onnxocr-ppocrv5==0.0.14",
     "openvino==2026.0.0",
     "opencv-python==4.12.0.88",
