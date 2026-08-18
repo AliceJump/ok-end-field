@@ -11,6 +11,7 @@ class TestEfInteraction(unittest.TestCase):
     @patch("src.interaction.EfInteraction.active_and_send_mouse_delta")
     @patch("src.interaction.EfInteraction.win32gui")
     def test_back_posts_escape_without_forcing_foreground(self, win32gui, activate, sleep):
+        interaction = EfInteraction.__new__(EfInteraction)
         interaction._last_key_log_times = {}  # 本地 ok-script BaseInteraction.send_key 新增的日志间隔表
         interaction.keyboard = MagicMock()
         interaction._game_hwnd = MagicMock(return_value=200)
