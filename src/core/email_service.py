@@ -115,11 +115,16 @@ def resolve_recipient(to_user: str | None, settings: dict) -> str:
 
 
 def load_email_template(name: str = DEFAULT_TEMPLATE_NAME) -> str:
-    """读取 ``html/`` 下的邮件 HTML 模板，并把本地图片素材内嵌为 base64。"""
+    """读取 ``html/`` 下的邮件 HTML 模板。
+
+    把本地图片素材内嵌为 base64，并把 ``<link rel="stylesheet">`` 引用的
+    共享 CSS（email_style.css）内联为 ``<style>``，保证邮件客户端也能渲染样式。
+    """
     path = HTML_DIR / name
     if not path.is_file():
         raise FileNotFoundError(f"邮件模板不存在: {path}")
     html = path.read_text(encoding="utf-8")
+    html = _inline_local_stylesheets(html)
     return _inline_local_assets(html)
 
 
@@ -145,6 +150,29 @@ def _path_to_data_uri(ref: str) -> str | None:
         return None
     encoded = base64.b64encode(candidate.read_bytes()).decode("ascii")
     return f"data:{mime};base64,{encoded}"
+
+
+def _inline_local_stylesheets(html: str) -> str:
+    """把 HTML 中 ``<link rel="stylesheet" href="...">`` 引用的本地 CSS 内联为 ``<style>``。
+
+    模板在浏览器里预览时通过相对链接加载共享样式（email_style.css），
+    发送邮件时这里把 CSS 内容直接内联，避免部分邮件客户端忽略外部样式表。
+    """
+    def _replace_link(match: re.Match) -> str:
+        href = match.group(1).strip()
+        candidate = Path(href)
+        if not candidate.is_absolute():
+            candidate = (HTML_DIR / candidate).resolve()
+        if not candidate.is_file() or candidate.suffix.lower() != ".css":
+            return match.group(0)
+        css = candidate.read_text(encoding="utf-8")
+        return f"<style>\n{css}\n</style>"
+
+    return re.sub(
+        r'<link\s+rel="stylesheet"\s+href="([^"]+)"\s*/?>',
+        _replace_link,
+        html,
+    )
 
 
 def _inline_local_assets(html: str) -> str:
