@@ -79,6 +79,11 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install polib
+          pip install uv
+
+      - name: Verify requirements.txt reproducible
+        run: |
+          python scripts/gen_release_requirements.py --check
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         run: |
@@ -287,7 +292,8 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: pyappify_dist-${{ steps.tag.outputs.tag }}
+          # 与 build job 上传的 safe_tag 名保持一致，避免 tag 含 / 时下载失败
+          name: pyappify_dist-${{ steps.tag.outputs.safe_tag }}
           path: pyappify_dist
 
       - name: Release
