@@ -21,14 +21,14 @@ DEFAULT_BATTLE_CONFIG = {
 }
 
 BATTLE_CONFIG_NAME = "Battle Config"
-BATTLE_CONFIG_MODE_KEY = "战斗配置"
-BATTLE_CONFIG_MODE_GLOBAL = "使用全局配置"
-BATTLE_CONFIG_MODE_INDEPENDENT = "使用独立配置"
+BATTLE_CONFIG_MODE_KEY = "使用独立配置"
 BATTLE_CONFIG_TYPE = {
     "技能释放": {
         "options_available": ["1", "2", "3", "4"],
         "allow_duplication": False,
     },
+    "启用排轴": {"sub_configs": {True: [KEY_ROTATION_SEQUENCE]}},
+    KEY_ROTATION_SEQUENCE: {},
     KEY_COND_ENABLED: {"type": "conditional_rotation"},
     KEY_COND_SEQUENCE: {"hidden": True},
     KEY_INSTANT_ULT: {"hidden": True},
