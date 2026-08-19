@@ -367,9 +367,9 @@ def get_battle_config(self, key: str, default=None)
 `BattleMixin` 的读取顺序：
 
 1. `BattleConfigManager` 从全局 `Battle Config` 取值。
-2. 任务配置 `使用独立配置` 为关闭（False）时直接返回全局值。
+2. 任务配置 `使用独立配置` 为关闭（False）时直接返回全局值。此时账号任务覆盖不会生效。
 3. 为开启（True）时读取当前任务配置，以全局值兜底。
-4. `AccountOverrideMixin` 绑定后的 `self.config.get` 可再按当前稳定账号 ID 应用账号任务覆盖；账号覆盖优先级最高。
+4. `AccountOverrideMixin` 绑定后的 `self.config.get` 可再按当前稳定账号 ID 应用账号任务覆盖；账号覆盖仅在 `使用独立配置=True` 时为最高优先级。
 
 账号上下文通过以下接口设置：
 

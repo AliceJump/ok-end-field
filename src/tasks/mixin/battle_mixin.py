@@ -115,11 +115,13 @@ class BattleMixin(BaseEfTask):
         raw_config_get = getattr(self, "_raw_cfg_get", None)
         if callable(raw_config_get):
             try:
-                use_independent = bool(raw_config_get(BATTLE_CONFIG_MODE_KEY, False))
+                raw_value = raw_config_get(BATTLE_CONFIG_MODE_KEY, False)
             except (TypeError, AttributeError):
-                use_independent = bool(self.config.get(BATTLE_CONFIG_MODE_KEY, False))
+                raw_value = self.config.get(BATTLE_CONFIG_MODE_KEY, False)
         else:
-            use_independent = bool(self.config.get(BATTLE_CONFIG_MODE_KEY, False))
+            raw_value = self.config.get(BATTLE_CONFIG_MODE_KEY, False)
+
+        use_independent = self._parse_use_independent(raw_value)
         if not use_independent:
             return global_value
         if callable(raw_config_get):
@@ -128,6 +130,40 @@ class BattleMixin(BaseEfTask):
             except (TypeError, AttributeError):
                 pass
         return self.config.get(key, global_value)
+
+    def _parse_use_independent(self, value):
+        """解析「使用独立配置」值，支持布尔值、旧字符串格式和未识别值回退。
+
+        Args:
+            value: 配置值（可能是 bool、str 或其他类型）
+
+        Returns:
+            bool: True 表示使用独立配置，False 表示使用全局配置
+        """
+        # 已经是布尔值，直接返回
+        if isinstance(value, bool):
+            return value
+
+        # 处理字符串值（包括旧的下拉框格式和其他可能的字符串表示）
+        if isinstance(value, str):
+            # 旧下拉框格式："使用独立配置" / "使用全局配置"
+            if value == "使用独立配置":
+                return True
+            if value == "使用全局配置":
+                return False
+
+            # 其他常见字符串布尔表示
+            normalized = value.strip().lower()
+            if normalized in ("true", "1", "yes", "on"):
+                return True
+            if normalized in ("false", "0", "no", "off", ""):
+                return False
+
+        # 未识别的值：回退到默认值 False（使用全局配置）
+        # 记录日志以便排查
+        if value not in (None, False, ""):
+            self.log_debug(f"未识别的「使用独立配置」值: {value!r}，回退到 False（使用全局配置）")
+        return False
 
     def get_account_config_base_value(self, key: str, default=None):
         return dict.get(self.config, key, default)
