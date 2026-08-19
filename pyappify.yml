@@ -7,6 +7,9 @@ profiles:
     main_script: "main.py"
     requires_python: "3.12"
     requirements: "requirements.txt"
+    # --no-deps：用户端 pip 按 requirements.txt 精确安装，不自动拉传递依赖
+    #（配合裁剪后的清单，去掉 pyside6-addons/QtWebEngine 约 200MB）
+    pip_args: "--no-deps"
     use_pythonw: true
     show_add_defender: true
     
@@ -14,4 +17,5 @@ profiles:
     git_url: "https://github.com/AliceJump/ok-ef-update.git"
     main_script: "main.py"
     requirements: "requirements.txt"
+    pip_args: "--no-deps"
 
