@@ -7,10 +7,10 @@ QtWebEngine 约 200MB），发布包只保留 pyside6-essentials。配合 pyappi
 pip_args "--no-deps"，用户端 pip 只按本清单精确安装，不再拉取 QtWebEngine。
 
     生成并覆盖 requirements.txt：
-      python scripts/gen_release_requirements.py
+      uv run --locked python scripts/gen_release_requirements.py
 
     校验已提交的 requirements.txt 与生成结果一致（CI 使用）：
-      python scripts/gen_release_requirements.py --check
+      uv run --locked python scripts/gen_release_requirements.py --check
 """
 from __future__ import annotations
 
@@ -52,15 +52,15 @@ HEADER = """\
 # 「日常任务帮助」内嵌 WebView 在无 QtWebEngine 时会自动回退到系统浏览器
 # （src/tasks/daily/daily_liaison_mixin.py open_help_link）。
 # 重新生成：
-#   python scripts/gen_release_requirements.py
+#   uv run --locked python scripts/gen_release_requirements.py
 # 校验（CI）：
-#   python scripts/gen_release_requirements.py --check
+#   uv run --locked python scripts/gen_release_requirements.py --check
 """
 
 
 def generate_compiled() -> str:
     """从 uv.lock 导出 requirements 格式清单（与锁文件版本一致，不含 dev 组）。"""
-    cmd = ["uv", "export", "--format", "requirements-txt", "--no-hashes", "--no-dev"]
+    cmd = ["uv", "export", "--locked", "--format", "requirements-txt", "--no-hashes", "--no-dev"]
     proc = subprocess.run(cmd, cwd=ROOT, capture_output=True, text=True, encoding="utf-8")
     if proc.returncode != 0:
         sys.stderr.write(proc.stderr)
@@ -130,7 +130,10 @@ def main() -> int:
     args = parser.parse_args()
 
     generated = shrink(generate_compiled())
-    output = Path(args.output)
+    output = Path(args.output).resolve()
+    if not output.is_relative_to(ROOT):
+        sys.stderr.write(f"输出路径必须在仓库内: {output}\n")
+        return 1
 
     if args.check:
         if not output.exists():

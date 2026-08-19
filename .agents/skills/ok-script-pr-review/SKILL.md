@@ -13,14 +13,15 @@ A focused workflow for triaging and responding to CodeRabbit AI reviews on ok-sc
 
 ### 1. Survey current review state
 
-For each PR under review, list CodeRabbit review summaries and inline comments. List endpoints must use `--paginate` so no comments are missed, and must output the comment `.id` plus `.in_reply_to_id` (needed to map replies to threads):
+For each PR under review, list CodeRabbit review summaries and inline comments. List endpoints must use `--paginate` so no comments are missed, and must output the comment `.id` plus `.in_reply_to_id` (needed to map replies to threads) and `.node_id` (GraphQL id, matches `comments.nodes.id`):
 
 ```powershell
 # review-level state（--paginate 分页拉全）
 gh api --paginate repos/<owner>/<repo>/pulls/<n>/reviews --jq '.[] | select(.user.login|contains("coderabbit")) | "\(.user.login) [\(.state)] \(.submitted_at): \(.body // "")"'
 
-# inline review comments（--paginate 分页拉全，带评论 id 与回复关系）
-gh api --paginate "repos/<owner>/<repo>/pulls/<n>/comments" --jq '.[] | "\(.id) reply_to=\(.in_reply_to_id // "-") \(.user.login) \(.path):\(.line // .original_line) \(.created_at)\n\(.body)\n---"'
+# inline review comments（--paginate 分页拉全，带评论 id/node_id 与回复关系；
+# node_id 与 GraphQL comments.nodes.id 一致，用于跨 API 匹配）
+gh api --paginate "repos/<owner>/<repo>/pulls/<n>/comments" --jq '.[] | "\(.id) node=\(.node_id) reply_to=\(.in_reply_to_id // "-") \(.user.login) \(.path):\(.line // .original_line) \(.created_at)\n\(.body)\n---"'
 ```
 
 ### 2. Trigger a fresh review on the latest code
@@ -30,9 +31,9 @@ CodeRabbit reviews whatever was pushed when its run started; a later force-push 
 ```powershell
 # 普通新提交：默认增量评审
 gh pr comment <n> --body "@coderabbitai review"
-# force-push 重写分支后：需要完整评审（CLI: coderabbit review --full；
-# 触发词见 CodeRabbit 文档），否则重写前的评论会失效/误判
-gh pr comment <n> --body "@coderabbitai review --full"
+# force-push 重写分支后：需要完整评审。触发词是 "@coderabbitai full review"，
+# 不是 "@coderabbitai review --full"（后者不是有效的触发形式）
+gh pr comment <n> --body "@coderabbitai full review"
 ```
 
 ### 3. Handle rate limits
@@ -41,10 +42,13 @@ CodeRabbit has a rate limit. Signals: a PR was pushed/fixed but no new review ap
 
 ### 4. Reply to a review comment
 
-Reply on the thread to record the disposition (accepted / fixed / stale). The endpoint must be the reply sub-resource of the specific comment (`/pulls/<n>/comments/<comment_id>/replies`):
+Reply on the thread to record the disposition (accepted / fixed / stale). The endpoint must be the reply sub-resource of the specific comment (`/pulls/<n>/comments/<comment_id>/replies`). GitHub 不支持"回复的回复"：若目标评论的 `in_reply_to_id` 非空（它本身是回复），必须先用 REST `pulls/comments` 列表定位该线程的顶层评论（`in_reply_to_id` 为空的评论），再向顶层评论的 ID 调 `/replies`：
 
 ```powershell
+# 目标评论是顶层评论（in_reply_to_id 为空）：直接用其 ID
 gh api repos/<owner>/<repo>/pulls/<n>/comments/<comment_id>/replies -X POST -f body="已采纳：<commit sha 与说明>"
+# 目标评论是回复（in_reply_to_id 非空）：先用列表接口找出顶层评论 id 再回复
+gh api --paginate "repos/<owner>/<repo>/pulls/<n>/comments" --jq '.[] | select(.id == <目标id>) | .in_reply_to_id // empty' # 沿链回溯到 in_reply_to_id 为空的顶层 id
 ```
 
 回复只记录处置意见，**不自动解析线程**；解析是独立步骤，需先确认修复/失效后执行（见下）。
@@ -54,7 +58,9 @@ gh api repos/<owner>/<repo>/pulls/<n>/comments/<comment_id>/replies -X POST -f b
 The GitHub "Resolve conversation" button is available as GraphQL. List threads with cursor pagination, returning the thread id plus the path/line/id of its first comment so comments can be matched to threads:
 
 ```powershell
-gh api graphql -f query='query($cursor:String) { repository(owner:"<o>", name:"<r>") { pullRequest(number: <n>) { reviewThreads(first: 100, after: $cursor) { pageInfo { hasNextPage endCursor } nodes { id isResolved isOutdated comments(first:1) { nodes { id body path line } } } } } } }' -F cursor=null
+# comments(first:1) 只能拿到线程首个评论，无法映射回复；需要时用
+# comments(first:100) 拉全线程评论，并同时取 originalLine（过期评论保留原始行号）
+gh api graphql -f query='query($cursor:String) { repository(owner:"<o>", name:"<r>") { pullRequest(number: <n>) { reviewThreads(first: 100, after: $cursor) { pageInfo { hasNextPage endCursor } nodes { id isResolved isOutdated comments(first:100) { nodes { id body path line originalLine } } } } } } }' -F cursor=null
 ```
 
 用 `pageInfo.endCursor` 循环翻页直到 `hasNextPage` 为 false（PowerShell 里用单引号包 query，id 拼接用双引号）。
@@ -68,6 +74,7 @@ gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "<thre
 ### 6. Triage rules
 
 - Verify every finding against the CURRENT branch code before acting (the review may predate a force-push).
+- 映射与行号校验：用一个普通线程（`isOutdated=false`）和一个过期线程（`isOutdated=true`）各测一次——REST 评论的 `node_id` 应能在 GraphQL `comments.nodes.id` 中找到对应线程；过期评论用 `originalLine` 显示原始行号（`line` 可能为 null 或已漂移）。
 - `isOutdated=true` 是线程已过时的信号，但**不能单独作为解析依据**：解析前仍需对照当前代码确认问题确已修复或已失效。
 - 回复后查询 `isResolved`，仅在值为 `false` 且确认问题已修复/失效时才解析线程；不要把回复与自动解析绑定。
 - Accept valid suggestions and push the fix, then reply + resolve.
@@ -79,5 +86,5 @@ gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "<thre
 - `gh api graphql` queries on Windows PowerShell: wrap the query in single quotes; use string concatenation for interpolated ids (`'query { ... "' + $id + '" }'`).
 - Thread ids look like `PRRT_kwDO...`; they are opaque, fetch them via the query above.
 - A review comment id (`pulls/comments/<id>`) is NOT the same as a thread id; use the GraphQL `reviewThreads` listing to map them.
-- `--paginate` 只对 REST 列表接口生效；GraphQL 用 `pageInfo.endCursor` 手动翻页。
+- `--paginate` 同时支持 REST 列表接口和符合要求的 GraphQL 查询（GraphQL 查询须使用 `$endCursor`、`after: $endCursor` 并返回 `pageInfo.hasNextPage`/`endCursor`）。本技能第 5 步示例用 `$cursor` 手动翻页，属 GraphQL 手动分页；`--paginate` 只自动翻一个连接。
 - `app.quit()` / `os._exit` behaviors seen during crash diagnosis are unrelated to review handling; keep this skill scoped to review triage.

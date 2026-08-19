@@ -89,7 +89,7 @@ jobs:
 
       - name: Verify requirements.txt reproducible
         run: |
-          python scripts/gen_release_requirements.py --check
+          uv run --locked python scripts/gen_release_requirements.py --check
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         env:
@@ -337,9 +337,9 @@ jobs:
             ###  更新日志 ${{ needs.sync.outputs.start_tag }} -> ${{ needs.sync.outputs.end_tag }}:
               ${{ needs.sync.outputs.changes_with_asterisk }}
             ### 下载包说明
-              * [ok-ef-win32-China-setup-${{ steps.tag.outputs.tag }}.exe](https://github.com/AliceJump/ok-end-field/releases/download/${{ steps.tag.outputs.tag }}/ok-ef-win32-China-setup-${{ steps.tag.outputs.tag }}.exe) 完整安装包, 更新使用阿里云+腾讯CNB.
-              * [ok-ef-win32-Global-setup-${{ steps.tag.outputs.tag }}.exe](https://github.com/AliceJump/ok-end-field/releases/download/${{ steps.tag.outputs.tag }}/ok-ef-win32-Global-setup-${{ steps.tag.outputs.tag }}.exe) full package with dependencies, using GitHub and PyPi as update source
-              * 不要下载ok-ef-win32-${{ steps.tag.outputs.tag }}.zip,和SourceCode.zip, Do Not Download the SourceCode, ok-ef-win32-${{ steps.tag.outputs.tag }}.zip
+              * [ok-ef-win32-China-setup-${{ steps.tag.outputs.safe_tag }}.exe](https://github.com/AliceJump/ok-end-field/releases/download/${{ steps.tag.outputs.tag }}/ok-ef-win32-China-setup-${{ steps.tag.outputs.safe_tag }}.exe) 完整安装包, 更新使用阿里云+腾讯CNB.
+              * [ok-ef-win32-Global-setup-${{ steps.tag.outputs.safe_tag }}.exe](https://github.com/AliceJump/ok-end-field/releases/download/${{ steps.tag.outputs.tag }}/ok-ef-win32-Global-setup-${{ steps.tag.outputs.safe_tag }}.exe) full package with dependencies, using GitHub and PyPi as update source
+              * 不要下载ok-ef-win32-${{ steps.tag.outputs.safe_tag }}.zip,和SourceCode.zip, Do Not Download the SourceCode, ok-ef-win32-${{ steps.tag.outputs.safe_tag }}.zip
             ### 如果无法下载或下载慢, 可以使用其他下载源
               * [Mirror酱下载渠道](https://mirrorchyan.com/zh/projects?rid=ok-end-field&source=ok-ef-release), 国内网页直链, 下载需要购买CD-KEY, 已有Mirror酱CD-KEY可免费下载
               * [OneDrive](https://1drv.ms/f/c/0c7567d06cc5b5f3/IgAudOtrzHPVT6sJgWeWSiByAZNvwAzcehIdj3hEcprRlP0)

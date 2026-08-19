@@ -6,9 +6,9 @@
 # 「日常任务帮助」内嵌 WebView 在无 QtWebEngine 时会自动回退到系统浏览器
 # （src/tasks/daily/daily_liaison_mixin.py open_help_link）。
 # 重新生成：
-#   python scripts/gen_release_requirements.py
+#   uv run --locked python scripts/gen_release_requirements.py
 # 校验（CI）：
-#   python scripts/gen_release_requirements.py --check
+#   uv run --locked python scripts/gen_release_requirements.py --check
 
 certifi==2026.7.22
     # via requests
