@@ -143,8 +143,8 @@ def main() -> int:
         if not output.exists():
             sys.stderr.write(f"缺少文件: {output}\n")
             return 1
-        current = output.read_text(encoding="utf-8")
-        if current != generated:
+        current = output.read_bytes()
+        if current != generated.encode("utf-8"):
             sys.stderr.write("requirements.txt 与生成结果不一致，请重新生成:\n")
             sys.stderr.write("  python scripts/gen_release_requirements.py\n")
             return 1

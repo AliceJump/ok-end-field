@@ -96,7 +96,7 @@ jobs:
           # 准备最小校验环境：创建空 venv 并只装 packaging（marker 解析），
           # 供 --no-sync 校验使用，避免同步项目全量依赖
           uv venv .venv
-          uv pip install --python .venv packaging
+          uv pip install --python .venv packaging==26.3
 
       - name: Verify requirements.txt reproducible
         run: |
