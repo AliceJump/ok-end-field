@@ -1,4 +1,4 @@
-name: download stats
+name: Download Stats
 
 on:
   workflow_dispatch:
@@ -11,6 +11,7 @@ permissions:
 
 jobs:
   build:
+    if: ${{ github.repository_owner == 'AliceJump' }}
     runs-on: ubuntu-latest
 
     steps:
