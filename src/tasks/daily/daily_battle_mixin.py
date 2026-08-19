@@ -899,6 +899,7 @@ class DailyBattleFeature:
 
             def check():
                 for feature in end_features:
+                    self.sleep(0.05)
                     if self.find_feature(
                         feature=feature,
                         box=feature_box,
