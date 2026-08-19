@@ -19,6 +19,7 @@ jobs:
 
     env:
       PYTHONIOENCODING: 'UTF-8'
+      PYTHONLEGACYWINDOWSSTDIO: 'UTF-8'
 
     strategy:
       matrix:
@@ -45,7 +46,7 @@ jobs:
             "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           }
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           # 必须显式 checkout 到解析出的 tag；repository_dispatch 的 client_payload.tag
           # 只是事件携带的数据，GitHub 不会自动 checkout 该 tag
@@ -57,14 +58,9 @@ jobs:
           fetch-tags: true
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set UTF-8 encoding
-        run: |
-          set PYTHONIOENCODING=utf-8
-          set PYTHONLEGACYWINDOWSSTDIO=utf-8
-          echo PYTHONIOENCODING=utf-8 >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
@@ -85,6 +81,7 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
+
     outputs:
       start_tag: ${{ steps.sync.outputs.start_tag }}
       end_tag: ${{ steps.sync.outputs.end_tag }}
@@ -92,6 +89,7 @@ jobs:
 
     env:
       PYTHONIOENCODING: 'UTF-8'
+      PYTHONLEGACYWINDOWSSTDIO: 'UTF-8'
 
     strategy:
       matrix:
@@ -118,7 +116,7 @@ jobs:
             "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           }
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           # 必须显式 checkout 到解析出的 tag；repository_dispatch 的 client_payload.tag
           # 只是事件携带的数据，GitHub 不会自动 checkout 该 tag
@@ -130,14 +128,9 @@ jobs:
           fetch-tags: true
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set UTF-8 encoding
-        run: |
-          set PYTHONIOENCODING=utf-8
-          set PYTHONLEGACYWINDOWSSTDIO=utf-8
-          echo PYTHONIOENCODING=utf-8 >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
@@ -168,6 +161,7 @@ jobs:
 
     env:
       PYTHONIOENCODING: 'UTF-8'
+      PYTHONLEGACYWINDOWSSTDIO: 'UTF-8'
 
     strategy:
       matrix:
@@ -194,7 +188,7 @@ jobs:
             "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           }
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           # 必须显式 checkout 到解析出的 tag；repository_dispatch 的 client_payload.tag
           # 只是事件携带的数据，GitHub 不会自动 checkout 该 tag
@@ -206,14 +200,9 @@ jobs:
           fetch-tags: true
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Set UTF-8 encoding
-        run: |
-          set PYTHONIOENCODING=utf-8
-          set PYTHONLEGACYWINDOWSSTDIO=utf-8
-          echo PYTHONIOENCODING=utf-8 >> $GITHUB_ENV
 
       - name: Install dependencies
         run: |
@@ -237,7 +226,7 @@ jobs:
           }
 
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: pyappify_dist-${{ steps.tag.outputs.tag }}
           path: pyappify_dist/*
@@ -260,7 +249,7 @@ jobs:
           }
 
       - name: Download build artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v6
         with:
           name: pyappify_dist-${{ steps.tag.outputs.tag }}
           path: pyappify_dist
@@ -291,6 +280,7 @@ jobs:
     permissions:
       actions: write
       contents: read
+
     steps:
       - name: Resolve release tag
         id: tag
