@@ -17,6 +17,9 @@ def install_win32_gdi_point_patch():
     （内存布局完全一致，ok 内部构造 POINT() 的调用不受影响），并重新设置所有
     引用 POINT 的 argtypes（GetCursorPos / UpdateLayeredWindow / MoveToEx），
     使全局 user32/gdi32 的 argtypes 与第三方库一致，各调用方均无需再规避。
+
+    安装是原子的：先保存所有原始值，任何一步失败都会回滚已修改的值并记录日志，
+    只有全部赋值成功后才标记为已安装，失败后下次调用可重试。
     """
     global _PATCH_INSTALLED
     if _PATCH_INSTALLED:
@@ -24,12 +27,23 @@ def install_win32_gdi_point_patch():
     try:
         import ctypes
         import ctypes.wintypes as wintypes
+        from ok import Logger
         from ok.ui.overlay import win32_gdi
-
-        win32_gdi.POINT = wintypes.POINT
-        user32 = ctypes.windll.user32
-        gdi32 = ctypes.windll.gdi32
+    except Exception as exc:
+        # ok 库不可用，跳过，不影响启动
+        return
+    logger = Logger.get_logger(__name__)
+    user32 = ctypes.windll.user32
+    gdi32 = ctypes.windll.gdi32
+    originals = {
+        "POINT": win32_gdi.POINT,
+        "GetCursorPos.argtypes": user32.GetCursorPos.argtypes,
+        "UpdateLayeredWindow.argtypes": user32.UpdateLayeredWindow.argtypes,
+        "MoveToEx.argtypes": gdi32.MoveToEx.argtypes,
+    }
+    try:
         point_ptr = ctypes.POINTER(wintypes.POINT)
+        win32_gdi.POINT = wintypes.POINT
         user32.GetCursorPos.argtypes = [point_ptr]
         user32.UpdateLayeredWindow.argtypes = [
             ctypes.c_void_p, ctypes.c_void_p, point_ptr,
@@ -37,7 +51,11 @@ def install_win32_gdi_point_patch():
             wintypes.DWORD, ctypes.POINTER(win32_gdi.BLENDFUNCTION), wintypes.DWORD,
         ]
         gdi32.MoveToEx.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, point_ptr]
-        _PATCH_INSTALLED = True
-    except Exception:
-        # 若 ok 库版本/结构变化导致补丁失败，静默跳过，不影响启动
-        pass
+    except Exception as exc:
+        win32_gdi.POINT = originals["POINT"]
+        user32.GetCursorPos.argtypes = originals["GetCursorPos.argtypes"]
+        user32.UpdateLayeredWindow.argtypes = originals["UpdateLayeredWindow.argtypes"]
+        gdi32.MoveToEx.argtypes = originals["MoveToEx.argtypes"]
+        logger.warning("win32_gdi_point_patch 安装失败，已回滚所有已修改的值: %s", exc)
+        return
+    _PATCH_INSTALLED = True
