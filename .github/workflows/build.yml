@@ -81,21 +81,24 @@ jobs:
           set PYTHONLEGACYWINDOWSSTDIO=utf-8
           echo PYTHONIOENCODING=utf-8 >> $GITHUB_ENV
 
-      - name: Install dependencies
+      - name: Install uv
         run: |
-          pip install -r requirements.txt
-          pip install polib
           pip install uv==0.10.9 # 固定 uv 版本，与 uv.lock 生成版本一致
 
       - name: Verify requirements.txt reproducible
         run: |
           uv run --locked python scripts/gen_release_requirements.py --check
 
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install polib
+
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         env:
           RELEASE_TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG"
+          uv run --locked python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG"
 
       - name: Run tests
         timeout-minutes: 5
@@ -177,12 +180,13 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install polib
+          pip install uv==0.10.9 # 固定 uv 版本，与 uv.lock 生成版本一致
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         env:
           RELEASE_TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG"
+          uv run --locked python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG"
 
       - name: Sync Repositories # 同步部分代码(deploy.txt中), 合并tag中间更新日志, 到更新库, 以减少用户更新使用的git库大小
         id: sync   # Give the step an ID to access its outputs
@@ -266,12 +270,13 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install polib
+          pip install uv==0.10.9 # 固定 uv 版本，与 uv.lock 生成版本一致
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
         env:
           RELEASE_TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG"
+          uv run --locked python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG"
 
       - name: Build with PyAppify Action
         id: build-app

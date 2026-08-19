@@ -117,7 +117,7 @@ def shrink(compiled: str) -> str:
             continue
         kept = [head]
         for bl in block[1:]:
-            via_ref = bl.strip().removeprefix("#").strip()
+            via_ref = bl.strip().removeprefix("#").strip().removeprefix("via ").strip()
             if via_ref in via_dropped:
                 continue
             kept.append(bl)
@@ -132,11 +132,12 @@ def main() -> int:
     parser.add_argument("--check", action="store_true", help="校验已提交文件与生成结果一致")
     args = parser.parse_args()
 
-    generated = shrink(generate_compiled())
     output = Path(args.output).resolve()
     if not output.is_relative_to(ROOT):
         sys.stderr.write(f"输出路径必须在仓库内: {output}\n")
         return 1
+
+    generated = shrink(generate_compiled())
 
     if args.check:
         if not output.exists():
