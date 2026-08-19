@@ -11,8 +11,8 @@ on:
 
 jobs:
   mirrorchyan:
-    runs-on: macos-latest
     if: ${{ github.repository_owner == 'AliceJump' }}
+    runs-on: macos-latest
 
     steps:
       - id: uploading

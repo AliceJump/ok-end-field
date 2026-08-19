@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   update:
+    if: ${{ github.repository_owner == 'AliceJump' }}
     runs-on: ubuntu-latest
 
     steps:
@@ -43,15 +44,16 @@ jobs:
             echo "run=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         if: steps.schedule.outputs.run == 'true'
         with:
           fetch-depth: 2
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: steps.schedule.outputs.run == 'true'
         with:
-          python-version: "3.12"
+          python-version: '3.12'
+          cache: pip
 
       - name: Backup current data
         if: steps.schedule.outputs.run == 'true'

@@ -31,27 +31,34 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ github.repository_owner == 'AliceJump' }}
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: '3.12'
           cache: pip
           cache-dependency-path: requirements-docs.txt
+
       - name: Configure GitHub Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
         with:
           enablement: true
+
       - name: Install documentation dependencies
         run: pip install -r requirements-docs.txt
+
       - name: Build site
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: mkdocs build --strict
+
       - name: Upload Pages artifact
         if: github.event_name != 'pull_request'
-        uses: actions/upload-pages-artifact@v4
+        uses: actions/upload-pages-artifact@v5
         with:
           path: site
 
@@ -59,7 +66,8 @@ jobs:
     if: github.event_name != 'pull_request'
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
