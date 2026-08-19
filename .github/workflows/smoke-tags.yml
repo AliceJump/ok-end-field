@@ -37,8 +37,12 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.collect.outputs.matrix }}
+
+    env:
+      PYTHONIOENCODING: 'UTF-8'
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -75,27 +79,28 @@ jobs:
     needs: collect
     if: ${{ needs.collect.outputs.matrix != '[]' }}
     runs-on: windows-latest
+
     strategy:
       fail-fast: false
       matrix:
         shard: ${{ fromJSON(needs.collect.outputs.matrix) }}
+
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           lfs: true
 
-      - name: Set up Python 3.12
-        uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+          cache: pip
 
       - name: Smoke test tags in this shard
         shell: pwsh
         continue-on-error: true
         timeout-minutes: 300
-        env:
-          PYTHONIOENCODING: 'UTF-8'
         run: |
           ./scripts/smoke_test_tags.ps1 -Tags "${{ matrix.shard }}" `
             -WaitSeconds ${{ inputs.wait_seconds }} `
@@ -104,7 +109,7 @@ jobs:
 
       - name: Upload results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: smoke-results-${{ strategy.job-index }}
           path: |
@@ -118,7 +123,7 @@ jobs:
     if: always()
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           path: artifacts
           merge-multiple: true
