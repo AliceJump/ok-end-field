@@ -20,6 +20,8 @@ jobs:
     runs-on: windows-latest
     permissions:
       contents: read
+    outputs:
+      sha: ${{ steps.sha.outputs.sha }}
 
     env:
       PYTHONIOENCODING: 'UTF-8'
@@ -71,6 +73,13 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
+      - name: Output immutable commit SHA
+        id: sha
+        shell: pwsh
+        run: |
+          # tag 可能是移动的分支名，test 校验与下游 build 必须用同一不可变提交
+          "sha=$(git rev-parse HEAD)" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
@@ -84,10 +93,15 @@ jobs:
       - name: Install uv
         run: |
           pip install uv==0.10.9 # 固定 uv 版本，与 uv.lock 生成版本一致
+          # 准备最小校验环境：创建空 venv 并只装 packaging（marker 解析），
+          # 供 --no-sync 校验使用，避免同步项目全量依赖
+          uv venv .venv
+          uv pip install --python .venv packaging
 
       - name: Verify requirements.txt reproducible
         run: |
-          uv run --locked python scripts/gen_release_requirements.py --check
+          # --no-sync：只做一致性校验，不同步/安装项目全量依赖（PySide6 等）
+          uv run --locked --no-sync python scripts/gen_release_requirements.py --check
 
       - name: Install dependencies
         run: |
@@ -157,9 +171,8 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          # 必须显式 checkout 到解析出的 tag；repository_dispatch 的 client_payload.tag
-          # 只是事件携带的数据，GitHub 不会自动 checkout 该 tag
-          ref: ${{ steps.tag.outputs.tag }}
+          # 用 test job 输出的不可变 commit SHA，确保与 test 校验的是同一源码
+          ref: ${{ needs.test.outputs.sha }}
           lfs: true
           # 拉全量历史与 tag：repository_dispatch 触发时默认只拉单次提交，
           # 后续 partial-sync-repo 需要本地 tag 执行 git rev-parse
@@ -247,9 +260,8 @@ jobs:
 
       - uses: actions/checkout@v4
         with:
-          # 必须显式 checkout 到解析出的 tag；repository_dispatch 的 client_payload.tag
-          # 只是事件携带的数据，GitHub 不会自动 checkout 该 tag
-          ref: ${{ steps.tag.outputs.tag }}
+          # 用 test job 输出的不可变 commit SHA，确保与 test 校验的是同一源码
+          ref: ${{ needs.test.outputs.sha }}
           lfs: true
           # 拉全量历史与 tag：repository_dispatch 触发时默认只拉单次提交，
           # 后续 partial-sync-repo 需要本地 tag 执行 git rev-parse

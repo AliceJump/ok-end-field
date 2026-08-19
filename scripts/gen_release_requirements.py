@@ -151,7 +151,7 @@ def main() -> int:
         print("OK: requirements.txt 与生成结果一致")
         return 0
 
-    output.write_text(generated, encoding="utf-8")
+    output.write_text(generated, encoding="utf-8", newline="\n")
     print(f"已生成 {output}")
     return 0
 
