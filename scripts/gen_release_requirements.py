@@ -69,15 +69,15 @@ def generate_compiled() -> str:
 
 
 def marker_applies(marker: str | None) -> bool:
-    """判断环境标记是否适用于 Windows x64 + Python 3.12。"""
+    """判断环境标记是否适用于 Windows x64 + Python 3.12（解析失败时终止，不静默放行）。"""
     if not marker:
         return True
     if Marker is None:
-        return True
+        raise SystemExit("packaging.markers 不可用，无法解析依赖标记")
     try:
         return bool(Marker(marker).evaluate(WINDOWS_ENV))
-    except Exception:
-        return True
+    except Exception as exc:
+        raise SystemExit(f"依赖标记解析/求值失败: {marker!r} ({exc})") from exc
 
 
 def shrink(compiled: str) -> str:
@@ -87,7 +87,10 @@ def shrink(compiled: str) -> str:
     while start < len(lines) and (lines[start].startswith("#") or not lines[start].strip()):
         start += 1
 
-    dropped: set[str] = set(DROPPED_PKGS)
+    # 过滤集合仅用 DROPPED_PKGS：同一 pkg 可能存在多个 marker 块（uv universal
+    # resolution 按平台/版本拆分），跳过某个不适用块不应影响同 pkg 其他适用块。
+    # via_dropped 单独维护，仅用于清理 "via" 注释引用。
+    via_dropped: set[str] = set(DROPPED_PKGS)
     result: list[str] = [HEADER]
     i = start
     n = len(lines)
@@ -108,14 +111,14 @@ def shrink(compiled: str) -> str:
             marker = marker.strip()
             head = pkg_part.rstrip()
         pkg = head.split("==", 1)[0]
-        if pkg in dropped or not marker_applies(marker):
-            dropped.add(pkg)
+        if pkg in DROPPED_PKGS or not marker_applies(marker):
+            via_dropped.add(pkg)
             i = j
             continue
         kept = [head]
         for bl in block[1:]:
             via_ref = bl.strip().removeprefix("#").strip()
-            if via_ref in dropped:
+            if via_ref in via_dropped:
                 continue
             kept.append(bl)
         result.extend(kept)

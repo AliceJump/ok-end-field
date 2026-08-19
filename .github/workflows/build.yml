@@ -85,7 +85,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           pip install polib
-          pip install uv
+          pip install uv==0.10.9 # 固定 uv 版本，与 uv.lock 生成版本一致
 
       - name: Verify requirements.txt reproducible
         run: |

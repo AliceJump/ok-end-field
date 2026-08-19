@@ -58,9 +58,10 @@ gh api --paginate "repos/<owner>/<repo>/pulls/<n>/comments" --jq '.[] | select(.
 The GitHub "Resolve conversation" button is available as GraphQL. List threads with cursor pagination, returning the thread id plus the path/line/id of its first comment so comments can be matched to threads:
 
 ```powershell
-# comments(first:1) 只能拿到线程首个评论，无法映射回复；需要时用
-# comments(first:100) 拉全线程评论，并同时取 originalLine（过期评论保留原始行号）
-gh api graphql -f query='query($cursor:String) { repository(owner:"<o>", name:"<r>") { pullRequest(number: <n>) { reviewThreads(first: 100, after: $cursor) { pageInfo { hasNextPage endCursor } nodes { id isResolved isOutdated comments(first:100) { nodes { id body path line originalLine } } } } } } }' -F cursor=null
+# comments 连接也要独立翻页：每个线程用 commentCursor 循环直到 hasNextPage 为 false，
+# 线程评论超过 100 条时后续回复才不会被漏掉；first:100 只是一页，不是完整列表。
+# 同时保留 reviewThreads 自身的游标循环。
+gh api graphql -f query='query($cursor:String, $commentCursor:String) { repository(owner:"<o>", name:"<r>") { pullRequest(number: <n>) { reviewThreads(first: 100, after: $cursor) { pageInfo { hasNextPage endCursor } nodes { id isResolved isOutdated comments(first: 100, after: $commentCursor) { pageInfo { hasNextPage endCursor } nodes { id body path line originalLine } } } } } } }' -F cursor=null -F commentCursor=null
 ```
 
 用 `pageInfo.endCursor` 循环翻页直到 `hasNextPage` 为 false（PowerShell 里用单引号包 query，id 拼接用双引号）。
