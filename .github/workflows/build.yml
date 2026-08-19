@@ -42,15 +42,21 @@ jobs:
       - name: Resolve release tag
         id: tag
         shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CLIENT_PAYLOAD_TAG: ${{ github.event.client_payload.tag }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if ("${{ github.event_name }}" -eq "repository_dispatch") {
-            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          if ($env:EVENT_NAME -eq "repository_dispatch") {
+            $raw = $env:CLIENT_PAYLOAD_TAG
           } else {
-            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            $raw = $env:REF_NAME
           }
+          # 拒绝 CR/LF，防止向 GITHUB_OUTPUT 注入额外行
+          $raw = $raw -replace "[\r\n]", ""
+          "tag=$raw" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           # safe_tag：转义非法文件名字符，供产物重命名/artifact 名使用
           #（workflow_dispatch 时 tag 为分支名，可能含 / 等字符）
-          $raw = if ("${{ github.event_name }}" -eq "repository_dispatch") { "${{ github.event.client_payload.tag }}" } else { "${{ github.ref_name }}" }
           $safe = $raw -replace '[/\\:<>*?"|]', '-'
           "safe_tag=$safe" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
@@ -86,8 +92,10 @@ jobs:
           python scripts/gen_release_requirements.py --check
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          python -m ok.update.inline_ok_requirements --tag ${{ steps.tag.outputs.tag }}
+          python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG"
 
       - name: Run tests
         timeout-minutes: 5
@@ -126,15 +134,21 @@ jobs:
       - name: Resolve release tag
         id: tag
         shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CLIENT_PAYLOAD_TAG: ${{ github.event.client_payload.tag }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if ("${{ github.event_name }}" -eq "repository_dispatch") {
-            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          if ($env:EVENT_NAME -eq "repository_dispatch") {
+            $raw = $env:CLIENT_PAYLOAD_TAG
           } else {
-            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            $raw = $env:REF_NAME
           }
+          # 拒绝 CR/LF，防止向 GITHUB_OUTPUT 注入额外行
+          $raw = $raw -replace "[\r\n]", ""
+          "tag=$raw" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           # safe_tag：转义非法文件名字符，供产物重命名/artifact 名使用
           #（workflow_dispatch 时 tag 为分支名，可能含 / 等字符）
-          $raw = if ("${{ github.event_name }}" -eq "repository_dispatch") { "${{ github.event.client_payload.tag }}" } else { "${{ github.ref_name }}" }
           $safe = $raw -replace '[/\\:<>*?"|]', '-'
           "safe_tag=$safe" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
@@ -165,8 +179,10 @@ jobs:
           pip install polib
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          python -m ok.update.inline_ok_requirements --tag ${{ steps.tag.outputs.tag }}
+          python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG"
 
       - name: Sync Repositories # 同步部分代码(deploy.txt中), 合并tag中间更新日志, 到更新库, 以减少用户更新使用的git库大小
         id: sync   # Give the step an ID to access its outputs
@@ -207,15 +223,21 @@ jobs:
       - name: Resolve release tag
         id: tag
         shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CLIENT_PAYLOAD_TAG: ${{ github.event.client_payload.tag }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if ("${{ github.event_name }}" -eq "repository_dispatch") {
-            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          if ($env:EVENT_NAME -eq "repository_dispatch") {
+            $raw = $env:CLIENT_PAYLOAD_TAG
           } else {
-            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            $raw = $env:REF_NAME
           }
+          # 拒绝 CR/LF，防止向 GITHUB_OUTPUT 注入额外行
+          $raw = $raw -replace "[\r\n]", ""
+          "tag=$raw" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           # safe_tag：转义非法文件名字符，供产物重命名/artifact 名使用
           #（workflow_dispatch 时 tag 为分支名，可能含 / 等字符）
-          $raw = if ("${{ github.event_name }}" -eq "repository_dispatch") { "${{ github.event.client_payload.tag }}" } else { "${{ github.ref_name }}" }
           $safe = $raw -replace '[/\\:<>*?"|]', '-'
           "safe_tag=$safe" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
@@ -246,8 +268,10 @@ jobs:
           pip install polib
 
       - name: inline_ok_requirements #把ok-script加入源码, 从requirements.txt中删除以提高升级更新速度
+        env:
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
         run: |
-          python -m ok.update.inline_ok_requirements --tag ${{ steps.tag.outputs.tag }}
+          python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG"
 
       - name: Build with PyAppify Action
         id: build-app
@@ -255,8 +279,10 @@ jobs:
 
       - name: Add version to build filenames
         shell: pwsh
+        env:
+          VERSION: ${{ steps.tag.outputs.safe_tag }}
         run: |
-          $version = "${{ steps.tag.outputs.safe_tag }}"
+          $version = "$env:VERSION"
           Get-ChildItem -Path pyappify_dist -File | ForEach-Object {
             Rename-Item -LiteralPath $_.FullName -NewName "$($_.BaseName)-$version$($_.Extension)"
           }
@@ -277,15 +303,21 @@ jobs:
       - name: Resolve release tag
         id: tag
         shell: pwsh
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CLIENT_PAYLOAD_TAG: ${{ github.event.client_payload.tag }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if ("${{ github.event_name }}" -eq "repository_dispatch") {
-            "tag=${{ github.event.client_payload.tag }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+          if ($env:EVENT_NAME -eq "repository_dispatch") {
+            $raw = $env:CLIENT_PAYLOAD_TAG
           } else {
-            "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+            $raw = $env:REF_NAME
           }
+          # 拒绝 CR/LF，防止向 GITHUB_OUTPUT 注入额外行
+          $raw = $raw -replace "[\r\n]", ""
+          "tag=$raw" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           # safe_tag：转义非法文件名字符，供产物重命名/artifact 名使用
           #（workflow_dispatch 时 tag 为分支名，可能含 / 等字符）
-          $raw = if ("${{ github.event_name }}" -eq "repository_dispatch") { "${{ github.event.client_payload.tag }}" } else { "${{ github.ref_name }}" }
           $safe = $raw -replace '[/\\:<>*?"|]', '-'
           "safe_tag=$safe" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
@@ -326,17 +358,26 @@ jobs:
       - name: Resolve release tag
         id: tag
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CLIENT_PAYLOAD_TAG: ${{ github.event.client_payload.tag }}
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            echo "tag=${{ github.event.client_payload.tag }}" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = "repository_dispatch" ]; then
+            raw="$CLIENT_PAYLOAD_TAG"
           else
-            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+            raw="$REF_NAME"
           fi
+          # 拒绝 CR/LF，防止向 GITHUB_OUTPUT 注入额外行
+          raw="${raw//$'\r'/}"
+          raw="${raw//$'\n'/}"
+          echo "tag=$raw" >> "$GITHUB_OUTPUT"
 
       - name: Trigger MirrorChyanUploading
         shell: bash
         run: |
-          gh workflow run --repo $GITHUB_REPOSITORY mirrorchyan_uploading.yml -f tag=${{ steps.tag.outputs.tag }}
-          gh workflow run --repo $GITHUB_REPOSITORY mirrorchyan_release_note.yml -f tag=${{ steps.tag.outputs.tag }}
+          gh workflow run --repo "$GITHUB_REPOSITORY" mirrorchyan_uploading.yml -f tag="$RELEASE_TAG"
+          gh workflow run --repo "$GITHUB_REPOSITORY" mirrorchyan_release_note.yml -f tag="$RELEASE_TAG"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ steps.tag.outputs.tag }}
