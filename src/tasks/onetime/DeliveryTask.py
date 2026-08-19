@@ -136,6 +136,10 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self.config_type[self.CFG_TEST_TARGET] = {
             "type": "drop_down",
             "options": [self.TEST_NONE] + self.to_delivery_point_config_keys + self.ends + [self.TEST_FULL_CYCLE],
+            "sub_configs": {
+                self.TEST_NONE: [self.CFG_ONLY_ACCEPT, self.CFG_ONLY_DELIVER],
+                self.TEST_FULL_CYCLE: [self.CFG_FULL_CYCLE_LOCATION],
+            },
         }
         self.config_type[self.CFG_DELIVERY_AREA] = {
             "type": "drop_down",
