@@ -18,8 +18,6 @@ comtypes==1.4.16
     # via pycaw
 darkdetect==0.8.0
     # via pyside6-fluent-widgets
-greenlet==3.5.4
-    # via playwright
 idna==3.18
     # via requests
 imagehash==4.3.2
@@ -67,8 +65,6 @@ pillow==12.3.0
     #   imageio
     #   onnxocr-ppocrv5
     #   scikit-image
-playwright==1.57.0
-    # via ok-end-field
 psutil==7.2.2
     # via
     #   ok-script
@@ -83,8 +79,6 @@ pyclipper==1.4.0
     # via onnxocr-ppocrv5
 pydirectinput==1.0.4
     # via ok-script
-pyee==13.0.1
-    # via playwright
 pygetwindow==0.0.9
     # via pyautogui
 pymsgbox==2.0.1
@@ -135,9 +129,7 @@ six==1.17.0
 tifffile==2026.7.31
     # via scikit-image
 typing-extensions==4.16.0
-    # via
-    #   ok-script
-    #   pyee
+    # via ok-script
 urllib3==2.7.0
     # via requests
 websocket-client==1.9.0
