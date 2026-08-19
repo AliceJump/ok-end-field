@@ -10,6 +10,10 @@ on:
     # 改为发 repository_dispatch（GITHUB_TOKEN 可触发的事件之一）来触发构建
     types:
       - auto-release
+  workflow_dispatch:
+    # 手动触发：仅执行 test + build（构建安装包），跳过 sync/release/mirror 上传。
+    # 用法：gh workflow run build.yml --ref <分支> ，
+    # 此时 steps.tag.outputs.tag 取分支名，产物文件名带分支名便于区分。
 
 jobs:
   test:
@@ -82,6 +86,7 @@ jobs:
 
   sync:
     needs: test
+    if: github.event_name != 'workflow_dispatch' # 手动触发仅构建安装包，不同步更新库
     runs-on: windows-latest
     permissions:
       contents: read
