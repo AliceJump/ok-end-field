@@ -48,6 +48,11 @@ jobs:
           } else {
             "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           }
+          # safe_tag：转义非法文件名字符，供产物重命名/artifact 名使用
+          #（workflow_dispatch 时 tag 为分支名，可能含 / 等字符）
+          $raw = if ("${{ github.event_name }}" -eq "repository_dispatch") { "${{ github.event.client_payload.tag }}" } else { "${{ github.ref_name }}" }
+          $safe = $raw -replace '[/\\:<>*?"|]', '-'
+          "safe_tag=$safe" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - uses: actions/checkout@v4
         with:
@@ -122,6 +127,11 @@ jobs:
           } else {
             "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           }
+          # safe_tag：转义非法文件名字符，供产物重命名/artifact 名使用
+          #（workflow_dispatch 时 tag 为分支名，可能含 / 等字符）
+          $raw = if ("${{ github.event_name }}" -eq "repository_dispatch") { "${{ github.event.client_payload.tag }}" } else { "${{ github.ref_name }}" }
+          $safe = $raw -replace '[/\\:<>*?"|]', '-'
+          "safe_tag=$safe" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - uses: actions/checkout@v4
         with:
@@ -198,6 +208,11 @@ jobs:
           } else {
             "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           }
+          # safe_tag：转义非法文件名字符，供产物重命名/artifact 名使用
+          #（workflow_dispatch 时 tag 为分支名，可能含 / 等字符）
+          $raw = if ("${{ github.event_name }}" -eq "repository_dispatch") { "${{ github.event.client_payload.tag }}" } else { "${{ github.ref_name }}" }
+          $safe = $raw -replace '[/\\:<>*?"|]', '-'
+          "safe_tag=$safe" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - uses: actions/checkout@v4
         with:
@@ -236,7 +251,7 @@ jobs:
       - name: Add version to build filenames
         shell: pwsh
         run: |
-          $version = "${{ steps.tag.outputs.tag }}"
+          $version = "${{ steps.tag.outputs.safe_tag }}"
           Get-ChildItem -Path pyappify_dist -File | ForEach-Object {
             Rename-Item -LiteralPath $_.FullName -NewName "$($_.BaseName)-$version$($_.Extension)"
           }
@@ -244,7 +259,7 @@ jobs:
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: pyappify_dist-${{ steps.tag.outputs.tag }}
+          name: pyappify_dist-${{ steps.tag.outputs.safe_tag }}
           path: pyappify_dist/*
 
   release:
@@ -263,6 +278,11 @@ jobs:
           } else {
             "tag=${{ github.ref_name }}" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
           }
+          # safe_tag：转义非法文件名字符，供产物重命名/artifact 名使用
+          #（workflow_dispatch 时 tag 为分支名，可能含 / 等字符）
+          $raw = if ("${{ github.event_name }}" -eq "repository_dispatch") { "${{ github.event.client_payload.tag }}" } else { "${{ github.ref_name }}" }
+          $safe = $raw -replace '[/\\:<>*?"|]', '-'
+          "safe_tag=$safe" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Download build artifacts
         uses: actions/download-artifact@v4
