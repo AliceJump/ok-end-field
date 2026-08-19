@@ -87,6 +87,12 @@ class LangTestCase(unittest.TestCase):
     def collect_missing(self):
 
         # 完全缺失（FAIL）
+        """
+        Scan source files for language references and collect missing-file and fully missing-key errors.
+        
+        Returns:
+            list[str]: Error messages for language files or keys missing from all supported locales.
+        """
         missing = []
 
         # 部分缺失（WARNING）
