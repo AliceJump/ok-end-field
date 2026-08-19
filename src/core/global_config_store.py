@@ -99,7 +99,6 @@ zip_line_config_option = ConfigOption(
     config_type=ZIP_LINE_CONFIG_TYPE,
     icon=Icons.Zipline
 )
-
 GLOBAL_CONFIG_OPTIONS = [
     key_config_option,
     battle_config_option,

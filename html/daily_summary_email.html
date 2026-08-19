@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OK-EF · 日常任务汇总</title>
+
+    <link rel="stylesheet" href="email_style.css">
+    <base target="_blank">
+
+    <style>
+        /* =========================================================
+         * 任务汇总终端模块
+         * ========================================================= */
+
+        .terminal-block {
+            position: relative;
+
+            margin: 26px 0;
+
+            background: #1e1e1c;
+            border: 1px solid #2e2e2c;
+            border-left: 4px solid #d6d05a;
+        }
+
+        .terminal-block::before {
+            content: "TASK LOG";
+
+            position: absolute;
+
+            top: -10px;
+            left: 14px;
+
+            padding: 0 6px;
+
+            background: #efeee9;
+
+            color: #7b7b75;
+
+            font-size: 8px;
+            font-weight: 700;
+
+            letter-spacing: 0.12em;
+        }
+
+        .terminal-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 10px 16px;
+
+            background: #252523;
+            border-bottom: 1px solid #2e2e2c;
+        }
+
+        .terminal-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+
+            color: #c9c8c2;
+
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .terminal-icon {
+            width: 7px;
+            height: 7px;
+
+            background: #d6d05a;
+
+            display: inline-block;
+        }
+
+        .terminal-status {
+            color: #888780;
+
+            font-size: 9px;
+            letter-spacing: 0.1em;
+        }
+
+        .terminal-body {
+            padding: 16px 20px;
+        }
+
+        .terminal-body pre {
+            margin: 0;
+            padding: 0;
+
+            background: transparent;
+            border: none;
+            border-radius: 0;
+
+            font-family:
+                "JetBrains Mono",
+                "Fira Code",
+                "SF Mono",
+                "Consolas",
+                "Courier New",
+                monospace;
+
+            font-size: 12px;
+            line-height: 1.8;
+
+            color: #b5b4ae;
+
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* =========================================================
+         * 失败任务明细模块
+         * ========================================================= */
+
+        .failed-block {
+            position: relative;
+
+            margin: 26px 0;
+
+            background: #1e1e1c;
+            border: 1px solid #2e2e2c;
+            border-left: 4px solid #b05a5a;
+        }
+
+        .failed-block::before {
+            content: "FAILED TASKS";
+
+            position: absolute;
+
+            top: -10px;
+            left: 14px;
+
+            padding: 0 6px;
+
+            background: #efeee9;
+
+            color: #b05a5a;
+
+            font-size: 8px;
+            font-weight: 700;
+
+            letter-spacing: 0.12em;
+        }
+
+        .failed-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 10px 16px;
+
+            background: #252523;
+            border-bottom: 1px solid #2e2e2c;
+        }
+
+        .failed-title {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+
+            color: #c9c8c2;
+
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .failed-icon {
+            width: 7px;
+            height: 7px;
+
+            background: #b05a5a;
+
+            display: inline-block;
+        }
+
+        .failed-status {
+            color: #888780;
+
+            font-size: 9px;
+            letter-spacing: 0.1em;
+        }
+
+        .failed-body {
+            padding: 12px 20px 16px;
+        }
+
+        /* 每条失败记录为一张卡片：背景 + 左侧黄色竖条 + 圆角，
+           记录间留空隙；原因多行时保留换行，卡片边界一眼可辨 */
+        .failed-row {
+            background: #262624;
+
+            border-left: 3px solid #d6d05a;
+            border-radius: 4px;
+
+            padding: 10px 14px;
+
+            margin-bottom: 8px;
+
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .failed-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .failed-head {
+            color: #e7e6df;
+            font-weight: 700;
+
+            margin-bottom: 4px;
+        }
+
+        .failed-reason {
+            color: #b5b4ae;
+
+            white-space: pre-line;
+            word-wrap: break-word;
+        }
+
+        .failed-empty {
+            color: #777772;
+            font-size: 12px;
+        }
+
+        /* =========================================================
+         * 统计模块
+         * ========================================================= */
+
+        .stats-block {
+            position: relative;
+
+            margin: 26px 0;
+
+            padding: 20px 22px 20px 24px;
+
+            background: #e5e4df;
+
+            border-top: 1px solid #c9c8c2;
+            border-right: 1px solid #c9c8c2;
+            border-bottom: 1px solid #c9c8c2;
+
+            border-left: 4px solid #d6d05a;
+        }
+
+        .stats-block::before {
+            content: "EXECUTION STATS";
+
+            position: absolute;
+
+            top: -10px;
+            left: 14px;
+
+            padding: 0 6px;
+
+            background: #efeee9;
+
+            color: #7b7b75;
+
+            font-size: 8px;
+            font-weight: 700;
+
+            letter-spacing: 0.12em;
+        }
+
+        .stats-title {
+            display: flex;
+            align-items: center;
+
+            gap: 9px;
+
+            margin-bottom: 12px;
+
+            color: #202020;
+
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .stats-icon {
+            width: 7px;
+            height: 7px;
+
+            background: #d6d05a;
+
+            display: inline-block;
+        }
+
+        .stats-grid {
+            display: flex;
+            gap: 16px;
+        }
+
+        .stat-item {
+            flex: 1;
+
+            padding: 12px 14px;
+
+            background: #efeee9;
+            border: 1px solid #c9c8c2;
+        }
+
+        .stat-label {
+            margin-bottom: 4px;
+
+            color: #8a8982;
+
+            font-size: 9px;
+            font-weight: 700;
+
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            color: #292925;
+
+            font-size: 20px;
+            font-weight: 800;
+        }
+
+        .stat-value.ok {
+            color: #5a8a5a;
+        }
+
+        .stat-value.warn {
+            color: #c4a030;
+        }
+
+        .stat-value.fail {
+            color: #b05a5a;
+        }
+
+        /* =========================================================
+         * 汇总专属的移动端规则（基础规则见 email_style.css）
+         * ========================================================= */
+
+        @media screen and (max-width: 600px) {
+            .stats-grid {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="email-shell">
+
+    <!-- 顶部系统状态栏 -->
+    <div class="system-bar">
+        <div class="system-status">
+            <span class="status-dot"></span>
+            <span>TASK SYSTEM ONLINE</span>
+        </div>
+
+        <div class="system-id">
+            OK-EF / DAILY SUMMARY
+        </div>
+    </div>
+
+
+    <!-- Header -->
+    <div class="header">
+
+        <!-- 纯文字品牌 -->
+        <div class="brand-row">
+            <div class="brand-name">OK-EF</div>
+            <div class="brand-code">
+                ENDFIELD AUTOMATION TERMINAL
+            </div>
+        </div>
+
+        <div class="header-tag">
+            DAILY SUMMARY
+        </div>
+
+        <h1>日常任务汇总</h1>
+
+        <p class="header-sub">
+            OK-EF ROUTINE TASK EXECUTION REPORT
+        </p>
+
+    </div>
+
+
+    <!-- Content -->
+    <div class="content">
+
+        <p>你好，Endministrator</p>
+
+        <p>
+            以下是 <strong>OK-EF</strong> 日常任务的最终执行汇总报告。
+            所有任务均已完成调度与执行，详细日志见下方终端输出。
+        </p>
+
+
+        <!-- 统计模块（先展示状态） -->
+        <div class="stats-block">
+            <div class="stats-title">
+                <span class="stats-icon"></span>
+                执行概况
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-label">任务状态</div>
+                    <div class="stat-value {{status_class}}">{{status_text}}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">执行轮数</div>
+                    <div class="stat-value">{{total_rounds}}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">成功 / 失败 / 跳过</div>
+                    <div class="stat-value">{{success_count}} / {{failed_count}} / {{skipped_count}}</div>
+                </div>
+            </div>
+            <div class="stats-grid" style="margin-top:12px">
+                <div class="stat-item">
+                    <div class="stat-label">系统模块</div>
+                    <div class="stat-value">{{system_name}}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">报告类型</div>
+                    <div class="stat-value">{{report_type}}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">状态码</div>
+                    <div class="stat-value">{{status_en}}</div>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- 失败任务明细 -->
+        <div class="failed-block">
+            <div class="failed-header">
+                <div class="failed-title">
+                    <span class="failed-icon"></span>
+                    失败任务明细
+                </div>
+                <div class="failed-status">
+                    FAILED TASKS / {{failed_count}}
+                </div>
+            </div>
+            <div class="failed-body">
+                {{failed_details_html}}
+            </div>
+        </div>
+
+
+        <!-- 任务日志终端 -->
+        <div class="terminal-block">
+            <div class="terminal-header">
+                <div class="terminal-title">
+                    <span class="terminal-icon"></span>
+                    执行日志
+                </div>
+                <div class="terminal-status">
+                    LOG OUTPUT / COMPLETE
+                </div>
+            </div>
+            <div class="terminal-body">
+                <pre>{{summary_text}}</pre>
+            </div>
+        </div>
+
+
+        <!-- Meta -->
+        <div class="meta">
+
+            <div class="meta-label">
+                TRANSMISSION RECORD
+            </div>
+
+            <div class="meta-row">
+                <div class="meta-key">发送时间</div>
+                <div class="meta-value">{{send_time}}</div>
+            </div>
+
+            <div class="meta-row">
+                <div class="meta-key">发送系统</div>
+                <div class="meta-value">
+                    OK-EF · 终末地自动化工具
+                </div>
+            </div>
+
+            <div class="meta-row">
+                <div class="meta-key">邮件状态</div>
+                <div class="meta-value">
+                    DAILY SUMMARY DELIVERED
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Footer -->
+    <div class="footer">
+
+        <div class="footer-brand">
+            <span class="footer-line"></span>
+            <span class="footer-name">OK-EF</span>
+        </div>
+
+        <p class="footer-text">
+            ENDFIELD AUTOMATION TOOL / DAILY TASK SUMMARY
+            <br>
+            本邮件由系统自动发送，请勿直接回复。
+        </p>
+
+    </div>
+
+</div>
+
+</body>
+</html>

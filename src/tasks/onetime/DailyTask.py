@@ -12,8 +12,10 @@ from src.tasks.daily.daily_regional_runner import DailyRegionalRunner
 from src.tasks.daily.finally_file import (
     create_task_summary_report,
 )
+from src.core.email_service import send_daily_summary_email
 import tempfile
 import os
+import threading
 import webbrowser
 from pathlib import Path
 from src.tasks.daily.daily_task_runner import DailyTaskRunner
@@ -129,6 +131,7 @@ class DailyTask(
             "发生异常时终止游戏": False,
             "仅退出游戏": False,
             "自动打开汇总文件": True,
+            "邮件发送汇总": False,
         })
         self.config_description.update({
             "⭐地区建设": (
@@ -136,6 +139,7 @@ class DailyTask(
             ),
             "⭐传送到帝江号右侧传送点": "是否在日常任务结束后传送到帝江号右侧传送点。",
             "自动打开汇总文件": "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。",
+            "邮件发送汇总": "任务完成后是否将最终执行汇总通过邮件发送（收件人取“设置 → 邮件发送配置”中的默认收件人）。",
         })
         self.config_type["⭐地区建设"] = {
             "type": "multi_selection",
@@ -149,7 +153,7 @@ class DailyTask(
         }
 
         # 合并两个分组字典
-        all_groups = {**task_group, **self.default_config_group, **{"其他配置": ["发生异常时终止游戏", "仅退出游戏", "自动打开汇总文件"]}}
+        all_groups = {**task_group, **self.default_config_group, **{"其他配置": ["发生异常时终止游戏", "仅退出游戏", "邮件发送汇总", "自动打开汇总文件"]}}
 
         self.register_config_groups(all_groups)
         self.add_exit_after_config()
@@ -208,6 +212,85 @@ class DailyTask(
                 self.log_debug(f"使用 os.startfile 打开路径失败，改用浏览器回退: {error}")
         webbrowser.open(file_uri)
 
+    def _send_daily_summary_email(self, summary_path: str | Path):
+        """后台发送日常汇总邮件，不阻塞任务结束；失败仅记录日志。"""
+        def _run():
+            try:
+                summary_text = Path(summary_path).read_text(encoding="utf-8")
+                status_data = self._build_summary_status_data()
+                recipient = send_daily_summary_email(summary_text, status_data=status_data)
+                self.log_info(f"日常汇总邮件已发送至: {recipient}", notify=True)
+            except Exception as e:
+                self.log_info(f"日常汇总邮件发送失败: {e}", notify=True)
+
+        threading.Thread(target=_run, daemon=True, name="DailySummaryEmailSender").start()
+
+    def _build_summary_status_data(self) -> dict:
+        """从 daily_runner.final_summary 提取邮件状态展示数据。"""
+        summary = self.daily_runner.final_summary if self.daily_runner else {}
+        per_round = summary.get("per_round") or []
+
+        success_count = sum(len(r.get("success", [])) for r in per_round)
+        failed_count = sum(len(r.get("failed", [])) for r in per_round)
+        skipped_count = sum(len(r.get("skipped", [])) for r in per_round)
+
+        status = str(summary.get("status", "未开始") or "未开始")
+        status_en_map = {
+            "完成": "COMPLETED",
+            "完成后退出": "COMPLETED",
+            "部分失败": "PARTIAL",
+            "运行中": "RUNNING",
+            "异常结束": "FAILED",
+            "未开始": "IDLE",
+        }
+        # 未知状态不默认当作成功，避免邮件把异常/新增状态误标为绿色完成
+        status_en = status_en_map.get(status, "WARN")
+        # 存在失败任务时，即使状态为完成也降级为 PARTIAL，与统计数字保持一致
+        if status_en == "COMPLETED" and failed_count > 0:
+            status_en = "PARTIAL"
+
+        failed_details = self._build_failed_details()
+
+        return {
+            "status": status,
+            "status_en": status_en,
+            "total_rounds": summary.get("actual_repeat_total", len(per_round)),
+            "success_count": success_count,
+            "failed_count": failed_count,
+            "skipped_count": skipped_count,
+            "failed_details": failed_details,
+            "system_name": "OK-EF",
+            "report_type": "DAILY",
+        }
+
+    def _build_failed_details(self) -> list[dict]:
+        """从 final_summary 的 failure_details 构建失败任务明细列表。"""
+        summary = self.daily_runner.final_summary if self.daily_runner else {}
+        failure_details = summary.get("failure_details") or {}
+        per_round = summary.get("per_round") or []
+
+        # account_id -> account_user 映射（用于显示账号名）
+        id_to_user = {}
+        for r in per_round:
+            aid = str(r.get("account_id", "") or "")
+            user = str(r.get("account_user", "") or "")
+            if aid:
+                id_to_user[aid] = user
+
+        details = []
+        for account_id, tasks in failure_details.items():
+            if not isinstance(tasks, dict):
+                continue
+            account_name = id_to_user.get(str(account_id), "") or (str(account_id) if account_id else "无")
+            for task_name, reason in tasks.items():
+                display_task = str(task_name).lstrip("⭐").strip()
+                details.append({
+                    "account": account_name,
+                    "task": display_task,
+                    "reason": str(reason or ""),
+                })
+        return details
+
     def run_daily_finally(self):
         try:
             # 在任务完成或停止时自动生成一个临时的汇总文件（不再依赖配置项）
@@ -228,6 +311,10 @@ class DailyTask(
                 self.log_info(f"日常执行情况汇总已创建并打开: {summary_path}")
             else:
                 self.log_info(f"日常执行情况汇总已创建（未打开）: {summary_path}")
+
+            # 根据开关决定是否将最终汇总通过邮件发送
+            if self.config.get("邮件发送汇总", False):
+                self._send_daily_summary_email(summary_path)
 
             return True
         except Exception as e:

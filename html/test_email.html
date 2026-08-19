@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OK-EF · 测试邮件</title>
+
+    <link rel="stylesheet" href="email_style.css">
+
+    <style>
+        /* =========================================================
+         * 信息模块
+         * ========================================================= */
+
+        .info-block {
+            position: relative;
+
+            margin: 26px 0;
+
+            padding: 20px 22px 20px 24px;
+
+            background: #e5e4df;
+
+            border-top: 1px solid #c9c8c2;
+            border-right: 1px solid #c9c8c2;
+            border-bottom: 1px solid #c9c8c2;
+
+            border-left: 4px solid #d6d05a;
+        }
+
+        .info-block::before {
+            content: "SYSTEM STATUS";
+
+            position: absolute;
+
+            top: -10px;
+            left: 14px;
+
+            padding: 0 6px;
+
+            background: #e5e4df;
+
+            color: #7b7b75;
+
+            font-size: 8px;
+            font-weight: 700;
+
+            letter-spacing: 0.12em;
+        }
+
+        .info-title {
+            display: flex;
+            align-items: center;
+
+            gap: 9px;
+
+            margin-bottom: 8px;
+
+            color: #202020;
+
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .info-icon {
+            width: 7px;
+            height: 7px;
+
+            background: #d6d05a;
+
+            display: inline-block;
+        }
+
+        .info-block p {
+            margin: 0;
+
+            color: #555550;
+
+            font-size: 13px;
+            line-height: 1.8;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="email-shell">
+
+    <!-- 顶部系统状态栏 -->
+    <div class="system-bar">
+        <div class="system-status">
+            <span class="status-dot"></span>
+            <span>MAIL SYSTEM ONLINE</span>
+        </div>
+
+        <div class="system-id">
+            OK-EF / NOTIFICATION
+        </div>
+    </div>
+
+
+    <!-- Header -->
+    <div class="header">
+
+        <!-- 纯文字品牌，不使用任何图片 -->
+        <div class="brand-row">
+            <div class="brand-name">OK-EF</div>
+            <div class="brand-code">
+                ENDFIELD AUTOMATION TERMINAL
+            </div>
+        </div>
+
+        <div class="header-tag">
+            SYSTEM NOTIFICATION
+        </div>
+
+        <h1>测试邮件</h1>
+
+        <p class="header-sub">
+            SMTP CONFIGURATION VERIFICATION
+        </p>
+
+    </div>
+
+
+    <!-- Content -->
+    <div class="content">
+
+        <p>你好，Endministrator</p>
+
+        <p>
+            这是一封来自 <strong>OK-EF</strong> 的系统测试邮件，
+            用于验证当前邮件通知服务是否已正确完成配置。
+        </p>
+
+
+        <!-- 状态模块 -->
+        <div class="info-block">
+
+            <div class="info-title">
+                <span class="info-icon"></span>
+                配置验证通过
+            </div>
+
+            <p>
+                已成功建立邮件服务连接。
+                SMTP 服务器、发件邮箱、授权信息以及收件人配置均已通过验证。
+            </p>
+
+            <p style="margin-top:10px;">
+                邮件通知模块现已处于正常工作状态。
+            </p>
+
+        </div>
+
+
+        <p>
+            后续 OK-EF 将可以通过该邮件服务向你发送相关系统通知。
+        </p>
+
+
+        <!-- Meta -->
+        <div class="meta">
+
+            <div class="meta-label">
+                TRANSMISSION RECORD
+            </div>
+
+            <div class="meta-row">
+                <div class="meta-key">发送时间</div>
+                <div class="meta-value">{{send_time}}</div>
+            </div>
+
+            <div class="meta-row">
+                <div class="meta-key">发送系统</div>
+                <div class="meta-value">
+                    OK-EF · 终末地自动化工具
+                </div>
+            </div>
+
+            <div class="meta-row">
+                <div class="meta-key">邮件状态</div>
+                <div class="meta-value">
+                    SMTP DELIVERY VERIFIED
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <!-- Footer -->
+    <div class="footer">
+
+        <div class="footer-brand">
+            <span class="footer-line"></span>
+            <span class="footer-name">OK-EF</span>
+        </div>
+
+        <p class="footer-text">
+            ENDFIELD AUTOMATION TOOL / SYSTEM NOTIFICATION
+            <br>
+            本邮件由系统自动发送，请勿直接回复。
+        </p>
+
+    </div>
+
+</div>
+
+</body>
+</html>
