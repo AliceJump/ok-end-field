@@ -171,7 +171,7 @@ class ArrowAngleMatcher:
 
         # 基于 alpha 计算紧致 bbox
         alpha_mask = rotated_alpha_chan > 8
-        ys, xs = np.where(alpha_mask)
+        ys, xs = np.nonzero(alpha_mask)
 
         if ys.size == 0:
             bgr_cropped = rotated_bgr
@@ -342,7 +342,7 @@ def rotated_template_match(
 
         # 提取 bbox
         alpha_mask = rotated_alpha > 8
-        ys, xs = np.where(alpha_mask)
+        ys, xs = np.nonzero(alpha_mask)
 
         if ys.size == 0:
             continue

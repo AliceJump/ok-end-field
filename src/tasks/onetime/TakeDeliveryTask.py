@@ -56,12 +56,12 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                 if match:
                     try:
                         val = float(match.group(1))
-                        if val >= filter_min and val <= 100:
-                            rewards.append((t, val))  # 保存 OCR对象 和 提取出的数值
-                        elif val > 100:
-                            self.log_debug(f"金额异常过大({val}万)，可能是OCR误识别，已过滤")
-                    except:
-                        pass
+                    except (TypeError, ValueError):
+                        continue
+                    if val >= filter_min and val <= 100:
+                        rewards.append((t, val))  # 保存 OCR对象 和 提取出的数值
+                    elif val > 100:
+                        self.log_debug(f"金额异常过大({val}万)，可能是OCR误识别，已过滤")
         return rewards, accept_btns, refresh_btn
 
     def detect_ticket_type(self, reward_obj, ticket_types, y_ceiling):

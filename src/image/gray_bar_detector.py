@@ -86,7 +86,7 @@ def detect_gray_bars(
         bar_width = end - start + 1
         if not min_width_px <= bar_width <= max_width_px:
             continue
-        ys, _ = np.where(mask[:, start:end + 1] > 0)
+        ys, _ = np.nonzero(mask[:, start:end + 1] > 0)
         if not len(ys):
             continue
         local_y1, local_y2 = int(ys.min()), int(ys.max())
