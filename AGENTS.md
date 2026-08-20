@@ -6,16 +6,20 @@
 
 ### PowerShell 双引号字符串中的反引号（必踩坑）
 
-在 PowerShell 双引号字符串里，反引号 `` ` `` 是**转义字符**而非字面量（如 `` `$HOME `` 会展开变量）。给 `gh pr create/edit --body "..."` 等传 Markdown（含代码反引号）时：
+在 PowerShell 双引号字符串里，反引号 `` ` `` 是**转义字符**而非字面量：`` `$HOME `` 保留字面量不展开，而 `$HOME` 会展开变量；合法转义如 `` `a ``（0x07）、`` `r ``（CR）、`` `n ``（LF）会变成控制字符；未知序列如 `` `s `` 会**移除反引号、保留原字符**（`` "Use `src` END" `` → `Use src END`）。给 `gh pr create/edit --body "..."` 等传 Markdown（含代码反引号）时：
 
-- **必须用单引号字符串**（`'...'` 或 `@'...'@` here-string），单引号内反引号是字面量，`gh pr edit --body $body` 传变量也可；
-- **禁止用双引号传含反引号的 body**——反引号会被吞掉（`` \`src\` `` 渲染成 `\src\`，只剩反斜杠），造成 PR 描述格式错乱；
-- 已踩坑案例：PR #194、PR #203 的 body 中 `` `src/...` `` 全部变成 `\src/...\`，需 `gh pr edit` 重新提交。
+- **必须用单引号字符串**（`'...'` 或 `@'...'@` here-string），单引号内反引号是字面量（`` 'Use `src` END' `` → `` Use `src` END ``），`gh pr edit --body $body` 传变量也可；
+- **禁止用双引号传含反引号的 body**——反引号会被移除或变控制字符（如 `` `assets `` 里的 `` `a `` 变成 `^G`），造成 PR 描述格式错乱；
+- 已踩坑案例：PR #194、PR #203 的 body 中 `` `src/...` `` 全部丢失或变 `^G`，需 `gh pr edit` 重新提交。
 
-**PR 创建后必须自检**——无论用什么方式传 body，创建后立即验证反引号完好：
+**PR 创建后必须自检**——创建时把 body 存到本地变量/文件，创建后用 `gh pr view` 拉取远端 body 与本地**逐字比较**（不要只 `Select-String` 查反引号，无法发现控制字符）：
 
 ```powershell
-gh pr view <n> --json body --jq '.body' | Select-String '`'
+# 创建前：$body 已在变量中
+gh pr create --base master --head "$BRANCH" --title "..." --body $body
+gh pr view <n> --json body --jq '.body' > remote_body.md
+$body > local_body.md
+git diff --no-index local_body.md remote_body.md   # 无输出 = 一致
 ```
 
 若出现 `\xxx\` 或 `^G` 等异常字符，用单引号 here-string 重写 body：
@@ -41,7 +45,7 @@ gh pr edit <n> --body $body
 `configs/` 目录下的 JSON 是用户运行数据，修改 `default_config` 中的配置键名时必须遵守严格顺序（迁移表 → 迁移测试 → i18n → 文档 → 恢复），否则会丢失用户配置。**完整流程见 `.agents/skills/ok-config-migration`**。要点：
 
 1. **先加迁移表，再改键名**：同一任务类中先加 `config_key_migrations = {旧键: 新键}`，再改 `default_config` / 键名常量 / 键生成函数，同一提交完成。
-2. **迁移表生效前禁止运行程序**：先用 `migrate_config_file_keys(<任务名>, migrations)`（见 `src/tasks/onetime/DeliveryTask.py`）跑迁移测试。
+2. **迁移表生效前禁止运行程序**：先运行迁移测试（`tests/TestZipLineConfig.py` 等实际迁移测试），测试断言旧键值已迁移到新键（被测函数为 `migrate_config_file_keys(<任务名>, migrations)`，见 `src/tasks/onetime/DeliveryTask.py`）。
 3. **同步 i18n**：同步全部 `i18n/*/LC_MESSAGES/ok.po` 的 msgid 并 `task_i18n_helper.py compile`。
 4. **同步文档**：搜索 `docs/` 更新旧键名。
 5. **配置丢失可恢复**：`logs/ok-script.log` 的 `Config:init self.config = {...}` 保存完整历史配置，可从最后一次含旧键名的记录恢复。
@@ -66,7 +70,7 @@ gh pr edit <n> --body $body
 见 `.agents/skills/ok-script-i18n` 的「Lang JSON Convention」节，要点：
 
 - **新增 key 用语义化命名**（如 `inst_title`），不要沿用旧的 `k_<md5前8位>` hash 风格；旧 `k_*` 保持不动，两种风格可共存。
-- 每个 key 下为 6 种语言节点（`zh_CN`/`zh_TW`/`en_US`/`ja_JP`/`ko_KR`/`es_ES`），格式 `{"string": "..."}` 或 `{"pattern": "..."}`。
+- 每个 key 下为 6 种语言节点（`zh_CN`/`zh_TW`/`en_US`/`ja_JP`/`ko_KR`/`es_ES`），格式 `{"string": "..."}` 或 `{"pattern": "..."}`（详见 skill 的节点类型说明）。
 - **lang JSON 只放 OCR 匹配文本**。UI 说明（如 `instructions` 富文本）用 `self.tr("中文msgid")` 走 gettext，msgid 写入 `i18n/*/LC_MESSAGES/ok.po` 后 `task_i18n_helper.py compile`。
 - **最小原则**：emoji（`📍` `⚙️` `🖱️` 等）、`└─`/`├─`、HTML 标签/颜色等无需翻译的内容留在代码里拼，只把需翻译的纯文本放进 i18n 数据。
 - **动态键名翻译**：`instructions` 里动态读取的配置键名显示时经 `self.tr(键名)` 翻译；查配置值用原始键名，显示用翻译后的键名（见 `src/tasks/mixin/zip_line_mixin.py`）。

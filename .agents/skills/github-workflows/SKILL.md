@@ -20,12 +20,14 @@ run: pip install --only-binary :all: -r requirements-docs.txt
 run: 'pip install --only-binary :all: -r requirements-docs.txt'
 ```
 
-- A single-line `run: <value>` containing `:word:` (colon followed by content) is parsed as a YAML mapping → GitHub refuses to start the workflow.
+- A single-line `run: <value>` containing `:word:` (colon followed by content) is parsed as a YAML mapping by the GitHub workflow parser → GitHub refuses to start the workflow. This is specific to how the GitHub parser treats the unquoted single-line `run` value; YAML 1.2 plain scalars do allow a colon without a following space in general. Quoting the entire single-line `run` value remains the fix, and text inside a block scalar (`run: |`) is unaffected.
 - Inside a **block scalar** (`run: |` multi-line), `:all:` is plain text and is safe (download_stats.yml was unaffected).
-- **Always validate YAML before pushing**:
+- **Always validate YAML before pushing**, in two separate steps:
+  1. Generic YAML syntax first:
   ```powershell
   uv run python -c "import yaml; yaml.safe_load(open('<file>', encoding='utf-8')); print('OK')"
   ```
+  2. GitHub Actions structure/expressions/contexts (covers undefined `matrix.os`/`matrix.arch` and similar): run `actionlint .github/workflows/*.yml` or an equivalent validator. Generic `yaml.safe_load` alone cannot catch workflow-structure errors.
 
 ## 2. Diagnosing "workflow file issue" / jobs: 0
 

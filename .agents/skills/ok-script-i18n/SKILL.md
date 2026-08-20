@@ -71,7 +71,7 @@ When adding or modifying an ok-script task:
 
 - **New keys use semantic names** (e.g. `inst_title`, `inst_delivery_targets`), not the legacy `k_<md5前8位>` hash style.
 - Legacy `k_*` hash keys stay untouched — no migration needed; both styles coexist.
-- Each key has 6 locale nodes (`zh_CN`/`zh_TW`/`en_US`/`ja_JP`/`ko_KR`/`es_ES`), formatted `{"string": "..."}` or `{"pattern": "..."}`.
+- Each key has 6 locale nodes (`zh_CN`/`zh_TW`/`en_US`/`ja_JP`/`ko_KR`/`es_ES`), formatted `{"string": "..."}`, `{"pattern": "..."}`, or `{"terms": [...]}` (node types: `string` literal, `pattern` regex, `terms` term list).
 - Code reads via `self.lang.<模块名>.<语义化key>`, auto-selected by the current UI language (see `src/data/lang/`).
 - **lang JSON holds only OCR match text** (either `k_*` hash or semantic keys). UI explanations (e.g. `instructions` rich text) do NOT go in lang JSON — use `self.tr("中文msgid")` through ok gettext: msgid into `i18n/*/LC_MESSAGES/ok.po` (msgid must match the code string verbatim, including full-width punctuation / `{placeholders}`), then `task_i18n_helper.py compile`.
 - **Minimal principle**: emoji (`📍` `⚙️` `🖱️`), tree chars (`└─`/`├─`), HTML tags/colors that need no translation stay concatenated in code (e.g. `"📍 " + self.tr("滑索配置说明")`); only translatable plain text goes into i18n data (msgid/msgstr exclude emoji and decoration).

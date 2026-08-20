@@ -44,7 +44,7 @@ How to reason about GitHub Actions job speedups, with the verified ok-end-field 
 
 ## 3. partial-sync-repo behavior notes
 
-- Inputs: `repos`, `sync_list`, `tag`, optional `gitignore_file`, `show_author`. Uses `@master` (unpinned) unless you pin.
+- Inputs: `repos`, `sync_list`, `tag`, optional `gitignore_file`, `show_author`. Pin `ok-oldking/partial-sync-repo` to a full 40-char commit SHA (with a human-readable version in a trailing comment) instead of `@master` — branch refs change as upstream moves, so the workflow could execute unreviewed code.
 - It: shallow-clones each target repo fresh (`fse.remove` + `git clone`), syncs listed files, generates a commit message from last-synced tag → current tag, then synchronizes tags (deletes source-missing tags, applies current + special tags like `lts`).
 - Commit `2bf054d` "don't sync tags if no changes": when files didn't change, `return` before the tag loop — big time save when there is nothing to commit.
 - If you want "don't delete old tags / only push the new tag", the action has no option — you must fork it or replace with custom git commands.

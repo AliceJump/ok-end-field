@@ -112,7 +112,7 @@ Verified parameter usage from `docs/dev/文字识别示例.md` and `docs/dev/图
   - Pass `box` explicitly only when you need a dynamic custom search region; use `vertical_variance`/`horizontal_variance` (relative proportions) to widen the default region instead.
   - `find_one` returns the highest-confidence `Box` or `None` (no `result[0]` needed).
   - `find_feature` returns results sorted by confidence desc; `result[0]` is the best match.
-  - Polling for a template that appears late: loop `find_feature` + `next_frame()` + `sleep`, same pattern as OCR disappearance polling.
+  - Polling for a template that appears late: loop `find_feature` and use **one** refresh mechanism per iteration — either `next_frame()` **or** `sleep()`, not both (each one refreshes the current frame; combining them adds extra refreshes and delays). Match the same pattern as OCR disappearance polling.
 
 ## Screenshot Reasoning
 

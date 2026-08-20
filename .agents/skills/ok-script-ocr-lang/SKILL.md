@@ -54,7 +54,7 @@ uv run python -m unittest tests.TestCheckLang
 `TestCheckLang` only scans `self.lang.<module>.k_xxx` references and validates `zh_CN` + `zh_TW`:
 - module missing or both locales missing key → FAIL.
 - only one active locale missing → warning (not fail).
-- non-`k_` access (e.g. `self.lang.login_mixin.ms`) is NOT covered by the test regex — verify manually.
+- non-`k_` access (e.g. `self.lang.login_mixin.ms`) is NOT covered by the test regex — verify manually. If you want automatic coverage for semantic keys, extend the test regex to all `self.lang.<module>.<key>` accesses with the same `zh_CN`/`zh_TW` validation rules.
 
 ## 4. OCR confusion patch (ocr_text_fix.json)
 

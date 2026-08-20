@@ -80,6 +80,7 @@ Workflows that `git push` to a branch protected by the `pull_request` rule fail.
 ```
 
 - Note: PRs opened by `GITHUB_TOKEN` trigger CI in an **approval-required** state (official behavior).
+- When intentionally reusing the same fixed branch + PR across scheduled runs, concurrent runs can overwrite each other — add a workflow-level `concurrency` group to cancel the older run, or use a branch name incorporating `GITHUB_RUN_ID` and drop the `-f` force-push.
 
 ## 5. Reference
 
