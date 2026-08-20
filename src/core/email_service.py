@@ -286,6 +286,7 @@ def send_email(
 
     # 校验服务器证书，避免降级/中间人风险（SonarQube S4830）
     ssl_context = ssl.create_default_context()
+    ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
 
     if use_ssl:
         server = smtplib.SMTP_SSL(smtp_host, smtp_port, timeout=timeout, context=ssl_context)

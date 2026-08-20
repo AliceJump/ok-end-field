@@ -101,9 +101,11 @@ jobs:
         shell: pwsh
         continue-on-error: true
         timeout-minutes: 300
+        env:
+          WAIT_SECONDS: ${{ inputs.wait_seconds }}
         run: |
           ./scripts/smoke_test_tags.ps1 -Tags "${{ matrix.shard }}" `
-            -WaitSeconds ${{ inputs.wait_seconds }} `
+            -WaitSeconds $env:WAIT_SECONDS `
             -ResultFile "smoke_${{ strategy.job-index }}.csv" `
             -BadTagsFile "bad_${{ strategy.job-index }}.txt"
 

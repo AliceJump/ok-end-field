@@ -60,7 +60,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                             rewards.append((t, val))  # 保存 OCR对象 和 提取出的数值
                         elif val > 100:
                             self.log_debug(f"金额异常过大({val}万)，可能是OCR误识别，已过滤")
-                    except:
+                    except Exception:
                         pass
         return rewards, accept_btns, refresh_btn
 

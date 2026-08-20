@@ -371,5 +371,5 @@ def run_in_window(hwnd, func, *args, **kwargs):
         if need_restore and prev and win32gui.IsWindow(prev):
             try:
                 win32gui.SetForegroundWindow(prev)
-            except:
+            except Exception:
                 pass

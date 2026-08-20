@@ -465,10 +465,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self.log_info("未找到‘运送委托列表’，退出")
             return False
         self.wait_ui_stable(refresh_interval=1)
-        enable_delivery_area = True
-        ticket_types = []
-        if enable_delivery_area:
-            ticket_types.append("ticket_delivery_area")
+        ticket_types = ["ticket_delivery_area"]
 
         if not ticket_types:
             self.log_info("警告: 未启用任何券种，任务退出")
