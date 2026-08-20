@@ -12,7 +12,7 @@ from pathlib import Path
 from PIL import Image
 from PySide6.QtCore import QEventLoop, QTimer
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentIcon
+from qfluentwidgets import FluentIcon, Theme
 from qfluentwidgets.components.widgets.icon_widget import IconWidget
 
 import src.icons as icons_module
@@ -97,7 +97,8 @@ class GifIconTestCase(unittest.TestCase):
         # png/svg 走原有渲染路径，不应被 GIF 逻辑影响
         png = ThemeIcon("a", "b", suffix=".png", base_path=self.tmp)
         self.assertFalse(png._is_gif)
-        self.assertEqual(png.path(), str(self.tmp / "a.png"))
+        self.assertEqual(png.path(Theme.LIGHT), str(self.tmp / "a.png"))
+        self.assertEqual(png.path(Theme.DARK), str(self.tmp / "b.png"))
 
     def test_theme_icon_rejects_bad_suffix(self):
         with self.assertRaises(AssertionError):

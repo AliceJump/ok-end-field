@@ -87,6 +87,12 @@ class LangTestCase(unittest.TestCase):
     def collect_missing(self):
 
         # 完全缺失（FAIL）
+        """
+        Scan source files for language references and collect missing-file and fully missing-key errors.
+        
+        Returns:
+            list[str]: Error messages for language files or keys missing from all supported locales.
+        """
         missing = []
 
         # 部分缺失（WARNING）
@@ -144,7 +150,7 @@ class LangTestCase(unittest.TestCase):
                             f"{file_path} -> {lang_group}.json"
                         )
 
-                        print("     ❌", msg)
+                        print("     [X]", msg)
 
                         missing.append(msg)
 
@@ -165,7 +171,7 @@ class LangTestCase(unittest.TestCase):
                             missing_langs.append(locale_code)
 
                             print(
-                                f"     ⚠️ MISSING locale {locale_code}"
+                                f"     [!] MISSING locale {locale_code}"
                             )
 
                             continue
@@ -173,7 +179,7 @@ class LangTestCase(unittest.TestCase):
                         if key in lang_data:
 
                             print(
-                                f"     ✅ FOUND in {locale_code}"
+                                f"     [OK] FOUND in {locale_code}"
                             )
 
                             found_langs.append(locale_code)
@@ -181,7 +187,7 @@ class LangTestCase(unittest.TestCase):
                         else:
 
                             print(
-                                f"     ⚠️ MISSING key in {locale_code}"
+                                f"     [!] MISSING key in {locale_code}"
                             )
 
                             missing_langs.append(locale_code)
@@ -199,7 +205,7 @@ class LangTestCase(unittest.TestCase):
                             f"(missing in ALL languages)"
                         )
 
-                        print("     ❌", msg)
+                        print("     [X]", msg)
 
                         missing.append(msg)
 
