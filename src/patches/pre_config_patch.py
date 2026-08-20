@@ -8,6 +8,6 @@ def install_pre_config_patch():
     Raises:
         None
     """
-    # WA: set empty PATH to resolve qfluentwidgets access os.environ['PATH'] issue
-    if "PATH" not in os.environ:
-        os.environ["PATH"] = ""
+    # WA: set default PATH to resolve qfluentwidgets access os.environ['PATH'] issue
+    # 使用 os.defpath 而非空串，避免非绝对路径命令（如 git/python）无法解析
+    os.environ.setdefault("PATH", os.defpath)
