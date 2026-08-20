@@ -12,6 +12,7 @@
 """
 
 import argparse
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -25,9 +26,21 @@ ROOT = Path(__file__).resolve().parents[1]
 I18N_DIR = ROOT / "i18n"
 LOCALES = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES")
 
+# git ref 名与常见 revision 语法（HEAD~1 / HEAD^ / @{upstream} 等）的
+# 安全字符集；list 形式调用 git show，无 shell 解释，仅拦截明显注入字符
+_SAFE_REF_RE = re.compile(r"^[A-Za-z0-9._/\-~^@{}]+$")
+
+
+def is_safe_ref(ref: str) -> bool:
+    """校验 git ref 是否只含安全字符，避免 CLI 输入逃逸进 git show。"""
+    return bool(_SAFE_REF_RE.match(ref))
+
 
 def load_history(loc: str, ref: str) -> polib.POFile | None:
     """从 git 读取历史 ok.po 内容并解析。"""
+    if not is_safe_ref(ref):
+        print(f"  [po] {loc}: 非法 ref 被拒绝: {ref!r}")
+        return None
     rel = f"i18n/{loc}/LC_MESSAGES/ok.po"
     proc = subprocess.run(
         ["git", "show", f"{ref}:{rel}"],
@@ -35,6 +48,7 @@ def load_history(loc: str, ref: str) -> polib.POFile | None:
         capture_output=True,
         text=True,
         encoding="utf-8",
+        check=False,
     )
     if proc.returncode != 0:
         print(f"  [po] {loc}: git show {ref}:{rel} 失败: {proc.stderr.strip()}")

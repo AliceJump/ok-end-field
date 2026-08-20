@@ -77,7 +77,7 @@ def find_box_font():
         path = os.path.join(fonts_dir, candidate)
         if os.path.exists(path):
             return ImageFont.truetype(path, 30)
-    return ImageFont.load_default(size=30)
+    return ImageFont.load_default().font_variant(size=30)
 
 
 def render_boxed_image(sidecar: dict, original_path: str | Path, output_path: str | Path) -> None:

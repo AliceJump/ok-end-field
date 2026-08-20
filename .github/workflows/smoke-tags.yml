@@ -24,8 +24,7 @@ on:
         required: false
         default: ''
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: smoke-tags
@@ -35,6 +34,8 @@ jobs:
   # 收集所有 v* tag 并按 shards 均分（round-robin），输出每个分片的 tag 逗号串
   collect:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     outputs:
       matrix: ${{ steps.collect.outputs.matrix }}
 
@@ -79,6 +80,8 @@ jobs:
     needs: collect
     if: ${{ needs.collect.outputs.matrix != '[]' }}
     runs-on: windows-latest
+    permissions:
+      contents: read
 
     strategy:
       fail-fast: false
