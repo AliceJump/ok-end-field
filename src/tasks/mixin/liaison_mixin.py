@@ -313,7 +313,7 @@ class LiaisonMixin(NavigationMixin):
                     found_target = True
                     break
 
-                self.scroll_relative(0.5, 0.5, -3)
+                self.scroll_relative(0.5, 0.5, -1)
                 self.wait_ui_stable(refresh_interval=0.5)
 
             if not found_target:

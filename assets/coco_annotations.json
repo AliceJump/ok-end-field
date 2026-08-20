@@ -1159,6 +1159,26 @@
             "id": 229,
             "name": "clear_page_demo_battle",
             "supercategory": ""
+        },
+        {
+            "id": 230,
+            "name": "liino_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 231,
+            "name": "mi_fu_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 232,
+            "name": "arcane_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 233,
+            "name": "catcher_contact",
+            "supercategory": ""
         }
     ],
     "images": [
@@ -1860,7 +1880,7 @@
         },
         {
             "id": 154,
-            "file_name": "images/2.png",
+            "file_name": "images/4.png",
             "width": 1920,
             "height": 1080
         },
@@ -1933,6 +1953,12 @@
         {
             "id": 167,
             "file_name": "images/1.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 168,
+            "file_name": "images/5.png",
             "width": 1920,
             "height": 1080
         },
@@ -2034,7 +2060,7 @@
         },
         {
             "id": 186,
-            "file_name": "images/3.png",
+            "file_name": "images/2.png",
             "width": 1920,
             "height": 1080
         },
@@ -2118,7 +2144,7 @@
         },
         {
             "id": 206,
-            "file_name": "images/4.png",
+            "file_name": "images/3.png",
             "width": 1920,
             "height": 1080
         },
@@ -4952,6 +4978,58 @@
                 23
             ],
             "area": 529,
+            "iscrowd": 0
+        },
+        {
+            "id": 204,
+            "image_id": 168,
+            "category_id": 230,
+            "bbox": [
+                987,
+                304,
+                97,
+                110
+            ],
+            "area": 10670,
+            "iscrowd": 0
+        },
+        {
+            "id": 205,
+            "image_id": 168,
+            "category_id": 231,
+            "bbox": [
+                1120,
+                305,
+                101,
+                107
+            ],
+            "area": 10807,
+            "iscrowd": 0
+        },
+        {
+            "id": 206,
+            "image_id": 168,
+            "category_id": 232,
+            "bbox": [
+                1257,
+                305,
+                99,
+                106
+            ],
+            "area": 10494,
+            "iscrowd": 0
+        },
+        {
+            "id": 207,
+            "image_id": 168,
+            "category_id": 233,
+            "bbox": [
+                1120,
+                497,
+                99,
+                106
+            ],
+            "area": 10494,
             "iscrowd": 0
         },
         {
