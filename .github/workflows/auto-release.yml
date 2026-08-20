@@ -91,16 +91,27 @@ jobs:
           fi
           echo "next=$next" >> "$GITHUB_OUTPUT"
 
+      - name: Generate GitHub App token for tag creation
+        id: app-token
+        if: steps.check.outputs.changed == 'true'
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          # 仅给本仓库安装的 release bot 发 token
+          owner: AliceJump
+          repositories: ok-end-field
+
       - name: Create and push version tag
         if: steps.check.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -euo pipefail
           next="${{ steps.version.outputs.next }}"
           target="${{ steps.check.outputs.latest_commit }}"
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "alicejump-release-bot[bot]"
+          git config user.email "alicejump-release-bot[bot]@users.noreply.github.com"
           # tag 必须指向关注路径最后一次修改的 commit（latest_commit），而不是 HEAD
           git tag -a "$next" "$target" -m "$next"
           git push origin "$next"
