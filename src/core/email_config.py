@@ -7,12 +7,7 @@
 """
 from __future__ import annotations
 
-import os
 from ok import ConfigOption
-
-# WA: set empty PATH to resolve qfluentwidgets access os.environ['PATH'] issue
-if "PATH" not in os.environ:
-    os.environ["PATH"] = ""
 from qfluentwidgets import FluentIcon
 
 EMAIL_CONFIG_NAME = "Email Config"
