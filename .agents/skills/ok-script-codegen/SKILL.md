@@ -91,6 +91,29 @@ def run(self):  # 定义任务运行入口。
 - Use `wait_click_feature` to wait for and click a template.
 - Use `find_one` or `find_feature` only for single-frame detection or custom loop detection.
 
+## Project-Specific OCR / Template Parameters (ok-end-field)
+
+Verified parameter usage from `docs/dev/文字识别示例.md` and `docs/dev/图像模板匹配示例.md`. Use these only in the ok-end-field project (BaseEfTask subclasses).
+
+### OCR click parameters
+
+- `wait_click_ocr(match=..., box=..., time_out=..., recheck_time=..., alt=...)`:
+  - `recheck_time > 0`: after a match is found, wait `recheck_time` seconds then re-locate the text before clicking. Use for elements that move right after appearing (pop animations, scrolling lists) or that flash on transitional frames. Reduces offset/false-click probability; does not guarantee animation completion.
+  - `alt=True`: press-and-hold `Alt` then click, then release. Use for **open-world interactions** with scene objects/NPCs (default interact key `F` is unreliable when the character is moving or many props are nearby); normal menu UI buttons usually don't need it.
+- `Box.name` holds the recognized text; use it for secondary logic (e.g. `if "收取信用" in result[0].name`).
+- Waiting for text to **disappear** cannot use `wait_ocr` (which waits for appearance) — poll with `ocr` in a loop with `next_frame()`/`sleep`.
+- `box_of_screen(x1, y1, x2, y2)` takes 0.0~1.0 relative proportions.
+
+### Template matching parameters
+
+- `find_feature(feature=..., box=..., threshold=...)` and `find_one(feature=..., box=..., threshold=...)`:
+  - `feature` accepts a `FeatureList` enum, a string, or a list of candidates. The framework auto-selects `_2k`/`_4k` resolution variants when present.
+  - **Omit `box`** to use the default search region from `assets/coco_annotations.json` (marked via the debug-mode "模板" tab, which auto-saves the template to `assets/images/` and its coords to `coco_annotations.json`). Don't hand-maintain the JSON.
+  - Pass `box` explicitly only when you need a dynamic custom search region; use `vertical_variance`/`horizontal_variance` (relative proportions) to widen the default region instead.
+  - `find_one` returns the highest-confidence `Box` or `None` (no `result[0]` needed).
+  - `find_feature` returns results sorted by confidence desc; `result[0]` is the best match.
+  - Polling for a template that appears late: loop `find_feature` and use **one** refresh mechanism per iteration — either `next_frame()` **or** `sleep()`, not both (each one refreshes the current frame; combining them adds extra refreshes and delays). Match the same pattern as OCR disappearance polling.
+
 ## Screenshot Reasoning
 
 When screenshots are attached:
