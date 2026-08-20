@@ -49,6 +49,15 @@ function Get-LatestReview {
     return ($codedRabbit | Sort-Object submitted_at)[-1]
 }
 
+function Get-CodeRabbitStatus {
+    # CodeRabbit 完成 review 后会在 head commit 上发布 commit status
+    # （context="CodeRabbit"），即使没有发布新的 review 条目也会更新。
+    # 返回 status 对象（state/description/created_at）；不存在则返回 $null。
+    $s = Invoke-GhChecked @("api", "repos/$Repo/commits/$headSha/status", "--jq", '.statuses[] | select(.context == "CodeRabbit")')
+    if (-not $s) { return $null }
+    return ($s | ConvertFrom-Json)
+}
+
 function Get-ReviewSummary {
     param([object]$Review)
     if (-not $Review) { return "" }
@@ -78,6 +87,24 @@ try {
             Write-Host "head 已更新: $($headSha.Substring(0,7)) -> $($fresh.Substring(0,7))"
             $headSha = $fresh
         }
+        # 判断依据 1（快速）：CodeRabbit commit status 已存在 = review 已完成
+        # （即使无新 review 条目也会更新 status，见 SKILL.md 2b 节说明）
+        $status = Get-CodeRabbitStatus
+        if ($status) {
+            Write-Host "OK: CodeRabbit status 已完成 → state=$($status.state) desc='$($status.description)' ($($status.created_at))"
+            if ($SinceCommit -and $sinceDate -and $status.created_at -lt $sinceDate) {
+                Write-Host "注意: status 早于 $SinceCommit 提交，可能仍是旧 review（force-push 场景），请人工确认"
+            }
+            # 若 status 存在但 reviews 无对应条目，提示可能无新意见
+            $latest = Get-LatestReview
+            if ($latest -and $latest.commit_id -eq $headSha) {
+                Write-Host "最新 review 已覆盖当前 head → $(Get-ReviewSummary $latest)"
+            } else {
+                Write-Host "注意: 本次完成可能未发布新 review 条目（无新的 actionable comments），请直接查看 CodeRabbit 评论"
+            }
+            exit 0
+        }
+        # 判断依据 2（兜底）：最新 review 的 commit_id 已等于当前 head
         $latest = Get-LatestReview
         if ($latest -and $latest.commit_id -and $latest.commit_id -eq $headSha) {
             $summary = Get-ReviewSummary $latest
@@ -90,7 +117,7 @@ try {
         if ($latest -and $latest.commit_id) {
             Write-Host ("等待中... 最新 review 停在 " + $latest.commit_id.Substring(0,7) + " ($($latest.submitted_at))，目标 " + $headSha.Substring(0,7))
         } else {
-            Write-Host "等待中... 尚未发现 CodeRabbit review"
+            Write-Host "等待中... 尚未发现 CodeRabbit review/status"
         }
         Start-Sleep -Seconds $IntervalSeconds
     }
