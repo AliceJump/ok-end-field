@@ -297,7 +297,7 @@ self.default_config_group.update({...})
 - `Ensure Main Once Action Sleep`
 - `Zip Line Config`
 
-战斗任务通过 `BattleMixin.get_battle_config()` 读取。任务可通过「使用独立配置」开关选择全局或独立战斗配置；绑定账号上下文后，账号任务覆盖优先级最高。不要在多个任务中复制全局战斗默认值。
+战斗任务通过 `BattleMixin.get_battle_config()` 读取。任务可通过「使用独立配置」开关选择全局或独立战斗配置；「使用独立配置」关闭时，`get_battle_config()` 直接返回全局配置，账号任务覆盖不会生效。仅当「使用独立配置」开启时，绑定账号上下文后，账号任务覆盖才为最高优先级。不要在多个任务中复制全局战斗默认值。
 
 ### 6.4 Feature 资源
 
