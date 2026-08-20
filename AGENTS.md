@@ -2,6 +2,40 @@
 
 项目级强制规则。每次会话开始必须读取并遵守。
 
+## 提交与 PR 强制规则（最高优先级，必须先读）
+
+### PowerShell 双引号字符串中的反引号（必踩坑）
+
+在 PowerShell 双引号字符串里，反引号 `` ` `` 是**转义字符**而非字面量（如 `` `$HOME `` 会展开变量）。给 `gh pr create/edit --body "..."` 等传 Markdown（含代码反引号）时：
+
+- **必须用单引号字符串**（`'...'` 或 `@'...'@` here-string），单引号内反引号是字面量，`gh pr edit --body $body` 传变量也可；
+- **禁止用双引号传含反引号的 body**——反引号会被吞掉（`` \`src\` `` 渲染成 `\src\`，只剩反斜杠），造成 PR 描述格式错乱；
+- 已踩坑案例：PR #194、PR #203 的 body 中 `` `src/...` `` 全部变成 `\src/...\`，需 `gh pr edit` 重新提交。
+
+**PR 创建后必须自检**——无论用什么方式传 body，创建后立即验证反引号完好：
+
+```powershell
+gh pr view <n> --json body --jq '.body' | Select-String '`'
+```
+
+若出现 `\xxx\` 或 `^G` 等异常字符，用单引号 here-string 重写 body：
+
+```powershell
+$body = @'
+...正文（含 `反引号`）...
+'@
+gh pr edit <n> --body $body
+```
+
+### 提交检查清单
+
+提交或创建 PR 前依次确认：
+
+1. PR/commit body 含代码反引号时用单引号 here-string，且创建后自检通过（见上）。
+2. 不提交敏感信息（token、密钥、私钥）。`.pem`、`RELEASE_APP_PRIVATE_KEY` 等只进 Secrets 不进仓库。
+3. 配置键名修改走 `.agents/skills/ok-config-migration` 严格顺序。
+4. 中文 commit message 与仓库风格一致（`fix:`/`feat:`/`docs:`/`refactor:`/`ci:` 前缀）。
+
 ## 配置键名修改（重要）
 
 `configs/` 目录下的 JSON 是用户运行数据，修改 `default_config` 中的配置键名时必须遵守严格顺序（迁移表 → 迁移测试 → i18n → 文档 → 恢复），否则会丢失用户配置。**完整流程见 `.agents/skills/ok-config-migration`**。要点：
@@ -17,14 +51,6 @@
 - Python：依赖通过 [uv](https://docs.astral.sh/uv/) 管理，`uv sync` 创建仓库本地 `.venv`，用 `uv run python ...` 执行（见 `.agents/skills/use-local-venv`）。`pyproject.toml` + `uv.lock` 为唯一来源，`requirements.txt` 为发布流水线的派生产物，勿手改。
 - 测试：`run_tests.ps1`（经 `uv run`）或 `uv run python -m unittest discover -s tests`。
 - 日志：`logs/ok-script.log`（配置历史、任务执行、OCR 均可在此排查）；历史日志位于同目录的 `ok-script.YYYY-MM-DD.log` 文件中。
-
-## PowerShell 双引号字符串中的反引号（重要）
-
-在 PowerShell 双引号字符串里，反引号 `` ` `` 是**转义字符**而非字面量（如 `` `$HOME `` 会展开变量）。给 `gh pr create/edit --body "..."` 等传 Markdown（含代码反引号）时：
-
-- **必须用单引号字符串**（`'...'` 或 `@'...'@` here-string），单引号内反引号是字面量，`gh pr edit --body $body` 传变量也可；
-- 若用双引号，反引号会被吞掉（`` \`src\` `` 渲染成 `\src\`，只剩反斜杠），造成 PR 描述格式错乱；
-- 已踩坑案例：PR #194 首次 body 中 `` `src/...` `` 全部变成 `\src/...\`，需 `gh pr edit` 重新提交。
 
 ## 代码风格
 
