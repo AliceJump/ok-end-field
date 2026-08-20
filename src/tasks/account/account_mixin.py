@@ -26,8 +26,16 @@ class AccountMixin(LoginMixin):
             ),
         })
         self.default_config_group.update({
-            "多账户模式": ["多账户模式", "多账户独立配置", "账号列表"],
+            "多账户模式": ["多账户模式"],
         })
+        # 「多账户模式」开关: 开启后展开显示「多账户独立配置」和「账号列表」两个子选项
+        if not hasattr(self, "config_type") or self.config_type is None:
+            self.config_type = {}
+        self.config_type["多账户模式"] = {
+            "sub_configs": {
+                True: ["多账户独立配置", "账号列表"],
+            },
+        }
 
     def get_account_list(self):
         account_str = self.config.get("账号列表", "")
