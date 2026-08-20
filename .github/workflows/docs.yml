@@ -49,7 +49,7 @@ jobs:
           enablement: true
 
       - name: Install documentation dependencies
-        run: pip install --only-binary :all: -r requirements-docs.txt
+        run: 'pip install --only-binary :all: mkdocs-material==9.7.7'
 
       - name: Build site
         env:
