@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 concurrency:
   group: update-endfield-map
@@ -130,7 +131,7 @@ jobs:
           print("Validation passed.")
           PY
 
-      - name: Commit
+      - name: Commit to branch
         if: steps.schedule.outputs.run == 'true'
         run: |
           git config user.name "github-actions[bot]"
@@ -143,9 +144,23 @@ jobs:
             exit 0
           fi
 
+          git checkout -b chore/update-map-data
           git commit -m "chore(map): update endfield map data"
 
-      - name: Push
+      - name: Push branch and open PR
         if: steps.schedule.outputs.run == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git push
+          set -euo pipefail
+          BRANCH="chore/update-map-data"
+          git push -f origin "$BRANCH"
+          if gh pr view "$BRANCH" --json number --jq '.number' >/dev/null 2>&1; then
+            gh pr edit "$BRANCH" --title "chore(map): 更新地图数据" --body "由 update-endfield-map-data 工作流自动生成的地图数据更新。"
+            echo "Updated existing PR for $BRANCH"
+          else
+            gh pr create --base master --head "$BRANCH" \
+              --title "chore(map): 更新地图数据" \
+              --body "由 update-endfield-map-data 工作流自动生成的地图数据更新。"
+            echo "Created new PR for $BRANCH"
+          fi

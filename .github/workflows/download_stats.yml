@@ -8,6 +8,7 @@ on:
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
   build:
@@ -33,7 +34,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: commit
+      - name: commit to branch
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
@@ -41,6 +42,27 @@ jobs:
           git add assets/downloads.svg
 
           if ! git diff --cached --quiet; then
+            git checkout -b chore/update-download-stats
             git commit -m "update download stats"
-            git push
+          fi
+
+      - name: push branch and open PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          BRANCH="chore/update-download-stats"
+          if ! git rev-parse --verify "$BRANCH" >/dev/null 2>&1; then
+            echo "No changes; branch not created."
+            exit 0
+          fi
+          git push -f origin "$BRANCH"
+          if gh pr view "$BRANCH" --json number --jq '.number' >/dev/null 2>&1; then
+            gh pr edit "$BRANCH" --title "chore: update download stats" --body "由 download_stats 工作流自动生成的下载统计更新。"
+            echo "Updated existing PR for $BRANCH"
+          else
+            gh pr create --base master --head "$BRANCH" \
+              --title "chore: update download stats" \
+              --body "由 download_stats 工作流自动生成的下载统计更新。"
+            echo "Created new PR for $BRANCH"
           fi
