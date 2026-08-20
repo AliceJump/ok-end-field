@@ -5,7 +5,7 @@
 - 读取/生成 ``configs/Email Config.json`` 中的邮件配置
 - 发送普通文本邮件、HTML 邮件、带附件邮件
 - 发送测试邮件（供“设置 → 邮件发送配置”里的“发送测试邮件”按钮调用）
-- 读取 ``html/`` 目录下的邮件 HTML 模板
+- 读取 ``assets/html/`` 目录下的邮件 HTML 模板
 """
 from __future__ import annotations
 
@@ -30,7 +30,7 @@ from src.core.email_config import DEFAULT_EMAIL_CONFIG, EMAIL_CONFIG_NAME
 
 # 项目根目录（src/core/email_service.py -> 上三级为项目根）
 ROOT = Path(__file__).resolve().parents[2]
-HTML_DIR = ROOT / "html"
+HTML_DIR = ROOT / "assets" / "html"
 DEFAULT_TEMPLATE_NAME = "test_email.html"
 
 
@@ -115,7 +115,7 @@ def resolve_recipient(to_user: str | None, settings: dict) -> str:
 
 
 def load_email_template(name: str = DEFAULT_TEMPLATE_NAME) -> str:
-    """读取 ``html/`` 下的邮件 HTML 模板。
+    """读取 ``assets/html/`` 下的邮件 HTML 模板。
 
     把本地图片素材内嵌为 base64，并把 ``<link rel="stylesheet">`` 引用的
     共享 CSS（email_style.css）内联为 ``<style>``，保证邮件客户端也能渲染样式。
@@ -339,7 +339,7 @@ def send_email_to_user(
 def send_test_email(to_user: str | None = None, settings: dict | None = None) -> str:
     """发送一封测试邮件。
 
-    使用 ``html/test_email.html`` 模板，收件人优先取传入的 ``to_user``，
+    使用 ``assets/html/test_email.html`` 模板，收件人优先取传入的 ``to_user``，
     否则使用设置中的“默认收件人”。
     """
     settings = settings or get_email_settings()
@@ -391,7 +391,7 @@ def send_daily_summary_email(
 ) -> str:
     """发送日常任务最终汇总邮件。
 
-    使用 ``html/daily_summary_email.html`` 模板，收件人取设置中的“默认收件人”。
+    使用 ``assets/html/daily_summary_email.html`` 模板，收件人取设置中的“默认收件人”。
 
     Args:
         summary_text: 汇总文本（写入终端日志区域）。

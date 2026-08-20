@@ -20,7 +20,7 @@
     uv run python tools/send_email_to_user.py --to user@example.com --subject "报告" \
         --body-file report.txt --attachment a.png --attachment b.png
 
-    # 使用 html/test_email.html 模板发送测试邮件
+    # 使用 assets/html/test_email.html 模板发送测试邮件
     uv run python tools/send_email_to_user.py --test-email
 
     # 不使用 SSL（例如使用 587 STARTTLS）
@@ -67,7 +67,7 @@ def main() -> int:
     parser.add_argument(
         "--test-email",
         action="store_true",
-        help="使用 html/test_email.html 模板发送一封测试邮件",
+        help="使用 assets/html/test_email.html 模板发送一封测试邮件",
     )
     parser.add_argument("--to", help="收件人邮箱，或设置“收件人列表”中的用户别名")
     parser.add_argument("--subject", default="", help="邮件主题")
