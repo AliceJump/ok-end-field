@@ -49,7 +49,9 @@ After pushing fixes, wait for CodeRabbit to cover the new head before reading it
 .\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber <n> -IntervalSeconds 15 -TimeoutSeconds 300
 ```
 
-Exit codes: `0` = a review covering the current head exists (prints `actionable=N` summary); `1` = timeout (retry or re-trigger with `@coderabbitai review`); `2` = API/auth error. The script re-fetches `headRefOid` each poll, so pushing a new commit mid-wait is handled; use `-SinceCommit <sha>` to flag reviews that predate a force-push.
+Exit codes: `0` = review done (either a new review entry covers the head, or the CodeRabbit commit status reached `success`); `1` = timeout (retry or re-trigger with `@coderabbitai review`); `2` = API/auth error. The script re-fetches `headRefOid` each poll, so pushing a new commit mid-wait is handled; use `-SinceCommit <sha>` to flag reviews that predate a force-push.
+
+**Status vs review entries (verified)**: CodeRabbit posts a commit status (`context=CodeRabbit`) on the PR head — `pending` ("Review queued") while running, `success` ("Review completed") when done. When a re-triggered review finds nothing new, it completes WITHOUT posting a new review entry, so the reviews list still shows the old `commit_id`; the status is the only completion signal. The script therefore treats `status.state == success` as done (fast path) and a review entry matching the head as a fallback. `pending` means keep waiting, not done.
 
 ### 3. Handle rate limits
 

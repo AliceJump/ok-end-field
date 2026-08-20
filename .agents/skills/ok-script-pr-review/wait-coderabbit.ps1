@@ -87,10 +87,11 @@ try {
             Write-Host "head 已更新: $($headSha.Substring(0,7)) -> $($fresh.Substring(0,7))"
             $headSha = $fresh
         }
-        # 判断依据 1（快速）：CodeRabbit commit status 已存在 = review 已完成
+        # 判断依据 1（快速）：CodeRabbit commit status 为 success = review 已完成
         # （即使无新 review 条目也会更新 status，见 SKILL.md 2b 节说明）
+        # pending（如 'Review queued'）表示已排队但未完成，继续等待
         $status = Get-CodeRabbitStatus
-        if ($status) {
+        if ($status -and $status.state -eq "success") {
             Write-Host "OK: CodeRabbit status 已完成 → state=$($status.state) desc='$($status.description)' ($($status.created_at))"
             if ($SinceCommit -and $sinceDate -and $status.created_at -lt $sinceDate) {
                 Write-Host "注意: status 早于 $SinceCommit 提交，可能仍是旧 review（force-push 场景），请人工确认"
@@ -103,6 +104,9 @@ try {
                 Write-Host "注意: 本次完成可能未发布新 review 条目（无新的 actionable comments），请直接查看 CodeRabbit 评论"
             }
             exit 0
+        }
+        if ($status -and $status.state -ne "success") {
+            Write-Host ("等待中... CodeRabbit status=$($status.state) desc='$($status.description)' ($($status.created_at))")
         }
         # 判断依据 2（兜底）：最新 review 的 commit_id 已等于当前 head
         $latest = Get-LatestReview
