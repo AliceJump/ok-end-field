@@ -7,6 +7,7 @@
 """
 from __future__ import annotations
 
+import os
 from ok import ConfigOption
 
 # WA: set empty PATH to resolve qfluentwidgets access os.environ['PATH'] issue
