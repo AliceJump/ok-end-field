@@ -103,8 +103,9 @@ jobs:
         timeout-minutes: 300
         env:
           WAIT_SECONDS: ${{ inputs.wait_seconds }}
+          SMOKE_TAGS: ${{ matrix.shard }}
         run: |
-          ./scripts/smoke_test_tags.ps1 -Tags "${{ matrix.shard }}" `
+          ./scripts/smoke_test_tags.ps1 -Tags $env:SMOKE_TAGS `
             -WaitSeconds $env:WAIT_SECONDS `
             -ResultFile "smoke_${{ strategy.job-index }}.csv" `
             -BadTagsFile "bad_${{ strategy.job-index }}.txt"
