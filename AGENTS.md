@@ -18,6 +18,14 @@
 - 测试：`run_tests.ps1`（经 `uv run`）或 `uv run python -m unittest discover -s tests`。
 - 日志：`logs/ok-script.log`（配置历史、任务执行、OCR 均可在此排查）；历史日志位于同目录的 `ok-script.YYYY-MM-DD.log` 文件中。
 
+## PowerShell 双引号字符串中的反引号（重要）
+
+在 PowerShell 双引号字符串里，反引号 `` ` `` 是**转义字符**而非字面量（如 `` `$HOME `` 会展开变量）。给 `gh pr create/edit --body "..."` 等传 Markdown（含代码反引号）时：
+
+- **必须用单引号字符串**（`'...'` 或 `@'...'@` here-string），单引号内反引号是字面量，`gh pr edit --body $body` 传变量也可；
+- 若用双引号，反引号会被吞掉（`` \`src\` `` 渲染成 `\src\`，只剩反斜杠），造成 PR 描述格式错乱；
+- 已踩坑案例：PR #194 首次 body 中 `` `src/...` `` 全部变成 `\src/...\`，需 `gh pr edit` 重新提交。
+
 ## 代码风格
 
 - 任务类基于 ok-script：`BaseTask` / `TriggerTask`，见 `.agents/skills/ok-script-tasks`。
