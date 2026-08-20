@@ -132,6 +132,22 @@ def merge_bool_options(option_keys: dict):
     return transform
 
 
+def legacy_battle_mode_to_bool(config, new_key):
+    """把旧「战斗配置」下拉框值迁移为「使用独立配置」布尔开关。
+
+    旧值 "使用独立配置" → True；"使用全局配置" → False。
+    新键已是 bool → _NO_MIGRATION（无需迁移）。
+    """
+    if isinstance(config.get(new_key), bool):
+        return _NO_MIGRATION
+    old_value = config.get("战斗配置")
+    if old_value == "使用独立配置":
+        return True
+    if old_value == "使用全局配置":
+        return False
+    return _NO_MIGRATION
+
+
 def legacy_bool_switch_to_list(*, ops_key: str, defaults: list):
     """把旧「布尔开关 + 操作列表」合并为新多选列表键。
 

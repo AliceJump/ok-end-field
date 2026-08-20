@@ -1459,8 +1459,8 @@ msgstr ""
 "Manufacturing bay: collect cultivation materials and replenish the quantity to be manufactured.\n"
 "Cultivation bay: collect cultivation materials and directly cultivate again."
 
-msgid "选择当前任务使用全局或独立战斗配置。"
-msgstr "Choose whether the current task uses the global or the independent battle config."
+msgid "勾选后使用当前任务的独立战斗配置，否则使用全局战斗配置。"
+msgstr "When enabled, use this task's independent battle config; otherwise use the global battle config."
 
 msgid "选择执行时机：任务最开始时最先执行，或任务最后执行。"
 msgstr "Choose timing: execute at the very start or at the end of the daily tasks."

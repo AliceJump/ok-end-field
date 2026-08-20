@@ -1493,8 +1493,8 @@ msgstr ""
 "Compartimento de fabricación: recoger materiales de cultivo y reponer la cantidad a fabricar.\n"
 "Compartimento de cultivo: recoger materiales de cultivo y cultivar de nuevo directamente."
 
-msgid "选择当前任务使用全局或独立战斗配置。"
-msgstr "Elegir si la tarea actual usa la configuración de combate global o independiente."
+msgid "勾选后使用当前任务的独立战斗配置，否则使用全局战斗配置。"
+msgstr "Al activarlo, usa la configuración de combate independiente de esta tarea; de lo contrario, usa la configuración global."
 
 msgid "选择执行时机：任务最开始时最先执行，或任务最后执行。"
 msgstr "Elegir momento: ejecutar al inicio o al final de las tareas diarias."

@@ -3,8 +3,6 @@ import unittest
 from unittest.mock import patch
 
 from src.core.BattleConfig import (
-    BATTLE_CONFIG_MODE_GLOBAL,
-    BATTLE_CONFIG_MODE_INDEPENDENT,
     BATTLE_CONFIG_MODE_KEY,
     KEY_COND_SEQUENCE,
     KEY_INSTANT_LINK,
@@ -305,7 +303,7 @@ class TestBattleConfigOverrides(unittest.TestCase):
         task.battle_config_manager = BattleConfigManager({"启动技能点数": 2})
         return task
 
-    def test_task_config_uses_conditional_battle_dropdown(self):
+    def test_task_config_uses_independent_switch(self):
         task = object.__new__(BattleMixin)
         task.default_config = {}
         task.config_description = {}
@@ -314,20 +312,16 @@ class TestBattleConfigOverrides(unittest.TestCase):
         task._register_battle_config()
 
         mode_type = task.config_type[BATTLE_CONFIG_MODE_KEY]
-        self.assertEqual(
-            mode_type["options"],
-            [BATTLE_CONFIG_MODE_GLOBAL, BATTLE_CONFIG_MODE_INDEPENDENT],
-        )
-        self.assertEqual(mode_type["sub_configs"][BATTLE_CONFIG_MODE_GLOBAL], [])
-        # 修复A：3 个 hidden key 不在下拉列表中独立展开为行
-        independent_keys = mode_type["sub_configs"][BATTLE_CONFIG_MODE_INDEPENDENT]
+        # 开关类型：无 options，sub_configs 以 True 为键
+        self.assertNotIn("options", mode_type)
+        independent_keys = mode_type["sub_configs"][True]
         expected = [k for k in list(task.default_config)[1:]
                     if k not in (KEY_COND_SEQUENCE, KEY_INSTANT_ULT, KEY_INSTANT_LINK)]
         self.assertEqual(independent_keys, expected)
 
     def test_task_config_overrides_global_battle_config(self):
         task = self.make_battle_task({
-            BATTLE_CONFIG_MODE_KEY: BATTLE_CONFIG_MODE_INDEPENDENT,
+            BATTLE_CONFIG_MODE_KEY: True,
             "启动技能点数": 3,
         })
 
@@ -335,7 +329,7 @@ class TestBattleConfigOverrides(unittest.TestCase):
 
     def test_global_mode_ignores_independent_battle_value(self):
         task = self.make_battle_task({
-            BATTLE_CONFIG_MODE_KEY: BATTLE_CONFIG_MODE_GLOBAL,
+            BATTLE_CONFIG_MODE_KEY: False,
             "启动技能点数": 3,
         })
 

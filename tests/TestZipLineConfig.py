@@ -290,7 +290,7 @@ class TestZipLineConfig(unittest.TestCase):
                 "仅送货": False,
                 "测试对象": "无",
             }
-            daily_default = {"_enabled": True, "战斗配置": "使用全局配置", "⭐刷体力": True}
+            daily_default = {"_enabled": True, "使用独立配置": False, "⭐刷体力": True}
             state_path = os.path.join(tmp, "configs", "_global_config_migrations.json")
             backup_dir = os.path.join(tmp, "configs", "global_config_migration_backup")
             store_path = os.path.join(tmp, "configs", "account_scoped_overrides.json")
