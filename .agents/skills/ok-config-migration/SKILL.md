@@ -19,7 +19,7 @@ Rename config keys in ok-script task classes safely. `configs/` JSON holds user 
    ```powershell
    uv run python -m unittest tests.TestZipLineConfig -v
    ```
-   The test asserts the old key value was migrated to the new key (the function under test is `migrate_config_file_keys(<任务名>, migrations)` in `src/tasks/onetime/DeliveryTask.py`).
+   The test asserts the old key value was migrated to the new key (the function under test is `migrate_config_file_keys(<任务名>, migrations)`, defined in `src/core/config_migration.py`; the migration table lives in `src/tasks/onetime/DeliveryTask.py`).
 3. **同步 i18n** — after key changes, sync all `i18n/*/LC_MESSAGES/ok.po` msgid (msgid must match the code key name exactly), then compile:
    ```powershell
    uv run python scripts/task_i18n_helper.py compile
