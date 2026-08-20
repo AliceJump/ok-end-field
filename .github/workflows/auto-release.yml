@@ -22,6 +22,8 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          # 不持久化 github.token，避免 git push 仍以 github-actions[bot] 认证
+          persist-credentials: false
 
       - name: Check changes in deploy.txt paths since last tag
         id: check
@@ -106,7 +108,7 @@ jobs:
       - name: Create and push version tag
         if: steps.check.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          APP_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           set -euo pipefail
           next="${{ steps.version.outputs.next }}"
@@ -115,21 +117,9 @@ jobs:
           git config user.email "alicejump-release-bot[bot]@users.noreply.github.com"
           # tag 必须指向关注路径最后一次修改的 commit（latest_commit），而不是 HEAD
           git tag -a "$next" "$target" -m "$next"
-          git push origin "$next"
+          # 显式用 App token 认证推送（checkout 已 persist-credentials: false，
+          # 若直接 git push origin 会因无凭据失败），App token 在 tag ruleset 豁免列表中
+          git push "https://x-access-token:${APP_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$next"
           echo "Released $next -> $target"
-
-      - name: Trigger Build via repository_dispatch
-        if: steps.check.outputs.changed == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          next="${{ steps.version.outputs.next }}"
-          # GITHUB_TOKEN 推送的 tag 不会触发 push 事件（官方限制），
-          # 改用 repository_dispatch（GITHUB_TOKEN 可触发的事件之一）通知 Build 构建该 tag
-          curl -sS -X POST \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            "https://api.github.com/repos/${{ github.repository }}/dispatches" \
-            -d "{\"event_type\":\"auto-release\",\"client_payload\":{\"tag\":\"$next\"}}"
-          echo "Dispatched build for $next"
+          # App token 推送的 tag 会触发 build.yml 的 push 事件（GITHUB_TOKEN 不会，这是
+          # 之前用 repository_dispatch 的原因），因此不再需要手动 dispatch
