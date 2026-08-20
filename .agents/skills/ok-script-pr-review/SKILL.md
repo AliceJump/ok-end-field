@@ -38,6 +38,19 @@ gh pr comment <n> --body "@coderabbitai review"
 gh pr comment <n> --body "@coderabbitai full review"
 ```
 
+### 2b. Wait for a new review (polling tool)
+
+After pushing fixes, wait for CodeRabbit to cover the new head before reading its comments. Use the included `wait-coderabbit.ps1` instead of long `Start-Sleep` calls — it polls at a short interval and exits as soon as the latest review's `commit_id` equals the PR's current `headRefOid`:
+
+```powershell
+# 等待直到出现覆盖当前 head 的新 review（默认 20s 间隔 / 900s 超时）
+.\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber <n>
+# 更短间隔 / 更短超时
+.\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber <n> -IntervalSeconds 15 -TimeoutSeconds 300
+```
+
+Exit codes: `0` = a review covering the current head exists (prints `actionable=N` summary); `1` = timeout (retry or re-trigger with `@coderabbitai review`); `2` = API/auth error. The script re-fetches `headRefOid` each poll, so pushing a new commit mid-wait is handled; use `-SinceCommit <sha>` to flag reviews that predate a force-push.
+
 ### 3. Handle rate limits
 
 CodeRabbit has a rate limit. Signals: a PR was pushed/fixed but no new review appears (`updated_at` moves, review timestamps do not), or the re-trigger comment is ignored. Action: wait, then retry the trigger. Do not spam the trigger; retry after a sensible delay.
