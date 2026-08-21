@@ -59,10 +59,10 @@ def _scale_template(template_rgba: np.ndarray, scale: float) -> np.ndarray:
     new_h = max(1, int(round(h * scale)))
     new_w = max(1, int(round(w * scale)))
 
-    rgb_scaled = cv2.resize(template_rgba[:, :, :3], (new_w, new_h), cv2.INTER_LINEAR)
-    alpha_scaled = cv2.resize(template_rgba[:, :, 3], (new_w, new_h), cv2.INTER_NEAREST)
+    rgb_scaled = cv2.resize(template_rgba[:, :, :3], (new_w, new_h), interpolation=cv2.INTER_LINEAR)
+    alpha_scaled = cv2.resize(template_rgba[:, :, 3], (new_w, new_h), interpolation=cv2.INTER_NEAREST)
 
-    return cv2.merge([rgb_scaled, alpha_scaled])
+    return np.dstack([rgb_scaled, alpha_scaled])
 
 
 def _scale_point(point: Tuple[float, float], scale: float) -> Tuple[float, float]:

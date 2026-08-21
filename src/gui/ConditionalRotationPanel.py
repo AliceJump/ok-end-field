@@ -341,7 +341,7 @@ class _ActionListEditor(QWidget):
         self._list.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         self._list.setSpacing(2)
         self._list.setStyleSheet(_LIST_STYLE)
-        self._list.model().rowsMoved.connect(lambda *_: self.changed.emit())
+        self._list.model().rowsMoved.connect(self._on_rows_moved)
         self._layout.addWidget(self._list)
 
         self.add_btn = PushButton(FluentIcon.ADD, _tr("添加动作"))
@@ -353,17 +353,44 @@ class _ActionListEditor(QWidget):
         for t in (tokens if isinstance(tokens, list) else []):
             self._add_row(t, emit=False)
 
-    def _add_row(self, token: str, emit: bool = True):
+    def _make_row(self, token: str) -> _ActionRow:
         row = _ActionRow(token)
         row.changed.connect(self.changed)
         row.remove_requested.connect(self._remove_row_widget)
+        # 编辑时把最新 token 同步写入所属 item 的 UserRole，拖拽排序时数据随 item 迁移不丢失
+        row.changed.connect(lambda w=row: self._sync_row_token(w))
+        return row
+
+    def _add_row(self, token: str, emit: bool = True):
+        row = self._make_row(token)
         item = QListWidgetItem()
         # 固定行高，确保内容完整可见
         item.setSizeHint(QSize(0, 36))
+        item.setData(Qt.UserRole, token)
         self._list.addItem(item)
         self._list.setItemWidget(item, row)
         if emit:
             self.changed.emit()
+
+    def _sync_row_token(self, row_widget: _ActionRow):
+        for i in range(self._list.count()):
+            item = self._list.item(i)
+            if self._list.itemWidget(item) is row_widget:
+                item.setData(Qt.UserRole, row_widget.to_token())
+                break
+
+    def _on_rows_moved(self, *_):
+        # QListWidget InternalMove 会删除原 item 并插入新 item，
+        # setItemWidget 关联的控件不会随之迁移；按 UserRole 保存的 token 重建缺失的行控件
+        for i in range(self._list.count()):
+            item = self._list.item(i)
+            if self._list.itemWidget(item) is not None:
+                continue
+            token = item.data(Qt.UserRole)
+            if token is None:
+                continue
+            self._list.setItemWidget(item, self._make_row(str(token)))
+        self.changed.emit()
 
     def _remove_row_widget(self, row_widget: _ActionRow):
         for i in range(self._list.count()):

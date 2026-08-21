@@ -147,12 +147,16 @@ class BaseEfTask(
         current_executor_pause = 0.0
 
         if executor_pause_start != self._seen_executor_pause_start:
-            pause_duration = max(0.0, time.time() - executor_pause_start)
-            if executor.paused:
-                current_executor_pause = pause_duration
+            if executor_pause_start is None:
+                # 防御：pause_start 异常被置空时同步标记并跳过计算，避免 time.time() - None 抛 TypeError
+                self._seen_executor_pause_start = None
             else:
-                self._active_time_paused_total += pause_duration
-                self._seen_executor_pause_start = executor_pause_start
+                pause_duration = max(0.0, time.time() - executor_pause_start)
+                if executor.paused:
+                    current_executor_pause = pause_duration
+                else:
+                    self._active_time_paused_total += pause_duration
+                    self._seen_executor_pause_start = executor_pause_start
 
         current_task_pause = 0.0
         if self._task_pause_started_at is not None:

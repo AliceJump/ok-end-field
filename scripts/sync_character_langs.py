@@ -195,9 +195,14 @@ def sync_characters(wiki: dict) -> tuple:
         changed_canon = False
         for key in added:
             if key not in canon:
+                # 新角色可能缺 en_US（wiki 字段为空时不会写入该语言键），直接取会 KeyError
+                en_name = (lang[key].get("en_US") or {}).get("string", "")
+                if not en_name:
+                    print(f"  [跳过] {key}: 缺少 en_US，canonical 节点需人工补充")
+                    continue
                 canon[key] = {
                     "zh": lang[key]["zh_CN"]["string"],
-                    "en": lang[key]["en_US"]["string"].lower().replace(" ", "_"),
+                    "en": en_name.lower().replace(" ", "_"),
                     "stars": 6,
                 }
                 changed_canon = True
