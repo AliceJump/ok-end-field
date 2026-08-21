@@ -301,6 +301,7 @@ class DailyTradeFeature:
         return result
 
     def buy_sell(self, target_areas=None, keep_area_context=False, after_buy=None):
+        navigation_failed = False
         for area in target_areas or areas_list:
             if not self.config.get(area, False):
                 self.log_info(f"跳过{area}，因为配置中未启用")
@@ -309,6 +310,7 @@ class DailyTradeFeature:
                 self.ensure_main()
             if not self.to_model_area(area, "物资调度"):
                 self.log_info(f"无法进入{area}物资调度，买卖货失败")
+                navigation_failed = True
                 continue
             self.wait_click_ocr(
                 match=self.lang.daily_trade_mixin.k_33fb3f9c, box=self.box.top
@@ -451,4 +453,4 @@ class DailyTradeFeature:
                 else:
                     self.log_info("未找到加号按钮，无法出售")
 
-        return True
+        return not navigation_failed

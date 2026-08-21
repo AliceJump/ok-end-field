@@ -27,30 +27,38 @@ def _new_store() -> Dict[str, Any]:
     return copy.deepcopy(_EMPTY_STORE)
 
 
+def _backup_corrupt_store() -> str:
+    """把疑似损坏的存储文件移到 .corrupt；失败时如实报告，不假装已备份。"""
+    backup_path = f"{_STORE_PATH}.corrupt"
+    try:
+        os.replace(_STORE_PATH, backup_path)
+        return backup_path
+    except OSError:
+        return f"{_STORE_PATH}（备份失败：{backup_path} 无法写入）"
+
+
 def _load_store_json() -> Tuple[Dict[str, Any], Any]:
-    """读取存储文件；解析失败时备份损坏文件并抛错，绝不静默回退到空存储。"""
+    """读取存储文件。
+
+    - JSON 解析错误 / 编码错误 / 顶层类型异常：视为文件损坏，备份后抛错，绝不静默回退到空存储
+    - 文件读取 OSError（权限等）：与损坏无关，直接抛出原异常，不动源文件
+    """
     current_mtime: Any = os.path.getmtime(_STORE_PATH)
     try:
         with open(_STORE_PATH, "r", encoding="utf-8") as fp:
-            data = json.load(fp)
-    except Exception as exc:
-        backup_path = f"{_STORE_PATH}.corrupt"
-        try:
-            os.replace(_STORE_PATH, backup_path)
-        except OSError:
-            pass
+            raw = fp.read()
+    except OSError:
+        raise
+    try:
+        data = json.loads(raw)
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        backup_path = _backup_corrupt_store()
         raise RuntimeError(
             f"账号覆盖配置文件损坏，已备份到 {backup_path}，请修复后重启: {exc}"
         ) from exc
     if not isinstance(data, dict):
-        backup_path = f"{_STORE_PATH}.corrupt"
-        try:
-            os.replace(_STORE_PATH, backup_path)
-        except OSError:
-            pass
-        raise RuntimeError(
-            f"账号覆盖配置文件格式异常（顶层不是对象），已备份到 {backup_path}"
-        )
+        backup_path = _backup_corrupt_store()
+        raise RuntimeError(f"账号覆盖配置文件格式异常（顶层不是对象），已备份到 {backup_path}")
     return data, current_mtime
 
 
