@@ -66,3 +66,8 @@ jobs:
               --body "由 download_stats 工作流自动生成的下载统计更新。"
             echo "Created new PR for $BRANCH"
           fi
+          # 启用 auto-merge：checks 通过后自动 squash 合并（master ruleset approval=0）
+          gh pr merge "$BRANCH" --auto --squash --delete-branch \
+            --subject "chore: update download stats" \
+            --body "由 download_stats 工作流自动生成的下载统计更新。"
+          echo "Auto-merge enabled for $BRANCH"
