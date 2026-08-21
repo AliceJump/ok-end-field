@@ -132,6 +132,7 @@ jobs:
           PY
 
       - name: Commit to branch
+        id: commit
         if: steps.schedule.outputs.run == 'true'
         run: |
           git config user.name "github-actions[bot]"

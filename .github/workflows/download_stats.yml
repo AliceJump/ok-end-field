@@ -35,6 +35,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: commit to branch
+        id: commit
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
