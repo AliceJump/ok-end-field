@@ -54,3 +54,8 @@ run: 'pip install --only-binary :all: -r requirements-docs.txt'
 
 - Workflows that create PRs need `pull-requests: write` (plus `contents: write` for branch pushes).
 - `persist-credentials: false` on `actions/checkout` stops the persisted `github.token` from overriding later `git push` credentials (see github-rulesets skill for the full App-token push pattern).
+- **`gh pr merge --auto` fails with `GraphQL: Auto merge is not allowed for this repository (enablePullRequestAutoMerge)`** when the repository setting `allow_auto_merge` is false (GitHub default). Enable it once via API:
+  ```powershell
+  gh api -X PATCH repos/<owner>/<repo> -F allow_auto_merge=true --jq '{allow_auto_merge}'
+  ```
+  Also verify `allow_squash_merge`/`allow_rebase_merge` match the ruleset's `allowed_merge_methods`. Without this, the PR is created fine but auto-merge enablement fails and the job exits non-zero.
