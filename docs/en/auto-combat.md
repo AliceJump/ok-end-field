@@ -39,8 +39,8 @@ flowchart TD
 
 Dropdown for how the ultimate is released:
 
-- **Hold Skill Key** (default): hold the skill key (1–4) until the ultimate animation starts (combat state changes), then release — identical to the original behavior.
-- **Alt + Skill Key**: hold Alt while tapping the skill key (1–4) to release the ultimate, then release Alt. For players who set the ultimate release method to `Alt + Skill Key` in the in-game settings.
+- Hold Skill Key (default)
+- Alt + Skill Key
 
 ---
 
