@@ -144,26 +144,23 @@ jobs:
             exit 0
           fi
 
-          git checkout -b chore/update-map-data
+          BRANCH="chore/update-map-data-$(date -u +%Y%m%d%H%M%S)"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+          git checkout -b "$BRANCH"
           git commit -m "chore(map): update endfield map data"
 
       - name: Push branch and open PR
-        if: steps.schedule.outputs.run == 'true'
+        if: steps.commit.outputs.branch != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          BRANCH="chore/update-map-data"
-          git push -f origin "$BRANCH"
-          if gh pr view "$BRANCH" --json number --jq '.number' >/dev/null 2>&1; then
-            gh pr edit "$BRANCH" --title "chore(map): 更新地图数据" --body "由 update-endfield-map-data 工作流自动生成的地图数据更新。"
-            echo "Updated existing PR for $BRANCH"
-          else
-            gh pr create --base master --head "$BRANCH" \
-              --title "chore(map): 更新地图数据" \
-              --body "由 update-endfield-map-data 工作流自动生成的地图数据更新。"
-            echo "Created new PR for $BRANCH"
-          fi
+          BRANCH="${{ steps.commit.outputs.branch }}"
+          git push -u origin "$BRANCH"
+          gh pr create --base master --head "$BRANCH" \
+            --title "chore(map): 更新地图数据" \
+            --body "由 update-endfield-map-data 工作流自动生成的地图数据更新。"
+          echo "Created new PR for $BRANCH"
           # 启用 auto-merge：校验已在 PR 创建前完成（Validate data 步骤），
           # checks 通过后自动 squash 合并（master ruleset approval=0，squash 允许）
           gh pr merge "$BRANCH" --auto --squash --delete-branch \
