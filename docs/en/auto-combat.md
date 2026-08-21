@@ -35,6 +35,15 @@ flowchart TD
 > All battle-related config items are now managed centrally in **「Global Config → Battle Config」**;
 > configure once and it applies to Auto Combat, Stamina Farming, Daily Tasks, and every other battle-related task — no need to set them repeatedly in multiple places.
 
+### Ultimate release method
+
+Dropdown for how the ultimate is released:
+
+- Hold Skill Key (default)
+- Alt + Skill Key
+
+---
+
 ### Skill release
 
 The `Skill` release order is a sortable list, default `1,2,3`, selectable from 1 to 4 without duplicates. In normal mode, skills are cycled from this list when neither a conjunction nor an ultimate is released.

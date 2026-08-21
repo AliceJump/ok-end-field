@@ -1261,6 +1261,18 @@ msgstr "終結技をすぐに放出"
 msgid "立即释放连携技"
 msgstr "連携技をすぐに放出"
 
+msgid "终结技释放方式"
+msgstr "終結技の放出方法"
+
+msgid "配置终结技的释放方式"
+msgstr "終結技の放出方法を設定します"
+
+msgid "长按技能按键"
+msgstr "スキルキーを長押し"
+
+msgid "Alt + 技能按键"
+msgstr "Alt + スキルキー"
+
 msgid "等级读取测试"
 msgstr "レベル読み取りテスト"
 

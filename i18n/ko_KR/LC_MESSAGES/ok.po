@@ -1260,6 +1260,18 @@ msgstr "필살기 즉시 방출"
 msgid "立即释放连携技"
 msgstr "연계기 즉시 방출"
 
+msgid "终结技释放方式"
+msgstr "필살기 발동 방식"
+
+msgid "配置终结技的释放方式"
+msgstr "필살기 발동 방식을 설정합니다"
+
+msgid "长按技能按键"
+msgstr "스킬 키 길게 누르기"
+
+msgid "Alt + 技能按键"
+msgstr "Alt + 스킬 키"
+
 msgid "等级读取测试"
 msgstr "레벨 읽기 테스트"
 

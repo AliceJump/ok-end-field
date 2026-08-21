@@ -41,6 +41,9 @@ from src.core.BattleConfig import (
     KEY_COND_SEQUENCE,
     KEY_INSTANT_LINK,
     KEY_INSTANT_ULT,
+    KEY_ULT_RELEASE_MODE,
+    ULT_RELEASE_MODE_ALT,
+    ULT_RELEASE_MODE_HOLD,
 )
 from src.core.config_migration import legacy_battle_mode_to_bool
 from src.core.global_config_store import get_global_config
@@ -223,8 +226,19 @@ class BattleMixin(BaseEfTask):
         else:
             ults = [ult_sequence]
 
+        release_mode = self.get_battle_config(KEY_ULT_RELEASE_MODE, ULT_RELEASE_MODE_HOLD)
+
         for ult in ults:
             if self._find_battle_ult("ult_" + ult):
+                if release_mode == ULT_RELEASE_MODE_ALT:
+                    # Alt + 技能按键：按住 Alt 的同时点按技能键释放终结技
+                    self.send_key_down("alt")
+                    self.send_key(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，不经过KeyConfigManager管理
+                    self.send_key_up("alt")
+                    # 等待技能释放导致战斗状态变化
+                    self.wait_until(lambda: not self.in_combat(), time_out=1)
+                    self.wait_until(lambda: self.in_team(), time_out=3)
+                    return True
                 self.send_key_down(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，不经过KeyConfigManager管理
                 # 等待技能释放导致战斗状态变化
                 self.wait_until(lambda: not self.in_combat(), time_out=1)
