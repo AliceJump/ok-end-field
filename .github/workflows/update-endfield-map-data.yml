@@ -164,9 +164,3 @@ jobs:
               --body "由 update-endfield-map-data 工作流自动生成的地图数据更新。"
             echo "Created new PR for $BRANCH"
           fi
-          # 启用 auto-merge：校验已在 PR 创建前完成（Validate data 步骤），
-          # checks 通过后自动 squash 合并（master ruleset approval=0，squash 允许）
-          gh pr merge "$BRANCH" --auto --squash --delete-branch \
-            --subject "chore(map): 更新地图数据" \
-            --body "由 update-endfield-map-data 工作流自动生成的地图数据更新。"
-          echo "Auto-merge enabled for $BRANCH"
