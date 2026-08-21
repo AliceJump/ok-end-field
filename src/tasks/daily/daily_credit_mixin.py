@@ -121,7 +121,7 @@ class DailyCreditMixin:
                                     self.wait_pop_up(time_out=5)
                                 left_help_time -= 1
                                 help_time += 1
-            if not self.safe_back(feature=fL.friend_page, time_out=5):
+            if not self.safe_back(feature=fL.friend_page, time_out=10):
                 self.log_info("未能安全返回好友列表")
                 return False
             is_first_time = False
