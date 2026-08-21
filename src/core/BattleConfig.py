@@ -5,8 +5,14 @@ KEY_INSTANT_ULT = "立即释放终结技"
 KEY_INSTANT_LINK = "立即释放连携技"
 KEY_ROTATION_SEQUENCE = "排轴序列"
 
+# 终结技释放方式（供 BattleMixin.use_ult 选择释放方式）
+KEY_ULT_RELEASE_MODE = "终结技释放方式"
+ULT_RELEASE_MODE_HOLD = "长按技能按键"
+ULT_RELEASE_MODE_ALT = "Alt + 技能按键"
+
 # 默认战斗通用配置
 DEFAULT_BATTLE_CONFIG = {
+    KEY_ULT_RELEASE_MODE: ULT_RELEASE_MODE_HOLD,
     "技能释放": ["1", "2", "3"],
     "启动技能点数": 2,
     "完成通知": True,
@@ -23,6 +29,10 @@ DEFAULT_BATTLE_CONFIG = {
 BATTLE_CONFIG_NAME = "Battle Config"
 BATTLE_CONFIG_MODE_KEY = "使用独立配置"
 BATTLE_CONFIG_TYPE = {
+    KEY_ULT_RELEASE_MODE: {
+        "type": "drop_down",
+        "options": [ULT_RELEASE_MODE_HOLD, ULT_RELEASE_MODE_ALT],
+    },
     "技能释放": {
         "options_available": ["1", "2", "3", "4"],
         "allow_duplication": False,
@@ -35,6 +45,7 @@ BATTLE_CONFIG_TYPE = {
     KEY_INSTANT_LINK: {"hidden": True},
 }
 BATTLE_CONFIG_DESCRIPTION = {
+    KEY_ULT_RELEASE_MODE: "配置终结技的释放方式",
     "技能释放": (
         "按列表顺序自动循环释放「战技」。\n"
         "可从 1/2/3/4 中选择并排序，至少保留一个。"

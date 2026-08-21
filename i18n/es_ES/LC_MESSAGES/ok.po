@@ -1261,6 +1261,18 @@ msgstr "Liberar ultimate inmediatamente"
 msgid "立即释放连携技"
 msgstr "Liberar habilidad de enlace inmediatamente"
 
+msgid "终结技释放方式"
+msgstr "Método de liberación de la ultimate"
+
+msgid "配置终结技的释放方式"
+msgstr "Configura el método de liberación de la ultimate"
+
+msgid "长按技能按键"
+msgstr "Mantener pulsada la tecla de habilidad"
+
+msgid "Alt + 技能按键"
+msgstr "Alt + tecla de habilidad"
+
 msgid "等级读取测试"
 msgstr "Prueba de lectura de nivel"
 

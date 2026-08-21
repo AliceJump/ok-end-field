@@ -1227,6 +1227,18 @@ msgstr "Release Ultimate Immediately"
 msgid "立即释放连携技"
 msgstr "Release Link Skill Immediately"
 
+msgid "终结技释放方式"
+msgstr "Ultimate Release Method"
+
+msgid "配置终结技的释放方式"
+msgstr "Configure how the ultimate is released"
+
+msgid "长按技能按键"
+msgstr "Hold Skill Key"
+
+msgid "Alt + 技能按键"
+msgstr "Alt + Skill Key"
+
 msgid "等级读取测试"
 msgstr "Level Read Test"
 

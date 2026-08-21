@@ -1229,6 +1229,18 @@ msgstr "立即釋放終結技"
 msgid "立即释放连携技"
 msgstr "立即釋放連攜技"
 
+msgid "终结技释放方式"
+msgstr "終結技釋放方式"
+
+msgid "配置终结技的释放方式"
+msgstr "設定終結技的釋放方式"
+
+msgid "长按技能按键"
+msgstr "長按技能按鍵"
+
+msgid "Alt + 技能按键"
+msgstr "Alt + 技能按鍵"
+
 msgid "等级读取测试"
 msgstr "等級讀取測試"
 
