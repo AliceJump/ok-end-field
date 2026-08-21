@@ -41,8 +41,11 @@ function Invoke-GhChecked {
 function Get-LastCodeRabbitComment {
     # 返回最后一条 CodeRabbit 回复对象 { body, created_at }，无则 $null
     $json = Invoke-GhChecked @("api", "--paginate", "--slurp", "repos/$Repo/issues/$PrNumber/comments")
-    $all = $json | ConvertFrom-Json
-    $cr = @($all | Where-Object { $_.user.login -like "*coderabbit*" })
+    # --slurp + --paginate 返回的是「页数组」：外层每个元素是一页评论数组，需展平
+    $pages = @($json | ConvertFrom-Json)
+    $all = @($pages | ForEach-Object { $_ })
+    # 精确匹配 CodeRabbit 机器人身份，避免同名人类用户伪造触发文本
+    $cr = @($all | Where-Object { $_.user.login -eq "coderabbitai[bot]" -and $_.user.type -eq "Bot" })
     if ($cr.Count -eq 0) { return $null }
     $last = ($cr | Sort-Object created_at)[-1]
     return @{ body = $last.body; created_at = $last.created_at }
@@ -79,7 +82,8 @@ if ($mins -le 0) {
     $ceilMins = [int][Math]::Ceiling($mins)
     $bufferMins = $ceilMins + 1
     # 评论发布时间 + (ceil(X)+1) 分钟 = 可用时刻
-    $commentTime = [datetime]$last.created_at
+    # created_at 带 UTC 偏移，必须显式转 UTC，避免非 UTC 主机上与 UtcNow 比较出错
+    $commentTime = [datetimeoffset]::Parse($last.created_at).UtcDateTime
     $availableAt = $commentTime.AddMinutes($bufferMins)
     $now = [datetime]::UtcNow
 
@@ -89,17 +93,24 @@ if ($mins -le 0) {
     if ($now -ge $availableAt) {
         Write-Host "当前已到可用时刻，立即触发。"
     } else {
-        $waitSec = [int](($availableAt - $now).TotalSeconds) + $ExtraBufferSeconds
+        # 向上取整，避免截断导致提前触发
+        $waitSec = [int][Math]::Ceiling(($availableAt - $now).TotalSeconds) + $ExtraBufferSeconds
         Write-Host ("还需等待 {0}s ..." -f $waitSec)
         Start-Sleep -Seconds $waitSec
         Write-Host "等待结束。"
     }
 }
 
-if ($NoTrigger) {
-    Write-Host "（-NoTrigger，未发 review，可手动触发 @coderabbitai review）"
-} else {
-    Write-Host "触发 review ..."
-    gh pr comment $PrNumber --repo $Repo --body "@coderabbitai review" 2>&1 | Out-Null
+try {
+    if ($NoTrigger) {
+        Write-Host "（-NoTrigger，未发 review，可手动触发 @coderabbitai review）"
+    } else {
+        Write-Host "触发 review ..."
+        Invoke-GhChecked @("pr", "comment", "$PrNumber", "--repo", $Repo, "--body", "@coderabbitai review") | Out-Null
+    }
+} catch {
+    # gh 触发失败按约定返回异常退出码 2
+    Write-Error ("触发 review 失败: {0}" -f $_.Exception.Message)
+    exit 2
 }
 exit 0
