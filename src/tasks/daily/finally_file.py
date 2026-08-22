@@ -159,6 +159,37 @@ def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_da
     raise RuntimeError(f"无法创建{task_name}执行情况汇总文件")
 
 
+def _build_account_id_to_user(per_round) -> dict[str, str]:
+    """从 per_round 构建 account_id -> account_user 映射。"""
+    id_to_user: dict[str, str] = {}
+    if not isinstance(per_round, list):
+        return id_to_user
+    for item in per_round:
+        aid = str(item.get("account_id", "") or "").strip()
+        aun = str(item.get("account_user", "") or "").strip()
+        if aid:
+            id_to_user[aid] = aun
+    return id_to_user
+
+
+def _format_account_failure_lines(account_id, tasks_map, id_to_user, _tr) -> list[str]:
+    """格式化单个账号的失败任务明细。"""
+    account_user = id_to_user.get(str(account_id), "")
+    account_display = account_user or (f"id:{account_id}" if account_id else _tr("无"))
+    lines = [
+        f"=== {_tr('账号')}: {account_display} ===",
+        _tr("失败任务:"),
+    ]
+    if tasks_map:
+        for task_name, message in tasks_map.items():
+            message_text = str(message).strip() if message is not None else ""
+            lines.append(f"  - {task_name} : {_tr(message_text) or _tr('未设置失败消息')}")
+    else:
+        lines.append(f"  - {_tr('无')}")
+    lines.append("")
+    return lines
+
+
 def format_failure_details_by_account(per_round, failure_details: dict, translate=None) -> list[str]:
     """仅支持按 `account_id` 分组的 `failure_details` 格式：
     { account_id: { task_name: message, ... }, ... }
@@ -170,35 +201,10 @@ def format_failure_details_by_account(per_round, failure_details: dict, translat
         return []
 
     _tr = translate or (lambda s: s)
+    id_to_user = _build_account_id_to_user(per_round)
 
     lines: list[str] = [_tr("失败消息:"), ""]
-
-    # 构建 account_id -> account_user 映射（若有 per_round）
-    id_to_user: dict[str, str] = {}
-    if isinstance(per_round, list):
-        for round_item in per_round:
-            aid = str(round_item.get("account_id", "") or "").strip()
-            aun = str(round_item.get("account_user", "") or "").strip()
-            if aid:
-                id_to_user[aid] = aun
-
-    # 处理按账号分组的 failure_details
     for account_id, tasks_map in failure_details.items():
-        if not isinstance(tasks_map, dict):
-            continue
-        account_user = id_to_user.get(str(account_id), "")
-        account_display = account_user or (f"id:{account_id}" if account_id else _tr("无"))
-
-        lines.append(f"=== {_tr('账号')}: {account_display} ===")
-        lines.append(_tr("失败任务:") + "")
-
-        if tasks_map:
-            for task_name, message in tasks_map.items():
-                message_text = str(message).strip() if message is not None else ""
-                lines.append(f"  - {task_name} : {_tr(message_text) or _tr('未设置失败消息')}")
-        else:
-            lines.append(f"  - {_tr('无')}")
-
-        lines.append("")
-
+        if isinstance(tasks_map, dict):
+            lines.extend(_format_account_failure_lines(account_id, tasks_map, id_to_user, _tr))
     return lines
