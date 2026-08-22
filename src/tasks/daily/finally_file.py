@@ -10,6 +10,7 @@ KEY = 0x55
 
 
 def decode(text: str) -> str:
+    """解码经过 base64 编码并 XOR 混淆的文本。"""
     raw = base64.b64decode(text)
     data = bytes([b ^ KEY for b in raw])
     return data.decode()
@@ -25,6 +26,7 @@ def get_software_name() -> str:
 
 
 def iter_daily_finally_candidates(base_name: str):
+    """生成报告文件名候选序列，用于避免文件名冲突。"""
     base_path = Path(base_name)
     stem = base_path.stem or base_path.name
     suffix = base_path.suffix if base_path.suffix else ".txt"
@@ -160,7 +162,14 @@ def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_da
 
 
 def _build_account_id_to_user(per_round) -> dict[str, str]:
-    """从 per_round 构建 account_id -> account_user 映射。"""
+    """从 per_round 列表构建 account_id 到 account_user 的映射字典。
+
+    Args:
+        per_round: 每轮执行信息列表，每项包含 account_id 和 account_user 字段。
+
+    Returns:
+        account_id -> account_user 映射字典；per_round 非列表时返回空字典。
+    """
     id_to_user: dict[str, str] = {}
     if not isinstance(per_round, list):
         return id_to_user
@@ -173,7 +182,17 @@ def _build_account_id_to_user(per_round) -> dict[str, str]:
 
 
 def _format_account_failure_lines(account_id, tasks_map, id_to_user, _tr) -> list[str]:
-    """格式化单个账号的失败任务明细。"""
+    """格式化单个账号的失败任务明细为报告文本行。
+
+    Args:
+        account_id: 账号标识。
+        tasks_map: 该账号的 {task_name: message} 字典。
+        id_to_user: account_id -> account_user 映射，用于显示账号名。
+        _tr: 翻译函数（如 task.tr），用于翻译 UI 标签和失败消息。
+
+    Returns:
+        格式化后的文本行列表。
+    """
     account_user = id_to_user.get(str(account_id), "")
     account_display = account_user or (f"id:{account_id}" if account_id else _tr("无"))
     lines = [
