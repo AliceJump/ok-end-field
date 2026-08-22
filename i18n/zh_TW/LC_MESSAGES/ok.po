@@ -1669,13 +1669,13 @@ msgstr "每次偵測後的等待時間。"
 
 
 msgid "失败消息:"
-msgstr "失敗消息:"
+msgstr "失敗訊息:"
 
 msgid "失败任务:"
 msgstr "失敗任務:"
 
 msgid "未设置失败消息"
-msgstr "未設定失敗消息"
+msgstr "未設定失敗訊息"
 
 msgid "制造舱任务失败"
 msgstr "製造艙任務失敗"
