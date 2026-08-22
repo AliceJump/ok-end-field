@@ -1,0 +1,8 @@
+instructions:
+  review:
+    - |
+      ## i18n 翻译路径区分
+
+      - `config_description`、`config_type` options 等 UI 说明文字走 gettext `self.tr()`，已通过 `i18n/*/LC_MESSAGES/ok.po` 翻译，**不要**建议改用 `self.lang.<模块名>.<语义化key>`。
+      - `self.lang.<模块名>.<语义化key>` 仅用于 OCR 匹配文本和数据/配置读取（`assets/lang/*.json`）。
+      - 新增需翻译的 UI 纯文本时，直接在代码中写中文 msgid，然后同步到各语言 .po 文件并 compile。
