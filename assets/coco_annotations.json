@@ -1,1186 +1,4 @@
 {
-    "info": {
-        "year": 2026,
-        "version": "3.3.10",
-        "description": "COCO Label Conversion",
-        "contributor": "CVHub",
-        "url": "https://github.com/CVHub520/X-AnyLabeling",
-        "date_created": "2026-04-05"
-    },
-    "licenses": [
-        {
-            "id": 1,
-            "url": "https://www.gnu.org/licenses/gpl-3.0.html",
-            "name": "GNU GENERAL PUBLIC LICENSE Version 3"
-        }
-    ],
-    "categories": [
-        {
-            "id": 1,
-            "name": "akekuri_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 2,
-            "name": "alesh_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 3,
-            "name": "antal_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 4,
-            "name": "arclight_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 5,
-            "name": "ardelia_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 6,
-            "name": "assist_friend",
-            "supercategory": ""
-        },
-        {
-            "id": 7,
-            "name": "avywenna_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 8,
-            "name": "bluesteel_ore",
-            "supercategory": ""
-        },
-        {
-            "id": 9,
-            "name": "can_exchange_info_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 10,
-            "name": "can_help_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 11,
-            "name": "chat_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 12,
-            "name": "chat_icon_2",
-            "supercategory": ""
-        },
-        {
-            "id": 13,
-            "name": "chat_icon_dark",
-            "supercategory": ""
-        },
-        {
-            "id": 14,
-            "name": "check_in_close",
-            "supercategory": ""
-        },
-        {
-            "id": 15,
-            "name": "chen_qianyu_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 16,
-            "name": "claim_gift",
-            "supercategory": ""
-        },
-        {
-            "id": 17,
-            "name": "close",
-            "supercategory": ""
-        },
-        {
-            "id": 18,
-            "name": "clue_1_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 19,
-            "name": "clue_2_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 20,
-            "name": "clue_3_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 21,
-            "name": "clue_4_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 22,
-            "name": "clue_5_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 23,
-            "name": "clue_6_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 24,
-            "name": "clue_7_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 25,
-            "name": "consumables_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 26,
-            "name": "credit_can_buy",
-            "supercategory": ""
-        },
-        {
-            "id": 27,
-            "name": "cultivation_materials_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 28,
-            "name": "da_pan_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 29,
-            "name": "danger_1_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 30,
-            "name": "danger_2_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 31,
-            "name": "danger_3_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 32,
-            "name": "danger_4_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 33,
-            "name": "danger_5_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 34,
-            "name": "default_link_skill",
-            "supercategory": ""
-        },
-        {
-            "id": 35,
-            "name": "dense_source_ore_powder_4k",
-            "supercategory": ""
-        },
-        {
-            "id": 36,
-            "name": "e",
-            "supercategory": ""
-        },
-        {
-            "id": 37,
-            "name": "ember_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 38,
-            "name": "esc",
-            "supercategory": ""
-        },
-        {
-            "id": 39,
-            "name": "esc_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 40,
-            "name": "esc_4k",
-            "supercategory": ""
-        },
-        {
-            "id": 41,
-            "name": "essence_locked",
-            "supercategory": ""
-        },
-        {
-            "id": 42,
-            "name": "essence_quality_gold_1",
-            "supercategory": ""
-        },
-        {
-            "id": 43,
-            "name": "essence_quality_gold_2",
-            "supercategory": ""
-        },
-        {
-            "id": 44,
-            "name": "essence_quality_gold_3",
-            "supercategory": ""
-        },
-        {
-            "id": 45,
-            "name": "essence_throw_away",
-            "supercategory": ""
-        },
-        {
-            "id": 46,
-            "name": "essence_throw_confirm",
-            "supercategory": ""
-        },
-        {
-            "id": 47,
-            "name": "essence_ui_marker",
-            "supercategory": ""
-        },
-        {
-            "id": 48,
-            "name": "essence_unlocked",
-            "supercategory": ""
-        },
-        {
-            "id": 49,
-            "name": "estella_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 50,
-            "name": "fluorite_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 51,
-            "name": "friend_chat_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 52,
-            "name": "gather_icon_out_map",
-            "supercategory": ""
-        },
-        {
-            "id": 53,
-            "name": "gather_icon_out_map2",
-            "supercategory": ""
-        },
-        {
-            "id": 54,
-            "name": "gathering_materials_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 55,
-            "name": "gilberta_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 56,
-            "name": "high_capacity_valley_battery",
-            "supercategory": ""
-        },
-        {
-            "id": 57,
-            "name": "higher_order_d96",
-            "supercategory": ""
-        },
-        {
-            "id": 58,
-            "name": "higher_order_lattice",
-            "supercategory": ""
-        },
-        {
-            "id": 59,
-            "name": "higher_order_quadrant_liquid",
-            "supercategory": ""
-        },
-        {
-            "id": 60,
-            "name": "higher_order_reflection_tube",
-            "supercategory": ""
-        },
-        {
-            "id": 61,
-            "name": "higher_order_three_photos",
-            "supercategory": ""
-        },
-        {
-            "id": 62,
-            "name": "industrial_equipment_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 63,
-            "name": "laevatain_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 64,
-            "name": "last_rite_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 65,
-            "name": "lifeng_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 66,
-            "name": "logout",
-            "supercategory": ""
-        },
-        {
-            "id": 67,
-            "name": "main_out",
-            "supercategory": ""
-        },
-        {
-            "id": 68,
-            "name": "market_dispatch_terminal",
-            "supercategory": ""
-        },
-        {
-            "id": 69,
-            "name": "market_dispatch_terminal_out",
-            "supercategory": ""
-        },
-        {
-            "id": 70,
-            "name": "market_good_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 71,
-            "name": "market_minus_button",
-            "supercategory": ""
-        },
-        {
-            "id": 72,
-            "name": "market_plus_button",
-            "supercategory": ""
-        },
-        {
-            "id": 73,
-            "name": "max_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 74,
-            "name": "minerals_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 75,
-            "name": "monthly_card",
-            "supercategory": ""
-        },
-        {
-            "id": 76,
-            "name": "one_click_claim",
-            "supercategory": ""
-        },
-        {
-            "id": 77,
-            "name": "one_task_to_map",
-            "supercategory": ""
-        },
-        {
-            "id": 78,
-            "name": "operator_liaison_station",
-            "supercategory": ""
-        },
-        {
-            "id": 79,
-            "name": "operator_liaison_station_out_map",
-            "supercategory": ""
-        },
-        {
-            "id": 80,
-            "name": "orobertyl",
-            "supercategory": ""
-        },
-        {
-            "id": 81,
-            "name": "perlica_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 82,
-            "name": "pick_f",
-            "supercategory": ""
-        },
-        {
-            "id": 83,
-            "name": "pick_recycle",
-            "supercategory": ""
-        },
-        {
-            "id": 84,
-            "name": "plants_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 85,
-            "name": "plus_button",
-            "supercategory": ""
-        },
-        {
-            "id": 86,
-            "name": "pogranichnik_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 87,
-            "name": "price_down",
-            "supercategory": ""
-        },
-        {
-            "id": 88,
-            "name": "price_up",
-            "supercategory": ""
-        },
-        {
-            "id": 89,
-            "name": "products_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 90,
-            "name": "q",
-            "supercategory": ""
-        },
-        {
-            "id": 91,
-            "name": "reward_ok",
-            "supercategory": ""
-        },
-        {
-            "id": 92,
-            "name": "rossi_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 93,
-            "name": "secondary_objective_direction_dot",
-            "supercategory": ""
-        },
-        {
-            "id": 94,
-            "name": "secondary_objective_direction_dot_light",
-            "supercategory": ""
-        },
-        {
-            "id": 95,
-            "name": "secondary_objective_direction_dot_light_three",
-            "supercategory": ""
-        },
-        {
-            "id": 96,
-            "name": "secondary_objective_direction_dot_light_two",
-            "supercategory": ""
-        },
-        {
-            "id": 97,
-            "name": "skill_1",
-            "supercategory": ""
-        },
-        {
-            "id": 98,
-            "name": "skill_2",
-            "supercategory": ""
-        },
-        {
-            "id": 99,
-            "name": "skill_3",
-            "supercategory": ""
-        },
-        {
-            "id": 100,
-            "name": "skill_4",
-            "supercategory": ""
-        },
-        {
-            "id": 101,
-            "name": "skip_dialog_cancel",
-            "supercategory": ""
-        },
-        {
-            "id": 102,
-            "name": "skip_dialog_confirm",
-            "supercategory": ""
-        },
-        {
-            "id": 103,
-            "name": "skip_dialog_esc",
-            "supercategory": ""
-        },
-        {
-            "id": 104,
-            "name": "snowshine_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 105,
-            "name": "source_ore",
-            "supercategory": ""
-        },
-        {
-            "id": 106,
-            "name": "switch_q",
-            "supercategory": ""
-        },
-        {
-            "id": 107,
-            "name": "tangtang_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 108,
-            "name": "ticket_valley",
-            "supercategory": ""
-        },
-        {
-            "id": 109,
-            "name": "ticket_wuling",
-            "supercategory": ""
-        },
-        {
-            "id": 110,
-            "name": "top_left_tab",
-            "supercategory": ""
-        },
-        {
-            "id": 111,
-            "name": "transfer_point",
-            "supercategory": ""
-        },
-        {
-            "id": 112,
-            "name": "ult_1",
-            "supercategory": ""
-        },
-        {
-            "id": 113,
-            "name": "ult_2",
-            "supercategory": ""
-        },
-        {
-            "id": 114,
-            "name": "ult_3",
-            "supercategory": ""
-        },
-        {
-            "id": 115,
-            "name": "ult_4",
-            "supercategory": ""
-        },
-        {
-            "id": 116,
-            "name": "visit_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 117,
-            "name": "weapon_quota",
-            "supercategory": ""
-        },
-        {
-            "id": 118,
-            "name": "wulfgard_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 119,
-            "name": "wuling_6_65w",
-            "supercategory": ""
-        },
-        {
-            "id": 120,
-            "name": "wuling_7_31w",
-            "supercategory": ""
-        },
-        {
-            "id": 121,
-            "name": "wuling_7_31w_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 122,
-            "name": "wuling_7_31w_4k",
-            "supercategory": ""
-        },
-        {
-            "id": 123,
-            "name": "wuling_7_31w_dark",
-            "supercategory": ""
-        },
-        {
-            "id": 124,
-            "name": "wuling_7_31w_dark_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 125,
-            "name": "wuling_7_31w_dark_4k",
-            "supercategory": ""
-        },
-        {
-            "id": 126,
-            "name": "wuling_7_98w",
-            "supercategory": ""
-        },
-        {
-            "id": 127,
-            "name": "wuling_7_98w_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 128,
-            "name": "wuling_7_98w_4k",
-            "supercategory": ""
-        },
-        {
-            "id": 129,
-            "name": "wuling_7_98w_dark",
-            "supercategory": ""
-        },
-        {
-            "id": 130,
-            "name": "wuling_7_98w_dark_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 131,
-            "name": "wuling_7_98w_dark_4k",
-            "supercategory": ""
-        },
-        {
-            "id": 132,
-            "name": "xaihi_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 133,
-            "name": "yvonne_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 134,
-            "name": "gather_icon_in_map",
-            "supercategory": ""
-        },
-        {
-            "id": 135,
-            "name": "wuling_11_9w",
-            "supercategory": ""
-        },
-        {
-            "id": 136,
-            "name": "wuling_11_9w_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 137,
-            "name": "wuling_11_9w_4k",
-            "supercategory": ""
-        },
-        {
-            "id": 138,
-            "name": "monthly_card2",
-            "supercategory": ""
-        },
-        {
-            "id": 139,
-            "name": "zhuang_fangyi_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 140,
-            "name": "baker_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 141,
-            "name": "baker_click",
-            "supercategory": ""
-        },
-        {
-            "id": 142,
-            "name": "stamina_plus_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 143,
-            "name": "start_follow",
-            "supercategory": ""
-        },
-        {
-            "id": 144,
-            "name": "transfer_go",
-            "supercategory": ""
-        },
-        {
-            "id": 145,
-            "name": "log_out_confirm",
-            "supercategory": ""
-        },
-        {
-            "id": 146,
-            "name": "liaison_confirm",
-            "supercategory": ""
-        },
-        {
-            "id": 147,
-            "name": "give_gift",
-            "supercategory": ""
-        },
-        {
-            "id": 148,
-            "name": "to_max_produce_num",
-            "supercategory": ""
-        },
-        {
-            "id": 149,
-            "name": "select_confirm",
-            "supercategory": ""
-        },
-        {
-            "id": 150,
-            "name": "make_simply_entrance",
-            "supercategory": ""
-        },
-        {
-            "id": 151,
-            "name": "yingtuo_monument",
-            "supercategory": ""
-        },
-        {
-            "id": 152,
-            "name": "baker_page_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 153,
-            "name": "in_map",
-            "supercategory": ""
-        },
-        {
-            "id": 154,
-            "name": "yingtuo_not_cleared_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 155,
-            "name": "yingtuo_difficult_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 156,
-            "name": "yingtuo_entrance",
-            "supercategory": ""
-        },
-        {
-            "id": 157,
-            "name": "sentence_part_feature",
-            "supercategory": ""
-        },
-        {
-            "id": 158,
-            "name": "resident_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 159,
-            "name": "transaction_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 160,
-            "name": "main_centre_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 161,
-            "name": "boat_entrance_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 162,
-            "name": "change_area",
-            "supercategory": ""
-        },
-        {
-            "id": 163,
-            "name": "battle_cost_x1",
-            "supercategory": ""
-        },
-        {
-            "id": 164,
-            "name": "trigger_gather_button",
-            "supercategory": ""
-        },
-        {
-            "id": 165,
-            "name": "restart_battle",
-            "supercategory": ""
-        },
-        {
-            "id": 166,
-            "name": "left_battle",
-            "supercategory": ""
-        },
-        {
-            "id": 167,
-            "name": "go_gather_view",
-            "supercategory": ""
-        },
-        {
-            "id": 168,
-            "name": "go_space",
-            "supercategory": ""
-        },
-        {
-            "id": 169,
-            "name": "map_filter_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 170,
-            "name": "collect_gift",
-            "supercategory": ""
-        },
-        {
-            "id": 171,
-            "name": "to_give_gift",
-            "supercategory": ""
-        },
-        {
-            "id": 172,
-            "name": "contact_page_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 173,
-            "name": "outpost_manager_enter",
-            "supercategory": ""
-        },
-        {
-            "id": 174,
-            "name": "material_dispatch_enter",
-            "supercategory": ""
-        },
-        {
-            "id": 175,
-            "name": "warehouse_node_enter",
-            "supercategory": ""
-        },
-        {
-            "id": 176,
-            "name": "fill_max",
-            "supercategory": ""
-        },
-        {
-            "id": 177,
-            "name": "get_exchange_ticket",
-            "supercategory": ""
-        },
-        {
-            "id": 178,
-            "name": "left_button",
-            "supercategory": ""
-        },
-        {
-            "id": 179,
-            "name": "battle_space_left",
-            "supercategory": ""
-        },
-        {
-            "id": 180,
-            "name": "friend_page",
-            "supercategory": ""
-        },
-        {
-            "id": 181,
-            "name": "info_exchange",
-            "supercategory": ""
-        },
-        {
-            "id": 182,
-            "name": "make_room",
-            "supercategory": ""
-        },
-        {
-            "id": 183,
-            "name": "exchange_room",
-            "supercategory": ""
-        },
-        {
-            "id": 184,
-            "name": "cultivation_room",
-            "supercategory": ""
-        },
-        {
-            "id": 185,
-            "name": "operation_report_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 186,
-            "name": "double_ticket",
-            "supercategory": ""
-        },
-        {
-            "id": 187,
-            "name": "collect_clue_enter",
-            "supercategory": ""
-        },
-        {
-            "id": 188,
-            "name": "receive_clue_enter",
-            "supercategory": ""
-        },
-        {
-            "id": 189,
-            "name": "all_receive",
-            "supercategory": ""
-        },
-        {
-            "id": 190,
-            "name": "refresh_order_list",
-            "supercategory": ""
-        },
-        {
-            "id": 191,
-            "name": "credit_shop_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 192,
-            "name": "credit_shop_refresh",
-            "supercategory": ""
-        },
-        {
-            "id": 193,
-            "name": "get_claim_page",
-            "supercategory": ""
-        },
-        {
-            "id": 194,
-            "name": "rationality_supplement_page",
-            "supercategory": ""
-        },
-        {
-            "id": 195,
-            "name": "battle_page_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 196,
-            "name": "gather_icon2",
-            "supercategory": ""
-        },
-        {
-            "id": 197,
-            "name": "space_get_claim",
-            "supercategory": ""
-        },
-        {
-            "id": 198,
-            "name": "demo_left_time",
-            "supercategory": ""
-        },
-        {
-            "id": 199,
-            "name": "demographic_follow",
-            "supercategory": ""
-        },
-        {
-            "id": 200,
-            "name": "level_tip",
-            "supercategory": ""
-        },
-        {
-            "id": 201,
-            "name": "start_demo",
-            "supercategory": ""
-        },
-        {
-            "id": 202,
-            "name": "demo_random_button",
-            "supercategory": ""
-        },
-        {
-            "id": 203,
-            "name": "enter_demo",
-            "supercategory": ""
-        },
-        {
-            "id": 204,
-            "name": "liaison_stage",
-            "supercategory": ""
-        },
-        {
-            "id": 205,
-            "name": "receive_good",
-            "supercategory": ""
-        },
-        {
-            "id": 206,
-            "name": "demo_double_open",
-            "supercategory": ""
-        },
-        {
-            "id": 207,
-            "name": "b_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 208,
-            "name": "can_use_help",
-            "supercategory": ""
-        },
-        {
-            "id": 209,
-            "name": "secondary_objective_direction_dot_light_fourth",
-            "supercategory": ""
-        },
-        {
-            "id": 210,
-            "name": "daily_demo_enter",
-            "supercategory": ""
-        },
-        {
-            "id": 211,
-            "name": "transaction_overview",
-            "supercategory": ""
-        },
-        {
-            "id": 212,
-            "name": "view_location",
-            "supercategory": ""
-        },
-        {
-            "id": 213,
-            "name": "b",
-            "supercategory": ""
-        },
-        {
-            "id": 214,
-            "name": "b_4k",
-            "supercategory": ""
-        },
-        {
-            "id": 215,
-            "name": "login_reward_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 216,
-            "name": "start_scratch_card",
-            "supercategory": ""
-        },
-        {
-            "id": 217,
-            "name": "scratch_card_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 218,
-            "name": "in_scratch_card_page",
-            "supercategory": ""
-        },
-        {
-            "id": 219,
-            "name": "wuling_15_9w",
-            "supercategory": ""
-        },
-        {
-            "id": 220,
-            "name": "wuling_15_9w_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 221,
-            "name": "wuling_15_9w_4k",
-            "supercategory": ""
-        },
-        {
-            "id": 222,
-            "name": "wuling_16_3w_4k",
-            "supercategory": ""
-        },
-        {
-            "id": 223,
-            "name": "wuling_16_3w_2k",
-            "supercategory": ""
-        },
-        {
-            "id": 224,
-            "name": "wuling_16_3w",
-            "supercategory": ""
-        },
-        {
-            "id": 225,
-            "name": "scratching_icon",
-            "supercategory": ""
-        },
-        {
-            "id": 226,
-            "name": "clear_page_gather",
-            "supercategory": ""
-        },
-        {
-            "id": 227,
-            "name": "battle_gather_ok",
-            "supercategory": ""
-        },
-        {
-            "id": 228,
-            "name": "battle_space_ok",
-            "supercategory": ""
-        },
-        {
-            "id": 229,
-            "name": "clear_page_demo_battle",
-            "supercategory": ""
-        },
-        {
-            "id": 230,
-            "name": "liino_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 231,
-            "name": "mi_fu_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 232,
-            "name": "arcane_contact",
-            "supercategory": ""
-        },
-        {
-            "id": 233,
-            "name": "catcher_contact",
-            "supercategory": ""
-        }
-    ],
     "images": [
         {
             "license": 0,
@@ -1880,7 +698,7 @@
         },
         {
             "id": 154,
-            "file_name": "images/4.png",
+            "file_name": "images/2.png",
             "width": 1920,
             "height": 1080
         },
@@ -1987,6 +805,12 @@
             "height": 1080
         },
         {
+            "id": 173,
+            "file_name": "images/1.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
             "id": 174,
             "file_name": "images/0.png",
             "width": 1920,
@@ -2047,12 +871,6 @@
             "height": 1080
         },
         {
-            "id": 184,
-            "file_name": "images/0.png",
-            "width": 1920,
-            "height": 1080
-        },
-        {
             "id": 185,
             "file_name": "images/0.png",
             "width": 1920,
@@ -2060,7 +878,7 @@
         },
         {
             "id": 186,
-            "file_name": "images/2.png",
+            "file_name": "images/3.png",
             "width": 1920,
             "height": 1080
         },
@@ -2144,7 +962,7 @@
         },
         {
             "id": 206,
-            "file_name": "images/3.png",
+            "file_name": "images/4.png",
             "width": 1920,
             "height": 1080
         },
@@ -3799,15 +2617,15 @@
         },
         {
             "id": 117,
-            "image_id": 24,
-            "category_id": 182,
+            "image_id": 173,
+            "category_id": 234,
             "bbox": [
-                2114,
-                1433,
-                54,
-                53
+                1639,
+                201,
+                46,
+                39
             ],
-            "area": 2862,
+            "area": 1794,
             "iscrowd": 0
         },
         {
@@ -3827,15 +2645,15 @@
         },
         {
             "id": 119,
-            "image_id": 24,
-            "category_id": 183,
+            "image_id": 173,
+            "category_id": 235,
             "bbox": [
-                1510,
-                1438,
-                53,
-                47
+                1642,
+                270,
+                40,
+                51
             ],
-            "area": 2491,
+            "area": 2040,
             "iscrowd": 0
         },
         {
@@ -3854,19 +2672,6 @@
             "segmentation": []
         },
         {
-            "id": 121,
-            "image_id": 184,
-            "category_id": 184,
-            "bbox": [
-                1373,
-                744,
-                28,
-                28
-            ],
-            "area": 784,
-            "iscrowd": 0
-        },
-        {
             "id": 122,
             "image_id": 66,
             "category_id": 68,
@@ -3883,15 +2688,15 @@
         },
         {
             "id": 123,
-            "image_id": 184,
-            "category_id": 185,
+            "image_id": 173,
+            "category_id": 184,
             "bbox": [
-                183,
-                84,
-                27,
-                31
+                1170,
+                353,
+                47,
+                43
             ],
-            "area": 837,
+            "area": 2021,
             "iscrowd": 0
         },
         {
@@ -5033,6 +3838,32 @@
             "iscrowd": 0
         },
         {
+            "id": 208,
+            "image_id": 173,
+            "category_id": 182,
+            "bbox": [
+                754,
+                746,
+                28,
+                24
+            ],
+            "area": 672,
+            "iscrowd": 0
+        },
+        {
+            "id": 209,
+            "image_id": 173,
+            "category_id": 183,
+            "bbox": [
+                1056,
+                745,
+                28,
+                27
+            ],
+            "area": 756,
+            "iscrowd": 0
+        },
+        {
             "id": 210,
             "image_id": 124,
             "category_id": 80,
@@ -5406,6 +4237,1196 @@
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
+        },
+        {
+            "id": 265,
+            "image_id": 173,
+            "category_id": 236,
+            "bbox": [
+                183,
+                84,
+                27,
+                31
+            ],
+            "area": 837,
+            "iscrowd": 0
+        }
+    ],
+    "categories": [
+        {
+            "id": 1,
+            "name": "akekuri_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 2,
+            "name": "alesh_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 3,
+            "name": "antal_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 4,
+            "name": "arclight_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 5,
+            "name": "ardelia_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 6,
+            "name": "assist_friend",
+            "supercategory": ""
+        },
+        {
+            "id": 7,
+            "name": "avywenna_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 8,
+            "name": "bluesteel_ore",
+            "supercategory": ""
+        },
+        {
+            "id": 9,
+            "name": "can_exchange_info_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 10,
+            "name": "can_help_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 11,
+            "name": "chat_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 12,
+            "name": "chat_icon_2",
+            "supercategory": ""
+        },
+        {
+            "id": 13,
+            "name": "chat_icon_dark",
+            "supercategory": ""
+        },
+        {
+            "id": 14,
+            "name": "check_in_close",
+            "supercategory": ""
+        },
+        {
+            "id": 15,
+            "name": "chen_qianyu_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 16,
+            "name": "claim_gift",
+            "supercategory": ""
+        },
+        {
+            "id": 17,
+            "name": "close",
+            "supercategory": ""
+        },
+        {
+            "id": 18,
+            "name": "clue_1_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 19,
+            "name": "clue_2_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 20,
+            "name": "clue_3_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 21,
+            "name": "clue_4_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 22,
+            "name": "clue_5_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 23,
+            "name": "clue_6_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 24,
+            "name": "clue_7_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 25,
+            "name": "consumables_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 26,
+            "name": "credit_can_buy",
+            "supercategory": ""
+        },
+        {
+            "id": 27,
+            "name": "cultivation_materials_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 28,
+            "name": "da_pan_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 29,
+            "name": "danger_1_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 30,
+            "name": "danger_2_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 31,
+            "name": "danger_3_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 32,
+            "name": "danger_4_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 33,
+            "name": "danger_5_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 34,
+            "name": "default_link_skill",
+            "supercategory": ""
+        },
+        {
+            "id": 35,
+            "name": "dense_source_ore_powder_4k",
+            "supercategory": ""
+        },
+        {
+            "id": 36,
+            "name": "e",
+            "supercategory": ""
+        },
+        {
+            "id": 37,
+            "name": "ember_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 38,
+            "name": "esc",
+            "supercategory": ""
+        },
+        {
+            "id": 39,
+            "name": "esc_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 40,
+            "name": "esc_4k",
+            "supercategory": ""
+        },
+        {
+            "id": 41,
+            "name": "essence_locked",
+            "supercategory": ""
+        },
+        {
+            "id": 42,
+            "name": "essence_quality_gold_1",
+            "supercategory": ""
+        },
+        {
+            "id": 43,
+            "name": "essence_quality_gold_2",
+            "supercategory": ""
+        },
+        {
+            "id": 44,
+            "name": "essence_quality_gold_3",
+            "supercategory": ""
+        },
+        {
+            "id": 45,
+            "name": "essence_throw_away",
+            "supercategory": ""
+        },
+        {
+            "id": 46,
+            "name": "essence_throw_confirm",
+            "supercategory": ""
+        },
+        {
+            "id": 47,
+            "name": "essence_ui_marker",
+            "supercategory": ""
+        },
+        {
+            "id": 48,
+            "name": "essence_unlocked",
+            "supercategory": ""
+        },
+        {
+            "id": 49,
+            "name": "estella_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 50,
+            "name": "fluorite_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 51,
+            "name": "friend_chat_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 52,
+            "name": "gather_icon_out_map",
+            "supercategory": ""
+        },
+        {
+            "id": 53,
+            "name": "gather_icon_out_map2",
+            "supercategory": ""
+        },
+        {
+            "id": 54,
+            "name": "gathering_materials_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 55,
+            "name": "gilberta_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 56,
+            "name": "high_capacity_valley_battery",
+            "supercategory": ""
+        },
+        {
+            "id": 57,
+            "name": "higher_order_d96",
+            "supercategory": ""
+        },
+        {
+            "id": 58,
+            "name": "higher_order_lattice",
+            "supercategory": ""
+        },
+        {
+            "id": 59,
+            "name": "higher_order_quadrant_liquid",
+            "supercategory": ""
+        },
+        {
+            "id": 60,
+            "name": "higher_order_reflection_tube",
+            "supercategory": ""
+        },
+        {
+            "id": 61,
+            "name": "higher_order_three_photos",
+            "supercategory": ""
+        },
+        {
+            "id": 62,
+            "name": "industrial_equipment_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 63,
+            "name": "laevatain_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 64,
+            "name": "last_rite_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 65,
+            "name": "lifeng_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 66,
+            "name": "logout",
+            "supercategory": ""
+        },
+        {
+            "id": 67,
+            "name": "main_out",
+            "supercategory": ""
+        },
+        {
+            "id": 68,
+            "name": "market_dispatch_terminal",
+            "supercategory": ""
+        },
+        {
+            "id": 69,
+            "name": "market_dispatch_terminal_out",
+            "supercategory": ""
+        },
+        {
+            "id": 70,
+            "name": "market_good_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 71,
+            "name": "market_minus_button",
+            "supercategory": ""
+        },
+        {
+            "id": 72,
+            "name": "market_plus_button",
+            "supercategory": ""
+        },
+        {
+            "id": 73,
+            "name": "max_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 74,
+            "name": "minerals_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 75,
+            "name": "monthly_card",
+            "supercategory": ""
+        },
+        {
+            "id": 76,
+            "name": "one_click_claim",
+            "supercategory": ""
+        },
+        {
+            "id": 77,
+            "name": "one_task_to_map",
+            "supercategory": ""
+        },
+        {
+            "id": 78,
+            "name": "operator_liaison_station",
+            "supercategory": ""
+        },
+        {
+            "id": 79,
+            "name": "operator_liaison_station_out_map",
+            "supercategory": ""
+        },
+        {
+            "id": 80,
+            "name": "orobertyl",
+            "supercategory": ""
+        },
+        {
+            "id": 81,
+            "name": "perlica_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 82,
+            "name": "pick_f",
+            "supercategory": ""
+        },
+        {
+            "id": 83,
+            "name": "pick_recycle",
+            "supercategory": ""
+        },
+        {
+            "id": 84,
+            "name": "plants_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 85,
+            "name": "plus_button",
+            "supercategory": ""
+        },
+        {
+            "id": 86,
+            "name": "pogranichnik_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 87,
+            "name": "price_down",
+            "supercategory": ""
+        },
+        {
+            "id": 88,
+            "name": "price_up",
+            "supercategory": ""
+        },
+        {
+            "id": 89,
+            "name": "products_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 90,
+            "name": "q",
+            "supercategory": ""
+        },
+        {
+            "id": 91,
+            "name": "reward_ok",
+            "supercategory": ""
+        },
+        {
+            "id": 92,
+            "name": "rossi_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 93,
+            "name": "secondary_objective_direction_dot",
+            "supercategory": ""
+        },
+        {
+            "id": 94,
+            "name": "secondary_objective_direction_dot_light",
+            "supercategory": ""
+        },
+        {
+            "id": 95,
+            "name": "secondary_objective_direction_dot_light_three",
+            "supercategory": ""
+        },
+        {
+            "id": 96,
+            "name": "secondary_objective_direction_dot_light_two",
+            "supercategory": ""
+        },
+        {
+            "id": 97,
+            "name": "skill_1",
+            "supercategory": ""
+        },
+        {
+            "id": 98,
+            "name": "skill_2",
+            "supercategory": ""
+        },
+        {
+            "id": 99,
+            "name": "skill_3",
+            "supercategory": ""
+        },
+        {
+            "id": 100,
+            "name": "skill_4",
+            "supercategory": ""
+        },
+        {
+            "id": 101,
+            "name": "skip_dialog_cancel",
+            "supercategory": ""
+        },
+        {
+            "id": 102,
+            "name": "skip_dialog_confirm",
+            "supercategory": ""
+        },
+        {
+            "id": 103,
+            "name": "skip_dialog_esc",
+            "supercategory": ""
+        },
+        {
+            "id": 104,
+            "name": "snowshine_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 105,
+            "name": "source_ore",
+            "supercategory": ""
+        },
+        {
+            "id": 106,
+            "name": "switch_q",
+            "supercategory": ""
+        },
+        {
+            "id": 107,
+            "name": "tangtang_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 108,
+            "name": "ticket_valley",
+            "supercategory": ""
+        },
+        {
+            "id": 109,
+            "name": "ticket_wuling",
+            "supercategory": ""
+        },
+        {
+            "id": 110,
+            "name": "top_left_tab",
+            "supercategory": ""
+        },
+        {
+            "id": 111,
+            "name": "transfer_point",
+            "supercategory": ""
+        },
+        {
+            "id": 112,
+            "name": "ult_1",
+            "supercategory": ""
+        },
+        {
+            "id": 113,
+            "name": "ult_2",
+            "supercategory": ""
+        },
+        {
+            "id": 114,
+            "name": "ult_3",
+            "supercategory": ""
+        },
+        {
+            "id": 115,
+            "name": "ult_4",
+            "supercategory": ""
+        },
+        {
+            "id": 116,
+            "name": "visit_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 117,
+            "name": "weapon_quota",
+            "supercategory": ""
+        },
+        {
+            "id": 118,
+            "name": "wulfgard_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 119,
+            "name": "wuling_6_65w",
+            "supercategory": ""
+        },
+        {
+            "id": 120,
+            "name": "wuling_7_31w",
+            "supercategory": ""
+        },
+        {
+            "id": 121,
+            "name": "wuling_7_31w_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 122,
+            "name": "wuling_7_31w_4k",
+            "supercategory": ""
+        },
+        {
+            "id": 123,
+            "name": "wuling_7_31w_dark",
+            "supercategory": ""
+        },
+        {
+            "id": 124,
+            "name": "wuling_7_31w_dark_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 125,
+            "name": "wuling_7_31w_dark_4k",
+            "supercategory": ""
+        },
+        {
+            "id": 126,
+            "name": "wuling_7_98w",
+            "supercategory": ""
+        },
+        {
+            "id": 127,
+            "name": "wuling_7_98w_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 128,
+            "name": "wuling_7_98w_4k",
+            "supercategory": ""
+        },
+        {
+            "id": 129,
+            "name": "wuling_7_98w_dark",
+            "supercategory": ""
+        },
+        {
+            "id": 130,
+            "name": "wuling_7_98w_dark_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 131,
+            "name": "wuling_7_98w_dark_4k",
+            "supercategory": ""
+        },
+        {
+            "id": 132,
+            "name": "xaihi_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 133,
+            "name": "yvonne_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 134,
+            "name": "gather_icon_in_map",
+            "supercategory": ""
+        },
+        {
+            "id": 135,
+            "name": "wuling_11_9w",
+            "supercategory": ""
+        },
+        {
+            "id": 136,
+            "name": "wuling_11_9w_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 137,
+            "name": "wuling_11_9w_4k",
+            "supercategory": ""
+        },
+        {
+            "id": 138,
+            "name": "monthly_card2",
+            "supercategory": ""
+        },
+        {
+            "id": 139,
+            "name": "zhuang_fangyi_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 140,
+            "name": "baker_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 141,
+            "name": "baker_click",
+            "supercategory": ""
+        },
+        {
+            "id": 142,
+            "name": "stamina_plus_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 143,
+            "name": "start_follow",
+            "supercategory": ""
+        },
+        {
+            "id": 144,
+            "name": "transfer_go",
+            "supercategory": ""
+        },
+        {
+            "id": 145,
+            "name": "log_out_confirm",
+            "supercategory": ""
+        },
+        {
+            "id": 146,
+            "name": "liaison_confirm",
+            "supercategory": ""
+        },
+        {
+            "id": 147,
+            "name": "give_gift",
+            "supercategory": ""
+        },
+        {
+            "id": 148,
+            "name": "to_max_produce_num",
+            "supercategory": ""
+        },
+        {
+            "id": 149,
+            "name": "select_confirm",
+            "supercategory": ""
+        },
+        {
+            "id": 150,
+            "name": "make_simply_entrance",
+            "supercategory": ""
+        },
+        {
+            "id": 151,
+            "name": "yingtuo_monument",
+            "supercategory": ""
+        },
+        {
+            "id": 152,
+            "name": "baker_page_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 153,
+            "name": "in_map",
+            "supercategory": ""
+        },
+        {
+            "id": 154,
+            "name": "yingtuo_not_cleared_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 155,
+            "name": "yingtuo_difficult_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 156,
+            "name": "yingtuo_entrance",
+            "supercategory": ""
+        },
+        {
+            "id": 157,
+            "name": "sentence_part_feature",
+            "supercategory": ""
+        },
+        {
+            "id": 158,
+            "name": "resident_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 159,
+            "name": "transaction_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 160,
+            "name": "main_centre_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 161,
+            "name": "boat_entrance_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 162,
+            "name": "change_area",
+            "supercategory": ""
+        },
+        {
+            "id": 163,
+            "name": "battle_cost_x1",
+            "supercategory": ""
+        },
+        {
+            "id": 164,
+            "name": "trigger_gather_button",
+            "supercategory": ""
+        },
+        {
+            "id": 165,
+            "name": "restart_battle",
+            "supercategory": ""
+        },
+        {
+            "id": 166,
+            "name": "left_battle",
+            "supercategory": ""
+        },
+        {
+            "id": 167,
+            "name": "go_gather_view",
+            "supercategory": ""
+        },
+        {
+            "id": 168,
+            "name": "go_space",
+            "supercategory": ""
+        },
+        {
+            "id": 169,
+            "name": "map_filter_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 170,
+            "name": "collect_gift",
+            "supercategory": ""
+        },
+        {
+            "id": 171,
+            "name": "to_give_gift",
+            "supercategory": ""
+        },
+        {
+            "id": 172,
+            "name": "contact_page_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 173,
+            "name": "outpost_manager_enter",
+            "supercategory": ""
+        },
+        {
+            "id": 174,
+            "name": "material_dispatch_enter",
+            "supercategory": ""
+        },
+        {
+            "id": 175,
+            "name": "warehouse_node_enter",
+            "supercategory": ""
+        },
+        {
+            "id": 176,
+            "name": "fill_max",
+            "supercategory": ""
+        },
+        {
+            "id": 177,
+            "name": "get_exchange_ticket",
+            "supercategory": ""
+        },
+        {
+            "id": 178,
+            "name": "left_button",
+            "supercategory": ""
+        },
+        {
+            "id": 179,
+            "name": "battle_space_left",
+            "supercategory": ""
+        },
+        {
+            "id": 180,
+            "name": "friend_page",
+            "supercategory": ""
+        },
+        {
+            "id": 181,
+            "name": "info_exchange",
+            "supercategory": ""
+        },
+        {
+            "id": 182,
+            "name": "exchange_room",
+            "supercategory": ""
+        },
+        {
+            "id": 183,
+            "name": "make_room",
+            "supercategory": ""
+        },
+        {
+            "id": 184,
+            "name": "cultivation_room",
+            "supercategory": ""
+        },
+        {
+            "id": 186,
+            "name": "double_ticket",
+            "supercategory": ""
+        },
+        {
+            "id": 187,
+            "name": "collect_clue_enter",
+            "supercategory": ""
+        },
+        {
+            "id": 188,
+            "name": "receive_clue_enter",
+            "supercategory": ""
+        },
+        {
+            "id": 189,
+            "name": "all_receive",
+            "supercategory": ""
+        },
+        {
+            "id": 190,
+            "name": "refresh_order_list",
+            "supercategory": ""
+        },
+        {
+            "id": 191,
+            "name": "credit_shop_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 192,
+            "name": "credit_shop_refresh",
+            "supercategory": ""
+        },
+        {
+            "id": 193,
+            "name": "get_claim_page",
+            "supercategory": ""
+        },
+        {
+            "id": 194,
+            "name": "rationality_supplement_page",
+            "supercategory": ""
+        },
+        {
+            "id": 195,
+            "name": "battle_page_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 196,
+            "name": "gather_icon2",
+            "supercategory": ""
+        },
+        {
+            "id": 197,
+            "name": "space_get_claim",
+            "supercategory": ""
+        },
+        {
+            "id": 198,
+            "name": "demo_left_time",
+            "supercategory": ""
+        },
+        {
+            "id": 199,
+            "name": "demographic_follow",
+            "supercategory": ""
+        },
+        {
+            "id": 200,
+            "name": "level_tip",
+            "supercategory": ""
+        },
+        {
+            "id": 201,
+            "name": "start_demo",
+            "supercategory": ""
+        },
+        {
+            "id": 202,
+            "name": "demo_random_button",
+            "supercategory": ""
+        },
+        {
+            "id": 203,
+            "name": "enter_demo",
+            "supercategory": ""
+        },
+        {
+            "id": 204,
+            "name": "liaison_stage",
+            "supercategory": ""
+        },
+        {
+            "id": 205,
+            "name": "receive_good",
+            "supercategory": ""
+        },
+        {
+            "id": 206,
+            "name": "demo_double_open",
+            "supercategory": ""
+        },
+        {
+            "id": 207,
+            "name": "b_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 208,
+            "name": "can_use_help",
+            "supercategory": ""
+        },
+        {
+            "id": 209,
+            "name": "secondary_objective_direction_dot_light_fourth",
+            "supercategory": ""
+        },
+        {
+            "id": 210,
+            "name": "daily_demo_enter",
+            "supercategory": ""
+        },
+        {
+            "id": 211,
+            "name": "transaction_overview",
+            "supercategory": ""
+        },
+        {
+            "id": 212,
+            "name": "view_location",
+            "supercategory": ""
+        },
+        {
+            "id": 213,
+            "name": "b",
+            "supercategory": ""
+        },
+        {
+            "id": 214,
+            "name": "b_4k",
+            "supercategory": ""
+        },
+        {
+            "id": 215,
+            "name": "login_reward_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 216,
+            "name": "start_scratch_card",
+            "supercategory": ""
+        },
+        {
+            "id": 217,
+            "name": "scratch_card_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 218,
+            "name": "in_scratch_card_page",
+            "supercategory": ""
+        },
+        {
+            "id": 219,
+            "name": "wuling_15_9w",
+            "supercategory": ""
+        },
+        {
+            "id": 220,
+            "name": "wuling_15_9w_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 221,
+            "name": "wuling_15_9w_4k",
+            "supercategory": ""
+        },
+        {
+            "id": 222,
+            "name": "wuling_16_3w_4k",
+            "supercategory": ""
+        },
+        {
+            "id": 223,
+            "name": "wuling_16_3w_2k",
+            "supercategory": ""
+        },
+        {
+            "id": 224,
+            "name": "wuling_16_3w",
+            "supercategory": ""
+        },
+        {
+            "id": 225,
+            "name": "scratching_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 226,
+            "name": "clear_page_gather",
+            "supercategory": ""
+        },
+        {
+            "id": 227,
+            "name": "battle_gather_ok",
+            "supercategory": ""
+        },
+        {
+            "id": 228,
+            "name": "battle_space_ok",
+            "supercategory": ""
+        },
+        {
+            "id": 229,
+            "name": "clear_page_demo_battle",
+            "supercategory": ""
+        },
+        {
+            "id": 230,
+            "name": "liino_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 231,
+            "name": "mi_fu_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 232,
+            "name": "arcane_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 233,
+            "name": "catcher_contact",
+            "supercategory": ""
+        },
+        {
+            "id": 234,
+            "name": "products_collect_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 235,
+            "name": "clue_collect_icon",
+            "supercategory": ""
+        },
+        {
+            "id": 236,
+            "name": "operation_report_icon",
+            "supercategory": ""
         }
     ]
 }
