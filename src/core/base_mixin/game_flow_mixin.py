@@ -258,7 +258,7 @@ class GameFlowMixin:
         """
         clicked = self.click_feature(
             feature="reward_ok",
-            box=self.box.bottom,
+            boxes=[self.box.bottom],
             time_out=time_out,
             after_sleep=after_sleep,
         )
