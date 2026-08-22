@@ -194,7 +194,8 @@ def format_failure_details_by_account(per_round, failure_details: dict, translat
 
         if tasks_map:
             for task_name, message in tasks_map.items():
-                lines.append(f"  - {task_name} : {_tr(str(message)) or _tr('未设置失败消息')}")
+                message_text = str(message).strip() if message is not None else ""
+                lines.append(f"  - {task_name} : {_tr(message_text) or _tr('未设置失败消息')}")
         else:
             lines.append(f"  - {_tr('无')}")
 
