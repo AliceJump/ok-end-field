@@ -15,7 +15,7 @@ class DailyBoatMixin:
         exchange_help_box = self.box_of_screen(0.1, 561 / 861, 0.9, 0.9)
         ok_bool_clue = True
         ok_up_room = True
-        self.one_click_finish()
+        self._one_click_collect()
         if not self.up_make_room_num(exchange_help_box):
             self.mark_task_failure("制造舱任务失败")
             ok_up_room = False
@@ -33,10 +33,14 @@ class DailyBoatMixin:
             return True
         return False
 
-    def one_click_finish(self):
-        self.wait_click_feature(feature=fL.clue_collect_icon, box=self.box_of_screen(1627 /1920, 178 /1080, (1627+76) /1920, (178+154) /1080))
-        if self.wait_click_feature(feature=fL.products_collect_icon, box=self.box_of_screen(1627 /1920, 178 /1080, (1627+76) /1920, (178+154) /1080)):
-            self.wait_pop_up(time_out=5)
+    def _one_click_collect(self):
+        stages = self._boat_stages()
+        clue_box = self.box_of_screen(1627 / 1920, 178 / 1080, (1627 + 76) / 1920, (178 + 154) / 1080)
+        if "收集线索" in stages:
+            self.wait_click_feature(feature=fL.clue_collect_icon, box=clue_box)
+        if "使用制造舱助力" in stages:
+            if self.wait_click_feature(feature=fL.products_collect_icon, box=clue_box):
+                self.wait_pop_up(time_out=5)
 
     def collect_clue(self, exchange_help_box):
         if "收集线索" not in self._boat_stages():

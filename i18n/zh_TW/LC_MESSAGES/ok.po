@@ -407,7 +407,7 @@ msgid "刮刮乐"
 msgstr "刮刮樂"
 
 msgid "使用制造舱助力"
-msgstr "製造舱助力"
+msgstr "使用製造艙助力"
 
 msgid "刷体力"
 msgstr "刷體力"
