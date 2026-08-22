@@ -141,7 +141,7 @@ class DailyBoatMixin:
         return None
 
     def up_make_room_num(self, exchange_help_box):
-        if "制造舱" not in self._boat_stages():
+        if "使用制造舱助力" not in self._boat_stages():
             self.log_info("制造舱助力任务未启用，跳过")
             return True
         self.wait_ui_stable()
