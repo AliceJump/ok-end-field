@@ -105,7 +105,7 @@ def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_da
             "",
         ])
 
-    failure_lines = format_failure_details_by_account(per_round, failure_details)
+    failure_lines = format_failure_details_by_account(per_round, failure_details, translate=getattr(task, 'tr', None))
     if failure_lines:
         lines.extend(failure_lines)
 
@@ -159,16 +159,19 @@ def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_da
     raise RuntimeError(f"无法创建{task_name}执行情况汇总文件")
 
 
-def format_failure_details_by_account(per_round, failure_details: dict) -> list[str]:
+def format_failure_details_by_account(per_round, failure_details: dict, translate=None) -> list[str]:
     """仅支持按 `account_id` 分组的 `failure_details` 格式：
     { account_id: { task_name: message, ... }, ... }
 
     将每个账号的失败任务按账号展示，账号显示名优先使用 `per_round` 中的 `account_user`。
+    translate: 可选的翻译函数（如 task.tr），用于翻译失败消息。
     """
     if not isinstance(failure_details, dict) or not failure_details:
         return []
 
-    lines: list[str] = ["失败消息:", ""]
+    _tr = translate or (lambda s: s)
+
+    lines: list[str] = [_tr("失败消息:"), ""]
 
     # 构建 account_id -> account_user 映射（若有 per_round）
     id_to_user: dict[str, str] = {}
@@ -184,16 +187,16 @@ def format_failure_details_by_account(per_round, failure_details: dict) -> list[
         if not isinstance(tasks_map, dict):
             continue
         account_user = id_to_user.get(str(account_id), "")
-        account_display = account_user or (f"id:{account_id}" if account_id else "无")
+        account_display = account_user or (f"id:{account_id}" if account_id else _tr("无"))
 
-        lines.append(f"=== 账号: {account_display} ===")
-        lines.append("失败任务:")
+        lines.append(f"=== {_tr('账号')}: {account_display} ===")
+        lines.append(_tr("失败任务:") + "")
 
         if tasks_map:
             for task_name, message in tasks_map.items():
-                lines.append(f"  - {task_name} : {str(message) or '未设置失败消息'}")
+                lines.append(f"  - {task_name} : {_tr(str(message)) or _tr('未设置失败消息')}")
         else:
-            lines.append("  - 无")
+            lines.append(f"  - {_tr('无')}")
 
         lines.append("")
 
