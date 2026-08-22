@@ -18,7 +18,7 @@ class DailyRoutineFeature(
 ):
     # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
     lang: LangAccessor
-    BOAT_STAGES = ['收集线索', '制造舱', '培养舱']
+    BOAT_STAGES = ['收集线索', '使用制造舱助力']
     ACTIVITY_REWARDS = ['周常奖励', '理智补给', '刮刮乐']
 
     def __init__(self, task):
@@ -83,8 +83,7 @@ class DailyRoutineFeature(
             "⭐帝江号收菜": (
                 "选择帝江号收菜内容：\n"
                 "收集线索：前往会客室收集线索，集齐后开启情报交流。\n"
-                "制造舱：收取培养材料并补足待制造数量。\n"
-                "培养舱：收取培养材料并直接再次培养。"
+                "使用制造舱助力：好友可为你的制造舱提供助力，你可在制造时使用这些助力。"
             ),
             "⭐活动奖励": (
                 "选择要领取的活动奖励：\n"
