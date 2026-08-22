@@ -1664,3 +1664,115 @@ msgstr "Lower boundary of the search area, from 0 to 1; it must exceed Minimum Y
 
 msgid "每次检测后的等待时间。"
 msgstr "Wait time after each detection."
+
+
+msgid "失败消息:"
+msgstr "Failure messages:"
+
+msgid "失败任务:"
+msgstr "Failed tasks:"
+
+msgid "未设置失败消息"
+msgstr "No failure message set"
+
+msgid "制造舱任务失败"
+msgstr "Manufacturing bay task failed"
+
+msgid "培养舱任务失败"
+msgstr "Cultivation bay task failed"
+
+msgid "收集线索任务失败"
+msgstr "Clue collection task failed"
+
+msgid "未找到会客室，任务失败"
+msgstr "Reception room not found, task failed"
+
+msgid "未找到制造舱，任务失败"
+msgstr "Manufacturing bay not found, task failed"
+
+msgid "未找到培养舱，任务失败"
+msgstr "Cultivation bay not found, task failed"
+
+msgid "未找到全部收取、培养或停工字样，任务失败"
+msgstr "Could not find collect all, cultivate, or stopped text, task failed"
+
+msgid "未找到再次培养按钮，再次培养失败"
+msgstr "Re-cultivate button not found, re-cultivation failed"
+
+msgid "二次寻路失败：无法进入『能量淤积点』详情页"
+msgstr "Pathfinding failed: Cannot enter Energy Accumulation Point details"
+
+msgid "未找到『重新挑战』按钮，可能战斗尚未结束"
+msgstr "Retry button not found, battle may not have ended"
+
+msgid "点击随机按钮后等级未变化，可能未点中按钮"
+msgstr "Level unchanged after clicking random button, may have missed"
+
+msgid "未能进入总览界面"
+msgstr "Failed to enter overview screen"
+
+msgid "未找到『进入演算』目标，可能尚未找到正确路线"
+msgstr "Enter Operation target not found, correct route may not be found"
+
+msgid "未能进入『进入演算』目标，可能尚未找到正确路线"
+msgstr "Failed to enter Operation target, correct route may not be found"
+
+msgid "未找到『进入演算』按钮，可能还没到关卡入口页"
+msgstr "Enter Operation button not found, may not be at stage entrance"
+
+msgid "未找到等级信息标志，可能没有进入演武集算关卡界面"
+msgstr "Level info indicator not found, may not be in Operation stage screen"
+
+msgid "传送失败，无法开始送礼任务"
+msgstr "Teleport failed, cannot start gift delivery task"
+
+msgid "多次收礼失败，停止重试"
+msgstr "Gift collection failed multiple times, stopping retries"
+
+msgid "干员联络任务失败"
+msgstr "Operator liaison task failed"
+
+msgid "前往联络站失败"
+msgstr "Failed to go to liaison station"
+
+msgid "送礼任务最终失败"
+msgstr "Gift delivery task ultimately failed"
+
+msgid "信用商店刷新失败：未找到确认按钮"
+msgstr "Credit shop refresh failed: Confirm button not found"
+
+msgid "传送到帝江号失败，无法执行帝江号整理"
+msgstr "Teleport to Dijiang failed, cannot perform Dijiang organization"
+
+msgid "未能找到简易制作入口"
+msgstr "Simple crafting entry not found"
+
+msgid "未能找到简易制作按钮"
+msgstr "Simple crafting button not found"
+
+msgid "未找到装备按钮，任务失败"
+msgstr "Equipment button not found, task failed"
+
+msgid "未找到制作按钮，任务失败"
+msgstr "Crafting button not found, task failed"
+
+msgid "未完成任何转交运送委托操作"
+msgstr "No transfer delivery commission operations completed"
+
+msgid "未找到日常奖励按钮，任务失败"
+msgstr "Daily reward button not found, task failed"
+
+msgid "未找到通行证奖励入口，任务失败"
+msgstr "Pass reward entry not found, task failed"
+
+msgid "领取失败"
+msgstr "Claim failed"
+
+msgid "未找到进入战斗按钮"
+msgstr "Enter battle button not found"
+
+msgid "未找到『演算』入口，可能界面未加载完全"
+msgstr "Operation entry not found, screen may not be fully loaded"
+
+msgid "未能找到传送点，无法继续"
+msgstr "Teleport point not found, cannot continue"

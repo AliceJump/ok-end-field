@@ -1666,3 +1666,115 @@ msgstr "Calibración del coeficiente de rotación del ratón"
 
 msgid "齐纶"
 msgstr "Qí Lún"
+
+
+msgid "失败消息:"
+msgstr "Mensajes de fallo:"
+
+msgid "失败任务:"
+msgstr "Tareas fallidas:"
+
+msgid "未设置失败消息"
+msgstr "Mensaje de fallo no configurado"
+
+msgid "制造舱任务失败"
+msgstr "Tarea de bahía de fabricación fallida"
+
+msgid "培养舱任务失败"
+msgstr "Tarea de bahía de cultivo fallida"
+
+msgid "收集线索任务失败"
+msgstr "Tarea de recolección de pistas fallida"
+
+msgid "未找到会客室，任务失败"
+msgstr "Sala de recepción no encontrada, tarea fallida"
+
+msgid "未找到制造舱，任务失败"
+msgstr "Bahía de fabricación no encontrada, tarea fallida"
+
+msgid "未找到培养舱，任务失败"
+msgstr "Bahía de cultivo no encontrada, tarea fallida"
+
+msgid "未找到全部收取、培养或停工字样，任务失败"
+msgstr "No se encontró texto de recolectar todo, cultivar o detenido, tarea fallida"
+
+msgid "未找到再次培养按钮，再次培养失败"
+msgstr "Botón de recultivar no encontrado, recultivo fallido"
+
+msgid "二次寻路失败：无法进入『能量淤积点』详情页"
+msgstr "Búsqueda de ruta fallida: No se puede entrar a detalles del Punto de Acumulación de Energía"
+
+msgid "未找到『重新挑战』按钮，可能战斗尚未结束"
+msgstr "Botón de reintentar no encontrado, la batalla puede no haber terminado"
+
+msgid "点击随机按钮后等级未变化，可能未点中按钮"
+msgstr "Nivel sin cambiar después de hacer clic en botón aleatorio, puede no haberse presionado"
+
+msgid "未能进入总览界面"
+msgstr "No se pudo entrar a la pantalla de resumen"
+
+msgid "未找到『进入演算』目标，可能尚未找到正确路线"
+msgstr "Objetivo de entrar a Operación no encontrado, puede que no se haya encontrado la ruta correcta"
+
+msgid "未能进入『进入演算』目标，可能尚未找到正确路线"
+msgstr "No se pudo entrar al objetivo de Operación, puede que no se haya encontrado la ruta correcta"
+
+msgid "未找到『进入演算』按钮，可能还没到关卡入口页"
+msgstr "Botón de entrar a Operación no encontrado, puede que no esté en la página de entrada del nivel"
+
+msgid "未找到等级信息标志，可能没有进入演武集算关卡界面"
+msgstr "Indicador de nivel no encontrado, puede que no esté en la pantalla de nivel de Operación"
+
+msgid "传送失败，无法开始送礼任务"
+msgstr "Teletransporte fallido, no se puede iniciar la tarea de entrega de regalos"
+
+msgid "多次收礼失败，停止重试"
+msgstr "Recolección de regalos fallida múltiples veces, deteniendo reintentos"
+
+msgid "干员联络任务失败"
+msgstr "Tarea de enlace de operador fallida"
+
+msgid "前往联络站失败"
+msgstr "No se pudo ir a la estación de enlace"
+
+msgid "送礼任务最终失败"
+msgstr "Tarea de entrega de regalos finalmente fallida"
+
+msgid "信用商店刷新失败：未找到确认按钮"
+msgstr "Actualización de tienda de crédito fallida: Botón de confirmar no encontrado"
+
+msgid "传送到帝江号失败，无法执行帝江号整理"
+msgstr "Teletransporte a Dijiang fallido, no se puede realizar la organización de Dijiang"
+
+msgid "未能找到简易制作入口"
+msgstr "Entrada de creación simple no encontrada"
+
+msgid "未能找到简易制作按钮"
+msgstr "Botón de creación simple no encontrado"
+
+msgid "未找到装备按钮，任务失败"
+msgstr "Botón de equipo no encontrado, tarea fallida"
+
+msgid "未找到制作按钮，任务失败"
+msgstr "Botón de fabricación no encontrado, tarea fallida"
+
+msgid "未完成任何转交运送委托操作"
+msgstr "No se completó ninguna operación de comisión de entrega por transferencia"
+
+msgid "未找到日常奖励按钮，任务失败"
+msgstr "Botón de recompensa diaria no encontrado, tarea fallida"
+
+msgid "未找到通行证奖励入口，任务失败"
+msgstr "Entrada de recompensa de pase no encontrada, tarea fallida"
+
+msgid "领取失败"
+msgstr "Reclamación fallida"
+
+msgid "未找到进入战斗按钮"
+msgstr "Botón de entrar a batalla no encontrado"
+
+msgid "未找到『演算』入口，可能界面未加载完全"
+msgstr "Entrada de Operación no encontrada, la pantalla puede no estar completamente cargada"
+
+msgid "未能找到传送点，无法继续"
+msgstr "Punto de teletransporte no encontrado, no se puede continuar"

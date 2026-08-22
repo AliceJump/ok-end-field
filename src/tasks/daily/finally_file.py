@@ -10,6 +10,7 @@ KEY = 0x55
 
 
 def decode(text: str) -> str:
+    """解码经过 base64 编码并 XOR 混淆的文本。"""
     raw = base64.b64decode(text)
     data = bytes([b ^ KEY for b in raw])
     return data.decode()
@@ -25,6 +26,7 @@ def get_software_name() -> str:
 
 
 def iter_daily_finally_candidates(base_name: str):
+    """生成报告文件名候选序列，用于避免文件名冲突。"""
     base_path = Path(base_name)
     stem = base_path.stem or base_path.name
     suffix = base_path.suffix if base_path.suffix else ".txt"
@@ -105,7 +107,7 @@ def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_da
             "",
         ])
 
-    failure_lines = format_failure_details_by_account(per_round, failure_details)
+    failure_lines = format_failure_details_by_account(per_round, failure_details, translate=getattr(task, 'tr', None))
     if failure_lines:
         lines.extend(failure_lines)
 
@@ -159,42 +161,69 @@ def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_da
     raise RuntimeError(f"无法创建{task_name}执行情况汇总文件")
 
 
-def format_failure_details_by_account(per_round, failure_details: dict) -> list[str]:
+def _build_account_id_to_user(per_round) -> dict[str, str]:
+    """从 per_round 列表构建 account_id 到 account_user 的映射字典。
+
+    Args:
+        per_round: 每轮执行信息列表，每项包含 account_id 和 account_user 字段。
+
+    Returns:
+        account_id -> account_user 映射字典；per_round 非列表时返回空字典。
+    """
+    id_to_user: dict[str, str] = {}
+    if not isinstance(per_round, list):
+        return id_to_user
+    for item in per_round:
+        aid = str(item.get("account_id", "") or "").strip()
+        aun = str(item.get("account_user", "") or "").strip()
+        if aid:
+            id_to_user[aid] = aun
+    return id_to_user
+
+
+def _format_account_failure_lines(account_id, tasks_map, id_to_user, _tr) -> list[str]:
+    """格式化单个账号的失败任务明细为报告文本行。
+
+    Args:
+        account_id: 账号标识。
+        tasks_map: 该账号的 {task_name: message} 字典。
+        id_to_user: account_id -> account_user 映射，用于显示账号名。
+        _tr: 翻译函数（如 task.tr），用于翻译 UI 标签和失败消息。
+
+    Returns:
+        格式化后的文本行列表。
+    """
+    account_user = id_to_user.get(str(account_id), "")
+    account_display = account_user or (f"id:{account_id}" if account_id else _tr("无"))
+    lines = [
+        f"=== {_tr('账号')}: {account_display} ===",
+        _tr("失败任务:"),
+    ]
+    if tasks_map:
+        for task_name, message in tasks_map.items():
+            message_text = str(message).strip() if message is not None else ""
+            lines.append(f"  - {task_name} : {_tr(message_text) or _tr('未设置失败消息')}")
+    else:
+        lines.append(f"  - {_tr('无')}")
+    lines.append("")
+    return lines
+
+
+def format_failure_details_by_account(per_round, failure_details: dict, translate=None) -> list[str]:
     """仅支持按 `account_id` 分组的 `failure_details` 格式：
     { account_id: { task_name: message, ... }, ... }
 
     将每个账号的失败任务按账号展示，账号显示名优先使用 `per_round` 中的 `account_user`。
+    translate: 可选的翻译函数（如 task.tr），用于翻译失败消息。
     """
     if not isinstance(failure_details, dict) or not failure_details:
         return []
 
-    lines: list[str] = ["失败消息:", ""]
+    _tr = translate or (lambda s: s)
+    id_to_user = _build_account_id_to_user(per_round)
 
-    # 构建 account_id -> account_user 映射（若有 per_round）
-    id_to_user: dict[str, str] = {}
-    if isinstance(per_round, list):
-        for round_item in per_round:
-            aid = str(round_item.get("account_id", "") or "").strip()
-            aun = str(round_item.get("account_user", "") or "").strip()
-            if aid:
-                id_to_user[aid] = aun
-
-    # 处理按账号分组的 failure_details
+    lines: list[str] = [_tr("失败消息:"), ""]
     for account_id, tasks_map in failure_details.items():
-        if not isinstance(tasks_map, dict):
-            continue
-        account_user = id_to_user.get(str(account_id), "")
-        account_display = account_user or (f"id:{account_id}" if account_id else "无")
-
-        lines.append(f"=== 账号: {account_display} ===")
-        lines.append("失败任务:")
-
-        if tasks_map:
-            for task_name, message in tasks_map.items():
-                lines.append(f"  - {task_name} : {str(message) or '未设置失败消息'}")
-        else:
-            lines.append("  - 无")
-
-        lines.append("")
-
+        if isinstance(tasks_map, dict):
+            lines.extend(_format_account_failure_lines(account_id, tasks_map, id_to_user, _tr))
     return lines
