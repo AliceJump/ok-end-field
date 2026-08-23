@@ -530,9 +530,11 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
     def _find_zip_line_board_button(self, direct_wait=5.0, total_time_out=60.0):
         """传送落地后确保处于主界面，再寻找「登上滑索架」交互按钮。
 
-        先在主界面直接查找按钮约 direct_wait 秒；若附近其他设备过近遮挡
-        滑索架导致交互按钮不出现，则参考 navigate_until_target 目标不稳定
-        时的做法（WASD 小幅度踱步搜索），边踱步边找直到总超时。
+        分三个阶段：
+        1. 直接原地查找约 ``direct_wait`` 秒；
+        2. 未找到则切换步行模式做 WASD 小幅度踱步搜索，最多约 10 秒；
+        3. 仍未找到则改为仅 W/S 前后移动继续搜索，直到总超时。
+        移动全程保持步行而非奔跑（ctrl 切换），结束后恢复奔跑模式。
 
         Args:
             direct_wait: 直接原地查找的时长（秒）。
@@ -557,20 +559,44 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 return found
             self.sleep(0.1)
 
-        # 阶段二：踱步寻找（WASD 小幅度移动，参考 nav 目标不稳定时的做法）
-        self.log_info("短时间内未找到登上滑索架，可能被其他设备遮挡，开始踱步寻找")
-        remaining = total_time_out - (self.active_time() - start)
-        found = self.strafe_search(
-            check,
-            passes=None,  # 不限轮数，持续踱步直到找到或超时
-            duration=0.2,  # 每个方向轻移 0.2 秒，避免走远
-            time_out=max(1.0, remaining),
-        )
-        if found:
-            self.log_info("踱步寻找过程中找到登上滑索架")
-        else:
-            self.log_info("踱步寻找超时，仍未找到登上滑索架")
-        return found
+        # 切换步行模式：踱步与前后移动都用走路，避免奔跑错过交互按钮
+        self.press_key("ctrl")  # 确认使用send_key：ctrl为奔跑切换键，不属于游戏可配置热键
+        try:
+            # 阶段二：WASD 踱步寻找（参考 nav 目标不稳定时的做法），最多持续约 10 秒
+            self.log_info("短时间内未找到登上滑索架，可能被其他设备遮挡，切换步行开始踱步寻找（最长 10 秒）")
+            elapsed = self.active_time() - start
+            strafe_budget = min(10.0, max(1.0, total_time_out - elapsed))
+            found = self.strafe_search(
+                check,
+                passes=None,  # 不限轮数，持续踱步直到找到或阶段时限
+                duration=0.2,  # 每个方向轻移 0.2 秒，避免走远
+                time_out=strafe_budget,
+            )
+            if found:
+                self.log_info("踱步寻找过程中找到登上滑索架")
+                return found
+
+            # 阶段三：改为仅 W/S 前后移动继续找，直到总超时
+            remaining = total_time_out - (self.active_time() - start)
+            if remaining <= 0:
+                self.log_info("踱步超时，仍未找到登上滑索架")
+                return None
+            self.log_info("踱步仍未找到登上滑索架，改为仅 W/S 前后移动继续寻找")
+            found = self.strafe_search(
+                check,
+                passes=None,
+                duration=0.2,
+                keys=("w", "s"),  # 仅前后移动
+                time_out=max(1.0, remaining),
+            )
+            if found:
+                self.log_info("前后移动寻找过程中找到登上滑索架")
+                return found
+            self.log_info("前后移动超时，仍未找到登上滑索架")
+            return None
+        finally:
+            self.press_key("ctrl", after_sleep=0.01)  # 结束后恢复奔跑模式（与导航结束时处理一致）
+            self.log_info("恢复奔跑模式")
 
     def to_storage_point_and_back_zip_line(self, only_zip_line=False):
         """从仓储点出发，乘坐滑索到送货点

@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""验证传送后寻找「登上滑索架」按钮的两阶段逻辑（直接查找 + 踱步搜索）。"""
-import time
+"""验证传送后寻找「登上滑索架」按钮的三阶段逻辑（直接查找 + 踱步 + 前后移动）。"""
 import unittest
 from types import SimpleNamespace
 
@@ -11,19 +10,26 @@ class _FakeBox:
     """模拟 OCR 命中的按钮 Box。"""
 
 
-def _make_stub(ocr_results, strafe_result="not-called"):
-    """构造仅包含 _find_zip_line_board_button 所需接口的桩对象。"""
+def _make_stub(ocr_results, strafe_results=None, advance_per_strafe=None):
+    """构造仅包含 _find_zip_line_board_button 所需接口的桩对象。
+
+    strafe_results: 每次 strafe_search 调用依次返回的值；None 表示该次返回未命中。
+    advance_per_strafe: 每次踱步调用后时钟前进的秒数（模拟搜索真实耗时）。
+    """
     stub = SimpleNamespace()
     stub._ocr_results = list(ocr_results)
-    stub._strafe_result = strafe_result
+    stub._strafe_results = list(strafe_results or [])
     stub.strafe_calls = []
+    stub.ctrl_calls = []
     stub.log_lines = []
     stub.lang = SimpleNamespace(
         DeliveryTask=SimpleNamespace(k_b0e3a2da="登上滑索架"))
     stub.box = SimpleNamespace(bottom_right="bottom_right")
     stub.ensure_main_calls = []
     stub.ensure_main = lambda *a, **kw: stub.ensure_main_calls.append(kw)
-    stub.active_time = time.monotonic
+    clock = {"t": 0.0}
+    stub.clock = clock
+    stub.active_time = lambda: clock["t"]
     stub.next_frame = lambda: "frame"
 
     def _ocr(**kwargs):
@@ -33,13 +39,22 @@ def _make_stub(ocr_results, strafe_result="not-called"):
         return []
 
     stub.ocr = _ocr
-    stub.sleep = lambda *a, **kw: None
+
+    def _sleep(sec=0):
+        clock["t"] += sec if isinstance(sec, (int, float)) else 0  # 桩时钟随等待前进
+
+    stub.sleep = _sleep
     stub.log_info = lambda msg: stub.log_lines.append(msg)
+    stub.press_key = lambda key, *a, **kw: stub.ctrl_calls.append(key)
 
     def _strafe(check, passes=None, duration=0.2, keys=("w", "a", "s", "d"),
                 time_out=-1):
-        stub.strafe_calls.append(time_out)
-        return stub._strafe_result
+        stub.strafe_calls.append({"keys": keys, "time_out": time_out})
+        if advance_per_strafe is not None:
+            clock["t"] += advance_per_strafe  # 模拟踱步搜索真实耗时
+        if stub._strafe_results:
+            return stub._strafe_results.pop(0)
+        return None
 
     stub.strafe_search = _strafe
     return stub
@@ -47,7 +62,7 @@ def _make_stub(ocr_results, strafe_result="not-called"):
 
 class TestFindZipLineBoardButton(unittest.TestCase):
     def test_direct_hit(self):
-        """阶段一直接找到按钮：不进入踱步搜索。"""
+        """阶段一直接找到按钮：不进入踱步搜索，也不切换步行。"""
         box = _FakeBox()
         stub = _make_stub(ocr_results=[None, box])
         result = DeliveryTask._find_zip_line_board_button(
@@ -55,25 +70,42 @@ class TestFindZipLineBoardButton(unittest.TestCase):
         self.assertIs(result, box)
         self.assertEqual(len(stub.ensure_main_calls), 1)  # 先确认主界面
         self.assertEqual(stub.strafe_calls, [])  # 未触发踱步
+        self.assertEqual(stub.ctrl_calls, [])  # 未切换步行/奔跑
 
     def test_strafe_hit_after_direct_miss(self):
-        """阶段一找不到时进入踱步搜索并命中。"""
+        """阶段一找不到时进入 WASD 踱步搜索并命中，时限不超过 10 秒。"""
         box = _FakeBox()
-        stub = _make_stub(ocr_results=[], strafe_result=box)
+        stub = _make_stub(ocr_results=[], strafe_results=[box])
         result = DeliveryTask._find_zip_line_board_button(
             stub, direct_wait=0.02, total_time_out=30.0)
         self.assertIs(result, box)
-        self.assertEqual(len(stub.strafe_calls), 1)  # 进入踱步一次
-        self.assertGreaterEqual(stub.strafe_calls[0], 1.0)  # 踱步时限为剩余时间
+        self.assertEqual(len(stub.strafe_calls), 1)  # 仅进入踱步一次
+        self.assertLessEqual(stub.strafe_calls[0]["time_out"], 10.0)  # 踱步最多 10 秒
+        self.assertEqual(stub.strafe_calls[0]["keys"], ("w", "a", "s", "d"))
+        self.assertEqual(stub.ctrl_calls, ["ctrl", "ctrl"])  # 切步行 + 恢复奔跑
         self.assertTrue(any("踱步" in msg for msg in stub.log_lines))
 
+    def test_ws_fallback_after_strafe_timeout(self):
+        """踱步超时后改用仅 W/S 前后移动继续找，命中后恢复奔跑。"""
+        box = _FakeBox()
+        stub = _make_stub(ocr_results=[], strafe_results=[None, box])
+        result = DeliveryTask._find_zip_line_board_button(
+            stub, direct_wait=0.02, total_time_out=60.0)
+        self.assertIs(result, box)
+        self.assertEqual(len(stub.strafe_calls), 2)  # 踱步 + 前后移动各一次
+        self.assertEqual(stub.strafe_calls[1]["keys"], ("w", "s"))  # 阶段三仅前后移动
+        self.assertGreaterEqual(stub.strafe_calls[1]["time_out"], 1.0)  # 用剩余时间继续找
+        self.assertEqual(stub.ctrl_calls, ["ctrl", "ctrl"])  # 结束恢复奔跑模式
+
     def test_timeout_returns_none(self):
-        """踱步超时仍未找到：返回 None 并记录超时日志。"""
-        stub = _make_stub(ocr_results=[], strafe_result=None)
+        """总超时仍未找到：返回 None 并记录超时日志。"""
+        stub = _make_stub(ocr_results=[], strafe_results=[None],
+                          advance_per_strafe=10.0)  # 踱步消耗掉全部预算
         result = DeliveryTask._find_zip_line_board_button(
             stub, direct_wait=0.01, total_time_out=0.03)
         self.assertIsNone(result)
         self.assertTrue(any("超时" in msg for msg in stub.log_lines))
+        self.assertEqual(len(stub.strafe_calls), 1)  # 总预算耗尽时不再进入阶段三
 
 
 if __name__ == "__main__":
