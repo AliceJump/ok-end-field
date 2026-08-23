@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# ruff: noqa: UP009
 import asyncio
 import hashlib
 import hmac
@@ -12,13 +13,37 @@ from urllib import error, parse, request
 
 import websockets
 
-
 ENDFIELD_MAP_WS_URL = "wss://ws.skland.com/ws/v1/game/endfield/map"
 ENDFIELD_MAP_API_HOST = "https://zonai.skland.com"
 ENDFIELD_MAP_HG_GRANT_URL = "https://as.hypergryph.com/user/oauth2/v2/grant"
 ENDFIELD_MAP_HG_APP_CODE = "4ca99fa6b56cc2ba"
 ENDFIELD_MAP_ORIGIN = "https://game.skland.com"
 ENDFIELD_MAP_REFERER = "https://game.skland.com/map/endfield"
+
+# zonai 接口要求 dId 为数美(SMSdk)真实签发的设备指纹：
+# 纯随机串会返回 10001 设备信息无效（已在真实浏览器内用原生 fetch 复现验证，
+# 可排除 TLS 指纹因素），因此不能伪造。
+# 但官方 SDK 注册流程自铸的全新设备ID可以从 Python 直接使用、与账号无关且可长期复用；
+# 自铸流程见 src/core/map_device_id.py：临时浏览器配置匿名访问官方地图页（无需登录）
+# 完成注册，并持久化到 configs/map_device_id.json。
+from src.core.map_device_id import ensure_map_device_id
+
+_shumei_did_failed_at = 0.0
+_SHUMEI_DID_RETRY_INTERVAL = 30.0
+
+
+def _get_shumei_device_id() -> str:
+    """获取可用的 dId：优先使用已自铸并持久化的设备ID，缺失时现场铸造。"""
+    global _shumei_did_failed_at
+    if time.time() - _shumei_did_failed_at < _SHUMEI_DID_RETRY_INTERVAL:
+        return ""
+    try:
+        did = ensure_map_device_id()
+    except Exception as exc:  # noqa: BLE001 - 铸造失败（无浏览器/网络异常/注册超时）时按间隔降级重试
+        _shumei_did_failed_at = time.time()
+        del exc
+        return ""
+    return did
 
 
 def _make_msg_id() -> str:
@@ -108,12 +133,31 @@ class WsPositionMixin:
         if not oauth_code:
             raise RuntimeError("HG 授权接口没有返回 oauth code")
 
+        device_id = _get_shumei_device_id()
+        if not device_id:
+            raise RuntimeError(
+                "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 "
+                "fp-it.portal101.cn），30 秒后将自动重试"
+            )
+
         cred_resp = self._post_json(
             f"{ENDFIELD_MAP_API_HOST}/web/v1/user/auth/generate_cred_by_code",
             {"kind": 1, "code": oauth_code},
+            headers={
+                "platform": "3",
+                "vName": "1.0.0",
+                "timestamp": str(int(time.time())),
+                "dId": device_id,
+            },
         )
         if not isinstance(cred_resp, dict) or cred_resp.get("code") != 0:
-            raise RuntimeError(f"地图 cred 换取接口返回异常: {cred_resp}")
+            hint = ""
+            if isinstance(cred_resp, dict) and cred_resp.get("code") == 10001:
+                hint = ("（设备信息无效：已存 dId 可能被风控拒绝，"
+                        "删除 configs/map_device_id.json 或运行 "
+                        "`uv run python -m src.core.map_device_id --refresh` "
+                        "重新铸造后重试）")
+            raise RuntimeError(f"地图 cred 换取接口返回异常: {cred_resp}{hint}")
 
         data = cred_resp.get("data") or {}
         cred = str(data.get("cred") or "").strip()
@@ -125,6 +169,7 @@ class WsPositionMixin:
             "cred": cred,
             "sign_token": sign_token,
             "user_id": str(data.get("userId") or "").strip(),
+            "d_id": device_id,
             "sign_time": {
                 "clientTime": str(int(time.time())),
                 "serverTime": str(cred_resp.get("timestamp") or int(time.time())),
