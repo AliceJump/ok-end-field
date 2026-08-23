@@ -87,7 +87,10 @@ def exchange_content(content: str) -> dict[str, Any]:
     if not isinstance(cred_resp, dict) or cred_resp.get("code") != 0:
         hint = ""
         if isinstance(cred_resp, dict) and cred_resp.get("code") == 10001:
-            hint = "（设备信息无效：浏览器缓存失效或接口风控升级，请重新打开网页地图后重试）"
+            hint = ("（设备信息无效：已存 dId 可能被风控拒绝，"
+                    "删除 configs/map_device_id.json 或运行 "
+                    "`uv run python -m src.core.map_device_id --refresh` "
+                    "重新铸造后重试）")
         raise RuntimeError(f"generate_cred_by_code failed: {cred_resp}{hint}")
 
     data = cred_resp.get("data") or {}

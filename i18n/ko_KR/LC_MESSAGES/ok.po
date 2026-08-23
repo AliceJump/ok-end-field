@@ -1777,3 +1777,12 @@ msgstr "연산 진입점을 찾을 수 없음, 화면이 완전히 로드되지 
 
 msgid "未能找到传送点，无法继续"
 msgstr "텔레포트 지점을 찾을 수 없음, 계속할 수 없음"
+
+msgid "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
+msgstr "지도 디바이스 ID(dId)를 사용할 수 없습니다: 자동 발급 실패(Edge/Chrome 설치 및 fp-it.portal101.cn 접근 필요). 30초 후 자동으로 재시도합니다"
+
+msgid "HG 授权接口没有返回 oauth code"
+msgstr "HG 승인 API가 oauth 코드를 반환하지 않았습니다"
+
+msgid "地图 cred 换取接口缺少 cred 或 token"
+msgstr "지도 cred 교환 API 응답에 cred 또는 token이 없습니다"

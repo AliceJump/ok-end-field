@@ -1778,3 +1778,12 @@ msgstr "Entrada de Operación no encontrada, la pantalla puede no estar completa
 
 msgid "未能找到传送点，无法继续"
 msgstr "Punto de teletransporte no encontrado, no se puede continuar"
+
+msgid "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
+msgstr "ID de dispositivo del mapa (dId) no disponible: fallo al generar automáticamente (se requiere Edge/Chrome y acceso a fp-it.portal101.cn); se reintentará en 30 segundos"
+
+msgid "HG 授权接口没有返回 oauth code"
+msgstr "La API de autorización HG no devolvió un código oauth"
+
+msgid "地图 cred 换取接口缺少 cred 或 token"
+msgstr "La respuesta de la API de intercambio de cred del mapa no incluye cred o token"

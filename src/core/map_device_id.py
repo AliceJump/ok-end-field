@@ -304,20 +304,108 @@ def _wait_devtools_port(profile_dir: str, deadline: float) -> int:
     raise TimeoutError("浏览器调试端口未就绪")
 
 
-def _create_map_target(port: int) -> dict:
+def _create_blank_target(port: int) -> dict:
+    """在调试浏览器中新建一个 about:blank 标签页并返回 target 信息。"""
     last_error: Exception | None = None
     for method in ("PUT", "GET"):
         try:
             req = urllib.request.Request(
                 f"http://127.0.0.1:{port}/json/new?"
-                + urllib.request.quote(MAP_PAGE_URL),
+                + urllib.request.quote("about:blank"),
                 method=method,
             )
             with urllib.request.urlopen(req, timeout=10) as resp:
                 return json.loads(resp.read().decode("utf-8"))
         except Exception as e:  # noqa: BLE001 - 不同浏览器版本接受的 HTTP 方法不同
             last_error = e
-    raise RuntimeError(f"无法在新浏览器中打开官方地图页: {last_error}")
+    raise RuntimeError(f"无法在新浏览器中打开空白标签页: {last_error}")
+
+
+def _launch_debug_browser() -> tuple[subprocess.Popen, str]:
+    """启动带远程调试端口的临时浏览器，返回 (进程对象, 临时Profile目录)。"""
+    browser = _find_browser()
+    if not browser:
+        raise RuntimeError(
+            "未找到 Edge/Chrome，无法通过浏览器铸造地图设备ID(dId)；"
+            "请安装 Edge 或 Chrome 后重试"
+        )
+    profile_dir = tempfile.mkdtemp(prefix="ok_ef_map_did_")
+    try:
+        proc = subprocess.Popen([
+            browser,
+            f"--user-data-dir={profile_dir}",
+            "--remote-debugging-port=0",
+            "--no-first-run",
+            "--no-default-browser-check",
+            "--window-size=900,700",
+            "about:blank",
+        ])
+    except OSError:
+        shutil.rmtree(profile_dir, ignore_errors=True)
+        raise
+    return proc, profile_dir
+
+
+def _extract_profile_payload(msg: dict) -> dict | None:
+    """从 Network.requestWillBeSent 事件提取数美注册载荷；无则返回 None。"""
+    request = (msg.get("params") or {}).get("request") or {}
+    body = request.get("postData")
+    if "deviceprofile" not in request.get("url", "") or not body:
+        return None
+    try:
+        payload = json.loads(body)
+    except ValueError:
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _collect_registration_via_cdp(
+        conn, deadline: float) -> tuple[str | None, dict | None]:
+    """循环读取 CDP 消息直到拿到 dId 或超时。
+
+    返回 ``(ls_value, captured_payload)``：localStorage 中读到的数美串
+    （未读到为 ``None``）与捕获到的注册载荷（未捕获为 ``None``）。
+    """
+    captured_payload: dict | None = None
+    ls_value: str | None = None
+    next_eval_id = 10
+    pending_eval: set[int] = set()
+    while time.time() < deadline and ls_value is None:
+        try:
+            raw = conn.recv(2.0)
+        except TimeoutError:
+            raw = None
+        msg = json.loads(raw) if raw else None
+        if not msg:
+            continue
+        if msg.get("method") == "Network.requestWillBeSent":
+            payload = _extract_profile_payload(msg)
+            if payload is not None:
+                captured_payload = payload
+            continue
+        eval_id = msg.get("id")
+        if eval_id in pending_eval:
+            pending_eval.discard(eval_id)
+            result = ((msg.get("result") or {}).get("result") or {})
+            value = result.get("value")
+            if isinstance(value, str) and len(value) > 20:
+                ls_value = value
+                break
+        # 周期性轮询 localStorage（无未决请求时才发起新的查询）
+        if not pending_eval:
+            next_eval_id += 1
+            pending_eval.add(next_eval_id)
+            conn.send(json.dumps({
+                "id": next_eval_id,
+                "method": "Runtime.evaluate",
+                "params": {
+                    "expression":
+                        f"localStorage.getItem('{_SHUMEI_LS_KEY}')",
+                    "returnByValue": True,
+                },
+            }))
+            time.sleep(3)
+    return ls_value, captured_payload
 
 
 def mint_device_id_browser(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
@@ -328,75 +416,24 @@ def mint_device_id_browser(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
     2. 该次注册使用的加密载荷（从网络层捕获后写入本地，
        之后 ``mint_device_id_http`` 即可用它进行免浏览器铸造）。
     """
-    browser = _find_browser()
-    if not browser:
-        raise RuntimeError(
-            "未找到 Edge/Chrome，无法通过浏览器铸造地图设备ID(dId)；"
-            "请安装 Edge 或 Chrome 后重试"
-        )
-
-    profile_dir = tempfile.mkdtemp(prefix="ok_ef_map_did_")
-    proc = subprocess.Popen([
-        browser,
-        f"--user-data-dir={profile_dir}",
-        "--remote-debugging-port=0",
-        "--no-first-run",
-        "--no-default-browser-check",
-        "--window-size=900,700",
-        "about:blank",
-    ])
+    proc, profile_dir = _launch_debug_browser()
     conn = None
     try:
         deadline = time.time() + timeout
         port = _wait_devtools_port(profile_dir, min(deadline, time.time() + 15))
-        target = _create_map_target(port)
+        target = _create_blank_target(port)
         conn = ws_connect(target["webSocketDebuggerUrl"], timeout=2)
+        # 先启用网络监听再导航到地图页：若先导航后启用，
+        # 加载早期发出的 deviceprofile 注册请求可能被漏掉
         conn.send(json.dumps({"id": 1, "method": "Network.enable"}))
+        conn.send(json.dumps({
+            "id": 2,
+            "method": "Page.navigate",
+            "params": {"url": MAP_PAGE_URL},
+        }))
 
-        captured_payload = None
-        ls_value = None
-        next_eval_id = 10
-        pending_eval: dict[int, bool] = {}
-        while time.time() < deadline and ls_value is None:
-            try:
-                raw = conn.recv(2.0)
-            except TimeoutError:
-                raw = None
-            msg = json.loads(raw) if raw else None
-            if not msg:
-                continue
-            if msg.get("method") == "Network.requestWillBeSent":
-                request = (msg.get("params") or {}).get("request") or {}
-                url = request.get("url", "")
-                body = request.get("postData")
-                if "deviceprofile" in url and body:
-                    try:
-                        captured_payload = json.loads(body)
-                    except ValueError:
-                        pass
-                continue
-            eval_id = msg.get("id")
-            if eval_id in pending_eval:
-                del pending_eval[eval_id]
-                result = ((msg.get("result") or {}).get("result") or {})
-                value = result.get("value")
-                if isinstance(value, str) and len(value) > 20:
-                    ls_value = value
-                    break
-            # 周期性轮询 localStorage（无未决请求时才发起新的查询）
-            if not pending_eval:
-                next_eval_id += 1
-                pending_eval[next_eval_id] = True
-                conn.send(json.dumps({
-                    "id": next_eval_id,
-                    "method": "Runtime.evaluate",
-                    "params": {
-                        "expression":
-                            f"localStorage.getItem('{_SHUMEI_LS_KEY}')",
-                        "returnByValue": True,
-                    },
-                }))
-                time.sleep(3)
+        ls_value, captured_payload = _collect_registration_via_cdp(
+            conn, deadline)
 
         match = _SHUMEI_VALUE_RE.search(ls_value or "")
         if not match or len(match.group(1)) < _DID_MIN_LENGTH:
@@ -411,10 +448,7 @@ def mint_device_id_browser(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
                 conn.close()
             except Exception as exc:  # noqa: BLE001 - 关闭失败不影响主流程
                 del exc
-        try:
-            proc.kill()
-        except OSError:
-            pass
+        proc.kill()
         shutil.rmtree(profile_dir, ignore_errors=True)
 
 

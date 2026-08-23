@@ -217,6 +217,7 @@ async function pump() {
     const url = xhr.url || "";
     let status = 200;
     let text = "{}";
+    let transportError = false;
     try {
       const r = await realPost(url, xhr.headers || {}, body);
       status = r.status;
@@ -235,6 +236,9 @@ async function pump() {
         }
       }
     } catch (e) {
+      transportError = true;
+      status = 0;
+      text = "";
       console.error("[runner] http error:", e.message);
     }
     xhr.status = status;
@@ -242,7 +246,12 @@ async function pump() {
     xhr.responseText = text;
     xhr.response = text;
     if (typeof xhr.onreadystatechange === "function") xhr.onreadystatechange();
-    if (typeof xhr.onload === "function") xhr.onload();
+    if (transportError) {
+      /* 传输失败走 onerror，让 SDK 进入自身的错误/重试逻辑 */
+      if (typeof xhr.onerror === "function") xhr.onerror();
+    } else if (typeof xhr.onload === "function") {
+      xhr.onload();
+    }
   }
 }
 pump().catch((e) => { console.error("pump error:", e); process.exit(1); });

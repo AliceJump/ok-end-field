@@ -1776,3 +1776,12 @@ msgstr "Operation entry not found, screen may not be fully loaded"
 
 msgid "未能找到传送点，无法继续"
 msgstr "Teleport point not found, cannot continue"
+
+msgid "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
+msgstr "Map device ID (dId) unavailable: auto-minting failed (Edge/Chrome required, with access to fp-it.portal101.cn); retrying automatically in 30 seconds"
+
+msgid "HG 授权接口没有返回 oauth code"
+msgstr "HG grant API did not return an oauth code"
+
+msgid "地图 cred 换取接口缺少 cred 或 token"
+msgstr "Map cred exchange API response missing cred or token"
