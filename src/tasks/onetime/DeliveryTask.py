@@ -527,6 +527,83 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 self.log_info("警告: 尚未定位到刷新按钮位置，无法刷新，重试...")
                 self.sleep(1.0)
 
+    def _find_zip_line_board_button(self, direct_wait=5.0, total_time_out=60.0):
+        """传送落地后确保处于主界面，再寻找「登上滑索架」交互按钮。
+
+        分三个阶段：
+        1. 直接原地查找约 ``direct_wait`` 秒；
+        2. 未找到则切换步行模式做 WASD 小幅度踱步搜索，最多约 10 秒；
+        3. 仍未找到则改为仅 W/S 前后移动继续搜索，直到总超时。
+        移动全程保持步行而非奔跑（ctrl 切换），结束后恢复奔跑模式。
+
+        Args:
+            direct_wait: 直接原地查找的时长（秒）。
+            total_time_out: 含直接查找在内的总超时（秒）。
+
+        Returns:
+            Box | None: 找到的「登上滑索架」按钮位置；超时返回 None。
+        """
+        self.ensure_main()  # 传送后先确保回到主界面再尝试登滑索架
+        match = self.lang.DeliveryTask.k_b0e3a2da  # 「登上滑索架」按钮 OCR 文本
+        box = self.box.bottom_right  # 交互按钮固定出现在右下角提示区
+        start = self.active_time()
+        deadline = start + max(0.0, total_time_out)  # 统一总截止时间
+
+        def check():
+            frame = self.next_frame()  # 移动或等待后必须取新帧再识别
+            results = self.ocr(match=match, box=box, frame=frame, log=True)
+            return results[0] if results else None  # 命中返回按钮位置
+
+        # 阶段一：直接原地查找一小段时间（正常情况下按钮很快出现），
+        # 但同样受总截止时间约束（direct_wait 大于剩余预算时提前截断）
+        while self.active_time() < min(start + direct_wait, deadline):
+            if found := check():
+                return found
+            self.sleep(0.1)
+
+        remaining = deadline - self.active_time()
+        if remaining <= 0:  # 严格遵守总截止时间：剩余不足时不再进入移动搜索
+            self.log_info("总等待时间已耗尽，仍未找到登上滑索架")
+            return None
+
+        # 切换步行模式：踱步与前后移动都用走路，避免奔跑错过交互按钮
+        self.press_key("ctrl")  # 确认使用send_key：ctrl为奔跑切换键，不属于游戏可配置热键
+        try:
+            # 阶段二：WASD 踱步寻找（参考 nav 目标不稳定时的做法），最多持续约 10 秒
+            self.log_info("短时间内未找到登上滑索架，可能被其他设备遮挡，切换步行开始踱步寻找（最长 10 秒）")
+            found = self.strafe_search(
+                check,
+                passes=None,  # 不限轮数，持续踱步直到找到或阶段时限
+                duration=0.2,  # 每个方向轻移 0.2 秒，避免走远
+                keys=("s", "w", "a", "d"),  # 后退优先：落点常越过滑索架，后退最容易重新看到
+                time_out=min(10.0, remaining),
+            )
+            if found:
+                self.log_info("踱步寻找过程中找到登上滑索架")
+                return found
+
+            # 阶段三：改为仅前后移动继续找，直到总超时
+            remaining = deadline - self.active_time()
+            if remaining <= 0:
+                self.log_info("踱步超时，仍未找到登上滑索架")
+                return None
+            self.log_info("踱步仍未找到登上滑索架，改为仅 W/S 前后移动继续寻找")
+            found = self.strafe_search(
+                check,
+                passes=None,
+                duration=0.2,
+                keys=("s", "w"),  # 仅前后移动，同样后退优先
+                time_out=remaining,
+            )
+            if found:
+                self.log_info("前后移动寻找过程中找到登上滑索架")
+                return found
+            self.log_info("前后移动超时，仍未找到登上滑索架")
+            return None
+        finally:
+            self.press_key("ctrl", after_sleep=0.01)  # 结束后恢复奔跑模式（与导航结束时处理一致）
+            self.log_info("恢复奔跑模式")
+
     def to_storage_point_and_back_zip_line(self, only_zip_line=False):
         """从仓储点出发，乘坐滑索到送货点
 
@@ -536,7 +613,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         Returns:
             bool: 成功返回True，失败返回False
         """
-        if result := self.wait_ocr(match=self.lang.DeliveryTask.k_b0e3a2da, box=self.box.bottom_right, time_out=120, log=True):
+        result = self._find_zip_line_board_button(total_time_out=120)  # 主界面确认 + 找登滑索架按钮（含踱步兜底），总超时沿用 120s
+        if result:
             if self.wait_ocr(match=self.lang.DeliveryTask.k_96b876e3, box=self.box.top_left, time_out=2, log=True):
                 self.press_key("tab")
                 self.wait_until(
@@ -547,7 +625,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     time_out=2,
                     raise_if_not_found=False,
                 )
-            self.click_with_alt(result[0], after_sleep=2)
+            self.click_with_alt(result, after_sleep=2)  # result 已是单个按钮 Box（踱步搜索返回值）
             to_delivery_point_key = self._resolve_to_delivery_point_config_key()
             if not to_delivery_point_key:
                 return False
