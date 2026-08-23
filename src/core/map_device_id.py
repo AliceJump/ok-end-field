@@ -359,6 +359,50 @@ def _extract_profile_payload(msg: dict) -> dict | None:
     return payload if isinstance(payload, dict) else None
 
 
+class _LsPoller:
+    """管理 localStorage 轮询：跟踪未决请求，空闲时发起新的查询。"""
+
+    def __init__(self, conn):
+        self.conn = conn
+        self.next_id = 10
+        self.pending: set[int] = set()
+
+    def maybe_send(self) -> bool:
+        """无未决请求时发起新的 localStorage 查询；返回是否真的发送。"""
+        if self.pending:
+            return False
+        self.next_id += 1
+        self.pending.add(self.next_id)
+        self.conn.send(json.dumps({
+            "id": self.next_id,
+            "method": "Runtime.evaluate",
+            "params": {
+                "expression":
+                    f"localStorage.getItem('{_SHUMEI_LS_KEY}')",
+                "returnByValue": True,
+            },
+        }))
+        return True
+
+
+def _recv_cdp_message(conn) -> dict | None:
+    """接收一条 CDP 消息；超时或空载返回 None。"""
+    try:
+        raw = conn.recv(2.0)
+    except TimeoutError:
+        return None
+    return json.loads(raw) if raw else None
+
+
+def _parse_ls_value(msg: dict) -> str | None:
+    """解析 Runtime.evaluate 响应中的 localStorage 值；过短视为无效。"""
+    result = ((msg.get("result") or {}).get("result") or {})
+    value = result.get("value")
+    if isinstance(value, str) and len(value) > 20:
+        return value
+    return None
+
+
 def _collect_registration_via_cdp(
         conn, deadline: float) -> tuple[str | None, dict | None]:
     """循环读取 CDP 消息直到拿到 dId 或超时。
@@ -368,14 +412,9 @@ def _collect_registration_via_cdp(
     """
     captured_payload: dict | None = None
     ls_value: str | None = None
-    next_eval_id = 10
-    pending_eval: set[int] = set()
+    poller = _LsPoller(conn)
     while time.time() < deadline and ls_value is None:
-        try:
-            raw = conn.recv(2.0)
-        except TimeoutError:
-            raw = None
-        msg = json.loads(raw) if raw else None
+        msg = _recv_cdp_message(conn)
         if not msg:
             continue
         if msg.get("method") == "Network.requestWillBeSent":
@@ -384,26 +423,13 @@ def _collect_registration_via_cdp(
                 captured_payload = payload
             continue
         eval_id = msg.get("id")
-        if eval_id in pending_eval:
-            pending_eval.discard(eval_id)
-            result = ((msg.get("result") or {}).get("result") or {})
-            value = result.get("value")
-            if isinstance(value, str) and len(value) > 20:
-                ls_value = value
+        if eval_id in poller.pending:
+            poller.pending.discard(eval_id)
+            ls_value = _parse_ls_value(msg)
+            if ls_value is not None:
                 break
         # 周期性轮询 localStorage（无未决请求时才发起新的查询）
-        if not pending_eval:
-            next_eval_id += 1
-            pending_eval.add(next_eval_id)
-            conn.send(json.dumps({
-                "id": next_eval_id,
-                "method": "Runtime.evaluate",
-                "params": {
-                    "expression":
-                        f"localStorage.getItem('{_SHUMEI_LS_KEY}')",
-                    "returnByValue": True,
-                },
-            }))
+        if poller.maybe_send():
             time.sleep(3)
     return ls_value, captured_payload
 
@@ -448,7 +474,9 @@ def mint_device_id_browser(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
                 conn.close()
             except Exception as exc:  # noqa: BLE001 - 关闭失败不影响主流程
                 del exc
-        proc.kill()
+        if proc.poll() is None:
+            proc.kill()
+        proc.wait()  # 等待浏览器退出：Windows 下进程未结束时 Profile 文件仍被锁定
         shutil.rmtree(profile_dir, ignore_errors=True)
 
 
