@@ -78,6 +78,7 @@ class DailyBoatMixin:
         return True
 
     def _receive_clue(self):
+        self.receive_bool = False
         if not self.wait_click_feature(
             feature=fL.receive_clue_enter,
             time_out=4,
@@ -88,37 +89,37 @@ class DailyBoatMixin:
             self.log_info("未找到接收按钮")
             return
 
-        self.wait_click_feature(
+        if self.wait_click_feature(
             feature=fL.all_receive,
             time_out=4,
             raise_if_not_found=False,
-        )
+        ):
+            self.receive_bool = True
 
 
     def _give_clue(self):
         start_index = 1
         search_box = self._clue_search_box(shift_x=0.558 - 0.258)
         found=None
-        while start_index <= 7:
-            found = self._find_first_clue_icon(start_index, search_box)
-            if not found:
-                break
+        if self.receive_bool:
+            self.log_info("接收线索成功，开始放置线索")
+            while start_index <= 7:
+                found = self._find_first_clue_icon(start_index, search_box)
+                if not found:
+                    break
 
-            clue_index, result = found
-            self.log_info("点击线索框")
+                clue_index, result = found
+                self.log_info("点击线索框")
 
-            self.click(result, after_sleep=0.5)
-            self.wait_click_ocr(
-                match=self.lang.daily_routine_mixin.k_401d58fa,
-                time_out=2,
-                box=self.box.top_right,
-            )
+                self.click(result, after_sleep=0.5)
+                self.wait_click_ocr(
+                    match=self.lang.daily_routine_mixin.k_401d58fa,
+                    time_out=2,
+                    box=self.box.top_right,
+                )
 
-            start_index = clue_index + 1
-        if found:
-            start_end_x_offset=0.3
-        else:
-            start_end_x_offset=0
+                start_index = clue_index + 1
+        start_end_x_offset=0.3
         if self.wait_click_feature(
             feature=fL.skip_dialog_confirm,
             box=self.box_of_screen(0.371+start_end_x_offset, 0.770, 0.397+start_end_x_offset, 0.811),
