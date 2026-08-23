@@ -462,7 +462,18 @@ class WsPositionMixin:
                     pass
 
     def _start_map_ws_client(self, raw_cred: str | None):
-        auth_bundle = self._resolve_auth_bundle(raw_cred)
+        try:
+            auth_bundle = self._resolve_auth_bundle(raw_cred)
+        except Exception as e:
+            # 铸造/认证失败不抛出阻断导航：记录一次后由后续触发周期重试，
+            # map_device_id 内部有 30 秒冷却，不会频繁铸造
+            if not getattr(self, "_map_ws_auth_failed_logged", False):
+                self._map_ws_auth_failed_logged = True
+                log_error = getattr(self, "log_error", None)
+                if callable(log_error):
+                    log_error(f"[地图WS] 认证失败，稍后将自动重试: {e}")
+            return False
+        self._map_ws_auth_failed_logged = False
         cred = str(auth_bundle.get("cred") or "")
         sign_token = str(auth_bundle.get("sign_token") or "")
         sign_time = auth_bundle.get("sign_time") if isinstance(auth_bundle.get("sign_time"), dict) else {}
