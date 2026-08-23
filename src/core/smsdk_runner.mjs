@@ -5,28 +5,18 @@
  * XHR 垫片把 deviceprofile 请求转发给真实服务端并把响应回填给 SDK。
  * 成功后输出一行 `DID=<dId>` 供调用方解析。
  *
- * 用法：node smsdk_runner.js <sdk_js_path> [organization]
+ * 用法：node smsdk_runner.mjs [organization] < sdk.js
+ * （SDK 源码从 stdin 读入，避免 CLI 传递文件路径）
  * 需要 Node >= 16；Node >= 17 时依赖 --openssl-legacy-provider 启用 DES。
  */
-"use strict";
-const fs = require("node:fs");
-const vm = require("node:vm");
-const https = require("node:https");
-const { URL } = require("node:url");
+import fs from "node:fs";
+import vm from "node:vm";
+import https from "node:https";
+import { URL } from "node:url";
 
-const sdkPath = process.argv[2];
-if (!sdkPath) {
-  console.error("usage: node smsdk_runner.js <sdk_js_path> [organization]");
-  process.exit(64);
-}
-/* S8707 缓解：校验 CLI 传入的 SDK 路径为已存在的 .js 文件（路径由本仓库
- * Python 端构造，此处仍做基本校验防止误用） */
-if (!fs.existsSync(sdkPath) || !sdkPath.toLowerCase().endsWith(".js")) {
-  console.error("invalid sdk path:", sdkPath);
-  process.exit(64);
-}
-const ORG = process.argv[3] || "UWXspnCCJN4sfYlNfqps";
-const sdkSource = fs.readFileSync(sdkPath, "utf8");
+const ORG = process.argv[2] || "UWXspnCCJN4sfYlNfqps";
+/* SDK 脚本由调用方（本仓库 Python 端，已做 SHA256 校验与缓存）从 stdin 写入 */
+const sdkSource = fs.readFileSync(0, "utf8");
 
 /* 官方地图页 _smConf 内嵌的 RSA 公钥（公开静态资源） */
 const PUBKEY =
@@ -36,21 +26,6 @@ const PUBKEY =
 const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
   "(KHTML, like Gecko) Chrome/151.0.0.0 Safari/537.36 Edg/151.0.0.0";
-
-function makeStorage() {
-  const store = {};
-  return {
-    __data: store,
-    getItem: (k) => (k in store ? store[k] : null),
-    setItem: (k, v) => { store[k] = String(v); },
-    removeItem: (k) => { delete store[k]; },
-    set(k, v) { this.setItem(k, v); },
-    get(k) { return this.getItem(k); },
-    remove(k) { this.removeItem(k); },
-  };
-}
-const ls = makeStorage();
-const ss = makeStorage();
 
 const noopFn = function () { return undefined; };
 
@@ -85,6 +60,21 @@ function makeElement(tag) {
     set(t, p, v) { t[p] = v; return true; },
   });
 }
+
+function makeStorage() {
+  const store = {};
+  return {
+    __data: store,
+    getItem: (k) => (k in store ? store[k] : null),
+    setItem: (k, v) => { store[k] = String(v); },
+    removeItem: (k) => { delete store[k]; },
+    set(k, v) { this.setItem(k, v); },
+    get(k) { return this.getItem(k); },
+    remove(k) { this.removeItem(k); },
+  };
+}
+const ls = makeStorage();
+const ss = makeStorage();
 
 const cookieJar = {};
 const locationShim = {
@@ -174,7 +164,9 @@ sandboxWindow.self = sandboxWindow;
 /* 宿主 pump()：消费 xhrQueue，转发真实 HTTPS 并把响应回填给 SDK */
 vm.createContext(sandboxWindow);
 try {
-  vm.runInContext(sdkSource, sandboxWindow, { filename: "smsdk.js" });
+  /* 设计如此：本工具的唯一职责就是在受控 vm 中执行官方 SDK 脚本
+   * （来源固定、SHA256 校验），非不可信输入 */
+  vm.runInContext(sdkSource, sandboxWindow, { filename: "smsdk.js" }); // NOSONAR
 } catch (e) {
   console.error("sdk eval error:", e.message);
   process.exit(65);
@@ -274,15 +266,12 @@ async function pump() {
   }
 }
 
-/* CommonJS 不支持顶层 await，用 async IIFE 承接 pump 的异步循环 */
-(async () => {
-  try {
-    await pump();
-  } catch (e) {
-    console.error("pump error:", e);
-    process.exit(1);
-  }
-})();
+try {
+  await pump(); // ESM 顶层 await（S7785）
+} catch (e) {
+  console.error("pump error:", e);
+  process.exit(1);
+}
 
 /* 兜底超时：90 秒未成功则失败退出 */
 setTimeout(() => {

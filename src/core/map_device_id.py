@@ -24,7 +24,7 @@
 因此本模块采用混合策略（按优先级）：
 - 已持久化的 dId 直接复用（与账号无关，可长期使用）；
 - 「本地保存的注册载荷」走纯 HTTP 重放铸造（无需浏览器/Node）；
-- 「Node 运行官方 SMSdk 本体」（``smsdk_runner.js`` + 官方 SDK 脚本，
+- 「Node 运行官方 SMSdk 本体」（``smsdk_runner.mjs`` + 官方 SDK 脚本，
   用浏览器环境垫片让 SDK 自己生成并提交注册请求），无需浏览器、
   无载荷次数上限；SDK 脚本不随仓库分发，首次使用时从官方 CDN
   下载并做 SHA256 校验，缓存在 ``configs/``（已 gitignore）；
@@ -190,7 +190,7 @@ def _find_node() -> str:
     return shutil.which("node") or ""
 
 
-_RUNNER_PATH = Path(__file__).with_name("smsdk_runner.js")
+_RUNNER_PATH = Path(__file__).with_name("smsdk_runner.mjs")
 # 官方 SMSdk 脚本（skland-bbs 前端引用的公开静态资源），不随仓库分发，
 # 首次使用时下载到 configs/ 缓存（该目录已被 gitignore）。
 _SDK_JS_URL = ("https://bbs.hycdn.cn/public/skland/others/skland-bbs/"
@@ -241,7 +241,7 @@ def _ensure_sdk_js() -> str:
 def mint_device_id_node(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
     """Node 铸造路径：运行官方 SMSdk 本体（浏览器环境垫片）完成注册。
 
-    ``smsdk_runner.js`` 在 Node vm 中垫片 document/navigator/localStorage/
+    ``smsdk_runner.mjs`` 在 Node vm 中垫片 document/navigator/localStorage/
     XHR/canvas 等，让官方 SDK 自己采集指纹、加密并提交注册请求；
     XHR 垫片把请求转发给真实服务端。全程无浏览器，且每次铸造都是
     全新载荷，不受「载荷次数上限」限制。
@@ -255,6 +255,8 @@ def mint_device_id_node(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
         raise RuntimeError(f"获取官方 SDK 脚本失败: {exc}") from exc
     if not _RUNNER_PATH.is_file():
         raise RuntimeError(f"缺少 SDK 运行文件: {_RUNNER_PATH}")
+    # SDK 源码经 stdin 传给 runner，避免 CLI 传递文件路径
+    sdk_source = Path(sdk_js).read_text(encoding="utf-8")
 
     env_base = os.environ.copy()
     attempts = [
@@ -267,7 +269,8 @@ def mint_device_id_node(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
     for env in attempts:
         try:
             proc = subprocess.run(
-                [node, str(_RUNNER_PATH), str(sdk_js)],
+                [node, str(_RUNNER_PATH)],
+                input=sdk_source,
                 capture_output=True, text=True, encoding="utf-8",
                 errors="replace", timeout=timeout, env=env, check=False,
             )
