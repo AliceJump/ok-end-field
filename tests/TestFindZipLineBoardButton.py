@@ -111,13 +111,16 @@ class TestFindZipLineBoardButton(unittest.TestCase):
         self.assertLessEqual(stub.strafe_calls[0]["time_out"], 5.0)  # 不超过总超时
 
     def test_exhausted_before_strafe_returns_immediately(self):
-        """阶段一耗尽全部预算：直接返回 None，不切步行也不进入移动搜索。"""
+        """阶段一耗尽正数的短总预算：立即返回，不切步行也不进入移动搜索。"""
         stub = _make_stub(ocr_results=[])
         result = DeliveryTask._find_zip_line_board_button(
-            stub, direct_wait=0.0, total_time_out=-1.0)
+            stub, direct_wait=5.0, total_time_out=0.03)
         self.assertIsNone(result)
         self.assertEqual(stub.strafe_calls, [])
         self.assertEqual(stub.ctrl_calls, [])  # 未做任何模式切换
+        # 阶段一被总截止时间截断：未跑满 direct_wait
+        # （桩时钟按 sleep(0.1) 步进，留一个步长容差）
+        self.assertLessEqual(stub.clock["t"], 0.03 + 0.1)
 
 
 if __name__ == "__main__":

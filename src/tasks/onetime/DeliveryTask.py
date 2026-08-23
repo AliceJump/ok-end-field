@@ -547,20 +547,22 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         match = self.lang.DeliveryTask.k_b0e3a2da  # 「登上滑索架」按钮 OCR 文本
         box = self.box.bottom_right  # 交互按钮固定出现在右下角提示区
         start = self.active_time()
+        deadline = start + max(0.0, total_time_out)  # 统一总截止时间
 
         def check():
             frame = self.next_frame()  # 移动或等待后必须取新帧再识别
             results = self.ocr(match=match, box=box, frame=frame, log=True)
             return results[0] if results else None  # 命中返回按钮位置
 
-        # 阶段一：直接原地查找一小段时间（正常情况下按钮很快出现）
-        while self.active_time() - start < direct_wait:
+        # 阶段一：直接原地查找一小段时间（正常情况下按钮很快出现），
+        # 但同样受总截止时间约束（direct_wait 大于剩余预算时提前截断）
+        while self.active_time() < min(start + direct_wait, deadline):
             if found := check():
                 return found
             self.sleep(0.1)
 
-        elapsed = self.active_time() - start
-        if total_time_out - elapsed <= 0:  # 严格遵守总截止时间：剩余不足时不再进入移动搜索
+        remaining = deadline - self.active_time()
+        if remaining <= 0:  # 严格遵守总截止时间：剩余不足时不再进入移动搜索
             self.log_info("总等待时间已耗尽，仍未找到登上滑索架")
             return None
 
@@ -574,14 +576,14 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 passes=None,  # 不限轮数，持续踱步直到找到或阶段时限
                 duration=0.2,  # 每个方向轻移 0.2 秒，避免走远
                 keys=("s", "w", "a", "d"),  # 后退优先：落点常越过滑索架，后退最容易重新看到
-                time_out=min(10.0, total_time_out - elapsed),
+                time_out=min(10.0, remaining),
             )
             if found:
                 self.log_info("踱步寻找过程中找到登上滑索架")
                 return found
 
             # 阶段三：改为仅前后移动继续找，直到总超时
-            remaining = total_time_out - (self.active_time() - start)
+            remaining = deadline - self.active_time()
             if remaining <= 0:
                 self.log_info("踱步超时，仍未找到登上滑索架")
                 return None
