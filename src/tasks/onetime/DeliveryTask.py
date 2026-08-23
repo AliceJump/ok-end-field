@@ -573,13 +573,14 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 check,
                 passes=None,  # 不限轮数，持续踱步直到找到或阶段时限
                 duration=0.2,  # 每个方向轻移 0.2 秒，避免走远
+                keys=("s", "w", "a", "d"),  # 后退优先：落点常越过滑索架，后退最容易重新看到
                 time_out=min(10.0, total_time_out - elapsed),
             )
             if found:
                 self.log_info("踱步寻找过程中找到登上滑索架")
                 return found
 
-            # 阶段三：改为仅 W/S 前后移动继续找，直到总超时
+            # 阶段三：改为仅前后移动继续找，直到总超时
             remaining = total_time_out - (self.active_time() - start)
             if remaining <= 0:
                 self.log_info("踱步超时，仍未找到登上滑索架")
@@ -589,7 +590,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 check,
                 passes=None,
                 duration=0.2,
-                keys=("w", "s"),  # 仅前后移动
+                keys=("s", "w"),  # 仅前后移动，同样后退优先
                 time_out=remaining,
             )
             if found:

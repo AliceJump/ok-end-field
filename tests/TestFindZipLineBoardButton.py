@@ -47,7 +47,7 @@ def _make_stub(ocr_results, strafe_results=None, advance_per_strafe=None):
     stub.log_info = lambda msg: stub.log_lines.append(msg)
     stub.press_key = lambda key, *a, **kw: stub.ctrl_calls.append(key)
 
-    def _strafe(check, passes=None, duration=0.2, keys=("w", "a", "s", "d"),
+    def _strafe(check, passes=None, duration=0.2, keys=("s", "w", "a", "d"),
                 time_out=-1):
         stub.strafe_calls.append({"keys": keys, "time_out": time_out})
         if advance_per_strafe is not None:
@@ -81,7 +81,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
         self.assertIs(result, box)
         self.assertEqual(len(stub.strafe_calls), 1)  # 仅进入踱步一次
         self.assertLessEqual(stub.strafe_calls[0]["time_out"], 10.0)  # 踱步最多 10 秒
-        self.assertEqual(stub.strafe_calls[0]["keys"], ("w", "a", "s", "d"))
+        self.assertEqual(stub.strafe_calls[0]["keys"], ("s", "w", "a", "d"))  # 后退优先
         self.assertEqual(stub.ctrl_calls, ["ctrl", "ctrl"])  # 切步行 + 恢复奔跑
         self.assertTrue(any("踱步" in msg for msg in stub.log_lines))
 
@@ -93,7 +93,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             stub, direct_wait=0.02, total_time_out=60.0)
         self.assertIs(result, box)
         self.assertEqual(len(stub.strafe_calls), 2)  # 踱步 + 前后移动各一次
-        self.assertEqual(stub.strafe_calls[1]["keys"], ("w", "s"))  # 阶段三仅前后移动
+        self.assertEqual(stub.strafe_calls[1]["keys"], ("s", "w"))  # 阶段三仅前后移动,后退优先
         # 阶段三时限为剩余时间：不超过总超时，且确实用掉了大部分预算
         self.assertLessEqual(stub.strafe_calls[1]["time_out"], 60.0)
         self.assertGreater(stub.strafe_calls[1]["time_out"], 55.0)
