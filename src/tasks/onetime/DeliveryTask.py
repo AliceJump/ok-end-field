@@ -527,6 +527,51 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 self.log_info("警告: 尚未定位到刷新按钮位置，无法刷新，重试...")
                 self.sleep(1.0)
 
+    def _find_zip_line_board_button(self, direct_wait=5.0, total_time_out=60.0):
+        """传送落地后确保处于主界面，再寻找「登上滑索架」交互按钮。
+
+        先在主界面直接查找按钮约 direct_wait 秒；若附近其他设备过近遮挡
+        滑索架导致交互按钮不出现，则参考 navigate_until_target 目标不稳定
+        时的做法（WASD 小幅度踱步搜索），边踱步边找直到总超时。
+
+        Args:
+            direct_wait: 直接原地查找的时长（秒）。
+            total_time_out: 含直接查找在内的总超时（秒）。
+
+        Returns:
+            Box | None: 找到的「登上滑索架」按钮位置；超时返回 None。
+        """
+        self.ensure_main()  # 传送后先确保回到主界面再尝试登滑索架
+        match = self.lang.DeliveryTask.k_b0e3a2da  # 「登上滑索架」按钮 OCR 文本
+        box = self.box.bottom_right  # 交互按钮固定出现在右下角提示区
+        start = self.active_time()
+
+        def check():
+            frame = self.next_frame()  # 移动或等待后必须取新帧再识别
+            results = self.ocr(match=match, box=box, frame=frame, log=True)
+            return results[0] if results else None  # 命中返回按钮位置
+
+        # 阶段一：直接原地查找一小段时间（正常情况下按钮很快出现）
+        while self.active_time() - start < direct_wait:
+            if found := check():
+                return found
+            self.sleep(0.1)
+
+        # 阶段二：踱步寻找（WASD 小幅度移动，参考 nav 目标不稳定时的做法）
+        self.log_info("短时间内未找到登上滑索架，可能被其他设备遮挡，开始踱步寻找")
+        remaining = total_time_out - (self.active_time() - start)
+        found = self.strafe_search(
+            check,
+            passes=None,  # 不限轮数，持续踱步直到找到或超时
+            duration=0.2,  # 每个方向轻移 0.2 秒，避免走远
+            time_out=max(1.0, remaining),
+        )
+        if found:
+            self.log_info("踱步寻找过程中找到登上滑索架")
+        else:
+            self.log_info("踱步寻找超时，仍未找到登上滑索架")
+        return found
+
     def to_storage_point_and_back_zip_line(self, only_zip_line=False):
         """从仓储点出发，乘坐滑索到送货点
 
@@ -536,7 +581,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         Returns:
             bool: 成功返回True，失败返回False
         """
-        if result := self.wait_ocr(match=self.lang.DeliveryTask.k_b0e3a2da, box=self.box.bottom_right, time_out=120, log=True):
+        result = self._find_zip_line_board_button(total_time_out=120)  # 主界面确认 + 找登滑索架按钮（含踱步兜底），总超时沿用 120s
+        if result:
             if self.wait_ocr(match=self.lang.DeliveryTask.k_96b876e3, box=self.box.top_left, time_out=2, log=True):
                 self.press_key("tab")
                 self.wait_until(
@@ -547,7 +593,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     time_out=2,
                     raise_if_not_found=False,
                 )
-            self.click_with_alt(result[0], after_sleep=2)
+            self.click_with_alt(result, after_sleep=2)  # result 已是单个按钮 Box（踱步搜索返回值）
             to_delivery_point_key = self._resolve_to_delivery_point_config_key()
             if not to_delivery_point_key:
                 return False
