@@ -1777,3 +1777,12 @@ msgstr "「演算」エントリが見つかりません、画面が完全に読
 
 msgid "未能找到传送点，无法继续"
 msgstr "テレポートポイントが見つかりません、続行できません"
+
+msgid "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
+msgstr "マップデバイスID(dId)を利用できません：自動発行に失敗しました（Edge/Chrome のインストールと fp-it.portal101.cn へのアクセスが必要）。30秒後に自動リトライします"
+
+msgid "HG 授权接口没有返回 oauth code"
+msgstr "HG 認可インターフェースが oauth code を返しませんでした"
+
+msgid "地图 cred 换取接口缺少 cred 或 token"
+msgstr "マップ cred 交換インターフェースのレスポンスに cred または token がありません"

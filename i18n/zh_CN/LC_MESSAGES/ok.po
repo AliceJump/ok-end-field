@@ -1779,3 +1779,12 @@ msgstr "未找到『演算』入口，可能界面未加载完全"
 
 msgid "未能找到传送点，无法继续"
 msgstr "未能找到传送点，无法继续"
+
+msgid "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
+msgstr "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
+
+msgid "HG 授权接口没有返回 oauth code"
+msgstr "HG 授权接口没有返回 oauth code"
+
+msgid "地图 cred 换取接口缺少 cred 或 token"
+msgstr "地图 cred 换取接口缺少 cred 或 token"
