@@ -53,7 +53,8 @@ def open_json(req: request.Request):
     return json.loads(text)
 
 
-def exchange_content(content: str) -> dict[str, Any]:
+def _request_hg_grant_code(content: str) -> str:
+    """解码 content 并调用 HG grant 接口换取 oauth code。"""
     hg_token = parse.unquote(content.strip().strip('"'))
     grant_resp = post_json(HG_GRANT_URL, {
         "token": hg_token,
@@ -66,14 +67,11 @@ def exchange_content(content: str) -> dict[str, Any]:
     oauth_code = ((grant_resp.get("data") or {}).get("code") or "").strip()
     if not oauth_code:
         raise RuntimeError("HG grant did not return oauth code")
+    return oauth_code
 
-    device_id = ensure_map_device_id()
-    if not device_id:
-        raise RuntimeError(
-            "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 "
-            "fp-it.portal101.cn），稍后重试"
-        )
 
+def _request_map_cred(oauth_code: str, device_id: str) -> dict[str, Any]:
+    """用 oauth code 换取地图 cred；10001 时提示重新铸造 dId。"""
     cred_resp = post_json(
         f"{API_HOST}/web/v1/user/auth/generate_cred_by_code",
         {"kind": 1, "code": oauth_code},
@@ -94,14 +92,28 @@ def exchange_content(content: str) -> dict[str, Any]:
         raise RuntimeError(f"generate_cred_by_code failed: {cred_resp}{hint}")
 
     data = cred_resp.get("data") or {}
-    cred = str(data.get("cred") or "").strip()
-    sign_token = str(data.get("token") or "").strip()
-    if not cred or not sign_token:
+    if not str(data.get("cred") or "").strip() or \
+            not str(data.get("token") or "").strip():
         raise RuntimeError("generate_cred_by_code response missing cred/token")
+    return cred_resp
+
+
+def exchange_content(content: str) -> dict[str, Any]:
+    oauth_code = _request_hg_grant_code(content)
+
+    device_id = ensure_map_device_id()
+    if not device_id:
+        raise RuntimeError(
+            "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 "
+            "fp-it.portal101.cn），稍后重试"
+        )
+
+    cred_resp = _request_map_cred(oauth_code, device_id)
+    data = cred_resp.get("data") or {}
 
     return {
-        "cred": cred,
-        "sign_token": sign_token,
+        "cred": str(data.get("cred") or "").strip(),
+        "sign_token": str(data.get("token") or "").strip(),
         "user_id": str(data.get("userId") or "").strip(),
         "d_id": device_id,
         "sign_time": {

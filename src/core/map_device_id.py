@@ -384,6 +384,14 @@ class _LsPoller:
         }))
         return True
 
+    def consume_response(self, msg: dict) -> str | None:
+        """消息是未决查询的响应时消费它并解析值；否则返回 None。"""
+        eval_id = msg.get("id")
+        if eval_id not in self.pending:
+            return None
+        self.pending.discard(eval_id)
+        return _parse_ls_value(msg)
+
 
 def _recv_cdp_message(conn) -> dict | None:
     """接收一条 CDP 消息；超时或空载返回 None。"""
@@ -422,12 +430,9 @@ def _collect_registration_via_cdp(
             if payload is not None:
                 captured_payload = payload
             continue
-        eval_id = msg.get("id")
-        if eval_id in poller.pending:
-            poller.pending.discard(eval_id)
-            ls_value = _parse_ls_value(msg)
-            if ls_value is not None:
-                break
+        ls_value = poller.consume_response(msg)
+        if ls_value is not None:
+            break
         # 周期性轮询 localStorage（无未决请求时才发起新的查询）
         if poller.maybe_send():
             time.sleep(3)

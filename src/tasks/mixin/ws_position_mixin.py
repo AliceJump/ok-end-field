@@ -120,7 +120,8 @@ class WsPositionMixin:
             return None
         return json.loads(text)
 
-    def _exchange_hg_token_for_map_auth(self, hg_token: str) -> dict[str, Any]:
+    def _request_hg_grant_code(self, hg_token: str) -> str:
+        """调用 HG 授权接口换取 oauth code；异常时抛出 RuntimeError。"""
         grant_resp = self._post_json(ENDFIELD_MAP_HG_GRANT_URL, {
             "token": hg_token,
             "appCode": ENDFIELD_MAP_HG_APP_CODE,
@@ -132,14 +133,13 @@ class WsPositionMixin:
         oauth_code = ((grant_resp.get("data") or {}).get("code") or "").strip()
         if not oauth_code:
             raise RuntimeError("HG 授权接口没有返回 oauth code")
+        return oauth_code
 
-        device_id = _get_shumei_device_id()
-        if not device_id:
-            raise RuntimeError(
-                "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 "
-                "fp-it.portal101.cn），30 秒后将自动重试"
-            )
+    def _request_map_cred(self, oauth_code: str, device_id: str) -> dict[str, Any]:
+        """用 oauth code 换取地图 cred；被风控拒绝(10001)时提示重新铸造 dId。
 
+        返回完整 cred_resp（data 含 cred/token/userId，顶层含服务器 timestamp）。
+        """
         cred_resp = self._post_json(
             f"{ENDFIELD_MAP_API_HOST}/web/v1/user/auth/generate_cred_by_code",
             {"kind": 1, "code": oauth_code},
@@ -160,19 +160,31 @@ class WsPositionMixin:
             raise RuntimeError(f"地图 cred 换取接口返回异常: {cred_resp}{hint}")
 
         data = cred_resp.get("data") or {}
-        cred = str(data.get("cred") or "").strip()
-        sign_token = str(data.get("token") or "").strip()
-        if not cred or not sign_token:
+        if not str(data.get("cred") or "").strip() or \
+                not str(data.get("token") or "").strip():
             raise RuntimeError("地图 cred 换取接口缺少 cred 或 token")
+        return cred_resp
 
+    def _exchange_hg_token_for_map_auth(self, hg_token: str) -> dict[str, Any]:
+        oauth_code = self._request_hg_grant_code(hg_token)
+
+        device_id = _get_shumei_device_id()
+        if not device_id:
+            raise RuntimeError(
+                "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 "
+                "fp-it.portal101.cn），30 秒后将自动重试"
+            )
+
+        data = self._request_map_cred(oauth_code, device_id) or {}
+        cred_data = data.get("data") or {}
         return {
-            "cred": cred,
-            "sign_token": sign_token,
-            "user_id": str(data.get("userId") or "").strip(),
+            "cred": str(cred_data.get("cred") or "").strip(),
+            "sign_token": str(cred_data.get("token") or "").strip(),
+            "user_id": str(cred_data.get("userId") or "").strip(),
             "d_id": device_id,
             "sign_time": {
                 "clientTime": str(int(time.time())),
-                "serverTime": str(cred_resp.get("timestamp") or int(time.time())),
+                "serverTime": str(data.get("timestamp") or int(time.time())),
             },
         }
 

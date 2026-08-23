@@ -9,14 +9,20 @@
  * 需要 Node >= 16；Node >= 17 时依赖 --openssl-legacy-provider 启用 DES。
  */
 "use strict";
-const fs = require("fs");
-const vm = require("vm");
-const https = require("https");
-const { URL } = require("url");
+const fs = require("node:fs");
+const vm = require("node:vm");
+const https = require("node:https");
+const { URL } = require("node:url");
 
 const sdkPath = process.argv[2];
 if (!sdkPath) {
   console.error("usage: node smsdk_runner.js <sdk_js_path> [organization]");
+  process.exit(64);
+}
+/* S8707 缓解：校验 CLI 传入的 SDK 路径为已存在的 .js 文件（路径由本仓库
+ * Python 端构造，此处仍做基本校验防止误用） */
+if (!fs.existsSync(sdkPath) || !sdkPath.toLowerCase().endsWith(".js")) {
+  console.error("invalid sdk path:", sdkPath);
   process.exit(64);
 }
 const ORG = process.argv[3] || "UWXspnCCJN4sfYlNfqps";
@@ -46,9 +52,10 @@ function makeStorage() {
 const ls = makeStorage();
 const ss = makeStorage();
 
+const noopFn = function () { return undefined; };
+
 function makeCtx() {
-  const t = function () { return undefined; };
-  return new Proxy(t, {
+  return new Proxy(noopFn, {
     get(_t, p) {
       if (p === "measureText") return () => ({ width: 10 });
       if (typeof p === "symbol") return undefined;
@@ -98,12 +105,17 @@ sandboxWindow.document = {
       .map(([k, v]) => k + "=" + v).join("; ");
   },
   set cookie(str) {
-    const m = String(str).match(/^\s*([^=]+)=([^;]*)/);
-    if (!m) return;
-    if (/expires=Thu, 01 Jan 1970/i.test(String(str))) {
-      cookieJar[m[1].trim()] = null;
+    /* 用 indexOf 手工解析，避免正则回溯（S8786）并兼容旧格式 */
+    const raw = String(str);
+    const eq = raw.indexOf("=");
+    if (eq < 0) return;
+    const semi = raw.indexOf(";", eq);
+    const value = semi === -1 ? raw.slice(eq + 1) : raw.slice(eq + 1, semi);
+    const name = raw.slice(0, eq).trim();
+    if (/expires=Thu, 01 Jan 1970/i.test(raw)) {
+      cookieJar[name] = null;
     } else {
-      cookieJar[m[1].trim()] = decodeURIComponent(m[2]);
+      cookieJar[name] = decodeURIComponent(value);
     }
   },
   body: { clientWidth: 1500, clientHeight: 750 },
@@ -126,18 +138,16 @@ sandboxWindow.sessionStorage = ss;
 /* ---- XHR shim：send 时入队，由宿主 pump() 转发真实 HTTPS ---- */
 const xhrQueue = [];
 class XHRShim {
-  constructor() {
-    this.readyState = 0;
-    this.withCredentials = false;
-    this.headers = {};
-    this.responseText = "";
-    this.response = "";
-    this.status = 0;
-  }
+  readyState = 0;
+  withCredentials = false;
+  headers = {};
+  responseText = "";
+  response = "";
+  status = 0;
   open(method, url) { this.method = method; this.url = url; }
   setRequestHeader(k, v) { this.headers[k] = v; }
   send(body) { xhrQueue.push({ xhr: this, body }); }
-  abort() {}
+  abort() { /* 垫片无需实现中断逻辑 */ }
 }
 sandboxWindow.XMLHttpRequest = XHRShim;
 sandboxWindow.addEventListener = () => {};
@@ -208,53 +218,71 @@ function reportIfReady() {
   }
   return false;
 }
+
+/* 处理单个已出队请求：转发真实 HTTPS 并把结果回填给 SDK 回调 */
+async function deliverItem(xhr, body) {
+  const url = xhr.url || "";
+  let status = 200;
+  let text = "{}";
+  let transportError = false;
+  try {
+    const r = await realPost(url, xhr.headers || {}, body);
+    status = r.status;
+    text = r.text;
+    if (url.includes("deviceprofile")) {
+      logDeviceprofile(status, text);
+    }
+  } catch (e) {
+    transportError = true;
+    status = 0;
+    text = "";
+    console.error("[runner] http error:", e.message);
+  }
+  xhr.status = status;
+  xhr.readyState = 4;
+  xhr.responseText = text;
+  xhr.response = text;
+  if (typeof xhr.onreadystatechange === "function") xhr.onreadystatechange();
+  if (transportError) {
+    /* 传输失败走 onerror，让 SDK 进入自身的错误/重试逻辑 */
+    if (typeof xhr.onerror === "function") xhr.onerror();
+  } else if (typeof xhr.onload === "function") {
+    xhr.onload();
+  }
+}
+
+/* 只记录状态与错误码，不输出响应体（含签发的 deviceId，避免泄露） */
+function logDeviceprofile(status, text) {
+  let reg = null;
+  try { reg = JSON.parse(text); } catch (_) { /* 非 JSON 响应 */ }
+  const devId = reg?.detail?.deviceId;
+  if (typeof devId === "string" && devId.length > 16) {
+    registrationsSeen += 1;
+    console.error("[runner] deviceprofile ok, status:", status);
+  } else {
+    console.error("[runner] deviceprofile rejected, status:", status,
+      "code:", typeof reg?.code === "number" ? "rejected" : "n/a");
+  }
+}
+
 async function pump() {
   while (true) {
     if (reportIfReady()) return;
     const item = xhrQueue.shift();
     if (!item) { await new Promise((r) => setTimeout(r, 60)); continue; }
-    const { xhr, body } = item;
-    const url = xhr.url || "";
-    let status = 200;
-    let text = "{}";
-    let transportError = false;
-    try {
-      const r = await realPost(url, xhr.headers || {}, body);
-      status = r.status;
-      text = r.text;
-      if (url.includes("deviceprofile")) {
-        /* 只记录状态与错误码，不输出响应体（含签发的 deviceId，避免泄露） */
-        let reg = null;
-        try { reg = JSON.parse(text); } catch (_) { /* 非 JSON 响应 */ }
-        const devId = reg && reg.detail && reg.detail.deviceId;
-        if (typeof devId === "string" && devId.length > 16) {
-          registrationsSeen += 1;
-          console.error("[runner] deviceprofile ok, status:", status);
-        } else {
-          console.error("[runner] deviceprofile rejected, status:", status,
-            "code:", reg ? reg.code : "n/a");
-        }
-      }
-    } catch (e) {
-      transportError = true;
-      status = 0;
-      text = "";
-      console.error("[runner] http error:", e.message);
-    }
-    xhr.status = status;
-    xhr.readyState = 4;
-    xhr.responseText = text;
-    xhr.response = text;
-    if (typeof xhr.onreadystatechange === "function") xhr.onreadystatechange();
-    if (transportError) {
-      /* 传输失败走 onerror，让 SDK 进入自身的错误/重试逻辑 */
-      if (typeof xhr.onerror === "function") xhr.onerror();
-    } else if (typeof xhr.onload === "function") {
-      xhr.onload();
-    }
+    await deliverItem(item.xhr, item.body);
   }
 }
-pump().catch((e) => { console.error("pump error:", e); process.exit(1); });
+
+/* CommonJS 不支持顶层 await，用 async IIFE 承接 pump 的异步循环 */
+(async () => {
+  try {
+    await pump();
+  } catch (e) {
+    console.error("pump error:", e);
+    process.exit(1);
+  }
+})();
 
 /* 兜底超时：90 秒未成功则失败退出 */
 setTimeout(() => {
