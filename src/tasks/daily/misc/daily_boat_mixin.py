@@ -38,8 +38,8 @@ class DailyBoatMixin:
         stages = self._boat_stages()
         clue_box = self.box_of_screen(1627 / 1920, 178 / 1080, (1627 + 76) / 1920, (178 + 154) / 1080)
         if "收集线索" in stages:
-            self.wait_click_feature(feature=fL.clue_collect_icon, box=clue_box)
-        result = self.wait_click_feature(feature=fL.products_collect_icon, box=clue_box)
+            self.wait_click_feature(feature=fL.clue_collect_icon, box=clue_box, raise_if_not_found=False)
+        result = self.wait_click_feature(feature=fL.products_collect_icon, box=clue_box, raise_if_not_found=False)
         if result:
             self.wait_pop_up(time_out=5)
         return True
