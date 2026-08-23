@@ -267,15 +267,16 @@ async function pump() {
   }
 }
 
+/* 兜底超时：90 秒未成功则失败退出（必须在 await pump() 之前注册，
+ * 否则 pump 永久阻塞导致兜底永不生效） */
+setTimeout(() => {
+  console.error("runner timeout: no successful registration in 90s");
+  process.exit(3);
+}, 90000);
+
 try {
   await pump(); // ESM 顶层 await（S7785）
 } catch (e) {
   console.error("pump error:", e);
   process.exit(1);
 }
-
-/* 兜底超时：90 秒未成功则失败退出 */
-setTimeout(() => {
-  console.error("runner timeout: no successful registration in 90s");
-  process.exit(3);
-}, 90000);
