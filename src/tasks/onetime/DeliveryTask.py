@@ -559,18 +559,21 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 return found
             self.sleep(0.1)
 
+        elapsed = self.active_time() - start
+        if total_time_out - elapsed <= 0:  # 严格遵守总截止时间：剩余不足时不再进入移动搜索
+            self.log_info("总等待时间已耗尽，仍未找到登上滑索架")
+            return None
+
         # 切换步行模式：踱步与前后移动都用走路，避免奔跑错过交互按钮
         self.press_key("ctrl")  # 确认使用send_key：ctrl为奔跑切换键，不属于游戏可配置热键
         try:
             # 阶段二：WASD 踱步寻找（参考 nav 目标不稳定时的做法），最多持续约 10 秒
             self.log_info("短时间内未找到登上滑索架，可能被其他设备遮挡，切换步行开始踱步寻找（最长 10 秒）")
-            elapsed = self.active_time() - start
-            strafe_budget = min(10.0, max(1.0, total_time_out - elapsed))
             found = self.strafe_search(
                 check,
                 passes=None,  # 不限轮数，持续踱步直到找到或阶段时限
                 duration=0.2,  # 每个方向轻移 0.2 秒，避免走远
-                time_out=strafe_budget,
+                time_out=min(10.0, total_time_out - elapsed),
             )
             if found:
                 self.log_info("踱步寻找过程中找到登上滑索架")
@@ -587,7 +590,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 passes=None,
                 duration=0.2,
                 keys=("w", "s"),  # 仅前后移动
-                time_out=max(1.0, remaining),
+                time_out=remaining,
             )
             if found:
                 self.log_info("前后移动寻找过程中找到登上滑索架")

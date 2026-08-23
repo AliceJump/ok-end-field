@@ -94,18 +94,30 @@ class TestFindZipLineBoardButton(unittest.TestCase):
         self.assertIs(result, box)
         self.assertEqual(len(stub.strafe_calls), 2)  # 踱步 + 前后移动各一次
         self.assertEqual(stub.strafe_calls[1]["keys"], ("w", "s"))  # 阶段三仅前后移动
-        self.assertGreaterEqual(stub.strafe_calls[1]["time_out"], 1.0)  # 用剩余时间继续找
+        # 阶段三时限为剩余时间：不超过总超时，且确实用掉了大部分预算
+        self.assertLessEqual(stub.strafe_calls[1]["time_out"], 60.0)
+        self.assertGreater(stub.strafe_calls[1]["time_out"], 55.0)
         self.assertEqual(stub.ctrl_calls, ["ctrl", "ctrl"])  # 结束恢复奔跑模式
 
     def test_timeout_returns_none(self):
         """总超时仍未找到：返回 None 并记录超时日志。"""
         stub = _make_stub(ocr_results=[], strafe_results=[None],
-                          advance_per_strafe=10.0)  # 踱步消耗掉全部预算
+                          advance_per_strafe=10.0)  # 踱步消耗掉全部剩余预算
         result = DeliveryTask._find_zip_line_board_button(
-            stub, direct_wait=0.01, total_time_out=0.03)
+            stub, direct_wait=0.01, total_time_out=5.0)
         self.assertIsNone(result)
         self.assertTrue(any("超时" in msg for msg in stub.log_lines))
-        self.assertEqual(len(stub.strafe_calls), 1)  # 总预算耗尽时不再进入阶段三
+        self.assertEqual(len(stub.strafe_calls), 1)  # 总预算耗尽时不进入阶段三
+        self.assertLessEqual(stub.strafe_calls[0]["time_out"], 5.0)  # 不超过总超时
+
+    def test_exhausted_before_strafe_returns_immediately(self):
+        """阶段一耗尽全部预算：直接返回 None，不切步行也不进入移动搜索。"""
+        stub = _make_stub(ocr_results=[])
+        result = DeliveryTask._find_zip_line_board_button(
+            stub, direct_wait=0.0, total_time_out=-1.0)
+        self.assertIsNone(result)
+        self.assertEqual(stub.strafe_calls, [])
+        self.assertEqual(stub.ctrl_calls, [])  # 未做任何模式切换
 
 
 if __name__ == "__main__":
