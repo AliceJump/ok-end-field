@@ -26,7 +26,7 @@ ENDFIELD_MAP_REFERER = "https://game.skland.com/map/endfield"
 # 但官方 SDK 注册流程自铸的全新设备ID可以从 Python 直接使用、与账号无关且可长期复用；
 # 自铸流程见 src/core/map_device_id.py：临时浏览器配置匿名访问官方地图页（无需登录）
 # 完成注册，并持久化到 configs/map_device_id.json。
-from src.core.map_device_id import ensure_map_device_id
+from src.core.map_device_id import clear_stored_device_id, ensure_map_device_id
 
 _shumei_did_failed_at = 0.0
 _SHUMEI_DID_RETRY_INTERVAL = 30.0
@@ -134,6 +134,9 @@ class WsPositionMixin:
             })
         except RuntimeError as e:
             raise MapAuthError(f"HG 授权接口请求失败: {e}") from e
+        except (error.URLError, TimeoutError) as e:
+            # DNS/连接/TLS 失败与超时同样属于可预期的认证失败
+            raise MapAuthError(f"HG 授权接口网络异常: {e}") from e
         if not isinstance(grant_resp, dict) or grant_resp.get("status") != 0:
             raise MapAuthError(f"HG 授权接口返回异常: {grant_resp}")
 
@@ -160,13 +163,15 @@ class WsPositionMixin:
             )
         except RuntimeError as e:
             raise MapAuthError(f"地图 cred 换取接口请求失败: {e}") from e
+        except (error.URLError, TimeoutError) as e:
+            raise MapAuthError(f"地图 cred 换取接口网络异常: {e}") from e
         if not isinstance(cred_resp, dict) or cred_resp.get("code") != 0:
             hint = ""
             if isinstance(cred_resp, dict) and cred_resp.get("code") == 10001:
-                hint = ("（设备信息无效：已存 dId 可能被风控拒绝，"
-                        "删除 configs/map_device_id.json 或运行 "
-                        "`uv run python -m src.core.map_device_id --refresh` "
-                        "重新铸造后重试）")
+                # 已存 dId 被风控拒绝：清除进程缓存与持久化文件，
+                # 下个触发周期自动重新铸造（否则会一直复用被拒的值）
+                clear_stored_device_id()
+                hint = "（设备信息无效：已存 dId 可能被风控拒绝，已自动清除本地缓存，稍后将重新铸造重试）"
             raise MapAuthError(f"地图 cred 换取接口返回异常: {cred_resp}{hint}")
 
         data = cred_resp.get("data") or {}
