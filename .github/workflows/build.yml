@@ -217,7 +217,12 @@ jobs:
           show_author: true #在更新日志中加入作者
 
   build:
-    needs: test
+    # 必须等 sync 完成后再打包：-c setup 会从更新仓库(git_url)克隆源码并按其
+    # requirements.txt 安装依赖，若与 sync 并行会打进上一版的旧依赖集。
+    needs: [test, sync]
+    if: >-
+      !cancelled() && needs.test.result == 'success' &&
+      (needs.sync.result == 'success' || needs.sync.result == 'skipped')
     runs-on: windows-latest
     permissions:
       contents: read
