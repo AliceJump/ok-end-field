@@ -21,17 +21,24 @@
      服务端持续拒绝，返回 code=1902），但浏览器每次访问都会生成全新载荷；
    - 官方页面自身也只在会话内缓存 dId，重启浏览器即重新注册。
 
-因此本模块采用混合策略：
-- 首次铸造优先用本地保存的注册载荷走纯 HTTP 重放（无需浏览器）；
-- 载荷耗尽或被拒时回退到「临时浏览器匿名访问官方地图页」完成注册，
-  并在这一次访问中顺带捕获全新注册载荷存入本地，供后续 HTTP 复用。
+因此本模块采用混合策略（按优先级）：
+- 已持久化的 dId 直接复用（与账号无关，可长期使用）；
+- 「本地保存的注册载荷」走纯 HTTP 重放铸造（无需浏览器/Node）；
+- 「Node 运行官方 SMSdk 本体」（``smsdk_runner.js`` + 官方 SDK 脚本，
+  用浏览器环境垫片让 SDK 自己生成并提交注册请求），无需浏览器、
+  无载荷次数上限；SDK 脚本不随仓库分发，首次使用时从官方 CDN
+  下载并做 SHA256 校验，缓存在 ``configs/``（已 gitignore）；
+- 以上都不可用时回退到「临时浏览器匿名访问官方地图页」完成注册，
+  并顺带捕获全新注册载荷存入本地，供后续 HTTP 复用。
 - 铸造成功的 dId 持久化到 ``configs/map_device_id.json`` 长期使用，
   仅在被风控拒绝时才需要重新铸造。
 
 内置兜底载荷来自本项目调查期间一次性匿名临时 Profile 的抓包，
 不含任何用户个人信息。
 """
+import hashlib
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -179,6 +186,104 @@ def mint_device_id_http(timeout: float = 15.0) -> str:
     raise RuntimeError("；".join(errors) or "没有可用的注册载荷")
 
 
+def _find_node() -> str:
+    return shutil.which("node") or ""
+
+
+_RUNNER_PATH = Path(__file__).with_name("smsdk_runner.js")
+# 官方 SMSdk 脚本（skland-bbs 前端引用的公开静态资源），不随仓库分发，
+# 首次使用时下载到 configs/ 缓存（该目录已被 gitignore）。
+_SDK_JS_URL = ("https://bbs.hycdn.cn/public/skland/others/skland-bbs/"
+               "60e9c30fb0b1d1ca574c4522ca06fc7b.js")
+_SDK_JS_NAME = "smsdk_60e9c30fb0b1d1ca574c4522ca06fc7b.js"
+_SDK_JS_CACHE = get_relative_path("configs", _SDK_JS_NAME)
+_SDK_JS_SHA256 = "2dbd8228c80c13e05c05e2e3093fd1c5935fd62937a1b0add7c6fe28a1905f9f"
+_SDK_JS_MIN_SIZE = 200_000
+_DID_OUTPUT_RE = re.compile(r"^DID=(.+)$", re.MULTILINE)
+
+
+def _sdk_js_sha256(path: str) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as fp:
+        for chunk in iter(lambda: fp.read(65536), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _download_sdk_js(dest: str) -> None:
+    req = urllib.request.Request(_SDK_JS_URL, headers={
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+    })
+    with urllib.request.urlopen(req, timeout=30) as resp:
+        content = resp.read()
+    if len(content) < _SDK_JS_MIN_SIZE or \
+            hashlib.sha256(content).hexdigest() != _SDK_JS_SHA256:
+        raise RuntimeError(
+            f"官方 SDK 脚本校验失败(len={len(content)})，拒绝缓存使用")
+    ensure_dir_for_file(dest)
+    tmp = dest + ".part"
+    with open(tmp, "wb") as fp:
+        fp.write(content)
+    os.replace(tmp, dest)
+
+
+def _ensure_sdk_js() -> str:
+    if Path(_SDK_JS_CACHE).is_file():
+        try:
+            if _sdk_js_sha256(_SDK_JS_CACHE) == _SDK_JS_SHA256:
+                return _SDK_JS_CACHE
+        except OSError:
+            pass
+    _download_sdk_js(_SDK_JS_CACHE)
+    return _SDK_JS_CACHE
+
+
+def mint_device_id_node(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
+    """Node 铸造路径：运行官方 SMSdk 本体（浏览器环境垫片）完成注册。
+
+    ``smsdk_runner.js`` 在 Node vm 中垫片 document/navigator/localStorage/
+    XHR/canvas 等，让官方 SDK 自己采集指纹、加密并提交注册请求；
+    XHR 垫片把请求转发给真实服务端。全程无浏览器，且每次铸造都是
+    全新载荷，不受「载荷次数上限」限制。
+    """
+    node = _find_node()
+    if not node:
+        raise RuntimeError("未找到 node.exe")
+    try:
+        sdk_js = _ensure_sdk_js()
+    except Exception as exc:
+        raise RuntimeError(f"获取官方 SDK 脚本失败: {exc}") from exc
+    if not _RUNNER_PATH.is_file():
+        raise RuntimeError(f"缺少 SDK 运行文件: {_RUNNER_PATH}")
+
+    env_base = os.environ.copy()
+    attempts = [
+        # Node >= 17 (OpenSSL 3) 需要 legacy provider 才启用 DES
+        {**env_base, "NODE_OPTIONS": "--openssl-legacy-provider"},
+        # 旧版 Node 不认识该选项时去掉重试
+        env_base,
+    ]
+    errors: list[str] = []
+    for env in attempts:
+        try:
+            proc = subprocess.run(
+                [node, str(_RUNNER_PATH), str(sdk_js)],
+                capture_output=True, text=True, encoding="utf-8",
+                errors="replace", timeout=timeout, env=env, check=False,
+            )
+        except subprocess.TimeoutExpired:
+            errors.append(f"超时({timeout:.0f}s)")
+            break
+        except OSError as exc:
+            raise RuntimeError(f"无法启动 node: {exc}") from exc
+        match = _DID_OUTPUT_RE.search(proc.stdout or "")
+        if match and len(match.group(1).strip()) >= _DID_MIN_LENGTH:
+            return match.group(1).strip()
+        stderr_tail = (proc.stderr or "").strip().splitlines()[-3:]
+        errors.append("；".join(stderr_tail) or f"exit={proc.returncode}")
+    raise RuntimeError("；".join(errors))
+
+
 def _find_browser() -> str:
     for candidate in _BROWSER_CANDIDATES:
         if Path(candidate).is_file():
@@ -314,18 +419,18 @@ def mint_device_id_browser(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
 
 
 def mint_device_id() -> str:
-    """铸造全新 dId：先走 HTTP 直连注册，失败则回退到临时浏览器方案。"""
-    try:
-        return mint_device_id_http()
-    except Exception as http_error:  # noqa: BLE001 - 回退到浏览器方案
-        fallback_error = http_error
-    try:
-        return mint_device_id_browser()
-    except Exception as exc:
-        raise RuntimeError(
-            f"地图设备ID铸造失败：HTTP 直连({fallback_error})；"
-            f"临时浏览器({exc})"
-        ) from exc
+    """铸造全新 dId：HTTP 重放 -> Node 运行官方 SDK -> 临时浏览器。"""
+    errors: list[str] = []
+    for label, mint in (
+        ("HTTP 重放", mint_device_id_http),
+        ("Node+官方SDK", mint_device_id_node),
+        ("临时浏览器", mint_device_id_browser),
+    ):
+        try:
+            return mint()
+        except Exception as exc:  # noqa: BLE001 - 依次回退到下一条路径
+            errors.append(f"{label}({exc})")
+    raise RuntimeError("地图设备ID铸造失败：" + "；".join(errors))
 
 
 def ensure_map_device_id(explicit: str = "", allow_mint: bool = True) -> str:
