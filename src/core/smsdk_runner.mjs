@@ -62,7 +62,8 @@ function makeElement(tag) {
 }
 
 function makeStorage() {
-  const store = {};
+  /* 无原型对象：避免 "constructor"/"toString" 等继承名被 k in store 误判为已存值 */
+  const store = Object.create(null);
   return {
     __data: store,
     getItem: (k) => (k in store ? store[k] : null),
