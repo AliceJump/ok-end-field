@@ -22,6 +22,10 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# gh 输出是 UTF-8（评审 body 含中文）；PowerShell 默认按系统 ANSI(GBK) 解码
+# 会把 JSON 弄坏导致 ConvertFrom-Json 报 "unexpected character"，必须显式切 UTF-8
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+
 function Invoke-GhChecked {
     param([string[]]$GhArgs)
     $output = gh @GhArgs 2>&1

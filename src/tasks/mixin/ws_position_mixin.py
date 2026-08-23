@@ -168,9 +168,10 @@ class WsPositionMixin:
         if not isinstance(cred_resp, dict) or cred_resp.get("code") != 0:
             hint = ""
             if isinstance(cred_resp, dict) and cred_resp.get("code") == 10001:
-                # 已存 dId 被风控拒绝：清除进程缓存与持久化文件，
-                # 下个触发周期自动重新铸造（否则会一直复用被拒的值）
+                # 已存 dId 被风控拒绝：清除进程缓存与持久化文件，并停掉仍在
+                # 使用旧 dId 的地图WS客户端，下个触发周期自动重新铸造并重建
                 clear_stored_device_id()
+                self._stop_map_ws_client()
                 hint = "（设备信息无效：已存 dId 可能被风控拒绝，已自动清除本地缓存，稍后将重新铸造重试）"
             raise MapAuthError(f"地图 cred 换取接口返回异常: {cred_resp}{hint}")
 
@@ -503,6 +504,7 @@ class WsPositionMixin:
                 and self._map_ws_sign_token == sign_token
                 and self._map_ws_user_id == user_id
                 and self._map_ws_auth_source == auth_source
+                and self._map_ws_device_id == device_id  # dId 变化（如10001后重新铸造）时不复用旧客户端
         ):
             return True
 
