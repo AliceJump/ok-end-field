@@ -12,10 +12,14 @@
 
 certifi==2026.7.22
     # via requests
+cffi==2.1.1
+    # via cryptography
 charset-normalizer==3.4.9
     # via requests
 comtypes==1.4.16
     # via pycaw
+cryptography==50.0.0
+    # via ok-end-field
 darkdetect==0.8.0
     # via pyside6-fluent-widgets
 idna==3.18
@@ -77,6 +81,8 @@ pycaw==20240210
     # via ok-script
 pyclipper==1.4.0
     # via onnxocr-ppocrv5
+pycparser==3.0
+    # via cffi
 pydirectinput==1.0.4
     # via ok-script
 pygetwindow==0.0.9
