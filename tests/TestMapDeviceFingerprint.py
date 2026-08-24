@@ -34,7 +34,7 @@ class TestMapDeviceFingerprint(unittest.TestCase):
         self.assertEqual(payload["encode"], 5)
         self.assertEqual(payload["organization"], fp._SM_CONFIG["organization"])
         base64.b64decode(payload["ep"])  # ep 可解码
-        self.assertTrue(len(uid) > 0)
+        self.assertGreater(len(uid), 0)
 
     def test_mint_rejects_non_1100(self):
         """服务端返回非 1100 时抛出 RuntimeError。"""
