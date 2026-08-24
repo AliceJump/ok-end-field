@@ -158,8 +158,9 @@ def _get_smid() -> str:
     """生成长度合规的 smid：时间戳 + 随机 md5 + 校验尾。"""
     t = time.localtime()
     stamp = f"{t.tm_year:04d}{t.tm_mon:02d}{t.tm_mday:02d}{t.tm_hour:02d}{t.tm_min:02d}{t.tm_sec:02d}"
-    v = stamp + hashlib.md5(str(uuid.uuid4()).encode()).hexdigest() + "00"
-    tail = hashlib.md5(("smsk_web_" + v).encode()).hexdigest()[:14]
+    # md5 在此仅用于生成随机标识与校验尾，非安全哈希用途，协议规定算法
+    v = stamp + hashlib.md5(str(uuid.uuid4()).encode()).hexdigest() + "00"  # NOSONAR
+    tail = hashlib.md5(("smsk_web_" + v).encode()).hexdigest()[:14]  # NOSONAR
     return v + tail + "0"
 
 
