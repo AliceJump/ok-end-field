@@ -171,7 +171,8 @@ def build_registration_payload() -> tuple[dict, bytes]:
         仅用于测试断言与调试，正常铸造流程不需要保存。
     """
     uid = str(uuid.uuid4()).encode("utf-8")
-    pri_id = hashlib.md5(uid).hexdigest()[:16].encode("utf-8")  # NOSONAR (python:S4790) 数美协议规定的密钥派生方式，非安全哈希用途
+    # md5 派生 AES 密钥是数美协议的规定算法，非安全哈希用途
+    pri_id = hashlib.md5(uid).hexdigest()[:16].encode("utf-8")  # NOSONAR
     ep = base64.b64encode(_PK.encrypt(uid, rsa_padding.PKCS1v15())).decode("utf-8")
 
     now_ms = int(time.time() * 1000)
@@ -193,8 +194,8 @@ def build_registration_payload() -> tuple[dict, bytes]:
         "subVersion": "1.0.0",
         "time": 0,
     }
-    # NOSONAR (python:S4790) tn 是数美协议要求的完整性校验串，算法固定为 MD5，非安全用途
-    profile["tn"] = hashlib.md5(_get_tn(profile).encode()).hexdigest()
+    # tn 是数美协议要求的完整性校验串，算法固定为 MD5，非安全用途
+    profile["tn"] = hashlib.md5(_get_tn(profile).encode()).hexdigest()  # NOSONAR
 
     payload = {
         "appId": "default",
