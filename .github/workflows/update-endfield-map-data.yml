@@ -164,7 +164,14 @@ jobs:
           echo "Created new PR for $BRANCH"
           # 启用 auto-merge：校验已在 PR 创建前完成（Validate data 步骤），
           # checks 通过后自动 squash 合并（master ruleset approval=0，squash 允许）
-          gh pr merge "$BRANCH" --auto --squash --delete-branch \
-            --subject "chore(map): 更新地图数据" \
-            --body "由 update-endfield-map-data 工作流自动生成的地图数据更新。"
-          echo "Auto-merge enabled for $BRANCH"
+          # PR 已是 clean status（无待等待的 check）时 enablePullRequestAutoMerge 会被拒绝，
+          # 此时所有合并条件已满足，直接合并即可
+          if ! gh pr merge "$BRANCH" --auto --squash --delete-branch \
+                --subject "chore(map): 更新地图数据" \
+                --body "由 update-endfield-map-data 工作流自动生成的地图数据更新。"; then
+            echo "Auto-merge unavailable (clean status), merging directly"
+            gh pr merge "$BRANCH" --squash --delete-branch \
+              --subject "chore(map): 更新地图数据" \
+              --body "由 update-endfield-map-data 工作流自动生成的地图数据更新。"
+          fi
+          echo "Merged or auto-merge enabled for $BRANCH"

@@ -61,8 +61,15 @@ jobs:
             --title "chore: update download stats" \
             --body "由 download_stats 工作流自动生成的下载统计更新。"
           echo "Created new PR for $BRANCH"
-          # 启用 auto-merge：checks 通过后自动 squash 合并（master ruleset approval=0）
-          gh pr merge "$BRANCH" --auto --squash --delete-branch \
-            --subject "chore: update download stats" \
-            --body "由 download_stats 工作流自动生成的下载统计更新。"
-          echo "Auto-merge enabled for $BRANCH"
+          # 启用 auto-merge：checks 通过后自动 squash 合并（master ruleset approval=0）；
+          # PR 已是 clean status（无待等待的 check）时 enablePullRequestAutoMerge 会被拒绝，
+          # 此时所有合并条件已满足，直接合并即可
+          if ! gh pr merge "$BRANCH" --auto --squash --delete-branch \
+                --subject "chore: update download stats" \
+                --body "由 download_stats 工作流自动生成的下载统计更新。"; then
+            echo "Auto-merge unavailable (clean status), merging directly"
+            gh pr merge "$BRANCH" --squash --delete-branch \
+              --subject "chore: update download stats" \
+              --body "由 download_stats 工作流自动生成的下载统计更新。"
+          fi
+          echo "Merged or auto-merge enabled for $BRANCH"
