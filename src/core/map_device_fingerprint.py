@@ -55,6 +55,9 @@ _SM_CONFIG = {
 _PK = serialization.load_der_public_key(base64.b64decode(_SM_CONFIG["publicKey"]))
 
 # 已知字段的 3DES 加密键与改名映射，逆向自官方 SDK。
+# 注意：这些 8 字节键是公开的协议常量（与上游开源实现
+# NoelZong/skland-auto-sign 等完全一致），仅用于指纹报文的混淆格式，
+# 不用于保护任何数据，因此不属于"密钥/凭据"类敏感信息。
 # 注意：这些键值不是敏感凭据，而是数美 SDK 公开前端脚本中的固定
 # 协议常量，与下方 RSA 公钥同性质，任何人均可从公开静态资源反编译
 # 得到；仅用于构造合法报文格式，不提供任何保密性，故随源码提交。
