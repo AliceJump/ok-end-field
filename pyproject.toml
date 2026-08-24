@@ -17,6 +17,7 @@ dependencies = [
     "pynput==1.8.2",
     "imagehash==4.3.2",
     "pyautogui==0.9.54",
+    "cryptography>=44.0.0",
     "scikit-image==0.26.0",
 ]
 
