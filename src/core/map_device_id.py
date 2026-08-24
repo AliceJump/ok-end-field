@@ -23,6 +23,8 @@
 
 因此本模块采用混合策略（按优先级）：
 - 已持久化的 dId 直接复用（与账号无关，可长期使用）；
+- 「合成指纹」纯 Python 本地构造注册档案直接铸造（无次数上限，
+  算法见 ``map_device_fingerprint.py``，可能随数美版本变化）；
 - 「本地保存的注册载荷」走纯 HTTP 重放铸造（无需浏览器/Node）；
 - 「Node 运行官方 SMSdk 本体」（``smsdk_runner.mjs`` + 官方 SDK 脚本，
   用浏览器环境垫片让 SDK 自己生成并提交注册请求），无需浏览器、
@@ -489,9 +491,22 @@ def mint_device_id_browser(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
 
 
 def mint_device_id() -> str:
-    """铸造全新 dId：HTTP 重放 -> Node 运行官方 SDK -> 临时浏览器。"""
+    """铸造全新 dId：合成指纹 -> HTTP 重放 -> Node 运行官方 SDK -> 临时浏览器。
+
+    合成指纹（``map_device_fingerprint``）为纯 Python 本地构造注册档案，
+    无载荷次数上限、无 Node/浏览器依赖，是首选路径；算法可能随数美
+    前端版本变化，已独立成单独文件便于后续调整。任一路径失败自动
+    回退到下一条。
+    """
+    def _mint_synthetic() -> str:
+        # 延迟导入：cryptography 缺失时仅该路径不可用，不影响其余路径
+        from src.core.map_device_fingerprint import mint_device_id_synthetic
+
+        return mint_device_id_synthetic()
+
     errors: list[str] = []
     for label, mint in (
+        ("合成指纹", _mint_synthetic),
         ("HTTP 重放", mint_device_id_http),
         ("Node+官方SDK", mint_device_id_node),
         ("临时浏览器", mint_device_id_browser),
