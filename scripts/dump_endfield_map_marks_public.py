@@ -35,6 +35,12 @@ def write_json(path: Path, data):
     )
 
 
+EXCLUDE_MARKS = {
+    "长距滑索架",
+    "滑索架",
+}
+
+
 def main():
     print("Downloading map tree...")
 
@@ -80,12 +86,12 @@ def main():
                 for item in data.get("markTemplates", [])
             }
 
-            all_names.update(name for name in template_map.values() if name)
+            all_names.update(name for name in template_map.values() if name and name not in EXCLUDE_MARKS)
 
             def _add_point(mark: dict):
                 nonlocal duplicate_count
                 name = template_map.get(mark.get("templateId"))
-                if not name:
+                if not name or name in EXCLUDE_MARKS:
                     return
                 pos = mark.get("pos")
                 if not isinstance(pos, dict):
