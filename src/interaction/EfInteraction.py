@@ -36,7 +36,7 @@ class EfInteraction(PostMessageInteraction):
         self._esc_hwnd = 0
         self._key_prev_hwnd = 0  # 后台模式下按键按下前的前台窗口，松开时恢复
         self._background_key_hold_count = 0  # 后台模式下未释放的按键数
-        self._pressed_keys = set()  # 已成功按下的按键（用于配对保护）
+        self._pressed_keys = {}  # 已成功按下的按键计数映射（规范化身份 -> 次数）
         self.keyboard = Controller()
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.001, move=True, key="left"):
@@ -161,6 +161,13 @@ class EfInteraction(PostMessageInteraction):
             time.sleep(0.02)
         return win32gui.GetForegroundWindow() == hwnd
 
+    def _normalize_key(self, key) -> str:
+        """规范化按键身份：esc/escape 归一为同一身份。"""
+        k = str(key).lower()
+        if k in ("esc", "escape"):
+            return "esc"
+        return k
+
     def send_key_down(self, key, activate=True, foreground=False):
         """发送按键按下。返回 True 表示按键已成功按下，False 表示未按下（如置顶失败）。"""
         # ESC 默认走 PostMessage（后台可用）；foreground=True 时走前置+pynput（主界面可靠返回）
@@ -209,7 +216,8 @@ class EfInteraction(PostMessageInteraction):
                         f"游戏={hwnd} 置顶成功={fg_after == hwnd}"
                     )
         self.keyboard.press(self._convert_key(key))
-        self._pressed_keys.add(str(key).lower())
+        norm = self._normalize_key(key)
+        self._pressed_keys[norm] = self._pressed_keys.get(norm, 0) + 1
         return True
 
     def send_key_up(self, key, foreground=False):
@@ -226,9 +234,12 @@ class EfInteraction(PostMessageInteraction):
             self._esc_hwnd = 0
             return
         # 配对保护：仅释放实际按下过的按键，避免向原前台应用发送未配对释放
-        if key_lower not in self._pressed_keys:
+        norm = self._normalize_key(key)
+        if self._pressed_keys.get(norm, 0) <= 0:
             return
-        self._pressed_keys.discard(key_lower)
+        self._pressed_keys[norm] -= 1
+        if self._pressed_keys[norm] <= 0:
+            del self._pressed_keys[norm]
         try:
             self.keyboard.release(self._convert_key(key))
         finally:
