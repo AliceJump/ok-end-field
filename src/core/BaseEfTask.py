@@ -174,7 +174,7 @@ class BaseEfTask(
         interaction = getattr(getattr(self, "executor", None), "interaction", None)
         if interaction is not None and hasattr(interaction, "send_key_down"):
             try:
-                if self.is_main():
+                if self.in_world():
                     pressed = interaction.send_key_down("esc", foreground=True)
                     if pressed:
                         interaction.send_key_up("esc", foreground=True)
