@@ -1835,3 +1835,6 @@ msgstr "Boleto de Arsenal"
 
 msgid "嵌晶玉"
 msgstr "Oroberilio"
+
+msgid "购买优先商品时信用不足"
+msgstr "Créditos insuficientes al comprar artículos prioritarios"

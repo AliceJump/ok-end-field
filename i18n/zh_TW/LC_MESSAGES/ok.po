@@ -1835,3 +1835,6 @@ msgstr "武庫配額"
 
 msgid "嵌晶玉"
 msgstr "嵌晶玉"
+
+msgid "购买优先商品时信用不足"
+msgstr "購買優先商品時信用不足"

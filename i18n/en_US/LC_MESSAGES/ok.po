@@ -1833,3 +1833,6 @@ msgstr "Arsenal Ticket"
 
 msgid "嵌晶玉"
 msgstr "Oroberyl"
+
+msgid "购买优先商品时信用不足"
+msgstr "Insufficient credits when buying priority items"
