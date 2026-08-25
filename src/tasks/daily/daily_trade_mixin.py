@@ -377,6 +377,7 @@ class DailyTradeFeature:
                                 break
                     else:
                         self.log_info("未找到加号按钮，无法购买")
+                        self.back()
 
             if after_buy is not None:
                 after_buy(area)
