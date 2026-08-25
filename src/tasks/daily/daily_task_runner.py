@@ -134,12 +134,25 @@ class DailyTaskRunner:
             self.task_status["skipped"].append(key)
             return True
 
+        # 后台模式下跳过需要前台操作的子任务（如战斗/送货/卖货）
+        input_mode = getattr(self.task, "input_mode", None)
+        if (
+            input_mode is not None
+            and input_mode() == "background"
+            and key in getattr(self.task, "FOREGROUND_TASK_KEYS", ())
+        ):
+            self.task.log_info(f"后台模式下跳过需要前台操作的子任务: {key}")
+            self.task_status["skipped"].append(key)
+            return True
+
         self.current_task_key = key
         self.failure_screenshot_tasks.discard(key)
         self.final_summary["current_task"] = key
         self.task.log_info(f"开始任务: {key}")
         self.task.ensure_main()
-        self.task.send_key("shift")  # 确认使用send_key：shift为奔跑切换键，游戏固定不可配置键
+        # shift 为奔跑切换键：后台模式下移动已禁用，无需切换奔跑状态
+        if not (input_mode is not None and input_mode() == "background"):
+            self.task.send_key("shift")  # 确认使用send_key：shift为奔跑切换键，游戏固定不可配置键
         result = func()
 
         if result is False:

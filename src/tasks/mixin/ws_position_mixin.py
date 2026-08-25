@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# ruff: noqa: UP009
 import asyncio
 import hashlib
 import hmac
@@ -12,7 +13,6 @@ from urllib import error, parse, request
 
 import websockets
 
-
 ENDFIELD_MAP_WS_URL = "wss://ws.skland.com/ws/v1/game/endfield/map"
 ENDFIELD_MAP_API_HOST = "https://zonai.skland.com"
 ENDFIELD_MAP_HG_GRANT_URL = "https://as.hypergryph.com/user/oauth2/v2/grant"
@@ -20,11 +20,40 @@ ENDFIELD_MAP_HG_APP_CODE = "4ca99fa6b56cc2ba"
 ENDFIELD_MAP_ORIGIN = "https://game.skland.com"
 ENDFIELD_MAP_REFERER = "https://game.skland.com/map/endfield"
 
+# zonai 接口要求 dId 为数美(SMSdk)真实签发的设备指纹：
+# 纯随机串会返回 10001 设备信息无效（已在真实浏览器内用原生 fetch 复现验证，
+# 可排除 TLS 指纹因素），因此不能伪造。
+# 但官方 SDK 注册流程自铸的全新设备ID可以从 Python 直接使用、与账号无关且可长期复用；
+# 自铸流程见 src/core/map_device_id.py：临时浏览器配置匿名访问官方地图页（无需登录）
+# 完成注册，并持久化到 configs/map_device_id.json。
+from src.core.map_device_id import clear_stored_device_id, ensure_map_device_id
+
+_shumei_did_failed_at = 0.0
+_SHUMEI_DID_RETRY_INTERVAL = 30.0
+
+
+def _get_shumei_device_id() -> str:
+    """获取可用的 dId：优先使用已自铸并持久化的设备ID，缺失时现场铸造。"""
+    global _shumei_did_failed_at
+    if time.time() - _shumei_did_failed_at < _SHUMEI_DID_RETRY_INTERVAL:
+        return ""
+    try:
+        did = ensure_map_device_id()
+    except Exception as exc:  # noqa: BLE001 - 铸造失败（无浏览器/网络异常/注册超时）时按间隔降级重试
+        _shumei_did_failed_at = time.time()
+        del exc
+        return ""
+    return did
+
 
 def _make_msg_id() -> str:
     """生成协议消息 ID，仅用于请求-响应匹配，非安全用途。"""  # NOSONAR (python:S2245)
     alphabet = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
     return "".join(random.choice(alphabet) for _ in range(8))  # NOSONAR
+
+
+class MapAuthError(RuntimeError):
+    """地图认证链路失败（HG 授权 / cred 换取 / dId 铸造 / 认证请求网络异常）。"""
 
 
 class WsPositionMixin:
@@ -95,39 +124,83 @@ class WsPositionMixin:
             return None
         return json.loads(text)
 
-    def _exchange_hg_token_for_map_auth(self, hg_token: str) -> dict[str, Any]:
-        grant_resp = self._post_json(ENDFIELD_MAP_HG_GRANT_URL, {
-            "token": hg_token,
-            "appCode": ENDFIELD_MAP_HG_APP_CODE,
-            "type": 0,
-        })
+    def _request_hg_grant_code(self, hg_token: str) -> str:
+        """调用 HG 授权接口换取 oauth code；异常时抛出 MapAuthError。"""
+        try:
+            grant_resp = self._post_json(ENDFIELD_MAP_HG_GRANT_URL, {
+                "token": hg_token,
+                "appCode": ENDFIELD_MAP_HG_APP_CODE,
+                "type": 0,
+            })
+        except RuntimeError as e:
+            raise MapAuthError(f"HG 授权接口请求失败: {e}") from e
+        except (error.URLError, TimeoutError) as e:
+            # DNS/连接/TLS 失败与超时同样属于可预期的认证失败
+            raise MapAuthError(f"HG 授权接口网络异常: {e}") from e
         if not isinstance(grant_resp, dict) or grant_resp.get("status") != 0:
-            raise RuntimeError(f"HG 授权接口返回异常: {grant_resp}")
+            raise MapAuthError(f"HG 授权接口返回异常: {grant_resp}")
 
         oauth_code = ((grant_resp.get("data") or {}).get("code") or "").strip()
         if not oauth_code:
-            raise RuntimeError("HG 授权接口没有返回 oauth code")
+            raise MapAuthError("HG 授权接口没有返回 oauth code")
+        return oauth_code
 
-        cred_resp = self._post_json(
-            f"{ENDFIELD_MAP_API_HOST}/web/v1/user/auth/generate_cred_by_code",
-            {"kind": 1, "code": oauth_code},
-        )
+    def _request_map_cred(self, oauth_code: str, device_id: str) -> dict[str, Any]:
+        """用 oauth code 换取地图 cred；被风控拒绝(10001)时提示重新铸造 dId。
+
+        返回完整 cred_resp（data 含 cred/token/userId，顶层含服务器 timestamp）。
+        """
+        try:
+            cred_resp = self._post_json(
+                f"{ENDFIELD_MAP_API_HOST}/web/v1/user/auth/generate_cred_by_code",
+                {"kind": 1, "code": oauth_code},
+                headers={
+                    "platform": "3",
+                    "vName": "1.0.0",
+                    "timestamp": str(int(time.time())),
+                    "dId": device_id,
+                },
+            )
+        except RuntimeError as e:
+            raise MapAuthError(f"地图 cred 换取接口请求失败: {e}") from e
+        except (error.URLError, TimeoutError) as e:
+            raise MapAuthError(f"地图 cred 换取接口网络异常: {e}") from e
         if not isinstance(cred_resp, dict) or cred_resp.get("code") != 0:
-            raise RuntimeError(f"地图 cred 换取接口返回异常: {cred_resp}")
+            hint = ""
+            if isinstance(cred_resp, dict) and cred_resp.get("code") == 10001:
+                # 已存 dId 被风控拒绝：清除进程缓存与持久化文件，并停掉仍在
+                # 使用旧 dId 的地图WS客户端，下个触发周期自动重新铸造并重建
+                clear_stored_device_id()
+                self._stop_map_ws_client()
+                hint = "（设备信息无效：已存 dId 可能被风控拒绝，已自动清除本地缓存，稍后将重新铸造重试）"
+            raise MapAuthError(f"地图 cred 换取接口返回异常: {cred_resp}{hint}")
 
         data = cred_resp.get("data") or {}
-        cred = str(data.get("cred") or "").strip()
-        sign_token = str(data.get("token") or "").strip()
-        if not cred or not sign_token:
-            raise RuntimeError("地图 cred 换取接口缺少 cred 或 token")
+        if not str(data.get("cred") or "").strip() or \
+                not str(data.get("token") or "").strip():
+            raise MapAuthError("地图 cred 换取接口缺少 cred 或 token")
+        return cred_resp
 
+    def _exchange_hg_token_for_map_auth(self, hg_token: str) -> dict[str, Any]:
+        oauth_code = self._request_hg_grant_code(hg_token)
+
+        device_id = _get_shumei_device_id()
+        if not device_id:
+            raise MapAuthError(
+                "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 "
+                "fp-it.portal101.cn），30 秒后将自动重试"
+            )
+
+        data = self._request_map_cred(oauth_code, device_id) or {}
+        cred_data = data.get("data") or {}
         return {
-            "cred": cred,
-            "sign_token": sign_token,
-            "user_id": str(data.get("userId") or "").strip(),
+            "cred": str(cred_data.get("cred") or "").strip(),
+            "sign_token": str(cred_data.get("token") or "").strip(),
+            "user_id": str(cred_data.get("userId") or "").strip(),
+            "d_id": device_id,
             "sign_time": {
                 "clientTime": str(int(time.time())),
-                "serverTime": str(cred_resp.get("timestamp") or int(time.time())),
+                "serverTime": str(data.get("timestamp") or int(time.time())),
             },
         }
 
@@ -405,7 +478,18 @@ class WsPositionMixin:
                     pass
 
     def _start_map_ws_client(self, raw_cred: str | None):
-        auth_bundle = self._resolve_auth_bundle(raw_cred)
+        try:
+            auth_bundle = self._resolve_auth_bundle(raw_cred)
+        except MapAuthError as e:
+            # 仅捕获可预期的认证失败：不抛出阻断导航，记录一次后由后续
+            # 触发周期重试（map_device_id 内部有 30 秒冷却，不会频繁铸造）
+            if not getattr(self, "_map_ws_auth_failed_logged", False):
+                self._map_ws_auth_failed_logged = True
+                log_error = getattr(self, "log_error", None)
+                if callable(log_error):
+                    log_error(f"[地图WS] 认证失败，稍后将自动重试: {e}")
+            return False
+        self._map_ws_auth_failed_logged = False
         cred = str(auth_bundle.get("cred") or "")
         sign_token = str(auth_bundle.get("sign_token") or "")
         sign_time = auth_bundle.get("sign_time") if isinstance(auth_bundle.get("sign_time"), dict) else {}
@@ -420,6 +504,7 @@ class WsPositionMixin:
                 and self._map_ws_sign_token == sign_token
                 and self._map_ws_user_id == user_id
                 and self._map_ws_auth_source == auth_source
+                and self._map_ws_device_id == device_id  # dId 变化（如10001后重新铸造）时不复用旧客户端
         ):
             return True
 

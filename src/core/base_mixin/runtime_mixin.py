@@ -6,12 +6,9 @@ from functools import partial
 from typing import List
 
 import cv2
-import imagehash
 import numpy as np
 import win32gui
-from PIL import Image
 from ok import Box
-from skimage.metrics import structural_similarity as ssim
 
 from src.config import config as app_config
 from src.data.FeatureList import FeatureList as fL
@@ -799,22 +796,24 @@ class RuntimeMixin:
     def wait_ui_stable(
             self,
             method="phash",
-            threshold: int = 5,
+            threshold: int | float = 5,
             stable_time: float = 0.5,
             max_wait: float = 5,
             refresh_interval: float = 1,
             box: Box | tuple | list | None = None,
+            ssim_threshold: float = 0.95,
     ):
         """
         等待指定区域在视觉上稳定下来。
 
         Args:
-            method: 稳定性判断方法。
-            threshold: 稳定阈值。
+            method: 稳定性判断方法（phash/dhash/pixel/ssim）。
+            threshold: 稳定阈值（phash/dhash 为汉明距离，pixel 为像素差异均值）。
             stable_time: 持续稳定时长。
             max_wait: 最长等待时间。
             refresh_interval: 帧刷新间隔。
             box: 需要监测的区域。
+            ssim_threshold: SSIM 方法专用阈值（0-1 范围，默认 0.95）。
 
         Returns:
             bool: 稳定后返回 True，超时返回 False。
@@ -847,13 +846,10 @@ class RuntimeMixin:
             current_frame = parse_box(self.next_frame(), box)
 
             if method in ("phash", "dhash"):
-                img1 = Image.fromarray(last_frame)
-                img2 = Image.fromarray(current_frame)
-
-                h1 = imagehash.phash(img1) if method == "phash" else imagehash.dhash(img1)
-                h2 = imagehash.phash(img2) if method == "phash" else imagehash.dhash(img2)
-
-                is_stable = (h1 - h2) <= threshold
+                from src.image.stability import perceptual_hash, hamming_distance
+                h1 = perceptual_hash(last_frame, method=method)
+                h2 = perceptual_hash(current_frame, method=method)
+                is_stable = hamming_distance(h1, h2) <= threshold
 
             elif method == "pixel":
                 if last_frame.shape != current_frame.shape:
@@ -863,14 +859,11 @@ class RuntimeMixin:
                     is_stable = np.mean(diff) <= threshold
 
             elif method == "ssim":
-                last_gray = cv2.cvtColor(last_frame, cv2.COLOR_BGR2GRAY)
-                current_gray = cv2.cvtColor(current_frame, cv2.COLOR_BGR2GRAY)
-
-                if last_gray.shape != current_gray.shape:
+                from src.image.stability import ssim_score
+                if last_frame.shape != current_frame.shape:
                     is_stable = False
                 else:
-                    score, _ = ssim(last_gray, current_gray, full=True)
-                    is_stable = score >= threshold
+                    is_stable = ssim_score(last_frame, current_frame) >= ssim_threshold
 
             else:
                 raise ValueError(f"Unknown method {method}")
@@ -969,6 +962,9 @@ class RuntimeMixin:
         Returns:
             None
         """
+        if self.input_mode() == "background":
+            self.log_info("后台模式下已禁用移动操作")
+            return
         send_move_keys(self, keys, duration)
 
     def _dodge_with_direction(self, direction_key: str, pre_hold: float = 0.004,
@@ -1035,6 +1031,9 @@ class RuntimeMixin:
         Returns:
             Any: move_to_target_once_impl 的返回值。
         """
+        if self.input_mode() == "background":
+            self.log_info("后台模式下已禁用视角移动")
+            return None
         scaled_max_step = self.scale_distance(max_step)
         scaled_min_step = min(scaled_max_step, self.scale_distance(min_step))
         scaled_slow_radius = self.scale_distance(slow_radius)
@@ -1064,6 +1063,9 @@ class RuntimeMixin:
         Returns:
             Any: send_mouse_delta 的返回值。
         """
+        if not only_activate and self.input_mode() == "background":
+            self.log_info("后台模式下已禁用移动视角操作")
+            return None
         return send_mouse_delta(self.get_game_hwnd(), dx, dy, activate, only_activate, delay, steps)
 
     def click_with_alt(self, x: int | float | Box | List[Box] = -1, y: int | float = -1, move_back: bool = False,

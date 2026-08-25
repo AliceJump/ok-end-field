@@ -34,6 +34,9 @@ class EfInteraction(PostMessageInteraction):
         self.cursor_position = None
         self.activated = False
         self._esc_hwnd = 0
+        self._key_prev_hwnd = 0  # 后台模式下按键按下前的前台窗口，松开时恢复
+        self._background_key_hold_count = 0  # 后台模式下未释放的按键数
+        self._pressed_keys = {}  # 已成功按下的按键计数映射（规范化身份 -> 次数）
         self.keyboard = Controller()
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.001, move=True, key="left"):
@@ -131,8 +134,44 @@ class EfInteraction(PostMessageInteraction):
         finally:
             self.cursor_position = None
 
-    def send_key_down(self, key, activate=True):
-        if str(key).lower() in ("esc", "escape"):
+    def _background_mode(self) -> bool:
+        """后台模式（伪后台）：按键用完即恢复窗口。
+
+        优先取当前任务的 input_mode()（支持任务级开关），无当前任务时回退全局配置。
+        """
+        try:
+            from ok import og
+            task = getattr(getattr(og, "executor", None), "current_task", None)
+            if task is not None and hasattr(task, "input_mode"):
+                return task.input_mode() == "background"
+        except Exception:
+            pass
+        try:
+            from src.core.global_config_store import INPUT_MODE_NAME, get_global_config
+            return get_global_config(INPUT_MODE_NAME).get("输入模式", "前台模式") == "后台模式"
+        except Exception:
+            return False
+
+    def _wait_foreground(self, hwnd, timeout=1.0) -> bool:
+        """等待 hwnd 成为前台窗口。"""
+        start = time.monotonic()
+        while time.monotonic() - start < timeout:
+            if win32gui.GetForegroundWindow() == hwnd:
+                return True
+            time.sleep(0.02)
+        return win32gui.GetForegroundWindow() == hwnd
+
+    def _normalize_key(self, key) -> str:
+        """规范化按键身份：esc/escape 归一为同一身份。"""
+        k = str(key).lower()
+        if k in ("esc", "escape"):
+            return "esc"
+        return k
+
+    def send_key_down(self, key, activate=True, foreground=False):
+        """发送按键按下。返回 True 表示按键已成功按下，False 表示未按下（如置顶失败）。"""
+        # ESC 默认走 PostMessage（后台可用）；foreground=True 时走前置+pynput（主界面可靠返回）
+        if str(key).lower() in ("esc", "escape") and not foreground:
             self._esc_hwnd = self._game_hwnd()
             vk_code = win32con.VK_ESCAPE
             win32gui.SendMessage(self._esc_hwnd, win32con.WM_ACTIVATE, win32con.WA_ACTIVE, 0)
@@ -142,13 +181,48 @@ class EfInteraction(PostMessageInteraction):
                 vk_code,
                 self.make_lparam(vk_code, is_up=False),
             )
-            return
+            return True
+        # 后台模式下：按下时前置游戏（pynput 只投递到前台窗口），松开时恢复原窗口
+        if self._background_mode():
+            if self._background_key_hold_count == 0:
+                self._key_prev_hwnd = win32gui.GetForegroundWindow()
+            self._background_key_hold_count += 1
         if activate:
-            active_and_send_mouse_delta(self._game_hwnd(), only_activate=True)
+            hwnd = self._game_hwnd()
+            # 后台模式下：记录的前台窗口已是游戏窗口则无需置顶，直接按键
+            if self._background_mode() and self._key_prev_hwnd == hwnd:
+                pass
+            else:
+                fg_before = win32gui.GetForegroundWindow()
+                was_foreground = fg_before == hwnd
+                active_and_send_mouse_delta(hwnd, only_activate=True)
+                if not was_foreground:
+                    # 等待窗口真正成为前台，并给游戏处理焦点切换的时间后再按键
+                    if not self._wait_foreground(hwnd, timeout=1.0):
+                        # 置顶失败：回滚后台按键状态，禁止发送按键（可能投递到其他前台应用）
+                        if self._background_key_hold_count:
+                            self._background_key_hold_count -= 1
+                        if self._background_key_hold_count == 0:
+                            self._key_prev_hwnd = 0
+                        logger.warning(
+                            f"后台按键置顶失败: key={key} 游戏={hwnd} 当前前台={win32gui.GetForegroundWindow()}"
+                        )
+                        return False
+                    time.sleep(0.3)
+                if self._background_mode():
+                    fg_after = win32gui.GetForegroundWindow()
+                    logger.info(
+                        f"后台按键置顶: key={key} 前置前={fg_before} 前置后={fg_after} "
+                        f"游戏={hwnd} 置顶成功={fg_after == hwnd}"
+                    )
         self.keyboard.press(self._convert_key(key))
+        norm = self._normalize_key(key)
+        self._pressed_keys[norm] = self._pressed_keys.get(norm, 0) + 1
+        return True
 
-    def send_key_up(self, key):
-        if str(key).lower() in ("esc", "escape"):
+    def send_key_up(self, key, foreground=False):
+        key_lower = str(key).lower()
+        if key_lower in ("esc", "escape") and not foreground:
             hwnd = self._esc_hwnd or self._game_hwnd()
             vk_code = win32con.VK_ESCAPE
             win32gui.PostMessage(
@@ -159,7 +233,36 @@ class EfInteraction(PostMessageInteraction):
             )
             self._esc_hwnd = 0
             return
-        self.keyboard.release(self._convert_key(key))
+        # 配对保护：仅释放实际按下过的按键，避免向原前台应用发送未配对释放
+        norm = self._normalize_key(key)
+        if self._pressed_keys.get(norm, 0) <= 0:
+            return
+        self._pressed_keys[norm] -= 1
+        if self._pressed_keys[norm] <= 0:
+            del self._pressed_keys[norm]
+        try:
+            self.keyboard.release(self._convert_key(key))
+        finally:
+            if self._background_key_hold_count:
+                self._background_key_hold_count -= 1
+        if self._background_key_hold_count == 0 and self._key_prev_hwnd:
+            prev = self._key_prev_hwnd
+            # 松开后稍等片刻，让游戏处理完 key-up 事件再恢复原窗口
+            time.sleep(0.1)
+            current = win32gui.GetForegroundWindow()
+            restored = False
+            if prev and win32gui.IsWindow(prev) and current != prev:
+                try:
+                    win32gui.SetForegroundWindow(prev)
+                    restored = True
+                except Exception:
+                    # 恢复失败：保留恢复目标，避免后续按键沿用旧状态
+                    self._key_prev_hwnd = prev
+            else:
+                self._key_prev_hwnd = 0
+            logger.info(
+                f"后台按键恢复: key={key} 原窗口={prev} 当前={current} 恢复成功={restored}"
+            )
 
     def _convert_key(self, key: str):
         aliases = {

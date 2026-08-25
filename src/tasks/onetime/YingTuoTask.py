@@ -6,6 +6,8 @@ from ok import Box
 
 
 class YingTuoTask(BattleMixin):
+    requires_foreground = True  # 战斗需要前台
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "影拓丰碑"

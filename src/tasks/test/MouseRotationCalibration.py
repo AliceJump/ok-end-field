@@ -27,6 +27,8 @@ def angle_delta(after: float, before: float) -> float:
 class MouseRotationCalibration(BaseEfTask):
     """鼠标视角旋转系数标定测试（工具与调试分组）。"""
 
+    requires_foreground = True  # 视角旋转需要前台
+
     # 基础标定参数（可通过任务配置覆盖，集中在此处便于统一调整）
     CALIBRATION_DX = 100  # 每个 sample 的测试位移量，正负方向交替
     CALIBRATION_DX_LIST = ""  # 标定位移列表（逗号分隔多个像素值，如 "200, 400, 800"）；留空则用 标定位移dx 单值

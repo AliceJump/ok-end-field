@@ -19,6 +19,8 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
     - `min_reward`: 最低报酬金额（万）。
     """
 
+    requires_foreground = True  # 接取送货需要导航/移动
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "接取委托"
