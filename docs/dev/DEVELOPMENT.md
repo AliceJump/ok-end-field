@@ -1,6 +1,6 @@
 # ok-ef 开发指南
 
-返回：[文档索引](../zh-CN/README.md) / [README](../../README.md)
+返回：[文档索引](../zh-CN/index.md) / [README](https://github.com/AliceJump/ok-end-field/blob/master/README.md)
 
 本文以当前源码、`src/config.py`、测试目录和 workflow 为准，说明项目结构和贡献流程。具体项目自有接口见 [API 参考](API.md)。
 
@@ -212,7 +212,7 @@ ok-end-field/
 ├── configs/                      # 任务、全局、账号作用域配置
 ├── tests/                        # unittest 测试
 ├── scripts/                      # 维护/CI 脚本，按功能分目录
-│   ├── i18n/                     # 语言与翻译维护（sync_*、po 检查、gen_lang_stubs 等）
+│   ├── i18n/                     # 语言与翻译维护（sync_* 官方译名同步、gen_lang_stubs、lang_fill_missing 等）
 │   ├── data-capture/             # 官方 API / Wiki 数据抓取（capture_*、dump_*）
 │   ├── release/                  # tag 辅助、requirements 生成、tag 冒烟
 │   ├── docs/                     # mkdocs 构建辅助（mkdocs_mermaid）
@@ -347,12 +347,11 @@ self.press_combat_key("e")      # combat
 
 ## 7. 测试清单
 
-当前 `tests/` 有 37 个测试模块：
+当前 `tests/` 有 43 个测试模块：
 
 | 文件 | 主要覆盖 |
 |------|----------|
-| `TestAccountBattleConfig.py` | 账号配置可见性、快照合并、战斗配置优先级 |
-| `TestAccountConfigBlacklist.py` | 任务账号配置黑名单 |
+| `TestAccountBattleConfig.py` | 账号配置可见性、快照合并、任务账号配置黑名单、战斗配置优先级 |
 | `TestAccountOverrideMixin.py` | 账号覆盖 Mixin：仅任务运行时启用覆盖、其余回退默认 |
 | `TestAutoCombat.py` | 战斗图片识别、技能条、等级和排轴解析 |
 | `TestAutoPick.py` | 自动拾取规则（可生产植物默认跳过与开关） |
@@ -371,20 +370,27 @@ self.press_combat_key("e")      # combat
 | `TestEfInteraction.py` | 窗口激活与后台消息交互 |
 | `TestEssenceImageFeatures.py` | 装备词条 Feature 资产存在性 |
 | `TestEssenceRecognizer.py` | 装备词条 OCR 纯解析和等级附加 |
+| `TestFindZipLineBoardButton.py` | 滑索上车站点按钮多阶段查找 |
 | `TestGameWindow.py` | 游戏窗口查找（类名与可执行文件匹配） |
+| `TestGifIcon.py` | GIF/主题图标合成与缓存失效 |
+| `TestGrayBarDetector.py` | 灰条检测算法（合成帧） |
 | `TestGuiI18n.py` | GUI 翻译调用和运行时采集污染 |
 | `TestItemMapQuery.py` | 物品地图查询和筛选 |
 | `TestLogZipDedup.py` | 日志打包图片去重 |
+| `TestMapDeviceFingerprint.py` | 地图设备指纹与注册 payload 构造 |
 | `TestMouseRotationCalibration.py` | 鼠标视角旋转系数标定角度差纯函数与任务注册 |
+| `TestOkWin32GdiPointPatch.py` | Win32 GDI 坐标补丁幂等安装 |
 | `TestOutpostExchange.py` | 据点兑换优先级与排除逻辑 |
 | `TestPoLocaleConsistency.py` | gettext catalog 完整性和一致性 |
+| `TestPreConfigPatch.py` | 启动前配置环境变量补丁 |
 | `TestPressEsc.py` | `press_esc` 走任务键盘控制器 |
+| `TestQfluentNavigationPatch.py` | qfluentwidgets 导航补丁回归 |
+| `TestRealtimeGrayBarDetectTask.py` | 实时灰条检测任务常量与调试绘制 |
 | `TestRuntimeMixinFeatureClick.py` | 普通/Alt Feature 点击路径 |
 | `TestScreenshotSidecar.py` | 截图侧边数据序列化 |
 | `TestSequenceParser.py` | 中英文逗号序列和整数序列解析 |
 | `TestStateDrivenWaits.py` | 状态驱动的等待（ensure_main/ensure_map/safe_back 等） |
-| `TestTakeDeliveryFunctions.py` | 运送委托 OCR 样本处理 |
-| `TestWarehouseSwitchOCR.py` | 仓库状态 OCR 样本 |
+| `TestYingTuoTask.py` | 影拓丰碑关卡灰条识别 |
 | `TestYoloDetect.py` | 检测注入、ROI/overlay 和参数验证 |
 | `TestYoloModelRegistry.py` | 模型配置合并及目标路由 |
 | `TestZipLineConfig.py` | 滑索全局配置分组与旧配置迁移 |
@@ -430,7 +436,7 @@ checkout(LFS)
 
 `scripts/release/auto_release.py`、`scripts/release/auto_release.ps1`、`scripts/release/auto_release.sh` 是 tag 辅助脚本。发布行为以脚本和 workflow 当前实现为准，不要假定测试在“打 tag 前”自动运行；CI 是 tag 已推送后启动。
 
-语言工具状态：`scripts/i18n/lang_batch_translate.py` 仍扫描旧的 locale 子目录 schema，不适用于当前统一 `assets/lang/*.json`；`scripts/i18n/migrate_lang.py` 是迁移脚本。日常语言维护不要运行它们，详见 i18n 文档。
+语言工具：`scripts/i18n/` 保留 `sync_*.py`（官方译名同步进 lang JSON 与 ok.po）、`gen_lang_stubs.py`（类型提示存根生成）、`lang_fill_missing.py`（缺失语言补全）和 `restore_empty_po_entries.py`（从 git 历史恢复被清空的翻译）；针对旧 `assets/lang/<module>/<locale>.json` 目录 schema 的批量翻译与迁移工具已随 schema 切换删除。详见 i18n 文档。
 
 ## 9. 维护检查
 

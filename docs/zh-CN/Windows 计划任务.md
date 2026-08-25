@@ -1,6 +1,6 @@
 # Windows 计划任务
 
-返回：[文档索引](README.md) / [README](../../README.md)
+返回：[文档索引](index.md) / [README](https://github.com/AliceJump/ok-end-field/blob/master/README.md)
 
 ok-ef 提供了 [日常任务外部命令](./日常任务.md) 和内置计划任务功能。
 

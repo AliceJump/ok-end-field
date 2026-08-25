@@ -11,6 +11,8 @@ from src.core.BattleConfig import (
 )
 from src.gui.AccountConfigTab import AccountConfigTab
 from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.onetime.DailyTask import DailyTask
+from src.tasks.onetime.DeliveryTask import DeliveryTask
 
 
 class _DummyTask:
@@ -295,6 +297,28 @@ class TestAccountConfigRules(unittest.TestCase):
         self.assertEqual(tab.current_original_values["普通配置"], 6)
         tab.current_virtual_config["普通配置"] = 5
         self.assertTrue(tab._has_current_task_changes())
+
+    def test_tasks_hide_only_non_account_execution_controls(self):
+        self.assertTrue({
+            "发生异常时终止游戏",
+            "仅退出游戏",
+            "自动打开汇总文件",
+            "Exit After Task",
+            "重复测试的次数",
+        }.issubset(DailyTask.account_config_blacklist))
+        self.assertTrue({
+            "选择测试对象",
+            "仅接取",
+            "仅送货",
+            "完整循环测试区域",
+            "发生异常时终止游戏",
+            "Exit After Task",
+        }.issubset(DeliveryTask.account_config_blacklist))
+
+        self.assertNotIn("配置选择", DailyTask.account_config_blacklist)
+        self.assertNotIn("⭐执行外部命令", DailyTask.account_config_blacklist)
+        self.assertNotIn("外部命令", DailyTask.account_config_blacklist)
+        self.assertNotIn("通向武陵城送货点", DeliveryTask.account_config_blacklist)
 
 class TestBattleConfigOverrides(unittest.TestCase):
     def make_battle_task(self, config):

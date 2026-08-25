@@ -19,7 +19,7 @@ Stable versions increment the patch number of the latest stable `vMAJOR.MINOR.PA
 - If no prerelease exists for a version beyond the latest stable release, begin the next patch at `.1`, for example stable `v3.3.54` creates `v3.3.55-beta.1`.
 - Treat a prerelease whose base version has already been released as closed; start the following patch rather than tagging a prerelease after its stable release.
 
-Use `scripts/next_tag.py` to calculate tags; it ignores tags outside these formats.
+Use `next_tag.py` in this skill's `scripts/` directory (`.agents/skills/deploy/scripts/next_tag.py`) to calculate tags; it ignores tags outside these formats.
 
 ## Workflow
 
@@ -37,9 +37,9 @@ Use `scripts/next_tag.py` to calculate tags; it ignores tags outside these forma
 4. Calculate the tag before committing, selecting `release`, `beta`, or `alpha` from the user's command. Include the publishing remote when configured, typically `origin`, so local and published tag names are both considered without overwriting an existing local tag:
 
    ```powershell
-   .\.venv\Scripts\python.exe .agent\skills\deploy\scripts\next_tag.py release --remote origin
-   .\.venv\Scripts\python.exe .agent\skills\deploy\scripts\next_tag.py beta --remote origin
-   .\.venv\Scripts\python.exe .agent\skills\deploy\scripts\next_tag.py alpha --remote origin
+    .\.venv\Scripts\python.exe .agents\skills\deploy\scripts\next_tag.py release --remote origin
+    .\.venv\Scripts\python.exe .agents\skills\deploy\scripts\next_tag.py beta --remote origin
+    .\.venv\Scripts\python.exe .agents\skills\deploy\scripts\next_tag.py alpha --remote origin
    ```
 
    If no repository `.venv` exists, run the script with available Python. If remote tag lookup fails, stop before creating a version tag rather than guessing from stale local tags.

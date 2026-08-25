@@ -1,6 +1,6 @@
 # Action Sequence (Timeline)
 
-Back: [Documentation home](index.md) / [README](../../README.md)
+Back: [Documentation home](index.md) / [README](https://github.com/AliceJump/ok-end-field/blob/master/README.md)
 
 Controls the priority order of skill releases.
 

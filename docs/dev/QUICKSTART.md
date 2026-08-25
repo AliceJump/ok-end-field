@@ -1,6 +1,6 @@
 # ok-ef 开发者快速开始
 
-返回：[文档索引](../zh-CN/README.md) / [README](../../README.md)
+返回：[文档索引](../zh-CN/index.md) / [README](https://github.com/AliceJump/ok-end-field/blob/master/README.md)
 
 ## 1. 从源码运行
 

@@ -1,6 +1,6 @@
 # Daily Tasks
 
-Back: [Documentation home](index.md) / [README](../../README.md)
+Back: [Documentation home](index.md) / [README](https://github.com/AliceJump/ok-end-field/blob/master/README.md)
 
 ## Overview
 
@@ -315,8 +315,8 @@ mxu.exe --autostart --instance 日常任务
 # MXU (Linux / macOS): specify instance, exit after run completes
 ./mxu --autostart -i 日常任务 --quit-after-run
 
-# Generic: run a local script
-python scripts/daily_extra.py
+# Generic: run a local script (any path you create, example)
+python my_extra_script.py
 ```
 
 Notes:

@@ -148,9 +148,9 @@
 
 ## 5. 自动翻译替换方案（工程化）
 
-### 5.1 数据层（一次性脚本）
+### 5.1 数据层（同步脚本）
 
-`tools/sync_world_map_from_wiki.py`：
+`scripts/i18n/sync_world_map_langs.py`（本方案的落地实现，另含 §5.4 的 po 同步与 `tools/official_five_lang.json` 快照）：
 1. 内置中→英对照表（上表，人工核实后固化）。
 2. 优先从**官方地图 API**（`zonai.skland.com`=简中 + `zonai.skport.com`=`sk-language: en|ja|ko`，`/map/tree`、`/map/catalog`）拉取地点/类型**四语**官方名作交叉校验；es 从 Atlos 仓库 `talos/src/locale/data/region/es-ES.json` 拉取；再从 endfield.wiki.gg Category:NPCs 抓取并解析 NPC 英文名（注意排除方舟本体 NPC），输出 JSON 供校验：仓库缺的、wiki 有的 → 列出待补。
 3. 生成/更新 `assets/lang/world_map.json` 节点：
@@ -164,11 +164,9 @@
 
 ### 5.2 检查机制（CI/测试）
 
-`tests/test_world_map_i18n.py`：
-- 遍历 `delivery_area.py` 全部地点/NPC 名，断言 world_map.json 中存在对应节点。
-- 断言 en_US 节点值满足官方名规则（非空、无拼音混写）。
-- 断言 zh_TW 节点存在。
-- 断言不包含黑名单错误译名。
+常态化校验由现有测试承担，未单独新建 `tests/test_world_map_i18n.py`：
+- `tests/TestCheckLang.py`：源码语言引用与 `assets/lang/*.json` 节点一致性。
+- `tests/TestPoLocaleConsistency.py`：po 完整性、占位符一致性与官方同名豁免集（见 §5.4）。
 
 ### 5.3 后续语言补充流程（ja/ko/es）
 
@@ -196,7 +194,7 @@
 |---|---|---|
 | 1 | 固化多语言对照表 + 修正 world_map.json 现有错误译名 + 补 NPC 节点（见 §8 清单 A/C） | world_map.json 更新 |
 | 2 | DeliveryTask 补传 lang_accessor，ends/地点 OCR 本地化生效；修 DeliveryTask.json / TakeDeliveryTask.json / WarehouseTransferTask.json 错译与重复键（清单 D） | 代码小改 |
-| 3 | 同步脚本 + 测试文件 | tools/ + tests/ |
+| 3 | 同步脚本 + 测试文件 | scripts/i18n/ + tests/（已落地） |
 | 4 | zh_TW 全量核对；en_US 激活 `ACTIVE_LOCALES_CONFIG` | 语言切换可用 |
 | 5 | 统一两通道译名：po（gettext）与 assets/lang JSON 同名概念保持一致（清单 B） | po 重编译 + JSON 校准 |
 | 6 | 杂项：login_mixin 硬编码中文、to_model_area 中文模块名、daily_demo/daily_liaison 残缺节点（清单 E） | 代码小改 |

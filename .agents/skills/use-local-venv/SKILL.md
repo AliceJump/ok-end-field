@@ -31,7 +31,6 @@ $Python = if (Test-Path ".\.venv\Scripts\python.exe") {
 }
 
 & $Python -m pytest
-& $Python .agent/skills/github_issue_solver/scripts/github_api.py get 123
 ```
 
 For one-off commands in this repository on Windows, this is usually enough:

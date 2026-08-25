@@ -24,7 +24,7 @@
 形式：
 - `wait_click_ocr(...)` 一步完成——领奖、换队、使用药剂、页签切换、确定/放弃按钮。
 - `wait_ocr` 结果直接 `self.click(result[0])`——定位按钮后点击。
-- 坐标对准型：`src/core/base_mixin/navigation_mixin.py:413` `align_ocr_or_find_target_to_center`，结果只取 x/y 做鼠标对准移动，被 battle / zip_line / delivery 复用。
+- 坐标对准型：`src/tasks/mixin/navigation_mixin.py:413` `align_ocr_or_find_target_to_center`，结果只取 x/y 做鼠标对准移动，被 battle / zip_line / delivery 复用。
 
 典型文件：
 - `src/tasks/daily/misc/daily_reward_mixin.py`（周常/理智补给各领取入口，多为布尔判断的点击）

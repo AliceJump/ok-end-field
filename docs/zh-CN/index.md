@@ -12,7 +12,7 @@ ok-ef 是面向《明日方舟：终末地》的 Windows 自动化工具。它�
 
 - [功能概览](features/overview.md)
 - [常见问题与反馈](guides/troubleshooting.md)
-- [完整中文文档索引](README.md)
+- [完整中文文档索引](https://github.com/AliceJump/ok-end-field/blob/master/docs/zh-CN/README.md)
 
 !!! warning "风险提示"
     本开源外部工具仅供学习与个人使用。第三方工具可能违反游戏规则并给账号带来风险；请阅读游戏官方规则并自行承担相关风险。

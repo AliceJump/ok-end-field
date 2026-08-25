@@ -80,8 +80,7 @@ uv run python -m unittest tests.TestPoLocaleConsistency
 
 ## 6. Tool status (avoid)
 
-- `scripts/i18n/lang_batch_translate.py` still scans the OLD `assets/lang/<module>/<locale>.json` directory schema — INCOMPATIBLE with the runtime single-file schema. Do NOT run it on current resources.
-- `scripts/i18n/migrate_lang.py` is for legacy migration, not daily maintenance.
+- Legacy batch-translate / migrate tools for the OLD `assets/lang/<module>/<locale>.json` schema were deleted with the schema switch. Do not try to run them.
 - Reliable path: hand-edit the unified JSON, validate references with `TestCheckLang`, manually review regexes and game-specific terms.
 
 ## 7. Troubleshooting checklist
