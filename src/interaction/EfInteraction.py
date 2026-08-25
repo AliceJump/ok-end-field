@@ -169,7 +169,12 @@ class EfInteraction(PostMessageInteraction):
                 self._key_prev_hwnd = win32gui.GetForegroundWindow()
             self._background_key_hold_count += 1
         if activate:
-            active_and_send_mouse_delta(self._game_hwnd(), only_activate=True)
+            hwnd = self._game_hwnd()
+            was_foreground = win32gui.GetForegroundWindow() == hwnd
+            active_and_send_mouse_delta(hwnd, only_activate=True)
+            if not was_foreground:
+                # 等待窗口真正置顶后再按键，避免按键投递到旧前台窗口
+                time.sleep(0.1)
         self.keyboard.press(self._convert_key(key))
 
     def send_key_up(self, key):
