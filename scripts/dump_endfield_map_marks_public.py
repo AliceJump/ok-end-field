@@ -76,24 +76,28 @@ def main():
             data = data.get("data", {})
 
             template_map = {
-                item["id"]: item["name"]
+                item["id"]: item["name"].strip()
                 for item in data.get("markTemplates", [])
             }
 
-            all_names.update(template_map.values())
+            all_names.update(name for name in template_map.values() if name)
 
-            for mark in data.get("marks", []):
-                name = template_map.get(mark["templateId"])
+            def _add_point(mark: dict):
+                nonlocal duplicate_count
+                name = template_map.get(mark.get("templateId"))
                 if not name:
-                    continue
+                    return
+                pos = mark.get("pos")
+                if not isinstance(pos, dict):
+                    return
 
-                x = mark["pos"]["x"]
-                y = mark["pos"]["y"]
-                z = mark["pos"]["z"]
+                x = pos["x"]
+                y = pos["y"]
+                z = pos["z"]
 
                 coord = (x, y, z)
 
-                points = all_maps[mark["mapId"]][name]
+                points = all_maps[mark.get("mapId")][name]
 
                 if coord in points:
                     duplicate_count += 1
@@ -103,6 +107,13 @@ def main():
                     "y": y,
                     "z": z,
                 }
+
+            for mark in data.get("marks", []):
+                _add_point(mark)
+
+            # saveMarks 中带坐标的标记（如中继器/供电桩）也纳入
+            for mark in data.get("saveMarks", []):
+                _add_point(mark)
 
     summary = {
         map_id: {

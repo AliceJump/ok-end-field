@@ -292,29 +292,34 @@ def generate_simple_marks(out_dir: Path):
 
         data = data.get("data", {})
 
-        # templateId -> 名称
+        # templateId -> 名称（统一 strip，避免名称带换行/首尾空白）
         template_map = {
-            t["id"]: t["name"]
+            t["id"]: t["name"].strip()
             for t in data.get("markTemplates", [])
         }
 
-        # 收集所有物品名称
+        # 收集所有物品名称（跳过空名与排除项）
         for name in template_map.values():
-            if name not in EXCLUDE_MARKS:
+            if name and name not in EXCLUDE_MARKS:
                 all_names.add(name)
 
-        for mark in data.get("marks", []):
-            name = template_map.get(mark["templateId"])
+        def _add_point(map_id: str, name: str, pos: Any):
             if not name or name in EXCLUDE_MARKS:
-                continue
-
-            map_id = mark["mapId"]
-
+                return
+            if not isinstance(pos, dict):
+                return
             all_maps[map_id][name].append({
-                "x": mark["pos"]["x"],
-                "y": mark["pos"]["y"],
-                "z": mark["pos"]["z"],
+                "x": pos["x"],
+                "y": pos["y"],
+                "z": pos["z"],
             })
+
+        for mark in data.get("marks", []):
+            _add_point(mark["mapId"], template_map.get(mark["templateId"]), mark.get("pos"))
+
+        # saveMarks 中带坐标的标记（如中继器/供电桩）也纳入
+        for mark in data.get("saveMarks", []):
+            _add_point(mark.get("mapId"), template_map.get(mark.get("templateId")), mark.get("pos"))
 
     # 导出坐标
     export = {
