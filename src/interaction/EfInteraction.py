@@ -205,6 +205,8 @@ class EfInteraction(PostMessageInteraction):
         if self._background_key_hold_count == 0 and self._key_prev_hwnd:
             prev = self._key_prev_hwnd
             self._key_prev_hwnd = 0
+            # 松开后稍等片刻，让游戏处理完 key-up 事件再恢复原窗口
+            time.sleep(0.1)
             current = win32gui.GetForegroundWindow()
             if prev and win32gui.IsWindow(prev) and current != prev:
                 try:
