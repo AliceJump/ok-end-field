@@ -1788,3 +1788,26 @@ msgstr "HG 授权接口没有返回 oauth code"
 
 msgid "地图 cred 换取接口缺少 cred 或 token"
 msgstr "地图 cred 换取接口缺少 cred 或 token"
+
+msgid "Alt点击小地图测试"
+msgstr "Alt点击小地图测试"
+
+
+msgid "验证 alt+点击小地图中心能否替代 send_key('m') 打开地图（后台输入可行性）"
+msgstr "验证 alt+点击小地图中心能否替代 send_key('m') 打开地图（后台输入可行性）"
+
+
+msgid "测试次数"
+msgstr "测试次数"
+
+
+msgid "测试前前置游戏"
+msgstr "测试前前置游戏"
+
+
+msgid "重复测试次数，每次先关闭地图再重新打开"
+msgstr "重复测试次数，每次先关闭地图再重新打开"
+
+
+msgid "勾选后每次测试前先把游戏窗口置前（对比前台/后台行为）"
+msgstr "勾选后每次测试前先把游戏窗口置前（对比前台/后台行为）"
