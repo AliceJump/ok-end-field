@@ -6,11 +6,6 @@ param(
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $OutputEncoding = [Console]::OutputEncoding
 
-git config i18n.commitEncoding utf-8 | Out-Null
-git config i18n.logOutputEncoding utf-8 | Out-Null
-
-
-
 # 版本限制
 $MAX_MAJOR = 10
 $MAX_MINOR = 10
@@ -92,7 +87,7 @@ function Increment-Version {
     param($version)
 
     if ($null -eq $version) {
-        return @{ Major = 0; Minor = 1; Patch = 0; Valid = $true }
+        return @{ Major = 0; Minor = 0; Patch = 1; Valid = $true }
     }
 
     if ($version.Patch -lt $MAX_PATCH) {
@@ -251,6 +246,9 @@ if ($DryRun) {
 
     exit 0
 }
+
+git config i18n.commitEncoding utf-8 | Out-Null
+git config i18n.logOutputEncoding utf-8 | Out-Null
 
 if (-not (Test-GitStatus)) {
     exit 1

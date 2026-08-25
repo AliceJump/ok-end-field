@@ -8,8 +8,8 @@
 3. 创建新 tag 并推送到远程仓库
 
 使用方法：
-    python scripts/release/auto_release.py              # 自动递增并发布
-    python scripts/release/auto_release.py --dry-run    # 仅显示将要创建的版本号，不实际操作
+    uv run --locked python scripts/release/auto_release.py              # 自动递增并发布
+    uv run --locked python scripts/release/auto_release.py --dry-run    # 仅显示将要创建的版本号，不实际操作
 """
 
 import subprocess

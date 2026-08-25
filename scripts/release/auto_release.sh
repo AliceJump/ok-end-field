@@ -106,9 +106,9 @@ increment_version() {
     local minor=${2:-0}
     local patch=${3:-0}
 
-    # 如果没有任何版本（传入空值），从 v0.1.0 开始
+    # 如果没有任何版本（传入空值），从 v0.0.1 开始
     if [[ -z "${1:-}" && -z "${2:-}" && -z "${3:-}" ]]; then
-        echo "0 1 0"
+        echo "0 0 1"
         return 0
     fi
 

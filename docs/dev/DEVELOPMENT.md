@@ -347,13 +347,13 @@ self.press_combat_key("e")      # combat
 
 ## 7. 测试清单
 
-当前 `tests/` 有 43 个测试模块：
+当前 `tests/` 有 42 个测试模块：
 
 | 文件 | 主要覆盖 |
 |------|----------|
 | `TestAccountBattleConfig.py` | 账号配置可见性、快照合并、任务账号配置黑名单、战斗配置优先级 |
 | `TestAccountOverrideMixin.py` | 账号覆盖 Mixin：仅任务运行时启用覆盖、其余回退默认 |
-| `TestAutoCombat.py` | 战斗图片识别、技能条、等级和排轴解析 |
+| `TestAutoCombat.py` | 排轴技能序列解析（`_parse_skill_sequence`） |
 | `TestAutoPick.py` | 自动拾取规则（可生产植物默认跳过与开关） |
 | `TestCheckLang.py` | 源码语言 key 与统一 JSON 的 `zh_CN/zh_TW` 引用 |
 | `TestConditionalRotation.py` | 排轴条件旋转 AST 归一化与 `AutoCombatLogic.run()` 实时条件路径（含 if/else 分支） |

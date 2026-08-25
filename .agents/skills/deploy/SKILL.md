@@ -37,9 +37,9 @@ Use `next_tag.py` in this skill's `scripts/` directory (`.agents/skills/deploy/s
 4. Calculate the tag before committing, selecting `release`, `beta`, or `alpha` from the user's command. Include the publishing remote when configured, typically `origin`, so local and published tag names are both considered without overwriting an existing local tag:
 
    ```powershell
-    .\.venv\Scripts\python.exe .agents\skills\deploy\scripts\next_tag.py release --remote origin
-    .\.venv\Scripts\python.exe .agents\skills\deploy\scripts\next_tag.py beta --remote origin
-    .\.venv\Scripts\python.exe .agents\skills\deploy\scripts\next_tag.py alpha --remote origin
+   .\.venv\Scripts\python.exe .agents\skills\deploy\scripts\next_tag.py release --remote origin
+   .\.venv\Scripts\python.exe .agents\skills\deploy\scripts\next_tag.py beta --remote origin
+   .\.venv\Scripts\python.exe .agents\skills\deploy\scripts\next_tag.py alpha --remote origin
    ```
 
    If no repository `.venv` exists, run the script with available Python. If remote tag lookup fails, stop before creating a version tag rather than guessing from stale local tags.
