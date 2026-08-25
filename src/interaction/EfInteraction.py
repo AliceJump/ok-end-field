@@ -161,6 +161,7 @@ class EfInteraction(PostMessageInteraction):
         return win32gui.GetForegroundWindow() == hwnd
 
     def send_key_down(self, key, activate=True, foreground=False):
+        """发送按键按下。返回 True 表示按键已成功按下，False 表示未按下（如置顶失败）。"""
         # ESC 默认走 PostMessage（后台可用）；foreground=True 时走前置+pynput（主界面可靠返回）
         if str(key).lower() in ("esc", "escape") and not foreground:
             self._esc_hwnd = self._game_hwnd()
@@ -172,7 +173,7 @@ class EfInteraction(PostMessageInteraction):
                 vk_code,
                 self.make_lparam(vk_code, is_up=False),
             )
-            return
+            return True
         # 后台模式下：按下时前置游戏（pynput 只投递到前台窗口），松开时恢复原窗口
         if self._background_mode():
             if self._background_key_hold_count == 0:
@@ -198,7 +199,7 @@ class EfInteraction(PostMessageInteraction):
                         logger.warning(
                             f"后台按键置顶失败: key={key} 游戏={hwnd} 当前前台={win32gui.GetForegroundWindow()}"
                         )
-                        return
+                        return False
                     time.sleep(0.3)
                 if self._background_mode():
                     fg_after = win32gui.GetForegroundWindow()
@@ -207,6 +208,7 @@ class EfInteraction(PostMessageInteraction):
                         f"游戏={hwnd} 置顶成功={fg_after == hwnd}"
                     )
         self.keyboard.press(self._convert_key(key))
+        return True
 
     def send_key_up(self, key, foreground=False):
         if str(key).lower() in ("esc", "escape") and not foreground:

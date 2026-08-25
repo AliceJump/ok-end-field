@@ -175,13 +175,19 @@ class BaseEfTask(
         if interaction is not None and hasattr(interaction, "send_key_down"):
             try:
                 if self.is_main():
-                    interaction.send_key_down("esc", foreground=True)
-                    interaction.send_key_up("esc", foreground=True)
+                    pressed = interaction.send_key_down("esc", foreground=True)
+                    if pressed:
+                        interaction.send_key_up("esc", foreground=True)
                     if after_sleep > 0:
                         self.sleep(after_sleep)
                     return
             except Exception:
-                pass
+                # 前台输入已开始后异常：清理（释放按键）并结束，不再次调用父类返回
+                try:
+                    interaction.send_key_up("esc", foreground=True)
+                except Exception:
+                    pass
+                return
         super().back(*args, after_sleep=after_sleep, **kwargs)
 
     def sleep(self, timeout):
