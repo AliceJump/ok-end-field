@@ -161,7 +161,7 @@ class GameFlowMixin:
             if self.active_time() - start_time > time_out:
                 self.log_info("skip_dialog 超时退出")
                 return False
-            if self.find_one("skip_dialog_esc", horizontal_variance=0.05):
+            if self.find_one(fL.skip_dialog_esc, horizontal_variance=0.05):
                 self.press_esc()
                 self.click_confirm()
             self.sleep(0.5)
@@ -174,7 +174,7 @@ class GameFlowMixin:
             list: 匹配到的确认按钮结果列表。
         """
         return self.find_one(
-            "skip_dialog_confirm", horizontal_variance=0.05, vertical_variance=0.05
+            fL.skip_dialog_confirm, horizontal_variance=0.05, vertical_variance=0.05
         )
 
     def click_confirm(self, after_sleep=0, time_out=5, recheck_time=0, disappear_time_out=0.8):
@@ -241,7 +241,7 @@ class GameFlowMixin:
             bool: 找到并点击返回 True，超时返回 False。
         """
         clicked = self.click_feature(
-            feature="reward_ok",
+            fL.reward_ok,
             boxes=[self.box.bottom],
             time_out=time_out,
             after_sleep=after_sleep,
@@ -274,9 +274,9 @@ class GameFlowMixin:
                 run_at_window_pos(self.get_game_hwnd(), super().click, self.width // 2, self.height // 2, 1, 0.5, 0.5)
                 return False
             elif close := (
-                    self.find_one("one_click_claim", horizontal_variance=0.1, vertical_variance=0.1)
+                    self.find_one(fL.one_click_claim, horizontal_variance=0.1, vertical_variance=0.1)
                     or self.find_one(
-                "check_in_close",
+                fL.check_in_close,
                 horizontal_variance=0.1,
                 vertical_variance=0.1,
                 threshold=0.75,
@@ -293,7 +293,7 @@ class GameFlowMixin:
         Returns:
             list: 匹配到的奖励确认按钮结果列表。
         """
-        return self.find_one("reward_ok", vertical_variance=0.05,
+        return self.find_one(fL.reward_ok, vertical_variance=0.05,
                              box=self.box_of_screen(1760 / 3840, 1760 / 2160, 2100 / 3840, 2100 / 2160))
 
     def find_f(self):
@@ -303,7 +303,7 @@ class GameFlowMixin:
         Returns:
             list: 匹配到的 F 键提示结果列表。
         """
-        return self.find_one("pick_f", vertical_variance=0.05)
+        return self.find_one(fL.pick_f, vertical_variance=0.05)
 
     def read_essence_info(self) -> EssenceInfo | None:
         """
@@ -332,7 +332,7 @@ class GameFlowMixin:
         Returns:
             bool: 检测到战斗场景返回 True。
         """
-        in_combat_world = self.find_one("top_left_tab")
+        in_combat_world = self.find_one(fL.top_left_tab)
         if in_combat_world:
             self._logged_in = True
         return in_combat_world
@@ -386,7 +386,7 @@ class GameFlowMixin:
         Returns:
             bool: 当前处于游戏世界返回 True。
         """
-        main_world_features = ["esc"]
+        main_world_features = [fL.esc]
 
         in_world = all(self.find_one(f, vertical_variance=0.01, horizontal_variance=0.02) for f in main_world_features)
 

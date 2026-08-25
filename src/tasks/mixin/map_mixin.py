@@ -31,7 +31,7 @@ class MapMixin(BaseEfTask):
 
         # 查找“任务定位到地图”按钮
         result = self.wait_feature(
-            feature="one_task_to_map",
+            feature=fL.one_task_to_map,
             threshold=0.8,
             box=self.box.bottom_right,
             time_out=4,
