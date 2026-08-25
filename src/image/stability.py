@@ -1,8 +1,12 @@
-"""甯хǔ瀹氭€у害閲忥細imagehash(phash/dhash) 涓?skimage(ssim) 鐨?numpy/cv2 绛変环瀹炵幇銆?
-浠呬緷璧?numpy 涓?opencv锛岄伩鍏嶄负鍗曚竴鍔熻兘寮曞叆 scipy/scikit-image 浼犻€掍緷璧栨爲
-锛坰cipy+pywavelets+networkx 绛夛紝瀹夎浣撶Н绾?160MB锛夈€?
-- perceptual_hash: 瀵瑰簲 imagehash.phash / imagehash.dhash
-- hamming_distance: 瀵瑰簲 ImageHash.__sub__锛堜笉鍚屾瘮鐗规暟锛?- ssim_score: 瀵瑰簲 skimage.metrics.structural_similarity锛堢伆搴﹀浘锛岄珮鏂獥锛?"""
+"""帧稳定性度量：imagehash(phash/dhash) 与 skimage(ssim) 的 numpy/cv2 等价实现。
+
+仅依赖 numpy 与 opencv，避免为单一功能引入 scipy/scikit-image 传递依赖树
+（scipy+pywavelets+networkx 等，安装体积约 160MB）。
+
+- perceptual_hash: 对应 imagehash.phash / imagehash.dhash
+- hamming_distance: 对应 ImageHash.__sub__（不同比特数）
+- ssim_score: 对应 skimage.metrics.structural_similarity（灰度图，高斯窗）
+"""
 from typing import Union
 
 import cv2
@@ -27,7 +31,7 @@ def _bits_to_int(bits: np.ndarray) -> int:
 
 
 def _dct_hash(gray_small: np.ndarray, hash_size: int) -> int:
-    """DCT 浣庨鍧椾腑鍊间簩鍊煎寲锛坧hash 鏍稿績锛夈€?""
+    """DCT 低频块中值二值化（phash 核心）。"""
     dct = cv2.dct(np.float32(gray_small))
     low_freq = dct[:hash_size, :hash_size].flatten()
     median = np.median(low_freq)
@@ -35,8 +39,11 @@ def _dct_hash(gray_small: np.ndarray, hash_size: int) -> int:
 
 
 def perceptual_hash(img: ArrayLike, method: str = "phash", hash_size: int = 8) -> int:
-    """璁＄畻鎰熺煡鍝堝笇鏁存暟銆?
-    method="phash": 32x32 DCT 宸︿笂 8x8 涓€煎搱甯岋紙涓?imagehash.phash 涓€鑷达級銆?    method="dhash": 鐩搁偦鍍忕礌姊害鍝堝笇锛堜笌 imagehash.dhash 涓€鑷达級銆?    """
+    """计算感知哈希整数。
+
+    method="phash": 32x32 DCT 左上 8x8 中值哈希（与 imagehash.phash 一致）。
+    method="dhash": 相邻像素梯度哈希（与 imagehash.dhash 一致）。
+    """
     gray = _to_gray(img)
     if method == "phash":
         size = hash_size * 4
@@ -50,7 +57,7 @@ def perceptual_hash(img: ArrayLike, method: str = "phash", hash_size: int = 8) -
 
 
 def hamming_distance(h1: int, h2: int) -> int:
-    """涓や釜鍝堝笇鏁存暟鐨勬眽鏄庤窛绂汇€?""
+    """两个哈希整数的汉明距离。"""
     return (h1 ^ h2).bit_count()
 
 
@@ -60,8 +67,11 @@ def _gaussian_blur(img: np.ndarray, sigma: float) -> np.ndarray:
 
 
 def ssim_score(img1: ArrayLike, img2: ArrayLike) -> float:
-    """鐏板害鍥?SSIM锛圵ang et al. 楂樻柉绐?蟽=1.5, K1=0.01, K2=0.03锛夈€?
-    涓?skimage.metrics.structural_similarity 榛樿鍙傛暟锛堝潎鍖€ 7x7 绐楋級鐣ユ湁宸紓锛?    浣嗗銆岀晫闈㈡槸鍚︾ǔ瀹氥€嶇殑鍒ゅ畾璇箟涓€鑷淬€?    """
+    """灰度图 SSIM（Wang et al. 高斯窗 σ=1.5, K1=0.01, K2=0.03）。
+
+    与 skimage.metrics.structural_similarity 默认参数（均匀 7x7 窗）略有差异，
+    但对「界面是否稳定」的判定语义一致。
+    """
     a = np.float64(_to_gray(img1))
     b = np.float64(_to_gray(img2))
     if a.shape != b.shape:
