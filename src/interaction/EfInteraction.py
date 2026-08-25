@@ -179,12 +179,19 @@ class EfInteraction(PostMessageInteraction):
             self._background_key_hold_count += 1
         if activate:
             hwnd = self._game_hwnd()
-            was_foreground = win32gui.GetForegroundWindow() == hwnd
+            fg_before = win32gui.GetForegroundWindow()
+            was_foreground = fg_before == hwnd
             active_and_send_mouse_delta(hwnd, only_activate=True)
             if not was_foreground:
                 # 等待窗口真正成为前台，并给游戏处理焦点切换的时间后再按键
                 self._wait_foreground(hwnd, timeout=1.0)
                 time.sleep(0.3)
+            if self._background_mode():
+                fg_after = win32gui.GetForegroundWindow()
+                logger.info(
+                    f"后台按键置顶: key={key} 前置前={fg_before} 前置后={fg_after} "
+                    f"游戏={hwnd} 置顶成功={fg_after == hwnd}"
+                )
         self.keyboard.press(self._convert_key(key))
 
     def send_key_up(self, key):
@@ -208,11 +215,16 @@ class EfInteraction(PostMessageInteraction):
             # 松开后稍等片刻，让游戏处理完 key-up 事件再恢复原窗口
             time.sleep(0.1)
             current = win32gui.GetForegroundWindow()
+            restored = False
             if prev and win32gui.IsWindow(prev) and current != prev:
                 try:
                     win32gui.SetForegroundWindow(prev)
+                    restored = True
                 except Exception:
                     pass
+            logger.info(
+                f"后台按键恢复: key={key} 原窗口={prev} 当前={current} 恢复成功={restored}"
+            )
 
     def _convert_key(self, key: str):
         aliases = {
