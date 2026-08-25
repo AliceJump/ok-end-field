@@ -35,10 +35,10 @@ class BackgroundKeyTest(BaseEfTask):
             "仅测试置顶": False,
         }
         self.config_description = {
-            "测试按键": "要测试的按键（默认 m 打开地图，结果可观察）",
-            "测试次数": "重复测试次数",
-            "按键后等待(秒)": "按键后等待结果出现的时间",
-            "仅测试置顶": "勾选后只测试窗口置顶是否成功（不按键），用于隔离置顶问题",
+            "测试按键": self.tr("要测试的按键（仅支持 m 打开地图，结果可观察）"),
+            "测试次数": self.tr("重复测试次数"),
+            "按键后等待(秒)": self.tr("按键后等待结果出现的时间"),
+            "仅测试置顶": self.tr("勾选后只测试窗口置顶是否成功（不按键），用于隔离置顶问题"),
         }
 
     def _in_map(self) -> bool:
@@ -53,6 +53,9 @@ class BackgroundKeyTest(BaseEfTask):
 
     def run(self):
         key = str(self.config.get("测试按键", "m"))
+        if key != "m":
+            self.log_info("测试按键仅支持 m（打开地图），已强制使用 m")
+            key = "m"
         repeat = max(1, int(self.config.get("测试次数", 3)))
         wait_after = float(self.config.get("按键后等待(秒)", 1.0))
         only_activate = bool(self.config.get("仅测试置顶", False))
@@ -101,7 +104,12 @@ class BackgroundKeyTest(BaseEfTask):
                 self._close_map()
 
         self.log_info(f"测试完成：{success}/{repeat} 次成功")
-        if success == repeat:
+        if only_activate:
+            if success == repeat:
+                self.log_info("结论：窗口置顶可正常成功", notify=True)
+            else:
+                self.log_error("结论：窗口置顶未能稳定成功", notify=True)
+        elif success == repeat:
             self.log_info("结论：后台模式按键可正常送达游戏", notify=True)
         else:
             self.log_error("结论：后台模式按键未能稳定送达游戏", notify=True)

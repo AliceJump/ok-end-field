@@ -184,7 +184,16 @@ class EfInteraction(PostMessageInteraction):
             active_and_send_mouse_delta(hwnd, only_activate=True)
             if not was_foreground:
                 # 等待窗口真正成为前台，并给游戏处理焦点切换的时间后再按键
-                self._wait_foreground(hwnd, timeout=1.0)
+                if not self._wait_foreground(hwnd, timeout=1.0):
+                    # 置顶失败：回滚后台按键状态，禁止发送按键（可能投递到其他前台应用）
+                    if self._background_key_hold_count:
+                        self._background_key_hold_count -= 1
+                    if self._background_key_hold_count == 0:
+                        self._key_prev_hwnd = 0
+                    logger.warning(
+                        f"后台按键置顶失败: key={key} 游戏={hwnd} 当前前台={win32gui.GetForegroundWindow()}"
+                    )
+                    return
                 time.sleep(0.3)
             if self._background_mode():
                 fg_after = win32gui.GetForegroundWindow()
@@ -206,12 +215,13 @@ class EfInteraction(PostMessageInteraction):
             )
             self._esc_hwnd = 0
             return
-        self.keyboard.release(self._convert_key(key))
-        if self._background_key_hold_count:
-            self._background_key_hold_count -= 1
+        try:
+            self.keyboard.release(self._convert_key(key))
+        finally:
+            if self._background_key_hold_count:
+                self._background_key_hold_count -= 1
         if self._background_key_hold_count == 0 and self._key_prev_hwnd:
             prev = self._key_prev_hwnd
-            self._key_prev_hwnd = 0
             # 松开后稍等片刻，让游戏处理完 key-up 事件再恢复原窗口
             time.sleep(0.1)
             current = win32gui.GetForegroundWindow()
@@ -221,7 +231,10 @@ class EfInteraction(PostMessageInteraction):
                     win32gui.SetForegroundWindow(prev)
                     restored = True
                 except Exception:
-                    pass
+                    # 恢复失败：保留恢复目标，避免后续按键沿用旧状态
+                    self._key_prev_hwnd = prev
+            else:
+                self._key_prev_hwnd = 0
             logger.info(
                 f"后台按键恢复: key={key} 原窗口={prev} 当前={current} 恢复成功={restored}"
             )

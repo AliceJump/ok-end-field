@@ -326,12 +326,13 @@ class DailyTradeFeature:
                 if not buy_only:
                     self.log_info("后台模式下强制只买不卖，跳过卖出")
                 buy_only = True
-            good_infos, _ = self.collect_market_goods_info(buy_only=buy_only)
+            # 价格校验在采集前：buy_only 时不需要卖出价
             buy_price = self.config.get(f"{area}买入价", 0)
             sell_price = self.config.get(f"{area}卖出价", 0)
-            if not (buy_price and sell_price):
-                self.log_info("未找到买入价或卖出价")
+            if not buy_price or (not buy_only and not sell_price):
+                self.log_info("未找到所需价格配置")
                 continue
+            good_infos, _ = self.collect_market_goods_info(buy_only=buy_only)
             if buy_only:
                 buy_good = good_infos
                 sell_goods = []

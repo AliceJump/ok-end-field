@@ -50,10 +50,15 @@ class TestEfInteraction(unittest.TestCase):
         win32gui.SendMessage.assert_called_once_with(200, win32con.WM_ACTIVATE, win32con.WA_ACTIVE, 0)
 
     @patch("src.interaction.EfInteraction.active_and_send_mouse_delta")
-    def test_regular_key_down_forces_configured_window_foreground(self, force_activate):
+    @patch("src.interaction.EfInteraction.win32gui")
+    def test_regular_key_down_forces_configured_window_foreground(self, win32gui, force_activate):
         interaction = EfInteraction.__new__(EfInteraction)
         interaction._game_hwnd = MagicMock(return_value=200)
         interaction.keyboard = MagicMock()
+        interaction._background_key_hold_count = 0
+        interaction._key_prev_hwnd = 0
+        interaction._background_mode = MagicMock(return_value=False)
+        win32gui.GetForegroundWindow.return_value = 200  # 游戏已在前台
 
         interaction.send_key_down("a")
 
