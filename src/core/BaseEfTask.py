@@ -289,7 +289,12 @@ class BaseEfTask(
         super().load_config()
 
     def input_mode(self) -> str:
-        """返回 'foreground' | 'background'，合并全局与任务级开关。"""
+        """返回 'foreground' | 'background'，合并全局与任务级开关。
+
+        触发式任务始终返回前台模式（触发时用户已在前台，持续运行不受后台影响）。
+        """
+        if isinstance(self, TriggerTask):
+            return "foreground"
         try:
             task_override = self.config.get("后台模式启用", False)
         except Exception:
