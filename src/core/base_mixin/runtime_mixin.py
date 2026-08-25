@@ -796,22 +796,24 @@ class RuntimeMixin:
     def wait_ui_stable(
             self,
             method="phash",
-            threshold: int = 5,
+            threshold: int | float = 5,
             stable_time: float = 0.5,
             max_wait: float = 5,
             refresh_interval: float = 1,
             box: Box | tuple | list | None = None,
+            ssim_threshold: float = 0.95,
     ):
         """
         等待指定区域在视觉上稳定下来。
 
         Args:
-            method: 稳定性判断方法。
-            threshold: 稳定阈值。
+            method: 稳定性判断方法（phash/dhash/pixel/ssim）。
+            threshold: 稳定阈值（phash/dhash 为汉明距离，pixel 为像素差异均值）。
             stable_time: 持续稳定时长。
             max_wait: 最长等待时间。
             refresh_interval: 帧刷新间隔。
             box: 需要监测的区域。
+            ssim_threshold: SSIM 方法专用阈值（0-1 范围，默认 0.95）。
 
         Returns:
             bool: 稳定后返回 True，超时返回 False。
@@ -861,7 +863,7 @@ class RuntimeMixin:
                 if last_frame.shape != current_frame.shape:
                     is_stable = False
                 else:
-                    is_stable = ssim_score(last_frame, current_frame) >= threshold
+                    is_stable = ssim_score(last_frame, current_frame) >= ssim_threshold
 
             else:
                 raise ValueError(f"Unknown method {method}")

@@ -11,6 +11,8 @@ dependencies = [
     "onnxocr-ppocrv5==0.0.14",
     "openvino==2026.0.0",
     "opencv-python==4.12.0.88",
+    "numpy>=2.0.0",
+    "Pillow>=10.0.0",
     "websockets==15.0.1",
     "json5==0.15.0",
     "pynput==1.8.2",
