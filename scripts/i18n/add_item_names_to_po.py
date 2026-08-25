@@ -3,7 +3,7 @@ import json
 import polib
 import os
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + '/..')
+os.chdir(os.path.dirname(os.path.abspath(__file__)) + '/../..')
 
 # Load item names
 item_names = json.load(open('assets/items/map/item_names.json', 'r', encoding='utf-8'))

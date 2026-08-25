@@ -56,7 +56,7 @@ HEADERS = {
     "timestamp": "0",
 }
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 LANG_MARKS_JSON = ROOT / "assets" / "data" / "map_marks.json"
 ITEM_NAMES_JSON = ROOT / "assets" / "items" / "map" / "item_names.json"
 I18N_DIR = ROOT / "i18n"

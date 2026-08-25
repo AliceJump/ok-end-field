@@ -97,7 +97,7 @@ gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "<thre
 - 回复后查询 `isResolved`，仅在值为 `false` 且确认问题已修复/失效时才解析线程；不要把回复与自动解析绑定。
 - Accept valid suggestions and push the fix, then reply + resolve.
 - Re-run the target test before resolving a correctness (Major) finding using the repository's test command:
-  `run_tests.ps1` 或 `uv run python -m unittest discover -s tests`。
+  `scripts/testing/run_tests.ps1` 或 `uv run python -m unittest discover -s tests`。
 
 ## Gotchas
 

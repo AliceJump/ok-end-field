@@ -79,13 +79,13 @@ python main.py
 
 **① 点击 Screenshot**
 
-<img src="./readme/templates/0.png" alt="Screenshot button" width="700">
+<img src="templates/0.png" alt="Screenshot button" width="700">
 
 截图自动保存到 `ok_templates/`，推荐 3840×2160 全屏截图。
 
 **② 截图完成后出现在列表中**
 
-<img src="./readme/templates/1.png" alt="Screenshot listed" width="700">
+<img src="templates/1.png" alt="Screenshot listed" width="700">
 
 ---
 
@@ -95,21 +95,21 @@ python main.py
 
 **③ Markup 界面**
 
-<img src="./readme/templates/2.png" alt="Markup button" width="700">
+<img src="templates/2.png" alt="Markup button" width="700">
 
 **④ 点击绘制 → 框选目标元素（左上→右下）**
 
-<img src="./readme/templates/3.png" alt="Draw bounding box" width="700">
+<img src="templates/3.png" alt="Draw bounding box" width="700">
 
 **⑤ 输入模板名 → 确认**
 
-<img src="./readme/templates/4.png" alt="Enter label name" width="700">
+<img src="templates/4.png" alt="Enter label name" width="700">
 
 > 标签名必须与 `src/data/FeatureList.py` 中的值及代码调用一致。当前约定是小写英文 `snake_case`，按语义使用后缀，例如角色联络头像用 `<name>_contact`，图标用 `<name>_icon`，同类变体用 `_2`、`_3`。分辨率专用模板只追加 `_2k` 或 `_4k`；代码通常传不带分辨率后缀的基础名，例如 `self.find_feature(feature=fL.esc)`，由 `get_feature_by_resolution()` 按窗口宽度选择 `esc`、`esc_2k` 或 `esc_4k`。不要沿用仓库中不存在的 `char_`、`box_` 等旧前缀约定。
 
 **⑥ 标注完成**
 
-<img src="./readme/templates/5.png" alt="Annotation done" width="700">
+<img src="templates/5.png" alt="Annotation done" width="700">
 
 ---
 
@@ -119,11 +119,11 @@ python main.py
 
 **⑦ 选择导出目标**
 
-<img src="./readme/templates/6.png" alt="Save dialog" width="500">
+<img src="templates/6.png" alt="Save dialog" width="500">
 
 **⑧ 导出完成**
 
-<img src="./readme/templates/7.png" alt="Export done" width="400">
+<img src="templates/7.png" alt="Export done" width="400">
 
 ---
 

@@ -30,7 +30,7 @@ jobs:
           python -m pip install --only-binary :all: requests==2.32.4
 
       - name: generate svg
-        run: python scripts/download_stats.py
+        run: python scripts/stats/download_stats.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

@@ -8,23 +8,23 @@
 用法示例::
 
     # 生成/查看邮件配置（配置项会自动补齐）
-    uv run python tools/send_email_to_user.py --init-config
+    uv run python scripts/maintenance/send_email_to_user.py --init-config
 
     # 直接发送给某个邮箱
-    uv run python tools/send_email_to_user.py --to user@example.com --subject "测试" --body "你好"
+    uv run python scripts/maintenance/send_email_to_user.py --to user@example.com --subject "测试" --body "你好"
 
     # 使用设置中的“收件人列表”别名发送
-    uv run python tools/send_email_to_user.py --to 小明 --subject "测试" --body "你好"
+    uv run python scripts/maintenance/send_email_to_user.py --to 小明 --subject "测试" --body "你好"
 
     # 从文件读取正文并附带附件
-    uv run python tools/send_email_to_user.py --to user@example.com --subject "报告" \
+    uv run python scripts/maintenance/send_email_to_user.py --to user@example.com --subject "报告" \
         --body-file report.txt --attachment a.png --attachment b.png
 
     # 使用 assets/html/test_email.html 模板发送测试邮件
-    uv run python tools/send_email_to_user.py --test-email
+    uv run python scripts/maintenance/send_email_to_user.py --test-email
 
     # 不使用 SSL（例如使用 587 STARTTLS）
-    uv run python tools/send_email_to_user.py --to user@example.com --subject "测试" --body "你好" --no-ssl
+    uv run python scripts/maintenance/send_email_to_user.py --to user@example.com --subject "测试" --body "你好" --no-ssl
 """
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ import argparse
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from src.core.email_service import (  # noqa: E402

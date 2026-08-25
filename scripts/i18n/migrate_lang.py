@@ -15,7 +15,7 @@ import json
 import shutil
 from pathlib import Path
 
-LANG_ROOT = Path(__file__).resolve().parent.parent / "assets" / "lang"
+LANG_ROOT = Path(__file__).resolve().parents[2] / "assets" / "lang"
 SUPPORTED_LOCALES = ["zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES"]
 
 

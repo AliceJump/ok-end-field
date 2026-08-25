@@ -3,7 +3,7 @@
 """从已去重的日志 zip 中恢复完整截图文件集。
 
 用法:
-    python scripts/restore_log_screenshots.py <日志zip路径> [输出目录]
+    python scripts/maintenance/restore_log_screenshots.py <日志zip路径> [输出目录]
 
 zip 内应包含 screenshots_dedup_info.json（导出/上传日志时由
 src/patches/log_upload_patch.py 自动生成）。脚本会把 zip 全部内容解压到
@@ -11,14 +11,14 @@ src/patches/log_upload_patch.py 自动生成）。脚本会把 zip 全部内容�
 侧车信息重绘 _boxed.png（新版 zip 不再保存画框大图）。
 
 示例:
-    python scripts/restore_log_screenshots.py C:\\Downloads\\20260803-154650-ok-ef-log.zip
+    python scripts/maintenance/restore_log_screenshots.py C:\\Downloads\\20260803-154650-ok-ef-log.zip
 """
 
 import argparse
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.patches.log_zip_dedup import (
     DEDUP_INFO_FILENAME,

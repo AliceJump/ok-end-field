@@ -11,7 +11,7 @@
   - pattern 节点 -> re.Pattern[str]   （运行时是 re.Pattern，值显示在 docstring）
 
 用法:
-    python tools/gen_lang_stubs.py
+    python scripts/i18n/gen_lang_stubs.py
 
 生成的 src/data/lang/_lang_typed.py 由本脚本自动维护，请勿手改。
 本脚本也会幂等地把 src/data/lang/__init__.py 里 LangAccessor 改为继承
@@ -25,7 +25,7 @@ import re
 import sys
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 LANG_ROOT = REPO_ROOT / "assets" / "lang"
 TYPED_OUT = REPO_ROOT / "src" / "data" / "lang" / "_lang_typed.py"
 INIT_FILE = REPO_ROOT / "src" / "data" / "lang" / "__init__.py"
@@ -129,7 +129,7 @@ def main() -> int:
     parts = [
         "# -*- coding: utf-8 -*-",
         "# ruff: noqa: RUF002",
-        '"""由 tools/gen_lang_stubs.py 自动生成，请勿手改。',
+        '"""由 scripts/i18n/gen_lang_stubs.py 自动生成，请勿手改。',
         "",
         "为 self.lang.<模块>.<key> 提供静态类型提示：",
         "  - 自动补全：输入 self.lang.<模块>. 时列出全部 key",

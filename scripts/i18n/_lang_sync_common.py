@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """sync_*.py 公共工具：JSON 读写、ok.po 同步、lang JSON 官方译名回写。
 
-供 scripts/sync_map_mark_langs.py 与 scripts/sync_wiki_item_langs.py 共用，
+供 scripts/i18n/sync_map_mark_langs.py 与 scripts/i18n/sync_wiki_item_langs.py 共用，
 消除两脚本之间的重复实现（SonarCloud new_duplicated_lines）。
 """
 

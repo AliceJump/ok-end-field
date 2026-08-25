@@ -163,10 +163,8 @@ ok-end-field/
 ├── main.py / main_debug.py       # 正式/调试入口，均安装启动补丁
 ├── pyproject.toml                # 项目 Python 依赖声明
 ├── requirements.txt              # 由 uv 针对平台生成，供发布流水线 pip 使用
-├── run_tests.ps1                 # 逐个运行 tests/*.py（经 uv run）
 ├── pyappify.yml                  # China/Global 打包 profile
 ├── deploy.txt                    # tag 构建时同步到更新仓库的清单
-├── auto_release.py/.ps1/.sh      # tag 辅助脚本
 ├── src/
 │   ├── config.py                 # ok-script 应用配置、任务和 tab 注册
 │   ├── globals.py                # 应用级共享对象
@@ -213,8 +211,15 @@ ok-end-field/
 ├── i18n/<locale>/LC_MESSAGES/   # gettext ok.po/ok.mo
 ├── configs/                      # 任务、全局、账号作用域配置
 ├── tests/                        # unittest 测试
-├── tools/                        # 辅助工具；部分语言工具仍针对旧 schema
-├── scripts/                      # 下载统计、迁移等脚本
+├── scripts/                      # 维护/CI 脚本，按功能分目录
+│   ├── i18n/                     # 语言与翻译维护（sync_*、po 检查、gen_lang_stubs 等）
+│   ├── data-capture/             # 官方 API / Wiki 数据抓取（capture_*、dump_*）
+│   ├── release/                  # tag 辅助、requirements 生成、tag 冒烟
+│   ├── docs/                     # mkdocs 构建辅助（mkdocs_mermaid）
+│   ├── stats/                    # 下载统计 SVG 生成
+│   ├── testing/                  # run_tests.ps1 测试运行
+│   └── maintenance/              # 日志截图恢复、邮件工具
+├── tools/                        # 脚本产出的本地数据（wiki_catalog 等，gitignored）
 ├── ok_tasks/                     # 用户自定义任务
 ├── ok_templates/                 # 模板标注子模块
 └── .github/workflows/            # 构建、统计、地图数据和维护 workflow
@@ -393,10 +398,10 @@ uv run python -m unittest discover -s tests -p "Test*.py"
 或使用仓库脚本：
 
 ```powershell
-.\run_tests.ps1
+.\scripts\testing\run_tests.ps1
 ```
 
-`run_tests.ps1` 通过 `uv run python` 在项目 `.venv` 中执行，无需手动激活虚拟环境。
+`scripts/testing/run_tests.ps1` 通过 `uv run python` 在项目 `.venv` 中执行，无需手动激活虚拟环境。
 
 测试并非全是无资源的纯算法测试。部分依赖 `assets` 图片、OCR 样本、OpenCV、`ok-script` 的 `TaskTestCase` 或 Windows 相关导入。它们通常不要求正在运行游戏，但窗口交互流程仍必须实机验证。
 
@@ -423,9 +428,9 @@ checkout(LFS)
 - `update-endfield-map-data.yml`：地图数据更新。
 - `stale.yml`：issue/PR 维护。
 
-`auto_release.py`、`auto_release.ps1`、`auto_release.sh` 是 tag 辅助脚本。发布行为以脚本和 workflow 当前实现为准，不要假定测试在“打 tag 前”自动运行；CI 是 tag 已推送后启动。
+`scripts/release/auto_release.py`、`scripts/release/auto_release.ps1`、`scripts/release/auto_release.sh` 是 tag 辅助脚本。发布行为以脚本和 workflow 当前实现为准，不要假定测试在“打 tag 前”自动运行；CI 是 tag 已推送后启动。
 
-语言工具状态：`tools/lang_batch_translate.py` 仍扫描旧的 locale 子目录 schema，不适用于当前统一 `assets/lang/*.json`；`scripts/migrate_lang.py` 是迁移脚本。日常语言维护不要运行它们，详见 i18n 文档。
+语言工具状态：`scripts/i18n/lang_batch_translate.py` 仍扫描旧的 locale 子目录 schema，不适用于当前统一 `assets/lang/*.json`；`scripts/i18n/migrate_lang.py` 是迁移脚本。日常语言维护不要运行它们，详见 i18n 文档。
 
 ## 9. 维护检查
 

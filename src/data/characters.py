@@ -11,7 +11,7 @@
 - ``stars``：稀有度（4/5/6）
 
 6 语言显示名见 assets/lang/characters.json；官方多语言同步见
-scripts/sync_character_langs.py（数据源 endfield.wiki.gg）。
+scripts/i18n/sync_character_langs.py（数据源 endfield.wiki.gg）。
 """
 
 import json

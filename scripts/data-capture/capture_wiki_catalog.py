@@ -9,11 +9,11 @@
 语言代码按抓取目录命名：en / ja / ko / ru / th / id / zh-Hant。
 
 用法：
-    python scripts/capture_wiki_catalog.py [--out DIR] [--proxy URL]
+    python scripts/data-capture/capture_wiki_catalog.py [--out DIR] [--proxy URL]
 
 依赖：playwright + 系统 Chrome（channel="chrome"）；建议走代理。
 产物：``tools/wiki_catalog/by_lang/<stamp>_<lang>/m<main>_s<sub>.json``，
-随后运行 ``scripts/sync_wiki_item_langs.py`` 归类。
+随后运行 ``scripts/i18n/sync_wiki_item_langs.py`` 归类。
 """
 
 import argparse
@@ -26,7 +26,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 from playwright.sync_api import sync_playwright
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 
 PREFIX = "https://zonai.skport.com/web/v1/wiki/item/catalog"
 
@@ -56,7 +56,7 @@ def main():
     ap.add_argument("--headless", action="store_true", default=True)
     args = ap.parse_args()
 
-    root = Path(__file__).resolve().parent.parent
+    root = Path(__file__).resolve().parents[2]
     out_dir = (root / args.out).resolve()
     if not out_dir.is_relative_to(root):
         ap.error(f"--out must be inside the repo root: {args.out}")

@@ -195,7 +195,7 @@ ok-ef.exe -t 1 -e
 
 ```bash
 # 执行 tests/ 下全部测试脚本（PowerShell）
-./run_tests.ps1
+./scripts/testing/run_tests.ps1
 
 # 或逐个运行 unittest
 python -m unittest tests/TestEssenceRecognizer.py

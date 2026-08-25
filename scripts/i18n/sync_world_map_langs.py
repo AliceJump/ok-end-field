@@ -42,7 +42,7 @@ HEADERS = {
     "Origin": "https://game.skport.com",
 }
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 WORLD_MAP_JSON = ROOT / "assets" / "lang" / "world_map.json"
 CANON_WORLD_MAP_JSON = ROOT / "assets" / "data" / "world_map.json"
 SNAPSHOT_JSON = ROOT / "tools" / "official_five_lang.json"
@@ -85,6 +85,7 @@ def get_json(url: str, headers: dict):
 
 
 def write_json(path: Path, data):
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         json.dumps(data, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",

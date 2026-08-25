@@ -125,10 +125,10 @@ class MyBattleTask(MapMixin, BattleMixin):
 uv run python -m unittest discover -s tests -p "Test*.py"
 ```
 
-仓库的 `run_tests.ps1` 会逐个运行 `tests/*.py`，也可使用：
+仓库的 `scripts/testing/run_tests.ps1` 会逐个运行 `tests/*.py`，也可使用：
 
 ```powershell
-.\run_tests.ps1
+.\scripts\testing\run_tests.ps1
 ```
 
 新增语言引用后至少运行：

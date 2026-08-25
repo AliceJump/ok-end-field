@@ -140,7 +140,7 @@
 - `delivery_area.py` 中 `delivery_locations` / `delivery_targets_by_location` 保持中文 canonical 名（键名不变，避免触发 `config_key_migrations`）。
 - 所有对外显示/OCR 处已通过 `get_delivery_locations(area, lang_accessor)` / `get_delivery_targets(area, lang_accessor)` 本地化（`delivery_area_service.py:40-69` 已支持）。
 - **待办**：`DeliveryTask._configure_delivery_area` 目前调用 `get_delivery_targets(self.delivery_area)` 未传 `lang_accessor`，需补传，使 ends 列表本地化。
-- `通向{地点}送货点` 配置键：键名保持中文不变（存储稳定性），显示翻译继续走 gettext ok.po；po 中已存在的「通向武陵城送货点」等 msgid 由 `scripts/sync_world_map_langs.py` 的 po 同步逻辑（§5.4）内嵌替换内旧译名片段。
+- `通向{地点}送货点` 配置键：键名保持中文不变（存储稳定性），显示翻译继续走 gettext ok.po；po 中已存在的「通向武陵城送货点」等 msgid 由 `scripts/i18n/sync_world_map_langs.py` 的 po 同步逻辑（§5.4）内嵌替换内旧译名片段。
 
 ### 4.3 激活语言
 
@@ -181,7 +181,7 @@
 
 ### 5.4 ok.po 译名同步
 
-`scripts/sync_world_map_langs.py` 在刷新 world_map.json 与 `tools/official_five_lang.json` 快照后，还会把官方译名同步进 `i18n/{en_US,ja_JP,ko_KR,es_ES}/LC_MESSAGES/ok.po`：
+`scripts/i18n/sync_world_map_langs.py` 在刷新 world_map.json 与 `tools/official_five_lang.json` 快照后，还会把官方译名同步进 `i18n/{en_US,ja_JP,ko_KR,es_ES}/LC_MESSAGES/ok.po`：
 
 1. **精确匹配**：msgid（去尾 `\n`）与官方 zh 名一致 → 整条 msgstr 替换为官方译名（ja 官方未翻译的名可能直接是中文/片假名，属官方数据）。
 2. **内嵌替换**：msgid 含官方 zh 名（子串）且 msgstr 含该名旧译名 → 文本替换为新译名，如「通向试验园区送货点」的 `Test Zone` → `Test Area`、ja「武陵买入价」的 `ウーリン` → `武陵`。按 zh 名长度降序处理，避免短名子串冲突。

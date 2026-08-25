@@ -9,10 +9,10 @@ skland 有 15 个类型子类（skport 只有 13 类，缺武器基质/任务/�
 系统蓝图/装扮/能量淤积点/蚀刻章/档案库），全部抓取以覆盖简中全量。
 
 用法：
-    python scripts/capture_wiki_zhcn.py [--out DIR] [--proxy URL]
+    python scripts/data-capture/capture_wiki_zhcn.py [--out DIR] [--proxy URL]
 
 产物：``tools/wiki_catalog/zh_cn/<stamp>/m1_s<sub>.json``，
-随后运行 ``scripts/sync_wiki_item_langs.py`` 合并 zh_CN 节点。
+随后运行 ``scripts/i18n/sync_wiki_item_langs.py`` 合并 zh_CN 节点。
 """
 
 import argparse
@@ -25,7 +25,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 from playwright.sync_api import sync_playwright
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 
 PREFIX = "https://zonai.skland.com/web/v1/wiki/item/catalog"
 
@@ -40,7 +40,7 @@ def main():
     ap.add_argument("--headless", action="store_true", default=True)
     args = ap.parse_args()
 
-    root = Path(__file__).resolve().parent.parent
+    root = Path(__file__).resolve().parents[2]
     out_dir = (root / args.out).resolve()
     if not out_dir.is_relative_to(root):
         ap.error(f"--out must be inside the repo root: {args.out}")

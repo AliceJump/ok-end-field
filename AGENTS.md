@@ -53,7 +53,7 @@ gh pr edit <n> --body $body
 ## 运行环境
 
 - Python：依赖通过 [uv](https://docs.astral.sh/uv/) 管理，`uv sync` 创建仓库本地 `.venv`，用 `uv run python ...` 执行（见 `.agents/skills/use-local-venv`）。`pyproject.toml` + `uv.lock` 为唯一来源，`requirements.txt` 为发布流水线的派生产物，勿手改。
-- 测试：`run_tests.ps1`（经 `uv run`）或 `uv run python -m unittest discover -s tests`。
+- 测试：`scripts/testing/run_tests.ps1`（经 `uv run`）或 `uv run python -m unittest discover -s tests`。
 - 日志：`logs/ok-script.log`（配置历史、任务执行、OCR 均可在此排查）；历史日志位于同目录的 `ok-script.YYYY-MM-DD.log` 文件中。
 
 ## 代码风格

@@ -3,9 +3,9 @@
 """把官方 Wiki catalog 抓取结果归类为多语言物品表。
 
 数据源：
-- ``scripts/capture_wiki_catalog.py`` 抓取的 skport 原始 JSON（7 语言 × 13 类型），
+- ``scripts/data-capture/capture_wiki_catalog.py`` 抓取的 skport 原始 JSON（7 语言 × 13 类型），
   位于 ``tools/wiki_catalog/by_lang/<stamp>_<lang>/m<main>_s<sub>.json``；
-- ``scripts/capture_wiki_zhcn.py`` 抓取的 skland 简中 JSON（15 类型），
+- ``scripts/data-capture/capture_wiki_zhcn.py`` 抓取的 skland 简中 JSON（15 类型），
   位于 ``tools/wiki_catalog/zh_cn/<stamp>/m1_s<sub>.json``。
 每个 item 含 itemId（同库唯一）、name、lang、brief.associate.id（跨域稳定 hash）。
 
@@ -47,7 +47,7 @@ from _lang_sync_common import (
     write_json,
 )
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 RAW_DIR = ROOT / "tools" / "wiki_catalog" / "by_lang"
 ZHCN_DIR = ROOT / "tools" / "wiki_catalog" / "zh_cn"
 OUT_JSON = ROOT / "assets" / "data" / "wiki_items.json"

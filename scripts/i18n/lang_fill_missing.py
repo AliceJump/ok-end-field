@@ -17,10 +17,10 @@
 某缺失语言存在多个不同候选值时跳过（保守）。
 
 用法：
-  python scripts/lang_fill_missing.py            # A + B 并写回
-  python scripts/lang_fill_missing.py --dry-run  # 只看变更，不写回
-  python scripts/lang_fill_missing.py --sources-only
-  python scripts/lang_fill_missing.py --cross-only
+  python scripts/i18n/lang_fill_missing.py            # A + B 并写回
+  python scripts/i18n/lang_fill_missing.py --dry-run  # 只看变更，不写回
+  python scripts/i18n/lang_fill_missing.py --sources-only
+  python scripts/i18n/lang_fill_missing.py --cross-only
 """
 
 import argparse
@@ -36,7 +36,7 @@ from _lang_sync_common import (
     write_json,
 )
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 LANG_DIR = ROOT / "assets" / "lang"
 DATA_DIR = ROOT / "assets" / "data"
 SNAPSHOT_JSON = ROOT / "tools" / "official_five_lang.json"

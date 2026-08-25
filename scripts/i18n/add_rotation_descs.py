@@ -2,7 +2,7 @@
 import polib
 import os
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + '/..')
+os.chdir(os.path.dirname(os.path.abspath(__file__)) + '/../..')
 
 # The EXACT source text from BattleConfig.py
 NEW_ENTRIES = {

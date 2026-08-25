@@ -207,7 +207,7 @@ i18n/<locale>/LC_MESSAGES/ok.po
 
 ## 8. 工具状态
 
-`tools/lang_batch_translate.py` 当前仍按旧的 `assets/lang/<module>/<locale>.json` 目录结构扫描，并且只枚举目录；它与运行时统一单文件 schema 不兼容。不要对当前资源运行该脚本，否则不能正确发现或更新模块。`scripts/migrate_lang.py` 是旧格式迁移用途，也不是日常维护入口。
+`scripts/i18n/lang_batch_translate.py` 当前仍按旧的 `assets/lang/<module>/<locale>.json` 目录结构扫描，并且只枚举目录；它与运行时统一单文件 schema 不兼容。不要对当前资源运行该脚本，否则不能正确发现或更新模块。`scripts/i18n/migrate_lang.py` 是旧格式迁移用途，也不是日常维护入口。
 
 当前可靠流程是手工编辑统一 JSON，使用 `TestCheckLang` 校验引用，再人工复核正则和游戏专有名词。
 

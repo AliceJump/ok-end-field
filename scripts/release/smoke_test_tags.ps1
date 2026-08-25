@@ -11,7 +11,7 @@
 #   install，首个 tag 冷启动安装约 1-2 分钟，后续 tag 走缓存秒级完成。
 #
 # 用法:
-#   ./scripts/smoke_test_tags.ps1 -Tags "v1.0.18,v1.0.17" -WaitSeconds 90 `
+#   ./scripts/release/smoke_test_tags.ps1 -Tags "v1.0.18,v1.0.17" -WaitSeconds 90 `
 #       -ResultFile tmp/smoke_results.csv -Python ".venv/Scripts/python.exe"
 #
 # 参数:

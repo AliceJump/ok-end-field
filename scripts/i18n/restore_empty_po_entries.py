@@ -7,8 +7,8 @@
 - 不新增 msgid、不恢复已删除条目、不覆盖已有非空翻译。
 
 用法：
-    python scripts/restore_empty_po_entries.py            # 源 = git HEAD
-    python scripts/restore_empty_po_entries.py --ref <commit>   # 指定历史版本
+    python scripts/i18n/restore_empty_po_entries.py            # 源 = git HEAD
+    python scripts/i18n/restore_empty_po_entries.py --ref <commit>   # 指定历史版本
 """
 
 import argparse
@@ -22,7 +22,7 @@ try:
 except ImportError:
     polib = None
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 I18N_DIR = ROOT / "i18n"
 LOCALES = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES")
 

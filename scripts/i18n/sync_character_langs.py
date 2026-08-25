@@ -30,7 +30,7 @@ from urllib import request, parse
 
 from pypinyin import pinyin, Style
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 LANG_CHARACTERS_JSON = ROOT / "assets" / "lang" / "characters.json"
 CANON_CHARACTERS_JSON = ROOT / "assets" / "data" / "characters.json"
 

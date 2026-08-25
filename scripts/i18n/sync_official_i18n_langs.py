@@ -26,7 +26,7 @@ from _lang_sync_common import (  # noqa: E402
     write_json,
 )
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 LANG_DIR = ROOT / "assets" / "lang"
 I18N_DIR = ROOT / "assets" / "data" / "i18n_texts"
 PO_DIR = ROOT / "i18n"

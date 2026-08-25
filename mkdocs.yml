@@ -110,6 +110,7 @@ nav:
       - 日常送礼维护: update/日常送礼维护工作流.md
       - 从源码运行: dev/QUICKSTART.md
       - 开发指南: dev/DEVELOPMENT.md
+      - 模板贡献指南: dev/guide-submodule-contrib.md
       - API 参考: dev/API.md
       - i18n 与 OCR: dev/i18n_OCR配置流程.md
       - 键盘操作体系: dev/键盘操作体系.md
@@ -122,6 +123,7 @@ nav:
       - 账户切换流程: dev/切换账户流程分析.md
       - 账号唯一 ID 实现: dev/账号唯一ID与多账户覆盖默认逻辑.md
       - 任务执行情况汇总: dev/任务执行情况汇总报告.md
+      - 自动大世界收菜: dev/自动大世界收菜.md
   - English:
     - Documentation home: en/index.md
     - Getting started:

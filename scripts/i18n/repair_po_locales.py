@@ -12,7 +12,7 @@ from deep_translator import GoogleTranslator
 from opencc import OpenCC
 
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 I18N_ROOT = ROOT / "i18n"
 TARGETS = {"es_ES": "es", "ja_JP": "ja", "ko_KR": "ko"}
 HAN_RE = re.compile(r"[\u3400-\u9fff]")

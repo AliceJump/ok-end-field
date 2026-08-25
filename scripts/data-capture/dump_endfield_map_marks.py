@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Any
 from urllib import error, parse, request
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from src.core.map_device_id import ensure_map_device_id
 
@@ -281,7 +281,7 @@ EXCLUDE_MARKS = {
 
 def generate_simple_marks(out_dir: Path):
     """将 mark_list__*.json 转换为按地图+名称分类的格式"""
-    target_dir = Path(__file__).resolve().parent.parent / "assets" / "items" / "map"
+    target_dir = Path(__file__).resolve().parents[2] / "assets" / "items" / "map"
     target_dir.mkdir(parents=True, exist_ok=True)
     all_maps = defaultdict(lambda: defaultdict(list))
     all_names = set()

@@ -1,4 +1,8 @@
-Get-ChildItem -Path ".\tests\*.py" | ForEach-Object {
+# 仓库根 = 本脚本（scripts/testing/）向上两级
+$RepoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
+Push-Location $RepoRoot
+
+Get-ChildItem -Path (Join-Path $RepoRoot "tests\*.py") | ForEach-Object {
   Write-Host "Running tests in $($_.FullName)"
   try {
       # Run the Python unittest command (via uv, uses the project .venv)
@@ -11,6 +15,8 @@ Get-ChildItem -Path ".\tests\*.py" | ForEach-Object {
   } catch {
       # Stop the loop and return the error
       Write-Error $_
+      Pop-Location
       exit 1
   }
 }
+Pop-Location

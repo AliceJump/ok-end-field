@@ -14,7 +14,7 @@ HEADERS = {
 }
 
 TARGET_DIR = (
-    Path(__file__).resolve().parent.parent
+    Path(__file__).resolve().parents[2]
     / "assets"
     / "items"
     / "map"

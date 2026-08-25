@@ -97,7 +97,7 @@ jobs:
       - name: Verify requirements.txt reproducible
         run: |
           # --no-sync：只做一致性校验，不同步/安装项目全量依赖（PySide6 等）
-          uv run --locked --no-sync python scripts/gen_release_requirements.py --check
+          uv run --locked --no-sync python scripts/release/gen_release_requirements.py --check
 
       - name: Install uv
         run: |
