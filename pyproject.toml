@@ -23,6 +23,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "polib",
+    "pypinyin",
 ]
 
 [tool.uv]

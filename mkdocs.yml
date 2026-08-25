@@ -101,7 +101,6 @@ nav:
       - 仓库物品转移: zh-CN/仓库物品转移.md
       - 物品导航与实时检测: zh-CN/物品导航与实时检测.md
       - 账号配置: zh-CN/账号配置用户指南.md
-      - 账号唯一 ID 与覆盖逻辑: zh-CN/账号唯一ID与多账户覆盖默认逻辑.md
       - Windows 计划任务: zh-CN/Windows 计划任务.md
       - 鼠标转向标定: zh-CN/鼠标转向标定汇总.md
     - 开发与维护:
@@ -110,8 +109,10 @@ nav:
       - 日常送礼维护: update/日常送礼维护工作流.md
       - 从源码运行: dev/QUICKSTART.md
       - 开发指南: dev/DEVELOPMENT.md
+      - 模板贡献指南: dev/guide-submodule-contrib.md
       - API 参考: dev/API.md
       - i18n 与 OCR: dev/i18n_OCR配置流程.md
+      - OCR 使用分类: dev/OCR使用分类.md
       - 键盘操作体系: dev/键盘操作体系.md
       - 滑索与送货逻辑: dev/滑索与送货逻辑.md
       - NPC 与送货点多语言: dev/NPC与送货点多语言对照方案.md
@@ -121,7 +122,8 @@ nav:
       - 装备词条识别: dev/装备词条识别轮子.md
       - 账户切换流程: dev/切换账户流程分析.md
       - 账号唯一 ID 实现: dev/账号唯一ID与多账户覆盖默认逻辑.md
-      - 任务执行情况汇总: dev/任务执行情况汇总报告.md
+      - 任务汇总报告机制: dev/任务汇总报告机制.md
+      - 自动拾取: dev/自动拾取任务.md
   - English:
     - Documentation home: en/index.md
     - Getting started:
@@ -139,7 +141,6 @@ nav:
       - Warehouse Transfer: en/warehouse-transfer.md
       - Item Navigation & Realtime Detection: en/item-navigation.md
       - Account Configuration: en/account-configuration.md
-      - Account Overview & Multi-Account Overrides: en/account-overview.md
       - Windows Task Scheduler: en/windows-task-scheduler.md
       - Mouse Rotation Calibration: en/mouse-rotation-calibration.md
       - FAQ and feedback: en/guides/troubleshooting.md

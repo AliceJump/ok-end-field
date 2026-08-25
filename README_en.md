@@ -212,7 +212,7 @@ ok-ef.exe -t 1 -e
 
 ```bash
 # Run all scripts under tests/ (PowerShell)
-./run_tests.ps1
+./scripts/testing/run_tests.ps1
 
 # Or run unittest case-by-case
 python -m unittest tests/TestEssenceRecognizer.py

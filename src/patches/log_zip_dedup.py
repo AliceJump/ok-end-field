@@ -4,7 +4,7 @@
 - 打 zip 时（仅导出日志/上传日志触发）：对图片文件按内容（MD5）去重，
   只保留第一份，重复项记录到 zip 内的 ``screenshots_dedup_info.json``。
 - 恢复时：根据该信息文件把保留文件复制回重复文件名，还原与去重前完全一致的文件集。
-  （见 ``scripts/restore_log_screenshots.py``）
+  （见 ``scripts/maintenance/restore_log_screenshots.py``）
 
 本模块不依赖 ok-script / Qt，可被脚本独立调用。
 """
@@ -62,7 +62,7 @@ def build_dedup_info(duplicates: list, note: str = "") -> dict:
         "generated_at": datetime.now().isoformat(timespec="seconds"),
         "note": note or (
             "完全相同的图片已去重，仅保留第一份；重复文件可用 "
-            "scripts/restore_log_screenshots.py 恢复"
+            "scripts/maintenance/restore_log_screenshots.py 恢复"
         ),
         "duplicates": duplicates,
     }

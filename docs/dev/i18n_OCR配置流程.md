@@ -1,6 +1,6 @@
 # i18n 与 OCR 配置流程
 
-返回：[文档索引](../zh-CN/README.md) / [README](../../README.md)
+返回：[文档索引](../zh-CN/index.md) / [README](https://github.com/AliceJump/ok-end-field/blob/master/README.md)
 
 本文区分两套用途不同的语言资源：
 
@@ -207,7 +207,14 @@ i18n/<locale>/LC_MESSAGES/ok.po
 
 ## 8. 工具状态
 
-`tools/lang_batch_translate.py` 当前仍按旧的 `assets/lang/<module>/<locale>.json` 目录结构扫描，并且只枚举目录；它与运行时统一单文件 schema 不兼容。不要对当前资源运行该脚本，否则不能正确发现或更新模块。`scripts/migrate_lang.py` 是旧格式迁移用途，也不是日常维护入口。
+`scripts/i18n/` 下的可用工具：
+
+- `sync_*.py`：官方译名同步进 lang JSON 与 ok.po（world_map / map_mark / wiki_item / character / official_i18n 各数据源一个脚本）。
+- `gen_lang_stubs.py`：扫描 lang JSON 生成 `src/data/lang/_lang_typed.py` 类型提示存根。
+- `lang_fill_missing.py`：缺失语言节点补全与审计（`--dry-run` 幂等）。
+- `restore_empty_po_entries.py`：从任意 git ref 的历史 po 恢复被清空的翻译。
+
+针对旧 `assets/lang/<module>/<locale>.json` 目录 schema 的批量翻译与迁移工具已随 schema 切换删除。
 
 当前可靠流程是手工编辑统一 JSON，使用 `TestCheckLang` 校验引用，再人工复核正则和游戏专有名词。
 

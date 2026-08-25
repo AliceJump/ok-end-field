@@ -4,7 +4,7 @@
 ok-script 原本每张截图会额外保存一张画了模板匹配框的 ``_boxed.png``，
 大小与原图几乎相同。本模块把框信息（坐标/名称/置信度/颜色，均为固定像素）
 序列化到 ``_boxes.json`` 侧车文件，恢复时可精确重绘出与原 _boxed.png
-完全一致的图片，见 ``scripts/restore_log_screenshots.py``。
+完全一致的图片，见 ``scripts/maintenance/restore_log_screenshots.py``。
 
 本模块不依赖 ok-script / Qt，可被脚本独立调用。
 """

@@ -26,7 +26,7 @@ POLLUTED_MSGIDS = {
 }
 
 # 官方 API/Atlos 提供、且官方各语言译名与英文相同（非英文回退）的条目。
-# 由 scripts/sync_world_map_langs.py / sync_map_mark_langs.py 同步，保持与官方一致。
+# 由 scripts/i18n/sync_world_map_langs.py / sync_map_mark_langs.py 同步，保持与官方一致。
 OFFICIAL_SAME_AS_ENGLISH = {
     "武陵",  # es 官方 = "Wuling"
     # mark 模板名（es_MX 官方未本地化，与英文同名）
@@ -46,7 +46,7 @@ OFFICIAL_SAME_AS_ENGLISH = {
     "伊冯",  # Yvonne
     "庄方宜",  # Zhuang Fangyi
     "否",  # 西英同形词 "No"
-    # ---- 以下由 scripts/sync_official_i18n_langs.py 从官方解包数据同步 ----
+    # ---- 以下由 scripts/i18n/sync_official_i18n_langs.py 从官方解包数据同步 ----
     # 官方 es_MX 未本地化，直接沿用英文译名（与英文相同，非回退）
     "余烬",  # Ember
     "佩丽卡",  # Perlica

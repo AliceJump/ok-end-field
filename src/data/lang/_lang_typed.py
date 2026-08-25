@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # ruff: noqa: RUF002
-"""由 tools/gen_lang_stubs.py 自动生成，请勿手改。
+"""由 scripts/i18n/gen_lang_stubs.py 自动生成，请勿手改。
 
 为 self.lang.<模块>.<key> 提供静态类型提示：
   - 自动补全：输入 self.lang.<模块>. 时列出全部 key
@@ -189,9 +189,6 @@ class DailyBattleMixinModule(_LangModuleBaseT):
 
     k_39d12e73_1: re.Pattern[str]
     """领取"""
-
-    k_4e1f3d8b: re.Pattern[str]
-    """(天|小时)"""
 
     k_62b5b688: re.Pattern[str]
     """已出战"""
@@ -946,10 +943,10 @@ class WorldMapModule(_LangModuleBaseT):
     k_zangjiangu: re.Pattern[str]
     """藏剑谷"""
 
-    yinglongguan: re.Pattern[str]
+    k_yinglongguan: re.Pattern[str]
     """应龙关"""
 
-    beibujinqu: re.Pattern[str]
+    k_beibujinqu: re.Pattern[str]
     """北部禁区"""
 
     k_727bb38b: re.Pattern[str]

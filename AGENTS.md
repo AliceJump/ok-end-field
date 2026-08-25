@@ -46,14 +46,14 @@ gh pr edit <n> --body $body
 
 1. **先加迁移表，再改键名**：同一任务类中先加 `config_key_migrations = {旧键: 新键}`，再改 `default_config` / 键名常量 / 键生成函数，同一提交完成。
 2. **迁移表生效前禁止运行程序**：先运行迁移测试（`tests/TestZipLineConfig.py` 等实际迁移测试），测试断言旧键值已迁移到新键（被测函数为 `migrate_config_file_keys(<任务名>, migrations)`，定义于 `src/core/config_migration.py`；迁移表见 `src/tasks/onetime/DeliveryTask.py`）。
-3. **同步 i18n**：同步全部 `i18n/*/LC_MESSAGES/ok.po` 的 msgid 并 `task_i18n_helper.py compile`。
+3. **同步 i18n**：同步全部 `i18n/*/LC_MESSAGES/ok.po` 的 msgid 并运行 `.agents/skills/ok-script-i18n/scripts/task_i18n_helper.py compile`。
 4. **同步文档**：搜索 `docs/` 更新旧键名。
 5. **配置丢失可恢复**：`logs/ok-script.log` 的 `Config:init self.config = {...}` 保存完整历史配置，可从最后一次含旧键名的记录恢复。
 
 ## 运行环境
 
 - Python：依赖通过 [uv](https://docs.astral.sh/uv/) 管理，`uv sync` 创建仓库本地 `.venv`，用 `uv run python ...` 执行（见 `.agents/skills/use-local-venv`）。`pyproject.toml` + `uv.lock` 为唯一来源，`requirements.txt` 为发布流水线的派生产物，勿手改。
-- 测试：`run_tests.ps1`（经 `uv run`）或 `uv run python -m unittest discover -s tests`。
+- 测试：`scripts/testing/run_tests.ps1`（经 `uv run`）或 `uv run python -m unittest discover -s tests`。
 - 日志：`logs/ok-script.log`（配置历史、任务执行、OCR 均可在此排查）；历史日志位于同目录的 `ok-script.YYYY-MM-DD.log` 文件中。
 
 ## 代码风格

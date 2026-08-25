@@ -1,6 +1,6 @@
 # Account Configuration User Guide
 
-Back: [Documentation home](index.md) / [README](../../README.md)
+Back: [Documentation home](index.md) / [README](https://github.com/AliceJump/ok-end-field/blob/master/README.md)
 
 This is a simplified document for daily use — it only explains how to configure and use the feature.
 

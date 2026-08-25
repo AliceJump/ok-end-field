@@ -1,6 +1,6 @@
 # ok-ef 开发指南
 
-返回：[文档索引](../zh-CN/README.md) / [README](../../README.md)
+返回：[文档索引](../zh-CN/index.md) / [README](https://github.com/AliceJump/ok-end-field/blob/master/README.md)
 
 本文以当前源码、`src/config.py`、测试目录和 workflow 为准，说明项目结构和贡献流程。具体项目自有接口见 [API 参考](API.md)。
 
@@ -163,10 +163,8 @@ ok-end-field/
 ├── main.py / main_debug.py       # 正式/调试入口，均安装启动补丁
 ├── pyproject.toml                # 项目 Python 依赖声明
 ├── requirements.txt              # 由 uv 针对平台生成，供发布流水线 pip 使用
-├── run_tests.ps1                 # 逐个运行 tests/*.py（经 uv run）
 ├── pyappify.yml                  # China/Global 打包 profile
 ├── deploy.txt                    # tag 构建时同步到更新仓库的清单
-├── auto_release.py/.ps1/.sh      # tag 辅助脚本
 ├── src/
 │   ├── config.py                 # ok-script 应用配置、任务和 tab 注册
 │   ├── globals.py                # 应用级共享对象
@@ -213,8 +211,15 @@ ok-end-field/
 ├── i18n/<locale>/LC_MESSAGES/   # gettext ok.po/ok.mo
 ├── configs/                      # 任务、全局、账号作用域配置
 ├── tests/                        # unittest 测试
-├── tools/                        # 辅助工具；部分语言工具仍针对旧 schema
-├── scripts/                      # 下载统计、迁移等脚本
+├── scripts/                      # 维护/CI 脚本，按功能分目录
+│   ├── i18n/                     # 语言与翻译维护（sync_* 官方译名同步、gen_lang_stubs、lang_fill_missing 等）
+│   ├── data-capture/             # 官方 API / Wiki 数据抓取（capture_*、dump_*）
+│   ├── release/                  # tag 辅助、requirements 生成、tag 冒烟
+│   ├── docs/                     # mkdocs 构建辅助（mkdocs_mermaid）
+│   ├── stats/                    # 下载统计 SVG 生成
+│   ├── testing/                  # run_tests.ps1 测试运行
+│   └── maintenance/              # 日志截图恢复、邮件工具
+├── tools/                        # 脚本产出的本地数据（wiki_catalog 等，gitignored）
 ├── ok_tasks/                     # 用户自定义任务
 ├── ok_templates/                 # 模板标注子模块
 └── .github/workflows/            # 构建、统计、地图数据和维护 workflow
@@ -342,18 +347,16 @@ self.press_combat_key("e")      # combat
 
 ## 7. 测试清单
 
-当前 `tests/` 有 37 个测试模块：
+当前 `tests/` 有 42 个测试模块：
 
 | 文件 | 主要覆盖 |
 |------|----------|
-| `TestAccountBattleConfig.py` | 账号配置可见性、快照合并、战斗配置优先级 |
-| `TestAccountConfigBlacklist.py` | 任务账号配置黑名单 |
+| `TestAccountBattleConfig.py` | 账号配置可见性、快照合并、任务账号配置黑名单、战斗配置优先级 |
 | `TestAccountOverrideMixin.py` | 账号覆盖 Mixin：仅任务运行时启用覆盖、其余回退默认 |
-| `TestAutoCombat.py` | 战斗图片识别、技能条、等级和排轴解析 |
+| `TestAutoCombat.py` | 排轴技能序列解析（`_parse_skill_sequence`） |
 | `TestAutoPick.py` | 自动拾取规则（可生产植物默认跳过与开关） |
 | `TestCheckLang.py` | 源码语言 key 与统一 JSON 的 `zh_CN/zh_TW` 引用 |
-| `TestConditionalRotation.py` | 排轴条件旋转 AST 归一化 |
-| `TestConditionalRotationCombat.py` | 条件旋转战斗执行（if/else 分支） |
+| `TestConditionalRotation.py` | 排轴条件旋转 AST 归一化与 `AutoCombatLogic.run()` 实时条件路径（含 if/else 分支） |
 | `TestConditionalRotationGui.py` | 条件旋转 GUI 动作/条件格式化 |
 | `TestDailyBattleToEnd.py` | 日常刷本到结束：YOLO 命中禁用中键点击、奖励等待 |
 | `TestDailyBoatState.py` | 日常联运状态共享范围 |
@@ -366,20 +369,27 @@ self.press_combat_key("e")      # combat
 | `TestEfInteraction.py` | 窗口激活与后台消息交互 |
 | `TestEssenceImageFeatures.py` | 装备词条 Feature 资产存在性 |
 | `TestEssenceRecognizer.py` | 装备词条 OCR 纯解析和等级附加 |
+| `TestFindZipLineBoardButton.py` | 滑索上车站点按钮多阶段查找 |
 | `TestGameWindow.py` | 游戏窗口查找（类名与可执行文件匹配） |
+| `TestGifIcon.py` | GIF/主题图标合成与缓存失效 |
+| `TestGrayBarDetector.py` | 灰条检测算法（合成帧） |
 | `TestGuiI18n.py` | GUI 翻译调用和运行时采集污染 |
 | `TestItemMapQuery.py` | 物品地图查询和筛选 |
 | `TestLogZipDedup.py` | 日志打包图片去重 |
+| `TestMapDeviceFingerprint.py` | 地图设备指纹与注册 payload 构造 |
 | `TestMouseRotationCalibration.py` | 鼠标视角旋转系数标定角度差纯函数与任务注册 |
+| `TestOkWin32GdiPointPatch.py` | Win32 GDI 坐标补丁幂等安装 |
 | `TestOutpostExchange.py` | 据点兑换优先级与排除逻辑 |
 | `TestPoLocaleConsistency.py` | gettext catalog 完整性和一致性 |
+| `TestPreConfigPatch.py` | 启动前配置环境变量补丁 |
 | `TestPressEsc.py` | `press_esc` 走任务键盘控制器 |
+| `TestQfluentNavigationPatch.py` | qfluentwidgets 导航补丁回归 |
+| `TestRealtimeGrayBarDetectTask.py` | 实时灰条检测任务常量与调试绘制 |
 | `TestRuntimeMixinFeatureClick.py` | 普通/Alt Feature 点击路径 |
 | `TestScreenshotSidecar.py` | 截图侧边数据序列化 |
 | `TestSequenceParser.py` | 中英文逗号序列和整数序列解析 |
 | `TestStateDrivenWaits.py` | 状态驱动的等待（ensure_main/ensure_map/safe_back 等） |
-| `TestTakeDeliveryFunctions.py` | 运送委托 OCR 样本处理 |
-| `TestWarehouseSwitchOCR.py` | 仓库状态 OCR 样本 |
+| `TestYingTuoTask.py` | 影拓丰碑关卡灰条识别 |
 | `TestYoloDetect.py` | 检测注入、ROI/overlay 和参数验证 |
 | `TestYoloModelRegistry.py` | 模型配置合并及目标路由 |
 | `TestZipLineConfig.py` | 滑索全局配置分组与旧配置迁移 |
@@ -393,10 +403,10 @@ uv run python -m unittest discover -s tests -p "Test*.py"
 或使用仓库脚本：
 
 ```powershell
-.\run_tests.ps1
+.\scripts\testing\run_tests.ps1
 ```
 
-`run_tests.ps1` 通过 `uv run python` 在项目 `.venv` 中执行，无需手动激活虚拟环境。
+`scripts/testing/run_tests.ps1` 通过 `uv run python` 在项目 `.venv` 中执行，无需手动激活虚拟环境。
 
 测试并非全是无资源的纯算法测试。部分依赖 `assets` 图片、OCR 样本、OpenCV、`ok-script` 的 `TaskTestCase` 或 Windows 相关导入。它们通常不要求正在运行游戏，但窗口交互流程仍必须实机验证。
 
@@ -423,9 +433,9 @@ checkout(LFS)
 - `update-endfield-map-data.yml`：地图数据更新。
 - `stale.yml`：issue/PR 维护。
 
-`auto_release.py`、`auto_release.ps1`、`auto_release.sh` 是 tag 辅助脚本。发布行为以脚本和 workflow 当前实现为准，不要假定测试在“打 tag 前”自动运行；CI 是 tag 已推送后启动。
+`scripts/release/auto_release.py`、`scripts/release/auto_release.ps1`、`scripts/release/auto_release.sh` 是 tag 辅助脚本。发布行为以脚本和 workflow 当前实现为准，不要假定测试在“打 tag 前”自动运行；CI 是 tag 已推送后启动。
 
-语言工具状态：`tools/lang_batch_translate.py` 仍扫描旧的 locale 子目录 schema，不适用于当前统一 `assets/lang/*.json`；`scripts/migrate_lang.py` 是迁移脚本。日常语言维护不要运行它们，详见 i18n 文档。
+语言工具：`scripts/i18n/` 保留 `sync_*.py`（官方译名同步进 lang JSON 与 ok.po）、`gen_lang_stubs.py`（类型提示存根生成）、`lang_fill_missing.py`（缺失语言补全）和 `restore_empty_po_entries.py`（从 git 历史恢复被清空的翻译）；针对旧 `assets/lang/<module>/<locale>.json` 目录 schema 的批量翻译与迁移工具已随 schema 切换删除。详见 i18n 文档。
 
 ## 9. 维护检查
 

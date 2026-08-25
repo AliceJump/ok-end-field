@@ -1,6 +1,6 @@
 # 文档索引
 
-返回：[README](../../README.md) / [English README](../../README_en.md)
+返回：[README](https://github.com/AliceJump/ok-end-field/blob/master/README.md) / [English README](https://github.com/AliceJump/ok-end-field/blob/master/README_en.md)
 
 本文是仓库内正式文档入口。文档内容以当前代码为唯一事实来源；任务注册、窗口配置、OCR、YOLO 和自定义页来自 [src/config.py](../../src/config.py)，具体默认值与行为以对应任务实现为准。
 
@@ -37,8 +37,10 @@
 | [键盘操作体系](../dev/键盘操作体系.md) | 全局热键配置和直接 `send_key` 例外 |
 | [滑索与送货逻辑](../dev/滑索与送货逻辑.md) | 滑索 OCR 对齐、送货编排和调试入口 |
 | [地图官方 WS 客户端实现](../dev/地图官方WS客户端实现.md) | 物品导航官方地图 WebSocket 与本地 WS 回退 |
-| [任务执行情况汇总报告](../dev/任务执行情况汇总报告.md) | 临时汇总文件的创建、目录结构与打开开关 |
+| [任务汇总报告机制](../dev/任务汇总报告机制.md) | 任务完成时临时汇总文件的创建、目录结构与打开开关 |
 | [OCR 使用分类](../dev/OCR使用分类.md) | 全部 OCR 调用按「点击型/判断型/混合」归类与敏感度结论 |
+| [自动拾取](../dev/自动拾取任务.md) | 自动拾取触发任务的白名单/黑名单与检测流程 |
+| [模板贡献指南](../dev/guide-submodule-contrib.md) | 无权限贡献者通过子仓库修改游戏截图模板 |
 
 ## 维护文档
 

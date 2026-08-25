@@ -1,6 +1,6 @@
 # 地图官方 WebSocket 客户端实现
 
-返回：[文档索引](../zh-CN/README.md) / [README](../../README.md)
+返回：[文档索引](../zh-CN/index.md) / [README](https://github.com/AliceJump/ok-end-field/blob/master/README.md)
 
 ## 概述
 

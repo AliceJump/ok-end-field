@@ -18,7 +18,7 @@ def _generate_with_sidecar(self, frame, ui_dict, folder, name, show_box, frame_b
 
     逻辑与原实现一致：保存 _original.png 后，若有画框则把固定像素的框信息
     序列化到同名 _boxes.json（体积为 KB 级），恢复时可重绘出完全相同的
-    _boxed.png（见 scripts/restore_log_screenshots.py）。
+    _boxed.png（见 scripts/maintenance/restore_log_screenshots.py）。
     """
     pil_image = self.to_pil_image(frame, processor=processor)
     if pil_image is None:

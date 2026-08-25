@@ -65,7 +65,7 @@ jobs:
       - name: Generate latest map data
         if: steps.schedule.outputs.run == 'true'
         run: |
-          python scripts/dump_endfield_map_marks_public.py
+          python scripts/data-capture/dump_endfield_map_marks_public.py
 
       - name: Validate data
         if: steps.schedule.outputs.run == 'true'

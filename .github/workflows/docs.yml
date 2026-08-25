@@ -7,14 +7,14 @@ on:
     paths:
       - docs/**
       - mkdocs.yml
-      - mkdocs_mermaid.py
+      - scripts/docs/mkdocs_mermaid.py
       - requirements-docs.txt
       - .github/workflows/docs.yml
   pull_request:
     paths:
       - docs/**
       - mkdocs.yml
-      - mkdocs_mermaid.py
+      - scripts/docs/mkdocs_mermaid.py
       - requirements-docs.txt
       - .github/workflows/docs.yml
   workflow_dispatch:
@@ -53,7 +53,7 @@ jobs:
 
       - name: Build site
         env:
-          PYTHONPATH: ${{ github.workspace }}
+          PYTHONPATH: ${{ github.workspace }}/scripts/docs
         run: mkdocs build --strict
 
       - name: Upload Pages artifact
