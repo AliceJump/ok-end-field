@@ -11,6 +11,8 @@ from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 class TestBattleToEnd(Common, MapMixin, ZipLineMixin):
     """独立测试刷体力流程中的奖励点导航。"""
 
+    requires_foreground = True  # 战斗/导航需要前台
+
     CFG_STAGE_NAME = "关卡名"
 
     def __init__(self, *args, **kwargs):

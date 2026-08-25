@@ -1785,3 +1785,45 @@ msgstr "HG grant API did not return an oauth code"
 
 msgid "地图 cred 换取接口缺少 cred 或 token"
 msgstr "Map cred exchange API response missing cred or token"
+
+msgid "Alt点击小地图测试"
+msgstr "Alt-click Minimap Test"
+
+
+msgid "验证 alt+点击小地图中心能否替代 send_key('m') 打开地图（后台输入可行性）"
+msgstr "Verify that alt+clicking the minimap center can replace send_key('m') to open the map (background input feasibility)"
+
+
+msgid "测试次数"
+msgstr "Test Count"
+
+
+msgid "测试前前置游戏"
+msgstr "Bring Game to Foreground Before Test"
+
+
+msgid "重复测试次数，每次先关闭地图再重新打开"
+msgstr "Number of test repetitions; the map is closed and reopened each time"
+
+
+msgid "勾选后每次测试前先把游戏窗口置前（对比前台/后台行为）"
+msgstr "When checked, brings the game window to the foreground before each test (to compare foreground/background behavior)"
+
+msgid "后台按键测试"
+msgstr "Background Key Test"
+
+
+msgid "验证后台模式下按键能否送达游戏（置顶+等待+按键+恢复），输出诊断日志"
+msgstr "Verify whether keys reach the game in background mode (foreground+wait+key+restore), outputting diagnostic logs"
+
+
+msgid "要测试的按键（仅支持 m 打开地图，结果可观察）"
+msgstr "Key to test (only m is supported to open the map, result is observable)"
+
+
+msgid "按键后等待结果出现的时间"
+msgstr "Time to wait for the result after pressing the key"
+
+
+msgid "勾选后只测试窗口置顶是否成功（不按键），用于隔离置顶问题"
+msgstr "When checked, only tests whether the window comes to the foreground (no key press), to isolate foreground issues"

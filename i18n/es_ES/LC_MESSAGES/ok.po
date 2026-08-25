@@ -1787,3 +1787,45 @@ msgstr "La API de autorización HG no devolvió un código oauth"
 
 msgid "地图 cred 换取接口缺少 cred 或 token"
 msgstr "La respuesta de la API de intercambio de cred del mapa no incluye cred o token"
+
+msgid "Alt点击小地图测试"
+msgstr "Prueba de clic Alt en minimapa"
+
+
+msgid "验证 alt+点击小地图中心能否替代 send_key('m') 打开地图（后台输入可行性）"
+msgstr "Verifica que alt+clic en el centro del minimapa pueda reemplazar a send_key('m') para abrir el mapa (viabilidad de entrada en segundo plano)"
+
+
+msgid "测试次数"
+msgstr "Número de pruebas"
+
+
+msgid "测试前前置游戏"
+msgstr "Traer el juego al frente antes de la prueba"
+
+
+msgid "重复测试次数，每次先关闭地图再重新打开"
+msgstr "Número de repeticiones de la prueba; el mapa se cierra y se vuelve a abrir cada vez"
+
+
+msgid "勾选后每次测试前先把游戏窗口置前（对比前台/后台行为）"
+msgstr "Al marcar, trae la ventana del juego al frente antes de cada prueba (para comparar el comportamiento en primer plano/fondo)"
+
+msgid "后台按键测试"
+msgstr "Prueba de teclas en segundo plano"
+
+
+msgid "验证后台模式下按键能否送达游戏（置顶+等待+按键+恢复），输出诊断日志"
+msgstr "Verifica si las teclas llegan al juego en modo segundo plano (primer plano+espera+tecla+restauración), mostrando registros de diagnóstico"
+
+
+msgid "要测试的按键（仅支持 m 打开地图，结果可观察）"
+msgstr "Tecla a probar (solo se admite m para abrir el mapa, el resultado es observable)"
+
+
+msgid "按键后等待结果出现的时间"
+msgstr "Tiempo de espera del resultado tras pulsar la tecla"
+
+
+msgid "勾选后只测试窗口置顶是否成功（不按键），用于隔离置顶问题"
+msgstr "Al marcar, solo prueba si la ventana pasa al primer plano (sin pulsar teclas), para aislar problemas de primer plano"

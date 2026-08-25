@@ -11,6 +11,8 @@ logger = Logger.get_logger(__name__)
 
 # 原有任务类调用独立逻辑
 class AutoCombatTask(BattleMixin, TriggerTask):
+    requires_foreground = True  # 战斗需要前台
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "自动战斗"

@@ -17,6 +17,7 @@ from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.core.base_mixin.window_arrow_drawing_mixin import WindowArrowDrawingMixin
 from src.core.global_config_store import (
     ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME,
+    INPUT_MODE_NAME,
     KEY_CONFIG_NAME,
     get_global_config,
     migrate_task_zip_line_values_to_global,
@@ -96,6 +97,10 @@ class BaseEfTask(
 ):
     """游戏自动化任务基类，提供通用的交互和识别功能。"""
 
+    # 该任务是否必须在前台模式下运行（涉及移动/战斗/视角操作）。
+    # 后台模式下此类任务会在启用时被拦截。
+    requires_foreground = False
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.keyboard = Controller()
@@ -159,6 +164,31 @@ class BaseEfTask(
             current_task_pause = max(0.0, now - self._task_pause_started_at)
 
         return now - self._active_time_paused_total - current_executor_pause - current_task_pause
+
+    def back(self, *args, after_sleep=0, **kwargs):
+        """返回键：主界面状态下用前置+真实按键（可靠返回），否则走 PostMessage（后台可用）。
+
+        主界面状态下 PostMessage 的 ESC 在游戏后台时可能被延迟处理，导致残留的 back
+        在后续任务置顶时才生效，干扰后续任务。因此主界面时强制前置后真实按键。
+        """
+        interaction = getattr(getattr(self, "executor", None), "interaction", None)
+        if interaction is not None and hasattr(interaction, "send_key_down"):
+            try:
+                if self.in_world():
+                    pressed = interaction.send_key_down("esc", foreground=True)
+                    if pressed:
+                        interaction.send_key_up("esc", foreground=True)
+                    if after_sleep > 0:
+                        self.sleep(after_sleep)
+                    return
+            except Exception:
+                # 前台输入已开始后异常：清理（释放按键）并结束，不再次调用父类返回
+                try:
+                    interaction.send_key_up("esc", foreground=True)
+                except Exception:
+                    pass
+                return
+        super().back(*args, after_sleep=after_sleep, **kwargs)
 
     def sleep(self, timeout):
         """Sleep for active task time, keeping the deadline across pauses."""
@@ -250,7 +280,38 @@ class BaseEfTask(
         # 把任务文件中的滑索旧值转存到全局 Zip Line Config.json，避免全局侧 legacy 收集
         # 在任务文件滑索键已被删除后读不到值。
         migrate_task_zip_line_values_to_global(self.__class__.__name__)
+        # 注入后台模式任务级开关（布尔，置于配置最顶端，与战斗独立配置一致）
+        self.default_config = {"后台模式启用": False, **self.default_config}
+        self.config_description["后台模式启用"] = (
+            "后台模式启用：勾选后该任务强制后台模式（按键用完即恢复窗口，禁用移动/战斗/视角操作）；"
+            "不勾选则跟随全局输入模式。"
+        )
         super().load_config()
+
+    def input_mode(self) -> str:
+        """返回 'foreground' | 'background'，合并全局与任务级开关。
+
+        触发式任务始终返回前台模式（触发时用户已在前台，持续运行不受后台影响）。
+        """
+        if isinstance(self, TriggerTask):
+            return "foreground"
+        try:
+            task_override = self.config.get("后台模式启用", False)
+        except Exception:
+            task_override = False
+        if task_override:
+            return "background"
+        try:
+            global_mode = get_global_config(INPUT_MODE_NAME).get("输入模式", "前台模式")
+        except Exception:
+            global_mode = "前台模式"
+        return "background" if global_mode == "后台模式" else "foreground"
+
+    def enable(self):
+        if self.input_mode() == "background" and getattr(self, "requires_foreground", False):
+            self.log_info("后台模式下该任务需要前台操作（移动/战斗/视角），无法启用", notify=True)
+            return
+        super().enable()
 
     def box_of_screen(
             self,

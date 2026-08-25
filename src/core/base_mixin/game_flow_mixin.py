@@ -337,7 +337,7 @@ class GameFlowMixin:
             self._logged_in = True
         return in_combat_world
 
-    def ensure_main(self, esc=True, time_out=90, after_sleep=0, need_active=True):
+    def ensure_main(self, esc=True, time_out=90, after_sleep=0):
         """
         确保回到主界面（游戏世界）。
 
@@ -345,7 +345,6 @@ class GameFlowMixin:
             esc: 是否在失败时执行返回键处理。
             time_out: 等待主界面的总超时时间。
             after_sleep: 成功后额外等待时间。
-            need_active: 是否先激活窗口。
 
         Returns:
             None
@@ -360,7 +359,7 @@ class GameFlowMixin:
 
         # Give loading and return animations a chance to finish before recovery input.
         result = self.wait_until(
-            lambda: self.is_main(esc=False, need_active=need_active),
+            lambda: self.is_main(esc=False),
             time_out=observe_time,
             settle_time=1.0,
             raise_if_not_found=False,
@@ -368,7 +367,7 @@ class GameFlowMixin:
         if not result and self.active_time() - start < time_out:
             self._next_main_recovery_time = self.active_time()
             result = self.wait_until(
-                lambda: self.is_main(esc=esc, need_active=need_active),
+                lambda: self.is_main(esc=esc),
                 time_out=max(0.01, time_out - (self.active_time() - start)),
                 settle_time=1.0,
                 raise_if_not_found=False,
@@ -396,22 +395,18 @@ class GameFlowMixin:
 
         return in_world
 
-    def is_main(self, esc=False, need_active=True):
+    def is_main(self, esc=False):
         """
         判断是否处于可执行任务的主界面状态。
 
         Args:
             esc: 是否在处理失败时按返回键。
-            need_active: 是否需要先激活窗口。
 
         Returns:
             bool: 处于主界面返回 True，否则返回 False。
         """
 
         self.next_frame()
-
-        if not self._logged_in and need_active:
-            self.active_and_send_mouse_delta(activate=True, only_activate=True)
 
         # Stability is handled by ensure_main's outer wait.
         if self.in_world():

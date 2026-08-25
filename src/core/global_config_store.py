@@ -25,6 +25,7 @@ from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING, stages_dict
 KEY_CONFIG_NAME = "Game Hotkey Config"
 ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME = "Ensure Main Once Action Sleep"
 ZIP_LINE_CONFIG_NAME = "Zip Line Config"
+INPUT_MODE_NAME = "输入模式"
 ZIP_LINE_SCROLL_KEY = "是否启用滚动放大视角"
 ZIP_LINE_GROUP_KEY = "滑索配置分类"
 ZIP_LINE_DELIVERY_GROUP = "送货滑索"
@@ -99,11 +100,19 @@ zip_line_config_option = ConfigOption(
     config_type=ZIP_LINE_CONFIG_TYPE,
     icon=Icons.Zipline
 )
+input_mode_option = ConfigOption(
+    INPUT_MODE_NAME,
+    {"输入模式": "前台模式"},
+    description="前台模式：游戏窗口保持前置，支持移动/战斗/视角操作；后台模式：按键用完即恢复窗口，禁用移动/战斗/视角操作",
+    config_type={"输入模式": {"type": "drop_down", "options": ["前台模式", "后台模式"]}},
+    icon=FluentIcon.PLAY
+)
 GLOBAL_CONFIG_OPTIONS = [
     key_config_option,
     battle_config_option,
     ensure_main_once_action_sleep_option,
     zip_line_config_option,
+    input_mode_option,
 ]
 
 _LOCK = threading.Lock()
