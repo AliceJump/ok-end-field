@@ -191,16 +191,26 @@ def sync_characters(wiki: dict) -> tuple:
             added.append(key)
 
     # canonical JSON 补新角色（zh + en + stars）
-    if added:
+    # 每次同步都检查 lang 中缺少 canonical 记录的角色：仅遍历 added 会漏掉
+    # 之前因缺 en_US 被跳过的角色（下次同步它们已在 lang 中，不会再进 added）
+    missing_canon = [key for key in lang if key not in canon]
+    if missing_canon:
         changed_canon = False
-        for key in added:
-            if key not in canon:
-                canon[key] = {
-                    "zh": lang[key]["zh_CN"]["string"],
-                    "en": lang[key]["en_US"]["string"].lower().replace(" ", "_"),
-                    "stars": 6,
-                }
-                changed_canon = True
+        for key in missing_canon:
+            if key in canon:
+                continue
+            zh_name = lang[key].get("zh_CN", {}).get("string", "")
+            # 新角色可能缺 en_US（wiki 字段为空时不会写入该语言键），直接取会 KeyError
+            en_name = (lang[key].get("en_US") or {}).get("string", "")
+            if not en_name or not zh_name:
+                print(f"  [跳过] {key}: 缺少 en_US/zh_CN，canonical 节点需人工补充")
+                continue
+            canon[key] = {
+                "zh": zh_name,
+                "en": en_name.lower().replace(" ", "_"),
+                "stars": 6,
+            }
+            changed_canon = True
         if changed_canon:
             CANON_CHARACTERS_JSON.write_text(
                 json.dumps(canon, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"

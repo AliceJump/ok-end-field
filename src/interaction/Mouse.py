@@ -1,5 +1,6 @@
 # ===== device layer =====
 import ctypes
+import ctypes.wintypes
 import time
 import win32gui
 
@@ -204,11 +205,14 @@ def active_and_send_mouse_delta(
                     import win32con
 
                     win32api.keybd_event(win32con.VK_MENU, 0, 0, 0)
-                    time.sleep(0.01)
+                    try:
+                        time.sleep(0.01)
 
-                    win32gui.SetForegroundWindow(hwnd)
-
-                    win32api.keybd_event(win32con.VK_MENU, 0, win32con.KEYEVENTF_KEYUP, 0)
+                        win32gui.SetForegroundWindow(hwnd)
+                    finally:
+                        # 无论第二次 SetForegroundWindow 是否成功，都必须抬起 Alt，
+                        # 否则 Alt 在系统层面保持按下，后续所有按键都变成 Alt 组合键
+                        win32api.keybd_event(win32con.VK_MENU, 0, win32con.KEYEVENTF_KEYUP, 0)
 
                 time.sleep(delay)
 

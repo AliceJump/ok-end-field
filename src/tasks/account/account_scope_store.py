@@ -27,6 +27,53 @@ def _new_store() -> Dict[str, Any]:
     return copy.deepcopy(_EMPTY_STORE)
 
 
+def _backup_corrupt_store() -> str:
+    """把疑似损坏的存储文件移到 .corrupt；失败时如实报告，不假装已备份。"""
+    backup_path = f"{_STORE_PATH}.corrupt"
+    try:
+        os.replace(_STORE_PATH, backup_path)
+        return backup_path
+    except OSError:
+        return f"{_STORE_PATH}（备份失败：{backup_path} 无法写入）"
+
+
+def _load_store_json() -> Tuple[Dict[str, Any], Any]:
+    """读取存储文件。
+
+    - JSON 解析错误 / 编码错误 / 顶层类型异常：视为文件损坏，备份后抛错，绝不静默回退到空存储
+    - 文件读取 OSError（权限等）：与损坏无关，直接抛出原异常，不动源文件
+    """
+    current_mtime: Any = os.path.getmtime(_STORE_PATH)
+    try:
+        with open(_STORE_PATH, "r", encoding="utf-8") as fp:
+            raw = fp.read()
+    except OSError:
+        raise
+    try:
+        data = json.loads(raw)
+    except (json.JSONDecodeError, UnicodeDecodeError) as exc:
+        backup_path = _backup_corrupt_store()
+        raise RuntimeError(
+            f"账号覆盖配置文件损坏，已备份到 {backup_path}，请修复后重启: {exc}"
+        ) from exc
+    if not isinstance(data, dict):
+        backup_path = _backup_corrupt_store()
+        raise RuntimeError(f"账号覆盖配置文件格式异常（顶层不是对象），已备份到 {backup_path}")
+    return data, current_mtime
+
+
+def _atomic_write_json(data: Dict[str, Any]) -> Any:
+    """先写临时文件再原子替换，避免写入中途崩溃留下截断的 JSON。"""
+    ensure_dir_for_file(_STORE_PATH)
+    tmp_path = f"{_STORE_PATH}.tmp"
+    with open(tmp_path, "w", encoding="utf-8") as fp:
+        json.dump(data, fp, ensure_ascii=False, indent=2)
+        fp.flush()
+        os.fsync(fp.fileno())
+    os.replace(tmp_path, _STORE_PATH)
+    return os.path.getmtime(_STORE_PATH)
+
+
 def _clean_text(value: Any) -> str:
     if value is None:
         return ""
@@ -337,11 +384,7 @@ def load_overrides(force: bool = False) -> Dict[str, Any]:
         if current_mtime is None:
             data = _new_store()
         else:
-            try:
-                with open(_STORE_PATH, "r", encoding="utf-8") as fp:
-                    data = json.load(fp)
-            except Exception:
-                data = _new_store()
+            data, current_mtime = _load_store_json()
 
         normalized = _normalize(data)
         _CACHE_DATA = normalized
@@ -356,12 +399,8 @@ def save_overrides(data: Dict[str, Any]) -> Dict[str, Any]:
     normalized = _normalize(data)
 
     with _LOCK:
-        ensure_dir_for_file(_STORE_PATH)
-        with open(_STORE_PATH, "w", encoding="utf-8") as fp:
-            json.dump(normalized, fp, ensure_ascii=False, indent=2)
-
+        _CACHE_MTIME = _atomic_write_json(normalized)
         _CACHE_DATA = normalized
-        _CACHE_MTIME = os.path.getmtime(_STORE_PATH)
 
     return copy.deepcopy(normalized)
 
@@ -372,22 +411,15 @@ def update_overrides(updater: Callable[[Dict[str, Any]], Dict[str, Any]]) -> Dic
 
     with _LOCK:
         if os.path.exists(_STORE_PATH):
-            current_mtime: Any = os.path.getmtime(_STORE_PATH)
-            try:
-                with open(_STORE_PATH, "r", encoding="utf-8") as fp:
-                    current = _normalize(json.load(fp))
-            except Exception:
-                current = _new_store()
+            current, current_mtime = _load_store_json()
+            current = _normalize(current)
         else:
             current_mtime = None
             current = _new_store()
 
         updated = _normalize(updater(copy.deepcopy(current)))
         if updated != current:
-            ensure_dir_for_file(_STORE_PATH)
-            with open(_STORE_PATH, "w", encoding="utf-8") as fp:
-                json.dump(updated, fp, ensure_ascii=False, indent=2)
-            current_mtime = os.path.getmtime(_STORE_PATH)
+            current_mtime = _atomic_write_json(updated)
 
         _CACHE_DATA = updated
         _CACHE_MTIME = current_mtime

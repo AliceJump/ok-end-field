@@ -297,8 +297,6 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                     # 3. 滚动次数已满，准备刷新
                     self.log_debug("已完成当前列表扫描，准备检测刷新")
 
-                    refresh_not_found_count = 0  # 重置计数
-
                     if last_refresh_box:
 
                         last_click = getattr(self, 'last_refresh_time', 0)
