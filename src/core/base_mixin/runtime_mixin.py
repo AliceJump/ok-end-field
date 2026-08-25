@@ -969,6 +969,9 @@ class RuntimeMixin:
         Returns:
             None
         """
+        if self.input_mode() == "background":
+            self.log_info("后台模式下已禁用移动操作")
+            return
         send_move_keys(self, keys, duration)
 
     def _dodge_with_direction(self, direction_key: str, pre_hold: float = 0.004,
@@ -1035,6 +1038,9 @@ class RuntimeMixin:
         Returns:
             Any: move_to_target_once_impl 的返回值。
         """
+        if self.input_mode() == "background":
+            self.log_info("后台模式下已禁用视角移动")
+            return None
         scaled_max_step = self.scale_distance(max_step)
         scaled_min_step = min(scaled_max_step, self.scale_distance(min_step))
         scaled_slow_radius = self.scale_distance(slow_radius)
@@ -1064,6 +1070,9 @@ class RuntimeMixin:
         Returns:
             Any: send_mouse_delta 的返回值。
         """
+        if not only_activate and self.input_mode() == "background":
+            self.log_info("后台模式下已禁用移动视角操作")
+            return None
         return send_mouse_delta(self.get_game_hwnd(), dx, dy, activate, only_activate, delay, steps)
 
     def click_with_alt(self, x: int | float | Box | List[Box] = -1, y: int | float = -1, move_back: bool = False,

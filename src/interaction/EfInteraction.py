@@ -34,6 +34,7 @@ class EfInteraction(PostMessageInteraction):
         self.cursor_position = None
         self.activated = False
         self._esc_hwnd = 0
+        self._key_prev_hwnd = 0  # 后台模式下按键按下前的前台窗口，松开时恢复
         self.keyboard = Controller()
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.001, move=True, key="left"):
@@ -131,6 +132,24 @@ class EfInteraction(PostMessageInteraction):
         finally:
             self.cursor_position = None
 
+    def _background_mode(self) -> bool:
+        """后台模式（伪后台）：按键用完即恢复窗口。
+
+        优先取当前任务的 input_mode()（支持任务级开关），无当前任务时回退全局配置。
+        """
+        try:
+            from ok import og
+            task = getattr(getattr(og, "executor", None), "current_task", None)
+            if task is not None and hasattr(task, "input_mode"):
+                return task.input_mode() == "background"
+        except Exception:
+            pass
+        try:
+            from src.core.global_config_store import INPUT_MODE_NAME, get_global_config
+            return get_global_config(INPUT_MODE_NAME).get("输入模式", "前台模式") == "后台模式"
+        except Exception:
+            return False
+
     def send_key_down(self, key, activate=True):
         if str(key).lower() in ("esc", "escape"):
             self._esc_hwnd = self._game_hwnd()
@@ -143,6 +162,9 @@ class EfInteraction(PostMessageInteraction):
                 self.make_lparam(vk_code, is_up=False),
             )
             return
+        # 后台模式下：按下时前置游戏（pynput 只投递到前台窗口），松开时恢复原窗口
+        if self._background_mode():
+            self._key_prev_hwnd = win32gui.GetForegroundWindow()
         if activate:
             active_and_send_mouse_delta(self._game_hwnd(), only_activate=True)
         self.keyboard.press(self._convert_key(key))
@@ -160,6 +182,15 @@ class EfInteraction(PostMessageInteraction):
             self._esc_hwnd = 0
             return
         self.keyboard.release(self._convert_key(key))
+        if self._key_prev_hwnd:
+            prev = self._key_prev_hwnd
+            self._key_prev_hwnd = 0
+            current = win32gui.GetForegroundWindow()
+            if prev and win32gui.IsWindow(prev) and current != prev:
+                try:
+                    win32gui.SetForegroundWindow(prev)
+                except Exception:
+                    pass
 
     def _convert_key(self, key: str):
         aliases = {

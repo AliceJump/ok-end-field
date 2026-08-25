@@ -52,6 +52,8 @@ class DeliveryRow:
 class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
     """运输委托自动化任务类 - 处理游戏中的送货操作"""
 
+    requires_foreground = True  # 送货需要移动/导航
+
     # 配置键名常量
     CFG_TARGET_TICKET_NUM = "目标券数"
     CFG_TEST_TARGET = "选择测试对象"

@@ -7,6 +7,8 @@ from src.tasks.mixin.battle_mixin import BattleMixin
 
 
 class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
+    requires_foreground = True  # 战斗需要前台
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "刷体力"

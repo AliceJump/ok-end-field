@@ -134,6 +134,17 @@ class DailyTaskRunner:
             self.task_status["skipped"].append(key)
             return True
 
+        # 后台模式下跳过需要前台操作的子任务（如战斗/送货/卖货）
+        input_mode = getattr(self.task, "input_mode", None)
+        if (
+            input_mode is not None
+            and input_mode() == "background"
+            and key in getattr(self.task, "FOREGROUND_TASK_KEYS", ())
+        ):
+            self.task.log_info(f"后台模式下跳过需要前台操作的子任务: {key}")
+            self.task_status["skipped"].append(key)
+            return True
+
         self.current_task_key = key
         self.failure_screenshot_tasks.discard(key)
         self.final_summary["current_task"] = key

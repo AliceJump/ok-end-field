@@ -327,7 +327,12 @@ class DailyTradeFeature:
             if not (buy_price and sell_price):
                 self.log_info("未找到买入价或卖出价")
                 continue
-            if self.config.get("只买不卖", False):
+            buy_only = self.config.get("只买不卖", False)
+            if self.input_mode() == "background":
+                if not buy_only:
+                    self.log_info("后台模式下强制只买不卖，跳过卖出")
+                buy_only = True
+            if buy_only:
                 buy_good = good_infos
                 sell_goods = []
                 can_buy = buy_good and (buy_good.good_price < buy_price)

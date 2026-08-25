@@ -151,6 +151,7 @@ config = {
         ["src.tasks.test.TestBattleSlotDetect", "TestBattleSlotDetect"],
         ["src.tasks.test.TestCombatTemplateMatch", "TestCombatTemplateMatch"],
         ["src.tasks.test.MouseRotationCalibration", "MouseRotationCalibration"],
+        ["src.tasks.test.AltClickMinimapTest", "AltClickMinimapTest"],
     ],
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],

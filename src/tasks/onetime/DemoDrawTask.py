@@ -5,6 +5,8 @@ from src.tasks.mixin.common import Common
 
 
 class DemoDrawTask(Common):
+    requires_foreground = True  # 演算战斗需要前台
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "演算抽牌"
