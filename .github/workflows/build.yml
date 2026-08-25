@@ -217,7 +217,7 @@ jobs:
           show_author: true #在更新日志中加入作者
 
   build:
-    needs: test
+    needs: sync
     runs-on: windows-latest
     permissions:
       contents: read
