@@ -17,6 +17,7 @@ class TestEfInteraction(unittest.TestCase):
         interaction._game_hwnd = MagicMock(return_value=200)
         interaction._background_key_hold_count = 0
         interaction._key_prev_hwnd = 0
+        interaction._pressed_keys = set()
         interaction._background_mode = MagicMock(return_value=False)
         win32gui.GetForegroundWindow.return_value = 200  # 游戏已在前台
 
@@ -80,6 +81,7 @@ class TestEfInteraction(unittest.TestCase):
         interaction.keyboard = MagicMock()
         interaction._background_key_hold_count = 0
         interaction._key_prev_hwnd = 0
+        interaction._pressed_keys = set()
         interaction._background_mode = MagicMock(return_value=False)
         win32gui.GetForegroundWindow.return_value = 200  # 游戏已在前台
 

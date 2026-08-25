@@ -36,6 +36,7 @@ class EfInteraction(PostMessageInteraction):
         self._esc_hwnd = 0
         self._key_prev_hwnd = 0  # 后台模式下按键按下前的前台窗口，松开时恢复
         self._background_key_hold_count = 0  # 后台模式下未释放的按键数
+        self._pressed_keys = set()  # 已成功按下的按键（用于配对保护）
         self.keyboard = Controller()
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.001, move=True, key="left"):
@@ -208,10 +209,12 @@ class EfInteraction(PostMessageInteraction):
                         f"游戏={hwnd} 置顶成功={fg_after == hwnd}"
                     )
         self.keyboard.press(self._convert_key(key))
+        self._pressed_keys.add(str(key).lower())
         return True
 
     def send_key_up(self, key, foreground=False):
-        if str(key).lower() in ("esc", "escape") and not foreground:
+        key_lower = str(key).lower()
+        if key_lower in ("esc", "escape") and not foreground:
             hwnd = self._esc_hwnd or self._game_hwnd()
             vk_code = win32con.VK_ESCAPE
             win32gui.PostMessage(
@@ -222,6 +225,10 @@ class EfInteraction(PostMessageInteraction):
             )
             self._esc_hwnd = 0
             return
+        # 配对保护：仅释放实际按下过的按键，避免向原前台应用发送未配对释放
+        if key_lower not in self._pressed_keys:
+            return
+        self._pressed_keys.discard(key_lower)
         try:
             self.keyboard.release(self._convert_key(key))
         finally:
