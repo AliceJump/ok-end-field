@@ -10,15 +10,39 @@ class TestEfInteraction(unittest.TestCase):
     @patch("src.interaction.EfInteraction.time.sleep")
     @patch("src.interaction.EfInteraction.active_and_send_mouse_delta")
     @patch("src.interaction.EfInteraction.win32gui")
-    def test_back_posts_escape_without_forcing_foreground(self, win32gui, activate, sleep):
+    def test_esc_foreground_forces_foreground_and_presses(self, win32gui, activate, sleep):
         interaction = EfInteraction.__new__(EfInteraction)
         interaction._last_key_log_times = {}  # 本地 ok-script BaseInteraction.send_key 新增的日志间隔表
+        interaction.keyboard = MagicMock()
+        interaction._game_hwnd = MagicMock(return_value=200)
+        interaction._background_key_hold_count = 0
+        interaction._key_prev_hwnd = 0
+        interaction._background_mode = MagicMock(return_value=False)
+        win32gui.GetForegroundWindow.return_value = 200  # 游戏已在前台
+
+        # foreground=True 时 ESC 走前置+pynput 路径
+        interaction.send_key_down("esc", foreground=True)
+        interaction.send_key_up("esc", foreground=True)
+
+        activate.assert_called_once_with(200, only_activate=True)
+        interaction.keyboard.press.assert_called_once()
+        interaction.keyboard.release.assert_called_once()
+        win32gui.PostMessage.assert_not_called()
+
+    @patch("src.interaction.EfInteraction.time.sleep")
+    @patch("src.interaction.EfInteraction.active_and_send_mouse_delta")
+    @patch("src.interaction.EfInteraction.win32gui")
+    def test_esc_default_posts_message_without_foreground(self, win32gui, activate, sleep):
+        interaction = EfInteraction.__new__(EfInteraction)
+        interaction._last_key_log_times = {}
         interaction.keyboard = MagicMock()
         interaction._game_hwnd = MagicMock(return_value=200)
         interaction._esc_hwnd = 0
         interaction.make_lparam = MagicMock(side_effect=(11, 22))
 
-        interaction.back()
+        # 默认（foreground=False）ESC 走 PostMessage，不前置
+        interaction.send_key_down("esc")
+        interaction.send_key_up("esc")
 
         activate.assert_not_called()
         interaction.keyboard.assert_not_called()
@@ -31,7 +55,6 @@ class TestEfInteraction(unittest.TestCase):
             ],
         )
         self.assertEqual(interaction._esc_hwnd, 0)
-        sleep.assert_called_once_with(0.01)
 
     @patch("src.interaction.EfInteraction.active_and_send_mouse_delta")
     @patch("src.interaction.EfInteraction.GetCursorPos", return_value=(10, 20))

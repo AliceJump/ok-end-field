@@ -160,8 +160,9 @@ class EfInteraction(PostMessageInteraction):
             time.sleep(0.02)
         return win32gui.GetForegroundWindow() == hwnd
 
-    def send_key_down(self, key, activate=True):
-        if str(key).lower() in ("esc", "escape"):
+    def send_key_down(self, key, activate=True, foreground=False):
+        # ESC 默认走 PostMessage（后台可用）；foreground=True 时走前置+pynput（主界面可靠返回）
+        if str(key).lower() in ("esc", "escape") and not foreground:
             self._esc_hwnd = self._game_hwnd()
             vk_code = win32con.VK_ESCAPE
             win32gui.SendMessage(self._esc_hwnd, win32con.WM_ACTIVATE, win32con.WA_ACTIVE, 0)
@@ -203,8 +204,8 @@ class EfInteraction(PostMessageInteraction):
                 )
         self.keyboard.press(self._convert_key(key))
 
-    def send_key_up(self, key):
-        if str(key).lower() in ("esc", "escape"):
+    def send_key_up(self, key, foreground=False):
+        if str(key).lower() in ("esc", "escape") and not foreground:
             hwnd = self._esc_hwnd or self._game_hwnd()
             vk_code = win32con.VK_ESCAPE
             win32gui.PostMessage(

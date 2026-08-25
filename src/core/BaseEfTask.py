@@ -165,6 +165,25 @@ class BaseEfTask(
 
         return now - self._active_time_paused_total - current_executor_pause - current_task_pause
 
+    def back(self, *args, after_sleep=0, **kwargs):
+        """返回键：主界面状态下用前置+真实按键（可靠返回），否则走 PostMessage（后台可用）。
+
+        主界面状态下 PostMessage 的 ESC 在游戏后台时可能被延迟处理，导致残留的 back
+        在后续任务置顶时才生效，干扰后续任务。因此主界面时强制前置后真实按键。
+        """
+        interaction = getattr(getattr(self, "executor", None), "interaction", None)
+        if interaction is not None and hasattr(interaction, "send_key_down"):
+            try:
+                if self.is_main():
+                    interaction.send_key_down("esc", foreground=True)
+                    interaction.send_key_up("esc", foreground=True)
+                    if after_sleep > 0:
+                        self.sleep(after_sleep)
+                    return
+            except Exception:
+                pass
+        super().back(*args, after_sleep=after_sleep, **kwargs)
+
     def sleep(self, timeout):
         """Sleep for active task time, keeping the deadline across pauses."""
         if timeout <= 0:
