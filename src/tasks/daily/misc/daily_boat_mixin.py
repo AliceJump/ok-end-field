@@ -35,11 +35,18 @@ class DailyBoatMixin:
         return False
 
     def _one_click_collect(self):
+        """
+        Collects available clues and products from the daily boat.
+        
+        Returns:
+        	bool: Always `True`.
+        """
         stages = self._boat_stages()
         clue_box = self.box_of_screen(1627 / 1920, 178 / 1080, (1627 + 76) / 1920, (178 + 154) / 1080)
         start_time= self.active_time()
         if "收集线索" in stages:
-            self.wait_click_feature(feature=fL.clue_collect_icon, time_out=3, box=clue_box, raise_if_not_found=False)
+            if self.wait_click_feature(feature=fL.clue_collect_icon, time_out=3, box=clue_box, raise_if_not_found=False):
+                self.wait_pop_up(time_out=5)
         result = self.wait_click_feature(feature=fL.products_collect_icon, time_out=max(1, 3 - (self.active_time() - start_time)), box=clue_box, raise_if_not_found=False)
         if result:
             self.wait_pop_up(time_out=5)
