@@ -150,7 +150,9 @@ class DailyTaskRunner:
         self.final_summary["current_task"] = key
         self.task.log_info(f"开始任务: {key}")
         self.task.ensure_main()
-        self.task.send_key("shift")  # 确认使用send_key：shift为奔跑切换键，游戏固定不可配置键
+        # shift 为奔跑切换键：后台模式下移动已禁用，无需切换奔跑状态
+        if not (input_mode is not None and input_mode() == "background"):
+            self.task.send_key("shift")  # 确认使用send_key：shift为奔跑切换键，游戏固定不可配置键
         result = func()
 
         if result is False:
