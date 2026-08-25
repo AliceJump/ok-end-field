@@ -1829,3 +1829,9 @@ msgstr "Tiempo de espera del resultado tras pulsar la tecla"
 
 msgid "勾选后只测试窗口置顶是否成功（不按键），用于隔离置顶问题"
 msgstr "Al marcar, solo prueba si la ventana pasa al primer plano (sin pulsar teclas), para aislar problemas de primer plano"
+
+msgid "武库配额"
+msgstr "Boleto de Arsenal"
+
+msgid "嵌晶玉"
+msgstr "Oroberilio"

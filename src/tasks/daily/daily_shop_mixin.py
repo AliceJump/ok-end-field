@@ -3,6 +3,15 @@ import re
 from src.data.FeatureList import FeatureList as fL
 from src.data.lang import LangAccessor
 
+# 优先商品模板标签 → 中文显示名（gettext msgid）。
+# 模板标签（weapon_quota/orobertyl）直接打进日志不可读，先映射为中文名；
+# 显示时经 self.tr() 走项目 gettext 机制跟随 UI 语言，各语言官方译名取自
+# 游戏解包文本（assets/data/i18n_texts/*.json，key=e38d9b5bba114f81 / 8a3b3efb79c0131f）。
+_PRIORITY_ITEM_NAMES = {
+    fL.weapon_quota.value: "武库配额",
+    fL.orobertyl.value: "嵌晶玉",
+}
+
 
 class DailyShopFeature:
     # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
@@ -140,8 +149,9 @@ class DailyShopFeature:
         candidates.extend((item, False) for item in normal_results)
         candidates.extend((item, True) for item in (discount_results or []))
         for idx, (item, is_discount_item) in enumerate(candidates, start=1):
-            item_name = getattr(item, "name", None) or f"未知商品#{idx}"
-            self.log_info(f"尝试购买优先商品: {item_name}，当前信用: {sum_credit}")
+            raw_name = getattr(item, "name", None)
+            item_name = _PRIORITY_ITEM_NAMES.get(raw_name, raw_name) or f"未知商品#{idx}"
+            self.log_info(f"尝试购买优先商品: {self.tr(item_name)}，当前信用: {sum_credit}")
             if not self.back_shop():
                 self.info_set(self.CFG_CREDIT_SHOP_WARNING, "购买优先商品前未能返回采购页面")
                 return False, sum_credit, False
@@ -150,29 +160,29 @@ class DailyShopFeature:
             cost = self.get_cost()
             if cost <= 0:
                 if is_discount_item:
-                    self.log_info(f"商品: {item_name}，未识别到有效价格，折扣商品设置价格为10.000")
+                    self.log_info(f"商品: {self.tr(item_name)}，未识别到有效价格，折扣商品设置价格为10.000")
                     cost = 10
                 else:
                     self.info_set(self.CFG_CREDIT_SHOP_WARNING, "购买优先商品前未能获取价格信息")
-                    self.mark_task_failure(f"购买失败: {item_name}，原因: 未识别到有效价格且非折扣商品")
+                    self.mark_task_failure(f"购买失败: {self.tr(item_name)}，原因: 未识别到有效价格且非折扣商品")
                     return False, sum_credit, False
-            self.log_info(f"商品价格识别成功: {item_name}，价格: {cost}")
+            self.log_info(f"商品价格识别成功: {self.tr(item_name)}，价格: {cost}")
             result = self.wait_click_feature(
                 feature=fL.skip_dialog_confirm, box=self.box_of_screen(0.816, 0.788, 0.855, 0.841), time_out=4, raise_if_not_found=False
             )
             if not result:
-                self.log_info(f"购买流程中断: {item_name}，未找到确认/不足弹窗，尝试返回采购页")
+                self.log_info(f"购买流程中断: {self.tr(item_name)}，未找到确认/不足弹窗，尝试返回采购页")
                 if not self.back_shop():
                     return False, sum_credit, False
                 if cost != 10:
                     self.info_set(self.CFG_CREDIT_SHOP_WARNING, "购买优先商品时信用不足")
-                    self.mark_task_failure(f"购买失败: {item_name}，原因: 信用不足，当前信用: {sum_credit}，价格: {cost}")
+                    self.mark_task_failure(f"购买失败: {self.tr(item_name)}，原因: 信用不足，当前信用: {sum_credit}，价格: {cost}")
                     self.back_shop()
                     return False, sum_credit, False
                 return False, sum_credit, True
             self.wait_pop_up()
             sum_credit -= cost
-            self.log_info(f"购买成功: {item_name}，消耗信用: {cost}，剩余信用: {sum_credit}")
+            self.log_info(f"购买成功: {self.tr(item_name)}，消耗信用: {cost}，剩余信用: {sum_credit}")
         if sum_credit <= reserve_credit:
             self.log_info(f"信用降至保留阈值，停止优先购买，剩余信用: {sum_credit}，阈值: {reserve_credit}")
             return True, sum_credit, True
