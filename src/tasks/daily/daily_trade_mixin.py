@@ -59,7 +59,7 @@ class DailyTradeFeature:
     def __getattr__(self, name):
         return getattr(self._task, name)
 
-    def collect_market_goods_info(self):
+    def collect_market_goods_info(self, buy_only=False):
         def ocr_stock_quantity() -> int:
             stock_piece = self.ocr(
                 match=_DIGITS_ONLY_RE,
@@ -82,7 +82,7 @@ class DailyTradeFeature:
         # =========================
         # ✅ 只买模式：直接OCR扫描
         # =========================
-        if self.config.get("只买不卖", False):
+        if buy_only:
             results = self.ocr(
                 match=re.compile(r"\d+"),
                 box=self.box_of_screen(0, market_text_y / self.height, 1, 1),
@@ -321,17 +321,17 @@ class DailyTradeFeature:
                 self.log_info("未找到货物")
                 continue
             self.click(result)
-            good_infos, _ = self.collect_market_goods_info()
-            buy_price = self.config.get(f"{area}买入价", 0)
-            sell_price = self.config.get(f"{area}卖出价", 0)
-            if not (buy_price and sell_price):
-                self.log_info("未找到买入价或卖出价")
-                continue
             buy_only = self.config.get("只买不卖", False)
             if self.input_mode() == "background":
                 if not buy_only:
                     self.log_info("后台模式下强制只买不卖，跳过卖出")
                 buy_only = True
+            good_infos, _ = self.collect_market_goods_info(buy_only=buy_only)
+            buy_price = self.config.get(f"{area}买入价", 0)
+            sell_price = self.config.get(f"{area}卖出价", 0)
+            if not (buy_price and sell_price):
+                self.log_info("未找到买入价或卖出价")
+                continue
             if buy_only:
                 buy_good = good_infos
                 sell_goods = []

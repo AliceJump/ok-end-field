@@ -35,6 +35,7 @@ class EfInteraction(PostMessageInteraction):
         self.activated = False
         self._esc_hwnd = 0
         self._key_prev_hwnd = 0  # 后台模式下按键按下前的前台窗口，松开时恢复
+        self._background_key_hold_count = 0  # 后台模式下未释放的按键数
         self.keyboard = Controller()
 
     def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.001, move=True, key="left"):
@@ -164,7 +165,9 @@ class EfInteraction(PostMessageInteraction):
             return
         # 后台模式下：按下时前置游戏（pynput 只投递到前台窗口），松开时恢复原窗口
         if self._background_mode():
-            self._key_prev_hwnd = win32gui.GetForegroundWindow()
+            if self._background_key_hold_count == 0:
+                self._key_prev_hwnd = win32gui.GetForegroundWindow()
+            self._background_key_hold_count += 1
         if activate:
             active_and_send_mouse_delta(self._game_hwnd(), only_activate=True)
         self.keyboard.press(self._convert_key(key))
@@ -182,7 +185,9 @@ class EfInteraction(PostMessageInteraction):
             self._esc_hwnd = 0
             return
         self.keyboard.release(self._convert_key(key))
-        if self._key_prev_hwnd:
+        if self._background_key_hold_count:
+            self._background_key_hold_count -= 1
+        if self._background_key_hold_count == 0 and self._key_prev_hwnd:
             prev = self._key_prev_hwnd
             self._key_prev_hwnd = 0
             current = win32gui.GetForegroundWindow()
