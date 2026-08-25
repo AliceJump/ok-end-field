@@ -151,6 +151,15 @@ class EfInteraction(PostMessageInteraction):
         except Exception:
             return False
 
+    def _wait_foreground(self, hwnd, timeout=1.0) -> bool:
+        """等待 hwnd 成为前台窗口。"""
+        start = time.monotonic()
+        while time.monotonic() - start < timeout:
+            if win32gui.GetForegroundWindow() == hwnd:
+                return True
+            time.sleep(0.02)
+        return win32gui.GetForegroundWindow() == hwnd
+
     def send_key_down(self, key, activate=True):
         if str(key).lower() in ("esc", "escape"):
             self._esc_hwnd = self._game_hwnd()
@@ -173,8 +182,9 @@ class EfInteraction(PostMessageInteraction):
             was_foreground = win32gui.GetForegroundWindow() == hwnd
             active_and_send_mouse_delta(hwnd, only_activate=True)
             if not was_foreground:
-                # 等待窗口真正置顶后再按键，避免按键投递到旧前台窗口
-                time.sleep(0.1)
+                # 等待窗口真正成为前台，并给游戏处理焦点切换的时间后再按键
+                self._wait_foreground(hwnd, timeout=1.0)
+                time.sleep(0.3)
         self.keyboard.press(self._convert_key(key))
 
     def send_key_up(self, key):
