@@ -119,10 +119,9 @@ class DailyBoatMixin:
                 )
 
                 start_index = clue_index + 1
-        start_end_x_offset=0.3
         if self.wait_click_feature(
             feature=fL.skip_dialog_confirm,
-            box=self.box_of_screen(0.371+start_end_x_offset, 0.770, 0.397+start_end_x_offset, 0.811),
+            box=self.box_of_screen(0.371, 0.770, 0.397, 0.811),
             time_out=1,
             raise_if_not_found=False,
         ):
