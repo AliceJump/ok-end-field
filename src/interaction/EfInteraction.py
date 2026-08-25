@@ -180,28 +180,32 @@ class EfInteraction(PostMessageInteraction):
             self._background_key_hold_count += 1
         if activate:
             hwnd = self._game_hwnd()
-            fg_before = win32gui.GetForegroundWindow()
-            was_foreground = fg_before == hwnd
-            active_and_send_mouse_delta(hwnd, only_activate=True)
-            if not was_foreground:
-                # 等待窗口真正成为前台，并给游戏处理焦点切换的时间后再按键
-                if not self._wait_foreground(hwnd, timeout=1.0):
-                    # 置顶失败：回滚后台按键状态，禁止发送按键（可能投递到其他前台应用）
-                    if self._background_key_hold_count:
-                        self._background_key_hold_count -= 1
-                    if self._background_key_hold_count == 0:
-                        self._key_prev_hwnd = 0
-                    logger.warning(
-                        f"后台按键置顶失败: key={key} 游戏={hwnd} 当前前台={win32gui.GetForegroundWindow()}"
+            # 后台模式下：记录的前台窗口已是游戏窗口则无需置顶，直接按键
+            if self._background_mode() and self._key_prev_hwnd == hwnd:
+                pass
+            else:
+                fg_before = win32gui.GetForegroundWindow()
+                was_foreground = fg_before == hwnd
+                active_and_send_mouse_delta(hwnd, only_activate=True)
+                if not was_foreground:
+                    # 等待窗口真正成为前台，并给游戏处理焦点切换的时间后再按键
+                    if not self._wait_foreground(hwnd, timeout=1.0):
+                        # 置顶失败：回滚后台按键状态，禁止发送按键（可能投递到其他前台应用）
+                        if self._background_key_hold_count:
+                            self._background_key_hold_count -= 1
+                        if self._background_key_hold_count == 0:
+                            self._key_prev_hwnd = 0
+                        logger.warning(
+                            f"后台按键置顶失败: key={key} 游戏={hwnd} 当前前台={win32gui.GetForegroundWindow()}"
+                        )
+                        return
+                    time.sleep(0.3)
+                if self._background_mode():
+                    fg_after = win32gui.GetForegroundWindow()
+                    logger.info(
+                        f"后台按键置顶: key={key} 前置前={fg_before} 前置后={fg_after} "
+                        f"游戏={hwnd} 置顶成功={fg_after == hwnd}"
                     )
-                    return
-                time.sleep(0.3)
-            if self._background_mode():
-                fg_after = win32gui.GetForegroundWindow()
-                logger.info(
-                    f"后台按键置顶: key={key} 前置前={fg_before} 前置后={fg_after} "
-                    f"游戏={hwnd} 置顶成功={fg_after == hwnd}"
-                )
         self.keyboard.press(self._convert_key(key))
 
     def send_key_up(self, key, foreground=False):
