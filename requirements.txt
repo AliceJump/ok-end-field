@@ -49,7 +49,7 @@ numpy==2.2.6
     #   scipy
     #   shapely
     #   tifffile
-ok-script==2.0.2
+ok-script==2.0.4
     # via ok-end-field
 onnxocr-ppocrv5==0.0.14
     # via ok-end-field
