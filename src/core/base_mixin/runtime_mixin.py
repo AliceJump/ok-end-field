@@ -6,12 +6,9 @@ from functools import partial
 from typing import List
 
 import cv2
-import imagehash
 import numpy as np
 import win32gui
-from PIL import Image
 from ok import Box
-from skimage.metrics import structural_similarity as ssim
 
 from src.config import config as app_config
 from src.data.FeatureList import FeatureList as fL
@@ -847,13 +844,10 @@ class RuntimeMixin:
             current_frame = parse_box(self.next_frame(), box)
 
             if method in ("phash", "dhash"):
-                img1 = Image.fromarray(last_frame)
-                img2 = Image.fromarray(current_frame)
-
-                h1 = imagehash.phash(img1) if method == "phash" else imagehash.dhash(img1)
-                h2 = imagehash.phash(img2) if method == "phash" else imagehash.dhash(img2)
-
-                is_stable = (h1 - h2) <= threshold
+                from src.image.stability import perceptual_hash, hamming_distance
+                h1 = perceptual_hash(last_frame, method=method)
+                h2 = perceptual_hash(current_frame, method=method)
+                is_stable = hamming_distance(h1, h2) <= threshold
 
             elif method == "pixel":
                 if last_frame.shape != current_frame.shape:
@@ -863,14 +857,11 @@ class RuntimeMixin:
                     is_stable = np.mean(diff) <= threshold
 
             elif method == "ssim":
-                last_gray = cv2.cvtColor(last_frame, cv2.COLOR_BGR2GRAY)
-                current_gray = cv2.cvtColor(current_frame, cv2.COLOR_BGR2GRAY)
-
-                if last_gray.shape != current_gray.shape:
+                from src.image.stability import ssim_score
+                if last_frame.shape != current_frame.shape:
                     is_stable = False
                 else:
-                    score, _ = ssim(last_gray, current_gray, full=True)
-                    is_stable = score >= threshold
+                    is_stable = ssim_score(last_frame, current_frame) >= threshold
 
             else:
                 raise ValueError(f"Unknown method {method}")
