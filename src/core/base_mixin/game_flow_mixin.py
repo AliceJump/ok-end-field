@@ -163,23 +163,7 @@ class GameFlowMixin:
                 return False
             if self.find_one("skip_dialog_esc", horizontal_variance=0.05):
                 self.press_esc()
-                self.sleep(0.1)
-                start = self.active_time()
-                while self.active_time() - start < 3:
-                    self.next_frame()
-                    confirm = self.find_confirm()
-                    if confirm:
-                        self.click(confirm)
-                        if self.wait_until(
-                                lambda: not self.find_confirm(),
-                                time_out=max(0.01, min(0.8, 3 - (self.active_time() - start))),
-                                raise_if_not_found=False,
-                        ):
-                            self.log_debug("AutoSkipDialogTask confirm disappeared")
-                            return True
-                    else:
-                        self.log_debug("AutoSkipDialogTask no confirm break")
-                        return True
+                self.click_confirm()
             self.sleep(0.5)
 
     def find_confirm(self):
