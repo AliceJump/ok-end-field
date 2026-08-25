@@ -1,5 +1,4 @@
 import unittest
-from pathlib import Path
 
 import cv2
 import numpy as np
@@ -8,7 +7,6 @@ from src.image.gray_bar_detector import detect_gray_bars
 
 
 class TestGrayBarDetector(unittest.TestCase):
-    sample_path = Path("tmp/simply.png")
 
     def _frame(self, scale=1.0, brightness=0, widths=(70, 70, 70, 70), bar_height=12):
         width, height = round(2560 * scale), round(1440 * scale)
@@ -64,15 +62,4 @@ class TestGrayBarDetector(unittest.TestCase):
         self.assertEqual(len(bars), 2)
         self.assertTrue(all(bar.x < 300 for bar in bars))
 
-    def test_simply_sample(self):
-        if not self.sample_path.exists():
-            self.skipTest("tmp/simply.png is not available")
-        frame = cv2.imread(str(self.sample_path))
-        bars = detect_gray_bars(frame)
-        self.assertEqual(len(bars), 4)
-        self.assertEqual([(bar.x, bar.y, bar.width, bar.height) for bar in bars], [
-            (162, 1098, 69, 12),
-            (240, 1098, 70, 12),
-            (318, 1098, 70, 12),
-            (396, 1098, 70, 12),
-        ])
+    

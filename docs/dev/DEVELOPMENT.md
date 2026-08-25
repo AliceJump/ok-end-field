@@ -356,8 +356,7 @@ self.press_combat_key("e")      # combat
 | `TestAutoCombat.py` | 战斗图片识别、技能条、等级和排轴解析 |
 | `TestAutoPick.py` | 自动拾取规则（可生产植物默认跳过与开关） |
 | `TestCheckLang.py` | 源码语言 key 与统一 JSON 的 `zh_CN/zh_TW` 引用 |
-| `TestConditionalRotation.py` | 排轴条件旋转 AST 归一化 |
-| `TestConditionalRotationCombat.py` | 条件旋转战斗执行（if/else 分支） |
+| `TestConditionalRotation.py` | 排轴条件旋转 AST 归一化与 `AutoCombatLogic.run()` 实时条件路径（含 if/else 分支） |
 | `TestConditionalRotationGui.py` | 条件旋转 GUI 动作/条件格式化 |
 | `TestDailyBattleToEnd.py` | 日常刷本到结束：YOLO 命中禁用中键点击、奖励等待 |
 | `TestDailyBoatState.py` | 日常联运状态共享范围 |
