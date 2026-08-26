@@ -231,7 +231,7 @@ class _FakeTask:
     def _check_single_exit_condition(self):
         return self._frame > 30
 
-    def is_combat_ended(self):
+    def is_combat_ended(self, exit_condition=None):
         if self._frame > 30:
             self._exited = True
             return True
@@ -429,6 +429,31 @@ class TestConditionalRotationCombat(unittest.TestCase):
         logic = AutoCombatLogic(task)
         result = logic.run(start_sleep=0, deadline=1.0)
         self.assertFalse(result)
+
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_recommend_detector_reset_only_on_combat_transition(self, _mu, _md):
+        """推荐技能检测器仅在非战斗→战斗转换时复位，同一场战斗重入不复位。"""
+        with patch("src.tasks.onetime.AutoCombatLogic.get_recommend_skill_detector") as mock_get:
+            detector = mock_get.return_value
+            task = _FakeTask({})
+            logic = AutoCombatLogic(task)
+
+            # 第一次进入战斗：非战斗 → 战斗转换，复位一次
+            self.assertTrue(logic.run(start_sleep=0))
+            self.assertEqual(detector.reset.call_count, 1)
+
+            # auto_battle 在同一场战斗内重入 run()（in_combat 仍为 True）：不得复位
+            task._exited = False
+            self.assertTrue(logic.run(start_sleep=0))
+            self.assertEqual(detector.reset.call_count, 1)
+
+            # 战斗结束后再进入新战斗：再次复位
+            self.assertFalse(logic.run(start_sleep=0))  # 非战斗 → 清标记
+            self.assertEqual(detector.reset.call_count, 1)
+            task._exited = False
+            self.assertTrue(logic.run(start_sleep=0))
+            self.assertEqual(detector.reset.call_count, 2)
 
 
 if __name__ == "__main__":

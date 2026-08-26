@@ -284,6 +284,8 @@ class AutoCombatLogic:
         self._exit_check_interval = 0.5
         task = self.task
         if not task.in_combat(required_yellow=1):
+            # 非战斗状态：清标记，下次进入战斗时才会复位推荐技能检测器
+            task._recommend_detector_in_combat = False
             now = task.active_time()
             last = getattr(task, '_last_no_combat_log_time', 0)
             if now - last >= 5:
@@ -296,11 +298,14 @@ class AutoCombatLogic:
         # 已确认进入战斗，记录进入时刻（用于“秒退”判定）
         combat_enter_time = task.active_time()
 
-        # 新战斗开始：上一场结束时推荐技能检测器可能仍有 active 标签
-        # （战斗外不会调用 detect，active 不会自复位），整体复位后新战斗
-        # 首个白圈周期才能重新产生上升沿。仅在战斗边界复位，不在每帧
-        # use_recommend_skill() 调用时复位。
-        get_recommend_skill_detector().reset()
+        # 非战斗 → 战斗 转换时复位推荐技能检测器，每场战斗仅一次：
+        # 上一场结束时可能残留 active 标签（战斗外不调用 detect，不会自复位），
+        # 新战斗首个白圈周期才能重新产生上升沿。用 task 上的标记保证
+        # auto_battle 在同一场战斗内重入 run() 时不再复位，避免同周期白圈
+        # 因 active 被清空而重复触发。
+        if not getattr(task, "_recommend_detector_in_combat", False):
+            get_recommend_skill_detector().reset()
+            task._recommend_detector_in_combat = True
 
         # 初始化普通战斗配置属性（排轴与普通模式共用）
         self.normal_skill_sequence = task.get_battle_config("技能释放", ["1", "2", "3"])
