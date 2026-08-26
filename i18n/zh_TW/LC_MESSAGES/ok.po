@@ -2184,9 +2184,6 @@ msgstr ""
 msgid "Log"
 msgstr ""
 
-msgid "Log(0705)"
-msgstr ""
-
 msgid "{vendor} {feature} is enabled and may cause malfunctions!"
 msgstr ""
 
@@ -2194,9 +2191,6 @@ msgid "{} is not connected, please select the game window."
 msgstr ""
 
 msgid "开始执行日常任务..."
-msgstr ""
-
-msgid "开始第 1/3 个账号(0705)任务执行"
 msgstr ""
 
 msgid "账号列表已保存"
