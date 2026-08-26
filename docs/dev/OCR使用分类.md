@@ -49,7 +49,6 @@
 ### 2.3 名称决策
 - 拾取黑/白名单：`src/tasks/trigger/AutoPickTask.py:50-53`，读 `texts[0].name` 决定是否拾取 / 按 F 次数。
 - 仓库识别：`WarehouseTransferTask.py:73-80`，读 name 判断"武陵仓库/谷地仓库"。
-- 装备词条：`src/essence/essence_recognizer.py:367`，全量文本聚类解析基质名称/来源/词条/等级。
 
 ## 三、混合 / 复杂
 
@@ -69,7 +68,6 @@
 - `AutoPickTask`（掉落物名称决策）
 - `DeliveryTask` / `TakeDeliveryTask`（委托行、金额、地点回填）
 - `daily_trade`（价格筛选）
-- `essence_recognizer`（词条文本解析）
 
 除上述核心链路外，其余约 105 处（点击型 + 混合型 + 未分类）对识别内容不敏感，只需"能匹配到位置"即可，混淆补丁对其帮助有限。
 
