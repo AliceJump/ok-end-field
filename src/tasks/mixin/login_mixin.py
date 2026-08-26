@@ -137,6 +137,13 @@ class LoginMixin(BaseEfTask):
         start_time = self.active_time()
         clicked_result = None
 
+        # 调用方可能传 str 或 re.Pattern；日志统一用可读文本，
+        # 避免 Pattern 对象被 str() 成 "re.compile(...)" 污染日志与 i18n 收集
+        match_text = match.pattern if isinstance(match, re.Pattern) else str(match)
+        success_match_text = (
+            success_match.pattern if isinstance(success_match, re.Pattern) else str(success_match)
+        ) if success_match else None
+
         while self.active_time() - start_time < 60:
 
             ocr_result = self.login_ocr(
@@ -182,7 +189,7 @@ class LoginMixin(BaseEfTask):
 
                 if success:
                     self.log_info(
-                        f"点击后检测到成功目标: {success_match}"
+                        f"点击后检测到成功目标: {success_match_text}"
                     )
                     return clicked_result
 
@@ -196,15 +203,15 @@ class LoginMixin(BaseEfTask):
 
                 if not check:
                     self.log_info(
-                        f"点击后目标已消失: {match}"
+                        f"点击后目标已消失: {match_text}"
                     )
                     return clicked_result
 
             self.log_debug(
-                f"点击后仍检测到'{match}'，准备重试"
+                f"点击后仍检测到'{match_text}'，准备重试"
             )
 
             self.sleep(1)
 
-        self.log_error(f"点击{match}超时或未成功")
+        self.log_error(f"点击{match_text}超时或未成功")
         return None

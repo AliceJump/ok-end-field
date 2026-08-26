@@ -578,7 +578,6 @@ msgstr "Map Account"
 msgid "埃特拉"
 msgstr "Estella"
 
-
 msgid "基础配置"
 msgstr "Basic Settings"
 
@@ -1665,7 +1664,6 @@ msgstr "Lower boundary of the search area, from 0 to 1; it must exceed Minimum Y
 msgid "每次检测后的等待时间。"
 msgstr "Wait time after each detection."
 
-
 msgid "失败消息:"
 msgstr "Failure messages:"
 
@@ -1789,22 +1787,17 @@ msgstr "Map cred exchange API response missing cred or token"
 msgid "Alt点击小地图测试"
 msgstr "Alt-click Minimap Test"
 
-
 msgid "验证 alt+点击小地图中心能否替代 send_key('m') 打开地图（后台输入可行性）"
 msgstr "Verify that alt+clicking the minimap center can replace send_key('m') to open the map (background input feasibility)"
-
 
 msgid "测试次数"
 msgstr "Test Count"
 
-
 msgid "测试前前置游戏"
 msgstr "Bring Game to Foreground Before Test"
 
-
 msgid "重复测试次数，每次先关闭地图再重新打开"
 msgstr "Number of test repetitions; the map is closed and reopened each time"
-
 
 msgid "勾选后每次测试前先把游戏窗口置前（对比前台/后台行为）"
 msgstr "When checked, brings the game window to the foreground before each test (to compare foreground/background behavior)"
@@ -1812,18 +1805,14 @@ msgstr "When checked, brings the game window to the foreground before each test 
 msgid "后台按键测试"
 msgstr "Background Key Test"
 
-
 msgid "验证后台模式下按键能否送达游戏（置顶+等待+按键+恢复），输出诊断日志"
 msgstr "Verify whether keys reach the game in background mode (foreground+wait+key+restore), outputting diagnostic logs"
-
 
 msgid "要测试的按键（仅支持 m 打开地图，结果可观察）"
 msgstr "Key to test (only m is supported to open the map, result is observable)"
 
-
 msgid "按键后等待结果出现的时间"
 msgstr "Time to wait for the result after pressing the key"
-
 
 msgid "勾选后只测试窗口置顶是否成功（不按键），用于隔离置顶问题"
 msgstr "When checked, only tests whether the window comes to the foreground (no key press), to isolate foreground issues"
@@ -1837,3 +1826,385 @@ msgstr "Oroberyl"
 msgid "购买优先商品时信用不足"
 msgstr "Insufficient credits when buying priority items"
 
+msgid "Action List"
+msgstr ""
+
+msgid "Auto"
+msgstr ""
+
+msgid "Auto Resize Game Window"
+msgstr ""
+
+msgid "Auto Start Game When App Starts"
+msgstr ""
+
+msgid "Basic Options"
+msgstr ""
+
+msgid "Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them."
+msgstr ""
+
+msgid "Diagnosis"
+msgstr ""
+
+msgid "Discord Notification"
+msgstr ""
+
+msgid "Discord Webhook"
+msgstr ""
+
+msgid "Discord channel webhook URL"
+msgstr ""
+
+msgid "Email Config"
+msgstr ""
+
+msgid "Enterprise WeChat Webhook Notification"
+msgstr ""
+
+msgid "Enterprise WeChat Webhook URL"
+msgstr ""
+
+msgid "Enterprise WeChat group bot webhook URL"
+msgstr ""
+
+msgid "Exact QQ contact nickname"
+msgstr ""
+
+msgid "Exact WeChat contact nickname"
+msgstr ""
+
+msgid "Exit After Task"
+msgstr ""
+
+msgid "Exit App when Game Exits"
+msgstr ""
+
+msgid "Exit the Game and the App after Successfully Executing the Task"
+msgstr ""
+
+msgid "HotKey"
+msgstr ""
+
+msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgstr ""
+
+msgid "Key to test (only m is supported to open the map, result is observable)"
+msgstr ""
+
+msgid "Kill Launcher After Start"
+msgstr ""
+
+msgid "Launch with DX11"
+msgstr ""
+
+msgid "Minimize Window to System Tray when Closing"
+msgstr ""
+
+msgid "Mute Game while in Background"
+msgstr ""
+
+msgid "No"
+msgstr ""
+
+msgid "None"
+msgstr ""
+
+msgid "Notification"
+msgstr ""
+
+msgid "Operation"
+msgstr ""
+
+msgid "Performance Test"
+msgstr ""
+
+msgid "QQ Bot API App ID"
+msgstr ""
+
+msgid "QQ Bot API Channel ID"
+msgstr ""
+
+msgid "QQ Bot API Notification"
+msgstr ""
+
+msgid "QQ Bot API Token"
+msgstr ""
+
+msgid "QQ Bot application ID"
+msgstr ""
+
+msgid "QQ Bot application token"
+msgstr ""
+
+msgid "QQ Desktop Nickname"
+msgstr ""
+
+msgid "QQ Desktop Notification (Not Reliable)"
+msgstr ""
+
+msgid "QQ channel ID to receive notifications"
+msgstr ""
+
+msgid "Requires the local QQ client window to be open and running"
+msgstr ""
+
+msgid "Requires the local WeChat client window to be open and running"
+msgstr ""
+
+msgid "SMTP 授权码/密码。请勿在公开仓库中提交真实授权码。"
+msgstr ""
+
+msgid "SMTP 服务器地址，例如 smtp.qq.com / smtp.163.com / smtp.gmail.com"
+msgstr ""
+
+msgid "SMTP 端口。SSL 通常为 465，STARTTLS 通常为 587。"
+msgstr ""
+
+msgid "SMTP 连接与发送的超时时间（秒）。"
+msgstr ""
+
+msgid "SMTP服务器"
+msgstr ""
+
+msgid "SMTP端口"
+msgstr ""
+
+msgid "Send notifications through an Enterprise WeChat group bot"
+msgstr ""
+
+msgid "Send notifications through the QQ Guild Bot API"
+msgstr ""
+
+msgid "Send notifications through the Telegram Bot API"
+msgstr ""
+
+msgid "Send notifications to a Discord webhook"
+msgstr ""
+
+msgid "Show notifications using the Windows system tray"
+msgstr ""
+
+msgid "Start/Stop"
+msgstr ""
+
+msgid "System Notification"
+msgstr ""
+
+msgid "Telegram Bot Token"
+msgstr ""
+
+msgid "Telegram Chat ID"
+msgstr ""
+
+msgid "Telegram Notification"
+msgstr ""
+
+msgid "Telegram bot token from BotFather"
+msgstr ""
+
+msgid "Telegram user, group, or channel chat ID"
+msgstr ""
+
+msgid "Time to wait for the result after pressing the key"
+msgstr ""
+
+msgid "Trigger Interval"
+msgstr ""
+
+msgid "Use DirectML"
+msgstr ""
+
+msgid "Use GPU to Improve Performance"
+msgstr ""
+
+msgid "Use the skill set when conditions are met"
+msgstr ""
+
+msgid "WeChat Desktop Nickname"
+msgstr ""
+
+msgid "WeChat Desktop Notification (Not Reliable)"
+msgstr ""
+
+msgid "When checked, only tests whether the window comes to the foreground (no key press), to isolate foreground issues"
+msgstr ""
+
+msgid "W长按时间(秒)"
+msgstr ""
+
+msgid "Yes"
+msgstr ""
+
+msgid "一次标定多个位移量（如 200, 400, 800），每个位移正负各测一次，覆盖多量程；留空则只用 标定位移dx 单值"
+msgstr ""
+
+msgid "一次验证多个角度（如 30, 90, 180, -90），每个角度都实测；留空则只用 验证目标角度(度) 单角度"
+msgstr ""
+
+msgid "主题前缀"
+msgstr ""
+
+msgid "仅测试置顶"
+msgstr ""
+
+msgid "任务完成后是否将最终执行汇总通过邮件发送（收件人取“设置 → 邮件发送配置”中的默认收件人）。"
+msgstr ""
+
+msgid "使用 SSL/TLS 加密连接发送邮件。"
+msgstr ""
+
+msgid "发件邮箱"
+msgstr ""
+
+msgid "发送时自动添加到邮件主题前面的前缀。"
+msgstr ""
+
+msgid "发送测试邮件"
+msgstr ""
+
+msgid "发送鼠标位移后、按 W 刷新前等待转向完成的时间；太短可能在转向未完成时就按 W 刷新朝向"
+msgstr ""
+
+msgid "后台模式启用"
+msgstr ""
+
+msgid "后台模式启用：勾选后该任务强制后台模式（按键用完即恢复窗口，禁用移动/战斗/视角操作）；不勾选则跟随全局输入模式。"
+msgstr ""
+
+msgid "启用SSL"
+msgstr ""
+
+msgid "周常"
+msgstr ""
+
+msgid "填写完上方 SMTP/发件邮箱/授权码/收件人后，点击此按钮发送一封测试邮件。"
+msgstr ""
+
+msgid "实测角度与目标角度误差超过该值判 FAIL"
+msgstr ""
+
+msgid "左右方向成对验证"
+msgstr ""
+
+msgid "开启后每个验证角度自动补上相反方向（如 44 会自动补 -44），左右两方向都实测；关闭则只测列表里的方向"
+msgstr ""
+
+msgid "手动yaw_per_pixel(留空用标定)"
+msgstr ""
+
+msgid "手动填标定系数可直接跳过标定只做验证；留空则先用本次标定结果"
+msgstr ""
+
+msgid "按 W 刷新朝向时的长按时长，太短则朝向不刷新"
+msgstr ""
+
+msgid "按键后等待(秒)"
+msgstr ""
+
+msgid "授权码"
+msgstr ""
+
+msgid "收件人列表"
+msgstr ""
+
+msgid "松开 W 后等待画面更新的时间"
+msgstr ""
+
+msgid "标定位移列表(逗号分隔)"
+msgstr ""
+
+msgid "标定采样次数，正负方向交替（仅单位移模式生效）"
+msgstr ""
+
+msgid "每个 sample 的测试方向位移量，正负交替测试（标定位移列表留空时生效）"
+msgstr ""
+
+msgid "每个目标角度的验证重复次数"
+msgstr ""
+
+msgid "测试按键"
+msgstr ""
+
+msgid "用于登录 SMTP 的邮箱地址，同时也是发件人地址。"
+msgstr ""
+
+msgid ""
+"用户别名到邮箱的映射，每行一个，格式：别名=邮箱（或 别名:邮箱）。\n"
+"例如：\n"
+"洛茜=rossi@endfiled.com\n"
+"洁尔佩塔=gilberta@endfiled.com\n"
+"发送时可用 --to 洛茜 直接按别名发送。"
+msgstr ""
+
+msgid "用标定系数反算位移并实测验证的角度；正值=向左转(鼠标左移)，负值=向右转，0=不验证"
+msgstr ""
+
+msgid "调用发送工具但未指定 --to 时使用的默认收件人邮箱。"
+msgstr ""
+
+msgid "转向后等待(秒)"
+msgstr ""
+
+msgid "连接超时秒数"
+msgstr ""
+
+msgid "邮件发送汇总"
+msgstr ""
+
+msgid "邮件发送配置"
+msgstr ""
+
+msgid "重复测试次数"
+msgstr ""
+
+msgid "锁闭储藏箱"
+msgstr ""
+
+msgid "验证次数"
+msgstr ""
+
+msgid "验证目标角度(度)"
+msgstr ""
+
+msgid "验证角度列表(逗号分隔)"
+msgstr ""
+
+msgid "验证误差容差(度)"
+msgstr ""
+
+msgid "默认收件人"
+msgstr ""
+
+msgid "GPU Driver Warning"
+msgstr ""
+
+msgid "Log"
+msgstr ""
+
+msgid "Log(0705)"
+msgstr ""
+
+msgid "{vendor} {feature} is enabled and may cause malfunctions!"
+msgstr ""
+
+msgid "{} is not connected, please select the game window."
+msgstr ""
+
+msgid "开始执行日常任务..."
+msgstr ""
+
+msgid "开始第 1/3 个账号(0705)任务执行"
+msgstr ""
+
+msgid "账号列表已保存"
+msgstr ""
+
+msgid "（复用ID {reused}，新建ID {created}）"
+msgstr ""
+
+msgid "；账号名（手机号）是唯一ID，密码变化不影响ID，账号名变化会新建ID"
+msgstr ""
+
+msgid "；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）"
+msgstr ""
