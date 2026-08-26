@@ -69,7 +69,7 @@ class DailyTaskRunner:
         try:
             # 任务名/失败消息为运行时标识与文本，不过内层 tr
             self.task.log_info(self.task.tr("任务失败标记 | {name}: {message}").format(
-                name=resolved_task_name, message=resolved_message))
+                name=self.task.tr(resolved_task_name), message=resolved_message))
         except Exception:
             pass
 
@@ -143,14 +143,14 @@ class DailyTaskRunner:
             and input_mode() == "background"
             and key in getattr(self.task, "FOREGROUND_TASK_KEYS", ())
         ):
-            self.task.log_info(self.task.tr("后台模式下跳过需要前台操作的子任务: {key}").format(key=key))
+            self.task.log_info(self.task.tr("后台模式下跳过需要前台操作的子任务: {key}").format(key=self.task.tr(key)))
             self.task_status["skipped"].append(key)
             return True
 
         self.current_task_key = key
         self.failure_screenshot_tasks.discard(key)
         self.final_summary["current_task"] = key
-        self.task.log_info(self.task.tr("开始任务: {key}").format(key=key))
+        self.task.log_info(self.task.tr("开始任务: {key}").format(key=self.task.tr(key)))
         self.task.ensure_main()
         # shift 为奔跑切换键：后台模式下移动已禁用，无需切换奔跑状态
         if not (input_mode is not None and input_mode() == "background"):
@@ -162,7 +162,7 @@ class DailyTaskRunner:
             self.set_task_failure(self.task.tr("任务返回 False"), task_name=key)
             if key not in self.failure_screenshot_tasks:
                 self.task.screenshot(f'DailyTask_FailTask_{key}')
-            self.task.log_info(self.task.tr("任务 {key} 执行失败").format(key=key), notify=True)
+            self.task.log_info(self.task.tr("任务 {key} 执行失败").format(key=self.task.tr(key)), notify=True)
             return False
 
         self.task_status["success"].append(key)
@@ -204,7 +204,8 @@ class DailyTaskRunner:
 
                 if self.task_status["failed"]:
                     self.task.log_info(self.task.tr("第 {idx} 轮 | 失败任务: {failed}").format(
-                        idx=repeat_idx + 1, failed=self.task_status['failed']), notify=True)
+                        idx=repeat_idx + 1,
+                        failed=[self.task.tr(k) for k in self.task_status['failed']]), notify=True)
                 else:
                     self.task.log_info(self.task.tr("第 {idx} 轮 | 日常完成!").format(idx=repeat_idx + 1), notify=True)
 
@@ -218,7 +219,8 @@ class DailyTaskRunner:
             if self.final_summary["actual_repeat_total"] > 1:
                 if self.final_summary["all_fail_tasks"]:
                     self.task.log_info(self.task.tr("执行完成，失败统计: {failed}").format(
-                        failed=self.final_summary['all_fail_tasks']), notify=True)
+                        failed=[(idx, [self.task.tr(k) for k in keys])
+                                for idx, keys in self.final_summary['all_fail_tasks']]), notify=True)
                 else:
                     self.task.log_info("所有任务均成功完成!", notify=True)
 
@@ -249,7 +251,7 @@ class DailyTaskRunner:
             current_message = self.failure_details.get(self.current_task_key, "")
             if current_message:
                 self.task.info_set("当前失败的任务", self.task.tr("{key}: {message}").format(
-                    key=self.current_task_key, message=current_message))
+                    key=self.task.tr(self.current_task_key), message=current_message))
             else:
                 self.task.info_set("当前失败的任务", self.current_task_key)
 
