@@ -49,7 +49,7 @@ class RuntimeMixin:
             round(x * width),
             round(y * height),
         )
-    
+
     def smooth_drag(self, start, end, duration=0.12):
         smooth_drag(
             self.get_game_hwnd(),
@@ -57,7 +57,7 @@ class RuntimeMixin:
             self.normalize_pos(end),
             duration,
         )
-        
+
     _resolution_warned = False
 
     def feature_stable(self, feature, box, duration):
@@ -136,7 +136,7 @@ class RuntimeMixin:
                 last_blind_time = time.time()
 
         return False
-    
+
     def wait_feature_disappear(
         self,
         feature,
@@ -156,7 +156,7 @@ class RuntimeMixin:
                 return True
 
         return False
-    
+
 
     def _wait_for_stable_resolution(self):
         """等待捕获帧尺寸稳定，避免启动阶段的中间帧触发误报。"""
@@ -671,8 +671,8 @@ class RuntimeMixin:
 
         Raises:
             ValueError: 当目标图像为空时抛出。
-        
-        说明: 
+
+        说明:
           - 缓存键 (scale_key, angle)：scale_key = round(scale, 4) 避免浮点误差
           - 不在每次 match() 中清空缓存，仅按需生成旋转结果
           - scaled_template 缓存避免同一分辨率重复 resize
@@ -838,6 +838,22 @@ class RuntimeMixin:
             Any: send_key 的返回值。
         """
         actual_key = self.key_manager.resolve_key(key, "common")
+        return self.send_key(actual_key, interval=interval, down_time=down_time, after_sleep=after_sleep)
+
+    def press_industry_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
+        """
+        按配置映射后的工业按键。
+
+        Args:
+            key: 按键名称。
+            down_time: 按下时长。
+            after_sleep: 释放后等待时间。
+            interval: 按键间隔。
+
+        Returns:
+            Any: send_key 的返回值。
+        """
+        actual_key = self.key_manager.resolve_key(key, "industry")
         return self.send_key(actual_key, interval=interval, down_time=down_time, after_sleep=after_sleep)
 
     def press_combat_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):

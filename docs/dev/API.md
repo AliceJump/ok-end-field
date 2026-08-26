@@ -208,12 +208,13 @@ def scroll_relative(self, x: float, y: float, count: int) -> None
 
 ```text
 def press_key(self, key: str, down_time=0.02, after_sleep=0, interval=-1)
+def press_industry_key(self, key: str, down_time=0.02, after_sleep=0, interval=-1)
 def press_combat_key(self, key: str, down_time=0.02, after_sleep=0, interval=-1)
 def press_esc(self)
 def move_keys(self, keys, duration, need_back=False)
 ```
 
-前两个方法分别以 `common`、`combat` 类型调用 `KeyConfigManager.resolve_key`，参数传默认按键值，例如 `self.press_key("m")`。`move_keys` 用于 `w/a/s/d` 等持续移动；当前实现不使用 `need_back` 参数。
+前三个方法分别以 `common`、`industry`、`combat` 类型调用 `KeyConfigManager.resolve_key`，参数传默认按键值，例如 `self.press_key("m")`。`move_keys` 用于 `w/a/s/d` 等持续移动；当前实现不使用 `need_back` 参数。
 
 `press_esc()` 仅用于过剧情（对话时）触发 ESC，底层使用 `BaseEfTask` 统一初始化的键盘控制器。其他返回主界面、关闭页面等流程不得使用该函数。
 
@@ -342,7 +343,7 @@ class KeyConfigManager:
 - 通用：`Handbook Key=f8`、`Recruitment Key=f9`
 - 工业：`Area Build Key=y`、`Blueprint Key=f1`、`Product Icon Toggle Key=f4`
 
-所有可改键操作应走 `press_key`/`press_combat_key`。固定技能数字、方向键和系统修饰键等代码可按其明确语义使用底层发送接口。
+所有可改键操作应走 `press_key`/`press_industry_key`/`press_combat_key`。固定技能数字、方向键和系统修饰键等代码可按其明确语义使用底层发送接口。
 
 ### 2.4 战斗配置与账号覆盖
 
