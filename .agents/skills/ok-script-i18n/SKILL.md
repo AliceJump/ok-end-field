@@ -39,6 +39,18 @@ Use `scripts/task_i18n_helper.py` in this skill (`.agents/skills/ok-script-i18n/
 
 The scanner is a helper, not a substitute for reading the task. It finds common literal strings but can miss values built through constants, imports, f-strings, comprehensions, or helper functions.
 
+### Merging conflicting catalogs (git merge / stash pop)
+
+When the same `ok.po` was modified on both sides (e.g. feature branch merged with `master` after a po sync commit like #252), the text `po` usually auto-merges but the binary `ok.mo` always conflicts. Resolve by merging the two po sides then recompiling — `scripts/merge_po.py` merges two po files by `msgid -> msgstr` dictionary, keeping entries unique to either side; when the same `msgid` exists on both sides with different translations, the **newer file (by mtime) wins** (override with `--prefer ours|theirs`). Recompile the merged po afterwards with `task_i18n_helper.py compile`.
+
+```powershell
+# 从合并状态取对方一侧：git show :3:path > theirs.po
+git show :3:i18n/zh_CN/LC_MESSAGES/ok.po > "$env:TEMP\theirs.po"
+.\.venv\Scripts\python.exe .agents\skills\ok-script-i18n\scripts\merge_po.py i18n\zh_CN\LC_MESSAGES\ok.po "$env:TEMP\theirs.po" --output i18n\zh_CN\LC_MESSAGES\ok.po --compile
+```
+
+After merging all locales, run `task_i18n_helper.py check` to confirm no duplicate `msgid` remains.
+
 ## Catalog Rules
 
 - Keep `msgid` exactly equal to the source string used by the code.
