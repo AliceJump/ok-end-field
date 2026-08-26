@@ -42,7 +42,7 @@
 - 据点券数：`src/tasks/daily/misc/daily_outpost_mixin.py:10`。
 
 ### 2.2 状态判断
-- 等待文案出现/消失：`zip_line_mixin.py`（滑索停止提示）、`daily_liaison_mixin.py`（舰桥/信赖弹窗）、`game_flow_mixin.py`、`DeliveryTask.py` 的 tab 文案。
+- 等待文案出现/消失：`zip_line_mixin.py`（滑索停止提示）、`daily_liaison_mixin.py`（舰桥/信赖弹窗）、`game_flow_mixin.py`、`DeliveryTask.py:348`（tab 文案判断）。
 - 目标/标记可见性：`navigation_mixin.py:112/185`（导航中 OCR 判断目标是否可见，不读 name 不点击）。
 - 导航回退：`runtime_mixin.py:450` `safe_back` 用 OCR 判断目标可见性。
 
@@ -58,9 +58,8 @@
   - `daily_battle_mixin.py:798`：读 name 过滤"已选"后点击。
   - `daily_logistics_mixin.py:129`：点击 + 读 name 决定后续步骤起始下标。
 - 大区域全文本解析：
-  - `DeliveryTask.py:259-301`：多区域 OCR 文本计数 + 名称分组组装 DeliveryRow。
   - `TakeDeliveryTask.py:188`：全量文本 + 正则金额解析 + 接取判断。
-- 复杂联动：`DeliveryTask.py:539-550` 同一代码块内坐标点击 + 状态判断多次 OCR。
+- 复杂联动：`DeliveryTask.py:337-358` `to_storage_point_and_back_zip_line` 中 tab 文案出现/消失判断 + 点击登上滑索架 + 多次 OCR 协同。
 
 ## 敏感度结论
 
