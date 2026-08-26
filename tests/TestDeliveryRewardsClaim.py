@@ -57,6 +57,7 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
         feature = object.__new__(DailyLogisticsMixin)
         feature.info_set = Mock()
         feature.log_info = Mock()
+        feature.tr = lambda message, **kwargs: message
         feature.mark_task_failure = Mock()
         feature.to_model_area = Mock(return_value=True)
         feature.ensure_main = Mock()

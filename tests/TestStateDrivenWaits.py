@@ -15,6 +15,9 @@ class _EnsureMainHarness(GameFlowMixin):
         self.esc_checks = []
         self.sleeps = []
 
+    def tr(self, message, **kwargs):
+        return message
+
     def check_resolution(self):
         pass
 

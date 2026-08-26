@@ -111,7 +111,7 @@ class DailyLiaisonFeature:
         retry = 0
         result = self.navigate_to_operator_liaison_station()
         while result == LiaisonResult.FIND_CHAT_ICON:
-            self.log_info(f"聊天界面处理 (第 {retry + 1}/{max_retry} 次)")
+            self.log_info(self.tr("聊天界面处理 (第 {idx}/{total} 次)").format(idx=retry + 1, total=max_retry))
 
             if self.collect_and_give_gifts():
                 return True
@@ -143,14 +143,14 @@ class DailyLiaisonFeature:
         max_retry = self.config.get(self.CFG_GIFT_MAX_RETRY, 1)
 
         for i in range(max_retry):
-            self.log_info(f"送礼任务 - 第 {i + 1}/{max_retry} 次尝试")
+            self.log_info(self.tr("送礼任务 - 第 {idx}/{total} 次尝试").format(idx=i + 1, total=max_retry))
 
             success = self.execute_gift_to_liaison()
             if success:
-                self.log_info(f"第 {i + 1} 次送礼任务成功")
+                self.log_info(self.tr("第 {idx} 次送礼任务成功").format(idx=i + 1))
                 return True
 
-            self.log_info(f"第 {i + 1} 次送礼任务失败")
+            self.log_info(self.tr("第 {idx} 次送礼任务失败").format(idx=i + 1))
 
         self.mark_task_failure("送礼任务最终失败")
         return False

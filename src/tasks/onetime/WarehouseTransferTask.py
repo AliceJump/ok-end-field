@@ -178,7 +178,7 @@ class WarehouseTransferTask(BaseEfTask):
             if not item_key_en:
                 self.log_info(f"找不到的图标名 {item_key}")
             for round_idx in range(ROUND + 1):
-                icon = self.find_one(feature=item_key_en, box=search_box, threshold=0.8)
+                icon = self.find_one(item_key_en, box=search_box, threshold=0.8)
                 if icon:
                     break
                 if round_idx == ROUND:

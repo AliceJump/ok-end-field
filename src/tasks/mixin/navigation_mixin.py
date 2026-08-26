@@ -470,7 +470,8 @@ class NavigationMixin(SearchMixin):
                     result.x + result.width // 2,
                     result.y + result.height // 2,
                 )
-                screen_center_pos = self.screen_center()
+                # 屏幕中心（原 RuntimeMixin.screen_center 已移除，直接内联计算）
+                screen_center_pos = (int(self.width / 2), int(self.height / 2))
                 last_target = result
                 last_target_fail_count = 0
                 # 计算偏移量
@@ -502,7 +503,7 @@ class NavigationMixin(SearchMixin):
                     decay = 0.9 ** last_target_fail_count
                     # 计算目标中心到屏幕中心的偏移
 
-                    screen_center_x, screen_center_y = self.screen_center()
+                    screen_center_x, screen_center_y = int(self.width / 2), int(self.height / 2)
                     offset_x = int((screen_center_x - last_target.x) * decay)
                     offset_y = int((screen_center_y - last_target.y) * decay)
                     offset_width = int(last_target.width / 2 * decay)

@@ -44,9 +44,9 @@ class AutoInteractionTask(BaseEfTask, TriggerTask):
                     return
         if self.config.get('自动点击传送', True):
             # 先普通匹配；未找到时再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感
-            result = self.find_one(feature=fL.transfer_go, frame=now)
+            result = self.find_one(fL.transfer_go, frame=now)
             if not result:
-                result = self.find_one(feature=fL.transfer_go, frame=now, canny_lower=50, canny_higher=150, threshold=0.8)
+                result = self.find_one(fL.transfer_go, frame=now, canny_lower=50, canny_higher=150, threshold=0.8)
             if result:
-                if self.find_one(feature=fL.in_map,box=self.box_of_screen(0.027, 0.531, 0.051, 0.896) , frame=now):
+                if self.find_one(fL.in_map, box=self.box_of_screen(0.027, 0.531, 0.051, 0.896), frame=now):
                     self.click(result, after_sleep=0.4)
