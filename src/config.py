@@ -138,6 +138,12 @@ config = {
         ["src.tasks.onetime.DemoDrawTask", "DemoDrawTask"],
         ["src.tasks.onetime.YingTuoTask", "YingTuoTask"],
         ["src.tasks.onetime.TestStartGame", "TestStartGame"],
+        ["src.tasks.test.RealtimeDetectTask", "RealtimeYoloScanTask"],
+        ["src.tasks.test.RealtimeDetectTask", "RealtimeDetectTask"],
+        ["src.tasks.test.PeriodicScreenshotTask", "PeriodicScreenshotTask"],
+        ["src.tasks.test.DiagnosisTask", "DiagnosisTask"],
+        ["src.tasks.test.MouseRotationCalibration", "MouseRotationCalibration"],
+        ["src.tasks.test.TestArrowAngle", "TestArrowAngle"],
         ["src.tasks.test.TestCircularPulseDetect", "TestCircularPulseDetect"],
     ],
     "custom_tabs": [

@@ -113,7 +113,7 @@ all potential risks.**
 - Realtime Detection: loop YOLO detection for model debugging
 - Test and Diagnosis: development and framework diagnostic tools
 
-> `PeriodicScreenshotTask` remains in the source tree but is not currently registered. The former Graduation Essence task has been removed.
+> `PeriodicScreenshotTask` and other debug/test tasks are registered in the one-time task list. The former Graduation Essence task has been removed.
 
 ### Trigger tasks (background loop detection, partial support)
 
