@@ -394,6 +394,9 @@ class AutoCombatLogic:
                             self._end = True
                             self._normal_attack_hold_enabled = False
                             self._sync_normal_attack_hold()
+                            # 战斗结束确认：清战斗标记，下次进入战斗（含结算未出现时
+                            # auto_battle 直接重入的新战斗）才会复位推荐技能检测器
+                            task._recommend_detector_in_combat = False
                             break
                 if no_battle:
                     self._normal_attack_hold_enabled = False

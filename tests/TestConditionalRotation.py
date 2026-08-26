@@ -432,25 +432,23 @@ class TestConditionalRotationCombat(unittest.TestCase):
 
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
-    def test_recommend_detector_reset_only_on_combat_transition(self, _mu, _md):
-        """推荐技能检测器仅在非战斗→战斗转换时复位，同一场战斗重入不复位。"""
+    def test_recommend_detector_reset_on_combat_boundary(self, _mu, _md):
+        """推荐技能检测器：仅战斗边界复位，同场重入与跨场进入行为正确。"""
         with patch("src.tasks.onetime.AutoCombatLogic.get_recommend_skill_detector") as mock_get:
             detector = mock_get.return_value
             task = _FakeTask({})
             logic = AutoCombatLogic(task)
 
-            # 第一次进入战斗：非战斗 → 战斗转换，复位一次
+            # 第一次进入战斗：非战斗 → 战斗转换，复位一次；
+            # deadline 使战斗中途提前返回（战斗未结束，标记保留）
+            self.assertFalse(logic.run(start_sleep=0, deadline=1.0))
+            self.assertEqual(detector.reset.call_count, 1)
+
+            # 同一场战斗重入（in_combat 仍为 True、未确认结束）：不得复位
             self.assertTrue(logic.run(start_sleep=0))
             self.assertEqual(detector.reset.call_count, 1)
 
-            # auto_battle 在同一场战斗内重入 run()（in_combat 仍为 True）：不得复位
-            task._exited = False
-            self.assertTrue(logic.run(start_sleep=0))
-            self.assertEqual(detector.reset.call_count, 1)
-
-            # 战斗结束后再进入新战斗：再次复位
-            self.assertFalse(logic.run(start_sleep=0))  # 非战斗 → 清标记
-            self.assertEqual(detector.reset.call_count, 1)
+            # 战斗结束确认后直接进入新战斗（无中间非战斗调用）：再次复位
             task._exited = False
             self.assertTrue(logic.run(start_sleep=0))
             self.assertEqual(detector.reset.call_count, 2)
