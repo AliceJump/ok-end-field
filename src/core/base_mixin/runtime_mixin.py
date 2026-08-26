@@ -2,12 +2,10 @@ import gc
 import threading
 import time
 from enum import Enum
-from functools import partial
 from typing import List
 
 import cv2
 import numpy as np
-import win32gui
 from ok import Box
 
 from src.config import config as app_config
@@ -21,19 +19,8 @@ from src.interaction.Mouse import (
     smooth_drag
 )
 from src.yolo.loader import YoloModelLoader
-from src.image.rotated_template import rotated_template_match
 
 feature_values = [f.value for f in fL]
-
-
-def _back_window(prev):
-    current = win32gui.GetForegroundWindow()
-
-    if prev and win32gui.IsWindow(prev) and current != prev:
-        try:
-            win32gui.SetForegroundWindow(prev)
-        except Exception:
-            pass
 
 
 class RuntimeMixin:
@@ -62,7 +49,7 @@ class RuntimeMixin:
             round(x * width),
             round(y * height),
         )
-    
+
     def smooth_drag(self, start, end, duration=0.12):
         smooth_drag(
             self.get_game_hwnd(),
@@ -70,7 +57,7 @@ class RuntimeMixin:
             self.normalize_pos(end),
             duration,
         )
-        
+
     _resolution_warned = False
 
     def feature_stable(self, feature, box, duration):
@@ -149,7 +136,7 @@ class RuntimeMixin:
                 last_blind_time = time.time()
 
         return False
-    
+
     def wait_feature_disappear(
         self,
         feature,
@@ -169,7 +156,7 @@ class RuntimeMixin:
                 return True
 
         return False
-    
+
 
     def _wait_for_stable_resolution(self):
         """等待捕获帧尺寸稳定，避免启动阶段的中间帧触发误报。"""
@@ -521,9 +508,6 @@ class RuntimeMixin:
         self._yolo_model_key = None
         gc.collect()
 
-    def list_yolo_models(self) -> list[str]:
-        return self.yolo_loader().available_models()
-
     def list_yolo_targets(self, model_key: str | None = None) -> list[str]:
         return self.yolo_loader().target_names(model_key or self._yolo_model_key)
 
@@ -668,69 +652,6 @@ class RuntimeMixin:
 
         return sorted(filtered_results, key=lambda item: item.confidence, reverse=True)
 
-    def rotated_template_match_runtime(
-            self,
-            template_image,
-            target_image: np.ndarray | None = None,
-            target_center: tuple | None = None,
-            template_center: tuple | None = None,
-            angle_start: float = 0.0,
-            angle_end: float = 360.0,
-            angle_step: float = 5.0,
-            roi: tuple | None = None,
-            method: int = cv2.TM_CCORR_NORMED,
-    ):
-        """
-        运行时包装：在当前帧或给定 target_image 上执行旋转模板匹配。
-
-        参数:
-          template_image: 模板图像（ndarray，支持 alpha）或模板文件路径（string）
-          target_image: 可选，若为空则使用 `self.next_frame()`
-          target_center: (x,y)，若为 None 则使用目标图中心
-          template_center: (x,y)，若为 None 则使用模板中心
-          angle_start/angle_end/angle_step: 角度范围与步进
-          roi: (x,y,w,h) 可选裁剪目标区域以提高性能
-          method: cv2.matchTemplate 方法
-
-        Returns:
-            tuple[float, float]: 最佳角度和对应分数。
-
-        Raises:
-            ValueError: 当模板文件无法读取或目标图像为空时抛出。
-        """
-        # 加载/解析 template_image
-        tpl = template_image
-        if isinstance(template_image, str):
-            tpl = cv2.imread(template_image, cv2.IMREAD_UNCHANGED)
-            if tpl is None:
-                raise ValueError(f"无法读取模板文件: {template_image}")
-
-        # 获取目标帧
-        tgt = target_image if target_image is not None else self.next_frame()
-        if tgt is None:
-            raise ValueError("target_image is None and self.next_frame() 返回 None")
-
-        # 计算默认中心：如果未提供，则使用项目约定的归一化默认点 (215/2560, 222/1440)
-        if target_center is None:
-            # 传入归一化坐标，底层 rotated_template_match 会按目标尺寸反归一化
-            target_center = (215.0 / 2560.0, 222.0 / 1440.0)
-
-        if template_center is None:
-            th, tw = tpl.shape[:2]
-            template_center = (tw // 2, th // 2)
-
-        return rotated_template_match(
-            tgt,
-            tpl,
-            target_center,
-            template_center,
-            angle_start,
-            angle_end,
-            angle_step,
-            roi=roi,
-            method=method,
-        )
-
     def get_arrow_angle(self, center: tuple | None = None, target_image: np.ndarray | None = None,
                         two_stage: bool = True, benchmark_width: int = 2560, max_cache_scales: int = 10,
                         smoothing_threshold: float = 0.35):
@@ -750,8 +671,8 @@ class RuntimeMixin:
 
         Raises:
             ValueError: 当目标图像为空时抛出。
-        
-        说明: 
+
+        说明:
           - 缓存键 (scale_key, angle)：scale_key = round(scale, 4) 避免浮点误差
           - 不在每次 match() 中清空缓存，仅按需生成旋转结果
           - scaled_template 缓存避免同一分辨率重复 resize
@@ -921,7 +842,7 @@ class RuntimeMixin:
 
     def press_industry_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
         """
-        按配置映射后的行业按键。
+        按配置映射后的工业按键。
 
         Args:
             key: 按键名称。
@@ -1003,20 +924,6 @@ class RuntimeMixin:
             None
         """
         self._dodge_with_direction('w', pre_hold=pre_hold, dodge_down_time=dodge_down_time, after_sleep=after_sleep)
-
-    def dodge_backward(self, pre_hold: float = 0.004, dodge_down_time: float = 0.003, after_sleep: float = 0.005):
-        """
-        向后闪避。
-
-        Args:
-            pre_hold: 闪避前预按时长。
-            dodge_down_time: 闪避键按下时长。
-            after_sleep: 闪避后等待时间。
-
-        Returns:
-            None
-        """
-        self._dodge_with_direction('s', pre_hold=pre_hold, dodge_down_time=dodge_down_time, after_sleep=after_sleep)
 
     def move_to_target_once(self, ocr_obj, max_step=100, min_step=20, slow_radius=200, deadzone=4):
         """

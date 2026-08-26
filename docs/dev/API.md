@@ -173,20 +173,9 @@ def login_ocr(
     target_height=0, use_grayscale=False, log=False,
     frame_processor=None, lib="default", need_active=True,
 )
-
-def login_find_feature(
-    self, feature=None, horizontal_variance=0, vertical_variance=0,
-    threshold=0, use_gray_scale=False,
-    x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1,
-    box=None, canny_lower=0, canny_higher=0,
-    frame_processor=None, template=None,
-    match_method=cv2.TM_CCOEFF_NORMED, screenshot=False,
-    mask_function=None, frame=None, limit=0, target_height=0,
-    need_active=True,
-)
 ```
 
-这些入口使用 Win32 屏幕捕获绕过登录界面无法由常规 WGC 帧可靠捕获的问题。`login_find_feature` 总会获取新的登录截图，传入的 `frame` 不会成为最终识别帧。
+这些入口使用 Win32 屏幕捕获绕过登录界面无法由常规 WGC 帧可靠捕获的问题。
 
 ### 1.4 点击、按键和移动
 
@@ -231,7 +220,6 @@ def move_keys(self, keys, duration, need_back=False)
 
 ```text
 def dodge_forward(self, pre_hold=0.004, dodge_down_time=0.003, after_sleep=0.005)
-def dodge_backward(self, pre_hold=0.004, dodge_down_time=0.003, after_sleep=0.005)
 
 def move_to_target_once(
     self, ocr_obj, max_step=100, min_step=20,
@@ -285,7 +273,6 @@ def yolo_detect(
     detections=None, model_key=None,
 ) -> list[Box]
 
-def list_yolo_models(self) -> list[str]
 def list_yolo_targets(self, model_key: str | None = None) -> list[str]
 def set_yolo_model(self, model_key: str)
 def release_yolo_detector(self)

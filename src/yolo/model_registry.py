@@ -48,10 +48,6 @@ def build_yolo_model_settings(yolo_config: dict | None) -> tuple[str, dict[str, 
     return default_model, settings
 
 
-def list_model_keys(settings: dict[str, dict]) -> list[str]:
-    return list(settings.keys())
-
-
 def list_target_names(settings: dict[str, dict], model_key: str) -> list[str]:
     model_info = settings.get(model_key, {})
     labels = model_info.get("labels", {})

@@ -1,14 +1,8 @@
-import re
-import os
-from datetime import datetime
-
-import cv2
 import numpy as np
 from pynput.keyboard import Key
 
 from src.data.world_map import areas_list
 from src.data.world_map_utils import get_world_map_matcher, get_world_map_text
-from src.essence.essence_recognizer import EssenceInfo, read_essence_info
 from src.image.login_screenshot import capture_window_by_screen
 from src.interaction.Mouse import run_at_window_pos
 from src.data.FeatureList import FeatureList as fL
@@ -84,69 +78,6 @@ class GameFlowMixin:
             log=log,
             frame_processor=frame_processor,
             lib=lib,
-        )
-
-    def login_find_feature(self, feature=None, horizontal_variance=0, vertical_variance=0, threshold=0,
-                           use_gray_scale=False, x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1, box=None,
-                           canny_lower=0, canny_higher=0, frame_processor=None, template=None,
-                           match_method=cv2.TM_CCOEFF_NORMED, screenshot=False, mask_function=None, frame=None,
-                           limit=0, target_height=0, need_active=True):
-        """
-        基于登录截图执行特征识别。
-
-        Args:
-            feature_name: 特征名称。
-            horizontal_variance: 水平容差。
-            vertical_variance: 垂直容差。
-            threshold: 匹配阈值。
-            use_gray_scale: 是否使用灰度图。
-            x: 区域左上角相对 X 坐标。
-            y: 区域左上角相对 Y 坐标。
-            to_x: 区域右下角相对 X 坐标。
-            to_y: 区域右下角相对 Y 坐标。
-            width: 识别区域宽度。
-            height: 识别区域高度。
-            box: 识别框。
-            canny_lower: Canny 下限。
-            canny_higher: Canny 上限。
-            frame_processor: 额外帧处理器。
-            template: 自定义模板。
-            match_method: 模板匹配方法。
-            screenshot: 是否先截图。
-            mask_function: 掩码函数。
-            frame: 输入帧。
-            limit: 返回数量限制。
-            target_height: 目标缩放高度。
-            need_active: 是否先激活窗口。
-
-        Returns:
-            list: 特征识别结果列表。
-        """
-        img = self.login_screenshot(need_active=need_active)
-        screenshot_frame = img if isinstance(img, np.ndarray) else np.array(img)
-        return super().find_feature(
-            feature,
-            horizontal_variance,
-            vertical_variance,
-            threshold,
-            use_gray_scale,
-            x,
-            y,
-            to_x,
-            to_y,
-            width,
-            height,
-            box,
-            canny_lower,
-            canny_higher,
-            frame_processor,
-            template,
-            match_method,
-            screenshot,
-            mask_function,
-            screenshot_frame,
-            limit,
-            target_height,
         )
 
     def skip_dialog(self, time_out=60):
@@ -286,16 +217,6 @@ class GameFlowMixin:
                 return False
         return False
 
-    def find_reward_ok(self):
-        """
-        寻找奖励对话框中的确定按钮。
-
-        Returns:
-            list: 匹配到的奖励确认按钮结果列表。
-        """
-        return self.find_one(fL.reward_ok, vertical_variance=0.05,
-                             box=self.box_of_screen(1760 / 3840, 1760 / 2160, 2100 / 3840, 2100 / 2160))
-
     def find_f(self):
         """
         寻找 F 键提示（拾取物品）。
@@ -304,26 +225,6 @@ class GameFlowMixin:
             list: 匹配到的 F 键提示结果列表。
         """
         return self.find_one(fL.pick_f, vertical_variance=0.05)
-
-    def read_essence_info(self) -> EssenceInfo | None:
-        """
-        读取当前屏幕中的装备词条面板信息。
-
-        该方法仅保留为 OCR 解析轮子的便捷入口，不再对应独立任务。
-
-        Returns:
-            EssenceInfo | None: 识别到则返回词条信息，否则返回 None。
-        """
-        return read_essence_info(self)
-
-    def in_bg(self):
-        """
-        判断游戏窗口是否在后台。
-
-        Returns:
-            bool: 窗口不在前台时返回 True。
-        """
-        return not self.hwnd.is_foreground()
 
     def in_combat_world(self):
         """
@@ -677,15 +578,6 @@ class GameFlowMixin:
             bool: 检测到好友帝江号返回 True。
         """
         return self.wait_feature(feature=fL.left_button, vertical_variance=0.1, horizontal_variance=0.1, raise_if_not_found=False, time_out=1) is not None
-
-    def wait_friend_list(self, end_icon_name="friend_chat_icon"):
-        start_time = self.active_time()
-        while True:
-            if self.active_time() - start_time > 20:
-                self.log_info("加载好友列表超时")
-                return False
-            if self.find_feature(feature=end_icon_name):
-                return True
 
     def ensure_in_friend_boat(self):
         """
