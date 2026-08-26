@@ -1194,5 +1194,10 @@ class RuntimeMixin:
                 self.click(result, after_sleep=after_sleep)
             return result
 
+        # match 支持 str / re.Pattern / list，逐项取 .pattern 防止日志出现 re.compile(...)
+        if isinstance(match, (list, tuple)):
+            match_text = [getattr(m, "pattern", m) for m in match]
+        else:
+            match_text = getattr(match, "pattern", match)
         self.log_info(self.tr("wait ocr no box {x} {y} {width} {height} {to_x} {to_y} {match}").format(
-            x=x, y=y, width=width, height=height, to_x=to_x, to_y=to_y, match=getattr(match, "pattern", match)))
+            x=x, y=y, width=width, height=height, to_x=to_x, to_y=to_y, match=match_text))

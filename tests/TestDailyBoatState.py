@@ -20,6 +20,9 @@ class _RunnerHarness:
     def log_info(self, *args, **kwargs):
         pass
 
+    def tr(self, message, **kwargs):
+        return message
+
     def screenshot(self, *args, **kwargs):
         pass
 

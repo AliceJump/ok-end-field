@@ -86,4 +86,5 @@ gh pr edit <n> --body $body
 3. **动态配置用声明式豁免（治本）**：用户输入载入的下拉配置（如「地图账号」= 账号列表）不参与翻译——把 config key 登记到 `src/core/dynamic_config_keys.py` 的 `DYNAMIC_DROPDOWN_KEYS`，渲染补丁 `dynamic_config_patch.py` 据此跳过 tr。**项目资源类下拉不要登记**（干员列表 characters.json、物品导航「选择物品」等是合法待翻译文案）。
 4. 框架无单条豁免参数；`to_translate` 仅 debug 模式启用，生产不受影响，垃圾条目对运行无害但会膨胀 po、误导翻译。
 5. `log_info`/`mark_task_failure` 自身不做翻译也不支持 params 填充；**带动态值的日志统一在调用侧走 tr+format**：`self.tr("模板{a}…{b}").format(a=已译文本值, b=纯数字值)`——外层模板串必须 tr（msgid=稳定模板串进 po），文本类动态值内层过 tr 后再填充，纯数字值直接填充不 tr；运行时未知文本（OCR 结果、账号名等）不过 tr 防污染收集池。通知链路（`notify=True`/`show_notification`）和 instructions 富文本构建同理。
+   **纯静态硬编码文案（无占位符、无变化）禁止在调用侧加 tr**：直接 `log_info("固定中文")`——UI 显示层渲染日志时会统一翻译，调用侧再包一层 tr 属于冗余；只有带占位符、存在多种变化的模板串才需要调用侧 tr+format（gettext 必须在 format 前命中稳定 msgid）。
 6. po 出现垃圾条目时：确认来源 → 能声明式的走第 3 条；一次性清理可仿照 `tmp/clean_dynamic_po_entries.py` 删条目后重编译。

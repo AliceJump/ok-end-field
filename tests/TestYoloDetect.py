@@ -19,6 +19,9 @@ class _DummyTask(RuntimeMixin):
     def log_info(self, message):
         self.logs.append(message)
 
+    def tr(self, message, **kwargs):
+        return message
+
     def next_frame(self):
         return np.zeros((500, 500, 3), dtype=np.uint8)
 
