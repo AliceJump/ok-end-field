@@ -362,6 +362,13 @@ class RuntimeMixin:
         Returns:
             Box: 置信度最高的匹配框；未匹配到时返回 None。
         """
+        # Validate feature/feature_name mutual exclusivity
+        if feature is not None and feature_name is not None:
+            raise ValueError("只能提供 feature 或 feature_name 中的一个参数，不能同时提供两者")
+        if feature is None and feature_name is None:
+            raise ValueError("必须提供 feature 或 feature_name 中的一个参数")
+
+        # Resolve alias
         if feature is not None and feature_name is None:
             feature_name = feature
         return super().find_one(feature_name, horizontal_variance, vertical_variance, threshold,
