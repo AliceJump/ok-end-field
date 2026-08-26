@@ -45,8 +45,9 @@ When the same `ok.po` was modified on both sides (e.g. feature branch merged wit
 
 ```powershell
 # 从合并状态取双方两侧：git show :2:path (ours), git show :3:path (theirs)
-git show :2:i18n/zh_CN/LC_MESSAGES/ok.po > "$env:TEMP\ours.po"
-git show :3:i18n/zh_CN/LC_MESSAGES/ok.po > "$env:TEMP\theirs.po"
+# 注意：必须显式 UTF-8 导出（PowerShell 5.1 的 > 重定向会写 UTF-16LE，polib 按 UTF-8 解码会失败）
+git show :2:i18n/zh_CN/LC_MESSAGES/ok.po | Out-File -Encoding utf8 "$env:TEMP\ours.po"
+git show :3:i18n/zh_CN/LC_MESSAGES/ok.po | Out-File -Encoding utf8 "$env:TEMP\theirs.po"
 .\.venv\Scripts\python.exe .agents\skills\ok-script-i18n\scripts\merge_po.py "$env:TEMP\ours.po" "$env:TEMP\theirs.po" --output i18n\zh_CN\LC_MESSAGES\ok.po --prefer ours --compile
 ```
 
