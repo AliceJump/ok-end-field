@@ -294,6 +294,9 @@ class _FakeTask:
             return True
         return False
 
+    def use_recommend_skill(self):
+        return False
+
     def send_key(self, key):
         self.actions.append(key)
 

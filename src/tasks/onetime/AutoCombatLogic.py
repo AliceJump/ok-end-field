@@ -73,6 +73,9 @@ class AutoCombatLogic:
         task = self.task
         if task.use_link_skill():
             return
+        # 推荐技能：优先级仅次于连携技，高于终结技
+        if task.use_recommend_skill():
+            return
         if task.use_ult():
             return
 

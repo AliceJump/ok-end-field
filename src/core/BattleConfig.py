@@ -5,6 +5,19 @@ KEY_INSTANT_ULT = "立即释放终结技"
 KEY_INSTANT_LINK = "立即释放连携技"
 KEY_ROTATION_SEQUENCE = "排轴序列"
 
+# 推荐技能（白色圆周脉冲触发战技）相关
+KEY_RECOMMEND_SKILL = "自动释放推荐技能"
+
+# 推荐技能按钮四区域预设（与 TestCircularPulseDetect 调试任务共用同一数据源）。
+# x / y 为按钮中心归一化坐标（pixel / 宽、pixel / 高）；
+# button_radius / effect_max_radius 为半径（pixel / 短边）。
+RECOMMEND_SKILL_REGIONS = [
+    {"label": "批次1", "x": 0.820, "y": 0.898, "button_radius": 0.037, "effect_max_radius": 0.050},
+    {"label": "批次2", "x": 0.870, "y": 0.898, "button_radius": 0.037, "effect_max_radius": 0.050},
+    {"label": "批次3", "x": 0.920, "y": 0.898, "button_radius": 0.037, "effect_max_radius": 0.050},
+    {"label": "批次4", "x": 0.970, "y": 0.898, "button_radius": 0.037, "effect_max_radius": 0.050},
+]
+
 # 终结技释放方式（供 BattleMixin.use_ult 选择释放方式）
 KEY_ULT_RELEASE_MODE = "终结技释放方式"
 ULT_RELEASE_MODE_HOLD = "长按技能按键"
@@ -24,6 +37,7 @@ DEFAULT_BATTLE_CONFIG = {
     KEY_COND_SEQUENCE: [],
     KEY_INSTANT_ULT: False,
     KEY_INSTANT_LINK: False,
+    KEY_RECOMMEND_SKILL: False,
 }
 
 BATTLE_CONFIG_NAME = "Battle Config"
@@ -43,6 +57,7 @@ BATTLE_CONFIG_TYPE = {
     KEY_COND_SEQUENCE: {"hidden": True},
     KEY_INSTANT_ULT: {"hidden": True},
     KEY_INSTANT_LINK: {"hidden": True},
+    KEY_RECOMMEND_SKILL: {},
 }
 BATTLE_CONFIG_DESCRIPTION = {
     KEY_ULT_RELEASE_MODE: "配置终结技的释放方式",
@@ -83,6 +98,11 @@ BATTLE_CONFIG_DESCRIPTION = {
     KEY_INSTANT_LINK: (
         "在没有运行任何条件动作时生效\n"
         "当连携技可释放时立刻释放连携技"
+    ),
+    KEY_RECOMMEND_SKILL: (
+        "自动优先释放推荐技能。\n"
+        "技能按钮出现白圈（游戏推荐释放时机）时，自动按下对应技能键，\n"
+        "每个白圈周期按一次；优先级仅次于连携技。"
     ),
 }
 
