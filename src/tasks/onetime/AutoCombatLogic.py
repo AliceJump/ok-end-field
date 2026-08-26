@@ -10,6 +10,7 @@ from src.core.BattleConfig import (
 )
 from src.core.rotation_ast import iter_actions, normalize_ast
 from src.data.FeatureList import FeatureList as fL
+from src.image.recommend_skill_detector import get_recommend_skill_detector
 
 
 class _TaskProbe:
@@ -294,6 +295,12 @@ class AutoCombatLogic:
 
         # 已确认进入战斗，记录进入时刻（用于“秒退”判定）
         combat_enter_time = task.active_time()
+
+        # 新战斗开始：上一场结束时推荐技能检测器可能仍有 active 标签
+        # （战斗外不会调用 detect，active 不会自复位），整体复位后新战斗
+        # 首个白圈周期才能重新产生上升沿。仅在战斗边界复位，不在每帧
+        # use_recommend_skill() 调用时复位。
+        get_recommend_skill_detector().reset()
 
         # 初始化普通战斗配置属性（排轴与普通模式共用）
         self.normal_skill_sequence = task.get_battle_config("技能释放", ["1", "2", "3"])

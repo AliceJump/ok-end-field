@@ -149,6 +149,16 @@ class TestRecommendSkillDetector(unittest.TestCase):
         # 闪光后单按钮白圈重现 → 重新产生上升沿。
         self.assertTrue(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
 
+    def test_reset_clears_active_across_battles(self):
+        """上一场结束时标签 active：新战斗入口复位后，首帧白圈应重新触发。"""
+        pulse = render(signal_color=COLOR_WHITE)
+        # 上一场结束：白圈期间退出战斗，标签保持 active（战斗外无 detect 调用）。
+        self.assertTrue(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
+        # 新战斗确认：战斗边界整体复位。
+        self.det.reset()
+        # 新战斗首帧白圈 → 重新产生上升沿。
+        self.assertTrue(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
+
 
 if __name__ == "__main__":
     unittest.main()
