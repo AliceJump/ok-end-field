@@ -546,11 +546,12 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         if current_area not in DELIVERY_AREA_CONFIG:
             self.log_info(f"配置的地区({current_area})无效，回退为默认地区({DEFAULT_DELIVERY_AREA})")
             current_area = DEFAULT_DELIVERY_AREA
-        if current_area == self.delivery_area:
-            return
-        self._configure_delivery_area(current_area)
-        if self.config.get(self.CFG_FULL_CYCLE_LOCATION) not in self.full_cycle_locations:
-            self.config[self.CFG_FULL_CYCLE_LOCATION] = self.full_cycle_locations[0]
+        if current_area != self.delivery_area:
+            self._configure_delivery_area(current_area)
+        # 地区未变时也要修正无效的完整循环测试区域（如地区数据更新后旧地点失效）
+        if self.CFG_FULL_CYCLE_LOCATION in self.config:
+            if self.config.get(self.CFG_FULL_CYCLE_LOCATION) not in self.full_cycle_locations:
+                self.config[self.CFG_FULL_CYCLE_LOCATION] = self.full_cycle_locations[0]
         # 日常模式（DeliveryFeature）未注册这两个配置项，仅独立任务模式同步下拉选项
         if self.CFG_FULL_CYCLE_LOCATION in self.config_type and self.CFG_TEST_TARGET in self.config_type:
             self.config_type[self.CFG_TEST_TARGET]["options"] = (
