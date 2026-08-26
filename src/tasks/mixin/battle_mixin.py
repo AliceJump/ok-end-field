@@ -305,15 +305,26 @@ class BattleMixin(BaseEfTask):
             ):
                 confirmed.append((slot, region, label))
 
-        # 全部激活区域（≥3 个）同帧命中 = 大招演出/爆炸等全屏白闪，
-        # 而非单个按钮的推荐脉冲；整批忽略。
-        if len(active_regions) >= 3 and len(confirmed) == len(active_regions):
-            labels = "、".join(label for _, _, label in confirmed)
+        # 全部激活区域（≥3 个）当前均为白色 = 大招演出/爆炸等全屏白闪，
+        # 而非单个按钮的推荐脉冲；整批忽略。用当帧白色状态而非上升沿集合
+        # 判断：闪光前已 active 的标签不会产生上升沿，若只统计 confirmed
+        # 会漏判闪光，导致其余区域误按技能键。
+        if len(active_regions) >= 3 and all(
+            detector.is_pulsing(
+                frame,
+                float(region["x"]),
+                float(region["y"]),
+                float(region["button_radius"]),
+            )
+            for region in active_regions
+        ):
+            labels = "、".join(str(region["label"]) for region in active_regions)
             self.log_info(f"推荐技能疑似全屏闪光，忽略本次命中: {labels}")
-            # detect 已把这些标签置为 active；复位后若真实白圈紧接闪光出现，
-            # 才能重新产生上升沿并按出技能。
-            for _, _, label in confirmed:
-                detector.reset_label(label)
+            # detect 已把本帧上升沿区域置为 active（闪光前已 active 的标签
+            # 同样处于该状态）；复位全部激活区域标签，允许后续真实白圈
+            # 重新产生上升沿并按出技能。
+            for region in active_regions:
+                detector.reset_label(str(region["label"]))
             return False
 
         pressed = False

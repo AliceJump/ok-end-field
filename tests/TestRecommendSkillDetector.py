@@ -125,6 +125,30 @@ class TestRecommendSkillDetector(unittest.TestCase):
         # 未复位的标签仍保持 active，白圈不再触发；复位无关标签不影响它。
         self.assertFalse(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
 
+    def test_is_pulsing_reflects_current_white_state(self):
+        rest = render()
+        pulse = render(signal_color=COLOR_WHITE)
+        self.assertFalse(self.det.is_pulsing(rest, 0.920, 0.898, 0.037))
+        self.assertTrue(self.det.is_pulsing(pulse, 0.920, 0.898, 0.037))
+        # 不改变任何状态：查询后再检测仍按原状态机工作。
+        self.assertTrue(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
+        self.assertFalse(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
+
+    def test_flash_after_some_labels_already_active(self):
+        """部分标签已 active 时发生全屏闪光：复位全部激活标签后仍可重新触发。"""
+        pulse = render(signal_color=COLOR_WHITE)
+        # 闪光前 批次3 已是真实脉冲（active，不再产生上升沿）。
+        self.assertTrue(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
+        # 全屏闪光：所有区域当前均为白色；按当帧白色状态复位全部激活区域标签
+        # （含闪光前已 active 的批次3，而不只是本帧新确认的批次2）。
+        self.assertTrue(self.det.is_pulsing(pulse, 0.920, 0.898, 0.037))
+        self.det.reset_label("批次3")
+        self.det.reset_label("批次2")
+        self.det.reset_label("批次1")
+        self.det.reset_label("批次4")
+        # 闪光后单按钮白圈重现 → 重新产生上升沿。
+        self.assertTrue(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -117,6 +117,15 @@ class RecommendSkillDetector:
         """查询当帧信号层白色角度占比（不改变任何状态，供诊断日志使用）。"""
         return self._white_ratio(frame, cx_n, cy_n, r_n)
 
+    def is_pulsing(self, frame: np.ndarray, cx_n: float, cy_n: float,
+                   r_n: float) -> bool:
+        """当帧该按钮信号层是否达到白色脉冲确认占比（不改变任何状态）。
+
+        用于全屏闪光判定：需要「当前是否全白」而非「是否新上升沿」，
+        已 active 的标签不会产生上升沿，不能用 detect 的返回值判断。
+        """
+        return self._white_ratio(frame, cx_n, cy_n, r_n) >= _ON_RATIO
+
     def detect(self, frame: np.ndarray, cx_n: float, cy_n: float,
                r_n: float, label: str) -> bool:
         """检测指定按钮是否出现白色圆周脉冲上升沿。
