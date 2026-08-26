@@ -507,7 +507,7 @@ class CircularPulseDetector:
 
         window_r = max(effect_r, button_r * 1.5)
         scale = min(1.0, _MAX_ROI_HALF_PX / max(window_r, 1.0))
-        half = int(math.ceil(window_r)) + 3
+        half = math.ceil(window_r) + 3
         cx = entry.circle.x * width
         cy = entry.circle.y * height
         x0 = max(0, int(cx) - half)
