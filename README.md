@@ -100,7 +100,7 @@ An image-recognition-based automation tool for End Field, with partial backgroun
 - 实时检测：循环执行 YOLO 检测，用于模型调试
 - 测试、诊断：开发调试与框架诊断工具
 
-> `PeriodicScreenshotTask`（定时截图）源码仍在仓库中，但当前未注册；历史“毕业基质识别”任务已移除。
+> `PeriodicScreenshotTask`（定时截图）等调试/测试任务已注册到一次性任务列表；历史“毕业基质识别”任务已移除。
 
 ### 触发式任务（后台循环检测，不完全支持）
 - [自动战斗](docs/zh-CN/自动战斗.md)：检测战斗状态并按技能序列自动释放

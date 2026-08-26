@@ -121,22 +121,17 @@ ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask)
 | 6 | `DemoDrawTask` | `src.tasks.onetime.DemoDrawTask` |
 | 7 | `YingTuoTask` | `src.tasks.onetime.YingTuoTask` |
 | 8 | `TestStartGame` | `src.tasks.onetime.TestStartGame` |
-| 9 | `TestBattleToEnd` | `src.tasks.test.TestBattleToEnd` |
-| 10 | `TestArrowAngle` | `src.tasks.test.TestArrowAngle` |
-| 11 | `TestDragScan` | `src.tasks.test.TestDragScan` |
-| 12 | `TestPauseTiming` | `src.tasks.test.TestPauseTiming` |
-| 13 | `TestBlueDotAlign` | `src.tasks.test.TestBlueDotAlign` |
-| 14 | `TestLevelRead` | `src.tasks.test.TestLevelRead` |
-| 15 | `TestDemoGraphic` | `src.tasks.test.TestDemoGraphic` |
-| 16 | `RealtimeDetectTask` | `src.tasks.test.RealtimeDetectTask` |
-| 17 | `DiagnosisTask` | `src.tasks.test.DiagnosisTask` |
-| 18 | `TestBattleSlotDetect` | `src.tasks.test.TestBattleSlotDetect` |
-| 19 | `TestCombatTemplateMatch` | `src.tasks.test.TestCombatTemplateMatch` |
-| 20 | `MouseRotationCalibration` | `src.tasks.test.MouseRotationCalibration` |
+| 9 | `RealtimeYoloScanTask` | `src.tasks.test.RealtimeDetectTask` |
+| 10 | `RealtimeDetectTask` | `src.tasks.test.RealtimeDetectTask` |
+| 11 | `PeriodicScreenshotTask` | `src.tasks.test.PeriodicScreenshotTask` |
+| 12 | `DiagnosisTask` | `src.tasks.test.DiagnosisTask` |
+| 13 | `MouseRotationCalibration` | `src.tasks.test.MouseRotationCalibration` |
+| 14 | `TestArrowAngle` | `src.tasks.test.TestArrowAngle` |
+| 15 | `TestCircularPulseDetect` | `src.tasks.test.TestCircularPulseDetect` |
 
 一次性任务按「业务任务（`src.tasks.onetime.*`）→ 调试/测试任务（`src.tasks.test.*`）」分组排列。
 
-`PeriodicScreenshotTask.py` 存在但未注册。`TakeDeliveryTask` 的类声明还包含 `TriggerTask`，但它当前只注册在一次性任务列表中。
+`TakeDeliveryTask` 的类声明还包含 `TriggerTask`，但它当前只注册在一次性任务列表中。
 
 ### 触发式任务
 

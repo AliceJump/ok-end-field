@@ -2461,3 +2461,16 @@ msgstr "Salir al completar"
 
 msgid "异常结束"
 msgstr "Terminado con excepción"
+
+msgid "诊断间隔(轮)"
+msgstr "Intervalo de diagnóstico (rondas)"
+
+msgid "每轮四批检测后的等待时间；越小采样越密。"
+msgstr ""
+"Tiempo de espera tras cada ronda de detección de los cuatro lotes; valores "
+"más pequeños muestrean con mayor densidad."
+
+msgid "每隔多少轮输出一行按钮数据与环带诊断；设为 1 逐轮打印。"
+msgstr ""
+"Cada cuántas rondas se imprime una línea de datos de botones y diagnóstico "
+"del anillo; póngalo en 1 para imprimir cada ronda."

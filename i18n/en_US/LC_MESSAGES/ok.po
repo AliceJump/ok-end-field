@@ -2386,3 +2386,16 @@ msgstr "Exit after completion"
 
 msgid "异常结束"
 msgstr "Ended with exception"
+
+msgid "诊断间隔(轮)"
+msgstr "Diagnostic Interval (Rounds)"
+
+msgid "每轮四批检测后的等待时间；越小采样越密。"
+msgstr ""
+"Wait time after each round of four-batch detection; smaller values sample "
+"more densely."
+
+msgid "每隔多少轮输出一行按钮数据与环带诊断；设为 1 逐轮打印。"
+msgstr ""
+"Print a line of button data and annulus diagnosis every N rounds; set to 1 "
+"to print every round."

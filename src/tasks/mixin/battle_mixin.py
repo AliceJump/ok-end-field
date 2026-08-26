@@ -41,12 +41,15 @@ from src.core.BattleConfig import (
     KEY_COND_SEQUENCE,
     KEY_INSTANT_LINK,
     KEY_INSTANT_ULT,
+    KEY_RECOMMEND_SKILL,
     KEY_ULT_RELEASE_MODE,
+    RECOMMEND_SKILL_REGIONS,
     ULT_RELEASE_MODE_ALT,
     ULT_RELEASE_MODE_HOLD,
 )
 from src.core.config_migration import legacy_battle_mode_to_bool
 from src.core.global_config_store import get_global_config
+from src.image.recommend_skill_detector import get_recommend_skill_detector
 
 
 class BattleMixin(BaseEfTask):
@@ -257,6 +260,82 @@ class BattleMixin(BaseEfTask):
             return True
 
         return False
+
+    def use_recommend_skill(self):
+        """检测推荐技能按钮的白色圆周脉冲，命中即按对应战技键（每周期按一次）。
+
+        监测区域随队伍人数右锚定（复用 in_team() 检出的 _battle_member_count）：
+        N 人取最右侧 N 个区域；按键编号为激活区域内从左到右的位次。
+        例：3 人时批次2/3/4 激活，批次2 命中 → 按 1。
+
+        Returns:
+            bool: 本帧是否因推荐技能命中而按下了按键。
+        """
+        if not self.get_battle_config(KEY_RECOMMEND_SKILL, False):
+            return False
+        member_count = int(self._battle_member_count or 0)
+        if not 1 <= member_count <= len(RECOMMEND_SKILL_REGIONS):
+            return False
+        active_regions = RECOMMEND_SKILL_REGIONS[-member_count:]
+        frame = self.frame
+        if frame is None or frame.size == 0:
+            return False
+
+        detector = get_recommend_skill_detector()
+        # 节流诊断：每 2 秒输出一次各区域白色占比，便于实战核对检测状态
+        now = self.active_time()
+        if now - getattr(self, "_recommend_last_diag", 0.0) >= 2.0:
+            self._recommend_last_diag = now
+            ratios = " ".join(
+                f"{region['label']}={detector.white_ratio(frame, float(region['x']), float(region['y']), float(region['button_radius'])):.2f}"
+                for region in active_regions
+            )
+            self.log_debug(f"推荐技能监测占比: {ratios}（人数 {member_count}）")
+
+        # 先收集本帧全部上升沿，再做全屏闪光过滤
+        confirmed = []
+        for slot, region in enumerate(active_regions, start=1):
+            label = str(region["label"])
+            if detector.detect(
+                frame,
+                float(region["x"]),
+                float(region["y"]),
+                float(region["button_radius"]),
+                label,
+            ):
+                confirmed.append((slot, region, label))
+
+        # 全部激活区域（≥3 个）当前均为白色 = 大招演出/爆炸等全屏白闪，
+        # 而非单个按钮的推荐脉冲；整批忽略。用当帧白色状态而非上升沿集合
+        # 判断：闪光前已 active 的标签不会产生上升沿，若只统计 confirmed
+        # 会漏判闪光，导致其余区域误按技能键。
+        if len(active_regions) >= 3 and all(
+            detector.is_pulsing(
+                frame,
+                float(region["x"]),
+                float(region["y"]),
+                float(region["button_radius"]),
+            )
+            for region in active_regions
+        ):
+            labels = "、".join(str(region["label"]) for region in active_regions)
+            self.log_info(f"推荐技能疑似全屏闪光，忽略本次命中: {labels}")
+            # detect 已把本帧上升沿区域置为 active（闪光前已 active 的标签
+            # 同样处于该状态）；复位全部激活区域标签，允许后续真实白圈
+            # 重新产生上升沿并按出技能。
+            for region in active_regions:
+                detector.reset_label(str(region["label"]))
+            return False
+
+        pressed = False
+        for slot, _, label in confirmed:
+            key = str(slot)
+            self.press_combat_key(key)
+            self.log_info(
+                f"推荐技能 {label} 命中, 按下按键 {key}（队伍 {member_count} 人）"
+            )
+            pressed = True
+        return pressed
 
     def in_combat(self, required_yellow=1):
         """

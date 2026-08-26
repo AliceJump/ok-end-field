@@ -10,6 +10,7 @@ from src.core.BattleConfig import (
 )
 from src.core.rotation_ast import iter_actions, normalize_ast
 from src.data.FeatureList import FeatureList as fL
+from src.image.recommend_skill_detector import get_recommend_skill_detector
 
 
 class _TaskProbe:
@@ -72,6 +73,9 @@ class AutoCombatLogic:
         """执行一帧普通战斗逻辑（非排轴模式 / normal_[n] 临时模式共用）。"""
         task = self.task
         if task.use_link_skill():
+            return
+        # 推荐技能：优先级仅次于连携技，高于终结技
+        if task.use_recommend_skill():
             return
         if task.use_ult():
             return
@@ -280,6 +284,8 @@ class AutoCombatLogic:
         self._exit_check_interval = 0.5
         task = self.task
         if not task.in_combat(required_yellow=1):
+            # 非战斗状态：清标记，下次进入战斗时才会复位推荐技能检测器
+            task._recommend_detector_in_combat = False
             now = task.active_time()
             last = getattr(task, '_last_no_combat_log_time', 0)
             if now - last >= 5:
@@ -291,6 +297,15 @@ class AutoCombatLogic:
 
         # 已确认进入战斗，记录进入时刻（用于“秒退”判定）
         combat_enter_time = task.active_time()
+
+        # 非战斗 → 战斗 转换时复位推荐技能检测器，每场战斗仅一次：
+        # 上一场结束时可能残留 active 标签（战斗外不调用 detect，不会自复位），
+        # 新战斗首个白圈周期才能重新产生上升沿。用 task 上的标记保证
+        # auto_battle 在同一场战斗内重入 run() 时不再复位，避免同周期白圈
+        # 因 active 被清空而重复触发。
+        if not getattr(task, "_recommend_detector_in_combat", False):
+            get_recommend_skill_detector().reset()
+            task._recommend_detector_in_combat = True
 
         # 初始化普通战斗配置属性（排轴与普通模式共用）
         self.normal_skill_sequence = task.get_battle_config("技能释放", ["1", "2", "3"])
@@ -379,6 +394,9 @@ class AutoCombatLogic:
                             self._end = True
                             self._normal_attack_hold_enabled = False
                             self._sync_normal_attack_hold()
+                            # 战斗结束确认：清战斗标记，下次进入战斗（含结算未出现时
+                            # auto_battle 直接重入的新战斗）才会复位推荐技能检测器
+                            task._recommend_detector_in_combat = False
                             break
                 if no_battle:
                     self._normal_attack_hold_enabled = False
