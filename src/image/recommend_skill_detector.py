@@ -63,6 +63,15 @@ class RecommendSkillDetector:
         with self._lock:
             self._tracks.clear()
 
+    def reset_label(self, label: str) -> None:
+        """清除单个按钮状态。
+
+        用于全屏闪光过滤等场景：detect 已把该标签置为 active 但上层决定忽略
+        本次命中，复位后紧接出现的真实脉冲仍能重新产生上升沿。
+        """
+        with self._lock:
+            self._tracks.pop(label, None)
+
     @staticmethod
     def _white_ratio(frame: np.ndarray, cx_n: float, cy_n: float,
                      r_n: float) -> float:

@@ -106,6 +106,25 @@ class TestRecommendSkillDetector(unittest.TestCase):
         self.assertTrue(c)
         self.assertFalse(d)
 
+    def test_reset_label_allows_immediate_rearm_after_flash(self):
+        """全屏闪光过滤复位后，紧接出现的单按钮白圈应重新产生上升沿。"""
+        pulse = render(signal_color=COLOR_WHITE)
+        # 全屏闪光：该标签已被确认（active=True），detect 不再返回 True。
+        self.assertTrue(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
+        self.assertFalse(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
+        # 闪光过滤后复位该标签 → 白圈立即重现仍能再次触发。
+        self.det.reset_label("批次3")
+        self.assertTrue(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
+        # 复位后重复白帧只计一次（不重复触发）。
+        self.assertFalse(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
+
+    def test_reset_label_does_not_affect_other_labels(self):
+        pulse = render(signal_color=COLOR_WHITE)
+        self.assertTrue(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
+        self.det.reset_label("批次2")
+        # 未复位的标签仍保持 active，白圈不再触发；复位无关标签不影响它。
+        self.assertFalse(self.det.detect(pulse, 0.920, 0.898, 0.037, "批次3"))
+
 
 if __name__ == "__main__":
     unittest.main()

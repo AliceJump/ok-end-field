@@ -310,6 +310,10 @@ class BattleMixin(BaseEfTask):
         if len(active_regions) >= 3 and len(confirmed) == len(active_regions):
             labels = "、".join(label for _, _, label in confirmed)
             self.log_info(f"推荐技能疑似全屏闪光，忽略本次命中: {labels}")
+            # detect 已把这些标签置为 active；复位后若真实白圈紧接闪光出现，
+            # 才能重新产生上升沿并按出技能。
+            for _, _, label in confirmed:
+                detector.reset_label(label)
             return False
 
         pressed = False
