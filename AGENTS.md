@@ -74,3 +74,15 @@ gh pr edit <n> --body $body
 - **lang JSON 只放 OCR 匹配文本**。UI 说明（如 `instructions` 富文本）用 `self.tr("中文msgid")` 走 gettext，msgid 写入 `i18n/*/LC_MESSAGES/ok.po` 后 `task_i18n_helper.py compile`。
 - **最小原则**：emoji（`📍` `⚙️` `🖱️` 等）、`└─`/`├─`、HTML 标签/颜色等无需翻译的内容留在代码里拼，只把需翻译的纯文本放进 i18n 数据。
 - **动态键名翻译**：`instructions` 里动态读取的配置键名显示时经 `self.tr(键名)` 翻译；查配置值用原始键名，显示用翻译后的键名（见 `src/tasks/mixin/zip_line_mixin.py`）。
+
+## i18n 收集池防污染（重要）
+
+框架机制：debug 模式下 `App.tr(key)` 会把所有传入的 key 收进 `to_translate`，「开发工具→生成 i18n 文件」按钮将其导出为 po 条目。GUI 渲染层（配置下拉框当前值、任务信息卡、计划任务名等）会对**动态值**调 `og.app.tr()`，因此运行时数据会污染 po。已踩坑案例：账号名 `*0705`、`re.compile('上次')`、`开始第 1/3 个账号(0705)任务执行`、`Log(0705)`。
+
+强制规则：
+
+1. **翻译函数输入必须是静态模板**：`self.tr("固定中文")` 或 `self.tr("含 {placeholder} 模板").format(...)`；禁止 `tr(f"...{变量}...")`、禁止把运行时变量拼进 tr 参数。
+2. **`re.Pattern` 进日志前必须取 `.pattern`**：f-string 直接拼 Pattern 对象会 str 化为 `re.compile('xxx')`（见 `login_mixin.click_text` 的规范化写法）。
+3. **过滤层**：`src/patches/i18n_collection_patch.py` 的 `is_dynamic_text()` 在 tr 入口拦截动态内容；发现新的垃圾形态时**先更新该处正则规则**，再用 `tmp/clean_dynamic_po_entries.py`（复用同一规则）清扫存量 po 并重编译。
+4. 框架无单条豁免参数；`to_translate` 仅 debug 模式启用，生产不受影响，垃圾条目对运行无害但会膨胀 po、误导翻译。
+5. `log_info`/`mark_task_failure` 自身不做翻译也不支持 params 填充；`tr+format` 仅用于通知链路（`notify=True`/`show_notification`）和 instructions 富文本构建。
