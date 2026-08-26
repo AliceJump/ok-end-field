@@ -83,6 +83,7 @@ gh pr edit <n> --body $body
 
 1. **翻译函数输入必须是静态模板**：`self.tr("固定中文")` 或 `self.tr("含 {placeholder} 模板").format(...)`；禁止 `tr(f"...{变量}...")`、禁止把运行时变量拼进 tr 参数。
 2. **`re.Pattern` 进日志前必须取 `.pattern`**：f-string 直接拼 Pattern 对象会 str 化为 `re.compile('xxx')`（见 `login_mixin.click_text` 的规范化写法）。
-3. **过滤层**：`src/patches/i18n_collection_patch.py` 的 `is_dynamic_text()` 在 tr 入口拦截动态内容；发现新的垃圾形态时**先更新该处正则规则**，再用 `tmp/clean_dynamic_po_entries.py`（复用同一规则）清扫存量 po 并重编译。
+3. **动态配置用声明式豁免（治本）**：用户输入载入的下拉配置（如「地图账号」= 账号列表）不参与翻译——把 config key 登记到 `src/core/dynamic_config_keys.py` 的 `DYNAMIC_DROPDOWN_KEYS`，渲染补丁 `dynamic_config_patch.py` 据此跳过 tr。**项目资源类下拉不要登记**（干员列表 characters.json、物品导航「选择物品」等是合法待翻译文案）。
 4. 框架无单条豁免参数；`to_translate` 仅 debug 模式启用，生产不受影响，垃圾条目对运行无害但会膨胀 po、误导翻译。
 5. `log_info`/`mark_task_failure` 自身不做翻译也不支持 params 填充；`tr+format` 仅用于通知链路（`notify=True`/`show_notification`）和 instructions 富文本构建。
+6. po 出现垃圾条目时：确认来源 → 能声明式的走第 3 条；一次性清理可仿照 `tmp/clean_dynamic_po_entries.py` 删条目后重编译。
