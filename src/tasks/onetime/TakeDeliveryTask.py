@@ -1,10 +1,8 @@
 import re
-from ok import TriggerTask, Logger
+from ok import TriggerTask
 
 from src.icons import Icons
 from src.core.BaseEfTask import BaseEfTask
-
-logger = Logger.get_logger(__name__)
 
 
 class TakeDeliveryTask(BaseEfTask, TriggerTask):
@@ -252,7 +250,6 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                     # 匹配成功后，尝试接取任务（最多3次）
                     self.log_info(f"准备接取任务：{matched_msg}")
 
-                    success = False
                     for attempt in range(1, 4):  # 尝试3次
                         self.log_debug(f"接取运送委托 (尝试 {attempt}/3)")
                         self.click(target_btn, after_sleep=0)  # 点击后不等待
@@ -261,15 +258,13 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                         delivery_text = self.wait_ocr(match=self.lang.TakeDeliveryTask.k_046ed3ab, time_out=2, raise_if_not_found=False)
                         if delivery_text:
                             self.log_info(f"抢单成功！(第 {attempt} 次尝试)")
-                            success = True
                             return True
                         else:
                             self.log_debug(f"第 {attempt} 次尝试未成功，继续...")
 
                     # 3次都失败
-                    if not success:
-                        self.log_info("抢单失败（可能已被抢走），继续检测列表状态...")
-                        # 继续循环，不返回，让后面的刷新逻辑处理
+                    self.log_info("抢单失败（可能已被抢走），继续检测列表状态...")
+                    # 继续循环，不返回，让后面的刷新逻辑处理
 
                 else:
                     self.log_debug("未找到符合条件(金额+类型)的委托")
@@ -280,7 +275,6 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                     else:
                         last_refresh_box = getattr(self, 'last_known_refresh_btn', None)
 
-                    # 2. 检查是否需要滚动 (每轮刷新之间最多滚动1次)
                     # 2. 检查是否需要滚动 (每轮刷新之间最多滚动1次)
                     if scroll_step < 1:
                         scroll_step += 1

@@ -1,9 +1,5 @@
-import re
 import webbrowser
-from dataclasses import dataclass
-from typing import List, Tuple
 
-from ok import Box
 from qfluentwidgets import FluentIcon
 
 from src.icons import Icons
@@ -19,8 +15,6 @@ from src.data.delivery_area_service import (
     get_delivery_target_ocr_pattern,
     get_delivery_targets,
     get_full_cycle_targets,
-    get_task_model_area,
-    get_transfer_search_area,
 )
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.account.account_mixin import AccountMixin
@@ -35,18 +29,6 @@ secondary_objective_direction_dot = [
     fL.secondary_objective_direction_dot_light_three,
     fL.secondary_objective_direction_dot_light_fourth
 ]
-
-
-@dataclass
-class DeliveryRow:
-    """运输委托行对象 - 包含OCR元素和坐标信息
-
-    Attributes:
-        elems: OCR识别的元素列表
-        box: 行的边界框(x1, y1, x2, y2)
-    """
-    elems: List[Box]  # OCRItem列表
-    box: Tuple[float, float, float, float]  # (x1, y1, x2, y2)
 
 
 class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
@@ -163,255 +145,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
     def open_tutorial_link(self, *_):
         webbrowser.open(self.TUTORIAL_LINK)
 
-    def merge_left_right_groups(self) -> List[DeliveryRow]:
-        """合并OCR左右区域结果，按规则分组为行对象
-
-        Returns:
-            list[DeliveryRow]: 运输委托行列表
-        """
-
-        def split_items_by_marker(items: list, marker: str):
-            """
-            按item.name中的marker分组，marker归入上一组
-
-            Args:
-                items: OCRItem列表
-                marker: 分组标记字符串
-
-            Returns:
-                list: 分组后的OCRItem列表
-            """
-            groups = []
-            current = []
-
-            for item in items:
-                name = getattr(item, "name", "").strip()
-                if not name:
-                    continue
-
-                current.append(item)
-
-                if marker in name:
-                    groups.append(current)
-                    current = []
-
-            if current:
-                groups.append(current)
-
-            return groups
-
-        screen_scale_y1_y2 = {
-            1.5: (254 / 1280, 1134 / 1280),  # 3:2 宽高比（常见于部分平板与轻薄本，如 3000x2000）
-            1.0: (0.1271, 0.8561 + (0.8561 - 0.1271) / 11),  # 1:1 宽高比（方屏/窗口接近正方形）
-            9 / 16: (0.075, 0.7916),  # 9:16 宽高比（竖屏，如手机投屏）
-            16 / 9: (250 / 1080, 926 / 1080),  # 16:9 宽高比（主流显示器，如 1920x1080 / 2560x1440）
-        }
-
-        screen_scale_desc = {
-            1.5: "3:2（如 3000x2000）",
-            1.0: "1:1（方屏/接近方屏窗口）",
-            9 / 16: "9:16（竖屏）",
-            16 / 9: "16:9（如 1920x1080、2560x1440）",
-        }
-
-        x_ranges = [
-            (0.4776, 0.5505),
-            (0.8438, 0.9167),
-            (0.3141, 0.3641),
-        ]
-
-        screen_scale_areas = {
-            ratio: [[x1, y1, x2, y2] for (x1, x2) in x_ranges]
-            for ratio, (y1, y2) in screen_scale_y1_y2.items()
-        }
-        ratio = self.width / self.height
-        area = screen_scale_areas.get(ratio)
-        if area is None:
-            supported = "、".join(
-                f"{k:.3f} -> {v}" for k, v in screen_scale_desc.items()
-            )
-            raise ValueError(
-                f"不支持的屏幕比例: {ratio:.3f}（当前分辨率: {self.width}x{self.height}）。"
-                f"支持的比例有：{supported}。"
-                "请调整游戏窗口比例"
-            )
-        # === 区域定义 ===
-        left_box = self.box_of_screen(area[0][0], area[0][1], area[0][2], area[0][3])
-        right_box = self.box_of_screen(area[1][0], area[1][1], area[1][2], area[1][3])
-        mid_box = self.box_of_screen(area[2][0], area[2][1], area[2][2], area[2][3])
-
-        areas = [
-            ("left", left_box, 10),
-            ("right", right_box, 10),
-            ("mid", mid_box, 5),
-        ]
-
-        # 期望比例
-        expected_ratio = [2, 2, 1]  # 左:右:中
-        total_ratio = sum(expected_ratio)
-
-        results = {name: [] for name, _, _ in areas}
-        start_time = self.active_time()
-
-        while True:
-            self.next_frame()  # 拿到最新截图
-
-            # OCR
-            for name, box, _ in areas:
-                results[name] = self.ocr(
-                    match=re.compile(r"[\u4e00-\u9fff]+"),
-                    box=box,
-                    log=True,
-                    threshold=0.8
-                )
-
-            # 实际项数
-            counts = [len(results[name]) for name, _, _ in areas]
-
-            # 超时退出
-            if self.active_time() - start_time > 2:
-                break
-
-            # 检查最小项数
-            min_ok = all(c >= min_count for c, (_, _, min_count) in zip(counts, areas))
-
-            # 检查比例
-            total_count = sum(counts)
-            if total_count % total_ratio != 0:
-                ratio_ok = False
-            else:
-                unit = total_count // total_ratio
-                ratio_ok = all(c == r * unit for c, r in zip(counts, expected_ratio))
-
-            # 同时满足最小项数和比例才算 OK
-            if min_ok and ratio_ok:
-                break  # 满足条件，退出循环
-            else:
-                self.sleep(0.1)  # 不满足，等待再重扫一次
-
-        # 最终 OCR 结果
-        left_items = results["left"]
-        right_items = results["right"]
-        mid_items = results["mid"]
-
-        # === 基础清洗 ===
-        left_items = [i for i in left_items if getattr(i, "name", "").strip()]
-        right_items = [i for i in right_items if getattr(i, "name", "").strip()]
-        mid_items = [i for i in mid_items if getattr(i, "name", "").strip()]
-        # === 分组 ===
-        left_groups = [
-            g for g in split_items_by_marker(left_items, self.lang.DeliveryTask.k_view_location) if len(g) >= 2
-        ]
-
-        right_groups = [
-            g for g in split_items_by_marker(right_items, self.lang.DeliveryTask.k_accept_delivery) if len(g) >= 2
-        ]
-        available_left = left_groups.copy()
-        available_mid = mid_items.copy()
-
-        rows = []
-
-        for rg in right_groups:
-            if rg[0].y < rg[1].y:
-                rg_min_y = rg[0].y
-                rg_max_y = rg[1].y + rg[1].height
-            else:
-                rg_min_y = rg[1].y
-                rg_max_y = rg[0].y + rg[0].height
-
-            matched_left = None
-            matched_mid = None
-
-            # ===== 找 left =====
-            for lg in available_left:
-                ys = [e.y for e in lg]
-                if min(ys) >= rg_min_y and max(ys) <= rg_max_y:
-                    matched_left = lg
-                    break
-
-            # ===== 找 mid =====
-            for m in available_mid:
-                if rg_min_y <= m.y <= rg_max_y:
-                    matched_mid = m
-                    break
-
-            # ===== 任意成功就 remove =====
-            if matched_left:
-                available_left.remove(matched_left)
-
-            if matched_mid:
-                available_mid.remove(matched_mid)
-
-            # ===== 构建 elems（顺序必须固定）=====
-            elems = []
-
-            if matched_left:
-                elems += matched_left
-
-            if matched_mid:
-                elems += [matched_mid]
-
-            elems += rg
-
-            # ===== 不足5个不加入 =====
-            if len(elems) >= 5:
-                min_x = min(e.x for e in [elems[0], elems[-1]])
-                max_x = max(e.x for e in [elems[0], elems[-1]])
-                min_y = min(e.y for e in [elems[-2], elems[-1]])
-                max_y = max(e.y + e.height for e in [elems[-2], elems[-1]])
-                rows.append(DeliveryRow(elems=elems, box=(min_x, min_y, max_x, max_y)))
-
-        return rows
-
-    def detect_ticket_type(self, row: DeliveryRow) -> str | None:
-        """检测行对象中的票券类型
-
-        Args:
-            row: DeliveryRow运输委托行对象
-
-        Returns:
-            str: 票券类型("ticket_delivery_area")或None
-        """
-        first_name = row.elems[0].name
-        if extract_delivery_location(first_name, self.delivery_area, self.lang):
-            return "ticket_delivery_area"
-        return None
-
-    def _resolve_transfer_search_box(self, area_config):
-        """将传送搜索配置解析为可用 box，支持 preset 与坐标两种配置。"""
-        if area_config is None:
-            return None
-        if isinstance(area_config, str):
-            return getattr(self.box, area_config, None)
-        if not isinstance(area_config, dict):
-            return None
-
-        preset = area_config.get("preset")
-        if preset:
-            return getattr(self.box, preset, None)
-
-        if all(k in area_config for k in ("x", "y", "to_x", "to_y")):
-            return self.box_of_screen(
-                area_config["x"],
-                area_config["y"],
-                area_config["to_x"],
-                area_config["to_y"],
-            )
-        return None
-
-    def _get_transfer_search_box_by_location(self, location_name):
-        area_config = get_transfer_search_area(location_name, self.delivery_area)
-        return self._resolve_transfer_search_box(area_config)
-
-    def _remember_delivery_location(self, row: DeliveryRow):
-        """从接取到的委托行里缓存地点信息，供后续传送点搜索复用。"""
-        first_name = row.elems[0].name
-        self._accepted_delivery_location = extract_delivery_location(first_name, self.delivery_area, self.lang)
-        if self._accepted_delivery_location:
-            self.log_info(f"已缓存委托地点: {self._accepted_delivery_location}")
-        else:
-            self.log_info(f"未能从委托行识别地点，将直接判定送货失败: {first_name}")
-
     def _to_delivery_point_config_key(self, location_name: str | None) -> str:
         if location_name is None:
             return self.CFG_TO_DELIVERY_POINT
@@ -467,11 +200,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self.log_info("未找到‘运送委托列表’，退出")
             return False
         self.wait_ui_stable(refresh_interval=1)
-        ticket_types = ["ticket_delivery_area"]
-
-        if not ticket_types:
-            self.log_info("警告: 未启用任何券种，任务退出")
-            return None
         self.active_and_send_mouse_delta(0, self.height//2-20, activate=False)
         start_time = self.active_time()
         while True:
@@ -708,56 +436,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self.ensure_main()
 
 
-    def _resolve_transfer_point_search_box(self):
-        """根据当前委托区域选择传送点搜索区域。"""
-        cached_box = self._get_transfer_search_box_by_location(self._accepted_delivery_location)
-        if cached_box:
-            return cached_box
-        if self._accepted_delivery_location:
-            self.log_info(f"委托地点({self._accepted_delivery_location})未配置传送搜索区域，送货失败")
-        return None
-
-    def _try_recover_delivery_location_on_map(self):
-        """地图已打开时，尝试从右上角地点信息回填委托地点缓存。"""
-        if self._accepted_delivery_location:
-            return False
-        if not hasattr(self, "delivery_area"):
-            return False
-
-        try:
-            delivery_locations = get_delivery_locations(self.delivery_area, self.lang)
-            if not delivery_locations:
-                return False
-
-            ocr_results = self.wait_ocr(
-                match=delivery_locations,
-                box=self.box.top_right,
-                time_out=4,
-                log=True,
-            )
-            if not ocr_results:
-                return False
-
-            location_text = str(getattr(ocr_results[0], "name", "")).strip()
-            if not location_text:
-                return False
-
-            location_name = extract_delivery_location(location_text, self.delivery_area)
-            if not location_name:
-                return False
-
-            self._accepted_delivery_location = location_name
-            self.log_info(f"通过地图自动回填送货地点: {location_name}")
-            return True
-        except Exception:
-            return False
-
-    def _resolve_transfer_point_search_box_after_map_open(self, fallback_box):
-        """地图打开后重新解析传送点搜索区域，便于后续扩展或回填逻辑插入。"""
-        if not self._accepted_delivery_location:
-            self._try_recover_delivery_location_on_map()
-        return self._resolve_transfer_point_search_box() or fallback_box
-
     def _run_single_delivery_cycle(self):
         if getattr(self, "_daily_delivery_mode", False) or self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE:
             ends_list_pattern_dict = {}
@@ -847,7 +525,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                         after_sleep=2,
                         alt=True,
                 ):
-                    self.log_info("未找到登上滑索架，测试失败")
+                    self.log_info("已找到并登上滑索架，继续测试")
                     self.on_zip_line_start(
                         end, need_v=False,
                         need_scroll=self.zip_line_scroll_enabled()
@@ -862,21 +540,29 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     need_scroll=self.zip_line_scroll_enabled(),
                 )
 
+    def _ensure_delivery_area_config(self):
+        """校验并应用配置中的送货地区，必要时同步相关下拉选项。"""
+        current_area = self.config.get(self.CFG_DELIVERY_AREA, DEFAULT_DELIVERY_AREA)
+        if current_area not in DELIVERY_AREA_CONFIG:
+            self.log_info(f"配置的地区({current_area})无效，回退为默认地区({DEFAULT_DELIVERY_AREA})")
+            current_area = DEFAULT_DELIVERY_AREA
+        if current_area != self.delivery_area:
+            self._configure_delivery_area(current_area)
+        # 地区未变时也要修正无效的完整循环测试区域（如地区数据更新后旧地点失效）
+        if self.CFG_FULL_CYCLE_LOCATION in self.config:
+            if self.config.get(self.CFG_FULL_CYCLE_LOCATION) not in self.full_cycle_locations:
+                self.config[self.CFG_FULL_CYCLE_LOCATION] = self.full_cycle_locations[0]
+        # 日常模式（DeliveryFeature）未注册这两个配置项，仅独立任务模式同步下拉选项
+        if self.CFG_FULL_CYCLE_LOCATION in self.config_type and self.CFG_TEST_TARGET in self.config_type:
+            self.config_type[self.CFG_TEST_TARGET]["options"] = (
+                [self.TEST_NONE] + self.to_delivery_point_config_keys + self.ends + [self.TEST_FULL_CYCLE]
+            )
+            self.config_type[self.CFG_FULL_CYCLE_LOCATION]["options"] = self.full_cycle_locations
+
     def run(self):
         """运输委托任务的主入口，支持与日常任务一致的多账号执行逻辑。"""
         try:
-            current_area = self.config.get(self.CFG_DELIVERY_AREA, DEFAULT_DELIVERY_AREA)
-            if current_area not in DELIVERY_AREA_CONFIG:
-                self.log_info(f"配置的地区({current_area})无效，回退为默认地区({DEFAULT_DELIVERY_AREA})")
-                current_area = DEFAULT_DELIVERY_AREA
-            if current_area != self.delivery_area:
-                self._configure_delivery_area(current_area)
-                if self.config.get(self.CFG_FULL_CYCLE_LOCATION) not in self.full_cycle_locations:
-                    self.config[self.CFG_FULL_CYCLE_LOCATION] = self.full_cycle_locations[0]
-                self.config_type[self.CFG_TEST_TARGET]["options"] = (
-                        [self.TEST_NONE] + self.to_delivery_point_config_keys + self.ends + [self.TEST_FULL_CYCLE]
-                )
-                self.config_type[self.CFG_FULL_CYCLE_LOCATION]["options"] = self.full_cycle_locations
+            self._ensure_delivery_area_config()
             allow_multi = (
                     self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE
                     and not self.config.get(self.CFG_ONLY_ACCEPT)
@@ -936,11 +622,7 @@ class DeliveryFeature(DeliveryTask):
 
     def run_daily(self):
         """执行一轮日常自动送货，由 DailyTask 负责多账号循环。"""
-        current_area = self.config.get(self.CFG_DELIVERY_AREA, DEFAULT_DELIVERY_AREA)
-        if current_area not in DELIVERY_AREA_CONFIG:
-            current_area = DEFAULT_DELIVERY_AREA
-        if current_area != self.delivery_area:
-            self._configure_delivery_area(current_area)
+        self._ensure_delivery_area_config()
 
         self._daily_delivery_mode = True
         try:
