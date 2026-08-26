@@ -3,6 +3,15 @@ import re
 from src.data.FeatureList import FeatureList as fL
 from src.data.lang import LangAccessor
 
+# 优先商品模板标签 → 官方中文名。
+# 模板标签（weapon_quota/orobertyl）直接打进日志不可读，先映射为游戏内官方名称
+# （解包文本 assets/data/i18n_texts/*.json，key=e38d9b5bba114f81 / 8a3b3efb79c0131f）。
+# 日志/失败消息链路自带翻译机制，代码里勿手动 tr，否则整句 msgid 会与 ok.po 错位。
+_PRIORITY_ITEM_NAMES = {
+    fL.weapon_quota.value: "武库配额",
+    fL.orobertyl.value: "嵌晶玉",
+}
+
 
 class DailyShopFeature:
     # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
@@ -140,7 +149,11 @@ class DailyShopFeature:
         candidates.extend((item, False) for item in normal_results)
         candidates.extend((item, True) for item in (discount_results or []))
         for idx, (item, is_discount_item) in enumerate(candidates, start=1):
-            item_name = getattr(item, "name", None) or f"未知商品#{idx}"
+            # 模板标签（weapon_quota/orobertyl）替换为官方中文名，保证日志可读；
+            # 不手动调 self.tr——log_info/mark_task_failure 链路自带翻译机制，
+            # 预翻译会使整句 msgid 与 ok.po 条目错位。
+            raw_name = getattr(item, "name", None)
+            item_name = _PRIORITY_ITEM_NAMES.get(raw_name, raw_name) or f"未知商品#{idx}"
             self.log_info(f"尝试购买优先商品: {item_name}，当前信用: {sum_credit}")
             if not self.back_shop():
                 self.info_set(self.CFG_CREDIT_SHOP_WARNING, "购买优先商品前未能返回采购页面")

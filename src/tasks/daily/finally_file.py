@@ -58,6 +58,8 @@ def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_da
     """
     task_name = getattr(task, 'name', '未知任务')
     app_name = get_software_name()
+    # 报告文案走项目 gettext（msgid 入 ok.po）；task 缺失时退化为原文
+    _tr = getattr(task, 'tr', None) or (lambda s: s)
 
     target_dir = base_dir / app_name / task_name
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -86,24 +88,24 @@ def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_da
     failure_details = summary_info.get("failure_details") or {}
 
     lines = [
-        f"{task_name}执行情况汇总 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+        f"{_tr(task_name)}{_tr('执行情况汇总')} - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         "=" * 50,
-        f"执行状态: {status or '未知'}",
-        f"执行轮数: {actual_repeat_total}",
+        _tr("执行状态: {status}").format(status=_tr(status) if status else _tr("未知")),
+        _tr("执行轮数: {rounds}").format(rounds=actual_repeat_total),
         "",
     ]
 
     if exception_text:
         lines.extend([
-            "异常信息:",
+            _tr("异常信息:"),
             f"  {exception_text}",
             "",
         ])
 
     if current_task:
         lines.extend([
-            "当前正在执行的任务:",
-            f"  {current_task}",
+            _tr("当前正在执行的任务:"),
+            f"  {_tr(current_task)}",
             "",
         ])
 
@@ -122,28 +124,30 @@ def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_da
             skipped = r.get("skipped", [])
             all_tasks = r.get("all", [])
 
-            acct_display = f"{account_user}" if account_user else (f"id:{account_id}" if account_id else "无")
-            lines.append(f"--- 第 {rid} 轮 (账号: {acct_display}) ---")
+            acct_display = f"{account_user}" if account_user else (f"id:{account_id}" if account_id else _tr("无"))
+            lines.append(_tr("--- 第 {round} 轮 (账号: {account}) ---").format(round=rid, account=acct_display))
             lines.append(
-                f"总任务数: {len(all_tasks)} | 成功: {len(success)} | 失败: {len(failed)} | 跳过: {len(skipped)}")
+                _tr("总任务数: {total} | 成功: {success} | 失败: {failed} | 跳过: {skipped}").format(
+                    total=len(all_tasks), success=len(success), failed=len(failed), skipped=len(skipped)))
             lines.append("")
-            lines.append("成功任务:")
-            lines.append(f"  {', '.join(success) if success else '无'}")
+            lines.append(_tr("成功任务:"))
+            lines.append(f"  {', '.join(_tr(t) for t in success) if success else _tr('无')}")
             lines.append("")
-            lines.append("失败任务:")
-            lines.append(f"  {', '.join(failed) if failed else '无'}")
+            lines.append(_tr("失败任务:"))
+            lines.append(f"  {', '.join(_tr(t) for t in failed) if failed else _tr('无')}")
             lines.append("")
-            lines.append("跳过任务:")
-            lines.append(f"  {', '.join(skipped) if skipped else '无'}")
+            lines.append(_tr("跳过任务:"))
+            lines.append(f"  {', '.join(_tr(t) for t in skipped) if skipped else _tr('无')}")
             lines.append("")
     else:
         if all_fail_tasks:
-            lines.append("❌ 失败任务统计:")
+            lines.append("❌ " + _tr("失败任务统计:"))
             for repeat_idx, failed_tasks in all_fail_tasks:
-                lines.append(f"  第 {repeat_idx} 轮: {', '.join(failed_tasks)}")
+                lines.append(_tr("第 {round} 轮: {tasks}").format(
+                    round=repeat_idx, tasks=', '.join(_tr(t) for t in failed_tasks)))
             lines.append("")
         else:
-            lines.append("✅ 所有任务执行成功！")
+            lines.append("✅ " + _tr("所有任务执行成功！"))
             lines.append("")
 
     content = "\n".join(lines)
@@ -202,7 +206,7 @@ def _format_account_failure_lines(account_id, tasks_map, id_to_user, _tr) -> lis
     if tasks_map:
         for task_name, message in tasks_map.items():
             message_text = str(message).strip() if message is not None else ""
-            lines.append(f"  - {task_name} : {_tr(message_text) or _tr('未设置失败消息')}")
+            lines.append(f"  - {_tr(task_name)} : {_tr(message_text) or _tr('未设置失败消息')}")
     else:
         lines.append(f"  - {_tr('无')}")
     lines.append("")
