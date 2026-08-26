@@ -1,4 +1,3 @@
-
 from src.data.FeatureList import FeatureList as fL
 
 
@@ -88,7 +87,9 @@ class DailyCreditMixin:
                 actions.append("交流")
             if left_help_time > 0:
                 actions.append("助力")
-            self.log_info(f"已进入好友帝江号，准备进行{''.join(actions)}操作")
+            # 「交流」「助力」为静态文案，内层逐个过 tr 后拼接
+            self.log_info(self.tr("已进入好友帝江号，准备进行{actions}操作").format(
+                actions=''.join(self.tr(a) for a in actions)))
             self.press_key("y")
             self.wait_ui_stable(refresh_interval=1)
             if left_exchange_time > 0:

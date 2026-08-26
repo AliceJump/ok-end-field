@@ -44,7 +44,8 @@ class DailyBuyFeature:
         for area in target_areas:
             if not keep_area_context:
                 self.ensure_main()
-            self.log_info(f"进入区域: {area}")
+            # 区域名是项目静态常量（po 已有正式 msgid），文本值内层过 tr
+            self.log_info(self.tr("进入区域: {area}").format(area=self.tr(area)))
             #
             self.wait_click_ocr(
                 match=self.lang.daily_buy_mixin.stable_materials_tab,

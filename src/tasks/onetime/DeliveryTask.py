@@ -885,7 +885,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             for repeat_idx, repeat_times in self.iter_multi_account_context(
                     repeat_times=1,
                     empty_accounts_message="多账户模式已开启，但账号列表为空，自动送货任务结束",
-                    account_log_suffix="自动送货",
+                    account_log_suffix=self.tr("自动送货"),
                     allow_multi_account=allow_multi,
             ):
                 self._run_single_delivery_cycle()

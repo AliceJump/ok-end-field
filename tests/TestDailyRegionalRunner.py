@@ -20,6 +20,7 @@ def _make_task(config_options, buy_sell_result=True, after_buy_called=True,
     task.to_model_area = Mock(return_value=to_model_area_result)
     task.safe_back = Mock()
     task.log_info = Mock()
+    task.tr = lambda message, **kwargs: message
 
     def buy_sell_impl(target_areas=None, keep_area_context=False, after_buy=None):
         if after_buy is not None and after_buy_called and target_areas:

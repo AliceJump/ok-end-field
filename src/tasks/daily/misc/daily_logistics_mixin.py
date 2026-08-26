@@ -18,7 +18,7 @@ class DailyLogisticsMixin:
         start_time = self.active_time()
         while True:
             if self.active_time() - start_time > time_out:
-                self.log_info(f"盲点加速超时，未找到 {feature}")
+                self.log_info(self.tr("盲点加速超时，未找到 {feature}").format(feature=feature))
                 return False
             if self.find_feature(feature=feature, box=box):
                 return True
@@ -101,13 +101,12 @@ class DailyLogisticsMixin:
         for area in areas_list:
             activity_num = 0
             count = 0
-            self.log_info(f"开始处理区域: {area}")
+            self.log_info(self.tr("开始处理区域: {area}").format(area=self.tr(area)))
 
             while True:
                 if 0 < activity_num <= count:
-                    self.log_info(
-                        f"{area}仓储节点已完成{activity_num}次，停止继续"
-                    )
+                    self.log_info(self.tr("{area}仓储节点已完成{count}次，停止继续").format(
+                        area=self.tr(area), count=activity_num))
                     break
 
                 self.to_model_area(area, "仓储节点")
@@ -122,7 +121,7 @@ class DailyLogisticsMixin:
                         box=self.box.top_left,
                         time_out=5
                 ):
-                    self.log_info(f"{area}未找到本地仓储节点，返回主界面")
+                    self.log_info(self.tr("{area}未找到本地仓储节点，返回主界面").format(area=self.tr(area)))
                     self.ensure_main()
                     break
 
@@ -134,7 +133,7 @@ class DailyLogisticsMixin:
 
                 if not results:
                     self.log_info(
-                        f"{area} 当前没有货物装箱可操作，返回主界面"
+                        self.tr("{area} 当前没有货物装箱可操作，返回主界面").format(area=self.tr(area))
                     )
                     self.ensure_main()
                     break
@@ -142,7 +141,8 @@ class DailyLogisticsMixin:
                 if activity_num == 0:
                     activity_num = len(results)
                     self.log_info(
-                        f"{area}共有{activity_num}次可进行转交运送委托的活动",
+                        self.tr("{area}共有{activity_num}次可进行转交运送委托的活动").format(
+                            area=self.tr(area), activity_num=activity_num),
                         notify=True,
                     )
 
@@ -180,7 +180,7 @@ class DailyLogisticsMixin:
                             continue
 
                         self.log_info(
-                            f"步骤 {feature} 未找到，跳过本次活动"
+                            self.tr("步骤 {feature} 未找到，跳过本次活动").format(feature=feature)
                         )
                         break
                 self.ensure_main()

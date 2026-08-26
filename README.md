@@ -158,7 +158,6 @@ An image-recognition-based automation tool for End Field, with partial backgroun
 | [开发指南（DEVELOPMENT.md）](docs/dev/DEVELOPMENT.md) | 架构、目录、任务注册、测试和发布流程 |
 | [API 参考（API.md）](docs/dev/API.md) | BaseEfTask、Mixin、ScreenPosition、KeyConfigManager 等详细 API |
 | [i18n 与 OCR 配置流程](docs/dev/i18n_OCR配置流程.md) | 运行时语言、语言 JSON、OCR 匹配与纠错链路 |
-| [装备词条识别轮子](docs/dev/装备词条识别轮子.md) | 已移除任务所保留的 OCR 解析器、CSV 匹配和模板资源 |
 | [键盘操作体系（键盘操作体系.md）](docs/dev/键盘操作体系.md) | 热键映射、按键封装规范、send_key 例外清单 |
 
 ### 从源码运行 (Python)
@@ -198,7 +197,7 @@ ok-ef.exe -t 1 -e
 ./scripts/testing/run_tests.ps1
 
 # 或逐个运行 unittest
-python -m unittest tests/TestEssenceRecognizer.py
+python -m unittest tests/TestGameWindow.py
 ```
 
 若你在开发“识别类任务”（OCR/模板/颜色识别），建议优先在 `main_debug.py` 下调试，配合日志与截图目录排查。

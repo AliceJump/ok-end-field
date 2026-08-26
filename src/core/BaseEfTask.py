@@ -34,13 +34,18 @@ _ok_screenshot.get_current_time_formatted = lambda: datetime.now().strftime("%Y%
 
 
 def back_window(prev):
+    """尝试将前台窗口恢复为 prev，返回是否实际完成恢复。"""
     current = win32gui.GetForegroundWindow()
 
-    if prev and win32gui.IsWindow(prev) and current != prev:
-        try:
-            win32gui.SetForegroundWindow(prev)
-        except Exception:
-            pass
+    if not prev or not win32gui.IsWindow(prev) or current == prev:
+        return False
+
+    try:
+        win32gui.SetForegroundWindow(prev)
+    except Exception:
+        return False
+
+    return win32gui.GetForegroundWindow() == prev
 
 
 def _extract_locale_from_object(obj: Any) -> str | None:
@@ -445,11 +450,15 @@ class BaseEfTask(
                 username = str(account.get("username", "")).strip()
                 account_id = str(account.get("account_id", "")).strip() or username
                 if not username:
-                    self.log_info(f"第 {repeat_idx + 1}/{repeat_times} 个账号为空，已跳过")
+                    # 纯数字值直接填充不 tr，模板串过 tr
+                    self.log_info(self.tr("第 {idx}/{total} 个账号为空，已跳过").format(
+                        idx=repeat_idx + 1, total=repeat_times))
                     continue
 
                 self.set_current_account(username, account_id)
-                self.log_info(f"开始第 {repeat_idx + 1}/{repeat_times} 个账号({username[-4:]}){account_log_suffix}")
+                # 账号后缀是运行时用户数据不过 tr（防污染收集池）；模板串过 tr
+                self.log_info(self.tr("开始第 {idx}/{total} 个账号({suffix}){log_suffix}").format(
+                    idx=repeat_idx + 1, total=repeat_times, suffix=username[-4:], log_suffix=account_log_suffix))
                 self.login_flow(username)
             else:
                 self.set_current_account("", "")

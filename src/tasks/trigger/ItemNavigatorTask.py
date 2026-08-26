@@ -313,7 +313,9 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
             # 如果新路径不存在，检查旧路径并迁移
             old_path = Path('assets') / 'items' / 'map' / 'marked_points.json'
             if old_path.exists():
-                self.log_info(f"发现旧路径的 marked_points.json，正在迁移到新路径: {self._marked_store}")
+                # 存储路径是运行时值不过 tr
+                self.log_info(self.tr("发现旧路径的 marked_points.json，正在迁移到新路径: {path}").format(
+                    path=self._marked_store))
                 try:
                     data = json.loads(old_path.read_text(encoding='utf-8'))
                     for k, v in (data or {}).items():
@@ -391,7 +393,7 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
             )
 
             if not success:
-                self.log_info(f"[箭头] 绘制失败")
+                self.log_info("[箭头] 绘制失败")
                 return
 
             if tooltip:

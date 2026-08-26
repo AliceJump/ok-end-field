@@ -180,7 +180,7 @@ class DailyBoatMixin:
             char_list = list(get_contact_list_with_feature_list().values())
             count = 0
             for char in char_list:
-                if result := self.find_one(feature=char, box=self.box_of_screen(0.3, 0, 1, 1)):
+                if result := self.find_one(char, box=self.box_of_screen(0.3, 0, 1, 1)):
                     self.click(result)
                     count += 1
                 if count >= 2:

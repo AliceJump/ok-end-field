@@ -5,7 +5,6 @@ from ok import Logger
 from src.yolo.model_registry import (
     build_name_to_model_map,
     build_yolo_model_settings,
-    list_model_keys,
     list_target_names,
 )
 
@@ -18,9 +17,6 @@ class YoloModelLoader:
         self._name_to_model_key = build_name_to_model_map(self.model_settings)
         self._active_model_key: str | None = None
         self._active_detector = None
-
-    def available_models(self) -> list[str]:
-        return list_model_keys(self.model_settings)
 
     def target_names(self, model_key: str | None = None) -> list[str]:
         key = model_key or self.default_model_key

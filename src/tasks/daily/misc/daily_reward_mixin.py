@@ -11,10 +11,11 @@ class DailyRewardMixin:
                 time_out=time_out,
                 after_sleep=after_sleep,
         ):
-            self.mark_task_failure(f"未找到{match_str}按钮，任务失败")
+            # match_str 是调用方传入的 OCR 匹配文本（运行时参数）不过 tr
+            self.mark_task_failure(self.tr("未找到{name}按钮，任务失败").format(name=match_str))
             return False
 
-        self.log_info(f"找到{match_str}按钮并点击")
+        self.log_info(self.tr("找到{name}按钮并点击").format(name=match_str))
         return True
 
     def claim_weekly_rewards(self):
