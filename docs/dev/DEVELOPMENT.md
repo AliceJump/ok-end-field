@@ -198,7 +198,6 @@ ok-end-field/
 │   ├── interaction/              # Win32 输入、键位、鼠标、屏幕区域
 │   ├── image/                    # HSV、登录截图、旋转模板
 │   ├── yolo/                     # 模型定义、注册、加载和 OpenVINO 检测
-│   ├── essence/                  # 装备词条 OCR 纯算法轮子
 │   ├── patches/                  # 启动 monkey patches
 │   └── gui/                      # 全局/账号配置页、WebView 对话框
 ├── assets/
@@ -368,7 +367,6 @@ self.press_combat_key("e")      # combat
 | `TestDeliveryRewardsClaim.py` | 送货奖励领取状态处理 |
 | `TestEfInteraction.py` | 窗口激活与后台消息交互 |
 | `TestEssenceImageFeatures.py` | 装备词条 Feature 资产存在性 |
-| `TestEssenceRecognizer.py` | 装备词条 OCR 纯解析和等级附加 |
 | `TestFindZipLineBoardButton.py` | 滑索上车站点按钮多阶段查找 |
 | `TestGameWindow.py` | 游戏窗口查找（类名与可执行文件匹配） |
 | `TestGifIcon.py` | GIF/主题图标合成与缓存失效 |

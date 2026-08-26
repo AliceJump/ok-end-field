@@ -173,7 +173,6 @@ If you encounter issues, check the following in order:
 | [Development Guide (DEVELOPMENT.md)](docs/dev/DEVELOPMENT.md) | Architecture, repository structure, task registration, testing, and release workflow |
 | [API Reference (API.md)](docs/dev/API.md) | Detailed API docs for BaseEfTask, Mixin, ScreenPosition, KeyConfigManager, and more |
 | [i18n & OCR Configuration](docs/dev/i18n_OCR配置流程.md) | Runtime locale, language JSON, OCR matching, and text-fix workflow |
-| [Equipment Affix Recognition Toolkit](docs/dev/装备词条识别轮子.md) | Reusable OCR parser, CSV matcher, and template assets after task removal |
 | [Keyboard System (键盘操作体系.md)](docs/dev/键盘操作体系.md) | Hotkey mapping, key binding conventions, and send_key exception list |
 
 ### Run from source (Python)
@@ -215,7 +214,7 @@ ok-ef.exe -t 1 -e
 ./scripts/testing/run_tests.ps1
 
 # Or run unittest case-by-case
-python -m unittest tests/TestEssenceRecognizer.py
+python -m unittest tests/TestGameWindow.py
 ```
 
 For OCR/template/color-recognition features, prefer debugging with `main_debug.py` and inspect logs/screenshots for
