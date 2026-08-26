@@ -34,13 +34,18 @@ _ok_screenshot.get_current_time_formatted = lambda: datetime.now().strftime("%Y%
 
 
 def back_window(prev):
+    """尝试将前台窗口恢复为 prev，返回是否实际完成恢复。"""
     current = win32gui.GetForegroundWindow()
 
-    if prev and win32gui.IsWindow(prev) and current != prev:
-        try:
-            win32gui.SetForegroundWindow(prev)
-        except Exception:
-            pass
+    if not prev or not win32gui.IsWindow(prev) or current == prev:
+        return False
+
+    try:
+        win32gui.SetForegroundWindow(prev)
+    except Exception:
+        return False
+
+    return win32gui.GetForegroundWindow() == prev
 
 
 def _extract_locale_from_object(obj: Any) -> str | None:
