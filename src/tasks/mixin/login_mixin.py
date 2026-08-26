@@ -1,6 +1,8 @@
 import re
+
 import pyautogui
-from src.core.BaseEfTask import BaseEfTask
+import win32gui
+from src.core.BaseEfTask import BaseEfTask, back_window
 from src.data.FeatureList import FeatureList as fL
 from src.interaction.Mouse import run_at_window_pos
 from ok import Box
@@ -56,6 +58,11 @@ class LoginMixin(BaseEfTask):
         if not result:
             raise RuntimeError("未找到登出按钮，可能没有先登录，请先登录任意账号")
         self.click(result)
+        # 前置动作：后续「最近/账号/登录」点击走 pyautogui（只作用于前台窗口），
+        # 必须先把游戏窗口置前；后台模式下先记录切换前的前台窗口，点击登录后恢复。
+        prev_hwnd = None
+        if self.input_mode() == "background":
+            prev_hwnd = win32gui.GetForegroundWindow()
         self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True)
         if not self.wait_click_feature(feature=fL.log_out_confirm, time_out=5, raise_if_not_found=False):  # 点击登出确认
             self.log_error("未找到登出确认按钮")
@@ -70,6 +77,12 @@ class LoginMixin(BaseEfTask):
                         box=self.box_of_screen(0, (result[0].y + result[0].height) / self.height, 1,
                                                1))  # 点击最近登录的账号（假设是唯一的）
         self.click_text("登录", box=self.box.center)  # 点击登录按钮
+        # 后台模式：点击登录后不再有前台点击（后续仅轮询截图确认登录），
+        # 恢复切换账号前的前台窗口，避免游戏一直霸占前台。
+        if prev_hwnd is not None:
+            back_window(prev_hwnd)
+            prev_hwnd = None
+            self.log_info("后台模式：已恢复切换账号前的前台窗口")
         if not self._confirm_logged_in():
             raise RuntimeError("登录失败")
 
