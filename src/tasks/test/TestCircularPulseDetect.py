@@ -40,7 +40,7 @@ class TestCircularPulseDetect(BaseEfTask):
             "命中时在匹配位置画框（绿=当前峰值环，红=已校准按钮），"
             "并按对应数字键（批次1→1，依次类推），每个周期按一次。"
             "逐轮打印各批次 r_t/thr/actual_r/support 数据行与环带活跃度诊断；"
-            "参数在本文件顶部 _PRESETS 中填写。"
+            "参数需在 BattleConfig.RECOMMEND_SKILL_REGIONS 中配置。"
         )
         self.icon = FluentIcon.SEARCH
         self.visible = self.debug
@@ -61,7 +61,7 @@ class TestCircularPulseDetect(BaseEfTask):
             if self._is_configured(p)
         ]
         if not presets:
-            raise ValueError("请先在 src/tasks/test/TestCircularPulseDetect.py 的 _PRESETS 中填写至少一批参数")
+            raise ValueError("请先在 BattleConfig.RECOMMEND_SKILL_REGIONS 中配置至少一批预设区域参数")
 
         self.log_info(
             f"开始光圈检测实测: {len(presets)} 批 "
