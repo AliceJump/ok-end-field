@@ -52,7 +52,11 @@ class TestCircularPulseDetect(BaseEfTask):
         })
 
     def run(self):
-        interval = max(0.0, float(self.config.get("扫描间隔(秒)", 0.1) or 0.1))
+        interval_value = self.config.get("扫描间隔(秒)", 0.1)
+        interval = max(
+            0.0,
+            float(0.1 if interval_value is None or interval_value == "" else interval_value),
+        )
         presets = [
             dict(p, index=i + 1)
             for i, p in enumerate(_PRESETS)
