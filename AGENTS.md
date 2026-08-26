@@ -88,3 +88,20 @@ gh pr edit <n> --body $body
 5. `log_info`/`mark_task_failure` 自身不做翻译也不支持 params 填充；**带动态值的日志统一在调用侧走 tr+format**：`self.tr("模板{a}…{b}").format(a=已译文本值, b=纯数字值)`——外层模板串必须 tr（msgid=稳定模板串进 po），文本类动态值内层过 tr 后再填充，纯数字值直接填充不 tr；运行时未知文本（OCR 结果、账号名等）不过 tr 防污染收集池。通知链路（`notify=True`/`show_notification`）和 instructions 富文本构建同理。
    **纯静态硬编码文案（无占位符、无变化）禁止在调用侧加 tr**：直接 `log_info("固定中文")`——UI 显示层渲染日志时会统一翻译，调用侧再包一层 tr 属于冗余；只有带占位符、存在多种变化的模板串才需要调用侧 tr+format（gettext 必须在 format 前命中稳定 msgid）。
 6. po 出现垃圾条目时：确认来源 → 能声明式的走第 3 条；一次性清理可仿照 `tmp/clean_dynamic_po_entries.py` 删条目后重编译。
+
+## 技能清单（.agents/skills/）
+
+仓库技能按场景简要说明如下；需要时用 skill 工具加载对应技能获取完整流程：
+
+- `deploy`：提交并创建版本 tag 推送到发布远端（`deploy` / `deploy beta` / `deploy alpha`）。
+- `use-local-venv`：优先使用仓库本地 `.venv`（`uv sync` 创建、`uv run` 执行）运行 Python。
+- `ok-script-tasks`：创建/修改 ok-script 任务类（`BaseTask` / `TriggerTask`、任务配置 UI 元数据、注册）。
+- `ok-script-codegen`：根据需求描述/截图生成任务 run 方法自动化代码（OCR、模板匹配、相对点击、等待方法）。
+- `ok-script-i18n`：任务元数据/字符串 gettext 国际化（ok.po 同步与编译、lang JSON 约定、`merge_po.py` 目录冲突合并）。
+- `ok-script-ocr-lang`：OCR 语言资源与 OCR 文本修正补丁（`assets/lang/*.json` schema、active locale、`ocr_text_fix.json`）。
+- `ok-config-migration`：配置键名修改严格顺序（迁移表 → 迁移测试 → i18n → 文档 → 恢复）。
+- `ok-script-pr-review`：CodeRabbit 审阅处理（触发新审阅、等待审阅覆盖新 head、回复/解析线程、限流重试）。
+- `github-workflows`：GitHub Actions workflow YAML 编写与排查（语法陷阱、Invalid workflow、SonarCloud 规则）。
+- `github-rulesets`：仓库 rulesets（分支/tag 保护、bypass 角色、GitHub App 自动打 tag）配置与排查。
+- `github-actions-performance`：GitHub Actions 任务性能分析（checkout 版本差异、shallow-clone 副作用、tag 裁剪开销）。
+- `log-watcher-ops`：log-watcher 项目运维（Outlook HTML 日报邮件、watch_dirs 监控、每日清理、dashboard 部署与 `/ok-logs/` 反向代理）。
