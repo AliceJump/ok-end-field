@@ -3,7 +3,6 @@ import math
 from typing import Dict, Tuple, Optional, List
 
 import win32gui
-import win32con
 from PySide6.QtCore import QPoint, QPointF, QTimer, Qt, QObject, Signal, Slot
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPolygonF, QBrush
@@ -41,33 +40,18 @@ class WindowArrowOverlay(QWidget):
         self._sync_timer.timeout.connect(self._sync_geometry)
         self._sync_timer.start(50)
 
-        # ==================== 修改重点 ====================
         self.setWindowFlags(
             Qt.Tool  # 工具窗口
             | Qt.FramelessWindowHint  # 无边框
             | Qt.WindowTransparentForInput
-            | Qt.WindowStaysOnTopHint  # ← 新增：全局置顶
+            | Qt.WindowStaysOnTopHint  # 全局置顶
         )
-        # ================================================
 
         self.setAttribute(Qt.WA_TranslucentBackground, True)
         self.setAttribute(Qt.WA_NoSystemBackground, True)
         self.setAttribute(Qt.WA_TransparentForMouseEvents, True)
 
-        # 不再绑定为游戏窗口的子窗口（全局置顶不需要）
-        # self._bind_to_game_window_layer()   # 可注释或删除
-
         self._sync_geometry()
-
-    def _bind_to_game_window_layer(self):
-        """将叠层绑定为游戏窗口的 owned window，保持在游戏窗口之上但不全局置顶。"""
-        try:
-            # 确保原生窗口句柄已创建
-            overlay_hwnd = int(self.winId())
-            if overlay_hwnd and win32gui.IsWindow(self._hwnd):
-                win32gui.SetWindowLong(overlay_hwnd, win32con.GWL_HWNDPARENT, self._hwnd)
-        except Exception as e:
-            logger.error(f"绑定箭头叠层到游戏窗口失败: {e}")
 
     def _should_show_overlay(self) -> bool:
         """仅在游戏窗口处于前台时显示箭头叠层。"""
@@ -111,7 +95,6 @@ class WindowArrowOverlay(QWidget):
         app = QApplication.instance()
         if app is not None:
             app.processEvents()
-        # 每次绘制后启动自动清除计时器，2s 后尝试清空
 
     def clear_arrows(self):
         self._arrows = []
@@ -261,7 +244,6 @@ class WindowArrowOverlay(QWidget):
 class WindowArrowOverlayController(QObject):
     """把箭头更新切回 GUI 线程执行。"""
 
-    arrows_replaced = Signal(object)
     arrow_updated = Signal(object)
     clear_requested = Signal()
     style_requested = Signal(tuple, float, float)
@@ -273,7 +255,6 @@ class WindowArrowOverlayController(QObject):
         self._hwnd = hwnd
         self._overlay: Optional[WindowArrowOverlay] = None
         self._arrow_map: Dict[str, ArrowSpec] = {}
-        self.arrows_replaced.connect(self._on_arrows_replaced)
         self.arrow_updated.connect(self._on_arrow_updated)
         self.clear_requested.connect(self._on_clear_requested)
         self.style_requested.connect(self._on_style_requested)
@@ -311,18 +292,6 @@ class WindowArrowOverlayController(QObject):
     def _apply_arrow_state(self):
         overlay = self._ensure_overlay()
         overlay.set_arrows(list(self._arrow_map.values()))
-    @Slot(object)
-    def _on_arrows_replaced(self, arrows: List[ArrowSpec]):
-        self._arrow_map = {}
-
-        for spec in arrows:
-            arrow_type = getattr(spec, 'arrow_type', None) or 'default'
-
-            self._arrow_map[arrow_type] = spec
-
-            self._restart_arrow_timer(arrow_type)
-
-        self._apply_arrow_state()
 
     @Slot(object)
     def _on_arrow_updated(self, arrow: ArrowSpec):
@@ -333,14 +302,6 @@ class WindowArrowOverlayController(QObject):
         self._restart_arrow_timer(arrow_type)
 
         self._apply_arrow_state()
-
-    def _on_arrows_requested(self, arrows: List[ArrowSpec]):
-        overlay = self._ensure_overlay()
-        self._arrow_map = {}
-        for spec in arrows:
-            arrow_type = getattr(spec, 'arrow_type', None) or 'default'
-            self._arrow_map[arrow_type] = spec
-        overlay.set_arrows(list(self._arrow_map.values()))
 
     @Slot()
     def _on_clear_requested(self):
@@ -416,39 +377,6 @@ class WindowArrowDrawingMixin:
         except Exception as e:
             logger.error(f"获取窗口大小失败: {e}")
             return 0, 0
-
-    def set_window_arrow_style(
-            self,
-            arrow_color: Optional[Tuple[int, int, int]] = None,
-            shaft_width_norm: Optional[float] = None,
-            head_angle_deg: Optional[float] = None,
-            head_len_ratio: Optional[float] = None,
-    ):
-        """
-        设置窗口箭头的全局样式。
-        
-        Args:
-            arrow_color: 箭头颜色 (RGB)，例如 (0, 255, 0) 为绿色
-            shaft_width_norm: 箭身宽度（归一化），默认 0.01
-            head_angle_deg: 箭头头部张角（度）
-            head_len_ratio: 箭头头部长度比例
-        """
-        if arrow_color is not None:
-            self._window_arrow_color = arrow_color
-        if shaft_width_norm is not None:
-            self._window_arrow_shaft_width_norm = shaft_width_norm
-        if head_angle_deg is not None:
-            self._window_arrow_head_angle_deg = head_angle_deg
-        if head_len_ratio is not None:
-            self._window_arrow_head_len_ratio = head_len_ratio
-
-        controller = self._ensure_window_arrow_controller()
-        if controller is not None:
-            controller.style_requested.emit(
-                self._window_arrow_color,
-                self._window_arrow_head_angle_deg,
-                self._window_arrow_head_len_ratio,
-            )
 
     def draw_window_arrow(
             self,
@@ -577,57 +505,6 @@ class WindowArrowDrawingMixin:
             arrow_type=arrow_type,
         )
 
-    def draw_window_arrows(
-            self,
-            arrows: List[Dict],
-            default_shaft_width_norm: Optional[float] = None,
-    ) -> int:
-        """
-        在游戏窗口上绘制多个箭头。
-        
-        Args:
-            arrows: 箭头列表，每个元素是字典：
-                {
-                    'start_x_norm': float,      # 必需
-                    'start_y_norm': float,      # 必需
-                    'end_x_norm': float,        # 必需
-                    'end_y_norm': float,        # 必需
-                    'shaft_width_norm': float,  # 可选
-                    'color': tuple,             # 可选 (RGB)
-                    'head_len_norm': float,     # 可选
-                }
-            default_shaft_width_norm: 默认的箭身宽度
-            
-        Returns:
-            成功绘制的箭头数量
-        """
-        try:
-            controller = self._ensure_window_arrow_controller()
-            if controller is None:
-                return 0
-
-            arrow_specs = []
-            for arrow in arrows:
-                arrow_specs.append(
-                    ArrowSpec(
-                        arrow_type=arrow.get('arrow_type', 'default'),
-                        start_x_norm=arrow.get('start_x_norm', 0.0),
-                        start_y_norm=arrow.get('start_y_norm', 0.0),
-                        end_x_norm=arrow.get('end_x_norm', 1.0),
-                        end_y_norm=arrow.get('end_y_norm', 1.0),
-                        color=arrow.get('color') or self._window_arrow_color,
-                        shaft_width_norm=arrow.get('shaft_width_norm',
-                                                   default_shaft_width_norm or self._window_arrow_shaft_width_norm),
-                        head_len_norm=arrow.get('head_len_norm'),
-                    )
-                )
-
-            controller.arrows_replaced.emit(arrow_specs)
-            return len(arrow_specs)
-        except Exception as e:
-            logger.error(f"绘制多个窗口箭头失败: {e}")
-            return 0
-
     def clear_window_arrows(self):
         """清空窗口上的所有箭头。"""
         try:
@@ -637,20 +514,3 @@ class WindowArrowDrawingMixin:
             controller.clear_requested.emit()
         except Exception as e:
             logger.error(f"清空窗口箭头失败: {e}")
-
-    def get_window_arrow_size(self) -> Tuple[int, int]:
-        """获取游戏窗口大小。"""
-        overlay = self._window_arrow_overlay
-        if overlay is not None:
-            return overlay.width(), overlay.height()
-        return self._get_window_arrow_size()
-
-    def get_window_arrow_dpi_scale(self) -> float:
-        """获取 DPI 缩放因子。"""
-        width, height = self._get_window_arrow_size()
-        min_dim = min(width, height)
-        if min_dim > 1500:
-            return 1.5
-        if min_dim > 1000:
-            return 1.2
-        return 1.0

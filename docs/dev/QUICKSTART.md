@@ -113,7 +113,7 @@ class MyBattleTask(MapMixin, BattleMixin):
 
 - Feature 使用 `FeatureList` 或其中存在的字符串名称；`find_feature` 返回列表，`find_one` 返回首项。
 - OCR 文本使用 `self.lang.<module>.<key>`，资源写入统一的 `assets/lang/<module>.json`。
-- 可改键操作用 `press_key`、`press_industry_key` 或 `press_combat_key`；参数传默认按键值。
+- 可改键操作用 `press_key` 或 `press_combat_key`；参数传默认按键值。
 - `self.click(box)` 可点击识别框；当前项目封装不使用 `click(box=...)` 示例。
 - `login_flow(username)` 选择登录界面的最近账号，不输入密码。
 

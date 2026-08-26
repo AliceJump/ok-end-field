@@ -333,7 +333,6 @@ self.wait_ocr(match=self.lang.login_mixin.k_20275ef2, time_out=5)
 
 ```python
 self.press_key("f")             # common
-self.press_industry_key("y")    # industry
 self.press_combat_key("e")      # combat
 ```
 

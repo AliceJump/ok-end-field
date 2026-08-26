@@ -173,20 +173,9 @@ def login_ocr(
     target_height=0, use_grayscale=False, log=False,
     frame_processor=None, lib="default", need_active=True,
 )
-
-def login_find_feature(
-    self, feature=None, horizontal_variance=0, vertical_variance=0,
-    threshold=0, use_gray_scale=False,
-    x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1,
-    box=None, canny_lower=0, canny_higher=0,
-    frame_processor=None, template=None,
-    match_method=cv2.TM_CCOEFF_NORMED, screenshot=False,
-    mask_function=None, frame=None, limit=0, target_height=0,
-    need_active=True,
-)
 ```
 
-这些入口使用 Win32 屏幕捕获绕过登录界面无法由常规 WGC 帧可靠捕获的问题。`login_find_feature` 总会获取新的登录截图，传入的 `frame` 不会成为最终识别帧。
+这些入口使用 Win32 屏幕捕获绕过登录界面无法由常规 WGC 帧可靠捕获的问题。
 
 ### 1.4 点击、按键和移动
 
@@ -219,19 +208,17 @@ def scroll_relative(self, x: float, y: float, count: int) -> None
 
 ```text
 def press_key(self, key: str, down_time=0.02, after_sleep=0, interval=-1)
-def press_industry_key(self, key: str, down_time=0.02, after_sleep=0, interval=-1)
 def press_combat_key(self, key: str, down_time=0.02, after_sleep=0, interval=-1)
 def press_esc(self)
 def move_keys(self, keys, duration, need_back=False)
 ```
 
-前三个方法分别以 `common`、`industry`、`combat` 类型调用 `KeyConfigManager.resolve_key`，参数传默认按键值，例如 `self.press_key("m")`。`move_keys` 用于 `w/a/s/d` 等持续移动；当前实现不使用 `need_back` 参数。
+前两个方法分别以 `common`、`combat` 类型调用 `KeyConfigManager.resolve_key`，参数传默认按键值，例如 `self.press_key("m")`。`move_keys` 用于 `w/a/s/d` 等持续移动；当前实现不使用 `need_back` 参数。
 
 `press_esc()` 仅用于过剧情（对话时）触发 ESC，底层使用 `BaseEfTask` 统一初始化的键盘控制器。其他返回主界面、关闭页面等流程不得使用该函数。
 
 ```text
 def dodge_forward(self, pre_hold=0.004, dodge_down_time=0.003, after_sleep=0.005)
-def dodge_backward(self, pre_hold=0.004, dodge_down_time=0.003, after_sleep=0.005)
 
 def move_to_target_once(
     self, ocr_obj, max_step=100, min_step=20,
@@ -285,7 +272,6 @@ def yolo_detect(
     detections=None, model_key=None,
 ) -> list[Box]
 
-def list_yolo_models(self) -> list[str]
 def list_yolo_targets(self, model_key: str | None = None) -> list[str]
 def set_yolo_model(self, model_key: str)
 def release_yolo_detector(self)
@@ -356,7 +342,7 @@ class KeyConfigManager:
 - 通用：`Handbook Key=f8`、`Recruitment Key=f9`
 - 工业：`Area Build Key=y`、`Blueprint Key=f1`、`Product Icon Toggle Key=f4`
 
-所有可改键操作应走 `press_key`/`press_industry_key`/`press_combat_key`。固定技能数字、方向键和系统修饰键等代码可按其明确语义使用底层发送接口。
+所有可改键操作应走 `press_key`/`press_combat_key`。固定技能数字、方向键和系统修饰键等代码可按其明确语义使用底层发送接口。
 
 ### 2.4 战斗配置与账号覆盖
 
