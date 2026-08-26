@@ -55,7 +55,7 @@ class DailyCreditMixin:
                     return False
                 if left_exchange_time > 0:
                     result = self.find_feature(
-                        feature="can_exchange_info_icon", box=span_box
+                        feature=fL.can_exchange_info_icon, box=span_box
                     )
                     if scroll_count >= 7:
                         self.back()
@@ -67,7 +67,7 @@ class DailyCreditMixin:
                         continue
                 elif left_help_time > 0:
                     result = self.find_feature(
-                        feature="can_help_icon", box=span_box
+                        feature=fL.can_help_icon, box=span_box
                     )
                 if not result:
                     scroll_count += 1

@@ -144,7 +144,7 @@ class DailyRewardMixin:
         )
 
         if result := self.find_one(
-                feature="claim_gift", box=self.box.left, threshold=0.8
+                feature=fL.claim_gift, box=self.box.left, threshold=0.8
         ):
             self.log_info("发现可领取的额外奖励，点击领取")
             self.click(result)

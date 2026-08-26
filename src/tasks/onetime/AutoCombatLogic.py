@@ -9,6 +9,7 @@ from src.core.BattleConfig import (
     KEY_INSTANT_ULT,
 )
 from src.core.rotation_ast import iter_actions, normalize_ast
+from src.data.FeatureList import FeatureList as fL
 
 
 class _TaskProbe:
@@ -24,7 +25,7 @@ class _TaskProbe:
     def link_available(self) -> bool:
         # 对应 battle_mixin.use_link_skill 的检测参数
         return bool(self._task.find_one(
-            "default_link_skill", threshold=0.7, vertical_variance=0.005, horizontal_variance=0.005
+            fL.default_link_skill, threshold=0.7, vertical_variance=0.005, horizontal_variance=0.005
         ))
 
     def skill_count(self) -> int:

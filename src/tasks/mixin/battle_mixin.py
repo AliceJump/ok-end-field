@@ -252,7 +252,7 @@ class BattleMixin(BaseEfTask):
         """
         使用连携技能。
         """
-        if self.find_one("default_link_skill", threshold=0.7, vertical_variance=0.005, horizontal_variance=0.005):
+        if self.find_one(fL.default_link_skill, threshold=0.7, vertical_variance=0.005, horizontal_variance=0.005):
             self.press_combat_key("e")
             return True
 
@@ -287,7 +287,7 @@ class BattleMixin(BaseEfTask):
         skill_checks = []
         boxes = self._battle_feature_boxes("skill")
         for box_index, box in enumerate(boxes, start=1):
-            result = self.find_one("skill_1", box=box)
+            result = self.find_one(fL.skill_1, box=box)
             match_position = f"({result.x},{result.y})" if result is not None else "-"
             match_score = f"{result.confidence:.3f}" if result is not None else "-"
             skill_checks.append(
