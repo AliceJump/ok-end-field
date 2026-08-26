@@ -2204,3 +2204,15 @@ msgstr ""
 
 msgid "；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）"
 msgstr ""
+
+msgid "i18n 模板实验"
+msgstr "i18n 模板实验"
+
+msgid "验证 gettext 模板与占位符的双层翻译行为"
+msgstr "验证 gettext 模板与占位符的双层翻译行为"
+
+msgid "测试模板: {value}"
+msgstr "测试模板: {value}"
+
+msgid "原始值"
+msgstr "原始值"
