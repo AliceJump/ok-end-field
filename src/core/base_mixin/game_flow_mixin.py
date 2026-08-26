@@ -353,7 +353,7 @@ class GameFlowMixin:
             Exception: 当无法回到主界面时抛出。
         """
         self.check_resolution()
-        self.info_set("current task", f"wait main esc={esc}")
+        self.info_set("current task", self.tr("wait main esc={esc}").format(esc=esc))
         start = self.active_time()
         observe_time = min(2.0, time_out)
 
@@ -377,7 +377,7 @@ class GameFlowMixin:
             raise Exception("Please start in game world and in team!")
         if after_sleep > 0:
             self.sleep(after_sleep)
-        self.info_set("current task", f"in main esc={esc}")
+        self.info_set("current task", self.tr("in main esc={esc}").format(esc=esc))
 
     def in_world(self):
         """
@@ -514,7 +514,7 @@ class GameFlowMixin:
         self.press_key("i")
         results = self.wait_feature(feature=fL.operation_report_icon, time_out=time_out, raise_if_not_found=False)
         if results:
-            self.log_info(f"已进入房间列表")
+            self.log_info("已进入房间列表")
             return True
 
         self.log_info("未识别到房间列表")

@@ -117,7 +117,7 @@ class DailyTradeFeature:
 
             min_item = min(candidates, key=lambda x: x.good_price)
 
-            self.log_info(f"最低价格: {min_item.good_price}")
+            self.log_info(self.tr("最低价格: {price}").format(price=min_item.good_price))
 
             return min_item, market_text_y
 
@@ -304,12 +304,12 @@ class DailyTradeFeature:
         navigation_failed = False
         for area in target_areas or areas_list:
             if not self.config.get(area, False):
-                self.log_info(f"跳过{area}，因为配置中未启用")
+                self.log_info(self.tr("跳过{area}，因为配置中未启用").format(area=self.tr(area)))
                 continue
             if not keep_area_context:
                 self.ensure_main()
             if not self.to_model_area(area, "物资调度"):
-                self.log_info(f"无法进入{area}物资调度，买卖货失败")
+                self.log_info(self.tr("无法进入{area}物资调度，买卖货失败").format(area=self.tr(area)))
                 navigation_failed = True
                 continue
             self.wait_click_ocr(
@@ -402,7 +402,8 @@ class DailyTradeFeature:
 
             for sell_good in sell_goods:
                 if sell_good.stock_quantity <= 0:
-                    self.log_info(f"跳过出售 {sell_good.good_name}，存货数量<=0")
+                    # 物品名来自游戏数据运行时加载不过 tr
+                    self.log_info(self.tr("跳过出售 {name}，存货数量<=0").format(name=sell_good.good_name))
                     continue
                 back_to_area_deadline = self.active_time() + 20
                 while not self.wait_ocr(

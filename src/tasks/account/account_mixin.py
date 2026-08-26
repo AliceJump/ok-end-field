@@ -54,7 +54,8 @@ class AccountMixin(LoginMixin):
             username = line.split(",", 1)[0].strip() if "," in line else line.strip()  # ✅ 兼容只有账号的情况
 
             if not username:
-                self.log_info(f"账号格式错误，已跳过: {line}")
+                # 行内容是用户配置运行时文本不过 tr
+                self.log_info(self.tr("账号格式错误，已跳过: {line}").format(line=line))
                 continue
 
             account_id = resolve_account_id(username, create_if_missing=False)

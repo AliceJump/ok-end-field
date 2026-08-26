@@ -155,7 +155,7 @@ class DailyDemoFeature:
         changed = {"level": None}
 
         def level_changed():
-            result = self.find_one(feature=fL.level_tip, box=self._level_tip_box())
+            result = self.find_one(fL.level_tip, box=self._level_tip_box())
             if not result:
                 return False
             current = self._level_from_tip(result)
@@ -178,8 +178,10 @@ class DailyDemoFeature:
         level_x = result.x 
         one_level_width = (end_x - start_x) / level_all #每个等级占的宽度占屏幕宽度的比例
         level = int((level_x - self.screen_width * start_x) / (self.screen_width * one_level_width)) #根据等级信息标志的x坐标计算当前等级
-        self.log_info(f"当前等级: {level}")
-        self.log_info(
-            f"x={level_x}, ratio={(level_x - self.screen_width * start_x) / (self.screen_width * one_level_width):.2f}, level={level}"
-        )
+        self.log_info(self.tr("当前等级: {level}").format(level=level))
+        self.log_info(self.tr("x={x}, ratio={ratio:.2f}, level={level}").format(
+            x=level_x,
+            ratio=(level_x - self.screen_width * start_x) / (self.screen_width * one_level_width),
+            level=level
+        ))
         return level

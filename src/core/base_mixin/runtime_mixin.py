@@ -438,7 +438,7 @@ class RuntimeMixin:
         while True:
             # 检查是否已超时
             if self.active_time() - start_time > time_out:
-                self.log_info(f"safe_back 超时（{time_out}s），目标未出现")
+                self.log_info(self.tr("safe_back 超时（{time_out}s），目标未出现").format(time_out=time_out))
                 return False
 
             remaining = time_out - (self.active_time() - start_time)
@@ -632,7 +632,7 @@ class RuntimeMixin:
             detections = detector.detect(detect_frame, threshold=conf)
         detections = detections or []
 
-        self.log_info(f"yolo_detect: raw detections count = {len(detections)}")
+        self.log_info(self.tr("yolo_detect: raw detections count = {count}").format(count=len(detections)))
         raw_results: list[Box] = []
         filtered_results: list[Box] = []
 
@@ -641,7 +641,8 @@ class RuntimeMixin:
                 continue
             det_name = getattr(det, "name", None)
             det_conf = float(getattr(det, "confidence", 0.0) or 0.0)
-            self.log_info(f"Raw detection: name={det_name}, conf={det_conf:.3f}")
+            # 检测名是模型输出运行时文本不过 tr
+            self.log_info(self.tr("Raw detection: name={name}, conf={conf:.3f}").format(name=det_name, conf=det_conf))
 
             new_box = Box(
                 int(det.x + offset_x),
@@ -663,7 +664,7 @@ class RuntimeMixin:
             self.draw_boxes(f"yolo_raw_{debug_tag}", raw_results, color="yellow", debug=debug_overlay_enabled)
             self.draw_boxes(f"yolo_filtered_{debug_tag}", filtered_results, color="red", debug=debug_overlay_enabled)
 
-        self.log_info(f"yolo_detect: filtered detections count = {len(filtered_results)}")
+        self.log_info(self.tr("yolo_detect: filtered detections count = {count}").format(count=len(filtered_results)))
 
         return sorted(filtered_results, key=lambda item: item.confidence, reverse=True)
 
@@ -1193,90 +1194,5 @@ class RuntimeMixin:
                 self.click(result, after_sleep=after_sleep)
             return result
 
-        self.log_info(f"wait ocr no box {x} {y} {width} {height} {to_x} {to_y} {match}")
-
-    def screen_center(self) -> tuple[int, int]:
-        """
-        返回当前屏幕中心点坐标。
-
-        Returns:
-            tuple[int, int]: 屏幕中心点坐标。
-        """
-        return int(self.width / 2), int(self.height / 2)
-
-    def find_one(self, feature_name=None, horizontal_variance=0, vertical_variance=0, threshold=0,
-             use_gray_scale=False, box=None, canny_lower=0, canny_higher=0,
-             frame_processor=None, template=None, mask_function=None, frame=None,
-             match_method=cv2.TM_CCOEFF_NORMED, screenshot=False, limit=1,
-             target_height=0, feature=None):
-        """
-        按当前分辨率执行单个特征识别。
-
-        本方法为父类 ``find_one()`` 的兼容封装，支持使用 ``feature`` 作为
-        ``feature_name`` 的别名。特征名称映射逻辑由底层 ``find_feature()`` 统一处理。
-
-        Args:
-            feature_name: 特征名称。
-            horizontal_variance: 水平容差。
-            vertical_variance: 垂直容差。
-            threshold: 匹配阈值。
-            use_gray_scale: 是否使用灰度图匹配。
-            box: 识别区域。
-            canny_lower: Canny 边缘检测下限阈值。
-            canny_higher: Canny 边缘检测上限阈值。
-            frame_processor: 额外图像处理函数。
-            template: 自定义模板图像。
-            mask_function: 掩码处理函数。
-            frame: 输入图像，为 None 时自动截图。
-            match_method: OpenCV 模板匹配方法。
-            screenshot: 是否强制重新截图。
-            limit: 最大返回结果数量。
-            target_height: 匹配前缩放到指定高度，0 表示不缩放。
-            feature: ``feature_name`` 的兼容别名。
-
-        Returns:
-            Box: 匹配到的第一个结果；未匹配到时返回空 Box 或 None（取决于父类实现）。
-        """
-        if feature_name is None and feature is not None:
-            feature_name = feature
-        return super().find_one(feature_name, horizontal_variance, vertical_variance, threshold,
-                                use_gray_scale, box, canny_lower, canny_higher, frame_processor,
-                                template, mask_function, frame, match_method, screenshot,
-                                limit, target_height)
-    def send_key(
-        self,
-        key,
-        down_time=0.1,
-        interval=0,
-        after_sleep=0
-    ):
-        """
-        Sends a key event.
-
-        发送键事件。
-
-        Parameters
-        ----------
-        key:
-            Key to send. 要发送的键。
-
-        down_time:
-            Down time. 按下时间。
-
-        interval:
-            Interval check. 间隔检查。
-
-        after_sleep:
-            Sleep after. 后睡眠。
-
-        Returns
-        -------
-        bool:
-            True if sent. 如果发送返回 True。
-        """
-        return super().send_key(
-            key,
-            down_time,
-            interval,
-            after_sleep
-        )
+        self.log_info(self.tr("wait ocr no box {x} {y} {width} {height} {to_x} {to_y} {match}").format(
+            x=x, y=y, width=width, height=height, to_x=to_x, to_y=to_y, match=getattr(match, "pattern", match)))
