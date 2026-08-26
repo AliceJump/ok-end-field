@@ -253,7 +253,8 @@ msgid "三相纳米片"
 msgstr "三相ナノフレーク"
 
 msgid "不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
-msgstr "農場や採種/植え付けラインで量産できる作物は拾わない：玉葉人参、金石稲、芽針、錦草、苦葉椒、サンドリーフ、灰麦、シトローム、蕎花、アケトン樹木。"
+msgstr ""
+"農場や採種/植え付けラインで量産できる作物は拾わない：玉葉人参、金石稲、芽針、錦草、苦葉椒、サンドリーフ、灰麦、シトローム、蕎花、アケトン樹木。"
 
 msgid "不换队伍"
 msgstr "チーム変更なし"
@@ -386,7 +387,8 @@ msgid "供能高地"
 msgstr "エネルギー高地"
 
 msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
-msgstr "現在のアカウントのタスク設定を完全なスナップショットとして保存します。タスクのデフォルト値が変更されても、保存済みのアカウントには影響しません。"
+msgstr ""
+"現在のアカウントのタスク設定を完全なスナップショットとして保存します。タスクのデフォルト値が変更されても、保存済みのアカウントには影響しません。"
 
 msgid "保存当前账号配置"
 msgstr "現在のアカウント設定を保存"
@@ -848,10 +850,14 @@ msgstr ""
 "1/2/3/4から選択して並べ替え、最低1つは保持。"
 
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
-msgstr "地域ごとに選択した操作を実行：まず拠点交換、次に売買の「買い」を実行。「物資を購入」を有効にすると、購入後は安定物資需要の購入に切り替え、最後に変動需要物資の売却に戻します。"
+msgstr ""
+"地域ごとに選択した操作を実行：まず拠点交換、次に売買の「買い」を実行。「物資を購入」を有効にすると、購入後は安定物資需要の購入に切り替え、最後に変動需要物資の売却に戻します。"
 
-msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr "アカウントとタスクごとに独立したパラメーターを設定します。アカウントを選択し、タスクを選択すると、属性コントロールが自動表示されます。アカウント名（電話番号）のみ必要で、パスワードは不要です。レガシー形式「アカウント,パスワード」も互換性がありますが、パスワードは保存されません。ログイン時は電話番号下4桁での照合も可能です（一意の場合）。"
+msgid ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
+"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr ""
+"アカウントとタスクごとに独立したパラメーターを設定します。アカウントを選択し、タスクを選択すると、属性コントロールが自動表示されます。アカウント名（電話番号）のみ必要で、パスワードは不要です。レガシー形式「アカウント,パスワード」も互換性がありますが、パスワードは保存されません。ログイン時は電話番号下4桁での照合も可能です（一意の場合）。"
 
 msgid "据点兑换"
 msgstr "拠点交換"
@@ -1777,8 +1783,11 @@ msgstr "「演算」エントリが見つかりません、画面が完全に読
 msgid "未能找到传送点，无法继续"
 msgstr "テレポートポイントが見つかりません、続行できません"
 
-msgid "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
-msgstr "マップデバイスID(dId)を利用できません：自動発行に失敗しました（Edge/Chrome のインストールと fp-it.portal101.cn へのアクセスが必要）。30秒後に自動リトライします"
+msgid ""
+"地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
+msgstr ""
+"マップデバイスID(dId)を利用できません：自動発行に失敗しました（Edge/Chrome のインストールと fp-it.portal101.cn "
+"へのアクセスが必要）。30秒後に自動リトライします"
 
 msgid "HG 授权接口没有返回 oauth code"
 msgstr "HG 認可インターフェースが oauth code を返しませんでした"
@@ -1829,307 +1838,316 @@ msgid "购买优先商品时信用不足"
 msgstr "優先商品の購入時にクレジットが不足しています"
 
 msgid "Action List"
-msgstr ""
+msgstr "アクションリスト"
 
 msgid "Auto"
-msgstr ""
+msgstr "自動"
 
 msgid "Auto Resize Game Window"
-msgstr ""
+msgstr "ゲームウィンドウの自動リサイズ"
 
 msgid "Auto Start Game When App Starts"
-msgstr ""
+msgstr "アプリ起動時にゲームを自動起動"
 
 msgid "Basic Options"
-msgstr ""
+msgstr "基本オプション"
 
-msgid "Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them."
-msgstr ""
+msgid ""
+"Choose where notifications are delivered. Notifications always appear in the"
+" app; enable any additional providers you want to receive them."
+msgstr "通知の配信先を選択します。通知は常にアプリ内に表示されます。追加で受け取りたいチャンネルを有効にしてください。"
 
 msgid "Diagnosis"
-msgstr ""
+msgstr "診断"
 
 msgid "Discord Notification"
-msgstr ""
+msgstr "Discord 通知"
 
 msgid "Discord Webhook"
-msgstr ""
+msgstr "Discord Webhook"
 
 msgid "Discord channel webhook URL"
-msgstr ""
+msgstr "Discord チャンネルの Webhook URL"
 
 msgid "Email Config"
-msgstr ""
+msgstr "メール設定"
 
 msgid "Enterprise WeChat Webhook Notification"
-msgstr ""
+msgstr "企業微信（WeCom）Webhook 通知"
 
 msgid "Enterprise WeChat Webhook URL"
-msgstr ""
+msgstr "企業微信 Webhook URL"
 
 msgid "Enterprise WeChat group bot webhook URL"
-msgstr ""
+msgstr "企業微信グループボットの Webhook URL"
 
 msgid "Exact QQ contact nickname"
-msgstr ""
+msgstr "QQ コンタクトの正確なニックネーム"
 
 msgid "Exact WeChat contact nickname"
-msgstr ""
+msgstr "WeChat コンタクトの正確なニックネーム"
 
 msgid "Exit After Task"
-msgstr ""
+msgstr "タスク後に終了"
 
 msgid "Exit App when Game Exits"
-msgstr ""
+msgstr "ゲーム終了時にアプリも終了"
 
 msgid "Exit the Game and the App after Successfully Executing the Task"
-msgstr ""
+msgstr "タスク成功後にゲームとアプリを終了する"
 
 msgid "HotKey"
-msgstr ""
+msgstr "ホットキー"
 
-msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
-msgstr ""
+msgid ""
+"Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgstr "トリガータスク間の遅延を増やして CPU/GPU 使用率を下げる（ミリ秒）"
 
-msgid "Key to test (only m is supported to open the map, result is observable)"
-msgstr ""
+msgid ""
+"Key to test (only m is supported to open the map, result is observable)"
+msgstr "テストするキー（マップを開くのは m のみ対応、結果を観察できます）"
 
 msgid "Kill Launcher After Start"
-msgstr ""
+msgstr "起動後にランチャーを終了"
 
 msgid "Launch with DX11"
-msgstr ""
+msgstr "DX11 で起動"
 
 msgid "Minimize Window to System Tray when Closing"
-msgstr ""
+msgstr "閉じる時にシステムトレイへ最小化"
 
 msgid "Mute Game while in Background"
-msgstr ""
+msgstr "バックグラウンド中はゲームをミュート"
 
 msgid "No"
-msgstr ""
+msgstr "いいえ"
 
 msgid "None"
-msgstr ""
+msgstr "なし"
 
 msgid "Notification"
-msgstr ""
+msgstr "通知"
 
 msgid "Operation"
-msgstr ""
+msgstr "操作"
 
 msgid "Performance Test"
-msgstr ""
+msgstr "パフォーマンステスト"
 
 msgid "QQ Bot API App ID"
-msgstr ""
+msgstr "QQ ボット API App ID"
 
 msgid "QQ Bot API Channel ID"
-msgstr ""
+msgstr "QQ ボット API チャンネル ID"
 
 msgid "QQ Bot API Notification"
-msgstr ""
+msgstr "QQ ボット API 通知"
 
 msgid "QQ Bot API Token"
-msgstr ""
+msgstr "QQ ボット API トークン"
 
 msgid "QQ Bot application ID"
-msgstr ""
+msgstr "QQ ボットのアプリケーション ID"
 
 msgid "QQ Bot application token"
-msgstr ""
+msgstr "QQ ボットのアプリケーショントークン"
 
 msgid "QQ Desktop Nickname"
-msgstr ""
+msgstr "QQ デスクトップ版のニックネーム"
 
 msgid "QQ Desktop Notification (Not Reliable)"
-msgstr ""
+msgstr "QQ デスクトップ版通知（信頼性低）"
 
 msgid "QQ channel ID to receive notifications"
-msgstr ""
+msgstr "通知を受け取る QQ チャンネル ID"
 
 msgid "Requires the local QQ client window to be open and running"
-msgstr ""
+msgstr "ローカルの QQ クライアントウィンドウが開いて実行されている必要があります"
 
 msgid "Requires the local WeChat client window to be open and running"
-msgstr ""
+msgstr "ローカルの WeChat クライアントウィンドウが開いて実行されている必要があります"
 
 msgid "SMTP 授权码/密码。请勿在公开仓库中提交真实授权码。"
-msgstr ""
+msgstr "SMTP 認証コード/パスワード。実際の認証コードを公開リポジトリにコミットしないでください。"
 
 msgid "SMTP 服务器地址，例如 smtp.qq.com / smtp.163.com / smtp.gmail.com"
-msgstr ""
+msgstr "SMTP サーバーアドレス（例: smtp.qq.com / smtp.163.com / smtp.gmail.com）"
 
 msgid "SMTP 端口。SSL 通常为 465，STARTTLS 通常为 587。"
-msgstr ""
+msgstr "SMTP ポート。SSL は通常 465、STARTTLS は通常 587 です。"
 
 msgid "SMTP 连接与发送的超时时间（秒）。"
-msgstr ""
+msgstr "SMTP の接続と送信のタイムアウト時間（秒）。"
 
 msgid "SMTP服务器"
-msgstr ""
+msgstr "SMTP サーバー"
 
 msgid "SMTP端口"
-msgstr ""
+msgstr "SMTP ポート"
 
 msgid "Send notifications through an Enterprise WeChat group bot"
-msgstr ""
+msgstr "企業微信グループボット経由で通知を送信"
 
 msgid "Send notifications through the QQ Guild Bot API"
-msgstr ""
+msgstr "QQ ギルドボット API 経由で通知を送信"
 
 msgid "Send notifications through the Telegram Bot API"
-msgstr ""
+msgstr "Telegram Bot API 経由で通知を送信"
 
 msgid "Send notifications to a Discord webhook"
-msgstr ""
+msgstr "Discord Webhook へ通知を送信"
 
 msgid "Show notifications using the Windows system tray"
-msgstr ""
+msgstr "Windows システムトレイで通知を表示"
 
 msgid "Start/Stop"
-msgstr ""
+msgstr "開始/停止"
 
 msgid "System Notification"
-msgstr ""
+msgstr "システム通知"
 
 msgid "Telegram Bot Token"
-msgstr ""
+msgstr "Telegram ボットトークン"
 
 msgid "Telegram Chat ID"
-msgstr ""
+msgstr "Telegram チャット ID"
 
 msgid "Telegram Notification"
-msgstr ""
+msgstr "Telegram 通知"
 
 msgid "Telegram bot token from BotFather"
-msgstr ""
+msgstr "BotFather から発行された Telegram ボットトークン"
 
 msgid "Telegram user, group, or channel chat ID"
-msgstr ""
+msgstr "Telegram のユーザー・グループ・チャンネルのチャット ID"
 
 msgid "Time to wait for the result after pressing the key"
-msgstr ""
+msgstr "キー押下後に結果を待つ時間"
 
 msgid "Trigger Interval"
-msgstr ""
+msgstr "トリガー間隔"
 
 msgid "Use DirectML"
-msgstr ""
+msgstr "DirectML を使用"
 
 msgid "Use GPU to Improve Performance"
-msgstr ""
+msgstr "GPU を使用してパフォーマンスを向上"
 
 msgid "Use the skill set when conditions are met"
-msgstr ""
+msgstr "条件を満たしたときにこのスキルセットを使用"
 
 msgid "WeChat Desktop Nickname"
-msgstr ""
+msgstr "WeChat デスクトップ版のニックネーム"
 
 msgid "WeChat Desktop Notification (Not Reliable)"
-msgstr ""
+msgstr "WeChat デスクトップ版通知（信頼性低）"
 
-msgid "When checked, only tests whether the window comes to the foreground (no key press), to isolate foreground issues"
-msgstr ""
+msgid ""
+"When checked, only tests whether the window comes to the foreground (no key "
+"press), to isolate foreground issues"
+msgstr "チェック時はウィンドウが前面に出るかのみテストし（キー入力なし）、前面化の問題を切り分けます"
 
 msgid "W长按时间(秒)"
-msgstr ""
+msgstr "W 長押し時間（秒）"
 
 msgid "Yes"
-msgstr ""
+msgstr "はい"
 
 msgid "一次标定多个位移量（如 200, 400, 800），每个位移正负各测一次，覆盖多量程；留空则只用 标定位移dx 单值"
 msgstr ""
+"複数の変位量を一度にキャリブレーションします（例: 200, 400, 800）。各変位を正負 1 回ずつ測定し複数レンジをカバー。空欄の場合は "
+"標定位移dx の単一値のみ使用"
 
 msgid "一次验证多个角度（如 30, 90, 180, -90），每个角度都实测；留空则只用 验证目标角度(度) 单角度"
-msgstr ""
+msgstr "複数の角度を一度に検証します（例: 30, 90, 180, -90）。各角度を実測。空欄の場合は 验证目标角度(度) の単一角度のみ検証"
 
 msgid "主题前缀"
-msgstr ""
+msgstr "件名プレフィックス"
 
 msgid "仅测试置顶"
-msgstr ""
+msgstr "前面化のみテスト"
 
 msgid "任务完成后是否将最终执行汇总通过邮件发送（收件人取“设置 → 邮件发送配置”中的默认收件人）。"
-msgstr ""
+msgstr "タスク完了後に最終サマリーをメールで送信するかどうか（受信者は「設定 → メール送信設定」の既定の受信者）。"
 
 msgid "使用 SSL/TLS 加密连接发送邮件。"
-msgstr ""
+msgstr "SSL/TLS 暗号化接続でメールを送信します。"
 
 msgid "发件邮箱"
-msgstr ""
+msgstr "送信用メールアドレス"
 
 msgid "发送时自动添加到邮件主题前面的前缀。"
-msgstr ""
+msgstr "送信時にメール件名の先頭に自動付加されるプレフィックス。"
 
 msgid "发送测试邮件"
-msgstr ""
+msgstr "テストメールを送信"
 
 msgid "发送鼠标位移后、按 W 刷新前等待转向完成的时间；太短可能在转向未完成时就按 W 刷新朝向"
-msgstr ""
+msgstr "マウス変位送信後、W で更新する前に旋回完了を待つ時間。短すぎると旋回未完了のまま W を押してしまいます"
 
 msgid "后台模式启用"
-msgstr ""
+msgstr "バックグラウンドモードを有効化"
 
 msgid "后台模式启用：勾选后该任务强制后台模式（按键用完即恢复窗口，禁用移动/战斗/视角操作）；不勾选则跟随全局输入模式。"
 msgstr ""
+"バックグラウンドモード有効化：チェックするとこのタスクは強制でバックグラウンドモードになります（キー送信後にウィンドウを復元。移動/戦闘/視点操作は無効）。未チェックの場合はグローバル入力モードに従います。"
 
 msgid "启用SSL"
-msgstr ""
+msgstr "SSL を有効化"
 
 msgid "周常"
-msgstr ""
+msgstr "週間"
 
 msgid "填写完上方 SMTP/发件邮箱/授权码/收件人后，点击此按钮发送一封测试邮件。"
-msgstr ""
+msgstr "上記の SMTP/送信用メールアドレス/認証コード/受信者を入力後、このボタンでテストメールを送信します。"
 
 msgid "实测角度与目标角度误差超过该值判 FAIL"
-msgstr ""
+msgstr "実測角度と目標角度の誤差がこの値を超えたら FAIL 判定"
 
 msgid "左右方向成对验证"
-msgstr ""
+msgstr "左右方向をペアで検証"
 
 msgid "开启后每个验证角度自动补上相反方向（如 44 会自动补 -44），左右两方向都实测；关闭则只测列表里的方向"
-msgstr ""
+msgstr "有効にすると各検証角度に自動で逆方向（例: 44 には -44）を補い、左右両方向を実測します。無効の場合はリスト内の方向のみテスト"
 
 msgid "手动yaw_per_pixel(留空用标定)"
-msgstr ""
+msgstr "手動 yaw_per_pixel（空欄でキャリブレーション値使用）"
 
 msgid "手动填标定系数可直接跳过标定只做验证；留空则先用本次标定结果"
-msgstr ""
+msgstr "キャリブレーション係数を手動入力すると標定をスキップし検証のみ行います。空欄の場合はまず今回の標定結果を使用"
 
 msgid "按 W 刷新朝向时的长按时长，太短则朝向不刷新"
-msgstr ""
+msgstr "W で向きを更新するときの長押し時間。短すぎると向きが更新されません"
 
 msgid "按键后等待(秒)"
-msgstr ""
+msgstr "キー入力後の待機（秒）"
 
 msgid "授权码"
-msgstr ""
+msgstr "認証コード"
 
 msgid "收件人列表"
-msgstr ""
+msgstr "受信者リスト"
 
 msgid "松开 W 后等待画面更新的时间"
-msgstr ""
+msgstr "W を離した後に画面更新を待つ時間"
 
 msgid "标定位移列表(逗号分隔)"
-msgstr ""
+msgstr "キャリブレーション変位リスト（カンマ区切り）"
 
 msgid "标定采样次数，正负方向交替（仅单位移模式生效）"
-msgstr ""
+msgstr "キャリブレーション標本回数。正負方向を交互に測定（単一変位モードのみ有効）"
 
 msgid "每个 sample 的测试方向位移量，正负交替测试（标定位移列表留空时生效）"
-msgstr ""
+msgstr "各サンプルのテスト方向変位量。正負交互にテスト（キャリブレーション変位リストが空欄の場合に有効）"
 
 msgid "每个目标角度的验证重复次数"
-msgstr ""
+msgstr "目標角度ごとの検証繰り返し回数"
 
 msgid "测试按键"
-msgstr ""
+msgstr "テストキー"
 
 msgid "用于登录 SMTP 的邮箱地址，同时也是发件人地址。"
-msgstr ""
+msgstr "SMTP ログインに使うメールアドレス。送信者アドレスでもあります。"
 
 msgid ""
 "用户别名到邮箱的映射，每行一个，格式：别名=邮箱（或 别名:邮箱）。\n"
@@ -2138,72 +2156,77 @@ msgid ""
 "洁尔佩塔=gilberta@endfiled.com\n"
 "发送时可用 --to 洛茜 直接按别名发送。"
 msgstr ""
+"ユーザー別名からメールボックスへのマッピング。1 行に 1 件、形式: 別名=メールボックス（または 別名:メールボックス）。\n"
+"例：\n"
+"洛茜(Rossi)=rossi@endfiled.com\n"
+"潔爾佩タ(Gilberta)=gilberta@endfiled.com\n"
+"送信時は --to 洛茜 のように別名で直接指定できます。"
 
 msgid "用标定系数反算位移并实测验证的角度；正值=向左转(鼠标左移)，负值=向右转，0=不验证"
-msgstr ""
+msgstr "キャリブレーション係数から変位を逆算して実測検証する角度。正=左へ旋回（マウス左移動）、負=右へ旋回、0=検証なし"
 
 msgid "调用发送工具但未指定 --to 时使用的默认收件人邮箱。"
-msgstr ""
+msgstr "送信ツール呼び出し時に --to を指定しない場合に使われる既定の受信者アドレス。"
 
 msgid "转向后等待(秒)"
-msgstr ""
+msgstr "旋回後の待機（秒）"
 
 msgid "连接超时秒数"
-msgstr ""
+msgstr "接続タイムアウト秒数"
 
 msgid "邮件发送汇总"
-msgstr ""
+msgstr "メール概要送信"
 
 msgid "邮件发送配置"
-msgstr ""
+msgstr "メール送信設定"
 
 msgid "重复测试次数"
-msgstr ""
+msgstr "繰り返しテスト回数"
 
 msgid "锁闭储藏箱"
-msgstr ""
+msgstr "ロック資源箱"
 
 msgid "验证次数"
-msgstr ""
+msgstr "検証回数"
 
 msgid "验证目标角度(度)"
-msgstr ""
+msgstr "検証目標角度（度）"
 
 msgid "验证角度列表(逗号分隔)"
-msgstr ""
+msgstr "検証角度リスト（カンマ区切り）"
 
 msgid "验证误差容差(度)"
-msgstr ""
+msgstr "検証誤差の許容値（度）"
 
 msgid "默认收件人"
-msgstr ""
+msgstr "既定の受信者"
 
 msgid "GPU Driver Warning"
-msgstr ""
+msgstr "GPU ドライバー警告"
 
 msgid "Log"
-msgstr ""
+msgstr "ログ"
 
 msgid "{vendor} {feature} is enabled and may cause malfunctions!"
-msgstr ""
+msgstr "{vendor} の {feature} が有効のため、不具合が発生する可能性があります！"
 
 msgid "{} is not connected, please select the game window."
-msgstr ""
+msgstr "{} が接続されていません。ゲームウィンドウを選択してください。"
 
 msgid "开始执行日常任务..."
-msgstr ""
+msgstr "デイリータスクを開始します..."
 
 msgid "账号列表已保存"
-msgstr ""
+msgstr "アカウントリストを保存しました"
 
 msgid "（复用ID {reused}，新建ID {created}）"
-msgstr ""
+msgstr "（再利用 ID {reused}、新規作成 ID {created}）"
 
 msgid "；账号名（手机号）是唯一ID，密码变化不影响ID，账号名变化会新建ID"
-msgstr ""
+msgstr "；アカウント名（電話番号）が一意の ID です。パスワード変更は ID に影響せず、アカウント名を変更すると新しい ID になります"
 
 msgid "；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）"
-msgstr ""
+msgstr "；アカウントページではパスワード不要です。保存時にパスワード情報は削除されます（ユーザー名のみ保持）"
 
 msgid "执行情况汇总"
 msgstr "実行状況サマリー"

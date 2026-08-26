@@ -817,8 +817,12 @@ msgstr ""
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
 msgstr "按地區執行所選操作：先據點兌換，再執行買賣貨的買；啟用買物資時，買完後切換到穩定物資需求購買，最後切回彈性需求物資執行賣。"
 
-msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr "按帳號和任務配置獨立引數。先選帳號，再選任務，下面會自動出現該任務的屬性控制項。帳號頁只需填寫帳號名（手機號），無需填寫密碼。系統相容舊格式 `帳號,密碼` 但不會儲存密碼。登入時也可只使用手機號後四碼進行匹配（若唯一）。"
+msgid ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
+"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr ""
+"按帳號和任務配置獨立引數。先選帳號，再選任務，下面會自動出現該任務的屬性控制項。帳號頁只需填寫帳號名（手機號），無需填寫密碼。系統相容舊格式 "
+"`帳號,密碼` 但不會儲存密碼。登入時也可只使用手機號後四碼進行匹配（若唯一）。"
 
 msgid "据点兑换"
 msgstr "據點兌換"
@@ -1777,8 +1781,10 @@ msgstr "未找到『演算』入口，可能介面未載入完全"
 msgid "未能找到传送点，无法继续"
 msgstr "未能找到傳送點，無法繼續"
 
-msgid "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
-msgstr "地圖設備ID(dId)暫不可用：自動鑄造失敗（需安裝 Edge/Chrome 且可訪問 fp-it.portal101.cn），30 秒後將自動重試"
+msgid ""
+"地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
+msgstr ""
+"地圖設備ID(dId)暫不可用：自動鑄造失敗（需安裝 Edge/Chrome 且可訪問 fp-it.portal101.cn），30 秒後將自動重試"
 
 msgid "HG 授权接口没有返回 oauth code"
 msgstr "HG 授權接口沒有返回 oauth code"
@@ -1829,307 +1835,313 @@ msgid "购买优先商品时信用不足"
 msgstr "購買優先商品時信用不足"
 
 msgid "Action List"
-msgstr ""
+msgstr "動作列表"
 
 msgid "Auto"
-msgstr ""
+msgstr "自動"
 
 msgid "Auto Resize Game Window"
-msgstr ""
+msgstr "自動調整遊戲視窗大小"
 
 msgid "Auto Start Game When App Starts"
-msgstr ""
+msgstr "啟動程式時自動開始遊戲"
 
 msgid "Basic Options"
-msgstr ""
+msgstr "基礎選項"
 
-msgid "Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them."
-msgstr ""
+msgid ""
+"Choose where notifications are delivered. Notifications always appear in the"
+" app; enable any additional providers you want to receive them."
+msgstr "選擇通知發送渠道。通知始終會在程式內顯示；可額外勾選想要接收通知的渠道。"
 
 msgid "Diagnosis"
-msgstr ""
+msgstr "診斷"
 
 msgid "Discord Notification"
-msgstr ""
+msgstr "Discord 通知"
 
 msgid "Discord Webhook"
-msgstr ""
+msgstr "Discord Webhook"
 
 msgid "Discord channel webhook URL"
-msgstr ""
+msgstr "Discord 頻道 Webhook URL"
 
 msgid "Email Config"
-msgstr ""
+msgstr "郵件設定"
 
 msgid "Enterprise WeChat Webhook Notification"
-msgstr ""
+msgstr "企業微信 Webhook 通知"
 
 msgid "Enterprise WeChat Webhook URL"
-msgstr ""
+msgstr "企業微信 Webhook URL"
 
 msgid "Enterprise WeChat group bot webhook URL"
-msgstr ""
+msgstr "企業微信群機器人 Webhook URL"
 
 msgid "Exact QQ contact nickname"
-msgstr ""
+msgstr "QQ 聯絡人的精確暱稱"
 
 msgid "Exact WeChat contact nickname"
-msgstr ""
+msgstr "微信聯絡人的精確暱稱"
 
 msgid "Exit After Task"
-msgstr ""
+msgstr "任務後退出"
 
 msgid "Exit App when Game Exits"
-msgstr ""
+msgstr "遊戲結束時關閉程式"
 
 msgid "Exit the Game and the App after Successfully Executing the Task"
-msgstr ""
+msgstr "任務成功執行後退出遊戲與本程式"
 
 msgid "HotKey"
-msgstr ""
+msgstr "熱鍵"
 
-msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
-msgstr ""
+msgid ""
+"Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgstr "增加觸發任務間隔以降低 CPU/GPU 佔用（毫秒）"
 
-msgid "Key to test (only m is supported to open the map, result is observable)"
-msgstr ""
+msgid ""
+"Key to test (only m is supported to open the map, result is observable)"
+msgstr "要測試的按鍵（僅支援 m 開啟地圖，結果可觀察）"
 
 msgid "Kill Launcher After Start"
-msgstr ""
+msgstr "啟動後關閉啟動器"
 
 msgid "Launch with DX11"
-msgstr ""
+msgstr "以 DX11 啟動"
 
 msgid "Minimize Window to System Tray when Closing"
-msgstr ""
+msgstr "關閉視窗時最小化到系統托盤"
 
 msgid "Mute Game while in Background"
-msgstr ""
+msgstr "背景模式時將遊戲靜音"
 
 msgid "No"
-msgstr ""
+msgstr "否"
 
 msgid "None"
-msgstr ""
+msgstr "無"
 
 msgid "Notification"
-msgstr ""
+msgstr "通知"
 
 msgid "Operation"
-msgstr ""
+msgstr "操作"
 
 msgid "Performance Test"
-msgstr ""
+msgstr "性能測試"
 
 msgid "QQ Bot API App ID"
-msgstr ""
+msgstr "QQ 機器人 API App ID"
 
 msgid "QQ Bot API Channel ID"
-msgstr ""
+msgstr "QQ 機器人 API 頻道 ID"
 
 msgid "QQ Bot API Notification"
-msgstr ""
+msgstr "QQ 機器人 API 通知"
 
 msgid "QQ Bot API Token"
-msgstr ""
+msgstr "QQ 機器人 API Token"
 
 msgid "QQ Bot application ID"
-msgstr ""
+msgstr "QQ 機器人應用程式 ID"
 
 msgid "QQ Bot application token"
-msgstr ""
+msgstr "QQ 機器人應用程式 Token"
 
 msgid "QQ Desktop Nickname"
-msgstr ""
+msgstr "QQ 桌面版暱稱"
 
 msgid "QQ Desktop Notification (Not Reliable)"
-msgstr ""
+msgstr "QQ 桌面版通知（不可靠）"
 
 msgid "QQ channel ID to receive notifications"
-msgstr ""
+msgstr "接收通知的 QQ 頻道 ID"
 
 msgid "Requires the local QQ client window to be open and running"
-msgstr ""
+msgstr "需要本機 QQ 用戶端視窗保持開啟並執行"
 
 msgid "Requires the local WeChat client window to be open and running"
-msgstr ""
+msgstr "需要本機微信用戶端視窗保持開啟並執行"
 
 msgid "SMTP 授权码/密码。请勿在公开仓库中提交真实授权码。"
-msgstr ""
+msgstr "SMTP 授權碼/密碼。請勿在公開倉庫中提交真實授權碼。"
 
 msgid "SMTP 服务器地址，例如 smtp.qq.com / smtp.163.com / smtp.gmail.com"
-msgstr ""
+msgstr "SMTP 伺服器地址，例如 smtp.qq.com / smtp.163.com / smtp.gmail.com"
 
 msgid "SMTP 端口。SSL 通常为 465，STARTTLS 通常为 587。"
-msgstr ""
+msgstr "SMTP 埠。SSL 通常為 465，STARTTLS 通常為 587。"
 
 msgid "SMTP 连接与发送的超时时间（秒）。"
-msgstr ""
+msgstr "SMTP 連線與傳送的逾時時間（秒）。"
 
 msgid "SMTP服务器"
-msgstr ""
+msgstr "SMTP 伺服器"
 
 msgid "SMTP端口"
-msgstr ""
+msgstr "SMTP 埠"
 
 msgid "Send notifications through an Enterprise WeChat group bot"
-msgstr ""
+msgstr "透過企業微信群機器人傳送通知"
 
 msgid "Send notifications through the QQ Guild Bot API"
-msgstr ""
+msgstr "透過 QQ 頻道機器人 API 傳送通知"
 
 msgid "Send notifications through the Telegram Bot API"
-msgstr ""
+msgstr "透過 Telegram Bot API 傳送通知"
 
 msgid "Send notifications to a Discord webhook"
-msgstr ""
+msgstr "傳送通知到 Discord Webhook"
 
 msgid "Show notifications using the Windows system tray"
-msgstr ""
+msgstr "使用 Windows 系統托盤顯示通知"
 
 msgid "Start/Stop"
-msgstr ""
+msgstr "開始/停止"
 
 msgid "System Notification"
-msgstr ""
+msgstr "系統通知"
 
 msgid "Telegram Bot Token"
-msgstr ""
+msgstr "Telegram Bot Token"
 
 msgid "Telegram Chat ID"
-msgstr ""
+msgstr "Telegram 聊天 ID"
 
 msgid "Telegram Notification"
-msgstr ""
+msgstr "Telegram 通知"
 
 msgid "Telegram bot token from BotFather"
-msgstr ""
+msgstr "來自 BotFather 的 Telegram 機器人 Token"
 
 msgid "Telegram user, group, or channel chat ID"
-msgstr ""
+msgstr "Telegram 使用者、群組或頻道的聊天 ID"
 
 msgid "Time to wait for the result after pressing the key"
-msgstr ""
+msgstr "按下按鍵後等待結果的時間"
 
 msgid "Trigger Interval"
-msgstr ""
+msgstr "觸發間隔"
 
 msgid "Use DirectML"
-msgstr ""
+msgstr "使用 DirectML"
 
 msgid "Use GPU to Improve Performance"
-msgstr ""
+msgstr "使用 GPU 提升性能"
 
 msgid "Use the skill set when conditions are met"
-msgstr ""
+msgstr "滿足條件時使用該技能組"
 
 msgid "WeChat Desktop Nickname"
-msgstr ""
+msgstr "微信桌面版暱稱"
 
 msgid "WeChat Desktop Notification (Not Reliable)"
-msgstr ""
+msgstr "微信桌面版通知（不可靠）"
 
-msgid "When checked, only tests whether the window comes to the foreground (no key press), to isolate foreground issues"
-msgstr ""
+msgid ""
+"When checked, only tests whether the window comes to the foreground (no key "
+"press), to isolate foreground issues"
+msgstr "勾選後僅測試視窗能否置前（不按鍵），用於排查置前問題"
 
 msgid "W长按时间(秒)"
-msgstr ""
+msgstr "W 長按時間（秒）"
 
 msgid "Yes"
-msgstr ""
+msgstr "是"
 
 msgid "一次标定多个位移量（如 200, 400, 800），每个位移正负各测一次，覆盖多量程；留空则只用 标定位移dx 单值"
-msgstr ""
+msgstr "一次標定多個位移量（如 200, 400, 800），每個位移正負各測一次，覆蓋多量程；留空則只用 標定位移dx 單值"
 
 msgid "一次验证多个角度（如 30, 90, 180, -90），每个角度都实测；留空则只用 验证目标角度(度) 单角度"
-msgstr ""
+msgstr "一次驗證多個角度（如 30, 90, 180, -90），每個角度都實測；留空則只用 驗證目標角度(度) 單角度"
 
 msgid "主题前缀"
-msgstr ""
+msgstr "主旨前綴"
 
 msgid "仅测试置顶"
-msgstr ""
+msgstr "僅測試置頂"
 
 msgid "任务完成后是否将最终执行汇总通过邮件发送（收件人取“设置 → 邮件发送配置”中的默认收件人）。"
-msgstr ""
+msgstr "任務完成後是否將最終執行彙總透過郵件寄送（收件人取「設定 → 郵件寄送設定」中的預設收件人）。"
 
 msgid "使用 SSL/TLS 加密连接发送邮件。"
-msgstr ""
+msgstr "使用 SSL/TLS 加密連線傳送郵件。"
 
 msgid "发件邮箱"
-msgstr ""
+msgstr "寄件信箱"
 
 msgid "发送时自动添加到邮件主题前面的前缀。"
-msgstr ""
+msgstr "傳送時自動加在郵件主旨前面的前綴。"
 
 msgid "发送测试邮件"
-msgstr ""
+msgstr "傳送測試郵件"
 
 msgid "发送鼠标位移后、按 W 刷新前等待转向完成的时间；太短可能在转向未完成时就按 W 刷新朝向"
-msgstr ""
+msgstr "傳送滑鼠位移後、按 W 重新整理前等待轉向完成的時間；太短可能在轉向未完成時就按 W 重新整理朝向"
 
 msgid "后台模式启用"
-msgstr ""
+msgstr "啟用背景模式"
 
 msgid "后台模式启用：勾选后该任务强制后台模式（按键用完即恢复窗口，禁用移动/战斗/视角操作）；不勾选则跟随全局输入模式。"
-msgstr ""
+msgstr "背景模式啟用：勾選後該任務強制背景模式（按鍵用完即恢復視窗，停用移動/戰鬥/視角操作）；不勾選則跟隨全域輸入模式。"
 
 msgid "启用SSL"
-msgstr ""
+msgstr "啟用 SSL"
 
 msgid "周常"
-msgstr ""
+msgstr "週常"
 
 msgid "填写完上方 SMTP/发件邮箱/授权码/收件人后，点击此按钮发送一封测试邮件。"
-msgstr ""
+msgstr "填寫完上方 SMTP/寄件信箱/授權碼/收件人後，點擊此按鈕傳送一封測試郵件。"
 
 msgid "实测角度与目标角度误差超过该值判 FAIL"
-msgstr ""
+msgstr "實測角度與目標角度誤差超過該值判 FAIL"
 
 msgid "左右方向成对验证"
-msgstr ""
+msgstr "左右方向成對驗證"
 
 msgid "开启后每个验证角度自动补上相反方向（如 44 会自动补 -44），左右两方向都实测；关闭则只测列表里的方向"
-msgstr ""
+msgstr "開啟後每個驗證角度自動補上相反方向（如 44 會自動補 -44），左右兩方向都實測；關閉則只測列表裡的方向"
 
 msgid "手动yaw_per_pixel(留空用标定)"
-msgstr ""
+msgstr "手動 yaw_per_pixel（留空用標定值）"
 
 msgid "手动填标定系数可直接跳过标定只做验证；留空则先用本次标定结果"
-msgstr ""
+msgstr "手動填標定係數可直接跳過標定只做驗證；留空則先用本次標定結果"
 
 msgid "按 W 刷新朝向时的长按时长，太短则朝向不刷新"
-msgstr ""
+msgstr "按 W 重新整理朝向時的長按時長，太短則朝向不重新整理"
 
 msgid "按键后等待(秒)"
-msgstr ""
+msgstr "按鍵後等待（秒）"
 
 msgid "授权码"
-msgstr ""
+msgstr "授權碼"
 
 msgid "收件人列表"
-msgstr ""
+msgstr "收件人列表"
 
 msgid "松开 W 后等待画面更新的时间"
-msgstr ""
+msgstr "鬆開 W 後等待畫面更新的時間"
 
 msgid "标定位移列表(逗号分隔)"
-msgstr ""
+msgstr "標定位移列表（逗號分隔）"
 
 msgid "标定采样次数，正负方向交替（仅单位移模式生效）"
-msgstr ""
+msgstr "標定取樣次數，正負方向交替（僅單位移模式生效）"
 
 msgid "每个 sample 的测试方向位移量，正负交替测试（标定位移列表留空时生效）"
-msgstr ""
+msgstr "每個 sample 的測試方向位移量，正負交替測試（標定位移列表留空時生效）"
 
 msgid "每个目标角度的验证重复次数"
-msgstr ""
+msgstr "每個目標角度的驗證重複次數"
 
 msgid "测试按键"
-msgstr ""
+msgstr "測試按鍵"
 
 msgid "用于登录 SMTP 的邮箱地址，同时也是发件人地址。"
-msgstr ""
+msgstr "用於登入 SMTP 的信箱地址，同時也是寄件人地址。"
 
 msgid ""
 "用户别名到邮箱的映射，每行一个，格式：别名=邮箱（或 别名:邮箱）。\n"
@@ -2138,72 +2150,77 @@ msgid ""
 "洁尔佩塔=gilberta@endfiled.com\n"
 "发送时可用 --to 洛茜 直接按别名发送。"
 msgstr ""
+"使用者別名到信箱的映射，每行一個，格式：別名=信箱（或 別名:信箱）。\n"
+"例如：\n"
+"洛茜=rossi@endfiled.com\n"
+"潔爾佩塔=gilberta@endfiled.com\n"
+"傳送時可用 --to 洛茜 直接按別名傳送。"
 
 msgid "用标定系数反算位移并实测验证的角度；正值=向左转(鼠标左移)，负值=向右转，0=不验证"
-msgstr ""
+msgstr "用標定係數反算位移並實測驗證的角度；正值=向左轉(滑鼠左移)，負值=向右轉，0=不驗證"
 
 msgid "调用发送工具但未指定 --to 时使用的默认收件人邮箱。"
-msgstr ""
+msgstr "呼叫傳送工具但未指定 --to 時使用的預設收件人信箱。"
 
 msgid "转向后等待(秒)"
-msgstr ""
+msgstr "轉向後等待（秒）"
 
 msgid "连接超时秒数"
-msgstr ""
+msgstr "連線逾時秒數"
 
 msgid "邮件发送汇总"
-msgstr ""
+msgstr "郵件寄送彙總"
 
 msgid "邮件发送配置"
-msgstr ""
+msgstr "郵件寄送設定"
 
 msgid "重复测试次数"
-msgstr ""
+msgstr "重複測試次數"
 
 msgid "锁闭储藏箱"
-msgstr ""
+msgstr "鎖閉儲藏箱"
 
 msgid "验证次数"
-msgstr ""
+msgstr "驗證次數"
 
 msgid "验证目标角度(度)"
-msgstr ""
+msgstr "驗證目標角度（度）"
 
 msgid "验证角度列表(逗号分隔)"
-msgstr ""
+msgstr "驗證角度列表（逗號分隔）"
 
 msgid "验证误差容差(度)"
-msgstr ""
+msgstr "驗證誤差容差（度）"
 
 msgid "默认收件人"
-msgstr ""
+msgstr "預設收件人"
 
 msgid "GPU Driver Warning"
-msgstr ""
+msgstr "GPU 驅動警告"
 
 msgid "Log"
-msgstr ""
+msgstr "日誌"
 
 msgid "{vendor} {feature} is enabled and may cause malfunctions!"
-msgstr ""
+msgstr "{vendor} {feature} 已啟用，可能導致異常！"
 
 msgid "{} is not connected, please select the game window."
-msgstr ""
+msgstr "{} 未連線，請先選擇遊戲視窗。"
 
 msgid "开始执行日常任务..."
-msgstr ""
+msgstr "開始執行日常任務..."
 
 msgid "账号列表已保存"
-msgstr ""
+msgstr "帳號列表已保存"
 
 msgid "（复用ID {reused}，新建ID {created}）"
-msgstr ""
+msgstr "（重用 ID {reused}，新建 ID {created}）"
 
 msgid "；账号名（手机号）是唯一ID，密码变化不影响ID，账号名变化会新建ID"
-msgstr ""
+msgstr "；帳號名（手機號）是唯一 ID，密碼變化不影響 ID，帳號名變化會新建 ID"
 
 msgid "；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）"
-msgstr ""
+msgstr "；帳號頁無需填寫密碼，保存時會移除任何密碼資訊（僅保留使用者名稱）"
 
 msgid "执行情况汇总"
 msgstr "執行情況彙總"

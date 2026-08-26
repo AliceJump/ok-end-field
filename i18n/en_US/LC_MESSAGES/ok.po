@@ -220,7 +220,9 @@ msgid "三相纳米片"
 msgstr "Triphasic Nanoflake"
 
 msgid "不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
-msgstr "Do not pick crops mass-produced by farms or planting/harvesting lines: 琼叶参, 金石稻, 芽针, 锦草, 苦叶椒, 砂叶, 灰芦麦, 柑实, 荞花, 酮化灌木."
+msgstr ""
+"Do not pick crops mass-produced by farms or planting/harvesting lines: 琼叶参, "
+"金石稻, 芽针, 锦草, 苦叶椒, 砂叶, 灰芦麦, 柑实, 荞花, 酮化灌木."
 
 msgid "不换队伍"
 msgstr "Don't Change Team"
@@ -272,7 +274,8 @@ msgid "仅送货"
 msgstr "Deliver Only"
 
 msgid "从发货仓库取出指定物品，切到收货仓库后一键存放 （目前只支持中文版）"
-msgstr "Transfer specified items from warehouse to another warehouse (Chinese only)"
+msgstr ""
+"Transfer specified items from warehouse to another warehouse (Chinese only)"
 
 msgid "从账号列表或已有覆盖中选择"
 msgstr "Select from account list or existing overrides"
@@ -293,7 +296,9 @@ msgid "任务会按顺序依次对齐并滑行每段距离"
 msgstr "The task aligns and zips through each distance in order"
 
 msgid "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。"
-msgstr "After the task finishes, open the summary file with the system default app. If disabled, only create the file."
+msgstr ""
+"After the task finishes, open the summary file with the system default app. "
+"If disabled, only create the file."
 
 msgid "任务属性配置"
 msgstr "Task Attribute Config"
@@ -353,7 +358,9 @@ msgid "供能高地"
 msgstr "Power Plateau"
 
 msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
-msgstr "Save a complete task configuration snapshot for the current account. Changes to task defaults will not affect saved accounts."
+msgstr ""
+"Save a complete task configuration snapshot for the current account. Changes"
+" to task defaults will not affect saved accounts."
 
 msgid "保存当前账号配置"
 msgstr "Save Current Account Config"
@@ -467,7 +474,9 @@ msgid "发货仓库"
 msgstr "Source Warehouse"
 
 msgid "发送已知鼠标位移实测并标定 yaw_per_pixel 旋转系数"
-msgstr "Send known mouse deltas to measure and calibrate the yaw_per_pixel rotation coefficient"
+msgstr ""
+"Send known mouse deltas to measure and calibrate the yaw_per_pixel rotation "
+"coefficient"
 
 msgid "只买不卖"
 msgstr "Buy Only, No Selling"
@@ -520,7 +529,10 @@ msgid "启用后将只进行购买操作，不进行出售操作。"
 msgstr "When enabled, only purchase, no selling."
 
 msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
-msgstr "When enabled, stronghold exchange only buys items in the \"Trading Goods Priority List\" when it is not empty; if the list is empty, the original exchange logic is used."
+msgstr ""
+"When enabled, stronghold exchange only buys items in the \"Trading Goods "
+"Priority List\" when it is not empty; if the list is empty, the original "
+"exchange logic is used."
 
 msgid "启用实时条件"
 msgstr "Enable Real-Time Conditions"
@@ -564,7 +576,9 @@ msgstr ""
 "Release the Link Skill immediately when it is available"
 
 msgid "在演武台面前自动进入演算抽牌页，循环抽取直到满足等级变化条件"
-msgstr "Auto-enter the card draw page at the Combat Stage, keep drawing until level-up conditions are met."
+msgstr ""
+"Auto-enter the card draw page at the Combat Stage, keep drawing until level-"
+"up conditions are met."
 
 msgid "地区切换"
 msgstr "Region Switch"
@@ -641,13 +655,16 @@ msgid "实时检测"
 msgstr "Real-time Detection"
 
 msgid "对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低"
-msgstr "Auto-zooms in when aligning zip lines; may improve or clearly reduce success rate"
+msgstr ""
+"Auto-zooms in when aligning zip lines; may improve or clearly reduce success"
+" rate"
 
 msgid "导航到演武集算『演算』入口"
 msgstr "Navigate to the \"演算\" entrance of 演武集算"
 
 msgid "将次要目标方向蓝点对齐到屏幕中心"
-msgstr "Align the secondary target direction blue dot to the center of the screen"
+msgstr ""
+"Align the secondary target direction blue dot to the center of the screen"
 
 msgid "尝试仅收培育室"
 msgstr "Try Cultivation Room Only"
@@ -665,7 +682,9 @@ msgid "已保存当前账号配置"
 msgstr "Account configuration saved"
 
 msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
-msgstr "Account & task config refreshed (account page list is independent from task account list)"
+msgstr ""
+"Account & task config refreshed (account page list is independent from task "
+"account list)"
 
 msgid "帮助"
 msgstr "Help"
@@ -714,7 +733,8 @@ msgid "当前视图：{view_mode} | 展示 {count} / {total} 项"
 msgstr "Current View: {view_mode} | Showing {count} / {total} items"
 
 msgid "当前账号的 hg/check data.content 值，用于官方地图位置同步"
-msgstr "Current account hg/check data.content value for official map position sync"
+msgstr ""
+"Current account hg/check data.content value for official map position sync"
 
 msgid "当前账号配置没有变化"
 msgstr "Account configuration is unchanged"
@@ -786,7 +806,9 @@ msgid "技能释放"
 msgstr "Skill Release"
 
 msgid "持续检测 skill 和 ult 模板并输出命中位置与匹配分数"
-msgstr "Continuously detect skill and ult templates and output hit positions and match scores"
+msgstr ""
+"Continuously detect skill and ult templates and output hit positions and "
+"match scores"
 
 msgid "持续读取并显示当前箭头的角度"
 msgstr "Continuously read and display arrow angle"
@@ -813,10 +835,20 @@ msgstr ""
 "Select from 1/2/3/4 and sort, keep at least one."
 
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
-msgstr "Execute the selected operations by region: first outpost exchange, then buy in buy & sell; when buy supplies is enabled, switch to stable supply needs to buy after buying, then switch back to flexible supply needs to sell."
+msgstr ""
+"Execute the selected operations by region: first outpost exchange, then buy "
+"in buy & sell; when buy supplies is enabled, switch to stable supply needs "
+"to buy after buying, then switch back to flexible supply needs to sell."
 
-msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr "Configure independent parameters per account and task. Select account first, then task, and the attribute controls will appear automatically. Only the account name (phone) is needed, no password. Compatible with legacy `account,password` format but passwords are not saved. Login also accepts the last 4 digits of the phone number for matching (if unique)."
+msgid ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
+"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr ""
+"Configure independent parameters per account and task. Select account first,"
+" then task, and the attribute controls will appear automatically. Only the "
+"account name (phone) is needed, no password. Compatible with legacy "
+"`account,password` format but passwords are not saved. Login also accepts "
+"the last 4 digits of the phone number for matching (if unique)."
 
 msgid "据点兑换"
 msgstr "Outpost Exchange"
@@ -932,7 +964,9 @@ msgstr ""
 "Different parameters per account for same task"
 
 msgid "是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"
-msgstr "Whether to transfer all delivery commissions in \"Regional Operations / Warehouse Node\" and claim the transfer commission rewards once."
+msgstr ""
+"Whether to transfer all delivery commissions in \"Regional Operations / "
+"Warehouse Node\" and claim the transfer commission rewards once."
 
 msgid ""
 "是否在「帝江号」打开背包并点击「一键存放」。\n"
@@ -959,10 +993,14 @@ msgstr ""
 "Ignored when Terminate on Exception is on"
 
 msgid "是否在日常任务结束后传送到帝江号右侧传送点。"
-msgstr "Whether to teleport to the right waypoint of Dijiang after the daily task ends."
+msgstr ""
+"Whether to teleport to the right waypoint of Dijiang after the daily task "
+"ends."
 
 msgid "是否执行一次外部命令行程序（可在「外部命令执行时机」选择在最开始或最后执行）。"
-msgstr "Whether to run an external command once. Use External Command Timing to run it at the start or end."
+msgstr ""
+"Whether to run an external command once. Use External Command Timing to run "
+"it at the start or end."
 
 msgid "是否执行演武集算任务"
 msgstr "Execute Combat Simulation Task"
@@ -995,7 +1033,9 @@ msgid "普里莫"
 msgstr "Primo"
 
 msgid "暂停时间应超过此值，用于观察恢复后的行为"
-msgstr "The pause duration should exceed this value, to observe the behavior after recovery"
+msgstr ""
+"The pause duration should exceed this value, to observe the behavior after "
+"recovery"
 
 msgid "暂停计时验证"
 msgstr "Pause Timing Verification"
@@ -1071,7 +1111,9 @@ msgid "每个 sample 的测试方向位移量，正负交替测试"
 msgstr "Test displacement per sample; positive and negative alternate"
 
 msgid "每个键对应一条滑索路线，值为距离序列，用英文逗号分隔"
-msgstr "Each key is a zip line route; the value is a distance sequence, comma-separated"
+msgstr ""
+"Each key is a zip line route; the value is a distance sequence, comma-"
+"separated"
 
 msgid "每次检测后的等待时间"
 msgstr "Wait time after each detection"
@@ -1080,10 +1122,13 @@ msgid "每行一个账号名（手机号），无需密码"
 msgstr "One account (phone) per line, no password needed"
 
 msgid "每轮最多抽牌5次；未满足条件时点击左下角『放弃』并重新开始。"
-msgstr "Max 5 draws per round; if conditions are not met, click \"Give Up\" at bottom-left and restart."
+msgstr ""
+"Max 5 draws per round; if conditions are not met, click \"Give Up\" at "
+"bottom-left and restart."
 
 msgid "每轮模板检测之间的等待时间，最小 0.05 秒"
-msgstr "Wait time between each round of template detection, minimum 0.05 seconds"
+msgstr ""
+"Wait time between each round of template detection, minimum 0.05 seconds"
 
 msgid "汤汤"
 msgstr "Tangtang"
@@ -1197,7 +1242,9 @@ msgid "白垩界卫"
 msgstr "Marble Aggelomoirai"
 
 msgid "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"
-msgstr "Listen to WebSocket location data, point to nearest item and support key marking"
+msgstr ""
+"Listen to WebSocket location data, point to nearest item and support key "
+"marking"
 
 msgid "目标券数"
 msgstr "Target Ticket Count"
@@ -1246,7 +1293,8 @@ msgid "箭头角度实时读取"
 msgstr "Real-time Arrow Angle Reading"
 
 msgid "箭头角度检测的最低置信度，低于此值该 sample 作废"
-msgstr "Minimum confidence for arrow angle detection; samples below it are discarded"
+msgstr ""
+"Minimum confidence for arrow angle detection; samples below it are discarded"
 
 msgid "精选荞愈胶囊"
 msgstr "Buck Capsule [A]"
@@ -1440,7 +1488,8 @@ msgid "接取委托"
 msgstr "Auto Accept Delivery Orders"
 
 msgid "进入战斗后开始自动操作前的等待秒数。"
-msgstr "Wait time in seconds before auto-operation starts after entering battle."
+msgstr ""
+"Wait time in seconds before auto-operation starts after entering battle."
 
 msgid "进入战斗后的初始等待时间"
 msgstr "Initial wait time after entering battle"
@@ -1467,10 +1516,13 @@ msgstr ""
 "Use manufacturing assistance: friends can assist your manufacturing bay, and you can use these assists during production."
 
 msgid "勾选后使用当前任务的独立战斗配置，否则使用全局战斗配置。"
-msgstr "When enabled, use this task's independent battle config; otherwise use the global battle config."
+msgstr ""
+"When enabled, use this task's independent battle config; otherwise use the "
+"global battle config."
 
 msgid "选择执行时机：任务最开始时最先执行，或任务最后执行。"
-msgstr "Choose timing: execute at the very start or at the end of the daily tasks."
+msgstr ""
+"Choose timing: execute at the very start or at the end of the daily tasks."
 
 msgid "选择模型 labels 的 value 作为目标类别"
 msgstr "Select model labels value as target class"
@@ -1515,7 +1567,8 @@ msgstr ""
 "Scratch-off: perform the scratch-off."
 
 msgid "逐个检测四个技能位置并输出模板匹配结果"
-msgstr "Detect the four skill slots one by one and output template matching results"
+msgstr ""
+"Detect the four skill slots one by one and output template matching results"
 
 msgid "通向武陵城送货点"
 msgstr "To Wuling City Delivery Point"
@@ -1635,7 +1688,9 @@ msgid "关卡灰条实测扫描"
 msgstr "Stage Gray Bar Live Scan"
 
 msgid "持续检测关卡灰条；X 始终搜索整张屏幕，并可调整长度和归一化 Y 范围。"
-msgstr "Continuously detect stage gray bars. X always searches the full screen; length and normalized Y range are configurable."
+msgstr ""
+"Continuously detect stage gray bars. X always searches the full screen; "
+"length and normalized Y range are configurable."
 
 msgid "最小长度比例"
 msgstr "Minimum Length Ratio"
@@ -1650,16 +1705,22 @@ msgid "Y最大比例"
 msgstr "Maximum Y Ratio"
 
 msgid "灰条最小长度占屏幕宽度的比例；默认 34/1920，约为 0.017708。"
-msgstr "Minimum gray-bar length as a screen-width ratio; default 34/1920, about 0.017708."
+msgstr ""
+"Minimum gray-bar length as a screen-width ratio; default 34/1920, about "
+"0.017708."
 
 msgid "灰条最大长度占屏幕宽度的比例；默认 78/1920，约为 0.040625。"
-msgstr "Maximum gray-bar length as a screen-width ratio; default 78/1920, about 0.040625."
+msgstr ""
+"Maximum gray-bar length as a screen-width ratio; default 78/1920, about "
+"0.040625."
 
 msgid "搜索区域的上边界，范围为 0~1。"
 msgstr "Upper boundary of the search area, from 0 to 1."
 
 msgid "搜索区域的下边界，范围为 0~1，必须大于 Y最小比例。"
-msgstr "Lower boundary of the search area, from 0 to 1; it must exceed Minimum Y Ratio."
+msgstr ""
+"Lower boundary of the search area, from 0 to 1; it must exceed Minimum Y "
+"Ratio."
 
 msgid "每次检测后的等待时间。"
 msgstr "Wait time after each detection."
@@ -1775,8 +1836,11 @@ msgstr "Operation entry not found, screen may not be fully loaded"
 msgid "未能找到传送点，无法继续"
 msgstr "Teleport point not found, cannot continue"
 
-msgid "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
-msgstr "Map device ID (dId) unavailable: auto-minting failed (Edge/Chrome required, with access to fp-it.portal101.cn); retrying automatically in 30 seconds"
+msgid ""
+"地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
+msgstr ""
+"Map device ID (dId) unavailable: auto-minting failed (Edge/Chrome required, "
+"with access to fp-it.portal101.cn); retrying automatically in 30 seconds"
 
 msgid "HG 授权接口没有返回 oauth code"
 msgstr "HG grant API did not return an oauth code"
@@ -1788,7 +1852,9 @@ msgid "Alt点击小地图测试"
 msgstr "Alt-click Minimap Test"
 
 msgid "验证 alt+点击小地图中心能否替代 send_key('m') 打开地图（后台输入可行性）"
-msgstr "Verify that alt+clicking the minimap center can replace send_key('m') to open the map (background input feasibility)"
+msgstr ""
+"Verify that alt+clicking the minimap center can replace send_key('m') to "
+"open the map (background input feasibility)"
 
 msgid "测试次数"
 msgstr "Test Count"
@@ -1800,22 +1866,29 @@ msgid "重复测试次数，每次先关闭地图再重新打开"
 msgstr "Number of test repetitions; the map is closed and reopened each time"
 
 msgid "勾选后每次测试前先把游戏窗口置前（对比前台/后台行为）"
-msgstr "When checked, brings the game window to the foreground before each test (to compare foreground/background behavior)"
+msgstr ""
+"When checked, brings the game window to the foreground before each test (to "
+"compare foreground/background behavior)"
 
 msgid "后台按键测试"
 msgstr "Background Key Test"
 
 msgid "验证后台模式下按键能否送达游戏（置顶+等待+按键+恢复），输出诊断日志"
-msgstr "Verify whether keys reach the game in background mode (foreground+wait+key+restore), outputting diagnostic logs"
+msgstr ""
+"Verify whether keys reach the game in background mode "
+"(foreground+wait+key+restore), outputting diagnostic logs"
 
 msgid "要测试的按键（仅支持 m 打开地图，结果可观察）"
-msgstr "Key to test (only m is supported to open the map, result is observable)"
+msgstr ""
+"Key to test (only m is supported to open the map, result is observable)"
 
 msgid "按键后等待结果出现的时间"
 msgstr "Time to wait for the result after pressing the key"
 
 msgid "勾选后只测试窗口置顶是否成功（不按键），用于隔离置顶问题"
-msgstr "When checked, only tests whether the window comes to the foreground (no key press), to isolate foreground issues"
+msgstr ""
+"When checked, only tests whether the window comes to the foreground (no key "
+"press), to isolate foreground issues"
 
 msgid "武库配额"
 msgstr "Arsenal Ticket"
@@ -1827,307 +1900,350 @@ msgid "购买优先商品时信用不足"
 msgstr "Insufficient credits when buying priority items"
 
 msgid "Action List"
-msgstr ""
+msgstr "Action List"
 
 msgid "Auto"
-msgstr ""
+msgstr "Auto"
 
 msgid "Auto Resize Game Window"
-msgstr ""
+msgstr "Auto Resize Game Window"
 
 msgid "Auto Start Game When App Starts"
-msgstr ""
+msgstr "Auto Start Game When App Starts"
 
 msgid "Basic Options"
-msgstr ""
+msgstr "Basic Options"
 
-msgid "Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them."
+msgid ""
+"Choose where notifications are delivered. Notifications always appear in the"
+" app; enable any additional providers you want to receive them."
 msgstr ""
+"Choose where notifications are delivered. Notifications always appear in the"
+" app; enable any additional providers you want to receive them."
 
 msgid "Diagnosis"
-msgstr ""
+msgstr "Diagnosis"
 
 msgid "Discord Notification"
-msgstr ""
+msgstr "Discord Notification"
 
 msgid "Discord Webhook"
-msgstr ""
+msgstr "Discord Webhook"
 
 msgid "Discord channel webhook URL"
-msgstr ""
+msgstr "Discord channel webhook URL"
 
 msgid "Email Config"
-msgstr ""
+msgstr "Email Config"
 
 msgid "Enterprise WeChat Webhook Notification"
-msgstr ""
+msgstr "Enterprise WeChat Webhook Notification"
 
 msgid "Enterprise WeChat Webhook URL"
-msgstr ""
+msgstr "Enterprise WeChat Webhook URL"
 
 msgid "Enterprise WeChat group bot webhook URL"
-msgstr ""
+msgstr "Enterprise WeChat group bot webhook URL"
 
 msgid "Exact QQ contact nickname"
-msgstr ""
+msgstr "Exact QQ contact nickname"
 
 msgid "Exact WeChat contact nickname"
-msgstr ""
+msgstr "Exact WeChat contact nickname"
 
 msgid "Exit After Task"
-msgstr ""
+msgstr "Exit After Task"
 
 msgid "Exit App when Game Exits"
-msgstr ""
+msgstr "Exit App when Game Exits"
 
 msgid "Exit the Game and the App after Successfully Executing the Task"
-msgstr ""
+msgstr "Exit the Game and the App after Successfully Executing the Task"
 
 msgid "HotKey"
-msgstr ""
+msgstr "HotKey"
 
-msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgid ""
+"Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
 msgstr ""
+"Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
 
-msgid "Key to test (only m is supported to open the map, result is observable)"
+msgid ""
+"Key to test (only m is supported to open the map, result is observable)"
 msgstr ""
+"Key to test (only m is supported to open the map, result is observable)"
 
 msgid "Kill Launcher After Start"
-msgstr ""
+msgstr "Kill Launcher After Start"
 
 msgid "Launch with DX11"
-msgstr ""
+msgstr "Launch with DX11"
 
 msgid "Minimize Window to System Tray when Closing"
-msgstr ""
+msgstr "Minimize Window to System Tray when Closing"
 
 msgid "Mute Game while in Background"
-msgstr ""
+msgstr "Mute Game while in Background"
 
 msgid "No"
-msgstr ""
+msgstr "No"
 
 msgid "None"
-msgstr ""
+msgstr "None"
 
 msgid "Notification"
-msgstr ""
+msgstr "Notification"
 
 msgid "Operation"
-msgstr ""
+msgstr "Operation"
 
 msgid "Performance Test"
-msgstr ""
+msgstr "Performance Test"
 
 msgid "QQ Bot API App ID"
-msgstr ""
+msgstr "QQ Bot API App ID"
 
 msgid "QQ Bot API Channel ID"
-msgstr ""
+msgstr "QQ Bot API Channel ID"
 
 msgid "QQ Bot API Notification"
-msgstr ""
+msgstr "QQ Bot API Notification"
 
 msgid "QQ Bot API Token"
-msgstr ""
+msgstr "QQ Bot API Token"
 
 msgid "QQ Bot application ID"
-msgstr ""
+msgstr "QQ Bot application ID"
 
 msgid "QQ Bot application token"
-msgstr ""
+msgstr "QQ Bot application token"
 
 msgid "QQ Desktop Nickname"
-msgstr ""
+msgstr "QQ Desktop Nickname"
 
 msgid "QQ Desktop Notification (Not Reliable)"
-msgstr ""
+msgstr "QQ Desktop Notification (Not Reliable)"
 
 msgid "QQ channel ID to receive notifications"
-msgstr ""
+msgstr "QQ channel ID to receive notifications"
 
 msgid "Requires the local QQ client window to be open and running"
-msgstr ""
+msgstr "Requires the local QQ client window to be open and running"
 
 msgid "Requires the local WeChat client window to be open and running"
-msgstr ""
+msgstr "Requires the local WeChat client window to be open and running"
 
 msgid "SMTP 授权码/密码。请勿在公开仓库中提交真实授权码。"
 msgstr ""
+"SMTP auth code/password. Never commit a real auth code to public "
+"repositories."
 
 msgid "SMTP 服务器地址，例如 smtp.qq.com / smtp.163.com / smtp.gmail.com"
-msgstr ""
+msgstr "SMTP server address, e.g. smtp.qq.com / smtp.163.com / smtp.gmail.com"
 
 msgid "SMTP 端口。SSL 通常为 465，STARTTLS 通常为 587。"
-msgstr ""
+msgstr "SMTP port. Usually 465 for SSL, 587 for STARTTLS."
 
 msgid "SMTP 连接与发送的超时时间（秒）。"
-msgstr ""
+msgstr "Timeout (seconds) for SMTP connection and sending."
 
 msgid "SMTP服务器"
-msgstr ""
+msgstr "SMTP server"
 
 msgid "SMTP端口"
-msgstr ""
+msgstr "SMTP port"
 
 msgid "Send notifications through an Enterprise WeChat group bot"
-msgstr ""
+msgstr "Send notifications through an Enterprise WeChat group bot"
 
 msgid "Send notifications through the QQ Guild Bot API"
-msgstr ""
+msgstr "Send notifications through the QQ Guild Bot API"
 
 msgid "Send notifications through the Telegram Bot API"
-msgstr ""
+msgstr "Send notifications through the Telegram Bot API"
 
 msgid "Send notifications to a Discord webhook"
-msgstr ""
+msgstr "Send notifications to a Discord webhook"
 
 msgid "Show notifications using the Windows system tray"
-msgstr ""
+msgstr "Show notifications using the Windows system tray"
 
 msgid "Start/Stop"
-msgstr ""
+msgstr "Start/Stop"
 
 msgid "System Notification"
-msgstr ""
+msgstr "System Notification"
 
 msgid "Telegram Bot Token"
-msgstr ""
+msgstr "Telegram Bot Token"
 
 msgid "Telegram Chat ID"
-msgstr ""
+msgstr "Telegram Chat ID"
 
 msgid "Telegram Notification"
-msgstr ""
+msgstr "Telegram Notification"
 
 msgid "Telegram bot token from BotFather"
-msgstr ""
+msgstr "Telegram bot token from BotFather"
 
 msgid "Telegram user, group, or channel chat ID"
-msgstr ""
+msgstr "Telegram user, group, or channel chat ID"
 
 msgid "Time to wait for the result after pressing the key"
-msgstr ""
+msgstr "Time to wait for the result after pressing the key"
 
 msgid "Trigger Interval"
-msgstr ""
+msgstr "Trigger Interval"
 
 msgid "Use DirectML"
-msgstr ""
+msgstr "Use DirectML"
 
 msgid "Use GPU to Improve Performance"
-msgstr ""
+msgstr "Use GPU to Improve Performance"
 
 msgid "Use the skill set when conditions are met"
-msgstr ""
+msgstr "Use the skill set when conditions are met"
 
 msgid "WeChat Desktop Nickname"
-msgstr ""
+msgstr "WeChat Desktop Nickname"
 
 msgid "WeChat Desktop Notification (Not Reliable)"
-msgstr ""
+msgstr "WeChat Desktop Notification (Not Reliable)"
 
-msgid "When checked, only tests whether the window comes to the foreground (no key press), to isolate foreground issues"
+msgid ""
+"When checked, only tests whether the window comes to the foreground (no key "
+"press), to isolate foreground issues"
 msgstr ""
+"When checked, only tests whether the window comes to the foreground (no key "
+"press), to isolate foreground issues"
 
 msgid "W长按时间(秒)"
-msgstr ""
+msgstr "W long-press duration (s)"
 
 msgid "Yes"
-msgstr ""
+msgstr "Yes"
 
 msgid "一次标定多个位移量（如 200, 400, 800），每个位移正负各测一次，覆盖多量程；留空则只用 标定位移dx 单值"
 msgstr ""
+"Calibrate multiple displacements at once (e.g. 200, 400, 800); each is "
+"tested once per direction to cover multiple ranges. Leave empty to use only "
+"the single 标定位移dx value."
 
 msgid "一次验证多个角度（如 30, 90, 180, -90），每个角度都实测；留空则只用 验证目标角度(度) 单角度"
 msgstr ""
+"Verify multiple angles at once (e.g. 30, 90, 180, -90), each measured for "
+"real. Leave empty to verify only the single 验证目标角度(度) angle."
 
 msgid "主题前缀"
-msgstr ""
+msgstr "Subject prefix"
 
 msgid "仅测试置顶"
-msgstr ""
+msgstr "Foreground test only"
 
 msgid "任务完成后是否将最终执行汇总通过邮件发送（收件人取“设置 → 邮件发送配置”中的默认收件人）。"
 msgstr ""
+"Whether to send the final run summary by email after the task completes "
+"(recipient = default recipient in \"Settings → Email sending config\")."
 
 msgid "使用 SSL/TLS 加密连接发送邮件。"
-msgstr ""
+msgstr "Use SSL/TLS encrypted connection to send mail."
 
 msgid "发件邮箱"
-msgstr ""
+msgstr "Sender mailbox"
 
 msgid "发送时自动添加到邮件主题前面的前缀。"
-msgstr ""
+msgstr "Prefix automatically added before the email subject when sending."
 
 msgid "发送测试邮件"
-msgstr ""
+msgstr "Send test email"
 
 msgid "发送鼠标位移后、按 W 刷新前等待转向完成的时间；太短可能在转向未完成时就按 W 刷新朝向"
 msgstr ""
+"Time to wait for the turn to finish after sending mouse displacement and "
+"before pressing W to refresh; too short may refresh the heading before "
+"turning completes."
 
 msgid "后台模式启用"
-msgstr ""
+msgstr "Enable background mode"
 
 msgid "后台模式启用：勾选后该任务强制后台模式（按键用完即恢复窗口，禁用移动/战斗/视角操作）；不勾选则跟随全局输入模式。"
 msgstr ""
+"Enable background mode: when checked this task forces background mode "
+"(window restored after keys are sent; movement/combat/camera disabled). When"
+" unchecked it follows the global input mode."
 
 msgid "启用SSL"
-msgstr ""
+msgstr "Enable SSL"
 
 msgid "周常"
-msgstr ""
+msgstr "Weekly"
 
 msgid "填写完上方 SMTP/发件邮箱/授权码/收件人后，点击此按钮发送一封测试邮件。"
 msgstr ""
+"After filling in SMTP/sender mailbox/auth code/recipients above, click this "
+"button to send a test email."
 
 msgid "实测角度与目标角度误差超过该值判 FAIL"
 msgstr ""
+"Mark FAIL when the error between measured and target angle exceeds this "
+"value"
 
 msgid "左右方向成对验证"
-msgstr ""
+msgstr "Verify left/right in pairs"
 
 msgid "开启后每个验证角度自动补上相反方向（如 44 会自动补 -44），左右两方向都实测；关闭则只测列表里的方向"
 msgstr ""
+"When enabled, each verification angle automatically adds its opposite (e.g. "
+"44 adds -44), testing both directions; when disabled only the listed "
+"directions are tested."
 
 msgid "手动yaw_per_pixel(留空用标定)"
-msgstr ""
+msgstr "Manual yaw_per_pixel (empty = use calibration)"
 
 msgid "手动填标定系数可直接跳过标定只做验证；留空则先用本次标定结果"
 msgstr ""
+"Fill in calibration coefficients manually to skip calibration and verify "
+"only; leave empty to use this run's calibration result first."
 
 msgid "按 W 刷新朝向时的长按时长，太短则朝向不刷新"
 msgstr ""
+"Long-press duration when pressing W to refresh heading; too short and the "
+"heading won't refresh."
 
 msgid "按键后等待(秒)"
-msgstr ""
+msgstr "Wait after key press (s)"
 
 msgid "授权码"
-msgstr ""
+msgstr "Auth code"
 
 msgid "收件人列表"
-msgstr ""
+msgstr "Recipient list"
 
 msgid "松开 W 后等待画面更新的时间"
-msgstr ""
+msgstr "Time to wait for screen update after releasing W"
 
 msgid "标定位移列表(逗号分隔)"
-msgstr ""
+msgstr "Calibration displacement list (comma-separated)"
 
 msgid "标定采样次数，正负方向交替（仅单位移模式生效）"
 msgstr ""
+"Number of calibration samples, alternating positive/negative directions "
+"(only in single-displacement mode)"
 
 msgid "每个 sample 的测试方向位移量，正负交替测试（标定位移列表留空时生效）"
 msgstr ""
+"Displacement per test sample, alternating positive/negative (applies when "
+"the calibration displacement list is empty)"
 
 msgid "每个目标角度的验证重复次数"
-msgstr ""
+msgstr "Verification repeats per target angle"
 
 msgid "测试按键"
-msgstr ""
+msgstr "Test key"
 
 msgid "用于登录 SMTP 的邮箱地址，同时也是发件人地址。"
 msgstr ""
+"Mailbox address used to log into SMTP; also used as the sender address."
 
 msgid ""
 "用户别名到邮箱的映射，每行一个，格式：别名=邮箱（或 别名:邮箱）。\n"
@@ -2136,72 +2252,85 @@ msgid ""
 "洁尔佩塔=gilberta@endfiled.com\n"
 "发送时可用 --to 洛茜 直接按别名发送。"
 msgstr ""
+"Mapping from user aliases to mailboxes, one per line, format: alias=mailbox (or alias:mailbox).\n"
+"Example:\n"
+"Rossi=rossi@endfiled.com\n"
+"Gilberta=gilberta@endfiled.com\n"
+"When sending, use --to Rossi to send directly by alias."
 
 msgid "用标定系数反算位移并实测验证的角度；正值=向左转(鼠标左移)，负值=向右转，0=不验证"
 msgstr ""
+"Angle to verify by back-calculating displacement from calibration "
+"coefficients and measuring for real; positive = turn left (mouse left), "
+"negative = turn right, 0 = no verification."
 
 msgid "调用发送工具但未指定 --to 时使用的默认收件人邮箱。"
 msgstr ""
+"Default recipient mailbox used when calling the send tool without --to."
 
 msgid "转向后等待(秒)"
-msgstr ""
+msgstr "Wait after turning (s)"
 
 msgid "连接超时秒数"
-msgstr ""
+msgstr "Connection timeout (seconds)"
 
 msgid "邮件发送汇总"
-msgstr ""
+msgstr "Email digest"
 
 msgid "邮件发送配置"
-msgstr ""
+msgstr "Email sending config"
 
 msgid "重复测试次数"
-msgstr ""
+msgstr "Repeat test count"
 
 msgid "锁闭储藏箱"
-msgstr ""
+msgstr "Sealed Crate"
 
 msgid "验证次数"
-msgstr ""
+msgstr "Verification count"
 
 msgid "验证目标角度(度)"
-msgstr ""
+msgstr "Target angle to verify (degrees)"
 
 msgid "验证角度列表(逗号分隔)"
-msgstr ""
+msgstr "Verification angle list (comma-separated)"
 
 msgid "验证误差容差(度)"
-msgstr ""
+msgstr "Verification error tolerance (degrees)"
 
 msgid "默认收件人"
-msgstr ""
+msgstr "Default recipient"
 
 msgid "GPU Driver Warning"
-msgstr ""
+msgstr "GPU Driver Warning"
 
 msgid "Log"
-msgstr ""
+msgstr "Log"
 
 msgid "{vendor} {feature} is enabled and may cause malfunctions!"
-msgstr ""
+msgstr "{vendor} {feature} is enabled and may cause malfunctions!"
 
 msgid "{} is not connected, please select the game window."
-msgstr ""
+msgstr "{} is not connected, please select the game window."
 
 msgid "开始执行日常任务..."
-msgstr ""
+msgstr "Starting daily tasks..."
 
 msgid "账号列表已保存"
-msgstr ""
+msgstr "Account list saved"
 
 msgid "（复用ID {reused}，新建ID {created}）"
-msgstr ""
+msgstr "(reused IDs {reused}, created IDs {created})"
 
 msgid "；账号名（手机号）是唯一ID，密码变化不影响ID，账号名变化会新建ID"
 msgstr ""
+"; Account name (phone number) is the unique ID; changing the password "
+"doesn't change the ID, changing the account name creates a new ID"
 
 msgid "；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）"
 msgstr ""
+"; No password needed on the accounts page; any password info is removed on "
+"save (only usernames kept)"
 
 msgid "执行情况汇总"
 msgstr " Execution Summary"
@@ -2222,7 +2351,8 @@ msgid "--- 第 {round} 轮 (账号: {account}) ---"
 msgstr "--- Round {round} (Account: {account}) ---"
 
 msgid "总任务数: {total} | 成功: {success} | 失败: {failed} | 跳过: {skipped}"
-msgstr "Total: {total} | Success: {success} | Failed: {failed} | Skipped: {skipped}"
+msgstr ""
+"Total: {total} | Success: {success} | Failed: {failed} | Skipped: {skipped}"
 
 msgid "成功任务:"
 msgstr "Successful tasks:"

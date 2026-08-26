@@ -253,7 +253,9 @@ msgid "三相纳米片"
 msgstr "3상 나노 플레이크 칩"
 
 msgid "不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
-msgstr "농장이나 파종/수확 라인에서 대량 생산되는 작물은 줍지 않음：홍옥 인삼、금석벼、야침、금초、쓴맛 나는 고추、샌드리프、회보리、시트론、메밀꽃、아케톤。"
+msgstr ""
+"농장이나 파종/수확 라인에서 대량 생산되는 작물은 줍지 않음：홍옥 인삼、금석벼、야침、금초、쓴맛 나는 "
+"고추、샌드리프、회보리、시트론、메밀꽃、아케톤。"
 
 msgid "不换队伍"
 msgstr "팀 변경 없음"
@@ -553,7 +555,9 @@ msgid "启用后将只进行购买操作，不进行出售操作。"
 msgstr "활성화하면 구매만 하고 판매하지 않습니다."
 
 msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
-msgstr "활성화하면 「거래 상품 우선 순서」가 비어 있지 않을 때만 거점 교환은 그중의 상품만 구매합니다. 순서가 비어 있으면 원래 로직으로 교환합니다."
+msgstr ""
+"활성화하면 「거래 상품 우선 순서」가 비어 있지 않을 때만 거점 교환은 그중의 상품만 구매합니다. 순서가 비어 있으면 원래 로직으로 "
+"교환합니다."
 
 msgid "启用实时条件"
 msgstr "실시간 조건 활성화"
@@ -725,7 +729,9 @@ msgid "开启后仅显示与原配置不同的项"
 msgstr "활성화하면 기본 설정과 다른 항목만 표시"
 
 msgid "开启后等待外部命令执行完成；关闭则后台启动后立即继续。开启此选项可支持多账户模式。"
-msgstr "활성화하면 외부 명령이 끝날 때까지 대기하고, 비활성화하면 백그라운드 실행 후 즉시 계속합니다. 다중 계정 모드를 지원하려면 활성화하세요."
+msgstr ""
+"활성화하면 외부 명령이 끝날 때까지 대기하고, 비활성화하면 백그라운드 실행 후 즉시 계속합니다. 다중 계정 모드를 지원하려면 "
+"활성화하세요."
 
 msgid "开启后若检测到目标命令已在运行，将跳过本次启动。"
 msgstr "활성화하면 대상 명령이 이미 실행 중일 때 이번 실행을 건너뜁니다."
@@ -848,10 +854,17 @@ msgstr ""
 "1/2/3/4에서 선택하고 정렬하며, 최소 하나는 유지하세요."
 
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
-msgstr "지역별로 선택한 작업 실행：먼저 거점 교환, 다음으로 매매의 매수를 실행. 「물자 구매」를 활성화하면 구매 후 안정 물자 수요 구매로 전환하고, 마지막에 탄력 수요 물자 매도로 복귀."
+msgstr ""
+"지역별로 선택한 작업 실행：먼저 거점 교환, 다음으로 매매의 매수를 실행. 「물자 구매」를 활성화하면 구매 후 안정 물자 수요 구매로 "
+"전환하고, 마지막에 탄력 수요 물자 매도로 복귀."
 
-msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr "계정 및 작업별로 독립적인 매개변수를 설정합니다. 계정을 선택하고 작업을 선택하면 속성 컨트롤이 자동으로 나타납니다. 계정 이름(전화번호)만 필요하며 비밀번호는 필요하지 않습니다. 레거시 형식 `계정,비밀번호`와 호환되지만 비밀번호는 저장되지 않습니다. 로그인 시 전화번호 끝 4자리로도 일치 가능합니다(고유한 경우)."
+msgid ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
+"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr ""
+"계정 및 작업별로 독립적인 매개변수를 설정합니다. 계정을 선택하고 작업을 선택하면 속성 컨트롤이 자동으로 나타납니다. 계정 "
+"이름(전화번호)만 필요하며 비밀번호는 필요하지 않습니다. 레거시 형식 `계정,비밀번호`와 호환되지만 비밀번호는 저장되지 않습니다. 로그인"
+" 시 전화번호 끝 4자리로도 일치 가능합니다(고유한 경우)."
 
 msgid "据点兑换"
 msgstr "거점 교환"
@@ -1776,8 +1789,11 @@ msgstr "연산 진입점을 찾을 수 없음, 화면이 완전히 로드되지 
 msgid "未能找到传送点，无法继续"
 msgstr "텔레포트 지점을 찾을 수 없음, 계속할 수 없음"
 
-msgid "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
-msgstr "지도 디바이스 ID(dId)를 사용할 수 없습니다: 자동 발급 실패(Edge/Chrome 설치 및 fp-it.portal101.cn 접근 필요). 30초 후 자동으로 재시도합니다"
+msgid ""
+"地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
+msgstr ""
+"지도 디바이스 ID(dId)를 사용할 수 없습니다: 자동 발급 실패(Edge/Chrome 설치 및 fp-it.portal101.cn 접근"
+" 필요). 30초 후 자동으로 재시도합니다"
 
 msgid "HG 授权接口没有返回 oauth code"
 msgstr "HG 승인 API가 oauth 코드를 반환하지 않았습니다"
@@ -1828,307 +1844,319 @@ msgid "购买优先商品时信用不足"
 msgstr "우선 상품 구매 시 크레딧이 부족합니다"
 
 msgid "Action List"
-msgstr ""
+msgstr "액션 목록"
 
 msgid "Auto"
-msgstr ""
+msgstr "자동"
 
 msgid "Auto Resize Game Window"
-msgstr ""
+msgstr "게임 창 자동 크기 조정"
 
 msgid "Auto Start Game When App Starts"
-msgstr ""
+msgstr "앱 시작 시 게임 자동 실행"
 
 msgid "Basic Options"
-msgstr ""
+msgstr "기본 옵션"
 
-msgid "Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them."
-msgstr ""
+msgid ""
+"Choose where notifications are delivered. Notifications always appear in the"
+" app; enable any additional providers you want to receive them."
+msgstr "알림 전송 위치를 선택합니다. 알림은 항상 앱에 표시되며, 추가로 수신할 채널을 활성화할 수 있습니다."
 
 msgid "Diagnosis"
-msgstr ""
+msgstr "진단"
 
 msgid "Discord Notification"
-msgstr ""
+msgstr "Discord 알림"
 
 msgid "Discord Webhook"
-msgstr ""
+msgstr "Discord 웹훅"
 
 msgid "Discord channel webhook URL"
-msgstr ""
+msgstr "Discord 채널 웹훅 URL"
 
 msgid "Email Config"
-msgstr ""
+msgstr "메일 설정"
 
 msgid "Enterprise WeChat Webhook Notification"
-msgstr ""
+msgstr "기업 위챗 웹훅 알림"
 
 msgid "Enterprise WeChat Webhook URL"
-msgstr ""
+msgstr "기업 위챗 웹훅 URL"
 
 msgid "Enterprise WeChat group bot webhook URL"
-msgstr ""
+msgstr "기업 위챗 그룹 봇 웹훅 URL"
 
 msgid "Exact QQ contact nickname"
-msgstr ""
+msgstr "QQ 연락처의 정확한 닉네임"
 
 msgid "Exact WeChat contact nickname"
-msgstr ""
+msgstr "위챗 연락처의 정확한 닉네임"
 
 msgid "Exit After Task"
-msgstr ""
+msgstr "작업 후 종료"
 
 msgid "Exit App when Game Exits"
-msgstr ""
+msgstr "게임 종료 시 앱도 종료"
 
 msgid "Exit the Game and the App after Successfully Executing the Task"
-msgstr ""
+msgstr "작업 성공 후 게임과 앱을 종료합니다"
 
 msgid "HotKey"
-msgstr ""
+msgstr "단축키"
 
-msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
-msgstr ""
+msgid ""
+"Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgstr "트리거 작업 간 지연을 늘려 CPU/GPU 사용량 감소(밀리초)"
 
-msgid "Key to test (only m is supported to open the map, result is observable)"
-msgstr ""
+msgid ""
+"Key to test (only m is supported to open the map, result is observable)"
+msgstr "테스트할 키(m만 지원: 지도를 열어 결과 확인 가능)"
 
 msgid "Kill Launcher After Start"
-msgstr ""
+msgstr "실행 후 런처 종료"
 
 msgid "Launch with DX11"
-msgstr ""
+msgstr "DX11로 실행"
 
 msgid "Minimize Window to System Tray when Closing"
-msgstr ""
+msgstr "닫을 때 시스템 트레이로 최소화"
 
 msgid "Mute Game while in Background"
-msgstr ""
+msgstr "백그라운드 시 게음 음소거"
 
 msgid "No"
-msgstr ""
+msgstr "아니요"
 
 msgid "None"
-msgstr ""
+msgstr "없음"
 
 msgid "Notification"
-msgstr ""
+msgstr "알림"
 
 msgid "Operation"
-msgstr ""
+msgstr "조작"
 
 msgid "Performance Test"
-msgstr ""
+msgstr "성능 테스트"
 
 msgid "QQ Bot API App ID"
-msgstr ""
+msgstr "QQ 봇 API App ID"
 
 msgid "QQ Bot API Channel ID"
-msgstr ""
+msgstr "QQ 봇 API 채널 ID"
 
 msgid "QQ Bot API Notification"
-msgstr ""
+msgstr "QQ 봇 API 알림"
 
 msgid "QQ Bot API Token"
-msgstr ""
+msgstr "QQ 봇 API 토큰"
 
 msgid "QQ Bot application ID"
-msgstr ""
+msgstr "QQ 봇 애플리케이션 ID"
 
 msgid "QQ Bot application token"
-msgstr ""
+msgstr "QQ 봇 애플리케이션 토큰"
 
 msgid "QQ Desktop Nickname"
-msgstr ""
+msgstr "QQ 데스크톱 닉네임"
 
 msgid "QQ Desktop Notification (Not Reliable)"
-msgstr ""
+msgstr "QQ 데스크톱 알림(신뢰성 낮음)"
 
 msgid "QQ channel ID to receive notifications"
-msgstr ""
+msgstr "알림을 받을 QQ 채널 ID"
 
 msgid "Requires the local QQ client window to be open and running"
-msgstr ""
+msgstr "로컬 QQ 클라이언트 창이 열려 실행 중이어야 합니다"
 
 msgid "Requires the local WeChat client window to be open and running"
-msgstr ""
+msgstr "로컬 위챗 클라이언트 창이 열려 실행 중이어야 합니다"
 
 msgid "SMTP 授权码/密码。请勿在公开仓库中提交真实授权码。"
-msgstr ""
+msgstr "SMTP 인증 코드/비밀번호입니다. 실제 인증 코드를 공개 저장소에 커밋하지 마세요."
 
 msgid "SMTP 服务器地址，例如 smtp.qq.com / smtp.163.com / smtp.gmail.com"
-msgstr ""
+msgstr "SMTP 서버 주소(예: smtp.qq.com / smtp.163.com / smtp.gmail.com)"
 
 msgid "SMTP 端口。SSL 通常为 465，STARTTLS 通常为 587。"
-msgstr ""
+msgstr "SMTP 포트입니다. SSL은 보통 465, STARTTLS는 보통 587입니다."
 
 msgid "SMTP 连接与发送的超时时间（秒）。"
-msgstr ""
+msgstr "SMTP 연결 및 전송 timeout(초)입니다."
 
 msgid "SMTP服务器"
-msgstr ""
+msgstr "SMTP 서버"
 
 msgid "SMTP端口"
-msgstr ""
+msgstr "SMTP 포트"
 
 msgid "Send notifications through an Enterprise WeChat group bot"
-msgstr ""
+msgstr "기업 위챗 그룹 봇으로 알림 전송"
 
 msgid "Send notifications through the QQ Guild Bot API"
-msgstr ""
+msgstr "QQ 길드 봇 API로 알림 전송"
 
 msgid "Send notifications through the Telegram Bot API"
-msgstr ""
+msgstr "Telegram 봇 API로 알림 전송"
 
 msgid "Send notifications to a Discord webhook"
-msgstr ""
+msgstr "Discord 웹훅으로 알림 전송"
 
 msgid "Show notifications using the Windows system tray"
-msgstr ""
+msgstr "Windows 시스템 트레이로 알림 표시"
 
 msgid "Start/Stop"
-msgstr ""
+msgstr "시작/정지"
 
 msgid "System Notification"
-msgstr ""
+msgstr "시스템 알림"
 
 msgid "Telegram Bot Token"
-msgstr ""
+msgstr "Telegram 봇 토큰"
 
 msgid "Telegram Chat ID"
-msgstr ""
+msgstr "Telegram 채팅 ID"
 
 msgid "Telegram Notification"
-msgstr ""
+msgstr "Telegram 알림"
 
 msgid "Telegram bot token from BotFather"
-msgstr ""
+msgstr "BotFather에서 발급받은 Telegram 봇 토큰"
 
 msgid "Telegram user, group, or channel chat ID"
-msgstr ""
+msgstr "Telegram 사용자, 그룹 또는 채널의 채팅 ID"
 
 msgid "Time to wait for the result after pressing the key"
-msgstr ""
+msgstr "키 입력 후 결과를 기다리는 시간"
 
 msgid "Trigger Interval"
-msgstr ""
+msgstr "트리거 간격"
 
 msgid "Use DirectML"
-msgstr ""
+msgstr "DirectML 사용"
 
 msgid "Use GPU to Improve Performance"
-msgstr ""
+msgstr "GPU를 사용해 성능 향상"
 
 msgid "Use the skill set when conditions are met"
-msgstr ""
+msgstr "조건 충족 시 해당 스킬 세트 사용"
 
 msgid "WeChat Desktop Nickname"
-msgstr ""
+msgstr "위챗 데스크톱 닉네임"
 
 msgid "WeChat Desktop Notification (Not Reliable)"
-msgstr ""
+msgstr "위챗 데스크톱 알림(신뢰성 낮음)"
 
-msgid "When checked, only tests whether the window comes to the foreground (no key press), to isolate foreground issues"
-msgstr ""
+msgid ""
+"When checked, only tests whether the window comes to the foreground (no key "
+"press), to isolate foreground issues"
+msgstr "체크 시 창이 전면으로 오는지만 테스트하여(키 입력 없음) 전면 문제를 분리합니다"
 
 msgid "W长按时间(秒)"
-msgstr ""
+msgstr "W 길게 누르는 시간(초)"
 
 msgid "Yes"
-msgstr ""
+msgstr "예"
 
 msgid "一次标定多个位移量（如 200, 400, 800），每个位移正负各测一次，覆盖多量程；留空则只用 标定位移dx 单值"
 msgstr ""
+"여러 변위량을 한 번에 캘리브레이션합니다(예: 200, 400, 800). 각 변위를 양방향으로 한 번씩 측정해 다중 범위를 커버합니다."
+" 비우면 标定位移dx 단일 값만 사용"
 
 msgid "一次验证多个角度（如 30, 90, 180, -90），每个角度都实测；留空则只用 验证目标角度(度) 单角度"
 msgstr ""
+"여러 각도를 한 번에 검증합니다(예: 30, 90, 180, -90). 각도마다 실측합니다. 비우면 验证目标角度(度) 단일 각도만 검증"
 
 msgid "主题前缀"
-msgstr ""
+msgstr "제목 접두사"
 
 msgid "仅测试置顶"
-msgstr ""
+msgstr "전면 테스트만"
 
 msgid "任务完成后是否将最终执行汇总通过邮件发送（收件人取“设置 → 邮件发送配置”中的默认收件人）。"
-msgstr ""
+msgstr "작업 완료 후 최종 요약을 메일로 보낼지 여부입니다(수신자: \"설정 → 메일 전송 설정\"의 기본 수신자)."
 
 msgid "使用 SSL/TLS 加密连接发送邮件。"
-msgstr ""
+msgstr "SSL/TLS 암호화 연결로 메일을 보냅니다."
 
 msgid "发件邮箱"
-msgstr ""
+msgstr "보내는 사람 메일함"
 
 msgid "发送时自动添加到邮件主题前面的前缀。"
-msgstr ""
+msgstr "전송 시 메일 제목 앞에 자동 추가되는 접두사입니다."
 
 msgid "发送测试邮件"
-msgstr ""
+msgstr "테스트 메일 보내기"
 
 msgid "发送鼠标位移后、按 W 刷新前等待转向完成的时间；太短可能在转向未完成时就按 W 刷新朝向"
-msgstr ""
+msgstr "마ウス 변위 전송 후 W 갱신 전에 회전 완료를 기다리는 시간입니다. 너무 짧으면 회전이 끝나기 전에 W를 누를 수 있습니다"
 
 msgid "后台模式启用"
-msgstr ""
+msgstr "백그라운드 모드 사용"
 
 msgid "后台模式启用：勾选后该任务强制后台模式（按键用完即恢复窗口，禁用移动/战斗/视角操作）；不勾选则跟随全局输入模式。"
 msgstr ""
+"백그라운드 모드 사용: 체크 시 이 작업은 강제로 백그라운드 모드로 동작합니다(키 전송 후 창 복원, 이동/전투/시점 조작 비활성화). "
+"체크하지 않으면 전역 입력 모드를 따릅니다."
 
 msgid "启用SSL"
-msgstr ""
+msgstr "SSL 사용"
 
 msgid "周常"
-msgstr ""
+msgstr "주간"
 
 msgid "填写完上方 SMTP/发件邮箱/授权码/收件人后，点击此按钮发送一封测试邮件。"
-msgstr ""
+msgstr "위의 SMTP/보내는 사람 메일함/인증 코드/수신자를 입력한 뒤 이 버튼으로 테스트 메일을 보냅니다."
 
 msgid "实测角度与目标角度误差超过该值判 FAIL"
-msgstr ""
+msgstr "실측 각도와 목표 각도의 오차가 이 값을 초과하면 FAIL 판정"
 
 msgid "左右方向成对验证"
-msgstr ""
+msgstr "좌우 방향 쌍 검증"
 
 msgid "开启后每个验证角度自动补上相反方向（如 44 会自动补 -44），左右两方向都实测；关闭则只测列表里的方向"
 msgstr ""
+"켜면 각 검증 각도에 반대 방향(예: 44 → -44)을 자동 추가해 양방향을 모두 실측합니다. 끄면 목록의 방향만 테스트합니다."
 
 msgid "手动yaw_per_pixel(留空用标定)"
-msgstr ""
+msgstr "수동 yaw_per_pixel(비우면 캘리브레이션 값 사용)"
 
 msgid "手动填标定系数可直接跳过标定只做验证；留空则先用本次标定结果"
-msgstr ""
+msgstr "캘리브레이션 계수를 수동 입력하면 캘리브레이션을 건너뛰고 검증만 합니다. 비우면 이번 캘리브레이션 결과를 먼저 사용"
 
 msgid "按 W 刷新朝向时的长按时长，太短则朝向不刷新"
-msgstr ""
+msgstr "W로 방향을 갱신할 때의 길게 누르는 시간입니다. 너무 짧으면 방향이 갱신되지 않습니다"
 
 msgid "按键后等待(秒)"
-msgstr ""
+msgstr "키 입력 후 대기(초)"
 
 msgid "授权码"
-msgstr ""
+msgstr "인증 코드"
 
 msgid "收件人列表"
-msgstr ""
+msgstr "수신자 목록"
 
 msgid "松开 W 后等待画面更新的时间"
-msgstr ""
+msgstr "W 해제 후 화면 갱신 대기 시간"
 
 msgid "标定位移列表(逗号分隔)"
-msgstr ""
+msgstr "캘리브레이션 변위 목록(쉼표 구분)"
 
 msgid "标定采样次数，正负方向交替（仅单位移模式生效）"
-msgstr ""
+msgstr "캘리브레이션 샘플 횟수, 양방향 교차 측정(단일 변위 모드에서만 적용)"
 
 msgid "每个 sample 的测试方向位移量，正负交替测试（标定位移列表留空时生效）"
-msgstr ""
+msgstr "샘플별 테스트 방향 변위량, 양방향 교차 테스트(캘리브레이션 변위 목록이 비어 있을 때 적용)"
 
 msgid "每个目标角度的验证重复次数"
-msgstr ""
+msgstr "목표 각도별 검증 반복 횟수"
 
 msgid "测试按键"
-msgstr ""
+msgstr "테스트 키"
 
 msgid "用于登录 SMTP 的邮箱地址，同时也是发件人地址。"
-msgstr ""
+msgstr "SMTP 로그인에 사용되는 메일 주소이며 발신인 주소이기도 합니다."
 
 msgid ""
 "用户别名到邮箱的映射，每行一个，格式：别名=邮箱（或 别名:邮箱）。\n"
@@ -2137,72 +2165,77 @@ msgid ""
 "洁尔佩塔=gilberta@endfiled.com\n"
 "发送时可用 --to 洛茜 直接按别名发送。"
 msgstr ""
+"사용자 별칭과 메일함 매핑, 한 줄에 하나, 형식: 별칭=메일함(또는 별칭:메일함).\n"
+"예:\n"
+"洛茜(Rossi)=rossi@endfiled.com\n"
+"洁尔佩塔(Gilberta)=gilberta@endfiled.com\n"
+"전송 시 --to 洛茜 처럼 별칭으로 바로 보낼 수 있습니다."
 
 msgid "用标定系数反算位移并实测验证的角度；正值=向左转(鼠标左移)，负值=向右转，0=不验证"
-msgstr ""
+msgstr "캘리브레이션 계수로 변위를 역산해 실측 검증하는 각도입니다. 양수=좌회전(마우스 왼쪽), 음수=우회전, 0=검증 안 함"
 
 msgid "调用发送工具但未指定 --to 时使用的默认收件人邮箱。"
-msgstr ""
+msgstr "전송 도구 호출 시 --to 를 지정하지 않으면 사용되는 기본 수신자 메일함입니다."
 
 msgid "转向后等待(秒)"
-msgstr ""
+msgstr "회전 후 대기(초)"
 
 msgid "连接超时秒数"
-msgstr ""
+msgstr "연결 timeout(초)"
 
 msgid "邮件发送汇总"
-msgstr ""
+msgstr "메일 요약 전송"
 
 msgid "邮件发送配置"
-msgstr ""
+msgstr "메일 전송 설정"
 
 msgid "重复测试次数"
-msgstr ""
+msgstr "반복 테스트 횟수"
 
 msgid "锁闭储藏箱"
-msgstr ""
+msgstr "잠긴 보물 상자"
 
 msgid "验证次数"
-msgstr ""
+msgstr "검증 횟수"
 
 msgid "验证目标角度(度)"
-msgstr ""
+msgstr "검증 목표 각도(도)"
 
 msgid "验证角度列表(逗号分隔)"
-msgstr ""
+msgstr "검증 각도 목록(쉼표 구분)"
 
 msgid "验证误差容差(度)"
-msgstr ""
+msgstr "검증 오차 허용치(도)"
 
 msgid "默认收件人"
-msgstr ""
+msgstr "기본 수신자"
 
 msgid "GPU Driver Warning"
-msgstr ""
+msgstr "GPU 드라이버 경고"
 
 msgid "Log"
-msgstr ""
+msgstr "로그"
 
 msgid "{vendor} {feature} is enabled and may cause malfunctions!"
-msgstr ""
+msgstr "{vendor} {feature} 이(가) 활성화되어 있어 오작동할 수 있습니다!"
 
 msgid "{} is not connected, please select the game window."
-msgstr ""
+msgstr "{} 이(가) 연결되지 않았습니다. 게임 창을 선택해 주세요."
 
 msgid "开始执行日常任务..."
-msgstr ""
+msgstr "데일리 작업을 시작합니다..."
 
 msgid "账号列表已保存"
-msgstr ""
+msgstr "계정 목록이 저장되었습니다"
 
 msgid "（复用ID {reused}，新建ID {created}）"
-msgstr ""
+msgstr "(재사용 ID {reused}, 신규 생성 ID {created})"
 
 msgid "；账号名（手机号）是唯一ID，密码变化不影响ID，账号名变化会新建ID"
-msgstr ""
+msgstr "; 계정명(전화번호)이 고유 ID입니다. 비밀번호 변경은 ID에 영향이 없으며, 계정명 변경 시 새 ID가 생성됩니다"
 
 msgid "；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）"
-msgstr ""
+msgstr "; 계정 페이지에는 비밀번호가 필요 없습니다. 저장 시 비밀번호 정보는 제거됩니다(사용자명만 유지)"
 
 msgid "执行情况汇总"
 msgstr " 실행 요약"

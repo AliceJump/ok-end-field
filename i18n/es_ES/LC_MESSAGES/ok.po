@@ -13,7 +13,9 @@ msgid "关卡灰条实测扫描"
 msgstr "Escaneo en vivo de barras grises de fase"
 
 msgid "持续检测关卡灰条；X 始终搜索整张屏幕，并可调整长度和归一化 Y 范围。"
-msgstr "Detecta continuamente las barras grises de fase. X siempre busca toda la pantalla; se pueden ajustar la longitud y el rango Y normalizado."
+msgstr ""
+"Detecta continuamente las barras grises de fase. X siempre busca toda la "
+"pantalla; se pueden ajustar la longitud y el rango Y normalizado."
 
 msgid "最小长度比例"
 msgstr "Proporción de longitud mínima"
@@ -28,16 +30,22 @@ msgid "Y最大比例"
 msgstr "Proporción Y máxima"
 
 msgid "灰条最小长度占屏幕宽度的比例；默认 34/1920，约为 0.017708。"
-msgstr "Proporción entre la longitud mínima de la barra gris y el ancho de pantalla; valor predeterminado 34/1920, aproximadamente 0.017708."
+msgstr ""
+"Proporción entre la longitud mínima de la barra gris y el ancho de pantalla;"
+" valor predeterminado 34/1920, aproximadamente 0.017708."
 
 msgid "灰条最大长度占屏幕宽度的比例；默认 78/1920，约为 0.040625。"
-msgstr "Proporción entre la longitud máxima de la barra gris y el ancho de pantalla; valor predeterminado 78/1920, aproximadamente 0.040625."
+msgstr ""
+"Proporción entre la longitud máxima de la barra gris y el ancho de pantalla;"
+" valor predeterminado 78/1920, aproximadamente 0.040625."
 
 msgid "搜索区域的上边界，范围为 0~1。"
 msgstr "Límite superior del área de búsqueda, entre 0 y 1."
 
 msgid "搜索区域的下边界，范围为 0~1，必须大于 Y最小比例。"
-msgstr "Límite inferior del área de búsqueda, entre 0 y 1; debe ser mayor que la proporción Y mínima."
+msgstr ""
+"Límite inferior del área de búsqueda, entre 0 y 1; debe ser mayor que la "
+"proporción Y mínima."
 
 msgid "每次检测后的等待时间。"
 msgstr "Tiempo de espera tras cada detección."
@@ -253,7 +261,9 @@ msgid "三相纳米片"
 msgstr "Nanohoja trifásica"
 
 msgid "不拾取可由种植田或采种/种植流水线量产的作物：琼叶参、金石稻、芽针、锦草、苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
-msgstr "No recoger cultivos producibles en masa por granjas o líneas de siembra/cosecha: 琼叶参, 金石稻, 芽针, 锦草, 苦叶椒, 砂叶, 灰芦麦, 柑实, 荞花, 酮化灌木."
+msgstr ""
+"No recoger cultivos producibles en masa por granjas o líneas de "
+"siembra/cosecha: 琼叶参, 金石稻, 芽针, 锦草, 苦叶椒, 砂叶, 灰芦麦, 柑实, 荞花, 酮化灌木."
 
 msgid "不换队伍"
 msgstr "No Cambiar Equipo"
@@ -280,7 +290,8 @@ msgid "交易货品优先序列"
 msgstr "Prioridad de mercancías"
 
 msgid "仅在“完整循环测试”时生效，用于限定测试的小区域（当前地区可选地点）"
-msgstr "Solo se aplica a Prueba de ciclo completo para limitar la zona de prueba"
+msgstr ""
+"Solo se aplica a Prueba de ciclo completo para limitar la zona de prueba"
 
 msgid "仅差异"
 msgstr "Solo diferencias"
@@ -326,7 +337,9 @@ msgid "任务会按顺序依次对齐并滑行每段距离"
 msgstr "La tarea se alinea y recorre cada distancia en orden"
 
 msgid "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。"
-msgstr "Al terminar la tarea, abre el archivo de resumen con la aplicación predeterminada del sistema. Si se desactiva, solo se crea el archivo."
+msgstr ""
+"Al terminar la tarea, abre el archivo de resumen con la aplicación "
+"predeterminada del sistema. Si se desactiva, solo se crea el archivo."
 
 msgid "任务属性配置"
 msgstr "Configuración de atributos de tarea"
@@ -386,7 +399,10 @@ msgid "供能高地"
 msgstr "Meseta de poder"
 
 msgid "保存当前账号的完整任务配置快照。任务默认值变化不会影响已保存账号。"
-msgstr "Guarda una instantánea completa de la configuración de la tarea para la cuenta actual. Los cambios en los valores predeterminados no afectarán a las cuentas guardadas."
+msgstr ""
+"Guarda una instantánea completa de la configuración de la tarea para la "
+"cuenta actual. Los cambios en los valores predeterminados no afectarán a las"
+" cuentas guardadas."
 
 msgid "保存当前账号配置"
 msgstr "Guardar Configuracion De La Cuenta Actual"
@@ -456,7 +472,9 @@ msgstr ""
 "Se usa para calcular el día de la secuencia de mazmorras."
 
 msgid "刷取哪个副本。所选副本必须领完所有等级的首通奖励。"
-msgstr "Mazmorra que farmear. Deben haberse recogido todas las recompensas iniciales."
+msgstr ""
+"Mazmorra que farmear. Deben haberse recogido todas las recompensas "
+"iniciales."
 
 msgid "刷本序列"
 msgstr "Secuencia de mazmorras"
@@ -479,7 +497,9 @@ msgid "动作列表"
 msgstr "Lista de acciones"
 
 msgid "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。"
-msgstr "Si está marcado Salir al terminar, una excepción también cerrará el juego y la aplicación."
+msgstr ""
+"Si está marcado Salir al terminar, una excepción también cerrará el juego y "
+"la aplicación."
 
 msgid "北部禁区"
 msgstr "Zona de exclusión norte de Wuling"
@@ -500,7 +520,9 @@ msgid "发货仓库"
 msgstr "Almacén de origen"
 
 msgid "发送已知鼠标位移实测并标定 yaw_per_pixel 旋转系数"
-msgstr "Envía desplazamientos de ratón conocidos para medir y calibrar el coeficiente de rotación yaw_per_pixel"
+msgstr ""
+"Envía desplazamientos de ratón conocidos para medir y calibrar el "
+"coeficiente de rotación yaw_per_pixel"
 
 msgid "只买不卖"
 msgstr "Solo Comprar, No Vender"
@@ -523,7 +545,9 @@ msgstr ""
 "Si este campo tiene valor, se usa primero y no se lee la página de configuración de cuentas."
 
 msgid "可选。设置外部命令的起始目录（工作目录）；留空则使用默认目录。"
-msgstr "Opcional. Directorio de trabajo del comando externo; vacío usa el predeterminado."
+msgstr ""
+"Opcional. Directorio de trabajo del comando externo; vacío usa el "
+"predeterminado."
 
 msgid "完成通知"
 msgstr "Notificación de finalización"
@@ -553,7 +577,10 @@ msgid "启用后将只进行购买操作，不进行出售操作。"
 msgstr "Al activarlo, solo se compra y no se vende."
 
 msgid "启用后，仅当「交易货品优先序列」不为空时，据点兑换才只购买其中的商品；序列为空时按原逻辑兑换。"
-msgstr "Al activarlo, solo cuando la \"Secuencia prioritaria de mercancías comerciales\" no esté vacía, el intercambio de puesto solo comprará los productos de ella; si la secuencia está vacía, usa la lógica original."
+msgstr ""
+"Al activarlo, solo cuando la \"Secuencia prioritaria de mercancías "
+"comerciales\" no esté vacía, el intercambio de puesto solo comprará los "
+"productos de ella; si la secuencia está vacía, usa la lógica original."
 
 msgid "启用实时条件"
 msgstr "Habilitar condiciones en tiempo real"
@@ -574,7 +601,9 @@ msgid "四号谷地卖出价"
 msgstr "Precio de venta del Valle IV"
 
 msgid "四号谷地物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
-msgstr "Precio máximo de compra del Valle IV. Use un valor alto para comprar siempre."
+msgstr ""
+"Precio máximo de compra del Valle IV. Use un valor alto para comprar "
+"siempre."
 
 msgid "四号谷地物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
 msgstr "Precio mínimo de venta del Valle IV. Use 1 para vender siempre."
@@ -597,7 +626,9 @@ msgstr ""
 "Liberar la habilidad de enlace inmediatamente cuando esté disponible"
 
 msgid "在演武台面前自动进入演算抽牌页，循环抽取直到满足等级变化条件"
-msgstr "Entrar automáticamente a la página de robo de cartas y robar hasta cumplir condiciones de subida de nivel."
+msgstr ""
+"Entrar automáticamente a la página de robo de cartas y robar hasta cumplir "
+"condiciones de subida de nivel."
 
 msgid "地区切换"
 msgstr "Cambio de región"
@@ -668,19 +699,24 @@ msgid "完整循环测试区域"
 msgstr "Zona de prueba de ciclo completo"
 
 msgid "实时循环执行 YOLO 检测，用于在线观察目标识别结果。"
-msgstr "Ejecutar YOLO en bucle para observar el reconocimiento en tiempo real."
+msgstr ""
+"Ejecutar YOLO en bucle para observar el reconocimiento en tiempo real."
 
 msgid "实时检测"
 msgstr "Detección en Tiempo Real"
 
 msgid "对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低"
-msgstr "Amplía automáticamente al alinear; puede mejorar o reducir claramente la tasa de éxito"
+msgstr ""
+"Amplía automáticamente al alinear; puede mejorar o reducir claramente la "
+"tasa de éxito"
 
 msgid "导航到演武集算『演算』入口"
 msgstr "Navegar a la entrada \"演算\" de 演武集算"
 
 msgid "将次要目标方向蓝点对齐到屏幕中心"
-msgstr "Alinear el punto azul de la dirección del objetivo secundario al centro de la pantalla"
+msgstr ""
+"Alinear el punto azul de la dirección del objetivo secundario al centro de "
+"la pantalla"
 
 msgid "尝试仅收培育室"
 msgstr "Intentar recoger solo la cámara de cultivo"
@@ -698,7 +734,9 @@ msgid "已保存当前账号配置"
 msgstr "Configuración de cuenta guardada"
 
 msgid "已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"
-msgstr "Configuración de cuentas y tareas actualizada (las listas son independientes)"
+msgstr ""
+"Configuración de cuentas y tareas actualizada (las listas son "
+"independientes)"
 
 msgid "帮助"
 msgstr "Ayuda"
@@ -725,7 +763,9 @@ msgid "开启后仅显示与原配置不同的项"
 msgstr "Mostrar solo los valores distintos de la configuración original"
 
 msgid "开启后等待外部命令执行完成；关闭则后台启动后立即继续。开启此选项可支持多账户模式。"
-msgstr "Esperar a que termine el comando externo; necesario para el modo multicuenta."
+msgstr ""
+"Esperar a que termine el comando externo; necesario para el modo "
+"multicuenta."
 
 msgid "开启后若检测到目标命令已在运行，将跳过本次启动。"
 msgstr "Omitir el inicio si el comando objetivo ya está en ejecución."
@@ -747,7 +787,9 @@ msgid "当前视图：{view_mode} | 展示 {count} / {total} 项"
 msgstr "Vista actual: {view_mode} | Mostrando {count} / {total} elementos"
 
 msgid "当前账号的 hg/check data.content 值，用于官方地图位置同步"
-msgstr "Valor hg/check data.content de la cuenta actual para sincronizar la posicion del mapa oficial"
+msgstr ""
+"Valor hg/check data.content de la cuenta actual para sincronizar la posicion"
+" del mapa oficial"
 
 msgid "当前账号配置没有变化"
 msgstr "La configuración de cuenta no ha cambiado"
@@ -819,7 +861,9 @@ msgid "技能释放"
 msgstr "Uso de habilidades"
 
 msgid "持续检测 skill 和 ult 模板并输出命中位置与匹配分数"
-msgstr "Detecta continuamente las plantillas de skill y ult y muestra las posiciones de acierto y las puntuaciones de coincidencia"
+msgstr ""
+"Detecta continuamente las plantillas de skill y ult y muestra las posiciones"
+" de acierto y las puntuaciones de coincidencia"
 
 msgid "持续读取并显示当前箭头的角度"
 msgstr "Leer y mostrar continuamente el ángulo de la flecha"
@@ -828,7 +872,8 @@ msgid "指定的队伍编号"
 msgstr "Número de Equipo Especificado"
 
 msgid "按 W 刷新朝向后的画面等待时间"
-msgstr "Tiempo de espera de pantalla tras pulsar W para refrescar la orientación"
+msgstr ""
+"Tiempo de espera de pantalla tras pulsar W para refrescar la orientación"
 
 msgid ""
 "按住标记按键并持续达到这个时长后，\n"
@@ -838,7 +883,9 @@ msgstr ""
 "para marcar el objetivo como recogido."
 
 msgid "按住鼠标蛇形扫描指定矩形区域"
-msgstr "Mantener presionado el ratón y escanear en zigzag el área rectangular especificada"
+msgstr ""
+"Mantener presionado el ratón y escanear en zigzag el área rectangular "
+"especificada"
 
 msgid ""
 "按列表顺序自动循环释放「战技」。\n"
@@ -848,10 +895,23 @@ msgstr ""
 "Seleccione de 1/2/3/4 y ordene, mantenga al menos uno."
 
 msgid "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
-msgstr "Ejecutar las operaciones seleccionadas por región: primero intercambio de puestos, luego la compra en comprar y vender; cuando la compra de suministros esté habilitada, cambiar a necesidades de suministro estable para comprar después de comprar, y luego volver a necesidades de suministro flexible para vender."
+msgstr ""
+"Ejecutar las operaciones seleccionadas por región: primero intercambio de "
+"puestos, luego la compra en comprar y vender; cuando la compra de "
+"suministros esté habilitada, cambiar a necesidades de suministro estable "
+"para comprar después de comprar, y luego volver a necesidades de suministro "
+"flexible para vender."
 
-msgid "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
-msgstr "Configure parámetros independientes por cuenta y tarea. Seleccione primero la cuenta, luego la tarea, y los controles aparecerán automáticamente. Solo necesita el nombre de cuenta (teléfono), sin contraseña. Compatible con formato antiguo `cuenta,contraseña` pero no se guardan contraseñas. También puede usar los últimos 4 dígitos del teléfono para iniciar sesión (si es único)."
+msgid ""
+"按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 "
+"`账号,密码` 但不会保存密码。登录时也可只使用手机号后四位进行匹配（若唯一）。"
+msgstr ""
+"Configure parámetros independientes por cuenta y tarea. Seleccione primero "
+"la cuenta, luego la tarea, y los controles aparecerán automáticamente. Solo "
+"necesita el nombre de cuenta (teléfono), sin contraseña. Compatible con "
+"formato antiguo `cuenta,contraseña` pero no se guardan contraseñas. También "
+"puede usar los últimos 4 dígitos del teléfono para iniciar sesión (si es "
+"único)."
 
 msgid "据点兑换"
 msgstr "Intercambio del puesto"
@@ -936,7 +996,8 @@ msgstr ""
 "Después, recoger el crédito en la Tienda de crédito."
 
 msgid "是否启用「地区建设/四号谷地物资调度/弹性需求物资」交易。"
-msgstr "Activar el comercio en Construcción regional/Valle IV/Demanda flexible."
+msgstr ""
+"Activar el comercio en Construcción regional/Valle IV/Demanda flexible."
 
 msgid "是否启用「地区建设/武陵物资调度/弹性需求物资」交易。"
 msgstr "Activar el comercio en Construcción regional/Wuling/Demanda flexible."
@@ -968,7 +1029,9 @@ msgstr ""
 "Permite distintos parámetros por cuenta para una misma tarea"
 
 msgid "是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"
-msgstr "Si transferir todos los encargos de entrega en \"Operaciones regionales / Nodo de almacén\" y reclamar las recompensas de transferencia una vez."
+msgstr ""
+"Si transferir todos los encargos de entrega en \"Operaciones regionales / "
+"Nodo de almacén\" y reclamar las recompensas de transferencia una vez."
 
 msgid ""
 "是否在「帝江号」打开背包并点击「一键存放」。\n"
@@ -994,10 +1057,14 @@ msgstr ""
 "No se aplica si está activado Terminar el juego tras una excepción"
 
 msgid "是否在日常任务结束后传送到帝江号右侧传送点。"
-msgstr "Teletransportarse al punto derecho del Dijiang después de que finalice la tarea diaria."
+msgstr ""
+"Teletransportarse al punto derecho del Dijiang después de que finalice la "
+"tarea diaria."
 
 msgid "是否执行一次外部命令行程序（可在「外部命令执行时机」选择在最开始或最后执行）。"
-msgstr "Indica si se ejecuta una vez un comando externo. Usa Momento del comando externo para ejecutarlo al inicio o al final."
+msgstr ""
+"Indica si se ejecuta una vez un comando externo. Usa Momento del comando "
+"externo para ejecutarlo al inicio o al final."
 
 msgid "是否执行演武集算任务"
 msgstr "Ejecutar tarea de simulación de combate"
@@ -1030,7 +1097,9 @@ msgid "普里莫"
 msgstr "Prímo"
 
 msgid "暂停时间应超过此值，用于观察恢复后的行为"
-msgstr "La duración de la pausa debe superar este valor, para observar el comportamiento tras la recuperación"
+msgstr ""
+"La duración de la pausa debe superar este valor, para observar el "
+"comportamiento tras la recuperación"
 
 msgid "暂停计时验证"
 msgstr "Verificación de sincronización de pausa"
@@ -1097,7 +1166,8 @@ msgid "武陵城"
 msgstr "Ciudad de Wuling"
 
 msgid "武陵物资买入价格上限，超出则拒绝买入。若必买，则设大数。"
-msgstr "Precio máximo de compra de Wuling. Use un valor alto para comprar siempre."
+msgstr ""
+"Precio máximo de compra de Wuling. Use un valor alto para comprar siempre."
 
 msgid "武陵物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
 msgstr "Precio mínimo de venta de Wuling. Use 1 para vender siempre."
@@ -1106,7 +1176,9 @@ msgid "每个 sample 的测试方向位移量，正负交替测试"
 msgstr "Desplazamiento de prueba por muestra; se alterna positivo y negativo"
 
 msgid "每个键对应一条滑索路线，值为距离序列，用英文逗号分隔"
-msgstr "Cada clave es una ruta de tirolesa; el valor es una secuencia de distancias separadas por comas"
+msgstr ""
+"Cada clave es una ruta de tirolesa; el valor es una secuencia de distancias "
+"separadas por comas"
 
 msgid "每次检测后的等待时间"
 msgstr "Espera tras cada detección"
@@ -1115,10 +1187,14 @@ msgid "每行一个账号名（手机号），无需密码"
 msgstr "Una cuenta (teléfono) por línea, sin contraseña"
 
 msgid "每轮最多抽牌5次；未满足条件时点击左下角『放弃』并重新开始。"
-msgstr "Máximo 5 robos por ronda; si no se cumplen las condiciones, haga clic en \"Rendirse\" y reinicie."
+msgstr ""
+"Máximo 5 robos por ronda; si no se cumplen las condiciones, haga clic en "
+"\"Rendirse\" y reinicie."
 
 msgid "每轮模板检测之间的等待时间，最小 0.05 秒"
-msgstr "Tiempo de espera entre cada ronda de detección de plantillas, mínimo 0.05 segundos"
+msgstr ""
+"Tiempo de espera entre cada ronda de detección de plantillas, mínimo 0.05 "
+"segundos"
 
 msgid "汤汤"
 msgstr "Tangtang"
@@ -1166,7 +1242,9 @@ msgid "清空当前账号全部覆盖"
 msgstr "Borrar todas las anulaciones de la cuenta actual"
 
 msgid "游戏内开启全屏模式时请确保游戏内分辨率与你的屏幕分辨率一致"
-msgstr "En pantalla completa, asegúrese de que la resolución del juego coincida con la pantalla"
+msgstr ""
+"En pantalla completa, asegúrese de que la resolución del juego coincida con "
+"la pantalla"
 
 msgid "游戏内快捷键配置"
 msgstr "Configuración de teclas del juego"
@@ -1178,7 +1256,9 @@ msgid "源矿"
 msgstr "Mineral de Originio"
 
 msgid "滑索距离序列在「全局配置 → 滑索配置」中设置"
-msgstr "Configura las secuencias de distancia en Configuración global → Configuración de tirolesa"
+msgstr ""
+"Configura las secuencias de distancia en Configuración global → "
+"Configuración de tirolesa"
 
 msgid "滑索距离序列，用逗号分隔。"
 msgstr "Secuencia de distancia de tirolina, separada por comas."
@@ -1232,13 +1312,17 @@ msgid "白垩界卫"
 msgstr "Aggelomoirai de mármol"
 
 msgid "监听本地 WebSocket 位置数据，指向已选物品的最近点并支持按键标记"
-msgstr "Leer posiciones del WebSocket local, señalar el objeto más cercano y permitir marcarlo con una tecla"
+msgstr ""
+"Leer posiciones del WebSocket local, señalar el objeto más cercano y "
+"permitir marcarlo con una tecla"
 
 msgid "目标券数"
 msgstr "Cantidad objetivo de vales"
 
 msgid "目标券数优先级序列，用逗号分隔多个券数。"
-msgstr "Secuencia de prioridad de cantidades objetivo de cupones, separadas por comas."
+msgstr ""
+"Secuencia de prioridad de cantidades objetivo de cupones, separadas por "
+"comas."
 
 msgid ""
 "目标券数优先级序列，用逗号分隔多个券数。按列表中顺序优先抢前面的券数。\n"
@@ -1281,7 +1365,9 @@ msgid "箭头角度实时读取"
 msgstr "Lectura del ángulo de la flecha en tiempo real"
 
 msgid "箭头角度检测的最低置信度，低于此值该 sample 作废"
-msgstr "Confianza mínima para detectar el ángulo de la flecha; las muestras por debajo se descartan"
+msgstr ""
+"Confianza mínima para detectar el ángulo de la flecha; las muestras por "
+"debajo se descartan"
 
 msgid "精选荞愈胶囊"
 msgstr "Cápsulas de floracina [A]"
@@ -1311,7 +1397,8 @@ msgid "自动交互"
 msgstr "Interacción automática"
 
 msgid "自动完成当前所有普通影拓丰碑关卡"
-msgstr "Completar automáticamente todos los niveles normales de Estela Sombría"
+msgstr ""
+"Completar automáticamente todos los niveles normales de Estela Sombría"
 
 msgid "自动战斗"
 msgstr "Combate automático"
@@ -1326,10 +1413,13 @@ msgid "自动拾取"
 msgstr "Recogida automática"
 
 msgid "自动检测战斗开始和结束，使用说明参见选项"
-msgstr "Detectar automáticamente el inicio y fin del combate; consulte las opciones."
+msgstr ""
+"Detectar automáticamente el inicio y fin del combate; consulte las opciones."
 
 msgid "自动跳过剧情和点击传送按钮"
-msgstr "Omitir la historia automáticamente y hacer clic en el botón de teletransporte"
+msgstr ""
+"Omitir la historia automáticamente y hacer clic en el botón de "
+"teletransporte"
 
 msgid "自动点击传送"
 msgstr "Teletransporte automático"
@@ -1475,7 +1565,9 @@ msgid "接取委托"
 msgstr "Aceptación automática de encargos de entrega"
 
 msgid "进入战斗后开始自动操作前的等待秒数。"
-msgstr "Tiempo de espera en segundos antes de que comience la operación automática después de entrar en batalla."
+msgstr ""
+"Tiempo de espera en segundos antes de que comience la operación automática "
+"después de entrar en batalla."
 
 msgid "进入战斗后的初始等待时间"
 msgstr "Espera inicial tras entrar en combate"
@@ -1502,7 +1594,9 @@ msgstr ""
 "Usar asistencia de manufactura: tus amigos pueden asistir tu compartimento de fabricación, y puedes usar estas asistencias durante la producción."
 
 msgid "勾选后使用当前任务的独立战斗配置，否则使用全局战斗配置。"
-msgstr "Al activarlo, usa la configuración de combate independiente de esta tarea; de lo contrario, usa la configuración global."
+msgstr ""
+"Al activarlo, usa la configuración de combate independiente de esta tarea; "
+"de lo contrario, usa la configuración global."
 
 msgid "选择执行时机：任务最开始时最先执行，或任务最后执行。"
 msgstr "Elegir momento: ejecutar al inicio o al final de las tareas diarias."
@@ -1550,7 +1644,9 @@ msgstr ""
 "Rasca y gana: realizar el rasca y gana."
 
 msgid "逐个检测四个技能位置并输出模板匹配结果"
-msgstr "Detectar una a una las cuatro posiciones de habilidades y mostrar los resultados de coincidencia de plantillas"
+msgstr ""
+"Detectar una a una las cuatro posiciones de habilidades y mostrar los "
+"resultados de coincidencia de plantillas"
 
 msgid "通向武陵城送货点"
 msgstr "Hacia el punto de entrega de Wuling"
@@ -1565,13 +1661,17 @@ msgid "通过下拉框切换送货地区配置。"
 msgstr "Cambiar la región de entrega con el desplegable."
 
 msgid "配合任务计划程序提前启动游戏,防止游戏更新/弹公告导致的后续问题"
-msgstr "Iniciar antes el juego con el Programador de tareas para evitar problemas de actualización o avisos"
+msgstr ""
+"Iniciar antes el juego con el Programador de tareas para evitar problemas de"
+" actualización o avisos"
 
 msgid "配置选择"
 msgstr "Selección de Configuración"
 
 msgid "配置默认隐藏，选择后展开对应配置项。"
-msgstr "La configuración está oculta de forma predeterminada y se expande al seleccionarla."
+msgstr ""
+"La configuración está oculta de forma predeterminada y se expande al "
+"seleccionarla."
 
 msgid "醚质"
 msgstr "Aurileno"
@@ -1621,7 +1721,9 @@ msgid "首墩"
 msgstr "Piedra Marcadora"
 
 msgid "验证暂停任务期间活动计时是否冻结"
-msgstr "Verificar si el temporizador de actividad se congela durante la pausa de la tarea"
+msgstr ""
+"Verificar si el temporizador de actividad se congela durante la pausa de la "
+"tarea"
 
 msgid "骏卫"
 msgstr "Pogranichnik"
@@ -1694,37 +1796,52 @@ msgid "未找到培养舱，任务失败"
 msgstr "Bahía de cultivo no encontrada, tarea fallida"
 
 msgid "未找到全部收取、培养或停工字样，任务失败"
-msgstr "No se encontró texto de recolectar todo, cultivar o detenido, tarea fallida"
+msgstr ""
+"No se encontró texto de recolectar todo, cultivar o detenido, tarea fallida"
 
 msgid "未找到再次培养按钮，再次培养失败"
 msgstr "Botón de recultivar no encontrado, recultivo fallido"
 
 msgid "二次寻路失败：无法进入『能量淤积点』详情页"
-msgstr "Búsqueda de ruta fallida: No se puede entrar a detalles del Punto de Acumulación de Energía"
+msgstr ""
+"Búsqueda de ruta fallida: No se puede entrar a detalles del Punto de "
+"Acumulación de Energía"
 
 msgid "未找到『重新挑战』按钮，可能战斗尚未结束"
-msgstr "Botón de reintentar no encontrado, la batalla puede no haber terminado"
+msgstr ""
+"Botón de reintentar no encontrado, la batalla puede no haber terminado"
 
 msgid "点击随机按钮后等级未变化，可能未点中按钮"
-msgstr "Nivel sin cambiar después de hacer clic en botón aleatorio, puede no haberse presionado"
+msgstr ""
+"Nivel sin cambiar después de hacer clic en botón aleatorio, puede no haberse"
+" presionado"
 
 msgid "未能进入总览界面"
 msgstr "No se pudo entrar a la pantalla de resumen"
 
 msgid "未找到『进入演算』目标，可能尚未找到正确路线"
-msgstr "Objetivo de entrar a Operación no encontrado, puede que no se haya encontrado la ruta correcta"
+msgstr ""
+"Objetivo de entrar a Operación no encontrado, puede que no se haya "
+"encontrado la ruta correcta"
 
 msgid "未能进入『进入演算』目标，可能尚未找到正确路线"
-msgstr "No se pudo entrar al objetivo de Operación, puede que no se haya encontrado la ruta correcta"
+msgstr ""
+"No se pudo entrar al objetivo de Operación, puede que no se haya encontrado "
+"la ruta correcta"
 
 msgid "未找到『进入演算』按钮，可能还没到关卡入口页"
-msgstr "Botón de entrar a Operación no encontrado, puede que no esté en la página de entrada del nivel"
+msgstr ""
+"Botón de entrar a Operación no encontrado, puede que no esté en la página de"
+" entrada del nivel"
 
 msgid "未找到等级信息标志，可能没有进入演武集算关卡界面"
-msgstr "Indicador de nivel no encontrado, puede que no esté en la pantalla de nivel de Operación"
+msgstr ""
+"Indicador de nivel no encontrado, puede que no esté en la pantalla de nivel "
+"de Operación"
 
 msgid "传送失败，无法开始送礼任务"
-msgstr "Teletransporte fallido, no se puede iniciar la tarea de entrega de regalos"
+msgstr ""
+"Teletransporte fallido, no se puede iniciar la tarea de entrega de regalos"
 
 msgid "多次收礼失败，停止重试"
 msgstr "Recolección de regalos fallida múltiples veces, deteniendo reintentos"
@@ -1739,10 +1856,13 @@ msgid "送礼任务最终失败"
 msgstr "Tarea de entrega de regalos finalmente fallida"
 
 msgid "信用商店刷新失败：未找到确认按钮"
-msgstr "Actualización de tienda de crédito fallida: Botón de confirmar no encontrado"
+msgstr ""
+"Actualización de tienda de crédito fallida: Botón de confirmar no encontrado"
 
 msgid "传送到帝江号失败，无法执行帝江号整理"
-msgstr "Teletransporte a Dijiang fallido, no se puede realizar la organización de Dijiang"
+msgstr ""
+"Teletransporte a Dijiang fallido, no se puede realizar la organización de "
+"Dijiang"
 
 msgid "未能找到简易制作入口"
 msgstr "Entrada de creación simple no encontrada"
@@ -1757,7 +1877,8 @@ msgid "未找到制作按钮，任务失败"
 msgstr "Botón de fabricación no encontrado, tarea fallida"
 
 msgid "未完成任何转交运送委托操作"
-msgstr "No se completó ninguna operación de comisión de entrega por transferencia"
+msgstr ""
+"No se completó ninguna operación de comisión de entrega por transferencia"
 
 msgid "未找到日常奖励按钮，任务失败"
 msgstr "Botón de recompensa diaria no encontrado, tarea fallida"
@@ -1772,25 +1893,35 @@ msgid "未找到进入战斗按钮"
 msgstr "Botón de entrar a batalla no encontrado"
 
 msgid "未找到『演算』入口，可能界面未加载完全"
-msgstr "Entrada de Operación no encontrada, la pantalla puede no estar completamente cargada"
+msgstr ""
+"Entrada de Operación no encontrada, la pantalla puede no estar completamente"
+" cargada"
 
 msgid "未能找到传送点，无法继续"
 msgstr "Punto de teletransporte no encontrado, no se puede continuar"
 
-msgid "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
-msgstr "ID de dispositivo del mapa (dId) no disponible: fallo al generar automáticamente (se requiere Edge/Chrome y acceso a fp-it.portal101.cn); se reintentará en 30 segundos"
+msgid ""
+"地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），30 秒后将自动重试"
+msgstr ""
+"ID de dispositivo del mapa (dId) no disponible: fallo al generar "
+"automáticamente (se requiere Edge/Chrome y acceso a fp-it.portal101.cn); se "
+"reintentará en 30 segundos"
 
 msgid "HG 授权接口没有返回 oauth code"
 msgstr "La API de autorización HG no devolvió un código oauth"
 
 msgid "地图 cred 换取接口缺少 cred 或 token"
-msgstr "La respuesta de la API de intercambio de cred del mapa no incluye cred o token"
+msgstr ""
+"La respuesta de la API de intercambio de cred del mapa no incluye cred o "
+"token"
 
 msgid "Alt点击小地图测试"
 msgstr "Prueba de clic Alt en minimapa"
 
 msgid "验证 alt+点击小地图中心能否替代 send_key('m') 打开地图（后台输入可行性）"
-msgstr "Verifica que alt+clic en el centro del minimapa pueda reemplazar a send_key('m') para abrir el mapa (viabilidad de entrada en segundo plano)"
+msgstr ""
+"Verifica que alt+clic en el centro del minimapa pueda reemplazar a "
+"send_key('m') para abrir el mapa (viabilidad de entrada en segundo plano)"
 
 msgid "测试次数"
 msgstr "Número de pruebas"
@@ -1799,25 +1930,35 @@ msgid "测试前前置游戏"
 msgstr "Traer el juego al frente antes de la prueba"
 
 msgid "重复测试次数，每次先关闭地图再重新打开"
-msgstr "Número de repeticiones de la prueba; el mapa se cierra y se vuelve a abrir cada vez"
+msgstr ""
+"Número de repeticiones de la prueba; el mapa se cierra y se vuelve a abrir "
+"cada vez"
 
 msgid "勾选后每次测试前先把游戏窗口置前（对比前台/后台行为）"
-msgstr "Al marcar, trae la ventana del juego al frente antes de cada prueba (para comparar el comportamiento en primer plano/fondo)"
+msgstr ""
+"Al marcar, trae la ventana del juego al frente antes de cada prueba (para "
+"comparar el comportamiento en primer plano/fondo)"
 
 msgid "后台按键测试"
 msgstr "Prueba de teclas en segundo plano"
 
 msgid "验证后台模式下按键能否送达游戏（置顶+等待+按键+恢复），输出诊断日志"
-msgstr "Verifica si las teclas llegan al juego en modo segundo plano (primer plano+espera+tecla+restauración), mostrando registros de diagnóstico"
+msgstr ""
+"Verifica si las teclas llegan al juego en modo segundo plano (primer "
+"plano+espera+tecla+restauración), mostrando registros de diagnóstico"
 
 msgid "要测试的按键（仅支持 m 打开地图，结果可观察）"
-msgstr "Tecla a probar (solo se admite m para abrir el mapa, el resultado es observable)"
+msgstr ""
+"Tecla a probar (solo se admite m para abrir el mapa, el resultado es "
+"observable)"
 
 msgid "按键后等待结果出现的时间"
 msgstr "Tiempo de espera del resultado tras pulsar la tecla"
 
 msgid "勾选后只测试窗口置顶是否成功（不按键），用于隔离置顶问题"
-msgstr "Al marcar, solo prueba si la ventana pasa al primer plano (sin pulsar teclas), para aislar problemas de primer plano"
+msgstr ""
+"Al marcar, solo prueba si la ventana pasa al primer plano (sin pulsar "
+"teclas), para aislar problemas de primer plano"
 
 msgid "武库配额"
 msgstr "Boleto de Arsenal"
@@ -1829,307 +1970,355 @@ msgid "购买优先商品时信用不足"
 msgstr "Créditos insuficientes al comprar artículos prioritarios"
 
 msgid "Action List"
-msgstr ""
+msgstr "Lista de acciones"
 
 msgid "Auto"
-msgstr ""
+msgstr "Automático"
 
 msgid "Auto Resize Game Window"
-msgstr ""
+msgstr "Redimensionar automáticamente la ventana del juego"
 
 msgid "Auto Start Game When App Starts"
-msgstr ""
+msgstr "Iniciar el juego automáticamente al abrir la app"
 
 msgid "Basic Options"
-msgstr ""
+msgstr "Opciones básicas"
 
-msgid "Choose where notifications are delivered. Notifications always appear in the app; enable any additional providers you want to receive them."
+msgid ""
+"Choose where notifications are delivered. Notifications always appear in the"
+" app; enable any additional providers you want to receive them."
 msgstr ""
+"Elige dónde se envían las notificaciones. Siempre aparecen en la app; activa"
+" los proveedores adicionales que quieras recibir."
 
 msgid "Diagnosis"
-msgstr ""
+msgstr "Diagnóstico"
 
 msgid "Discord Notification"
-msgstr ""
+msgstr "Notificación de Discord"
 
 msgid "Discord Webhook"
-msgstr ""
+msgstr "Webhook de Discord"
 
 msgid "Discord channel webhook URL"
-msgstr ""
+msgstr "URL del webhook del canal de Discord"
 
 msgid "Email Config"
-msgstr ""
+msgstr "Configuración de correo"
 
 msgid "Enterprise WeChat Webhook Notification"
-msgstr ""
+msgstr "Notificación por webhook de WeCom (WeChat empresarial)"
 
 msgid "Enterprise WeChat Webhook URL"
-msgstr ""
+msgstr "URL del webhook de WeCom"
 
 msgid "Enterprise WeChat group bot webhook URL"
-msgstr ""
+msgstr "URL del webhook del bot de grupo de WeCom"
 
 msgid "Exact QQ contact nickname"
-msgstr ""
+msgstr "Apodo exacto del contacto de QQ"
 
 msgid "Exact WeChat contact nickname"
-msgstr ""
+msgstr "Apodo exacto del contacto de WeChat"
 
 msgid "Exit After Task"
-msgstr ""
+msgstr "Salir tras la tarea"
 
 msgid "Exit App when Game Exits"
-msgstr ""
+msgstr "Cerrar la app al salir del juego"
 
 msgid "Exit the Game and the App after Successfully Executing the Task"
-msgstr ""
+msgstr "Tras ejecutar la tarea con éxito, cierra el juego y la app"
 
 msgid "HotKey"
-msgstr ""
+msgstr "Tecla rápida"
 
-msgid "Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
+msgid ""
+"Increase Delay between Trigger Tasks to Reduce CPU/GPU Usage(Milliseconds)"
 msgstr ""
+"Aumenta el retardo entre tareas disparadoras para reducir el uso de CPU/GPU "
+"(milisegundos)"
 
-msgid "Key to test (only m is supported to open the map, result is observable)"
+msgid ""
+"Key to test (only m is supported to open the map, result is observable)"
 msgstr ""
+"Tecla a probar (solo se admite m para abrir el mapa y observar el resultado)"
 
 msgid "Kill Launcher After Start"
-msgstr ""
+msgstr "Cerrar el launcher tras iniciar"
 
 msgid "Launch with DX11"
-msgstr ""
+msgstr "Iniciar con DX11"
 
 msgid "Minimize Window to System Tray when Closing"
-msgstr ""
+msgstr "Minimizar a la bandeja del sistema al cerrar"
 
 msgid "Mute Game while in Background"
-msgstr ""
+msgstr "Silenciar el juego en segundo plano"
 
 msgid "No"
-msgstr ""
+msgstr "No"
 
 msgid "None"
-msgstr ""
+msgstr "Ninguno"
 
 msgid "Notification"
-msgstr ""
+msgstr "Notificación"
 
 msgid "Operation"
-msgstr ""
+msgstr "Operación"
 
 msgid "Performance Test"
-msgstr ""
+msgstr "Prueba de rendimiento"
 
 msgid "QQ Bot API App ID"
-msgstr ""
+msgstr "App ID de la API del bot de QQ"
 
 msgid "QQ Bot API Channel ID"
-msgstr ""
+msgstr "ID de canal de la API del bot de QQ"
 
 msgid "QQ Bot API Notification"
-msgstr ""
+msgstr "Notificación por API del bot de QQ"
 
 msgid "QQ Bot API Token"
-msgstr ""
+msgstr "Token de la API del bot de QQ"
 
 msgid "QQ Bot application ID"
-msgstr ""
+msgstr "ID de aplicación del bot de QQ"
 
 msgid "QQ Bot application token"
-msgstr ""
+msgstr "Token de aplicación del bot de QQ"
 
 msgid "QQ Desktop Nickname"
-msgstr ""
+msgstr "Apodo de QQ de escritorio"
 
 msgid "QQ Desktop Notification (Not Reliable)"
-msgstr ""
+msgstr "Notificación de QQ de escritorio (poco fiable)"
 
 msgid "QQ channel ID to receive notifications"
-msgstr ""
+msgstr "ID del canal de QQ para recibir notificaciones"
 
 msgid "Requires the local QQ client window to be open and running"
-msgstr ""
+msgstr "Requiere que la ventana del cliente de QQ esté abierta y en ejecución"
 
 msgid "Requires the local WeChat client window to be open and running"
 msgstr ""
+"Requiere que la ventana del cliente de WeChat esté abierta y en ejecución"
 
 msgid "SMTP 授权码/密码。请勿在公开仓库中提交真实授权码。"
 msgstr ""
+"Código/contraseña de autorización SMTP. Nunca suba códigos reales a "
+"repositorios públicos."
 
 msgid "SMTP 服务器地址，例如 smtp.qq.com / smtp.163.com / smtp.gmail.com"
 msgstr ""
+"Dirección del servidor SMTP, p. ej. smtp.qq.com / smtp.163.com / "
+"smtp.gmail.com"
 
 msgid "SMTP 端口。SSL 通常为 465，STARTTLS 通常为 587。"
-msgstr ""
+msgstr "Puerto SMTP. SSL suele ser 465; STARTTLS, 587."
 
 msgid "SMTP 连接与发送的超时时间（秒）。"
-msgstr ""
+msgstr "Timeout (segundos) de conexión y envío SMTP."
 
 msgid "SMTP服务器"
-msgstr ""
+msgstr "Servidor SMTP"
 
 msgid "SMTP端口"
-msgstr ""
+msgstr "Puerto SMTP"
 
 msgid "Send notifications through an Enterprise WeChat group bot"
-msgstr ""
+msgstr "Envía notificaciones mediante un bot de grupo de WeCom"
 
 msgid "Send notifications through the QQ Guild Bot API"
-msgstr ""
+msgstr "Envía notificaciones mediante la API del bot de guild de QQ"
 
 msgid "Send notifications through the Telegram Bot API"
-msgstr ""
+msgstr "Envía notificaciones mediante la API del bot de Telegram"
 
 msgid "Send notifications to a Discord webhook"
-msgstr ""
+msgstr "Envía notificaciones a un webhook de Discord"
 
 msgid "Show notifications using the Windows system tray"
-msgstr ""
+msgstr "Mostrar notificaciones con la bandeja del sistema de Windows"
 
 msgid "Start/Stop"
-msgstr ""
+msgstr "Iniciar/Detener"
 
 msgid "System Notification"
-msgstr ""
+msgstr "Notificación del sistema"
 
 msgid "Telegram Bot Token"
-msgstr ""
+msgstr "Token del bot de Telegram"
 
 msgid "Telegram Chat ID"
-msgstr ""
+msgstr "ID de chat de Telegram"
 
 msgid "Telegram Notification"
-msgstr ""
+msgstr "Notificación de Telegram"
 
 msgid "Telegram bot token from BotFather"
-msgstr ""
+msgstr "Token del bot de Telegram obtenido de BotFather"
 
 msgid "Telegram user, group, or channel chat ID"
-msgstr ""
+msgstr "ID de chat de usuario, grupo o canal de Telegram"
 
 msgid "Time to wait for the result after pressing the key"
-msgstr ""
+msgstr "Tiempo de espera del resultado tras pulsar la tecla"
 
 msgid "Trigger Interval"
-msgstr ""
+msgstr "Intervalo de disparo"
 
 msgid "Use DirectML"
-msgstr ""
+msgstr "Usar DirectML"
 
 msgid "Use GPU to Improve Performance"
-msgstr ""
+msgstr "Usar GPU para mejorar el rendimiento"
 
 msgid "Use the skill set when conditions are met"
-msgstr ""
+msgstr "Usar el conjunto de habilidades cuando se cumplan las condiciones"
 
 msgid "WeChat Desktop Nickname"
-msgstr ""
+msgstr "Apodo de WeChat de escritorio"
 
 msgid "WeChat Desktop Notification (Not Reliable)"
-msgstr ""
+msgstr "Notificación de WeChat de escritorio (poco fiable)"
 
-msgid "When checked, only tests whether the window comes to the foreground (no key press), to isolate foreground issues"
+msgid ""
+"When checked, only tests whether the window comes to the foreground (no key "
+"press), to isolate foreground issues"
 msgstr ""
+"Si se marca, solo prueba si la ventana pasa al frente (sin pulsar teclas), "
+"para aislar problemas de primer plano"
 
 msgid "W长按时间(秒)"
-msgstr ""
+msgstr "Duración de pulsación larga de W (s)"
 
 msgid "Yes"
-msgstr ""
+msgstr "Sí"
 
 msgid "一次标定多个位移量（如 200, 400, 800），每个位移正负各测一次，覆盖多量程；留空则只用 标定位移dx 单值"
 msgstr ""
+"Calibra varios desplazamientos a la vez (p. ej. 200, 400, 800); cada uno se "
+"mide en ambas direcciones para cubrir varios rangos. Vacío = usar solo el "
+"valor único de 标定位移dx"
 
 msgid "一次验证多个角度（如 30, 90, 180, -90），每个角度都实测；留空则只用 验证目标角度(度) 单角度"
 msgstr ""
+"Verifica varios ángulos a la vez (p. ej. 30, 90, 180, -90), midiendo cada "
+"uno. Vacío = verificar solo el ángulo único de 验证目标角度(度)"
 
 msgid "主题前缀"
-msgstr ""
+msgstr "Prefijo del asunto"
 
 msgid "仅测试置顶"
-msgstr ""
+msgstr "Solo prueba de primer plano"
 
 msgid "任务完成后是否将最终执行汇总通过邮件发送（收件人取“设置 → 邮件发送配置”中的默认收件人）。"
 msgstr ""
+"Enviar o no el resumen final por correo al terminar la tarea (destinatario: "
+"el predeterminado de \"Ajustes → Configuración de envío de correo\")."
 
 msgid "使用 SSL/TLS 加密连接发送邮件。"
-msgstr ""
+msgstr "Enviar correo con conexión cifrada SSL/TLS."
 
 msgid "发件邮箱"
-msgstr ""
+msgstr "Buzón remitente"
 
 msgid "发送时自动添加到邮件主题前面的前缀。"
-msgstr ""
+msgstr "Prefijo que se añade automáticamente antes del asunto al enviar."
 
 msgid "发送测试邮件"
-msgstr ""
+msgstr "Enviar correo de prueba"
 
 msgid "发送鼠标位移后、按 W 刷新前等待转向完成的时间；太短可能在转向未完成时就按 W 刷新朝向"
 msgstr ""
+"Tiempo de espera a que termine el giro tras enviar el desplazamiento y antes"
+" de pulsar W; si es muy corto puede refrescar el rumbo antes de completar el"
+" giro"
 
 msgid "后台模式启用"
-msgstr ""
+msgstr "Activar modo en segundo plano"
 
 msgid "后台模式启用：勾选后该任务强制后台模式（按键用完即恢复窗口，禁用移动/战斗/视角操作）；不勾选则跟随全局输入模式。"
 msgstr ""
+"Activar modo en segundo plano: al marcarlo, la tarea fuerza el modo en "
+"segundo plano (la ventana se restaura tras enviar las teclas; "
+"movimiento/combate/cámara desactivados). Si no, sigue el modo de entrada "
+"global."
 
 msgid "启用SSL"
-msgstr ""
+msgstr "Activar SSL"
 
 msgid "周常"
-msgstr ""
+msgstr "Semanal"
 
 msgid "填写完上方 SMTP/发件邮箱/授权码/收件人后，点击此按钮发送一封测试邮件。"
 msgstr ""
+"Tras rellenar SMTP/buzón remitente/código de autorización/destinatarios, "
+"pulse este botón para enviar un correo de prueba."
 
 msgid "实测角度与目标角度误差超过该值判 FAIL"
 msgstr ""
+"Marca FAIL cuando el error entre el ángulo medido y el objetivo supere este "
+"valor"
 
 msgid "左右方向成对验证"
-msgstr ""
+msgstr "Verificar izquierda/derecha en pares"
 
 msgid "开启后每个验证角度自动补上相反方向（如 44 会自动补 -44），左右两方向都实测；关闭则只测列表里的方向"
 msgstr ""
+"Activado, cada ángulo añade automáticamente su opuesto (p. ej. 44 añade -44)"
+" y se miden ambas direcciones; desactivado, solo se prueban los de la lista"
 
 msgid "手动yaw_per_pixel(留空用标定)"
-msgstr ""
+msgstr "yaw_per_pixel manual (vacío = usar calibración)"
 
 msgid "手动填标定系数可直接跳过标定只做验证；留空则先用本次标定结果"
 msgstr ""
+"Rellene los coeficientes manualmente para saltar la calibración y solo "
+"verificar; vacío = usar primero el resultado de esta calibración"
 
 msgid "按 W 刷新朝向时的长按时长，太短则朝向不刷新"
 msgstr ""
+"Duración de pulsación larga al pulsar W para actualizar el rumbo; si es muy "
+"corta no se actualiza"
 
 msgid "按键后等待(秒)"
-msgstr ""
+msgstr "Espera tras pulsar tecla (s)"
 
 msgid "授权码"
-msgstr ""
+msgstr "Código de autorización"
 
 msgid "收件人列表"
-msgstr ""
+msgstr "Lista de destinatarios"
 
 msgid "松开 W 后等待画面更新的时间"
-msgstr ""
+msgstr "Tiempo de espera de actualización de pantalla tras soltar W"
 
 msgid "标定位移列表(逗号分隔)"
-msgstr ""
+msgstr "Lista de desplazamientos de calibración (separados por comas)"
 
 msgid "标定采样次数，正负方向交替（仅单位移模式生效）"
 msgstr ""
+"Número de muestras de calibración, alternando direcciones positiva/negativa "
+"(solo en modo de desplazamiento único)"
 
 msgid "每个 sample 的测试方向位移量，正负交替测试（标定位移列表留空时生效）"
 msgstr ""
+"Desplazamiento por muestra de prueba, alternando positivo/negativo (aplica "
+"si la lista de desplazamientos de calibración está vacía)"
 
 msgid "每个目标角度的验证重复次数"
-msgstr ""
+msgstr "Repeticiones de verificación por ángulo objetivo"
 
 msgid "测试按键"
-msgstr ""
+msgstr "Tecla de prueba"
 
 msgid "用于登录 SMTP 的邮箱地址，同时也是发件人地址。"
 msgstr ""
+"Buzón usado para iniciar sesión en SMTP; también es la dirección del "
+"remitente."
 
 msgid ""
 "用户别名到邮箱的映射，每行一个，格式：别名=邮箱（或 别名:邮箱）。\n"
@@ -2138,72 +2327,85 @@ msgid ""
 "洁尔佩塔=gilberta@endfiled.com\n"
 "发送时可用 --to 洛茜 直接按别名发送。"
 msgstr ""
+"Mapeo de alias de usuario a buzones, uno por línea, formato: alias=buzón (o alias:buzón).\n"
+"Ejemplo:\n"
+"Rossi=rossi@endfiled.com\n"
+"Gilberta=gilberta@endfiled.com\n"
+"Al enviar, use --to Rossi para enviar directamente por alias."
 
 msgid "用标定系数反算位移并实测验证的角度；正值=向左转(鼠标左移)，负值=向右转，0=不验证"
 msgstr ""
+"Ángulo a verificar recalculando el desplazamiento con los coeficientes y "
+"midiéndolo; positivo = girar a la izquierda (ratón a la izq.), negativo = "
+"derecha, 0 = no verificar"
 
 msgid "调用发送工具但未指定 --to 时使用的默认收件人邮箱。"
 msgstr ""
+"Buzón predeterminado usado al llamar a la herramienta de envío sin --to."
 
 msgid "转向后等待(秒)"
-msgstr ""
+msgstr "Espera tras girar (s)"
 
 msgid "连接超时秒数"
-msgstr ""
+msgstr "Timeout de conexión (segundos)"
 
 msgid "邮件发送汇总"
-msgstr ""
+msgstr "Resumen por correo"
 
 msgid "邮件发送配置"
-msgstr ""
+msgstr "Configuración de envío de correo"
 
 msgid "重复测试次数"
-msgstr ""
+msgstr "Número de repeticiones de prueba"
 
 msgid "锁闭储藏箱"
-msgstr ""
+msgstr "Caja sellada"
 
 msgid "验证次数"
-msgstr ""
+msgstr "Número de verificaciones"
 
 msgid "验证目标角度(度)"
-msgstr ""
+msgstr "Ángulo objetivo a verificar (grados)"
 
 msgid "验证角度列表(逗号分隔)"
-msgstr ""
+msgstr "Lista de ángulos de verificación (separados por comas)"
 
 msgid "验证误差容差(度)"
-msgstr ""
+msgstr "Tolerancia de error de verificación (grados)"
 
 msgid "默认收件人"
-msgstr ""
+msgstr "Destinatario predeterminado"
 
 msgid "GPU Driver Warning"
-msgstr ""
+msgstr "Aviso de driver de GPU"
 
 msgid "Log"
-msgstr ""
+msgstr "Registro"
 
 msgid "{vendor} {feature} is enabled and may cause malfunctions!"
-msgstr ""
+msgstr "¡{vendor} {feature} está activado y puede causar fallos!"
 
 msgid "{} is not connected, please select the game window."
-msgstr ""
+msgstr "{} no está conectado; seleccione la ventana del juego."
 
 msgid "开始执行日常任务..."
-msgstr ""
+msgstr "Iniciando tareas diarias..."
 
 msgid "账号列表已保存"
-msgstr ""
+msgstr "Lista de cuentas guardada"
 
 msgid "（复用ID {reused}，新建ID {created}）"
-msgstr ""
+msgstr "(IDs reutilizados {reused}, IDs creados {created})"
 
 msgid "；账号名（手机号）是唯一ID，密码变化不影响ID，账号名变化会新建ID"
 msgstr ""
+"; El nombre de cuenta (teléfono) es el ID único; cambiar la contraseña no "
+"afecta al ID, cambiar el nombre crea uno nuevo"
 
 msgid "；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）"
 msgstr ""
+"; No hace falta contraseña en la página de cuentas; se elimina cualquier "
+"información de contraseña al guardar (solo se conservan los nombres)"
 
 msgid "执行情况汇总"
 msgstr " Resumen de ejecución"
@@ -2224,7 +2426,8 @@ msgid "--- 第 {round} 轮 (账号: {account}) ---"
 msgstr "--- Ronda {round} (Cuenta: {account}) ---"
 
 msgid "总任务数: {total} | 成功: {success} | 失败: {failed} | 跳过: {skipped}"
-msgstr "Total: {total} | Éxito: {success} | Fallo: {failed} | Omitido: {skipped}"
+msgstr ""
+"Total: {total} | Éxito: {success} | Fallo: {failed} | Omitido: {skipped}"
 
 msgid "成功任务:"
 msgstr "Tareas exitosas:"
