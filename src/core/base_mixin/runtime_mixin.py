@@ -332,6 +332,50 @@ class RuntimeMixin:
                                     template, match_method, screenshot, mask_function, frame, limit, target_height)
         return result
 
+    def find_one(self, feature_name=None, horizontal_variance=0, vertical_variance=0, threshold=0,
+                 use_gray_scale=False, box=None, canny_lower=0, canny_higher=0,
+                 frame_processor=None, template=None, mask_function=None, frame=None,
+                 match_method=cv2.TM_CCOEFF_NORMED, screenshot=False, limit=1,
+                 target_height=0, feature=None):
+        """
+        按当前分辨率映射后执行单个特征识别。
+
+        Args:
+            feature_name: 特征名称。
+            horizontal_variance: 水平容差。
+            vertical_variance: 垂直容差。
+            threshold: 匹配阈值。
+            use_gray_scale: 是否使用灰度图。
+            box: 识别框。
+            canny_lower: Canny 下限。
+            canny_higher: Canny 上限。
+            frame_processor: 额外帧处理器。
+            template: 自定义模板。
+            mask_function: 掩码函数。
+            frame: 输入帧。
+            match_method: 模板匹配方法。
+            screenshot: 是否截图后识别。
+            limit: 返回数量限制。
+            target_height: 目标缩放高度。
+            feature: feature_name 的兼容别名。
+
+        Returns:
+            Box: 置信度最高的匹配框；未匹配到时返回 None。
+        """
+        # Validate feature/feature_name mutual exclusivity
+        if feature is not None and feature_name is not None:
+            raise ValueError("只能提供 feature 或 feature_name 中的一个参数，不能同时提供两者")
+        if feature is None and feature_name is None:
+            raise ValueError("必须提供 feature 或 feature_name 中的一个参数")
+
+        # Resolve alias
+        if feature is not None and feature_name is None:
+            feature_name = feature
+        return super().find_one(feature_name, horizontal_variance, vertical_variance, threshold,
+                                use_gray_scale, box, canny_lower, canny_higher, frame_processor,
+                                template, mask_function, frame, match_method, screenshot,
+                                limit, target_height)
+
     def scroll(self, x: int, y: int, count: int) -> None:
         """按屏幕绝对像素坐标滚轮。
 
