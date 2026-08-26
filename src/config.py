@@ -153,7 +153,6 @@ config = {
         ["src.tasks.test.MouseRotationCalibration", "MouseRotationCalibration"],
         ["src.tasks.test.AltClickMinimapTest", "AltClickMinimapTest"],
         ["src.tasks.test.BackgroundKeyTest", "BackgroundKeyTest"],
-        ["src.tasks.test.I18nTemplateTestTask", "I18nTemplateTestTask"],
     ],
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],

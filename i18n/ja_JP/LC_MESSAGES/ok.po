@@ -2204,15 +2204,3 @@ msgstr ""
 
 msgid "；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）"
 msgstr ""
-
-msgid "i18n 模板实验"
-msgstr "i18n テンプレート実験"
-
-msgid "验证 gettext 模板与占位符的双层翻译行为"
-msgstr "gettext テンプレートとプレースホルダーの二層翻訳を検証"
-
-msgid "测试模板: {value}"
-msgstr "テストテンプレート: {value}"
-
-msgid "原始值"
-msgstr "元の値"
