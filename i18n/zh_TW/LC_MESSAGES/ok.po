@@ -2204,3 +2204,57 @@ msgstr ""
 
 msgid "；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）"
 msgstr ""
+
+msgid "执行情况汇总"
+msgstr "執行情況彙總"
+
+msgid "执行状态: {status}"
+msgstr "執行狀態: {status}"
+
+msgid "执行轮数: {rounds}"
+msgstr "執行輪數: {rounds}"
+
+msgid "异常信息:"
+msgstr "異常資訊:"
+
+msgid "当前正在执行的任务:"
+msgstr "當前正在執行的任務:"
+
+msgid "--- 第 {round} 轮 (账号: {account}) ---"
+msgstr "--- 第 {round} 輪 (帳號: {account}) ---"
+
+msgid "总任务数: {total} | 成功: {success} | 失败: {failed} | 跳过: {skipped}"
+msgstr "總任務數: {total} | 成功: {success} | 失敗: {failed} | 跳過: {skipped}"
+
+msgid "成功任务:"
+msgstr "成功任務:"
+
+msgid "跳过任务:"
+msgstr "跳過任務:"
+
+msgid "失败任务统计:"
+msgstr "失敗任務統計:"
+
+msgid "所有任务执行成功！"
+msgstr "所有任務執行成功！"
+
+msgid "第 {round} 轮: {tasks}"
+msgstr "第 {round} 輪: {tasks}"
+
+msgid "未开始"
+msgstr "未開始"
+
+msgid "运行中"
+msgstr "執行中"
+
+msgid "部分失败"
+msgstr "部分失敗"
+
+msgid "完成"
+msgstr "完成"
+
+msgid "完成后退出"
+msgstr "完成後退出"
+
+msgid "异常结束"
+msgstr "異常結束"

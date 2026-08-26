@@ -2203,3 +2203,57 @@ msgstr ""
 
 msgid "；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）"
 msgstr ""
+
+msgid "执行情况汇总"
+msgstr " 실행 요약"
+
+msgid "执行状态: {status}"
+msgstr "실행 상태: {status}"
+
+msgid "执行轮数: {rounds}"
+msgstr "실행 라운드 수: {rounds}"
+
+msgid "异常信息:"
+msgstr "예외 정보:"
+
+msgid "当前正在执行的任务:"
+msgstr "현재 실행 중인 작업:"
+
+msgid "--- 第 {round} 轮 (账号: {account}) ---"
+msgstr "--- {round}라운드 (계정: {account}) ---"
+
+msgid "总任务数: {total} | 成功: {success} | 失败: {failed} | 跳过: {skipped}"
+msgstr "전체 작업: {total} | 성공: {success} | 실패: {failed} | 건너뜀: {skipped}"
+
+msgid "成功任务:"
+msgstr "성공한 작업:"
+
+msgid "跳过任务:"
+msgstr "건너뛴 작업:"
+
+msgid "失败任务统计:"
+msgstr "실패 작업 통계:"
+
+msgid "所有任务执行成功！"
+msgstr "모든 작업이 성공적으로 완료되었습니다!"
+
+msgid "第 {round} 轮: {tasks}"
+msgstr "{round}라운드: {tasks}"
+
+msgid "未开始"
+msgstr "시작 안 함"
+
+msgid "运行中"
+msgstr "실행 중"
+
+msgid "部分失败"
+msgstr "일부 실패"
+
+msgid "完成"
+msgstr "완료"
+
+msgid "完成后退出"
+msgstr "완료 후 종료"
+
+msgid "异常结束"
+msgstr "비정상 종료"
