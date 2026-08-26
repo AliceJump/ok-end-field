@@ -157,7 +157,7 @@ class LoginMixin(BaseEfTask):
 
                 # 如果需要等待消失
                 if clicked_result and need_wait_disappear:
-                    self.log_info(f"点击并确认目标已消失: {match}")
+                    self.log_info(f"点击并确认目标已消失: {match_text}")
                     return clicked_result
 
                 self.sleep(1)
