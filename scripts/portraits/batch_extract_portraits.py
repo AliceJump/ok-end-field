@@ -152,15 +152,23 @@ def extract_portraits(screenshot, output_dir, filename):
     return True
 
 
+def _validate_path(path: Path) -> Path:
+    """验证并规范化路径，防止路径注入攻击"""
+    resolved = path.resolve()
+    # 检查路径是否包含危险字符
+    if ".." in path.parts or "~" in str(path):
+        raise ValueError(f"路径包含危险字符: {path}")
+    return resolved
+
 def main():
     if len(sys.argv) < 2:
         print("用法: python batch_extract_portraits.py <图片目录> [输出目录]")
         print("示例: python batch_extract_portraits.py health/ output/portraits/")
         sys.exit(1)
 
-    input_dir = Path(sys.argv[1])
+    input_dir = _validate_path(Path(sys.argv[1]))
     if len(sys.argv) >= 3:
-        output_dir = Path(sys.argv[2])
+        output_dir = _validate_path(Path(sys.argv[2]))
     else:
         output_dir = input_dir / "portraits"
 
