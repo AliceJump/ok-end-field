@@ -304,9 +304,12 @@ class GameFlowMixin:
             self._next_main_recovery_time = self.active_time()
             # 恢复阶段：循环两段检查直到总预算耗尽，第二段失败不中断恢复
             while self.active_time() - start < time_out:
+                remaining = time_out - (self.active_time() - start)
+                if remaining <= 0:
+                    break
                 result = self.wait_until(
                     lambda: main_suspected(esc),
-                    time_out=max(0.01, time_out - (self.active_time() - start)),
+                    time_out=remaining,
                     settle_time=0,
                     raise_if_not_found=False,
                 )
