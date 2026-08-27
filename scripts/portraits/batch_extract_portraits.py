@@ -154,7 +154,10 @@ def extract_portraits(screenshot, output_dir, filename):
 
 def _validate_path(path: Path) -> Path:
     """验证并规范化路径，防止路径注入攻击"""
-    resolved = path.resolve()
+    try:
+        resolved = path.resolve()
+    except RuntimeError as e:
+        raise ValueError(f"路径解析失败（可能存在循环符号链接）: {path}") from e
     # 检查路径是否包含危险字符
     if ".." in path.parts or "~" in str(path):
         raise ValueError(f"路径包含危险字符: {path}")
@@ -172,6 +175,10 @@ def main():
             output_dir = _validate_path(Path(sys.argv[2]))
         else:
             output_dir = input_dir / "portraits"
+
+        if input_dir == output_dir:
+            print("错误: 输入目录和输出目录不能相同")
+            sys.exit(1)
 
         if not input_dir.is_dir():
             print(f"错误: 输入路径不是目录: {input_dir}")
