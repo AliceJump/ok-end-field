@@ -6,14 +6,14 @@ from unittest.mock import Mock, patch
 from src.tasks.daily.daily_regional_runner import DailyRegionalRunner
 
 
-def _make_task(config_options, buy_sell_result=True, sold_result=False,
+def _make_task(config_options, buy_sell_result=True, went_friend_boat_result=False,
                after_buy_called=True, exchange_result=True, buy_staple_result=True,
                to_model_area_result=True):
     """构造一个带 mock 的 task，用于 DailyRegionalRunner 分支测试。
 
     after_buy_called: buy_sell 是否真的触发 after_buy 回调
                       （为 False 时模拟地区未启用/未找到货物/缺买卖价跳过的场景）
-    sold_result: buy_sell 是否报告「真正卖出过货物」。
+    went_friend_boat_result: buy_sell 是否报告「已前往好友帝江号」。
     """
     task = SimpleNamespace()
     task.config = SimpleNamespace(get=lambda key, default=None: config_options)
@@ -28,7 +28,7 @@ def _make_task(config_options, buy_sell_result=True, sold_result=False,
     def buy_sell_impl(target_areas=None, keep_area_context=False, after_buy=None):
         if after_buy is not None and after_buy_called and target_areas:
             after_buy(target_areas[0])
-        return buy_sell_result, sold_result
+        return buy_sell_result, went_friend_boat_result
 
     task.daily_trade = SimpleNamespace(buy_sell=Mock(side_effect=buy_sell_impl))
     return task
@@ -92,23 +92,23 @@ class TestDailyRegionalRunner(unittest.TestCase):
         logged = " ".join(call.args[0] for call in task.log_info.call_args_list)
         self.assertIn("买卖货失败", logged)
 
-    # ── 真正卖出过货物 → 直接回主界面、跳过 safe_back、继续下一区域 ──
-    def test_trade_sold_ensure_main_skips_safe_back_and_continues(self):
-        task = _make_task(["买卖货"], sold_result=True)
+    # ── 已前往好友帝江号 → 直接回主界面、跳过 safe_back、继续下一区域 ──
+    def test_trade_went_friend_boat_ensure_main_skips_safe_back_and_continues(self):
+        task = _make_task(["买卖货"], went_friend_boat_result=True)
         result = self.run_runner(task)
 
         self.assertTrue(result)
-        # 每个区域卖出后都直接 ensure_main，不再走 safe_back 逐层返回
+        # 每个区域前往好友船后都直接 ensure_main，不再走 safe_back 逐层返回
         self.assertEqual(task.ensure_main.call_count, 2)
         task.safe_back.assert_not_called()
         # 继续处理下一区域
         self.assertEqual(task.daily_trade.buy_sell.call_count, 2)
         logged = " ".join(call.args[0] for call in task.log_info.call_args_list)
-        self.assertIn("已实际卖出货物", logged)
+        self.assertIn("已前往好友帝江号", logged)
 
-    # ── 未卖出时仍走原 safe_back 返回路径，不调用 ensure_main ──
-    def test_trade_not_sold_keeps_safe_back_path(self):
-        task = _make_task(["买卖货"], sold_result=False)
+    # ── 未前往好友船时仍走原 safe_back 返回路径，不调用 ensure_main ──
+    def test_trade_not_went_friend_boat_keeps_safe_back_path(self):
+        task = _make_task(["买卖货"], went_friend_boat_result=False)
         result = self.run_runner(task)
 
         self.assertTrue(result)
