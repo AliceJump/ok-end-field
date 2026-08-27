@@ -470,7 +470,7 @@ class NavigationMixin(SearchMixin):
                     result.x + result.width // 2,
                     result.y + result.height // 2,
                 )
-                # 屏幕中心（原 RuntimeMixin.screen_center 已移除，直接内联计算）
+                # 屏幕中心（与 RuntimeMixin.screen_center 一致的内联计算）
                 screen_center_pos = (int(self.width / 2), int(self.height / 2))
                 last_target = result
                 last_target_fail_count = 0

@@ -969,6 +969,15 @@ class RuntimeMixin:
         """
         self._dodge_with_direction('w', pre_hold=pre_hold, dodge_down_time=dodge_down_time, after_sleep=after_sleep)
 
+    def screen_center(self) -> tuple[int, int]:
+        """
+        返回当前屏幕中心点坐标。
+
+        Returns:
+            tuple[int, int]: 屏幕中心点坐标。
+        """
+        return int(self.width / 2), int(self.height / 2)
+
     def move_to_target_once(self, ocr_obj, max_step=100, min_step=20, slow_radius=200, deadzone=4):
         """
         移动一次以逼近 OCR 目标。
