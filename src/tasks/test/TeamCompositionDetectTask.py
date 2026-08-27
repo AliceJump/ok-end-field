@@ -129,7 +129,9 @@ class TeamCompositionDetectTask(BaseEfTask):
                 best_pos = max_loc
         hist = 0.0
         phash_sim = 0.0
-        if best_pos is not None:
+        if best_pos is None:
+            self.log_debug(f"模板过小, 跳过全部尺度: template={t_w}x{t_h}, portrait={p_w}x{p_h}")
+        else:
             tw = int(p_w * best_scale)
             th = int(p_h * best_scale)
             region = template[best_pos[1]:best_pos[1] + th, best_pos[0]:best_pos[0] + tw]
@@ -140,9 +142,9 @@ class TeamCompositionDetectTask(BaseEfTask):
             phash_sim = 1.0 - np.count_nonzero(p1 != p2) / p1.size
         return (best + hist + phash_sim) / 3
 
-    def _identify(self, portrait, templates, names):
+    def _identify(self, portrait, templates):
         best_name = None
-        best_score = 0.0
+        best_score = float("-inf")
         for label, template in templates.items():
             score = self._match_portrait(portrait, template)
             if score > best_score:
@@ -150,7 +152,7 @@ class TeamCompositionDetectTask(BaseEfTask):
                 best_name = label
         if best_name:
             best_name = best_name.replace("_battle_icon", "")
-        return best_name, best_score
+        return best_name, max(best_score, 0.0)
 
     def run(self):
         interval = max(0.1, float(self.config.get("扫描间隔(秒)", 0.5) or 0.5))
@@ -171,8 +173,8 @@ class TeamCompositionDetectTask(BaseEfTask):
                 portraits = self._detect_battle_portraits(frame)
                 detect_count += 1
                 team = []
-                for i, p in enumerate(portraits):
-                    label, score = self._identify(p, contacts, char_names)
+                for p in portraits:
+                    label, score = self._identify(p, contacts)
                     name = char_names.get(label, label)
                     if score < min_score:
                         team.append(self.tr("未知({score:.2f})").format(score=score))

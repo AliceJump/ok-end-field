@@ -111,7 +111,7 @@ def extract_portraits(screenshot, output_dir, filename):
     diffs = [x_coords[i+1] - x_coords[i] for i in range(len(x_coords)-1)]
 
     if not all(abs(d - diffs[0]) < 0.005 for d in diffs):
-        print(f"  警告: 血条x坐标不符合等差数列")
+        print("  警告: 血条x坐标不符合等差数列")
         return False
 
     # 根据血条位置确定头像位置
@@ -190,17 +190,17 @@ def main():
 
         screenshot = cv2.imread(str(image_file))
         if screenshot is None:
-            print(f"  错误: 无法加载图片")
+            print("  错误: 无法加载图片")
             fail_count += 1
             continue
 
         filename = image_file.stem
         if extract_portraits(screenshot, output_dir, filename):
             success_count += 1
-            print(f"  成功: 提取4个头像")
+            print("  成功: 提取4个头像")
         else:
             fail_count += 1
-            print(f"  失败: 血条检测异常")
+            print("  失败: 血条检测异常")
 
     print()
     print(f"完成: 成功 {success_count} 个, 失败 {fail_count} 个")
