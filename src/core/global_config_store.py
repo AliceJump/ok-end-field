@@ -232,6 +232,7 @@ def _migrate_legacy_zip_line_account_overrides() -> None:
     from src.tasks.account.account_scope_store import update_overrides
 
     def apply(data):
+        """Apply migration to account override data."""
         accounts = data.get("accounts") or {}
         if not isinstance(accounts, dict):
             return data
@@ -408,6 +409,7 @@ def migrate_task_zip_line_values_to_global(task_class_name: str) -> None:
 
 
 def get_global_config(name: str) -> Config:
+    """Get a global configuration object by name, loading it if not yet cached."""
     with _LOCK:
         option = _OPTIONS.get(name)
         if option is None:
@@ -427,6 +429,7 @@ def get_global_config(name: str) -> Config:
 
 
 def get_all_visible_configs():
+    """Get all visible (non-internal) global configurations as a sorted list."""
     configs = []
     for option in GLOBAL_CONFIG_OPTIONS:
         if not option.name.startswith("_"):

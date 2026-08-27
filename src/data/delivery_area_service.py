@@ -38,6 +38,7 @@ def _get_area_config(area_name: str) -> dict:
 
 
 def get_delivery_locations(area_name: str, lang_accessor=None) -> list[str]:
+    """Get the list of delivery locations for a specific area, optionally localized."""
     locations = _get_area_config(area_name)["delivery_locations"]
     if lang_accessor is None:
         return list(locations)
@@ -45,6 +46,7 @@ def get_delivery_locations(area_name: str, lang_accessor=None) -> list[str]:
 
 
 def get_delivery_targets(area_name: str, lang_accessor=None) -> list[str]:
+    """Get the list of all delivery targets across all locations in an area, optionally localized."""
     area_config = _get_area_config(area_name)
     targets_by_location = area_config["delivery_targets_by_location"]
     targets = []
@@ -56,6 +58,7 @@ def get_delivery_targets(area_name: str, lang_accessor=None) -> list[str]:
 
 
 def get_ocr_priority_locations(area_name: str, lang_accessor=None) -> list[str]:
+    """Get the list of priority locations for OCR scanning in an area, optionally localized."""
     locations = _get_area_config(area_name)["ocr_priority_locations"]
     if lang_accessor is None:
         return list(locations)
@@ -63,6 +66,7 @@ def get_ocr_priority_locations(area_name: str, lang_accessor=None) -> list[str]:
 
 
 def get_full_cycle_targets(area_name: str, location_name: str, lang_accessor=None) -> list[str]:
+    """Get the full cycle delivery targets for a specific location within an area, optionally localized."""
     targets = _get_area_config(area_name)["delivery_targets_by_location"].get(location_name, [])
     if lang_accessor is None:
         return list(targets)
@@ -70,6 +74,7 @@ def get_full_cycle_targets(area_name: str, location_name: str, lang_accessor=Non
 
 
 def extract_delivery_location(text: str, area_name: str, lang_accessor=None) -> str | None:
+    """Extract the canonical location name from text by matching against known locations."""
     canonical_locations = get_delivery_locations(area_name)
     localized_locations = get_delivery_locations(area_name, lang_accessor=lang_accessor)
     for canonical_name, localized_name in zip(canonical_locations, localized_locations):
@@ -86,6 +91,7 @@ def get_transfer_search_area(location_name: str | None, area_name: str) -> dict 
 
 
 def get_task_model_area(area_name: str, lang_accessor=None) -> str:
+    """Get the task model area name for an area, optionally localized."""
     task_model_area = _get_area_config(area_name).get("task_model_area", area_name)
     if lang_accessor is None:
         return task_model_area
@@ -111,12 +117,14 @@ def _normalize_matcher_to_pattern(matcher, fallback_text: str) -> re.Pattern:
 
 
 def get_delivery_target_ocr_pattern(_area_name: str, target_name: str, lang_accessor=None) -> re.Pattern:
+    """Get the compiled OCR pattern for matching a delivery target, optionally localized."""
     if lang_accessor is not None:
         return _normalize_matcher_to_pattern(get_world_map_matcher(lang_accessor, target_name), target_name)
     return compile_ocr_pattern(target_name)
 
 
 def get_accept_feature_labels(area_name: str, target_ticket_num: str) -> list[str]:
+    """Get the feature labels for accepting delivery orders in an area with a target ticket price."""
     area_code = _get_area_config(area_name).get("feature_label_area_code")
     price_code = format_delivery_ticket_price_code(target_ticket_num)
     if not area_code or not price_code:
