@@ -71,9 +71,13 @@ class SearchMixin(BaseEfTask):
             for key in keys:
                 self.move_keys(key, duration=duration)
                 count += 1
+                if start is not None and self.active_time() - start >= time_out:
+                    self.move_keys(opposite[key], duration=duration)  # 超时前归正回原位
+                    return None
                 if result := check_func():  # 命中时停在发现位置
+                    if start is not None and self.active_time() - start >= time_out:
+                        self.move_keys(opposite[key], duration=duration)
+                        return None
                     return result
                 self.move_keys(opposite[key], duration=duration)  # 未命中反向归正回原位
-                if start is not None and self.active_time() - start >= time_out:
-                    return None
         return None
