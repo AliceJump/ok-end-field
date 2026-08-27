@@ -242,6 +242,16 @@ class GameFlowMixin:
         """
         确保回到主界面（游戏世界）。
 
+        采用两段稳定检查确认主界面：
+        1. 第一段（疑似确认）：检测到一帧疑似主界面（Esc 图标）后，再确认一帧，
+           过滤加载/返回动画中的单帧闪屏误检；
+        2. 第二段（最终确认）：仅在第一段通过后执行，主界面状态须持续 2 秒。
+
+        两段检查共享同一时间预算（time_out），确保总耗时不超过指定超时时间。
+        恢复阶段（按 ESC 返回）在总预算内循环执行两段检查：第二段未通过时
+        回到第一段继续恢复等待，直到总超时，避免主界面刚出现时图标未稳定
+        匹配导致提前失败。
+
         Args:
             esc: 是否在失败时执行返回键处理。
             time_out: 等待主界面的总超时时间。
@@ -258,21 +268,58 @@ class GameFlowMixin:
         start = self.active_time()
         observe_time = min(2.0, time_out)
 
-        # Give loading and return animations a chance to finish before recovery input.
-        result = self.wait_until(
-            lambda: self.is_main(esc=False),
-            time_out=observe_time,
-            settle_time=1.0,
-            raise_if_not_found=False,
-        )
-        if not result and self.active_time() - start < time_out:
-            self._next_main_recovery_time = self.active_time()
-            result = self.wait_until(
-                lambda: self.is_main(esc=esc),
-                time_out=max(0.01, time_out - (self.active_time() - start)),
-                settle_time=1.0,
+        def main_suspected(use_esc):
+            # 第一段稳定检查：疑似主界面（Esc）连续两帧出现才算通过
+            if not self.is_main(esc=use_esc):
+                return False
+            return self.is_main(esc=use_esc)
+
+        def main_stable(use_esc):
+            # 第二段稳定检查（最终确认）：仅在第一段通过后执行，状态须持续 2 秒
+            # 使用剩余时间预算，避免超出总 time_out
+            remaining = time_out - (self.active_time() - start)
+            if remaining <= 0:
+                return False
+            # 理想稳定时间为 2 秒，但不超过剩余预算
+            stable_time_out = min(3.0, remaining)
+            stable_settle = min(2.0, remaining)
+            return self.wait_until(
+                lambda: self.is_main(esc=use_esc),
+                time_out=stable_time_out,
+                settle_time=stable_settle,
                 raise_if_not_found=False,
             )
+
+        # Give loading and return animations a chance to finish before recovery input.
+        result = self.wait_until(
+            lambda: main_suspected(False),
+            time_out=observe_time,
+            settle_time=0,
+            raise_if_not_found=False,
+        )
+        if result:
+            result = main_stable(False)
+
+        if not result and self.active_time() - start < time_out:
+            self._next_main_recovery_time = self.active_time()
+            # 恢复阶段：循环两段检查直到总预算耗尽，第二段失败不中断恢复
+            while self.active_time() - start < time_out:
+                remaining = time_out - (self.active_time() - start)
+                if remaining <= 0:
+                    break
+                result = self.wait_until(
+                    lambda: main_suspected(esc),
+                    time_out=remaining,
+                    settle_time=0,
+                    raise_if_not_found=False,
+                )
+                if not result:
+                    break
+                # 最终确认只观察不按键，避免返回键干扰刚出现的稳定状态
+                result = main_stable(False)
+                if result:
+                    break
+                self.log_info("主界面第二段稳定检查未通过，继续恢复等待")
 
         if not result:
             raise Exception("Please start in game world and in team!")
