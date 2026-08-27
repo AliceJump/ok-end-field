@@ -37,13 +37,19 @@ class DailyRegionalRunner:
                 # 因此用 _buy_ran 标记，回调未执行时单独补一次买物资。
                 # 任一步骤失败均只记录日志，继续处理下一地区。
                 self._buy_ran = False
-                trade_ok = self._task.daily_trade.buy_sell(
+                trade_ok, sold_any = self._task.daily_trade.buy_sell(
                     target_areas=[area],
                     keep_area_context=True,
                     after_buy=self._buy_staple_after_trade if enabled_buy else None,
                 )
                 if not trade_ok:
                     self.log_info(self.tr("买卖货失败: {area}").format(area=self.tr(area)))
+                if sold_any:
+                    # 真正卖出过货物：角色已在好友船/野外，界面远离地区建设总览，
+                    # 逐层返回难以退回。直接回主界面结束本区域建设，继续下一区域。
+                    self._task.ensure_main()
+                    self.log_info(self.tr("已实际卖出货物，结束{area}地区建设").format(area=self.tr(area)))
+                    continue
                 if enabled_buy and not self._buy_ran:
                     self.log_info("买卖货未执行买物资回调，单独执行买物资")
                     self._buy_staple_in_area(area)

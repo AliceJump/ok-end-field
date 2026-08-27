@@ -301,7 +301,14 @@ class DailyTradeFeature:
         return result
 
     def buy_sell(self, target_areas=None, keep_area_context=False, after_buy=None):
+        """买卖货主流程。
+
+        Returns:
+            tuple[bool, bool]: (是否未发生导航失败, 是否真正卖出过货物——
+                仅当加号成功、出售确认按钮点击成功且弹窗关闭后才为 True)。
+        """
         navigation_failed = False
+        sold_any = False
         for area in target_areas or areas_list:
             if not self.config.get(area, False):
                 self.log_info(self.tr("跳过{area}，因为配置中未启用").format(area=self.tr(area)))
@@ -367,7 +374,7 @@ class DailyTradeFeature:
                             self.log_info(
                                 "等待返回 '地区建设' 界面超时，结束买卖货任务"
                             )
-                            return False
+                            return False, sold_any
                         self.back()
                     self.click(buy_good.name_box)
                     self.wait_ui_stable(refresh_interval=1)
@@ -411,7 +418,7 @@ class DailyTradeFeature:
                 ):
                     if self.active_time() > back_to_area_deadline:
                         self.log_info("等待返回 '地区建设' 界面超时，结束买卖货任务")
-                        return False
+                        return False, sold_any
                     self.back()
                 if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:]), log=True) or
                         self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]), log=True)):
@@ -444,7 +451,7 @@ class DailyTradeFeature:
                     continue
                 if not self.ensure_in_friend_boat():
                     self.log_info("未进入好友船")
-                    return False
+                    return False, sold_any
                 self.navigate_to_friend_exchange()
                 self.wait_click_ocr(match=get_world_map_matcher(self.lang, area), box=self.box.top)
                 if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:])) or
@@ -453,12 +460,15 @@ class DailyTradeFeature:
                     continue
                 self.wait_ui_stable(refresh_interval=1)
                 if self.plus_max():
-                    self.wait_click_ocr(
+                    # 仅当出售确认按钮真正点击成功且弹窗关闭，才算真正卖出
+                    sold_confirmed = self.wait_click_ocr(
                         match=self.lang.daily_trade_mixin.k_b84e4cb0,
                         box=self.box.bottom_right,
                     )
                     self.wait_pop_up()
+                    if sold_confirmed:
+                        sold_any = True
                 else:
                     self.log_info("未找到加号按钮，无法出售")
 
-        return not navigation_failed
+        return not navigation_failed, sold_any
