@@ -50,11 +50,11 @@ class SearchMixin(BaseEfTask):
         keys=("w", "a", "s", "d"),
         time_out: float = -1,
     ):
-        """WASD 轻微移动搜索，先检测再移动，命中即返回其结果。
+        """WASD 轻微移动搜索，每次方向尝试移动后检测，未命中则反向归正回原位。
 
         Args:
             check_func: 无参回调，返回真值表示命中（可直接返回检测结果）。
-            passes: 各方向往复轮数，默认 3 轮；None 表示不限制轮数（配合 time_out 使用）。
+            passes: 各方向尝试轮数，默认 3 轮；None 表示不限制轮数（配合 time_out 使用）。
             duration: 每次按移动键的持续秒数。
             keys: 依次尝试的移动键，默认 W/A/S/D 前后左右。
             time_out: 总搜索时限（秒），<=0 表示不限制。
@@ -62,15 +62,18 @@ class SearchMixin(BaseEfTask):
         Returns:
             check_func 的命中结果；未命中返回 None。
         """
+        opposite = {"w": "s", "s": "w", "a": "d", "d": "a"}
         start = self.active_time() if time_out > 0 else None
         count = 0
+        if result := check_func():  # 先原地检测一次
+            return result
         while passes is None or count < passes * len(keys):
             for key in keys:
-                result = check_func()
-                if result:
-                    return result
+                self.move_keys(key, duration=duration)
                 count += 1
+                if result := check_func():  # 命中时停在发现位置
+                    return result
+                self.move_keys(opposite[key], duration=duration)  # 未命中反向归正回原位
                 if start is not None and self.active_time() - start >= time_out:
                     return None
-                self.move_keys(key, duration=duration)
         return None

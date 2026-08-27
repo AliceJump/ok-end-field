@@ -209,6 +209,7 @@ class ZipLineMixin(NavigationMixin):
                     ),
                     passes=1,
                     duration=0.1,
+                    keys=("s", "w", "a", "d"),  # 后退优先：落点常越过滑索架，后退最容易重新看到
                 )
                 if result:
                     self.press_key("v", after_sleep=1)
