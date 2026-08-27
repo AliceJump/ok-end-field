@@ -65,7 +65,11 @@ class SearchMixin(BaseEfTask):
         opposite = {"w": "s", "s": "w", "a": "d", "d": "a"}
         start = self.active_time() if time_out > 0 else None
         count = 0
-        if result := check_func():  # 先原地检测一次
+        result = check_func()  # 先原地检测一次
+        # 首次检测也可能跨过截止线：原地路径无需归正，超时直接返回
+        if start is not None and self.active_time() - start >= time_out:
+            return None
+        if result:
             return result
         while passes is None or count < passes * len(keys):
             for key in keys:
@@ -75,7 +79,7 @@ class SearchMixin(BaseEfTask):
                     self.move_keys(opposite[key], duration=duration)  # 超时前归正回原位
                     return None
                 result = check_func()
-                # 无论命中与否，检测后立即校验截止时间：check_func 自身耗时可能跨过截止线
+                # 无论命中与否, 检测后立即校验截止时间: check_func 自身耗时可能跨过截止线
                 if start is not None and self.active_time() - start >= time_out:
                     self.move_keys(opposite[key], duration=duration)  # 超时先归正回原位
                     return None
