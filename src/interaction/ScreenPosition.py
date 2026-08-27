@@ -12,24 +12,24 @@ class ScreenPosition:
     """
 
     def __init__(self, parent):
-        self.parent = parent  # parent 必须有 .width 和 .height
+        self.parent = parent  # parent 必须有 .screen_center（经 .width/.height 计算）
 
     # ---------- 固定位置 ----------
     @property
     def top_left(self) -> Box:
-        return Box(x=0, y=0, to_x=self.parent.width // 2, to_y=self.parent.height // 2)
+        return Box(x=0, y=0, to_x=self.parent.screen_center()[0], to_y=self.parent.screen_center()[1])
 
     @property
     def top_right(self) -> Box:
-        return Box(x=self.parent.width // 2, y=0, to_x=self.parent.width, to_y=self.parent.height // 2)
+        return Box(x=self.parent.screen_center()[0], y=0, to_x=self.parent.width, to_y=self.parent.screen_center()[1])
 
     @property
     def bottom_left(self) -> Box:
-        return Box(x=0, y=self.parent.height // 2, to_x=self.parent.width // 2, to_y=self.parent.height)
+        return Box(x=0, y=self.parent.screen_center()[1], to_x=self.parent.screen_center()[0], to_y=self.parent.height)
 
     @property
     def bottom_right(self) -> Box:
-        return Box(x=self.parent.width // 2, y=self.parent.height // 2, to_x=self.parent.width, to_y=self.parent.height)
+        return Box(x=self.parent.screen_center()[0], y=self.parent.screen_center()[1], to_x=self.parent.width, to_y=self.parent.height)
 
     @property
     def bottom_right_quarter(self) -> Box:
@@ -37,19 +37,19 @@ class ScreenPosition:
 
     @property
     def left(self) -> Box:
-        return Box(x=0, y=0, to_x=self.parent.width // 2, to_y=self.parent.height)
+        return Box(x=0, y=0, to_x=self.parent.screen_center()[0], to_y=self.parent.height)
 
     @property
     def right(self) -> Box:
-        return Box(x=self.parent.width // 2, y=0, to_x=self.parent.width, to_y=self.parent.height)
+        return Box(x=self.parent.screen_center()[0], y=0, to_x=self.parent.width, to_y=self.parent.height)
 
     @property
     def top(self) -> Box:
-        return Box(x=0, y=0, to_x=self.parent.width, to_y=self.parent.height // 2)
+        return Box(x=0, y=0, to_x=self.parent.width, to_y=self.parent.screen_center()[1])
 
     @property
     def bottom(self) -> Box:
-        return Box(x=0, y=self.parent.height // 2, to_x=self.parent.width, to_y=self.parent.height)
+        return Box(x=0, y=self.parent.screen_center()[1], to_x=self.parent.width, to_y=self.parent.height)
 
     @property
     def center(self) -> Box:
