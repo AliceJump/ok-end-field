@@ -61,7 +61,7 @@ GROUND_TRUTH = {
         3: 'snowshine_contact',  # 用户确认: 昼雪
         4: 'catcher_contact',    # 用户确认: 卡契尔
     },
-    '42.png': {
+    '48.png': {
         1: 'antal_contact',      # 用户确认: 安塔尔
         2: 'fluorite_contact',   # 用户确认: 萤石
         3: 'akekuri_contact',    # 用户确认: 秋栗
