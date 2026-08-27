@@ -10,10 +10,13 @@ from src.tasks.mixin.map_mixin import MapMixin
 
 
 class _EnsureMainHarness(GameFlowMixin):
-    def __init__(self, wait_results):
+    def __init__(self, wait_results, simulated_time=None):
         self.wait_results = iter(wait_results)
         self.esc_checks = []
         self.sleeps = []
+        self.simulated_time = simulated_time or [1]
+        self.time_index = 0
+        self.wait_calls = []
 
     def tr(self, message, **kwargs):
         return message
@@ -25,14 +28,19 @@ class _EnsureMainHarness(GameFlowMixin):
         pass
 
     def active_time(self):
-        return 1
+        if self.time_index < len(self.simulated_time):
+            return self.simulated_time[self.time_index]
+        return self.simulated_time[-1]
 
     def is_main(self, esc=False, need_active=True):
         self.esc_checks.append(esc)
         return False
 
     def wait_until(self, condition, **kwargs):
+        self.wait_calls.append(kwargs)
         condition()
+        if self.time_index + 1 < len(self.simulated_time):
+            self.time_index += 1
         return next(self.wait_results)
 
     def sleep(self, timeout):
@@ -227,6 +235,55 @@ class TestStateDrivenWaits(unittest.TestCase):
         # 第一段疑似通过但第二段 2 秒稳定失败 → 进入恢复阶段重新两段确认
         self.assertEqual(task.esc_checks, [False, False, True, True])
         self.assertEqual(task.sleeps, [])
+
+    def test_ensure_main_short_timeout_caps_phase_b(self):
+        # 测试短超时场景（time_out=1.0）：相位B的超时时间应受限于剩余时间
+        # 模拟时间：start=0, 相位A后=0.5, 相位B调用时剩余0.5秒
+        task = _EnsureMainHarness([True, True], simulated_time=[0, 0.5, 0.5])
+
+        task.ensure_main(time_out=1.0)
+
+        # 验证第二个 wait_until (相位B) 使用了受限的超时时间
+        self.assertEqual(len(task.wait_calls), 2)
+        # 相位A: time_out=min(2.0, 1.0)=1.0
+        self.assertEqual(task.wait_calls[0]["time_out"], 1.0)
+        # 相位B: time_out=min(3.0, 0.5)=0.5, settle_time=min(2.0, 0.5)=0.5
+        self.assertLessEqual(task.wait_calls[1]["time_out"], 0.5)
+        self.assertLessEqual(task.wait_calls[1]["settle_time"], 0.5)
+        self.assertEqual(task.esc_checks, [False, False])
+
+    def test_ensure_main_near_deadline_skips_phase_b_when_no_time_remains(self):
+        # 测试接近截止时间场景：相位A消耗大部分时间，相位B无剩余时间则返回False
+        # 模拟时间：start=0, 相位A后=0.99, 剩余0.01秒
+        # 当相位A返回False时，应尝试恢复路径
+        task = _EnsureMainHarness([None, True, None], simulated_time=[0, 0.99, 1.0, 1.0])
+
+        with self.assertRaises(Exception) as context:
+            task.ensure_main(time_out=1.0)
+
+        # 验证抛出正确的异常
+        self.assertEqual(str(context.exception), "Please start in game world and in team!")
+        # 相位A失败，进入恢复路径的相位A，相位B因剩余时间<=0而返回False
+        self.assertEqual(len(task.wait_calls), 2)
+        # 第一次相位A
+        self.assertEqual(task.wait_calls[0]["time_out"], 1.0)
+        # 恢复路径相位A，剩余时间接近0
+        self.assertLessEqual(task.wait_calls[1]["time_out"], 0.01)
+
+    def test_ensure_main_very_short_timeout_does_not_hang(self):
+        # 测试极短超时场景（time_out=0.5）：确保不会挂起或超出预算
+        # 模拟时间：start=0, 相位A后=0.3, 相位B有0.2秒剩余
+        task = _EnsureMainHarness([True, True], simulated_time=[0, 0.3, 0.3])
+
+        task.ensure_main(time_out=0.5)
+
+        # 验证相位B的超时时间被正确限制
+        self.assertEqual(len(task.wait_calls), 2)
+        self.assertEqual(task.wait_calls[0]["time_out"], 0.5)
+        # 相位B: 剩余0.2秒，time_out和settle_time都应<=0.2
+        self.assertLessEqual(task.wait_calls[1]["time_out"], 0.2)
+        self.assertLessEqual(task.wait_calls[1]["settle_time"], 0.2)
+        self.assertEqual(task.esc_checks, [False, False])
 
     def test_ensure_map_does_not_toggle_an_open_map(self):
         task = _EnsureMapHarness(in_map=True)

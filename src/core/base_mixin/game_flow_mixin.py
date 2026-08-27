@@ -247,6 +247,8 @@ class GameFlowMixin:
            过滤加载/返回动画中的单帧闪屏误检；
         2. 第二段（最终确认）：仅在第一段通过后执行，主界面状态须持续 2 秒。
 
+        两段检查共享同一时间预算（time_out），确保总耗时不超过指定超时时间。
+
         Args:
             esc: 是否在失败时执行返回键处理。
             time_out: 等待主界面的总超时时间。
@@ -271,10 +273,17 @@ class GameFlowMixin:
 
         def main_stable(use_esc):
             # 第二段稳定检查（最终确认）：仅在第一段通过后执行，状态须持续 2 秒
+            # 使用剩余时间预算，避免超出总 time_out
+            remaining = time_out - (self.active_time() - start)
+            if remaining <= 0:
+                return False
+            # 理想稳定时间为 2 秒，但不超过剩余预算
+            stable_time_out = min(3.0, remaining)
+            stable_settle = min(2.0, remaining)
             return self.wait_until(
                 lambda: self.is_main(esc=use_esc),
-                time_out=3.0,
-                settle_time=2.0,
+                time_out=stable_time_out,
+                settle_time=stable_settle,
                 raise_if_not_found=False,
             )
 
