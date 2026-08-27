@@ -166,21 +166,32 @@ def main():
         print("示例: python batch_extract_portraits.py health/ output/portraits/")
         sys.exit(1)
 
-    input_dir = _validate_path(Path(sys.argv[1]))
-    if len(sys.argv) >= 3:
-        output_dir = _validate_path(Path(sys.argv[2]))
-    else:
-        output_dir = input_dir / "portraits"
+    try:
+        input_dir = _validate_path(Path(sys.argv[1]))
+        if len(sys.argv) >= 3:
+            output_dir = _validate_path(Path(sys.argv[2]))
+        else:
+            output_dir = input_dir / "portraits"
 
-    # 创建输出目录
-    output_dir.mkdir(parents=True, exist_ok=True)
+        if not input_dir.is_dir():
+            print(f"错误: 输入路径不是目录: {input_dir}")
+            sys.exit(1)
 
-    # 支持的图片格式
-    image_extensions = {'.png', '.jpg', '.jpeg', '.bmp', '.tiff'}
+        # 创建输出目录
+        output_dir.mkdir(parents=True, exist_ok=True)
 
-    # 查找所有图片
-    image_files = [f for f in input_dir.iterdir()
-                   if f.suffix.lower() in image_extensions and f.is_file()]
+        # 支持的图片格式
+        image_extensions = {'.png', '.jpg', '.jpeg', '.bmp', '.tiff'}
+
+        # 查找所有图片
+        image_files = [f for f in input_dir.iterdir()
+                       if f.suffix.lower() in image_extensions and f.is_file()]
+    except ValueError as e:
+        print(f"路径错误: {e}")
+        sys.exit(1)
+    except OSError as e:
+        print(f"文件系统错误: {e}")
+        sys.exit(1)
 
     if not image_files:
         print(f"未找到图片文件: {input_dir}")
