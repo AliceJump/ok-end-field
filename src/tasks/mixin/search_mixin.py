@@ -75,8 +75,9 @@ class SearchMixin(BaseEfTask):
                     self.move_keys(opposite[key], duration=duration)  # 超时前归正回原位
                     return None
                 result = check_func()
+                # 无论命中与否，检测后立即校验截止时间：check_func 自身耗时可能跨过截止线
                 if start is not None and self.active_time() - start >= time_out:
-                    self.move_keys(opposite[key], duration=duration)  # 超时归正回原位
+                    self.move_keys(opposite[key], duration=duration)  # 超时先归正回原位
                     return None
                 if result:  # 命中时停在发现位置
                     return result
