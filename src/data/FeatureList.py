@@ -2,7 +2,6 @@ from enum import Enum
 
 
 class FeatureList(str, Enum):
-    """Enumeration of all feature labels used for image recognition and game automation."""
     akekuri_contact = 'akekuri_contact'
     alesh_contact = 'alesh_contact'
     all_receive = 'all_receive'
@@ -10,6 +9,7 @@ class FeatureList(str, Enum):
     arcane_contact = 'arcane_contact'
     arclight_contact = 'arclight_contact'
     ardelia_contact = 'ardelia_contact'
+    ardelia_contact_battle_icon = 'ardelia_contact_battle_icon'
     assist_friend = 'assist_friend'
     avywenna_contact = 'avywenna_contact'
     b = 'b'
@@ -72,6 +72,7 @@ class FeatureList(str, Enum):
     double_ticket = 'double_ticket'
     e = 'e'
     ember_contact = 'ember_contact'
+    ember_contact_battle_icon = 'ember_contact_battle_icon'
     enter_demo = 'enter_demo'
     esc = 'esc'
     esc_2k = 'esc_2k'
@@ -98,6 +99,7 @@ class FeatureList(str, Enum):
     get_claim_page = 'get_claim_page'
     get_exchange_ticket = 'get_exchange_ticket'
     gilberta_contact = 'gilberta_contact'
+    gilberta_contact_battle_icon = 'gilberta_contact_battle_icon'
     give_gift = 'give_gift'
     go_gather_view = 'go_gather_view'
     go_space = 'go_space'
@@ -112,7 +114,9 @@ class FeatureList(str, Enum):
     industrial_equipment_icon = 'industrial_equipment_icon'
     info_exchange = 'info_exchange'
     laevatain_contact = 'laevatain_contact'
+    laevatain_contact_battle_icon = 'laevatain_contact_battle_icon'
     last_rite_contact = 'last_rite_contact'
+    last_rite_contact_battle_icon = 'last_rite_contact_battle_icon'
     left_battle = 'left_battle'
     left_button = 'left_button'
     level_tip = 'level_tip'
@@ -165,6 +169,7 @@ class FeatureList(str, Enum):
     restart_battle = 'restart_battle'
     reward_ok = 'reward_ok'
     rossi_contact = 'rossi_contact'
+    rossi_contact_battle_icon = 'rossi_contact_battle_icon'
     scratch_card_icon = 'scratch_card_icon'
     scratching_icon = 'scratching_icon'
     secondary_objective_direction_dot = 'secondary_objective_direction_dot'
@@ -209,6 +214,7 @@ class FeatureList(str, Enum):
     warehouse_node_enter = 'warehouse_node_enter'
     weapon_quota = 'weapon_quota'
     wulfgard_contact = 'wulfgard_contact'
+    wulfgard_contact_battle_icon = 'wulfgard_contact_battle_icon'
     wuling_11_9w = 'wuling_11_9w'
     wuling_11_9w_2k = 'wuling_11_9w_2k'
     wuling_11_9w_4k = 'wuling_11_9w_4k'
@@ -237,4 +243,5 @@ class FeatureList(str, Enum):
     yingtuo_monument = 'yingtuo_monument'
     yingtuo_not_cleared_icon = 'yingtuo_not_cleared_icon'
     yvonne_contact = 'yvonne_contact'
+    yvonne_contact_battle_icon = 'yvonne_contact_battle_icon'
     zhuang_fangyi_contact = 'zhuang_fangyi_contact'

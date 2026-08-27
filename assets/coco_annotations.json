@@ -902,7 +902,7 @@
         },
         {
             "id": 193,
-            "file_name": "images/1.png",
+            "file_name": "images/2.png",
             "width": 1920,
             "height": 1080
         },
@@ -926,7 +926,7 @@
         },
         {
             "id": 199,
-            "file_name": "images/2.png",
+            "file_name": "images/1.png",
             "width": 1920,
             "height": 1080
         },
@@ -4250,6 +4250,126 @@
             ],
             "area": 837,
             "iscrowd": 0
+        },
+        {
+            "id": 266,
+            "image_id": 182,
+            "category_id": 237,
+            "bbox": [
+                40,
+                927,
+                54,
+                46
+            ],
+            "area": 2484,
+            "iscrowd": 0,
+            "ignore": 0,
+            "segmentation": []
+        },
+        {
+            "id": 267,
+            "image_id": 182,
+            "category_id": 238,
+            "bbox": [
+                156,
+                927,
+                54,
+                46
+            ],
+            "area": 2484,
+            "iscrowd": 0,
+            "ignore": 0,
+            "segmentation": []
+        },
+        {
+            "id": 268,
+            "image_id": 182,
+            "category_id": 239,
+            "bbox": [
+                273,
+                927,
+                54,
+                46
+            ],
+            "area": 2484,
+            "iscrowd": 0,
+            "ignore": 0,
+            "segmentation": []
+        },
+        {
+            "id": 269,
+            "image_id": 182,
+            "category_id": 240,
+            "bbox": [
+                390,
+                927,
+                54,
+                46
+            ],
+            "area": 2484,
+            "iscrowd": 0,
+            "ignore": 0,
+            "segmentation": []
+        },
+        {
+            "id": 270,
+            "image_id": 193,
+            "category_id": 241,
+            "bbox": [
+                40,
+                927,
+                54,
+                46
+            ],
+            "area": 2484,
+            "iscrowd": 0,
+            "ignore": 0,
+            "segmentation": []
+        },
+        {
+            "id": 271,
+            "image_id": 193,
+            "category_id": 242,
+            "bbox": [
+                156,
+                927,
+                54,
+                46
+            ],
+            "area": 2484,
+            "iscrowd": 0,
+            "ignore": 0,
+            "segmentation": []
+        },
+        {
+            "id": 272,
+            "image_id": 193,
+            "category_id": 243,
+            "bbox": [
+                273,
+                927,
+                54,
+                46
+            ],
+            "area": 2484,
+            "iscrowd": 0,
+            "ignore": 0,
+            "segmentation": []
+        },
+        {
+            "id": 273,
+            "image_id": 198,
+            "category_id": 244,
+            "bbox": [
+                273,
+                927,
+                54,
+                46
+            ],
+            "area": 2484,
+            "iscrowd": 0,
+            "ignore": 0,
+            "segmentation": []
         }
     ],
     "categories": [
@@ -5427,6 +5547,46 @@
             "id": 236,
             "name": "operation_report_icon",
             "supercategory": ""
+        },
+        {
+            "id": 237,
+            "name": "yvonne_contact_battle_icon",
+            "supercategory": null
+        },
+        {
+            "id": 238,
+            "name": "rossi_contact_battle_icon",
+            "supercategory": null
+        },
+        {
+            "id": 239,
+            "name": "gilberta_contact_battle_icon",
+            "supercategory": null
+        },
+        {
+            "id": 240,
+            "name": "ember_contact_battle_icon",
+            "supercategory": null
+        },
+        {
+            "id": 241,
+            "name": "laevatain_contact_battle_icon",
+            "supercategory": null
+        },
+        {
+            "id": 242,
+            "name": "ardelia_contact_battle_icon",
+            "supercategory": null
+        },
+        {
+            "id": 243,
+            "name": "wulfgard_contact_battle_icon",
+            "supercategory": null
+        },
+        {
+            "id": 244,
+            "name": "last_rite_contact_battle_icon",
+            "supercategory": null
         }
     ]
 }
