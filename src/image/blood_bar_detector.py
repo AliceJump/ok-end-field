@@ -119,7 +119,10 @@ def detect_blue_bars(
         norm_h = h / height
 
         # 血条应该是细长的水平条，y坐标在范围内
-        if (norm_w > 50 / width and norm_h < 12 / height and
+        # 50px 和 12px 是基于标准分辨率 1920x1080 的阈值
+        min_width_ratio = 50 / STANDARD_WIDTH
+        max_height_ratio = 12 / STANDARD_HEIGHT
+        if (norm_w > min_width_ratio and norm_h < max_height_ratio and
                 norm_w > norm_h * 3 and
                 y_min <= norm_y <= y_max):
             center_x = (x + offset_x + w // 2) / width
