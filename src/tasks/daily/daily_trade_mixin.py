@@ -304,11 +304,11 @@ class DailyTradeFeature:
         """买卖货主流程。
 
         Returns:
-            tuple[bool, bool]: (是否未发生导航失败, 是否真正卖出过货物——
-                仅当加号成功、出售确认按钮点击成功且弹窗关闭后才为 True)。
+            tuple[bool, bool]: (是否未发生导航失败, 是否已前往好友帝江号——
+                仅当「前往」按钮真正点击成功且到达好友船后才为 True)。
         """
         navigation_failed = False
-        sold_any = False
+        went_friend_boat = False
         for area in target_areas or areas_list:
             if not self.config.get(area, False):
                 self.log_info(self.tr("跳过{area}，因为配置中未启用").format(area=self.tr(area)))
@@ -374,7 +374,7 @@ class DailyTradeFeature:
                             self.log_info(
                                 "等待返回 '地区建设' 界面超时，结束买卖货任务"
                             )
-                            return False, sold_any
+                            return False, went_friend_boat
                         self.back()
                     self.click(buy_good.name_box)
                     self.wait_ui_stable(refresh_interval=1)
@@ -418,7 +418,7 @@ class DailyTradeFeature:
                 ):
                     if self.active_time() > back_to_area_deadline:
                         self.log_info("等待返回 '地区建设' 界面超时，结束买卖货任务")
-                        return False, sold_any
+                        return False, went_friend_boat
                     self.back()
                 if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:]), log=True) or
                         self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]), log=True)):
@@ -451,7 +451,10 @@ class DailyTradeFeature:
                     continue
                 if not self.ensure_in_friend_boat():
                     self.log_info("未进入好友船")
-                    return False, sold_any
+                    return False, went_friend_boat
+                # 已真正点击「前往」并到达好友帝江号：角色在野外，之后无论卖出是否
+                # 完成都只能 ensure_main 返回主界面（safe_back 逐层返回无法退回地区建设）
+                went_friend_boat = True
                 self.navigate_to_friend_exchange()
                 self.wait_click_ocr(match=get_world_map_matcher(self.lang, area), box=self.box.top)
                 if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:])) or
@@ -460,15 +463,12 @@ class DailyTradeFeature:
                     continue
                 self.wait_ui_stable(refresh_interval=1)
                 if self.plus_max():
-                    # 仅当出售确认按钮真正点击成功且弹窗关闭，才算真正卖出
-                    sold_confirmed = self.wait_click_ocr(
+                    self.wait_click_ocr(
                         match=self.lang.daily_trade_mixin.k_b84e4cb0,
                         box=self.box.bottom_right,
                     )
                     self.wait_pop_up()
-                    if sold_confirmed:
-                        sold_any = True
                 else:
                     self.log_info("未找到加号按钮，无法出售")
 
-        return not navigation_failed, sold_any
+        return not navigation_failed, went_friend_boat
