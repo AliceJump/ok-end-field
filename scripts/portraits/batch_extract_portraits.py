@@ -157,7 +157,7 @@ def _validate_path(path: Path) -> Path:
     try:
         resolved = path.resolve()
     except RuntimeError as e:
-        raise ValueError(f"路径解析失败（可能存在循环符号链接）: {path}") from e
+        raise ValueError(f"路径解析失败(可能存在循环符号链接): {path}") from e
     # 检查路径是否包含危险字符
     if ".." in path.parts or "~" in str(path):
         raise ValueError(f"路径包含危险字符: {path}")
