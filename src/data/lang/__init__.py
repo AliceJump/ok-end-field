@@ -31,6 +31,7 @@ LocaleCode = Enum("LocaleCode", {name: name for name in SUPPORTED_LOCALES}, type
 
 
 def get_supported_locales() -> tuple[str, ...]:
+    """Get a tuple of all supported locale codes that are currently active."""
     return SUPPORTED_LOCALES
 
 
@@ -76,6 +77,7 @@ def _parse_lang_value(v: Any) -> Any:
 
 
 class LangNode:
+    """Represents a language node that can contain string, pattern, or terms data."""
     def __init__(self, data: dict | None):
         self._data = data or {}
 
@@ -102,18 +104,22 @@ class LangNode:
 
     @property
     def string(self) -> str | None:
+        """Get the string value from this language node, if present."""
         return self._data.get("string")
 
     @property
     def pattern(self) -> str | None:
+        """Get the pattern value from this language node, if present."""
         return self._data.get("pattern")
 
     @property
     def terms(self) -> list | None:
+        """Get the terms list from this language node, if present."""
         return self._data.get("terms")
 
 
 class LangModule:
+    """Represents a language module containing multiple language keys and their localized values."""
     def __init__(self, data: dict):
         self._data = data or {}
 
@@ -133,6 +139,7 @@ class LangModule:
 
 
 class LangAccessor(_LangAccessorTyped):
+    """Accessor for loading and accessing language modules for a specific locale."""
     def __init__(self, locale: str | None = None):
         self.locale = _normalize_locale(locale)
         self._cache: dict[str, LangModule] = {}
@@ -237,6 +244,7 @@ def _locale_from_obj(obj: Any) -> str | None:
 
 
 def get_lang_accessor(obj_or_locale: Any = None) -> LangAccessor:
+    """Get a language accessor for the specified locale or object's locale attribute."""
     locale = None
     if isinstance(obj_or_locale, str):
         locale = obj_or_locale

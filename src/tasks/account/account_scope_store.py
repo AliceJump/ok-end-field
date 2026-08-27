@@ -20,6 +20,7 @@ _CACHE_DATA: Dict[str, Any] = copy.deepcopy(_EMPTY_STORE)
 
 
 def get_store_path() -> str:
+    """Get the file path to the account-scoped overrides storage file."""
     return _STORE_PATH
 
 
@@ -115,6 +116,7 @@ def _parse_account_list_text_internal(account_list_text: Any) -> Tuple[List[Dict
 
 
 def parse_account_list_text(account_list_text: Any) -> List[Dict[str, str]]:
+    """Parse account list text into a list of account dictionaries with username and password fields."""
     entries, _ = _parse_account_list_text_internal(account_list_text)
     return entries
 
@@ -369,6 +371,7 @@ def _sync_account_list_text_on_data(data: Dict[str, Any], text: str) -> Tuple[Di
 
 
 def load_overrides(force: bool = False) -> Dict[str, Any]:
+    """Load account-scoped configuration overrides from storage, using cache unless force is True."""
     global _CACHE_MTIME
     global _CACHE_DATA
 
@@ -393,6 +396,7 @@ def load_overrides(force: bool = False) -> Dict[str, Any]:
 
 
 def save_overrides(data: Dict[str, Any]) -> Dict[str, Any]:
+    """Save account-scoped configuration overrides to storage and update cache."""
     global _CACHE_MTIME
     global _CACHE_DATA
 
@@ -406,6 +410,7 @@ def save_overrides(data: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def update_overrides(updater: Callable[[Dict[str, Any]], Dict[str, Any]]) -> Dict[str, Any]:
+    """Update account-scoped overrides by applying an updater function to the current data."""
     global _CACHE_MTIME
     global _CACHE_DATA
 
@@ -427,6 +432,7 @@ def update_overrides(updater: Callable[[Dict[str, Any]], Dict[str, Any]]) -> Dic
 
 
 def sync_account_list_text(text: str) -> Dict[str, Any]:
+    """Synchronize the account list text with the account registry, creating or reusing account IDs."""
     summary: Dict[str, Any] = {}
 
     def apply(data):
@@ -442,6 +448,7 @@ def sync_account_list_text(text: str) -> Dict[str, Any]:
 
 
 def resolve_account_id(username: str, create_if_missing: bool = False) -> str:
+    """Resolve the internal account ID for a username, optionally creating a new ID if not found."""
     account_name = _clean_username(username)
     if not account_name:
         return ""
@@ -465,6 +472,7 @@ def resolve_account_id(username: str, create_if_missing: bool = False) -> str:
 
 
 def get_account_task_overrides(account: str, task_name: str, account_name: str = "") -> Dict[str, Any]:
+    """Get configuration overrides for a specific account and task combination."""
     if not task_name:
         return {}
 
@@ -517,6 +525,7 @@ def _resolve_account_id_for_read(data: Dict[str, Any], account: str, account_nam
 
 
 def get_account_map_content(account: str, account_name: str = "") -> str:
+    """Get the map sync content (hg/check data.content) for a specific account."""
     account_key = _clean_username(account)
     account_name = _clean_username(account_name)
     if not account_key and not account_name:
@@ -535,6 +544,7 @@ def get_account_map_content(account: str, account_name: str = "") -> str:
 
 
 def set_account_map_content(account: str, content: str) -> None:
+    """Set the map sync content for a specific account."""
     if not account:
         return
 
@@ -571,6 +581,7 @@ def _resolve_account_id_for_write(data: Dict[str, Any], account: str) -> str:
 
 
 def set_account_task_overrides(account: str, task_name: str, values: Dict[str, Any]) -> None:
+    """Set configuration overrides for a specific account and task combination."""
     if not account or not task_name:
         return
 
@@ -592,6 +603,7 @@ def set_account_task_overrides(account: str, task_name: str, values: Dict[str, A
 
 
 def remove_account_task_overrides(account: str, task_name: str) -> None:
+    """Remove configuration overrides for a specific account and task combination."""
     if not account or not task_name:
         return
 
@@ -612,15 +624,18 @@ def remove_account_task_overrides(account: str, task_name: str) -> None:
 
 
 def list_accounts() -> list[str]:
+    """List all account IDs that have configuration overrides."""
     data = load_overrides()
     return list((data.get("accounts") or {}).keys())
 
 
 def get_account_list_text() -> str:
+    """Get the stored account list text (one account per line)."""
     data = load_overrides()
     value = data.get("account_list_text", "")
     return value if isinstance(value, str) else str(value)
 
 
 def set_account_list_text(text: str) -> None:
+    """Set the account list text and synchronize with the account registry."""
     sync_account_list_text(text)

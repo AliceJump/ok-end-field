@@ -2,6 +2,7 @@ from enum import Enum
 
 
 class FeatureList(str, Enum):
+    """Enumeration of all feature labels used for image recognition and game automation."""
     akekuri_contact = 'akekuri_contact'
     alesh_contact = 'alesh_contact'
     all_receive = 'all_receive'

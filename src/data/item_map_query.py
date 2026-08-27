@@ -45,14 +45,17 @@ def _load_item_names() -> list[str]:
 
 
 def get_supported_item_names() -> list[str]:
+    """Get the list of all supported item names for map queries."""
     return list(_load_item_names())
 
 
 def get_supported_map_types() -> list[str]:
+    """Get the list of all supported map types available in the item map data."""
     return list(_load_summary().keys())
 
 
 def search_item_names(keyword: str) -> list[str]:
+    """Search for item names containing the specified keyword (case-insensitive)."""
     keyword = keyword.lower()
 
     return [

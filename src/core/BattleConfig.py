@@ -108,11 +108,14 @@ BATTLE_CONFIG_DESCRIPTION = {
 
 
 class BattleConfigManager:
+    """Manages battle configuration with fallback to default values."""
     def __init__(self, battle_config: dict | None = None):
         self.battle_config = battle_config or {}
 
     def update_config(self, battle_config: dict):
+        """Update the battle configuration with a new dictionary."""
         self.battle_config = battle_config or {}
 
     def get(self, key: str, default=None):
+        """Get a configuration value with fallback to default battle config."""
         return self.battle_config.get(key, DEFAULT_BATTLE_CONFIG.get(key, default))

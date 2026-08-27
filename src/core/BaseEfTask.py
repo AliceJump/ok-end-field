@@ -212,11 +212,13 @@ class BaseEfTask(
             super().sleep(min(remaining, 0.1))
 
     def pause(self):
+        """Pause the task and track pause time for active time calculation."""
         if not isinstance(self, TriggerTask) and self._task_pause_started_at is None:
             self._task_pause_started_at = time.monotonic()
         return super().pause()
 
     def unpause(self):
+        """Resume the task and accumulate the paused duration."""
         if self._task_pause_started_at is not None:
             self._active_time_paused_total += max(0.0, time.monotonic() - self._task_pause_started_at)
             self._task_pause_started_at = None
@@ -317,6 +319,7 @@ class BaseEfTask(
         return "background" if global_mode == "后台模式" else "foreground"
 
     def enable(self):
+        """Enable the task if it is compatible with the current input mode."""
         if self.input_mode() == "background" and getattr(self, "requires_foreground", False):
             self.log_info("后台模式下该任务需要前台操作（移动/战斗/视角），无法启用", notify=True)
             return
@@ -335,6 +338,7 @@ class BaseEfTask(
             vcenter=False,
             confidence=1.0,
     ):
+        """Create a screen box with rounded coordinate ratios for consistent positioning."""
         return super().box_of_screen(
             _round_ratio(x),
             _round_ratio(y),
@@ -363,6 +367,7 @@ class BaseEfTask(
             vcenter=False,
             confidence=1.0,
     ):
+        """Create a screen box scaled from original resolution coordinates with rounded ratios."""
         return super().box_of_screen_scaled(
             original_screen_width,
             original_screen_height,
@@ -379,13 +384,16 @@ class BaseEfTask(
         )
 
     def click_relative(self, x, y, *args, **kwargs):
+        """Click at relative screen coordinates with rounded ratios."""
         return super().click_relative(_round_ratio(x), _round_ratio(y), *args, **kwargs)
 
     def middle_click_relative(self, x, y, *args, **kwargs):
+        """Middle-click at relative screen coordinates with rounded ratios."""
         return super().middle_click_relative(_round_ratio(x), _round_ratio(y), *args, **kwargs)
 
     @property
     def runtime_locale(self) -> str | None:
+        """Get the runtime locale for this task instance."""
         return _extract_locale_from_object(self)
 
     def screenshot_timestamp_prefix(self):

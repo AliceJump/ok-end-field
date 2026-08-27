@@ -33,6 +33,7 @@ def _get_localized_character_name(lang_accessor: Any, char_key: str, fallback: s
 
 
 def get_contact_list_with_feature_list(lang_accessor=None) -> dict[str, str]:
+    """Get a mapping of localized character names to their feature labels for contact interactions."""
     feature_set = {f.value for f in FeatureList}  # 取 FeatureList 枚举的所有值
 
     en_to_zh = {

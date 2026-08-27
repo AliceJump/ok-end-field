@@ -64,13 +64,16 @@ class InMemoryConfig(dict):
         self.default = defaults
 
     def get_default(self, key):
+        """Get the default value for a configuration key."""
         return self.default.get(key)
 
     def has_user_config(self):
+        """Check if any user-defined (non-internal) configuration keys exist."""
         return any(not str(key).startswith("_") for key in self.keys())
 
 
 class AccountConfigTab(CustomTab):
+    """Tab for managing per-account configuration overrides and account list."""
     ALWAYS_HIDDEN_CONFIG_KEYS = {"多账户模式", "多账户独立配置", "账号列表"}
 
     def __init__(self):
@@ -101,6 +104,7 @@ class AccountConfigTab(CustomTab):
 
     @property
     def name(self):
+        """Get the tab name key for translation."""
         # MainWindow 会对 tab 的 name 统一调用 self.app.tr(name)，
         # 这里必须返回源 key（"账号配置"）而非已翻译文本，
         # 否则会对翻译结果二次 tr()，把繁体 key 当作待翻译字符串收集进 ok.po。
@@ -108,17 +112,21 @@ class AccountConfigTab(CustomTab):
 
     @property
     def position(self):
+        """Get the navigation position for this tab."""
         return NavigationItemPosition.TOP
 
     @property
     def add_after_default_tabs(self):
+        """Indicate whether this tab should be added after default tabs."""
         return False
 
     @property
     def icon(self):
+        """Get the icon for this tab."""
         return FluentIcon.PEOPLE
 
     def showEvent(self, event):
+        """Handle widget show event, loading or syncing configuration data."""
         super().showEvent(event)
         if not self._loaded_once and self.executor is not None:
             self._loaded_once = True
@@ -127,6 +135,7 @@ class AccountConfigTab(CustomTab):
             self.sync_from_source()
 
     def sync_from_source(self):
+        """Synchronize account configuration from the source without rebuilding task list."""
         self._save_pending_changes()
         self._building = True
         try:
@@ -266,6 +275,7 @@ class AccountConfigTab(CustomTab):
 
     @staticmethod
     def _parse_accounts(account_list_text: str) -> list[Dict[str, str]]:
+        """Parse account list text into structured account dictionaries with username and password."""
         accounts: list[Dict[str, str]] = []
         seen = set()
         for entry in parse_account_list_text(account_list_text):
@@ -276,6 +286,7 @@ class AccountConfigTab(CustomTab):
         return accounts
 
     def _resolve_account_key_by_username(self, username: str) -> str:
+        """Resolve the internal account key from a username by looking up the account registry."""
         username = username.strip()
         if not username:
             return ""
@@ -292,6 +303,7 @@ class AccountConfigTab(CustomTab):
         return ""
 
     def _get_account_name_by_key(self, account_key: str) -> str:
+        """Get the account display name (username) from the internal account key."""
         if not account_key:
             return ""
 
@@ -305,10 +317,12 @@ class AccountConfigTab(CustomTab):
 
     @staticmethod
     def _is_supported_value(value: Any) -> bool:
+        """Check if a value is a supported configuration type."""
         return isinstance(value, (bool, int, float, str, list))
 
     @staticmethod
     def _config_key_set(task, attribute: str) -> set[str]:
+        """Extract configuration keys from a task attribute, handling strings, lists, tuples, and sets."""
         value = getattr(task, attribute, None)
         if isinstance(value, str):
             return {value}
@@ -318,9 +332,11 @@ class AccountConfigTab(CustomTab):
 
     @staticmethod
     def _task_storage_name(task) -> str:
+        """Get the storage name for a task used in account override keys."""
         return str(getattr(task, "account_override_name", task.__class__.__name__))
 
     def _account_config_schema(self, task, task_override: Dict[str, Any]) -> Dict[str, Any]:
+        """Build the configuration schema for a task including default and account-specific settings."""
         schema = dict(task.default_config)
         extra_defaults = getattr(task, "account_config_defaults", None)
         if isinstance(extra_defaults, dict):
@@ -337,6 +353,7 @@ class AccountConfigTab(CustomTab):
         return schema
 
     def _account_config_rules(self, task) -> tuple[set[str], set[str]]:
+        """Determine configuration key blacklist and whitelist for account overrides."""
         blacklist = self.ALWAYS_HIDDEN_CONFIG_KEYS | self._config_key_set(task, "account_config_blacklist")
         whitelist = self._config_key_set(task, "account_config_whitelist")
 
@@ -365,6 +382,7 @@ class AccountConfigTab(CustomTab):
 
     @staticmethod
     def _account_config_base_value(task, key: str, default_value: Any) -> Any:
+        """Get the base configuration value for a key, falling back to default if not in task config."""
         if key in task.config:
             return dict.get(task.config, key, default_value)
         provider = getattr(task, "get_account_config_base_value", None)
@@ -374,6 +392,7 @@ class AccountConfigTab(CustomTab):
 
     @staticmethod
     def _coerce_like(base_value: Any, value: Any) -> Any:
+        """Coerce a value to match the type of the base value, with fallback for incompatible types."""
         if base_value is None or value is None:
             return value
 
@@ -417,6 +436,7 @@ class AccountConfigTab(CustomTab):
         return value if isinstance(value, type(base_value)) else base_value
 
     def _collect_tasks(self):
+        """Collect all tasks that support multi-account configuration from the executor."""
         if self.executor is None:
             return []
 
@@ -434,6 +454,7 @@ class AccountConfigTab(CustomTab):
         return tasks
 
     def refresh_from_source(self):
+        """Fully refresh account configuration and task list from source data."""
         if not self._ensure_executor():
             return
 
@@ -458,6 +479,7 @@ class AccountConfigTab(CustomTab):
             self._building = False
 
     def save_base_settings(self):
+        """Save the account list and synchronize account registry."""
         if not self._ensure_executor():
             return
 
@@ -489,18 +511,22 @@ class AccountConfigTab(CustomTab):
         self._set_status(status)
 
     def _current_account_key(self) -> str:
+        """Get the internal account key for the currently selected account."""
         display = self.account_selector.currentText().strip()
         return self.account_display_to_key.get(display, "")
 
     def _current_account_name(self) -> str:
+        """Get the display name (username) for the currently selected account."""
         display = self.account_selector.currentText().strip()
         return self.account_display_to_name.get(display, "")
 
     def _current_task(self):
+        """Get the task object for the currently selected task."""
         display = self.task_selector.currentText().strip()
         return self.task_map.get(display)
 
     def rebuild_account_selector(self, keep_selection: bool = True):
+        """Rebuild the account selector dropdown, optionally preserving the current selection."""
         current_key = self._current_account_key() if keep_selection else ""
 
         raw_items: list[tuple[str, str]] = []
@@ -560,6 +586,7 @@ class AccountConfigTab(CustomTab):
             self.account_selector.blockSignals(False)
 
     def rebuild_task_selector(self, keep_selection: bool = True):
+        """Rebuild the task selector dropdown, optionally preserving the current selection."""
         current_task = self._current_task()
         current_class_name = AccountConfigTab._task_storage_name(current_task) if keep_selection and current_task else ""
 
@@ -592,6 +619,7 @@ class AccountConfigTab(CustomTab):
             self.task_selector.blockSignals(False)
 
     def on_account_changed(self, _):
+        """Handle account selector change event, saving pending changes and reloading task editor."""
         if self._building:
             return
         self._save_pending_changes()
@@ -599,6 +627,7 @@ class AccountConfigTab(CustomTab):
         self.render_task_editor()
 
     def load_current_map_content(self):
+        """Load the map sync content for the currently selected account."""
         account_key = self._current_account_key()
         account_name = self._current_account_name()
         self.current_map_account_key = account_key
@@ -610,12 +639,14 @@ class AccountConfigTab(CustomTab):
         self.map_content_edit.setText(self.current_map_value)
 
     def on_task_changed(self, _):
+        """Handle task selector change event, saving pending changes and reloading task editor."""
         if self._building:
             return
         self._save_pending_changes()
         self.render_task_editor()
 
     def on_view_mode_changed(self, _):
+        """Handle view mode switch change event (all config vs. diff only)."""
         if self._building:
             return
         self._save_pending_changes()
@@ -699,6 +730,7 @@ class AccountConfigTab(CustomTab):
         self._set_current_task_editor_enabled(not bool(task and task.running))
 
     def render_task_editor(self):
+        """Render the task configuration editor for the currently selected account and task."""
         self._hide_task_editor()
         self.current_virtual_config = None
         self.current_task = None
@@ -896,12 +928,14 @@ class AccountConfigTab(CustomTab):
         return changed
 
     def save_current_account_config(self):
+        """Save the currently edited account configuration and map content."""
         if not self.current_map_account_key and not self.current_account_key:
             self._set_status(og.app.tr("请先选择账号"))
             return
         self._save_pending_changes(show_status=True, cleanup_blacklist=True)
 
     def clear_current_task_override(self):
+        """Clear the configuration override for the current account and task combination."""
         account_key = self._current_account_key()
         account_name = self._current_account_name()
         task = self._current_task()
@@ -945,6 +979,7 @@ class AccountConfigTab(CustomTab):
         ))
 
     def clear_current_account_overrides(self):
+        """Clear all task configuration overrides for the currently selected account."""
         account_key = self._current_account_key()
         account_name = self._current_account_name()
         if not account_key:
