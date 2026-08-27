@@ -14,6 +14,7 @@ class _EnsureMainHarness(GameFlowMixin):
         self.wait_results = iter(wait_results)
         self.esc_checks = []
         self.sleeps = []
+        self.logs = []
         self.simulated_time = simulated_time or [1]
         self.time_index = 0
         self.wait_calls = []
@@ -45,6 +46,9 @@ class _EnsureMainHarness(GameFlowMixin):
 
     def sleep(self, timeout):
         self.sleeps.append(timeout)
+
+    def log_info(self, message):
+        self.logs.append(message)
 
 
 class _EnsureMapHarness(GameFlowMixin):
@@ -214,8 +218,8 @@ class TestStateDrivenWaits(unittest.TestCase):
 
         task.ensure_main()
 
-        # 第一段观察未过 → 恢复阶段疑似确认 + 第二段 2 秒稳定（最终确认）
-        self.assertEqual(task.esc_checks, [False, True, True])
+        # 第一段观察未过 → 恢复阶段疑似确认（按 ESC）+ 第二段 2 秒稳定（只观察不按键）
+        self.assertEqual(task.esc_checks, [False, True, False])
         self.assertEqual(task.sleeps, [])
 
     def test_ensure_main_natural_success_requires_two_stages(self):
@@ -227,13 +231,14 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertEqual(task.esc_checks, [False, False])
         self.assertEqual(task.sleeps, [])
 
-    def test_ensure_main_stage_two_failure_enables_recovery(self):
+    def test_ensure_main_stage_two_failure_loops_recovery(self):
         task = _EnsureMainHarness([True, None, True, True])
 
         task.ensure_main()
 
-        # 第一段疑似通过但第二段 2 秒稳定失败 → 进入恢复阶段重新两段确认
-        self.assertEqual(task.esc_checks, [False, False, True, True])
+        # 观察阶段第一段疑似通过但第二段 2 秒稳定失败 → 进入恢复阶段重新两段确认（循环），
+        # 恢复阶段的第二段观察仍不按键（esc=False）
+        self.assertEqual(task.esc_checks, [False, False, True, False])
         self.assertEqual(task.sleeps, [])
 
     def test_ensure_main_short_timeout_caps_phase_b(self):
@@ -268,7 +273,7 @@ class TestStateDrivenWaits(unittest.TestCase):
         # 第一次相位A
         self.assertEqual(task.wait_calls[0]["time_out"], 1.0)
         # 恢复路径相位A，剩余时间接近0
-        self.assertLessEqual(task.wait_calls[1]["time_out"], 0.01)
+        self.assertAlmostEqual(task.wait_calls[1]["time_out"], 0.01, places=2)
 
     def test_ensure_main_very_short_timeout_does_not_hang(self):
         # 测试极短超时场景（time_out=0.5）：确保不会挂起或超出预算
@@ -284,6 +289,16 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertLessEqual(task.wait_calls[1]["time_out"], 0.2)
         self.assertLessEqual(task.wait_calls[1]["settle_time"], 0.2)
         self.assertEqual(task.esc_checks, [False, False])
+
+    def test_ensure_main_recovery_stable_failure_keeps_looping(self):
+        task = _EnsureMainHarness([None, True, None, True, True])
+
+        task.ensure_main()
+
+        # 恢复阶段第二段再次失败后继续循环：疑似(ESC) → 稳定(不按键) → 成功
+        self.assertEqual(task.esc_checks, [False, True, False, True, False])
+        self.assertEqual(task.sleeps, [])
+        self.assertEqual(len([m for m in task.logs if "第二段稳定检查未通过" in m]), 1)
 
     def test_ensure_map_does_not_toggle_an_open_map(self):
         task = _EnsureMapHarness(in_map=True)

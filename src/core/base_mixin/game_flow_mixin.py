@@ -248,6 +248,9 @@ class GameFlowMixin:
         2. 第二段（最终确认）：仅在第一段通过后执行，主界面状态须持续 2 秒。
 
         两段检查共享同一时间预算（time_out），确保总耗时不超过指定超时时间。
+        恢复阶段（按 ESC 返回）在总预算内循环执行两段检查：第二段未通过时
+        回到第一段继续恢复等待，直到总超时，避免主界面刚出现时图标未稳定
+        匹配导致提前失败。
 
         Args:
             esc: 是否在失败时执行返回键处理。
@@ -299,14 +302,21 @@ class GameFlowMixin:
 
         if not result and self.active_time() - start < time_out:
             self._next_main_recovery_time = self.active_time()
-            result = self.wait_until(
-                lambda: main_suspected(esc),
-                time_out=max(0.01, time_out - (self.active_time() - start)),
-                settle_time=0,
-                raise_if_not_found=False,
-            )
-            if result:
-                result = main_stable(esc)
+            # 恢复阶段：循环两段检查直到总预算耗尽，第二段失败不中断恢复
+            while self.active_time() - start < time_out:
+                result = self.wait_until(
+                    lambda: main_suspected(esc),
+                    time_out=max(0.01, time_out - (self.active_time() - start)),
+                    settle_time=0,
+                    raise_if_not_found=False,
+                )
+                if not result:
+                    break
+                # 最终确认只观察不按键，避免返回键干扰刚出现的稳定状态
+                result = main_stable(False)
+                if result:
+                    break
+                self.log_info("主界面第二段稳定检查未通过，继续恢复等待")
 
         if not result:
             raise Exception("Please start in game world and in team!")
