@@ -202,19 +202,30 @@ class _TaskMapHarness:
 
 class TestStateDrivenWaits(unittest.TestCase):
     def test_ensure_main_observes_before_enabling_recovery(self):
-        task = _EnsureMainHarness([None, True])
+        task = _EnsureMainHarness([None, True, True])
 
         task.ensure_main()
 
-        self.assertEqual(task.esc_checks, [False, True])
+        # 第一段观察未过 → 恢复阶段疑似确认 + 第二段 2 秒稳定（最终确认）
+        self.assertEqual(task.esc_checks, [False, True, True])
         self.assertEqual(task.sleeps, [])
 
-    def test_ensure_main_natural_success_never_enables_recovery(self):
-        task = _EnsureMainHarness([True])
+    def test_ensure_main_natural_success_requires_two_stages(self):
+        task = _EnsureMainHarness([True, True])
 
         task.ensure_main()
 
-        self.assertEqual(task.esc_checks, [False])
+        # 第一段疑似通过后仍须经过第二段稳定检查才最终确认，未进入恢复阶段
+        self.assertEqual(task.esc_checks, [False, False])
+        self.assertEqual(task.sleeps, [])
+
+    def test_ensure_main_stage_two_failure_enables_recovery(self):
+        task = _EnsureMainHarness([True, None, True, True])
+
+        task.ensure_main()
+
+        # 第一段疑似通过但第二段 2 秒稳定失败 → 进入恢复阶段重新两段确认
+        self.assertEqual(task.esc_checks, [False, False, True, True])
         self.assertEqual(task.sleeps, [])
 
     def test_ensure_map_does_not_toggle_an_open_map(self):

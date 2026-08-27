@@ -242,6 +242,11 @@ class GameFlowMixin:
         """
         确保回到主界面（游戏世界）。
 
+        采用两段稳定检查确认主界面：
+        1. 第一段（疑似确认）：检测到一帧疑似主界面（Esc 图标）后，再确认一帧，
+           过滤加载/返回动画中的单帧闪屏误检；
+        2. 第二段（最终确认）：仅在第一段通过后执行，主界面状态须持续 2 秒。
+
         Args:
             esc: 是否在失败时执行返回键处理。
             time_out: 等待主界面的总超时时间。
@@ -258,21 +263,41 @@ class GameFlowMixin:
         start = self.active_time()
         observe_time = min(2.0, time_out)
 
+        def main_suspected(use_esc):
+            # 第一段稳定检查：疑似主界面（Esc）连续两帧出现才算通过
+            if not self.is_main(esc=use_esc):
+                return False
+            return self.is_main(esc=use_esc)
+
+        def main_stable(use_esc):
+            # 第二段稳定检查（最终确认）：仅在第一段通过后执行，状态须持续 2 秒
+            return self.wait_until(
+                lambda: self.is_main(esc=use_esc),
+                time_out=3.0,
+                settle_time=2.0,
+                raise_if_not_found=False,
+            )
+
         # Give loading and return animations a chance to finish before recovery input.
         result = self.wait_until(
-            lambda: self.is_main(esc=False),
+            lambda: main_suspected(False),
             time_out=observe_time,
-            settle_time=1.0,
+            settle_time=0,
             raise_if_not_found=False,
         )
+        if result:
+            result = main_stable(False)
+
         if not result and self.active_time() - start < time_out:
             self._next_main_recovery_time = self.active_time()
             result = self.wait_until(
-                lambda: self.is_main(esc=esc),
+                lambda: main_suspected(esc),
                 time_out=max(0.01, time_out - (self.active_time() - start)),
-                settle_time=1.0,
+                settle_time=0,
                 raise_if_not_found=False,
             )
+            if result:
+                result = main_stable(esc)
 
         if not result:
             raise Exception("Please start in game world and in team!")
