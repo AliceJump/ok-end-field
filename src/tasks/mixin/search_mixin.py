@@ -49,8 +49,9 @@ class SearchMixin(BaseEfTask):
         duration: float = 0.2,
         keys=("w", "a", "s", "d"),
         time_out: float = -1,
+        reset_position: bool = False,
     ):
-        """WASD 轻微移动搜索，每次方向尝试移动后检测，未命中则反向归正回原位。
+        """WASD 轻微移动搜索，每次方向尝试移动后检测，可选未命中归正回原位。
 
         Args:
             check_func: 无参回调，返回真值表示命中（可直接返回检测结果）。
@@ -58,6 +59,7 @@ class SearchMixin(BaseEfTask):
             duration: 每次按移动键的持续秒数。
             keys: 依次尝试的移动键，默认 W/A/S/D 前后左右。
             time_out: 总搜索时限（秒），<=0 表示不限制。
+            reset_position: 是否在每次检测失败后反向移动归正，默认 False。
 
         Returns:
             check_func 的命中结果；未命中返回 None。
@@ -65,25 +67,36 @@ class SearchMixin(BaseEfTask):
         opposite = {"w": "s", "s": "w", "a": "d", "d": "a"}
         start = self.active_time() if time_out > 0 else None
         count = 0
+
+        def restore(key):
+            if reset_position:
+                self.move_keys(opposite[key], duration=duration)
+
         result = check_func()  # 先原地检测一次
-        # 首次检测也可能跨过截止线：原地路径无需归正，超时直接返回
         if start is not None and self.active_time() - start >= time_out:
             return None
         if result:
             return result
+
         while passes is None or count < passes * len(keys):
             for key in keys:
                 self.move_keys(key, duration=duration)
                 count += 1
+
                 if start is not None and self.active_time() - start >= time_out:
-                    self.move_keys(opposite[key], duration=duration)  # 超时前归正回原位
+                    restore(key)
                     return None
+
                 result = check_func()
-                # 无论命中与否, 检测后立即校验截止时间: check_func 自身耗时可能跨过截止线
+
+                # check_func 自身耗时可能跨越 timeout
                 if start is not None and self.active_time() - start >= time_out:
-                    self.move_keys(opposite[key], duration=duration)  # 超时先归正回原位
+                    restore(key)
                     return None
-                if result:  # 命中时停在发现位置
+
+                if result:
                     return result
-                self.move_keys(opposite[key], duration=duration)  # 未命中反向归正回原位
+
+                restore(key)
+
         return None
