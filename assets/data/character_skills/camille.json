@@ -15,7 +15,7 @@
       "enhancement": null,
       "description": "普通攻击： 对敌人进行至多5段攻击，造成灼热伤害。作为主控干员时，重击会造成18点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成灼热伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量灼热伤害并恢复一定技力。",
       "damage_multiplier": "",
-      "stagger_value": 0,
+      "stagger_value": 18,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": []
@@ -42,7 +42,7 @@
       },
       "description": "召唤衔火血翼飞向敌人，对小范围敌人造成灼热伤害并施加灼热附着。随后衔火血翼将在目标周围盘桓一段时间，期间对目标施加虚弱和灼热脆弱。目标被击败时，衔火血翼会飞向附近的另一个敌人，对目标造成灼热伤害，施加灼热附着、虚弱和灼热脆弱。 衔火血翼盘桓的敌人被卡缪的连携技命中时，将在短暂延迟后发生一次爆裂，受到额外的灼热伤害。",
       "damage_multiplier": "200%",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
       "effects": [
@@ -63,18 +63,12 @@
       "enhancement": null,
       "description": "当有敌人的灼热附着被消耗或吸收后可以发动。 来回穿梭，造成灼热伤害并恢复一定技力。",
       "damage_multiplier": "300%（第一段）+ 500%（追猎）",
-      "stagger_value": 20,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": [
         {
           "effect_id": "ATTACH_BURN",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "BUFF_HEAL",
           "value": 1,
           "duration": "",
           "target": "enemy"
@@ -96,7 +90,7 @@
       },
       "description": "卡缪飞向空中，落下枪雨并衔接横扫攻击，对命中的目标造成灼热伤害并施加灼热附着，同时恢复一定技力。施放后一段时间内下一次战技会被替换为追猎，追猎视为连携技，不消耗技力。 追猎：来回穿梭，造成灼热伤害并恢复一定技力。",
       "damage_multiplier": "600%",
-      "stagger_value": 15,
+      "stagger_value": 0,
       "cooldown": "20秒",
       "spirit_cost": 130,
       "effects": [

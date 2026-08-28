@@ -15,7 +15,7 @@
       "enhancement": null,
       "description": "普通攻击：对敌人至多造成5段攻击，造成灼热伤害。作为主控干员时，重击会造成18点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成灼热伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量灼热伤害并恢复一定技力。",
       "damage_multiplier": "",
-      "stagger_value": 0,
+      "stagger_value": 18,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": []
@@ -42,23 +42,10 @@
       },
       "description": "召唤熔核碎片持续攻击前方敌人，造成灼热伤害。如果命中敌人，会获得一点熔火。如果施放时已拥有4层熔火，则最后会消耗所有层数，对大范围内敌人追加1次攻击，造成灼热伤害并强制施加短暂的燃烧。追加攻击命中敌人会额外获得终结技能量。终结技期间，战技效果增强。",
       "damage_multiplier": "140%（初始）+ 14%（持续）+ 770%（追加）",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "ATTACH_BURN",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "STACK_MOLTEN",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "effects": []
     },
     {
       "skill_id": "laevat_link",
@@ -69,7 +56,7 @@
       "enhancement": null,
       "description": "当有敌人进入燃烧或腐蚀状态时可以发动。让所有处于燃烧或腐蚀状态的敌人脚下喷出火焰，对其造成灼热伤害。如果命中敌人，会获得1层熔火。每命中1个敌人，还会额外获得终结技能量。",
       "damage_multiplier": "540%",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": []
@@ -92,7 +79,14 @@
       "stagger_value": 0,
       "cooldown": "20秒",
       "spirit_cost": 300,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "ATTACH_BURN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     }
   ]
 }

@@ -14,7 +14,9 @@
       "attach_effects": [],
       "status_effects": [],
       "clear_effects": [],
-      "enhancement_conditions": []
+      "enhancement_conditions": [],
+      "effects": [],
+      "stagger_value": 17
     },
     {
       "name": "凝声",
@@ -25,7 +27,16 @@
       ],
       "status_effects": [],
       "clear_effects": [],
-      "enhancement_conditions": []
+      "enhancement_conditions": [],
+      "effects": [
+        {
+          "effect_id": "ATTACH_COLD",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ],
+      "stagger_value": 0
     },
     {
       "name": "失真",
@@ -40,7 +51,9 @@
       "enhancement_conditions": [
         "冻结状态",
         "当有敌人进入冻结状态时可以发动"
-      ]
+      ],
+      "effects": [],
+      "stagger_value": 0
     },
     {
       "name": "震音",
@@ -51,7 +64,9 @@
       ],
       "status_effects": [],
       "clear_effects": [],
-      "enhancement_conditions": []
+      "enhancement_conditions": [],
+      "effects": [],
+      "stagger_value": 0
     }
   ]
 }

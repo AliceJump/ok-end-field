@@ -15,7 +15,7 @@
       "enhancement": null,
       "description": "普通攻击：对敌人进行至多4段攻击，造成电磁伤害。作为主控干员时，重击会造成15点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成电磁伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量电磁伤害并恢复一定技力。",
       "damage_multiplier": "",
-      "stagger_value": 0,
+      "stagger_value": 15,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": []
@@ -38,26 +38,7 @@
       "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "ATTACH_ELECTROMAGNETIC",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "VULN_BURN",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "VULN_ELECTROMAGNETIC",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "effects": []
     },
     {
       "skill_id": "antal_link",
@@ -68,23 +49,10 @@
       "enhancement": null,
       "description": "当被聚焦的敌人进入物理异常或法术附着状态时可以发动。在该敌人身上引发1次能量爆炸，造成电磁伤害并再次对其施加该物理异常或法术附着。",
       "damage_multiplier": "340%",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
-      "effects": [
-        {
-          "effect_id": "ATTACH_ELECTROMAGNETIC",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "TRIGGER_EXPLOSION",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "effects": []
     },
     {
       "skill_id": "antal_ultimate",
@@ -98,20 +66,7 @@
       "stagger_value": 0,
       "cooldown": "20秒",
       "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "BUFF_BURN_UP",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "BUFF_ELECTROMAGNETIC_UP",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "effects": []
     }
   ]
 }

@@ -15,7 +15,7 @@
       "enhancement": null,
       "description": "普通攻击：对敌人进行至多4段攻击，造成物理伤害。作为主控干员时，重击会造成25点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
       "damage_multiplier": "",
-      "stagger_value": 0,
+      "stagger_value": 25,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": []
@@ -35,7 +35,7 @@
       },
       "description": "连续施放可最多施放3段不同招式，初始战技为断云。断云：消耗100技力，施放后返还50技力。从拳套中发射出拘束索，对目标及其附近敌人造成物理伤害并尝试将其拉取至自身附近。施放后战技在一段时间内替换为追形。追形：消耗50技力。朝前方连续挥拳造成物理伤害，最后一拳额外造成猛击。如果本次猛击消耗的最大破防层数不少于3层，战技在一段时间内替换为开天。开天：消耗50技力，朝前方范围造成大量物理伤害。本次伤害类型不属于战技伤害，而是视为猛击伤害。",
       "damage_multiplier": "150%（断云）+ 200%（追形）+ 600%（开天）",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
       "effects": []
@@ -49,17 +49,10 @@
       "enhancement": null,
       "description": "当有敌人达到3层及以上破防时可以发动。使用上勾拳痛击前方的敌人，对其造成物理伤害，同时施加一定时间的物理脆弱。施放后战技在一段时间内替换为追形。",
       "damage_multiplier": "250%",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
-      "effects": [
-        {
-          "effect_id": "VULN_PHYSICAL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "effects": []
     },
     {
       "skill_id": "mifu_ultimate",
@@ -70,17 +63,10 @@
       "enhancement": null,
       "description": "短暂蓄力后朝前方冲刺，对身前目标强制造成击飞，随后将其砸向地面造成物理伤害。施放后战技在一段时间内替换为追形。",
       "damage_multiplier": "700%",
-      "stagger_value": 20,
+      "stagger_value": 0,
       "cooldown": "15秒",
       "spirit_cost": 80,
-      "effects": [
-        {
-          "effect_id": "STATUS_HEAVY_HIT",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "effects": []
     }
   ]
 }

@@ -15,7 +15,7 @@
       "enhancement": null,
       "description": "普通攻击：对敌人进行至多5段攻击，造成寒冷伤害。作为主控干员时，重击会造成17点失衡。 下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成寒冷伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量寒冷伤害并恢复一定技力。",
       "damage_multiplier": "",
-      "stagger_value": 0,
+      "stagger_value": 17,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": []
@@ -35,10 +35,23 @@
       },
       "description": "向前发射一颗制冷弹。制冷弹碰到敌人后会发生爆炸，造成寒冷伤害。命中处于寒冷附着或自然附着的敌人时，消耗掉目标身上所有的法术附着，对其强制施加冻结，并基于消耗的层数造成寒冷伤害。战技成功施加冻结后，会基于消耗的层数，额外获得终结技能量，命中多名目标时仅获得1次。",
       "damage_multiplier": "250%（基础）+ 150%（冻结）+ 200%（每层）",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "ATTACH_NATURAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "ATTACH_COLD",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     },
     {
       "skill_id": "yvonne_link",
@@ -49,7 +62,7 @@
       "enhancement": null,
       "description": "当主控干员对处于冻结状态的敌人造成重击时可以发动。立即在敌人旁部署一个速冻仔，速冻仔会不断施放能量攻击周围的敌人，造成寒冷伤害并持续向中心牵引。持续时间结束后，速冻仔自爆，对周围敌人强制施加冻结并造成寒冷伤害。连携技成功命中敌人后，会额外获得终结技能量，命中多名目标时仅获得1次。",
       "damage_multiplier": "100%（能量）+ 200%（爆炸）",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": []

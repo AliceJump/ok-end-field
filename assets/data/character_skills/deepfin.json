@@ -15,7 +15,7 @@
       "enhancement": null,
       "description": "普通攻击:对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成17点失衡。下落攻击:处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。处决攻击:附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
       "damage_multiplier": "",
-      "stagger_value": 0,
+      "stagger_value": 17,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": []
@@ -42,24 +42,12 @@
       },
       "description": "勾起冰块砸击面前的敌人，对目标造成物理伤害。命中处于寒冷附着状态的目标时，消耗掉目标身上所有寒冷附着，对其强制施加冻结，并基于消耗层数恢复技力，命中多名目标时仅恢复1次。",
       "damage_multiplier": "450%",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
       "effects": [
         {
-          "effect_id": "STATUS_FROZEN",
-          "value": 1,
-          "duration": "短暂",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "BUFF_HEAL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "CLEAR_ATTACH",
+          "effect_id": "ATTACH_COLD",
           "value": 1,
           "duration": "",
           "target": "enemy"
@@ -75,17 +63,10 @@
       "enhancement": null,
       "description": "当附近目标的法术异常或源石结晶被消耗时可以发动。在敌人脚下开洞垂钓，造成物理伤害，并恢复一定技力，有一定概率能钓出珍鳞，大幅增加伤害并额外恢复技力。",
       "damage_multiplier": "300%（基础）+ 480%（珍鳞）",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
-      "effects": [
-        {
-          "effect_id": "BUFF_HEAL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "effects": []
     },
     {
       "skill_id": "deepfin_ultimate",
@@ -96,7 +77,7 @@
       "enhancement": null,
       "description": "钓起超乎想象的大鳞砸击面前的所有敌人，造成大范围的寒冷伤害，施加寒冷附着并恢复一定技力， 每击败一个目标将额外恢复一定技力。",
       "damage_multiplier": "980%",
-      "stagger_value": 20,
+      "stagger_value": 0,
       "cooldown": "20秒",
       "spirit_cost": 100,
       "effects": [

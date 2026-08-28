@@ -15,7 +15,7 @@
       "enhancement": null,
       "description": "普通攻击：对敌人进行至多4段攻击，造成自然伤害。作为主控干员时，重击会造成18点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成自然伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量自然伤害并恢复一定技力。",
       "damage_multiplier": "",
-      "stagger_value": 0,
+      "stagger_value": 18,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": []
@@ -29,17 +29,10 @@
       "enhancement": null,
       "description": "骑上多利先生冲撞目标，对目标造成自然伤害，若目标处于腐蚀状态，消耗其腐蚀状态，并对其施加物理脆弱与法术脆弱。",
       "damage_multiplier": "300%",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "ATTACH_NATURAL",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "effects": []
     },
     {
       "skill_id": "ardelia_link",
@@ -50,23 +43,10 @@
       "enhancement": null,
       "description": "当主控干员对不处于破防或法术附着状态的敌人造成重击后可以发动。发射一团火山云抛向目标敌人，到达目标身边后对目标造成自然伤害。火山云会跟踪目标，短暂延迟后爆炸，对周围其他敌人造成一半的自然伤害，并强制施加短暂的腐蚀。",
       "damage_multiplier": "200%",
-      "stagger_value": 5,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
-      "effects": [
-        {
-          "effect_id": "ATTACH_NATURAL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "BUFF_HEAL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "effects": []
     },
     {
       "skill_id": "ardelia_ultimate",
@@ -86,20 +66,7 @@
       "stagger_value": 0,
       "cooldown": "20秒",
       "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "ATTACH_NATURAL",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "BUFF_HEAL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "effects": []
     }
   ]
 }

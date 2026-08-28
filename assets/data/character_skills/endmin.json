@@ -13,9 +13,9 @@
       "element": "物理",
       "has_enhancement": false,
       "enhancement": null,
-      "description": "处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。下落攻击：普通攻击：对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成18点失衡。",
+      "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成18点失衡。 下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
       "damage_multiplier": "",
-      "stagger_value": 0,
+      "stagger_value": 18,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": []
@@ -35,17 +35,10 @@
       },
       "description": "使用源石技艺冲击前方一定范围内的敌人，造成物理伤害和猛击。",
       "damage_multiplier": "300%（基础）+ 200%（每层破防）",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "CONSUME_STACK",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "effects": []
     },
     {
       "skill_id": "endmin_link",
@@ -56,17 +49,10 @@
       "enhancement": null,
       "description": "当小队内其他干员的连携技造成伤害时可以发动。冲到敌人身边，对其造成物理伤害，并附着源石结晶，在一段时间内将其封印。施加物理异常和破防会消耗源石结晶并额外造成物理伤害。",
       "damage_multiplier": "250%",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
-      "effects": [
-        {
-          "effect_id": "STATUS_STAGGER",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "effects": []
     },
     {
       "skill_id": "endmin_ultimate",
@@ -77,7 +63,7 @@
       "enhancement": null,
       "description": "使用源石技艺轰击地面，对前方扇形范围内的敌人造成大量物理伤害。如果敌人身上附着源石结晶，则消耗源石结晶并额外造成一次物理伤害。",
       "damage_multiplier": "800%",
-      "stagger_value": 25,
+      "stagger_value": 0,
       "cooldown": "15秒",
       "spirit_cost": 90,
       "effects": []

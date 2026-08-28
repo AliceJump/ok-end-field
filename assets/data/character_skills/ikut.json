@@ -15,7 +15,7 @@
       "enhancement": null,
       "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成16点失衡。 下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
       "damage_multiplier": "",
-      "stagger_value": 0,
+      "stagger_value": 16,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": []
@@ -42,30 +42,12 @@
       },
       "description": "瞬闪至敌人身边进行2次斩击，造成少量物理伤害。若敌人处于导电状态，消耗其导电状态并追加一次攻击，造成电磁伤害，然后恢复一定技力。",
       "damage_multiplier": "101%（每段）+ 405%（追加）",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
       "effects": [
         {
           "effect_id": "ATTACH_ELECTROMAGNETIC",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "STATUS_CONDUCTING",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "BUFF_HEAL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "TRIGGER_ADDITIONAL",
           "value": 1,
           "duration": "",
           "target": "enemy"
@@ -81,12 +63,12 @@
       "enhancement": null,
       "description": "当有敌人进入导电状态或导电状态被消耗后可以发动。瞬闪至敌人身边进行多次斩击，造成物理伤害，并恢复一定技力。",
       "damage_multiplier": "350%",
-      "stagger_value": 5,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": [
         {
-          "effect_id": "BUFF_HEAL",
+          "effect_id": "ATTACH_ELECTROMAGNETIC",
           "value": 1,
           "duration": "",
           "target": "enemy"
@@ -102,18 +84,12 @@
       "enhancement": null,
       "description": "用电弧包裹自身后向前方冲刺一段距离，对路径上的敌人造成电磁伤害并施加电磁附着。一段时间后，引爆留下的电弧，再次造成电磁伤害，若敌人处于电磁附着状态，则会消耗其电磁附着并强制施加导电。",
       "damage_multiplier": "350%（冲刺）+ 550%（引爆）",
-      "stagger_value": 10,
+      "stagger_value": 0,
       "cooldown": "15秒",
       "spirit_cost": 90,
       "effects": [
         {
           "effect_id": "ATTACH_ELECTROMAGNETIC",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "TRIGGER_EXPLOSION",
           "value": 1,
           "duration": "",
           "target": "enemy"

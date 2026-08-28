@@ -14,7 +14,9 @@
       "attach_effects": [],
       "status_effects": [],
       "clear_effects": [],
-      "enhancement_conditions": []
+      "enhancement_conditions": [],
+      "effects": [],
+      "stagger_value": 16
     },
     {
       "name": "归穹宇",
@@ -23,7 +25,9 @@
       "attach_effects": [],
       "status_effects": [],
       "clear_effects": [],
-      "enhancement_conditions": []
+      "enhancement_conditions": [],
+      "effects": [],
+      "stagger_value": 0
     },
     {
       "name": "见天河",
@@ -35,7 +39,9 @@
       "enhancement_conditions": [
         "破防状态",
         "当有敌人进入破防状态时可以发动"
-      ]
+      ],
+      "effects": [],
+      "stagger_value": 0
     },
     {
       "name": "冽风霜",
@@ -44,7 +50,9 @@
       "attach_effects": [],
       "status_effects": [],
       "clear_effects": [],
-      "enhancement_conditions": []
+      "enhancement_conditions": [],
+      "effects": [],
+      "stagger_value": 0
     }
   ]
 }

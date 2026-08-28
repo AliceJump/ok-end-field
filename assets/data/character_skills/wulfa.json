@@ -15,7 +15,7 @@
       "enhancement": null,
       "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成18点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
       "damage_multiplier": "",
-      "stagger_value": 0,
+      "stagger_value": 18,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": []
@@ -29,23 +29,10 @@
       "enhancement": null,
       "description": "冲向目标，造成物理伤害并施加击飞。 若目标已经拥有破防，则会额外释放狼之珀冲向目标，造成灼热伤害。",
       "damage_multiplier": "192%（第一段）+ 288%（第二段）",
-      "stagger_value": 20,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "ATTACH_BURN",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "STATUS_HEAVY_HIT",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "effects": []
     },
     {
       "skill_id": "wulfa_link",
@@ -69,7 +56,7 @@
       },
       "description": "当有敌人同时处于破防和法术附着状态时可以发动。 洛茜的连携技可连续发动两次，第一次会对目标造成物理伤害。 第二次将消耗目标全部的法术附着，对其造成基于消耗层数的物理伤害并造成一次击飞，同时在一段时间内提升自身的暴击率和暴击伤害。 当第二次连携技精准衔接时，可以额外施加1层破防。",
       "damage_multiplier": "150%（第一段）+ 300%（第二段）+ 180%（每层）",
-      "stagger_value": 5,
+      "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
       "effects": []
@@ -96,10 +83,17 @@
       },
       "description": "挥动披风迅捷戳击，在短时间内对目标造成多段灼热伤害，之后使用匕首进行两段斩击，造成大量灼热伤害并施加灼热附着。 本次技能将在暴击时造成更高的暴击伤害。",
       "damage_multiplier": "600%（戳击）+ 250%（第一段）+ 750%（第二段）",
-      "stagger_value": 25,
+      "stagger_value": 0,
       "cooldown": "10秒",
       "spirit_cost": 110,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "ATTACH_BURN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     }
   ]
 }
