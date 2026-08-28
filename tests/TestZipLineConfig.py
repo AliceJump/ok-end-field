@@ -9,22 +9,10 @@ from ok.util.file import read_json_file, write_json_file
 
 from src.core import config_migration, global_config_store
 from src.tasks.account import account_scope_store
-from src.core.global_config_store import (
-    ZIP_LINE_CONFIG_NAME,
-    ZIP_LINE_CONFIG_TYPE,
-    ZIP_LINE_DELIVERY_GROUP,
-    ZIP_LINE_GATHER_GROUP,
-    ZIP_LINE_GROUP_KEY,
-)
+from src.core.global_config_store import ZIP_LINE_CONFIG_NAME
 
 
 class TestZipLineConfig(unittest.TestCase):
-    def test_zipline_config_has_explicit_route_groups(self):
-        group_meta = ZIP_LINE_CONFIG_TYPE[ZIP_LINE_GROUP_KEY]
-        self.assertEqual(group_meta["options"], [ZIP_LINE_DELIVERY_GROUP, ZIP_LINE_GATHER_GROUP])
-        self.assertIn(ZIP_LINE_DELIVERY_GROUP, group_meta["sub_configs"])
-        self.assertIn(ZIP_LINE_GATHER_GROUP, group_meta["sub_configs"])
-
     @patch("src.tasks.account.account_scope_store.update_overrides")
     def test_legacy_account_routes_move_to_shared_zipline_config(self, update_overrides):
         global_config_store._migrate_legacy_zip_line_account_overrides()

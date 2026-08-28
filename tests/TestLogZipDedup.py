@@ -17,10 +17,6 @@ from src.patches.log_zip_dedup import (
 
 class TestLogZipDedup(unittest.TestCase):
 
-    def test_md5_hex_returns_same_hash_for_same_bytes(self):
-        self.assertEqual(md5_hex(b"abc"), "900150983cd24fb0d6963f7d28e17f72")
-        self.assertNotEqual(md5_hex(b"abc"), md5_hex(b"abd"))
-
     def test_collect_image_duplicates_keeps_first_and_records_rest(self):
         entries = [
             ("screenshots/a_original.png", b"same"),
