@@ -1,54 +1,93 @@
 {
   "character_id": "lang_wei",
-  "wiki_item_id": "3",
   "name": "狼卫",
-  "star": 0,
-  "element": "",
-  "profession": "",
-  "weapon_type": "",
+  "star": 5,
+  "element": "灼热",
+  "profession": "术师",
+  "weapon_type": "手铳",
   "skills": [
     {
+      "skill_id": "wolfgd_normal",
       "name": "多重连射",
       "skill_type": "普通攻击",
+      "element": "灼热",
+      "has_enhancement": false,
+      "enhancement": null,
       "description": "下落攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量灼热伤害并恢复一定技力。处决攻击：对敌人进行至多4段攻击，造成灼热伤害。作为主控干员时，重击会造成18点失衡。处于空中时使用普通攻击，会下落并攻击附近敌人，造成灼热伤害。普通攻击：",
-      "attach_effects": [],
-      "status_effects": [],
-      "clear_effects": [],
-      "enhancement_conditions": []
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
     },
     {
+      "skill_id": "wolfgd_skill",
       "name": "灼热弹痕",
       "skill_type": "战技",
+      "element": "灼热",
+      "has_enhancement": false,
+      "enhancement": null,
       "description": "对目标进行连射，造成少量灼热伤害，最后一次射击施加灼热附着。如果目标处于燃烧或导电状态，则不再施加灼热附着，而是消耗该状态并追加一次射击，造成大量灼热伤害。",
-      "attach_effects": [
-        "ATTACH_BURN"
-      ],
-      "status_effects": [],
-      "clear_effects": [],
-      "enhancement_conditions": []
-    },
-    {
-      "name": "爆裂手雷·β型",
-      "skill_type": "连携技",
-      "description": "当有敌人被施加法术附着时可以发动。向目标所在位置扔出一颗爆裂手雷，手雷落地后爆炸，对附近范围的敌人造成灼热伤害并施加灼热附着。",
-      "attach_effects": [
-        "ATTACH_BURN"
-      ],
-      "status_effects": [],
-      "clear_effects": [],
-      "enhancement_conditions": [
-        "法术附着",
-        "当有敌人被施加法术附着时可以发动"
+      "damage_multiplier": "230%（基础）+ 850%（追加）",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_BURN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "TRIGGER_ADDITIONAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
       ]
     },
     {
+      "skill_id": "wolfgd_link",
+      "name": "爆裂手雷·β型",
+      "skill_type": "连携技",
+      "element": "灼热",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当有敌人被施加法术附着时可以发动。向目标所在位置扔出一颗爆裂手雷，手雷落地后爆炸，对附近范围的敌人造成灼热伤害并施加灼热附着。",
+      "damage_multiplier": "135%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "ATTACH_BURN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "wolfgd_ultimate",
       "name": "狼之怒",
       "skill_type": "终结技",
+      "element": "灼热",
+      "has_enhancement": false,
+      "enhancement": null,
       "description": "进行快速射击并施放狼之怒攻击附近敌人，造成5次灼热伤害并强制施加燃烧。",
-      "attach_effects": [],
-      "status_effects": [],
-      "clear_effects": [],
-      "enhancement_conditions": []
+      "damage_multiplier": "72%（每段）",
+      "stagger_value": 15,
+      "cooldown": "10秒",
+      "spirit_cost": 90,
+      "effects": [
+        {
+          "effect_id": "ATTACH_BURN",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     }
   ]
 }

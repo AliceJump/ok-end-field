@@ -1,57 +1,105 @@
 {
   "character_id": "ai_er_dai_la",
-  "wiki_item_id": "11",
   "name": "艾尔黛拉",
-  "star": 0,
-  "element": "",
-  "profession": "",
-  "weapon_type": "",
+  "star": 6,
+  "element": "自然",
+  "profession": "辅助",
+  "weapon_type": "施术单元",
   "skills": [
     {
+      "skill_id": "ardelia_normal",
       "name": "岩石的轻语",
       "skill_type": "普通攻击",
+      "element": "自然",
+      "has_enhancement": false,
+      "enhancement": null,
       "description": "处于空中时使用普通攻击，会下落并攻击附近敌人，造成自然伤害。下落攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量自然伤害并恢复一定技力。处决攻击：普通攻击：对敌人进行至多4段攻击，造成自然伤害。作为主控干员时，重击会造成18点失衡。",
-      "attach_effects": [],
-      "status_effects": [],
-      "clear_effects": [],
-      "enhancement_conditions": []
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
     },
     {
+      "skill_id": "ardelia_skill",
       "name": "奔腾的多利",
       "skill_type": "战技",
+      "element": "自然",
+      "has_enhancement": false,
+      "enhancement": null,
       "description": "骑上多利先生冲撞目标，对目标造成自然伤害，若目标处于腐蚀状态，消耗其腐蚀状态，并对其施加物理脆弱与法术脆弱。",
-      "attach_effects": [
-        "ATTACH_CORRODE",
-        "VULN_PHYSICAL",
-        "VULN_ALL"
-      ],
-      "status_effects": [],
-      "clear_effects": [
-        "CLEAR_CORRODE"
-      ],
-      "enhancement_conditions": [
-        "腐蚀状态"
+      "damage_multiplier": "300%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_NATURAL",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        }
       ]
     },
     {
+      "skill_id": "ardelia_link",
       "name": "火山蘑菇云",
       "skill_type": "连携技",
+      "element": "自然",
+      "has_enhancement": false,
+      "enhancement": null,
       "description": "当主控干员对不处于破防或法术附着状态的敌人造成重击后可以发动。发射一团火山云抛向目标敌人，到达目标身边后对目标造成自然伤害。火山云会跟踪目标，短暂延迟后爆炸，对周围其他敌人造成一半的自然伤害，并强制施加短暂的腐蚀。",
-      "attach_effects": [
-        "ATTACH_CORRODE"
-      ],
-      "status_effects": [],
-      "clear_effects": [],
-      "enhancement_conditions": []
+      "damage_multiplier": "200%",
+      "stagger_value": 5,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "ATTACH_NATURAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "BUFF_HEAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     },
     {
+      "skill_id": "ardelia_ultimate",
       "name": "毛茸茸派对",
       "skill_type": "终结技",
+      "element": "自然",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "自然领域",
+        "trigger_condition": "终结技期间",
+        "enhancement_effect": "自然领域",
+        "enhancement_visible_pulse": false,
+        "effects": []
+      },
       "description": "艾尔黛拉进入可移动的持续施法状态，召唤多利先生的帮助，随机向四周散射多利先生的分身。每个分身命中敌人时对其造成自然伤害，每个敌人每0.3秒最多受到一次伤害。",
-      "attach_effects": [],
-      "status_effects": [],
-      "clear_effects": [],
-      "enhancement_conditions": []
+      "damage_multiplier": "150%（每秒）",
+      "stagger_value": 0,
+      "cooldown": "20秒",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_NATURAL",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "BUFF_HEAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     }
   ]
 }

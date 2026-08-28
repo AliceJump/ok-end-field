@@ -1,51 +1,85 @@
 {
   "character_id": "da_pan",
-  "wiki_item_id": "13",
   "name": "大潘",
-  "star": 0,
-  "element": "",
-  "profession": "",
-  "weapon_type": "",
+  "star": 5,
+  "element": "物理",
+  "profession": "突击",
+  "weapon_type": "双手剑",
   "skills": [
     {
+      "skill_id": "dapan_normal",
       "name": "滚刀切！",
       "skill_type": "普通攻击",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
       "description": "下落攻击： 普通攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。 对敌人进行至多4段攻击，造成物理伤害。作为主控干员时，重击会造成20点失衡。处决攻击：",
-      "attach_effects": [],
-      "status_effects": [],
-      "clear_effects": [],
-      "enhancement_conditions": []
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
     },
     {
+      "skill_id": "dapan_skill",
       "name": "颠勺！",
       "skill_type": "战技",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
       "description": "掏出铁锅进行短暂蓄力后，用力向上颠勺，对敌人造成物理伤害与击飞。",
-      "attach_effects": [],
-      "status_effects": [],
-      "clear_effects": [],
-      "enhancement_conditions": []
+      "damage_multiplier": "300%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": []
     },
     {
+      "skill_id": "dapan_link",
       "name": "加料！",
       "skill_type": "连携技",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
       "description": "当有敌人达到4层破防时可以发动。抡起铁锅对敌人造成大量物理伤害并猛击，本次猛击的伤害获得额外提升。",
-      "attach_effects": [],
-      "status_effects": [],
-      "clear_effects": [],
-      "enhancement_conditions": [
-        "当有敌人达到4层破防时可以发动"
-      ]
+      "damage_multiplier": "650%",
+      "stagger_value": 15,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
     },
     {
+      "skill_id": "dapan_ultimate",
       "name": "切丝入锅！",
       "skill_type": "终结技",
+      "element": "物理",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "备料状态",
+        "trigger_condition": "终结技击败敌人",
+        "enhancement_effect": "备料状态",
+        "enhancement_visible_pulse": false,
+        "effects": []
+      },
       "description": "猛拍砧板，立即对前方范围内的敌人强制造成击飞。随后发动6段连续斩击，造成物理伤害，最后将所有敌人一并击坠，强制造成倒地，造成大量物理伤害。",
-      "attach_effects": [
-        "STATUS_HEAVY_HIT"
-      ],
-      "status_effects": [],
-      "clear_effects": [],
-      "enhancement_conditions": []
+      "damage_multiplier": "50%（每段）+ 400%（终结一击）",
+      "stagger_value": 20,
+      "cooldown": "15秒",
+      "spirit_cost": 90,
+      "effects": [
+        {
+          "effect_id": "STATUS_STAGGER",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "STATUS_HEAVY_HIT",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     }
   ]
 }
