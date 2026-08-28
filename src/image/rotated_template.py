@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from typing import Tuple, Optional, List
 import cv2
 import numpy as np
@@ -5,6 +6,32 @@ import os
 
 
 ARROW_TEMPLATE_FILENAME = "arrow.png"
+
+# 量化精度
+_SCALE_FACTOR = 10000  # 4 位小数
+_ANGLE_FACTOR = 1000  # 3 位小数（deg）
+
+
+def _quantize_scale(scale: float) -> int:
+    """将浮点缩放量化为整数 key，避免浮点字典键误差。"""
+    return int(round(float(scale) * _SCALE_FACTOR))
+
+
+def _dequantize_scale(scale_q: int) -> float:
+    return scale_q / _SCALE_FACTOR
+
+
+def _quantize_angle(angle: float) -> int:
+    """归一化到 [0,360) 后量化为整数 key。"""
+    return int(round(float(angle % 360) * _ANGLE_FACTOR))
+
+
+def _dequantize_angle(angle_q: int) -> float:
+    return angle_q / _ANGLE_FACTOR
+
+
+def _is_identity_scale(scale: float) -> bool:
+    return abs(float(scale) - 1.0) < 1e-9
 
 
 def _to_rgba(img: np.ndarray) -> np.ndarray:
@@ -52,7 +79,7 @@ def _safe_roi(img: np.ndarray, x: int, y: int, w: int, h: int) -> Optional[np.nd
 
 
 def _scale_template(template_rgba: np.ndarray, scale: float) -> np.ndarray:
-    if abs(scale - 1.0) < 1e-9:
+    if _is_identity_scale(scale):
         return template_rgba
     h, w = template_rgba.shape[:2]
     new_h = max(1, int(round(h * scale)))
@@ -65,7 +92,7 @@ def _scale_template(template_rgba: np.ndarray, scale: float) -> np.ndarray:
 
 
 def _scale_point(point: Tuple[float, float], scale: float) -> Tuple[float, float]:
-    if abs(scale - 1.0) < 1e-9:
+    if _is_identity_scale(scale):
         return point
     return (point[0] * scale, point[1] * scale)
 
@@ -115,51 +142,47 @@ class ArrowAngleMatcher:
         self.benchmark_width = benchmark_width
         self.max_cache_scales = max_cache_scales
 
-        # 缓存
-        self._scaled_template_cache = {}  # scale_key -> (tpl_rgba_scaled, center_scaled)
-        self._scaled_access = []  # LRU
-        self._rotation_cache = {}  # (scale_key, angle_norm) -> (bgr_cropped, alpha_255, bbox, rel_center)
-
-    def _get_scale_key(self, scale: float) -> float:
-        return round(scale, 4)
-
-    def _normalize_angle(self, angle: float) -> float:
-        return float(angle % 360)
+        # LRU 缓存
+        # scale_q(int) -> (tpl_rgba_scaled, center_scaled)
+        self._scaled_template_cache: OrderedDict[int, Tuple[np.ndarray, Tuple[float, float]]] = OrderedDict()
+        # (scale_q, angle_q) -> (bgr_cropped, alpha_255, bbox, rel_center)
+        self._rotation_cache: dict[Tuple[int, int], Tuple[np.ndarray, np.ndarray, Tuple[int, int, int, int], Tuple[float, float]]] = {}
 
     def _get_scaled_template(self, scale: float):
-        scale_key = self._get_scale_key(scale)
-        if scale_key in self._scaled_template_cache:
-            if scale_key in self._scaled_access:
-                self._scaled_access.remove(scale_key)
-            self._scaled_access.append(scale_key)
-            return self._scaled_template_cache[scale_key]
+        """获取缩放模板，内部使用量化整数 key 实现 LRU。"""
+        scale_q = _quantize_scale(scale)
+        if scale_q in self._scaled_template_cache:
+            self._scaled_template_cache.move_to_end(scale_q)
+            return self._scaled_template_cache[scale_q]
 
-        tpl_rgba = _scale_template(self.tpl_rgba_orig, scale)
-        center = _scale_point(self.template_center_orig, scale)
+        scale_eff = _dequantize_scale(scale_q)
+        tpl_rgba = _scale_template(self.tpl_rgba_orig, scale_eff)
+        center = _scale_point(self.template_center_orig, scale_eff)
 
-        self._scaled_template_cache[scale_key] = (tpl_rgba, center)
-        self._scaled_access.append(scale_key)
-
+        self._scaled_template_cache[scale_q] = (tpl_rgba, center)
         # LRU 清理
         if len(self._scaled_template_cache) > self.max_cache_scales:
-            oldest = self._scaled_access.pop(0)
-            del self._scaled_template_cache[oldest]
-            self._rotation_cache = {k: v for k, v in self._rotation_cache.items() if k[0] != oldest}
+            oldest_q, _ = self._scaled_template_cache.popitem(last=False)
+            # 同步清理该 scale 下的所有旋转缓存
+            self._rotation_cache = {k: v for k, v in self._rotation_cache.items() if k[0] != oldest_q}
 
         return tpl_rgba, center
 
-    def _ensure_cache_for_scale_angle(self, scale_key: float, angle: float):
-        """确保某个角度的旋转结果已缓存"""
-        angle_norm = self._normalize_angle(angle)
-        cache_key = (scale_key, angle_norm)
+    def _ensure_cache_for_scale_angle(self, scale: float, angle: float):
+        """确保某个角度的旋转结果已缓存；scale 可为原始浮点或已量化值。"""
+        # 兼容调用方传入已量化的 scale_key(float) 或原始 scale
+        scale_q = _quantize_scale(scale)
+        angle_q = _quantize_angle(angle)
+        cache_key = (scale_q, angle_q)
 
         if cache_key in self._rotation_cache:
             return
 
-        tpl_rgba, template_center = self._get_scaled_template(scale_key)  # 注意这里传入 scale_key 而非 scale
+        tpl_rgba, template_center = self._get_scaled_template(scale)
         th, tw = tpl_rgba.shape[:2]
+        angle_eff = _dequantize_angle(angle_q)
 
-        M = cv2.getRotationMatrix2D(template_center, angle_norm, 1.0)
+        M = cv2.getRotationMatrix2D(template_center, angle_eff, 1.0)
 
         rotated_bgr = cv2.warpAffine(
             tpl_rgba[:, :, :3], M, (tw, th), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT, borderValue=0
@@ -188,24 +211,28 @@ class ArrowAngleMatcher:
         self._rotation_cache[cache_key] = (bgr_cropped, alpha_mask_final, bbox, rel_center)
 
     def _get_angles_with_wrap(self, center_angle: float, radius: float, step: float) -> List[float]:
-        """生成环绕角度列表"""
-        angles = []
-        a = center_angle - radius
-        while a <= center_angle + radius + 1e-6:
-            angles.append(self._normalize_angle(a))
-            a += step
-        return sorted(set(angles))
+        """生成环绕角度列表，量化去重后排序。"""
+        n = int(round(2 * radius / step)) + 1
+        raw = [center_angle - radius + i * step for i in range(n)]
+        # 量化去重（处理浮点累积误差与跨 0/360 边界）
+        seen: dict[int, float] = {}
+        for a in raw:
+            q = _quantize_angle(a)
+            if q not in seen:
+                seen[q] = _dequantize_angle(q)
+        return sorted(seen.values())
 
     def _search(
-            self, tgt: np.ndarray, center: Tuple[float, float], scale_key: float, angles: List[float]
+            self, tgt: np.ndarray, center: Tuple[float, float], scale: float, angles: List[float]
     ) -> Tuple[float, float]:
         """在给定角度列表中搜索最佳匹配"""
         best_angle = 0.0
         best_score = -float("inf")
+        scale_q = _quantize_scale(scale)
 
         for ang in angles:
-            ang_norm = self._normalize_angle(ang)
-            cache_key = (scale_key, ang_norm)
+            angle_q = _quantize_angle(ang)
+            cache_key = (scale_q, angle_q)
 
             if cache_key not in self._rotation_cache:
                 continue
@@ -225,8 +252,9 @@ class ArrowAngleMatcher:
             except Exception:
                 score = -1.0
 
+            ang_eff = _dequantize_angle(angle_q)
             if score > best_score:
-                best_angle = ang_norm
+                best_angle = ang_eff
                 best_score = score
 
         return best_angle, best_score if best_score > -float("inf") else 0.0
@@ -237,7 +265,6 @@ class ArrowAngleMatcher:
         H, W = tgt.shape[:2]
 
         scale = W / self.benchmark_width
-        scale_key = self._get_scale_key(scale)
 
         # 标准化中心点
         cx, cy = center
@@ -249,9 +276,9 @@ class ArrowAngleMatcher:
         # 粗搜索
         coarse_angles = [float(a) for a in range(0, 360, 10)]
         for ang in coarse_angles:
-            self._ensure_cache_for_scale_angle(scale_key, ang)
+            self._ensure_cache_for_scale_angle(scale, ang)
 
-        best_angle, best_score = self._search(tgt, center, scale_key, coarse_angles)
+        best_angle, best_score = self._search(tgt, center, scale, coarse_angles)
 
         if not two_stage or best_score < 0.3:  # 阈值可根据实际情况调整
             return best_angle, best_score
@@ -259,11 +286,10 @@ class ArrowAngleMatcher:
         # 精搜索
         fine_angles = self._get_angles_with_wrap(best_angle, 10.0, 0.5)
         for ang in fine_angles:
-            self._ensure_cache_for_scale_angle(scale_key, ang)
+            self._ensure_cache_for_scale_angle(scale, ang)
 
-        fine_angle, fine_score = self._search(tgt, center, scale_key, fine_angles)
+        fine_angle, fine_score = self._search(tgt, center, scale, fine_angles)
 
         if fine_score > best_score:
             return fine_angle, fine_score
         return best_angle, best_score
-
