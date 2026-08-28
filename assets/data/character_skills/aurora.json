@@ -66,7 +66,14 @@
       "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "BUFF_HEAL",
+          "value": 1,
+          "duration": "",
+          "target": "ally"
+        }
+      ]
     },
     {
       "skill_id": "aurora_ultimate",
@@ -80,7 +87,14 @@
       "stagger_value": 0,
       "cooldown": "20秒",
       "spirit_cost": 100,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "STATUS_FROZEN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     }
   ]
 }

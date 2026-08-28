@@ -32,7 +32,20 @@
       "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "VULN_PHYSICAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "VULN_ALL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     },
     {
       "skill_id": "ardelia_link",
@@ -46,7 +59,14 @@
       "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "ATTACH_NATURAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     },
     {
       "skill_id": "ardelia_ultimate",

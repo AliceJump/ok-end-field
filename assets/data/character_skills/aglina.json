@@ -66,14 +66,26 @@
         "trigger_condition": "目标处于破防状态时",
         "enhancement_effect": "法术脆弱增强",
         "enhancement_visible_pulse": false,
-        "effects": [
-          {
-            "effect_id": "VULN_ALL",
-            "value": 1,
-            "duration": "",
-            "target": "enemy"
-          }
-        ]
+      "effects": [
+        {
+          "effect_id": "ATTACH_NATURAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "STATUS_SLOW",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "VULN_ALL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
       },
       "description": "创造一个重力紊乱区域，对区域内的敌人立即造成一次自然伤害并施加自然附着。处于重力紊乱区域中的目标被施加缓速和法术脆弱。目标处于破防状态时，法术脆弱效果会随破防层数额外提升。区域内的目标若处于击飞状态，将保持击飞状态直到区域效果结束。",
       "damage_multiplier": "750%",

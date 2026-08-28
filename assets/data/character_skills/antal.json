@@ -31,7 +31,20 @@
         "trigger_condition": "战技命中敌人",
         "enhancement_effect": "聚焦状态",
         "enhancement_visible_pulse": false,
-        "effects": []
+      "effects": [
+        {
+          "effect_id": "VULN_ELECTROMAGNETIC",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "VULN_BURN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
       },
       "description": "对敌人施加长时间聚焦，造成电磁伤害，被聚焦的敌人受到电磁脆弱和灼热脆弱，同时最多聚焦1个敌人。",
       "damage_multiplier": "200%",
