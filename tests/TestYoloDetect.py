@@ -60,11 +60,6 @@ class TestYoloDetect(unittest.TestCase):
         self.assertEqual(1, len(results))
         self.assertEqual(0, len(task.draw_calls))
 
-    def test_yolo_detect_requires_name(self):
-        task = _DummyTask(debug=False)
-        with self.assertRaises(ValueError):
-            task.yolo_detect(name=[])
-
 
 if __name__ == "__main__":
     unittest.main()

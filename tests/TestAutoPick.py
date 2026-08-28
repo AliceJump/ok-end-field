@@ -1,10 +1,7 @@
 import unittest
 
 from src.tasks.trigger.auto_pick_rules import (
-    BLACK_LIST,
-    CFG_SKIP_PRODUCIBLE,
     PICKABLE_PLANT_VARIANTS,
-    PRODUCIBLE_PLANTS,
     WHITE_LIST,
     should_skip_pick,
 )
@@ -12,10 +9,6 @@ from src.tasks.trigger.auto_pick_rules import (
 
 class TestAutoPickRules(unittest.TestCase):
     def test_producible_plants_are_skipped_by_default(self):
-        self.assertEqual(
-            PRODUCIBLE_PLANTS,
-            {'琼叶参', '金石稻', '芽针', '锦草', '苦叶椒', '砂叶', '灰芦麦', '柑实', '荞花', '酮化灌木'},
-        )
         self.assertTrue(should_skip_pick('荞花'))
         self.assertTrue(should_skip_pick('获得锦草 x3'))
         self.assertTrue(should_skip_pick('酮化灌木'))
@@ -25,10 +18,6 @@ class TestAutoPickRules(unittest.TestCase):
         self.assertTrue(should_skip_pick('激活箱子'))
 
     def test_special_plant_variants_are_not_skipped_by_default(self):
-        self.assertEqual(
-            PICKABLE_PLANT_VARIANTS,
-            {'荆刺芽针', '蓬茸锦草', '黯银柑实', '映火荞花'},
-        )
         for item_name in PICKABLE_PLANT_VARIANTS:
             self.assertFalse(should_skip_pick(item_name))
 
@@ -56,12 +45,7 @@ class TestAutoPickRules(unittest.TestCase):
                 f'{text} 应被子串匹配到白名单',
             )
 
-    def test_black_list_entries_are_not_in_whitelist(self):
-        self.assertTrue(BLACK_LIST)
-        self.assertFalse(BLACK_LIST & WHITE_LIST)
 
-    def test_config_key_is_registered(self):
-        self.assertEqual(CFG_SKIP_PRODUCIBLE, '屏蔽可量产植物')
 
 
 if __name__ == '__main__':

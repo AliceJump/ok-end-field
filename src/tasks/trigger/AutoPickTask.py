@@ -1,5 +1,3 @@
-import cv2
-import numpy as np
 from ok import Logger, TriggerTask
 
 from src.core.BaseEfTask import BaseEfTask
@@ -88,19 +86,3 @@ white_color = {
     'g': (230, 255),
     'b': (230, 255)
 }
-
-gray_color = {
-    'r': (40, 90),
-    'g': (40, 90),
-    'b': (40, 90),
-}
-
-
-def is_mostly_grayscale(frame, threshold=10):
-    b, g, r = cv2.split(frame)
-    diff_rg = cv2.absdiff(r, g)
-    diff_gb = cv2.absdiff(g, b)
-    diff_br = cv2.absdiff(b, r)
-    gray_mask = (diff_rg < threshold) & (diff_gb < threshold) & (diff_br < threshold)
-    gray_percentage = (np.sum(gray_mask) / frame.size * 3)
-    return gray_percentage

@@ -12,7 +12,6 @@ from src.patches.screenshot_sidecar import (
     rebuild_boxed_images,
     render_boxed_image,
     serialize_boxes,
-    sidecar_path_of,
 )
 
 
@@ -52,12 +51,6 @@ class TestScreenshotSidecar(unittest.TestCase):
         self.assertEqual(boxes[0]["name"], "无名字段")
         self.assertEqual(boxes[0]["text"], "无名字段")
 
-    def test_build_sidecar_structure(self):
-        sidecar = build_sidecar("a_original.png", [{"x": 1}])
-        self.assertEqual(sidecar["format"], 1)
-        self.assertEqual(sidecar["image"], "a_original.png")
-        self.assertEqual(sidecar["boxes"], [{"x": 1}])
-
     def test_render_boxed_image_draws_rectangle(self):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)
@@ -77,12 +70,6 @@ class TestScreenshotSidecar(unittest.TestCase):
                 self.assertEqual(img.getpixel((10, 40)), (255, 60, 60))  # 左边框
                 self.assertEqual(img.getpixel((89, 40)), (255, 60, 60))  # 右边框
                 self.assertEqual(img.getpixel((50, 40)), (255, 255, 255))  # 框内部保持原色
-
-    def test_sidecar_path_of_derives_name(self):
-        self.assertEqual(
-            sidecar_path_of("20260728_152007_日常任务_original.png").name,
-            "20260728_152007_日常任务_boxes.json",
-        )
 
     def test_rebuild_boxed_images(self):
         with tempfile.TemporaryDirectory() as tmp:

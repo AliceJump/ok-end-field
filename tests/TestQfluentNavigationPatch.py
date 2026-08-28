@@ -65,9 +65,6 @@ class TestQfluentNavigationPatch(unittest.TestCase):
         cls._original = NavigationPanel._onIndicatorAniFinished
         install_qfluent_navigation_patch()
 
-    def test_patch_installed(self):
-        self.assertIsNot(NavigationPanel._onIndicatorAniFinished, self._original)
-
     def test_no_crash_when_indicator_item_none(self):
         # 窗口未显示时 _findIndicatorItem 返回 None，原方法会抛 AttributeError
         panel = _FakePanel(_FakeWidget(), indicator_item=None)

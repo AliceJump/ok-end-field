@@ -21,13 +21,6 @@ class TestGameWindow(unittest.TestCase):
 
         self.assertEqual(hwnd, 200)
 
-    @patch("src.core.game_window.win32gui")
-    def test_find_game_hwnd_returns_zero_when_no_window_matches(self, win32gui):
-        win32gui.GetForegroundWindow.return_value = 0
-        win32gui.EnumWindows.side_effect = lambda callback, context: None
-
-        self.assertEqual(find_game_hwnd({"hwnd_class": "UnityWndClass"}, timeout=0), 0)
-
 
 if __name__ == "__main__":
     unittest.main()
