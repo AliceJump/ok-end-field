@@ -29,7 +29,7 @@ from src.data.skill_types import (
 )
 from src.data.effects import EffectType
 
-from src.data.characters import load_all_characters
+from src.data.character_skills import load_all_characters
 
 # 导出类型以便其他模块使用
 __all__ = [

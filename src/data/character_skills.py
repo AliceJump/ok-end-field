@@ -1,4 +1,4 @@
-"""角色数据包。从JSON文件加载所有角色数据。"""
+"""角色数据模块。从JSON文件加载所有角色技能数据。"""
 
 from __future__ import annotations
 
@@ -101,7 +101,8 @@ def _load_character_from_json(file_path: Path) -> Character:
 def load_all_characters() -> dict[str, Character]:
     """加载所有角色数据。"""
     characters: dict[str, Character] = {}
-    characters_dir = Path(__file__).parent
+    # JSON 文件位于 assets/data/character_skills/ 目录
+    characters_dir = Path(__file__).resolve().parent.parent.parent / "assets" / "data" / "character_skills"
 
     for json_file in sorted(characters_dir.glob("*.json")):
         character = _load_character_from_json(json_file)
