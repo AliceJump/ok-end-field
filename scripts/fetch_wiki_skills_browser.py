@@ -17,11 +17,15 @@ OUTPUT_FILE = ROOT / "tmp_all_characters_full.json"
 
 
 def extract_text_from_document(doc: dict) -> str:
-    """从文档中提取纯文本"""
+    """从文档中提取纯文本 - 按blockIds顺序"""
     texts = []
+    block_ids = doc.get('blockIds', [])
     block_map = doc.get('blockMap', {})
-    for block_id in block_map:
-        block = block_map[block_id]
+    
+    for block_id in block_ids:
+        block = block_map.get(block_id)
+        if not block:
+            continue
         if block.get('kind') == 'text':
             inline_elements = (block.get('text') or {}).get('inlineElements', [])
             for elem in inline_elements:
