@@ -1,0 +1,98 @@
+{
+  "character_id": "tang_tang",
+  "name": "汤汤",
+  "star": 6,
+  "element": "寒冷",
+  "profession": "术师",
+  "weapon_type": "手铳",
+  "skills": [
+    {
+      "skill_id": "tangtang_normal",
+      "name": "崩你脑壳！",
+      "skill_type": "普通攻击",
+      "element": "寒冷",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多5段攻击，造成寒冷伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "tangtang_skill",
+      "name": "踏潮卷浪！",
+      "skill_type": "战技",
+      "element": "寒冷",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "水龙卷系统",
+        "trigger_condition": "消耗涡流形成水龙卷",
+        "enhancement_effect": "水龙卷系统",
+        "enhancement_visible_pulse": false,
+        "effects": []
+      },
+      "description": "从水中跃出，对敌人抵近射击，造成寒冷伤害，并掀起一个水龙卷。",
+      "damage_multiplier": "180%（射击）+ 300%（水龙卷）",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_COLD",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "tangtang_link",
+      "name": "河水，助我！",
+      "skill_type": "连携技",
+      "element": "寒冷",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当有敌人被施加寒冷附着或受到法术爆发伤害时可以发动。释放一道强力的水流，贯穿前方敌人造成寒冷伤害，并迸射出一处涡流。",
+      "damage_multiplier": "240%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "ATTACH_COLD",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "STACK_WHIRLPOOL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "tangtang_ultimate",
+      "name": "大当家盯着呢！",
+      "skill_type": "终结技",
+      "element": "寒冷",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "古老图形封锁",
+        "trigger_condition": "主控干员在古老图形中下落攻击",
+        "enhancement_effect": "古老图形封锁",
+        "enhancement_visible_pulse": false,
+        "effects": []
+      },
+      "description": "汤汤揭开眼罩，释放眼中的古老图形封锁范围内的敌人，使其暂停行动一段时间。",
+      "damage_multiplier": "320%（持续）+ 400%（巨浪）+ 700%（提前降下）",
+      "stagger_value": 15,
+      "cooldown": "20秒",
+      "spirit_cost": 90,
+      "effects": []
+    }
+  ]
+}

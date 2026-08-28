@@ -1,0 +1,111 @@
+{
+  "character_id": "ying_shi",
+  "name": "萤石",
+  "star": 4,
+  "element": "自然",
+  "profession": "术师",
+  "weapon_type": "手铳",
+  "skills": [
+    {
+      "skill_id": "bounda_normal",
+      "name": "独门射击法",
+      "skill_type": "普通攻击",
+      "element": "自然",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多4段攻击，造成自然伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "bounda_skill",
+      "name": "小惊喜",
+      "skill_type": "战技",
+      "element": "自然",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "自制炸弹",
+        "trigger_condition": "战技命中敌人",
+        "enhancement_effect": "自制炸弹",
+        "enhancement_visible_pulse": false,
+        "effects": []
+      },
+      "description": "踢出自制炸弹将其黏附在目标身上，并施加缓速，短暂延迟后爆炸对范围内的敌人造成自然伤害并施加自然附着。",
+      "damage_multiplier": "420%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_NATURAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "TRIGGER_EXPLOSION",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "bounda_link",
+      "name": "免费赠礼",
+      "skill_type": "连携技",
+      "element": "自然",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当敌人进入2层及以上寒冷附着或自然附着时可以发动。射击目标敌人，引发一次特殊爆炸，造成自然伤害并施加该法术附着。",
+      "damage_multiplier": "380%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "ATTACH_NATURAL",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "TRIGGER_EXPLOSION",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "bounda_ultimate",
+      "name": "巅峰闹剧",
+      "skill_type": "终结技",
+      "element": "自然",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "引爆增强",
+        "trigger_condition": "终结技命中粘有自制炸弹的敌人",
+        "enhancement_effect": "引爆增强",
+        "enhancement_visible_pulse": false,
+        "effects": []
+      },
+      "description": "萤石以弧形轨迹高速运动并向弧内目标快速射击，造成4段自然伤害，若命中目标身上粘有自制炸弹，则立刻将其引爆并提升爆炸伤害及范围。",
+      "damage_multiplier": "250%（每段）",
+      "stagger_value": 20,
+      "cooldown": "10秒",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "TRIGGER_EXPLOSION",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    }
+  ]
+}

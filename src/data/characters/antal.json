@@ -1,0 +1,117 @@
+{
+  "character_id": "an_ta_er",
+  "name": "安塔尔",
+  "star": 4,
+  "element": "电磁",
+  "profession": "辅助",
+  "weapon_type": "施术单元",
+  "skills": [
+    {
+      "skill_id": "antal_normal",
+      "name": "交换电流",
+      "skill_type": "普通攻击",
+      "element": "电磁",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多4段攻击，造成电磁伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "antal_skill",
+      "name": "指定研究对象",
+      "skill_type": "战技",
+      "element": "电磁",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "聚焦状态",
+        "trigger_condition": "战技命中敌人",
+        "enhancement_effect": "聚焦状态",
+        "enhancement_visible_pulse": false,
+        "effects": []
+      },
+      "description": "对敌人施加长时间聚焦，造成电磁伤害，被聚焦的敌人受到电磁脆弱和灼热脆弱。",
+      "damage_multiplier": "200%",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_ELECTROMAGNETIC",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "VULN_BURN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "VULN_ELECTROMAGNETIC",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "antal_link",
+      "name": "磁暴试验场",
+      "skill_type": "连携技",
+      "element": "电磁",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当被聚焦的敌人进入物理异常或法术附着状态时可以发动。在该敌人身上引发1次能量爆炸，造成电磁伤害并再次对其施加该物理异常或法术附着。",
+      "damage_multiplier": "340%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "ATTACH_ELECTROMAGNETIC",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "TRIGGER_EXPLOSION",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "antal_ultimate",
+      "name": "超频时刻",
+      "skill_type": "终结技",
+      "element": "电磁",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "对全队施加一段时间的电磁增幅和灼热增幅。",
+      "damage_multiplier": "20%（增幅）",
+      "stagger_value": 0,
+      "cooldown": "20秒",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "BUFF_BURN_UP",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "BUFF_ELECTROMAGNETIC_UP",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    }
+  ]
+}

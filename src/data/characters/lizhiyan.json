@@ -1,0 +1,99 @@
+{
+  "character_id": "jue",
+  "name": "诀",
+  "star": 6,
+  "element": "自然",
+  "profession": "术师",
+  "weapon_type": "施术单元",
+  "skills": [
+    {
+      "skill_id": "lizhiyan_normal",
+      "name": "自然疗法",
+      "skill_type": "普通攻击",
+      "element": "自然",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多4段攻击，造成自然伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "lizhiyan_skill",
+      "name": "生息之种",
+      "skill_type": "战技",
+      "element": "自然",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "种子爆发",
+        "trigger_condition": "种子命中处于自然附着的敌人",
+        "enhancement_effect": "种子爆发",
+        "enhancement_visible_pulse": false,
+        "effects": []
+      },
+      "description": "投掷生息之种，命中敌人后造成自然伤害。若目标处于自然附着状态，则消耗所有自然附着并爆发，造成额外伤害。",
+      "damage_multiplier": "250%（基础）+ 350%（爆发）",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_NATURAL",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "CLEAR_ATTACH",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "lizhiyan_link",
+      "name": "万物共鸣",
+      "skill_type": "连携技",
+      "element": "自然",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当有敌人被施加法术异常时可以发动。引发自然共鸣，造成自然伤害并施加自然附着。",
+      "damage_multiplier": "280%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "ATTACH_NATURAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "lizhiyan_ultimate",
+      "name": "生命之树",
+      "skill_type": "终结技",
+      "element": "自然",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "召唤生命之树，对范围内敌人造成大量自然伤害并治疗全队。",
+      "damage_multiplier": "700%",
+      "stagger_value": 20,
+      "cooldown": "20秒",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "BUFF_HEAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    }
+  ]
+}

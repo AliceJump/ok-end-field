@@ -1,0 +1,98 @@
+{
+  "character_id": "lai_wan_ting",
+  "name": "莱万汀",
+  "star": 6,
+  "element": "灼热",
+  "profession": "突击",
+  "weapon_type": "单手剑",
+  "skills": [
+    {
+      "skill_id": "laevat_normal",
+      "name": "燃烬",
+      "skill_type": "普通攻击",
+      "element": "灼热",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多5段攻击，造成灼热伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "laevat_skill",
+      "name": "焚灭",
+      "skill_type": "战技",
+      "element": "灼热",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "熔火层数",
+        "trigger_condition": "战技命中敌人获得1层熔火，4层时触发追加攻击",
+        "enhancement_effect": "追加攻击",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {
+            "effect_id": "TRIGGER_ADDITIONAL",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          }
+        ]
+      },
+      "description": "召唤熔核碎片持续攻击前方敌人，造成灼热伤害。如果命中敌人，会获得1层熔火。",
+      "damage_multiplier": "140%（初始）+ 14%（持续）+ 770%（追加）",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_BURN",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "STACK_MOLTEN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "laevat_link",
+      "name": "沸腾",
+      "skill_type": "连携技",
+      "element": "灼热",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当有敌人进入燃烧或腐蚀状态时可以发动。让所有处于燃烧或腐蚀状态的敌人脚下喷出火焰。",
+      "damage_multiplier": "540%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "laevat_ultimate",
+      "name": "黄昏",
+      "skill_type": "终结技",
+      "element": "灼热",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "强化普攻",
+        "trigger_condition": "施放终结技后",
+        "enhancement_effect": "强化普攻",
+        "enhancement_visible_pulse": false,
+        "effects": []
+      },
+      "description": "召唤烈焰魔剑并切换为主控角色。一段时间内，普通攻击得到强化。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "20秒",
+      "spirit_cost": 300,
+      "effects": []
+    }
+  ]
+}

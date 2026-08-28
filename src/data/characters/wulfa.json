@@ -1,0 +1,105 @@
+{
+  "character_id": "luo_qian",
+  "name": "洛茜",
+  "star": 6,
+  "element": "物理",
+  "profession": "近卫",
+  "weapon_type": "单手剑",
+  "skills": [
+    {
+      "skill_id": "wulfa_normal",
+      "name": "沸腾狼血",
+      "skill_type": "普通攻击",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "wulfa_skill",
+      "name": "血红之影",
+      "skill_type": "战技",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "冲向目标，造成物理伤害并施加击飞。若目标已经拥有破防，则会额外释放狼之珀冲向目标，造成灼热伤害。",
+      "damage_multiplier": "192%（第一段）+ 288%（第二段）",
+      "stagger_value": 20,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_BURN",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "STATUS_HEAVY_HIT",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "wulfa_link",
+      "name": "燎影时刻",
+      "skill_type": "连携技",
+      "element": "物理",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "暴击率/暴击伤害提升",
+        "trigger_condition": "连携技第二段精准衔接时",
+        "enhancement_effect": "伤害提升",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {
+            "effect_id": "BUFF_DAMAGE_UP",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          }
+        ]
+      },
+      "description": "当有敌人同时处于破防和法术附着状态时可以发动。洛茜的连携技可连续发动两次。",
+      "damage_multiplier": "150%（第一段）+ 300%（第二段）+ 180%（每层）",
+      "stagger_value": 5,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "wulfa_ultimate",
+      "name": "\"利爪\"奇袭",
+      "skill_type": "终结技",
+      "element": "灼热",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "暴击伤害提升",
+        "trigger_condition": "终结技暴击时",
+        "enhancement_effect": "伤害提升",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {
+            "effect_id": "BUFF_DAMAGE_UP",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          }
+        ]
+      },
+      "description": "挥动披风迅捷戳击，在短时间内对目标造成多段灼热伤害，之后使用匕首进行两段斩击。",
+      "damage_multiplier": "600%（戳击）+ 250%（第一段）+ 750%（第二段）",
+      "stagger_value": 25,
+      "cooldown": "10秒",
+      "spirit_cost": 110,
+      "effects": []
+    }
+  ]
+}

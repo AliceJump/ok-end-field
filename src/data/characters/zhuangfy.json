@@ -1,0 +1,99 @@
+{
+  "character_id": "zhuang_fang_yi",
+  "name": "庄方宜",
+  "star": 6,
+  "element": "电磁",
+  "profession": "突击",
+  "weapon_type": "施术单元",
+  "skills": [
+    {
+      "skill_id": "zhuangfy_normal",
+      "name": "伏击",
+      "skill_type": "普通攻击",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "zhuangfy_skill",
+      "name": "靶向鱼雷",
+      "skill_type": "战技",
+      "element": "电磁",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "锁定目标敌人后，向前方发射一道电磁能量造成电磁伤害。若命中处于电磁附着或导电状态的敌人，则消耗该状态并追加一次攻击。",
+      "damage_multiplier": "280%（基础）+ 420%（追加）",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_ELECTROMAGNETIC",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "TRIGGER_ADDITIONAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "zhuangfy_link",
+      "name": "反隐协议",
+      "skill_type": "连携技",
+      "element": "电磁",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当有敌人被施加法术附着时可以发动。短暂蓄力后释放电磁脉冲，造成电磁伤害并强制施加导电。",
+      "damage_multiplier": "320%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "ATTACH_ELECTROMAGNETIC",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "STATUS_CONDUCTING",
+          "value": 1,
+          "duration": "短暂",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "zhuangfy_ultimate",
+      "name": "全域追踪",
+      "skill_type": "终结技",
+      "element": "电磁",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "锁定范围内所有敌人，发射大量电磁飞弹进行轰炸，造成电磁伤害。",
+      "damage_multiplier": "600%",
+      "stagger_value": 20,
+      "cooldown": "20秒",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_ELECTROMAGNETIC",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    }
+  ]
+}

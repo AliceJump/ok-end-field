@@ -1,0 +1,86 @@
+{
+  "character_id": "chen_qian_yu",
+  "name": "陈千语",
+  "star": 5,
+  "element": "物理",
+  "profession": "近卫",
+  "weapon_type": "单手剑",
+  "skills": [
+    {
+      "skill_id": "chen_normal",
+      "name": "破飞霞",
+      "skill_type": "普通攻击",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "chen_skill",
+      "name": "归穹宇",
+      "skill_type": "战技",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "对目标敌人进行上挑攻击，造成物理伤害和击飞。",
+      "damage_multiplier": "380%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "STATUS_HEAVY_HIT",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "chen_link",
+      "name": "见天河",
+      "skill_type": "连携技",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当有敌人进入破防状态时可以发动。进行穿梭斩击，对路径上的所有敌人造成物理伤害和击飞。",
+      "damage_multiplier": "270%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "STATUS_SHRED",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "STATUS_HEAVY_HIT",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "chen_ultimate",
+      "name": "冽风霜",
+      "skill_type": "终结技",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "对目标敌人进行7段斩击，每次造成物理伤害。最后一段斩击造成的伤害更高。",
+      "damage_multiplier": "81%（每段）+ 1023%（终结一击）",
+      "stagger_value": 20,
+      "cooldown": "10秒",
+      "spirit_cost": 70,
+      "effects": []
+    }
+  ]
+}

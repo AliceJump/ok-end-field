@@ -1,0 +1,106 @@
+{
+  "character_id": "jun_wei",
+  "name": "骏卫",
+  "star": 6,
+  "element": "物理",
+  "profession": "先锋",
+  "weapon_type": "单手剑",
+  "skills": [
+    {
+      "skill_id": "pograni_normal",
+      "name": "全面攻势",
+      "skill_type": "普通攻击",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "pograni_skill",
+      "name": "粉碎阵线",
+      "skill_type": "战技",
+      "element": "物理",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "破防层数消耗",
+        "trigger_condition": "战技命中敌人时消耗破防层数恢复技力",
+        "enhancement_effect": "破防层数消耗",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {
+            "effect_id": "CONSUME_STACK",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          }
+        ]
+      },
+      "description": "对前方范围的敌人进行两段斩击，造成物理伤害并施加碎甲，同时基于消耗的破防层数恢复技力。",
+      "damage_multiplier": "192%（第一段）+ 238%（第二段）",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "BUFF_HEAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "pograni_link",
+      "name": "盈月邀击",
+      "skill_type": "连携技",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当有敌人被猛击或者碎甲消耗破防层数后可以发动。根据消耗的最高破防层数，对敌人进行相同段数的斩击。",
+      "damage_multiplier": "95%（第一段）+ 122%（第二段）+ 149%（第三段）+ 297%（强化第三段）",
+      "stagger_value": 13,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "CONSUME_STACK",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "pograni_ultimate",
+      "name": "盾卫旗队，上前",
+      "skill_type": "终结技",
+      "element": "物理",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "铁誓消耗",
+        "trigger_condition": "终结技期间消耗铁誓召唤盾卫袭扰",
+        "enhancement_effect": "召唤效果",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {
+            "effect_id": "TRIGGER_ADDITIONAL",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          }
+        ]
+      },
+      "description": "以目标为中心，召唤四名盾卫向目标进军，并将进军途中的敌人往目标方向推动。",
+      "damage_multiplier": "300%（进军）+ 100%（袭扰）+ 450%（决胜）",
+      "stagger_value": 10,
+      "cooldown": "10秒",
+      "spirit_cost": 90,
+      "effects": []
+    }
+  ]
+}

@@ -1,0 +1,112 @@
+{
+  "character_id": "ka_miao",
+  "name": "卡缪",
+  "star": 6,
+  "element": "灼热",
+  "profession": "先锋",
+  "weapon_type": "长柄武器",
+  "skills": [
+    {
+      "skill_id": "camille_normal",
+      "name": "歃血涤罪",
+      "skill_type": "普通攻击",
+      "element": "灼热",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多5段攻击，造成灼热伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "camille_skill",
+      "name": "驱火焚影",
+      "skill_type": "战技",
+      "element": "灼热",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "衔火血翼盘桓",
+        "trigger_condition": "战技命中敌人后召唤衔火血翼盘桓",
+        "enhancement_effect": "召唤效果",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {
+            "effect_id": "TRIGGER_ADDITIONAL",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          }
+        ]
+      },
+      "description": "召唤衔火血翼飞向敌人，对小范围敌人造成灼热伤害并施加灼热附着。",
+      "damage_multiplier": "200%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_BURN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "camille_link",
+      "name": "锥心之棘",
+      "skill_type": "连携技",
+      "element": "灼热",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当有敌人的灼热附着被消耗或吸收后可以发动。来回穿梭，造成灼热伤害并恢复一定技力。",
+      "damage_multiplier": "300%（第一段）+ 500%（追猎）",
+      "stagger_value": 20,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "ATTACH_BURN",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "BUFF_HEAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "camille_ultimate",
+      "name": "猩红坠雨",
+      "skill_type": "终结技",
+      "element": "灼热",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "追猎状态",
+        "trigger_condition": "施放终结技后",
+        "enhancement_effect": "追猎状态",
+        "enhancement_visible_pulse": false,
+        "effects": []
+      },
+      "description": "卡缪飞向空中，落下枪雨并衔接横扫攻击，对命中的目标造成灼热伤害并施加灼热附着。",
+      "damage_multiplier": "600%",
+      "stagger_value": 15,
+      "cooldown": "20秒",
+      "spirit_cost": 130,
+      "effects": [
+        {
+          "effect_id": "ATTACH_BURN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    }
+  ]
+}

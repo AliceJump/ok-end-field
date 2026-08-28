@@ -1,0 +1,93 @@
+{
+  "character_id": "ai_te_la",
+  "name": "埃特拉",
+  "star": 4,
+  "element": "寒冷",
+  "profession": "近卫",
+  "weapon_type": "长柄武器",
+  "skills": [
+    {
+      "skill_id": "etra_normal",
+      "name": "噪点",
+      "skill_type": "普通攻击",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多4段攻击，造成物理伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "etra_skill",
+      "name": "凝声",
+      "skill_type": "战技",
+      "element": "寒冷",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "向前刺出长枪，激发出一道制冷声波，对一条直线上的敌人造成寒冷伤害并施加寒冷附着。",
+      "damage_multiplier": "350%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_COLD",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "etra_link",
+      "name": "失真",
+      "skill_type": "连携技",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当有敌人进入冻结状态时可以发动。迅速移动到敌人身边，对小范围内的敌人造成物理伤害并强制造成击飞。",
+      "damage_multiplier": "360%（非冻结）+ 630%（冻结）",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "STATUS_HEAVY_HIT",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "etra_ultimate",
+      "name": "震音",
+      "skill_type": "终结技",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "耗尽全身力气，用力下砸枪柄，对自身附近圆形范围的敌人造成物理伤害。如果敌人处于物理脆弱状态，则对其强制造成击飞。",
+      "damage_multiplier": "1100%",
+      "stagger_value": 20,
+      "cooldown": "10秒",
+      "spirit_cost": 70,
+      "effects": [
+        {
+          "effect_id": "STATUS_HEAVY_HIT",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "VULN_PHYSICAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    }
+  ]
+}

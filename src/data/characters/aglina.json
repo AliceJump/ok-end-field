@@ -1,0 +1,93 @@
+{
+  "character_id": "jie_er_pei_ta",
+  "name": "洁尔佩塔",
+  "star": 6,
+  "element": "自然",
+  "profession": "辅助",
+  "weapon_type": "施术单元",
+  "skills": [
+    {
+      "skill_id": "aglina_normal",
+      "name": "秘杖·束能技艺",
+      "skill_type": "普通攻击",
+      "element": "自然",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多4段攻击，造成自然伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "aglina_skill",
+      "name": "秘杖·引力模式",
+      "skill_type": "战技",
+      "element": "自然",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "进入持续施法状态，在前方产生重力奇点。重力奇点会持续吸引附近的敌人并对其造成自然伤害。",
+      "damage_multiplier": "219%（牵引）+ 130%（爆炸）",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_NATURAL",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "aglina_link",
+      "name": "秘杖·矩阵位移",
+      "skill_type": "连携技",
+      "element": "自然",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当有敌人被施加法术异常时可以发动。短暂施法后使目标及附近敌人全部受到重力牵引。",
+      "damage_multiplier": "315%",
+      "stagger_value": 5,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "aglina_ultimate",
+      "name": "秘杖·重力场",
+      "skill_type": "终结技",
+      "element": "自然",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "法术脆弱增强",
+        "trigger_condition": "目标处于破防状态时",
+        "enhancement_effect": "法术脆弱增强",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {
+            "effect_id": "VULN_ALL",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          }
+        ]
+      },
+      "description": "创造一个重力紊乱区域，对区域内的敌人立即造成一次自然伤害并施加自然附着。",
+      "damage_multiplier": "750%",
+      "stagger_value": 20,
+      "cooldown": "20秒",
+      "spirit_cost": 90,
+      "effects": [
+        {
+          "effect_id": "ATTACH_NATURAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    }
+  ]
+}

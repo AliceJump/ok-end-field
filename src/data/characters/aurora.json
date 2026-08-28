@@ -1,0 +1,106 @@
+{
+  "character_id": "zhou_xue",
+  "name": "昼雪",
+  "star": 5,
+  "element": "寒冷",
+  "profession": "重装",
+  "weapon_type": "双手剑",
+  "skills": [
+    {
+      "skill_id": "aurora_normal",
+      "name": "霜刃",
+      "skill_type": "普通攻击",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多4段攻击，造成物理伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "aurora_skill",
+      "name": "冰封护盾",
+      "skill_type": "战技",
+      "element": "寒冷",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "护盾叠加",
+        "trigger_condition": "战技命中敌人获得护盾",
+        "enhancement_effect": "护盾效果",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {
+            "effect_id": "BUFF_SHIELD",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          }
+        ]
+      },
+      "description": "挥动武器造成寒冷伤害，并获得基于自身最大生命值的护盾。",
+      "damage_multiplier": "300%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_COLD",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "BUFF_SHIELD",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "aurora_link",
+      "name": "寒冰冲锋",
+      "skill_type": "连携技",
+      "element": "寒冷",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当有敌人处于冻结状态时可以发动。冲锋撞击敌人，造成寒冷伤害。",
+      "damage_multiplier": "250%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "ATTACH_COLD",
+          "value": 0,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "aurora_ultimate",
+      "name": "冰川之怒",
+      "skill_type": "终结技",
+      "element": "寒冷",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "召唤冰川之力，对范围内敌人造成大量寒冷伤害并施加冻结。",
+      "damage_multiplier": "600%",
+      "stagger_value": 20,
+      "cooldown": "20秒",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "STATUS_FROZEN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    }
+  ]
+}

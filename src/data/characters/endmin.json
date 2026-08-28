@@ -1,0 +1,86 @@
+{
+  "character_id": "guan_li_yuan",
+  "name": "管理员",
+  "star": 6,
+  "element": "物理",
+  "profession": "近卫",
+  "weapon_type": "单手剑",
+  "skills": [
+    {
+      "skill_id": "endmin_normal",
+      "name": "基础剑术",
+      "skill_type": "普通攻击",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "endmin_skill",
+      "name": "制敌一击",
+      "skill_type": "战技",
+      "element": "物理",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "破甲效果",
+        "trigger_condition": "命中敌人时消耗破防层数",
+        "enhancement_effect": "破甲效果",
+        "enhancement_visible_pulse": false,
+        "effects": []
+      },
+      "description": "向前突进斩击，造成物理伤害。若命中敌人处于破防状态，则消耗所有破防层数并造成额外伤害。",
+      "damage_multiplier": "300%（基础）+ 200%（每层破防）",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "CONSUME_STACK",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "endmin_link",
+      "name": "协同作战",
+      "skill_type": "连携技",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当有敌人处于失衡状态时可以发动。与队友协同攻击，造成物理伤害。",
+      "damage_multiplier": "250%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "STATUS_STAGGER",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "endmin_ultimate",
+      "name": "终末一击",
+      "skill_type": "终结技",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "蓄力后释放强力一击，对前方敌人造成大量物理伤害。",
+      "damage_multiplier": "800%",
+      "stagger_value": 25,
+      "cooldown": "15秒",
+      "spirit_cost": 90,
+      "effects": []
+    }
+  ]
+}

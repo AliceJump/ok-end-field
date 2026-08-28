@@ -1,0 +1,93 @@
+{
+  "character_id": "qiu_li",
+  "name": "秋栗",
+  "star": 4,
+  "element": "灼热",
+  "profession": "先锋",
+  "weapon_type": "单手剑",
+  "skills": [
+    {
+      "skill_id": "karin_normal",
+      "name": "进取剑锋",
+      "skill_type": "普通攻击",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "普通攻击：对敌人进行至多4段攻击，造成物理伤害。",
+      "damage_multiplier": "",
+      "stagger_value": 0,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": []
+    },
+    {
+      "skill_id": "karin_skill",
+      "name": "热情迸发",
+      "skill_type": "战技",
+      "element": "灼热",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "向前方挥斩，造成灼热伤害并施加灼热附着。",
+      "damage_multiplier": "320%",
+      "stagger_value": 10,
+      "cooldown": "",
+      "spirit_cost": 100,
+      "effects": [
+        {
+          "effect_id": "ATTACH_BURN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "karin_link",
+      "name": "快闪冲击",
+      "skill_type": "连携技",
+      "element": "物理",
+      "has_enhancement": false,
+      "enhancement": null,
+      "description": "当有敌人失衡，或触发失衡节点时可以发动。进行来回2段突刺，每段造成物理伤害，并恢复一定技力。",
+      "damage_multiplier": "180%（每段）",
+      "stagger_value": 5,
+      "cooldown": "",
+      "spirit_cost": 0,
+      "effects": [
+        {
+          "effect_id": "BUFF_HEAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    },
+    {
+      "skill_id": "karin_ultimate",
+      "name": "小队，集结！",
+      "skill_type": "终结技",
+      "element": "物理",
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "连击状态",
+        "trigger_condition": "终结技施放期间",
+        "enhancement_effect": "连击效果",
+        "enhancement_visible_pulse": false,
+        "effects": []
+      },
+      "description": "进入持续施法状态，发射3枚集结信号弹，每次发射恢复一定技力。",
+      "damage_multiplier": "80（恢复技力）",
+      "stagger_value": 0,
+      "cooldown": "20秒",
+      "spirit_cost": 120,
+      "effects": [
+        {
+          "effect_id": "BUFF_HEAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
+    }
+  ]
+}
