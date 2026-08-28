@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """pre_config_patch 的单元测试：缺失 PATH 时用 os.defpath 补齐。
 
 背景
@@ -18,6 +17,7 @@ PySide6 导入时 _setupQtDirectories 会执行
 仅操作 os.environ['PATH']，并在 setUp/tearDown 中保存恢复，不影响其它测试。
 不构造 ok 全局，不依赖 qfluentwidgets / PySide6 导入。
 """
+
 import os
 import unittest
 
@@ -25,7 +25,6 @@ from src.patches.pre_config_patch import install_pre_config_patch
 
 
 class TestPreConfigPatch(unittest.TestCase):
-
     def setUp(self):
         self._saved_path = os.environ.get("PATH")
 

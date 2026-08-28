@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import os
 import tempfile
 import time
@@ -10,6 +9,7 @@ from src.tasks.daily.finally_file import create_task_summary_report
 
 class _MockTask:
     """用于测试的模拟任务对象。"""
+
     def __init__(self, name: str = "日常任务"):
         self.name = name
 

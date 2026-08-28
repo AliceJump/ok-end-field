@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """ok 库 win32_gdi 全局 user32.GetCursorPos 污染根治补丁的单元测试。
 
 背景
@@ -18,16 +17,16 @@ POINTER(自定义POINT)。ctypes 按类型对象做指针校验，任何用标�
 仅导入 win32_gdi 并执行补丁函数，不构造 ok 全局（不 init_ok/destroy_ok）。
 补丁是幂等的，安装后即保持修复状态（与生产启动行为一致）。
 """
+
 import ctypes
-import ctypes.wintypes as wintypes
 import unittest
+from ctypes import wintypes
 
 from ok.ui.overlay import win32_gdi
 from src.patches.win32_gdi_point_patch import install_win32_gdi_point_patch
 
 
 class TestOkWin32GdiPointPatch(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         # 记录补丁前的自定义 POINT 类（补丁会把它替换为 wintypes.POINT）
@@ -68,8 +67,7 @@ class TestOkWin32GdiPointPatch(unittest.TestCase):
         gdi32 = ctypes.windll.gdi32
         self.assertEqual(
             gdi32.MoveToEx.argtypes,
-            [ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
-             ctypes.POINTER(wintypes.POINT)],
+            [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.POINTER(wintypes.POINT)],
         )
 
 

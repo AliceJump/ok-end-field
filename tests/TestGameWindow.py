@@ -15,7 +15,9 @@ class TestGameWindow(unittest.TestCase):
         win32gui.GetWindowRect.return_value = (0, 0, 1920, 1080)
         win32gui.EnumWindows.side_effect = lambda callback, context: [callback(hwnd, context) for hwnd in (100, 200)]
         get_process_id.side_effect = lambda hwnd: (1, hwnd)
-        process.side_effect = lambda pid: type("Process", (), {"name": lambda self: "Other.exe" if pid == 100 else "Endfield.exe"})()
+        process.side_effect = lambda pid: type(
+            "Process", (), {"name": lambda self: "Other.exe" if pid == 100 else "Endfield.exe"}
+        )()
 
         hwnd = find_game_hwnd({"exe": ["Endfield.exe"], "hwnd_class": "UnityWndClass"})
 

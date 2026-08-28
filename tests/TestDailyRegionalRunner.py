@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
@@ -6,9 +5,15 @@ from unittest.mock import Mock, patch
 from src.tasks.daily.daily_regional_runner import DailyRegionalRunner
 
 
-def _make_task(config_options, buy_sell_result=True, went_friend_boat_result=False,
-               after_buy_called=True, exchange_result=True, buy_staple_result=True,
-               to_model_area_result=True):
+def _make_task(
+    config_options,
+    buy_sell_result=True,
+    went_friend_boat_result=False,
+    after_buy_called=True,
+    exchange_result=True,
+    buy_staple_result=True,
+    to_model_area_result=True,
+):
     """构造一个带 mock 的 task，用于 DailyRegionalRunner 分支测试。
 
     after_buy_called: buy_sell 是否真的触发 after_buy 回调
@@ -144,8 +149,7 @@ class TestDailyRegionalRunner(unittest.TestCase):
 
     # ── 买物资 + 买卖货，回调被跳过且补充购买失败 → 记录日志并继续 ──
     def test_fallback_buy_failure_logs_and_continues(self):
-        task = _make_task(["买物资", "买卖货"], after_buy_called=False,
-                          buy_staple_result=False)
+        task = _make_task(["买物资", "买卖货"], after_buy_called=False, buy_staple_result=False)
         result = self.run_runner(task)
 
         self.assertTrue(result)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import json
 import unittest
 from pathlib import Path
@@ -26,7 +25,9 @@ class TestEssenceImageFeatures(unittest.TestCase):
             self.assertIn(name, id_by_name, f"Missing category {name} in assets/coco_annotations.json")
 
         gold_names = sorted(n for n in id_by_name if n.startswith("essence_quality_gold"))
-        self.assertGreaterEqual(len(gold_names), 1, "Missing any essence_quality_gold* category in assets/coco_annotations.json")
+        self.assertGreaterEqual(
+            len(gold_names), 1, "Missing any essence_quality_gold* category in assets/coco_annotations.json"
+        )
 
         # compress_copy_coco() requires exactly 1 box per category (global unique)
         for name in sorted(required) + gold_names:

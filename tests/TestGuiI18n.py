@@ -2,7 +2,6 @@ import ast
 import unittest
 from pathlib import Path
 
-
 GUI_ROOT = Path("src/gui")
 
 
@@ -37,9 +36,7 @@ class GuiI18nTestCase(unittest.TestCase):
                 if node.func.id not in translated_widgets:
                     continue
                 if any(
-                    isinstance(child, ast.Call)
-                    and isinstance(child.func, ast.Attribute)
-                    and child.func.attr == "tr"
+                    isinstance(child, ast.Call) and isinstance(child.func, ast.Attribute) and child.func.attr == "tr"
                     for arg in node.args
                     for child in ast.walk(arg)
                 ):

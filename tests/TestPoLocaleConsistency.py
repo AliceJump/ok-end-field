@@ -4,7 +4,6 @@ from pathlib import Path
 
 import polib
 
-
 I18N_ROOT = Path("i18n")
 HAN_RE = re.compile(r"[\u3400-\u9fff]")
 PLACEHOLDER_RE = re.compile(r"\{[^{}]+\}")
@@ -87,10 +86,7 @@ ES_UNTRANSLATED_OK = set()
 class PoLocaleConsistencyTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.catalogs = {
-            path.parents[1].name: polib.pofile(str(path))
-            for path in I18N_ROOT.glob("*/LC_MESSAGES/ok.po")
-        }
+        cls.catalogs = {path.parents[1].name: polib.pofile(str(path)) for path in I18N_ROOT.glob("*/LC_MESSAGES/ok.po")}
 
     def test_catalog_structure_is_consistent(self):
         errors = []

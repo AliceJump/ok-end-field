@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-# ruff: noqa: UP009, N999
+# ruff: noqa: UP009
 """验证合成数美指纹模块：载荷结构、字段改名加密、失败路径。"""
+
 import base64
 import json
 import unittest
@@ -59,10 +60,14 @@ class TestMapDeviceFingerprint(unittest.TestCase):
 
         class _FakeResp:
             def read(self):
-                stream = BytesIO(json.dumps({
-                    "code": 1100,
-                    "detail": {"deviceId": "x" * 32},
-                }).encode("utf-8"))
+                stream = BytesIO(
+                    json.dumps(
+                        {
+                            "code": 1100,
+                            "detail": {"deviceId": "x" * 32},
+                        }
+                    ).encode("utf-8")
+                )
                 return stream.read()
 
             def __enter__(self):

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import unittest
 
 from src.core.config_migration import (
@@ -13,11 +12,13 @@ BOAT_STAGES = ["收集线索", "制造舱", "培养舱"]
 ACTIVITY_REWARDS = ["周常奖励", "理智补给", "刮刮乐"]
 
 VALUE_MIGRATIONS = {
-    "⭐地区建设": merge_bool_options({
-        "据点兑换": "⭐据点兑换",
-        "买物资": "⭐买物资",
-        "买卖货": "⭐买卖货",
-    }),
+    "⭐地区建设": merge_bool_options(
+        {
+            "据点兑换": "⭐据点兑换",
+            "买物资": "⭐买物资",
+            "买卖货": "⭐买卖货",
+        }
+    ),
     "⭐帝江号收菜": legacy_bool_switch_to_list(
         ops_key="帝江号收菜操作",
         defaults=BOAT_STAGES,

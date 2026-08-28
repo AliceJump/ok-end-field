@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 import os
+
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 import unittest
 from unittest.mock import patch

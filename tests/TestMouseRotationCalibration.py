@@ -1,11 +1,12 @@
-# -*- coding: utf-8 -*-
 """鼠标视角旋转系数标定任务的单元测试。"""
+
 import unittest
 
 from src.tasks.test.MouseRotationCalibration import (
     MouseRotationCalibration,
     angle_delta,
 )
+
 
 class TestAngleDelta(unittest.TestCase):
     """angle_delta 纯函数测试（含 0/360 边界）。"""
