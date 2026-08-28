@@ -80,7 +80,7 @@ class RuntimeMixin:
         boxes=None,
         time_out=5,
         after_sleep=0,
-        click_after_delay=0,
+        click_after_delay=0.5,
         settle_time=0,
         blind_point=None,
         blind_delay=1,
