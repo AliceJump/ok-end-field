@@ -1,7 +1,7 @@
 """
 导出战斗头像模板: 裁剪战斗截图头像, 按角色命名(去重), 生成 labelme JSON 标注
 用法: python export_battle_templates.py
-输出: crops/{char}_battle_icon.png + crops/{截图}.json (labelme格式)
+输出: crops/battle_icon_{char}.png + crops/{截图}.json (labelme格式)
 """
 import cv2
 import json
@@ -20,51 +20,51 @@ OUTPUT_DIR = Path(__file__).parent / "crops"
 # 完整 ground truth（反向匹配为基础 + 用户纠错）
 GROUND_TRUTH = {
     '50.png': {
-        1: 'yvonne_contact',     # 反向匹配一致
-        2: 'rossi_contact',      # 用户纠错: 洛茜
-        3: 'gilberta_contact',   # 反向匹配一致
-        4: 'ember_contact',      # 反向匹配一致
+        1: 'contact_yvonne',     # 反向匹配一致
+        2: 'contact_rossi',      # 用户纠错: 洛茜
+        3: 'contact_gilberta',   # 反向匹配一致
+        4: 'contact_ember',      # 反向匹配一致
     },
     '61.png': {
-        1: 'laevatain_contact',  # 用户纠错: 莱万汀
-        2: 'ardelia_contact',    # 用户纠错: 艾尔黛拉
-        3: 'wulfgard_contact',   # 用户纠错: 狼卫
-        4: 'ember_contact',      # 反向匹配一致
+        1: 'contact_laevatain',  # 用户纠错: 莱万汀
+        2: 'contact_ardelia',    # 用户纠错: 艾尔黛拉
+        3: 'contact_wulfgard',   # 用户纠错: 狼卫
+        4: 'contact_ember',      # 反向匹配一致
     },
     '68.png': {
-        1: 'yvonne_contact',     # 反向匹配一致
-        2: 'gilberta_contact',   # 反向匹配一致
-        3: 'last_rite_contact',  # 用户纠错: 别礼
-        4: 'ember_contact',      # 用户纠错: 余烬
+        1: 'contact_yvonne',     # 反向匹配一致
+        2: 'contact_gilberta',   # 反向匹配一致
+        3: 'contact_last_rite',  # 用户纠错: 别礼
+        4: 'contact_ember',      # 用户纠错: 余烬
     },
     '15.png': {
-        1: 'zhuang_fangyi_contact',  # 用户确认: 庄方宜
-        2: 'perlica_contact',        # 用户确认: 佩丽卡
-        3: 'avywenna_contact',       # 用户确认: 艾维文娜
-        4: 'liino_contact',          # 用户确认: 梨诺
+        1: 'contact_zhuang_fangyi',  # 用户确认: 庄方宜
+        2: 'contact_perlica',        # 用户确认: 佩丽卡
+        3: 'contact_avywenna',       # 用户确认: 艾维文娜
+        4: 'contact_liino',          # 用户确认: 梨诺
     },
     '33.png': {
-        1: 'chen_qianyu_contact',    # 用户确认: 陈千语
-        2: 'pogranichnik_contact',   # 用户确认: 骏卫
-        3: 'lifeng_contact',         # 用户确认: 黎风
-        4: 'da_pan_contact',         # 用户确认: 大潘
+        1: 'contact_chen_qianyu',    # 用户确认: 陈千语
+        2: 'contact_pogranichnik',   # 用户确认: 骏卫
+        3: 'contact_lifeng',         # 用户确认: 黎风
+        4: 'contact_da_pan',         # 用户确认: 大潘
     },
     '40.png': {
-        1: 'arclight_contact',   # 用户确认: 弧光
-        2: 'xaihi_contact',      # 用户确认: 赛希
-        3: 'tangtang_contact',   # 用户确认: 汤汤
-        4: 'estella_contact',    # 用户确认: 埃特拉
+        1: 'contact_arclight',   # 用户确认: 弧光
+        2: 'contact_xaihi',      # 用户确认: 赛希
+        3: 'contact_tangtang',   # 用户确认: 汤汤
+        4: 'contact_estella',    # 用户确认: 埃特拉
     },
     '41.png': {
-        1: 'endministrator_contact',  # 用户确认: 管理员(endministrator)
-        2: 'alesh_contact',      # 用户确认: 阿列什
-        3: 'snowshine_contact',  # 用户确认: 昼雪
-        4: 'catcher_contact',    # 用户确认: 卡契尔
+        1: 'contact_endministrator',  # 用户确认: 管理员(endministrator)
+        2: 'contact_alesh',      # 用户确认: 阿列什
+        3: 'contact_snowshine',  # 用户确认: 昼雪
+        4: 'contact_catcher',    # 用户确认: 卡契尔
     },
     '48.png': {
-        1: 'antal_contact',      # 用户确认: 安塔尔
-        2: 'fluorite_contact',   # 用户确认: 萤石
-        3: 'akekuri_contact',    # 用户确认: 秋栗
+        1: 'contact_antal',      # 用户确认: 安塔尔
+        2: 'contact_fluorite',   # 用户确认: 萤石
+        3: 'contact_akekuri',    # 用户确认: 秋栗
         4: None,                 # 未放角色
     },
 }
@@ -131,7 +131,7 @@ def main():
             })
             if label not in saved_chars:
                 saved_chars.add(label)
-                out_name = f"{label.replace('_contact', '')}_battle_icon.png"
+                out_name = f"battle_icon_{label.replace('contact_', '')}.png"
                 cv2.imwrite(str(OUTPUT_DIR / out_name), img)
                 print(f"  [{fname} P{i}] -> {out_name} bbox=({x1},{y1},{x2},{y2})")
             else:

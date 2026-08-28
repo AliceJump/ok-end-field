@@ -37,10 +37,10 @@ def get_contact_list_with_feature_list(lang_accessor=None) -> dict[str, str]:
     feature_set = {f.value for f in FeatureList}  # 取 FeatureList 枚举的所有值
 
     en_to_zh = {
-        info["en"] + "_contact": _get_localized_character_name(lang_accessor, char_key, info["zh"])
+        "contact_" + info["en"]: _get_localized_character_name(lang_accessor, char_key, info["zh"])
         for char_key, info in characters.items()
     }
-    # 构建英文名 -> 中文名字典，英文名后面加 "_contact"
+    # 构建英文名 -> 中文名字典，英文名前面加 "contact_"
 
     common = feature_set & en_to_zh.keys()  # 取 feature_set 和字典 key 的交集
 

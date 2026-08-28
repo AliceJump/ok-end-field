@@ -7,7 +7,7 @@
 
 字段说明：
 - ``zh``：简中 canonical 名（用于 OCR 匹配与本地化回退）
-- ``en``：内部 ID（用于 FeatureList 的 ``xxx_contact`` 枚举匹配，非官方英文名）
+- ``en``：内部 ID（用于 FeatureList 的 ``contact_*`` 枚举匹配，非官方英文名）
 - ``stars``：稀有度（4/5/6）
 
 6 语言显示名见 assets/lang/characters.json；官方多语言同步见

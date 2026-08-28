@@ -4716,27 +4716,27 @@
     "categories": [
         {
             "id": 1,
-            "name": "akekuri_contact",
+            "name": "contact_akekuri",
             "supercategory": ""
         },
         {
             "id": 2,
-            "name": "alesh_contact",
+            "name": "contact_alesh",
             "supercategory": ""
         },
         {
             "id": 3,
-            "name": "antal_contact",
+            "name": "contact_antal",
             "supercategory": ""
         },
         {
             "id": 4,
-            "name": "arclight_contact",
+            "name": "contact_arclight",
             "supercategory": ""
         },
         {
             "id": 5,
-            "name": "ardelia_contact",
+            "name": "contact_ardelia",
             "supercategory": ""
         },
         {
@@ -4746,7 +4746,7 @@
         },
         {
             "id": 7,
-            "name": "avywenna_contact",
+            "name": "contact_avywenna",
             "supercategory": ""
         },
         {
@@ -4786,7 +4786,7 @@
         },
         {
             "id": 15,
-            "name": "chen_qianyu_contact",
+            "name": "contact_chen_qianyu",
             "supercategory": ""
         },
         {
@@ -4851,7 +4851,7 @@
         },
         {
             "id": 28,
-            "name": "da_pan_contact",
+            "name": "contact_da_pan",
             "supercategory": ""
         },
         {
@@ -4896,7 +4896,7 @@
         },
         {
             "id": 37,
-            "name": "ember_contact",
+            "name": "contact_ember",
             "supercategory": ""
         },
         {
@@ -4956,12 +4956,12 @@
         },
         {
             "id": 49,
-            "name": "estella_contact",
+            "name": "contact_estella",
             "supercategory": ""
         },
         {
             "id": 50,
-            "name": "fluorite_contact",
+            "name": "contact_fluorite",
             "supercategory": ""
         },
         {
@@ -4986,7 +4986,7 @@
         },
         {
             "id": 55,
-            "name": "gilberta_contact",
+            "name": "contact_gilberta",
             "supercategory": ""
         },
         {
@@ -5026,17 +5026,17 @@
         },
         {
             "id": 63,
-            "name": "laevatain_contact",
+            "name": "contact_laevatain",
             "supercategory": ""
         },
         {
             "id": 64,
-            "name": "last_rite_contact",
+            "name": "contact_last_rite",
             "supercategory": ""
         },
         {
             "id": 65,
-            "name": "lifeng_contact",
+            "name": "contact_lifeng",
             "supercategory": ""
         },
         {
@@ -5116,7 +5116,7 @@
         },
         {
             "id": 81,
-            "name": "perlica_contact",
+            "name": "contact_perlica",
             "supercategory": ""
         },
         {
@@ -5141,7 +5141,7 @@
         },
         {
             "id": 86,
-            "name": "pogranichnik_contact",
+            "name": "contact_pogranichnik",
             "supercategory": ""
         },
         {
@@ -5171,7 +5171,7 @@
         },
         {
             "id": 92,
-            "name": "rossi_contact",
+            "name": "contact_rossi",
             "supercategory": ""
         },
         {
@@ -5231,7 +5231,7 @@
         },
         {
             "id": 104,
-            "name": "snowshine_contact",
+            "name": "contact_snowshine",
             "supercategory": ""
         },
         {
@@ -5246,7 +5246,7 @@
         },
         {
             "id": 107,
-            "name": "tangtang_contact",
+            "name": "contact_tangtang",
             "supercategory": ""
         },
         {
@@ -5301,7 +5301,7 @@
         },
         {
             "id": 118,
-            "name": "wulfgard_contact",
+            "name": "contact_wulfgard",
             "supercategory": ""
         },
         {
@@ -5371,12 +5371,12 @@
         },
         {
             "id": 132,
-            "name": "xaihi_contact",
+            "name": "contact_xaihi",
             "supercategory": ""
         },
         {
             "id": 133,
-            "name": "yvonne_contact",
+            "name": "contact_yvonne",
             "supercategory": ""
         },
         {
@@ -5406,7 +5406,7 @@
         },
         {
             "id": 139,
-            "name": "zhuang_fangyi_contact",
+            "name": "contact_zhuang_fangyi",
             "supercategory": ""
         },
         {
@@ -5636,7 +5636,7 @@
         },
         {
             "id": 185,
-            "name": "arcane_battle_icon",
+            "name": "battle_icon_arcane",
             "supercategory": ""
         },
         {
@@ -5861,22 +5861,22 @@
         },
         {
             "id": 230,
-            "name": "liino_contact",
+            "name": "contact_liino",
             "supercategory": ""
         },
         {
             "id": 231,
-            "name": "mi_fu_contact",
+            "name": "contact_mi_fu",
             "supercategory": ""
         },
         {
             "id": 232,
-            "name": "arcane_contact",
+            "name": "contact_arcane",
             "supercategory": ""
         },
         {
             "id": 233,
-            "name": "catcher_contact",
+            "name": "contact_catcher",
             "supercategory": ""
         },
         {
@@ -5896,142 +5896,142 @@
         },
         {
             "id": 237,
-            "name": "yvonne_battle_icon",
+            "name": "battle_icon_yvonne",
             "supercategory": null
         },
         {
             "id": 238,
-            "name": "rossi_battle_icon",
+            "name": "battle_icon_rossi",
             "supercategory": null
         },
         {
             "id": 239,
-            "name": "gilberta_battle_icon",
+            "name": "battle_icon_gilberta",
             "supercategory": null
         },
         {
             "id": 240,
-            "name": "ember_battle_icon",
+            "name": "battle_icon_ember",
             "supercategory": null
         },
         {
             "id": 241,
-            "name": "laevatain_battle_icon",
+            "name": "battle_icon_laevatain",
             "supercategory": null
         },
         {
             "id": 242,
-            "name": "ardelia_battle_icon",
+            "name": "battle_icon_ardelia",
             "supercategory": null
         },
         {
             "id": 243,
-            "name": "wulfgard_battle_icon",
+            "name": "battle_icon_wulfgard",
             "supercategory": null
         },
         {
             "id": 244,
-            "name": "last_rite_battle_icon",
+            "name": "battle_icon_last_rite",
             "supercategory": null
         },
         {
             "id": 245,
-            "name": "zhuang_fangyi_battle_icon",
+            "name": "battle_icon_zhuang_fangyi",
             "supercategory": null
         },
         {
             "id": 246,
-            "name": "perlica_battle_icon",
+            "name": "battle_icon_perlica",
             "supercategory": null
         },
         {
             "id": 247,
-            "name": "avywenna_battle_icon",
+            "name": "battle_icon_avywenna",
             "supercategory": null
         },
         {
             "id": 248,
-            "name": "liino_battle_icon",
+            "name": "battle_icon_liino",
             "supercategory": null
         },
         {
             "id": 249,
-            "name": "chen_qianyu_battle_icon",
+            "name": "battle_icon_chen_qianyu",
             "supercategory": null
         },
         {
             "id": 250,
-            "name": "pogranichnik_battle_icon",
+            "name": "battle_icon_pogranichnik",
             "supercategory": null
         },
         {
             "id": 251,
-            "name": "lifeng_battle_icon",
+            "name": "battle_icon_lifeng",
             "supercategory": null
         },
         {
             "id": 252,
-            "name": "da_pan_battle_icon",
+            "name": "battle_icon_da_pan",
             "supercategory": null
         },
         {
             "id": 253,
-            "name": "arclight_battle_icon",
+            "name": "battle_icon_arclight",
             "supercategory": null
         },
         {
             "id": 254,
-            "name": "xaihi_battle_icon",
+            "name": "battle_icon_xaihi",
             "supercategory": null
         },
         {
             "id": 255,
-            "name": "tangtang_battle_icon",
+            "name": "battle_icon_tangtang",
             "supercategory": null
         },
         {
             "id": 256,
-            "name": "estella_battle_icon",
+            "name": "battle_icon_estella",
             "supercategory": null
         },
         {
             "id": 257,
-            "name": "endministrator_battle_icon",
+            "name": "battle_icon_endministrator",
             "supercategory": null
         },
         {
             "id": 258,
-            "name": "alesh_battle_icon",
+            "name": "battle_icon_alesh",
             "supercategory": null
         },
         {
             "id": 259,
-            "name": "snowshine_battle_icon",
+            "name": "battle_icon_snowshine",
             "supercategory": null
         },
         {
             "id": 260,
-            "name": "catcher_battle_icon",
+            "name": "battle_icon_catcher",
             "supercategory": null
         },
         {
             "id": 261,
-            "name": "antal_battle_icon",
+            "name": "battle_icon_antal",
             "supercategory": null
         },
         {
             "id": 262,
-            "name": "fluorite_battle_icon",
+            "name": "battle_icon_fluorite",
             "supercategory": null
         },
         {
             "id": 263,
-            "name": "akekuri_battle_icon",
+            "name": "battle_icon_akekuri",
             "supercategory": null
         },
         {
             "id": 264,
-            "name": "mi_fu_battle_icon",
+            "name": "battle_icon_mi_fu",
             "supercategory": ""
         }
     ]

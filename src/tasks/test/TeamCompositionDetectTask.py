@@ -65,7 +65,7 @@ class TeamCompositionDetectTask(BaseEfTask):
         contacts = {}
         for ann in data["annotations"]:
             name = cat_map.get(ann["category_id"], "")
-            if not name.endswith("_battle_icon"):
+            if not name.startswith("battle_icon_"):
                 continue
             img = img_map.get(ann["image_id"])
             if img is None:
@@ -151,7 +151,7 @@ class TeamCompositionDetectTask(BaseEfTask):
                 best_score = score
                 best_name = label
         if best_name:
-            best_name = best_name.replace("_battle_icon", "")
+            best_name = best_name.replace("battle_icon_", "")
         return best_name, max(best_score, 0.0)
 
     def run(self):
