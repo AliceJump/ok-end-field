@@ -80,7 +80,14 @@
       "stagger_value": 0,
       "cooldown": "10秒",
       "spirit_cost": 90,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "ATTACH_BURN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     }
   ]
 }

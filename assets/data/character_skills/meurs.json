@@ -32,7 +32,14 @@
       "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "STATUS_BROKEN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     },
     {
       "skill_id": "meurs_link",
@@ -46,7 +53,14 @@
       "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "BUFF_SHIELD",
+          "value": 1,
+          "duration": "",
+          "target": "ally"
+        }
+      ]
     },
     {
       "skill_id": "meurs_ultimate",
@@ -60,7 +74,14 @@
       "stagger_value": 0,
       "cooldown": "15秒",
       "spirit_cost": 80,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "VULN_ALL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     }
   ]
 }

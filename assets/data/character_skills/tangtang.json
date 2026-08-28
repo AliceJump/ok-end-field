@@ -44,6 +44,12 @@
           "value": 1,
           "duration": "",
           "target": "enemy"
+        },
+        {
+          "effect_id": "VULN_ALL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
         }
       ]
     },

@@ -32,7 +32,14 @@
       "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "STATUS_HEAVY_HIT",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     },
     {
       "skill_id": "wulfa_link",

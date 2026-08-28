@@ -46,7 +46,14 @@
       "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "BUFF_HEAL",
+          "value": 1,
+          "duration": "",
+          "target": "ally"
+        }
+      ]
     },
     {
       "skill_id": "liino_ultimate",

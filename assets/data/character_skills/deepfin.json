@@ -31,14 +31,20 @@
         "trigger_condition": "战技消耗寒冷附着强制施加冻结",
         "enhancement_effect": "冻结效果",
         "enhancement_visible_pulse": false,
-        "effects": [
-          {
-            "effect_id": "STATUS_FROZEN",
-            "value": 1,
-            "duration": "",
-            "target": "enemy"
-          }
-        ]
+      "effects": [
+        {
+          "effect_id": "CLEAR_COLD",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "STATUS_FROZEN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
       },
       "description": "勾起冰块砸击面前的敌人，对目标造成物理伤害。命中处于寒冷附着状态的目标时，消耗掉目标身上所有寒冷附着，对其强制施加冻结，并基于消耗层数恢复技力，命中多名目标时仅恢复1次。",
       "damage_multiplier": "450%",

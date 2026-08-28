@@ -52,7 +52,14 @@
       "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 0,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "VULN_PHYSICAL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     },
     {
       "skill_id": "mifu_ultimate",
@@ -66,7 +73,14 @@
       "stagger_value": 0,
       "cooldown": "15秒",
       "spirit_cost": 80,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "STATUS_HEAVY_HIT",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     }
   ]
 }

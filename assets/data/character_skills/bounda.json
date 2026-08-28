@@ -44,6 +44,12 @@
           "value": 1,
           "duration": "",
           "target": "enemy"
+        },
+        {
+          "effect_id": "STATUS_SLOW",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
         }
       ]
     },
