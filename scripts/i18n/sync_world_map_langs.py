@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """从官方地图 API（四语）+ Atlos（西语）同步多语言译名到 world_map.json。
 
 数据源：
@@ -18,11 +16,12 @@
 
 import hashlib
 import json
-import json5
 import re
 import sys
 from pathlib import Path
 from urllib import request
+
+import json5
 
 try:
     import polib
@@ -31,10 +30,7 @@ except ImportError:
 
 SKLAND = "https://zonai.skland.com"
 SKPORT = "https://zonai.skport.com"
-ATLOS_REGION = (
-    "https://raw.githubusercontent.com/Terra-Online/Atlos/HEAD/"
-    "talos/src/locale/data/region/es-ES.json"
-)
+ATLOS_REGION = "https://raw.githubusercontent.com/Terra-Online/Atlos/HEAD/talos/src/locale/data/region/es-ES.json"
 
 HEADERS = {
     "User-Agent": "Mozilla/5.0",
@@ -140,16 +136,22 @@ def build_official(langs):
                     for l in ("en", "ja", "ko"):
                         if s[l] != "?":
                             name_map[s_zh["name"].strip()][l] = s[l]
-                sites.append({
-                    "id": s_zh["id"],
-                    "zh": s_zh["name"].strip(),
-                    "en": s["en"], "ja": s["ja"], "ko": s["ko"],
-                })
-            level_list.append({
-                "id": lv_zh["id"],
-                "name": {l: lv[l]["name"] for l in langs},
-                "sites": sites,
-            })
+                sites.append(
+                    {
+                        "id": s_zh["id"],
+                        "zh": s_zh["name"].strip(),
+                        "en": s["en"],
+                        "ja": s["ja"],
+                        "ko": s["ko"],
+                    }
+                )
+            level_list.append(
+                {
+                    "id": lv_zh["id"],
+                    "name": {l: lv[l]["name"] for l in langs},
+                    "sites": sites,
+                }
+            )
         levels.append({"id": m_zh["id"], "name": {l: m[l]["name"] for l in langs}, "levels": level_list})
 
     # catalog: 按 mainType/subType 顺序对齐（四语 subType id 一致）
@@ -211,12 +213,7 @@ def match_es_main(levels, es_main_by_key, es_sites_by_key):
     es_main_by_en = {}
     for mp in levels:
         en_name = mp["name"]["en"]
-        my_sites = {
-            slug(s["en"])
-            for lv in mp["levels"]
-            for s in lv["sites"]
-            if s["en"] != "?"
-        }
+        my_sites = {slug(s["en"]) for lv in mp["levels"] for s in lv["sites"] if s["en"] != "?"}
         best_key, best_n = None, 0
         for main_key, es_sites in es_sites_by_key.items():
             n = len(my_sites & es_sites)
@@ -229,7 +226,7 @@ def match_es_main(levels, es_main_by_key, es_sites_by_key):
 
 def sync_world_map(name_map, es_site_by_slug, es_sub_by_lv, es_main_by_en):
     data = json5.loads(WORLD_MAP_JSON.read_text(encoding="utf-8"))
-    stats = {l: 0 for l in ("en", "ja", "ko", "es")}
+    stats = dict.fromkeys(("en", "ja", "ko", "es"), 0)
     touched = []
     for key, node in data.items():
         zh = (node.get("zh_CN") or {}).get("pattern")
@@ -353,7 +350,7 @@ def sync_canon(name_map, catalog_map):
         except Exception:
             pass
     canon_zh = set(collect_canon_names())
-    manual = sorted((set(official) - snapshot_zh - set(existing_zh) - canon_zh))
+    manual = sorted(set(official) - snapshot_zh - set(existing_zh) - canon_zh)
     return added, manual
 
 
@@ -487,7 +484,7 @@ def main():
             print(f"  {key} {zh} [{where}]: {node}")
     if canon_manual:
         print()
-        print(f"MANUAL (official name not in canonical master data, decide whether to add):")
+        print("MANUAL (official name not in canonical master data, decide whether to add):")
         for zh in canon_manual:
             print(f"  {zh}")
 

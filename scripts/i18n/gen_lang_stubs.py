@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """生成 src/data/lang/_lang_typed.py 类型提示文件。
 
 扫描 assets/lang/*.json，为 self.lang.<模块>.<key> 生成静态类型定义，
@@ -17,6 +16,7 @@
 本脚本也会幂等地把 src/data/lang/__init__.py 里 LangAccessor 改为继承
 _LangAccessorTyped（仅类型提示，不改变运行时行为）。
 """
+
 from __future__ import annotations
 
 import json
@@ -68,12 +68,7 @@ def _is_valid_attr(name: str) -> bool:
 
 def _doc(s: str) -> str:
     """转义 docstring 文本，避免破坏三引号。"""
-    return (
-        s.replace("\\", "\\\\")
-        .replace('"""', '\\"\\"\\"')
-        .replace("\r", " ")
-        .replace("\n", " ")
-    )
+    return s.replace("\\", "\\\\").replace('"""', '\\"\\"\\"').replace("\r", " ").replace("\n", " ")
 
 
 def build_module_class(module_name: str, data: dict) -> tuple[str, int]:
@@ -111,7 +106,7 @@ def main() -> int:
         try:
             with f.open(encoding="utf-8") as fh:
                 data = json.load(fh)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             print(f"[warn] 跳过 {f.name}: {exc}")
             continue
         if not isinstance(data, dict) or not data:

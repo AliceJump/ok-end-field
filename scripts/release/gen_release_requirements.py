@@ -12,6 +12,7 @@ pip_args "--no-deps"，用户端 pip 只按本清单精确安装，不再拉取 
     校验已提交的 requirements.txt 与生成结果一致（CI 使用）：
       uv run --locked python scripts/release/gen_release_requirements.py --check
 """
+
 from __future__ import annotations
 
 import argparse

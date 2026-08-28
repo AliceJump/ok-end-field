@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """从 git 历史 po 恢复空翻译。
 
 对 i18n/*/LC_MESSAGES/ok.po 的每个条目：
@@ -92,8 +91,7 @@ def restore_locale(loc: str, ref: str, quiet: bool = False) -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="从 git 历史 po 恢复空翻译")
-    parser.add_argument("--ref", default="HEAD",
-                        help="历史版本 ref（默认 HEAD）")
+    parser.add_argument("--ref", default="HEAD", help="历史版本 ref（默认 HEAD）")
     args = parser.parse_args()
 
     if polib is None:

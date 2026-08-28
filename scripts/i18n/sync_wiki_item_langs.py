@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """把官方 Wiki catalog 抓取结果归类为多语言物品表。
 
 数据源：
@@ -177,9 +175,7 @@ def merge_zh_cn(merged: dict[str, dict[str, str]], zhcn_batch: Path) -> dict:
         else:
             key = normalize_name(name)
             cands = name_to_iids.get(key, [])
-            if len(cands) == 1:
-                hit = cands[0]
-            elif len(cands) > 1:
+            if len(cands) == 1 or len(cands) > 1:
                 hit = cands[0]
         if hit:
             matched[hit] = name
@@ -220,8 +216,7 @@ def sync_po(merged: dict[str, dict[str, str]], zhcn: dict[str, str]) -> tuple[di
         official.pop(zh, None)
         zhcn.pop(zh, None)
     all_stats, all_touched = sync_po_entries(official, PO_LOCALES, I18N_DIR, quiet=True)
-    zh_stats, zh_touched = sync_zh_cn_self_patch(zhcn.values(), I18N_DIR,
-                                                 update_existing=True, quiet=True)
+    zh_stats, zh_touched = sync_zh_cn_self_patch(zhcn.values(), I18N_DIR, update_existing=True, quiet=True)
     all_stats = {**all_stats, **zh_stats}
     all_touched.extend(zh_touched)
     return all_stats, all_touched
@@ -246,14 +241,15 @@ def sync_other_lang_jsons(merged: dict[str, dict[str, str]], zhcn: dict[str, str
         for zh in marks:
             official.pop(zh, None)
 
-    return sync_lang_jsons(official, ROOT / "assets" / "lang",
-                           skip_files=("map_marks.json", "wiki_items.json"))
+    return sync_lang_jsons(official, ROOT / "assets" / "lang", skip_files=("map_marks.json", "wiki_items.json"))
 
 
 def main():
     batches = find_latest_batches()
     if not batches:
-        print("No wiki catalog raw data found; wiki_items.json untouched (capture locally, e.g. run capture_wiki_catalog.py).")
+        print(
+            "No wiki catalog raw data found; wiki_items.json untouched (capture locally, e.g. run capture_wiki_catalog.py)."
+        )
         return 0
     print(f"language batches: {sorted(batches)}")
 
