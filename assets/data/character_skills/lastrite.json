@@ -1,125 +1,57 @@
 {
   "character_id": "bie_li",
+  "wiki_item_id": "4",
   "name": "别礼",
-  "star": 6,
-  "element": "寒冷",
-  "profession": "突击",
-  "weapon_type": "双手剑",
+  "star": 0,
+  "element": "",
+  "profession": "",
+  "weapon_type": "",
   "skills": [
     {
-      "skill_id": "lastrite_normal",
-      "name": "寒霜剑术",
+      "name": "严霜之舞",
       "skill_type": "普通攻击",
-      "element": "寒冷",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "普通攻击：对敌人进行至多5段攻击，造成寒冷伤害。",
-      "damage_multiplier": "",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
+      "description": "对敌人进行至多4段攻击，造成寒冷伤害。作为主控干员时，重击会造成25点失衡。处于空中时使用普通攻击，会下落并攻击附近敌人造成寒冷伤害。下落攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量寒冷伤害并恢复一定技力。处决攻击：普通攻击：",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "lastrite_skill",
-      "name": "低温症",
+      "name": "塞什卡的秘传",
       "skill_type": "战技",
-      "element": "寒冷",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "寒冷脆弱",
-        "trigger_condition": "消耗法术附着施加寒冷脆弱",
-        "enhancement_effect": "寒冷脆弱",
-        "enhancement_visible_pulse": false,
-        "effects": [
-          {
-            "effect_id": "VULN_COLD",
-            "value": 1,
-            "duration": "",
-            "target": "enemy"
-          }
-        ]
-      },
-      "description": "攻击命中处于法术附着的敌人时，消耗所有法术附着并施加寒冷脆弱，使敌人受到的寒冷伤害增加。",
-      "damage_multiplier": "200%（基础）+ 每层4%（脆弱）",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "VULN_COLD",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "BUFF_DAMAGE_UP",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "CLEAR_ATTACH",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "主控干员为别礼时，施放该战技不会中断普通攻击。对主控干员的武器进行低温灌注，并返还一定技力。一段时间内，当前主控干员接下来的1次重击会生成别礼的幻影，对目标进行追击，造成寒冷伤害，施加寒冷附着。",
+      "attach_effects": [
+        "ATTACH_COLD"
+      ],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "lastrite_link",
-      "name": "冰封斩",
+      "name": "噬冬",
       "skill_type": "连携技",
-      "element": "寒冷",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "当有敌人处于冻结状态时可以发动。释放冰封斩击，造成寒冷伤害。",
-      "damage_multiplier": "400%",
-      "stagger_value": 15,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": [
-        {
-          "effect_id": "ATTACH_COLD",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        }
+      "description": "在目标敌人身上凝结冰锥，随后将其斩碎，消耗敌人身上的所有寒冷附着，对其造成基于其寒冷附着层数的寒冷伤害，并且根据消耗的层数获得终结技能量。当有敌人进入3层及以上寒冷附着状态时可以发动。",
+      "attach_effects": [
+        "ATTACH_COLD"
+      ],
+      "status_effects": [],
+      "clear_effects": [
+        "CLEAR_COLD",
+        "CLEAR_ATTACH"
+      ],
+      "enhancement_conditions": [
+        "3层及以上寒冷附着状态",
+        "当有敌人进入3层及以上寒冷附着状态时可以发动"
       ]
     },
     {
-      "skill_id": "lastrite_ultimate",
-      "name": "绝对零度",
+      "name": "临终别礼",
       "skill_type": "终结技",
-      "element": "寒冷",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "寒冷脆弱增强",
-        "trigger_condition": "终结技期间",
-        "enhancement_effect": "寒冷脆弱增强",
-        "enhancement_visible_pulse": false,
-        "effects": [
-          {
-            "effect_id": "VULN_COLD",
-            "value": 1,
-            "duration": "",
-            "target": "enemy"
-          }
-        ]
-      },
-      "description": "释放极寒之力，对范围内敌人造成大量寒冷伤害并施加寒冷脆弱。",
-      "damage_multiplier": "800%（伤害）+ 寒冷脆弱×1.5",
-      "stagger_value": 25,
-      "cooldown": "20秒",
-      "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "VULN_COLD",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "披着霜铠，凝结冰镰，对前方进行三次斩击，该状态下免疫所有伤害。别礼只能从自身的战技、连携技中获得终结技能量。每次斩击造成大量寒冷伤害。",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     }
   ]
 }

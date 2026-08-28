@@ -1,86 +1,47 @@
 {
   "character_id": "ka_qi_er",
+  "wiki_item_id": "94",
   "name": "卡契尔",
-  "star": 4,
-  "element": "物理",
-  "profession": "重装",
-  "weapon_type": "双手剑",
+  "star": 0,
+  "element": "",
+  "profession": "",
+  "weapon_type": "",
   "skills": [
     {
-      "skill_id": "meurs_normal",
       "name": "基础战术",
       "skill_type": "普通攻击",
-      "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "普通攻击：对敌人进行至多4段攻击，造成物理伤害。",
-      "damage_multiplier": "",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
+      "description": "下落攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。处决攻击：对敌人进行至多4段攻击，造成物理伤害。作为主控干员时，重击会造成22点失衡。处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。普通攻击：",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "meurs_skill",
       "name": "刚性阻击",
       "skill_type": "战技",
-      "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
       "description": "架起盾牌格挡攻击，使自身及周围干员获得庇护，并立即返还一定技力。若在立盾期间受到攻击，则发动一次反击，尝试对敌人造成物理伤害并施加1层破防。",
-      "damage_multiplier": "400%",
-      "stagger_value": 20,
-      "cooldown": "",
-      "spirit_cost": 100,
-      "effects": []
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "meurs_link",
       "name": "即时压制",
       "skill_type": "连携技",
-      "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "当敌人开始蓄力，或主控干员受到攻击后生命值低于40%可以发动。挥拳向前用力扣下，对敌人造成物理伤害，并使自身和另一名友方干员获得护盾。",
-      "damage_multiplier": "55%（第一段）+ 225%（第二段）",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": [
-        {
-          "effect_id": "BUFF_SHIELD",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "当敌人开始蓄力，或主控干员受到攻击后生命值低于40%可以发动。防御力可以额外提高护盾值。挥拳向前用力扣下，对敌人造成物理伤害，并使自身和另一名友方干员（主控干员优先）获得护盾。",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "meurs_ultimate",
       "name": "教科书式猛攻",
       "skill_type": "终结技",
-      "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
       "description": "挥动大剑快速向前斩击2次，造成物理伤害并施加虚弱。最后向下猛砸，对目标范围内的所有敌人造成大量物理伤害并造成倒地。",
-      "damage_multiplier": "200%（第一段）+ 270%（第二段）+ 400%（第三段）",
-      "stagger_value": 15,
-      "cooldown": "15秒",
-      "spirit_cost": 80,
-      "effects": [
-        {
-          "effect_id": "STATUS_STAGGER",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "VULN_ALL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     }
   ]
 }

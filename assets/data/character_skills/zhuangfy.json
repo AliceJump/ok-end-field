@@ -1,99 +1,57 @@
 {
   "character_id": "zhuang_fang_yi",
+  "wiki_item_id": "1132",
   "name": "庄方宜",
-  "star": 6,
-  "element": "电磁",
-  "profession": "突击",
-  "weapon_type": "施术单元",
+  "star": 0,
+  "element": "",
+  "profession": "",
+  "weapon_type": "",
   "skills": [
     {
-      "skill_id": "zhuangfy_normal",
-      "name": "伏击",
+      "name": "疾电法",
       "skill_type": "普通攻击",
-      "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。",
-      "damage_multiplier": "",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
+      "description": "下落攻击：对敌人进行至多5段攻击，造成电磁伤害。作为主控干员时，重击会造成18点失衡。普通攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量电磁伤害并恢复一定技力。 处于空中时使用普通攻击，会下落并攻击附近敌人，造成电磁伤害。 处决攻击：",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "zhuangfy_skill",
-      "name": "靶向鱼雷",
+      "name": "惊霆诀",
       "skill_type": "战技",
-      "element": "电磁",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "锁定目标敌人后，向前方发射一道电磁能量造成电磁伤害。若命中处于电磁附着或导电状态的敌人，则消耗该状态并追加一次攻击。",
-      "damage_multiplier": "280%（基础）+ 420%（追加）",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "ATTACH_ELECTROMAGNETIC",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "TRIGGER_ADDITIONAL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "随后引导附近的青霆剑依次雷击目标，造成电磁伤害并额外获得终结技能量，最后一次雷击造成6倍伤害。消耗目标的导电状态，使本次战技伤害倍率提高，并生成相当于所消耗导电的异常等级+1柄青霆剑，若现存的青霆剑少于3柄，即使未消耗目标的导电状态仍能生成1柄青霆剑。一次战技最多生成3柄青霆剑。",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "zhuangfy_link",
-      "name": "反隐协议",
+      "name": "一息万变",
       "skill_type": "连携技",
-      "element": "电磁",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "当有敌人被施加法术附着时可以发动。短暂蓄力后释放电磁脉冲，造成电磁伤害并强制施加导电。",
-      "damage_multiplier": "320%",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": [
-        {
-          "effect_id": "ATTACH_ELECTROMAGNETIC",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "STATUS_CONDUCTING",
-          "value": 1,
-          "duration": "短暂",
-          "target": "enemy"
-        }
+      "description": "构造息雷阵法攻击敌人，造成电磁伤害。命中处于电磁附着的敌人时，消耗其电磁附着，强制施加导电，并基于消耗的层数额外获得终结技能量。主控干员的重击或处决，命中处于电磁附着状态的敌人后可以发动。若强制施加导电时，敌人已处于导电状态，则所施加导电的异常等级+1。",
+      "attach_effects": [
+        "ATTACH_ELECTROMAGNETIC"
+      ],
+      "status_effects": [],
+      "clear_effects": [
+        "CLEAR_ATTACH"
+      ],
+      "enhancement_conditions": [
+        "电磁附着"
       ]
     },
     {
-      "skill_id": "zhuangfy_ultimate",
-      "name": "全域追踪",
+      "name": "万钧风雷",
       "skill_type": "终结技",
-      "element": "电磁",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "锁定范围内所有敌人，发射大量电磁飞弹进行轰炸，造成电磁伤害。",
-      "damage_multiplier": "600%",
-      "stagger_value": 20,
-      "cooldown": "20秒",
-      "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "ATTACH_ELECTROMAGNETIC",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "首次施放战技惊霆诀不消耗技力与导电，若存在目标，则无论其是否处于导电状态，必定生成3柄青霆剑。战技惊霆诀伤害倍率提高，伤害范围扩大，最后一次雷击命中时施加电磁附着。普通攻击得到强化。自身行动更不容易被打断。连携技一息万变对一定范围内的敌人生效，伤害倍率提高，冷却恢复速度提升至原本的4倍。作为主控干员时，终结技期间普攻第三段后会造成18点失衡。进入天理合真状态：",
+      "attach_effects": [
+        "ATTACH_ELECTROMAGNETIC"
+      ],
+      "status_effects": [],
+      "clear_effects": [
+        "CLEAR_ATTACH"
+      ],
+      "enhancement_conditions": []
     }
   ]
 }

@@ -1,106 +1,51 @@
 {
   "character_id": "zhou_xue",
+  "wiki_item_id": "90",
   "name": "昼雪",
-  "star": 5,
-  "element": "寒冷",
-  "profession": "重装",
-  "weapon_type": "双手剑",
+  "star": 0,
+  "element": "",
+  "profession": "",
+  "weapon_type": "",
   "skills": [
     {
-      "skill_id": "aurora_normal",
-      "name": "霜刃",
+      "name": "失温猛击",
       "skill_type": "普通攻击",
-      "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "普通攻击：对敌人进行至多4段攻击，造成物理伤害。",
-      "damage_multiplier": "",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
+      "description": "下落攻击：附近有失衡敌人时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。处决攻击：对敌人进行至多3段攻击，造成物理伤害。作为主控干员时，重击会造成23点失衡。处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。普通攻击：",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "aurora_skill",
-      "name": "冰封护盾",
+      "name": "饱和性防御",
       "skill_type": "战技",
-      "element": "寒冷",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "护盾叠加",
-        "trigger_condition": "战技命中敌人获得护盾",
-        "enhancement_effect": "护盾效果",
-        "enhancement_visible_pulse": false,
-        "effects": [
-          {
-            "effect_id": "BUFF_SHIELD",
-            "value": 1,
-            "duration": "",
-            "target": "enemy"
-          }
-        ]
-      },
-      "description": "挥动武器造成寒冷伤害，并获得基于自身最大生命值的护盾。",
-      "damage_multiplier": "300%",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "ATTACH_COLD",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "BUFF_SHIELD",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "若在立盾期间受到攻击，则发动一次反击，尝试对攻击者造成寒冷伤害，并施加寒冷附着。架起盾牌格挡攻击，使自身及周围干员获得庇护，并立即返还一定技力。",
+      "attach_effects": [
+        "ATTACH_COLD"
+      ],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "aurora_link",
-      "name": "寒冰冲锋",
+      "name": "极地救援",
       "skill_type": "连携技",
-      "element": "寒冷",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "当有敌人处于冻结状态时可以发动。冲锋撞击敌人，造成寒冷伤害。",
-      "damage_multiplier": "250%",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": [
-        {
-          "effect_id": "ATTACH_COLD",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "意志可以额外提高治疗量。昼雪对其丢出雪地救援助理，触碰到目标时立即大量治疗附近的干员，并在接下来一段时间内对范围内的干员持续提供治疗。当主控干员受到攻击后，如果生命值低于60%可以发动。",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "aurora_ultimate",
-      "name": "冰川之怒",
+      "name": "凛冽寒霜",
       "skill_type": "终结技",
-      "element": "寒冷",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "召唤冰川之力，对范围内敌人造成大量寒冷伤害并施加冻结。",
-      "damage_multiplier": "600%",
-      "stagger_value": 20,
-      "cooldown": "20秒",
-      "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "STATUS_FROZEN",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "借助喷气装置跳起并朝前砸下盾牌，对范围内的敌人造成大量寒冷伤害，并生成一个持续数秒的冰雪地带持续对敌人造成寒冷伤害。敌人身处冰雪地带内一段时间后将被强制冻结。",
+      "attach_effects": [
+        "STATUS_FROZEN"
+      ],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     }
   ]
 }

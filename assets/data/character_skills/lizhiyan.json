@@ -1,98 +1,91 @@
 {
   "character_id": "jue",
+  "wiki_item_id": "1675",
   "name": "诀",
-  "star": 6,
-  "element": "自然",
-  "profession": "术师",
-  "weapon_type": "施术单元",
+  "star": 0,
+  "element": "",
+  "profession": "",
+  "weapon_type": "",
   "skills": [
     {
-      "skill_id": "lizhiyan_normal",
-      "name": "自然疗法",
+      "name": "重火力截击",
       "skill_type": "普通攻击",
-      "element": "自然",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "普通攻击：对敌人进行至多4段攻击，造成自然伤害。",
-      "damage_multiplier": "",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
+      "description": "对敌人进行至多5段攻击，造成自然伤害。作为主控干员时，重击会造成17点失衡。下落攻击：处决攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成自然伤害。附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量自然伤害并恢复一定技力。普通攻击：",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "lizhiyan_skill",
-      "name": "生息之种",
+      "name": "摧玉网格",
       "skill_type": "战技",
-      "element": "自然",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "种子爆发",
-        "trigger_condition": "种子命中处于自然附着的敌人",
-        "enhancement_effect": "种子爆发",
-        "enhancement_visible_pulse": false,
-        "effects": []
-      },
-      "description": "投掷生息之种，命中敌人后造成自然伤害。若目标处于自然附着状态，则消耗所有自然附着并爆发，造成额外伤害。",
-      "damage_multiplier": "250%（基础）+ 350%（爆发）",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "ATTACH_NATURAL",
-          "value": 0,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "CLEAR_ATTACH",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "阵诀·智：智识值 ≥ 意志值，阵诀·智生效中。在目标脚下创建摧玉网格，对范围内敌人造成自然伤害并施加自然附着。- 造成的伤害更高。",
+      "attach_effects": [
+        "ATTACH_NATURAL"
+      ],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "lizhiyan_link",
-      "name": "万物共鸣",
+      "name": "应龙四式",
       "skill_type": "连携技",
-      "element": "自然",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "当有敌人被施加法术异常时可以发动。引发自然共鸣，造成自然伤害并施加自然附着。",
-      "damage_multiplier": "280%",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": [
-        {
-          "effect_id": "ATTACH_NATURAL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
+      "description": "- 连携技冷却时间更短。当有敌人被施加自然附着或进入2层及以上其他法术附着时可以发动。- 当自身战技命中处于囹圄状态的敌人时，返还一定技力，提前结束囹圄状态，造成爆炸伤害，并再次施加自然脆弱和寒冷脆弱，短暂延迟后，造成多段额外伤害。智识值 ≥ 意志值，阵诀·智生效中。冲向目标，设置四个战术分身对其及周围的敌人施加自然脆弱和寒冷脆弱，造成自然伤害，并使该目标进入囹圄状态。囹圄状态结束时，战术分身向其攻击，并造成爆炸伤害。囹圄状态：所有行动减缓。阵诀·智：",
+      "attach_effects": [
+        "ATTACH_NATURAL",
+        "VULN_COLD"
+      ],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": [
+        "自然附着或进入2层及以上其他法术附着",
+        "当有敌人被施加自然附着或进入2层及以上其他法术附着时可以发动",
+        "囹圄状态"
       ]
     },
     {
-      "skill_id": "lizhiyan_ultimate",
-      "name": "生命之树",
+      "name": "破晦",
       "skill_type": "终结技",
-      "element": "自然",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "召唤生命之树，对范围内敌人造成大量自然伤害并治疗全队。",
-      "damage_multiplier": "700%",
-      "stagger_value": 20,
-      "cooldown": "20秒",
-      "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "BUFF_HEAL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
+      "description": "智识值 ≥ 意志值，阵诀·智生效中。生成破晦阵，对区域内的敌人立即造成自然伤害。阵诀·智：处于破晦阵中的敌人被处决或受到主控干员重击时，破晦阵将对其发动集束打击，造成范围伤害，最多发动2次。- 破晦阵生成时，还会对区域内的敌人强制施加腐蚀。当发动2次集束打击后，终结技切换为破晦诀明。破晦诀明：对前方大范围内敌人造成自然伤害。",
+      "attach_effects": [
+        "ATTACH_CORRODE"
+      ],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
+    },
+    {
+      "name": "破晦",
+      "skill_type": "终结技",
+      "description": "处于破晦阵中的敌人被处决或受到主控干员重击时，破晦阵将对其发动集束打击，造成范围伤害，最多发动2次。阵诀·意：- 破晦阵生成时，还会对区域内处于法术附着状态的敌人再次施加该法术附着。生成破晦阵，对区域内的敌人立即造成自然伤害。当发动2次集束打击后，终结技切换为破晦诀明。意志值 > 智识值，阵诀·意生效中。破晦诀明：对前方大范围内敌人造成自然伤害。",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
+    },
+    {
+      "name": "摧玉网格",
+      "skill_type": "战技",
+      "description": "在目标脚下创建摧玉网格，对范围内敌人造成自然伤害并施加自然附着。阵诀·意：意志值 > 智识值，阵诀·意生效中。- 造成伤害时会向中心牵引范围内的敌人。",
+      "attach_effects": [
+        "ATTACH_NATURAL"
+      ],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
+    },
+    {
+      "name": "应龙四式",
+      "skill_type": "连携技",
+      "description": "囹圄状态：所有行动减缓。- 施放连携技使敌人进入囹圄状态时，会小幅牵引范围内的敌人。当有敌人被施加法术附着时可以发动。阵诀·意：意志值 > 智识值，阵诀·意生效中。冲向目标，设置四个战术分身对其及周围的敌人再次施加该法术附着、自然脆弱和寒冷脆弱，造成自然伤害，并使该目标进入囹圄状态。囹圄状态结束时，战术分身向其攻击，并造成爆炸伤害。- 意志可以额外提升连携技施加的自然脆弱和寒冷脆弱效果。",
+      "attach_effects": [
+        "VULN_COLD"
+      ],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": [
+        "法术附着",
+        "当有敌人被施加法术附着时可以发动"
       ]
     }
   ]

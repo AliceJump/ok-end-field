@@ -1,0 +1,50 @@
+{
+  "character_id": "chen_qian_yu",
+  "wiki_item_id": "12",
+  "name": "陈千语",
+  "star": 0,
+  "element": "",
+  "profession": "",
+  "weapon_type": "",
+  "skills": [
+    {
+      "name": "破飞霞",
+      "skill_type": "普通攻击",
+      "description": "下落攻击： 普通攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。 对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成16点失衡。处决攻击：",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
+    },
+    {
+      "name": "归穹宇",
+      "skill_type": "战技",
+      "description": "对目标敌人进行上挑攻击，造成物理伤害和击飞。",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
+    },
+    {
+      "name": "见天河",
+      "skill_type": "连携技",
+      "description": "当有敌人进入破防状态时可以发动。进行穿梭斩击，对路径上的所有敌人造成物理伤害和击飞。",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": [
+        "破防状态",
+        "当有敌人进入破防状态时可以发动"
+      ]
+    },
+    {
+      "name": "冽风霜",
+      "skill_type": "终结技",
+      "description": "对目标敌人进行7段斩击，每次造成物理伤害。最后一段斩击造成的伤害更高。",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
+    }
+  ]
+}

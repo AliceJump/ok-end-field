@@ -1,106 +1,49 @@
 {
   "character_id": "li_feng",
+  "wiki_item_id": "130",
   "name": "黎风",
-  "star": 6,
-  "element": "物理",
-  "profession": "近卫",
-  "weapon_type": "长柄武器",
+  "star": 0,
+  "element": "",
+  "profession": "",
+  "weapon_type": "",
   "skills": [
     {
-      "skill_id": "lifeng_normal",
       "name": "摧破",
       "skill_type": "普通攻击",
-      "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "普通攻击：对敌人进行至多4段攻击，造成物理伤害。",
-      "damage_multiplier": "",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
+      "description": " 对敌人进行至多4段攻击，造成物理伤害。作为主控干员时，重击会造成19点失衡。处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。下落攻击：普通攻击：",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "lifeng_skill",
       "name": "荡浊身",
       "skill_type": "战技",
-      "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "连续向前挥枪，造成2次物理伤害，之后重砸地面，再次对前方所有敌人造成物理伤害并造成倒地。",
-      "damage_multiplier": "86%（第一段）+ 86%（第二段）+ 268%（第三段）",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "STATUS_STAGGER",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "最后一击命中的敌人若不处于破防状态，则额外对其施加物理脆弱。连续向前挥枪，造成2次物理伤害，之后重砸地面，再次对前方所有敌人造成物理伤害并造成倒地。",
+      "attach_effects": [
+        "VULN_PHYSICAL"
+      ],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "lifeng_link",
       "name": "忿怒相",
       "skill_type": "连携技",
-      "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "当处于物理脆弱或碎甲状态的敌人受到主控干员重击后可以发动。施放身外身以长枪突刺，造成物理伤害，并且获得连击。",
-      "damage_multiplier": "105%（第一段）+ 375%（第二段）",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": [
-        {
-          "effect_id": "VULN_PHYSICAL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "STACK_COMBO",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "施放身外身以长枪突刺，造成物理伤害，并且获得连击。当处于物理脆弱或碎甲状态的敌人受到主控干员重击后可以发动。",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "lifeng_ultimate",
       "name": "不动心",
       "skill_type": "终结技",
-      "element": "物理",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "连击消耗",
-        "trigger_condition": "终结技消耗连击追加伤害",
-        "enhancement_effect": "伤害提升",
-        "enhancement_visible_pulse": false,
-        "effects": [
-          {
-            "effect_id": "BUFF_DAMAGE_UP",
-            "value": 1,
-            "duration": "",
-            "target": "enemy"
-          }
-        ]
-      },
-      "description": "施放身外身，使用不动杵重砸前方地面，对大范围内的所有敌人造成物理伤害并造成倒地。",
-      "damage_multiplier": "400%（第一段）+ 400%（第二段）+ 600%（追加）",
-      "stagger_value": 5,
-      "cooldown": "15秒",
-      "spirit_cost": 90,
-      "effects": [
-        {
-          "effect_id": "STATUS_STAGGER",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "若该技能消耗了连击，则会追加大量物理伤害。施放身外身，使用不动杵重砸前方地面，对大范围内的所有敌人造成物理伤害并造成造成倒地，然后将所有敌人聚拢至中心。一段时间后，对仍然留在砸地范围内的所有敌人再次造成大量物理伤害并造成倒地。",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     }
   ]
 }

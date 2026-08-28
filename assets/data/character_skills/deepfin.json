@@ -1,112 +1,59 @@
 {
   "character_id": "a_lie_shi",
+  "wiki_item_id": "87",
   "name": "阿列什",
-  "star": 5,
-  "element": "寒冷",
-  "profession": "先锋",
-  "weapon_type": "单手剑",
+  "star": 0,
+  "element": "",
+  "profession": "",
+  "weapon_type": "",
   "skills": [
     {
-      "skill_id": "deepfin_normal",
       "name": "基本挥竿法",
       "skill_type": "普通攻击",
-      "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。",
-      "damage_multiplier": "",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
+      "description": "附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成17点失衡。处决攻击:下落攻击:普通攻击:",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "deepfin_skill",
       "name": "非常规路亚",
       "skill_type": "战技",
-      "element": "寒冷",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "寒冷附着消耗",
-        "trigger_condition": "战技消耗寒冷附着强制施加冻结",
-        "enhancement_effect": "冻结效果",
-        "enhancement_visible_pulse": false,
-        "effects": [
-          {
-            "effect_id": "STATUS_FROZEN",
-            "value": 1,
-            "duration": "",
-            "target": "enemy"
-          }
-        ]
-      },
-      "description": "勾起冰块砸击敌人，造成物理伤害。若敌人处于寒冷附着状态，则消耗所有寒冷附着并强制施加冻结，基于消耗层数恢复技力。",
-      "damage_multiplier": "450%",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "STATUS_FROZEN",
-          "value": 1,
-          "duration": "短暂",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "BUFF_HEAL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "CLEAR_ATTACH",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "对其强制施加冻结，并基于消耗层数恢复技力，命中多名目标时仅恢复1次。勾起冰块砸击面前的敌人，对目标造成物理伤害。命中处于寒冷附着状态的目标时，消耗掉目标身上所有寒冷附着，",
+      "attach_effects": [
+        "ATTACH_COLD",
+        "STATUS_FROZEN"
+      ],
+      "status_effects": [],
+      "clear_effects": [
+        "CLEAR_COLD",
+        "CLEAR_ATTACH"
+      ],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "deepfin_link",
       "name": "凿孔底钓术",
       "skill_type": "连携技",
-      "element": "寒冷",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "当附近目标的法术异常或源石结晶被消耗时可以发动。在敌人脚下开洞垂钓，造成物理伤害并恢复技力。",
-      "damage_multiplier": "300%（基础）+ 480%（珍鳞）",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": [
-        {
-          "effect_id": "BUFF_HEAL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
+      "description": "在敌人脚下开洞垂钓，造成物理伤害，并恢复一定技力，有一定概率能钓出珍鳞，大幅增加伤害并额外恢复技力。当附近目标的法术异常或源石结晶被消耗时可以发动。",
+      "attach_effects": [
+        "STATUS_ABNORMAL"
+      ],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": [
+        "当附近目标的法术异常或源石结晶被消耗时可以发动"
       ]
     },
     {
-      "skill_id": "deepfin_ultimate",
-      "name": "大鳞，上钩！",
+      "name": "大鳞，上钩!",
       "skill_type": "终结技",
-      "element": "寒冷",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "钓起超乎想象的大鳞砸击面前的所有敌人，造成大范围的寒冷伤害并施加寒冷附着。",
-      "damage_multiplier": "980%",
-      "stagger_value": 20,
-      "cooldown": "20秒",
-      "spirit_cost": 100,
-      "effects": [
-        {
-          "effect_id": "ATTACH_COLD",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+      "description": "钓起超乎想象的大鳞砸击面前的所有敌人，造成大范围的寒冷伤害，施加寒冷附着并恢复一定技力， 每击败一个目标将额外恢复一定技力。",
+      "attach_effects": [
+        "ATTACH_COLD"
+      ],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     }
   ]
 }

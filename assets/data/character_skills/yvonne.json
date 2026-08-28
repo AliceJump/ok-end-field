@@ -1,72 +1,60 @@
 {
   "character_id": "yi_feng",
+  "wiki_item_id": "157",
   "name": "伊冯",
-  "star": 6,
-  "element": "寒冷",
-  "profession": "突击",
-  "weapon_type": "手铳",
+  "star": 0,
+  "element": "",
+  "profession": "",
+  "weapon_type": "",
   "skills": [
     {
-      "skill_id": "yvonne_normal",
       "name": "雀跃扳机",
       "skill_type": "普通攻击",
-      "element": "寒冷",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "普通攻击：对敌人进行至多5段攻击，造成寒冷伤害。",
-      "damage_multiplier": "",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
+      "description": " 处于空中时使用普通攻击，会下落并攻击附近敌人，造成寒冷伤害。处决攻击：下落攻击：对敌人进行至多5段攻击，造成寒冷伤害。作为主控干员时，重击会造成17点失衡。附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量寒冷伤害并恢复一定技力。 普通攻击：",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     },
     {
-      "skill_id": "yvonne_skill",
       "name": "冰冰弹·β型",
       "skill_type": "战技",
-      "element": "寒冷",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "冻结触发",
-        "trigger_condition": "命中处于寒冷附着或自然附着的敌人时",
-        "enhancement_effect": "消耗掉目标身上所有的法术附着，对其强制施加冻结",
-        "enhancement_visible_pulse": false,
-        "effects": []
-      },
-      "description": "向前发射一颗制冷弹。制冷弹碰到敌人后会发生爆炸，造成寒冷伤害。命中处于寒冷附着或自然附着的敌人时，消耗掉目标身上所有的法术附着，对其强制施加冻结。",
-      "damage_multiplier": "250%（基础）+ 150%（冻结）+ 200%（每层）",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 100,
-      "effects": []
+      "description": "向前发射一颗制冷弹。制冷弹碰到敌人后会发生爆炸，造成寒冷伤害。命中处于寒冷附着或自然附着的敌人时，消耗掉目标身上所有的法术附着，对其强制施加冻结，并基于消耗的层数造成寒冷伤害。战技成功施加冻结后，会基于消耗的层数，额外获得终结技能量，命中多名目标时仅获得1次。",
+      "attach_effects": [
+        "ATTACH_COLD",
+        "ATTACH_NATURAL",
+        "STATUS_FROZEN"
+      ],
+      "status_effects": [],
+      "clear_effects": [
+        "CLEAR_ALL",
+        "CLEAR_ATTACH"
+      ],
+      "enhancement_conditions": [
+        "寒冷附着或自然附着"
+      ]
     },
     {
-      "skill_id": "yvonne_link",
-      "name": "速冻仔·υ37",
+      "name": "速冻仔·u37",
       "skill_type": "连携技",
-      "element": "寒冷",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "当主控干员对处于冻结状态的敌人造成重击时可以发动。立即在敌人旁部署一个速冻仔。",
-      "damage_multiplier": "100%（能量）+ 200%（爆炸）",
-      "stagger_value": 10,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
+      "description": "当主控干员对处于冻结状态的敌人造成重击时可以发动。连携技成功命中敌人后，会额外获得终结技能量，命中多名目标时仅获得1次。立即在敌人旁部署一个速冻仔，速冻仔会不断施放能量攻击周围的敌人，造成寒冷伤害并持续向中心牵引。持续时间结束后，速冻仔自爆，对周围敌人强制施加冻结并造成寒冷伤害。",
+      "attach_effects": [
+        "STATUS_FROZEN"
+      ],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": [
+        "当主控干员对处于冻结状态的敌人造成重击时可以发动"
+      ]
     },
     {
-      "skill_id": "yvonne_ultimate",
       "name": "冷冻射手",
       "skill_type": "终结技",
-      "element": "寒冷",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "立即部署小嘀嗒进行辅助，并切换至主控干员。在接下来一定时间内，伊冯的普通攻击会得到强化，每次普通攻击都会增加自己的暴击率。当叠加至最大层数后，自身暴击伤害增加。持续时间结束前的最后一次强力攻击会变为，造成大量寒冷伤害。如果敌人处于冻结状态，额外造成一次寒冷伤害。",
-      "damage_multiplier": "",
-      "stagger_value": 0,
-      "cooldown": "10秒",
-      "spirit_cost": 220,
-      "effects": []
+      "description": "如果敌人处于冻结状态，额外造成一次寒冷伤害后，消耗其冻结状态。在接下来一定时间内，伊冯的普通攻击会得到强化，每次普通攻击都会增加自己的暴击率。当叠加至最大层数后，自身暴击伤害增加。持续时间结束前的最后一次普通攻击会变为重击，造成大量寒冷伤害。立即部署小嘀嗒进行辅助，并切换至主控干员。",
+      "attach_effects": [],
+      "status_effects": [],
+      "clear_effects": [],
+      "enhancement_conditions": []
     }
   ]
 }
