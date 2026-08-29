@@ -25,8 +25,19 @@
       "name": "血红之影",
       "skill_type": "战技",
       "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "破防追加灼热伤害",
+        "trigger_condition": {
+          "text": "目标已拥有破防状态时释放狼之珀",
+          "effects": [
+            "STATUS_SHRED"
+          ]
+        },
+        "enhancement_effect": "追加灼热伤害",
+        "enhancement_visible_pulse": false,
+        "effects": []
+      },
       "description": "冲向目标，造成物理伤害并施加击飞。 若目标已经拥有破防，则会额外释放狼之珀冲向目标，造成灼热伤害。",
       "damage_multiplier": "192%（第一段）+ 288%（第二段）",
       "stagger_value": 0,

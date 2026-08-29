@@ -98,7 +98,11 @@
       "stagger_value": 0,
       "cooldown": "10秒",
       "spirit_cost": 220,
-      "effects": []
+      "effects": [
+        {"effect_id": "BUFF_DAMAGE_UP", "target": "self"},
+        {"effect_id": "BUFF_CRIT_RATE_UP", "target": "self"},
+        {"effect_id": "TRIGGER_ADDITIONAL", "target": "enemy"}
+      ]
     }
   ]
 }

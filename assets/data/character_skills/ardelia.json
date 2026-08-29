@@ -25,8 +25,32 @@
       "name": "奔腾的多利",
       "skill_type": "战技",
       "element": "自然",
-      "has_enhancement": false,
-      "enhancement": null,
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "腐蚀消耗双脆弱",
+        "trigger_condition": {
+          "text": "消耗腐蚀状态施加物理脆弱与法术脆弱",
+          "effects": [
+            "STATUS_CORROSION"
+          ]
+        },
+        "enhancement_effect": "双脆弱",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {
+            "effect_id": "VULN_PHYSICAL",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          },
+          {
+            "effect_id": "VULN_ALL",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          }
+        ]
+      },
       "description": "骑上多利先生冲撞目标，对目标造成自然伤害，若目标处于腐蚀状态，消耗其腐蚀状态，并对其施加物理脆弱与法术脆弱。",
       "damage_multiplier": "300%",
       "stagger_value": 0,

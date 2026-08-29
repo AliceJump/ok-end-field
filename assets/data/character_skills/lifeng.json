@@ -25,8 +25,24 @@
       "name": "荡浊身",
       "skill_type": "战技",
       "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "不破防时施加物理脆弱",
+        "trigger_condition": {
+          "text": "最后一击命中的敌人若不处于破防状态则额外施加物理脆弱",
+          "effects": []
+        },
+        "enhancement_effect": "物理脆弱",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {
+            "effect_id": "VULN_PHYSICAL",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          }
+        ]
+      },
       "description": "连续向前挥枪，造成2次物理伤害，之后重砸地面，再次对前方所有敌人造成物理伤害并造成倒地。最后一击命中的敌人若不处于破防状态，则额外对其施加物理脆弱。",
       "damage_multiplier": "86%（第一段）+ 86%（第二段）+ 268%（第三段）",
       "stagger_value": 0,

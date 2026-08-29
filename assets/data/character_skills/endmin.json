@@ -64,8 +64,24 @@
       "name": "轰击序列",
       "skill_type": "终结技",
       "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "源石结晶消耗额外伤害",
+        "trigger_condition": {
+          "text": "敌人身上附着源石结晶时消耗结晶并额外造成物理伤害",
+          "effects": []
+        },
+        "enhancement_effect": "追加物理伤害",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {
+            "effect_id": "TRIGGER_ADDITIONAL",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          }
+        ]
+      },
       "description": "使用源石技艺轰击地面，对前方扇形范围内的敌人造成大量物理伤害。如果敌人身上附着源石结晶，则消耗源石结晶并额外造成一次物理伤害。",
       "damage_multiplier": "800%",
       "stagger_value": 0,
