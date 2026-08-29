@@ -45,6 +45,7 @@ def _load_skill_effects(effects_data: list[dict]) -> list[SkillEffect]:
             value=effect_data.get("value", 0),
             duration=effect_data.get("duration", ""),
             target=effect_data.get("target", "enemy"),
+            count=effect_data.get("count", 1),
         )
         effects.append(effect)
     return effects

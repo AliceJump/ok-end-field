@@ -42,6 +42,7 @@ class SkillEffect:
     value: int = 0  # 效果值（如层数、百分比等）
     duration: str = ""  # 持续时间
     target: str = "enemy"  # 效果目标：enemy/ally/self
+    count: int = 1  # 施加/消耗计数：+1=施加，-1=消耗，0=仅检查/触发条件
 
 
 @dataclass
