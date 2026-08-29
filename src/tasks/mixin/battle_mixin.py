@@ -42,6 +42,7 @@ from src.core.BattleConfig import (
     KEY_INSTANT_LINK,
     KEY_INSTANT_ULT,
     KEY_RECOMMEND_SKILL,
+    KEY_SKILL_ALLOWLIST,
     KEY_ULT_RELEASE_MODE,
     RECOMMEND_SKILL_REGIONS,
     ULT_RELEASE_MODE_ALT,
@@ -271,7 +272,7 @@ class BattleMixin(BaseEfTask):
         Returns:
             bool: 本帧是否因推荐技能命中而按下了按键。
         """
-        if not self.get_battle_config(KEY_RECOMMEND_SKILL, False):
+        if not self.get_battle_config(KEY_RECOMMEND_SKILL, False) and not self.get_battle_config(KEY_SKILL_ALLOWLIST, False):
             return False
         member_count = int(self._battle_member_count or 0)
         if not 1 <= member_count <= len(RECOMMEND_SKILL_REGIONS):

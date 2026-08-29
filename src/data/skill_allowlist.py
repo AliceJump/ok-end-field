@@ -1,6 +1,6 @@
-"""技能允许列表：根据队伍 4 角色的增强链依赖，自动判定哪些战技有意义释放。
+"""自动技能列表：根据队伍 4 角色的增强链依赖，自动判定哪些战技有意义释放。
 
-使用方式（战斗配置中启用"启用技能允许列表"后）：
+使用方式（战斗配置中启用"自动技能列表"后）：
     frame = task.next_frame()           # 战斗中截帧
     members = detect_team_from_frame(frame)  # battle_icon 模板匹配自动识别
     # → ["别礼", "伊冯", "洁尔佩塔", "余烬"]
@@ -25,8 +25,11 @@ import numpy as np
 _ROOT = Path(__file__).resolve().parent.parent.parent
 _DATA_DIR = _ROOT / "assets" / "data" / "character_skills"
 _CHARACTERS_JSON = _ROOT / "assets" / "data" / "characters.json"
-_COCO_JSON = _ROOT / "ok_templates" / "coco_annotations.json"
-_OK_TEMPLATES = _ROOT / "ok_templates"
+_ASSETS_DIR = _ROOT / "assets"
+_COCO_JSON = _ASSETS_DIR / "coco_annotations.json"
+
+# 战技无实际释放价值的角色（自动技能列表始终跳过）
+_EXCLUDED_CHARS = {"余烬"}
 
 # ── 数据加载 ──────────────────────────────────────────────────────────────────
 
@@ -83,6 +86,10 @@ def build_skill_allowlist(
     result: dict[int, tuple[bool, str]] = {}
 
     for idx, char_name in enumerate(team_members):
+        if char_name in _EXCLUDED_CHARS:
+            result[idx] = (False, "战技无实际释放价值")
+            continue
+
         char_data = characters.get(char_name)
         if not char_data:
             result[idx] = (True, "")
@@ -183,31 +190,25 @@ def filter_skill_sequence(
     skill_sequence: list[str],
     characters: dict[str, dict] | None = None,
 ) -> list[str]:
-    """根据技能允许列表过滤技能释放序列。
+    """根据自动技能列表生成技能释放序列。
+
+    直接用允许列表生成完整序列（按位置顺序），而非与原序列取交集。
 
     Args:
         team_members:   4 个角色名，索引 i 对应技能键 "i+1"
-        skill_sequence: 原始技能序列，如 ["1", "2", "3", "1"]
+        skill_sequence: 原始技能序列（保留但不参与交集）
         characters:     角色数据（可选）
 
     Returns:
-        过滤后的序列（仅保留允许释放的技能键）
+        允许释放的技能键列表（按位置顺序排列）
     """
     allowlist = build_skill_allowlist(team_members, characters)
-    allowed = {str(i + 1) for i, (ok, _) in allowlist.items() if ok}
+    allowed = sorted(
+        {str(i + 1) for i, (ok, _) in allowlist.items() if ok},
+        key=lambda s: int(s),
+    )
 
-    if not allowed:
-        return list(skill_sequence)
-
-    filtered = []
-    for token in skill_sequence:
-        if token in _NORMAL_SKILL_TOKENS:
-            if token in allowed:
-                filtered.append(token)
-        else:
-            filtered.append(token)
-
-    return filtered if filtered else list(skill_sequence)
+    return allowed if allowed else list(skill_sequence)
 
 
 # ── 编队头像自动识别 ────────────────────────────────────────────────────────
@@ -268,7 +269,7 @@ def _load_battle_icons() -> dict[str, np.ndarray]:
         img = img_map.get(ann["image_id"])
         if img is None:
             continue
-        path = _OK_TEMPLATES / img["file_name"]
+        path = _ASSETS_DIR / img["file_name"]
         if not path.exists():
             continue
         shot = cv2.imread(str(path))

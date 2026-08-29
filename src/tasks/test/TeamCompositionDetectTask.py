@@ -8,9 +8,9 @@ from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
 
-OK_TEMPLATES = Path(__file__).resolve().parent.parent.parent.parent / "ok_templates"
-COCO_JSON = OK_TEMPLATES / "coco_annotations.json"
-CHARACTERS_JSON = Path(__file__).resolve().parent.parent.parent.parent / "assets" / "data" / "characters.json"
+ASSETS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "assets"
+COCO_JSON = ASSETS_DIR / "coco_annotations.json"
+CHARACTERS_JSON = ASSETS_DIR / "data" / "characters.json"
 
 # 左下角4个头像固定区域（归一化坐标，基于1920x1080）
 PORTRAIT_ROIS = [
@@ -70,7 +70,7 @@ class TeamCompositionDetectTask(BaseEfTask):
             img = img_map.get(ann["image_id"])
             if img is None:
                 continue
-            path = OK_TEMPLATES / img["file_name"]
+            path = ASSETS_DIR / img["file_name"]
             if not path.exists():
                 continue
             shot = cv2.imread(str(path))
@@ -160,7 +160,7 @@ class TeamCompositionDetectTask(BaseEfTask):
         contacts = self._load_contacts()
         char_names = self._load_char_names()
         if not contacts:
-            self.log_info(self.tr("未加载到任何 battle_icon 模板，请检查 ok_templates/coco_annotations.json"))
+            self.log_info(self.tr("未加载到任何 battle_icon 模板，请检查 assets/coco_annotations.json"))
             return
         self.log_info(self.tr("编队判定启动: 共 {count} 个战斗头像模板").format(count=len(contacts)), notify=True)
         detect_count = 0

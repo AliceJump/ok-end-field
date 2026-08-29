@@ -314,8 +314,9 @@ class AutoCombatLogic:
         self.normal_start_trigger = task.get_battle_config("启动技能点数", 2)
         self.normal_skill_index = 0
 
-        # ── 技能允许列表：自动识别编队，过滤战技释放序列 ──
+        # ── 自动技能列表：自动识别编队过滤战技释放序列 ──
         if task.get_battle_config(KEY_SKILL_ALLOWLIST, False):
+            # 自动识别编队，过滤战技释放序列
             frame = task.frame
             if frame is not None and frame.size > 0:
                 team_members = detect_team_from_frame(frame)
@@ -326,18 +327,18 @@ class AutoCombatLogic:
                     )
                     if self.normal_skill_sequence != original_seq:
                         task.log_info(
-                            f"技能允许列表已生效: {original_seq} → {self.normal_skill_sequence} "
+                            f"自动技能列表已生效: {original_seq} → {self.normal_skill_sequence} "
                             f"(队伍: {'/'.join(team_members)})"
                         )
                     else:
                         task.log_info(
-                            f"技能允许列表已生效，无技能被过滤 "
+                            f"自动技能列表已生效，无技能被过滤 "
                             f"(队伍: {'/'.join(team_members)})"
                         )
                 else:
-                    task.log_info("技能允许列表: 头像识别失败，跳过过滤")
+                    task.log_info("自动技能列表: 头像识别失败，跳过过滤")
             else:
-                task.log_info("技能允许列表: 帧不可用，跳过过滤")
+                task.log_info("自动技能列表: 帧不可用，跳过过滤")
 
         # 模式初始化：实时条件 > 排轴 > 普通
         # 实时条件优先：启用时自动忽略普通排轴

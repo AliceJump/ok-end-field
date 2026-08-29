@@ -8,8 +8,8 @@ KEY_ROTATION_SEQUENCE = "排轴序列"
 # 推荐技能（白色圆周脉冲触发战技）相关
 KEY_RECOMMEND_SKILL = "自动释放推荐技能"
 
-# 技能允许列表（根据队伍编队自动过滤战技释放序列）
-KEY_SKILL_ALLOWLIST = "启用技能允许列表"
+# 自动技能列表（根据队伍编队自动过滤战技释放序列）
+KEY_SKILL_ALLOWLIST = "自动技能列表"
 
 # 推荐技能按钮四区域预设（与 TestCircularPulseDetect 调试任务共用同一数据源）。
 # x / y 为按钮中心归一化坐标（pixel / 宽、pixel / 高）；
@@ -62,7 +62,7 @@ BATTLE_CONFIG_TYPE = {
     KEY_INSTANT_ULT: {"hidden": True},
     KEY_INSTANT_LINK: {"hidden": True},
     KEY_RECOMMEND_SKILL: {},
-    KEY_SKILL_ALLOWLIST: {},
+    KEY_SKILL_ALLOWLIST: {"sub_configs": {False: [key for key in DEFAULT_BATTLE_CONFIG if key not in (KEY_SKILL_ALLOWLIST, KEY_ULT_RELEASE_MODE, "启动技能点数", "完成通知", "无数字操作间隔", "进入战斗后的初始等待时间")]}},
 }
 BATTLE_CONFIG_DESCRIPTION = {
     KEY_ULT_RELEASE_MODE: "配置终结技的释放方式",
