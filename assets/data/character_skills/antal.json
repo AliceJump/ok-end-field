@@ -1,101 +1,88 @@
 {
-  "character_id": "an_ta_er",
-  "name": "安塔尔",
-  "star": 4,
-  "element": "电磁",
-  "profession": "辅助",
-  "weapon_type": "施术单元",
-  "skills": [
-    {
-      "skill_id": "antal_normal",
-      "name": "交换电流",
-      "skill_type": "普通攻击",
-      "element": "电磁",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "普通攻击：对敌人进行至多4段攻击，造成电磁伤害。作为主控干员时，重击会造成15点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成电磁伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量电磁伤害并恢复一定技力。",
-      "damage_multiplier": "",
-      "stagger_value": 15,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
-    },
-    {
-      "skill_id": "antal_skill",
-      "name": "指定研究对象",
-      "skill_type": "战技",
-      "element": "电磁",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "聚焦状态",
-        "trigger_condition": {
-          "text": "战技命中敌人",
-          "effects": []
-        },
-        "enhancement_effect": "聚焦状态",
-        "enhancement_visible_pulse": false,
-        "effects": [
-          {
-            "effect_id": "VULN_ELECTROMAGNETIC",
-            "value": 1,
-            "duration": "",
-            "target": "enemy"
-          },
-          {
-            "effect_id": "VULN_BURN",
-            "value": 1,
-            "duration": "",
-            "target": "enemy"
-          }
-        ]
-      },
-      "description": "对敌人施加长时间聚焦，造成电磁伤害，被聚焦的敌人受到电磁脆弱和灼热脆弱，同时最多聚焦1个敌人。",
-      "damage_multiplier": "200%",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 100,
-      "effects": []
-    },
-    {
-      "skill_id": "antal_link",
-      "name": "磁暴试验场",
-      "skill_type": "连携技",
-      "element": "电磁",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "当被聚焦的敌人进入物理异常或法术附着状态时可以发动。在该敌人身上引发1次能量爆炸，造成电磁伤害并再次对其施加该物理异常或法术附着。",
-      "damage_multiplier": "340%",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
-    },
-    {
-      "skill_id": "antal_ultimate",
-      "name": "超频时刻",
-      "skill_type": "终结技",
-      "element": "电磁",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "对全队施加一段时间的电磁增幅和灼热增幅。",
-      "damage_multiplier": "20%（增幅）",
-      "stagger_value": 0,
-      "cooldown": "20秒",
-      "spirit_cost": 100,
-      "effects": [
+    "character_id": "an_ta_er",
+    "name": "安塔尔",
+    "star": 4,
+    "element": "电磁",
+    "profession": "辅助",
+    "weapon_type": "施术单元",
+    "skills": [
         {
-          "effect_id": "VULN_ELECTROMAGNETIC",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
+            "skill_id": "antal_normal",
+            "name": "交换电流",
+            "skill_type": "普通攻击",
+            "element": "电磁",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "普通攻击：对敌人进行至多4段攻击，造成电磁伤害。作为主控干员时，重击会造成15点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成电磁伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量电磁伤害并恢复一定技力。",
+            "damage_multiplier": "",
+            "stagger_value": 15,
+            "cooldown": "",
+            "spirit_cost": 0,
+            "effects": []
         },
         {
-          "effect_id": "VULN_BURN",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
+            "skill_id": "antal_skill",
+            "name": "指定研究对象",
+            "skill_type": "战技",
+            "element": "电磁",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "聚焦状态",
+                "trigger_condition": {
+                    "text": "战技命中敌人",
+                    "effects": []
+                },
+                "enhancement_effect": "聚焦状态",
+                "enhancement_visible_pulse": false,
+                "effects": [
+                    {
+                        "effect_id": "VULN_ELECTROMAGNETIC",
+                        "value": 1,
+                        "duration": "",
+                        "target": "enemy"
+                    },
+                    {
+                        "effect_id": "VULN_BURN",
+                        "value": 1,
+                        "duration": "",
+                        "target": "enemy"
+                    }
+                ]
+            },
+            "description": "对敌人施加长时间聚焦，造成电磁伤害，被聚焦的敌人受到电磁脆弱和灼热脆弱，同时最多聚焦1个敌人。",
+            "damage_multiplier": "200%",
+            "stagger_value": 0,
+            "cooldown": "",
+            "spirit_cost": 100,
+            "effects": []
+        },
+        {
+            "skill_id": "antal_link",
+            "name": "磁暴试验场",
+            "skill_type": "连携技",
+            "element": "电磁",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "当被聚焦的敌人进入物理异常或法术附着状态时可以发动。在该敌人身上引发1次能量爆炸，造成电磁伤害并再次对其施加该物理异常或法术附着。",
+            "damage_multiplier": "340%",
+            "stagger_value": 0,
+            "cooldown": "",
+            "spirit_cost": 0,
+            "effects": []
+        },
+        {
+            "skill_id": "antal_ultimate",
+            "name": "超频时刻",
+            "skill_type": "终结技",
+            "element": "电磁",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "对全队施加一段时间的电磁增幅和灼热增幅。",
+            "damage_multiplier": "20%（增幅）",
+            "stagger_value": 0,
+            "cooldown": "20秒",
+            "spirit_cost": 100,
+            "effects": []
         }
-      ]
-    }
-  ]
+    ]
 }

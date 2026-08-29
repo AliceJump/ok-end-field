@@ -1,80 +1,80 @@
 {
-  "character_id": "ai_wei_wen_na",
-  "name": "艾维文娜",
-  "star": 5,
-  "element": "电磁",
-  "profession": "突击",
-  "weapon_type": "长柄武器",
-  "skills": [
-    {
-      "skill_id": "avywen_normal",
-      "name": "雷枪·疾袭",
-      "skill_type": "普通攻击",
-      "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成17点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
-      "damage_multiplier": "",
-      "stagger_value": 17,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
-    },
-    {
-      "skill_id": "avywen_skill",
-      "name": "雷枪·截回",
-      "skill_type": "战技",
-      "element": "电磁",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "跃起后用枪刮起旋风，对周围的敌人造成少量电磁伤害。同时召回全部雷枪、强雷枪。雷枪被召回时若穿过敌人则对其造成电磁伤害。强雷枪造成更高的电磁伤害，还会施加电磁附着。",
-      "damage_multiplier": "150%（旋风）+ 168%（雷枪）+ 432%（强雷枪）",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 100,
-      "effects": [
+    "character_id": "ai_wei_wen_na",
+    "name": "艾维文娜",
+    "star": 5,
+    "element": "电磁",
+    "profession": "突击",
+    "weapon_type": "长柄武器",
+    "skills": [
         {
-          "effect_id": "ATTACH_ELECTROMAGNETIC",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
-    },
-    {
-      "skill_id": "avywen_link",
-      "name": "雷枪·掣击",
-      "skill_type": "连携技",
-      "element": "电磁",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "主控干员对处于电磁附着或导电状态的目标进行重击后可以发动。跃起并向目标掷出3支雷枪，并对前方范围内的敌人造成一次电磁伤害。",
-      "damage_multiplier": "380%",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": [
+            "skill_id": "avywen_normal",
+            "name": "雷枪·疾袭",
+            "skill_type": "普通攻击",
+            "element": "物理",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成17点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
+            "damage_multiplier": "",
+            "stagger_value": 17,
+            "cooldown": "",
+            "spirit_cost": 0,
+            "effects": []
+        },
         {
-          "effect_id": "ATTACH_ELECTROMAGNETIC",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
+            "skill_id": "avywen_skill",
+            "name": "雷枪·截回",
+            "skill_type": "战技",
+            "element": "电磁",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "跃起后用枪刮起旋风，对周围的敌人造成少量电磁伤害。同时召回全部雷枪、强雷枪。雷枪被召回时若穿过敌人则对其造成电磁伤害。强雷枪造成更高的电磁伤害，还会施加电磁附着。",
+            "damage_multiplier": "150%（旋风）+ 168%（雷枪）+ 432%（强雷枪）",
+            "stagger_value": 0,
+            "cooldown": "",
+            "spirit_cost": 100,
+            "effects": [
+                {
+                    "effect_id": "ATTACH_ELECTROMAGNETIC",
+                    "value": 1,
+                    "duration": "",
+                    "target": "enemy"
+                }
+            ]
+        },
+        {
+            "skill_id": "avywen_link",
+            "name": "雷枪·掣击",
+            "skill_type": "连携技",
+            "element": "电磁",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "主控干员对处于电磁附着或导电状态的目标进行重击后可以发动。跃起并向目标掷出3支雷枪，并对前方范围内的敌人造成一次电磁伤害。",
+            "damage_multiplier": "380%",
+            "stagger_value": 0,
+            "cooldown": "",
+            "spirit_cost": 0,
+            "effects": [
+                {
+                    "effect_id": "ATTACH_ELECTROMAGNETIC",
+                    "value": 1,
+                    "duration": "",
+                    "target": "enemy"
+                }
+            ]
+        },
+        {
+            "skill_id": "avywen_ultimate",
+            "name": "雷枪·决颤",
+            "skill_type": "终结技",
+            "element": "电磁",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "向目标区域投下一支强雷枪，对附近敌人造成大量电磁伤害。",
+            "damage_multiplier": "950%",
+            "stagger_value": 0,
+            "cooldown": "10秒",
+            "spirit_cost": 100,
+            "effects": []
         }
-      ]
-    },
-    {
-      "skill_id": "avywen_ultimate",
-      "name": "雷枪·决颤",
-      "skill_type": "终结技",
-      "element": "电磁",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "向目标区域投下一支强雷枪，对附近敌人造成大量电磁伤害。",
-      "damage_multiplier": "950%",
-      "stagger_value": 0,
-      "cooldown": "10秒",
-      "spirit_cost": 100,
-      "effects": []
-    }
-  ]
+    ]
 }

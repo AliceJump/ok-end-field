@@ -1,113 +1,113 @@
 {
-  "character_id": "tang_tang",
-  "name": "汤汤",
-  "star": 6,
-  "element": "寒冷",
-  "profession": "术师",
-  "weapon_type": "手铳",
-  "skills": [
-    {
-      "skill_id": "tangtang_normal",
-      "name": "崩你脑壳！",
-      "skill_type": "普通攻击",
-      "element": "寒冷",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "普通攻击：对敌人进行至多5段攻击，造成寒冷伤害。作为主控干员时，重击会造成18点失衡。 下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成寒冷伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量寒冷伤害并恢复一定技力。",
-      "damage_multiplier": "",
-      "stagger_value": 18,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
-    },
-    {
-      "skill_id": "tangtang_skill",
-      "name": "踏潮卷浪！",
-      "skill_type": "战技",
-      "element": "寒冷",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "水龙卷系统",
-        "trigger_condition": {
-          "text": "消耗涡流形成水龙卷",
-          "effects": [
-            "STACK_WHIRLPOOL"
-          ]
-        },
-        "enhancement_effect": "水龙卷系统",
-        "enhancement_visible_pulse": false,
-        "effects": []
-      },
-      "description": "从水中跃出，对敌人抵近射击，造成寒冷伤害，并掀起一个水龙卷。同时消耗附近所有涡流使其形成额外的水龙卷，并根据形成数量返还一定技力。水龙卷：对范围内敌人施加1层寒冷附着，并持续造成寒冷伤害。若本次形成多个水龙卷，将对敌人额外施加法术脆弱，但无法重复施加寒冷附着。水龙卷伤害视为战技伤害。",
-      "damage_multiplier": "180%（射击）+ 300%（水龙卷）",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 100,
-      "effects": [
+    "character_id": "tang_tang",
+    "name": "汤汤",
+    "star": 6,
+    "element": "寒冷",
+    "profession": "术师",
+    "weapon_type": "手铳",
+    "skills": [
         {
-          "effect_id": "ATTACH_COLD",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
+            "skill_id": "tangtang_normal",
+            "name": "崩你脑壳！",
+            "skill_type": "普通攻击",
+            "element": "寒冷",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "普通攻击：对敌人进行至多5段攻击，造成寒冷伤害。作为主控干员时，重击会造成18点失衡。 下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成寒冷伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量寒冷伤害并恢复一定技力。",
+            "damage_multiplier": "",
+            "stagger_value": 18,
+            "cooldown": "",
+            "spirit_cost": 0,
+            "effects": []
         },
         {
-          "effect_id": "VULN_ALL",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
+            "skill_id": "tangtang_skill",
+            "name": "踏潮卷浪！",
+            "skill_type": "战技",
+            "element": "寒冷",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "水龙卷系统",
+                "trigger_condition": {
+                    "text": "消耗涡流形成水龙卷",
+                    "effects": [
+                        "STACK_WHIRLPOOL"
+                    ]
+                },
+                "enhancement_effect": "水龙卷系统",
+                "enhancement_visible_pulse": false,
+                "effects": []
+            },
+            "description": "从水中跃出，对敌人抵近射击，造成寒冷伤害，并掀起一个水龙卷。同时消耗附近所有涡流使其形成额外的水龙卷，并根据形成数量返还一定技力。水龙卷：对范围内敌人施加1层寒冷附着，并持续造成寒冷伤害。若本次形成多个水龙卷，将对敌人额外施加法术脆弱，但无法重复施加寒冷附着。水龙卷伤害视为战技伤害。",
+            "damage_multiplier": "180%（射击）+ 300%（水龙卷）",
+            "stagger_value": 0,
+            "cooldown": "",
+            "spirit_cost": 100,
+            "effects": [
+                {
+                    "effect_id": "ATTACH_COLD",
+                    "value": 1,
+                    "duration": "",
+                    "target": "enemy"
+                },
+                {
+                    "effect_id": "VULN_ALL",
+                    "value": 1,
+                    "duration": "",
+                    "target": "enemy"
+                }
+            ]
+        },
+        {
+            "skill_id": "tangtang_link",
+            "name": "河水，助我！",
+            "skill_type": "连携技",
+            "element": "寒冷",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "当有敌人被施加寒冷附着或受到法术爆发伤害时可以发动。释放一道强力的水流，贯穿前方敌人造成寒冷伤害，并迸射出一处涡流。场上最多存在2处涡流。",
+            "damage_multiplier": "240%",
+            "stagger_value": 0,
+            "cooldown": "",
+            "spirit_cost": 0,
+            "effects": [
+                {
+                    "effect_id": "ATTACH_COLD",
+                    "value": 1,
+                    "duration": "",
+                    "target": "enemy"
+                }
+            ]
+        },
+        {
+            "skill_id": "tangtang_ultimate",
+            "name": "大当家盯着呢！",
+            "skill_type": "终结技",
+            "element": "寒冷",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "古老图形封锁",
+                "trigger_condition": {
+                    "text": "主控干员在古老图形中下落攻击，提前结束演化降下巨浪并提升伤害",
+                    "effects": []
+                },
+                "enhancement_effect": "巨浪伤害提升",
+                "enhancement_visible_pulse": false,
+                "effects": [
+                    {
+                        "effect_id": "BUFF_DAMAGE_UP",
+                        "value": 1,
+                        "duration": "",
+                        "target": "enemy"
+                    }
+                ]
+            },
+            "description": "汤汤揭开眼罩，释放眼中的古老图形封锁范围内的敌人，使其暂停行动一段时间，并造成持续的寒冷伤害。古老图形演化结束时降下巨浪，对范围内敌人造成大量寒冷伤害。若主控干员在古老图形中下落攻击，会提前结束演化降下巨浪，巨浪造成的寒冷伤害提升。",
+            "damage_multiplier": "320%（持续）+ 400%（巨浪）+ 700%（提前降下）",
+            "stagger_value": 0,
+            "cooldown": "20秒",
+            "spirit_cost": 90,
+            "effects": []
         }
-      ]
-    },
-    {
-      "skill_id": "tangtang_link",
-      "name": "河水，助我！",
-      "skill_type": "连携技",
-      "element": "寒冷",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "当有敌人被施加寒冷附着或受到法术爆发伤害时可以发动。释放一道强力的水流，贯穿前方敌人造成寒冷伤害，并迸射出一处涡流。场上最多存在2处涡流。",
-      "damage_multiplier": "240%",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": [
-        {
-          "effect_id": "ATTACH_COLD",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
-    },
-    {
-      "skill_id": "tangtang_ultimate",
-      "name": "大当家盯着呢！",
-      "skill_type": "终结技",
-      "element": "寒冷",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "古老图形封锁",
-        "trigger_condition": {
-          "text": "主控干员在古老图形中下落攻击，提前结束演化降下巨浪并提升伤害",
-          "effects": []
-        },
-        "enhancement_effect": "巨浪伤害提升",
-        "enhancement_visible_pulse": false,
-        "effects": [
-          {
-            "effect_id": "BUFF_DAMAGE_UP",
-            "value": 1,
-            "duration": "",
-            "target": "enemy"
-          }
-        ]
-      },
-      "description": "汤汤揭开眼罩，释放眼中的古老图形封锁范围内的敌人，使其暂停行动一段时间，并造成持续的寒冷伤害。古老图形演化结束时降下巨浪，对范围内敌人造成大量寒冷伤害。若主控干员在古老图形中下落攻击，会提前结束演化降下巨浪，巨浪造成的寒冷伤害提升。",
-      "damage_multiplier": "320%（持续）+ 400%（巨浪）+ 700%（提前降下）",
-      "stagger_value": 0,
-      "cooldown": "20秒",
-      "spirit_cost": 90,
-      "effects": []
-    }
-  ]
+    ]
 }

@@ -1,104 +1,111 @@
 {
-  "character_id": "guan_li_yuan",
-  "name": "管理员",
-  "star": 6,
-  "element": "物理",
-  "profession": "近卫",
-  "weapon_type": "单手剑",
-  "skills": [
-    {
-      "skill_id": "endmin_normal",
-      "name": "毁伤序列",
-      "skill_type": "普通攻击",
-      "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
-      "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成18点失衡。 下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
-      "damage_multiplier": "",
-      "stagger_value": 18,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
-    },
-    {
-      "skill_id": "endmin_skill",
-      "name": "构成序列",
-      "skill_type": "战技",
-      "element": "物理",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "破甲效果",
-        "trigger_condition": {
-          "text": "命中敌人时消耗破防层数",
-          "effects": [
-            "STACK_SHRED"
-          ]
+    "character_id": "guan_li_yuan",
+    "name": "管理员",
+    "star": 6,
+    "element": "物理",
+    "profession": "近卫",
+    "weapon_type": "单手剑",
+    "skills": [
+        {
+            "skill_id": "endmin_normal",
+            "name": "毁伤序列",
+            "skill_type": "普通攻击",
+            "element": "物理",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成18点失衡。 下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
+            "damage_multiplier": "",
+            "stagger_value": 18,
+            "cooldown": "",
+            "spirit_cost": 0,
+            "effects": []
         },
-        "enhancement_effect": "破甲效果",
-        "enhancement_visible_pulse": false,
-        "effects": []
-      },
-      "description": "使用源石技艺冲击前方一定范围内的敌人，造成物理伤害和猛击。",
-      "damage_multiplier": "300%（基础）+ 200%（每层破防）",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 100,
-      "effects": []
-    },
-    {
-      "skill_id": "endmin_link",
-      "name": "锁闭序列",
-      "skill_type": "连携技",
-      "element": "物理",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "源石结晶消耗→额外物理伤害",
-        "trigger_condition": {
-          "text": "施加物理异常或破防时消耗源石结晶",
-          "effects": ["STATUS_SHRED"]
+        {
+            "skill_id": "endmin_skill",
+            "name": "构成序列",
+            "skill_type": "战技",
+            "element": "物理",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "破甲效果",
+                "trigger_condition": {
+                    "text": "命中敌人时消耗破防层数",
+                    "effects": [
+                        "STACK_SHRED"
+                    ]
+                },
+                "enhancement_effect": "破甲效果",
+                "enhancement_visible_pulse": false,
+                "effects": []
+            },
+            "description": "使用源石技艺冲击前方一定范围内的敌人，造成物理伤害和猛击。",
+            "damage_multiplier": "300%（基础）+ 200%（每层破防）",
+            "stagger_value": 0,
+            "cooldown": "",
+            "spirit_cost": 100,
+            "effects": []
         },
-        "enhancement_effect": "额外造成物理伤害",
-        "enhancement_visible_pulse": false,
-        "effects": [
-          {"effect_id": "TRIGGER_ADDITIONAL", "value": 1, "duration": "", "target": "enemy"}
-        ]
-      },
-      "description": "当小队内其他干员的连携技造成伤害时可以发动。冲到敌人身边，对其造成物理伤害，并附着源石结晶，在一段时间内将其封印。施加物理异常和破防会消耗源石结晶并额外造成物理伤害。",
-      "damage_multiplier": "250%",
-      "stagger_value": 0,
-      "cooldown": "",
-      "spirit_cost": 0,
-      "effects": []
-    },
-    {
-      "skill_id": "endmin_ultimate",
-      "name": "轰击序列",
-      "skill_type": "终结技",
-      "element": "物理",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "源石结晶消耗额外伤害",
-        "trigger_condition": {
-          "text": "敌人身上附着源石结晶时消耗结晶并额外造成物理伤害",
-          "effects": []
+        {
+            "skill_id": "endmin_link",
+            "name": "锁闭序列",
+            "skill_type": "连携技",
+            "element": "物理",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "源石结晶消耗→额外物理伤害",
+                "trigger_condition": {
+                    "text": "施加物理异常或破防时消耗源石结晶",
+                    "effects": [
+                        "STATUS_SHRED"
+                    ]
+                },
+                "enhancement_effect": "额外造成物理伤害",
+                "enhancement_visible_pulse": false,
+                "effects": [
+                    {
+                        "effect_id": "TRIGGER_ADDITIONAL",
+                        "value": 1,
+                        "duration": "",
+                        "target": "enemy"
+                    }
+                ]
+            },
+            "description": "当小队内其他干员的连携技造成伤害时可以发动。冲到敌人身边，对其造成物理伤害，并附着源石结晶，在一段时间内将其封印。施加物理异常和破防会消耗源石结晶并额外造成物理伤害。",
+            "damage_multiplier": "250%",
+            "stagger_value": 0,
+            "cooldown": "",
+            "spirit_cost": 0,
+            "effects": []
         },
-        "enhancement_effect": "追加物理伤害",
-        "enhancement_visible_pulse": false,
-        "effects": [
-          {
-            "effect_id": "TRIGGER_ADDITIONAL",
-            "value": 1,
-            "duration": "",
-            "target": "enemy"
-          }
-        ]
-      },
-      "description": "使用源石技艺轰击地面，对前方扇形范围内的敌人造成大量物理伤害。如果敌人身上附着源石结晶，则消耗源石结晶并额外造成一次物理伤害。",
-      "damage_multiplier": "800%",
-      "stagger_value": 0,
-      "cooldown": "15秒",
-      "spirit_cost": 90,
-      "effects": []
-    }
-  ]
+        {
+            "skill_id": "endmin_ultimate",
+            "name": "轰击序列",
+            "skill_type": "终结技",
+            "element": "物理",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "源石结晶消耗额外伤害",
+                "trigger_condition": {
+                    "text": "敌人身上附着源石结晶时消耗结晶并额外造成物理伤害",
+                    "effects": []
+                },
+                "enhancement_effect": "追加物理伤害",
+                "enhancement_visible_pulse": false,
+                "effects": [
+                    {
+                        "effect_id": "TRIGGER_ADDITIONAL",
+                        "value": 1,
+                        "duration": "",
+                        "target": "enemy"
+                    }
+                ]
+            },
+            "description": "使用源石技艺轰击地面，对前方扇形范围内的敌人造成大量物理伤害。如果敌人身上附着源石结晶，则消耗源石结晶并额外造成一次物理伤害。",
+            "damage_multiplier": "800%",
+            "stagger_value": 0,
+            "cooldown": "15秒",
+            "spirit_cost": 90,
+            "effects": []
+        }
+    ]
 }
