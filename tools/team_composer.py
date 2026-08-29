@@ -747,6 +747,81 @@ def find_team_by_names(characters: list[CharacterData], names: list[str]) -> Opt
     return team if len(team) > 0 else None
 
 
+def find_best_teams(
+    characters: list[CharacterData],
+    must_include: list[str] | None = None,
+    prefer_element: str | None = None,
+    prefer_elements: list[str] | None = None,
+    top_n: int = 10,
+) -> list[tuple[list[CharacterData], TeamScore]]:
+    """搜索最优队伍组合。
+
+    Args:
+        characters: 全部角色数据
+        must_include: 必须包含的角色名列表
+        prefer_element: 偏好元素（加分）
+        prefer_elements: 偏好双元素组合（加分）
+        top_n: 返回前 N 个结果
+    """
+    from itertools import combinations
+
+    # 固定角色
+    fixed: list[CharacterData] = []
+    if must_include:
+        for name in must_include:
+            found = [c for c in characters if c.name == name]
+            if found:
+                fixed.append(found[0])
+            else:
+                print(f"⚠️ 未找到必须包含的角色: {name}", file=sys.stderr)
+
+    remaining = [c for c in characters if c not in fixed]
+    need = TEAM_SIZE - len(fixed)
+    if need <= 0:
+        # 已满或超出
+        team = fixed[:TEAM_SIZE]
+        return [(team, score_team(team))]
+
+    results: list[tuple[list[CharacterData], TeamScore]] = []
+    for combo in combinations(remaining, need):
+        team = list(fixed) + list(combo)
+        ts = score_team(team)
+
+        # 元素偏好加分
+        team_elements = {c.element for c in team}
+        if prefer_element and prefer_element in team_elements:
+            ts.element_reaction += 5.0
+            ts.total += 5.0
+        if prefer_elements:
+            matched = sum(1 for e in prefer_elements if e in team_elements)
+            ts.element_reaction += matched * 3.0
+            ts.total += matched * 3.0
+
+        results.append((team, ts))
+
+    results.sort(key=lambda x: -x[1].total)
+    return results[:top_n]
+
+
+def format_team_result(rank: int, team: list[CharacterData], score: TeamScore) -> str:
+    """格式化单支队伍推荐结果。"""
+    lines = []
+    lines.append(f"  #{rank}  总分: {score.total:.1f}")
+    lines.append(f"  {'─'*50}")
+    for c in team:
+        star_str = "★" * c.star
+        attach = "/".join(sorted(c.attach_elements)) if c.attach_elements else "-"
+        lines.append(f"    {c.name:<8} {star_str:<8} {c.element:<6} {c.profession:<6} [{attach}]")
+    lines.append(f"  元素反应: {score.element_reaction:.1f}  "
+                 f"定位均衡: {score.role_balance:.1f}  "
+                 f"增强链: {score.enhancement_chain:.1f}  "
+                 f"状态协同: {score.status_synergy:.1f}  "
+                 f"连携覆盖: {score.link_coverage:.1f}")
+    if score.details:
+        lines.append(f"  💡 {'; '.join(score.details[:3])}")
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # 主逻辑
 # ---------------------------------------------------------------------------
