@@ -8,6 +8,9 @@ KEY_ROTATION_SEQUENCE = "排轴序列"
 # 推荐技能（白色圆周脉冲触发战技）相关
 KEY_RECOMMEND_SKILL = "自动释放推荐技能"
 
+# 技能允许列表（根据队伍编队自动过滤战技释放序列）
+KEY_SKILL_ALLOWLIST = "启用技能允许列表"
+
 # 推荐技能按钮四区域预设（与 TestCircularPulseDetect 调试任务共用同一数据源）。
 # x / y 为按钮中心归一化坐标（pixel / 宽、pixel / 高）；
 # button_radius / effect_max_radius 为半径（pixel / 短边）。
@@ -38,6 +41,7 @@ DEFAULT_BATTLE_CONFIG = {
     KEY_INSTANT_ULT: False,
     KEY_INSTANT_LINK: False,
     KEY_RECOMMEND_SKILL: False,
+    KEY_SKILL_ALLOWLIST: False,
 }
 
 BATTLE_CONFIG_NAME = "Battle Config"
@@ -58,6 +62,7 @@ BATTLE_CONFIG_TYPE = {
     KEY_INSTANT_ULT: {"hidden": True},
     KEY_INSTANT_LINK: {"hidden": True},
     KEY_RECOMMEND_SKILL: {},
+    KEY_SKILL_ALLOWLIST: {},
 }
 BATTLE_CONFIG_DESCRIPTION = {
     KEY_ULT_RELEASE_MODE: "配置终结技的释放方式",
@@ -103,6 +108,12 @@ BATTLE_CONFIG_DESCRIPTION = {
         "自动优先释放推荐技能。\n"
         "技能按钮出现白圈（游戏推荐释放时机）时，自动按下对应技能键，\n"
         "每个白圈周期按一次；优先级仅次于连携技。"
+    ),
+    KEY_SKILL_ALLOWLIST: (
+        "根据队伍角色的增强链依赖，自动过滤「技能释放」序列。\n"
+        "启用后，战斗开始时自动识别左下角 4 个头像，\n"
+        "跳过被增强机制接管的战技（如伊冯战技在别礼+洁尔佩塔队中），\n"
+        "只保留有意义释放的战技。"
     ),
 }
 
