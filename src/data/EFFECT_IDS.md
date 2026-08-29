@@ -58,11 +58,13 @@
 | `BUFF_CRIT_RATE_UP` | 暴击率提升 | 暴击率增加 |
 | `BUFF_CRIT_DMG_UP` | 暴击伤害提升 | 暴击伤害增加 |
 | `BUFF_SHIELD` | 护盾 | 获得护盾效果 |
-| `BUFF;element_ABSORB` | 元素吸收 | 吸收元素效果 |
 | `BUFF_HEAL` | 治疗 | 恢复生命值 |
 | `BUFF_SPEED_UP` | 移速提升 | 移动速度增加 |
 | `BUFF_DAMAGE_UP` | 伤害提升 | 所有伤害增加 |
-| `BUFF EleM_UP` | 元素伤害提升 | 特定元素伤害增加 |
+| `BUFF_COLD_UP` | 寒冷伤害提升 | 寒冷元素伤害增加 |
+| `BUFF_BURN_UP` | 灼热伤害提升 | 灼热元素伤害增加 |
+| `BUFF_ELECTROMAGNETIC_UP` | 电磁伤害提升 | 电磁元素伤害增加 |
+| `BUFF_NATURAL_UP` | 自然伤害提升 | 自然元素伤害增加 |
 
 ## 6. 减益效果 (Debuff)
 
