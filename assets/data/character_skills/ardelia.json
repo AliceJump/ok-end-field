@@ -61,7 +61,7 @@
       "spirit_cost": 0,
       "effects": [
         {
-          "effect_id": "ATTACH_NATURAL",
+          "effect_id": "STATUS_CORROSION",
           "value": 1,
           "duration": "",
           "target": "enemy"

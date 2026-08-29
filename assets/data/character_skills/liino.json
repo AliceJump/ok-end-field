@@ -69,7 +69,7 @@
       "spirit_cost": 100,
       "effects": [
         {
-          "effect_id": "ATTACH_ELECTROMAGNETIC",
+          "effect_id": "STATUS_CONDUCTING",
           "value": 1,
           "duration": "",
           "target": "enemy"

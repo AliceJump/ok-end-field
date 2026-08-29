@@ -77,7 +77,7 @@
       "spirit_cost": 0,
       "effects": [
         {
-          "effect_id": "ATTACH_BURN",
+          "effect_id": "STATUS_BURNING",
           "value": 1,
           "duration": "",
           "target": "enemy"

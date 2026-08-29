@@ -34,7 +34,7 @@
       "spirit_cost": 100,
       "effects": [
         {
-          "effect_id": "STATUS_BROKEN",
+          "effect_id": "STATUS_SHRED",
           "value": 1,
           "duration": "",
           "target": "enemy"
@@ -77,6 +77,12 @@
       "effects": [
         {
           "effect_id": "VULN_ALL",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
+          "effect_id": "STATUS_KNOCKDOWN",
           "value": 1,
           "duration": "",
           "target": "enemy"

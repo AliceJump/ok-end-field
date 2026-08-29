@@ -73,6 +73,12 @@
           "value": 1,
           "duration": "",
           "target": "enemy"
+        },
+        {
+          "effect_id": "STATUS_KNOCKDOWN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
         }
       ]
     }

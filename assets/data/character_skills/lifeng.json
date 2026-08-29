@@ -34,6 +34,12 @@
       "spirit_cost": 100,
       "effects": [
         {
+          "effect_id": "STATUS_KNOCKDOWN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
+        {
           "effect_id": "VULN_PHYSICAL",
           "value": 1,
           "duration": "",
@@ -85,7 +91,14 @@
       "stagger_value": 0,
       "cooldown": "15秒",
       "spirit_cost": 90,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "STATUS_KNOCKDOWN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     }
   ]
 }

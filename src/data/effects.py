@@ -19,19 +19,26 @@ class EffectType(Enum):
     VULN_PHYSICAL = "VULN_PHYSICAL"
     VULN_ALL = "VULN_ALL"
 
-    # 异常状态
-    STATUS_FROZEN = "STATUS_FROZEN"
-    STATUS_BURNING = "STATUS_BURNING"
-    STATUS_CONDUCTING = "STATUS_CONDUCTING"
-    STATUS_SHRED = "STATUS_SHRED"
-    STATUS_SHATTER = "STATUS_SHATTER"
-    STATUS_STAGGER = "STATUS_STAGGER"
-    STATUS_HEAVY_HIT = "STATUS_HEAVY_HIT"
-    STATUS_SPELL_INFLICT = "STATUS_SPELL_INFLICT"
-    STATUS_SPELL_BURST = "STATUS_SPELL_BURST"
-    STATUS_SPELL_ANOMALY = "STATUS_SPELL_ANOMALY"
-    STATUS_SLOW = "STATUS_SLOW"
-    STATUS_BROKEN = "STATUS_BROKEN"
+    # 物理异常状态（wiki: 物理异常）
+    STATUS_SHRED = "STATUS_SHRED"        # 破防（首次受到物理异常时进入，可叠加最多4层）
+    STATUS_HEAVY_HIT = "STATUS_HEAVY_HIT"  # 击飞（已破防时触发，叠加破防层数+失衡+浮空）
+    STATUS_KNOCKDOWN = "STATUS_KNOCKDOWN"  # 倒地（已破防时触发，叠加破防层数+失衡+击倒）
+    STATUS_SHATTER = "STATUS_SHATTER"    # 碎甲（已破防时触发，消耗所有破防层数，增加物理受伤）
+    STATUS_HEAVY_STRIKE = "STATUS_HEAVY_STRIKE"  # 猛击（已破防时触发，消耗所有破防层数，大量物理伤害）
+    STATUS_STAGGER = "STATUS_STAGGER"    # 失衡
+
+    # 法术异常状态（wiki: 法术异常 - 不同元素附着交叉触发）
+    STATUS_CORROSION = "STATUS_CORROSION"  # 腐蚀（自然+其他元素→消耗附着→全属性抗性逐渐下降）
+    STATUS_FROZEN = "STATUS_FROZEN"      # 冻结（寒冷+其他元素→消耗附着→弱小敌人无法行动）
+    STATUS_CONDUCTING = "STATUS_CONDUCTING"  # 导电（电磁+其他元素→消耗附着→法术伤害提高）
+    STATUS_BURNING = "STATUS_BURNING"    # 燃烧（灼热+其他元素→消耗附着→持续灼热伤害）
+
+    # 其他状态
+    STATUS_SPELL_INFLICT = "STATUS_SPELL_INFLICT"  # 通用的法术附着状态
+    STATUS_SPELL_BURST = "STATUS_SPELL_BURST"  # 法术爆发伤害（同元素再次附着触发）
+    STATUS_SPELL_ANOMALY = "STATUS_SPELL_ANOMALY"  # 法术异常状态（通用）
+    STATUS_SLOW = "STATUS_SLOW"          # 缓速
+    STATUS_BROKEN = "STATUS_BROKEN"      # 破碎
 
     # 层数系统
     STACK_MOLTEN = "STACK_MOLTEN"
@@ -106,17 +113,24 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.VULN_PHYSICAL: "敌人受到物理伤害增加",
     EffectType.VULN_ALL: "敌人受到所有元素伤害增加",
 
-    # 异常状态
-    EffectType.STATUS_FROZEN: "敌人被冻结，无法行动",
-    EffectType.STATUS_BURNING: "敌人持续受到灼热伤害",
-    EffectType.STATUS_CONDUCTING: "敌人处于导电状态",
-    EffectType.STATUS_SHRED: "敌人防御力降低",
-    EffectType.STATUS_SHATTER: "消耗破防层数造成额外伤害",
+    # 物理异常状态
+    EffectType.STATUS_SHRED: "破防状态，可被击飞和倒地叠加（最多4层），被猛击和碎甲消耗",
+    EffectType.STATUS_HEAVY_HIT: "击飞：已破防时触发，叠加破防层数，造成物理伤害和失衡，浮空弱小敌人",
+    EffectType.STATUS_KNOCKDOWN: "倒地：已破防时触发，叠加破防层数，造成物理伤害和失衡，击倒弱小敌人",
+    EffectType.STATUS_SHATTER: "碎甲：已破防时触发，消耗所有破防层数，造成物理伤害，增加物理受伤",
+    EffectType.STATUS_HEAVY_STRIKE: "猛击：已破防时触发，消耗所有破防层数，造成大量物理伤害",
     EffectType.STATUS_STAGGER: "敌人失去平衡",
-    EffectType.STATUS_HEAVY_HIT: "对敌人造成重击效果",
+
+    # 法术异常状态（不同元素附着交叉触发）
+    EffectType.STATUS_CORROSION: "腐蚀：自然+其他元素→消耗所有附着→初始自然伤害+全属性抗性逐渐下降",
+    EffectType.STATUS_FROZEN: "冻结：寒冷+其他元素→消耗所有附着→初始寒冷伤害+弱小敌人无法行动",
+    EffectType.STATUS_CONDUCTING: "导电：电磁+其他元素→消耗所有附着→初始电磁伤害+法术伤害提高",
+    EffectType.STATUS_BURNING: "燃烧：灼热+其他元素→消耗所有附着→初始灼热伤害+持续灼热伤害",
+
+    # 其他状态
     EffectType.STATUS_SPELL_INFLICT: "通用的法术附着状态",
-    EffectType.STATUS_SPELL_BURST: "法术爆发伤害",
-    EffectType.STATUS_SPELL_ANOMALY: "法术异常状态",
+    EffectType.STATUS_SPELL_BURST: "法术爆发伤害（同元素再次附着时触发）",
+    EffectType.STATUS_SPELL_ANOMALY: "法术异常状态（通用）",
     EffectType.STATUS_SLOW: "敌人被施加缓速",
     EffectType.STATUS_BROKEN: "敌人处于破碎状态",
 
@@ -201,8 +215,12 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "冻结": EffectType.STATUS_FROZEN,
     "燃烧": EffectType.STATUS_BURNING,
     "导电": EffectType.STATUS_CONDUCTING,
+    "腐蚀": EffectType.STATUS_CORROSION,
     "破防": EffectType.STATUS_SHRED,
     "碎甲": EffectType.STATUS_SHATTER,
+    "猛击": EffectType.STATUS_HEAVY_STRIKE,
+    "倒地": EffectType.STATUS_KNOCKDOWN,
+    "击飞": EffectType.STATUS_HEAVY_HIT,
     "失衡": EffectType.STATUS_STAGGER,
     "重击": EffectType.STATUS_HEAVY_HIT,
     "法术附着": EffectType.STATUS_SPELL_INFLICT,

@@ -32,7 +32,14 @@
       "stagger_value": 0,
       "cooldown": "",
       "spirit_cost": 100,
-      "effects": []
+      "effects": [
+        {
+          "effect_id": "STATUS_KNOCKDOWN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        }
+      ]
     },
     {
       "skill_id": "azrila_link",
@@ -47,6 +54,12 @@
       "cooldown": "",
       "spirit_cost": 0,
       "effects": [
+        {
+          "effect_id": "STATUS_KNOCKDOWN",
+          "value": 1,
+          "duration": "",
+          "target": "enemy"
+        },
         {
           "effect_id": "BUFF_HEAL",
           "value": 1,

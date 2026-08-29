@@ -52,7 +52,7 @@
       "spirit_cost": 100,
       "effects": [
         {
-          "effect_id": "STATUS_BROKEN",
+          "effect_id": "STATUS_SHATTER",
           "value": 1,
           "duration": "",
           "target": "enemy"
