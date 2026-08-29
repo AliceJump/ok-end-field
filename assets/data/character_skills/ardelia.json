@@ -61,13 +61,15 @@
                     "effect_id": "VULN_PHYSICAL",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 },
                 {
                     "effect_id": "VULN_ALL",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         },
@@ -88,7 +90,8 @@
                     "effect_id": "STATUS_CORROSION",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         },

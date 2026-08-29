@@ -55,7 +55,8 @@
                     "effect_id": "ATTACH_COLD",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         },
@@ -76,7 +77,8 @@
                     "effect_id": "BUFF_HEAL",
                     "value": 1,
                     "duration": "",
-                    "target": "ally"
+                    "target": "ally",
+                    "count": 1
                 }
             ]
         },
@@ -97,7 +99,8 @@
                     "effect_id": "STATUS_FROZEN",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         }

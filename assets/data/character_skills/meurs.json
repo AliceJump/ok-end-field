@@ -37,7 +37,8 @@
                     "effect_id": "STATUS_SHRED",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         },
@@ -58,7 +59,8 @@
                     "effect_id": "BUFF_SHIELD",
                     "value": 1,
                     "duration": "",
-                    "target": "ally"
+                    "target": "ally",
+                    "count": 1
                 }
             ]
         },
@@ -79,13 +81,15 @@
                     "effect_id": "VULN_ALL",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 },
                 {
                     "effect_id": "STATUS_KNOCKDOWN",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         }

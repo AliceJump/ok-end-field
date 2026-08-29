@@ -51,7 +51,8 @@
                     "effect_id": "BUFF_HEAL",
                     "value": 1,
                     "duration": "",
-                    "target": "ally"
+                    "target": "ally",
+                    "count": 1
                 }
             ]
         },
@@ -72,7 +73,8 @@
                     "effect_id": "STATUS_CONDUCTING",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         }

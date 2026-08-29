@@ -62,7 +62,8 @@
                     "effect_id": "ATTACH_COLD",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         },
@@ -97,7 +98,8 @@
                     "effect_id": "ATTACH_COLD",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         }

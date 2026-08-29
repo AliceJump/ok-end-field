@@ -32,7 +32,8 @@
                     "effect_id": "ATTACH_ELECTROMAGNETIC",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ],
             "description": "释放一道电磁能量从空中落下，对小范围内敌人造成电磁伤害并施加电磁附着。",
@@ -53,7 +54,8 @@
                     "effect_id": "STATUS_CONDUCTING",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ],
             "description": "当主控干员对敌人造成重击后可以发动。释放积蓄的电磁能量轰击目标，造成电磁伤害并强制施加短暂的导电。",

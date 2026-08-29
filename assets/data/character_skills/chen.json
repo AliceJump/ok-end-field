@@ -37,7 +37,8 @@
                     "effect_id": "STATUS_HEAVY_HIT",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         },
@@ -58,7 +59,8 @@
                     "effect_id": "STATUS_HEAVY_HIT",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         },

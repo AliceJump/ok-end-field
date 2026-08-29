@@ -49,7 +49,8 @@
                     "effect_id": "ATTACH_NATURAL",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         },
@@ -70,7 +71,8 @@
                     "effect_id": "VULN_ALL",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         },

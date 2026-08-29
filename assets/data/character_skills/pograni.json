@@ -55,7 +55,8 @@
                     "effect_id": "STATUS_SHATTER",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         },

@@ -49,13 +49,15 @@
                     "effect_id": "CLEAR_COLD",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": -1
                 },
                 {
                     "effect_id": "STATUS_FROZEN",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         },
@@ -76,7 +78,8 @@
                     "effect_id": "STATUS_FROZEN",
                     "value": 1,
                     "duration": "",
-                    "target": "enemy"
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         },
@@ -119,11 +122,13 @@
             "effects": [
                 {
                     "effect_id": "BUFF_DAMAGE_UP",
-                    "target": "self"
+                    "target": "self",
+                    "count": 1
                 },
                 {
                     "effect_id": "BUFF_CRIT_RATE_UP",
-                    "target": "self"
+                    "target": "self",
+                    "count": 1
                 }
             ]
         }
