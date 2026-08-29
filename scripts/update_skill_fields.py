@@ -89,7 +89,7 @@ def update_skill_fields(skill: dict):
     effects = extract_effects_from_desc(desc)
     
     # 合并效果（保留原有的，添加新的）
-    old_effects = skill.get('effects', [])
+    old_effects = list(skill.get('effects', []))
     old_effect_ids = [e.get('effect_id') for e in old_effects]
     
     for e in effects['attach_effects']:
@@ -97,6 +97,10 @@ def update_skill_fields(skill: dict):
             old_effects.append({'effect_id': e, 'value': 1, 'duration': '', 'target': 'enemy'})
     
     for e in effects['status_effects']:
+        if e not in old_effect_ids:
+            old_effects.append({'effect_id': e, 'value': 1, 'duration': '', 'target': 'enemy'})
+    
+    for e in effects['clear_effects']:
         if e not in old_effect_ids:
             old_effects.append({'effect_id': e, 'value': 1, 'duration': '', 'target': 'enemy'})
     
@@ -134,7 +138,7 @@ def main():
         
         if changed:
             with open(json_file, 'w', encoding='utf-8') as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
+                json.dump(data, f, ensure_ascii=False, indent=4)
             updated += 1
     
     print(f"\nUpdated {updated} files")

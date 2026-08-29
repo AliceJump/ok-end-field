@@ -64,8 +64,8 @@ FILENAME_MAP = {
     "yi_feng": "yvonne",
     "jie_er_pei_ta": "aglina",
     "lai_wan_ting": "laevat",
-    "guan_li_yuan_nan": "endmin",
-    "guan_li_yuan_nv": "endmin",
+    "guan_li_yuan_nan": "endmin_m",
+    "guan_li_yuan_nv": "endmin_f",
     "jun_wei": "pograni",
     "yu_jin": "azrila",
     "bie_li": "lastrite",
@@ -203,14 +203,21 @@ def parse_character(char_data: dict) -> dict:
         skill = parse_skill(skill_data)
         skills.append(skill)
     
+    # 尝试从已有角色文件中复用元数据，避免覆盖为默认空值
+    existing_file = ASSETS_DIR / f"{game_id}.json"
+    existing_meta = {}
+    if existing_file.exists():
+        with open(existing_file, encoding='utf-8') as ef:
+            existing_meta = json.load(ef)
+
     result = {
         "character_id": game_id,
         "wiki_item_id": item_id,
         "name": char_data.get("name", ""),
-        "star": char_data.get("star", 0),
-        "element": char_data.get("element", ""),
-        "profession": char_data.get("profession", ""),
-        "weapon_type": char_data.get("weapon_type", ""),
+        "star": char_data.get("star") or existing_meta.get("star", 0),
+        "element": char_data.get("element") or existing_meta.get("element", ""),
+        "profession": char_data.get("profession") or existing_meta.get("profession", ""),
+        "weapon_type": char_data.get("weapon_type") or existing_meta.get("weapon_type", ""),
         "skills": skills,
     }
     
@@ -224,7 +231,7 @@ def generate_character_file(char_data: dict) -> str:
     filepath = ASSETS_DIR / f"{filename}.json"
     
     with open(filepath, 'w', encoding='utf-8') as f:
-        json.dump(char_data, f, ensure_ascii=False, indent=2)
+        json.dump(char_data, f, ensure_ascii=False, indent=4)
     
     return filepath.name
 
@@ -297,7 +304,7 @@ def main():
     # 保存汇总信息
     summary_file = TMP_DIR / "tmp_character_summary.json"
     with open(summary_file, 'w', encoding='utf-8') as f:
-        json.dump(summary, f, ensure_ascii=False, indent=2)
+        json.dump(summary, f, ensure_ascii=False, indent=4)
     
     # 输出结果
     print(f"\nGenerated {len(generated_files)} character files:")

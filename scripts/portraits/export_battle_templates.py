@@ -76,12 +76,12 @@ def extract_portraits_with_bbox(screenshot):
     blue_bars = detect_blue_bars(screenshot, BLOOD_BAR_ROI)
     positions = []
     if len(blue_bars) == 4:
-        x_coords = [bar['center_x'] for bar in blue_bars]
+        x_coords = [bar.center_x for bar in blue_bars]
         diffs = [x_coords[i+1] - x_coords[i] for i in range(len(x_coords)-1)]
         if all(abs(d - diffs[0]) < 0.005 for d in diffs):
             for bar in blue_bars:
-                pcx = int((bar['center_x'] + PORTRAIT_OFFSET_X) * width)
-                pcy = int((bar['center_y'] + PORTRAIT_OFFSET_Y) * height)
+                pcx = int((bar.center_x + PORTRAIT_OFFSET_X) * width)
+                pcy = int((bar.center_y + PORTRAIT_OFFSET_Y) * height)
                 pw = int(PORTRAIT_WIDTH * width)
                 ph = int(PORTRAIT_HEIGHT * height)
                 positions.append((max(0, pcx - pw // 2), max(0, pcy - ph // 2), pw, ph))

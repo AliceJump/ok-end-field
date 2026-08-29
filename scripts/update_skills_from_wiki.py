@@ -15,6 +15,7 @@ from playwright.sync_api import sync_playwright
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS_DIR = ROOT / "assets" / "data" / "character_skills"
 OUTPUT_FILE = ROOT / "tmp" / "wiki_skills_full.json"
+OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
 
 def extract_text_from_document(doc: dict) -> str:
