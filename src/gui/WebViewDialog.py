@@ -1,10 +1,11 @@
-# -*- coding: utf-8 -*-
 """内嵌 WebView 对话框组件，用于显示网页内容。"""
-from PySide6.QtCore import Qt, QUrl
-from PySide6.QtWidgets import QDialog, QVBoxLayout, QHBoxLayout, QWidget
+
+from ok.gui.tasks.ConfigCard import og
+from PySide6.QtCore import QUrl
 from PySide6.QtWebEngineWidgets import QWebEngineView
-from qfluentwidgets import FluentIcon, PushButton, FluentStyleSheet
-from ok.gui.tasks.ConfigCard import ConfigCard, og
+from PySide6.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout, QWidget
+from qfluentwidgets import FluentIcon, FluentStyleSheet, PushButton
+
 
 class WebViewDialog(QDialog):
     """内嵌 WebView 的对话框，用于显示网页内容。"""
@@ -98,6 +99,7 @@ class WebViewDialog(QDialog):
     def _open_in_browser(self):
         """在默认浏览器中打开当前页面。"""
         import webbrowser
+
         webbrowser.open(self.web_view.url().toString())
 
     def _on_title_changed(self, title: str):

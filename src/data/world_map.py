@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 """地图/关卡/货物数据（剥离自内嵌字典，见 assets/data/world_map.json）。
 
@@ -15,8 +14,7 @@ from pathlib import Path
 from src.data.FeatureList import FeatureList as fL
 
 _DATA = json.loads(
-    (Path(__file__).resolve().parent.parent.parent / "assets" / "data" / "world_map.json")
-    .read_text(encoding="utf-8")
+    (Path(__file__).resolve().parent.parent.parent / "assets" / "data" / "world_map.json").read_text(encoding="utf-8")
 )
 
 STAGE_CATEGORY_OPERATOR = "干员养成"

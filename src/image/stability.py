@@ -7,6 +7,7 @@
 - hamming_distance: 对应 ImageHash.__sub__（不同比特数）
 - ssim_score: 对应 skimage.metrics.structural_similarity（灰度图，高斯窗）
 """
+
 from typing import Union
 
 import cv2

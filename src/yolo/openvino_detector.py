@@ -1,23 +1,21 @@
-from typing import Tuple
+import gc
 
 import cv2
-import gc
 import numpy as np
-from openvino import Core
-
 from ok import Box, Logger, sort_boxes
+from openvino import Core
 
 logger = Logger.get_logger(__name__)
 
 
 class OpenVinoYolo8Detect:
     def __init__(
-            self,
-            weights="echo.onnx",
-            labels: dict[int, str] | None = None,
-            model_h=640,
-            model_w=640,
-            iou_thres=0.45,
+        self,
+        weights="echo.onnx",
+        labels: dict[int, str] | None = None,
+        model_h=640,
+        model_w=640,
+        iou_thres=0.45,
     ):
         self.dic_labels = labels or {0: "battle_end"}
         self.weights = weights
@@ -63,7 +61,7 @@ class OpenVinoYolo8Detect:
             logger.error(f"Error initializing OpenVINO: {e}")
             raise RuntimeError("Could not initialize OpenVINO model") from e
 
-    def letterbox(self, img: np.ndarray, new_shape: Tuple[int, int] = (640, 640)) -> Tuple[np.ndarray, Tuple[int, int]]:
+    def letterbox(self, img: np.ndarray, new_shape: tuple[int, int] = (640, 640)) -> tuple[np.ndarray, tuple[int, int]]:
         shape = img.shape[:2]
 
         r = min(new_shape[0] / shape[0], new_shape[1] / shape[1])

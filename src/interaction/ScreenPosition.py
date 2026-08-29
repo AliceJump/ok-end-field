@@ -29,11 +29,18 @@ class ScreenPosition:
 
     @property
     def bottom_right(self) -> Box:
-        return Box(x=self.parent.screen_center()[0], y=self.parent.screen_center()[1], to_x=self.parent.width, to_y=self.parent.height)
+        return Box(
+            x=self.parent.screen_center()[0],
+            y=self.parent.screen_center()[1],
+            to_x=self.parent.width,
+            to_y=self.parent.height,
+        )
 
     @property
     def bottom_right_quarter(self) -> Box:
-        return Box(x=self.parent.width * 3 // 4, y=self.parent.height * 3 // 4, to_x=self.parent.width, to_y=self.parent.height)
+        return Box(
+            x=self.parent.width * 3 // 4, y=self.parent.height * 3 // 4, to_x=self.parent.width, to_y=self.parent.height
+        )
 
     @property
     def left(self) -> Box:
@@ -53,8 +60,12 @@ class ScreenPosition:
 
     @property
     def center(self) -> Box:
-        return Box(x=self.parent.width // 4, y=self.parent.height // 4,
-                   to_x=self.parent.width * 3 // 4, to_y=self.parent.height * 3 // 4)
+        return Box(
+            x=self.parent.width // 4,
+            y=self.parent.height // 4,
+            to_x=self.parent.width * 3 // 4,
+            to_y=self.parent.height * 3 // 4,
+        )
 
     # ---------- 战斗UI按键映射 (基于COCO标注 @ 3840x2160) ----------
     # 这些Box是从COCO数据集标注的bbox转换而来
@@ -64,12 +75,7 @@ class ScreenPosition:
         """将基于参考分辨率(3840x2160)的bbox缩放到当前屏幕分辨率"""
         scale_x = self.parent.width / ref_width
         scale_y = self.parent.height / ref_height
-        return Box(
-            x=int(x * scale_x),
-            y=int(y * scale_y),
-            to_x=int((x + w) * scale_x),
-            to_y=int((y + h) * scale_y)
-        )
+        return Box(x=int(x * scale_x), y=int(y * scale_y), to_x=int((x + w) * scale_x), to_y=int((y + h) * scale_y))
 
     # 导航按键 (屏幕右上角)
     @property
@@ -148,25 +154,17 @@ class ScreenPosition:
             x=self.combat_skill_1.x,
             y=self.combat_skill_1.y,
             to_x=self.combat_skill_4.to_x,
-            to_y=self.combat_skill_1.to_y
+            to_y=self.combat_skill_1.to_y,
         )
 
     @property
     def combat_ult_bar(self) -> Box:
         """终极技能栏区域 (包含ult 1-4)"""
         return Box(
-            x=self.combat_ult_1.x,
-            y=self.combat_ult_1.y,
-            to_x=self.combat_ult_4.to_x,
-            to_y=self.combat_ult_3.to_y
+            x=self.combat_ult_1.x, y=self.combat_ult_1.y, to_x=self.combat_ult_4.to_x, to_y=self.combat_ult_3.to_y
         )
 
     @property
     def nav_panel(self) -> Box:
         """导航面板区域 (b, c, esc)"""
-        return Box(
-            x=self.nav_b.x,
-            y=self.nav_b.y,
-            to_x=self.nav_esc.to_x,
-            to_y=self.nav_esc.to_y
-        )
+        return Box(x=self.nav_b.x, y=self.nav_b.y, to_x=self.nav_esc.to_x, to_y=self.nav_esc.to_y)

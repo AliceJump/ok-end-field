@@ -30,21 +30,26 @@ class DailyLogisticsMixin:
         self.log_info("开始收邮件")
         self.press_key("k")
         if not self.wait_click_ocr(
-                x=0, y=0.88,
-                to_x=0.25, to_y=0.95,
-                match=self.lang.daily_routine_mixin.k_ffb5655a,
-                time_out=5,
+            x=0,
+            y=0.88,
+            to_x=0.25,
+            to_y=0.95,
+            match=self.lang.daily_routine_mixin.k_ffb5655a,
+            time_out=5,
         ):
             self.log_info("未识别到领取按钮，直接退出收邮件")
             self.press_key("esc")
             return True
         self.wait_pop_up()
-        stage_area = self.wait_ocr(
-            match=self.lang.daily_routine_mixin.k_4a2ece6a,
-            box=self.box.top_left,
-            time_out=4,
-            raise_if_not_found=False,
-        ) or []
+        stage_area = (
+            self.wait_ocr(
+                match=self.lang.daily_routine_mixin.k_4a2ece6a,
+                box=self.box.top_left,
+                time_out=4,
+                raise_if_not_found=False,
+            )
+            or []
+        )
         if len(stage_area) > 0:
             self.click(x=stage_area[0].x, y=stage_area[0].y + int(self.height * 0.25))
             self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_3fef35d6, box=self.box.center, time_out=5)
@@ -64,11 +69,7 @@ class DailyLogisticsMixin:
                   便于调用方在后续地区重试。
         """
         self.log_info("开始领取转交委托奖励")
-        if not self.wait_click_ocr(
-                match=self.lang.daily_routine_mixin.k_41a9fd98,
-                box=self.box.top_left,
-                time_out=5
-        ):
+        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_41a9fd98, box=self.box.top_left, time_out=5):
             self.log_info("未找到「我转交的委托」节点，跳过领取")
             return False
 
@@ -105,8 +106,11 @@ class DailyLogisticsMixin:
 
             while True:
                 if 0 < activity_num <= count:
-                    self.log_info(self.tr("{area}仓储节点已完成{count}次，停止继续").format(
-                        area=self.tr(area), count=activity_num))
+                    self.log_info(
+                        self.tr("{area}仓储节点已完成{count}次，停止继续").format(
+                            area=self.tr(area), count=activity_num
+                        )
+                    )
                     break
 
                 self.to_model_area(area, "仓储节点")
@@ -117,9 +121,7 @@ class DailyLogisticsMixin:
                         claim_rewards_done = True
 
                 if not self.wait_click_ocr(
-                        match=self.lang.daily_routine_mixin.k_298d3284,
-                        box=self.box.top_left,
-                        time_out=5
+                    match=self.lang.daily_routine_mixin.k_298d3284, box=self.box.top_left, time_out=5
                 ):
                     self.log_info(self.tr("{area}未找到本地仓储节点，返回主界面").format(area=self.tr(area)))
                     self.ensure_main()
@@ -132,9 +134,7 @@ class DailyLogisticsMixin:
                 )
 
                 if not results:
-                    self.log_info(
-                        self.tr("{area} 当前没有货物装箱可操作，返回主界面").format(area=self.tr(area))
-                    )
+                    self.log_info(self.tr("{area} 当前没有货物装箱可操作，返回主界面").format(area=self.tr(area)))
                     self.ensure_main()
                     break
 
@@ -142,18 +142,19 @@ class DailyLogisticsMixin:
                     activity_num = len(results)
                     self.log_info(
                         self.tr("{area}共有{activity_num}次可进行转交运送委托的活动").format(
-                            area=self.tr(area), activity_num=activity_num),
+                            area=self.tr(area), activity_num=activity_num
+                        ),
                         notify=True,
                     )
 
                 self.click(results[0])
-                start_index = 0 if not (self.lang.daily_routine_mixin.k_view_quote in results[0].name) else 2
+                start_index = 0 if self.lang.daily_routine_mixin.k_view_quote not in results[0].name else 2
                 steps = [
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 0),
                     (fL.fill_max, None, 0),
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 1),
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 0),
-                    (fL.esc, None, 0)
+                    (fL.esc, None, 0),
                 ]
                 optional_steps = {3}
                 blind_spot_steps = {3, 4}
@@ -173,27 +174,28 @@ class DailyLogisticsMixin:
                             break
                         if i == len(steps) - 1:
                             continue
-                    res = self.wait_click_feature(feature=feature, click_after_delay=0.5, box=box, time_out=time_out, raise_if_not_found=False, after_sleep=after_sleep)
+                    res = self.wait_click_feature(
+                        feature=feature,
+                        click_after_delay=0.5,
+                        box=box,
+                        time_out=time_out,
+                        raise_if_not_found=False,
+                        after_sleep=after_sleep,
+                    )
 
                     if not res:
                         if i in optional_steps:
                             continue
 
-                        self.log_info(
-                            self.tr("步骤 {feature} 未找到，跳过本次活动").format(feature=feature)
-                        )
+                        self.log_info(self.tr("步骤 {feature} 未找到，跳过本次活动").format(feature=feature))
                         break
                 self.ensure_main()
                 self.press_key("j", after_sleep=1)
 
                 if not self.wait_click_ocr(
-                        match=self.lang.daily_routine_mixin.k_1dd73947,
-                        box=self.box.bottom_left,
-                        time_out=5
+                    match=self.lang.daily_routine_mixin.k_1dd73947, box=self.box.bottom_left, time_out=5
                 ):
-                    self.log_info(
-                        "未找到 '转交运送委托' 按钮，跳过本次活动"
-                    )
+                    self.log_info("未找到 '转交运送委托' 按钮，跳过本次活动")
                     self.ensure_main()
                     break
                 if not self.click_confirm():

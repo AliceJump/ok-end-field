@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 _PATCH_INSTALLED = False
 
 
@@ -26,6 +25,7 @@ def install_conditional_rotation_patch():
         return
 
     import ok.gui.tasks.ConfigItemFactory as factory
+
     from src.gui.ConditionalRotationPanel import ConditionalRotationPanel
 
     original_config_widget = factory.config_widget

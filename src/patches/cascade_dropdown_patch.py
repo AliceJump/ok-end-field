@@ -5,7 +5,6 @@ from PySide6.QtGui import QAction, QFontMetrics
 from qfluentwidgets import ComboBox
 from qfluentwidgets.components.widgets.combo_box import ComboBoxMenu, MenuAnimationType
 
-
 _PATCH_INSTALLED = False
 
 

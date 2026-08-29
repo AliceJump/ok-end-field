@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """截图画框信息的序列化与重绘（替代保存 _boxed.png 大图）。
 
 ok-script 原本每张截图会额外保存一张画了模板匹配框的 ``_boxed.png``，
@@ -45,16 +44,18 @@ def serialize_boxes(ui_dict: dict, x_offset: float = 0, y_offset: float = 0) -> 
             text = str(name)
             if confidence > 0:
                 text += f"_{round(confidence * 100)}"
-            boxes.append({
-                "name": name,
-                "x": box.x + x_offset,
-                "y": box.y + y_offset,
-                "width": width,
-                "height": height,
-                "confidence": confidence,
-                "color": list(color),
-                "text": text,
-            })
+            boxes.append(
+                {
+                    "name": name,
+                    "x": box.x + x_offset,
+                    "y": box.y + y_offset,
+                    "width": width,
+                    "height": height,
+                    "confidence": confidence,
+                    "color": list(color),
+                    "text": text,
+                }
+            )
     return boxes
 
 
@@ -72,8 +73,7 @@ def find_box_font():
     from PIL import ImageFont
 
     fonts_dir = os.path.join(os.environ["WINDIR"], "Fonts")
-    for candidate in ["msyh.ttc", "msyh.ttf", "simsun.ttc", "simsun.ttf",
-                      "arial.ttf", "arial.ttc"]:
+    for candidate in ["msyh.ttc", "msyh.ttf", "simsun.ttc", "simsun.ttf", "arial.ttf", "arial.ttc"]:
         path = os.path.join(fonts_dir, candidate)
         if os.path.exists(path):
             return ImageFont.truetype(path, 30)
@@ -97,15 +97,16 @@ def render_boxed_image(sidecar: dict, original_path: str | Path, output_path: st
             x, y = box["x"], box["y"]
             width, height = box["width"], box["height"]
             draw.rectangle([x, y, x + width, y + height], outline=color, width=2)
-            draw.multiline_text((x, y + height + 8), box["text"], fill=color,
-                                font=font, stroke_width=1, stroke_fill="black")
+            draw.multiline_text(
+                (x, y + height + 8), box["text"], fill=color, font=font, stroke_width=1, stroke_fill="black"
+            )
         img.save(output_path)
 
 
 def sidecar_path_of(original_name: str | Path) -> Path:
     """由 _original.png 文件名推导对应的 _boxes.json 路径。"""
     original_name = Path(original_name)
-    return original_name.with_name(original_name.stem[:-len("_original")] + SIDECAR_SUFFIX)
+    return original_name.with_name(original_name.stem[: -len("_original")] + SIDECAR_SUFFIX)
 
 
 def rebuild_boxed_images(output_dir: str | Path) -> list[str]:
@@ -120,12 +121,10 @@ def rebuild_boxed_images(output_dir: str | Path) -> list[str]:
     output_dir = Path(output_dir)
     rebuilt = []
     for sidecar_path in sorted(output_dir.rglob(f"*{SIDECAR_SUFFIX}")):
-        original_path = sidecar_path.with_name(
-            sidecar_path.name[:-len(SIDECAR_SUFFIX)] + "_original.png")
+        original_path = sidecar_path.with_name(sidecar_path.name[: -len(SIDECAR_SUFFIX)] + "_original.png")
         if not original_path.is_file():
             continue
-        output_path = sidecar_path.with_name(
-            sidecar_path.name[:-len(SIDECAR_SUFFIX)] + "_boxed.png")
+        output_path = sidecar_path.with_name(sidecar_path.name[: -len(SIDECAR_SUFFIX)] + "_boxed.png")
         try:
             with open(sidecar_path, encoding="utf-8") as sidecar_file:
                 sidecar = json.load(sidecar_file)

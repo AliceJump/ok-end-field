@@ -12,6 +12,7 @@ YOLO_MODELS = {
     },
 }
 
+
 def get_all_label_names() -> list[str]:
     """
     获取所有模型中的 labels 名称

@@ -25,7 +25,7 @@ def install_qfluent_navigation_patch():
         return
     try:
         from qfluentwidgets.components.navigation.navigation_panel import NavigationPanel
-    except Exception as exc:
+    except Exception:
         # qfluentwidgets 不可用，跳过，不影响启动
         return
     logger = None

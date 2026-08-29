@@ -2,6 +2,7 @@
 import ctypes
 import ctypes.wintypes
 import time
+
 import win32gui
 
 user32 = ctypes.windll.user32
@@ -11,15 +12,13 @@ MOUSEEVENTF_MOVE = 0x0001
 
 
 import math
-import time
-import win32gui
 
 
 def smooth_drag(
-        hwnd,
-        start,
-        end,
-        duration=0.12,
+    hwnd,
+    start,
+    end,
+    duration=0.12,
 ):
     """
     平滑拖动鼠标（保持按下状态）。
@@ -52,6 +51,7 @@ def smooth_drag(
         if sleep_time > 0:
             time.sleep(sleep_time)
 
+
 def _safe_print(message):
     try:
         print(message)
@@ -59,16 +59,15 @@ def _safe_print(message):
         pass
 
 
-import math
 
 
 def calc_direction_step(
-        from_pos,
-        to_pos,
-        max_step=100,
-        min_step=5,
-        slow_radius=200,
-        deadzone=8,
+    from_pos,
+    to_pos,
+    max_step=100,
+    min_step=5,
+    slow_radius=200,
+    deadzone=8,
 ):
     """
     平滑版移动计算
@@ -88,11 +87,7 @@ def calc_direction_step(
         return 0, 0
 
     # 指数减速
-    step = min_step + (
-        max_step - min_step
-    ) * (
-        1 - math.exp(-dist / slow_radius)
-    )
+    step = min_step + (max_step - min_step) * (1 - math.exp(-dist / slow_radius))
 
     step = min(step, max_step)
 
@@ -100,6 +95,7 @@ def calc_direction_step(
     dy = round(dy_raw / dist * step)
 
     return dx, dy
+
 
 def click_down(hwnd, x, y, key="left"):
     """
@@ -119,7 +115,8 @@ def click_down(hwnd, x, y, key="left"):
         user32.mouse_event(MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
     elif key == "right":
         user32.mouse_event(MOUSEEVENTF_RIGHTDOWN, 0, 0, 0, 0)
-        
+
+
 def click_up(hwnd, key="left"):
     """
     在指定窗口内模拟鼠标抬起事件。
@@ -133,15 +130,16 @@ def click_up(hwnd, key="left"):
     elif key == "right":
         user32.mouse_event(MOUSEEVENTF_RIGHTUP, 0, 0, 0, 0)
 
+
 # ===== device control =====
 def active_and_send_mouse_delta(
-        hwnd,
-        dx=1,
-        dy=1,
-        activate=True,
-        only_activate=False,
-        delay=0.005,
-        steps=5,
+    hwnd,
+    dx=1,
+    dy=1,
+    activate=True,
+    only_activate=False,
+    delay=0.005,
+    steps=5,
 ):
     """
     激活指定窗口并发送相对鼠标移动。
@@ -175,7 +173,6 @@ def active_and_send_mouse_delta(
 
             # 如果当前窗口不是目标窗口
             if current_hwnd != hwnd:
-
                 # 检查窗口句柄是否有效
                 if not win32gui.IsWindow(hwnd):
                     _safe_print(f"窗口激活失败: 无效的窗口句柄 {hwnd}")
@@ -219,7 +216,7 @@ def active_and_send_mouse_delta(
                 # 检查窗口是否真的在前台
                 final_hwnd = win32gui.GetForegroundWindow()
                 if final_hwnd != hwnd:
-                    _safe_print(f"窗口激活警告: 窗口未完全置于前台 " f"(目标:{hwnd}, 当前:{final_hwnd})")
+                    _safe_print(f"窗口激活警告: 窗口未完全置于前台 (目标:{hwnd}, 当前:{final_hwnd})")
 
         except win32gui.error as e:
             # 错误码 0 通常不是严重错误
@@ -231,7 +228,6 @@ def active_and_send_mouse_delta(
 
     # 只激活窗口不发送鼠标移动
     if not only_activate:
-
         abs_steps = max(1, steps)
 
         base_dx = dx // abs_steps
@@ -241,7 +237,6 @@ def active_and_send_mouse_delta(
         remain_dy = dy % abs_steps
 
         for i in range(abs_steps):
-
             move_dx = base_dx
             move_dy = base_dy
 

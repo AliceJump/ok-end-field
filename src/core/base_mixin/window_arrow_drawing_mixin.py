@@ -1,14 +1,11 @@
-from dataclasses import dataclass
 import math
-from typing import Dict, Tuple, Optional, List
+from dataclasses import dataclass
 
 import win32gui
-from PySide6.QtCore import QPoint, QPointF, QTimer, Qt, QObject, Signal, Slot
-from PySide6.QtGui import QGuiApplication
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPen, QPolygonF, QBrush
-from PySide6.QtWidgets import QApplication, QWidget
-
 from ok.util.logger import Logger
+from PySide6.QtCore import QObject, QPointF, Qt, QTimer, Signal, Slot
+from PySide6.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
+from PySide6.QtWidgets import QApplication, QWidget
 
 logger = Logger.get_logger(__name__)
 
@@ -20,9 +17,9 @@ class ArrowSpec:
     start_y_norm: float
     end_x_norm: float
     end_y_norm: float
-    color: Tuple[int, int, int]
+    color: tuple[int, int, int]
     shaft_width_norm: float
-    head_len_norm: Optional[float]
+    head_len_norm: float | None
 
 
 class WindowArrowOverlay(QWidget):
@@ -31,7 +28,7 @@ class WindowArrowOverlay(QWidget):
     def __init__(self, hwnd: int, parent=None):
         super().__init__(parent)
         self._hwnd = hwnd
-        self._arrows: List[ArrowSpec] = []
+        self._arrows: list[ArrowSpec] = []
         self._arrow_head_angle_deg = 28.0
         self._arrow_head_len_ratio = 0.35
         self._base_color = QColor(0, 255, 0, 160)
@@ -60,7 +57,7 @@ class WindowArrowOverlay(QWidget):
         except Exception:
             return False
 
-    def set_style(self, color: Tuple[int, int, int], head_angle_deg: float, head_len_ratio: float):
+    def set_style(self, color: tuple[int, int, int], head_angle_deg: float, head_len_ratio: float):
         # 支持三元/四元元组或直接传入 QColor；三元组使用默认 alpha
         try:
             if isinstance(color, QColor):
@@ -75,11 +72,11 @@ class WindowArrowOverlay(QWidget):
         self._arrow_head_angle_deg = head_angle_deg
         self._arrow_head_len_ratio = head_len_ratio
 
-    def set_arrows(self, arrows: List[ArrowSpec]):
-        unique_arrows: Dict[str, ArrowSpec] = {}
-        ordered_types: List[str] = []
+    def set_arrows(self, arrows: list[ArrowSpec]):
+        unique_arrows: dict[str, ArrowSpec] = {}
+        ordered_types: list[str] = []
         for spec in arrows:
-            arrow_type = getattr(spec, 'arrow_type', None) or 'default'
+            arrow_type = getattr(spec, "arrow_type", None) or "default"
             if arrow_type not in unique_arrows:
                 ordered_types.append(arrow_type)
             unique_arrows[arrow_type] = spec
@@ -116,6 +113,7 @@ class WindowArrowOverlay(QWidget):
             # 混合 DPI 多屏下 Qt 的屏幕逻辑 origin 不等于 物理origin/DPR，
             # 否则 overlay 会向 x 正方向偏移（见 src/core/screen_coords.py 注释）。
             from src.core.screen_coords import physical_rect_to_logical
+
             lx, ly, lw, lh = physical_rect_to_logical(left, top, width, height)
 
             self.setGeometry(
@@ -132,7 +130,7 @@ class WindowArrowOverlay(QWidget):
         except Exception as e:
             logger.error(f"同步箭头叠层几何失败: {e}")
 
-    def _color_for(self, color: Tuple[int, int, int]) -> QColor:
+    def _color_for(self, color: tuple[int, int, int]) -> QColor:
         try:
             # 支持 QColor 直接传入
             if isinstance(color, QColor):
@@ -171,8 +169,11 @@ class WindowArrowOverlay(QWidget):
         color = self._color_for(spec.color)
         # 允许更细的箭身，最小为 1 像素
         shaft_width = max(1, int(min(width, height) * spec.shaft_width_norm))
-        head_len = spec.head_len_norm * min(width, height) if spec.head_len_norm is not None else max(10.0,
-                                                                                                      length * self._arrow_head_len_ratio)
+        head_len = (
+            spec.head_len_norm * min(width, height)
+            if spec.head_len_norm is not None
+            else max(10.0, length * self._arrow_head_len_ratio)
+        )
         head_len = max(8.0, min(head_len, min(width, height) * 0.18))
 
         ux = dx / length
@@ -180,10 +181,14 @@ class WindowArrowOverlay(QWidget):
         theta = math.atan2(uy, ux)
         head_angle = math.radians(self._arrow_head_angle_deg)
 
-        wing1 = QPointF(end_x + math.cos(theta + math.pi - head_angle) * head_len,
-                        end_y + math.sin(theta + math.pi - head_angle) * head_len)
-        wing2 = QPointF(end_x + math.cos(theta + math.pi + head_angle) * head_len,
-                        end_y + math.sin(theta + math.pi + head_angle) * head_len)
+        wing1 = QPointF(
+            end_x + math.cos(theta + math.pi - head_angle) * head_len,
+            end_y + math.sin(theta + math.pi - head_angle) * head_len,
+        )
+        wing2 = QPointF(
+            end_x + math.cos(theta + math.pi + head_angle) * head_len,
+            end_y + math.sin(theta + math.pi + head_angle) * head_len,
+        )
         tip = QPointF(end_x, end_y)
 
         pen = QPen(color, shaft_width, Qt.SolidLine, Qt.RoundCap, Qt.RoundJoin)
@@ -215,22 +220,26 @@ class WindowArrowOverlay(QWidget):
             inner_band_k = 0.18
             inner_center_k = 0.42
 
-            inner_band = QPolygonF([
-                shrink_point(tip, inner_band_k),
-                shrink_point(wing1, inner_band_k),
-                shrink_point(wing2, inner_band_k),
-            ])
+            inner_band = QPolygonF(
+                [
+                    shrink_point(tip, inner_band_k),
+                    shrink_point(wing1, inner_band_k),
+                    shrink_point(wing2, inner_band_k),
+                ]
+            )
 
             painter.setBrush(QBrush(QColor(255, 255, 255)))
             painter.setPen(Qt.NoPen)
             painter.drawPolygon(inner_band)
 
             # 再绘制更小的彩色中心三角，避免白色覆盖尖端颜色
-            inner_center = QPolygonF([
-                shrink_point(tip, inner_center_k),
-                shrink_point(wing1, inner_center_k),
-                shrink_point(wing2, inner_center_k),
-            ])
+            inner_center = QPolygonF(
+                [
+                    shrink_point(tip, inner_center_k),
+                    shrink_point(wing1, inner_center_k),
+                    shrink_point(wing2, inner_center_k),
+                ]
+            )
             painter.setBrush(QBrush(color))
             painter.drawPolygon(inner_center)
         except Exception:
@@ -250,11 +259,11 @@ class WindowArrowOverlayController(QObject):
 
     def __init__(self, hwnd: int):
         super().__init__()
-        self._arrow_timers: Dict[str, QTimer] = {}
+        self._arrow_timers: dict[str, QTimer] = {}
         self._arrow_timeout_ms = 2000
         self._hwnd = hwnd
-        self._overlay: Optional[WindowArrowOverlay] = None
-        self._arrow_map: Dict[str, ArrowSpec] = {}
+        self._overlay: WindowArrowOverlay | None = None
+        self._arrow_map: dict[str, ArrowSpec] = {}
         self.arrow_updated.connect(self._on_arrow_updated)
         self.clear_requested.connect(self._on_clear_requested)
         self.style_requested.connect(self._on_style_requested)
@@ -276,9 +285,7 @@ class WindowArrowOverlayController(QObject):
             timer = QTimer(self)
             timer.setSingleShot(True)
 
-            timer.timeout.connect(
-                lambda at=arrow_type: self._expire_arrow(at)
-            )
+            timer.timeout.connect(lambda at=arrow_type: self._expire_arrow(at))
 
             self._arrow_timers[arrow_type] = timer
 
@@ -295,7 +302,7 @@ class WindowArrowOverlayController(QObject):
 
     @Slot(object)
     def _on_arrow_updated(self, arrow: ArrowSpec):
-        arrow_type = getattr(arrow, 'arrow_type', None) or 'default'
+        arrow_type = getattr(arrow, "arrow_type", None) or "default"
 
         self._arrow_map[arrow_type] = arrow
 
@@ -317,7 +324,7 @@ class WindowArrowOverlayController(QObject):
             self._overlay.clear_arrows()
 
     @Slot(tuple, float, float)
-    def _on_style_requested(self, color: Tuple[int, int, int], head_angle_deg: float, head_len_ratio: float):
+    def _on_style_requested(self, color: tuple[int, int, int], head_angle_deg: float, head_len_ratio: float):
         overlay = self._ensure_overlay()
         overlay.set_style(color, head_angle_deg, head_len_ratio)
 
@@ -334,17 +341,18 @@ class WindowArrowDrawingMixin:
         self._window_arrow_shaft_width_norm = 0.005
         self._window_arrow_head_angle_deg = 28.0
         self._window_arrow_head_len_ratio = 0.35
-        self._window_arrow_overlay: Optional[WindowArrowOverlay] = None
-        self._window_arrow_controller: Optional[WindowArrowOverlayController] = None
+        self._window_arrow_overlay: WindowArrowOverlay | None = None
+        self._window_arrow_controller: WindowArrowOverlayController | None = None
 
     def _ensure_window_arrow_controller(self):
         if self._window_arrow_controller is not None:
             return self._window_arrow_controller
 
-        app = getattr(self, 'app', None)
+        app = getattr(self, "app", None)
         if app is None:
             try:
                 from PySide6.QtWidgets import QApplication
+
                 app = QApplication.instance()
             except Exception:
                 app = None
@@ -364,7 +372,7 @@ class WindowArrowDrawingMixin:
         self._window_arrow_overlay = self._window_arrow_controller._overlay
         return self._window_arrow_controller
 
-    def _get_window_arrow_size(self) -> Tuple[int, int]:
+    def _get_window_arrow_size(self) -> tuple[int, int]:
         """获取当前游戏窗口的客户区大小。"""
         try:
             overlay = self._window_arrow_overlay
@@ -379,20 +387,20 @@ class WindowArrowDrawingMixin:
             return 0, 0
 
     def draw_window_arrow(
-            self,
-            start_x_norm: float,
-            start_y_norm: float,
-            end_x_norm: float,
-            end_y_norm: float,
-            shaft_width_norm: Optional[float] = None,
-            head_len_norm: Optional[float] = None,
-            color: Optional[Tuple[int, int, int]] = None,
-            alpha: Optional[int] = None,
-            arrow_type: str = 'default',
+        self,
+        start_x_norm: float,
+        start_y_norm: float,
+        end_x_norm: float,
+        end_y_norm: float,
+        shaft_width_norm: float | None = None,
+        head_len_norm: float | None = None,
+        color: tuple[int, int, int] | None = None,
+        alpha: int | None = None,
+        arrow_type: str = "default",
     ) -> bool:
         """
         在游戏窗口上绘制单个箭头。
-        
+
         Args:
             start_x_norm: 起点归一化 X 坐标 [0, 1]
             start_y_norm: 起点归一化 Y 坐标 [0, 1]
@@ -402,7 +410,7 @@ class WindowArrowDrawingMixin:
             head_len_norm: 箭头头部长度（归一化），默认自动计算
             color: 箭头颜色 (RGB)，默认使用全局设置
             alpha: 透明度 (0-255)，默认使用全局设置，0=完全透明 255=完全不透明
-            
+
         Returns:
             是否绘制成功
         """
@@ -418,7 +426,7 @@ class WindowArrowDrawingMixin:
 
             controller.arrow_updated.emit(
                 ArrowSpec(
-                    arrow_type=arrow_type or 'default',
+                    arrow_type=arrow_type or "default",
                     start_x_norm=start_x_norm,
                     start_y_norm=start_y_norm,
                     end_x_norm=end_x_norm,
@@ -434,19 +442,19 @@ class WindowArrowDrawingMixin:
             return False
 
     def draw_window_arrow_from_center(
-            self,
-            center_x: float,
-            center_y: float,
-            max_length: float,
-            draw_length: float,
-            angle_deg: float,
-            shaft_width_norm: Optional[float] = None,
-            head_len_norm: Optional[float] = None,
-            color: Optional[Tuple[int, int, int]] = None,
-            alpha: Optional[int] = None,
-            center_is_norm: bool = False,
-            length_is_norm: bool = False,
-            arrow_type: str = 'default',
+        self,
+        center_x: float,
+        center_y: float,
+        max_length: float,
+        draw_length: float,
+        angle_deg: float,
+        shaft_width_norm: float | None = None,
+        head_len_norm: float | None = None,
+        color: tuple[int, int, int] | None = None,
+        alpha: int | None = None,
+        center_is_norm: bool = False,
+        length_is_norm: bool = False,
+        arrow_type: str = "default",
     ) -> bool:
         """
         以中心点、最大长度、绘制长度和角度直接绘制箭头。

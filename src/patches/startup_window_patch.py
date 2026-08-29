@@ -10,6 +10,7 @@ def install_startup_window_patch():
         return
 
     from ok.gui.StartController import StartController
+
     from src.config import config
 
     min_size = config.get("supported_resolution", {}).get("min_size")

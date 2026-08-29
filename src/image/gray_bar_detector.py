@@ -19,21 +19,21 @@ class GrayBar:
 
 
 def detect_gray_bars(
-        frame: np.ndarray,
-        *,
-        y_min_ratio: float = 1077 / 1440,
-        y_max_ratio: float = 1115 / 1440,
-        x_min_ratio: float = 0.0,
-        x_max_ratio: float = 1.0,
-        min_width_ratio: float = 34 / 1920,
-        max_width_ratio: float = 78 / 1920,
-        min_height_ratio: float = 3 / 1440,
-        max_height_ratio: float = 12 / 1440,
-        contrast_threshold_ratio: float = 8 / 255,
-        max_gray_lightness_ratio: float = 180 / 255,
-        min_vertical_ratio: float = 3 / 1440,
-        min_aspect_ratio: float = 4.0,
-        max_gap_ratio: float = 2 / 2560,
+    frame: np.ndarray,
+    *,
+    y_min_ratio: float = 1077 / 1440,
+    y_max_ratio: float = 1115 / 1440,
+    x_min_ratio: float = 0.0,
+    x_max_ratio: float = 1.0,
+    min_width_ratio: float = 34 / 1920,
+    max_width_ratio: float = 78 / 1920,
+    min_height_ratio: float = 3 / 1440,
+    max_height_ratio: float = 12 / 1440,
+    contrast_threshold_ratio: float = 8 / 255,
+    max_gray_lightness_ratio: float = 180 / 255,
+    min_vertical_ratio: float = 3 / 1440,
+    min_aspect_ratio: float = 4.0,
+    max_gap_ratio: float = 2 / 2560,
 ) -> list[GrayBar]:
     """检测归一化 UI ROI 内、相对局部背景更亮的细长横条。
 
@@ -51,8 +51,14 @@ def detect_gray_bars(
     if not (0 <= x_min_ratio < x_max_ratio <= 1 and 0 <= y_min_ratio < y_max_ratio <= 1):
         raise ValueError("ROI ratios must satisfy 0 <= min < max <= 1")
     normalized_values = (
-        min_width_ratio, max_width_ratio, min_height_ratio, max_height_ratio,
-        contrast_threshold_ratio, max_gray_lightness_ratio, min_vertical_ratio, max_gap_ratio,
+        min_width_ratio,
+        max_width_ratio,
+        min_height_ratio,
+        max_height_ratio,
+        contrast_threshold_ratio,
+        max_gray_lightness_ratio,
+        min_vertical_ratio,
+        max_gap_ratio,
     )
     if not all(0 <= value <= 1 for value in normalized_values):
         raise ValueError("gray-bar detector thresholds must be normalized ratios in [0, 1]")
@@ -74,7 +80,9 @@ def detect_gray_bars(
     gap_px = max(0, round(max_gap_ratio * width))
 
     # 高斯模糊仅用于估计同一区域的局部背景，不依赖任何绝对灰度值。
-    background = cv2.GaussianBlur(gray, ksize=(0, 0), sigmaX=max(1, width * 12 / 2560), sigmaY=max(1, height * 4 / 1440))
+    background = cv2.GaussianBlur(
+        gray, ksize=(0, 0), sigmaX=max(1, width * 12 / 2560), sigmaY=max(1, height * 4 / 1440)
+    )
     diff = gray.astype(np.float32) - background.astype(np.float32)
     mask = (diff >= contrast_threshold_ratio * 255).astype(np.uint8) * 255
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (3, 2)))
@@ -86,7 +94,7 @@ def detect_gray_bars(
         bar_width = end - start + 1
         if not min_width_px <= bar_width <= max_width_px:
             continue
-        ys, _ = np.nonzero(mask[:, start:end + 1] > 0)
+        ys, _ = np.nonzero(mask[:, start : end + 1] > 0)
         if not len(ys):
             continue
         local_y1, local_y2 = int(ys.min()), int(ys.max())
@@ -99,10 +107,16 @@ def detect_gray_bars(
         if lightness[inset_y1:inset_y2, inset_x1:inset_x2].mean() > max_gray_lightness_ratio * 255:
             continue
         absolute_x, absolute_y = x1 + start, y1 + local_y1
-        results.append(GrayBar(
-            absolute_x, absolute_y, bar_width, bar_height,
-            absolute_x + bar_width / 2, absolute_y + bar_height / 2,
-        ))
+        results.append(
+            GrayBar(
+                absolute_x,
+                absolute_y,
+                bar_width,
+                bar_height,
+                absolute_x + bar_width / 2,
+                absolute_y + bar_height / 2,
+            )
+        )
     return sorted(results, key=lambda bar: bar.x)
 
 

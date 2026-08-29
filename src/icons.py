@@ -1,4 +1,5 @@
 """自定义图标模块"""
+
 import hashlib
 import logging
 import os
@@ -29,7 +30,7 @@ def _invert_hex_color(match):
         inv = "".join(f"{15 - c:x}" for c in channels)
         alpha = hex_str[3] if len(hex_str) == 4 else ""
         return f"#{inv}{alpha}"
-    r, g, b = (int(hex_str[i:i + 2], 16) for i in (0, 2, 4))
+    r, g, b = (int(hex_str[i : i + 2], 16) for i in (0, 2, 4))
     alpha = hex_str[6:8] if len(hex_str) == 8 else ""
     return f"#{255 - r:02x}{255 - g:02x}{255 - b:02x}{alpha}"
 

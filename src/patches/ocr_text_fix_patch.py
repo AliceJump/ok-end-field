@@ -166,9 +166,7 @@ def _apply_confusion_to_str(text: str, char_confusion: dict[str, tuple[str, ...]
     return variants
 
 
-def _apply_confusion_to_regex(
-    pattern: re.Pattern, char_confusion: dict[str, tuple[str, ...]]
-) -> re.Pattern:
+def _apply_confusion_to_regex(pattern: re.Pattern, char_confusion: dict[str, tuple[str, ...]]) -> re.Pattern:
     """对 regex pattern 应用字符混淆。
 
     安全规则:
@@ -194,9 +192,7 @@ def _apply_confusion_to_regex(
         if typ == "LITERAL":
             if val in char_confusion:
                 confused_chars = "".join(
-                    confused
-                    for confused in char_confusion[val]
-                    if confused not in _REGEX_METACHARS
+                    confused for confused in char_confusion[val] if confused not in _REGEX_METACHARS
                 )
                 if confused_chars:
                     result_parts.append(f"[{confused_chars}{val}]")
@@ -220,9 +216,7 @@ def _apply_confusion_to_regex(
                 new_inner.append(c)
                 if c in char_confusion:
                     confused_chars = "".join(
-                        confused
-                        for confused in char_confusion[c]
-                        if confused not in _REGEX_METACHARS
+                        confused for confused in char_confusion[c] if confused not in _REGEX_METACHARS
                     )
                     if confused_chars:
                         new_inner.append(confused_chars)
@@ -289,8 +283,8 @@ def install_ocr_text_fix_patch():
     if _PATCH_INSTALLED:
         return
 
-    from ok.task.TaskExecutor import TaskExecutor
     from ok.task.task import OCR
+    from ok.task.TaskExecutor import TaskExecutor
 
     # 1. 读取并构建字符级混淆表
     fix_map = _load_fix_map()

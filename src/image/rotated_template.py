@@ -1,9 +1,8 @@
+import os
 from collections import OrderedDict
-from typing import Tuple, Optional, List
+
 import cv2
 import numpy as np
-import os
-
 
 ARROW_TEMPLATE_FILENAME = "arrow.png"
 
@@ -47,7 +46,7 @@ def _to_rgba(img: np.ndarray) -> np.ndarray:
     raise ValueError(f"Unsupported image shape: {img.shape}")
 
 
-def _safe_roi(img: np.ndarray, x: int, y: int, w: int, h: int) -> Optional[np.ndarray]:
+def _safe_roi(img: np.ndarray, x: int, y: int, w: int, h: int) -> np.ndarray | None:
     """安全 ROI 提取：正常返回 view，越界时 padding copy"""
     H, W = img.shape[:2]
     x0 = int(round(x))
@@ -91,7 +90,7 @@ def _scale_template(template_rgba: np.ndarray, scale: float) -> np.ndarray:
     return np.dstack([rgb_scaled, alpha_scaled])
 
 
-def _scale_point(point: Tuple[float, float], scale: float) -> Tuple[float, float]:
+def _scale_point(point: tuple[float, float], scale: float) -> tuple[float, float]:
     if _is_identity_scale(scale):
         return point
     return (point[0] * scale, point[1] * scale)
@@ -103,11 +102,11 @@ class ArrowAngleMatcher:
     """
 
     def __init__(
-            self,
-            template_path: str | None = None,
-            template_center: Tuple[int, int] = None,
-            benchmark_width: int = 2560,
-            max_cache_scales: int = 12,
+        self,
+        template_path: str | None = None,
+        template_center: tuple[int, int] = None,
+        benchmark_width: int = 2560,
+        max_cache_scales: int = 12,
     ):
 
         # 加载模板
@@ -144,9 +143,11 @@ class ArrowAngleMatcher:
 
         # LRU 缓存
         # scale_q(int) -> (tpl_rgba_scaled, center_scaled)
-        self._scaled_template_cache: OrderedDict[int, Tuple[np.ndarray, Tuple[float, float]]] = OrderedDict()
+        self._scaled_template_cache: OrderedDict[int, tuple[np.ndarray, tuple[float, float]]] = OrderedDict()
         # (scale_q, angle_q) -> (bgr_cropped, alpha_255, bbox, rel_center)
-        self._rotation_cache: dict[Tuple[int, int], Tuple[np.ndarray, np.ndarray, Tuple[int, int, int, int], Tuple[float, float]]] = {}
+        self._rotation_cache: dict[
+            tuple[int, int], tuple[np.ndarray, np.ndarray, tuple[int, int, int, int], tuple[float, float]]
+        ] = {}
 
     def _get_scaled_template(self, scale: float):
         """获取缩放模板，内部使用量化整数 key 实现 LRU。"""
@@ -203,14 +204,14 @@ class ArrowAngleMatcher:
         else:
             y0, y1 = ys.min(), ys.max()
             x0, x1 = xs.min(), xs.max()
-            bgr_cropped = rotated_bgr[y0: y1 + 1, x0: x1 + 1].copy()
-            alpha_mask_final = ((rotated_alpha_chan[y0: y1 + 1, x0: x1 + 1] > 8) * 255).astype(np.uint8)
+            bgr_cropped = rotated_bgr[y0 : y1 + 1, x0 : x1 + 1].copy()
+            alpha_mask_final = ((rotated_alpha_chan[y0 : y1 + 1, x0 : x1 + 1] > 8) * 255).astype(np.uint8)
             rel_center = (template_center[0] - x0, template_center[1] - y0)
             bbox = (x0, y0, x1 - x0 + 1, y1 - y0 + 1)
 
         self._rotation_cache[cache_key] = (bgr_cropped, alpha_mask_final, bbox, rel_center)
 
-    def _get_angles_with_wrap(self, center_angle: float, radius: float, step: float) -> List[float]:
+    def _get_angles_with_wrap(self, center_angle: float, radius: float, step: float) -> list[float]:
         """生成环绕角度列表，量化去重后排序。"""
         n = int(round(2 * radius / step)) + 1
         raw = [center_angle - radius + i * step for i in range(n)]
@@ -223,8 +224,8 @@ class ArrowAngleMatcher:
         return sorted(seen.values())
 
     def _search(
-            self, tgt: np.ndarray, center: Tuple[float, float], scale: float, angles: List[float]
-    ) -> Tuple[float, float]:
+        self, tgt: np.ndarray, center: tuple[float, float], scale: float, angles: list[float]
+    ) -> tuple[float, float]:
         """在给定角度列表中搜索最佳匹配"""
         best_angle = 0.0
         best_score = -float("inf")
@@ -259,7 +260,7 @@ class ArrowAngleMatcher:
 
         return best_angle, best_score if best_score > -float("inf") else 0.0
 
-    def match(self, screenshot: np.ndarray, center: Tuple[float, float], two_stage: bool = True) -> Tuple[float, float]:
+    def match(self, screenshot: np.ndarray, center: tuple[float, float], two_stage: bool = True) -> tuple[float, float]:
         """主匹配接口"""
         tgt = _to_rgba(screenshot)
         H, W = tgt.shape[:2]

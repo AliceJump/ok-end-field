@@ -1,8 +1,10 @@
 import ctypes
+
+import win32con
 import win32gui
 import win32ui
-import win32con
 from PIL import Image, ImageGrab
+
 
 def capture_window(hwnd):
     """
@@ -81,7 +83,6 @@ def capture_window_by_screen(hwnd):
     # 3️⃣ 虚拟桌面原点偏移后裁剪窗口客户区
     virtual_x = ctypes.windll.user32.GetSystemMetrics(76)  # SM_XVIRTUALSCREEN
     virtual_y = ctypes.windll.user32.GetSystemMetrics(77)  # SM_YVIRTUALSCREEN
-    cropped = screen.crop((left - virtual_x, top - virtual_y,
-                           left - virtual_x + width, top - virtual_y + height))
+    cropped = screen.crop((left - virtual_x, top - virtual_y, left - virtual_x + width, top - virtual_y + height))
 
     return cropped

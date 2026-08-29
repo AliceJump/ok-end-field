@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """导出/上传日志 zip 时的重复截图去重与恢复。
 
 - 打 zip 时（仅导出日志/上传日志触发）：对图片文件按内容（MD5）去重，
@@ -44,11 +43,13 @@ def collect_image_duplicates(entries):
     for arcname, data in entries:
         digest = md5_hex(data)
         if digest in seen:
-            duplicates.append({
-                "hash": digest,
-                "kept": seen[digest],
-                "duplicate": arcname,
-            })
+            duplicates.append(
+                {
+                    "hash": digest,
+                    "kept": seen[digest],
+                    "duplicate": arcname,
+                }
+            )
         else:
             seen[digest] = arcname
             unique_entries.append((arcname, data))
@@ -60,10 +61,8 @@ def build_dedup_info(duplicates: list, note: str = "") -> dict:
     return {
         "format": DEDUP_INFO_FORMAT,
         "generated_at": datetime.now().isoformat(timespec="seconds"),
-        "note": note or (
-            "完全相同的图片已去重，仅保留第一份；重复文件可用 "
-            "scripts/maintenance/restore_log_screenshots.py 恢复"
-        ),
+        "note": note
+        or ("完全相同的图片已去重，仅保留第一份；重复文件可用 scripts/maintenance/restore_log_screenshots.py 恢复"),
         "duplicates": duplicates,
     }
 
