@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import json
 import tempfile
 import unittest
@@ -16,7 +15,6 @@ from src.patches.log_zip_dedup import (
 
 
 class TestLogZipDedup(unittest.TestCase):
-
     def test_collect_image_duplicates_keeps_first_and_records_rest(self):
         entries = [
             ("screenshots/a_original.png", b"same"),
@@ -70,10 +68,20 @@ class TestLogZipDedup(unittest.TestCase):
                 zipf.writestr("logs/ok-script.log", "log content")
                 zipf.writestr("screenshots/a_original.png", kept_bytes)
                 zipf.writestr("screenshots/b_original.png", b"unique")
-                zipf.writestr(DEDUP_INFO_FILENAME, json.dumps(build_dedup_info([
-                    {"hash": md5_hex(kept_bytes), "kept": "screenshots/a_original.png",
-                     "duplicate": "screenshots/a_dup.png"},
-                ])))
+                zipf.writestr(
+                    DEDUP_INFO_FILENAME,
+                    json.dumps(
+                        build_dedup_info(
+                            [
+                                {
+                                    "hash": md5_hex(kept_bytes),
+                                    "kept": "screenshots/a_original.png",
+                                    "duplicate": "screenshots/a_dup.png",
+                                },
+                            ]
+                        )
+                    ),
+                )
 
             output_dir = Path(tmp) / "restored"
             restored = restore_duplicates(zip_path, output_dir)
@@ -100,10 +108,16 @@ class TestLogZipDedup(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             zip_path = Path(tmp) / "broken-log.zip"
             with zipfile.ZipFile(zip_path, "w") as zipf:
-                zipf.writestr(DEDUP_INFO_FILENAME, json.dumps(build_dedup_info([
-                    {"hash": "h", "kept": "screenshots/ghost.png",
-                     "duplicate": "screenshots/a_dup.png"},
-                ])))
+                zipf.writestr(
+                    DEDUP_INFO_FILENAME,
+                    json.dumps(
+                        build_dedup_info(
+                            [
+                                {"hash": "h", "kept": "screenshots/ghost.png", "duplicate": "screenshots/a_dup.png"},
+                            ]
+                        )
+                    ),
+                )
             output_dir = Path(tmp) / "restored"
             restored = restore_duplicates(zip_path, output_dir)
             self.assertEqual(restored, [])

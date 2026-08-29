@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """验证传送后寻找「登上滑索架」按钮的三阶段逻辑（直接查找 + 踱步 + 前后移动）。"""
+
 import unittest
 from types import SimpleNamespace
 
@@ -22,8 +22,7 @@ def _make_stub(ocr_results, strafe_results=None, advance_per_strafe=None):
     stub.strafe_calls = []
     stub.ctrl_calls = []
     stub.log_lines = []
-    stub.lang = SimpleNamespace(
-        DeliveryTask=SimpleNamespace(k_b0e3a2da="登上滑索架"))
+    stub.lang = SimpleNamespace(DeliveryTask=SimpleNamespace(k_b0e3a2da="登上滑索架"))
     stub.box = SimpleNamespace(bottom_right="bottom_right")
     stub.ensure_main_calls = []
     stub.ensure_main = lambda *a, **kw: stub.ensure_main_calls.append(kw)
@@ -47,8 +46,7 @@ def _make_stub(ocr_results, strafe_results=None, advance_per_strafe=None):
     stub.log_info = lambda msg: stub.log_lines.append(msg)
     stub.press_key = lambda key, *a, **kw: stub.ctrl_calls.append(key)
 
-    def _strafe(check, passes=None, duration=0.2, keys=("s", "w", "a", "d"),
-                time_out=-1):
+    def _strafe(check, passes=None, duration=0.2, keys=("s", "w", "a", "d"), time_out=-1):
         stub.strafe_calls.append({"keys": keys, "time_out": time_out})
         if advance_per_strafe is not None:
             clock["t"] += advance_per_strafe  # 模拟踱步搜索真实耗时
@@ -65,8 +63,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
         """阶段一直接找到按钮：不进入踱步搜索，也不切换步行。"""
         box = _FakeBox()
         stub = _make_stub(ocr_results=[None, box])
-        result = DeliveryTask._find_zip_line_board_button(
-            stub, direct_wait=5.0, total_time_out=60.0)
+        result = DeliveryTask._find_zip_line_board_button(stub, direct_wait=5.0, total_time_out=60.0)
         self.assertIs(result, box)
         self.assertEqual(len(stub.ensure_main_calls), 1)  # 先确认主界面
         self.assertEqual(stub.strafe_calls, [])  # 未触发踱步
@@ -76,8 +73,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
         """阶段一找不到时进入 WASD 踱步搜索并命中，时限不超过 10 秒。"""
         box = _FakeBox()
         stub = _make_stub(ocr_results=[], strafe_results=[box])
-        result = DeliveryTask._find_zip_line_board_button(
-            stub, direct_wait=0.02, total_time_out=30.0)
+        result = DeliveryTask._find_zip_line_board_button(stub, direct_wait=0.02, total_time_out=30.0)
         self.assertIs(result, box)
         self.assertEqual(len(stub.strafe_calls), 1)  # 仅进入踱步一次
         self.assertLessEqual(stub.strafe_calls[0]["time_out"], 10.0)  # 踱步最多 10 秒
@@ -89,8 +85,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
         """踱步超时后改用仅 W/S 前后移动继续找，命中后恢复奔跑。"""
         box = _FakeBox()
         stub = _make_stub(ocr_results=[], strafe_results=[None, box])
-        result = DeliveryTask._find_zip_line_board_button(
-            stub, direct_wait=0.02, total_time_out=60.0)
+        result = DeliveryTask._find_zip_line_board_button(stub, direct_wait=0.02, total_time_out=60.0)
         self.assertIs(result, box)
         self.assertEqual(len(stub.strafe_calls), 2)  # 踱步 + 前后移动各一次
         self.assertEqual(stub.strafe_calls[1]["keys"], ("s", "w"))  # 阶段三仅前后移动,后退优先
@@ -101,10 +96,8 @@ class TestFindZipLineBoardButton(unittest.TestCase):
 
     def test_timeout_returns_none(self):
         """总超时仍未找到：返回 None 并记录超时日志。"""
-        stub = _make_stub(ocr_results=[], strafe_results=[None],
-                          advance_per_strafe=10.0)  # 踱步消耗掉全部剩余预算
-        result = DeliveryTask._find_zip_line_board_button(
-            stub, direct_wait=0.01, total_time_out=5.0)
+        stub = _make_stub(ocr_results=[], strafe_results=[None], advance_per_strafe=10.0)  # 踱步消耗掉全部剩余预算
+        result = DeliveryTask._find_zip_line_board_button(stub, direct_wait=0.01, total_time_out=5.0)
         self.assertIsNone(result)
         self.assertTrue(any("超时" in msg for msg in stub.log_lines))
         self.assertEqual(len(stub.strafe_calls), 1)  # 总预算耗尽时不进入阶段三
@@ -113,8 +106,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
     def test_exhausted_before_strafe_returns_immediately(self):
         """阶段一耗尽正数的短总预算：立即返回，不切步行也不进入移动搜索。"""
         stub = _make_stub(ocr_results=[])
-        result = DeliveryTask._find_zip_line_board_button(
-            stub, direct_wait=5.0, total_time_out=0.03)
+        result = DeliveryTask._find_zip_line_board_button(stub, direct_wait=5.0, total_time_out=0.03)
         self.assertIsNone(result)
         self.assertEqual(stub.strafe_calls, [])
         self.assertEqual(stub.ctrl_calls, [])  # 未做任何模式切换

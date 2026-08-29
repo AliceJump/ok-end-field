@@ -9,6 +9,7 @@
 回落重新武装、彩色特效不误触、局部白色弧形特效（不满半圈）不触发、
 多按钮状态互不干扰。
 """
+
 import unittest
 
 import cv2
@@ -19,18 +20,17 @@ from src.image.recommend_skill_detector import RecommendSkillDetector
 W, H = 1280, 720
 
 # 与游戏一致的参考色（BGR）
-COLOR_BG = (38, 32, 28)           # 深色场景
-COLOR_FACE = (45, 40, 36)         # 按钮内部
-COLOR_ICON = (255, 255, 255)      # 面内白色图标
-COLOR_SEGMENT = (208, 206, 0)     # 面内亮色扇形段（青/绿）
-COLOR_BORDER = (33, 26, 23)       # 最内层深色描边 hsl(220,16%,11%)
+COLOR_BG = (38, 32, 28)  # 深色场景
+COLOR_FACE = (45, 40, 36)  # 按钮内部
+COLOR_ICON = (255, 255, 255)  # 面内白色图标
+COLOR_SEGMENT = (208, 206, 0)  # 面内亮色扇形段（青/绿）
+COLOR_BORDER = (33, 26, 23)  # 最内层深色描边 hsl(220,16%,11%)
 COLOR_RIM_REST = (118, 112, 111)  # 常态灰蓝 hsl(222,4%,45%) ≈ RGB(111,112,118)
-COLOR_WHITE = (255, 255, 255)     # 脉冲白 hsl(0,0%,100%)
-COLOR_COLORED_VFX = (60, 40, 220) # 高饱和彩色特效（红）
+COLOR_WHITE = (255, 255, 255)  # 脉冲白 hsl(0,0%,100%)
+COLOR_COLORED_VFX = (60, 40, 220)  # 高饱和彩色特效（红）
 
 
-def render(cx_n=0.920, cy_n=0.898, r_n=0.037,
-           signal_color=COLOR_RIM_REST, white_arc_ratio=0.0):
+def render(cx_n=0.920, cy_n=0.898, r_n=0.037, signal_color=COLOR_RIM_REST, white_arc_ratio=0.0):
     """在 (cx_n, cy_n) 处渲染按钮。
 
     signal_color：中间信号层颜色（常态灰蓝或脉冲白或特效色）。
@@ -43,8 +43,7 @@ def render(cx_n=0.920, cy_n=0.898, r_n=0.037,
     cv2.circle(img, (cx, cy), int(r0 * 0.72), COLOR_FACE, -1)
     # 面内白色图标 + 亮色扇形段（验证采样带不被面内白色干扰）
     cv2.circle(img, (cx, cy - int(r0 * 0.15)), int(r0 * 0.22), COLOR_ICON, -1)
-    cv2.ellipse(img, (cx, cy), (int(r0 * 0.55), int(r0 * 0.55)),
-                0, 30, 150, COLOR_SEGMENT, -1)
+    cv2.ellipse(img, (cx, cy), (int(r0 * 0.55), int(r0 * 0.55)), 0, 30, 150, COLOR_SEGMENT, -1)
     # 最内层深色细描边
     cv2.circle(img, (cx, cy), int(r0 * 0.88), COLOR_BORDER, 2)
     # 中间信号层
@@ -59,7 +58,6 @@ def render(cx_n=0.920, cy_n=0.898, r_n=0.037,
 
 
 class TestRecommendSkillDetector(unittest.TestCase):
-
     def setUp(self):
         self.det = RecommendSkillDetector()
 

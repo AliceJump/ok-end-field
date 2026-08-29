@@ -1,5 +1,4 @@
 import unittest
-from types import SimpleNamespace
 
 from src.tasks.daily.daily_task_runner import DailyTaskRunner
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
@@ -75,7 +74,7 @@ class _LiaisonHarness(LiaisonMixin):
 class TestDailyBoatState(unittest.TestCase):
     def test_state_is_shared_only_across_configured_boat_tasks(self):
         task = _RunnerHarness()
-        task.config = {key: True for key in ("boat_a", "boat_b", "other", "boat_c")}
+        task.config = dict.fromkeys(("boat_a", "boat_b", "other", "boat_c"), True)
         items = [(key, task.task(key)) for key in task.config]
         runner = DailyTaskRunner(task, items, shared_state_task_keys={"boat_a", "boat_b", "boat_c"})
 

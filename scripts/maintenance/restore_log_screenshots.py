@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """从已去重的日志 zip 中恢复完整截图文件集。
 
 用法:
@@ -31,10 +29,8 @@ from src.patches.screenshot_sidecar import rebuild_boxed_images
 def main() -> int:
     parser = argparse.ArgumentParser(description="恢复日志 zip 中被去重的重复截图")
     parser.add_argument("zip_path", type=Path, help="日志 zip 文件路径")
-    parser.add_argument("output_dir", type=Path, nargs="?",
-                        help="输出目录（默认 <zip 名去掉后缀>_restored）")
-    parser.add_argument("--no-rebuild-boxed", action="store_true",
-                        help="不依据 _boxes.json 重绘 _boxed.png")
+    parser.add_argument("output_dir", type=Path, nargs="?", help="输出目录（默认 <zip 名去掉后缀>_restored）")
+    parser.add_argument("--no-rebuild-boxed", action="store_true", help="不依据 _boxes.json 重绘 _boxed.png")
     args = parser.parse_args()
 
     if not args.zip_path.is_file():

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """发送邮件给指定用户的命令行工具。
 
 邮件配置放在应用的“设置 → 邮件发送配置”（对应全局配置 ``Email Config``，
@@ -26,6 +25,7 @@
     # 不使用 SSL（例如使用 587 STARTTLS）
     uv run python scripts/maintenance/send_email_to_user.py --to user@example.com --subject "测试" --body "你好" --no-ssl
 """
+
 from __future__ import annotations
 
 import argparse
@@ -56,9 +56,7 @@ def _resolve_body_file(raw: str) -> Path:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="发送邮件给指定用户（配置见设置 → 邮件发送配置）"
-    )
+    parser = argparse.ArgumentParser(description="发送邮件给指定用户（配置见设置 → 邮件发送配置）")
     parser.add_argument(
         "--init-config",
         action="store_true",
@@ -117,7 +115,7 @@ def main() -> int:
                 attachments=args.attachment,
                 settings=settings,
             )
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:
         print(f"[错误] 邮件发送失败: {exc}", file=sys.stderr)
         return 1
 

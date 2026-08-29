@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
@@ -35,15 +34,11 @@ class TestClaimDeliveryRewardsStatus(unittest.TestCase):
         feature.click.assert_not_called()
 
     def test_claim_confirm_failure_returns_false(self):
-        feature = self.make_claim_feature(
-            node_found=True, results=[SimpleNamespace(name="奖励")], pop_up=False
-        )
+        feature = self.make_claim_feature(node_found=True, results=[SimpleNamespace(name="奖励")], pop_up=False)
         self.assertFalse(feature._claim_delivery_rewards_in_current_node())
 
     def test_claim_success_returns_true(self):
-        feature = self.make_claim_feature(
-            node_found=True, results=[SimpleNamespace(name="奖励")], pop_up=True
-        )
+        feature = self.make_claim_feature(node_found=True, results=[SimpleNamespace(name="奖励")], pop_up=True)
         self.assertTrue(feature._claim_delivery_rewards_in_current_node())
 
 
@@ -67,9 +62,7 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
         feature.blind_spot_speed_up = Mock(return_value=True)
         feature.wait_click_feature = Mock(return_value=True)
         feature.box_of_screen = Mock(return_value=object())
-        feature.box = SimpleNamespace(
-            top_left=object(), bottom=object(), bottom_left=object()
-        )
+        feature.box = SimpleNamespace(top_left=object(), bottom=object(), bottom_left=object())
         feature.lang = SimpleNamespace(
             daily_routine_mixin=SimpleNamespace(
                 k_view_quote="查看报价",
@@ -80,9 +73,7 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
             )
         )
         # 领取奖励按序列返回（覆盖 _claim_delivery_rewards_in_current_node）
-        feature._claim_delivery_rewards_in_current_node = Mock(
-            side_effect=claim_results
-        )
+        feature._claim_delivery_rewards_in_current_node = Mock(side_effect=claim_results)
         # 找本地仓储节点与「转交运送委托」按钮均返回 True
         feature.wait_click_ocr = Mock(return_value=True)
         # 找货物 → 返回一项，让每个地区转交一次后退出
@@ -102,9 +93,7 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
 
         self.assertTrue(result)
         # 第一个地区领取失败(False)，第二个地区重试(True) → 领取被调用两次
-        self.assertEqual(
-            feature._claim_delivery_rewards_in_current_node.call_count, 2
-        )
+        self.assertEqual(feature._claim_delivery_rewards_in_current_node.call_count, 2)
 
     def test_first_area_success_skips_second_area_claim(self):
         feature = self.make_send_feature([True])
@@ -112,9 +101,7 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
 
         self.assertTrue(result)
         # 第一个地区领取成功，第二个地区不再重复领取
-        self.assertEqual(
-            feature._claim_delivery_rewards_in_current_node.call_count, 1
-        )
+        self.assertEqual(feature._claim_delivery_rewards_in_current_node.call_count, 1)
 
     def test_all_areas_fail_keeps_retrying(self):
         feature = self.make_send_feature([False, False])
@@ -122,9 +109,7 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
 
         self.assertTrue(result)
         # 两个地区都失败 → 每个地区都尝试领取一次
-        self.assertEqual(
-            feature._claim_delivery_rewards_in_current_node.call_count, 2
-        )
+        self.assertEqual(feature._claim_delivery_rewards_in_current_node.call_count, 2)
 
 
 if __name__ == "__main__":

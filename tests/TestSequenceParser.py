@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import unittest
 
 from src.core.sequence_parser import parse_int_sequence, parse_sequence

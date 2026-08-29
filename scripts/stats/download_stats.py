@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
+import os
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
-import os
+
 import requests
 
 repo_full = os.getenv("GITHUB_REPOSITORY", "AliceJump/ok-end-field")
@@ -12,7 +13,7 @@ if "/" in repo_full:
 else:
     OWNER = "AliceJump"
     REPO = "ok-end-field"
-    
+
 TOKEN = os.getenv("GITHUB_TOKEN", "").strip()
 
 ASSETS_DIR = Path("assets")
@@ -38,10 +39,7 @@ def get_all_releases():
     releases = []
 
     while True:
-        url = (
-            f"https://api.github.com/repos/{OWNER}/{REPO}/releases"
-            f"?per_page=100&page={page}"
-        )
+        url = f"https://api.github.com/repos/{OWNER}/{REPO}/releases?per_page=100&page={page}"
         data = github_get(url)
         if not data:
             break
@@ -62,10 +60,7 @@ def build_monthly_downloads(releases):
         dt = datetime.fromisoformat(published_at.replace("Z", "+00:00"))
         month = dt.strftime("%Y-%m")
 
-        downloads = sum(
-            asset.get("download_count", 0)
-            for asset in release.get("assets", [])
-        )
+        downloads = sum(asset.get("download_count", 0) for asset in release.get("assets", []))
 
         monthly[month] += downloads
 
@@ -73,12 +68,7 @@ def build_monthly_downloads(releases):
 
 
 def escape(text: str) -> str:
-    return (
-        text.replace("&", "&amp;")
-        .replace("<", "&lt;")
-        .replace(">", "&gt;")
-        .replace('"', "&quot;")
-    )
+    return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;").replace('"', "&quot;")
 
 
 def generate_svg(items):
@@ -109,35 +99,30 @@ def generate_svg(items):
     svg = []
 
     svg.append(
-        f'<svg xmlns="http://www.w3.org/2000/svg" '
-        f'width="{width}" height="{height}" '
-        f'viewBox="0 0 {width} {height}">'
+        f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" viewBox="0 0 {width} {height}">'
     )
 
     # background
     svg.append('<rect width="100%" height="100%" rx="16" fill="#0b1220"/>')
 
     # border
-    svg.append(
-        f'<rect x="1" y="1" width="{width-2}" height="{height-2}" '
-        f'rx="15" fill="none" stroke="#1f2937"/>'
-    )
+    svg.append(f'<rect x="1" y="1" width="{width - 2}" height="{height - 2}" rx="15" fill="none" stroke="#1f2937"/>')
 
     # title
     svg.append(
         '<text x="24" y="38" fill="#e5e7eb" '
         'font-size="20" font-weight="700" '
         'font-family="Segoe UI, Arial">'
-        'Monthly Downloads'
-        '</text>'
+        "Monthly Downloads"
+        "</text>"
     )
 
     # subtitle
     svg.append(
         f'<text x="24" y="56" fill="#94a3b8" '
         f'font-size="12" font-family="Segoe UI, Arial">'
-        f'{len(items)} months · {total_downloads:,} total downloads'
-        '</text>'
+        f"{len(items)} months · {total_downloads:,} total downloads"
+        "</text>"
     )
 
     # first row y（✔️ 关键修复：往上提）
@@ -150,9 +135,7 @@ def generate_svg(items):
 
         # month text
         svg.append(
-            f'<text x="24" y="{y}" fill="#e2e8f0" '
-            f'font-size="13" font-family="Segoe UI, Arial">'
-            f'{escape(month)}</text>'
+            f'<text x="24" y="{y}" fill="#e2e8f0" font-size="13" font-family="Segoe UI, Arial">{escape(month)}</text>'
         )
 
         # number
@@ -160,22 +143,14 @@ def generate_svg(items):
             f'<text x="500" y="{y}" fill="#cbd5e1" '
             f'font-size="13" text-anchor="end" '
             f'font-family="Segoe UI, Arial">'
-            f'{downloads:,}</text>'
+            f"{downloads:,}</text>"
         )
 
         # background bar
-        svg.append(
-            f'<rect x="{bar_x}" y="{y-10}" '
-            f'width="{bar_max_width}" height="10" '
-            f'rx="5" fill="#1f2937"/>'
-        )
+        svg.append(f'<rect x="{bar_x}" y="{y - 10}" width="{bar_max_width}" height="10" rx="5" fill="#1f2937"/>')
 
         # value bar
-        svg.append(
-            f'<rect x="{bar_x-4}" y="{y-10}" '
-            f'width="{bar_width}" height="10" '
-            f'rx="5" fill="{color}"/>'
-        )
+        svg.append(f'<rect x="{bar_x - 4}" y="{y - 10}" width="{bar_width}" height="10" rx="5" fill="{color}"/>')
 
         y += row_height
 

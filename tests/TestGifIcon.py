@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """GIF 动图图标支持测试：GifIcon / ThemeIcon(.gif) 的渲染与帧推进、缺失变体颜色反转缓存。"""
+
 import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -12,7 +12,6 @@ from pathlib import Path
 from PIL import Image
 from PySide6.QtCore import QEventLoop, QTimer
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentIcon, Theme
 from qfluentwidgets.components.widgets.icon_widget import IconWidget
 
 import src.icons as icons_module
@@ -78,8 +77,7 @@ class GifIconTestCase(unittest.TestCase):
         widget.show()
         self.app.processEvents()
         widget.grab()
-        self.assertTrue(any(widget in player._widgets for player in
-                            (icon._light_gif._player, icon._dark_gif._player)))
+        self.assertTrue(any(widget in player._widgets for player in (icon._light_gif._player, icon._dark_gif._player)))
         widget.close()
 
     def test_missing_file_degrades_gracefully(self):
@@ -103,8 +101,7 @@ class ThemeIconInvertTestCase(unittest.TestCase):
         Image.new("RGBA", (16, 16), (255, 0, 0, 255)).save(cls.red_png)
         cls.black_svg = cls.tmp / "black.svg"
         cls.black_svg.write_text(
-            '<svg width="10" height="10" viewBox="0 0 10 10" fill="#000000">'
-            '<path d="M0 0h10v10z"/></svg>',
+            '<svg width="10" height="10" viewBox="0 0 10 10" fill="#000000"><path d="M0 0h10v10z"/></svg>',
             encoding="utf-8",
         )
 

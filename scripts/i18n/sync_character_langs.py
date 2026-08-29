@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """从第三方 wiki（endfield.wiki.gg）同步干员（Operator）西语译名（es_ES）。
 
 数据源：
@@ -22,13 +20,13 @@
 """
 
 import json
-import json5
 import re
 import sys
 from pathlib import Path
-from urllib import request, parse
+from urllib import parse, request
 
-from pypinyin import pinyin, Style
+import json5
+from pypinyin import Style, pinyin
 
 ROOT = Path(__file__).resolve().parents[2]
 LANG_CHARACTERS_JSON = ROOT / "assets" / "lang" / "characters.json"
@@ -60,16 +58,36 @@ NEW_OP_LANGS = ("en_US", "ja_JP", "ko_KR", "es_ES")
 # 新角色默认由 pypinyin 自动生成拼音 key；此处仅保留已验证的
 # 官方拼写与多音字例外（如 什/缪/茜 等，拼音库默认读音可能错误）。
 ZH_KEY_MAP = {
-    "庄方宜": "zhuang_fang_yi", "洛茜": "luo_qian", "汤汤": "tang_tang",
-    "管理员": "guan_li_yuan", "黎风": "li_feng", "余烬": "yu_jin",
-    "洁尔佩塔": "jie_er_pei_ta", "艾尔黛拉": "ai_er_dai_la", "骏卫": "jun_wei",
-    "莱万汀": "lai_wan_ting", "伊冯": "yi_feng", "别礼": "bie_li",
-    "陈千语": "chen_qian_yu", "昼雪": "zhou_xue", "赛希": "sai_xi",
-    "狼卫": "lang_wei", "佩丽卡": "pei_li_ka", "弧光": "hu_guang",
-    "阿列什": "a_lie_shi", "艾维文娜": "ai_wei_wen_na", "大潘": "da_pan",
-    "埃特拉": "ai_te_la", "卡契尔": "ka_qi_er", "安塔尔": "an_ta_er",
-    "萤石": "ying_shi", "秋栗": "qiu_li",
-    "诀": "jue", "卡缪": "ka_miao", "弭弗": "mi_fu", "梨诺": "li_nuo",
+    "庄方宜": "zhuang_fang_yi",
+    "洛茜": "luo_qian",
+    "汤汤": "tang_tang",
+    "管理员": "guan_li_yuan",
+    "黎风": "li_feng",
+    "余烬": "yu_jin",
+    "洁尔佩塔": "jie_er_pei_ta",
+    "艾尔黛拉": "ai_er_dai_la",
+    "骏卫": "jun_wei",
+    "莱万汀": "lai_wan_ting",
+    "伊冯": "yi_feng",
+    "别礼": "bie_li",
+    "陈千语": "chen_qian_yu",
+    "昼雪": "zhou_xue",
+    "赛希": "sai_xi",
+    "狼卫": "lang_wei",
+    "佩丽卡": "pei_li_ka",
+    "弧光": "hu_guang",
+    "阿列什": "a_lie_shi",
+    "艾维文娜": "ai_wei_wen_na",
+    "大潘": "da_pan",
+    "埃特拉": "ai_te_la",
+    "卡契尔": "ka_qi_er",
+    "安塔尔": "an_ta_er",
+    "萤石": "ying_shi",
+    "秋栗": "qiu_li",
+    "诀": "jue",
+    "卡缪": "ka_miao",
+    "弭弗": "mi_fu",
+    "梨诺": "li_nuo",
 }
 
 
@@ -109,19 +127,21 @@ def get_operator_infoboxes() -> dict:
     out = {}
     for i in range(0, len(titles), 50):
         batch = titles[i : i + 50]
-        d = api_get({
-            "action": "query",
-            "titles": "|".join(batch),
-            "prop": "revisions",
-            "rvslots": "main",
-            "rvprop": "content",
-            "format": "json",
-        })
+        d = api_get(
+            {
+                "action": "query",
+                "titles": "|".join(batch),
+                "prop": "revisions",
+                "rvslots": "main",
+                "rvprop": "content",
+                "format": "json",
+            }
+        )
         for pid, pg in d["query"]["pages"].items():
             if "revisions" not in pg:
                 continue
             txt = pg["revisions"][0]["slots"]["main"]["*"]
-            m = re.search(r"\{\{Operator infobox\n(.*?)\n\}\}", txt, re.S)
+            m = re.search(r"\{\{Operator infobox\n(.*?)\n\}\}", txt, re.DOTALL)
             if not m:
                 continue
             body = m.group(1)
@@ -212,14 +232,10 @@ def sync_characters(wiki: dict) -> tuple:
             }
             changed_canon = True
         if changed_canon:
-            CANON_CHARACTERS_JSON.write_text(
-                json.dumps(canon, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-            )
+            CANON_CHARACTERS_JSON.write_text(json.dumps(canon, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
     if changed or added:
-        LANG_CHARACTERS_JSON.write_text(
-            json.dumps(lang, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-        )
+        LANG_CHARACTERS_JSON.write_text(json.dumps(lang, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return changed, added, manual
 
 

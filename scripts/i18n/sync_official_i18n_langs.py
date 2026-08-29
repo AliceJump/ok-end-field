@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """用官方解包 i18n_texts（14 语言）补齐 assets/lang/*.json 与 i18n/*/LC_MESSAGES/ok.po。
 
 逻辑（按用户要求）：
@@ -14,13 +13,14 @@
 
 import argparse
 import json
-import json5
 import re
 import sys
 from pathlib import Path
 
+import json5
+
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _lang_sync_common import (  # noqa: E402
+from _lang_sync_common import (
     norm_zh_name,
     sync_po_entries,
     write_json,
@@ -33,15 +33,37 @@ PO_DIR = ROOT / "i18n"
 
 # 官方语言文件 -> 项目 lang JSON 语言键
 OFFICIAL_TO_REPO = {
-    "CN": "zh_CN", "TC": "zh_TW", "EN": "en_US", "JP": "ja_JP", "KR": "ko_KR",
+    "CN": "zh_CN",
+    "TC": "zh_TW",
+    "EN": "en_US",
+    "JP": "ja_JP",
+    "KR": "ko_KR",
     "MX": "es_ES",
-    "BR": "pt_BR", "DE": "de_DE", "FR": "fr_FR", "ID": "id_ID",
-    "IT": "it_IT", "RU": "ru_RU", "TH": "th_TH", "VN": "vi_VN",
+    "BR": "pt_BR",
+    "DE": "de_DE",
+    "FR": "fr_FR",
+    "ID": "id_ID",
+    "IT": "it_IT",
+    "RU": "ru_RU",
+    "TH": "th_TH",
+    "VN": "vi_VN",
 }
 # 解包全部 14 种语言 -> lang JSON 节点全量写入
 REPO_LANGS = (
-    "zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES",
-    "pt_BR", "de_DE", "fr_FR", "id_ID", "it_IT", "ru_RU", "th_TH", "vi_VN",
+    "zh_CN",
+    "zh_TW",
+    "en_US",
+    "ja_JP",
+    "ko_KR",
+    "es_ES",
+    "pt_BR",
+    "de_DE",
+    "fr_FR",
+    "id_ID",
+    "it_IT",
+    "ru_RU",
+    "th_TH",
+    "vi_VN",
 )
 # ok.po / .mo 仅同步项目 UI 支持的 6 种 locale（i18n/ 目录只有这些）
 PO_LANGS = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES")
@@ -57,20 +79,74 @@ def _norm(text: str) -> str:
     """官方名键名差异归一（与 norm_zh_name 一致，另做全角转半角字母数字）。"""
     t = norm_zh_name(text)
     # 全角英数 -> 半角（官方表多为半角，OCR/lang 可能全角）
-    t = t.translate(str.maketrans({
-        "０": "0", "１": "1", "２": "2", "３": "3", "４": "4", "５": "5",
-        "６": "6", "７": "7", "８": "8", "９": "9",
-        "Ａ": "A", "Ｂ": "B", "Ｃ": "C", "Ｄ": "D", "Ｅ": "E", "Ｆ": "F",
-        "Ｇ": "G", "Ｈ": "H", "Ｉ": "I", "Ｊ": "J", "Ｋ": "K", "Ｌ": "L",
-        "Ｍ": "M", "Ｎ": "N", "Ｏ": "O", "Ｐ": "P", "Ｑ": "Q", "Ｒ": "R",
-        "Ｓ": "S", "Ｔ": "T", "Ｕ": "U", "Ｖ": "V", "Ｗ": "W", "Ｘ": "X",
-        "Ｙ": "Y", "Ｚ": "Z",
-        "ａ": "a", "ｂ": "b", "ｃ": "c", "ｄ": "d", "ｅ": "e", "ｆ": "f",
-        "ｇ": "g", "ｈ": "h", "ｉ": "i", "ｊ": "j", "ｋ": "k", "ｌ": "l",
-        "ｍ": "m", "ｎ": "n", "ｏ": "o", "ｐ": "p", "ｑ": "q", "ｒ": "r",
-        "ｓ": "s", "ｔ": "t", "ｕ": "u", "ｖ": "v", "ｗ": "w", "ｘ": "x",
-        "ｙ": "y", "ｚ": "z",
-    }))
+    t = t.translate(
+        str.maketrans(
+            {
+                "０": "0",
+                "１": "1",
+                "２": "2",
+                "３": "3",
+                "４": "4",
+                "５": "5",
+                "６": "6",
+                "７": "7",
+                "８": "8",
+                "９": "9",
+                "Ａ": "A",
+                "Ｂ": "B",
+                "Ｃ": "C",
+                "Ｄ": "D",
+                "Ｅ": "E",
+                "Ｆ": "F",
+                "Ｇ": "G",
+                "Ｈ": "H",
+                "Ｉ": "I",
+                "Ｊ": "J",
+                "Ｋ": "K",
+                "Ｌ": "L",
+                "Ｍ": "M",
+                "Ｎ": "N",
+                "Ｏ": "O",
+                "Ｐ": "P",
+                "Ｑ": "Q",
+                "Ｒ": "R",
+                "Ｓ": "S",
+                "Ｔ": "T",
+                "Ｕ": "U",
+                "Ｖ": "V",
+                "Ｗ": "W",
+                "Ｘ": "X",
+                "Ｙ": "Y",
+                "Ｚ": "Z",
+                "ａ": "a",
+                "ｂ": "b",
+                "ｃ": "c",
+                "ｄ": "d",
+                "ｅ": "e",
+                "ｆ": "f",
+                "ｇ": "g",
+                "ｈ": "h",
+                "ｉ": "i",
+                "ｊ": "j",
+                "ｋ": "k",
+                "ｌ": "l",
+                "ｍ": "m",
+                "ｎ": "n",
+                "ｏ": "o",
+                "ｐ": "p",
+                "ｑ": "q",
+                "ｒ": "r",
+                "ｓ": "s",
+                "ｔ": "t",
+                "ｕ": "u",
+                "ｖ": "v",
+                "ｗ": "w",
+                "ｘ": "x",
+                "ｙ": "y",
+                "ｚ": "z",
+            }
+        )
+    )
     return t.strip()
 
 
@@ -106,10 +182,8 @@ def split_regex_pattern(pattern: str) -> list:
     - 返回非空片段列表；拆不出字面片段的返回空列表。
     """
     p = pattern.strip()
-    if p.startswith("^"):
-        p = p[1:]
-    if p.endswith("$"):
-        p = p[:-1]
+    p = p.removeprefix("^")
+    p = p.removesuffix("$")
     if not p:
         return []
     out = []
@@ -297,11 +371,7 @@ def main() -> int:
                 # 游戏显示的是“数字+单位”，官方文本池将其保存为 %d天/%d小时。
                 # 普通的“天”/“小时”反查只能得到单位缩写或找不到 key，
                 # 因此这里按格式词条特例生成完整 OCR 正则。
-                format_anchor = (
-                    {"天": "%d天", "小时": "%d小时"}.get(a_text)
-                    if len(anchors) > 1
-                    else None
-                )
+                format_anchor = {"天": "%d天", "小时": "%d小时"}.get(a_text) if len(anchors) > 1 else None
                 if format_anchor:
                     ranked_format = pick_keys([("zh_CN", format_anchor, False)], index)
                     ov_b = official_format_vals(raw_texts, index, format_anchor)
@@ -334,8 +404,10 @@ def main() -> int:
                 if isinstance(sub, dict):
                     for kind in ("string", "pattern"):
                         v = sub.get(kind)
-                        if isinstance(v, str) and v.strip() and not (
-                            kind == "pattern" and _STRONG_REGEX_META.search(v)
+                        if (
+                            isinstance(v, str)
+                            and v.strip()
+                            and not (kind == "pattern" and _STRONG_REGEX_META.search(v))
                         ):
                             zh = v.strip()
                             break
@@ -365,8 +437,7 @@ def main() -> int:
                 if is_regex_like(node, lang):
                     continue
                 if isinstance(cur, dict) and (
-                    isinstance(cur.get("string"), str)
-                    or isinstance(cur.get("pattern"), str)
+                    isinstance(cur.get("string"), str) or isinstance(cur.get("pattern"), str)
                 ):
                     # 覆盖已有值（string 或普通 pattern）
                     for kind in ("string", "pattern"):
@@ -408,9 +479,7 @@ def main() -> int:
     # ok.po 同步（仅 UI 支持的 6 种 locale；不新增 msgid，只更新已有条目）
     print("\n=== i18n ok.po 同步 ===")
     if po_official and not args.dry:
-        po_stats, po_touched = sync_po_entries(
-            po_official, PO_LANGS, PO_DIR, create_missing=False
-        )
+        po_stats, po_touched = sync_po_entries(po_official, PO_LANGS, PO_DIR, create_missing=False)
         for loc, n in po_stats.items():
             print(f"  {loc}: {n} entries updated")
     else:

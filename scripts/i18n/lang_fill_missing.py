@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """补全 assets/lang/*.json 缺失语言（两阶段，多语言值匹配）。
 
 阶段 A（数据源 → lang）：把仓库内官方译名数据源收集为词条，按
@@ -32,7 +30,6 @@ from _lang_sync_common import (
     build_lang_value_index,
     fill_missing_cross_files,
     fill_missing_from_index,
-    normalize_value,
     write_json,
 )
 
@@ -128,13 +125,10 @@ def stage_sources(data_map: dict, index: dict, dry_run: bool) -> tuple[dict, lis
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--dry-run", action="store_true",
-                    help="只打印变更，不写回文件")
+    ap.add_argument("--dry-run", action="store_true", help="只打印变更，不写回文件")
     mode_group = ap.add_mutually_exclusive_group()
-    mode_group.add_argument("--sources-only", action="store_true",
-                            help="只跑阶段 A (数据源到 lang)")
-    mode_group.add_argument("--cross-only", action="store_true",
-                            help="只跑阶段 B (lang 内部互相补全)")
+    mode_group.add_argument("--sources-only", action="store_true", help="只跑阶段 A (数据源到 lang)")
+    mode_group.add_argument("--cross-only", action="store_true", help="只跑阶段 B (lang 内部互相补全)")
     args = ap.parse_args()
 
     # 一次性加载全部 lang JSON 到内存

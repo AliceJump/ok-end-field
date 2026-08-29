@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import unittest
 
 from src.data.item_map_query import (

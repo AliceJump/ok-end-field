@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """从官方地图公开接口同步地图标记（markTemplates）多语言名称。
 
 数据源（均免登录、免签名）：zonai.skport.com 的 map/tree + map/mark/list，
@@ -94,11 +92,7 @@ def fetch_templates(lang: str, map_id: str, level_id: str | None) -> dict[str, s
     if code:
         headers["sk-language"] = code
     data = get_json(url, headers).get("data", {})
-    return {
-        t["id"]: t["name"]
-        for t in data.get("markTemplates", [])
-        if t.get("id") and t.get("name")
-    }
+    return {t["id"]: t["name"] for t in data.get("markTemplates", []) if t.get("id") and t.get("name")}
 
 
 def sync_po(merged: dict[str, dict[str, str]]) -> tuple[dict, list]:
@@ -112,9 +106,7 @@ def sync_po(merged: dict[str, dict[str, str]]) -> tuple[dict, list]:
     official = build_official(merged, lambda _tid, langs: langs.get("zh_CN"))
 
     all_stats, all_touched = sync_po_entries(official, ("zh_TW", *PO_LANGS), I18N_DIR)
-    zh_stats, zh_touched = sync_zh_cn_self_patch(
-        official.keys(), I18N_DIR, update_existing=True
-    )
+    zh_stats, zh_touched = sync_zh_cn_self_patch(official.keys(), I18N_DIR, update_existing=True)
     all_stats = {**zh_stats, **all_stats}
     all_touched = zh_touched + all_touched
     return all_stats, all_touched
