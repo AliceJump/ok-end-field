@@ -62,18 +62,22 @@
       "element": "自然",
       "has_enhancement": true,
       "enhancement": {
-        "name": "法术脆弱增强",
+        "name": "破防→法术脆弱增强 / 击飞→保持击飞",
         "trigger_condition": {
-          "text": "目标处于破防状态时",
-          "effects": [
-            "STATUS_SHRED"
-          ]
+          "text": "目标处于破防状态时，法术脆弱随破防层数额外提升；目标处于击飞状态时保持击飞",
+          "effects": ["STATUS_SHRED", "STATUS_HEAVY_HIT"]
         },
         "enhancement_effect": "法术脆弱增强",
         "enhancement_visible_pulse": false,
         "effects": [
           {
             "effect_id": "VULN_ALL",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          },
+          {
+            "effect_id": "STATUS_HEAVY_HIT",
             "value": 1,
             "duration": "",
             "target": "enemy"

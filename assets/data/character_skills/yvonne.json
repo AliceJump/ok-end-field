@@ -91,8 +91,20 @@
       "name": "冷冻射手",
       "skill_type": "终结技",
       "element": "寒冷",
-      "has_enhancement": false,
-      "enhancement": null,
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "冻结状态追加伤害+消耗冻结",
+        "trigger_condition": {
+          "text": "敌人处于冻结状态",
+          "effects": ["STATUS_FROZEN"]
+        },
+        "enhancement_effect": "额外造成一次寒冷伤害后消耗其冻结状态",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {"effect_id": "TRIGGER_ADDITIONAL", "value": 1, "duration": "", "target": "enemy"},
+          {"effect_id": "CLEAR_FROZEN", "value": 1, "duration": "", "target": "enemy"}
+        ]
+      },
       "description": "立即部署小嘀嗒进行辅助，并切换至主控干员。在接下来一定时间内，伊冯的普通攻击会得到强化，每次普通攻击都会增加自己的暴击率。当叠加至最大层数后，自身暴击伤害增加。持续时间结束前的最后一次普通攻击会变为重击，造成大量寒冷伤害。如果敌人处于冻结状态，额外造成一次寒冷伤害后，消耗其冻结状态。",
       "damage_multiplier": "",
       "stagger_value": 0,

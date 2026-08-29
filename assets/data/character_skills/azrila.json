@@ -25,8 +25,19 @@
       "name": "进军",
       "skill_type": "战技",
       "element": "灼热",
-      "has_enhancement": false,
-      "enhancement": null,
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "受伤后额外失衡",
+        "trigger_condition": {
+          "text": "施放过程中受到过来自敌人的伤害",
+          "effects": []
+        },
+        "enhancement_effect": "命中时额外造成一定失衡",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {"effect_id": "STATUS_STAGGER", "value": 1, "duration": "", "target": "enemy"}
+        ]
+      },
       "description": "向前方跃起随后重砸，对扇形范围内的所有敌人造成灼热伤害并倒地。施放过程中若受到过来自敌人的伤害，命中时额外造成一定失衡。",
       "damage_multiplier": "390%",
       "stagger_value": 0,

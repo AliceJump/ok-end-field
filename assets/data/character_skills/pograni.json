@@ -64,8 +64,19 @@
       "name": "盈月邀击",
       "skill_type": "连携技",
       "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "消耗4层破防→第3次斩击强化",
+        "trigger_condition": {
+          "text": "消耗4层破防",
+          "effects": ["STACK_SHRED"]
+        },
+        "enhancement_effect": "第3次斩击获得强化",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {"effect_id": "TRIGGER_ADDITIONAL", "value": 1, "duration": "", "target": "enemy"}
+        ]
+      },
       "description": "当有敌人被猛击或者碎甲消耗破防层数后可以发动。根据消耗的最高破防层数，对敌人进行相同次数的斩击（最多3次），造成物理伤害并恢复一定技力，每一击的伤害和技力恢复效果都更强。若消耗4层破防，第3次斩击将获得强化。",
       "damage_multiplier": "95%（第一段）+ 122%（第二段）+ 149%（第三段）+ 297%（强化第三段）",
       "stagger_value": 0,

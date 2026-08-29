@@ -50,8 +50,19 @@
       "name": "锁闭序列",
       "skill_type": "连携技",
       "element": "物理",
-      "has_enhancement": false,
-      "enhancement": null,
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "源石结晶消耗→额外物理伤害",
+        "trigger_condition": {
+          "text": "施加物理异常或破防时消耗源石结晶",
+          "effects": ["STATUS_SHRED"]
+        },
+        "enhancement_effect": "额外造成物理伤害",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {"effect_id": "TRIGGER_ADDITIONAL", "value": 1, "duration": "", "target": "enemy"}
+        ]
+      },
       "description": "当小队内其他干员的连携技造成伤害时可以发动。冲到敌人身边，对其造成物理伤害，并附着源石结晶，在一段时间内将其封印。施加物理异常和破防会消耗源石结晶并额外造成物理伤害。",
       "damage_multiplier": "250%",
       "stagger_value": 0,

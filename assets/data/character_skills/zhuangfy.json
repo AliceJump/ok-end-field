@@ -64,8 +64,19 @@
       "name": "一息万变",
       "skill_type": "连携技",
       "element": "电磁",
-      "has_enhancement": false,
-      "enhancement": null,
+      "has_enhancement": true,
+      "enhancement": {
+        "name": "电磁附着消耗→导电+导电等级+1",
+        "trigger_condition": {
+          "text": "命中处于电磁附着的敌人",
+          "effects": ["ATTACH_ELECTROMAGNETIC"]
+        },
+        "enhancement_effect": "消耗电磁附着强制施加导电，若已处于导电则异常等级+1",
+        "enhancement_visible_pulse": false,
+        "effects": [
+          {"effect_id": "STATUS_CONDUCTING", "value": 1, "duration": "", "target": "enemy"}
+        ]
+      },
       "description": "主控干员的重击或处决，命中处于电磁附着状态的敌人后可以发动。构造息雷阵法攻击敌人，造成电磁伤害。命中处于电磁附着的敌人时，消耗其电磁附着，强制施加导电，并基于消耗的层数额外获得终结技能量。若强制施加导电时，敌人已处于导电状态，则所施加导电的异常等级+1。",
       "damage_multiplier": "320%",
       "stagger_value": 0,
