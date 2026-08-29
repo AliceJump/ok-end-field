@@ -107,6 +107,61 @@
 
 ---
 
+# 效果术语映射 (EFFECT_TERMS)
+
+`EFFECT_TERMS` 将游戏文案中的**中文术语**关联到效果 ID，用于在
+`trigger_condition` / `description` / `enhancement_effect` 等自然语言字段中
+识别术语对应的效果（配合 `match_effect_terms()` 使用）。
+
+匹配规则：按术语长度从长到短优先（避免「寒冷附着」被「附着」误吞）；
+纯动词「消耗」「清空」不单独映射，仅保留「消耗寒冷附着」等明确组合术语。
+
+| 术语 | 效果 ID |
+|------|---------|
+| 寒冷附着 | `ATTACH_COLD` |
+| 灼热附着 | `ATTACH_BURN` |
+| 电磁附着 | `ATTACH_ELECTROMAGNETIC` |
+| 自然附着 | `ATTACH_NATURAL` |
+| 寒冷脆弱 | `VULN_COLD` |
+| 灼热脆弱 | `VULN_BURN` |
+| 电磁脆弱 | `VULN_ELECTROMAGNETIC` |
+| 自然脆弱 | `VULN_NATURAL` |
+| 物理脆弱 | `VULN_PHYSICAL` |
+| 法术脆弱 | `VULN_ALL` |
+| 冻结 | `STATUS_FROZEN` |
+| 燃烧 | `STATUS_BURNING` |
+| 导电 | `STATUS_CONDUCTING` |
+| 破防 | `STATUS_SHRED` |
+| 碎甲 | `STATUS_SHATTER` |
+| 失衡 | `STATUS_STAGGER` |
+| 重击 | `STATUS_HEAVY_HIT` |
+| 法术附着 | `STATUS_SPELL_INFLICT` |
+| 法术爆发 | `STATUS_SPELL_BURST` |
+| 法术异常 | `STATUS_SPELL_ANOMALY` |
+| 熔火 | `STACK_MOLTEN` |
+| 铁誓 | `STACK_IRON_OATH` |
+| 连击 | `STACK_COMBO` |
+| 士气 | `STACK_MORALE` |
+| 涡流 | `STACK_WHIRLPOOL` |
+| 种子 | `STACK_SEED` |
+| 蓄力 | `STACK_CHARGE` |
+| 护盾 | `BUFF_SHIELD` |
+| 治疗 | `BUFF_HEAL` |
+| 缓速 / 减速 | `DEBUFF_SPEED_DOWN` |
+| 真空 | `MECH_VACUUM` |
+| 重力 | `MECH_GRAVITY` |
+| 冰冻领域 | `MECH_FREEZE_FIELD` |
+| 火焰领域 | `MECH_FIRE_FIELD` |
+| 雷电领域 | `MECH_LIGHTNING_FIELD` |
+| 自然领域 | `MECH_NATURE_FIELD` |
+| 炸弹 | `MECH_BOMB` |
+| 雷达 | `MECH_RADAR` |
+| 炮台 | `MECH_TURRET` |
+| 消耗寒冷附着 / 清空附着 | `CLEAR_ATTACH` |
+| 清空状态 | `CLEAR_STATUS` |
+
+---
+
 # 角色技能效果梳理
 
 ## 莱万汀 (lai_wan_ting)

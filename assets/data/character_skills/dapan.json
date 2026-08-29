@@ -61,13 +61,7 @@
       "skill_type": "终结技",
       "element": "物理",
       "has_enhancement": true,
-      "enhancement": {
-        "name": "备料状态",
-        "trigger_condition": "终结技击败敌人",
-        "enhancement_effect": "备料状态",
-        "enhancement_visible_pulse": false,
-        "effects": []
-      },
+      "enhancement": null,
       "description": "猛拍砧板，立即对前方范围内的敌人强制造成击飞。随后发动6段连续斩击，造成物理伤害，最后将所有敌人一并击坠，强制造成倒地，造成大量物理伤害。",
       "damage_multiplier": "50%（每段）+ 400%（终结一击）",
       "stagger_value": 0,

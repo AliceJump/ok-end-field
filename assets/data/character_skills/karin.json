@@ -63,7 +63,10 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "连击状态",
-        "trigger_condition": "终结技施放期间",
+        "trigger_condition": {
+          "text": "终结技施放期间",
+          "effects": []
+        },
         "enhancement_effect": "连击效果",
         "enhancement_visible_pulse": false,
         "effects": []

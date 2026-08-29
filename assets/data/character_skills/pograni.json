@@ -28,7 +28,12 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "破防层数消耗",
-        "trigger_condition": "战技命中敌人时消耗破防层数恢复技力",
+        "trigger_condition": {
+          "text": "战技命中敌人时消耗破防层数恢复技力",
+          "effects": [
+            "STACK_SHRED"
+          ]
+        },
         "enhancement_effect": "破防层数消耗",
         "enhancement_visible_pulse": false,
         "effects": [
@@ -76,7 +81,12 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "铁誓消耗",
-        "trigger_condition": "终结技期间消耗铁誓召唤盾卫袭扰",
+        "trigger_condition": {
+          "text": "终结技期间消耗铁誓召唤盾卫袭扰",
+          "effects": [
+            "STACK_IRON_OATH"
+          ]
+        },
         "enhancement_effect": "召唤效果",
         "enhancement_visible_pulse": false,
         "effects": [

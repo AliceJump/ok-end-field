@@ -30,6 +30,8 @@ class EffectType(Enum):
     STATUS_SPELL_INFLICT = "STATUS_SPELL_INFLICT"
     STATUS_SPELL_BURST = "STATUS_SPELL_BURST"
     STATUS_SPELL_ANOMALY = "STATUS_SPELL_ANOMALY"
+    STATUS_SLOW = "STATUS_SLOW"
+    STATUS_BROKEN = "STATUS_BROKEN"
 
     # 层数系统
     STACK_MOLTEN = "STACK_MOLTEN"
@@ -77,6 +79,8 @@ class EffectType(Enum):
     CONSUME_STACK = "CONSUME_STACK"
     CLEAR_ATTACH = "CLEAR_ATTACH"
     CLEAR_STATUS = "CLEAR_STATUS"
+    CLEAR_COLD = "CLEAR_COLD"
+    CLEAR_NATURAL = "CLEAR_NATURAL"
 
     # 触发效果
     TRIGGER_LINK = "TRIGGER_LINK"
@@ -113,6 +117,8 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STATUS_SPELL_INFLICT: "通用的法术附着状态",
     EffectType.STATUS_SPELL_BURST: "法术爆发伤害",
     EffectType.STATUS_SPELL_ANOMALY: "法术异常状态",
+    EffectType.STATUS_SLOW: "敌人被施加缓速",
+    EffectType.STATUS_BROKEN: "敌人处于破碎状态",
 
     # 层数系统
     EffectType.STACK_MOLTEN: "莱万汀的熔火灼痕层数",
@@ -160,6 +166,8 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.CONSUME_STACK: "消耗特定层数",
     EffectType.CLEAR_ATTACH: "清空所有元素附着",
     EffectType.CLEAR_STATUS: "清空所有异常状态",
+    EffectType.CLEAR_COLD: "清空敌人寒冷附着",
+    EffectType.CLEAR_NATURAL: "清空敌人自然附着",
 
     # 触发效果
     EffectType.TRIGGER_LINK: "触发连携技效果",
@@ -168,3 +176,114 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.TRIGGER_HEAL: "触发治疗效果",
     EffectType.TRIGGER_SHIELD: "触发护盾效果",
 }
+
+
+# 效果术语映射：游戏文案中出现的术语 -> 效果ID
+# 用于在 trigger_condition / description / enhancement_effect 等自然语言字段中
+# 将中文术语（如"寒冷附着""冻结""破防"）关联到对应的效果ID。
+# 匹配时按术语长度从长到短优先（避免"寒冷附着"被"附着"误吞）。
+EFFECT_TERMS: dict[str, EffectType] = {
+    # 元素附着
+    "寒冷附着": EffectType.ATTACH_COLD,
+    "灼热附着": EffectType.ATTACH_BURN,
+    "电磁附着": EffectType.ATTACH_ELECTROMAGNETIC,
+    "自然附着": EffectType.ATTACH_NATURAL,
+
+    # 元素脆弱
+    "寒冷脆弱": EffectType.VULN_COLD,
+    "灼热脆弱": EffectType.VULN_BURN,
+    "电磁脆弱": EffectType.VULN_ELECTROMAGNETIC,
+    "自然脆弱": EffectType.VULN_NATURAL,
+    "物理脆弱": EffectType.VULN_PHYSICAL,
+    "法术脆弱": EffectType.VULN_ALL,
+
+    # 异常状态
+    "冻结": EffectType.STATUS_FROZEN,
+    "燃烧": EffectType.STATUS_BURNING,
+    "导电": EffectType.STATUS_CONDUCTING,
+    "破防": EffectType.STATUS_SHRED,
+    "碎甲": EffectType.STATUS_SHATTER,
+    "失衡": EffectType.STATUS_STAGGER,
+    "重击": EffectType.STATUS_HEAVY_HIT,
+    "法术附着": EffectType.STATUS_SPELL_INFLICT,
+    "法术爆发": EffectType.STATUS_SPELL_BURST,
+    "法术异常": EffectType.STATUS_SPELL_ANOMALY,
+    "缓速": EffectType.STATUS_SLOW,
+    "破碎": EffectType.STATUS_BROKEN,
+
+    # 层数系统
+    "消耗破防层数": EffectType.STACK_SHRED,
+    "破防层数": EffectType.STACK_SHRED,
+    "熔火": EffectType.STACK_MOLTEN,
+    "铁誓": EffectType.STACK_IRON_OATH,
+    "连击": EffectType.STACK_COMBO,
+    "士气": EffectType.STACK_MORALE,
+    "涡流": EffectType.STACK_WHIRLPOOL,
+    "种子": EffectType.STACK_SEED,
+    "蓄力": EffectType.STACK_CHARGE,
+
+    # 增益效果
+    "攻击力提升": EffectType.BUFF_ATTACK_UP,
+    "暴击率提升": EffectType.BUFF_CRIT_RATE_UP,
+    "暴击伤害提升": EffectType.BUFF_CRIT_DMG_UP,
+    "护盾": EffectType.BUFF_SHIELD,
+    "治疗": EffectType.BUFF_HEAL,
+    "移速提升": EffectType.BUFF_SPEED_UP,
+    "伤害提升": EffectType.BUFF_DAMAGE_UP,
+    "寒冷伤害提升": EffectType.BUFF_COLD_UP,
+    "灼热伤害提升": EffectType.BUFF_BURN_UP,
+    "电磁伤害提升": EffectType.BUFF_ELECTROMAGNETIC_UP,
+    "自然伤害提升": EffectType.BUFF_NATURAL_UP,
+
+    # 减益效果
+    "防御力降低": EffectType.DEBUFF_DEF_DOWN,
+    "减速": EffectType.DEBUFF_SPEED_DOWN,
+    "治疗效果降低": EffectType.DEBUFF_HEAL_DOWN,
+    "真空": EffectType.MECH_VACUUM,
+    "重力": EffectType.MECH_GRAVITY,
+    "冰冻领域": EffectType.MECH_FREEZE_FIELD,
+    "火焰领域": EffectType.MECH_FIRE_FIELD,
+    "雷电领域": EffectType.MECH_LIGHTNING_FIELD,
+    "自然领域": EffectType.MECH_NATURE_FIELD,
+    "炸弹": EffectType.MECH_BOMB,
+    "雷达": EffectType.MECH_RADAR,
+    "炮台": EffectType.MECH_TURRET,
+
+    # 消耗/清除（保留明确的组合术语；避免动词"消耗""清空"误报）
+    "消耗寒冷附着": EffectType.CLEAR_COLD,
+    "消耗自然附着": EffectType.CLEAR_NATURAL,
+    "清空寒冷附着": EffectType.CLEAR_COLD,
+    "清空自然附着": EffectType.CLEAR_NATURAL,
+    "消耗电磁附着": EffectType.CLEAR_ATTACH,
+    "消耗灼热附着": EffectType.CLEAR_ATTACH,
+    "清空附着": EffectType.CLEAR_ATTACH,
+    "清空状态": EffectType.CLEAR_STATUS,
+}
+
+# 按术语长度从长到短排序（匹配时优先长术语，避免"寒冷附着"被"附着"误吞）
+_TERMS_BY_LEN: list[tuple[str, EffectType]] = sorted(
+    EFFECT_TERMS.items(), key=lambda kv: len(kv[0]), reverse=True,
+)
+
+
+def match_effect_terms(text: str) -> list[tuple[str, EffectType]]:
+    """在自然语言文本中提取命中效果术语。
+
+    返回 [(术语, 效果ID), ...]，按出现顺序、同一位置优先长术语。
+    例如 match_effect_terms("命中处于寒冷附着或自然附着的敌人时") ->
+      [("寒冷附着", EffectType.ATTACH_COLD), ("自然附着", EffectType.ATTACH_NATURAL)]
+    """
+    hits: list[tuple[str, EffectType]] = []
+    i = 0
+    n = len(text)
+    while i < n:
+        matched = False
+        for term, eff in _TERMS_BY_LEN:
+            if text.startswith(term, i):
+                hits.append((term, eff))
+                i += len(term)
+                matched = True
+                break
+        if not matched:
+            i += 1
+    return hits

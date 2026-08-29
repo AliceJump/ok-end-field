@@ -14,7 +14,7 @@ from src.data.skill_types import (
     SkillEnhancement,
     SkillEffect,
 )
-from src.data.effects import EffectType
+from src.data.effects import EffectType, match_effect_terms
 
 
 # 类型映射
@@ -50,10 +50,53 @@ def _load_skill_effects(effects_data: list[dict]) -> list[SkillEffect]:
     return effects
 
 
+def _skill_type_of(skill_type: str) -> SkillType:
+    """将技能类型字符串映射为 SkillType；未知时抛 KeyError。"""
+    return _SKILL_TYPE_MAP[skill_type]
+
+
+def _element_of(element: str, fallback: ElementType = ElementType.PHYSICAL) -> ElementType:
+    """将元素字符串映射为 ElementType；缺失/未知时返回 fallback。"""
+    try:
+        return _ELEMENT_MAP[element]
+    except (KeyError, TypeError):
+        return fallback
+
+
+def _default_skill_id(character_id: str, skill_type: str) -> str:
+    """旧格式无 skill_id 时，按 <角色id>_<类型> 生成稳定的 skill_id。"""
+    suffix = {
+        "普通攻击": "normal",
+        "战技": "skill",
+        "连携技": "link",
+        "终结技": "ultimate",
+        "天赋": "talent",
+        "潜能": "potential",
+    }.get(skill_type, "skill")
+    return f"{character_id}_{suffix}"
+
+
+def _load_trigger_condition(trigger_data) -> tuple[str, list[EffectType]]:
+    """解析触发条件：兼容字符串与新格式 {"text", "effects"}。
+
+    返回 (文本, 效果ID列表)。新格式优先使用显式 effects；
+    仅字符串时回退用 match_effect_terms 自动解析。
+    """
+    if isinstance(trigger_data, dict):
+        text = trigger_data.get("text", "")
+        effects = [EffectType(e) for e in trigger_data.get("effects", [])]
+        return text, effects
+    text = trigger_data or ""
+    return text, [eff for _, eff in match_effect_terms(text)]
+
+
 def _load_character_from_json(file_path: Path) -> Character:
-    """从JSON文件加载角色数据。"""
+    """从JSON文件加载角色数据（兼容新旧两种格式）。"""
     with open(file_path, "r", encoding="utf-8") as f:
         data = json.load(f)
+
+    character_id = data["character_id"]
+    character_element = _element_of(data.get("element", ""))
 
     # 解析技能列表
     skills: list[Skill] = []
@@ -61,22 +104,38 @@ def _load_character_from_json(file_path: Path) -> Character:
         enhancement = None
         if skill_data.get("enhancement"):
             enh_data = skill_data["enhancement"]
+            trigger_condition, trigger_effects = _load_trigger_condition(
+                enh_data.get("trigger_condition", ""),
+            )
             enhancement = SkillEnhancement(
                 name=enh_data["name"],
-                trigger_condition=enh_data["trigger_condition"],
+                trigger_condition=trigger_condition,
+                trigger_effects=trigger_effects,
                 effects=_load_skill_effects(enh_data.get("effects", [])),
                 enhancement_visible_pulse=enh_data.get("enhancement_visible_pulse", False),
             )
 
-        # 加载技能基础效果
+        # 加载技能基础效果；旧格式的 attach/status/clear 纯ID列表合并进 effects
         effects = _load_skill_effects(skill_data.get("effects", []))
+        legacy_ids = []
+        for legacy_key in ("attach_effects", "status_effects", "clear_effects"):
+            legacy_ids.extend(skill_data.get(legacy_key, []) or [])
+        for legacy_id in legacy_ids:
+            if all(e.effect_id.value != legacy_id for e in effects):
+                try:
+                    effects.append(SkillEffect(effect_id=EffectType(legacy_id)))
+                except ValueError:
+                    pass
 
+        skill_type = _skill_type_of(skill_data["skill_type"])
         skill = Skill(
-            skill_id=skill_data["skill_id"],
+            skill_id=skill_data.get("skill_id") or _default_skill_id(character_id, skill_data["skill_type"]),
             name=skill_data["name"],
-            skill_type=_SKILL_TYPE_MAP[skill_data["skill_type"]],
-            element=_ELEMENT_MAP[skill_data["element"]],
-            has_enhancement=skill_data["has_enhancement"],
+            skill_type=skill_type,
+            element=_element_of(skill_data.get("element", ""), character_element),
+            has_enhancement=skill_data.get(
+                "has_enhancement", enhancement is not None,
+            ),
             enhancement=enhancement,
             effects=effects,
             description=skill_data.get("description", ""),
@@ -88,12 +147,12 @@ def _load_character_from_json(file_path: Path) -> Character:
         skills.append(skill)
 
     return Character(
-        character_id=data["character_id"],
+        character_id=character_id,
         name=data["name"],
-        star=data["star"],
-        element=_ELEMENT_MAP[data["element"]],
-        profession=data["profession"],
-        weapon_type=data["weapon_type"],
+        star=data.get("star", 0),
+        element=character_element,
+        profession=data.get("profession", ""),
+        weapon_type=data.get("weapon_type", ""),
         skills=skills,
     )
 

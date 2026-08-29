@@ -28,7 +28,12 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "导电消耗",
-        "trigger_condition": "战技消耗导电状态追加攻击",
+        "trigger_condition": {
+          "text": "战技消耗导电状态追加攻击",
+          "effects": [
+            "STATUS_CONDUCTING"
+          ]
+        },
         "enhancement_effect": "追加攻击",
         "enhancement_visible_pulse": false,
         "effects": [

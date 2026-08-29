@@ -28,7 +28,13 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "寒冷脆弱",
-        "trigger_condition": "消耗法术附着施加寒冷脆弱",
+        "trigger_condition": {
+          "text": "消耗法术附着施加寒冷脆弱",
+          "effects": [
+            "STATUS_SPELL_INFLICT",
+            "VULN_COLD"
+          ]
+        },
         "enhancement_effect": "寒冷脆弱",
         "enhancement_visible_pulse": false,
         "effects": [
@@ -83,7 +89,10 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "寒冷脆弱增强",
-        "trigger_condition": "终结技期间",
+        "trigger_condition": {
+          "text": "终结技期间",
+          "effects": []
+        },
         "enhancement_effect": "寒冷脆弱增强",
         "enhancement_visible_pulse": false,
         "effects": [

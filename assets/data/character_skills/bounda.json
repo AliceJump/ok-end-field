@@ -28,7 +28,10 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "自制炸弹",
-        "trigger_condition": "战技命中敌人",
+        "trigger_condition": {
+          "text": "战技命中敌人",
+          "effects": []
+        },
         "enhancement_effect": "自制炸弹",
         "enhancement_visible_pulse": false,
         "effects": []
@@ -88,7 +91,12 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "引爆增强",
-        "trigger_condition": "终结技命中粘有自制炸弹的敌人",
+        "trigger_condition": {
+          "text": "终结技命中粘有自制炸弹的敌人",
+          "effects": [
+            "MECH_BOMB"
+          ]
+        },
         "enhancement_effect": "引爆增强",
         "enhancement_visible_pulse": false,
         "effects": []

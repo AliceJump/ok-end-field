@@ -28,7 +28,12 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "护盾叠加",
-        "trigger_condition": "战技命中敌人获得护盾",
+        "trigger_condition": {
+          "text": "战技命中敌人获得护盾",
+          "effects": [
+            "BUFF_SHIELD"
+          ]
+        },
         "enhancement_effect": "护盾效果",
         "enhancement_visible_pulse": false,
         "effects": [

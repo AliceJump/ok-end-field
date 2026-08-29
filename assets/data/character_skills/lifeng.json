@@ -63,7 +63,12 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "连击消耗",
-        "trigger_condition": "终结技消耗连击追加伤害",
+        "trigger_condition": {
+          "text": "终结技消耗连击追加伤害",
+          "effects": [
+            "STACK_COMBO"
+          ]
+        },
         "enhancement_effect": "伤害提升",
         "enhancement_visible_pulse": false,
         "effects": [

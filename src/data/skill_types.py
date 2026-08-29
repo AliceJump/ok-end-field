@@ -49,6 +49,7 @@ class SkillEnhancement:
     """战技强化态信息（战技的条件触发效果）。"""
     name: str  # 强化状态名称
     trigger_condition: str  # 触发条件（如"命中处于寒冷附着或自然附着的敌人时"）
+    trigger_effects: list[EffectType] = field(default_factory=list)  # 触发条件关联的效果 ID
     effects: list[SkillEffect] = field(default_factory=list)  # 强化效果列表
     enhancement_visible_pulse: bool = False  # 强化状态可见脉冲
 
@@ -61,6 +62,7 @@ class SkillReaction:
     trigger_condition: str  # 触发条件
     condition_type: ConditionType  # 条件类型
     effects: list[SkillEffect] = field(default_factory=list)  # 效果列表
+    trigger_effects: list[EffectType] = field(default_factory=list)  # 触发条件关联的效果 ID
     order_requirement: Optional[str] = None  # 顺序要求
     time_window: Optional[str] = None  # 时间窗口
     stack_requirement: Optional[int] = None  # 层数要求

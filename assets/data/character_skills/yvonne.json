@@ -28,7 +28,13 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "冻结触发",
-        "trigger_condition": "命中处于寒冷附着或自然附着的敌人时",
+        "trigger_condition": {
+          "text": "命中处于寒冷附着或自然附着的敌人时",
+          "effects": [
+            "ATTACH_COLD",
+            "ATTACH_NATURAL"
+          ]
+        },
         "enhancement_effect": "消耗掉目标身上所有的法术附着，对其强制施加冻结",
         "enhancement_visible_pulse": false,
         "effects": []

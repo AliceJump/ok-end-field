@@ -49,7 +49,10 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "暴击率/暴击伤害提升",
-        "trigger_condition": "连携技第二段精准衔接时",
+        "trigger_condition": {
+          "text": "连携技第二段精准衔接时",
+          "effects": []
+        },
         "enhancement_effect": "伤害提升",
         "enhancement_visible_pulse": false,
         "effects": [
@@ -76,7 +79,10 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "暴击伤害提升",
-        "trigger_condition": "终结技暴击时",
+        "trigger_condition": {
+          "text": "终结技暴击时",
+          "effects": []
+        },
         "enhancement_effect": "伤害提升",
         "enhancement_visible_pulse": false,
         "effects": [

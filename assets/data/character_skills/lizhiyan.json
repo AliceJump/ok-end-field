@@ -28,7 +28,13 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "种子爆发",
-        "trigger_condition": "种子命中处于自然附着的敌人",
+        "trigger_condition": {
+          "text": "种子命中处于自然附着的敌人",
+          "effects": [
+            "STACK_SEED",
+            "ATTACH_NATURAL"
+          ]
+        },
         "enhancement_effect": "种子爆发",
         "enhancement_visible_pulse": false,
         "effects": []

@@ -28,23 +28,26 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "衔火血翼盘桓",
-        "trigger_condition": "战技命中敌人后召唤衔火血翼盘桓",
+        "trigger_condition": {
+          "text": "战技命中敌人后召唤衔火血翼盘桓",
+          "effects": []
+        },
         "enhancement_effect": "召唤效果",
         "enhancement_visible_pulse": false,
-      "effects": [
-        {
-          "effect_id": "ATTACH_BURN",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        },
-        {
-          "effect_id": "VULN_BURN",
-          "value": 1,
-          "duration": "",
-          "target": "enemy"
-        }
-      ]
+        "effects": [
+          {
+            "effect_id": "ATTACH_BURN",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          },
+          {
+            "effect_id": "VULN_BURN",
+            "value": 1,
+            "duration": "",
+            "target": "enemy"
+          }
+        ]
       },
       "description": "召唤衔火血翼飞向敌人，对小范围敌人造成灼热伤害并施加灼热附着。随后衔火血翼将在目标周围盘桓一段时间，期间对目标施加虚弱和灼热脆弱。目标被击败时，衔火血翼会飞向附近的另一个敌人，对目标造成灼热伤害，施加灼热附着、虚弱和灼热脆弱。 衔火血翼盘桓的敌人被卡缪的连携技命中时，将在短暂延迟后发生一次爆裂，受到额外的灼热伤害。",
       "damage_multiplier": "200%",
@@ -89,7 +92,10 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "追猎状态",
-        "trigger_condition": "施放终结技后",
+        "trigger_condition": {
+          "text": "施放终结技后",
+          "effects": []
+        },
         "enhancement_effect": "追猎状态",
         "enhancement_visible_pulse": false,
         "effects": []

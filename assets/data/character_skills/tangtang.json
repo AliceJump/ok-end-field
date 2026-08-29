@@ -28,7 +28,12 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "水龙卷系统",
-        "trigger_condition": "消耗涡流形成水龙卷",
+        "trigger_condition": {
+          "text": "消耗涡流形成水龙卷",
+          "effects": [
+            "STACK_WHIRLPOOL"
+          ]
+        },
         "enhancement_effect": "水龙卷系统",
         "enhancement_visible_pulse": false,
         "effects": []
@@ -82,7 +87,10 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "古老图形封锁",
-        "trigger_condition": "主控干员在古老图形中下落攻击",
+        "trigger_condition": {
+          "text": "主控干员在古老图形中下落攻击",
+          "effects": []
+        },
         "enhancement_effect": "古老图形封锁",
         "enhancement_visible_pulse": false,
         "effects": []

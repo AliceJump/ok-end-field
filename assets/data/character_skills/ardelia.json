@@ -73,14 +73,8 @@
       "name": "毛茸茸派对",
       "skill_type": "终结技",
       "element": "自然",
-      "has_enhancement": true,
-      "enhancement": {
-        "name": "自然领域",
-        "trigger_condition": "终结技期间",
-        "enhancement_effect": "自然领域",
-        "enhancement_visible_pulse": false,
-        "effects": []
-      },
+      "has_enhancement": false,
+      "enhancement": null,
       "description": "艾尔黛拉进入可移动的持续施法状态，召唤多利先生的帮助，随机向四周散射多利先生的分身。每个分身命中敌人时对其造成自然伤害，每个敌人每0.3秒最多受到一次伤害。",
       "damage_multiplier": "150%（每秒）",
       "stagger_value": 0,

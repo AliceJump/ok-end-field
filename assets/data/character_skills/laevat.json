@@ -28,7 +28,12 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "熔火层数",
-        "trigger_condition": "战技命中敌人获得1层熔火，4层时触发追加攻击",
+        "trigger_condition": {
+          "text": "战技命中敌人获得1层熔火，4层时触发追加攻击",
+          "effects": [
+            "STACK_MOLTEN"
+          ]
+        },
         "enhancement_effect": "追加攻击",
         "enhancement_visible_pulse": false,
         "effects": [
@@ -76,7 +81,10 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "强化普攻",
-        "trigger_condition": "施放终结技后",
+        "trigger_condition": {
+          "text": "施放终结技后",
+          "effects": []
+        },
         "enhancement_effect": "强化普攻",
         "enhancement_visible_pulse": false,
         "effects": []

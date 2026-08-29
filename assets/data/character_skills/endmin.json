@@ -28,7 +28,12 @@
       "has_enhancement": true,
       "enhancement": {
         "name": "破甲效果",
-        "trigger_condition": "命中敌人时消耗破防层数",
+        "trigger_condition": {
+          "text": "命中敌人时消耗破防层数",
+          "effects": [
+            "STACK_SHRED"
+          ]
+        },
         "enhancement_effect": "破甲效果",
         "enhancement_visible_pulse": false,
         "effects": []
