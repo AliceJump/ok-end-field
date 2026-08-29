@@ -320,7 +320,7 @@ class AutoCombatLogic:
             frame = task.frame
             if frame is not None and frame.size > 0:
                 team_members = detect_team_from_frame(frame)
-                if team_members and team_members[0] != "?":
+                if team_members and all(m != "?" for m in team_members):
                     original_seq = list(self.normal_skill_sequence)
                     self.normal_skill_sequence = filter_skill_sequence(
                         team_members, self.normal_skill_sequence

@@ -190,25 +190,35 @@ def filter_skill_sequence(
     skill_sequence: list[str],
     characters: dict[str, dict] | None = None,
 ) -> list[str]:
-    """根据自动技能列表生成技能释放序列。
+    """根据自动技能列表过滤技能释放序列。
 
-    直接用允许列表生成完整序列（按位置顺序），而非与原序列取交集。
+    保留原始序列中的非数字 token（ult_/e/sleep_/normal_ 等），
+    仅对数字战技 token（1-4）根据允许列表进行过滤。
 
     Args:
         team_members:   4 个角色名，索引 i 对应技能键 "i+1"
-        skill_sequence: 原始技能序列（保留但不参与交集）
+        skill_sequence: 原始技能序列
         characters:     角色数据（可选）
 
     Returns:
-        允许释放的技能键列表（按位置顺序排列）
+        过滤后的技能释放序列
     """
     allowlist = build_skill_allowlist(team_members, characters)
-    allowed = sorted(
-        {str(i + 1) for i, (ok, _) in allowlist.items() if ok},
-        key=lambda s: int(s),
-    )
+    allowed_digits = {
+        str(i + 1) for i, (ok, _) in allowlist.items() if ok
+    }
 
-    return allowed if allowed else list(skill_sequence)
+    filtered = []
+    for token in skill_sequence:
+        if token in _NORMAL_SKILL_TOKENS:
+            # 数字战技 token：仅保留允许列表中的
+            if token in allowed_digits:
+                filtered.append(token)
+        else:
+            # 非数字 token（ult_/e/sleep_/normal_ 等）：保留
+            filtered.append(token)
+
+    return filtered if filtered else list(skill_sequence)
 
 
 # ── 编队头像自动识别 ────────────────────────────────────────────────────────

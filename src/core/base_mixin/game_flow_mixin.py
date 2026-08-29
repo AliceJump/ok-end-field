@@ -171,23 +171,25 @@ class GameFlowMixin:
         Returns:
             bool: 找到并点击返回 True，超时返回 False。
         """
-        clicked = self.click_feature(
-            fL.reward_ok,
-            boxes=[self.box.bottom],
-            time_out=time_out,
-            after_sleep=after_sleep,
-        )
-        if clicked:
-            return True
-        result = self.wait_ocr(
-            match=self.lang.game_flow_mixin.k_8b2ca27a,
-            time_out=1,
-            box=self.box.bottom,
-        )
-        if result:
-            self.click(result, after_sleep=after_sleep)
-            return True
-        return False
+        count = 0
+        start_time = self.active_time()
+        while True:
+            if self.active_time() - start_time > time_out:
+                return False
+            if count >= 30:
+                return False
+            result = self.find_one(
+                feature=fL.reward_ok, box=self.box.bottom, threshold=0.8
+            )
+            if not result:
+                remaining = max(0.1, time_out - (self.active_time() - start_time))
+                result = self.wait_ocr(match=self.lang.game_flow_mixin.k_8b2ca27a, time_out=min(1, remaining), box=self.box.bottom)
+            if result:
+                if self.active_time() - start_time > time_out:
+                    return False
+                self.click(result, after_sleep=after_sleep)
+                return True
+            count += 1
 
     def wait_login(self):
         """
