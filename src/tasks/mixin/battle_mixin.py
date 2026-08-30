@@ -25,8 +25,6 @@ import numpy as np
 from ok import Box
 
 from src.data.FeatureList import FeatureList as fL
-from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING
-from src.data.world_map_utils import is_world_map_text
 from src.core.sequence_parser import parse_sequence
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 from src.core.BaseEfTask import BaseEfTask
@@ -35,12 +33,9 @@ from src.core.BattleConfig import (
     BATTLE_CONFIG_MODE_KEY,
     BATTLE_CONFIG_NAME,
     BATTLE_CONFIG_TYPE,
+    BATTLE_GROUP_CONFIGS,
     BattleConfigManager,
     DEFAULT_BATTLE_CONFIG,
-    KEY_COND_ENABLED,
-    KEY_COND_SEQUENCE,
-    KEY_INSTANT_LINK,
-    KEY_INSTANT_ULT,
     KEY_RECOMMEND_SKILL,
     KEY_SKILL_ALLOWLIST,
     KEY_ULT_RELEASE_MODE,
@@ -98,11 +93,12 @@ class BattleMixin(BaseEfTask):
         # 「使用独立配置」开关：勾选后展开显示当前任务的独立战斗配置项。
         # 实时条件的 3 个内部数据 key（序列/立即释放开关）不单独展开为行——
         # 它们由「启用实时条件」面板承载（KEY_COND_ENABLED 渲染为面板行，随开关显隐）
+        # KEY_INSTANT_ULT / KEY_INSTANT_LINK 已从 DEFAULT_BATTLE_CONFIG 移除，无需再排除
         battle_mode_type = {
             "sub_configs": {
                 True: [
                     key for key in DEFAULT_BATTLE_CONFIG
-                    if key not in (KEY_COND_SEQUENCE, KEY_INSTANT_ULT, KEY_INSTANT_LINK)
+                    if key not in BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST]
                 ],
             },
         }
