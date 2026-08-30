@@ -471,29 +471,37 @@ def detect_team_stable(
     max_attempts: int = 6,
     interval: float = 0.2,
     confidence: int = 2,
-) -> list[str]:
-    """多帧稳定识别：连续 confidence 次识别出相同队伍才返回结果。
+    deadline: float | None = None,
+) -> tuple[list[str], bool]:
+    """多帧稳定识别：连续 confidence 次识别出相同队伍才视为稳定。
 
     用于战斗开始前的稳定检测，避免单帧误识别。
     优先使用 task.sleep（兼容任务框架），无 task 时回退 time.sleep。
 
     Args:
         frame_getter:  无参 callable，返回 BGR numpy 帧（如 task.next_frame）
-        task:          任务实例（可选，用于 task.sleep）
+        task:          任务实例（可选，用于 task.sleep / task.active_time）
         max_attempts:  最大采样次数
         interval:      每次采样间隔秒数
         confidence:    连续多少次相同结果视为稳定
+        deadline:      可选截止时间戳（同 task.active_time() 单位），超时立即停止
 
     Returns:
-        稳定识别的角色名列表；若未达稳定则返回最后一次识别结果。
+        (team, stable) 二元组：
+        - team:   角色名列表；无有效结果时返回 ["?"]
+        - stable: 是否达到 confidence 连续相同（True=稳定，False=超时/未达条件）
     """
     import time
     _sleep = getattr(task, 'sleep', None) or time.sleep
+    _now = getattr(task, 'active_time', None) or time.time
 
     last_result: list[str] = []
     streak = 0
 
-    for _ in range(max_attempts):
+    for i in range(max_attempts):
+        if deadline is not None and _now() >= deadline:
+            break
+
         frame = frame_getter()
         if frame is None or (hasattr(frame, 'size') and frame.size == 0):
             _sleep(interval)
@@ -503,14 +511,15 @@ def detect_team_stable(
         if current == last_result:
             streak += 1
             if streak >= confidence:
-                return current
+                return (current, True)
         else:
             last_result = current
             streak = 1
 
-        _sleep(interval)
+        if i < max_attempts - 1:
+            _sleep(interval)
 
-    return last_result
+    return (last_result or ["?"], False)
 
 
 def detect_team_from_frame_with_scores(frame: np.ndarray) -> list[tuple[str, float]]:
