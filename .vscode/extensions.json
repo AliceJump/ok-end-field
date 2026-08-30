@@ -1,5 +1,7 @@
 {
   "recommendations": [
-    "AliceJump.ok-lang-hints"
+    "AliceJump.ok-lang-hints",
+    "charliermarsh.ruff",
+    "ms-python.python"
   ]
 }

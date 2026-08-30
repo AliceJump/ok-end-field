@@ -54,6 +54,7 @@ __pycache__/
 *$py.class
 *.pyc
 *.pyo
+.ruff_cache/
 
 ############################
 # 🏗 构建产物
@@ -77,6 +78,7 @@ python/
 .idea/
 .vscode/*
 !.vscode/extensions.json
+!.vscode/settings.json
 .workbuddy/
 
 ############################
