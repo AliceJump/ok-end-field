@@ -39,6 +39,13 @@
                 "enhancement_visible_pulse": true,
                 "effects": [
                     {
+                        "effect_id": "CLEAR_NATURAL",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": -1
+                    },
+                    {
                         "effect_id": "CLEAR_COLD",
                         "value": 1,
                         "duration": null,
