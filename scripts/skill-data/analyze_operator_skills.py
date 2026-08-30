@@ -113,6 +113,7 @@ class SkillAnalysis:
     current_skill_id: str | None = None
     current_effects: list[str] = field(default_factory=list)
     current_enhancement_count: int = 0
+    variants: list[dict[str, Any]] = field(default_factory=list)
     review_flags: list[str] = field(default_factory=list)
 
 
@@ -321,6 +322,21 @@ def _enhancements(skill: dict) -> list[dict]:
     return values
 
 
+def _needs_separate_enhancement(condition: ConditionAnalysis) -> bool:
+    """判断条件是否需要独立 enhancement，而不是可由基础 effects 表达。"""
+    if condition.role != "resolution":
+        return False
+    trigger = condition.trigger_text
+    result = condition.result_text
+    # “命中后获得资源/恢复资源”属于技能成功命中的基础产出。
+    if re.search(r"命中(?:敌人|目标)", trigger) and re.search(r"获得|恢复|生成", result):
+        return False
+    # 自身增益叠层达到上限是一个连续增益链，不一定需要单独条件效果。
+    if "叠加至最大层数" in trigger:
+        return False
+    return True
+
+
 def _analyze_operator(detail_path: Path, current_characters: dict[str, dict]) -> OperatorAnalysis:
     payload = json.loads(detail_path.read_text(encoding="utf-8"))
     item = payload.get("data", {}).get("item", {})
@@ -345,10 +361,12 @@ def _analyze_operator(detail_path: Path, current_characters: dict[str, dict]) ->
     }
     document_map = document.get("documentMap") or {}
 
+    skills_by_key: dict[tuple[str, str], SkillAnalysis] = {}
     for tab in widget.get("tabList", []):
         tab_data = widget.get("tabDataMap", {}).get(tab.get("tabId"), {})
         intro = tab_data.get("intro") or {}
-        skill_name = str(intro.get("name") or "")
+        skill_name = str(intro.get("name") or "").strip()
+        skill_type = str(intro.get("type") or "").strip()
         description = _document_text(document_map, intro.get("description"))
         rank_table, material_table = _skill_tables(
             _document_tables(document_map, tab_data.get("content")),
@@ -360,9 +378,25 @@ def _analyze_operator(detail_path: Path, current_characters: dict[str, dict]) ->
             if isinstance(effect, dict) and effect.get("effect_id")
         ]
         conditions = _conditions(description)
+        key = (skill_type, skill_name)
+        if key in skills_by_key:
+            skill = skills_by_key[key]
+            skill.variants.append(
+                {
+                    "description": description,
+                    "rank_table": rank_table,
+                    "material_table": material_table,
+                    "conditions": [asdict(condition) for condition in conditions],
+                    "description_effects": _effect_values(description),
+                    "stack_rules": _stack_rules(description),
+                }
+            )
+            skill.review_flags.append("官方 WIKI 包含同名技能的多个形态/变体")
+            continue
+
         skill = SkillAnalysis(
             name=skill_name,
-            skill_type=str(intro.get("type") or ""),
+            skill_type=skill_type,
             description=description,
             rank_table=rank_table,
             material_table=material_table,
@@ -373,6 +407,7 @@ def _analyze_operator(detail_path: Path, current_characters: dict[str, dict]) ->
             current_effects=current_effects,
             current_enhancement_count=len(_enhancements(current_skill)),
         )
+        skills_by_key[key] = skill
 
         current_description = re.sub(r"\s+", "", str(current_skill.get("description") or ""))
         wiki_description = re.sub(r"\s+", "", description)
@@ -380,9 +415,8 @@ def _analyze_operator(detail_path: Path, current_characters: dict[str, dict]) ->
             skill.review_flags.append("本地角色技能数据中找不到同名技能")
         elif current_description != wiki_description:
             skill.review_flags.append("本地技能描述与官方 WIKI 当前描述不完全一致")
-        if len(conditions) > 1 and skill.current_enhancement_count < len(
-            [condition for condition in conditions if condition.role == "resolution"]
-        ):
+        required_enhancements = sum(_needs_separate_enhancement(condition) for condition in conditions)
+        if len(conditions) > 1 and skill.current_enhancement_count < required_enhancements:
             skill.review_flags.append("描述含多个结算条件，本地 enhancements 数量可能不足")
         if any(condition.stack_rules for condition in conditions):
             skill.review_flags.append("包含特殊层数/次数阈值，需核对 operator、count 与消费方向")

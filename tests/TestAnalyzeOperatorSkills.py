@@ -14,6 +14,7 @@ _SPEC.loader.exec_module(_MODULE)
 
 _conditions = _MODULE._conditions
 _stack_rules = _MODULE._stack_rules
+_needs_separate_enhancement = _MODULE._needs_separate_enhancement
 
 
 class TestAnalyzeOperatorSkills(unittest.TestCase):
@@ -55,6 +56,13 @@ class TestAnalyzeOperatorSkills(unittest.TestCase):
         self.assertEqual(conditions[0].role, "activation")
         self.assertIn("STATUS_BURNING", conditions[0].trigger_effects)
         self.assertIn("STATUS_CORROSION", conditions[0].trigger_effects)
+
+    def test_hit_resource_gain_is_base_output(self):
+        condition = _conditions("如果命中敌人，会获得1层熔火。")[0]
+        self.assertFalse(_needs_separate_enhancement(condition))
+
+        condition = _conditions("如果已拥有4层熔火，则消耗所有层数并追加攻击。")[0]
+        self.assertTrue(_needs_separate_enhancement(condition))
 
 
 if __name__ == "__main__":
