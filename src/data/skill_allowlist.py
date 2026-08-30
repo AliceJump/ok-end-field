@@ -102,29 +102,34 @@ def _build_team_skill_context(
     for (sname, _sid), sdata in all_skills.items():
         if sdata.get("skill_type") != "战技":
             continue
-        enh = sdata.get("enhancement")
-        if not enh:
+        skill_enhancements = sdata.get("enhancements") or []
+        if not skill_enhancements and sdata.get("enhancement"):
+            skill_enhancements = [sdata["enhancement"]]
+        if not skill_enhancements:
             continue
 
-        # 触发条件 effects → 可能是 string 或 dict
-        tc = enh.get("trigger_condition", {})
-        raw_requires = tc.get("effects") or []
-        requires = [
-            eid for eid in (
-                [e if isinstance(e, str) else e.get("effect_id", "") for e in raw_requires]
+        requires: list[str] = []
+        enh_effects: list[str] = []
+        for enh in skill_enhancements:
+            # 触发条件 effects → 可能是 string 或 dict
+            tc = enh.get("trigger_condition", {})
+            raw_requires = tc.get("effects") or []
+            requires.extend(
+                eid for eid in (
+                    [e if isinstance(e, str) else e.get("effect_id", "") for e in raw_requires]
+                )
+                if eid and eid != "STATUS_STAGGER"
             )
-            if eid and eid != "STATUS_STAGGER"
-        ]
 
-        # 增强效果 effects → 可能是 string 或 dict
-        raw_enh_effects = enh.get("effects") or []
-        enh_effects = [
-            eid for eid in (
-                [e.get("effect_id", "") if isinstance(e, dict) else (e if isinstance(e, str) else "")
-                 for e in raw_enh_effects]
+            # 增强效果 effects → 可能是 string 或 dict
+            raw_enh_effects = enh.get("effects") or []
+            enh_effects.extend(
+                eid for eid in (
+                    [e.get("effect_id", "") if isinstance(e, dict) else (e if isinstance(e, str) else "")
+                     for e in raw_enh_effects]
+                )
+                if eid and eid != "STATUS_STAGGER"
             )
-            if eid and eid != "STATUS_STAGGER"
-        ]
 
         enhancements[(sname, "战技")] = {
             "requires": requires,

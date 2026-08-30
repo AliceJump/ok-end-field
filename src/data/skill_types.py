@@ -79,6 +79,7 @@ class Skill:
     element: ElementType  # 元素类型
     has_enhancement: bool  # 是否存在强化态
     enhancement: Optional[SkillEnhancement] = None  # 强化态信息
+    enhancements: list[SkillEnhancement] = field(default_factory=list)  # 全部独立条件效果
     effects: list[SkillEffect] = field(default_factory=list)  # 技能基础效果列表
     description: str = ""  # 技能描述
     damage_multiplier: str = ""  # 伤害倍率

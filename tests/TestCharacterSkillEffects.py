@@ -29,11 +29,14 @@ class TestCharacterSkillEffects(unittest.TestCase):
                 data = json.loads(json_file.read_text(encoding="utf-8"))
                 for skill in data.get("skills") or []:
                     effect_groups = [skill.get("effects") or []]
-                    enhancement = skill.get("enhancement") or {}
-                    effect_groups.append(enhancement.get("effects") or [])
-                    trigger_condition = enhancement.get("trigger_condition") or {}
-                    if isinstance(trigger_condition, dict):
-                        effect_groups.append(trigger_condition.get("effects") or [])
+                    enhancements = skill.get("enhancements") or []
+                    if not enhancements and skill.get("enhancement"):
+                        enhancements = [skill["enhancement"]]
+                    for enhancement in enhancements:
+                        effect_groups.append(enhancement.get("effects") or [])
+                        trigger_condition = enhancement.get("trigger_condition") or {}
+                        if isinstance(trigger_condition, dict):
+                            effect_groups.append(trigger_condition.get("effects") or [])
 
                     for effects in effect_groups:
                         for effect in effects:
@@ -85,8 +88,12 @@ class TestCharacterSkillEffects(unittest.TestCase):
         wulfa = characters["luo_qian"]
         wulfa_link = next(skill for skill in wulfa.skills if skill.skill_id == "wulfa_link")
         self.assertEqual(
-            [effect.effect_id for effect in wulfa_link.enhancement.effects],
+            [effect.effect_id for effect in wulfa_link.enhancements[0].effects],
             [EffectType.BUFF_CRIT_RATE_UP, EffectType.BUFF_CRIT_DMG_UP],
+        )
+        self.assertEqual(
+            [effect.effect_id for effect in wulfa_link.enhancements[1].effects],
+            [EffectType.STACK_SHRED],
         )
         wulfa_ultimate = next(skill for skill in wulfa.skills if skill.skill_id == "wulfa_ultimate")
         self.assertFalse(wulfa_ultimate.has_enhancement)
@@ -179,7 +186,9 @@ class TestCharacterSkillEffects(unittest.TestCase):
 
         seraph = characters["sai_xi"]
         seraph_skill = next(skill for skill in seraph.skills if skill.skill_id == "seraph_skill")
-        self.assertEqual(seraph_skill.enhancement.effects[0].effect_id, EffectType.MECH_SUPPORT_CRYSTAL)
+        self.assertEqual(seraph_skill.effects[0].effect_id, EffectType.MECH_SUPPORT_CRYSTAL)
+        self.assertEqual(seraph_skill.enhancements[0].effects[0].effect_id, EffectType.BUFF_HEAL)
+        self.assertEqual(seraph_skill.enhancements[1].effects[0].effect_id, EffectType.BUFF_SPELL_UP)
         seraph_ultimate = next(skill for skill in seraph.skills if skill.skill_id == "seraph_ultimate")
         self.assertEqual(
             [effect.effect_id for effect in seraph_ultimate.effects],
@@ -196,6 +205,15 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertEqual(liino_skill.effects[0].effect_id, EffectType.STATUS_SINGING)
         liino_ultimate = next(skill for skill in liino.skills if skill.skill_id == "liino_ultimate")
         self.assertIn(EffectType.STATUS_HIGH_SINGING, [effect.effect_id for effect in liino_ultimate.effects])
+
+        pograni = characters["jun_wei"]
+        pograni_ultimate = next(skill for skill in pograni.skills if skill.skill_id == "pograni_ultimate")
+        self.assertEqual(len(pograni_ultimate.enhancements), 2)
+        self.assertEqual(pograni_ultimate.enhancements[0].effects[0].count, -1)
+
+        bounda_ultimate = next(skill for skill in bounda.skills if skill.skill_id == "bounda_ultimate")
+        self.assertEqual(len(bounda_ultimate.enhancements), 2)
+        self.assertEqual(bounda_ultimate.enhancements[1].effects[0].effect_id, EffectType.STATUS_SPELL_INFLICT)
 
 
 if __name__ == "__main__":
