@@ -26,41 +26,61 @@
             "skill_type": "战技",
             "element": "寒冷",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "支援晶体",
-                "trigger_condition": {
-                    "text": "战技命中敌人召唤支援晶体",
-                    "effects": []
+            "enhancement": null,
+            "enhancements": [
+                {
+                    "name": "支援晶体重击治疗",
+                    "trigger_condition": {
+                        "text": "主控干员对敌人造成重击",
+                        "effects": [
+                            "MECH_SUPPORT_CRYSTAL"
+                        ]
+                    },
+                    "enhancement_effect": "支援晶体为主控干员回复生命值，最多触发2次",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "BUFF_HEAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "ally"
+                        }
+                    ]
                 },
-                "enhancement_effect": "召唤效果",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "MECH_SUPPORT_CRYSTAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "field"
+                {
+                    "name": "满血转法术增幅",
+                    "trigger_condition": {
+                        "text": "支援晶体触发回复时主控干员生命值已满",
+                        "effects": [
+                            "MECH_SUPPORT_CRYSTAL"
+                        ]
                     },
-                    {
-                        "effect_id": "BUFF_HEAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "ally"
-                    },
-                    {
-                        "effect_id": "BUFF_SPELL_UP",
-                        "value": 1,
-                        "duration": null,
-                        "target": "ally"
-                    }
-                ]
-            },
+                    "enhancement_effect": "施加法术增幅",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "BUFF_SPELL_UP",
+                            "value": 1,
+                            "duration": null,
+                            "target": "ally"
+                        }
+                    ]
+                }
+            ],
             "description": "召唤支援晶体在一段时间内环绕主控干员。当主控干员对敌人造成重击时支援晶体为其回复生命值，该效果最多可触发2次。意志可以额外提高治疗量。若触发回复时主控干员生命值已满，则额外对其施加一段时间的法术增幅，该效果无法叠加。",
             "damage_multiplier": "324（治疗）+ 15%（法术增幅）",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 100,
-            "effects": []
+            "effects": [
+                {
+                    "effect_id": "MECH_SUPPORT_CRYSTAL",
+                    "value": 1,
+                    "duration": null,
+                    "target": "field",
+                    "count": 1
+                }
+            ]
         },
         {
             "skill_id": "seraph_link",

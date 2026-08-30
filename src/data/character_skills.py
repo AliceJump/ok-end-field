@@ -91,6 +91,20 @@ def _load_trigger_condition(trigger_data) -> tuple[str, list[EffectType]]:
     return text, [eff for _, eff in match_effect_terms(text)]
 
 
+def _load_enhancement(enh_data: dict) -> SkillEnhancement:
+    """加载一个独立条件效果。"""
+    trigger_condition, trigger_effects = _load_trigger_condition(
+        enh_data.get("trigger_condition", ""),
+    )
+    return SkillEnhancement(
+        name=enh_data["name"],
+        trigger_condition=trigger_condition,
+        trigger_effects=trigger_effects,
+        effects=_load_skill_effects(enh_data.get("effects") or []),
+        enhancement_visible_pulse=enh_data.get("enhancement_visible_pulse", False),
+    )
+
+
 def _load_character_from_json(file_path: Path) -> Character:
     """从JSON文件加载角色数据（兼容新旧两种格式）。"""
     with open(file_path, "r", encoding="utf-8") as f:
@@ -102,19 +116,13 @@ def _load_character_from_json(file_path: Path) -> Character:
     # 解析技能列表
     skills: list[Skill] = []
     for skill_data in data.get("skills", []):
-        enhancement = None
-        if skill_data.get("enhancement"):
-            enh_data = skill_data["enhancement"]
-            trigger_condition, trigger_effects = _load_trigger_condition(
-                enh_data.get("trigger_condition", ""),
-            )
-            enhancement = SkillEnhancement(
-                name=enh_data["name"],
-                trigger_condition=trigger_condition,
-                trigger_effects=trigger_effects,
-                effects=_load_skill_effects(enh_data.get("effects") or []),
-                enhancement_visible_pulse=enh_data.get("enhancement_visible_pulse", False),
-            )
+        enhancements = [
+            _load_enhancement(enh_data)
+            for enh_data in skill_data.get("enhancements") or []
+        ]
+        if not enhancements and skill_data.get("enhancement"):
+            enhancements.append(_load_enhancement(skill_data["enhancement"]))
+        enhancement = enhancements[0] if enhancements else None
 
         # 加载技能基础效果；旧格式的 attach/status/clear 纯ID列表合并进 effects
         effects = _load_skill_effects(skill_data.get("effects") or [])
@@ -135,9 +143,10 @@ def _load_character_from_json(file_path: Path) -> Character:
             skill_type=skill_type,
             element=_element_of(skill_data.get("element", ""), character_element),
             has_enhancement=skill_data.get(
-                "has_enhancement", enhancement is not None,
+                "has_enhancement", bool(enhancements),
             ),
             enhancement=enhancement,
+            enhancements=enhancements,
             effects=effects,
             description=skill_data.get("description", ""),
             damage_multiplier=skill_data.get("damage_multiplier", ""),
