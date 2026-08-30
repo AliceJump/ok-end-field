@@ -36,10 +36,22 @@
                 "enhancement_visible_pulse": false,
                 "effects": [
                     {
-                        "effect_id": "TRIGGER_ADDITIONAL",
+                        "effect_id": "MECH_SUPPORT_CRYSTAL",
                         "value": 1,
                         "duration": null,
-                        "target": "enemy"
+                        "target": "field"
+                    },
+                    {
+                        "effect_id": "BUFF_HEAL",
+                        "value": 1,
+                        "duration": null,
+                        "target": "ally"
+                    },
+                    {
+                        "effect_id": "BUFF_SPELL_UP",
+                        "value": 1,
+                        "duration": null,
+                        "target": "ally"
                     }
                 ]
             },
@@ -77,23 +89,29 @@
             "name": "栈溢出",
             "skill_type": "终结技",
             "element": "寒冷",
-            "has_enhancement": true,
-            "enhancement": {
-                "name": "寒冷增幅+自然增幅",
-                "trigger_condition": {
-                    "text": "终结技期间",
-                    "effects": []
-                },
-                "enhancement_effect": "增幅效果",
-                "enhancement_visible_pulse": false,
-                "effects": []
-            },
+            "has_enhancement": false,
+            "enhancement": null,
             "description": "对全队施加一段时间的寒冷增幅和自然增幅，智识可以额外提高该增幅效果。",
             "damage_multiplier": "24%（寒冷增幅）+ 24%（自然增幅）",
             "stagger_value": 0,
             "cooldown": "20秒",
             "spirit_cost": 80,
-            "effects": []
+            "effects": [
+                {
+                    "effect_id": "BUFF_COLD_UP",
+                    "value": 1,
+                    "duration": null,
+                    "target": "ally",
+                    "count": 1
+                },
+                {
+                    "effect_id": "BUFF_NATURAL_UP",
+                    "value": 1,
+                    "duration": null,
+                    "target": "ally",
+                    "count": 1
+                }
+            ]
         }
     ]
 }

@@ -61,17 +61,8 @@
             "name": "小队，集结！",
             "skill_type": "终结技",
             "element": "物理",
-            "has_enhancement": true,
-            "enhancement": {
-                "name": "连击状态",
-                "trigger_condition": {
-                    "text": "终结技施放期间",
-                    "effects": []
-                },
-                "enhancement_effect": "连击效果",
-                "enhancement_visible_pulse": false,
-                "effects": []
-            },
+            "has_enhancement": false,
+            "enhancement": null,
             "description": "进入持续施法状态，发射3枚集结信号弹，每次发射恢复一定技力。",
             "damage_multiplier": "80（恢复技力）",
             "stagger_value": 0,
