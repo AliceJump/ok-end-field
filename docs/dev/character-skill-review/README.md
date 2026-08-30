@@ -22,6 +22,22 @@
 
 外部资料可能滞后；发生冲突时，以当前解包文本和游戏内实测为准。
 
+## 森空岛官方 WIKI 完整快照
+
+已新增 `scripts/data-capture/capture_skland_operator_details.py`，通过真实浏览器监听官方已签名的 `item/info` 响应，抓取当前 WIKI 中全部干员的完整详情。
+
+2026-08-30 最终快照：`tools/wiki_catalog/operator_details/20260830_221449/`（由 gitignore 排除，仅保留在本地）。
+
+- 干员目录：33 项，含噗切娜、提弗洛斯、管理员男女两个词条；
+- 完整详情：33/33 成功，原始 JSON 约 13.4 MiB；
+- 渲染文本：33 份，共 487,905 字符；
+- 每份详情完整保留 `documentMap`、`chapterGroup`、`extraInfo`、`widgetCommonMap`；
+- 可利用信息包括角色资料、职业/武器/能力、各等级属性、精英化材料、全部技能描述、WIKI 当前展示的 RANK 1–9 技能倍率与数值、天赋、潜能、能力扩延、推荐武器、档案、语音与资源链接；
+- 同时保存 `catalog.json`、`char_pool.json`、`weapon_pool.json`、详情页纯文本，以及每名干员对应的完整 `item/list` 关联物品响应（33/33）；
+- `manifest.json` 记录每名干员的 item ID、详情 URL、更新时间、文件路径、数据体积和文档组件数量；`latest.json` 指向最近一次抓取。
+
+完整原始 JSON 是后续自动解析倍率和条件的权威 WIKI 输入；纯文本仅用于人工检索，不应替代结构化原始数据。
+
 ## 已确认的核心战斗机制
 
 ### 物理异常
