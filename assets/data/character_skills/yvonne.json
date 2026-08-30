@@ -39,14 +39,7 @@
                 "enhancement_visible_pulse": true,
                 "effects": [
                     {
-                        "effect_id": "CLEAR_NATURAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": -1
-                    },
-                    {
-                        "effect_id": "CLEAR_COLD",
+                        "effect_id": "CLEAR_ATTACH",
                         "value": 1,
                         "duration": null,
                         "target": "enemy",
@@ -117,7 +110,8 @@
                         "effect_id": "CLEAR_FROZEN",
                         "value": 1,
                         "duration": null,
-                        "target": "enemy"
+                        "target": "enemy",
+                        "count": -1
                     }
                 ]
             },
@@ -128,7 +122,7 @@
             "spirit_cost": 220,
             "effects": [
                 {
-                    "effect_id": "BUFF_DAMAGE_UP",
+                    "effect_id": "BUFF_CRIT_DMG_UP",
                     "target": "self",
                     "count": 1
                 },
