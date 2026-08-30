@@ -868,7 +868,7 @@ class DailyBattleFeature:
                     match=re.compile(click_key),
                     box=self.box.bottom_right,
                     time_out=3,
-                    settle_time=1.0,
+                    settle_time=2,
                 )
                 if not stable:
                     self.log_info(f"『{click_key}』按钮未稳定显示，跳过直接点击，继续寻路")

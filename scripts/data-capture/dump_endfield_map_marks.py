@@ -56,11 +56,14 @@ def open_json(req: request.Request):
 def _request_hg_grant_code(content: str) -> str:
     """解码 content 并调用 HG grant 接口换取 oauth code。"""
     hg_token = parse.unquote(content.strip().strip('"'))
-    grant_resp = post_json(HG_GRANT_URL, {
-        "token": hg_token,
-        "appCode": HG_APP_CODE,
-        "type": 0,
-    })
+    grant_resp = post_json(
+        HG_GRANT_URL,
+        {
+            "token": hg_token,
+            "appCode": HG_APP_CODE,
+            "type": 0,
+        },
+    )
     if not isinstance(grant_resp, dict) or grant_resp.get("status") != 0:
         raise RuntimeError(f"HG grant failed: {grant_resp}")
 
@@ -85,15 +88,16 @@ def _request_map_cred(oauth_code: str, device_id: str) -> dict[str, Any]:
     if not isinstance(cred_resp, dict) or cred_resp.get("code") != 0:
         hint = ""
         if isinstance(cred_resp, dict) and cred_resp.get("code") == 10001:
-            hint = ("（设备信息无效：已存 dId 可能被风控拒绝，"
-                    "删除 configs/map_device_id.json 或运行 "
-                    "`uv run python -m src.core.map_device_id --refresh` "
-                    "重新铸造后重试）")
+            hint = (
+                "（设备信息无效：已存 dId 可能被风控拒绝，"
+                "删除 configs/map_device_id.json 或运行 "
+                "`uv run python -m src.core.map_device_id --refresh` "
+                "重新铸造后重试）"
+            )
         raise RuntimeError(f"generate_cred_by_code failed: {cred_resp}{hint}")
 
     data = cred_resp.get("data") or {}
-    if not str(data.get("cred") or "").strip() or \
-            not str(data.get("token") or "").strip():
+    if not str(data.get("cred") or "").strip() or not str(data.get("token") or "").strip():
         raise RuntimeError("generate_cred_by_code response missing cred/token")
     return cred_resp
 
@@ -104,8 +108,7 @@ def exchange_content(content: str) -> dict[str, Any]:
     device_id = ensure_map_device_id()
     if not device_id:
         raise RuntimeError(
-            "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 "
-            "fp-it.portal101.cn），稍后重试"
+            "地图设备ID(dId)暂不可用：自动铸造失败（需安装 Edge/Chrome 且可访问 fp-it.portal101.cn），稍后重试"
         )
 
     cred_resp = _request_map_cred(oauth_code, device_id)
@@ -153,12 +156,16 @@ class SignedClient:
         payload = parsed.path
         payload += parsed.query if method.upper() == "GET" else body
         payload += headers["timestamp"]
-        payload += json.dumps({
-            "platform": headers["platform"],
-            "timestamp": headers["timestamp"],
-            "dId": headers["dId"],
-            "vName": headers["vName"],
-        }, separators=(",", ":"), ensure_ascii=False)
+        payload += json.dumps(
+            {
+                "platform": headers["platform"],
+                "timestamp": headers["timestamp"],
+                "dId": headers["dId"],
+                "vName": headers["vName"],
+            },
+            separators=(",", ":"),
+            ensure_ascii=False,
+        )
         digest = hmac.new(self.sign_token.encode("utf-8"), payload.encode("utf-8"), hashlib.sha256).hexdigest()
         headers["sign"] = hashlib.md5(digest.encode("utf-8")).hexdigest()
         return headers
@@ -223,7 +230,7 @@ def collect_mark_queries(tree_resp: Any) -> list[dict[str, str]]:
         return queries
 
     # Fallback for schema changes: keep only top-level map IDs, never use level IDs as mapId.
-    pattern = re.compile(r"^(base\d+|map\d+)$", re.I)
+    pattern = re.compile(r"^(base\d+|map\d+)$", re.IGNORECASE)
     for value in walk_values(tree_resp):
         if isinstance(value, str):
             map_id = value.strip()
@@ -273,6 +280,7 @@ def write_json(path: Path, data: Any):
 def safe_name(value: str) -> str:
     return re.sub(r"[^A-Za-z0-9_.-]+", "_", value)
 
+
 EXCLUDE_MARKS = {
     "长距滑索架",
     "滑索架",
@@ -293,10 +301,7 @@ def generate_simple_marks(out_dir: Path):
         data = data.get("data", {})
 
         # templateId -> 名称（统一 strip，避免名称带换行/首尾空白）
-        template_map = {
-            t["id"]: t["name"].strip()
-            for t in data.get("markTemplates", [])
-        }
+        template_map = {t["id"]: t["name"].strip() for t in data.get("markTemplates", [])}
 
         # 收集所有物品名称（跳过空名与排除项）
         for name in template_map.values():
@@ -308,11 +313,13 @@ def generate_simple_marks(out_dir: Path):
                 return
             if not isinstance(pos, dict):
                 return
-            all_maps[map_id][name].append({
-                "x": pos["x"],
-                "y": pos["y"],
-                "z": pos["z"],
-            })
+            all_maps[map_id][name].append(
+                {
+                    "x": pos["x"],
+                    "y": pos["y"],
+                    "z": pos["z"],
+                }
+            )
 
         for mark in data.get("marks", []):
             _add_point(mark["mapId"], template_map.get(mark["templateId"]), mark.get("pos"))
@@ -322,10 +329,7 @@ def generate_simple_marks(out_dir: Path):
             _add_point(mark.get("mapId"), template_map.get(mark.get("templateId")), mark.get("pos"))
 
     # 导出坐标
-    export = {
-        map_id: dict(groups)
-        for map_id, groups in all_maps.items()
-    }
+    export = {map_id: dict(groups) for map_id, groups in all_maps.items()}
     write_json(target_dir / "summary.json", export)
 
     # 导出所有物品名单（排序）
@@ -336,6 +340,7 @@ def generate_simple_marks(out_dir: Path):
 
     print("saved marks_simple.json")
     print("saved mark_names.json")
+
 
 def main():
     parser = argparse.ArgumentParser(description="Dump Endfield map mark/list JSON by hg/check data.content")
@@ -380,10 +385,12 @@ def main():
     for role in roles:
         for query in mark_queries:
             params = dict(query)
-            params.update({
-                "roleId": role["roleId"],
-                "serverId": role["serverId"],
-            })
+            params.update(
+                {
+                    "roleId": role["roleId"],
+                    "serverId": role["serverId"],
+                }
+            )
             resp = client.get("/web/v1/game/endfield/map/mark/list", params)
             level_suffix = f"__level_{safe_name(params['levelId'])}" if params.get("levelId") else ""
             filename = (

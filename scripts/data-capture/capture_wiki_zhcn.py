@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """抓取国服官方 Wiki（wiki.skland.com）catalog 简中数据（真实浏览器）。
 
 接口 ``zonai.skland.com/web/v1/wiki/item/catalog`` 需前端签名（401），
@@ -66,23 +64,27 @@ def main():
         page.set_default_timeout(60000)
 
         try:
-            page.goto("https://wiki.skland.com/endfield/catalog?mainTypeId=1&typeSubId=1",
-                      timeout=90000, wait_until="domcontentloaded")
+            page.goto(
+                "https://wiki.skland.com/endfield/catalog?mainTypeId=1&typeSubId=1",
+                timeout=90000,
+                wait_until="domcontentloaded",
+            )
         except Exception as e:
             print("init goto:", e, flush=True)
         page.wait_for_timeout(8000)
 
         for sub in SUBS:
-            url = (f"https://wiki.skland.com/endfield/catalog"
-                   f"?mainTypeId=1&typeSubId={sub}&filterIds=&header=0")
+            url = f"https://wiki.skland.com/endfield/catalog?mainTypeId=1&typeSubId={sub}&filterIds=&header=0"
             try:
                 with page.expect_response(
-                        lambda r, s=sub:
+                    lambda r, s=sub: (
                         r.url.startswith(PREFIX)
-                        and f"typeMainId=1" in r.url
+                        and "typeMainId=1" in r.url
                         and f"typeSubId={s}" in r.url
-                        and r.status == 200,
-                        timeout=40000) as ri:
+                        and r.status == 200
+                    ),
+                    timeout=40000,
+                ) as ri:
                     page.goto(url, timeout=60000, wait_until="domcontentloaded")
                 body = ri.value.text()
                 d = json.loads(body)

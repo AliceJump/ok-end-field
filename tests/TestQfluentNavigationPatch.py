@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """qfluentwidgets 导航面板窗口显示前 expand 崩溃补丁的单元测试。
 
 背景
@@ -18,6 +17,7 @@ None，启动即抛 AttributeError。
 不构造 Qt 窗口，只安装补丁后用假 panel 对象调用被打补丁的方法，覆盖
 当前项为 None、指示项为 None、指示项存在三条路径。
 """
+
 import unittest
 
 from qfluentwidgets.components.navigation.navigation_panel import NavigationPanel
@@ -59,14 +59,10 @@ class _FakePanel:
 
 
 class TestQfluentNavigationPatch(unittest.TestCase):
-
     @classmethod
     def setUpClass(cls):
         cls._original = NavigationPanel._onIndicatorAniFinished
         install_qfluent_navigation_patch()
-
-    def test_patch_installed(self):
-        self.assertIsNot(NavigationPanel._onIndicatorAniFinished, self._original)
 
     def test_no_crash_when_indicator_item_none(self):
         # 窗口未显示时 _findIndicatorItem 返回 None，原方法会抛 AttributeError

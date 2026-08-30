@@ -196,30 +196,6 @@ class DailyOutpostMixin:
 
         self.log_info(f"{outpost_name} 兑换操作完成")
 
-    def test_ocr_full(self):
-        self.next_frame()
-        self.ocr(log=True)
-
-    def test_ocr(self):
-        box1 = self.box_of_screen(1749 / 1920, 107 / 1080, 1789 / 1920, 134 / 1080)
-        box2 = self.box_of_screen(
-            (1749 + (1832 - 1750)) / 1920, 107 / 1080, (1789 + (1832 - 1750)) / 1920, 134 / 1080
-        )
-        self.wait_click_ocr(
-            match=re.compile(r"^\d+/5$"),
-            after_sleep=2,
-            time_out=2,
-            box=box1,
-            log=True,
-        )
-        self.wait_click_ocr(
-            match=re.compile(r"^\d+/5$"),
-            after_sleep=2,
-            time_out=2,
-            box=box2,
-            log=True,
-        )
-
     def exchange_outpost_goods(self, target_areas=None, keep_area_context=False):
         self.info_set("current_task", "exchange_outpost_goods")
         self.log_info("开始据点兑换任务")

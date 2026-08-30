@@ -162,7 +162,6 @@ class GameFlowMixin:
     def wait_pop_up(self, time_out=15, after_sleep=0):
         """
         等待奖励弹窗出现并点击 OK 按钮。
-        使用 click_feature 持续点击直到弹窗消失。
 
         Args:
             time_out: 总超时时间。

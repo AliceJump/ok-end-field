@@ -2,9 +2,8 @@
 import unittest
 from pathlib import Path
 
-from src.config import config
 from ok.test.TaskTestCase import TaskTestCase
-
+from src.config import config
 from src.tasks.trigger.AutoCombatTask import AutoCombatTask
 
 
@@ -51,5 +50,5 @@ class TestMyOneTimeTask(TaskTestCase):
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

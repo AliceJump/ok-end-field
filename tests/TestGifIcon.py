@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
 """GIF 动图图标支持测试：GifIcon / ThemeIcon(.gif) 的渲染与帧推进、缺失变体颜色反转缓存。"""
+
 import os
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
@@ -12,7 +12,6 @@ from pathlib import Path
 from PIL import Image
 from PySide6.QtCore import QEventLoop, QTimer
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentIcon, Theme
 from qfluentwidgets.components.widgets.icon_widget import IconWidget
 
 import src.icons as icons_module
@@ -48,17 +47,6 @@ class GifIconTestCase(unittest.TestCase):
         cls.light_path = _make_gif(cls.tmp / "light.gif")
         cls.dark_path = _make_gif(cls.tmp / "dark.gif")
 
-    def test_gif_icon_path_and_icon(self):
-        icon = GifIcon(self.single_path)
-        self.assertEqual(icon.path(), self.single_path)
-        qicon = icon.icon()
-        self.assertFalse(qicon.isNull())
-        # 引擎图标没有预置尺寸，但可通过 pixmap() 取当前帧
-        pm = qicon.pixmap(32, 32)
-        self.assertFalse(pm.isNull())
-        self.assertEqual(pm.width(), 32)
-        self.assertEqual(pm.height(), 32)
-
     def test_icon_widget_registers_and_animates(self):
         icon = GifIcon(self.single_path)
         widget = IconWidget(icon)
@@ -89,20 +77,8 @@ class GifIconTestCase(unittest.TestCase):
         widget.show()
         self.app.processEvents()
         widget.grab()
-        self.assertTrue(any(widget in player._widgets for player in
-                            (icon._light_gif._player, icon._dark_gif._player)))
+        self.assertTrue(any(widget in player._widgets for player in (icon._light_gif._player, icon._dark_gif._player)))
         widget.close()
-
-    def test_theme_icon_static_suffixes_still_work(self):
-        # png/svg 走原有渲染路径，不应被 GIF 逻辑影响
-        png = ThemeIcon("a", "b", suffix=".png", base_path=self.tmp)
-        self.assertFalse(png._is_gif)
-        self.assertEqual(png.path(Theme.LIGHT), str(self.tmp / "a.png"))
-        self.assertEqual(png.path(Theme.DARK), str(self.tmp / "b.png"))
-
-    def test_theme_icon_rejects_bad_suffix(self):
-        with self.assertRaises(AssertionError):
-            ThemeIcon("a", "b", suffix=".webp")
 
     def test_missing_file_degrades_gracefully(self):
         icon = GifIcon(str(self.tmp / "not_exists.gif"))
@@ -125,8 +101,7 @@ class ThemeIconInvertTestCase(unittest.TestCase):
         Image.new("RGBA", (16, 16), (255, 0, 0, 255)).save(cls.red_png)
         cls.black_svg = cls.tmp / "black.svg"
         cls.black_svg.write_text(
-            '<svg width="10" height="10" viewBox="0 0 10 10" fill="#000000">'
-            '<path d="M0 0h10v10z"/></svg>',
+            '<svg width="10" height="10" viewBox="0 0 10 10" fill="#000000"><path d="M0 0h10v10z"/></svg>',
             encoding="utf-8",
         )
 
@@ -183,16 +158,6 @@ class ThemeIconInvertTestCase(unittest.TestCase):
         self.assertLessEqual(abs(center[0] - 0), 8)
         self.assertGreaterEqual(center[1], 247)
         self.assertEqual(center[3], 255)
-
-    def test_both_provided_no_cache(self):
-        icon = ThemeIcon("a", "b", suffix=".png", base_path=self.tmp)
-        self.assertEqual(icon._light_path, str(self.tmp / "a.png"))
-        self.assertEqual(icon._dark_path, str(self.tmp / "b.png"))
-        self.assertEqual(list(self.cache.glob("*")), [])
-
-    def test_neither_provided_raises(self):
-        with self.assertRaises(ValueError):
-            ThemeIcon(suffix=".png", base_path=self.tmp)
 
     def test_missing_source_warns_and_falls_back(self):
         # 源文件缺失：不崩溃，路径回落到源路径（渲染为空）

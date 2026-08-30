@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """sync_*.py 公共工具：JSON 读写、ok.po 同步、lang JSON 官方译名回写。
 
 供 scripts/i18n/sync_map_mark_langs.py 与 scripts/i18n/sync_wiki_item_langs.py 共用，
@@ -6,11 +5,12 @@
 """
 
 import json
-import json5
 import re
 import sys
 from collections import defaultdict
 from pathlib import Path
+
+import json5
 
 try:
     import polib
@@ -30,10 +30,21 @@ REPO_LANGS = ("zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES")
 
 # 名称规范化映射：键名差异（全角罗马数字/括号/空格）归一到官方简中名，
 # 如 储藏箱Ⅳ -> 储藏箱IV，避免因写法差异匹配不上官方译名
-_ZH_NORM = str.maketrans({
-    "Ⅰ": "I", "Ⅱ": "II", "Ⅲ": "III", "Ⅳ": "IV", "Ⅴ": "V", "Ⅵ": "VI",
-    "（": "(", "）": ")", "，": ",", "；": ";", "　": "",
-})
+_ZH_NORM = str.maketrans(
+    {
+        "Ⅰ": "I",
+        "Ⅱ": "II",
+        "Ⅲ": "III",
+        "Ⅳ": "IV",
+        "Ⅴ": "V",
+        "Ⅵ": "VI",
+        "（": "(",
+        "）": ")",
+        "，": ",",
+        "；": ";",
+        "　": "",
+    }
+)
 
 
 def norm_zh_name(name: str) -> str:
@@ -51,17 +62,13 @@ def build_official(merged: dict, zh_of) -> dict:
         zh = (zh_of(key, langs) or "").strip()
         if not zh or zh in official:
             continue
-        official[zh] = {
-            lang: (v or "").strip()
-            for lang, v in langs.items()
-            if lang != "zh_CN" and (v or "").strip()
-        }
+        official[zh] = {lang: (v or "").strip() for lang, v in langs.items() if lang != "zh_CN" and (v or "").strip()}
     return official
 
 
-def sync_po_entries(official: dict, locales: tuple, i18n_dir: Path,
-                    quiet: bool = False,
-                    create_missing: bool = True) -> tuple[dict, list]:
+def sync_po_entries(
+    official: dict, locales: tuple, i18n_dir: Path, quiet: bool = False, create_missing: bool = True
+) -> tuple[dict, list]:
     """把官方译名同步进 i18n/*/LC_MESSAGES/ok.po 并编译 .mo。
 
     - 精确匹配：msgid == 简中名 → 覆盖 msgstr 为官方译名（官方有值时）；
@@ -114,8 +121,9 @@ def sync_po_entries(official: dict, locales: tuple, i18n_dir: Path,
     return all_stats, all_touched
 
 
-def sync_zh_cn_self_patch(zh_names, i18n_dir: Path, update_existing: bool = True,
-                          quiet: bool = False) -> tuple[dict, list]:
+def sync_zh_cn_self_patch(
+    zh_names, i18n_dir: Path, update_existing: bool = True, quiet: bool = False
+) -> tuple[dict, list]:
     """zh_CN 官方简中名自补（msgid == msgstr）。
 
     update_existing=False 时只补缺失条目，不动已有条目。
@@ -157,8 +165,7 @@ def sync_zh_cn_self_patch(zh_names, i18n_dir: Path, update_existing: bool = True
     return {"zh_CN": stats}, touched
 
 
-def sync_lang_jsons(official: dict, lang_dir: Path, skip_files: tuple = ()
-                    ) -> tuple[dict, list]:
+def sync_lang_jsons(official: dict, lang_dir: Path, skip_files: tuple = ()) -> tuple[dict, list]:
     """以官方表覆盖/补齐 assets/lang/*.json 中相同中文的 string/pattern 节点。
 
     - 匹配键：节点 zh_CN 值（string 或 pattern）== 官方简中名
@@ -207,12 +214,8 @@ def sync_lang_jsons(official: dict, lang_dir: Path, skip_files: tuple = ()
                 if not val:
                     continue
                 cur = node.get(lang)
-                has_val = (
-                    isinstance(cur, dict)
-                    and (
-                        isinstance(cur.get("string"), str)
-                        or isinstance(cur.get("pattern"), str)
-                    )
+                has_val = isinstance(cur, dict) and (
+                    isinstance(cur.get("string"), str) or isinstance(cur.get("pattern"), str)
                 )
                 if has_val:
                     for sub in ("string", "pattern"):
@@ -249,11 +252,13 @@ def print_json_result(json_stats: dict, json_touched: list) -> None:
 # ---------- 多语言值匹配补全（不只按 zh_CN） ----------
 
 # 全角字母数字 -> 半角（匹配归一用）
-_FULLWIDTH = str.maketrans({
-    c: chr(ord(c) - 0xFEE0)
-    for c in "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"
-              "ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ０１２３４５６７８９"
-})
+_FULLWIDTH = str.maketrans(
+    {
+        c: chr(ord(c) - 0xFEE0)
+        for c in "ＡＢＣＤＥＦＧＨＩＪＫＬＭＮＯＰＱＲＳＴＵＶＷＸＹＺ"
+        "ａｂｃｄｅｆｇｈｉｊｋｌｍｎｏｐｑｒｓｔｕｖｗｘｙｚ０１２３４５６７８９"
+    }
+)
 
 
 def normalize_value(value: str) -> str:
@@ -321,8 +326,7 @@ def build_lang_value_index(entries: list) -> dict:
     return index
 
 
-def fill_missing_from_index(data: dict, index: dict,
-                            langs: tuple = REPO_LANGS) -> list:
+def fill_missing_from_index(data: dict, index: dict, langs: tuple = REPO_LANGS) -> list:
     """按任意语言值匹配词条索引，补全节点缺失语言。
 
     - 用节点每个已有语言值（含 zh_CN）查 index，命中词条均为候选；
@@ -353,8 +357,7 @@ def fill_missing_from_index(data: dict, index: dict,
             vals = {
                 e[lang].strip()
                 for e in candidates
-                if isinstance(e.get(lang), str)
-                and e[lang].strip() and e[lang].strip() != "?"
+                if isinstance(e.get(lang), str) and e[lang].strip() and e[lang].strip() != "?"
             }
             if len(vals) == 1:
                 val = vals.pop()
@@ -363,8 +366,7 @@ def fill_missing_from_index(data: dict, index: dict,
     return touched
 
 
-def fill_missing_cross_files(data_map: dict, langs: tuple = REPO_LANGS
-                             ) -> tuple[dict, list]:
+def fill_missing_cross_files(data_map: dict, langs: tuple = REPO_LANGS) -> tuple[dict, list]:
     """lang/*.json 之间按任意语言值匹配互相补全缺失语言。
 
     - data_map: {Path: 已加载的 JSON dict}（内存态，函数内直接修改）；
@@ -406,11 +408,7 @@ def fill_missing_cross_files(data_map: dict, langs: tuple = REPO_LANGS
         if not candidates:
             continue
         for lang in missing:
-            vals = {
-                cand[3].get(lang)
-                for cand in candidates
-                if cand[3].get(lang) and cand[3].get(lang) != "?"
-            }
+            vals = {cand[3].get(lang) for cand in candidates if cand[3].get(lang) and cand[3].get(lang) != "?"}
             if len(vals) == 1:
                 val = vals.pop()
                 node[lang] = {style: val}

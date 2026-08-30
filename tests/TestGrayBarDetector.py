@@ -7,7 +7,6 @@ from src.image.gray_bar_detector import detect_gray_bars
 
 
 class TestGrayBarDetector(unittest.TestCase):
-
     def _frame(self, scale=1.0, brightness=0, widths=(70, 70, 70, 70), bar_height=12):
         width, height = round(2560 * scale), round(1440 * scale)
         background = np.tile(np.linspace(28, 58, width, dtype=np.float32), (height, 1))
@@ -15,7 +14,7 @@ class TestGrayBarDetector(unittest.TestCase):
         for index, bar_width in enumerate(widths):
             bar_width = round(bar_width * scale)
             half_height = round(bar_height * scale / 2)
-            background[y - half_height:y + half_height, x:x + bar_width] += 64 + index * 3
+            background[y - half_height : y + half_height, x : x + bar_width] += 64 + index * 3
             x += bar_width + round(8 * scale)
         return cv2.cvtColor(np.clip(background + brightness, 0, 255).astype(np.uint8), cv2.COLOR_GRAY2BGR)
 
@@ -61,5 +60,3 @@ class TestGrayBarDetector(unittest.TestCase):
         bars = detect_gray_bars(frame, x_min_ratio=0, x_max_ratio=1)
         self.assertEqual(len(bars), 2)
         self.assertTrue(all(bar.x < 300 for bar in bars))
-
-    

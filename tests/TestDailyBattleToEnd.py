@@ -20,7 +20,6 @@ class _ToEndTaskHarness:
 
     def wait_ocr(self, **kwargs):
         self.events.append("ocr_miss")
-        return None
 
     def click(self, *args, **kwargs):
         self.events.append(("click", kwargs.get("key")))
@@ -75,11 +74,7 @@ class TestDailyBattleToEnd(unittest.TestCase):
             result = feature.to_end()
 
         self.assertTrue(result)
-        middle_click_indexes = [
-            index
-            for index, event in enumerate(task.events)
-            if event == ("click", "middle")
-        ]
+        middle_click_indexes = [index for index, event in enumerate(task.events) if event == ("click", "middle")]
         self.assertEqual(1, len(middle_click_indexes))
         self.assertLess(middle_click_indexes[0], task.events.index("yolo_hit"))
         self.assertEqual(4, task.events.count("ocr_miss"))

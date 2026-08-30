@@ -1,10 +1,9 @@
-# -*- coding: utf-8 -*-
 import unittest
 from unittest.mock import patch
 
 import pyautogui
 
-from src.core.rotation_ast import normalize_ast, eval_cond, iter_actions
+from src.core.rotation_ast import eval_cond, iter_actions, normalize_ast
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
 
@@ -43,11 +42,13 @@ class TestNormalizeAst(unittest.TestCase):
         self.assertTrue(any("条件" in x for x in w))
 
     def test_normalize_skill_out_of_range(self):
-        ast, w = normalize_ast([
-            {"if": "skill>=4", "then": ["1"]},
-            {"if": "skill>=0", "then": ["2"]},
-            {"if": "skill>=3", "then": ["3"]},
-        ])
+        ast, w = normalize_ast(
+            [
+                {"if": "skill>=4", "then": ["1"]},
+                {"if": "skill>=0", "then": ["2"]},
+                {"if": "skill>=3", "then": ["3"]},
+            ]
+        )
         self.assertEqual(ast, [{"if": "skill>=3", "then": ["3"]}])
         # 每个非法 if 的 Condition 产生 2 条 warning（原子非法 + 整块丢弃），共 4 条
         self.assertEqual(len(w), 4)
@@ -69,9 +70,7 @@ class TestNormalizeAst(unittest.TestCase):
         self.assertEqual(w, [])
 
     def test_normalize_nested_all_any(self):
-        ast, w = normalize_ast([
-            {"if": {"all": ["ult1", {"any": ["link", "skill>=2"]}]}, "then": ["1"], "else": ["2"]}
-        ])
+        ast, w = normalize_ast([{"if": {"all": ["ult1", {"any": ["link", "skill>=2"]}]}, "then": ["1"], "else": ["2"]}])
         self.assertEqual(len(ast), 1)
         self.assertEqual(ast[0]["if"], {"all": ["ult1", {"any": ["link", "skill>=2"]}]})
         self.assertEqual(ast[0]["then"], ["1"])

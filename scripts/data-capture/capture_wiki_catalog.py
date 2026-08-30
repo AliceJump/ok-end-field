@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 """抓取官方 Wiki（wiki.skport.com）catalog 多语言数据（真实浏览器）。
 
 接口 ``zonai.skport.com/web/v1/wiki/item/catalog`` 的 sign 由前端自动生成
@@ -43,9 +41,19 @@ LANGS = [
 
 # (mainTypeId, typeSubId)
 COMBOS = [
-    ("1", "1"), ("1", "2"), ("1", "6"), ("1", "16"), ("1", "5"),
-    ("1", "4"), ("1", "15"), ("1", "3"), ("1", "17"),
-    ("2", "10"), ("2", "9"), ("3", "13"), ("3", "14"),
+    ("1", "1"),
+    ("1", "2"),
+    ("1", "6"),
+    ("1", "16"),
+    ("1", "5"),
+    ("1", "4"),
+    ("1", "15"),
+    ("1", "3"),
+    ("1", "17"),
+    ("2", "10"),
+    ("2", "9"),
+    ("3", "13"),
+    ("3", "14"),
 ]
 
 
@@ -81,8 +89,11 @@ def main():
         page.set_default_timeout(60000)
 
         try:
-            page.goto("https://wiki.skport.com/endfield/catalog?mainTypeId=1&typeSubId=1",
-                      timeout=90000, wait_until="domcontentloaded")
+            page.goto(
+                "https://wiki.skport.com/endfield/catalog?mainTypeId=1&typeSubId=1",
+                timeout=90000,
+                wait_until="domcontentloaded",
+            )
         except Exception as e:
             print("init goto:", e, flush=True)
         page.wait_for_timeout(8000)
@@ -94,27 +105,29 @@ def main():
                 try:
                     page.click("#lang .HLang__TextBlock-bWHShx", timeout=10000)
                     page.wait_for_timeout(500)
-                    page.click(f"#lang .HLang__LangOption-ftlMmG >> text='{label}'",
-                               timeout=10000, force=True)
+                    page.click(f"#lang .HLang__LangOption-ftlMmG >> text='{label}'", timeout=10000, force=True)
                     page.wait_for_load_state("domcontentloaded", timeout=30000)
                 except Exception as e:
                     print(f"[{code}] switch fail: {e}", flush=True)
                 page.wait_for_timeout(6000)
-            print(f"== language {code} (html lang={page.evaluate('() => document.documentElement.lang')})",
-                  flush=True)
+            print(f"== language {code} (html lang={page.evaluate('() => document.documentElement.lang')})", flush=True)
 
             counts = {}
             for main_id, sub_id in COMBOS:
-                url = (f"https://wiki.skport.com/endfield/catalog"
-                       f"?mainTypeId={main_id}&typeSubId={sub_id}&filterIds=&header=0")
+                url = (
+                    f"https://wiki.skport.com/endfield/catalog"
+                    f"?mainTypeId={main_id}&typeSubId={sub_id}&filterIds=&header=0"
+                )
                 try:
                     with page.expect_response(
-                            lambda r, m=main_id, s=sub_id:
+                        lambda r, m=main_id, s=sub_id: (
                             r.url.startswith(PREFIX)
                             and f"typeMainId={m}" in r.url
                             and f"typeSubId={s}" in r.url
-                            and r.status == 200,
-                            timeout=40000) as ri:
+                            and r.status == 200
+                        ),
+                        timeout=40000,
+                    ) as ri:
                         page.goto(url, timeout=60000, wait_until="domcontentloaded")
                     body = ri.value.text()
                     d = json.loads(body)

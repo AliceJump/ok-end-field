@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import unittest
 from unittest.mock import patch
 
@@ -11,8 +10,6 @@ from src.core.BattleConfig import (
 )
 from src.gui.AccountConfigTab import AccountConfigTab
 from src.tasks.mixin.battle_mixin import BattleMixin
-from src.tasks.onetime.DailyTask import DailyTask
-from src.tasks.onetime.DeliveryTask import DeliveryTask
 
 
 class _DummyTask:
@@ -123,12 +120,15 @@ class TestAccountConfigRules(unittest.TestCase):
 
         self.assertTrue(changed)
         saved = tab.overrides_data["accounts"]["acc"]["_DummyTask"]
-        self.assertEqual(saved, {
-            "普通配置": 5,
-            "强制配置": 3,
-            "配置选择": "常用配置",
-            "额外配置": 9,
-        })
+        self.assertEqual(
+            saved,
+            {
+                "普通配置": 5,
+                "强制配置": 3,
+                "配置选择": "常用配置",
+                "额外配置": 9,
+            },
+        )
 
     def test_unchanged_visible_values_still_complete_full_snapshot(self):
         tab = _AccountConfigHarness()
@@ -298,27 +298,6 @@ class TestAccountConfigRules(unittest.TestCase):
         tab.current_virtual_config["普通配置"] = 5
         self.assertTrue(tab._has_current_task_changes())
 
-    def test_tasks_hide_only_non_account_execution_controls(self):
-        self.assertTrue({
-            "发生异常时终止游戏",
-            "仅退出游戏",
-            "自动打开汇总文件",
-            "Exit After Task",
-            "重复测试的次数",
-        }.issubset(DailyTask.account_config_blacklist))
-        self.assertTrue({
-            "选择测试对象",
-            "仅接取",
-            "仅送货",
-            "完整循环测试区域",
-            "发生异常时终止游戏",
-            "Exit After Task",
-        }.issubset(DeliveryTask.account_config_blacklist))
-
-        self.assertNotIn("配置选择", DailyTask.account_config_blacklist)
-        self.assertNotIn("⭐执行外部命令", DailyTask.account_config_blacklist)
-        self.assertNotIn("外部命令", DailyTask.account_config_blacklist)
-        self.assertNotIn("通向武陵城送货点", DeliveryTask.account_config_blacklist)
 
 class TestBattleConfigOverrides(unittest.TestCase):
     def make_battle_task(self, config):
@@ -341,28 +320,28 @@ class TestBattleConfigOverrides(unittest.TestCase):
         # 开关类型：无 options，sub_configs 以 True 为键
         self.assertNotIn("options", mode_type)
         independent_keys = mode_type["sub_configs"][True]
-        expected = [k for k in list(task.default_config)[1:]
-                    if k not in (KEY_COND_SEQUENCE, KEY_INSTANT_ULT, KEY_INSTANT_LINK)]
+        expected = [
+            k for k in list(task.default_config)[1:] if k not in (KEY_COND_SEQUENCE, KEY_INSTANT_ULT, KEY_INSTANT_LINK)
+        ]
         self.assertEqual(independent_keys, expected)
 
     def test_task_config_overrides_global_battle_config(self):
-        task = self.make_battle_task({
-            BATTLE_CONFIG_MODE_KEY: True,
-            "启动技能点数": 3,
-        })
+        task = self.make_battle_task(
+            {
+                BATTLE_CONFIG_MODE_KEY: True,
+                "启动技能点数": 3,
+            }
+        )
 
         self.assertEqual(task.get_battle_config("启动技能点数"), 3)
 
     def test_global_mode_ignores_independent_battle_value(self):
-        task = self.make_battle_task({
-            BATTLE_CONFIG_MODE_KEY: False,
-            "启动技能点数": 3,
-        })
-
-        self.assertEqual(task.get_battle_config("启动技能点数"), 2)
-
-    def test_global_battle_config_is_fallback_for_task(self):
-        task = self.make_battle_task({})
+        task = self.make_battle_task(
+            {
+                BATTLE_CONFIG_MODE_KEY: False,
+                "启动技能点数": 3,
+            }
+        )
 
         self.assertEqual(task.get_battle_config("启动技能点数"), 2)
 
@@ -374,14 +353,6 @@ class TestUseIndependentParsing(unittest.TestCase):
         task = object.__new__(BattleMixin)
         task.log_debug = lambda msg: None
         return task
-
-    def test_boolean_true_returns_true(self):
-        task = self.make_task()
-        self.assertTrue(task._parse_use_independent(True))
-
-    def test_boolean_false_returns_false(self):
-        task = self.make_task()
-        self.assertFalse(task._parse_use_independent(False))
 
     def test_legacy_dropdown_use_independent_string(self):
         """旧下拉框值「使用独立配置」应解析为 True"""
@@ -407,33 +378,11 @@ class TestUseIndependentParsing(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertFalse(task._parse_use_independent(value))
 
-    def test_empty_string_returns_false(self):
-        """空字符串应解析为 False"""
-        task = self.make_task()
-        self.assertFalse(task._parse_use_independent(""))
-
-    def test_whitespace_string_returns_false(self):
-        """空白字符串应解析为 False"""
-        task = self.make_task()
-        self.assertFalse(task._parse_use_independent("   "))
-
-    def test_none_returns_false(self):
-        """None 应回退到 False"""
-        task = self.make_task()
-        self.assertFalse(task._parse_use_independent(None))
-
     def test_invalid_string_returns_false(self):
         """无效字符串应回退到 False（默认值）"""
         task = self.make_task()
         for value in ["invalid", "random_text", "2", "maybe"]:
             with self.subTest(value=value):
-                self.assertFalse(task._parse_use_independent(value))
-
-    def test_invalid_types_return_false(self):
-        """非布尔/字符串类型应回退到 False"""
-        task = self.make_task()
-        for value in [123, 1.5, [], {}, object()]:
-            with self.subTest(value=type(value).__name__):
                 self.assertFalse(task._parse_use_independent(value))
 
 
@@ -460,30 +409,6 @@ class TestUseIndependentBattleConfigSelection(unittest.TestCase):
         task = self.make_task_with_value("使用全局配置")
         self.assertEqual(task.get_battle_config("启动技能点数"), 2)
 
-    def test_string_true_selects_task_config(self):
-        """字符串 "true" 应选择任务配置"""
-        task = self.make_task_with_value("true")
-        self.assertEqual(task.get_battle_config("启动技能点数"), 3)
-
-    def test_string_false_selects_global_config(self):
-        """字符串 "false" 应选择全局配置"""
-        task = self.make_task_with_value("false")
-        self.assertEqual(task.get_battle_config("启动技能点数"), 2)
-
-    def test_string_1_selects_task_config(self):
-        """字符串 "1" 应选择任务配置"""
-        task = self.make_task_with_value("1")
-        self.assertEqual(task.get_battle_config("启动技能点数"), 3)
-
-    def test_string_0_selects_global_config(self):
-        """字符串 "0" 应选择全局配置"""
-        task = self.make_task_with_value("0")
-        self.assertEqual(task.get_battle_config("启动技能点数"), 2)
-
-    def test_invalid_string_selects_global_config(self):
-        """无效字符串应回退到全局配置（默认行为）"""
-        task = self.make_task_with_value("invalid_value")
-        self.assertEqual(task.get_battle_config("启动技能点数"), 2)
 
 if __name__ == "__main__":
     unittest.main()

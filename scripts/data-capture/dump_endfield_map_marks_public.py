@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 import json
 from collections import defaultdict
 from pathlib import Path
@@ -13,12 +11,7 @@ HEADERS = {
     "Origin": "https://game.skland.com",
 }
 
-TARGET_DIR = (
-    Path(__file__).resolve().parents[2]
-    / "assets"
-    / "items"
-    / "map"
-)
+TARGET_DIR = Path(__file__).resolve().parents[2] / "assets" / "items" / "map"
 TARGET_DIR.mkdir(parents=True, exist_ok=True)
 
 
@@ -63,16 +56,15 @@ def main():
         for level in game_map.get("levels", []):
             level_id = level.get("id")
             if level_id:
-                queries.append({
-                    "mapId": map_id,
-                    "levelId": level_id,
-                })
+                queries.append(
+                    {
+                        "mapId": map_id,
+                        "levelId": level_id,
+                    }
+                )
 
         for query in queries:
-            url = (
-                "/web/v1/game/endfield/map/mark/list?"
-                + parse.urlencode(query)
-            )
+            url = "/web/v1/game/endfield/map/mark/list?" + parse.urlencode(query)
 
             print("GET", url)
 
@@ -81,10 +73,7 @@ def main():
 
             data = data.get("data", {})
 
-            template_map = {
-                item["id"]: item["name"].strip()
-                for item in data.get("markTemplates", [])
-            }
+            template_map = {item["id"]: item["name"].strip() for item in data.get("markTemplates", [])}
 
             all_names.update(name for name in template_map.values() if name and name not in EXCLUDE_MARKS)
 
@@ -122,11 +111,7 @@ def main():
                 _add_point(mark)
 
     summary = {
-        map_id: {
-            name: list(points.values())
-            for name, points in groups.items()
-        }
-        for map_id, groups in all_maps.items()
+        map_id: {name: list(points.values()) for name, points in groups.items()} for map_id, groups in all_maps.items()
     }
 
     write_json(

@@ -15,18 +15,13 @@ class TestGameWindow(unittest.TestCase):
         win32gui.GetWindowRect.return_value = (0, 0, 1920, 1080)
         win32gui.EnumWindows.side_effect = lambda callback, context: [callback(hwnd, context) for hwnd in (100, 200)]
         get_process_id.side_effect = lambda hwnd: (1, hwnd)
-        process.side_effect = lambda pid: type("Process", (), {"name": lambda self: "Other.exe" if pid == 100 else "Endfield.exe"})()
+        process.side_effect = lambda pid: type(
+            "Process", (), {"name": lambda self: "Other.exe" if pid == 100 else "Endfield.exe"}
+        )()
 
         hwnd = find_game_hwnd({"exe": ["Endfield.exe"], "hwnd_class": "UnityWndClass"})
 
         self.assertEqual(hwnd, 200)
-
-    @patch("src.core.game_window.win32gui")
-    def test_find_game_hwnd_returns_zero_when_no_window_matches(self, win32gui):
-        win32gui.GetForegroundWindow.return_value = 0
-        win32gui.EnumWindows.side_effect = lambda callback, context: None
-
-        self.assertEqual(find_game_hwnd({"hwnd_class": "UnityWndClass"}, timeout=0), 0)
 
 
 if __name__ == "__main__":

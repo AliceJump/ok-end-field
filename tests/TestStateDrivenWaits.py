@@ -2,7 +2,6 @@ import unittest
 from unittest.mock import patch
 
 from ok import Box
-
 from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.tasks.mixin.battle_mixin import BattleMixin
