@@ -95,7 +95,15 @@
             "stagger_value": 0,
             "cooldown": "10秒",
             "spirit_cost": 90,
-            "effects": []
+            "effects": [
+                {
+                    "effect_id": "STATUS_BURNING",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
         }
     ]
 }
