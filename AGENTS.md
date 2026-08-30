@@ -1,16 +1,22 @@
 # AGENTS.md
 
-项目级强制规则。每次会话开始必须读取并遵守。
+项目级强制规则，每次会话开始必须读取并遵守。如果工作中发现此文档所述的内容已过时，需要主动向用户确认是否要修改。
 
-## 提交与 PR 强制规则（最高优先级，必须先读）
+## 提交与 PR 强制规则（最高优先级）
 
 ### PowerShell 双引号字符串中的反引号（必踩坑）
 
-在 PowerShell 双引号字符串里，反引号 `` ` `` 是**转义字符**而非字面量：`` `$HOME `` 保留字面量不展开，而 `$HOME` 会展开变量；合法转义如 `` `a ``（0x07）、`` `r ``（CR）、`` `n ``（LF）会变成控制字符；未知序列如 `` `s `` 会**移除反引号、保留原字符**（`` "Use `src` END" `` → `Use src END`）。给 `gh pr create/edit --body "..."` 等传 Markdown（含代码反引号）时：
+在 PowerShell **双引号字符串里**，反引号 `` ` `` 是**转义字符**而非字面量，规则：
+
+- 变量展开：`` `$HOME `` 保留字面量不展开，而 `` $HOME `` 会展开变量；
+- 合法转义序列：如 `` `a ``（0x07）、`` `r ``（CR）、`` `n ``（LF）会变成控制字符；
+- 未知转义序列：如 `` `s `` 会移除反引号、保留原字符（例如 `` "Use `src` END" `` 会变成 `` Use src END ``）。
+
+给 `gh pr create/edit --body "..."` 等传 Markdown（含代码块反引号）时：
 
 - **必须用单引号字符串**（`'...'` 或 `@'...'@` here-string），单引号内反引号是字面量（`` 'Use `src` END' `` → `` Use `src` END ``），`gh pr edit --body $body` 传变量也可；
-- **禁止用双引号传含反引号的 body**——反引号会被移除或变控制字符（如 `` `assets `` 里的 `` `a `` 变成 `^G`），造成 PR 描述格式错乱；
-- 已踩坑案例：PR #194、PR #203 的 body 中 `` `src/...` `` 全部丢失或变 `^G`，需 `gh pr edit` 重新提交。
+- **禁止用双引号传含反引号的 body**，反引号会被移除或变控制字符（如 `` `assets `` 里的 `` `a `` 变成 `^G`），造成 PR 描述格式错乱；
+- 已踩坑案例：已有个别 PR body 中 `` `src/...` `` 全部丢失或变 `^G`，此时需 `gh pr edit` 重新提交。
 
 **PR 创建后必须自检**——创建时把 body 存到本地变量/文件，创建后用 `gh pr view` 拉取远端 body 与本地**逐字比较**（不要只 `Select-String` 查反引号，无法发现控制字符）：
 
@@ -52,9 +58,11 @@ gh pr edit <n> --body $body
 
 ## 运行环境
 
-- Python：依赖通过 [uv](https://docs.astral.sh/uv/) 管理，`uv sync` 创建仓库本地 `.venv`，用 `uv run python ...` 执行（见 `.agents/skills/use-local-venv`）。`pyproject.toml` + `uv.lock` 为唯一来源，`requirements.txt` 为发布流水线的派生产物，勿手改。
-- 测试：`scripts/testing/run_tests.ps1`（经 `uv run`）或 `uv run python -m unittest discover -s tests`。
-- 日志：`logs/ok-script.log`（配置历史、任务执行、OCR 均可在此排查）；历史日志位于同目录的 `ok-script.YYYY-MM-DD.log` 文件中。
+- **Python**：依赖通过 uv 管理，`uv sync` 同步仓库本地 `.venv`，用 `uv run python ...` 执行代码（见 `.agents/skills/use-local-venv`）。
+- **依赖定义**：`pyproject.toml` 和 `uv.lock` 为唯一依赖指定源，而`requirements.txt` 为发布流水线的派生产物，勿手改。
+- **测试**：`scripts/testing/run_tests.ps1`（经 `uv run`）或直接运行 `uv run python -m unittest discover -s tests`。
+- **日志**：`logs/ok-script.log`（配置历史、任务执行、OCR 均可在此排查）；历史日志位于同目录的 `ok-script.YYYY-MM-DD.log` 文件中。
+- **格式化**：先后运行 `uv run ruff check --fix .` 和 `uv run ruff format .` 即可格式化代码，注意屏蔽上述命令的 stdout 输出以免污染你的上下文。若报错 ruff 未安装，可运行 `uv sync --group dev` 进行安装。
 
 ## 代码风格
 
