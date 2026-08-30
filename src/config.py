@@ -1,6 +1,7 @@
 import os
 
 import numpy as np
+
 from src.core.email_config import email_config_option
 from src.interaction.EfInteraction import EfInteraction
 from src.tasks.daily.finally_file import decode
@@ -34,7 +35,7 @@ def make_bottom_left_black(frame):  # 可选. 某些游戏截图时遮挡UID使�
         black_rect = np.zeros((black_height, black_width, frame.shape[2]), dtype=frame.dtype)  # 确保数据类型一致
 
         # 用黑色矩形替换图像的左下角部分
-        frame[start_y:height, start_x:start_x + black_width] = black_rect
+        frame[start_y:height, start_x : start_x + black_width] = black_rect
 
         return frame
     except Exception as e:
@@ -54,28 +55,27 @@ config = {
     "wait_until_before_delay": 0,
     "wait_until_check_delay": 0,
     "wait_until_settle_time": 0,  # 调用 wait_until时候, 在第一次满足条件的时候, 会等待再次检测, 以避免某些滑动动画没到预定位置就在动画路径中被检测到
-    'ocr': {
-        'lib': 'onnxocr',
-        'params': {
-            'use_openvino': True,
-            'use_npu': True,
-        }
+    "ocr": {
+        "lib": "onnxocr",
+        "params": {
+            "use_openvino": True,
+            "use_npu": True,
+        },
     },
-    'template_tab': {
+    "template_tab": {
         # 是否生成标签枚举
-        'generate_label_enum': True,
-
+        "generate_label_enum": True,
         # 标签枚举的相对路径
-        'label_enum_relative_path': 'src/data/FeatureList',
+        "label_enum_relative_path": "src/data/FeatureList",
     },
-    'item_map': {
+    "item_map": {
         # 物品地图数据的相对路径
-        'summary_json': os.path.join('assets', 'items', 'map', 'summary.json'),
-        'item_names_json': os.path.join('assets', 'items', 'map', 'item_names.json'),
+        "summary_json": os.path.join("assets", "items", "map", "summary.json"),
+        "item_names_json": os.path.join("assets", "items", "map", "item_names.json"),
     },
     "windows": {  # Windows游戏请填写此设置
         "exe": ["Endfield.exe"],
-        'hwnd_class': 'UnityWndClass', #增加重名检查准确度
+        "hwnd_class": "UnityWndClass",  # 增加重名检查准确度
         # GUI 需要可迭代配置；设备管理器需要类对象，使用包装器同时满足两者。
         "interaction": [EfInteraction],
         # Genshin:某些操作可以后台, 部分游戏支持 PostMessage:可后台点击, 极少游戏支持 ForegroundPostMessage:前台使用PostMessage Pynput/PyDirect:仅支持前台使用
