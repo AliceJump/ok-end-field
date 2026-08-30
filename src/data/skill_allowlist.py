@@ -58,7 +58,102 @@ def clear_cache():
     _cached_characters = None
 
 
-# ── 核心逻辑：构建允许列表 ──────────────────────────────────────────────────
+# ── 核心逻辑：两阶段构建允许列表 ────────────────────────────────────────────
+
+def _build_team_skill_context(
+    team_members: list[str],
+    characters: dict[str, dict],
+) -> dict:
+    """第一阶段：扫描队伍所有技能，建立依赖关系图。
+
+    Returns:
+        {
+            "producers":    {effect_id: [(char_name, skill_type), ...]},
+            "enhancements": {(char_name, "战技"): {"requires": [...], "effects": [...]}},
+        }
+    """
+    team_set = set(team_members)
+
+    # 收集队内所有技能
+    all_skills: dict[tuple[str, str], dict] = {}
+    for name, cdata in characters.items():
+        if name not in team_set:
+            continue
+        for s in cdata.get("skills", []):
+            all_skills[(name, s.get("skill_id", ""))] = s
+
+    # ── producers: 哪些技能产出什么状态 ──
+    producers: dict[str, list[tuple[str, str]]] = {}
+    for (sname, _sid), sdata in all_skills.items():
+        for eff in (sdata.get("effects") or []):
+            eid = eff.get("effect_id", "") if isinstance(eff, dict) else (eff if isinstance(eff, str) else "")
+            if eid:
+                producers.setdefault(eid, []).append((sname, sdata.get("skill_type", "")))
+
+    # ── 物理异常隐式产出：含击飞/倒地/碎甲/猛击的技能隐式产出 STACK_SHRED ──
+    _PHYS_ANOMALY_KEYWORDS = ('击飞', '倒地', '碎甲', '猛击')
+    for (sname, _sid), sdata in all_skills.items():
+        desc = sdata.get('description', '')
+        if any(kw in desc for kw in _PHYS_ANOMALY_KEYWORDS):
+            producers.setdefault('STACK_SHRED', []).append((sname, sdata.get('skill_type', '')))
+
+    # ── enhancements: 哪些战技有增强，增强需要什么、产出什么 ──
+    enhancements: dict[tuple[str, str], dict] = {}
+    for (sname, _sid), sdata in all_skills.items():
+        if sdata.get("skill_type") != "战技":
+            continue
+        enh = sdata.get("enhancement")
+        if not enh:
+            continue
+
+        # 触发条件 effects → 可能是 string 或 dict
+        tc = enh.get("trigger_condition", {})
+        raw_requires = tc.get("effects") or []
+        requires = [
+            eid for eid in (
+                [e if isinstance(e, str) else e.get("effect_id", "") for e in raw_requires]
+            )
+            if eid and eid != "STATUS_STAGGER"
+        ]
+
+        # 增强效果 effects → 可能是 string 或 dict
+        raw_enh_effects = enh.get("effects") or []
+        enh_effects = [
+            eid for eid in (
+                [e.get("effect_id", "") if isinstance(e, dict) else (e if isinstance(e, str) else "")
+                 for e in raw_enh_effects]
+            )
+            if eid and eid != "STATUS_STAGGER"
+        ]
+
+        enhancements[(sname, "战技")] = {
+            "requires": requires,
+            "effects": enh_effects,
+        }
+
+    # ── 物理异常隐式依赖：所有含击飞/倒地/碎甲/猛击的战技默认依赖 STACK_SHRED ──
+    # 对已有增强态的战技：补充 requires
+    # 对无增强态的战技：创建合成增强条目
+    _PHYS_ANOMALY_KEYWORDS = ('击飞', '倒地', '碎甲', '猛击')
+    for (sname, _sid), sdata in all_skills.items():
+        if sdata.get("skill_type") != "战技":
+            continue
+        desc = sdata.get("description", "")
+        if not any(kw in desc for kw in _PHYS_ANOMALY_KEYWORDS):
+            continue
+        key = (sname, "战技")
+        if key in enhancements:
+            if "STACK_SHRED" not in enhancements[key]["requires"]:
+                enhancements[key]["requires"].append("STACK_SHRED")
+        else:
+            enhancements[key] = {
+                "requires": ["STACK_SHRED"],
+                "effects": [],
+                "_synthetic": True,
+            }
+
+    return {"producers": producers, "enhancements": enhancements}
+
 
 def build_skill_allowlist(
     team_members: list[str],
@@ -66,13 +161,16 @@ def build_skill_allowlist(
 ) -> dict[int, tuple[bool, str]]:
     """判断队伍中每个角色的战技是否允许手动释放。
 
+    两阶段架构：
+      1. 建立队伍技能依赖图（producers / enhancements）
+      2. 逐个角色判定战技是否应被增强态接管
+
     Args:
-        team_members: 4 个角色名列表，索引 0-3 对应技能键 1-4
+        team_members: 4 个角色名，索引 0-3 对应技能键 "1"-"4"
         characters:   角色数据字典（可选，默认加载）
 
     Returns:
         {位置索引: (是否允许, 阻止原因)}
-        例: {1: (False, "增强可触发，被增强机制接管"), 3: (True, "")}
     """
     if characters is None:
         characters = load_characters()
@@ -80,6 +178,10 @@ def build_skill_allowlist(
     if not characters:
         return {i: (True, "") for i in range(len(team_members))}
 
+    # ── 第一阶段：建立队伍技能依赖图 ──
+    ctx = _build_team_skill_context(team_members, characters)
+
+    # ── 第二阶段：逐个判定战技 ──
     result: dict[int, tuple[bool, str]] = {}
 
     for idx, char_name in enumerate(team_members):
@@ -98,87 +200,32 @@ def build_skill_allowlist(
             result[idx] = (True, "")
             continue
 
-        has_enhancement = skill.get("has_enhancement", False)
-        enhancement = skill.get("enhancement") if has_enhancement else None
-
-        if not has_enhancement or not enhancement:
+        key = (char_name, "战技")
+        enhancement = ctx["enhancements"].get(key)
+        if not enhancement:
             result[idx] = (True, "")
             continue
 
-        # ── 增强条件分析 ──
-        trigger_condition = enhancement.get("trigger_condition", {})
-        trigger_effects = [
-            eid for eid in (trigger_condition.get("effects") or [])
-            if eid != "STATUS_STAGGER"  # 失衡：基础异常，不参与增强依赖判定
-        ]
+        required = enhancement["requires"]
+        enhancement_effects = enhancement["effects"]
 
-        # 增强产出全部是无价值效果 → 增强形同虚设，战技无释放价值
-        enhancement_effects = [
-            e.get("effect_id", "") for e in (enhancement.get("effects") or [])
-            if e.get("effect_id") != "STATUS_STAGGER"
-        ]
-        if not trigger_effects and not enhancement_effects:
-            result[idx] = (False, "增强效果无实际价值")
-            continue
-
-        if not trigger_effects:
+        # 无触发条件且无增强效果 → 自身机制型增强（如弩弗三段替换），战技有意义
+        if not required and not enhancement_effects:
             result[idx] = (True, "")
             continue
 
-        # ── 队内产出映射（仅限队伍成员，不看全游戏角色）──
-        team_set = set(team_members)
-        all_skills = {}
-        for name, cdata in characters.items():
-            if name not in team_set:
-                continue
-            for s in cdata.get("skills", []):
-                all_skills[(name, s.get("skill_id", ""))] = s
-
-        skill_produces: dict[str, list[str]] = {}
-        for (sname, _), sdata in all_skills.items():
-            for eff in (sdata.get("effects") or []):
-                eid = eff.get("effect_id", "")
-                if eid:
-                    skill_produces.setdefault(eid, []).append(sname)
-
-        # ── 战技增强是否可触发（仅限队内其他人）──
-        is_dependency = False
-        dependency_meaningful = False
-
-        for eff in trigger_effects:
-            producers = skill_produces.get(eff, [])
-            if producers:
-                is_dependency = True
-                break
-
-        # ── 有意义依赖：队内有人既产该状态，其自身增强又需要该状态 ──
-        if is_dependency:
-            ultimate_triggers: dict[str, list[str]] = {}
-            for (sname, _), sdata in all_skills.items():
-                if sname == char_name:
-                    continue
-                enh = sdata.get("enhancement")
-                if enh:
-                    tc = enh.get("trigger_condition", {})
-                    for eff in (tc.get("effects") or []):
-                        ultimate_triggers.setdefault(eff, []).append(sname)
-
-            dependency_meaningful = False
-            for eff in trigger_effects:
-                if eff in ultimate_triggers:
-                    dependency_meaningful = True
-                    break
-
-        # ── 最终判定 ──
-        if not is_dependency:
-            # 增强条件在队内无人能触发 → 增强形同虚设，战技有意义
+        # 无触发条件 → 增强不依赖外部状态，战技有意义
+        if not required:
             result[idx] = (True, "")
-        elif dependency_meaningful:
-            # 增强可触发 + 有其他人依赖该状态 → 战技有意义
-            result[idx] = (True, "")
+            continue
+
+        # 所有触发条件是否都能被队内满足
+        can_trigger = all(eff in ctx["producers"] for eff in required)
+
+        if can_trigger:
+            result[idx] = (False, "增强态优先")
         else:
-            # 增强可触发但无人需要 → 增强接管了战技的释放价值
-            result[idx] = (False, "增强可触发，被增强机制接管")
+            result[idx] = (True, "")
 
     return result
 
@@ -205,7 +252,8 @@ def generate_skill_sequence(
         生成的战技释放序列，如 ["1", "3"]
     """
     allowlist = build_skill_allowlist(team_members, characters)
-    return [str(i + 1) for i, (ok, _) in allowlist.items() if ok]
+    result = [str(i + 1) for i, (ok, _) in allowlist.items() if ok]
+    return result if result else [str(i + 1) for i in range(len(team_members))]
 
 
 def filter_skill_sequence(
@@ -365,13 +413,16 @@ def _match_portrait(portrait: np.ndarray, template: np.ndarray) -> float:
 
 
 def detect_team_from_frame(frame: np.ndarray) -> list[str]:
-    """从战斗帧的左下角头像识别当前队伍 4 个角色名（中文）。
+    """从战斗帧的左下角头像识别当前队伍角色名（中文）。
+
+    自动兼容少人情况：识别完成后去掉尾部未识别的 "?" 位，
+    因此 3 人队返回 3 个、2 人队返回 2 个。
 
     Args:
         frame: BGR 格式 numpy 数组（由 task.next_frame() 获取）
 
     Returns:
-        4 个中文角色名列表，识别失败的位置用 "?" 代替。
+        角色名列表（按位置顺序），识别失败的位置用 "?" 代替。
         例: ["别礼", "伊冯", "洁尔佩塔", "余烬"]
     """
     icons = _load_battle_icons()
@@ -408,7 +459,58 @@ def detect_team_from_frame(frame: np.ndarray) -> list[str]:
         else:
             team.append("?")
 
-    return team
+    # 兼容少人：去掉尾部 "?" 位
+    while team and team[-1] == "?":
+        team.pop()
+    return team or ["?"] * 4
+
+
+def detect_team_stable(
+    frame_getter,
+    task=None,
+    max_attempts: int = 6,
+    interval: float = 0.2,
+    confidence: int = 2,
+) -> list[str]:
+    """多帧稳定识别：连续 confidence 次识别出相同队伍才返回结果。
+
+    用于战斗开始前的稳定检测，避免单帧误识别。
+    优先使用 task.sleep（兼容任务框架），无 task 时回退 time.sleep。
+
+    Args:
+        frame_getter:  无参 callable，返回 BGR numpy 帧（如 task.next_frame）
+        task:          任务实例（可选，用于 task.sleep）
+        max_attempts:  最大采样次数
+        interval:      每次采样间隔秒数
+        confidence:    连续多少次相同结果视为稳定
+
+    Returns:
+        稳定识别的角色名列表；若未达稳定则返回最后一次识别结果。
+    """
+    import time
+    _sleep = getattr(task, 'sleep', None) or time.sleep
+
+    last_result: list[str] = []
+    streak = 0
+
+    for _ in range(max_attempts):
+        frame = frame_getter()
+        if frame is None or (hasattr(frame, 'size') and frame.size == 0):
+            _sleep(interval)
+            continue
+
+        current = detect_team_from_frame(frame)
+        if current == last_result:
+            streak += 1
+            if streak >= confidence:
+                return current
+        else:
+            last_result = current
+            streak = 1
+
+        _sleep(interval)
+
+    return last_result
 
 
 def detect_team_from_frame_with_scores(frame: np.ndarray) -> list[tuple[str, float]]:
