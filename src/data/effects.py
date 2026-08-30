@@ -116,7 +116,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.VULN_ELECTROMAGNETIC: "敌人受到电磁伤害增加",
     EffectType.VULN_NATURAL: "敌人受到自然伤害增加",
     EffectType.VULN_PHYSICAL: "敌人受到物理伤害增加",
-    EffectType.VULN_ALL: "敌人受到所有元素伤害增加",
+    EffectType.VULN_ALL: "敌人受到的法术伤害增加（不含物理伤害）",
 
     # 物理异常状态
     EffectType.STATUS_SHRED: "破防状态，可被击飞和倒地叠加（最多4层），被猛击和碎甲消耗",
@@ -230,7 +230,6 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "倒地": EffectType.STATUS_KNOCKDOWN,
     "击飞": EffectType.STATUS_HEAVY_HIT,
     "失衡": EffectType.STATUS_STAGGER,
-    "重击": EffectType.STATUS_HEAVY_HIT,
     "法术附着": EffectType.STATUS_SPELL_INFLICT,
     "法术爆发": EffectType.STATUS_SPELL_BURST,
     "法术异常": EffectType.STATUS_SPELL_ANOMALY,

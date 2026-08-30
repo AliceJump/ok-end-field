@@ -36,14 +36,7 @@
                 },
                 "enhancement_effect": "伤害提升+青霆剑",
                 "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "BUFF_DAMAGE_UP",
-                        "value": 1,
-                        "duration": null,
-                        "target": "self"
-                    }
-                ]
+                "effects": []
             },
             "description": "消耗目标的导电状态，使本次战技伤害倍率提高，并生成相当于所消耗导电的异常等级+1柄青霆剑，若现存的青霆剑少于3柄，即使未消耗目标的导电状态仍能生成1柄青霆剑。随后引导附近的青霆剑依次雷击目标，造成电磁伤害并额外获得终结技能量，最后一次雷击造成6倍伤害。一次战技最多生成3柄青霆剑。",
             "damage_multiplier": "280%（基础）+ 420%（追加）",
