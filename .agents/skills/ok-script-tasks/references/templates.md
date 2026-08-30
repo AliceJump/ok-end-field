@@ -50,13 +50,17 @@ class AutoClosePopupTask(TriggerTask):
         self.name = "Auto Close Popup"
         self.description = "Close known popups when they appear."
         self.trigger_interval = 1.0
-        self.default_config.update({
-            "_enabled": True,
-            "Close Text": ["Close", "关闭"],
-        })
-        self.config_description.update({
-            "Close Text": "OCR text for popup close buttons. 弹窗关闭按钮文本。",
-        })
+        self.default_config.update(
+            {
+                "_enabled": True,
+                "Close Text": ["Close", "关闭"],
+            }
+        )
+        self.config_description.update(
+            {
+                "Close Text": "OCR text for popup close buttons. 弹窗关闭按钮文本。",
+            }
+        )
 
     def run(self):
         close_button = self.ocr(match=self.config.get("Close Text"))
@@ -103,18 +107,24 @@ class ClickFeatureTask(BaseTask):
 ## Config With Drop-Down and Multi-Selection
 
 ```python
-self.default_config.update({
-    "Mode": "Safe",
-    "Enabled Labels": ["A"],
-})
-self.config_type.update({
-    "Mode": {"type": "drop_down", "options": ["Safe", "Fast"]},
-    "Enabled Labels": {"type": "multi_selection", "options": ["A", "B", "C"]},
-})
-self.config_description.update({
-    "Mode": "Execution mode. 执行模式。",
-    "Enabled Labels": "Labels allowed for matching. 允许匹配的标签。",
-})
+self.default_config.update(
+    {
+        "Mode": "Safe",
+        "Enabled Labels": ["A"],
+    }
+)
+self.config_type.update(
+    {
+        "Mode": {"type": "drop_down", "options": ["Safe", "Fast"]},
+        "Enabled Labels": {"type": "multi_selection", "options": ["A", "B", "C"]},
+    }
+)
+self.config_description.update(
+    {
+        "Mode": "Execution mode. 执行模式。",
+        "Enabled Labels": "Labels allowed for matching. 允许匹配的标签。",
+    }
+)
 ```
 
 ## Built-In Registration

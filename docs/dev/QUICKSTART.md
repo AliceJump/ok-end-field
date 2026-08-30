@@ -4,11 +4,11 @@
 
 ## 1. 从源码运行
 
-| 项目 | 当前要求 |
-|------|----------|
-| 操作系统 | Windows 10/11；交互、截图和登录流程依赖 Win32 |
-| Python | 3.12；CI 和 China 打包配置均固定为 3.12 |
-| 权限 | 建议管理员权限运行终端/IDE，以与游戏权限一致 |
+| 项目     | 当前要求                                            |
+| -------- | --------------------------------------------------- |
+| 操作系统 | Windows 10/11；交互、截图和登录流程依赖 Win32       |
+| Python   | 3.12；CI 和 China 打包配置均固定为 3.12             |
+| 权限     | 建议管理员权限运行终端/IDE，以与游戏权限一致        |
 | 游戏窗口 | 16:9，最低 `1920x1080`（1080P）；见 `src/config.py` |
 
 ```powershell
@@ -45,9 +45,11 @@ class MyTask(BaseEfTask):
         self.name = "我的任务"
         self.description = "执行一个可重复验证的步骤"
         self.default_config.update({"等待秒数": 1})
-        self.config_description.update({
-            "等待秒数": "操作完成后的等待时间。",
-        })
+        self.config_description.update(
+            {
+                "等待秒数": "操作完成后的等待时间。",
+            }
+        )
 
     def run(self):
         self.ensure_main()
@@ -58,7 +60,7 @@ class MyTask(BaseEfTask):
 在 `src/config.py` 的 `config["onetime_tasks"]` 中注册模块路径和类名：
 
 ```python
-["src.tasks.onetime.MyTask", "MyTask"],
+["src.tasks.onetime.MyTask", "MyTask"]
 ```
 
 不要直接赋值 `self.default_config = {...}`；多重继承任务需要保留 MRO 中其它 Mixin 已注册的配置。
@@ -85,7 +87,7 @@ class MyTriggerTask(BaseEfTask, TriggerTask):
 注册到 `config["trigger_tasks"]`：
 
 ```python
-["src.tasks.trigger.MyTriggerTask", "MyTriggerTask"],
+["src.tasks.trigger.MyTriggerTask", "MyTriggerTask"]
 ```
 
 现有组合可作为 MRO 参考：`AutoCombatTask(BattleMixin, TriggerTask)`、`ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask)`。业务 Mixin 已继承 `BaseEfTask` 时不需要再次显式列出 `BaseEfTask`。

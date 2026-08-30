@@ -47,6 +47,7 @@ Example:
 ```python
 import re  # 导入正则模块，用于 OCR 文本的部分匹配。
 
+
 def run(self):  # 定义任务运行入口。
     self.log_info("开始执行任务")  # 记录任务开始执行。
     start_button = self.wait_ocr(match="开始", time_out=5)  # 等待 OCR 精确匹配“开始”按钮。

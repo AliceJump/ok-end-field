@@ -5,7 +5,6 @@ from collections import Counter
 
 import polib
 
-
 TASK_DICT_ATTRS = {"default_config", "config_description", "config_type"}
 TASK_STRING_ATTRS = {"name", "description"}
 CONFIG_TYPE_META = {
@@ -101,7 +100,7 @@ class TaskStringVisitor(ast.NodeVisitor):
 
 
 def scan_task(path):
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         tree = ast.parse(f.read(), filename=path)
     visitor = TaskStringVisitor()
     visitor.visit(tree)
