@@ -42,6 +42,12 @@
                         "value": 1,
                         "duration": null,
                         "target": "enemy"
+                    },
+                    {
+                        "effect_id": "ATTACH_BURN",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy"
                     }
                 ]
             },
@@ -50,7 +56,15 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 100,
-            "effects": []
+            "effects": [
+                {
+                    "effect_id": "STACK_MOLTEN",
+                    "value": 1,
+                    "duration": null,
+                    "target": "self",
+                    "count": 1
+                }
+            ]
         },
         {
             "skill_id": "laevat_link",
