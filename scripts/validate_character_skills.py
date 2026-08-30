@@ -145,8 +145,12 @@ def main():
         sys.exit(1)
 
     if args.characters:
-        files = [data_dir / f"{c}.json" for c in args.characters]
-        files = [f for f in files if f.exists()]
+        resolved_base = data_dir.resolve()
+        files = []
+        for c in args.characters:
+            f = (data_dir / f"{c}.json").resolve()
+            if str(f).startswith(str(resolved_base) + ("\\" if sys.platform == "win32" else "/")) and f.exists():
+                files.append(f)
     else:
         files = sorted(data_dir.glob("*.json"))
 

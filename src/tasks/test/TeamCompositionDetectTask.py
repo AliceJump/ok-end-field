@@ -1,26 +1,15 @@
 """编队判定测试任务：固定区域裁剪战斗头像 + battle_icon 模板多尺度匹配，循环判定编队组成。"""
-import json
-from pathlib import Path
-
 import cv2
-import numpy as np
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
-
-ASSETS_DIR = Path(__file__).resolve().parent.parent.parent.parent / "assets"
-COCO_JSON = ASSETS_DIR / "coco_annotations.json"
-CHARACTERS_JSON = ASSETS_DIR / "data" / "characters.json"
-
-# 左下角4个头像固定区域（归一化坐标，基于1920x1080）
-PORTRAIT_ROIS = [
-    (40 / 1920, 927 / 1080),
-    (156 / 1920, 927 / 1080),
-    (273 / 1920, 927 / 1080),
-    (390 / 1920, 927 / 1080),
-]
-PORTRAIT_SIZE = (54 / 1920, 46 / 1080)
-MATCH_SCALES = [0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2]
+from src.data.skill_allowlist import (
+    _PORTRAIT_ROIS,
+    _PORTRAIT_SIZE,
+    _match_portrait,
+    _load_battle_icons,
+    _load_char_name_map,
+)
 
 
 class TeamCompositionDetectTask(BaseEfTask):
@@ -39,114 +28,23 @@ class TeamCompositionDetectTask(BaseEfTask):
             "扫描间隔(秒)": "每次判定之间的间隔时间（秒）",
             "最小匹配分数": "平均匹配分数低于该值的角色判定为未知",
         }
-        self._contacts = None
-        self._char_names = {}
-
-    def _load_char_names(self):
-        if self._char_names:
-            return self._char_names
-        with open(CHARACTERS_JSON, encoding="utf-8") as f:
-            data = json.load(f)
-        for info in data.values():
-            en = info.get("en")
-            zh = info.get("zh")
-            if en and zh:
-                self._char_names[en] = zh
-        return self._char_names
-
-    def _load_contacts(self):
-        """从 coco_annotations.json 加载 battle_icon 模板（同风格圆形战斗头像，缓存）"""
-        if self._contacts is not None:
-            return self._contacts
-        with open(COCO_JSON, encoding="utf-8") as f:
-            data = json.load(f)
-        cat_map = {c["id"]: c["name"] for c in data["categories"]}
-        img_map = {i["id"]: i for i in data["images"]}
-        contacts = {}
-        for ann in data["annotations"]:
-            name = cat_map.get(ann["category_id"], "")
-            if not name.startswith("battle_icon_"):
-                continue
-            img = img_map.get(ann["image_id"])
-            if img is None:
-                continue
-            path = ASSETS_DIR / img["file_name"]
-            if not path.exists():
-                continue
-            shot = cv2.imread(str(path))
-            if shot is None:
-                continue
-            x, y, w, h = [int(v) for v in ann["bbox"]]
-            contacts[name] = shot[y:y + h, x:x + w].copy()
-        self._contacts = contacts
-        return contacts
-
     def _detect_battle_portraits(self, frame):
         """按固定区域裁剪左下角4个头像"""
         height, width = frame.shape[:2]
-        pw = int(PORTRAIT_SIZE[0] * width)
-        ph = int(PORTRAIT_SIZE[1] * height)
+        pw = int(_PORTRAIT_SIZE[0] * width)
+        ph = int(_PORTRAIT_SIZE[1] * height)
         portraits = []
-        for rx, ry in PORTRAIT_ROIS:
+        for rx, ry in _PORTRAIT_ROIS:
             x1 = int(rx * width)
             y1 = int(ry * height)
             portraits.append(frame[y1:y1 + ph, x1:x1 + pw].copy())
         return portraits
 
-    @staticmethod
-    def _hist_sim(img1, img2):
-        h1 = cv2.calcHist([cv2.cvtColor(img1, cv2.COLOR_BGR2HSV)], [0, 1], None, [30, 32], [0, 180, 0, 256])
-        h2 = cv2.calcHist([cv2.cvtColor(img2, cv2.COLOR_BGR2HSV)], [0, 1], None, [30, 32], [0, 180, 0, 256])
-        cv2.normalize(h1, h1)
-        cv2.normalize(h2, h2)
-        return cv2.compareHist(h1, h2, cv2.HISTCMP_CORREL)
-
-    @staticmethod
-    def _phash(img, size=16):
-        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        small = cv2.resize(gray, (size, size))
-        return small > small.mean()
-
-    def _match_portrait(self, portrait, template):
-        t_h, t_w = template.shape[:2]
-        p_h, p_w = portrait.shape[:2]
-        t_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-        p_gray = cv2.cvtColor(portrait, cv2.COLOR_BGR2GRAY)
-        best = -1.0
-        best_scale = 1.0
-        best_pos = None
-        for scale in MATCH_SCALES:
-            tw = max(10, int(p_w * scale))
-            th = max(10, int(p_h * scale))
-            if tw > t_w or th > t_h:
-                continue
-            tmpl = cv2.resize(p_gray, (tw, th))
-            result = cv2.matchTemplate(t_gray, tmpl, cv2.TM_CCOEFF_NORMED)
-            _, max_val, _, max_loc = cv2.minMaxLoc(result)
-            if max_val > best:
-                best = max_val
-                best_scale = scale
-                best_pos = max_loc
-        hist = 0.0
-        phash_sim = 0.0
-        if best_pos is None:
-            self.log_debug(f"模板过小, 跳过全部尺度: template={t_w}x{t_h}, portrait={p_w}x{p_h}")
-        else:
-            tw = int(p_w * best_scale)
-            th = int(p_h * best_scale)
-            region = template[best_pos[1]:best_pos[1] + th, best_pos[0]:best_pos[0] + tw]
-            region = cv2.resize(region, (p_w, p_h))
-            hist = self._hist_sim(portrait, region)
-            p1 = self._phash(portrait)
-            p2 = self._phash(region)
-            phash_sim = 1.0 - np.count_nonzero(p1 != p2) / p1.size
-        return (best + hist + phash_sim) / 3
-
     def _identify(self, portrait, templates):
         best_name = None
         best_score = float("-inf")
         for label, template in templates.items():
-            score = self._match_portrait(portrait, template)
+            score = _match_portrait(portrait, template)
             if score > best_score:
                 best_score = score
                 best_name = label
@@ -157,8 +55,8 @@ class TeamCompositionDetectTask(BaseEfTask):
     def run(self):
         interval = max(0.1, float(self.config.get("扫描间隔(秒)", 0.5) or 0.5))
         min_score = float(self.config.get("最小匹配分数", 0.5) or 0.5)
-        contacts = self._load_contacts()
-        char_names = self._load_char_names()
+        contacts = _load_battle_icons()
+        char_names = _load_char_name_map()
         if not contacts:
             self.log_info(self.tr("未加载到任何 battle_icon 模板，请检查 assets/coco_annotations.json"))
             return

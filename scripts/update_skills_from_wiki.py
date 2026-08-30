@@ -12,64 +12,12 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 from playwright.sync_api import sync_playwright
 
+from _wiki_utils import extract_text_from_document, parse_skills_from_item_info
+
 ROOT = Path(__file__).resolve().parent.parent
 ASSETS_DIR = ROOT / "assets" / "data" / "character_skills"
 OUTPUT_FILE = ROOT / "tmp" / "wiki_skills_full.json"
 OUTPUT_FILE.parent.mkdir(parents=True, exist_ok=True)
-
-
-def extract_text_from_document(doc: dict) -> str:
-    """从文档中提取纯文本 - 按blockIds顺序"""
-    texts = []
-    block_ids = doc.get('blockIds', [])
-    block_map = doc.get('blockMap', {})
-    
-    for block_id in block_ids:
-        block = block_map.get(block_id)
-        if not block:
-            continue
-        if block.get('kind') == 'text':
-            inline_elements = (block.get('text') or {}).get('inlineElements', [])
-            for elem in inline_elements:
-                if elem.get('kind') == 'text':
-                    text = (elem.get('text') or {}).get('text', '')
-                    if text:
-                        texts.append(text)
-    return ''.join(texts)
-
-
-def parse_skills_from_item_info(item_info: dict) -> list:
-    """从item/info响应中解析技能数据"""
-    skills = []
-    
-    item = item_info.get('item', {})
-    doc = item.get('document', {})
-    widget_common_map = doc.get('widgetCommonMap', {})
-    document_map = doc.get('documentMap', {})
-    
-    for widget_id, widget in widget_common_map.items():
-        tab_data_map = widget.get('tabDataMap', {})
-        if not tab_data_map:
-            continue
-        
-        for tab_key, tab in tab_data_map.items():
-            intro = tab.get('intro') or {}
-            name = intro.get('name', '')
-            skill_type = intro.get('type', '')
-            doc_id = intro.get('description', '')
-            
-            if skill_type in ['普通攻击', '战技', '连携技', '终结技']:
-                description = ''
-                if doc_id and doc_id in document_map:
-                    description = extract_text_from_document(document_map[doc_id])
-                
-                skills.append({
-                    'name': name,
-                    'skill_type': skill_type,
-                    'description': description,
-                })
-    
-    return skills
 
 
 def crawl_wiki() -> list:

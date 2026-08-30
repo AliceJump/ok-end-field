@@ -12,66 +12,10 @@ sys.stdout.reconfigure(encoding='utf-8')
 
 from playwright.sync_api import sync_playwright
 
+from _wiki_utils import extract_text_from_document, parse_skills_from_item_info
+
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_FILE = ROOT / "tmp_all_characters_full.json"
-
-
-def extract_text_from_document(doc: dict) -> str:
-    """从文档中提取纯文本 - 按blockIds顺序"""
-    texts = []
-    block_ids = doc.get('blockIds', [])
-    block_map = doc.get('blockMap', {})
-    
-    for block_id in block_ids:
-        block = block_map.get(block_id)
-        if not block:
-            continue
-        if block.get('kind') == 'text':
-            inline_elements = (block.get('text') or {}).get('inlineElements', [])
-            for elem in inline_elements:
-                if elem.get('kind') == 'text':
-                    text = (elem.get('text') or {}).get('text', '')
-                    if text:
-                        texts.append(text)
-    return ''.join(texts)
-
-
-def parse_skills_from_item_info(item_info: dict) -> list:
-    """从item/info响应中解析技能数据"""
-    skills = []
-    
-    item = item_info.get('item', {})
-    doc = item.get('document', {})
-    widget_common_map = doc.get('widgetCommonMap', {})
-    document_map = doc.get('documentMap', {})
-    
-    # 遍历所有widget
-    for widget_id, widget in widget_common_map.items():
-        tab_data_map = widget.get('tabDataMap', {})
-        if not tab_data_map:
-            continue
-        
-        # 遍历所有tab
-        for tab_key, tab in tab_data_map.items():
-            intro = tab.get('intro') or {}
-            name = intro.get('name', '')
-            skill_type = intro.get('type', '')
-            doc_id = intro.get('description', '')
-            
-            # 只处理技能类型
-            if skill_type in ['普通攻击', '战技', '连携技', '终结技']:
-                # 获取文档描述
-                description = ''
-                if doc_id and doc_id in document_map:
-                    description = extract_text_from_document(document_map[doc_id])
-                
-                skills.append({
-                    'name': name,
-                    'skill_type': skill_type,
-                    'description': description,
-                })
-    
-    return skills
 
 
 def main():
