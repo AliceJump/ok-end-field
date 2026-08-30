@@ -397,7 +397,7 @@ class NavigationMixin(SearchMixin):
         move_count = 0
         sum_dx = 0
         sum_dy = 0
-        for i in range(max_time*2):
+        for _ in range(max_time*2):
             start_action_time = self.active_time()
             if need_scroll:
                 self.do_scroll(1, 400)
