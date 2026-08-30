@@ -43,7 +43,15 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 100,
-            "effects": []
+            "effects": [
+                {
+                    "effect_id": "STACK_QINGTING_SWORD",
+                    "value": 1,
+                    "duration": null,
+                    "target": "self",
+                    "count": 1
+                }
+            ]
         },
         {
             "skill_id": "zhuangfy_link",

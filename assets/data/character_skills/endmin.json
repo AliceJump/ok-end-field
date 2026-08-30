@@ -18,7 +18,15 @@
             "stagger_value": 18,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [
+                {
+                    "effect_id": "STATUS_ORIGINIUM_CRYSTAL",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
         },
         {
             "skill_id": "endmin_skill",

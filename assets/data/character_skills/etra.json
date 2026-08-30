@@ -60,6 +60,12 @@
                 "enhancement_visible_pulse": false,
                 "effects": [
                     {
+                        "effect_id": "TRIGGER_ADDITIONAL",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy"
+                    },
+                    {
                         "effect_id": "VULN_PHYSICAL",
                         "value": 1,
                         "duration": null,

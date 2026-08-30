@@ -38,6 +38,13 @@
                 "enhancement_visible_pulse": false,
                 "effects": [
                     {
+                        "effect_id": "STATUS_CONDUCTING",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": -1
+                    },
+                    {
                         "effect_id": "TRIGGER_ADDITIONAL",
                         "value": 1,
                         "duration": null,
@@ -83,6 +90,13 @@
                 "enhancement_effect": "消耗电磁附着并强制施加导电",
                 "enhancement_visible_pulse": false,
                 "effects": [
+                    {
+                        "effect_id": "ATTACH_ELECTROMAGNETIC",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": -1
+                    },
                     {
                         "effect_id": "STATUS_CONDUCTING",
                         "value": 1,

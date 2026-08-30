@@ -39,6 +39,13 @@
                 "enhancement_visible_pulse": false,
                 "effects": [
                     {
+                        "effect_id": "STATUS_SPELL_ANOMALY",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": -1
+                    },
+                    {
                         "effect_id": "TRIGGER_ADDITIONAL",
                         "value": 1,
                         "duration": null,

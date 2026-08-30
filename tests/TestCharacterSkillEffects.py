@@ -129,7 +129,7 @@ class TestCharacterSkillEffects(unittest.TestCase):
                 EffectType.STATUS_SPELL_INFLICT,
                 EffectType.VULN_NATURAL,
                 EffectType.VULN_COLD,
-                EffectType.STATUS_SLOW,
+                EffectType.STATUS_CONFINEMENT,
             ],
         )
 
@@ -141,6 +141,61 @@ class TestCharacterSkillEffects(unittest.TestCase):
         aglina = characters["jie_er_pei_ta"]
         aglina_link = next(skill for skill in aglina.skills if skill.skill_id == "aglina_link")
         self.assertEqual([effect.effect_id for effect in aglina_link.effects], [EffectType.STATUS_HEAVY_HIT])
+
+    def test_remaining_character_review_fixes(self):
+        characters = load_all_characters()
+
+        antal = characters["an_ta_er"]
+        antal_skill = next(skill for skill in antal.skills if skill.skill_id == "antal_skill")
+        self.assertEqual(
+            [effect.effect_id for effect in antal_skill.effects],
+            [EffectType.STATUS_FOCUS, EffectType.VULN_ELECTROMAGNETIC, EffectType.VULN_BURN],
+        )
+        antal_link = next(skill for skill in antal.skills if skill.skill_id == "antal_link")
+        self.assertEqual([effect.effect_id for effect in antal_link.effects], [EffectType.TRIGGER_REPEAT_EFFECT])
+
+        ikut = characters["hu_guang"]
+        ikut_skill = next(skill for skill in ikut.skills if skill.skill_id == "ikut_skill")
+        self.assertEqual(ikut_skill.enhancement.effects[0].count, -1)
+        ikut_ultimate = next(skill for skill in ikut.skills if skill.skill_id == "ikut_ultimate")
+        self.assertEqual(ikut_ultimate.enhancement.effects[0].count, -1)
+
+        bounda = characters["ying_shi"]
+        bounda_skill = next(skill for skill in bounda.skills if skill.skill_id == "bounda_skill")
+        self.assertEqual(bounda_skill.effects[0].effect_id, EffectType.MECH_BOMB)
+        bounda_link = next(skill for skill in bounda.skills if skill.skill_id == "bounda_link")
+        self.assertEqual([effect.effect_id for effect in bounda_link.effects], [EffectType.STATUS_SPELL_INFLICT])
+
+        deepfin = characters["a_lie_shi"]
+        deepfin_skill = next(skill for skill in deepfin.skills if skill.skill_id == "deepfin_skill")
+        self.assertEqual(deepfin_skill.effects, [])
+        self.assertEqual(deepfin_skill.enhancement.effects[0].count, -1)
+
+        meurs = characters["ka_qi_er"]
+        meurs_skill = next(skill for skill in meurs.skills if skill.skill_id == "meurs_skill")
+        self.assertIn(EffectType.BUFF_PROTECTION, [effect.effect_id for effect in meurs_skill.effects])
+        meurs_ultimate = next(skill for skill in meurs.skills if skill.skill_id == "meurs_ultimate")
+        self.assertEqual(meurs_ultimate.effects[0].effect_id, EffectType.DEBUFF_WEAKEN)
+
+        seraph = characters["sai_xi"]
+        seraph_skill = next(skill for skill in seraph.skills if skill.skill_id == "seraph_skill")
+        self.assertEqual(seraph_skill.enhancement.effects[0].effect_id, EffectType.MECH_SUPPORT_CRYSTAL)
+        seraph_ultimate = next(skill for skill in seraph.skills if skill.skill_id == "seraph_ultimate")
+        self.assertEqual(
+            [effect.effect_id for effect in seraph_ultimate.effects],
+            [EffectType.BUFF_COLD_UP, EffectType.BUFF_NATURAL_UP],
+        )
+
+        lastrite = characters["bie_li"]
+        lastrite_link = next(skill for skill in lastrite.skills if skill.skill_id == "lastrite_link")
+        self.assertEqual(lastrite_link.effects[0].effect_id, EffectType.CLEAR_COLD)
+        self.assertEqual(lastrite_link.effects[0].count, -1)
+
+        liino = characters["li_nuo"]
+        liino_skill = next(skill for skill in liino.skills if skill.skill_id == "liino_skill")
+        self.assertEqual(liino_skill.effects[0].effect_id, EffectType.STATUS_SINGING)
+        liino_ultimate = next(skill for skill in liino.skills if skill.skill_id == "liino_ultimate")
+        self.assertIn(EffectType.STATUS_HIGH_SINGING, [effect.effect_id for effect in liino_ultimate.effects])
 
 
 if __name__ == "__main__":

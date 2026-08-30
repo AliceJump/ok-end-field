@@ -32,7 +32,36 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 100,
-            "effects": []
+            "effects": [
+                {
+                    "effect_id": "STATUS_SINGING",
+                    "value": 1,
+                    "duration": null,
+                    "target": "self",
+                    "count": 1
+                },
+                {
+                    "effect_id": "TRIGGER_ADDITIONAL",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                },
+                {
+                    "effect_id": "BUFF_ATTACK_UP",
+                    "value": 1,
+                    "duration": null,
+                    "target": "ally",
+                    "count": 1
+                },
+                {
+                    "effect_id": "BUFF_HEAL",
+                    "value": 1,
+                    "duration": null,
+                    "target": "ally",
+                    "count": 1
+                }
+            ]
         },
         {
             "skill_id": "liino_link",
@@ -74,6 +103,41 @@
                     "value": 1,
                     "duration": null,
                     "target": "enemy",
+                    "count": 1
+                },
+                {
+                    "effect_id": "STATUS_HIGH_SINGING",
+                    "value": 1,
+                    "duration": null,
+                    "target": "self",
+                    "count": 1
+                },
+                {
+                    "effect_id": "BUFF_ATTACK_UP",
+                    "value": 1,
+                    "duration": null,
+                    "target": "ally",
+                    "count": 1
+                },
+                {
+                    "effect_id": "BUFF_ELECTROMAGNETIC_UP",
+                    "value": 1,
+                    "duration": null,
+                    "target": "ally",
+                    "count": 1
+                },
+                {
+                    "effect_id": "BUFF_NATURAL_UP",
+                    "value": 1,
+                    "duration": null,
+                    "target": "ally",
+                    "count": 1
+                },
+                {
+                    "effect_id": "BUFF_HEAL",
+                    "value": 1,
+                    "duration": null,
+                    "target": "ally",
                     "count": 1
                 }
             ]

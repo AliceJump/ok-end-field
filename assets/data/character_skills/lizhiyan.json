@@ -77,7 +77,7 @@
                     "count": 1
                 },
                 {
-                    "effect_id": "STATUS_SLOW",
+                    "effect_id": "STATUS_CONFINEMENT",
                     "value": 1,
                     "duration": null,
                     "target": "enemy",
