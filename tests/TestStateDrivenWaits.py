@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 
+import numpy as np
 from ok import Box
 from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
@@ -456,6 +457,18 @@ class TestStateDrivenWaits(unittest.TestCase):
         task = StubTask()
         self.assertTrue(BattleMixin.in_team(task))
         self.assertEqual(task._battle_member_count, 1)
+
+    @patch("src.tasks.mixin.battle_mixin.detect_team_from_frame")
+    def test_detected_team_member_rechecks_current_frame(self, detect_team):
+        detect_team.side_effect = [["?", "?"], ["余烬", "?"]]
+
+        class StubTask:
+            frame = np.zeros((10, 10, 3), dtype=np.uint8)
+
+        task = StubTask()
+        self.assertFalse(BattleMixin._has_detected_team_member(task))
+        self.assertTrue(BattleMixin._has_detected_team_member(task))
+        self.assertEqual(detect_team.call_count, 2)
 
 
 if __name__ == "__main__":

@@ -44,6 +44,7 @@ from src.core.BattleConfig import (
     ULT_RELEASE_MODE_HOLD,
 )
 from src.core.config_migration import legacy_battle_mode_to_bool
+from src.data.skill_allowlist import detect_team_from_frame
 from src.core.global_config_store import get_global_config
 from src.image.recommend_skill_detector import get_recommend_skill_detector
 
@@ -235,18 +236,26 @@ class BattleMixin(BaseEfTask):
                     self.send_key_down("alt")
                     self.send_key(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，不经过KeyConfigManager管理
                     self.send_key_up("alt")
-                    # 等待技能释放导致战斗状态变化
+                    # 等待技能释放导致战斗状态变化，然后等待重新识别到至少一个人
                     self.wait_until(lambda: not self.in_combat(), time_out=1)
-                    self.wait_until(lambda: self.in_team(), time_out=3)
+                    self.wait_until(self._has_detected_team_member, time_out=3)
                     return True
                 self.send_key_down(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，不经过KeyConfigManager管理
                 # 等待技能释放导致战斗状态变化
                 self.wait_until(lambda: not self.in_combat(), time_out=1)
                 self.send_key_up(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，释放按键
-                self.wait_until(lambda: self.in_team(), time_out=3)
+                # wait_until 每轮会刷新 self.frame，再重新识别当前编队
+                self.wait_until(self._has_detected_team_member, time_out=3)
                 return True
 
         return False
+
+    def _has_detected_team_member(self):
+        """当前帧至少识别到一个编队成员时返回 True。"""
+        frame = self.frame
+        if frame is None or frame.size == 0:
+            return False
+        return any(member != "?" for member in detect_team_from_frame(frame))
 
     def use_link_skill(self):
         """
