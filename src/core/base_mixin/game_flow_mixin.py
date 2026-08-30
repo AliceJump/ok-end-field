@@ -175,7 +175,7 @@ class GameFlowMixin:
         while True:
             if self.active_time() - start_time > time_out:
                 return False
-            if count > 30:
+            if count >= 30:
                 return False
             result = self.find_one(
                 feature=fL.reward_ok, box=self.box.bottom, threshold=0.8
