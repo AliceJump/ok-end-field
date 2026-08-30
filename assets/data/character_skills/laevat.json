@@ -44,7 +44,7 @@
                         "target": "enemy"
                     },
                     {
-                        "effect_id": "ATTACH_BURN",
+                        "effect_id": "STATUS_BURNING",
                         "value": 1,
                         "duration": null,
                         "target": "enemy"

@@ -504,7 +504,13 @@ def detect_team_stable(
 
         frame = frame_getter()
         if frame is None or (hasattr(frame, 'size') and frame.size == 0):
-            _sleep(interval)
+            if deadline is None:
+                _sleep(interval)
+            else:
+                remaining = deadline - _now()
+                if remaining <= 0:
+                    break
+                _sleep(min(interval, remaining))
             continue
 
         current = detect_team_from_frame(frame)
@@ -517,7 +523,13 @@ def detect_team_stable(
             streak = 1
 
         if i < max_attempts - 1:
-            _sleep(interval)
+            if deadline is None:
+                _sleep(interval)
+            else:
+                remaining = deadline - _now()
+                if remaining <= 0:
+                    break
+                _sleep(min(interval, remaining))
 
     return (last_result or ["?"], False)
 

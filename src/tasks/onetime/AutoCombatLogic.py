@@ -317,6 +317,7 @@ class AutoCombatLogic:
         # ── 自动技能列表：标记是否需要后续处理 ──
         _skill_allowlist_enabled = task.get_battle_config(KEY_SKILL_ALLOWLIST, False)
         _detected_team: list[str] | None = None
+        _team_stable = False
 
         # 模式初始化：实时条件 > 排轴 > 普通
         # 实时条件优先：启用时自动忽略普通排轴
@@ -370,8 +371,6 @@ class AutoCombatLogic:
             self._normal_attack_hold_enabled = True
             self._sync_normal_attack_hold()
 
-            _detected_team = None
-            _team_stable = False
             try:
                 _detect_start = task.active_time()
                 _target_sleep = start_sleep if start_sleep is not None else task.get_battle_config("进入战斗后的初始等待时间", 3)
