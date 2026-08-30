@@ -71,8 +71,6 @@ class EffectType(Enum):
     DEBUFF_HEAL_DOWN = "DEBUFF_HEAL_DOWN"
 
     # 放置物
-    PLACE_THUNDER_SPEAR = "PLACE_THUNDER_SPEAR"  # 雷枪（艾维文娜战技召回时造成伤害）
-    REMOVE_THUNDER_SPEAR = "REMOVE_THUNDER_SPEAR"  # 召回雷枪（清除所有雷枪放置物）
 
     # 特殊机制
     MECH_VACUUM = "MECH_VACUUM"
@@ -84,6 +82,8 @@ class EffectType(Enum):
     MECH_BOMB = "MECH_BOMB"
     MECH_RADAR = "MECH_RADAR"
     MECH_TURRET = "MECH_TURRET"
+    PLACE_THUNDER_SPEAR = "PLACE_THUNDER_SPEAR"  
+    REMOVE_THUNDER_SPEAR = "REMOVE_THUNDER_SPEAR"
 
     # 消耗/清除
     CONSUME_ALL = "CONSUME_ALL"
@@ -179,6 +179,8 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.MECH_BOMB: "萤石的炸弹效果",
     EffectType.MECH_RADAR: "安塔尔的雷达效果",
     EffectType.MECH_TURRET: "佩丽卡的炮台效果",
+    EffectType.PLACE_THUNDER_SPEAR: "艾维文娜的雷枪放置物",
+    EffectType.REMOVE_THUNDER_SPEAR: "艾维文娜的雷枪召回",
 
     # 消耗/清除
     EffectType.CONSUME_ALL: "清空所有层数/效果",
