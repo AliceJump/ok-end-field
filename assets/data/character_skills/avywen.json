@@ -25,8 +25,24 @@
             "name": "雷枪·截回",
             "skill_type": "战技",
             "element": "电磁",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "强雷枪召回",
+                "trigger_condition": {
+                    "text": "存在雷枪或强雷枪时召回",
+                    "effects": ["PLACE_THUNDER_SPEAR"]
+                },
+                "enhancement_effect": "强雷枪造成更高电磁伤害并施加电磁附着",
+                "enhancement_visible_pulse": false,
+                "effects": [
+                    {
+                        "effect_id": "ATTACH_ELECTROMAGNETIC",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy"
+                    }
+                ]
+            },
             "description": "跃起后用枪刮起旋风，对周围的敌人造成少量电磁伤害。同时召回全部雷枪、强雷枪。雷枪被召回时若穿过敌人则对其造成电磁伤害。强雷枪造成更高的电磁伤害，还会施加电磁附着。",
             "damage_multiplier": "150%（旋风）+ 168%（雷枪）+ 432%（强雷枪）",
             "stagger_value": 0,
@@ -34,11 +50,10 @@
             "spirit_cost": 100,
             "effects": [
                 {
-                    "effect_id": "ATTACH_ELECTROMAGNETIC",
-                    "value": 1,
+                    "effect_id": "REMOVE_THUNDER_SPEAR",
+                    "value": 0,
                     "duration": null,
-                    "target": "enemy",
-                    "count": 1
+                    "target": "field"
                 }
             ]
         },
@@ -56,11 +71,10 @@
             "spirit_cost": 0,
             "effects": [
                 {
-                    "effect_id": "ATTACH_ELECTROMAGNETIC",
-                    "value": 1,
+                    "effect_id": "PLACE_THUNDER_SPEAR",
+                    "value": 3,
                     "duration": null,
-                    "target": "enemy",
-                    "count": 0
+                    "target": "field"
                 }
             ]
         },
@@ -76,7 +90,14 @@
             "stagger_value": 0,
             "cooldown": "10秒",
             "spirit_cost": 100,
-            "effects": []
+            "effects": [
+                {
+                    "effect_id": "PLACE_THUNDER_SPEAR",
+                    "value": 1,
+                    "duration": null,
+                    "target": "field"
+                }
+            ]
         }
     ]
 }

@@ -147,12 +147,11 @@ def build_skill_allowlist(
 
         for eff in trigger_effects:
             producers = skill_produces.get(eff, [])
-            other_producers = [p for p in producers if p != char_name]
-            if other_producers:
+            if producers:
                 is_dependency = True
                 break
 
-        # ── 有意义依赖：队内有其他人既产该状态，其自身增强又需要该状态 ──
+        # ── 有意义依赖：队内有人既产该状态，其自身增强又需要该状态 ──
         if is_dependency:
             ultimate_triggers: dict[str, list[str]] = {}
             for (sname, _), sdata in all_skills.items():

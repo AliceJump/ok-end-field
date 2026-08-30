@@ -70,6 +70,10 @@ class EffectType(Enum):
     DEBUFF_SPEED_DOWN = "DEBUFF_SPEED_DOWN"
     DEBUFF_HEAL_DOWN = "DEBUFF_HEAL_DOWN"
 
+    # 放置物
+    PLACE_THUNDER_SPEAR = "PLACE_THUNDER_SPEAR"  # 雷枪（艾维文娜战技召回时造成伤害）
+    REMOVE_THUNDER_SPEAR = "REMOVE_THUNDER_SPEAR"  # 召回雷枪（清除所有雷枪放置物）
+
     # 特殊机制
     MECH_VACUUM = "MECH_VACUUM"
     MECH_GRAVITY = "MECH_GRAVITY"
