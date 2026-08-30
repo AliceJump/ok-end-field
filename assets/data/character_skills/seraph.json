@@ -1,0 +1,99 @@
+{
+    "character_id": "sai_xi",
+    "name": "赛希",
+    "star": 5,
+    "element": "寒冷",
+    "profession": "辅助",
+    "weapon_type": "施术单元",
+    "skills": [
+        {
+            "skill_id": "seraph_normal",
+            "name": "冷却",
+            "skill_type": "普通攻击",
+            "element": "寒冷",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "普通攻击：对敌人进行至多5段攻击，造成寒冷伤害。作为主控干员时，重击会造成15点失衡。 下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成寒冷伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量寒冷伤害并恢复一定技力。",
+            "damage_multiplier": null,
+            "stagger_value": 15,
+            "cooldown": null,
+            "spirit_cost": 0,
+            "effects": []
+        },
+        {
+            "skill_id": "seraph_skill",
+            "name": "分布式拒绝服务",
+            "skill_type": "战技",
+            "element": "寒冷",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "支援晶体",
+                "trigger_condition": {
+                    "text": "战技命中敌人召唤支援晶体",
+                    "effects": []
+                },
+                "enhancement_effect": "召唤效果",
+                "enhancement_visible_pulse": false,
+                "effects": [
+                    {
+                        "effect_id": "TRIGGER_ADDITIONAL",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy"
+                    }
+                ]
+            },
+            "description": "召唤支援晶体在一段时间内环绕主控干员。当主控干员对敌人造成重击时支援晶体为其回复生命值，该效果最多可触发2次。意志可以额外提高治疗量。若触发回复时主控干员生命值已满，则额外对其施加一段时间的法术增幅，该效果无法叠加。",
+            "damage_multiplier": "324（治疗）+ 15%（法术增幅）",
+            "stagger_value": 0,
+            "cooldown": null,
+            "spirit_cost": 100,
+            "effects": []
+        },
+        {
+            "skill_id": "seraph_link",
+            "name": "压力测试",
+            "skill_type": "连携技",
+            "element": "寒冷",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "当支援晶体的生命回复次数耗尽后可以发动。短暂蓄力后将支援晶体丢向敌人，造成寒冷伤害并施加寒冷附着。",
+            "damage_multiplier": "450%",
+            "stagger_value": 0,
+            "cooldown": null,
+            "spirit_cost": 0,
+            "effects": [
+                {
+                    "effect_id": "ATTACH_COLD",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
+        },
+        {
+            "skill_id": "seraph_ultimate",
+            "name": "栈溢出",
+            "skill_type": "终结技",
+            "element": "寒冷",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "寒冷增幅+自然增幅",
+                "trigger_condition": {
+                    "text": "终结技期间",
+                    "effects": []
+                },
+                "enhancement_effect": "增幅效果",
+                "enhancement_visible_pulse": false,
+                "effects": []
+            },
+            "description": "对全队施加一段时间的寒冷增幅和自然增幅，智识可以额外提高该增幅效果。",
+            "damage_multiplier": "24%（寒冷增幅）+ 24%（自然增幅）",
+            "stagger_value": 0,
+            "cooldown": "20秒",
+            "spirit_cost": 80,
+            "effects": []
+        }
+    ]
+}

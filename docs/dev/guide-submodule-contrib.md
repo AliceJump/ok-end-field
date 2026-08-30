@@ -105,7 +105,7 @@ python main.py
 
 <img src="templates/4.png" alt="Enter label name" width="700">
 
-> 标签名必须与 `src/data/FeatureList.py` 中的值及代码调用一致。当前约定是小写英文 `snake_case`，按语义使用后缀，例如角色联络头像用 `<name>_contact`，图标用 `<name>_icon`，同类变体用 `_2`、`_3`。分辨率专用模板只追加 `_2k` 或 `_4k`；代码通常传不带分辨率后缀的基础名，例如 `self.find_feature(feature=fL.esc)`，由 `get_feature_by_resolution()` 按窗口宽度选择 `esc`、`esc_2k` 或 `esc_4k`。不要沿用仓库中不存在的 `char_`、`box_` 等旧前缀约定。
+> 标签名必须与 `src/data/FeatureList.py` 中的值及代码调用一致。当前约定是小写英文 `snake_case`，按语义使用前缀/后缀，例如角色联络头像用 `contact_<name>`，战斗头像用 `battle_icon_<name>`，图标用 `<name>_icon`，同类变体用 `_2`、`_3`。分辨率专用模板只追加 `_2k` 或 `_4k`；代码通常传不带分辨率后缀的基础名，例如 `self.find_feature(feature=fL.esc)`，由 `get_feature_by_resolution()` 按窗口宽度选择 `esc`、`esc_2k` 或 `esc_4k`。不要沿用仓库中不存在的 `char_`、`box_` 等旧前缀约定。
 
 **⑥ 标注完成**
 

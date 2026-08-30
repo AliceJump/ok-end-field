@@ -1,0 +1,123 @@
+{
+    "character_id": "lai_wan_ting",
+    "name": "莱万汀",
+    "star": 6,
+    "element": "灼热",
+    "profession": "突击",
+    "weapon_type": "单手剑",
+    "skills": [
+        {
+            "skill_id": "laevat_normal",
+            "name": "燃烬",
+            "skill_type": "普通攻击",
+            "element": "灼热",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "普通攻击：对敌人至多造成5段攻击，造成灼热伤害。作为主控干员时，重击会造成18点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成灼热伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量灼热伤害并恢复一定技力。",
+            "damage_multiplier": null,
+            "stagger_value": 18,
+            "cooldown": null,
+            "spirit_cost": 0,
+            "effects": []
+        },
+        {
+            "skill_id": "laevat_skill",
+            "name": "焚灭",
+            "skill_type": "战技",
+            "element": "灼热",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "熔火层数",
+                "trigger_condition": {
+                    "text": "战技命中敌人获得1层熔火，4层时触发追加攻击",
+                    "effects": [
+                        "STACK_MOLTEN"
+                    ]
+                },
+                "enhancement_effect": "追加攻击",
+                "enhancement_visible_pulse": false,
+                "effects": [
+                    {
+                        "effect_id": "TRIGGER_ADDITIONAL",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy"
+                    },
+                    {
+                        "effect_id": "STATUS_BURNING",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy"
+                    }
+                ]
+            },
+            "description": "召唤熔核碎片持续攻击前方敌人，造成灼热伤害。如果命中敌人，会获得一点熔火。如果施放时已拥有4层熔火，则最后会消耗所有层数，对大范围内敌人追加1次攻击，造成灼热伤害并强制施加短暂的燃烧。追加攻击命中敌人会额外获得终结技能量。终结技期间，战技效果增强。",
+            "damage_multiplier": "140%（初始）+ 14%（持续）+ 770%（追加）",
+            "stagger_value": 0,
+            "cooldown": null,
+            "spirit_cost": 100,
+            "effects": [
+                {
+                    "effect_id": "STACK_MOLTEN",
+                    "value": 1,
+                    "duration": null,
+                    "target": "self",
+                    "count": 1
+                }
+            ]
+        },
+        {
+            "skill_id": "laevat_link",
+            "name": "沸腾",
+            "skill_type": "连携技",
+            "element": "灼热",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "当有敌人进入燃烧或腐蚀状态时可以发动。让所有处于燃烧或腐蚀状态的敌人脚下喷出火焰，对其造成灼热伤害。如果命中敌人，会获得1层熔火。每命中1个敌人，还会额外获得终结技能量。",
+            "damage_multiplier": "540%",
+            "stagger_value": 0,
+            "cooldown": null,
+            "spirit_cost": 0,
+            "effects": [
+                {
+                    "effect_id": "STATUS_BURNING",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
+        },
+        {
+            "skill_id": "laevat_ultimate",
+            "name": "黄昏",
+            "skill_type": "终结技",
+            "element": "灼热",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "强化普攻",
+                "trigger_condition": {
+                    "text": "施放终结技后",
+                    "effects": []
+                },
+                "enhancement_effect": "强化普攻",
+                "enhancement_visible_pulse": false,
+                "effects": []
+            },
+            "description": "召唤烈焰魔剑并切换为主控角色。一段时间内，普通攻击得到强化，烈焰魔剑会协同莱万汀发动攻击，每次攻击造成灼热伤害。此外，普通攻击第3段会施加灼热附着。",
+            "damage_multiplier": null,
+            "stagger_value": 0,
+            "cooldown": "20秒",
+            "spirit_cost": 300,
+            "effects": [
+                {
+                    "effect_id": "ATTACH_BURN",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
+        }
+    ]
+}

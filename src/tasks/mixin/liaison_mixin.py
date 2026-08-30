@@ -245,7 +245,7 @@ class LiaisonMixin(NavigationMixin):
 
         for info in characters.values():
             if target_name == info.get("zh"):
-                feature_name = f"{info.get('en')}_contact"
+                feature_name = f"contact_{info.get('en')}"
                 if feature_name in self.can_contact_dict.values():
                     return feature_name
 

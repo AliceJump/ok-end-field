@@ -145,6 +145,7 @@ config = {
         ["src.tasks.test.MouseRotationCalibration", "MouseRotationCalibration"],
         ["src.tasks.test.TestArrowAngle", "TestArrowAngle"],
         ["src.tasks.test.TestCircularPulseDetect", "TestCircularPulseDetect"],
+        ["src.tasks.test.TeamCompositionDetectTask", "TeamCompositionDetectTask"],
     ],
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],

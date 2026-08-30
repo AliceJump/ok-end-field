@@ -15,7 +15,7 @@
    未知 key 的新角色打印提示（ZH_KEY_MAP 需人工补充）。
 4. 幂等：西语已是最新时不产生任何变更。
 
-注：assets/data/characters.json 的 ``en`` 是内部 ID（与 FeatureList 的 ``xxx_contact``
+注：assets/data/characters.json 的 ``en`` 是内部 ID（与 FeatureList 的 ``contact_*``
 枚举绑定），不随本脚本改动。
 """
 

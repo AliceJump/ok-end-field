@@ -1,0 +1,128 @@
+{
+    "character_id": "jun_wei",
+    "name": "骏卫",
+    "star": 6,
+    "element": "物理",
+    "profession": "先锋",
+    "weapon_type": "单手剑",
+    "skills": [
+        {
+            "skill_id": "pograni_normal",
+            "name": "全面攻势",
+            "skill_type": "普通攻击",
+            "element": "物理",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成18点失衡。 下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
+            "damage_multiplier": null,
+            "stagger_value": 18,
+            "cooldown": null,
+            "spirit_cost": 0,
+            "effects": []
+        },
+        {
+            "skill_id": "pograni_skill",
+            "name": "粉碎阵线",
+            "skill_type": "战技",
+            "element": "物理",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "破防层数消耗",
+                "trigger_condition": {
+                    "text": "战技命中敌人时消耗破防层数恢复技力",
+                    "effects": [
+                        "STACK_SHRED"
+                    ]
+                },
+                "enhancement_effect": "破防层数消耗",
+                "enhancement_visible_pulse": false,
+                "effects": [
+                    {
+                        "effect_id": "CONSUME_STACK",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy"
+                    }
+                ]
+            },
+            "description": "对前方范围的敌人进行两次斩击，造成物理伤害并施加碎甲，同时基于消耗的破防层数恢复技力，命中多名目标时仅恢复1次。",
+            "damage_multiplier": "192%（第一段）+ 238%（第二段）",
+            "stagger_value": 0,
+            "cooldown": null,
+            "spirit_cost": 100,
+            "effects": [
+                {
+                    "effect_id": "STATUS_SHATTER",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
+        },
+        {
+            "skill_id": "pograni_link",
+            "name": "盈月邀击",
+            "skill_type": "连携技",
+            "element": "物理",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "消耗4层破防→第3次斩击强化",
+                "trigger_condition": {
+                    "text": "消耗4层破防",
+                    "effects": [
+                        "STACK_SHRED"
+                    ]
+                },
+                "enhancement_effect": "第3次斩击获得强化",
+                "enhancement_visible_pulse": false,
+                "effects": [
+                    {
+                        "effect_id": "TRIGGER_ADDITIONAL",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy"
+                    }
+                ]
+            },
+            "description": "当有敌人被猛击或者碎甲消耗破防层数后可以发动。根据消耗的最高破防层数，对敌人进行相同次数的斩击（最多3次），造成物理伤害并恢复一定技力，每一击的伤害和技力恢复效果都更强。若消耗4层破防，第3次斩击将获得强化。",
+            "damage_multiplier": "95%（第一段）+ 122%（第二段）+ 149%（第三段）+ 297%（强化第三段）",
+            "stagger_value": 0,
+            "cooldown": null,
+            "spirit_cost": 0,
+            "effects": []
+        },
+        {
+            "skill_id": "pograni_ultimate",
+            "name": "盾卫旗队，上前",
+            "skill_type": "终结技",
+            "element": "物理",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "铁誓消耗",
+                "trigger_condition": {
+                    "text": "终结技期间消耗铁誓召唤盾卫袭扰",
+                    "effects": [
+                        "STACK_IRON_OATH"
+                    ]
+                },
+                "enhancement_effect": "召唤效果",
+                "enhancement_visible_pulse": false,
+                "effects": [
+                    {
+                        "effect_id": "TRIGGER_ADDITIONAL",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy"
+                    }
+                ]
+            },
+            "description": "以目标为中心，召唤四名盾卫向目标进军，并将进军途中的敌人往目标方向推动，造成物理伤害的同时生成5点铁誓。当有敌人受到物理异常效果或骏卫的连携技伤害后，消耗1点铁誓召唤一名盾卫对其发动袭扰，造成物理伤害并恢复一定技力。当消耗的铁誓是最后一点时，四名盾卫发动决胜，对其造成大量物理伤害并恢复大量技力。",
+            "damage_multiplier": "300%（进军）+ 100%（袭扰）+ 450%（决胜）",
+            "stagger_value": 0,
+            "cooldown": "10秒",
+            "spirit_cost": 90,
+            "effects": []
+        }
+    ]
+}

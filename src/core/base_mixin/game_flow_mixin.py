@@ -181,8 +181,11 @@ class GameFlowMixin:
                 feature=fL.reward_ok, box=self.box.bottom, threshold=0.8
             )
             if not result:
-                result = self.wait_ocr(match=self.lang.game_flow_mixin.k_8b2ca27a, time_out=1, box=self.box.bottom)
+                remaining = max(0.1, time_out - (self.active_time() - start_time))
+                result = self.wait_ocr(match=self.lang.game_flow_mixin.k_8b2ca27a, time_out=min(1, remaining), box=self.box.bottom)
             if result:
+                if self.active_time() - start_time > time_out:
+                    return False
                 self.click(result, after_sleep=after_sleep)
                 return True
             count += 1

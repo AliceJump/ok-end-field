@@ -1,0 +1,133 @@
+{
+    "character_id": "luo_qian",
+    "name": "洛茜",
+    "star": 6,
+    "element": "物理",
+    "profession": "近卫",
+    "weapon_type": "单手剑",
+    "skills": [
+        {
+            "skill_id": "wulfa_normal",
+            "name": "沸腾狼血",
+            "skill_type": "普通攻击",
+            "element": "物理",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成18点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
+            "damage_multiplier": null,
+            "stagger_value": 18,
+            "cooldown": null,
+            "spirit_cost": 0,
+            "effects": []
+        },
+        {
+            "skill_id": "wulfa_skill",
+            "name": "血红之影",
+            "skill_type": "战技",
+            "element": "物理",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "破防追加灼热伤害",
+                "trigger_condition": {
+                    "text": "目标已拥有破防状态时释放狼之珀",
+                    "effects": [
+                        "STATUS_SHRED"
+                    ]
+                },
+                "enhancement_effect": "追加灼热伤害",
+                "enhancement_visible_pulse": false,
+                "effects": []
+            },
+            "description": "冲向目标，造成物理伤害并施加击飞。 若目标已经拥有破防，则会额外释放狼之珀冲向目标，造成灼热伤害。",
+            "damage_multiplier": "192%（第一段）+ 288%（第二段）",
+            "stagger_value": 0,
+            "cooldown": null,
+            "spirit_cost": 100,
+            "effects": [
+                {
+                    "effect_id": "STATUS_HEAVY_HIT",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
+        },
+        {
+            "skill_id": "wulfa_link",
+            "name": "燎影时刻",
+            "skill_type": "连携技",
+            "element": "物理",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "暴击率/暴击伤害提升",
+                "trigger_condition": {
+                    "text": "连携技第二段精准衔接时",
+                    "effects": []
+                },
+                "enhancement_effect": "伤害提升",
+                "enhancement_visible_pulse": false,
+                "effects": [
+                    {
+                        "effect_id": "BUFF_DAMAGE_UP",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy"
+                    }
+                ]
+            },
+            "description": "当有敌人同时处于破防和法术附着状态时可以发动。 洛茜的连携技可连续发动两次，第一次会对目标造成物理伤害。 第二次将消耗目标全部的法术附着，对其造成基于消耗层数的物理伤害并造成一次击飞，同时在一段时间内提升自身的暴击率和暴击伤害。 当第二次连携技精准衔接时，可以额外施加1层破防。",
+            "damage_multiplier": "150%（第一段）+ 300%（第二段）+ 180%（每层）",
+            "stagger_value": 0,
+            "cooldown": null,
+            "spirit_cost": 0,
+            "effects": [
+                {
+                    "effect_id": "STATUS_HEAVY_HIT",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
+        },
+        {
+            "skill_id": "wulfa_ultimate",
+            "name": "“利爪”奇袭",
+            "skill_type": "终结技",
+            "element": "灼热",
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "暴击伤害提升",
+                "trigger_condition": {
+                    "text": "终结技暴击时",
+                    "effects": []
+                },
+                "enhancement_effect": "伤害提升",
+                "enhancement_visible_pulse": false,
+                "effects": [
+                    {
+                        "effect_id": "BUFF_DAMAGE_UP",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy"
+                    }
+                ]
+            },
+            "description": "挥动披风迅捷戳击，在短时间内对目标造成多段灼热伤害，之后使用匕首进行两段斩击，造成大量灼热伤害并施加灼热附着。 本次技能将在暴击时造成更高的暴击伤害。",
+            "damage_multiplier": "600%（戳击）+ 250%（第一段）+ 750%（第二段）",
+            "stagger_value": 0,
+            "cooldown": "10秒",
+            "spirit_cost": 110,
+            "effects": [
+                {
+                    "effect_id": "ATTACH_BURN",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
+        }
+    ]
+}

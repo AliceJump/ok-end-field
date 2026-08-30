@@ -7,9 +7,11 @@ from src.core.BattleConfig import (
     KEY_COND_SEQUENCE,
     KEY_INSTANT_LINK,
     KEY_INSTANT_ULT,
+    KEY_SKILL_ALLOWLIST,
 )
 from src.core.rotation_ast import iter_actions, normalize_ast
 from src.data.FeatureList import FeatureList as fL
+from src.data.skill_allowlist import detect_team_stable, generate_skill_sequence
 from src.image.recommend_skill_detector import get_recommend_skill_detector
 
 
@@ -312,6 +314,11 @@ class AutoCombatLogic:
         self.normal_start_trigger = task.get_battle_config("启动技能点数", 2)
         self.normal_skill_index = 0
 
+        # ── 自动技能列表：标记是否需要后续处理 ──
+        _skill_allowlist_enabled = task.get_battle_config(KEY_SKILL_ALLOWLIST, False)
+        _detected_team: list[str] | None = None
+        _team_stable = False
+
         # 模式初始化：实时条件 > 排轴 > 普通
         # 实时条件优先：启用时自动忽略普通排轴
         self.cond_rotation_enabled = task.get_battle_config(KEY_COND_ENABLED, False)
@@ -363,11 +370,38 @@ class AutoCombatLogic:
             task.click(key="middle")
             self._normal_attack_hold_enabled = True
             self._sync_normal_attack_hold()
-            if start_sleep is not None:
-                task.sleep(start_sleep)
+
+            try:
+                _detect_start = task.active_time()
+                _target_sleep = start_sleep if start_sleep is not None else task.get_battle_config("进入战斗后的初始等待时间", 3)
+                _detect_deadline = _detect_start + _target_sleep
+                if _skill_allowlist_enabled:
+                    # 初始等待期间做多帧稳定识别，复用等待时间
+                    _detected_team, _team_stable = detect_team_stable(
+                        task.next_frame, task=task, deadline=_detect_deadline,
+                    )
+                    _elapsed = task.active_time() - _detect_start
+                    if _elapsed < _target_sleep:
+                        task.sleep(_target_sleep - _elapsed)
+                else:
+                    task.sleep(_target_sleep)
+            except Exception:
+                import pyautogui
+                pyautogui.mouseUp()
+                raise
+
+        # ── 自动技能列表：处理识别结果 ──
+        if _skill_allowlist_enabled:
+            if _team_stable and _detected_team and all(m != "?" for m in _detected_team):
+                self.normal_skill_sequence = generate_skill_sequence(_detected_team)
+                task.log_info(
+                    f"自动技能列表已生成: {self.normal_skill_sequence} "
+                    f"(队伍: {'/'.join(_detected_team)})"
+                )
+            elif _detected_team and not _team_stable:
+                task.log_info("自动技能列表: 队伍未达稳定，跳过生成")
             else:
-                wait_time = task.get_battle_config("进入战斗后的初始等待时间", 3)
-                task.sleep(wait_time)
+                task.log_info("自动技能列表: 头像识别失败，跳过生成")
 
         try:
             while True:

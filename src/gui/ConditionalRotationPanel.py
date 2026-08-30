@@ -33,12 +33,8 @@ from qfluentwidgets import (
 )
 
 from src.core.BattleConfig import (
-    BATTLE_CONFIG_DESCRIPTION,
     BATTLE_CONFIG_NAME,
-    KEY_COND_ENABLED,
     KEY_COND_SEQUENCE,
-    KEY_INSTANT_LINK,
-    KEY_INSTANT_ULT,
 )
 from src.core.global_config_store import get_global_config
 from src.core.rotation_ast import normalize_ast
@@ -988,17 +984,15 @@ class _ConditionListEditDialog(MessageBoxBase):
 
 # 主面板: 4 行配置项 (无折叠, 与其他配置行样式一致)
 class ConditionalRotationPanel(QWidget):
-    """实时条件面板: 四行配置项.
+    """实时条件动作列表编辑按钮.
 
-    启用实时条件 / 立即释放终结技 / 立即释放连携技 / 动作列表(编辑按钮).
+    渲染一个「动作列表」行，点击弹出实时条件 AST 编辑对话框.
     """
 
     def __init__(self, parent=None, config=None):
         super().__init__(parent)
         self.config = config or get_global_config(BATTLE_CONFIG_NAME)
-        self._loading = False
         self._setup_ui()
-        self._load()
 
     def _setup_ui(self):
         # 与 LabelAnd* 控件保持一致的约定：把主布局存为 self.layout 属性（遮蔽 Qt 的
@@ -1008,56 +1002,17 @@ class ConditionalRotationPanel(QWidget):
         self.layout.setContentsMargins(0, 0, 0, 0)
         self.layout.setSpacing(0)
 
-        # Row 1: 启用实时条件
-        self._row1 = LabelAndWidget(KEY_COND_ENABLED, BATTLE_CONFIG_DESCRIPTION[KEY_COND_ENABLED])
-        self.enable_switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
-        self.enable_switch.setOnText(_tr("是"))
-        self.enable_switch.setOffText(_tr("否"))
-        self.enable_switch.checkedChanged.connect(lambda c: self._set_config(KEY_COND_ENABLED, c))
-        self._row1.add_widget(self.enable_switch, stretch=0)
-        self.layout.addWidget(self._row1)
-
-        # Row 2: 立即释放终结技
-        self._row2 = LabelAndWidget(KEY_INSTANT_ULT, BATTLE_CONFIG_DESCRIPTION[KEY_INSTANT_ULT])
-        self.ult_switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
-        self.ult_switch.setOnText(_tr("是"))
-        self.ult_switch.setOffText(_tr("否"))
-        self.ult_switch.checkedChanged.connect(lambda c: self._set_config(KEY_INSTANT_ULT, c))
-        self._row2.add_widget(self.ult_switch, stretch=0)
-        self.layout.addWidget(self._row2)
-
-        # Row 3: 立即释放连携技
-        self._row3 = LabelAndWidget(KEY_INSTANT_LINK, BATTLE_CONFIG_DESCRIPTION[KEY_INSTANT_LINK])
-        self.link_switch = SwitchButton(indicatorPos=IndicatorPosition.RIGHT)
-        self.link_switch.setOnText(_tr("是"))
-        self.link_switch.setOffText(_tr("否"))
-        self.link_switch.checkedChanged.connect(lambda c: self._set_config(KEY_INSTANT_LINK, c))
-        self._row3.add_widget(self.link_switch, stretch=0)
-        self.layout.addWidget(self._row3)
-
-        # Row 4: 动作列表 + 编辑按钮
-        self._row4 = LabelAndWidget(_tr("动作列表"), _tr("当条件符合时使用技能组"))
-        self._row4.contentLabel.setWordWrap(False)
+        # 动作列表 + 编辑按钮
+        self._row = LabelAndWidget(_tr("动作列表"), _tr("当条件符合时使用技能组"))
+        self._row.contentLabel.setWordWrap(False)
         self.edit_btn = PushButton(FluentIcon.EDIT, _tr("编辑"))
         self.edit_btn.clicked.connect(self._on_edit)
-        self._row4.add_widget(self.edit_btn, stretch=0)
-        self.layout.addWidget(self._row4)
-
-    def _load(self):
-        self._loading = True
-        self.enable_switch.setChecked(bool(self.config.get(KEY_COND_ENABLED, False)))
-        self.ult_switch.setChecked(bool(self.config.get(KEY_INSTANT_ULT, False)))
-        self.link_switch.setChecked(bool(self.config.get(KEY_INSTANT_LINK, False)))
-        self._loading = False
+        self._row.add_widget(self.edit_btn, stretch=0)
+        self.layout.addWidget(self._row)
 
     def update_value(self):
         """供 ConfigCard.update_config 调用."""
-        self._load()
-
-    def _set_config(self, key: str, value):
-        if self._loading:
-            return
-        self.config[key] = value
+        pass
 
     def _on_edit(self):
         raw_ast = self.config.get(KEY_COND_SEQUENCE, [])
