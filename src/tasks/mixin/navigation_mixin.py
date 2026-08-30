@@ -395,12 +395,12 @@ class NavigationMixin(SearchMixin):
         success = False
         random_move_count = 0
         move_count = 0
-        scroll_bool = False
         sum_dx = 0
         sum_dy = 0
-        move_bool = False
-        for i in range(max_time*2):
+        for _ in range(max_time*2):
             start_action_time = self.active_time()
+            if need_scroll:
+                self.do_scroll(1, 400)
             if ocr:
                 # 使用OCR模式识别目标，设置超时时间为2秒，并启用日志记录
                 start_time = self.active_time()
@@ -550,17 +550,7 @@ class NavigationMixin(SearchMixin):
 
             if self.active_time() - start_action_time < once_time:
                 self.sleep(once_time - (self.active_time() - start_action_time))  # OCR 成功后不需要处理，下一次失败仍然随机
-            if need_scroll:
-                # 初始放大（只执行一次）
-                if not scroll_bool:
-                    scroll_bool = True
-                    self.do_scroll(8, 400)
 
-                # 时间节点控制
-                scroll_plan = {int(max_time * 0.250): -400, int(max_time * 0.500): -400, int(max_time * 0.750): -400}
-
-                if i in scroll_plan:
-                    self.do_scroll(2, scroll_plan[i])
         if raise_if_fail:
             raise Exception("对中失败")
         else:
@@ -569,4 +559,3 @@ class NavigationMixin(SearchMixin):
     def do_scroll(self, times, delta):
         for _ in range(times):
             pyautogui.scroll(int(self.resolution_scale() * delta))
-            self.sleep(0.1)
