@@ -85,7 +85,7 @@ def _load_trigger_condition(trigger_data) -> tuple[str, list[EffectType]]:
     """
     if isinstance(trigger_data, dict):
         text = trigger_data.get("text", "")
-        effects = [EffectType(e) for e in trigger_data.get("effects", [])]
+        effects = [EffectType(e) for e in trigger_data.get("effects") or []]
         return text, effects
     text = trigger_data or ""
     return text, [eff for _, eff in match_effect_terms(text)]
@@ -112,12 +112,12 @@ def _load_character_from_json(file_path: Path) -> Character:
                 name=enh_data["name"],
                 trigger_condition=trigger_condition,
                 trigger_effects=trigger_effects,
-                effects=_load_skill_effects(enh_data.get("effects", [])),
+                effects=_load_skill_effects(enh_data.get("effects") or []),
                 enhancement_visible_pulse=enh_data.get("enhancement_visible_pulse", False),
             )
 
         # 加载技能基础效果；旧格式的 attach/status/clear 纯ID列表合并进 effects
-        effects = _load_skill_effects(skill_data.get("effects", []))
+        effects = _load_skill_effects(skill_data.get("effects") or [])
         legacy_ids = []
         for legacy_key in ("attach_effects", "status_effects", "clear_effects"):
             legacy_ids.extend(skill_data.get(legacy_key, []) or [])

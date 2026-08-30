@@ -66,6 +66,7 @@ EFFECT_KEYWORD_RULES: dict[str, list[str]] = {
     # 清除
     "CLEAR_COLD":    ["冻结"],
     "CLEAR_NATURAL": ["腐蚀"],
+    "CLEAR_FROZEN":  ["冻结", "消耗"],
 
     # 机制
     "MECH_VACUUM":        ["聚怪", "吸引"],

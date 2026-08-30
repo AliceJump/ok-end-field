@@ -88,6 +88,7 @@ class EffectType(Enum):
     CLEAR_STATUS = "CLEAR_STATUS"
     CLEAR_COLD = "CLEAR_COLD"
     CLEAR_NATURAL = "CLEAR_NATURAL"
+    CLEAR_FROZEN = "CLEAR_FROZEN"
 
     # 触发效果
     TRIGGER_LINK = "TRIGGER_LINK"
@@ -182,6 +183,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.CLEAR_STATUS: "清空所有异常状态",
     EffectType.CLEAR_COLD: "清空敌人寒冷附着",
     EffectType.CLEAR_NATURAL: "清空敌人自然附着",
+    EffectType.CLEAR_FROZEN: "消耗敌人冻结状态",
 
     # 触发效果
     EffectType.TRIGGER_LINK: "触发连携技效果",
@@ -270,6 +272,8 @@ EFFECT_TERMS: dict[str, EffectType] = {
     # 消耗/清除（保留明确的组合术语；避免动词"消耗""清空"误报）
     "消耗寒冷附着": EffectType.CLEAR_COLD,
     "消耗自然附着": EffectType.CLEAR_NATURAL,
+    "消耗冻结状态": EffectType.CLEAR_FROZEN,
+    "消耗冻结": EffectType.CLEAR_FROZEN,
     "清空寒冷附着": EffectType.CLEAR_COLD,
     "清空自然附着": EffectType.CLEAR_NATURAL,
     "消耗电磁附着": EffectType.CLEAR_ATTACH,
