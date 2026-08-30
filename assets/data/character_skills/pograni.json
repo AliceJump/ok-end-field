@@ -14,9 +14,9 @@
             "has_enhancement": false,
             "enhancement": null,
             "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成18点失衡。 下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
-            "damage_multiplier": "",
+            "damage_multiplier": null,
             "stagger_value": 18,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": []
         },
@@ -40,7 +40,7 @@
                     {
                         "effect_id": "CONSUME_STACK",
                         "value": 1,
-                        "duration": "",
+                        "duration": null,
                         "target": "enemy"
                     }
                 ]
@@ -48,13 +48,13 @@
             "description": "对前方范围的敌人进行两次斩击，造成物理伤害并施加碎甲，同时基于消耗的破防层数恢复技力，命中多名目标时仅恢复1次。",
             "damage_multiplier": "192%（第一段）+ 238%（第二段）",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 100,
             "effects": [
                 {
                     "effect_id": "STATUS_SHATTER",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }
@@ -80,7 +80,7 @@
                     {
                         "effect_id": "TRIGGER_ADDITIONAL",
                         "value": 1,
-                        "duration": "",
+                        "duration": null,
                         "target": "enemy"
                     }
                 ]
@@ -88,7 +88,7 @@
             "description": "当有敌人被猛击或者碎甲消耗破防层数后可以发动。根据消耗的最高破防层数，对敌人进行相同次数的斩击（最多3次），造成物理伤害并恢复一定技力，每一击的伤害和技力恢复效果都更强。若消耗4层破防，第3次斩击将获得强化。",
             "damage_multiplier": "95%（第一段）+ 122%（第二段）+ 149%（第三段）+ 297%（强化第三段）",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": []
         },
@@ -112,7 +112,7 @@
                     {
                         "effect_id": "TRIGGER_ADDITIONAL",
                         "value": 1,
-                        "duration": "",
+                        "duration": null,
                         "target": "enemy"
                     }
                 ]

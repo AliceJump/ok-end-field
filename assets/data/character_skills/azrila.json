@@ -14,9 +14,9 @@
             "has_enhancement": false,
             "enhancement": null,
             "description": "普通攻击：对敌人进行至多4段攻击，造成物理伤害。作为主控干员时，重击会造成25点失衡。 下落攻击：处于空中时使用普攻，会下落并攻击附近敌人，造成物理伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
-            "damage_multiplier": "",
+            "damage_multiplier": null,
             "stagger_value": 25,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": []
         },
@@ -38,7 +38,7 @@
                     {
                         "effect_id": "STATUS_STAGGER",
                         "value": 1,
-                        "duration": "",
+                        "duration": null,
                         "target": "enemy"
                     }
                 ]
@@ -46,13 +46,13 @@
             "description": "向前方跃起随后重砸，对扇形范围内的所有敌人造成灼热伤害并倒地。施放过程中若受到过来自敌人的伤害，命中时额外造成一定失衡。",
             "damage_multiplier": "390%",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 100,
             "effects": [
                 {
                     "effect_id": "STATUS_KNOCKDOWN",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }
@@ -68,20 +68,20 @@
             "description": "主控干员受到攻击后可以发动。向目标敌人跳起并重砸，造成物理伤害和倒地，同时治疗主控干员。意志可以额外提高治疗量。",
             "damage_multiplier": "230%",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": [
                 {
                     "effect_id": "STATUS_KNOCKDOWN",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 },
                 {
                     "effect_id": "BUFF_HEAL",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "ally",
                     "count": 1
                 }
@@ -103,7 +103,7 @@
                 {
                     "effect_id": "BUFF_SHIELD",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "ally",
                     "count": 1
                 }

@@ -15,9 +15,9 @@
             "enhancement": null,
             "effects": [],
             "description": "普通攻击：对敌人进行至多4段攻击，造成电磁伤害。作为主控干员时，重击会造成15点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成电磁伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量电磁伤害并恢复一定技力。",
-            "damage_multiplier": "",
+            "damage_multiplier": null,
             "stagger_value": 15,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0
         },
         {
@@ -31,7 +31,7 @@
                 {
                     "effect_id": "ATTACH_ELECTROMAGNETIC",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }
@@ -39,7 +39,7 @@
             "description": "释放一道电磁能量从空中落下，对小范围内敌人造成电磁伤害并施加电磁附着。",
             "damage_multiplier": "400%",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 100
         },
         {
@@ -53,7 +53,7 @@
                 {
                     "effect_id": "STATUS_CONDUCTING",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }
@@ -61,7 +61,7 @@
             "description": "当主控干员对敌人造成重击后可以发动。释放积蓄的电磁能量轰击目标，造成电磁伤害并强制施加短暂的导电。",
             "damage_multiplier": "180%",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0
         },
         {

@@ -14,9 +14,9 @@
             "has_enhancement": false,
             "enhancement": null,
             "description": "普通攻击：对敌人进行至多4段攻击，造成物理伤害。作为主控干员时，重击会造成19点失衡。 下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
-            "damage_multiplier": "",
+            "damage_multiplier": null,
             "stagger_value": 19,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": []
         },
@@ -38,7 +38,7 @@
                     {
                         "effect_id": "VULN_PHYSICAL",
                         "value": 1,
-                        "duration": "",
+                        "duration": null,
                         "target": "enemy"
                     }
                 ]
@@ -46,20 +46,20 @@
             "description": "连续向前挥枪，造成2次物理伤害，之后重砸地面，再次对前方所有敌人造成物理伤害并造成倒地。最后一击命中的敌人若不处于破防状态，则额外对其施加物理脆弱。",
             "damage_multiplier": "86%（第一段）+ 86%（第二段）+ 268%（第三段）",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 100,
             "effects": [
                 {
                     "effect_id": "STATUS_KNOCKDOWN",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 },
                 {
                     "effect_id": "VULN_PHYSICAL",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }
@@ -75,7 +75,7 @@
             "description": "当处于物理脆弱或碎甲状态的敌人受到主控干员重击后可以发动。施放身外身以长枪突刺，造成物理伤害，并且获得连击。",
             "damage_multiplier": "105%（第一段）+ 375%（第二段）",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": []
         },
@@ -99,7 +99,7 @@
                     {
                         "effect_id": "BUFF_DAMAGE_UP",
                         "value": 1,
-                        "duration": "",
+                        "duration": null,
                         "target": "self"
                     }
                 ]
@@ -113,7 +113,7 @@
                 {
                     "effect_id": "STATUS_KNOCKDOWN",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }

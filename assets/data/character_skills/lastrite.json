@@ -14,9 +14,9 @@
             "has_enhancement": false,
             "enhancement": null,
             "description": "普通攻击：对敌人进行至多4段攻击，造成寒冷伤害。作为主控干员时，重击会造成25点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人造成寒冷伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量寒冷伤害并恢复一定技力。",
-            "damage_multiplier": "",
+            "damage_multiplier": null,
             "stagger_value": 25,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": []
         },
@@ -41,7 +41,7 @@
                     {
                         "effect_id": "VULN_COLD",
                         "value": 1,
-                        "duration": "",
+                        "duration": null,
                         "target": "enemy"
                     }
                 ]
@@ -49,13 +49,13 @@
             "description": "对主控干员的武器进行低温灌注，并返还一定技力。一段时间内，当前主控干员接下来的1次重击会生成别礼的幻影，对目标进行追击，造成寒冷伤害，施加寒冷附着。主控干员为别礼时，施放该战技不会中断普通攻击。",
             "damage_multiplier": "200%（基础）+ 每层4%（脆弱）",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 100,
             "effects": [
                 {
                     "effect_id": "ATTACH_COLD",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }
@@ -71,13 +71,13 @@
             "description": "当有敌人进入3层及以上寒冷附着状态时可以发动。在目标敌人身上凝结冰锥，随后将其斩碎，消耗敌人身上的所有寒冷附着，对其造成基于其寒冷附着层数的寒冷伤害，并且根据消耗的层数获得终结技能量。",
             "damage_multiplier": "400%",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": [
                 {
                     "effect_id": "ATTACH_COLD",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }
@@ -101,7 +101,7 @@
                     {
                         "effect_id": "VULN_COLD",
                         "value": 1,
-                        "duration": "",
+                        "duration": null,
                         "target": "enemy"
                     }
                 ]

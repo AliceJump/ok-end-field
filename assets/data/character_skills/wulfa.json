@@ -14,9 +14,9 @@
             "has_enhancement": false,
             "enhancement": null,
             "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成18点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
-            "damage_multiplier": "",
+            "damage_multiplier": null,
             "stagger_value": 18,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": []
         },
@@ -41,13 +41,13 @@
             "description": "冲向目标，造成物理伤害并施加击飞。 若目标已经拥有破防，则会额外释放狼之珀冲向目标，造成灼热伤害。",
             "damage_multiplier": "192%（第一段）+ 288%（第二段）",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 100,
             "effects": [
                 {
                     "effect_id": "STATUS_HEAVY_HIT",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }
@@ -71,7 +71,7 @@
                     {
                         "effect_id": "BUFF_DAMAGE_UP",
                         "value": 1,
-                        "duration": "",
+                        "duration": null,
                         "target": "enemy"
                     }
                 ]
@@ -79,13 +79,13 @@
             "description": "当有敌人同时处于破防和法术附着状态时可以发动。 洛茜的连携技可连续发动两次，第一次会对目标造成物理伤害。 第二次将消耗目标全部的法术附着，对其造成基于消耗层数的物理伤害并造成一次击飞，同时在一段时间内提升自身的暴击率和暴击伤害。 当第二次连携技精准衔接时，可以额外施加1层破防。",
             "damage_multiplier": "150%（第一段）+ 300%（第二段）+ 180%（每层）",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": [
                 {
                     "effect_id": "STATUS_HEAVY_HIT",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }
@@ -109,7 +109,7 @@
                     {
                         "effect_id": "BUFF_DAMAGE_UP",
                         "value": 1,
-                        "duration": "",
+                        "duration": null,
                         "target": "enemy"
                     }
                 ]
@@ -123,7 +123,7 @@
                 {
                     "effect_id": "ATTACH_BURN",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }

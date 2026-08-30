@@ -14,9 +14,9 @@
             "has_enhancement": false,
             "enhancement": null,
             "description": "普通攻击：对敌人进行至多5段攻击，造成自然伤害。作为主控干员时，重击会造成17点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成自然伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量自然伤害并恢复一定技力。",
-            "damage_multiplier": "",
+            "damage_multiplier": null,
             "stagger_value": 17,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": []
         },
@@ -42,13 +42,13 @@
             "description": "意志值 > 智识值，阵诀·意生效中。在目标脚下创建摧玉网格，对范围内敌人造成自然伤害并施加自然附着。阵诀·意：- 造成伤害时会向中心牵引范围内的敌人。",
             "damage_multiplier": "250%（基础）+ 350%（爆发）",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 100,
             "effects": [
                 {
                     "effect_id": "ATTACH_NATURAL",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }
@@ -64,13 +64,13 @@
             "description": "意志值 > 智识值，阵诀·意生效中。当有敌人被施加法术附着时可以发动。冲向目标，设置四个战术分身对其及周围的敌人再次施加该法术附着、自然脆弱和寒冷脆弱，造成自然伤害，并使该目标进入囹圄状态。囹圄状态结束时，战术分身向其攻击，并造成爆炸伤害。囹圄状态：所有行动减缓。阵诀·意：- 施放连携技使敌人进入囹圄状态时，会小幅牵引范围内的敌人。- 意志可以额外提升连携技施加的自然脆弱和寒冷脆弱效果。",
             "damage_multiplier": "280%",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": [
                 {
                     "effect_id": "VULN_ALL",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }

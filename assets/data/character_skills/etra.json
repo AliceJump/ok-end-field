@@ -14,9 +14,9 @@
             "has_enhancement": false,
             "enhancement": null,
             "description": "普通攻击：对敌人进行至多4段攻击，造成物理伤害。作为主控干员时，重击会造成17点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
-            "damage_multiplier": "",
+            "damage_multiplier": null,
             "stagger_value": 17,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": []
         },
@@ -30,13 +30,13 @@
             "description": "向前刺出长枪，激发出一道制冷声波，对一条直线上的敌人造成寒冷伤害并施加寒冷附着。",
             "damage_multiplier": "350%",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 100,
             "effects": [
                 {
                     "effect_id": "ATTACH_COLD",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }
@@ -62,7 +62,7 @@
                     {
                         "effect_id": "VULN_PHYSICAL",
                         "value": 1,
-                        "duration": "",
+                        "duration": null,
                         "target": "enemy"
                     }
                 ]
@@ -70,13 +70,13 @@
             "description": "当有敌人进入冻结状态时可以发动。迅速移动到敌人身边，对小范围内的敌人造成物理伤害并强制造成击飞。如果命中处于冻结状态的敌人，还会造成额外伤害并施加物理脆弱。",
             "damage_multiplier": "360%（非冻结）+ 630%（冻结）",
             "stagger_value": 0,
-            "cooldown": "",
+            "cooldown": null,
             "spirit_cost": 0,
             "effects": [
                 {
                     "effect_id": "STATUS_HEAVY_HIT",
                     "value": 1,
-                    "duration": "",
+                    "duration": null,
                     "target": "enemy",
                     "count": 1
                 }
@@ -102,7 +102,7 @@
                     {
                         "effect_id": "STATUS_HEAVY_HIT",
                         "value": 1,
-                        "duration": "",
+                        "duration": null,
                         "target": "enemy"
                     }
                 ]
