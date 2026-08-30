@@ -116,7 +116,6 @@ def crawl_wiki() -> list:
         
         # 逐个抓取并更新
         all_characters = []
-        updated_count = 0
         
         for i, char in enumerate(characters):
             item_id = char['itemId']
@@ -176,7 +175,6 @@ def crawl_wiki() -> list:
                         if changed:
                             with open(f, 'w', encoding='utf-8') as fh:
                                 json.dump(old_data, fh, ensure_ascii=False, indent=2)
-                            updated_count += 1
                             print(f" - {len(skills)}个技能 [已更新]")
                         else:
                             print(f" - {len(skills)}个技能 [无变化]")

@@ -257,7 +257,6 @@ def score_team(team: list[CharacterData]) -> TeamScore:
     """
     ts = TeamScore()
     elements = {c.element for c in team}
-    professions = {c.profession for c in team}
 
     # =====================================================================
     # 0. 预计算：谁生产什么状态，谁消耗什么状态
@@ -573,13 +572,6 @@ def analyze_team_skills(team: list[CharacterData]) -> list[SkillVerdict]:
                 eid = eff.get("effect_id", "")
                 base_value += EFFECT_BASE_VALUE.get(eid, 1)
                 produces.append(eid)
-            # 终结技的 effects 也可能有产出
-            if s.has_enhancement and s.enhancement:
-                for eff in s.enhancement.get("effects") or []:
-                    eid = eff.get("effect_id", "")
-                    # 增强效果的价值单独算
-                    pass
-
             # ---- 2. 增强条件检查 ----
             enhancement_bonus = 0
             requires: list[str] = []
@@ -708,7 +700,7 @@ def format_skill_analysis(team: list[CharacterData], verdicts: list[SkillVerdict
     """格式化技能分析输出。"""
     lines = []
     lines.append(f"{'='*60}")
-    lines.append(f"  队伍技能分析（技力经济学）")
+    lines.append("  队伍技能分析（技力经济学）")
     lines.append(f"  队伍: {' / '.join(c.name for c in team)}")
     lines.append(f"{'─'*60}")
 
@@ -726,7 +718,7 @@ def format_skill_analysis(team: list[CharacterData], verdicts: list[SkillVerdict
 
     # 总结：按优先级排序
     lines.append(f"\n{'─'*60}")
-    lines.append(f"  推荐释放顺序（按价值从高到低）:")
+    lines.append("  推荐释放顺序（按价值从高到低）:")
     sorted_v = sorted(verdicts, key=lambda x: (-x.total_value, x.spirit_cost))
     for i, v in enumerate(sorted_v, 1):
         if "不值得" not in v.verdict:

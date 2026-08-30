@@ -11,7 +11,7 @@ from src.core.BattleConfig import (
 )
 from src.core.rotation_ast import iter_actions, normalize_ast
 from src.data.FeatureList import FeatureList as fL
-from src.data.skill_allowlist import detect_team_from_frame, filter_skill_sequence
+from src.data.skill_allowlist import detect_team_from_frame, generate_skill_sequence
 from src.image.recommend_skill_detector import get_recommend_skill_detector
 
 
@@ -314,31 +314,21 @@ class AutoCombatLogic:
         self.normal_start_trigger = task.get_battle_config("启动技能点数", 2)
         self.normal_skill_index = 0
 
-        # ── 自动技能列表：自动识别编队过滤战技释放序列 ──
+        # ── 自动技能列表：自动识别编队，直接生成允许的技能释放序列 ──
         if task.get_battle_config(KEY_SKILL_ALLOWLIST, False):
-            # 自动识别编队，过滤战技释放序列
             frame = task.frame
             if frame is not None and frame.size > 0:
                 team_members = detect_team_from_frame(frame)
                 if team_members and all(m != "?" for m in team_members):
-                    original_seq = list(self.normal_skill_sequence)
-                    self.normal_skill_sequence = filter_skill_sequence(
-                        team_members, self.normal_skill_sequence
+                    self.normal_skill_sequence = generate_skill_sequence(team_members)
+                    task.log_info(
+                        f"自动技能列表已生成: {self.normal_skill_sequence} "
+                        f"(队伍: {'/'.join(team_members)})"
                     )
-                    if self.normal_skill_sequence != original_seq:
-                        task.log_info(
-                            f"自动技能列表已生效: {original_seq} → {self.normal_skill_sequence} "
-                            f"(队伍: {'/'.join(team_members)})"
-                        )
-                    else:
-                        task.log_info(
-                            f"自动技能列表已生效，无技能被过滤 "
-                            f"(队伍: {'/'.join(team_members)})"
-                        )
                 else:
-                    task.log_info("自动技能列表: 头像识别失败，跳过过滤")
+                    task.log_info("自动技能列表: 头像识别失败，跳过生成")
             else:
-                task.log_info("自动技能列表: 帧不可用，跳过过滤")
+                task.log_info("自动技能列表: 帧不可用，跳过生成")
 
         # 模式初始化：实时条件 > 排轴 > 普通
         # 实时条件优先：启用时自动忽略普通排轴

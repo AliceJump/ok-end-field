@@ -181,7 +181,7 @@ def main():
     with open(OUTPUT_FILE, 'w', encoding='utf-8') as f:
         json.dump(all_characters, f, ensure_ascii=False, indent=2)
     
-    print(f"\n===== 完成 =====")
+    print("\n===== 完成 =====")
     print(f"保存到 {OUTPUT_FILE}")
     print(f"共 {len(all_characters)} 个角色")
 

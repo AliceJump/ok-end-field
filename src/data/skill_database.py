@@ -96,7 +96,7 @@ class SkillDatabase:
                     result.append(skill)
         return result
 
-    def get_reactions_by_element(self, element: ElementType) -> list[SkillReaction]:
+    def get_reactions_by_element(self) -> list[SkillReaction]:
         """按元素获取反应。"""
         return []
 

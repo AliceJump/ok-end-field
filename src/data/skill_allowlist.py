@@ -184,10 +184,29 @@ def build_skill_allowlist(
     return result
 
 
-# ── 过滤技能释放序列 ────────────────────────────────────────────────────────
+# ── 生成技能释放序列 ────────────────────────────────────────────────
 
 # 普通战技 token 集合（不含 ult_/e/sleep_/normal_）
 _NORMAL_SKILL_TOKENS = {"1", "2", "3", "4"}
+
+
+def generate_skill_sequence(
+    team_members: list[str],
+    characters: dict[str, dict] | None = None,
+) -> list[str]:
+    """根据队伍编队直接生成允许的战技释放序列（生成式，不依赖用户配置）。
+
+    自动构建 allowlist，仅返回被允许的数字战技 token，按索引升序排列。
+
+    Args:
+        team_members: 4 个角色名，索引 i 对应技能键 "i+1"
+        characters:   角色数据（可选）
+
+    Returns:
+        生成的战技释放序列，如 ["1", "3"]
+    """
+    allowlist = build_skill_allowlist(team_members, characters)
+    return [str(i + 1) for i, (ok, _) in allowlist.items() if ok]
 
 
 def filter_skill_sequence(

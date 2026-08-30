@@ -311,7 +311,7 @@ def main():
     for f in sorted(generated_files):
         print(f"  - {f}")
     
-    print(f"\nSummary:")
+    print("\nSummary:")
     print(f"  Total characters: {summary['total_characters']}")
     print(f"  Elements: {summary['elements']}")
     

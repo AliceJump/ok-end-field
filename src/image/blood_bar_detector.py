@@ -142,20 +142,11 @@ def detect_blue_bars(
 
 def locate_portraits(
         bars: list[BloodBar],
-        *,
-        offset_x: float = PORTRAIT_OFFSET_X,
-        offset_y: float = PORTRAIT_OFFSET_Y,
-        portrait_width: float = PORTRAIT_WIDTH,
-        portrait_height: float = PORTRAIT_HEIGHT,
 ) -> list[Portrait]:
     """根据血条位置定位头像。
 
     Args:
         bars: detect_blue_bars 返回的血条列表
-        offset_x: 头像中心相对血条中心的 X 偏移（归一化）
-        offset_y: 头像中心相对血条中心的 Y 偏移（归一化）
-        portrait_width: 头像宽度（归一化）
-        portrait_height: 头像高度（归一化）
 
     Returns:
         头像列表

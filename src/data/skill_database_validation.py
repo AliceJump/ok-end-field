@@ -100,7 +100,7 @@ def validate_reactions(i18n_data):
                 break
 
         if not found:
-            print(f"  解包数据: [未找到]")
+            print("  解包数据: [未找到]")
 
     print("\n" + "=" * 60)
     print(f"验证完成: {validated_count}/{len(reactions)} 个反应条件在解包数据中找到")
