@@ -117,7 +117,7 @@ def load_character(filepath: Path) -> CharacterData:
             has_enhancement=s.get("has_enhancement", False),
             enhancement=s.get("enhancement"),
             description=s.get("description", ""),
-            effects=s.get("effects", []),
+            effects=s.get("effects") or [],
             stagger_value=s.get("stagger_value", 0),
             spirit_cost=s.get("spirit_cost", 0),
         )
@@ -127,7 +127,7 @@ def load_character(filepath: Path) -> CharacterData:
             if tc.get("text"):
                 skill.trigger_conditions.append(tc["text"])
                 # 也提取 trigger_condition.effects 中的前置状态
-                for eff in tc.get("effects", []):
+                for eff in tc.get("effects") or []:
                     skill.trigger_conditions.append(f"requires:{eff}")
         skills.append(skill)
 
@@ -166,6 +166,7 @@ def load_character(filepath: Path) -> CharacterData:
             if eid.startswith("STATUS_") and eid not in (
                 "STATUS_SPELL_INFLICT", "STATUS_SPELL_BURST",
                 "STATUS_SPELL_ANOMALY", "STATUS_BROKEN",
+                "STATUS_STAGGER",  # 失衡：基础异常，不算协同
             ):
                 char.status_effects.add(eid)
             # 治疗/护盾
@@ -185,7 +186,7 @@ def load_character(filepath: Path) -> CharacterData:
         # 从增强 trigger 判断能消耗的异常
         if sk.has_enhancement and sk.enhancement:
             tc = sk.enhancement.get("trigger_condition", {})
-            for teff in tc.get("effects", []):
+            for teff in (tc.get("effects") or []):
                 anomaly_map = {
                     "STATUS_BURNING": "STATUS_BURNING",
                     "STATUS_FROZEN": "STATUS_FROZEN",
@@ -280,7 +281,7 @@ def score_team(team: list[CharacterData]) -> TeamScore:
         if c.skills:
             for s in c.skills:
                 if s.has_enhancement and s.enhancement:
-                    for eff in s.enhancement.get("effects", []):
+                    for eff in (s.enhancement.get("effects") or []):
                         eid = eff.get("effect_id", "")
                         if eid.startswith("STATUS_") and eid not in (
                             "STATUS_SPELL_INFLICT", "STATUS_SPELL_BURST",
@@ -294,7 +295,7 @@ def score_team(team: list[CharacterData]) -> TeamScore:
         for s in c.skills:
             if s.has_enhancement and s.enhancement:
                 tc = s.enhancement.get("trigger_condition", {})
-                for eff in tc.get("effects", []):
+                for eff in tc.get("effects") or []:
                     if eff.startswith("STATUS_"):
                         status_consumers.setdefault(eff, []).append(c.name)
 
@@ -346,7 +347,7 @@ def score_team(team: list[CharacterData]) -> TeamScore:
         for s in c.skills:
             if s.has_enhancement and s.enhancement:
                 tc = s.enhancement.get("trigger_condition", {})
-                trigger_effects = tc.get("effects", [])
+                trigger_effects = tc.get("effects") or []
                 if not trigger_effects:
                     continue
                 for teff in trigger_effects:
@@ -493,7 +494,7 @@ EFFECT_BASE_VALUE: dict[str, int] = {
     # 低价值：消耗战技值不划算
     "STATUS_KNOCKDOWN": 2,    # 倒地：物理异常控制不稳定，首次只触发破防
     "STATUS_HEAVY_HIT": 3,    # 击飞：类似倒地
-    "STATUS_STAGGER": 2,      # 失衡：基础异常，不算赚
+    "STATUS_STAGGER": 0,      # 失衡：基础异常，不纳入评分
     "STATUS_SHATTER": 3,      # 碎甲：需要叠满破防才触发
     "STATUS_HEAVY_STRIKE": 3, # 猛击：需要叠满破防才触发
     "DEBUFF_SPEED_DOWN": 2,   # 减速
@@ -543,7 +544,7 @@ def analyze_team_skills(team: list[CharacterData]) -> list[SkillVerdict]:
                 team_produces.setdefault(eid, set()).add(c.name)
             # 终结技/战技的 enhancement.effects 也算产出
             if s.has_enhancement and s.enhancement:
-                for eff in s.enhancement.get("effects", []):
+                for eff in s.enhancement.get("effects") or []:
                     eid = eff.get("effect_id", "")
                     team_produces.setdefault(eid, set()).add(c.name)
         # attach_elements 也能产出对应附着
@@ -574,7 +575,7 @@ def analyze_team_skills(team: list[CharacterData]) -> list[SkillVerdict]:
                 produces.append(eid)
             # 终结技的 effects 也可能有产出
             if s.has_enhancement and s.enhancement:
-                for eff in s.enhancement.get("effects", []):
+                for eff in s.enhancement.get("effects") or []:
                     eid = eff.get("effect_id", "")
                     # 增强效果的价值单独算
                     pass
@@ -585,8 +586,8 @@ def analyze_team_skills(team: list[CharacterData]) -> list[SkillVerdict]:
             enhancement_triggered = False
             if s.has_enhancement and s.enhancement:
                 tc = s.enhancement.get("trigger_condition", {})
-                trigger_effects = tc.get("effects", [])
-                enhancement_effects = s.enhancement.get("effects", [])
+                trigger_effects = (tc.get("effects") or [])
+                enhancement_effects = (s.enhancement.get("effects") or [])
 
                 if trigger_effects:
                     # 需要团队产出这些状态
@@ -631,7 +632,7 @@ def analyze_team_skills(team: list[CharacterData]) -> list[SkillVerdict]:
                         continue
                     for ts in tc.skills:
                         if ts.has_enhancement and ts.enhancement:
-                            tc_trigger = ts.enhancement.get("trigger_condition", {}).get("effects", [])
+                            tc_trigger = (ts.enhancement.get("trigger_condition", {}).get("effects") or [])
                             if prod in tc_trigger:
                                 chain_bonus += 4
                                 chain_reasons.append(f"{tc.name}的{ts.name}需要{prod}")

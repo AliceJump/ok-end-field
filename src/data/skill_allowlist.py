@@ -28,9 +28,6 @@ _CHARACTERS_JSON = _ROOT / "assets" / "data" / "characters.json"
 _ASSETS_DIR = _ROOT / "assets"
 _COCO_JSON = _ASSETS_DIR / "coco_annotations.json"
 
-# 战技无实际释放价值的角色（自动技能列表始终跳过）
-_EXCLUDED_CHARS = {"余烬"}
-
 # ── 数据加载 ──────────────────────────────────────────────────────────────────
 
 _cached_characters: dict[str, dict] | None = None
@@ -86,10 +83,6 @@ def build_skill_allowlist(
     result: dict[int, tuple[bool, str]] = {}
 
     for idx, char_name in enumerate(team_members):
-        if char_name in _EXCLUDED_CHARS:
-            result[idx] = (False, "战技无实际释放价值")
-            continue
-
         char_data = characters.get(char_name)
         if not char_data:
             result[idx] = (True, "")
@@ -114,7 +107,19 @@ def build_skill_allowlist(
 
         # ── 增强条件分析 ──
         trigger_condition = enhancement.get("trigger_condition", {})
-        trigger_effects = trigger_condition.get("effects", [])
+        trigger_effects = [
+            eid for eid in (trigger_condition.get("effects") or [])
+            if eid != "STATUS_STAGGER"  # 失衡：基础异常，不参与增强依赖判定
+        ]
+
+        # 增强产出全部是无价值效果 → 增强形同虚设，战技无释放价值
+        enhancement_effects = [
+            e.get("effect_id", "") for e in (enhancement.get("effects") or [])
+            if e.get("effect_id") != "STATUS_STAGGER"
+        ]
+        if not trigger_effects and not enhancement_effects:
+            result[idx] = (False, "增强效果无实际价值")
+            continue
 
         if not trigger_effects:
             result[idx] = (True, "")
@@ -131,7 +136,7 @@ def build_skill_allowlist(
 
         skill_produces: dict[str, list[str]] = {}
         for (sname, _), sdata in all_skills.items():
-            for eff in sdata.get("effects", []):
+            for eff in (sdata.get("effects") or []):
                 eid = eff.get("effect_id", "")
                 if eid:
                     skill_produces.setdefault(eid, []).append(sname)
@@ -156,7 +161,7 @@ def build_skill_allowlist(
                 enh = sdata.get("enhancement")
                 if enh:
                     tc = enh.get("trigger_condition", {})
-                    for eff in tc.get("effects", []):
+                    for eff in (tc.get("effects") or []):
                         ultimate_triggers.setdefault(eff, []).append(sname)
 
             dependency_meaningful = False
