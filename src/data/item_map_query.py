@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import os
 import json
+import os
 from collections.abc import Iterable
 from functools import lru_cache
 from pathlib import Path
@@ -16,9 +16,7 @@ ItemMap = dict[str, list[MapPoint]]
 SummaryMap = dict[str, ItemMap]
 
 _ITEM_MAP_CONFIG = app_config.get("item_map", {})
-_SUMMARY_PATH = Path(
-    _ITEM_MAP_CONFIG.get("summary_json", os.path.join("assets", "items", "map", "summary.json"))
-)
+_SUMMARY_PATH = Path(_ITEM_MAP_CONFIG.get("summary_json", os.path.join("assets", "items", "map", "summary.json")))
 _ITEM_NAMES_PATH = Path(
     _ITEM_MAP_CONFIG.get("item_names_json", os.path.join("assets", "items", "map", "item_names.json"))
 )
@@ -58,11 +56,7 @@ def search_item_names(keyword: str) -> list[str]:
     """Search for item names containing the specified keyword (case-insensitive)."""
     keyword = keyword.lower()
 
-    return [
-        item_name
-        for item_name in _load_item_names()
-        if keyword in item_name.lower()
-    ]
+    return [item_name for item_name in _load_item_names() if keyword in item_name.lower()]
 
 
 def get_item_map(

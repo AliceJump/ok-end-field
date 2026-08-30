@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 """干员（Operator）canonical 数据（剥离自内嵌字典，见 assets/data/characters.json）。
 
@@ -18,7 +17,6 @@ import json
 from pathlib import Path
 
 characters = json.loads(
-    (Path(__file__).resolve().parent.parent.parent / "assets" / "data" / "characters.json")
-    .read_text(encoding="utf-8")
+    (Path(__file__).resolve().parent.parent.parent / "assets" / "data" / "characters.json").read_text(encoding="utf-8")
 )
 all_list = [i["zh"] for i in characters.values()]

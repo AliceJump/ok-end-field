@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 
 """送货地区配置（数据剥离自 src/data/delivery_area.py，见 assets/data/delivery_area.json）。
 
@@ -10,8 +9,9 @@ import json
 from pathlib import Path
 
 _DATA = json.loads(
-    (Path(__file__).resolve().parent.parent.parent / "assets" / "data" / "delivery_area.json")
-    .read_text(encoding="utf-8")
+    (Path(__file__).resolve().parent.parent.parent / "assets" / "data" / "delivery_area.json").read_text(
+        encoding="utf-8"
+    )
 )
 
 # 当前默认启用的送货地区；新地区未显式选择时会回退到这里。

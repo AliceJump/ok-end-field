@@ -1,11 +1,9 @@
-from qfluentwidgets import FluentIcon, NavigationItemPosition
-
-from ok.gui.tasks.ConfigCard import ConfigCard, og
+from ok.gui.tasks.ConfigCard import ConfigCard
 from ok.gui.widget.CustomTab import CustomTab
+from qfluentwidgets import FluentIcon, NavigationItemPosition
 
 from src.core.BattleConfig import BATTLE_CONFIG_NAME
 from src.core.global_config_store import ZIP_LINE_CONFIG_NAME, get_all_visible_configs
-
 
 GLOBAL_CONFIG_GROUPS = {
     "战斗配置": [BATTLE_CONFIG_NAME],
@@ -41,10 +39,7 @@ class GlobalConfigTab(CustomTab):
             self._build_cards()
 
     def _build_cards(self):
-        visible_configs = {
-            name: (config, option)
-            for name, config, option in get_all_visible_configs()
-        }
+        visible_configs = {name: (config, option) for name, config, option in get_all_visible_configs()}
         shown = set()
         for group_name, config_names in GLOBAL_CONFIG_GROUPS.items():
             for config_name in config_names:

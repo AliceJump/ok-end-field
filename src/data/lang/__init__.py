@@ -1,11 +1,11 @@
-import json5
 import re
 from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from ._lang_typed import _LangAccessorTyped
+import json5
 
+from ._lang_typed import _LangAccessorTyped
 
 # ============================================================
 # Locale activation config
@@ -78,6 +78,7 @@ def _parse_lang_value(v: Any) -> Any:
 
 class LangNode:
     """Represents a language node that can contain string, pattern, or terms data."""
+
     def __init__(self, data: dict | None):
         self._data = data or {}
 
@@ -95,7 +96,7 @@ class LangNode:
             return f"<LangNode {self._data}>"
         if isinstance(m, str):
             return m
-        if hasattr(m, 'pattern'):
+        if hasattr(m, "pattern"):
             return m.pattern
         return str(m)
 
@@ -120,6 +121,7 @@ class LangNode:
 
 class LangModule:
     """Represents a language module containing multiple language keys and their localized values."""
+
     def __init__(self, data: dict):
         self._data = data or {}
 
@@ -140,6 +142,7 @@ class LangModule:
 
 class LangAccessor(_LangAccessorTyped):
     """Accessor for loading and accessing language modules for a specific locale."""
+
     def __init__(self, locale: str | None = None):
         self.locale = _normalize_locale(locale)
         self._cache: dict[str, LangModule] = {}
@@ -226,11 +229,7 @@ def build_matcher(node: Any):
 def _locale_from_obj(obj: Any) -> str | None:
     """从执行器/对象中提取 locale 字符串，提取失败时返回 None。"""
     executor = getattr(obj, "executor", None)
-    locale_obj = (
-        getattr(executor, "locale", None)
-        if executor is not None
-        else getattr(obj, "locale", None)
-    )
+    locale_obj = getattr(executor, "locale", None) if executor is not None else getattr(obj, "locale", None)
     if locale_obj is None:
         return None
     if isinstance(locale_obj, Enum):
@@ -291,13 +290,13 @@ def get_lang_module_value(lang_accessor: Any, module_name: str, item: str, fallb
 
 __all__ = [
     "ACTIVE_LOCALES_CONFIG",
+    "SUPPORTED_LOCALES",
     "LangAccessor",
     "LangModule",
     "LangNode",
     "LocaleCode",
-    "SUPPORTED_LOCALES",
     "build_matcher",
-    "get_lang_module_value",
     "get_lang_accessor",
+    "get_lang_module_value",
     "get_supported_locales",
 ]

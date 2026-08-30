@@ -1,12 +1,14 @@
 import os
-import win32process, win32api, win32con
+
 import psutil
+import win32api
+import win32con
+import win32process
 
 
 class ProcessManager:
     def kill_game(self):
         try:
-
             hwnd = self.get_game_hwnd()
             if hwnd:
                 tid, pid = win32process.GetWindowThreadProcessId(hwnd)
@@ -44,7 +46,7 @@ class ProcessManager:
                 if proc.info["name"] == exe_name and proc.info["pid"] != current_pid:
                     try:
                         proc.kill()
-                        self.log_info(self.tr("已终止本软件进程 pid={pid}").format(pid=proc.info['pid']), notify=True)
+                        self.log_info(self.tr("已终止本软件进程 pid={pid}").format(pid=proc.info["pid"]), notify=True)
                     except Exception as e2:
                         self.log_info(self.tr("终止本软件进程失败: {err}").format(err=e2), notify=True)
         except Exception as e:

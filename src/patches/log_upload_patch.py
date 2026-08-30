@@ -9,21 +9,25 @@ import time
 import zipfile
 from pathlib import Path
 
-from src.patches.log_zip_dedup import (
-    DEDUP_INFO_FILENAME,
-    build_dedup_info,
-    collect_image_duplicates,
-)
-
 import requests
 from PIL import Image
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QHBoxLayout, QWidget
 from qfluentwidgets import (
-    FluentIcon, PushButton, BodyLabel, FluentStyleSheet, ComboBox,
-    MessageBoxBase, SubtitleLabel,
+    BodyLabel,
+    ComboBox,
+    FluentIcon,
+    FluentStyleSheet,
+    MessageBoxBase,
+    PushButton,
+    SubtitleLabel,
 )
 
+from src.patches.log_zip_dedup import (
+    DEDUP_INFO_FILENAME,
+    build_dedup_info,
+    collect_image_duplicates,
+)
 
 _PATCH_INSTALLED = False
 
@@ -45,7 +49,7 @@ def _build_logs_zip(note_text: str = ""):
     from ok.gui.util.Alert import alert_error
     from ok.util.file import get_downloads_folder
 
-    app_name = og.config.get('gui_title')
+    app_name = og.config.get("gui_title")
     downloads_path = Path(get_downloads_folder())
     zip_path = downloads_path / f"{app_name}-log.zip"
     logger = Logger.get_logger(__name__)
@@ -122,10 +126,7 @@ def _build_logs_zip(note_text: str = ""):
                     DEDUP_INFO_FILENAME,
                     json.dumps(build_dedup_info(duplicates), ensure_ascii=False, indent=2),
                 )
-                logger.info(
-                    f"deduplicated {len(duplicates)} identical images, "
-                    f"details in {DEDUP_INFO_FILENAME}"
-                )
+                logger.info(f"deduplicated {len(duplicates)} identical images, details in {DEDUP_INFO_FILENAME}")
 
         # 本地先做一次完整性校验，避免把损坏的 zip 继续上传到服务器
         try:
@@ -137,7 +138,7 @@ def _build_logs_zip(note_text: str = ""):
             raise
     except Exception as exc:
         alert_error(f"{og.app.tr('Export failed')}: {exc}", tray=True)
-        logger.error('export_logs exception', exc)
+        logger.error("export_logs exception", exc)
         raise
 
     return zip_path
@@ -155,7 +156,7 @@ def _upload_logs_bg(note_text: str = ""):
     from ok import Logger, og
     from ok.gui.util.Alert import alert_error, alert_info
 
-    upload_api = (og.config.get('log_upload_api') or '').strip()
+    upload_api = (og.config.get("log_upload_api") or "").strip()
     if not upload_api:
         alert_error(og.app.tr("Please configure log upload api in config"), tray=True)
         return
@@ -167,13 +168,13 @@ def _upload_logs_bg(note_text: str = ""):
     last_exc = None
     for attempt in range(1, 4):
         try:
-            with open(zip_path, 'rb') as file_handle:
+            with open(zip_path, "rb") as file_handle:
                 response = requests.post(
                     upload_api,
-                    files={'file': (zip_path.name, file_handle, 'application/zip')},
+                    files={"file": (zip_path.name, file_handle, "application/zip")},
                     data={
-                        'app_name': og.config.get('gui_title'),
-                        'note_text': note_text,
+                        "app_name": og.config.get("gui_title"),
+                        "note_text": note_text,
                     },
                     timeout=(10, 900),
                 )
@@ -182,26 +183,29 @@ def _upload_logs_bg(note_text: str = ""):
             return
         except Exception as exc:
             last_exc = exc
-            logger.warning(f'upload attempt {attempt}/3 failed ({file_size_mb:.1f} MB): {exc}')
+            logger.warning(f"upload attempt {attempt}/3 failed ({file_size_mb:.1f} MB): {exc}")
             if attempt < 3:
                 time.sleep(2 ** (attempt - 1))
 
     alert_error(f"{og.app.tr('Upload failed')}: {last_exc}", tray=True)
-    logger.error('upload_logs exception', last_exc)
+    logger.error("upload_logs exception", last_exc)
 
 
 def _prompt_upload_note() -> str:
     from ok import og
+
     try:
         from ok import Logger
-        Logger.get_logger(__name__).debug('prompt_upload_note called')
+
+        Logger.get_logger(__name__).debug("prompt_upload_note called")
     except Exception:
         pass
 
     try:
         from datetime import datetime
-        from PySide6.QtWidgets import QApplication
+
         from ok.gui.tasks.ConfigCard import ConfigCard
+        from PySide6.QtWidgets import QApplication
 
         parent = QApplication.activeWindow()
         dlg = MessageBoxBase(parent)
@@ -253,15 +257,15 @@ def _prompt_upload_note() -> str:
             "复现步骤",
         ]
 
-        defaults = {k: "" for k in keys}
+        defaults = dict.fromkeys(keys, "")
         initial = dict(defaults)
 
         task_options = []
         try:
-            executor = getattr(og, 'executor', None)
-            tasks = getattr(executor, 'tasks', None)
+            executor = getattr(og, "executor", None)
+            tasks = getattr(executor, "tasks", None)
             if tasks:
-                task_options = [t.name for t in tasks if getattr(t, 'name', None)]
+                task_options = [t.name for t in tasks if getattr(t, "name", None)]
         except Exception:
             task_options = []
 
@@ -380,7 +384,7 @@ def _prompt_upload_note() -> str:
 
         def _timer_check():
             try:
-                has = bool((virtual_config.get('错误描述') or '').strip())
+                has = bool((virtual_config.get("错误描述") or "").strip())
                 dlg.yesButton.setEnabled(has)
                 _adjust_dialog_width()
             except Exception:
@@ -405,10 +409,11 @@ def _prompt_upload_note() -> str:
             return ""
 
         import json
+
         data = {
-            "task": (virtual_config.get('出错的任务') or '').strip(),
-            "error_description": (virtual_config.get('错误描述') or '').strip(),
-            "reproduction_steps": (virtual_config.get('复现步骤') or '').strip(),
+            "task": (virtual_config.get("出错的任务") or "").strip(),
+            "error_description": (virtual_config.get("错误描述") or "").strip(),
+            "reproduction_steps": (virtual_config.get("复现步骤") or "").strip(),
             "time": (
                 f"{now.year}-{month_cb.currentText()}-{day_cb.currentText()} "
                 f"{hour_cb.currentText()}:{minute_cb.currentText()}"
@@ -418,8 +423,10 @@ def _prompt_upload_note() -> str:
     except Exception as exc:
         try:
             from ok import Logger
-            Logger.get_logger(__name__).exception('prompt_upload_note exception')
+
+            Logger.get_logger(__name__).exception("prompt_upload_note exception")
             from ok.gui.util.Alert import alert_error
+
             alert_error(f"{og.app.tr('打开日志上传窗口失败')}: {exc}", tray=True)
         except Exception:
             pass
@@ -449,6 +456,7 @@ def install_log_upload_patch():
         original_init(self, *args, **kwargs)
         try:
             from ok import og
+
             label = og.app.tr("Upload Logs")
         except Exception:
             label = og.app.tr("Upload Logs")

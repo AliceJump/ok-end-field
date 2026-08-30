@@ -1,5 +1,5 @@
-import numpy as np
 import cv2
+import numpy as np
 
 
 def isolate_by_hsv_ranges(frame, ranges, invert=True, kernel_size=2):

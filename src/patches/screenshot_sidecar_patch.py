@@ -12,8 +12,7 @@ _PATCH_INSTALLED = False
 logger = Logger.get_logger(__name__)
 
 
-def _generate_with_sidecar(self, frame, ui_dict, folder, name, show_box, frame_box,
-                           processor=None):
+def _generate_with_sidecar(self, frame, ui_dict, folder, name, show_box, frame_box, processor=None):
     """替代 generate_screen_shot：不再保存 _boxed.png，改为写 _boxes.json。
 
     逻辑与原实现一致：保存 _original.png 后，若有画框则把固定像素的框信息
@@ -33,7 +32,7 @@ def _generate_with_sidecar(self, frame, ui_dict, folder, name, show_box, frame_b
 
     if show_box and ui_dict:
         try:
-            sidecar_name = original_name[:-len("_original.png")] + "_boxes.json"
+            sidecar_name = original_name[: -len("_original.png")] + "_boxes.json"
             with open(sidecar_name, "w", encoding="utf-8") as sidecar_file:
                 json.dump(
                     build_sidecar(
@@ -53,16 +52,12 @@ def _generate_with_sidecar(self, frame, ui_dict, folder, name, show_box, frame_b
 _original_generate = Screenshot.generate_screen_shot
 
 
-def _patched_generate_screen_shot(self, frame, ui_dict, folder, name, show_box,
-                                  frame_box, processor=None):
+def _patched_generate_screen_shot(self, frame, ui_dict, folder, name, show_box, frame_box, processor=None):
     try:
-        return _generate_with_sidecar(self, frame, ui_dict, folder, name, show_box,
-                                      frame_box, processor)
+        return _generate_with_sidecar(self, frame, ui_dict, folder, name, show_box, frame_box, processor)
     except Exception:
-        logger.warning("generate_screen_shot with sidecar failed, fallback to original",
-                       exc_info=True)
-        return _original_generate(self, frame, ui_dict, folder, name, show_box,
-                                  frame_box, processor)
+        logger.warning("generate_screen_shot with sidecar failed, fallback to original", exc_info=True)
+        return _original_generate(self, frame, ui_dict, folder, name, show_box, frame_box, processor)
 
 
 def install_screenshot_sidecar_patch():

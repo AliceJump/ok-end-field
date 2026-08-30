@@ -1,11 +1,12 @@
-import json5
 import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from src.data.lang import build_matcher, get_lang_module_value
-from src.data.world_map import outpost_dict, goods_dict, stages_dict
+import json5
+
+from src.data.lang import get_lang_module_value
+from src.data.world_map import goods_dict, outpost_dict, stages_dict
 
 
 def get_area_by_outpost_name(outpost_name: str) -> str:

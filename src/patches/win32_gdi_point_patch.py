@@ -27,9 +27,10 @@ def install_win32_gdi_point_patch():
     try:
         import ctypes
         import ctypes.wintypes as wintypes
+
         from ok import Logger
         from ok.ui.overlay import win32_gdi
-    except Exception as exc:
+    except Exception:
         # ok 库不可用，跳过，不影响启动
         return
     logger = Logger.get_logger(__name__)
@@ -46,9 +47,15 @@ def install_win32_gdi_point_patch():
         win32_gdi.POINT = wintypes.POINT
         user32.GetCursorPos.argtypes = [point_ptr]
         user32.UpdateLayeredWindow.argtypes = [
-            ctypes.c_void_p, ctypes.c_void_p, point_ptr,
-            ctypes.POINTER(win32_gdi.SIZE), ctypes.c_void_p, point_ptr,
-            wintypes.DWORD, ctypes.POINTER(win32_gdi.BLENDFUNCTION), wintypes.DWORD,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            point_ptr,
+            ctypes.POINTER(win32_gdi.SIZE),
+            ctypes.c_void_p,
+            point_ptr,
+            wintypes.DWORD,
+            ctypes.POINTER(win32_gdi.BLENDFUNCTION),
+            wintypes.DWORD,
         ]
         gdi32.MoveToEx.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, point_ptr]
     except Exception as exc:

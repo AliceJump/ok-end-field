@@ -2,8 +2,12 @@ from __future__ import annotations
 
 import copy
 from collections import OrderedDict
-from typing import Any, Dict
+from typing import Any
 
+from ok.gui.Communicate import communicate
+from ok.gui.tasks.ConfigCard import ConfigCard, og
+from ok.gui.tasks.LabelAndWidget import LabelAndWidget
+from ok.gui.widget.CustomTab import CustomTab
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
@@ -17,23 +21,19 @@ from qfluentwidgets import (
     TextEdit,
 )
 
-from ok.gui.tasks.ConfigCard import ConfigCard, og
-from ok.gui.tasks.LabelAndWidget import LabelAndWidget
-from ok.gui.widget.CustomTab import CustomTab
-from ok.gui.Communicate import communicate
+from src.core.global_config_store import (
+    ZIP_LINE_CONFIG_DESCRIPTION,
+    ZIP_LINE_CONFIG_NAME,
+    ZIP_LINE_CONFIG_TYPE,
+    ZIP_LINE_DEFAULT_CONFIG,
+    get_global_config,
+)
 from src.tasks.account.account_scope_store import (
     get_account_map_content,
     load_overrides,
     parse_account_list_text,
     sync_account_list_text,
     update_overrides,
-)
-from src.core.global_config_store import (
-    ZIP_LINE_CONFIG_NAME,
-    ZIP_LINE_CONFIG_TYPE,
-    ZIP_LINE_CONFIG_DESCRIPTION,
-    ZIP_LINE_DEFAULT_CONFIG,
-    get_global_config,
 )
 
 
@@ -59,7 +59,7 @@ class GlobalZipLineConfigProxy:
 class InMemoryConfig(dict):
     """A lightweight config object used by ConfigCard for account overrides."""
 
-    def __init__(self, initial: Dict[str, Any], defaults: Dict[str, Any]):
+    def __init__(self, initial: dict[str, Any], defaults: dict[str, Any]):
         super().__init__(initial)
         self.default = defaults
 
@@ -74,6 +74,7 @@ class InMemoryConfig(dict):
 
 class AccountConfigTab(CustomTab):
     """Tab for managing per-account configuration overrides and account list."""
+
     ALWAYS_HIDDEN_CONFIG_KEYS = {"多账户模式", "多账户独立配置", "账号列表"}
 
     def __init__(self):
@@ -81,23 +82,23 @@ class AccountConfigTab(CustomTab):
         self._loaded_once = False
         self._building = False
 
-        self.overrides_data: Dict[str, Any] = {"accounts": {}}
-        self.task_map: Dict[str, Any] = {}
+        self.overrides_data: dict[str, Any] = {"accounts": {}}
+        self.task_map: dict[str, Any] = {}
         self.current_virtual_config: InMemoryConfig | None = None
         self.current_task = None
         self.current_account_key = ""
         self.current_account_name = ""
         self.current_editable_keys: list[str] = []
-        self.current_base_values: Dict[str, Any] = {}
-        self.current_original_values: Dict[str, Any] = {}
+        self.current_base_values: dict[str, Any] = {}
+        self.current_original_values: dict[str, Any] = {}
         self.current_editor_card = None
         self.current_account_list_value = ""
         self.current_map_account_key = ""
         self.current_map_value = ""
         self._editor_cards: OrderedDict[tuple[Any, ...], ConfigCard] = OrderedDict()
-        self._task_expand_state: Dict[str, bool] = {}
-        self.account_display_to_key: Dict[str, str] = {}
-        self.account_display_to_name: Dict[str, str] = {}
+        self._task_expand_state: dict[str, bool] = {}
+        self.account_display_to_key: dict[str, str] = {}
+        self.account_display_to_name: dict[str, str] = {}
 
         self._build_ui()
         communicate.task.connect(self._on_task_state_changed)
@@ -156,11 +157,13 @@ class AccountConfigTab(CustomTab):
         header_layout = QVBoxLayout(header)
         header_layout.setContentsMargins(0, 0, 0, 0)
         header_layout.setSpacing(6)
-        tip = BodyLabel(og.app.tr(
-            "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。"
-            "账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。"
-            "登录时也可只使用手机号后四位进行匹配（若唯一）。"
-        ))
+        tip = BodyLabel(
+            og.app.tr(
+                "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。"
+                "账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。"
+                "登录时也可只使用手机号后四位进行匹配（若唯一）。"
+            )
+        )
         tip.setWordWrap(True)
         header_layout.addWidget(tip)
         self.add_card(og.app.tr("账号配置中心"), header)
@@ -274,9 +277,9 @@ class AccountConfigTab(CustomTab):
         return True
 
     @staticmethod
-    def _parse_accounts(account_list_text: str) -> list[Dict[str, str]]:
+    def _parse_accounts(account_list_text: str) -> list[dict[str, str]]:
         """Parse account list text into structured account dictionaries with username and password."""
-        accounts: list[Dict[str, str]] = []
+        accounts: list[dict[str, str]] = []
         seen = set()
         for entry in parse_account_list_text(account_list_text):
             username = str(entry.get("username", "")).strip()
@@ -335,7 +338,7 @@ class AccountConfigTab(CustomTab):
         """Get the storage name for a task used in account override keys."""
         return str(getattr(task, "account_override_name", task.__class__.__name__))
 
-    def _account_config_schema(self, task, task_override: Dict[str, Any]) -> Dict[str, Any]:
+    def _account_config_schema(self, task, task_override: dict[str, Any]) -> dict[str, Any]:
         """Build the configuration schema for a task including default and account-specific settings."""
         schema = dict(task.default_config)
         extra_defaults = getattr(task, "account_config_defaults", None)
@@ -442,7 +445,9 @@ class AccountConfigTab(CustomTab):
 
         tasks = []
         seen = set()
-        for task in list(getattr(self.executor, "onetime_tasks", [])) + list(getattr(self.executor, "trigger_tasks", [])):
+        for task in list(getattr(self.executor, "onetime_tasks", [])) + list(
+            getattr(self.executor, "trigger_tasks", [])
+        ):
             if not getattr(task, "support_multi_account", False):
                 continue
             class_name = AccountConfigTab._task_storage_name(task)
@@ -494,12 +499,9 @@ class AccountConfigTab(CustomTab):
         self.rebuild_account_selector()
         self.load_current_map_content()
         self.render_task_editor()
-        status = (
-            og.app.tr("账号列表已保存")
-            + og.app.tr("（复用ID {reused}，新建ID {created}）").format(
-                reused=summary.get('reused_count', 0),
-                created=summary.get('created_count', 0),
-            )
+        status = og.app.tr("账号列表已保存") + og.app.tr("（复用ID {reused}，新建ID {created}）").format(
+            reused=summary.get("reused_count", 0),
+            created=summary.get("created_count", 0),
         )
         status += og.app.tr("；账号名（手机号）是唯一ID，密码变化不影响ID，账号名变化会新建ID")
         status += og.app.tr("；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）")
@@ -588,7 +590,9 @@ class AccountConfigTab(CustomTab):
     def rebuild_task_selector(self, keep_selection: bool = True):
         """Rebuild the task selector dropdown, optionally preserving the current selection."""
         current_task = self._current_task()
-        current_class_name = AccountConfigTab._task_storage_name(current_task) if keep_selection and current_task else ""
+        current_class_name = (
+            AccountConfigTab._task_storage_name(current_task) if keep_selection and current_task else ""
+        )
 
         task_map = {}
         displays = []
@@ -599,7 +603,8 @@ class AccountConfigTab(CustomTab):
 
         selected_display = next(
             (
-                display for display, task in task_map.items()
+                display
+                for display, task in task_map.items()
                 if AccountConfigTab._task_storage_name(task) == current_class_name
             ),
             displays[0] if displays else "",
@@ -656,9 +661,7 @@ class AccountConfigTab(CustomTab):
         task_class = AccountConfigTab._task_storage_name(task)
         accounts = self.overrides_data.get("accounts") or {}
         account_map = accounts.get(account_key, {})
-        if account_name and (
-            not isinstance(account_map, dict) or (not account_map and account_name in accounts)
-        ):
+        if account_name and (not isinstance(account_map, dict) or (not account_map and account_name in accounts)):
             legacy_account_map = accounts.get(account_name, {})
             if isinstance(legacy_account_map, dict):
                 account_map = legacy_account_map
@@ -770,9 +773,8 @@ class AccountConfigTab(CustomTab):
             return
 
         view_mode = og.app.tr("仅差异项") if only_diff else og.app.tr("全部配置")
-        summary_text = (
-            og.app.tr("当前视图：{view_mode} | 展示 {count} / {total} 项")
-            .format(view_mode=view_mode, count=len(editable_keys), total=total_supported_keys)
+        summary_text = og.app.tr("当前视图：{view_mode} | 展示 {count} / {total} 项").format(
+            view_mode=view_mode, count=len(editable_keys), total=total_supported_keys
         )
         self.editor_summary_label.setText(summary_text)
         self.editor_summary_label.show()
@@ -845,11 +847,7 @@ class AccountConfigTab(CustomTab):
             getattr(self, "current_account_name", ""),
             only_diff=False,
         )
-        full_config = {
-            key: copy.deepcopy(snapshot[key])
-            for key in snapshot_keys
-            if key in snapshot
-        }
+        full_config = {key: copy.deepcopy(snapshot[key]) for key in snapshot_keys if key in snapshot}
         for key in self.current_editable_keys:
             if key not in self.current_virtual_config:
                 continue
@@ -894,8 +892,7 @@ class AccountConfigTab(CustomTab):
     def _save_pending_changes(self, show_status: bool = False, cleanup_blacklist: bool = False) -> bool:
         task_dirty = self._has_current_task_changes()
         map_dirty = bool(
-            self.current_map_account_key
-            and self.map_content_edit.text().strip() != self.current_map_value
+            self.current_map_account_key and self.map_content_edit.text().strip() != self.current_map_value
         )
         if not task_dirty and not map_dirty and not cleanup_blacklist:
             if show_status:
@@ -907,9 +904,7 @@ class AccountConfigTab(CustomTab):
         def merge(latest):
             self.overrides_data = latest
             if task_dirty or cleanup_blacklist:
-                changes["task"] = self._apply_current_task_override(
-                    cleanup_blacklist=cleanup_blacklist
-                )
+                changes["task"] = self._apply_current_task_override(cleanup_blacklist=cleanup_blacklist)
             if map_dirty:
                 changes["map"] = self._apply_current_map_content()
             return self.overrides_data
@@ -944,8 +939,7 @@ class AccountConfigTab(CustomTab):
             return
 
         map_dirty = bool(
-            self.current_map_account_key
-            and self.map_content_edit.text().strip() != self.current_map_value
+            self.current_map_account_key and self.map_content_edit.text().strip() != self.current_map_value
         )
         task_class = AccountConfigTab._task_storage_name(task)
 
@@ -956,9 +950,7 @@ class AccountConfigTab(CustomTab):
             accounts = self.overrides_data.get("accounts", {})
             target_key = account_key
             account_map = accounts.get(target_key, {})
-            if account_name and (
-                not isinstance(account_map, dict) or (not account_map and account_name in accounts)
-            ):
+            if account_name and (not isinstance(account_map, dict) or (not account_map and account_name in accounts)):
                 legacy_account_map = accounts.get(account_name, {})
                 if isinstance(legacy_account_map, dict):
                     account_map = legacy_account_map
@@ -974,9 +966,9 @@ class AccountConfigTab(CustomTab):
         self.rebuild_account_selector()
         self.load_current_map_content()
         self.render_task_editor()
-        self._set_status(og.app.tr("已清空：{account} / {task} 覆盖").format(
-            account=account_name or account_key, task=task.name
-        ))
+        self._set_status(
+            og.app.tr("已清空：{account} / {task} 覆盖").format(account=account_name or account_key, task=task.name)
+        )
 
     def clear_current_account_overrides(self):
         """Clear all task configuration overrides for the currently selected account."""
@@ -987,8 +979,7 @@ class AccountConfigTab(CustomTab):
             return
 
         map_dirty = bool(
-            self.current_map_account_key
-            and self.map_content_edit.text().strip() != self.current_map_value
+            self.current_map_account_key and self.map_content_edit.text().strip() != self.current_map_value
         )
 
         def clear_account(latest):
@@ -1009,6 +1000,4 @@ class AccountConfigTab(CustomTab):
         self.rebuild_account_selector()
         self.load_current_map_content()
         self.render_task_editor()
-        self._set_status(og.app.tr("已清空账号全部覆盖：{account}").format(
-            account=account_name or account_key
-        ))
+        self._set_status(og.app.tr("已清空账号全部覆盖：{account}").format(account=account_name or account_key))

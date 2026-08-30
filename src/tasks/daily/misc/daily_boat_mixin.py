@@ -1,5 +1,5 @@
-from src.data.FeatureList import FeatureList as fL
 from src.data.characters_utils import get_contact_list_with_feature_list
+from src.data.FeatureList import FeatureList as fL
 
 
 class DailyBoatMixin:
@@ -37,17 +37,24 @@ class DailyBoatMixin:
     def _one_click_collect(self):
         """
         Collects available clues and products from the daily boat.
-        
+
         Returns:
-        	bool: Always `True`.
+                bool: Always `True`.
         """
         stages = self._boat_stages()
         clue_box = self.box_of_screen(1627 / 1920, 178 / 1080, (1627 + 76) / 1920, (178 + 154) / 1080)
-        start_time= self.active_time()
+        start_time = self.active_time()
         if "收集线索" in stages:
-            if self.wait_click_feature(feature=fL.clue_collect_icon, time_out=3, box=clue_box, raise_if_not_found=False):
+            if self.wait_click_feature(
+                feature=fL.clue_collect_icon, time_out=3, box=clue_box, raise_if_not_found=False
+            ):
                 self.wait_pop_up(time_out=5)
-        result = self.wait_click_feature(feature=fL.products_collect_icon, time_out=max(1, 3 - (self.active_time() - start_time)), box=clue_box, raise_if_not_found=False)
+        result = self.wait_click_feature(
+            feature=fL.products_collect_icon,
+            time_out=max(1, 3 - (self.active_time() - start_time)),
+            box=clue_box,
+            raise_if_not_found=False,
+        )
         if result:
             self.wait_pop_up(time_out=5)
         return True
@@ -88,11 +95,7 @@ class DailyBoatMixin:
     def _receive_clue(self):
         self.receive_bool = False
         if not self.wait_click_feature(
-            feature=fL.receive_clue_enter,
-            time_out=4,
-            box=self.box.right,
-            raise_if_not_found=False,
-            after_sleep=1
+            feature=fL.receive_clue_enter, time_out=4, box=self.box.right, raise_if_not_found=False, after_sleep=1
         ):
             self.log_info("未找到接收按钮")
             return
@@ -104,11 +107,10 @@ class DailyBoatMixin:
         ):
             self.receive_bool = True
 
-
     def _give_clue(self):
         start_index = 1
         search_box = self._clue_search_box(shift_x=0.558 - 0.258)
-        found=None
+        found = None
         if self.receive_bool:
             self.log_info("接收线索成功，开始放置线索")
             while start_index <= 7:
@@ -171,9 +173,19 @@ class DailyBoatMixin:
         return True
 
     def use_help(self, char=True):
-        if not self.wait_click_feature(feature=fL.can_use_help, time_out=2, box=self.box_of_screen(0.890, 0.011, 0.941, 0.074), raise_if_not_found=False):
+        if not self.wait_click_feature(
+            feature=fL.can_use_help,
+            time_out=2,
+            box=self.box_of_screen(0.890, 0.011, 0.941, 0.074),
+            raise_if_not_found=False,
+        ):
             return
-        if not self.wait_click_feature(feature=fL.skip_dialog_confirm, time_out=2, box=self.box_of_screen(0.818, 0.787, 0.865, 0.861), raise_if_not_found=False):
+        if not self.wait_click_feature(
+            feature=fL.skip_dialog_confirm,
+            time_out=2,
+            box=self.box_of_screen(0.818, 0.787, 0.865, 0.861),
+            raise_if_not_found=False,
+        ):
             return
         if char:
             self.wait_ui_stable()
@@ -186,6 +198,16 @@ class DailyBoatMixin:
                 if count >= 2:
                     break
         else:
-            self.wait_click_feature(feature=fL.max_icon, time_out=2, box=self.box_of_screen(0.699, 0.654, 0.732, 0.719), raise_if_not_found=False)
-        self.wait_click_feature(feature=fL.skip_dialog_confirm, time_out=2, box=self.box_of_screen(0.818, 0.787, 0.865, 0.861), raise_if_not_found=False)
+            self.wait_click_feature(
+                feature=fL.max_icon,
+                time_out=2,
+                box=self.box_of_screen(0.699, 0.654, 0.732, 0.719),
+                raise_if_not_found=False,
+            )
+        self.wait_click_feature(
+            feature=fL.skip_dialog_confirm,
+            time_out=2,
+            box=self.box_of_screen(0.818, 0.787, 0.865, 0.861),
+            raise_if_not_found=False,
+        )
         return

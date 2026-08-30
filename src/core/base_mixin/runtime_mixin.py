@@ -2,7 +2,6 @@ import gc
 import threading
 import time
 from enum import Enum
-from typing import List
 
 import cv2
 import numpy as np
@@ -14,9 +13,13 @@ from src.image.frame_processes import isolate_by_hsv_ranges
 from src.interaction.Key import move_keys as send_move_keys
 from src.interaction.Mouse import (
     active_and_send_mouse_delta as send_mouse_delta,
+)
+from src.interaction.Mouse import (
     move_to_target_once as move_to_target_once_impl,
+)
+from src.interaction.Mouse import (
     run_at_window_pos,
-    smooth_drag
+    smooth_drag,
 )
 from src.yolo.loader import YoloModelLoader
 
@@ -25,11 +28,13 @@ feature_values = [f.value for f in fL]
 
 class RuntimeMixin:
     """视觉识别、按键输入、鼠标控制与模型加载能力。"""
+
     BASE_WIDTH = 1920
     BASE_HEIGHT = 1080
     RESOLUTION_STABLE_SECONDS = 2.0
     RESOLUTION_STABLE_TIMEOUT = 6.0
     RESOLUTION_STABLE_INTERVAL = 0.1
+
     def normalize_pos(self, pos):
         """
         将归一化坐标转换为当前窗口坐标。
@@ -66,9 +71,7 @@ class RuntimeMixin:
 
         end_time = time.time() + duration
         while time.time() < end_time:
-            if not self.find_feature(
-                feature_name=feature, box=box, frame=self.next_frame()
-            ):
+            if not self.find_feature(feature_name=feature, box=box, frame=self.next_frame()):
                 return False
             self.sleep(0.05)
 
@@ -86,7 +89,7 @@ class RuntimeMixin:
         blind_delay=1,
         verify_disappear=True,
         verify_timeout=0.5,
-        max_click_retry=3
+        max_click_retry=3,
     ):
         boxes = [None] + (boxes or [])
 
@@ -121,9 +124,7 @@ class RuntimeMixin:
                         ):
                             return True
 
-                        self.log_warning(
-                            f"{feature} 点击后未消失，重试 {retry_count + 1}/{max_click_retry}"
-                        )
+                        self.log_warning(f"{feature} 点击后未消失，重试 {retry_count + 1}/{max_click_retry}")
 
                         retry_count += 1
 
@@ -156,7 +157,6 @@ class RuntimeMixin:
                 return True
 
         return False
-
 
     def _wait_for_stable_resolution(self):
         """等待捕获帧尺寸稳定，避免启动阶段的中间帧触发误报。"""
@@ -204,8 +204,7 @@ class RuntimeMixin:
         min_w, min_h = min_size
         if width < min_w or height < min_h:
             self.log_info(
-                f"当前分辨率 {width}x{height} 低于要求最小值 {min_w}x{min_h}（1080P），不保证正常运行",
-                notify=True
+                f"当前分辨率 {width}x{height} 低于要求最小值 {min_w}x{min_h}（1080P），不保证正常运行", notify=True
             )
         RuntimeMixin._resolution_warned = True
 
@@ -248,14 +247,27 @@ class RuntimeMixin:
         danger_group = ["danger_" + str(i) for i in range(1, 3)]
         danger_group_box = self.box_of_screen(640 / 1920, 480 / 1080, 1300 / 1920, 600 / 1080)
         for danger in danger_group:
-            result = self.find_one(danger, threshold=0.8, box=danger_group_box, vertical_variance=0.01,
-                                   horizontal_variance=0.01)
+            result = self.find_one(
+                danger, threshold=0.8, box=danger_group_box, vertical_variance=0.01, horizontal_variance=0.01
+            )
             if result:
                 return True
         return False
 
-    def click(self, x=-1, y=-1, move_back=False, name=None, interval=-1, move=True, down_time=0.01, after_sleep=0,
-              key='left', hcenter=False, vcenter=False):
+    def click(
+        self,
+        x=-1,
+        y=-1,
+        move_back=False,
+        name=None,
+        interval=-1,
+        move=True,
+        down_time=0.01,
+        after_sleep=0,
+        key="left",
+        hcenter=False,
+        vcenter=False,
+    ):
         """
         带危险态检查的点击封装。
 
@@ -283,14 +295,46 @@ class RuntimeMixin:
             self.log_info("dangerous")
             self.kill_game()
             raise Exception("dangerous")
-        return super().click(x, y, move_back=move_back, name=name, interval=interval, move=move,
-                             down_time=down_time, after_sleep=after_sleep, key=key,
-                             hcenter=hcenter, vcenter=vcenter)
+        return super().click(
+            x,
+            y,
+            move_back=move_back,
+            name=name,
+            interval=interval,
+            move=move,
+            down_time=down_time,
+            after_sleep=after_sleep,
+            key=key,
+            hcenter=hcenter,
+            vcenter=vcenter,
+        )
 
-    def find_feature(self, feature_name=None, horizontal_variance=0, vertical_variance=0, threshold=0,
-                     use_gray_scale=False, x=-1, y=-1, to_x=-1, to_y=-1, width=-1, height=-1, box=None, canny_lower=0,
-                     canny_higher=0, frame_processor=None, template=None, match_method=cv2.TM_CCOEFF_NORMED,
-                     screenshot=False, mask_function=None, frame=None, limit=0, target_height=0, feature=None):
+    def find_feature(
+        self,
+        feature_name=None,
+        horizontal_variance=0,
+        vertical_variance=0,
+        threshold=0,
+        use_gray_scale=False,
+        x=-1,
+        y=-1,
+        to_x=-1,
+        to_y=-1,
+        width=-1,
+        height=-1,
+        box=None,
+        canny_lower=0,
+        canny_higher=0,
+        frame_processor=None,
+        template=None,
+        match_method=cv2.TM_CCOEFF_NORMED,
+        screenshot=False,
+        mask_function=None,
+        frame=None,
+        limit=0,
+        target_height=0,
+        feature=None,
+    ):
         """
         按当前分辨率映射后执行特征识别。
 
@@ -327,16 +371,52 @@ class RuntimeMixin:
             feature_name = [self.get_feature_by_resolution(name) for name in feature_name]
         else:
             feature_name = self.get_feature_by_resolution(feature_name)
-        result = super().find_feature(feature_name, horizontal_variance, vertical_variance, threshold, use_gray_scale, x,
-                                    y, to_x, to_y, width, height, box, canny_lower, canny_higher, frame_processor,
-                                    template, match_method, screenshot, mask_function, frame, limit, target_height)
+        result = super().find_feature(
+            feature_name,
+            horizontal_variance,
+            vertical_variance,
+            threshold,
+            use_gray_scale,
+            x,
+            y,
+            to_x,
+            to_y,
+            width,
+            height,
+            box,
+            canny_lower,
+            canny_higher,
+            frame_processor,
+            template,
+            match_method,
+            screenshot,
+            mask_function,
+            frame,
+            limit,
+            target_height,
+        )
         return result
 
-    def find_one(self, feature_name=None, horizontal_variance=0, vertical_variance=0, threshold=0,
-                 use_gray_scale=False, box=None, canny_lower=0, canny_higher=0,
-                 frame_processor=None, template=None, mask_function=None, frame=None,
-                 match_method=cv2.TM_CCOEFF_NORMED, screenshot=False, limit=1,
-                 target_height=0, feature=None):
+    def find_one(
+        self,
+        feature_name=None,
+        horizontal_variance=0,
+        vertical_variance=0,
+        threshold=0,
+        use_gray_scale=False,
+        box=None,
+        canny_lower=0,
+        canny_higher=0,
+        frame_processor=None,
+        template=None,
+        mask_function=None,
+        frame=None,
+        match_method=cv2.TM_CCOEFF_NORMED,
+        screenshot=False,
+        limit=1,
+        target_height=0,
+        feature=None,
+    ):
         """
         按当前分辨率映射后执行单个特征识别。
 
@@ -371,10 +451,24 @@ class RuntimeMixin:
         # Resolve alias
         if feature is not None and feature_name is None:
             feature_name = feature
-        return super().find_one(feature_name, horizontal_variance, vertical_variance, threshold,
-                                use_gray_scale, box, canny_lower, canny_higher, frame_processor,
-                                template, mask_function, frame, match_method, screenshot,
-                                limit, target_height)
+        return super().find_one(
+            feature_name,
+            horizontal_variance,
+            vertical_variance,
+            threshold,
+            use_gray_scale,
+            box,
+            canny_lower,
+            canny_higher,
+            frame_processor,
+            template,
+            mask_function,
+            frame,
+            match_method,
+            screenshot,
+            limit,
+            target_height,
+        )
 
     def scroll(self, x: int, y: int, count: int) -> None:
         """按屏幕绝对像素坐标滚轮。
@@ -406,8 +500,9 @@ class RuntimeMixin:
         - 地图 UI：用 (0.5, 0.5) 等比例坐标在地图中心连续缩放，适配不同分辨率。
         - 列表 UI：在固定相对区域（如左侧列表 0.1/0.5）滚动查找条目，避免硬编码像素。
         """
-        run_at_window_pos(self.get_game_hwnd(), super().scroll_relative, int(x * self.width), int(y * self.height), 0.5, x,
-                          y, count)
+        run_at_window_pos(
+            self.get_game_hwnd(), super().scroll_relative, int(x * self.width), int(y * self.height), 0.5, x, y, count
+        )
 
     def get_feature_by_resolution(self, base_name: str):
         """
@@ -445,8 +540,7 @@ class RuntimeMixin:
 
         raise AttributeError(f"未找到任何可用资源: {base_name}")
 
-    def safe_back(self, match=None, feature=None,
-                  box=None, time_out: float = 30, once_time_out: float = 2):
+    def safe_back(self, match=None, feature=None, box=None, time_out: float = 30, once_time_out: float = 2):
         """
         安全返回：持续点击返回直到找到指定目标（OCR文本或特征）。
 
@@ -478,18 +572,18 @@ class RuntimeMixin:
                 if match is not None and self.ocr(match=match, box=box):
                     return True
                 if feature is not None and self.find_one(
-                        feature,
-                        vertical_variance=0.05,
-                        horizontal_variance=0.05,
-                        box=box,
+                    feature,
+                    vertical_variance=0.05,
+                    horizontal_variance=0.05,
+                    box=box,
                 ):
                     return True
                 return False
 
             if self.wait_until(
-                    target_visible,
-                    time_out=max(0.01, min(once_time_out, remaining)),
-                    raise_if_not_found=False,
+                target_visible,
+                time_out=max(0.01, min(once_time_out, remaining)),
+                raise_if_not_found=False,
             ):
                 return True
 
@@ -595,13 +689,13 @@ class RuntimeMixin:
         return False
 
     def yolo_detect(
-            self,
-            name: str | list[str],
-            frame: np.ndarray | None = None,
-            box: Box | None = None,
-            conf: float = 0.7,
-            detections: list[Box] | None = None,
-            model_key: str | None = None,
+        self,
+        name: str | list[str],
+        frame: np.ndarray | None = None,
+        box: Box | None = None,
+        conf: float = 0.7,
+        detections: list[Box] | None = None,
+        model_key: str | None = None,
     ) -> list[Box]:
         """
         对当前帧执行 YOLO 检测并返回命中的框。
@@ -623,11 +717,7 @@ class RuntimeMixin:
         if not name:
             raise ValueError("yolo_detect 至少需要传入一个 name")
         raw_names = [name] if isinstance(name, str) else name
-        ordered_target_names = [
-            str(n.value) if isinstance(n, Enum) else str(n)
-            for n in raw_names
-            if n is not None
-        ]
+        ordered_target_names = [str(n.value) if isinstance(n, Enum) else str(n) for n in raw_names if n is not None]
         target_names = {n for n in ordered_target_names}
         if not ordered_target_names:
             raise ValueError("yolo_detect 至少需要一个有效 name")
@@ -696,9 +786,15 @@ class RuntimeMixin:
 
         return sorted(filtered_results, key=lambda item: item.confidence, reverse=True)
 
-    def get_arrow_angle(self, center: tuple | None = None, target_image: np.ndarray | None = None,
-                        two_stage: bool = True, benchmark_width: int = 2560, max_cache_scales: int = 10,
-                        smoothing_threshold: float = 0.35):
+    def get_arrow_angle(
+        self,
+        center: tuple | None = None,
+        target_image: np.ndarray | None = None,
+        two_stage: bool = True,
+        benchmark_width: int = 2560,
+        max_cache_scales: int = 10,
+        smoothing_threshold: float = 0.35,
+    ):
         """
         便捷 API：使用 ArrowAngleMatcher 检测 arrow.png 在目标图中的旋转角度（二阶段搜索）。
         支持多分辨率自动适应（缓存键 (scale_key, angle)，scale_key 四舍五入避免浮点误差）。
@@ -735,8 +831,12 @@ class RuntimeMixin:
             center = (215.0 / 2560.0, 222.0 / 1440.0)
 
         # 使用缓存匹配器，支持多分辨率自适应与 LRU 限制
-        matcher = ArrowAngleMatcher(template_path=None, template_center=(12, 12),
-                                    benchmark_width=benchmark_width, max_cache_scales=max_cache_scales)
+        matcher = ArrowAngleMatcher(
+            template_path=None,
+            template_center=(12, 12),
+            benchmark_width=benchmark_width,
+            max_cache_scales=max_cache_scales,
+        )
 
         detected_angle, score = matcher.match(tgt, center=center, two_stage=two_stage)
 
@@ -760,14 +860,14 @@ class RuntimeMixin:
         return detected_angle, score
 
     def wait_ui_stable(
-            self,
-            method="phash",
-            threshold: int | float = 5,
-            stable_time: float = 0.5,
-            max_wait: float = 5,
-            refresh_interval: float = 1,
-            box: Box | tuple | list | None = None,
-            ssim_threshold: float = 0.95,
+        self,
+        method="phash",
+        threshold: int | float = 5,
+        stable_time: float = 0.5,
+        max_wait: float = 5,
+        refresh_interval: float = 1,
+        box: Box | tuple | list | None = None,
+        ssim_threshold: float = 0.95,
     ):
         """
         等待指定区域在视觉上稳定下来。
@@ -787,6 +887,7 @@ class RuntimeMixin:
         Raises:
             ValueError: 当 method 不支持或 box 非法时抛出。
         """
+
         def parse_box(frame, box: Box | tuple | list | None):
             if box is None:
                 return frame
@@ -796,11 +897,11 @@ class RuntimeMixin:
                 y = int(box.y)
                 w = int(box.width)
                 h = int(box.height)
-                return frame[y:y + h, x:x + w]
+                return frame[y : y + h, x : x + w]
 
             if isinstance(box, (tuple, list)) and len(box) == 4:
                 x, y, w, h = map(int, box)
-                return frame[y:y + h, x:x + w]
+                return frame[y : y + h, x : x + w]
 
             raise ValueError("box must be None / (x,y,w,h) / object(x,y,width,height)")
 
@@ -812,7 +913,8 @@ class RuntimeMixin:
             current_frame = parse_box(self.next_frame(), box)
 
             if method in ("phash", "dhash"):
-                from src.image.stability import perceptual_hash, hamming_distance
+                from src.image.stability import hamming_distance, perceptual_hash
+
                 h1 = perceptual_hash(last_frame, method=method)
                 h2 = perceptual_hash(current_frame, method=method)
                 is_stable = hamming_distance(h1, h2) <= threshold
@@ -826,6 +928,7 @@ class RuntimeMixin:
 
             elif method == "ssim":
                 from src.image.stability import ssim_score
+
                 if last_frame.shape != current_frame.shape:
                     is_stable = False
                 else:
@@ -933,8 +1036,9 @@ class RuntimeMixin:
             return
         send_move_keys(self, keys, duration)
 
-    def _dodge_with_direction(self, direction_key: str, pre_hold: float = 0.004,
-                              dodge_down_time: float = 0.003, after_sleep: float = 0.005):
+    def _dodge_with_direction(
+        self, direction_key: str, pre_hold: float = 0.004, dodge_down_time: float = 0.003, after_sleep: float = 0.005
+    ):
         """
         按指定方向执行闪避。
 
@@ -950,7 +1054,7 @@ class RuntimeMixin:
         move_thread = threading.Thread(target=self.move_keys, args=(direction_key, pre_hold), daemon=True)
         move_thread.start()
         self.sleep(0.005)
-        self.press_key('lshift', down_time=dodge_down_time)
+        self.press_key("lshift", down_time=dodge_down_time)
         move_thread.join(timeout=max(pre_hold + 0.002, 0.05))
         if after_sleep > 0:
             self.sleep(after_sleep)
@@ -967,7 +1071,7 @@ class RuntimeMixin:
         Returns:
             None
         """
-        self._dodge_with_direction('w', pre_hold=pre_hold, dodge_down_time=dodge_down_time, after_sleep=after_sleep)
+        self._dodge_with_direction("w", pre_hold=pre_hold, dodge_down_time=dodge_down_time, after_sleep=after_sleep)
 
     def screen_center(self) -> tuple[int, int]:
         """
@@ -1029,20 +1133,55 @@ class RuntimeMixin:
             return None
         return send_mouse_delta(self.get_game_hwnd(), dx, dy, activate, only_activate, delay, steps)
 
-    def click_with_alt(self, x: int | float | Box | List[Box] = -1, y: int | float = -1, move_back: bool = False,
-                       name: str | None = None, interval: int = -1, move: bool = True, down_time: float = 0.01,
-                       after_sleep: float = 0, key: str = 'left'):
+    def click_with_alt(
+        self,
+        x: int | float | Box | list[Box] = -1,
+        y: int | float = -1,
+        move_back: bool = False,
+        name: str | None = None,
+        interval: int = -1,
+        move: bool = True,
+        down_time: float = 0.01,
+        after_sleep: float = 0,
+        key: str = "left",
+    ):
         self.send_key_down("alt")
         self.sleep(0.5)
-        self.click(x=x, y=y, move_back=move_back, name=name, interval=interval, move=move, down_time=down_time,
-                   after_sleep=after_sleep, key=key)
+        self.click(
+            x=x,
+            y=y,
+            move_back=move_back,
+            name=name,
+            interval=interval,
+            move=move,
+            down_time=down_time,
+            after_sleep=after_sleep,
+            key=key,
+        )
         self.send_key_up("alt")
 
-    def wait_click_feature(self, feature, horizontal_variance=0, vertical_variance=0, threshold=0, relative_x=0.5,
-                           relative_y=0.5, time_out=0, pre_action=None, post_action=None, box=None,
-                           raise_if_not_found=True, use_gray_scale=False, canny_lower=0, canny_higher=0,
-                           click_after_delay=0, settle_time=-1, after_sleep=0, target_height=0,
-                           alt: bool = False):
+    def wait_click_feature(
+        self,
+        feature,
+        horizontal_variance=0,
+        vertical_variance=0,
+        threshold=0,
+        relative_x=0.5,
+        relative_y=0.5,
+        time_out=0,
+        pre_action=None,
+        post_action=None,
+        box=None,
+        raise_if_not_found=True,
+        use_gray_scale=False,
+        canny_lower=0,
+        canny_higher=0,
+        click_after_delay=0,
+        settle_time=-1,
+        after_sleep=0,
+        target_height=0,
+        alt: bool = False,
+    ):
         result = self.wait_until(
             lambda: self.find_one(
                 feature,
@@ -1072,10 +1211,31 @@ class RuntimeMixin:
             return True
         return False
 
-    def wait_click_ocr(self, x=0, y=0, to_x=1, to_y=1, width=0, height=0, box=None, name=None, match=None,
-                       threshold=0, frame=None, target_height=0, time_out=0, raise_if_not_found=False,
-                       recheck_time=0, after_sleep=0, post_action=None, log=False, screenshot=False,
-                       settle_time=-1, lib="default", alt: bool = False):
+    def wait_click_ocr(
+        self,
+        x=0,
+        y=0,
+        to_x=1,
+        to_y=1,
+        width=0,
+        height=0,
+        box=None,
+        name=None,
+        match=None,
+        threshold=0,
+        frame=None,
+        target_height=0,
+        time_out=0,
+        raise_if_not_found=False,
+        recheck_time=0,
+        after_sleep=0,
+        post_action=None,
+        log=False,
+        screenshot=False,
+        settle_time=-1,
+        lib="default",
+        alt: bool = False,
+    ):
         """
         等待 OCR 命中后立即点击目标。
 
@@ -1159,5 +1319,8 @@ class RuntimeMixin:
             match_text = [getattr(m, "pattern", m) for m in match]
         else:
             match_text = getattr(match, "pattern", match)
-        self.log_info(self.tr("wait ocr no box {x} {y} {width} {height} {to_x} {to_y} {match}").format(
-            x=x, y=y, width=width, height=height, to_x=to_x, to_y=to_y, match=match_text))
+        self.log_info(
+            self.tr("wait ocr no box {x} {y} {width} {height} {to_x} {to_y} {match}").format(
+                x=x, y=y, width=width, height=height, to_x=to_x, to_y=to_y, match=match_text
+            )
+        )

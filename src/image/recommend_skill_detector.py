@@ -32,18 +32,18 @@ __all__ = [
     "get_recommend_skill_detector",
 ]
 
-_WHITE_S_MAX = 70       # 饱和度上限：白色低饱和；彩色 VFX 高饱和被排除
-_WHITE_V_MIN = 200      # 明度下限：常态圆周 V≈118 被排除，脉冲白接近 255
-_ANGLE_SAMPLES = 64     # 圆周角度采样数
-_SIGNAL_BAND = (0.93, 1.12)   # 中间信号层半径带（相对配置半径，含辉光外扩）
-_ON_RATIO = 0.80        # 白角占比确认阈值（定稿值；实测脉冲相位占比 0.59~0.94）
-_OFF_FRAMES = 3         # 连续低于确认阈值帧数后复位（防止噪声占比卡在迟滞中区）
+_WHITE_S_MAX = 70  # 饱和度上限：白色低饱和；彩色 VFX 高饱和被排除
+_WHITE_V_MIN = 200  # 明度下限：常态圆周 V≈118 被排除，脉冲白接近 255
+_ANGLE_SAMPLES = 64  # 圆周角度采样数
+_SIGNAL_BAND = (0.93, 1.12)  # 中间信号层半径带（相对配置半径，含辉光外扩）
+_ON_RATIO = 0.80  # 白角占比确认阈值（定稿值；实测脉冲相位占比 0.59~0.94）
+_OFF_FRAMES = 3  # 连续低于确认阈值帧数后复位（防止噪声占比卡在迟滞中区）
 
 
 class _Track:
     """单个按钮的迟滞去抖状态。"""
 
-    __slots__ = ("hits", "misses", "active")
+    __slots__ = ("active", "hits", "misses")
 
     def __init__(self):
         self.hits = 0
@@ -73,8 +73,7 @@ class RecommendSkillDetector:
             self._tracks.pop(label, None)
 
     @staticmethod
-    def _white_ratio(frame: np.ndarray, cx_n: float, cy_n: float,
-                     r_n: float) -> float:
+    def _white_ratio(frame: np.ndarray, cx_n: float, cy_n: float, r_n: float) -> float:
         """计算信号层半径带内的白色角度占比（0~1）。"""
         height, width = frame.shape[:2]
         min_wh = min(width, height)
@@ -112,13 +111,11 @@ class RecommendSkillDetector:
             hit |= valid & white[ys.clip(0, h - 1), xs.clip(0, w - 1)]
         return float(np.count_nonzero(hit)) / _ANGLE_SAMPLES
 
-    def white_ratio(self, frame: np.ndarray, cx_n: float, cy_n: float,
-                    r_n: float) -> float:
+    def white_ratio(self, frame: np.ndarray, cx_n: float, cy_n: float, r_n: float) -> float:
         """查询当帧信号层白色角度占比（不改变任何状态，供诊断日志使用）。"""
         return self._white_ratio(frame, cx_n, cy_n, r_n)
 
-    def is_pulsing(self, frame: np.ndarray, cx_n: float, cy_n: float,
-                   r_n: float) -> bool:
+    def is_pulsing(self, frame: np.ndarray, cx_n: float, cy_n: float, r_n: float) -> bool:
         """当帧该按钮信号层是否达到白色脉冲确认占比（不改变任何状态）。
 
         用于全屏闪光判定：需要「当前是否全白」而非「是否新上升沿」，
@@ -126,8 +123,7 @@ class RecommendSkillDetector:
         """
         return self._white_ratio(frame, cx_n, cy_n, r_n) >= _ON_RATIO
 
-    def detect(self, frame: np.ndarray, cx_n: float, cy_n: float,
-               r_n: float, label: str) -> bool:
+    def detect(self, frame: np.ndarray, cx_n: float, cy_n: float, r_n: float, label: str) -> bool:
         """检测指定按钮是否出现白色圆周脉冲上升沿。
 
         :param frame: BGR 截图帧

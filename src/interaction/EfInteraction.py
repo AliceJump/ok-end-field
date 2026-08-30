@@ -1,14 +1,13 @@
 import ctypes
 import time
 
-import pynput
 import win32api
 import win32con
 import win32gui
 from ok.device.intercation import PostMessageInteraction
 from ok.util.logger import Logger
-from win32api import GetCursorPos, GetSystemMetrics, SetCursorPos
 from pynput.keyboard import Controller, Key
+from win32api import GetCursorPos, GetSystemMetrics, SetCursorPos
 
 from src.core.game_window import find_game_hwnd
 from src.interaction.Mouse import active_and_send_mouse_delta
@@ -21,14 +20,10 @@ MOUSEEVENTF_MIDDLEUP = 0x0040
 
 
 class RECT(ctypes.Structure):
-    _fields_ = [("left", ctypes.c_long),
-                ("top", ctypes.c_long),
-                ("right", ctypes.c_long),
-                ("bottom", ctypes.c_long)]
+    _fields_ = [("left", ctypes.c_long), ("top", ctypes.c_long), ("right", ctypes.c_long), ("bottom", ctypes.c_long)]
 
 
 class EfInteraction(PostMessageInteraction):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.cursor_position = None
@@ -62,11 +57,9 @@ class EfInteraction(PostMessageInteraction):
             btn_down = win32con.WM_RBUTTONDOWN
             btn_mk = win32con.MK_RBUTTON
             btn_up = win32con.WM_RBUTTONUP
-        self.post(btn_down, btn_mk, click_pos
-                  )
+        self.post(btn_down, btn_mk, click_pos)
         time.sleep(down_time)
-        self.post(btn_up, 0, click_pos
-                  )
+        self.post(btn_up, 0, click_pos)
         if x >= 0 and move_Cursor:
             time.sleep(0.1)
             SetCursorPos(self.cursor_position)
@@ -141,6 +134,7 @@ class EfInteraction(PostMessageInteraction):
         """
         try:
             from ok import og
+
             task = getattr(getattr(og, "executor", None), "current_task", None)
             if task is not None and hasattr(task, "input_mode"):
                 return task.input_mode() == "background"
@@ -148,6 +142,7 @@ class EfInteraction(PostMessageInteraction):
             pass
         try:
             from src.core.global_config_store import INPUT_MODE_NAME, get_global_config
+
             return get_global_config(INPUT_MODE_NAME).get("输入模式", "前台模式") == "后台模式"
         except Exception:
             return False
@@ -260,9 +255,7 @@ class EfInteraction(PostMessageInteraction):
                     self._key_prev_hwnd = prev
             else:
                 self._key_prev_hwnd = 0
-            logger.info(
-                f"后台按键恢复: key={key} 原窗口={prev} 当前={current} 恢复成功={restored}"
-            )
+            logger.info(f"后台按键恢复: key={key} 原窗口={prev} 当前={current} 恢复成功={restored}")
 
     def _convert_key(self, key: str):
         aliases = {
@@ -270,17 +263,14 @@ class EfInteraction(PostMessageInteraction):
             "shift": Key.shift,
             "lshift": Key.shift_l,
             "rshift": Key.shift_r,
-
             # Ctrl
             "ctrl": Key.ctrl,
             "lctrl": Key.ctrl_l,
             "rctrl": Key.ctrl_r,
-
             # Alt
             "alt": Key.alt,
             "lalt": Key.alt_l,
             "ralt": Key.alt_r,
-
             # 常用
             "enter": Key.enter,
             "tab": Key.tab,
@@ -289,12 +279,10 @@ class EfInteraction(PostMessageInteraction):
             "delete": Key.delete,
             "esc": Key.esc,
             "escape": Key.esc,
-
             "up": Key.up,
             "down": Key.down,
             "left": Key.left,
             "right": Key.right,
-
             "home": Key.home,
             "end": Key.end,
             "pageup": Key.page_up,

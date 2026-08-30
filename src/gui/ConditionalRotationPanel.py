@@ -1,18 +1,36 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QSize, Qt, Signal
-from PySide6.QtWidgets import (
-    QAbstractItemView, QDialog, QDoubleSpinBox, QFrame, QGraphicsOpacityEffect,
-    QHBoxLayout, QLabel, QListWidget, QListWidgetItem, QListView,
-    QVBoxLayout, QWidget,
-)
-from qfluentwidgets import (
-    Action, ComboBox, FluentIcon, IndicatorPosition,
-    MessageBox, MessageBoxBase, PushButton, RoundMenu, SpinBox,
-    SubtitleLabel, SwitchButton, TransparentToolButton,
-)
 from ok import og
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
+from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QSize, Qt, Signal
+from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QDialog,
+    QDoubleSpinBox,
+    QFrame,
+    QGraphicsOpacityEffect,
+    QHBoxLayout,
+    QLabel,
+    QListView,
+    QListWidget,
+    QListWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
+from qfluentwidgets import (
+    Action,
+    ComboBox,
+    FluentIcon,
+    IndicatorPosition,
+    MessageBox,
+    MessageBoxBase,
+    PushButton,
+    RoundMenu,
+    SpinBox,
+    SubtitleLabel,
+    SwitchButton,
+    TransparentToolButton,
+)
 
 from src.core.BattleConfig import (
     BATTLE_CONFIG_DESCRIPTION,
@@ -32,12 +50,21 @@ def _tr(text: str) -> str:
 
 # 友好名映射
 _ACTION_DISPLAY = {
-    "1": "战技 1", "2": "战技 2", "3": "战技 3", "4": "战技 4", "e": "连携技",
-    "ult_1": "终结技 1", "ult_2": "终结技 2", "ult_3": "终结技 3", "ult_4": "终结技 4",
+    "1": "战技 1",
+    "2": "战技 2",
+    "3": "战技 3",
+    "4": "战技 4",
+    "e": "连携技",
+    "ult_1": "终结技 1",
+    "ult_2": "终结技 2",
+    "ult_3": "终结技 3",
+    "ult_4": "终结技 4",
 }
 _ATOM_DISPLAY = {
-    "ult1": "终结技 1 可用", "ult2": "终结技 2 可用",
-    "ult3": "终结技 3 可用", "ult4": "终结技 4 可用",
+    "ult1": "终结技 1 可用",
+    "ult2": "终结技 2 可用",
+    "ult3": "终结技 3 可用",
+    "ult4": "终结技 4 可用",
     "link": "连携技可用",
 }
 
@@ -48,9 +75,11 @@ _SLEEP_KEY = "__sleep__"
 _NORMAL_KEY = "__normal__"
 
 _ACTION_OPTIONS = [  # (key, 显示名)
-    (_SKILL_ACTION_KEY, "战技 N"), ("e", "连携技"),
+    (_SKILL_ACTION_KEY, "战技 N"),
+    ("e", "连携技"),
     (_ULT_ACTION_KEY, "终结技 N"),
-    (_SLEEP_KEY, "等待 N 秒"), (_NORMAL_KEY, "普通战斗 N 秒"),
+    (_SLEEP_KEY, "等待 N 秒"),
+    (_NORMAL_KEY, "普通战斗 N 秒"),
 ]
 
 # 条件原子选项 key（带 SpinBox 选择数字）
@@ -58,7 +87,9 @@ _ULT_KEY = "__ult__"
 _SKILL_KEY = "__skill__"
 
 _ATOM_OPTIONS = [  # (key, 显示名)
-    (_ULT_KEY, "终结技 N 可用"), ("link", "连携技可用"), (_SKILL_KEY, "技力 ≥ N"),
+    (_ULT_KEY, "终结技 N 可用"),
+    ("link", "连携技可用"),
+    (_SKILL_KEY, "技力 ≥ N"),
 ]
 
 # 模板映射：key → 下拉列表中的模板文字
@@ -350,7 +381,7 @@ class _ActionListEditor(QWidget):
 
     def load(self, tokens: list):
         self._list.clear()
-        for t in (tokens if isinstance(tokens, list) else []):
+        for t in tokens if isinstance(tokens, list) else []:
             self._add_row(t, emit=False)
 
     def _make_row(self, token: str) -> _ActionRow:
@@ -645,7 +676,7 @@ class _ConditionEditDialog(MessageBoxBase):
         opacityEffect.setOpacity(0.0)
         QDialog.showEvent(self, event)
         self.widget.adjustSize()
-        ani = QPropertyAnimation(opacityEffect, b'opacity', self)
+        ani = QPropertyAnimation(opacityEffect, b"opacity", self)
         ani.setStartValue(0.0)
         ani.setEndValue(1.0)
         ani.setDuration(150)
@@ -661,7 +692,7 @@ class _ConditionEditDialog(MessageBoxBase):
         self.widget.setGraphicsEffect(None)
         opacityEffect = QGraphicsOpacityEffect(self.widget)
         self.widget.setGraphicsEffect(opacityEffect)
-        ani = QPropertyAnimation(opacityEffect, b'opacity', self)
+        ani = QPropertyAnimation(opacityEffect, b"opacity", self)
         ani.setStartValue(1.0)
         ani.setEndValue(0.0)
         ani.setDuration(100)
@@ -681,7 +712,7 @@ class _ConditionEditDialog(MessageBoxBase):
 class _ConditionDisplayCard(QFrame):
     """只读显示卡片：两行（条件行 / 动作行），行间浅色线，右键菜单。"""
 
-    selected = Signal(object)      # emit self
+    selected = Signal(object)  # emit self
     right_clicked = Signal(object, QPoint)  # emit self, global_pos
     double_clicked = Signal(object)  # emit self
 
@@ -693,9 +724,7 @@ class _ConditionDisplayCard(QFrame):
         self._node = node
         self._build()
         self.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.customContextMenuRequested.connect(
-            lambda pos: self.right_clicked.emit(self, self.mapToGlobal(pos))
-        )
+        self.customContextMenuRequested.connect(lambda pos: self.right_clicked.emit(self, self.mapToGlobal(pos)))
 
     def _build(self):
         layout = self.layout()
@@ -827,7 +856,7 @@ class _ConditionListEditDialog(MessageBoxBase):
         opacityEffect.setOpacity(0.0)
         QDialog.showEvent(self, event)
         self.widget.adjustSize()
-        ani = QPropertyAnimation(opacityEffect, b'opacity', self)
+        ani = QPropertyAnimation(opacityEffect, b"opacity", self)
         ani.setStartValue(0.0)
         ani.setEndValue(1.0)
         ani.setDuration(150)
@@ -843,7 +872,7 @@ class _ConditionListEditDialog(MessageBoxBase):
         self.widget.setGraphicsEffect(None)  # 清除阴影
         opacityEffect = QGraphicsOpacityEffect(self.widget)
         self.widget.setGraphicsEffect(opacityEffect)
-        ani = QPropertyAnimation(opacityEffect, b'opacity', self)
+        ani = QPropertyAnimation(opacityEffect, b"opacity", self)
         ani.setStartValue(1.0)
         ani.setEndValue(0.0)
         ani.setDuration(100)

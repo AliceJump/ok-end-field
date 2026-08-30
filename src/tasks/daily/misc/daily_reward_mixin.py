@@ -6,10 +6,10 @@ from src.data.FeatureList import FeatureList as fL
 class DailyRewardMixin:
     def _click_ocr_with_info(self, match_str, box, time_out=5, after_sleep=2):
         if not self.wait_click_ocr(
-                match=re.compile(match_str),
-                box=box,
-                time_out=time_out,
-                after_sleep=after_sleep,
+            match=re.compile(match_str),
+            box=box,
+            time_out=time_out,
+            after_sleep=after_sleep,
         ):
             # match_str 是调用方传入的 OCR 匹配文本（运行时参数）不过 tr
             self.mark_task_failure(self.tr("未找到{name}按钮，任务失败").format(name=match_str))
@@ -23,11 +23,13 @@ class DailyRewardMixin:
 
         if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_13eea5dd, box=self.box.left, time_out=5):
             self.log_info("进入『每周事务』页面")
-            if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box.top_right, time_out=5):
+            if self.wait_click_ocr(
+                match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box.top_right, time_out=5
+            ):
                 if self.wait_click_ocr(
-                        match=self.lang.daily_routine_mixin.k_bf856c96,
-                        box=self.box.bottom_right,
-                        time_out=5,
+                    match=self.lang.daily_routine_mixin.k_bf856c96,
+                    box=self.box.bottom_right,
+                    time_out=5,
                 ):
                     self.wait_pop_up()
                     self.log_info("已领取『每周事务』奖励")
@@ -48,7 +50,11 @@ class DailyRewardMixin:
             return False
 
         self.log_info("进入『理智补给』页面")
-        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box_of_screen(0.894, 0.648, 0.995, 0.991), time_out=5):
+        if self.wait_click_ocr(
+            match=self.lang.daily_routine_mixin.k_39d12e73_1,
+            box=self.box_of_screen(0.894, 0.648, 0.995, 0.991),
+            time_out=5,
+        ):
             self.wait_pop_up()
             self.log_info("已领取『理智补给』奖励")
             return True
@@ -61,8 +67,9 @@ class DailyRewardMixin:
 
         while True:
             # 页面判断模板允许横向偏移，纵向不需要放宽（vertical_variance 保持默认 0）
-            if self.wait_feature(feature=fL.in_scratch_card_page, horizontal_variance=0.1,
-                                 raise_if_not_found=False, time_out=2):
+            if self.wait_feature(
+                feature=fL.in_scratch_card_page, horizontal_variance=0.1, raise_if_not_found=False, time_out=2
+            ):
                 break
 
             if self.active_time() - start_time > 20:
@@ -104,12 +111,11 @@ class DailyRewardMixin:
         sanity_enabled = "理智补给" in enabled_rewards
         scratch_enabled = "刮刮乐" in enabled_rewards
 
-
         if weekly_enabled:
             self.claim_weekly_rewards()
         else:
             self.log_info("已关闭『周常奖励』，跳过")
-            
+
         if scratch_enabled:
             self.scratch_reward()
         else:
@@ -130,9 +136,9 @@ class DailyRewardMixin:
         self.log_info("按下 F8 打开日常奖励界面")
 
         if not self.wait_click_ocr(
-                match=self.lang.daily_routine_mixin.k_8d0e83fc,
-                box=self.box.top,
-                time_out=5,
+            match=self.lang.daily_routine_mixin.k_8d0e83fc,
+            box=self.box.top,
+            time_out=5,
         ):
             self.mark_task_failure("未找到日常奖励按钮，任务失败")
             return False
@@ -144,9 +150,7 @@ class DailyRewardMixin:
             time_out=5,
         )
 
-        if result := self.find_one(
-                feature=fL.claim_gift, box=self.box.left, threshold=0.8
-        ):
+        if result := self.find_one(feature=fL.claim_gift, box=self.box.left, threshold=0.8):
             self.log_info("发现可领取的额外奖励，点击领取")
             self.click(result)
             self.wait_pop_up()
@@ -155,25 +159,30 @@ class DailyRewardMixin:
         self.log_info("日常奖励领取完成")
 
         if not self.wait_click_ocr(
-                match=self.lang.daily_routine_mixin.k_23926d61,
-                box=self.box.bottom_right,
-                time_out=5,
+            match=self.lang.daily_routine_mixin.k_23926d61,
+            box=self.box.bottom_right,
+            time_out=5,
         ):
             self.mark_task_failure("未找到通行证奖励入口，任务失败")
             return False
 
         if self.wait_click_ocr(
-                match=self.lang.daily_routine_mixin.k_d7613f0e,
-                box=self.box.top,
-                time_out=5,
+            match=self.lang.daily_routine_mixin.k_d7613f0e,
+            box=self.box.top,
+            time_out=5,
         ):
-            mission_boxes = self.wait_ocr(
-                x=0.12, y=0.33,
-                to_x=0.31, to_y=0.80,
-                match=self.lang.daily_routine_mixin.k_105cdd5a,
-                time_out=2,
-                raise_if_not_found=False,
-            ) or []
+            mission_boxes = (
+                self.wait_ocr(
+                    x=0.12,
+                    y=0.33,
+                    to_x=0.31,
+                    to_y=0.80,
+                    match=self.lang.daily_routine_mixin.k_105cdd5a,
+                    time_out=2,
+                    raise_if_not_found=False,
+                )
+                or []
+            )
             for box in mission_boxes:
                 self.click_box(box=box)
                 self.wait_click_ocr(
