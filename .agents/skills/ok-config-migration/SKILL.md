@@ -17,12 +17,13 @@ Rename config keys in ok-script task classes safely. `configs/` JSON holds user 
    - Both must land in the **same commit**. Never deploy in steps.
 2. **迁移表生效前禁止运行程序** — do NOT launch the app to verify after renaming. Run the actual migration test first:
    ```powershell
-   uv run python -m unittest tests.TestZipLineConfig -v
+   uv run --locked python -m unittest tests.TestZipLineConfig -v
    ```
    The test asserts the old key value was migrated to the new key (the function under test is `migrate_config_file_keys(<任务名>, migrations)`, defined in `src/core/config_migration.py`; the migration table lives in `src/tasks/onetime/DeliveryTask.py`).
 3. **同步 i18n** — after key changes, sync all `i18n/*/LC_MESSAGES/ok.po` msgid (msgid must match the code key name exactly), then compile:
    ```powershell
-   uv run python .agents/skills/ok-script-i18n/scripts/task_i18n_helper.py compile
+   uv run --locked python .agents/skills/ok-script-i18n/scripts/task_i18n_helper.py check
+   uv run --locked python .agents/skills/ok-script-i18n/scripts/task_i18n_helper.py compile
    ```
 4. **同步文档** — search `docs/` for the old key names and update them (e.g. the「通向送货点」key family).
 5. **配置丢失可恢复** — if a user config was already lost:

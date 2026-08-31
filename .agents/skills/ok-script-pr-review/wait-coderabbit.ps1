@@ -73,9 +73,9 @@ function Get-LatestReview {
 }
 
 function Get-CodeRabbitStatus {
-    # 返回 head 上 CodeRabbit commit status 的 state/description/created_at；无则 $null
+    # 返回 head 上最新 CodeRabbit commit status 的 state/description/created_at；无则 $null
     $tsv = Invoke-GhChecked @("api", "repos/$Repo/commits/$headSha/status", "--jq",
-        '.statuses[] | select(.context == "CodeRabbit") | [.state, .description, .created_at] | @tsv')
+        '[.statuses[] | select(.context == "CodeRabbit")] | sort_by(.created_at) | reverse | .[0] | if . then [.state, .description, .created_at] | @tsv else empty end')
     if (-not $tsv) { return $null }
     $first = ($tsv -split "`n")[0].Trim() -split "`t"
     if ($first.Count -lt 3) { return $null }
@@ -86,7 +86,7 @@ function Get-NewTopLevelComments {
     # 列出 id 大于基线的 CodeRabbit 顶层评审意见（id|path|line）
     param([long]$BaselineId)
     $out = Invoke-GhChecked @("api", "--paginate", "repos/$Repo/pulls/$PrNumber/comments", "--jq",
-        '.[] | select(.user.login == "coderabbitai[bot]" and .in_reply_to_id == null) | [.id, .path, (.line // .original_line // 0)] | @tsv')
+        '.[] | select(.user.login == "coderabbitai[bot]" and .user.type == "Bot" and .in_reply_to_id == null) | [.id, .path, (.line // .original_line // 0)] | @tsv')
     if (-not $out) { return @() }
     $items = @()
     foreach ($ln in ($out -split "`n")) {
@@ -99,7 +99,7 @@ function Get-NewTopLevelComments {
 
 function Get-MaxCommentId {
     $out = Invoke-GhChecked @("api", "--paginate", "repos/$Repo/pulls/$PrNumber/comments", "--jq",
-        '[.[] | select(.user.login == "coderabbitai[bot]") | .id] | max // 0')
+        '[.[] | select(.user.login == "coderabbitai[bot]" and .user.type == "Bot") | .id] | max // 0')
     if (-not $out) { return 0 }
     return [long](([string]$out | Select-Object -Last 1).Trim())
 }
@@ -148,22 +148,30 @@ try {
             $headSha = $fresh
             $pendingSince = $null
             $noEntryPolls = 0
+            if ($ListNewComments) { $baselineMaxId = Get-MaxCommentId }
         }
 
         $status = Get-CodeRabbitStatus
         $latest = Get-LatestReview
         $entryCoversHead = ($latest -and $latest.commit_id -eq $headSha)
         $statusDone = ($status -and $status.state -eq "success")
+        if ($SinceCommit -and $sinceDate -and $statusDone -and [datetime]$status.created_at -lt [datetime]$sinceDate) {
+            $statusDone = $false
+            Write-Host "忽略早于 -SinceCommit 的旧 success status: $($status.created_at)"
+        }
         $changesRequested = ($latest -and $latest.state -eq "CHANGES_REQUESTED")
+        $completionSignal = if ($WaitMergeReady) { $statusDone } else { $statusDone -or $entryCoversHead }
 
-        if (-not $statusDone -and $status) {
-            if ($status.state -eq "pending" -and -not $pendingSince) { $pendingSince = Get-Date }
-            if ($status.state -ne "pending") { $pendingSince = $null; $stallHinted = $false }
+        if (-not $completionSignal) {
+            $statusState = if ($status) { $status.state } else { "none" }
+            $statusDescription = if ($status) { $status.description } else { "" }
+            if ($statusState -eq "pending" -and -not $pendingSince) { $pendingSince = Get-Date }
+            if ($statusState -ne "pending") { $pendingSince = $null; $stallHinted = $false }
             if ($pendingSince -and ((Get-Date) - $pendingSince).TotalMinutes -ge 5 -and -not $stallHinted) {
                 Write-Host "提示: status 持续 pending 超过 5 分钟，可能限流；可在 PR 里重新评论 '@coderabbitai review' 后重跑本脚本"
                 $stallHinted = $true
             }
-            Write-Host "等待中... status=$($status.state) desc='$($status.description)'；最新评审 $(Get-ReviewSummary $latest)"
+            Write-Host "等待中... status=$statusState desc='$statusDescription'；最新评审 $(Get-ReviewSummary $latest)"
             Start-Sleep -Seconds $IntervalSeconds
             continue
         }
@@ -177,8 +185,7 @@ try {
         }
 
         if ($SinceCommit -and $sinceDate) {
-            if ($statusDone -and $status.created_at -lt $sinceDate) { Write-Host "注意: status 早于 $SinceCommit，可能是 force-push 前的旧结果，请人工确认" }
-            if ($latest -and $latest.submitted_at -lt $sinceDate) { Write-Host "注意: 评审早于 $SinceCommit，可能是 force-push 前的旧结果，请人工确认" }
+            if ($latest -and [datetime]$latest.submitted_at -lt [datetime]$sinceDate) { Write-Host "注意: 评审早于 $SinceCommit，可能是 force-push 前的旧结果，请人工确认" }
         }
 
         if ($DismissChangesRequested -and $changesRequested) { Hide-ChangesRequestedReviews; $latest = Get-LatestReview }

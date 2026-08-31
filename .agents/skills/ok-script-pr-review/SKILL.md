@@ -47,15 +47,27 @@ After pushing fixes, wait for CodeRabbit to cover the new head before reading it
 .\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber <n>
 # 更短间隔 / 更短超时
 .\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber <n> -IntervalSeconds 15 -TimeoutSeconds 300
+# force-push 后拒绝把旧 status 当成本轮完成
+.\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber <n> -SinceCommit <force-push前sha>
+# 等待可合并并列出本轮新增意见（dismiss 旧 CHANGES_REQUESTED 需要管理员权限）
+.\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber <n> -WaitMergeReady -ListNewComments
 ```
 
-Exit codes: `0` = review done (either a new review entry covers the head, or the CodeRabbit commit status reached `success`); `1` = timeout (retry or re-trigger with `@coderabbitai review`); `2` = API/auth error. The script re-fetches `headRefOid` each poll, so pushing a new commit mid-wait is handled; use `-SinceCommit <sha>` to flag reviews that predate a force-push.
+Exit codes: `0` = review done (either a new review entry covers the head, or a non-stale CodeRabbit commit status reached `success`); `1` = timeout; `2` = API/auth error; `3` = `-WaitMergeReady` completed but the latest review is still `CHANGES_REQUESTED`. The script re-fetches `headRefOid` each poll, so pushing a new commit mid-wait is handled; after a force-push pass `-SinceCommit <old-sha>` so success statuses older than that commit are ignored rather than merely warned about. Use `-DismissChangesRequested` only when the user explicitly wants administrative dismissal.
 
 **Status vs review entries (verified)**: CodeRabbit posts a commit status (`context=CodeRabbit`) on the PR head — `pending` ("Review queued") while running, `success` ("Review completed") when done. When a re-triggered review finds nothing new, it completes WITHOUT posting a new review entry, so the reviews list still shows the old `commit_id`; the status is the only completion signal. The script therefore treats `status.state == success` as done (fast path) and a review entry matching the head as a fallback. `pending` means keep waiting, not done.
 
 ### 3. Handle rate limits
 
 CodeRabbit has a rate limit. Signals: a PR was pushed/fixed but no new review appears (`updated_at` moves, review timestamps do not), or the re-trigger comment is ignored. Action: wait, then retry the trigger. Do not spam the trigger; retry after a sensible delay.
+
+If CodeRabbit posted `More reviews will be available in ...`, the included helper computes the absolute retry time from that bot comment and triggers once:
+
+```powershell
+.\.agents\skills\ok-script-pr-review\wait-coderabbit-rate-limit.ps1 -PrNumber <n>
+# only calculate/wait; do not post a trigger
+.\.agents\skills\ok-script-pr-review\wait-coderabbit-rate-limit.ps1 -PrNumber <n> -NoTrigger
+```
 
 ### 4. Reply to a review comment
 
@@ -97,7 +109,7 @@ gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "<thre
 - 回复后查询 `isResolved`，仅在值为 `false` 且确认问题已修复/失效时才解析线程；不要把回复与自动解析绑定。
 - Accept valid suggestions and push the fix, then reply + resolve.
 - Re-run the target test before resolving a correctness (Major) finding using the repository's test command:
-  `scripts/testing/run_tests.ps1` 或 `uv run python -m unittest discover -s tests`。
+  `scripts/testing/run_tests.ps1` or `uv run --locked python -m unittest <focused module> -v`.
 
 ## Gotchas
 

@@ -1,6 +1,6 @@
 ---
 name: use-local-venv
-description: Prefer the repository-local Python virtual environment for coding-agent work. Use when running Python scripts, tests, linters, formatters, package installs, dependency checks, or any Python command in a repo that may contain a .venv; fall back to global Python only when no local .venv interpreter exists.
+description: Prefer the repository-local Python virtual environment for coding-agent work. Use when running Python scripts, tests, linters, formatters, package installs, dependency checks, or any Python command in a repo that uses uv and a .venv; keep pyproject.toml plus uv.lock authoritative and avoid global Python drift.
 ---
 
 # Use Local Venv
@@ -9,46 +9,41 @@ description: Prefer the repository-local Python virtual environment for coding-a
 
 Use the project `.venv` for Python commands so agent work uses the same dependencies as the repository instead of the global Python installation.
 
-The `.venv` is created and synced by `uv sync` from `pyproject.toml` and `uv.lock`. Prefer running commands with `uv run python ...` (uv auto-selects the `.venv`); the direct interpreter paths below also work.
+The `.venv` is created and synced by `uv sync` from `pyproject.toml` and `uv.lock`. In this repository, use `uv sync --locked` and `uv run --locked ...` so a verification command cannot silently rewrite the lockfile or resolve different dependency versions.
 
 ## Rule
 
-- Before running Python, check for a local virtual environment at the repository root.
-- Prefer invoking the interpreter directly rather than relying on activation.
-- Use the global `python` command only when no local `.venv` interpreter exists.
+- Run from the repository root unless the script explicitly supports another working directory.
+- Prefer `uv run --locked python ...`; it selects the repository `.venv` without activation and verifies the lockfile.
+- Use the direct `.venv` interpreter only for bootstrap or diagnostics when `uv` is unavailable.
+- Do not fall back to global Python in this repository. If `uv` or `.venv` is missing, run `uv sync --locked` or report the environment problem instead of executing with unknown dependencies.
+- `pyproject.toml` and `uv.lock` are dependency sources of truth. `requirements.txt` is a publishing derivative and must not be hand-edited.
 
 ## PowerShell
 
-Resolve the interpreter once, then call it with `&`:
+Normal commands:
 
 ```powershell
-$Python = if (Test-Path ".\.venv\Scripts\python.exe") {
-  ".\.venv\Scripts\python.exe"
-} elseif (Test-Path ".\.venv\bin\python") {
-  ".\.venv\bin\python"
-} else {
-  "python"
-}
-
-& $Python -m pytest
+uv sync --locked
+uv run --locked python -m unittest tests.TestCheckLang -v
+uv run --locked python -m py_compile path/to/script.py
 ```
 
-For one-off commands in this repository on Windows, this is usually enough:
+Direct-interpreter fallback after confirming it exists:
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest discover tests
+& ".\.venv\Scripts\python.exe" -m unittest discover -s tests
 ```
 
 ## POSIX Shells
 
 ```bash
-if [ -x "./.venv/bin/python" ]; then
-  PYTHON="./.venv/bin/python"
-elif [ -x "./.venv/Scripts/python.exe" ]; then
-  PYTHON="./.venv/Scripts/python.exe"
-else
-  PYTHON="python"
-fi
-
-$PYTHON -m pytest
+uv sync --locked
+uv run --locked python -m unittest discover -s tests
 ```
+
+## Tests
+
+- Full repository suite: `scripts/testing/run_tests.ps1`.
+- Focused unittest: `uv run --locked python -m unittest tests.TestModule -v`.
+- Preserve and report pre-existing independent failures; do not hide them by switching interpreters or dependencies.
