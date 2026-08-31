@@ -14,6 +14,7 @@
 
     python merge_po.py ours.po theirs.po --output merged.po --compile
 """
+
 import argparse
 import os
 import sys
@@ -87,10 +88,13 @@ def main():
     parser.add_argument("ours", help="己方 po 文件路径")
     parser.add_argument("theirs", help="对方 po 文件路径")
     parser.add_argument("--output", required=True, help="合并结果输出路径")
-    parser.add_argument("--prefer", choices=("newer", "ours", "theirs"), default="newer",
-                        help="同一 msgid 冲突时的取舍（默认较新者，按文件 mtime）")
-    parser.add_argument("--compile", action="store_true",
-                        help="合并后编译输出 po 的同目录 ok.mo")
+    parser.add_argument(
+        "--prefer",
+        choices=("newer", "ours", "theirs"),
+        default="newer",
+        help="同一 msgid 冲突时的取舍（默认较新者，按文件 mtime）",
+    )
+    parser.add_argument("--compile", action="store_true", help="合并后编译输出 po 的同目录 ok.mo")
     args = parser.parse_args()
 
     merged, notes = merge_po(args.ours, args.theirs, prefer=args.prefer)

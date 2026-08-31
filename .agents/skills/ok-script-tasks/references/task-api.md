@@ -52,16 +52,20 @@ If a trigger task `run()` returns truthy, the executor restarts trigger scanning
 Use `self.default_config` for all task settings. `Config` persists only keys present in defaults and enforces default value types.
 
 ```python
-self.default_config.update({
-    "_enabled": True,
-    "Retry Count": 3,
-    "Target Text": "Start",
-    "Accepted Text": ["Start", "开始"],
-})
-self.config_description.update({
-    "Retry Count": "Maximum attempts before the task stops.",
-    "Target Text": "Text to search before clicking.",
-})
+self.default_config.update(
+    {
+        "_enabled": True,
+        "Retry Count": 3,
+        "Target Text": "Start",
+        "Accepted Text": ["Start", "开始"],
+    }
+)
+self.config_description.update(
+    {
+        "Retry Count": "Maximum attempts before the task stops.",
+        "Target Text": "Text to search before clicking.",
+    }
+)
 ```
 
 GUI widgets are inferred from default value type:
@@ -140,18 +144,22 @@ Prefer task methods over direct executor/device access:
 Prefer bilingual matching at the data boundary:
 
 ```python
-self.default_config.update({
-    "Confirm Text": ["Confirm", "确定"],
-    "Cancel Text": ["Cancel", "取消"],
-})
+self.default_config.update(
+    {
+        "Confirm Text": ["Confirm", "确定"],
+        "Cancel Text": ["Cancel", "取消"],
+    }
+)
 ```
 
 Use stable config keys and bilingual descriptions:
 
 ```python
-self.config_description.update({
-    "Confirm Text": "Texts to accept as confirmation buttons. 确认按钮文本列表。",
-})
+self.config_description.update(
+    {
+        "Confirm Text": "Texts to accept as confirmation buttons. 确认按钮文本列表。",
+    }
+)
 ```
 
 If a task should be visible only in certain locales:

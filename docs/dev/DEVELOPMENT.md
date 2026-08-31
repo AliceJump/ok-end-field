@@ -26,16 +26,16 @@ flowchart TD
 
 当前关键技术配置：
 
-| 领域 | 当前实现 |
-|------|----------|
-| Python | CI 和 China 打包使用 3.12 |
-| 平台 | Windows；游戏进程 `Endfield.exe`、窗口类 `UnityWndClass` |
-| 捕获 | 优先 WGC，后备 `BitBlt_RenderFull` |
-| OCR | `onnxocr`，启用 OpenVINO 和 NPU 参数 |
-| Feature | COCO 标注区域 + OpenCV 模板匹配 |
-| YOLO | ONNX/OpenVINO，多模型注册和按目标路由 |
-| UI | ok-script GUI + qfluentwidgets 自定义页 |
-| 打包 | PyAppify；China/Global profile |
+| 领域    | 当前实现                                                 |
+| ------- | -------------------------------------------------------- |
+| Python  | CI 和 China 打包使用 3.12                                |
+| 平台    | Windows；游戏进程 `Endfield.exe`、窗口类 `UnityWndClass` |
+| 捕获    | 优先 WGC，后备 `BitBlt_RenderFull`                       |
+| OCR     | `onnxocr`，启用 OpenVINO 和 NPU 参数                     |
+| Feature | COCO 标注区域 + OpenCV 模板匹配                          |
+| YOLO    | ONNX/OpenVINO，多模型注册和按目标路由                    |
+| UI      | ok-script GUI + qfluentwidgets 自定义页                  |
+| 打包    | PyAppify；China/Global profile                           |
 
 ## 2. 基类与组合
 
@@ -56,13 +56,13 @@ BaseEfTask(
 
 职责：
 
-| 类 | 文件 | 职责 |
-|----|------|------|
-| `WindowArrowDrawingMixin` | `src/core/base_mixin/window_arrow_drawing_mixin.py` | 导航箭头窗口绘制 |
-| `AccountOverrideMixin` | `src/core/base_mixin/account_override_mixin.py` | 按稳定账号 ID 覆盖任务配置 |
-| `GameFlowMixin` | `src/core/base_mixin/game_flow_mixin.py` | 主界面、地图、登录截图、弹窗和场景流程 |
-| `RuntimeMixin` | `src/core/base_mixin/runtime_mixin.py` | Feature、点击、按键、移动、UI 稳定、YOLO |
-| `ProcessManager` | `src/core/base_mixin/process_manager.py` | 游戏进程终止能力 |
+| 类                        | 文件                                                | 职责                                     |
+| ------------------------- | --------------------------------------------------- | ---------------------------------------- |
+| `WindowArrowDrawingMixin` | `src/core/base_mixin/window_arrow_drawing_mixin.py` | 导航箭头窗口绘制                         |
+| `AccountOverrideMixin`    | `src/core/base_mixin/account_override_mixin.py`     | 按稳定账号 ID 覆盖任务配置               |
+| `GameFlowMixin`           | `src/core/base_mixin/game_flow_mixin.py`            | 主界面、地图、登录截图、弹窗和场景流程   |
+| `RuntimeMixin`            | `src/core/base_mixin/runtime_mixin.py`              | Feature、点击、按键、移动、UI 稳定、YOLO |
+| `ProcessManager`          | `src/core/base_mixin/process_manager.py`            | 游戏进程终止能力                         |
 
 不要再引用旧的 `src/tasks/mixin/runtime_mixin.py`、`game_flow_mixin.py`、`process_manager.py` 或 `window_arrow_drawing_mixin.py` 路径。
 
@@ -111,23 +111,23 @@ ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask)
 
 ### 一次性任务
 
-| 顺序 | 类 | 模块 |
-|------|----|------|
-| 1 | `DailyTask` | `src.tasks.onetime.DailyTask` |
-| 2 | `TakeDeliveryTask` | `src.tasks.onetime.TakeDeliveryTask` |
-| 3 | `WarehouseTransferTask` | `src.tasks.onetime.WarehouseTransferTask` |
-| 4 | `DeliveryTask` | `src.tasks.onetime.DeliveryTask` |
-| 5 | `BattleTask` | `src.tasks.onetime.BattleTask` |
-| 6 | `DemoDrawTask` | `src.tasks.onetime.DemoDrawTask` |
-| 7 | `YingTuoTask` | `src.tasks.onetime.YingTuoTask` |
-| 8 | `TestStartGame` | `src.tasks.onetime.TestStartGame` |
-| 9 | `RealtimeYoloScanTask` | `src.tasks.test.RealtimeDetectTask` |
-| 10 | `RealtimeDetectTask` | `src.tasks.test.RealtimeDetectTask` |
-| 11 | `PeriodicScreenshotTask` | `src.tasks.test.PeriodicScreenshotTask` |
-| 12 | `DiagnosisTask` | `src.tasks.test.DiagnosisTask` |
-| 13 | `MouseRotationCalibration` | `src.tasks.test.MouseRotationCalibration` |
-| 14 | `TestArrowAngle` | `src.tasks.test.TestArrowAngle` |
-| 15 | `TestCircularPulseDetect` | `src.tasks.test.TestCircularPulseDetect` |
+| 顺序 | 类                         | 模块                                      |
+| ---- | -------------------------- | ----------------------------------------- |
+| 1    | `DailyTask`                | `src.tasks.onetime.DailyTask`             |
+| 2    | `TakeDeliveryTask`         | `src.tasks.onetime.TakeDeliveryTask`      |
+| 3    | `WarehouseTransferTask`    | `src.tasks.onetime.WarehouseTransferTask` |
+| 4    | `DeliveryTask`             | `src.tasks.onetime.DeliveryTask`          |
+| 5    | `BattleTask`               | `src.tasks.onetime.BattleTask`            |
+| 6    | `DemoDrawTask`             | `src.tasks.onetime.DemoDrawTask`          |
+| 7    | `YingTuoTask`              | `src.tasks.onetime.YingTuoTask`           |
+| 8    | `TestStartGame`            | `src.tasks.onetime.TestStartGame`         |
+| 9    | `RealtimeYoloScanTask`     | `src.tasks.test.RealtimeDetectTask`       |
+| 10   | `RealtimeDetectTask`       | `src.tasks.test.RealtimeDetectTask`       |
+| 11   | `PeriodicScreenshotTask`   | `src.tasks.test.PeriodicScreenshotTask`   |
+| 12   | `DiagnosisTask`            | `src.tasks.test.DiagnosisTask`            |
+| 13   | `MouseRotationCalibration` | `src.tasks.test.MouseRotationCalibration` |
+| 14   | `TestArrowAngle`           | `src.tasks.test.TestArrowAngle`           |
+| 15   | `TestCircularPulseDetect`  | `src.tasks.test.TestCircularPulseDetect`  |
 
 一次性任务按「业务任务（`src.tasks.onetime.*`）→ 调试/测试任务（`src.tasks.test.*`）」分组排列。
 
@@ -135,12 +135,12 @@ ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask)
 
 ### 触发式任务
 
-| 顺序 | 类 | 模块 |
-|------|----|------|
-| 1 | `AutoCombatTask` | `src.tasks.trigger.AutoCombatTask` |
-| 2 | `AutoInteractionTask` | `src.tasks.trigger.AutoInteractionTask` |
-| 3 | `AutoPickTask` | `src.tasks.trigger.AutoPickTask` |
-| 4 | `ItemNavigatorTask` | `src.tasks.trigger.ItemNavigatorTask` |
+| 顺序 | 类                    | 模块                                    |
+| ---- | --------------------- | --------------------------------------- |
+| 1    | `AutoCombatTask`      | `src.tasks.trigger.AutoCombatTask`      |
+| 2    | `AutoInteractionTask` | `src.tasks.trigger.AutoInteractionTask` |
+| 3    | `AutoPickTask`        | `src.tasks.trigger.AutoPickTask`        |
+| 4    | `ItemNavigatorTask`   | `src.tasks.trigger.ItemNavigatorTask`   |
 
 当前没有 `AutoLoginTask.py` 或触发式自动登录注册。登录切换能力由 `LoginMixin`/`AccountMixin` 供多账号任务调用。
 
@@ -262,7 +262,7 @@ class MyTask(BaseEfTask):
 注册格式：
 
 ```python
-["src.tasks.onetime.MyTask", "MyTask"],
+["src.tasks.onetime.MyTask", "MyTask"]
 ```
 
 触发式任务还需在最终 MRO 中包含 `ok.TriggerTask`，并注册到 `trigger_tasks`。完整最小示例见 [QUICKSTART](QUICKSTART.md)。
@@ -326,9 +326,9 @@ self.wait_ocr(match=self.lang.login_mixin.k_20275ef2, time_out=5)
 可改键操作不得直接发送默认字面值：
 
 ```python
-self.press_key("f")             # common
-self.press_industry_key("y")    # industry
-self.press_combat_key("e")      # combat
+self.press_key("f")  # common
+self.press_industry_key("y")  # industry
+self.press_combat_key("e")  # combat
 ```
 
 `KeyConfigManager` 只有 `resolve_key(key, key_type)`。方向移动、固定角色数字键、固定滑索键和 `alt` 等系统修饰键可按明确的不改键语义使用底层接口。若游戏设置允许改键，对应 UI 图标也不应做成固定按键字样模板。
@@ -343,49 +343,49 @@ self.press_combat_key("e")      # combat
 
 当前 `tests/` 有 42 个测试模块：
 
-| 文件 | 主要覆盖 |
-|------|----------|
-| `TestAccountBattleConfig.py` | 账号配置可见性、快照合并、任务账号配置黑名单、战斗配置优先级 |
-| `TestAccountOverrideMixin.py` | 账号覆盖 Mixin：仅任务运行时启用覆盖、其余回退默认 |
-| `TestAutoCombat.py` | 排轴技能序列解析（`_parse_skill_sequence`） |
-| `TestAutoPick.py` | 自动拾取规则（可生产植物默认跳过与开关） |
-| `TestCheckLang.py` | 源码语言 key 与统一 JSON 的 `zh_CN/zh_TW` 引用 |
-| `TestConditionalRotation.py` | 排轴条件旋转 AST 归一化与 `AutoCombatLogic.run()` 实时条件路径（含 if/else 分支） |
-| `TestConditionalRotationGui.py` | 条件旋转 GUI 动作/条件格式化 |
-| `TestDailyBattleToEnd.py` | 日常刷本到结束：YOLO 命中禁用中键点击、奖励等待 |
-| `TestDailyBoatState.py` | 日常联运状态共享范围 |
-| `TestDailyConfigMigration.py` | 日常地区布尔键合并迁移 |
-| `TestDailyRegionalRunner.py` | 日常地区执行器（仅购买/回调/重试） |
-| `TestDailyRewardWaits.py` | 日常奖励领取等待逻辑 |
-| `TestDailyTaskFinallyFile.py` | 日常汇总文件生成和清理 |
-| `TestDeliveryAreaConfig.py` | 送货地区、搜索区域、目标和券种配置 |
-| `TestDeliveryRewardsClaim.py` | 送货奖励领取状态处理 |
-| `TestEfInteraction.py` | 窗口激活与后台消息交互 |
-| `TestEssenceImageFeatures.py` | 装备词条 Feature 资产存在性 |
-| `TestFindZipLineBoardButton.py` | 滑索上车站点按钮多阶段查找 |
-| `TestGameWindow.py` | 游戏窗口查找（类名与可执行文件匹配） |
-| `TestGifIcon.py` | GIF/主题图标合成与缓存失效 |
-| `TestGrayBarDetector.py` | 灰条检测算法（合成帧） |
-| `TestGuiI18n.py` | GUI 翻译调用和运行时采集污染 |
-| `TestItemMapQuery.py` | 物品地图查询和筛选 |
-| `TestLogZipDedup.py` | 日志打包图片去重 |
-| `TestMapDeviceFingerprint.py` | 地图设备指纹与注册 payload 构造 |
-| `TestMouseRotationCalibration.py` | 鼠标视角旋转系数标定角度差纯函数与任务注册 |
-| `TestOkWin32GdiPointPatch.py` | Win32 GDI 坐标补丁幂等安装 |
-| `TestOutpostExchange.py` | 据点兑换优先级与排除逻辑 |
-| `TestPoLocaleConsistency.py` | gettext catalog 完整性和一致性 |
-| `TestPreConfigPatch.py` | 启动前配置环境变量补丁 |
-| `TestPressEsc.py` | `press_esc` 走任务键盘控制器 |
-| `TestQfluentNavigationPatch.py` | qfluentwidgets 导航补丁回归 |
-| `TestRealtimeGrayBarDetectTask.py` | 实时灰条检测任务常量与调试绘制 |
-| `TestRuntimeMixinFeatureClick.py` | 普通/Alt Feature 点击路径 |
-| `TestScreenshotSidecar.py` | 截图侧边数据序列化 |
-| `TestSequenceParser.py` | 中英文逗号序列和整数序列解析 |
-| `TestStateDrivenWaits.py` | 状态驱动的等待（ensure_main/ensure_map/safe_back 等） |
-| `TestYingTuoTask.py` | 影拓丰碑关卡灰条识别 |
-| `TestYoloDetect.py` | 检测注入、ROI/overlay 和参数验证 |
-| `TestYoloModelRegistry.py` | 模型配置合并及目标路由 |
-| `TestZipLineConfig.py` | 滑索全局配置分组与旧配置迁移 |
+| 文件                               | 主要覆盖                                                                          |
+| ---------------------------------- | --------------------------------------------------------------------------------- |
+| `TestAccountBattleConfig.py`       | 账号配置可见性、快照合并、任务账号配置黑名单、战斗配置优先级                      |
+| `TestAccountOverrideMixin.py`      | 账号覆盖 Mixin：仅任务运行时启用覆盖、其余回退默认                                |
+| `TestAutoCombat.py`                | 排轴技能序列解析（`_parse_skill_sequence`）                                       |
+| `TestAutoPick.py`                  | 自动拾取规则（可生产植物默认跳过与开关）                                          |
+| `TestCheckLang.py`                 | 源码语言 key 与统一 JSON 的 `zh_CN/zh_TW` 引用                                    |
+| `TestConditionalRotation.py`       | 排轴条件旋转 AST 归一化与 `AutoCombatLogic.run()` 实时条件路径（含 if/else 分支） |
+| `TestConditionalRotationGui.py`    | 条件旋转 GUI 动作/条件格式化                                                      |
+| `TestDailyBattleToEnd.py`          | 日常刷本到结束：YOLO 命中禁用中键点击、奖励等待                                   |
+| `TestDailyBoatState.py`            | 日常联运状态共享范围                                                              |
+| `TestDailyConfigMigration.py`      | 日常地区布尔键合并迁移                                                            |
+| `TestDailyRegionalRunner.py`       | 日常地区执行器（仅购买/回调/重试）                                                |
+| `TestDailyRewardWaits.py`          | 日常奖励领取等待逻辑                                                              |
+| `TestDailyTaskFinallyFile.py`      | 日常汇总文件生成和清理                                                            |
+| `TestDeliveryAreaConfig.py`        | 送货地区、搜索区域、目标和券种配置                                                |
+| `TestDeliveryRewardsClaim.py`      | 送货奖励领取状态处理                                                              |
+| `TestEfInteraction.py`             | 窗口激活与后台消息交互                                                            |
+| `TestEssenceImageFeatures.py`      | 装备词条 Feature 资产存在性                                                       |
+| `TestFindZipLineBoardButton.py`    | 滑索上车站点按钮多阶段查找                                                        |
+| `TestGameWindow.py`                | 游戏窗口查找（类名与可执行文件匹配）                                              |
+| `TestGifIcon.py`                   | GIF/主题图标合成与缓存失效                                                        |
+| `TestGrayBarDetector.py`           | 灰条检测算法（合成帧）                                                            |
+| `TestGuiI18n.py`                   | GUI 翻译调用和运行时采集污染                                                      |
+| `TestItemMapQuery.py`              | 物品地图查询和筛选                                                                |
+| `TestLogZipDedup.py`               | 日志打包图片去重                                                                  |
+| `TestMapDeviceFingerprint.py`      | 地图设备指纹与注册 payload 构造                                                   |
+| `TestMouseRotationCalibration.py`  | 鼠标视角旋转系数标定角度差纯函数与任务注册                                        |
+| `TestOkWin32GdiPointPatch.py`      | Win32 GDI 坐标补丁幂等安装                                                        |
+| `TestOutpostExchange.py`           | 据点兑换优先级与排除逻辑                                                          |
+| `TestPoLocaleConsistency.py`       | gettext catalog 完整性和一致性                                                    |
+| `TestPreConfigPatch.py`            | 启动前配置环境变量补丁                                                            |
+| `TestPressEsc.py`                  | `press_esc` 走任务键盘控制器                                                      |
+| `TestQfluentNavigationPatch.py`    | qfluentwidgets 导航补丁回归                                                       |
+| `TestRealtimeGrayBarDetectTask.py` | 实时灰条检测任务常量与调试绘制                                                    |
+| `TestRuntimeMixinFeatureClick.py`  | 普通/Alt Feature 点击路径                                                         |
+| `TestScreenshotSidecar.py`         | 截图侧边数据序列化                                                                |
+| `TestSequenceParser.py`            | 中英文逗号序列和整数序列解析                                                      |
+| `TestStateDrivenWaits.py`          | 状态驱动的等待（ensure_main/ensure_map/safe_back 等）                             |
+| `TestYingTuoTask.py`               | 影拓丰碑关卡灰条识别                                                              |
+| `TestYoloDetect.py`                | 检测注入、ROI/overlay 和参数验证                                                  |
+| `TestYoloModelRegistry.py`         | 模型配置合并及目标路由                                                            |
+| `TestZipLineConfig.py`             | 滑索全局配置分组与旧配置迁移                                                      |
 
 推荐从仓库根目录运行：
 
