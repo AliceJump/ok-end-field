@@ -21,13 +21,32 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = [
-    "polib",
-    "pypinyin",
-]
+dev = ["polib>=1.2,<2", "pypinyin>=0.55,<1", "ruff>=0.16,<1"]
 
 [tool.uv]
 package = false
 
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["ok_templates"]
+
 [tool.ruff.lint]
 allowed-confusables = ["，", "。", "；", "：", "（", "）", "、"]
+select = ["E", "W", "F", "I", "C4", "B", "UP", "SIM", "RUF"]
+ignore = [
+    "E501",
+    "D",
+    "S101",
+    "BLE001",
+    "N",
+    "C901",
+    "RUF001",
+    "RUF002",
+    "PT",
+    "PLR2004",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+exclude = ["ok_templates"]
