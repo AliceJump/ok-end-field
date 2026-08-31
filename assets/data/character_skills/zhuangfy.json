@@ -26,30 +26,68 @@
             "skill_type": "战技",
             "element": "电磁",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "导电消耗伤害提升",
-                "trigger_condition": {
-                    "text": "消耗目标的导电状态使伤害倍率提高并额外生成青霆剑",
+            "enhancement": null,
+            "enhancements": [
+                {
+                    "name": "消耗导电生成青霆剑",
+                    "trigger_condition": {
+                        "text": "消耗目标的导电状态",
+                        "effects": [
+                            "STATUS_CONDUCTING"
+                        ]
+                    },
+                    "enhancement_effect": "消耗导电，使本次战技伤害倍率提高，并按所消耗导电的异常等级+1动态生成青霆剑",
+                    "enhancement_visible_pulse": false,
                     "effects": [
-                        "STATUS_CONDUCTING"
+                        {
+                            "effect_id": "STATUS_CONDUCTING",
+                            "value": 0,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "STACK_QINGTING_SWORD",
+                            "value": 0,
+                            "duration": null,
+                            "target": "self",
+                            "count": null
+                        }
                     ]
                 },
-                "enhancement_effect": "伤害提升+青霆剑",
-                "enhancement_visible_pulse": false,
-                "effects": []
-            },
+                {
+                    "name": "未消耗导电时兜底生成青霆剑",
+                    "trigger_condition": {
+                        "text": "现存青霆剑少于3柄，且本次未消耗导电",
+                        "effects": [
+                            "STACK_QINGTING_SWORD"
+                        ]
+                    },
+                    "enhancement_effect": "生成1柄青霆剑",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STACK_QINGTING_SWORD",
+                            "value": 1,
+                            "duration": null,
+                            "target": "self",
+                            "count": 1
+                        }
+                    ]
+                }
+            ],
             "description": "消耗目标的导电状态，使本次战技伤害倍率提高，并生成相当于所消耗导电的异常等级+1柄青霆剑，若现存的青霆剑少于3柄，即使未消耗目标的导电状态仍能生成1柄青霆剑。随后引导附近的青霆剑依次雷击目标，造成电磁伤害并额外获得终结技能量，最后一次雷击造成6倍伤害。一次战技最多生成3柄青霆剑。",
-            "damage_multiplier": "280%（基础）+ 420%（追加）",
-            "stagger_value": 0,
+            "damage_multiplier": "45%（每次雷击）+ 9%×所消耗导电异常等级（额外）；最后一次雷击为6倍",
+            "stagger_value": 15,
             "cooldown": null,
             "spirit_cost": 100,
             "effects": [
                 {
                     "effect_id": "STACK_QINGTING_SWORD",
-                    "value": 1,
+                    "value": 0,
                     "duration": null,
                     "target": "self",
-                    "count": 1
+                    "count": -1
                 }
             ]
         },

@@ -124,7 +124,24 @@ class TestCharacterSkillEffects(unittest.TestCase):
 
         zhuangfy = characters["zhuang_fang_yi"]
         zhuangfy_skill = next(skill for skill in zhuangfy.skills if skill.skill_id == "zhuangfy_skill")
-        self.assertEqual(zhuangfy_skill.enhancement.effects, [])
+        self.assertEqual(len(zhuangfy_skill.enhancements), 2)
+        self.assertEqual(
+            [effect.effect_id for effect in zhuangfy_skill.enhancements[0].effects],
+            [EffectType.STATUS_CONDUCTING, EffectType.STACK_QINGTING_SWORD],
+        )
+        self.assertEqual(zhuangfy_skill.enhancements[0].effects[0].count, -1)
+        self.assertIsNone(zhuangfy_skill.enhancements[0].effects[1].count)
+        self.assertEqual(
+            [effect.effect_id for effect in zhuangfy_skill.enhancements[1].effects],
+            [EffectType.STACK_QINGTING_SWORD],
+        )
+        self.assertEqual(zhuangfy_skill.enhancements[1].effects[0].count, 1)
+        self.assertEqual([effect.effect_id for effect in zhuangfy_skill.effects], [EffectType.STACK_QINGTING_SWORD])
+        self.assertEqual(zhuangfy_skill.effects[0].count, -1)
+        self.assertEqual(zhuangfy_skill.stagger_value, 15)
+        self.assertIn("45%", zhuangfy_skill.damage_multiplier)
+        self.assertIn("9%", zhuangfy_skill.damage_multiplier)
+        self.assertIn("6倍", zhuangfy_skill.damage_multiplier)
 
         jue = characters["jue"]
         jue_skill = next(skill for skill in jue.skills if skill.skill_id == "lizhiyan_skill")

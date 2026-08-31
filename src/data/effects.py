@@ -166,7 +166,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STACK_SEED: "诀的种子层数",
     EffectType.STACK_TRACE: "洛茜的爪印斫痕层数",
     EffectType.STACK_CHARGE: "卡契尔的蓄力层数",
-    EffectType.STACK_QINGTING_SWORD: "庄方宜的青霆剑数量，单次战技最多生成3柄",
+    EffectType.STACK_QINGTING_SWORD: "庄方宜的青霆剑数量，可按导电异常等级动态生成，单次战技最多生成3柄，并在逐柄雷击后消费",
 
     # 增益效果
     EffectType.BUFF_ATTACK_UP: "攻击力增加",
