@@ -1,0 +1,666 @@
+{
+  "ATTACH_COLD": {
+    "zh_CN": {"string": "寒冷附着"},
+    "zh_TW": {"string": "寒冷附著"},
+    "en_US": {"string": "Cryo Infliction"},
+    "ja_JP": {"string": "寒冷付着"},
+    "ko_KR": {"string": "냉기 부착"},
+    "es_ES": {"string": "Imp. crio."}
+  },
+  "ATTACH_BURN": {
+    "zh_CN": {"string": "灼热附着"},
+    "zh_TW": {"string": "灼熱附著"},
+    "en_US": {"string": "Heat Infliction"},
+    "ja_JP": {"string": "灼熱付着"},
+    "ko_KR": {"string": "열기 부착"},
+    "es_ES": {"string": "Imp. de cal."}
+  },
+  "ATTACH_ELECTROMAGNETIC": {
+    "zh_CN": {"string": "电磁附着"},
+    "zh_TW": {"string": "電磁附著"},
+    "en_US": {"string": "Electric Infliction"},
+    "ja_JP": {"string": "電磁付着"},
+    "ko_KR": {"string": "전기 부착"},
+    "es_ES": {"string": "Imp. elec."}
+  },
+  "ATTACH_NATURAL": {
+    "zh_CN": {"string": "自然附着"},
+    "zh_TW": {"string": "自然附著"},
+    "en_US": {"string": "Nature Infliction"},
+    "ja_JP": {"string": "自然付着"},
+    "ko_KR": {"string": "자연 부착"},
+    "es_ES": {"string": "Imp. de nat."}
+  },
+  "VULN_COLD": {
+    "zh_CN": {"string": "寒冷脆弱"},
+    "zh_TW": {"string": "寒冷脆弱"},
+    "en_US": {"string": "Cryo Susceptibility"},
+    "ja_JP": {"string": "寒冷脆弱"},
+    "ko_KR": {"string": "냉기 취약"},
+    "es_ES": {"string": "Susceptibilidad criogénica"}
+  },
+  "VULN_BURN": {
+    "zh_CN": {"string": "灼热脆弱"},
+    "zh_TW": {"string": "灼熱脆弱"},
+    "en_US": {"string": "Heat Susceptibility"},
+    "ja_JP": {"string": "灼熱脆弱"},
+    "ko_KR": {"string": "열기 취약"},
+    "es_ES": {"string": "Susceptibilidad al calor"}
+  },
+  "VULN_ELECTROMAGNETIC": {
+    "zh_CN": {"string": "电磁脆弱"},
+    "zh_TW": {"string": "電磁脆弱"},
+    "en_US": {"string": "Electric Susceptibility"},
+    "ja_JP": {"string": "電磁脆弱"},
+    "ko_KR": {"string": "전기 취약"},
+    "es_ES": {"string": "Susceptibilidad eléctrica"}
+  },
+  "VULN_NATURAL": {
+    "zh_CN": {"string": "自然脆弱"},
+    "zh_TW": {"string": "自然脆弱"},
+    "en_US": {"string": "Nature Susceptibility"},
+    "ja_JP": {"string": "自然脆弱"},
+    "ko_KR": {"string": "자연 취약"},
+    "es_ES": {"string": "Susceptibilidad a la naturaleza"}
+  },
+  "VULN_PHYSICAL": {
+    "zh_CN": {"string": "物理脆弱"},
+    "zh_TW": {"string": "物理脆弱"},
+    "en_US": {"string": "Physical Susceptibility"},
+    "ja_JP": {"string": "物理脆弱"},
+    "ko_KR": {"string": "물리 취약"},
+    "es_ES": {"string": "Suscep. fís."}
+  },
+  "VULN_ALL": {
+    "zh_CN": {"string": "法术脆弱"},
+    "zh_TW": {"string": "法術脆弱"},
+    "en_US": {"string": "Arts Susceptibility"},
+    "ja_JP": {"string": "アーツ脆弱"},
+    "ko_KR": {"string": "아츠 취약"},
+    "es_ES": {"string": "Suscep. a art."}
+  },
+  "STATUS_SHRED": {
+    "zh_CN": {"string": "破防"},
+    "zh_TW": {"string": "破防"},
+    "en_US": {"string": "Vulnerable"},
+    "ja_JP": {"string": "クラッシュ"},
+    "ko_KR": {"string": "방어 불능"},
+    "es_ES": {"string": "Vulnerable"}
+  },
+  "STATUS_HEAVY_HIT": {
+    "zh_CN": {"string": "击飞"},
+    "zh_TW": {"string": "擊飛"},
+    "en_US": {"string": "Lift"},
+    "ja_JP": {"string": "浮遊"},
+    "ko_KR": {"string": "띄우기"},
+    "es_ES": {"string": "Levantar"}
+  },
+  "STATUS_KNOCKDOWN": {
+    "zh_CN": {"string": "倒地"},
+    "zh_TW": {"string": "倒地"},
+    "en_US": {"string": "Knock Down"},
+    "ja_JP": {"string": "転倒"},
+    "ko_KR": {"string": "넘어뜨리기"},
+    "es_ES": {"string": "Derribar"}
+  },
+  "STATUS_SHATTER": {
+    "zh_CN": {"string": "碎甲"},
+    "zh_TW": {"string": "碎甲"},
+    "en_US": {"string": "Breach"},
+    "ja_JP": {"string": "破砕"},
+    "ko_KR": {"string": "갑옷 파괴"},
+    "es_ES": {"string": "Brecha"}
+  },
+  "STATUS_HEAVY_STRIKE": {
+    "zh_CN": {"string": "猛击"},
+    "zh_TW": {"string": "猛擊"},
+    "en_US": {"string": "Crush"},
+    "ja_JP": {"string": "猛撃"},
+    "ko_KR": {"string": "강타"},
+    "es_ES": {"string": "Triturar"}
+  },
+  "STATUS_STAGGER": {
+    "zh_CN": {"string": "失衡"},
+    "zh_TW": {"string": "失衡"},
+    "en_US": {"string": "Stagger"},
+    "ja_JP": {"string": "ブレイク"},
+    "ko_KR": {"string": "불균형"},
+    "es_ES": {"string": "Tambaleo"}
+  },
+  "STATUS_CORROSION": {
+    "zh_CN": {"string": "腐蚀"},
+    "zh_TW": {"string": "腐蝕"},
+    "en_US": {"string": "Corrosion"},
+    "ja_JP": {"string": "腐食"},
+    "ko_KR": {"string": "부식"},
+    "es_ES": {"string": "Corrosión"}
+  },
+  "STATUS_FROZEN": {
+    "zh_CN": {"string": "冻结"},
+    "zh_TW": {"string": "凍結"},
+    "en_US": {"string": "Solidification"},
+    "ja_JP": {"string": "凍結"},
+    "ko_KR": {"string": "동결"},
+    "es_ES": {"string": "Solidificación"}
+  },
+  "STATUS_CONDUCTING": {
+    "zh_CN": {"string": "导电"},
+    "zh_TW": {"string": "導電"},
+    "en_US": {"string": "Electrification"},
+    "ja_JP": {"string": "感電"},
+    "ko_KR": {"string": "감전"},
+    "es_ES": {"string": "Electrificación"}
+  },
+  "STATUS_BURNING": {
+    "zh_CN": {"string": "燃烧"},
+    "zh_TW": {"string": "燃燒"},
+    "en_US": {"string": "Combustion"},
+    "ja_JP": {"string": "燃焼"},
+    "ko_KR": {"string": "연소"},
+    "es_ES": {"string": "Combustión"}
+  },
+  "STATUS_SPELL_INFLICT": {
+    "zh_CN": {"string": "法术附着"},
+    "zh_TW": {"string": "法術附著"},
+    "en_US": {"string": "Arts Infliction"},
+    "ja_JP": {"string": "アーツ付着"},
+    "ko_KR": {"string": "아츠 부착"},
+    "es_ES": {"string": "Imposición de artes"}
+  },
+  "STATUS_SPELL_BURST": {
+    "zh_CN": {"string": "法术爆发"},
+    "zh_TW": {"string": "法術爆發"},
+    "en_US": {"string": "Arts Burst"},
+    "ja_JP": {"string": "アーツ爆発"},
+    "ko_KR": {"string": "아츠 폭발"},
+    "es_ES": {"string": "Ráfaga de artes"}
+  },
+  "STATUS_SPELL_ANOMALY": {
+    "zh_CN": {"string": "法术异常"},
+    "zh_TW": {"string": "法術異常"},
+    "en_US": {"string": "Arts Reaction"},
+    "ja_JP": {"string": "アーツ異常"},
+    "ko_KR": {"string": "아츠 이상"},
+    "es_ES": {"string": "Reacción a artes"}
+  },
+  "STATUS_SLOW": {
+    "zh_CN": {"string": "缓速"},
+    "zh_TW": {"string": "緩速"},
+    "en_US": {"string": "Slow"},
+    "ja_JP": {"string": "スロー"},
+    "ko_KR": {"string": "감속"},
+    "es_ES": {"string": "Ralentizar"}
+  },
+  "STATUS_BROKEN": {
+    "zh_CN": {"string": "碎冰"},
+    "zh_TW": {"string": "碎冰"},
+    "en_US": {"string": "Shatter"},
+    "ja_JP": {"string": "粉砕"},
+    "ko_KR": {"string": "쇄빙"},
+    "es_ES": {"string": "Quebrar"}
+  },
+  "STATUS_FOCUS": {
+    "zh_CN": {"string": "聚焦"},
+    "zh_TW": {"string": "聚焦"},
+    "en_US": {"string": "Focus"},
+    "ja_JP": {"string": "フォーカス"},
+    "ko_KR": {"string": "포커싱"},
+    "es_ES": {"string": "Enfoque"}
+  },
+  "STATUS_CONFINEMENT": {
+    "zh_CN": {"string": "囹圄"},
+    "zh_TW": {"string": "囹圄"},
+    "en_US": {"string": "Imprisonment"},
+    "ja_JP": {"string": "牢獄"},
+    "ko_KR": {"string": "구속"},
+    "es_ES": {"string": "Aprisionamiento"}
+  },
+  "STATUS_ORIGINIUM_CRYSTAL": {
+    "zh_CN": {"string": "源石结晶"},
+    "zh_TW": {"string": "源石結晶"},
+    "en_US": {"string": "Originium Crystal"},
+    "ja_JP": {"string": "源石結晶"},
+    "ko_KR": {"string": "오리지늄 결정"},
+    "es_ES": {"string": "Cristal de Originio"}
+  },
+  "STATUS_SINGING": {
+    "zh_CN": {"string": "演唱姿态"},
+    "zh_TW": {"string": "演唱姿態"},
+    "en_US": {"string": "Singing Stance"},
+    "ja_JP": {"string": "歌唱態勢"},
+    "ko_KR": {"string": "가창 자세"},
+    "es_ES": {"string": "Postura de canto"}
+  },
+  "STATUS_HIGH_SINGING": {
+    "zh_CN": {"string": "高歌姿态"},
+    "zh_TW": {"string": "高歌姿態"},
+    "en_US": {"string": "High Singing Stance"},
+    "ja_JP": {"string": "熱唱態勢"},
+    "ko_KR": {"string": "열창 자세"},
+    "es_ES": {"string": "Postura de canto intenso"}
+  },
+  "STACK_MOLTEN": {
+    "zh_CN": {"string": "熔火"},
+    "zh_TW": {"string": "熔火"},
+    "en_US": {"string": "Melting Flame"},
+    "ja_JP": {"string": "劫火"},
+    "ko_KR": {"string": "녹아내린 불꽃"},
+    "es_ES": {"string": "Fusión de llamas"}
+  },
+  "STACK_SHRED": {
+    "zh_CN": {"string": "破防层数"},
+    "zh_TW": {"string": "破防層數"},
+    "en_US": {"string": "Vulnerability Stacks"},
+    "ja_JP": {"string": "クラッシュ段階"},
+    "ko_KR": {"string": "방어 불능 스택"},
+    "es_ES": {"string": "Acumulaciones de Vulnerabilidad"}
+  },
+  "STACK_IRON_OATH": {
+    "zh_CN": {"string": "铁誓"},
+    "zh_TW": {"string": "鐵誓"},
+    "en_US": {"string": "The Steel Oath"},
+    "ja_JP": {"string": "鉄の誓い"},
+    "ko_KR": {"string": "철의 서약"},
+    "es_ES": {"string": "El juramento de acero"}
+  },
+  "STACK_BLOOD_WING": {
+    "zh_CN": {"string": "衔火血翼"},
+    "zh_TW": {"string": "銜火血翼"},
+    "en_US": {"string": "Firefang Vesperwings"},
+    "ja_JP": {"string": "燃える血の翼"},
+    "ko_KR": {"string": "타오르는 핏빛 날개"},
+    "es_ES": {"string": "Vesperalas de colmillo ígneo"}
+  },
+  "STACK_COMBO": {
+    "zh_CN": {"string": "连击"},
+    "zh_TW": {"string": "連擊"},
+    "en_US": {"string": "Link"},
+    "ja_JP": {"string": "リンク"},
+    "ko_KR": {"string": "연타"},
+    "es_ES": {"string": "Enlace"}
+  },
+  "STACK_MORALE": {
+    "zh_CN": {"string": "士气激昂"},
+    "zh_TW": {"string": "士氣激昂"},
+    "en_US": {"string": "Fervent Morale"},
+    "ja_JP": {"string": "士気高揚"},
+    "ko_KR": {"string": "사기 격양"},
+    "es_ES": {"string": "Moral ferviente"}
+  },
+  "STACK_WHIRLPOOL": {
+    "zh_CN": {"string": "涡流"},
+    "zh_TW": {"string": "渦流"},
+    "en_US": {"string": "Whirlpool"},
+    "ja_JP": {"string": "湍水"},
+    "ko_KR": {"string": "와류"},
+    "es_ES": {"string": "Remolino"}
+  },
+  "STACK_SEED": {
+    "zh_CN": {"string": "种子"},
+    "zh_TW": {"string": "種子"},
+    "en_US": {"string": "Seed"},
+    "ja_JP": {"string": "種子"},
+    "ko_KR": {"string": "씨앗"},
+    "es_ES": {"string": "Semilla"}
+  },
+  "STACK_TRACE": {
+    "zh_CN": {"string": "爪印斫痕"},
+    "zh_TW": {"string": "爪印斫痕"},
+    "en_US": {"string": "Razor Clawmark"},
+    "ja_JP": {"string": "染まる爪痕"},
+    "ko_KR": {"string": "늑대의 발톱"},
+    "es_ES": {"string": "Marca de garra afilada"}
+  },
+  "STACK_CHARGE": {
+    "zh_CN": {"string": "蓄力"},
+    "zh_TW": {"string": "蓄力"},
+    "en_US": {"string": "Charge"},
+    "ja_JP": {"string": "チャージ"},
+    "ko_KR": {"string": "차지"},
+    "es_ES": {"string": "Carga"}
+  },
+  "STACK_QINGTING_SWORD": {
+    "zh_CN": {"string": "青霆剑"},
+    "zh_TW": {"string": "青霆劍"},
+    "en_US": {"string": "Sunderblade"},
+    "ja_JP": {"string": "蒼雷剣"},
+    "ko_KR": {"string": "청뢰검"},
+    "es_ES": {"string": "Hoja de Ruptura"}
+  },
+  "BUFF_ATTACK_UP": {
+    "zh_CN": {"string": "攻击力提升"},
+    "zh_TW": {"string": "攻擊力提升"},
+    "en_US": {"string": "ATK Boost"},
+    "ja_JP": {"string": "攻撃力UP"},
+    "ko_KR": {"string": "공격력 증가"},
+    "es_ES": {"string": "Refuerzo de ATQ"}
+  },
+  "BUFF_CRIT_RATE_UP": {
+    "zh_CN": {"string": "暴击率提升"},
+    "zh_TW": {"string": "暴擊率提升"},
+    "en_US": {"string": "Critical Rate Boost"},
+    "ja_JP": {"string": "会心率UP"},
+    "ko_KR": {"string": "치명타 확률 증가"},
+    "es_ES": {"string": "Refuerzo de índice crít."}
+  },
+  "BUFF_CRIT_DMG_UP": {
+    "zh_CN": {"string": "暴击伤害提升"},
+    "zh_TW": {"string": "暴擊傷害提升"},
+    "en_US": {"string": "Critical DMG Boost"},
+    "ja_JP": {"string": "会心ダメージUP"},
+    "ko_KR": {"string": "치명타 피해 증가"},
+    "es_ES": {"string": "Refuerzo de DAÑ crítico"}
+  },
+  "BUFF_SHIELD": {
+    "zh_CN": {"string": "护盾"},
+    "zh_TW": {"string": "護盾"},
+    "en_US": {"string": "Shield"},
+    "ja_JP": {"string": "シールド"},
+    "ko_KR": {"string": "보호"},
+    "es_ES": {"string": "Escudo"}
+  },
+  "BUFF_HEAL": {
+    "zh_CN": {"string": "治疗"},
+    "zh_TW": {"string": "治療"},
+    "en_US": {"string": "HP Treatment"},
+    "ja_JP": {"string": "治療"},
+    "ko_KR": {"string": "치유"},
+    "es_ES": {"string": "Trat. de PV"}
+  },
+  "BUFF_SPEED_UP": {
+    "zh_CN": {"string": "移动速度提升"},
+    "zh_TW": {"string": "移動速度提升"},
+    "en_US": {"string": "Movement Speed Boost"},
+    "ja_JP": {"string": "移動速度UP"},
+    "ko_KR": {"string": "이동 속도 증가"},
+    "es_ES": {"string": "Refuerzo de VEL de movimiento"}
+  },
+  "BUFF_DAMAGE_UP": {
+    "zh_CN": {"string": "伤害提升"},
+    "zh_TW": {"string": "傷害提升"},
+    "en_US": {"string": "DMG Boost"},
+    "ja_JP": {"string": "ダメージUP"},
+    "ko_KR": {"string": "피해 증가"},
+    "es_ES": {"string": "Refuerzo de DAÑ"}
+  },
+  "BUFF_COLD_UP": {
+    "zh_CN": {"string": "寒冷伤害提升"},
+    "zh_TW": {"string": "寒冷傷害提升"},
+    "en_US": {"string": "Cryo DMG Boost"},
+    "ja_JP": {"string": "寒冷ダメージUP"},
+    "ko_KR": {"string": "냉기 피해 증가"},
+    "es_ES": {"string": "Refuerzo de DAÑ crio."}
+  },
+  "BUFF_BURN_UP": {
+    "zh_CN": {"string": "灼热伤害提升"},
+    "zh_TW": {"string": "灼熱傷害提升"},
+    "en_US": {"string": "Heat DMG Boost"},
+    "ja_JP": {"string": "灼熱ダメージUP"},
+    "ko_KR": {"string": "열기 피해 증가"},
+    "es_ES": {"string": "Refuerzo de DAÑ por calor"}
+  },
+  "BUFF_ELECTROMAGNETIC_UP": {
+    "zh_CN": {"string": "电磁伤害提升"},
+    "zh_TW": {"string": "電磁傷害提升"},
+    "en_US": {"string": "Electric DMG Boost"},
+    "ja_JP": {"string": "電磁ダメージUP"},
+    "ko_KR": {"string": "전기 피해 증가"},
+    "es_ES": {"string": "Refuerzo de DAÑ eléc."}
+  },
+  "BUFF_NATURAL_UP": {
+    "zh_CN": {"string": "自然伤害提升"},
+    "zh_TW": {"string": "自然傷害提升"},
+    "en_US": {"string": "Nature DMG Boost"},
+    "ja_JP": {"string": "自然ダメージUP"},
+    "ko_KR": {"string": "자연 피해 증가"},
+    "es_ES": {"string": "Refuerzo de DAÑ por natur."}
+  },
+  "BUFF_SPELL_UP": {
+    "zh_CN": {"string": "法术增幅"},
+    "zh_TW": {"string": "法術增幅"},
+    "en_US": {"string": "Arts Amp"},
+    "ja_JP": {"string": "アーツ増幅"},
+    "ko_KR": {"string": "아츠 증폭"},
+    "es_ES": {"string": "Amp de artes"}
+  },
+  "BUFF_PROTECTION": {
+    "zh_CN": {"string": "庇护"},
+    "zh_TW": {"string": "庇護"},
+    "en_US": {"string": "Protect"},
+    "ja_JP": {"string": "加護"},
+    "ko_KR": {"string": "비호"},
+    "es_ES": {"string": "Proteger"}
+  },
+  "DEBUFF_DEF_DOWN": {
+    "zh_CN": {"string": "防御力降低"},
+    "zh_TW": {"string": "防禦力降低"},
+    "en_US": {"string": "DEF Reduction"},
+    "ja_JP": {"string": "防御力ダウン"},
+    "ko_KR": {"string": "방어 감소"},
+    "es_ES": {"string": "Reducción de DEF"}
+  },
+  "DEBUFF_SPEED_DOWN": {
+    "zh_CN": {"string": "移动速度降低"},
+    "zh_TW": {"string": "移動速度降低"},
+    "en_US": {"string": "Movement Speed Reduction"},
+    "ja_JP": {"string": "移動速度ダウン"},
+    "ko_KR": {"string": "이동 속도 감소"},
+    "es_ES": {"string": "Reducción de VEL de movimiento"}
+  },
+  "DEBUFF_HEAL_DOWN": {
+    "zh_CN": {"string": "治疗效果降低"},
+    "zh_TW": {"string": "治療效果降低"},
+    "en_US": {"string": "Healing Reduction"},
+    "ja_JP": {"string": "治療効果ダウン"},
+    "ko_KR": {"string": "치유 효과 감소"},
+    "es_ES": {"string": "Reducción de Trat. de PV"}
+  },
+  "DEBUFF_WEAKEN": {
+    "zh_CN": {"string": "虚弱"},
+    "zh_TW": {"string": "虛弱"},
+    "en_US": {"string": "Weaken"},
+    "ja_JP": {"string": "弱体化"},
+    "ko_KR": {"string": "허약"},
+    "es_ES": {"string": "Debilitar"}
+  },
+  "MECH_VACUUM": {
+    "zh_CN": {"string": "真空"},
+    "zh_TW": {"string": "真空"},
+    "en_US": {"string": "Vacuum"},
+    "ja_JP": {"string": "真空"},
+    "ko_KR": {"string": "진공"},
+    "es_ES": {"string": "Vacío"}
+  },
+  "MECH_GRAVITY": {
+    "zh_CN": {"string": "重力场"},
+    "zh_TW": {"string": "重力場"},
+    "en_US": {"string": "Gravity Field"},
+    "ja_JP": {"string": "重力場"},
+    "ko_KR": {"string": "중력장"},
+    "es_ES": {"string": "Campo gravitacional"}
+  },
+  "MECH_FREEZE_FIELD": {
+    "zh_CN": {"string": "冰冻领域"},
+    "zh_TW": {"string": "冰凍領域"},
+    "en_US": {"string": "Cryo Field"},
+    "ja_JP": {"string": "凍結フィールド"},
+    "ko_KR": {"string": "빙결 영역"},
+    "es_ES": {"string": "Campo criogénico"}
+  },
+  "MECH_FIRE_FIELD": {
+    "zh_CN": {"string": "火焰领域"},
+    "zh_TW": {"string": "火焰領域"},
+    "en_US": {"string": "Flame Field"},
+    "ja_JP": {"string": "炎フィールド"},
+    "ko_KR": {"string": "화염 영역"},
+    "es_ES": {"string": "Campo de llamas"}
+  },
+  "MECH_LIGHTNING_FIELD": {
+    "zh_CN": {"string": "雷电领域"},
+    "zh_TW": {"string": "雷電領域"},
+    "en_US": {"string": "Lightning Field"},
+    "ja_JP": {"string": "雷電フィールド"},
+    "ko_KR": {"string": "번개 영역"},
+    "es_ES": {"string": "Campo eléctrico"}
+  },
+  "MECH_NATURE_FIELD": {
+    "zh_CN": {"string": "自然领域"},
+    "zh_TW": {"string": "自然領域"},
+    "en_US": {"string": "Nature Field"},
+    "ja_JP": {"string": "自然フィールド"},
+    "ko_KR": {"string": "자연 영역"},
+    "es_ES": {"string": "Campo natural"}
+  },
+  "MECH_BOMB": {
+    "zh_CN": {"string": "炸弹"},
+    "zh_TW": {"string": "炸彈"},
+    "en_US": {"string": "Explosive"},
+    "ja_JP": {"string": "爆弾"},
+    "ko_KR": {"string": "폭탄"},
+    "es_ES": {"string": "Explosivo"}
+  },
+  "MECH_RADAR": {
+    "zh_CN": {"string": "雷达"},
+    "zh_TW": {"string": "雷達"},
+    "en_US": {"string": "Radar"},
+    "ja_JP": {"string": "レーダー"},
+    "ko_KR": {"string": "레이더"},
+    "es_ES": {"string": "Radar"}
+  },
+  "MECH_TURRET": {
+    "zh_CN": {"string": "炮台"},
+    "zh_TW": {"string": "砲台"},
+    "en_US": {"string": "Turret"},
+    "ja_JP": {"string": "タレット"},
+    "ko_KR": {"string": "포탑"},
+    "es_ES": {"string": "Torreta"}
+  },
+  "MECH_SUPPORT_CRYSTAL": {
+    "zh_CN": {"string": "支援晶体"},
+    "zh_TW": {"string": "支援晶體"},
+    "en_US": {"string": "Auxiliary Crystal"},
+    "ja_JP": {"string": "サポートクリスタル"},
+    "ko_KR": {"string": "지원 결정체"},
+    "es_ES": {"string": "Cristal auxiliar"}
+  },
+  "PLACE_THUNDER_SPEAR": {
+    "zh_CN": {"string": "放置雷枪"},
+    "zh_TW": {"string": "放置雷槍"},
+    "en_US": {"string": "Place Thunderlance"},
+    "ja_JP": {"string": "雷槍設置"},
+    "ko_KR": {"string": "썬더랜스 설치"},
+    "es_ES": {"string": "Colocar Lanzatrueno"}
+  },
+  "REMOVE_THUNDER_SPEAR": {
+    "zh_CN": {"string": "召回雷枪"},
+    "zh_TW": {"string": "召回雷槍"},
+    "en_US": {"string": "Recall Thunderlance"},
+    "ja_JP": {"string": "雷槍回収"},
+    "ko_KR": {"string": "썬더랜스 회수"},
+    "es_ES": {"string": "Recuperar Lanzatrueno"}
+  },
+  "CONSUME_ALL": {
+    "zh_CN": {"string": "消耗全部"},
+    "zh_TW": {"string": "消耗全部"},
+    "en_US": {"string": "Consume All"},
+    "ja_JP": {"string": "すべて消費"},
+    "ko_KR": {"string": "모두 소모"},
+    "es_ES": {"string": "Consumir todo"}
+  },
+  "CONSUME_STACK": {
+    "zh_CN": {"string": "消耗层数"},
+    "zh_TW": {"string": "消耗層數"},
+    "en_US": {"string": "Consume Stacks"},
+    "ja_JP": {"string": "段階消費"},
+    "ko_KR": {"string": "스택 소모"},
+    "es_ES": {"string": "Consumir acumulaciones"}
+  },
+  "CLEAR_ATTACH": {
+    "zh_CN": {"string": "清除元素附着"},
+    "zh_TW": {"string": "清除元素附著"},
+    "en_US": {"string": "Clear Elemental Inflictions"},
+    "ja_JP": {"string": "元素付着解除"},
+    "ko_KR": {"string": "원소 부착 제거"},
+    "es_ES": {"string": "Eliminar imposiciones elementales"}
+  },
+  "CLEAR_STATUS": {
+    "zh_CN": {"string": "清除异常状态"},
+    "zh_TW": {"string": "清除異常狀態"},
+    "en_US": {"string": "Clear Statuses"},
+    "ja_JP": {"string": "異常状態解除"},
+    "ko_KR": {"string": "이상 상태 제거"},
+    "es_ES": {"string": "Eliminar estados"}
+  },
+  "CLEAR_COLD": {
+    "zh_CN": {"string": "清除寒冷附着"},
+    "zh_TW": {"string": "清除寒冷附著"},
+    "en_US": {"string": "Clear Cryo Infliction"},
+    "ja_JP": {"string": "寒冷付着解除"},
+    "ko_KR": {"string": "냉기 부착 제거"},
+    "es_ES": {"string": "Eliminar Imp. crio."}
+  },
+  "CLEAR_NATURAL": {
+    "zh_CN": {"string": "清除自然附着"},
+    "zh_TW": {"string": "清除自然附著"},
+    "en_US": {"string": "Clear Nature Infliction"},
+    "ja_JP": {"string": "自然付着解除"},
+    "ko_KR": {"string": "자연 부착 제거"},
+    "es_ES": {"string": "Eliminar Imp. de nat."}
+  },
+  "CLEAR_FROZEN": {
+    "zh_CN": {"string": "消耗冻结"},
+    "zh_TW": {"string": "消耗凍結"},
+    "en_US": {"string": "Consume Solidification"},
+    "ja_JP": {"string": "凍結消費"},
+    "ko_KR": {"string": "동결 소모"},
+    "es_ES": {"string": "Consumir Solidificación"}
+  },
+  "TRIGGER_LINK": {
+    "zh_CN": {"string": "触发连携技"},
+    "zh_TW": {"string": "觸發連攜技"},
+    "en_US": {"string": "Trigger Combo Skill"},
+    "ja_JP": {"string": "連携技発動"},
+    "ko_KR": {"string": "연계 스킬 발동"},
+    "es_ES": {"string": "Activar habilidad de combo"}
+  },
+  "TRIGGER_ADDITIONAL": {
+    "zh_CN": {"string": "触发额外攻击"},
+    "zh_TW": {"string": "觸發額外攻擊"},
+    "en_US": {"string": "Trigger Additional Attack"},
+    "ja_JP": {"string": "追加攻撃発動"},
+    "ko_KR": {"string": "추가 공격 발동"},
+    "es_ES": {"string": "Activar ataque adicional"}
+  },
+  "TRIGGER_EXPLOSION": {
+    "zh_CN": {"string": "触发爆炸"},
+    "zh_TW": {"string": "觸發爆炸"},
+    "en_US": {"string": "Trigger Explosion"},
+    "ja_JP": {"string": "爆発発動"},
+    "ko_KR": {"string": "폭발 발동"},
+    "es_ES": {"string": "Activar explosión"}
+  },
+  "TRIGGER_HEAL": {
+    "zh_CN": {"string": "触发治疗"},
+    "zh_TW": {"string": "觸發治療"},
+    "en_US": {"string": "Trigger HP Treatment"},
+    "ja_JP": {"string": "治療発動"},
+    "ko_KR": {"string": "치유 발동"},
+    "es_ES": {"string": "Activar Trat. de PV"}
+  },
+  "TRIGGER_SHIELD": {
+    "zh_CN": {"string": "触发护盾"},
+    "zh_TW": {"string": "觸發護盾"},
+    "en_US": {"string": "Trigger Shield"},
+    "ja_JP": {"string": "シールド発動"},
+    "ko_KR": {"string": "보호막 발동"},
+    "es_ES": {"string": "Activar escudo"}
+  },
+  "TRIGGER_REPEAT_EFFECT": {
+    "zh_CN": {"string": "再次施加同类效果"},
+    "zh_TW": {"string": "再次施加同類效果"},
+    "en_US": {"string": "Reapply Same Effect"},
+    "ja_JP": {"string": "同種効果を再付与"},
+    "ko_KR": {"string": "동일 효과 재부여"},
+    "es_ES": {"string": "Volver a aplicar el mismo efecto"}
+  }
+}

@@ -81,12 +81,13 @@ When adding or modifying an ok-script task:
 
 ## Lang JSON Convention (assets/lang/)
 
-`assets/lang/` language JSONs are a separate, parallel system to gettext — use for **OCR matching text** only. Not the same as `i18n/` catalogs.
+`assets/lang/` language JSONs are a separate, parallel system to gettext. They hold task OCR match text and tracked localized business-data modules; they are not the same as `i18n/` catalogs.
 
 - **New keys use semantic names** (e.g. `inst_title`, `inst_delivery_targets`), not the legacy `k_<md5前8位>` hash style.
 - Legacy `k_*` hash keys stay untouched — no migration needed; both styles coexist.
 - Each key has 6 locale nodes (`zh_CN`/`zh_TW`/`en_US`/`ja_JP`/`ko_KR`/`es_ES`), formatted `{"string": "..."}`, `{"pattern": "..."}`, or `{"terms": [...]}` (node types: `string` literal, `pattern` regex, `terms` term list).
 - Code reads via `self.lang.<模块名>.<语义化key>`, auto-selected by the current UI language (see `src/data/lang/`).
-- **lang JSON holds only OCR match text** (either `k_*` hash or semantic keys). UI explanations (e.g. `instructions` rich text) do NOT go in lang JSON — use `self.tr("中文msgid")` through ok gettext: msgid into `i18n/*/LC_MESSAGES/ok.po` (msgid must match the code string verbatim, including full-width punctuation / `{placeholders}`), then `task_i18n_helper.py compile`.
+- **Tracked full-locale JSON belongs in `assets/lang/`**: if each top-level business key directly contains complete locale nodes, keep the tracked file at `assets/lang/<module>.json`, even when it primarily serves a plugin or data query. Keep canonical/structured business data in `assets/data/`. Local generated files ignored by `.gitignore` retain their existing paths and ignored status.
+- **Task lang modules hold only OCR match text** (either `k_*` hash or semantic keys). Pure localized data modules such as `effect_names` and `yingtuo_stages` may serve plugins/data queries and do not need to be loaded by task OCR code. UI explanations (e.g. `instructions` rich text) do NOT go in lang JSON — use `self.tr("中文msgid")` through ok gettext: msgid into `i18n/*/LC_MESSAGES/ok.po` (msgid must match the code string verbatim, including full-width punctuation / `{placeholders}`), then `task_i18n_helper.py compile`.
 - **Minimal principle**: emoji (`📍` `⚙️` `🖱️`), tree chars (`└─`/`├─`), HTML tags/colors that need no translation stay concatenated in code (e.g. `"📍 " + self.tr("滑索配置说明")`); only translatable plain text goes into i18n data (msgid/msgstr exclude emoji and decoration).
 - **Dynamic key-name translation**: config key names read dynamically in `instructions` (delivery points / target names / deposit-point names) must also pass through `self.tr(键名)` for display; msgid goes into ok.po (zh_TW in Traditional; other locales may keep Simplified for cross-referencing the config JSON key name). Look up config values with the raw key, display with the translated key (see `src/tasks/mixin/zip_line_mixin.py`).

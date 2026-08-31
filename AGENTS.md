@@ -71,7 +71,8 @@ gh pr edit <n> --body $body
 
 - **新增 key 用语义化命名**（如 `inst_title`），不要沿用旧的 `k_<md5前8位>` hash 风格；旧 `k_*` 保持不动，两种风格可共存。
 - 每个 key 下为 6 种语言节点（`zh_CN`/`zh_TW`/`en_US`/`ja_JP`/`ko_KR`/`es_ES`），格式 `{"string": "..."}` 或 `{"pattern": "..."}`（详见 skill 的节点类型说明）。
-- **lang JSON 只放 OCR 匹配文本**。UI 说明（如 `instructions` 富文本）用 `self.tr("中文msgid")` 走 gettext，msgid 写入 `i18n/*/LC_MESSAGES/ok.po` 后 `task_i18n_helper.py compile`。
+- **受版本控制的完整多语言键 JSON 统一放在 `assets/lang/`**：凡顶层业务 key 下直接包含完整 locale 节点的已跟踪文件，即使主要供插件或数据查询使用，也归入 `assets/lang/<module>.json`；`assets/data/` 只保存 canonical/结构化业务数据。`.gitignore` 中的本地生成数据保持原路径和忽略状态，不因本约定迁移或纳入版本控制。数据型 lang 模块不强制接入任务 OCR 运行时。
+- **任务模块的 lang JSON 只放 OCR 匹配文本**；`effect_names`、`yingtuo_stages` 等纯多语言数据模块可供插件/数据查询使用，但不承载 UI 说明。UI 说明（如 `instructions` 富文本）用 `self.tr("中文msgid")` 走 gettext，msgid 写入 `i18n/*/LC_MESSAGES/ok.po` 后 `task_i18n_helper.py compile`。
 - **最小原则**：emoji（`📍` `⚙️` `🖱️` 等）、`└─`/`├─`、HTML 标签/颜色等无需翻译的内容留在代码里拼，只把需翻译的纯文本放进 i18n 数据。
 - **动态键名翻译**：`instructions` 里动态读取的配置键名显示时经 `self.tr(键名)` 翻译；查配置值用原始键名，显示用翻译后的键名（见 `src/tasks/mixin/zip_line_mixin.py`）。
 
