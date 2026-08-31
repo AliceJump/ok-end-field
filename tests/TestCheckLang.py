@@ -1,17 +1,34 @@
-import os
+import ast
 import re
 import unittest
 from pathlib import Path
 
 import json5
+from src.data.lang import get_supported_locales
 
 SOURCE_ROOT = Path("src")
 LANG_ROOT = Path("assets/lang")
 
-PATTERN = re.compile(r"self\.lang\.([a-zA-Z0-9_]+)\.(k_[a-zA-Z0-9_]+)")
+SUPPORTED_LOCALES = get_supported_locales()
+NODE_TYPES = {"string", "pattern", "terms"}
 
 
-SUPPORTED_LOCALES = ["zh_CN", "zh_TW"]
+class LangReferenceVisitor(ast.NodeVisitor):
+    def __init__(self):
+        self.references = []
+
+    def visit_Attribute(self, node):
+        module = node.value
+        root = module.value if isinstance(module, ast.Attribute) else None
+        if (
+            isinstance(module, ast.Attribute)
+            and isinstance(root, ast.Attribute)
+            and root.attr == "lang"
+            and isinstance(root.value, ast.Name)
+            and root.value.id == "self"
+        ):
+            self.references.append((module.attr, node.attr))
+        self.generic_visit(node)
 
 
 class LangTestCase(unittest.TestCase):
@@ -23,12 +40,18 @@ class LangTestCase(unittest.TestCase):
     # =========================
     def find_lang_references(self, file_path: Path):
         try:
-            text = file_path.read_text(encoding="utf-8")
-        except Exception:
-            print(f"[READ FAIL] {file_path}")
-            return []
+            text = file_path.read_text(encoding="utf-8-sig")
+        except OSError as exc:
+            self.fail(f"[READ FAIL] {file_path}: {exc}")
 
-        refs = PATTERN.findall(text)
+        try:
+            tree = ast.parse(text, filename=str(file_path))
+        except SyntaxError as exc:
+            self.fail(f"[PARSE FAIL] {file_path}: {exc}")
+
+        visitor = LangReferenceVisitor()
+        visitor.visit(tree)
+        refs = visitor.references
 
         if refs:
             print(f"[SCAN] {file_path} -> {len(refs)} refs")
@@ -82,17 +105,13 @@ class LangTestCase(unittest.TestCase):
     # 核心检查逻辑
     # =========================
     def collect_missing(self):
-        # 完全缺失（FAIL）
         """
-        Scan source files for language references and collect missing-file and fully missing-key errors.
+        Scan source files for language references and collect missing-file or active-locale key errors.
 
         Returns:
-            list[str]: Error messages for language files or keys missing from all supported locales.
+            list[str]: Error messages for language files or keys missing from any active locale.
         """
         missing = []
-
-        # 部分缺失（WARNING）
-        partial_missing = []
 
         # 去重
         seen = set()
@@ -100,92 +119,65 @@ class LangTestCase(unittest.TestCase):
         file_count = 0
         ref_count = 0
 
-        for root, _, files in os.walk(SOURCE_ROOT):
-            for name in files:
-                if not name.endswith((".java", ".kt", ".py", ".js", ".ts")):
+        for file_path in SOURCE_ROOT.rglob("*.py"):
+            file_count += 1
+
+            refs = self.find_lang_references(file_path)
+
+            for lang_group, key in refs:
+                ref_count += 1
+
+                print(f"  -> checking {lang_group}.{key}")
+
+                # duplicate skip
+                ref_id = (str(file_path), lang_group, key)
+
+                if ref_id in seen:
+                    print("     (SKIP duplicate)")
                     continue
 
-                file_path = Path(root) / name
-                file_count += 1
+                seen.add(ref_id)
 
-                refs = self.find_lang_references(file_path)
+                # load unified lang json
+                data_map = self.load_unified_lang_json(lang_group)
 
-                for lang_group, key in refs:
-                    ref_count += 1
+                # missing file
+                if data_map is None:
+                    msg = f"[MISSING_FILE] {file_path} -> {lang_group}.json"
 
-                    print(f"  -> checking {lang_group}.{key}")
+                    print("     [X]", msg)
 
-                    # =========================
-                    # duplicate skip
-                    # =========================
-                    ref_id = (str(file_path), lang_group, key)
+                    missing.append(msg)
 
-                    if ref_id in seen:
-                        print("     (SKIP duplicate)")
-                        continue
+                    continue
 
-                    seen.add(ref_id)
+                missing_langs = []
 
-                    # =========================
-                    # load unified lang json
-                    # =========================
-                    data_map = self.load_unified_lang_json(lang_group)
+                # check all active locale entries
+                for locale_code in SUPPORTED_LOCALES:
+                    lang_data = data_map.get(locale_code)
 
-                    # =========================
-                    # missing file
-                    # =========================
-                    if data_map is None:
-                        msg = f"[MISSING_FILE] {file_path} -> {lang_group}.json"
+                    if not isinstance(lang_data, dict):
+                        missing_langs.append(locale_code)
 
-                        print("     [X]", msg)
-
-                        missing.append(msg)
+                        print(f"     [!] MISSING locale {locale_code}")
 
                         continue
 
-                    found_langs = []
-                    missing_langs = []
+                    if key in lang_data:
+                        print(f"     [OK] FOUND in {locale_code}")
+                    else:
+                        print(f"     [!] MISSING key in {locale_code}")
 
-                    # =========================
-                    # check all locale entries
-                    # =========================
-                    for locale_code in SUPPORTED_LOCALES:
-                        lang_data = data_map.get(locale_code)
+                        missing_langs.append(locale_code)
 
-                        if not isinstance(lang_data, dict):
-                            missing_langs.append(locale_code)
-
-                            print(f"     [!] MISSING locale {locale_code}")
-
-                            continue
-
-                        if key in lang_data:
-                            print(f"     [OK] FOUND in {locale_code}")
-
-                            found_langs.append(locale_code)
-
-                        else:
-                            print(f"     [!] MISSING key in {locale_code}")
-
-                            missing_langs.append(locale_code)
-
-                    # =========================
-                    # missing in ALL languages
-                    # -> FAIL
-                    # =========================
-                    if not found_langs:
-                        msg = f"[MISSING_KEY] {file_path} -> {lang_group}.{key} (missing in ALL languages)"
-
-                        print("     [X]", msg)
-
-                        missing.append(msg)
-
-                    # =========================
-                    # partial missing
-                    # -> WARNING ONLY
-                    # =========================
-                    elif missing_langs:
-                        partial_missing.append((file_path, lang_group, key, missing_langs))
+                if missing_langs:
+                    msg = (
+                        f"[MISSING_KEY] {file_path} -> {lang_group}.{key} "
+                        f"(missing in {', '.join(missing_langs)})"
+                    )
+                    print("     [X]", msg)
+                    missing.append(msg)
 
         # =========================
         # SUMMARY
@@ -195,18 +187,6 @@ class LangTestCase(unittest.TestCase):
         print(f"files scanned: {file_count}")
         print(f"refs found: {ref_count}")
         print(f"missing errors: {len(missing)}")
-        print(f"partial missing: {len(partial_missing)}")
-
-        # =========================
-        # PARTIAL MISSING SUMMARY
-        # =========================
-        if partial_missing:
-            print("\n========== PARTIAL MISSING ==========")
-
-            for file_path, lang_group, key, missing_langs in partial_missing:
-                print(f"\n[PARTIAL] {file_path} -> {lang_group}.{key}")
-
-                print(f"  missing languages: {missing_langs}")
 
         # =========================
         # FULL MISSING SUMMARY
@@ -226,8 +206,55 @@ class LangTestCase(unittest.TestCase):
 
         missing = self.collect_missing()
 
-        # 只有完全缺失才 FAIL
         self.assertEqual(missing, [], msg="\n".join(missing))
+
+    def test_lang_node_schema_is_valid(self):
+        errors = []
+        for file_path in sorted(LANG_ROOT.glob("*.json")):
+            try:
+                raw = json5.loads(file_path.read_text(encoding="utf-8"))
+            except Exception as exc:
+                errors.append(f"{file_path}: {exc}")
+                continue
+
+            if not isinstance(raw, dict):
+                errors.append(f"{file_path}: top-level value must be an object")
+                continue
+
+            for key, locale_dict in raw.items():
+                if not isinstance(locale_dict, dict):
+                    errors.append(f"{file_path}:{key}: locale map must be an object")
+                    continue
+                for locale, node in locale_dict.items():
+                    if not isinstance(node, dict):
+                        errors.append(f"{file_path}:{key}:{locale}: node must be an object")
+                        continue
+                    present = NODE_TYPES.intersection(node)
+                    unknown = set(node).difference(NODE_TYPES)
+                    if len(present) != 1 or unknown:
+                        errors.append(
+                            f"{file_path}:{key}:{locale}: expected exactly one node type, "
+                            f"found {sorted(node)}"
+                        )
+                        continue
+                    node_type = next(iter(present))
+                    value = node[node_type]
+                    if node_type in {"string", "pattern"}:
+                        if not isinstance(value, str) or not value:
+                            errors.append(f"{file_path}:{key}:{locale}: invalid {node_type}")
+                        elif node_type == "pattern":
+                            try:
+                                re.compile(value)
+                            except re.error as exc:
+                                errors.append(f"{file_path}:{key}:{locale}: invalid regex: {exc}")
+                    elif not (
+                        isinstance(value, list)
+                        and value
+                        and all(isinstance(term, str) and term for term in value)
+                    ):
+                        errors.append(f"{file_path}:{key}:{locale}: invalid terms")
+
+        self.assertEqual(errors, [], msg="\n".join(errors))
 
 
 if __name__ == "__main__":

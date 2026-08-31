@@ -25,9 +25,9 @@ run: 'pip install --only-binary :all: -r requirements-docs.txt'
 - **Always validate YAML before pushing**, in two separate steps:
   1. Generic YAML syntax first:
   ```powershell
-  uv run python -c "import yaml; yaml.safe_load(open('<file>', encoding='utf-8')); print('OK')"
+  uv run --locked --with PyYAML python -c "import yaml; yaml.safe_load(open('<file>', encoding='utf-8')); print('OK')"
   ```
-  2. GitHub Actions structure/expressions/contexts (covers undefined `matrix.os`/`matrix.arch` and similar): run `actionlint .github/workflows/*.yml` or an equivalent validator. Generic `yaml.safe_load` alone cannot catch workflow-structure errors.
+  2. GitHub Actions structure/expressions/contexts (covers undefined `matrix.os`/`matrix.arch` and similar): run `actionlint .github/workflows/*.yml` or an equivalent validator. Verify `actionlint` is installed before invoking it; do not silently skip this step because generic `yaml.safe_load` cannot catch workflow-structure errors.
 
 ## 2. Diagnosing "workflow file issue" / jobs: 0
 
