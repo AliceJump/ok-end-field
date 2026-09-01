@@ -872,7 +872,7 @@
         },
         {
             "id": 184,
-            "file_name": "images/8.png",
+            "file_name": "images/5.png",
             "width": 1920,
             "height": 1080
         },
@@ -1046,19 +1046,25 @@
         },
         {
             "id": 221,
-            "file_name": "images/5.png",
-            "width": 1920,
-            "height": 1080
-        },
-        {
-            "id": 222,
             "file_name": "images/6.png",
             "width": 1920,
             "height": 1080
         },
         {
-            "id": 223,
+            "id": 222,
             "file_name": "images/7.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 223,
+            "file_name": "images/8.png",
+            "width": 1920,
+            "height": 1080
+        },
+        {
+            "id": 224,
+            "file_name": "images/0.png",
             "width": 1920,
             "height": 1080
         }
@@ -3980,6 +3986,19 @@
             "iscrowd": 0
         },
         {
+            "id": 215,
+            "image_id": 224,
+            "category_id": 265,
+            "bbox": [
+                156,
+                927,
+                54,
+                46
+            ],
+            "area": 2484,
+            "iscrowd": 0
+        },
+        {
             "id": 216,
             "image_id": 128,
             "category_id": 131,
@@ -6032,6 +6051,11 @@
         {
             "id": 264,
             "name": "battle_icon_mi_fu",
+            "supercategory": ""
+        },
+        {
+            "id": 265,
+            "name": "battle_icon_camille",
             "supercategory": ""
         }
     ]
