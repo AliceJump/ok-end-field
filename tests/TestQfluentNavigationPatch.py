@@ -15,14 +15,15 @@ None，启动即抛 AttributeError。
 隔离策略
 --------
 不构造 Qt 窗口，只安装补丁后用假 panel 对象调用被打补丁的方法，覆盖
-当前项为 None、指示项为 None、指示项存在三条路径。
+当前项为 None、指示项为 None、指示项存在三条路径；测试类结束后恢复方法和
+安装标记，并由后置哨兵测试验证，避免污染单进程 discovery 的后续模块。
 """
 
 import unittest
 
 from qfluentwidgets.components.navigation.navigation_panel import NavigationPanel
 
-from src.patches.qfluent_navigation_patch import install_qfluent_navigation_patch
+from src.patches import qfluent_navigation_patch
 
 
 class _FakeIndicator:
@@ -59,10 +60,21 @@ class _FakePanel:
 
 
 class TestQfluentNavigationPatch(unittest.TestCase):
+    _cleanup_completed = False
+
     @classmethod
     def setUpClass(cls):
-        cls._original = NavigationPanel._onIndicatorAniFinished
-        install_qfluent_navigation_patch()
+        cls._original_method = NavigationPanel._onIndicatorAniFinished
+        cls._original_flag = qfluent_navigation_patch._PATCH_INSTALLED
+        cls.addClassCleanup(cls._assert_and_restore_patch_state)
+        qfluent_navigation_patch._PATCH_INSTALLED = False
+        qfluent_navigation_patch.install_qfluent_navigation_patch()
+
+    @classmethod
+    def _assert_and_restore_patch_state(cls):
+        NavigationPanel._onIndicatorAniFinished = cls._original_method
+        qfluent_navigation_patch._PATCH_INSTALLED = cls._original_flag
+        cls._cleanup_completed = True
 
     def test_no_crash_when_indicator_item_none(self):
         # 窗口未显示时 _findIndicatorItem 返回 None，原方法会抛 AttributeError
@@ -83,6 +95,19 @@ class TestQfluentNavigationPatch(unittest.TestCase):
         panel = _FakePanel(None, indicator_item=_FakeWidget())
         NavigationPanel._onIndicatorAniFinished(panel)
         self.assertFalse(panel.indicator.hidden)
+
+
+class TestZQfluentNavigationPatchStateRestored(unittest.TestCase):
+    def test_global_state_restored_after_patch_tests(self):
+        self.assertTrue(TestQfluentNavigationPatch._cleanup_completed)
+        self.assertIs(
+            NavigationPanel._onIndicatorAniFinished,
+            TestQfluentNavigationPatch._original_method,
+        )
+        self.assertEqual(
+            qfluent_navigation_patch._PATCH_INSTALLED,
+            TestQfluentNavigationPatch._original_flag,
+        )
 
 
 if __name__ == "__main__":

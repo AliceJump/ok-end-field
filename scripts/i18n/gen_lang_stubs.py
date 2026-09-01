@@ -32,6 +32,10 @@ INIT_FILE = REPO_ROOT / "src" / "data" / "lang" / "__init__.py"
 
 BASE_LOCALE = "zh_CN"
 LOCALE_ORDER = ["zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES"]
+DATA_ONLY_MODULES = {
+    "effect_names",
+    "yingtuo_stages",
+}
 
 
 def pascal_case(name: str) -> str:
@@ -103,6 +107,8 @@ def main() -> int:
     modules: list[tuple[str, dict]] = []
     failed = False
     for f in sorted(LANG_ROOT.glob("*.json")):
+        if f.stem in DATA_ONLY_MODULES:
+            continue
         try:
             with f.open(encoding="utf-8") as fh:
                 data = json.load(fh)
@@ -133,33 +139,36 @@ def main() -> int:
         "string 节点 -> str（运行时按当前 UI 语言取值，docstring 显示基准值）；",
         "pattern 节点 -> re.Pattern[str]（docstring 显示文本）。",
         '"""',
+        "",
         "import re",
         "from typing import TYPE_CHECKING",
         "",
         "if TYPE_CHECKING:",
         "    from . import LangModule as _LangModuleBase",
+        "",
         "    _LangModuleBaseT = _LangModuleBase",
         "else:",
         "    _LangModuleBaseT = object",
+        "",
         "",
     ]
 
     for module_name, data in modules:
         block, skipped = build_module_class(module_name, data)
-        parts.append(block)
-        parts.append("")
+        parts.append(block.rstrip())
+        parts.extend(("", ""))
         if skipped:
             failed = True
 
-    parts.append("")
     parts.append("class _LangAccessorTyped:")
     parts.append('    """self.lang 的类型化声明（仅类型提示，运行时由 __getattr__ 动态加载）"""')
+    parts.append("")
     for module_name, _ in modules:
         cls = pascal_case(module_name) + "Module"
         parts.append(f"    {module_name}: {cls}")
     parts.append("")
 
-    TYPED_OUT.write_text("\n".join(parts), encoding="utf-8")
+    TYPED_OUT.write_text("\n".join(parts).rstrip() + "\n", encoding="utf-8")
     print(f"[ok] 已生成 {TYPED_OUT.relative_to(REPO_ROOT)}（{len(modules)} 个模块）")
 
     # 幂等更新 __init__.py：LangAccessor 继承 _LangAccessorTyped

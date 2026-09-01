@@ -1,115 +1,19 @@
-# AGENTS.md
+# Skills
 
-项目级强制规则，每次会话开始必须读取并遵守。如果工作中发现此文档所述的内容已过时，需要主动向用户确认是否要修改。
+本文件只负责技能发现。遇到下列场景时，先读取对应技能文件并按其中流程执行。
 
-## 提交与 PR 强制规则（最高优先级）
-
-### PowerShell 双引号字符串中的反引号（必踩坑）
-
-在 PowerShell **双引号字符串里**，反引号 `` ` `` 是**转义字符**而非字面量，规则：
-
-- 变量展开：`` `$HOME `` 保留字面量不展开，而 `` $HOME `` 会展开变量；
-- 合法转义序列：如 `` `a ``（0x07）、`` `r ``（CR）、`` `n ``（LF）会变成控制字符；
-- 未知转义序列：如 `` `s `` 会移除反引号、保留原字符（例如 `` "Use `src` END" `` 会变成 `` Use src END ``）。
-
-给 `gh pr create/edit --body "..."` 等传 Markdown（含代码块反引号）时：
-
-- **必须用单引号字符串**（`'...'` 或 `@'...'@` here-string），单引号内反引号是字面量（`` 'Use `src` END' `` → `` Use `src` END ``），`gh pr edit --body $body` 传变量也可；
-- **禁止用双引号传含反引号的 body**，反引号会被移除或变控制字符（如 `` `assets `` 里的 `` `a `` 变成 `^G`），造成 PR 描述格式错乱；
-- 已踩坑案例：已有个别 PR body 中 `` `src/...` `` 全部丢失或变 `^G`，此时需 `gh pr edit` 重新提交。
-
-**PR 创建后必须自检**——创建时把 body 存到本地变量/文件，创建后用 `gh pr view` 拉取远端 body 与本地**逐字比较**（不要只 `Select-String` 查反引号，无法发现控制字符）：
-
-```powershell
-# 创建前：$body 已在变量中
-gh pr create --base master --head "$BRANCH" --title "..." --body $body
-gh pr view <n> --json body --jq '.body' > remote_body.md
-$body > local_body.md
-git diff --no-index local_body.md remote_body.md   # 无输出 = 一致
-```
-
-若出现 `\xxx\` 或 `^G` 等异常字符，用单引号 here-string 重写 body：
-
-```powershell
-$body = @'
-...正文（含 `反引号`）...
-'@
-gh pr edit <n> --body $body
-```
-
-### 提交检查清单
-
-提交或创建 PR 前依次确认：
-
-1. PR/commit body 含代码反引号时用单引号 here-string，且创建后自检通过（见上）。
-2. 不提交敏感信息（token、密钥、私钥）。`.pem`、`RELEASE_APP_PRIVATE_KEY` 等只进 Secrets 不进仓库。
-3. 配置键名修改走 `.agents/skills/ok-config-migration` 严格顺序。
-4. 中文 commit message 与仓库风格一致（`fix:`/`feat:`/`docs:`/`refactor:`/`ci:` 前缀）。
-
-## 配置键名修改（重要）
-
-`configs/` 目录下的 JSON 是用户运行数据，修改 `default_config` 中的配置键名时必须遵守严格顺序（迁移表 → 迁移测试 → i18n → 文档 → 恢复），否则会丢失用户配置。**完整流程见 `.agents/skills/ok-config-migration`**。要点：
-
-1. **先加迁移表，再改键名**：同一任务类中先加 `config_key_migrations = {旧键: 新键}`，再改 `default_config` / 键名常量 / 键生成函数，同一提交完成。
-2. **迁移表生效前禁止运行程序**：先运行迁移测试（`tests/TestZipLineConfig.py` 等实际迁移测试），测试断言旧键值已迁移到新键（被测函数为 `migrate_config_file_keys(<任务名>, migrations)`，定义于 `src/core/config_migration.py`；迁移表见 `src/tasks/onetime/DeliveryTask.py`）。
-3. **同步 i18n**：同步全部 `i18n/*/LC_MESSAGES/ok.po` 的 msgid 并运行 `.agents/skills/ok-script-i18n/scripts/task_i18n_helper.py compile`。
-4. **同步文档**：搜索 `docs/` 更新旧键名。
-5. **配置丢失可恢复**：`logs/ok-script.log` 的 `Config:init self.config = {...}` 保存完整历史配置，可从最后一次含旧键名的记录恢复。
-
-## 运行环境
-
-- **Python**：依赖通过 uv 管理，`uv sync` 同步仓库本地 `.venv`，用 `uv run python ...` 执行代码（见 `.agents/skills/use-local-venv`）。
-- **依赖定义**：`pyproject.toml` 和 `uv.lock` 为唯一依赖指定源，而`requirements.txt` 为发布流水线的派生产物，勿手改。
-- **测试**：`scripts/testing/run_tests.ps1`（经 `uv run`）或直接运行 `uv run python -m unittest discover -s tests`。
-- **日志**：`logs/ok-script.log`（配置历史、任务执行、OCR 均可在此排查）；历史日志位于同目录的 `ok-script.YYYY-MM-DD.log` 文件中。
-- **格式化**：先后运行 `uv run ruff check --fix .` 和 `uv run ruff format .` 即可格式化代码，注意屏蔽上述命令的 stdout 输出以免污染你的上下文。若报错 ruff 未安装，可运行 `uv sync --group dev` 进行安装。
-
-## 代码风格
-
-- 任务类基于 ok-script：`BaseTask` / `TriggerTask`，见 `.agents/skills/ok-script-tasks`。
-- 任务字符串国际化见 `.agents/skills/ok-script-i18n`（含 `assets/lang/` lang JSON 约定）。
-- OCR 语言资源与 OCR 混淆补丁见 `.agents/skills/ok-script-ocr-lang`（`assets/lang/*.json` schema、active locale、`ocr_text_fix.json`）。
-- 生成任务代码见 `.agents/skills/ok-script-codegen`（含本项目 OCR/模板参数参考）。
-- 配置键名迁移见 `.agents/skills/ok-config-migration`。
-- GitHub Actions 工作流/rulesets/性能见 `.agents/skills/github-workflows`、`.agents/skills/github-rulesets`、`.agents/skills/github-actions-performance`。
-
-## lang JSON key 命名约定（重要）
-
-见 `.agents/skills/ok-script-i18n` 的「Lang JSON Convention」节，要点：
-
-- **新增 key 用语义化命名**（如 `inst_title`），不要沿用旧的 `k_<md5前8位>` hash 风格；旧 `k_*` 保持不动，两种风格可共存。
-- 每个 key 下为 6 种语言节点（`zh_CN`/`zh_TW`/`en_US`/`ja_JP`/`ko_KR`/`es_ES`），格式 `{"string": "..."}` 或 `{"pattern": "..."}`（详见 skill 的节点类型说明）。
-- **lang JSON 只放 OCR 匹配文本**。UI 说明（如 `instructions` 富文本）用 `self.tr("中文msgid")` 走 gettext，msgid 写入 `i18n/*/LC_MESSAGES/ok.po` 后 `task_i18n_helper.py compile`。
-- **最小原则**：emoji（`📍` `⚙️` `🖱️` 等）、`└─`/`├─`、HTML 标签/颜色等无需翻译的内容留在代码里拼，只把需翻译的纯文本放进 i18n 数据。
-- **动态键名翻译**：`instructions` 里动态读取的配置键名显示时经 `self.tr(键名)` 翻译；查配置值用原始键名，显示用翻译后的键名（见 `src/tasks/mixin/zip_line_mixin.py`）。
-
-## i18n 收集池防污染（重要）
-
-框架机制：debug 模式下 `App.tr(key)` 会把所有传入的 key 收进 `to_translate`，「开发工具→生成 i18n 文件」按钮将其导出为 po 条目。GUI 渲染层（配置下拉框当前值、任务信息卡、计划任务名等）会对**动态值**调 `og.app.tr()`，因此运行时数据会污染 po。已踩坑案例：账号名 `*0705`、`re.compile('上次')`、`开始第 1/3 个账号(0705)任务执行`、`Log(0705)`。
-
-强制规则：
-
-1. **翻译函数输入必须是静态模板**：`self.tr("固定中文")` 或 `self.tr("含 {placeholder} 模板").format(...)`；禁止 `tr(f"...{变量}...")`、禁止把运行时变量拼进 tr 参数。
-2. **`re.Pattern` 进日志前必须取 `.pattern`**：f-string 直接拼 Pattern 对象会 str 化为 `re.compile('xxx')`（见 `login_mixin.click_text` 的规范化写法）。
-3. **动态配置用声明式豁免（治本）**：用户输入载入的下拉配置（如「地图账号」= 账号列表）不参与翻译——把 config key 登记到 `src/core/dynamic_config_keys.py` 的 `DYNAMIC_DROPDOWN_KEYS`，渲染补丁 `dynamic_config_patch.py` 据此跳过 tr。**项目资源类下拉不要登记**（干员列表 characters.json、物品导航「选择物品」等是合法待翻译文案）。
-4. 框架无单条豁免参数；`to_translate` 仅 debug 模式启用，生产不受影响，垃圾条目对运行无害但会膨胀 po、误导翻译。
-5. `log_info`/`mark_task_failure` 自身不做翻译也不支持 params 填充；**带动态值的日志统一在调用侧走 tr+format**：`self.tr("模板{a}…{b}").format(a=已译文本值, b=纯数字值)`——外层模板串必须 tr（msgid=稳定模板串进 po），文本类动态值内层过 tr 后再填充，纯数字值直接填充不 tr；运行时未知文本（OCR 结果、账号名等）不过 tr 防污染收集池。通知链路（`notify=True`/`show_notification`）和 instructions 富文本构建同理。
-   **纯静态硬编码文案（无占位符、无变化）禁止在调用侧加 tr**：直接 `log_info("固定中文")`——UI 显示层渲染日志时会统一翻译，调用侧再包一层 tr 属于冗余；只有带占位符、存在多种变化的模板串才需要调用侧 tr+format（gettext 必须在 format 前命中稳定 msgid）。
-6. po 出现垃圾条目时：确认来源 → 能声明式的走第 3 条；一次性清理可仿照 `tmp/clean_dynamic_po_entries.py` 删条目后重编译。
-
-## 技能清单（.agents/skills/）
-
-仓库技能按场景简要说明如下；需要时用 skill 工具加载对应技能获取完整流程：
-
-- `deploy`：提交并创建版本 tag 推送到发布远端（`deploy` / `deploy beta` / `deploy alpha`）。
-- `use-local-venv`：优先使用仓库本地 `.venv`（`uv sync` 创建、`uv run` 执行）运行 Python。
-- `ok-script-tasks`：创建/修改 ok-script 任务类（`BaseTask` / `TriggerTask`、任务配置 UI 元数据、注册）。
-- `ok-script-codegen`：根据需求描述/截图生成任务 run 方法自动化代码（OCR、模板匹配、相对点击、等待方法）。
-- `ok-script-i18n`：任务元数据/字符串 gettext 国际化（ok.po 同步与编译、lang JSON 约定、`merge_po.py` 目录冲突合并）。
-- `ok-script-ocr-lang`：OCR 语言资源与 OCR 文本修正补丁（`assets/lang/*.json` schema、active locale、`ocr_text_fix.json`）。
-- `ok-config-migration`：配置键名修改严格顺序（迁移表 → 迁移测试 → i18n → 文档 → 恢复）。
-- `ok-script-pr-review`：CodeRabbit 审阅处理（触发新审阅、等待审阅覆盖新 head、回复/解析线程、限流重试）。
-- `github-workflows`：GitHub Actions workflow YAML 编写与排查（语法陷阱、Invalid workflow、SonarCloud 规则）。
-- `github-rulesets`：仓库 rulesets（分支/tag 保护、bypass 角色、GitHub App 自动打 tag）配置与排查。
-- `github-actions-performance`：GitHub Actions 任务性能分析（checkout 版本差异、shallow-clone 副作用、tag 裁剪开销）。
-- `log-watcher-ops`：log-watcher 项目运维（Outlook HTML 日报邮件、watch_dirs 监控、每日清理、dashboard 部署与 `/ok-logs/` 反向代理）。
+| Skill | 适用场景 | 路径 |
+|---|---|---|
+| `repository-workflow` | 提交/PR、安全检查、PowerShell Markdown 引号、测试与日志入口、批量改码验证 | `.agents/skills/repository-workflow/SKILL.md` |
+| `deploy` | 提交完成改动、计算并创建 stable/beta/alpha tag、推送发布远端 | `.agents/skills/deploy/SKILL.md` |
+| `use-local-venv` | 运行 Python、测试、lint、依赖检查或安装，统一使用 uv 与仓库 `.venv` | `.agents/skills/use-local-venv/SKILL.md` |
+| `ok-script-tasks` | 创建、修改、注册或审阅 `BaseTask` / `TriggerTask` 任务 | `.agents/skills/ok-script-tasks/SKILL.md` |
+| `ok-script-codegen` | 根据描述或截图生成任务 `run()` 自动化代码 | `.agents/skills/ok-script-codegen/SKILL.md` |
+| `ok-script-i18n` | gettext UI 文案、PO/MO、lang JSON 归档约定、收集池防污染与目录冲突合并 | `.agents/skills/ok-script-i18n/SKILL.md` |
+| `ok-script-ocr-lang` | OCR 匹配语言节点、active locale、`ocr_text_fix.json` 与语言引用排错 | `.agents/skills/ok-script-ocr-lang/SKILL.md` |
+| `ok-config-migration` | 修改持久化配置键名并安全迁移用户数据 | `.agents/skills/ok-config-migration/SKILL.md` |
+| `ok-script-pr-review` | 触发、等待、核验、回复和解析 CodeRabbit PR 审阅 | `.agents/skills/ok-script-pr-review/SKILL.md` |
+| `github-workflows` | 编辑或排查 GitHub Actions YAML、权限、actionlint 与 SonarCloud 规则 | `.agents/skills/github-workflows/SKILL.md` |
+| `github-rulesets` | 分支/tag ruleset、bypass、GitHub App token 与受保护分支工作流 | `.agents/skills/github-rulesets/SKILL.md` |
+| `github-actions-performance` | 分析 Actions 慢任务、checkout 历史/tag 与同步性能 | `.agents/skills/github-actions-performance/SKILL.md` |
+| `log-watcher-ops` | 本机私有 log-watcher 邮件、监控、清理、看板部署与 Apache 反代运维 | `.agents/skills/log-watcher-ops/SKILL.md`（本地忽略，不随仓库发布） |

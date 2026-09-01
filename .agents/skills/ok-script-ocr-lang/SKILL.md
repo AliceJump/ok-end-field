@@ -48,13 +48,17 @@ Source doc: `docs/dev/i18n_OCR配置流程.md`.
 6. Run the language reference test + verify the OCR region on a real window.
 
 ```powershell
-uv run python -m unittest tests.TestCheckLang
+uv run --locked python -m unittest tests.TestCheckLang -v
 ```
 
-`TestCheckLang` only scans `self.lang.<module>.k_xxx` references and validates `zh_CN` + `zh_TW`:
-- module missing or both locales missing key → FAIL.
-- only one active locale missing → warning (not fail).
-- non-`k_` access (e.g. `self.lang.login_mixin.ms`) is NOT covered by the test regex — verify manually. If you want automatic coverage for semantic keys, extend the test regex to all `self.lang.<module>.<key>` accesses with the same `zh_CN`/`zh_TW` validation rules.
+`TestCheckLang` parses Python source with `ast` and covers both legacy `k_*` and semantic `self.lang.<module>.<key>` references. It fails when a referenced module/key is missing from either active locale. It also validates every lang node: exactly one of `string`/`pattern`/`terms`, non-empty values, and compilable regular expressions.
+
+After adding or renaming lang keys, regenerate the checked-in type hints, review the generated diff, and include the expected output:
+
+```powershell
+uv run --locked python scripts/i18n/gen_lang_stubs.py
+git diff -- src/data/lang/_lang_typed.py
+```
 
 ## 4. OCR confusion patch (ocr_text_fix.json)
 
@@ -73,8 +77,8 @@ uv run python -m unittest tests.TestCheckLang
 
 GUI text uses `i18n/<locale>/LC_MESSAGES/ok.po`. Verification:
 ```powershell
-uv run python -m unittest tests.TestGuiI18n
-uv run python -m unittest tests.TestPoLocaleConsistency
+uv run --locked python -m unittest tests.TestGuiI18n -v
+uv run --locked python -m unittest tests.TestPoLocaleConsistency -v
 ```
 `TestPoLocaleConsistency` checks catalog duplicates/empty translations, placeholder consistency, and known runtime pollution of msgid. It does NOT decide OCR `SUPPORTED_LOCALES`.
 
@@ -91,6 +95,6 @@ Locale node not taking effect — check in order:
 3. Runtime locale is enabled in `ACTIVE_LOCALES_CONFIG`.
 4. Locale node contains exactly one valid type field.
 5. Regex string is a valid Python regex.
-6. Non-`k_` keys not covered by `TestCheckLang` are completed manually.
+6. Regenerated `src/data/lang/_lang_typed.py` includes the module/key and every diff is explained by the source lang change or generator update.
 
 Stable OCR misrecognition: first confirm it's purely a match problem. Only same-length char confusion belongs in `ocr_text_fix.json`; length-changing / word-order / business-only corrections belong in the language pattern or business parsing.

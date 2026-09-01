@@ -1,4 +1,4 @@
-param(
+﻿param(
     [Parameter(Mandatory = $true)][int]$PrNumber,
     [string]$Repo = "AliceJump/ok-end-field",
     [ValidateRange(0, 2147483647)][int]$ExtraBufferSeconds = 0,
@@ -28,6 +28,7 @@ param(
 # 评论发出后已流逝的时间会被自然扣除。
 
 $ErrorActionPreference = "Stop"
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 
 function Invoke-GhChecked {
     param([string[]]$GhArgs)
@@ -40,26 +41,25 @@ function Invoke-GhChecked {
 
 function Get-LastCodeRabbitComment {
     # 返回最后一条 CodeRabbit 回复对象 { body, created_at }，无则 $null
-    $json = Invoke-GhChecked @("api", "--paginate", "--slurp", "repos/$Repo/issues/$PrNumber/comments")
-    # --slurp + --paginate 返回的是「页数组」：外层每个元素是一页评论数组，需展平
-    $pages = @($json | ConvertFrom-Json)
-    $all = @($pages | ForEach-Object { $_ })
-    # 精确匹配 CodeRabbit 机器人身份，避免同名人类用户伪造触发文本
-    $cr = @($all | Where-Object { $_.user.login -eq "coderabbitai[bot]" -and $_.user.type -eq "Bot" })
-    if ($cr.Count -eq 0) { return $null }
-    $last = ($cr | Sort-Object created_at)[-1]
-    return @{ body = $last.body; created_at = $last.created_at }
+    # 服务端完成身份过滤、排序与 JSON 编码，避免 PowerShell 按系统 ANSI 解码整页 JSON。
+    $json = Invoke-GhChecked @(
+        "api", "--paginate", "--slurp", "repos/$Repo/issues/$PrNumber/comments", "--jq",
+        '[.[][] | select(.user.login == "coderabbitai[bot]" and .user.type == "Bot")] | sort_by(.created_at) | last | if . then {body, created_at} else empty end'
+    )
+    if (-not $json) { return $null }
+    return $json | ConvertFrom-Json
 }
 
-function Parse-WaitMinutes {
+function Get-WaitMinutes {
     param([string]$Text)
     if (-not $Text) { return $null }
     if ($Text -match "available now") { return 0.0 }
-    $m = [regex]::Match($Text, "available in (\d+(?:\.\d+)?) (minutes?|seconds?)")
+    $m = [regex]::Match($Text, "available in\s+(\d+(?:\.\d+)?)\s*(minutes?|mins?|seconds?|secs?)", "IgnoreCase")
     if (-not $m.Success) { return $null }
     $val = [double]$m.Groups[1].Value
     $unit = $m.Groups[2].Value
-    if ($unit.StartsWith("second")) { return ($val / 60.0) }
+    if ($unit.StartsWith("second", [System.StringComparison]::OrdinalIgnoreCase) -or
+        $unit.StartsWith("sec", [System.StringComparison]::OrdinalIgnoreCase)) { return ($val / 60.0) }
     return $val
 }
 
@@ -69,7 +69,7 @@ if (-not $last) {
     exit 1
 }
 
-$mins = Parse-WaitMinutes $last.body
+$mins = Get-WaitMinutes $last.body
 if ($null -eq $mins) {
     Write-Host "最后一条 CodeRabbit 回复不含等待时间信息，内容: $($last.body.Substring(0, [Math]::Min(160, $last.body.Length)))"
     exit 1

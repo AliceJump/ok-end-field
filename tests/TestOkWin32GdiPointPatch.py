@@ -15,7 +15,8 @@ POINTER(自定义POINT)。ctypes 按类型对象做指针校验，任何用标�
 隔离策略
 --------
 仅导入 win32_gdi 并执行补丁函数，不构造 ok 全局（不 init_ok/destroy_ok）。
-补丁是幂等的，安装后即保持修复状态（与生产启动行为一致）。
+测试类结束后恢复 POINT、三个 argtypes 和安装标记，并由后置哨兵测试验证，
+避免污染单进程 discovery 的后续模块；生产启动时补丁仍保持安装状态。
 """
 
 import ctypes
@@ -23,15 +24,36 @@ import unittest
 from ctypes import wintypes
 
 from ok.ui.overlay import win32_gdi
-from src.patches.win32_gdi_point_patch import install_win32_gdi_point_patch
+
+from src.patches import win32_gdi_point_patch
 
 
 class TestOkWin32GdiPointPatch(unittest.TestCase):
+    _cleanup_completed = False
+
     @classmethod
     def setUpClass(cls):
-        # 记录补丁前的自定义 POINT 类（补丁会把它替换为 wintypes.POINT）
-        cls._orig_point = getattr(win32_gdi, "POINT", None)
-        install_win32_gdi_point_patch()
+        user32 = ctypes.windll.user32
+        gdi32 = ctypes.windll.gdi32
+        cls._orig_point = win32_gdi.POINT
+        cls._orig_getcursorpos_argtypes = user32.GetCursorPos.argtypes
+        cls._orig_updatelayeredwindow_argtypes = user32.UpdateLayeredWindow.argtypes
+        cls._orig_movetoex_argtypes = gdi32.MoveToEx.argtypes
+        cls._original_flag = win32_gdi_point_patch._PATCH_INSTALLED
+        cls.addClassCleanup(cls._assert_and_restore_patch_state)
+        win32_gdi_point_patch._PATCH_INSTALLED = False
+        win32_gdi_point_patch.install_win32_gdi_point_patch()
+
+    @classmethod
+    def _assert_and_restore_patch_state(cls):
+        user32 = ctypes.windll.user32
+        gdi32 = ctypes.windll.gdi32
+        win32_gdi.POINT = cls._orig_point
+        user32.GetCursorPos.argtypes = cls._orig_getcursorpos_argtypes
+        user32.UpdateLayeredWindow.argtypes = cls._orig_updatelayeredwindow_argtypes
+        gdi32.MoveToEx.argtypes = cls._orig_movetoex_argtypes
+        win32_gdi_point_patch._PATCH_INSTALLED = cls._original_flag
+        cls._cleanup_completed = True
 
     def test_point_replaced_with_wintypes(self):
         # 模块内 POINT 已被替换为标准 wintypes.POINT（ok 内部 POINT() 也用它）
@@ -68,6 +90,24 @@ class TestOkWin32GdiPointPatch(unittest.TestCase):
         self.assertEqual(
             gdi32.MoveToEx.argtypes,
             [ctypes.c_void_p, ctypes.c_int, ctypes.c_int, ctypes.POINTER(wintypes.POINT)],
+        )
+
+
+class TestZOkWin32GdiPointPatchStateRestored(unittest.TestCase):
+    def test_global_state_restored_after_patch_tests(self):
+        user32 = ctypes.windll.user32
+        gdi32 = ctypes.windll.gdi32
+        self.assertTrue(TestOkWin32GdiPointPatch._cleanup_completed)
+        self.assertIs(win32_gdi.POINT, TestOkWin32GdiPointPatch._orig_point)
+        self.assertIs(user32.GetCursorPos.argtypes, TestOkWin32GdiPointPatch._orig_getcursorpos_argtypes)
+        self.assertIs(
+            user32.UpdateLayeredWindow.argtypes,
+            TestOkWin32GdiPointPatch._orig_updatelayeredwindow_argtypes,
+        )
+        self.assertIs(gdi32.MoveToEx.argtypes, TestOkWin32GdiPointPatch._orig_movetoex_argtypes)
+        self.assertEqual(
+            win32_gdi_point_patch._PATCH_INSTALLED,
+            TestOkWin32GdiPointPatch._original_flag,
         )
 
 

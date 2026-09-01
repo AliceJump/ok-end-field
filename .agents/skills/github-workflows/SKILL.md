@@ -1,13 +1,13 @@
 ---
 name: github-workflows
-description: Configure and troubleshoot GitHub Actions workflow files on ok-script app repos: YAML syntax traps (single-line run with :word:, block scalars), diagnosing "Invalid workflow file" / jobs:0 runs that never start, and SonarCloud workflow rules (githubactions:S8544). Use when editing .github/workflows/*.yml, fixing a workflow that fails at parse time, or validating YAML before push. Lessons from ok-end-field PRs #194-#200.
+description: Configure and troubleshoot GitHub Actions workflow files on ok-script app repos: YAML syntax traps (single-line run with :word:, block scalars), diagnosing "Invalid workflow file" / jobs:0 runs that never start, and SonarCloud workflow rules (githubactions:S8544). Use when editing .github/workflows/*.yml or *.yaml, fixing a workflow that fails at parse time, or validating YAML before push. Lessons from ok-end-field PRs #194-#200.
 ---
 
 # GitHub Workflows — YAML & File Troubleshooting
 
 ## Purpose
 
-Pitfalls and verified fixes for `.github/workflows/*.yml` files: YAML traps that break parsing, how to diagnose workflows that never start, and SonarCloud rules that flag workflow files.
+Pitfalls and verified fixes for `.github/workflows/*.yml` and `.github/workflows/*.yaml` files: YAML traps that break parsing, how to diagnose workflows that never start, and SonarCloud rules that flag workflow files.
 
 ## 1. YAML traps
 
@@ -22,12 +22,36 @@ run: 'pip install --only-binary :all: -r requirements-docs.txt'
 
 - A single-line `run: <value>` containing `:word:` (colon followed by content) is parsed as a YAML mapping by the GitHub workflow parser → GitHub refuses to start the workflow. This is specific to how the GitHub parser treats the unquoted single-line `run` value; YAML 1.2 plain scalars do allow a colon without a following space in general. Quoting the entire single-line `run` value remains the fix, and text inside a block scalar (`run: |`) is unaffected.
 - Inside a **block scalar** (`run: |` multi-line), `:all:` is plain text and is safe (download_stats.yml was unaffected).
-- **Always validate YAML before pushing**, in two separate steps:
-  1. Generic YAML syntax first:
+- **Always validate YAML before pushing**, in two separate steps. PowerShell does not reliably expand native-command globs, so enumerate both extensions and pass explicit paths:
   ```powershell
-  uv run python -c "import yaml; yaml.safe_load(open('<file>', encoding='utf-8')); print('OK')"
+  $workflowFiles = @(
+      Get-ChildItem -LiteralPath ".github/workflows" -File |
+          Where-Object { $_.Extension -in ".yml", ".yaml" }
+  )
+  if ($workflowFiles.Count -eq 0) {
+      throw "No workflow YAML files found"
+  }
+  $workflowPaths = @($workflowFiles.FullName)
+
+  # Generic YAML syntax. PyYAML is locked in the repository dev dependencies.
+  uv run --locked python -c 'import pathlib, sys, yaml; [yaml.safe_load(pathlib.Path(path).read_text(encoding="utf-8-sig")) for path in sys.argv[1:]]; print(f"parsed {len(sys.argv) - 1} workflow YAML file(s)")' @workflowPaths
+  if ($LASTEXITCODE -ne 0) {
+      throw "Workflow YAML parsing failed"
+  }
+
+  # GitHub Actions structure, expressions, and contexts.
+  $actionlint = Get-Command actionlint -ErrorAction SilentlyContinue
+  if (-not $actionlint) {
+      throw "actionlint is required; install it before validating workflows"
+  }
+  $actionlintPath = $actionlint.Source
+  & $actionlintPath @workflowPaths
+  if ($LASTEXITCODE -ne 0) {
+      throw "actionlint failed"
+  }
   ```
-  2. GitHub Actions structure/expressions/contexts (covers undefined `matrix.os`/`matrix.arch` and similar): run `actionlint .github/workflows/*.yml` or an equivalent validator. Generic `yaml.safe_load` alone cannot catch workflow-structure errors.
+
+  Generic `yaml.safe_load` cannot catch undefined contexts such as `matrix.os` or `matrix.arch`; an unavailable `actionlint` is a reported validation failure, not a skipped check.
 
 ## 2. Diagnosing "workflow file issue" / jobs: 0
 

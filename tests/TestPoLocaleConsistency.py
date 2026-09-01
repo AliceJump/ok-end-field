@@ -83,6 +83,10 @@ OFFICIAL_SAME_AS_ENGLISH = {
 ES_UNTRANSLATED_OK = set()
 
 
+def entry_key(entry):
+    return entry.msgctxt, entry.msgid, entry.msgid_plural
+
+
 class PoLocaleConsistencyTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -95,9 +99,10 @@ class PoLocaleConsistencyTestCase(unittest.TestCase):
             for entry in catalog:
                 if not entry.msgid:
                     continue
-                if entry.msgid in seen:
-                    errors.append(f"{locale}: duplicate {entry.msgid!r}")
-                seen.add(entry.msgid)
+                key = entry_key(entry)
+                if key in seen:
+                    errors.append(f"{locale}: duplicate {key!r}")
+                seen.add(key)
                 if not entry.msgstr:
                     errors.append(f"{locale}: empty {entry.msgid!r}")
                 if set(PLACEHOLDER_RE.findall(entry.msgid)) != set(PLACEHOLDER_RE.findall(entry.msgstr)):
@@ -106,7 +111,7 @@ class PoLocaleConsistencyTestCase(unittest.TestCase):
         self.assertEqual(errors, [], "\n".join(errors))
 
     def test_target_locales_do_not_copy_english_fallbacks(self):
-        english = {entry.msgid: entry.msgstr for entry in self.catalogs["en_US"]}
+        english = {entry_key(entry): entry.msgstr for entry in self.catalogs["en_US"]}
         errors = []
         for locale, catalog in self.catalogs.items():
             if locale == "en_US":
@@ -114,7 +119,7 @@ class PoLocaleConsistencyTestCase(unittest.TestCase):
             for entry in catalog:
                 if not HAN_RE.search(entry.msgid):
                     continue
-                english_text = english.get(entry.msgid, "")
+                english_text = english.get(entry_key(entry), "")
                 if (
                     english_text
                     and entry.msgstr == english_text
@@ -122,11 +127,20 @@ class PoLocaleConsistencyTestCase(unittest.TestCase):
                     and entry.msgid not in OFFICIAL_SAME_AS_ENGLISH
                 ):
                     errors.append(f"{locale}: English fallback {entry.msgid!r}")
-                if locale in {"es_ES", "ko_KR"} and entry.msgstr == entry.msgid:
-                    if entry.msgid not in ES_UNTRANSLATED_OK:
-                        errors.append(f"{locale}: untranslated source {entry.msgid!r}")
+                if (
+                    locale in {"es_ES", "ko_KR"}
+                    and entry.msgstr == entry.msgid
+                    and entry.msgid not in ES_UNTRANSLATED_OK
+                ):
+                    errors.append(f"{locale}: untranslated source {entry.msgid!r}")
 
         self.assertEqual(errors, [], "\n".join(errors))
+
+    def test_entry_key_distinguishes_missing_and_empty_context(self):
+        missing = polib.POEntry(msgid="same", msgstr="missing")
+        explicit_empty = polib.POEntry(msgid="same", msgstr="empty", msgctxt="")
+
+        self.assertNotEqual(entry_key(missing), entry_key(explicit_empty))
 
     def test_runtime_pollution_ids_are_absent(self):
         errors = []

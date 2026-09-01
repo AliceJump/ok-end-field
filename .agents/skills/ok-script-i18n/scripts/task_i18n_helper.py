@@ -1,11 +1,11 @@
 import argparse
 import ast
-import os
+import re
 from collections import Counter
+from pathlib import Path
 
 import polib
 
-TASK_DICT_ATTRS = {"default_config", "config_description", "config_type"}
 TASK_STRING_ATTRS = {"name", "description"}
 CONFIG_TYPE_META = {
     "type",
@@ -17,6 +17,7 @@ CONFIG_TYPE_META = {
     "text_edit",
     "button",
 }
+PLACEHOLDER_RE = re.compile(r"\{[^{}]+\}")
 
 
 class TaskStringVisitor(ast.NodeVisitor):
@@ -29,6 +30,10 @@ class TaskStringVisitor(ast.NodeVisitor):
         self.generic_visit(node)
 
     def visit_AnnAssign(self, node):
+        self._collect_assignment(node.target, node.value)
+        self.generic_visit(node)
+
+    def visit_AugAssign(self, node):
         self._collect_assignment(node.target, node.value)
         self.generic_visit(node)
 
@@ -50,6 +55,17 @@ class TaskStringVisitor(ast.NodeVisitor):
             self._collect_dict_strings(value)
         elif self._is_self_attr_in(target, {"config_type"}):
             self._collect_config_type_strings(value)
+        elif isinstance(target, ast.Subscript):
+            self._collect_subscript_assignment(target, value)
+
+    def _collect_subscript_assignment(self, target, value):
+        owner = target.value
+        if self._is_self_attr_in(owner, {"default_config", "config_description"}):
+            self._add_string(target.slice)
+            self._collect_value_strings(value)
+        elif self._is_self_attr_in(owner, {"config_type"}):
+            self._add_string(target.slice)
+            self._collect_config_type_value(value)
 
     def _is_self_attr_in(self, node, attrs):
         return (
@@ -68,7 +84,7 @@ class TaskStringVisitor(ast.NodeVisitor):
     def _collect_dict_strings(self, node):
         if not isinstance(node, ast.Dict):
             return
-        for key, value in zip(node.keys, node.values):
+        for key, value in zip(node.keys, node.values, strict=True):
             self._add_string(key)
             self._collect_value_strings(value)
 
@@ -83,15 +99,17 @@ class TaskStringVisitor(ast.NodeVisitor):
     def _collect_config_type_strings(self, node):
         if not isinstance(node, ast.Dict):
             return
-        for key, value in zip(node.keys, node.values):
+        for key, value in zip(node.keys, node.values, strict=True):
             self._add_string(key)
             self._collect_config_type_value(value)
 
     def _collect_config_type_value(self, node):
         if isinstance(node, ast.Dict):
-            for key, value in zip(node.keys, node.values):
+            for key, value in zip(node.keys, node.values, strict=True):
                 if isinstance(key, ast.Constant) and key.value in {"options", "buttons"}:
                     self._collect_value_strings(value)
+                elif isinstance(key, ast.Constant) and key.value == "text":
+                    self._add_string(value)
         elif isinstance(node, (ast.List, ast.Tuple, ast.Set)):
             for item in node.elts:
                 self._collect_config_type_value(item)
@@ -100,7 +118,7 @@ class TaskStringVisitor(ast.NodeVisitor):
 
 
 def scan_task(path):
-    with open(path, encoding="utf-8") as f:
+    with open(path, encoding="utf-8-sig") as f:
         tree = ast.parse(f.read(), filename=path)
     visitor = TaskStringVisitor()
     visitor.visit(tree)
@@ -109,32 +127,93 @@ def scan_task(path):
 
 
 def iter_po_paths(i18n_dir):
-    for root, _, files in os.walk(i18n_dir):
-        if "ok.po" in files:
-            yield os.path.join(root, "ok.po")
+    yield from sorted(Path(i18n_dir).glob("*/LC_MESSAGES/ok.po"))
+
+
+def entry_key(entry):
+    return entry.msgctxt, entry.msgid, entry.msgid_plural
+
+
+def entry_key_sort(key):
+    context, msgid, plural = key
+    return context is not None, context or "", msgid, plural or ""
+
+
+def translated_strings(entry):
+    if entry.msgid_plural:
+        return list(entry.msgstr_plural.values())
+    return [entry.msgstr]
 
 
 def compile_i18n(i18n_dir):
-    for po_path in iter_po_paths(i18n_dir):
-        mo_path = os.path.join(os.path.dirname(po_path), "ok.mo")
+    paths = list(iter_po_paths(i18n_dir))
+    if not paths:
+        raise SystemExit(f"No ok.po catalogs found under {i18n_dir}")
+    for po_path in paths:
+        mo_path = po_path.with_name("ok.mo")
         po = polib.pofile(str(po_path))
-        po.save_as_mofile(mo_path)
+        po.save_as_mofile(str(mo_path))
         print(f"compiled {po_path} -> {mo_path}")
 
 
 def check_i18n(i18n_dir):
+    paths = list(iter_po_paths(i18n_dir))
+    if not paths:
+        raise SystemExit(f"No ok.po catalogs found under {i18n_dir}")
+
     failed = False
-    for po_path in iter_po_paths(i18n_dir):
+    catalog_keys = {}
+    for po_path in paths:
         po = polib.pofile(str(po_path))
-        ids = [entry.msgid for entry in po if entry.msgid]
-        duplicates = sorted(msgid for msgid, count in Counter(ids).items() if count > 1)
+        locale = po_path.parents[1].name
+        entries = [entry for entry in po if entry.msgid and not entry.obsolete]
+        keys = [entry_key(entry) for entry in entries]
+        duplicates = sorted(
+            (key for key, count in Counter(keys).items() if count > 1),
+            key=entry_key_sort,
+        )
         if duplicates:
             failed = True
-            print(f"duplicate msgid entries in {po_path}:")
-            for msgid in duplicates:
-                print(msgid)
-        else:
+            print(f"duplicate entries in {po_path}:")
+            for context, msgid, plural in duplicates:
+                print(f"  context={context!r} msgid={msgid!r} plural={plural!r}")
+
+        for entry in entries:
+            translations = translated_strings(entry)
+            if not translations or any(not translation for translation in translations):
+                failed = True
+                print(f"empty translation in {po_path}: {entry.msgid!r}")
+                continue
+            expected_singular = set(PLACEHOLDER_RE.findall(entry.msgid))
+            expected_plural = expected_singular
+            if entry.msgid_plural:
+                expected_plural = set(PLACEHOLDER_RE.findall(entry.msgid_plural))
+            for translation in translations:
+                actual = set(PLACEHOLDER_RE.findall(translation))
+                if frozenset(actual) not in {frozenset(expected_singular), frozenset(expected_plural)}:
+                    failed = True
+                    print(
+                        f"placeholder mismatch in {po_path}: {entry.msgid!r} "
+                        f"expected={sorted(expected_singular)} or {sorted(expected_plural)} "
+                        f"actual={sorted(actual)}"
+                    )
+
+        catalog_keys[locale] = set(keys)
+        if not duplicates:
             print(f"ok {po_path}")
+
+    reference_locale = sorted(catalog_keys)[0]
+    reference_keys = catalog_keys[reference_locale]
+    for locale, keys in sorted(catalog_keys.items()):
+        missing = sorted(reference_keys - keys, key=entry_key_sort)
+        extra = sorted(keys - reference_keys, key=entry_key_sort)
+        if missing or extra:
+            failed = True
+            print(f"catalog key mismatch for {locale} vs {reference_locale}: missing={len(missing)} extra={len(extra)}")
+            for key in missing[:20]:
+                print(f"  missing {key}")
+            for key in extra[:20]:
+                print(f"  extra {key}")
     if failed:
         raise SystemExit(1)
 
