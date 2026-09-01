@@ -231,6 +231,7 @@ class BattleMixin(BaseEfTask):
 
         for ult in ults:
             if self._find_battle_ult("ult_" + ult):
+                self.log_info(f"检测到终极技 ult_{ult}，尝试释放（模式: {release_mode}）")
                 if release_mode == ULT_RELEASE_MODE_ALT:
                     # Alt + 技能按键：按住 Alt 的同时点按技能键释放终结技
                     self.send_key_down("alt")
@@ -238,24 +239,59 @@ class BattleMixin(BaseEfTask):
                     self.send_key_up("alt")
                     # 等待技能释放导致战斗状态变化，然后等待重新识别到至少一个人
                     self.wait_until(lambda: not self.in_combat(), time_out=1)
-                    self.wait_until(self._has_detected_team_member, time_out=3)
+                    self._has_detected_team_member()
                     return True
                 self.send_key_down(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，不经过KeyConfigManager管理
                 # 等待技能释放导致战斗状态变化
                 self.wait_until(lambda: not self.in_combat(), time_out=1)
                 self.send_key_up(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，释放按键
                 # wait_until 每轮会刷新 self.frame，再重新识别当前编队
-                self.wait_until(self._has_detected_team_member, time_out=3)
+                self._has_detected_team_member()
                 return True
 
         return False
 
-    def _has_detected_team_member(self):
-        """当前帧至少识别到一个编队成员时返回 True。"""
-        frame = self.frame
-        if frame is None or frame.size == 0:
+    def _has_detected_team_member(self, time_out=3):
+        """在指定时间内等待当前队伍恢复为战斗开始时的完整队伍。
+
+        连续两帧识别到与战斗开始时相同的完整队伍时返回 True。
+        超时返回 False。
+        """
+        battle_team = getattr(self, "_battle_team", None)
+        if not battle_team:
             return False
-        return any(member != "?" for member in detect_team_from_frame(frame))
+
+        start_time = self.active_time()
+        matched_count = 0
+
+        while self.active_time() - start_time < time_out:
+            frame = self.next_frame()
+
+            if frame is None or frame.size == 0:
+                matched_count = 0
+                continue
+
+            team = detect_team_from_frame(frame)
+            self.log_info(f"当前队伍角色: {team}")
+
+            if (
+                team
+                and not any(member == "?" for member in team)
+                and team == battle_team
+            ):
+                matched_count += 1
+
+                if matched_count >= 2:
+                    self.log_info(f"队伍恢复确认: {team}")
+                    return True
+            else:
+                matched_count = 0
+
+        self.log_info(
+            f"等待队伍恢复超时（{time_out:.1f}秒），"
+            f"目标队伍: {battle_team}"
+        )
+        return False
 
     def use_link_skill(self):
         """
@@ -707,7 +743,7 @@ class BattleMixin(BaseEfTask):
             else:
                 consecutive_matches = 0
         return False
-    
+
     def is_battle_settlement(self) -> bool:
         """
         判断是否进入战斗结算状态
@@ -723,7 +759,7 @@ class BattleMixin(BaseEfTask):
                 box=self.box_of_screen(0.550, 0.896, 0.574, 0.943)
             ),
         ))
-    
+
     def auto_battle(self, no_battle: bool = False):
         """
         自动战斗主循环
