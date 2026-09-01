@@ -60,7 +60,12 @@ class TeamCompositionDetectTask(BaseEfTask):
         if not contacts:
             self.log_info(self.tr("未加载到任何 battle_icon 模板，请检查 assets/coco_annotations.json"))
             return
-        self.log_info(self.tr("编队判定启动: 共 {count} 个战斗头像模板").format(count=len(contacts)), notify=True)
+        self.log_info(
+            self.tr("编队判定启动: 共 {count} 个战斗头像模板").format(
+                count=sum(len(template_list) for template_list in contacts.values())
+            ),
+            notify=True,
+        )
         detect_count = 0
         try:
             while True:
