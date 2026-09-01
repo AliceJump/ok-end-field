@@ -89,6 +89,7 @@ class TestCharacterSkillEffects(unittest.TestCase):
                         operators = [operator for operator in ("all", "any") if operator in gate]
                         self.assertEqual(len(operators), 1)
                         requires = gate[operators[0]]
+                        self.assertIsInstance(requires, list)
                         self.assertTrue(requires)
                         self.assertTrue(all(effect_id in valid_effect_ids for effect_id in requires))
 
