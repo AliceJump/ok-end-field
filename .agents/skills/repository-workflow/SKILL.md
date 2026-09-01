@@ -49,6 +49,12 @@ if ($remoteBase64 -cne $localBase64) {
 }
 ```
 
+## Windows PowerShell 5.1 encoding
+
+- A `.ps1` file that contains non-ASCII text and supports Windows PowerShell 5.1 must be saved as UTF-8 with BOM. PowerShell 5.1 otherwise decodes UTF-8 source using the active ANSI code page.
+- `[Console]::OutputEncoding` only controls subprocess/output encoding; it does not fix source-file decoding and is not a substitute for the BOM.
+- Keep ASCII-only PowerShell scripts as plain UTF-8 unless another repository convention requires a BOM.
+
 ## Broad automated edits
 
 Textual batch tools can preserve Python syntax while deleting or duplicating executable statements. For broad docstring, annotation, formatting, or source-rewrite operations:
