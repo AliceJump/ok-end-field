@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -27,6 +26,12 @@ _DATA_DIR = _ROOT / "assets" / "data" / "character_skills"
 _CHARACTERS_JSON = _ROOT / "assets" / "data" / "characters.json"
 _ASSETS_DIR = _ROOT / "assets"
 _COCO_JSON = _ASSETS_DIR / "coco_annotations.json"
+
+_SHRED_STACK_PRODUCERS = {
+    "STATUS_SHRED",
+    "STATUS_HEAVY_HIT",
+    "STATUS_KNOCKDOWN",
+}
 
 # ── 数据加载 ──────────────────────────────────────────────────────────────────
 
@@ -60,6 +65,53 @@ def clear_cache():
 
 # ── 核心逻辑：两阶段构建允许列表 ────────────────────────────────────────────
 
+
+def _effect_id(effect) -> str:
+    if isinstance(effect, str):
+        return effect
+    if isinstance(effect, dict):
+        return effect.get("effect_id", "")
+    return ""
+
+
+def _produced_effect_id(effect) -> str:
+    """只把实际施加/增加的效果计为 producer。"""
+    effect_id = _effect_id(effect)
+    if not effect_id:
+        return ""
+    if isinstance(effect, dict):
+        count = effect.get("count", 1)
+        if count is not None and count <= 0:
+            return ""
+    return effect_id
+
+
+def _static_release_gate(enhancement: dict) -> dict | None:
+    """读取显式静态 release gate；动态阈值和非 gate 分支返回 None。"""
+    gate = enhancement.get("release_gate")
+    if not isinstance(gate, dict) or gate.get("static") is False:
+        return None
+    for operator in ("all", "any"):
+        if operator not in gate:
+            continue
+        requires = [effect_id for effect in gate.get(operator) or [] if (effect_id := _effect_id(effect))]
+        if requires:
+            return {"operator": operator, "requires": requires}
+    return None
+
+
+def _branch_can_trigger(branch: dict, producers: dict, skill_key: tuple[str, str]) -> bool:
+    """判断一个静态 gate 分支是否能由其它队内技能满足。"""
+    checks = [
+        any(
+            (producer_name, producer_skill_id) != skill_key
+            for producer_name, producer_skill_id, _ in producers.get(effect_id, [])
+        )
+        for effect_id in branch["requires"]
+    ]
+    return all(checks) if branch["operator"] == "all" else any(checks)
+
+
 def _build_team_skill_context(
     team_members: list[str],
     characters: dict[str, dict],
@@ -68,8 +120,8 @@ def _build_team_skill_context(
 
     Returns:
         {
-            "producers":    {effect_id: [(char_name, skill_type), ...]},
-            "enhancements": {(char_name, "战技"): {"requires": [...], "effects": [...]}},
+            "producers": {effect_id: [(char_name, skill_id, skill_type), ...]},
+            "release_gates": {(char_name, skill_id): [gate_branch, ...]},
         }
     """
     team_set = set(team_members)
@@ -82,77 +134,41 @@ def _build_team_skill_context(
         for s in cdata.get("skills", []):
             all_skills[(name, s.get("skill_id", ""))] = s
 
-    # ── producers: 哪些技能产出什么状态 ──
-    producers: dict[str, list[tuple[str, str]]] = {}
-    for (sname, _sid), sdata in all_skills.items():
-        for eff in (sdata.get("effects") or []):
-            eid = eff.get("effect_id", "") if isinstance(eff, dict) else (eff if isinstance(eff, str) else "")
-            if eid:
-                producers.setdefault(eid, []).append((sname, sdata.get("skill_type", "")))
+    # ── producers: 哪些技能在施放后产出什么状态 ──
+    producers: dict[str, list[tuple[str, str, str]]] = {}
+    for (sname, sid), sdata in all_skills.items():
+        producer = (sname, sid, sdata.get("skill_type", ""))
+        for eff in sdata.get("effects") or []:
+            effect_id = _produced_effect_id(eff)
+            if not effect_id:
+                continue
+            effect_producers = producers.setdefault(effect_id, [])
+            if producer not in effect_producers:
+                effect_producers.append(producer)
+            if effect_id in _SHRED_STACK_PRODUCERS:
+                shred_producers = producers.setdefault("STACK_SHRED", [])
+                if producer not in shred_producers:
+                    shred_producers.append(producer)
 
-    # ── 物理异常隐式产出：含击飞/倒地/碎甲/猛击的技能隐式产出 STACK_SHRED ──
-    _PHYS_ANOMALY_KEYWORDS = ('击飞', '倒地', '碎甲', '猛击')
-    for (sname, _sid), sdata in all_skills.items():
-        desc = sdata.get('description', '')
-        if any(kw in desc for kw in _PHYS_ANOMALY_KEYWORDS):
-            producers.setdefault('STACK_SHRED', []).append((sname, sdata.get('skill_type', '')))
-
-    # ── enhancements: 哪些战技有增强，增强需要什么、产出什么 ──
-    enhancements: dict[tuple[str, str], dict] = {}
-    for (sname, _sid), sdata in all_skills.items():
+    # ── release gates: 每个 enhancement 保持独立分支，分支间按 OR 判定 ──
+    release_gates: dict[tuple[str, str], list[dict]] = {}
+    for (sname, sid), sdata in all_skills.items():
         if sdata.get("skill_type") != "战技":
             continue
-        enh = sdata.get("enhancement")
-        if not enh:
+        skill_enhancements = sdata.get("enhancements") or []
+        if not skill_enhancements and sdata.get("enhancement"):
+            skill_enhancements = [sdata["enhancement"]]
+        if not skill_enhancements:
             continue
 
-        # 触发条件 effects → 可能是 string 或 dict
-        tc = enh.get("trigger_condition", {})
-        raw_requires = tc.get("effects") or []
-        requires = [
-            eid for eid in (
-                [e if isinstance(e, str) else e.get("effect_id", "") for e in raw_requires]
-            )
-            if eid and eid != "STATUS_STAGGER"
-        ]
+        branches = []
+        for enh in skill_enhancements:
+            if gate := _static_release_gate(enh):
+                branches.append(gate)
+        if branches:
+            release_gates[(sname, sid)] = branches
 
-        # 增强效果 effects → 可能是 string 或 dict
-        raw_enh_effects = enh.get("effects") or []
-        enh_effects = [
-            eid for eid in (
-                [e.get("effect_id", "") if isinstance(e, dict) else (e if isinstance(e, str) else "")
-                 for e in raw_enh_effects]
-            )
-            if eid and eid != "STATUS_STAGGER"
-        ]
-
-        enhancements[(sname, "战技")] = {
-            "requires": requires,
-            "effects": enh_effects,
-        }
-
-    # ── 物理异常隐式依赖：所有含击飞/倒地/碎甲/猛击的战技默认依赖 STACK_SHRED ──
-    # 对已有增强态的战技：补充 requires
-    # 对无增强态的战技：创建合成增强条目
-    _PHYS_ANOMALY_KEYWORDS = ('击飞', '倒地', '碎甲', '猛击')
-    for (sname, _sid), sdata in all_skills.items():
-        if sdata.get("skill_type") != "战技":
-            continue
-        desc = sdata.get("description", "")
-        if not any(kw in desc for kw in _PHYS_ANOMALY_KEYWORDS):
-            continue
-        key = (sname, "战技")
-        if key in enhancements:
-            if "STACK_SHRED" not in enhancements[key]["requires"]:
-                enhancements[key]["requires"].append("STACK_SHRED")
-        else:
-            enhancements[key] = {
-                "requires": ["STACK_SHRED"],
-                "effects": [],
-                "_synthetic": True,
-            }
-
-    return {"producers": producers, "enhancements": enhancements}
+    return {"producers": producers, "release_gates": release_gates}
 
 
 def build_skill_allowlist(
@@ -162,7 +178,7 @@ def build_skill_allowlist(
     """判断队伍中每个角色的战技是否允许手动释放。
 
     两阶段架构：
-      1. 建立队伍技能依赖图（producers / enhancements）
+      1. 建立队伍技能依赖图（producers / release gates）
       2. 逐个角色判定战技是否应被增强态接管
 
     Args:
@@ -200,29 +216,13 @@ def build_skill_allowlist(
             result[idx] = (True, "")
             continue
 
-        key = (char_name, "战技")
-        enhancement = ctx["enhancements"].get(key)
-        if not enhancement:
+        key = (char_name, skill.get("skill_id", ""))
+        release_gates = ctx["release_gates"].get(key)
+        if not release_gates:
             result[idx] = (True, "")
             continue
 
-        required = enhancement["requires"]
-        enhancement_effects = enhancement["effects"]
-
-        # 无触发条件且无增强效果 → 自身机制型增强（如弩弗三段替换），战技有意义
-        if not required and not enhancement_effects:
-            result[idx] = (True, "")
-            continue
-
-        # 无触发条件 → 增强不依赖外部状态，战技有意义
-        if not required:
-            result[idx] = (True, "")
-            continue
-
-        # 所有触发条件是否都能被队内满足
-        can_trigger = all(eff in ctx["producers"] for eff in required)
-
-        if can_trigger:
+        if any(_branch_can_trigger(branch, ctx["producers"], key) for branch in release_gates):
             result[idx] = (False, "增强态优先")
         else:
             result[idx] = (True, "")
@@ -492,6 +492,7 @@ def detect_team_stable(
         - stable: 是否达到 confidence 连续相同（True=稳定，False=超时/未达条件）
     """
     import time
+
     _sleep = getattr(task, 'sleep', None) or time.sleep
     _now = getattr(task, 'active_time', None) or time.time
 

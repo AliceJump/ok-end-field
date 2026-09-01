@@ -54,7 +54,15 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [
+                {
+                    "effect_id": "STATUS_HEAVY_HIT",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
         },
         {
             "skill_id": "aglina_ultimate",

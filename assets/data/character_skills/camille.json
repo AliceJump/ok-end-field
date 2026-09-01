@@ -61,6 +61,20 @@
                     "duration": null,
                     "target": "enemy",
                     "count": 1
+                },
+                {
+                    "effect_id": "DEBUFF_WEAKEN",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                },
+                {
+                    "effect_id": "VULN_BURN",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
                 }
             ]
         },

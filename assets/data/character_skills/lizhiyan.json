@@ -25,20 +25,8 @@
             "name": "摧玉网格",
             "skill_type": "战技",
             "element": "自然",
-            "has_enhancement": true,
-            "enhancement": {
-                "name": "种子爆发",
-                "trigger_condition": {
-                    "text": "种子命中处于自然附着的敌人",
-                    "effects": [
-                        "STACK_SEED",
-                        "ATTACH_NATURAL"
-                    ]
-                },
-                "enhancement_effect": "种子爆发",
-                "enhancement_visible_pulse": false,
-                "effects": []
-            },
+            "has_enhancement": false,
+            "enhancement": null,
             "description": "意志值 > 智识值，阵诀·意生效中。在目标脚下创建摧玉网格，对范围内敌人造成自然伤害并施加自然附着。阵诀·意：- 造成伤害时会向中心牵引范围内的敌人。",
             "damage_multiplier": "250%（基础）+ 350%（爆发）",
             "stagger_value": 0,
@@ -68,7 +56,28 @@
             "spirit_cost": 0,
             "effects": [
                 {
-                    "effect_id": "VULN_ALL",
+                    "effect_id": "STATUS_SPELL_INFLICT",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                },
+                {
+                    "effect_id": "VULN_NATURAL",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                },
+                {
+                    "effect_id": "VULN_COLD",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                },
+                {
+                    "effect_id": "STATUS_CONFINEMENT",
                     "value": 1,
                     "duration": null,
                     "target": "enemy",
@@ -88,7 +97,15 @@
             "stagger_value": 0,
             "cooldown": "20秒",
             "spirit_cost": 100,
-            "effects": []
+            "effects": [
+                {
+                    "effect_id": "STATUS_SPELL_INFLICT",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
         }
     ]
 }

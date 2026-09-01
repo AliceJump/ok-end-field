@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "腐蚀消耗双脆弱",
+                "release_gate": {
+                    "all": ["STATUS_CORROSION"]
+                },
                 "trigger_condition": {
                     "text": "消耗腐蚀状态施加物理脆弱与法术脆弱",
                     "effects": [
@@ -37,6 +40,13 @@
                 "enhancement_effect": "双脆弱",
                 "enhancement_visible_pulse": false,
                 "effects": [
+                    {
+                        "effect_id": "STATUS_CORROSION",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": -1
+                    },
                     {
                         "effect_id": "VULN_PHYSICAL",
                         "value": 1,
@@ -56,22 +66,7 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 100,
-            "effects": [
-                {
-                    "effect_id": "VULN_PHYSICAL",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                },
-                {
-                    "effect_id": "VULN_ALL",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                }
-            ]
+            "effects": []
         },
         {
             "skill_id": "ardelia_link",

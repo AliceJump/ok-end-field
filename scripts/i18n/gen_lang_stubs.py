@@ -22,6 +22,7 @@ from __future__ import annotations
 import json
 import keyword
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -128,8 +129,6 @@ def main() -> int:
         return 1
 
     parts = [
-        "# -*- coding: utf-8 -*-",
-        "# ruff: noqa: RUF002",
         '"""由 scripts/i18n/gen_lang_stubs.py 自动生成，请勿手改。',
         "",
         "为 self.lang.<模块>.<key> 提供静态类型提示：",

@@ -39,6 +39,11 @@ class EffectType(Enum):
     STATUS_SPELL_ANOMALY = "STATUS_SPELL_ANOMALY"  # 法术异常状态（通用）
     STATUS_SLOW = "STATUS_SLOW"          # 缓速
     STATUS_BROKEN = "STATUS_BROKEN"      # 破碎
+    STATUS_FOCUS = "STATUS_FOCUS"        # 安塔尔施加的聚焦状态
+    STATUS_CONFINEMENT = "STATUS_CONFINEMENT"  # 诀施加的囹圄状态
+    STATUS_ORIGINIUM_CRYSTAL = "STATUS_ORIGINIUM_CRYSTAL"  # 管理员施加的源石结晶
+    STATUS_SINGING = "STATUS_SINGING"    # 梨诺的演唱姿态
+    STATUS_HIGH_SINGING = "STATUS_HIGH_SINGING"  # 梨诺的高歌姿态
 
     # 层数系统
     STACK_MOLTEN = "STACK_MOLTEN"
@@ -51,6 +56,7 @@ class EffectType(Enum):
     STACK_SEED = "STACK_SEED"
     STACK_TRACE = "STACK_TRACE"
     STACK_CHARGE = "STACK_CHARGE"
+    STACK_QINGTING_SWORD = "STACK_QINGTING_SWORD"
 
     # 增益效果
     BUFF_ATTACK_UP = "BUFF_ATTACK_UP"
@@ -64,11 +70,14 @@ class EffectType(Enum):
     BUFF_BURN_UP = "BUFF_BURN_UP"
     BUFF_ELECTROMAGNETIC_UP = "BUFF_ELECTROMAGNETIC_UP"
     BUFF_NATURAL_UP = "BUFF_NATURAL_UP"
+    BUFF_SPELL_UP = "BUFF_SPELL_UP"
+    BUFF_PROTECTION = "BUFF_PROTECTION"
 
     # 减益效果
     DEBUFF_DEF_DOWN = "DEBUFF_DEF_DOWN"
     DEBUFF_SPEED_DOWN = "DEBUFF_SPEED_DOWN"
     DEBUFF_HEAL_DOWN = "DEBUFF_HEAL_DOWN"
+    DEBUFF_WEAKEN = "DEBUFF_WEAKEN"
 
     # 放置物
 
@@ -82,6 +91,7 @@ class EffectType(Enum):
     MECH_BOMB = "MECH_BOMB"
     MECH_RADAR = "MECH_RADAR"
     MECH_TURRET = "MECH_TURRET"
+    MECH_SUPPORT_CRYSTAL = "MECH_SUPPORT_CRYSTAL"
     PLACE_THUNDER_SPEAR = "PLACE_THUNDER_SPEAR"  
     REMOVE_THUNDER_SPEAR = "REMOVE_THUNDER_SPEAR"
 
@@ -100,6 +110,7 @@ class EffectType(Enum):
     TRIGGER_EXPLOSION = "TRIGGER_EXPLOSION"
     TRIGGER_HEAL = "TRIGGER_HEAL"
     TRIGGER_SHIELD = "TRIGGER_SHIELD"
+    TRIGGER_REPEAT_EFFECT = "TRIGGER_REPEAT_EFFECT"
 
 
 # 效果描述映射
@@ -116,7 +127,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.VULN_ELECTROMAGNETIC: "敌人受到电磁伤害增加",
     EffectType.VULN_NATURAL: "敌人受到自然伤害增加",
     EffectType.VULN_PHYSICAL: "敌人受到物理伤害增加",
-    EffectType.VULN_ALL: "敌人受到所有元素伤害增加",
+    EffectType.VULN_ALL: "敌人受到的法术伤害增加（不含物理伤害）",
 
     # 物理异常状态
     EffectType.STATUS_SHRED: "破防状态，可被击飞和倒地叠加（最多4层），被猛击和碎甲消耗",
@@ -138,6 +149,11 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STATUS_SPELL_ANOMALY: "法术异常状态（通用）",
     EffectType.STATUS_SLOW: "敌人被施加缓速",
     EffectType.STATUS_BROKEN: "敌人处于破碎状态",
+    EffectType.STATUS_FOCUS: "安塔尔施加的聚焦状态，同一时间最多存在于一个敌人",
+    EffectType.STATUS_CONFINEMENT: "诀施加的囹圄状态，使目标所有行动减缓",
+    EffectType.STATUS_ORIGINIUM_CRYSTAL: "管理员附着的源石结晶，可被物理异常或破防消耗",
+    EffectType.STATUS_SINGING: "梨诺的演唱姿态，持续强化全队并周期追加攻击与治疗",
+    EffectType.STATUS_HIGH_SINGING: "梨诺的高歌姿态，替代演唱姿态并提供强化效果",
 
     # 层数系统
     EffectType.STACK_MOLTEN: "莱万汀的熔火灼痕层数",
@@ -150,6 +166,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STACK_SEED: "诀的种子层数",
     EffectType.STACK_TRACE: "洛茜的爪印斫痕层数",
     EffectType.STACK_CHARGE: "卡契尔的蓄力层数",
+    EffectType.STACK_QINGTING_SWORD: "庄方宜的青霆剑数量，可按导电异常等级动态生成，单次战技最多生成3柄，并在逐柄雷击后消费",
 
     # 增益效果
     EffectType.BUFF_ATTACK_UP: "攻击力增加",
@@ -163,11 +180,14 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.BUFF_BURN_UP: "灼热伤害增加",
     EffectType.BUFF_ELECTROMAGNETIC_UP: "电磁伤害增加",
     EffectType.BUFF_NATURAL_UP: "自然伤害增加",
+    EffectType.BUFF_SPELL_UP: "法术伤害增加",
+    EffectType.BUFF_PROTECTION: "干员获得庇护效果",
 
     # 减益效果
     EffectType.DEBUFF_DEF_DOWN: "敌人防御力下降",
     EffectType.DEBUFF_SPEED_DOWN: "敌人移动速度下降",
     EffectType.DEBUFF_HEAL_DOWN: "敌人受到的治疗效果降低",
+    EffectType.DEBUFF_WEAKEN: "敌人被施加虚弱效果",
 
     # 特殊机制
     EffectType.MECH_VACUUM: "洁尔佩塔的真空牵引效果",
@@ -179,6 +199,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.MECH_BOMB: "萤石的炸弹效果",
     EffectType.MECH_RADAR: "安塔尔的雷达效果",
     EffectType.MECH_TURRET: "佩丽卡的炮台效果",
+    EffectType.MECH_SUPPORT_CRYSTAL: "赛希召唤的支援晶体",
     EffectType.PLACE_THUNDER_SPEAR: "艾维文娜的雷枪放置物",
     EffectType.REMOVE_THUNDER_SPEAR: "艾维文娜的雷枪召回",
 
@@ -197,6 +218,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.TRIGGER_EXPLOSION: "触发爆炸效果",
     EffectType.TRIGGER_HEAL: "触发治疗效果",
     EffectType.TRIGGER_SHIELD: "触发护盾效果",
+    EffectType.TRIGGER_REPEAT_EFFECT: "再次施加目标当前的同类状态或附着",
 }
 
 
@@ -230,12 +252,16 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "倒地": EffectType.STATUS_KNOCKDOWN,
     "击飞": EffectType.STATUS_HEAVY_HIT,
     "失衡": EffectType.STATUS_STAGGER,
-    "重击": EffectType.STATUS_HEAVY_HIT,
     "法术附着": EffectType.STATUS_SPELL_INFLICT,
     "法术爆发": EffectType.STATUS_SPELL_BURST,
     "法术异常": EffectType.STATUS_SPELL_ANOMALY,
     "缓速": EffectType.STATUS_SLOW,
     "破碎": EffectType.STATUS_BROKEN,
+    "聚焦": EffectType.STATUS_FOCUS,
+    "囹圄": EffectType.STATUS_CONFINEMENT,
+    "源石结晶": EffectType.STATUS_ORIGINIUM_CRYSTAL,
+    "演唱姿态": EffectType.STATUS_SINGING,
+    "高歌姿态": EffectType.STATUS_HIGH_SINGING,
 
     # 层数系统
     "消耗破防层数": EffectType.STACK_SHRED,
@@ -247,6 +273,7 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "涡流": EffectType.STACK_WHIRLPOOL,
     "种子": EffectType.STACK_SEED,
     "蓄力": EffectType.STACK_CHARGE,
+    "青霆剑": EffectType.STACK_QINGTING_SWORD,
 
     # 增益效果
     "攻击力提升": EffectType.BUFF_ATTACK_UP,
@@ -260,11 +287,14 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "灼热伤害提升": EffectType.BUFF_BURN_UP,
     "电磁伤害提升": EffectType.BUFF_ELECTROMAGNETIC_UP,
     "自然伤害提升": EffectType.BUFF_NATURAL_UP,
+    "法术增幅": EffectType.BUFF_SPELL_UP,
+    "庇护": EffectType.BUFF_PROTECTION,
 
     # 减益效果
     "防御力降低": EffectType.DEBUFF_DEF_DOWN,
     "减速": EffectType.DEBUFF_SPEED_DOWN,
     "治疗效果降低": EffectType.DEBUFF_HEAL_DOWN,
+    "虚弱": EffectType.DEBUFF_WEAKEN,
     "真空": EffectType.MECH_VACUUM,
     "重力": EffectType.MECH_GRAVITY,
     "冰冻领域": EffectType.MECH_FREEZE_FIELD,

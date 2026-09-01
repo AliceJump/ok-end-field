@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "水龙卷系统",
+                "release_gate": {
+                    "all": ["STACK_WHIRLPOOL"]
+                },
                 "trigger_condition": {
                     "text": "消耗涡流形成水龙卷",
                     "effects": [
@@ -96,14 +99,7 @@
                 },
                 "enhancement_effect": "巨浪伤害提升",
                 "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "BUFF_DAMAGE_UP",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
+                "effects": []
             },
             "description": "汤汤揭开眼罩，释放眼中的古老图形封锁范围内的敌人，使其暂停行动一段时间，并造成持续的寒冷伤害。古老图形演化结束时降下巨浪，对范围内敌人造成大量寒冷伤害。若主控干员在古老图形中下落攻击，会提前结束演化降下巨浪，巨浪造成的寒冷伤害提升。",
             "damage_multiplier": "320%（持续）+ 400%（巨浪）+ 700%（提前降下）",

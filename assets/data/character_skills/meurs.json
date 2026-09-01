@@ -39,6 +39,13 @@
                     "duration": null,
                     "target": "enemy",
                     "count": 1
+                },
+                {
+                    "effect_id": "BUFF_PROTECTION",
+                    "value": 1,
+                    "duration": null,
+                    "target": "ally",
+                    "count": 1
                 }
             ]
         },
@@ -78,7 +85,7 @@
             "spirit_cost": 80,
             "effects": [
                 {
-                    "effect_id": "VULN_ALL",
+                    "effect_id": "DEBUFF_WEAKEN",
                     "value": 1,
                     "duration": null,
                     "target": "enemy",

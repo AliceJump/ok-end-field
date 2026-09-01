@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "不破防时施加物理脆弱",
+                "release_gate": {
+                    "static": false
+                },
                 "trigger_condition": {
                     "text": "最后一击命中的敌人若不处于破防状态则额外施加物理脆弱",
                     "effects": []
@@ -51,13 +54,6 @@
             "effects": [
                 {
                     "effect_id": "STATUS_KNOCKDOWN",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                },
-                {
-                    "effect_id": "VULN_PHYSICAL",
                     "value": 1,
                     "duration": null,
                     "target": "enemy",
@@ -97,14 +93,14 @@
                 "enhancement_visible_pulse": false,
                 "effects": [
                     {
-                        "effect_id": "BUFF_DAMAGE_UP",
+                        "effect_id": "TRIGGER_ADDITIONAL",
                         "value": 1,
                         "duration": null,
-                        "target": "self"
+                        "target": "enemy"
                     }
                 ]
             },
-            "description": "施放身外身，使用不动杵重砸前方地面，对大范围内的所有敌人造成物理伤害并造成造成倒地，然后将所有敌人聚拢至中心。一段时间后，对仍然留在砸地范围内的所有敌人再次造成大量物理伤害并造成倒地。若该技能消耗了连击，则会追加大量物理伤害。",
+            "description": "施放身外身，使用不动杵重砸前方地面，对大范围内的所有敌人造成物理伤害并造成倒地，然后将所有敌人聚拢至中心。一段时间后，对仍然留在砸地范围内的所有敌人再次造成大量物理伤害并造成倒地。若该技能消耗了连击，则会追加大量物理伤害。",
             "damage_multiplier": "400%（第一段）+ 400%（第二段）+ 600%（追加）",
             "stagger_value": 0,
             "cooldown": "15秒",

@@ -42,7 +42,7 @@ class SkillEffect:
     value: int = 0  # 效果值（如层数、百分比等）
     duration: str = ""  # 持续时间
     target: str = "enemy"  # 效果目标：enemy/ally/self
-    count: int = 1  # 施加/消耗计数：+1=施加，-1=消耗，0=仅检查/触发条件
+    count: Optional[int] = 1  # 施加/消耗计数；None=数量由运行时状态动态决定
 
 
 @dataclass
@@ -77,14 +77,23 @@ class Skill:
     name: str  # 技能名称
     skill_type: SkillType  # 技能类型
     element: ElementType  # 元素类型
-    has_enhancement: bool  # 是否存在强化态
-    enhancement: Optional[SkillEnhancement] = None  # 强化态信息
+    enhancements: list[SkillEnhancement] = field(default_factory=list)  # 全部独立条件效果
     effects: list[SkillEffect] = field(default_factory=list)  # 技能基础效果列表
     description: str = ""  # 技能描述
     damage_multiplier: str = ""  # 伤害倍率
     stagger_value: int = 0  # 失衡值
     cooldown: str = ""  # 冷却时间
     spirit_cost: int = 0  # 技力消耗
+
+    @property
+    def enhancement(self) -> Optional[SkillEnhancement]:
+        """旧单分支接口，始终指向 enhancements 的首项。"""
+        return self.enhancements[0] if self.enhancements else None
+
+    @property
+    def has_enhancement(self) -> bool:
+        """是否存在已解析的条件效果分支。"""
+        return bool(self.enhancements)
 
 
 @dataclass
