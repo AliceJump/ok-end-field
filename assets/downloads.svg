@@ -2,7 +2,7 @@
 <rect width="100%" height="100%" rx="16" fill="#0b1220"/>
 <rect x="1" y="1" width="518" height="336" rx="15" fill="none" stroke="#1f2937"/>
 <text x="24" y="38" fill="#e5e7eb" font-size="20" font-weight="700" font-family="Segoe UI, Arial">Monthly Downloads</text>
-<text x="24" y="56" fill="#94a3b8" font-size="12" font-family="Segoe UI, Arial">8 months · 32,173 total downloads</text>
+<text x="24" y="56" fill="#94a3b8" font-size="12" font-family="Segoe UI, Arial">8 months · 32,224 total downloads</text>
 <text x="24" y="88" fill="#e2e8f0" font-size="13" font-family="Segoe UI, Arial">2026-01</text>
 <text x="500" y="88" fill="#cbd5e1" font-size="13" text-anchor="end" font-family="Segoe UI, Arial">6,486</text>
 <rect x="110" y="78" width="340" height="10" rx="5" fill="#1f2937"/>
@@ -12,7 +12,7 @@
 <rect x="110" y="110" width="340" height="10" rx="5" fill="#1f2937"/>
 <rect x="106" y="110" width="291" height="10" rx="5" fill="#0ea5e9"/>
 <text x="24" y="152" fill="#e2e8f0" font-size="13" font-family="Segoe UI, Arial">2026-03</text>
-<text x="500" y="152" fill="#cbd5e1" font-size="13" text-anchor="end" font-family="Segoe UI, Arial">2,631</text>
+<text x="500" y="152" fill="#cbd5e1" font-size="13" text-anchor="end" font-family="Segoe UI, Arial">2,632</text>
 <rect x="110" y="142" width="340" height="10" rx="5" fill="#1f2937"/>
 <rect x="106" y="142" width="137" height="10" rx="5" fill="#06b6d4"/>
 <text x="24" y="184" fill="#e2e8f0" font-size="13" font-family="Segoe UI, Arial">2026-04</text>
@@ -32,7 +32,7 @@
 <rect x="110" y="270" width="340" height="10" rx="5" fill="#1f2937"/>
 <rect x="106" y="270" width="184" height="10" rx="5" fill="#2563eb"/>
 <text x="24" y="312" fill="#e2e8f0" font-size="13" font-family="Segoe UI, Arial">2026-08</text>
-<text x="500" y="312" fill="#cbd5e1" font-size="13" text-anchor="end" font-family="Segoe UI, Arial">4,244</text>
+<text x="500" y="312" fill="#cbd5e1" font-size="13" text-anchor="end" font-family="Segoe UI, Arial">4,294</text>
 <rect x="110" y="302" width="340" height="10" rx="5" fill="#1f2937"/>
-<rect x="106" y="302" width="222" height="10" rx="5" fill="#0ea5e9"/>
+<rect x="106" y="302" width="225" height="10" rx="5" fill="#0ea5e9"/>
 </svg>
