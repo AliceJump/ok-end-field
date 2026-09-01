@@ -21,7 +21,7 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["polib>=1.2,<2", "pypinyin>=0.55,<1", "PyYAML>=6.0,<7", "ruff>=0.16,<1"]
+dev = ["playwright>=1.55,<2", "polib>=1.2,<2", "pypinyin>=0.55,<1", "PyYAML>=6.0,<7", "ruff>=0.16,<1"]
 
 [tool.uv]
 package = false
