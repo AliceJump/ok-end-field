@@ -29,7 +29,7 @@ import time
 from contextlib import contextmanager
 from pathlib import Path
 from typing import TYPE_CHECKING
-from urllib.parse import urlsplit
+from urllib.parse import parse_qs, urlsplit
 
 if TYPE_CHECKING:
     from playwright.sync_api import Response
@@ -106,6 +106,11 @@ def _catalog_items(payload: dict) -> list[dict]:
                     seen.add(item_id)
                     result.append(item)
     return result
+
+
+def _has_expected_item_id(response_url: str, expected_item_id: str) -> bool:
+    """检查详情响应查询参数中的唯一 id 是否与预期干员一致。"""
+    return parse_qs(urlsplit(response_url).query).get("id") == [expected_item_id]
 
 
 def _response_body(response: Response) -> str | None:
@@ -372,7 +377,7 @@ def main() -> int:
                 with page.expect_response(
                     lambda response, expected=item_id: (
                         response.url.startswith(DETAIL_API)
-                        and f"id={expected}" in response.url
+                        and _has_expected_item_id(response.url, expected)
                         and response.status == 200
                     ),
                     timeout=60000,

@@ -81,6 +81,10 @@ def _manifest(catalog_count: int, operators: list[dict], failures: list[dict] | 
 
 
 class TestCaptureSklandOperatorDetails(unittest.TestCase):
+    def test_detail_response_id_matches_exact_query_value(self):
+        self.assertFalse(_MODULE._has_expected_item_id(f"{_MODULE.DETAIL_API}?id=10", "1"))
+        self.assertTrue(_MODULE._has_expected_item_id(f"{_MODULE.DETAIL_API}?lang=zh-CN&id=1", "1"))
+
     def test_snapshot_directory_conflict_is_explicit(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             out_root = Path(temp_dir)
