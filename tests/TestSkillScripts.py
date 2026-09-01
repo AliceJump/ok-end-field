@@ -1,4 +1,5 @@
 import importlib.util
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -6,8 +7,11 @@ from pathlib import Path
 
 import polib
 
-
 ROOT = Path(__file__).resolve().parent.parent
+WAIT_CODERABBIT = ROOT / ".agents/skills/ok-script-pr-review/wait-coderabbit.ps1"
+WAIT_CODERABBIT_HELPERS = ROOT / ".agents/skills/ok-script-pr-review/wait-coderabbit-helpers.ps1"
+WAIT_CODERABBIT_RATE_LIMIT = ROOT / ".agents/skills/ok-script-pr-review/wait-coderabbit-rate-limit.ps1"
+RUN_TESTS = ROOT / "scripts/testing/run_tests.ps1"
 
 
 def load_script_module(name: str, relative_path: str):
@@ -130,6 +134,22 @@ class SkillScriptTestCase(unittest.TestCase):
             with self.assertRaises(ValueError):
                 MERGE_PO.load_catalog(str(catalog_path))
 
+    def test_po_keys_distinguish_missing_and_explicit_empty_context(self):
+        missing = polib.POEntry(msgid="same", msgstr="missing")
+        explicit_empty = polib.POEntry(msgid="same", msgstr="empty", msgctxt="")
+
+        self.assertNotEqual(I18N_HELPER.entry_key(missing), I18N_HELPER.entry_key(explicit_empty))
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            catalog_path = Path(temp_dir) / "contexts.po"
+            catalog = polib.POFile()
+            catalog.append(missing)
+            catalog.append(explicit_empty)
+            catalog.save(str(catalog_path))
+
+            _, entries = MERGE_PO.load_catalog(str(catalog_path))
+            self.assertEqual(len(entries), 2)
+
     def test_i18n_scanner_reads_config_type_subscript_fields(self):
         tree = I18N_HELPER.ast.parse(
             """
@@ -164,9 +184,74 @@ class Demo:
         self.assertNotIn("yingtuo_stages", modules)
 
     def test_i18n_helper_rejects_missing_catalog_directory(self):
-        with tempfile.TemporaryDirectory() as temp_dir:
-            with self.assertRaises(SystemExit):
-                I18N_HELPER.check_i18n(temp_dir)
+        with tempfile.TemporaryDirectory() as temp_dir, self.assertRaises(SystemExit):
+            I18N_HELPER.check_i18n(temp_dir)
+
+    def test_non_ascii_powershell_scripts_have_utf8_bom(self):
+        non_ascii_paths = set()
+        for path in (WAIT_CODERABBIT, WAIT_CODERABBIT_HELPERS, WAIT_CODERABBIT_RATE_LIMIT, RUN_TESTS):
+            with self.subTest(path=path.relative_to(ROOT)):
+                data = path.read_bytes()
+                text = data.decode("utf-8-sig")
+                if any(ord(char) > 127 for char in text):
+                    non_ascii_paths.add(path)
+                    self.assertTrue(data.startswith(b"\xef\xbb\xbf"))
+
+        self.assertEqual(non_ascii_paths, {WAIT_CODERABBIT, WAIT_CODERABBIT_RATE_LIMIT, RUN_TESTS})
+
+    def test_wait_coderabbit_has_no_review_dismissal_mutation(self):
+        script = WAIT_CODERABBIT.read_text(encoding="utf-8-sig")
+
+        self.assertNotIn("DismissChangesRequested", script)
+        self.assertNotIn("/dismissals", script)
+        self.assertNotRegex(script, r'"-X"\s*,\s*"(?:POST|PUT|PATCH|DELETE)"')
+        self.assertNotIn('"pr", "comment"', script)
+        self.assertIn("Get-ChangesRequestedReviews", script)
+        self.assertIn("exit 3", script)
+
+    def test_wait_coderabbit_helpers_match_force_push_and_enforce_cutoff(self):
+        command = """
+. '.agents/skills/ok-script-pr-review/wait-coderabbit-helpers.ps1'
+$event = Select-ForcePushEvent -SinceCommit 'abcdef0' -EventLines @(
+    "abcdef0123456789`t1234567890abcdef`t2026-09-01T12:00:00Z"
+)
+if ($event.BeforeCommit -ne 'abcdef0123456789') { throw 'wrong force-push event' }
+if (-not (Test-TimestampAfterCutoff -Timestamp '2026-09-01T12:00:01Z' -Cutoff $event.CreatedAt)) { throw 'new timestamp rejected' }
+if (Test-TimestampAfterCutoff -Timestamp '2026-09-01T12:00:00Z' -Cutoff $event.CreatedAt) { throw 'equal timestamp accepted' }
+if (Test-TimestampAfterCutoff -Timestamp '2026-09-01T11:59:59Z' -Cutoff $event.CreatedAt) { throw 'old timestamp accepted' }
+$review = [pscustomobject]@{ commit_id = 'head123'; submitted_at = '2026-09-01T12:00:01Z' }
+$status = [pscustomobject]@{ sha = 'head123'; state = 'success'; created_at = '2026-09-01T12:00:01Z' }
+if (-not (Test-ReviewCoversHead -Review $review -HeadSha 'head123' -Cutoff $event.CreatedAt)) { throw 'current review rejected' }
+if (Test-ReviewCoversHead -Review $review -HeadSha 'other456' -Cutoff $event.CreatedAt) { throw 'stale review accepted' }
+if (-not (Test-StatusCompletesHead -Status $status -HeadSha 'head123' -Cutoff $event.CreatedAt)) { throw 'current status rejected' }
+if (Test-StatusCompletesHead -Status $status -HeadSha 'other456' -Cutoff $event.CreatedAt) { throw 'stale status accepted' }
+$status.state = 'pending'
+if (Test-StatusCompletesHead -Status $status -HeadSha 'head123' -Cutoff $event.CreatedAt) { throw 'pending status accepted' }
+try {
+    Select-ForcePushEvent -SinceCommit 'deadbee' -EventLines @() | Out-Null
+    throw 'missing event did not fail closed'
+} catch {
+    if ($_.Exception.Message -notlike 'No HeadRefForcePushedEvent*') { throw }
+}
+try {
+    ConvertTo-UtcCutoff '2026-09-01T12:00:00' | Out-Null
+    throw 'offset-free time accepted'
+} catch {
+    if ($_.Exception.Message -notlike '-SinceTime must include*') { throw }
+}
+exit 0
+"""
+        result = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-NonInteractive", "-Command", command],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
 
 if __name__ == "__main__":

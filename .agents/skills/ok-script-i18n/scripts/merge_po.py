@@ -30,7 +30,7 @@ def load_catalog(path):
     for entry in po:
         if not entry.msgid or entry.obsolete:
             continue
-        key = (entry.msgctxt or "", entry.msgid, entry.msgid_plural or "")
+        key = (entry.msgctxt, entry.msgid, entry.msgid_plural)
         if key in entries:
             raise ValueError(f"{path} contains duplicate PO entry: {key!r}")
         entries[key] = entry

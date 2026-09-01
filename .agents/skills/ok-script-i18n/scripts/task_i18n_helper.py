@@ -6,7 +6,6 @@ from pathlib import Path
 
 import polib
 
-
 TASK_STRING_ATTRS = {"name", "description"}
 CONFIG_TYPE_META = {
     "type",
@@ -85,7 +84,7 @@ class TaskStringVisitor(ast.NodeVisitor):
     def _collect_dict_strings(self, node):
         if not isinstance(node, ast.Dict):
             return
-        for key, value in zip(node.keys, node.values):
+        for key, value in zip(node.keys, node.values, strict=True):
             self._add_string(key)
             self._collect_value_strings(value)
 
@@ -100,13 +99,13 @@ class TaskStringVisitor(ast.NodeVisitor):
     def _collect_config_type_strings(self, node):
         if not isinstance(node, ast.Dict):
             return
-        for key, value in zip(node.keys, node.values):
+        for key, value in zip(node.keys, node.values, strict=True):
             self._add_string(key)
             self._collect_config_type_value(value)
 
     def _collect_config_type_value(self, node):
         if isinstance(node, ast.Dict):
-            for key, value in zip(node.keys, node.values):
+            for key, value in zip(node.keys, node.values, strict=True):
                 if isinstance(key, ast.Constant) and key.value in {"options", "buttons"}:
                     self._collect_value_strings(value)
                 elif isinstance(key, ast.Constant) and key.value == "text":
@@ -119,7 +118,7 @@ class TaskStringVisitor(ast.NodeVisitor):
 
 
 def scan_task(path):
-    with open(path, "r", encoding="utf-8-sig") as f:
+    with open(path, encoding="utf-8-sig") as f:
         tree = ast.parse(f.read(), filename=path)
     visitor = TaskStringVisitor()
     visitor.visit(tree)
@@ -132,7 +131,12 @@ def iter_po_paths(i18n_dir):
 
 
 def entry_key(entry):
-    return entry.msgctxt or "", entry.msgid, entry.msgid_plural or ""
+    return entry.msgctxt, entry.msgid, entry.msgid_plural
+
+
+def entry_key_sort(key):
+    context, msgid, plural = key
+    return context is not None, context or "", msgid, plural or ""
 
 
 def translated_strings(entry):
@@ -164,7 +168,10 @@ def check_i18n(i18n_dir):
         locale = po_path.parents[1].name
         entries = [entry for entry in po if entry.msgid and not entry.obsolete]
         keys = [entry_key(entry) for entry in entries]
-        duplicates = sorted(key for key, count in Counter(keys).items() if count > 1)
+        duplicates = sorted(
+            (key for key, count in Counter(keys).items() if count > 1),
+            key=entry_key_sort,
+        )
         if duplicates:
             failed = True
             print(f"duplicate entries in {po_path}:")
@@ -198,14 +205,11 @@ def check_i18n(i18n_dir):
     reference_locale = sorted(catalog_keys)[0]
     reference_keys = catalog_keys[reference_locale]
     for locale, keys in sorted(catalog_keys.items()):
-        missing = sorted(reference_keys - keys)
-        extra = sorted(keys - reference_keys)
+        missing = sorted(reference_keys - keys, key=entry_key_sort)
+        extra = sorted(keys - reference_keys, key=entry_key_sort)
         if missing or extra:
             failed = True
-            print(
-                f"catalog key mismatch for {locale} vs {reference_locale}: "
-                f"missing={len(missing)} extra={len(extra)}"
-            )
+            print(f"catalog key mismatch for {locale} vs {reference_locale}: missing={len(missing)} extra={len(extra)}")
             for key in missing[:20]:
                 print(f"  missing {key}")
             for key in extra[:20]:
