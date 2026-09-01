@@ -24,15 +24,15 @@ jobs:
           python-version: "3.12"
 
       - name: install uv
-        run: pip install uv
+        run: 'pip install --only-binary :all: uv==0.12.5'
 
       - name: install deps
-        run: uv sync --group dev
+        run: uv sync --locked --no-build --only-group dev
 
       - name: ruff check fix and format
         run: |
-          uv run ruff check --fix .
-          uv run ruff format .
+          uv run --locked --no-build --no-sync ruff check --fix .
+          uv run --locked --no-build --no-sync ruff format .
 
       - name: commit to branch
         id: commit
