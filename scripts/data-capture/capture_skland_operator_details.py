@@ -61,13 +61,15 @@ def _safe_name(name: str) -> str:
 
 
 def _write_text(path: Path, text: str) -> None:
+    parts = Path(path).parts
+    if ".." in parts:
+        raise ValueError(f"路径包含越界片段：{path}")
     real = os.path.realpath(path)
     root_real = os.path.realpath(ROOT)
-    if real.startswith(root_real + os.sep):
-        Path(real).parent.mkdir(parents=True, exist_ok=True)
-        Path(real).write_text(text, encoding="utf-8")
-    else:
+    if not real.startswith(root_real + os.sep):
         raise ValueError(f"拒绝写入仓库外路径：{path}")
+    Path(real).parent.mkdir(parents=True, exist_ok=True)
+    Path(real).write_text(text, encoding="utf-8")
 
 
 def _create_snapshot_dir(out_root: Path, stamp: str) -> Path:
