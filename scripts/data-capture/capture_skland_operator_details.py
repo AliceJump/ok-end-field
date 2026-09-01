@@ -61,8 +61,10 @@ def _safe_name(name: str) -> str:
 
 
 def _write_text(path: Path, text: str) -> None:
-    parts = Path(path).parts
-    if ".." in parts:
+    normalized = os.path.normpath(path)
+    if os.path.isabs(normalized):
+        normalized = os.path.relpath(normalized, ROOT)
+    if normalized.startswith(".." + os.sep):
         raise ValueError(f"路径包含越界片段：{path}")
     real = os.path.realpath(path)
     root_real = os.path.realpath(ROOT)
