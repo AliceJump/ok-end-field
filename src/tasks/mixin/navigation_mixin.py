@@ -188,8 +188,8 @@ class NavigationMixin(SearchMixin):
                 return self.yolo_detect(name=nav, box=nav_box)
             return self.find_feature(nav, box=nav_box, threshold=0.7)
 
-        self.send_key_down("w")  # 确认使用send_key：w为方向移动键，不属于游戏可配置热键，用于持续移动
-        self._walk_key_held = True  # 追踪 W 键状态，供导航对中门控使用
+        # 确认使用send_key：w为方向移动键，不属于游戏可配置热键，用于持续移动
+        self._walk_key_held = self.send_key_down("w")  # 追踪 W 键状态，供导航对中门控使用
 
         try:
             while True:
@@ -268,6 +268,21 @@ class NavigationMixin(SearchMixin):
                     nav_missing_start_time = None
                     nav_missing_recovered = False
 
+                    # 在移动视角前先按首次识别位置门控行走。即使本轮未完成对中，
+                    # 也保留“已识别但偏离中央”的状态，避免误恢复 W。
+                    first_nav_result = nav_result[0] if isinstance(nav_result, list) else nav_result
+                    scx, _scy = self.screen_center()
+                    center_tolerance = self.scale_distance(100)
+                    first_nav_center_x = first_nav_result.x + first_nav_result.width // 2
+                    if abs(first_nav_center_x - scx) <= center_tolerance:
+                        if not self._walk_key_held:
+                            self._walk_key_held = self.send_key_down("w")
+                        if self._walk_key_held and not run_bool and run_allowed:
+                            enter_run_mode()
+                    elif self._walk_key_held:
+                        self.send_key_up("w")
+                        self._walk_key_held = False
+
                     align_pos = self.align_ocr_or_find_target_to_center(
                         ocr_match_or_feature_name_list=nav,
                         only_x=True,
@@ -286,20 +301,14 @@ class NavigationMixin(SearchMixin):
                         if abs(align_pos[0] - scx) <= center_tolerance:
                             # 目标在中央附近 → 恢复行走
                             if not self._walk_key_held:
-                                self.send_key_down("w")
-                                self._walk_key_held = True
-                            if not run_bool and run_allowed:
+                                self._walk_key_held = self.send_key_down("w")
+                            if self._walk_key_held and not run_bool and run_allowed:
                                 enter_run_mode()
                         else:
                             # 目标偏离中央 → 停步
                             if self._walk_key_held:
                                 self.send_key_up("w")
                                 self._walk_key_held = False
-                    else:
-                        # 对中未识别到目标 → 恢复行走继续搜索
-                        if not self._walk_key_held:
-                            self.send_key_down("w")
-                            self._walk_key_held = True
                 else:
                     if nav_missing_start_time is None:
                         nav_missing_start_time = self.active_time()
@@ -331,8 +340,7 @@ class NavigationMixin(SearchMixin):
                                     break
                                 self.sleep(0.02)
                             self.send_key_up("s")  # 确认使用send_key：释放方向键
-                        self.send_key_down("w")
-                        self._walk_key_held = True
+                        self._walk_key_held = self.send_key_down("w")
                         nav_missing_recovered = True
 
                     if need_v and self.active_time() - last_click_v_time > 5:
