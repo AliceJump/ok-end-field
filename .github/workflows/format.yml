@@ -24,7 +24,7 @@ jobs:
           python-version: "3.12"
 
       - name: install uv
-        run: 'pip install --only-binary :all: uv==0.10.9'
+        run: 'pip install --only-binary :all: uv==0.12.5'
 
       - name: install deps
         run: uv sync --locked --no-build --only-group dev
