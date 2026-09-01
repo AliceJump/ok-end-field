@@ -5,7 +5,7 @@
 本文区分两套用途不同的语言资源：
 
 - `i18n/<locale>/LC_MESSAGES/ok.po`：GUI/gettext 翻译。
-- `assets/lang/<module>.json`：任务 OCR 匹配器和本地化业务文本。
+- `assets/lang/<module>.json`：任务 OCR 匹配器、本地化业务文本，以及少量多语言 data-only 数据。
 
 两者不能互相替代。
 
@@ -210,7 +210,7 @@ i18n/<locale>/LC_MESSAGES/ok.po
 `scripts/i18n/` 下的可用工具：
 
 - `sync_*.py`：官方译名同步进 lang JSON 与 ok.po（world_map / map_mark / wiki_item / character / official_i18n 各数据源一个脚本）。
-- `gen_lang_stubs.py`：扫描 lang JSON 生成 `src/data/lang/_lang_typed.py` 类型提示存根。
+- `gen_lang_stubs.py`：扫描 OCR/业务 lang JSON 生成 `src/data/lang/_lang_typed.py` 类型提示存根；`effect_names.json` 是 data-only 模块，由生成器显式排除，不暴露为 `self.lang` OCR 模块。
 - `lang_fill_missing.py`：缺失语言节点补全与审计（`--dry-run` 幂等）。
 - `restore_empty_po_entries.py`：从任意 git ref 的历史 po 恢复被清空的翻译。
 

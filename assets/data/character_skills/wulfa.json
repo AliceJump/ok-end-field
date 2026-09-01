@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "破防追加灼热伤害",
+                "release_gate": {
+                    "all": ["STACK_SHRED"]
+                },
                 "trigger_condition": {
                     "text": "目标已拥有破防状态时释放狼之珀",
                     "effects": [
@@ -59,23 +62,50 @@
             "skill_type": "连携技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "暴击率/暴击伤害提升",
-                "trigger_condition": {
-                    "text": "连携技第二段精准衔接时",
-                    "effects": []
+            "enhancement": null,
+            "enhancements": [
+                {
+                    "name": "第二段暴击增益",
+                    "trigger_condition": {
+                        "text": "连携技第二段命中",
+                        "effects": []
+                    },
+                    "enhancement_effect": "提升自身暴击率和暴击伤害",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "BUFF_CRIT_RATE_UP",
+                            "value": 1,
+                            "duration": null,
+                            "target": "self"
+                        },
+                        {
+                            "effect_id": "BUFF_CRIT_DMG_UP",
+                            "value": 1,
+                            "duration": null,
+                            "target": "self"
+                        }
+                    ]
                 },
-                "enhancement_effect": "伤害提升",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "BUFF_DAMAGE_UP",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
+                {
+                    "name": "精准衔接额外破防",
+                    "trigger_condition": {
+                        "text": "第二次连携技精准衔接",
+                        "effects": []
+                    },
+                    "enhancement_effect": "额外施加1层破防",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STACK_SHRED",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                }
+            ],
             "description": "当有敌人同时处于破防和法术附着状态时可以发动。 洛茜的连携技可连续发动两次，第一次会对目标造成物理伤害。 第二次将消耗目标全部的法术附着，对其造成基于消耗层数的物理伤害并造成一次击飞，同时在一段时间内提升自身的暴击率和暴击伤害。 当第二次连携技精准衔接时，可以额外施加1层破防。",
             "damage_multiplier": "150%（第一段）+ 300%（第二段）+ 180%（每层）",
             "stagger_value": 0,
@@ -96,24 +126,8 @@
             "name": "“利爪”奇袭",
             "skill_type": "终结技",
             "element": "灼热",
-            "has_enhancement": true,
-            "enhancement": {
-                "name": "暴击伤害提升",
-                "trigger_condition": {
-                    "text": "终结技暴击时",
-                    "effects": []
-                },
-                "enhancement_effect": "伤害提升",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "BUFF_DAMAGE_UP",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
+            "has_enhancement": false,
+            "enhancement": null,
             "description": "挥动披风迅捷戳击，在短时间内对目标造成多段灼热伤害，之后使用匕首进行两段斩击，造成大量灼热伤害并施加灼热附着。 本次技能将在暴击时造成更高的暴击伤害。",
             "damage_multiplier": "600%（戳击）+ 250%（第一段）+ 750%（第二段）",
             "stagger_value": 0,

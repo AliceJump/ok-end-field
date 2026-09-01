@@ -1,10 +1,14 @@
 import ast
 import re
+import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import json5
 from src.data.lang import get_supported_locales
+
+from scripts.i18n import gen_lang_stubs
 
 SOURCE_ROOT = Path("src")
 LANG_ROOT = Path("assets/lang")
@@ -207,6 +211,44 @@ class LangTestCase(unittest.TestCase):
         missing = self.collect_missing()
 
         self.assertEqual(missing, [], msg="\n".join(missing))
+
+    def test_data_only_lang_modules_are_not_ocr_stubs(self):
+        self.assertIn("effect_names", gen_lang_stubs.DATA_ONLY_MODULES)
+        self.assertTrue((gen_lang_stubs.LANG_ROOT / "effect_names.json").exists())
+        typed_stub = Path("src/data/lang/_lang_typed.py").read_text(encoding="utf-8")
+        self.assertNotIn("class EffectNamesModule", typed_stub)
+        self.assertNotIn("effect_names: EffectNamesModule", typed_stub)
+
+        with tempfile.TemporaryDirectory() as temp_dir_name:
+            temp_dir = Path(temp_dir_name)
+            lang_root = temp_dir / "lang"
+            lang_root.mkdir()
+            (lang_root / "task.json").write_text(
+                '{"confirm": {"zh_CN": {"string": "确认"}}}',
+                encoding="utf-8",
+            )
+            (lang_root / "effect_names.json").write_text(
+                '{"STATUS_TEST": {"zh_CN": {"string": "测试"}}}',
+                encoding="utf-8",
+            )
+            typed_out = temp_dir / "_lang_typed.py"
+            init_file = temp_dir / "__init__.py"
+            init_file.write_text(
+                "from ._lang_typed import _LangAccessorTyped\nclass LangAccessor(_LangAccessorTyped):\n    pass\n",
+                encoding="utf-8",
+            )
+            with (
+                patch.object(gen_lang_stubs, "REPO_ROOT", temp_dir),
+                patch.object(gen_lang_stubs, "LANG_ROOT", lang_root),
+                patch.object(gen_lang_stubs, "TYPED_OUT", typed_out),
+                patch.object(gen_lang_stubs, "INIT_FILE", init_file),
+            ):
+                self.assertEqual(gen_lang_stubs.main(), 0)
+
+            generated = typed_out.read_text(encoding="utf-8")
+            self.assertIn("class TaskModule", generated)
+            self.assertNotIn("EffectNamesModule", generated)
+            self.assertNotIn("effect_names:", generated)
 
     def test_lang_node_schema_is_valid(self):
         errors = []

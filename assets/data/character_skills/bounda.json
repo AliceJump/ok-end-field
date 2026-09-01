@@ -43,6 +43,13 @@
             "spirit_cost": 100,
             "effects": [
                 {
+                    "effect_id": "MECH_BOMB",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                },
+                {
                     "effect_id": "ATTACH_NATURAL",
                     "value": 1,
                     "duration": null,
@@ -72,14 +79,7 @@
             "spirit_cost": 0,
             "effects": [
                 {
-                    "effect_id": "ATTACH_NATURAL",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                },
-                {
-                    "effect_id": "ATTACH_COLD",
+                    "effect_id": "STATUS_SPELL_INFLICT",
                     "value": 1,
                     "duration": null,
                     "target": "enemy",
@@ -93,39 +93,63 @@
             "skill_type": "终结技",
             "element": "自然",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "引爆增强",
-                "trigger_condition": {
-                    "text": "终结技命中粘有自制炸弹的敌人",
+            "enhancement": null,
+            "enhancements": [
+                {
+                    "name": "引爆增强",
+                    "trigger_condition": {
+                        "text": "终结技命中粘有自制炸弹的敌人",
+                        "effects": [
+                            "MECH_BOMB"
+                        ]
+                    },
+                    "enhancement_effect": "引爆增强",
+                    "enhancement_visible_pulse": false,
                     "effects": [
-                        "MECH_BOMB"
+                        {
+                            "effect_id": "MECH_BOMB",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "TRIGGER_EXPLOSION",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
                     ]
                 },
-                "enhancement_effect": "引爆增强",
-                "enhancement_visible_pulse": false,
-                "effects": []
-            },
+                {
+                    "name": "高层附着再次施加",
+                    "trigger_condition": {
+                        "text": "最后一段伤害命中处于2层及以上寒冷附着或自然附着的目标",
+                        "effects": [
+                            "ATTACH_COLD",
+                            "ATTACH_NATURAL"
+                        ]
+                    },
+                    "enhancement_effect": "再次施加该法术附着",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_SPELL_INFLICT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                }
+            ],
             "description": "萤石以弧形轨迹高速运动并向弧内目标快速射击，造成4段自然伤害，若命中目标身上粘有自制炸弹，则立刻将其引爆并提升爆炸伤害及范围。若最后一段伤害命中处于2层及以上寒冷附着或自然附着的目标，则再次施加该法术附着。",
             "damage_multiplier": "250%（每段）",
             "stagger_value": 0,
             "cooldown": "10秒",
             "spirit_cost": 100,
-            "effects": [
-                {
-                    "effect_id": "ATTACH_NATURAL",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                },
-                {
-                    "effect_id": "ATTACH_COLD",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                }
-            ]
+            "effects": []
         }
     ]
 }

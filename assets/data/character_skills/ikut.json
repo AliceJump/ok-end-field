@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "导电消耗",
+                "release_gate": {
+                    "all": ["STATUS_CONDUCTING"]
+                },
                 "trigger_condition": {
                     "text": "战技消耗导电状态追加攻击",
                     "effects": [
@@ -37,6 +40,13 @@
                 "enhancement_effect": "追加攻击",
                 "enhancement_visible_pulse": false,
                 "effects": [
+                    {
+                        "effect_id": "STATUS_CONDUCTING",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": -1
+                    },
                     {
                         "effect_id": "TRIGGER_ADDITIONAL",
                         "value": 1,
@@ -83,6 +93,13 @@
                 "enhancement_effect": "消耗电磁附着并强制施加导电",
                 "enhancement_visible_pulse": false,
                 "effects": [
+                    {
+                        "effect_id": "ATTACH_ELECTROMAGNETIC",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": -1
+                    },
                     {
                         "effect_id": "STATUS_CONDUCTING",
                         "value": 1,

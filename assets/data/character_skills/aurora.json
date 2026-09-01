@@ -25,32 +25,21 @@
             "name": "饱和性防御",
             "skill_type": "战技",
             "element": "寒冷",
-            "has_enhancement": true,
-            "enhancement": {
-                "name": "护盾叠加",
-                "trigger_condition": {
-                    "text": "战技命中敌人获得护盾",
-                    "effects": [
-                        "BUFF_SHIELD"
-                    ]
-                },
-                "enhancement_effect": "护盾效果",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "BUFF_SHIELD",
-                        "value": 1,
-                        "duration": null,
-                        "target": "ally"
-                    }
-                ]
-            },
+            "has_enhancement": false,
+            "enhancement": null,
             "description": "架起盾牌格挡攻击，使自身及周围干员获得庇护，并立即返还一定技力。若在立盾期间受到攻击，则发动一次反击，尝试对攻击者造成寒冷伤害，并施加寒冷附着。",
             "damage_multiplier": "300%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 100,
             "effects": [
+                {
+                    "effect_id": "BUFF_PROTECTION",
+                    "value": 1,
+                    "duration": null,
+                    "target": "ally",
+                    "count": 1
+                },
                 {
                     "effect_id": "ATTACH_COLD",
                     "value": 1,

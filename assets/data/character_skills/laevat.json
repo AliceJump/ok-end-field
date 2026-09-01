@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "熔火层数",
+                "release_gate": {
+                    "static": false
+                },
                 "trigger_condition": {
                     "text": "战技命中敌人获得1层熔火，4层时触发追加攻击",
                     "effects": [
@@ -37,6 +40,13 @@
                 "enhancement_effect": "追加攻击",
                 "enhancement_visible_pulse": false,
                 "effects": [
+                    {
+                        "effect_id": "STACK_MOLTEN",
+                        "value": 4,
+                        "duration": null,
+                        "target": "self",
+                        "count": -4
+                    },
                     {
                         "effect_id": "TRIGGER_ADDITIONAL",
                         "value": 1,
@@ -80,10 +90,10 @@
             "spirit_cost": 0,
             "effects": [
                 {
-                    "effect_id": "STATUS_BURNING",
+                    "effect_id": "STACK_MOLTEN",
                     "value": 1,
                     "duration": null,
-                    "target": "enemy",
+                    "target": "self",
                     "count": 1
                 }
             ]

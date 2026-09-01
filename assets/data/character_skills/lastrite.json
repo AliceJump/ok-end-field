@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "寒冷脆弱",
+                "release_gate": {
+                    "all": ["STATUS_SPELL_INFLICT"]
+                },
                 "trigger_condition": {
                     "text": "消耗法术附着施加寒冷脆弱",
                     "effects": [
@@ -75,11 +78,11 @@
             "spirit_cost": 0,
             "effects": [
                 {
-                    "effect_id": "ATTACH_COLD",
+                    "effect_id": "CLEAR_COLD",
                     "value": 1,
                     "duration": null,
                     "target": "enemy",
-                    "count": 1
+                    "count": -1
                 }
             ]
         },
@@ -88,24 +91,8 @@
             "name": "临终别礼",
             "skill_type": "终结技",
             "element": "寒冷",
-            "has_enhancement": true,
-            "enhancement": {
-                "name": "寒冷脆弱增强",
-                "trigger_condition": {
-                    "text": "终结技期间",
-                    "effects": []
-                },
-                "enhancement_effect": "寒冷脆弱增强",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "VULN_COLD",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
+            "has_enhancement": false,
+            "enhancement": null,
             "description": "披着霜铠，凝结冰镰，对前方进行三次斩击，该状态下免疫所有伤害。每次斩击造成大量寒冷伤害。别礼只能从自身的战技、连携技中获得终结技能量。",
             "damage_multiplier": "800%（伤害）+ 寒冷脆弱×1.5",
             "stagger_value": 0,
