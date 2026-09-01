@@ -60,10 +60,11 @@ def _safe_name(name: str) -> str:
 
 
 def _write_text(path: Path, text: str) -> None:
-    if not path.resolve().is_relative_to(ROOT):
+    resolved = path.resolve()
+    if not resolved.is_relative_to(ROOT):
         raise ValueError(f"拒绝写入仓库外路径：{path}")
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(text, encoding="utf-8")
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    resolved.write_text(text, encoding="utf-8")
 
 
 def _create_snapshot_dir(out_root: Path, stamp: str) -> Path:
