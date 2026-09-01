@@ -132,9 +132,9 @@ class TestAnalyzeOperatorSkills(unittest.TestCase):
 
     def test_snapshot_path_traversal_is_rejected(self):
         for bad in ["../../../etc/escape", str(_MODULE.ROOT.parent)]:
-            sys.argv = ["analyze_operator_skills.py", "--snapshot", bad, "--stdout"]
-            with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as ctx:
-                _MODULE.main()
+            with mock.patch.object(sys, "argv", ["analyze_operator_skills.py", "--snapshot", bad, "--stdout"]):
+                with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as ctx:
+                    _MODULE.main()
             self.assertEqual(ctx.exception.code, 2)
 
 
