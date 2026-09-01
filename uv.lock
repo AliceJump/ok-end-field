@@ -2,6 +2,9 @@ version = 1
 revision = 3
 requires-python = "==3.12.*"
 
+[manifest]
+overrides = [{ name = "pywin32", marker = "sys_platform == 'win32'", specifier = "==311" }]
+
 [[package]]
 name = "certifi"
 version = "2026.7.22"
@@ -258,7 +261,7 @@ dependencies = [
     { name = "pycaw" },
     { name = "pydirectinput" },
     { name = "pynput" },
-    { name = "pywin32" },
+    { name = "pywin32", marker = "sys_platform == 'win32'" },
     { name = "requests" },
     { name = "typing-extensions" },
 ]

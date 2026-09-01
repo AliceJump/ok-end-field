@@ -12,7 +12,7 @@ permissions:
 jobs:
   format:
     if: ${{ github.repository_owner == 'AliceJump' }}
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: checkout
@@ -22,17 +22,18 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+          cache: pip
 
       - name: install uv
-        run: 'pip install --only-binary :all: uv==0.12.5'
+        run: "pip install --only-binary :all: uv==0.12.5"
 
       - name: install deps
-        run: uv sync --locked --no-build --only-group dev
+        run: uv sync --locked --only-group dev
 
       - name: ruff check fix and format
         run: |
-          uv run --locked --no-build --no-sync ruff check --fix .
-          uv run --locked --no-build --no-sync ruff format .
+          uv run --locked ruff check --fix .
+          uv run --locked ruff format .
 
       - name: commit to branch
         id: commit
