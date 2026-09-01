@@ -1,10 +1,10 @@
-﻿import win32api
+import win32api
 import win32con
 from qfluentwidgets import FluentIcon
 
-from src.data.world_map import item_to_warehouse_dict
-from src.data.zh_en import ITEM_WAREHOUSE_CATEGORY_EN_BY_ZH, ITEM_TRANSLATION_DICT
 from src.core.BaseEfTask import BaseEfTask
+from src.data.world_map import item_to_warehouse_dict
+from src.data.zh_en import ITEM_TRANSLATION_DICT, ITEM_WAREHOUSE_CATEGORY_EN_BY_ZH
 from src.icons import Icons
 
 _LOCATIONS = {
@@ -123,7 +123,7 @@ class WarehouseTransferTask(BaseEfTask):
             )
             if hits:
                 self.send_key("esc")  # 确认使用send_key：esc为系统通用退出键，非游戏可配置热键
-                self.log_info(f"仓库切换成功")
+                self.log_info("仓库切换成功")
                 return
             self.sleep(0.5)
         raise RuntimeError("切换仓库失败：5秒内未检测到“已连接”")
@@ -134,7 +134,7 @@ class WarehouseTransferTask(BaseEfTask):
         )  # 确认使用send_key：ctrl为系统修饰键，用于ctrl+点击多选，非游戏可配置热键
         try:
             self.sleep(0.03)
-            self.click(box,   down_time=0.03, after_sleep=0, key="left")
+            self.click(box, down_time=0.03, after_sleep=0, key="left")
             self.sleep(0.03)
         finally:
             win32api.keybd_event(win32con.VK_CONTROL, 0, win32con.KEYEVENTF_KEYUP, 0)

@@ -1,13 +1,14 @@
-from ok import TriggerTask, Logger
+from ok import Logger, TriggerTask
 
 from src.icons import Icons
-from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
 logger = Logger.get_logger(__name__)
 
 
 # 自动战斗主逻辑独立类
+
 
 # 原有任务类调用独立逻辑
 class AutoCombatTask(BattleMixin, TriggerTask):

@@ -1,9 +1,8 @@
 import re
 
-from src.data.world_map import areas_list
-from src.core.sequence_parser import parse_sequence
 from src.data.FeatureList import FeatureList as fL
 from src.data.lang import LangAccessor
+from src.data.world_map import areas_list
 
 
 class DailyBuyFeature:
@@ -14,25 +13,30 @@ class DailyBuyFeature:
 
     def __init__(self, task):
         self._task = task
-        task.default_config.update({
-            self.CFG_SHOP_WHITELIST: [],
-            self.CFG_BUY_GIFT: True,
-        })
-        task.config_description.update({
-            self.CFG_SHOP_WHITELIST: (
-                "默认留空，表示购买「日用消耗」「工业货品」「人文物产」首行首个物资。\n"
-                "更多用法参见 ./docs/日常任务.md > 买物资 。"
-            ),
-            self.CFG_BUY_GIFT: (
-                "是否购买「人文物产」（同样应用购物白名单序列）。"
-            ),
-        })
-        task.default_config_group.update({
-            "⭐买物资": [self.CFG_SHOP_WHITELIST, self.CFG_BUY_GIFT],
-        })
+        task.default_config.update(
+            {
+                self.CFG_SHOP_WHITELIST: [],
+                self.CFG_BUY_GIFT: True,
+            }
+        )
+        task.config_description.update(
+            {
+                self.CFG_SHOP_WHITELIST: (
+                    "默认留空，表示购买「日用消耗」「工业货品」「人文物产」首行首个物资。\n"
+                    "更多用法参见 ./docs/日常任务.md > 买物资 。"
+                ),
+                self.CFG_BUY_GIFT: ("是否购买「人文物产」（同样应用购物白名单序列）。"),
+            }
+        )
+        task.default_config_group.update(
+            {
+                "⭐买物资": [self.CFG_SHOP_WHITELIST, self.CFG_BUY_GIFT],
+            }
+        )
 
     def __getattr__(self, name):
         return getattr(self._task, name)
+
     def buy_staple_goods(self, target_areas=None, keep_area_context=False):
         self.info_set("current_task", "buy_staple_goods")
         self.log_info("开始买物资任务")
@@ -84,7 +88,12 @@ class DailyBuyFeature:
             else:
                 self.click_relative(0.1, 0.4)
                 self.log_info("未指定白名单，选择首行首个")
-            can_buy=self.wait_feature(feature=fL.skip_dialog_confirm, box=self.box_of_screen(0.825, 0.793, 0.851, 0.843), time_out=2, raise_if_not_found=False)
+            can_buy = self.wait_feature(
+                feature=fL.skip_dialog_confirm,
+                box=self.box_of_screen(0.825, 0.793, 0.851, 0.843),
+                time_out=2,
+                raise_if_not_found=False,
+            )
             if can_buy:
                 self.plus_max()
                 self.click(can_buy)

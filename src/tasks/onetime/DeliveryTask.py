@@ -2,7 +2,7 @@ import webbrowser
 
 from qfluentwidgets import FluentIcon
 
-from src.icons import Icons
+from src.core.sequence_parser import parse_int_sequence
 from src.data.delivery_area import (
     DEFAULT_DELIVERY_AREA,
     DELIVERY_AREA_CONFIG,
@@ -17,8 +17,8 @@ from src.data.delivery_area_service import (
     get_full_cycle_targets,
 )
 from src.data.FeatureList import FeatureList as fL
+from src.icons import Icons
 from src.tasks.account.account_mixin import AccountMixin
-from src.core.sequence_parser import parse_int_sequence
 from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
@@ -27,7 +27,7 @@ secondary_objective_direction_dot = [
     fL.secondary_objective_direction_dot_light,
     fL.secondary_objective_direction_dot_light_two,
     fL.secondary_objective_direction_dot_light_three,
-    fL.secondary_objective_direction_dot_light_fourth
+    fL.secondary_objective_direction_dot_light_fourth,
 ]
 
 
@@ -90,16 +90,18 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self._configure_delivery_area(DEFAULT_DELIVERY_AREA)
         self.support_schedule_task = True
         self.support_multi_account = True
-        self.config_description.update({
-            self.CFG_DELIVERY_AREA: "通过下拉框切换送货地区配置",
-            self.CFG_TEST_TARGET: "默认是无，表示正常执行相关任务\n也可以选择特定的滑索分叉序列来测试滑索功能\n选择完整循环测试则会依次测试每个送货目标的完整流程\n(需要锁定次要任务在送货任务上或附近)",
-            self.CFG_ONLY_ACCEPT: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n仅接取当前地区委托，不送货',
-            self.CFG_ONLY_DELIVER: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n接取当前地区委托后启动自动识别送货',
-            self.CFG_TARGET_TICKET_NUM: "目标券数优先级序列，用逗号分隔多个券数。按列表中顺序优先抢前面的券数。\n默认：119000。可选：73100、79800、119000、159000、163000",
-            self.CFG_FULL_CYCLE_LOCATION: "仅在“完整循环测试”时生效，用于限定测试的小区域（当前地区可选地点）",
-            self.CFG_TUTORIAL: self.TUTORIAL_TIPS,
-            "发生异常时终止游戏": "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。",
-        })
+        self.config_description.update(
+            {
+                self.CFG_DELIVERY_AREA: "通过下拉框切换送货地区配置",
+                self.CFG_TEST_TARGET: "默认是无，表示正常执行相关任务\n也可以选择特定的滑索分叉序列来测试滑索功能\n选择完整循环测试则会依次测试每个送货目标的完整流程\n(需要锁定次要任务在送货任务上或附近)",
+                self.CFG_ONLY_ACCEPT: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n仅接取当前地区委托，不送货',
+                self.CFG_ONLY_DELIVER: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n接取当前地区委托后启动自动识别送货',
+                self.CFG_TARGET_TICKET_NUM: "目标券数优先级序列，用逗号分隔多个券数。按列表中顺序优先抢前面的券数。\n默认：119000。可选：73100、79800、119000、159000、163000",
+                self.CFG_FULL_CYCLE_LOCATION: "仅在“完整循环测试”时生效，用于限定测试的小区域（当前地区可选地点）",
+                self.CFG_TUTORIAL: self.TUTORIAL_TIPS,
+                "发生异常时终止游戏": "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。",
+            }
+        )
         self.default_config.update(
             {
                 self.CFG_TARGET_TICKET_NUM: ["119000"],
@@ -200,16 +202,14 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self.log_info("未找到‘运送委托列表’，退出")
             return False
         self.wait_ui_stable(refresh_interval=1)
-        self.active_and_send_mouse_delta(0, self.height//2-20, activate=False)
+        self.active_and_send_mouse_delta(0, self.height // 2 - 20, activate=False)
         start_time = self.active_time()
         while True:
             if self.active_time() - start_time > 600:
                 self.log_info("接单尝试时间过长，退出")
                 return False
             target_nums = parse_int_sequence(self.config.get(self.CFG_TARGET_TICKET_NUM, ["119000"]))
-            box = self.box_of_screen(
-                0.654, 0.230, 0.699, 0.900
-            )
+            box = self.box_of_screen(0.654, 0.230, 0.699, 0.900)
             results, has_configured_feature = self._find_accept_order_results(target_nums, box)
             if not has_configured_feature:
                 self.log_info(f"当前地区({self.delivery_area})未配置目标券数({target_nums})对应接单特征")
@@ -217,8 +217,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             if results:
                 for result in results:
                     self.click(
-                        (result.x + result.width)/self.width + (0.873 - 0.691),
-                        (result.y + result.height)/self.height,
+                        (result.x + result.width) / self.width + (0.873 - 0.691),
+                        (result.y + result.height) / self.height,
                         down_time=0.1,
                     )
                     self.log_info("疑似已经接取委托")
@@ -230,9 +230,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                         feature=fL.get_exchange_ticket,
                         time_out=3,
                         raise_if_not_found=False,
-                    ) or (
-                        self.wait_feature(feature=fL.one_task_to_map)
-                    )
+                    ) or (self.wait_feature(feature=fL.one_task_to_map))
                     if accepted_successfully:
                         self.log_info("接取成功")
                         return True
@@ -241,7 +239,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self.log_info("未找到符合条件(金额+类型)的委托，准备刷新重试")
             refresh_btn_start = self.active_time()
             while True:
-                if last_refresh_box := self.wait_feature(feature=fL.refresh_order_list, vertical_variance=0.05, horizontal_variance=0.02):
+                if last_refresh_box := self.wait_feature(
+                    feature=fL.refresh_order_list, vertical_variance=0.05, horizontal_variance=0.02
+                ):
                     now = self.active_time()
                     last = getattr(self, "_last_refresh_ts", 0.0)
                     wait = max(0.0, 5.4 - (now - last))
@@ -249,7 +249,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                         self.sleep(wait)
                     self.click(last_refresh_box)
                     self._last_refresh_ts = self.active_time()
-                    self.wait_ui_stable(refresh_interval=1)  # 刷新后界面稳定的时间可能会比平常长一些，尤其是网络较慢的时候
+                    self.wait_ui_stable(
+                        refresh_interval=1
+                    )  # 刷新后界面稳定的时间可能会比平常长一些，尤其是网络较慢的时候
                     break
                 if self.active_time() - refresh_btn_start > 10:
                     self.log_info("长时间未定位到刷新按钮，无法刷新，结束任务")
@@ -343,14 +345,18 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         Returns:
             bool: 成功返回True，失败返回False
         """
-        result = self._find_zip_line_board_button(total_time_out=120)  # 主界面确认 + 找登滑索架按钮（含踱步兜底），总超时沿用 120s
+        result = self._find_zip_line_board_button(
+            total_time_out=120
+        )  # 主界面确认 + 找登滑索架按钮（含踱步兜底），总超时沿用 120s
         if result:
             if self.wait_ocr(match=self.lang.DeliveryTask.k_96b876e3, box=self.box.top_left, time_out=2, log=True):
                 self.press_key("tab")
                 self.wait_until(
-                    lambda: not self.ocr(
-                        match=self.lang.DeliveryTask.k_96b876e3,
-                        box=self.box.top_left,
+                    lambda: (
+                        not self.ocr(
+                            match=self.lang.DeliveryTask.k_96b876e3,
+                            box=self.box.top_left,
+                        )
                     ),
                     time_out=2,
                     raise_if_not_found=False,
@@ -363,10 +369,12 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             if not zip_line_list:
                 self.log_info(f"送货点滑索配置为空: {to_delivery_point_key}")
                 return False
-            self.zip_line_list_go(zip_line_list,
-                                  need_scroll=self.zip_line_scroll_enabled(),
-                                  target=(secondary_objective_direction_dot, "feature"),
-                                  need_v=True)  # 需要在配置里指定出发点的滑索距离,这里默认是36m的滑索
+            self.zip_line_list_go(
+                zip_line_list,
+                need_scroll=self.zip_line_scroll_enabled(),
+                target=(secondary_objective_direction_dot, "feature"),
+                need_v=True,
+            )  # 需要在配置里指定出发点的滑索距离,这里默认是36m的滑索
             if only_zip_line:
                 return True
             self.align_ocr_or_find_target_to_center(
@@ -376,7 +384,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 ocr=False,
                 raise_if_fail=False,
             )
-            self.send_key("v", after_sleep=0.5)  # 确认使用send_key：v为追踪键，在导航循环中用于重置视野，属于高频重复操作避免经过KeyConfigManager
+            self.send_key(
+                "v", after_sleep=0.5
+            )  # 确认使用send_key：v为追踪键，在导航循环中用于重置视野，属于高频重复操作避免经过KeyConfigManager
             if not self.navigate_until_target(
                 target=fL.receive_good,
                 target_is_ocr=False,
@@ -416,7 +426,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             ocr=False,
             raise_if_fail=False,
         )
-        self.send_key("v", after_sleep=0.5)  # 确认使用send_key：v为追踪键，在导航循环中用于重置视野，属于高频重复操作避免经过KeyConfigManager
+        self.send_key(
+            "v", after_sleep=0.5
+        )  # 确认使用send_key：v为追踪键，在导航循环中用于重置视野，属于高频重复操作避免经过KeyConfigManager
         self.navigate_until_target(
             target=end_pattern,
             target_is_ocr=True,
@@ -434,7 +446,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         ):
             self.skip_dialog(time_out=5)
             self.ensure_main()
-
 
     def _run_single_delivery_cycle(self):
         if getattr(self, "_daily_delivery_mode", False) or self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE:
@@ -499,8 +510,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                                 end_pattern = pattern
                                 self.on_zip_line_start(
                                     ends_list_pattern_dict[pattern],
-                                     need_scroll=self.zip_line_scroll_enabled(),
-                                    target=(secondary_objective_direction_dot, "feature")
+                                    need_scroll=self.zip_line_scroll_enabled(),
+                                    target=(secondary_objective_direction_dot, "feature"),
                                 )
                                 break
                     self.to_end_and_submit(end_pattern)
@@ -517,19 +528,16 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 self.task_to_transfer_point()
                 self.to_storage_point_and_back_zip_line(only_zip_line=True)
                 if self.wait_click_ocr(
-                        match=self.lang.DeliveryTask.k_b0e3a2da,
-                        box=self.box.bottom_right,
-                        settle_time=1,
-                        time_out=2,
-                        log=True,
-                        after_sleep=2,
-                        alt=True,
+                    match=self.lang.DeliveryTask.k_b0e3a2da,
+                    box=self.box.bottom_right,
+                    settle_time=1,
+                    time_out=2,
+                    log=True,
+                    after_sleep=2,
+                    alt=True,
                 ):
                     self.log_info("已找到并登上滑索架，继续测试")
-                    self.on_zip_line_start(
-                        end, need_v=False,
-                        need_scroll=self.zip_line_scroll_enabled()
-                    )
+                    self.on_zip_line_start(end, need_v=False, need_scroll=self.zip_line_scroll_enabled())
                     self.sleep(2)
         else:
             zip_line_list_str = self.get_zip_line_config_value(self.config.get(self.CFG_TEST_TARGET))
@@ -564,20 +572,20 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         try:
             self._ensure_delivery_area_config()
             allow_multi = (
-                    self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE
-                    and not self.config.get(self.CFG_ONLY_ACCEPT)
-                    and not self.config.get(self.CFG_ONLY_DELIVER)
+                self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE
+                and not self.config.get(self.CFG_ONLY_ACCEPT)
+                and not self.config.get(self.CFG_ONLY_DELIVER)
             )
             for repeat_idx, repeat_times in self.iter_multi_account_context(
-                    repeat_times=1,
-                    empty_accounts_message="多账户模式已开启，但账号列表为空，自动送货任务结束",
-                    account_log_suffix=self.tr("自动送货"),
-                    allow_multi_account=allow_multi,
+                repeat_times=1,
+                empty_accounts_message="多账户模式已开启，但账号列表为空，自动送货任务结束",
+                account_log_suffix=self.tr("自动送货"),
+                allow_multi_account=allow_multi,
             ):
                 self._run_single_delivery_cycle()
 
         except Exception as e:
-            self.handle_task_exception(e, 'DeliveryTask_Exception')
+            self.handle_task_exception(e, "DeliveryTask_Exception")
 
 
 class DeliveryFeature(DeliveryTask):
@@ -593,18 +601,20 @@ class DeliveryFeature(DeliveryTask):
         self.try_time = 0
         self._configure_delivery_area(DEFAULT_DELIVERY_AREA)
 
-        task.default_config.update({
-            self.DAILY_ENABLE_KEY: False,
-            self.CFG_TARGET_TICKET_NUM: ["119000"],
-            self.CFG_DELIVERY_AREA: DEFAULT_DELIVERY_AREA,
-        })
-        task.config_description.update({
-            self.DAILY_ENABLE_KEY: "是否执行自动接取并完成运输委托。",
-            self.CFG_TARGET_TICKET_NUM: (
-                "目标券数优先级序列，用逗号分隔多个券数。"
-            ),
-            self.CFG_DELIVERY_AREA: "通过下拉框切换送货地区配置。",
-        })
+        task.default_config.update(
+            {
+                self.DAILY_ENABLE_KEY: False,
+                self.CFG_TARGET_TICKET_NUM: ["119000"],
+                self.CFG_DELIVERY_AREA: DEFAULT_DELIVERY_AREA,
+            }
+        )
+        task.config_description.update(
+            {
+                self.DAILY_ENABLE_KEY: "是否执行自动接取并完成运输委托。",
+                self.CFG_TARGET_TICKET_NUM: ("目标券数优先级序列，用逗号分隔多个券数。"),
+                self.CFG_DELIVERY_AREA: "通过下拉框切换送货地区配置。",
+            }
+        )
         task.config_type[self.CFG_DELIVERY_AREA] = {
             "type": "drop_down",
             "options": list(DELIVERY_AREA_CONFIG.keys()),
@@ -613,9 +623,11 @@ class DeliveryFeature(DeliveryTask):
             "options_available": DELIVERY_TARGET_TICKET_NUM_OPTIONS,
             "allow_duplication": False,
         }
-        task.default_config_group.update({
-            self.DAILY_ENABLE_KEY: [self.CFG_TARGET_TICKET_NUM, self.CFG_DELIVERY_AREA],
-        })
+        task.default_config_group.update(
+            {
+                self.DAILY_ENABLE_KEY: [self.CFG_TARGET_TICKET_NUM, self.CFG_DELIVERY_AREA],
+            }
+        )
 
     def __getattr__(self, name):
         return getattr(self._task, name)

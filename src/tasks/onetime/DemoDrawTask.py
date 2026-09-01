@@ -15,13 +15,17 @@ class DemoDrawTask(Common):
         self.description = "在演武台面前自动进入演算抽牌页，循环抽取直到满足等级变化条件"
 
         self.daily_demo = DailyDemoFeature(self)
-        self.default_config.update({
-            "最多重开次数": 30,
-        })
+        self.default_config.update(
+            {
+                "最多重开次数": 30,
+            }
+        )
         self.default_config.pop("⭐演算", None)
-        self.config_description.update({
-            "最多重开次数": "每轮最多抽牌5次；未满足条件时点击左下角『放弃』并重新开始。",
-        })
+        self.config_description.update(
+            {
+                "最多重开次数": "每轮最多抽牌5次；未满足条件时点击左下角『放弃』并重新开始。",
+            }
+        )
 
     def run(self):
         max_restart_times = int(self.config.get("最多重开次数", 30))
@@ -55,10 +59,10 @@ class DemoDrawTask(Common):
 
         for draw_index in range(5):
             if not self.wait_click_feature(
-                    feature=fL.demo_random_button,
-                    time_out=10,
-                    raise_if_not_found=False,
-                    click_after_delay=0.5,
+                feature=fL.demo_random_button,
+                time_out=10,
+                raise_if_not_found=False,
+                click_after_delay=0.5,
             ):
                 self.log_warning("未找到演算抽牌按钮")
                 return False
@@ -85,10 +89,10 @@ class DemoDrawTask(Common):
 
     def abandon_draw_page(self):
         if not self.wait_click_ocr(
-                match=self.lang.daily_battle_mixin.k_b8a81b7a,
-                box=self.box.bottom_left,
-                time_out=5,
-                raise_if_not_found=False,
+            match=self.lang.daily_battle_mixin.k_b8a81b7a,
+            box=self.box.bottom_left,
+            time_out=5,
+            raise_if_not_found=False,
         ):
             self.log_warning("未找到左下角『放弃』按钮")
             return False

@@ -5,10 +5,15 @@ class DailyCreditMixin:
     def collect_credit(self):
         self.info_set("current_task", "collect_credit")
         self.press_key("f5")
-        self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_7be4248b, box=self.box.top, time_out=5, recheck_time=1)
-        result = self.wait_click_ocr(match=[self.lang.daily_routine_mixin.k_b693e51a, self.lang.daily_routine_mixin.k_f646bcd5],
-                                     box=self.box.bottom_left,
-                                     time_out=7, recheck_time=1)
+        self.wait_click_ocr(
+            match=self.lang.daily_routine_mixin.k_7be4248b, box=self.box.top, time_out=5, recheck_time=1
+        )
+        result = self.wait_click_ocr(
+            match=[self.lang.daily_routine_mixin.k_b693e51a, self.lang.daily_routine_mixin.k_f646bcd5],
+            box=self.box.bottom_left,
+            time_out=7,
+            recheck_time=1,
+        )
         if not result:
             self.log_info("未找到可收取信用或无待领取信用的选项")
             return False
@@ -31,7 +36,9 @@ class DailyCreditMixin:
                 self.log_info("循环过多次仍未找到交流或助力对象，可能出现异常，结束拜访")
                 return False
             if is_first_time:
-                self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_e84c3ae9, box=self.box.right, time_out=7, recheck_time=1)
+                self.wait_click_ocr(
+                    match=self.lang.daily_routine_mixin.k_e84c3ae9, box=self.box.right, time_out=7, recheck_time=1
+                )
             else:
                 if left_exchange_time <= 0 and left_help_time <= 0:
                     if exchange_not_found:
@@ -53,21 +60,17 @@ class DailyCreditMixin:
                     self.log_info("找不到可交流或助力的玩家")
                     return False
                 if left_exchange_time > 0:
-                    result = self.find_feature(
-                        feature=fL.can_exchange_info_icon, box=span_box
-                    )
+                    result = self.find_feature(feature=fL.can_exchange_info_icon, box=span_box)
                     if scroll_count >= 7:
                         self.back()
                         self.ensure_in_friend_boat()
-                        self.press_key('f')
+                        self.press_key("f")
                         self.wait_ui_stable(refresh_interval=1)
                         left_exchange_time = 0
                         exchange_not_found = True
                         continue
                 elif left_help_time > 0:
-                    result = self.find_feature(
-                        feature=fL.can_help_icon, box=span_box
-                    )
+                    result = self.find_feature(feature=fL.can_help_icon, box=span_box)
                 if not result:
                     scroll_count += 1
                     self.scroll_relative(0.5, 0.5, -4)
@@ -77,7 +80,9 @@ class DailyCreditMixin:
             self.click_confirm(time_out=5, recheck_time=1)
             if not self.ensure_in_friend_boat():
                 self.log_info("未能进入好友帝江号")
-                if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_a730d877, box=self.box.top_left, time_out=1):
+                if self.wait_click_ocr(
+                    match=self.lang.daily_routine_mixin.k_a730d877, box=self.box.top_left, time_out=1
+                ):
                     continue
                 else:
                     return False
@@ -88,12 +93,20 @@ class DailyCreditMixin:
             if left_help_time > 0:
                 actions.append("助力")
             # 「交流」「助力」为静态文案，内层逐个过 tr 后拼接
-            self.log_info(self.tr("已进入好友帝江号，准备进行{actions}操作").format(
-                actions=''.join(self.tr(a) for a in actions)))
+            self.log_info(
+                self.tr("已进入好友帝江号，准备进行{actions}操作").format(actions="".join(self.tr(a) for a in actions))
+            )
             self.press_key("y")
             self.wait_ui_stable(refresh_interval=1)
             if left_exchange_time > 0:
-                if not self.wait_click_feature(feature=fL.info_exchange, box=exchange_help_box, time_out=5, click_after_delay=0.5, raise_if_not_found=False, after_sleep=0.5):
+                if not self.wait_click_feature(
+                    feature=fL.info_exchange,
+                    box=exchange_help_box,
+                    time_out=5,
+                    click_after_delay=0.5,
+                    raise_if_not_found=False,
+                    after_sleep=0.5,
+                ):
                     left_exchange_time = 0
                 else:
                     left_exchange_time -= 1
@@ -118,7 +131,7 @@ class DailyCreditMixin:
                                 self.log_info("继续进行助力操作")
                                 last_help = result[-1]
                                 self.click(last_help)
-                                if (last_help.x / self.width > 0.7):
+                                if last_help.x / self.width > 0.7:
                                     self.wait_pop_up(time_out=5)
                                 left_help_time -= 1
                                 help_time += 1

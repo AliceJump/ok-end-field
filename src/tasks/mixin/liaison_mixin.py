@@ -18,11 +18,10 @@ LiaisonMixin
 """
 
 import random
-import re
 
-from src.data.FeatureList import FeatureList as fL
 from src.data.characters import characters
 from src.data.characters_utils import get_contact_list_with_feature_list, get_localized_name_by_canonical
+from src.data.FeatureList import FeatureList as fL
 from src.tasks.mixin.common import LiaisonResult, build_name_patterns
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 
@@ -54,10 +53,7 @@ class LiaisonMixin(NavigationMixin):
         self.can_contact_dict = get_contact_list_with_feature_list(self.lang)
 
         # 为每个干员构建 OCR 名称匹配规则
-        self.contact_name_patterns = {
-            name: build_name_patterns(name)
-            for name in self.can_contact_dict.keys()
-        }
+        self.contact_name_patterns = {name: build_name_patterns(name) for name in self.can_contact_dict.keys()}
 
     def transfer_to_home_point(self, box=None, should_check_out_boat=False):
         """
@@ -93,11 +89,7 @@ class LiaisonMixin(NavigationMixin):
 
         # 查找帝江号区域
         target_area = self.wait_click_feature(
-            feature=fL.boat_entrance_icon,
-            time_out=2,
-            raise_if_not_found=False,
-            after_sleep=2,
-            settle_time=1
+            feature=fL.boat_entrance_icon, time_out=2, raise_if_not_found=False, after_sleep=2, settle_time=1
         )
         if should_check_out_boat:
             if not target_area:
@@ -109,11 +101,7 @@ class LiaisonMixin(NavigationMixin):
         self.log_info("找到帝江号区域，点击进入")
 
         # 查找传送点
-        tp_icon = self.find_feature(
-            feature=fL.transfer_point,
-            box=box,
-            threshold=0.7
-        )
+        tp_icon = self.find_feature(feature=fL.transfer_point, box=box, threshold=0.7)
 
         if not tp_icon:
             self.log_info("未找到传送点图标，传送失败")
@@ -172,11 +160,7 @@ class LiaisonMixin(NavigationMixin):
 
             self.move_keys("w", duration=1)
 
-            if self.wait_ocr(
-                    match=self.lang.liaison_mixin.k_80b758b9,
-                    box=self.box.left,
-                    log=True
-            ):
+            if self.wait_ocr(match=self.lang.liaison_mixin.k_80b758b9, box=self.box.left, log=True):
                 self.log_info("已到达中央环厅")
                 return True
 
@@ -195,10 +179,7 @@ class LiaisonMixin(NavigationMixin):
         self.ensure_map()
         self.log_info("打开地图界面")
 
-        if not self.start_tracking_and_align_target(
-                fL.operator_liaison_station,
-                fL.operator_liaison_station_out_map
-        ):
+        if not self.start_tracking_and_align_target(fL.operator_liaison_station, fL.operator_liaison_station_out_map):
             return False
 
         def special_chat_detect():
@@ -280,33 +261,22 @@ class LiaisonMixin(NavigationMixin):
                 return False
             target_feature_name = self.can_contact_dict[target_name]
 
-        search_char_box = self.box_of_screen(
-            795 / 1920,
-            248 / 1080,
-            1687 / 1920,
-            764 / 1080
-        )
+        search_char_box = self.box_of_screen(795 / 1920, 248 / 1080, 1687 / 1920, 764 / 1080)
 
         find_name_patterns = []
 
         for attempt in range(1, 11):
-
             self.log_info(f"第 {attempt}/10 次尝试打开信任度界面")
 
-            self.press_key('f')
+            self.press_key("f")
             self.wait_ui_stable(refresh_interval=1)
             result = {}
             found_target = False
 
             for _ in range(3):
-
                 self.next_frame()
 
-                found = self.find_one(
-                    feature=target_feature_name,
-                    box=search_char_box,
-                    threshold=0.7
-                )
+                found = self.find_one(feature=target_feature_name, box=search_char_box, threshold=0.7)
 
                 if found:
                     result[target_feature_name] = found
@@ -317,26 +287,20 @@ class LiaisonMixin(NavigationMixin):
                 self.wait_ui_stable(refresh_interval=0.5)
 
             if not found_target:
-
                 self.ensure_main()
-                self.press_key('f')
+                self.press_key("f")
                 self.wait_ui_stable(refresh_interval=1)
                 self.log_info(f"未找到联络对象 {target_name}，尝试其他目标")
 
                 other_results = {}
 
                 for _, other_feature in self.can_contact_dict.items():
-
                     if other_feature == target_feature_name:
                         continue
 
                     self.next_frame()
 
-                    found = self.find_one(
-                        feature=other_feature,
-                        box=search_char_box,
-                        threshold=0.7
-                    )
+                    found = self.find_one(feature=other_feature, box=search_char_box, threshold=0.7)
 
                     if found:
                         other_results[other_feature] = found
@@ -351,15 +315,9 @@ class LiaisonMixin(NavigationMixin):
 
             find_feature_name = next(iter(result))
 
-            find_name = next(
-                k for k, v in self.can_contact_dict.items()
-                if v == find_feature_name
-            )
+            find_name = next(k for k, v in self.can_contact_dict.items() if v == find_feature_name)
 
-            find_name_patterns = self.contact_name_patterns.get(
-                find_name,
-                build_name_patterns(find_name)
-            )
+            find_name_patterns = self.contact_name_patterns.get(find_name, build_name_patterns(find_name))
 
             self.log_info("找到联络对象")
 
@@ -379,7 +337,6 @@ class LiaisonMixin(NavigationMixin):
             wait_disappear_count = 0
 
             while self.find_one(fL.contact_page_icon):
-
                 wait_disappear_count += 1
 
                 if wait_disappear_count >= 200:
@@ -391,22 +348,14 @@ class LiaisonMixin(NavigationMixin):
 
             self.next_frame()
 
-            if not self.wait_ocr(
-                    match=find_name_patterns,
-                    box=self.box.top,
-                    time_out=2,
-                    log=True
-            ):
+            if not self.wait_ocr(match=find_name_patterns, box=self.box.top, time_out=2, log=True):
                 self.log_info(f"未找到 {find_name} 的名字,重新打开联络界面")
                 self.ensure_main()
                 continue
 
             self.next_frame()
 
-            if chat_box := self.ocr(
-                    match=find_name_patterns,
-                    box=self.box.bottom_right
-            ):
+            if chat_box := self.ocr(match=find_name_patterns, box=self.box.bottom_right):
                 return self.click_chat_box(find_name_patterns, chat_box)
 
             self.log_info(f"找到 {find_name} 的名字，开始界面对齐")
@@ -420,7 +369,7 @@ class LiaisonMixin(NavigationMixin):
                 min_step=20,
                 slow_radius=100,
                 tolerance=100,
-                once_time=0.1
+                once_time=0.1,
             )
 
             if find_flag:
@@ -458,11 +407,7 @@ class LiaisonMixin(NavigationMixin):
 
         self.next_frame()
 
-        self.wait_click_ocr(
-            match=find_name_patterns,
-            box=self.box.bottom_right,
-            time_out=1
-        )
+        self.wait_click_ocr(match=find_name_patterns, box=self.box.bottom_right, time_out=1)
 
         self.send_key_up("alt")  # 确认使用send_key：释放alt修饰键
 
@@ -477,7 +422,7 @@ class LiaisonMixin(NavigationMixin):
         """在已点击『收下』后，完成收礼弹窗流程。"""
         self.log_info("开始收下礼物")
         self.skip_dialog()
-        self.press_key('f', after_sleep=0.5)
+        self.press_key("f", after_sleep=0.5)
         self.log_info("收下完成")
         return True
 
@@ -492,7 +437,7 @@ class LiaisonMixin(NavigationMixin):
             box=self.box_of_screen(0.942, 0.898, 0.963, 0.937),
             time_out=5,
             after_sleep=0.5,
-            raise_if_not_found=False
+            raise_if_not_found=False,
         ):
             self.log_info("确认赠送按钮已出现")
             self.skip_dialog()
@@ -580,6 +525,7 @@ class LiaisonMixin(NavigationMixin):
 
             if result:
                 return result
+
     def _loop_wait_click_feature(self, feature, box, time_out, log_msg=None):
         start_time = self.active_time()
 
