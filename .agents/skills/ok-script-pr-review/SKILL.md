@@ -47,13 +47,17 @@ After pushing fixes, wait for CodeRabbit to cover the new head before reading it
 .\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber <n>
 # 更短间隔 / 更短超时
 .\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber <n> -IntervalSeconds 15 -TimeoutSeconds 300
-# force-push 后拒绝把旧 status 当成本轮完成
+# force-push 后按 GitHub HeadRefForcePushedEvent 的真实发生时间拒绝旧结果
 .\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber <n> -SinceCommit <force-push前sha>
-# 等待可合并并列出本轮新增意见（dismiss 旧 CHANGES_REQUESTED 需要管理员权限）
+# 无法唯一匹配 force-push 事件时，显式传带时区的截止时间；脚本会 fail closed
+.\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber <n> -SinceTime 2026-09-01T12:34:56Z
+# 等待可合并并列出本轮新增意见
 .\.agents\skills\ok-script-pr-review\wait-coderabbit.ps1 -PrNumber <n> -WaitMergeReady -ListNewComments
 ```
 
-Exit codes: `0` = review done (either a new review entry covers the head, or a non-stale CodeRabbit commit status reached `success`); `1` = timeout; `2` = API/auth error; `3` = `-WaitMergeReady` completed but the latest review is still `CHANGES_REQUESTED`. The script re-fetches `headRefOid` each poll, so pushing a new commit mid-wait is handled; after a force-push pass `-SinceCommit <old-sha>` so success statuses older than that commit are ignored rather than merely warned about. Use `-DismissChangesRequested` only when the user explicitly wants administrative dismissal.
+Exit codes: `0` = review done (either a new review entry covers the current head, or a non-stale CodeRabbit commit status on that head reached `success`); `1` = timeout; `2` = API/auth/cutoff-resolution error; `3` = `-WaitMergeReady` completed but one or more CodeRabbit reviews are still `CHANGES_REQUESTED`. The script re-fetches `headRefOid` each poll, so pushing a new commit mid-wait is handled. With `-SinceCommit`, it queries the PR timeline and requires exactly one matching `HeadRefForcePushedEvent`; it never substitutes the commit author/committer date. If the event cannot be identified uniquely, pass an explicit ISO 8601 `-SinceTime` with `Z` or a numeric UTC offset. Both status and review completion signals must refer to the current SHA and be strictly later than the cutoff.
+
+The waiter is read-only. It does not dismiss reviews or perform any other GitHub mutation. With `-WaitMergeReady`, every remaining CodeRabbit `CHANGES_REQUESTED` review is listed and the script exits `3`; dismissal, if ever required, must be a separate deliberate maintainer action.
 
 **Status vs review entries (verified)**: CodeRabbit posts a commit status (`context=CodeRabbit`) on the PR head — `pending` ("Review queued") while running, `success` ("Review completed") when done. When a re-triggered review finds nothing new, it completes WITHOUT posting a new review entry, so the reviews list still shows the old `commit_id`; the status is the only completion signal. The script therefore treats `status.state == success` as done (fast path) and a review entry matching the head as a fallback. `pending` means keep waiting, not done.
 
