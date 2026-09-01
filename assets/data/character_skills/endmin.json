@@ -39,7 +39,15 @@
                 },
                 "enhancement_effect": "破甲效果",
                 "enhancement_visible_pulse": false,
-                "effects": []
+                "effects": [
+                    {
+                        "effect_id": "STACK_SHRED",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": -1
+                    }
+                ]
             },
             "description": "使用源石技艺冲击前方一定范围内的敌人，造成物理伤害和猛击。",
             "damage_multiplier": "300%（基础）+ 200%（每层破防）",
