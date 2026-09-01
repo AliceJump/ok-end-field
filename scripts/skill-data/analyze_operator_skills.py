@@ -14,6 +14,7 @@
 用法：
     python scripts/skill-data/analyze_operator_skills.py
     python scripts/skill-data/analyze_operator_skills.py --snapshot 20260830_221449
+    python scripts/skill-data/analyze_operator_skills.py --snapshot 20260830_221449 --allow-partial
     python scripts/skill-data/analyze_operator_skills.py --operator 安塔尔 --stdout
 
 默认输出到快照内的 ``analysis/`` 目录（已由 tools/wiki_catalog 的 gitignore 排除）。
@@ -28,6 +29,8 @@ import sys
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
+
+sys.stdout.reconfigure(encoding="utf-8")
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -127,6 +130,16 @@ class OperatorAnalysis:
     review_flags: list[str] = field(default_factory=list)
 
 
+@dataclass
+class DocumentParts:
+    texts: list[str] = field(default_factory=list)
+    tables: list[list[list[str]]] = field(default_factory=list)
+
+    def extend(self, other: DocumentParts) -> None:
+        self.texts.extend(other.texts)
+        self.tables.extend(other.tables)
+
+
 def _inline_text(element: dict) -> str:
     text = element.get("text")
     if isinstance(text, dict):
@@ -139,62 +152,58 @@ def _inline_text(element: dict) -> str:
     return ""
 
 
-def _block_text(document: dict, block_id: str, seen: set[str] | None = None) -> str | list[list[str]]:
-    """把官方文档块还原为文本或二维表。"""
+def _block_parts(document: dict, block_id: str, seen: set[str] | None = None) -> DocumentParts:
+    """递归还原官方文档块，同时保持文本与二维表类型分离。"""
     seen = set() if seen is None else seen
     if block_id in seen:
-        return ""
+        return DocumentParts()
     seen.add(block_id)
     block = document.get("blockMap", {}).get(block_id, {})
     kind = block.get("kind")
 
     if kind == "text":
-        return "".join(_inline_text(item) for item in block.get("text", {}).get("inlineElements", []))
+        text = "".join(_inline_text(item) for item in block.get("text", {}).get("inlineElements", []))
+        return DocumentParts(texts=[text] if text else [])
 
     if kind == "table":
         table = block.get("table", {})
         rows: list[list[str]] = []
+        nested_tables: list[list[list[str]]] = []
         for row_id in table.get("rowIds", []):
             row: list[str] = []
             for column_id in table.get("columnIds", []):
                 cell = table.get("cellMap", {}).get(f"{row_id}_{column_id}", {})
-                values = [
-                    _block_text(document, child_id, seen.copy())
-                    for child_id in cell.get("childIds", [])
-                ]
-                row.append(" / ".join(str(value) for value in values if value))
+                cell_parts = DocumentParts()
+                for child_id in cell.get("childIds", []):
+                    cell_parts.extend(_block_parts(document, child_id, seen.copy()))
+                row.append(" / ".join(value.strip() for value in cell_parts.texts if value.strip()))
+                nested_tables.extend(cell_parts.tables)
             rows.append(row)
-        return rows
+        return DocumentParts(tables=[rows, *nested_tables])
 
-    values: list[str] = []
+    result = DocumentParts()
     for key in ("childIds", "blockIds"):
         for child_id in block.get(key, []):
-            value = _block_text(document, child_id, seen.copy())
-            if value:
-                values.append(str(value))
-    return "\n".join(values)
+            result.extend(_block_parts(document, child_id, seen.copy()))
+    return result
 
 
-def _document_parts(document_map: dict, document_id: str | None) -> list[str | list[list[str]]]:
+def _document_parts(document_map: dict, document_id: str | None) -> DocumentParts:
     if not document_id:
-        return []
+        return DocumentParts()
     document = document_map.get(document_id, {})
-    return [
-        _block_text(document, block_id)
-        for block_id in document.get("blockIds", [])
-    ]
+    result = DocumentParts()
+    for block_id in document.get("blockIds", []):
+        result.extend(_block_parts(document, block_id))
+    return result
 
 
 def _document_text(document_map: dict, document_id: str | None) -> str:
-    values: list[str] = []
-    for part in _document_parts(document_map, document_id):
-        if isinstance(part, str) and part.strip():
-            values.append(part.strip())
-    return "\n".join(values)
+    return "\n".join(value.strip() for value in _document_parts(document_map, document_id).texts if value.strip())
 
 
 def _document_tables(document_map: dict, document_id: str | None) -> list[list[list[str]]]:
-    return [part for part in _document_parts(document_map, document_id) if isinstance(part, list)]
+    return _document_parts(document_map, document_id).tables
 
 
 def _effect_values(text: str) -> list[str]:
@@ -505,14 +514,32 @@ def _latest_snapshot() -> str:
     return str(json.loads(latest.read_text(encoding="utf-8"))["snapshot"])
 
 
+def _validate_snapshot_manifest(manifest: dict, *, explicit_snapshot: bool, allow_partial: bool) -> None:
+    if manifest.get("complete") is True:
+        return
+    reasons = manifest.get("incomplete_reasons") or ["manifest 未标记为完整"]
+    detail = "; ".join(str(reason) for reason in reasons)
+    if not explicit_snapshot:
+        raise ValueError(f"latest.json 指向不完整快照：{detail}")
+    if not allow_partial:
+        raise ValueError(f"快照不完整：{detail}；如需诊断，请显式添加 --allow-partial")
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--snapshot", default=None, help="快照目录名，默认读取 latest.json")
+    parser.add_argument(
+        "--allow-partial",
+        action="store_true",
+        help="允许分析显式 --snapshot 指定的不完整快照",
+    )
     parser.add_argument("--operator", action="append", default=[], help="仅分析指定干员，可重复")
     parser.add_argument("--out", default=None, help="输出目录，默认 <snapshot>/analysis")
     parser.add_argument("--stdout", action="store_true", help="同时输出 Markdown 到终端")
     args = parser.parse_args()
 
+    if args.allow_partial and not args.snapshot:
+        parser.error("--allow-partial 必须与显式 --snapshot 一起使用")
     snapshot = args.snapshot or _latest_snapshot()
     snapshot_dir = SNAPSHOT_ROOT / snapshot
     manifest_path = snapshot_dir / "manifest.json"
@@ -520,6 +547,14 @@ def main() -> int:
         parser.error(f"快照不存在：{snapshot_dir}")
 
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    try:
+        _validate_snapshot_manifest(
+            manifest,
+            explicit_snapshot=args.snapshot is not None,
+            allow_partial=args.allow_partial,
+        )
+    except ValueError as exc:
+        parser.error(str(exc))
     selected_names = set(args.operator)
     current_characters = _load_current_characters()
     operators: list[OperatorAnalysis] = []
