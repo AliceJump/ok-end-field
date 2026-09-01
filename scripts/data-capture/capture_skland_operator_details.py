@@ -60,13 +60,18 @@ def _safe_name(name: str) -> str:
     return value or "unknown"
 
 
-def _write_text(path: Path, text: str) -> None:
+def _validate_write_path(path: Path) -> Path:
     real = os.path.realpath(path)
     root_real = os.path.realpath(ROOT)
     if not real.startswith(root_real + os.sep):
         raise ValueError(f"拒绝写入仓库外路径：{path}")
-    Path(real).parent.mkdir(parents=True, exist_ok=True)
-    Path(real).write_text(text, encoding="utf-8")
+    return Path(real)
+
+
+def _write_text(path: Path, text: str) -> None:
+    safe = _validate_write_path(path)
+    safe.parent.mkdir(parents=True, exist_ok=True)
+    safe.write_text(text, encoding="utf-8")
 
 
 def _create_snapshot_dir(out_root: Path, stamp: str) -> Path:
