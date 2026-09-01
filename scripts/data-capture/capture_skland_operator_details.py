@@ -82,8 +82,11 @@ def _create_snapshot_dir(out_root: Path, stamp: str) -> Path:
         raise ValueError(f"拒绝写入仓库外路径：{out_root}")
     Path(real).mkdir(parents=True, exist_ok=True)
     snapshot_dir = Path(real) / stamp
+    snap_real = os.path.realpath(snapshot_dir)
+    if not snap_real.startswith(root_real + os.sep):
+        raise ValueError(f"拒绝写入仓库外路径：{snapshot_dir}")
     try:
-        snapshot_dir.mkdir()
+        Path(snap_real).mkdir()
     except FileExistsError as exc:
         raise FileExistsError(f"快照目录已存在，可能有同秒并发抓取：{snapshot_dir}") from exc
     return snapshot_dir
