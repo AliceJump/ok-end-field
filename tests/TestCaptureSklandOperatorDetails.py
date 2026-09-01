@@ -92,6 +92,7 @@ class TestCaptureSklandOperatorDetails(unittest.TestCase):
     def test_saves_warm_up_global_responses_separately(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             snapshot_dir = Path(temp_dir)
+            _MODULE.ROOT = snapshot_dir
             saved = set()
             responses = [
                 _FakeResponse(
@@ -111,6 +112,7 @@ class TestCaptureSklandOperatorDetails(unittest.TestCase):
     def test_failure_snapshot_does_not_replace_latest(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             out_root = Path(temp_dir)
+            _MODULE.ROOT = out_root
             latest = out_root / "latest.json"
             latest.write_text('{"snapshot":"previous"}', encoding="utf-8")
             snapshot_dir = _MODULE._create_snapshot_dir(out_root, "failed")
@@ -132,6 +134,7 @@ class TestCaptureSklandOperatorDetails(unittest.TestCase):
     def test_limited_subset_does_not_replace_latest(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             out_root = Path(temp_dir)
+            _MODULE.ROOT = out_root
             latest = out_root / "latest.json"
             latest.write_text('{"snapshot":"previous"}', encoding="utf-8")
             snapshot_dir = _MODULE._create_snapshot_dir(out_root, "limited")
@@ -148,6 +151,7 @@ class TestCaptureSklandOperatorDetails(unittest.TestCase):
     def test_complete_snapshot_replaces_latest(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             out_root = Path(temp_dir)
+            _MODULE.ROOT = out_root
             snapshot_dir = _MODULE._create_snapshot_dir(out_root, "complete")
             operators = _write_snapshot_files(snapshot_dir, ["1", "2"])
 
@@ -161,6 +165,7 @@ class TestCaptureSklandOperatorDetails(unittest.TestCase):
     def test_capture_error_marks_snapshot_incomplete(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             out_root = Path(temp_dir)
+            _MODULE.ROOT = out_root
             latest = out_root / "latest.json"
             latest.write_text('{"snapshot":"previous"}', encoding="utf-8")
             snapshot_dir = _MODULE._create_snapshot_dir(out_root, "aborted")
@@ -173,9 +178,22 @@ class TestCaptureSklandOperatorDetails(unittest.TestCase):
             self.assertIn("capture_errors: 1", result["incomplete_reasons"])
             self.assertEqual(json.loads(latest.read_text(encoding="utf-8")), {"snapshot": "previous"})
 
+    def test_write_text_rejects_path_outside_root(self):
+        with tempfile.TemporaryDirectory() as temp_dir:
+            base = Path(temp_dir)
+            _MODULE.ROOT = base
+            _MODULE._write_text(base / "ok.txt", "x")
+            self.assertEqual((base / "ok.txt").read_text(encoding="utf-8"), "x")
+            with self.assertRaisesRegex(ValueError, "拒绝写入"):
+                _MODULE._write_text(base / ".." / "escape.txt", "x")
+            with self.assertRaisesRegex(ValueError, "拒绝写入"):
+                _MODULE._write_text(base.parent / "escape.txt", "x")
+            self.assertFalse((base.parent / "escape.txt").exists())
+
     def test_missing_global_and_unindexed_file_prevent_latest_update(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             out_root = Path(temp_dir)
+            _MODULE.ROOT = out_root
             snapshot_dir = _MODULE._create_snapshot_dir(out_root, "inconsistent")
             operators = _write_snapshot_files(snapshot_dir, ["1"])
             (snapshot_dir / "weapon_pool.json").unlink()
