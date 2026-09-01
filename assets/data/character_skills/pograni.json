@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "破防层数消耗",
+                "release_gate": {
+                    "all": ["STACK_SHRED"]
+                },
                 "trigger_condition": {
                     "text": "战技命中敌人时消耗破防层数恢复技力",
                     "effects": [

@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "熔火层数",
+                "release_gate": {
+                    "static": false
+                },
                 "trigger_condition": {
                     "text": "战技命中敌人获得1层熔火，4层时触发追加攻击",
                     "effects": [

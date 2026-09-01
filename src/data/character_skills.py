@@ -122,7 +122,6 @@ def _load_character_from_json(file_path: Path) -> Character:
         ]
         if not enhancements and skill_data.get("enhancement"):
             enhancements.append(_load_enhancement(skill_data["enhancement"]))
-        enhancement = enhancements[0] if enhancements else None
 
         # 加载技能基础效果；旧格式的 attach/status/clear 纯ID列表合并进 effects
         effects = _load_skill_effects(skill_data.get("effects") or [])
@@ -142,10 +141,7 @@ def _load_character_from_json(file_path: Path) -> Character:
             name=skill_data["name"],
             skill_type=skill_type,
             element=_element_of(skill_data.get("element", ""), character_element),
-            has_enhancement=skill_data.get(
-                "has_enhancement", bool(enhancements),
-            ),
-            enhancement=enhancement,
+            # 已解析分支是唯一真源；JSON 中的旧布尔标记不参与运行时判定。
             enhancements=enhancements,
             effects=effects,
             description=skill_data.get("description", ""),

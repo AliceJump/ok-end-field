@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "强雷枪召回",
+                "release_gate": {
+                    "all": ["PLACE_THUNDER_SPEAR"]
+                },
                 "trigger_condition": {
                     "text": "存在雷枪或强雷枪时召回",
                     "effects": ["PLACE_THUNDER_SPEAR"]

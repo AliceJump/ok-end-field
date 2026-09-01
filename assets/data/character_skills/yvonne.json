@@ -28,6 +28,12 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "冻结触发",
+                "release_gate": {
+                    "any": [
+                        "ATTACH_COLD",
+                        "ATTACH_NATURAL"
+                    ]
+                },
                 "trigger_condition": {
                     "text": "命中处于寒冷附着或自然附着的敌人时",
                     "effects": [

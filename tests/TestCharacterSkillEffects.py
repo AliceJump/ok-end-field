@@ -1,12 +1,13 @@
 """角色技能效果 ID 一致性测试。"""
 
+import dataclasses
 import json
+import tempfile
 import unittest
 from pathlib import Path
 
-from src.data.character_skills import load_all_characters
+from src.data.character_skills import _load_character_from_json, load_all_characters
 from src.data.effects import EffectType, match_effect_terms
-
 
 _ROOT = Path(__file__).resolve().parent.parent
 _CHARACTER_SKILLS_DIR = _ROOT / "assets" / "data" / "character_skills"
@@ -14,6 +15,17 @@ _VALID_TARGETS = {"enemy", "ally", "self", "field"}
 
 
 class TestCharacterSkillEffects(unittest.TestCase):
+    def _load_temp_character(self, temp_dir: Path, skill: dict):
+        data = {
+            "character_id": "test_character",
+            "name": "测试角色",
+            "element": "物理",
+            "skills": [skill],
+        }
+        path = temp_dir / "character.json"
+        path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        return _load_character_from_json(path).skills[0]
+
     def test_all_character_skill_files_load(self):
         characters = load_all_characters()
         json_files = list(_CHARACTER_SKILLS_DIR.glob("*.json"))
@@ -56,10 +68,70 @@ class TestCharacterSkillEffects(unittest.TestCase):
                                 f"{json_file.name}/{skill.get('name')} 使用了未知效果 ID {effect_id}",
                             )
 
+    def test_release_gate_schema_is_explicit_and_valid(self):
+        valid_effect_ids = {effect.value for effect in EffectType}
+
+        for json_file in _CHARACTER_SKILLS_DIR.glob("*.json"):
+            data = json.loads(json_file.read_text(encoding="utf-8"))
+            for skill in data.get("skills") or []:
+                enhancements = skill.get("enhancements") or []
+                if not enhancements and skill.get("enhancement"):
+                    enhancements = [skill["enhancement"]]
+                for enhancement in enhancements:
+                    gate = enhancement.get("release_gate")
+                    if gate is None:
+                        continue
+                    with self.subTest(json_file=json_file.name, skill=skill.get("skill_id")):
+                        self.assertIsInstance(gate, dict)
+                        if gate.get("static") is False:
+                            self.assertEqual(set(gate), {"static"})
+                            continue
+                        operators = [operator for operator in ("all", "any") if operator in gate]
+                        self.assertEqual(len(operators), 1)
+                        requires = gate[operators[0]]
+                        self.assertTrue(requires)
+                        self.assertTrue(all(effect_id in valid_effect_ids for effect_id in requires))
+
     def test_normal_attack_heavy_strike_is_not_treated_as_lift(self):
         self.assertEqual(match_effect_terms("重击会造成18点失衡"), [("失衡", EffectType.STATUS_STAGGER)])
         self.assertEqual(match_effect_terms("造成击飞"), [("击飞", EffectType.STATUS_HEAVY_HIT)])
         self.assertEqual(match_effect_terms("造成猛击"), [("猛击", EffectType.STATUS_HEAVY_STRIKE)])
+
+    def test_has_enhancement_is_derived_from_parsed_branches(self):
+        branch = {
+            "name": "条件效果",
+            "trigger_condition": {"text": "目标处于冻结", "effects": ["STATUS_FROZEN"]},
+            "effects": [],
+        }
+        base_skill = {
+            "skill_id": "test_skill",
+            "name": "测试技能",
+            "skill_type": "战技",
+            "element": "物理",
+        }
+
+        with tempfile.TemporaryDirectory() as temp_dir_name:
+            temp_dir = Path(temp_dir_name)
+            cases = [
+                ({"enhancements": [branch]}, True),
+                ({"enhancement": branch}, True),
+                ({"enhancements": [branch], "has_enhancement": False}, True),
+                ({"enhancement": branch, "has_enhancement": False}, True),
+                ({"has_enhancement": True}, False),
+                ({"has_enhancement": False}, False),
+            ]
+            for fields, expected in cases:
+                with self.subTest(fields=fields):
+                    skill = self._load_temp_character(temp_dir, {**base_skill, **fields})
+                    self.assertEqual(skill.has_enhancement, expected)
+                    self.assertEqual(bool(skill.enhancements), expected)
+                    self.assertEqual(skill.enhancement, skill.enhancements[0] if expected else None)
+
+    def test_enhancement_compatibility_view_tracks_enhancements(self):
+        skill_fields = {field.name for field in dataclasses.fields(load_all_characters()["sai_xi"].skills[1])}
+        self.assertIn("enhancements", skill_fields)
+        self.assertNotIn("enhancement", skill_fields)
+        self.assertNotIn("has_enhancement", skill_fields)
 
     def test_physical_review_fixes(self):
         characters = load_all_characters()
@@ -194,6 +266,21 @@ class TestCharacterSkillEffects(unittest.TestCase):
         deepfin_skill = next(skill for skill in deepfin.skills if skill.skill_id == "deepfin_skill")
         self.assertEqual(deepfin_skill.effects, [])
         self.assertEqual(deepfin_skill.enhancement.effects[0].count, -1)
+
+        endmin = characters["guan_li_yuan"]
+        endmin_normal = next(skill for skill in endmin.skills if skill.skill_id == "endmin_normal")
+        endmin_link = next(skill for skill in endmin.skills if skill.skill_id == "endmin_link")
+        endmin_ultimate = next(skill for skill in endmin.skills if skill.skill_id == "endmin_ultimate")
+        self.assertNotIn(EffectType.STATUS_ORIGINIUM_CRYSTAL, [effect.effect_id for effect in endmin_normal.effects])
+        self.assertEqual([effect.effect_id for effect in endmin_link.effects], [EffectType.STATUS_ORIGINIUM_CRYSTAL])
+        self.assertEqual(
+            [effect.effect_id for effect in endmin_link.enhancement.effects],
+            [EffectType.STATUS_ORIGINIUM_CRYSTAL, EffectType.TRIGGER_ADDITIONAL],
+        )
+        self.assertEqual(endmin_link.enhancement.effects[0].count, -1)
+        self.assertEqual(endmin_ultimate.enhancement.trigger_effects, [EffectType.STATUS_ORIGINIUM_CRYSTAL])
+        self.assertEqual(endmin_ultimate.enhancement.effects[0].effect_id, EffectType.STATUS_ORIGINIUM_CRYSTAL)
+        self.assertEqual(endmin_ultimate.enhancement.effects[0].count, -1)
 
         meurs = characters["ka_qi_er"]
         meurs_skill = next(skill for skill in meurs.skills if skill.skill_id == "meurs_skill")

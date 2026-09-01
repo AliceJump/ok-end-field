@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "不破防时施加物理脆弱",
+                "release_gate": {
+                    "static": false
+                },
                 "trigger_condition": {
                     "text": "最后一击命中的敌人若不处于破防状态则额外施加物理脆弱",
                     "effects": []

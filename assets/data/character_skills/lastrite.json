@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "寒冷脆弱",
+                "release_gate": {
+                    "all": ["STATUS_SPELL_INFLICT"]
+                },
                 "trigger_condition": {
                     "text": "消耗法术附着施加寒冷脆弱",
                     "effects": [

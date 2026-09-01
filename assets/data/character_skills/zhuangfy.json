@@ -30,6 +30,9 @@
             "enhancements": [
                 {
                     "name": "消耗导电生成青霆剑",
+                    "release_gate": {
+                        "all": ["STATUS_CONDUCTING"]
+                    },
                     "trigger_condition": {
                         "text": "消耗目标的导电状态",
                         "effects": [
@@ -57,6 +60,9 @@
                 },
                 {
                     "name": "未消耗导电时兜底生成青霆剑",
+                    "release_gate": {
+                        "static": false
+                    },
                     "trigger_condition": {
                         "text": "现存青霆剑少于3柄，且本次未消耗导电",
                         "effects": [

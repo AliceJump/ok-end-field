@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "寒冷附着消耗",
+                "release_gate": {
+                    "all": ["ATTACH_COLD"]
+                },
                 "trigger_condition": {
                     "text": "战技消耗寒冷附着强制施加冻结",
                     "effects": [

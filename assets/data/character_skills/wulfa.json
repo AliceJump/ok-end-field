@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "破防追加灼热伤害",
+                "release_gate": {
+                    "all": ["STACK_SHRED"]
+                },
                 "trigger_condition": {
                     "text": "目标已拥有破防状态时释放狼之珀",
                     "effects": [

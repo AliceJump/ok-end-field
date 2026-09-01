@@ -28,6 +28,12 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "燃烧/导电消耗追加射击",
+                "release_gate": {
+                    "any": [
+                        "STATUS_BURNING",
+                        "STATUS_CONDUCTING"
+                    ]
+                },
                 "trigger_condition": {
                     "text": "目标处于燃烧或导电状态时消耗该状态并追加射击",
                     "effects": [

@@ -30,6 +30,9 @@
             "enhancements": [
                 {
                     "name": "支援晶体重击治疗",
+                    "release_gate": {
+                        "static": false
+                    },
                     "trigger_condition": {
                         "text": "主控干员对敌人造成重击",
                         "effects": [
@@ -49,6 +52,9 @@
                 },
                 {
                     "name": "满血转法术增幅",
+                    "release_gate": {
+                        "static": false
+                    },
                     "trigger_condition": {
                         "text": "支援晶体触发回复时主控干员生命值已满",
                         "effects": [

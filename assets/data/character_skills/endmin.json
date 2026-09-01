@@ -18,15 +18,7 @@
             "stagger_value": 18,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "STATUS_ORIGINIUM_CRYSTAL",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                }
-            ]
+            "effects": []
         },
         {
             "skill_id": "endmin_skill",
@@ -36,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "破甲效果",
+                "release_gate": {
+                    "all": ["STACK_SHRED"]
+                },
                 "trigger_condition": {
                     "text": "命中敌人时消耗破防层数",
                     "effects": [
@@ -68,16 +63,23 @@
             "element": "物理",
             "has_enhancement": true,
             "enhancement": {
-                "name": "源石结晶消耗→额外物理伤害",
+                "name": "源石结晶被物理异常或破防消耗",
                 "trigger_condition": {
-                    "text": "施加物理异常或破防时消耗源石结晶",
+                    "text": "锁闭序列附着源石结晶后，施加物理异常或破防会消耗结晶",
                     "effects": [
-                        "STATUS_SHRED"
+                        "STATUS_ORIGINIUM_CRYSTAL"
                     ]
                 },
                 "enhancement_effect": "额外造成物理伤害",
                 "enhancement_visible_pulse": false,
                 "effects": [
+                    {
+                        "effect_id": "STATUS_ORIGINIUM_CRYSTAL",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": -1
+                    },
                     {
                         "effect_id": "TRIGGER_ADDITIONAL",
                         "value": 1,
@@ -91,7 +93,15 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [
+                {
+                    "effect_id": "STATUS_ORIGINIUM_CRYSTAL",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
         },
         {
             "skill_id": "endmin_ultimate",
@@ -103,11 +113,20 @@
                 "name": "源石结晶消耗额外伤害",
                 "trigger_condition": {
                     "text": "敌人身上附着源石结晶时消耗结晶并额外造成物理伤害",
-                    "effects": []
+                    "effects": [
+                        "STATUS_ORIGINIUM_CRYSTAL"
+                    ]
                 },
                 "enhancement_effect": "追加物理伤害",
                 "enhancement_visible_pulse": false,
                 "effects": [
+                    {
+                        "effect_id": "STATUS_ORIGINIUM_CRYSTAL",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": -1
+                    },
                     {
                         "effect_id": "TRIGGER_ADDITIONAL",
                         "value": 1,

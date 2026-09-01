@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "水龙卷系统",
+                "release_gate": {
+                    "all": ["STACK_WHIRLPOOL"]
+                },
                 "trigger_condition": {
                     "text": "消耗涡流形成水龙卷",
                     "effects": [

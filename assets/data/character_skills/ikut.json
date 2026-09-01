@@ -28,6 +28,9 @@
             "has_enhancement": true,
             "enhancement": {
                 "name": "导电消耗",
+                "release_gate": {
+                    "all": ["STATUS_CONDUCTING"]
+                },
                 "trigger_condition": {
                     "text": "战技消耗导电状态追加攻击",
                     "effects": [
