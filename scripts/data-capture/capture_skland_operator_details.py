@@ -71,7 +71,8 @@ def _write_text(path: Path, text: str) -> None:
     if not real.startswith(root_real + os.sep):
         raise ValueError(f"拒绝写入仓库外路径：{path}")
     Path(real).parent.mkdir(parents=True, exist_ok=True)
-    Path(real).write_text(text, encoding="utf-8")
+    with open(real, "w", encoding="utf-8") as f:
+        f.write(text)
 
 
 def _create_snapshot_dir(out_root: Path, stamp: str) -> Path:
