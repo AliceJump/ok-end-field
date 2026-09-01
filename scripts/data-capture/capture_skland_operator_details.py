@@ -25,10 +25,13 @@ import json
 import re
 import sys
 import time
+from contextlib import contextmanager
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import urlsplit
 
-from playwright.sync_api import Response, sync_playwright
+if TYPE_CHECKING:
+    from playwright.sync_api import Response
 
 sys.stdout.reconfigure(encoding="utf-8")
 
@@ -47,6 +50,7 @@ _GLOBAL_FILES = {
     "/web/v1/wiki/char-pool": "char_pool.json",
     "/web/v1/wiki/weapon-pool": "weapon_pool.json",
 }
+_REQUIRED_GLOBAL_FILES = frozenset({"catalog.json", *_GLOBAL_FILES.values()})
 
 
 def _safe_name(name: str) -> str:
@@ -58,6 +62,16 @@ def _safe_name(name: str) -> str:
 def _write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+
+
+def _create_snapshot_dir(out_root: Path, stamp: str) -> Path:
+    out_root.mkdir(parents=True, exist_ok=True)
+    snapshot_dir = out_root / stamp
+    try:
+        snapshot_dir.mkdir()
+    except FileExistsError as exc:
+        raise FileExistsError(f"快照目录已存在，可能有同秒并发抓取：{snapshot_dir}") from exc
+    return snapshot_dir
 
 
 def _catalog_items(payload: dict) -> list[dict]:
@@ -84,8 +98,152 @@ def _response_body(response: Response) -> str | None:
         return None
 
 
+def _save_global_responses(snapshot_dir: Path, responses: list[Response], saved: set[str]) -> None:
+    for response in responses:
+        filename = _GLOBAL_FILES.get(urlsplit(response.url).path)
+        if filename is None or filename in saved:
+            continue
+        body = _response_body(response)
+        if body is None:
+            continue
+        _write_text(snapshot_dir / filename, body)
+        saved.add(filename)
+
+
+@contextmanager
+def _record_capture_errors(errors: list[dict]):
+    try:
+        yield
+    except Exception as exc:
+        errors.append({"stage": "capture", "error": str(exc)})
+        print(f"capture aborted: {exc}", flush=True)
+
+
+def _snapshot_file_sets(snapshot_dir: Path) -> dict[str, set[str]]:
+    result: dict[str, set[str]] = {}
+    for key, directory, pattern in (
+        ("details", "details", "*.json"),
+        ("rendered_text", "rendered_text", "*.txt"),
+        ("related_items", "related_items", "*.json"),
+    ):
+        result[key] = {
+            path.relative_to(snapshot_dir).as_posix()
+            for path in (snapshot_dir / directory).glob(pattern)
+            if path.is_file()
+        }
+    return result
+
+
+def _snapshot_incomplete_reasons(snapshot_dir: Path, manifest: dict) -> list[str]:
+    reasons: list[str] = []
+    operators = manifest.get("operators") or []
+    failures = manifest.get("failures") or []
+    capture_errors = manifest.get("capture_errors") or []
+    catalog_count = int(manifest.get("catalog_operator_count") or 0)
+    requested_count = int(manifest.get("operator_count") or 0)
+    success_count = int(manifest.get("success_count") or 0)
+    failure_count = int(manifest.get("failure_count") or 0)
+
+    if catalog_count <= 0:
+        reasons.append("empty_catalog")
+    if requested_count != catalog_count:
+        reasons.append(f"catalog_subset: requested {requested_count} of {catalog_count}")
+    if failure_count or failures:
+        reasons.append(f"operator_failures: {max(failure_count, len(failures))}")
+    if capture_errors:
+        reasons.append(f"capture_errors: {len(capture_errors)}")
+    if success_count != len(operators):
+        reasons.append(f"success_count_mismatch: manifest {success_count}, entries {len(operators)}")
+    if failure_count != len(failures):
+        reasons.append(f"failure_count_mismatch: manifest {failure_count}, entries {len(failures)}")
+    if requested_count != success_count + failure_count:
+        reasons.append(
+            f"operator_count_mismatch: requested {requested_count}, success {success_count}, failure {failure_count}"
+        )
+
+    catalog_path = snapshot_dir / "catalog.json"
+    if catalog_path.is_file():
+        try:
+            raw_catalog_count = len(_catalog_items(json.loads(catalog_path.read_text(encoding="utf-8"))))
+        except (OSError, ValueError, TypeError, AttributeError) as exc:
+            reasons.append(f"invalid_catalog: {exc}")
+        else:
+            if raw_catalog_count != catalog_count:
+                reasons.append(f"catalog_count_mismatch: manifest {catalog_count}, file {raw_catalog_count}")
+
+    missing_global_files = sorted(
+        filename for filename in _REQUIRED_GLOBAL_FILES if not (snapshot_dir / filename).is_file()
+    )
+    if missing_global_files:
+        reasons.append(f"missing_global_files: {', '.join(missing_global_files)}")
+
+    actual_global_files = {filename for filename in _GLOBAL_FILES.values() if (snapshot_dir / filename).is_file()}
+    manifest_global_files = {str(filename) for filename in manifest.get("global_files") or []}
+    if manifest_global_files != actual_global_files:
+        reasons.append(
+            "global_file_manifest_mismatch: "
+            f"manifest {sorted(manifest_global_files)}, files {sorted(actual_global_files)}"
+        )
+
+    file_sets = _snapshot_file_sets(snapshot_dir)
+    actual_counts = {key: len(paths) for key, paths in file_sets.items()}
+    if manifest.get("file_counts") != actual_counts:
+        reasons.append(f"file_count_manifest_mismatch: manifest {manifest.get('file_counts')}, files {actual_counts}")
+
+    detail_files = [str(entry.get("detail_file") or "") for entry in operators]
+    rendered_files = [str(entry.get("rendered_text_file") or "") for entry in operators]
+    related_files = [str(path) for entry in operators for path in entry.get("related_item_files") or []]
+    for label, listed, expected_count in (
+        ("details", detail_files, success_count),
+        ("rendered_text", rendered_files, success_count),
+        ("related_items", related_files, len(related_files)),
+    ):
+        listed_set = set(listed)
+        if (
+            "" in listed_set
+            or len(listed) != len(listed_set)
+            or len(listed) != expected_count
+            or listed_set != file_sets[label]
+        ):
+            reasons.append(
+                f"{label}_file_mismatch: manifest {len(listed)} entries, "
+                f"{len(listed_set)} unique, files {len(file_sets[label])}"
+            )
+    return reasons
+
+
+def _finalize_snapshot(snapshot_dir: Path, out_root: Path, manifest: dict) -> dict:
+    manifest["required_global_files"] = sorted(_REQUIRED_GLOBAL_FILES)
+    manifest["file_counts"] = {key: len(paths) for key, paths in _snapshot_file_sets(snapshot_dir).items()}
+    reasons = _snapshot_incomplete_reasons(snapshot_dir, manifest)
+    manifest["complete"] = not reasons
+    manifest["incomplete_reasons"] = reasons
+    _write_text(
+        snapshot_dir / "manifest.json",
+        json.dumps(manifest, ensure_ascii=False, indent=2),
+    )
+    if manifest["complete"]:
+        snapshot = snapshot_dir.name
+        _write_text(
+            out_root / "latest.json",
+            json.dumps(
+                {
+                    "snapshot": snapshot,
+                    "manifest": f"{snapshot}/manifest.json",
+                    "catalog_operator_count": manifest["catalog_operator_count"],
+                    "success_count": manifest["success_count"],
+                    "failure_count": manifest["failure_count"],
+                    "complete": True,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+        )
+    return manifest
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", default=r"tools/wiki_catalog/operator_details")
     parser.add_argument("--proxy", default=None, help="例如 http://127.0.0.1:10808")
     parser.add_argument("--headed", action="store_true", help="显示浏览器窗口")
@@ -97,12 +255,19 @@ def main() -> int:
     if not out_root.is_relative_to(ROOT):
         parser.error(f"--out 必须位于仓库内：{args.out}")
 
+    try:
+        from playwright.sync_api import sync_playwright
+    except ImportError as exc:
+        parser.error(f"无法导入 Playwright；请先运行 uv sync --locked --group dev：{exc}")
+
     stamp = time.strftime("%Y%m%d_%H%M%S")
-    snapshot_dir = out_root / stamp
+    try:
+        snapshot_dir = _create_snapshot_dir(out_root, stamp)
+    except FileExistsError as exc:
+        parser.error(str(exc))
     details_dir = snapshot_dir / "details"
     related_dir = snapshot_dir / "related_items"
     rendered_dir = snapshot_dir / "rendered_text"
-    snapshot_dir.mkdir(parents=True, exist_ok=True)
 
     launch_kwargs: dict = {"headless": not args.headed}
     if args.proxy:
@@ -110,10 +275,14 @@ def main() -> int:
 
     index: list[dict] = []
     failures: list[dict] = []
+    capture_errors: list[dict] = []
     global_saved: set[str] = set()
-    current_responses: list[Response] = []
+    global_responses: list[Response] = []
+    operator_responses: list[Response] = []
+    catalog_operators: list[dict] = []
+    operators: list[dict] = []
 
-    with sync_playwright() as playwright:
+    with _record_capture_errors(capture_errors), sync_playwright() as playwright:
         try:
             browser = playwright.chromium.launch(channel="chrome", **launch_kwargs)
         except Exception as exc:
@@ -130,7 +299,10 @@ def main() -> int:
             path = urlsplit(response.url).path
             if path not in _CAPTURE_PATHS:
                 return
-            current_responses.append(response)
+            if path in _GLOBAL_FILES:
+                global_responses.append(response)
+            else:
+                operator_responses.append(response)
 
         page.on("response", capture_response)
 
@@ -140,6 +312,9 @@ def main() -> int:
         except Exception as exc:
             print(f"catalog warm-up navigation: {exc}", flush=True)
         page.wait_for_timeout(8000)
+        _save_global_responses(snapshot_dir, global_responses, global_saved)
+        global_responses.clear()
+        operator_responses.clear()
 
         with page.expect_response(
             lambda response: (
@@ -155,21 +330,24 @@ def main() -> int:
         catalog_body = catalog_info.value.text()
         catalog_payload = json.loads(catalog_body)
         _write_text(snapshot_dir / "catalog.json", catalog_body)
-        operators = _catalog_items(catalog_payload)
+        catalog_operators = _catalog_items(catalog_payload)
+        operators = catalog_operators
         if args.limit > 0:
             operators = operators[: args.limit]
+        _save_global_responses(snapshot_dir, global_responses, global_saved)
+        global_responses.clear()
+        operator_responses.clear()
 
-        print(f"operator catalog: {len(operators)} entries", flush=True)
+        print(f"operator catalog: {len(operators)}/{len(catalog_operators)} entries", flush=True)
 
         for position, operator in enumerate(operators, start=1):
             item_id = str(operator["itemId"])
             name = str(operator.get("name") or f"operator_{item_id}")
             stem = f"{item_id}_{_safe_name(name)}"
             detail_url = (
-                "https://wiki.skland.com/endfield/detail"
-                f"?mainTypeId=1&subTypeId=1&gameEntryId={item_id}&header=0"
+                f"https://wiki.skland.com/endfield/detail?mainTypeId=1&subTypeId=1&gameEntryId={item_id}&header=0"
             )
-            current_responses.clear()
+            operator_responses.clear()
             print(f"[{position:02d}/{len(operators):02d}] {name} ({item_id})", flush=True)
 
             try:
@@ -196,18 +374,12 @@ def main() -> int:
 
                 related_paths: list[str] = []
                 related_index = 0
-                for response in current_responses:
+                for response in operator_responses:
                     response_url = response.url
                     response_body = _response_body(response)
                     if response_body is None:
                         continue
                     path = urlsplit(response_url).path
-                    if path in _GLOBAL_FILES:
-                        filename = _GLOBAL_FILES[path]
-                        if filename not in global_saved:
-                            _write_text(snapshot_dir / filename, response_body)
-                            global_saved.add(filename)
-                        continue
                     if path == "/web/v1/wiki/item/list":
                         related_index += 1
                         suffix = "" if related_index == 1 else f"_{related_index}"
@@ -253,12 +425,19 @@ def main() -> int:
                 }
                 failures.append(failure)
                 print(f"  ERROR: {exc}", flush=True)
+            finally:
+                _save_global_responses(snapshot_dir, global_responses, global_saved)
+                global_responses.clear()
 
+        _save_global_responses(snapshot_dir, global_responses, global_saved)
+        global_responses.clear()
         browser.close()
 
     manifest = {
         "source": CATALOG_PAGE,
         "captured_at": stamp,
+        "catalog_operator_count": len(catalog_operators),
+        "capture_limit": args.limit,
         "operator_count": len(operators),
         "success_count": len(index),
         "failure_count": len(failures),
@@ -267,28 +446,15 @@ def main() -> int:
         "global_files": sorted(global_saved),
         "operators": index,
         "failures": failures,
+        "capture_errors": capture_errors,
     }
-    _write_text(
-        snapshot_dir / "manifest.json",
-        json.dumps(manifest, ensure_ascii=False, indent=2),
-    )
-    _write_text(
-        out_root / "latest.json",
-        json.dumps(
-            {
-                "snapshot": stamp,
-                "manifest": f"{stamp}/manifest.json",
-                "success_count": len(index),
-                "failure_count": len(failures),
-            },
-            ensure_ascii=False,
-            indent=2,
-        ),
-    )
+    manifest = _finalize_snapshot(snapshot_dir, out_root, manifest)
 
     print(f"snapshot: {snapshot_dir}", flush=True)
     print(f"success: {len(index)}/{len(operators)}, failures: {len(failures)}", flush=True)
-    return 1 if failures else 0
+    if not manifest["complete"]:
+        print(f"incomplete snapshot: {'; '.join(manifest['incomplete_reasons'])}", flush=True)
+    return 0 if manifest["complete"] else 1
 
 
 if __name__ == "__main__":
