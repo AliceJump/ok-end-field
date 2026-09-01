@@ -1,9 +1,12 @@
 """官方 WIKI 技能自动分析脚本测试。"""
 
 import importlib.util
+import io
 import sys
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
+from unittest import mock
 
 _SCRIPT_PATH = Path(__file__).resolve().parent.parent / "scripts" / "skill-data" / "analyze_operator_skills.py"
 _SPEC = importlib.util.spec_from_file_location("analyze_operator_skills", _SCRIPT_PATH)
@@ -126,6 +129,13 @@ class TestAnalyzeOperatorSkills(unittest.TestCase):
         self.assertNotIn("技能等级", description)
         self.assertEqual(rank_table, rank_rows)
         self.assertEqual(material_table, material_rows)
+
+    def test_snapshot_path_traversal_is_rejected(self):
+        for bad in ["../../../etc/escape", str(_MODULE.ROOT.parent)]:
+            sys.argv = ["analyze_operator_skills.py", "--snapshot", bad, "--stdout"]
+            with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as ctx:
+                _MODULE.main()
+            self.assertEqual(ctx.exception.code, 2)
 
 
 if __name__ == "__main__":

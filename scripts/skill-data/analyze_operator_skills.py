@@ -541,7 +541,9 @@ def main() -> int:
     if args.allow_partial and not args.snapshot:
         parser.error("--allow-partial 必须与显式 --snapshot 一起使用")
     snapshot = args.snapshot or _latest_snapshot()
-    snapshot_dir = SNAPSHOT_ROOT / snapshot
+    snapshot_dir = (SNAPSHOT_ROOT / snapshot).resolve()
+    if not snapshot_dir.is_relative_to(SNAPSHOT_ROOT):
+        parser.error(f"--snapshot 必须位于 {SNAPSHOT_ROOT} 内：{snapshot}")
     manifest_path = snapshot_dir / "manifest.json"
     if not manifest_path.exists():
         parser.error(f"快照不存在：{snapshot_dir}")
