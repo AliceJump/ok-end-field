@@ -24,7 +24,7 @@ class FeatureList(str, Enum):
     battle_icon_chen_qianyu = 'battle_icon_chen_qianyu'
     battle_icon_da_pan = 'battle_icon_da_pan'
     battle_icon_ember = 'battle_icon_ember'
-    battle_icon_endministrator = 'battle_icon_endministrator'
+    battle_icon_endministrator_female = 'battle_icon_endministrator_female'
     battle_icon_estella = 'battle_icon_estella'
     battle_icon_fluorite = 'battle_icon_fluorite'
     battle_icon_gilberta = 'battle_icon_gilberta'

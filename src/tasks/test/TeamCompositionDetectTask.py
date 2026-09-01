@@ -6,7 +6,7 @@ from src.core.BaseEfTask import BaseEfTask
 from src.data.skill_allowlist import (
     _PORTRAIT_ROIS,
     _PORTRAIT_SIZE,
-    _match_portrait,
+    _best_match_portrait,
     _load_battle_icons,
     _load_char_name_map,
 )
@@ -43,8 +43,8 @@ class TeamCompositionDetectTask(BaseEfTask):
     def _identify(self, portrait, templates):
         best_name = None
         best_score = float("-inf")
-        for label, template in templates.items():
-            score = _match_portrait(portrait, template)
+        for label, template_list in templates.items():
+            score = _best_match_portrait(portrait, template_list)
             if score > best_score:
                 best_score = score
                 best_name = label

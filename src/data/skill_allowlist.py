@@ -306,9 +306,16 @@ _PORTRAIT_SIZE = (54 / 1920, 46 / 1080)
 _MATCH_SCALES = [0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2]
 _MIN_MATCH_SCORE = 0.45
 
+# 模板别名：变体 annotation 名 → 主模板名
+# COCO annotations 中变体名保持唯一，代码侧在此声明同角色归并关系。
+_TEMPLATE_ALIASES: dict[str, str] = {
+    "battle_icon_endministrator_female": "battle_icon_endministrator",
+    "battle_icon_endministrator_male": "battle_icon_endministrator",
+}
+
 # 缓存
 _char_name_map: dict[str, str] | None = None   # en → zh
-_battle_icons: dict[str, np.ndarray] | None = None
+_battle_icons: dict[str, list[np.ndarray]] | None = None
 
 
 def _load_char_name_map() -> dict[str, str]:
@@ -330,8 +337,13 @@ def _load_char_name_map() -> dict[str, str]:
     return _char_name_map
 
 
-def _load_battle_icons() -> dict[str, np.ndarray]:
-    """从 coco_annotations.json 加载 battle_icon 模板（带缓存）。"""
+def _load_battle_icons() -> dict[str, list[np.ndarray]]:
+    """从 coco_annotations.json 加载 battle_icon 模板（带缓存）。
+
+    每条 annotation 使用独立的 category name（不重复）。
+    加载后按 ``_TEMPLATE_ALIASES`` 将变体名归并到主模板名下，
+    返回 ``dict[str, list[np.ndarray]]``。
+    """
     global _battle_icons
     if _battle_icons is not None:
         return _battle_icons
@@ -342,7 +354,7 @@ def _load_battle_icons() -> dict[str, np.ndarray]:
         data = json.load(f)
     cat_map = {c["id"]: c["name"] for c in data["categories"]}
     img_map = {i["id"]: i for i in data["images"]}
-    icons: dict[str, np.ndarray] = {}
+    icons: dict[str, list[np.ndarray]] = {}
     for ann in data["annotations"]:
         name = cat_map.get(ann["category_id"], "")
         if not name.startswith("battle_icon_"):
@@ -357,7 +369,11 @@ def _load_battle_icons() -> dict[str, np.ndarray]:
         if shot is None:
             continue
         x, y, w, h = [int(v) for v in ann["bbox"]]
-        icons[name] = shot[y:y + h, x:x + w].copy()
+        icons.setdefault(name, []).append(shot[y:y + h, x:x + w].copy())
+    # 按别名表归并变体模板到主模板名
+    for variant, primary in _TEMPLATE_ALIASES.items():
+        if variant in icons:
+            icons.setdefault(primary, []).extend(icons.pop(variant))
     _battle_icons = icons
     return icons
 
@@ -369,6 +385,11 @@ def _hist_sim(img1: np.ndarray, img2: np.ndarray) -> float:
     cv2.normalize(h1, h1)
     cv2.normalize(h2, h2)
     return cv2.compareHist(h1, h2, cv2.HISTCMP_CORREL)
+
+
+def _best_match_portrait(portrait: np.ndarray, templates: list[np.ndarray]) -> float:
+    """对多张模板取最佳匹配分数（同角色不同外观）。"""
+    return max((_match_portrait(portrait, t) for t in templates), default=-1.0)
 
 
 def _phash(img: np.ndarray, size: int = 16) -> np.ndarray:
@@ -445,8 +466,8 @@ def detect_team_from_frame(frame: np.ndarray) -> list[str]:
 
         best_name: str | None = None
         best_score = -1.0
-        for label, template in icons.items():
-            score = _match_portrait(portrait, template)
+        for label, templates in icons.items():
+            score = _best_match_portrait(portrait, templates)
             if score > best_score:
                 best_score = score
                 best_name = label
@@ -560,8 +581,8 @@ def detect_team_from_frame_with_scores(frame: np.ndarray) -> list[tuple[str, flo
 
         best_name: str | None = None
         best_score = -1.0
-        for label, template in icons.items():
-            score = _match_portrait(portrait, template)
+        for label, templates in icons.items():
+            score = _best_match_portrait(portrait, templates)
             if score > best_score:
                 best_score = score
                 best_name = label
