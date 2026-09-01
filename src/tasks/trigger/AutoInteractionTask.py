@@ -1,4 +1,4 @@
-from ok import TriggerTask, Logger
+from ok import Logger, TriggerTask
 
 from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
@@ -17,15 +17,15 @@ class AutoInteractionTask(BaseEfTask, TriggerTask):
         self.icon = Icons.Interact
 
         self.default_config = {
-            '_enabled': True,
-            '自动跳过剧情': True,
-            '自动点击传送': True,
+            "_enabled": True,
+            "自动跳过剧情": True,
+            "自动点击传送": True,
         }
 
     def run(self):
         self.check_resolution()
         now = self.next_frame()
-        if self.config.get('自动跳过剧情', True):
+        if self.config.get("自动跳过剧情", True):
             if self.find_one(fL.skip_dialog_esc, horizontal_variance=0.05, frame=now):
                 self.press_esc()
                 start = self.active_time()
@@ -33,16 +33,23 @@ class AutoInteractionTask(BaseEfTask, TriggerTask):
                     self.next_frame()
                     if self.click_confirm():
                         return
-            if self.find_one([fL.baker_icon, fL.baker_page_icon], horizontal_variance=0.05, vertical_variance=0.05, frame=now):
+            if self.find_one(
+                [fL.baker_icon, fL.baker_page_icon], horizontal_variance=0.05, vertical_variance=0.05, frame=now
+            ):
                 now = self.next_frame()
-                if result:= self.find_one(fL.baker_click, horizontal_variance=0.05, vertical_variance=0.1, frame=now):
+                if result := self.find_one(fL.baker_click, horizontal_variance=0.05, vertical_variance=0.1, frame=now):
                     self.click(result, after_sleep=0.4)
-                if result:= self.find_one(fL.sentence_part_feature, horizontal_variance=0.05, vertical_variance=0.1, frame=now):
+                if result := self.find_one(
+                    fL.sentence_part_feature, horizontal_variance=0.05, vertical_variance=0.1, frame=now
+                ):
                     self.click(result, after_sleep=0.4)
-                if result:= self.ocr(match=self.lang.AutoSkipDialogTask.k_92399078, box=self.box_of_screen(1294/1920, 806/1080, 1412/1920, 860/1080)):
+                if result := self.ocr(
+                    match=self.lang.AutoSkipDialogTask.k_92399078,
+                    box=self.box_of_screen(1294 / 1920, 806 / 1080, 1412 / 1920, 860 / 1080),
+                ):
                     self.click(result, after_sleep=0.4)
                     return
-        if self.config.get('自动点击传送', True):
+        if self.config.get("自动点击传送", True):
             # 先普通匹配；未找到时再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感
             result = self.find_one(fL.transfer_go, frame=now)
             if not result:

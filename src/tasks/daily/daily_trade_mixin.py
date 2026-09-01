@@ -1,12 +1,11 @@
 import re
-from typing import List
 
 from src.data.FeatureList import FeatureList as fL
+from src.data.lang import LangAccessor
 from src.data.world_map import areas_list
 from src.data.world_map_utils import get_world_map_matcher
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.common import GoodsInfo
-from src.data.lang import LangAccessor
 
 # 匹配纯数字文本（存货/价格 OCR）
 _DIGITS_ONLY_RE = re.compile(r"^\d+$")
@@ -19,9 +18,11 @@ class DailyTradeFeature:
     def __init__(self, task):
         self._task = task
         #
-        task.default_config.update({
-            "只买不卖": False,
-        })
+        task.default_config.update(
+            {
+                "只买不卖": False,
+            }
+        )
         buy_sell_dict = {}
         buy_sell_desc_dict = {}
         for area in areas_list:
@@ -33,28 +34,32 @@ class DailyTradeFeature:
             buy_sell_desc_dict[f"{area}卖出价"] = f"{area}物资卖出价格下限，不足则拒绝卖出。若必卖，则设1。"
             buy_sell_desc_dict[area] = f"是否启用「地区建设/{area}物资调度/弹性需求物资」交易。"
         task.default_config.update(buy_sell_dict)
-        task.config_description.update({
-            "只买不卖": (
-                "启用后将只进行购买操作，不进行出售操作。"
-            ),
-            **buy_sell_desc_dict,
-        })
+        task.config_description.update(
+            {
+                "只买不卖": ("启用后将只进行购买操作，不进行出售操作。"),
+                **buy_sell_desc_dict,
+            }
+        )
 
         # 关键：把你要折叠的子项挂到父项下
         grouped_children = ["只买不卖"]
         for area in areas_list:
-            grouped_children.extend([
-                area,
-            ])
+            grouped_children.extend(
+                [
+                    area,
+                ]
+            )
         area_grouped_children = []
         for area in areas_list:
             area_grouped_children = area_grouped_children + [
                 f"{area}买入价",
                 f"{area}卖出价",
             ]
-        task.default_config_group.update({
-            "⭐买卖货": grouped_children + area_grouped_children,
-        })
+        task.default_config_group.update(
+            {
+                "⭐买卖货": grouped_children + area_grouped_children,
+            }
+        )
 
     def __getattr__(self, name):
         return getattr(self._task, name)
@@ -192,10 +197,8 @@ class DailyTradeFeature:
 
         return sum_good_info, market_text_y
 
-    def analyze_goods_info(
-            self, good_infos: List[dict], buy_price: int, sell_price: int
-    ):
-        processed_goods: List[GoodsInfo] = []
+    def analyze_goods_info(self, good_infos: list[dict], buy_price: int, sell_price: int):
+        processed_goods: list[GoodsInfo] = []
 
         for good_info in good_infos:
             try:
@@ -241,19 +244,15 @@ class DailyTradeFeature:
                 f"[货物] 名称:{good.good_name:<10} "
                 f"存货:{good.stock_quantity:>3} "
                 f"买价:{good.good_price:>6} "
-                f"卖价:{str(good.friend_price):>6} "
+                f"卖价:{good.friend_price!s:>6} "
             )
 
         buy_good = min(processed_goods, key=lambda x: x.good_price)
 
-        self.log_info(
-            f"推荐购买 | 名称:{buy_good.good_name} | 价格:{buy_good.good_price}"
-        )
+        self.log_info(f"推荐购买 | 名称:{buy_good.good_name} | 价格:{buy_good.good_price}")
 
         try:
-            sell_goods = [
-                good for good in processed_goods if good.friend_price > sell_price
-            ]
+            sell_goods = [good for good in processed_goods if good.friend_price > sell_price]
         except TypeError:
             self.log_error("好友价格数据异常，无法进行出售分析")
             sell_goods = []
@@ -261,42 +260,32 @@ class DailyTradeFeature:
         if sell_goods:
             self.log_info("===== 推荐出售列表 =====")
             for good in sell_goods:
-                self.log_info(
-                    f"推荐出售 | 名称:{good.good_name} | 卖价:{good.friend_price}"
-                )
+                self.log_info(f"推荐出售 | 名称:{good.good_name} | 卖价:{good.friend_price}")
         else:
             self.log_info("没有符合出售条件的货物")
 
         if buy_good.good_price < buy_price:
-            self.log_info(
-                f"满足购买条件 | 实际价格:{buy_good.good_price} "
-                f"< 设定上限:{buy_price}"
-            )
+            self.log_info(f"满足购买条件 | 实际价格:{buy_good.good_price} < 设定上限:{buy_price}")
             return buy_good, sell_goods, True
         else:
-            self.log_info(
-                f"不满足购买条件 | 实际价格:{buy_good.good_price} "
-                f">= 设定上限:{buy_price}"
-            )
+            self.log_info(f"不满足购买条件 | 实际价格:{buy_good.good_price} >= 设定上限:{buy_price}")
             return buy_good, sell_goods, False
 
     def navigate_to_friend_exchange(self):
         self.log_info("前往物资调度终端")
         self.ensure_in_friend_boat()
         self.ensure_map()
-        if not self.start_tracking_and_align_target(
-                fL.market_dispatch_terminal, fL.market_dispatch_terminal_out
-        ):
+        if not self.start_tracking_and_align_target(fL.market_dispatch_terminal, fL.market_dispatch_terminal_out):
             return False
         result = self.navigate_until_target(
             target=self.lang.daily_trade_mixin.k_fa04e4df,
             nav=fL.market_dispatch_terminal_out,
             time_out=200,
-            box=self.box_of_screen(0.631, 0.565, 0.771, 0.837)
+            box=self.box_of_screen(0.631, 0.565, 0.771, 0.837),
         )
 
         if result:
-            self.press_key('f')
+            self.press_key("f")
             self.wait_ui_stable(refresh_interval=1)
         return result
 
@@ -319,9 +308,7 @@ class DailyTradeFeature:
                 self.log_info(self.tr("无法进入{area}物资调度，买卖货失败").format(area=self.tr(area)))
                 navigation_failed = True
                 continue
-            self.wait_click_ocr(
-                match=self.lang.daily_trade_mixin.k_33fb3f9c, box=self.box.top
-            )
+            self.wait_click_ocr(match=self.lang.daily_trade_mixin.k_33fb3f9c, box=self.box.top)
             result = self.wait_feature(
                 feature=fL.market_good_icon,
                 time_out=2,
@@ -348,48 +335,43 @@ class DailyTradeFeature:
                 sell_goods = []
                 can_buy = buy_good and (buy_good.good_price < buy_price)
             else:
-                buy_good, sell_goods, can_buy = self.analyze_goods_info(
-                    good_infos, buy_price, sell_price
-                )
+                buy_good, sell_goods, can_buy = self.analyze_goods_info(good_infos, buy_price, sell_price)
             # 「即将溢出」状态强制购买：该商品即将溢出、必须买入，
             # 即使不满足价格上限。实际 OCR 文本为「即将溢出」四字，
             # 用一个「即将|溢出」合并正则匹配以便容错：OCR 可能把
             # 四字识别为一个文本块，也可能拆成「即将」「溢出」两个块，
             # 任一命中即视为即将溢出（见 find_boxes_by_name 的 OR 语义）。
-            if buy_good and not can_buy and self.wait_ocr(
-                match=self.lang.daily_trade_mixin.impending_overflow,
-                box=self.box.top_left,
-                time_out=3,
+            if (
+                buy_good
+                and not can_buy
+                and self.wait_ocr(
+                    match=self.lang.daily_trade_mixin.impending_overflow,
+                    box=self.box.top_left,
+                    time_out=3,
+                )
             ):
                 can_buy = True
             if buy_good:
                 if can_buy:
                     back_to_area_deadline = self.active_time() + 20
                     while not self.wait_ocr(
-                            match=self.lang.daily_trade_mixin.k_d6bdcc47,
-                            box=self.box.top_left,
-                            time_out=1,
+                        match=self.lang.daily_trade_mixin.k_d6bdcc47,
+                        box=self.box.top_left,
+                        time_out=1,
                     ):
                         if self.active_time() > back_to_area_deadline:
-                            self.log_info(
-                                "等待返回 '地区建设' 界面超时，结束买卖货任务"
-                            )
+                            self.log_info("等待返回 '地区建设' 界面超时，结束买卖货任务")
                             return False, went_friend_boat
                         self.back()
                     self.click(buy_good.name_box)
                     self.wait_ui_stable(refresh_interval=1)
                     if self.plus_max():
-                        self.wait_click_ocr(
-                            match=self.lang.daily_trade_mixin.k_7cf40bbd,
-                            box=self.box.bottom_right
-                        )
+                        self.wait_click_ocr(match=self.lang.daily_trade_mixin.k_7cf40bbd, box=self.box.bottom_right)
                         self.wait_pop_up()
                         for sg in sell_goods:
                             if sg.good_name == buy_good.good_name:
                                 sg.stock_quantity += 1
-                                self.log_info(
-                                    f"{sg.good_name} 本次已购买，存货数量更新为 {sg.stock_quantity}"
-                                )
+                                self.log_info(f"{sg.good_name} 本次已购买，存货数量更新为 {sg.stock_quantity}")
                                 break
                     else:
                         self.log_info("未找到加号按钮，无法购买")
@@ -400,9 +382,9 @@ class DailyTradeFeature:
 
             if sell_goods:
                 if not self.wait_click_ocr(
-                        match=self.lang.daily_trade_mixin.k_33fb3f9c,
-                        box=self.box.top,
-                        time_out=5,
+                    match=self.lang.daily_trade_mixin.k_33fb3f9c,
+                    box=self.box.top,
+                    time_out=5,
                 ):
                     self.log_info("未能切回弹性需求物资，跳过卖出操作")
                     continue
@@ -414,14 +396,16 @@ class DailyTradeFeature:
                     continue
                 back_to_area_deadline = self.active_time() + 20
                 while not self.wait_ocr(
-                        match=self.lang.daily_trade_mixin.k_d6bdcc47, box=self.box.top_left, time_out=1
+                    match=self.lang.daily_trade_mixin.k_d6bdcc47, box=self.box.top_left, time_out=1
                 ):
                     if self.active_time() > back_to_area_deadline:
                         self.log_info("等待返回 '地区建设' 界面超时，结束买卖货任务")
                         return False, went_friend_boat
                     self.back()
-                if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:]), log=True) or
-                        self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]), log=True)):
+                if not (
+                    self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:]), log=True)
+                    or self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]), log=True)
+                ):
                     self.log_info("未找到卖出货物，无法出售")
                     continue
                 self.wait_ui_stable(refresh_interval=1)
@@ -431,18 +415,14 @@ class DailyTradeFeature:
                 )
                 self.wait_ui_stable(refresh_interval=1)
                 try:
-                    c_y = (
-                            sell_good.friend_name_box.y + sell_good.friend_name_box.height // 2
-                    )
+                    c_y = sell_good.friend_name_box.y + sell_good.friend_name_box.height // 2
                     c_x = sell_good.friend_name_box.x - int((808 - 737) / 1920 * self.width)
                 except AttributeError:
                     self.log_info("未找到好友价格，无法出售")
                     continue
                 self.click(c_x, c_y)
                 go_friend_deadline = self.active_time() + 20
-                while not self.wait_click_ocr(
-                        match=self.lang.daily_trade_mixin.k_23926d61, box=self.box.center
-                ):
+                while not self.wait_click_ocr(match=self.lang.daily_trade_mixin.k_23926d61, box=self.box.center):
                     if self.active_time() > go_friend_deadline:
                         self.log_info("等待 '前往' 按钮超时，跳过该货物出售")
                         break
@@ -457,8 +437,10 @@ class DailyTradeFeature:
                 went_friend_boat = True
                 self.navigate_to_friend_exchange()
                 self.wait_click_ocr(match=get_world_map_matcher(self.lang, area), box=self.box.top)
-                if not (self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:])) or
-                        self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]))):
+                if not (
+                    self.wait_click_ocr(match=re.compile(sell_good.name_box.name[-3:]))
+                    or self.wait_click_ocr(match=re.compile(sell_good.good_name[:3]))
+                ):
                     self.log_info("未找到卖出货物，无法出售")
                     continue
                 self.wait_ui_stable(refresh_interval=1)

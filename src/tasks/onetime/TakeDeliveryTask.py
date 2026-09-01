@@ -1,8 +1,9 @@
 import re
+
 from ok import TriggerTask
 
-from src.icons import Icons
 from src.core.BaseEfTask import BaseEfTask
+from src.icons import Icons
 
 
 class TakeDeliveryTask(BaseEfTask, TriggerTask):
@@ -28,12 +29,12 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         self.description = "自动抢送货委托单"
 
         self.default_config = {
-            '接取谷地券': False,
-            '接取谷地券最低金额(万)': 5.0,
-            '接取谷地券最高金额(万)': 40.0,
-            '接取武陵券': True,
-            '接取武陵券最低金额(万)': 5.0,
-            '接取武陵券最高金额(万)': 15.0
+            "接取谷地券": False,
+            "接取谷地券最低金额(万)": 5.0,
+            "接取谷地券最高金额(万)": 40.0,
+            "接取武陵券": True,
+            "接取武陵券最低金额(万)": 5.0,
+            "接取武陵券最高金额(万)": 15.0,
         }
 
     def process_ocr_results(self, full_texts, filter_min, reward_pattern):
@@ -96,7 +97,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
             x_offset=x_offset_val,
             y_offset=y_offset_val,
             width_offset=search_width - reward_obj.width,
-            height_offset=target_real_height - reward_obj.height
+            height_offset=target_real_height - reward_obj.height,
         )
 
         # 边界检查
@@ -122,7 +123,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
     def run(self):
         # 前置：按Y，点击“仓储节点”，点击“运送委托列表”
         self.log_info("前置操作：按Y，点击‘仓储节点’，点击‘运送委托列表’")
-        self.press_key('y', down_time=0.05)
+        self.press_key("y", down_time=0.05)
         storage_box = self.wait_ocr(match=self.lang.TakeDeliveryTask.k_a72a252f, time_out=5)
         if storage_box:
             self.click(storage_box[0])
@@ -152,16 +153,16 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         reward_pattern = re.compile(reward_regex, re.I)
 
         # 读取券种配置
-        valley_min = float(self.config.get('接取谷地券最低金额(万)', 5.0))
-        valley_max = float(self.config.get('接取谷地券最高金额(万)', 40.0))
-        wuling_min = float(self.config.get('接取武陵券最低金额(万)', 5.0))
-        wuling_max = float(self.config.get('接取武陵券最高金额(万)', 15.0))
+        valley_min = float(self.config.get("接取谷地券最低金额(万)", 5.0))
+        valley_max = float(self.config.get("接取谷地券最高金额(万)", 40.0))
+        wuling_min = float(self.config.get("接取武陵券最低金额(万)", 5.0))
+        wuling_max = float(self.config.get("接取武陵券最高金额(万)", 15.0))
 
         ticket_types = []
         if enable_valley:
-            ticket_types.append('ticket_valley')
+            ticket_types.append("ticket_valley")
         if enable_wuling:
-            ticket_types.append('ticket_wuling')
+            ticket_types.append("ticket_wuling")
 
         if not ticket_types:
             self.log_info("警告: 未启用任何券种，任务退出")
@@ -184,7 +185,6 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                 break
 
             try:
-
                 full_texts = self.ocr(box=self.box_of_screen(0.05, 0.15, 0.95, 0.95))
                 rewards, accept_btns, refresh_btn = self.process_ocr_results(full_texts, filter_min, reward_pattern)
 
@@ -230,9 +230,17 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                     if ticket_result:
                         # 根据具体的图标类型判断对应的金额阈值
                         is_qualified = False
-                        if ticket_result.name == 'ticket_valley' and enable_valley and val >= valley_min and val <= valley_max:
-                            is_qualified = True
-                        elif ticket_result.name == 'ticket_wuling' and enable_wuling and val >= wuling_min and val <= wuling_max:
+                        if (
+                            ticket_result.name == "ticket_valley"
+                            and enable_valley
+                            and val >= valley_min
+                            and val <= valley_max
+                        ) or (
+                            ticket_result.name == "ticket_wuling"
+                            and enable_wuling
+                            and val >= wuling_min
+                            and val <= wuling_max
+                        ):
                             is_qualified = True
 
                         if is_qualified:
@@ -255,7 +263,9 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                         self.click(target_btn, after_sleep=0)  # 点击后不等待
 
                         # 检查是否出现"请尽快送达"
-                        delivery_text = self.wait_ocr(match=self.lang.TakeDeliveryTask.k_046ed3ab, time_out=2, raise_if_not_found=False)
+                        delivery_text = self.wait_ocr(
+                            match=self.lang.TakeDeliveryTask.k_046ed3ab, time_out=2, raise_if_not_found=False
+                        )
                         if delivery_text:
                             self.log_info(f"抢单成功！(第 {attempt} 次尝试)")
                             return True
@@ -273,7 +283,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                     if refresh_btn:
                         last_refresh_box = refresh_btn
                     else:
-                        last_refresh_box = getattr(self, 'last_known_refresh_btn', None)
+                        last_refresh_box = getattr(self, "last_known_refresh_btn", None)
 
                     # 2. 检查是否需要滚动 (每轮刷新之间最多滚动1次)
                     if scroll_step < 1:
@@ -292,8 +302,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                     self.log_debug("已完成当前列表扫描，准备检测刷新")
 
                     if last_refresh_box:
-
-                        last_click = getattr(self, 'last_refresh_time', 0)
+                        last_click = getattr(self, "last_refresh_time", 0)
                         elapsed = self.active_time() - last_click
 
                         if elapsed < 5.6:
@@ -303,7 +312,9 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
 
                         # CD已好（或睡醒），执行点击
                         self.log_info(f"执行刷新 (坐标: {int(last_refresh_box.x)}, {int(last_refresh_box.y)})")
-                        self.click(last_refresh_box,  )
+                        self.click(
+                            last_refresh_box,
+                        )
                         self.last_refresh_time = self.active_time()
 
                         # 刷新成功后，滚动状态反转

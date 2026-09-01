@@ -1,11 +1,10 @@
-import re
 import threading
 
 from PySide6.QtCore import QTimer
 from qfluentwidgets import FluentIcon
 
-from src.data.characters_utils import get_contact_list_with_feature_list
 from src.data.characters import all_list
+from src.data.characters_utils import get_contact_list_with_feature_list
 from src.data.lang import LangAccessor
 from src.tasks.mixin.common import LiaisonResult, build_name_patterns
 
@@ -30,29 +29,35 @@ class DailyLiaisonFeature:
             "icon": FluentIcon.LINK,
             "callback": self.open_help_link,
         }
-        self._task.default_config.update({
-            "⭐送礼": True,
-            "一次送礼个数": 2,
-            "⭐帝江号一键存放": False,
-            self.CFG_GIFT_MAX_RETRY: 2,
-            self.CFG_PRIORITY_GIFT_TARGET: all_list[0],
-        })
-        self._task.config_description.update({
-            "⭐送礼": (
-                "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。\n"
-                "如果途中偶遇干员，则直接交互完成送礼。\n"
-                "任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
-            ),
-            "⭐帝江号一键存放": (
-                "是否在「帝江号」打开背包并点击「一键存放」。\n"
-                "与「简易制作」合并执行，共享传送与开背包。\n"
-                "确认不会自动存可用道具导致治疗药被存入后再开启"
-            ),
-            "帮助": "打开日常任务使用说明网页。",
-        })
-        self._task.default_config_group.update({
-            "⭐送礼": [self.CFG_GIFT_MAX_RETRY, "一次送礼个数", self.CFG_PRIORITY_GIFT_TARGET],
-        })
+        self._task.default_config.update(
+            {
+                "⭐送礼": True,
+                "一次送礼个数": 2,
+                "⭐帝江号一键存放": False,
+                self.CFG_GIFT_MAX_RETRY: 2,
+                self.CFG_PRIORITY_GIFT_TARGET: all_list[0],
+            }
+        )
+        self._task.config_description.update(
+            {
+                "⭐送礼": (
+                    "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。\n"
+                    "如果途中偶遇干员，则直接交互完成送礼。\n"
+                    "任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
+                ),
+                "⭐帝江号一键存放": (
+                    "是否在「帝江号」打开背包并点击「一键存放」。\n"
+                    "与「简易制作」合并执行，共享传送与开背包。\n"
+                    "确认不会自动存可用道具导致治疗药被存入后再开启"
+                ),
+                "帮助": "打开日常任务使用说明网页。",
+            }
+        )
+        self._task.default_config_group.update(
+            {
+                "⭐送礼": [self.CFG_GIFT_MAX_RETRY, "一次送礼个数", self.CFG_PRIORITY_GIFT_TARGET],
+            }
+        )
 
     def __getattr__(self, name):
         return getattr(self._task, name)
@@ -71,6 +76,7 @@ class DailyLiaisonFeature:
                 self.log_error(f"打开帮助对话框失败: {e}")
                 # 如果 WebView 失败，回退到打开浏览器
                 import webbrowser
+
                 webbrowser.open(self.HELP_LINK)
 
         # 确保在 GUI 线程中执行

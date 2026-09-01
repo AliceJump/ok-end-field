@@ -2,12 +2,14 @@ import re
 
 import pyautogui
 import win32gui
+from ok import Box
+
 from src.core.BaseEfTask import BaseEfTask, back_window
 from src.data.FeatureList import FeatureList as fL
 from src.interaction.Mouse import run_at_window_pos
-from ok import Box
-class LoginMixin(BaseEfTask):
 
+
+class LoginMixin(BaseEfTask):
     def login_flow(self, username: str, password: str | None = None):
         """
         执行登录流程：登出当前账号并尝试用指定账号登录。
@@ -65,18 +67,25 @@ class LoginMixin(BaseEfTask):
             prev_hwnd = win32gui.GetForegroundWindow()
         try:
             self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True)
-            if not self.wait_click_feature(feature=fL.log_out_confirm, time_out=5, raise_if_not_found=False):  # 点击登出确认
+            if not self.wait_click_feature(
+                feature=fL.log_out_confirm, time_out=5, raise_if_not_found=False
+            ):  # 点击登出确认
                 self.log_error("未找到登出确认按钮")
                 return False
             self._logged_in = False
-            result = self.click_text(re.compile("最近"), box=self.box.center, success_match=self.lang.login_mixin.k_20275ef2,
-                                     need_wait_disappear=False)  # 点击当前账号（假设是唯一的）"最近", box=self.box.center, need_wait_disappear=False)  # 点击当前账号（假设是唯一的）
+            result = self.click_text(
+                re.compile("最近"),
+                box=self.box.center,
+                success_match=self.lang.login_mixin.k_20275ef2,
+                need_wait_disappear=False,
+            )  # 点击当前账号（假设是唯一的）"最近", box=self.box.center, need_wait_disappear=False)  # 点击当前账号（假设是唯一的）
             if not result:
                 self.log_error("未找到‘最近’按钮，可能未成功返回登录界面")
                 raise RuntimeError("未找到‘最近’按钮，可能未成功返回登录界面")
-            self.click_text(re.compile(username[-4:]),
-                            box=self.box_of_screen(0, (result[0].y + result[0].height) / self.height, 1,
-                                                   1))  # 点击最近登录的账号（假设是唯一的）
+            self.click_text(
+                re.compile(username[-4:]),
+                box=self.box_of_screen(0, (result[0].y + result[0].height) / self.height, 1, 1),
+            )  # 点击最近登录的账号（假设是唯一的）
             self.click_text("登录", box=self.box.center)  # 点击登录按钮
         finally:
             # 后台模式：点击登录后不再有前台点击（后续仅轮询截图确认登录），
@@ -130,11 +139,11 @@ class LoginMixin(BaseEfTask):
         pyautogui.hotkey("ctrl", "v")
 
     def click_text(
-            self,
-            match: str,
-            box=None,
-            need_wait_disappear: bool = True,
-            success_match: str | None = None,
+        self,
+        match: str,
+        box=None,
+        need_wait_disappear: bool = True,
+        success_match: str | None = None,
     ) -> Box | None:
         """
         OCR 查找并点击文本。
@@ -157,20 +166,16 @@ class LoginMixin(BaseEfTask):
         # 避免 Pattern 对象被 str() 成 "re.compile(...)" 污染日志与 i18n 收集
         match_text = match.pattern if isinstance(match, re.Pattern) else str(match)
         success_match_text = (
-            success_match.pattern if isinstance(success_match, re.Pattern) else str(success_match)
-        ) if success_match else None
+            (success_match.pattern if isinstance(success_match, re.Pattern) else str(success_match))
+            if success_match
+            else None
+        )
 
         while self.active_time() - start_time < 60:
-
-            ocr_result = self.login_ocr(
-                match=match,
-                box=box,
-                need_active=False
-            )
+            ocr_result = self.login_ocr(match=match, box=box, need_active=False)
 
             # 没找到目标
             if not ocr_result:
-
                 # 如果需要等待消失
                 if clicked_result and need_wait_disappear:
                     self.log_info(f"点击并确认目标已消失: {match_text}")
@@ -197,35 +202,21 @@ class LoginMixin(BaseEfTask):
 
             # ---------- 检测 success_match ----------
             if success_match:
-                success = self.login_ocr(
-                    match=success_match,
-                    box=box,
-                    need_active=False
-                )
+                success = self.login_ocr(match=success_match, box=box, need_active=False)
 
                 if success:
-                    self.log_info(
-                        f"点击后检测到成功目标: {success_match_text}"
-                    )
+                    self.log_info(f"点击后检测到成功目标: {success_match_text}")
                     return clicked_result
 
             # ---------- 检测原目标是否消失 ----------
             if need_wait_disappear:
-                check = self.login_ocr(
-                    match=match,
-                    box=box,
-                    need_active=False
-                )
+                check = self.login_ocr(match=match, box=box, need_active=False)
 
                 if not check:
-                    self.log_info(
-                        f"点击后目标已消失: {match_text}"
-                    )
+                    self.log_info(f"点击后目标已消失: {match_text}")
                     return clicked_result
 
-            self.log_debug(
-                f"点击后仍检测到'{match_text}'，准备重试"
-            )
+            self.log_debug(f"点击后仍检测到'{match_text}'，准备重试")
 
             self.sleep(1)
 

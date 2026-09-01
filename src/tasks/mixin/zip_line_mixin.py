@@ -1,13 +1,14 @@
 import re
-from src.image.hsv_config import HSVRange as hR
-from src.core.sequence_parser import parse_int_sequence
+
 from src.core.global_config_store import (
     ZIP_LINE_CONFIG_NAME,
-    ZIP_LINE_SCROLL_KEY,
     ZIP_LINE_DELIVERY_KEYS,
     ZIP_LINE_GATHER_KEYS,
+    ZIP_LINE_SCROLL_KEY,
     get_global_config,
 )
+from src.core.sequence_parser import parse_int_sequence
+from src.image.hsv_config import HSVRange as hR
 from src.tasks.account.account_scope_store import get_account_task_overrides
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 
@@ -77,15 +78,22 @@ class ZipLineMixin(NavigationMixin):
                 _inst_line("⚠️ " + self.tr("填写规则"), "#FE821D", bold=True),
                 _inst_line(f"└─ {self.tr('每个键对应一条滑索路线，值为距离序列，用英文逗号分隔')}", indent=1),
                 _inst_line(f"└─ {self.tr('任务会按顺序依次对齐并滑行每段距离')}", indent=1),
-                _inst_line(f"└─ {self.tr('例：「{key}」= {raw} → 依次滑行 {seq}').format(key=example_key, raw=example_raw, seq=example_seq)}", indent=1),
+                _inst_line(
+                    f"└─ {self.tr('例：「{key}」= {raw} → 依次滑行 {seq}').format(key=example_key, raw=example_raw, seq=example_seq)}",
+                    indent=1,
+                ),
                 _inst_line(f"└─ {self.tr('留空表示该路线不乘滑索')}", indent=1),
                 _inst_gap(),
                 _inst_line("📦 " + self.tr("送货相关键"), "#FE821D", bold=True),
                 _inst_line(f"├─ {self.tr('{keys}：出发滑索距离').format(keys=' / '.join(start_keys))}", indent=1),
-                _inst_line(f"└─ {self.tr('{keys}：各送货目标滑索序列').format(keys=' / '.join(target_keys))}", indent=1),
+                _inst_line(
+                    f"└─ {self.tr('{keys}：各送货目标滑索序列').format(keys=' / '.join(target_keys))}", indent=1
+                ),
                 _inst_gap(),
                 _inst_line("🪫 " + self.tr("淤积点相关键"), "#FE821D", bold=True),
-                _inst_line(f"└─ {self.tr('{keys}：能量淤积点滑索序列').format(keys=' / '.join(gather_keys))}", indent=1),
+                _inst_line(
+                    f"└─ {self.tr('{keys}：能量淤积点滑索序列').format(keys=' / '.join(gather_keys))}", indent=1
+                ),
                 _inst_gap(),
                 _inst_line("🖱️ " + self.tr("是否启用滚动放大视角"), "#FE821D", bold=True),
                 _inst_line(f"└─ {self.tr('对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低')}", indent=1),
@@ -225,10 +233,15 @@ class ZipLineMixin(NavigationMixin):
                     raise_if_fail=False,
                 )
                 self.click(key="right")
-        if self.wait_ocr(match=[
+        if self.wait_ocr(
+            match=[
                 self.lang.zip_line_mixin.k_2f4f4a2f,
                 self.lang.zip_line_mixin.k_0b1e4f35,
-            ], box=self.box_of_screen(0.351, 0.943, 0.657, 0.981), log=True, time_out=2):
+            ],
+            box=self.box_of_screen(0.351, 0.943, 0.657, 0.981),
+            log=True,
+            time_out=2,
+        ):
             self.click(key="right", after_sleep=2)
         self.log_info("滑索结束")
         self.ensure_main()
@@ -237,8 +250,12 @@ class ZipLineMixin(NavigationMixin):
         for _ in range(max_attempts):
             self.click(after_sleep=0.1)
             self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
-            if not self.ocr(match=[
+            if not self.ocr(
+                match=[
                     self.lang.zip_line_mixin.k_2f4f4a2f,
                     self.lang.zip_line_mixin.k_0b1e4f35,
-                ], frame=self.next_frame(), box=self.box_of_screen(0.351, 0.943, 0.657, 0.981)):
+                ],
+                frame=self.next_frame(),
+                box=self.box_of_screen(0.351, 0.943, 0.657, 0.981),
+            ):
                 return True

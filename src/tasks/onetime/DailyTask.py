@@ -1,44 +1,38 @@
-from qfluentwidgets import FluentIcon
-
-from src.tasks.account.account_mixin import AccountMixin
-from src.tasks.daily.daily_battle_mixin import DailyBattleFeature
-from src.tasks.daily.daily_buy_mixin import DailyBuyFeature
-from src.tasks.daily.daily_liaison_mixin import DailyLiaisonFeature
-from src.tasks.daily.daily_routine_mixin import DailyRoutineFeature
-from src.tasks.daily.daily_shop_mixin import DailyShopFeature
-from src.tasks.daily.daily_trade_mixin import DailyTradeFeature
-from src.tasks.daily.daily_demo_mixin import DailyDemoFeature
-from src.tasks.daily.daily_regional_runner import DailyRegionalRunner
-from src.tasks.daily.finally_file import (
-    create_task_summary_report,
-)
-from src.core.email_service import send_daily_summary_email
-import tempfile
 import os
+import tempfile
 import threading
 import webbrowser
 from pathlib import Path
-from src.tasks.daily.daily_task_runner import DailyTaskRunner
-from src.tasks.onetime.DeliveryTask import DeliveryFeature
-from src.tasks.mixin.end_command_mixin import EndCommandMixin
-from src.tasks.mixin.common import Common
-from src.tasks.mixin.map_mixin import MapMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
-from src.tasks.mixin.battle_mixin import BattleMixin
-from src.tasks.mixin.liaison_mixin import LiaisonMixin
-from src.tasks.mixin.mouse_scan_mixin import MouseScanMixin
+
+from qfluentwidgets import FluentIcon
+
 from src.core.config_migration import legacy_bool_switch_to_list, merge_bool_options
+from src.core.email_service import send_daily_summary_email
+from src.tasks.account.account_mixin import AccountMixin
+from src.tasks.daily.daily_battle_mixin import DailyBattleFeature
+from src.tasks.daily.daily_buy_mixin import DailyBuyFeature
+from src.tasks.daily.daily_demo_mixin import DailyDemoFeature
+from src.tasks.daily.daily_liaison_mixin import DailyLiaisonFeature
+from src.tasks.daily.daily_regional_runner import DailyRegionalRunner
+from src.tasks.daily.daily_routine_mixin import DailyRoutineFeature
+from src.tasks.daily.daily_shop_mixin import DailyShopFeature
+from src.tasks.daily.daily_task_runner import DailyTaskRunner
+from src.tasks.daily.daily_trade_mixin import DailyTradeFeature
+from src.tasks.daily.finally_file import (
+    create_task_summary_report,
+)
+from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.mixin.common import Common
+from src.tasks.mixin.end_command_mixin import EndCommandMixin
+from src.tasks.mixin.liaison_mixin import LiaisonMixin
+from src.tasks.mixin.map_mixin import MapMixin
+from src.tasks.mixin.mouse_scan_mixin import MouseScanMixin
+from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.onetime.DeliveryTask import DeliveryFeature
 
 
 class DailyTask(
-    Common,
-    MapMixin,
-    ZipLineMixin,
-    BattleMixin,
-    LiaisonMixin,
-    EndCommandMixin,
-    AccountMixin,
-    MouseScanMixin
+    Common, MapMixin, ZipLineMixin, BattleMixin, LiaisonMixin, EndCommandMixin, AccountMixin, MouseScanMixin
 ):
     """日常任务聚合执行器。"""
 
@@ -52,11 +46,13 @@ class DailyTask(
     }
     config_value_migrations = {
         # 旧版三个地区布尔开关 → 新的多选列表键。
-        "⭐地区建设": merge_bool_options({
-            "据点兑换": "⭐据点兑换",
-            "买物资": "⭐买物资",
-            "买卖货": "⭐买卖货",
-        }),
+        "⭐地区建设": merge_bool_options(
+            {
+                "据点兑换": "⭐据点兑换",
+                "买物资": "⭐买物资",
+                "买卖货": "⭐买卖货",
+            }
+        ),
         # 旧布尔开关 + 操作列表 → 新多选列表键。
         "⭐帝江号收菜": legacy_bool_switch_to_list(
             ops_key="帝江号收菜操作",
@@ -68,23 +64,29 @@ class DailyTask(
         ),
     }
 
-    BOAT_STATE_TASK_KEYS = frozenset({
-        "⭐帝江号整理",
-        "⭐帝江号收菜",
-    })
-    MULTI_SELECTION_TASK_KEYS = frozenset({
-        "⭐地区建设",
-        "⭐帝江号收菜",
-        "⭐活动奖励",
-    })
+    BOAT_STATE_TASK_KEYS = frozenset(
+        {
+            "⭐帝江号整理",
+            "⭐帝江号收菜",
+        }
+    )
+    MULTI_SELECTION_TASK_KEYS = frozenset(
+        {
+            "⭐地区建设",
+            "⭐帝江号收菜",
+            "⭐活动奖励",
+        }
+    )
     # 后台模式下需要前台操作的子任务（其余子任务可在后台模式执行）。
     # 地区建设不整体拦截：卖货只是其中一小部分，后台模式下卖货部分会因移动被禁用而自然失败/跳过。
-    FOREGROUND_TASK_KEYS = frozenset({
-        "⭐刷体力",      # 战斗，硬性需要前台
-        "⭐自动送货",    # 移动/导航，硬性需要前台
-        "⭐演算",        # 演算战斗，硬性需要前台
-        "⭐送礼",        # 送礼需要大量移动
-    })
+    FOREGROUND_TASK_KEYS = frozenset(
+        {
+            "⭐刷体力",  # 战斗，硬性需要前台
+            "⭐自动送货",  # 移动/导航，硬性需要前台
+            "⭐演算",  # 演算战斗，硬性需要前台
+            "⭐送礼",  # 送礼需要大量移动
+        }
+    )
 
     account_config_blacklist = {
         "发生异常时终止游戏",
@@ -132,36 +134,42 @@ class DailyTask(
                 "可选填写『外部命令起始于』作为命令工作目录。"
             ),
         )
-        self.default_config.update({
-            "⭐地区建设": DailyRegionalRunner.DEFAULT_OPTIONS,
-            "⭐传送到帝江号右侧传送点": True,
-            "配置选择": "⭐⭐⭐ 默认",
-            "发生异常时终止游戏": False,
-            "仅退出游戏": False,
-            "自动打开汇总文件": True,
-            "邮件发送汇总": False,
-        })
-        self.config_description.update({
-            "⭐地区建设": (
-                "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
-            ),
-            "⭐传送到帝江号右侧传送点": "是否在日常任务结束后传送到帝江号右侧传送点。",
-            "自动打开汇总文件": "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。",
-            "邮件发送汇总": "任务完成后是否将最终执行汇总通过邮件发送（收件人取“设置 → 邮件发送配置”中的默认收件人）。",
-        })
+        self.default_config.update(
+            {
+                "⭐地区建设": DailyRegionalRunner.DEFAULT_OPTIONS,
+                "⭐传送到帝江号右侧传送点": True,
+                "配置选择": "⭐⭐⭐ 默认",
+                "发生异常时终止游戏": False,
+                "仅退出游戏": False,
+                "自动打开汇总文件": True,
+                "邮件发送汇总": False,
+            }
+        )
+        self.config_description.update(
+            {
+                "⭐地区建设": (
+                    "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
+                ),
+                "⭐传送到帝江号右侧传送点": "是否在日常任务结束后传送到帝江号右侧传送点。",
+                "自动打开汇总文件": "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。",
+                "邮件发送汇总": "任务完成后是否将最终执行汇总通过邮件发送（收件人取“设置 → 邮件发送配置”中的默认收件人）。",
+            }
+        )
         self.config_type["⭐地区建设"] = {
             "type": "multi_selection",
             "options": DailyRegionalRunner.OPTIONS,
         }
         task_group = {
-            "⭐⭐⭐ 默认": [
-                item[0] for item in self.build_task_plan()
-                if item[0] not in self.MULTI_SELECTION_TASK_KEYS
-            ] + ["⭐帝江号一键存放", "⭐简易制作", "⭐地区建设", "⭐帝江号收菜", "⭐活动奖励", "⭐执行外部命令"],
+            "⭐⭐⭐ 默认": [item[0] for item in self.build_task_plan() if item[0] not in self.MULTI_SELECTION_TASK_KEYS]
+            + ["⭐帝江号一键存放", "⭐简易制作", "⭐地区建设", "⭐帝江号收菜", "⭐活动奖励", "⭐执行外部命令"],
         }
 
         # 合并两个分组字典
-        all_groups = {**task_group, **self.default_config_group, **{"其他配置": ["发生异常时终止游戏", "仅退出游戏", "邮件发送汇总", "自动打开汇总文件"]}}
+        all_groups = {
+            **task_group,
+            **self.default_config_group,
+            **{"其他配置": ["发生异常时终止游戏", "仅退出游戏", "邮件发送汇总", "自动打开汇总文件"]},
+        }
 
         self.register_config_groups(all_groups)
         self.add_exit_after_config()
@@ -171,8 +179,11 @@ class DailyTask(
     def build_task_plan(self):
         return [
             ("⭐送礼", self.daily_liaison.execute_gift_task),
-            ("⭐帝江号整理", self.daily_routine.boat_organize,
-             lambda: self.config.get("⭐帝江号一键存放", False) or self.config.get("⭐简易制作", False)),
+            (
+                "⭐帝江号整理",
+                self.daily_routine.boat_organize,
+                lambda: self.config.get("⭐帝江号一键存放", False) or self.config.get("⭐简易制作", False),
+            ),
             ("⭐帝江号收菜", self.daily_routine.boat_claim_rewards),
             ("⭐收邮件", self.daily_routine.claim_mail),
             ("⭐转交运送委托", self.daily_routine.delivery_send_others),
@@ -195,7 +206,7 @@ class DailyTask(
         try:
             task_plan = self.build_task_plan()
             # 根据配置决定外部命令的执行时机
-            end_cmd_task=("⭐执行外部命令", self.launch_end_command_non_blocking)
+            end_cmd_task = ("⭐执行外部命令", self.launch_end_command_non_blocking)
             if self.config.get("外部命令执行时机", "任务最后") == "任务最开始":
                 task_plan.insert(0, end_cmd_task)
             else:
@@ -222,6 +233,7 @@ class DailyTask(
 
     def _send_daily_summary_email(self, summary_path: str | Path):
         """后台发送日常汇总邮件，不阻塞任务结束；失败仅记录日志。"""
+
         def _run():
             try:
                 summary_text = Path(summary_path).read_text(encoding="utf-8")
@@ -292,11 +304,13 @@ class DailyTask(
             account_name = id_to_user.get(str(account_id), "") or (str(account_id) if account_id else "无")
             for task_name, reason in tasks.items():
                 display_task = str(task_name).lstrip("⭐").strip()
-                details.append({
-                    "account": account_name,
-                    "task": display_task,
-                    "reason": str(reason or ""),
-                })
+                details.append(
+                    {
+                        "account": account_name,
+                        "task": display_task,
+                        "reason": str(reason or ""),
+                    }
+                )
         return details
 
     def run_daily_finally(self):

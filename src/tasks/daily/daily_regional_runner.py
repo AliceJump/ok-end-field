@@ -48,7 +48,9 @@ class DailyRegionalRunner:
                     # 已前往好友帝江号：角色在野外，界面远离地区建设总览，
                     # 逐层返回难以退回。直接回主界面结束本区域建设，继续下一区域。
                     self._task.ensure_main()
-                    self.log_info(self.tr("已前往好友帝江号，直接回主界面结束{area}地区建设").format(area=self.tr(area)))
+                    self.log_info(
+                        self.tr("已前往好友帝江号，直接回主界面结束{area}地区建设").format(area=self.tr(area))
+                    )
                     continue
                 if enabled_buy and not self._buy_ran:
                     self.log_info("买卖货未执行买物资回调，单独执行买物资")

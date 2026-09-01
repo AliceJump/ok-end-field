@@ -1,6 +1,7 @@
-import threading
-import pyautogui
 import traceback
+
+import pyautogui
+
 from src.core.BaseEfTask import BaseEfTask
 from src.core.BattleConfig import (
     KEY_COND_ENABLED,
@@ -27,16 +28,17 @@ class _TaskProbe:
 
     def link_available(self) -> bool:
         # 对应 battle_mixin.use_link_skill 的检测参数
-        return bool(self._task.find_one(
-            fL.default_link_skill, threshold=0.7, vertical_variance=0.005, horizontal_variance=0.005
-        ))
+        return bool(
+            self._task.find_one(
+                fL.default_link_skill, threshold=0.7, vertical_variance=0.005, horizontal_variance=0.005
+            )
+        )
 
     def skill_count(self) -> int:
         return self._task.get_skill_bar_count()
 
 
 class AutoCombatLogic:
-
     def __init__(self, task: BaseEfTask):
         self.rotation_active = None
         self.skill_sequence = None
@@ -289,7 +291,7 @@ class AutoCombatLogic:
             # 非战斗状态：清标记，下次进入战斗时才会复位推荐技能检测器
             task._recommend_detector_in_combat = False
             now = task.active_time()
-            last = getattr(task, '_last_no_combat_log_time', 0)
+            last = getattr(task, "_last_no_combat_log_time", 0)
             if now - last >= 5:
                 task._last_no_combat_log_time = now
             # 一直未进入战斗：分辨率低于 1080p 时每 5 秒警告一次
@@ -373,12 +375,16 @@ class AutoCombatLogic:
 
             try:
                 _detect_start = task.active_time()
-                _target_sleep = start_sleep if start_sleep is not None else task.get_battle_config("进入战斗后的初始等待时间", 3)
+                _target_sleep = (
+                    start_sleep if start_sleep is not None else task.get_battle_config("进入战斗后的初始等待时间", 3)
+                )
                 _detect_deadline = _detect_start + _target_sleep
                 if _skill_allowlist_enabled:
                     # 初始等待期间做多帧稳定识别，复用等待时间
                     _detected_team, _team_stable = detect_team_stable(
-                        task.next_frame, task=task, deadline=_detect_deadline,
+                        task.next_frame,
+                        task=task,
+                        deadline=_detect_deadline,
                     )
                     _elapsed = task.active_time() - _detect_start
                     if _elapsed < _target_sleep:
@@ -387,6 +393,7 @@ class AutoCombatLogic:
                     task.sleep(_target_sleep)
             except Exception:
                 import pyautogui
+
                 pyautogui.mouseUp()
                 raise
 
@@ -394,10 +401,7 @@ class AutoCombatLogic:
         if _skill_allowlist_enabled:
             if _team_stable and _detected_team and all(m != "?" for m in _detected_team):
                 self.normal_skill_sequence = generate_skill_sequence(_detected_team)
-                task.log_info(
-                    f"自动技能列表已生成: {self.normal_skill_sequence} "
-                    f"(队伍: {'/'.join(_detected_team)})"
-                )
+                task.log_info(f"自动技能列表已生成: {self.normal_skill_sequence} (队伍: {'/'.join(_detected_team)})")
             elif _detected_team and not _team_stable:
                 task.log_info("自动技能列表: 队伍未达稳定，跳过生成")
             else:

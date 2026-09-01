@@ -1,20 +1,26 @@
 import math
 import re
 import traceback
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
 
 from ok import TaskDisabledException
+
+from src.core.sequence_parser import parse_int_sequence, parse_sequence
 from src.data.FeatureList import FeatureList as fL
 from src.data.lang import LangAccessor
-from src.data.world_map import stages_cost, higher_order_feature_dict, STAGE_CATEGORY_ENERGY_POOLING, \
-    STAGE_CATEGORY_DANGER_REHEARSAL
-from src.data.world_map import stages_dict, stages_list
+from src.data.world_map import (
+    STAGE_CATEGORY_DANGER_REHEARSAL,
+    STAGE_CATEGORY_ENERGY_POOLING,
+    higher_order_feature_dict,
+    stages_cost,
+    stages_dict,
+    stages_list,
+)
 from src.data.world_map_utils import get_stage_category, get_world_map_matcher, is_world_map_text
-from src.core.sequence_parser import parse_int_sequence, parse_sequence
+
 MAX_STORAGE_TICKET = 1000
 ONE_MEDICINE_RESTORE_ENERGY = 40
-
 
 
 @dataclass
@@ -22,6 +28,7 @@ class BattleContext:
     """
     战斗上下文类，用于存储和管理战斗相关的状态信息
     """
+
     stage_name: str = ""  # 关卡名称
     category_name: str = ""  # 战斗类别名称
 
@@ -43,6 +50,7 @@ class DailyBattleFeature:
     """
     日常战斗功能类，用于处理日常战斗任务，包括刷取体力副本、处理奖励档位切换等功能。
     """
+
     # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
     lang: LangAccessor
     # 配置项常量定义
@@ -63,17 +71,19 @@ class DailyBattleFeature:
         self.stages_list = stages_list
         self._reset_battle_state()
         today_str = datetime.now().strftime("%Y-%m-%d")
-        self._task.default_config.update({
-            "⭐刷体力": True,
-            self.CFG_USE_LIMITED_STAMINA_POTION: False,
-            "体力本": "干员经验",
-            self.CFG_STAGE_REWARD_TIER: self.REWARD_TIER_KEEP,
-            self.CFG_STAMINA_START_DATE: today_str,  # 默认当天，可自定义
-            "刷本序列": [],  # 为空表示不启用自动轮换
-            "仅站桩": False,
-            self.CFG_STAMINA_CONTINUE_COUNT: 0,
-            self.CFG_PRE_ENTER_TEAM_SWITCH: self.PRE_ENTER_TEAM_SWITCH_NONE,
-        })
+        self._task.default_config.update(
+            {
+                "⭐刷体力": True,
+                self.CFG_USE_LIMITED_STAMINA_POTION: False,
+                "体力本": "干员经验",
+                self.CFG_STAGE_REWARD_TIER: self.REWARD_TIER_KEEP,
+                self.CFG_STAMINA_START_DATE: today_str,  # 默认当天，可自定义
+                "刷本序列": [],  # 为空表示不启用自动轮换
+                "仅站桩": False,
+                self.CFG_STAMINA_CONTINUE_COUNT: 0,
+                self.CFG_PRE_ENTER_TEAM_SWITCH: self.PRE_ENTER_TEAM_SWITCH_NONE,
+            }
+        )
         self._task.default_config_group.update(
             {
                 "⭐刷体力": [
@@ -90,42 +100,32 @@ class DailyBattleFeature:
             }
         )
 
-        self._task.config_description.update({
-            "⭐刷体力": (
-                "是否消耗所有「理智」刷取培养材料。"
-            ),
-            self.CFG_USE_LIMITED_STAMINA_POTION: (
-                "如果勾选，将优先全部用掉限时为‘小时’的体力药，\n"
-                "如有‘天’单位的体力药，则按 2*m/n（向上取整）消耗。"
-            ),
-            "体力本": (
-                "刷取哪个副本。所选副本必须领完所有等级的首通奖励。"
-            ),
-            self.CFG_STAGE_REWARD_TIER: (
-                "用于『干员经验/干员进阶/技能提升/武器进阶』的奖励档位选择。\n"
-                "保持当前：不切换。\n"
-                "低阶/高阶：点击『前往』后自动打开『自选』并切换。"
-            ),
-            "仅站桩": (
-                "若启用，则开始挑战后角色原地不动（不输出），\n"
-                "仅对「重度能量淤积点」生效。可以用于建好防御塔情形，避免角色离开副本区域。"
-            ),
-            self.CFG_STAMINA_START_DATE: (
-                "刷体力自动切换的起始日期，格式如2026-04-05。\n"
-                "用于计算今天是第几天，配合刷本序列使用。"
-            ),
-            "刷本序列": (
-                "会根据开始日期自动轮换，留空表示不启用自动轮换。"
-            ),
-            self.CFG_STAMINA_CONTINUE_COUNT: (
-                "结算时点击「放弃」而非「领取」，不消耗体力。\n"
-                "只支持能量淤积点。\n"
-                "0 表示不启用。"
-            ),
-            self.CFG_PRE_ENTER_TEAM_SWITCH: (
-                "选择要更换的队伍编号。"
-            ),
-        })
+        self._task.config_description.update(
+            {
+                "⭐刷体力": ("是否消耗所有「理智」刷取培养材料。"),
+                self.CFG_USE_LIMITED_STAMINA_POTION: (
+                    "如果勾选，将优先全部用掉限时为‘小时’的体力药，\n如有‘天’单位的体力药，则按 2*m/n（向上取整）消耗。"
+                ),
+                "体力本": ("刷取哪个副本。所选副本必须领完所有等级的首通奖励。"),
+                self.CFG_STAGE_REWARD_TIER: (
+                    "用于『干员经验/干员进阶/技能提升/武器进阶』的奖励档位选择。\n"
+                    "保持当前：不切换。\n"
+                    "低阶/高阶：点击『前往』后自动打开『自选』并切换。"
+                ),
+                "仅站桩": (
+                    "若启用，则开始挑战后角色原地不动（不输出），\n"
+                    "仅对「重度能量淤积点」生效。可以用于建好防御塔情形，避免角色离开副本区域。"
+                ),
+                self.CFG_STAMINA_START_DATE: (
+                    "刷体力自动切换的起始日期，格式如2026-04-05。\n用于计算今天是第几天，配合刷本序列使用。"
+                ),
+                "刷本序列": ("会根据开始日期自动轮换，留空表示不启用自动轮换。"),
+                self.CFG_STAMINA_CONTINUE_COUNT: (
+                    "结算时点击「放弃」而非「领取」，不消耗体力。\n只支持能量淤积点。\n0 表示不启用。"
+                ),
+                self.CFG_PRE_ENTER_TEAM_SWITCH: ("选择要更换的队伍编号。"),
+            }
+        )
         # 刷本序列选项：包括基础副本名 + 支持档位调整的副本的高阶/低阶版本
         stage_options_with_tiers = []
         for stage in self.stages_list:
@@ -140,7 +140,7 @@ class DailyBattleFeature:
         }
         self._task.config_type[self.CFG_STAGE_REWARD_TIER] = {
             "type": "drop_down",
-            "options": [self.REWARD_TIER_KEEP, self.REWARD_TIER_LOW, self.REWARD_TIER_HIGH]
+            "options": [self.REWARD_TIER_KEEP, self.REWARD_TIER_LOW, self.REWARD_TIER_HIGH],
         }
         self._task.config_type[self.CFG_PRE_ENTER_TEAM_SWITCH] = {
             "type": "drop_down",
@@ -208,9 +208,9 @@ class DailyBattleFeature:
     def _split_stage_name_and_reward_tier(self, raw_stage_name):
         stage_name = str(raw_stage_name or "").strip()
         if stage_name.endswith(self.REWARD_TIER_LOW):
-            return stage_name[:-len(self.REWARD_TIER_LOW)].strip(), self.REWARD_TIER_LOW
+            return stage_name[: -len(self.REWARD_TIER_LOW)].strip(), self.REWARD_TIER_LOW
         if stage_name.endswith(self.REWARD_TIER_HIGH):
-            return stage_name[:-len(self.REWARD_TIER_HIGH)].strip(), self.REWARD_TIER_HIGH
+            return stage_name[: -len(self.REWARD_TIER_HIGH)].strip(), self.REWARD_TIER_HIGH
         return stage_name, None
 
     def _format_stage_with_reward_tier(self, stage_name, reward_tier=None):
@@ -237,13 +237,20 @@ class DailyBattleFeature:
         """若配置了滑索路线，则通过滑索移动至目标。"""
         zip_line_str = self.get_zip_line_config_value(self.battle_ctx.stage_name)
         if zip_line_str:
-            self.wait_click_ocr(match=self.lang.daily_battle_mixin.k_b0e3a2da, time_out=10, after_sleep=2, recheck_time=1,
-                                box=self.box.bottom_right, log=True, alt=True)
+            self.wait_click_ocr(
+                match=self.lang.daily_battle_mixin.k_b0e3a2da,
+                time_out=10,
+                after_sleep=2,
+                recheck_time=1,
+                box=self.box.bottom_right,
+                log=True,
+                alt=True,
+            )
             zip_line_list = parse_int_sequence(zip_line_str)
             self.zip_line_list_go(
                 zip_line_list,
                 need_scroll=self.zip_line_scroll_enabled(),
-                target=([fL.gather_icon_out_map, fL.gather_icon_out_map2], "feature")
+                target=([fL.gather_icon_out_map, fL.gather_icon_out_map2], "feature"),
             )
             return True
         return False
@@ -272,8 +279,7 @@ class DailyBattleFeature:
                 self.log_info(f"刷本序列解析结果: {seq_list}")
 
                 seq_with_tier_list = [
-                    self._format_stage_with_reward_tier(*self._split_stage_name_and_reward_tier(s))
-                    for s in seq_list
+                    self._format_stage_with_reward_tier(*self._split_stage_name_and_reward_tier(s)) for s in seq_list
                 ]
                 self.log_info(f"刷本序列标准化: {seq_with_tier_list}")
 
@@ -281,9 +287,8 @@ class DailyBattleFeature:
                 invalid_stages = []
                 for raw_stage in seq_list:
                     parsed_stage_name, parsed_tier = self._split_stage_name_and_reward_tier(raw_stage)
-                    if (
-                        parsed_stage_name not in self.stages_list
-                        or (parsed_tier and parsed_stage_name not in self.REWARD_TIER_STAGE_SET)
+                    if parsed_stage_name not in self.stages_list or (
+                        parsed_tier and parsed_stage_name not in self.REWARD_TIER_STAGE_SET
                     ):
                         invalid_stages.append(raw_stage)
 
@@ -301,8 +306,7 @@ class DailyBattleFeature:
                         return
                     if start_date and today < start:
                         explain = (
-                            f"刷体力自动选择失败：开始日期 {start_date} 在未来"
-                            f"（今天 {today}），已使用原配置体力本"
+                            f"刷体力自动选择失败：开始日期 {start_date} 在未来（今天 {today}），已使用原配置体力本"
                         )
                     elif not seq_list:
                         explain = "刷体力自动选择失败：刷本序列为空，已使用原配置体力本"
@@ -355,19 +359,19 @@ class DailyBattleFeature:
         now_ticket = self.detect_ticket_number()
         max_eat = (MAX_STORAGE_TICKET - now_ticket) // ONE_MEDICINE_RESTORE_ENERGY
         self.wait_click_feature(
-            feature=fL.stamina_plus_icon, vertical_variance=0.01, horizontal_variance=0.01,
+            feature=fL.stamina_plus_icon,
+            vertical_variance=0.01,
+            horizontal_variance=0.01,
             time_out=5,
             box=self.box_of_screen((3530 - 40) / 3840, 0, (3600) / 3840, (80 + 40) / 2160),
             raise_if_not_found=False,
-            settle_time=1
+            settle_time=1,
         )  # 右上角加号
         self.wait_feature(feature=fL.rationality_supplement_page, time_out=5, raise_if_not_found=False)
         # 支持天和小时单位，按剩余时效升序消耗
         unit_day = self.lang.daily_battle_mixin.k_unit_day
         unit_hour = self.lang.daily_battle_mixin.k_unit_hour
-        validity_pattern = re.compile(
-            rf"\d+({re.escape(unit_day)}|{re.escape(unit_hour)})"
-        )
+        validity_pattern = re.compile(rf"\d+({re.escape(unit_day)}|{re.escape(unit_hour)})")
         box_list = self.wait_ocr(x=0.20, y=0.45, to_x=0.88, to_y=0.66, match=validity_pattern, log=True)
         if not box_list:
             self.log_warning("未找到应急理智加强剂，剩余时效未识别")
@@ -410,7 +414,7 @@ class DailyBattleFeature:
                     self.log_info("数量未识别，按照1个处理")
                     count = 1
                 else:
-                    count = int(re.findall(r'(\d+)', count_box_list[0].name)[0])
+                    count = int(re.findall(r"(\d+)", count_box_list[0].name)[0])
                 if validity_unit == self.lang.daily_battle_mixin.k_unit_hour:
                     consume = count
                     self.log_info(f"找到 {count} 个限时 {validity_num} 小时的 应急理智加强剂，本次全部用掉")
@@ -479,7 +483,8 @@ class DailyBattleFeature:
             if self.battle_ctx.extra_run_limit > 0:
                 if not is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING):
                     self.log_warning(
-                        f"体力刷完后继续刷功能仅支持{STAGE_CATEGORY_ENERGY_POOLING}，当前副本为『{self.battle_ctx.category_name}』，已禁用此功能")
+                        f"体力刷完后继续刷功能仅支持{STAGE_CATEGORY_ENERGY_POOLING}，当前副本为『{self.battle_ctx.category_name}』，已禁用此功能"
+                    )
                     self.battle_ctx.extra_run_limit = 0
                 else:
                     self.log_info(f"体力刷完后继续刷取次数: {self.battle_ctx.extra_run_limit}")
@@ -503,7 +508,8 @@ class DailyBattleFeature:
                             raise
                         self.log_info(f"battle_gather_extra 异常: {e}\n{traceback.format_exc()}")
                         self.screenshot(
-                            f'DailyBattleMixin_battleGather_Extra_Exception_{self.battle_ctx.category_name}_{self.battle_ctx.stage_name}')
+                            f"DailyBattleMixin_battleGather_Extra_Exception_{self.battle_ctx.category_name}_{self.battle_ctx.stage_name}"
+                        )
                         return False
 
             # 进入副本详情页
@@ -518,7 +524,8 @@ class DailyBattleFeature:
                         raise
                     self.log_info(f"battle_gather 异常: {e}\n{traceback.format_exc()}")
                     self.screenshot(
-                        f'DailyBattleMixin_battleGather_Exception_{self.battle_ctx.category_name}_{self.battle_ctx.stage_name}')
+                        f"DailyBattleMixin_battleGather_Exception_{self.battle_ctx.category_name}_{self.battle_ctx.stage_name}"
+                    )
                     return False
             else:  # 协议空间 or 危境预演
                 try:
@@ -528,7 +535,8 @@ class DailyBattleFeature:
                         raise
                     self.log_info(f"battle_space 异常: {e}\n{traceback.format_exc()}")
                     self.screenshot(
-                        f'DailyBattleMixin_battleSpace_Exception_{self.battle_ctx.category_name}_{self.battle_ctx.stage_name}')
+                        f"DailyBattleMixin_battleSpace_Exception_{self.battle_ctx.category_name}_{self.battle_ctx.stage_name}"
+                    )
                     return False
         finally:
             self.release_yolo_detector()
@@ -538,25 +546,49 @@ class DailyBattleFeature:
         # 点击追踪按钮，进入地图并传送
         self._click_track_and_transfer()
 
-        if (not self._navigate_via_zip_line()) or (not self.wait_ocr(match=self.lang.daily_battle_mixin.k_bfe73e18, box=self.box_of_screen(0.679, 0.620, 0.714, 0.769), time_out=3, raise_if_not_found=False)):
+        if (not self._navigate_via_zip_line()) or (
+            not self.wait_ocr(
+                match=self.lang.daily_battle_mixin.k_bfe73e18,
+                box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
+                time_out=3,
+                raise_if_not_found=False,
+            )
+        ):
             self.align_ocr_or_find_target_to_center(
-                    [fL.gather_icon_out_map, fL.gather_icon_out_map2],
-                    ocr=False,
-                    only_x=True,
-                    threshold=0.7,
-                    tolerance=100,
-                )
-            self.navigate_until_target(target=self.lang.daily_battle_mixin.k_bfe73e18, box=self.box_of_screen(0.679, 0.620, 0.714, 0.769), nav=[fL.gather_icon_out_map2, fL.gather_icon_out_map],
-                                    time_out=60)
+                [fL.gather_icon_out_map, fL.gather_icon_out_map2],
+                ocr=False,
+                only_x=True,
+                threshold=0.7,
+                tolerance=100,
+            )
+            self.navigate_until_target(
+                target=self.lang.daily_battle_mixin.k_bfe73e18,
+                box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
+                nav=[fL.gather_icon_out_map2, fL.gather_icon_out_map],
+                time_out=60,
+            )
 
         if self.wait_ocr(match=self.lang.daily_battle_mixin.k_b8a81b7a, box=self.box.bottom_right, time_out=1):
             self.log_info("放弃未领取的奖励")
-            self.wait_click_ocr(match=self.lang.daily_battle_mixin.k_b8a81b7a, box=self.box.bottom_right, time_out=5, recheck_time=1,
-                                alt=True)
+            self.wait_click_ocr(
+                match=self.lang.daily_battle_mixin.k_b8a81b7a,
+                box=self.box.bottom_right,
+                time_out=5,
+                recheck_time=1,
+                alt=True,
+            )
             self.click_confirm()
         self._switch_team_before_activate_for_gather()
         #
-        if not self.wait_click_feature(feature=fL.trigger_gather_button, vertical_variance=0.2, horizontal_variance=0.05, time_out=5, settle_time=1, raise_if_not_found=False, alt=True):
+        if not self.wait_click_feature(
+            feature=fL.trigger_gather_button,
+            vertical_variance=0.2,
+            horizontal_variance=0.05,
+            time_out=5,
+            settle_time=1,
+            raise_if_not_found=False,
+            alt=True,
+        ):
             self.log_info("没有找到『激发』按钮")
             return False
         # 开战
@@ -565,9 +597,22 @@ class DailyBattleFeature:
     def battle_space(self):
         self.battle_ctx.enter_text = "进入"
         # 先普通匹配；超时后再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感
-        if not self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.942, 0.896, 0.967, 0.938), settle_time=1, time_out=5, raise_if_not_found=False):
-            self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.942, 0.896, 0.967, 0.938), settle_time=1, time_out=2,
-                                    canny_lower=50, canny_higher=150, threshold=0.8)
+        if not self.wait_click_feature(
+            feature=fL.to_max_produce_num,
+            box=self.box_of_screen(0.942, 0.896, 0.967, 0.938),
+            settle_time=1,
+            time_out=5,
+            raise_if_not_found=False,
+        ):
+            self.wait_click_feature(
+                feature=fL.to_max_produce_num,
+                box=self.box_of_screen(0.942, 0.896, 0.967, 0.938),
+                settle_time=1,
+                time_out=2,
+                canny_lower=50,
+                canny_higher=150,
+                threshold=0.8,
+            )
         # 插入点：在首次『进入』之后、下一次『进入』之前执行换队。
         # 若上面已经点击到『取消』，则直接结束，不会触发该逻辑。
         self._switch_team_before_reenter()
@@ -590,25 +635,39 @@ class DailyBattleFeature:
         # 点击追踪按钮，进入地图并传送
         self._click_track_and_transfer()
 
-        if (not self._navigate_via_zip_line()) or (not self.wait_ocr(match=self.lang.daily_battle_mixin.k_bfe73e18, box=self.box_of_screen(0.679, 0.620, 0.714, 0.769), time_out=3, raise_if_not_found=False)):
-            self.align_ocr_or_find_target_to_center(
-                    [fL.gather_icon_out_map, fL.gather_icon_out_map2],
-                    ocr=False,
-                    only_x=True,
-                    threshold=0.7,
-                    tolerance=100,
-                )
-            self.navigate_until_target(
-                target=self.lang.daily_battle_mixin.k_39d12e73_1, nav=[fL.gather_icon_out_map, fL.gather_icon_out_map2],
-                box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),time_out=60
+        if (not self._navigate_via_zip_line()) or (
+            not self.wait_ocr(
+                match=self.lang.daily_battle_mixin.k_bfe73e18,
+                box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
+                time_out=3,
+                raise_if_not_found=False,
             )
-        click_key = self.lang.daily_battle_mixin.k_b8a81b7a if self.battle_ctx.is_extra_mode else self.lang.daily_battle_mixin.k_39d12e73_1
+        ):
+            self.align_ocr_or_find_target_to_center(
+                [fL.gather_icon_out_map, fL.gather_icon_out_map2],
+                ocr=False,
+                only_x=True,
+                threshold=0.7,
+                tolerance=100,
+            )
+            self.navigate_until_target(
+                target=self.lang.daily_battle_mixin.k_39d12e73_1,
+                nav=[fL.gather_icon_out_map, fL.gather_icon_out_map2],
+                box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
+                time_out=60,
+            )
+        click_key = (
+            self.lang.daily_battle_mixin.k_b8a81b7a
+            if self.battle_ctx.is_extra_mode
+            else self.lang.daily_battle_mixin.k_39d12e73_1
+        )
         result = self.wait_ocr(match=re.compile(click_key), box=self.box.bottom_right, time_out=5)
         if not result:
             self.mark_task_failure(f"二次寻路失败：没有找到『{click_key}』按钮")
             return False
-        if not self.wait_click_ocr(match=re.compile(click_key), box=self.box.bottom_right, time_out=5, recheck_time=1,
-                                   alt=True):
+        if not self.wait_click_ocr(
+            match=re.compile(click_key), box=self.box.bottom_right, time_out=5, recheck_time=1, alt=True
+        ):
             self.mark_task_failure(f"二次寻路失败：没有找到『{click_key}奖励』按钮")
             return False
         # 如果是放弃领奖，那么还需要点击确认
@@ -625,14 +684,34 @@ class DailyBattleFeature:
         """
         if self.battle_ctx.is_extra_mode:
             # 放弃领取奖励后需要重新点击激发按钮
-            if not self.wait_click_feature(feature=fL.trigger_gather_button, vertical_variance=0.2, horizontal_variance=0.05, time_out=5, raise_if_not_found=False, settle_time=1, alt=True):
+            if not self.wait_click_feature(
+                feature=fL.trigger_gather_button,
+                vertical_variance=0.2,
+                horizontal_variance=0.05,
+                time_out=5,
+                raise_if_not_found=False,
+                settle_time=1,
+                alt=True,
+            ):
                 self.log_info("未找到『激发』按钮，无法继续进行额外刷取")
                 return False
             # 先普通匹配；超时后再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感
-            if not self.wait_click_feature(feature=fL.to_max_produce_num, time_out=10, box=self.box_of_screen(0.946, 0.902, 0.966, 0.937),
-                                settle_time=1, raise_if_not_found=False):
-                self.wait_click_feature(feature=fL.to_max_produce_num, time_out=3, box=self.box_of_screen(0.946, 0.902, 0.966, 0.937),
-                                settle_time=1, canny_lower=50, canny_higher=150, threshold=0.8)
+            if not self.wait_click_feature(
+                feature=fL.to_max_produce_num,
+                time_out=10,
+                box=self.box_of_screen(0.946, 0.902, 0.966, 0.937),
+                settle_time=1,
+                raise_if_not_found=False,
+            ):
+                self.wait_click_feature(
+                    feature=fL.to_max_produce_num,
+                    time_out=3,
+                    box=self.box_of_screen(0.946, 0.902, 0.966, 0.937),
+                    settle_time=1,
+                    canny_lower=50,
+                    canny_higher=150,
+                    threshold=0.8,
+                )
             self.click_confirm()
         else:
             # 一个循环：先等『重新挑战』按钮出现，出现后点击，再等按钮消失
@@ -659,19 +738,27 @@ class DailyBattleFeature:
         self.battle_ctx.extra_run_count = 0
         self.battle_ctx.is_extra_mode = False
 
-        while self.battle_ctx.left_ticket >= self._battle_stage_cost or self.battle_ctx.extra_run_count < self.battle_ctx.extra_run_limit:
+        while (
+            self.battle_ctx.left_ticket >= self._battle_stage_cost
+            or self.battle_ctx.extra_run_count < self.battle_ctx.extra_run_limit
+        ):
             if enter_bool:
                 # 开始下一轮刷取
                 self.to_restart()
             else:
-                enter_feature = fL.to_max_produce_num  if (
-                    self.battle_ctx.enter_text == "挑战"
-                    and is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING)
-                ) else fL.give_gift
+                enter_feature = (
+                    fL.to_max_produce_num
+                    if (
+                        self.battle_ctx.enter_text == "挑战"
+                        and is_world_map_text(self.lang, self.battle_ctx.category_name, STAGE_CATEGORY_ENERGY_POOLING)
+                    )
+                    else fL.give_gift
+                )
                 self.click_feature(
-                    feature=enter_feature, time_out=10,
+                    feature=enter_feature,
+                    time_out=10,
                     boxes=[self.box_of_screen(0.946, 0.904, 0.970, 0.943)],
-                    settle_time=1
+                    settle_time=1,
                 )
                 # 如果无体力，点击放弃领奖后需要点击确认
                 if self.battle_ctx.extra_run_limit > 0 and self.battle_ctx.left_ticket < self._battle_stage_cost:
@@ -713,7 +800,10 @@ class DailyBattleFeature:
                         self.sleep(0.5)  # 防止空转
 
                     # 如果体力耗尽但设置了额外刷取次数，则开始额外刷取
-                    self.battle_ctx.is_extra_mode = self.battle_ctx.extra_run_limit > 0 and self.battle_ctx.extra_run_count < self.battle_ctx.extra_run_limit
+                    self.battle_ctx.is_extra_mode = (
+                        self.battle_ctx.extra_run_limit > 0
+                        and self.battle_ctx.extra_run_count < self.battle_ctx.extra_run_limit
+                    )
         return True
 
     def to_stage(self):
@@ -729,7 +819,7 @@ class DailyBattleFeature:
             match=get_world_map_matcher(self.lang, self.battle_ctx.category_name),
             box=self.box.left,
             log=True,
-            time_out=6
+            time_out=6,
         )
 
         # 默认按钮文本
@@ -741,19 +831,29 @@ class DailyBattleFeature:
         for _ in range(5):
             if is_higher_order:
                 # 高阶关卡，使用 feature_dict 查找位置
-                location = self.wait_feature(feature=higher_order_feature_dict[self.battle_ctx.stage_name], raise_if_not_found=False, box=self.box_of_screen(0.364, 0.328, 0.431, 0.781), time_out=2)
+                location = self.wait_feature(
+                    feature=higher_order_feature_dict[self.battle_ctx.stage_name],
+                    raise_if_not_found=False,
+                    box=self.box_of_screen(0.364, 0.328, 0.431, 0.781),
+                    time_out=2,
+                )
                 if location:
                     location = [location]
             else:
                 # 普通关卡
-                location = self.wait_ocr(match=re.compile(
-                    get_world_map_matcher(self.lang,self.battle_ctx.stage_name)),
-                    box=self.box_of_screen(0.331, 0.272, 0.621, 0.844), log=True, time_out=2)
+                location = self.wait_ocr(
+                    match=re.compile(get_world_map_matcher(self.lang, self.battle_ctx.stage_name)),
+                    box=self.box_of_screen(0.331, 0.272, 0.621, 0.844),
+                    log=True,
+                    time_out=2,
+                )
 
             if location:
                 enter_bool = self.wait_click_feature(
                     feature=to_text,
-                    box=self.box_of_screen(0.808, location[0].y / self.height, 0.834, location[0].y / self.height + 0.15),
+                    box=self.box_of_screen(
+                        0.808, location[0].y / self.height, 0.834, location[0].y / self.height + 0.15
+                    ),
                     time_out=2,
                     raise_if_not_found=False,
                 )
@@ -786,7 +886,9 @@ class DailyBattleFeature:
         if target_tier == self.REWARD_TIER_KEEP:
             return True
 
-        if not self.wait_click_ocr(match=self.lang.daily_battle_mixin.k_a6ee3a67, box=self.box.bottom_right, time_out=6):
+        if not self.wait_click_ocr(
+            match=self.lang.daily_battle_mixin.k_a6ee3a67, box=self.box.bottom_right, time_out=6
+        ):
             self.log_info(f"{self.battle_ctx.stage_name} 未识别到『自选』，跳过奖励档位切换")
             return True
         self.wait_ui_stable(refresh_interval=0.5)
@@ -795,12 +897,15 @@ class DailyBattleFeature:
             self.log_info(f"{self.battle_ctx.stage_name} 已是{target_tier}奖励")
         else:
             target_box = self.box.top if target_tier == self.REWARD_TIER_LOW else self.box.bottom
-            candidates = self.wait_ocr(
-                match=[self.lang.daily_battle_mixin.k_25e74dce, self.lang.daily_battle_mixin.k_70b20820],
-                box=target_box,
-                time_out=4,
-                log=True,
-            ) or []
+            candidates = (
+                self.wait_ocr(
+                    match=[self.lang.daily_battle_mixin.k_25e74dce, self.lang.daily_battle_mixin.k_70b20820],
+                    box=target_box,
+                    time_out=4,
+                    log=True,
+                )
+                or []
+            )
             valid_candidates = [c for c in candidates if self.lang.daily_battle_mixin.k_reward_select not in c.name]
             if valid_candidates:
                 self.click(valid_candidates[0])
@@ -910,11 +1015,7 @@ class DailyBattleFeature:
             return bool(self.rotate_search(check))
 
         def search_normal_reward(end_feature_name, search_box):
-            return bool(
-                self.rotate_search(
-                    lambda: self.yolo_detect(end_feature_name, box=search_box)
-                )
-            )
+            return bool(self.rotate_search(lambda: self.yolo_detect(end_feature_name, box=search_box)))
 
         try:
             target_found_by_yolo = False
@@ -938,9 +1039,7 @@ class DailyBattleFeature:
                     self._open_index()
 
                     if not self.to_stage():
-                        self.mark_task_failure(
-                            "二次寻路失败：无法进入『能量淤积点』详情页"
-                        )
+                        self.mark_task_failure("二次寻路失败：无法进入『能量淤积点』详情页")
                         return False
 
                     if result := self.wait_feature(
@@ -1015,16 +1114,12 @@ class DailyBattleFeature:
                 raise
 
             if is_gather:
-                self.log_info(
-                    f"未找到奖励发放点，尝试二次寻路: {e}"
-                )
+                self.log_info(f"未找到奖励发放点，尝试二次寻路: {e}")
 
                 if self._gather_retry_navigate():
                     return True
 
-                self.mark_task_failure(
-                    "二次寻路失败，无法找到奖励发放点"
-                )
+                self.mark_task_failure("二次寻路失败，无法找到奖励发放点")
                 return False
 
             raise
@@ -1042,8 +1137,7 @@ class DailyBattleFeature:
         返回：
             int: 扣掉本轮消耗理智后的剩余理智，如果理智不足则返回 0。
         """
-        self.log_info(
-            "领取奖励,当前理智: {}, 本轮消耗理智: {}".format(self.battle_ctx.left_ticket, self._battle_stage_cost))
+        self.log_info(f"领取奖励,当前理智: {self.battle_ctx.left_ticket}, 本轮消耗理智: {self._battle_stage_cost}")
         self.wait_ui_stable(refresh_interval=1)
         start_time = self.active_time()
 
@@ -1059,28 +1153,33 @@ class DailyBattleFeature:
 
         # 尝试点击“获得奖励”，失败则本轮减少消耗理智
         if not self.wait_click_feature(
-                feature=fL.battle_cost_x1,
-                time_out=2,
-                horizontal_variance=0.3,
-                raise_if_not_found=False,
+            feature=fL.battle_cost_x1,
+            time_out=2,
+            horizontal_variance=0.3,
+            raise_if_not_found=False,
         ):
             self.mark_task_failure("未找到 '获得奖励' 按钮, 任务失败")
             return 0
 
         # 扣除本轮消耗理智
         sum_ticket_number = self.battle_ctx.left_ticket - need_ticket_number
-        self.log_info("扣除本轮消耗理智: {}, 剩余理智: {}".format(need_ticket_number, sum_ticket_number))
+        self.log_info(f"扣除本轮消耗理智: {need_ticket_number}, 剩余理智: {sum_ticket_number}")
         if sum_ticket_number < 0:
             return 0  # 理智不足，不能继续
 
         # 点击“领取”，失败则返回0
         self.next_frame()
-        if not self.wait_click_feature(feature=fL.skip_dialog_confirm, box=self.box_of_screen(0.627, 0.802, 0.670, 0.965), time_out=2, settle_time=1):
+        if not self.wait_click_feature(
+            feature=fL.skip_dialog_confirm,
+            box=self.box_of_screen(0.627, 0.802, 0.670, 0.965),
+            time_out=2,
+            settle_time=1,
+        ):
             self.mark_task_failure("领取失败")
             return 0
         # 预测下一轮是否还能继续
         next_sum = sum_ticket_number - need_ticket_number
-        self.log_info("预测下一轮消耗理智: {}, 预测下一轮剩余理智: {}".format(need_ticket_number, next_sum))
+        self.log_info(f"预测下一轮消耗理智: {need_ticket_number}, 预测下一轮剩余理智: {next_sum}")
 
         if next_sum < 0:
             self.log_info("下一轮理智不足，无法继续")

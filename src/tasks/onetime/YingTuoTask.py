@@ -1,8 +1,9 @@
-from src.icons import Icons
-from src.data.FeatureList import FeatureList as fL
-from src.tasks.mixin.battle_mixin import BattleMixin
-from src.image.gray_bar_detector import detect_gray_bars
 from ok import Box
+
+from src.data.FeatureList import FeatureList as fL
+from src.icons import Icons
+from src.image.gray_bar_detector import detect_gray_bars
+from src.tasks.mixin.battle_mixin import BattleMixin
 
 
 class YingTuoTask(BattleMixin):
@@ -40,16 +41,34 @@ class YingTuoTask(BattleMixin):
             for result in results:
                 self.click(result, after_sleep=0.25)
                 self.log_info("进入挑战页面，开始挑战")
-                if not self.wait_click_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=10, settle_time=0.5, raise_if_not_found=False):
+                if not self.wait_click_feature(
+                    feature=fL.to_max_produce_num,
+                    box=self.box_of_screen(0.934, 0.881, 0.977, 0.965),
+                    time_out=10,
+                    settle_time=0.5,
+                    raise_if_not_found=False,
+                ):
                     self.log_info("未能找到挑战开始按钮")
                     raise Exception("未能找到挑战开始按钮")
-                if not self.wait_click_feature(feature=fL.give_gift, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=10, settle_time=0.5, raise_if_not_found=False):
+                if not self.wait_click_feature(
+                    feature=fL.give_gift,
+                    box=self.box_of_screen(0.934, 0.881, 0.977, 0.965),
+                    time_out=10,
+                    settle_time=0.5,
+                    raise_if_not_found=False,
+                ):
                     self.log_info("未能进入战斗")
                     raise Exception("未能进入战斗")
                 if not self.battle_and_exit():
                     self.log_info("战斗过程中发生错误，返回失败")
                     raise Exception("战斗过程中发生错误")
-                if not self.wait_feature(feature=fL.to_max_produce_num, box=self.box_of_screen(0.934, 0.881, 0.977, 0.965), time_out=60, settle_time=0.5, raise_if_not_found=False):
+                if not self.wait_feature(
+                    feature=fL.to_max_produce_num,
+                    box=self.box_of_screen(0.934, 0.881, 0.977, 0.965),
+                    time_out=60,
+                    settle_time=0.5,
+                    raise_if_not_found=False,
+                ):
                     self.log_info("未能找到挑战开始按钮，返回失败")
                     raise Exception("未能找到挑战开始按钮")
                 self.log_info("挑战完成，继续寻找下一个普通关卡")
