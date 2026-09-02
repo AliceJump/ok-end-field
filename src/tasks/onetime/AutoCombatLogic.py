@@ -287,6 +287,7 @@ class AutoCombatLogic:
         self._last_exit_check_time = 0
         self._exit_check_interval = 0.5
         task = self.task
+        task._battle_team=None
         if not task.in_combat(required_yellow=1):
             # 非战斗状态：清标记，下次进入战斗时才会复位推荐技能检测器
             task._recommend_detector_in_combat = False
