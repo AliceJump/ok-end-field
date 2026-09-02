@@ -114,6 +114,7 @@ class BattleMixin(BaseEfTask):
         self.last_no_number_action_time = 0
         self.exit_check_count = 0
         self._battle_member_count = 0
+        self._last_ult_release_time = 0
         self.battle_config_manager = BattleConfigManager(get_global_config(BATTLE_CONFIG_NAME))
         self._register_battle_config()
         # 用于识别 LV 或等级文字
@@ -245,6 +246,9 @@ class BattleMixin(BaseEfTask):
 
         return sequence if sequence else ["1", "2", "3"]
 
+    # 终结技释放后延迟退出检查的时间（秒）
+    ULT_EXIT_DELAY = 3.0
+
     def use_ult(self, ult_sequence: str = None):
         """
         尝试释放终极技。
@@ -275,6 +279,8 @@ class BattleMixin(BaseEfTask):
                     # 等待技能释放导致战斗状态变化，然后等待重新识别到至少一个人
                     self.wait_until(lambda: not self.in_combat(), time_out=1)
                     self._has_detected_team_member()
+                    # 记录终结技释放时间，延迟退出检查
+                    self._last_ult_release_time = self.active_time()
                     return True
                 self.send_key_down(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，不经过KeyConfigManager管理
                 # 等待技能释放导致战斗状态变化
@@ -282,6 +288,8 @@ class BattleMixin(BaseEfTask):
                 self.send_key_up(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，释放按键
                 # wait_until 每轮会刷新 self.frame，再重新识别当前编队
                 self._has_detected_team_member()
+                # 记录终结技释放时间，延迟退出检查
+                self._last_ult_release_time = self.active_time()
                 return True
 
         return False
@@ -847,6 +855,18 @@ class BattleMixin(BaseEfTask):
         if self.find_feature(feature=fL.b):
             self.log_info("退出检查通过: 检测到结算模板 fL.b")
             return True
+
+        # 终结技释放后延迟退出检查：终结技动画期间 in_team 会返回 False，
+        # 需要等待动画结束、技能图标重新出现后再做退出判定。
+        last_ult_time = getattr(self, '_last_ult_release_time', 0)
+        if last_ult_time > 0:
+            elapsed = self.active_time() - last_ult_time
+            if elapsed < self.ULT_EXIT_DELAY:
+                self.log_debug(
+                    f"终结技释放后延迟退出检查（已过 {elapsed:.1f}s，"
+                    f"需等待 {self.ULT_EXIT_DELAY:.1f}s）"
+                )
+                return False
 
         # UI状态检测
         has_lv = self.ocr_lv()
