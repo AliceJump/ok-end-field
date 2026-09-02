@@ -26,9 +26,6 @@ import cv2
 import numpy as np
 from ok import Box
 
-from src.data.FeatureList import FeatureList as fL
-from src.core.sequence_parser import parse_sequence
-from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 from src.core.BaseEfTask import BaseEfTask
 from src.core.BattleConfig import (
     BATTLE_CONFIG_DESCRIPTION,
@@ -36,7 +33,6 @@ from src.core.BattleConfig import (
     BATTLE_CONFIG_NAME,
     BATTLE_CONFIG_TYPE,
     BATTLE_GROUP_CONFIGS,
-    BattleConfigManager,
     DEFAULT_BATTLE_CONFIG,
     KEY_RECOMMEND_SKILL,
     KEY_SKILL_ALLOWLIST,
@@ -44,11 +40,14 @@ from src.core.BattleConfig import (
     RECOMMEND_SKILL_REGIONS,
     ULT_RELEASE_MODE_ALT,
     ULT_RELEASE_MODE_HOLD,
+    BattleConfigManager,
 )
 from src.core.config_migration import legacy_battle_mode_to_bool
-
 from src.core.global_config_store import get_global_config
+from src.core.sequence_parser import parse_sequence
+from src.data.FeatureList import FeatureList as fL
 from src.image.recommend_skill_detector import get_recommend_skill_detector
+from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
 # ── 编队识别：模块级常量与工具函数 ─────────────────────────────────────────
 
@@ -289,6 +288,34 @@ class BattleMixin(BaseEfTask):
 
     # ── 编队头像识别 ────────────────────────────────────────────────────────
 
+    def _detect_team_core(self, frame=None) -> dict[str, tuple[float, str]]:
+        """编队识别核心逻辑：遍历 battle_icon 特征，返回 {en_name: (score, feature_name)}。"""
+        if frame is None:
+            frame = self.frame
+
+        char_best: dict[str, tuple[float, str]] = {}
+
+        for feature_name in list(self.executor.feature_set.feature_dict):
+            if not feature_name.startswith("battle_icon_"):
+                continue
+            try:
+                search_box = self.get_box_by_name(feature_name)
+            except (ValueError, AttributeError):
+                continue
+            try:
+                result = self.find_one(feature_name, box=search_box)
+            except Exception:
+                continue
+            if result is None:
+                continue
+            en_name = _TEMPLATE_ALIASES.get(feature_name, feature_name)
+            en_name = en_name.replace("battle_icon_", "")
+            prev = char_best.get(en_name)
+            if prev is None or result.confidence > prev[0]:
+                char_best[en_name] = (result.confidence, feature_name)
+
+        return char_best
+
     def detect_team(self, frame=None) -> list[str]:
         """从战斗帧识别当前队伍角色名（中文）。
 
@@ -302,35 +329,9 @@ class BattleMixin(BaseEfTask):
         Returns:
             角色名列表，例: ["别礼", "伊冯", "洁尔佩塔", "余烬"]
         """
-        if frame is None:
-            frame = self.frame
-
+        char_best = self._detect_team_core(frame)
         name_map = _load_char_name_map()
 
-        # {en_name: (best_score, feature_name)} — 多模板归并到同一角色
-        char_best: dict[str, tuple[float, str]] = {}
-
-        for feature_name in list(self.executor.feature_set.feature_dict):
-            if not feature_name.startswith("battle_icon_"):
-                continue
-            try:
-                search_box = self.get_box_by_name(feature_name)
-            except (ValueError, AttributeError):
-                continue
-            try:
-                result = self.find_one(feature_name, box=search_box)
-            except Exception:
-                continue
-            if result is None:
-                continue
-            # 映射到角色 en_name：先查别名，再去前缀
-            en_name = _TEMPLATE_ALIASES.get(feature_name, feature_name)
-            en_name = en_name.replace("battle_icon_", "")
-            prev = char_best.get(en_name)
-            if prev is None or result.confidence > prev[0]:
-                char_best[en_name] = (result.confidence, feature_name)
-
-        # 按 annotation x 坐标排序 → 位置顺序
         sorted_chars = sorted(
             char_best.items(),
             key=lambda item: self.get_box_by_name(item[1][1]).x,
@@ -342,31 +343,8 @@ class BattleMixin(BaseEfTask):
 
     def detect_team_with_scores(self, frame=None) -> list[tuple[str, float]]:
         """同 detect_team，但同时返回匹配备分数（调试用）。"""
-        if frame is None:
-            frame = self.frame
-
+        char_best = self._detect_team_core(frame)
         name_map = _load_char_name_map()
-
-        char_best: dict[str, tuple[float, str]] = {}
-
-        for feature_name in list(self.executor.feature_set.feature_dict):
-            if not feature_name.startswith("battle_icon_"):
-                continue
-            try:
-                search_box = self.get_box_by_name(feature_name)
-            except (ValueError, AttributeError):
-                continue
-            try:
-                result = self.find_one(feature_name, box=search_box)
-            except Exception:
-                continue
-            if result is None:
-                continue
-            en_name = _TEMPLATE_ALIASES.get(feature_name, feature_name)
-            en_name = en_name.replace("battle_icon_", "")
-            prev = char_best.get(en_name)
-            if prev is None or result.confidence > prev[0]:
-                char_best[en_name] = (result.confidence, feature_name)
 
         sorted_chars = sorted(
             char_best.items(),
