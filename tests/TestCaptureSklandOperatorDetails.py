@@ -88,6 +88,7 @@ class TestCaptureSklandOperatorDetails(unittest.TestCase):
     def test_snapshot_directory_conflict_is_explicit(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             out_root = Path(temp_dir)
+            _MODULE.ROOT = out_root
             snapshot_dir = _MODULE._create_snapshot_dir(out_root, "20260830_221449")
             self.assertTrue(snapshot_dir.is_dir())
             with self.assertRaisesRegex(FileExistsError, "同秒并发抓取"):
@@ -188,9 +189,9 @@ class TestCaptureSklandOperatorDetails(unittest.TestCase):
             _MODULE.ROOT = base
             _MODULE._write_text(base / "ok.txt", "x")
             self.assertEqual((base / "ok.txt").read_text(encoding="utf-8"), "x")
-            with self.assertRaisesRegex(ValueError, "拒绝写入"):
+            with self.assertRaisesRegex(ValueError, "路径包含越界片段|拒绝写入"):
                 _MODULE._write_text(base / ".." / "escape.txt", "x")
-            with self.assertRaisesRegex(ValueError, "拒绝写入"):
+            with self.assertRaisesRegex(ValueError, "路径包含越界片段|拒绝写入"):
                 _MODULE._write_text(base.parent / "escape.txt", "x")
             self.assertFalse((base.parent / "escape.txt").exists())
 
