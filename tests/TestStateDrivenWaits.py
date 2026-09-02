@@ -1,8 +1,9 @@
 import unittest
 from unittest.mock import patch
 
-import numpy as np
 from ok import Box
+
+from src.core.BattleConfig import ULT_RELEASE_MODE_ALT, ULT_RELEASE_MODE_HOLD
 from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.tasks.mixin.battle_mixin import BattleMixin
@@ -132,6 +133,40 @@ class _BattleHarness:
 
     def sleep(self, timeout):
         raise AssertionError("settlement success must not use a fixed sleep")
+
+
+class _UltHarness:
+    def __init__(self, release_mode):
+        self.release_mode = release_mode
+        self.events = []
+
+    def get_battle_config(self, key, default=None):
+        return self.release_mode
+
+    def _find_battle_ult(self, feature):
+        return True
+
+    def log_info(self, message):
+        pass
+
+    def send_key_down(self, key):
+        self.events.append(("down", key))
+
+    def send_key(self, key):
+        self.events.append(("press", key))
+
+    def send_key_up(self, key):
+        self.events.append(("up", key))
+
+    def active_time(self):
+        self.events.append(("timestamp", None))
+        return 42
+
+    def wait_until(self, condition, **kwargs):
+        self.events.append(("wait", None))
+
+    def _has_detected_team_member(self):
+        self.events.append(("detect", None))
 
 
 class _CombatExitHarness:
@@ -346,6 +381,39 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertEqual(combat_logic.return_value.run.call_count, 2)
         self.assertEqual(task.frames, 2)
 
+    def test_alt_ult_records_release_before_wait_and_team_detection(self):
+        task = _UltHarness(ULT_RELEASE_MODE_ALT)
+
+        self.assertTrue(BattleMixin.use_ult(task, "2"))
+        self.assertEqual(
+            task.events,
+            [
+                ("down", "alt"),
+                ("press", "2"),
+                ("up", "alt"),
+                ("timestamp", None),
+                ("wait", None),
+                ("detect", None),
+            ],
+        )
+        self.assertEqual(task._last_ult_release_time, 42)
+
+    def test_hold_ult_records_release_immediately_after_key_up(self):
+        task = _UltHarness(ULT_RELEASE_MODE_HOLD)
+
+        self.assertTrue(BattleMixin.use_ult(task, "3"))
+        self.assertEqual(
+            task.events,
+            [
+                ("down", "3"),
+                ("wait", None),
+                ("up", "3"),
+                ("timestamp", None),
+                ("detect", None),
+            ],
+        )
+        self.assertEqual(task._last_ult_release_time, 42)
+
     def test_combat_exit_counter_reuses_existing_detection(self):
         task = _CombatExitHarness()
 
@@ -457,6 +525,22 @@ class TestStateDrivenWaits(unittest.TestCase):
         task = StubTask()
         self.assertTrue(BattleMixin.in_team(task))
         self.assertEqual(task._battle_member_count, 1)
+
+    @patch("src.tasks.mixin.battle_mixin._load_char_name_map")
+    def test_detect_team_preserves_unrecognized_slots(self, load_name_map):
+        load_name_map.return_value = {"first": "一号", "fourth": "四号"}
+
+        class StubTask:
+            def _detect_team_core(self, frame):
+                return {
+                    "fourth": (0.91, "battle_icon_fourth", 3),
+                    "first": (0.95, "battle_icon_first", 0),
+                }
+
+        self.assertEqual(
+            BattleMixin.detect_team(StubTask()),
+            ["一号", "?", "?", "四号"],
+        )
 
     @patch.object(BattleMixin, "detect_team")
     def test_detected_team_member_rechecks_current_frame(self, detect_team):

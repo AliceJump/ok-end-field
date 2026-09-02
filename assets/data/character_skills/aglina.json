@@ -113,13 +113,12 @@
             ],
             "enhancements": [
                 {
-                    "name": "破防→法术脆弱增强 / 击飞→保持击飞",
+                    "name": "破防→法术脆弱增强",
                     "trigger_condition": {
-                        "text": "目标处于破防状态时，法术脆弱随破防层数额外提升；目标处于击飞状态时保持击飞",
+                        "text": "目标处于破防状态时，法术脆弱随破防层数额外提升",
                         "effects": {
-                            "any": [
-                                "STATUS_SHRED",
-                                "STATUS_HEAVY_HIT"
+                            "all": [
+                                "STATUS_SHRED"
                             ]
                         }
                     },
@@ -131,7 +130,22 @@
                             "value": 1,
                             "duration": null,
                             "target": "enemy"
-                        },
+                        }
+                    ]
+                },
+                {
+                    "name": "击飞→保持击飞",
+                    "trigger_condition": {
+                        "text": "目标处于击飞状态时保持击飞",
+                        "effects": {
+                            "all": [
+                                "STATUS_HEAVY_HIT"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "保持击飞",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
                         {
                             "effect_id": "STATUS_HEAVY_HIT",
                             "value": 1,

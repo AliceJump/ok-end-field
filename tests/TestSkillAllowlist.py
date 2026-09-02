@@ -4,6 +4,7 @@ import unittest
 
 from src.data.skill_allowlist import (
     _build_team_skill_context,
+    _skill_effects_needed_by_others,
     build_skill_allowlist,
     generate_skill_sequence,
     load_characters,
@@ -106,6 +107,25 @@ class TestSkillAllowlist(unittest.TestCase):
             enhancements=[{"trigger_condition": {"effects": {"all": ["A"]}}}],
         )
         self.assertTrue(build_skill_allowlist(["静态目标"], {"静态目标": static_target})[0][0])
+
+    def test_effect_dependency_evaluation_preserves_effect_order(self):
+        release_gates = {("依赖者", "consumer_skill"): [{"requires": ["B"]}]}
+        skill_key = ("产出者", "producer_skill")
+
+        self.assertFalse(
+            _skill_effects_needed_by_others(
+                {"effects": [_effect("A"), _effect("B")]},
+                release_gates,
+                skill_key,
+            )
+        )
+        self.assertTrue(
+            _skill_effects_needed_by_others(
+                {"effects": [_effect("B"), _effect("A")]},
+                release_gates,
+                skill_key,
+            )
+        )
 
     def test_real_seraph_skill_remains_in_generated_sequence(self):
         characters = load_characters()

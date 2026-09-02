@@ -383,6 +383,7 @@ class AutoCombatLogic:
                 # 尝试识别
                 if _skill_allowlist_enabled:
                     try:
+                        task.next_frame()
                         team = task.detect_team()
                         if team and all(m != "?" for m in team):
                             task._battle_team = team
@@ -438,6 +439,7 @@ class AutoCombatLogic:
                 # 每轮尝试识别队伍，识别出就不再识别
                 if not getattr(task, '_battle_team', None) and _skill_allowlist_enabled:
                     try:
+                        task.next_frame()
                         team = task.detect_team()
                         if team and all(m != "?" for m in team):
                             task._battle_team = team

@@ -95,7 +95,11 @@ def _static_release_gate(enhancement: dict) -> dict | None:
     for operator in ("all", "any"):
         if operator not in effects:
             continue
-        requires = [effect_id for effect_id in effects.get(operator) or [] if (eid := _effect_id(effect_id))]
+        requires = [
+            parsed_effect_id
+            for effect in effects.get(operator) or []
+            if (parsed_effect_id := _effect_id(effect))
+        ]
         if requires:
             return {"operator": operator, "requires": requires}
     return None
@@ -111,6 +115,52 @@ def _branch_can_trigger(branch: dict, producers: dict, skill_key: tuple[str, str
         for effect_id in branch["requires"]
     ]
     return all(checks) if branch["operator"] == "all" else any(checks)
+
+
+def _self_dependency_effects(skill_data: dict) -> set[str]:
+    """收集技能自身增强分支依赖的效果 ID。"""
+    dependencies: set[str] = set()
+    for enhancement in skill_data.get("enhancements") or []:
+        trigger = enhancement.get("trigger_condition", {})
+        if not isinstance(trigger, dict):
+            continue
+        trigger_effects = trigger.get("effects", [])
+        if isinstance(trigger_effects, dict):
+            effect_groups = (trigger_effects.get(operator) or [] for operator in ("all", "any"))
+        elif isinstance(trigger_effects, list):
+            effect_groups = (trigger_effects,)
+        else:
+            continue
+        for effects in effect_groups:
+            dependencies.update(effect for effect in effects if isinstance(effect, str))
+    return dependencies
+
+
+def _other_skill_gate_requires_effect(
+    effect_id: str,
+    all_release_gates: dict,
+    self_key: tuple[str, str],
+) -> bool:
+    """判断队内其他技能的任一门控分支是否依赖指定效果。"""
+    return any(
+        effect_id in gate.get("requires", [])
+        for required_skill_key, gates in all_release_gates.items()
+        if required_skill_key != self_key
+        for gate in gates
+    )
+
+
+def _effect_dependency_result(
+    effect,
+    self_dependencies: set[str],
+    all_release_gates: dict,
+    self_key: tuple[str, str],
+) -> bool | None:
+    """判定单个效果；非产出或仅供自身使用时返回 None。"""
+    effect_id = _produced_effect_id(effect)
+    if not effect_id or effect_id in self_dependencies:
+        return None
+    return _other_skill_gate_requires_effect(effect_id, all_release_gates, self_key)
 
 
 def _skill_effects_needed_by_others(
@@ -132,42 +182,11 @@ def _skill_effects_needed_by_others(
     if not effects:
         return True
 
-    # 收集自己增强态依赖的效果（trigger_condition.effects）
-    self_dep_effects: set[str] = set()
-    skill_enhancements = skill_data.get("enhancements") or []
-    for enh in skill_enhancements:
-        trigger = enh.get("trigger_condition", {})
-        if not isinstance(trigger, dict):
-            continue
-        trigger_effects = trigger.get("effects", [])
-        if isinstance(trigger_effects, dict):
-            # 新结构：{"all": [...]} 或 {"any": [...]}
-            for op in ("all", "any"):
-                for eff in trigger_effects.get(op) or []:
-                    if isinstance(eff, str):
-                        self_dep_effects.add(eff)
-        elif isinstance(trigger_effects, list):
-            # 兼容旧结构：["A", "B"]
-            for eff in trigger_effects:
-                if isinstance(eff, str):
-                    self_dep_effects.add(eff)
-
-    for eff in effects:
-        effect_id = _produced_effect_id(eff)
-        if not effect_id:
-            continue
-        # 效果被自己增强态依赖 → 跳过，不阻止
-        if effect_id in self_dep_effects:
-            continue
-        # 检查是否有其他队友的 release gate 需要这个效果
-        for req_key, gates in all_release_gates.items():
-            if req_key == self_key:
-                continue
-            for gate in gates:
-                if effect_id in gate.get("requires", []):
-                    return True
-        # 效果无人依赖 → 阻止
-        return False
+    self_dependencies = _self_dependency_effects(skill_data)
+    for effect in effects:
+        result = _effect_dependency_result(effect, self_dependencies, all_release_gates, self_key)
+        if result is not None:
+            return result
 
     # 无产出效果或所有产出效果都被自己依赖 → 允许
     return True

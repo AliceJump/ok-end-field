@@ -82,8 +82,9 @@
                     "trigger_condition": {
                         "text": "当有敌人被施加寒冷附着或受到法术爆发伤害时可以发动",
                         "effects": {
-                            "all": [
-                                "ATTACH_COLD"
+                            "any": [
+                                "ATTACH_COLD",
+                                "STATUS_SPELL_BURST"
                             ]
                         }
                     },

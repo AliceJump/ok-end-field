@@ -70,14 +70,75 @@
             "effects": [],
             "enhancements": [
                 {
-                    "name": "磁暴试验场",
+                    "name": "磁暴试验场·破防",
                     "trigger_condition": {
-                        "text": "当被聚焦的敌人进入物理异常或法术附着状态时可以发动",
+                        "text": "当被聚焦的敌人进入破防状态时可以发动",
                         "effects": {
-                            "any": [
-                                "STATUS_SHRED",
-                                "STATUS_HEAVY_HIT",
-                                "STATUS_KNOCKDOWN",
+                            "all": [
+                                "STATUS_FOCUS",
+                                "STATUS_SHRED"
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "磁暴试验场·击飞",
+                    "trigger_condition": {
+                        "text": "当被聚焦的敌人进入击飞状态时可以发动",
+                        "effects": {
+                            "all": [
+                                "STATUS_FOCUS",
+                                "STATUS_HEAVY_HIT"
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "磁暴试验场·倒地",
+                    "trigger_condition": {
+                        "text": "当被聚焦的敌人进入倒地状态时可以发动",
+                        "effects": {
+                            "all": [
+                                "STATUS_FOCUS",
+                                "STATUS_KNOCKDOWN"
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "磁暴试验场·法术附着",
+                    "trigger_condition": {
+                        "text": "当被聚焦的敌人进入法术附着状态时可以发动",
+                        "effects": {
+                            "all": [
+                                "STATUS_FOCUS",
                                 "STATUS_SPELL_INFLICT"
                             ]
                         }

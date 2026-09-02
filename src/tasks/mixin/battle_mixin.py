@@ -276,20 +276,20 @@ class BattleMixin(BaseEfTask):
                     self.send_key_down("alt")
                     self.send_key(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，不经过KeyConfigManager管理
                     self.send_key_up("alt")
+                    # 从实际完成按键操作的时刻开始计算退出延迟
+                    self._last_ult_release_time = self.active_time()
                     # 等待技能释放导致战斗状态变化，然后等待重新识别到至少一个人
                     self.wait_until(lambda: not self.in_combat(), time_out=1)
                     self._has_detected_team_member()
-                    # 记录终结技释放时间，延迟退出检查
-                    self._last_ult_release_time = self.active_time()
                     return True
                 self.send_key_down(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，不经过KeyConfigManager管理
                 # 等待技能释放导致战斗状态变化
                 self.wait_until(lambda: not self.in_combat(), time_out=1)
                 self.send_key_up(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，释放按键
+                # 从实际完成按键操作的时刻开始计算退出延迟
+                self._last_ult_release_time = self.active_time()
                 # wait_until 每轮会刷新 self.frame，再重新识别当前编队
                 self._has_detected_team_member()
-                # 记录终结技释放时间，延迟退出检查
-                self._last_ult_release_time = self.active_time()
                 return True
 
         return False
@@ -468,14 +468,11 @@ class BattleMixin(BaseEfTask):
         char_best = self._detect_team_core(frame)
         name_map = _load_char_name_map()
 
-        sorted_chars = sorted(
-            char_best.items(),
-            key=lambda item: item[1][2],
-        )
-
-        team = [name_map.get(en, en) for en, _ in sorted_chars]
-
-        return team or ["?"] * 4
+        team = ["?"] * 4
+        for en_name, (_, _, slot_idx) in char_best.items():
+            if 0 <= slot_idx < len(team):
+                team[slot_idx] = name_map.get(en_name, en_name)
+        return team
 
     def detect_team_with_scores(self, frame=None) -> list[tuple[str, float]]:
         """同 detect_team，但同时返回匹配备分数（调试用）。"""

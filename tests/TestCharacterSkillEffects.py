@@ -46,7 +46,14 @@ class TestCharacterSkillEffects(unittest.TestCase):
                         effect_groups.append(enhancement.get("effects") or [])
                         trigger_condition = enhancement.get("trigger_condition") or {}
                         if isinstance(trigger_condition, dict):
-                            effect_groups.append(trigger_condition.get("effects") or [])
+                            trigger_effects = trigger_condition.get("effects") or []
+                            if isinstance(trigger_effects, dict):
+                                effect_groups.extend(
+                                    trigger_effects.get(operator) or []
+                                    for operator in ("all", "any")
+                                )
+                            else:
+                                effect_groups.append(trigger_effects)
 
                     for effects in effect_groups:
                         for effect in effects:
@@ -66,7 +73,7 @@ class TestCharacterSkillEffects(unittest.TestCase):
                                 f"{json_file.name}/{skill.get('name')} 使用了未知效果 ID {effect_id}",
                             )
 
-    def test_release_gate_schema_is_explicit_and_valid(self):
+    def test_trigger_condition_effect_schema_is_explicit_and_valid(self):
         valid_effect_ids = {effect.value for effect in EffectType}
 
         for json_file in _CHARACTER_SKILLS_DIR.glob("*.json"):
@@ -74,19 +81,17 @@ class TestCharacterSkillEffects(unittest.TestCase):
             for skill in data.get("skills") or []:
                 enhancements = skill.get("enhancements") or []
                 for enhancement in enhancements:
-                    gate = enhancement.get("release_gate")
-                    if gate is None:
+                    trigger_condition = enhancement.get("trigger_condition") or {}
+                    if not isinstance(trigger_condition, dict):
+                        continue
+                    condition_effects = trigger_condition.get("effects")
+                    if not isinstance(condition_effects, dict):
                         continue
                     with self.subTest(json_file=json_file.name, skill=skill.get("skill_id")):
-                        self.assertIsInstance(gate, dict)
-                        if gate.get("static") is False:
-                            self.assertEqual(set(gate), {"static"})
-                            continue
-                        operators = [operator for operator in ("all", "any") if operator in gate]
+                        operators = [operator for operator in ("all", "any") if operator in condition_effects]
                         self.assertEqual(len(operators), 1)
-                        requires = gate[operators[0]]
+                        requires = condition_effects[operators[0]]
                         self.assertIsInstance(requires, list)
-                        self.assertTrue(requires)
                         self.assertTrue(all(effect_id in valid_effect_ids for effect_id in requires))
 
     def test_normal_attack_heavy_strike_is_not_treated_as_lift(self):
@@ -121,6 +126,68 @@ class TestCharacterSkillEffects(unittest.TestCase):
                     self.assertEqual(skill.has_enhancement, expected)
                     self.assertEqual(bool(skill.enhancements), expected)
                     self.assertEqual(skill.enhancement, skill.enhancements[0] if expected else None)
+
+    def test_trigger_condition_operator_groups_load(self):
+        branch = {
+            "name": "组合条件",
+            "trigger_condition": {
+                "text": "聚焦目标进入破防",
+                "effects": {"all": ["STATUS_FOCUS", "STATUS_SHRED"]},
+            },
+            "effects": [],
+        }
+        skill = {
+            "skill_id": "test_skill",
+            "name": "测试技能",
+            "skill_type": "战技",
+            "element": "物理",
+            "enhancements": [branch],
+        }
+
+        with tempfile.TemporaryDirectory() as temp_dir_name:
+            loaded = self._load_temp_character(Path(temp_dir_name), skill)
+
+        self.assertEqual(
+            loaded.enhancement.trigger_effects,
+            [EffectType.STATUS_FOCUS, EffectType.STATUS_SHRED],
+        )
+
+    def test_requested_trigger_condition_branches(self):
+        def load_skill(file_name, skill_id):
+            data = json.loads((_CHARACTER_SKILLS_DIR / file_name).read_text(encoding="utf-8"))
+            return next(skill for skill in data["skills"] if skill["skill_id"] == skill_id)
+
+        aglina = load_skill("aglina.json", "aglina_ultimate")
+        self.assertEqual(
+            [branch["trigger_condition"]["effects"] for branch in aglina["enhancements"]],
+            [{"all": ["STATUS_SHRED"]}, {"all": ["STATUS_HEAVY_HIT"]}],
+        )
+        self.assertEqual(
+            [[effect["effect_id"] for effect in branch["effects"]] for branch in aglina["enhancements"]],
+            [["VULN_ALL"], ["STATUS_HEAVY_HIT"]],
+        )
+
+        antal = load_skill("antal.json", "antal_link")
+        listed_statuses = {
+            "STATUS_SHRED",
+            "STATUS_HEAVY_HIT",
+            "STATUS_KNOCKDOWN",
+            "STATUS_SPELL_INFLICT",
+        }
+        self.assertEqual(len(antal["enhancements"]), len(listed_statuses))
+        self.assertEqual(
+            {
+                tuple(branch["trigger_condition"]["effects"]["all"])
+                for branch in antal["enhancements"]
+            },
+            {("STATUS_FOCUS", status) for status in listed_statuses},
+        )
+
+        tangtang = load_skill("tangtang.json", "tangtang_link")
+        self.assertEqual(
+            tangtang["enhancements"][0]["trigger_condition"]["effects"],
+            {"any": ["ATTACH_COLD", "STATUS_SPELL_BURST"]},
+        )
 
     def test_enhancement_compatibility_view_tracks_enhancements(self):
         skill_fields = {field.name for field in dataclasses.fields(load_all_characters()["sai_xi"].skills[1])}

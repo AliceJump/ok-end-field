@@ -85,7 +85,16 @@ def _load_trigger_condition(trigger_data) -> tuple[str, list[EffectType]]:
     """
     if isinstance(trigger_data, dict):
         text = trigger_data.get("text", "")
-        effects = [EffectType(e) for e in trigger_data.get("effects") or []]
+        raw_effects = trigger_data.get("effects") or []
+        if isinstance(raw_effects, dict):
+            effect_ids = [
+                effect_id
+                for operator in ("all", "any")
+                for effect_id in raw_effects.get(operator) or []
+            ]
+        else:
+            effect_ids = raw_effects
+        effects = [EffectType(effect_id) for effect_id in effect_ids]
         return text, effects
     text = trigger_data or ""
     return text, [eff for _, eff in match_effect_terms(text)]

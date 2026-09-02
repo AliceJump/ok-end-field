@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pyautogui
 
+from src.core.BattleConfig import KEY_SKILL_ALLOWLIST
 from src.core.rotation_ast import eval_cond, iter_actions, normalize_ast
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
@@ -204,6 +205,7 @@ class _FakeTask:
         self._frame = 0
         self._exited = False
         self.actions = []
+        self.frame_events = []
         self.debug = False
 
     # ── 时间 / 帧 ──
@@ -216,6 +218,7 @@ class _FakeTask:
     def next_frame(self):
         self._time += 0.1
         self._frame += 1
+        self.frame_events.append("frame")
 
     # ── 战斗状态 ──
     def in_combat(self, required_yellow=0):
@@ -277,6 +280,10 @@ class _FakeTask:
         if name == "default_link_skill":
             return True if self._link else None
         return None
+
+    def detect_team(self):
+        self.frame_events.append("detect")
+        return ["?", "?", "?", "?"]
 
     # ── 动作 ──
     def use_ult(self, ult_sequence=None):
@@ -347,6 +354,18 @@ class TestConditionalRotationCombat(unittest.TestCase):
         # 回退普通模式：cond_rotation_enabled 最终为 False，走 _do_normal_combat_frame
         self.assertFalse(logic.cond_rotation_enabled)
         self.assertIn("1", task.actions)
+
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_team_detection_always_uses_a_fresh_frame(self, _mu, _md):
+        task = _FakeTask({KEY_SKILL_ALLOWLIST: True})
+        logic = AutoCombatLogic(task)
+
+        logic.run(start_sleep=0.3)
+
+        detect_indexes = [index for index, event in enumerate(task.frame_events) if event == "detect"]
+        self.assertTrue(detect_indexes)
+        self.assertTrue(all(task.frame_events[index - 1] == "frame" for index in detect_indexes))
 
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
