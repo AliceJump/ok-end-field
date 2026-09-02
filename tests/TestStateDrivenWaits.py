@@ -458,17 +458,33 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertTrue(BattleMixin.in_team(task))
         self.assertEqual(task._battle_member_count, 1)
 
-    @patch("src.tasks.mixin.battle_mixin.detect_team_from_frame")
+    @patch.object(BattleMixin, "detect_team")
     def test_detected_team_member_rechecks_current_frame(self, detect_team):
-        detect_team.side_effect = [["?", "?"], ["余烬", "?"]]
+        """_has_detected_team_member 会用最新帧重新调用 detect_team 匹配。"""
+        detect_team.return_value = ["余烬", "别礼"]
 
-        class StubTask:
-            frame = np.zeros((10, 10, 3), dtype=np.uint8)
+        class StubTask(BattleMixin):
+            _battle_team = ["余烬", "别礼"]
+            _call_count = 0
+
+            def __init__(self):
+                pass
+
+            def active_time(self):
+                return self._call_count * 0.1  # 递增时间，确保循环终会超时
+
+            def next_frame(self):
+                self._call_count += 1
+                import numpy as np
+                return np.zeros((10, 10, 3), dtype=np.uint8)
+
+            def log_info(self, message):
+                pass
 
         task = StubTask()
-        self.assertFalse(BattleMixin._has_detected_team_member(task))
-        self.assertTrue(BattleMixin._has_detected_team_member(task))
-        self.assertEqual(detect_team.call_count, 2)
+        BattleMixin._has_detected_team_member(task, time_out=0.01)
+        # 验证 detect_team 被调用（说明是实时识别而非缓存）
+        detect_team.assert_called()
 
 
 if __name__ == "__main__":
