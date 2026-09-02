@@ -3,9 +3,16 @@ from unittest.mock import patch
 
 from src.core.BattleConfig import (
     BATTLE_CONFIG_MODE_KEY,
+    KEY_BATTLE_INITIAL_WAIT,
+    KEY_COMPLETE_NOTIFY,
     KEY_COND_SEQUENCE,
     KEY_INSTANT_LINK,
     KEY_INSTANT_ULT,
+    KEY_NO_NUMBER_OPERATION_INTERVAL,
+    KEY_ROTATION_SEQUENCE,
+    KEY_SKILL_ALLOWLIST,
+    KEY_START_SKILL_POINT,
+    KEY_ULT_RELEASE_MODE,
     BattleConfigManager,
 )
 from src.gui.AccountConfigTab import AccountConfigTab
@@ -320,11 +327,18 @@ class TestBattleConfigOverrides(unittest.TestCase):
         # 开关类型：无 options，sub_configs 以 True 为键
         self.assertNotIn("options", mode_type)
         independent_keys = mode_type["sub_configs"][True]
-        # independent_keys 排除了 BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST] 中的键
-        from src.core.BattleConfig import BATTLE_GROUP_CONFIGS, KEY_SKILL_ALLOWLIST
-        excluded_keys = BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST]
+        # independent_keys 应包含 DEFAULT_BATTLE_CONFIG 中排除 BATTLE_GROUP_CONFIGS 的键
         expected = [
-            k for k in list(task.default_config)[1:] if k not in excluded_keys
+            KEY_ULT_RELEASE_MODE,
+            KEY_START_SKILL_POINT,
+            KEY_COMPLETE_NOTIFY,
+            KEY_NO_NUMBER_OPERATION_INTERVAL,
+            KEY_BATTLE_INITIAL_WAIT,
+            KEY_ROTATION_SEQUENCE,
+            KEY_COND_SEQUENCE,
+            KEY_INSTANT_ULT,
+            KEY_INSTANT_LINK,
+            KEY_SKILL_ALLOWLIST,
         ]
         self.assertEqual(independent_keys, expected)
 
