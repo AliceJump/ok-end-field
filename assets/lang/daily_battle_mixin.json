@@ -98,7 +98,7 @@
       "pattern": "Current"
     },
     "ja_JP": {
-      "pattern": "選択中"
+      "pattern": "現在"
     },
     "ko_KR": {
       "pattern": "현재"
@@ -183,7 +183,7 @@
       "pattern": "恢復理智"
     },
     "en_US": {
-      "pattern": "Sanity Recovery"
+      "pattern": "Restore Sanity"
     },
     "ja_JP": {
       "pattern": "理性回復"
@@ -192,31 +192,31 @@
       "pattern": "이성 회복"
     },
     "es_ES": {
-      "pattern": "Recuperación de Cordura"
+      "pattern": "Restablecer cordura"
     },
     "pt_BR": {
-      "pattern": "Recuperação de Sanidade"
+      "pattern": "Restaurar Sanidade"
     },
     "de_DE": {
-      "pattern": "Verstandswiederherstellung"
+      "pattern": "Verstand wiederherstellen"
     },
     "fr_FR": {
-      "pattern": "Restauration de lucidité"
+      "pattern": "Restaurer la lucidité"
     },
     "id_ID": {
-      "pattern": "Pemulihan Sanity"
+      "pattern": "Pulihkan Sanity"
     },
     "it_IT": {
-      "pattern": "Recupero Lucidità"
+      "pattern": "Ripristina Lucidità"
     },
     "ru_RU": {
-      "pattern": "Восстановление рассудка"
+      "pattern": "Восстановить рассудок"
     },
     "th_TH": {
-      "pattern": "ฟื้นฟู​ค่า​สติ"
+      "pattern": "คืน​ค่า​สติ"
     },
     "vi_VN": {
-      "pattern": "Phục Hồi Tỉnh Táo"
+      "pattern": "Khôi Phục Tỉnh Táo"
     }
   },
   "k_9294c931": {
@@ -227,40 +227,40 @@
       "pattern": "挑戰"
     },
     "en_US": {
-      "pattern": "The Pugilist's Challenge"
+      "pattern": "Challenge"
     },
     "ja_JP": {
       "pattern": "挑戦"
     },
     "ko_KR": {
-      "pattern": "도전"
+      "pattern": "도전하기"
     },
     "es_ES": {
-      "pattern": "El desafío de la pugilista"
+      "pattern": "Challenge"
     },
     "pt_BR": {
-      "pattern": "O Desafio da Pugilista"
+      "pattern": "Challenge"
     },
     "de_DE": {
-      "pattern": "Die Herausforderung der Faustkämpferin"
+      "pattern": "Challenge"
     },
     "fr_FR": {
-      "pattern": "Le défi du pugilat"
+      "pattern": "Challenge"
     },
     "id_ID": {
-      "pattern": "Tantangan si Petinju Bayaran"
+      "pattern": "Challenge"
     },
     "it_IT": {
-      "pattern": "La sfida pugilistica"
+      "pattern": "Challenge"
     },
     "ru_RU": {
-      "pattern": "Вызов на бой"
+      "pattern": "Challenge"
     },
     "th_TH": {
-      "pattern": "ศึก​ท้าทาย​แห่ง​นักมวย"
+      "pattern": "Challenge"
     },
     "vi_VN": {
-      "pattern": "Thử Thách của Quyền Sư"
+      "pattern": "Challenge"
     }
   },
   "k_6afbae72": {
@@ -758,10 +758,10 @@
       "pattern": "Enter"
     },
     "ja_JP": {
-      "pattern": "開始"
+      "pattern": "挑戦"
     },
     "ko_KR": {
-      "pattern": "진입"
+      "pattern": "진입하기"
     },
     "es_ES": {
       "pattern": "Ingresar"
@@ -843,7 +843,7 @@
       "pattern": "重新挑戰"
     },
     "en_US": {
-      "pattern": "Try Again"
+      "pattern": "Retry"
     },
     "ja_JP": {
       "pattern": "もう一度"
@@ -852,13 +852,13 @@
       "pattern": "다시 도전하기"
     },
     "es_ES": {
-      "pattern": "Intentar de nuevo"
+      "pattern": "Reintentar"
     },
     "pt_BR": {
       "pattern": "Tentar Novamente"
     },
     "de_DE": {
-      "pattern": "Erneut versuchen"
+      "pattern": "Wiederholen"
     },
     "fr_FR": {
       "pattern": "Réessayer"
@@ -870,13 +870,13 @@
       "pattern": "Riprova"
     },
     "ru_RU": {
-      "pattern": "Повторить"
+      "pattern": "Повтор"
     },
     "th_TH": {
       "pattern": "ลอง​อีกครั้ง"
     },
     "vi_VN": {
-      "pattern": "Thử Lại"
+      "pattern": "Thử lại"
     }
   },
   "k_39d12e73": {

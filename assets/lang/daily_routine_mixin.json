@@ -578,7 +578,7 @@
       "pattern": "No credits to claim"
     },
     "ja_JP": {
-      "pattern": "FP未獲得"
+      "pattern": "FP受取済"
     },
     "ko_KR": {
       "pattern": "수령할 수 있는 크레딧 없음"
@@ -1143,7 +1143,7 @@
       "pattern": "收取"
     },
     "en_US": {
-      "pattern": "Collect"
+      "pattern": "Take"
     },
     "ja_JP": {
       "pattern": "受取"
@@ -1152,31 +1152,31 @@
       "pattern": "받기"
     },
     "es_ES": {
-      "pattern": "Recoger"
+      "pattern": "Tomar"
     },
     "pt_BR": {
-      "pattern": "Coletar"
+      "pattern": "Pegar"
     },
     "de_DE": {
-      "pattern": "Sammeln"
+      "pattern": "Nehmen"
     },
     "fr_FR": {
-      "pattern": "Récupérer"
+      "pattern": "Prendre"
     },
     "id_ID": {
       "pattern": "Ambil"
     },
     "it_IT": {
-      "pattern": "Raccogli"
+      "pattern": "Prendi"
     },
     "ru_RU": {
-      "pattern": "Забрать"
+      "pattern": "Взять"
     },
     "th_TH": {
       "pattern": "เก็บ"
     },
     "vi_VN": {
-      "pattern": "Thu thập"
+      "pattern": "Lấy"
     }
   },
   "k_3297422a": {
@@ -1187,40 +1187,40 @@
       "pattern": "收集"
     },
     "en_US": {
-      "pattern": "Collected"
+      "pattern": "Gathering"
     },
     "ja_JP": {
-      "pattern": "記録"
+      "pattern": "探索"
     },
     "ko_KR": {
       "pattern": "수집"
     },
     "es_ES": {
-      "pattern": "Recolectado"
+      "pattern": "Recolección"
     },
     "pt_BR": {
-      "pattern": "Coletou"
+      "pattern": "Coleta"
     },
     "de_DE": {
-      "pattern": "Gesammelt"
+      "pattern": "Sammeln"
     },
     "fr_FR": {
-      "pattern": "Récupérés"
+      "pattern": "Récolte"
     },
     "id_ID": {
-      "pattern": "Diambil"
+      "pattern": "Pengumpulan"
     },
     "it_IT": {
-      "pattern": "Raccolti"
+      "pattern": "Raccolta"
     },
     "ru_RU": {
-      "pattern": "Собрано"
+      "pattern": "Сбор"
     },
     "th_TH": {
-      "pattern": "รวบรวม​แล้ว"
+      "pattern": "การ​รวบรวม"
     },
     "vi_VN": {
-      "pattern": "Đã thu thập"
+      "pattern": "Thu Thập"
     }
   },
   "k_8d0e83fc": {
@@ -1526,7 +1526,7 @@
       "pattern": "Assistência de Produção"
     },
     "de_DE": {
-      "pattern": "Produktions-\nunterstützung"
+      "pattern": "Produktionsunterstützung"
     },
     "fr_FR": {
       "pattern": "Aide à la production"
@@ -1646,7 +1646,7 @@
       "pattern": "Livello"
     },
     "ru_RU": {
-      "pattern": "Уровень"
+      "pattern": "Ур."
     },
     "th_TH": {
       "pattern": "เล​เวล​"
@@ -1771,7 +1771,7 @@
       "pattern": "轉交運送委託"
     },
     "en_US": {
-      "pattern": "Delivery Job Transfer"
+      "pattern": "Transfer Job"
     },
     "ja_JP": {
       "pattern": "外部委託"
@@ -1780,31 +1780,31 @@
       "pattern": "운송 의뢰 위탁"
     },
     "es_ES": {
-      "pattern": "Transferencia de trabajos de entrega"
+      "pattern": "Transferir trabajo"
     },
     "pt_BR": {
-      "pattern": "Transferência de Trabalho de Entrega"
+      "pattern": "Transferir Trabalho"
     },
     "de_DE": {
-      "pattern": "Lieferauftrag übertragen"
+      "pattern": "Auftrag übertragen"
     },
     "fr_FR": {
-      "pattern": "Transfert de tâche de livraison"
+      "pattern": "Transférer"
     },
     "id_ID": {
-      "pattern": "Transfer Tugas Pengantaran"
+      "pattern": "Transfer Tugas"
     },
     "it_IT": {
-      "pattern": "Trasferimento dei lavori di consegna"
+      "pattern": "Trasferisci lavoro"
     },
     "ru_RU": {
-      "pattern": "Передача поручения по доставке"
+      "pattern": "Передать поручение"
     },
     "th_TH": {
-      "pattern": "การ​โอน​งาน​จัดส่ง"
+      "pattern": "โอน​งาน"
     },
     "vi_VN": {
-      "pattern": "Chuyển Giao Nhiệm Vụ Giao Hàng"
+      "pattern": "Chuyển Giao Công Việc"
     }
   },
   "k_e39054a0": {

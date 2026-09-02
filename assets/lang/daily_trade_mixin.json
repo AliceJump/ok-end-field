@@ -294,7 +294,7 @@
       "pattern": "Acquista"
     },
     "ru_RU": {
-      "pattern": "Купить"
+      "pattern": "Покупка"
     },
     "th_TH": {
       "pattern": "ซื้อ"
@@ -462,7 +462,7 @@
       "string": "Ridistribuzione scorte"
     },
     "ru_RU": {
-      "string": "Система перераспределения резервов"
+      "string": "Перераспределение резервов"
     },
     "th_TH": {
       "string": "ศูนย์​กระจาย​ของ"
