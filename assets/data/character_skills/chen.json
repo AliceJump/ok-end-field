@@ -48,31 +48,33 @@
             "skill_type": "连携技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "见天河",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当有敌人进入破防状态时可以发动",
-                    "effects": [
-                        "STATUS_SHRED"
-                    ]
-                },
-                "effects": [
-                    {
-                        "effect_id": "STATUS_HEAVY_HIT",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    }
-                ]
-            },
             "description": "当有敌人进入破防状态时可以发动。进行穿梭斩击，对路径上的所有敌人造成物理伤害和击飞。",
             "damage_multiplier": "270%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "见天河",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当有敌人进入破防状态时可以发动",
+                        "effects": [
+                            "STATUS_SHRED"
+                        ]
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_HEAVY_HIT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "chen_ultimate",

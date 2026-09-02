@@ -132,8 +132,6 @@ def _skill_effects_needed_by_others(
     # 收集自己增强态依赖的效果（release_gate requires + trigger_condition effects）
     self_dep_effects: set[str] = set()
     skill_enhancements = skill_data.get("enhancements") or []
-    if not skill_enhancements and skill_data.get("enhancement"):
-        skill_enhancements = [skill_data["enhancement"]]
     for enh in skill_enhancements:
         # release_gate
         gate = enh.get("release_gate", {})
@@ -214,8 +212,6 @@ def _build_team_skill_context(
         if sdata.get("skill_type") != "战技":
             continue
         skill_enhancements = sdata.get("enhancements") or []
-        if not skill_enhancements and sdata.get("enhancement"):
-            skill_enhancements = [sdata["enhancement"]]
         if not skill_enhancements:
             continue
 

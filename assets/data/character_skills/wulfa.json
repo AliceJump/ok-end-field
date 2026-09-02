@@ -26,23 +26,6 @@
             "skill_type": "战技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "破防追加灼热伤害",
-                "release_gate": {
-                    "all": [
-                        "STACK_SHRED"
-                    ]
-                },
-                "trigger_condition": {
-                    "text": "目标已拥有破防状态时释放狼之珀",
-                    "effects": [
-                        "STATUS_SHRED"
-                    ]
-                },
-                "enhancement_effect": "追加灼热伤害",
-                "enhancement_visible_pulse": false,
-                "effects": []
-            },
             "description": "冲向目标，造成物理伤害并施加击飞。 若目标已经拥有破防，则会额外释放狼之珀冲向目标，造成灼热伤害。",
             "damage_multiplier": "192%（第一段）+ 288%（第二段）",
             "stagger_value": 0,
@@ -56,6 +39,25 @@
                     "target": "enemy",
                     "count": 1
                 }
+            ],
+            "enhancements": [
+                {
+                    "name": "破防追加灼热伤害",
+                    "release_gate": {
+                        "all": [
+                            "STACK_SHRED"
+                        ]
+                    },
+                    "trigger_condition": {
+                        "text": "目标已拥有破防状态时释放狼之珀",
+                        "effects": [
+                            "STATUS_SHRED"
+                        ]
+                    },
+                    "enhancement_effect": "追加灼热伤害",
+                    "enhancement_visible_pulse": false,
+                    "effects": []
+                }
             ]
         },
         {
@@ -64,26 +66,6 @@
             "skill_type": "连携技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "燎影时刻",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当有敌人同时处于破防和法术附着状态时可以发动",
-                    "effects": [
-                        "STATUS_SHRED",
-                        "STATUS_SPELL_INFLICT"
-                    ]
-                },
-                "effects": [
-                    {
-                        "effect_id": "STATUS_HEAVY_HIT",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    }
-                ]
-            },
             "enhancements": [
                 {
                     "name": "第二段暴击增益",
@@ -119,6 +101,26 @@
                     "effects": [
                         {
                             "effect_id": "STACK_SHRED",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "燎影时刻",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当有敌人同时处于破防和法术附着状态时可以发动",
+                        "effects": [
+                            "STATUS_SHRED",
+                            "STATUS_SPELL_INFLICT"
+                        ]
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_HEAVY_HIT",
                             "value": 1,
                             "duration": null,
                             "target": "enemy",

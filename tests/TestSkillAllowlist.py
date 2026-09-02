@@ -147,7 +147,7 @@ class TestSkillAllowlist(unittest.TestCase):
         laevat = characters["莱万汀"]
         skill = next(skill for skill in laevat["skills"] if skill["skill_id"] == "laevat_skill")
 
-        self.assertFalse(skill["enhancement"]["release_gate"]["static"])
+        self.assertFalse(skill["enhancements"][0]["release_gate"]["static"])
         self.assertTrue(build_skill_allowlist(["莱万汀"], {"莱万汀": laevat})[0][0])
 
 

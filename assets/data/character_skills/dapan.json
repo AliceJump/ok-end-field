@@ -48,31 +48,33 @@
             "skill_type": "连携技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "加料！",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当有敌人达到4层破防时可以发动",
-                    "effects": [
-                        "STATUS_SHRED"
-                    ]
-                },
-                "effects": [
-                    {
-                        "effect_id": "STATUS_HEAVY_STRIKE",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    }
-                ]
-            },
             "description": "当有敌人达到4层破防时可以发动。抡起铁锅对敌人造成大量物理伤害并猛击，本次猛击的伤害获得额外提升。",
             "damage_multiplier": "650%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "加料！",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当有敌人达到4层破防时可以发动",
+                        "effects": [
+                            "STATUS_SHRED"
+                        ]
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_HEAVY_STRIKE",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "dapan_ultimate",

@@ -26,43 +26,45 @@
             "skill_type": "战技",
             "element": "电磁",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "导电消耗",
-                "release_gate": {
-                    "all": [
-                        "STATUS_CONDUCTING"
-                    ]
-                },
-                "trigger_condition": {
-                    "text": "战技消耗导电状态追加攻击",
-                    "effects": [
-                        "STATUS_CONDUCTING"
-                    ]
-                },
-                "enhancement_effect": "追加攻击",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "STATUS_CONDUCTING",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": -1
-                    },
-                    {
-                        "effect_id": "TRIGGER_ADDITIONAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
             "description": "瞬闪至敌人身边进行2次斩击，造成少量物理伤害。若敌人处于导电状态，消耗其导电状态并追加一次攻击，造成电磁伤害，然后恢复一定技力。",
             "damage_multiplier": "101%（每段）+ 405%（追加）",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 100,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "导电消耗",
+                    "release_gate": {
+                        "all": [
+                            "STATUS_CONDUCTING"
+                        ]
+                    },
+                    "trigger_condition": {
+                        "text": "战技消耗导电状态追加攻击",
+                        "effects": [
+                            "STATUS_CONDUCTING"
+                        ]
+                    },
+                    "enhancement_effect": "追加攻击",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_CONDUCTING",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "TRIGGER_ADDITIONAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "ikut_link",
@@ -70,23 +72,25 @@
             "skill_type": "连携技",
             "element": "电磁",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "鸣雷",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当有敌人进入导电状态或导电状态被消耗后可以发动",
-                    "effects": [
-                        "STATUS_CONDUCTING"
-                    ]
-                },
-                "effects": []
-            },
             "description": "当有敌人进入导电状态或导电状态被消耗后可以发动。瞬闪至敌人身边进行多次斩击，造成物理伤害，并恢复一定技力。",
             "damage_multiplier": "350%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "鸣雷",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当有敌人进入导电状态或导电状态被消耗后可以发动",
+                        "effects": [
+                            "STATUS_CONDUCTING"
+                        ]
+                    },
+                    "effects": []
+                }
+            ]
         },
         {
             "skill_id": "ikut_ultimate",
@@ -94,32 +98,6 @@
             "skill_type": "终结技",
             "element": "电磁",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "电磁附着消耗→导电",
-                "trigger_condition": {
-                    "text": "敌人处于电磁附着状态",
-                    "effects": [
-                        "ATTACH_ELECTROMAGNETIC"
-                    ]
-                },
-                "enhancement_effect": "消耗电磁附着并强制施加导电",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "ATTACH_ELECTROMAGNETIC",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": -1
-                    },
-                    {
-                        "effect_id": "STATUS_CONDUCTING",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
             "description": "用电弧包裹自身后向前方冲刺一段距离，对路径上的敌人造成电磁伤害并施加电磁附着。一段时间后，引爆留下的电弧，再次造成电磁伤害，若敌人处于电磁附着状态，则会消耗其电磁附着并强制施加导电。",
             "damage_multiplier": "350%（冲刺）+ 550%（引爆）",
             "stagger_value": 0,
@@ -132,6 +110,34 @@
                     "duration": null,
                     "target": "enemy",
                     "count": 1
+                }
+            ],
+            "enhancements": [
+                {
+                    "name": "电磁附着消耗→导电",
+                    "trigger_condition": {
+                        "text": "敌人处于电磁附着状态",
+                        "effects": [
+                            "ATTACH_ELECTROMAGNETIC"
+                        ]
+                    },
+                    "enhancement_effect": "消耗电磁附着并强制施加导电",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "ATTACH_ELECTROMAGNETIC",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "STATUS_CONDUCTING",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
                 }
             ]
         }

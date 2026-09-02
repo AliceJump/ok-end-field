@@ -48,31 +48,33 @@
             "skill_type": "连携技",
             "element": "自然",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "秘杖·矩阵位移",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当有敌人被施加法术异常时可以发动",
-                    "effects": [
-                        "STATUS_SPELL_INFLICT"
-                    ]
-                },
-                "effects": [
-                    {
-                        "effect_id": "STATUS_HEAVY_HIT",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    }
-                ]
-            },
             "description": "当有敌人被施加法术异常时可以发动。短暂施法后使目标及附近敌人全部受到重力牵引，对其造成自然伤害并强制造成击飞。",
             "damage_multiplier": "315%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "秘杖·矩阵位移",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当有敌人被施加法术异常时可以发动",
+                        "effects": [
+                            "STATUS_SPELL_INFLICT"
+                        ]
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_HEAVY_HIT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "aglina_ultimate",
@@ -80,32 +82,6 @@
             "skill_type": "终结技",
             "element": "自然",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "破防→法术脆弱增强 / 击飞→保持击飞",
-                "trigger_condition": {
-                    "text": "目标处于破防状态时，法术脆弱随破防层数额外提升；目标处于击飞状态时保持击飞",
-                    "effects": [
-                        "STATUS_SHRED",
-                        "STATUS_HEAVY_HIT"
-                    ]
-                },
-                "enhancement_effect": "法术脆弱增强",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "VULN_ALL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    },
-                    {
-                        "effect_id": "STATUS_HEAVY_HIT",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
             "description": "创造一个重力紊乱区域，对区域内的敌人立即造成一次自然伤害并施加自然附着。处于重力紊乱区域中的目标被施加缓速和法术脆弱。目标处于破防状态时，法术脆弱效果会随破防层数额外提升。区域内的目标若处于击飞状态，将保持击飞状态直到区域效果结束。",
             "damage_multiplier": "750%",
             "stagger_value": 0,
@@ -132,6 +108,34 @@
                     "duration": null,
                     "target": "enemy",
                     "count": 1
+                }
+            ],
+            "enhancements": [
+                {
+                    "name": "破防→法术脆弱增强 / 击飞→保持击飞",
+                    "trigger_condition": {
+                        "text": "目标处于破防状态时，法术脆弱随破防层数额外提升；目标处于击飞状态时保持击飞",
+                        "effects": [
+                            "STATUS_SHRED",
+                            "STATUS_HEAVY_HIT"
+                        ]
+                    },
+                    "enhancement_effect": "法术脆弱增强",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "VULN_ALL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        },
+                        {
+                            "effect_id": "STATUS_HEAVY_HIT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
                 }
             ]
         }

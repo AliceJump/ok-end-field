@@ -26,16 +26,6 @@
             "skill_type": "战技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "三段战技替换",
-                "trigger_condition": {
-                    "text": "断云→追形→开天",
-                    "effects": []
-                },
-                "enhancement_effect": "技能替换",
-                "enhancement_visible_pulse": false,
-                "effects": []
-            },
             "description": "连续施放可最多施放3段不同招式，初始战技为断云。断云：消耗100技力，施放后返还50技力。从拳套中发射出拘束索，对目标及其附近敌人造成物理伤害并尝试将其拉取至自身附近。施放后战技在一段时间内替换为追形。追形：消耗50技力。朝前方连续挥拳造成物理伤害，最后一拳额外造成猛击。如果本次猛击消耗的最大破防层数不少于3层，战技在一段时间内替换为开天。开天：消耗50技力，朝前方范围造成大量物理伤害。本次伤害类型不属于战技伤害，而是视为猛击伤害。",
             "damage_multiplier": "150%（断云）+ 200%（追形）+ 600%（开天）",
             "stagger_value": 0,
@@ -49,6 +39,18 @@
                     "target": "enemy",
                     "count": 1
                 }
+            ],
+            "enhancements": [
+                {
+                    "name": "三段战技替换",
+                    "trigger_condition": {
+                        "text": "断云→追形→开天",
+                        "effects": []
+                    },
+                    "enhancement_effect": "技能替换",
+                    "enhancement_visible_pulse": false,
+                    "effects": []
+                }
             ]
         },
         {
@@ -57,31 +59,33 @@
             "skill_type": "连携技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "拳出无悔",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当有敌人达到3层及以上破防时可以发动",
-                    "effects": [
-                        "STATUS_SHRED"
-                    ]
-                },
-                "effects": [
-                    {
-                        "effect_id": "VULN_PHYSICAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    }
-                ]
-            },
             "description": "当有敌人达到3层及以上破防时可以发动。使用上勾拳痛击前方的敌人，对其造成物理伤害，同时施加一定时间的物理脆弱。施放后战技在一段时间内替换为追形。",
             "damage_multiplier": "250%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "拳出无悔",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当有敌人达到3层及以上破防时可以发动",
+                        "effects": [
+                            "STATUS_SHRED"
+                        ]
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "VULN_PHYSICAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "mifu_ultimate",

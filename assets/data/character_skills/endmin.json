@@ -26,31 +26,6 @@
             "skill_type": "战技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "破甲效果",
-                "release_gate": {
-                    "all": [
-                        "STACK_SHRED"
-                    ]
-                },
-                "trigger_condition": {
-                    "text": "命中敌人时消耗破防层数",
-                    "effects": [
-                        "STACK_SHRED"
-                    ]
-                },
-                "enhancement_effect": "破甲效果",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "STACK_SHRED",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": -1
-                    }
-                ]
-            },
             "description": "使用源石技艺冲击前方一定范围内的敌人，造成物理伤害和猛击。",
             "damage_multiplier": "300%（基础）+ 200%（每层破防）",
             "stagger_value": 0,
@@ -64,6 +39,33 @@
                     "target": "enemy",
                     "count": 1
                 }
+            ],
+            "enhancements": [
+                {
+                    "name": "破甲效果",
+                    "release_gate": {
+                        "all": [
+                            "STACK_SHRED"
+                        ]
+                    },
+                    "trigger_condition": {
+                        "text": "命中敌人时消耗破防层数",
+                        "effects": [
+                            "STACK_SHRED"
+                        ]
+                    },
+                    "enhancement_effect": "破甲效果",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STACK_SHRED",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        }
+                    ]
+                }
             ]
         },
         {
@@ -72,32 +74,6 @@
             "skill_type": "连携技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "源石结晶被物理异常或破防消耗",
-                "trigger_condition": {
-                    "text": "锁闭序列附着源石结晶后，施加物理异常或破防会消耗结晶",
-                    "effects": [
-                        "STATUS_ORIGINIUM_CRYSTAL"
-                    ]
-                },
-                "enhancement_effect": "额外造成物理伤害",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "STATUS_ORIGINIUM_CRYSTAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": -1
-                    },
-                    {
-                        "effect_id": "TRIGGER_ADDITIONAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
             "description": "当小队内其他干员的连携技造成伤害时可以发动。冲到敌人身边，对其造成物理伤害，并附着源石结晶，在一段时间内将其封印。施加物理异常和破防会消耗源石结晶并额外造成物理伤害。",
             "damage_multiplier": "250%",
             "stagger_value": 0,
@@ -115,7 +91,35 @@
             "trigger_condition": {
                 "text": "当小队内其他干员的连携技造成伤害时可以发动",
                 "effects": []
-            }
+            },
+            "enhancements": [
+                {
+                    "name": "源石结晶被物理异常或破防消耗",
+                    "trigger_condition": {
+                        "text": "锁闭序列附着源石结晶后，施加物理异常或破防会消耗结晶",
+                        "effects": [
+                            "STATUS_ORIGINIUM_CRYSTAL"
+                        ]
+                    },
+                    "enhancement_effect": "额外造成物理伤害",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_ORIGINIUM_CRYSTAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "TRIGGER_ADDITIONAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "endmin_ultimate",
@@ -123,38 +127,40 @@
             "skill_type": "终结技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "源石结晶消耗额外伤害",
-                "trigger_condition": {
-                    "text": "敌人身上附着源石结晶时消耗结晶并额外造成物理伤害",
-                    "effects": [
-                        "STATUS_ORIGINIUM_CRYSTAL"
-                    ]
-                },
-                "enhancement_effect": "追加物理伤害",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "STATUS_ORIGINIUM_CRYSTAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": -1
-                    },
-                    {
-                        "effect_id": "TRIGGER_ADDITIONAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
             "description": "使用源石技艺轰击地面，对前方扇形范围内的敌人造成大量物理伤害。如果敌人身上附着源石结晶，则消耗源石结晶并额外造成一次物理伤害。",
             "damage_multiplier": "800%",
             "stagger_value": 0,
             "cooldown": "15秒",
             "spirit_cost": 90,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "源石结晶消耗额外伤害",
+                    "trigger_condition": {
+                        "text": "敌人身上附着源石结晶时消耗结晶并额外造成物理伤害",
+                        "effects": [
+                            "STATUS_ORIGINIUM_CRYSTAL"
+                        ]
+                    },
+                    "enhancement_effect": "追加物理伤害",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_ORIGINIUM_CRYSTAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "TRIGGER_ADDITIONAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }

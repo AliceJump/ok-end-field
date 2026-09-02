@@ -42,8 +42,6 @@ class TestCharacterSkillEffects(unittest.TestCase):
                 for skill in data.get("skills") or []:
                     effect_groups = [skill.get("effects") or []]
                     enhancements = skill.get("enhancements") or []
-                    if not enhancements and skill.get("enhancement"):
-                        enhancements = [skill["enhancement"]]
                     for enhancement in enhancements:
                         effect_groups.append(enhancement.get("effects") or [])
                         trigger_condition = enhancement.get("trigger_condition") or {}
@@ -75,8 +73,6 @@ class TestCharacterSkillEffects(unittest.TestCase):
             data = json.loads(json_file.read_text(encoding="utf-8"))
             for skill in data.get("skills") or []:
                 enhancements = skill.get("enhancements") or []
-                if not enhancements and skill.get("enhancement"):
-                    enhancements = [skill["enhancement"]]
                 for enhancement in enhancements:
                     gate = enhancement.get("release_gate")
                     if gate is None:
@@ -115,9 +111,7 @@ class TestCharacterSkillEffects(unittest.TestCase):
             temp_dir = Path(temp_dir_name)
             cases = [
                 ({"enhancements": [branch]}, True),
-                ({"enhancement": branch}, True),
                 ({"enhancements": [branch], "has_enhancement": False}, True),
-                ({"enhancement": branch, "has_enhancement": False}, True),
                 ({"has_enhancement": True}, False),
                 ({"has_enhancement": False}, False),
             ]

@@ -48,52 +48,54 @@
             "skill_type": "连携技",
             "element": "自然",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "应龙四式",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当有敌人被施加法术附着时可以发动",
-                    "effects": [
-                        "STATUS_SPELL_INFLICT"
-                    ]
-                },
-                "effects": [
-                    {
-                        "effect_id": "STATUS_SPELL_INFLICT",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    },
-                    {
-                        "effect_id": "VULN_NATURAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    },
-                    {
-                        "effect_id": "VULN_COLD",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    },
-                    {
-                        "effect_id": "STATUS_CONFINEMENT",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    }
-                ]
-            },
             "description": "意志值 > 智识值，阵诀·意生效中。当有敌人被施加法术附着时可以发动。冲向目标，设置四个战术分身对其及周围的敌人再次施加该法术附着、自然脆弱和寒冷脆弱，造成自然伤害，并使该目标进入囹圄状态。囹圄状态结束时，战术分身向其攻击，并造成爆炸伤害。囹圄状态：所有行动减缓。阵诀·意：- 施放连携技使敌人进入囹圄状态时，会小幅牵引范围内的敌人。- 意志可以额外提升连携技施加的自然脆弱和寒冷脆弱效果。",
             "damage_multiplier": "280%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "应龙四式",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当有敌人被施加法术附着时可以发动",
+                        "effects": [
+                            "STATUS_SPELL_INFLICT"
+                        ]
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_SPELL_INFLICT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "VULN_NATURAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "VULN_COLD",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "STATUS_CONFINEMENT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "lizhiyan_ultimate",

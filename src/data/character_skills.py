@@ -120,8 +120,6 @@ def _load_character_from_json(file_path: Path) -> Character:
             _load_enhancement(enh_data)
             for enh_data in skill_data.get("enhancements") or []
         ]
-        if not enhancements and skill_data.get("enhancement"):
-            enhancements.append(_load_enhancement(skill_data["enhancement"]))
 
         # 加载技能基础效果；旧格式的 attach/status/clear 纯ID列表合并进 effects
         effects = _load_skill_effects(skill_data.get("effects") or [])

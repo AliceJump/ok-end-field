@@ -55,29 +55,31 @@
             "skill_type": "连携技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "即时压制",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当敌人开始蓄力，或主控干员受到攻击后生命值低于40%可以发动",
-                    "effects": []
-                },
-                "effects": [
-                    {
-                        "effect_id": "BUFF_SHIELD",
-                        "value": 1,
-                        "duration": null,
-                        "target": "ally",
-                        "count": 1
-                    }
-                ]
-            },
             "description": "当敌人开始蓄力，或主控干员受到攻击后生命值低于40%可以发动。挥拳向前用力扣下，对敌人造成物理伤害，并使自身和另一名友方干员（主控干员优先）获得护盾。防御力可以额外提高护盾值。",
             "damage_multiplier": "55%（第一段）+ 225%（第二段）",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "即时压制",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当敌人开始蓄力，或主控干员受到攻击后生命值低于40%可以发动",
+                        "effects": []
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "BUFF_SHIELD",
+                            "value": 1,
+                            "duration": null,
+                            "target": "ally",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "meurs_ultimate",

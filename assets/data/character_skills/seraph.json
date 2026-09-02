@@ -94,31 +94,33 @@
             "skill_type": "连携技",
             "element": "寒冷",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "压力测试",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当支援晶体的生命回复次数耗尽后可以发动",
-                    "effects": [
-                        "BUFF_HEAL"
-                    ]
-                },
-                "effects": [
-                    {
-                        "effect_id": "ATTACH_COLD",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    }
-                ]
-            },
             "description": "当支援晶体的生命回复次数耗尽后可以发动。短暂蓄力后将支援晶体丢向敌人，造成寒冷伤害并施加寒冷附着。",
             "damage_multiplier": "450%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "压力测试",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当支援晶体的生命回复次数耗尽后可以发动",
+                        "effects": [
+                            "BUFF_HEAL"
+                        ]
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "ATTACH_COLD",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "seraph_ultimate",

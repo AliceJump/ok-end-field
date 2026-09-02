@@ -48,29 +48,31 @@
             "skill_type": "连携技",
             "element": "电磁",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "即时协议·闪链",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当主控干员对敌人造成重击后可以发动",
-                    "effects": []
-                },
-                "effects": [
-                    {
-                        "effect_id": "STATUS_CONDUCTING",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    }
-                ]
-            },
             "effects": [],
             "description": "当主控干员对敌人造成重击后可以发动。释放积蓄的电磁能量轰击目标，造成电磁伤害并强制施加短暂的导电。",
             "damage_multiplier": "180%",
             "stagger_value": 0,
             "cooldown": null,
-            "spirit_cost": 0
+            "spirit_cost": 0,
+            "enhancements": [
+                {
+                    "name": "即时协议·闪链",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当主控干员对敌人造成重击后可以发动",
+                        "effects": []
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_CONDUCTING",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "pelica_ultimate",

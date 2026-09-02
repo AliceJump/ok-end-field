@@ -49,43 +49,45 @@
             "skill_type": "连携技",
             "element": "自然",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "箭阵",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当自身启示已满时可以发动",
-                    "effects": []
-                },
-                "effects": [
-                    {
-                        "effect_id": "STATUS_BARRAGE_ARRAY",
-                        "value": 1,
-                        "duration": null,
-                        "target": "area",
-                        "count": 1
-                    },
-                    {
-                        "effect_id": "DEBUFF_SLOW",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    },
-                    {
-                        "effect_id": "VULN_NATURE_BURST",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    }
-                ]
-            },
             "description": "当自身启示已满时可以发动。在目标区域形成箭阵，箭阵对敌人持续造成自然伤害并施加缓速效果，使敌人受到的自然爆发伤害提升。使用连携技时，还会将当前启示全部转化为猎矢。每2点启示转化为1点猎矢。",
             "damage_multiplier": "300%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "箭阵",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当自身启示已满时可以发动",
+                        "effects": []
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_BARRAGE_ARRAY",
+                            "value": 1,
+                            "duration": null,
+                            "target": "area",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "DEBUFF_SLOW",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "VULN_NATURE_BURST",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "typhoeus_ultimate",

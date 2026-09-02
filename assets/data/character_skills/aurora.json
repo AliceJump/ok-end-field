@@ -55,29 +55,31 @@
             "skill_type": "连携技",
             "element": "寒冷",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "极地救援",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当主控干员受到攻击后，如果生命值低于60%可以发动",
-                    "effects": []
-                },
-                "effects": [
-                    {
-                        "effect_id": "BUFF_HEAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "ally",
-                        "count": 1
-                    }
-                ]
-            },
             "description": "当主控干员受到攻击后，如果生命值低于60%可以发动。昼雪对其丢出雪地救援助理，触碰到目标时立即大量治疗附近的干员，并在接下来一段时间内对范围内的干员持续提供治疗。意志可以额外提高治疗量。",
             "damage_multiplier": "250%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "极地救援",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当主控干员受到攻击后，如果生命值低于60%可以发动",
+                        "effects": []
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "BUFF_HEAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "ally",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "aurora_ultimate",

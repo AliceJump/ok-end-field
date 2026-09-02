@@ -48,31 +48,6 @@
             "skill_type": "连携技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "冻结状态额外伤害+物理脆弱",
-                "trigger_condition": {
-                    "text": "命中处于冻结状态的敌人",
-                    "effects": [
-                        "STATUS_FROZEN"
-                    ]
-                },
-                "enhancement_effect": "额外伤害并施加物理脆弱",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "TRIGGER_ADDITIONAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    },
-                    {
-                        "effect_id": "VULN_PHYSICAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
             "description": "当有敌人进入冻结状态时可以发动。迅速移动到敌人身边，对小范围内的敌人造成物理伤害并强制造成击飞。如果命中处于冻结状态的敌人，还会造成额外伤害并施加物理脆弱。",
             "damage_multiplier": "360%（非冻结）+ 630%（冻结）",
             "stagger_value": 0,
@@ -92,7 +67,34 @@
                 "effects": [
                     "STATUS_FROZEN"
                 ]
-            }
+            },
+            "enhancements": [
+                {
+                    "name": "冻结状态额外伤害+物理脆弱",
+                    "trigger_condition": {
+                        "text": "命中处于冻结状态的敌人",
+                        "effects": [
+                            "STATUS_FROZEN"
+                        ]
+                    },
+                    "enhancement_effect": "额外伤害并施加物理脆弱",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_ADDITIONAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        },
+                        {
+                            "effect_id": "VULN_PHYSICAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "etra_ultimate",
@@ -100,31 +102,33 @@
             "skill_type": "终结技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "物理脆弱追加强制击飞",
-                "trigger_condition": {
-                    "text": "敌人处于物理脆弱状态",
-                    "effects": [
-                        "VULN_PHYSICAL"
-                    ]
-                },
-                "enhancement_effect": "强制造成击飞",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "STATUS_HEAVY_HIT",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
             "description": "耗尽全身力气，用力下砸枪柄，对自身附近圆形范围的敌人造成物理伤害。如果敌人处于物理脆弱状态，则对其强制造成击飞。",
             "damage_multiplier": "1100%",
             "stagger_value": 0,
             "cooldown": "10秒",
             "spirit_cost": 70,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "物理脆弱追加强制击飞",
+                    "trigger_condition": {
+                        "text": "敌人处于物理脆弱状态",
+                        "effects": [
+                            "VULN_PHYSICAL"
+                        ]
+                    },
+                    "enhancement_effect": "强制造成击飞",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_HEAVY_HIT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }

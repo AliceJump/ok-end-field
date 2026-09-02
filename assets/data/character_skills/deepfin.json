@@ -26,43 +26,45 @@
             "skill_type": "战技",
             "element": "寒冷",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "寒冷附着消耗",
-                "release_gate": {
-                    "all": [
-                        "ATTACH_COLD"
-                    ]
-                },
-                "trigger_condition": {
-                    "text": "战技消耗寒冷附着强制施加冻结",
-                    "effects": [
-                        "ATTACH_COLD"
-                    ]
-                },
-                "enhancement_effect": "冻结效果",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "CLEAR_COLD",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": -1
-                    },
-                    {
-                        "effect_id": "STATUS_FROZEN",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
             "description": "勾起冰块砸击面前的敌人，对目标造成物理伤害。命中处于寒冷附着状态的目标时，消耗掉目标身上所有寒冷附着，对其强制施加冻结，并基于消耗层数恢复技力，命中多名目标时仅恢复1次。",
             "damage_multiplier": "450%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 100,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "寒冷附着消耗",
+                    "release_gate": {
+                        "all": [
+                            "ATTACH_COLD"
+                        ]
+                    },
+                    "trigger_condition": {
+                        "text": "战技消耗寒冷附着强制施加冻结",
+                        "effects": [
+                            "ATTACH_COLD"
+                        ]
+                    },
+                    "enhancement_effect": "冻结效果",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "CLEAR_COLD",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "STATUS_FROZEN",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "deepfin_link",
@@ -70,24 +72,26 @@
             "skill_type": "连携技",
             "element": "寒冷",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "凿孔底钓术",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当附近目标的法术异常或源石结晶被消耗时可以发动",
-                    "effects": [
-                        "STATUS_SPELL_INFLICT",
-                        "STATUS_ORIGINIUM_CRYSTAL"
-                    ]
-                },
-                "effects": []
-            },
             "description": "当附近目标的法术异常或源石结晶被消耗时可以发动。在敌人脚下开洞垂钓，造成物理伤害，并恢复一定技力，有一定概率能钓出珍鳞，大幅增加伤害并额外恢复技力。",
             "damage_multiplier": "300%（基础）+ 480%（珍鳞）",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "凿孔底钓术",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当附近目标的法术异常或源石结晶被消耗时可以发动",
+                        "effects": [
+                            "STATUS_SPELL_INFLICT",
+                            "STATUS_ORIGINIUM_CRYSTAL"
+                        ]
+                    },
+                    "effects": []
+                }
+            ]
         },
         {
             "skill_id": "deepfin_ultimate",

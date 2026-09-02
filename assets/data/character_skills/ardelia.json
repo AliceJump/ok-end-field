@@ -26,49 +26,51 @@
             "skill_type": "战技",
             "element": "自然",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "腐蚀消耗双脆弱",
-                "release_gate": {
-                    "all": [
-                        "STATUS_CORROSION"
-                    ]
-                },
-                "trigger_condition": {
-                    "text": "消耗腐蚀状态施加物理脆弱与法术脆弱",
-                    "effects": [
-                        "STATUS_CORROSION"
-                    ]
-                },
-                "enhancement_effect": "双脆弱",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "STATUS_CORROSION",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": -1
-                    },
-                    {
-                        "effect_id": "VULN_PHYSICAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    },
-                    {
-                        "effect_id": "VULN_ALL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
             "description": "骑上多利先生冲撞目标，对目标造成自然伤害，若目标处于腐蚀状态，消耗其腐蚀状态，并对其施加物理脆弱与法术脆弱。",
             "damage_multiplier": "300%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 100,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "腐蚀消耗双脆弱",
+                    "release_gate": {
+                        "all": [
+                            "STATUS_CORROSION"
+                        ]
+                    },
+                    "trigger_condition": {
+                        "text": "消耗腐蚀状态施加物理脆弱与法术脆弱",
+                        "effects": [
+                            "STATUS_CORROSION"
+                        ]
+                    },
+                    "enhancement_effect": "双脆弱",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_CORROSION",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "VULN_PHYSICAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        },
+                        {
+                            "effect_id": "VULN_ALL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "ardelia_link",
@@ -76,29 +78,31 @@
             "skill_type": "连携技",
             "element": "自然",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "火山蘑菇云",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当主控干员对不处于破防或法术附着状态的敌人造成重击后可以发动",
-                    "effects": []
-                },
-                "effects": [
-                    {
-                        "effect_id": "STATUS_CORROSION",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    }
-                ]
-            },
             "description": "当主控干员对不处于破防或法术附着状态的敌人造成重击后可以发动。发射一团火山云抛向目标敌人，到达目标身边后对目标造成自然伤害。火山云会跟踪目标，短暂延迟后爆炸，对周围其他敌人造成一半的自然伤害，并强制施加短暂的腐蚀。",
             "damage_multiplier": "200%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "火山蘑菇云",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当主控干员对不处于破防或法术附着状态的敌人造成重击后可以发动",
+                        "effects": []
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_CORROSION",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "ardelia_ultimate",

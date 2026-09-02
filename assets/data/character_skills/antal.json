@@ -62,31 +62,33 @@
             "skill_type": "连携技",
             "element": "电磁",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "磁暴试验场",
-                "release_gate": null,
-                "trigger_condition": {
-                    "text": "当被聚焦的敌人进入物理异常或法术附着状态时可以发动",
-                    "effects": [
-                        "STATUS_SPELL_INFLICT"
-                    ]
-                },
-                "effects": [
-                    {
-                        "effect_id": "TRIGGER_REPEAT_EFFECT",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": 1
-                    }
-                ]
-            },
             "description": "当被聚焦的敌人进入物理异常或法术附着状态时可以发动。在该敌人身上引发1次能量爆炸，造成电磁伤害并再次对其施加该物理异常或法术附着。",
             "damage_multiplier": "340%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "磁暴试验场",
+                    "release_gate": null,
+                    "trigger_condition": {
+                        "text": "当被聚焦的敌人进入物理异常或法术附着状态时可以发动",
+                        "effects": [
+                            "STATUS_SPELL_INFLICT"
+                        ]
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
         },
         {
             "skill_id": "antal_ultimate",
