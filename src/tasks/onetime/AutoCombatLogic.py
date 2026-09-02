@@ -12,7 +12,7 @@ from src.core.BattleConfig import (
 )
 from src.core.rotation_ast import iter_actions, normalize_ast
 from src.data.FeatureList import FeatureList as fL
-from src.data.skill_allowlist import detect_team_stable, generate_skill_sequence
+from src.data.skill_allowlist import generate_skill_sequence
 from src.image.recommend_skill_detector import get_recommend_skill_detector
 
 
@@ -381,9 +381,7 @@ class AutoCombatLogic:
                 _detect_deadline = _detect_start + _target_sleep
                 if _skill_allowlist_enabled:
                     # 初始等待期间做多帧稳定识别，复用等待时间
-                    _detected_team, _team_stable = detect_team_stable(
-                        task.next_frame,
-                        task=task,
+                    _detected_team, _team_stable = task.detect_team_stable(
                         deadline=_detect_deadline,
                     )
                     _elapsed = task.active_time() - _detect_start

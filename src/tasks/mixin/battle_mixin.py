@@ -18,7 +18,9 @@ BattleMixin
     numpy
 """
 
+import json
 import re
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -44,9 +46,43 @@ from src.core.BattleConfig import (
     ULT_RELEASE_MODE_HOLD,
 )
 from src.core.config_migration import legacy_battle_mode_to_bool
-from src.data.skill_allowlist import detect_team_from_frame
+
 from src.core.global_config_store import get_global_config
 from src.image.recommend_skill_detector import get_recommend_skill_detector
+
+# ── 编队识别：模块级常量与工具函数 ─────────────────────────────────────────
+
+_ROOT = Path(__file__).resolve().parent.parent.parent
+_CHARACTERS_JSON = _ROOT / "assets" / "data" / "characters.json"
+
+_char_name_map: dict[str, str] | None = None   # en → zh
+
+# 模板别名：变体 annotation 名 → 主模板名
+# 同角色有多个 battle_icon 外观时，在此声明归并关系，
+# 框架 feature_set 中仍保持独立条目。
+_TEMPLATE_ALIASES: dict[str, str] = {
+    "battle_icon_endministrator_female": "battle_icon_endministrator",
+    "battle_icon_endministrator_male": "battle_icon_endministrator",
+}
+
+
+def _load_char_name_map() -> dict[str, str]:
+    """加载 characters.json，返回 en→zh 映射（如 ember→余烬）。"""
+    global _char_name_map
+    if _char_name_map is not None:
+        return _char_name_map
+    if not _CHARACTERS_JSON.exists():
+        _char_name_map = {}
+        return _char_name_map
+    with open(_CHARACTERS_JSON, encoding="utf-8") as f:
+        data = json.load(f)
+    _char_name_map = {}
+    for info in data.values():
+        en = info.get("en", "")
+        zh = info.get("zh", "")
+        if en and zh:
+            _char_name_map[en] = zh
+    return _char_name_map
 
 
 class BattleMixin(BaseEfTask):
@@ -251,6 +287,146 @@ class BattleMixin(BaseEfTask):
 
         return False
 
+    # ── 编队头像识别 ────────────────────────────────────────────────────────
+
+    def detect_team(self, frame=None) -> list[str]:
+        """从战斗帧识别当前队伍角色名（中文）。
+
+        遍历所有 battle_icon 特征，用 get_box_by_name 获取各自的搜索框，
+        再由 find_one 在框内匹配。多模板映射到同一角色时取最高分。
+        自动兼容少人情况：去掉尾部未识别的 "?" 位。
+
+        Args:
+            frame: BGR numpy 帧（可选，默认使用 self.frame）
+
+        Returns:
+            角色名列表，例: ["别礼", "伊冯", "洁尔佩塔", "余烬"]
+        """
+        if frame is None:
+            frame = self.frame
+
+        name_map = _load_char_name_map()
+
+        # {en_name: (best_score, feature_name)} — 多模板归并到同一角色
+        char_best: dict[str, tuple[float, str]] = {}
+
+        for feature_name in list(self.executor.feature_set.feature_dict):
+            if not feature_name.startswith("battle_icon_"):
+                continue
+            try:
+                search_box = self.get_box_by_name(feature_name)
+            except (ValueError, AttributeError):
+                continue
+            try:
+                result = self.find_one(feature_name, box=search_box)
+            except Exception:
+                continue
+            if result is None:
+                continue
+            # 映射到角色 en_name：先查别名，再去前缀
+            en_name = _TEMPLATE_ALIASES.get(feature_name, feature_name)
+            en_name = en_name.replace("battle_icon_", "")
+            prev = char_best.get(en_name)
+            if prev is None or result.confidence > prev[0]:
+                char_best[en_name] = (result.confidence, feature_name)
+
+        # 按 annotation x 坐标排序 → 位置顺序
+        sorted_chars = sorted(
+            char_best.items(),
+            key=lambda item: self.get_box_by_name(item[1][1]).x,
+        )
+
+        team = [name_map.get(en, en) for en, _ in sorted_chars]
+
+        return team or ["?"] * 4
+
+    def detect_team_with_scores(self, frame=None) -> list[tuple[str, float]]:
+        """同 detect_team，但同时返回匹配备分数（调试用）。"""
+        if frame is None:
+            frame = self.frame
+
+        name_map = _load_char_name_map()
+
+        char_best: dict[str, tuple[float, str]] = {}
+
+        for feature_name in list(self.executor.feature_set.feature_dict):
+            if not feature_name.startswith("battle_icon_"):
+                continue
+            try:
+                search_box = self.get_box_by_name(feature_name)
+            except (ValueError, AttributeError):
+                continue
+            try:
+                result = self.find_one(feature_name, box=search_box)
+            except Exception:
+                continue
+            if result is None:
+                continue
+            en_name = _TEMPLATE_ALIASES.get(feature_name, feature_name)
+            en_name = en_name.replace("battle_icon_", "")
+            prev = char_best.get(en_name)
+            if prev is None or result.confidence > prev[0]:
+                char_best[en_name] = (result.confidence, feature_name)
+
+        sorted_chars = sorted(
+            char_best.items(),
+            key=lambda item: self.get_box_by_name(item[1][1]).x,
+        )
+
+        return [(name_map.get(en, en), score) for en, (score, _) in sorted_chars]
+
+    def detect_team_stable(
+        self,
+        max_attempts: int = 6,
+        interval: float = 0.2,
+        confidence: int = 2,
+        deadline: float | None = None,
+    ) -> tuple[list[str], bool]:
+        """多帧稳定识别：连续 confidence 次识别出相同队伍才视为稳定。
+
+        用于战斗开始前的稳定检测，避免单帧误识别。
+
+        Args:
+            max_attempts:  最大采样次数
+            interval:      每次采样间隔秒数
+            confidence:    连续多少次相同结果视为稳定
+            deadline:      可选截止时间戳（同 self.active_time() 单位），超时立即停止
+
+        Returns:
+            (team, stable) 二元组
+        """
+        last_result: list[str] = []
+        streak = 0
+
+        for i in range(max_attempts):
+            if deadline is not None and self.active_time() >= deadline:
+                break
+
+            frame = self.next_frame()
+            if frame is None or (hasattr(frame, 'size') and frame.size == 0):
+                self.sleep(min(interval, max(0, (deadline or self.active_time() + interval) - self.active_time())))
+                continue
+
+            current = self.detect_team(frame)
+            if current == last_result:
+                streak += 1
+                if streak >= confidence:
+                    return (current, True)
+            else:
+                last_result = current
+                streak = 1
+
+            if i < max_attempts - 1:
+                if deadline is not None:
+                    remaining = deadline - self.active_time()
+                    if remaining <= 0:
+                        break
+                    self.sleep(min(interval, remaining))
+                else:
+                    self.sleep(interval)
+
+        return (last_result or ["?"], False)
+
     def _has_detected_team_member(self, time_out=3):
         """在指定时间内等待当前队伍恢复为战斗开始时的完整队伍。
 
@@ -271,7 +447,7 @@ class BattleMixin(BaseEfTask):
                 matched_count = 0
                 continue
 
-            team = detect_team_from_frame(frame)
+            team = self.detect_team(frame)
             self.log_info(f"当前队伍角色: {team}")
 
             if (
