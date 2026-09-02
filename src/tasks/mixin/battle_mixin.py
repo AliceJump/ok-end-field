@@ -51,7 +51,7 @@ from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
 # ── 编队识别：模块级常量与工具函数 ─────────────────────────────────────────
 
-_ROOT = Path(__file__).resolve().parent.parent.parent
+_ROOT = Path(__file__).resolve().parents[3]
 _CHARACTERS_JSON = _ROOT / "assets" / "data" / "characters.json"
 
 _char_name_map: dict[str, str] | None = None   # en → zh
@@ -303,7 +303,7 @@ class BattleMixin(BaseEfTask):
             except (ValueError, AttributeError):
                 continue
             try:
-                result = self.find_one(feature_name, box=search_box)
+                result = self.find_one(feature_name, box=search_box, frame=frame)
             except Exception:
                 continue
             if result is None:
@@ -393,6 +393,8 @@ class BattleMixin(BaseEfTask):
             else:
                 last_result = current
                 streak = 1
+                if streak >= confidence:
+                    return (current, True)
 
             if i < max_attempts - 1:
                 if deadline is not None:
