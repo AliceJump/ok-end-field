@@ -2,9 +2,111 @@
     "character_id": "ti_fu_luo_si",
     "wiki_item_id": "2116",
     "name": "提弗洛斯",
-    "star": 0,
-    "element": null,
-    "profession": null,
-    "weapon_type": null,
-    "skills": []
+    "star": 6,
+    "element": "自然",
+    "profession": "突击",
+    "weapon_type": "施术单元",
+    "skills": [
+        {
+            "skill_id": "typhoeus_normal",
+            "name": "普通攻击",
+            "skill_type": "普通攻击",
+            "element": "自然",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "普通攻击：对敌人进行至多4段攻击，造成自然伤害。作为主控干员时，重击会造成18点失衡。空中攻击：处于浮空状态时使用普通攻击，会进行空中普通攻击，命中带有自然附着的敌人时，消耗1层自然附着获得1点启示。若自身存有猎矢，空中攻击将转化为强化射击，造成自然爆发。",
+            "damage_multiplier": null,
+            "stagger_value": 18,
+            "cooldown": null,
+            "spirit_cost": 0,
+            "effects": []
+        },
+        {
+            "skill_id": "typhoeus_skill",
+            "name": "浮空疾射",
+            "skill_type": "战技",
+            "element": "自然",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "提弗洛斯的战技会进入短暂的浮空状态，期间可释放5次空中普通攻击，最后一击视为重击。",
+            "damage_multiplier": null,
+            "stagger_value": 0,
+            "cooldown": null,
+            "spirit_cost": 100,
+            "effects": [
+                {
+                    "effect_id": "STATUS_HOVERING",
+                    "value": 1,
+                    "duration": null,
+                    "target": "self",
+                    "count": 1
+                }
+            ]
+        },
+        {
+            "skill_id": "typhoeus_link",
+            "name": "箭阵",
+            "skill_type": "连携技",
+            "element": "自然",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "当自身启示已满时可以发动。在目标区域形成箭阵，箭阵对敌人持续造成自然伤害并施加缓速效果，使敌人受到的自然爆发伤害提升。使用连携技时，还会将当前启示全部转化为猎矢。每2点启示转化为1点猎矢。",
+            "damage_multiplier": "300%",
+            "stagger_value": 0,
+            "cooldown": null,
+            "spirit_cost": 0,
+            "effects": [
+                {
+                    "effect_id": "STATUS_BARRAGE_ARRAY",
+                    "value": 1,
+                    "duration": null,
+                    "target": "area",
+                    "count": 1
+                },
+                {
+                    "effect_id": "DEBUFF_SLOW",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                },
+                {
+                    "effect_id": "VULN_NATURE_BURST",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
+        },
+        {
+            "skill_id": "typhoeus_ultimate",
+            "name": "天降箭雨",
+            "skill_type": "终结技",
+            "element": "自然",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "提弗洛斯的终结技对范围内敌人造成高额自然伤害，并立即获得猎矢，进入浮空状态。施放终结技后的五次空中普通攻击命中时产生一次箭雨，造成自然伤害。",
+            "damage_multiplier": "600%",
+            "stagger_value": 0,
+            "cooldown": "20秒",
+            "spirit_cost": 130,
+            "effects": [
+                {
+                    "effect_id": "STATUS_HOVERING",
+                    "value": 1,
+                    "duration": null,
+                    "target": "self",
+                    "count": 1
+                },
+                {
+                    "effect_id": "GRANT_HUNTING_ARROWS",
+                    "value": 1,
+                    "duration": null,
+                    "target": "self",
+                    "count": 1
+                }
+            ]
+        }
+    ]
 }

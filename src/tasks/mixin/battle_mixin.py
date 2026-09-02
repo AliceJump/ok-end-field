@@ -288,53 +288,181 @@ class BattleMixin(BaseEfTask):
 
     # ── 编队头像识别 ────────────────────────────────────────────────────────
 
-    def _detect_team_core(self, frame=None) -> dict[str, tuple[float, str]]:
-        """编队识别核心逻辑：遍历 battle_icon 特征，返回 {en_name: (score, feature_name)}。"""
+    # 归一化距离阈值：同一槽位人工框选偏差的允许范围。
+    # 相邻战斗槽位中心距约 116px / 1920 ≈ 0.06，阈值取 0.025
+    # 确保同一槽位的微小偏差能合并，相邻槽位不会被错误合并。
+    BATTLE_ICON_GROUP_DISTANCE_THRESHOLD = 0.025
+
+    @staticmethod
+    def _union_find_cluster(n, pairs):
+        """并查集聚类。
+
+        Args:
+            n: 元素总数
+            pairs: 可合并的元素对列表 [(i, j), ...]
+
+        Returns:
+            各元素所属连通分量的根节点列表
+        """
+        parent = list(range(n))
+
+        def find(i):
+            while parent[i] != i:
+                parent[i] = parent[parent[i]]
+                i = parent[i]
+            return i
+
+        def union(i, j):
+            ri, rj = find(i), find(j)
+            if ri != rj:
+                parent[ri] = rj
+
+        for i, j in pairs:
+            union(i, j)
+
+        return [find(i) for i in range(n)]
+
+    def _build_search_boxes(self, boxes, frame_width, frame_height):
+        """将所有 battle_icon bbox 按中心距离聚类，为每个簇生成外接搜索框。
+
+        全程使用归一化坐标进行距离判断，最终转回像素坐标生成 Box。
+
+        Args:
+            boxes: 原始 Box 列表（像素坐标）
+            frame_width: 帧宽度
+            frame_height: 帧高度
+
+        Returns:
+            聚类后的搜索 Box 列表（像素坐标）
+        """
+        if not boxes:
+            return []
+
+        # 计算归一化中心点
+        centers = []
+        for b in boxes:
+            cx = (b.x + b.width / 2) / frame_width
+            cy = (b.y + b.height / 2) / frame_height
+            centers.append((cx, cy))
+
+        # 找出所有中心距离 < 阈值的配对
+        threshold = self.BATTLE_ICON_GROUP_DISTANCE_THRESHOLD
+        pairs = []
+        for i in range(len(boxes)):
+            for j in range(i + 1, len(boxes)):
+                dx = centers[i][0] - centers[j][0]
+                dy = centers[i][1] - centers[j][1]
+                if (dx * dx + dy * dy) ** 0.5 < threshold:
+                    pairs.append((i, j))
+
+        # 并查集聚类
+        roots = self._union_find_cluster(len(boxes), pairs)
+
+        # 按簇分组
+        groups: dict[int, list] = {}
+        for i, root in enumerate(roots):
+            groups.setdefault(root, []).append(i)
+
+        # 每个簇生成外接矩形（归一化坐标）
+        search_boxes = []
+        for indices in groups.values():
+            nxs = [(boxes[i].x / frame_width) for i in indices]
+            nys = [(boxes[i].y / frame_height) for i in indices]
+            nxe = [((boxes[i].x + boxes[i].width) / frame_width) for i in indices]
+            nye = [((boxes[i].y + boxes[i].height) / frame_height) for i in indices]
+
+            x1 = min(nxs) * frame_width
+            y1 = min(nys) * frame_height
+            x2 = max(nxe) * frame_width
+            y2 = max(nye) * frame_height
+            search_boxes.append(Box(
+                int(x1), int(y1),
+                int(x2 - x1), int(y2 - y1),
+                name=f"battle_slot_{len(search_boxes)}",
+            ))
+
+        return search_boxes
+
+    def _detect_team_core(self, frame=None) -> dict[str, tuple[float, str, int]]:
+        """编队识别核心逻辑：返回 {en_name: (score, feature_name, slot_idx)}。
+
+        流程：
+        1. 收集所有 battle_icon 的 COCO bbox → 中心距离聚类 → 生成独立槽位搜索框
+        2. 搜索框按 x 排序，确定位置1/2/3/4
+        3. 逐槽位匹配：每个槽位在所有角色模板中取最高分，角色不重复
+        """
         if frame is None:
             frame = self.frame
 
-        char_best: dict[str, tuple[float, str]] = {}
+        char_best: dict[str, tuple[float, str, int]] = {}
 
-        for feature_name in list(self.executor.feature_set.feature_dict):
+        # 1. 收集所有有效的 battle_icon 搜索框
+        raw_boxes = []
+        valid_features = []
+        for f in fL:
+            feature_name = f.value
             if not feature_name.startswith("battle_icon_"):
                 continue
             try:
-                search_box = self.get_box_by_name(feature_name)
+                box = self.get_box_by_name(feature_name)
             except (ValueError, AttributeError):
                 continue
-            try:
-                result = self.find_one(feature_name, box=search_box, frame=frame)
-            except Exception:
-                continue
-            if result is None:
-                continue
-            en_name = _TEMPLATE_ALIASES.get(feature_name, feature_name)
-            en_name = en_name.replace("battle_icon_", "")
-            prev = char_best.get(en_name)
-            if prev is None or result.confidence > prev[0]:
-                char_best[en_name] = (result.confidence, feature_name)
+            if box is not None:
+                raw_boxes.append(box)
+                valid_features.append(feature_name)
+
+        if not raw_boxes:
+            return char_best
+
+        # 2. 中心距离聚类 → 独立搜索框，按 x 排序
+        fh, fw = frame.shape[:2]
+        search_boxes = self._build_search_boxes(raw_boxes, frame_width=fw, frame_height=fh)
+        search_boxes.sort(key=lambda b: b.x)
+
+        if not search_boxes:
+            return char_best
+
+        # 3. 逐槽位匹配：每个槽位在所有模板中取最高分，已认领的角色不再参与
+        used_features: set[str] = set()
+        for slot_idx, slot_box in enumerate(search_boxes):
+            best_score = 0.0
+            best_feature = None
+            for feature_name in valid_features:
+                if feature_name in used_features:
+                    continue
+                try:
+                    result = self.find_one(feature_name, box=slot_box, frame=frame)
+                except Exception:
+                    continue
+                if result is not None and result.confidence > best_score:
+                    best_score = result.confidence
+                    best_feature = feature_name
+            if best_feature is not None:
+                en_name = _TEMPLATE_ALIASES.get(best_feature, best_feature)
+                en_name = en_name.replace("battle_icon_", "")
+                char_best[en_name] = (best_score, best_feature, slot_idx)
+                used_features.add(best_feature)
 
         return char_best
 
     def detect_team(self, frame=None) -> list[str]:
         """从战斗帧识别当前队伍角色名（中文）。
 
-        遍历所有 battle_icon 特征，用 get_box_by_name 获取各自的搜索框，
-        再由 find_one 在框内匹配。多模板映射到同一角色时取最高分。
-        自动兼容少人情况：去掉尾部未识别的 "?" 位。
+        槽位按 x 排序，未匹配到的槽位标记为 "?"。
+        例: ["伊冯", "洁尔佩塔", "?", "余烬"] 表示第3位角色未识别。
 
         Args:
             frame: BGR numpy 帧（可选，默认使用 self.frame）
 
         Returns:
-            角色名列表，例: ["别礼", "伊冯", "洁尔佩塔", "余烬"]
+            角色名列表
         """
         char_best = self._detect_team_core(frame)
         name_map = _load_char_name_map()
 
         sorted_chars = sorted(
             char_best.items(),
-            key=lambda item: self.get_box_by_name(item[1][1]).x,
+            key=lambda item: item[1][2],
         )
 
         team = [name_map.get(en, en) for en, _ in sorted_chars]
@@ -348,10 +476,10 @@ class BattleMixin(BaseEfTask):
 
         sorted_chars = sorted(
             char_best.items(),
-            key=lambda item: self.get_box_by_name(item[1][1]).x,
+            key=lambda item: item[1][2],
         )
 
-        return [(name_map.get(en, en), score) for en, (score, _) in sorted_chars]
+        return [(name_map.get(en, en), score) for en, (score, _, _) in sorted_chars]
 
     def detect_team_stable(
         self,
