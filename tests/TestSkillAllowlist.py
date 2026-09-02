@@ -99,6 +99,7 @@ class TestSkillAllowlist(unittest.TestCase):
         self.assertNotIn(("目标", "目标_skill"), _build_team_skill_context(["目标"], characters)["release_gates"])
         self.assertTrue(build_skill_allowlist(["目标"], characters)[0][0])
 
+        # 静态 release_gate 依赖自己效果 → 仅自己依赖，仍允许手动释放
         static_target = _character(
             "静态目标",
             effects=[_effect("A")],

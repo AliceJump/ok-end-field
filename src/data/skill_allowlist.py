@@ -28,6 +28,9 @@ _SHRED_STACK_PRODUCERS = {
     "STATUS_KNOCKDOWN",
 }
 
+# 豁免名单：这些角色的战技跳过所有检查，直接允许释放
+EXEMPT_CHARACTERS: set[str] = set()
+
 # ── 数据加载 ──────────────────────────────────────────────────────────────────
 
 _cached_characters: dict[str, dict] | None = None
@@ -105,6 +108,66 @@ def _branch_can_trigger(branch: dict, producers: dict, skill_key: tuple[str, str
         for effect_id in branch["requires"]
     ]
     return all(checks) if branch["operator"] == "all" else any(checks)
+
+
+def _skill_effects_needed_by_others(
+    skill_data: dict,
+    all_release_gates: dict,
+    self_key: tuple[str, str],
+) -> bool:
+    """检查技能产出的效果是否被队内其他成员所依赖。
+
+    用于二次评估：
+    - 效果被其他队友的 release gate 依赖 → 阻止（增强态优先）
+    - 效果仅被自己增强态依赖（release_gate 或 trigger_condition）→ 允许
+    - 效果无人依赖 → 阻止（效果无依赖）
+
+    返回 True 表示应该释放，
+    返回 False 表示不应该释放（有效果但无人依赖）。
+    """
+    effects = skill_data.get("effects") or []
+    if not effects:
+        return True
+
+    # 收集自己增强态依赖的效果（release_gate requires + trigger_condition effects）
+    self_dep_effects: set[str] = set()
+    skill_enhancements = skill_data.get("enhancements") or []
+    if not skill_enhancements and skill_data.get("enhancement"):
+        skill_enhancements = [skill_data["enhancement"]]
+    for enh in skill_enhancements:
+        # release_gate
+        gate = enh.get("release_gate", {})
+        if isinstance(gate, dict):
+            for op in ("all", "any"):
+                for eff in gate.get(op) or []:
+                    if isinstance(eff, str):
+                        self_dep_effects.add(eff)
+        # trigger_condition
+        trigger = enh.get("trigger_condition", {})
+        if isinstance(trigger, dict):
+            for eff in trigger.get("effects", []):
+                if isinstance(eff, str):
+                    self_dep_effects.add(eff)
+
+    for eff in effects:
+        effect_id = _produced_effect_id(eff)
+        if not effect_id:
+            continue
+        # 效果被自己增强态依赖 → 跳过，不阻止
+        if effect_id in self_dep_effects:
+            continue
+        # 检查是否有其他队友的 release gate 需要这个效果
+        for req_key, gates in all_release_gates.items():
+            if req_key == self_key:
+                continue
+            for gate in gates:
+                if effect_id in gate.get("requires", []):
+                    return True
+        # 效果无人依赖 → 阻止
+        return False
+
+    # 无产出效果或所有产出效果都被自己依赖 → 允许
+    return True
 
 
 def _build_team_skill_context(
@@ -213,14 +276,26 @@ def build_skill_allowlist(
 
         key = (char_name, skill.get("skill_id", ""))
         release_gates = ctx["release_gates"].get(key)
-        if not release_gates:
+
+        # 豁免：跳过所有检查，直接允许释放
+        if char_name in EXEMPT_CHARACTERS:
             result[idx] = (True, "")
             continue
 
-        if any(_branch_can_trigger(branch, ctx["producers"], key) for branch in release_gates):
+        # 一次评估：检查技能的 release gate 是否能被队友触发
+        if release_gates and any(
+            _branch_can_trigger(branch, ctx["producers"], key)
+            for branch in release_gates
+        ):
             result[idx] = (False, "增强态优先")
-        else:
-            result[idx] = (True, "")
+            continue
+
+        # 二次评估：检查技能产出的效果是否被任何增强态或 release gate 所依赖
+        if not _skill_effects_needed_by_others(skill, ctx["release_gates"], key):
+            result[idx] = (False, "效果无依赖")
+            continue
+
+        result[idx] = (True, "")
 
     return result
 
