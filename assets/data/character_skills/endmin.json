@@ -29,7 +29,9 @@
             "enhancement": {
                 "name": "破甲效果",
                 "release_gate": {
-                    "all": ["STACK_SHRED"]
+                    "all": [
+                        "STACK_SHRED"
+                    ]
                 },
                 "trigger_condition": {
                     "text": "命中敌人时消耗破防层数",
@@ -109,7 +111,11 @@
                     "target": "enemy",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当小队内其他干员的连携技造成伤害时可以发动",
+                "effects": []
+            }
         },
         {
             "skill_id": "endmin_ultimate",

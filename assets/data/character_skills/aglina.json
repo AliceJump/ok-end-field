@@ -62,7 +62,13 @@
                     "target": "enemy",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当有敌人被施加法术异常时可以发动",
+                "effects": [
+                    "STATUS_SPELL_INFLICT"
+                ]
+            }
         },
         {
             "skill_id": "aglina_ultimate",

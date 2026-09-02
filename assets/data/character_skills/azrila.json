@@ -78,7 +78,11 @@
                     "target": "ally",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "主控干员受到攻击后可以发动",
+                "effects": []
+            }
         },
         {
             "skill_id": "azrila_ultimate",

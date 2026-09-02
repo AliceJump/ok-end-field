@@ -29,7 +29,9 @@
             "enhancement": {
                 "name": "破防追加灼热伤害",
                 "release_gate": {
-                    "all": ["STACK_SHRED"]
+                    "all": [
+                        "STACK_SHRED"
+                    ]
                 },
                 "trigger_condition": {
                     "text": "目标已拥有破防状态时释放狼之珀",
@@ -119,7 +121,14 @@
                     "target": "enemy",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当有敌人同时处于破防和法术附着状态时可以发动",
+                "effects": [
+                    "STATUS_SHRED",
+                    "STATUS_SPELL_INFLICT"
+                ]
+            }
         },
         {
             "skill_id": "wulfa_ultimate",

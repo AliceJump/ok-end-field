@@ -90,7 +90,13 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "trigger_condition": {
+                "text": "当有敌人的灼热附着被消耗或吸收后可以发动",
+                "effects": [
+                    "ATTACH_BURN"
+                ]
+            }
         },
         {
             "skill_id": "camille_ultimate",

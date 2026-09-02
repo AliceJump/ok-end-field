@@ -62,7 +62,13 @@
                     "target": "enemy",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当有敌人进入破防状态时可以发动",
+                "effects": [
+                    "STATUS_SHRED"
+                ]
+            }
         },
         {
             "skill_id": "chen_ultimate",

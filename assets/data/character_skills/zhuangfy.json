@@ -31,7 +31,9 @@
                 {
                     "name": "消耗导电生成青霆剑",
                     "release_gate": {
-                        "all": ["STATUS_CONDUCTING"]
+                        "all": [
+                            "STATUS_CONDUCTING"
+                        ]
                     },
                     "trigger_condition": {
                         "text": "消耗目标的导电状态",
@@ -135,7 +137,13 @@
                     "target": "enemy",
                     "count": -1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "主控干员的重击或处决，命中处于电磁附着状态的敌人后可以发动",
+                "effects": [
+                    "ATTACH_ELECTROMAGNETIC"
+                ]
+            }
         },
         {
             "skill_id": "zhuangfy_ultimate",

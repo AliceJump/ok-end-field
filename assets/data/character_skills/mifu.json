@@ -71,7 +71,13 @@
                     "target": "enemy",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当有敌人达到3层及以上破防时可以发动",
+                "effects": [
+                    "STATUS_SHRED"
+                ]
+            }
         },
         {
             "skill_id": "mifu_ultimate",

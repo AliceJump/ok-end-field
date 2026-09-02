@@ -29,7 +29,9 @@
             "enhancement": {
                 "name": "寒冷脆弱",
                 "release_gate": {
-                    "all": ["STATUS_SPELL_INFLICT"]
+                    "all": [
+                        "STATUS_SPELL_INFLICT"
+                    ]
                 },
                 "trigger_condition": {
                     "text": "消耗法术附着施加寒冷脆弱",
@@ -84,7 +86,13 @@
                     "target": "enemy",
                     "count": -1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当有敌人进入3层及以上寒冷附着状态时可以发动",
+                "effects": [
+                    "ATTACH_COLD"
+                ]
+            }
         },
         {
             "skill_id": "lastrite_ultimate",

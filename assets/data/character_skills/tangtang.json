@@ -29,7 +29,9 @@
             "enhancement": {
                 "name": "水龙卷系统",
                 "release_gate": {
-                    "all": ["STACK_WHIRLPOOL"]
+                    "all": [
+                        "STACK_WHIRLPOOL"
+                    ]
                 },
                 "trigger_condition": {
                     "text": "消耗涡流形成水龙卷",
@@ -83,7 +85,13 @@
                     "target": "enemy",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当有敌人被施加寒冷附着或受到法术爆发伤害时可以发动",
+                "effects": [
+                    "ATTACH_COLD"
+                ]
+            }
         },
         {
             "skill_id": "tangtang_ultimate",

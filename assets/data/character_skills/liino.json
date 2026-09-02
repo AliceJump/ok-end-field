@@ -83,7 +83,13 @@
                     "target": "ally",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "演唱姿态期间，当有敌人被施加法术异常或法术异常被消耗时可以发动",
+                "effects": [
+                    "STATUS_SPELL_INFLICT"
+                ]
+            }
         },
         {
             "skill_id": "liino_ultimate",

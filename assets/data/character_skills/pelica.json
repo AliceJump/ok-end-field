@@ -62,7 +62,11 @@
             "damage_multiplier": "180%",
             "stagger_value": 0,
             "cooldown": null,
-            "spirit_cost": 0
+            "spirit_cost": 0,
+            "trigger_condition": {
+                "text": "当主控干员对敌人造成重击后可以发动",
+                "effects": []
+            }
         },
         {
             "skill_id": "pelica_ultimate",

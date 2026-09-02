@@ -86,7 +86,13 @@
                     "target": "enemy",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当有敌人进入冻结状态时可以发动",
+                "effects": [
+                    "STATUS_FROZEN"
+                ]
+            }
         },
         {
             "skill_id": "etra_ultimate",

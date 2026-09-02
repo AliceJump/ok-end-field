@@ -73,7 +73,14 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "trigger_condition": {
+                "text": "当处于物理脆弱或碎甲状态的敌人受到主控干员重击后可以发动",
+                "effects": [
+                    "VULN_PHYSICAL",
+                    "STATUS_SHRED"
+                ]
+            }
         },
         {
             "skill_id": "lifeng_ultimate",

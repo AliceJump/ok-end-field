@@ -69,7 +69,11 @@
                     "target": "ally",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当敌人开始蓄力，或主控干员受到攻击后生命值低于40%可以发动",
+                "effects": []
+            }
         },
         {
             "skill_id": "meurs_ultimate",

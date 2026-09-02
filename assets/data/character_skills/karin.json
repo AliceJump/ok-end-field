@@ -54,7 +54,13 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "trigger_condition": {
+                "text": "当有敌人失衡，或触发失衡节点时可以发动",
+                "effects": [
+                    "STATUS_KNOCKDOWN"
+                ]
+            }
         },
         {
             "skill_id": "karin_ultimate",

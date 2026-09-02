@@ -69,7 +69,11 @@
                     "target": "ally",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当主控干员受到攻击后，如果生命值低于60%可以发动",
+                "effects": []
+            }
         },
         {
             "skill_id": "aurora_ultimate",

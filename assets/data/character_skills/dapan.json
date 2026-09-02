@@ -62,7 +62,13 @@
                     "target": "enemy",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当有敌人达到4层破防时可以发动",
+                "effects": [
+                    "STATUS_SHRED"
+                ]
+            }
         },
         {
             "skill_id": "dapan_ultimate",

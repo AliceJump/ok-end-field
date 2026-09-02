@@ -29,7 +29,9 @@
             "enhancement": {
                 "name": "破防层数消耗",
                 "release_gate": {
-                    "all": ["STACK_SHRED"]
+                    "all": [
+                        "STACK_SHRED"
+                    ]
                 },
                 "trigger_condition": {
                     "text": "战技命中敌人时消耗破防层数恢复技力",
@@ -79,7 +81,13 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "trigger_condition": {
+                "text": "当有敌人被猛击或者碎甲消耗破防层数后可以发动",
+                "effects": [
+                    "STATUS_SHRED"
+                ]
+            }
         },
         {
             "skill_id": "pograni_ultimate",

@@ -77,7 +77,11 @@
                     "target": "enemy",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当自身启示已满时可以发动",
+                "effects": []
+            }
         },
         {
             "skill_id": "typhoeus_ultimate",

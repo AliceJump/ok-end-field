@@ -85,7 +85,14 @@
                     "target": "enemy",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当敌人进入2层及以上寒冷附着或自然附着时可以发动",
+                "effects": [
+                    "ATTACH_COLD",
+                    "ATTACH_NATURAL"
+                ]
+            }
         },
         {
             "skill_id": "bounda_ultimate",

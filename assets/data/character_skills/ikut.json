@@ -29,7 +29,9 @@
             "enhancement": {
                 "name": "导电消耗",
                 "release_gate": {
-                    "all": ["STATUS_CONDUCTING"]
+                    "all": [
+                        "STATUS_CONDUCTING"
+                    ]
                 },
                 "trigger_condition": {
                     "text": "战技消耗导电状态追加攻击",
@@ -74,7 +76,13 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "trigger_condition": {
+                "text": "当有敌人进入导电状态或导电状态被消耗后可以发动",
+                "effects": [
+                    "STATUS_CONDUCTING"
+                ]
+            }
         },
         {
             "skill_id": "ikut_ultimate",

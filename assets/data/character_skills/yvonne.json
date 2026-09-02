@@ -87,7 +87,13 @@
                     "target": "enemy",
                     "count": 1
                 }
-            ]
+            ],
+            "trigger_condition": {
+                "text": "当主控干员对处于冻结状态的敌人造成重击时可以发动",
+                "effects": [
+                    "STATUS_FROZEN"
+                ]
+            }
         },
         {
             "skill_id": "yvonne_ultimate",

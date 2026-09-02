@@ -29,7 +29,9 @@
             "enhancement": {
                 "name": "寒冷附着消耗",
                 "release_gate": {
-                    "all": ["ATTACH_COLD"]
+                    "all": [
+                        "ATTACH_COLD"
+                    ]
                 },
                 "trigger_condition": {
                     "text": "战技消耗寒冷附着强制施加冻结",
@@ -74,7 +76,14 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "trigger_condition": {
+                "text": "当附近目标的法术异常或源石结晶被消耗时可以发动",
+                "effects": [
+                    "STATUS_SPELL_INFLICT",
+                    "STATUS_ORIGINIUM_CRYSTAL"
+                ]
+            }
         },
         {
             "skill_id": "deepfin_ultimate",
