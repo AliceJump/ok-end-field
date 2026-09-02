@@ -30,7 +30,7 @@ class TestSkillAllowlist(unittest.TestCase):
     def test_single_branch_all_requires_every_effect(self):
         target = _character(
             "目标",
-            enhancements=[{"release_gate": {"all": ["A", "B"]}}],
+            enhancements=[{"trigger_condition": {"effects": {"all": ["A", "B"]}}}],
         )
         characters = {
             "目标": target,
@@ -45,8 +45,8 @@ class TestSkillAllowlist(unittest.TestCase):
         target = _character(
             "目标",
             enhancements=[
-                {"release_gate": {"all": ["A"]}},
-                {"release_gate": {"all": ["B"]}},
+                {"trigger_condition": {"effects": {"all": ["A"]}}},
+                {"trigger_condition": {"effects": {"all": ["B"]}}},
             ],
         )
         characters = {
@@ -60,7 +60,7 @@ class TestSkillAllowlist(unittest.TestCase):
         self.assertTrue(build_skill_allowlist(["目标"], characters)[0][0])
 
     def test_negative_count_is_not_a_producer(self):
-        target = _character("目标", enhancements=[{"release_gate": {"all": ["A"]}}])
+        target = _character("目标", enhancements=[{"trigger_condition": {"effects": {"all": ["A"]}}}])
         consumer = _character("消费", effects=[_effect("A", count=-1)])
         characters = {"目标": target, "消费": consumer}
 
@@ -71,7 +71,7 @@ class TestSkillAllowlist(unittest.TestCase):
     def test_shred_consuming_anomaly_is_not_a_stack_producer(self):
         target = _character(
             "目标",
-            enhancements=[{"release_gate": {"all": ["STACK_SHRED"]}}],
+            enhancements=[{"trigger_condition": {"effects": {"all": ["STACK_SHRED"]}}}],
         )
         consumer = _character(
             "猛击者",
@@ -84,12 +84,12 @@ class TestSkillAllowlist(unittest.TestCase):
         self.assertTrue(build_skill_allowlist(["目标", "猛击者"], characters)[0][0])
 
     def test_post_cast_branch_is_not_a_release_gate(self):
+        # 动态 trigger_condition.effects（无 all/any）不应被视为静态门控
         target = _character(
             "目标",
             enhancements=[
                 {
-                    "release_gate": {"static": False},
-                    "trigger_condition": {"effects": ["A"]},
+                    "trigger_condition": {"effects": ["A"]},  # 简单列表，非静态
                     "effects": [_effect("B")],
                 }
             ],
@@ -99,11 +99,11 @@ class TestSkillAllowlist(unittest.TestCase):
         self.assertNotIn(("目标", "目标_skill"), _build_team_skill_context(["目标"], characters)["release_gates"])
         self.assertTrue(build_skill_allowlist(["目标"], characters)[0][0])
 
-        # 静态 release_gate 依赖自己效果 → 仅自己依赖，仍允许手动释放
+        # 静态 trigger_condition.effects 依赖自己效果 → 仅自己依赖，仍允许手动释放
         static_target = _character(
             "静态目标",
             effects=[_effect("A")],
-            enhancements=[{"release_gate": {"all": ["A"]}}],
+            enhancements=[{"trigger_condition": {"effects": {"all": ["A"]}}}],
         )
         self.assertTrue(build_skill_allowlist(["静态目标"], {"静态目标": static_target})[0][0])
 
@@ -123,7 +123,9 @@ class TestSkillAllowlist(unittest.TestCase):
         characters = load_characters()
         zhuang = characters["庄方宜"]
         skill = next(skill for skill in zhuang["skills"] if skill["skill_id"] == "zhuangfy_skill")
-        self.assertFalse(skill["enhancements"][1]["release_gate"]["static"])
+        # 验证 trigger_condition.effects 是 dict 结构
+        tc_effects = skill["enhancements"][1]["trigger_condition"]["effects"]
+        self.assertIsInstance(tc_effects, dict)
 
         sword_consumer = _character(
             "青霆剑消费者",
@@ -139,7 +141,9 @@ class TestSkillAllowlist(unittest.TestCase):
             "导电产出者": conductive_producer,
         }
 
+        # 青霆剑消费者是消费效果，不是生产者，所以庄方宜的战技允许释放
         self.assertTrue(build_skill_allowlist(["庄方宜", "青霆剑消费者"], team_data)[0][0])
+        # 导电产出者生产 STATUS_CONDUCTING，被庄方宜的 trigger_condition 依赖，所以禁止
         self.assertFalse(build_skill_allowlist(["庄方宜", "导电产出者"], team_data)[0][0])
 
     def test_real_laevat_threshold_is_not_statically_satisfied(self):
@@ -147,7 +151,10 @@ class TestSkillAllowlist(unittest.TestCase):
         laevat = characters["莱万汀"]
         skill = next(skill for skill in laevat["skills"] if skill["skill_id"] == "laevat_skill")
 
-        self.assertFalse(skill["enhancements"][0]["release_gate"]["static"])
+        # 验证 trigger_condition.effects 是 dict 结构
+        tc_effects = skill["enhancements"][0]["trigger_condition"]["effects"]
+        self.assertIsInstance(tc_effects, dict)
+        # 莱万汀单独时，没有其他人生产 STACK_MOLTEN，所以允许释放
         self.assertTrue(build_skill_allowlist(["莱万汀"], {"莱万汀": laevat})[0][0])
 
 

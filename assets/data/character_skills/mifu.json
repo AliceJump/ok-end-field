@@ -45,7 +45,9 @@
                     "name": "三段战技替换",
                     "trigger_condition": {
                         "text": "断云→追形→开天",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "enhancement_effect": "技能替换",
                     "enhancement_visible_pulse": false,
@@ -68,12 +70,13 @@
             "enhancements": [
                 {
                     "name": "拳出无悔",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当有敌人达到3层及以上破防时可以发动",
-                        "effects": [
-                            "STATUS_SHRED"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_SHRED"
+                            ]
+                        }
                     },
                     "effects": [
                         {

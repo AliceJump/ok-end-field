@@ -57,12 +57,13 @@
             "enhancements": [
                 {
                     "name": "秘杖·矩阵位移",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当有敌人被施加法术异常时可以发动",
-                        "effects": [
-                            "STATUS_SPELL_INFLICT"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_SPELL_INFLICT"
+                            ]
+                        }
                     },
                     "effects": [
                         {
@@ -115,10 +116,12 @@
                     "name": "破防→法术脆弱增强 / 击飞→保持击飞",
                     "trigger_condition": {
                         "text": "目标处于破防状态时，法术脆弱随破防层数额外提升；目标处于击飞状态时保持击飞",
-                        "effects": [
-                            "STATUS_SHRED",
-                            "STATUS_HEAVY_HIT"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_SHRED",
+                                "STATUS_HEAVY_HIT"
+                            ]
+                        }
                     },
                     "enhancement_effect": "法术脆弱增强",
                     "enhancement_visible_pulse": false,

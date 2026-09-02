@@ -35,16 +35,13 @@
             "enhancements": [
                 {
                     "name": "导电消耗",
-                    "release_gate": {
-                        "all": [
-                            "STATUS_CONDUCTING"
-                        ]
-                    },
                     "trigger_condition": {
                         "text": "战技消耗导电状态追加攻击",
-                        "effects": [
-                            "STATUS_CONDUCTING"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_CONDUCTING"
+                            ]
+                        }
                     },
                     "enhancement_effect": "追加攻击",
                     "enhancement_visible_pulse": false,
@@ -81,12 +78,13 @@
             "enhancements": [
                 {
                     "name": "鸣雷",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当有敌人进入导电状态或导电状态被消耗后可以发动",
-                        "effects": [
-                            "STATUS_CONDUCTING"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_CONDUCTING"
+                            ]
+                        }
                     },
                     "effects": []
                 }
@@ -117,9 +115,11 @@
                     "name": "电磁附着消耗→导电",
                     "trigger_condition": {
                         "text": "敌人处于电磁附着状态",
-                        "effects": [
-                            "ATTACH_ELECTROMAGNETIC"
-                        ]
+                        "effects": {
+                            "all": [
+                                "ATTACH_ELECTROMAGNETIC"
+                            ]
+                        }
                     },
                     "enhancement_effect": "消耗电磁附着并强制施加导电",
                     "enhancement_visible_pulse": false,

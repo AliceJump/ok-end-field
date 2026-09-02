@@ -73,9 +73,11 @@
                     "name": "冻结状态额外伤害+物理脆弱",
                     "trigger_condition": {
                         "text": "命中处于冻结状态的敌人",
-                        "effects": [
-                            "STATUS_FROZEN"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_FROZEN"
+                            ]
+                        }
                     },
                     "enhancement_effect": "额外伤害并施加物理脆弱",
                     "enhancement_visible_pulse": false,
@@ -113,9 +115,11 @@
                     "name": "物理脆弱追加强制击飞",
                     "trigger_condition": {
                         "text": "敌人处于物理脆弱状态",
-                        "effects": [
-                            "VULN_PHYSICAL"
-                        ]
+                        "effects": {
+                            "all": [
+                                "VULN_PHYSICAL"
+                            ]
+                        }
                     },
                     "enhancement_effect": "强制造成击飞",
                     "enhancement_visible_pulse": false,

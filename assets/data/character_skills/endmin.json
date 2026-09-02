@@ -43,16 +43,13 @@
             "enhancements": [
                 {
                     "name": "破甲效果",
-                    "release_gate": {
-                        "all": [
-                            "STACK_SHRED"
-                        ]
-                    },
                     "trigger_condition": {
                         "text": "命中敌人时消耗破防层数",
-                        "effects": [
-                            "STACK_SHRED"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STACK_SHRED"
+                            ]
+                        }
                     },
                     "enhancement_effect": "破甲效果",
                     "enhancement_visible_pulse": false,
@@ -97,9 +94,11 @@
                     "name": "源石结晶被物理异常或破防消耗",
                     "trigger_condition": {
                         "text": "锁闭序列附着源石结晶后，施加物理异常或破防会消耗结晶",
-                        "effects": [
-                            "STATUS_ORIGINIUM_CRYSTAL"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_ORIGINIUM_CRYSTAL"
+                            ]
+                        }
                     },
                     "enhancement_effect": "额外造成物理伤害",
                     "enhancement_visible_pulse": false,
@@ -138,9 +137,11 @@
                     "name": "源石结晶消耗额外伤害",
                     "trigger_condition": {
                         "text": "敌人身上附着源石结晶时消耗结晶并额外造成物理伤害",
-                        "effects": [
-                            "STATUS_ORIGINIUM_CRYSTAL"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_ORIGINIUM_CRYSTAL"
+                            ]
+                        }
                     },
                     "enhancement_effect": "追加物理伤害",
                     "enhancement_visible_pulse": false,

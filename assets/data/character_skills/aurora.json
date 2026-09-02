@@ -64,10 +64,11 @@
             "enhancements": [
                 {
                     "name": "极地救援",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当主控干员受到攻击后，如果生命值低于60%可以发动",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "effects": [
                         {

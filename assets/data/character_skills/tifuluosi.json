@@ -58,10 +58,11 @@
             "enhancements": [
                 {
                     "name": "箭阵",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当自身启示已满时可以发动",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "effects": [
                         {

@@ -57,12 +57,13 @@
             "enhancements": [
                 {
                     "name": "见天河",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当有敌人进入破防状态时可以发动",
-                        "effects": [
-                            "STATUS_SHRED"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_SHRED"
+                            ]
+                        }
                     },
                     "effects": [
                         {

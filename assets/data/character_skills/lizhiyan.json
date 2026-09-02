@@ -57,12 +57,13 @@
             "enhancements": [
                 {
                     "name": "应龙四式",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当有敌人被施加法术附着时可以发动",
-                        "effects": [
-                            "STATUS_SPELL_INFLICT"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_SPELL_INFLICT"
+                            ]
+                        }
                     },
                     "effects": [
                         {

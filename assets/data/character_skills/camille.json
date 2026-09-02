@@ -59,7 +59,9 @@
                     "name": "衔火血翼盘桓",
                     "trigger_condition": {
                         "text": "战技命中敌人后召唤衔火血翼盘桓",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "enhancement_effect": "召唤效果",
                     "enhancement_visible_pulse": false,
@@ -95,12 +97,13 @@
             "enhancements": [
                 {
                     "name": "锥心之棘",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当有敌人的灼热附着被消耗或吸收后可以发动",
-                        "effects": [
-                            "ATTACH_BURN"
-                        ]
+                        "effects": {
+                            "all": [
+                                "ATTACH_BURN"
+                            ]
+                        }
                     },
                     "effects": []
                 }
@@ -131,7 +134,9 @@
                     "name": "追猎状态",
                     "trigger_condition": {
                         "text": "施放终结技后",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "enhancement_effect": "追猎状态",
                     "enhancement_visible_pulse": false,

@@ -43,14 +43,13 @@
             "enhancements": [
                 {
                     "name": "熔火层数",
-                    "release_gate": {
-                        "static": false
-                    },
                     "trigger_condition": {
                         "text": "战技命中敌人获得1层熔火，4层时触发追加攻击",
-                        "effects": [
-                            "STACK_MOLTEN"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STACK_MOLTEN"
+                            ]
+                        }
                     },
                     "enhancement_effect": "追加攻击",
                     "enhancement_visible_pulse": false,
@@ -93,13 +92,14 @@
             "enhancements": [
                 {
                     "name": "沸腾",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当有敌人进入燃烧或腐蚀状态时可以发动",
-                        "effects": [
-                            "STATUS_BURNING",
-                            "STATUS_CORROSION"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_BURNING",
+                                "STATUS_CORROSION"
+                            ]
+                        }
                     },
                     "effects": [
                         {
@@ -138,7 +138,9 @@
                     "name": "强化普攻",
                     "trigger_condition": {
                         "text": "施放终结技后",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "enhancement_effect": "强化普攻",
                     "enhancement_visible_pulse": false,

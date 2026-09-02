@@ -42,16 +42,13 @@
             "enhancements": [
                 {
                     "name": "强雷枪召回",
-                    "release_gate": {
-                        "all": [
-                            "PLACE_THUNDER_SPEAR"
-                        ]
-                    },
                     "trigger_condition": {
                         "text": "存在雷枪或强雷枪时召回",
-                        "effects": [
-                            "PLACE_THUNDER_SPEAR"
-                        ]
+                        "effects": {
+                            "all": [
+                                "PLACE_THUNDER_SPEAR"
+                            ]
+                        }
                     },
                     "enhancement_effect": "强雷枪造成更高电磁伤害并施加电磁附着",
                     "enhancement_visible_pulse": false,
@@ -81,13 +78,14 @@
             "enhancements": [
                 {
                     "name": "雷枪·掣击",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "主控干员对处于电磁附着或导电状态的目标进行重击后可以发动",
-                        "effects": [
-                            "ATTACH_ELECTROMAGNETIC",
-                            "STATUS_CONDUCTING"
-                        ]
+                        "effects": {
+                            "all": [
+                                "ATTACH_ELECTROMAGNETIC",
+                                "STATUS_CONDUCTING"
+                            ]
+                        }
                     },
                     "effects": [
                         {

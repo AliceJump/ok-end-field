@@ -50,16 +50,13 @@
             "enhancements": [
                 {
                     "name": "水龙卷系统",
-                    "release_gate": {
-                        "all": [
-                            "STACK_WHIRLPOOL"
-                        ]
-                    },
                     "trigger_condition": {
                         "text": "消耗涡流形成水龙卷",
-                        "effects": [
-                            "STACK_WHIRLPOOL"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STACK_WHIRLPOOL"
+                            ]
+                        }
                     },
                     "enhancement_effect": "水龙卷系统",
                     "enhancement_visible_pulse": false,
@@ -82,12 +79,13 @@
             "enhancements": [
                 {
                     "name": "河水，助我！",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当有敌人被施加寒冷附着或受到法术爆发伤害时可以发动",
-                        "effects": [
-                            "ATTACH_COLD"
-                        ]
+                        "effects": {
+                            "all": [
+                                "ATTACH_COLD"
+                            ]
+                        }
                     },
                     "effects": [
                         {
@@ -118,7 +116,9 @@
                     "name": "古老图形封锁",
                     "trigger_condition": {
                         "text": "主控干员在古老图形中下落攻击，提前结束演化降下巨浪并提升伤害",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "enhancement_effect": "巨浪伤害提升",
                     "enhancement_visible_pulse": false,

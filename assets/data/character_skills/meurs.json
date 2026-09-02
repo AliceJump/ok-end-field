@@ -64,10 +64,11 @@
             "enhancements": [
                 {
                     "name": "即时压制",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当敌人开始蓄力，或主控干员受到攻击后生命值低于40%可以发动",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "effects": [
                         {

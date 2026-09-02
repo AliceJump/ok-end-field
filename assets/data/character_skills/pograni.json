@@ -43,16 +43,13 @@
             "enhancements": [
                 {
                     "name": "破防层数消耗",
-                    "release_gate": {
-                        "all": [
-                            "STACK_SHRED"
-                        ]
-                    },
                     "trigger_condition": {
                         "text": "战技命中敌人时消耗破防层数恢复技力",
-                        "effects": [
-                            "STACK_SHRED"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STACK_SHRED"
+                            ]
+                        }
                     },
                     "enhancement_effect": "破防层数消耗",
                     "enhancement_visible_pulse": false,
@@ -83,9 +80,11 @@
                     "name": "消耗4层破防→第3次斩击强化",
                     "trigger_condition": {
                         "text": "消耗4层破防",
-                        "effects": [
-                            "STACK_SHRED"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STACK_SHRED"
+                            ]
+                        }
                     },
                     "enhancement_effect": "第3次斩击获得强化",
                     "enhancement_visible_pulse": false,
@@ -105,9 +104,11 @@
                     "name": "铁誓袭扰",
                     "trigger_condition": {
                         "text": "敌人受到物理异常效果或骏卫的连携技伤害",
-                        "effects": [
-                            "STACK_IRON_OATH"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STACK_IRON_OATH"
+                            ]
+                        }
                     },
                     "enhancement_effect": "消耗1点铁誓召唤盾卫袭扰",
                     "enhancement_visible_pulse": false,
@@ -131,9 +132,11 @@
                     "name": "最后铁誓决胜",
                     "trigger_condition": {
                         "text": "消耗的铁誓是最后一点",
-                        "effects": [
-                            "STACK_IRON_OATH"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STACK_IRON_OATH"
+                            ]
+                        }
                     },
                     "enhancement_effect": "四名盾卫发动决胜",
                     "enhancement_visible_pulse": false,

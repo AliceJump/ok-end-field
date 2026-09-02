@@ -57,12 +57,13 @@
             "enhancements": [
                 {
                     "name": "加料！",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当有敌人达到4层破防时可以发动",
-                        "effects": [
-                            "STATUS_SHRED"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_SHRED"
+                            ]
+                        }
                     },
                     "effects": [
                         {

@@ -57,12 +57,13 @@
             "enhancements": [
                 {
                     "name": "快闪冲击",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当有敌人失衡，或触发失衡节点时可以发动",
-                        "effects": [
-                            "STATUS_KNOCKDOWN"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_KNOCKDOWN"
+                            ]
+                        }
                     },
                     "effects": []
                 }

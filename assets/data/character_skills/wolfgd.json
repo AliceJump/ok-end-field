@@ -43,18 +43,14 @@
             "enhancements": [
                 {
                     "name": "燃烧/导电消耗追加射击",
-                    "release_gate": {
-                        "any": [
-                            "STATUS_BURNING",
-                            "STATUS_CONDUCTING"
-                        ]
-                    },
                     "trigger_condition": {
                         "text": "目标处于燃烧或导电状态时消耗该状态并追加射击",
-                        "effects": [
-                            "STATUS_BURNING",
-                            "STATUS_CONDUCTING"
-                        ]
+                        "effects": {
+                            "any": [
+                                "STATUS_BURNING",
+                                "STATUS_CONDUCTING"
+                            ]
+                        }
                     },
                     "enhancement_effect": "追加射击",
                     "enhancement_visible_pulse": false,
@@ -91,12 +87,13 @@
             "enhancements": [
                 {
                     "name": "爆裂手雷·β型",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当有敌人被施加法术附着时可以发动",
-                        "effects": [
-                            "STATUS_SPELL_INFLICT"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_SPELL_INFLICT"
+                            ]
+                        }
                     },
                     "effects": [
                         {

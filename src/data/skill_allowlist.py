@@ -85,14 +85,17 @@ def _produced_effect_id(effect) -> str:
 
 
 def _static_release_gate(enhancement: dict) -> dict | None:
-    """读取显式静态 release gate；动态阈值和非 gate 分支返回 None。"""
-    gate = enhancement.get("release_gate")
-    if not isinstance(gate, dict) or gate.get("static") is False:
+    """从 trigger_condition.effects 读取显式静态门控；非 gate 分支返回 None。"""
+    trigger = enhancement.get("trigger_condition", {})
+    if not isinstance(trigger, dict):
+        return None
+    effects = trigger.get("effects")
+    if not isinstance(effects, dict):
         return None
     for operator in ("all", "any"):
-        if operator not in gate:
+        if operator not in effects:
             continue
-        requires = [effect_id for effect in gate.get(operator) or [] if (effect_id := _effect_id(effect))]
+        requires = [effect_id for effect_id in effects.get(operator) or [] if (eid := _effect_id(effect_id))]
         if requires:
             return {"operator": operator, "requires": requires}
     return None
@@ -119,7 +122,7 @@ def _skill_effects_needed_by_others(
 
     用于二次评估：
     - 效果被其他队友的 release gate 依赖 → 阻止（增强态优先）
-    - 效果仅被自己增强态依赖（release_gate 或 trigger_condition）→ 允许
+    - 效果仅被自己增强态依赖（trigger_condition）→ 允许
     - 效果无人依赖 → 阻止（效果无依赖）
 
     返回 True 表示应该释放，
@@ -129,21 +132,23 @@ def _skill_effects_needed_by_others(
     if not effects:
         return True
 
-    # 收集自己增强态依赖的效果（release_gate requires + trigger_condition effects）
+    # 收集自己增强态依赖的效果（trigger_condition.effects）
     self_dep_effects: set[str] = set()
     skill_enhancements = skill_data.get("enhancements") or []
     for enh in skill_enhancements:
-        # release_gate
-        gate = enh.get("release_gate", {})
-        if isinstance(gate, dict):
+        trigger = enh.get("trigger_condition", {})
+        if not isinstance(trigger, dict):
+            continue
+        trigger_effects = trigger.get("effects", [])
+        if isinstance(trigger_effects, dict):
+            # 新结构：{"all": [...]} 或 {"any": [...]}
             for op in ("all", "any"):
-                for eff in gate.get(op) or []:
+                for eff in trigger_effects.get(op) or []:
                     if isinstance(eff, str):
                         self_dep_effects.add(eff)
-        # trigger_condition
-        trigger = enh.get("trigger_condition", {})
-        if isinstance(trigger, dict):
-            for eff in trigger.get("effects", []):
+        elif isinstance(trigger_effects, list):
+            # 兼容旧结构：["A", "B"]
+            for eff in trigger_effects:
                 if isinstance(eff, str):
                     self_dep_effects.add(eff)
 

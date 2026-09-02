@@ -43,12 +43,11 @@
             "enhancements": [
                 {
                     "name": "不破防时施加物理脆弱",
-                    "release_gate": {
-                        "static": false
-                    },
                     "trigger_condition": {
                         "text": "最后一击命中的敌人若不处于破防状态则额外施加物理脆弱",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "enhancement_effect": "物理脆弱",
                     "enhancement_visible_pulse": false,
@@ -78,13 +77,14 @@
             "enhancements": [
                 {
                     "name": "忿怒相",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当处于物理脆弱或碎甲状态的敌人受到主控干员重击后可以发动",
-                        "effects": [
-                            "VULN_PHYSICAL",
-                            "STATUS_SHRED"
-                        ]
+                        "effects": {
+                            "all": [
+                                "VULN_PHYSICAL",
+                                "STATUS_SHRED"
+                            ]
+                        }
                     },
                     "effects": []
                 }
@@ -115,9 +115,11 @@
                     "name": "连击消耗",
                     "trigger_condition": {
                         "text": "终结技消耗连击追加伤害",
-                        "effects": [
-                            "STACK_COMBO"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STACK_COMBO"
+                            ]
+                        }
                     },
                     "enhancement_effect": "伤害提升",
                     "enhancement_visible_pulse": false,

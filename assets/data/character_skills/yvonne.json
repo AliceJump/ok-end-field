@@ -35,18 +35,14 @@
             "enhancements": [
                 {
                     "name": "冻结触发",
-                    "release_gate": {
-                        "any": [
-                            "ATTACH_COLD",
-                            "ATTACH_NATURAL"
-                        ]
-                    },
                     "trigger_condition": {
                         "text": "命中处于寒冷附着或自然附着的敌人时",
-                        "effects": [
-                            "ATTACH_COLD",
-                            "ATTACH_NATURAL"
-                        ]
+                        "effects": {
+                            "any": [
+                                "ATTACH_COLD",
+                                "ATTACH_NATURAL"
+                            ]
+                        }
                     },
                     "enhancement_effect": "消耗掉目标身上所有的法术附着，对其强制施加冻结",
                     "enhancement_visible_pulse": true,
@@ -84,12 +80,13 @@
             "enhancements": [
                 {
                     "name": "速冻仔·u37",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当主控干员对处于冻结状态的敌人造成重击时可以发动",
-                        "effects": [
-                            "STATUS_FROZEN"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_FROZEN"
+                            ]
+                        }
                     },
                     "effects": [
                         {
@@ -131,9 +128,11 @@
                     "name": "冻结状态追加伤害+消耗冻结",
                     "trigger_condition": {
                         "text": "敌人处于冻结状态",
-                        "effects": [
-                            "STATUS_FROZEN"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_FROZEN"
+                            ]
+                        }
                     },
                     "enhancement_effect": "额外造成一次寒冷伤害后消耗其冻结状态",
                     "enhancement_visible_pulse": false,

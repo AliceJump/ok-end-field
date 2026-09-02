@@ -35,16 +35,13 @@
             "enhancements": [
                 {
                     "name": "腐蚀消耗双脆弱",
-                    "release_gate": {
-                        "all": [
-                            "STATUS_CORROSION"
-                        ]
-                    },
                     "trigger_condition": {
                         "text": "消耗腐蚀状态施加物理脆弱与法术脆弱",
-                        "effects": [
-                            "STATUS_CORROSION"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_CORROSION"
+                            ]
+                        }
                     },
                     "enhancement_effect": "双脆弱",
                     "enhancement_visible_pulse": false,
@@ -87,10 +84,11 @@
             "enhancements": [
                 {
                     "name": "火山蘑菇云",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当主控干员对不处于破防或法术附着状态的敌人造成重击后可以发动",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "effects": [
                         {

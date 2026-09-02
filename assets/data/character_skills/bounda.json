@@ -59,7 +59,9 @@
                     "name": "自制炸弹",
                     "trigger_condition": {
                         "text": "战技命中敌人",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "enhancement_effect": "自制炸弹",
                     "enhancement_visible_pulse": false,
@@ -82,13 +84,14 @@
             "enhancements": [
                 {
                     "name": "免费赠礼",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当敌人进入2层及以上寒冷附着或自然附着时可以发动",
-                        "effects": [
-                            "ATTACH_COLD",
-                            "ATTACH_NATURAL"
-                        ]
+                        "effects": {
+                            "all": [
+                                "ATTACH_COLD",
+                                "ATTACH_NATURAL"
+                            ]
+                        }
                     },
                     "effects": [
                         {
@@ -114,9 +117,11 @@
                     "name": "引爆增强",
                     "trigger_condition": {
                         "text": "终结技命中粘有自制炸弹的敌人",
-                        "effects": [
-                            "MECH_BOMB"
-                        ]
+                        "effects": {
+                            "all": [
+                                "MECH_BOMB"
+                            ]
+                        }
                     },
                     "enhancement_effect": "引爆增强",
                     "enhancement_visible_pulse": false,
@@ -141,10 +146,12 @@
                     "name": "高层附着再次施加",
                     "trigger_condition": {
                         "text": "最后一段伤害命中处于2层及以上寒冷附着或自然附着的目标",
-                        "effects": [
-                            "ATTACH_COLD",
-                            "ATTACH_NATURAL"
-                        ]
+                        "effects": {
+                            "all": [
+                                "ATTACH_COLD",
+                                "ATTACH_NATURAL"
+                            ]
+                        }
                     },
                     "enhancement_effect": "再次施加该法术附着",
                     "enhancement_visible_pulse": false,

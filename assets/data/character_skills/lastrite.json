@@ -43,17 +43,14 @@
             "enhancements": [
                 {
                     "name": "寒冷脆弱",
-                    "release_gate": {
-                        "all": [
-                            "STATUS_SPELL_INFLICT"
-                        ]
-                    },
                     "trigger_condition": {
                         "text": "消耗法术附着施加寒冷脆弱",
-                        "effects": [
-                            "STATUS_SPELL_INFLICT",
-                            "VULN_COLD"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_SPELL_INFLICT",
+                                "VULN_COLD"
+                            ]
+                        }
                     },
                     "enhancement_effect": "寒冷脆弱",
                     "enhancement_visible_pulse": false,
@@ -83,12 +80,13 @@
             "enhancements": [
                 {
                     "name": "噬冬",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当有敌人进入3层及以上寒冷附着状态时可以发动",
-                        "effects": [
-                            "ATTACH_COLD"
-                        ]
+                        "effects": {
+                            "all": [
+                                "ATTACH_COLD"
+                            ]
+                        }
                     },
                     "effects": [
                         {

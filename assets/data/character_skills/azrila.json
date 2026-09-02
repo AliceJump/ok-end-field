@@ -45,7 +45,9 @@
                     "name": "受伤后额外失衡",
                     "trigger_condition": {
                         "text": "施放过程中受到过来自敌人的伤害",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "enhancement_effect": "命中时额外造成一定失衡",
                     "enhancement_visible_pulse": false,
@@ -68,10 +70,11 @@
             "enhancements": [
                 {
                     "name": "前线援护",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "主控干员受到攻击后可以发动",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "effects": [
                         {

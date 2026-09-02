@@ -71,12 +71,13 @@
             "enhancements": [
                 {
                     "name": "磁暴试验场",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当被聚焦的敌人进入物理异常或法术附着状态时可以发动",
-                        "effects": [
-                            "STATUS_SPELL_INFLICT"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_SPELL_INFLICT"
+                            ]
+                        }
                     },
                     "effects": [
                         {

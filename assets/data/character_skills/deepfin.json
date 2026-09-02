@@ -35,16 +35,13 @@
             "enhancements": [
                 {
                     "name": "寒冷附着消耗",
-                    "release_gate": {
-                        "all": [
-                            "ATTACH_COLD"
-                        ]
-                    },
                     "trigger_condition": {
                         "text": "战技消耗寒冷附着强制施加冻结",
-                        "effects": [
-                            "ATTACH_COLD"
-                        ]
+                        "effects": {
+                            "all": [
+                                "ATTACH_COLD"
+                            ]
+                        }
                     },
                     "enhancement_effect": "冻结效果",
                     "enhancement_visible_pulse": false,
@@ -81,13 +78,14 @@
             "enhancements": [
                 {
                     "name": "凿孔底钓术",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当附近目标的法术异常或源石结晶被消耗时可以发动",
-                        "effects": [
-                            "STATUS_SPELL_INFLICT",
-                            "STATUS_ORIGINIUM_CRYSTAL"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_SPELL_INFLICT",
+                                "STATUS_ORIGINIUM_CRYSTAL"
+                            ]
+                        }
                     },
                     "effects": []
                 }

@@ -43,16 +43,14 @@
             "enhancements": [
                 {
                     "name": "破防追加灼热伤害",
-                    "release_gate": {
-                        "all": [
-                            "STACK_SHRED"
-                        ]
-                    },
                     "trigger_condition": {
                         "text": "目标已拥有破防状态时释放狼之珀",
-                        "effects": [
-                            "STATUS_SHRED"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STACK_SHRED",
+                                "STATUS_SHRED"
+                            ]
+                        }
                     },
                     "enhancement_effect": "追加灼热伤害",
                     "enhancement_visible_pulse": false,
@@ -71,7 +69,9 @@
                     "name": "第二段暴击增益",
                     "trigger_condition": {
                         "text": "连携技第二段命中",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "enhancement_effect": "提升自身暴击率和暴击伤害",
                     "enhancement_visible_pulse": false,
@@ -94,7 +94,9 @@
                     "name": "精准衔接额外破防",
                     "trigger_condition": {
                         "text": "第二次连携技精准衔接",
-                        "effects": []
+                        "effects": {
+                            "all": []
+                        }
                     },
                     "enhancement_effect": "额外施加1层破防",
                     "enhancement_visible_pulse": false,
@@ -110,13 +112,14 @@
                 },
                 {
                     "name": "燎影时刻",
-                    "release_gate": null,
                     "trigger_condition": {
                         "text": "当有敌人同时处于破防和法术附着状态时可以发动",
-                        "effects": [
-                            "STATUS_SHRED",
-                            "STATUS_SPELL_INFLICT"
-                        ]
+                        "effects": {
+                            "all": [
+                                "STATUS_SHRED",
+                                "STATUS_SPELL_INFLICT"
+                            ]
+                        }
                     },
                     "effects": [
                         {
