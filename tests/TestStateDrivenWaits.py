@@ -464,6 +464,16 @@ class TestStateDrivenWaits(unittest.TestCase):
 
         class StubTask:
             frame = np.zeros((10, 10, 3), dtype=np.uint8)
+            _battle_team = ["余烬", "?"]
+
+            def next_frame(self):
+                return self.frame
+
+            def active_time(self):
+                return 0
+
+            def log_info(self, msg):
+                pass
 
         task = StubTask()
         self.assertFalse(BattleMixin._has_detected_team_member(task))

@@ -320,8 +320,11 @@ class TestBattleConfigOverrides(unittest.TestCase):
         # 开关类型：无 options，sub_configs 以 True 为键
         self.assertNotIn("options", mode_type)
         independent_keys = mode_type["sub_configs"][True]
+        # independent_keys 排除了 BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST] 中的键
+        from src.core.BattleConfig import BATTLE_GROUP_CONFIGS, KEY_SKILL_ALLOWLIST
+        excluded_keys = BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST]
         expected = [
-            k for k in list(task.default_config)[1:] if k not in (KEY_COND_SEQUENCE, KEY_INSTANT_ULT, KEY_INSTANT_LINK)
+            k for k in list(task.default_config)[1:] if k not in excluded_keys
         ]
         self.assertEqual(independent_keys, expected)
 
