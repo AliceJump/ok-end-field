@@ -70,28 +70,32 @@
             "name": "河水，助我！",
             "skill_type": "连携技",
             "element": "寒冷",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "河水，助我！",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "当有敌人被施加寒冷附着或受到法术爆发伤害时可以发动",
+                    "effects": [
+                        "ATTACH_COLD"
+                    ]
+                },
+                "effects": [
+                    {
+                        "effect_id": "ATTACH_COLD",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": 1
+                    }
+                ]
+            },
             "description": "当有敌人被施加寒冷附着或受到法术爆发伤害时可以发动。释放一道强力的水流，贯穿前方敌人造成寒冷伤害，并迸射出一处涡流。场上最多存在2处涡流。",
             "damage_multiplier": "240%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "ATTACH_COLD",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                }
-            ],
-            "trigger_condition": {
-                "text": "当有敌人被施加寒冷附着或受到法术爆发伤害时可以发动",
-                "effects": [
-                    "ATTACH_COLD"
-                ]
-            }
+            "effects": []
         },
         {
             "skill_id": "tangtang_ultimate",

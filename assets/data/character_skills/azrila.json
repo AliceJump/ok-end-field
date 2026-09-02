@@ -56,33 +56,37 @@
             "name": "前线援护",
             "skill_type": "连携技",
             "element": "物理",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "前线援护",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "主控干员受到攻击后可以发动",
+                    "effects": []
+                },
+                "effects": [
+                    {
+                        "effect_id": "STATUS_KNOCKDOWN",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": 1
+                    },
+                    {
+                        "effect_id": "BUFF_HEAL",
+                        "value": 1,
+                        "duration": null,
+                        "target": "ally",
+                        "count": 1
+                    }
+                ]
+            },
             "description": "主控干员受到攻击后可以发动。向目标敌人跳起并重砸，造成物理伤害和倒地，同时治疗主控干员。意志可以额外提高治疗量。",
             "damage_multiplier": "230%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "STATUS_KNOCKDOWN",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                },
-                {
-                    "effect_id": "BUFF_HEAL",
-                    "value": 1,
-                    "duration": null,
-                    "target": "ally",
-                    "count": 1
-                }
-            ],
-            "trigger_condition": {
-                "text": "主控干员受到攻击后可以发动",
-                "effects": []
-            }
+            "effects": []
         },
         {
             "skill_id": "azrila_ultimate",

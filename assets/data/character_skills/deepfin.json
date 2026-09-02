@@ -69,21 +69,25 @@
             "name": "凿孔底钓术",
             "skill_type": "连携技",
             "element": "寒冷",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "凿孔底钓术",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "当附近目标的法术异常或源石结晶被消耗时可以发动",
+                    "effects": [
+                        "STATUS_SPELL_INFLICT",
+                        "STATUS_ORIGINIUM_CRYSTAL"
+                    ]
+                },
+                "effects": []
+            },
             "description": "当附近目标的法术异常或源石结晶被消耗时可以发动。在敌人脚下开洞垂钓，造成物理伤害，并恢复一定技力，有一定概率能钓出珍鳞，大幅增加伤害并额外恢复技力。",
             "damage_multiplier": "300%（基础）+ 480%（珍鳞）",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [],
-            "trigger_condition": {
-                "text": "当附近目标的法术异常或源石结晶被消耗时可以发动",
-                "effects": [
-                    "STATUS_SPELL_INFLICT",
-                    "STATUS_ORIGINIUM_CRYSTAL"
-                ]
-            }
+            "effects": []
         },
         {
             "skill_id": "deepfin_ultimate",

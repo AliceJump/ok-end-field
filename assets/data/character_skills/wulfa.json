@@ -64,7 +64,26 @@
             "skill_type": "连携技",
             "element": "物理",
             "has_enhancement": true,
-            "enhancement": null,
+            "enhancement": {
+                "name": "燎影时刻",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "当有敌人同时处于破防和法术附着状态时可以发动",
+                    "effects": [
+                        "STATUS_SHRED",
+                        "STATUS_SPELL_INFLICT"
+                    ]
+                },
+                "effects": [
+                    {
+                        "effect_id": "STATUS_HEAVY_HIT",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": 1
+                    }
+                ]
+            },
             "enhancements": [
                 {
                     "name": "第二段暴击增益",
@@ -113,22 +132,7 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "STATUS_HEAVY_HIT",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                }
-            ],
-            "trigger_condition": {
-                "text": "当有敌人同时处于破防和法术附着状态时可以发动",
-                "effects": [
-                    "STATUS_SHRED",
-                    "STATUS_SPELL_INFLICT"
-                ]
-            }
+            "effects": []
         },
         {
             "skill_id": "wulfa_ultimate",

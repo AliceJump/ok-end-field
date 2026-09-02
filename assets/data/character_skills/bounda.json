@@ -70,29 +70,33 @@
             "name": "免费赠礼",
             "skill_type": "连携技",
             "element": "自然",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "免费赠礼",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "当敌人进入2层及以上寒冷附着或自然附着时可以发动",
+                    "effects": [
+                        "ATTACH_COLD",
+                        "ATTACH_NATURAL"
+                    ]
+                },
+                "effects": [
+                    {
+                        "effect_id": "STATUS_SPELL_INFLICT",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": 1
+                    }
+                ]
+            },
             "description": "当敌人进入2层及以上寒冷附着或自然附着时可以发动。射击目标敌人，引发一次特殊爆炸，造成自然伤害并施加该法术附着。",
             "damage_multiplier": "380%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "STATUS_SPELL_INFLICT",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                }
-            ],
-            "trigger_condition": {
-                "text": "当敌人进入2层及以上寒冷附着或自然附着时可以发动",
-                "effects": [
-                    "ATTACH_COLD",
-                    "ATTACH_NATURAL"
-                ]
-            }
+            "effects": []
         },
         {
             "skill_id": "bounda_ultimate",

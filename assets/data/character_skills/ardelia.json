@@ -75,26 +75,30 @@
             "name": "火山蘑菇云",
             "skill_type": "连携技",
             "element": "自然",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "火山蘑菇云",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "当主控干员对不处于破防或法术附着状态的敌人造成重击后可以发动",
+                    "effects": []
+                },
+                "effects": [
+                    {
+                        "effect_id": "STATUS_CORROSION",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": 1
+                    }
+                ]
+            },
             "description": "当主控干员对不处于破防或法术附着状态的敌人造成重击后可以发动。发射一团火山云抛向目标敌人，到达目标身边后对目标造成自然伤害。火山云会跟踪目标，短暂延迟后爆炸，对周围其他敌人造成一半的自然伤害，并强制施加短暂的腐蚀。",
             "damage_multiplier": "200%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "STATUS_CORROSION",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                }
-            ],
-            "trigger_condition": {
-                "text": "当主控干员对不处于破防或法术附着状态的敌人造成重击后可以发动",
-                "effects": []
-            }
+            "effects": []
         },
         {
             "skill_id": "ardelia_ultimate",

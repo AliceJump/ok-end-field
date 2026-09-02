@@ -81,29 +81,33 @@
             "name": "沸腾",
             "skill_type": "连携技",
             "element": "灼热",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "沸腾",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "当有敌人进入燃烧或腐蚀状态时可以发动",
+                    "effects": [
+                        "STATUS_BURNING",
+                        "STATUS_CORROSION"
+                    ]
+                },
+                "effects": [
+                    {
+                        "effect_id": "STACK_MOLTEN",
+                        "value": 1,
+                        "duration": null,
+                        "target": "self",
+                        "count": 1
+                    }
+                ]
+            },
             "description": "当有敌人进入燃烧或腐蚀状态时可以发动。让所有处于燃烧或腐蚀状态的敌人脚下喷出火焰，对其造成灼热伤害。如果命中敌人，会获得1层熔火。每命中1个敌人，还会额外获得终结技能量。",
             "damage_multiplier": "540%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "STACK_MOLTEN",
-                    "value": 1,
-                    "duration": null,
-                    "target": "self",
-                    "count": 1
-                }
-            ],
-            "trigger_condition": {
-                "text": "当有敌人进入燃烧或腐蚀状态时可以发动",
-                "effects": [
-                    "STATUS_BURNING",
-                    "STATUS_CORROSION"
-                ]
-            }
+            "effects": []
         },
         {
             "skill_id": "laevat_ultimate",

@@ -56,28 +56,32 @@
             "name": "拳出无悔",
             "skill_type": "连携技",
             "element": "物理",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "拳出无悔",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "当有敌人达到3层及以上破防时可以发动",
+                    "effects": [
+                        "STATUS_SHRED"
+                    ]
+                },
+                "effects": [
+                    {
+                        "effect_id": "VULN_PHYSICAL",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": 1
+                    }
+                ]
+            },
             "description": "当有敌人达到3层及以上破防时可以发动。使用上勾拳痛击前方的敌人，对其造成物理伤害，同时施加一定时间的物理脆弱。施放后战技在一段时间内替换为追形。",
             "damage_multiplier": "250%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "VULN_PHYSICAL",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                }
-            ],
-            "trigger_condition": {
-                "text": "当有敌人达到3层及以上破防时可以发动",
-                "effects": [
-                    "STATUS_SHRED"
-                ]
-            }
+            "effects": []
         },
         {
             "skill_id": "mifu_ultimate",

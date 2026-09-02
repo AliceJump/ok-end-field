@@ -68,28 +68,32 @@
             "name": "悦心音调",
             "skill_type": "连携技",
             "element": "电磁",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "悦心音调",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "演唱姿态期间，当有敌人被施加法术异常或法术异常被消耗时可以发动",
+                    "effects": [
+                        "STATUS_SPELL_INFLICT"
+                    ]
+                },
+                "effects": [
+                    {
+                        "effect_id": "BUFF_HEAL",
+                        "value": 1,
+                        "duration": null,
+                        "target": "ally",
+                        "count": 1
+                    }
+                ]
+            },
             "description": "演唱姿态期间，当有敌人被施加法术异常或法术异常被消耗时可以发动。对敌人造成电磁伤害，治疗主控干员，并额外获得终结技能量。施放连携技悦心音调，不会打断演唱姿态。",
             "damage_multiplier": "350%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "BUFF_HEAL",
-                    "value": 1,
-                    "duration": null,
-                    "target": "ally",
-                    "count": 1
-                }
-            ],
-            "trigger_condition": {
-                "text": "演唱姿态期间，当有敌人被施加法术异常或法术异常被消耗时可以发动",
-                "effects": [
-                    "STATUS_SPELL_INFLICT"
-                ]
-            }
+            "effects": []
         },
         {
             "skill_id": "liino_ultimate",

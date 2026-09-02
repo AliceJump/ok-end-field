@@ -47,28 +47,32 @@
             "name": "秘杖·矩阵位移",
             "skill_type": "连携技",
             "element": "自然",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "秘杖·矩阵位移",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "当有敌人被施加法术异常时可以发动",
+                    "effects": [
+                        "STATUS_SPELL_INFLICT"
+                    ]
+                },
+                "effects": [
+                    {
+                        "effect_id": "STATUS_HEAVY_HIT",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": 1
+                    }
+                ]
+            },
             "description": "当有敌人被施加法术异常时可以发动。短暂施法后使目标及附近敌人全部受到重力牵引，对其造成自然伤害并强制造成击飞。",
             "damage_multiplier": "315%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "STATUS_HEAVY_HIT",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                }
-            ],
-            "trigger_condition": {
-                "text": "当有敌人被施加法术异常时可以发动",
-                "effects": [
-                    "STATUS_SPELL_INFLICT"
-                ]
-            }
+            "effects": []
         },
         {
             "skill_id": "aglina_ultimate",

@@ -83,20 +83,24 @@
             "name": "锥心之棘",
             "skill_type": "连携技",
             "element": "灼热",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "锥心之棘",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "当有敌人的灼热附着被消耗或吸收后可以发动",
+                    "effects": [
+                        "ATTACH_BURN"
+                    ]
+                },
+                "effects": []
+            },
             "description": "当有敌人的灼热附着被消耗或吸收后可以发动。 来回穿梭，造成灼热伤害并恢复一定技力。",
             "damage_multiplier": "300%（第一段）+ 500%（追猎）",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [],
-            "trigger_condition": {
-                "text": "当有敌人的灼热附着被消耗或吸收后可以发动",
-                "effects": [
-                    "ATTACH_BURN"
-                ]
-            }
+            "effects": []
         },
         {
             "skill_id": "camille_ultimate",

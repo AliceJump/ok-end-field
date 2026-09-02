@@ -79,28 +79,32 @@
             "name": "爆裂手雷·β型",
             "skill_type": "连携技",
             "element": "灼热",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "爆裂手雷·β型",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "当有敌人被施加法术附着时可以发动",
+                    "effects": [
+                        "STATUS_SPELL_INFLICT"
+                    ]
+                },
+                "effects": [
+                    {
+                        "effect_id": "ATTACH_BURN",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": 1
+                    }
+                ]
+            },
             "description": "当有敌人被施加法术附着时可以发动。向目标所在位置扔出一颗爆裂手雷，手雷落地后爆炸，对附近范围的敌人造成灼热伤害并施加灼热附着。",
             "damage_multiplier": "135%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "ATTACH_BURN",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                }
-            ],
-            "trigger_condition": {
-                "text": "当有敌人被施加法术附着时可以发动",
-                "effects": [
-                    "STATUS_SPELL_INFLICT"
-                ]
-            }
+            "effects": []
         },
         {
             "skill_id": "wolfgd_ultimate",

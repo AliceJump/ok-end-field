@@ -71,28 +71,32 @@
             "name": "噬冬",
             "skill_type": "连携技",
             "element": "寒冷",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "噬冬",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "当有敌人进入3层及以上寒冷附着状态时可以发动",
+                    "effects": [
+                        "ATTACH_COLD"
+                    ]
+                },
+                "effects": [
+                    {
+                        "effect_id": "CLEAR_COLD",
+                        "value": 1,
+                        "duration": null,
+                        "target": "enemy",
+                        "count": -1
+                    }
+                ]
+            },
             "description": "当有敌人进入3层及以上寒冷附着状态时可以发动。在目标敌人身上凝结冰锥，随后将其斩碎，消耗敌人身上的所有寒冷附着，对其造成基于其寒冷附着层数的寒冷伤害，并且根据消耗的层数获得终结技能量。",
             "damage_multiplier": "400%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "CLEAR_COLD",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": -1
-                }
-            ],
-            "trigger_condition": {
-                "text": "当有敌人进入3层及以上寒冷附着状态时可以发动",
-                "effects": [
-                    "ATTACH_COLD"
-                ]
-            }
+            "effects": []
         },
         {
             "skill_id": "lastrite_ultimate",

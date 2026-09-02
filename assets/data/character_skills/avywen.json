@@ -69,28 +69,32 @@
             "name": "雷枪·掣击",
             "skill_type": "连携技",
             "element": "电磁",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "雷枪·掣击",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "主控干员对处于电磁附着或导电状态的目标进行重击后可以发动",
+                    "effects": [
+                        "ATTACH_ELECTROMAGNETIC",
+                        "STATUS_CONDUCTING"
+                    ]
+                },
+                "effects": [
+                    {
+                        "effect_id": "PLACE_THUNDER_SPEAR",
+                        "value": 3,
+                        "duration": null,
+                        "target": "field"
+                    }
+                ]
+            },
             "description": "主控干员对处于电磁附着或导电状态的目标进行重击后可以发动。跃起并向目标掷出3支雷枪，并对前方范围内的敌人造成一次电磁伤害。",
             "damage_multiplier": "380%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "PLACE_THUNDER_SPEAR",
-                    "value": 3,
-                    "duration": null,
-                    "target": "field"
-                }
-            ],
-            "trigger_condition": {
-                "text": "主控干员对处于电磁附着或导电状态的目标进行重击后可以发动",
-                "effects": [
-                    "ATTACH_ELECTROMAGNETIC",
-                    "STATUS_CONDUCTING"
-                ]
-            }
+            "effects": []
         },
         {
             "skill_id": "avywen_ultimate",

@@ -69,20 +69,24 @@
             "name": "鸣雷",
             "skill_type": "连携技",
             "element": "电磁",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
+            "enhancement": {
+                "name": "鸣雷",
+                "release_gate": null,
+                "trigger_condition": {
+                    "text": "当有敌人进入导电状态或导电状态被消耗后可以发动",
+                    "effects": [
+                        "STATUS_CONDUCTING"
+                    ]
+                },
+                "effects": []
+            },
             "description": "当有敌人进入导电状态或导电状态被消耗后可以发动。瞬闪至敌人身边进行多次斩击，造成物理伤害，并恢复一定技力。",
             "damage_multiplier": "350%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [],
-            "trigger_condition": {
-                "text": "当有敌人进入导电状态或导电状态被消耗后可以发动",
-                "effects": [
-                    "STATUS_CONDUCTING"
-                ]
-            }
+            "effects": []
         },
         {
             "skill_id": "ikut_ultimate",
