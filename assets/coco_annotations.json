@@ -2718,12 +2718,12 @@
             "image_id": 223,
             "category_id": 261,
             "bbox": [
-                40,
+                57,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0
         },
         {
@@ -3938,12 +3938,12 @@
             "image_id": 223,
             "category_id": 262,
             "bbox": [
-                156,
+                173,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0
         },
         {
@@ -3951,12 +3951,12 @@
             "image_id": 223,
             "category_id": 263,
             "bbox": [
-                273,
+                290,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0
         },
         {
@@ -3964,12 +3964,12 @@
             "image_id": 184,
             "category_id": 185,
             "bbox": [
-                273,
+                290,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0
         },
         {
@@ -3977,12 +3977,12 @@
             "image_id": 184,
             "category_id": 264,
             "bbox": [
-                390,
+                407,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0
         },
         {
@@ -3990,12 +3990,12 @@
             "image_id": 224,
             "category_id": 265,
             "bbox": [
-                156,
+                173,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0
         },
         {
@@ -4018,12 +4018,12 @@
             "image_id": 222,
             "category_id": 266,
             "bbox": [
-                40,
+                57,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0
         },
         {
@@ -4046,12 +4046,12 @@
             "image_id": 222,
             "category_id": 258,
             "bbox": [
-                156,
+                173,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0
         },
         {
@@ -4059,12 +4059,12 @@
             "image_id": 222,
             "category_id": 259,
             "bbox": [
-                273,
+                290,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0
         },
         {
@@ -4072,12 +4072,12 @@
             "image_id": 222,
             "category_id": 260,
             "bbox": [
-                390,
+                407,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0
         },
         {
@@ -4428,12 +4428,12 @@
             "image_id": 182,
             "category_id": 237,
             "bbox": [
-                40,
+                57,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4443,12 +4443,12 @@
             "image_id": 182,
             "category_id": 238,
             "bbox": [
-                156,
+                173,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4458,12 +4458,12 @@
             "image_id": 182,
             "category_id": 239,
             "bbox": [
-                273,
+                290,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4473,12 +4473,12 @@
             "image_id": 182,
             "category_id": 240,
             "bbox": [
-                390,
+                407,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4488,12 +4488,12 @@
             "image_id": 193,
             "category_id": 241,
             "bbox": [
-                40,
+                57,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4503,12 +4503,12 @@
             "image_id": 193,
             "category_id": 242,
             "bbox": [
-                156,
+                173,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4518,12 +4518,12 @@
             "image_id": 193,
             "category_id": 243,
             "bbox": [
-                273,
+                290,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4533,12 +4533,12 @@
             "image_id": 198,
             "category_id": 244,
             "bbox": [
-                273,
+                290,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4548,12 +4548,12 @@
             "image_id": 218,
             "category_id": 245,
             "bbox": [
-                40,
+                57,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4563,12 +4563,12 @@
             "image_id": 218,
             "category_id": 246,
             "bbox": [
-                156,
+                173,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4578,12 +4578,12 @@
             "image_id": 218,
             "category_id": 247,
             "bbox": [
-                273,
+                290,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4593,12 +4593,12 @@
             "image_id": 218,
             "category_id": 248,
             "bbox": [
-                390,
+                407,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4608,12 +4608,12 @@
             "image_id": 219,
             "category_id": 249,
             "bbox": [
-                40,
+                57,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4623,12 +4623,12 @@
             "image_id": 219,
             "category_id": 250,
             "bbox": [
-                156,
+                173,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4638,12 +4638,12 @@
             "image_id": 219,
             "category_id": 251,
             "bbox": [
-                273,
+                290,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4653,12 +4653,12 @@
             "image_id": 219,
             "category_id": 252,
             "bbox": [
-                390,
+                407,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4668,12 +4668,12 @@
             "image_id": 221,
             "category_id": 253,
             "bbox": [
-                40,
+                57,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4683,12 +4683,12 @@
             "image_id": 221,
             "category_id": 254,
             "bbox": [
-                156,
+                173,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4698,12 +4698,12 @@
             "image_id": 221,
             "category_id": 255,
             "bbox": [
-                273,
+                290,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
@@ -4713,12 +4713,12 @@
             "image_id": 221,
             "category_id": 256,
             "bbox": [
-                390,
+                407,
                 927,
-                54,
+                37,
                 46
             ],
-            "area": 2484,
+            "area": 1702,
             "iscrowd": 0,
             "ignore": 0,
             "segmentation": []
