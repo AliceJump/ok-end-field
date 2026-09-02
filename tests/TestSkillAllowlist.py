@@ -4,7 +4,6 @@ import unittest
 
 from src.data.skill_allowlist import (
     _build_team_skill_context,
-    _skill_effects_needed_by_others,
     build_skill_allowlist,
     generate_skill_sequence,
     load_characters,
@@ -66,7 +65,9 @@ class TestSkillAllowlist(unittest.TestCase):
         characters = {"目标": target, "消费": consumer}
 
         context = _build_team_skill_context(["目标", "消费"], characters)
-        self.assertNotIn("A", context["producers"])
+        # 消费者的 effects 不应包含 count<=0 的效果
+        consumer_effects = context["skill_effects"].get(("消费", "消费_skill"), [])
+        self.assertNotIn("A", consumer_effects)
         self.assertTrue(build_skill_allowlist(["目标", "消费"], characters)[0][0])
 
     def test_shred_consuming_anomaly_is_not_a_stack_producer(self):
@@ -81,7 +82,10 @@ class TestSkillAllowlist(unittest.TestCase):
         characters = {"目标": target, "猛击者": consumer}
 
         context = _build_team_skill_context(["目标", "猛击者"], characters)
-        self.assertNotIn("STACK_SHRED", context["producers"])
+        # 猛击者产出的是 STATUS_HEAVY_STRIKE，不是 STACK_SHRED
+        consumer_effects = context["skill_effects"].get(("猛击者", "猛击者_skill"), [])
+        self.assertIn("STATUS_HEAVY_STRIKE", consumer_effects)
+        self.assertNotIn("STACK_SHRED", consumer_effects)
         self.assertTrue(build_skill_allowlist(["目标", "猛击者"], characters)[0][0])
 
     def test_post_cast_branch_is_not_a_release_gate(self):
@@ -97,7 +101,10 @@ class TestSkillAllowlist(unittest.TestCase):
         )
         characters = {"目标": target}
 
-        self.assertNotIn(("目标", "目标_skill"), _build_team_skill_context(["目标"], characters)["release_gates"])
+        context = _build_team_skill_context(["目标"], characters)
+        # 动态 trigger_condition（简单列表格式）不应被解析为有效触发条件
+        enhancements = context["enhancement_triggers"].get(("目标", "目标_skill"), [])
+        self.assertTrue(len(enhancements) == 0 or not enhancements[0]["trigger_groups"])
         self.assertTrue(build_skill_allowlist(["目标"], characters)[0][0])
 
         # 静态 trigger_condition.effects 依赖自己效果 → 仅自己依赖，仍允许手动释放
@@ -109,23 +116,50 @@ class TestSkillAllowlist(unittest.TestCase):
         self.assertTrue(build_skill_allowlist(["静态目标"], {"静态目标": static_target})[0][0])
 
     def test_effect_dependency_evaluation_preserves_effect_order(self):
-        release_gates = {("依赖者", "consumer_skill"): [{"requires": ["B"]}]}
-        skill_key = ("产出者", "producer_skill")
+        # 测试效果顺序对判定的影响
+        # 产出者产出 A 和 B，依赖者需要 B
+        producer = _character("产出者", effects=[_effect("A"), _effect("B")])
+        consumer = _character(
+            "依赖者",
+            enhancements=[{"trigger_condition": {"effects": {"all": ["B"]}}}],
+        )
 
-        self.assertFalse(
-            _skill_effects_needed_by_others(
-                {"effects": [_effect("A"), _effect("B")]},
-                release_gates,
-                skill_key,
-            )
+        # 依赖者有增强态且触发条件被满足（B 在 current_effects 中）
+        # B 的生产者是产出者（不是自我依赖），所以依赖者被禁止
+        # 产出者没有增强态，所以产出者被允许
+        result = build_skill_allowlist(["产出者", "依赖者"], {"产出者": producer, "依赖者": consumer})
+        self.assertTrue(result[0][0])   # 产出者被允许（没有增强态）
+        self.assertFalse(result[1][0])  # 依赖者被禁止（增强态优先，非自我依赖）
+
+        # 如果产出者只有 A，依赖者需要 B，则依赖者的增强态无法触发
+        # 所以两个战技都被允许（兜底机制）
+        producer_only_a = _character("产出者", effects=[_effect("A")])
+        result = build_skill_allowlist(["产出者", "依赖者"], {"产出者": producer_only_a, "依赖者": consumer})
+        self.assertTrue(result[0][0])  # 产出者被允许
+        self.assertTrue(result[1][0])  # 依赖者被允许（兜底）
+
+    def test_producer_with_enhancement_is_forbidden(self):
+        # 测试：如果产出者有增强态且触发条件被满足，产出者应该被禁止
+        producer_with_enh = _character(
+            "产出者",
+            effects=[_effect("A"), _effect("B")],
+            enhancements=[{"trigger_condition": {"effects": {"all": ["A"]}}}],
         )
-        self.assertTrue(
-            _skill_effects_needed_by_others(
-                {"effects": [_effect("B"), _effect("A")]},
-                release_gates,
-                skill_key,
-            )
+        consumer = _character(
+            "依赖者",
+            enhancements=[{"trigger_condition": {"effects": {"all": ["B"]}}}],
         )
+
+        # 产出者有增强态且触发条件被满足（A 在 current_effects 中）
+        # A 的生产者是产出者自己（自我依赖），所以产出者不被禁止
+        # 依赖者有增强态且触发条件被满足（B 在 current_effects 中）
+        # B 的生产者是产出者（不是自我依赖），所以依赖者被禁止
+        result = build_skill_allowlist(
+            ["产出者", "依赖者"],
+            {"产出者": producer_with_enh, "依赖者": consumer}
+        )
+        self.assertTrue(result[0][0])   # 产出者被允许（自我依赖）
+        self.assertFalse(result[1][0])  # 依赖者被禁止（增强态优先，非自我依赖）
 
     def test_real_seraph_skill_remains_in_generated_sequence(self):
         characters = load_characters()

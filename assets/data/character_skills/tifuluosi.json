@@ -66,21 +66,14 @@
                     },
                     "effects": [
                         {
-                            "effect_id": "STATUS_BARRAGE_ARRAY",
-                            "value": 1,
-                            "duration": null,
-                            "target": "area",
-                            "count": 1
-                        },
-                        {
-                            "effect_id": "DEBUFF_SLOW",
+                            "effect_id": "STATUS_SLOW",
                             "value": 1,
                             "duration": null,
                             "target": "enemy",
                             "count": 1
                         },
                         {
-                            "effect_id": "VULN_NATURE_BURST",
+                            "effect_id": "VULN_NATURAL_BURST",
                             "value": 1,
                             "duration": null,
                             "target": "enemy",
@@ -105,13 +98,6 @@
             "effects": [
                 {
                     "effect_id": "STATUS_HOVERING",
-                    "value": 1,
-                    "duration": null,
-                    "target": "self",
-                    "count": 1
-                },
-                {
-                    "effect_id": "GRANT_HUNTING_ARROWS",
                     "value": 1,
                     "duration": null,
                     "target": "self",

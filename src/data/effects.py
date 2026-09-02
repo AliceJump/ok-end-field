@@ -19,6 +19,8 @@ class EffectType(Enum):
     VULN_PHYSICAL = "VULN_PHYSICAL"
     VULN_ALL = "VULN_ALL"
 
+    VULN_NATURAL_BURST = "VULN_NATURAL_BURST"  # 自然爆发脆弱
+
     # 物理异常状态（wiki: 物理异常）
     STATUS_SHRED = "STATUS_SHRED"        # 破防（首次受到物理异常时进入，可叠加最多4层）
     STATUS_HEAVY_HIT = "STATUS_HEAVY_HIT"  # 击飞（已破防时触发，叠加破防层数+失衡+浮空）
@@ -44,6 +46,7 @@ class EffectType(Enum):
     STATUS_ORIGINIUM_CRYSTAL = "STATUS_ORIGINIUM_CRYSTAL"  # 管理员施加的源石结晶
     STATUS_SINGING = "STATUS_SINGING"    # 梨诺的演唱姿态
     STATUS_HIGH_SINGING = "STATUS_HIGH_SINGING"  # 梨诺的高歌姿态
+    STATUS_HOVERING = "STATUS_HOVERING"
 
     # 层数系统
     STACK_MOLTEN = "STACK_MOLTEN"
@@ -92,7 +95,7 @@ class EffectType(Enum):
     MECH_RADAR = "MECH_RADAR"
     MECH_TURRET = "MECH_TURRET"
     MECH_SUPPORT_CRYSTAL = "MECH_SUPPORT_CRYSTAL"
-    PLACE_THUNDER_SPEAR = "PLACE_THUNDER_SPEAR"  
+    PLACE_THUNDER_SPEAR = "PLACE_THUNDER_SPEAR"
     REMOVE_THUNDER_SPEAR = "REMOVE_THUNDER_SPEAR"
 
     # 消耗/清除
@@ -154,6 +157,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STATUS_ORIGINIUM_CRYSTAL: "管理员附着的源石结晶，可被物理异常或破防消耗",
     EffectType.STATUS_SINGING: "梨诺的演唱姿态，持续强化全队并周期追加攻击与治疗",
     EffectType.STATUS_HIGH_SINGING: "梨诺的高歌姿态，替代演唱姿态并提供强化效果",
+    EffectType.STATUS_HOVERING: "目标进入浮空状态",
 
     # 层数系统
     EffectType.STACK_MOLTEN: "莱万汀的熔火灼痕层数",
@@ -203,6 +207,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.PLACE_THUNDER_SPEAR: "艾维文娜的雷枪放置物",
     EffectType.REMOVE_THUNDER_SPEAR: "艾维文娜的雷枪召回",
 
+    EffectType.VULN_NATURAL_BURST: "敌人受到自然爆发伤害增加",
     # 消耗/清除
     EffectType.CONSUME_ALL: "清空所有层数/效果",
     EffectType.CONSUME_STACK: "消耗特定层数",
@@ -262,6 +267,7 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "源石结晶": EffectType.STATUS_ORIGINIUM_CRYSTAL,
     "演唱姿态": EffectType.STATUS_SINGING,
     "高歌姿态": EffectType.STATUS_HIGH_SINGING,
+    "浮空": EffectType.STATUS_HOVERING,
 
     # 层数系统
     "消耗破防层数": EffectType.STACK_SHRED,
@@ -316,6 +322,7 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "消耗灼热附着": EffectType.CLEAR_ATTACH,
     "清空附着": EffectType.CLEAR_ATTACH,
     "清空状态": EffectType.CLEAR_STATUS,
+    "自然爆发脆弱": EffectType.VULN_NATURAL_BURST,
 }
 
 # 按术语长度从长到短排序（匹配时优先长术语，避免"寒冷附着"被"附着"误吞）

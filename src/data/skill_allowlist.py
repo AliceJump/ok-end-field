@@ -1,13 +1,9 @@
 """自动技能列表：根据队伍 4 角色的增强链依赖，自动判定哪些战技有意义释放。
 
-编队识别已移至 BattleMixin.detect_team()（通过框架 find_one 原子操作），
-本模块仅负责技能匹配逻辑：给定角色名列表 → 判定允许释放的技能序列。
-
-使用方式：
-    members = task.detect_team()         # 战斗中截帧，框架 find_one 自动识别
-    seq = ["1", "2", "3"]
-    filtered = filter_skill_sequence(members, seq)
-    # → ["1", "3"]  （2号位伊冯、4号位余烬的战技被禁止）
+三阶段闭包算法：
+  1. 建立"当前已存在效果集"（非战技强化态闭包）
+  2. 处理"已经可以触发"的战技强化态（战技强化态闭包）
+  3. 处理剩余战技，检查 effects 是否对强化链有贡献
 
 参见 tools/team_composer.py --allowlist 查看命令行版本。
 """
@@ -61,10 +57,11 @@ def clear_cache():
     _cached_characters = None
 
 
-# ── 核心逻辑：两阶段构建允许列表 ────────────────────────────────────────────
+# ── 辅助函数 ──────────────────────────────────────────────────────────────────
 
 
 def _effect_id(effect) -> str:
+    """提取效果 ID。"""
     if isinstance(effect, str):
         return effect
     if isinstance(effect, dict):
@@ -73,7 +70,7 @@ def _effect_id(effect) -> str:
 
 
 def _produced_effect_id(effect) -> str:
-    """只把实际施加/增加的效果计为 producer。"""
+    """只把实际施加/增加的效果计为 producer（排除消费效果）。"""
     effect_id = _effect_id(effect)
     if not effect_id:
         return ""
@@ -84,169 +81,275 @@ def _produced_effect_id(effect) -> str:
     return effect_id
 
 
-def _static_release_gate(enhancement: dict) -> dict | None:
-    """从 trigger_condition.effects 读取显式静态门控；非 gate 分支返回 None。"""
-    trigger = enhancement.get("trigger_condition", {})
-    if not isinstance(trigger, dict):
-        return None
-    effects = trigger.get("effects")
+def _parse_trigger_groups(trigger_condition: dict | str) -> list[dict]:
+    """从 trigger_condition 中解析触发条件组。
+
+    返回 [{"operator": "all"|"any", "effects": set[str]}, ...]
+    每组是一个独立的条件判断，组间隐含 AND 关系。
+
+    只解析 dict 格式且包含 all/any 的静态门控。
+    简单列表格式（如 ['A']）被视为动态触发条件，不解析。
+    """
+    if isinstance(trigger_condition, str):
+        return []
+
+    effects = trigger_condition.get("effects", {})
     if not isinstance(effects, dict):
-        return None
+        return []
+
+    groups: list[dict] = []
     for operator in ("all", "any"):
-        if operator not in effects:
-            continue
-        requires = [
-            parsed_effect_id
-            for effect in effects.get(operator) or []
-            if (parsed_effect_id := _effect_id(effect))
-        ]
-        if requires:
-            return {"operator": operator, "requires": requires}
-    return None
+        effect_list = effects.get(operator) or []
+        effect_set = {_effect_id(e) for e in effect_list if _effect_id(e)}
+        if effect_set:
+            groups.append({"operator": operator, "effects": effect_set})
+
+    return groups
 
 
-def _branch_can_trigger(branch: dict, producers: dict, skill_key: tuple[str, str]) -> bool:
-    """判断一个静态 gate 分支是否能由其它队内技能满足。"""
-    checks = [
-        any(
-            (producer_name, producer_skill_id) != skill_key
-            for producer_name, producer_skill_id, _ in producers.get(effect_id, [])
-        )
-        for effect_id in branch["requires"]
-    ]
-    return all(checks) if branch["operator"] == "all" else any(checks)
+def _is_trigger_satisfied(trigger_groups: list[dict], current_effects: set[str]) -> bool:
+    """判断触发条件组是否被当前 effects 满足。
 
-
-def _self_dependency_effects(skill_data: dict) -> set[str]:
-    """收集技能自身增强分支依赖的效果 ID。"""
-    dependencies: set[str] = set()
-    for enhancement in skill_data.get("enhancements") or []:
-        trigger = enhancement.get("trigger_condition", {})
-        if not isinstance(trigger, dict):
-            continue
-        trigger_effects = trigger.get("effects", [])
-        if isinstance(trigger_effects, dict):
-            effect_groups = (trigger_effects.get(operator) or [] for operator in ("all", "any"))
-        elif isinstance(trigger_effects, list):
-            effect_groups = (trigger_effects,)
-        else:
-            continue
-        for effects in effect_groups:
-            dependencies.update(effect for effect in effects if isinstance(effect, str))
-    return dependencies
-
-
-def _other_skill_gate_requires_effect(
-    effect_id: str,
-    all_release_gates: dict,
-    self_key: tuple[str, str],
-) -> bool:
-    """判断队内其他技能的任一门控分支是否依赖指定效果。"""
-    return any(
-        effect_id in gate.get("requires", [])
-        for required_skill_key, gates in all_release_gates.items()
-        if required_skill_key != self_key
-        for gate in gates
+    组间隐含 AND 关系：每组都必须满足。
+    "all" 组：所有效果都必须在 current_effects 中。
+    "any" 组：至少一个效果在 current_effects 中。
+    """
+    return all(
+        current_effects >= group["effects"]
+        if group["operator"] == "all"
+        else bool(current_effects & group["effects"])
+        for group in trigger_groups
     )
 
 
-def _effect_dependency_result(
-    effect,
-    self_dependencies: set[str],
-    all_release_gates: dict,
-    self_key: tuple[str, str],
-) -> bool | None:
-    """判定单个效果；非产出或仅供自身使用时返回 None。"""
-    effect_id = _produced_effect_id(effect)
-    if not effect_id or effect_id in self_dependencies:
-        return None
-    return _other_skill_gate_requires_effect(effect_id, all_release_gates, self_key)
+def _is_non_skill_enhancement(skill_type: str) -> bool:
+    """判断技能类型是否为"非战技"（连携技、终结技等）。"""
+    return skill_type in {"连携技", "终结技", "天赋", "潜能"}
 
 
-def _skill_effects_needed_by_others(
-    skill_data: dict,
-    all_release_gates: dict,
-    self_key: tuple[str, str],
-) -> bool:
-    """检查技能产出的效果是否被队内其他成员所依赖。
+def _is_active_skill(skill_type: str) -> bool:
+    """判断技能类型是否为"战技"。"""
+    return skill_type == "战技"
 
-    用于二次评估：
-    - 效果被其他队友的 release gate 依赖 → 阻止（增强态优先）
-    - 效果仅被自己增强态依赖（trigger_condition）→ 允许
-    - 效果无人依赖 → 阻止（效果无依赖）
 
-    返回 True 表示应该释放，
-    返回 False 表示不应该释放（有效果但无人依赖）。
-    """
-    effects = skill_data.get("effects") or []
-    if not effects:
-        return True
-
-    self_dependencies = _self_dependency_effects(skill_data)
-    for effect in effects:
-        result = _effect_dependency_result(effect, self_dependencies, all_release_gates, self_key)
-        if result is not None:
-            return result
-
-    # 无产出效果或所有产出效果都被自己依赖 → 允许
-    return True
+# ── 核心逻辑：三阶段闭包算法 ────────────────────────────────────────────────
 
 
 def _build_team_skill_context(
     team_members: list[str],
     characters: dict[str, dict],
 ) -> dict:
-    """第一阶段：扫描队伍所有技能，建立依赖关系图。
+    """扫描队伍所有技能，建立基础数据结构。
 
     Returns:
         {
-            "producers": {effect_id: [(char_name, skill_id, skill_type), ...]},
-            "release_gates": {(char_name, skill_id): [gate_branch, ...]},
+            "team_skills": {(char_name, skill_id): skill_dict},
+            "skill_types": {(char_name, skill_id): skill_type},
+            "skill_effects": {(char_name, skill_id): [effect_id, ...]},
+            "enhancement_triggers": {
+                (char_name, skill_id): [{"trigger_groups": [...], "effects": [effect], "skill_type": str}, ...]
+            },
+            "effect_producers": {effect_id: [(char_name, skill_id), ...]},
         }
     """
     team_set = set(team_members)
 
-    # 收集队内所有技能
-    all_skills: dict[tuple[str, str], dict] = {}
+    team_skills: dict[tuple[str, str], dict] = {}
+    skill_types: dict[tuple[str, str], str] = {}
+    skill_effects: dict[tuple[str, str], list[str]] = {}
+    enhancement_triggers: dict[tuple[str, str], list[dict]] = {}
+    effect_producers: dict[str, list[tuple[str, str]]] = {}
+
     for name, cdata in characters.items():
         if name not in team_set:
             continue
         for s in cdata.get("skills", []):
-            all_skills[(name, s.get("skill_id", ""))] = s
+            skill_id = s.get("skill_id", "")
+            key = (name, skill_id)
+            team_skills[key] = s
+            skill_types[key] = s.get("skill_type", "")
 
-    # ── producers: 哪些技能在施放后产出什么状态 ──
-    producers: dict[str, list[tuple[str, str, str]]] = {}
-    for (sname, sid), sdata in all_skills.items():
-        producer = (sname, sid, sdata.get("skill_type", ""))
-        for eff in sdata.get("effects") or []:
-            effect_id = _produced_effect_id(eff)
-            if not effect_id:
-                continue
-            effect_producers = producers.setdefault(effect_id, [])
-            if producer not in effect_producers:
-                effect_producers.append(producer)
-            if effect_id in _SHRED_STACK_PRODUCERS:
-                shred_producers = producers.setdefault("STACK_SHRED", [])
-                if producer not in shred_producers:
-                    shred_producers.append(producer)
+            # 收集技能产出的效果
+            effects = []
+            for eff in s.get("effects") or []:
+                effect_id = _produced_effect_id(eff)
+                if effect_id:
+                    effects.append(effect_id)
+                    if effect_id not in effect_producers:
+                        effect_producers[effect_id] = []
+                    if key not in effect_producers[effect_id]:
+                        effect_producers[effect_id].append(key)
+            skill_effects[key] = effects
 
-    # ── release gates: 每个 enhancement 保持独立分支，分支间按 OR 判定 ──
-    release_gates: dict[tuple[str, str], list[dict]] = {}
-    for (sname, sid), sdata in all_skills.items():
-        if sdata.get("skill_type") != "战技":
+            # 收集增强态的触发条件和产出效果
+            enhancements = []
+            for enh in s.get("enhancements") or []:
+                trigger = enh.get("trigger_condition", {})
+                if not isinstance(trigger, dict):
+                    continue
+                trigger_groups = _parse_trigger_groups(trigger)
+                enh_effects = []
+                for eff in enh.get("effects") or []:
+                    eid = _effect_id(eff)
+                    if eid:
+                        enh_effects.append(eid)
+                if trigger_groups or enh_effects:
+                    enhancements.append({
+                        "trigger_groups": trigger_groups,
+                        "effects": enh_effects,
+                        "skill_type": s.get("skill_type", ""),
+                    })
+            if enhancements:
+                enhancement_triggers[key] = enhancements
+
+    return {
+        "team_skills": team_skills,
+        "skill_types": skill_types,
+        "skill_effects": skill_effects,
+        "enhancement_triggers": enhancement_triggers,
+        "effect_producers": effect_producers,
+    }
+
+
+def _closure_non_skill_enhancements(ctx: dict) -> set[str]:
+    """第一阶段：建立"当前已存在效果集"（非战技强化态闭包）。
+
+    初始：队伍内所有技能产出的效果
+    循环：遍历所有「战技以外」的强化态触发条件，
+          如果触发条件被当前 effects 满足，将该强化态产生的 effects 加入总集
+    直到：不再产生新 effects
+    """
+    current_effects: set[str] = set()
+    for effects in ctx["skill_effects"].values():
+        current_effects.update(effects)
+
+    changed = True
+    while changed:
+        changed = False
+        for key, enhancements in ctx["enhancement_triggers"].items():
+            for enh in enhancements:
+                if _is_active_skill(enh["skill_type"]):
+                    continue
+
+                trigger_groups = enh["trigger_groups"]
+                enh_output = enh["effects"]
+
+                if trigger_groups and _is_trigger_satisfied(trigger_groups, current_effects) and enh_output:
+                    for eid in enh_output:
+                        if eid not in current_effects:
+                            current_effects.add(eid)
+                            changed = True
+
+    return current_effects
+
+
+def _closure_skill_enhancements(ctx: dict, current_effects: set[str]) -> tuple[set[str], set[tuple[str, str]]]:
+    """第二阶段：处理"已经可以触发"的战技强化态。
+
+    遍历所有战技的强化态：
+    - 如果触发条件被当前 effects 满足 → 该战技禁止无条件释放
+    - 同时将强化态产生的 effects 加入总 effects
+    - 继续循环直到稳定
+
+    特殊处理：如果增强态依赖的效果只由该战技自己产出（自我依赖），
+    则不禁止该战技，因为增强态的触发需要战技先施放。
+
+    Returns:
+        (最终 effects 集合, 禁止释放的战技 key 集合)
+    """
+    forbidden_skills: set[tuple[str, str]] = set()
+
+    changed = True
+    while changed:
+        changed = False
+        for key, enhancements in ctx["enhancement_triggers"].items():
+            for enh in enhancements:
+                if not _is_active_skill(enh["skill_type"]):
+                    continue
+
+                trigger_groups = enh["trigger_groups"]
+                enh_output = enh["effects"]
+
+                if trigger_groups and _is_trigger_satisfied(trigger_groups, current_effects):
+                    # 检查是否为自我依赖
+                    is_self_dependency = True
+                    for group in trigger_groups:
+                        for effect_id in group["effects"]:
+                            producers = ctx.get("effect_producers", {}).get(effect_id, [])
+                            if any(pk != key for pk in producers):
+                                is_self_dependency = False
+                                break
+                        if not is_self_dependency:
+                            break
+
+                    if not is_self_dependency:
+                        if key not in forbidden_skills:
+                            forbidden_skills.add(key)
+                            changed = True
+
+                    if enh_output:
+                        for eid in enh_output:
+                            if eid not in current_effects:
+                                current_effects.add(eid)
+                                changed = True
+
+    return current_effects, forbidden_skills
+
+
+def _filter_remaining_skills(
+    ctx: dict,
+    current_effects: set[str],
+    forbidden_skills: set[tuple[str, str]],
+) -> set[tuple[str, str]]:
+    """第三阶段：处理剩余战技，检查 effects 是否对强化链有贡献。
+
+    对于没有被第二阶段禁止的战技：
+    - 检查其产出的效果是否对某个**当前已可激活的强化态**有贡献
+    - 有贡献 → 保留
+    - 无贡献 → 踢出
+    """
+    allowed_skills: set[tuple[str, str]] = set()
+
+    for key, skill_type in ctx["skill_types"].items():
+        if not _is_active_skill(skill_type):
             continue
-        skill_enhancements = sdata.get("enhancements") or []
-        if not skill_enhancements:
+
+        if key in forbidden_skills:
             continue
 
-        branches = []
-        for enh in skill_enhancements:
-            if gate := _static_release_gate(enh):
-                branches.append(gate)
-        if branches:
-            release_gates[(sname, sid)] = branches
+        skill_effects = ctx["skill_effects"].get(key, [])
+        if not skill_effects:
+            continue
 
-    return {"producers": producers, "release_gates": release_gates}
+        # 检查战技产出的效果是否与任何已可激活的强化态的触发条件有交集
+        has_contribution = False
+        for other_key, enhancements in ctx["enhancement_triggers"].items():
+            for enh in enhancements:
+                trigger_groups = enh["trigger_groups"]
+                if not trigger_groups:
+                    continue
+
+                # 检查该强化态是否已可激活（触发条件已满足）
+                if not _is_trigger_satisfied(trigger_groups, current_effects):
+                    continue
+
+                # 检查战技的效果是否与该强化态的触发条件有交集
+                for group in trigger_groups:
+                    if skill_effects_set := set(skill_effects):
+                        if skill_effects_set & group["effects"]:
+                            has_contribution = True
+                            break
+
+                if has_contribution:
+                    break
+
+            if has_contribution:
+                break
+
+        if has_contribution:
+            allowed_skills.add(key)
+
+    return allowed_skills
 
 
 def build_skill_allowlist(
@@ -255,9 +358,10 @@ def build_skill_allowlist(
 ) -> dict[int, tuple[bool, str]]:
     """判断队伍中每个角色的战技是否允许手动释放。
 
-    两阶段架构：
-      1. 建立队伍技能依赖图（producers / release gates）
-      2. 逐个角色判定战技是否应被增强态接管
+    三阶段闭包算法：
+      1. 建立"当前已存在效果集"（非战技强化态闭包）
+      2. 处理"已经可以触发"的战技强化态（战技强化态闭包）
+      3. 处理剩余战技，检查 effects 是否对强化链有贡献
 
     Args:
         team_members: 4 个角色名，索引 0-3 对应技能键 "1"-"4"
@@ -272,19 +376,34 @@ def build_skill_allowlist(
     if not characters:
         return {i: (True, "") for i in range(len(team_members))}
 
-    # ── 第一阶段：建立队伍技能依赖图 ──
+    # ── 第零阶段：建立基础数据结构 ──
     ctx = _build_team_skill_context(team_members, characters)
 
-    # ── 第二阶段：逐个判定战技 ──
-    result: dict[int, tuple[bool, str]] = {}
+    # ── 第一阶段：非战技强化态闭包 ──
+    current_effects = _closure_non_skill_enhancements(ctx)
 
+    # ── 第二阶段：战技强化态闭包 ──
+    current_effects, forbidden_skills = _closure_skill_enhancements(ctx, current_effects)
+
+    # ── 第三阶段：筛选剩余战技 ──
+    allowed_skills = _filter_remaining_skills(ctx, current_effects, forbidden_skills)
+
+    # ── 兜底：如果允许集合为空，返回全部战技 ──
+    all_active_skills = {
+        key for key, stype in ctx["skill_types"].items()
+        if _is_active_skill(stype)
+    }
+    if not allowed_skills:
+        allowed_skills = all_active_skills
+
+    # ── 转换为输出格式 ──
+    result: dict[int, tuple[bool, str]] = {}
     for idx, char_name in enumerate(team_members):
         char_data = characters.get(char_name)
         if not char_data:
             result[idx] = (True, "")
             continue
 
-        # 找到该角色的战技
         skill = None
         for s in char_data.get("skills", []):
             if s.get("skill_type") == "战技":
@@ -295,34 +414,23 @@ def build_skill_allowlist(
             continue
 
         key = (char_name, skill.get("skill_id", ""))
-        release_gates = ctx["release_gates"].get(key)
 
-        # 豁免：跳过所有检查，直接允许释放
         if char_name in EXEMPT_CHARACTERS:
             result[idx] = (True, "")
             continue
 
-        # 一次评估：检查技能的 release gate 是否能被队友触发
-        if release_gates and any(
-            _branch_can_trigger(branch, ctx["producers"], key)
-            for branch in release_gates
-        ):
+        if key in forbidden_skills:
             result[idx] = (False, "增强态优先")
-            continue
-
-        # 二次评估：检查技能产出的效果是否被任何增强态或 release gate 所依赖
-        if not _skill_effects_needed_by_others(skill, ctx["release_gates"], key):
+        elif key in allowed_skills:
+            result[idx] = (True, "")
+        else:
             result[idx] = (False, "效果无依赖")
-            continue
-
-        result[idx] = (True, "")
 
     return result
 
 
 # ── 生成技能释放序列 ────────────────────────────────────────────────
 
-# 普通战技 token 集合（不含 ult_/e/sleep_/normal_）
 _NORMAL_SKILL_TOKENS = {"1", "2", "3", "4"}
 
 
@@ -330,17 +438,7 @@ def generate_skill_sequence(
     team_members: list[str],
     characters: dict[str, dict] | None = None,
 ) -> list[str]:
-    """根据队伍编队直接生成允许的战技释放序列（生成式，不依赖用户配置）。
-
-    自动构建 allowlist，仅返回被允许的数字战技 token，按索引升序排列。
-
-    Args:
-        team_members: 4 个角色名，索引 i 对应技能键 "i+1"
-        characters:   角色数据（可选）
-
-    Returns:
-        生成的战技释放序列，如 ["1", "3"]
-    """
+    """根据队伍编队直接生成允许的战技释放序列。"""
     allowlist = build_skill_allowlist(team_members, characters)
     result = [str(i + 1) for i, (ok, _) in allowlist.items() if ok]
     return result if result else [str(i + 1) for i in range(len(team_members))]
@@ -351,19 +449,7 @@ def filter_skill_sequence(
     skill_sequence: list[str],
     characters: dict[str, dict] | None = None,
 ) -> list[str]:
-    """根据自动技能列表过滤技能释放序列。
-
-    保留原始序列中的非数字 token（ult_/e/sleep_/normal_ 等），
-    仅对数字战技 token（1-4）根据允许列表进行过滤。
-
-    Args:
-        team_members:   4 个角色名，索引 i 对应技能键 "i+1"
-        skill_sequence: 原始技能序列
-        characters:     角色数据（可选）
-
-    Returns:
-        过滤后的技能释放序列
-    """
+    """根据自动技能列表过滤技能释放序列。"""
     allowlist = build_skill_allowlist(team_members, characters)
     allowed_digits = {
         str(i + 1) for i, (ok, _) in allowlist.items() if ok
@@ -372,11 +458,9 @@ def filter_skill_sequence(
     filtered = []
     for token in skill_sequence:
         if token in _NORMAL_SKILL_TOKENS:
-            # 数字战技 token：仅保留允许列表中的
             if token in allowed_digits:
                 filtered.append(token)
         else:
-            # 非数字 token（ult_/e/sleep_/normal_ 等）：保留
             filtered.append(token)
 
     return filtered if filtered else list(skill_sequence)
