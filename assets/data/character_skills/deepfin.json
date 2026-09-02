@@ -81,7 +81,7 @@
                     "trigger_condition": {
                         "text": "当附近目标的法术异常或源石结晶被消耗时可以发动",
                         "effects": {
-                            "all": [
+                            "any": [
                                 "STATUS_SPELL_INFLICT",
                                 "STATUS_ORIGINIUM_CRYSTAL"
                             ]

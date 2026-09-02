@@ -81,7 +81,7 @@
                     "trigger_condition": {
                         "text": "主控干员对处于电磁附着或导电状态的目标进行重击后可以发动",
                         "effects": {
-                            "all": [
+                            "any": [
                                 "ATTACH_ELECTROMAGNETIC",
                                 "STATUS_CONDUCTING"
                             ]

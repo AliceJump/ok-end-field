@@ -87,7 +87,7 @@
                     "trigger_condition": {
                         "text": "当敌人进入2层及以上寒冷附着或自然附着时可以发动",
                         "effects": {
-                            "all": [
+                            "any": [
                                 "ATTACH_COLD",
                                 "ATTACH_NATURAL"
                             ]
@@ -147,7 +147,7 @@
                     "trigger_condition": {
                         "text": "最后一段伤害命中处于2层及以上寒冷附着或自然附着的目标",
                         "effects": {
-                            "all": [
+                            "any": [
                                 "ATTACH_COLD",
                                 "ATTACH_NATURAL"
                             ]

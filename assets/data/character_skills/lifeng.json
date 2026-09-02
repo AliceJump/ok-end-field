@@ -80,7 +80,7 @@
                     "trigger_condition": {
                         "text": "当处于物理脆弱或碎甲状态的敌人受到主控干员重击后可以发动",
                         "effects": {
-                            "all": [
+                            "any": [
                                 "VULN_PHYSICAL",
                                 "STATUS_SHRED"
                             ]

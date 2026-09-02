@@ -95,7 +95,7 @@
                     "trigger_condition": {
                         "text": "当有敌人进入燃烧或腐蚀状态时可以发动",
                         "effects": {
-                            "all": [
+                            "any": [
                                 "STATUS_BURNING",
                                 "STATUS_CORROSION"
                             ]

@@ -117,7 +117,7 @@
                     "trigger_condition": {
                         "text": "目标处于破防状态时，法术脆弱随破防层数额外提升；目标处于击飞状态时保持击飞",
                         "effects": {
-                            "all": [
+                            "any": [
                                 "STATUS_SHRED",
                                 "STATUS_HEAVY_HIT"
                             ]
