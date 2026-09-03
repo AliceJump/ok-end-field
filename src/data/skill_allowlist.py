@@ -37,6 +37,9 @@ _CATEGORY_SPELL_ANOMALIES = {
 EXEMPT_CHARACTERS: set[str] = {
     "梨诺" #梨诺战技无消耗
 }
+NO_ALLOW_CHARACTERS: set[str] = {
+    "余烬" #余烬战技基本无用
+}
 
 # ── 数据加载 ──────────────────────────────────────────────────────────────────
 
@@ -477,6 +480,9 @@ def build_skill_allowlist(
 
         if char_name in EXEMPT_CHARACTERS:
             result[idx] = (True, "")
+            continue
+        if char_name in NO_ALLOW_CHARACTERS:
+            result[idx] = (False, "战技基本无用")
             continue
 
         if key in forbidden_skills:
