@@ -22,10 +22,14 @@ _SHRED_STACK_PRODUCERS = {
     "STATUS_SHRED",
     "STATUS_HEAVY_HIT",
     "STATUS_KNOCKDOWN",
+    "STATUS_SHATTER",     # 碎甲
+    "STATUS_HEAVY_STRIKE"  # 猛击
 }
 
 # 豁免名单：这些角色的战技跳过所有检查，直接允许释放
-EXEMPT_CHARACTERS: set[str] = set()
+EXEMPT_CHARACTERS: set[str] = {
+    "梨诺" #梨诺战技无消耗
+}
 
 # ── 数据加载 ──────────────────────────────────────────────────────────────────
 
@@ -322,7 +326,14 @@ def _filter_remaining_skills(
             continue
 
         # 检查战技产出的效果是否与任何已可激活的强化态的触发条件有交集
-        has_contribution = False
+        # 破防链特殊规则：
+        # 破防、击飞、倒地、碎甲、猛击统一视为同一条物理强化链。
+        has_break_contribution = bool(
+            set(skill_effects) & _SHRED_STACK_PRODUCERS
+        )
+
+        # 检查战技产出的效果是否与任何已可激活的强化态的触发条件有交集
+        has_contribution = has_break_contribution
         for other_key, enhancements in ctx["enhancement_triggers"].items():
             for enh in enhancements:
                 trigger_groups = enh["trigger_groups"]

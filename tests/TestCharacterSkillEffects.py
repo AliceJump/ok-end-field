@@ -200,7 +200,7 @@ class TestCharacterSkillEffects(unittest.TestCase):
 
         dapan = characters["da_pan"]
         dapan_link = next(skill for skill in dapan.skills if skill.skill_id == "dapan_link")
-        self.assertEqual([effect.effect_id for effect in dapan_link.effects], [EffectType.STATUS_HEAVY_STRIKE])
+        self.assertEqual([effect.effect_id for effect in dapan_link.enhancement.effects], [EffectType.STATUS_HEAVY_STRIKE])
 
         lifeng = characters["li_feng"]
         lifeng_skill = next(skill for skill in lifeng.skills if skill.skill_id == "lifeng_skill")
@@ -254,7 +254,7 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertEqual(laevat_skill.enhancement.effects[0].effect_id, EffectType.STACK_MOLTEN)
         self.assertEqual(laevat_skill.enhancement.effects[0].count, -4)
         laevat_link = next(skill for skill in laevat.skills if skill.skill_id == "laevat_link")
-        self.assertEqual([effect.effect_id for effect in laevat_link.effects], [EffectType.STACK_MOLTEN])
+        self.assertEqual([effect.effect_id for effect in laevat_link.enhancement.effects], [EffectType.STACK_MOLTEN])
 
         zhuangfy = characters["zhuang_fang_yi"]
         zhuangfy_skill = next(skill for skill in zhuangfy.skills if skill.skill_id == "zhuangfy_skill")
@@ -282,7 +282,7 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertFalse(jue_skill.has_enhancement)
         jue_link = next(skill for skill in jue.skills if skill.skill_id == "lizhiyan_link")
         self.assertEqual(
-            [effect.effect_id for effect in jue_link.effects],
+            [effect.effect_id for effect in jue_link.enhancement.effects],
             [
                 EffectType.STATUS_SPELL_INFLICT,
                 EffectType.VULN_NATURAL,
@@ -298,7 +298,7 @@ class TestCharacterSkillEffects(unittest.TestCase):
 
         aglina = characters["jie_er_pei_ta"]
         aglina_link = next(skill for skill in aglina.skills if skill.skill_id == "aglina_link")
-        self.assertEqual([effect.effect_id for effect in aglina_link.effects], [EffectType.STATUS_HEAVY_HIT])
+        self.assertEqual([effect.effect_id for effect in aglina_link.enhancement.effects], [EffectType.STATUS_HEAVY_HIT])
 
     def test_remaining_character_review_fixes(self):
         characters = load_all_characters()
@@ -310,7 +310,7 @@ class TestCharacterSkillEffects(unittest.TestCase):
             [EffectType.STATUS_FOCUS, EffectType.VULN_ELECTROMAGNETIC, EffectType.VULN_BURN],
         )
         antal_link = next(skill for skill in antal.skills if skill.skill_id == "antal_link")
-        self.assertEqual([effect.effect_id for effect in antal_link.effects], [EffectType.TRIGGER_REPEAT_EFFECT])
+        self.assertEqual([effect.effect_id for effect in antal_link.enhancement.effects], [EffectType.TRIGGER_REPEAT_EFFECT])
 
         ikut = characters["hu_guang"]
         ikut_skill = next(skill for skill in ikut.skills if skill.skill_id == "ikut_skill")
@@ -322,7 +322,7 @@ class TestCharacterSkillEffects(unittest.TestCase):
         bounda_skill = next(skill for skill in bounda.skills if skill.skill_id == "bounda_skill")
         self.assertEqual(bounda_skill.effects[0].effect_id, EffectType.MECH_BOMB)
         bounda_link = next(skill for skill in bounda.skills if skill.skill_id == "bounda_link")
-        self.assertEqual([effect.effect_id for effect in bounda_link.effects], [EffectType.STATUS_SPELL_INFLICT])
+        self.assertEqual([effect.effect_id for effect in bounda_link.enhancement.effects], [EffectType.STATUS_SPELL_INFLICT])
 
         deepfin = characters["a_lie_shi"]
         deepfin_skill = next(skill for skill in deepfin.skills if skill.skill_id == "deepfin_skill")
@@ -363,8 +363,8 @@ class TestCharacterSkillEffects(unittest.TestCase):
 
         lastrite = characters["bie_li"]
         lastrite_link = next(skill for skill in lastrite.skills if skill.skill_id == "lastrite_link")
-        self.assertEqual(lastrite_link.effects[0].effect_id, EffectType.CLEAR_COLD)
-        self.assertEqual(lastrite_link.effects[0].count, -1)
+        self.assertEqual(lastrite_link.enhancement.effects[0].effect_id, EffectType.CLEAR_COLD)
+        self.assertEqual(lastrite_link.enhancement.effects[0].count, -1)
 
         liino = characters["li_nuo"]
         liino_skill = next(skill for skill in liino.skills if skill.skill_id == "liino_skill")
