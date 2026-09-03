@@ -4145,6 +4145,19 @@
             "segmentation": []
         },
         {
+            "id": 226,
+            "image_id": 110,
+            "category_id": 267,
+            "bbox": [
+                36,
+                269,
+                51,
+                59
+            ],
+            "area": 3009,
+            "iscrowd": 0
+        },
+        {
             "id": 228,
             "image_id": 138,
             "category_id": 47,
@@ -6072,6 +6085,11 @@
         {
             "id": 266,
             "name": "battle_icon_endministrator_female",
+            "supercategory": ""
+        },
+        {
+            "id": 267,
+            "name": "task_icon",
             "supercategory": ""
         }
     ]

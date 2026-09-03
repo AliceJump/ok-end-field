@@ -224,6 +224,7 @@ class FeatureList(str, Enum):
     start_follow = 'start_follow'
     start_scratch_card = 'start_scratch_card'
     switch_q = 'switch_q'
+    task_icon = 'task_icon'
     ticket_valley = 'ticket_valley'
     ticket_wuling = 'ticket_wuling'
     to_give_gift = 'to_give_gift'

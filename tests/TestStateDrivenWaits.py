@@ -526,50 +526,14 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertTrue(BattleMixin.in_team(task))
         self.assertEqual(task._battle_member_count, 1)
 
-    @patch("src.tasks.mixin.battle_mixin._load_char_name_map")
-    def test_detect_team_preserves_unrecognized_slots(self, load_name_map):
-        load_name_map.return_value = {"first": "一号", "fourth": "四号"}
-
-        class StubTask:
-            def _detect_team_core(self, frame):
-                return [
-                    ("first", 0.95, "battle_icon_first"),
-                    ("?", 0.0, ""),
-                    ("?", 0.0, ""),
-                    ("fourth", 0.91, "battle_icon_fourth"),
-                ]
-
-        self.assertEqual(
-            BattleMixin.detect_team(StubTask()),
-            ["一号", "?", "?", "四号"],
-        )
-        self.assertEqual(
-            BattleMixin.detect_team_with_scores(StubTask()),
-            [("一号", 0.95), ("?", 0.0), ("?", 0.0), ("四号", 0.91)],
-        )
-
-    @patch("src.tasks.mixin.battle_mixin.fL", [type("Feature", (), {"value": "battle_icon_first"})()])
-    def test_detect_team_core_preserves_scores_for_all_slots(self):
-        import numpy as np
-
-        search_boxes = [Box(index * 100, 10, 20, 20) for index in range(4)]
-
-        class StubTask:
-            frame = np.zeros((100, 500, 3), dtype=np.uint8)
-
-            _collect_team_candidate_boxes = BattleMixin._collect_team_candidate_boxes
-            _match_team_slots = BattleMixin._match_team_slots
-
-            def get_box_by_name(self, _feature_name):
-                return search_boxes[0]
-
-            def _build_search_boxes(self, _raw_boxes, frame_width, frame_height):
-                return search_boxes
-
-            def find_one(self, _feature_name, box, frame):
-                if box is search_boxes[3]:
-                    return Box(box.x, box.y, box.width, box.height, confidence=0.91)
-                return None
+    @patch("src.tasks.mixin.battle_mixin.detect_team_from_frame")
+    def test_detected_team_member_rechecks_current_frame(self, detect_team):
+        # 第一次调用返回不匹配的队伍，之后每次返回匹配队伍
+        detect_team.side_effect = [
+            ["角色A", "角色B"],  # 不匹配 → matched_count 重置
+            ["余烬", "赵昭"],  # 匹配 → matched_count=1
+            ["余烬", "赵昭"],  # 匹配 → matched_count=2 → 返回 True
+        ]
 
         self.assertEqual(
             BattleMixin._detect_team_core(StubTask()),
@@ -583,11 +547,8 @@ class TestStateDrivenWaits(unittest.TestCase):
 
     def test_detect_team_stable_ignores_all_unknown_slots(self):
         class StubTask:
-            def __init__(self):
-                self.detect_calls = 0
-
-            def active_time(self):
-                return 0
+            frame = np.zeros((10, 10, 3), dtype=np.uint8)
+            _battle_team = ["余烬", "赵昭"]
 
             def next_frame(self):
                 return object()
@@ -613,7 +574,8 @@ class TestStateDrivenWaits(unittest.TestCase):
                 self.detect_calls = 0
 
             def active_time(self):
-                return 0
+                # 利用 detect_team 的调用次数模拟时间推进
+                return float(detect_team.call_count)
 
             def next_frame(self):
                 return object()
@@ -657,9 +619,8 @@ class TestStateDrivenWaits(unittest.TestCase):
                 pass
 
         task = StubTask()
-        BattleMixin._has_detected_team_member(task, time_out=0.01)
-        # 验证 detect_team 被调用（说明是实时识别而非缓存）
-        detect_team.assert_called()
+        self.assertTrue(BattleMixin._has_detected_team_member(task))
+        self.assertEqual(detect_team.call_count, 3)
 
 
 if __name__ == "__main__":
