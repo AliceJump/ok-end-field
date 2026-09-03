@@ -70,13 +70,13 @@
             "effects": [],
             "enhancements": [
                 {
-                    "name": "磁暴试验场·破防",
+                    "name": "磁暴试验场·猛击",
                     "trigger_condition": {
-                        "text": "当被聚焦的敌人进入破防状态时可以发动",
+                        "text": "当被聚焦的敌人进入猛击状态时可以发动",
                         "effects": {
                             "all": [
                                 "STATUS_FOCUS",
-                                "STATUS_SHRED"
+                                "STATUS_HEAVY_STRIKE"
                             ]
                         }
                     },
@@ -84,11 +84,13 @@
                         {
                             "effect_id": "TRIGGER_REPEAT_EFFECT",
                             "value": 1,
-                            "duration": null,
+                            "duration": "",
                             "target": "enemy",
                             "count": 1
                         }
-                    ]
+                    ],
+                    "enhancement_effect": "",
+                    "enhancement_visible_pulse": false
                 },
                 {
                     "name": "磁暴试验场·击飞",
@@ -148,6 +150,29 @@
                             "effect_id": "TRIGGER_REPEAT_EFFECT",
                             "value": 1,
                             "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "磁暴试验场·碎甲",
+                    "trigger_condition": {
+                        "text": "当被聚焦的敌人进入碎甲状态时可以发动",
+                        "effects": {
+                            "all": [
+                                "STATUS_FOCUS",
+                                "STATUS_SHATTER"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
+                            "value": 1,
+                            "duration": "",
                             "target": "enemy",
                             "count": 1
                         }
