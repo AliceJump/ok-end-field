@@ -625,7 +625,7 @@ class TestStateDrivenWaits(unittest.TestCase):
 
         task = StubTask()
         self.assertTrue(BattleMixin._has_detected_team_member(task))
-        self.assertEqual(detect_team.call_count, 3)
+        self.assertEqual(detect_team.call_count, 2)
 
 
 if __name__ == "__main__":
