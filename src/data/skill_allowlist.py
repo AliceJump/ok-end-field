@@ -26,6 +26,13 @@ _SHRED_STACK_PRODUCERS = {
     "STATUS_HEAVY_STRIKE"  # 猛击
 }
 
+_CATEGORY_SPELL_ANOMALIES = {
+    "STATUS_CORROSION",
+    "STATUS_FROZEN",
+    "STATUS_CONDUCTING",
+    "STATUS_BURNING",
+}
+
 # 豁免名单：这些角色的战技跳过所有检查，直接允许释放
 EXEMPT_CHARACTERS: set[str] = {
     "梨诺" #梨诺战技无消耗
@@ -83,6 +90,27 @@ def _produced_effect_id(effect) -> str:
         if count is not None and count <= 0:
             return ""
     return effect_id
+
+
+def _expanded_produced_effect_ids(effect) -> tuple[str, ...]:
+    """展开正向产出效果的依赖 ID，并保留原始类别效果。"""
+    effect_id = _produced_effect_id(effect)
+    if not effect_id:
+        return ()
+    if effect_id in _CATEGORY_SPELL_ANOMALIES:
+        return effect_id, "STATUS_SPELL_ANOMALY"
+    return (effect_id,)
+
+
+def _register_effect_producer(
+    effect_producers: dict[str, list[tuple[str, str]]],
+    effect_id: str,
+    key: tuple[str, str],
+) -> None:
+    """登记效果生产者，同一技能仅登记一次。"""
+    producers = effect_producers.setdefault(effect_id, [])
+    if key not in producers:
+        producers.append(key)
 
 
 def _parse_trigger_groups(trigger_condition: dict | str) -> list[dict]:
@@ -267,13 +295,9 @@ def _build_team_skill_context(
             # 收集技能产出的效果
             effects = []
             for eff in s.get("effects") or []:
-                effect_id = _produced_effect_id(eff)
-                if effect_id:
+                for effect_id in _expanded_produced_effect_ids(eff):
                     effects.append(effect_id)
-                    if effect_id not in effect_producers:
-                        effect_producers[effect_id] = []
-                    if key not in effect_producers[effect_id]:
-                        effect_producers[effect_id].append(key)
+                    _register_effect_producer(effect_producers, effect_id, key)
             skill_effects[key] = effects
 
             # 收集增强态的触发条件和产出效果
@@ -285,13 +309,9 @@ def _build_team_skill_context(
                 trigger_groups = _parse_trigger_groups(trigger)
                 enh_effects = []
                 for eff in enh.get("effects") or []:
-                    eid = _produced_effect_id(eff)
-                    if eid:
+                    for eid in _expanded_produced_effect_ids(eff):
                         enh_effects.append(eid)
-                        if eid not in effect_producers:
-                            effect_producers[eid] = []
-                        if key not in effect_producers[eid]:
-                            effect_producers[eid].append(key)
+                        _register_effect_producer(effect_producers, eid, key)
                 if trigger_groups or enh_effects:
                     enhancements.append({
                         "trigger_groups": trigger_groups,
