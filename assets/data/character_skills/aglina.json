@@ -61,7 +61,7 @@
                         "text": "当有敌人被施加法术异常时可以发动",
                         "effects": {
                             "all": [
-                                "STATUS_SPELL_INFLICT"
+                                "STATUS_SPELL_ANOMALY"
                             ]
                         }
                     },

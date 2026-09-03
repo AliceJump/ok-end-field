@@ -62,17 +62,11 @@
                     "count": 1
                 }
             ],
-            "trigger_condition": {
-                "text": "当有敌人进入冻结状态时可以发动",
-                "effects": [
-                    "STATUS_FROZEN"
-                ]
-            },
             "enhancements": [
                 {
                     "name": "冻结状态额外伤害+物理脆弱",
                     "trigger_condition": {
-                        "text": "命中处于冻结状态的敌人",
+                        "text": "当有敌人进入冻结状态时可以发动；命中处于冻结状态的敌人",
                         "effects": {
                             "all": [
                                 "STATUS_FROZEN"

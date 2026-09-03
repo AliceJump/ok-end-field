@@ -127,30 +127,62 @@ class TestCharacterSkillEffects(unittest.TestCase):
                     self.assertEqual(bool(skill.enhancements), expected)
                     self.assertEqual(skill.enhancement, skill.enhancements[0] if expected else None)
 
-    def test_trigger_condition_operator_groups_load(self):
-        branch = {
-            "name": "组合条件",
-            "trigger_condition": {
-                "text": "聚焦目标进入破防",
-                "effects": {"all": ["STATUS_FOCUS", "STATUS_SHRED"]},
+    def test_trigger_condition_operator_groups_load_and_evaluate(self):
+        branches = [
+            {
+                "name": "全部条件",
+                "trigger_condition": {
+                    "text": "聚焦目标进入破防",
+                    "effects": {"all": ["STATUS_FOCUS", "STATUS_SHRED"]},
+                },
+                "effects": [],
             },
-            "effects": [],
-        }
+            {
+                "name": "任一条件",
+                "trigger_condition": {
+                    "text": "目标冻结或失衡",
+                    "effects": {"any": ["STATUS_FROZEN", "STATUS_STAGGER"]},
+                },
+                "effects": [],
+            },
+            {
+                "name": "动态事件",
+                "trigger_condition": {
+                    "text": "其他干员的连携技造成伤害",
+                    "effects": {"all": []},
+                },
+                "effects": [],
+            },
+        ]
         skill = {
             "skill_id": "test_skill",
             "name": "测试技能",
             "skill_type": "战技",
             "element": "物理",
-            "enhancements": [branch],
+            "enhancements": branches,
         }
 
         with tempfile.TemporaryDirectory() as temp_dir_name:
             loaded = self._load_temp_character(Path(temp_dir_name), skill)
 
         self.assertEqual(
-            loaded.enhancement.trigger_effects,
-            [EffectType.STATUS_FOCUS, EffectType.STATUS_SHRED],
+            [enhancement.trigger_effects for enhancement in loaded.enhancements[:2]],
+            [
+                [EffectType.STATUS_FOCUS, EffectType.STATUS_SHRED],
+                [EffectType.STATUS_FROZEN, EffectType.STATUS_STAGGER],
+            ],
         )
+        self.assertEqual(
+            [enhancement.trigger_effect_groups[0].operator for enhancement in loaded.enhancements[:2]],
+            ["all", "any"],
+        )
+        all_enhancement, any_enhancement, dynamic_enhancement = loaded.enhancements
+        self.assertTrue(all_enhancement.is_trigger_satisfied({EffectType.STATUS_FOCUS, EffectType.STATUS_SHRED}))
+        self.assertFalse(all_enhancement.is_trigger_satisfied({EffectType.STATUS_FOCUS}))
+        self.assertTrue(any_enhancement.is_trigger_satisfied({EffectType.STATUS_FROZEN}))
+        self.assertFalse(any_enhancement.is_trigger_satisfied({EffectType.STATUS_FOCUS}))
+        self.assertEqual(dynamic_enhancement.trigger_effect_groups, [])
+        self.assertFalse(dynamic_enhancement.is_trigger_satisfied(set()))
 
     def test_requested_trigger_condition_branches(self):
         def load_skill(file_name, skill_id):

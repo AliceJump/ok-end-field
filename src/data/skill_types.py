@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Optional
+from typing import Literal, Optional
 
 from src.data.effects import EffectType
 
@@ -45,6 +45,19 @@ class SkillEffect:
     count: Optional[int] = 1  # 施加/消耗计数；None=数量由运行时状态动态决定
 
 
+@dataclass(frozen=True)
+class TriggerEffectGroup:
+    """保留触发效果组的逻辑运算符。"""
+
+    operator: Literal["all", "any"]
+    effects: tuple[EffectType, ...]
+
+    def is_satisfied(self, current_effects: set[EffectType]) -> bool:
+        """按组运算符判断当前效果是否满足触发条件。"""
+        required = set(self.effects)
+        return required <= current_effects if self.operator == "all" else bool(required & current_effects)
+
+
 @dataclass
 class SkillEnhancement:
     """战技强化态信息（战技的条件触发效果）。"""
@@ -53,6 +66,13 @@ class SkillEnhancement:
     trigger_effects: list[EffectType] = field(default_factory=list)  # 触发条件关联的效果 ID
     effects: list[SkillEffect] = field(default_factory=list)  # 强化效果列表
     enhancement_visible_pulse: bool = False  # 强化状态可见脉冲
+    trigger_effect_groups: list[TriggerEffectGroup] = field(default_factory=list)  # 带 all/any 语义的条件组
+
+    def is_trigger_satisfied(self, current_effects: set[EffectType]) -> bool:
+        """所有条件组均满足时触发；组内按各自的 all/any 运算。"""
+        return bool(self.trigger_effect_groups) and all(
+            group.is_satisfied(current_effects) for group in self.trigger_effect_groups
+        )
 
 
 @dataclass

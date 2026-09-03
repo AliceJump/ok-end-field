@@ -6,16 +6,16 @@ import json
 from pathlib import Path
 from typing import Optional
 
+from src.data.effects import EffectType, match_effect_terms
 from src.data.skill_types import (
     Character,
-    Skill,
-    SkillType,
     ElementType,
-    SkillEnhancement,
+    Skill,
     SkillEffect,
+    SkillEnhancement,
+    SkillType,
+    TriggerEffectGroup,
 )
-from src.data.effects import EffectType, match_effect_terms
-
 
 # 类型映射
 _ELEMENT_MAP: dict[str, ElementType] = {
@@ -77,38 +77,45 @@ def _default_skill_id(character_id: str, skill_type: str) -> str:
     return f"{character_id}_{suffix}"
 
 
-def _load_trigger_condition(trigger_data) -> tuple[str, list[EffectType]]:
+def _load_trigger_condition(
+    trigger_data,
+) -> tuple[str, list[EffectType], list[TriggerEffectGroup]]:
     """解析触发条件：兼容字符串与新格式 {"text", "effects"}。
 
-    返回 (文本, 效果ID列表)。新格式优先使用显式 effects；
+    返回 (文本, 效果ID列表, 带运算符的效果组)。新格式优先使用显式 effects；
     仅字符串时回退用 match_effect_terms 自动解析。
     """
     if isinstance(trigger_data, dict):
         text = trigger_data.get("text", "")
         raw_effects = trigger_data.get("effects") or []
         if isinstance(raw_effects, dict):
-            effect_ids = [
-                effect_id
+            trigger_effect_groups = [
+                TriggerEffectGroup(
+                    operator=operator,
+                    effects=tuple(EffectType(effect_id) for effect_id in raw_effects.get(operator) or []),
+                )
                 for operator in ("all", "any")
-                for effect_id in raw_effects.get(operator) or []
+                if raw_effects.get(operator)
             ]
+            effects = [effect for group in trigger_effect_groups for effect in group.effects]
         else:
-            effect_ids = raw_effects
-        effects = [EffectType(effect_id) for effect_id in effect_ids]
-        return text, effects
+            effects = [EffectType(effect_id) for effect_id in raw_effects]
+            trigger_effect_groups = []
+        return text, effects, trigger_effect_groups
     text = trigger_data or ""
-    return text, [eff for _, eff in match_effect_terms(text)]
+    return text, [eff for _, eff in match_effect_terms(text)], []
 
 
 def _load_enhancement(enh_data: dict) -> SkillEnhancement:
     """加载一个独立条件效果。"""
-    trigger_condition, trigger_effects = _load_trigger_condition(
+    trigger_condition, trigger_effects, trigger_effect_groups = _load_trigger_condition(
         enh_data.get("trigger_condition", ""),
     )
     return SkillEnhancement(
         name=enh_data["name"],
         trigger_condition=trigger_condition,
         trigger_effects=trigger_effects,
+        trigger_effect_groups=trigger_effect_groups,
         effects=_load_skill_effects(enh_data.get("effects") or []),
         enhancement_visible_pulse=enh_data.get("enhancement_visible_pulse", False),
     )

@@ -136,6 +136,97 @@ def _is_active_skill(skill_type: str) -> bool:
     return skill_type == "战技"
 
 
+def _merge_new_effects(current_effects: set[str], enhancement_effects: list[str]) -> bool:
+    """合并强化态产出，返回是否新增了效果。"""
+    previous_count = len(current_effects)
+    current_effects.update(enhancement_effects)
+    return len(current_effects) != previous_count
+
+
+def _apply_non_skill_enhancements(ctx: dict, current_effects: set[str]) -> bool:
+    """扫描一次非战技强化态，并合并当前可触发分支的产出。"""
+    changed = False
+    for enhancements in ctx["enhancement_triggers"].values():
+        for enhancement in enhancements:
+            if _is_active_skill(enhancement["skill_type"]):
+                continue
+            trigger_groups = enhancement["trigger_groups"]
+            if trigger_groups and _is_trigger_satisfied(trigger_groups, current_effects):
+                changed |= _merge_new_effects(current_effects, enhancement["effects"])
+    return changed
+
+
+def _is_self_dependency(ctx: dict, key: tuple[str, str], trigger_groups: list[dict]) -> bool:
+    """判断触发组内所有效果是否都只能由当前技能自身产出。"""
+    producers_by_effect = ctx.get("effect_producers", {})
+    return all(
+        not any(producer_key != key for producer_key in producers_by_effect.get(effect_id, []))
+        for group in trigger_groups
+        for effect_id in group["effects"]
+    )
+
+
+def _apply_skill_enhancement(
+    ctx: dict,
+    key: tuple[str, str],
+    enhancement: dict,
+    current_effects: set[str],
+    forbidden_skills: set[tuple[str, str]],
+) -> bool:
+    """处理单个可触发的战技强化态，返回闭包状态是否变化。"""
+    if not _is_active_skill(enhancement["skill_type"]):
+        return False
+    trigger_groups = enhancement["trigger_groups"]
+    if not trigger_groups or not _is_trigger_satisfied(trigger_groups, current_effects):
+        return False
+
+    changed = False
+    if not _is_self_dependency(ctx, key, trigger_groups) and key not in forbidden_skills:
+        forbidden_skills.add(key)
+        changed = True
+    return _merge_new_effects(current_effects, enhancement["effects"]) or changed
+
+
+def _apply_skill_enhancements(
+    ctx: dict,
+    current_effects: set[str],
+    forbidden_skills: set[tuple[str, str]],
+) -> bool:
+    """扫描一次战技强化态，并汇总禁止项和新增效果。"""
+    changed = False
+    for key, enhancements in ctx["enhancement_triggers"].items():
+        for enhancement in enhancements:
+            changed |= _apply_skill_enhancement(
+                ctx,
+                key,
+                enhancement,
+                current_effects,
+                forbidden_skills,
+            )
+    return changed
+
+
+def _has_break_chain_contribution(skill_effects: set[str]) -> bool:
+    """判断技能产出是否属于破防强化链。"""
+    return bool(skill_effects & _SHRED_STACK_PRODUCERS)
+
+
+def _contributes_to_active_enhancement(
+    skill_effects: set[str],
+    enhancement_triggers: dict,
+    current_effects: set[str],
+) -> bool:
+    """判断技能产出是否命中任一当前可激活强化态的触发组。"""
+    for enhancements in enhancement_triggers.values():
+        for enhancement in enhancements:
+            trigger_groups = enhancement["trigger_groups"]
+            if not trigger_groups or not _is_trigger_satisfied(trigger_groups, current_effects):
+                continue
+            if any(skill_effects & group["effects"] for group in trigger_groups):
+                return True
+    return False
+
+
 # ── 核心逻辑：三阶段闭包算法 ────────────────────────────────────────────────
 
 
@@ -230,22 +321,8 @@ def _closure_non_skill_enhancements(ctx: dict) -> set[str]:
     for effects in ctx["skill_effects"].values():
         current_effects.update(effects)
 
-    changed = True
-    while changed:
-        changed = False
-        for key, enhancements in ctx["enhancement_triggers"].items():
-            for enh in enhancements:
-                if _is_active_skill(enh["skill_type"]):
-                    continue
-
-                trigger_groups = enh["trigger_groups"]
-                enh_output = enh["effects"]
-
-                if trigger_groups and _is_trigger_satisfied(trigger_groups, current_effects) and enh_output:
-                    for eid in enh_output:
-                        if eid not in current_effects:
-                            current_effects.add(eid)
-                            changed = True
+    while _apply_non_skill_enhancements(ctx, current_effects):
+        pass
 
     return current_effects
 
@@ -266,39 +343,8 @@ def _closure_skill_enhancements(ctx: dict, current_effects: set[str]) -> tuple[s
     """
     forbidden_skills: set[tuple[str, str]] = set()
 
-    changed = True
-    while changed:
-        changed = False
-        for key, enhancements in ctx["enhancement_triggers"].items():
-            for enh in enhancements:
-                if not _is_active_skill(enh["skill_type"]):
-                    continue
-
-                trigger_groups = enh["trigger_groups"]
-                enh_output = enh["effects"]
-
-                if trigger_groups and _is_trigger_satisfied(trigger_groups, current_effects):
-                    # 检查是否为自我依赖
-                    is_self_dependency = True
-                    for group in trigger_groups:
-                        for effect_id in group["effects"]:
-                            producers = ctx.get("effect_producers", {}).get(effect_id, [])
-                            if any(pk != key for pk in producers):
-                                is_self_dependency = False
-                                break
-                        if not is_self_dependency:
-                            break
-
-                    if not is_self_dependency:
-                        if key not in forbidden_skills:
-                            forbidden_skills.add(key)
-                            changed = True
-
-                    if enh_output:
-                        for eid in enh_output:
-                            if eid not in current_effects:
-                                current_effects.add(eid)
-                                changed = True
+    while _apply_skill_enhancements(ctx, current_effects, forbidden_skills):
+        pass
 
     return current_effects, forbidden_skills
 
@@ -324,41 +370,20 @@ def _filter_remaining_skills(
         if key in forbidden_skills:
             continue
 
-        skill_effects = ctx["skill_effects"].get(key, [])
+        skill_effects = set(ctx["skill_effects"].get(key, []))
         if not skill_effects:
             continue
 
         # 检查战技产出的效果是否与任何已可激活的强化态的触发条件有交集
         # 破防链特殊规则：
         # 破防、击飞、倒地、碎甲、猛击统一视为同一条物理强化链。
-        has_break_contribution = bool(
-            set(skill_effects) & _SHRED_STACK_PRODUCERS
-        )
-
-        # 检查战技产出的效果是否与任何已可激活的强化态的触发条件有交集
-        has_contribution = has_break_contribution
-        for other_key, enhancements in ctx["enhancement_triggers"].items():
-            for enh in enhancements:
-                trigger_groups = enh["trigger_groups"]
-                if not trigger_groups:
-                    continue
-
-                # 检查该强化态是否已可激活（触发条件已满足）
-                if not _is_trigger_satisfied(trigger_groups, current_effects):
-                    continue
-
-                # 检查战技的效果是否与该强化态的触发条件有交集
-                for group in trigger_groups:
-                    if skill_effects_set := set(skill_effects):
-                        if skill_effects_set & group["effects"]:
-                            has_contribution = True
-                            break
-
-                if has_contribution:
-                    break
-
-            if has_contribution:
-                break
+        has_contribution = _has_break_chain_contribution(skill_effects)
+        if not has_contribution:
+            has_contribution = _contributes_to_active_enhancement(
+                skill_effects,
+                ctx["enhancement_triggers"],
+                current_effects,
+            )
 
         if has_contribution:
             allowed_skills.add(key)

@@ -69,12 +69,6 @@
             "cooldown": null,
             "spirit_cost": 0,
             "effects": [],
-            "trigger_condition": {
-                "text": "当有敌人被猛击或者碎甲消耗破防层数后可以发动",
-                "effects": [
-                    "STATUS_SHRED"
-                ]
-            },
             "enhancements": [
                 {
                     "name": "消耗4层破防→第3次斩击强化",
@@ -88,6 +82,18 @@
                     },
                     "enhancement_effect": "第3次斩击获得强化",
                     "enhancement_visible_pulse": false,
+                    "effects": []
+                },
+                {
+                    "name": "盈月邀击",
+                    "trigger_condition": {
+                        "text": "当有敌人被猛击或者碎甲消耗破防层数后可以发动",
+                        "effects": {
+                            "all": [
+                                "STATUS_SHRED"
+                            ]
+                        }
+                    },
                     "effects": []
                 }
             ]

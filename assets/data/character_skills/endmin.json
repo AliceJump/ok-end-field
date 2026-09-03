@@ -85,10 +85,6 @@
                     "count": 1
                 }
             ],
-            "trigger_condition": {
-                "text": "当小队内其他干员的连携技造成伤害时可以发动",
-                "effects": []
-            },
             "enhancements": [
                 {
                     "name": "源石结晶被物理异常或破防消耗",
@@ -117,6 +113,16 @@
                             "target": "enemy"
                         }
                     ]
+                },
+                {
+                    "name": "锁闭序列",
+                    "trigger_condition": {
+                        "text": "当小队内其他干员的连携技造成伤害时可以发动",
+                        "effects": {
+                            "all": []
+                        }
+                    },
+                    "effects": []
                 }
             ]
         },
