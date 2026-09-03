@@ -1318,5 +1318,49 @@
     "vi_VN": {
       "string": "Liino"
     }
+  },
+  "ti_fu_luo_si": {
+    "zh_CN": {
+      "string": "提弗洛斯"
+    },
+    "zh_TW": {
+      "string": "提弗洛斯"
+    },
+    "en_US": {
+      "string": "Typhoeus"
+    },
+    "ja_JP": {
+      "string": "ティフォロス"
+    },
+    "ko_KR": {
+      "string": "티프로스"
+    },
+    "es_ES": {
+      "string": "Typhoeus"
+    },
+    "pt_BR": {
+      "string": "Typhoeus"
+    },
+    "de_DE": {
+      "string": "Typhoeus"
+    },
+    "fr_FR": {
+      "string": "Typhoeus"
+    },
+    "id_ID": {
+      "string": "Typhoeus"
+    },
+    "it_IT": {
+      "string": "Typhoeus"
+    },
+    "ru_RU": {
+      "string": "Тифея"
+    },
+    "th_TH": {
+      "string": "ไท​ฟี​อุส"
+    },
+    "vi_VN": {
+      "string": "Typhoeus"
+    }
   }
 }
