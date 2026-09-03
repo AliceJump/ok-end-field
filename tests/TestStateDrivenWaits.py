@@ -527,8 +527,8 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertEqual(task._battle_member_count, 1)
 
     def test_detect_team_stable_ignores_all_unknown_slots(self):
-        class StubTask:
-    def test_detect_team_stable_ignores_all_unknown_slots(self):
+        def test_detect_team_stable_ignores_all_unknown_slots(self):
+            import numpy as np
         import numpy as np
 
         class StubTask:
