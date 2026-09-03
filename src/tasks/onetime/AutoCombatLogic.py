@@ -65,6 +65,8 @@ class AutoCombatLogic:
     _SKILL_RETRY_MAX_FRAMES = 5  # 技力不足最大等待帧数（≈0.5s）
     _LOW_RES_WARN_INTERVAL = 5.0  # 低分辨率未进入战斗时警告间隔（秒）
     _SECOND_EXIT_THRESHOLD = 1.0  # 进入战斗后该秒数内退出视为“秒退”（等同未进入战斗）
+    _TEAM_DETECT_INTERVAL = 1.0  # 战斗主循环中的队伍识别间隔（秒）
+    _TEAM_DETECT_MAX_ATTEMPTS = 6  # 战斗主循环中的队伍识别尝试上限
 
     def _sync_normal_attack_hold(self):
         if self._normal_attack_hold_enabled:
@@ -286,6 +288,8 @@ class AutoCombatLogic:
     def run(self, start_sleep: float = None, no_battle: bool = False, deadline: float = None):
         self._last_exit_check_time = 0
         self._exit_check_interval = 0.5
+        self._last_team_detect_time = 0
+        self._team_detect_attempts = 0
         task = self.task
         task._battle_team=None
         if not task.in_combat(required_yellow=1):
@@ -384,18 +388,19 @@ class AutoCombatLogic:
                 # 尝试识别
                 if _skill_allowlist_enabled:
                     try:
-                        task.next_frame()
-                        team = task.detect_team()
-                        if team and all(m != "?" for m in team):
-                            task._battle_team = team
+                        team, stable = task.detect_team_stable(deadline=_sleep_end)
+                        if stable and team and all(m != "?" for m in team):
+                            skill_sequence = generate_skill_sequence(team)
+                            task._battle_team, self.normal_skill_sequence = team, skill_sequence
                             task.log_info(f"初始等待期间识别到队伍: {team}")
-                            # 生成自动技能列表
-                            self.normal_skill_sequence = generate_skill_sequence(team)
                             task.log_info(f"自动技能列表已生成: {self.normal_skill_sequence}")
                             break
-                    except Exception:
-                        pass
-                task.sleep(0.2)
+                    except Exception as exc:
+                        task._battle_team = None
+                        task.log_info(f"队伍识别或自动技能列表生成失败: {exc}")
+                retry_delay = min(0.2, _sleep_end - task.active_time())
+                if retry_delay > 0:
+                    task.sleep(retry_delay)
 
             # 剩余等待时间
             remaining = _sleep_end - task.active_time()
@@ -437,18 +442,28 @@ class AutoCombatLogic:
                     task.sleep(0.5)
                     continue
 
-                # 每轮尝试识别队伍，识别出就不再识别
-                if not getattr(task, '_battle_team', None) and _skill_allowlist_enabled:
+                # 按间隔尝试稳定识别队伍，识别成功或达到尝试上限后停止扫描
+                team_detect_due = now - self._last_team_detect_time >= self._TEAM_DETECT_INTERVAL
+                team_detect_available = self._team_detect_attempts < self._TEAM_DETECT_MAX_ATTEMPTS
+                if (
+                    not getattr(task, '_battle_team', None)
+                    and _skill_allowlist_enabled
+                    and team_detect_due
+                    and team_detect_available
+                ):
+                    self._team_detect_attempts += 1
                     try:
-                        task.next_frame()
-                        team = task.detect_team()
-                        if team and all(m != "?" for m in team):
-                            task._battle_team = team
+                        team, stable = task.detect_team_stable()
+                        if stable and team and all(m != "?" for m in team):
+                            skill_sequence = generate_skill_sequence(team)
+                            task._battle_team, self.normal_skill_sequence = team, skill_sequence
                             task.log_info(f"战斗中识别到队伍: {team}")
-                            self.normal_skill_sequence = generate_skill_sequence(team)
                             task.log_info(f"自动技能列表已生成: {self.normal_skill_sequence}")
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        task._battle_team = None
+                        task.log_info(f"队伍识别或自动技能列表生成失败: {exc}")
+                    finally:
+                        self._last_team_detect_time = task.active_time()
 
                 task.approach_enemy()
                 task.next_frame()

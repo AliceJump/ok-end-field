@@ -115,13 +115,19 @@
                     "count": -1
                 }
             ],
-            "trigger_condition": {
-                "text": "主控干员的重击或处决，命中处于电磁附着状态的敌人后可以发动",
-                "effects": [
-                    "ATTACH_ELECTROMAGNETIC"
-                ]
-            },
             "enhancements": [
+                {
+                    "name": "一息万变",
+                    "trigger_condition": {
+                        "text": "主控干员的重击或处决，命中处于电磁附着状态的敌人后可以发动",
+                        "effects": {
+                            "all": [
+                                "ATTACH_ELECTROMAGNETIC"
+                            ]
+                        }
+                    },
+                    "effects": []
+                },
                 {
                     "name": "电磁附着消耗→导电+导电等级+1",
                     "trigger_condition": {

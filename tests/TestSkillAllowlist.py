@@ -101,6 +101,28 @@ class TestSkillAllowlist(unittest.TestCase):
         self.assertNotIn("A", consumer_effects)
         self.assertTrue(build_skill_allowlist(["目标", "消费"], characters)[0][0])
 
+    def test_enhancement_effects_register_only_actual_producers(self):
+        producer = _character(
+            "产出者",
+            effects=[_effect("A")],
+            enhancements=[
+                {
+                    "trigger_condition": {"effects": {"all": ["A"]}},
+                    "effects": [_effect("B"), _effect("CONSUMED", count=-1)],
+                }
+            ],
+        )
+        consumer = _character(
+            "依赖者",
+            enhancements=[{"trigger_condition": {"effects": {"all": ["B"]}}}],
+        )
+        characters = {"产出者": producer, "依赖者": consumer}
+
+        context = _build_team_skill_context(["产出者", "依赖者"], characters)
+        self.assertEqual(context["effect_producers"]["B"], [("产出者", "产出者_skill")])
+        self.assertNotIn("CONSUMED", context["effect_producers"])
+        self.assertFalse(build_skill_allowlist(["产出者", "依赖者"], characters)[1][0])
+
     def test_shred_consuming_anomaly_is_not_a_stack_producer(self):
         target = _character(
             "目标",
@@ -220,8 +242,9 @@ class TestSkillAllowlist(unittest.TestCase):
             "导电产出者",
             effects=[_effect("STATUS_CONDUCTING")],
         )
+        zhuang_skill_only = {**zhuang, "skills": [skill]}
         team_data = {
-            "庄方宜": zhuang,
+            "庄方宜": zhuang_skill_only,
             "青霆剑消费者": sword_consumer,
             "导电产出者": conductive_producer,
         }
@@ -231,6 +254,19 @@ class TestSkillAllowlist(unittest.TestCase):
         # 导电产出者生产 STATUS_CONDUCTING，被庄方宜的 trigger_condition 依赖，所以禁止
         self.assertFalse(build_skill_allowlist(["庄方宜", "导电产出者"], team_data)[0][0])
 
+    def test_real_zhuang_fang_yi_link_release_gate_is_an_enhancement(self):
+        zhuang = load_characters()["庄方宜"]
+        link = next(skill for skill in zhuang["skills"] if skill["skill_id"] == "zhuangfy_link")
+
+        self.assertNotIn("trigger_condition", link)
+        self.assertEqual(len(link["enhancements"]), 2)
+        self.assertEqual(
+            link["enhancements"][0]["trigger_condition"]["effects"],
+            {"all": ["ATTACH_ELECTROMAGNETIC"]},
+        )
+        self.assertEqual(link["enhancements"][0]["effects"], [])
+        self.assertEqual(link["enhancements"][1]["effects"][0]["effect_id"], "STATUS_CONDUCTING")
+
     def test_real_laevat_threshold_is_not_statically_satisfied(self):
         characters = load_characters()
         laevat = characters["莱万汀"]
@@ -239,8 +275,9 @@ class TestSkillAllowlist(unittest.TestCase):
         # 验证 trigger_condition.effects 是 dict 结构
         tc_effects = skill["enhancements"][0]["trigger_condition"]["effects"]
         self.assertIsInstance(tc_effects, dict)
-        # 莱万汀单独时，没有其他人生产 STACK_MOLTEN，所以允许释放
-        self.assertTrue(build_skill_allowlist(["莱万汀"], {"莱万汀": laevat})[0][0])
+        # 仅验证战技本身时，没有其他技能生产 STACK_MOLTEN，所以允许释放
+        laevat_skill_only = {**laevat, "skills": [skill]}
+        self.assertTrue(build_skill_allowlist(["莱万汀"], {"莱万汀": laevat_skill_only})[0][0])
 
 
 if __name__ == "__main__":

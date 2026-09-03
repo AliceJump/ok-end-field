@@ -285,9 +285,13 @@ def _build_team_skill_context(
                 trigger_groups = _parse_trigger_groups(trigger)
                 enh_effects = []
                 for eff in enh.get("effects") or []:
-                    eid = _effect_id(eff)
+                    eid = _produced_effect_id(eff)
                     if eid:
                         enh_effects.append(eid)
+                        if eid not in effect_producers:
+                            effect_producers[eid] = []
+                        if key not in effect_producers[eid]:
+                            effect_producers[eid].append(key)
                 if trigger_groups or enh_effects:
                     enhancements.append({
                         "trigger_groups": trigger_groups,

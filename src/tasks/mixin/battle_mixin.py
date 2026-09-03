@@ -391,8 +391,8 @@ class BattleMixin(BaseEfTask):
 
         return search_boxes
 
-    def _detect_team_core(self, frame=None) -> dict[str, tuple[float, str, int]]:
-        """编队识别核心逻辑：返回 {en_name: (score, feature_name, slot_idx)}。
+    def _detect_team_core(self, frame=None) -> list[tuple[str, float, str]]:
+        """编队识别核心逻辑：返回四个槽位的 (en_name, score, feature_name)。
 
         流程：
         1. 收集所有 battle_icon 的 COCO bbox → 中心距离聚类 → 生成独立槽位搜索框
@@ -402,7 +402,7 @@ class BattleMixin(BaseEfTask):
         if frame is None:
             frame = self.frame
 
-        char_best: dict[str, tuple[float, str, int]] = {}
+        slot_results: list[tuple[str, float, str]] = [("?", 0.0, "") for _ in range(4)]
 
         # 1. 收集所有有效的 battle_icon 搜索框
         raw_boxes = []
@@ -420,7 +420,7 @@ class BattleMixin(BaseEfTask):
                 valid_features.append(feature_name)
 
         if not raw_boxes:
-            return char_best
+            return slot_results
 
         # 2. 中心距离聚类 → 独立搜索框，按 x 排序
         fh, fw = frame.shape[:2]
@@ -428,11 +428,11 @@ class BattleMixin(BaseEfTask):
         search_boxes.sort(key=lambda b: b.x)
 
         if not search_boxes:
-            return char_best
+            return slot_results
 
         # 3. 逐槽位匹配：每个槽位在所有模板中取最高分，已认领的角色不再参与
         used_features: set[str] = set()
-        for slot_idx, slot_box in enumerate(search_boxes):
+        for slot_idx, slot_box in enumerate(search_boxes[:4]):
             best_score = 0.0
             best_feature = None
             for feature_name in valid_features:
@@ -448,10 +448,10 @@ class BattleMixin(BaseEfTask):
             if best_feature is not None:
                 en_name = _TEMPLATE_ALIASES.get(best_feature, best_feature)
                 en_name = en_name.replace("battle_icon_", "")
-                char_best[en_name] = (best_score, best_feature, slot_idx)
+                slot_results[slot_idx] = (en_name, best_score, best_feature)
                 used_features.add(best_feature)
 
-        return char_best
+        return slot_results
 
     def detect_team(self, frame=None) -> list[str]:
         """从战斗帧识别当前队伍角色名（中文）。
@@ -465,26 +465,17 @@ class BattleMixin(BaseEfTask):
         Returns:
             角色名列表
         """
-        char_best = self._detect_team_core(frame)
+        slot_results = self._detect_team_core(frame)
         name_map = _load_char_name_map()
 
-        team = ["?"] * 4
-        for en_name, (_, _, slot_idx) in char_best.items():
-            if 0 <= slot_idx < len(team):
-                team[slot_idx] = name_map.get(en_name, en_name)
-        return team
+        return [name_map.get(en_name, en_name) for en_name, _, _ in slot_results]
 
     def detect_team_with_scores(self, frame=None) -> list[tuple[str, float]]:
         """同 detect_team，但同时返回匹配备分数（调试用）。"""
-        char_best = self._detect_team_core(frame)
+        slot_results = self._detect_team_core(frame)
         name_map = _load_char_name_map()
 
-        sorted_chars = sorted(
-            char_best.items(),
-            key=lambda item: item[1][2],
-        )
-
-        return [(name_map.get(en, en), score) for en, (score, _, _) in sorted_chars]
+        return [(name_map.get(en, en), score) for en, score, _ in slot_results]
 
     def detect_team_stable(
         self,

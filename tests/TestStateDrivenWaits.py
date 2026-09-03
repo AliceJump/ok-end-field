@@ -532,14 +532,50 @@ class TestStateDrivenWaits(unittest.TestCase):
 
         class StubTask:
             def _detect_team_core(self, frame):
-                return {
-                    "fourth": (0.91, "battle_icon_fourth", 3),
-                    "first": (0.95, "battle_icon_first", 0),
-                }
+                return [
+                    ("first", 0.95, "battle_icon_first"),
+                    ("?", 0.0, ""),
+                    ("?", 0.0, ""),
+                    ("fourth", 0.91, "battle_icon_fourth"),
+                ]
 
         self.assertEqual(
             BattleMixin.detect_team(StubTask()),
             ["一号", "?", "?", "四号"],
+        )
+        self.assertEqual(
+            BattleMixin.detect_team_with_scores(StubTask()),
+            [("一号", 0.95), ("?", 0.0), ("?", 0.0), ("四号", 0.91)],
+        )
+
+    @patch("src.tasks.mixin.battle_mixin.fL", [type("Feature", (), {"value": "battle_icon_first"})()])
+    def test_detect_team_core_preserves_scores_for_all_slots(self):
+        import numpy as np
+
+        search_boxes = [Box(index * 100, 10, 20, 20) for index in range(4)]
+
+        class StubTask:
+            frame = np.zeros((100, 500, 3), dtype=np.uint8)
+
+            def get_box_by_name(self, _feature_name):
+                return search_boxes[0]
+
+            def _build_search_boxes(self, _raw_boxes, frame_width, frame_height):
+                return search_boxes
+
+            def find_one(self, _feature_name, box, frame):
+                if box is search_boxes[3]:
+                    return Box(box.x, box.y, box.width, box.height, confidence=0.91)
+                return None
+
+        self.assertEqual(
+            BattleMixin._detect_team_core(StubTask()),
+            [
+                ("?", 0.0, ""),
+                ("?", 0.0, ""),
+                ("?", 0.0, ""),
+                ("first", 0.91, "battle_icon_first"),
+            ],
         )
 
     @patch.object(BattleMixin, "detect_team")

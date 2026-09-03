@@ -32,8 +32,6 @@ class TeamCompositionDetectTask(BattleMixin):
                     self.sleep(interval)
                     continue
                 detect_count += 1
-                # 使用框架 find_one 进行编队识别
-                team = self.detect_team(frame)
                 # 带分数版本（调试用）
                 team_with_scores = self.detect_team_with_scores(frame)
                 team_text = " | ".join(
