@@ -335,7 +335,7 @@ class GameFlowMixin:
         Returns:
             bool: 当前处于游戏世界返回 True。
         """
-        main_world_features = [fL.esc]
+        main_world_features = [fL.task_icon]
 
         in_world = all(self.find_one(f, vertical_variance=0.01, horizontal_variance=0.02) for f in main_world_features)
 
@@ -371,7 +371,7 @@ class GameFlowMixin:
         #     self.log_info("检测到对话跳过图标，按 ESC 退出对话")
         #     self.press_esc()
         #     self._next_main_recovery_time = self.active_time() + self.once_sleep_time
-        #     return False                                                                                                        
+        #     return False
 
         # 某些弹窗状态不视为主界面
         if result := (
@@ -544,7 +544,7 @@ class GameFlowMixin:
             "仓储节点": fL.warehouse_node_enter,
             "据点管理": fL.outpost_manager_enter,
         }
-        
+
         if box := self.wait_feature(
             feature=models.get(model),
             box=self.box.right,
