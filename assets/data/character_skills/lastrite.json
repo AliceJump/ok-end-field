@@ -47,8 +47,7 @@
                         "text": "消耗法术附着施加寒冷脆弱",
                         "effects": {
                             "all": [
-                                "STATUS_SPELL_INFLICT",
-                                "VULN_COLD"
+                                "STATUS_SPELL_INFLICT"
                             ]
                         }
                     },
