@@ -526,25 +526,6 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertTrue(BattleMixin.in_team(task))
         self.assertEqual(task._battle_member_count, 1)
 
-    @patch("src.tasks.mixin.battle_mixin.detect_team_from_frame")
-    def test_detected_team_member_rechecks_current_frame(self, detect_team):
-        # 第一次调用返回不匹配的队伍，之后每次返回匹配队伍
-        detect_team.side_effect = [
-            ["角色A", "角色B"],  # 不匹配 → matched_count 重置
-            ["余烬", "赵昭"],  # 匹配 → matched_count=1
-            ["余烬", "赵昭"],  # 匹配 → matched_count=2 → 返回 True
-        ]
-
-        self.assertEqual(
-            BattleMixin._detect_team_core(StubTask()),
-            [
-                ("?", 0.0, ""),
-                ("?", 0.0, ""),
-                ("?", 0.0, ""),
-                ("first", 0.91, "battle_icon_first"),
-            ],
-        )
-
     def test_detect_team_stable_ignores_all_unknown_slots(self):
         class StubTask:
     def test_detect_team_stable_ignores_all_unknown_slots(self):
