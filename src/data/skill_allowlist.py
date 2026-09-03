@@ -105,7 +105,7 @@ def _parse_trigger_groups(trigger_condition: dict | str) -> list[dict]:
     for operator in ("all", "any"):
         effect_list = effects.get(operator) or []
         effect_set = {_effect_id(e) for e in effect_list if _effect_id(e)}
-        if effect_set:
+        if effect_set or (operator == "all" and effects.get(operator) == []):
             groups.append({"operator": operator, "effects": effect_set})
 
     return groups
@@ -285,12 +285,9 @@ def _build_team_skill_context(
                 trigger_groups = _parse_trigger_groups(trigger)
                 enh_effects = []
                 for eff in enh.get("effects") or []:
-                    eid = _produced_effect_id(eff)
+                    eid = _effect_id(eff)
                     if eid:
                         enh_effects.append(eid)
-                        producers = effect_producers.setdefault(eid, [])
-                        if key not in producers:
-                            producers.append(key)
                 if trigger_groups or enh_effects:
                     enhancements.append({
                         "trigger_groups": trigger_groups,

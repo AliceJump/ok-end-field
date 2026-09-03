@@ -4,6 +4,8 @@ import unittest
 
 from src.data.skill_allowlist import (
     _build_team_skill_context,
+    _is_trigger_satisfied,
+    _parse_trigger_groups,
     build_skill_allowlist,
     generate_skill_sequence,
     load_characters,
@@ -27,6 +29,35 @@ def _character(name: str, effects=None, enhancements=None) -> dict:
 
 
 class TestSkillAllowlist(unittest.TestCase):
+    def test_explicit_empty_all_is_parsed_as_static_trigger(self):
+        self.assertEqual(
+            _parse_trigger_groups({"effects": {"all": []}}),
+            [{"operator": "all", "effects": set()}],
+        )
+        self.assertEqual(_parse_trigger_groups({"effects": {}}), [])
+
+    def test_empty_all_trigger_is_satisfied(self):
+        groups = [{"operator": "all", "effects": set()}]
+
+        self.assertTrue(_is_trigger_satisfied(groups, set()))
+
+    def test_real_empty_all_enhancements_are_kept_in_context(self):
+        characters = load_characters()
+        context = _build_team_skill_context(
+            ["黎风", "莱万汀"],
+            {name: characters[name] for name in ("黎风", "莱万汀")},
+        )
+
+        for key in (("黎风", "lifeng_skill"), ("莱万汀", "laevat_ultimate")):
+            enhancements = context["enhancement_triggers"][key]
+            self.assertIn(
+                [{"operator": "all", "effects": set()}],
+                [enhancement["trigger_groups"] for enhancement in enhancements],
+            )
+
+    def test_list_effects_remain_dynamic(self):
+        self.assertEqual(_parse_trigger_groups({"effects": ["A"]}), [])
+
     def test_single_branch_all_requires_every_effect(self):
         target = _character(
             "目标",
