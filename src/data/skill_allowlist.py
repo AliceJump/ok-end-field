@@ -1,12 +1,9 @@
 """自动技能列表：根据队伍 4 角色的增强链依赖，自动判定哪些战技有意义释放。
 
-使用方式（战斗配置中启用"自动技能列表"后）：
-    frame = task.next_frame()           # 战斗中截帧
-    members = detect_team_from_frame(frame)  # battle_icon 模板匹配自动识别
-    # → ["别礼", "伊冯", "洁尔佩塔", "余烬"]
-    seq = ["1", "2", "3"]
-    filtered = filter_skill_sequence(members, seq)
-    # → ["1", "3"]  （2号位伊冯、4号位余烬的战技被禁止）
+三阶段闭包算法：
+  1. 建立"当前已存在效果集"（非战技强化态闭包）
+  2. 处理"已经可以触发"的战技强化态（战技强化态闭包）
+  3. 处理剩余战技，检查 effects 是否对强化链有贡献
 
 参见 tools/team_composer.py --allowlist 查看命令行版本。
 """
@@ -16,21 +13,32 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-import cv2
-import numpy as np
-
 # ── 路径 ──────────────────────────────────────────────────────────────────────
 
 _ROOT = Path(__file__).resolve().parent.parent.parent
 _DATA_DIR = _ROOT / "assets" / "data" / "character_skills"
-_CHARACTERS_JSON = _ROOT / "assets" / "data" / "characters.json"
-_ASSETS_DIR = _ROOT / "assets"
-_COCO_JSON = _ASSETS_DIR / "coco_annotations.json"
 
 _SHRED_STACK_PRODUCERS = {
     "STATUS_SHRED",
     "STATUS_HEAVY_HIT",
     "STATUS_KNOCKDOWN",
+    "STATUS_SHATTER",     # 碎甲
+    "STATUS_HEAVY_STRIKE"  # 猛击
+}
+
+_CATEGORY_SPELL_ANOMALIES = {
+    "STATUS_CORROSION",
+    "STATUS_FROZEN",
+    "STATUS_CONDUCTING",
+    "STATUS_BURNING",
+}
+
+# 豁免名单：这些角色的战技跳过所有检查，直接允许释放
+EXEMPT_CHARACTERS: set[str] = {
+    "梨诺" #梨诺战技无消耗
+}
+NO_ALLOW_CHARACTERS: set[str] = {
+    "余烬" #余烬战技基本无用
 }
 
 # ── 数据加载 ──────────────────────────────────────────────────────────────────
@@ -63,10 +71,11 @@ def clear_cache():
     _cached_characters = None
 
 
-# ── 核心逻辑：两阶段构建允许列表 ────────────────────────────────────────────
+# ── 辅助函数 ──────────────────────────────────────────────────────────────────
 
 
 def _effect_id(effect) -> str:
+    """提取效果 ID。"""
     if isinstance(effect, str):
         return effect
     if isinstance(effect, dict):
@@ -75,7 +84,7 @@ def _effect_id(effect) -> str:
 
 
 def _produced_effect_id(effect) -> str:
-    """只把实际施加/增加的效果计为 producer。"""
+    """只把实际施加/增加的效果计为 producer（排除消费效果）。"""
     effect_id = _effect_id(effect)
     if not effect_id:
         return ""
@@ -86,89 +95,324 @@ def _produced_effect_id(effect) -> str:
     return effect_id
 
 
-def _static_release_gate(enhancement: dict) -> dict | None:
-    """读取显式静态 release gate；动态阈值和非 gate 分支返回 None。"""
-    gate = enhancement.get("release_gate")
-    if not isinstance(gate, dict) or gate.get("static") is False:
-        return None
+def _expanded_produced_effect_ids(effect) -> tuple[str, ...]:
+    """展开正向产出效果的依赖 ID，并保留原始类别效果。"""
+    effect_id = _produced_effect_id(effect)
+    if not effect_id:
+        return ()
+    if effect_id in _CATEGORY_SPELL_ANOMALIES:
+        return effect_id, "STATUS_SPELL_ANOMALY"
+    return (effect_id,)
+
+
+def _register_effect_producer(
+    effect_producers: dict[str, list[tuple[str, str]]],
+    effect_id: str,
+    key: tuple[str, str],
+) -> None:
+    """登记效果生产者，同一技能仅登记一次。"""
+    producers = effect_producers.setdefault(effect_id, [])
+    if key not in producers:
+        producers.append(key)
+
+
+def _parse_trigger_groups(trigger_condition: dict | str) -> list[dict]:
+    """从 trigger_condition 中解析触发条件组。
+
+    返回 [{"operator": "all"|"any", "effects": set[str]}, ...]
+    每组是一个独立的条件判断，组间隐含 AND 关系。
+
+    只解析 dict 格式且包含 all/any 的静态门控。
+    简单列表格式（如 ['A']）被视为动态触发条件，不解析。
+    """
+    if isinstance(trigger_condition, str):
+        return []
+
+    effects = trigger_condition.get("effects", {})
+    if not isinstance(effects, dict):
+        return []
+
+    groups: list[dict] = []
     for operator in ("all", "any"):
-        if operator not in gate:
-            continue
-        requires = [effect_id for effect in gate.get(operator) or [] if (effect_id := _effect_id(effect))]
-        if requires:
-            return {"operator": operator, "requires": requires}
-    return None
+        effect_list = effects.get(operator) or []
+        effect_set = {_effect_id(e) for e in effect_list if _effect_id(e)}
+        if effect_set or (operator == "all" and effects.get(operator) == []):
+            groups.append({"operator": operator, "effects": effect_set})
+
+    return groups
 
 
-def _branch_can_trigger(branch: dict, producers: dict, skill_key: tuple[str, str]) -> bool:
-    """判断一个静态 gate 分支是否能由其它队内技能满足。"""
-    checks = [
-        any(
-            (producer_name, producer_skill_id) != skill_key
-            for producer_name, producer_skill_id, _ in producers.get(effect_id, [])
-        )
-        for effect_id in branch["requires"]
-    ]
-    return all(checks) if branch["operator"] == "all" else any(checks)
+def _is_trigger_satisfied(trigger_groups: list[dict], current_effects: set[str]) -> bool:
+    """判断触发条件组是否被当前 effects 满足。
+
+    组间隐含 AND 关系：每组都必须满足。
+    "all" 组：所有效果都必须在 current_effects 中。
+    "any" 组：至少一个效果在 current_effects 中。
+    """
+    return all(
+        current_effects >= group["effects"]
+        if group["operator"] == "all"
+        else bool(current_effects & group["effects"])
+        for group in trigger_groups
+    )
+
+
+def _is_non_skill_enhancement(skill_type: str) -> bool:
+    """判断技能类型是否为"非战技"（连携技、终结技等）。"""
+    return skill_type in {"连携技", "终结技", "天赋", "潜能"}
+
+
+def _is_active_skill(skill_type: str) -> bool:
+    """判断技能类型是否为"战技"。"""
+    return skill_type == "战技"
+
+
+def _merge_new_effects(current_effects: set[str], enhancement_effects: list[str]) -> bool:
+    """合并强化态产出，返回是否新增了效果。"""
+    previous_count = len(current_effects)
+    current_effects.update(enhancement_effects)
+    return len(current_effects) != previous_count
+
+
+def _apply_non_skill_enhancements(ctx: dict, current_effects: set[str]) -> bool:
+    """扫描一次非战技强化态，并合并当前可触发分支的产出。"""
+    changed = False
+    for enhancements in ctx["enhancement_triggers"].values():
+        for enhancement in enhancements:
+            if _is_active_skill(enhancement["skill_type"]):
+                continue
+            trigger_groups = enhancement["trigger_groups"]
+            if trigger_groups and _is_trigger_satisfied(trigger_groups, current_effects):
+                changed |= _merge_new_effects(current_effects, enhancement["effects"])
+    return changed
+
+
+def _is_self_dependency(ctx: dict, key: tuple[str, str], trigger_groups: list[dict]) -> bool:
+    """判断触发组内所有效果是否都只能由当前技能自身产出。"""
+    producers_by_effect = ctx.get("effect_producers", {})
+    return all(
+        not any(producer_key != key for producer_key in producers_by_effect.get(effect_id, []))
+        for group in trigger_groups
+        for effect_id in group["effects"]
+    )
+
+
+def _apply_skill_enhancement(
+    ctx: dict,
+    key: tuple[str, str],
+    enhancement: dict,
+    current_effects: set[str],
+    forbidden_skills: set[tuple[str, str]],
+) -> bool:
+    """处理单个可触发的战技强化态，返回闭包状态是否变化。"""
+    if not _is_active_skill(enhancement["skill_type"]):
+        return False
+    trigger_groups = enhancement["trigger_groups"]
+    if not trigger_groups or not _is_trigger_satisfied(trigger_groups, current_effects):
+        return False
+
+    changed = False
+    if not _is_self_dependency(ctx, key, trigger_groups) and key not in forbidden_skills:
+        forbidden_skills.add(key)
+        changed = True
+    return _merge_new_effects(current_effects, enhancement["effects"]) or changed
+
+
+def _apply_skill_enhancements(
+    ctx: dict,
+    current_effects: set[str],
+    forbidden_skills: set[tuple[str, str]],
+) -> bool:
+    """扫描一次战技强化态，并汇总禁止项和新增效果。"""
+    changed = False
+    for key, enhancements in ctx["enhancement_triggers"].items():
+        for enhancement in enhancements:
+            changed |= _apply_skill_enhancement(
+                ctx,
+                key,
+                enhancement,
+                current_effects,
+                forbidden_skills,
+            )
+    return changed
+
+
+def _has_break_chain_contribution(skill_effects: set[str]) -> bool:
+    """判断技能产出是否属于破防强化链。"""
+    return bool(skill_effects & _SHRED_STACK_PRODUCERS)
+
+
+def _contributes_to_active_enhancement(
+    skill_effects: set[str],
+    enhancement_triggers: dict,
+    current_effects: set[str],
+) -> bool:
+    """判断技能产出是否命中任一当前可激活强化态的触发组。"""
+    for enhancements in enhancement_triggers.values():
+        for enhancement in enhancements:
+            trigger_groups = enhancement["trigger_groups"]
+            if not trigger_groups or not _is_trigger_satisfied(trigger_groups, current_effects):
+                continue
+            if any(skill_effects & group["effects"] for group in trigger_groups):
+                return True
+    return False
+
+
+# ── 核心逻辑：三阶段闭包算法 ────────────────────────────────────────────────
 
 
 def _build_team_skill_context(
     team_members: list[str],
     characters: dict[str, dict],
 ) -> dict:
-    """第一阶段：扫描队伍所有技能，建立依赖关系图。
+    """扫描队伍所有技能，建立基础数据结构。
 
     Returns:
         {
-            "producers": {effect_id: [(char_name, skill_id, skill_type), ...]},
-            "release_gates": {(char_name, skill_id): [gate_branch, ...]},
+            "team_skills": {(char_name, skill_id): skill_dict},
+            "skill_types": {(char_name, skill_id): skill_type},
+            "skill_effects": {(char_name, skill_id): [effect_id, ...]},
+            "enhancement_triggers": {
+                (char_name, skill_id): [{"trigger_groups": [...], "effects": [effect], "skill_type": str}, ...]
+            },
+            "effect_producers": {effect_id: [(char_name, skill_id), ...]},
         }
     """
     team_set = set(team_members)
 
-    # 收集队内所有技能
-    all_skills: dict[tuple[str, str], dict] = {}
+    team_skills: dict[tuple[str, str], dict] = {}
+    skill_types: dict[tuple[str, str], str] = {}
+    skill_effects: dict[tuple[str, str], list[str]] = {}
+    enhancement_triggers: dict[tuple[str, str], list[dict]] = {}
+    effect_producers: dict[str, list[tuple[str, str]]] = {}
+
     for name, cdata in characters.items():
         if name not in team_set:
             continue
         for s in cdata.get("skills", []):
-            all_skills[(name, s.get("skill_id", ""))] = s
+            skill_id = s.get("skill_id", "")
+            key = (name, skill_id)
+            team_skills[key] = s
+            skill_types[key] = s.get("skill_type", "")
 
-    # ── producers: 哪些技能在施放后产出什么状态 ──
-    producers: dict[str, list[tuple[str, str, str]]] = {}
-    for (sname, sid), sdata in all_skills.items():
-        producer = (sname, sid, sdata.get("skill_type", ""))
-        for eff in sdata.get("effects") or []:
-            effect_id = _produced_effect_id(eff)
-            if not effect_id:
-                continue
-            effect_producers = producers.setdefault(effect_id, [])
-            if producer not in effect_producers:
-                effect_producers.append(producer)
-            if effect_id in _SHRED_STACK_PRODUCERS:
-                shred_producers = producers.setdefault("STACK_SHRED", [])
-                if producer not in shred_producers:
-                    shred_producers.append(producer)
+            # 收集技能产出的效果
+            effects = []
+            for eff in s.get("effects") or []:
+                for effect_id in _expanded_produced_effect_ids(eff):
+                    effects.append(effect_id)
+                    _register_effect_producer(effect_producers, effect_id, key)
+            skill_effects[key] = effects
 
-    # ── release gates: 每个 enhancement 保持独立分支，分支间按 OR 判定 ──
-    release_gates: dict[tuple[str, str], list[dict]] = {}
-    for (sname, sid), sdata in all_skills.items():
-        if sdata.get("skill_type") != "战技":
+            # 收集增强态的触发条件和产出效果
+            enhancements = []
+            for enh in s.get("enhancements") or []:
+                trigger = enh.get("trigger_condition", {})
+                if not isinstance(trigger, dict):
+                    continue
+                trigger_groups = _parse_trigger_groups(trigger)
+                enh_effects = []
+                for eff in enh.get("effects") or []:
+                    for eid in _expanded_produced_effect_ids(eff):
+                        enh_effects.append(eid)
+                        _register_effect_producer(effect_producers, eid, key)
+                if trigger_groups or enh_effects:
+                    enhancements.append({
+                        "trigger_groups": trigger_groups,
+                        "effects": enh_effects,
+                        "skill_type": s.get("skill_type", ""),
+                    })
+            if enhancements:
+                enhancement_triggers[key] = enhancements
+
+    return {
+        "team_skills": team_skills,
+        "skill_types": skill_types,
+        "skill_effects": skill_effects,
+        "enhancement_triggers": enhancement_triggers,
+        "effect_producers": effect_producers,
+    }
+
+
+def _closure_non_skill_enhancements(ctx: dict) -> set[str]:
+    """第一阶段：建立"当前已存在效果集"（非战技强化态闭包）。
+
+    初始：队伍内所有技能产出的效果
+    循环：遍历所有「战技以外」的强化态触发条件，
+          如果触发条件被当前 effects 满足，将该强化态产生的 effects 加入总集
+    直到：不再产生新 effects
+    """
+    current_effects: set[str] = set()
+    for effects in ctx["skill_effects"].values():
+        current_effects.update(effects)
+
+    while _apply_non_skill_enhancements(ctx, current_effects):
+        pass
+
+    return current_effects
+
+
+def _closure_skill_enhancements(ctx: dict, current_effects: set[str]) -> tuple[set[str], set[tuple[str, str]]]:
+    """第二阶段：处理"已经可以触发"的战技强化态。
+
+    遍历所有战技的强化态：
+    - 如果触发条件被当前 effects 满足 → 该战技禁止无条件释放
+    - 同时将强化态产生的 effects 加入总 effects
+    - 继续循环直到稳定
+
+    特殊处理：如果增强态依赖的效果只由该战技自己产出（自我依赖），
+    则不禁止该战技，因为增强态的触发需要战技先施放。
+
+    Returns:
+        (最终 effects 集合, 禁止释放的战技 key 集合)
+    """
+    forbidden_skills: set[tuple[str, str]] = set()
+
+    while _apply_skill_enhancements(ctx, current_effects, forbidden_skills):
+        pass
+
+    return current_effects, forbidden_skills
+
+
+def _filter_remaining_skills(
+    ctx: dict,
+    current_effects: set[str],
+    forbidden_skills: set[tuple[str, str]],
+) -> set[tuple[str, str]]:
+    """第三阶段：处理剩余战技，检查 effects 是否对强化链有贡献。
+
+    对于没有被第二阶段禁止的战技：
+    - 检查其产出的效果是否对某个**当前已可激活的强化态**有贡献
+    - 有贡献 → 保留
+    - 无贡献 → 踢出
+    """
+    allowed_skills: set[tuple[str, str]] = set()
+
+    for key, skill_type in ctx["skill_types"].items():
+        if not _is_active_skill(skill_type):
             continue
-        skill_enhancements = sdata.get("enhancements") or []
-        if not skill_enhancements and sdata.get("enhancement"):
-            skill_enhancements = [sdata["enhancement"]]
-        if not skill_enhancements:
+
+        if key in forbidden_skills:
             continue
 
-        branches = []
-        for enh in skill_enhancements:
-            if gate := _static_release_gate(enh):
-                branches.append(gate)
-        if branches:
-            release_gates[(sname, sid)] = branches
+        skill_effects = set(ctx["skill_effects"].get(key, []))
+        if not skill_effects:
+            continue
 
-    return {"producers": producers, "release_gates": release_gates}
+        # 检查战技产出的效果是否与任何已可激活的强化态的触发条件有交集
+        # 破防链特殊规则：
+        # 破防、击飞、倒地、碎甲、猛击统一视为同一条物理强化链。
+        has_contribution = _has_break_chain_contribution(skill_effects)
+        if not has_contribution:
+            has_contribution = _contributes_to_active_enhancement(
+                skill_effects,
+                ctx["enhancement_triggers"],
+                current_effects,
+            )
+
+        if has_contribution:
+            allowed_skills.add(key)
+
+    return allowed_skills
 
 
 def build_skill_allowlist(
@@ -177,9 +421,10 @@ def build_skill_allowlist(
 ) -> dict[int, tuple[bool, str]]:
     """判断队伍中每个角色的战技是否允许手动释放。
 
-    两阶段架构：
-      1. 建立队伍技能依赖图（producers / release gates）
-      2. 逐个角色判定战技是否应被增强态接管
+    三阶段闭包算法：
+      1. 建立"当前已存在效果集"（非战技强化态闭包）
+      2. 处理"已经可以触发"的战技强化态（战技强化态闭包）
+      3. 处理剩余战技，检查 effects 是否对强化链有贡献
 
     Args:
         team_members: 4 个角色名，索引 0-3 对应技能键 "1"-"4"
@@ -194,19 +439,34 @@ def build_skill_allowlist(
     if not characters:
         return {i: (True, "") for i in range(len(team_members))}
 
-    # ── 第一阶段：建立队伍技能依赖图 ──
+    # ── 第零阶段：建立基础数据结构 ──
     ctx = _build_team_skill_context(team_members, characters)
 
-    # ── 第二阶段：逐个判定战技 ──
-    result: dict[int, tuple[bool, str]] = {}
+    # ── 第一阶段：非战技强化态闭包 ──
+    current_effects = _closure_non_skill_enhancements(ctx)
 
+    # ── 第二阶段：战技强化态闭包 ──
+    current_effects, forbidden_skills = _closure_skill_enhancements(ctx, current_effects)
+
+    # ── 第三阶段：筛选剩余战技 ──
+    allowed_skills = _filter_remaining_skills(ctx, current_effects, forbidden_skills)
+
+    # ── 兜底：如果允许集合为空，返回全部战技 ──
+    all_active_skills = {
+        key for key, stype in ctx["skill_types"].items()
+        if _is_active_skill(stype)
+    }
+    if not allowed_skills:
+        allowed_skills = all_active_skills
+
+    # ── 转换为输出格式 ──
+    result: dict[int, tuple[bool, str]] = {}
     for idx, char_name in enumerate(team_members):
         char_data = characters.get(char_name)
         if not char_data:
             result[idx] = (True, "")
             continue
 
-        # 找到该角色的战技
         skill = None
         for s in char_data.get("skills", []):
             if s.get("skill_type") == "战技":
@@ -217,22 +477,26 @@ def build_skill_allowlist(
             continue
 
         key = (char_name, skill.get("skill_id", ""))
-        release_gates = ctx["release_gates"].get(key)
-        if not release_gates:
+
+        if char_name in EXEMPT_CHARACTERS:
             result[idx] = (True, "")
             continue
+        if char_name in NO_ALLOW_CHARACTERS:
+            result[idx] = (False, "战技基本无用")
+            continue
 
-        if any(_branch_can_trigger(branch, ctx["producers"], key) for branch in release_gates):
+        if key in forbidden_skills:
             result[idx] = (False, "增强态优先")
-        else:
+        elif key in allowed_skills:
             result[idx] = (True, "")
+        else:
+            result[idx] = (False, "效果无依赖")
 
     return result
 
 
 # ── 生成技能释放序列 ────────────────────────────────────────────────
 
-# 普通战技 token 集合（不含 ult_/e/sleep_/normal_）
 _NORMAL_SKILL_TOKENS = {"1", "2", "3", "4"}
 
 
@@ -240,17 +504,7 @@ def generate_skill_sequence(
     team_members: list[str],
     characters: dict[str, dict] | None = None,
 ) -> list[str]:
-    """根据队伍编队直接生成允许的战技释放序列（生成式，不依赖用户配置）。
-
-    自动构建 allowlist，仅返回被允许的数字战技 token，按索引升序排列。
-
-    Args:
-        team_members: 4 个角色名，索引 i 对应技能键 "i+1"
-        characters:   角色数据（可选）
-
-    Returns:
-        生成的战技释放序列，如 ["1", "3"]
-    """
+    """根据队伍编队直接生成允许的战技释放序列。"""
     allowlist = build_skill_allowlist(team_members, characters)
     result = [str(i + 1) for i, (ok, _) in allowlist.items() if ok]
     return result if result else [str(i + 1) for i in range(len(team_members))]
@@ -261,19 +515,7 @@ def filter_skill_sequence(
     skill_sequence: list[str],
     characters: dict[str, dict] | None = None,
 ) -> list[str]:
-    """根据自动技能列表过滤技能释放序列。
-
-    保留原始序列中的非数字 token（ult_/e/sleep_/normal_ 等），
-    仅对数字战技 token（1-4）根据允许列表进行过滤。
-
-    Args:
-        team_members:   4 个角色名，索引 i 对应技能键 "i+1"
-        skill_sequence: 原始技能序列
-        characters:     角色数据（可选）
-
-    Returns:
-        过滤后的技能释放序列
-    """
+    """根据自动技能列表过滤技能释放序列。"""
     allowlist = build_skill_allowlist(team_members, characters)
     allowed_digits = {
         str(i + 1) for i, (ok, _) in allowlist.items() if ok
@@ -282,317 +524,9 @@ def filter_skill_sequence(
     filtered = []
     for token in skill_sequence:
         if token in _NORMAL_SKILL_TOKENS:
-            # 数字战技 token：仅保留允许列表中的
             if token in allowed_digits:
                 filtered.append(token)
         else:
-            # 非数字 token（ult_/e/sleep_/normal_ 等）：保留
             filtered.append(token)
 
     return filtered if filtered else list(skill_sequence)
-
-
-# ── 编队头像自动识别 ────────────────────────────────────────────────────────
-# 复用 TeamCompositionDetectTask 的 battle_icon 模板匹配逻辑
-
-# 左下角4个头像固定区域（归一化坐标，基于 1920x1080）
-_PORTRAIT_ROIS = [
-    (40 / 1920, 927 / 1080),
-    (156 / 1920, 927 / 1080),
-    (273 / 1920, 927 / 1080),
-    (390 / 1920, 927 / 1080),
-]
-_PORTRAIT_SIZE = (54 / 1920, 46 / 1080)
-_MATCH_SCALES = [0.6, 0.7, 0.8, 0.9, 1.0, 1.1, 1.2]
-_MIN_MATCH_SCORE = 0.45
-
-# 模板别名：变体 annotation 名 → 主模板名
-# COCO annotations 中变体名保持唯一，代码侧在此声明同角色归并关系。
-_TEMPLATE_ALIASES: dict[str, str] = {
-    "battle_icon_endministrator_female": "battle_icon_endministrator",
-    "battle_icon_endministrator_male": "battle_icon_endministrator",
-}
-
-# 缓存
-_char_name_map: dict[str, str] | None = None   # en → zh
-_battle_icons: dict[str, list[np.ndarray]] | None = None
-
-
-def _load_char_name_map() -> dict[str, str]:
-    """加载 characters.json，返回 en→zh 映射（如 ember→余烬）。"""
-    global _char_name_map
-    if _char_name_map is not None:
-        return _char_name_map
-    if not _CHARACTERS_JSON.exists():
-        _char_name_map = {}
-        return _char_name_map
-    with open(_CHARACTERS_JSON, encoding="utf-8") as f:
-        data = json.load(f)
-    _char_name_map = {}
-    for info in data.values():
-        en = info.get("en", "")
-        zh = info.get("zh", "")
-        if en and zh:
-            _char_name_map[en] = zh
-    return _char_name_map
-
-
-def _load_battle_icons() -> dict[str, list[np.ndarray]]:
-    """从 coco_annotations.json 加载 battle_icon 模板（带缓存）。
-
-    每条 annotation 使用独立的 category name（不重复）。
-    加载后按 ``_TEMPLATE_ALIASES`` 将变体名归并到主模板名下，
-    返回 ``dict[str, list[np.ndarray]]``。
-    """
-    global _battle_icons
-    if _battle_icons is not None:
-        return _battle_icons
-    if not _COCO_JSON.exists():
-        _battle_icons = {}
-        return _battle_icons
-    with open(_COCO_JSON, encoding="utf-8") as f:
-        data = json.load(f)
-    cat_map = {c["id"]: c["name"] for c in data["categories"]}
-    img_map = {i["id"]: i for i in data["images"]}
-    icons: dict[str, list[np.ndarray]] = {}
-    for ann in data["annotations"]:
-        name = cat_map.get(ann["category_id"], "")
-        if not name.startswith("battle_icon_"):
-            continue
-        img = img_map.get(ann["image_id"])
-        if img is None:
-            continue
-        path = _ASSETS_DIR / img["file_name"]
-        if not path.exists():
-            continue
-        shot = cv2.imread(str(path))
-        if shot is None:
-            continue
-        x, y, w, h = [int(v) for v in ann["bbox"]]
-        icons.setdefault(name, []).append(shot[y:y + h, x:x + w].copy())
-    # 按别名表归并变体模板到主模板名
-    for variant, primary in _TEMPLATE_ALIASES.items():
-        if variant in icons:
-            icons.setdefault(primary, []).extend(icons.pop(variant))
-    _battle_icons = icons
-    return icons
-
-
-def _hist_sim(img1: np.ndarray, img2: np.ndarray) -> float:
-    """HSV 直方图相关性。"""
-    h1 = cv2.calcHist([cv2.cvtColor(img1, cv2.COLOR_BGR2HSV)], [0, 1], None, [30, 32], [0, 180, 0, 256])
-    h2 = cv2.calcHist([cv2.cvtColor(img2, cv2.COLOR_BGR2HSV)], [0, 1], None, [30, 32], [0, 180, 0, 256])
-    cv2.normalize(h1, h1)
-    cv2.normalize(h2, h2)
-    return cv2.compareHist(h1, h2, cv2.HISTCMP_CORREL)
-
-
-def _best_match_portrait(portrait: np.ndarray, templates: list[np.ndarray]) -> float:
-    """对多张模板取最佳匹配分数（同角色不同外观）。"""
-    return max((_match_portrait(portrait, t) for t in templates), default=-1.0)
-
-
-def _phash(img: np.ndarray, size: int = 16) -> np.ndarray:
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    small = cv2.resize(gray, (size, size))
-    return small > small.mean()
-
-
-def _match_portrait(portrait: np.ndarray, template: np.ndarray) -> float:
-    """多尺度模板匹配 + HSV 直方图 + pHash 综合评分。"""
-    t_h, t_w = template.shape[:2]
-    p_h, p_w = portrait.shape[:2]
-    t_gray = cv2.cvtColor(template, cv2.COLOR_BGR2GRAY)
-    p_gray = cv2.cvtColor(portrait, cv2.COLOR_BGR2GRAY)
-    best = -1.0
-    best_pos = None
-    best_scale = 1.0
-    for scale in _MATCH_SCALES:
-        tw = max(10, int(p_w * scale))
-        th = max(10, int(p_h * scale))
-        if tw > t_w or th > t_h:
-            continue
-        tmpl = cv2.resize(p_gray, (tw, th))
-        result = cv2.matchTemplate(t_gray, tmpl, cv2.TM_CCOEFF_NORMED)
-        _, max_val, _, max_loc = cv2.minMaxLoc(result)
-        if max_val > best:
-            best = max_val
-            best_scale = scale
-            best_pos = max_loc
-    hist = 0.0
-    phash_sim = 0.0
-    if best_pos is not None:
-        tw = int(p_w * best_scale)
-        th = int(p_h * best_scale)
-        region = template[best_pos[1]:best_pos[1] + th, best_pos[0]:best_pos[0] + tw]
-        region = cv2.resize(region, (p_w, p_h))
-        hist = _hist_sim(portrait, region)
-        p1 = _phash(portrait)
-        p2 = _phash(region)
-        phash_sim = 1.0 - np.count_nonzero(p1 != p2) / p1.size
-    return (best + hist + phash_sim) / 3
-
-
-def detect_team_from_frame(frame: np.ndarray) -> list[str]:
-    """从战斗帧的左下角头像识别当前队伍角色名（中文）。
-
-    自动兼容少人情况：识别完成后去掉尾部未识别的 "?" 位，
-    因此 3 人队返回 3 个、2 人队返回 2 个。
-
-    Args:
-        frame: BGR 格式 numpy 数组（由 task.next_frame() 获取）
-
-    Returns:
-        角色名列表（按位置顺序），识别失败的位置用 "?" 代替。
-        例: ["别礼", "伊冯", "洁尔佩塔", "余烬"]
-    """
-    icons = _load_battle_icons()
-    name_map = _load_char_name_map()
-
-    if not icons:
-        return ["?"] * 4
-
-    height, width = frame.shape[:2]
-    pw = int(_PORTRAIT_SIZE[0] * width)
-    ph = int(_PORTRAIT_SIZE[1] * height)
-
-    team: list[str] = []
-    for rx, ry in _PORTRAIT_ROIS:
-        x1, y1 = int(rx * width), int(ry * height)
-        portrait = frame[y1:y1 + ph, x1:x1 + pw]
-        if portrait.size == 0:
-            team.append("?")
-            continue
-
-        best_name: str | None = None
-        best_score = -1.0
-        for label, templates in icons.items():
-            score = _best_match_portrait(portrait, templates)
-            if score > best_score:
-                best_score = score
-                best_name = label
-
-        if best_name and best_score >= _MIN_MATCH_SCORE:
-            # battle_icon_ember → ember → 余烬
-            en_key = best_name.replace("battle_icon_", "")
-            zh_name = name_map.get(en_key, en_key)
-            team.append(zh_name)
-        else:
-            team.append("?")
-
-    # 兼容少人：去掉尾部 "?" 位
-    while team and team[-1] == "?":
-        team.pop()
-    return team or ["?"] * 4
-
-
-def detect_team_stable(
-    frame_getter,
-    task=None,
-    max_attempts: int = 6,
-    interval: float = 0.2,
-    confidence: int = 2,
-    deadline: float | None = None,
-) -> tuple[list[str], bool]:
-    """多帧稳定识别：连续 confidence 次识别出相同队伍才视为稳定。
-
-    用于战斗开始前的稳定检测，避免单帧误识别。
-    优先使用 task.sleep（兼容任务框架），无 task 时回退 time.sleep。
-
-    Args:
-        frame_getter:  无参 callable，返回 BGR numpy 帧（如 task.next_frame）
-        task:          任务实例（可选，用于 task.sleep / task.active_time）
-        max_attempts:  最大采样次数
-        interval:      每次采样间隔秒数
-        confidence:    连续多少次相同结果视为稳定
-        deadline:      可选截止时间戳（同 task.active_time() 单位），超时立即停止
-
-    Returns:
-        (team, stable) 二元组：
-        - team:   角色名列表；无有效结果时返回 ["?"]
-        - stable: 是否达到 confidence 连续相同（True=稳定，False=超时/未达条件）
-    """
-    import time
-
-    _sleep = getattr(task, 'sleep', None) or time.sleep
-    _now = getattr(task, 'active_time', None) or time.time
-
-    last_result: list[str] = []
-    streak = 0
-
-    for i in range(max_attempts):
-        if deadline is not None and _now() >= deadline:
-            break
-
-        frame = frame_getter()
-        if frame is None or (hasattr(frame, 'size') and frame.size == 0):
-            if deadline is None:
-                _sleep(interval)
-            else:
-                remaining = deadline - _now()
-                if remaining <= 0:
-                    break
-                _sleep(min(interval, remaining))
-            continue
-
-        current = detect_team_from_frame(frame)
-        if current == last_result:
-            streak += 1
-            if streak >= confidence:
-                return (current, True)
-        else:
-            last_result = current
-            streak = 1
-
-        if i < max_attempts - 1:
-            if deadline is None:
-                _sleep(interval)
-            else:
-                remaining = deadline - _now()
-                if remaining <= 0:
-                    break
-                _sleep(min(interval, remaining))
-
-    return (last_result or ["?"], False)
-
-
-def detect_team_from_frame_with_scores(frame: np.ndarray) -> list[tuple[str, float]]:
-    """同 detect_team_from_frame，但同时返回匹配备分数（调试用）。
-
-    Returns:
-        [(角色名, 分数), ...]
-    """
-    icons = _load_battle_icons()
-    name_map = _load_char_name_map()
-
-    if not icons:
-        return [("-", 0.0)] * 4
-
-    height, width = frame.shape[:2]
-    pw = int(_PORTRAIT_SIZE[0] * width)
-    ph = int(_PORTRAIT_SIZE[1] * height)
-
-    team: list[tuple[str, float]] = []
-    for rx, ry in _PORTRAIT_ROIS:
-        x1, y1 = int(rx * width), int(ry * height)
-        portrait = frame[y1:y1 + ph, x1:x1 + pw]
-        if portrait.size == 0:
-            team.append(("-", 0.0))
-            continue
-
-        best_name: str | None = None
-        best_score = -1.0
-        for label, templates in icons.items():
-            score = _best_match_portrait(portrait, templates)
-            if score > best_score:
-                best_score = score
-                best_name = label
-
-        if best_name and best_score >= _MIN_MATCH_SCORE:
-            en_key = best_name.replace("battle_icon_", "")
-            zh_name = name_map.get(en_key, en_key)
-            team.append((zh_name, best_score))
-        else:
-            team.append(("?", best_score))
-
-    return team

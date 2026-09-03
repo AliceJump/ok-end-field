@@ -30,14 +30,13 @@
             "enhancements": [
                 {
                     "name": "支援晶体重击治疗",
-                    "release_gate": {
-                        "static": false
-                    },
                     "trigger_condition": {
                         "text": "主控干员对敌人造成重击",
-                        "effects": [
-                            "MECH_SUPPORT_CRYSTAL"
-                        ]
+                        "effects": {
+                            "all": [
+                                "MECH_SUPPORT_CRYSTAL"
+                            ]
+                        }
                     },
                     "enhancement_effect": "支援晶体为主控干员回复生命值，最多触发2次",
                     "enhancement_visible_pulse": false,
@@ -52,14 +51,13 @@
                 },
                 {
                     "name": "满血转法术增幅",
-                    "release_gate": {
-                        "static": false
-                    },
                     "trigger_condition": {
                         "text": "支援晶体触发回复时主控干员生命值已满",
-                        "effects": [
-                            "MECH_SUPPORT_CRYSTAL"
-                        ]
+                        "effects": {
+                            "all": [
+                                "MECH_SUPPORT_CRYSTAL"
+                            ]
+                        }
                     },
                     "enhancement_effect": "施加法术增幅",
                     "enhancement_visible_pulse": false,
@@ -93,20 +91,31 @@
             "name": "压力测试",
             "skill_type": "连携技",
             "element": "寒冷",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
             "description": "当支援晶体的生命回复次数耗尽后可以发动。短暂蓄力后将支援晶体丢向敌人，造成寒冷伤害并施加寒冷附着。",
             "damage_multiplier": "450%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
+            "effects": [],
+            "enhancements": [
                 {
-                    "effect_id": "ATTACH_COLD",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
+                    "name": "压力测试",
+                    "trigger_condition": {
+                        "text": "当支援晶体的生命回复次数耗尽后可以发动",
+                        "effects": {
+                            "all": []
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "ATTACH_COLD",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
                 }
             ]
         },

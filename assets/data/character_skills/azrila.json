@@ -26,16 +26,6 @@
             "skill_type": "战技",
             "element": "灼热",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "受伤后额外失衡",
-                "trigger_condition": {
-                    "text": "施放过程中受到过来自敌人的伤害",
-                    "effects": []
-                },
-                "enhancement_effect": "命中时额外造成一定失衡",
-                "enhancement_visible_pulse": false,
-                "effects": []
-            },
             "description": "向前方跃起随后重砸，对扇形范围内的所有敌人造成灼热伤害并倒地。施放过程中若受到过来自敌人的伤害，命中时额外造成一定失衡。",
             "damage_multiplier": "390%",
             "stagger_value": 0,
@@ -49,6 +39,20 @@
                     "target": "enemy",
                     "count": 1
                 }
+            ],
+            "enhancements": [
+                {
+                    "name": "受伤后额外失衡",
+                    "trigger_condition": {
+                        "text": "施放过程中受到过来自敌人的伤害",
+                        "effects": {
+                            "all": []
+                        }
+                    },
+                    "enhancement_effect": "命中时额外造成一定失衡",
+                    "enhancement_visible_pulse": false,
+                    "effects": []
+                }
             ]
         },
         {
@@ -56,27 +60,38 @@
             "name": "前线援护",
             "skill_type": "连携技",
             "element": "物理",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
             "description": "主控干员受到攻击后可以发动。向目标敌人跳起并重砸，造成物理伤害和倒地，同时治疗主控干员。意志可以额外提高治疗量。",
             "damage_multiplier": "230%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
+            "effects": [],
+            "enhancements": [
                 {
-                    "effect_id": "STATUS_KNOCKDOWN",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                },
-                {
-                    "effect_id": "BUFF_HEAL",
-                    "value": 1,
-                    "duration": null,
-                    "target": "ally",
-                    "count": 1
+                    "name": "前线援护",
+                    "trigger_condition": {
+                        "text": "主控干员受到攻击后可以发动",
+                        "effects": {
+                            "all": []
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_KNOCKDOWN",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "BUFF_HEAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "ally",
+                            "count": 1
+                        }
+                    ]
                 }
             ]
         },

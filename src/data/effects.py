@@ -18,6 +18,7 @@ class EffectType(Enum):
     VULN_NATURAL = "VULN_NATURAL"
     VULN_PHYSICAL = "VULN_PHYSICAL"
     VULN_ALL = "VULN_ALL"
+    VULN_NATURAL_BURST = "VULN_NATURAL_BURST"  # 自然爆发脆弱
 
     # 物理异常状态（wiki: 物理异常）
     STATUS_SHRED = "STATUS_SHRED"        # 破防（首次受到物理异常时进入，可叠加最多4层）
@@ -44,6 +45,7 @@ class EffectType(Enum):
     STATUS_ORIGINIUM_CRYSTAL = "STATUS_ORIGINIUM_CRYSTAL"  # 管理员施加的源石结晶
     STATUS_SINGING = "STATUS_SINGING"    # 梨诺的演唱姿态
     STATUS_HIGH_SINGING = "STATUS_HIGH_SINGING"  # 梨诺的高歌姿态
+    STATUS_HOVERING = "STATUS_HOVERING"
 
     # 层数系统
     STACK_MOLTEN = "STACK_MOLTEN"
@@ -79,8 +81,6 @@ class EffectType(Enum):
     DEBUFF_HEAL_DOWN = "DEBUFF_HEAL_DOWN"
     DEBUFF_WEAKEN = "DEBUFF_WEAKEN"
 
-    # 放置物
-
     # 特殊机制
     MECH_VACUUM = "MECH_VACUUM"
     MECH_GRAVITY = "MECH_GRAVITY"
@@ -92,7 +92,9 @@ class EffectType(Enum):
     MECH_RADAR = "MECH_RADAR"
     MECH_TURRET = "MECH_TURRET"
     MECH_SUPPORT_CRYSTAL = "MECH_SUPPORT_CRYSTAL"
-    PLACE_THUNDER_SPEAR = "PLACE_THUNDER_SPEAR"  
+
+    # 放置物
+    PLACE_THUNDER_SPEAR = "PLACE_THUNDER_SPEAR"
     REMOVE_THUNDER_SPEAR = "REMOVE_THUNDER_SPEAR"
 
     # 消耗/清除
@@ -128,6 +130,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.VULN_NATURAL: "敌人受到自然伤害增加",
     EffectType.VULN_PHYSICAL: "敌人受到物理伤害增加",
     EffectType.VULN_ALL: "敌人受到的法术伤害增加（不含物理伤害）",
+    EffectType.VULN_NATURAL_BURST: "敌人受到自然爆发伤害增加",
 
     # 物理异常状态
     EffectType.STATUS_SHRED: "破防状态，可被击飞和倒地叠加（最多4层），被猛击和碎甲消耗",
@@ -154,6 +157,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STATUS_ORIGINIUM_CRYSTAL: "管理员附着的源石结晶，可被物理异常或破防消耗",
     EffectType.STATUS_SINGING: "梨诺的演唱姿态，持续强化全队并周期追加攻击与治疗",
     EffectType.STATUS_HIGH_SINGING: "梨诺的高歌姿态，替代演唱姿态并提供强化效果",
+    EffectType.STATUS_HOVERING: "目标进入浮空状态",
 
     # 层数系统
     EffectType.STACK_MOLTEN: "莱万汀的熔火灼痕层数",
@@ -262,6 +266,7 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "源石结晶": EffectType.STATUS_ORIGINIUM_CRYSTAL,
     "演唱姿态": EffectType.STATUS_SINGING,
     "高歌姿态": EffectType.STATUS_HIGH_SINGING,
+    "浮空": EffectType.STATUS_HOVERING,
 
     # 层数系统
     "消耗破防层数": EffectType.STACK_SHRED,
@@ -295,6 +300,8 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "减速": EffectType.DEBUFF_SPEED_DOWN,
     "治疗效果降低": EffectType.DEBUFF_HEAL_DOWN,
     "虚弱": EffectType.DEBUFF_WEAKEN,
+
+    # 特殊机制
     "真空": EffectType.MECH_VACUUM,
     "重力": EffectType.MECH_GRAVITY,
     "冰冻领域": EffectType.MECH_FREEZE_FIELD,
@@ -316,6 +323,7 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "消耗灼热附着": EffectType.CLEAR_ATTACH,
     "清空附着": EffectType.CLEAR_ATTACH,
     "清空状态": EffectType.CLEAR_STATUS,
+    "自然爆发脆弱": EffectType.VULN_NATURAL_BURST,
 }
 
 # 按术语长度从长到短排序（匹配时优先长术语，避免"寒冷附着"被"附着"误吞）

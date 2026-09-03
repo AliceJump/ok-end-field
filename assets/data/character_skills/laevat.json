@@ -26,41 +26,6 @@
             "skill_type": "战技",
             "element": "灼热",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "熔火层数",
-                "release_gate": {
-                    "static": false
-                },
-                "trigger_condition": {
-                    "text": "战技命中敌人获得1层熔火，4层时触发追加攻击",
-                    "effects": [
-                        "STACK_MOLTEN"
-                    ]
-                },
-                "enhancement_effect": "追加攻击",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "STACK_MOLTEN",
-                        "value": 4,
-                        "duration": null,
-                        "target": "self",
-                        "count": -4
-                    },
-                    {
-                        "effect_id": "TRIGGER_ADDITIONAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    },
-                    {
-                        "effect_id": "STATUS_BURNING",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
             "description": "召唤熔核碎片持续攻击前方敌人，造成灼热伤害。如果命中敌人，会获得一点熔火。如果施放时已拥有4层熔火，则最后会消耗所有层数，对大范围内敌人追加1次攻击，造成灼热伤害并强制施加短暂的燃烧。追加攻击命中敌人会额外获得终结技能量。终结技期间，战技效果增强。",
             "damage_multiplier": "140%（初始）+ 14%（持续）+ 770%（追加）",
             "stagger_value": 0,
@@ -74,6 +39,42 @@
                     "target": "self",
                     "count": 1
                 }
+            ],
+            "enhancements": [
+                {
+                    "name": "熔火层数",
+                    "trigger_condition": {
+                        "text": "战技命中敌人获得1层熔火，4层时触发追加攻击",
+                        "effects": {
+                            "all": [
+                                "STACK_MOLTEN"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "追加攻击",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STACK_MOLTEN",
+                            "value": 4,
+                            "duration": null,
+                            "target": "self",
+                            "count": -4
+                        },
+                        {
+                            "effect_id": "TRIGGER_ADDITIONAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        },
+                        {
+                            "effect_id": "STATUS_BURNING",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
+                }
             ]
         },
         {
@@ -81,20 +82,34 @@
             "name": "沸腾",
             "skill_type": "连携技",
             "element": "灼热",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
             "description": "当有敌人进入燃烧或腐蚀状态时可以发动。让所有处于燃烧或腐蚀状态的敌人脚下喷出火焰，对其造成灼热伤害。如果命中敌人，会获得1层熔火。每命中1个敌人，还会额外获得终结技能量。",
             "damage_multiplier": "540%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
+            "effects": [],
+            "enhancements": [
                 {
-                    "effect_id": "STACK_MOLTEN",
-                    "value": 1,
-                    "duration": null,
-                    "target": "self",
-                    "count": 1
+                    "name": "沸腾",
+                    "trigger_condition": {
+                        "text": "当有敌人进入燃烧或腐蚀状态时可以发动",
+                        "effects": {
+                            "any": [
+                                "STATUS_BURNING",
+                                "STATUS_CORROSION"
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STACK_MOLTEN",
+                            "value": 1,
+                            "duration": null,
+                            "target": "self",
+                            "count": 1
+                        }
+                    ]
                 }
             ]
         },
@@ -104,16 +119,6 @@
             "skill_type": "终结技",
             "element": "灼热",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "强化普攻",
-                "trigger_condition": {
-                    "text": "施放终结技后",
-                    "effects": []
-                },
-                "enhancement_effect": "强化普攻",
-                "enhancement_visible_pulse": false,
-                "effects": []
-            },
             "description": "召唤烈焰魔剑并切换为主控角色。一段时间内，普通攻击得到强化，烈焰魔剑会协同莱万汀发动攻击，每次攻击造成灼热伤害。此外，普通攻击第3段会施加灼热附着。",
             "damage_multiplier": null,
             "stagger_value": 0,
@@ -126,6 +131,20 @@
                     "duration": null,
                     "target": "enemy",
                     "count": 1
+                }
+            ],
+            "enhancements": [
+                {
+                    "name": "强化普攻",
+                    "trigger_condition": {
+                        "text": "施放终结技后",
+                        "effects": {
+                            "all": []
+                        }
+                    },
+                    "enhancement_effect": "强化普攻",
+                    "enhancement_visible_pulse": false,
+                    "effects": []
                 }
             ]
         }
