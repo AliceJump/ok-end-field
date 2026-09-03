@@ -104,9 +104,7 @@
                     "trigger_condition": {
                         "text": "当支援晶体的生命回复次数耗尽后可以发动",
                         "effects": {
-                            "all": [
-                                "BUFF_HEAL"
-                            ]
+                            "all": []
                         }
                     },
                     "effects": [
