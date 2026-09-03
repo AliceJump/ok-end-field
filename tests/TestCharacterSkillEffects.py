@@ -8,6 +8,7 @@ from pathlib import Path
 
 from src.data.character_skills import _load_character_from_json, load_all_characters
 from src.data.effects import EffectType, match_effect_terms
+from src.data.skill_types import TriggerEffectGroup
 
 _ROOT = Path(__file__).resolve().parent.parent
 _CHARACTER_SKILLS_DIR = _ROOT / "assets" / "data" / "character_skills"
@@ -181,8 +182,16 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertFalse(all_enhancement.is_trigger_satisfied({EffectType.STATUS_FOCUS}))
         self.assertTrue(any_enhancement.is_trigger_satisfied({EffectType.STATUS_FROZEN}))
         self.assertFalse(any_enhancement.is_trigger_satisfied({EffectType.STATUS_FOCUS}))
-        self.assertEqual(dynamic_enhancement.trigger_effect_groups, [])
-        self.assertFalse(dynamic_enhancement.is_trigger_satisfied(set()))
+        self.assertEqual(
+            dynamic_enhancement.trigger_effect_groups,
+            [TriggerEffectGroup(operator="all", effects=())],
+        )
+        self.assertTrue(dynamic_enhancement.is_trigger_satisfied(set()))
+
+        typhoeus_link = next(
+            skill for skill in load_all_characters()["ti_fu_luo_si"].skills if skill.skill_id == "typhoeus_link"
+        )
+        self.assertTrue(typhoeus_link.enhancement.is_trigger_satisfied(set()))
 
     def test_requested_trigger_condition_branches(self):
         def load_skill(file_name, skill_id):

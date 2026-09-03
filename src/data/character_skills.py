@@ -95,7 +95,7 @@ def _load_trigger_condition(
                     effects=tuple(EffectType(effect_id) for effect_id in raw_effects.get(operator) or []),
                 )
                 for operator in ("all", "any")
-                if raw_effects.get(operator)
+                if raw_effects.get(operator) or (operator == "all" and operator in raw_effects)
             ]
             effects = [effect for group in trigger_effect_groups for effect in group.effects]
         else:
