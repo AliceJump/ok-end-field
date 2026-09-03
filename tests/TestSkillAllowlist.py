@@ -101,6 +101,71 @@ class TestSkillAllowlist(unittest.TestCase):
         self.assertNotIn("A", consumer_effects)
         self.assertTrue(build_skill_allowlist(["目标", "消费"], characters)[0][0])
 
+    def test_category_spell_anomaly_satisfies_generic_dependency(self):
+        target = _character(
+            "目标",
+            enhancements=[
+                {"trigger_condition": {"effects": {"all": ["STATUS_SPELL_ANOMALY"]}}}
+            ],
+        )
+        producer = _character("产出", effects=[_effect("STATUS_CORROSION")])
+        characters = {"目标": target, "产出": producer}
+
+        context = _build_team_skill_context(["目标", "产出"], characters)
+        producer_key = ("产出", "产出_skill")
+        self.assertIn("STATUS_CORROSION", context["skill_effects"][producer_key])
+        self.assertIn("STATUS_SPELL_ANOMALY", context["skill_effects"][producer_key])
+        self.assertEqual(context["effect_producers"]["STATUS_SPELL_ANOMALY"], [producer_key])
+        self.assertFalse(build_skill_allowlist(["目标", "产出"], characters)[0][0])
+
+    def test_consumed_category_spell_anomaly_does_not_satisfy_generic_dependency(self):
+        target = _character(
+            "目标",
+            enhancements=[
+                {"trigger_condition": {"effects": {"all": ["STATUS_SPELL_ANOMALY"]}}}
+            ],
+        )
+        consumer = _character("消费", effects=[_effect("STATUS_FROZEN", count=-1)])
+        characters = {"目标": target, "消费": consumer}
+
+        context = _build_team_skill_context(["目标", "消费"], characters)
+        self.assertNotIn("STATUS_FROZEN", context["effect_producers"])
+        self.assertNotIn("STATUS_SPELL_ANOMALY", context["effect_producers"])
+        self.assertTrue(build_skill_allowlist(["目标", "消费"], characters)[0][0])
+
+    def test_category_spell_anomaly_keeps_category_specific_dependency(self):
+        target = _character(
+            "目标",
+            enhancements=[
+                {"trigger_condition": {"effects": {"all": ["STATUS_CONDUCTING"]}}}
+            ],
+        )
+        producer = _character("产出", effects=[_effect("STATUS_CONDUCTING")])
+        characters = {"目标": target, "产出": producer}
+
+        context = _build_team_skill_context(["目标", "产出"], characters)
+        producer_key = ("产出", "产出_skill")
+        self.assertEqual(context["effect_producers"]["STATUS_CONDUCTING"], [producer_key])
+        self.assertFalse(build_skill_allowlist(["目标", "产出"], characters)[0][0])
+
+    def test_enhancement_category_spell_anomaly_is_also_expanded(self):
+        producer = _character(
+            "产出",
+            effects=[_effect("A")],
+            enhancements=[
+                {
+                    "trigger_condition": {"effects": {"all": ["A"]}},
+                    "effects": [_effect("STATUS_BURNING")],
+                }
+            ],
+        )
+
+        context = _build_team_skill_context(["产出"], {"产出": producer})
+        producer_key = ("产出", "产出_skill")
+        enhancement_effects = context["enhancement_triggers"][producer_key][0]["effects"]
+        self.assertEqual(enhancement_effects, ["STATUS_BURNING", "STATUS_SPELL_ANOMALY"])
+        self.assertEqual(context["effect_producers"]["STATUS_SPELL_ANOMALY"], [producer_key])
+
     def test_enhancement_effects_register_only_actual_producers(self):
         producer = _character(
             "产出者",
