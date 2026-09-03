@@ -557,6 +557,9 @@ class TestStateDrivenWaits(unittest.TestCase):
         class StubTask:
             frame = np.zeros((100, 500, 3), dtype=np.uint8)
 
+            _collect_team_candidate_boxes = BattleMixin._collect_team_candidate_boxes
+            _match_team_slots = BattleMixin._match_team_slots
+
             def get_box_by_name(self, _feature_name):
                 return search_boxes[0]
 
@@ -577,6 +580,58 @@ class TestStateDrivenWaits(unittest.TestCase):
                 ("first", 0.91, "battle_icon_first"),
             ],
         )
+
+    def test_detect_team_stable_ignores_all_unknown_slots(self):
+        class StubTask:
+            def __init__(self):
+                self.detect_calls = 0
+
+            def active_time(self):
+                return 0
+
+            def next_frame(self):
+                return object()
+
+            def detect_team(self, _frame):
+                self.detect_calls += 1
+                return ["?", "?", "?", "?"]
+
+            def sleep(self, _interval):
+                pass
+
+        task = StubTask()
+
+        self.assertEqual(
+            BattleMixin.detect_team_stable(task, max_attempts=3, confidence=2),
+            (["?"], False),
+        )
+        self.assertEqual(task.detect_calls, 3)
+
+    def test_detect_team_stable_accepts_recognized_team(self):
+        class StubTask:
+            def __init__(self):
+                self.detect_calls = 0
+
+            def active_time(self):
+                return 0
+
+            def next_frame(self):
+                return object()
+
+            def detect_team(self, _frame):
+                self.detect_calls += 1
+                return ["first", "second", "third", "fourth"]
+
+            def sleep(self, _interval):
+                pass
+
+        task = StubTask()
+
+        self.assertEqual(
+            BattleMixin.detect_team_stable(task, max_attempts=3, confidence=2),
+            (["first", "second", "third", "fourth"], True),
+        )
+        self.assertEqual(task.detect_calls, 2)
 
     @patch.object(BattleMixin, "detect_team")
     def test_detected_team_member_rechecks_current_frame(self, detect_team):

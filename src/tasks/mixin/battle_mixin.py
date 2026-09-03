@@ -391,20 +391,8 @@ class BattleMixin(BaseEfTask):
 
         return search_boxes
 
-    def _detect_team_core(self, frame=None) -> list[tuple[str, float, str]]:
-        """编队识别核心逻辑：返回四个槽位的 (en_name, score, feature_name)。
-
-        流程：
-        1. 收集所有 battle_icon 的 COCO bbox → 中心距离聚类 → 生成独立槽位搜索框
-        2. 搜索框按 x 排序，确定位置1/2/3/4
-        3. 逐槽位匹配：每个槽位在所有角色模板中取最高分，角色不重复
-        """
-        if frame is None:
-            frame = self.frame
-
-        slot_results: list[tuple[str, float, str]] = [("?", 0.0, "") for _ in range(4)]
-
-        # 1. 收集所有有效的 battle_icon 搜索框
+    def _collect_team_candidate_boxes(self) -> tuple[list[Box], list[str]]:
+        """收集有效的战斗头像候选框及对应模板名。"""
         raw_boxes = []
         valid_features = []
         for f in fL:
@@ -419,18 +407,11 @@ class BattleMixin(BaseEfTask):
                 raw_boxes.append(box)
                 valid_features.append(feature_name)
 
-        if not raw_boxes:
-            return slot_results
+        return raw_boxes, valid_features
 
-        # 2. 中心距离聚类 → 独立搜索框，按 x 排序
-        fh, fw = frame.shape[:2]
-        search_boxes = self._build_search_boxes(raw_boxes, frame_width=fw, frame_height=fh)
-        search_boxes.sort(key=lambda b: b.x)
-
-        if not search_boxes:
-            return slot_results
-
-        # 3. 逐槽位匹配：每个槽位在所有模板中取最高分，已认领的角色不再参与
+    def _match_team_slots(self, frame, search_boxes, valid_features) -> list[tuple[int, str, float]]:
+        """为每个槽位匹配最高分且未被其他槽位使用的角色模板。"""
+        matches = []
         used_features: set[str] = set()
         for slot_idx, slot_box in enumerate(search_boxes[:4]):
             best_score = 0.0
@@ -446,10 +427,33 @@ class BattleMixin(BaseEfTask):
                     best_score = result.confidence
                     best_feature = feature_name
             if best_feature is not None:
-                en_name = _TEMPLATE_ALIASES.get(best_feature, best_feature)
-                en_name = en_name.replace("battle_icon_", "")
-                slot_results[slot_idx] = (en_name, best_score, best_feature)
+                matches.append((slot_idx, best_feature, best_score))
                 used_features.add(best_feature)
+
+        return matches
+
+    def _detect_team_core(self, frame=None) -> list[tuple[str, float, str]]:
+        """编队识别核心逻辑：返回四个槽位的 (en_name, score, feature_name)。"""
+        if frame is None:
+            frame = self.frame
+
+        slot_results: list[tuple[str, float, str]] = [("?", 0.0, "") for _ in range(4)]
+
+        raw_boxes, valid_features = self._collect_team_candidate_boxes()
+        if not raw_boxes:
+            return slot_results
+
+        fh, fw = frame.shape[:2]
+        search_boxes = self._build_search_boxes(raw_boxes, frame_width=fw, frame_height=fh)
+        search_boxes.sort(key=lambda b: b.x)
+
+        if not search_boxes:
+            return slot_results
+
+        for slot_idx, feature_name, score in self._match_team_slots(frame, search_boxes, valid_features):
+            en_name = _TEMPLATE_ALIASES.get(feature_name, feature_name)
+            en_name = en_name.replace("battle_icon_", "")
+            slot_results[slot_idx] = (en_name, score, feature_name)
 
         return slot_results
 
@@ -510,15 +514,16 @@ class BattleMixin(BaseEfTask):
                 continue
 
             current = self.detect_team(frame)
-            if current == last_result:
-                streak += 1
-                if streak >= confidence:
-                    return (current, True)
-            else:
-                last_result = current
-                streak = 1
-                if streak >= confidence:
-                    return (current, True)
+            if current != ["?", "?", "?", "?"]:
+                if current == last_result:
+                    streak += 1
+                    if streak >= confidence:
+                        return (current, True)
+                else:
+                    last_result = current
+                    streak = 1
+                    if streak >= confidence:
+                        return (current, True)
 
             if i < max_attempts - 1:
                 if deadline is not None:
