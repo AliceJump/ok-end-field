@@ -547,8 +547,13 @@ class TestStateDrivenWaits(unittest.TestCase):
 
     def test_detect_team_stable_ignores_all_unknown_slots(self):
         class StubTask:
+    def test_detect_team_stable_ignores_all_unknown_slots(self):
+        import numpy as np
+
+        class StubTask:
             frame = np.zeros((10, 10, 3), dtype=np.uint8)
             _battle_team = ["余烬", "赵昭"]
+            detect_calls = 0
 
             def next_frame(self):
                 return object()
