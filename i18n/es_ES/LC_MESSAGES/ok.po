@@ -801,7 +801,7 @@ msgid "彦宁"
 msgstr "Yàn Níng"
 
 msgid "影拓丰碑"
-msgstr "Monumento del umbral"
+msgstr "Monumento del Umbral"
 
 msgid "快子遴捡晶格"
 msgstr "Entramado de proyección de taquiones"

@@ -441,7 +441,7 @@
       "pattern": "Wuling-LC-Batterie"
     },
     "fr_FR": {
-      "pattern": "Batterie de Wuling FC"
+      "pattern": "Batterie de Wuling FC"
     },
     "id_ID": {
       "pattern": "Baterai KR Wuling"
@@ -1714,7 +1714,7 @@
       "pattern": "Progressão de Arma"
     },
     "de_DE": {
-      "pattern": "Waffen-\nfortschritt"
+      "pattern": "Waffenfortschritt"
     },
     "fr_FR": {
       "pattern": "Progression de l'arme"
@@ -2227,7 +2227,7 @@
       "pattern": "礦物"
     },
     "en_US": {
-      "pattern": "Ore"
+      "pattern": "Minerals"
     },
     "ja_JP": {
       "pattern": "鉱物"
@@ -2236,31 +2236,31 @@
       "pattern": "광물"
     },
     "es_ES": {
-      "pattern": "Mineral"
+      "pattern": "Minerales"
     },
     "pt_BR": {
-      "pattern": "Minério"
+      "pattern": "Minerais"
     },
     "de_DE": {
-      "pattern": "Erz"
+      "pattern": "Mineralien"
     },
     "fr_FR": {
-      "pattern": "Minerai"
+      "pattern": "Minerais"
     },
     "id_ID": {
-      "pattern": "Bijih"
+      "pattern": "Mineral"
     },
     "it_IT": {
       "pattern": "Minerali"
     },
     "ru_RU": {
-      "pattern": "Руда"
+      "pattern": "Минералы"
     },
     "th_TH": {
-      "pattern": "แร่"
+      "pattern": "แร่ธาตุ"
     },
     "vi_VN": {
-      "pattern": "Quặng"
+      "pattern": "Khoáng Sản"
     }
   },
   "k_2b92fbc9": {
@@ -3468,7 +3468,7 @@
       "pattern": "그림자 이정표"
     },
     "es_ES": {
-      "pattern": "Monumento del umbral"
+      "pattern": "Monumento del Umbral"
     },
     "pt_BR": {
       "pattern": "Monumento Umbral"
