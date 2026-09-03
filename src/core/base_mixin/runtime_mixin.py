@@ -10,6 +10,7 @@ from ok import Box
 from src.config import config as app_config
 from src.data.FeatureList import FeatureList as fL
 from src.image.frame_processes import isolate_by_hsv_ranges
+from src.image.hsv_config import HSVRange as hR
 from src.interaction.Key import move_keys as send_move_keys
 from src.interaction.Mouse import (
     active_and_send_mouse_delta as send_mouse_delta,
@@ -367,6 +368,10 @@ class RuntimeMixin:
         """
         if feature is not None and feature_name is None:
             feature_name = feature
+        if not feature_name:
+            raise ValueError("必须提供 feature_name 或 feature 参数")
+        if fL.task_icon in feature_name:
+            mask_function = self.make_hsv_isolator(hR.WHITE, invert=False)
         if isinstance(feature_name, (list, tuple)):
             feature_name = [self.get_feature_by_resolution(name) for name in feature_name]
         else:
@@ -656,10 +661,13 @@ class RuntimeMixin:
         self._yolo_model_key = key
         return self._detector
 
-    def make_hsv_isolator(self, ranges):
+    def make_hsv_isolator(self, ranges, invert=True, kernel_size=2):
         """返回一个可直接调用的 HSV 过滤函数"""
-        return lambda frame, invert=True, kernel_size=2: isolate_by_hsv_ranges(
-            frame, ranges, invert=invert, kernel_size=kernel_size
+        return lambda frame: isolate_by_hsv_ranges(
+            frame,
+            ranges,
+            invert=invert,
+            kernel_size=kernel_size,
         )
 
     def _is_debug_overlay_enabled(self) -> bool:
