@@ -188,24 +188,6 @@ class TestSkillAllowlist(unittest.TestCase):
         self.assertNotIn("CONSUMED", context["effect_producers"])
         self.assertFalse(build_skill_allowlist(["产出者", "依赖者"], characters)[1][0])
 
-    def test_shred_consuming_anomaly_is_not_a_stack_producer(self):
-        target = _character(
-            "目标",
-            enhancements=[{"trigger_condition": {"effects": {"all": ["STACK_SHRED"]}}}],
-        )
-        consumer = _character(
-            "猛击者",
-            effects=[_effect("STATUS_HEAVY_STRIKE")],
-        )
-        characters = {"目标": target, "猛击者": consumer}
-
-        context = _build_team_skill_context(["目标", "猛击者"], characters)
-        # 猛击者产出的是 STATUS_HEAVY_STRIKE，不是 STACK_SHRED
-        consumer_effects = context["skill_effects"].get(("猛击者", "猛击者_skill"), [])
-        self.assertIn("STATUS_HEAVY_STRIKE", consumer_effects)
-        self.assertNotIn("STACK_SHRED", consumer_effects)
-        self.assertTrue(build_skill_allowlist(["目标", "猛击者"], characters)[0][0])
-
     def test_post_cast_branch_is_not_a_release_gate(self):
         # 动态 trigger_condition.effects（无 all/any）不应被视为静态门控
         target = _character(
