@@ -514,7 +514,10 @@ class BattleMixin(BaseEfTask):
                 continue
 
             current = self.detect_team(frame)
-            if current != ["?", "?", "?", "?"]:
+            if current == ["?", "?", "?", "?"]:
+                last_result = []
+                streak = 0
+            else:
                 if current == last_result:
                     streak += 1
                     if streak >= confidence:

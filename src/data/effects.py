@@ -18,7 +18,6 @@ class EffectType(Enum):
     VULN_NATURAL = "VULN_NATURAL"
     VULN_PHYSICAL = "VULN_PHYSICAL"
     VULN_ALL = "VULN_ALL"
-
     VULN_NATURAL_BURST = "VULN_NATURAL_BURST"  # 自然爆发脆弱
 
     # 物理异常状态（wiki: 物理异常）
@@ -82,8 +81,6 @@ class EffectType(Enum):
     DEBUFF_HEAL_DOWN = "DEBUFF_HEAL_DOWN"
     DEBUFF_WEAKEN = "DEBUFF_WEAKEN"
 
-    # 放置物
-
     # 特殊机制
     MECH_VACUUM = "MECH_VACUUM"
     MECH_GRAVITY = "MECH_GRAVITY"
@@ -95,6 +92,8 @@ class EffectType(Enum):
     MECH_RADAR = "MECH_RADAR"
     MECH_TURRET = "MECH_TURRET"
     MECH_SUPPORT_CRYSTAL = "MECH_SUPPORT_CRYSTAL"
+
+    # 放置物
     PLACE_THUNDER_SPEAR = "PLACE_THUNDER_SPEAR"
     REMOVE_THUNDER_SPEAR = "REMOVE_THUNDER_SPEAR"
 
@@ -131,6 +130,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.VULN_NATURAL: "敌人受到自然伤害增加",
     EffectType.VULN_PHYSICAL: "敌人受到物理伤害增加",
     EffectType.VULN_ALL: "敌人受到的法术伤害增加（不含物理伤害）",
+    EffectType.VULN_NATURAL_BURST: "敌人受到自然爆发伤害增加",
 
     # 物理异常状态
     EffectType.STATUS_SHRED: "破防状态，可被击飞和倒地叠加（最多4层），被猛击和碎甲消耗",
@@ -207,7 +207,6 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.PLACE_THUNDER_SPEAR: "艾维文娜的雷枪放置物",
     EffectType.REMOVE_THUNDER_SPEAR: "艾维文娜的雷枪召回",
 
-    EffectType.VULN_NATURAL_BURST: "敌人受到自然爆发伤害增加",
     # 消耗/清除
     EffectType.CONSUME_ALL: "清空所有层数/效果",
     EffectType.CONSUME_STACK: "消耗特定层数",
@@ -301,6 +300,8 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "减速": EffectType.DEBUFF_SPEED_DOWN,
     "治疗效果降低": EffectType.DEBUFF_HEAL_DOWN,
     "虚弱": EffectType.DEBUFF_WEAKEN,
+
+    # 特殊机制
     "真空": EffectType.MECH_VACUUM,
     "重力": EffectType.MECH_GRAVITY,
     "冰冻领域": EffectType.MECH_FREEZE_FIELD,
