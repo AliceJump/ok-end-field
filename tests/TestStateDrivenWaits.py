@@ -460,25 +460,30 @@ class TestStateDrivenWaits(unittest.TestCase):
 
     @patch("src.tasks.mixin.battle_mixin.detect_team_from_frame")
     def test_detected_team_member_rechecks_current_frame(self, detect_team):
-        detect_team.side_effect = [["?", "?"], ["余烬", "?"]]
+        # 第一次调用返回不匹配的队伍，之后每次返回匹配队伍
+        detect_team.side_effect = [
+            ["角色A", "角色B"],  # 不匹配 → matched_count 重置
+            ["余烬", "赵昭"],  # 匹配 → matched_count=1
+            ["余烬", "赵昭"],  # 匹配 → matched_count=2 → 返回 True
+        ]
 
         class StubTask:
             frame = np.zeros((10, 10, 3), dtype=np.uint8)
-            _battle_team = ["余烬", "?"]
+            _battle_team = ["余烬", "赵昭"]
 
             def next_frame(self):
                 return self.frame
 
             def active_time(self):
-                return 0
+                # 利用 detect_team 的调用次数模拟时间推进
+                return float(detect_team.call_count)
 
             def log_info(self, msg):
                 pass
 
         task = StubTask()
-        self.assertFalse(BattleMixin._has_detected_team_member(task))
         self.assertTrue(BattleMixin._has_detected_team_member(task))
-        self.assertEqual(detect_team.call_count, 2)
+        self.assertEqual(detect_team.call_count, 3)
 
 
 if __name__ == "__main__":
