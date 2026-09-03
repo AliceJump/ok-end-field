@@ -37,40 +37,58 @@ jobs:
 
       - name: commit to branch
         id: commit
+        shell: pwsh
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
 
           git add -A
 
-          if ! git diff --cached --quiet; then
-            BRANCH="style/format-$(date -u +%Y%m%d%H%M%S)"
-            echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-            git checkout -b "$BRANCH"
+          git diff --cached --quiet
+          if ($LASTEXITCODE -ne 0) {
+            $BRANCH = "style/format-$((Get-Date).ToUniversalTime().ToString('yyyyMMddHHmmss'))"
+            "branch=$BRANCH" >> $env:GITHUB_OUTPUT
+
+            git checkout -b $BRANCH
             git commit -m "chore: ruff format"
-          fi
+          }
 
       - name: push branch and open PR
         if: steps.commit.outputs.branch != ''
+        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
-          BRANCH="${{ steps.commit.outputs.branch }}"
-          git push -u origin "$BRANCH"
-          gh pr create --base master --head "$BRANCH" \
-            --title "style: format files" \
+          $BRANCH = "${{ steps.commit.outputs.branch }}"
+
+          git push -u origin $BRANCH
+
+          gh pr create `
+            --base master `
+            --head $BRANCH `
+            --title "style: format files" `
             --body "由 format 工作流自动生成的代码格式化更新。"
-          echo "Created new PR for $BRANCH"
-          # 启用 auto-merge：checks 通过后自动 squash 合并（master ruleset approval=0）；
+
+          Write-Host "Created new PR for $BRANCH"
+
+          # 启用 auto-merge：checks 通过后自动 squash 合并（master ruleset approval=0）。
           # PR 已是 clean status（无待等待的 check）时 enablePullRequestAutoMerge 会被拒绝，
-          # 此时所有合并条件已满足，直接合并即可
-          if ! gh pr merge "$BRANCH" --auto --squash --delete-branch \
-                --subject "style: format files" \
-                --body "由 format 工作流自动生成的代码格式化更新。"; then
-            echo "Auto-merge unavailable (clean status), merging directly"
-            gh pr merge "$BRANCH" --squash --delete-branch \
-              --subject "style: format files" \
+          # 此时所有合并条件已满足，直接合并即可。
+          gh pr merge $BRANCH `
+            --auto `
+            --squash `
+            --delete-branch `
+            --subject "style: format files" `
+            --body "由 format 工作流自动生成的代码格式化更新。"
+
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "Auto-merge unavailable (clean status), merging directly"
+
+            gh pr merge $BRANCH `
+              --squash `
+              --delete-branch `
+              --subject "style: format files" `
               --body "由 format 工作流自动生成的代码格式化更新。"
-          fi
-          echo "Merged or auto-merge enabled for $BRANCH"
+          }
+
+          Write-Host "Merged or auto-merge enabled for $BRANCH"
