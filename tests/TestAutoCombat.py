@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 
 from ok.test.TaskTestCase import TaskTestCase
+
 from src.config import config
 from src.tasks.trigger.AutoCombatTask import AutoCombatTask
 

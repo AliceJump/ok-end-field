@@ -21,7 +21,6 @@ class MyMixin:
 
 from ok.util.file import get_relative_path, read_json_file, write_json_file
 
-
 # 哨兵：转换函数返回它表示「无需迁移 / 不生成新键」。
 _NO_MIGRATION = object()
 

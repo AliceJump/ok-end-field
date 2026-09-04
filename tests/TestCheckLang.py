@@ -6,9 +6,9 @@ from pathlib import Path
 from unittest.mock import patch
 
 import json5
-from src.data.lang import get_supported_locales
 
 from scripts.i18n import gen_lang_stubs
+from src.data.lang import get_supported_locales
 
 SOURCE_ROOT = Path("src")
 LANG_ROOT = Path("assets/lang")
@@ -176,10 +176,7 @@ class LangTestCase(unittest.TestCase):
                         missing_langs.append(locale_code)
 
                 if missing_langs:
-                    msg = (
-                        f"[MISSING_KEY] {file_path} -> {lang_group}.{key} "
-                        f"(missing in {', '.join(missing_langs)})"
-                    )
+                    msg = f"[MISSING_KEY] {file_path} -> {lang_group}.{key} (missing in {', '.join(missing_langs)})"
                     print("     [X]", msg)
                     missing.append(msg)
 
@@ -275,8 +272,7 @@ class LangTestCase(unittest.TestCase):
                     unknown = set(node).difference(NODE_TYPES)
                     if len(present) != 1 or unknown:
                         errors.append(
-                            f"{file_path}:{key}:{locale}: expected exactly one node type, "
-                            f"found {sorted(node)}"
+                            f"{file_path}:{key}:{locale}: expected exactly one node type, found {sorted(node)}"
                         )
                         continue
                     node_type = next(iter(present))
@@ -290,9 +286,7 @@ class LangTestCase(unittest.TestCase):
                             except re.error as exc:
                                 errors.append(f"{file_path}:{key}:{locale}: invalid regex: {exc}")
                     elif not (
-                        isinstance(value, list)
-                        and value
-                        and all(isinstance(term, str) and term for term in value)
+                        isinstance(value, list) and value and all(isinstance(term, str) and term for term in value)
                     ):
                         errors.append(f"{file_path}:{key}:{locale}: invalid terms")
 

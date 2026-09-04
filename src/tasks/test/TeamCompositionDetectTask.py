@@ -1,4 +1,5 @@
 """编队判定测试任务：通过 BattleMixin.detect_team() 识别战斗头像，循环判定编队组成。"""
+
 from qfluentwidgets import FluentIcon
 
 from src.tasks.mixin.battle_mixin import BattleMixin
@@ -20,6 +21,7 @@ class TeamCompositionDetectTask(BattleMixin):
             "扫描间隔(秒)": "每次判定之间的间隔时间（秒）",
             "最小匹配分数": "匹配分数低于该值的角色判定为未知",
         }
+
     def run(self):
         interval = max(0.1, float(self.config.get("扫描间隔(秒)", 0.5) or 0.5))
         min_score = float(self.config.get("最小匹配分数", 0.5) or 0.5)
@@ -35,8 +37,7 @@ class TeamCompositionDetectTask(BattleMixin):
                 # 带分数版本（调试用）
                 team_with_scores = self.detect_team_with_scores(frame)
                 team_text = " | ".join(
-                    f"{name}({score:.2f})" if score >= min_score
-                    else self.tr("未知({score:.2f})").format(score=score)
+                    f"{name}({score:.2f})" if score >= min_score else self.tr("未知({score:.2f})").format(score=score)
                     for name, score in team_with_scores
                 )
                 self.log_info(self.tr("编队判定[{count}]: {team}").format(count=detect_count, team=team_text))

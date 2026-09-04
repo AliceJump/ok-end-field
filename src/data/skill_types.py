@@ -4,13 +4,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Literal, Optional
+from typing import Literal
 
 from src.data.effects import EffectType
 
 
 class SkillType(Enum):
     """技能类型。"""
+
     NORMAL_ATTACK = "普通攻击"
     SKILL = "战技"
     LINK_SKILL = "连携技"
@@ -21,6 +22,7 @@ class SkillType(Enum):
 
 class ElementType(Enum):
     """元素类型。"""
+
     COLD = "寒冷"
     BURN = "灼热"
     ELECTROMAGNETIC = "电磁"
@@ -30,6 +32,7 @@ class ElementType(Enum):
 
 class ConditionType(Enum):
     """条件逻辑类型。"""
+
     AND = "AND"  # 多个条件必须同时满足
     OR = "OR"  # 满足任意一个
     ANY = "ANY"  # 任意技能/事件
@@ -38,11 +41,12 @@ class ConditionType(Enum):
 @dataclass
 class SkillEffect:
     """技能原子化效果。"""
+
     effect_id: EffectType  # 效果ID
     value: int = 0  # 效果值（如层数、百分比等）
     duration: str = ""  # 持续时间
     target: str = "enemy"  # 效果目标：enemy/ally/self
-    count: Optional[int] = 1  # 施加/消耗计数；None=数量由运行时状态动态决定
+    count: int | None = 1  # 施加/消耗计数；None=数量由运行时状态动态决定
 
 
 @dataclass(frozen=True)
@@ -61,6 +65,7 @@ class TriggerEffectGroup:
 @dataclass
 class SkillEnhancement:
     """战技强化态信息（战技的条件触发效果）。"""
+
     name: str  # 强化状态名称
     trigger_condition: str  # 触发条件（如"命中处于寒冷附着或自然附着的敌人时"）
     trigger_effects: list[EffectType] = field(default_factory=list)  # 触发条件关联的效果 ID
@@ -78,21 +83,23 @@ class SkillEnhancement:
 @dataclass
 class SkillReaction:
     """技能反应/组合效果。"""
+
     reaction_id: str  # 反应ID
     name: str  # 反应名称
     trigger_condition: str  # 触发条件
     condition_type: ConditionType  # 条件类型
     effects: list[SkillEffect] = field(default_factory=list)  # 效果列表
     trigger_effects: list[EffectType] = field(default_factory=list)  # 触发条件关联的效果 ID
-    order_requirement: Optional[str] = None  # 顺序要求
-    time_window: Optional[str] = None  # 时间窗口
-    stack_requirement: Optional[int] = None  # 层数要求
-    count_requirement: Optional[int] = None  # 次数要求
+    order_requirement: str | None = None  # 顺序要求
+    time_window: str | None = None  # 时间窗口
+    stack_requirement: int | None = None  # 层数要求
+    count_requirement: int | None = None  # 次数要求
 
 
 @dataclass
 class Skill:
     """技能信息。"""
+
     skill_id: str  # 技能ID
     name: str  # 技能名称
     skill_type: SkillType  # 技能类型
@@ -106,7 +113,7 @@ class Skill:
     spirit_cost: int = 0  # 技力消耗
 
     @property
-    def enhancement(self) -> Optional[SkillEnhancement]:
+    def enhancement(self) -> SkillEnhancement | None:
         """旧单分支接口，始终指向 enhancements 的首项。"""
         return self.enhancements[0] if self.enhancements else None
 
@@ -119,6 +126,7 @@ class Skill:
 @dataclass
 class Character:
     """角色信息。"""
+
     character_id: str  # 角色ID
     name: str  # 角色名称
     star: int  # 星级
@@ -131,6 +139,7 @@ class Character:
 @dataclass
 class AutoReleaseRestriction:
     """自动释放限制。"""
+
     skill_id: str  # 技能ID
     enhancement_source: str  # 强化来源
     should_forbid_normal_release: bool  # 是否影响普通释放
@@ -140,6 +149,7 @@ class AutoReleaseRestriction:
 @dataclass
 class DetectionInfo:
     """自动化检测信息。"""
+
     state: str  # 状态
     detection_location: str  # 检测位置
     stability: str  # 稳定性

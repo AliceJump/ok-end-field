@@ -104,9 +104,7 @@ class TestSkillAllowlist(unittest.TestCase):
     def test_category_spell_anomaly_satisfies_generic_dependency(self):
         target = _character(
             "目标",
-            enhancements=[
-                {"trigger_condition": {"effects": {"all": ["STATUS_SPELL_ANOMALY"]}}}
-            ],
+            enhancements=[{"trigger_condition": {"effects": {"all": ["STATUS_SPELL_ANOMALY"]}}}],
         )
         producer = _character("产出", effects=[_effect("STATUS_CORROSION")])
         characters = {"目标": target, "产出": producer}
@@ -121,9 +119,7 @@ class TestSkillAllowlist(unittest.TestCase):
     def test_consumed_category_spell_anomaly_does_not_satisfy_generic_dependency(self):
         target = _character(
             "目标",
-            enhancements=[
-                {"trigger_condition": {"effects": {"all": ["STATUS_SPELL_ANOMALY"]}}}
-            ],
+            enhancements=[{"trigger_condition": {"effects": {"all": ["STATUS_SPELL_ANOMALY"]}}}],
         )
         consumer = _character("消费", effects=[_effect("STATUS_FROZEN", count=-1)])
         characters = {"目标": target, "消费": consumer}
@@ -136,9 +132,7 @@ class TestSkillAllowlist(unittest.TestCase):
     def test_category_spell_anomaly_keeps_category_specific_dependency(self):
         target = _character(
             "目标",
-            enhancements=[
-                {"trigger_condition": {"effects": {"all": ["STATUS_CONDUCTING"]}}}
-            ],
+            enhancements=[{"trigger_condition": {"effects": {"all": ["STATUS_CONDUCTING"]}}}],
         )
         producer = _character("产出", effects=[_effect("STATUS_CONDUCTING")])
         characters = {"目标": target, "产出": producer}
@@ -228,7 +222,7 @@ class TestSkillAllowlist(unittest.TestCase):
         # B 的生产者是产出者（不是自我依赖），所以依赖者被禁止
         # 产出者没有增强态，所以产出者被允许
         result = build_skill_allowlist(["产出者", "依赖者"], {"产出者": producer, "依赖者": consumer})
-        self.assertTrue(result[0][0])   # 产出者被允许（没有增强态）
+        self.assertTrue(result[0][0])  # 产出者被允许（没有增强态）
         self.assertFalse(result[1][0])  # 依赖者被禁止（增强态优先，非自我依赖）
 
         # 如果产出者只有 A，依赖者需要 B，则依赖者的增强态无法触发
@@ -254,11 +248,8 @@ class TestSkillAllowlist(unittest.TestCase):
         # A 的生产者是产出者自己（自我依赖），所以产出者不被禁止
         # 依赖者有增强态且触发条件被满足（B 在 current_effects 中）
         # B 的生产者是产出者（不是自我依赖），所以依赖者被禁止
-        result = build_skill_allowlist(
-            ["产出者", "依赖者"],
-            {"产出者": producer_with_enh, "依赖者": consumer}
-        )
-        self.assertTrue(result[0][0])   # 产出者被允许（自我依赖）
+        result = build_skill_allowlist(["产出者", "依赖者"], {"产出者": producer_with_enh, "依赖者": consumer})
+        self.assertTrue(result[0][0])  # 产出者被允许（自我依赖）
         self.assertFalse(result[1][0])  # 依赖者被禁止（增强态优先，非自我依赖）
 
     def test_real_seraph_skill_remains_in_generated_sequence(self):

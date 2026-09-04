@@ -9,7 +9,6 @@ import subprocess
 import sys
 from dataclasses import dataclass
 
-
 STABLE_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)$")
 PRERELEASE_RE = re.compile(r"^v(\d+)\.(\d+)\.(\d+)-(alpha|beta)\.(\d+)$")
 
@@ -20,7 +19,7 @@ class Version:
     minor: int
     patch: int
 
-    def next_patch(self) -> "Version":
+    def next_patch(self) -> Version:
         return Version(self.major, self.minor, self.patch + 1)
 
     def tag(self) -> str:
@@ -40,10 +39,7 @@ def repository_tags() -> list[str]:
 
 def remote_tags(remote: str) -> list[str]:
     result = run_git("ls-remote", "--refs", "--tags", remote, "refs/tags/v*")
-    return [
-        ref.removeprefix("refs/tags/")
-        for _, ref in (line.split("\t", 1) for line in result.stdout.splitlines())
-    ]
+    return [ref.removeprefix("refs/tags/") for _, ref in (line.split("\t", 1) for line in result.stdout.splitlines())]
 
 
 def run_git(*args: str) -> subprocess.CompletedProcess[str]:
@@ -77,9 +73,7 @@ def parse_tags(tags: list[str]) -> tuple[list[Version], dict[str, list[Prereleas
             continue
         if match := PRERELEASE_RE.fullmatch(tag.strip()):
             major, minor, patch, channel, number = match.groups()
-            prereleases[channel].append(
-                Prerelease(Version(int(major), int(minor), int(patch)), int(number))
-            )
+            prereleases[channel].append(Prerelease(Version(int(major), int(minor), int(patch)), int(number)))
     return stable, prereleases
 
 
@@ -100,10 +94,7 @@ def next_tag(channel: str, tags: list[str]) -> str:
     if channel_tags:
         latest_prerelease = max(channel_tags)
         if latest_prerelease.version > latest_stable:
-            candidate = (
-                f"{latest_prerelease.version.tag()}-{channel}."
-                f"{latest_prerelease.number + 1}"
-            )
+            candidate = f"{latest_prerelease.version.tag()}-{channel}.{latest_prerelease.number + 1}"
             if candidate in known_tags:
                 raise ValueError(f"Calculated tag already exists: {candidate}")
             return candidate

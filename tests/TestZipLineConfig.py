@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from ok.util import config as config_module
 from ok.util.file import read_json_file, write_json_file
+
 from src.core import config_migration, global_config_store
 from src.core.global_config_store import ZIP_LINE_CONFIG_NAME
 from src.tasks.account import account_scope_store
@@ -244,6 +245,7 @@ class TestZipLineConfig(unittest.TestCase):
         也应保证滑索值继承到全局 Zip Line Config.json。
         """
         from ok.util.config import Config
+
         from src.core.global_config_store import (
             ZIP_LINE_SCROLL_KEY,
             migrate_task_zip_line_values_to_global,

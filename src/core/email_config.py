@@ -1,10 +1,10 @@
-# -*- coding: utf-8 -*-
 """邮件发送服务的全局设置定义。
 
 邮件配置以 ``Email Config`` 全局配置的形式保存在 ``configs/Email Config.json``。
 首次运行发送工具或在“设置 → 邮件配置”中打开时，会自动按
 ``DEFAULT_EMAIL_CONFIG`` 生成这些配置项。
 """
+
 from __future__ import annotations
 
 from ok import ConfigOption
@@ -42,6 +42,7 @@ EMAIL_CONFIG_DESCRIPTION = {
     "连接超时秒数": "SMTP 连接与发送的超时时间（秒）。",
     "发送测试邮件": "填写完上方 SMTP/发件邮箱/授权码/收件人后，点击此按钮发送一封测试邮件。",
 }
+
 
 def _send_test_email_callback(*args):
     """设置页“发送测试邮件”按钮回调。"""

@@ -63,11 +63,7 @@ _CHINESE_NUMBERS = {
 
 _STATE_STACK_TERMS = tuple(
     sorted(
-        {
-            term
-            for term, effect in EFFECT_TERMS.items()
-            if effect.name.startswith("STACK_") or term.endswith("附着")
-        }
+        {term for term, effect in EFFECT_TERMS.items() if effect.name.startswith("STACK_") or term.endswith("附着")}
         | {
             "破防",
             "铁誓",
@@ -225,9 +221,7 @@ def _stack_rules(text: str) -> list[dict[str, Any]]:
         unit_end = match.end("unit") - match.start()
         if subject_pos >= 0 and subject_pos > unit_end + 3:
             continue
-        if match.group("unit") in {"次", "段"} and not any(
-            term in raw for term in {"连击", "附着层数"}
-        ):
+        if match.group("unit") in {"次", "段"} and not any(term in raw for term in {"连击", "附着层数"}):
             continue
         raw_count = match.group("count")
         count = int(raw_count) if raw_count.isdigit() else _CHINESE_NUMBERS.get(raw_count)
@@ -364,10 +358,7 @@ def _analyze_operator(detail_path: Path, current_characters: dict[str, dict]) ->
         return analysis
 
     current_character = current_characters.get(_normalize_name(name)) or {}
-    current_by_name = {
-        str(skill.get("name")): skill
-        for skill in current_character.get("skills") or []
-    }
+    current_by_name = {str(skill.get("name")): skill for skill in current_character.get("skills") or []}
     document_map = document.get("documentMap") or {}
 
     skills_by_key: dict[tuple[str, str], SkillAnalysis] = {}
@@ -467,8 +458,7 @@ def _markdown(operators: list[OperatorAnalysis], snapshot: str) -> str:
     lines.extend(["", "## 多条件与特殊层数详情", ""])
     for operator in operators:
         selected = [
-            skill for skill in operator.skills
-            if len(skill.conditions) > 1 or skill.stack_rules or skill.review_flags
+            skill for skill in operator.skills if len(skill.conditions) > 1 or skill.stack_rules or skill.review_flags
         ]
         if not selected:
             continue
@@ -593,9 +583,7 @@ def main() -> int:
         "operators": len(operators),
         "skills": payload["skill_count"],
         "conditions": sum(len(skill.conditions) for operator in operators for skill in operator.skills),
-        "multi_condition_skills": sum(
-            len(skill.conditions) > 1 for operator in operators for skill in operator.skills
-        ),
+        "multi_condition_skills": sum(len(skill.conditions) > 1 for operator in operators for skill in operator.skills),
         "stack_rule_skills": sum(bool(skill.stack_rules) for operator in operators for skill in operator.skills),
         "flagged_skills": sum(bool(skill.review_flags) for operator in operators for skill in operator.skills),
         "json": json_path.relative_to(ROOT).as_posix(),

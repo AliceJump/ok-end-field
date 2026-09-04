@@ -54,7 +54,7 @@ from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 _ROOT = Path(__file__).resolve().parents[3]
 _CHARACTERS_JSON = _ROOT / "assets" / "data" / "characters.json"
 
-_char_name_map: dict[str, str] | None = None   # en → zh
+_char_name_map: dict[str, str] | None = None  # en → zh
 
 # 模板别名：变体 annotation 名 → 主模板名
 # 同角色有多个 battle_icon 外观时，在此声明归并关系，
@@ -133,18 +133,17 @@ class BattleMixin(BaseEfTask):
         # KEY_INSTANT_ULT / KEY_INSTANT_LINK 已从 DEFAULT_BATTLE_CONFIG 移除，无需再排除
         battle_mode_type = {
             "sub_configs": {
-                True: [
-                    key for key in DEFAULT_BATTLE_CONFIG
-                    if key not in BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST]
-                ],
+                True: [key for key in DEFAULT_BATTLE_CONFIG if key not in BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST]],
             },
         }
 
         # 每个使用战斗能力的任务都可以选择自己的战斗参数来源。
-        self.default_config.update({
-            BATTLE_CONFIG_MODE_KEY: False,
-            **DEFAULT_BATTLE_CONFIG,
-        })
+        self.default_config.update(
+            {
+                BATTLE_CONFIG_MODE_KEY: False,
+                **DEFAULT_BATTLE_CONFIG,
+            }
+        )
         self.config_description.update(BATTLE_CONFIG_DESCRIPTION)
         self.config_description[BATTLE_CONFIG_MODE_KEY] = "勾选后使用当前任务的独立战斗配置，否则使用全局战斗配置。"
         self.config_type.update(BATTLE_CONFIG_TYPE)
@@ -262,7 +261,7 @@ class BattleMixin(BaseEfTask):
                 False : 未找到可释放技能
         """
         if ult_sequence is None:
-            ults = ['1', '2', '3', '4']
+            ults = ["1", "2", "3", "4"]
         else:
             ults = [ult_sequence]
 
@@ -383,11 +382,15 @@ class BattleMixin(BaseEfTask):
             y1 = min(nys) * frame_height
             x2 = max(nxe) * frame_width
             y2 = max(nye) * frame_height
-            search_boxes.append(Box(
-                int(x1), int(y1),
-                int(x2 - x1), int(y2 - y1),
-                name=f"battle_slot_{len(search_boxes)}",
-            ))
+            search_boxes.append(
+                Box(
+                    int(x1),
+                    int(y1),
+                    int(x2 - x1),
+                    int(y2 - y1),
+                    name=f"battle_slot_{len(search_boxes)}",
+                )
+            )
 
         return search_boxes
 
@@ -509,7 +512,7 @@ class BattleMixin(BaseEfTask):
                 break
 
             frame = self.next_frame()
-            if frame is None or (hasattr(frame, 'size') and frame.size == 0):
+            if frame is None or (hasattr(frame, "size") and frame.size == 0):
                 self.sleep(min(interval, max(0, (deadline or self.active_time() + interval) - self.active_time())))
                 continue
 
@@ -562,11 +565,7 @@ class BattleMixin(BaseEfTask):
             team = self.detect_team(frame)
             self.log_info(f"当前队伍角色: {team}")
 
-            if (
-                team
-                and not any(member == "?" for member in team)
-                and team == battle_team
-            ):
+            if team and not any(member == "?" for member in team) and team == battle_team:
                 matched_count += 1
 
                 if matched_count >= 2:
@@ -575,10 +574,7 @@ class BattleMixin(BaseEfTask):
             else:
                 matched_count = 0
 
-        self.log_info(
-            f"等待队伍恢复超时（{time_out:.1f}秒），"
-            f"目标队伍: {battle_team}"
-        )
+        self.log_info(f"等待队伍恢复超时（{time_out:.1f}秒），目标队伍: {battle_team}")
         return False
 
     def use_link_skill(self):
@@ -601,7 +597,9 @@ class BattleMixin(BaseEfTask):
         Returns:
             bool: 本帧是否因推荐技能命中而按下了按键。
         """
-        if not self.get_battle_config(KEY_RECOMMEND_SKILL, False) and not self.get_battle_config(KEY_SKILL_ALLOWLIST, False):
+        if not self.get_battle_config(KEY_RECOMMEND_SKILL, False) and not self.get_battle_config(
+            KEY_SKILL_ALLOWLIST, False
+        ):
             return False
         member_count = int(self._battle_member_count or 0)
         if not 1 <= member_count <= len(RECOMMEND_SKILL_REGIONS):
@@ -661,9 +659,7 @@ class BattleMixin(BaseEfTask):
         for slot, _, label in confirmed:
             key = str(slot)
             self.press_combat_key(key)
-            self.log_info(
-                f"推荐技能 {label} 命中, 按下按键 {key}（队伍 {member_count} 人）"
-            )
+            self.log_info(f"推荐技能 {label} 命中, 按下按键 {key}（队伍 {member_count} 人）")
             pressed = True
         return pressed
 
@@ -680,11 +676,7 @@ class BattleMixin(BaseEfTask):
             bool
         """
 
-        return (
-                self.get_skill_bar_count() >= required_yellow
-                and self.in_team()
-                and not self.ocr_lv()
-        )
+        return self.get_skill_bar_count() >= required_yellow and self.in_team() and not self.ocr_lv()
 
     def in_team(self):
         """
@@ -717,9 +709,7 @@ class BattleMixin(BaseEfTask):
                 skill_number = skill_offset + 1
                 next_box = boxes[box_index + skill_offset - 1]
                 next_result = self.find_one(f"skill_{skill_number}", box=next_box)
-                next_position = (
-                    f"({next_result.x},{next_result.y})" if next_result is not None else "-"
-                )
+                next_position = f"({next_result.x},{next_result.y})" if next_result is not None else "-"
                 next_score = f"{next_result.confidence:.3f}" if next_result is not None else "-"
                 skill_checks.append(
                     f"skill_{skill_number}->框{box_index + skill_offset}"
@@ -738,10 +728,7 @@ class BattleMixin(BaseEfTask):
             if sequence_valid:
                 break
         self._battle_member_count = found_skills
-        self.log_debug(
-            f"队伍人数检测: {found_skills} 人，"
-            f"检查结果: {'; '.join(skill_checks)}"
-        )
+        self.log_debug(f"队伍人数检测: {found_skills} 人，检查结果: {'; '.join(skill_checks)}")
         return sequence_valid and found_skills >= 1
 
     def _battle_feature_boxes(self, prefix: str):
@@ -805,8 +792,7 @@ class BattleMixin(BaseEfTask):
         current_index = original_index + (4 - self._battle_member_count) - 1
         if current_index < 0 or current_index >= len(boxes):
             self.log_debug(
-                f"终结技目标映射失败: {feature}, 队伍人数={self._battle_member_count}, "
-                f"计算框索引={current_index + 1}"
+                f"终结技目标映射失败: {feature}, 队伍人数={self._battle_member_count}, 计算框索引={current_index + 1}"
             )
             return None
         self.log_debug(
@@ -854,14 +840,11 @@ class BattleMixin(BaseEfTask):
 
         # 终结技释放后延迟退出检查：终结技动画期间 in_team 会返回 False，
         # 需要等待动画结束、技能图标重新出现后再做退出判定。
-        last_ult_time = getattr(self, '_last_ult_release_time', 0)
+        last_ult_time = getattr(self, "_last_ult_release_time", 0)
         if last_ult_time > 0:
             elapsed = self.active_time() - last_ult_time
             if elapsed < self.ULT_EXIT_DELAY:
-                self.log_debug(
-                    f"终结技释放后延迟退出检查（已过 {elapsed:.1f}s，"
-                    f"需等待 {self.ULT_EXIT_DELAY:.1f}s）"
-                )
+                self.log_debug(f"终结技释放后延迟退出检查（已过 {elapsed:.1f}s，需等待 {self.ULT_EXIT_DELAY:.1f}s）")
                 return False
 
         # UI状态检测
@@ -871,11 +854,7 @@ class BattleMixin(BaseEfTask):
         if not (has_lv or not in_team):
             return False
 
-        self.log_info(
-            f"退出检查通过:"
-            f" has_lv={has_lv},"
-            f" in_team={in_team},"
-        )
+        self.log_info(f"退出检查通过: has_lv={has_lv}, in_team={in_team},")
 
         return True
 
@@ -889,17 +868,10 @@ class BattleMixin(BaseEfTask):
 
             self.next_frame()
 
-            center_area = self.ocr(
-                match=r"^\d+$",
-                box=box,
-                name="center_number",
-                log=True
-            )
+            center_area = self.ocr(match=r"^\d+$", box=box, name="center_number", log=True)
 
             if len(center_area) > 0:
-                self.log_info(
-                    f"中间区域识别到数字: {[r.name for r in center_area]}"
-                )
+                self.log_info(f"中间区域识别到数字: {[r.name for r in center_area]}")
 
             return len(center_area) > 0
 
@@ -912,20 +884,13 @@ class BattleMixin(BaseEfTask):
         检测是否出现 LV 或等级 UI。
         """
 
-        lv = self.ocr(
-            0.02, 0.89, 0.23, 0.93,
-            match=self.lv_regex,
-            name='lv_text'
-        )
+        lv = self.ocr(0.02, 0.89, 0.23, 0.93, match=self.lv_regex, name="lv_text")
 
         if len(lv) > 0:
             return True
 
         lv = self.ocr(
-            0.02, 0.89, 0.23, 0.93,
-            frame_processor=isolate_white_text_to_black,
-            match=self.lv_regex,
-            name='lv_text'
+            0.02, 0.89, 0.23, 0.93, frame_processor=isolate_white_text_to_black, match=self.lv_regex, name="lv_text"
         )
 
         return len(lv) > 0
@@ -938,7 +903,6 @@ class BattleMixin(BaseEfTask):
         start = self.active_time()
 
         while self.active_time() - start < time_out:
-
             if self.in_combat():
                 return True
 
@@ -953,10 +917,10 @@ class BattleMixin(BaseEfTask):
         """战斗中周期触发操作（无伤害数字）"""
         interval = self.get_battle_config("无数字操作间隔", 6)
         interval = max(1.0, min(float(interval), 30.0))
-        if self.active_time() - getattr(self, 'last_no_number_action_time', 0) < interval:
+        if self.active_time() - getattr(self, "last_no_number_action_time", 0) < interval:
             return
         self.log_info("战斗中周期触发：执行索敌+向前闪避（贴近敌人）")
-        self.click(key='middle', down_time=0.002)
+        self.click(key="middle", down_time=0.002)
         self.dodge_forward(pre_hold=0.05, dodge_down_time=0.03, after_sleep=0.02)
         self.last_no_number_action_time = self.active_time()
 
@@ -969,11 +933,7 @@ class BattleMixin(BaseEfTask):
                 -1 表示未检测到
         """
 
-        skill_area_box = self.box_of_screen_scaled(
-            3840, 2160,
-            1586, 1940,
-            2266, 1983
-        )
+        skill_area_box = self.box_of_screen_scaled(3840, 2160, 1586, 1940, 2266, 1983)
 
         skill_area = skill_area_box.crop_frame(self.frame)
 
@@ -984,27 +944,17 @@ class BattleMixin(BaseEfTask):
 
         y_start, y_end = 1958, 1970
 
-        bars = [
-            (1604, 1796),
-            (1824, 2013),
-            (2043, 2231)
-        ]
+        bars = [(1604, 1796), (1824, 2013), (2043, 2231)]
 
         for x1, x2 in bars:
-
-            if self.check_is_pure_color_in_4k(
-                    x1, y_start, x2, y_end,
-                    yellow_skill_color
-            ):
+            if self.check_is_pure_color_in_4k(x1, y_start, x2, y_end, yellow_skill_color):
                 count += 1
             else:
                 break
 
         if count == 0:
             has_white_left = self.check_is_pure_color_in_4k(
-                1604, y_start, 1614, y_end,
-                white_skill_color,
-                threshold=0.1
+                1604, y_start, 1614, y_end, white_skill_color, threshold=0.1
             )
 
             if not has_white_left:
@@ -1031,9 +981,11 @@ class BattleMixin(BaseEfTask):
             is_valid_row = (dominant_count / width) >= threshold
             if is_valid_row and color_range:
                 b, g, r = dominant_color
-                if not (color_range['r'][0] <= r <= color_range['r'][1] and
-                        color_range['g'][0] <= g <= color_range['g'][1] and
-                        color_range['b'][0] <= b <= color_range['b'][1]):
+                if not (
+                    color_range["r"][0] <= r <= color_range["r"][1]
+                    and color_range["g"][0] <= g <= color_range["g"][1]
+                    and color_range["b"][0] <= b <= color_range["b"][1]
+                ):
                     is_valid_row = False
 
             if is_valid_row:
@@ -1049,16 +1001,15 @@ class BattleMixin(BaseEfTask):
         判断是否进入战斗结算状态
         """
 
-        return any((
-            self.find_feature(feature=fL.b),
-            self.find_feature(feature=fL.battle_space_ok),
-            self.find_feature(feature=fL.battle_gather_ok),
-            self.find_feature(feature=fL.restart_battle),
-            self.find_feature(
-                feature=fL.restart_battle,
-                box=self.box_of_screen(0.550, 0.896, 0.574, 0.943)
-            ),
-        ))
+        return any(
+            (
+                self.find_feature(feature=fL.b),
+                self.find_feature(feature=fL.battle_space_ok),
+                self.find_feature(feature=fL.battle_gather_ok),
+                self.find_feature(feature=fL.restart_battle),
+                self.find_feature(feature=fL.restart_battle, box=self.box_of_screen(0.550, 0.896, 0.574, 0.943)),
+            )
+        )
 
     def auto_battle(self, no_battle: bool = False):
         """
@@ -1071,7 +1022,6 @@ class BattleMixin(BaseEfTask):
         sleep_time = self.get_battle_config("进入战斗后的初始等待时间", 3)
 
         while True:
-
             # 全局超时保护
             if self.active_time() >= deadline:
                 self.log_info("自动战斗超时")
@@ -1136,14 +1086,6 @@ def isolate_white_text_to_black(cv_image):
     return output_image
 
 
-yellow_skill_color = {
-    'r': (230, 255),
-    'g': (180, 255),
-    'b': (0, 85)
-}
+yellow_skill_color = {"r": (230, 255), "g": (180, 255), "b": (0, 85)}
 
-white_skill_color = {
-    'r': (190, 255),
-    'g': (190, 255),
-    'b': (190, 255)
-}
+white_skill_color = {"r": (190, 255), "g": (190, 255), "b": (190, 255)}
