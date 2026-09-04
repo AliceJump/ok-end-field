@@ -1,4 +1,3 @@
-
 """地图/关卡/货物数据（剥离自内嵌字典，见 assets/data/world_map.json）。
 
 纯数据部分（areas_list/outpost_dict/goods_dict/exchange_goods_dict/

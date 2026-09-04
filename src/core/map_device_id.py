@@ -38,6 +38,7 @@
 内置兜底载荷来自本项目调查期间一次性匿名临时 Profile 的抓包，
 不含任何用户个人信息。
 """
+
 import hashlib
 import json
 import os
@@ -75,8 +76,8 @@ _SHUMEI_VALUE_RE = re.compile(r'\{"id":"([^"]+)"(?:,"timestamp":(\d{10,16}))?\}'
 _REGISTRATION_PAYLOAD = {
     "appId": "default",
     "organization": "UWXspnCCJN4sfYlNfqps",
-    "ep": 'WmWXdJCDSoNrEbXAPAkHHzngRtqBQ0CWvnhmVbFCEiMJKQa6wFpA/FcCFqnHpBX6/lfPhOdfNzu118yEjc7I6pHkHDsXqt6l0v/pUo+VtMhmNxOT0SgkNmTP6Fht1nYXegfBOl2q9sExG4uvMod4B1V+3tItBx9o+BpQpr1H7Ug=',
-    "data": 'eeb41ebb429dddb3343cdbb67d2e10baf8f0f79d8b59e797d28861512751bbc381ecc28dbffb6619e04388da23e08e7e329bc82c349c131e2fd865041a112dacb64c265eb3dd964928dd21ca263f0c03efa235c621632b612f6af3fc8564294d4e427e648e81f1738ec5e43bf1654908afaf67005c7f7a9b4414afd321f8b6da2b3ec6f125b7cac821b959ec93c289ae613bb3c546e44599a80e94ed4dfb0e4b4ed579fd6b606add2d3c775b64ff499625737c8419a5be8f25dfe6a2c246e170099b7cfd50b18d7236ab26a0c7c60cca783c5c7736537bb11a8ebc4f5f4aabdc744860f0e8f2728e1b8321438403ecf224c9b9a83c6e177fcae220ec0dfc94fac5297a31b0bbba7eed3067f9e5dafa54b979cbecde1e632fddc4a6a333bb366d7227d21ea1b71798abae8b1d7714f7992c2c6f304b328bfa97b5ac28933aa8c6d171bab86a80b5bcff89dde7793e46daa1a16fa7a40cdd6044dfbc8506116440380ccecb2c4e0077b531c1207bd4767c146a489e9ccbf3b3675c86bd53c723373ea070a7e725adca6e7983bc6ab9fcc3600eb0884dc39d703cbe4e5325baff3e4204cc385783c14332bf6549582d4d6f6b964d0e67f2ab20968e0441a1bc4abc28ee108b3339c357a0b5540fc311785530cea1a218bd1947bfdc256d30c779a8001194d1ffea479092b4513ed0093969c43ff6c73d1ddc7078e46cf045f862f142f5d919f9e7788279df78d35f7b9a8726fe235c3b15797297446f382a40b92208e9a1895c4af37c321045e85d4271c19f9fa3bb8867f79739d569d7a6ba20d2f89d7850acd7343a00e9d9eacc79ef40fd0be331d139d30e09285d1a77c7bc89549ca8bbc5b28c6a371304b7b0f5ab2ccd946348bf1654c206d2293ac6b399cacdcbd3e53c6d961aae282275f82a44f2930312601fff0c8efdc124fabc7afaefaa61574e7c79753dbe6889eff16306f63f03f7a292429441dc206fa8656940a73debbdf46ccddd8f09b88d1b1396f752db5399a543701f20e3ccb4a0f650915728d3638b73e7350cccdee5ad6ac5b6d41a8f1afc513111296990905c93d342eb9ca22e22e75c13ec85f8602aabb2679478493270f0311be7797e6e26e38ec5fdfc7ed0630009ca6466e1170c271877d0678216f132b0e6b6a8ec414ee49f2f823bb167b71a28f4f6c384b95206f901707c0fb394f619abe49e22096a866a1d0c27408c2530e60e7316399ac6a33b8b9e54da67f172f7bbd4a96ba173f5b520912fbb13fcbb6ee51a89c388604996ce337996562c06fc63d0d47b9493c412c99469b9bcc65c48fc5f3436112dfef830aaca481e8a3021dc242d075f2d4cdd825b5e8feb67b3cb5b13b66eda1f2004c3cb256a41873b545c9dca3aa8592042590cb91',
+    "ep": "WmWXdJCDSoNrEbXAPAkHHzngRtqBQ0CWvnhmVbFCEiMJKQa6wFpA/FcCFqnHpBX6/lfPhOdfNzu118yEjc7I6pHkHDsXqt6l0v/pUo+VtMhmNxOT0SgkNmTP6Fht1nYXegfBOl2q9sExG4uvMod4B1V+3tItBx9o+BpQpr1H7Ug=",
+    "data": "eeb41ebb429dddb3343cdbb67d2e10baf8f0f79d8b59e797d28861512751bbc381ecc28dbffb6619e04388da23e08e7e329bc82c349c131e2fd865041a112dacb64c265eb3dd964928dd21ca263f0c03efa235c621632b612f6af3fc8564294d4e427e648e81f1738ec5e43bf1654908afaf67005c7f7a9b4414afd321f8b6da2b3ec6f125b7cac821b959ec93c289ae613bb3c546e44599a80e94ed4dfb0e4b4ed579fd6b606add2d3c775b64ff499625737c8419a5be8f25dfe6a2c246e170099b7cfd50b18d7236ab26a0c7c60cca783c5c7736537bb11a8ebc4f5f4aabdc744860f0e8f2728e1b8321438403ecf224c9b9a83c6e177fcae220ec0dfc94fac5297a31b0bbba7eed3067f9e5dafa54b979cbecde1e632fddc4a6a333bb366d7227d21ea1b71798abae8b1d7714f7992c2c6f304b328bfa97b5ac28933aa8c6d171bab86a80b5bcff89dde7793e46daa1a16fa7a40cdd6044dfbc8506116440380ccecb2c4e0077b531c1207bd4767c146a489e9ccbf3b3675c86bd53c723373ea070a7e725adca6e7983bc6ab9fcc3600eb0884dc39d703cbe4e5325baff3e4204cc385783c14332bf6549582d4d6f6b964d0e67f2ab20968e0441a1bc4abc28ee108b3339c357a0b5540fc311785530cea1a218bd1947bfdc256d30c779a8001194d1ffea479092b4513ed0093969c43ff6c73d1ddc7078e46cf045f862f142f5d919f9e7788279df78d35f7b9a8726fe235c3b15797297446f382a40b92208e9a1895c4af37c321045e85d4271c19f9fa3bb8867f79739d569d7a6ba20d2f89d7850acd7343a00e9d9eacc79ef40fd0be331d139d30e09285d1a77c7bc89549ca8bbc5b28c6a371304b7b0f5ab2ccd946348bf1654c206d2293ac6b399cacdcbd3e53c6d961aae282275f82a44f2930312601fff0c8efdc124fabc7afaefaa61574e7c79753dbe6889eff16306f63f03f7a292429441dc206fa8656940a73debbdf46ccddd8f09b88d1b1396f752db5399a543701f20e3ccb4a0f650915728d3638b73e7350cccdee5ad6ac5b6d41a8f1afc513111296990905c93d342eb9ca22e22e75c13ec85f8602aabb2679478493270f0311be7797e6e26e38ec5fdfc7ed0630009ca6466e1170c271877d0678216f132b0e6b6a8ec414ee49f2f823bb167b71a28f4f6c384b95206f901707c0fb394f619abe49e22096a866a1d0c27408c2530e60e7316399ac6a33b8b9e54da67f172f7bbd4a96ba173f5b520912fbb13fcbb6ee51a89c388604996ce337996562c06fc63d0d47b9493c412c99469b9bcc65c48fc5f3436112dfef830aaca481e8a3021dc242d075f2d4cdd825b5e8feb67b3cb5b13b66eda1f2004c3cb256a41873b545c9dca3aa8592042590cb91",
     "os": "web",
     "encode": "5",
     "compress": "2",
@@ -101,10 +102,13 @@ def load_stored_device_id() -> str:
 def save_stored_device_id(device_id: str) -> None:
     """持久化自铸设备ID。"""
     ensure_dir_for_file(_STORE_PATH)
-    write_json_file(_STORE_PATH, {
-        "id": device_id,
-        "minted_at": int(time.time() * 1000),
-    })
+    write_json_file(
+        _STORE_PATH,
+        {
+            "id": device_id,
+            "minted_at": int(time.time() * 1000),
+        },
+    )
 
 
 def clear_stored_device_id() -> None:
@@ -135,10 +139,13 @@ def save_captured_payload(payload: dict) -> None:
     if not (isinstance(payload, dict) and payload.get("ep") and payload.get("data")):
         return
     ensure_dir_for_file(_PAYLOAD_STORE_PATH)
-    write_json_file(_PAYLOAD_STORE_PATH, {
-        **payload,
-        "captured_at": int(time.time() * 1000),
-    })
+    write_json_file(
+        _PAYLOAD_STORE_PATH,
+        {
+            **payload,
+            "captured_at": int(time.time() * 1000),
+        },
+    )
 
 
 def _post_registration_payload(payload: dict, timeout: float) -> str:
@@ -183,7 +190,7 @@ def mint_device_id_http(timeout: float = 15.0) -> str:
         tried.append(key)
         try:
             return _post_registration_payload(payload, timeout)
-        except Exception as e:  # noqa: BLE001 - 记录后尝试下一份载荷
+        except Exception as e:
             errors.append(f"{label}: {e}")
     raise RuntimeError("；".join(errors) or "没有可用的注册载荷")
 
@@ -195,8 +202,7 @@ def _find_node() -> str:
 _RUNNER_PATH = Path(__file__).with_name("smsdk_runner.mjs")
 # 官方 SMSdk 脚本（skland-bbs 前端引用的公开静态资源），不随仓库分发，
 # 首次使用时下载到 configs/ 缓存（该目录已被 gitignore）。
-_SDK_JS_URL = ("https://bbs.hycdn.cn/public/skland/others/skland-bbs/"
-               "60e9c30fb0b1d1ca574c4522ca06fc7b.js")
+_SDK_JS_URL = "https://bbs.hycdn.cn/public/skland/others/skland-bbs/60e9c30fb0b1d1ca574c4522ca06fc7b.js"
 _SDK_JS_NAME = "smsdk_60e9c30fb0b1d1ca574c4522ca06fc7b.js"
 _SDK_JS_CACHE = get_relative_path("configs", _SDK_JS_NAME)
 _SDK_JS_SHA256 = "2dbd8228c80c13e05c05e2e3093fd1c5935fd62937a1b0add7c6fe28a1905f9f"
@@ -213,15 +219,16 @@ def _sdk_js_sha256(path: str) -> str:
 
 
 def _download_sdk_js(dest: str) -> None:
-    req = urllib.request.Request(_SDK_JS_URL, headers={
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
-    })
+    req = urllib.request.Request(
+        _SDK_JS_URL,
+        headers={
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)",
+        },
+    )
     with urllib.request.urlopen(req, timeout=30) as resp:
         content = resp.read()
-    if len(content) < _SDK_JS_MIN_SIZE or \
-            hashlib.sha256(content).hexdigest() != _SDK_JS_SHA256:
-        raise RuntimeError(
-            f"官方 SDK 脚本校验失败(len={len(content)})，拒绝缓存使用")
+    if len(content) < _SDK_JS_MIN_SIZE or hashlib.sha256(content).hexdigest() != _SDK_JS_SHA256:
+        raise RuntimeError(f"官方 SDK 脚本校验失败(len={len(content)})，拒绝缓存使用")
     ensure_dir_for_file(dest)
     tmp = dest + ".part"
     with open(tmp, "wb") as fp:
@@ -273,8 +280,13 @@ def mint_device_id_node(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
             proc = subprocess.run(
                 [node, str(_RUNNER_PATH)],
                 input=sdk_source,
-                capture_output=True, text=True, encoding="utf-8",
-                errors="replace", timeout=timeout, env=env, check=False,
+                capture_output=True,
+                text=True,
+                encoding="utf-8",
+                errors="replace",
+                timeout=timeout,
+                env=env,
+                check=False,
             )
         except subprocess.TimeoutExpired:
             errors.append(f"超时({timeout:.0f}s)")
@@ -315,13 +327,12 @@ def _create_blank_target(port: int) -> dict:
     for method in ("PUT", "GET"):
         try:
             req = urllib.request.Request(
-                f"http://127.0.0.1:{port}/json/new?"
-                + urllib.request.quote("about:blank"),
+                f"http://127.0.0.1:{port}/json/new?" + urllib.request.quote("about:blank"),
                 method=method,
             )
             with urllib.request.urlopen(req, timeout=10) as resp:
                 return json.loads(resp.read().decode("utf-8"))
-        except Exception as e:  # noqa: BLE001 - 不同浏览器版本接受的 HTTP 方法不同
+        except Exception as e:
             last_error = e
     raise RuntimeError(f"无法在新浏览器中打开空白标签页: {last_error}")
 
@@ -330,21 +341,20 @@ def _launch_debug_browser() -> tuple[subprocess.Popen, str]:
     """启动带远程调试端口的临时浏览器，返回 (进程对象, 临时Profile目录)。"""
     browser = _find_browser()
     if not browser:
-        raise RuntimeError(
-            "未找到 Edge/Chrome，无法通过浏览器铸造地图设备ID(dId)；"
-            "请安装 Edge 或 Chrome 后重试"
-        )
+        raise RuntimeError("未找到 Edge/Chrome，无法通过浏览器铸造地图设备ID(dId)；请安装 Edge 或 Chrome 后重试")
     profile_dir = tempfile.mkdtemp(prefix="ok_ef_map_did_")
     try:
-        proc = subprocess.Popen([
-            browser,
-            f"--user-data-dir={profile_dir}",
-            "--remote-debugging-port=0",
-            "--no-first-run",
-            "--no-default-browser-check",
-            "--window-size=900,700",
-            "about:blank",
-        ])
+        proc = subprocess.Popen(
+            [
+                browser,
+                f"--user-data-dir={profile_dir}",
+                "--remote-debugging-port=0",
+                "--no-first-run",
+                "--no-default-browser-check",
+                "--window-size=900,700",
+                "about:blank",
+            ]
+        )
     except OSError:
         shutil.rmtree(profile_dir, ignore_errors=True)
         raise
@@ -378,15 +388,18 @@ class _LsPoller:
             return False
         self.next_id += 1
         self.pending.add(self.next_id)
-        self.conn.send(json.dumps({
-            "id": self.next_id,
-            "method": "Runtime.evaluate",
-            "params": {
-                "expression":
-                    f"localStorage.getItem('{_SHUMEI_LS_KEY}')",
-                "returnByValue": True,
-            },
-        }))
+        self.conn.send(
+            json.dumps(
+                {
+                    "id": self.next_id,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": f"localStorage.getItem('{_SHUMEI_LS_KEY}')",
+                        "returnByValue": True,
+                    },
+                }
+            )
+        )
         return True
 
     def consume_response(self, msg: dict) -> str | None:
@@ -409,15 +422,14 @@ def _recv_cdp_message(conn) -> dict | None:
 
 def _parse_ls_value(msg: dict) -> str | None:
     """解析 Runtime.evaluate 响应中的 localStorage 值；过短视为无效。"""
-    result = ((msg.get("result") or {}).get("result") or {})
+    result = (msg.get("result") or {}).get("result") or {}
     value = result.get("value")
     if isinstance(value, str) and len(value) > 20:
         return value
     return None
 
 
-def _collect_registration_via_cdp(
-        conn, deadline: float) -> tuple[str | None, dict | None]:
+def _collect_registration_via_cdp(conn, deadline: float) -> tuple[str | None, dict | None]:
     """循环读取 CDP 消息直到拿到 dId 或超时。
 
     返回 ``(ls_value, captured_payload)``：localStorage 中读到的数美串
@@ -462,14 +474,17 @@ def mint_device_id_browser(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
         # 先启用网络监听再导航到地图页：若先导航后启用，
         # 加载早期发出的 deviceprofile 注册请求可能被漏掉
         conn.send(json.dumps({"id": 1, "method": "Network.enable"}))
-        conn.send(json.dumps({
-            "id": 2,
-            "method": "Page.navigate",
-            "params": {"url": MAP_PAGE_URL},
-        }))
+        conn.send(
+            json.dumps(
+                {
+                    "id": 2,
+                    "method": "Page.navigate",
+                    "params": {"url": MAP_PAGE_URL},
+                }
+            )
+        )
 
-        ls_value, captured_payload = _collect_registration_via_cdp(
-            conn, deadline)
+        ls_value, captured_payload = _collect_registration_via_cdp(conn, deadline)
 
         match = _SHUMEI_VALUE_RE.search(ls_value or "")
         if not match or len(match.group(1)) < _DID_MIN_LENGTH:
@@ -482,7 +497,7 @@ def mint_device_id_browser(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
         if conn is not None:
             try:
                 conn.close()
-            except Exception as exc:  # noqa: BLE001 - 关闭失败不影响主流程
+            except Exception as exc:
                 del exc
         if proc.poll() is None:
             proc.kill()
@@ -498,6 +513,7 @@ def mint_device_id() -> str:
     前端版本变化，已独立成单独文件便于后续调整。任一路径失败自动
     回退到下一条。
     """
+
     def _mint_synthetic() -> str:
         # 延迟导入：cryptography 缺失时仅该路径不可用，不影响其余路径
         from src.core.map_device_fingerprint import mint_device_id_synthetic
@@ -513,7 +529,7 @@ def mint_device_id() -> str:
     ):
         try:
             return mint()
-        except Exception as exc:  # noqa: BLE001 - 依次回退到下一条路径
+        except Exception as exc:
             errors.append(f"{label}({exc})")
     raise RuntimeError("地图设备ID铸造失败：" + "；".join(errors))
 

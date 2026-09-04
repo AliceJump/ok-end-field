@@ -190,9 +190,7 @@ BATTLE_CONFIG_TYPE = {
         "type": "cond_sequence_editor",
     },
     KEY_RECOMMEND_SKILL: {},
-    KEY_SKILL_ALLOWLIST: {
-        "sub_configs": {False: BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST]}
-    },
+    KEY_SKILL_ALLOWLIST: {"sub_configs": {False: BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST]}},
 }
 
 
@@ -202,21 +200,13 @@ BATTLE_CONFIG_TYPE = {
 
 BATTLE_CONFIG_DESCRIPTION = {
     KEY_ULT_RELEASE_MODE: "配置终结技的释放方式",
-    KEY_SKILL_RELEASE: (
-        "按列表顺序自动循环释放「战技」。\n" "可从 1/2/3/4 中选择并排序，至少保留一个。"
-    ),
-    KEY_START_SKILL_POINT: (
-        "当「技力条」达到该数值时，\n" "开始执行技能序列。取值范围1-3。"
-    ),
+    KEY_SKILL_RELEASE: ("按列表顺序自动循环释放「战技」。\n可从 1/2/3/4 中选择并排序，至少保留一个。"),
+    KEY_START_SKILL_POINT: ("当「技力条」达到该数值时，\n开始执行技能序列。取值范围1-3。"),
     KEY_COMPLETE_NOTIFY: "战斗结束后发送系统通知。",
-    KEY_NO_NUMBER_OPERATION_INTERVAL: (
-        "战斗中周期触发锁敌+向前闪避的最小间隔秒数。\n" "取值不小于1。"
-    ),
+    KEY_NO_NUMBER_OPERATION_INTERVAL: ("战斗中周期触发锁敌+向前闪避的最小间隔秒数。\n取值不小于1。"),
     KEY_BATTLE_INITIAL_WAIT: "进入战斗后开始自动操作前的等待秒数。",
     KEY_ENABLE_ROTATION: (
-        "是否启用排轴功能。\n"
-        "启用后会根据「排轴序列」配置的顺序优先释放对应角色的技能，\n"
-        "当排轴失败时回退到非排轴状态。"
+        "是否启用排轴功能。\n启用后会根据「排轴序列」配置的顺序优先释放对应角色的技能，\n当排轴失败时回退到非排轴状态。"
     ),
     KEY_ROTATION_SEQUENCE: (
         "仅接受"
@@ -226,14 +216,10 @@ BATTLE_CONFIG_DESCRIPTION = {
         "normal_[n] 表示临时切换为普通战斗模式 n 秒，"
         "期间按「技能释放」顺序自动出技。"
     ),
-    KEY_COND_ENABLED: ("根据实时情况释放技能\n" "启用时自动忽略排轴配置"),
+    KEY_COND_ENABLED: ("根据实时情况释放技能\n启用时自动忽略排轴配置"),
     KEY_COND_SEQUENCE: "",
-    KEY_INSTANT_ULT: (
-        "在没有运行任何条件动作时生效\n" "当终结技可释放时立刻释放终结技"
-    ),
-    KEY_INSTANT_LINK: (
-        "在没有运行任何条件动作时生效\n" "当连携技可释放时立刻释放连携技"
-    ),
+    KEY_INSTANT_ULT: ("在没有运行任何条件动作时生效\n当终结技可释放时立刻释放终结技"),
+    KEY_INSTANT_LINK: ("在没有运行任何条件动作时生效\n当连携技可释放时立刻释放连携技"),
     KEY_RECOMMEND_SKILL: (
         "自动优先释放推荐技能。\n"
         "技能按钮出现白圈（游戏推荐释放时机）时，"

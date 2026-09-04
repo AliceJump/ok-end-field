@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-# ruff: noqa: RUF002
 """由 scripts/i18n/gen_lang_stubs.py 自动生成，请勿手改。
 
 为 self.lang.<模块>.<key> 提供静态类型提示：

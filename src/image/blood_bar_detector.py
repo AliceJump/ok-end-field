@@ -3,13 +3,13 @@
 检测游戏战斗界面左下角的蓝色血条，根据血条位置定位角色头像。
 支持任意分辨率，使用归一化坐标（基于1920x1080标准）。
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
 import cv2
 import numpy as np
-
 
 # 标准分辨率 1920x1080 下的参数
 STANDARD_WIDTH = 1920
@@ -19,8 +19,8 @@ STANDARD_HEIGHT = 1080
 BLOOD_BAR_ROI = {
     "x1": 0,
     "y1": 980 / STANDARD_HEIGHT,  # 约0.907
-    "x2": 500 / STANDARD_WIDTH,   # 约0.260
-    "y2": 1010 / STANDARD_HEIGHT  # 约0.935
+    "x2": 500 / STANDARD_WIDTH,  # 约0.260
+    "y2": 1010 / STANDARD_HEIGHT,  # 约0.935
 }
 
 # 血条位置范围（归一化Y坐标）
@@ -28,10 +28,10 @@ BLOOD_BAR_Y_MIN = 988 / STANDARD_HEIGHT  # 约0.915
 BLOOD_BAR_Y_MAX = 1005 / STANDARD_HEIGHT  # 约0.931
 
 # 头像参数（归一化）
-PORTRAIT_OFFSET_X = -17 / STANDARD_WIDTH   # 相对血条中心左移
+PORTRAIT_OFFSET_X = -17 / STANDARD_WIDTH  # 相对血条中心左移
 PORTRAIT_OFFSET_Y = -46 / STANDARD_HEIGHT  # 相对血条中心上移
-PORTRAIT_WIDTH = 54 / STANDARD_WIDTH       # 头像宽度
-PORTRAIT_HEIGHT = 46 / STANDARD_HEIGHT     # 头像高度
+PORTRAIT_WIDTH = 54 / STANDARD_WIDTH  # 头像宽度
+PORTRAIT_HEIGHT = 46 / STANDARD_HEIGHT  # 头像高度
 
 # 血条满血参数（1080p 下的像素值）
 FULL_HP_WIDTH_PX = 88  # 满血时血条宽度（像素）
@@ -40,6 +40,7 @@ FULL_HP_WIDTH_PX = 88  # 满血时血条宽度（像素）
 @dataclass(frozen=True)
 class BloodBar:
     """检测到的血条信息。"""
+
     x: float
     y: float
     width: float
@@ -51,6 +52,7 @@ class BloodBar:
 @dataclass(frozen=True)
 class Portrait:
     """根据血条定位的头像信息。"""
+
     name: str
     x: int
     y: int
@@ -60,11 +62,11 @@ class Portrait:
 
 
 def detect_blue_bars(
-        screenshot: np.ndarray,
-        roi: dict[str, float] | None = None,
-        *,
-        y_min: float = BLOOD_BAR_Y_MIN,
-        y_max: float = BLOOD_BAR_Y_MAX,
+    screenshot: np.ndarray,
+    roi: dict[str, float] | None = None,
+    *,
+    y_min: float = BLOOD_BAR_Y_MIN,
+    y_max: float = BLOOD_BAR_Y_MAX,
 ) -> list[BloodBar]:
     """检测蓝色血条位置。
 
@@ -122,26 +124,26 @@ def detect_blue_bars(
         # 50px 和 12px 是基于标准分辨率 1920x1080 的阈值
         min_width_ratio = 50 / STANDARD_WIDTH
         max_height_ratio = 12 / STANDARD_HEIGHT
-        if (norm_w > min_width_ratio and norm_h < max_height_ratio and
-                norm_w > norm_h * 3 and
-                y_min <= norm_y <= y_max):
+        if norm_w > min_width_ratio and norm_h < max_height_ratio and norm_w > norm_h * 3 and y_min <= norm_y <= y_max:
             center_x = (x + offset_x + w // 2) / width
             center_y = (y + offset_y + h // 2) / height
 
-            bars.append(BloodBar(
-                x=norm_x,
-                y=norm_y,
-                width=norm_w,
-                height=norm_h,
-                center_x=center_x,
-                center_y=center_y,
-            ))
+            bars.append(
+                BloodBar(
+                    x=norm_x,
+                    y=norm_y,
+                    width=norm_w,
+                    height=norm_h,
+                    center_x=center_x,
+                    center_y=center_y,
+                )
+            )
 
     return sorted(bars, key=lambda b: b.x)
 
 
 def locate_portraits(
-        bars: list[BloodBar],
+    bars: list[BloodBar],
 ) -> list[Portrait]:
     """根据血条位置定位头像。
 
@@ -153,26 +155,28 @@ def locate_portraits(
     """
     portraits: list[Portrait] = []
     for i, bar in enumerate(bars):
-        portraits.append(Portrait(
-            name=f"P{i + 1}",
-            x=0,  # 延迟计算，需要实际分辨率
-            y=0,
-            width=0,
-            height=0,
-            bar=bar,
-        ))
+        portraits.append(
+            Portrait(
+                name=f"P{i + 1}",
+                x=0,  # 延迟计算，需要实际分辨率
+                y=0,
+                width=0,
+                height=0,
+                bar=bar,
+            )
+        )
     return portraits
 
 
 def get_portrait_bbox(
-        bar: BloodBar,
-        screen_width: int,
-        screen_height: int,
-        *,
-        offset_x: float = PORTRAIT_OFFSET_X,
-        offset_y: float = PORTRAIT_OFFSET_Y,
-        portrait_width: float = PORTRAIT_WIDTH,
-        portrait_height: float = PORTRAIT_HEIGHT,
+    bar: BloodBar,
+    screen_width: int,
+    screen_height: int,
+    *,
+    offset_x: float = PORTRAIT_OFFSET_X,
+    offset_y: float = PORTRAIT_OFFSET_Y,
+    portrait_width: float = PORTRAIT_WIDTH,
+    portrait_height: float = PORTRAIT_HEIGHT,
 ) -> tuple[int, int, int, int]:
     """获取头像的像素坐标 bbox。
 
