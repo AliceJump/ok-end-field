@@ -413,10 +413,7 @@ class TestConditionalRotationCombat(unittest.TestCase):
 
         self.assertLessEqual(task.team_detect_calls, logic._TEAM_DETECT_MAX_ATTEMPTS)
         self.assertTrue(
-            all(
-                later - earlier >= logic._TEAM_DETECT_INTERVAL
-                for earlier, later in pairwise(task.team_detect_times)
-            )
+            all(later - earlier >= logic._TEAM_DETECT_INTERVAL for earlier, later in pairwise(task.team_detect_times))
         )
 
     @patch.object(pyautogui, "mouseDown")

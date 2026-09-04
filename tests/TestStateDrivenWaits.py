@@ -3,9 +3,9 @@ from unittest.mock import patch
 
 from ok import Box
 
-from src.core.BattleConfig import ULT_RELEASE_MODE_ALT, ULT_RELEASE_MODE_HOLD
 from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
+from src.core.BattleConfig import ULT_RELEASE_MODE_ALT, ULT_RELEASE_MODE_HOLD
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.map_mixin import MapMixin
 
@@ -597,6 +597,7 @@ class TestStateDrivenWaits(unittest.TestCase):
             def next_frame(self):
                 self._call_count += 1
                 import numpy as np
+
                 return np.zeros((10, 10, 3), dtype=np.uint8)
 
             def log_info(self, message):

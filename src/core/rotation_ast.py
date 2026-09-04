@@ -14,8 +14,8 @@ rotation_ast
 """
 
 import re
-from typing import Iterator, Protocol
-
+from collections.abc import Iterator
+from typing import Protocol
 
 # 条件原子
 _ULT_ATOMS = {"ult1", "ult2", "ult3", "ult4"}

@@ -1,5 +1,3 @@
-from qfluentwidgets import FluentIcon
-
 from ok.task.DiagnosisTask import DiagnosisTask as OkDiagnosisTask
 
 

@@ -21,14 +21,12 @@ from qfluentwidgets import (
     Action,
     ComboBox,
     FluentIcon,
-    IndicatorPosition,
     MessageBox,
     MessageBoxBase,
     PushButton,
     RoundMenu,
     SpinBox,
     SubtitleLabel,
-    SwitchButton,
     TransparentToolButton,
 )
 

@@ -3,18 +3,22 @@ import time
 from datetime import datetime
 from typing import Any
 
+# 覆写框架截图时间戳格式：日期_时分秒（无毫秒）
+# 注意：ok-script 新版中 ok.gui.debug.Screenshot 只是 ok.core.screenshot 的
+# 兼容别名模块，修改别名不会影响运行时内部引用，必须直接 patch 核心模块。
+import ok.core.screenshot as _ok_screenshot
 import win32gui
-from pynput.keyboard import Controller
 from ok import BaseTask, TaskDisabledException, TriggerTask, WaitFailedException
+from pynput.keyboard import Controller
 
-from src.interaction.KeyConfig import KeyConfigManager
-from src.interaction.ScreenPosition import ScreenPosition
-from src.data.lang import get_lang_accessor
+from src.config import config as app_config
 from src.core.base_mixin.account_override_mixin import AccountOverrideMixin
 from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.process_manager import ProcessManager
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.core.base_mixin.window_arrow_drawing_mixin import WindowArrowDrawingMixin
+from src.core.config_migration import migrate_config_file_keys, migrate_config_values
+from src.core.game_window import find_game_hwnd
 from src.core.global_config_store import (
     ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME,
     INPUT_MODE_NAME,
@@ -22,14 +26,10 @@ from src.core.global_config_store import (
     get_global_config,
     migrate_task_zip_line_values_to_global,
 )
-from src.core.config_migration import migrate_config_file_keys, migrate_config_values
-from src.core.game_window import find_game_hwnd
-from src.config import config as app_config
+from src.data.lang import get_lang_accessor
+from src.interaction.KeyConfig import KeyConfigManager
+from src.interaction.ScreenPosition import ScreenPosition
 
-# 覆写框架截图时间戳格式：日期_时分秒（无毫秒）
-# 注意：ok-script 新版中 ok.gui.debug.Screenshot 只是 ok.core.screenshot 的
-# 兼容别名模块，修改别名不会影响运行时内部引用，必须直接 patch 核心模块。
-import ok.core.screenshot as _ok_screenshot
 _ok_screenshot.get_current_time_formatted = lambda: datetime.now().strftime("%Y%m%d_%H%M%S")
 
 
@@ -57,11 +57,7 @@ def _extract_locale_from_object(obj: Any) -> str | None:
     # 优先使用 executor.locale
     executor = getattr(obj, "executor", None)
 
-    locale_obj = (
-        getattr(executor, "locale", None)
-        if executor is not None
-        else getattr(obj, "locale", None)
-    )
+    locale_obj = getattr(executor, "locale", None) if executor is not None else getattr(obj, "locale", None)
 
     if locale_obj is None:
         return None
@@ -69,7 +65,7 @@ def _extract_locale_from_object(obj: Any) -> str | None:
     # 支持 enum / QLocale / 自定义 Locale 类
     if hasattr(locale_obj, "name"):
         try:
-            name_attr = getattr(locale_obj, "name")
+            name_attr = locale_obj.name
             value = name_attr() if callable(name_attr) else name_attr
 
             if value:
@@ -224,8 +220,9 @@ class BaseEfTask(
             self._task_pause_started_at = None
         return super().unpause()
 
-    def wait_until(self, condition, time_out=0, pre_action=None, post_action=None, settle_time=-1,
-                   raise_if_not_found=False):
+    def wait_until(
+        self, condition, time_out=0, pre_action=None, post_action=None, settle_time=-1, raise_if_not_found=False
+    ):
         """Framework wait_until variant whose timeout freezes while paused."""
         self.executor.reset_scene()
         start = self.active_time()
@@ -279,10 +276,10 @@ class BaseEfTask(
         key_migrations = {}
         value_migrations = {}
         for klass in type(self).__mro__:
-            table = getattr(klass, 'config_key_migrations', None)
+            table = getattr(klass, "config_key_migrations", None)
             if table:
                 key_migrations.update(table)
-            vtable = getattr(klass, 'config_value_migrations', None)
+            vtable = getattr(klass, "config_value_migrations", None)
             if vtable:
                 value_migrations.update(vtable)
         migrate_config_file_keys(self.__class__.__name__, key_migrations)
@@ -326,17 +323,17 @@ class BaseEfTask(
         super().enable()
 
     def box_of_screen(
-            self,
-            x=0,
-            y=0,
-            to_x=1.0,
-            to_y=1.0,
-            width=0.0,
-            height=0.0,
-            name=None,
-            hcenter=False,
-            vcenter=False,
-            confidence=1.0,
+        self,
+        x=0,
+        y=0,
+        to_x=1.0,
+        to_y=1.0,
+        width=0.0,
+        height=0.0,
+        name=None,
+        hcenter=False,
+        vcenter=False,
+        confidence=1.0,
     ):
         """Create a screen box with rounded coordinate ratios for consistent positioning."""
         return super().box_of_screen(
@@ -353,19 +350,19 @@ class BaseEfTask(
         )
 
     def box_of_screen_scaled(
-            self,
-            original_screen_width,
-            original_screen_height,
-            x_original,
-            y_original,
-            to_x=0,
-            to_y=0,
-            width_original=0,
-            height_original=0,
-            name=None,
-            hcenter=False,
-            vcenter=False,
-            confidence=1.0,
+        self,
+        original_screen_width,
+        original_screen_height,
+        x_original,
+        y_original,
+        to_x=0,
+        to_y=0,
+        width_original=0,
+        height_original=0,
+        name=None,
+        hcenter=False,
+        vcenter=False,
+        confidence=1.0,
     ):
         """Create a screen box scaled from original resolution coordinates with rounded ratios."""
         return super().box_of_screen_scaled(
@@ -426,8 +423,13 @@ class BaseEfTask(
         self.current_account_id = account_id
         self._bind_account_aware_config_get()
 
-    def iter_multi_account_context(self, repeat_times: int = 1, empty_accounts_message: str | None = None,
-                                   account_log_suffix: str = "", allow_multi_account: bool = True):
+    def iter_multi_account_context(
+        self,
+        repeat_times: int = 1,
+        empty_accounts_message: str | None = None,
+        account_log_suffix: str = "",
+        allow_multi_account: bool = True,
+    ):
         """统一多账号执行上下文。
 
         当开启多账户模式时，会先读取账号列表；列表为空则直接结束当前任务。
@@ -459,14 +461,18 @@ class BaseEfTask(
                 account_id = str(account.get("account_id", "")).strip() or username
                 if not username:
                     # 纯数字值直接填充不 tr，模板串过 tr
-                    self.log_info(self.tr("第 {idx}/{total} 个账号为空，已跳过").format(
-                        idx=repeat_idx + 1, total=repeat_times))
+                    self.log_info(
+                        self.tr("第 {idx}/{total} 个账号为空，已跳过").format(idx=repeat_idx + 1, total=repeat_times)
+                    )
                     continue
 
                 self.set_current_account(username, account_id)
                 # 账号后缀是运行时用户数据不过 tr（防污染收集池）；模板串过 tr
-                self.log_info(self.tr("开始第 {idx}/{total} 个账号({suffix}){log_suffix}").format(
-                    idx=repeat_idx + 1, total=repeat_times, suffix=username[-4:], log_suffix=account_log_suffix))
+                self.log_info(
+                    self.tr("开始第 {idx}/{total} 个账号({suffix}){log_suffix}").format(
+                        idx=repeat_idx + 1, total=repeat_times, suffix=username[-4:], log_suffix=account_log_suffix
+                    )
+                )
                 self.login_flow(username)
             else:
                 self.set_current_account("", "")
@@ -565,6 +571,4 @@ class BaseEfTask(
                         # 给一个合理的默认值，后续 register_config 会根据类型覆盖
                         self.default_config[key] = None
 
-        self.config_description.update({
-            dropdown_key: "配置默认隐藏，选择后展开对应配置项。"
-        })
+        self.config_description.update({dropdown_key: "配置默认隐藏，选择后展开对应配置项。"})

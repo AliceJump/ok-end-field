@@ -1,4 +1,3 @@
-
 """送货地区配置（数据剥离自 src/data/delivery_area.py，见 assets/data/delivery_area.json）。
 
 数据在 assets/data/delivery_area.json（JSON），本模块仅作薄加载器，

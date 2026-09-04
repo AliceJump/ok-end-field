@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """鼠标视角旋转系数标定测试任务。
 
 通过现有输入接口发送已知鼠标相对位移（dx），并用 get_arrow_angle()
@@ -104,33 +103,23 @@ class MouseRotationCalibration(BaseEfTask):
         self.log_info("=== Mouse Rotation Calibration ===", notify=True)
 
         calibration_dx = int(self.config.get("标定位移dx", self.CALIBRATION_DX))
-        calibration_dx_list_raw = str(
-            self.config.get("标定位移列表(逗号分隔)", self.CALIBRATION_DX_LIST)).strip()
+        calibration_dx_list_raw = str(self.config.get("标定位移列表(逗号分隔)", self.CALIBRATION_DX_LIST)).strip()
         repeat_count = max(1, int(self.config.get("重复次数", self.REPEAT_COUNT)))
-        self._w_hold_time = max(
-            0.0, float(self.config.get("W长按时间(秒)", self.W_HOLD_TIME)))
-        self._angle_refresh_delay = max(
-            0.0, float(self.config.get("角度刷新等待(秒)", self.ANGLE_REFRESH_DELAY)))
-        self._turn_settle_delay = max(
-            0.0, float(self.config.get("转向后等待(秒)", self.TURN_SETTLE_DELAY)))
-        self._min_score = max(
-            0.0, min(1.0, float(self.config.get("最低置信度", self.MIN_SCORE))))
+        self._w_hold_time = max(0.0, float(self.config.get("W长按时间(秒)", self.W_HOLD_TIME)))
+        self._angle_refresh_delay = max(0.0, float(self.config.get("角度刷新等待(秒)", self.ANGLE_REFRESH_DELAY)))
+        self._turn_settle_delay = max(0.0, float(self.config.get("转向后等待(秒)", self.TURN_SETTLE_DELAY)))
+        self._min_score = max(0.0, min(1.0, float(self.config.get("最低置信度", self.MIN_SCORE))))
 
-        verify_target_yaw = float(
-            self.config.get("验证目标角度(度)", self.VERIFY_TARGET_YAW))
-        verify_angles_raw = str(
-            self.config.get("验证角度列表(逗号分隔)", self.VERIFY_ANGLES)).strip()
+        verify_target_yaw = float(self.config.get("验证目标角度(度)", self.VERIFY_TARGET_YAW))
+        verify_angles_raw = str(self.config.get("验证角度列表(逗号分隔)", self.VERIFY_ANGLES)).strip()
         verify_count = max(1, int(self.config.get("验证次数", self.VERIFY_COUNT)))
-        verify_tolerance = max(
-            0.0, float(self.config.get("验证误差容差(度)", self.VERIFY_TOLERANCE)))
+        verify_tolerance = max(0.0, float(self.config.get("验证误差容差(度)", self.VERIFY_TOLERANCE)))
         pair_lr_raw = self.config.get("左右方向成对验证", self.VERIFY_PAIR_LR)
         if isinstance(pair_lr_raw, str):
-            pair_lr = pair_lr_raw.strip().lower() in (
-                "1", "true", "yes", "on", "是", "开启", "开")
+            pair_lr = pair_lr_raw.strip().lower() in ("1", "true", "yes", "on", "是", "开启", "开")
         else:
             pair_lr = bool(pair_lr_raw)
-        manual_k = self._parse_manual_k(
-            self.config.get("手动yaw_per_pixel(留空用标定)", self.MANUAL_YAW_PER_PIXEL))
+        manual_k = self._parse_manual_k(self.config.get("手动yaw_per_pixel(留空用标定)", self.MANUAL_YAW_PER_PIXEL))
 
         self.log_info(
             f"Calibration parameters:  dx={calibration_dx}  repeat={repeat_count}  "
@@ -142,10 +131,7 @@ class MouseRotationCalibration(BaseEfTask):
         # 列表为空时用单值 dx 正负交替 repeat_count 次（原逻辑）。
         dx_plan = self._parse_dx_plan(calibration_dx_list_raw, calibration_dx, repeat_count)
         if len(dx_plan) > 1:
-            self.log_info(
-                f"Calibration plan:  {len(dx_plan)} 个 sample -> "
-                + ", ".join(f"{d:+d}" for d in dx_plan)
-            )
+            self.log_info(f"Calibration plan:  {len(dx_plan)} 个 sample -> " + ", ".join(f"{d:+d}" for d in dx_plan))
 
         if manual_k is not None:
             # 手动系数模式：跳过标定，直接用用户提供的系数做验证
@@ -153,16 +139,17 @@ class MouseRotationCalibration(BaseEfTask):
                 # 系数恒为负（鼠标右移 dx>0 视角左转 Δyaw<0，k=Δyaw/dx<0），
                 # 正数必为漏写负号，自动取负修正
                 self.log_info(
-                    f"手动 yaw_per_pixel 为正数，自动取负修正: "
-                    f"{manual_k:.5f} -> {-manual_k:.5f}",
+                    f"手动 yaw_per_pixel 为正数，自动取负修正: {manual_k:.5f} -> {-manual_k:.5f}",
                     notify=True,
                 )
                 manual_k = -manual_k
-            self.log_info(
-                f"Manual yaw_per_pixel = {manual_k:.5f}，跳过标定直接验证")
+            self.log_info(f"Manual yaw_per_pixel = {manual_k:.5f}，跳过标定直接验证")
             stats = {
-                "mean_k": manual_k, "std": 0.0,
-                "k_pos": manual_k, "k_neg": manual_k, "n": 0,
+                "mean_k": manual_k,
+                "std": 0.0,
+                "k_pos": manual_k,
+                "k_neg": manual_k,
+                "n": 0,
             }
         else:
             valid_samples = []
@@ -177,25 +164,21 @@ class MouseRotationCalibration(BaseEfTask):
         verify_angles = self._parse_verify_angles(verify_angles_raw, verify_target_yaw)
         if not verify_angles:
             if verify_target_yaw == 0:
-                self.log_info(
-                    "Verification skipped:  验证目标角度 = 0 且未配置角度列表")
+                self.log_info("Verification skipped:  验证目标角度 = 0 且未配置角度列表")
             else:
                 self.log_info("Verification skipped:  无有效验证角度")
             return
         if pair_lr:
             verify_angles = self._pair_left_right(verify_angles)
         if stats is None or abs(stats["mean_k"]) < 1e-9:
-            self.log_info(
-                "Verification skipped:  标定系数无效（无有效样本或 k=0）", notify=True)
+            self.log_info("Verification skipped:  标定系数无效（无有效样本或 k=0）", notify=True)
             return
         if len(verify_angles) > 1:
             self.log_info(
-                f"Verification plan:  {len(verify_angles)} 个角度 -> "
-                + ", ".join(f"{a:+.2f}°" for a in verify_angles)
+                f"Verification plan:  {len(verify_angles)} 个角度 -> " + ", ".join(f"{a:+.2f}°" for a in verify_angles)
             )
         for angle in verify_angles:
-            self._verify(angle, stats["k_pos"], stats["k_neg"],
-                         verify_count, verify_tolerance)
+            self._verify(angle, stats["k_pos"], stats["k_neg"], verify_count, verify_tolerance)
 
     def _read_arrow_angle(self):
         """按 W 长按一小段时间刷新朝向，等待画面更新后读取箭头角度（关闭角度平滑）。
@@ -255,9 +238,7 @@ class MouseRotationCalibration(BaseEfTask):
                 return None
 
             if not self._send_delta(dx):
-                self.log_info(
-                    f"Calibration sample rejected:  reason=input_failed  dx={dx}"
-                )
+                self.log_info(f"Calibration sample rejected:  reason=input_failed  dx={dx}")
                 return None
 
             # 发位移后先纯等待转向完成，再按 W 刷新朝向读角度，避免时序耦合
@@ -308,8 +289,7 @@ class MouseRotationCalibration(BaseEfTask):
             return sample
 
         except Exception as e:
-            self.log_error(
-                f"Calibration sample {index} 异常: {e}", exception=e, notify=True)
+            self.log_error(f"Calibration sample {index} 异常: {e}", exception=e, notify=True)
             self.log_info("Calibration sample rejected:  reason=exception")
             return None
 
@@ -347,8 +327,7 @@ class MouseRotationCalibration(BaseEfTask):
                 continue
             values.append(value)
         if not values:
-            return [single_dx if i % 2 == 0 else -single_dx
-                    for i in range(repeat_count)]
+            return [single_dx if i % 2 == 0 else -single_dx for i in range(repeat_count)]
         plan = []
         for v in values:
             plan.append(v)
@@ -431,8 +410,7 @@ class MouseRotationCalibration(BaseEfTask):
             notify=True,
         )
 
-    def _verify(self, target_yaw: float, k_pos: float, k_neg: float,
-                count: int, tolerance: float) -> None:
+    def _verify(self, target_yaw: float, k_pos: float, k_neg: float, count: int, tolerance: float) -> None:
         """用标定系数验证目标角度：dx = target_yaw / k，实测转角误差。
 
         - 按方向选择系数：target_yaw > 0（左转）用 k_neg，< 0（右转）用 k_pos，
@@ -445,10 +423,7 @@ class MouseRotationCalibration(BaseEfTask):
         if dx == 0:
             self.log_info("Verify skipped:  invalid k or dx = 0", notify=True)
             return
-        self.log_info(
-            f"Verify parameters:  target_yaw={target_yaw:+.2f}°  "
-            f"k={k:.5f}  dx={dx:+d}"
-        )
+        self.log_info(f"Verify parameters:  target_yaw={target_yaw:+.2f}°  k={k:.5f}  dx={dx:+d}")
 
         results = []
         for i in range(1, count + 1):

@@ -5,6 +5,7 @@ from enum import Enum
 
 class EffectType(Enum):
     """效果类型。"""
+
     # 元素附着
     ATTACH_COLD = "ATTACH_COLD"
     ATTACH_BURN = "ATTACH_BURN"
@@ -21,29 +22,29 @@ class EffectType(Enum):
     VULN_NATURAL_BURST = "VULN_NATURAL_BURST"  # 自然爆发脆弱
 
     # 物理异常状态（wiki: 物理异常）
-    STATUS_SHRED = "STATUS_SHRED"        # 破防（首次受到物理异常时进入，可叠加最多4层）
+    STATUS_SHRED = "STATUS_SHRED"  # 破防（首次受到物理异常时进入，可叠加最多4层）
     STATUS_HEAVY_HIT = "STATUS_HEAVY_HIT"  # 击飞（已破防时触发，叠加破防层数+失衡+浮空）
     STATUS_KNOCKDOWN = "STATUS_KNOCKDOWN"  # 倒地（已破防时触发，叠加破防层数+失衡+击倒）
-    STATUS_SHATTER = "STATUS_SHATTER"    # 碎甲（已破防时触发，消耗所有破防层数，增加物理受伤）
+    STATUS_SHATTER = "STATUS_SHATTER"  # 碎甲（已破防时触发，消耗所有破防层数，增加物理受伤）
     STATUS_HEAVY_STRIKE = "STATUS_HEAVY_STRIKE"  # 猛击（已破防时触发，消耗所有破防层数，大量物理伤害）
-    STATUS_STAGGER = "STATUS_STAGGER"    # 失衡
+    STATUS_STAGGER = "STATUS_STAGGER"  # 失衡
 
     # 法术异常状态（wiki: 法术异常 - 不同元素附着交叉触发）
     STATUS_CORROSION = "STATUS_CORROSION"  # 腐蚀（自然+其他元素→消耗附着→全属性抗性逐渐下降）
-    STATUS_FROZEN = "STATUS_FROZEN"      # 冻结（寒冷+其他元素→消耗附着→弱小敌人无法行动）
+    STATUS_FROZEN = "STATUS_FROZEN"  # 冻结（寒冷+其他元素→消耗附着→弱小敌人无法行动）
     STATUS_CONDUCTING = "STATUS_CONDUCTING"  # 导电（电磁+其他元素→消耗附着→法术伤害提高）
-    STATUS_BURNING = "STATUS_BURNING"    # 燃烧（灼热+其他元素→消耗附着→持续灼热伤害）
+    STATUS_BURNING = "STATUS_BURNING"  # 燃烧（灼热+其他元素→消耗附着→持续灼热伤害）
 
     # 其他状态
     STATUS_SPELL_INFLICT = "STATUS_SPELL_INFLICT"  # 通用的法术附着状态
     STATUS_SPELL_BURST = "STATUS_SPELL_BURST"  # 法术爆发伤害（同元素再次附着触发）
     STATUS_SPELL_ANOMALY = "STATUS_SPELL_ANOMALY"  # 法术异常状态（通用）
-    STATUS_SLOW = "STATUS_SLOW"          # 缓速
-    STATUS_BROKEN = "STATUS_BROKEN"      # 破碎
-    STATUS_FOCUS = "STATUS_FOCUS"        # 安塔尔施加的聚焦状态
+    STATUS_SLOW = "STATUS_SLOW"  # 缓速
+    STATUS_BROKEN = "STATUS_BROKEN"  # 破碎
+    STATUS_FOCUS = "STATUS_FOCUS"  # 安塔尔施加的聚焦状态
     STATUS_CONFINEMENT = "STATUS_CONFINEMENT"  # 诀施加的囹圄状态
     STATUS_ORIGINIUM_CRYSTAL = "STATUS_ORIGINIUM_CRYSTAL"  # 管理员施加的源石结晶
-    STATUS_SINGING = "STATUS_SINGING"    # 梨诺的演唱姿态
+    STATUS_SINGING = "STATUS_SINGING"  # 梨诺的演唱姿态
     STATUS_HIGH_SINGING = "STATUS_HIGH_SINGING"  # 梨诺的高歌姿态
     STATUS_HOVERING = "STATUS_HOVERING"
 
@@ -122,7 +123,6 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.ATTACH_BURN: "敌人被施加灼热元素",
     EffectType.ATTACH_ELECTROMAGNETIC: "敌人被施加电磁元素",
     EffectType.ATTACH_NATURAL: "敌人被施加自然元素",
-
     # 元素脆弱
     EffectType.VULN_COLD: "敌人受到寒冷伤害增加",
     EffectType.VULN_BURN: "敌人受到灼热伤害增加",
@@ -131,7 +131,6 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.VULN_PHYSICAL: "敌人受到物理伤害增加",
     EffectType.VULN_ALL: "敌人受到的法术伤害增加（不含物理伤害）",
     EffectType.VULN_NATURAL_BURST: "敌人受到自然爆发伤害增加",
-
     # 物理异常状态
     EffectType.STATUS_SHRED: "破防状态，可被击飞和倒地叠加（最多4层），被猛击和碎甲消耗",
     EffectType.STATUS_HEAVY_HIT: "击飞：已破防时触发，叠加破防层数，造成物理伤害和失衡，浮空弱小敌人",
@@ -139,13 +138,11 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STATUS_SHATTER: "碎甲：已破防时触发，消耗所有破防层数，造成物理伤害，增加物理受伤",
     EffectType.STATUS_HEAVY_STRIKE: "猛击：已破防时触发，消耗所有破防层数，造成大量物理伤害",
     EffectType.STATUS_STAGGER: "敌人失去平衡",
-
     # 法术异常状态（不同元素附着交叉触发）
     EffectType.STATUS_CORROSION: "腐蚀：自然+其他元素→消耗所有附着→初始自然伤害+全属性抗性逐渐下降",
     EffectType.STATUS_FROZEN: "冻结：寒冷+其他元素→消耗所有附着→初始寒冷伤害+弱小敌人无法行动",
     EffectType.STATUS_CONDUCTING: "导电：电磁+其他元素→消耗所有附着→初始电磁伤害+法术伤害提高",
     EffectType.STATUS_BURNING: "燃烧：灼热+其他元素→消耗所有附着→初始灼热伤害+持续灼热伤害",
-
     # 其他状态
     EffectType.STATUS_SPELL_INFLICT: "通用的法术附着状态",
     EffectType.STATUS_SPELL_BURST: "法术爆发伤害（同元素再次附着时触发）",
@@ -158,7 +155,6 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STATUS_SINGING: "梨诺的演唱姿态，持续强化全队并周期追加攻击与治疗",
     EffectType.STATUS_HIGH_SINGING: "梨诺的高歌姿态，替代演唱姿态并提供强化效果",
     EffectType.STATUS_HOVERING: "目标进入浮空状态",
-
     # 层数系统
     EffectType.STACK_MOLTEN: "莱万汀的熔火灼痕层数",
     EffectType.STACK_SHRED: "敌人身上的破防层数",
@@ -171,7 +167,6 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STACK_TRACE: "洛茜的爪印斫痕层数",
     EffectType.STACK_CHARGE: "卡契尔的蓄力层数",
     EffectType.STACK_QINGTING_SWORD: "庄方宜的青霆剑数量，可按导电异常等级动态生成，单次战技最多生成3柄，并在逐柄雷击后消费",
-
     # 增益效果
     EffectType.BUFF_ATTACK_UP: "攻击力增加",
     EffectType.BUFF_CRIT_RATE_UP: "暴击率增加",
@@ -186,13 +181,11 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.BUFF_NATURAL_UP: "自然伤害增加",
     EffectType.BUFF_SPELL_UP: "法术伤害增加",
     EffectType.BUFF_PROTECTION: "干员获得庇护效果",
-
     # 减益效果
     EffectType.DEBUFF_DEF_DOWN: "敌人防御力下降",
     EffectType.DEBUFF_SPEED_DOWN: "敌人移动速度下降",
     EffectType.DEBUFF_HEAL_DOWN: "敌人受到的治疗效果降低",
     EffectType.DEBUFF_WEAKEN: "敌人被施加虚弱效果",
-
     # 特殊机制
     EffectType.MECH_VACUUM: "洁尔佩塔的真空牵引效果",
     EffectType.MECH_GRAVITY: "洁尔佩塔的重力场效果",
@@ -206,7 +199,6 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.MECH_SUPPORT_CRYSTAL: "赛希召唤的支援晶体",
     EffectType.PLACE_THUNDER_SPEAR: "艾维文娜的雷枪放置物",
     EffectType.REMOVE_THUNDER_SPEAR: "艾维文娜的雷枪召回",
-
     # 消耗/清除
     EffectType.CONSUME_ALL: "清空所有层数/效果",
     EffectType.CONSUME_STACK: "消耗特定层数",
@@ -215,7 +207,6 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.CLEAR_COLD: "清空敌人寒冷附着",
     EffectType.CLEAR_NATURAL: "清空敌人自然附着",
     EffectType.CLEAR_FROZEN: "消耗敌人冻结状态",
-
     # 触发效果
     EffectType.TRIGGER_LINK: "触发连携技效果",
     EffectType.TRIGGER_ADDITIONAL: "触发额外攻击",
@@ -236,7 +227,6 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "灼热附着": EffectType.ATTACH_BURN,
     "电磁附着": EffectType.ATTACH_ELECTROMAGNETIC,
     "自然附着": EffectType.ATTACH_NATURAL,
-
     # 元素脆弱
     "寒冷脆弱": EffectType.VULN_COLD,
     "灼热脆弱": EffectType.VULN_BURN,
@@ -244,7 +234,6 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "自然脆弱": EffectType.VULN_NATURAL,
     "物理脆弱": EffectType.VULN_PHYSICAL,
     "法术脆弱": EffectType.VULN_ALL,
-
     # 异常状态
     "冻结": EffectType.STATUS_FROZEN,
     "燃烧": EffectType.STATUS_BURNING,
@@ -267,7 +256,6 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "演唱姿态": EffectType.STATUS_SINGING,
     "高歌姿态": EffectType.STATUS_HIGH_SINGING,
     "浮空": EffectType.STATUS_HOVERING,
-
     # 层数系统
     "消耗破防层数": EffectType.STACK_SHRED,
     "破防层数": EffectType.STACK_SHRED,
@@ -279,7 +267,6 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "种子": EffectType.STACK_SEED,
     "蓄力": EffectType.STACK_CHARGE,
     "青霆剑": EffectType.STACK_QINGTING_SWORD,
-
     # 增益效果
     "攻击力提升": EffectType.BUFF_ATTACK_UP,
     "暴击率提升": EffectType.BUFF_CRIT_RATE_UP,
@@ -294,13 +281,11 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "自然伤害提升": EffectType.BUFF_NATURAL_UP,
     "法术增幅": EffectType.BUFF_SPELL_UP,
     "庇护": EffectType.BUFF_PROTECTION,
-
     # 减益效果
     "防御力降低": EffectType.DEBUFF_DEF_DOWN,
     "减速": EffectType.DEBUFF_SPEED_DOWN,
     "治疗效果降低": EffectType.DEBUFF_HEAL_DOWN,
     "虚弱": EffectType.DEBUFF_WEAKEN,
-
     # 特殊机制
     "真空": EffectType.MECH_VACUUM,
     "重力": EffectType.MECH_GRAVITY,
@@ -311,7 +296,6 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "炸弹": EffectType.MECH_BOMB,
     "雷达": EffectType.MECH_RADAR,
     "炮台": EffectType.MECH_TURRET,
-
     # 消耗/清除（保留明确的组合术语；避免动词"消耗""清空"误报）
     "消耗寒冷附着": EffectType.CLEAR_COLD,
     "消耗自然附着": EffectType.CLEAR_NATURAL,
@@ -328,7 +312,9 @@ EFFECT_TERMS: dict[str, EffectType] = {
 
 # 按术语长度从长到短排序（匹配时优先长术语，避免"寒冷附着"被"附着"误吞）
 _TERMS_BY_LEN: list[tuple[str, EffectType]] = sorted(
-    EFFECT_TERMS.items(), key=lambda kv: len(kv[0]), reverse=True,
+    EFFECT_TERMS.items(),
+    key=lambda kv: len(kv[0]),
+    reverse=True,
 )
 
 

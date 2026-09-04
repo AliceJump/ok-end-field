@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """动态配置键声明表。
 
 「动态配置」= 值由**用户输入**载入的配置项（而非项目资源），典型如账号列表
@@ -13,9 +12,11 @@
 """
 
 # 用户输入载入的下拉配置 key（跨任务全局唯一；新增动态配置在此登记）
-DYNAMIC_DROPDOWN_KEYS = frozenset({
-    '地图账号',       # 物品导航：选项来自账号页账号列表（用户输入）
-})
+DYNAMIC_DROPDOWN_KEYS = frozenset(
+    {
+        "地图账号",  # 物品导航：选项来自账号页账号列表（用户输入）
+    }
+)
 
 
 def is_dynamic_dropdown_key(key) -> bool:
