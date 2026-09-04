@@ -354,7 +354,7 @@ class GameFlowMixin:
         Returns:
             bool: 当前处于游戏世界返回 True。
         """
-        main_world_features = [fL.task_icon]
+        main_world_features = [fL.esc]
 
         in_world = all(self.find_one(f, vertical_variance=0.01, horizontal_variance=0.02) for f in main_world_features)
 
