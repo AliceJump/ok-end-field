@@ -154,7 +154,7 @@ class DailyLogisticsMixin:
                     (fL.fill_max, None, 0),
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 1),
                     (fL.give_gift, self.box_of_screen(0.945, 0.904, 0.965, 0.937), 0),
-                    (fL.task_icon, None, 0),
+                    (fL.esc, None, 0),
                 ]
                 optional_steps = {3}
                 blind_spot_steps = {3, 4}
