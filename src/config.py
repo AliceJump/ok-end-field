@@ -146,6 +146,7 @@ config = {
         ["src.tasks.test.TestArrowAngle", "TestArrowAngle"],
         ["src.tasks.test.TestCircularPulseDetect", "TestCircularPulseDetect"],
         ["src.tasks.test.TeamCompositionDetectTask", "TeamCompositionDetectTask"],
+        ["src.tasks.test.FrameFeatureSearch", "FrameFeatureSearch"],
     ],
     "custom_tabs": [
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],
