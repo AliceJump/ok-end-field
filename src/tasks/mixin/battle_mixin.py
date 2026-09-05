@@ -517,7 +517,9 @@ class BattleMixin(BaseEfTask):
                 continue
 
             current = self.detect_team(frame)
-            if current == ["?", "?", "?", "?"]:
+
+            # 无效识别：空结果，或者全部都是 ?
+            if not current or all(x == "?" for x in current):
                 last_result = []
                 streak = 0
             else:
