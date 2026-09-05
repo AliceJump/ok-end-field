@@ -389,7 +389,7 @@ class AutoCombatLogic:
                 if _skill_allowlist_enabled:
                     try:
                         team, stable = task.detect_team_stable(deadline=_sleep_end)
-                        if stable and team and all(m != "?" for m in team):
+                        if stable and team and any(m != "?" for m in team):
                             skill_sequence = generate_skill_sequence(team)
                             task._battle_team, self.normal_skill_sequence = team, skill_sequence
                             task.log_info(f"初始等待期间识别到队伍: {team}")
@@ -454,7 +454,7 @@ class AutoCombatLogic:
                     self._team_detect_attempts += 1
                     try:
                         team, stable = task.detect_team_stable()
-                        if stable and team and all(m != "?" for m in team):
+                        if stable and team and any(m != "?" for m in team):
                             skill_sequence = generate_skill_sequence(team)
                             task._battle_team, self.normal_skill_sequence = team, skill_sequence
                             task.log_info(f"战斗中识别到队伍: {team}")
