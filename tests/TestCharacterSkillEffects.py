@@ -188,7 +188,18 @@ class TestCharacterSkillEffects(unittest.TestCase):
         typhoeus_link = next(
             skill for skill in load_all_characters()["ti_fu_luo_si"].skills if skill.skill_id == "typhoeus_link"
         )
-        self.assertTrue(typhoeus_link.enhancement.is_trigger_satisfied(set()))
+        self.assertFalse(typhoeus_link.enhancement.is_trigger_satisfied(set()))
+        self.assertFalse(typhoeus_link.enhancement.is_trigger_satisfied({EffectType.STACK_SIGN: 7}))
+        self.assertTrue(typhoeus_link.enhancement.is_trigger_satisfied({EffectType.STACK_SIGN: 8}))
+        self.assertEqual(typhoeus_link.enhancement.effects[0].count, -8)
+
+        self.assertEqual(
+            [effect.effect_id for effect in typhoeus_link.effects],
+            [EffectType.DEBUFF_SPEED_DOWN, EffectType.VULN_NATURAL_BURST],
+        )
+        self.assertTrue(all(effect.value == 1 for effect in typhoeus_link.effects))
+        self.assertTrue(all(effect.duration is None for effect in typhoeus_link.effects))
+        self.assertTrue(all(effect.target == "enemy" for effect in typhoeus_link.effects))
 
     def test_requested_trigger_condition_branches(self):
         def load_skill(file_name, skill_id):
