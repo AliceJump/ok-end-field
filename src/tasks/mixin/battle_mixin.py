@@ -248,7 +248,7 @@ class BattleMixin(BaseEfTask):
     # 终结技释放后延迟退出检查的时间（秒）
     ULT_EXIT_DELAY = 3.0
 
-    def use_ult(self, ult_sequence: str = None):
+    def use_ult(self, ult_sequence: str | None = None):
         """
         尝试释放终极技。
 
@@ -260,10 +260,7 @@ class BattleMixin(BaseEfTask):
                 True  : 成功释放
                 False : 未找到可释放技能
         """
-        if ult_sequence is None:
-            ults = ["1", "2", "3", "4"]
-        else:
-            ults = [ult_sequence]
+        ults = ["1", "2", "3", "4"] if ult_sequence is None else [ult_sequence]
 
         release_mode = self.get_battle_config(KEY_ULT_RELEASE_MODE, ULT_RELEASE_MODE_HOLD)
 
