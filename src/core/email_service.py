@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """邮件发送服务。
 
 提供：
@@ -7,6 +6,7 @@
 - 发送测试邮件（供“设置 → 邮件发送配置”里的“发送测试邮件”按钮调用）
 - 读取 ``assets/html/`` 目录下的邮件 HTML 模板
 """
+
 from __future__ import annotations
 
 import base64
@@ -15,6 +15,7 @@ import re
 import smtplib
 import ssl
 import threading
+from collections.abc import Iterable
 from datetime import datetime
 from email.header import Header
 from email.mime.application import MIMEApplication
@@ -22,7 +23,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formataddr
 from pathlib import Path
-from typing import Iterable
 
 from ok.util.file import get_relative_path, read_json_file, write_json_file
 
@@ -97,9 +97,7 @@ def resolve_recipient(to_user: str | None, settings: dict) -> str:
     if not target:
         target = str(settings.get("默认收件人", "") or "").strip()
     if not target:
-        raise ValueError(
-            "未指定收件人：请填写“默认收件人”或“收件人列表”，或传入邮箱/别名。"
-        )
+        raise ValueError("未指定收件人：请填写“默认收件人”或“收件人列表”，或传入邮箱/别名。")
 
     recipients = parse_recipients(settings.get("收件人列表"))
     if target in recipients:
@@ -108,10 +106,7 @@ def resolve_recipient(to_user: str | None, settings: dict) -> str:
     if "@" in target:
         return target
 
-    raise ValueError(
-        f"无法识别的收件人: {target}。请直接填写邮箱地址，"
-        f"或在设置“收件人列表”中把该名称映射到邮箱。"
-    )
+    raise ValueError(f"无法识别的收件人: {target}。请直接填写邮箱地址，或在设置“收件人列表”中把该名称映射到邮箱。")
 
 
 def load_email_template(name: str = DEFAULT_TEMPLATE_NAME) -> str:
@@ -158,6 +153,7 @@ def _inline_local_stylesheets(html: str) -> str:
     模板在浏览器里预览时通过相对链接加载共享样式（email_style.css），
     发送邮件时这里把 CSS 内容直接内联，避免部分邮件客户端忽略外部样式表。
     """
+
     def _replace_link(match: re.Match) -> str:
         href = match.group(1).strip()
         candidate = Path(href)
@@ -182,6 +178,7 @@ def _inline_local_assets(html: str) -> str:
     - ``<img src="...">``
     - CSS ``url("...")`` / ``url('...')`` / ``url(...)``
     """
+
     # 先处理 img src
     def _replace_src(match: re.Match) -> str:
         ref = match.group(1).strip()
@@ -268,9 +265,7 @@ def send_email(
     timeout = _safe_int(settings.get("连接超时秒数", 30), 30)
 
     if not smtp_host or not sender or not password:
-        raise ValueError(
-            "邮件配置不完整，请在“设置 → 邮件发送配置”中填写 SMTP服务器、发件邮箱和授权码。"
-        )
+        raise ValueError("邮件配置不完整，请在“设置 → 邮件发送配置”中填写 SMTP服务器、发件邮箱和授权码。")
 
     recipient = resolve_recipient(to_user, settings)
     prefix = str(settings.get("主题前缀", "") or "").strip()
@@ -301,9 +296,7 @@ def send_email(
                 server.quit()
             except Exception:
                 pass
-            raise ValueError(
-                f"STARTTLS 升级失败（服务器不支持加密连接），已中止发送: {exc}"
-            ) from exc
+            raise ValueError(f"STARTTLS 升级失败（服务器不支持加密连接），已中止发送: {exc}") from exc
 
     try:
         server.login(sender, password)
@@ -346,9 +339,7 @@ def send_test_email(to_user: str | None = None, settings: dict | None = None) ->
     recipient = resolve_recipient(to_user, settings)
 
     template = load_email_template(DEFAULT_TEMPLATE_NAME)
-    html_body = template.replace(
-        "{{send_time}}", datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    )
+    html_body = template.replace("{{send_time}}", datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
     return send_email(
         to_user=recipient,
@@ -370,7 +361,7 @@ def send_test_email_from_settings() -> None:
     def _run():
         try:
             recipient = send_test_email()
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             alert_error(f"测试邮件发送失败: {exc}")
             return
         alert_info(f"测试邮件已发送至: {recipient}")
@@ -457,6 +448,6 @@ def _render_failed_details(failed_details) -> str:
             '<div class="failed-row">'
             f'<div class="failed-head">{head}</div>'
             f'<div class="failed-reason">{reason}</div>'
-            '</div>'
+            "</div>"
         )
     return "\n".join(rows)

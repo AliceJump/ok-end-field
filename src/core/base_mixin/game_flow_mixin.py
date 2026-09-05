@@ -1,11 +1,11 @@
 import numpy as np
 from pynput.keyboard import Key
 
+from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import areas_list
 from src.data.world_map_utils import get_world_map_matcher, get_world_map_text
 from src.image.login_screenshot import capture_window_by_screen
 from src.interaction.Mouse import run_at_window_pos
-from src.data.FeatureList import FeatureList as fL
 
 
 class GameFlowMixin:
@@ -31,9 +31,25 @@ class GameFlowMixin:
         self.sleep(0.1)
         return capture_window_by_screen(self.get_game_hwnd())
 
-    def login_ocr(self, x=0, y=0, to_x=1, to_y=1, match=None, width=0, height=0, box=None, name=None, threshold=0,
-                  target_height=0, use_grayscale=False, log=False, frame_processor=None, lib='default',
-                  need_active=True):
+    def login_ocr(
+        self,
+        x=0,
+        y=0,
+        to_x=1,
+        to_y=1,
+        match=None,
+        width=0,
+        height=0,
+        box=None,
+        name=None,
+        threshold=0,
+        target_height=0,
+        use_grayscale=False,
+        log=False,
+        frame_processor=None,
+        lib="default",
+        need_active=True,
+    ):
         """
         基于登录截图执行 OCR 识别。
 
@@ -104,9 +120,7 @@ class GameFlowMixin:
         Returns:
             list: 匹配到的确认按钮结果列表。
         """
-        return self.find_one(
-            fL.skip_dialog_confirm, horizontal_variance=0.05, vertical_variance=0.05
-        )
+        return self.find_one(fL.skip_dialog_confirm, horizontal_variance=0.05, vertical_variance=0.05)
 
     def click_confirm(self, after_sleep=0, time_out=5, recheck_time=0, disappear_time_out=0.8):
         """
@@ -177,12 +191,12 @@ class GameFlowMixin:
                 return False
             if count >= 30:
                 return False
-            result = self.find_one(
-                feature=fL.reward_ok, box=self.box.bottom, threshold=0.8
-            )
+            result = self.find_one(feature=fL.reward_ok, box=self.box.bottom, threshold=0.8)
             if not result:
                 remaining = max(0.1, time_out - (self.active_time() - start_time))
-                result = self.wait_ocr(match=self.lang.game_flow_mixin.k_8b2ca27a, time_out=min(1, remaining), box=self.box.bottom)
+                result = self.wait_ocr(
+                    match=self.lang.game_flow_mixin.k_8b2ca27a, time_out=min(1, remaining), box=self.box.bottom
+                )
             if result:
                 if self.active_time() - start_time > time_out:
                     return False
@@ -202,17 +216,22 @@ class GameFlowMixin:
             if self.in_world():
                 self._logged_in = True
                 return True
-            elif self.find_one(fL.monthly_card) or self.find_one(fL.monthly_card2) or self.find_one(fL.logout) or self.find_one(fL.login_reward_icon):
+            elif (
+                self.find_one(fL.monthly_card)
+                or self.find_one(fL.monthly_card2)
+                or self.find_one(fL.logout)
+                or self.find_one(fL.login_reward_icon)
+            ):
                 run_at_window_pos(self.get_game_hwnd(), super().click, *self.screen_center(), 1, 0.5, 0.5)
                 return False
             elif close := (
-                    self.find_one(fL.one_click_claim, horizontal_variance=0.1, vertical_variance=0.1)
-                    or self.find_one(
-                fL.check_in_close,
-                horizontal_variance=0.1,
-                vertical_variance=0.1,
-                threshold=0.75,
-            )
+                self.find_one(fL.one_click_claim, horizontal_variance=0.1, vertical_variance=0.1)
+                or self.find_one(
+                    fL.check_in_close,
+                    horizontal_variance=0.1,
+                    vertical_variance=0.1,
+                    threshold=0.75,
+                )
             ):
                 self.click(close)
                 return False
@@ -335,7 +354,7 @@ class GameFlowMixin:
         Returns:
             bool: 当前处于游戏世界返回 True。
         """
-        main_world_features = [fL.task_icon]
+        main_world_features = [fL.esc]
 
         in_world = all(self.find_one(f, vertical_variance=0.01, horizontal_variance=0.02) for f in main_world_features)
 
@@ -375,23 +394,13 @@ class GameFlowMixin:
 
         # 某些弹窗状态不视为主界面
         if result := (
-            self.find_one(
-                feature=fL.skip_dialog_confirm,
-                horizontal_variance=0.05,
-                vertical_variance=0.05
-            )
-            or self.find_one(
-                feature=fL.to_max_produce_num,
-                box=self.box_of_screen(0.550, 0.885, 0.573, 0.950)
-            )
+            self.find_one(feature=fL.skip_dialog_confirm, horizontal_variance=0.05, vertical_variance=0.05)
+            or self.find_one(feature=fL.to_max_produce_num, box=self.box_of_screen(0.550, 0.885, 0.573, 0.950))
             or self.find_one(
                 feature=fL.left_battle,
                 vertical_variance=0.1,
             )
-            or self.find_one(
-                feature=fL.log_out_confirm,
-                box=self.box_of_screen(0.451, 0.572, 0.553, 0.620)
-            )
+            or self.find_one(feature=fL.log_out_confirm, box=self.box_of_screen(0.451, 0.572, 0.553, 0.620))
             or self.find_one(
                 feature=fL.reward_ok,
                 horizontal_variance=0.1,
@@ -404,12 +413,9 @@ class GameFlowMixin:
             return False
 
         # 命中 OCR 干扰并进行了处理，当前不视为稳定主界面
-        rules = [[
-            None,
-            None,
-            [self.lang.game_flow_mixin.k_8b2ca27a, self.lang.game_flow_mixin.k_7cd2e0c0],
-            self.box.bottom
-        ]]
+        rules = [
+            [None, None, [self.lang.game_flow_mixin.k_8b2ca27a, self.lang.game_flow_mixin.k_7cd2e0c0], self.box.bottom]
+        ]
 
         if self.handle_ocr_rules(rules):
             return False
@@ -420,7 +426,6 @@ class GameFlowMixin:
             self._next_main_recovery_time = self.active_time() + self.once_sleep_time
 
         return False
-
 
     def handle_ocr_rules(self, rules: list[list]) -> bool:
         """
@@ -435,7 +440,6 @@ class GameFlowMixin:
         """
 
         for need, need_box, match, box in rules:
-
             # 前置条件检测
             if need is not None and not self.ocr(match=need, box=need_box, log=True):
                 continue
@@ -500,7 +504,9 @@ class GameFlowMixin:
             if not check:
                 self.log_info("未识别到区域且未检测到建设，重新尝试打开界面")
                 continue
-            result = self.wait_ocr(match=[get_world_map_matcher(self.lang, area) for area in areas_list], box=self.box.left, time_out=1)
+            result = self.wait_ocr(
+                match=[get_world_map_matcher(self.lang, area) for area in areas_list], box=self.box.left, time_out=1
+            )
             if result:
                 success = True
                 break
@@ -515,23 +521,19 @@ class GameFlowMixin:
                 need_change = False
                 break
         if need_change:
-            if not self.wait_click_feature(
-                    feature=fL.change_area, time_out=2, raise_if_not_found=False
-            ):
+            if not self.wait_click_feature(feature=fL.change_area, time_out=2, raise_if_not_found=False):
                 return False
             if not self.wait_click_ocr(
-                    match=get_world_map_matcher(self.lang, area),
-                    box=self.box_of_screen(
-                        648 / 1920, 196 / 1080, 648 / 1920 + 628 / 1920, 196 / 1080 + 192 / 1080
-                    ),
-                    time_out=4,
+                match=get_world_map_matcher(self.lang, area),
+                box=self.box_of_screen(648 / 1920, 196 / 1080, 648 / 1920 + 628 / 1920, 196 / 1080 + 192 / 1080),
+                time_out=4,
             ):
                 return False
             if not self.wait_click_feature(
-                    feature=fL.to_max_produce_num,
-                    box=self.box_of_screen(0.636, 0.585, 0.656, 0.622),
-                    time_out=2,
-                    raise_if_not_found=False
+                feature=fL.to_max_produce_num,
+                box=self.box_of_screen(0.636, 0.585, 0.656, 0.622),
+                time_out=2,
+                raise_if_not_found=False,
             ):
                 return False
 
@@ -546,11 +548,7 @@ class GameFlowMixin:
         }
 
         if box := self.wait_feature(
-            feature=models.get(model),
-            box=self.box.right,
-            time_out=5,
-            settle_time=0.5,
-            raise_if_not_found=False
+            feature=models.get(model), box=self.box.right, time_out=5, settle_time=0.5, raise_if_not_found=False
         ):
             self.click(box)
             self.wait_ui_stable()
@@ -569,16 +567,21 @@ class GameFlowMixin:
         Returns:
             bool | None: 成功时返回 True，未命中时返回 None。
         """
-        if result := self.wait_ocr(match=[get_world_map_matcher(self.lang, area) for area in areas_list],
-                                   box=self.box_of_screen(0, 960 / 1080, 260 / 1920, 1), time_out=5):
+        if result := self.wait_ocr(
+            match=[get_world_map_matcher(self.lang, area) for area in areas_list],
+            box=self.box_of_screen(0, 960 / 1080, 260 / 1920, 1),
+            time_out=5,
+        ):
             expected_target_text = get_world_map_text(self.lang, target_area)
             if expected_target_text in result[0].name or target_area in result[0].name:
                 return True
             else:
                 self.click(result[0])
-                self.wait_click_ocr(match=get_world_map_matcher(self.lang, target_area),
-                                    box=self.box_of_screen(0, (960 - 60 * len(areas_list)) / 1080, 260 / 1920, 1),
-                                    time_out=5)
+                self.wait_click_ocr(
+                    match=get_world_map_matcher(self.lang, target_area),
+                    box=self.box_of_screen(0, (960 - 60 * len(areas_list)) / 1080, 260 / 1920, 1),
+                    time_out=5,
+                )
                 return True
 
     def ensure_map(self, addtional_feature=None, time_out=30):
@@ -598,9 +601,14 @@ class GameFlowMixin:
         start_time = self.active_time()
         default_features = [fL.transaction_icon, fL.main_centre_icon]
         if addtional_feature:
-            features = default_features + addtional_feature if isinstance(addtional_feature, list) else default_features + [addtional_feature]
+            features = (
+                default_features + addtional_feature
+                if isinstance(addtional_feature, list)
+                else default_features + [addtional_feature]
+            )
         else:
             features = default_features
+
         def in_map():
             if self.find_one(fL.in_map, box=self.box_of_screen(0.027, 0.531, 0.051, 0.896)):
                 return True
@@ -625,7 +633,16 @@ class GameFlowMixin:
         Returns:
             bool: 检测到好友帝江号返回 True。
         """
-        return self.wait_feature(feature=fL.left_button, vertical_variance=0.1, horizontal_variance=0.1, raise_if_not_found=False, time_out=1) is not None
+        return (
+            self.wait_feature(
+                feature=fL.left_button,
+                vertical_variance=0.1,
+                horizontal_variance=0.1,
+                raise_if_not_found=False,
+                time_out=1,
+            )
+            is not None
+        )
 
     def ensure_in_friend_boat(self):
         """

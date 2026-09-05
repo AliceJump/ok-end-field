@@ -1,4 +1,3 @@
-
 """干员（Operator）canonical 数据（剥离自内嵌字典，见 assets/data/characters.json）。
 
 数据在 assets/data/characters.json（JSON），本模块仅作薄加载器，

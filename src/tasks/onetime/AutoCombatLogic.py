@@ -291,7 +291,7 @@ class AutoCombatLogic:
         self._last_team_detect_time = 0
         self._team_detect_attempts = 0
         task = self.task
-        task._battle_team=None
+        task._battle_team = None
         if not task.in_combat(required_yellow=1):
             # 非战斗状态：清标记，下次进入战斗时才会复位推荐技能检测器
             task._recommend_detector_in_combat = False
@@ -383,7 +383,7 @@ class AutoCombatLogic:
             _sleep_end = task.active_time() + _target_sleep
             while task.active_time() < _sleep_end:
                 # 已识别出队伍则跳出等待
-                if getattr(task, '_battle_team', None):
+                if getattr(task, "_battle_team", None):
                     break
                 # 尝试识别
                 if _skill_allowlist_enabled:
@@ -446,7 +446,7 @@ class AutoCombatLogic:
                 team_detect_due = now - self._last_team_detect_time >= self._TEAM_DETECT_INTERVAL
                 team_detect_available = self._team_detect_attempts < self._TEAM_DETECT_MAX_ATTEMPTS
                 if (
-                    not getattr(task, '_battle_team', None)
+                    not getattr(task, "_battle_team", None)
                     and _skill_allowlist_enabled
                     and team_detect_due
                     and team_detect_available

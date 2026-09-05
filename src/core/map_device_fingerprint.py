@@ -18,6 +18,7 @@ auto-checkin 工具实测可用，与本项目同 organization/公钥/端点）�
 
 每次铸造的 uid/smid/vpw 均随机生成，无注册载荷次数上限。
 """
+
 import base64
 import gzip
 import hashlib
@@ -120,9 +121,7 @@ def _des(o: dict) -> dict:
                 warnings.simplefilter("ignore")
                 cipher = Cipher(TripleDES(rule["key"].encode("utf-8")), ECB())
             data = str(value).encode("utf-8") + b"\x00" * 8
-            result[rule["name"]] = base64.b64encode(
-                cipher.encryptor().update(data)
-            ).decode("utf-8")
+            result[rule["name"]] = base64.b64encode(cipher.encryptor().update(data)).decode("utf-8")
         elif key in _DES_RENAME:
             result[_DES_RENAME[key]] = value
         else:

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
 
 from src.data.effects import EffectType, match_effect_terms
 from src.data.skill_types import (
@@ -123,7 +122,7 @@ def _load_enhancement(enh_data: dict) -> SkillEnhancement:
 
 def _load_character_from_json(file_path: Path) -> Character:
     """从JSON文件加载角色数据（兼容新旧两种格式）。"""
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, encoding="utf-8") as f:
         data = json.load(f)
 
     character_id = data["character_id"]
@@ -132,10 +131,7 @@ def _load_character_from_json(file_path: Path) -> Character:
     # 解析技能列表
     skills: list[Skill] = []
     for skill_data in data.get("skills", []):
-        enhancements = [
-            _load_enhancement(enh_data)
-            for enh_data in skill_data.get("enhancements") or []
-        ]
+        enhancements = [_load_enhancement(enh_data) for enh_data in skill_data.get("enhancements") or []]
 
         # 加载技能基础效果；旧格式的 attach/status/clear 纯ID列表合并进 effects
         effects = _load_skill_effects(skill_data.get("effects") or [])
@@ -190,13 +186,13 @@ def load_all_characters() -> dict[str, Character]:
     return characters
 
 
-def get_character(character_id: str) -> Optional[Character]:
+def get_character(character_id: str) -> Character | None:
     """获取指定角色。"""
     all_chars = load_all_characters()
     return all_chars.get(character_id)
 
 
 __all__ = [
-    "load_all_characters",
     "get_character",
+    "load_all_characters",
 ]

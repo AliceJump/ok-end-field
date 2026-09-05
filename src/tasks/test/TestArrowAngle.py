@@ -32,11 +32,7 @@ class TestArrowAngle(BaseEfTask):
 
                 status = "✓" if score > 0.75 else "⚠"
 
-                self.log_info(
-                    f"{status} [#{iteration:03d}] "
-                    f"角度: {angle:6.1f}°    "
-                    f"置信度: {score:.4f}"
-                )
+                self.log_info(f"{status} [#{iteration:03d}] 角度: {angle:6.1f}°    置信度: {score:.4f}")
 
                 if iteration % 10 == 0:
                     self.log_info("-" * 50)

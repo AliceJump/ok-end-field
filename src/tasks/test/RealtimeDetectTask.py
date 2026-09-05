@@ -17,11 +17,7 @@ class RealtimeYoloScanTask(BaseEfTask):
         default_model, model_settings = build_yolo_model_settings(app_config.get("yolo", {}))
         model_options = list(model_settings.keys())
         target_options = sorted(
-            {
-                str(name)
-                for name in model_settings.get(default_model, {}).get("labels", {}).values()
-                if name is not None
-            }
+            {str(name) for name in model_settings.get(default_model, {}).get("labels", {}).values() if name is not None}
         )
         default_target = target_options[0] if target_options else "battle_end"
 

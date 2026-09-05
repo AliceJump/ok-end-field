@@ -2,8 +2,8 @@ from collections import deque
 
 import cv2
 import numpy as np
-from qfluentwidgets import FluentIcon
 from ok import Box
+from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
 from src.core.BattleConfig import RECOMMEND_SKILL_REGIONS
@@ -42,14 +42,18 @@ class TestCircularPulseDetect(BaseEfTask):
         )
         self.icon = FluentIcon.SEARCH
         self.visible = self.debug
-        self.default_config.update({
-            "扫描间隔(秒)": 0.1,
-            "诊断间隔(轮)": 5,
-        })
-        self.config_description.update({
-            "扫描间隔(秒)": "每轮四批检测后的等待时间；越小采样越密。",
-            "诊断间隔(轮)": "每隔多少轮输出一行按钮数据与环带诊断；设为 1 逐轮打印。",
-        })
+        self.default_config.update(
+            {
+                "扫描间隔(秒)": 0.1,
+                "诊断间隔(轮)": 5,
+            }
+        )
+        self.config_description.update(
+            {
+                "扫描间隔(秒)": "每轮四批检测后的等待时间；越小采样越密。",
+                "诊断间隔(轮)": "每隔多少轮输出一行按钮数据与环带诊断；设为 1 逐轮打印。",
+            }
+        )
 
     def run(self):
         interval_value = self.config.get("扫描间隔(秒)", 0.1)
@@ -57,17 +61,12 @@ class TestCircularPulseDetect(BaseEfTask):
             0.0,
             float(0.1 if interval_value is None or interval_value == "" else interval_value),
         )
-        presets = [
-            dict(p, index=i + 1)
-            for i, p in enumerate(_PRESETS)
-            if self._is_configured(p)
-        ]
+        presets = [dict(p, index=i + 1) for i, p in enumerate(_PRESETS) if self._is_configured(p)]
         if not presets:
             raise ValueError("请先在 BattleConfig.RECOMMEND_SKILL_REGIONS 中配置至少一批预设区域参数")
 
         self.log_info(
-            f"开始光圈检测实测: {len(presets)} 批 "
-            f"({', '.join(str(p['label']) for p in presets)})",
+            f"开始光圈检测实测: {len(presets)} 批 ({', '.join(str(p['label']) for p in presets)})",
             notify=True,
         )
 
@@ -76,7 +75,7 @@ class TestCircularPulseDetect(BaseEfTask):
 
         scan_count = 0
         last_hit_count = None
-        diag_store = {}   # 每批次滚动灰度窗口（环带差分用）
+        diag_store = {}  # 每批次滚动灰度窗口（环带差分用）
         while True:
             scan_count += 1
             frame = self.next_frame()
@@ -100,19 +99,15 @@ class TestCircularPulseDetect(BaseEfTask):
                 center_y = cy_n * height
                 button_r = r_n * min_wh
                 # 红框：按钮锚点位置（检测器在固定源坐标上采样，无校准圆心）。
-                button_boxes.append(self._make_box(
-                    f"pulse_b{index}_btn", center_x, center_y, button_r, 0.0))
+                button_boxes.append(self._make_box(f"pulse_b{index}_btn", center_x, center_y, button_r, 0.0))
                 # 绿框：当前白色圆周脉冲命中（仅上升沿）。
                 if rising:
                     hit_count += 1
-                    ring_boxes.append(self._make_box(
-                        f"pulse_b{index}_ring", center_x, center_y, button_r * 1.2, 1.0))
+                    ring_boxes.append(self._make_box(f"pulse_b{index}_ring", center_x, center_y, button_r * 1.2, 1.0))
                     # 新白圈周期 → 按对应数字键（批次1→1，依次类推）。
                     key = str(index)
                     self.press_key(key)
-                    self.log_info(
-                        f"[{scan_count}] {label} 白色圆周脉冲上升沿命中, 按下按键 {key}"
-                    )
+                    self.log_info(f"[{scan_count}] {label} 白色圆周脉冲上升沿命中, 按下按键 {key}")
 
             self.draw_boxes("pulse_buttons", button_boxes, color="red", debug=True)
             self.draw_boxes("pulse_rings", ring_boxes, color="green", debug=True)
@@ -124,34 +119,31 @@ class TestCircularPulseDetect(BaseEfTask):
             if scan_count % diag_every == 0:
                 for preset in presets:
                     label = str(preset["label"])
-                    line = self._report_ratio(
-                        scan_count, label, frame, preset)
+                    line = self._report_ratio(scan_count, label, frame, preset)
                     if line:
                         self.log_info(line)
-                    line = self._report_annulus(
-                        scan_count, label, preset, diag_store, min_wh)
+                    line = self._report_annulus(scan_count, label, preset, diag_store, min_wh)
                     if line:
                         self.log_info(line)
             self.sleep(interval)
 
     @staticmethod
     def _is_configured(preset: dict) -> bool:
-        return all(
-            0 < float(preset[key]) <= 1
-            for key in ("x", "y", "button_radius", "effect_max_radius")
-        ) and 0 <= float(preset["x"]) <= 1 and 0 <= float(preset["y"]) <= 1
+        return (
+            all(0 < float(preset[key]) <= 1 for key in ("x", "y", "button_radius", "effect_max_radius"))
+            and 0 <= float(preset["x"]) <= 1
+            and 0 <= float(preset["y"]) <= 1
+        )
 
     @staticmethod
-    def _make_box(name: str, center_x: float, center_y: float, radius: float,
-                  confidence: float) -> Box:
+    def _make_box(name: str, center_x: float, center_y: float, radius: float, confidence: float) -> Box:
         box = Box(center_x - radius, center_y - radius, radius * 2, radius * 2)
         box.name = name
         box.confidence = confidence
         return box
 
     @staticmethod
-    def _report_ratio(scan_count: int, label: str, frame: np.ndarray,
-                      preset: dict) -> str | None:
+    def _report_ratio(scan_count: int, label: str, frame: np.ndarray, preset: dict) -> str | None:
         """逐轮打印当帧信号层白色角度占比，定位「常态未白」或「常驻白」问题。"""
         detector = get_recommend_skill_detector()
         ratio = detector.white_ratio(
@@ -180,10 +172,10 @@ class TestCircularPulseDetect(BaseEfTask):
             return
         gray = cv2.cvtColor(frame[y0:y1, x0:x1], cv2.COLOR_BGR2GRAY)
         diag_store.setdefault(str(preset["label"]), deque(maxlen=TestCircularPulseDetect._DIAG_WINDOW)).append(
-            (gray, int(center_x) - x0, int(center_y) - y0))
+            (gray, int(center_x) - x0, int(center_y) - y0)
+        )
 
-    def _report_annulus(self, scan_count: int, label: str, preset: dict,
-                        diag_store: dict, min_wh: float) -> str | None:
+    def _report_annulus(self, scan_count: int, label: str, preset: dict, diag_store: dict, min_wh: float) -> str | None:
         """取滚动窗口内最大帧间差分再统计环带活跃度。
 
         每轮采样、窗口内取最大值后不受采样混叠影响（见历史注释：旧版每 50 轮
@@ -212,9 +204,8 @@ class TestCircularPulseDetect(BaseEfTask):
         max_diff = int(best.max())
         coverage = 0
         if active:
-            ys, xs = np.mgrid[0:best.shape[0], 0:best.shape[1]]
-            sectors = ((np.arctan2(ys - cy, xs - cx) + np.pi)
-                       / (2 * np.pi) * self._N_DIAG_SECTORS).astype(np.int32)
+            ys, xs = np.mgrid[0 : best.shape[0], 0 : best.shape[1]]
+            sectors = ((np.arctan2(ys - cy, xs - cx) + np.pi) / (2 * np.pi) * self._N_DIAG_SECTORS).astype(np.int32)
             hit = sectors[(mask > 0) & (best >= 5)] % self._N_DIAG_SECTORS
             coverage = len(np.unique(hit))
         if active == 0:

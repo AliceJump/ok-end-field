@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """屏幕物理像素 <-> Qt 逻辑坐标换算工具。
 
 背景
@@ -22,6 +21,7 @@ overlay 就向右偏移了 (1920 - 1536) * 1.25 = 480px —— 这正是"覆盖�
 即：屏幕物理原点映射到 Qt 逻辑原点（QScreen.geometry().topLeft()），屏幕内部的
 偏移再除以该屏幕的 devicePixelRatio。
 """
+
 from __future__ import annotations
 
 import ctypes
@@ -38,7 +38,7 @@ def get_physical_screen_origin(px: int, py: int):
         pt = ctypes.wintypes.POINT(int(px), int(py))
         mon = ctypes.windll.user32.MonitorFromPoint(pt, 2)  # MONITOR_DEFAULTTONEAREST
         info = win32api.GetMonitorInfo(int(mon))
-        return info['Monitor'][0], info['Monitor'][1]
+        return info["Monitor"][0], info["Monitor"][1]
     except Exception:
         return int(px), int(py)
 

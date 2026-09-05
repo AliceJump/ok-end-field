@@ -22,8 +22,8 @@ _SHRED_STACK_PRODUCERS = {
     "STATUS_SHRED",
     "STATUS_HEAVY_HIT",
     "STATUS_KNOCKDOWN",
-    "STATUS_SHATTER",     # 碎甲
-    "STATUS_HEAVY_STRIKE"  # 猛击
+    "STATUS_SHATTER",  # 碎甲
+    "STATUS_HEAVY_STRIKE",  # 猛击
 }
 
 _CATEGORY_SPELL_ANOMALIES = {
@@ -35,10 +35,10 @@ _CATEGORY_SPELL_ANOMALIES = {
 
 # 豁免名单：这些角色的战技跳过所有检查，直接允许释放
 EXEMPT_CHARACTERS: set[str] = {
-    "梨诺" #梨诺战技无消耗
+    "梨诺"  # 梨诺战技无消耗
 }
 NO_ALLOW_CHARACTERS: set[str] = {
-    "余烬" #余烬战技基本无用
+    "余烬"  # 余烬战技基本无用
 }
 
 # ── 数据加载 ──────────────────────────────────────────────────────────────────
@@ -150,9 +150,7 @@ def _is_trigger_satisfied(trigger_groups: list[dict], current_effects: set[str])
     "any" 组：至少一个效果在 current_effects 中。
     """
     return all(
-        current_effects >= group["effects"]
-        if group["operator"] == "all"
-        else bool(current_effects & group["effects"])
+        current_effects >= group["effects"] if group["operator"] == "all" else bool(current_effects & group["effects"])
         for group in trigger_groups
     )
 
@@ -316,11 +314,13 @@ def _build_team_skill_context(
                         enh_effects.append(eid)
                         _register_effect_producer(effect_producers, eid, key)
                 if trigger_groups or enh_effects:
-                    enhancements.append({
-                        "trigger_groups": trigger_groups,
-                        "effects": enh_effects,
-                        "skill_type": s.get("skill_type", ""),
-                    })
+                    enhancements.append(
+                        {
+                            "trigger_groups": trigger_groups,
+                            "effects": enh_effects,
+                            "skill_type": s.get("skill_type", ""),
+                        }
+                    )
             if enhancements:
                 enhancement_triggers[key] = enhancements
 
@@ -437,7 +437,7 @@ def build_skill_allowlist(
         characters = load_characters()
 
     if not characters:
-        return {i: (True, "") for i in range(len(team_members))}
+        return dict.fromkeys(range(len(team_members)), (True, ""))
 
     # ── 第零阶段：建立基础数据结构 ──
     ctx = _build_team_skill_context(team_members, characters)
@@ -452,10 +452,7 @@ def build_skill_allowlist(
     allowed_skills = _filter_remaining_skills(ctx, current_effects, forbidden_skills)
 
     # ── 兜底：如果允许集合为空，返回全部战技 ──
-    all_active_skills = {
-        key for key, stype in ctx["skill_types"].items()
-        if _is_active_skill(stype)
-    }
+    all_active_skills = {key for key, stype in ctx["skill_types"].items() if _is_active_skill(stype)}
     if not allowed_skills:
         allowed_skills = all_active_skills
 
@@ -517,9 +514,7 @@ def filter_skill_sequence(
 ) -> list[str]:
     """根据自动技能列表过滤技能释放序列。"""
     allowlist = build_skill_allowlist(team_members, characters)
-    allowed_digits = {
-        str(i + 1) for i, (ok, _) in allowlist.items() if ok
-    }
+    allowed_digits = {str(i + 1) for i, (ok, _) in allowlist.items() if ok}
 
     filtered = []
     for token in skill_sequence:

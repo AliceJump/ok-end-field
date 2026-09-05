@@ -430,7 +430,7 @@ class LiaisonMixin(NavigationMixin):
         """在已点击『赠送』后，完成选礼与确认赠送流程。"""
         self.wait_feature(feature=fL.map_filter_icon, box=self.box_of_screen(0.282, 0.907, 0.303, 0.937), time_out=5)
         for i in range(self.config.get("一次送礼个数", 2)):
-            self.click(144 / 1920, 855 / 1080, after_sleep=0.5)  # 点击礼物位置
+            self.click(360 / 2560, 1150 / 1440, after_sleep=0.5)  # 点击礼物位置
         self.log_info("点击赠送礼物位置")
         if self.wait_click_feature(
             feature=fL.give_gift,
