@@ -78,9 +78,10 @@ class AutoCombatLogic:
     def _do_normal_combat_frame(self):
         """执行一帧普通战斗逻辑（非排轴模式 / normal_[n] 临时模式共用）。"""
         task = self.task
+
+        # 技能优先级：连携技 > 推荐技能 > 终结技
         if task.use_link_skill():
             return
-        # 推荐技能：优先级仅次于连携技，高于终结技
         if task.use_recommend_skill():
             return
         if task.use_ult():
@@ -95,7 +96,7 @@ class AutoCombatLogic:
         if self.normal_skill_index >= len(self.normal_skill_sequence):
             self.normal_skill_index = 0
 
-        current_points = task.get_skill_bar_count()
+        current_points = skill_count  # 同帧结果必然相同
         if current_points < 1:
             if task.use_ult():
                 return
