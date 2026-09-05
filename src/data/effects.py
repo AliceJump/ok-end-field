@@ -60,6 +60,8 @@ class EffectType(Enum):
     STACK_TRACE = "STACK_TRACE"
     STACK_CHARGE = "STACK_CHARGE"
     STACK_QINGTING_SWORD = "STACK_QINGTING_SWORD"
+    STACK_SIGN = "STACK_SIGN"  # 提弗洛斯的启示层数
+    STACK_HUNTING_ARROW = "STACK_HUNTING_ARROW"  # 提弗洛斯的猎矢数量
 
     # 增益效果
     BUFF_ATTACK_UP = "BUFF_ATTACK_UP"
@@ -167,6 +169,8 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STACK_TRACE: "洛茜的爪印斫痕层数",
     EffectType.STACK_CHARGE: "卡契尔的蓄力层数",
     EffectType.STACK_QINGTING_SWORD: "庄方宜的青霆剑数量，可按导电异常等级动态生成，单次战技最多生成3柄，并在逐柄雷击后消费",
+    EffectType.STACK_SIGN: "提弗洛斯的启示层数，最多8点，满时可发动连携技",
+    EffectType.STACK_HUNTING_ARROW: "提弗洛斯的猎矢数量，最多4枚，消耗后强化射击触发自然爆发",
     # 增益效果
     EffectType.BUFF_ATTACK_UP: "攻击力增加",
     EffectType.BUFF_CRIT_RATE_UP: "暴击率增加",
@@ -267,6 +271,8 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "种子": EffectType.STACK_SEED,
     "蓄力": EffectType.STACK_CHARGE,
     "青霆剑": EffectType.STACK_QINGTING_SWORD,
+    "启示": EffectType.STACK_SIGN,
+    "猎矢": EffectType.STACK_HUNTING_ARROW,
     # 增益效果
     "攻击力提升": EffectType.BUFF_ATTACK_UP,
     "暴击率提升": EffectType.BUFF_CRIT_RATE_UP,
