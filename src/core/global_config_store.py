@@ -71,9 +71,11 @@ ZIP_LINE_CONFIG_TYPE = {
     },
 }
 
+KEY_CONFIG_DEFAULTS = {**DEFAULT_COMMON_KEYS, **DEFAULT_INDUSTRY_KEYS, **DEFAULT_COMBAT_KEYS}
+
 key_config_option = ConfigOption(
     KEY_CONFIG_NAME,
-    {**DEFAULT_COMMON_KEYS, **DEFAULT_INDUSTRY_KEYS, **DEFAULT_COMBAT_KEYS},
+    KEY_CONFIG_DEFAULTS,
     description="游戏内快捷键配置",
     icon=Icons.Keyboard,
 )

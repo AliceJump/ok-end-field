@@ -22,12 +22,15 @@ from qfluentwidgets import (
 )
 
 from src.core.global_config_store import (
+    KEY_CONFIG_DEFAULTS,
+    KEY_CONFIG_NAME,
     ZIP_LINE_CONFIG_DESCRIPTION,
     ZIP_LINE_CONFIG_NAME,
     ZIP_LINE_CONFIG_TYPE,
     ZIP_LINE_DEFAULT_CONFIG,
     get_global_config,
 )
+from src.icons import Icons
 from src.tasks.account.account_scope_store import (
     get_account_map_content,
     load_overrides,
@@ -49,6 +52,25 @@ class GlobalZipLineConfigProxy:
     config = get_global_config(ZIP_LINE_CONFIG_NAME)
     config_description = ZIP_LINE_CONFIG_DESCRIPTION
     config_type = ZIP_LINE_CONFIG_TYPE
+    account_config_blacklist = set()
+    account_config_whitelist = set()
+    account_config_defaults = {}
+    account_config_description = {}
+    account_config_type = {}
+
+
+class GlobalKeyConfigProxy:
+    """Expose the global hotkey schema in the per-account editor."""
+
+    name = "键位配置"
+    icon = Icons.Keyboard
+    account_override_name = KEY_CONFIG_NAME
+    support_multi_account = True
+    running = False
+    default_config = KEY_CONFIG_DEFAULTS
+    config = get_global_config(KEY_CONFIG_NAME)
+    config_description = {}
+    config_type = {}
     account_config_blacklist = set()
     account_config_whitelist = set()
     account_config_defaults = {}
@@ -456,6 +478,7 @@ class AccountConfigTab(CustomTab):
             seen.add(class_name)
             tasks.append(task)
         tasks.append(GlobalZipLineConfigProxy)
+        tasks.append(GlobalKeyConfigProxy)
         return tasks
 
     def refresh_from_source(self):

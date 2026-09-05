@@ -8,10 +8,12 @@ import numpy as np
 from ok import Box
 
 from src.config import config as app_config
+from src.core.global_config_store import KEY_CONFIG_NAME, get_global_config
 from src.data.FeatureList import FeatureList as fL
 from src.image.frame_processes import isolate_by_hsv_ranges
 from src.image.hsv_config import HSVRange as hR
 from src.interaction.Key import move_keys as send_move_keys
+from src.interaction.KeyConfig import KeyConfigManager
 from src.interaction.Mouse import (
     active_and_send_mouse_delta as send_mouse_delta,
 )
@@ -983,6 +985,23 @@ class RuntimeMixin:
 
         return super().info_set(key, value)
 
+    def _account_key_config(self) -> dict:
+        """全局键位配置叠加当前账号覆盖后的有效键位表（无账号上下文时为全局原值）。"""
+        base_config = get_global_config(KEY_CONFIG_NAME)
+        override = self._account_override_for(KEY_CONFIG_NAME)
+        if not override:
+            return base_config
+        effective = dict(base_config)
+        for key, value in override.items():
+            # 只应用已知键位，账号页之外的脏键不影响按键解析
+            if key in base_config:
+                effective[key] = self._coerce_override_value(base_config[key], value)
+        return effective
+
+    def _resolve_config_key(self, key: str, key_type: str) -> str:
+        """按当前账号上下文解析实际按键。"""
+        return KeyConfigManager(self._account_key_config()).resolve_key(key, key_type)
+
     def press_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
         """
         按配置映射后的通用按键。
@@ -996,7 +1015,7 @@ class RuntimeMixin:
         Returns:
             Any: send_key 的返回值。
         """
-        actual_key = self.key_manager.resolve_key(key, "common")
+        actual_key = self._resolve_config_key(key, "common")
         return self.send_key(actual_key, interval=interval, down_time=down_time, after_sleep=after_sleep)
 
     def press_industry_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
@@ -1012,7 +1031,7 @@ class RuntimeMixin:
         Returns:
             Any: send_key 的返回值。
         """
-        actual_key = self.key_manager.resolve_key(key, "industry")
+        actual_key = self._resolve_config_key(key, "industry")
         return self.send_key(actual_key, interval=interval, down_time=down_time, after_sleep=after_sleep)
 
     def press_combat_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
@@ -1028,7 +1047,7 @@ class RuntimeMixin:
         Returns:
             Any: send_key 的返回值。
         """
-        actual_key = self.key_manager.resolve_key(key, "combat")
+        actual_key = self._resolve_config_key(key, "combat")
         return self.send_key(actual_key, interval=interval, down_time=down_time, after_sleep=after_sleep)
 
     def move_keys(self, keys, duration, need_back=False):
