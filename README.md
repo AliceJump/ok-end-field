@@ -17,8 +17,11 @@ An image-recognition-based automation tool for End Field, with partial backgroun
 
 <p><i>通过模拟 Windows 用户接口进行操作，无内存读取、无文件修改</i></p>
 
-<p align="center"><b>官方网站：</b><a href="https://ok-script.com/ok-end-field/">ok-ef 终末地自动化</a>（中英繁三语文档 · 功能指南 · 开发维护）</p>
-
+<p align="center">
+  <a href="https://ok-script.com/ok-end-field/">
+    <img src="https://img.shields.io/badge/官网文档-在线站点-1aa6a9" alt="官网/文档">
+  </a>
+</p>
 
 <!-- Badges -->
 <div align="center">
@@ -27,7 +30,7 @@ An image-recognition-based automation tool for End Field, with partial backgroun
 [![GitHub release](https://img.shields.io/github/v/release/alicejump/ok-end-field)](https://github.com/alicejump/ok-end-field/releases)
 [![总下载量](https://img.shields.io/github/downloads/alicejump/ok-end-field/total)](https://github.com/alicejump/ok-end-field/releases)
 [![Discord](https://img.shields.io/discord/296598043787132928?color=5865f2&label=%20Discord)](https://discord.gg/vVyCatEBgA)
-[![官网/文档](https://img.shields.io/badge/官网文档-在线站点-1aa6a9)](https://alicejump.github.io/ok-end-field/)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/AliceJump/ok-end-field)
 
 </div>
 
