@@ -27,7 +27,7 @@ An image-recognition-based automation tool for End Field, with partial backgroun
 [![GitHub release](https://img.shields.io/github/v/release/alicejump/ok-end-field)](https://github.com/alicejump/ok-end-field/releases)
 [![总下载量](https://img.shields.io/github/downloads/alicejump/ok-end-field/total)](https://github.com/alicejump/ok-end-field/releases)
 [![Discord](https://img.shields.io/discord/296598043787132928?color=5865f2&label=%20Discord)](https://discord.gg/vVyCatEBgA)
-[![官网/文档](https://img.shields.io/badge/官网文档-在线站点-1aa6a9)](https://alicejump.github.io/ok-end-field/)
+[![官网/文档](https://img.shields.io/badge/官网文档-在线站点-1aa6a9)](https://ok-script.com/ok-end-field/)
 
 </div>
 
