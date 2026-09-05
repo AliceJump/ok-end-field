@@ -25,7 +25,7 @@ Use this workflow to synchronize character skill data from official wiki sources
 # Capture official wiki data (requires Playwright)
 uv run --locked python scripts/data-capture/capture_skland_operator_details.py
 
-# Or capture specific operators only
+# Or capture the first N operators; use a supported operator-filter parameter for specific operators when available
 uv run --locked python scripts/data-capture/capture_skland_operator_details.py --limit 5
 ```
 
@@ -109,14 +109,8 @@ Common effect IDs from `src/data/effects.py`:
 | `STATUS_SLOW` | 缓速 |
 | `VULN_NATURAL_BURST` | 自然爆发易伤 |
 | `ATTACH_NATURAL` | 自然附着 |
-| `TRIGGER_EXECUTION` | 处决攻击 |
-| `TRIGGER_POWER_SHOT` | 强化射击 |
-| `TRIGGER_HUNTRESS_GAZE` | 猎手的注视 |
-| `TRIGGER_HAIL_OF_ARROWS` | 箭雨 |
-| `TRIGGER_HAIL_OF_ARROWS_EMPOWERED` | 强化箭雨 |
 | `STACK_SIGN` | 启示层数 |
 | `STACK_HUNTING_ARROW` | 猎矢数量 |
-| `BARRAGE_ARRAY` | 箭阵区域 |
 
 ## Third-Party Wiki Scraping
 
