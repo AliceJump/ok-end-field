@@ -916,16 +916,20 @@ class RuntimeMixin:
         start_time = self.active_time()
         last_frame = parse_box(self.next_frame(), box)
         stable_start = None
+        # 哈希只随新帧计算一次并滚动复用，避免上一帧的哈希每轮重复计算
+        last_hash = None
+        if method in ("phash", "dhash"):
+            from src.image.stability import hamming_distance, perceptual_hash
+
+            last_hash = perceptual_hash(last_frame, method=method)
 
         while True:
             current_frame = parse_box(self.next_frame(), box)
 
             if method in ("phash", "dhash"):
-                from src.image.stability import hamming_distance, perceptual_hash
-
-                h1 = perceptual_hash(last_frame, method=method)
                 h2 = perceptual_hash(current_frame, method=method)
-                is_stable = hamming_distance(h1, h2) <= threshold
+                is_stable = hamming_distance(last_hash, h2) <= threshold
+                last_hash = h2
 
             elif method == "pixel":
                 if last_frame.shape != current_frame.shape:
