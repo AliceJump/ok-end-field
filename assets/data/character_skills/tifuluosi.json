@@ -103,7 +103,22 @@
             "stagger_value": 0,
             "cooldown": "21秒",
             "spirit_cost": 0,
-            "effects": [],
+            "effects": [
+                {
+                    "effect_id": "DEBUFF_SPEED_DOWN",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                },
+                {
+                    "effect_id": "VULN_NATURAL_BURST",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ],
             "enhancements": [
                 {
                     "name": "启示转化猎矢",
