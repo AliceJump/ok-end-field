@@ -46,7 +46,7 @@ from src.core.config_migration import legacy_battle_mode_to_bool
 from src.core.global_config_store import get_global_config
 from src.core.sequence_parser import parse_sequence
 from src.data.FeatureList import FeatureList as fL
-from src.image.recommend_skill_detector import get_recommend_skill_detector
+from src.image.recommend_skill_detector import PULSE_ON_RATIO, get_recommend_skill_detector
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
 # ── 编队识别：模块级常量与工具函数 ─────────────────────────────────────────
@@ -609,13 +609,19 @@ class BattleMixin(BaseEfTask):
             return False
 
         detector = get_recommend_skill_detector()
+        # 本帧各激活区域白色占比只计算一次，诊断 / 上升沿检测 / 闪光过滤共用
+        frame_ratios = {
+            str(region["label"]): detector.white_ratio(
+                frame, float(region["x"]), float(region["y"]), float(region["button_radius"])
+            )
+            for region in active_regions
+        }
         # 节流诊断：每 2 秒输出一次各区域白色占比，便于实战核对检测状态
         now = self.active_time()
         if now - getattr(self, "_recommend_last_diag", 0.0) >= 2.0:
             self._recommend_last_diag = now
             ratios = " ".join(
-                f"{region['label']}={detector.white_ratio(frame, float(region['x']), float(region['y']), float(region['button_radius'])):.2f}"
-                for region in active_regions
+                f"{region['label']}={frame_ratios[str(region['label'])]:.2f}" for region in active_regions
             )
             self.log_debug(f"推荐技能监测占比: {ratios}（人数 {member_count}）")
 
@@ -623,13 +629,7 @@ class BattleMixin(BaseEfTask):
         confirmed = []
         for slot, region in enumerate(active_regions, start=1):
             label = str(region["label"])
-            if detector.detect(
-                frame,
-                float(region["x"]),
-                float(region["y"]),
-                float(region["button_radius"]),
-                label,
-            ):
+            if detector.detect_ratio(frame_ratios[label], label):
                 confirmed.append((slot, region, label))
 
         # 全部激活区域（≥3 个）当前均为白色 = 大招演出/爆炸等全屏白闪，
@@ -637,13 +637,7 @@ class BattleMixin(BaseEfTask):
         # 判断：闪光前已 active 的标签不会产生上升沿，若只统计 confirmed
         # 会漏判闪光，导致其余区域误按技能键。
         if len(active_regions) >= 3 and all(
-            detector.is_pulsing(
-                frame,
-                float(region["x"]),
-                float(region["y"]),
-                float(region["button_radius"]),
-            )
-            for region in active_regions
+            frame_ratios[str(region["label"])] >= PULSE_ON_RATIO for region in active_regions
         ):
             labels = "、".join(str(region["label"]) for region in active_regions)
             self.log_info(f"推荐技能疑似全屏闪光，忽略本次命中: {labels}")
