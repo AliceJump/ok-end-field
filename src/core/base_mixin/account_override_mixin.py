@@ -41,6 +41,24 @@ class AccountOverrideMixin:
             return bool(self._raw_cfg_get("多账户独立配置", False))
         return True
 
+    def _account_override_for(self, config_name: str) -> dict:
+        """获取当前账号上下文对某个全局配置的覆盖字典。
+
+        仅在任务运行中、账号覆盖开关允许且存在账号上下文时返回覆盖值，
+        其余情况返回空 dict（等价于无覆盖，读取方走全局基值）。
+        """
+        if not getattr(self, "running", False):
+            return {}
+        if not self._is_account_override_enabled():
+            return {}
+
+        account_id = (getattr(self, "current_account_id", "") or "").strip()
+        account_name = (getattr(self, "current_user", "") or "").strip()
+        if not account_id and not account_name:
+            return {}
+
+        return get_account_task_overrides(account_id or account_name, config_name, account_name=account_name)
+
     @staticmethod
     def _coerce_override_value(base_value, override_value):
         if base_value is None or override_value is None:
