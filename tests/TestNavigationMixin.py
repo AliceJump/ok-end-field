@@ -39,12 +39,13 @@ class _Detection:
 
 
 class TestNavigationMixin(unittest.TestCase):
-    def test_failed_initial_walk_key_down_is_not_treated_as_held(self):
+    def test_walk_key_released_on_exit_even_when_down_result_unavailable(self):
+        """Task.send_key_down 不透传底层结果（恒返回 None），退出时仍必须释放 W。"""
         events = []
         stub = SimpleNamespace()
         stub.box_of_screen = lambda *args: None
         stub.active_time = lambda: 0
-        stub.send_key_down = lambda key: events.append(("down", key)) or False
+        stub.send_key_down = lambda key: events.append(("down", key))
         stub.send_key_up = lambda key: events.append(("up", key))
 
         def raise_during_target_check(*args, **kwargs):
@@ -61,7 +62,7 @@ class TestNavigationMixin(unittest.TestCase):
             )
 
         self.assertFalse(stub._walk_key_held)
-        self.assertEqual(events, [("down", "w")])
+        self.assertEqual(events, [("down", "w"), ("up", "w")])
 
     def test_off_center_first_detection_stops_w_before_alignment(self):
         events = []
@@ -72,7 +73,7 @@ class TestNavigationMixin(unittest.TestCase):
         stub.active_time = lambda: clock["time"]
         stub.screen_center = lambda: (960, 540)
         stub.scale_distance = lambda distance: distance
-        stub.send_key_down = lambda key: events.append(("down", key)) or True
+        stub.send_key_down = lambda key: events.append(("down", key))
         stub.send_key_up = lambda key: events.append(("up", key))
         stub.press_key = lambda key, **kwargs: events.append(("press", key))
         stub.log_info = lambda message, **kwargs: None

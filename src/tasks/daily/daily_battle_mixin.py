@@ -547,8 +547,10 @@ class DailyBattleFeature:
         self._click_track_and_transfer()
 
         if not self._navigate_via_zip_line():
-            self.navigate_until_target(target=self.lang.daily_battle_mixin.k_bfe73e18, box=self.box_of_screen(0.679, 0.620, 0.714, 0.769), nav=[fL.gather_icon_out_map2, fL.gather_icon_out_map],
-                                    time_out=60)
+            if not self.navigate_until_target(target=self.lang.daily_battle_mixin.k_bfe73e18, box=self.box_of_screen(0.679, 0.620, 0.714, 0.769), nav=[fL.gather_icon_out_map2, fL.gather_icon_out_map],
+                                              time_out=60):
+                self.log_info("导航未找到采集目标，终止本次采集流程")
+                return False
 
         if self.wait_ocr(match=self.lang.daily_battle_mixin.k_b8a81b7a, box=self.box.bottom_right, time_out=1):
             self.log_info("放弃未领取的奖励")
@@ -618,10 +620,12 @@ class DailyBattleFeature:
         self._click_track_and_transfer()
 
         if not self._navigate_via_zip_line():
-            self.navigate_until_target(
+            if not self.navigate_until_target(
                 target=self.lang.daily_battle_mixin.k_39d12e73_1, nav=[fL.gather_icon_out_map, fL.gather_icon_out_map2],
-                box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),time_out=60
-            )
+                box=self.box_of_screen(0.679, 0.620, 0.714, 0.769), time_out=60
+            ):
+                self.mark_task_failure("二次寻路失败：导航未找到能量淤积点")
+                return False
         click_key = (
             self.lang.daily_battle_mixin.k_b8a81b7a
             if self.battle_ctx.is_extra_mode

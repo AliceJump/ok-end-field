@@ -175,7 +175,11 @@ class NavigationMixin(SearchMixin):
             return self.find_feature(nav, box=nav_box, threshold=0.7)
 
         # 确认使用send_key：w为方向移动键，不属于游戏可配置热键，用于持续移动
-        self._walk_key_held = self.send_key_down("w")  # 追踪 W 键状态，供导航对中门控使用
+        # Task.send_key_down 不透传底层是否按下成功（ok-script 2.0.4 恒返回 None），
+        # 按下后只能乐观标记为已按住；若底层置顶失败未实际按下，
+        # EfInteraction 的配对保护会让后续 send_key_up 静默跳过，不会误释放。
+        self.send_key_down("w")
+        self._walk_key_held = True
 
         try:
             while True:
@@ -260,7 +264,8 @@ class NavigationMixin(SearchMixin):
                     first_nav_center_x = first_nav_result.x + first_nav_result.width // 2
                     if abs(first_nav_center_x - scx) <= center_tolerance:
                         if not self._walk_key_held:
-                            self._walk_key_held = self.send_key_down("w")
+                            self.send_key_down("w")
+                            self._walk_key_held = True
                         if self._walk_key_held and not run_bool and run_allowed:
                             enter_run_mode()
                     elif self._walk_key_held:
@@ -285,7 +290,8 @@ class NavigationMixin(SearchMixin):
                         if abs(align_pos[0] - scx) <= center_tolerance:
                             # 目标在中央附近 → 恢复行走
                             if not self._walk_key_held:
-                                self._walk_key_held = self.send_key_down("w")
+                                self.send_key_down("w")
+                                self._walk_key_held = True
                             if self._walk_key_held and not run_bool and run_allowed:
                                 enter_run_mode()
                         else:
@@ -324,7 +330,8 @@ class NavigationMixin(SearchMixin):
                                     break
                                 self.sleep(0.02)
                             self.send_key_up("s")  # 确认使用send_key：释放方向键
-                        self._walk_key_held = self.send_key_down("w")
+                        self.send_key_down("w")
+                        self._walk_key_held = True
                         nav_missing_recovered = True
 
                     if need_v and self.active_time() - last_click_v_time > 5:
