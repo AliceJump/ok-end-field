@@ -11,10 +11,7 @@ Use this skill for repository-wide rules that do not belong to a narrower domain
 
 ## Python environment and generated files
 
-- Dependency sources of truth are `pyproject.toml` and `uv.lock`.
-- Use `uv sync --locked` to materialize the repository `.venv`, and `uv run --locked python ...` for reproducible commands.
-- `requirements.txt` is generated for publishing workflows; do not edit it directly.
-- Run all tests with `scripts/testing/run_tests.ps1`, or a focused test with `uv run --locked python -m unittest <module> -v`.
+- Python environment, dependency, and test-entry rules are owned by the `use-local-venv` skill; read `.agents/skills/use-local-venv/SKILL.md` for command forms and the standard/focused test entry points.
 - Run skill/helper-script regressions with `uv run --locked python -m unittest tests.TestSkillScripts -v`.
 - Runtime diagnostics are in `logs/ok-script.log`; rotated files use `logs/ok-script.YYYY-MM-DD.log`.
 
@@ -27,6 +24,7 @@ Use this skill for repository-wide rules that do not belong to a narrower domain
 5. A persisted task config-key rename must also load `ok-config-migration` and follow its strict sequence.
 6. Remote `master` is locked: never push commits to it directly. Every remote change lands only through a PR.
 7. One PR carries exactly one feature or one responsibility. Keep each PR's scope clear, and split mixed-responsibility changes into separate PRs before pushing.
+8. Base every PR branch on the remote `master`: run `git fetch origin` first, branch from `origin/master`, and rebase onto it before pushing when behind. Never open a PR from a stale local `master`.
 
 ## PowerShell Markdown safety
 
