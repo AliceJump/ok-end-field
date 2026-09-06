@@ -2284,3 +2284,45 @@ msgstr "每轮四批检测后的等待时间；越小采样越密。"
 
 msgid "每隔多少轮输出一行按钮数据与环带诊断；设为 1 逐轮打印。"
 msgstr "每隔多少轮输出一行按钮数据与环带诊断；设为 1 逐轮打印。"
+
+msgid "Export Config"
+msgstr "导出配置"
+
+msgid "Import Config"
+msgstr "导入配置"
+
+msgid "选择配置压缩包"
+msgstr "选择配置压缩包"
+
+msgid "配置导入"
+msgstr "配置导入"
+
+msgid "导入将覆盖当前配置文件，原配置会备份到 configs/backup 目录，重启应用后生效。是否继续？"
+msgstr "导入将覆盖当前配置文件，原配置会备份到 configs/backup 目录，重启应用后生效。是否继续？"
+
+msgid "导入完成"
+msgstr "导入完成"
+
+msgid "导入成功，配置将在重启应用后生效。是否立即重启？"
+msgstr "导入成功，配置将在重启应用后生效。是否立即重启？"
+
+msgid "立即重启"
+msgstr "立即重启"
+
+msgid "稍后"
+msgstr "稍后"
+
+msgid "配置已导出"
+msgstr "配置已导出"
+
+msgid "导出失败"
+msgstr "导出失败"
+
+msgid "导入失败"
+msgstr "导入失败"
+
+msgid "压缩包中未找到配置文件"
+msgstr "压缩包中未找到配置文件"
+
+msgid "重启失败"
+msgstr "重启失败"

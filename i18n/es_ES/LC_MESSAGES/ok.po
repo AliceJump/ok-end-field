@@ -2474,3 +2474,50 @@ msgid "每隔多少轮输出一行按钮数据与环带诊断；设为 1 逐轮�
 msgstr ""
 "Cada cuántas rondas se imprime una línea de datos de botones y diagnóstico "
 "del anillo; póngalo en 1 para imprimir cada ronda."
+
+msgid "Export Config"
+msgstr "Exportar configuración"
+
+msgid "Import Config"
+msgstr "Importar configuración"
+
+msgid "选择配置压缩包"
+msgstr "Seleccionar archivo ZIP de configuración"
+
+msgid "配置导入"
+msgstr "Importación de configuración"
+
+msgid "导入将覆盖当前配置文件，原配置会备份到 configs/backup 目录，重启应用后生效。是否继续？"
+msgstr ""
+"La importación sobrescribirá los archivos de configuración actuales. La "
+"configuración existente se copiará en la carpeta configs/backup y los "
+"cambios surtirán efecto tras reiniciar la aplicación. ¿Continuar?"
+
+msgid "导入完成"
+msgstr "Importación completada"
+
+msgid "导入成功，配置将在重启应用后生效。是否立即重启？"
+msgstr ""
+"Importación correcta. La configuración surtirá efecto tras reiniciar la "
+"aplicación. ¿Reiniciar ahora?"
+
+msgid "立即重启"
+msgstr "Reiniciar ahora"
+
+msgid "稍后"
+msgstr "Más tarde"
+
+msgid "配置已导出"
+msgstr "Configuración exportada"
+
+msgid "导出失败"
+msgstr "Error al exportar"
+
+msgid "导入失败"
+msgstr "Error al importar"
+
+msgid "压缩包中未找到配置文件"
+msgstr "No se encontraron archivos de configuración en el ZIP"
+
+msgid "重启失败"
+msgstr "Error al reiniciar"

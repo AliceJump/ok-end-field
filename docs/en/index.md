@@ -20,6 +20,7 @@ ok-ef is a Windows automation tool for *Arknights: Endfield*. It uses screen rec
 - [Warehouse Transfer](warehouse-transfer.md)
 - [Item Navigation & Realtime Detection](item-navigation.md)
 - [Account Configuration](account-configuration.md)
+- [Config Export and Import](config-export-import.md)
 - [Windows Task Scheduler](windows-task-scheduler.md)
 - [FAQ and feedback](guides/troubleshooting.md)
 - [Development documentation](../dev/DEVELOPMENT.md)
