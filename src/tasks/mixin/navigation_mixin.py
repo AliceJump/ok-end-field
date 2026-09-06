@@ -344,6 +344,7 @@ class NavigationMixin(SearchMixin):
                 self.press_key("ctrl", after_sleep=0.01)  # 确认使用send_key：ctrl为奔跑切换键，不属于游戏可配置热键
             if self._walk_key_held:
                 self.send_key_up("w")  # 确认使用send_key：释放方向键
+                self._walk_key_held = False
 
     def align_ocr_or_find_target_to_center(
         self,
