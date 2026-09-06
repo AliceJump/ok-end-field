@@ -1,7 +1,9 @@
 import contextlib
+import copy
 import os
 import time
 import unittest
+import unittest.mock
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -65,7 +67,17 @@ class TabTestCase(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.app = QApplication.instance() or QApplication([])
+        cls._had_og_app = hasattr(og, "app")
+        cls._previous_og_app = getattr(og, "app", None)
         og.app = _FakeApp()
+
+    @classmethod
+    def tearDownClass(cls):
+        # 恢复 og.app，避免 _FakeApp 泄漏到套件中后续的其他用例
+        if cls._had_og_app:
+            og.app = cls._previous_og_app
+        else:
+            delattr(og, "app")
 
     def tearDown(self):
         _process_events(self.app)
@@ -121,7 +133,27 @@ class TestGlobalConfigTabBuild(TabTestCase):
         self.assertEqual(tab.vBoxLayout.count(), 5)
 
 
+_ACCOUNT_STORE = {
+    # 账号覆盖存储是 gitignore 的运行时文件（configs/account_scoped_overrides.json），
+    # 测试必须注入固定数据，不能依赖本机是否登录过账号。
+    "account_list_text": "tester_a\ntester_b\n",
+    "account_registry": {},
+    "accounts": {},
+    "map_contents": {},
+}
+
+
 class TestAccountConfigTabPrewarm(TabTestCase):
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        patcher = unittest.mock.patch(
+            "src.gui.AccountConfigTab.load_overrides",
+            lambda force=False: copy.deepcopy(_ACCOUNT_STORE),
+        )
+        patcher.start()
+        cls.addClassCleanup(patcher.stop)
+
     def _new_tab(self, with_executor=True):
         tab = AccountConfigTab()
         if with_executor:
@@ -135,7 +167,8 @@ class TestAccountConfigTabPrewarm(TabTestCase):
 
         self.assertTrue(tab._loaded_once)
         items = [tab.task_selector.itemText(i) for i in range(tab.task_selector.count())]
-        self.assertTrue(any("Game Hotkey Config" in item for item in items), "任务选择器应包含键位配置代理")
+        # 本 PR 的账号页仅含滑索代理；键位配置代理由 feat/account-scoped-key-config 引入
+        self.assertTrue(any("Zip Line Config" in item for item in items), "任务选择器应包含滑索配置代理")
 
     def test_prewarm_skipped_without_executor(self):
         tab = self._new_tab(with_executor=False)

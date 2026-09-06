@@ -86,7 +86,7 @@ class AccountConfigTab(CustomTab):
         super().__init__()
         self._loaded_once = False
         self._building = False
-        QTimer.singleShot(self.PREBUILD_DELAY_MS, self._prewarm_refresh)
+        QTimer.singleShot(self.PREBUILD_DELAY_MS, self, self._prewarm_refresh)
 
         self.overrides_data: dict[str, Any] = {"accounts": {}}
         self.task_map: dict[str, Any] = {}
@@ -492,7 +492,7 @@ class AccountConfigTab(CustomTab):
 
             if defer_render:
                 # 编辑卡片构建较重（数百个控件），放到下一轮事件循环构建
-                QTimer.singleShot(0, self._finish_deferred_refresh)
+                QTimer.singleShot(0, self, self._finish_deferred_refresh)
             else:
                 self.load_current_map_content()
                 self.render_task_editor()

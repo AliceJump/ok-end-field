@@ -23,7 +23,7 @@ class GlobalConfigTab(CustomTab):
         super().__init__()
         self._pending_cards = []
         self._build_scheduled = False
-        QTimer.singleShot(PREBUILD_DELAY_MS, self._prewarm_build)
+        QTimer.singleShot(PREBUILD_DELAY_MS, self, self._prewarm_build)
 
     @property
     def name(self):
@@ -57,7 +57,7 @@ class GlobalConfigTab(CustomTab):
             return
         self._build_scheduled = True
         self._pending_cards = self._collect_cards()
-        QTimer.singleShot(0, self._build_next_card)
+        QTimer.singleShot(0, self, self._build_next_card)
 
     def _collect_cards(self):
         visible_configs = {name: (config, option) for name, config, option in get_all_visible_configs()}
@@ -96,4 +96,4 @@ class GlobalConfigTab(CustomTab):
         self.add_widget(card)
         if self._pending_cards:
             # 每次事件循环只构建一张卡片，构建间隙保持界面响应
-            QTimer.singleShot(0, self._build_next_card)
+            QTimer.singleShot(0, self, self._build_next_card)
