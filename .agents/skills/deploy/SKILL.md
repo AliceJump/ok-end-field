@@ -12,8 +12,9 @@ Use this workflow to turn validated local changes into one commit and one annota
 Remote `master` is locked and only accepts changes through a PR (see the `repository-workflow` skill). Deploy must respect that lock:
 
 - If the worktree holds uncommitted code changes destined for `master`, stop before the commit step: land them through a PR first, then run this deploy flow on the merged result.
-- When the local branch already matches published `master` and no new commit is needed, skip the commit step and create the annotated tag on current `HEAD` instead.
-- Never push a deploy commit directly to `master`. The annotated-tag push itself is governed by the tag ruleset, not the branch lock.
+- When deploying on `master`, run `git fetch origin` first and require current `HEAD` to equal the published `origin/master` exactly, regardless of worktree cleanliness. A clean worktree with unpushed local commits must not be tagged or pushed; land those commits through a PR first.
+- When `HEAD` equals `origin/master` and no new commit is needed, skip the commit step and create the annotated tag on current `HEAD` instead.
+- On `master`, push only the annotated tag, never the branch ref. The annotated-tag push is governed by the tag ruleset, not the branch lock.
 
 ## Variants
 
@@ -68,9 +69,12 @@ Use `next_tag.py` in this skill's `scripts/` directory (`.agents/skills/deploy/s
    git show --no-patch --decorate HEAD
    ```
 
-7. Push the commit and annotated tag to the publishing remote, typically `origin`, unless the user explicitly requested local-only operation:
+7. Push to the publishing remote, typically `origin`, unless the user explicitly requested local-only operation. On the locked default branch `master`, push only the annotated tag; on any other branch, push the commit and the tag:
 
    ```powershell
+   # on master (tag-only; HEAD must already equal origin/master, see Locked default branch)
+   git push origin "<calculated-tag>"
+   # on any other branch
    git push origin HEAD "<calculated-tag>"
    ```
 
