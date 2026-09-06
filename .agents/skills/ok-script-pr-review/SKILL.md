@@ -122,3 +122,4 @@ gh api graphql -f query='mutation { resolveReviewThread(input: {threadId: "<thre
 - A review comment id (`pulls/comments/<id>`) is NOT the same as a thread id; use the GraphQL `reviewThreads` listing to map them.
 - `--paginate` 同时支持 REST 列表接口和符合要求的 GraphQL 查询（GraphQL 查询须使用 `$endCursor`、`after: $endCursor` 并返回 `pageInfo.hasNextPage`/`endCursor`）。本技能第 5 步示例用 `$cursor` 手动翻页，属 GraphQL 手动分页；`--paginate` 只自动翻一个连接。
 - `app.quit()` / `os._exit` behaviors seen during crash diagnosis are unrelated to review handling; keep this skill scoped to review triage.
+- 自带等待脚本 `wait-coderabbit.ps1` / `wait-coderabbit-rate-limit.ps1` 的 `--jq` 过滤器不含字符串字面量：Windows PowerShell 5.1 向原生程序传参会剥掉内嵌双引号（PS 7.3+ 已修复），字符串一律经环境变量（`$ENV.CR_*`）传给 gojq，null 字段交由 `@tsv` 渲染为空。扩展过滤器时保持该约束，两个 PS 版本均可直接运行。

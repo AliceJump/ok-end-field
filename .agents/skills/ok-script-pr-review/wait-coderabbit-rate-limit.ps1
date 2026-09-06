@@ -29,6 +29,10 @@
 
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+# Windows PowerShell 5.1 向原生程序传参会剥掉内嵌双引号（PS 7.3+ 已修复），
+# --jq 过滤器一律不写字符串字面量，字符串经环境变量传给 gojq 的 $ENV.*。
+$env:CR_LOGIN = 'coderabbitai[bot]'
+$env:CR_BOT = 'Bot'
 
 function Invoke-GhChecked {
     param([string[]]$GhArgs)
@@ -41,13 +45,25 @@ function Invoke-GhChecked {
 
 function Get-LastCodeRabbitComment {
     # 返回最后一条 CodeRabbit 回复对象 { body, created_at }，无则 $null
-    # 服务端完成身份过滤、排序与 JSON 编码，避免 PowerShell 按系统 ANSI 解码整页 JSON。
-    $json = Invoke-GhChecked @(
-        "api", "--paginate", "--slurp", "repos/$Repo/issues/$PrNumber/comments", "--jq",
-        '[.[][] | select(.user.login == "coderabbitai[bot]" and .user.type == "Bot")] | sort_by(.created_at) | last | if . then {body, created_at} else empty end'
+    # 本机 gh（2.92+）不支持 --slurp 与 --jq 组合，改为分页处理：
+    # 每页取最后一条，输出 created_at + base64(body)；body 经 base64 规避
+    # TSV 无法承载换行以及 PowerShell 按 ANSI 解码 JSON 的两类问题。
+    $out = Invoke-GhChecked @(
+        "api", "--paginate", "repos/$Repo/issues/$PrNumber/comments", "--jq",
+        '[.[] | select(.user.login == $ENV.CR_LOGIN and .user.type == $ENV.CR_BOT)] | sort_by(.created_at) | last | if . then [.created_at, (.body | @base64)] | @tsv else empty end'
     )
-    if (-not $json) { return $null }
-    return $json | ConvertFrom-Json
+    if (-not $out) { return $null }
+    $latest = $null
+    foreach ($ln in ($out -split "`n")) {
+        $f = $ln.Trim() -split "`t"
+        if ($f.Count -lt 2 -or -not $f[0] -or -not $f[1]) { continue }
+        if ($null -eq $latest -or $f[0] -gt $latest.created_at) {
+            $latest = [pscustomobject]@{ created_at = $f[0]; body_b64 = $f[1] }
+        }
+    }
+    if (-not $latest) { return $null }
+    $body = [Text.Encoding]::UTF8.GetString([Convert]::FromBase64String($latest.body_b64))
+    return [pscustomobject]@{ body = $body; created_at = $latest.created_at }
 }
 
 function Get-WaitMinutes {
