@@ -39,7 +39,7 @@ Support English and Chinese in both code review and generated code.
 
 - Answer the user in the language they use. If unclear, use English with concise Chinese labels where useful.
 - Prefer stable English config keys because config keys become persisted JSON fields. Add Chinese help in `config_description` or through the project's translation system.
-- Include both English and Chinese OCR match text when the UI may appear in either language.
+- Include OCR match text for every active OCR locale of the target project instead of assuming a fixed language pair; in ok-end-field only `zh_CN` and `zh_TW` are active OCR locales (see `$ok-script-ocr-lang`).
 - Use `supported_languages` only to hide a task in unsupported locales. Common locale names are `en_US`, `zh_CN`, `zh_TW`, `ja_JP`, `ko_KR`, and `es_ES`.
 - Do not hard-code assumptions from the source project used to study `ok-script` unless the target project explicitly uses them.
 
