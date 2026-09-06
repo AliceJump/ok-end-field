@@ -25,6 +25,8 @@ Use this skill for repository-wide rules that do not belong to a narrower domain
 3. Do not commit tokens, passwords, private keys, PEM files, credential exports, or secret-bearing config. GitHub App IDs may be repository variables; private keys belong only in Secrets.
 4. Follow recent repository commit language and use the established conventional prefix where applicable: `fix:`, `feat:`, `docs:`, `refactor:`, or `ci:`.
 5. A persisted task config-key rename must also load `ok-config-migration` and follow its strict sequence.
+6. Remote `master` is locked: never push commits to it directly. Every remote change lands only through a PR.
+7. One PR carries exactly one feature or one responsibility. Keep each PR's scope clear, and split mixed-responsibility changes into separate PRs before pushing.
 
 ## PowerShell Markdown safety
 
