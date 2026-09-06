@@ -419,16 +419,6 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         """
         if end_pattern == self.lang.DeliveryTask.k_6536f6f1:
             end_pattern = self.lang.DeliveryTask.k_0c1ef9f5
-        self.align_ocr_or_find_target_to_center(
-            ocr_match_or_feature_name_list=secondary_objective_direction_dot,
-            threshold=0.8,
-            only_x=True,
-            ocr=False,
-            raise_if_fail=False,
-        )
-        self.send_key(
-            "v", after_sleep=0.5
-        )  # 确认使用send_key：v为追踪键，在导航循环中用于重置视野，属于高频重复操作避免经过KeyConfigManager
         self.navigate_until_target(
             target=end_pattern,
             target_is_ocr=True,
