@@ -329,6 +329,139 @@ class WindowArrowOverlayController(QObject):
         overlay.set_style(color, head_angle_deg, head_len_ratio)
 
 
+class GdiArrowPainter:
+    """headless 回退绘制器：用框架 Win32GdiOverlay 的自定义画笔画箭头（无 Qt）。
+
+    生命周期由任务驱动：draw_window_arrow 每 ~0.3s 更新一次箭头并触发重绘，
+    每种箭头 2s 未刷新即消失（与 WindowArrowOverlayController 的超时语义一致）。
+    """
+
+    FRESH_SECONDS = 2.0
+
+    def __init__(self, overlay):
+        import threading
+
+        self._overlay = overlay
+        self._lock = threading.RLock()
+        self._arrows: dict[str, tuple[ArrowSpec, float]] = {}
+        self._head_angle_deg = 28.0
+        self._head_len_ratio = 0.35
+
+    def set_style(self, color, head_angle_deg, head_len_ratio):
+        # GDI 画笔不支持逐像素 alpha，颜色以各自 spec.color 为准
+        self._head_angle_deg = head_angle_deg
+        self._head_len_ratio = head_len_ratio
+
+    def add_arrow(self, arrow: ArrowSpec):
+        import time as _time
+
+        arrow_type = getattr(arrow, "arrow_type", None) or "default"
+        with self._lock:
+            self._arrows[arrow_type] = (arrow, _time.monotonic())
+        self._overlay._schedule_render()
+
+    def clear(self):
+        with self._lock:
+            self._arrows.clear()
+        self._overlay._schedule_render()
+
+    def paint(self, canvas, overlay):
+        import time as _time
+
+        width = max(1, int(getattr(overlay, "_width", 0) or 1))
+        height = max(1, int(getattr(overlay, "_height", 0) or 1))
+        now = _time.monotonic()
+        with self._lock:
+            for key in [k for k, (_, ts) in self._arrows.items() if now - ts > self.FRESH_SECONDS]:
+                self._arrows.pop(key, None)
+            specs = [spec for spec, _ts in self._arrows.values()]
+        if not specs:
+            return
+        try:
+            from ok.ui.overlay.win32_gdi import gdi32
+
+            for spec in specs:
+                self._paint_arrow_gdi(gdi32, canvas.hdc, spec, width, height)
+        except Exception as e:
+            from ok.util.logger import Logger
+
+            Logger.get_logger(__name__).error(f"GDI 箭头绘制失败: {e}")
+
+    def _paint_arrow_gdi(self, gdi32, hdc, spec: ArrowSpec, width: int, height: int):
+        import ctypes
+        import math
+
+        from ok.ui.overlay.win32_gdi import POINT, _rgb
+
+        sx, sy = spec.start_x_norm * width, spec.start_y_norm * height
+        ex, ey = spec.end_x_norm * width, spec.end_y_norm * height
+        dx, dy = ex - sx, ey - sy
+        length = math.hypot(dx, dy)
+        if length <= 1e-6:
+            return
+
+        color = tuple(spec.color)[:3]
+        shaft_width = max(1, int(min(width, height) * spec.shaft_width_norm))
+        head_len = (
+            spec.head_len_norm * min(width, height)
+            if spec.head_len_norm is not None
+            else max(10.0, length * self._head_len_ratio)
+        )
+        head_len = max(8.0, min(head_len, min(width, height) * 0.18))
+
+        ux, uy = dx / length, dy / length
+        theta = math.atan2(uy, ux)
+        head_angle = math.radians(self._head_angle_deg)
+        wing1 = (ex + math.cos(theta + math.pi - head_angle) * head_len,
+                 ey + math.sin(theta + math.pi - head_angle) * head_len)
+        wing2 = (ex + math.cos(theta + math.pi + head_angle) * head_len,
+                 ey + math.sin(theta + math.pi + head_angle) * head_len)
+        base_center_x, base_center_y = ex - ux * head_len, ey - uy * head_len
+
+        pen = gdi32.CreatePen(0, shaft_width, _rgb(*color))  # PS_SOLID
+        brush = gdi32.CreateSolidBrush(_rgb(*color))
+        # 框架未给这些 gdi32 函数设置 argtypes，64 位 HDC 必须包成 c_void_p 传入
+        hdc_ref = ctypes.c_void_p(hdc)
+        old_pen = gdi32.SelectObject(hdc_ref, pen)
+        old_brush = gdi32.SelectObject(hdc_ref, brush)
+        try:
+            # 箭身画到三角基部，三角覆盖尖端
+            gdi32.MoveToEx(hdc_ref, int(sx), int(sy), None)
+            gdi32.LineTo(hdc_ref, int(base_center_x), int(base_center_y))
+            points = (POINT * 3)(POINT(int(ex), int(ey)),
+                                 POINT(int(wing1[0]), int(wing1[1])),
+                                 POINT(int(wing2[0]), int(wing2[1])))
+            gdi32.Polygon(hdc_ref, points, 3)
+            # 起点圆点，视觉上与 Qt 版一致
+            dot_r = max(1.0, shaft_width * 0.35)
+            gdi32.Ellipse(hdc_ref, int(sx - dot_r), int(sy - dot_r), int(sx + dot_r), int(sy + dot_r))
+        finally:
+            gdi32.SelectObject(hdc_ref, old_pen)
+            gdi32.SelectObject(hdc_ref, old_brush)
+            gdi32.DeleteObject(pen)
+            gdi32.DeleteObject(brush)
+
+
+class _GdiEmit:
+    """让 GDI 控制器复用 Qt 控制器的 emit 调用面。"""
+
+    def __init__(self, fn):
+        self._fn = fn
+
+    def emit(self, *args):
+        self._fn(*args)
+
+
+class GdiArrowController:
+    """与 WindowArrowOverlayController 相同的调用面，但绘制走框架 GDI 浮层。"""
+
+    def __init__(self, painter: GdiArrowPainter):
+        self._painter = painter
+        self.arrow_updated = _GdiEmit(painter.add_arrow)
+        self.clear_requested = _GdiEmit(painter.clear)
+        self.style_requested = _GdiEmit(painter.set_style)
+
+
 class WindowArrowDrawingMixin:
     """为 Task 类提供窗口箭头绘制功能。"""
 
@@ -343,6 +476,8 @@ class WindowArrowDrawingMixin:
         self._window_arrow_head_len_ratio = 0.35
         self._window_arrow_overlay: WindowArrowOverlay | None = None
         self._window_arrow_controller: WindowArrowOverlayController | None = None
+        self._window_arrow_gdi_controller: GdiArrowController | None = None
+        self._window_arrow_gdi_warned = False
 
     def _ensure_window_arrow_controller(self):
         if self._window_arrow_controller is not None:
@@ -358,8 +493,15 @@ class WindowArrowDrawingMixin:
                 app = None
 
         if app is None:
-            logger.error("无法创建箭头叠层：未找到 QApplication 实例")
-            return None
+            # headless（插件任务启动器）无 Qt 事件循环，回退到框架 GDI 浮层
+            gdi_controller = self._ensure_gdi_arrow_controller()
+            if gdi_controller is None:
+                if not self._window_arrow_gdi_warned:
+                    self._window_arrow_gdi_warned = True
+                    logger.error("无法创建箭头叠层：headless 下未开启调试浮层"
+                                 "（工具箱“调试浮层”开关或 OK_TOOLKIT_USE_OVERLAY=1）")
+                return None
+            return gdi_controller
 
         hwnd = self.get_game_hwnd()
         self._window_arrow_controller = WindowArrowOverlayController(hwnd)
@@ -371,6 +513,35 @@ class WindowArrowDrawingMixin:
         )
         self._window_arrow_overlay = self._window_arrow_controller._overlay
         return self._window_arrow_controller
+
+    def _ensure_gdi_arrow_controller(self):
+        if self._window_arrow_gdi_controller is not None:
+            return self._window_arrow_gdi_controller
+
+        try:
+            from ok import og
+
+            app = getattr(og, "app", None)
+            overlay = app.get_overlay_view() if app is not None else None
+        except Exception as e:
+            logger.error(f"获取框架浮层失败: {e}")
+            return None
+        if overlay is None:
+            return None
+
+        painter = GdiArrowPainter(overlay)
+        painter.set_style(
+            self._window_arrow_color,
+            self._window_arrow_head_angle_deg,
+            self._window_arrow_head_len_ratio,
+        )
+        try:
+            overlay.draw("window_arrows", painter.paint)
+        except Exception as e:
+            logger.error(f"注册 GDI 箭头画笔失败: {e}")
+            return None
+        self._window_arrow_gdi_controller = GdiArrowController(painter)
+        return self._window_arrow_gdi_controller
 
     def _get_window_arrow_size(self) -> tuple[int, int]:
         """获取当前游戏窗口的客户区大小。"""
