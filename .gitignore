@@ -75,7 +75,8 @@ python/
 
 ############################
 # 🧰 IDE
-.idea/
+.idea/*
+!.idea/externalDependencies.xml
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
