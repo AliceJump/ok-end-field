@@ -40,6 +40,7 @@ class TestProcessExecutePatch(unittest.TestCase):
     _original_os = None
     _original_subprocess = None
     _original_flag = None
+    _original_cached_execute = None
     _cleanup_completed = False
 
     @classmethod
@@ -48,6 +49,7 @@ class TestProcessExecutePatch(unittest.TestCase):
         cls._original_os = process_mod.os
         cls._original_subprocess = process_mod.subprocess
         cls._original_flag = process_execute_patch._PATCH_INSTALLED
+        cls._original_cached_execute = process_execute_patch._original_execute
         cls.addClassCleanup(cls._restore_patch_state)
         process_execute_patch._PATCH_INSTALLED = False
         process_execute_patch.install_process_execute_patch()
@@ -58,6 +60,7 @@ class TestProcessExecutePatch(unittest.TestCase):
         process_mod.os = cls._original_os
         process_mod.subprocess = cls._original_subprocess
         process_execute_patch._PATCH_INSTALLED = cls._original_flag
+        process_execute_patch._original_execute = cls._original_cached_execute
         cls._cleanup_completed = True
 
     def _install_stubs(self):
@@ -126,7 +129,12 @@ class TestZProcessExecutePatchStateRestored(unittest.TestCase):
             process_execute_patch._PATCH_INSTALLED,
             TestProcessExecutePatch._original_flag,
         )
+        self.assertIs(
+            process_execute_patch._original_execute,
+            TestProcessExecutePatch._original_cached_execute,
+        )
 
 
 if __name__ == "__main__":
     unittest.main()
+
