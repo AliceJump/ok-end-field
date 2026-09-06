@@ -47,14 +47,27 @@
             "name": "快闪冲击",
             "skill_type": "连携技",
             "element": "物理",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
             "description": "当有敌人失衡，或触发失衡节点时可以发动。进行来回2段突刺，每段造成物理伤害，并恢复一定技力。",
             "damage_multiplier": "180%（每段）",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": []
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "快闪冲击",
+                    "trigger_condition": {
+                        "text": "当有敌人失衡，或触发失衡节点时可以发动",
+                        "effects": {
+                            "all": [
+                                "STATUS_STAGGER"
+                            ]
+                        }
+                    },
+                    "effects": []
+                }
+            ]
         },
         {
             "skill_id": "karin_ultimate",

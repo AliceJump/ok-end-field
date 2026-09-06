@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Callable, Iterable
+from collections.abc import Callable, Iterable
 
 from ok import TaskDisabledException
 
@@ -68,8 +68,11 @@ class DailyTaskRunner:
         self.failure_details[account_id].setdefault(resolved_task_name, resolved_message)
         try:
             # 任务名/失败消息为运行时标识与文本，不过内层 tr
-            self.task.log_info(self.task.tr("任务失败标记 | {name}: {message}").format(
-                name=self.task.tr(resolved_task_name), message=resolved_message))
+            self.task.log_info(
+                self.task.tr("任务失败标记 | {name}: {message}").format(
+                    name=self.task.tr(resolved_task_name), message=resolved_message
+                )
+            )
         except Exception:
             pass
 
@@ -161,7 +164,7 @@ class DailyTaskRunner:
             self.task_status["failed"].append(key)
             self.set_task_failure(self.task.tr("任务返回 False"), task_name=key)
             if key not in self.failure_screenshot_tasks:
-                self.task.screenshot(f'DailyTask_FailTask_{key}')
+                self.task.screenshot(f"DailyTask_FailTask_{key}")
             self.task.log_info(self.task.tr("任务 {key} 执行失败").format(key=self.task.tr(key)), notify=True)
             return False
 
@@ -180,22 +183,24 @@ class DailyTaskRunner:
         self._reset_task_status()
         try:
             for repeat_idx, repeat_total in self.task.iter_multi_account_context(
-                    repeat_times=repeat_times,
-                    empty_accounts_message="多账户模式已开启，但账号列表为空，日常任务结束",
-                    account_log_suffix=self.task.tr("任务执行"),
+                repeat_times=repeat_times,
+                empty_accounts_message="多账户模式已开启，但账号列表为空，日常任务结束",
+                account_log_suffix=self.task.tr("任务执行"),
             ):
                 self._mark_round_context(repeat_idx + 1, repeat_total)
                 if not self.task.config.get("多账户模式", False) and self.task.debug:
-                    self.task.log_info(self.task.tr("调试模式，第 {idx}/{total} 轮").format(
-                        idx=repeat_idx + 1, total=repeat_total))
+                    self.task.log_info(
+                        self.task.tr("调试模式，第 {idx}/{total} 轮").format(idx=repeat_idx + 1, total=repeat_total)
+                    )
 
                 if not self.task._logged_in:
                     self.task.ensure_main(time_out=600)
                 else:
                     self.task.ensure_main()
                 self._reset_shared_task_state()
-                self.task.log_info(self.task.tr("开始第 {idx}/{total} 轮任务执行").format(
-                    idx=repeat_idx + 1, total=repeat_total))
+                self.task.log_info(
+                    self.task.tr("开始第 {idx}/{total} 轮任务执行").format(idx=repeat_idx + 1, total=repeat_total)
+                )
 
                 for item in self.task_items:
                     key, func = item[0], item[1]
@@ -203,9 +208,12 @@ class DailyTaskRunner:
                     self.execute_task(key, func, predicate)
 
                 if self.task_status["failed"]:
-                    self.task.log_info(self.task.tr("第 {idx} 轮 | 失败任务: {failed}").format(
-                        idx=repeat_idx + 1,
-                        failed=[self.task.tr(k) for k in self.task_status['failed']]), notify=True)
+                    self.task.log_info(
+                        self.task.tr("第 {idx} 轮 | 失败任务: {failed}").format(
+                            idx=repeat_idx + 1, failed=[self.task.tr(k) for k in self.task_status["failed"]]
+                        ),
+                        notify=True,
+                    )
                 else:
                     self.task.log_info(self.task.tr("第 {idx} 轮 | 日常完成!").format(idx=repeat_idx + 1), notify=True)
 
@@ -218,9 +226,15 @@ class DailyTaskRunner:
                 self.final_summary["status"] = "完成"
             if self.final_summary["actual_repeat_total"] > 1:
                 if self.final_summary["all_fail_tasks"]:
-                    self.task.log_info(self.task.tr("执行完成，失败统计: {failed}").format(
-                        failed=[(idx, [self.task.tr(k) for k in keys])
-                                for idx, keys in self.final_summary['all_fail_tasks']]), notify=True)
+                    self.task.log_info(
+                        self.task.tr("执行完成，失败统计: {failed}").format(
+                            failed=[
+                                (idx, [self.task.tr(k) for k in keys])
+                                for idx, keys in self.final_summary["all_fail_tasks"]
+                            ]
+                        ),
+                        notify=True,
+                    )
                 else:
                     self.task.log_info("所有任务均成功完成!", notify=True)
 
@@ -250,13 +264,17 @@ class DailyTaskRunner:
         if self.current_task_key:
             current_message = self.failure_details.get(self.current_task_key, "")
             if current_message:
-                self.task.info_set("当前失败的任务", self.task.tr("{key}: {message}").format(
-                    key=self.task.tr(self.current_task_key), message=current_message))
+                self.task.info_set(
+                    "当前失败的任务",
+                    self.task.tr("{key}: {message}").format(
+                        key=self.task.tr(self.current_task_key), message=current_message
+                    ),
+                )
             else:
                 self.task.info_set("当前失败的任务", self.current_task_key)
 
         try:
-            self.task.screenshot('DailyTask_Exception')
+            self.task.screenshot("DailyTask_Exception")
         except Exception:
             pass
 

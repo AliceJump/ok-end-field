@@ -1,6 +1,8 @@
 import re
+
 from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
+
 
 class MapMixin(BaseEfTask):
     def task_to_transfer_point(self, need_location_list=None):
@@ -77,18 +79,18 @@ class MapMixin(BaseEfTask):
 
         # 打开标记显示管理
         if not self.wait_click_feature(
-                feature=fL.map_filter_icon,
-                time_out=10,
-                raise_if_not_found=False,
+            feature=fL.map_filter_icon,
+            time_out=10,
+            raise_if_not_found=False,
         ):
             return False
 
         # 点击清空选中，避免地图筛选导致传送点不显示
         if not self.wait_click_feature(
-                feature=fL.to_max_produce_num,
-                box=self.box_of_screen(0.117, 0.902, 0.141, 0.941),
-                time_out=10,
-                raise_if_not_found=False,
+            feature=fL.to_max_produce_num,
+            box=self.box_of_screen(0.117, 0.902, 0.141, 0.941),
+            time_out=10,
+            raise_if_not_found=False,
         ):
             return False
 
@@ -173,9 +175,7 @@ class MapMixin(BaseEfTask):
                 # 点击追踪
                 self.click(tracked, after_sleep=1)
                 # 若需要清空标记筛选时，清空标记筛选并点击屏幕中心
-                if need_reserve_icon_name and not self.clear_icon_in_map(
-                    need_reserve_icon_name=need_reserve_icon_name
-                ):
+                if need_reserve_icon_name and not self.clear_icon_in_map(need_reserve_icon_name=need_reserve_icon_name):
                     return False
                 # 点击追踪后，需要重新点击屏幕中心激活按钮准备点击传送按钮
                 self.click(0.5, 0.5, after_sleep=1)

@@ -26,39 +26,6 @@
             "skill_type": "战技",
             "element": "灼热",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "燃烧/导电消耗追加射击",
-                "release_gate": {
-                    "any": [
-                        "STATUS_BURNING",
-                        "STATUS_CONDUCTING"
-                    ]
-                },
-                "trigger_condition": {
-                    "text": "目标处于燃烧或导电状态时消耗该状态并追加射击",
-                    "effects": [
-                        "STATUS_BURNING",
-                        "STATUS_CONDUCTING"
-                    ]
-                },
-                "enhancement_effect": "追加射击",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "STATUS_SPELL_ANOMALY",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy",
-                        "count": -1
-                    },
-                    {
-                        "effect_id": "TRIGGER_ADDITIONAL",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
             "description": "对目标进行连射，造成少量灼热伤害，最后一次射击施加灼热附着。如果目标处于燃烧或导电状态，则不再施加灼热附着，而是消耗该状态并追加一次射击，造成大量灼热伤害。",
             "damage_multiplier": "230%（基础）+ 850%（追加）",
             "stagger_value": 0,
@@ -72,6 +39,37 @@
                     "target": "enemy",
                     "count": 1
                 }
+            ],
+            "enhancements": [
+                {
+                    "name": "燃烧/导电消耗追加射击",
+                    "trigger_condition": {
+                        "text": "目标处于燃烧或导电状态时消耗该状态并追加射击",
+                        "effects": {
+                            "any": [
+                                "STATUS_BURNING",
+                                "STATUS_CONDUCTING"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "追加射击",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_SPELL_ANOMALY",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "TRIGGER_ADDITIONAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
+                }
             ]
         },
         {
@@ -79,20 +77,33 @@
             "name": "爆裂手雷·β型",
             "skill_type": "连携技",
             "element": "灼热",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
             "description": "当有敌人被施加法术附着时可以发动。向目标所在位置扔出一颗爆裂手雷，手雷落地后爆炸，对附近范围的敌人造成灼热伤害并施加灼热附着。",
             "damage_multiplier": "135%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
+            "effects": [],
+            "enhancements": [
                 {
-                    "effect_id": "ATTACH_BURN",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
+                    "name": "爆裂手雷·β型",
+                    "trigger_condition": {
+                        "text": "当有敌人被施加法术附着时可以发动",
+                        "effects": {
+                            "all": [
+                                "STATUS_SPELL_INFLICT"
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "ATTACH_BURN",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
                 }
             ]
         },

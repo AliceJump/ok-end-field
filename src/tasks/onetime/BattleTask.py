@@ -1,9 +1,9 @@
 from src.icons import Icons
 from src.tasks.daily.daily_battle_mixin import DailyBattleFeature
+from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
-from src.tasks.mixin.battle_mixin import BattleMixin
 
 
 class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):

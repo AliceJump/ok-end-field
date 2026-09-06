@@ -1,10 +1,10 @@
 import random
-import re
 
 import pyautogui
 
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.mixin.search_mixin import SearchMixin
+
 TOLERANCE = 50
 
 
@@ -22,25 +22,21 @@ class NavigationMixin(SearchMixin):
         self.log_info(f"找到{target_feature_in_map}图标，点击进入")
         self.click(result)
 
-        if result := self.wait_feature(feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False):
+        if result := self.wait_feature(
+            feature=fL.start_follow, box=self.box.bottom_right, time_out=5, raise_if_not_found=False
+        ):
             self.click(result, after_sleep=0.5)
 
         self.press_key("m")
         self.log_info("关闭地图界面 (按下 M)")
         start_time = self.active_time()
-        while not self.find_feature(
-            feature=target_feature_out_map, box=self.box_of_screen(0, 0, 1, 1),
-            threshold=0.7
-        ):
+        while not self.find_feature(feature=target_feature_out_map, box=self.box_of_screen(0, 0, 1, 1), threshold=0.7):
             self.next_frame()
             if self.active_time() - start_time > 5:
                 self.log_info("等待追踪图标超时")
                 return False
         self.align_ocr_or_find_target_to_center(
-            ocr_match_or_feature_name_list=target_feature_out_map,
-            only_x=True,
-            threshold=0.7,
-            ocr=False
+            ocr_match_or_feature_name_list=target_feature_out_map, only_x=True, threshold=0.7, ocr=False
         )
         self.log_info("已对齐地图目标")
         return True
@@ -110,23 +106,13 @@ class NavigationMixin(SearchMixin):
 
         def check_target():
             if target_is_ocr:
-                return self.ocr(
-                    match=target,
-                    box=self.box_of_screen(0.635, 0.563, 0.724, 0.843)
-                    if not box else box
-                )
+                return self.ocr(match=target, box=self.box_of_screen(0.635, 0.563, 0.724, 0.843) if not box else box)
             elif target_is_yolo:
                 return self.yolo_detect(
-                    name=target,
-                    box=self.box_of_screen(0.635, 0.563, 0.724, 0.843)
-                    if not box else box
+                    name=target, box=self.box_of_screen(0.635, 0.563, 0.724, 0.843) if not box else box
                 )
             else:
-                return self.find_feature(
-                    target,
-                    threshold=0.7,
-                    vertical_variance=target_vertical_variance
-                )
+                return self.find_feature(target, threshold=0.7, vertical_variance=target_vertical_variance)
 
         # ========== 奔跑状态管理 ==========
         run_bool = True  # 当前是否处于奔跑状态（ctrl 切换）
@@ -223,9 +209,7 @@ class NavigationMixin(SearchMixin):
                         return True
 
                     self.log_info("确认期间目标丢失，开始小幅度 WASD 移动搜索")
-                    if self.strafe_search(
-                        check_target, passes=3, duration=0.2, time_out=10
-                    ):
+                    if self.strafe_search(check_target, passes=3, duration=0.2, time_out=10):
                         self.log_info("WASD 移动过程中重新找到目标")
                     else:
                         self.log_info("小幅度移动未找到目标，开始后退搜索")
@@ -291,7 +275,7 @@ class NavigationMixin(SearchMixin):
                         use_yolo=nav_is_yolo,
                         max_time=1,
                         raise_if_fail=False,
-                        allow_random_move=False
+                        allow_random_move=False,
                     )
 
                     # 对中过程中实时门控行走：目标在中央附近就走，偏离就停
@@ -362,27 +346,27 @@ class NavigationMixin(SearchMixin):
                 self.send_key_up("w")  # 确认使用send_key：释放方向键
 
     def align_ocr_or_find_target_to_center(
-            self,
-            ocr_match_or_feature_name_list,
-            only_x=False,
-            only_y=False,
-            box=None,
-            threshold=0.8,
-            max_time=50,
-            ocr=True,
-            use_yolo=False,
-            back_prev=False,
-            raise_if_fail=True,
-            is_num=False,
-            need_scroll=False,
-            max_step=120,
-            min_step=20,
-            slow_radius=350,
-            deadzone=8,
-            once_time=0.02,
-            tolerance=TOLERANCE,
-            ocr_frame_processor_list=None,
-            allow_random_move=True,
+        self,
+        ocr_match_or_feature_name_list,
+        only_x=False,
+        only_y=False,
+        box=None,
+        threshold=0.8,
+        max_time=50,
+        ocr=True,
+        use_yolo=False,
+        back_prev=False,
+        raise_if_fail=True,
+        is_num=False,
+        need_scroll=False,
+        max_step=120,
+        min_step=20,
+        slow_radius=350,
+        deadzone=8,
+        once_time=0.02,
+        tolerance=TOLERANCE,
+        ocr_frame_processor_list=None,
+        allow_random_move=True,
     ):
         """将OCR识别或图像特征检测的目标对准屏幕中心（自动移动视角/鼠标）
 
@@ -432,7 +416,7 @@ class NavigationMixin(SearchMixin):
         move_count = 0
         sum_dx = 0
         sum_dy = 0
-        for _ in range(max_time*2):
+        for _ in range(max_time * 2):
             start_action_time = self.active_time()
             if need_scroll:
                 self.do_scroll(1, 400)
@@ -534,7 +518,7 @@ class NavigationMixin(SearchMixin):
                 # 每次 OCR 失败，直接随机移动
                 max_offset = self.scale_distance(60)  # 最大随机偏移
                 if last_target:
-                    decay = 0.9 ** last_target_fail_count
+                    decay = 0.9**last_target_fail_count
                     # 计算目标中心到屏幕中心的偏移
 
                     screen_center_x, screen_center_y = self.screen_center()
@@ -584,7 +568,9 @@ class NavigationMixin(SearchMixin):
                         random_move_count = 0
 
             if self.active_time() - start_action_time < once_time:
-                self.sleep(once_time - (self.active_time() - start_action_time))  # OCR 成功后不需要处理，下一次失败仍然随机
+                self.sleep(
+                    once_time - (self.active_time() - start_action_time)
+                )  # OCR 成功后不需要处理，下一次失败仍然随机
 
         if raise_if_fail:
             raise Exception("对中失败")

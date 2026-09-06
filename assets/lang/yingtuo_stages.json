@@ -16,7 +16,31 @@
       "string": "그림자 이정표"
     },
     "es_ES": {
-      "string": "Monumento del umbral"
+      "string": "Monumento del Umbral"
+    },
+    "pt_BR": {
+      "string": "Monumento Umbral"
+    },
+    "de_DE": {
+      "string": "Schattenmonument"
+    },
+    "fr_FR": {
+      "string": "Monument de l'ombre"
+    },
+    "id_ID": {
+      "string": "Monumen Umbra"
+    },
+    "it_IT": {
+      "string": "Monumento d'ombra"
+    },
+    "ru_RU": {
+      "string": "Сумрачный монумент"
+    },
+    "th_TH": {
+      "string": "อนุสาวรีย์​แห่ง​เงามืด"
+    },
+    "vi_VN": {
+      "string": "Đài Bóng Tối"
     }
   },
   "仪式旋流": {
@@ -37,6 +61,30 @@
     },
     "es_ES": {
       "string": "Vórtice ritual"
+    },
+    "pt_BR": {
+      "string": "Vórtice do Ritual"
+    },
+    "de_DE": {
+      "string": "Ritueller Wirbel"
+    },
+    "fr_FR": {
+      "string": "Vortex rituel"
+    },
+    "id_ID": {
+      "string": "Pusaran Ritual"
+    },
+    "it_IT": {
+      "string": "Vortice rituale"
+    },
+    "ru_RU": {
+      "string": "Ритуальный вихрь"
+    },
+    "th_TH": {
+      "string": "วังวน​พิธีกรรม"
+    },
+    "vi_VN": {
+      "string": "Vòng Xoáy Nghi Lễ"
     }
   },
   "兽群把戏": {
@@ -57,6 +105,30 @@
     },
     "es_ES": {
       "string": "La mutiladora y sus amigos"
+    },
+    "pt_BR": {
+      "string": "Mutiladora e Amigos"
+    },
+    "de_DE": {
+      "string": "Fetzbestie und Freunde"
+    },
+    "fr_FR": {
+      "string": "Ours à dents de sabre et compagnie"
+    },
+    "id_ID": {
+      "string": "Mangler dan Teman-temannya"
+    },
+    "it_IT": {
+      "string": "Orso e amici"
+    },
+    "ru_RU": {
+      "string": "Саблезуб и друзья"
+    },
+    "th_TH": {
+      "string": "แมง​เกลอ​ร์​และ​ผอง​เพื่อน"
+    },
+    "vi_VN": {
+      "string": "Quái Thú và Bè Lũ"
     }
   },
   "冯河断水": {
@@ -77,6 +149,30 @@
     },
     "es_ES": {
       "string": "Vadeando el territorio del Rastrero"
+    },
+    "pt_BR": {
+      "string": "Caminhando no Território dos Rastejantes"
+    },
+    "de_DE": {
+      "string": "Wanderung durchs Wüstlingsgebiet"
+    },
+    "fr_FR": {
+      "string": "Traversée du territoire des ratisseurs"
+    },
+    "id_ID": {
+      "string": "Mengarungi Wilayah Raker"
+    },
+    "it_IT": {
+      "string": "Guado del manto rastrellato"
+    },
+    "ru_RU": {
+      "string": "Прогулка по вспаханной земле"
+    },
+    "th_TH": {
+      "string": "ลุย​ใน​ถิ่น​เร​เกอร์"
+    },
+    "vi_VN": {
+      "string": "Băng Qua Lãnh Địa Quái Cào"
     }
   },
   "刺痛盾阵": {
@@ -97,6 +193,30 @@
     },
     "es_ES": {
       "string": "Falange de espinas"
+    },
+    "pt_BR": {
+      "string": "Falange de Espinhos"
+    },
+    "de_DE": {
+      "string": "Dornige Schlachtreihe"
+    },
+    "fr_FR": {
+      "string": "Phalange d'épines"
+    },
+    "id_ID": {
+      "string": "Barisan Duri"
+    },
+    "it_IT": {
+      "string": "Falange di spine"
+    },
+    "ru_RU": {
+      "string": "Букет шипов"
+    },
+    "th_TH": {
+      "string": "กองพัน​หนาม"
+    },
+    "vi_VN": {
+      "string": "Trận Liệt Gai"
     }
   },
   "呼吼炽焰": {
@@ -117,6 +237,30 @@
     },
     "es_ES": {
       "string": "Llama aullante"
+    },
+    "pt_BR": {
+      "string": "Chama Uivante"
+    },
+    "de_DE": {
+      "string": "Heulende Flamme"
+    },
+    "fr_FR": {
+      "string": "Flamme hurlante"
+    },
+    "id_ID": {
+      "string": "Api Menderu"
+    },
+    "it_IT": {
+      "string": "Fiamma ululante"
+    },
+    "ru_RU": {
+      "string": "Ревущее пламя"
+    },
+    "th_TH": {
+      "string": "เปลวไฟ​คำราม"
+    },
+    "vi_VN": {
+      "string": "Ngọn Lửa Gào Thét"
     }
   },
   "大地的弃子": {
@@ -137,6 +281,30 @@
     },
     "es_ES": {
       "string": "Los abandonados por la tierra"
+    },
+    "pt_BR": {
+      "string": "Os Abandonados pela Terra"
+    },
+    "de_DE": {
+      "string": "Die vom Land Verstoßenen"
+    },
+    "fr_FR": {
+      "string": "Les oubliés des Terres"
+    },
+    "id_ID": {
+      "string": "Yang Ditelantarkan Negeri"
+    },
+    "it_IT": {
+      "string": "Rinnegati da Terra"
+    },
+    "ru_RU": {
+      "string": "Отвергнутые землей"
+    },
+    "th_TH": {
+      "string": "ผู้​ถูก​ทอดทิ้ง​โดย​แผ่นดิน"
+    },
+    "vi_VN": {
+      "string": "Kẻ Bị Vùng Đất Ruồng Bỏ"
     }
   },
   "安于磐石": {
@@ -157,6 +325,30 @@
     },
     "es_ES": {
       "string": "Sólido como una roca"
+    },
+    "pt_BR": {
+      "string": "Sólido como uma Rocha"
+    },
+    "de_DE": {
+      "string": "Steinhart"
+    },
+    "fr_FR": {
+      "string": "Dur comme la pierre"
+    },
+    "id_ID": {
+      "string": "Sekeras Batu"
+    },
+    "it_IT": {
+      "string": "Indistruttibile"
+    },
+    "ru_RU": {
+      "string": "Монолит"
+    },
+    "th_TH": {
+      "string": "แข็งแกร่ง​ดุจ​หินผา"
+    },
+    "vi_VN": {
+      "string": "Vững Như Đá"
     }
   },
   "山中见犼": {
@@ -177,6 +369,30 @@
     },
     "es_ES": {
       "string": "Aulladores del peñasco"
+    },
+    "pt_BR": {
+      "string": "Uivantes do Penhasco"
+    },
+    "de_DE": {
+      "string": "Heuler der Klippe"
+    },
+    "fr_FR": {
+      "string": "Hurleurs du pic"
+    },
+    "id_ID": {
+      "string": "Peraung Tebing"
+    },
+    "it_IT": {
+      "string": "Ulularocce della rupe"
+    },
+    "ru_RU": {
+      "string": "Ревуны скал"
+    },
+    "th_TH": {
+      "string": "ผู้​โหยหวน​แห่ง​ผา​หิน"
+    },
+    "vi_VN": {
+      "string": "Thú Gầm Vách Đá"
     }
   },
   "山犼争王": {
@@ -197,6 +413,30 @@
     },
     "es_ES": {
       "string": "Rey del peñasco"
+    },
+    "pt_BR": {
+      "string": "Rei do Penhasco"
+    },
+    "de_DE": {
+      "string": "König der Klippe"
+    },
+    "fr_FR": {
+      "string": "Roi du rocher"
+    },
+    "id_ID": {
+      "string": "Raja Tebing"
+    },
+    "it_IT": {
+      "string": "Re della rupe"
+    },
+    "ru_RU": {
+      "string": "Король скал"
+    },
+    "th_TH": {
+      "string": "ราชา​แห่ง​ผา​หิน"
+    },
+    "vi_VN": {
+      "string": "Chúa Tể Vách Đá"
     }
   },
   "弩斧相应": {
@@ -217,6 +457,30 @@
     },
     "es_ES": {
       "string": "Balista y hacha"
+    },
+    "pt_BR": {
+      "string": "Balista e Machado"
+    },
+    "de_DE": {
+      "string": "Balliste und Axt"
+    },
+    "fr_FR": {
+      "string": "Baliste et hache"
+    },
+    "id_ID": {
+      "string": "Ballista dan Kapak"
+    },
+    "it_IT": {
+      "string": "Ascia e balestra"
+    },
+    "ru_RU": {
+      "string": "Баллиста и топор"
+    },
+    "th_TH": {
+      "string": "บัล​ลิส​ตา​และ​ขวาน"
+    },
+    "vi_VN": {
+      "string": "Chiến Nỏ và Chiến Rìu"
     }
   },
   "忿鼓咆声": {
@@ -237,6 +501,30 @@
     },
     "es_ES": {
       "string": "Tamborilero enfurecido"
+    },
+    "pt_BR": {
+      "string": "Retumbador Furioso"
+    },
+    "de_DE": {
+      "string": "Furioses Trommeln"
+    },
+    "fr_FR": {
+      "string": "Batteur enragé"
+    },
+    "id_ID": {
+      "string": "Amukan Penabuh Drum"
+    },
+    "it_IT": {
+      "string": "Percussione scatenata"
+    },
+    "ru_RU": {
+      "string": "Рев барабанов"
+    },
+    "th_TH": {
+      "string": "มือ​กลอง​พิโรธ"
+    },
+    "vi_VN": {
+      "string": "Tiếng Trống Cuồng Nộ"
     }
   },
   "怨憎雾海": {
@@ -257,6 +545,30 @@
     },
     "es_ES": {
       "string": "Mar del aborrecimiento"
+    },
+    "pt_BR": {
+      "string": "Mar de Repulsa"
+    },
+    "de_DE": {
+      "string": "Meer der Abscheu"
+    },
+    "fr_FR": {
+      "string": "Mer du dégoût"
+    },
+    "id_ID": {
+      "string": "Lautan Kebencian"
+    },
+    "it_IT": {
+      "string": "Mare di disgusto"
+    },
+    "ru_RU": {
+      "string": "Море ненависти"
+    },
+    "th_TH": {
+      "string": "ทะเล​แห่ง​ความเกลียดชัง"
+    },
+    "vi_VN": {
+      "string": "Oán Ghét Đong Đầy"
     }
   },
   "撼山雾火": {
@@ -277,6 +589,30 @@
     },
     "es_ES": {
       "string": "Bruma ardiente sacudetierras"
+    },
+    "pt_BR": {
+      "string": "Névoa Ardente Sísmica"
+    },
+    "de_DE": {
+      "string": "Welterschütterndes Nebelfeuer"
+    },
+    "fr_FR": {
+      "string": "Ignibrume sismique"
+    },
+    "id_ID": {
+      "string": "Hazefyre Pengguncang Bumi"
+    },
+    "it_IT": {
+      "string": "Brumafiamma scuotiterra"
+    },
+    "ru_RU": {
+      "string": "Сотрясающее тенепламя"
+    },
+    "th_TH": {
+      "string": "เฮ​ซ​ไฟร์​สะเทือน​พิภพ"
+    },
+    "vi_VN": {
+      "string": "Hỏa Sương Chấn Địa"
     }
   },
   "旁门外道": {
@@ -297,6 +633,30 @@
     },
     "es_ES": {
       "string": "Tácticas no convencionales"
+    },
+    "pt_BR": {
+      "string": "Táticas Não Ortodoxas"
+    },
+    "de_DE": {
+      "string": "Unkonventionelle Taktik"
+    },
+    "fr_FR": {
+      "string": "Tactiques peu orthodoxes"
+    },
+    "id_ID": {
+      "string": "Taktik Tak Lazim"
+    },
+    "it_IT": {
+      "string": "Strategie poco ortodosse"
+    },
+    "ru_RU": {
+      "string": "Иная тактика"
+    },
+    "th_TH": {
+      "string": "ยุทธวิธี​นอก​แบบแผน"
+    },
+    "vi_VN": {
+      "string": "Chiến Thuật Dị Thường"
     }
   },
   "无机造物": {
@@ -317,6 +677,30 @@
     },
     "es_ES": {
       "string": "Constructo inorgánico"
+    },
+    "pt_BR": {
+      "string": "Construção Inorgânica"
+    },
+    "de_DE": {
+      "string": "Anorganisches Konstrukt"
+    },
+    "fr_FR": {
+      "string": "Construction non organique"
+    },
+    "id_ID": {
+      "string": "Konstruksi Anorganik"
+    },
+    "it_IT": {
+      "string": "Costrutto inorganico"
+    },
+    "ru_RU": {
+      "string": "Неорганическая постройка"
+    },
+    "th_TH": {
+      "string": "โครงสร้าง​อนินทรีย์"
+    },
+    "vi_VN": {
+      "string": "Thực Thể Vô Cơ"
     }
   },
   "枯竭海退": {
@@ -337,6 +721,30 @@
     },
     "es_ES": {
       "string": "Mar marchito"
+    },
+    "pt_BR": {
+      "string": "Mar Definhante"
+    },
+    "de_DE": {
+      "string": "Versiegte See"
+    },
+    "fr_FR": {
+      "string": "Mer asséchée"
+    },
+    "id_ID": {
+      "string": "Laut Mengering"
+    },
+    "it_IT": {
+      "string": "Mare inaridito"
+    },
+    "ru_RU": {
+      "string": "Высохшее море"
+    },
+    "th_TH": {
+      "string": "ทะเล​เหือดแห้ง"
+    },
+    "vi_VN": {
+      "string": "Biển Tàn Lụi"
     }
   },
   "死寂争鸣": {
@@ -357,6 +765,30 @@
     },
     "es_ES": {
       "string": "Contienda de silencios mortales"
+    },
+    "pt_BR": {
+      "string": "Disputa dos Silêncios Mortais"
+    },
+    "de_DE": {
+      "string": "Streitgespräche in tödlicher Stille"
+    },
+    "fr_FR": {
+      "string": "Discorde des silences mortels"
+    },
+    "id_ID": {
+      "string": "Pertikaian Hening Mematikan"
+    },
+    "it_IT": {
+      "string": "Contesa dei silenzi tombali"
+    },
+    "ru_RU": {
+      "string": "Отпор смертельному безмолвию"
+    },
+    "th_TH": {
+      "string": "การ​ห้ำหั่น​แห่ง​ความ​เงียบ​มรณะ"
+    },
+    "vi_VN": {
+      "string": "Sóng Ngầm Nơi Biển Lặng Tăm Tối"
     }
   },
   "死寂表象": {
@@ -377,6 +809,30 @@
     },
     "es_ES": {
       "string": "Éthillu desgarrador"
+    },
+    "pt_BR": {
+      "string": "Æthillu Atormentador"
+    },
+    "de_DE": {
+      "string": "Æthillu-Krise"
+    },
+    "fr_FR": {
+      "string": "Æthillu atroce"
+    },
+    "id_ID": {
+      "string": "Æthillu Mengerikan"
+    },
+    "it_IT": {
+      "string": "Æthillu agghiacciante"
+    },
+    "ru_RU": {
+      "string": "Встревоженная эфирлюзия"
+    },
+    "th_TH": {
+      "string": "เอ​ธิ​ล​ลู​สยดสยอง"
+    },
+    "vi_VN": {
+      "string": "Æthillu Kinh Hoàng"
     }
   },
   "毒雾求生": {
@@ -397,6 +853,30 @@
     },
     "es_ES": {
       "string": "Sobrevive al gas"
+    },
+    "pt_BR": {
+      "string": "Sobreviver ao Gás"
+    },
+    "de_DE": {
+      "string": "Tödliches Gas"
+    },
+    "fr_FR": {
+      "string": "Survivre au gaz"
+    },
+    "id_ID": {
+      "string": "Bertahan dari Gas"
+    },
+    "it_IT": {
+      "string": "Sopravvivi al gas"
+    },
+    "ru_RU": {
+      "string": "Газовая атака"
+    },
+    "th_TH": {
+      "string": "เอาตัวรอด​จาก​แก๊ส"
+    },
+    "vi_VN": {
+      "string": "Sống Sót Trước Khí Độc"
     }
   },
   "污浊血脉": {
@@ -417,6 +897,30 @@
     },
     "es_ES": {
       "string": "Sangre corrompida"
+    },
+    "pt_BR": {
+      "string": "Sangue Profanado"
+    },
+    "de_DE": {
+      "string": "Blut-Erniedrigung"
+    },
+    "fr_FR": {
+      "string": "Sang corrompu"
+    },
+    "id_ID": {
+      "string": "Darah Ternoda"
+    },
+    "it_IT": {
+      "string": "Sangue corrotto"
+    },
+    "ru_RU": {
+      "string": "Скверная кровь"
+    },
+    "th_TH": {
+      "string": "สายเลือด​แปดเปื้อน"
+    },
+    "vi_VN": {
+      "string": "Huyết Mạch Suy Đọa"
     }
   },
   "沉寂视界": {
@@ -437,6 +941,30 @@
     },
     "es_ES": {
       "string": "Horizonte silencioso"
+    },
+    "pt_BR": {
+      "string": "Horizonte Silencioso"
+    },
+    "de_DE": {
+      "string": "Stiller Horizont"
+    },
+    "fr_FR": {
+      "string": "Horizon silencieux"
+    },
+    "id_ID": {
+      "string": "Cakrawala Sunyi"
+    },
+    "it_IT": {
+      "string": "Orizzonte silenzioso"
+    },
+    "ru_RU": {
+      "string": "Безмолвный горизонт"
+    },
+    "th_TH": {
+      "string": "ขอบฟ้า​เงียบสงัด"
+    },
+    "vi_VN": {
+      "string": "Chân Trời Lặng Im"
     }
   },
   "浊流具现": {
@@ -457,6 +985,30 @@
     },
     "es_ES": {
       "string": "Manifestación de turbiedad"
+    },
+    "pt_BR": {
+      "string": "Manifesto de Turbidez"
+    },
+    "de_DE": {
+      "string": "Trübungsverzeichnis"
+    },
+    "fr_FR": {
+      "string": "Manifeste de la Turbidité"
+    },
+    "id_ID": {
+      "string": "Manifestasi Kekeruhan"
+    },
+    "it_IT": {
+      "string": "Manifesto di torbidità"
+    },
+    "ru_RU": {
+      "string": "Образ помутнения"
+    },
+    "th_TH": {
+      "string": "ภูต​สำแดง​สับสน"
+    },
+    "vi_VN": {
+      "string": "Sương Đục Hiện Thể"
     }
   },
   "清波访客": {
@@ -477,6 +1029,30 @@
     },
     "es_ES": {
       "string": "Visitantes de Qingbo"
+    },
+    "pt_BR": {
+      "string": "Visitantes de Qingbo"
+    },
+    "de_DE": {
+      "string": "Besucher von Qingbo"
+    },
+    "fr_FR": {
+      "string": "Visiteurs de Qingbo"
+    },
+    "id_ID": {
+      "string": "Pengunjung Qingbo"
+    },
+    "it_IT": {
+      "string": "Visitatori di Qingbo"
+    },
+    "ru_RU": {
+      "string": "Гости Циньбо"
+    },
+    "th_TH": {
+      "string": "ผู้มาเยือน​แห่ง​ชิง​ป๋อ"
+    },
+    "vi_VN": {
+      "string": "Lữ Khách Thanh Ba"
     }
   },
   "溶解窥看": {
@@ -497,6 +1073,30 @@
     },
     "es_ES": {
       "string": "Ojos de la estirpe disolvente"
+    },
+    "pt_BR": {
+      "string": "Olhos Dissolventes"
+    },
+    "de_DE": {
+      "string": "Lösliche Augen"
+    },
+    "fr_FR": {
+      "string": "Regard dissolvant"
+    },
+    "id_ID": {
+      "string": "Mata Makhluk Pelarut"
+    },
+    "it_IT": {
+      "string": "Occhi dal potere solvente"
+    },
+    "ru_RU": {
+      "string": "Растворяющий взор"
+    },
+    "th_TH": {
+      "string": "ดวงตา​แห่ง​ผู้​ละลาย"
+    },
+    "vi_VN": {
+      "string": "Dõi Theo Biến Chuyển"
     }
   },
   "潜流绝窟": {
@@ -517,6 +1117,30 @@
     },
     "es_ES": {
       "string": "Sima subacuática"
+    },
+    "pt_BR": {
+      "string": "Fenda do Riacho Profundo"
+    },
+    "de_DE": {
+      "string": "Unterstrom-Kluft"
+    },
+    "fr_FR": {
+      "string": "Gouffre sous-marin"
+    },
+    "id_ID": {
+      "string": "Ngarai Arus Bawah"
+    },
+    "it_IT": {
+      "string": "Abisso subacqueo"
+    },
+    "ru_RU": {
+      "string": "Подводная бездна"
+    },
+    "th_TH": {
+      "string": "หุบเหว​ใต้​กระแส"
+    },
+    "vi_VN": {
+      "string": "Khe Sâu Dòng Ngầm"
     }
   },
   "潮涌遗恨": {
@@ -537,6 +1161,30 @@
     },
     "es_ES": {
       "string": "Duelo de las mareas"
+    },
+    "pt_BR": {
+      "string": "Maré de Tristeza"
+    },
+    "de_DE": {
+      "string": "Gezeitentrauer"
+    },
+    "fr_FR": {
+      "string": "Souffrance des marées"
+    },
+    "id_ID": {
+      "string": "Duka Mendalam"
+    },
+    "it_IT": {
+      "string": "Ondata di dolore"
+    },
+    "ru_RU": {
+      "string": "Приливная печаль"
+    },
+    "th_TH": {
+      "string": "คลื่น​อาลัย"
+    },
+    "vi_VN": {
+      "string": "Thống Khổ Dậy Sóng"
     }
   },
   "灼痛疤痕": {
@@ -557,6 +1205,30 @@
     },
     "es_ES": {
       "string": "Marcas de calcinación"
+    },
+    "pt_BR": {
+      "string": "Cicatrizes Ardentes"
+    },
+    "de_DE": {
+      "string": "Brennende Narben"
+    },
+    "fr_FR": {
+      "string": "Cicatrices brûlantes"
+    },
+    "id_ID": {
+      "string": "Luka Panas"
+    },
+    "it_IT": {
+      "string": "Cicatrici roventi"
+    },
+    "ru_RU": {
+      "string": "Жгучие шрамы"
+    },
+    "th_TH": {
+      "string": "แผลเก่า​ปะทุ"
+    },
+    "vi_VN": {
+      "string": "Sẹo Bỏng Rát"
     }
   },
   "狂冲盾止": {
@@ -577,6 +1249,30 @@
     },
     "es_ES": {
       "string": "Escudos desenfrenados"
+    },
+    "pt_BR": {
+      "string": "Escudos Furiosos"
+    },
+    "de_DE": {
+      "string": "Wütende Schilde"
+    },
+    "fr_FR": {
+      "string": "Boucliers ravageurs"
+    },
+    "id_ID": {
+      "string": "Perisai Mengamuk"
+    },
+    "it_IT": {
+      "string": "Protezioni furiose"
+    },
+    "ru_RU": {
+      "string": "Буйство щитов"
+    },
+    "th_TH": {
+      "string": "โล่​อาละวาด"
+    },
+    "vi_VN": {
+      "string": "Khiên Cuồng Nộ"
     }
   },
   "矢影环伺": {
@@ -597,6 +1293,30 @@
     },
     "es_ES": {
       "string": "Rayos y sombras"
+    },
+    "pt_BR": {
+      "string": "Raios e Sombras"
+    },
+    "de_DE": {
+      "string": "Blitze und Schatten"
+    },
+    "fr_FR": {
+      "string": "Ombres et carreaux"
+    },
+    "id_ID": {
+      "string": "Kilat dan Bayangan"
+    },
+    "it_IT": {
+      "string": "Lampi e ombre"
+    },
+    "ru_RU": {
+      "string": "Молнии и тени"
+    },
+    "th_TH": {
+      "string": "สายฟ้า​ฟาด​และ​เงา"
+    },
+    "vi_VN": {
+      "string": "Lôi Điện và Bóng Tối"
     }
   },
   "血肉熔点": {
@@ -617,6 +1337,30 @@
     },
     "es_ES": {
       "string": "Punto de fusión de la carne"
+    },
+    "pt_BR": {
+      "string": "Ponto de fusão da carne"
+    },
+    "de_DE": {
+      "string": "Schmelzpunkt von Fleisch"
+    },
+    "fr_FR": {
+      "string": "Point de fusion de la chair"
+    },
+    "id_ID": {
+      "string": "Titik Leleh Daging"
+    },
+    "it_IT": {
+      "string": "Punto di fusione della carne"
+    },
+    "ru_RU": {
+      "string": "Точка плавления плоти"
+    },
+    "th_TH": {
+      "string": "จุดหลอมเหลว​ของ​เนื้อ"
+    },
+    "vi_VN": {
+      "string": "Nhiệt Độ Nhừ Thịt"
     }
   },
   "霜冻联结": {
@@ -637,6 +1381,30 @@
     },
     "es_ES": {
       "string": "Conexión criostática"
+    },
+    "pt_BR": {
+      "string": "Conexão Criostática"
+    },
+    "de_DE": {
+      "string": "Kryostatische Verbindung"
+    },
+    "fr_FR": {
+      "string": "Connexion cryostatique"
+    },
+    "id_ID": {
+      "string": "Koneksi Cryostatis"
+    },
+    "it_IT": {
+      "string": "Connessione criostatica"
+    },
+    "ru_RU": {
+      "string": "Криосвязь"
+    },
+    "th_TH": {
+      "string": "พันธะ​เยือกแข็ง"
+    },
+    "vi_VN": {
+      "string": "Liên Kết Hàn Băng"
     }
   }
 }

@@ -75,10 +75,10 @@ def _write_text(path: Path, text: str) -> None:
         f.write(text)
 
 
-def _create_snapshot_dir(out_root: Path, stamp: str) -> Path:
+def _create_snapshot_dir(out_root: Path, stamp: str, root: Path | None = None) -> Path:
     real = os.path.realpath(out_root)
-    root_real = os.path.realpath(ROOT)
-    if not real.startswith(root_real + os.sep):
+    root_real = os.path.realpath(root or ROOT)
+    if not real.startswith(root_real + os.sep) and real != root_real:
         raise ValueError(f"拒绝写入仓库外路径：{out_root}")
     Path(real).mkdir(parents=True, exist_ok=True)
     snapshot_dir = Path(real) / stamp

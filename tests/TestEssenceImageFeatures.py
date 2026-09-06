@@ -3,7 +3,6 @@ import unittest
 from pathlib import Path
 
 import cv2
-
 from ok.feature.FeatureSet import FeatureSet
 
 

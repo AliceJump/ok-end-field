@@ -22,7 +22,6 @@ from __future__ import annotations
 import json
 import keyword
 import re
-import subprocess
 import sys
 from pathlib import Path
 

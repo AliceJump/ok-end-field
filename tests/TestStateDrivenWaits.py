@@ -1,10 +1,11 @@
 import unittest
 from unittest.mock import patch
 
-import numpy as np
 from ok import Box
+
 from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
+from src.core.BattleConfig import ULT_RELEASE_MODE_ALT, ULT_RELEASE_MODE_HOLD
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.map_mixin import MapMixin
 
@@ -132,6 +133,40 @@ class _BattleHarness:
 
     def sleep(self, timeout):
         raise AssertionError("settlement success must not use a fixed sleep")
+
+
+class _UltHarness:
+    def __init__(self, release_mode):
+        self.release_mode = release_mode
+        self.events = []
+
+    def get_battle_config(self, key, default=None):
+        return self.release_mode
+
+    def _find_battle_ult(self, feature):
+        return True
+
+    def log_info(self, message):
+        pass
+
+    def send_key_down(self, key):
+        self.events.append(("down", key))
+
+    def send_key(self, key):
+        self.events.append(("press", key))
+
+    def send_key_up(self, key):
+        self.events.append(("up", key))
+
+    def active_time(self):
+        self.events.append(("timestamp", None))
+        return 42
+
+    def wait_until(self, condition, **kwargs):
+        self.events.append(("wait", None))
+
+    def _has_detected_team_member(self):
+        self.events.append(("detect", None))
 
 
 class _CombatExitHarness:
@@ -346,6 +381,39 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertEqual(combat_logic.return_value.run.call_count, 2)
         self.assertEqual(task.frames, 2)
 
+    def test_alt_ult_records_release_before_wait_and_team_detection(self):
+        task = _UltHarness(ULT_RELEASE_MODE_ALT)
+
+        self.assertTrue(BattleMixin.use_ult(task, "2"))
+        self.assertEqual(
+            task.events,
+            [
+                ("down", "alt"),
+                ("press", "2"),
+                ("up", "alt"),
+                ("timestamp", None),
+                ("wait", None),
+                ("detect", None),
+            ],
+        )
+        self.assertEqual(task._last_ult_release_time, 42)
+
+    def test_hold_ult_records_release_immediately_after_key_up(self):
+        task = _UltHarness(ULT_RELEASE_MODE_HOLD)
+
+        self.assertTrue(BattleMixin.use_ult(task, "3"))
+        self.assertEqual(
+            task.events,
+            [
+                ("down", "3"),
+                ("wait", None),
+                ("up", "3"),
+                ("timestamp", None),
+                ("detect", None),
+            ],
+        )
+        self.assertEqual(task._last_ult_release_time, 42)
+
     def test_combat_exit_counter_reuses_existing_detection(self):
         task = _CombatExitHarness()
 
@@ -458,15 +526,84 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertTrue(BattleMixin.in_team(task))
         self.assertEqual(task._battle_member_count, 1)
 
-    @patch("src.tasks.mixin.battle_mixin.detect_team_from_frame")
-    def test_detected_team_member_rechecks_current_frame(self, detect_team):
-        detect_team.side_effect = [["?", "?"], ["余烬", "?"]]
+    def test_detect_team_stable_ignores_all_unknown_slots(self):
+        import numpy as np
 
         class StubTask:
             frame = np.zeros((10, 10, 3), dtype=np.uint8)
+            _battle_team = ["余烬", "赵昭"]
+            detect_calls = 0
+
+            def next_frame(self):
+                return object()
+
+            def detect_team(self, _frame):
+                self.detect_calls += 1
+                return ["?", "?", "?", "?"]
+
+            def sleep(self, _interval):
+                pass
 
         task = StubTask()
-        self.assertFalse(BattleMixin._has_detected_team_member(task))
+
+        self.assertEqual(
+            BattleMixin.detect_team_stable(task, max_attempts=3, confidence=2),
+            (["?"], False),
+        )
+        self.assertEqual(task.detect_calls, 3)
+
+    def test_detect_team_stable_accepts_recognized_team(self):
+        class StubTask:
+            def __init__(self):
+                self.detect_calls = 0
+
+            def active_time(self):
+                # 利用 detect_team 的调用次数模拟时间推进
+                return float(detect_team.call_count)
+
+            def next_frame(self):
+                return object()
+
+            def detect_team(self, _frame):
+                self.detect_calls += 1
+                return ["first", "second", "third", "fourth"]
+
+            def sleep(self, _interval):
+                pass
+
+        task = StubTask()
+
+        self.assertEqual(
+            BattleMixin.detect_team_stable(task, max_attempts=3, confidence=2),
+            (["first", "second", "third", "fourth"], True),
+        )
+        self.assertEqual(task.detect_calls, 2)
+
+    @patch.object(BattleMixin, "detect_team")
+    def test_detected_team_member_rechecks_current_frame(self, detect_team):
+        """_has_detected_team_member 会用最新帧重新调用 detect_team 匹配。"""
+        detect_team.return_value = ["余烬", "别礼"]
+
+        class StubTask(BattleMixin):
+            _battle_team = ["余烬", "别礼"]
+            _call_count = 0
+
+            def __init__(self):
+                pass
+
+            def active_time(self):
+                return self._call_count * 0.1  # 递增时间，确保循环终会超时
+
+            def next_frame(self):
+                self._call_count += 1
+                import numpy as np
+
+                return np.zeros((10, 10, 3), dtype=np.uint8)
+
+            def log_info(self, message):
+                pass
+
+        task = StubTask()
         self.assertTrue(BattleMixin._has_detected_team_member(task))
         self.assertEqual(detect_team.call_count, 2)
 

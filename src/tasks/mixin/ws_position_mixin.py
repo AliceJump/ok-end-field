@@ -39,7 +39,7 @@ def _get_shumei_device_id() -> str:
         return ""
     try:
         did = ensure_map_device_id()
-    except Exception as exc:  # noqa: BLE001 - 铸造失败（无浏览器/网络异常/注册超时）时按间隔降级重试
+    except Exception as exc:
         _shumei_did_failed_at = time.time()
         del exc
         return ""
@@ -127,11 +127,14 @@ class WsPositionMixin:
     def _request_hg_grant_code(self, hg_token: str) -> str:
         """调用 HG 授权接口换取 oauth code；异常时抛出 MapAuthError。"""
         try:
-            grant_resp = self._post_json(ENDFIELD_MAP_HG_GRANT_URL, {
-                "token": hg_token,
-                "appCode": ENDFIELD_MAP_HG_APP_CODE,
-                "type": 0,
-            })
+            grant_resp = self._post_json(
+                ENDFIELD_MAP_HG_GRANT_URL,
+                {
+                    "token": hg_token,
+                    "appCode": ENDFIELD_MAP_HG_APP_CODE,
+                    "type": 0,
+                },
+            )
         except RuntimeError as e:
             raise MapAuthError(f"HG 授权接口请求失败: {e}") from e
         except (error.URLError, TimeoutError) as e:
@@ -176,8 +179,7 @@ class WsPositionMixin:
             raise MapAuthError(f"地图 cred 换取接口返回异常: {cred_resp}{hint}")
 
         data = cred_resp.get("data") or {}
-        if not str(data.get("cred") or "").strip() or \
-                not str(data.get("token") or "").strip():
+        if not str(data.get("cred") or "").strip() or not str(data.get("token") or "").strip():
             raise MapAuthError("地图 cred 换取接口缺少 cred 或 token")
         return cred_resp
 
@@ -367,11 +369,11 @@ class WsPositionMixin:
             log_info = getattr(self, "log_info", None)
             if callable(log_info):
                 log_info("物品导航：游戏窗口不存在或不可见，地图WS客户端停止")
-            setattr(self, "_navigator_window_missing_logged", True)
+            self._navigator_window_missing_logged = True
 
         info_set = getattr(self, "info_set", None)
         if callable(info_set):
-            info_set('导航', '游戏窗口不存在，地图WS已停止')
+            info_set("导航", "游戏窗口不存在，地图WS已停止")
         return True
 
     def _map_ws_should_stop_for_idle_consumer(self) -> bool:
@@ -386,7 +388,7 @@ class WsPositionMixin:
 
         info_set = getattr(self, "info_set", None)
         if callable(info_set):
-            info_set('导航', '地图WS已停止：长时间无任务读取位置')
+            info_set("导航", "地图WS已停止：长时间无任务读取位置")
         return True
 
     async def _map_ws_client_main(self):
@@ -412,10 +414,10 @@ class WsPositionMixin:
 
                 headers = self._map_api_headers(self._map_ws_cred)
                 async with websockets.connect(
-                        ENDFIELD_MAP_WS_URL,
-                        additional_headers=headers,
-                        open_timeout=15,
-                        ping_interval=None,
+                    ENDFIELD_MAP_WS_URL,
+                    additional_headers=headers,
+                    open_timeout=15,
+                    ping_interval=None,
                 ) as ws:
                     if callable(log_info):
                         log_info(f"[地图WS] 已连接: {ENDFIELD_MAP_WS_URL}")
@@ -441,7 +443,7 @@ class WsPositionMixin:
 
                         try:
                             msg = await asyncio.wait_for(ws.recv(), timeout=1.0)
-                        except asyncio.TimeoutError:
+                        except TimeoutError:
                             continue
                         if isinstance(msg, (bytes, bytearray)):
                             msg = msg.decode("utf-8", errors="ignore")
@@ -474,7 +476,7 @@ class WsPositionMixin:
                     log_error(f"[地图WS] 客户端异常，30秒后重试: {e}")
                 try:
                     await asyncio.wait_for(self._map_ws_stop_event.wait(), timeout=30.0)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass
 
     def _start_map_ws_client(self, raw_cred: str | None):
@@ -499,12 +501,12 @@ class WsPositionMixin:
         if not cred:
             return False
         if (
-                self._is_map_ws_client_enabled()
-                and self._map_ws_cred == cred
-                and self._map_ws_sign_token == sign_token
-                and self._map_ws_user_id == user_id
-                and self._map_ws_auth_source == auth_source
-                and self._map_ws_device_id == device_id  # dId 变化（如10001后重新铸造）时不复用旧客户端
+            self._is_map_ws_client_enabled()
+            and self._map_ws_cred == cred
+            and self._map_ws_sign_token == sign_token
+            and self._map_ws_user_id == user_id
+            and self._map_ws_auth_source == auth_source
+            and self._map_ws_device_id == device_id  # dId 变化（如10001后重新铸造）时不复用旧客户端
         ):
             return True
 
@@ -609,7 +611,7 @@ class WsPositionMixin:
 
         try:
             if callable(log_info):
-                log_info(f"[WS] 客户端已连接")
+                log_info("[WS] 客户端已连接")
 
             async for msg in ws:
                 if isinstance(msg, (bytes, bytearray)):
@@ -634,7 +636,7 @@ class WsPositionMixin:
                 log_error(f"[WS handler] 异常: {e}")
         finally:
             if callable(log_info):
-                log_info(f"[WS] 客户端已断开")
+                log_info("[WS] 客户端已断开")
 
     async def _ws_server_main(self):
         log_info = getattr(self, "log_info", None)
@@ -678,7 +680,7 @@ class WsPositionMixin:
                 except Exception:
                     pass
                 if callable(log_info):
-                    log_info(f"[WS] 服务器已关闭")
+                    log_info("[WS] 服务器已关闭")
 
         self._ws_server_thread = threading.Thread(target=_runner, name="WsPositionServer", daemon=True)
         self._ws_server_thread.start()
@@ -694,7 +696,7 @@ class WsPositionMixin:
 
     def _recv_ws_position_payload_or_cached(self, timeout: float = 0.5):
         """获取最新的位置数据，如果没有新数据则返回缓存的上一次数据。
-        
+
         返回：
             - 新的位置数据（从队列获取）
             - 或缓存的位置数据（如果队列为空）

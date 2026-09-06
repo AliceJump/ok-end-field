@@ -26,26 +26,6 @@
             "skill_type": "战技",
             "element": "电磁",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "强雷枪召回",
-                "release_gate": {
-                    "all": ["PLACE_THUNDER_SPEAR"]
-                },
-                "trigger_condition": {
-                    "text": "存在雷枪或强雷枪时召回",
-                    "effects": ["PLACE_THUNDER_SPEAR"]
-                },
-                "enhancement_effect": "强雷枪造成更高电磁伤害并施加电磁附着",
-                "enhancement_visible_pulse": false,
-                "effects": [
-                    {
-                        "effect_id": "ATTACH_ELECTROMAGNETIC",
-                        "value": 1,
-                        "duration": null,
-                        "target": "enemy"
-                    }
-                ]
-            },
             "description": "跃起后用枪刮起旋风，对周围的敌人造成少量电磁伤害。同时召回全部雷枪、强雷枪。雷枪被召回时若穿过敌人则对其造成电磁伤害。强雷枪造成更高的电磁伤害，还会施加电磁附着。",
             "damage_multiplier": "150%（旋风）+ 168%（雷枪）+ 432%（强雷枪）",
             "stagger_value": 0,
@@ -58,6 +38,29 @@
                     "duration": null,
                     "target": "field"
                 }
+            ],
+            "enhancements": [
+                {
+                    "name": "强雷枪召回",
+                    "trigger_condition": {
+                        "text": "存在雷枪或强雷枪时召回",
+                        "effects": {
+                            "all": [
+                                "PLACE_THUNDER_SPEAR"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "强雷枪造成更高电磁伤害并施加电磁附着",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "ATTACH_ELECTROMAGNETIC",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
+                }
             ]
         },
         {
@@ -65,19 +68,33 @@
             "name": "雷枪·掣击",
             "skill_type": "连携技",
             "element": "电磁",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
             "description": "主控干员对处于电磁附着或导电状态的目标进行重击后可以发动。跃起并向目标掷出3支雷枪，并对前方范围内的敌人造成一次电磁伤害。",
             "damage_multiplier": "380%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
+            "effects": [],
+            "enhancements": [
                 {
-                    "effect_id": "PLACE_THUNDER_SPEAR",
-                    "value": 3,
-                    "duration": null,
-                    "target": "field"
+                    "name": "雷枪·掣击",
+                    "trigger_condition": {
+                        "text": "主控干员对处于电磁附着或导电状态的目标进行重击后可以发动",
+                        "effects": {
+                            "any": [
+                                "ATTACH_ELECTROMAGNETIC",
+                                "STATUS_CONDUCTING"
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "PLACE_THUNDER_SPEAR",
+                            "value": 3,
+                            "duration": null,
+                            "target": "field"
+                        }
+                    ]
                 }
             ]
         },

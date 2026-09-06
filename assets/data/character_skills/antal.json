@@ -61,20 +61,122 @@
             "name": "磁暴试验场",
             "skill_type": "连携技",
             "element": "电磁",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
             "description": "当被聚焦的敌人进入物理异常或法术附着状态时可以发动。在该敌人身上引发1次能量爆炸，造成电磁伤害并再次对其施加该物理异常或法术附着。",
             "damage_multiplier": "340%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
+            "effects": [],
+            "enhancements": [
                 {
-                    "effect_id": "TRIGGER_REPEAT_EFFECT",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
+                    "name": "磁暴试验场·猛击",
+                    "trigger_condition": {
+                        "text": "当被聚焦的敌人进入猛击状态时可以发动",
+                        "effects": {
+                            "all": [
+                                "STATUS_FOCUS",
+                                "STATUS_HEAVY_STRIKE"
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
+                            "value": 1,
+                            "duration": "",
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ],
+                    "enhancement_effect": "",
+                    "enhancement_visible_pulse": false
+                },
+                {
+                    "name": "磁暴试验场·击飞",
+                    "trigger_condition": {
+                        "text": "当被聚焦的敌人进入击飞状态时可以发动",
+                        "effects": {
+                            "all": [
+                                "STATUS_FOCUS",
+                                "STATUS_HEAVY_HIT"
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "磁暴试验场·倒地",
+                    "trigger_condition": {
+                        "text": "当被聚焦的敌人进入倒地状态时可以发动",
+                        "effects": {
+                            "all": [
+                                "STATUS_FOCUS",
+                                "STATUS_KNOCKDOWN"
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "磁暴试验场·法术附着",
+                    "trigger_condition": {
+                        "text": "当被聚焦的敌人进入法术附着状态时可以发动",
+                        "effects": {
+                            "all": [
+                                "STATUS_FOCUS",
+                                "STATUS_SPELL_INFLICT"
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "磁暴试验场·碎甲",
+                    "trigger_condition": {
+                        "text": "当被聚焦的敌人进入碎甲状态时可以发动",
+                        "effects": {
+                            "all": [
+                                "STATUS_FOCUS",
+                                "STATUS_SHATTER"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
+                            "value": 1,
+                            "duration": "",
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
                 }
             ]
         },

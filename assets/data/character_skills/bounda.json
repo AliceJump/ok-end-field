@@ -26,16 +26,6 @@
             "skill_type": "战技",
             "element": "自然",
             "has_enhancement": true,
-            "enhancement": {
-                "name": "自制炸弹",
-                "trigger_condition": {
-                    "text": "战技命中敌人",
-                    "effects": []
-                },
-                "enhancement_effect": "自制炸弹",
-                "enhancement_visible_pulse": false,
-                "effects": []
-            },
             "description": "踢出自制炸弹将其黏附在目标身上，并施加缓速，短暂延迟后爆炸对范围内的敌人造成自然伤害并施加自然附着。若黏附目标被击败则自制炸弹提前爆炸。场上同时只能存在一个自制炸弹。",
             "damage_multiplier": "420%",
             "stagger_value": 0,
@@ -63,6 +53,20 @@
                     "target": "enemy",
                     "count": 1
                 }
+            ],
+            "enhancements": [
+                {
+                    "name": "自制炸弹",
+                    "trigger_condition": {
+                        "text": "战技命中敌人",
+                        "effects": {
+                            "all": []
+                        }
+                    },
+                    "enhancement_effect": "自制炸弹",
+                    "enhancement_visible_pulse": false,
+                    "effects": []
+                }
             ]
         },
         {
@@ -70,20 +74,34 @@
             "name": "免费赠礼",
             "skill_type": "连携技",
             "element": "自然",
-            "has_enhancement": false,
-            "enhancement": null,
+            "has_enhancement": true,
             "description": "当敌人进入2层及以上寒冷附着或自然附着时可以发动。射击目标敌人，引发一次特殊爆炸，造成自然伤害并施加该法术附着。",
             "damage_multiplier": "380%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
+            "effects": [],
+            "enhancements": [
                 {
-                    "effect_id": "STATUS_SPELL_INFLICT",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
+                    "name": "免费赠礼",
+                    "trigger_condition": {
+                        "text": "当敌人进入2层及以上寒冷附着或自然附着时可以发动",
+                        "effects": {
+                            "any": [
+                                "ATTACH_COLD",
+                                "ATTACH_NATURAL"
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_SPELL_INFLICT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
                 }
             ]
         },
@@ -99,9 +117,11 @@
                     "name": "引爆增强",
                     "trigger_condition": {
                         "text": "终结技命中粘有自制炸弹的敌人",
-                        "effects": [
-                            "MECH_BOMB"
-                        ]
+                        "effects": {
+                            "all": [
+                                "MECH_BOMB"
+                            ]
+                        }
                     },
                     "enhancement_effect": "引爆增强",
                     "enhancement_visible_pulse": false,
@@ -126,10 +146,12 @@
                     "name": "高层附着再次施加",
                     "trigger_condition": {
                         "text": "最后一段伤害命中处于2层及以上寒冷附着或自然附着的目标",
-                        "effects": [
-                            "ATTACH_COLD",
-                            "ATTACH_NATURAL"
-                        ]
+                        "effects": {
+                            "any": [
+                                "ATTACH_COLD",
+                                "ATTACH_NATURAL"
+                            ]
+                        }
                     },
                     "enhancement_effect": "再次施加该法术附着",
                     "enhancement_visible_pulse": false,

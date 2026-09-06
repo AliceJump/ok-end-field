@@ -1,9 +1,8 @@
-from src.interaction.Mouse import click_down, click_up
 from src.core.BaseEfTask import BaseEfTask
+from src.interaction.Mouse import click_down, click_up
 
 
 class MouseScanMixin(BaseEfTask):
-
     def drag_scan_area(
         self,
         start_pos: tuple[float, float],
@@ -63,9 +62,7 @@ class MouseScanMixin(BaseEfTask):
         coverage = short_side * coverage_ratio
         step = coverage * (1 - overlap)
 
-        self.log_info(
-            f"开始区域扫描: start={start_pos}, end={end_pos}"
-        )
+        self.log_info(f"开始区域扫描: start={start_pos}, end={end_pos}")
 
         self.log_info(
             f"扫描参数: "
@@ -91,20 +88,18 @@ class MouseScanMixin(BaseEfTask):
 
         click_down(
             self.get_game_hwnd(),
-            int(scan_start[0]*self.width),
-            int(scan_start[1]*self.height),
+            int(scan_start[0] * self.width),
+            int(scan_start[1] * self.height),
             key,
         )
 
         line = 0
 
         try:
-
             y = top
             reverse = False
 
             while y <= bottom + 1e-9:
-
                 if reverse:
                     line_start = (right, y)
                     line_end = (left, y)
@@ -115,9 +110,7 @@ class MouseScanMixin(BaseEfTask):
                 line += 1
 
                 if debug_lines:
-                    self.log_info(
-                        f"扫描第 {line} 行: {line_start} -> {line_end}"
-                    )
+                    self.log_info(f"扫描第 {line} 行: {line_start} -> {line_end}")
 
                 self.smooth_drag(
                     line_start,
@@ -147,9 +140,6 @@ class MouseScanMixin(BaseEfTask):
                 y = next_y
 
         finally:
-
             click_up(self.get_game_hwnd(), key)
 
-            self.log_info(
-                f"区域扫描完成，共扫描 {line} 行。"
-            )
+            self.log_info(f"区域扫描完成，共扫描 {line} 行。")

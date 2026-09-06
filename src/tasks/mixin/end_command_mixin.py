@@ -19,12 +19,10 @@ class EndCommandMixin:
         "结尾外部命令执行时机": "外部命令执行时机",
     }
 
-    def add_end_command_config(self, *, enable_description="是否执行一次外部命令行程序。",
-                               command_description=None):
+    def add_end_command_config(self, *, enable_description="是否执行一次外部命令行程序。", command_description=None):
         if command_description is None:
             command_description = (
-                "需要执行的命令行内容。\n"
-                "建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。"
+                "需要执行的命令行内容。\n建议：优先绝对路径；路径或参数含空格时按系统 shell 规则加引号。"
             )
 
         self.default_config.update(
@@ -47,10 +45,17 @@ class EndCommandMixin:
                 "外部命令执行时机": "选择执行时机：任务最开始时最先执行，或任务最后执行。",
             }
         )
-        self.default_config_group.update({
-            self._SWITCH_KEY: ["外部命令", "外部命令起始于", "外部命令等待退出",
-                               "外部命令已运行时跳过", "外部命令执行时机"],
-        })
+        self.default_config_group.update(
+            {
+                self._SWITCH_KEY: [
+                    "外部命令",
+                    "外部命令起始于",
+                    "外部命令等待退出",
+                    "外部命令已运行时跳过",
+                    "外部命令执行时机",
+                ],
+            }
+        )
         self.config_type["外部命令执行时机"] = {
             "type": "drop_down",
             "options": ["任务最开始", "任务最后"],

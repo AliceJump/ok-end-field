@@ -4,18 +4,17 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Optional
 
+from src.data.effects import EffectType, match_effect_terms
 from src.data.skill_types import (
     Character,
-    Skill,
-    SkillType,
     ElementType,
-    SkillEnhancement,
+    Skill,
     SkillEffect,
+    SkillEnhancement,
+    SkillType,
+    TriggerEffectGroup,
 )
-from src.data.effects import EffectType, match_effect_terms
-
 
 # 类型映射
 _ELEMENT_MAP: dict[str, ElementType] = {
@@ -77,29 +76,45 @@ def _default_skill_id(character_id: str, skill_type: str) -> str:
     return f"{character_id}_{suffix}"
 
 
-def _load_trigger_condition(trigger_data) -> tuple[str, list[EffectType]]:
+def _load_trigger_condition(
+    trigger_data,
+) -> tuple[str, list[EffectType], list[TriggerEffectGroup]]:
     """解析触发条件：兼容字符串与新格式 {"text", "effects"}。
 
-    返回 (文本, 效果ID列表)。新格式优先使用显式 effects；
+    返回 (文本, 效果ID列表, 带运算符的效果组)。新格式优先使用显式 effects；
     仅字符串时回退用 match_effect_terms 自动解析。
     """
     if isinstance(trigger_data, dict):
         text = trigger_data.get("text", "")
-        effects = [EffectType(e) for e in trigger_data.get("effects") or []]
-        return text, effects
+        raw_effects = trigger_data.get("effects") or []
+        if isinstance(raw_effects, dict):
+            trigger_effect_groups = [
+                TriggerEffectGroup(
+                    operator=operator,
+                    effects=tuple(EffectType(effect_id) for effect_id in raw_effects.get(operator) or []),
+                )
+                for operator in ("all", "any")
+                if raw_effects.get(operator) or (operator == "all" and operator in raw_effects)
+            ]
+            effects = [effect for group in trigger_effect_groups for effect in group.effects]
+        else:
+            effects = [EffectType(effect_id) for effect_id in raw_effects]
+            trigger_effect_groups = []
+        return text, effects, trigger_effect_groups
     text = trigger_data or ""
-    return text, [eff for _, eff in match_effect_terms(text)]
+    return text, [eff for _, eff in match_effect_terms(text)], []
 
 
 def _load_enhancement(enh_data: dict) -> SkillEnhancement:
     """加载一个独立条件效果。"""
-    trigger_condition, trigger_effects = _load_trigger_condition(
+    trigger_condition, trigger_effects, trigger_effect_groups = _load_trigger_condition(
         enh_data.get("trigger_condition", ""),
     )
     return SkillEnhancement(
         name=enh_data["name"],
         trigger_condition=trigger_condition,
         trigger_effects=trigger_effects,
+        trigger_effect_groups=trigger_effect_groups,
         effects=_load_skill_effects(enh_data.get("effects") or []),
         enhancement_visible_pulse=enh_data.get("enhancement_visible_pulse", False),
     )
@@ -107,7 +122,7 @@ def _load_enhancement(enh_data: dict) -> SkillEnhancement:
 
 def _load_character_from_json(file_path: Path) -> Character:
     """从JSON文件加载角色数据（兼容新旧两种格式）。"""
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, encoding="utf-8") as f:
         data = json.load(f)
 
     character_id = data["character_id"]
@@ -116,12 +131,7 @@ def _load_character_from_json(file_path: Path) -> Character:
     # 解析技能列表
     skills: list[Skill] = []
     for skill_data in data.get("skills", []):
-        enhancements = [
-            _load_enhancement(enh_data)
-            for enh_data in skill_data.get("enhancements") or []
-        ]
-        if not enhancements and skill_data.get("enhancement"):
-            enhancements.append(_load_enhancement(skill_data["enhancement"]))
+        enhancements = [_load_enhancement(enh_data) for enh_data in skill_data.get("enhancements") or []]
 
         # 加载技能基础效果；旧格式的 attach/status/clear 纯ID列表合并进 effects
         effects = _load_skill_effects(skill_data.get("effects") or [])
@@ -176,13 +186,13 @@ def load_all_characters() -> dict[str, Character]:
     return characters
 
 
-def get_character(character_id: str) -> Optional[Character]:
+def get_character(character_id: str) -> Character | None:
     """获取指定角色。"""
     all_chars = load_all_characters()
     return all_chars.get(character_id)
 
 
 __all__ = [
-    "load_all_characters",
     "get_character",
+    "load_all_characters",
 ]

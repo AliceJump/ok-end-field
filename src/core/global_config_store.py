@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import threading
 import shutil
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -10,8 +10,6 @@ from ok.util.config import Config
 from ok.util.file import get_relative_path, read_json_file, write_json_file
 from qfluentwidgets import FluentIcon
 
-from src.icons import Icons
-from src.interaction.KeyConfig import DEFAULT_COMBAT_KEYS, DEFAULT_COMMON_KEYS, DEFAULT_INDUSTRY_KEYS
 from src.core.BattleConfig import (
     BATTLE_CONFIG_DESCRIPTION,
     BATTLE_CONFIG_NAME,
@@ -20,7 +18,8 @@ from src.core.BattleConfig import (
 )
 from src.data.delivery_area import DELIVERY_AREA_CONFIG
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING, stages_dict
-
+from src.icons import Icons
+from src.interaction.KeyConfig import DEFAULT_COMBAT_KEYS, DEFAULT_COMMON_KEYS, DEFAULT_INDUSTRY_KEYS
 
 KEY_CONFIG_NAME = "Game Hotkey Config"
 ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME = "Ensure Main Once Action Sleep"
@@ -49,7 +48,7 @@ ZIP_LINE_GATHER_KEYS = list(stages_dict.get(STAGE_CATEGORY_ENERGY_POOLING, []))
 ZIP_LINE_DELIVERY_KEYS = [key for key in ZIP_LINE_ROUTE_KEYS if key not in ZIP_LINE_GATHER_KEYS]
 ZIP_LINE_DEFAULT_CONFIG = {
     ZIP_LINE_SCROLL_KEY: False,
-    **{key: "" for key in ZIP_LINE_ROUTE_KEYS},
+    **dict.fromkeys(ZIP_LINE_ROUTE_KEYS, ""),
     ZIP_LINE_GROUP_KEY: ZIP_LINE_DELIVERY_GROUP,
 }
 ZIP_LINE_CONFIG_DESCRIPTION = {
@@ -59,7 +58,7 @@ ZIP_LINE_CONFIG_DESCRIPTION = {
         "建议启用此项时不要使用非白发或有白帽角色"
     ),
     ZIP_LINE_GROUP_KEY: "选择要显示的滑索配置分类。",
-    **{key: "滑索距离序列，用逗号分隔。" for key in ZIP_LINE_ROUTE_KEYS},
+    **dict.fromkeys(ZIP_LINE_ROUTE_KEYS, "滑索距离序列，用逗号分隔。"),
 }
 ZIP_LINE_CONFIG_TYPE = {
     ZIP_LINE_GROUP_KEY: {
@@ -76,7 +75,7 @@ key_config_option = ConfigOption(
     KEY_CONFIG_NAME,
     {**DEFAULT_COMMON_KEYS, **DEFAULT_INDUSTRY_KEYS, **DEFAULT_COMBAT_KEYS},
     description="游戏内快捷键配置",
-    icon=Icons.Keyboard
+    icon=Icons.Keyboard,
 )
 battle_config_option = ConfigOption(
     BATTLE_CONFIG_NAME,
@@ -84,13 +83,13 @@ battle_config_option = ConfigOption(
     description="全局战斗配置",
     config_description=BATTLE_CONFIG_DESCRIPTION,
     config_type=BATTLE_CONFIG_TYPE,
-    icon=Icons.Battle
+    icon=Icons.Battle,
 )
 ensure_main_once_action_sleep_option = ConfigOption(
     ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME,
     {"SingleActionWithDelay": 1.5},
     description="主界面单次动作后延迟",
-    icon=FluentIcon.DATE_TIME
+    icon=FluentIcon.DATE_TIME,
 )
 zip_line_config_option = ConfigOption(
     ZIP_LINE_CONFIG_NAME,
@@ -98,14 +97,14 @@ zip_line_config_option = ConfigOption(
     description="滑索路线与距离序列配置",
     config_description=ZIP_LINE_CONFIG_DESCRIPTION,
     config_type=ZIP_LINE_CONFIG_TYPE,
-    icon=Icons.Zipline
+    icon=Icons.Zipline,
 )
 input_mode_option = ConfigOption(
     INPUT_MODE_NAME,
     {"输入模式": "前台模式"},
     description="前台模式：游戏窗口保持前置，支持移动/战斗/视角操作；后台模式：按键用完即恢复窗口，禁用移动/战斗/视角操作",
     config_type={"输入模式": {"type": "drop_down", "options": ["前台模式", "后台模式"]}},
-    icon=FluentIcon.PLAY
+    icon=FluentIcon.PLAY,
 )
 GLOBAL_CONFIG_OPTIONS = [
     key_config_option,
@@ -221,10 +220,7 @@ def _collect_legacy_zip_line_values() -> dict[str, Any]:
                 continue
             if type(value) is type(default_value) and value != default_value:
                 candidates_by_key.setdefault(key, []).append((mtime, value))
-    return {
-        key: max(candidates, key=lambda item: item[0])[1]
-        for key, candidates in candidates_by_key.items()
-    }
+    return {key: max(candidates, key=lambda item: item[0])[1] for key, candidates in candidates_by_key.items()}
 
 
 def _migrate_legacy_zip_line_account_overrides() -> None:
@@ -270,9 +266,7 @@ def _migrate_legacy_zip_line_account_overrides() -> None:
     update_overrides(apply)
 
 
-def _migrate_key_names_in_file(
-    option_name: str, migrations: dict[str, str], defaults: dict[str, Any]
-) -> None:
+def _migrate_key_names_in_file(option_name: str, migrations: dict[str, str], defaults: dict[str, Any]) -> None:
     """文件级键名迁移：旧键值复制到新键，旧键保留（回滚安全）。
 
     - 旧键存在且值非默认，新键缺失或为默认值 → 用旧值填充新键。
@@ -297,9 +291,7 @@ def _migrate_key_names_in_file(
             old_value = config[json_key]
             new_value = config.get(new_key)
             default_value = defaults.get(new_key)
-            if old_value != default_value and (
-                new_key not in config or new_value == default_value
-            ):
+            if old_value != default_value and (new_key not in config or new_value == default_value):
                 config[new_key] = old_value
                 modified = True
         elif json_key in reverse:
@@ -327,9 +319,7 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
     # Battle Config 键名迁移：幂等执行（旧键值复制到新键，旧键保留），
     # 放在迁移状态标记检查之前，保证已迁移过的安装也能完成本次键名重命名。
     if option.name == BATTLE_CONFIG_NAME:
-        _migrate_key_names_in_file(
-            option.name, _BATTLE_KEY_MIGRATIONS, DEFAULT_BATTLE_CONFIG
-        )
+        _migrate_key_names_in_file(option.name, _BATTLE_KEY_MIGRATIONS, DEFAULT_BATTLE_CONFIG)
 
     migrated_options = state.setdefault(_MIGRATION_MARKER, [])
     if not isinstance(migrated_options, list):
@@ -344,9 +334,7 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
 
     # 1. 键名迁移：把配置文件中不在 default 的旧键值复制到新键（旧键保留，回滚安全）
     if option.name == ZIP_LINE_CONFIG_NAME:
-        _migrate_key_names_in_file(
-            option.name, _ZIP_LINE_KEY_MIGRATIONS, ZIP_LINE_DEFAULT_CONFIG
-        )
+        _migrate_key_names_in_file(option.name, _ZIP_LINE_KEY_MIGRATIONS, ZIP_LINE_DEFAULT_CONFIG)
 
     # 2. 读取当前配置文件（键名复制后）
     config_file = get_relative_path("configs", f"{option.name}.json")
@@ -356,9 +344,7 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
 
     # 3. 从 legacy 任务配置文件收集旧值写入新键（仅当前值缺失或等于默认值时覆盖）
     values = (
-        _collect_legacy_zip_line_values()
-        if option.name == ZIP_LINE_CONFIG_NAME
-        else _collect_legacy_values(option)
+        _collect_legacy_zip_line_values() if option.name == ZIP_LINE_CONFIG_NAME else _collect_legacy_values(option)
     )
     modified = False
     for key, value in values.items():

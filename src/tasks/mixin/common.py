@@ -18,9 +18,11 @@ import re
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
-from src.data.FeatureList import FeatureList as fL
+
 from ok import Box
+
 from src.core.BaseEfTask import BaseEfTask
+from src.data.FeatureList import FeatureList as fL
 
 
 def build_name_patterns(find_name: str):
@@ -30,7 +32,7 @@ def build_name_patterns(find_name: str):
 
     # 1️⃣ 滑窗拆分
     if len(find_name) >= 2:
-        keys = [find_name[i: i + 2] for i in range(len(find_name) - 1)]
+        keys = [find_name[i : i + 2] for i in range(len(find_name) - 1)]
     else:
         keys = [find_name]
 
@@ -102,7 +104,7 @@ class GoodsInfo:
 
     good_name: str
     good_price: int
-    friend_price: Optional[int]
+    friend_price: int | None
     stock_quantity: int
     name_box: "Box"
     friend_name_box: Optional["Box"]
@@ -132,14 +134,9 @@ class Common(BaseEfTask):
         """
 
         result = self.wait_ocr(
-            match=re.compile(r'^[\d.]*k?/\d+k?$', re.IGNORECASE),
-            box=self.box_of_screen(
-                1400 / 1920,
-                0,
-                1,
-                70 / 1080
-            ),
-            log=True
+            match=re.compile(r"^[\d.]*k?/\d+k?$", re.IGNORECASE),
+            box=self.box_of_screen(1400 / 1920, 0, 1, 70 / 1080),
+            log=True,
         )
 
         if result:
@@ -160,7 +157,9 @@ class Common(BaseEfTask):
 
     def plus_max(self):
         for plus_button in [fL.plus_button, fL.market_plus_button]:
-            plus_button = self.wait_feature(feature=plus_button, box=self.box.bottom_right, threshold=0.8, raise_if_not_found=False, time_out=1)
+            plus_button = self.wait_feature(
+                feature=plus_button, box=self.box.bottom_right, threshold=0.8, raise_if_not_found=False, time_out=1
+            )
             if plus_button:
                 break
 

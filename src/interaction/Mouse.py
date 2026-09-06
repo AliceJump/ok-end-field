@@ -59,8 +59,6 @@ def _safe_print(message):
         pass
 
 
-
-
 def calc_direction_step(
     from_pos,
     to_pos,

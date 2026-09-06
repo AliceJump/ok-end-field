@@ -28,6 +28,7 @@ import cv2
 import numpy as np
 
 __all__ = [
+    "PULSE_ON_RATIO",
     "RecommendSkillDetector",
     "get_recommend_skill_detector",
 ]
@@ -37,6 +38,7 @@ _WHITE_V_MIN = 200  # 明度下限：常态圆周 V≈118 被排除，脉冲白�
 _ANGLE_SAMPLES = 64  # 圆周角度采样数
 _SIGNAL_BAND = (0.93, 1.12)  # 中间信号层半径带（相对配置半径，含辉光外扩）
 _ON_RATIO = 0.80  # 白角占比确认阈值（定稿值；实测脉冲相位占比 0.59~0.94）
+PULSE_ON_RATIO = _ON_RATIO  # 公开确认阈值：供调用方复用当帧占比做全屏闪光判定，避免重复计算
 _OFF_FRAMES = 3  # 连续低于确认阈值帧数后复位（防止噪声占比卡在迟滞中区）
 
 
@@ -123,17 +125,16 @@ class RecommendSkillDetector:
         """
         return self._white_ratio(frame, cx_n, cy_n, r_n) >= _ON_RATIO
 
-    def detect(self, frame: np.ndarray, cx_n: float, cy_n: float, r_n: float, label: str) -> bool:
-        """检测指定按钮是否出现白色圆周脉冲上升沿。
+    def detect_ratio(self, white_ratio: float, label: str) -> bool:
+        """基于已计算的占比推进迟滞去抖状态机。
 
-        :param frame: BGR 截图帧
-        :param cx_n: 按钮中心 X（pixel / 宽）
-        :param cy_n: 按钮中心 Y（pixel / 高）
-        :param r_n: 按钮参考半径（pixel / 短边）
+        供同帧多用途场景（诊断 / 上升沿 / 闪光过滤共用一次占比计算）复用，
+        与 :meth:`detect` 的状态机语义完全一致。
+
+        :param white_ratio: 该区域当帧白色角度占比（0~1，见 :meth:`white_ratio`）
         :param label: 状态键（通常为区域名，如「批次1」）
         :return: 仅当本次调用构成新脉冲周期（上升沿）时为 True
         """
-        white_ratio = self._white_ratio(frame, cx_n, cy_n, r_n)
         with self._lock:
             track = self._tracks.setdefault(label, _Track())
             if white_ratio >= _ON_RATIO:
@@ -150,6 +151,18 @@ class RecommendSkillDetector:
                 if track.misses >= _OFF_FRAMES:
                     track.active = False
             return False
+
+    def detect(self, frame: np.ndarray, cx_n: float, cy_n: float, r_n: float, label: str) -> bool:
+        """检测指定按钮是否出现白色圆周脉冲上升沿。
+
+        :param frame: BGR 截图帧
+        :param cx_n: 按钮中心 X（pixel / 宽）
+        :param cy_n: 按钮中心 Y（pixel / 高）
+        :param r_n: 按钮参考半径（pixel / 短边）
+        :param label: 状态键（通常为区域名，如「批次1」）
+        :return: 仅当本次调用构成新脉冲周期（上升沿）时为 True
+        """
+        return self.detect_ratio(self._white_ratio(frame, cx_n, cy_n, r_n), label)
 
 
 _shared_lock = threading.Lock()

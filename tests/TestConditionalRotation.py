@@ -1,8 +1,10 @@
 import unittest
+from itertools import pairwise
 from unittest.mock import patch
 
 import pyautogui
 
+from src.core.BattleConfig import KEY_SKILL_ALLOWLIST
 from src.core.rotation_ast import eval_cond, iter_actions, normalize_ast
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
@@ -204,6 +206,11 @@ class _FakeTask:
         self._frame = 0
         self._exited = False
         self.actions = []
+        self.frame_events = []
+        self.team_detect_times = []
+        self.team_detect_calls = 0
+        self.stable_team_result = (["?", "?", "?", "?"], False)
+        self.logs = []
         self.debug = False
 
     # ── 时间 / 帧 ──
@@ -216,6 +223,7 @@ class _FakeTask:
     def next_frame(self):
         self._time += 0.1
         self._frame += 1
+        self.frame_events.append("frame")
 
     # ── 战斗状态 ──
     def in_combat(self, required_yellow=0):
@@ -253,7 +261,7 @@ class _FakeTask:
         pass
 
     def log_info(self, *a, **k):
-        pass
+        self.logs.append(a[0] if a else "")
 
     def log_error(self, *a, **k):
         pass
@@ -277,6 +285,13 @@ class _FakeTask:
         if name == "default_link_skill":
             return True if self._link else None
         return None
+
+    def detect_team_stable(self, **kwargs):
+        self.team_detect_calls += 1
+        self.team_detect_times.append(self.active_time())
+        self.next_frame()
+        self.frame_events.append("detect")
+        return self.stable_team_result
 
     # ── 动作 ──
     def use_ult(self, ult_sequence=None):
@@ -347,6 +362,59 @@ class TestConditionalRotationCombat(unittest.TestCase):
         # 回退普通模式：cond_rotation_enabled 最终为 False，走 _do_normal_combat_frame
         self.assertFalse(logic.cond_rotation_enabled)
         self.assertIn("1", task.actions)
+
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_team_detection_always_uses_a_fresh_frame(self, _mu, _md):
+        task = _FakeTask({KEY_SKILL_ALLOWLIST: True})
+        logic = AutoCombatLogic(task)
+
+        logic.run(start_sleep=0.3)
+
+        detect_indexes = [index for index, event in enumerate(task.frame_events) if event == "detect"]
+        self.assertTrue(detect_indexes)
+        self.assertTrue(all(index > 0 and task.frame_events[index - 1] == "frame" for index in detect_indexes))
+
+    @patch("src.tasks.onetime.AutoCombatLogic.generate_skill_sequence", return_value=["4", "2"])
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_stable_team_is_assigned_with_generated_sequence(self, _mu, _md, generate_sequence):
+        task = _FakeTask({KEY_SKILL_ALLOWLIST: True})
+        task.stable_team_result = (["余烬", "别礼", "伊冯", "洁尔佩塔"], True)
+        logic = AutoCombatLogic(task)
+
+        logic.run(start_sleep=0.3)
+
+        generate_sequence.assert_called_with(task.stable_team_result[0])
+        self.assertEqual(task._battle_team, task.stable_team_result[0])
+        self.assertEqual(logic.normal_skill_sequence, ["4", "2"])
+
+    @patch("src.tasks.onetime.AutoCombatLogic.generate_skill_sequence", side_effect=ValueError("bad team"))
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_sequence_failure_leaves_team_eligible_for_retry(self, _mu, _md, _generate_sequence):
+        task = _FakeTask({KEY_SKILL_ALLOWLIST: True})
+        task.stable_team_result = (["余烬", "别礼", "伊冯", "洁尔佩塔"], True)
+        logic = AutoCombatLogic(task)
+
+        logic.run(start_sleep=0.3)
+
+        self.assertIsNone(task._battle_team)
+        self.assertGreater(task.team_detect_calls, 1)
+        self.assertTrue(any("bad team" in message for message in task.logs))
+
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_combat_team_detection_is_throttled_and_bounded(self, _mu, _md):
+        task = _FakeTask({KEY_SKILL_ALLOWLIST: True})
+        logic = AutoCombatLogic(task)
+
+        logic.run(start_sleep=0)
+
+        self.assertLessEqual(task.team_detect_calls, logic._TEAM_DETECT_MAX_ATTEMPTS)
+        self.assertTrue(
+            all(later - earlier >= logic._TEAM_DETECT_INTERVAL for earlier, later in pairwise(task.team_detect_times))
+        )
 
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")

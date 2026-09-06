@@ -1,10 +1,9 @@
 from __future__ import annotations
 
+import base64
 import time
 from datetime import datetime
 from pathlib import Path
-
-import base64
 
 KEY = 0x55
 
@@ -20,9 +19,10 @@ def get_software_name() -> str:
     """从全局配置中读取软件名（gui_title）。"""
     try:
         from ok import og  # type: ignore
-        return og.config.get('gui_title', 'ok-ef')
+
+        return og.config.get("gui_title", "ok-ef")
     except Exception:
-        return 'ok-ef'
+        return "ok-ef"
 
 
 def iter_daily_finally_candidates(base_name: str):
@@ -43,23 +43,23 @@ def iter_daily_finally_candidates(base_name: str):
 
 def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_days: int = 7) -> Path:
     """创建任务执行情况汇总文件（自动读取任务名和软件名构建目录）。
-    
+
     目录结构: {base_dir}/{app_name}/{task_name}/
-    
+
     Args:
         task: 任务实例（需要有 .name 属性）
         base_dir: 基础目录
         summary_info: 任务执行汇总信息，包含 all_fail_tasks、actual_repeat_total、
                       per_round、status、exception、current_task、failure_details 等
         keep_days: 保留的历史文件天数（默认7天）
-    
+
     Returns:
         创建的文件路径
     """
-    task_name = getattr(task, 'name', '未知任务')
+    task_name = getattr(task, "name", "未知任务")
     app_name = get_software_name()
     # 报告文案走项目 gettext（msgid 入 ok.po）；task 缺失时退化为原文
-    _tr = getattr(task, 'tr', None) or (lambda s: s)
+    _tr = getattr(task, "tr", None) or (lambda s: s)
 
     target_dir = base_dir / app_name / task_name
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -96,20 +96,24 @@ def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_da
     ]
 
     if exception_text:
-        lines.extend([
-            _tr("异常信息:"),
-            f"  {exception_text}",
-            "",
-        ])
+        lines.extend(
+            [
+                _tr("异常信息:"),
+                f"  {exception_text}",
+                "",
+            ]
+        )
 
     if current_task:
-        lines.extend([
-            _tr("当前正在执行的任务:"),
-            f"  {_tr(current_task)}",
-            "",
-        ])
+        lines.extend(
+            [
+                _tr("当前正在执行的任务:"),
+                f"  {_tr(current_task)}",
+                "",
+            ]
+        )
 
-    failure_lines = format_failure_details_by_account(per_round, failure_details, translate=getattr(task, 'tr', None))
+    failure_lines = format_failure_details_by_account(per_round, failure_details, translate=getattr(task, "tr", None))
     if failure_lines:
         lines.extend(failure_lines)
 
@@ -128,7 +132,9 @@ def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_da
             lines.append(_tr("--- 第 {round} 轮 (账号: {account}) ---").format(round=rid, account=acct_display))
             lines.append(
                 _tr("总任务数: {total} | 成功: {success} | 失败: {failed} | 跳过: {skipped}").format(
-                    total=len(all_tasks), success=len(success), failed=len(failed), skipped=len(skipped)))
+                    total=len(all_tasks), success=len(success), failed=len(failed), skipped=len(skipped)
+                )
+            )
             lines.append("")
             lines.append(_tr("成功任务:"))
             lines.append(f"  {', '.join(_tr(t) for t in success) if success else _tr('无')}")
@@ -143,8 +149,11 @@ def create_task_summary_report(task, base_dir: Path, summary_info: dict, keep_da
         if all_fail_tasks:
             lines.append("❌ " + _tr("失败任务统计:"))
             for repeat_idx, failed_tasks in all_fail_tasks:
-                lines.append(_tr("第 {round} 轮: {tasks}").format(
-                    round=repeat_idx, tasks=', '.join(_tr(t) for t in failed_tasks)))
+                lines.append(
+                    _tr("第 {round} 轮: {tasks}").format(
+                        round=repeat_idx, tasks=", ".join(_tr(t) for t in failed_tasks)
+                    )
+                )
             lines.append("")
         else:
             lines.append("✅ " + _tr("所有任务执行成功！"))
