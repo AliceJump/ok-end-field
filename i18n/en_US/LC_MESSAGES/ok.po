@@ -2399,3 +2399,50 @@ msgid "每隔多少轮输出一行按钮数据与环带诊断；设为 1 逐轮�
 msgstr ""
 "Print a line of button data and annulus diagnosis every N rounds; set to 1 "
 "to print every round."
+
+msgid "Export Config"
+msgstr "Export Config"
+
+msgid "Import Config"
+msgstr "Import Config"
+
+msgid "选择配置压缩包"
+msgstr "Select Config Zip File"
+
+msgid "配置导入"
+msgstr "Config Import"
+
+msgid "导入将覆盖当前配置文件，原配置会备份到 configs/backup 目录，重启应用后生效。是否继续？"
+msgstr ""
+"Importing will overwrite the current config files. The existing config is "
+"backed up to the configs/backup folder and changes take effect after "
+"restarting the app. Continue?"
+
+msgid "导入完成"
+msgstr "Import Completed"
+
+msgid "导入成功，配置将在重启应用后生效。是否立即重启？"
+msgstr ""
+"Import succeeded. The config will take effect after the app restarts. "
+"Restart now?"
+
+msgid "立即重启"
+msgstr "Restart Now"
+
+msgid "稍后"
+msgstr "Later"
+
+msgid "配置已导出"
+msgstr "Config Exported"
+
+msgid "导出失败"
+msgstr "Export Failed"
+
+msgid "导入失败"
+msgstr "Import Failed"
+
+msgid "压缩包中未找到配置文件"
+msgstr "No config files found in the zip archive"
+
+msgid "重启失败"
+msgstr "Restart Failed"
