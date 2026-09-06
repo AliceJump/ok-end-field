@@ -85,53 +85,53 @@ function Get-WaitMinutes {
     return $val
 }
 
-$comments = @(Get-CodeRabbitComments)
-if ($comments.Count -eq 0) {
-    Write-Host "评论区没有 CodeRabbit 回复。"
-    exit 1
-}
-
-# 按编辑时间从新到旧逐条找：最新评论可能是裸的 "Review rate limited."（不含
-# 时间），带倒计时的评论在其之前；CodeRabbit 编辑刷新倒计时后 updated_at 也
-# 随之变新，因此最新含等待时间的评论即当前真实等待时间。
-$found = $null
-$mins = $null
-foreach ($c in $comments) {
-    $mins = Get-WaitMinutes $c.body
-    if ($null -ne $mins) { $found = $c; break }
-}
-if (-not $found) {
-    Write-Host ("CodeRabbit 的 {0} 条评论均不含等待时间信息，无法推算可用时刻。" -f $comments.Count)
-    exit 1
-}
-
-if ($mins -le 0) {
-    Write-Host "最新含等待时间的回复: Reviews are available now（无需等待）。"
-} else {
-    # 向上取整 + 1 分钟缓冲
-    $ceilMins = [int][Math]::Ceiling($mins)
-    $bufferMins = $ceilMins + 1
-    # 评论编辑时间 + (ceil(X)+1) 分钟 = 可用时刻
-    # updated_at 带 UTC 标记，必须显式转 UTC，避免非 UTC 主机上与 UtcNow 比较出错
-    $commentTime = [datetimeoffset]::Parse($found.updated_at).UtcDateTime
-    $availableAt = $commentTime.AddMinutes($bufferMins)
-    $now = [datetime]::UtcNow
-
-    Write-Host ("最新含等待时间的评论（编辑于 {0:HH:mm:ssZ} UTC）显示需 {1:N1} 分钟，向上取整 {2} 分钟 +1 = {3} 分钟后可用" -f $commentTime, $mins, $ceilMins, $bufferMins)
-    Write-Host ("可用时刻 ≈ {0:HH:mm:ssZ} UTC，当前 {1:HH:mm:ssZ} UTC" -f $availableAt, $now)
-
-    if ($now -ge $availableAt) {
-        Write-Host "当前已到可用时刻，立即触发。"
-    } else {
-        # 向上取整，避免截断导致提前触发
-        $waitSec = [int][Math]::Ceiling(($availableAt - $now).TotalSeconds) + $ExtraBufferSeconds
-        Write-Host ("还需等待 {0}s ..." -f $waitSec)
-        Start-Sleep -Seconds $waitSec
-        Write-Host "等待结束。"
-    }
-}
-
 try {
+    $comments = @(Get-CodeRabbitComments)
+    if ($comments.Count -eq 0) {
+        Write-Host "评论区没有 CodeRabbit 回复。"
+        exit 1
+    }
+
+    # 按编辑时间从新到旧逐条找：最新评论可能是裸的 "Review rate limited."（不含
+    # 时间），带倒计时的评论在其之前；CodeRabbit 编辑刷新倒计时后 updated_at 也
+    # 随之变新，因此最新含等待时间的评论即当前真实等待时间。
+    $found = $null
+    $mins = $null
+    foreach ($c in $comments) {
+        $mins = Get-WaitMinutes $c.body
+        if ($null -ne $mins) { $found = $c; break }
+    }
+    if (-not $found) {
+        Write-Host ("CodeRabbit 的 {0} 条评论均不含等待时间信息，无法推算可用时刻。" -f $comments.Count)
+        exit 1
+    }
+
+    if ($mins -le 0) {
+        Write-Host "最新含等待时间的回复: Reviews are available now（无需等待）。"
+    } else {
+        # 向上取整 + 1 分钟缓冲
+        $ceilMins = [int][Math]::Ceiling($mins)
+        $bufferMins = $ceilMins + 1
+        # 评论编辑时间 + (ceil(X)+1) 分钟 = 可用时刻
+        # updated_at 带 UTC 标记，必须显式转 UTC，避免非 UTC 主机上与 UtcNow 比较出错
+        $commentTime = [datetimeoffset]::Parse($found.updated_at).UtcDateTime
+        $availableAt = $commentTime.AddMinutes($bufferMins)
+        $now = [datetime]::UtcNow
+
+        Write-Host ("最新含等待时间的评论（编辑于 {0:HH:mm:ssZ} UTC）显示需 {1:N1} 分钟，向上取整 {2} 分钟 +1 = {3} 分钟后可用" -f $commentTime, $mins, $ceilMins, $bufferMins)
+        Write-Host ("可用时刻 ≈ {0:HH:mm:ssZ} UTC，当前 {1:HH:mm:ssZ} UTC" -f $availableAt, $now)
+
+        if ($now -ge $availableAt) {
+            Write-Host "当前已到可用时刻，立即触发。"
+        } else {
+            # 向上取整，避免截断导致提前触发
+            $waitSec = [int][Math]::Ceiling(($availableAt - $now).TotalSeconds) + $ExtraBufferSeconds
+            Write-Host ("还需等待 {0}s ..." -f $waitSec)
+            Start-Sleep -Seconds $waitSec
+            Write-Host "等待结束。"
+        }
+    }
+
     if ($NoTrigger) {
         Write-Host "（-NoTrigger，未发 review，可手动触发 @coderabbitai review）"
     } else {
@@ -139,8 +139,8 @@ try {
         Invoke-GhChecked @("pr", "comment", "$PrNumber", "--repo", $Repo, "--body", "@coderabbitai review") | Out-Null
     }
 } catch {
-    # gh 触发失败按约定返回异常退出码 2
-    Write-Error ("触发 review 失败: {0}" -f $_.Exception.Message)
+    # API、认证、网络或评论解析异常均按约定返回异常退出码 2
+    Write-Error ("获取或解析 CodeRabbit 评论、或触发 review 失败: {0}" -f $_.Exception.Message)
     exit 2
 }
 exit 0
