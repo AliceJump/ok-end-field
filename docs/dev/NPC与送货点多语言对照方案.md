@@ -107,7 +107,7 @@
 **备注**：
 - 官方地图 API 四语数据同构（templateId/地图 ID 完全一致），仅名称语言不同（skport 域 + `sk-language` 短代码：en/ja/ko；skland 域=简中），已实测脚本化批量拉取（`/map/tree`、`/map/catalog`），产出 JSON 快照保存于 `C:\Users\26309\AppData\Local\Temp\opencode\skport\official_tree_{zh,en,ja,ko}.json`、`official_catalog_{zh,en,ja,ko}.json`、`official_five_lang.json`（含 es）。mark/list 含滑索/仓储节点/资源回收站/物资调度终端/协议传送点等 POI 坐标（templateId 已确认一致），可用于 OCR 匹配词校验。
 - 日文地名多用汉字（武陵城/清波砦/景玉谷/首礎/蔵剣谷/応龍関），且官方日文与中文同名的情况不少（武陵、景玉谷、幽谷、南山 等）；韩文为纯谚文转写（무릉/무릉성/실험 구역）。
-- es 地名由 Atlos 仓库（游戏本地化提取）提供，覆盖 145/168 site（应龙关 lv007 与北部禁区 lv008 的 site 级缺失，Atlos 全语言 region 数据均未收录这两区域——如需可后续用游戏客户端文本表补）；es NPC 名保留拼音转写（Chi-Lun），西语官方 NPC 译名仍待核实。
+- es 地名由 Atlos 仓库（游戏本地化提取）提供，覆盖 144/168 site（应龙关 lv007、北部禁区 lv008 与雪松林的 site 级缺失，Atlos 全语言 region 数据均未收录这三区域——如需可后续用游戏客户端文本表补）；es NPC 名保留拼音转写（Chi-Lun），西语官方 NPC 译名仍待核实。
 - 官方地图 API 仅发布 英/简中/日/韩 四语（`sk-language` 短代码验证），**不含 es**；`sk-language` 用长代码（ja-jp）返回空串而非报错，排查语言问题时应优先用短代码。
 
 ## 3. 各语言"对上"的规则
