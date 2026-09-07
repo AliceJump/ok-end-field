@@ -27,6 +27,8 @@ import tempfile
 import unittest
 import zipfile
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -34,6 +36,9 @@ import src.patches.config_transfer_patch as config_transfer_patch
 from src.patches.config_transfer_patch import (
     _collect_zip_paths,
     _drag_enter_event,
+    _pause_executor,
+    _restart_application,
+    _resume_executor,
     apply_config_import,
     export_config_zip,
     install_config_transfer_patch,
@@ -122,9 +127,7 @@ class TestConfigTransferPatch(unittest.TestCase):
             _write_file(configs_dir / "_ok.json", "old_global")
             _write_file(configs_dir / "OldTask.json", "old_task")
             _write_file(configs_dir / "backup" / "keep.json", "keep")
-            _write_file(
-                configs_dir / "global_config_migration_backup" / "keep.json", "keep"
-            )
+            _write_file(configs_dir / "global_config_migration_backup" / "keep.json", "keep")
 
             zip_path = tmp_path / "in.zip"
             _make_zip(
@@ -141,26 +144,18 @@ class TestConfigTransferPatch(unittest.TestCase):
             self.assertTrue(backup_dir.is_relative_to(configs_dir / "backup"))
             self.assertTrue(backup_dir.name.startswith("import_backup_"))
             # 旧配置完整备份（排除目录本身不重复备份）
-            self.assertEqual(
-                (backup_dir / "_ok.json").read_text(encoding="utf-8"), "old_global"
-            )
-            self.assertEqual(
-                (backup_dir / "OldTask.json").read_text(encoding="utf-8"), "old_task"
-            )
+            self.assertEqual((backup_dir / "_ok.json").read_text(encoding="utf-8"), "old_global")
+            self.assertEqual((backup_dir / "OldTask.json").read_text(encoding="utf-8"), "old_task")
             self.assertEqual(sorted(p.name for p in backup_dir.iterdir()), ["OldTask.json", "_ok.json"])
 
             # 新配置就位，zip 中不存在的旧文件被清除
-            self.assertEqual(
-                (configs_dir / "_ok.json").read_text(encoding="utf-8"), "new_global"
-            )
+            self.assertEqual((configs_dir / "_ok.json").read_text(encoding="utf-8"), "new_global")
             self.assertTrue((configs_dir / "BattleTask.json").is_file())
             self.assertTrue((configs_dir / "nested" / "deep" / "c.json").is_file())
             self.assertFalse((configs_dir / "OldTask.json").exists())
 
             # 排除目录在清空时保留
-            self.assertEqual(
-                (configs_dir / "backup" / "keep.json").read_text(encoding="utf-8"), "keep"
-            )
+            self.assertEqual((configs_dir / "backup" / "keep.json").read_text(encoding="utf-8"), "keep")
             self.assertTrue((configs_dir / "global_config_migration_backup" / "keep.json").is_file())
 
     def test_apply_config_import_accepts_flat_and_wrapped_zips(self):
@@ -183,6 +178,7 @@ class TestConfigTransferPatch(unittest.TestCase):
         for zip_entries in [
             {"configs/../evil.json": "evil"},
             {"../evil.json": "evil"},
+            {"configs/..\\evil.json": "evil"},
         ]:
             with tempfile.TemporaryDirectory() as tmp:
                 tmp_path = Path(tmp)
@@ -195,10 +191,205 @@ class TestConfigTransferPatch(unittest.TestCase):
                     apply_config_import(zip_path, configs_dir)
                 self.assertFalse((tmp_path / "evil.json").exists())
 
+    def test_apply_config_import_keeps_live_config_when_archive_read_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            configs_dir = tmp_path / "configs"
+            _write_file(configs_dir / "old.json", "old")
+            zip_path = tmp_path / "bad-crc.zip"
+            with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_STORED) as zf:
+                zf.writestr("configs/new.json", "new-content")
+            archive = zip_path.read_bytes().replace(b"new-content", b"bad-content", 1)
+            zip_path.write_bytes(archive)
+
+            with self.assertRaises(zipfile.BadZipFile):
+                apply_config_import(zip_path, configs_dir)
+
+            self.assertEqual((configs_dir / "old.json").read_text(encoding="utf-8"), "old")
+            self.assertFalse((configs_dir / "new.json").exists())
+
+    def test_apply_config_import_skips_excluded_archive_members(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            configs_dir = tmp_path / "configs"
+            _write_file(configs_dir / "backup" / "keep.json", "keep")
+            zip_path = tmp_path / "in.zip"
+            _make_zip(
+                zip_path,
+                {
+                    "configs/new.json": "new",
+                    "configs/backup/imported.json": "ignored",
+                },
+            )
+
+            apply_config_import(zip_path, configs_dir)
+
+            self.assertEqual((configs_dir / "new.json").read_text(encoding="utf-8"), "new")
+            self.assertEqual(
+                (configs_dir / "backup" / "keep.json").read_text(encoding="utf-8"),
+                "keep",
+            )
+            self.assertFalse((configs_dir / "backup" / "imported.json").exists())
+
+    def test_apply_config_import_rejects_excluded_only_archive(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            configs_dir = tmp_path / "configs"
+            _write_file(configs_dir / "old.json", "old")
+            zip_path = tmp_path / "in.zip"
+            _make_zip(zip_path, {"configs/backup/imported.json": "ignored"})
+
+            with self.assertRaisesRegex(ValueError, "no config files"):
+                apply_config_import(zip_path, configs_dir)
+
+            self.assertEqual((configs_dir / "old.json").read_text(encoding="utf-8"), "old")
+
+    def test_apply_config_import_enforces_member_and_total_size_limits(self):
+        cases = [
+            ({"configs/large.json": "12345"}, 4, 100),
+            ({"configs/a.json": "123", "configs/b.json": "456"}, 4, 5),
+        ]
+        for entries, member_limit, total_limit in cases:
+            with self.subTest(entries=entries), tempfile.TemporaryDirectory() as tmp:
+                tmp_path = Path(tmp)
+                configs_dir = tmp_path / "configs"
+                _write_file(configs_dir / "old.json", "old")
+                zip_path = tmp_path / "in.zip"
+                _make_zip(zip_path, entries)
+
+                with (
+                    patch.object(config_transfer_patch, "_MAX_IMPORT_MEMBER_BYTES", member_limit),
+                    patch.object(config_transfer_patch, "_MAX_IMPORT_TOTAL_BYTES", total_limit),
+                    self.assertRaisesRegex(ValueError, "too large"),
+                ):
+                    apply_config_import(zip_path, configs_dir)
+
+                self.assertEqual((configs_dir / "old.json").read_text(encoding="utf-8"), "old")
+
+    def test_apply_config_import_uses_unique_backup_directory(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            configs_dir = tmp_path / "configs"
+            _write_file(configs_dir / "old.json", "old")
+            zip_path = tmp_path / "in.zip"
+            _make_zip(zip_path, {"configs/new.json": "new"})
+            fixed_datetime = Mock()
+            fixed_datetime.now.return_value.strftime.return_value = "20260907_010203_000000"
+
+            with patch.object(config_transfer_patch, "datetime", fixed_datetime):
+                first = apply_config_import(zip_path, configs_dir)
+                second = apply_config_import(zip_path, configs_dir)
+
+            self.assertNotEqual(first, second)
+            self.assertEqual(second.name, f"{first.name}_1")
+
+    def test_apply_config_import_restores_backup_when_replacement_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            configs_dir = tmp_path / "configs"
+            _write_file(configs_dir / "old.json", "old")
+            zip_path = tmp_path / "in.zip"
+            _make_zip(zip_path, {"configs/a.json": "a", "configs/b.json": "b"})
+            real_move = config_transfer_patch.shutil.move
+            move_count = 0
+
+            def fail_second_move(source, destination):
+                nonlocal move_count
+                move_count += 1
+                if move_count == 2:
+                    raise OSError("replacement failed")
+                return real_move(source, destination)
+
+            with (
+                patch.object(config_transfer_patch.shutil, "move", fail_second_move),
+                self.assertRaisesRegex(OSError, "replacement failed"),
+            ):
+                apply_config_import(zip_path, configs_dir)
+
+            self.assertEqual((configs_dir / "old.json").read_text(encoding="utf-8"), "old")
+            self.assertFalse((configs_dir / "a.json").exists())
+            self.assertFalse((configs_dir / "b.json").exists())
+
+    def test_executor_resume_only_reverses_pause_from_import(self):
+        from ok import og
+
+        executor = SimpleNamespace(paused=False, pause=Mock(), start=Mock())
+        executor.pause.side_effect = lambda: setattr(executor, "paused", True)
+        with patch.object(og, "executor", executor):
+            paused_by_import = _pause_executor()
+            _resume_executor(paused_by_import)
+
+        self.assertTrue(paused_by_import)
+        executor.pause.assert_called_once_with()
+        executor.start.assert_called_once_with()
+
+        executor = SimpleNamespace(paused=True, pause=Mock(), start=Mock())
+        with patch.object(og, "executor", executor):
+            paused_by_import = _pause_executor()
+            _resume_executor(paused_by_import)
+
+        self.assertFalse(paused_by_import)
+        executor.pause.assert_not_called()
+        executor.start.assert_not_called()
+
+    def test_restart_application_does_not_quit_when_shell_launch_fails(self):
+        import ctypes
+
+        from ok import Logger, og
+        from ok.gui.util import Alert
+
+        app = SimpleNamespace(tr=lambda value: value, quit=Mock())
+        shell32 = SimpleNamespace(ShellExecuteW=Mock(return_value=31))
+        with (
+            patch.object(og, "app", app),
+            patch.object(Logger, "get_logger", return_value=Mock()),
+            patch.object(Alert, "alert_error") as alert_error,
+            patch.object(ctypes, "windll", SimpleNamespace(shell32=shell32), create=True),
+        ):
+            self.assertFalse(_restart_application())
+
+        app.quit.assert_not_called()
+        alert_error.assert_called_once()
+
+    def test_confirm_import_resumes_executor_on_failure_and_later(self):
+        from ok import Logger, og
+        from ok.gui.util import Alert
+
+        app = SimpleNamespace(tr=lambda value: value)
+
+        def run_import(responses, import_error=None):
+            response_iter = iter(responses)
+
+            def make_message_box(*_args):
+                return SimpleNamespace(
+                    exec=lambda: next(response_iter),
+                    yesButton=SimpleNamespace(setText=Mock()),
+                    cancelButton=SimpleNamespace(setText=Mock()),
+                )
+
+            resume_executor = Mock()
+            with (
+                patch.object(og, "app", app),
+                patch.object(Logger, "get_logger", return_value=Mock()),
+                patch.object(Alert, "alert_error"),
+                patch.object(Alert, "alert_info"),
+                patch.object(config_transfer_patch.QApplication, "activeWindow", return_value=None),
+                patch.object(config_transfer_patch, "MessageBox", side_effect=make_message_box),
+                patch.object(config_transfer_patch, "resolve_import_prefix", return_value="configs/"),
+                patch.object(config_transfer_patch, "_pause_executor", return_value=True),
+                patch.object(config_transfer_patch, "_resume_executor", resume_executor),
+                patch.object(config_transfer_patch, "get_configs_dir", return_value=Path("configs")),
+                patch.object(config_transfer_patch, "apply_config_import", side_effect=import_error),
+            ):
+                config_transfer_patch._confirm_and_import(Path("config.zip"))
+            resume_executor.assert_called_once_with(True)
+
+        run_import([True], OSError("import failed"))
+        run_import([True, False])
+
     def test_collect_zip_paths_only_accepts_local_zip_files(self):
         with tempfile.TemporaryDirectory() as tmp:
-            from PySide6.QtCore import QUrl
-            from PySide6.QtCore import QMimeData
+            from PySide6.QtCore import QMimeData, QUrl
 
             zip_path = Path(tmp) / "config.zip"
             _make_zip(zip_path, {"configs/_ok.json": "{}"})

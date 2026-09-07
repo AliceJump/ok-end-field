@@ -41,7 +41,7 @@ Import flow:
 ## 4. Taking effect and rolling back
 
 - Import only changes the config files on disk. The running application keeps using the in-memory configuration until you click **Restart Now** or restart the app manually.
-- To roll back, close the application first, copy the files from `configs/backup/import_backup_<timestamp>/` back into `configs`, or import the zip you exported before.
+- To roll back manually, close the application first. Remove everything in `configs` except the `backup` and `global_config_migration_backup` folders, then copy the files from `configs/backup/import_backup_<timestamp>/` back into `configs`. Alternatively, import the zip you exported before.
 - Export and import between identical or close application versions. Large version gaps may reset individual config items to their defaults.
 
 ## 5. FAQ

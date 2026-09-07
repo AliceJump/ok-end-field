@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import shutil
 import subprocess
+import tempfile
 import zipfile
 from datetime import datetime
 from pathlib import Path, PurePosixPath
@@ -36,6 +37,11 @@ _EXCLUDED_DIR_NAMES = {"backup", "global_config_migration_backup"}
 # 导出 zip 内的根目录名；导入时优先识别该前缀
 _ZIP_ROOT_DIR = "configs"
 
+# 防止压缩炸弹或异常大文件耗尽磁盘空间
+_MAX_IMPORT_MEMBER_BYTES = 16 * 1024 * 1024
+_MAX_IMPORT_TOTAL_BYTES = 256 * 1024 * 1024
+_COPY_CHUNK_BYTES = 1024 * 1024
+
 
 def get_configs_dir() -> Path:
     """返回当前应用的配置目录（与 ok.util.config.Config 的解析方式一致）。"""
@@ -43,7 +49,7 @@ def get_configs_dir() -> Path:
 
 
 def _is_excluded(rel_parts) -> bool:
-    return any(part in _EXCLUDED_DIR_NAMES for part in rel_parts)
+    return any(part.casefold() in _EXCLUDED_DIR_NAMES for part in rel_parts)
 
 
 def export_config_zip(configs_dir: Path, zip_path: Path) -> int:
@@ -107,10 +113,19 @@ def apply_config_import(zip_path: Path, configs_dir: Path) -> Path:
 
     configs_dir = Path(configs_dir).resolve()
     configs_dir.mkdir(parents=True, exist_ok=True)
-    root = configs_dir.resolve()
 
-    backup_dir = configs_dir / "backup" / f"import_backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    backup_dir.mkdir(parents=True, exist_ok=True)
+    backup_root = configs_dir / "backup"
+    backup_root.mkdir(parents=True, exist_ok=True)
+    backup_name = f"import_backup_{datetime.now().strftime('%Y%m%d_%H%M%S_%f')}"
+    suffix = 0
+    while True:
+        candidate_name = backup_name if suffix == 0 else f"{backup_name}_{suffix}"
+        backup_dir = backup_root / candidate_name
+        try:
+            backup_dir.mkdir()
+            break
+        except FileExistsError:
+            suffix += 1
 
     for path in sorted(configs_dir.rglob("*")):
         if not path.is_file():
@@ -122,37 +137,87 @@ def apply_config_import(zip_path: Path, configs_dir: Path) -> Path:
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(path, dest)
 
+    with tempfile.TemporaryDirectory(prefix=".config_import_", dir=configs_dir.parent) as tmp:
+        staging_dir = Path(tmp) / "configs"
+        staging_dir.mkdir()
+        staging_root = staging_dir.resolve()
+        extracted = 0
+        total_bytes = 0
+        has_config_file = False
+
+        with zipfile.ZipFile(zip_path) as zf:
+            for member in zf.infolist():
+                name = member.filename
+                if member.is_dir() or not name.startswith(prefix):
+                    continue
+                rel = name[len(prefix) :]
+                if not rel:
+                    continue
+                rel_path = PurePosixPath(rel)
+                rel_parts = rel_path.parts
+                if "\\" in rel or ".." in rel_parts or rel_path.is_absolute():
+                    raise ValueError(f"illegal path in zip: {name}")
+                if _is_excluded(rel_parts):
+                    continue
+                if member.file_size > _MAX_IMPORT_MEMBER_BYTES:
+                    raise ValueError(f"config file is too large: {name}")
+                if total_bytes + member.file_size > _MAX_IMPORT_TOTAL_BYTES:
+                    raise ValueError("config package is too large")
+
+                target = (staging_dir / Path(*rel_parts)).resolve()
+                if not target.is_relative_to(staging_root):
+                    raise ValueError(f"illegal path in zip: {name}")
+                target.parent.mkdir(parents=True, exist_ok=True)
+                member_bytes = 0
+                with zf.open(member) as src, open(target, "wb") as dst:
+                    while chunk := src.read(_COPY_CHUNK_BYTES):
+                        member_bytes += len(chunk)
+                        total_bytes += len(chunk)
+                        if member_bytes > _MAX_IMPORT_MEMBER_BYTES:
+                            raise ValueError(f"config file is too large: {name}")
+                        if total_bytes > _MAX_IMPORT_TOTAL_BYTES:
+                            raise ValueError("config package is too large")
+                        dst.write(chunk)
+                extracted += 1
+                has_config_file = has_config_file or rel.lower().endswith(".json")
+
+        if extracted == 0 or not has_config_file:
+            raise ValueError("no config files in zip")
+
+        try:
+            _clear_active_config(configs_dir)
+            for entry in staging_dir.iterdir():
+                shutil.move(str(entry), configs_dir / entry.name)
+        except Exception as replace_exc:
+            try:
+                _clear_active_config(configs_dir)
+                _restore_config_backup(backup_dir, configs_dir)
+            except Exception as restore_exc:
+                raise RuntimeError(
+                    f"config replacement failed and backup restore failed: {restore_exc}"
+                ) from replace_exc
+            raise
+    return backup_dir
+
+
+def _clear_active_config(configs_dir: Path):
     for entry in configs_dir.iterdir():
-        if entry.name in _EXCLUDED_DIR_NAMES:
+        if entry.name.casefold() in _EXCLUDED_DIR_NAMES:
             continue
         if entry.is_dir():
             shutil.rmtree(entry)
         else:
             entry.unlink()
 
-    extracted = 0
-    with zipfile.ZipFile(zip_path) as zf:
-        for member in zf.infolist():
-            name = member.filename
-            if name.endswith("/") or not name.startswith(prefix):
-                continue
-            rel = name[len(prefix):]
-            if not rel:
-                continue
-            rel_parts = PurePosixPath(rel).parts
-            if ".." in rel_parts or PurePosixPath(rel).is_absolute():
-                raise ValueError(f"illegal path in zip: {name}")
-            target = (configs_dir / Path(*rel_parts)).resolve()
-            if not target.is_relative_to(root):
-                raise ValueError(f"illegal path in zip: {name}")
-            target.parent.mkdir(parents=True, exist_ok=True)
-            with zf.open(member) as src, open(target, "wb") as dst:
-                shutil.copyfileobj(src, dst)
-            extracted += 1
 
-    if extracted == 0:
-        raise ValueError("no config files in zip")
-    return backup_dir
+def _restore_config_backup(backup_dir: Path, configs_dir: Path):
+    for path in sorted(backup_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        rel = path.relative_to(backup_dir)
+        dest = configs_dir / rel
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, dest)
 
 
 def _export_config_clicked():
@@ -199,6 +264,21 @@ def _pause_executor():
         executor = getattr(og, "executor", None)
         if executor is not None and not executor.paused:
             executor.pause()
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _resume_executor(paused_by_import: bool):
+    if not paused_by_import:
+        return
+    from ok import og
+
+    try:
+        executor = getattr(og, "executor", None)
+        if executor is not None:
+            executor.start()
     except Exception:
         pass
 
@@ -213,16 +293,19 @@ def _restart_application():
 
     try:
         params = subprocess.list2cmdline(sys.argv)
-        ctypes.windll.shell32.ShellExecuteW(None, "open", sys.executable, params, None, 0)
+        result = ctypes.windll.shell32.ShellExecuteW(None, "open", sys.executable, params, None, 0)
+        if result <= 32:
+            raise OSError(f"ShellExecuteW failed with code {result}")
         logger.info(f"config import restart application: {sys.executable} {params}")
     except Exception as exc:
         logger.error("restart application after config import failed", exc)
         alert_error(f"{og.app.tr('重启失败')}: {exc}", tray=True)
-        return
+        return False
 
     app = getattr(og, "app", None)
     if app is not None:
         app.quit()
+    return True
 
 
 def _confirm_and_import(zip_path: Path):
@@ -243,12 +326,13 @@ def _confirm_and_import(zip_path: Path):
     if not confirm_box.exec():
         return
 
-    _pause_executor()
+    paused_by_import = _pause_executor()
     try:
         apply_config_import(zip_path, get_configs_dir())
     except Exception as exc:
         logger.error("import config failed", exc)
         alert_error(f"{og.app.tr('导入失败')}: {exc}", tray=True)
+        _resume_executor(paused_by_import)
         return
 
     alert_info(og.app.tr("导入完成"), tray=True)
@@ -260,7 +344,10 @@ def _confirm_and_import(zip_path: Path):
     restart_box.yesButton.setText(og.app.tr("立即重启"))
     restart_box.cancelButton.setText(og.app.tr("稍后"))
     if restart_box.exec():
-        _restart_application()
+        if not _restart_application():
+            _resume_executor(paused_by_import)
+    else:
+        _resume_executor(paused_by_import)
 
 
 def _import_config_clicked():
