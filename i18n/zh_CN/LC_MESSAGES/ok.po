@@ -448,6 +448,9 @@ msgstr "动作列表"
 msgid "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。"
 msgstr "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。"
 
+msgid "雪松林"
+msgstr "雪松林"
+
 msgid "北部禁区"
 msgstr "北部禁区"
 
@@ -1268,6 +1271,9 @@ msgstr ""
 
 msgid "编辑"
 msgstr "编辑"
+
+msgid "阿莱克琉斯"
+msgstr "阿莱克琉斯"
 
 msgid "罗丹"
 msgstr "罗丹"

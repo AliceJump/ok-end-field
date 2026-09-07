@@ -501,6 +501,9 @@ msgstr ""
 "Si está marcado Salir al terminar, una excepción también cerrará el juego y "
 "la aplicación."
 
+msgid "雪松林"
+msgstr "Bosque nevado"
+
 msgid "北部禁区"
 msgstr "Zona de exclusión norte de Wuling"
 
@@ -1383,6 +1386,9 @@ msgstr ""
 
 msgid "编辑"
 msgstr "Editar"
+
+msgid "阿莱克琉斯"
+msgstr "Alleikhreos"
 
 msgid "罗丹"
 msgstr "Rhodagn"

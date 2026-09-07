@@ -64,6 +64,7 @@ OFFICIAL_SAME_AS_ENGLISH = {
     "秋栗",  # Akekuri
     "管理员",  # Endministrator
     "罗丹",  # Rhodagn
+    "阿莱克琉斯",  # Alleikhreos
     "艾尔黛拉",  # Ardelia
     "艾维文娜",  # Avywenna
     "莱万汀",  # Laevatain

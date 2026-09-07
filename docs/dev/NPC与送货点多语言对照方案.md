@@ -59,7 +59,7 @@
 
 ### 2.1 已核实对照表（中 → 英/日/韩/西）
 
-> 「待核实」= 该语言尚无官方来源证实（日/韩地名与 POI 类型已全部官方核实；es 地名除应龙关/北部禁区 site 级外已核实；NPC 名日/韩/西仍待核实），落地时节点留空回退 zh_CN（见 §3）。
+> 「待核实」= 该语言尚无官方来源证实（日/韩地名与 POI 类型已全部官方核实；es 地名除应龙关/北部禁区/雪松林 site 级外已核实；NPC 名日/韩/西仍待核实），落地时节点留空回退 zh_CN（见 §3）。
 
 | 中文 | en_US（官方） | ja_JP（官方 API） | ko_KR（官方 API） | es_ES（Atlos） | 来源 |
 |---|---|---|---|---|---|
@@ -70,6 +70,7 @@
 | 清波寨 | Qingbo Stockade | 清波砦 | 청파채 | Empalizada Qingbo | 官方地图 API、Atlos region |
 | 应龙关 | Yinglung Pass | 応龍関 | 응룡 관문 | （Atlos 缺） | 官方地图 API |
 | 北部禁区 | North Wuling Exclusion Zone | 北部封鎖区域 | 북쪽 금지 구역 | （Atlos 缺） | 官方地图 API |
+| 雪松林 | Snowy Forest | 雪松林 | 눈 덮인 소나무 숲 | （Atlos 缺） | 官方地图 API |
 | 四号谷地 | Valley IV | 四号谷地 | 4번 협곡 | Valle IV | 官方地图 API、Atlos region |
 | 枢纽区 | The Hub | 中枢エリア | 거점 지역 | La Base | 官方地图 API、Atlos region |
 | 谷地通道 | Valley Pass | 谷地通路 | 협곡길 | Senda del valle | 官方地图 API、Atlos region |

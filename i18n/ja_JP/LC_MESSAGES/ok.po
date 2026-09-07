@@ -483,6 +483,9 @@ msgstr "アクションリスト"
 msgid "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。"
 msgstr "自動終了が有効な場合、例外発生時もゲームとアプリを終了。"
 
+msgid "雪松林"
+msgstr "雪松林"
+
 msgid "北部禁区"
 msgstr "武陵北部封鎖区域"
 
@@ -1303,6 +1306,9 @@ msgstr ""
 
 msgid "编辑"
 msgstr "編集"
+
+msgid "阿莱克琉斯"
+msgstr "アレイクレウス"
 
 msgid "罗丹"
 msgstr "ロダン"
