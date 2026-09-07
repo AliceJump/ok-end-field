@@ -412,10 +412,14 @@ class GdiArrowPainter:
         ux, uy = dx / length, dy / length
         theta = math.atan2(uy, ux)
         head_angle = math.radians(self._head_angle_deg)
-        wing1 = (ex + math.cos(theta + math.pi - head_angle) * head_len,
-                 ey + math.sin(theta + math.pi - head_angle) * head_len)
-        wing2 = (ex + math.cos(theta + math.pi + head_angle) * head_len,
-                 ey + math.sin(theta + math.pi + head_angle) * head_len)
+        wing1 = (
+            ex + math.cos(theta + math.pi - head_angle) * head_len,
+            ey + math.sin(theta + math.pi - head_angle) * head_len,
+        )
+        wing2 = (
+            ex + math.cos(theta + math.pi + head_angle) * head_len,
+            ey + math.sin(theta + math.pi + head_angle) * head_len,
+        )
         base_center_x, base_center_y = ex - ux * head_len, ey - uy * head_len
 
         pen = gdi32.CreatePen(0, shaft_width, _rgb(*color))  # PS_SOLID
@@ -428,9 +432,9 @@ class GdiArrowPainter:
             # 箭身画到三角基部，三角覆盖尖端
             gdi32.MoveToEx(hdc_ref, int(sx), int(sy), None)
             gdi32.LineTo(hdc_ref, int(base_center_x), int(base_center_y))
-            points = (POINT * 3)(POINT(int(ex), int(ey)),
-                                 POINT(int(wing1[0]), int(wing1[1])),
-                                 POINT(int(wing2[0]), int(wing2[1])))
+            points = (POINT * 3)(
+                POINT(int(ex), int(ey)), POINT(int(wing1[0]), int(wing1[1])), POINT(int(wing2[0]), int(wing2[1]))
+            )
             gdi32.Polygon(hdc_ref, points, 3)
             # 起点圆点，视觉上与 Qt 版一致
             dot_r = max(1.0, shaft_width * 0.35)
@@ -498,8 +502,9 @@ class WindowArrowDrawingMixin:
             if gdi_controller is None:
                 if not self._window_arrow_gdi_warned:
                     self._window_arrow_gdi_warned = True
-                    logger.error("无法创建箭头叠层：headless 下未开启调试浮层"
-                                 "（工具箱“调试浮层”开关或 OK_TOOLKIT_USE_OVERLAY=1）")
+                    logger.error(
+                        "无法创建箭头叠层：headless 下未开启调试浮层（工具箱“调试浮层”开关或 OK_TOOLKIT_USE_OVERLAY=1）"
+                    )
                 return None
             return gdi_controller
 
