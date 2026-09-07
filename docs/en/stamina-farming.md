@@ -103,7 +103,7 @@ Switching flow notes:
 
 「Crisis Recurrence」 is a boss-type stage that costs **120 stamina** per run.
 
-Supported stages: Rodan, Trinity, Chalk Realm Guard, Ruan Yi, Nephes.
+Supported stages: Rodan, Trinity, Chalk Realm Guard, Ruan Yi, Nephes, Alleikhreos.
 
 ---
 
