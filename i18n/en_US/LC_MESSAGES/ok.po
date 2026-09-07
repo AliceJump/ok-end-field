@@ -455,6 +455,9 @@ msgstr "Action List"
 msgid "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。"
 msgstr "If Auto-Exit is selected, exceptions will also exit game and app."
 
+msgid "雪松林"
+msgstr "Snowy Forest"
+
 msgid "北部禁区"
 msgstr "North Wuling Exclusion Zone"
 

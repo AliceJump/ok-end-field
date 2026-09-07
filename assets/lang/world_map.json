@@ -3979,4 +3979,49 @@
       "pattern": "Trạm Gieo Mây Xiranflow"
     }
   }
+,
+  "k_xuesonglin": {
+    "zh_CN": {
+      "pattern": "雪松林"
+    },
+    "zh_TW": {
+      "pattern": "雪松林"
+    },
+    "en_US": {
+      "pattern": "Snowy Forest"
+    },
+    "ja_JP": {
+      "pattern": "雪松林"
+    },
+    "ko_KR": {
+      "pattern": "눈 덮인 소나무 숲"
+    },
+    "pt_BR": {
+      "pattern": "Floresta Nevada"
+    },
+    "de_DE": {
+      "pattern": "Verschneiter Wald"
+    },
+    "fr_FR": {
+      "pattern": "Forêt enneigée"
+    },
+    "id_ID": {
+      "pattern": "Hutan Salju"
+    },
+    "it_IT": {
+      "pattern": "Foresta innevata"
+    },
+    "es_ES": {
+      "pattern": "Bosque nevado"
+    },
+    "ru_RU": {
+      "pattern": "Снежный лес"
+    },
+    "th_TH": {
+      "pattern": "ป่า​ขาวโพลน"
+    },
+    "vi_VN": {
+      "pattern": "Rừng Tuyết"
+    }
+  }
 }

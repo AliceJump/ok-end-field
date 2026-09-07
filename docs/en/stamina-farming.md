@@ -173,7 +173,7 @@ Supports automatic stage rotation via 「Stamina farming start date」 and 「St
     武器经验, 武器进阶,
     罗丹, 三位一体, 白垩界卫, 阮一, 聂菲斯,
     D96钢, 超距辉映管, 快子遴捡晶格, 象限拟合液, 三相纳米片,
-    枢纽区, 源石研究园, 试验园区, 矿脉源区, 供能高地, 武陵城, 清波寨, 首墩, 藏剑谷, 应龙关, 北部禁区
+    枢纽区, 源石研究园, 试验园区, 矿脉源区, 供能高地, 武陵城, 清波寨, 首墩, 藏剑谷, 应龙关, 北部禁区, 雪松林
 
 - The program automatically computes which stage to farm today based on the "Stamina farming start date" and "Stage sequence".
 - If the "Stage sequence" is empty, automatic rotation is disabled and the "Stamina stage" config is used.
