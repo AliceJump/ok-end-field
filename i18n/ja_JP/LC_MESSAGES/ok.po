@@ -1307,6 +1307,9 @@ msgstr ""
 msgid "编辑"
 msgstr "編集"
 
+msgid "阿莱克琉斯"
+msgstr "アレイクレウス"
+
 msgid "罗丹"
 msgstr "ロダン"
 

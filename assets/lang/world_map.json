@@ -2527,6 +2527,50 @@
       "pattern": "Nefarith"
     }
   },
+  "k_alaikeliusi": {
+    "zh_CN": {
+      "pattern": "阿莱克琉斯"
+    },
+    "zh_TW": {
+      "pattern": "阿萊克琉斯"
+    },
+    "en_US": {
+      "pattern": "Alleikhreos"
+    },
+    "ja_JP": {
+      "pattern": "アレイクレウス"
+    },
+    "ko_KR": {
+      "pattern": "알레이크레오스"
+    },
+    "es_ES": {
+      "pattern": "Alleikhreos"
+    },
+    "pt_BR": {
+      "pattern": "Alleikhreos"
+    },
+    "de_DE": {
+      "pattern": "Alleikhreos"
+    },
+    "fr_FR": {
+      "pattern": "Alleikhreos"
+    },
+    "id_ID": {
+      "pattern": "Alleikhreos"
+    },
+    "it_IT": {
+      "pattern": "Alleikhreos"
+    },
+    "ru_RU": {
+      "pattern": "Аллейхреос"
+    },
+    "th_TH": {
+      "pattern": "อัล​เล​เคร​ออส"
+    },
+    "vi_VN": {
+      "pattern": "Alleikhreos"
+    }
+  },
   "k_e0c9b138": {
     "zh_CN": {
       "pattern": "能量淤积点"

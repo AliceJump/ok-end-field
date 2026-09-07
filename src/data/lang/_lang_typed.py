@@ -849,6 +849,9 @@ class WorldMapModule(_LangModuleBaseT):
     k_fadfef4b: re.Pattern[str]
     """聂菲斯"""
 
+    k_alaikeliusi: re.Pattern[str]
+    """阿莱克琉斯"""
+
     k_e0c9b138: re.Pattern[str]
     """能量淤积点"""
 

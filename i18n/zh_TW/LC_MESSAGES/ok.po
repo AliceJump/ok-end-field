@@ -1272,6 +1272,9 @@ msgstr ""
 msgid "编辑"
 msgstr "編輯"
 
+msgid "阿莱克琉斯"
+msgstr "阿萊克琉斯"
+
 msgid "罗丹"
 msgstr "羅丹"
 

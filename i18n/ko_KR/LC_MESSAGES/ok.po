@@ -1313,6 +1313,9 @@ msgstr ""
 msgid "编辑"
 msgstr "편집"
 
+msgid "阿莱克琉斯"
+msgstr "알레이크레오스"
+
 msgid "罗丹"
 msgstr "로댄"
 

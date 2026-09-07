@@ -1314,6 +1314,9 @@ msgstr ""
 msgid "编辑"
 msgstr "Edit"
 
+msgid "阿莱克琉斯"
+msgstr "Alleikhreos"
+
 msgid "罗丹"
 msgstr "Rhodagn"
 
