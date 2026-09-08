@@ -141,7 +141,7 @@ class TestConfigTransferPatch(unittest.TestCase):
 
             backup_dir = apply_config_import(zip_path, configs_dir)
 
-            self.assertTrue(backup_dir.is_relative_to(configs_dir / "backup"))
+            self.assertTrue(backup_dir.is_relative_to(configs_dir.resolve() / "backup"))
             self.assertTrue(backup_dir.name.startswith("import_backup_"))
             # 旧配置完整备份（排除目录本身不重复备份）
             self.assertEqual((backup_dir / "_ok.json").read_text(encoding="utf-8"), "old_global")
