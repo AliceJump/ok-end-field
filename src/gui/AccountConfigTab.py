@@ -8,6 +8,7 @@ from ok.gui.Communicate import communicate
 from ok.gui.tasks.ConfigCard import ConfigCard, og
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 from ok.gui.widget.CustomTab import CustomTab
+from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
@@ -22,12 +23,15 @@ from qfluentwidgets import (
 )
 
 from src.core.global_config_store import (
+    KEY_CONFIG_DEFAULTS,
+    KEY_CONFIG_NAME,
     ZIP_LINE_CONFIG_DESCRIPTION,
     ZIP_LINE_CONFIG_NAME,
     ZIP_LINE_CONFIG_TYPE,
     ZIP_LINE_DEFAULT_CONFIG,
     get_global_config,
 )
+from src.icons import Icons
 from src.tasks.account.account_scope_store import (
     get_account_map_content,
     load_overrides,
@@ -56,6 +60,25 @@ class GlobalZipLineConfigProxy:
     account_config_type = {}
 
 
+class GlobalKeyConfigProxy:
+    """Expose the global hotkey schema in the per-account editor."""
+
+    name = "键位配置"
+    icon = Icons.Keyboard
+    account_override_name = KEY_CONFIG_NAME
+    support_multi_account = True
+    running = False
+    default_config = KEY_CONFIG_DEFAULTS
+    config = get_global_config(KEY_CONFIG_NAME)
+    config_description = {}
+    config_type = {}
+    account_config_blacklist = set()
+    account_config_whitelist = set()
+    account_config_defaults = {}
+    account_config_description = {}
+    account_config_type = {}
+
+
 class InMemoryConfig(dict):
     """A lightweight config object used by ConfigCard for account overrides."""
 
@@ -77,10 +100,15 @@ class AccountConfigTab(CustomTab):
 
     ALWAYS_HIDDEN_CONFIG_KEYS = {"多账户模式", "多账户独立配置", "账号列表"}
 
+    # 启动后空闲预热：提前完成账号页首屏构建，消除首次切换到本页的卡顿。
+    # 与 GlobalConfigTab.PREBUILD_DELAY_MS 错开，避免两个页面的构建负载叠加。
+    PREBUILD_DELAY_MS = 4500
+
     def __init__(self):
         super().__init__()
         self._loaded_once = False
         self._building = False
+        QTimer.singleShot(self.PREBUILD_DELAY_MS, self, self._prewarm_refresh)
 
         self.overrides_data: dict[str, Any] = {"accounts": {}}
         self.task_map: dict[str, Any] = {}
@@ -131,9 +159,19 @@ class AccountConfigTab(CustomTab):
         super().showEvent(event)
         if not self._loaded_once and self.executor is not None:
             self._loaded_once = True
-            self.refresh_from_source()
+            # 首次加载：选择器先立即就绪，重的编辑卡片渲染延后一拍，
+            # 保证切换到本页瞬间不被阻塞。
+            self.refresh_from_source(defer_render=True)
         elif self.executor is not None:
             self.sync_from_source()
+
+    def _prewarm_refresh(self):
+        """启动空闲时预热账号页首屏，效果等同首次 showEvent 的加载。"""
+        if self._loaded_once or self.executor is None:
+            # executor 未注入（预热早于 MainWindow 初始化）时留待首次 showEvent 处理
+            return
+        self._loaded_once = True
+        self.refresh_from_source()
 
     def sync_from_source(self):
         """Synchronize account configuration from the source without rebuilding task list."""
@@ -456,9 +494,10 @@ class AccountConfigTab(CustomTab):
             seen.add(class_name)
             tasks.append(task)
         tasks.append(GlobalZipLineConfigProxy)
+        tasks.append(GlobalKeyConfigProxy)
         return tasks
 
-    def refresh_from_source(self):
+    def refresh_from_source(self, defer_render: bool = False):
         """Fully refresh account configuration and task list from source data."""
         if not self._ensure_executor():
             return
@@ -473,8 +512,13 @@ class AccountConfigTab(CustomTab):
 
             self.rebuild_account_selector(keep_selection=False)
             self.rebuild_task_selector(keep_selection=False)
-            self.load_current_map_content()
-            self.render_task_editor()
+
+            if defer_render:
+                # 编辑卡片构建较重（数百个控件），放到下一轮事件循环构建
+                QTimer.singleShot(0, self, self._finish_deferred_refresh)
+            else:
+                self.load_current_map_content()
+                self.render_task_editor()
 
             if not tasks:
                 self._set_status(og.app.tr("未找到 support_multi_account=True 的任务"))
@@ -482,6 +526,11 @@ class AccountConfigTab(CustomTab):
                 self._set_status(og.app.tr("已刷新账号与任务配置（账号页账号列表与任务账号列表独立）"))
         finally:
             self._building = False
+
+    def _finish_deferred_refresh(self):
+        """完成 refresh_from_source(defer_render=True) 延后的重渲染部分。"""
+        self.load_current_map_content()
+        self.render_task_editor()
 
     def save_base_settings(self):
         """Save the account list and synchronize account registry."""

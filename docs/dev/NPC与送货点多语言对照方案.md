@@ -59,7 +59,7 @@
 
 ### 2.1 已核实对照表（中 → 英/日/韩/西）
 
-> 「待核实」= 该语言尚无官方来源证实（日/韩地名与 POI 类型已全部官方核实；es 地名除应龙关/北部禁区 site 级外已核实；NPC 名日/韩/西仍待核实），落地时节点留空回退 zh_CN（见 §3）。
+> 「待核实」= 该语言尚无官方来源证实（日/韩地名与 POI 类型已全部官方核实；es 地名除应龙关/北部禁区/雪松林 site 级外已核实；NPC 名日/韩/西仍待核实），落地时节点留空回退 zh_CN（见 §3）。
 
 | 中文 | en_US（官方） | ja_JP（官方 API） | ko_KR（官方 API） | es_ES（Atlos） | 来源 |
 |---|---|---|---|---|---|
@@ -70,6 +70,7 @@
 | 清波寨 | Qingbo Stockade | 清波砦 | 청파채 | Empalizada Qingbo | 官方地图 API、Atlos region |
 | 应龙关 | Yinglung Pass | 応龍関 | 응룡 관문 | （Atlos 缺） | 官方地图 API |
 | 北部禁区 | North Wuling Exclusion Zone | 北部封鎖区域 | 북쪽 금지 구역 | （Atlos 缺） | 官方地图 API |
+| 雪松林 | Snowy Forest | 雪松林 | 눈 덮인 소나무 숲 | （Atlos 缺） | 官方地图 API |
 | 四号谷地 | Valley IV | 四号谷地 | 4번 협곡 | Valle IV | 官方地图 API、Atlos region |
 | 枢纽区 | The Hub | 中枢エリア | 거점 지역 | La Base | 官方地图 API、Atlos region |
 | 谷地通道 | Valley Pass | 谷地通路 | 협곡길 | Senda del valle | 官方地图 API、Atlos region |
@@ -106,7 +107,7 @@
 **备注**：
 - 官方地图 API 四语数据同构（templateId/地图 ID 完全一致），仅名称语言不同（skport 域 + `sk-language` 短代码：en/ja/ko；skland 域=简中），已实测脚本化批量拉取（`/map/tree`、`/map/catalog`），产出 JSON 快照保存于 `C:\Users\26309\AppData\Local\Temp\opencode\skport\official_tree_{zh,en,ja,ko}.json`、`official_catalog_{zh,en,ja,ko}.json`、`official_five_lang.json`（含 es）。mark/list 含滑索/仓储节点/资源回收站/物资调度终端/协议传送点等 POI 坐标（templateId 已确认一致），可用于 OCR 匹配词校验。
 - 日文地名多用汉字（武陵城/清波砦/景玉谷/首礎/蔵剣谷/応龍関），且官方日文与中文同名的情况不少（武陵、景玉谷、幽谷、南山 等）；韩文为纯谚文转写（무릉/무릉성/실험 구역）。
-- es 地名由 Atlos 仓库（游戏本地化提取）提供，覆盖 145/168 site（应龙关 lv007 与北部禁区 lv008 的 site 级缺失，Atlos 全语言 region 数据均未收录这两区域——如需可后续用游戏客户端文本表补）；es NPC 名保留拼音转写（Chi-Lun），西语官方 NPC 译名仍待核实。
+- es 地名由 Atlos 仓库（游戏本地化提取）提供，覆盖 144/168 site（应龙关 lv007、北部禁区 lv008 与雪松林的 site 级缺失，Atlos 全语言 region 数据均未收录这三区域——如需可后续用游戏客户端文本表补）；es NPC 名保留拼音转写（Chi-Lun），西语官方 NPC 译名仍待核实。
 - 官方地图 API 仅发布 英/简中/日/韩 四语（`sk-language` 短代码验证），**不含 es**；`sk-language` 用长代码（ja-jp）返回空串而非报错，排查语言问题时应优先用短代码。
 
 ## 3. 各语言"对上"的规则

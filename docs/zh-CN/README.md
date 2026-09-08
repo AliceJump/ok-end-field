@@ -17,6 +17,7 @@
 | [仓库物品转移](仓库物品转移.md) | [WarehouseTransferTask.py](../../src/tasks/onetime/WarehouseTransferTask.py) |
 | [物品导航与实时检测](物品导航与实时检测.md) | [ItemNavigatorTask.py](../../src/tasks/trigger/ItemNavigatorTask.py)、[RealtimeDetectTask.py](../../src/tasks/test/RealtimeDetectTask.py) |
 | [账号配置用户指南](账号配置用户指南.md) | [AccountConfigTab.py](../../src/gui/AccountConfigTab.py)、[account_mixin.py](../../src/tasks/account/account_mixin.py) |
+| [配置导出与导入](配置导出与导入.md) | [config_transfer_patch.py](../../src/patches/config_transfer_patch.py) |
 | [Windows 计划任务](Windows%20计划任务.md) | `ok-script` CLI 参数和支持计划任务的任务类 |
 
 ## 当前任务注册

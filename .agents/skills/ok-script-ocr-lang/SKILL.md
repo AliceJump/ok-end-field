@@ -60,6 +60,15 @@ uv run --locked python scripts/i18n/gen_lang_stubs.py
 git diff -- src/data/lang/_lang_typed.py
 ```
 
+### Naming and file-placement conventions
+
+- **New keys use semantic names** (e.g. `inst_title`, `inst_delivery_targets`), not the legacy `k_<md5前8位>` hash style. Legacy `k_*` hash keys stay untouched — no migration needed; both styles coexist.
+- Tracked full-locale business-data files keep the six core locales (`zh_CN`/`zh_TW`/`en_US`/`ja_JP`/`ko_KR`/`es_ES`); existing modules may additionally carry other locales and those nodes must be preserved.
+- **Tracked full-locale JSON belongs in `assets/lang/`**: if each top-level business key directly contains complete locale nodes, keep the tracked file at `assets/lang/<module>.json`, even when it primarily serves a plugin or data query. Keep canonical/structured business data in `assets/data/`. Local generated files ignored by `.gitignore` retain their existing paths and ignored status.
+- **Task lang modules hold only OCR match text** (either `k_*` hash or semantic keys). Pure localized data modules such as `effect_names` and `yingtuo_stages` may serve plugins/data queries and do not need to be loaded by task OCR code.
+- Keep `scripts/i18n/gen_lang_stubs.py` `DATA_ONLY_MODULES` synchronized when adding another plugin/data-only module; runtime OCR modules may be accessed dynamically and must remain in the generated `self.lang` type hints even when no direct attribute reference is found.
+- gettext-side rules for UI text (`self.tr` usage, emoji minimal principle, dynamic key-name translation) live in the `ok-script-i18n` skill; UI explanations do not go in lang JSON.
+
 ## 4. OCR confusion patch (ocr_text_fix.json)
 
 - File: `assets/ocr_fix/ocr_text_fix.json`, schema is full-text `OCR 错误文本 -> 正确文本` pairs.

@@ -218,10 +218,11 @@ class TestCharacterSkillEffects(unittest.TestCase):
 
         antal = load_skill("antal.json", "antal_link")
         listed_statuses = {
-            "STATUS_SHRED",
+            "STATUS_HEAVY_STRIKE",
             "STATUS_HEAVY_HIT",
             "STATUS_KNOCKDOWN",
             "STATUS_SPELL_INFLICT",
+            "STATUS_SHATTER",
         }
         self.assertEqual(len(antal["enhancements"]), len(listed_statuses))
         self.assertEqual(

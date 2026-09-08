@@ -9,7 +9,6 @@ from src.core.global_config_store import (
 )
 from src.core.sequence_parser import parse_int_sequence
 from src.image.hsv_config import HSVRange as hR
-from src.tasks.account.account_scope_store import get_account_task_overrides
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 
 
@@ -103,21 +102,7 @@ class ZipLineMixin(NavigationMixin):
 
     def get_zip_line_config_value(self, key, default=None):
         base_value = self.zip_line_config.get(key, default)
-        if not getattr(self, "running", False):
-            return base_value
-        if hasattr(self, "_is_account_override_enabled") and not self._is_account_override_enabled():
-            return base_value
-
-        account_id = (getattr(self, "current_account_id", "") or "").strip()
-        account_name = (getattr(self, "current_user", "") or "").strip()
-        if not account_id and not account_name:
-            return base_value
-
-        override = get_account_task_overrides(
-            account_id or account_name,
-            ZIP_LINE_CONFIG_NAME,
-            account_name=account_name,
-        )
+        override = self._account_override_for(ZIP_LINE_CONFIG_NAME)
         if key not in override:
             return base_value
         return self._coerce_override_value(base_value, override[key])

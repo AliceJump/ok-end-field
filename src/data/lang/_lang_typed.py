@@ -119,6 +119,9 @@ class CharactersModule(_LangModuleBaseT):
     li_nuo: str
     """梨诺"""
 
+    ti_fu_luo_si: str
+    """提弗洛斯"""
+
 
 class DailyBattleMixinModule(_LangModuleBaseT):
     """daily_battle_mixin — OCR 语言节点（值取自 zh_CN）"""
@@ -846,6 +849,9 @@ class WorldMapModule(_LangModuleBaseT):
     k_fadfef4b: re.Pattern[str]
     """聂菲斯"""
 
+    k_alaikeliusi: re.Pattern[str]
+    """阿莱克琉斯"""
+
     k_e0c9b138: re.Pattern[str]
     """能量淤积点"""
 
@@ -944,6 +950,9 @@ class WorldMapModule(_LangModuleBaseT):
 
     k_871bc220: re.Pattern[str]
     """盈天台建设站"""
+
+    k_xuesonglin: re.Pattern[str]
+    """雪松林"""
 
 
 class ZipLineMixinModule(_LangModuleBaseT):

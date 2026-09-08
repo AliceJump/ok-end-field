@@ -20,5 +20,6 @@ Available functionality can change between releases. Refer to the task list in t
 ## Configuration and scheduling
 
 - Account configuration supports multi-account and account-specific task configuration.
+- [Config export and import](../config-export-import.md) backs up, restores, or migrates the application configuration between devices.
 - Windows Task Scheduler can start registered one-time tasks on a schedule.
 - Mouse rotation calibration helps tune in-game camera rotation coefficients.
