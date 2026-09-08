@@ -459,6 +459,9 @@ def build_skill_allowlist(
     # ── 转换为输出格式 ──
     result: dict[int, tuple[bool, str]] = {}
     for idx, char_name in enumerate(team_members):
+        if char_name == "?":
+            result[idx] = (True, "")
+            continue
         char_data = characters.get(char_name)
         if not char_data:
             result[idx] = (True, "")

@@ -1,6 +1,5 @@
 {
     "character_id": "ti_fu_luo_si",
-    "wiki_item_id": "2116",
     "name": "提弗洛斯",
     "star": 6,
     "element": "自然",
@@ -9,28 +8,27 @@
     "skills": [
         {
             "skill_id": "typhoeus_normal",
-            "name": "普通攻击",
+            "name": "追猎荒原",
             "skill_type": "普通攻击",
             "element": "自然",
             "has_enhancement": false,
             "enhancement": null,
-            "description": "普通攻击：对敌人进行至多4段攻击，造成自然伤害。作为主控干员时，重击会造成18点失衡。空中攻击：处于浮空状态时使用普通攻击，会进行空中普通攻击，命中带有自然附着的敌人时，消耗1层自然附着获得1点启示。若自身存有猎矢，空中攻击将转化为强化射击，造成自然爆发。",
+            "description": "普通攻击：对敌人进行至多5段攻击，造成自然伤害。作为主控干员时，重击会造成17点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成自然伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量自然伤害并恢复一定技力。",
             "damage_multiplier": null,
-            "stagger_value": 18,
+            "stagger_value": 17,
             "cooldown": null,
             "spirit_cost": 0,
             "effects": []
         },
         {
             "skill_id": "typhoeus_skill",
-            "name": "浮空疾射",
+            "name": "风矢穿林",
             "skill_type": "战技",
             "element": "自然",
-            "has_enhancement": false,
-            "enhancement": null,
-            "description": "提弗洛斯的战技会进入短暂的浮空状态，期间可释放5次空中普通攻击，最后一击视为重击。",
-            "damage_multiplier": null,
-            "stagger_value": 0,
+            "has_enhancement": true,
+            "description": "跃入空中进入短暂浮空状态，期间可施放5次空中普通攻击，每次可同时攻击至多2名目标，造成自然伤害。每次空中普通攻击若命中带有自然附着的敌人，则消耗目标身上的1层自然附着，获得1点启示，并额外获得终结技能量。若自身仍存有猎矢，则会消耗1枚猎矢，将空中普通攻击转化为强化射击。强化射击：命中后额外强制造成一次自然爆发；若消耗了目标身上的自然附着，则本次造成的自然爆发伤害会提升。作为主控干员时，第五次空中普通攻击同时视为重击与强化射击，且无需消耗猎矢。",
+            "damage_multiplier": "50%（起跳射击）+ 65%（空中普通攻击）+ 100%（空中重击）+ 130%（强化射击自然爆发）",
+            "stagger_value": 20,
             "cooldown": null,
             "spirit_cost": 100,
             "effects": [
@@ -41,43 +39,111 @@
                     "target": "self",
                     "count": 1
                 }
-            ]
-        },
-        {
-            "skill_id": "typhoeus_link",
-            "name": "箭阵",
-            "skill_type": "连携技",
-            "element": "自然",
-            "has_enhancement": true,
-            "description": "当自身启示已满时可以发动。在目标区域形成箭阵，箭阵对敌人持续造成自然伤害并施加缓速效果，使敌人受到的自然爆发伤害提升。使用连携技时，还会将当前启示全部转化为猎矢。每2点启示转化为1点猎矢。",
-            "damage_multiplier": "300%",
-            "stagger_value": 0,
-            "cooldown": null,
-            "spirit_cost": 0,
-            "effects": [],
+            ],
             "enhancements": [
                 {
-                    "name": "箭阵",
+                    "name": "空中攻击消耗自然附着获得启示",
                     "trigger_condition": {
-                        "text": "当自身启示已满时可以发动",
+                        "text": "空中普通攻击命中带有自然附着的敌人时",
                         "effects": {
-                            "all": []
+                            "all": [
+                                "ATTACH_NATURAL"
+                            ]
                         }
                     },
                     "effects": [
                         {
-                            "effect_id": "STATUS_SLOW",
+                            "effect_id": "ATTACH_NATURAL",
                             "value": 1,
                             "duration": null,
                             "target": "enemy",
-                            "count": 1
+                            "count": -1
                         },
                         {
-                            "effect_id": "VULN_NATURAL_BURST",
+                            "effect_id": "STACK_SIGN",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy",
+                            "target": "self",
                             "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "消耗猎矢强化射击",
+                    "trigger_condition": {
+                        "text": "自身存有猎矢时",
+                        "effects": {
+                            "all": [
+                                "STACK_HUNTING_ARROW"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "强化射击",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STACK_HUNTING_ARROW",
+                            "value": 1,
+                            "duration": null,
+                            "target": "self",
+                            "count": -1
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "skill_id": "typhoeus_link",
+            "name": "野棘丛生",
+            "skill_type": "连携技",
+            "element": "自然",
+            "has_enhancement": true,
+            "description": "当自身启示已满时可以发动。将当前启示全部转化为猎矢，并且重置空中普通攻击次数。凝聚“猎手的注视”向目标齐射，在目标区域形成箭阵。处于箭阵内的敌人会持续受到自然伤害和缓速，同时受到的自然爆发伤害提高。每2点启示可以转化为1枚猎矢。",
+            "damage_multiplier": "200%（齐射命中）+ 100%（箭阵持续伤害）",
+            "stagger_value": 0,
+            "cooldown": "21秒",
+            "spirit_cost": 0,
+            "effects": [
+                {
+                    "effect_id": "DEBUFF_SPEED_DOWN",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                },
+                {
+                    "effect_id": "VULN_NATURAL_BURST",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ],
+            "enhancements": [
+                {
+                    "name": "启示转化猎矢",
+                    "trigger_condition": {
+                        "text": "当自身启示已满时可以发动",
+                        "effects": {
+                            "all": [
+                                "STACK_SIGN"
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STACK_SIGN",
+                            "value": 8,
+                            "duration": null,
+                            "target": "self",
+                            "count": -8
+                        },
+                        {
+                            "effect_id": "STACK_HUNTING_ARROW",
+                            "value": 4,
+                            "duration": null,
+                            "target": "self",
+                            "count": 4
                         }
                     ]
                 }
@@ -85,17 +151,24 @@
         },
         {
             "skill_id": "typhoeus_ultimate",
-            "name": "天降箭雨",
+            "name": "冰山呼告",
             "skill_type": "终结技",
             "element": "自然",
             "has_enhancement": false,
             "enhancement": null,
-            "description": "提弗洛斯的终结技对范围内敌人造成高额自然伤害，并立即获得猎矢，进入浮空状态。施放终结技后的五次空中普通攻击命中时产生一次箭雨，造成自然伤害。",
-            "damage_multiplier": "600%",
-            "stagger_value": 0,
+            "description": "拉弓射出一支强力箭矢，命中目标后引发爆炸，对范围内的敌人造成高额自然伤害。之后会进入浮空状态，并且重置空中普通攻击次数。之后的五次空中普通攻击命中敌人时，都会在目标的位置产生一轮箭雨，造成自然伤害。第五轮箭雨为强化箭雨，造成的伤害提升。施放终结技可立即获得2枚猎矢。",
+            "damage_multiplier": "300%（强力箭爆炸）+ 75%（常规箭雨）+ 200%（强化箭雨）",
+            "stagger_value": 20,
             "cooldown": "20秒",
-            "spirit_cost": 130,
+            "spirit_cost": 200,
             "effects": [
+                {
+                    "effect_id": "STACK_HUNTING_ARROW",
+                    "value": 2,
+                    "duration": null,
+                    "target": "self",
+                    "count": 2
+                },
                 {
                     "effect_id": "STATUS_HOVERING",
                     "value": 1,
@@ -103,7 +176,8 @@
                     "target": "self",
                     "count": 1
                 }
-            ]
+            ],
+            "enhancements": []
         }
     ]
 }

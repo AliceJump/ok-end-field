@@ -7,6 +7,15 @@ description: Commit completed repository changes, create the next annotated vers
 
 Use this workflow to turn validated local changes into one commit and one annotated version tag, then push both to the publishing remote. If the user explicitly requests a local-only deployment, stop after creating the local tag.
 
+## Locked default branch
+
+Remote `master` is locked and only accepts changes through a PR (see the `repository-workflow` skill). Deploy must respect that lock:
+
+- If the worktree holds uncommitted code changes destined for `master`, stop before the commit step: land them through a PR first, then run this deploy flow on the merged result.
+- When deploying on `master`, run `git fetch origin` first and require current `HEAD` to equal the published `origin/master` exactly, regardless of worktree cleanliness. A clean worktree with unpushed local commits must not be tagged or pushed; land those commits through a PR first.
+- When `HEAD` equals `origin/master` and no new commit is needed, skip the commit step and create the annotated tag on current `HEAD` instead.
+- On `master`, push only the annotated tag, never the branch ref. The annotated-tag push is governed by the tag ruleset, not the branch lock.
+
 ## Variants
 
 - `deploy` or `deploy release`: create a stable tag, such as `v3.3.54`.
@@ -60,9 +69,12 @@ Use `next_tag.py` in this skill's `scripts/` directory (`.agents/skills/deploy/s
    git show --no-patch --decorate HEAD
    ```
 
-7. Push the commit and annotated tag to the publishing remote, typically `origin`, unless the user explicitly requested local-only operation:
+7. Push to the publishing remote, typically `origin`, unless the user explicitly requested local-only operation. On the locked default branch `master`, push only the annotated tag; on any other branch, push the commit and the tag:
 
    ```powershell
+   # on master (tag-only; HEAD must already equal origin/master, see Locked default branch)
+   git push origin "<calculated-tag>"
+   # on any other branch
    git push origin HEAD "<calculated-tag>"
    ```
 
@@ -76,4 +88,5 @@ Use `next_tag.py` in this skill's `scripts/` directory (`.agents/skills/deploy/s
 - Never include merge commits when choosing the commit-message language.
 - Never infer a successful release from a local tag alone; report push success separately from CI publishing.
 - Do not push when the user explicitly requests a local-only commit or tag.
+- Never push a deploy commit directly to the locked default branch `master`; land code changes through a PR first and deploy the tag on the merged result.
 - Keep stable, beta, and alpha numbering independent except that the latest stable release closes older or equal prerelease base versions.

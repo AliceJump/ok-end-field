@@ -50,10 +50,15 @@ class AutoInteractionTask(BaseEfTask, TriggerTask):
                     self.click(result, after_sleep=0.4)
                     return
         if self.config.get("自动点击传送", True):
-            # 先普通匹配；未找到时再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感
+            # 传送按钮只存在于地图界面：先用侧栏 in_map 特征确认界面，
+            # 未在地图界面时跳过匹配，避免每周期白跑全屏模板 + Canny 兜底
+            in_map_box = self.box_of_screen(0.027, 0.531, 0.051, 0.896)
             result = self.find_one(fL.transfer_go, frame=now)
-            if not result:
-                result = self.find_one(fL.transfer_go, frame=now, canny_lower=50, canny_higher=150, threshold=0.8)
             if result:
-                if self.find_one(fL.in_map, box=self.box_of_screen(0.027, 0.531, 0.051, 0.896), frame=now):
+                if self.find_one(fL.in_map, box=in_map_box, frame=now):
+                    self.click(result, after_sleep=0.4)
+            elif self.find_one(fL.in_map, box=in_map_box, frame=now):
+                # 未普通命中且已在地图界面：再尝试一次轮廓（Canny）匹配，对按钮反色/主题变化不敏感
+                result = self.find_one(fL.transfer_go, frame=now, canny_lower=50, canny_higher=150, threshold=0.8)
+                if result:
                     self.click(result, after_sleep=0.4)

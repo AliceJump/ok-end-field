@@ -1,5 +1,6 @@
 from ok.gui.tasks.ConfigCard import ConfigCard
 from ok.gui.widget.CustomTab import CustomTab
+from PySide6.QtCore import QTimer
 from qfluentwidgets import FluentIcon, NavigationItemPosition
 
 from src.core.BattleConfig import BATTLE_CONFIG_NAME
@@ -12,8 +13,18 @@ GLOBAL_CONFIG_GROUPS = {
     "滑索配置": [ZIP_LINE_CONFIG_NAME],
 }
 
+# 启动后空闲预热：在用户点进本页之前把配置卡片建好，消除首次切换的卡顿。
+# 事件循环空闲后才会触发，不影响启动速度。
+PREBUILD_DELAY_MS = 3000
+
 
 class GlobalConfigTab(CustomTab):
+    def __init__(self):
+        super().__init__()
+        self._pending_cards = []
+        self._build_scheduled = False
+        QTimer.singleShot(PREBUILD_DELAY_MS, self, self._prewarm_build)
+
     @property
     def name(self):
         # MainWindow 会对 tab 的 name 统一调用 self.app.tr(name)，
@@ -35,12 +46,23 @@ class GlobalConfigTab(CustomTab):
 
     def showEvent(self, event):
         super().showEvent(event)
-        if self.vBoxLayout.count() == 0:
-            self._build_cards()
+        self._schedule_build()
 
-    def _build_cards(self):
+    def _prewarm_build(self):
+        self._schedule_build()
+
+    def _schedule_build(self):
+        """只排程一次；卡片逐个在事件循环空闲时构建，切换到本页不再被阻塞。"""
+        if self._build_scheduled:
+            return
+        self._build_scheduled = True
+        self._pending_cards = self._collect_cards()
+        QTimer.singleShot(0, self, self._build_next_card)
+
+    def _collect_cards(self):
         visible_configs = {name: (config, option) for name, config, option in get_all_visible_configs()}
         shown = set()
+        cards = []
         for group_name, config_names in GLOBAL_CONFIG_GROUPS.items():
             for config_name in config_names:
                 config_and_option = visible_configs.get(config_name)
@@ -48,32 +70,30 @@ class GlobalConfigTab(CustomTab):
                     continue
                 config, option = config_and_option
                 shown.add(config_name)
-                card = ConfigCard(
-                    None,
-                    group_name,
-                    config,
-                    option.description,
-                    option.default_config,
-                    option.config_description,
-                    option.config_type,
-                    option.icon,
-                )
-                # 标题即分组名（如「滑索配置」），ConfigCard 构造时已用 group_name 作为卡片标题
-                self.add_widget(card)
+                cards.append((group_name, config, option))
 
         for config_name, (config, option) in visible_configs.items():
             if config_name in shown:
                 continue
-            group_name = "其他配置"
-            card = ConfigCard(
-                None,
-                group_name,
-                config,
-                option.description,
-                option.default_config,
-                option.config_description,
-                option.config_type,
-                option.icon,
-            )
-            # 标题即分组名（如「滑索配置」），ConfigCard 构造时已用 group_name 作为卡片标题
-            self.add_widget(card)
+            cards.append(("其他配置", config, option))
+        return cards
+
+    def _build_next_card(self):
+        if not self._pending_cards:
+            return
+        group_name, config, option = self._pending_cards.pop(0)
+        card = ConfigCard(
+            None,
+            group_name,
+            config,
+            option.description,
+            option.default_config,
+            option.config_description,
+            option.config_type,
+            option.icon,
+        )
+        # 标题即分组名（如「滑索配置」），ConfigCard 构造时已用 group_name 作为卡片标题
+        self.add_widget(card)
+        if self._pending_cards:
+            # 每次事件循环只构建一张卡片，构建间隙保持界面响应
+            QTimer.singleShot(0, self, self._build_next_card)

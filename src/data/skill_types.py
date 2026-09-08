@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Collection, Mapping
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Literal
@@ -56,10 +57,22 @@ class TriggerEffectGroup:
     operator: Literal["all", "any"]
     effects: tuple[EffectType, ...]
 
-    def is_satisfied(self, current_effects: set[EffectType]) -> bool:
+    def is_satisfied(
+        self,
+        current_effects: Collection[EffectType] | Mapping[EffectType, int],
+    ) -> bool:
         """按组运算符判断当前效果是否满足触发条件。"""
         required = set(self.effects)
-        return required <= current_effects if self.operator == "all" else bool(required & current_effects)
+        available = set(current_effects)
+        if EffectType.STACK_SIGN in required:
+            sign_count = (
+                current_effects.get(EffectType.STACK_SIGN, 0)
+                if isinstance(current_effects, Mapping)
+                else sum(effect == EffectType.STACK_SIGN for effect in current_effects)
+            )
+            if sign_count < 8:
+                available.discard(EffectType.STACK_SIGN)
+        return required <= available if self.operator == "all" else bool(required & available)
 
 
 @dataclass
@@ -73,7 +86,10 @@ class SkillEnhancement:
     enhancement_visible_pulse: bool = False  # 强化状态可见脉冲
     trigger_effect_groups: list[TriggerEffectGroup] = field(default_factory=list)  # 带 all/any 语义的条件组
 
-    def is_trigger_satisfied(self, current_effects: set[EffectType]) -> bool:
+    def is_trigger_satisfied(
+        self,
+        current_effects: Collection[EffectType] | Mapping[EffectType, int],
+    ) -> bool:
         """所有条件组均满足时触发；组内按各自的 all/any 运算。"""
         return bool(self.trigger_effect_groups) and all(
             group.is_satisfied(current_effects) for group in self.trigger_effect_groups

@@ -1243,6 +1243,46 @@
       "string": "Fusión de llamas"
     }
   },
+  "STACK_SIGN": {
+    "zh_CN": {
+      "string": "启示"
+    },
+    "zh_TW": {
+      "string": "啟示"
+    },
+    "en_US": {
+      "string": "Sign"
+    },
+    "ja_JP": {
+      "string": "啓示"
+    },
+    "ko_KR": {
+      "string": "계시"
+    },
+    "es_ES": {
+      "string": "Signo"
+    }
+  },
+  "STACK_HUNTING_ARROW": {
+    "zh_CN": {
+      "string": "猎矢"
+    },
+    "zh_TW": {
+      "string": "獵矢"
+    },
+    "en_US": {
+      "string": "Hunting Arrow"
+    },
+    "ja_JP": {
+      "string": "狩矢"
+    },
+    "ko_KR": {
+      "string": "사냥 화살"
+    },
+    "es_ES": {
+      "string": "Flecha de caza"
+    }
+  },
   "STACK_SHRED": {
     "zh_CN": {
       "string": "破防层数"
@@ -2665,6 +2705,46 @@
     },
     "es_ES": {
       "string": "Volver a aplicar el mismo efecto"
+    }
+  },
+  "STATUS_HOVERING": {
+    "zh_CN": {
+      "string": "浮空"
+    },
+    "zh_TW": {
+      "string": "浮空"
+    },
+    "en_US": {
+      "string": "Hovering"
+    },
+    "ja_JP": {
+      "string": "浮遊"
+    },
+    "ko_KR": {
+      "string": "부유"
+    },
+    "es_ES": {
+      "string": "Flotando"
+    }
+  },
+  "VULN_NATURAL_BURST": {
+    "zh_CN": {
+      "string": "自然爆发脆弱"
+    },
+    "zh_TW": {
+      "string": "自然爆發脆弱"
+    },
+    "en_US": {
+      "string": "Nature Burst Vulnerability"
+    },
+    "ja_JP": {
+      "string": "自然爆発脆弱"
+    },
+    "ko_KR": {
+      "string": "자연 폭발 취약"
+    },
+    "es_ES": {
+      "string": "Vulnerabilidad de ráfaga natural"
     }
   }
 }

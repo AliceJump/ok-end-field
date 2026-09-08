@@ -2527,6 +2527,50 @@
       "pattern": "Nefarith"
     }
   },
+  "k_alaikeliusi": {
+    "zh_CN": {
+      "pattern": "阿莱克琉斯"
+    },
+    "zh_TW": {
+      "pattern": "阿萊克琉斯"
+    },
+    "en_US": {
+      "pattern": "Alleikhreos"
+    },
+    "ja_JP": {
+      "pattern": "アレイクレウス"
+    },
+    "ko_KR": {
+      "pattern": "알레이크레오스"
+    },
+    "es_ES": {
+      "pattern": "Alleikhreos"
+    },
+    "pt_BR": {
+      "pattern": "Alleikhreos"
+    },
+    "de_DE": {
+      "pattern": "Alleikhreos"
+    },
+    "fr_FR": {
+      "pattern": "Alleikhreos"
+    },
+    "id_ID": {
+      "pattern": "Alleikhreos"
+    },
+    "it_IT": {
+      "pattern": "Alleikhreos"
+    },
+    "ru_RU": {
+      "pattern": "Аллейхреос"
+    },
+    "th_TH": {
+      "pattern": "อัล​เล​เคร​ออส"
+    },
+    "vi_VN": {
+      "pattern": "Alleikhreos"
+    }
+  },
   "k_e0c9b138": {
     "zh_CN": {
       "pattern": "能量淤积点"
@@ -3977,6 +4021,51 @@
     },
     "vi_VN": {
       "pattern": "Trạm Gieo Mây Xiranflow"
+    }
+  }
+,
+  "k_xuesonglin": {
+    "zh_CN": {
+      "pattern": "雪松林"
+    },
+    "zh_TW": {
+      "pattern": "雪松林"
+    },
+    "en_US": {
+      "pattern": "Snowy Forest"
+    },
+    "ja_JP": {
+      "pattern": "雪松林"
+    },
+    "ko_KR": {
+      "pattern": "눈 덮인 소나무 숲"
+    },
+    "pt_BR": {
+      "pattern": "Floresta Nevada"
+    },
+    "de_DE": {
+      "pattern": "Verschneiter Wald"
+    },
+    "fr_FR": {
+      "pattern": "Forêt enneigée"
+    },
+    "id_ID": {
+      "pattern": "Hutan Salju"
+    },
+    "it_IT": {
+      "pattern": "Foresta innevata"
+    },
+    "es_ES": {
+      "pattern": "Bosque nevado"
+    },
+    "ru_RU": {
+      "pattern": "Снежный лес"
+    },
+    "th_TH": {
+      "pattern": "ป่า​ขาวโพลน"
+    },
+    "vi_VN": {
+      "pattern": "Rừng Tuyết"
     }
   }
 }

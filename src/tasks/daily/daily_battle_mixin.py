@@ -1119,7 +1119,6 @@ class DailyBattleFeature:
                 if self._gather_retry_navigate():
                     return True
 
-                self.mark_task_failure("二次寻路失败，无法找到奖励发放点")
                 return False
 
             raise

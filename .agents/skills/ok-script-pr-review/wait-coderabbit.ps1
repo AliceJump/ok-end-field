@@ -34,9 +34,16 @@
 # 编码注意：gh 输出是 UTF-8（评审 body 含中文），PowerShell 默认按系统 ANSI(GBK)
 # 解码会把 JSON 弄坏导致 ConvertFrom-Json 报错；因此除强制 UTF-8 外，
 # 所有结构化读取一律走服务端 --jq 输出 TSV，PowerShell 只按行拆字段。
+# 引号注意：Windows PowerShell 5.1 向原生程序传参会剥掉内嵌双引号（PS 7.3+ 已修复），
+# 因此 --jq 过滤器一律不写字符串字面量，字符串经环境变量传给 gojq 的 $ENV.*；
+# null 字段直接交给 @tsv（渲染为空字段），不再用 "" 兜底。
 
 $ErrorActionPreference = "Stop"
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$env:CR_LOGIN = 'coderabbitai[bot]'
+$env:CR_BOT = 'Bot'
+$env:CR_CONTEXT = 'CodeRabbit'
+$env:CR_BLOCKING = 'CHANGES_REQUESTED'
 . (Join-Path $PSScriptRoot "wait-coderabbit-helpers.ps1")
 
 function Invoke-GhChecked {
@@ -58,7 +65,7 @@ function Get-LatestReview {
     param([string]$CommitSha = "")
     # 最新一条 CodeRabbit review；服务端过滤并输出 TSV（id|state|commit_id|submitted_at）
     $out = Invoke-GhChecked @("api", "--paginate", "repos/$Repo/pulls/$PrNumber/reviews", "--jq",
-        '.[] | select(.user.login == "coderabbitai[bot]" and .user.type == "Bot") | [.id, .state, (.commit_id // ""), .submitted_at] | @tsv')
+        '.[] | select(.user.login == $ENV.CR_LOGIN and .user.type == $ENV.CR_BOT) | [.id, .state, .commit_id, .submitted_at] | @tsv')
     if (-not $out) { return $null }
     $latest = $null
     foreach ($ln in ($out -split "`n")) {
@@ -75,7 +82,7 @@ function Get-LatestReview {
 function Get-CodeRabbitStatus {
     # 返回 head 上最新 CodeRabbit commit status 的 state/description/created_at；无则 $null
     $tsv = Invoke-GhChecked @("api", "repos/$Repo/commits/$headSha/status", "--jq",
-        '. as $combined | [.statuses[] | select(.context == "CodeRabbit")] | sort_by(.created_at) | reverse | .[0] | if . then [$combined.sha, .state, .description, .created_at] | @tsv else empty end')
+        '. as $combined | [.statuses[] | select(.context == $ENV.CR_CONTEXT)] | sort_by(.created_at) | reverse | .[0] | if . then [$combined.sha, .state, .description, .created_at] | @tsv else empty end')
     if (-not $tsv) { return $null }
     $first = ($tsv -split "`n")[0].Trim() -split "`t"
     if ($first.Count -lt 4) { return $null }
@@ -95,7 +102,7 @@ function Get-ForcePushEvent {
         "-f", "owner=$($repoParts[0])",
         "-f", "name=$($repoParts[1])",
         "-F", "number=$PrNumber",
-        "--jq", '.data.repository.pullRequest.timelineItems.nodes[] | [(.beforeCommit.oid // ""), (.afterCommit.oid // ""), .createdAt] | @tsv'
+        "--jq", '.data.repository.pullRequest.timelineItems.nodes[] | [(.beforeCommit.oid), (.afterCommit.oid), .createdAt] | @tsv'
     )
     $lines = if ($out) { @($out -split "`n") } else { @() }
     return Select-ForcePushEvent -SinceCommit $Commit -EventLines $lines
@@ -103,7 +110,7 @@ function Get-ForcePushEvent {
 
 function Get-ChangesRequestedReviews {
     $out = Invoke-GhChecked @("api", "--paginate", "repos/$Repo/pulls/$PrNumber/reviews", "--jq",
-        '.[] | select(.user.login == "coderabbitai[bot]" and .user.type == "Bot" and .state == "CHANGES_REQUESTED") | [.id, .state, (.commit_id // ""), .submitted_at] | @tsv')
+        '.[] | select(.user.login == $ENV.CR_LOGIN and .user.type == $ENV.CR_BOT and .state == $ENV.CR_BLOCKING) | [.id, .state, .commit_id, .submitted_at] | @tsv')
     if (-not $out) { return @() }
     $items = @()
     foreach ($ln in ($out -split "`n")) {
@@ -118,7 +125,7 @@ function Get-NewTopLevelComments {
     # 列出 id 大于基线的 CodeRabbit 顶层评审意见（id|path|line）
     param([long]$BaselineId)
     $out = Invoke-GhChecked @("api", "--paginate", "repos/$Repo/pulls/$PrNumber/comments", "--jq",
-        '.[] | select(.user.login == "coderabbitai[bot]" and .user.type == "Bot" and .in_reply_to_id == null) | [.id, .path, (.line // .original_line // 0)] | @tsv')
+        '.[] | select(.user.login == $ENV.CR_LOGIN and .user.type == $ENV.CR_BOT and .in_reply_to_id == null) | [.id, .path, (.line // .original_line // 0)] | @tsv')
     if (-not $out) { return @() }
     $items = @()
     foreach ($ln in ($out -split "`n")) {
@@ -131,7 +138,7 @@ function Get-NewTopLevelComments {
 
 function Get-MaxCommentId {
     $out = Invoke-GhChecked @("api", "--paginate", "repos/$Repo/pulls/$PrNumber/comments", "--jq",
-        '[.[] | select(.user.login == "coderabbitai[bot]" and .user.type == "Bot") | .id] | max // 0')
+        '[.[] | select(.user.login == $ENV.CR_LOGIN and .user.type == $ENV.CR_BOT) | .id] | max // 0')
     if (-not $out) { return 0 }
     return [long](([string]$out | Select-Object -Last 1).Trim())
 }
