@@ -9,8 +9,8 @@ def install_startup_patches():
         return
 
     from src.patches.cascade_dropdown_patch import install_cascade_dropdown_patch
-    from src.patches.config_transfer_patch import install_config_transfer_patch
     from src.patches.conditional_rotation_patch import install_conditional_rotation_patch
+    from src.patches.config_transfer_patch import install_config_transfer_patch
     from src.patches.dynamic_config_patch import install_dynamic_config_patch
     from src.patches.log_upload_patch import install_log_upload_patch
     from src.patches.ocr_text_fix_patch import install_ocr_text_fix_patch
