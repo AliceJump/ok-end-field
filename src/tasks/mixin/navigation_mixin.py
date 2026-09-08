@@ -93,7 +93,8 @@ class NavigationMixin(SearchMixin):
             2. 检测 target 是否出现
             3. 出现后进行稳定性确认
             4. 确认期间丢失目标则先 WASD 小幅度移动搜索，未命中再按住 S 后退搜索
-            5. 若 nav 存在，则执行导航对齐逻辑
+            5. 若 nav 存在，则执行导航对齐逻辑；对中过程中实时门控行走：
+               目标在屏幕中央附近时按住 W 前进，偏离中央时松开 W 停步，循环内自动切换
             6. 若 nav 为 None，则仅执行直线前进搜索
             7. 导航连续丢失时旋转搜索，未命中则按中键并按住 S 后退搜索
 
@@ -173,7 +174,12 @@ class NavigationMixin(SearchMixin):
                 return self.yolo_detect(name=nav, box=nav_box)
             return self.find_feature(nav, box=nav_box, threshold=0.7)
 
-        self.send_key_down("w")  # 确认使用send_key：w为方向移动键，不属于游戏可配置热键，用于持续移动
+        # 确认使用send_key：w为方向移动键，不属于游戏可配置热键，用于持续移动
+        # Task.send_key_down 不透传底层是否按下成功（ok-script 2.0.4 恒返回 None），
+        # 按下后只能乐观标记为已按住；若底层置顶失败未实际按下，
+        # EfInteraction 的配对保护会让后续 send_key_up 静默跳过，不会误释放。
+        self.send_key_down("w")
+        self._walk_key_held = True
 
         try:
             while True:
@@ -181,6 +187,7 @@ class NavigationMixin(SearchMixin):
                 reached = check_target()
                 if reached:
                     self.send_key_up("w")  # 确认使用send_key：释放方向键
+                    self._walk_key_held = False
 
                     if run_bool:
                         self.log_info("找到目标，确认稳定中...")
@@ -228,6 +235,7 @@ class NavigationMixin(SearchMixin):
                     special_result = found_special_callback()
                     if special_result is not None:
                         self.send_key_up("w")  # 确认使用send_key：释放方向键
+                        self._walk_key_held = False
                         return special_result
 
                 if pre_loop_callback:
@@ -247,11 +255,24 @@ class NavigationMixin(SearchMixin):
                 if nav_result:
                     nav_missing_start_time = None
                     nav_missing_recovered = False
-                    if not run_bool and run_allowed:
-                        self.log_info("重新找到导航，恢复奔跑模式")
-                        enter_run_mode()
 
-                    self.align_ocr_or_find_target_to_center(
+                    # 在移动视角前先按首次识别位置门控行走。即使本轮未完成对中，
+                    # 也保留“已识别但偏离中央”的状态，避免误恢复 W。
+                    first_nav_result = nav_result[0] if isinstance(nav_result, list) else nav_result
+                    scx, _scy = self.screen_center()
+                    center_tolerance = self.scale_distance(100)
+                    first_nav_center_x = first_nav_result.x + first_nav_result.width // 2
+                    if abs(first_nav_center_x - scx) <= center_tolerance:
+                        if not self._walk_key_held:
+                            self.send_key_down("w")
+                            self._walk_key_held = True
+                        if self._walk_key_held and not run_bool and run_allowed:
+                            enter_run_mode()
+                    elif self._walk_key_held:
+                        self.send_key_up("w")
+                        self._walk_key_held = False
+
+                    align_pos = self.align_ocr_or_find_target_to_center(
                         ocr_match_or_feature_name_list=nav,
                         only_x=True,
                         threshold=0.7,
@@ -261,6 +282,23 @@ class NavigationMixin(SearchMixin):
                         raise_if_fail=False,
                         allow_random_move=False,
                     )
+
+                    # 对中过程中实时门控行走：目标在中央附近就走，偏离就停
+                    if align_pos:
+                        scx, _scy = self.screen_center()
+                        center_tolerance = self.scale_distance(100)
+                        if abs(align_pos[0] - scx) <= center_tolerance:
+                            # 目标在中央附近 → 恢复行走
+                            if not self._walk_key_held:
+                                self.send_key_down("w")
+                                self._walk_key_held = True
+                            if self._walk_key_held and not run_bool and run_allowed:
+                                enter_run_mode()
+                        else:
+                            # 目标偏离中央 → 停步
+                            if self._walk_key_held:
+                                self.send_key_up("w")
+                                self._walk_key_held = False
                 else:
                     if nav_missing_start_time is None:
                         nav_missing_start_time = self.active_time()
@@ -293,6 +331,7 @@ class NavigationMixin(SearchMixin):
                                 self.sleep(0.02)
                             self.send_key_up("s")  # 确认使用send_key：释放方向键
                         self.send_key_down("w")
+                        self._walk_key_held = True
                         nav_missing_recovered = True
 
                     if need_v and self.active_time() - last_click_v_time > 5:
@@ -310,7 +349,9 @@ class NavigationMixin(SearchMixin):
             if not run_bool:
                 self.log_info("导航结束，恢复奔跑模式")
                 self.press_key("ctrl", after_sleep=0.01)  # 确认使用send_key：ctrl为奔跑切换键，不属于游戏可配置热键
-            self.send_key_up("w")  # 确认使用send_key：释放方向键
+            if self._walk_key_held:
+                self.send_key_up("w")  # 确认使用send_key：释放方向键
+                self._walk_key_held = False
 
     def align_ocr_or_find_target_to_center(
         self,
@@ -359,7 +400,9 @@ class NavigationMixin(SearchMixin):
             ocr_frame_processor_list: OCR帧处理函数列表(可用于色彩隔离等预处理)
 
         Returns:
-            bool: 成功对中返回True，失败返回False(当raise_if_fail=False时)
+            tuple[int,int] | bool: 成功对中返回对中前的目标中心坐标 (x, y)，失败返回 False(当raise_if_fail=False时)
+                返回的是对中前的位置，外部导航可根据该位置判定目标是否在屏幕中央，
+                从而决定是否允许行走（不在中央则停步等待对齐）。
 
         Raises:
             Exception: 对中失败且raise_if_fail=True时抛出异常
@@ -465,7 +508,7 @@ class NavigationMixin(SearchMixin):
 
                 # 如果目标在容忍范围内
                 if abs(dx) <= scaled_tolerance and abs(dy) <= scaled_tolerance:
-                    return True
+                    return target_center
                 else:
                     dx, dy = self.move_to_target_once(
                         result,
