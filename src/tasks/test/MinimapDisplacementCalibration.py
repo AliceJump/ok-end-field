@@ -16,7 +16,7 @@ from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
 from src.tasks.account.account_scope_store import get_account_map_content, resolve_account_id
-from src.tasks.mixin.minimap_odometry import MinimapOdometry
+from src.tasks.mixin.minimap_odometry import MinimapOdometry, wrap_deg
 from src.tasks.mixin.ws_position_mixin import WsPositionMixin
 
 
@@ -278,18 +278,20 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
                 cond = scale_info.get("condition")
                 if scale_info.get("ill_conditioned"):
                     self.log_warning(
-                        f"本次行走近单方向（条件数 {cond:.1f}），垂直轴不可靠；"
+                        f"本次行走近单方向（条件数 {cond:.1f}），垂直轴不可靠，"
+                        "本次不输出轴映射（map_to_world_px=None），只给比例尺；"
                         "建议启用 E4 弧线或换方向再走一段，以便把轴映射定准",
                         notify=True,
                     )
 
         self._report(results)
 
-        if ws_active:
-            try:
-                self._stop_map_ws_client()
-            except Exception:
-                pass
+        # 收尾：WS 未稳定时 ws_active 会被置 False，但客户端线程已经起来了，
+        # 所以这里不按 ws_active 判断，一律停掉所有位置源（内部按 enabled 判断，幂等）。
+        try:
+            self._stop_position_sources()
+        except Exception as e:
+            self.log_warning(f"停止位置源失败: {e}")
 
     def _sample_for(self, duration):
         """按固定间隔采样 duration 秒，返回样本列表。"""
@@ -339,11 +341,15 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
             f"E2: before_angle={before_angle}  after_angle={after_angle}  "
             f"位移 len={ (pos[0]**2+pos[1]**2)**0.5 :.2f}px"
         )
+        d_yaw = None
+        if after_angle is not None and before_angle is not None:
+            # 归一化到 (-180, 180]：否则 350° -> 10° 会被算成 -340°
+            d_yaw = (wrap_deg(after_angle) - wrap_deg(before_angle) + 180.0) % 360.0 - 180.0
         return {
             "steps": steps,
             "pos_px": pos,
             "len_px": (pos[0] ** 2 + pos[1] ** 2) ** 0.5,
-            "d_yaw": after_angle - before_angle if after_angle is not None and before_angle is not None else None,
+            "d_yaw": d_yaw,
         }
 
     def _exp_straight(self, ws_active):
@@ -357,26 +363,30 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
         except Exception as e:
             self.log_warning(f"E3 send_key_down('w') 失败: {e}")
             return {"error": str(e)}
-        start = self.active_time()
-        while self.active_time() - start < duration:
-            self.sleep(self._cfg_float("采样间隔(秒)", self.SAMPLE_STEP))
-            r = self._od.sample()
-            if ws_active:
-                pos_ws = self._poll_ws_pos(timeout=0.0)
-                # 仅接受与稳定 mapId 一致的新位置，避免跨地图/陈旧数据污染标定
-                if pos_ws is not None and pos_ws[3] == self._ws_map_id:
-                    rec = {
-                        "t": self.active_time(),
-                        "x": pos_ws[0], "y": pos_ws[1], "z": pos_ws[2],
-                        "px": self._od.position_px(),
-                        "seg": "E3",
-                    }
-                    ws_records.append(rec)
-                    self._ws_records.append(rec)
         try:
-            self.send_key_up("w")
-        except Exception as e:
-            self.log_warning(f"E3 send_key_up('w') 失败: {e}")
+            start = self.active_time()
+            while self.active_time() - start < duration:
+                self.sleep(self._cfg_float("采样间隔(秒)", self.SAMPLE_STEP))
+                self._od.sample()
+                if ws_active:
+                    pos_ws = self._poll_ws_pos(timeout=0.0)
+                    # 仅接受与稳定 mapId 一致的新位置，避免跨地图/陈旧数据污染标定
+                    if pos_ws is not None and pos_ws[3] == self._ws_map_id:
+                        rec = {
+                            "t": self.active_time(),
+                            "x": pos_ws[0], "y": pos_ws[1], "z": pos_ws[2],
+                            "px": self._od.position_px(),
+                            "seg": "E3",
+                        }
+                        ws_records.append(rec)
+                        self._ws_records.append(rec)
+        finally:
+            # sleep 在任务被停用/结束时抛控制流异常，走不到下面的松键代码；
+            # 必须在 finally 里松 W，否则角色会一直前进。
+            try:
+                self.send_key_up("w")
+            except Exception as e:
+                self.log_warning(f"E3 send_key_up('w') 失败: {e}")
         end_pos = self._od.position_px()
         fwd, strafe = self._od.forward_strafe_m(heading)
         result = {
@@ -402,30 +412,33 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
         except Exception as e:
             self.log_warning(f"E4 send_key_down('w') 失败: {e}")
             return {"error": str(e)}
-        start = self.active_time()
-        i = 0
-        while self.active_time() - start < duration:
-            self.sleep(step)
-            if i % every == 0:
-                try:
-                    self.active_and_send_mouse_delta(dx=turn_dx, dy=0, steps=2, delay=0.005)
-                except Exception as e:
-                    self.log_warning(f"E4 转向失败: {e}")
-            self._od.sample()
-            if ws_active:
-                pos_ws = self._poll_ws_pos(timeout=0.0)
-                if pos_ws is not None and pos_ws[3] == self._ws_map_id:
-                    self._ws_records.append({
-                        "t": self.active_time(),
-                        "x": pos_ws[0], "y": pos_ws[1], "z": pos_ws[2],
-                        "px": self._od.position_px(),
-                        "seg": "E4",
-                    })
-            i += 1
         try:
-            self.send_key_up("w")
-        except Exception as e:
-            self.log_warning(f"E4 send_key_up('w') 失败: {e}")
+            start = self.active_time()
+            i = 0
+            while self.active_time() - start < duration:
+                self.sleep(step)
+                if i % every == 0:
+                    try:
+                        self.active_and_send_mouse_delta(dx=turn_dx, dy=0, steps=2, delay=0.005)
+                    except Exception as e:
+                        self.log_warning(f"E4 转向失败: {e}")
+                self._od.sample()
+                if ws_active:
+                    pos_ws = self._poll_ws_pos(timeout=0.0)
+                    if pos_ws is not None and pos_ws[3] == self._ws_map_id:
+                        self._ws_records.append({
+                            "t": self.active_time(),
+                            "x": pos_ws[0], "y": pos_ws[1], "z": pos_ws[2],
+                            "px": self._od.position_px(),
+                            "seg": "E4",
+                        })
+                i += 1
+        finally:
+            # 同 E3：走不到正常松键路径时也必须松开 W
+            try:
+                self.send_key_up("w")
+            except Exception as e:
+                self.log_warning(f"E4 send_key_up('w') 失败: {e}")
         pos = self._od.position_px()
         self.log_info(f"E4 净位移: {pos[0]:.2f},{pos[1]:.2f}px  len={(pos[0]**2+pos[1]**2)**0.5:.2f}px")
         return {"pos_px": pos, "len_px": (pos[0] ** 2 + pos[1] ** 2) ** 0.5}
@@ -477,8 +490,10 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
 
         返回：
           - scale_m_per_px: 米/像素（|d_world_xz|/|d_px| 的中位数）
-          - map_to_world_px: 2x2，地图系像素 -> 世界系米（inv(A)，含轴/符号）
-          - world_to_map_px: 2x2，世界系 -> 地图系像素（A）
+          - map_to_world_px: 2x2，地图系像素 -> 世界系米（inv(A)，含轴/符号）；
+            近单方向行走（ill_conditioned）时为 None——这时垂直轴完全没被激励，
+            解出的映射是数值噪声，不能当标定结果用
+          - world_to_map_px: 2x2，世界系 -> 地图系像素（A）；同样在病态时为 None
           - condition / ill_conditioned: 方向激励是否充足（病态检测）
           - n: 使用的相邻差分对数
         """
@@ -513,10 +528,6 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
         median_m_per_px = float(np.median(ratios)) if ratios else 0.0
         # 最小二乘拟合 d_px = A @ d_world（A: world系 -> map系像素）
         A, *_ = np.linalg.lstsq(dws, dpxs, rcond=None)
-        try:
-            invA = np.linalg.inv(A)
-        except np.linalg.LinAlgError:
-            invA = np.linalg.pinv(A)
         # 病态检测：行走是否近单方向（dws 奇异值比）
         try:
             s = np.linalg.svd(dws, compute_uv=False)
@@ -524,17 +535,28 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
         except Exception:
             cond = float("inf")
         ill = cond > 10.0
+        # 近单方向时垂直轴完全没被激励：lstsq 的解在那里不受约束，inv 会给出
+        # 数值爆炸的映射。这种情况只保留比例尺供参考，轴映射置 None。
+        map_to_world_px = None
+        world_to_map_px = None
+        if not ill:
+            try:
+                invA = np.linalg.inv(A)
+            except np.linalg.LinAlgError:
+                invA = np.linalg.pinv(A)
+            map_to_world_px = [
+                [round(float(invA[0, 0]), 6), round(float(invA[0, 1]), 6)],
+                [round(float(invA[1, 0]), 6), round(float(invA[1, 1]), 6)],
+            ]
+            world_to_map_px = [
+                [round(float(A[0, 0]), 6), round(float(A[0, 1]), 6)],
+                [round(float(A[1, 0]), 6), round(float(A[1, 1]), 6)],
+            ]
         return {
             "scale_m_per_px": round(meters_per_px, 6),
             "median_m_per_px": round(median_m_per_px, 6),
-            "map_to_world_px": [
-                [round(float(invA[0, 0]), 6), round(float(invA[0, 1]), 6)],
-                [round(float(invA[1, 0]), 6), round(float(invA[1, 1]), 6)],
-            ],
-            "world_to_map_px": [
-                [round(float(A[0, 0]), 6), round(float(A[0, 1]), 6)],
-                [round(float(A[1, 0]), 6), round(float(A[1, 1]), 6)],
-            ],
+            "map_to_world_px": map_to_world_px,
+            "world_to_map_px": world_to_map_px,
             "n": len(dws),
             "condition": round(cond, 2),
             "ill_conditioned": bool(ill),
@@ -542,42 +564,55 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
 
     def _report(self, results):
         self.log_info("===== 标定结果汇总 =====", notify=True)
-        for name, r in results.items():
+
+        def _ok(key):
+            """取一项实验结果的字典；未执行/失败时打印原因并返回 None。
+
+            实验内部失败会返回 ``{"error": ...}``，这里必须先挡掉——否则下面取
+            ``r['heading']`` 之类的字段会 KeyError，把整份汇总（含前面已成功的
+            实验）一起丢掉。
+            """
+            r = results.get(key)
             if r is None:
-                self.log_info(f"{name}: (无数据)")
-                continue
-        # 逐项输出关键量
-        if "E1_idle" in results:
-            r = results["E1_idle"]
+                self.log_info(f"{key}: (未执行)")
+                return None
+            if "error" in r:
+                self.log_info(f"{key}: (失败) {r['error']}")
+                return None
+            return r
+
+        r = _ok("E1_idle")
+        if r is not None:
             self.log_info(
                 f"E1 静止: 样本={r['samples']} 有位移样本={r['moved']} "
                 f"累计位移=({r['pos_px'][0]:.2f},{r['pos_px'][1]:.2f})px  len={r['len_px']:.2f}px"
             )
-        if "E2_turn" in results:
-            r = results["E2_turn"]
+        r = _ok("E2_turn")
+        if r is not None:
             self.log_info(
                 f"E2 转向: 步数={r['steps']} 位移len={r['len_px']:.2f}px "
                 f"Δyaw={r['d_yaw']}"
             )
-        if "E3_straight" in results:
-            r = results["E3_straight"]
+        r = _ok("E3_straight")
+        if r is not None:
             self.log_info(
                 f"E3 直走: heading={r['heading']} 位移=({r['pos_px'][0]:.2f},{r['pos_px'][1]:.2f})px "
                 f"len={r['len_px']:.2f}px  forward={r['forward']:.2f}  strafe={r['strafe']:.2f}  "
                 f"ws_records={r['ws_records']}"
             )
-        if "scale" in results:
-            si = results["scale"]
+        r = results.get("scale")
+        if r is not None:
+            axis_txt = r.get("map_to_world_px") or "不可用(行走近单方向)"
             self.log_info(
-                f"比例尺标定(E3+E4合并): scale_m_per_px={si['scale_m_per_px']}  "
-                f"(median={si.get('median_m_per_px')})  "
-                f"map_to_world_px={si['map_to_world_px']}  n={si['n']}  "
-                f"condition={si['condition']}  ill_conditioned={si['ill_conditioned']}",
+                f"比例尺标定(E3+E4合并): scale_m_per_px={r['scale_m_per_px']}  "
+                f"(median={r.get('median_m_per_px')})  "
+                f"map_to_world_px={axis_txt}  n={r['n']}  "
+                f"condition={r['condition']}  ill_conditioned={r['ill_conditioned']}",
                 notify=True,
             )
-        if "E4_arc" in results:
-            r = results["E4_arc"]
+        r = _ok("E4_arc")
+        if r is not None:
             self.log_info(f"E4 弧线: 净位移=({r['pos_px'][0]:.2f},{r['pos_px'][1]:.2f})px  len={r['len_px']:.2f}px")
-        if "E5_ui" in results:
-            r = results["E5_ui"]
+        r = _ok("E5_ui")
+        if r is not None:
             self.log_info(f"E5 界面: before={r['before_reason']} in_map={r['in_map_reasons']} after={r['after_reason']}")

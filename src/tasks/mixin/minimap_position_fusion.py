@@ -32,6 +32,8 @@ import math
 
 import numpy as np
 
+from src.tasks.mixin.minimap_odometry import _reraise_control_flow
+
 __all__ = ["MinimapPositionFusion", "world_from_map_px"]
 
 
@@ -274,8 +276,10 @@ class MinimapPositionFusion:
         """
         try:
             self._od.sample(frame=frame)
-        except Exception:
-            pass
+        except Exception as e:  # noqa: BLE001
+            # 任务被停用/结束抛的是框架控制流异常，必须放行——里程计侧
+            # _reraise_control_flow 特意让它们冒出来，这里不能又吞回去。
+            _reraise_control_flow(e)
         if self._pending_ws is not None and self.is_rest():
             w = self._pending_ws["world"]
             self._apply_sync(float(w[0]), float(w[2]), now)

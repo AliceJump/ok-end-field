@@ -175,12 +175,15 @@ def phase_shift(
 ) -> tuple[float, float, float]:
     """计算两帧小地图内容位移（图像系像素）。
 
+    两帧都会先经 :func:`_to_gray_norm_masked` 统一处理（转灰度、缩放到 mask 尺寸、
+    按环带均值方差归一化）；任一帧为 None 时返回 ``(0, 0, 0)``。
+
     Returns:
         (dx, dy, response)：内容从 A 到 B 的位移 + 相关响应。
         dx, dy 满足"内容从 A 移动到 B"（A 中 (x,y) -> B 中 (x+dx, y+dy)）。
     """
-    a = _to_gray_norm_masked(gray_a, mask) if gray_a.dtype != np.float32 else gray_a
-    b = _to_gray_norm_masked(gray_b, mask) if gray_b.dtype != np.float32 else gray_b
+    a = _to_gray_norm_masked(gray_a, mask)
+    b = _to_gray_norm_masked(gray_b, mask)
     if a is None or b is None:
         return 0.0, 0.0, 0.0
     (dx, dy), response = cv2.phaseCorrelate(a, b)

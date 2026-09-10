@@ -28,6 +28,10 @@ def install_double_spin_range_patch():
     def patched_init(self, config_desc, config, key):
         orig_init(self, config_desc, config, key)
         self.spin_box.setRange(-99999999.0, 99999999.0)
+        # orig_init 里的 update_value() 是在默认范围 [0, 99.99] 下执行的，负数/
+        # 大数值已被钳掉；放宽范围后必须回读一次，否则界面显示的是钳过的值，
+        # 用户一交互就会把错值写回配置。此时值等于配置原值，回写是幂等的。
+        self.update_value()
 
     LabelAndDoubleSpinBox.__init__ = patched_init
     _PATCH_INSTALLED = True

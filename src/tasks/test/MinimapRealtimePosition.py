@@ -210,7 +210,20 @@ class MinimapRealtimePosition(BaseEfTask, WsPositionMixin):
             return
 
         scale = max(0.0, self._cfg_float("比例尺(米/像素)", DEFAULT_SCALE))
-        matrix = _parse_matrix(self.config.get("轴映射(逗号4值)", DEFAULT_MAP_TO_WORLD))
+        raw_matrix = self.config.get("轴映射(逗号4值)", DEFAULT_MAP_TO_WORLD)
+        matrix = _parse_matrix(raw_matrix)
+        if str(raw_matrix or "").strip() and matrix is None:
+            self.log_warning(
+                f"轴映射无法解析（应为 4 个逗号分隔数字）: {raw_matrix!r}，"
+                "将退回用「比例尺」构造默认轴（图右=东、图下=南）",
+                notify=True,
+            )
+        if matrix is None and scale <= 0:
+            self.log_warning(
+                "轴映射不可用且比例尺为 0：融合位置会恒等于 WS 锚点（不随移动变化）。"
+                "请填写有效的「比例尺(米/像素)」或「轴映射(逗号4值)」",
+                notify=True,
+            )
 
         # 里程计（供"小地图计算位置"）
         self._od = MinimapOdometry(self, scale_m_per_px=(scale if scale > 0 else None))
@@ -368,12 +381,12 @@ class MinimapRealtimePosition(BaseEfTask, WsPositionMixin):
                 f"误差={err_txt} 最新WS={ws_txt} 位移={od_txt}"
             )
 
-        # 收尾
-        if ws_active:
-            try:
-                self._stop_map_ws_client()
-            except Exception:
-                pass
+        # 收尾：WS 未稳定时 ws_active 会被置 False，但客户端线程已经起来了，
+        # 所以这里不按 ws_active 判断，一律停掉所有位置源（内部按 enabled 判断，幂等）。
+        try:
+            self._stop_position_sources()
+        except Exception as e:
+            self.log_warning(f"停止位置源失败: {e}")
         elapsed = self.active_time() - start
         avg = elapsed / iteration if iteration > 0 else 0.0
         self.log_info(
