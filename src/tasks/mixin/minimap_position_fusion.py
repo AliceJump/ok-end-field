@@ -17,8 +17,9 @@
   - 里程计给出"地图系位移（像素）"，轴：图像 x 向右、y 向下，北向上。
   - ``map_to_world_px`` 是 2x2 矩阵，把"地图系像素位移"映射为"世界系(米)位移"：
         world_delta = map_to_world_px @ (map_px_delta)
-    该矩阵可由标定得到（默认取 ``scale_m_per_px * I`` 的恒等轴假设；真机 E3 会给出
-    真实的轴映射与符号，届时用 ``map_to_world_px = inv(标定A)`` 覆盖）。
+    该矩阵可由标定得到（默认取 ``diag(scale, -scale)``：图右=东 +x、图下=南
+    -z，与真机标定及消费方默认矩阵同号；一旦测得轴交换/其它符号，用
+    ``map_to_world_px = inv(标定A)`` 覆盖）。
   - WS 绝对坐标取水平分量 (x, z)。
 
 本模块不依赖 ``ok`` 框架，只依赖一个"里程计"鸭子类型对象（提供 ``sample``、
@@ -54,9 +55,11 @@ class MinimapPositionFusion:
             - ``position_px()``：累计地图系位移（像素）；
             - ``reset_position()``：清零累计位移；
             - ``last_sample()``：最近一次有效样本（用于静止判定）。
-        map_to_world_px: 2x2 矩阵，地图系像素 -> 世界系米。None 时用 ``scale * I``。
+        map_to_world_px: 2x2 矩阵，地图系像素 -> 世界系米。None 时用
+            ``diag(scale, -scale)``（图右=东 +x、图下=南 -z，见模块文档）。
         scale_m_per_px: 比例尺（米/像素），仅在 ``map_to_world_px`` 为 None 时用于构造默认轴。
-        rest_speed_px_s: 静止判定阈值（像素/秒），低于该值视为静止。
+        rest_speed_m_s: 静止判定阈值（米/秒，世界系），低于该值算"小地图没动"。
+        rest_ws_m: 静止判定的 WS 位移阈值（米）：相邻两次 WS 坐标之差低于该值算"WS 没动"。
     """
 
     def __init__(
@@ -65,7 +68,8 @@ class MinimapPositionFusion:
         *,
         map_to_world_px=None,
         scale_m_per_px: float = 1.0,
-        rest_speed_px_s: float = 2.0,
+        rest_speed_m_s: float = 0.2,
+        rest_ws_m: float = 0.5,
         arrow_func=None,
     ):
         self._od = odometry
@@ -73,8 +77,10 @@ class MinimapPositionFusion:
         if map_to_world_px is not None:
             self._map_to_world_px = np.asarray(map_to_world_px, dtype=np.float64).reshape(2, 2)
         else:
-            self._map_to_world_px = np.diag([self._scale, self._scale]).astype(np.float64)
-        self._rest_speed_px_s = float(rest_speed_px_s)
+            # 默认轴：图右=东 +x、图下=南 -z（图像 y 向下），与真机标定同号
+            self._map_to_world_px = np.diag([self._scale, -self._scale]).astype(np.float64)
+        self._rest_speed_m_s = float(rest_speed_m_s)
+        self._rest_ws_m = float(rest_ws_m)
         # 朝向来源回调：callable(frame) -> (angle, score)。用于同时取朝向。
         self._arrow_func = arrow_func
 
@@ -82,14 +88,24 @@ class MinimapPositionFusion:
         self._anchor_set = False
         self._last_sync_t: float | None = None
         self._pending_ws = None
+        # 静止判定：最近一次收到的 WS 坐标 + 相邻两次 WS 之间的位移（米）
+        self._last_ws = None          # (x, z)
+        self._ws_moved_m = None       # None = 还没收到过两次 WS 样本
+        # 最近一次静止校准的残差：校准前"小地图推算坐标" vs WS 坐标
+        self._last_sync_residual = None
+        # 最近一次 is_rest() 的两个实测值（排查"为什么没判静止"）
+        self._rest_diag = None
 
     # ------------------------------------------------------------------ #
     # 状态
     # ------------------------------------------------------------------ #
     def reset(self):
-        """清空锚点与待应用 WS 样本。"""
+        """清空锚点、待应用 WS 样本、静止判定状态与校准残差。"""
         self._anchor_set = False
         self._pending_ws = None
+        self._last_ws = None
+        self._ws_moved_m = None
+        self._last_sync_residual = None
         self._od.reset_position()
 
     def set_map_to_world_px(self, matrix):
@@ -114,58 +130,136 @@ class MinimapPositionFusion:
         s = scale_info.get("scale_m_per_px")
         if s:
             self._scale = float(s)
-            # 仅在没有自定义轴映射时用 scale 重建恒等轴
+            # 仅在没有自定义轴映射时用 scale 重建默认轴（图下=南，-z）
             if not scale_info.get("map_to_world_px"):
-                self._map_to_world_px = np.diag([self._scale, self._scale]).astype(np.float64)
+                self._map_to_world_px = np.diag([self._scale, -self._scale]).astype(np.float64)
 
     def set_scale(self, scale_m_per_px: float):
         self._scale = float(scale_m_per_px)
-        # 仅在未设置自定义轴映射时，用 scale 重建恒等轴（世界=地图系*scale）
-        self._map_to_world_px = np.diag([self._scale, self._scale]).astype(np.float64)
+        # 仅在未设置自定义轴映射时，用 scale 重建默认轴（图下=南，-z）
+        self._map_to_world_px = np.diag([self._scale, -self._scale]).astype(np.float64)
 
     @property
     def map_to_world_px(self) -> tuple[tuple[float, float], tuple[float, float]]:
         return (tuple(self._map_to_world_px[0]), tuple(self._map_to_world_px[1]))
 
+    @property
+    def last_sync_residual(self) -> dict | None:
+        """最近一次校准的残差：{map_x, map_z, ws_x, ws_z, dx, dz, dist}。
+
+        ``map_*`` 是校准前"用小地图推算的坐标"，``ws_*`` 是以此为准的 WS 坐标，
+        ``dist`` 是两者距离（米）——即小地图定位在这次静止前的累计偏差。
+        首次校准（此前没有锚点）时为 None。
+        """
+        return self._last_sync_residual
+
+    @property
+    def ws_moved_m(self) -> float | None:
+        """相邻两次 WS 坐标的位移（米）；从未收到过两次样本时为 None。"""
+        return self._ws_moved_m
+
+    @property
+    def rest_diag(self) -> dict | None:
+        """最近一次 :meth:`is_rest` 的实测值与判定理由（排查为何未判静止）。"""
+        return self._rest_diag
+
     def is_rest(self) -> bool:
-        """根据最近一次有效样本估算是否静止（速度 < 阈值）。"""
+        """是否静止：小地图里程计位移极小 **且** WS 也没有位移，两者同时成立。
+
+        小地图里程计给的是高频、准确的相对位移；WS 给的是绝对坐标但有传输延迟。
+        只有两者同时显示"没动"才判静止——静止时 WS 的延迟无影响，此时用 WS
+        校准（``sync``）才是安全的。任一条件不满足都不算静止：
+
+          - 小地图条件：最近一次有效样本的世界系速度 < ``rest_speed_m_s``；
+          - WS 条件：相邻两次 WS 坐标之差 < ``rest_ws_m``（无 WS 数据时不参与）。
+
+        注意：里程计没有有效样本时返回 False——无法确认"没动"，不猜。
+        判定过程与两个实测值记录在 :attr:`rest_diag`，供日志排查"为什么没判静止"。
+        """
+        diag = {"map_speed_m_s": None, "ws_moved_m": self._ws_moved_m, "reason": "ok"}
+        self._rest_diag = diag
+
+        # 条件 1：小地图里程计位移极小（-> 世界系米/秒，避免 px/s 与 m/s 混淆）
         last = self._od.last_sample()
         if not last or not last.get("sampled") or not last.get("ok"):
+            diag["reason"] = "no_odom_sample"
             return False
         dt = float(last.get("dt") or 0.0)
         if dt <= 1e-6:
+            diag["reason"] = "bad_dt"
             return False
         dpx = last.get("dmap_px") or (0.0, 0.0)
-        speed = math.hypot(float(dpx[0]), float(dpx[1])) / dt
-        return speed < self._rest_speed_px_s
+        world = self._map_to_world_px @ np.asarray(
+            [float(dpx[0]), float(dpx[1])], dtype=np.float64)
+        speed = math.hypot(float(world[0]), float(world[1])) / dt
+        diag["map_speed_m_s"] = speed
+        if speed >= self._rest_speed_m_s:
+            diag["reason"] = "map_moving"
+            return False
+
+        # 条件 2：WS 也没有位移（没有 WS 数据时该条件不参与判定）
+        if self._ws_moved_m is not None and self._ws_moved_m >= self._rest_ws_m:
+            diag["reason"] = "ws_moving"
+            return False
+        return True
 
     # ------------------------------------------------------------------ #
     # 校准
     # ------------------------------------------------------------------ #
-    def sync(self, world_xyz, *, map_id=None, now=None):
-        """用 WS 绝对坐标设置锚点并清零里程计。
+    def _note_ws(self, x: float, z: float) -> None:
+        """记录一次 WS 坐标，并更新"相邻两次 WS 之间的位移"（静止判定条件 2）。"""
+        if self._last_ws is not None:
+            self._ws_moved_m = math.hypot(float(x) - self._last_ws[0], float(z) - self._last_ws[1])
+        else:
+            self._ws_moved_m = None   # 还没有两次样本，条件 2 暂不参与
+        self._last_ws = (float(x), float(z))
 
-        应在静止时调用（此时 WS 延迟无影响）。返回本次估计结果。
-        """
-        if world_xyz is None:
-            return self.estimate()
-        self._anchor_world = np.array([float(world_xyz[0]), float(world_xyz[2])], dtype=np.float64)
+    def _apply_sync(self, ws_x: float, ws_z: float, now) -> dict | None:
+        """执行锚点替换：先记录校准前残差，再以 WS 为基准重设锚点并清零里程计。"""
+        pre = self.estimate()          # 校准前的"小地图推算位置"
+        self._last_sync_residual = None
+        if pre is not None:
+            mx, mz = float(pre["x"]), float(pre["z"])
+            self._last_sync_residual = {
+                "map_x": mx,
+                "map_z": mz,
+                "ws_x": float(ws_x),
+                "ws_z": float(ws_z),
+                "dx": mx - float(ws_x),
+                "dz": mz - float(ws_z),
+                "dist": math.hypot(mx - float(ws_x), mz - float(ws_z)),
+            }
+        self._anchor_world = np.array([float(ws_x), float(ws_z)], dtype=np.float64)
         self._anchor_set = True
         self._last_sync_t = now
         self._pending_ws = None
         self._od.reset_position()
         return self.estimate()
 
+    def sync(self, world_xyz, *, map_id=None, now=None):
+        """用 WS 绝对坐标设置锚点并清零里程计（无条件执行，调用方负责保证静止）。
+
+        校准前的小地图推算坐标与偏差记录在 :attr:`last_sync_residual`，
+        调用方据此输出"小地图算出来的位置偏了多少"。
+        """
+        if world_xyz is None:
+            return self.estimate()
+        x, z = float(world_xyz[0]), float(world_xyz[2])
+        self._note_ws(x, z)
+        return self._apply_sync(x, z, now)
+
     def try_sync(self, world_xyz, *, map_id=None, now=None) -> bool:
-        """尝试用 WS 校准：静止时立即同步；否则暂存待静止后应用。
+        """尝试用 WS 校准：静止（小地图没动 且 WS 没动）时立即同步；否则暂存。
 
         Returns:
             True 表示本次已同步；False 表示暂存为 pending（未同步）。
         """
         if world_xyz is None:
             return False
+        x, z = float(world_xyz[0]), float(world_xyz[2])
+        self._note_ws(x, z)
         if self.is_rest():
-            self.sync(world_xyz, map_id=map_id, now=now)
+            self._apply_sync(x, z, now)
             return True
         self._pending_ws = {"world": world_xyz, "map_id": map_id, "now": now}
         return False
@@ -183,11 +277,8 @@ class MinimapPositionFusion:
         except Exception:
             pass
         if self._pending_ws is not None and self.is_rest():
-            self.sync(
-                self._pending_ws["world"],
-                map_id=self._pending_ws["map_id"],
-                now=now,
-            )
+            w = self._pending_ws["world"]
+            self._apply_sync(float(w[0]), float(w[2]), now)
         return self.estimate()
 
     def estimate(self) -> dict | None:

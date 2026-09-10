@@ -8,6 +8,7 @@
 - 自定义轴映射（含符号/交换）生效；
 - world_from_map_px 纯函数。
 """
+import math
 import unittest
 
 from src.tasks.mixin.minimap_position_fusion import MinimapPositionFusion, world_from_map_px
@@ -55,26 +56,46 @@ class TestSyncAndEstimate(unittest.TestCase):
         od = _StubOd()
         fusion = MinimapPositionFusion(od, scale_m_per_px=2.0)
         fusion.sync((100.0, 0.0, 200.0))
-        # 里程计移动 (3, 4) 像素，轴默认 = scale*I -> 世界 (6, 8)
+        # 里程计移动 (3, 4) 像素，默认轴 = diag(scale,-scale)
+        # （图右=东 +x、图下=南 -z）-> 世界 (6, -8)
         od.add(3.0, 4.0, 0.5)
         est = fusion.step()
         self.assertAlmostEqual(est["x"], 106.0, delta=1e-6)
-        self.assertAlmostEqual(est["z"], 208.0, delta=1e-6)
+        self.assertAlmostEqual(est["z"], 192.0, delta=1e-6)
         self.assertEqual(est["dmap_px"], (3.0, 4.0))
+
+    def test_default_axis_maps_image_down_to_south(self):
+        """#5 回归：默认轴把地图 y 向下（南）映射为世界 -z（北朝上）。"""
+        od = _StubOd()
+        fusion = MinimapPositionFusion(od, scale_m_per_px=2.0)
+        fusion.sync((0.0, 0.0, 0.0))
+        od.add(0.0, 5.0, 0.5)   # 图上往下（南）
+        est = fusion.step()
+        self.assertAlmostEqual(est["x"], 0.0, delta=1e-6)
+        self.assertAlmostEqual(est["z"], -10.0, delta=1e-6)
+        # 图上往北 = -y -> 世界 +z
+        od.reset_position()
+        od.add(0.0, -5.0, 0.5)
+        est = fusion.step()
+        self.assertAlmostEqual(est["z"], 10.0, delta=1e-6)
 
 
 class TestRestGatedSync(unittest.TestCase):
+    """静止 = 小地图没动 **且** WS 没动，两者同时成立才用 WS 校准。"""
+
     def test_try_sync_defers_when_moving(self):
         od = _StubOd()
-        fusion = MinimapPositionFusion(od, rest_speed_px_s=2.0)
+        fusion = MinimapPositionFusion(od)  # 默认阈值：0.2 m/s、0.5 m
         fusion.sync((0.0, 0.0, 0.0))
-        # 移动：速度 10 px/s > 阈值 -> 不应同步
+        # 移动：10 m/s > 阈值 -> 不应同步
         od.add(10.0, 0.0, 1.0)
         applied = fusion.try_sync((50.0, 0.0, 60.0))
         self.assertFalse(applied)
         self.assertEqual(fusion.estimate()["x"], 0.0 + 10.0)  # 仍是旧锚点+位移
+        self.assertEqual(fusion.rest_diag["reason"], "map_moving")
 
-        # 静止：速度 0 < 阈值 -> step 时应用 pending，重设锚点并清零里程计
+        # 小地图停下 + WS 也不再动（同坐标再来一条）-> 静止，step 时应用 pending
+        fusion.try_sync((50.0, 0.0, 60.0))
         od.add(0.0, 0.0, 1.0)
         est = fusion.step()
         self.assertAlmostEqual(est["x"], 50.0, delta=1e-6)
@@ -83,13 +104,76 @@ class TestRestGatedSync(unittest.TestCase):
 
     def test_try_sync_immediate_when_rest(self):
         od = _StubOd()
-        fusion = MinimapPositionFusion(od, rest_speed_px_s=2.0)
-        fusion.sync((0.0, 0.0, 0.0))
-        od.add(0.0, 0.0, 1.0)  # 静止
+        fusion = MinimapPositionFusion(od)
+        # 锚定在 (80, 90)：随后同坐标的 WS 样本即"WS 也没动"
+        fusion.sync((80.0, 0.0, 90.0))
+        od.add(0.0, 0.0, 1.0)  # 小地图静止
         applied = fusion.try_sync((80.0, 0.0, 90.0))
         self.assertTrue(applied)
         self.assertEqual(fusion.estimate()["x"], 80.0)
         self.assertEqual(fusion.estimate()["z"], 90.0)
+
+    def test_ws_moving_blocks_rest(self):
+        """小地图没动、但 WS 还在动 -> 不算静止（两个条件必须同时成立）。"""
+        od = _StubOd()
+        fusion = MinimapPositionFusion(od)
+        fusion.sync((0.0, 0.0, 0.0))
+        od.add(0.0, 0.0, 1.0)                         # 小地图没动
+        applied = fusion.try_sync((30.0, 0.0, 40.0))  # WS 移动了 50m
+        self.assertFalse(applied)
+        self.assertEqual(fusion.rest_diag["reason"], "ws_moving")
+        self.assertFalse(fusion.is_rest())
+
+    def test_no_odom_sample_is_not_rest(self):
+        """里程计没有有效样本时不判静止：无法确认"没动"，不猜。"""
+        od = _StubOd()
+        fusion = MinimapPositionFusion(od)
+        fusion.sync((0.0, 0.0, 0.0))  # 此后 last_sample() 仍为 None
+        self.assertFalse(fusion.is_rest())
+        self.assertEqual(fusion.rest_diag["reason"], "no_odom_sample")
+
+    def test_rest_speed_is_world_units(self):
+        """静止阈值是世界系米/秒：慢走不再被误判为静止。
+
+        1.72 px/s（scale 0.64 -> 约 1.1 m/s，即日志里 #003/#045 那种慢走）
+        在旧的 2.0 px/s 阈值下会判"静止"，新阈值下正确判为移动。
+        """
+        od = _StubOd()
+        fusion = MinimapPositionFusion(od, scale_m_per_px=0.64)
+        fusion.sync((0.0, 0.0, 0.0))
+        od.add(1.72, 0.0, 1.0)
+        self.assertFalse(fusion.is_rest())
+        self.assertEqual(fusion.rest_diag["reason"], "map_moving")
+        self.assertAlmostEqual(fusion.rest_diag["map_speed_m_s"], 1.1, delta=0.01)
+
+
+class TestSyncResidual(unittest.TestCase):
+    """静止校准时记录"校准前小地图推算坐标 vs WS"，用来量小地图漂了多少。"""
+
+    def test_first_sync_has_no_residual(self):
+        od = _StubOd()
+        fusion = MinimapPositionFusion(od)
+        self.assertIsNone(fusion.last_sync_residual)
+        fusion.sync((1.0, 0.0, 2.0))
+        self.assertIsNone(fusion.last_sync_residual)  # 首次校准没有"之前的推算"
+
+    def test_residual_reports_minimap_drift(self):
+        od = _StubOd()
+        fusion = MinimapPositionFusion(od, scale_m_per_px=1.0)
+        fusion.sync((100.0, 0.0, 200.0))
+        od.add(3.0, 4.0, 1.0)   # 小地图推算又走 (3,4)px -> 世界 (3,-4)（图下=南）
+        fusion.sync((106.0, 0.0, 204.0))
+        res = fusion.last_sync_residual
+        self.assertAlmostEqual(res["map_x"], 103.0, delta=1e-6)
+        self.assertAlmostEqual(res["map_z"], 196.0, delta=1e-6)
+        self.assertAlmostEqual(res["ws_x"], 106.0, delta=1e-6)
+        self.assertAlmostEqual(res["ws_z"], 204.0, delta=1e-6)
+        self.assertAlmostEqual(res["dx"], -3.0, delta=1e-6)
+        self.assertAlmostEqual(res["dz"], -8.0, delta=1e-6)
+        self.assertAlmostEqual(res["dist"], math.hypot(3.0, 8.0), delta=1e-6)
+        # 校准后位置等于 WS（基准替换），残差仍保留校准前的推算值
+        self.assertAlmostEqual(fusion.estimate()["x"], 106.0, delta=1e-6)
+        self.assertAlmostEqual(fusion.estimate()["z"], 204.0, delta=1e-6)
 
 
 class TestAxisMapping(unittest.TestCase):
@@ -130,7 +214,7 @@ class TestState(unittest.TestCase):
         self.assertEqual(len(frames), 1)
         self.assertIs(frames[0], frame)  # 箭头读取的是同一个 frame
         self.assertAlmostEqual(st["x"], 106.0, delta=1e-6)
-        self.assertAlmostEqual(st["z"], 208.0, delta=1e-6)
+        self.assertAlmostEqual(st["z"], 192.0, delta=1e-6)
         self.assertAlmostEqual(st["heading"], 45.0, delta=1e-6)
         self.assertAlmostEqual(st["heading_score"], 0.9, delta=1e-6)
 
@@ -172,7 +256,8 @@ class TestState(unittest.TestCase):
         od = _StubOd()
         fusion = MinimapPositionFusion(od, scale_m_per_px=1.0)
         fusion.set_from_calibration(None)  # 不应报错
-        self.assertEqual(fusion.map_to_world_px, ((1.0, 0.0), (0.0, 1.0)))
+        # 保持默认轴 diag(scale, -scale)
+        self.assertEqual(fusion.map_to_world_px, ((1.0, 0.0), (0.0, -1.0)))
 
 
 if __name__ == "__main__":

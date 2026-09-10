@@ -5,11 +5,18 @@
   [实时位置] #003 | 位置=(-323.32, 461.00)m 朝向=353.5° 速度=0.96m/s 状态=静止 |
               误差=0.99m 最新WS=(-323.03, 463.64) 位移=(0.2, -1.5)px
 
-- 位置：融合后的实时坐标（WS 锚点 + 里程计增量 -> 世界 x/z, 米）。
+判定"静止"需要**小地图里程计位移极小 且 WS 也没有位移**两者同时成立；静止时以
+WS 坐标为基准重新校准。校准发生的那一拍额外输出一行，给出**校准前由小地图推算的
+坐标**与它跟 WS 的偏差，用来观察小地图定位在两次校准之间漂了多少：
+  [静止校准] #045 小地图推算=(569.00, -150.95)m WS=(569.58, -150.92)m
+             偏差=(-0.58, -0.03)m 距离=0.58m
+
+- 位置：融合后的实时坐标（WS 锚点 + 里程计增量 -> 世界 x/z, 米）。校准那一拍为
+  校准后的值（= WS），校准前的推算值见上面的 [静止校准] 行。
 - 朝向：小地图箭头角度（可信，直接使用）；低置信时标注 (低置信)。
-- 速度：当前移动速度（米/秒）。
-- 状态：静止 / 移动（静止时由 WS 校准、里程计清零）。
-- 误差：位置与"最新 WS 坐标"的距离（米）。静止≈0；移动时≈WS 延迟，非误差。
+- 速度：当前移动速度（米/秒，世界系，与静止判定同一个量）。
+- 状态：静止 / 移动（静止 = 小地图与 WS 同时显示没动，此时由 WS 校准、里程计清零）。
+- 误差：位置与"最新 WS 坐标"的距离（米）。静止校准后≈0；移动时≈WS 延迟，非误差。
 - 最新WS / 位移：最近收到的官方地图坐标(可能滞后) / 里程计原始位移(地图系像素)。
 
 坐标系：位置/WS 是"世界系"(x, z)；位移是"地图系"(图像 x 右、y 下，北向上)，
@@ -74,7 +81,7 @@ class MinimapRealtimePosition(BaseEfTask, WsPositionMixin):
             "朝向最低分数": 0.6,
         }
         self.config_description = {
-            "采样间隔(秒)": "每个采样拍之间等待的时间",
+            "采样间隔(秒)": "固定采样周期(秒)：睡到下一个采样点，保证每拍间隔为该值（不会被单拍工作耗时撑大）",
             "运行时长(秒)": "本次采样运行的秒数",
             "比例尺(米/像素)": "小地图比例尺（里程计 position_m / 融合用）",
             "轴映射(逗号4值)": "地图系像素->世界系米的 2x2 矩阵，逗号4值 a11,a12,a21,a22；"
@@ -244,7 +251,11 @@ class MinimapRealtimePosition(BaseEfTask, WsPositionMixin):
         min_score = max(0.0, min(1.0, self._cfg_float("朝向最低分数", 0.6)))
 
         start = self.active_time()
+        next_at = start
         iteration = 0
+        overruns = 0
+        max_period = 0.0
+        prev_tick = None
         self.log_info(
             f"开始实时采样: interval={interval:.2f}s duration={duration:.1f}s "
             f"scale={scale} matrix={matrix}"
@@ -252,12 +263,27 @@ class MinimapRealtimePosition(BaseEfTask, WsPositionMixin):
         self.log_info(
             "字段说明: "
             "位置=融合后的实时坐标(x,z,米) | 朝向=小地图箭头角度(°) | "
-            "速度=移动速度(米/秒) | 状态=静止/移动(静止时由WS校准) | "
+            "速度=移动速度(米/秒) | 状态=静止/移动(静止=小地图与WS都没动, 此时由WS校准) | "
             "误差=位置与最新WS的距离(米; 移动时≈WS延迟, 静止时≈0) | "
             "最新WS=最近收到的官方地图坐标(可能滞后) | 位移=里程计原始位移(地图系像素)"
         )
-        while self.active_time() - start < duration:
-            self.sleep(interval)
+        while True:
+            # 固定采样节拍：睡到下一个采样点（只睡剩余时间），而不是「sleep(interval) 后再干活」。
+            # 后者实际周期 = 采样间隔 + 单拍工作耗时，会明显大于设定的采样间隔。
+            next_at += interval
+            now = self.active_time()
+            if next_at > now:
+                self.sleep(next_at - now)
+            elif now - next_at > interval:
+                # 单拍工作远超采样间隔：重新对齐，不追赶补采（避免连续快采）
+                overruns += 1
+                next_at = now
+            now = self.active_time()
+            if now - start >= duration:
+                break
+            if prev_tick is not None:
+                max_period = max(max_period, now - prev_tick)
+            prev_tick = now
             iteration += 1
             pos_ws = None  # 本次迭代可能没有新的 WS 位置
 
@@ -272,15 +298,33 @@ class MinimapRealtimePosition(BaseEfTask, WsPositionMixin):
             # 融合：采样一拍（内部集成里程计 + 应用可能的待定 WS），并读朝向
             st = self._fusion.state(now=self.active_time(), frame=frame)
 
-            # 若 WS 有新鲜位置，交给 try_sync（静止时校准；移动时暂存）
+            # 若 WS 有新鲜位置，交给 try_sync（静止时才校准；移动时暂存）
+            synced = False
             if ws_active:
                 pos_ws = self._poll_ws_fresh(timeout=0.0)
                 if pos_ws is not None and pos_ws[3] == self._ws_map_id:
-                    self._fusion.try_sync(pos_ws, map_id=pos_ws[3], now=self.active_time())
+                    synced = self._fusion.try_sync(pos_ws, map_id=pos_ws[3], now=self.active_time())
                     self._last_ws = (pos_ws[0], pos_ws[2])  # 记录最近 WS 用于误差
+                    if synced:
+                        # 校准后重读估计：否则本拍仍打印重锚前的旧位置，
+                        # 与同一行的"位移"（已清零）自相矛盾（与 NavToPoint 处理一致）。
+                        est = self._fusion.estimate()
+                        if est is not None:
+                            st.update(est)
 
             if iteration % log_every != 0:
                 continue
+
+            # ---- 静止校准：输出校准前"小地图推算的坐标"与偏差 ----
+            residual = self._fusion.last_sync_residual if synced else None
+            if residual is not None:
+                self.log_info(
+                    f"[静止校准] #{iteration:03d} 小地图推算="
+                    f"({residual['map_x']:.2f}, {residual['map_z']:.2f})m "
+                    f"WS=({residual['ws_x']:.2f}, {residual['ws_z']:.2f})m "
+                    f"偏差=({residual['dx']:+.2f}, {residual['dz']:+.2f})m "
+                    f"距离={residual['dist']:.2f}m"
+                )
 
             # ---- 组装可读日志 ----
             od_px = self._od.position_px()
@@ -301,14 +345,9 @@ class MinimapRealtimePosition(BaseEfTask, WsPositionMixin):
             if heading_score is not None and heading_score < min_score:
                 heading_txt += "(低置信)"
 
-            # 速度（米/秒）
-            speed_txt = "-"
-            last = self._od.last_sample()
-            if last and last.get("sampled") and last.get("ok"):
-                dm = last.get("dmap_m") or (0.0, 0.0)
-                dt = max(0.0, float(last.get("dt") or 0.0))
-                if dt > 1e-6:
-                    speed_txt = f"{math.hypot(float(dm[0]), float(dm[1])) / dt:.2f}m/s"
+            # 速度（米/秒）：取静止判定用的同一个量（世界系位移/时间），单位与阈值一致
+            spd = (self._fusion.rest_diag or {}).get("map_speed_m_s")
+            speed_txt = f"{spd:.2f}m/s" if spd is not None else "-"
 
             # 状态
             rest_txt = "静止" if rest else "移动"
@@ -335,4 +374,11 @@ class MinimapRealtimePosition(BaseEfTask, WsPositionMixin):
                 self._stop_map_ws_client()
             except Exception:
                 pass
-        self.log_info("实时采样结束", notify=True)
+        elapsed = self.active_time() - start
+        avg = elapsed / iteration if iteration > 0 else 0.0
+        self.log_info(
+            f"实时采样结束: {iteration} 拍 / {elapsed:.1f}s，"
+            f"目标周期 {interval:.2f}s，实际平均 {avg:.3f}s，"
+            f"最大周期 {max_period:.3f}s，超时重对齐 {overruns} 次",
+            notify=True,
+        )

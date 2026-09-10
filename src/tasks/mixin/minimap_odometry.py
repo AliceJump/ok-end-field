@@ -38,6 +38,7 @@ __all__ = [
     "phase_shift",
     "body_axes_from_heading",
     "decompose_body",
+    "region_geometry",
     "wrap_deg",
 ]
 
@@ -48,9 +49,50 @@ DEFAULT_R_OUTER_RATIO = 0.044
 DEFAULT_R_INNER_RATIO = 0.014
 
 
+def region_geometry(
+    width: int,
+    height: int,
+    center_ratio: tuple[float, float] = DEFAULT_CENTER_RATIO,
+    r_outer_ratio: float = DEFAULT_R_OUTER_RATIO,
+    r_inner_ratio: float = DEFAULT_R_INNER_RATIO,
+) -> tuple[float, float, float, float]:
+    """由画面尺寸与比例算出小地图圆心与内外半径（像素）。
+
+    单一事实来源：里程计建掩膜（``MinimapOdometry._mask``）与「小地图区域检查」
+    任务都调用这里，保证"检查任务圈出来的区域"与"实际参与相位相关的像素"
+    永远一致——否则这个检查就没有意义。
+
+    Returns:
+        (cx, cy, r_inner, r_outer)：圆心像素坐标与内/外半径（像素）。
+        半径均按 *宽* 的同一比例换算（圆不为椭圆的假设）。
+    """
+    cx = float(center_ratio[0]) * float(width)
+    cy = float(center_ratio[1]) * float(height)
+    r_inner = float(r_inner_ratio) * float(width)
+    r_outer = float(r_outer_ratio) * float(width)
+    return cx, cy, r_inner, r_outer
+
+
 def wrap_deg(deg: float) -> float:
     """把角度归一化到 [0, 360)。"""
     return float(deg) % 360.0
+
+
+def _reraise_control_flow(e: BaseException) -> None:
+    """若 e 是框架的控制流异常则原样抛出，否则什么也不做。
+
+    这些异常在 ok 里直接继承 ``Exception``，所以 ``except Exception`` 会把它们
+    一起吞掉——而 ``TaskExecutor.execute`` 正是靠它们给任务正常收尾。吞掉的后果是
+    任务停不下来、executor 状态错乱。这里只放行这几类，其余仍按业务异常处理。
+
+    延迟导入 ok：本模块的纯数学部分不依赖框架，便于在无框架环境下做单测。
+    """
+    try:
+        from ok import FinishedException, TaskDisabledException, WaitFailedException
+    except Exception:  # pragma: no cover - 无框架环境下无从判断，按业务异常处理
+        return
+    if isinstance(e, (FinishedException, TaskDisabledException, WaitFailedException)):
+        raise e
 
 
 def annulus_mask(
@@ -249,6 +291,7 @@ class MinimapOdometry:
         self._anchor_t: float | None = None
         self._pos_px = np.zeros(2, dtype=np.float64)  # 地图系累计位移（像素）
         self._last: dict | None = None
+        self._last_result: dict | None = None
         self._scale_warned = False
 
     # ------------------------------------------------------------------ #
@@ -263,9 +306,9 @@ class MinimapOdometry:
         w, h = self._dimensions()
         key = (w, h)
         if key not in self._mask_cache:
-            r_outer = self._r_outer_ratio * w
-            r_inner = self._r_inner_ratio * w
-            cx, cy = self._center_ratio[0] * w, self._center_ratio[1] * h
+            cx, cy, r_inner, r_outer = region_geometry(
+                w, h, self._center_ratio, self._r_outer_ratio, self._r_inner_ratio
+            )
             self._mask_cache[key] = annulus_mask(
                 h, w, (cx, cy), r_inner, r_outer, feather=self._feather
             )
@@ -319,6 +362,20 @@ class MinimapOdometry:
     # 采样
     # ------------------------------------------------------------------ #
     def sample(self, frame: np.ndarray | None = None, *, now: float | None = None) -> dict:
+        """采样一拍位移并积分，并把本次结果记录到 :meth:`last_result`。
+
+        薄包装：调用方需要在不改变返回值的前提下回看"本拍到底采到没有"，用它区分
+        「位置在动」和「位置源已经没有数据了」。
+        """
+        out = self._sample_impl(frame=frame, now=now)
+        self._last_result = out
+        return out
+
+    def last_result(self) -> dict | None:
+        """最近一次采样结果（含 ``sampled=False``/``ok=False`` 的失败拍）；从未采样为 None。"""
+        return self._last_result
+
+    def _sample_impl(self, frame: np.ndarray | None = None, *, now: float | None = None) -> dict:
         """采样一拍位移并积分。返回本次结果字典，永不抛出。
 
         返回字典字段：
@@ -332,13 +389,11 @@ class MinimapOdometry:
           - reanchored: 本次是否因守卫触发而重置锚帧。
           - dmap_m: 玩家地图系位移（米，未配置比例尺时为像素值）。
         """
-        if self._max_speed_px_s is not None:
-            # 速度守卫依赖比例尺之外的像素速度，无需 scale
-            pass
         if frame is None:
             try:
                 frame = self._task.next_frame()
             except Exception as e:  # noqa: BLE001
+                _reraise_control_flow(e)   # 任务被禁用/结束必须放行，不能吞
                 self._log("log_warning", f"minimap_odometry next_frame 失败: {e}")
                 frame = None
         if frame is None:

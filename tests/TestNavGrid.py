@@ -479,6 +479,26 @@ class TestNavRunner(unittest.TestCase):
         self.assertEqual(runner._stuck_count, 0)
         self.assertIsNone(runner._stuck_cell)
 
+    def test_recover_stuck_uses_now_without_nameerror(self):
+        """#1 回归：设置 recover_stuck_cb 后 _handle_stuck 不再引用未定义 now。
+
+        生产（NavToPoint）总会挂 recover_stuck_cb；旧实现走进脱困分支时对
+        ``now`` 赋值却未定义该参数，任何一次卡住都会抛 NameError。
+        """
+        grid, controls, runner = self._corridor_runner()
+        runner.cfg.max_stuck_recovery = 2
+        attempts = []
+        runner.recover_stuck_cb = lambda: attempts.append(True)
+        runner._last_pos = (20.0, 0.0, 0.0)
+        runner._goal = (10.0, 0.0, 0.0)
+        # 无参直呼（测试/旧调用路径）与 step() 传 now 的路径都必须可用
+        runner._handle_stuck()
+        self.assertEqual(attempts, [True])
+        self.assertEqual(runner.state, "moving", runner.reason)
+        # 脱困后重新计时，观察是否因此移动
+        self.assertIsNotNone(runner._walk_started_at)
+        self.assertEqual(runner._walk_start_pos, (20.0, 0.0))
+
 
 if __name__ == "__main__":
     unittest.main()

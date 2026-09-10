@@ -214,7 +214,9 @@ class NavRunner:
         self._walk_started_at = now
         self._walk_start_pos = (self._last_pos[0], self._last_pos[2])
 
-    def _handle_stuck(self) -> None:
+    def _handle_stuck(self, now: float | None = None) -> None:
+        if now is None:
+            now = time.monotonic()
         self.controls.walk(False)
         cell = self.grid.cell_of(self._last_pos[0], self._last_pos[1], self._last_pos[2])
         if cell == self._stuck_cell:
@@ -453,7 +455,7 @@ class NavRunner:
         if now - self._walk_started_at >= self.cfg.stuck_window_s:
             moved = math.hypot(px - self._walk_start_pos[0], pz - self._walk_start_pos[1])
             if moved < self.cfg.stuck_min_dist:
-                self._handle_stuck()
+                self._handle_stuck(now)
             else:
                 self._reset_stuck(now)
         return self.state

@@ -25,11 +25,10 @@ from qfluentwidgets import FluentIcon
 from src.config import config
 from src.core.BaseEfTask import BaseEfTask
 from src.icons import Icons
-from src.image.arrow_heading import infer_arrow_heading
 from src.nav.grid import GridMap
 from src.nav.nav_runner import NavRunner, RunnerConfig
 from src.nav.storage import pick_best_2d_grid
-from src.tasks.mixin.minimap_odometry import MinimapOdometry
+from src.tasks.mixin.minimap_odometry import MinimapOdometry, _reraise_control_flow
 from src.tasks.mixin.minimap_position_fusion import MinimapPositionFusion
 from src.tasks.mixin.ws_position_mixin import WsPositionMixin
 from ok import Logger
@@ -46,6 +45,16 @@ _WALK_PRESS_TIME = 0.4
 _WATCHDOG_SECONDS = 90.0
 # 朝向日志间隔（秒）
 _HEADING_LOG_INTERVAL = 5.0
+# 模板箭头匹配的最低置信度：低于此值认为箭头不可读，停走等下一帧。
+# 参考「箭头角度实时读取」任务的置信度刻度（>0.75 计 ✓），导航要求比显示更严。
+_ARROW_SCORE_MIN = 0.6
+# 连续多少拍拿不到有效里程计样本就判定位置源已失效（0.5s/拍 → 约 3 秒）
+_STALE_TICKS_DEAD = 6
+# 主循环固定节拍（秒）。下游都假设周期稳定：里程计 sample_max_dt=1.5s、卡住判定窗口
+# 3s。用「sleep(0.2)+干活」的写法周期会被取帧/转向耗时撑到十几秒，整条链就崩了。
+_TICK_SECONDS = 0.5
+# 每多少拍打一条心跳（区分「在慢慢跑」和「已经卡死」）
+_HEARTBEAT_TICKS = 10
 
 
 class _GameNavControls:
@@ -56,30 +65,46 @@ class _GameNavControls:
         self.last_arrow_angle: float | None = None  # 小地图箭头角（原始）
         self.last_world_yaw: float | None = None    # 世界朝向（箭头角 + 朝向偏移）
         self._w_down = False
+        self._heading_tick: float | None = None     # 本拍朝向（箭头不可读时为 None）
+        self._turn_stage = "idle"                   # 转向周期：idle / settle / step
+        self._stage_until: float | None = None      # 当前阶段截止时刻
+        self._owns_w = False                        # 「迈一步」期间 W 由转向状态机独占
+
+    def begin_tick(self) -> None:
+        """每拍开头清掉上一拍的朝向：本拍箭头读不出来时绝不沿用旧角度。"""
+        self._heading_tick = None
 
     def heading(self) -> float | None:
-        # 直接读当前帧箭头角，绝不按 W（按 W 会让角色真的移动，破坏转向闭环）
-        try:
-            frame = self.task.next_frame()
-            # 几何法/模板法都返回屏幕角：0°=北/上，90°=右/东。
-            # 世界角按游戏约定映射：正北 0°，正西 90°，逆时针增大。
-            angle = infer_arrow_heading(frame)
-            if angle is None:
-                angle, _score = self.task.get_arrow_angle(benchmark_width=2560)
-        except Exception as e:
-            self.task.log_warning(f"朝向读取失败: {e}")
-            return None
-        if angle is None:
-            return None
+        # 朝向在 _read_arrow()（融合的 arrow_func 回调）里用**本拍那一帧**算好，这里只读。
+        # 不再自己取帧：旧实现在这里调 get_arrow_angle() 且不传 target_image，导致
+        # get_arrow_angle 内部再取一帧（runtime_mixin），等于每轮多取一帧；而窗口
+        # 不可捕获时 next_frame() 会**无限阻塞**（不是超时返回），循环就此冻死。
+        return self._heading_tick
+
+    def on_arrow(self, angle: float) -> None:
+        """由 _read_arrow() 在置信度通过后回调，换算并记录世界朝向。"""
         self.last_arrow_angle = float(angle)
         world_angle = (-float(angle)) % 360.0
         offset = float(self.task.config.get('朝向偏移(度)', 0.0))
         self.last_world_yaw = (world_angle + offset) % 360.0
-        return self.last_world_yaw
+        self._heading_tick = self.last_world_yaw
 
     def turn(self, delta_deg: float) -> None:
-        # 用标定系数（必为负）换算鼠标位移，转完视角后按 W 迈一步让身体朝向跟上。
-        # 关键：这个游戏转视角后角色身体不会立即转向，必须按前进迈一步才更新朝向。
+        """转向（非阻塞）：只发鼠标位移并进入「稳定 → 迈一步」周期，收尾交给 :meth:`tick`。
+
+        旧实现 `sleep(转向后等待)` + `press_key("w", 0.4)` 阻塞约 1.4 s，期间完全不采样，
+        把循环周期顶出里程计的有效窗口（`sample_max_dt=1.5s`）——09-08 的「里程计失效 →
+        融合冻结 → 误判卡住」正是这么来的。
+
+        **上一轮周期没走完时直接忽略新请求**：这个游戏转视角后角色身体（=小地图箭头）
+        不会立即转向，必须按前进迈一步才更新朝向。而调用方 `_move_toward` 每拍都会
+        `walk(False)` + `turn(delta)`，若此时允许打断，就会把「迈一步」的 W 提前松开，
+        箭头永远追不上，变成无限原地转。
+        """
+        now = self.task.active_time()
+        if self._turn_stage != "idle":
+            return
+        # 用标定系数（必为负）换算鼠标位移
         k_raw = float(self.task.config.get('yaw_per_pixel(负值)', -0.07))
         k = -abs(k_raw) if k_raw > 0 else k_raw  # 系数必为负
         if abs(k) < 1e-9:
@@ -89,14 +114,30 @@ class _GameNavControls:
         try:
             self.task.active_and_send_mouse_delta(dx=dx, dy=0, steps=1, delay=0)
         except Exception as e:
+            _reraise_control_flow(e)
             self.task.log_error(f"转向失败 dx={dx}: {e}", exception=e)
-        # 等视角旋转完成
-        self.task.sleep(float(self.task.config.get('转向后等待(秒)', 0.4)))
-        # 按 W 迈一小步，让角色身体朝向跟到视角方向（转视角不转身体）
-        self.task.press_key("w", down_time=_WALK_PRESS_TIME)
+        self._turn_stage = "settle"
+        self._stage_until = now + float(self.task.config.get('转向后等待(秒)', 0.4))
+
+    def tick(self, now: float) -> None:
+        """主循环每拍调用：推进「转向 → 视角稳定 → 迈一步 → 松键」周期，全程非阻塞。"""
+        if self._turn_stage == "settle" and now >= self._stage_until:
+            # 视角已稳定：按 W 迈一步，让身体朝向跟上视角（否则箭头不更新）
+            self._turn_stage = "step"
+            self._stage_until = now + _WALK_PRESS_TIME
+            self._owns_w = True
+            self.task.send_key_down("w")
+        elif self._turn_stage == "step" and now >= self._stage_until:
+            self._turn_stage = "idle"
+            self._stage_until = None
+            self._owns_w = False
+            self.task.send_key_up("w")
 
     def walk(self, held: bool) -> None:
-        # 连续移动：方向确定后按住 W，需要停止/转向/战斗时再松开
+        # 连续移动：方向确定后按住 W，需要停止/转向/战斗时再松开。
+        # 「迈一步」期间 W 归转向状态机独占，忽略外部请求，避免把这一步提前松开。
+        if self._owns_w:
+            return
         if held and not self._w_down:
             self.task.send_key_down("w")
             self._w_down = True
@@ -105,7 +146,14 @@ class _GameNavControls:
             self._w_down = False
 
     def release(self) -> None:
-        self.walk(False)
+        # 强制收尾：清掉转向周期并保证 W 一定处于松开状态
+        was_down = self._w_down or self._owns_w
+        self._turn_stage = "idle"
+        self._stage_until = None
+        self._owns_w = False
+        self._w_down = False
+        if was_down:
+            self.task.send_key_up("w")
 
     def recover_stuck(self) -> None:
         """卡住脱困：左右走位(A/D)各一小段 + 向前(W)一小段，看能否移开或重新对准。
@@ -143,10 +191,15 @@ class _GameNavControls:
 class NavToPointTask(WsPositionMixin, BaseEfTask):
     """导航到目标坐标点（导航执行测试）。"""
 
+    # 导航需要控制游戏移动/视角（send_key / 鼠标）并读取游戏小地图画面，
+    # 与自动战斗/送货等同属前台任务：后台输入模式下启用时应被拦截。
+    requires_foreground = True
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.name = "导航到坐标点"
+        self.group_name = "工具与调试"
         self.description = "使用导航图自动走到目标坐标点（导航执行测试）"
         self.icon = Icons.Navigation
 
@@ -291,6 +344,10 @@ class NavToPointTask(WsPositionMixin, BaseEfTask):
         self._controls = _GameNavControls(self)
         self._runner: NavRunner | None = None
         self._window_missing_logged = False
+        self._window_hidden_logged = False     # 窗口不可捕获只提示一次，避免刷屏
+        self._src_dead_logged = False          # 位置源失效只提示一次（原因变化时再提示）
+        self._src_dead_reason = ""
+        self._last_health = None               # 最近一拍的定位源健康度（心跳用）
         self._ws_wait_hint_logged = False
         self._fresh_hint_logged = False
         self._nav_fresh_pos_at: float | None = None
@@ -303,6 +360,7 @@ class NavToPointTask(WsPositionMixin, BaseEfTask):
         self._fused_diag_counter = 0
         self._last_fused_st = None      # 最近一次融合 state() 结果（含 rest/heading）
         self._last_pos_log_at = 0.0
+        self._stale_ticks = 0           # 连续无有效里程计样本的拍数（位置源健康度）
 
     @staticmethod
     def _parse_matrix(value):
@@ -325,49 +383,136 @@ class NavToPointTask(WsPositionMixin, BaseEfTask):
             self._odometry,
             map_to_world_px=matrix if matrix is not None else None,
             scale_m_per_px=scale,
+            # 注入朝向回调：让朝向与里程计共用主循环取的那一帧，两者不再各自取帧
+            arrow_func=self._read_arrow,
         )
         self._use_fused = True
         return self._fusion
 
-    def _fused_pos(self, map_id, px, py, pz) -> tuple:
-        """返回执行器用当前位置（与「实时位置」任务同一套融合方法）。
+    def _read_arrow(self, frame):
+        """读本拍箭头角（融合的 arrow_func 回调）；低置信返回 (None, score)。
 
-        与 MinimapRealtimePosition 一致：先 state()（采集里程计增量并给出融合位置），
-        再用 WS 位置设/校锚点；顺序不能反（先采样累积位移，再校准），否则里程计被反复重置。
+        - 复用与「箭头角度实时读取」同源的模板匹配 get_arrow_angle；
+        - 关平滑（smoothing_threshold=None）：低分沿用旧角会误导转向，改由显式置信度门控；
+        - **帧由调用方传入，绝不在这里取帧**——窗口不可捕获时 next_frame() 会无限阻塞。
+        """
+        if frame is None:
+            return None, 0.0
+        try:
+            angle, score = self.get_arrow_angle(
+                target_image=frame, two_stage=True, benchmark_width=2560,
+                smoothing_threshold=None)
+        except Exception as e:  # noqa: BLE001
+            _reraise_control_flow(e)
+            self.log_warning(f"朝向读取失败: {e}")
+            return None, 0.0
+        score = 0.0 if score is None else float(score)
+        if angle is None or score < _ARROW_SCORE_MIN:
+            return None, score
+        self._controls.on_arrow(float(angle))
+        return float(angle), score
+
+    def _fused_pos(self, map_id, px, py, pz, frame) -> tuple:
+        """本拍执行位置与位置源健康度，返回 ``((x, y, z), state, reason)``。
+
+        ``state``：``fresh`` 本拍位置源正常；``stale`` 融合可用但本拍没采到有效样本；
+        ``dead`` 取不到帧/未锚定/连续多拍无有效样本。控制层据此停下来等，而不是拿一个
+        冻结的坐标当真值——09-08 的「融合冻结 → 误判卡住」就是这么发生的。
+
+        顺序与 MinimapRealtimePosition 一致：先 state()（采样 + 给融合位置），再用 WS
+        设/校锚点；反过来会把里程计反复重置。**帧由主循环取一次后传入，不再自己取帧。**
         """
         if self._fusion is None:
-            return (px, py, pz)
+            return (px, py, pz), "dead", "未构建融合"
+        if frame is None:
+            # 绝不把 None 透传给 fusion：它会转交里程计再取一次帧（又一次无限阻塞）
+            return (px, py, pz), "dead", "取不到帧"
         try:
-            frame = self.next_frame()
             st = self._fusion.state(now=self.active_time(), frame=frame)
             self._last_fused_st = st
             fx, fz = st.get("x"), st.get("z")
 
+            synced = False
             if fx is None or fz is None:
                 # 未锚定：强制用当前 WS 位置设锚点（起步时角色静止，WS 延迟无影响）
                 self._fusion.sync((px, py, pz), map_id=map_id, now=self.active_time())
             else:
-                # 已锚定：静止时用 WS 校准（移动中暂存）
-                self._fusion.try_sync((px, py, pz), map_id=map_id, now=self.active_time())
+                # 已锚定：小地图与 WS 同时显示"没动"才校准（移动中暂存）
+                synced = self._fusion.try_sync((px, py, pz), map_id=map_id, now=self.active_time())
 
             # 校准后若锚点被更新，重读一次融合位置，避免本拍使用旧锚点
             est = self._fusion.estimate()
             if est is not None:
                 fx, fz = est.get("x"), est.get("z")
 
+            # 静止校准：输出校准前"小地图推算的坐标"与它跟 WS 的偏差，
+            # 用来观察小地图定位在两次校准之间漂了多少（校准本身以 WS 为基准）。
+            if synced:
+                res = self._fusion.last_sync_residual
+                if res is not None:
+                    self.log_info(
+                        f"[静止校准] 小地图推算=({res['map_x']:.2f},{res['map_z']:.2f}) "
+                        f"WS=({res['ws_x']:.2f},{res['ws_z']:.2f}) "
+                        f"偏差=({res['dx']:+.2f},{res['dz']:+.2f})m 距离={res['dist']:.2f}m"
+                    )
+
+            state, reason = self._position_health()
             if fx is not None and fz is not None:
-                # 诊断：偶尔打印融合位置 vs WS 原始 vs 里程计位移，便于排查冻结/偏移
+                # 诊断：偶尔打印融合位置 vs WS 原始 vs 里程计位移 + 位置源健康度
                 self._fused_diag_counter += 1
                 if self._fused_diag_counter % 10 == 1:
                     odpx = self._odometry.position_px()
                     self.log_info(
                         f"[融合位置] fused=({fx:.2f},{fz:.2f}) ws=({px:.2f},{pz:.2f}) "
-                        f"差=({fx-px:.2f},{fz-pz:.2f})m 位移px=({odpx[0]:.1f},{odpx[1]:.1f})"
+                        f"差=({fx-px:.2f},{fz-pz:.2f})m 位移px=({odpx[0]:.1f},{odpx[1]:.1f}) "
+                        f"位置源={state}"
                     )
-                return (float(fx), py, float(fz))
+                return (float(fx), py, float(fz)), state, reason
+            return (px, py, pz), "dead", reason or "未锚定"
         except Exception as e:  # noqa: BLE001
+            _reraise_control_flow(e)
             self.log_warning(f"融合位置计算失败，回退 WS 原始: {e}")
-        return (px, py, pz)
+            return (px, py, pz), "dead", f"融合异常:{e}"
+
+    def _position_health(self) -> tuple:
+        """按本拍里程计采样结果给位置源健康度。
+
+        判据直接用里程计自己的 ``ok``：``anchor_init``/``too_soon`` 都是 ok=True
+        （没出问题，只是这拍没有新位移），只有低响应/超窗/超位移等才 ok=False。
+        """
+        last = self._odometry.last_result() if self._odometry is not None else None
+        if last is None:
+            return "dead", "里程计未采样"
+        if last.get("ok"):
+            self._stale_ticks = 0
+            return "fresh", ""
+        reason = str(last.get("reason") or "unknown")
+        if reason in ("no_frame", "no_gray"):
+            return "dead", f"取不到帧({reason})"
+        self._stale_ticks += 1
+        if self._stale_ticks >= _STALE_TICKS_DEAD:
+            return "dead", f"连续{self._stale_ticks}拍无有效样本({reason})"
+        return "stale", f"无有效样本({reason})"
+
+    def _window_state(self) -> str:
+        """窗口状态：``ok`` 可捕获 / ``hidden`` 存在但不可捕获 / ``gone`` 窗口不存在。
+
+        必须把「存在但不可捕获」与「窗口没了」分开：框架的 ``sleep()`` 与
+        ``next_frame()`` 在 ``should_capture()`` 为 False 时会**无限等待**（不是超时
+        返回），所以 IDE/别的窗口抢焦点时旧代码会静默冻死；而窗口真的没了才该结束任务。
+        """
+        if self._is_game_window_alive():
+            # 窗口可见 ≠ 能捕获：前台被别的窗口占用时 should_capture() 仍是 False
+            try:
+                interaction = getattr(self.executor, "interaction", None)
+                if interaction is not None and not interaction.should_capture():
+                    return "hidden"
+            except Exception:
+                pass
+            return "ok"
+        device_manager = getattr(getattr(self, "executor", None), "device_manager", None)
+        hwnd_window = getattr(device_manager, "hwnd_window", None)
+        return "hidden" if getattr(hwnd_window, "hwnd", None) else "gone"
 
     def _maybe_log_position(self, cur, px, py, pz):
         """按配置间隔，在导航中实时打印一行位置信息。
@@ -641,17 +786,63 @@ class NavToPointTask(WsPositionMixin, BaseEfTask):
         # 导航坐标系：融合定位（WS 锚点 + 里程计 + 朝向）
         self._build_fusion()
 
+        # 固定节拍：每拍只睡到下一个采样点（只补剩余时间），而不是「sleep 后干活」。
+        next_at = self.active_time()
+        tick_no = 0
+        prev_t = None
+        max_period = 0.0
+        overruns = 0
         while True:
-            if not self._is_game_window_alive():
-                self._controls.release()
-                self._stop_position_sources()
-                if not self._window_missing_logged:
-                    self.log_info("导航到坐标点：游戏窗口不存在或不可见，任务结束")
-                    self._window_missing_logged = True
-                self.info_set('导航', '游戏窗口不存在')
-                return False
+            # ---- 固定节拍 ----
+            next_at += _TICK_SECONDS
+            remain = next_at - self.active_time()
+            if remain > 0:
+                self.sleep(remain)
+            elif -remain > _TICK_SECONDS:
+                # 上一拍严重超时（取帧/转向）：重新对齐，不追赶补采
+                overruns += 1
+                next_at = self.active_time()
+            now = self.active_time()
+            period = (now - prev_t) if prev_t is not None else 0.0
+            if period:
+                max_period = max(max_period, period)
+            prev_t = now
+            tick_no += 1
 
+            # ---- 心跳：保证「在慢慢跑」和「已经卡死」能从日志区分 ----
+            if tick_no % _HEARTBEAT_TICKS == 1:
+                runner_state = self._runner.state if self._runner is not None else "idle"
+                self.log_info(
+                    f"[导航心跳] 第{tick_no}拍 周期={period:.2f}s 最大={max_period:.2f}s "
+                    f"超时重对齐={overruns} 位置源={self._last_health or '?'} 状态={runner_state}"
+                )
+
+            # 转向是非阻塞状态机，由本拍时间推进（松 W / 迈一步）
+            self._controls.begin_tick()
+            self._controls.tick(now)
+
+            # ---- 窗口/前台状态 ----
+            # 窗口不可捕获时必须显式停下并说明：框架的 sleep()/next_frame() 在
+            # should_capture() 为 False 时会**无限等待**（不是超时返回），旧代码就是
+            # 这样静默冻死的——不移动、不报错、连日志都不打。
+            win = self._window_state()
+            if win != "ok":
+                self._controls.release()
+                if win == "gone":
+                    self._stop_position_sources()
+                    self.log_info("导航到坐标点：游戏窗口不存在，任务结束", notify=True)
+                    return False
+                if not self._window_hidden_logged:
+                    self._window_hidden_logged = True
+                    self.log_info(
+                        "导航到坐标点：游戏窗口不在前台/不可见，导航暂停（切回游戏自动继续）",
+                        notify=True)
+                self.info_set('导航', '游戏窗口不在前台，已暂停')
+                # 回循环顶部：下一步的 sleep() 本身就会阻塞到窗口恢复可捕获，即暂停语义
+                continue
+            self._window_hidden_logged = False
             self._window_missing_logged = False
+
             map_cred = self._get_account_map_content()
             self._ensure_ws_position_source(map_cred)
 
@@ -676,14 +867,12 @@ class NavToPointTask(WsPositionMixin, BaseEfTask):
                             "或在本任务配置里填写 content / 地图账号")
                 self._controls.release()
                 self.info_set('导航', '无法读取WS位置')
-                self.sleep(1.0)
-                continue
+                continue          # 节拍由循环顶部统一控制，不在分支里另睡
 
             pos, map_id, px, py, pz = self._extract_position_payload(payload)
             if not pos or not map_id:
                 self._controls.release()
                 self.info_set('导航', 'WS位置数据待接收...')
-                self.sleep(1.0)
                 continue
             map_id = str(map_id)
 
@@ -691,7 +880,6 @@ class NavToPointTask(WsPositionMixin, BaseEfTask):
             if grid is None:
                 self._controls.release()
                 self.info_set('导航', f'缺少导航网格 {map_id}，请先建网格')
-                self.sleep(2.0)
                 continue
 
             # 初始/空闲或地图切换时（重新）创建 runner
@@ -713,7 +901,6 @@ class NavToPointTask(WsPositionMixin, BaseEfTask):
                             "避免从错误起点规划（官方地图 WS 连接后几秒内自动开始）")
                     self._controls.release()
                     self.info_set('导航', '等待新位置数据…')
-                    self.sleep(1.0)
                     continue
                 start = configured_start or (px, py, pz)
                 if configured_start is not None:
@@ -726,19 +913,34 @@ class NavToPointTask(WsPositionMixin, BaseEfTask):
                 if self._runner.risky:
                     self.log_info("冒险导航：起点/终点偏离已走过区域，将冒险尝试", notify=True)
 
-            # 执行位置：融合坐标（WS 锚点 + 里程计）
-            cur = self._fused_pos(map_id, px, py, pz)
+            # 每拍只取一次帧，喂给融合（里程计与朝向共用这一帧）
+            frame = self.next_frame()
+            cur, health, why = self._fused_pos(map_id, px, py, pz, frame)
+            self._last_health = health
+
+            if health == "dead":
+                # 位置源失效：停下来等，绝不用冻结的坐标继续走或判卡住。
+                # 同时不调用 runner.step，避免它的卡住计时器在无效位置上推进。
+                self._controls.release()
+                if not self._src_dead_logged or self._src_dead_reason != why:
+                    self._src_dead_logged = True
+                    self._src_dead_reason = why
+                    self.log_warning(f"位置源失效（{why}）：已停下来等待恢复", notify=True)
+                self.info_set('导航', f'位置源失效({why})，等待恢复')
+                continue
+            self._src_dead_logged = False
+
             self._runner.step(cur)
             self._maybe_log_position(cur, px, py, pz)
 
             # 看门狗：位置长时间无变化（如卡在滑索提示）判失败
-            now = time.time()
+            wall_now = time.time()
             if self._last_moved_pos is None or (
                     abs(cur[0] - self._last_moved_pos[0]) > 0.3
                     or abs(cur[2] - self._last_moved_pos[2]) > 0.3):
                 self._last_moved_pos = cur
-                self._last_moved_at = now
-            elif self._runner.state == "moving" and now - self._last_moved_at > _WATCHDOG_SECONDS:
+                self._last_moved_at = wall_now
+            elif self._runner.state == "moving" and wall_now - self._last_moved_at > _WATCHDOG_SECONDS:
                 self.log_warning("导航执行超时：位置长时间无变化，任务结束", notify=True)
                 self._controls.release()
                 self._stop_position_sources()
@@ -774,8 +976,7 @@ class NavToPointTask(WsPositionMixin, BaseEfTask):
                 self.log_warning(f"导航失败: {self._runner.reason}", notify=True)
                 self._stop_position_sources()
                 return False
-
-            self.sleep(0.2)
+            # 节拍由循环顶部统一控制，这里不再 sleep
 
     def on_destroy(self):
         try:

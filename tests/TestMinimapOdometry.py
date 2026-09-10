@@ -14,11 +14,15 @@ import numpy as np
 import unittest
 
 from src.tasks.mixin.minimap_odometry import (
+    DEFAULT_CENTER_RATIO,
+    DEFAULT_R_INNER_RATIO,
+    DEFAULT_R_OUTER_RATIO,
     MinimapOdometry,
     annulus_mask,
     body_axes_from_heading,
     decompose_body,
     phase_shift,
+    region_geometry,
     wrap_deg,
 )
 
@@ -230,6 +234,45 @@ class TestDecompose(unittest.TestCase):
     def test_wrap_deg(self):
         self.assertAlmostEqual(wrap_deg(-30), 330.0, delta=1e-6)
         self.assertAlmostEqual(wrap_deg(390), 30.0, delta=1e-6)
+
+
+class TestRegionGeometry(unittest.TestCase):
+    """region_geometry 是"里程计掩膜"与"区域检查任务"共用的单一事实来源。"""
+
+    def test_default_values_at_2560x1440(self):
+        cx, cy, r_in, r_out = region_geometry(2560, 1440)
+        self.assertAlmostEqual(cx, 0.084 * 2560, delta=1e-6)     # 215.04
+        self.assertAlmostEqual(cy, 0.154 * 1440, delta=1e-6)     # 221.76
+        self.assertAlmostEqual(r_in, 0.014 * 2560, delta=1e-6)   # 35.84
+        self.assertAlmostEqual(r_out, 0.044 * 2560, delta=1e-6)  # 112.64
+
+    def test_radii_follow_width_only(self):
+        """半径只按宽换算（圆不为椭圆的假设）：换高度半径不变，圆心 y 变。"""
+        _, cy1, r_in1, r_out1 = region_geometry(2560, 1440)
+        _, cy2, r_in2, r_out2 = region_geometry(2560, 1080)
+        self.assertAlmostEqual(r_in1, r_in2, delta=1e-6)
+        self.assertAlmostEqual(r_out1, r_out2, delta=1e-6)
+        self.assertNotAlmostEqual(cy1, cy2, delta=1.0)
+
+    def test_custom_ratios(self):
+        cx, cy, r_in, r_out = region_geometry(
+            1000, 500, (0.1, 0.2), r_outer_ratio=0.05, r_inner_ratio=0.01)
+        self.assertAlmostEqual(cx, 100.0, delta=1e-6)
+        self.assertAlmostEqual(cy, 100.0, delta=1e-6)
+        self.assertAlmostEqual(r_in, 10.0, delta=1e-6)
+        self.assertAlmostEqual(r_out, 50.0, delta=1e-6)
+
+    def test_matches_odometry_mask(self):
+        """不变量：里程计建的掩膜 == 用 region_geometry 参数建的掩膜。
+
+        「小地图区域检查」任务正是用 region_geometry 画圈的，这条不变量保证
+        它圈出来的区域与实际参与相位相关的像素完全一致。
+        """
+        task = _FakeTask(width=200, height=200)
+        od = MinimapOdometry(task)
+        cx, cy, r_in, r_out = region_geometry(200, 200)
+        ref = annulus_mask(200, 200, (cx, cy), r_in, r_out, feather=od._feather)
+        self.assertTrue(np.array_equal(od._mask(), ref))
 
 
 if __name__ == "__main__":
