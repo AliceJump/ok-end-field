@@ -157,11 +157,17 @@ class TopmostMixin:
                 timer_fired = threading.Event()
 
                 def _delayed_start() -> None:
-                    timer_fired.set()
-                    try:
-                        self_inner.start_topmost_monitor()
-                    except Exception:
-                        pass
+                    # pause() may happen while this timer is pending. Keep the
+                    # state check and start in one critical section so a paused
+                    # task cannot restart monitoring after its windows restore.
+                    with self_inner._topmost_state_lock:
+                        if self_inner._topmost_paused:
+                            return
+                        timer_fired.set()
+                        try:
+                            self_inner.start_topmost_monitor()
+                        except Exception:
+                            pass
 
                 delay_timer = threading.Timer(self_inner._TOPMOST_START_DELAY, _delayed_start)
                 delay_timer.daemon = True
@@ -183,6 +189,8 @@ class TopmostMixin:
 
     def _init_topmost_mixin(self) -> None:
         self._topmost_stop_event = threading.Event()
+        self._topmost_state_lock = threading.RLock()
+        self._topmost_paused = False
         self._topmost_lock = threading.Lock()
         self._topmost_modified: set[int] = set()
         self._topmost_thread: threading.Thread | None = None
@@ -219,18 +227,21 @@ class TopmostMixin:
 
     def start_topmost_monitor(self) -> None:
         """启动 TOPMOST 监测线程。重复调用安全（已运行则忽略）。"""
-        if self._topmost_thread is not None and self._topmost_thread.is_alive():
-            return
-        self._topmost_stop_event.clear()
-        self._topmost_prev_fg = 0
-        t = threading.Thread(
-            target=self._topmost_monitor_loop,
-            name="topmost-monitor",
-            daemon=True,
-        )
-        self._topmost_thread = t
-        t.start()
-        logger.info("topmost monitor 已启动")
+        with self._topmost_state_lock:
+            if self._topmost_paused or (
+                self._topmost_thread is not None and self._topmost_thread.is_alive()
+            ):
+                return
+            self._topmost_stop_event.clear()
+            self._topmost_prev_fg = 0
+            t = threading.Thread(
+                target=self._topmost_monitor_loop,
+                name="topmost-monitor",
+                daemon=True,
+            )
+            self._topmost_thread = t
+            t.start()
+            logger.info("topmost monitor 已启动")
 
     def stop_topmost_monitor(self) -> None:
         """停止监测并恢复所有被本机制修改过的窗口。
@@ -254,8 +265,10 @@ class TopmostMixin:
         与 ``stop_topmost_monitor`` 的区别在于不清空 ``_topmost_modified`` 集合，
         resume 时仅对仍存在的窗口重新置顶。
         """
-        self._topmost_stop_event.set()
-        thread = self._topmost_thread
+        with self._topmost_state_lock:
+            self._topmost_paused = True
+            self._topmost_stop_event.set()
+            thread = self._topmost_thread
         if thread is not None and thread.is_alive():
             thread.join(timeout=1.0)
         if thread is None or not thread.is_alive():
@@ -265,10 +278,12 @@ class TopmostMixin:
 
     def resume_topmost_monitor(self) -> None:
         """恢复监测：对暂停前记录且仍存在的窗口重新置顶，然后重启监测线程。"""
-        # 先对暂停前记录的窗口重新置顶（仅仍存在的）
-        self._reapply_modified()
-        # 重启监测线程
-        self.start_topmost_monitor()
+        with self._topmost_state_lock:
+            self._topmost_paused = False
+            # 先对暂停前记录的窗口重新置顶（仅仍存在的）
+            self._reapply_modified()
+            # 清除暂停状态后重启监测线程
+            self.start_topmost_monitor()
 
     def _reapply_modified(self) -> None:
         """对已记录但仍存在且可见、未最小化的窗口重新设置 TOPMOST。"""
