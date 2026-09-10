@@ -16,6 +16,7 @@ from src.core.base_mixin.account_override_mixin import AccountOverrideMixin
 from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.process_manager import ProcessManager
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
+from src.core.base_mixin.topmost_mixin import TopmostMixin
 from src.core.base_mixin.window_arrow_drawing_mixin import WindowArrowDrawingMixin
 from src.core.config_migration import migrate_config_file_keys, migrate_config_values
 from src.core.game_window import find_game_hwnd
@@ -89,6 +90,7 @@ def _screenshot_timestamp_prefix():
 
 
 class BaseEfTask(
+    TopmostMixin,
     WindowArrowDrawingMixin,
     AccountOverrideMixin,
     GameFlowMixin,
@@ -123,6 +125,8 @@ class BaseEfTask(
         self.key_manager = KeyConfigManager(self.key_config)  # 初始化热键管理器
         # 初始化窗口箭头绘制 Mixin
         self._init_window_arrow_drawing_mixin()
+        # 初始化 TOPMOST 置顶监测 Mixin
+        self._init_topmost_mixin()
 
         # 语言访问器（按模块化 JSON 加载）
         try:
@@ -522,6 +526,7 @@ class BaseEfTask(
         self.log_info(str(message))
 
     def on_destroy(self):
+        self.stop_topmost_monitor()
         self.release_yolo_detector()
         super().on_destroy()
 
