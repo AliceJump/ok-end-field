@@ -165,8 +165,8 @@ class _UltHarness:
     def wait_until(self, condition, **kwargs):
         self.events.append(("wait", None))
 
-    def _has_detected_team_member(self):
-        self.events.append(("detect", None))
+    def _has_detected_team_member(self, **kwargs):
+        self.events.append(("detect", kwargs))
 
 
 class _CombatExitHarness:
@@ -392,8 +392,8 @@ class TestStateDrivenWaits(unittest.TestCase):
                 ("press", "2"),
                 ("up", "alt"),
                 ("timestamp", None),
-                ("wait", None),
-                ("detect", None),
+                ("detect", {"time_out": 1, "require_four_unknown": True}),
+                ("detect", {}),
             ],
         )
         self.assertEqual(task._last_ult_release_time, 42)
@@ -406,10 +406,10 @@ class TestStateDrivenWaits(unittest.TestCase):
             task.events,
             [
                 ("down", "3"),
-                ("wait", None),
+                ("detect", {"time_out": 1, "require_four_unknown": True}),
                 ("up", "3"),
                 ("timestamp", None),
-                ("detect", None),
+                ("detect", {}),
             ],
         )
         self.assertEqual(task._last_ult_release_time, 42)

@@ -275,12 +275,12 @@ class BattleMixin(BaseEfTask):
                     # 从实际完成按键操作的时刻开始计算退出延迟
                     self._last_ult_release_time = self.active_time()
                     # 等待技能释放导致战斗状态变化，然后等待重新识别到至少一个人
-                    self.wait_until(lambda: not self.in_combat(), time_out=1)
+                    self._has_detected_team_member(time_out=1, require_four_unknown=True)
                     self._has_detected_team_member()
                     return True
                 self.send_key_down(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，不经过KeyConfigManager管理
                 # 等待技能释放导致战斗状态变化
-                self.wait_until(lambda: not self.in_combat(), time_out=1)
+                self._has_detected_team_member(time_out=1, require_four_unknown=True)
                 self.send_key_up(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，释放按键
                 # 从实际完成按键操作的时刻开始计算退出延迟
                 self._last_ult_release_time = self.active_time()
@@ -541,14 +541,38 @@ class BattleMixin(BaseEfTask):
 
         return (last_result or ["?"], False)
 
-    def _has_detected_team_member(self, time_out=3):
-        """在指定时间内等待当前队伍恢复为战斗开始时的完整队伍。
+    def _is_detected_team_frame_matched(self, team, battle_team, require_four_unknown):
+        """判断当前帧的队伍识别结果是否满足等待条件。"""
+        if require_four_unknown:
+            return bool(team) and len(team) == 4 and all(member == "?" for member in team)
+        return bool(team) and not any(member == "?" for member in team) and team == battle_team
 
-        连续两帧识别到与战斗开始时相同的完整队伍时返回 True。
+    def _log_detected_team_member_result(self, team, battle_team, require_four_unknown, time_out, success):
+        """记录队伍检测成功或超时的结果。"""
+        if success:
+            if require_four_unknown:
+                self.log_info(f"队伍稳定为 4 个未知角色: {team}")
+            else:
+                self.log_info(f"队伍恢复确认: {team}")
+        elif require_four_unknown:
+            self.log_info(f"等待队伍稳定为 4 个 '?' 超时（{time_out:.1f}秒）")
+        else:
+            self.log_info(f"等待队伍恢复超时（{time_out:.1f}秒），目标队伍: {battle_team}")
+
+    def _has_detected_team_member(self, time_out=3, require_four_unknown=False):
+        """在指定时间内等待当前队伍恢复。
+
+        require_four_unknown=False:
+            等待队伍恢复为战斗开始时的完整队伍。
+
+        require_four_unknown=True:
+            等待队伍连续两帧识别为 4 个 '?'。
+
         超时返回 False。
         """
         battle_team = getattr(self, "_battle_team", None)
-        if not battle_team:
+
+        if not require_four_unknown and not battle_team:
             return False
 
         start_time = self.active_time()
@@ -564,16 +588,27 @@ class BattleMixin(BaseEfTask):
             team = self.detect_team(frame)
             self.log_info(f"当前队伍角色: {team}")
 
-            if team and not any(member == "?" for member in team) and team == battle_team:
+            matched = self._is_detected_team_frame_matched(team, battle_team, require_four_unknown)
+
+            if matched:
                 matched_count += 1
 
                 if matched_count >= 2:
-                    self.log_info(f"队伍恢复确认: {team}")
+                    self._log_detected_team_member_result(
+                        team, battle_team, require_four_unknown, time_out, success=True
+                    )
                     return True
             else:
                 matched_count = 0
 
-        self.log_info(f"等待队伍恢复超时（{time_out:.1f}秒），目标队伍: {battle_team}")
+        self._log_detected_team_member_result(
+            team=None,
+            battle_team=battle_team,
+            require_four_unknown=require_four_unknown,
+            time_out=time_out,
+            success=False,
+        )
+
         return False
 
     def use_link_skill(self):
