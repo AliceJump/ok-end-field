@@ -541,6 +541,24 @@ class BattleMixin(BaseEfTask):
 
         return (last_result or ["?"], False)
 
+    def _is_detected_team_frame_matched(self, team, battle_team, require_four_unknown):
+        """判断当前帧的队伍识别结果是否满足等待条件。"""
+        if require_four_unknown:
+            return bool(team) and len(team) == 4 and all(member == "?" for member in team)
+        return bool(team) and not any(member == "?" for member in team) and team == battle_team
+
+    def _log_detected_team_member_result(self, team, battle_team, require_four_unknown, time_out, success):
+        """记录队伍检测成功或超时的结果。"""
+        if success:
+            if require_four_unknown:
+                self.log_info(f"队伍稳定为 4 个未知角色: {team}")
+            else:
+                self.log_info(f"队伍恢复确认: {team}")
+        elif require_four_unknown:
+            self.log_info(f"等待队伍稳定为 4 个 '?' 超时（{time_out:.1f}秒）")
+        else:
+            self.log_info(f"等待队伍恢复超时（{time_out:.1f}秒），目标队伍: {battle_team}")
+
     def _has_detected_team_member(self, time_out=3, require_four_unknown=False):
         """在指定时间内等待当前队伍恢复。
 
@@ -570,27 +588,26 @@ class BattleMixin(BaseEfTask):
             team = self.detect_team(frame)
             self.log_info(f"当前队伍角色: {team}")
 
-            if require_four_unknown:
-                matched = team and len(team) == 4 and all(member == "?" for member in team)
-            else:
-                matched = team and not any(member == "?" for member in team) and team == battle_team
+            matched = self._is_detected_team_frame_matched(team, battle_team, require_four_unknown)
 
             if matched:
                 matched_count += 1
 
                 if matched_count >= 2:
-                    if require_four_unknown:
-                        self.log_info(f"队伍稳定为 4 个未知角色: {team}")
-                    else:
-                        self.log_info(f"队伍恢复确认: {team}")
+                    self._log_detected_team_member_result(
+                        team, battle_team, require_four_unknown, time_out, success=True
+                    )
                     return True
             else:
                 matched_count = 0
 
-        if require_four_unknown:
-            self.log_info(f"等待队伍稳定为 4 个 '?' 超时（{time_out:.1f}秒）")
-        else:
-            self.log_info(f"等待队伍恢复超时（{time_out:.1f}秒），目标队伍: {battle_team}")
+        self._log_detected_team_member_result(
+            team=None,
+            battle_team=battle_team,
+            require_four_unknown=require_four_unknown,
+            time_out=time_out,
+            success=False,
+        )
 
         return False
 
