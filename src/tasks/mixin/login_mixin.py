@@ -61,28 +61,27 @@ class LoginMixin(BaseEfTask):
         self.click(result)
         # 前置动作：后续「最近/账号/登录」点击走 pyautogui（只作用于前台窗口），
         # 必须先把游戏窗口置前。
-        try:
-            self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True)
-            if not self.wait_click_feature(
-                feature=fL.log_out_confirm, time_out=5, raise_if_not_found=False
-            ):  # 点击登出确认
-                self.log_error("未找到登出确认按钮")
-                return False
-            self._logged_in = False
-            result = self.click_text(
-                re.compile("最近"),
-                box=self.box.center,
-                success_match=self.lang.login_mixin.k_20275ef2,
-                need_wait_disappear=False,
-            )  # 点击当前账号（假设是唯一的）"最近", box=self.box.center, need_wait_disappear=False)  # 点击当前账号（假设是唯一的）
-            if not result:
-                self.log_error("未找到‘最近’按钮，可能未成功返回登录界面")
-                raise RuntimeError("未找到‘最近’按钮，可能未成功返回登录界面")
-            self.click_text(
-                re.compile(username[-4:]),
-                box=self.box_of_screen(0, (result[0].y + result[0].height) / self.height, 1, 1),
-            )  # 点击最近登录的账号（假设是唯一的）
-            self.click_text("登录", box=self.box.center)  # 点击登录按钮
+        self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True)
+        if not self.wait_click_feature(
+            feature=fL.log_out_confirm, time_out=5, raise_if_not_found=False
+        ):  # 点击登出确认
+            self.log_error("未找到登出确认按钮")
+            return False
+        self._logged_in = False
+        result = self.click_text(
+            re.compile("最近"),
+            box=self.box.center,
+            success_match=self.lang.login_mixin.k_20275ef2,
+            need_wait_disappear=False,
+        )  # 点击当前账号（假设是唯一的）"最近", box=self.box.center, need_wait_disappear=False)  # 点击当前账号（假设是唯一的）
+        if not result:
+            self.log_error("未找到‘最近’按钮，可能未成功返回登录界面")
+            raise RuntimeError("未找到‘最近’按钮，可能未成功返回登录界面")
+        self.click_text(
+            re.compile(username[-4:]),
+            box=self.box_of_screen(0, (result[0].y + result[0].height) / self.height, 1, 1),
+        )  # 点击最近登录的账号（假设是唯一的）
+        self.click_text("登录", box=self.box.center)  # 点击登录按钮
         if not self._confirm_logged_in():
             raise RuntimeError("登录失败")
 
