@@ -121,6 +121,10 @@ class TopmostMixin:
     仅记录本次任务实际修改过的窗口，任务结束时统一恢复为非 TOPMOST。
     """
 
+    # 触发式任务的 monitor 延迟启动阈值（秒）
+    # run() 执行超过此时间才启动 monitor，避免触发式任务的快速扫描 cycle 反复启停
+    _TOPMOST_START_DELAY: float = 2.0
+
     def __init_subclass__(cls, **kwargs: object) -> None:
         super().__init_subclass__(**kwargs)
         # 自动包装子类的 run()，使其运行期间自动启动/停止 TOPMOST 监测
@@ -133,12 +137,35 @@ class TopmostMixin:
                 already_running = (
                     getattr(self_inner, "_topmost_thread", None) is not None and self_inner._topmost_thread.is_alive()
                 )  # type: ignore[union-attr]
-                if not already_running:
-                    self_inner.start_topmost_monitor()
+                if already_running:
+                    return original_run(self_inner, *args, **kw)
+
+                # 延迟启动：等 _TOPMOST_START_DELAY 秒后再启动 monitor，
+                # 若 run() 在延迟期内返回则取消启动（适用于触发式任务的快速扫描 cycle）
+                delay_timer: threading.Timer | None = None
+                timer_fired = threading.Event()
+
+                def _delayed_start() -> None:
+                    timer_fired.set()
+                    try:
+                        self_inner.start_topmost_monitor()
+                    except Exception:
+                        pass
+
+                delay_timer = threading.Timer(self_inner._TOPMOST_START_DELAY, _delayed_start)
+                delay_timer.daemon = True
+                delay_timer.start()
+
                 try:
                     return original_run(self_inner, *args, **kw)
                 finally:
-                    if not already_running:
+                    # 取消延迟 timer（若尚未触发）
+                    if delay_timer is not None:
+                        delay_timer.cancel()
+                    # 等待 timer 线程结束，避免竞态
+                    delay_timer.join(timeout=1.0) if delay_timer is not None else None
+                    # 仅在 monitor 已启动时才停止（快速扫描 cycle 不会启动，此处为 no-op）
+                    if timer_fired.is_set():
                         self_inner.stop_topmost_monitor()
 
             cls.run = _wrapped_run  # type: ignore[attr-defined]
