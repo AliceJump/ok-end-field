@@ -20,7 +20,9 @@ def install_startup_patches():
     from src.patches.startup_window_patch import install_startup_window_patch
     from src.patches.task_config_lock_patch import install_task_config_lock_patch
     from src.patches.win32_gdi_point_patch import install_win32_gdi_point_patch
+    from src.patches.no_frame_task_patch import install_no_frame_task_patch
 
+    install_no_frame_task_patch()
     install_cascade_dropdown_patch()
     install_config_transfer_patch()
     install_conditional_rotation_patch()
