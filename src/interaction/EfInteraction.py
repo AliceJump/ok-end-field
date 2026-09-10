@@ -34,35 +34,88 @@ class EfInteraction(PostMessageInteraction):
         self._pressed_keys = {}  # 已成功按下的按键计数映射（规范化身份 -> 次数）
         self.keyboard = Controller()
 
-    def click(self, x=-1, y=-1, move_back=False, name=None, down_time=0.001, move=True, key="left"):
+    def _get_mouse_button_messages(self, key):
+        """获取鼠标按键对应的 Windows 消息。"""
+        if key == "left":
+            return (
+                win32con.WM_LBUTTONDOWN,
+                win32con.MK_LBUTTON,
+                win32con.WM_LBUTTONUP,
+            )
+
+        return (
+            win32con.WM_RBUTTONDOWN,
+            win32con.MK_RBUTTON,
+            win32con.WM_RBUTTONUP,
+        )
+
+    def _prepare_mouse_position(self, x, y):
+        """准备鼠标点击位置，并记录原始鼠标位置。"""
+        if x < 0:
+            return (
+                win32api.MAKELONG(
+                    round(self.capture.width * 0.5),
+                    round(self.capture.height * 0.5),
+                ),
+                False,
+            )
+
+        self.cursor_position = GetCursorPos()
+
+        abs_x, abs_y = self.capture.get_abs_cords(x, y)
+        click_pos = win32api.MAKELONG(x, y)
+
+        win32api.SetCursorPos((abs_x, abs_y))
+        time.sleep(0.001)
+
+        return click_pos, True
+
+    def _restore_cursor(self):
+        """恢复调用前的鼠标位置。"""
+        if self.move_Cursor:
+            time.sleep(0.1)
+            SetCursorPos(self.cursor_position)
+            self.move_Cursor = False
+
+    def click(
+        self,
+        x=-1,
+        y=-1,
+        move_back=False,
+        name=None,
+        down_time=0.001,
+        move=True,
+        key="left",
+    ):
         if key == "middle":
             self._click_middle(x, y, down_time)
             return
+
         self.try_activate()
-        move_Cursor = False
-        if x < 0:
-            click_pos = win32api.MAKELONG(round(self.capture.width * 0.5), round(self.capture.height * 0.5))
-        else:
-            self.cursor_position = GetCursorPos()
-            abs_x, abs_y = self.capture.get_abs_cords(x, y)
-            click_pos = win32api.MAKELONG(x, y)
-            win32api.SetCursorPos((abs_x, abs_y))
-            move_Cursor = True
-            time.sleep(0.001)
-        if key == "left":
-            btn_down = win32con.WM_LBUTTONDOWN
-            btn_mk = win32con.MK_LBUTTON
-            btn_up = win32con.WM_LBUTTONUP
-        else:
-            btn_down = win32con.WM_RBUTTONDOWN
-            btn_mk = win32con.MK_RBUTTON
-            btn_up = win32con.WM_RBUTTONUP
-        self.post(btn_down, btn_mk, click_pos)
+
+        self.click_pos, self.move_Cursor = self._prepare_mouse_position(x, y)
+        btn_down, btn_mk, btn_up = self._get_mouse_button_messages(key)
+
+        self.post(btn_down, btn_mk, self.click_pos)
         time.sleep(down_time)
-        self.post(btn_up, 0, click_pos)
-        if x >= 0 and move_Cursor:
-            time.sleep(0.1)
-            SetCursorPos(self.cursor_position)
+        self.post(btn_up, 0, self.click_pos)
+
+        if x >= 0:
+            self._restore_cursor()
+
+    def mouse_down(self, x=-1, y=-1, name=None, key="right"):
+        self.try_activate()
+
+        self.click_pos, self.move_Cursor = self._prepare_mouse_position(x, y)
+        btn_down, btn_mk, _ = self._get_mouse_button_messages(key)
+
+        self.post(btn_down, btn_mk, self.click_pos)
+
+    def mouse_up(self, name=None, key="right"):
+        _, _, btn_up = self._get_mouse_button_messages(key)
+
+        self.post(btn_up, 0, self.click_pos)
+        self._restore_cursor()
 
     def _click_middle(self, x=-1, y=-1, down_time=0.001):
         """真实鼠标事件点击中键。
