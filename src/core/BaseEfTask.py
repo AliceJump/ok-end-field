@@ -125,8 +125,6 @@ class BaseEfTask(
         self.key_manager = KeyConfigManager(self.key_config)  # 初始化热键管理器
         # 初始化窗口箭头绘制 Mixin
         self._init_window_arrow_drawing_mixin()
-        # 初始化 TOPMOST 置顶监测 Mixin
-        self._init_topmost_mixin()
 
         # 语言访问器（按模块化 JSON 加载）
         try:
