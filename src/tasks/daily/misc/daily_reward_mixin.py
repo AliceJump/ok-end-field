@@ -23,13 +23,11 @@ class DailyRewardMixin:
 
         if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_13eea5dd, box=self.box.left, time_out=5):
             self.log_info("进入『每周事务』页面")
-            if self.wait_click_ocr(
-                match=self.lang.daily_routine_mixin.k_39d12e73_1, box=self.box.top_right, time_out=5
+            if self.wait_click_feature(
+                feature=fL.week_task_collect, box=self.box.top_right, time_out=5, raise_if_not_found=False
             ):
-                if self.wait_click_ocr(
-                    match=self.lang.daily_routine_mixin.k_bf856c96,
-                    box=self.box.bottom_right,
-                    time_out=5,
+                if self.wait_click_feature(
+                    feature=fL.week_reward_collect, box=self.box.bottom_right, time_out=5, raise_if_not_found=False
                 ):
                     self.wait_pop_up()
                     self.log_info("已领取『每周事务』奖励")

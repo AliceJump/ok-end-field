@@ -100,6 +100,8 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
             '网页地图同步': ['content', '地图账号', '油猴脚本帮助'],
         })
 
+        self.needs_frame = False  # 纯 WS 驱动，不识别画面
+
         # internal constants (not user-facing)
         self._init_ws_position_mixin()
         cfg_folder = Path(config.get('config_folder', 'configs'))
