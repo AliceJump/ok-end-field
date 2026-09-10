@@ -61,7 +61,9 @@ class LoginMixin(BaseEfTask):
         self.click(result)
         # 前置动作：后续「最近/账号/登录」点击走 pyautogui（只作用于前台窗口），
         # 必须先把游戏窗口置前。
-        self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True)
+        if not self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True):
+            self.log_error("无法激活游戏窗口，已取消登录以避免误点其他窗口")
+            return False
         if not self.wait_click_feature(
             feature=fL.log_out_confirm, time_out=5, raise_if_not_found=False
         ):  # 点击登出确认
@@ -78,7 +80,7 @@ class LoginMixin(BaseEfTask):
             self.log_error("未找到‘最近’按钮，可能未成功返回登录界面")
             raise RuntimeError("未找到‘最近’按钮，可能未成功返回登录界面")
         self.click_text(
-            re.compile(username[-4:]),
+            re.compile(re.escape(username[-4:])),
             box=self.box_of_screen(0, (result[0].y + result[0].height) / self.height, 1, 1),
         )  # 点击最近登录的账号（假设是唯一的）
         self.click_text("登录", box=self.box.center)  # 点击登录按钮
