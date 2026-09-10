@@ -129,7 +129,8 @@ class EfInteraction(PostMessageInteraction):
         真实鼠标事件直接投递到当前前台窗口，可靠性更高。
         游戏通常处于鼠标捕获模式，点击后无需恢复光标位置。
         """
-        active_and_send_mouse_delta(self._game_hwnd(), only_activate=True)
+        if not active_and_send_mouse_delta(self._game_hwnd(), only_activate=True):
+            return
         if x < 0:
             x = round(self.capture.width * 0.5)
             y = round(self.capture.height * 0.5)
