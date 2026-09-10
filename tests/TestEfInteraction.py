@@ -15,10 +15,7 @@ class TestEfInteraction(unittest.TestCase):
         interaction._last_key_log_times = {}  # 本地 ok-script BaseInteraction.send_key 新增的日志间隔表
         interaction.keyboard = MagicMock()
         interaction._game_hwnd = MagicMock(return_value=200)
-        interaction._background_key_hold_count = 0
-        interaction._key_prev_hwnd = 0
         interaction._pressed_keys = {}
-        interaction._background_mode = MagicMock(return_value=False)
         win32gui.GetForegroundWindow.return_value = 200  # 游戏已在前台
 
         # foreground=True 时 ESC 走前置+pynput 路径
@@ -79,10 +76,7 @@ class TestEfInteraction(unittest.TestCase):
         interaction = EfInteraction.__new__(EfInteraction)
         interaction._game_hwnd = MagicMock(return_value=200)
         interaction.keyboard = MagicMock()
-        interaction._background_key_hold_count = 0
-        interaction._key_prev_hwnd = 0
         interaction._pressed_keys = {}
-        interaction._background_mode = MagicMock(return_value=False)
         win32gui.GetForegroundWindow.return_value = 200  # 游戏已在前台
 
         interaction.send_key_down("a")

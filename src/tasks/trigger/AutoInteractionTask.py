@@ -8,8 +8,6 @@ logger = Logger.get_logger(__name__)
 
 
 class AutoInteractionTask(BaseEfTask, TriggerTask):
-    requires_foreground = True  # 交互需要移动
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "自动交互"
