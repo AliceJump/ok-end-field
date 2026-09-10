@@ -8,10 +8,12 @@
   2. 移动期间用小地图里程计做高频相对增量：``P_live = P0 + world(里程计位移)``；
   3. 每走一段（再次静止）用新的 WS 坐标重新设 ``P0``，把里程计漂移限制在两次校准之间。
 
-延迟的处理：移动中收到的 WS 样本代表的是"延迟 L 前的旧位置"，不能直接当当前锚点，
-否则会引入 ``L * 速度`` 的偏差。因此本类提供 ``try_sync``——仅在里程计判定为静止
-时立即校准；否则把 WS 样本存入 ``pending``，待回归静止后再应用。静止校准由调用方
-（或 ``try_sync``）显式触发，符合"静止取点 -> 走 -> 静止校"的流程。
+延迟的处理：移动中收到的 WS 样本代表的是"延迟 L 前的旧位置"，不能当锚点，
+否则会引入 ``L * 速度`` 的偏差。因此 ``try_sync`` 只在**判定为静止**时才校准，
+而静止判定本身就要求"相邻两次 WS 样本一致"（见 :meth:`is_rest`），所以判为静止时
+手上这条样本已经排除了延迟——用当下这条即可，不需要（也不应该）把移动途中的
+样本暂存到静止后再应用：那样等于拿一条旧坐标去覆盖已经推进的位置（实测会被
+拽回 1.7m）。
 
 坐标系约定：
   - 里程计给出"地图系位移（像素）"，轴：图像 x 向右、y 向下，北向上。
@@ -72,6 +74,7 @@ class MinimapPositionFusion:
         scale_m_per_px: float = 1.0,
         rest_speed_m_s: float = 0.2,
         rest_ws_m: float = 0.5,
+        redundant_sync_m: float = 0.1,
         arrow_func=None,
     ):
         self._od = odometry
@@ -83,18 +86,21 @@ class MinimapPositionFusion:
             self._map_to_world_px = np.diag([self._scale, -self._scale]).astype(np.float64)
         self._rest_speed_m_s = float(rest_speed_m_s)
         self._rest_ws_m = float(rest_ws_m)
+        # 当前估计已经与 WS 坐标差不到这个距离时，重新校准是空操作，跳过（见 _is_sync_redundant）
+        self._redundant_sync_m = float(redundant_sync_m)
         # 朝向来源回调：callable(frame) -> (angle, score)。用于同时取朝向。
         self._arrow_func = arrow_func
 
         self._anchor_world = np.zeros(2, dtype=np.float64)  # (x, z)
         self._anchor_set = False
         self._last_sync_t: float | None = None
-        self._pending_ws = None
         # 静止判定：最近一次收到的 WS 坐标 + 相邻两次 WS 之间的位移（米）
         self._last_ws = None          # (x, z)
         self._ws_moved_m = None       # None = 还没收到过两次 WS 样本
         # 最近一次静止校准的残差：校准前"小地图推算坐标" vs WS 坐标
         self._last_sync_residual = None
+        # 最近一次 try_sync 是否因"空操作"而跳过（见 _is_sync_redundant）
+        self._last_sync_redundant = False
         # 最近一次 is_rest() 的两个实测值（排查"为什么没判静止"）
         self._rest_diag = None
 
@@ -102,12 +108,12 @@ class MinimapPositionFusion:
     # 状态
     # ------------------------------------------------------------------ #
     def reset(self):
-        """清空锚点、待应用 WS 样本、静止判定状态与校准残差。"""
+        """清空锚点、静止判定状态与校准残差。"""
         self._anchor_set = False
-        self._pending_ws = None
         self._last_ws = None
         self._ws_moved_m = None
         self._last_sync_residual = None
+        self._last_sync_redundant = False
         self._od.reset_position()
 
     def set_map_to_world_px(self, matrix):
@@ -143,11 +149,21 @@ class MinimapPositionFusion:
 
     @property
     def map_to_world_px(self) -> tuple[tuple[float, float], tuple[float, float]]:
-        return (tuple(self._map_to_world_px[0]), tuple(self._map_to_world_px[1]))
+        """当前轴映射。返回普通 float（不要泄漏 numpy 标量，否则日志里会打成 np.float64(...)）。"""
+        return tuple(tuple(float(v) for v in row) for row in self._map_to_world_px)
+
+    @property
+    def last_sync_redundant(self) -> bool:
+        """最近一次 :meth:`try_sync` 是否因"锚点没变、里程计也没漂"而跳过了校准。
+
+        静止时 WS 会持续重复推送同一坐标；不跳过的话每秒都会重设一次锚点、
+        清一次里程计，并把上一次真正有意义的校准残差覆盖掉。
+        """
+        return self._last_sync_redundant
 
     @property
     def last_sync_residual(self) -> dict | None:
-        """最近一次校准的残差：{map_x, map_z, ws_x, ws_z, dx, dz, dist}。
+        """最近一次**实际执行**的校准的残差：{map_x, map_z, ws_x, ws_z, dx, dz, dist}。
 
         ``map_*`` 是校准前"用小地图推算的坐标"，``ws_*`` 是以此为准的 WS 坐标，
         ``dist`` 是两者距离（米）——即小地图定位在这次静止前的累计偏差。
@@ -234,9 +250,24 @@ class MinimapPositionFusion:
         self._anchor_world = np.array([float(ws_x), float(ws_z)], dtype=np.float64)
         self._anchor_set = True
         self._last_sync_t = now
-        self._pending_ws = None
+        self._last_sync_redundant = False
         self._od.reset_position()
         return self.estimate()
+
+    def _is_sync_redundant(self, ws_x: float, ws_z: float) -> bool:
+        """当前估计已经与 WS 坐标几乎重合 → 重新校准是空操作。
+
+        静止时 WS 每秒都重复推送同一坐标，若每次都重锚+清零，日志会被
+        "静止校准"刷屏，而且上一次真正有意义的校准残差会被 0 残差覆盖掉。
+        阈值取 ``redundant_sync_m``：它同时是漂移修正的死区（漂移超过它才重锚），
+        所以位置不会因此无界漂移。
+        """
+        if not self._anchor_set:
+            return False
+        est = self.estimate()
+        if est is None:
+            return False
+        return math.hypot(est["x"] - float(ws_x), est["z"] - float(ws_z)) <= self._redundant_sync_m
 
     def sync(self, world_xyz, *, map_id=None, now=None):
         """用 WS 绝对坐标设置锚点并清零里程计（无条件执行，调用方负责保证静止）。
@@ -251,38 +282,39 @@ class MinimapPositionFusion:
         return self._apply_sync(x, z, now)
 
     def try_sync(self, world_xyz, *, map_id=None, now=None) -> bool:
-        """尝试用 WS 校准：静止（小地图没动 且 WS 没动）时立即同步；否则暂存。
+        """尝试用 WS 校准：只有**判定为静止**时才用这条样本重锚。
+
+        不做"移动中暂存、静止后再应用"：暂存的是移动途中的陈旧坐标，静止后应用
+        它会把里程计已经推进的位置拽回去。静止判定已要求相邻两次 WS 样本一致，
+        所以判为静止时手上这条就是可信的最新值。
 
         Returns:
-            True 表示本次已同步；False 表示暂存为 pending（未同步）。
+            True = 本次静止、锚点有效（可能是真正重锚，也可能是"已对齐、跳过"，
+            见 :attr:`last_sync_redundant`）；False = 未静止，本次不校准。
         """
         if world_xyz is None:
             return False
         x, z = float(world_xyz[0]), float(world_xyz[2])
         self._note_ws(x, z)
-        if self.is_rest():
-            self._apply_sync(x, z, now)
+        if not self.is_rest():
+            return False
+        if self._is_sync_redundant(x, z):
+            self._last_sync_redundant = True
             return True
-        self._pending_ws = {"world": world_xyz, "map_id": map_id, "now": now}
-        return False
+        self._apply_sync(x, z, now)
+        return True
 
     # ------------------------------------------------------------------ #
     # 定位
     # ------------------------------------------------------------------ #
     def step(self, *, now=None, frame=None) -> dict | None:
-        """采样一拍里程计，并在合适时应用待定 WS 校准，返回当前估计。
-
-        若存在 pending 的 WS 样本且当前静止，会在本拍应用它（重新设锚点并清零）。
-        """
+        """采样一拍里程计，返回当前估计。"""
         try:
             self._od.sample(frame=frame)
         except Exception as e:  # noqa: BLE001
             # 任务被停用/结束抛的是框架控制流异常，必须放行——里程计侧
             # _reraise_control_flow 特意让它们冒出来，这里不能又吞回去。
             _reraise_control_flow(e)
-        if self._pending_ws is not None and self.is_rest():
-            w = self._pending_ws["world"]
-            self._apply_sync(float(w[0]), float(w[2]), now)
         return self.estimate()
 
     def estimate(self) -> dict | None:

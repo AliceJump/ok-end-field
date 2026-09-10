@@ -12,10 +12,21 @@
 - 相位相关约定：``phaseCorrelate(A, B)`` 返回内容从 A 到 B 的图像位移
   ``(dx, dy)``（A 中 (x,y) 的像素在 B 中出现在 (x+dx, y+dy)）。
   因此玩家位移（地图系像素）= ``(-dx, -dy)``。
+- 朝向角约定（对外）：``read_yaw()`` / ``forward_strafe_m()`` /
+  ``body_axes_from_heading()`` 一律用**罗盘方位角**——正北 0°、正东 90°、
+  正南 180°、正西 270°，顺时针增大。底层 ``Task.get_arrow_angle()`` 返回的是
+  "屏幕上从正北逆时针"的角度（``cv2.getRotationMatrix2D`` 的正角表现为屏幕上
+  逆时针），与方位角差一个镜像，由 :func:`arrow_angle_to_bearing` 在入口处统一
+  转换，下游不再接触原始箭头角。
 
 单位：位移以"地图系像素"为原生单位（``position_px()``），换算米需要
 ``scale_m_per_px``（该值应由真值标定得到）。标注 ``m`` 的方法在未提供
 比例尺时仍返回像素值并记录警告。
+
+性能：相位相关只用到环带那几个像素，因此采样时先把帧裁到环带外接框
+（:func:`minimap_crop_box`，2560x1440 下约占全帧 8.4%）再做 FFT，
+位移结果与整帧一致而计算量按面积比下降（实测相位相关 100ms -> 12ms）。
+注意裁剪会改变相位相关的 FFT 窗，外扩比例见 ``DEFAULT_CROP_PAD_RATIO``。
 
 本模块为纯视觉/数学实现，不依赖 ``ok`` 框架，便于做单元测试；任务层通过
 传入一个"任务对象"（提供 ``next_frame`` / ``width`` / ``height`` /
@@ -31,13 +42,18 @@ import numpy as np
 
 __all__ = [
     "DEFAULT_CENTER_RATIO",
+    "DEFAULT_CROP_PAD_RATIO",
     "DEFAULT_R_OUTER_RATIO",
     "DEFAULT_R_INNER_RATIO",
     "MinimapOdometry",
     "annulus_mask",
-    "phase_shift",
+    "angle_delta",
+    "arrow_angle_to_bearing",
+    "bearing_to_arrow_angle",
     "body_axes_from_heading",
     "decompose_body",
+    "minimap_crop_box",
+    "phase_shift",
     "region_geometry",
     "wrap_deg",
 ]
@@ -47,6 +63,14 @@ __all__ = [
 DEFAULT_CENTER_RATIO = (0.084, 0.154)
 DEFAULT_R_OUTER_RATIO = 0.044
 DEFAULT_R_INNER_RATIO = 0.014
+# 环带外接框在外半径之外再留的余量（占外半径比例）。
+# 注意：这个值是"安全下限"，不能随便调小。裁剪相当于给相位相关换了个 FFT 窗，
+# 窗太小时"完全相同两帧"会解出 ±0.5px 的偏置（实测 pad=1.3 在 1920x1080/1280x720
+# 静止时是 (0,-0.5)，pad=5.0 又会出现）；0.5px/0.5s ≈ 0.67 m/s 的假速度会超过
+# 融合层的静止阈值 0.2 m/s，导致永远判不了"静止"、再也不重新校准。
+# pad=2.0 在 2560x1440 / 1920x1080 / 1280x720 / 640x360 上静止均为严格 0，
+# 框面积约占全帧 8.4%（相比整帧仍是约 12 倍的计算量下降）。
+DEFAULT_CROP_PAD_RATIO = 2.0
 
 
 def region_geometry(
@@ -76,6 +100,61 @@ def region_geometry(
 def wrap_deg(deg: float) -> float:
     """把角度归一化到 [0, 360)。"""
     return float(deg) % 360.0
+
+
+def angle_delta(after: float, before: float) -> float:
+    """两角之间的最短有向差，归一化到 (-180, 180]。
+
+    例如 ``angle_delta(2, 358) == 4.0``（正确跨越 0/360 边界）。
+    """
+    return (float(after) - float(before) + 180.0) % 360.0 - 180.0
+
+
+def minimap_crop_box(
+    width: int,
+    height: int,
+    center_ratio: tuple[float, float] = DEFAULT_CENTER_RATIO,
+    r_outer_ratio: float = DEFAULT_R_OUTER_RATIO,
+    pad_ratio: float = DEFAULT_CROP_PAD_RATIO,
+) -> tuple[int, int, int, int]:
+    """小地图环带的外接框 ``(x0, y0, x1, y1)``（整帧坐标，已夹到画面内）。
+
+    相位相关只用到环带那几千个像素，却要在整帧上做 FFT；先按这个框裁剪再相关，
+    结果与整帧一致——环带的真实位移（几十像素）远小于框尺寸，不会出现环绕歧义——
+    但计算量按面积比下降（2560x1440 实测：框占 8.4%，相位相关 100ms -> 12ms）。
+
+    夹取到画面内是安全的：被夹掉的只是画面外的空白，环带本身仍在框内
+    （小地图圆心在外接框内，任何落在画面外的环带像素本来就不存在）。
+
+    Args:
+        pad_ratio: 外半径之外再留的余量（占外半径比例），给羽化边缘留空间。
+    """
+    cx, cy, _r_inner, r_outer = region_geometry(
+        width, height, center_ratio, r_outer_ratio)
+    pad = r_outer * max(0.0, float(pad_ratio))
+    x0 = max(0, int(math.floor(cx - r_outer - pad)))
+    y0 = max(0, int(math.floor(cy - r_outer - pad)))
+    x1 = min(int(width), int(math.ceil(cx + r_outer + pad)))
+    y1 = min(int(height), int(math.ceil(cy + r_outer + pad)))
+    if x1 <= x0 or y1 <= y0:
+        # 尺寸异常（宽/高为 0 等）：退回整帧，让上层按原来的方式报错/降级
+        return 0, 0, int(width), int(height)
+    return x0, y0, x1, y1
+
+
+def arrow_angle_to_bearing(arrow_deg: float) -> float:
+    """箭头角（屏幕上从正北逆时针）-> 罗盘方位角（从正北顺时针）。
+
+    ``Task.get_arrow_angle()`` 用 ``cv2.getRotationMatrix2D`` 旋转朝上的箭头模板，
+    cv2 正角在屏幕上表现为逆时针，所以它给的 90° 是正西；而日常说的方位角
+    90° 是正东。两者互为镜像：``bearing = (360 - arrow) % 360``。
+    """
+    return (360.0 - float(arrow_deg)) % 360.0
+
+
+def bearing_to_arrow_angle(bearing_deg: float) -> float:
+    """罗盘方位角 -> 箭头角（与 :func:`arrow_angle_to_bearing` 互逆）。"""
+    return (360.0 - float(bearing_deg)) % 360.0
 
 
 def _reraise_control_flow(e: BaseException) -> None:
@@ -192,33 +271,29 @@ def phase_shift(
 
 def body_axes_from_heading(
     heading_deg: float,
-    convention: str = "north_up",
+    convention: str = "compass",
 ) -> tuple[tuple[float, float], tuple[float, float]]:
-    """根据朝向角（小地图箭头角度，度）返回地图系下的前向/右向单位向量。
+    """根据朝向角（罗盘方位角，度）返回地图系下的前向/右向单位向量。
 
-    地图系轴：x 向右（东）、y 向下（南）。heading_deg 为箭头指向的方位角。
+    地图系轴：x 向右（东）、y 向下（南）。``heading_deg`` 是**罗盘方位角**：
+    正北 0°、正东 90°、正南 180°、正西 270°，顺时针增大。
 
-    ``convention`` 定义箭头角度如何映射到世界方向（符号须由 E3 实测后固化）：
-      - ``"north_up"`` 默认：0°=正北(图像 y 向上)，90°=正东(图像 x 向右)。
-        即 前向 = (sin, -cos)（x=sin, y=-cos），0° 时 (0,-1) = 北(图像上)。
-      - ``"y_down_north"``：0°=正北(图像 y 向下轴取负)。语义相同，备用。
+    该约定由实机数据钉死（2026-09-10「小地图实时位置」跑测，两个朝向恒定窗口，
+    箭头角经 :func:`arrow_angle_to_bearing` 换算为方位角后比对）：
+      - 方位 76.5° 时地图系位移方向 80.0°（预测与实测差 3.5°）
+      - 方位 289.0° 时地图系位移方向 287.7°（差 1.3°）
 
-    无论哪种约定，返回的 (fwd, right) 都满足：
-      - 单位向量（长度 1）
-      - 相互正交（right = fwd 顺时针旋转 90°，即 (fwd_y, -fwd_x) 或镜像，保持一致）
+    ``convention``：``"compass"``（默认，顺时针方位角）；``"north_up"`` 是历史
+    别名，语义相同（保留以免旧调用方失效）。其他值按 ``"compass"`` 处理。
 
     Returns:
-        (fwd, right)：各为 (x, y) 元组。
+        (fwd, right)：各为 (x, y) 元组，均为单位向量且相互正交；
+        right 是玩家**右手**方向（朝北时右手在东，朝东时右手在南）。
     """
-    if convention == "north_up":
-        # x=sin(theta), y=-cos(theta)：0° -> (0,-1) 北；90° -> (1,0) 东
-        fwd = (math.sin(math.radians(heading_deg)), -math.cos(math.radians(heading_deg)))
-        # 右向 = 前向顺时针转 90°（图像 y 向下，顺时针即 (fwd_y, -fwd_x)）
-        right = (fwd[1], -fwd[0])
-    else:
-        # 兜底约定，x=cos, y=sin
-        fwd = (math.cos(math.radians(heading_deg)), math.sin(math.radians(heading_deg)))
-        right = (fwd[1], -fwd[0])
+    # 罗盘方位：0°=北 -> (0,-1)；90°=东 -> (1,0)；180°=南 -> (0,1)
+    fwd = (math.sin(math.radians(heading_deg)), -math.cos(math.radians(heading_deg)))
+    # 右手侧：地图系 y 向下，(x,y) -> (-y,x)（朝北时得东，朝东时得南）
+    right = (-fwd[1], fwd[0])
     return (float(fwd[0]), float(fwd[1])), (float(right[0]), float(right[1]))
 
 
@@ -268,19 +343,21 @@ class MinimapOdometry:
         r_outer_ratio: float = DEFAULT_R_OUTER_RATIO,
         r_inner_ratio: float = DEFAULT_R_INNER_RATIO,
         feather: int = 2,
+        crop_pad_ratio: float = DEFAULT_CROP_PAD_RATIO,
         sample_min_dt: float = 0.15,
         sample_max_dt: float = 1.5,
         response_low: float = 0.12,
         max_shift_ratio: float = 0.35,
         max_speed_px_s: float | None = None,
         scale_m_per_px: float | None = None,
-        heading_convention: str = "north_up",
+        heading_convention: str = "compass",
     ):
         self._task = task
         self._center_ratio = center_ratio
         self._r_outer_ratio = r_outer_ratio
         self._r_inner_ratio = r_inner_ratio
         self._feather = feather
+        self._crop_pad_ratio = crop_pad_ratio
         self._sample_min_dt = sample_min_dt
         self._sample_max_dt = sample_max_dt
         self._response_low = response_low
@@ -290,6 +367,7 @@ class MinimapOdometry:
         self._heading_convention = heading_convention
 
         self._mask_cache: dict[tuple[int, int], np.ndarray] = {}
+        self._box_cache: dict[tuple[int, int], tuple[int, int, int, int]] = {}
         self._anchor_gray: np.ndarray | None = None
         self._anchor_t: float | None = None
         self._pos_px = np.zeros(2, dtype=np.float64)  # 地图系累计位移（像素）
@@ -306,19 +384,43 @@ class MinimapOdometry:
         return w, h
 
     def _mask(self) -> np.ndarray:
+        """环带掩膜——尺寸是**裁剪框**，不是整帧（见 :func:`minimap_crop_box`）。"""
         w, h = self._dimensions()
         key = (w, h)
         if key not in self._mask_cache:
             cx, cy, r_inner, r_outer = region_geometry(
                 w, h, self._center_ratio, self._r_outer_ratio, self._r_inner_ratio
             )
+            x0, y0, x1, y1 = self._box()
+            # 框内建掩膜：圆心换成框内坐标，其余几何参数与整帧版完全一致
             self._mask_cache[key] = annulus_mask(
-                h, w, (cx, cy), r_inner, r_outer, feather=self._feather
+                y1 - y0, x1 - x0, (cx - x0, cy - y0), r_inner, r_outer,
+                feather=self._feather,
             )
         return self._mask_cache[key]
 
+    def _box(self) -> tuple[int, int, int, int]:
+        """环带外接框（整帧坐标，按任务分辨率算，与掩膜同一坐标系）。"""
+        w, h = self._dimensions()
+        key = (w, h)
+        if key not in self._box_cache:
+            self._box_cache[key] = minimap_crop_box(
+                w, h, self._center_ratio, self._r_outer_ratio, self._crop_pad_ratio)
+        return self._box_cache[key]
+
     def _crop_gray(self, frame: np.ndarray) -> np.ndarray | None:
-        return _to_gray_norm_masked(frame, self._mask())
+        """把帧裁到环带外接框，返回归一化灰度（框外不参与，省掉整帧 FFT）。"""
+        if frame is None:
+            return None
+        x0, y0, x1, y1 = self._box()
+        w, h = self._dimensions()
+        if w > 0 and h > 0 and frame.shape[:2] != (h, w):
+            # 帧尺寸与任务记录不一致：先整帧缩放到任务尺寸，框与掩膜才是同一坐标系
+            frame = cv2.resize(frame, (w, h), interpolation=cv2.INTER_AREA)
+        crop = frame[y0:y1, x0:x1]
+        if crop.size == 0:
+            return None
+        return _to_gray_norm_masked(crop, self._mask())
 
     def _log(self, meth, msg: str):
         fn = getattr(self._task, meth, None)
@@ -500,22 +602,29 @@ class MinimapOdometry:
         return self._to_m((float(self._pos_px[0]), float(self._pos_px[1])))
 
     def read_yaw(self) -> tuple[float | None, float]:
-        """读取小地图箭头角度（方向）。返回 (angle, score)。"""
+        """读取朝向，返回 ``(bearing, score)``。
+
+        ``bearing`` 是**罗盘方位角**（正北 0°、正东 90°、顺时针），由
+        :func:`arrow_angle_to_bearing` 从底层箭头角换算而来。
+        """
         fn = getattr(self._task, "get_arrow_angle", None)
         if not callable(fn):
             return None, 0.0
         try:
             angle, score = fn(smoothing_threshold=None)
-            return angle, 0.0 if score is None else float(score)
+            score = 0.0 if score is None else float(score)
+            if angle is None:
+                return None, score
+            return arrow_angle_to_bearing(angle), score
         except Exception as e:  # noqa: BLE001
             self._log("log_warning", f"read_yaw 失败: {e}")
             return None, 0.0
 
     def forward_strafe_m(self, heading_deg: float | None = None) -> tuple[float, float]:
-        """把累计位移按朝向角分解为 前向/右向（米或像素）。
+        """把累计位移按朝向分解为 前向/右向（米或像素）。
 
         Args:
-            heading_deg: 小地图箭头角度。None 时用最近一次 read_yaw()。
+            heading_deg: 罗盘方位角（正北 0°、正东 90°）。None 时用最近一次 read_yaw()。
         """
         if heading_deg is None:
             angle, _ = self.read_yaw()

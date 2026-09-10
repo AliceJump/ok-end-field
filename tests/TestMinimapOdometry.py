@@ -5,11 +5,12 @@
 - annulus_mask 圆环几何（内圈 0 / 环带 1 / 外圈 0、羽化）。
 - phase_shift 的位移符号约定（内容 A->B 位移 = (dx, dy)）。
 - MinimapOdometry 采样积分（玩家位移 = -(内容位移)）与守卫（响应低/超位移/时间窗）。
-- body_axes / decompose_body 前向-右向正交与符号约定。
+- body_axes / decompose_body 前向-右向正交、右手侧与罗盘方位角约定。
 
 这些测试不需要游戏窗口，仅依赖 numpy/opencv。
 """
 import cv2
+import math
 import numpy as np
 import unittest
 
@@ -19,8 +20,12 @@ from src.tasks.mixin.minimap_odometry import (
     DEFAULT_R_OUTER_RATIO,
     MinimapOdometry,
     annulus_mask,
+    angle_delta,
+    arrow_angle_to_bearing,
+    bearing_to_arrow_angle,
     body_axes_from_heading,
     decompose_body,
+    minimap_crop_box,
     phase_shift,
     region_geometry,
     wrap_deg,
@@ -209,31 +214,136 @@ class TestIntegration(unittest.TestCase):
 class TestDecompose(unittest.TestCase):
     def test_axes_orthonormal(self):
         for deg in (0, 90, 180, 270, 45):
-            fwd, right = body_axes_from_heading(float(deg), "north_up")
+            fwd, right = body_axes_from_heading(float(deg), "compass")
             self.assertAlmostEqual(fwd[0] ** 2 + fwd[1] ** 2, 1.0, delta=1e-6)
             self.assertAlmostEqual(right[0] ** 2 + right[1] ** 2, 1.0, delta=1e-6)
             self.assertAlmostEqual(fwd[0] * right[0] + fwd[1] * right[1], 0.0, delta=1e-6)
 
-    def test_north_up_convention(self):
-        # 0° = 北（图像 y 向上 → 单位向量 (0, -1)）
-        fwd, right = body_axes_from_heading(0.0, "north_up")
+    def test_arrow_angle_to_bearing_is_mirror(self):
+        """箭头角（屏幕上逆时针）与罗盘方位角（顺时针）互为镜像。"""
+        self.assertAlmostEqual(arrow_angle_to_bearing(0.0), 0.0, delta=1e-6)      # 北
+        self.assertAlmostEqual(arrow_angle_to_bearing(90.0), 270.0, delta=1e-6)   # 箭头 90°=西 -> 方位 270°
+        self.assertAlmostEqual(arrow_angle_to_bearing(270.0), 90.0, delta=1e-6)   # 箭头 270°=东 -> 方位 90°
+        for deg in (13.0, 76.5, 283.5, 359.0):
+            self.assertAlmostEqual(bearing_to_arrow_angle(arrow_angle_to_bearing(deg)), deg, delta=1e-6)
+
+    def test_compass_convention(self):
+        """罗盘方位角：0°=北、90°=东、180°=南、270°=西（顺时针）。"""
+        fwd, _ = body_axes_from_heading(0.0, "compass")     # 北 -> 图像 y 向上
         self.assertAlmostEqual(fwd[0], 0.0, delta=1e-6)
         self.assertAlmostEqual(fwd[1], -1.0, delta=1e-6)
-        # 90° = 东（图像 x 向右 → (1, 0)）
-        fwd, _ = body_axes_from_heading(90.0, "north_up")
+        fwd, _ = body_axes_from_heading(90.0, "compass")    # 东 -> 图像 x 向右
         self.assertAlmostEqual(fwd[0], 1.0, delta=1e-6)
+        self.assertAlmostEqual(fwd[1], 0.0, delta=1e-6)
+        fwd, _ = body_axes_from_heading(180.0, "compass")   # 南 -> 图像 y 向下
+        self.assertAlmostEqual(fwd[1], 1.0, delta=1e-6)
+        fwd, _ = body_axes_from_heading(270.0, "compass")   # 西 -> 图像 x 向左
+        self.assertAlmostEqual(fwd[0], -1.0, delta=1e-6)
+        # "north_up" 是历史别名，语义相同
+        self.assertEqual(body_axes_from_heading(90.0, "north_up"),
+                         body_axes_from_heading(90.0, "compass"))
+
+    def test_right_is_player_right_hand(self):
+        """right 必须是玩家右手侧：朝北时右手在东，朝东时右手在南。"""
+        _, right = body_axes_from_heading(0.0, "compass")
+        self.assertAlmostEqual(right[0], 1.0, delta=1e-6)
+        self.assertAlmostEqual(right[1], 0.0, delta=1e-6)
+        _, right = body_axes_from_heading(90.0, "compass")
+        self.assertAlmostEqual(right[0], 0.0, delta=1e-6)
+        self.assertAlmostEqual(right[1], 1.0, delta=1e-6)
+
+    def test_matches_arrow_angle_convention_from_real_log(self):
+        """回归实机日志：箭头角换算成方位角后，应与地图系位移方向一致。
+
+        数据取自 2026-09-10「小地图实时位置」30s 跑测（同一校准区间内朝向恒定）：
+          #036->#044 箭头角 283.5°，位移 (6.5,4.4)->(56.4,-4.4)px → 方位 80.0°
+          #024->#029 箭头角  71.0°，位移 (-20.6,-0.1)->(-48.9,-10.7)px → 方位 287.7°
+        若不换算（把箭头角当方位角用），两处分别差 156.5° / 140.5°。
+        """
+        for arrow_deg, measured_bearing in ((283.5, 80.0), (71.0, 287.7)):
+            fwd, _ = body_axes_from_heading(arrow_angle_to_bearing(arrow_deg), "compass")
+            predicted = math.degrees(math.atan2(fwd[0], -fwd[1])) % 360.0
+            diff = abs((predicted - measured_bearing + 180.0) % 360.0 - 180.0)
+            self.assertLess(
+                diff, 5.0,
+                f"箭头角 {arrow_deg}° 预测 {predicted:.1f}°，实测 {measured_bearing}°")
 
     def test_decompose_heading(self):
         # 朝北走 10 米（地图系：东 x、南 y），北= (0,-1)
-        fwd, _ = decompose_body((0.0, -10.0), heading_deg=0.0, scale_m_per_px=1.0, convention="north_up")
+        fwd, _ = decompose_body((0.0, -10.0), heading_deg=0.0, scale_m_per_px=1.0, convention="compass")
         self.assertAlmostEqual(fwd, 10.0, delta=1e-6)
         # 朝东走 10 米
-        fwd, _ = decompose_body((10.0, 0.0), heading_deg=90.0, scale_m_per_px=1.0, convention="north_up")
+        fwd, _ = decompose_body((10.0, 0.0), heading_deg=90.0, scale_m_per_px=1.0, convention="compass")
         self.assertAlmostEqual(fwd, 10.0, delta=1e-6)
+        # 朝东时向西走应判为后退
+        fwd, _ = decompose_body((-10.0, 0.0), heading_deg=90.0, scale_m_per_px=1.0, convention="compass")
+        self.assertAlmostEqual(fwd, -10.0, delta=1e-6)
+        # 朝北时向东横移 = 右手侧 → strafe 为正
+        _, strafe = decompose_body((10.0, 0.0), heading_deg=0.0, scale_m_per_px=1.0, convention="compass")
+        self.assertAlmostEqual(strafe, 10.0, delta=1e-6)
 
     def test_wrap_deg(self):
         self.assertAlmostEqual(wrap_deg(-30), 330.0, delta=1e-6)
         self.assertAlmostEqual(wrap_deg(390), 30.0, delta=1e-6)
+
+    def test_angle_delta_wraps_and_signed(self):
+        """最短有向差，跨 0/360 边界取短边。"""
+        self.assertAlmostEqual(angle_delta(2.0, 358.0), 4.0, delta=1e-6)
+        self.assertAlmostEqual(angle_delta(358.0, 2.0), -4.0, delta=1e-6)
+        self.assertAlmostEqual(angle_delta(90.0, 0.0), 90.0, delta=1e-6)
+        self.assertAlmostEqual(angle_delta(0.0, 90.0), -90.0, delta=1e-6)
+        self.assertAlmostEqual(abs(angle_delta(180.0, 0.0)), 180.0, delta=1e-6)
+
+
+class TestReadYaw(unittest.TestCase):
+    """read_yaw 对外的角度是罗盘方位角（正北 0°、正东 90°）。"""
+
+    def test_converts_arrow_angle_to_bearing(self):
+        task = _FakeTask(width=200, height=200, arrow_angle=90.0)  # 箭头 90° = 正西
+        bearing, score = MinimapOdometry(task).read_yaw()
+        self.assertAlmostEqual(bearing, 270.0, delta=1e-6)        # 方位 270° = 正西
+        self.assertAlmostEqual(score, 1.0, delta=1e-6)
+
+    def test_none_angle_stays_none(self):
+        task = _FakeTask(width=200, height=200)
+        task.get_arrow_angle = lambda smoothing_threshold=None: (None, 0.0)
+        bearing, score = MinimapOdometry(task).read_yaw()
+        self.assertIsNone(bearing)
+        self.assertAlmostEqual(score, 0.0, delta=1e-6)
+
+
+class TestCropRestIsExactlyStill(unittest.TestCase):
+    """回归：默认外扩比例下，静止（两帧完全相同）必须解出**严格 0** 位移。
+
+    裁剪等于给相位相关换了个 FFT 窗；窗太小时"相同两帧"会解出 ±0.5px 偏置，
+    0.5px/0.5s ≈ 0.67 m/s 的假速度会超过融合层的静止阈值 0.2 m/s ——
+    后果是永远判不了"静止"、再也不重新校准，漂移无界。所以这条必须钉死。
+    """
+
+    @staticmethod
+    def _frame(w, h, noise=40.0, blur=0.0):
+        rng = np.random.default_rng(0)
+        base = rng.normal(128, noise, (h, w)).astype(np.float32)
+        yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
+        base += 30 * np.sin(xx / 12.0) + 25 * np.cos(yy / 9.0)
+        if blur:
+            base = cv2.GaussianBlur(base, (0, 0), blur)
+        base = np.clip(base, 0, 255).astype(np.uint8)
+        return cv2.cvtColor(base, cv2.COLOR_GRAY2BGR)
+
+    def _rest_shift(self, w, h, noise, blur):
+        task = _FakeTask(w, h)
+        od = MinimapOdometry(task)                 # 默认 pad
+        frame = self._frame(w, h, noise, blur)
+        od.sample(frame=frame, now=0.0)
+        task._t = 0.5
+        return tuple(round(float(v), 6) for v in od.sample(frame=frame)["dmap_px"])
+
+    def test_rest_shift_is_exactly_zero(self):
+        for w, h in ((2560, 1440), (1920, 1080), (1280, 720)):
+            self.assertEqual(self._rest_shift(w, h, 40.0, 0.0), (0.0, 0.0), (w, h))
+        # 低噪+模糊（更接近真实小地图纹理）
+        self.assertEqual(self._rest_shift(1280, 720, 10.0, 2.0), (0.0, 0.0))
 
 
 class TestRegionGeometry(unittest.TestCase):
@@ -262,17 +372,58 @@ class TestRegionGeometry(unittest.TestCase):
         self.assertAlmostEqual(r_in, 10.0, delta=1e-6)
         self.assertAlmostEqual(r_out, 50.0, delta=1e-6)
 
-    def test_matches_odometry_mask(self):
-        """不变量：里程计建的掩膜 == 用 region_geometry 参数建的掩膜。
+    def test_mask_matches_region_geometry_on_crop(self):
+        """不变量：里程计在裁剪框内建的掩膜 == 整帧掩膜裁到该框的那一片。
 
-        「小地图区域检查」任务正是用 region_geometry 画圈的，这条不变量保证
-        它圈出来的区域与实际参与相位相关的像素完全一致。
+        「小地图区域检查」任务用整帧的 region_geometry/annulus_mask 画圈，
+        「里程计」把它裁到外接框后做相位相关——两者必须指向同一批像素，
+        否则那个检查就没意义。
         """
         task = _FakeTask(width=200, height=200)
         od = MinimapOdometry(task)
+        x0, y0, x1, y1 = od._box()
         cx, cy, r_in, r_out = region_geometry(200, 200)
-        ref = annulus_mask(200, 200, (cx, cy), r_in, r_out, feather=od._feather)
-        self.assertTrue(np.array_equal(od._mask(), ref))
+        full = annulus_mask(200, 200, (cx, cy), r_in, r_out, feather=od._feather)
+        self.assertTrue(np.array_equal(od._mask(), full[y0:y1, x0:x1]))
+        # 外接框必须把环带整个装下：框内非零像素数与整帧一致（没有把环切掉）
+        self.assertEqual(int((od._mask() > 0).sum()), int((full > 0).sum()))
+
+
+class TestCropBox(unittest.TestCase):
+    """相位相关前把帧裁到环带外接框——几何不能变，只是少算画面外的东西。"""
+
+    def test_box_contains_ring_and_shrinks_area(self):
+        w, h = 2560, 1440
+        x0, y0, x1, y1 = minimap_crop_box(w, h)
+        cx, cy, _r_in, r_out = region_geometry(w, h)
+        self.assertLessEqual(x0, cx - r_out)
+        self.assertGreaterEqual(x1, cx + r_out)
+        self.assertLessEqual(y0, cy - r_out)
+        self.assertGreaterEqual(y1, cy + r_out)
+        self.assertLess((x1 - x0) * (y1 - y0), w * h * 0.1)
+
+    def test_degenerate_size_returns_empty_box(self):
+        self.assertEqual(minimap_crop_box(0, 0), (0, 0, 0, 0))
+
+
+class TestCropKeepsDisplacement(unittest.TestCase):
+    """裁剪后位移估计与整帧一致（真实几何下环带只占画面一小块）。"""
+
+    def test_estimates_shift_on_cropped_ring(self):
+        w, h = 1280, 720
+        base = _texture(w, h)
+        f0 = _bgr(base)
+        f1 = _bgr(_shifted(base, 4, 3))
+        task = _FakeTask(w, h, frames=[f0, f1])
+        od = MinimapOdometry(task)                 # 默认几何：环带在左上角的小框内
+        x0, y0, x1, y1 = od._box()
+        self.assertLess((x1 - x0) * (y1 - y0), w * h * 0.1)   # 确实裁掉了一大块
+        od.sample(frame=f0, now=0.0)
+        task._t = 0.5
+        r = od.sample(frame=f1)
+        self.assertTrue(r["ok"], r)
+        self.assertAlmostEqual(r["dmap_px"][0], -4.0, delta=1.0)
+        self.assertAlmostEqual(r["dmap_px"][1], -3.0, delta=1.0)
 
 
 if __name__ == "__main__":

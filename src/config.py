@@ -146,6 +146,7 @@ config = {
         ["src.tasks.test.MinimapDisplacementCalibration", "MinimapDisplacementCalibration"],
         ["src.tasks.test.MinimapRealtimePosition", "MinimapRealtimePosition"],
         ["src.tasks.test.MinimapRegionCheck", "MinimapRegionCheck"],
+        ["src.tasks.test.MinimapTurnToHeading", "MinimapTurnToHeading"],
         ["src.tasks.test.TestArrowAngle", "TestArrowAngle"],
         ["src.tasks.test.TestCircularPulseDetect", "TestCircularPulseDetect"],
         ["src.tasks.test.TeamCompositionDetectTask", "TeamCompositionDetectTask"],

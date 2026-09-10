@@ -4,7 +4,7 @@
 用桩里程计验证：
 - sync 设置绝对锚点并清零里程计；
 - 里程计增量按 map_to_world_px 映射到世界坐标并叠加；
-- try_sync 在移动时暂存、静止后应用；
+- try_sync 只在静止时校准；移动中收到的样本直接忽略（不暂存，避免把位置拽回去）；
 - 自定义轴映射（含符号/交换）生效；
 - world_from_map_px 纯函数。
 """
@@ -83,35 +83,84 @@ class TestSyncAndEstimate(unittest.TestCase):
 class TestRestGatedSync(unittest.TestCase):
     """静止 = 小地图没动 **且** WS 没动，两者同时成立才用 WS 校准。"""
 
-    def test_try_sync_defers_when_moving(self):
+    def test_try_sync_ignores_samples_while_moving(self):
         od = _StubOd()
         fusion = MinimapPositionFusion(od)  # 默认阈值：0.2 m/s、0.5 m
         fusion.sync((0.0, 0.0, 0.0))
-        # 移动：10 m/s > 阈值 -> 不应同步
+        # 移动：10 m/s > 阈值 -> 不校准
         od.add(10.0, 0.0, 1.0)
         applied = fusion.try_sync((50.0, 0.0, 60.0))
         self.assertFalse(applied)
         self.assertEqual(fusion.estimate()["x"], 0.0 + 10.0)  # 仍是旧锚点+位移
         self.assertEqual(fusion.rest_diag["reason"], "map_moving")
 
-        # 小地图停下 + WS 也不再动（同坐标再来一条）-> 静止，step 时应用 pending
-        fusion.try_sync((50.0, 0.0, 60.0))
+        # 停下后拿到一致的两条 WS -> 用最新那条校准
         od.add(0.0, 0.0, 1.0)
-        est = fusion.step()
+        self.assertTrue(fusion.try_sync((50.0, 0.0, 60.0)))
+        est = fusion.estimate()
         self.assertAlmostEqual(est["x"], 50.0, delta=1e-6)
         self.assertAlmostEqual(est["z"], 60.0, delta=1e-6)
         self.assertEqual(est["dmap_px"], (0.0, 0.0))  # 已清零
 
+    def test_stale_sample_never_pulls_position_back(self):
+        """回归：移动途中收到的（陈旧）WS 样本不能在静止后被用来重锚。
+
+        实机日志里出现过"静止时位置被拽回 1.7m"：暂存的样本是移动途中的旧坐标，
+        静止后应用它就会覆盖里程计已经推进的位置。现在不做暂存。
+        """
+        od = _StubOd()
+        fusion = MinimapPositionFusion(od, scale_m_per_px=1.0)
+        fusion.sync((0.0, 0.0, 0.0))
+        # 移动 10m，而 WS 因延迟仍报旧位置 (0,0)：忽略这条，不暂存
+        od.add(10.0, 0.0, 1.0)
+        self.assertFalse(fusion.try_sync((0.0, 0.0, 0.0)))
+        # 停下，WS 追上到 (10,0)：先来一条（与上一条不同 -> 仍算 WS 在动），再来一条才判静止
+        od.add(0.0, 0.0, 1.0)
+        self.assertFalse(fusion.try_sync((10.0, 0.0, 0.0)))
+        self.assertTrue(fusion.try_sync((10.0, 0.0, 0.0)))
+        # 位置本来就对 -> 空操作，绝不能被拽回 0
+        self.assertTrue(fusion.last_sync_redundant)
+        self.assertAlmostEqual(fusion.estimate()["x"], 10.0, delta=1e-6)
+
     def test_try_sync_immediate_when_rest(self):
         od = _StubOd()
         fusion = MinimapPositionFusion(od)
-        # 锚定在 (80, 90)：随后同坐标的 WS 样本即"WS 也没动"
+        # 锚定在 (80, 90)：随后一条 0.4m 外的 WS 样本
+        # （相邻两次 WS 位移 0.4m < rest_ws_m 0.5m，仍算"WS 没动"）
         fusion.sync((80.0, 0.0, 90.0))
         od.add(0.0, 0.0, 1.0)  # 小地图静止
-        applied = fusion.try_sync((80.0, 0.0, 90.0))
+        applied = fusion.try_sync((80.4, 0.0, 90.0))
         self.assertTrue(applied)
-        self.assertEqual(fusion.estimate()["x"], 80.0)
-        self.assertEqual(fusion.estimate()["z"], 90.0)
+        self.assertFalse(fusion.last_sync_redundant)
+        self.assertAlmostEqual(fusion.estimate()["x"], 80.4, delta=1e-6)
+        self.assertAlmostEqual(fusion.estimate()["z"], 90.0, delta=1e-6)
+
+    def test_skips_redundant_resync(self):
+        """估计已与 WS 重合 → 重复的 WS 样本不再重锚。
+
+        静止时 WS 每秒重复推同一坐标；不跳过的话日志会被"静止校准"刷屏，
+        而且上一次真正有意义的残差会被 0 残差覆盖掉。
+        """
+        od = _StubOd()
+        fusion = MinimapPositionFusion(od)
+        fusion.sync((100.0, 0.0, 200.0))
+        od.add(0.0, 0.0, 1.0)                       # 小地图静止：估计 == 锚点 == WS
+        self.assertTrue(fusion.try_sync((100.0, 0.0, 200.0)))
+        self.assertTrue(fusion.last_sync_redundant)
+        self.assertIsNone(fusion.last_sync_residual)
+
+    def test_applies_sync_when_estimate_drifted(self):
+        """里程计漂了 5m：不是空操作，必须重锚并把残差记下来。"""
+        od = _StubOd()
+        fusion = MinimapPositionFusion(od, scale_m_per_px=1.0)
+        fusion.sync((100.0, 0.0, 200.0))
+        od.add(3.0, 4.0, 1.0)                       # 估计漂到 (103, 196)
+        od.add(0.0, 0.0, 1.0)                       # 然后停下（最后一条样本速度为 0）
+        self.assertTrue(fusion.try_sync((100.0, 0.0, 200.0)))
+        self.assertFalse(fusion.last_sync_redundant)
+        self.assertAlmostEqual(fusion.last_sync_residual["dist"], 5.0, delta=1e-6)
+        self.assertAlmostEqual(fusion.estimate()["x"], 100.0, delta=1e-6)
+        self.assertAlmostEqual(fusion.estimate()["z"], 200.0, delta=1e-6)
 
     def test_ws_moving_blocks_rest(self):
         """小地图没动、但 WS 还在动 -> 不算静止（两个条件必须同时成立）。"""

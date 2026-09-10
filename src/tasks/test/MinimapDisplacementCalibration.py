@@ -15,15 +15,24 @@
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
-from src.tasks.account.account_scope_store import get_account_map_content, resolve_account_id
-from src.tasks.mixin.minimap_odometry import MinimapOdometry, wrap_deg
-from src.tasks.mixin.ws_position_mixin import WsPositionMixin
+from src.tasks.mixin.minimap_odometry import wrap_deg
+from src.tasks.mixin.minimap_position_mixin import (
+    CONFIG_WS_ACCOUNT,
+    CONFIG_WS_CONTENT,
+    CONFIG_WS_MIN_HITS,
+    CONFIG_WS_WAIT,
+    MinimapPositionMixin,
+)
 
 
-class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
+class MinimapDisplacementCalibration(BaseEfTask, MinimapPositionMixin):
     """小地图位移里程计标定测试（工具与调试分组）。"""
 
     requires_foreground = True  # 需要前台移动/视角操作
+
+    # 比例尺配置键与定位 mixin 不同（这里 0 表示"自动/不标定"），语义一致都按像素处理
+    MINIMAP_SCALE_KEY = "比例尺(米/像素,0=自动)"
+    MINIMAP_SCALE_DEFAULT = 0.0
 
     # 基础采样参数
     SAMPLE_STEP = 0.25           # 每拍睡眠间隔（秒），同时控住 od 的采样 dt
@@ -53,7 +62,7 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
         # 标定是连续跑 E1-E5 的实验，期间 E1/E2/E4 不读取 WS 位置，
         # 若沿用 mixin 默认的消费空闲超时（10s），WS 客户端会在 E3 前自动停止，
         # 导致真值采不到。这里把空闲超时调大，避免中途被踢。
-        self._init_ws_position_mixin()
+        self._init_minimap_position_mixin()
         self._map_ws_consumer_idle_timeout = 3600.0
 
         self.default_config = {
@@ -67,10 +76,10 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
             "弧线转向间隔(拍)": self.ARC_TURN_EVERY,
             "箭头最低置信度": self.ARROW_MIN_SCORE,
             "比例尺(米/像素,0=自动)": self.SCALE_M_PER_PX,
-            "真值content": self.WS_CONTENT,
-            "真值地图账号": self.WS_ACCOUNT,
-            "WS等待稳定秒数": 10.0,
-            "WS稳定最小位置数": 3,
+            CONFIG_WS_CONTENT: self.WS_CONTENT,
+            CONFIG_WS_ACCOUNT: self.WS_ACCOUNT,
+            CONFIG_WS_WAIT: 10.0,
+            CONFIG_WS_MIN_HITS: 3,
             "启用E1静止": True,
             "启用E2转向": True,
             "启用E3直走": True,
@@ -88,10 +97,10 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
             "弧线转向间隔(拍)": "E4 每几拍转向一次",
             "箭头最低置信度": "箭头角度检测最低置信度，低于该值该方向读数为不可用",
             "比例尺(米/像素,0=自动)": "手动指定比例尺；为 0 且配置了 WS 真值时自动标定，否则仅像素相对测量",
-            "真值content": "可选。直接填官方地图 hg/check 返回的 data.content 作为真值来源",
-            "真值地图账号": "可选。content 为空时从账号配置页读取该账号的地图同步 content",
-            "WS等待稳定秒数": "等 WS 真值流稳定（连续收到同一 mapId 的有效位置）的最长等待秒数；未稳定则跳过比例尺标定",
-            "WS稳定最小位置数": "判为稳定所需的连续有效位置个数（同一 mapId）",
+            CONFIG_WS_CONTENT: "可选。直接填官方地图 hg/check 返回的 data.content 作为真值来源",
+            CONFIG_WS_ACCOUNT: "可选。content 为空时从账号配置页读取该账号的地图同步 content",
+            CONFIG_WS_WAIT: "等 WS 真值流稳定（连续收到同一 mapId 的有效位置）的最长等待秒数；未稳定则跳过比例尺标定",
+            CONFIG_WS_MIN_HITS: "判为稳定所需的连续有效位置个数（同一 mapId）",
             "启用E1静止": "是否执行 E1 静止实验",
             "启用E2转向": "是否执行 E2 原地转向实验",
             "启用E3直走": "是否执行 E3 直走实验",
@@ -99,132 +108,8 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
             "启用E5界面": "是否执行 E5 开/关大地图实验",
         }
 
-        # 里程计实例（构建时按配置初始化；真正启用放在 run 开头）
-        self._od: MinimapOdometry | None = None
-        # 校准期间使用的 WS mapId（等 WS 稳定后确定；跨地图记录被丢弃）
-        self._ws_map_id: str | None = None
-
-    # ------------------------------------------------------------------ #
-    # 配置读取
-    # ------------------------------------------------------------------ #
-    def _cfg_float(self, key, default):
-        try:
-            return float(self.config.get(key, default))
-        except (TypeError, ValueError):
-            return float(default)
-
-    def _cfg_int(self, key, default):
-        try:
-            return int(self.config.get(key, default))
-        except (TypeError, ValueError):
-            return int(default)
-
-    def _cfg_bool(self, key, default):
-        raw = self.config.get(key, default)
-        if isinstance(raw, str):
-            return raw.strip().lower() in ("1", "true", "yes", "on", "是", "开启", "开")
-        return bool(raw)
-
-    # ------------------------------------------------------------------ #
-    # 里程计
-    # ------------------------------------------------------------------ #
-    def _build_odometry(self):
-        scale = self._cfg_float("比例尺(米/像素,0=自动)", self.SCALE_M_PER_PX)
-        self._od = MinimapOdometry(
-            self,
-            scale_m_per_px=(scale if scale > 0 else None),
-        )
-
-    def _next_ok_sample(self, frame=None):
-        """采样一拍，返回 (sample, has_movement)。"""
-        r = self._od.sample(frame=frame)
-        return r
-
-    # ------------------------------------------------------------------ #
-    # 真值（可选 WS）
-    # ------------------------------------------------------------------ #
-    def _resolve_ws_cred(self):
-        content = str(self.config.get("真值content") or self.WS_CONTENT).strip()
-        if content:
-            return content
-        account = str(self.config.get("真值地图账号") or self.WS_ACCOUNT).strip()
-        if account:
-            account_id = resolve_account_id(account, create_if_missing=False) or account
-            return get_account_map_content(account_id, account_name=account)
-        account_id = str(getattr(self, "current_account_id", "") or "").strip()
-        account_name = str(getattr(self, "current_user", "") or "").strip()
-        return get_account_map_content(account_id or account_name, account_name=account_name)
-
-    def _maybe_start_ws(self) -> bool:
-        try:
-            cred = self._resolve_ws_cred()
-        except Exception as e:
-            self.log_info(f"WS 真值不可用（读取 content 失败）: {e}")
-            return False
-        if not cred:
-            self.log_info("未配置 WS 真值（content/地图账号为空），跳过比例尺自动标定")
-            return False
-        try:
-            ok = self._start_map_ws_client(cred)
-        except Exception as e:
-            self.log_info(f"启动地图 WS 客户端失败: {e}")
-            return False
-        if ok:
-            self.log_info("地图 WS 客户端已启动，将同步记录真值坐标", notify=True)
-        return ok
-
-    def _poll_ws_pos(self, timeout: float = 0.0):
-        """取一条**新到**的 WS 位置（不从缓存取旧值）。
-
-        Returns:
-            (x, y, z, map_id) | None：仅当收到有效新位置时返回。
-            用 ``_recv_ws_position_payload``（仅新消息）而不是
-            ``_recv_ws_position_payload_or_cached``（可能返回缓存旧值），
-            避免把同一旧位置重复当成真值点。
-        """
-        try:
-            payload = self._recv_ws_position_payload(timeout=timeout)
-        except Exception:
-            return None
-        if payload is None:
-            return None
-        try:
-            pos, map_id, x, y, z = self._extract_position_payload(payload)
-        except Exception:
-            return None
-        if pos is None or map_id is None:
-            return None
-        return (x, y, z, map_id)
-
-    def _wait_ws_stable(self, timeout: float = 10.0, min_hits: int = 3) -> tuple[bool, str | None]:
-        """等到 WS 真值流稳定再开始标定。
-
-        连续收到有效位置、且 mapId 一致，累计达 ``min_hits`` 才算稳定。
-        否则返回 (False, 最近的 mapId)。
-
-        目的：校准前 WS 可能还没完成认证/账号解析/首帧位置，此时记录到的
-        "真值"是空或陈旧缓存，导致比例尺/轴映射不准确。等稳定后再采样。
-        """
-        map_id = None
-        hits = 0
-        t0 = self.active_time()
-        while self.active_time() - t0 < timeout:
-            pos_ws = self._poll_ws_pos(timeout=0.5)
-            if pos_ws is None:
-                continue
-            _, _, _, mid = pos_ws
-            if map_id is None:
-                map_id = mid
-                hits = 1
-            elif mid == map_id:
-                hits += 1
-            else:
-                # 地图已切换，重新累计
-                map_id = mid
-                hits = 1
-            if hits >= min_hits:
-                return True, map_id
-        return False, map_id
+        # 里程计由 mixin 统一构建（比例尺读 MINIMAP_SCALE_KEY），run 开头赋给 self._od
+        self._od = None
 
     # ------------------------------------------------------------------ #
     # 实验
@@ -235,26 +120,20 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
             self.log_info("当前不在大世界画面，无法执行位移标定。请先进入大世界。", notify=True)
             return
 
-        self._build_odometry()
+        # 建里程计+融合、启动位置源（有 content 用官方地图 WS 客户端）、等真值流稳定并设锚点
+        ws_truth = self.start_minimap_position()
+        self._od = self.minimap_odometry
         self._od.reset(reset_position=True)
+        if ws_truth:
+            self.log_info("WS 真值流已稳定，开始标定", notify=True)
+        else:
+            self.log_warning(
+                "没有可用的 WS 真值（未配置 content / 认证失败 / 等稳定超时）："
+                "跳过比例尺与轴映射标定，E3 仅做相对测量",
+                notify=True,
+            )
 
-        ws_active = self._maybe_start_ws()
-        self._ws_map_id = None
-        if ws_active:
-            wait_timeout = self._cfg_float("WS等待稳定秒数", 10.0)
-            min_hits = max(2, self._cfg_int("WS稳定最小位置数", 3))
-            self.log_info("等待 WS 真值流稳定后再开始标定……", notify=True)
-            stable, map_id = self._wait_ws_stable(timeout=wait_timeout, min_hits=min_hits)
-            if not stable:
-                self.log_warning(
-                    f"WS 真值未在 {wait_timeout:.1f}s 内稳定（mapId={map_id}），"
-                    "跳过比例尺自动标定，E3 仅做相对测量",
-                    notify=True,
-                )
-                ws_active = False
-            else:
-                self._ws_map_id = map_id
-                self.log_info(f"WS 真值流已稳定，mapId={map_id}，开始标定", notify=True)
+        ws_active = ws_truth
 
         results = {}
         # 汇总 E3/E4 的 WS 真值点，用于一次 2D 拟合（单一直线行走只激励一个轴，
@@ -286,12 +165,8 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
 
         self._report(results)
 
-        # 收尾：WS 未稳定时 ws_active 会被置 False，但客户端线程已经起来了，
-        # 所以这里不按 ws_active 判断，一律停掉所有位置源（内部按 enabled 判断，幂等）。
-        try:
-            self._stop_position_sources()
-        except Exception as e:
-            self.log_warning(f"停止位置源失败: {e}")
+        # 收尾：WS 未稳定时可能没有锚点，但位置源线程已经起来了，一律停掉（内部幂等）
+        self.stop_minimap_position()
 
     def _sample_for(self, duration):
         """按固定间隔采样 duration 秒，返回样本列表。"""
@@ -369,9 +244,9 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
                 self.sleep(self._cfg_float("采样间隔(秒)", self.SAMPLE_STEP))
                 self._od.sample()
                 if ws_active:
-                    pos_ws = self._poll_ws_pos(timeout=0.0)
+                    pos_ws = self._poll_ws_position(timeout=0.0)
                     # 仅接受与稳定 mapId 一致的新位置，避免跨地图/陈旧数据污染标定
-                    if pos_ws is not None and pos_ws[3] == self._ws_map_id:
+                    if pos_ws is not None and pos_ws[3] == self._minimap_ws_map_id:
                         rec = {
                             "t": self.active_time(),
                             "x": pos_ws[0], "y": pos_ws[1], "z": pos_ws[2],
@@ -424,8 +299,8 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
                         self.log_warning(f"E4 转向失败: {e}")
                 self._od.sample()
                 if ws_active:
-                    pos_ws = self._poll_ws_pos(timeout=0.0)
-                    if pos_ws is not None and pos_ws[3] == self._ws_map_id:
+                    pos_ws = self._poll_ws_position(timeout=0.0)
+                    if pos_ws is not None and pos_ws[3] == self._minimap_ws_map_id:
                         self._ws_records.append({
                             "t": self.active_time(),
                             "x": pos_ws[0], "y": pos_ws[1], "z": pos_ws[2],
@@ -472,14 +347,6 @@ class MinimapDisplacementCalibration(BaseEfTask, WsPositionMixin):
             "after_reason": after.get("reason"),
             "pos_px": self._od.position_px(),
         }
-
-    def _read_arrow(self):
-        try:
-            angle, score = self.get_arrow_angle(smoothing_threshold=None)
-            return angle, 0.0 if score is None else float(score)
-        except Exception as e:
-            self.log_warning(f"读取箭头角度失败: {e}")
-            return None, 0.0
 
     def _fit_scale_axis(self, records):
         """从 (t, x, y, z, px, seg) 记录序列估算比例尺与地图系->世界系坐标映射。

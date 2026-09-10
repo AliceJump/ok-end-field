@@ -45,6 +45,16 @@ class MinimapRegionCheck(BaseEfTask):
 
     requires_foreground = True  # 需要读取游戏画面/小地图
 
+    # 几何/输出参数（可通过任务配置覆盖，集中在此处便于统一调整）；
+    # 前四项与里程计用的默认几何是同一份常量，改动必须同步
+    CENTER_X_RATIO = DEFAULT_CENTER_RATIO[0]
+    CENTER_Y_RATIO = DEFAULT_CENTER_RATIO[1]
+    R_OUTER_RATIO = DEFAULT_R_OUTER_RATIO
+    R_INNER_RATIO = DEFAULT_R_INNER_RATIO
+    ZOOM = 5                       # 放大图倍数（最近邻）
+    MARK_PAD_RATIO = 0.5           # 裁剪范围在外圈之外再留的余量（占外半径比例）
+    SAVE_DIR = "screenshots/minimap_region"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "小地图区域检查"
@@ -54,13 +64,13 @@ class MinimapRegionCheck(BaseEfTask):
         self.visible = self.debug
 
         self.default_config = {
-            "圆心x比例(占宽)": DEFAULT_CENTER_RATIO[0],
-            "圆心y比例(占高)": DEFAULT_CENTER_RATIO[1],
-            "外圈半径比例(占宽)": DEFAULT_R_OUTER_RATIO,
-            "内圈半径比例(占宽)": DEFAULT_R_INNER_RATIO,
-            "裁剪放大倍数": 5,
-            "标记外扩比例": 0.5,
-            "保存目录": "screenshots/minimap_region",
+            "圆心x比例(占宽)": self.CENTER_X_RATIO,
+            "圆心y比例(占高)": self.CENTER_Y_RATIO,
+            "外圈半径比例(占宽)": self.R_OUTER_RATIO,
+            "内圈半径比例(占宽)": self.R_INNER_RATIO,
+            "裁剪放大倍数": self.ZOOM,
+            "标记外扩比例": self.MARK_PAD_RATIO,
+            "保存目录": self.SAVE_DIR,
         }
         self.config_description = {
             "圆心x比例(占宽)": "小地图圆心 x / 画面宽（默认与里程计一致）",
@@ -91,12 +101,12 @@ class MinimapRegionCheck(BaseEfTask):
             return
 
         h, w = frame.shape[:2]
-        cx_ratio = self._cfg_float("圆心x比例(占宽)", DEFAULT_CENTER_RATIO[0])
-        cy_ratio = self._cfg_float("圆心y比例(占高)", DEFAULT_CENTER_RATIO[1])
-        r_out_ratio = self._cfg_float("外圈半径比例(占宽)", DEFAULT_R_OUTER_RATIO)
-        r_in_ratio = self._cfg_float("内圈半径比例(占宽)", DEFAULT_R_INNER_RATIO)
-        pad_ratio = max(0.0, self._cfg_float("标记外扩比例", 0.5))
-        zoom = max(1, int(self._cfg_float("裁剪放大倍数", 5)))
+        cx_ratio = self._cfg_float("圆心x比例(占宽)", self.CENTER_X_RATIO)
+        cy_ratio = self._cfg_float("圆心y比例(占高)", self.CENTER_Y_RATIO)
+        r_out_ratio = self._cfg_float("外圈半径比例(占宽)", self.R_OUTER_RATIO)
+        r_in_ratio = self._cfg_float("内圈半径比例(占宽)", self.R_INNER_RATIO)
+        pad_ratio = max(0.0, self._cfg_float("标记外扩比例", self.MARK_PAD_RATIO))
+        zoom = max(1, int(self._cfg_float("裁剪放大倍数", self.ZOOM)))
 
         # 与里程计建掩膜同一个函数 -> 圈出来的就是实际参与相位相关的区域
         cx, cy, r_in, r_out = region_geometry(
@@ -155,7 +165,7 @@ class MinimapRegionCheck(BaseEfTask):
             eff_zoom, zoom_img = 1, crop
 
         # ---- 保存 ----
-        save_dir = Path(self.config.get("保存目录", "screenshots/minimap_region"))
+        save_dir = Path(self.config.get("保存目录", self.SAVE_DIR))
         save_dir.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         full_path = save_dir / f"{stamp}_region_full.png"
