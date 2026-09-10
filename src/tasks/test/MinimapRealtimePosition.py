@@ -307,7 +307,7 @@ class MinimapRealtimePosition(BaseEfTask, WsPositionMixin):
                     self._last_ws = (pos_ws[0], pos_ws[2])  # 记录最近 WS 用于误差
                     if synced:
                         # 校准后重读估计：否则本拍仍打印重锚前的旧位置，
-                        # 与同一行的"位移"（已清零）自相矛盾（与 NavToPoint 处理一致）。
+                        # 与同一行的"位移"（已清零）自相矛盾。
                         est = self._fusion.estimate()
                         if est is not None:
                             st.update(est)
