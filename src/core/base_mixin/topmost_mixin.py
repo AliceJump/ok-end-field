@@ -5,6 +5,7 @@ HWND_TOPMOST，任务销毁时统一恢复为非 TOPMOST。
 
 无需手动调用，Mixin 在 ``run()`` 中自动启动监测，
 ``disable()`` / ``on_destroy()`` 中自动停止并恢复。
+暂停时恢复窗口但保留记录，恢复时对仍存在的窗口重新置顶。
 """
 
 from __future__ import annotations
@@ -204,6 +205,16 @@ class TopmostMixin:
         self.stop_topmost_monitor()
         super().disable()
 
+    def pause(self) -> None:
+        """任务暂停时恢复窗口并保留记录，resume 时重新置顶。"""
+        self.pause_topmost_monitor()
+        return super().pause()
+
+    def unpause(self) -> None:
+        """任务恢复时重新置顶暂停前记录的窗口。"""
+        self.resume_topmost_monitor()
+        return super().unpause()
+
     # ── 公开 API ──────────────────────────────────────────────
 
     def start_topmost_monitor(self) -> None:
@@ -236,6 +247,47 @@ class TopmostMixin:
         if thread is None or not thread.is_alive():
             self._topmost_thread = None
         self._restore_all_modified()
+
+    def pause_topmost_monitor(self) -> None:
+        """暂停监测：恢复所有窗口，但保留记录以便 resume 时重新置顶。
+
+        与 ``stop_topmost_monitor`` 的区别在于不清空 ``_topmost_modified`` 集合，
+        resume 时仅对仍存在的窗口重新置顶。
+        """
+        self._topmost_stop_event.set()
+        thread = self._topmost_thread
+        if thread is not None and thread.is_alive():
+            thread.join(timeout=1.0)
+        if thread is None or not thread.is_alive():
+            self._topmost_thread = None
+        # 恢复窗口但保留记录
+        self._restore_all_modified(keep_records=True)
+
+    def resume_topmost_monitor(self) -> None:
+        """恢复监测：对暂停前记录且仍存在的窗口重新置顶，然后重启监测线程。"""
+        # 先对暂停前记录的窗口重新置顶（仅仍存在的）
+        self._reapply_modified()
+        # 重启监测线程
+        self.start_topmost_monitor()
+
+    def _reapply_modified(self) -> None:
+        """对已记录但仍存在且可见、未最小化的窗口重新设置 TOPMOST。"""
+        with self._topmost_lock:
+            candidates = [
+                hwnd
+                for hwnd in self._topmost_modified
+                if win32gui.IsWindow(hwnd) and win32gui.IsWindowVisible(hwnd) and not win32gui.IsIconic(hwnd)
+            ]
+
+        reapplied = 0
+        for hwnd in candidates:
+            try:
+                if _set_window_topmost(hwnd):
+                    reapplied += 1
+            except Exception:
+                pass
+        if reapplied:
+            logger.info(f"topmost 恢复置顶: {reapplied} 个窗口")
 
     # ── 内部实现 ──────────────────────────────────────────────
 
@@ -293,11 +345,17 @@ class TopmostMixin:
         except Exception:
             logger.info(f"topmost 已置顶: hwnd=0x{fg:X}")
 
-    def _restore_all_modified(self) -> None:
-        """将所有被本机制修改过的窗口恢复为非 TOPMOST。"""
+    def _restore_all_modified(self, keep_records: bool = False) -> None:
+        """将所有被本机制修改过的窗口恢复为非 TOPMOST。
+
+        Args:
+            keep_records: True 时仅恢复窗口但保留 ``_topmost_modified`` 记录，
+                供 ``resume_topmost_monitor`` 重新置顶使用。
+        """
         with self._topmost_lock:
             to_restore = list(self._topmost_modified)
-            self._topmost_modified.clear()
+            if not keep_records:
+                self._topmost_modified.clear()
         self._topmost_prev_fg = 0
 
         restored = 0
