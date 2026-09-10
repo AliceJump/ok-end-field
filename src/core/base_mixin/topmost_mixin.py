@@ -30,6 +30,16 @@ SWP_NOACTIVATE = 0x0010
 SWP_SHOWWINDOW = 0x0040
 
 _user32 = ctypes.windll.user32
+_user32.SetWindowPos.argtypes = (
+    ctypes.wintypes.HWND,
+    ctypes.wintypes.HWND,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.wintypes.UINT,
+)
+_user32.SetWindowPos.restype = ctypes.wintypes.BOOL
 
 # Windows 系统窗口类名——这些窗口不应被置顶
 _SYSTEM_CLASS_NAMES: frozenset[str] = frozenset(
@@ -220,7 +230,8 @@ class TopmostMixin:
         thread = self._topmost_thread
         if thread is not None and thread.is_alive():
             thread.join(timeout=1.0)
-        self._topmost_thread = None
+        if thread is None or not thread.is_alive():
+            self._topmost_thread = None
         self._restore_all_modified()
 
     # ── 内部实现 ──────────────────────────────────────────────
@@ -268,15 +279,17 @@ class TopmostMixin:
         if _is_window_topmost(fg):
             return
 
-        if _set_window_topmost(fg):
-            try:
-                cls_name = win32gui.GetClassName(fg)
-                win_title = win32gui.GetWindowText(fg)
-                logger.info(f"topmost 已置顶: hwnd=0x{fg:X}  class={cls_name}  title={win_title}")
-            except Exception:
-                logger.info(f"topmost 已置顶: hwnd=0x{fg:X}")
-            with self._topmost_lock:
-                self._topmost_modified.add(fg)
+        with self._topmost_lock:
+            if self._topmost_stop_event.is_set() or not _set_window_topmost(fg):
+                return
+            self._topmost_modified.add(fg)
+
+        try:
+            cls_name = win32gui.GetClassName(fg)
+            win_title = win32gui.GetWindowText(fg)
+            logger.info(f"topmost 已置顶: hwnd=0x{fg:X}  class={cls_name}  title={win_title}")
+        except Exception:
+            logger.info(f"topmost 已置顶: hwnd=0x{fg:X}")
 
     def _restore_all_modified(self) -> None:
         """将所有被本机制修改过的窗口恢复为非 TOPMOST。"""
