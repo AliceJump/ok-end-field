@@ -1138,7 +1138,7 @@ class RuntimeMixin:
             deadzone=scaled_deadzone,
         )
 
-    def active_and_send_mouse_delta(self, dx=1, dy=1, activate=True, only_activate=False, delay=0.02, steps=3):
+    def active_and_send_mouse_delta(self, dx=1, dy=1, activate=True, only_activate=False, delay=0.02, steps=3) -> bool:
         """
         激活窗口后发送鼠标位移。
 
@@ -1151,7 +1151,7 @@ class RuntimeMixin:
             steps: 步进次数。
 
         Returns:
-            Any: send_mouse_delta 的返回值。
+            bool: 请求激活时窗口是否成功成为前台窗口；未请求激活时返回 True。
         """
         return send_mouse_delta(self.get_game_hwnd(), dx, dy, activate, only_activate, delay, steps)
 

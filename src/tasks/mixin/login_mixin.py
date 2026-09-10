@@ -62,7 +62,7 @@ class LoginMixin(BaseEfTask):
         # 前置动作：后续「最近/账号/登录」点击走 pyautogui（只作用于前台窗口），
         # 必须先把游戏窗口置前。
         if not self.active_and_send_mouse_delta(0, 0, activate=True, only_activate=True):
-            self.log_error("前台激活失败，中止登录流程")
+            self.log_error("无法激活游戏窗口，已取消登录以避免误点其他窗口")
             return False
         if not self.wait_click_feature(
             feature=fL.log_out_confirm, time_out=5, raise_if_not_found=False
