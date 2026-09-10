@@ -226,6 +226,9 @@ class TopmostMixin:
 
         可安全重复调用。放在 try/finally 或 on_destroy 中均可靠。
         """
+        # 先设置停止事件，再等待线程完全退出，
+        # 最后才获取锁取走恢复集合——避免线程在 _restore_all_modified()
+        # 清空集合后仍新增未记录的窗口修改。
         self._topmost_stop_event.set()
         thread = self._topmost_thread
         if thread is not None and thread.is_alive():
@@ -286,8 +289,7 @@ class TopmostMixin:
 
         try:
             cls_name = win32gui.GetClassName(fg)
-            win_title = win32gui.GetWindowText(fg)
-            logger.info(f"topmost 已置顶: hwnd=0x{fg:X}  class={cls_name}  title={win_title}")
+            logger.info(f"topmost 已置顶: hwnd=0x{fg:X}  class={cls_name}")
         except Exception:
             logger.info(f"topmost 已置顶: hwnd=0x{fg:X}")
 
@@ -298,14 +300,18 @@ class TopmostMixin:
             self._topmost_modified.clear()
         self._topmost_prev_fg = 0
 
+        restored = 0
+        failed = 0
         for hwnd in to_restore:
             try:
                 if win32gui.IsWindow(hwnd):
-                    _remove_window_topmost(hwnd)
-                    cls_name = win32gui.GetClassName(hwnd)
-                    win_title = win32gui.GetWindowText(hwnd)
-                    logger.info(f"topmost 已恢复: hwnd=0x{hwnd:X}  class={cls_name}  title={win_title}")
+                    if _remove_window_topmost(hwnd):
+                        logger.info(f"topmost 已恢复: hwnd=0x{hwnd:X}")
+                        restored += 1
+                    else:
+                        logger.warning(f"topmost 恢复失败: hwnd=0x{hwnd:X}")
+                        failed += 1
             except Exception:
                 pass
         if to_restore:
-            logger.info(f"topmost 恢复完成，共 {len(to_restore)} 个窗口")
+            logger.info(f"topmost 恢复完成: 成功 {restored}，失败 {failed}，共 {len(to_restore)} 个窗口")

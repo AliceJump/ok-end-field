@@ -220,9 +220,11 @@ def active_and_send_mouse_delta(
             # 错误码 0 通常不是严重错误
             if e.winerror != 0:
                 _safe_print(f"窗口激活失败 (Win32错误 {e.winerror}): {e}")
+                return False
 
         except Exception as e:
             _safe_print(f"窗口激活失败 (未知错误): {type(e).__name__}: {e}")
+            return False
 
     # 只激活窗口不发送鼠标移动
     if not only_activate:
@@ -262,6 +264,8 @@ def active_and_send_mouse_delta(
 
             if delay > 0:
                 time.sleep(delay)
+
+    return True
 
 
 # ===== control =====
