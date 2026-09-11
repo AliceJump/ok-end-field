@@ -23,7 +23,9 @@ class TemplateMonitorTask(BaseEfTask, TriggerTask):
 
         self.default_config = {
             "模板ID": fL.b.value,
+            "识别框": "",
             "模板HSV处理器": "",
+            "启用反转": False,
         }
 
         self.config_type = {
@@ -33,8 +35,21 @@ class TemplateMonitorTask(BaseEfTask, TriggerTask):
 
         self.config_description = {
             "模板ID": "要检测的模板ID（FeatureList枚举值）。必填。",
+            "识别框": "检测区域框，格式：x1,y1,x2,y2（相对坐标0-1）。留空表示全屏。",
             "模板HSV处理器": "处理模板图像，只保留指定颜色区域参与匹配。留空表示不使用。",
+            "启用反转": "是否启用HSV处理器的反转功能。",
         }
+
+    def _parse_box(self, box_str):
+        if not box_str or not box_str.strip():
+            return None
+        try:
+            parts = [float(x.strip()) for x in box_str.split(",")]
+            if len(parts) == 4:
+                return self.box_of_screen(*parts)
+        except (ValueError, AttributeError):
+            pass
+        return None
 
     def _make_hsv_processor(self, config_key):
         hsv_name = self.config.get(config_key, "")
@@ -42,7 +57,8 @@ class TemplateMonitorTask(BaseEfTask, TriggerTask):
             return None
         try:
             hsv_range = hR[hsv_name]
-            return self.make_hsv_isolator(hsv_range, invert=False)
+            invert = self.config.get("启用反转", False)
+            return self.make_hsv_isolator(hsv_range, invert=invert)
         except KeyError:
             return None
 
@@ -51,9 +67,12 @@ class TemplateMonitorTask(BaseEfTask, TriggerTask):
         now = self.next_frame()
 
         feature_name = self.config.get("模板ID", fL.b.value)
+        box = self._parse_box(self.config.get("识别框", ""))
         mask_function = self._make_hsv_processor("模板HSV处理器")
 
         kwargs = {"frame": now}
+        if box is not None:
+            kwargs["box"] = box
         if mask_function is not None:
             kwargs["mask_function"] = mask_function
 
