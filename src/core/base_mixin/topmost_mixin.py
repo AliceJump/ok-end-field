@@ -191,6 +191,7 @@ class TopmostMixin:
         self._topmost_stop_event = threading.Event()
         self._topmost_state_lock = threading.RLock()
         self._topmost_paused = False
+        self._topmost_executor_paused = False
         self._topmost_lock = threading.Lock()
         self._topmost_modified: set[int] = set()
         self._topmost_thread: threading.Thread | None = None
@@ -228,9 +229,7 @@ class TopmostMixin:
     def start_topmost_monitor(self) -> None:
         """启动 TOPMOST 监测线程。重复调用安全（已运行则忽略）。"""
         with self._topmost_state_lock:
-            if self._topmost_paused or (
-                self._topmost_thread is not None and self._topmost_thread.is_alive()
-            ):
+            if self._topmost_paused or (self._topmost_thread is not None and self._topmost_thread.is_alive()):
                 return
             self._topmost_stop_event.clear()
             self._topmost_prev_fg = 0
@@ -304,13 +303,39 @@ class TopmostMixin:
         if reapplied:
             logger.info(f"topmost 恢复置顶: {reapplied} 个窗口")
 
+    def _is_executor_paused(self) -> bool:
+        """检查 executor 是否处于暂停状态。"""
+        try:
+            executor = getattr(self, "executor", None)
+            if executor is None:
+                return False
+            return getattr(executor, "paused", False)
+        except Exception:
+            return False
+
     # ── 内部实现 ──────────────────────────────────────────────
 
     def _topmost_monitor_loop(self) -> None:
-        """后台轮询线程：检测前台窗口变化并按需设置 TOPMOST。"""
+        """后台轮询线程：检测前台窗口变化并按需设置 TOPMOST。
+
+        同时检测 executor 级别的暂停状态（快捷键暂停），
+        暂停时恢复窗口但保留记录，恢复时重新置顶。
+        """
+        self._topmost_executor_paused = False
         while not self._topmost_stop_event.is_set():
             try:
-                self._topmost_check_foreground()
+                executor_paused = self._is_executor_paused()
+                if executor_paused:
+                    if not self._topmost_executor_paused:
+                        self._topmost_executor_paused = True
+                        self._restore_all_modified(keep_records=True)
+                        logger.info("topmost: executor paused, windows restored")
+                else:
+                    if self._topmost_executor_paused:
+                        self._topmost_executor_paused = False
+                        self._reapply_modified()
+                        logger.info("topmost: executor resumed, windows reapplied")
+                    self._topmost_check_foreground()
             except Exception as exc:
                 logger.debug(f"topmost monitor 异常: {exc}")
             self._topmost_stop_event.wait(timeout=0.2)

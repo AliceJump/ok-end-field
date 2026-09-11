@@ -86,3 +86,21 @@ class TestTopmostMixin(unittest.TestCase):
             task.start_topmost_monitor()
 
         monitor_thread.assert_not_called()
+
+    def test_is_executor_paused_returns_false_when_no_executor(self):
+        task = TopmostMixin.__new__(TopmostMixin)
+        task._init_topmost_mixin()
+        task.executor = None
+
+        self.assertFalse(task._is_executor_paused())
+
+    def test_is_executor_paused_returns_executor_state(self):
+        task = TopmostMixin.__new__(TopmostMixin)
+        task._init_topmost_mixin()
+        task.executor = MagicMock()
+        task.executor.paused = True
+
+        self.assertTrue(task._is_executor_paused())
+
+        task.executor.paused = False
+        self.assertFalse(task._is_executor_paused())
