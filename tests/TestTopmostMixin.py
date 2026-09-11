@@ -64,6 +64,20 @@ class TestTopmostMixin(unittest.TestCase):
     def setUp(self):
         _DeferredTimer.instances.clear()
 
+    def assert_state_lock_held(self, task):
+        acquired = []
+
+        def probe_lock():
+            lock_acquired = task._topmost_state_lock.acquire(blocking=False)
+            acquired.append(lock_acquired)
+            if lock_acquired:
+                task._topmost_state_lock.release()
+
+        probe = threading.Thread(target=probe_lock)
+        probe.start()
+        probe.join()
+        self.assertEqual([False], acquired)
+
     def test_delayed_start_does_not_restart_a_paused_task(self):
         task = _PausedDuringDelayTask()
         task._init_topmost_mixin()
@@ -120,11 +134,71 @@ class TestTopmostMixin(unittest.TestCase):
             patch.object(task, "_reapply_modified") as reapply_modified,
             patch.object(task, "start_topmost_monitor") as start_monitor,
         ):
-            start_monitor.side_effect = lambda: self.assertFalse(task._topmost_paused)
+            reapply_modified.side_effect = lambda: self.assert_state_lock_held(task)
+
+            def assert_start_state():
+                self.assertFalse(task._topmost_paused)
+                self.assert_state_lock_held(task)
+
+            start_monitor.side_effect = assert_start_state
             task.resume_topmost_monitor()
 
         reapply_modified.assert_called_once_with()
         start_monitor.assert_called_once_with()
+
+    def test_stop_serializes_thread_shutdown_and_window_restore(self):
+        task = TopmostMixin.__new__(TopmostMixin)
+        task._init_topmost_mixin()
+        monitor_thread = MagicMock()
+        monitor_thread.is_alive.return_value = True
+        task._topmost_thread = monitor_thread
+        operations = []
+
+        def assert_join_state():
+            self.assertTrue(task._topmost_stop_event.is_set())
+            self.assert_state_lock_held(task)
+            operations.append("join")
+
+        def assert_restore_state():
+            self.assert_state_lock_held(task)
+            operations.append("restore")
+
+        monitor_thread.join.side_effect = assert_join_state
+        with patch.object(task, "_restore_all_modified", side_effect=assert_restore_state) as restore:
+            task.stop_topmost_monitor()
+
+        monitor_thread.join.assert_called_once_with()
+        restore.assert_called_once_with()
+        self.assertEqual(["join", "restore"], operations)
+        self.assertIsNone(task._topmost_thread)
+
+    def test_pause_serializes_thread_shutdown_and_window_restore(self):
+        task = TopmostMixin.__new__(TopmostMixin)
+        task._init_topmost_mixin()
+        monitor_thread = MagicMock()
+        monitor_thread.is_alive.return_value = True
+        task._topmost_thread = monitor_thread
+        operations = []
+
+        def assert_join_state():
+            self.assertTrue(task._topmost_paused)
+            self.assertTrue(task._topmost_stop_event.is_set())
+            self.assert_state_lock_held(task)
+            operations.append("join")
+
+        def assert_restore_state(*, keep_records):
+            self.assertTrue(keep_records)
+            self.assert_state_lock_held(task)
+            operations.append("restore")
+
+        monitor_thread.join.side_effect = assert_join_state
+        with patch.object(task, "_restore_all_modified", side_effect=assert_restore_state) as restore:
+            task.pause_topmost_monitor()
+
+        monitor_thread.join.assert_called_once_with()
+        restore.assert_called_once_with(keep_records=True)
+        self.assertEqual(["join", "restore"], operations)
+        self.assertIsNone(task._topmost_thread)
 
     def test_start_does_nothing_while_paused(self):
         task = TopmostMixin.__new__(TopmostMixin)

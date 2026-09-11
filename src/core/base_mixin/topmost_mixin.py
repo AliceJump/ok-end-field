@@ -255,16 +255,15 @@ class TopmostMixin:
 
         可安全重复调用。放在 try/finally 或 on_destroy 中均可靠。
         """
-        # 先设置停止事件，再等待线程完全退出，
-        # 最后才获取锁取走恢复集合——避免线程在 _restore_all_modified()
-        # 清空集合后仍新增未记录的窗口修改。
-        self._topmost_stop_event.set()
-        thread = self._topmost_thread
-        if thread is not None and thread.is_alive():
-            thread.join(timeout=1.0)
-        if thread is None or not thread.is_alive():
+        # 状态转换必须保持原子性：阻止 start/resume 在旧线程退出和窗口恢复
+        # 之间清除停止事件或启动新线程。
+        with self._topmost_state_lock:
+            self._topmost_stop_event.set()
+            thread = self._topmost_thread
+            if thread is not None and thread.is_alive():
+                thread.join()
             self._topmost_thread = None
-        self._restore_all_modified()
+            self._restore_all_modified()
 
     def pause_topmost_monitor(self) -> None:
         """暂停监测：恢复所有窗口，但保留记录以便 resume 时重新置顶。
@@ -276,12 +275,11 @@ class TopmostMixin:
             self._topmost_paused = True
             self._topmost_stop_event.set()
             thread = self._topmost_thread
-        if thread is not None and thread.is_alive():
-            thread.join(timeout=1.0)
-        if thread is None or not thread.is_alive():
+            if thread is not None and thread.is_alive():
+                thread.join()
             self._topmost_thread = None
-        # 恢复窗口但保留记录
-        self._restore_all_modified(keep_records=True)
+            # 恢复窗口但保留记录
+            self._restore_all_modified(keep_records=True)
 
     def resume_topmost_monitor(self) -> None:
         """恢复监测：对暂停前记录且仍存在的窗口重新置顶，然后重启监测线程。"""
