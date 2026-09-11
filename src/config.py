@@ -156,5 +156,6 @@ config = {
         ["src.tasks.trigger.AutoInteractionTask", "AutoInteractionTask"],
         ["src.tasks.trigger.AutoPickTask", "AutoPickTask"],
         ["src.tasks.trigger.ItemNavigatorTask", "ItemNavigatorTask"],
+        ["src.tasks.trigger.TemplateMonitorTask", "TemplateMonitorTask"],
     ],
 }
