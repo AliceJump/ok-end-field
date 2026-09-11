@@ -211,7 +211,8 @@ class EfInteraction(PostMessageInteraction):
             hwnd = self._game_hwnd()
             fg_before = win32gui.GetForegroundWindow()
             was_foreground = fg_before == hwnd
-            active_and_send_mouse_delta(hwnd, only_activate=True)
+            if not active_and_send_mouse_delta(hwnd, only_activate=True):
+                return False
             if not was_foreground:
                 # 等待窗口真正成为前台，并给游戏处理焦点切换的时间后再按键
                 start = time.monotonic()
