@@ -862,6 +862,10 @@ class BattleMixin(BaseEfTask):
         """
         单次战斗结束判定。
         """
+        # 结算模板优先检查：检测到 fL.b 结算模板同样判定战斗结束
+        if self.find_feature(feature=fL.b):
+            self.log_info("退出检查通过: 检测到结算模板 fL.b")
+            return True
 
         # 终结技释放后延迟退出检查：终结技动画期间 in_team 会返回 False，
         # 需要等待动画结束、技能图标重新出现后再做退出判定。

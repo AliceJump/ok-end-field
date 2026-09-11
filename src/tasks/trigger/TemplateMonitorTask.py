@@ -2,8 +2,8 @@ from ok import Logger, TriggerTask
 
 from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
-from src.image.hsv_config import HSVRange as hR
 from src.icons import Icons
+from src.image.hsv_config import HSVRange as hR
 
 logger = Logger.get_logger(__name__)
 
@@ -61,7 +61,7 @@ class TemplateMonitorTask(BaseEfTask, TriggerTask):
             hsv_range = hR[hsv_name]
             invert = self.config.get("启用反转", False)
             return self.make_hsv_isolator(hsv_range, invert=invert)
-        except (KeyError):
+        except KeyError:
             return None
 
     def run(self):
@@ -82,4 +82,5 @@ class TemplateMonitorTask(BaseEfTask, TriggerTask):
         if result:
             self.log_info(f"检测到模板: {feature_name}")
             return True
+        self.log_info(f"未检测到模板: {feature_name}")
         return False
