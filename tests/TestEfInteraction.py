@@ -7,6 +7,17 @@ from src.interaction.EfInteraction import EfInteraction
 
 
 class TestEfInteraction(unittest.TestCase):
+    @patch("src.interaction.EfInteraction.ctypes.windll.user32.mouse_event")
+    @patch("src.interaction.EfInteraction.active_and_send_mouse_delta", return_value=False)
+    def test_middle_click_does_not_send_mouse_events_when_activation_fails(self, activate, mouse_event):
+        interaction = EfInteraction.__new__(EfInteraction)
+        interaction._game_hwnd = MagicMock(return_value=200)
+
+        interaction._click_middle()
+
+        activate.assert_called_once_with(200, only_activate=True)
+        mouse_event.assert_not_called()
+
     @patch("src.interaction.EfInteraction.time.sleep")
     @patch("src.interaction.EfInteraction.active_and_send_mouse_delta")
     @patch("src.interaction.EfInteraction.win32gui")

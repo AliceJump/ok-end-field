@@ -144,17 +144,22 @@ class TopmostMixin:
 
             @functools.wraps(original_run)
             def _wrapped_run(self_inner: TopmostMixin, *args: object, **kw: object) -> object:
-                # 仅当 monitor 尚未运行时才启动（避免嵌套子类重复启停）
-                already_running = (
-                    getattr(self_inner, "_topmost_thread", None) is not None and self_inner._topmost_thread.is_alive()
-                )  # type: ignore[union-attr]
-                if already_running:
-                    return original_run(self_inner, *args, **kw)
+                # 使用实例级计数判断嵌套 run()；monitor 可能尚在延迟启动期，
+                # 因此不能仅通过线程是否存活来判断所有权。
+                with self_inner._topmost_state_lock:
+                    owns_monitor = self_inner._topmost_run_depth == 0
+                    self_inner._topmost_run_depth += 1
+
+                if not owns_monitor:
+                    try:
+                        return original_run(self_inner, *args, **kw)
+                    finally:
+                        with self_inner._topmost_state_lock:
+                            self_inner._topmost_run_depth -= 1
 
                 # 延迟启动：等 _TOPMOST_START_DELAY 秒后再启动 monitor，
                 # 若 run() 在延迟期内返回则取消启动（适用于触发式任务的快速扫描 cycle）
                 delay_timer: threading.Timer | None = None
-                timer_fired = threading.Event()
 
                 def _delayed_start() -> None:
                     # pause() may happen while this timer is pending. Keep the
@@ -163,33 +168,36 @@ class TopmostMixin:
                     with self_inner._topmost_state_lock:
                         if self_inner._topmost_paused:
                             return
-                        timer_fired.set()
                         try:
                             self_inner.start_topmost_monitor()
                         except Exception:
                             pass
 
-                delay_timer = threading.Timer(self_inner._TOPMOST_START_DELAY, _delayed_start)
-                delay_timer.daemon = True
-                delay_timer.start()
-
                 try:
+                    delay_timer = threading.Timer(self_inner._TOPMOST_START_DELAY, _delayed_start)
+                    delay_timer.daemon = True
+                    delay_timer.start()
                     return original_run(self_inner, *args, **kw)
                 finally:
-                    # 取消延迟 timer（若尚未触发）
-                    if delay_timer is not None:
-                        delay_timer.cancel()
-                    # 等待 timer 线程结束，避免竞态
-                    delay_timer.join(timeout=1.0) if delay_timer is not None else None
-                    # 仅在 monitor 已启动时才停止（快速扫描 cycle 不会启动，此处为 no-op）
-                    if timer_fired.is_set():
-                        self_inner.stop_topmost_monitor()
+                    try:
+                        # 外层 owner 总是取消并等待 timer，确保回调不会在清理后启动 monitor。
+                        if delay_timer is not None:
+                            delay_timer.cancel()
+                            delay_timer.join()
+                    finally:
+                        # 无条件停止：监测线程也可能由 pause 后的 resume() 启动。
+                        try:
+                            self_inner.stop_topmost_monitor()
+                        finally:
+                            with self_inner._topmost_state_lock:
+                                self_inner._topmost_run_depth -= 1
 
             cls.run = _wrapped_run  # type: ignore[attr-defined]
 
     def _init_topmost_mixin(self) -> None:
         self._topmost_stop_event = threading.Event()
         self._topmost_state_lock = threading.RLock()
+        self._topmost_run_depth = 0
         self._topmost_paused = False
         self._topmost_executor_paused = False
         self._topmost_lock = threading.Lock()

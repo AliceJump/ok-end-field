@@ -25,6 +25,7 @@ class _DeferredTimer:
         self.callback = callback
         self.daemon = False
         self.cancelled = False
+        self.joined = False
         self.__class__.instances.append(self)
 
     def start(self):
@@ -34,7 +35,7 @@ class _DeferredTimer:
         self.cancelled = True
 
     def join(self, timeout=None):
-        pass
+        self.joined = True
 
 
 class _PausedDuringDelayTask(TopmostMixin):
@@ -42,6 +43,21 @@ class _PausedDuringDelayTask(TopmostMixin):
 
     def run(self):
         self.pause_topmost_monitor()
+
+
+class _BaseNestedRunTask(TopmostMixin):
+    def run(self):
+        return "done"
+
+
+class _NestedRunTask(_BaseNestedRunTask):
+    def run(self):
+        return super().run()
+
+
+class _ResumeDuringRunTask(TopmostMixin):
+    def run(self):
+        self.resume_topmost_monitor()
 
 
 class TestTopmostMixin(unittest.TestCase):
@@ -61,6 +77,39 @@ class TestTopmostMixin(unittest.TestCase):
 
         self.assertTrue(task._topmost_paused)
         start_monitor.assert_not_called()
+
+    def test_nested_run_uses_one_owner_timer_and_cleanup(self):
+        task = _NestedRunTask()
+        task._init_topmost_mixin()
+
+        with (
+            patch.object(threading, "Timer", _DeferredTimer),
+            patch.object(task, "stop_topmost_monitor") as stop_monitor,
+        ):
+            self.assertEqual("done", task.run())
+
+        self.assertEqual(1, len(_DeferredTimer.instances))
+        self.assertTrue(_DeferredTimer.instances[0].cancelled)
+        self.assertTrue(_DeferredTimer.instances[0].joined)
+        stop_monitor.assert_called_once_with()
+        self.assertEqual(0, task._topmost_run_depth)
+
+    def test_owner_stops_monitor_started_by_resume(self):
+        task = _ResumeDuringRunTask()
+        task._init_topmost_mixin()
+        task._topmost_paused = True
+
+        with (
+            patch.object(threading, "Timer", _DeferredTimer),
+            patch.object(task, "_reapply_modified") as reapply_modified,
+            patch.object(task, "start_topmost_monitor") as start_monitor,
+            patch.object(task, "stop_topmost_monitor") as stop_monitor,
+        ):
+            task.run()
+
+        reapply_modified.assert_called_once_with()
+        start_monitor.assert_called_once_with()
+        stop_monitor.assert_called_once_with()
 
     def test_resume_clears_paused_state_before_starting_monitor(self):
         task = TopmostMixin.__new__(TopmostMixin)

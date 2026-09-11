@@ -84,6 +84,31 @@ class TestWindowActivation(unittest.TestCase):
         get_foreground.assert_called_once()
         self.assertEqual(set_foreground.call_args_list, [call(100), call(100)])
 
+    @patch("src.interaction.Mouse.user32.mouse_event")
+    @patch("win32api.keybd_event")
+    @patch("src.interaction.Mouse.time.sleep")
+    @patch("src.interaction.Mouse.win32gui.IsWindowVisible", return_value=True)
+    @patch("src.interaction.Mouse.win32gui.IsIconic", return_value=False)
+    @patch("src.interaction.Mouse.win32gui.IsWindow", return_value=True)
+    @patch("src.interaction.Mouse.win32gui.SetForegroundWindow")
+    @patch("src.interaction.Mouse.win32gui.GetForegroundWindow", return_value=1)
+    def test_zero_winerror_returns_false_without_sending_mouse_events(
+        self,
+        _get_foreground,
+        set_foreground,
+        _is_window,
+        _is_iconic,
+        _is_visible,
+        _sleep,
+        _keybd_event,
+        mouse_event,
+    ):
+        set_foreground.side_effect = Mouse.win32gui.error(0, "SetForegroundWindow", "No error message")
+
+        self.assertFalse(Mouse.active_and_send_mouse_delta(100))
+
+        mouse_event.assert_not_called()
+
 
 if __name__ == "__main__":
     unittest.main()

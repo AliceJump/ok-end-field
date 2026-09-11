@@ -225,10 +225,8 @@ def active_and_send_mouse_delta(
                     return False
 
         except win32gui.error as e:
-            # 错误码 0 通常不是严重错误
-            if e.winerror != 0:
-                _safe_print(f"窗口激活失败 (Win32错误 {e.winerror}): {e}")
-                return False
+            _safe_print(f"窗口激活失败 (Win32错误 {e.winerror}): {e}")
+            return False
 
         except Exception as e:
             _safe_print(f"窗口激活失败 (未知错误): {type(e).__name__}: {e}")
