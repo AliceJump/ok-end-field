@@ -101,9 +101,7 @@ def install_no_frame_task_patch():
             if not task:
                 self._wait_for_activity(self.next_trigger_delay(), wake_version)
                 continue
-            if cycled:
-                self.reset_scene()
-            elif time.time() - self._last_frame_time > 0.2:
+            if cycled or time.time() - self._last_frame_time > 0.2:
                 self.reset_scene()
             try:
                 task.start_time = time.time()
@@ -163,7 +161,6 @@ def install_no_frame_task_patch():
                 name = task.name
                 task.running = False
                 task.disable()
-                from ok import og
 
                 params = None
                 if isinstance(e, HotkeyConfigException):
