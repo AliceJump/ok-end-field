@@ -112,7 +112,7 @@ class TestGlobalConfigTabBuild(TabTestCase):
 
         _drain_pending(self.app, tab)
         self.assertEqual(tab._pending_cards, [])
-        self.assertEqual(tab.vBoxLayout.count(), 5, "应构建全部 5 张配置卡片")
+        self.assertEqual(tab.vBoxLayout.count(), 4, "应构建全部 4 张配置卡片")
 
     def test_build_only_scheduled_once(self):
         tab = self._new_tab()
@@ -130,7 +130,7 @@ class TestGlobalConfigTabBuild(TabTestCase):
         tab = self._new_tab()
         tab._prewarm_build()
         _drain_pending(self.app, tab)
-        self.assertEqual(tab.vBoxLayout.count(), 5)
+        self.assertEqual(tab.vBoxLayout.count(), 4)
 
 
 _ACCOUNT_STORE = {

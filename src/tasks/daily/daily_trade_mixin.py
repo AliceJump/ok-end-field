@@ -319,10 +319,6 @@ class DailyTradeFeature:
                 continue
             self.click(result)
             buy_only = self.config.get("只买不卖", False)
-            if self.input_mode() == "background":
-                if not buy_only:
-                    self.log_info("后台模式下强制只买不卖，跳过卖出")
-                buy_only = True
             # 价格校验在采集前：buy_only 时不需要卖出价
             buy_price = self.config.get(f"{area}买入价", 0)
             sell_price = self.config.get(f"{area}卖出价", 0)
