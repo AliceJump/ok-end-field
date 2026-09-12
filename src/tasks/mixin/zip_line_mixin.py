@@ -9,51 +9,21 @@ from src.core.global_config_store import (
 )
 from src.core.sequence_parser import parse_int_sequence
 from src.image.hsv_config import HSVRange as hR
+from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.navigation_mixin import NavigationMixin
 
 
-def _inst_line(text: str, color: str = "", *, bold: bool = False, indent: int = 0):
-    content = f"{'&nbsp;' * (indent * 4)}{text}"
-    if bold:
-        content = f"<strong>{content}</strong>"
-    return f'<span style="color:{color};">{content}</span>'
-
-
-def _inst_gap():
-    return '<span style="font-size:4px;">&nbsp;</span>'
-
-
-class ZipLineMixin(NavigationMixin):
-    # 延迟合并标记与基础说明缓存（类级默认，避免 __init__ 赋值顺序问题）
-    _zip_line_inst_dirty = True
-    _zip_line_inst_base = None
-
+class ZipLineMixin(InstructionsMixin, NavigationMixin):
     @property
     def zip_line_config(self):
         return get_global_config(ZIP_LINE_CONFIG_NAME)
 
-    @property
-    def instructions(self):
-        """滑索配置使用说明（延迟触发）。
+    def build_instructions(self):
+        """滑索配置使用说明。
 
-        首次访问时把滑索说明追加到任务说明（追加而非覆盖）。
         说明文本通过 self.tr() 走 ok 的 gettext i18n（msgid 写入 ok.po，编译成 ok.mo 生效）。
-        这样使用滑索的任务无需在 __init__ 里显式调用。
+        由 InstructionsMixin 延迟构建并追加到任务原有说明之后，使用滑索的任务无需在 __init__ 里显式调用。
         """
-        if self._zip_line_inst_dirty:
-            self._zip_line_inst_dirty = False
-            base = self._zip_line_inst_base
-            zip_inst = self._build_zip_line_instructions()
-            self._zip_line_inst_base = f"{base}<br><br>{zip_inst}" if base else zip_inst
-        return self._zip_line_inst_base
-
-    @instructions.setter
-    def instructions(self, value):
-        # ok 库 BaseTask.__init__ 会执行 self.instructions = None，这里仅缓存基础说明
-        self._zip_line_inst_base = value
-        self._zip_line_inst_dirty = True
-
-    def _build_zip_line_instructions(self):
         # 键名从滑索配置数据动态读取，不硬编码；显示时经 self.tr() 跟随 UI 语言翻译
         start_keys_raw = [k for k in ZIP_LINE_DELIVERY_KEYS if k.startswith("通向")]
         target_keys_raw = [k for k in ZIP_LINE_DELIVERY_KEYS if not k.startswith("通向")]
@@ -71,32 +41,32 @@ class ZipLineMixin(NavigationMixin):
 
         return "<br>".join(
             [
-                _inst_line("📍 " + self.tr("滑索配置说明"), "#FF5555", bold=True),
-                _inst_line("⚙️ " + self.tr("滑索距离序列在「全局配置 → 滑索配置」中设置"), "#FF5555", bold=True),
-                _inst_gap(),
-                _inst_line("⚠️ " + self.tr("填写规则"), "#FE821D", bold=True),
-                _inst_line(f"└─ {self.tr('每个键对应一条滑索路线，值为距离序列，用英文逗号分隔')}", indent=1),
-                _inst_line(f"└─ {self.tr('任务会按顺序依次对齐并滑行每段距离')}", indent=1),
-                _inst_line(
+                inst_line("📍 " + self.tr("滑索配置说明"), "#FF5555", bold=True),
+                inst_line("⚙️ " + self.tr("滑索距离序列在「全局配置 → 滑索配置」中设置"), "#FF5555", bold=True),
+                inst_gap(),
+                inst_line("⚠️ " + self.tr("填写规则"), "#FE821D", bold=True),
+                inst_line(f"└─ {self.tr('每个键对应一条滑索路线，值为距离序列，用英文逗号分隔')}", indent=1),
+                inst_line(f"└─ {self.tr('任务会按顺序依次对齐并滑行每段距离')}", indent=1),
+                inst_line(
                     f"└─ {self.tr('例：「{key}」= {raw} → 依次滑行 {seq}').format(key=example_key, raw=example_raw, seq=example_seq)}",
                     indent=1,
                 ),
-                _inst_line(f"└─ {self.tr('留空表示该路线不乘滑索')}", indent=1),
-                _inst_gap(),
-                _inst_line("📦 " + self.tr("送货相关键"), "#FE821D", bold=True),
-                _inst_line(f"├─ {self.tr('{keys}：出发滑索距离').format(keys=' / '.join(start_keys))}", indent=1),
-                _inst_line(
+                inst_line(f"└─ {self.tr('留空表示该路线不乘滑索')}", indent=1),
+                inst_gap(),
+                inst_line("📦 " + self.tr("送货相关键"), "#FE821D", bold=True),
+                inst_line(f"├─ {self.tr('{keys}：出发滑索距离').format(keys=' / '.join(start_keys))}", indent=1),
+                inst_line(
                     f"└─ {self.tr('{keys}：各送货目标滑索序列').format(keys=' / '.join(target_keys))}", indent=1
                 ),
-                _inst_gap(),
-                _inst_line("🪫 " + self.tr("淤积点相关键"), "#FE821D", bold=True),
-                _inst_line(
+                inst_gap(),
+                inst_line("🪫 " + self.tr("淤积点相关键"), "#FE821D", bold=True),
+                inst_line(
                     f"└─ {self.tr('{keys}：能量淤积点滑索序列').format(keys=' / '.join(gather_keys))}", indent=1
                 ),
-                _inst_gap(),
-                _inst_line("🖱️ " + self.tr("是否启用滚动放大视角"), "#FE821D", bold=True),
-                _inst_line(f"└─ {self.tr('对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低')}", indent=1),
-                _inst_line(f"└─ {self.tr('建议启用时不要使用非白发或有白帽角色')}", indent=1),
+                inst_gap(),
+                inst_line("🖱️ " + self.tr("是否启用滚动放大视角"), "#FE821D", bold=True),
+                inst_line(f"└─ {self.tr('对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低')}", indent=1),
+                inst_line(f"└─ {self.tr('建议启用时不要使用非白发或有白帽角色')}", indent=1),
             ]
         )
 
