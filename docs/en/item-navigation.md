@@ -24,11 +24,27 @@ This document covers two trigger/debug tasks:
 
 | Config item | Default | Description |
 |---|---:|---|
-| `content` | empty string | Optional. Fill in the `data.content` from the JSON returned by `web-api.skland.com/account/info/hg/check`. When present, the official-map WebSocket is preferred. |
+| `content` | empty string | Optional. Fill in the `data.content` from the JSON returned by `web-api.skland.com/account/info/hg/check`. When present, the official-map WebSocket is preferred. See "Obtaining content" below. |
 | `地图账号` (Map account) | empty string | Optional. When `content` is empty, reads the map-sync content saved for that account on the account configuration page. |
 | `选择物品` (Select item) | `[]` | List of item names to navigate; no target is filtered when empty. |
 | `标记按键` (Mark key) | `f` | The key pressed to mark an item as "collected" when close to the target. |
 | `标记按住时长` (Mark hold duration) | `2.0` | Seconds the mark key must be held. Timing starts only within a horizontal distance of 20 of the target; reaching the duration marks it as collected. `0`, negative, or non-numeric values fall back to the default 2 seconds. |
+
+### Obtaining content
+
+`content` is the account credential for official map sync; you need to grab it once from your browser:
+
+1. Open a browser and press `F12` to open DevTools.
+2. Visit <https://game.skland.com/map/endfield> and log in.
+3. Switch to the **Network** tab and type `https://web-api.skland.com/account/info/hg/check` in the filter box.
+4. Select that request in the filtered list and read `data.content` from the **Response**
+   (a long string).
+5. Paste it into the task's `content` parameter; **or** save it as `地图同步 content` on the
+   account configuration page and then pick that account via `地图账号` in the task.
+
+> Pick either route: putting it directly in `content` is handy for a one-off run, while saving it on
+> the account page suits long-term multi-account use. `content` is equivalent to a login session —
+> never paste it into issues, chat groups, or screenshots.
 
 ### Data flow
 
