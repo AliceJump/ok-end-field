@@ -146,15 +146,26 @@ class TestGdiOverlayTextRendering(unittest.TestCase):
         self.assertTrue(np.any(dominant != 0), "底板色不能是纯黑")
 
     def test_panel_alpha_zero_skips_the_panel_entirely(self):
-        """panel_alpha=0 时不应画底板——该路径画不出半透明，画了反而是一块不透明方块。"""
+        """panel_alpha=0 时不应画底板——该路径画不出半透明，画了反而是一块不透明方块。
+
+        不能用「是否存在等于底板色的像素」判定：文字与箭头都走抗锯齿，中间色会
+        零星撞上底板色。底板是一整块填充矩形，画了就一定是区域内的主色，
+        因此这里判主色（与 test_panel_colour_is_not_pure_black 对称）。
+        """
         self.painter.add_text(_text_spec(panel_alpha=0))
         self._paint()
 
         region = self._region(TEXT_ROWS, TEXT_COLS)
-        colors = np.unique(region.reshape(-1, 3), axis=0)
+        colors, counts = np.unique(region.reshape(-1, 3), axis=0, return_counts=True)
+        keep = np.any(colors != 0, axis=1)
+        self.assertTrue(keep.any(), "应存在非纯黑像素")
+
         panel_colour = np.array(GdiArrowPainter.gdi_panel_color(150))
-        painted_panel = np.any(np.all(colors == panel_colour, axis=1))
-        self.assertFalse(painted_panel, "panel_alpha=0 时不应出现底板色")
+        dominant = colors[keep][int(np.argmax(counts[keep]))]
+        self.assertFalse(
+            np.array_equal(dominant, panel_colour),
+            f"panel_alpha=0 时底板色不应成为区域主色，实际主色为 {dominant.tolist()}",
+        )
         # 字形仍然要画出来
         self.assertGreater(self._bright(region), 0)
 
