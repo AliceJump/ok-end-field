@@ -76,10 +76,7 @@ class _FrameReadySentinel:
         return True
 
     def __getattr__(self, item):
-        raise AttributeError(
-            f"任务声明了 needs_frame=False，不应访问帧属性 {item!r}；"
-            "请检查该任务是否真的不需要画面"
-        )
+        raise AttributeError(f"任务声明了 needs_frame=False，不应访问帧属性 {item!r}；请检查该任务是否真的不需要画面")
 
 
 _FRAME_READY = _FrameReadySentinel()
@@ -99,8 +96,8 @@ def install_no_frame_task_patch():
     if _PATCH_INSTALLED:
         return
 
-    from ok.task.TaskExecutor import TaskExecutor
     from ok.task.task import BaseTask
+    from ok.task.TaskExecutor import TaskExecutor
 
     _require_upstream_contract(TaskExecutor, BaseTask)
 

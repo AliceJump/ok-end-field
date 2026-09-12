@@ -12,9 +12,7 @@ if sys.platform == "win32":
 @unittest.skipUnless(sys.platform == "win32", "Login automation requires Windows desktop dependencies")
 class TestLoginMixin(unittest.TestCase):
     def setUp(self):
-        self.height_patcher = patch.object(
-            LoginMixin, "height", new_callable=PropertyMock, return_value=100
-        )
+        self.height_patcher = patch.object(LoginMixin, "height", new_callable=PropertyMock, return_value=100)
         self.height_patcher.start()
         self.addCleanup(self.height_patcher.stop)
 
