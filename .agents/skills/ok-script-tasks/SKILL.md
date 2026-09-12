@@ -45,7 +45,7 @@ Support English and Chinese in both code review and generated code.
 
 ## Config UI: Conditional Visibility and Numeric Ranges
 
-`self.config_type[key]` accepts two extra keys that drive the generated config UI. Both are honored by the shared resolver `ok/core/config_schema.py` and by the Qt card (`ok/ui/qt/tasks/ConfigCard.py`).
+`self.config_type[key]` accepts extra metadata for generated configuration UIs. `sub_configs` is honored by the shared resolver `ok/core/config_schema.py` and by the Qt card (`ok/ui/qt/tasks/ConfigCard.py`). The resolver also preserves `min` and `max` as `minimum` and `maximum` schema metadata for headless/web fields, including fields with `float` defaults; Qt widget behavior is described separately below.
 
 - **`sub_configs`** — show child options only for specific parent values:
 
@@ -59,9 +59,9 @@ Support English and Chinese in both code review and generated code.
   Project example: `src/core/BattleConfig.py` (`KEY_ENABLE_ROTATION`), `src/tasks/onetime/DeliveryTask.py`.
   The parent must be a widget that emits change signals: bool → `SwitchButton`, `drop_down`, or multi-selection.
 
-- **`min` / `max`** — numeric bounds for `SpinBox`. Only **int** defaults get a bounded `SpinBox`; a `float` default becomes a `DoubleSpinBox` that ignores `min`/`max`. So expose bounded numbers as `int` (e.g. a 0-100 opacity percentage, or a pixel size), and convert to a float internally.
+- **`min` / `max`** — on Qt config cards, these are numeric bounds for `SpinBox`. Only **int** defaults get a bounded `SpinBox`; a `float` default becomes a `DoubleSpinBox` that ignores `min`/`max`. This Qt limitation does not affect the headless/web schema: it still outputs `minimum` and `maximum` for fields with these keys, including `float` fields. Use an `int` default only when the Qt widget itself must enforce the bounds (e.g. a 0–100 opacity percentage or a pixel size), then convert to a float internally if needed.
 
-- The widget kind is chosen from the **default value's type**, not the current value: `bool` → switch, `int` → `SpinBox`, `float` → `DoubleSpinBox`, `list` → list editor. Pick the default's type deliberately.
+- An explicit `config_type[key]["type"]` takes priority. Only when `type` is absent is the widget kind inferred from the **default value's type**, not the current value: `bool` → switch, `int` → `SpinBox`, `float` → `DoubleSpinBox`, `list` → list editor. Pick the default's type deliberately for this fallback path.
 
 - Config keys and `config_description` strings are user-visible and must go through gettext (see `$ok-script-i18n`).
 
