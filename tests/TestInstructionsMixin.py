@@ -1,10 +1,16 @@
 """任务「使用说明」富文本混入与物品导航说明的测试。"""
 
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
+
+import polib
 
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.trigger.ItemNavigatorTask import ItemNavigatorTask
+
+I18N_ROOT = Path("i18n")
+MARKED_STORE = Path("configs") / "marked_points.json"
 
 
 class _DemoInstructions(InstructionsMixin):
@@ -16,6 +22,23 @@ class _DemoInstructions(InstructionsMixin):
     def build_instructions(self):
         self.build_count += 1
         return "EXTRA"
+
+
+def _navigator_stub(recorded=None, hold_seconds=2.0):
+    """构造只暴露 build_instructions 所需属性的物品导航替身。"""
+
+    def tr(text, *args, **kwargs):
+        if recorded is not None:
+            recorded.append(text)
+        return text
+
+    return SimpleNamespace(
+        tr=tr,
+        _marked_store=MARKED_STORE,
+        _near_xz_threshold=20.0,
+        _format_seconds=ItemNavigatorTask._format_seconds,
+        _mark_hold_seconds=lambda: hold_seconds,
+    )
 
 
 class TestInstructionsMixin(unittest.TestCase):
@@ -58,6 +81,52 @@ class TestInstructionsMixin(unittest.TestCase):
 
     def test_inst_gap_is_inline_spacer(self):
         self.assertIn("font-size", inst_gap())
+
+
+class TestItemNavigatorInstructions(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.recorded = []
+        cls.html = ItemNavigatorTask.build_instructions(_navigator_stub(cls.recorded))
+
+    def test_instructions_cover_key_topics(self):
+        for expected in (
+            "物品导航配置说明",
+            "关键配置",
+            "标记已获取",
+            "本地 WS 模式准备",
+            "浮层显示",
+            "显示条件",
+        ):
+            self.assertIn(expected, self.html)
+
+    def test_instructions_show_configured_hold_seconds(self):
+        self.assertIn("水平距离 20 以内连续按住标记键 2 秒", self.html)
+
+        html = ItemNavigatorTask.build_instructions(_navigator_stub(hold_seconds=1.0))
+        self.assertIn("水平距离 20 以内连续按住标记键 1 秒", html)
+
+    def test_runtime_values_are_not_passed_to_tr(self):
+        """运行时数据只能经 .format() 注入；直接喂给 tr() 会污染 gettext 收集池。"""
+        self.assertIn("configs/marked_points.json", self.html)
+        self.assertIn("assets/scripts/endfield-ws-position-relay.user.js", self.html)
+        for text in self.recorded:
+            self.assertNotIn("configs/marked_points.json", text)
+            self.assertNotIn("endfield-ws-position-relay.user.js", text)
+
+    def test_every_msgid_exists_in_all_locales(self):
+        self.assertTrue(self.recorded)
+        missing = []
+        for path in sorted(I18N_ROOT.glob("*/LC_MESSAGES/ok.po")):
+            locale = path.parents[1].name
+            entries = {entry.msgid: entry for entry in polib.pofile(str(path)) if entry.msgid}
+            for msgid in self.recorded:
+                entry = entries.get(msgid)
+                if entry is None:
+                    missing.append(f"{locale}: 缺少 msgid {msgid!r}")
+                elif not entry.msgstr:
+                    missing.append(f"{locale}: 未翻译 {msgid!r}")
+        self.assertEqual(missing, [], "\n".join(missing))
 
 
 class TestMarkHoldSeconds(unittest.TestCase):

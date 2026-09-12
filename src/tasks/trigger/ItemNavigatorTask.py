@@ -18,6 +18,7 @@ from src.core.BaseEfTask import BaseEfTask
 from src.data import item_map_query
 from src.icons import Icons
 from src.tasks.account.account_scope_store import get_account_map_content, load_overrides, resolve_account_id
+from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.ws_position_mixin import WsPositionMixin
 
 logger = Logger.get_logger(__name__)
@@ -29,8 +30,11 @@ SPECIAL_ITEM_Y_OFFSET = {
     },
 }
 
+# 本地 WS 模式依赖的油猴脚本（相对仓库根目录）
+RELAY_USER_SCRIPT = "assets/scripts/endfield-ws-position-relay.user.js"
 
-class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
+
+class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerTask):
     """实时从本地 WebSocket 拿玩家位置，指向已选物品的最近点，并支持按键标记已获取。
 
     设计原则：
@@ -156,6 +160,76 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
         except (TypeError, ValueError):
             return fallback
         return seconds if seconds > 0 else fallback
+
+    def build_instructions(self):
+        """物品导航配置使用说明（简要）。
+
+        文本经 self.tr() 走 gettext i18n（msgid 写入 i18n/*/LC_MESSAGES/ok.po）；
+        emoji、树形符号与 HTML 样式留在代码里拼接，只有可翻译的纯文本进入目录。
+        由 InstructionsMixin 延迟构建，任务卡片上的「使用说明」按钮读取 instructions 时才会执行。
+        """
+        marked_display = str(self._marked_store).replace("\\", "/")
+        return "<br>".join(
+            [
+                inst_line("📍 " + self.tr("物品导航配置说明"), "#FF5555", bold=True),
+                inst_line(
+                    "⚙️ " + self.tr("位置来源：content 有值时使用官方地图 WebSocket，为空时使用本地 WS"),
+                    "#FF5555",
+                    bold=True,
+                ),
+                inst_gap(),
+                inst_line("🧭 " + self.tr("关键配置"), "#FE821D", bold=True),
+                inst_line(f"└─ {self.tr('选择物品：勾选要导航的物品，只匹配当前地图；为空时不会有任何目标')}", indent=1),
+                inst_line(
+                    f"└─ {self.tr('地图账号：content 为空时从中读取地图同步 content，选项来自账号配置页')}", indent=1
+                ),
+                inst_line(f"└─ {self.tr('标记按键：接近目标后用于标记已获取的键位，仅支持单个字符')}", indent=1),
+                inst_line(
+                    f"└─ {self.tr('标记按住时长：连续按住标记键达到该时长即记为已获取（默认 2 秒）')}", indent=1
+                ),
+                inst_gap(),
+                # 浮层显示的文案分组：浮层功能本身在 feat/window-overlay-text 分支，
+                # 但使用说明只存在于本分支，因此该分组随使用说明一起落地。
+                inst_line("🎨 " + self.tr("浮层显示"), "#FE821D", bold=True),
+                inst_line(f"└─ {self.tr('浮层信息：开启后在浮层上显示物品名、距离、方位与高度（默认开启）')}", indent=1),
+                inst_line(
+                    f"└─ {self.tr('浮层文字透明度 / 浮层背景透明度：取值 0-100，0 表示完全透明')}", indent=1
+                ),
+                inst_line(
+                    f"└─ {self.tr('浮层字号：以 1080p 窗口高度为基准的像素值，会随窗口高度等比缩放')}", indent=1
+                ),
+                inst_gap(),
+                inst_line("🖱️ " + self.tr("标记已获取"), "#FE821D", bold=True),
+                inst_line(
+                    "└─ "
+                    + self.tr("水平距离 {distance} 以内连续按住标记键 {seconds} 秒即记为已获取，之后不再指向该点").format(
+                        distance=self._format_seconds(self._near_xz_threshold),
+                        seconds=self._format_seconds(self._mark_hold_seconds()),
+                    ),
+                    indent=1,
+                ),
+                inst_line(f"└─ {self.tr('中途松开或离开范围会取消本次标记')}", indent=1),
+                inst_line(
+                    f"└─ {self.tr('标记记录保存在 {path}，删除对应条目即可重新导航').format(path=marked_display)}",
+                    indent=1,
+                ),
+                inst_gap(),
+                inst_line("📡 " + self.tr("本地 WS 模式准备"), "#FE821D", bold=True),
+                inst_line(
+                    "└─ "
+                    + self.tr("安装 Tampermonkey 并导入 {path}（可用「油猴脚本帮助」按钮打开脚本目录）").format(
+                        path=RELAY_USER_SCRIPT
+                    ),
+                    indent=1,
+                ),
+                inst_line(f"└─ {self.tr('打开网页地图并保持页面存活，脚本会自动开启位置同步')}", indent=1),
+                inst_gap(),
+                inst_line("🪟 " + self.tr("显示条件"), "#FE821D", bold=True),
+                inst_line(f"└─ {self.tr('箭头仅在游戏窗口处于前台时显示')}", indent=1),
+                inst_line(f"└─ {self.tr('浮层同时显示当前指向的物品名、距离、方位（东西南北）与上下高度')}", indent=1),
+                inst_line(f"└─ {self.tr('游戏窗口不存在或不可见时任务会暂停并停止位置同步')}", indent=1),
+            ]
+        )
 
     @staticmethod
     def _get_map_account_options() -> list[str]:

@@ -2452,3 +2452,96 @@ msgstr "No config files found in the zip archive"
 
 msgid "重启失败"
 msgstr "Restart Failed"
+
+msgid "物品导航配置说明"
+msgstr "Item Navigation Config"
+
+msgid "位置来源：content 有值时使用官方地图 WebSocket，为空时使用本地 WS"
+msgstr ""
+"Position source: official map WebSocket when content is set, local WS when "
+"it is empty"
+
+msgid "关键配置"
+msgstr "Key settings"
+
+msgid "选择物品：勾选要导航的物品，只匹配当前地图；为空时不会有任何目标"
+msgstr ""
+"Select Items: pick the items to navigate; only the current map is matched, "
+"and an empty list means no target"
+
+msgid "地图账号：content 为空时从中读取地图同步 content，选项来自账号配置页"
+msgstr ""
+"Map Account: reads that account's map-sync content when content is empty; "
+"options come from the account page"
+
+msgid "标记按键：接近目标后用于标记已获取的键位，仅支持单个字符"
+msgstr ""
+"Mark Key: key used to mark an item as obtained when close to it; a single "
+"character only"
+
+msgid "标记已获取"
+msgstr "Mark as obtained"
+
+msgid "水平距离 {distance} 以内连续按住标记键 {seconds} 秒即记为已获取，之后不再指向该点"
+msgstr ""
+"Hold the mark key for {seconds} seconds within {distance} horizontal "
+"distance to mark it obtained; it is then skipped"
+
+msgid "中途松开或离开范围会取消本次标记"
+msgstr "Releasing the key or leaving the range cancels the attempt"
+
+msgid "标记记录保存在 {path}，删除对应条目即可重新导航"
+msgstr ""
+"Marks are stored in {path}; delete an entry to navigate to that point again"
+
+msgid "本地 WS 模式准备"
+msgstr "Local WS setup"
+
+msgid "安装 Tampermonkey 并导入 {path}（可用「油猴脚本帮助」按钮打开脚本目录）"
+msgstr ""
+"Install Tampermonkey and import {path} (use the browser Tampermonkey script "
+"help button to open the script folder)"
+
+msgid "打开网页地图并保持页面存活，脚本会自动开启位置同步"
+msgstr ""
+"Open the web map and keep the page alive; the script enables position sync "
+"automatically"
+
+msgid "显示条件"
+msgstr "Display conditions"
+
+msgid "箭头仅在游戏窗口处于前台时显示"
+msgstr "Arrows are shown only while the game window is in the foreground"
+
+msgid "游戏窗口不存在或不可见时任务会暂停并停止位置同步"
+msgstr ""
+"If the game window is missing or hidden, the task pauses and stops position "
+"sync"
+
+msgid "浮层同时显示当前指向的物品名、距离、方位（东西南北）与上下高度"
+msgstr ""
+"The overlay also shows the current target item name, distance, bearing "
+"(N/E/S/W) and vertical height"
+
+msgid "标记按住时长：连续按住标记键达到该时长即记为已获取（默认 2 秒）"
+msgstr ""
+"Mark Hold Duration: hold the mark key for this long to mark the item "
+"obtained (default 2 seconds)"
+
+msgid "浮层显示"
+msgstr "Overlay Display"
+
+msgid "浮层信息：开启后在浮层上显示物品名、距离、方位与高度（默认开启）"
+msgstr ""
+"Overlay Info: when enabled, shows the item name, distance, bearing and "
+"height on the overlay (on by default)"
+
+msgid "浮层文字透明度 / 浮层背景透明度：取值 0-100，0 表示完全透明"
+msgstr ""
+"Overlay Text Opacity / Overlay Background Opacity: 0-100, where 0 is fully "
+"transparent"
+
+msgid "浮层字号：以 1080p 窗口高度为基准的像素值，会随窗口高度等比缩放"
+msgstr ""
+"Overlay Font Size: pixel value based on a 1080p window height; scales with "
+"the window height"
