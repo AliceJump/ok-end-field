@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """导航规划（src/nav/grid_planner.py）单元测试。
 
 合成网格即可覆盖：代价模型（未知=冒险加价）、禁斜穿墙角、起终点吸附、
@@ -60,18 +59,29 @@ class TestCostModel(unittest.TestCase):
         self.assertFalse(res.ok)
         self.assertIn("找不到通路", res.reason)
 
-    def test_allow_unknown_false_avoids_unknown(self):
+    def test_allow_unknown_false_treats_unknown_as_blocked(self):
+        """未知格视同阻挡：既不穿未知格，也不斜穿未知格的角。"""
         grid = _grid(["o.o",
                       "ooo"])
         res = GridPlanner(grid, allow_unknown=False).plan_cells((0, 0), (0, 2))
         self.assertTrue(res.ok, res)
         self.assertEqual(res.risk_cells, 0)
         self.assertNotIn((0, 1), _cells(res))              # 未知格不穿
-        self.assertAlmostEqual(res.cost, 2 * math.sqrt(2), delta=1e-6)  # 斜向绕行
-        # 关掉斜向就只能走两段正交的绕行
+        # 斜步 (0,0)->(1,1) 的角 (0,1) 是未知格，视同阻挡 -> 不许切角，
+        # 只能绕：(0,0)->(1,0)->(1,1)->(1,2)->(0,2)，代价 4
+        self.assertAlmostEqual(res.cost, 4.0, delta=1e-6)
+        # 关掉斜向走法结果一样：斜步本来就被禁光了
         plain = GridPlanner(grid, allow_unknown=False, diagonal=False).plan_cells((0, 0), (0, 2))
         self.assertTrue(plain.ok, plain)
         self.assertAlmostEqual(plain.cost, 4.0, delta=1e-6)
+
+    def test_allow_unknown_true_may_cut_unknown_corner(self):
+        """允许穿越未知格时，未知格的角可以切（规则与 allow_unknown 一致，不是两套）。"""
+        grid = _grid(["o.o",
+                      "ooo"])
+        res = GridPlanner(grid, allow_unknown=True).plan_cells((0, 0), (0, 2))
+        self.assertTrue(res.ok, res)
+        self.assertAlmostEqual(res.cost, 2 * math.sqrt(2), delta=1e-6)  # 两个斜步
 
     def test_diagonal_equals_sqrt2(self):
         grid = _grid(["oo",
@@ -86,8 +96,22 @@ class TestCostModel(unittest.TestCase):
         res = GridPlanner(grid, diagonal=False).plan_cells((0, 0), (1, 1))
         self.assertTrue(res.ok, res)
         self.assertEqual(len(res.cells), 3)
-        for (ai, aj), (bi, bj) in zip(res.cells, res.cells[1:]):
+        for (ai, aj), (bi, bj) in zip(res.cells, res.cells[1:], strict=False):
             self.assertEqual(abs(ai - bi) + abs(aj - bj), 1)
+
+    def test_frontier_penalty_adds_cost_near_unknown(self):
+        grid = _grid(["o.o",
+                      "ooo"])
+        planner = GridPlanner(grid, frontier_margin=2, frontier_penalty=3.0)
+
+        self.assertAlmostEqual(
+            planner._step_cost(1, 0, 0, 0, CELL_FREE),
+            4.0,
+        )
+        self.assertAlmostEqual(
+            planner._step_cost(0, 0, 1, 0, CELL_FREE),
+            1.0,
+        )
 
 
 class TestCornerCutting(unittest.TestCase):
@@ -106,7 +130,7 @@ class TestCornerCutting(unittest.TestCase):
                       "o#o"])
         res = GridPlanner(grid).plan_cells((0, 0), (2, 2))
         self.assertTrue(res.ok, res)
-        for a, b in zip(res.waypoints, res.waypoints[1:]):
+        for _a, _b in zip(res.waypoints, res.waypoints[1:], strict=False):
             self.assertTrue(res.ok)
         # 每个航点都必须是可通行格（世界坐标反查）
         for x, z in res.waypoints:
@@ -141,26 +165,32 @@ class TestSnapping(unittest.TestCase):
 
 
 class TestSafetyMargin(unittest.TestCase):
-    def test_margin_closes_narrow_corridor(self):
-        """1 格宽走廊 + margin=1 会被膨胀堵死 —— 这正是要留安全边距的代价。"""
+    def test_margin_keeps_only_dangerous_route_available(self):
+        """窄路不满足离墙偏好时仍可通行；没有替代路线时必须继续规划。"""
         grid = _grid(["#####",
                       "#ooo#",
                       "#####"])
-        self.assertTrue(GridPlanner(grid, margin=0).plan_cells((1, 1), (1, 3)).ok)
-        res = GridPlanner(grid, margin=1).plan_cells((1, 1), (1, 3))
-        self.assertFalse(res.ok)
-
-    def test_margin_keeps_wide_route(self):
-        """够宽的通路膨胀一圈后仍能走通。"""
-        grid = _grid(["#######",
-                      "#ooooo#",
-                      "#ooooo#",
-                      "#ooooo#",
-                      "#######"])
-        res = GridPlanner(grid, margin=1).plan_cells((2, 2), (2, 4))
+        res = GridPlanner(grid, margin=2, wall_penalty=5.0).plan_cells((1, 1), (1, 3))
         self.assertTrue(res.ok, res)
-        self.assertEqual(res.notes, [])            # 起终点本身就在安全区里
-        self.assertGreaterEqual(len(res.cells), 3)
+
+    def test_wall_penalty_adds_cost_without_blocking(self):
+        """离墙不足只增加进入该格的代价，不会把格子改成不可通行。"""
+        grid = _grid(["#####",
+                      "#ooo#",
+                      "#ooo#",
+                      "#ooo#",
+                      "#####"])
+        planner = GridPlanner(grid, margin=2, wall_penalty=3.0)
+
+        self.assertTrue(planner._passable(1, 2))
+        self.assertAlmostEqual(
+            planner._step_cost(1, 1, 1, 2, CELL_FREE),
+            4.0,
+        )
+        self.assertAlmostEqual(
+            planner._step_cost(2, 1, 2, 2, CELL_FREE),
+            1.0,
+        )
 
 
 class TestWaypoints(unittest.TestCase):
@@ -183,6 +213,53 @@ class TestWaypoints(unittest.TestCase):
         self.assertEqual(res.cells[0], (0, 0))
         self.assertEqual(res.cells[-1], (0, 4))
         self.assertGreater(res.expanded, 0)
+
+    def test_waypoints_can_form_arbitrary_angle_segments(self):
+        grid = _grid(["oooooo",
+                      "oooooo",
+                      "oooooo",
+                      "oooooo"])
+        res = GridPlanner(grid).plan((0.5, 0.5), (4.5, 2.5))
+        self.assertTrue(res.ok, res)
+        self.assertEqual(len(res.waypoints), 2)
+        start_x, start_z = res.waypoints[0]
+        end_x, end_z = res.waypoints[-1]
+        self.assertNotEqual(abs(end_x - start_x), abs(end_z - start_z))
+        self.assertNotEqual(start_z, end_z)
+
+
+class TestFailureDiagnostics(unittest.TestCase):
+    """失败原因必须能区分「策略性不可达」（关了穿越未知格）和「真被阻挡隔断」。"""
+
+    def test_unknown_disabled_reason_names_the_switch(self):
+        grid = _grid(["o#o"])
+        res = GridPlanner(grid, allow_unknown=False).plan_cells((0, 0), (0, 2))
+        self.assertFalse(res.ok)
+        self.assertIn("允许穿越未知格", res.reason)
+        self.assertFalse(res.cap_exceeded)
+
+    def test_blocked_separation_reason_says_exhausted(self):
+        grid = _grid(["o#o"])
+        res = GridPlanner(grid, allow_unknown=True).plan_cells((0, 0), (0, 2))
+        self.assertFalse(res.ok)
+        self.assertIn("穷尽", res.reason)
+        self.assertNotIn("允许穿越未知格", res.reason)
+
+    def test_cap_exceeded_is_flagged_and_reported(self):
+        grid = _grid(["oooooooo"])
+        res = GridPlanner(grid, max_expand=1).plan_cells((0, 0), (0, 7))
+        self.assertFalse(res.ok)
+        self.assertTrue(res.cap_exceeded)
+        self.assertIn("搜索规模超限", res.reason)
+
+    def test_snap_note_names_state_and_offset(self):
+        """起点落在未知格并被挪走时，note 要说清原格状态和挪了多远。"""
+        grid = _grid(["o#."])
+        res = GridPlanner(grid, allow_unknown=False).plan_cells((0, 2), (0, 0))
+        self.assertTrue(res.ok, res)
+        self.assertTrue(res.notes, res.notes)
+        self.assertIn("未知格", res.notes[0])
+        self.assertIn("偏移 2 格", res.notes[0])
 
 
 if __name__ == "__main__":

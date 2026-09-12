@@ -45,6 +45,7 @@
     dmap_px          里程计累计位移（地图系像素，x 右 / y 下）。
     world_delta      上述位移映射到世界系的增量（米）。
     ws               最近收到的 WS 坐标 (x, z)，可能滞后；None = 还没收到。
+    map_id           最近 WS 位置所属地图；None = 还没收到。
     error            |融合坐标 - 最近 WS|（米）。移动时≈WS 延迟（不是误差），静止校准后≈0。
     odom_ok/odom_reason  本拍是否采到有效位移样本及原因（"ok"/"too_soon"/"no_frame"/
                      "low_response"/"exceed_max_shift"/"too_long_dt"/"speed_anomaly"，
@@ -52,6 +53,8 @@
                      用来区分"位置在动"和"位置源已经没有数据了"。
     just_synced/sync_residual  本拍是否刚触发静止校准、以及校准前的残差
                      （``{map_x, map_z, ws_x, ws_z, dx, dz, dist}``，即小地图推算偏了多少米）。
+    sync_checked/sync_redundant  本拍收到 WS 后是否检查了静止校准，以及检查结果是否为
+                     “当前估计已与 WS 对齐，无需重锚”。
 
 调用方注意：**务必把当前帧传进来**（``frame=frame``）。不传的话内部会用
 ``next_frame()`` 自己抓一帧，于是朝向你手里的帧与算位移的帧不是同一时刻，两者会错位。
@@ -106,13 +109,19 @@ CONFIG_WS_MIN_HITS = "WS稳定最小位置数"
 
 
 def parse_map_to_world(value):
-    """把 "a11,a12,a21,a22" 解析为 2x2 矩阵；非法时返回 None。"""
+    """把 "a11,a12,a21,a22" 解析为 2x2 矩阵；非法或含非有限值时返回 None。
+
+    非有限值（nan/inf）必须在这里挡掉：否则融合坐标会变成 nan（而不是 None），
+    下游的 ``x is None`` 守卫失效，规划阶段才在 ``index_of_world`` 深处炸栈。
+    """
     parts = str(value or "").split(",")
     if len(parts) != 4:
         return None
     try:
         nums = [float(p) for p in parts]
     except (TypeError, ValueError):
+        return None
+    if not all(math.isfinite(n) for n in nums):
         return None
     return [[nums[0], nums[1]], [nums[2], nums[3]]]
 
@@ -322,7 +331,14 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
     # ------------------------------------------------------------------ #
     # 朝向 / 位置
     # ------------------------------------------------------------------ #
-    def minimap_position(self, frame=None, *, now=None, feed_ws: bool = True) -> dict:
+    def minimap_position(
+        self,
+        frame=None,
+        *,
+        now=None,
+        feed_ws: bool = True,
+        allow_sync: bool = True,
+    ) -> dict:
         """采样一拍，返回本拍的「方向 + 坐标」。
 
         Args:
@@ -331,6 +347,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             now: 可选时间戳（秒），默认用 ``active_time()``。
             feed_ws: 是否顺带消费一条新到的 WS 位置并做静止校准。默认 True；
                 调用方要自己读原始 WS 样本时传 False（避免样本被这里吃掉）。
+            allow_sync: 为 False 时仍消费并记录 WS 样本、更新静止判定，但不重锚。
 
         Returns:
             见模块 docstring 的字段说明。``x``/``z`` 为 None 表示还没锚定。
@@ -341,8 +358,12 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
         st = self._minimap_fusion.state(now=now, frame=frame)
         st["just_synced"] = False
         st["sync_residual"] = None
+        st["sync_checked"] = False
+        st["sync_redundant"] = False
         if feed_ws:
-            self._feed_ws_position(st, self._now(now))
+            self._feed_ws_position(st, self._now(now), allow_sync=allow_sync)
+            st["rest"] = self._minimap_fusion.is_rest()
+        st["map_id"] = self._minimap_ws_map_id
 
         # 本拍是否有**有效位移样本**（区分"位置在动"与"位置源已经没有数据了"）。
         # 注意必须同时看 sampled：锚帧初始化（anchor_init）与采样过密（too_soon）
@@ -361,7 +382,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
     def _now(self, now):
         return self.active_time() if now is None else now
 
-    def _feed_ws_position(self, st: dict, now) -> bool:
+    def _feed_ws_position(self, st: dict, now, *, allow_sync: bool = True) -> bool:
         """消费一条新到的 WS 位置：静止时用它校准，否则忽略（不暂存）。返回本拍是否已校准。"""
         pos_ws = self._poll_ws_position(timeout=0.0)
         if pos_ws is None:
@@ -379,8 +400,15 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             self._apply_estimate(st, self._minimap_fusion.estimate())
             return False
 
-        synced = self._minimap_fusion.try_sync(pos_ws, map_id=map_id, now=now)
+        synced = self._minimap_fusion.try_sync(
+            pos_ws,
+            map_id=map_id,
+            now=now,
+            allow_sync=allow_sync,
+        )
         self._minimap_last_ws = (x, z)
+        st["sync_checked"] = synced
+        st["sync_redundant"] = bool(synced and self._minimap_fusion.last_sync_redundant)
         # 空操作（估计已与 WS 重合）不算"刚校准"：不重读估计、也不产生新的残差，
         # 这样静止时不会每秒刷一条 [静止校准]，上一次真正有意义的残差也留得住。
         if synced and not self._minimap_fusion.last_sync_redundant:

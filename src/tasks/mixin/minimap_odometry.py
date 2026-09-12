@@ -635,10 +635,3 @@ class MinimapOdometry:
 
     def last_sample(self) -> dict | None:
         return self._last
-
-    def set_scale(self, scale_m_per_px: float | None):
-        self._scale_m_per_px = scale_m_per_px
-        self._scale_warned = False
-
-    def scale(self) -> float | None:
-        return self._scale_m_per_px

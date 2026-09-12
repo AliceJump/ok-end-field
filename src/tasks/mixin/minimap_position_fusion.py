@@ -36,18 +36,7 @@ import numpy as np
 
 from src.tasks.mixin.minimap_odometry import _reraise_control_flow
 
-__all__ = ["MinimapPositionFusion", "world_from_map_px"]
-
-
-def world_from_map_px(
-    map_px: tuple[float, float],
-    map_to_world_px,
-) -> tuple[float, float]:
-    """把地图系位移（像素）映射为世界系位移（米）。"""
-    m = np.asarray(map_to_world_px, dtype=np.float64)
-    px = np.asarray([map_px[0], map_px[1]], dtype=np.float64)
-    out = m @ px
-    return (float(out[0]), float(out[1]))
+__all__ = ["MinimapPositionFusion"]
 
 
 class MinimapPositionFusion:
@@ -78,12 +67,12 @@ class MinimapPositionFusion:
         arrow_func=None,
     ):
         self._od = odometry
-        self._scale = float(scale_m_per_px)
+        scale = float(scale_m_per_px)
         if map_to_world_px is not None:
             self._map_to_world_px = np.asarray(map_to_world_px, dtype=np.float64).reshape(2, 2)
         else:
             # 默认轴：图右=东 +x、图下=南 -z（图像 y 向下），与真机标定同号
-            self._map_to_world_px = np.diag([self._scale, -self._scale]).astype(np.float64)
+            self._map_to_world_px = np.diag([scale, -scale]).astype(np.float64)
         self._rest_speed_m_s = float(rest_speed_m_s)
         self._rest_ws_m = float(rest_ws_m)
         # 当前估计已经与 WS 坐标差不到这个距离时，重新校准是空操作，跳过（见 _is_sync_redundant）
@@ -115,37 +104,6 @@ class MinimapPositionFusion:
         self._last_sync_residual = None
         self._last_sync_redundant = False
         self._od.reset_position()
-
-    def set_map_to_world_px(self, matrix):
-        self._map_to_world_px = np.asarray(matrix, dtype=np.float64).reshape(2, 2)
-
-    def set_from_calibration(self, scale_info: dict | None):
-        """直接从标定输出配置比例尺与轴映射。
-
-        ``scale_info`` 为 :class:`MinimapDisplacementCalibration` E3 输出的
-        ``scale_info`` dict，含 ``scale_m_per_px`` 与 ``map_to_world_px``。
-        若已提供 ``map_to_world_px``（含轴交换/符号），则优先使用它；否则
-        用 ``scale_m_per_px`` 构建默认恒等轴。
-        """
-        if not scale_info:
-            return
-        m = scale_info.get("map_to_world_px")
-        if m is not None and len(m) == 2:
-            try:
-                self.set_map_to_world_px(m)
-            except Exception:
-                pass
-        s = scale_info.get("scale_m_per_px")
-        if s:
-            self._scale = float(s)
-            # 仅在没有自定义轴映射时用 scale 重建默认轴（图下=南，-z）
-            if not scale_info.get("map_to_world_px"):
-                self._map_to_world_px = np.diag([self._scale, -self._scale]).astype(np.float64)
-
-    def set_scale(self, scale_m_per_px: float):
-        self._scale = float(scale_m_per_px)
-        # 仅在未设置自定义轴映射时，用 scale 重建默认轴（图下=南，-z）
-        self._map_to_world_px = np.diag([self._scale, -self._scale]).astype(np.float64)
 
     @property
     def map_to_world_px(self) -> tuple[tuple[float, float], tuple[float, float]]:
@@ -281,7 +239,7 @@ class MinimapPositionFusion:
         self._note_ws(x, z)
         return self._apply_sync(x, z, now)
 
-    def try_sync(self, world_xyz, *, map_id=None, now=None) -> bool:
+    def try_sync(self, world_xyz, *, map_id=None, now=None, allow_sync=True) -> bool:
         """尝试用 WS 校准：只有**判定为静止**时才用这条样本重锚。
 
         不做"移动中暂存、静止后再应用"：暂存的是移动途中的陈旧坐标，静止后应用
@@ -291,12 +249,17 @@ class MinimapPositionFusion:
         Returns:
             True = 本次静止、锚点有效（可能是真正重锚，也可能是"已对齐、跳过"，
             见 :attr:`last_sync_redundant`）；False = 未静止，本次不校准。
+
+        ``allow_sync=False`` 时仍记录 WS 样本并更新静止判定，但不会重锚。调用方
+        可用它先确认连续稳定时间，排除 WS 传输延迟尚未排空的样本。
         """
         if world_xyz is None:
             return False
         x, z = float(world_xyz[0]), float(world_xyz[2])
         self._note_ws(x, z)
         if not self.is_rest():
+            return False
+        if not allow_sync:
             return False
         if self._is_sync_redundant(x, z):
             self._last_sync_redundant = True
@@ -311,7 +274,7 @@ class MinimapPositionFusion:
         """采样一拍里程计，返回当前估计。"""
         try:
             self._od.sample(frame=frame)
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             # 任务被停用/结束抛的是框架控制流异常，必须放行——里程计侧
             # _reraise_control_flow 特意让它们冒出来，这里不能又吞回去。
             _reraise_control_flow(e)
@@ -359,7 +322,7 @@ class MinimapPositionFusion:
                 angle, score = self._arrow_func(frame)
                 heading = angle
                 heading_score = 0.0 if score is None else float(score)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 heading = None
                 heading_score = None
 

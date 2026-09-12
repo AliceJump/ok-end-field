@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """导航网格的表示与读写。
 
 存储只有一个格式：``<map>_<zoom>.grid.npz``
@@ -79,11 +78,11 @@ __all__ = [
     "CELL_FREE",
     "CELL_NAMES",
     "CELL_UNKNOWN",
-    "DenseGrid",
     "GRID_MAGIC",
     "GRID_SUFFIX",
-    "GridMeta",
     "SCHEMA_VERSION",
+    "DenseGrid",
+    "GridMeta",
     "load_grid",
     "new_grid",
     "save_grid",
@@ -108,7 +107,7 @@ AXIS_CONVENTION = (
 
 #: 邻居方向（模块级常量，避免每次调用重建 / 逐方向走方法调用）
 DIRS4 = ((1, 0), (-1, 0), (0, 1), (0, -1))
-DIRS8 = DIRS4 + ((1, 1), (1, -1), (-1, 1), (-1, -1))
+DIRS8 = (*DIRS4, (1, 1), (1, -1), (-1, 1), (-1, -1))
 
 
 @dataclass
@@ -127,6 +126,17 @@ class GridMeta:
     magic: str = GRID_MAGIC
     schema_version: int = SCHEMA_VERSION
 
+    def __post_init__(self):
+        self.validate()
+
+    def validate(self) -> None:
+        """校验换算参数。``cell_size`` 必须有限且为正，否则 ``index_of_world`` 会除零或映射错乱。
+
+        ``from_json`` 是在构造后才逐字段赋值，所以它必须显式再调一次本方法。
+        """
+        if not math.isfinite(float(self.cell_size)) or float(self.cell_size) <= 0:
+            raise ValueError(f"cell_size 必须为有限正数，当前 {self.cell_size!r}")
+
     def to_dict(self) -> dict:
         return {f.name: getattr(self, f.name) for f in fields(self)}
 
@@ -134,7 +144,7 @@ class GridMeta:
         return json.dumps(self.to_dict(), ensure_ascii=False)
 
     @classmethod
-    def from_json(cls, text: str) -> "GridMeta":
+    def from_json(cls, text: str) -> GridMeta:
         """严格解析：标识/版本不对直接报错，缺字段才用默认值补齐。"""
         try:
             data = json.loads(text)
@@ -164,8 +174,7 @@ class GridMeta:
             meta.created = str(data.get("created") or "")
         except (TypeError, ValueError, IndexError) as exc:
             raise ValueError(f"网格元数据字段格式不对: {exc}") from exc
-        if meta.cell_size <= 0:
-            raise ValueError(f"cell_size 必须为正，当前 {meta.cell_size}")
+        meta.validate()
         return meta
 
 
@@ -176,18 +185,19 @@ class DenseGrid:
     """
 
     def __init__(self, cells, meta: GridMeta | None = None):
-        arr = np.asarray(cells)
-        if arr.ndim != 2:
-            raise ValueError(f"只支持二维网格，收到 ndim={arr.ndim}")
-        if arr.dtype != np.uint8:
-            arr = arr.astype(np.uint8)
-        bad = set(np.unique(arr).tolist()) - _VALID_STATES
+        raw = np.asarray(cells)
+        if raw.ndim != 2:
+            raise ValueError(f"只支持二维网格，收到 ndim={raw.ndim}")
+        if raw.size == 0:
+            raise ValueError("网格是空的")
+        # 按**原始值**校验再转 uint8：先 astype 会把越界值静默回绕（256→0、258→2），
+        # 正好放过这里要拦的输入。浮点 1.0 与整数 1 在这里相等，仍算合法。
+        bad = set(np.unique(raw).tolist()) - _VALID_STATES
         if bad:
             raise ValueError(
                 f"网格里有非法状态 {sorted(bad)}；只允许 {sorted(_VALID_STATES)}"
                 f"（{CELL_NAMES}）")
-        if arr.size == 0:
-            raise ValueError("网格是空的")
+        arr = raw if raw.dtype == np.uint8 else raw.astype(np.uint8)
         self.cells = arr
         self.meta = meta if isinstance(meta, GridMeta) else GridMeta()
         self._padded_cache: np.ndarray | None = None
@@ -223,6 +233,10 @@ class DenseGrid:
 
     def index_of_world(self, x: float, z: float) -> tuple[int, int]:
         """世界 (x, z) → 数组下标 ``(i, j)``；可能越界，用 :meth:`in_bounds` 判。"""
+        # math.floor(NaN/inf) 会抛 ValueError/OverflowError；坐标来自定位或用户输入，
+        # 在边界处给出明确报错，而不是让它在规划深处炸栈。
+        if not (math.isfinite(float(x)) and math.isfinite(float(z))):
+            raise ValueError(f"世界坐标必须有限，收到 ({x!r}, {z!r})")
         cs = self.meta.cell_size
         j = math.floor((float(x) - self.meta.origin[0]) / cs)
         i = math.floor((float(z) - self.meta.origin[2]) / cs)
@@ -253,9 +267,13 @@ class DenseGrid:
     # 邻域
     # ------------------------------------------------------------------ #
     def neighbors(self, i: int, j: int, *, diagonal: bool = True) -> list[tuple[int, int]]:
-        """相邻的**非阻挡**格（可行走与未知都返回；未知格让寻路器按风险代价处理）。
+        """相邻的**非阻挡**格（可行走与未知都返回）。
 
-        ``diagonal=True`` 时八连通，且禁止斜穿墙角（两条正交邻格都必须非阻挡）。
+        「是否允许走未知格」以及 ``allow_unknown=False`` 时「未知格视同阻挡」的禁斜穿
+        判定，都由调用方 :class:`~src.nav.grid_planner.GridPlanner` 按策略决定；
+        这里只按**阻挡**粗筛。
+
+        ``diagonal=True`` 时八连通，且禁止斜穿**阻挡**格的角（两条正交邻格都必须非阻挡）。
         调用方保证 ``(i, j)`` 在界内（A* 只在已入图的格上扩展）。
 
         这是寻路的热路径，所以走缓存好的"四周补一圈阻挡"数组直接下标，
@@ -268,15 +286,26 @@ class DenseGrid:
         for di, dj in (DIRS8 if diagonal else DIRS4):
             if p[i + di, j + dj] == blk:
                 continue
-            if di and dj and (p[i + di, j] == blk or p[i, j + dj] == blk):
+            if di and dj and self._padded_corner_cut(p, i, j, di, dj):
                 continue
             out.append((i + di - 1, j + dj - 1))
         return out
 
+    @staticmethod
+    def _padded_corner_cut(p: np.ndarray, i: int, j: int, di: int, dj: int) -> bool:
+        """斜向一步是否斜穿**阻挡**格的角；``p`` 是补过一圈阻挡的数组，``i``/``j`` 已 +1。
+
+        这是邻域生成用的**廉价粗筛**，只看阻挡。策略层的最终判定在
+        :meth:`GridPlanner._corner_ok`——``allow_unknown=False``（未知格视同阻挡）时
+        未知格的角也不许切，那一层说了算。
+        """
+        blk = CELL_BLOCKED
+        return p[i + di, j] == blk or p[i, j + dj] == blk
+
     def _padded(self) -> np.ndarray:
         """四周补一圈 ``CELL_BLOCKED`` 的副本，使越界查询自然落到阻挡格。
 
-        惰性构建并缓存；``cells`` 视为只读（要改就换新网格，如 :meth:`inflate_blocked`）。
+        惰性构建并缓存；``cells`` 视为只读（要改就换一张新网格）。
         """
         cached = self._padded_cache
         if cached is None or cached.shape != (self.shape[0] + 2, self.shape[1] + 2):
@@ -314,18 +343,31 @@ class DenseGrid:
             dist[grown] = step
             frontier = grown
 
-    def inflate_blocked(self, margin: int = 1) -> "DenseGrid":
-        """把距阻挡格 ``margin`` 格以内的非阻挡格也标成阻挡，返回**新**网格。
+    def frontier_clearance(self) -> np.ndarray:
+        """每格到最近 ``CELL_UNKNOWN`` 的 BFS 距离（单位：格）。
 
-        规划视图用：定位误差 ±0.5m + 1m 格子，"贴墙"判定没有余量。原网格不变。
+        ``-1`` 表示该格无法在不穿过阻挡格的情况下到达未知边缘；
+        没有未知格时全图返回 ``-1``。规划器用它偏好已知自由区域内部。
         """
-        margin = max(0, int(margin))
-        if margin == 0:
-            return DenseGrid(self.cells.copy(), replace(self.meta))
-        dist = self.clearance()
-        out = self.cells.copy()
-        out[(dist >= 0) & (dist <= margin) & (out != CELL_BLOCKED)] = CELL_BLOCKED
-        return DenseGrid(out, replace(self.meta, source=f"{self.meta.source}+inflate{margin}"))
+        unknown = self.cells == CELL_UNKNOWN
+        dist = np.where(unknown, 0, -1).astype(np.int32)
+        if not unknown.any():
+            return dist
+        passable = self.cells != CELL_BLOCKED
+        frontier = unknown.copy()
+        step = 0
+        while True:
+            step += 1
+            grown = np.zeros_like(frontier)
+            grown[1:, :] |= frontier[:-1, :]
+            grown[:-1, :] |= frontier[1:, :]
+            grown[:, 1:] |= frontier[:, :-1]
+            grown[:, :-1] |= frontier[:, 1:]
+            grown &= passable & (dist < 0)
+            if not grown.any():
+                return dist
+            dist[grown] = step
+            frontier = grown
 
     def nearest_free(self, i: int, j: int, max_radius: int = 8) -> tuple[int, int] | None:
         """最近的可行走格（落点修正用）；``max_radius`` 内找不到返回 None。"""

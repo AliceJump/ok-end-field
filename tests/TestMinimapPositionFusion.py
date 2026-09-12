@@ -5,13 +5,12 @@
 - sync 设置绝对锚点并清零里程计；
 - 里程计增量按 map_to_world_px 映射到世界坐标并叠加；
 - try_sync 只在静止时校准；移动中收到的样本直接忽略（不暂存，避免把位置拽回去）；
-- 自定义轴映射（含符号/交换）生效；
-- world_from_map_px 纯函数。
+- 自定义轴映射（含符号/交换）生效。
 """
 import math
 import unittest
 
-from src.tasks.mixin.minimap_position_fusion import MinimapPositionFusion, world_from_map_px
+from src.tasks.mixin.minimap_position_fusion import MinimapPositionFusion
 
 
 class _StubOd:
@@ -135,6 +134,19 @@ class TestRestGatedSync(unittest.TestCase):
         self.assertAlmostEqual(fusion.estimate()["x"], 80.4, delta=1e-6)
         self.assertAlmostEqual(fusion.estimate()["z"], 90.0, delta=1e-6)
 
+    def test_allow_sync_false_records_ws_without_reanchor(self):
+        od = _StubOd()
+        fusion = MinimapPositionFusion(od)
+        fusion.sync((80.0, 0.0, 90.0))
+        od.add(0.0, 0.0, 1.0)
+
+        self.assertFalse(fusion.try_sync((80.4, 0.0, 90.0), allow_sync=False))
+        self.assertAlmostEqual(fusion.estimate()["x"], 80.0, delta=1e-6)
+        self.assertEqual(fusion.rest_diag["reason"], "ok")
+
+        self.assertTrue(fusion.try_sync((80.4, 0.0, 90.0)))
+        self.assertAlmostEqual(fusion.estimate()["x"], 80.4, delta=1e-6)
+
     def test_skips_redundant_resync(self):
         """估计已与 WS 重合 → 重复的 WS 样本不再重锚。
 
@@ -238,12 +250,6 @@ class TestAxisMapping(unittest.TestCase):
         self.assertAlmostEqual(est["x"], -2.0, delta=1e-6)
         self.assertAlmostEqual(est["z"], 5.0, delta=1e-6)
 
-    def test_world_from_map_px(self):
-        m = [[2.0, 0.0], [0.0, -1.0]]
-        w = world_from_map_px((3.0, 4.0), m)
-        self.assertAlmostEqual(w[0], 6.0, delta=1e-6)
-        self.assertAlmostEqual(w[1], -4.0, delta=1e-6)
-
 
 class TestState(unittest.TestCase):
     def _arrow(self, captured):
@@ -283,30 +289,6 @@ class TestState(unittest.TestCase):
         st = fusion.state()
         self.assertIsNone(st["heading"])
         self.assertIsNone(st["heading_score"])
-
-
-    def test_set_from_calibration(self):
-        od = _StubOd()
-        fusion = MinimapPositionFusion(od, scale_m_per_px=1.0)
-        # 标定输出：轴交换+符号，比例尺 3.0
-        calib = {
-            "scale_m_per_px": 3.0,
-            "map_to_world_px": [[0.0, -1.0], [1.0, 0.0]],
-        }
-        fusion.set_from_calibration(calib)
-        fusion.sync((0.0, 0.0, 0.0))
-        od.add(5.0, 2.0, 0.5)
-        est = fusion.step()
-        # world_delta = M @ (5,2) = (-2,5)   （单位已是米，因 map_to_world_px 已含比例）
-        self.assertAlmostEqual(est["x"], -2.0, delta=1e-6)
-        self.assertAlmostEqual(est["z"], 5.0, delta=1e-6)
-
-    def test_set_from_calibration_empty_is_noop(self):
-        od = _StubOd()
-        fusion = MinimapPositionFusion(od, scale_m_per_px=1.0)
-        fusion.set_from_calibration(None)  # 不应报错
-        # 保持默认轴 diag(scale, -scale)
-        self.assertEqual(fusion.map_to_world_px, ((1.0, 0.0), (0.0, -1.0)))
 
 
 if __name__ == "__main__":

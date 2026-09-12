@@ -1,21 +1,41 @@
-# -*- coding: utf-8 -*-
-"""小地图位移里程计标定/验证任务。
+"""小地图位移里程计标定（被动采集）。
 
-通过真实游戏画面运行一组实验，验证"小地图位移里程计"（MinimapOdometry）：
-  - E1 静止：累计位移应≈0（底噪）。
-  - E2 原地转向：累计位移应≈0（验证地图固定不随视角转、内圈 mask 盖住箭头扫掠）。
-  - E3 直走：位移方向应与箭头朝向一致、大小随时间线性；若配置了官方地图 WS
-    真值，则用 WS 绝对坐标标定比例尺 S(米/像素) 与地图系->世界系的坐标轴映射。
-  - E4 走弧线：验证转向+移动路线下的积分轨迹与净位移。
-  - E5 界面切换：开/关大地图时里程计不崩溃、恢复后锚帧重置。
+本任务**不发送任何按键/鼠标**：由你自己在游戏里跑图，任务只做两件事——
 
-本任务只做测量与标定，不把结果写入正式配置（第一版不持久化）。
+1. **同拍采集**：每一拍同时取「里程计累计位移（地图系像素）」与「官方地图 WS 的绝对
+   坐标真值 (x, z)」，成对记录；
+2. **你手动停止后拟合**：用**段内相邻差分**最小二乘拟合出 比例尺 S(米/像素) 与
+   地图系->世界系轴映射矩阵，打印可直接粘贴到「小地图网格导航」配置里的值，并把
+   原始样本保存成 JSON。
+
+拟合原理：相邻两拍取 (Δworld, Δpx)，最小二乘解 ``Δpx = A·Δworld``，再取 ``inv(A)``。
+一直沿单一方向直走只激励一个轴，垂直轴是数值噪声——这种情况会判为**病态**、只给
+比例尺不给轴映射。所以请**至少朝两个明显不同的方向各走一段**（如向东一段、再向北一段）。
+
+为什么静止时重锚（``静止时重锚`` 默认开）
+----------------------------------------
+里程计是逐帧锚定的相位相关，锚帧长期不更新会持续劣化、误差随时间累积。静止时 WS 的
+传输延迟没有影响、是最可信的绝对坐标，用它重锚并清零里程计等于**给每条采集段的漂移
+封顶**；而且重锚后"短段之间"的数据形态，与导航任务实际运行的方式一致，标定结果更贴合
+真实使用。重锚只在真正静止（里程计与 WS 同时显示没动）时发生。
+
+重锚会把里程计清零、地图切换会重置融合——**两者都会让像素原点跳变**，所以都会**切段**
+（``seg`` 递增），跨段差分在拟合时自动跳过；否则那一段差分是坏的。
+
+结束方式：**你跑够了手动停止任务**（或到达「采集超时(秒)」）。手动停止时用已采数据
+照常计算，不会白跑。任务不自动判停——中途短暂停顿不该提前收尾。
 """
+
+import itertools
+import json
+import math
+from datetime import datetime
+from pathlib import Path
 
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
-from src.tasks.mixin.minimap_odometry import wrap_deg
+from src.tasks.mixin.minimap_odometry import _reraise_control_flow
 from src.tasks.mixin.minimap_position_mixin import (
     CONFIG_WS_ACCOUNT,
     CONFIG_WS_CONTENT,
@@ -24,339 +44,260 @@ from src.tasks.mixin.minimap_position_mixin import (
     MinimapPositionMixin,
 )
 
+CONFIG_TICK = "采样间隔(秒)"
+CONFIG_TIMEOUT = "采集超时(秒)"
+CONFIG_REANCHOR_AT_REST = "静止时重锚"
+CONFIG_RAW_DIR = "原始数据目录"
+
 
 class MinimapDisplacementCalibration(BaseEfTask, MinimapPositionMixin):
-    """小地图位移里程计标定测试（工具与调试分组）。"""
+    """小地图位移里程计标定：你跑图，任务被动采集，你手动停止后拟合（工具与调试分组）。"""
 
-    requires_foreground = True  # 需要前台移动/视角操作
+    requires_foreground = True  # 需要你在大世界里跑图，任务本身不发输入
 
-    # 比例尺配置键与定位 mixin 不同（这里 0 表示"自动/不标定"），语义一致都按像素处理
+    # 里程计比例尺键：本任务用它只是为了建里程计，标定结果是量出来的，所以默认不指定
     MINIMAP_SCALE_KEY = "比例尺(米/像素,0=自动)"
     MINIMAP_SCALE_DEFAULT = 0.0
 
-    # 基础采样参数
-    SAMPLE_STEP = 0.25           # 每拍睡眠间隔（秒），同时控住 od 的采样 dt
-    IDLE_DURATION = 2.0          # E1 静止时长（秒）
-    TURN_STEP_DX = 40            # E2 每步鼠标位移量（正负交替，用于原地转向）
-    TURN_STEPS = 20              # E2 转向步数
-    STRAIGHT_DURATION = 3.0      # E3 直走时长（秒）
-    ARC_DURATION = 3.0           # E4 走弧线时长（秒）
-    ARC_TURN_DX = 60             # E4 每步转向的鼠标位移量
-    ARC_TURN_EVERY = 2           # E4 每 N 拍转向一次
-    ARROW_MIN_SCORE = 0.6        # 箭头角度最低置信度
-
-    # 比例尺与真值（0/空=不用真值，仅像素相对测量）
-    SCALE_M_PER_PX = 0.0         # 手动指定 米/像素；为 0 时若 WS 可用则自动标定，否则不标定
-    WS_CONTENT = ""              # 直接填 hg/check 的 data.content 作为真值源
-    WS_ACCOUNT = ""              # 从账号配置页读取对应账号地图同步 content
+    #: screenshots/ 每次启动会被清空，原始数据默认写到不会被清的 logs/ 下
+    RAW_DIR_DEFAULT = "logs/minimap_calibration"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "小地图位移标定"
         self.group_name = "工具与调试"
         self.group_icon = FluentIcon.DEVELOPER_TOOLS
-        self.description = "实测小地图位移里程计（静止/转向/直走/弧线/界面切换）并可选标定比例尺"
+        self.description = "你自己跑图，任务被动采集里程计与 WS 真值，手动停止后拟合比例尺与轴映射"
         self.visible = self.debug
 
-        # 为可选的真值（官方地图 WS 客户端）初始化内部状态。
-        # 标定是连续跑 E1-E5 的实验，期间 E1/E2/E4 不读取 WS 位置，
-        # 若沿用 mixin 默认的消费空闲超时（10s），WS 客户端会在 E3 前自动停止，
-        # 导致真值采不到。这里把空闲超时调大，避免中途被踢。
         self._init_minimap_position_mixin()
+        # 标定期间会长时间不读 WS 也不会真正"空闲"，把消费空闲超时调大，避免中途被踢
         self._map_ws_consumer_idle_timeout = 3600.0
 
         self.default_config = {
-            "采样间隔(秒)": self.SAMPLE_STEP,
-            "静止时长(秒)": self.IDLE_DURATION,
-            "转向步数": self.TURN_STEPS,
-            "转向鼠标dx(每步)": self.TURN_STEP_DX,
-            "直走时长(秒)": self.STRAIGHT_DURATION,
-            "弧线时长(秒)": self.ARC_DURATION,
-            "弧线转向dx(每步)": self.ARC_TURN_DX,
-            "弧线转向间隔(拍)": self.ARC_TURN_EVERY,
-            "箭头最低置信度": self.ARROW_MIN_SCORE,
-            "比例尺(米/像素,0=自动)": self.SCALE_M_PER_PX,
-            CONFIG_WS_CONTENT: self.WS_CONTENT,
-            CONFIG_WS_ACCOUNT: self.WS_ACCOUNT,
+            CONFIG_TICK: 0.25,
+            CONFIG_TIMEOUT: 600.0,
+            CONFIG_REANCHOR_AT_REST: True,
+            CONFIG_RAW_DIR: self.RAW_DIR_DEFAULT,
+            CONFIG_WS_CONTENT: "",
+            CONFIG_WS_ACCOUNT: "",
             CONFIG_WS_WAIT: 10.0,
             CONFIG_WS_MIN_HITS: 3,
-            "启用E1静止": True,
-            "启用E2转向": True,
-            "启用E3直走": True,
-            "启用E4弧线": True,
-            "启用E5界面": True,
         }
         self.config_description = {
-            "采样间隔(秒)": "每拍采样的睡眠间隔；同时也决定 od 的锚帧时间窗",
-            "静止时长(秒)": "E1 原地不动的采样时长，用于测底噪",
-            "转向步数": "E2 原地转向的鼠标步数（正负交替），用于验证地图固定",
-            "转向鼠标dx(每步)": "E2 每步相对鼠标位移像素值",
-            "直走时长(秒)": "E3 持续按住 W 的时长",
-            "弧线时长(秒)": "E4 走弧线的总时长（边前进边转视角）",
-            "弧线转向dx(每步)": "E4 每次转向的鼠标位移像素值",
-            "弧线转向间隔(拍)": "E4 每几拍转向一次",
-            "箭头最低置信度": "箭头角度检测最低置信度，低于该值该方向读数为不可用",
-            "比例尺(米/像素,0=自动)": "手动指定比例尺；为 0 且配置了 WS 真值时自动标定，否则仅像素相对测量",
-            CONFIG_WS_CONTENT: "可选。直接填官方地图 hg/check 返回的 data.content 作为真值来源",
+            CONFIG_TICK: "每拍采样的间隔；越小样本越密（也越吃 CPU）",
+            CONFIG_TIMEOUT: "采集的最长时间上限（秒），到点用已采数据计算",
+            CONFIG_REANCHOR_AT_REST: "静止时用 WS 重锚并清零里程计（每条采集段的漂移封顶，"
+                                     "且更贴近导航的真实运行方式）。关掉则全程只用一条累积里程计",
+            CONFIG_RAW_DIR: "原始样本 JSON 的保存目录（screenshots/ 每次启动会清空，勿填那里）",
+            CONFIG_WS_CONTENT: "可选。官方地图 hg/check 的 data.content，提供绝对坐标真值",
             CONFIG_WS_ACCOUNT: "可选。content 为空时从账号配置页读取该账号的地图同步 content",
-            CONFIG_WS_WAIT: "等 WS 真值流稳定（连续收到同一 mapId 的有效位置）的最长等待秒数；未稳定则跳过比例尺标定",
-            CONFIG_WS_MIN_HITS: "判为稳定所需的连续有效位置个数（同一 mapId）",
-            "启用E1静止": "是否执行 E1 静止实验",
-            "启用E2转向": "是否执行 E2 原地转向实验",
-            "启用E3直走": "是否执行 E3 直走实验",
-            "启用E4弧线": "是否执行 E4 走弧线实验",
-            "启用E5界面": "是否执行 E5 开/关大地图实验",
+            CONFIG_WS_WAIT: "等 WS 真值流稳定（连续收到同一 mapId 的有效位置）的最长秒数",
+            CONFIG_WS_MIN_HITS: "判为稳定所需的连续有效位置个数",
         }
 
-        # 里程计由 mixin 统一构建（比例尺读 MINIMAP_SCALE_KEY），run 开头赋给 self._od
-        self._od = None
+        self._records = []
+        self._map_id = None
+        self._seg = 0
+        self._last_recorded_ws = None
+        self._travel_m = 0.0
+        self._finished_by = ""
 
     # ------------------------------------------------------------------ #
-    # 实验
+    # 主流程
     # ------------------------------------------------------------------ #
     def run(self):
-        self.log_info("=== Minimap Displacement Calibration ===", notify=True)
+        self.log_info("=== 小地图位移标定（被动采集）===", notify=True)
         if not self.in_world():
-            self.log_info("当前不在大世界画面，无法执行位移标定。请先进入大世界。", notify=True)
+            self.log_warning("当前不在大世界画面，无法采集小地图位移。请先进入大世界。", notify=True)
             return
 
-        # 建里程计+融合、启动位置源（有 content 用官方地图 WS 客户端）、等真值流稳定并设锚点
-        ws_truth = self.start_minimap_position()
-        self._od = self.minimap_odometry
-        self._od.reset(reset_position=True)
-        if ws_truth:
-            self.log_info("WS 真值流已稳定，开始标定", notify=True)
-        else:
+        # 建里程计+融合、启动位置源、等 WS 真值流稳定
+        if not self.start_minimap_position():
             self.log_warning(
-                "没有可用的 WS 真值（未配置 content / 认证失败 / 等稳定超时）："
-                "跳过比例尺与轴映射标定，E3 仅做相对测量",
+                "没有可用的官方地图 WS 真值（未配置 content / 未选地图账号 / 认证失败 / 等稳定超时）。"
+                "没有绝对坐标就无法标定比例尺与轴映射，请先配置真值来源。",
                 notify=True,
             )
+            self.stop_minimap_position()
+            return
 
-        ws_active = ws_truth
+        self._reset_state()
+        try:
+            self._collect()
+        finally:
+            # 手动停止任务时也会走到这里：用已采数据照常计算，不会白跑
+            self._stop_and_report()
 
-        results = {}
-        # 汇总 E3/E4 的 WS 真值点，用于一次 2D 拟合（单一直线行走只激励一个轴，
-        # 合并转向/弧线数据能把两个方向都定住，避免非对角项成为噪声）。
-        self._ws_records = []
-        if self._cfg_bool("启用E1静止", True):
-            results["E1_idle"] = self._exp_idle()
-        if self._cfg_bool("启用E2转向", True):
-            results["E2_turn"] = self._exp_turn()
-        if self._cfg_bool("启用E3直走", True):
-            results["E3_straight"] = self._exp_straight(ws_active)
-        if self._cfg_bool("启用E4弧线", True):
-            results["E4_arc"] = self._exp_arc(ws_active)
-        if self._cfg_bool("启用E5界面", True):
-            results["E5_ui"] = self._exp_ui()
+    def _reset_state(self) -> None:
+        self._records = []
+        self._map_id = None
+        self._seg = 0
+        self._last_recorded_ws = None
+        self._travel_m = 0.0
+        self._finished_by = ""
 
-        if ws_active and len(self._ws_records) >= 3:
-            scale_info = self._fit_scale_axis(self._ws_records)
-            if scale_info is not None:
-                results["scale"] = scale_info
-                cond = scale_info.get("condition")
-                if scale_info.get("ill_conditioned"):
-                    self.log_warning(
-                        f"本次行走近单方向（条件数 {cond:.1f}），垂直轴不可靠，"
-                        "本次不输出轴映射（map_to_world_px=None），只给比例尺；"
-                        "建议启用 E4 弧线或换方向再走一段，以便把轴映射定准",
-                        notify=True,
-                    )
+    def _collect(self) -> None:
+        tick = max(0.05, self._cfg_float(CONFIG_TICK, 0.25))
+        timeout = max(1.0, self._cfg_float(CONFIG_TIMEOUT, 600.0))
+        allow_sync = self._cfg_bool(CONFIG_REANCHOR_AT_REST, True)
 
-        self._report(results)
-
-        # 收尾：WS 未稳定时可能没有锚点，但位置源线程已经起来了，一律停掉（内部幂等）
-        self.stop_minimap_position()
-
-    def _sample_for(self, duration):
-        """按固定间隔采样 duration 秒，返回样本列表。"""
-        step = max(0.05, self._cfg_float("采样间隔(秒)", self.SAMPLE_STEP))
-        start = self.active_time()
-        out = []
-        while self.active_time() - start < duration:
-            self.sleep(step)
-            r = self._od.sample()
-            out.append(r)
-        return out
-
-    def _exp_idle(self):
-        duration = self._cfg_float("静止时长(秒)", self.IDLE_DURATION)
-        self.log_info(f"=== E1 静止 ({duration:.1f}s) ===", notify=True)
-        # 先重置，从清空位置开始
-        self._od.reset_position()
-        samples = self._sample_for(duration)
-        pos = self._od.position_px()
-        moved = sum(1 for s in samples if s.get("sampled") and s.get("ok"))
-        return {
-            "samples": len(samples),
-            "moved": moved,
-            "pos_px": pos,
-            "len_px": (pos[0] ** 2 + pos[1] ** 2) ** 0.5,
-        }
-
-    def _exp_turn(self):
-        steps = max(1, self._cfg_int("转向步数", self.TURN_STEPS))
-        dx = self._cfg_int("转向鼠标dx(每步)", self.TURN_STEP_DX)
-        self.log_info(f"=== E2 原地转向 ({steps} 步, dx={dx}) ===", notify=True)
-        self._od.reset_position()
-        before_angle, before_score = self._read_arrow()
-        out = []
-        for i in range(steps):
-            direction = dx if i % 2 == 0 else -dx
-            try:
-                self.active_and_send_mouse_delta(dx=direction, dy=0, steps=2, delay=0.005)
-            except Exception as e:
-                self.log_warning(f"E2 鼠标位移失败: {e}")
-                continue
-            self.sleep(self._cfg_float("采样间隔(秒)", self.SAMPLE_STEP))
-            out.append(self._od.sample())
-        after_angle, after_score = self._read_arrow()
-        pos = self._od.position_px()
         self.log_info(
-            f"E2: before_angle={before_angle}  after_angle={after_angle}  "
-            f"位移 len={ (pos[0]**2+pos[1]**2)**0.5 :.2f}px"
+            "开始被动采集：请自行跑图，建议朝两个以上不同方向各走一段；"
+            + ("静止时会用 WS 重锚并切段。" if allow_sync else "采集期间不重锚。")
+            + "走到足够多之后手动停止任务即可得到标定结果。",
+            notify=True,
         )
-        d_yaw = None
-        if after_angle is not None and before_angle is not None:
-            # 归一化到 (-180, 180]：否则 350° -> 10° 会被算成 -340°
-            d_yaw = (wrap_deg(after_angle) - wrap_deg(before_angle) + 180.0) % 360.0 - 180.0
-        return {
-            "steps": steps,
-            "pos_px": pos,
-            "len_px": (pos[0] ** 2 + pos[1] ** 2) ** 0.5,
-            "d_yaw": d_yaw,
-        }
 
-    def _exp_straight(self, ws_active):
-        duration = self._cfg_float("直走时长(秒)", self.STRAIGHT_DURATION)
-        self.log_info(f"=== E3 直走 ({duration:.1f}s) ===", notify=True)
-        self._od.reset_position()
-        heading, h_score = self._read_arrow()
-        ws_records = []
+        started = self.active_time()
+        while self.active_time() - started < timeout:
+            self._sample_once(allow_sync=allow_sync)
+            self.info_set(
+                "小地图标定",
+                f"采样 {len(self._records)} 条 | 行程 {self._travel_m:.1f}m | 段 {self._seg + 1}",
+            )
+            self.sleep(tick)
+
+        self._finished_by = "采集超时"
+        self.log_warning(f"采集超时（{timeout:.0f}s），用已采数据计算", notify=True)
+
+    def _sample_once(self, *, allow_sync: bool) -> None:
+        """采一拍：里程计与 WS 真值同拍配对记录；重锚/换地图时切段。"""
         try:
-            self.send_key_down("w")
+            st = self.minimap_position(frame=self.next_frame(), allow_sync=allow_sync)
         except Exception as e:
-            self.log_warning(f"E3 send_key_down('w') 失败: {e}")
-            return {"error": str(e)}
-        try:
-            start = self.active_time()
-            while self.active_time() - start < duration:
-                self.sleep(self._cfg_float("采样间隔(秒)", self.SAMPLE_STEP))
-                self._od.sample()
-                if ws_active:
-                    pos_ws = self._poll_ws_position(timeout=0.0)
-                    # 仅接受与稳定 mapId 一致的新位置，避免跨地图/陈旧数据污染标定
-                    if pos_ws is not None and pos_ws[3] == self._minimap_ws_map_id:
-                        rec = {
-                            "t": self.active_time(),
-                            "x": pos_ws[0], "y": pos_ws[1], "z": pos_ws[2],
-                            "px": self._od.position_px(),
-                            "seg": "E3",
-                        }
-                        ws_records.append(rec)
-                        self._ws_records.append(rec)
-        finally:
-            # sleep 在任务被停用/结束时抛控制流异常，走不到下面的松键代码；
-            # 必须在 finally 里松 W，否则角色会一直前进。
-            try:
-                self.send_key_up("w")
-            except Exception as e:
-                self.log_warning(f"E3 send_key_up('w') 失败: {e}")
-        end_pos = self._od.position_px()
-        fwd, strafe = self._od.forward_strafe_m(heading)
-        result = {
-            "heading": heading,
-            "h_score": h_score,
-            "pos_px": end_pos,
-            "len_px": (end_pos[0] ** 2 + end_pos[1] ** 2) ** 0.5,
-            "forward": fwd,
-            "strafe": strafe,
-            "ws_records": len(ws_records),
-        }
-        return result
+            # 任务被停用/结束时抛的是框架控制流异常，必须放行交给外层收尾
+            _reraise_control_flow(e)
+            self.log_warning(f"采样失败: {e}")
+            return
 
-    def _exp_arc(self, ws_active):
-        duration = self._cfg_float("弧线时长(秒)", self.ARC_DURATION)
-        turn_dx = self._cfg_int("弧线转向dx(每步)", self.ARC_TURN_DX)
-        every = max(1, self._cfg_int("弧线转向间隔(拍)", self.ARC_TURN_EVERY))
-        self.log_info(f"=== E4 走弧线 ({duration:.1f}s, turn_dx={turn_dx}, every={every}) ===", notify=True)
-        self._od.reset_position()
-        step = self._cfg_float("采样间隔(秒)", self.SAMPLE_STEP)
+        # 静止重锚会把里程计清零（换地图会重置融合）——像素原点跳变，必须切段，
+        # 否则跨这段的差分是坏的。注意 sync_checked 但非 just_synced 表示"已对齐、未重锚"，
+        # 那种情况里程计没被清零，不能切段。
+        if st.get("just_synced"):
+            self._seg += 1
+        map_id = st.get("map_id")
+        if self._map_id is not None and map_id is not None and map_id != self._map_id:
+            self._seg += 1
+        if map_id is not None:
+            self._map_id = map_id
+
+        if not st.get("odom_ok"):
+            return
+
+        ws = st.get("ws")
+        if ws is None or ws == self._last_recorded_ws:
+            return
+        if self._last_recorded_ws is not None:
+            self._travel_m += math.hypot(
+                ws[0] - self._last_recorded_ws[0], ws[1] - self._last_recorded_ws[1])
+        self._last_recorded_ws = ws
+
+        od = self.minimap_odometry
+        px = od.position_px()
+        self._records.append({
+            "t": round(self.active_time(), 3),
+            "x": ws[0],
+            "z": ws[1],
+            "px": [round(px[0], 4), round(px[1], 4)],
+            "seg": self._seg,
+            "map_id": self._map_id,
+        })
+
+    # ------------------------------------------------------------------ #
+    # 计算与报告
+    # ------------------------------------------------------------------ #
+    def _stop_and_report(self) -> None:
         try:
-            self.send_key_down("w")
+            self.stop_minimap_position()
         except Exception as e:
-            self.log_warning(f"E4 send_key_down('w') 失败: {e}")
-            return {"error": str(e)}
-        try:
-            start = self.active_time()
-            i = 0
-            while self.active_time() - start < duration:
-                self.sleep(step)
-                if i % every == 0:
-                    try:
-                        self.active_and_send_mouse_delta(dx=turn_dx, dy=0, steps=2, delay=0.005)
-                    except Exception as e:
-                        self.log_warning(f"E4 转向失败: {e}")
-                self._od.sample()
-                if ws_active:
-                    pos_ws = self._poll_ws_position(timeout=0.0)
-                    if pos_ws is not None and pos_ws[3] == self._minimap_ws_map_id:
-                        self._ws_records.append({
-                            "t": self.active_time(),
-                            "x": pos_ws[0], "y": pos_ws[1], "z": pos_ws[2],
-                            "px": self._od.position_px(),
-                            "seg": "E4",
-                        })
-                i += 1
-        finally:
-            # 同 E3：走不到正常松键路径时也必须松开 W
-            try:
-                self.send_key_up("w")
-            except Exception as e:
-                self.log_warning(f"E4 send_key_up('w') 失败: {e}")
-        pos = self._od.position_px()
-        self.log_info(f"E4 净位移: {pos[0]:.2f},{pos[1]:.2f}px  len={(pos[0]**2+pos[1]**2)**0.5:.2f}px")
-        return {"pos_px": pos, "len_px": (pos[0] ** 2 + pos[1] ** 2) ** 0.5}
+            self.log_warning(f"停止位置源失败: {e}")
 
-    def _exp_ui(self):
-        self.log_info("=== E5 界面切换（开/关大地图） ===", notify=True)
-        self._od.reset_position()
-        before = self._od.sample()
-        try:
-            self.press_key("m")
-        except Exception as e:
-            self.log_warning(f"E5 开地图失败: {e}")
-            return {"error": str(e)}
-        self.sleep(0.6)
-        in_map_samples = []
-        for _ in range(3):
-            self.sleep(self._cfg_float("采样间隔(秒)", self.SAMPLE_STEP))
-            in_map_samples.append(self._od.sample())
-        try:
-            self.press_key("m")
-        except Exception as e:
-            self.log_warning(f"E5 关地图失败: {e}")
-        self.sleep(0.6)
-        after = self._od.sample()
-        reasons = []
-        for s in in_map_samples:
-            reasons.append(s.get("reason"))
-        return {
-            "before_reason": before.get("reason"),
-            "in_map_reasons": reasons,
-            "after_reason": after.get("reason"),
-            "pos_px": self._od.position_px(),
-        }
+        records = self._records
+        if len(records) < 2:
+            self.log_warning(
+                f"采集样本不足（{len(records)} 条），无法标定。"
+                "请确认已配置 WS 真值，并真的在游戏里走动过。",
+                notify=True,
+            )
+            return
 
-    def _fit_scale_axis(self, records):
-        """从 (t, x, y, z, px, seg) 记录序列估算比例尺与地图系->世界系坐标映射。
+        scale_info = self._fit_scale_axis(records)
+        self._report_calibration(scale_info, records)
+        self._dump_raw(records, scale_info)
 
-        采用**段内相邻差分**：每条记录带 ``seg``（如 E3/E4），只对同段内相邻
-        两个记录取 (d_world, d_px)，跨段（实验间 reset_position 造成的跳变）跳过。
-        这样不同段各自复位也不会污染坐标一致；对曲线路径同样适用。
+    def _report_calibration(self, scale_info, records) -> None:
+        self.log_info(
+            f"采集结束（{self._finished_by or '手动停止'}）：样本 {len(records)} 条，"
+            f"行程 {self._travel_m:.1f}m，段 {self._seg + 1} 个"
+        )
+        if scale_info is None:
+            self.log_warning(
+                f"有效差分对不足（{len(records)} 条样本）："
+                "需要同段内至少 2 组相邻差分，请多走一段后重跑。",
+                notify=True,
+            )
+            return
+
+        self.log_info("===== 标定结果 =====", notify=True)
+        self.log_info(
+            f"有效差分对 {scale_info['n']} 组，"
+            f"条件数 {scale_info['condition']}（>10 视为近单方向，轴映射不可靠）"
+        )
+        self.log_info(f"比例尺(米/像素) = {scale_info['scale_m_per_px']:.6f}", notify=True)
+        self.log_info(f"（参考：逐点比值中位数 = {scale_info.get('median_m_per_px')}）")
+
+        matrix = scale_info.get("map_to_world_px")
+        if matrix is None:
+            self.log_warning(
+                "轴映射不可用：本次行走近单方向，垂直轴没有被激励。"
+                "请换一个明显不同的方向再走一段后重跑。",
+                notify=True,
+            )
+        else:
+            flat = f"{matrix[0][0]:.6f},{matrix[0][1]:.6f},{matrix[1][0]:.6f},{matrix[1][1]:.6f}"
+            self.log_info(f"轴映射(逗号4值) = {flat}", notify=True)
+            self.log_info(
+                "把上面两行分别填入「小地图网格导航」的「比例尺(米/像素)」与「轴映射(逗号4值)」。"
+            )
+
+    def _dump_raw(self, records, scale_info) -> None:
+        raw_dir = str(self.config.get(CONFIG_RAW_DIR, self.RAW_DIR_DEFAULT) or "").strip()
+        if not raw_dir:
+            return
+        try:
+            directory = Path(raw_dir)
+            directory.mkdir(parents=True, exist_ok=True)
+            stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            path = directory / f"calibration_{stamp}.json"
+            path.write_text(
+                json.dumps({
+                    "created": stamp,
+                    "map_id": self._map_id,
+                    "segments": self._seg + 1,
+                    "finished_by": self._finished_by or "手动停止",
+                    "travel_m": round(self._travel_m, 3),
+                    "result": scale_info,
+                    "samples": records,
+                }, ensure_ascii=False, indent=2),
+                encoding="utf-8",
+            )
+            self.log_info(f"原始数据已保存: {path}", notify=True)
+        except OSError as e:
+            self.log_warning(f"原始数据保存失败: {e}")
+
+    # ------------------------------------------------------------------ #
+    # 拟合（段内相邻差分 + 病态检测）
+    # ------------------------------------------------------------------ #
+    @staticmethod
+    def _fit_scale_axis(records):
+        """从 (t, x, z, px, seg) 记录序列估算比例尺与地图系->世界系坐标映射。
+
+        采用**段内相邻差分**：每条记录带 ``seg``（重锚/换地图时递增），只对同段内相邻
+        两个记录取 (d_world, d_px)，跨段跳过。这样像素原点被清零也不会污染拟合。
 
         返回：
-          - scale_m_per_px: 米/像素（|d_world_xz|/|d_px| 的中位数）
+          - scale_m_per_px: 米/像素（|d_world_xz|/|d_px| 的总位移长度比）
           - map_to_world_px: 2x2，地图系像素 -> 世界系米（inv(A)，含轴/符号）；
             近单方向行走（ill_conditioned）时为 None——这时垂直轴完全没被激励，
             解出的映射是数值噪声，不能当标定结果用
@@ -368,8 +309,8 @@ class MinimapDisplacementCalibration(BaseEfTask, MinimapPositionMixin):
 
         dws = []
         dpxs = []
-        for prev, cur in zip(records[:-1], records[1:]):
-            # 跨段（复位）或缺少坐标/像素则跳过
+        for prev, cur in itertools.pairwise(records):
+            # 跨段（重锚/换地图）或缺少坐标/像素则跳过
             if prev.get("seg") != cur.get("seg"):
                 continue
             p = prev.get("px")
@@ -391,7 +332,7 @@ class MinimapDisplacementCalibration(BaseEfTask, MinimapPositionMixin):
         sum_p = float(np.sum(np.hypot(dpxs[:, 0], dpxs[:, 1])))
         meters_per_px = (sum_w / sum_p) if sum_p > 1e-9 else 0.0
         # 参考：逐点比值中位数
-        ratios = [np.hypot(dw[0], dw[1]) / np.hypot(dp[0], dp[1]) for dw, dp in zip(dws, dpxs)]
+        ratios = [np.hypot(dw[0], dw[1]) / np.hypot(dp[0], dp[1]) for dw, dp in zip(dws, dpxs, strict=True)]
         median_m_per_px = float(np.median(ratios)) if ratios else 0.0
         # 最小二乘拟合 d_px = A @ d_world（A: world系 -> map系像素）
         A, *_ = np.linalg.lstsq(dws, dpxs, rcond=None)
@@ -428,58 +369,3 @@ class MinimapDisplacementCalibration(BaseEfTask, MinimapPositionMixin):
             "condition": round(cond, 2),
             "ill_conditioned": bool(ill),
         }
-
-    def _report(self, results):
-        self.log_info("===== 标定结果汇总 =====", notify=True)
-
-        def _ok(key):
-            """取一项实验结果的字典；未执行/失败时打印原因并返回 None。
-
-            实验内部失败会返回 ``{"error": ...}``，这里必须先挡掉——否则下面取
-            ``r['heading']`` 之类的字段会 KeyError，把整份汇总（含前面已成功的
-            实验）一起丢掉。
-            """
-            r = results.get(key)
-            if r is None:
-                self.log_info(f"{key}: (未执行)")
-                return None
-            if "error" in r:
-                self.log_info(f"{key}: (失败) {r['error']}")
-                return None
-            return r
-
-        r = _ok("E1_idle")
-        if r is not None:
-            self.log_info(
-                f"E1 静止: 样本={r['samples']} 有位移样本={r['moved']} "
-                f"累计位移=({r['pos_px'][0]:.2f},{r['pos_px'][1]:.2f})px  len={r['len_px']:.2f}px"
-            )
-        r = _ok("E2_turn")
-        if r is not None:
-            self.log_info(
-                f"E2 转向: 步数={r['steps']} 位移len={r['len_px']:.2f}px "
-                f"Δyaw={r['d_yaw']}"
-            )
-        r = _ok("E3_straight")
-        if r is not None:
-            self.log_info(
-                f"E3 直走: heading={r['heading']} 位移=({r['pos_px'][0]:.2f},{r['pos_px'][1]:.2f})px "
-                f"len={r['len_px']:.2f}px  forward={r['forward']:.2f}  strafe={r['strafe']:.2f}  "
-                f"ws_records={r['ws_records']}"
-            )
-        r = results.get("scale")
-        if r is not None:
-            axis_txt = r.get("map_to_world_px") or "不可用(行走近单方向)"
-            self.log_info(
-                f"比例尺标定(E3+E4合并): scale_m_per_px={r['scale_m_per_px']}  "
-                f"(median={r.get('median_m_per_px')})  "
-                f"map_to_world_px={axis_txt}  n={r['n']}  "
-                f"condition={r['condition']}  ill_conditioned={r['ill_conditioned']}",
-                notify=True,
-            )
-        r = _ok("E4_arc")
-        if r is not None:
-            self.log_info(f"E4 弧线: 净位移=({r['pos_px'][0]:.2f},{r['pos_px'][1]:.2f})px  len={r['len_px']:.2f}px")
-        r = _ok("E5_ui")
-        if r is not None:
-            self.log_info(f"E5 界面: before={r['before_reason']} in_map={r['in_map_reasons']} after={r['after_reason']}")

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """导航网格表示与读写（src/nav/grid_io.py）的单元测试。
 
 不需要游戏窗口：合成网格 + 临时目录即可覆盖格式校验、坐标换算、邻域、
@@ -130,7 +129,7 @@ class TestNeighbors(unittest.TestCase):
 
 
 class TestClearance(unittest.TestCase):
-    def test_distance_and_inflate(self):
+    def test_distance(self):
         grid = _grid(["ooo", "o#o", "ooo"])
         dist = grid.clearance()
         self.assertEqual(dist[1, 1], 0)                 # 阻挡格自身
@@ -138,21 +137,20 @@ class TestClearance(unittest.TestCase):
         self.assertEqual(dist[1, 0], 1)
         self.assertEqual(dist[0, 1], 1)
 
-        inflated = grid.inflate_blocked(1)
-        self.assertTrue(inflated.is_blocked(1, 0))
-        self.assertTrue(inflated.is_blocked(0, 1))
-        self.assertFalse(inflated.is_blocked(0, 0))     # 距离 2，margin 1 不动它
-        self.assertEqual(inflated.counts()["阻挡"], grid.counts()["阻挡"] + 4)
-        # 原网格不受影响
-        self.assertFalse(grid.is_blocked(1, 0))
-
     def test_one_when_no_blocked(self):
         dist = _grid(["oo", "oo"]).clearance()
         self.assertTrue((dist == -1).all())
 
-    def test_margin_zero_keeps_grid(self):
-        grid = _grid(["o#", "oo"])
-        self.assertTrue(np.array_equal(grid.inflate_blocked(0).cells, grid.cells))
+
+    def test_frontier_clearance(self):
+        grid = _grid(["o.o", "ooo"])
+        dist = grid.frontier_clearance()
+        self.assertEqual(dist[0, 1], 0)                  # 未知格自身
+        self.assertEqual(dist[0, 0], 1)
+        self.assertEqual(dist[0, 2], 1)
+        self.assertEqual(dist[1, 1], 1)
+        self.assertEqual(dist[1, 0], 2)
+        self.assertEqual(dist[1, 2], 2)
 
 
 class TestNearestFree(unittest.TestCase):
