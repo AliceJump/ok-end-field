@@ -228,7 +228,7 @@ requires-dist = [
     { name = "cryptography", specifier = ">=44.0.0" },
     { name = "json5", specifier = "==0.15.0" },
     { name = "numpy", specifier = ">=2.0.0" },
-    { name = "ok-script", specifier = "==2.0.4" },
+    { name = "ok-script", specifier = "==2.0.7b1" },
     { name = "onnxocr-ppocrv5", specifier = "==0.0.14" },
     { name = "opencv-python", specifier = "==4.12.0.88" },
     { name = "openvino", specifier = "==2026.0.0" },
@@ -252,7 +252,7 @@ dev = [
 
 [[package]]
 name = "ok-script"
-version = "2.0.4"
+version = "2.0.7b1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mouse" },
@@ -265,9 +265,9 @@ dependencies = [
     { name = "requests" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c7/e6/f9fbac76aca85f38dc8e1464701d7a22b9e653ec8e1e2bf50d2577522f8b/ok_script-2.0.4.tar.gz", hash = "sha256:5dc3a90a12e374d72dafef8415952bcfa76035f0f5aab831de7ad8b06c2265cb", size = 1082937, upload-time = "2026-08-20T17:09:35.206Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/72/df/e27d453882a7fadab94f0d7d9540e9ab836aacfb05ab7312a52e5e73bd03/ok_script-2.0.7b1.tar.gz", hash = "sha256:b3c95121ee60cb4c0904c1592db50e85e9b1dd72587b716b4a2658ce8371abdf", size = 1117009, upload-time = "2026-09-05T09:56:02.237Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d4/2f/211fd57e153057ab58756e1aa59489fca1f81c991e43fc360c765ddf5dc6/ok_script-2.0.4-py3-none-any.whl", hash = "sha256:425dcc023f8000a610bbf8de38c454e0f940e2cf3f92e67ea1d6eae2078016da", size = 1113286, upload-time = "2026-08-20T17:09:33.67Z" },
+    { url = "https://files.pythonhosted.org/packages/f3/c9/9fbc47e8acf50ded04a234a7522d29de6856d56186ec264e3c1a2f08aa32/ok_script-2.0.7b1-py3-none-any.whl", hash = "sha256:7d9b9570d22390f9edcd612ea2a700e9365b8706318caeb6e520f7228de1fe75", size = 1139070, upload-time = "2026-09-05T09:56:00.716Z" },
 ]
 
 [[package]]
