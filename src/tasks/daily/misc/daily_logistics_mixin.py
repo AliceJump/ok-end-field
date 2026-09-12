@@ -93,6 +93,32 @@ class DailyLogisticsMixin:
         self.log_info("转交委托奖励领取完成")
         return True
 
+    def _click_transfer_commission_in_task_panel(self, max_scroll=7):
+        """在任务面板中向下滚动查找并点击「转交运送委托」。
+
+        「转交运送委托」位于任务面板列表的折叠线以下时，
+        只做一次静态识别会直接漏判，并被误当成「本次活动不可转交」而放弃。
+        因此在面板内向下滚动重试，滚动次数与
+        daily_credit_mixin.collect_credit 的滚动重试保持一致。
+
+        Args:
+            max_scroll: 最大向下滚动次数。
+
+        Returns:
+            bool: 找到并点击返回 True；滚动次数耗尽仍未找到返回 False。
+        """
+        if self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_1dd73947, box=self.box.bottom_left, time_out=5):
+            return True
+
+        for _ in range(max_scroll):
+            self.scroll_relative(0.5, 0.5, -4)
+            self.wait_ui_stable(refresh_interval=1)
+            if self.wait_click_ocr(
+                match=self.lang.daily_routine_mixin.k_1dd73947, box=self.box.bottom_left, time_out=5
+            ):
+                return True
+        return False
+
     def delivery_send_others(self):
         self.info_set("current_task", "delivery_send_others")
 
@@ -192,9 +218,7 @@ class DailyLogisticsMixin:
                 self.ensure_main()
                 self.press_key("j", after_sleep=1)
 
-                if not self.wait_click_ocr(
-                    match=self.lang.daily_routine_mixin.k_1dd73947, box=self.box.bottom_left, time_out=5
-                ):
+                if not self._click_transfer_commission_in_task_panel():
                     self.log_info("未找到 '转交运送委托' 按钮，跳过本次活动")
                     self.ensure_main()
                     break
