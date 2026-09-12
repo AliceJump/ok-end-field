@@ -1,0 +1,879 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>物品导航 · 使用说明</title>
+<style>
+  :root {
+    --bg: #f5f6f8;
+    --panel: #ffffff;
+    --panel-2: #fbfcfd;
+    --line: #e3e6ea;
+    --line-strong: #cdd3da;
+    --text: #1f2328;
+    --text-2: #59636e;
+    --text-3: #808a94;
+    --accent: #0f766e;
+    --accent-soft: #e6f4f2;
+    --indigo: #4f46e5;
+    --indigo-soft: #eef0fe;
+    --warn: #b45309;
+    --warn-soft: #fdf3e3;
+    --danger: #b91c1c;
+    --danger-soft: #fdecec;
+    --ok: #15803d;
+    --ok-soft: #e9f7ee;
+    --code-bg: #f2f4f6;
+    --arrow-green: #15803d;
+    --arrow-yellow: #b45309;
+    --radius: 12px;
+    --shadow: 0 1px 2px rgba(16,24,40,.05), 0 4px 14px rgba(16,24,40,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171a;
+      --panel: #1b1f23;
+      --panel-2: #20252a;
+      --line: #2c333a;
+      --line-strong: #3a434c;
+      --text: #e6e9ec;
+      --text-2: #a8b2bc;
+      --text-3: #7c8791;
+      --accent: #5eead4;
+      --accent-soft: #17322f;
+      --indigo: #a5b4fc;
+      --indigo-soft: #23244a;
+      --warn: #fbbf24;
+      --warn-soft: #33270f;
+      --danger: #f87171;
+      --danger-soft: #3a1d1d;
+      --ok: #4ade80;
+      --ok-soft: #14301f;
+      --code-bg: #23282e;
+      --arrow-green: #22c55e;
+      --arrow-yellow: #facc15;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 6px 20px rgba(0,0,0,.28);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.75 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+          "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans SC", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1000px; margin: 0 auto; padding: 0 20px 72px; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    padding: 44px 0 26px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 26px;
+  }
+  .hero h1 {
+    margin: 0 0 10px;
+    font-size: 32px;
+    line-height: 1.25;
+    letter-spacing: -.4px;
+  }
+  .hero p.lead { margin: 0; color: var(--text-2); max-width: 74ch; }
+  .chips { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 999px;
+    background: var(--panel); border: 1px solid var(--line);
+    font-size: 12.5px; color: var(--text-2);
+  }
+  .chip b { color: var(--text); font-weight: 600; }
+  .chip.teal { background: var(--accent-soft); border-color: transparent; color: var(--accent); }
+  .chip.indigo { background: var(--indigo-soft); border-color: transparent; color: var(--indigo); }
+
+  /* ---------- toc ---------- */
+  .toc {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px 18px; box-shadow: var(--shadow); margin-bottom: 30px;
+  }
+  .toc h2 { margin: 0 0 10px; font-size: 13px; color: var(--text-3); font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  .toc ol { margin: 0; padding-left: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 18px; counter-reset: t; }
+  .toc a { color: var(--text-2); text-decoration: none; font-size: 14px; display: block; padding: 3px 0; border-bottom: 1px dashed transparent; }
+  .toc a:hover { color: var(--accent); border-bottom-color: var(--accent); }
+  .toc a::before { counter-increment: t; content: counter(t) ". "; color: var(--text-3); }
+
+  /* ---------- section ---------- */
+  section { margin: 0 0 38px; scroll-margin-top: 16px; }
+  h2.sec {
+    font-size: 22px; margin: 0 0 14px; padding-bottom: 8px;
+    border-bottom: 2px solid var(--line); letter-spacing: -.2px;
+  }
+  h2.sec .n {
+    display: inline-block; min-width: 28px; height: 28px; line-height: 28px;
+    text-align: center; border-radius: 8px; background: var(--accent-soft);
+    color: var(--accent); font-size: 14px; margin-right: 10px; vertical-align: 2px;
+  }
+  h3 { font-size: 16.5px; margin: 24px 0 8px; }
+  h4 { font-size: 14.5px; margin: 18px 0 6px; color: var(--text-2); }
+  p { margin: 10px 0; }
+  ul, ol { margin: 10px 0; padding-left: 22px; }
+  li { margin: 5px 0; }
+  a { color: var(--accent); }
+
+  code {
+    background: var(--code-bg); padding: 1px 6px; border-radius: 5px;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", monospace;
+    font-size: .88em;
+  }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line);
+    border-radius: 10px; padding: 12px 14px; overflow-x: auto; margin: 12px 0;
+    font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", monospace;
+    font-size: 13px; line-height: 1.65;
+  }
+  pre code { background: none; padding: 0; }
+
+  /* ---------- card ---------- */
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 18px 20px; box-shadow: var(--shadow); margin: 16px 0;
+  }
+  .card > :first-child { margin-top: 0; }
+  .card > :last-child { margin-bottom: 0; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+
+  /* ---------- callout ---------- */
+  .note {
+    border-left: 3px solid var(--line-strong); background: var(--panel-2);
+    border-radius: 0 10px 10px 0; padding: 12px 16px; margin: 14px 0;
+  }
+  .note .t { font-weight: 600; font-size: 13.5px; display: block; margin-bottom: 3px; }
+  .note.tip { border-left-color: var(--accent); background: var(--accent-soft); }
+  .note.tip .t { color: var(--accent); }
+  .note.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+  .note.warn .t { color: var(--warn); }
+  .note.danger { border-left-color: var(--danger); background: var(--danger-soft); }
+  .note.danger .t { color: var(--danger); }
+  .note.ok { border-left-color: var(--ok); background: var(--ok-soft); }
+  .note.ok .t { color: var(--ok); }
+  .note p:last-child { margin-bottom: 0; }
+
+  /* ---------- table ---------- */
+  .tbl-wrap { overflow-x: auto; margin: 14px 0; border: 1px solid var(--line); border-radius: var(--radius); }
+  table { border-collapse: collapse; width: 100%; background: var(--panel); font-size: 14px; }
+  th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { background: var(--panel-2); font-weight: 600; font-size: 13px; color: var(--text-2); white-space: nowrap; }
+  tr:last-child td { border-bottom: none; }
+  td code { white-space: nowrap; }
+  .req { color: var(--danger); font-weight: 600; font-size: 12.5px; }
+  .opt { color: var(--text-3); font-size: 12.5px; }
+
+  /* ---------- steps ---------- */
+  ol.steps { list-style: none; padding-left: 0; counter-reset: s; margin: 14px 0; }
+  ol.steps > li {
+    position: relative; padding: 0 0 0 42px; margin: 0 0 14px; counter-increment: s;
+  }
+  ol.steps > li::before {
+    content: counter(s); position: absolute; left: 0; top: 1px;
+    width: 26px; height: 26px; line-height: 26px; text-align: center;
+    border-radius: 50%; background: var(--accent); color: #fff;
+    font-size: 13px; font-weight: 600;
+  }
+  @media (prefers-color-scheme: dark) { ol.steps > li::before { color: #0b1a19; } }
+  ol.steps > li > b { display: block; }
+
+  /* 步骤内的分步操作（例如用开发者工具取 content） */
+  ol.substeps {
+    list-style: decimal; margin: 8px 0 0; padding-left: 24px;
+    color: var(--text-2); line-height: 1.75;
+  }
+  ol.substeps li { margin: 4px 0; }
+  ol.substeps code { word-break: break-all; }
+
+  /* ---------- faq ---------- */
+  details {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    margin: 10px 0; overflow: hidden;
+  }
+  details[open] { box-shadow: var(--shadow); }
+  summary {
+    cursor: pointer; padding: 12px 16px; font-weight: 600; font-size: 14.5px;
+    list-style: none; display: flex; gap: 10px; align-items: flex-start;
+  }
+  summary::-webkit-details-marker { display: none; }
+  summary::before {
+    content: "?"; flex: 0 0 20px; height: 20px; line-height: 20px; text-align: center;
+    border-radius: 6px; background: var(--warn-soft); color: var(--warn);
+    font-size: 12px; margin-top: 2px;
+  }
+  details .body { padding: 0 16px 14px 46px; color: var(--text-2); }
+  details .body > :first-child { margin-top: 0; }
+  details .body > :last-child { margin-bottom: 0; }
+
+  /* ---------- legend ---------- */
+  .legend { display: grid; gap: 14px; }
+  .legend .row { display: grid; grid-template-columns: 132px 1fr; gap: 16px; align-items: center; }
+  .legend .swatch {
+    background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
+    padding: 8px; display: flex; justify-content: center; align-items: center;
+  }
+  .legend .txt { font-size: 14px; }
+  .legend .txt b { display: block; margin-bottom: 2px; }
+  .legend .txt span { color: var(--text-2); }
+  @media (max-width: 560px) { .legend .row { grid-template-columns: 1fr; } }
+
+  .kbd {
+    display: inline-block; min-width: 22px; text-align: center;
+    padding: 1px 6px; border-radius: 6px; border: 1px solid var(--line-strong);
+    border-bottom-width: 2px; background: var(--panel-2);
+    font-family: ui-monospace, Consolas, monospace; font-size: 12.5px; color: var(--text);
+  }
+  .fig { margin: 16px 0; }
+  .fig svg { display: block; width: 100%; height: auto; }
+  .fig figcaption { font-size: 13px; color: var(--text-3); margin-top: 8px; text-align: center; }
+  footer {
+    border-top: 1px solid var(--line); padding-top: 18px; margin-top: 40px;
+    color: var(--text-3); font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="hero">
+  <h1>物品导航 · 使用说明</h1>
+  <p class="lead">
+    触发式任务「物品导航」会把你在游戏里的实时坐标，换算成指向目标物品最近点位的箭头，
+    叠加在游戏窗口上；走近后按住标记键即视为"已获取"，之后不再指向它。
+    本文覆盖两种位置来源（官方地图 WebSocket / 本地油猴脚本）、全部配置项、箭头含义、标记规则与排错。
+  </p>
+  <div class="chips">
+    <span class="chip teal">任务名 <b>物品导航</b></span>
+    <span class="chip">实现 <code>ItemNavigatorTask</code></span>
+    <span class="chip indigo">纯坐标驱动 · 不识别画面</span>
+    <span class="chip">点位数据 <b>6482</b> 个</span>
+    <span class="chip">可选物品 <b>168</b> 项</span>
+  </div>
+</header>
+
+<nav class="toc">
+  <h2>目录</h2>
+  <ol>
+    <li><a href="#what">它做什么</a></li>
+    <li><a href="#how">两种位置来源</a></li>
+    <li><a href="#prep">使用前提</a></li>
+    <li><a href="#config">配置项一览</a></li>
+    <li><a href="#start-local">上手 A：本地油猴脚本</a></li>
+    <li><a href="#start-official">上手 B：官方地图同步</a></li>
+    <li><a href="#hud">画面元素与箭头图例</a></li>
+    <li><a href="#mark">标记"已获取"的规则</a></li>
+    <li><a href="#data">点位数据与地图</a></li>
+    <li><a href="#faq">常见问题</a></li>
+    <li><a href="#limits">限制与注意事项</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<!-- ============ 1 ============ -->
+<section id="what">
+  <h2 class="sec"><span class="n">1</span>它做什么</h2>
+  <p>
+    任务每轮循环会：读取一次玩家坐标 → 在「选择物品」里筛出<b>当前地图</b>的点位 →
+    取水平距离最近的<b>未标记</b>点 → 在游戏窗口上画方向箭头与高差箭头 → 检测标记键是否被按住。
+  </p>
+  <div class="grid2">
+    <div class="card">
+      <h4>做</h4>
+      <ul>
+        <li>持续指向最近的目标点位</li>
+        <li>提示目标在你上方 / 下方（高差）</li>
+        <li>提示附近还有哪些未标记点</li>
+        <li>按住标记键把当前目标记为"已获取"</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>不做</h4>
+      <ul>
+        <li>不自动移动、不自动寻路</li>
+        <li>不自动拾取、不自动交互</li>
+        <li>不识别游戏画面（<code>needs_frame = False</code>）</li>
+        <li>不做跨地图 / 跨层的路径规划</li>
+      </ul>
+    </div>
+  </div>
+  <div class="note tip">
+    <span class="t">因为它不截图</span>
+    <p>任务只吃 WebSocket 坐标，不走截图 + OCR/模板匹配管线，因此不占检测资源；但仍要求游戏窗口存在且可见。</p>
+  </div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="how">
+  <h2 class="sec"><span class="n">2</span>两种位置来源</h2>
+  <p>位置数据的来源取决于配置里是否存在有效的 <code>content</code>，两者不会同时启用。</p>
+
+  <div class="grid2">
+    <div class="card">
+      <h4>方式 A · 官方地图 WebSocket</h4>
+      <p>用 <code>content</code> 走官方鉴权链路，换取 <code>cred</code> / <code>signToken</code> / <code>dId</code>，
+      再连接 <code>wss://ws.skland.com/ws/v1/game/endfield/map</code> 接收位置推送。</p>
+      <ul>
+        <li>不需要开浏览器、不需要油猴脚本</li>
+        <li>需要账号已绑定终末地角色</li>
+        <li>首次会自铸设备指纹并缓存到 <code>configs/map_device_id.json</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>方式 B · 本地 WebSocket 服务</h4>
+      <p>程序在 <code>ws://127.0.0.1:3001</code> 起一个服务端，由浏览器油猴脚本把官方网页地图收到的
+      <b>原始位置 JSON 包</b>转发过来。</p>
+      <ul>
+        <li>需要在浏览器里打开网页地图并保持标签页存活</li>
+        <li>需要安装 Tampermonkey 并导入仓库内脚本</li>
+        <li>不需要登录态之外的任何凭据</li>
+      </ul>
+    </div>
+  </div>
+
+  <figure class="fig">
+    <svg viewBox="0 0 680 250" role="img" aria-label="位置来源判定流程">
+      <defs>
+        <marker id="ah" markerWidth="9" markerHeight="9" refX="7.5" refY="4.5" orient="auto">
+          <path d="M0,0 L9,4.5 L0,9 z" fill="currentColor"/>
+        </marker>
+      </defs>
+      <g font-family="system-ui, sans-serif" font-size="12.5" text-anchor="middle" color="#59636e">
+        <rect x="16" y="24" width="132" height="44" rx="9" fill="#eef0fe" stroke="#cdd3da"/>
+        <text x="82" y="44" fill="#1f2328" font-weight="600">任务 content</text>
+        <text x="82" y="60" fill="#59636e">或 地图账号 → content</text>
+
+        <rect x="16" y="152" width="132" height="44" rx="9" fill="#e6f4f2" stroke="#cdd3da"/>
+        <text x="82" y="172" fill="#1f2328" font-weight="600">本地 WS 服务</text>
+        <text x="82" y="188" fill="#59636e">127.0.0.1:3001</text>
+
+        <rect x="196" y="86" width="104" height="48" rx="9" fill="#fff" stroke="#cdd3da"/>
+        <text x="248" y="107" fill="#1f2328" font-weight="600">content</text>
+        <text x="248" y="123" fill="#59636e">是否为空？</text>
+
+        <rect x="348" y="28" width="150" height="52" rx="9" fill="#e6f4f2" stroke="#0f766e"/>
+        <text x="423" y="50" fill="#0f766e" font-weight="600">官方地图 WS</text>
+        <text x="423" y="67" fill="#59636e">wss://ws.skland.com</text>
+
+        <rect x="348" y="140" width="150" height="52" rx="9" fill="#fdf3e3" stroke="#b45309"/>
+        <text x="423" y="162" fill="#b45309" font-weight="600">本地 WS 回退</text>
+        <text x="423" y="179" fill="#59636e">需油猴脚本推送</text>
+
+        <rect x="546" y="86" width="118" height="48" rx="9" fill="#fff" stroke="#cdd3da"/>
+        <text x="605" y="107" fill="#1f2328" font-weight="600">统一位置队列</text>
+        <text x="605" y="123" fill="#59636e">→ 画箭头</text>
+
+        <line x1="148" y1="46" x2="192" y2="98" stroke="#59636e" stroke-width="1.4" marker-end="url(#ah)"/>
+        <line x1="148" y1="174" x2="192" y2="122" stroke="#59636e" stroke-width="1.4" marker-end="url(#ah)"/>
+        <line x1="300" y1="100" x2="344" y2="60" stroke="#0f766e" stroke-width="1.4" marker-end="url(#ah)"/>
+        <text x="316" y="72" fill="#0f766e" font-size="11.5">有值</text>
+        <line x1="300" y1="120" x2="344" y2="160" stroke="#b45309" stroke-width="1.4" marker-end="url(#ah)"/>
+        <text x="318" y="152" fill="#b45309" font-size="11.5">为空</text>
+        <line x1="498" y1="54" x2="548" y2="98" stroke="#59636e" stroke-width="1.4" marker-end="url(#ah)"/>
+        <line x1="498" y1="166" x2="548" y2="122" stroke="#59636e" stroke-width="1.4" marker-end="url(#ah)"/>
+      </g>
+    </svg>
+    <figcaption>图 1 · 位置来源判定：只要解析出 content 就走官方 WS，否则走本地 WS 回退。</figcaption>
+  </figure>
+
+  <div class="note warn">
+    <span class="t">回退只发生在"没有 content"时</span>
+    <p>
+      如果已经配了 <code>content</code>（或地图账号能解析出 content），但官方鉴权或连接失败，
+      <b>当前运行不会自动改用本地 WS</b>。要切回本地模式，请清空任务的 <code>content</code> 并清空「地图账号」。
+    </p>
+  </div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="prep">
+  <h2 class="sec"><span class="n">3</span>使用前提</h2>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr><th>前提</th><th>方式 A</th><th>方式 B</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>游戏窗口存在且可见</td><td>必需</td><td>必需</td><td>窗口不可见时任务会暂停并停止位置同步</td></tr>
+        <tr><td>至少选择 1 个物品</td><td>必需</td><td>必需</td><td>「选择物品」为空时不会有任何候选目标</td></tr>
+        <tr><td>账号已绑定终末地角色</td><td>必需</td><td>—</td><td>用于解析 <code>serverId</code> / <code>roleId</code></td></tr>
+        <tr><td>本机装有 Edge 或 Chrome</td><td>首次需要</td><td>—</td><td>用于自铸设备指纹 <code>dId</code>；需能访问 <code>fp-it.portal101.cn</code></td></tr>
+        <tr><td>Tampermonkey 扩展</td><td>—</td><td>必需</td><td>用于运行仓库内的转发脚本</td></tr>
+        <tr><td>浏览器打开网页地图并保持存活</td><td>—</td><td>必需</td><td><code>https://game.skland.com/map/endfield</code>，脚本会自动开启"位置同步"</td></tr>
+        <tr><td>本机 3001 端口未被占用/拦截</td><td>—</td><td>必需</td><td>服务端监听 <code>127.0.0.1:3001</code></td></tr>
+        <tr><td>游戏窗口处于前台</td><td>箭头显示</td><td>箭头显示</td><td>叠层仅在游戏窗口为前台窗口时显示，切出去会隐藏箭头</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="config">
+  <h2 class="sec"><span class="n">4</span>配置项一览</h2>
+  <p>在任务的配置界面里，<code>content</code>、<code>地图账号</code>、<code>油猴脚本帮助</code> 归在「网页地图同步」分组下。</p>
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr><th>配置项</th><th>默认值</th><th>填写要求</th><th>说明</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>content</code></td><td>空字符串</td><td class="opt">与「地图账号」二选一</td>
+          <td>直接粘贴 <code>web-api.skland.com/account/info/hg/check</code> 返回 JSON 里的 <code>data.content</code>。此项有值时优先使用，不再读取账号配置页。取值步骤见<a href="#start-official">第 6 节「上手 B：官方地图同步」</a>的「准备 content」。</td>
+        </tr>
+        <tr>
+          <td><code>地图账号</code></td><td>空字符串</td><td class="opt">与 <code>content</code> 二选一</td>
+          <td>下拉框，候选项来自账号配置页。选中后从该账号保存的地图同步 content 取值；留空则尝试使用当前任务账号上下文。</td>
+        </tr>
+        <tr>
+          <td><code>选择物品</code></td><td><code>[]</code></td><td class="req">建议必填</td>
+          <td>多选，候选项为 <code>assets/items/map/item_names.json</code> 中的 168 个物品名。只会在当前地图里匹配这些物品；为空时不会筛出任何目标。</td>
+        </tr>
+        <tr>
+          <td><code>标记按键</code></td><td><code>f</code></td><td class="opt">可选</td>
+          <td>接近目标后用于标记"已获取"的键位。<b>仅支持单个字符</b>（字母或数字），<code>F1</code> 这类组合键无效。</td>
+        </tr>
+        <tr>
+          <td><code>标记按住时长</code></td><td><code>2.0</code></td><td class="opt">可选</td>
+          <td>连续按住标记键的秒数。进入<b>水平距离 20 以内</b>才开始计时，达到该时长即标记为已获取。填 <code>0</code>、负数或非数字会回退为默认 2 秒。</td>
+        </tr>
+        <tr>
+          <td><code>浮层信息</code></td><td>开</td><td class="opt">可选</td>
+          <td>在浮层上显示当前指向目标的物品名、距离、方位与高度。关闭后浮层只保留箭头，已显示的文字会立即清掉。</td>
+        </tr>
+        <tr>
+          <td><code>浮层文字透明度</code></td><td><code>92</code></td><td class="opt">可选</td>
+          <td>浮层文字的透明度，取值 <b>0-100</b>（0 完全透明，100 完全不透明）。<b>仅当「浮层信息」开启时才会显示该项。</b></td>
+        </tr>
+        <tr>
+          <td><code>浮层背景透明度</code></td><td><code>59</code></td><td class="opt">可选</td>
+          <td>浮层文字黑色底板的透明度，取值 <b>0-100</b>，填 <code>0</code> 表示不绘制底板。<b>仅当「浮层信息」开启时才会显示该项。</b></td>
+        </tr>
+        <tr>
+          <td><code>浮层字号</code></td><td><code>26</code></td><td class="opt">可选</td>
+          <td>浮层文字字号，按 <b>1080p 窗口高度为基准</b>的像素值，会随窗口高度等比缩放（例如 26 表示 1080p 下约 26px）。<b>仅当「浮层信息」开启时才会显示该项。</b></td>
+        </tr>
+        <tr>
+          <td><code>油猴脚本帮助</code></td><td>按钮</td><td>—</td>
+          <td>点击后打开一份临时帮助文本，并在资源管理器中定位到油猴脚本文件。</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note tip">
+    <span class="t">应用内也有这份说明</span>
+    <p>
+      任务卡片上的「使用说明」按钮会弹出一份简要配置说明，覆盖位置来源、关键配置、获取 content 的步骤、标记规则、
+      本地 WS 准备与显示条件，文案跟随界面语言（简中 / 繁中 / 英 / 日 / 韩 / 西）。
+      本页可以看作它的完整展开版。
+    </p>
+  </div>
+  <div class="note tip">
+    <span class="t">该填哪个？</span>
+    <p>
+      已经用账号配置页同步过地图，就选「地图账号」，最省事；
+      只想临时用一次、或想手动指定凭证，就把 <code>content</code> 直接贴进任务配置。
+      不想碰官方接口，就两个都留空，走本地油猴脚本。
+    </p>
+  </div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="start-local">
+  <h2 class="sec"><span class="n">5</span>上手 A：本地油猴脚本（推荐先跑通）</h2>
+
+  <ol class="steps">
+    <li>
+      <b>安装 Tampermonkey</b>
+      在浏览器扩展商店安装油猴扩展，并确认它处于启用状态。
+    </li>
+    <li>
+      <b>导入转发脚本</b>
+      在任务配置里点「油猴脚本帮助」按钮，会自动定位到脚本文件；把
+      <code>assets/scripts/endfield-ws-position-relay.user.js</code> 导入 Tampermonkey 并启用。
+    </li>
+    <li>
+      <b>打开网页地图</b>
+      访问 <code>https://game.skland.com/map/endfield</code>。脚本会每隔 1 秒尝试点击"位置同步"开关，
+      最多尝试 30 秒；若中途超过 5 秒没收到有效消息，会自动重试恢复。
+    </li>
+    <li>
+      <b>确认脚本已连上本地服务</b>
+      浏览器控制台应出现 <code>[坐标转发] 已连接到本地服务器 ws://localhost:3001</code>。
+      如果显示"本地WS断开，准备重连"，说明程序端服务还没起来（先启动任务即可）。
+    </li>
+    <li>
+      <b>在任务里选择物品</b>
+      「选择物品」里勾选你要找的东西（例如 <code>见闻辑录</code>、<code>储藏箱III</code>、<code>醚质</code>）。
+    </li>
+    <li>
+      <b>启动任务并保持游戏在前台</b>
+      任务日志里会出现 <code>ItemNavigatorTask 启动 - 正在启动WS服务</code> 与 <code>ws://127.0.0.1:3001</code>。
+      切回游戏窗口，左上角即可看到箭头。
+    </li>
+  </ol>
+
+  <div class="note">
+    <span class="t">脚本做了什么</span>
+    <p>
+      它劫持网页地图的 <code>WebSocket.addEventListener</code>，把 <code>/ws/v1/game/endfield/map</code> 上收到的
+      原始 JSON 包（心跳包 <code>type: 4</code> 除外）原样转发到 <code>ws://localhost:3001</code>，
+      因此程序拿到的是与官方客户端一致的数据格式。
+    </p>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="start-official">
+  <h2 class="sec"><span class="n">6</span>上手 B：官方地图同步</h2>
+
+  <ol class="steps">
+    <li>
+      <b>准备 content</b>
+      二选一：把 <code>content</code> 直接贴进任务配置，或保存到账号配置页再在任务里选账号。
+      两种方式都需要先按下面的步骤把 <code>content</code> 取出来：
+      <ol class="substeps">
+        <li>打开浏览器，按 <code>F12</code> 打开开发者工具。</li>
+        <li>访问 <code>https://game.skland.com/map/endfield</code> 并登录。</li>
+        <li>切到 <b>「网络 / Network」</b> 标签，在筛选框里输入
+          <code>https://web-api.skland.com/account/info/hg/check</code>。</li>
+        <li>在筛选后的请求列表里选中该请求，从 <b>「响应 / Response」</b> 中取
+          <code>data.content</code> 的值（是一长串字符串）。</li>
+        <li>把该值填入任务的 <code>content</code> 参数；<b>或</b>填入账号配置页的
+          <code>地图同步 content</code>，再回到任务用「地图账号」选择该账号。</li>
+      </ol>
+    </li>
+    <li>
+      <b>选择账号</b>
+      用账号配置页方式时，在「地图账号」下拉框里选中对应账号。
+    </li>
+    <li>
+      <b>选择物品并启动任务</b>
+      日志里会出现 <code>ItemNavigatorTask 启动 - 正在启动官方地图WS客户端</code>，
+      随后是 <code>[地图WS] 已解析角色: serverId=… roleId=…</code> 与 <code>[地图WS] 已连接</code>。
+    </li>
+    <li>
+      <b>等待第一条位置</b>
+      收到位置后日志会打印 <code>[地图WS] 收到位置: mapId=… pos=(x,y,z)</code>，任务显示栏同步更新。
+    </li>
+  </ol>
+
+  <h3>鉴权链路与首次铸造</h3>
+  <p>方式 A 的内部流程（了解即可，出问题时对照日志）：</p>
+  <pre><code>content ──HG 授权接口──▶ oauth code
+        ──generate_cred_by_code + dId──▶ cred / token(userId)
+        ──/api/v1/websocket/token──▶ ws token
+        ──连接 wss://ws.skland.com/...──▶ type:2 认证成功
+        ──定时 type:1011 初始化 + type:3 心跳──▶ type:1012 位置推送</code></pre>
+
+  <div class="note warn">
+    <span class="t">关于设备指纹 dId</span>
+    <p>
+      接口要求 <code>dId</code> 是真实签发的设备指纹，随机串会返回 <code>10001 设备信息无效</code>。
+      程序会自动开一个匿名浏览器配置访问官方地图页完成注册，并缓存到 <code>configs/map_device_id.json</code>。
+      如果已存的 dId 被风控拒绝，程序会自动清除本地缓存、停掉旧客户端，并在稍后重新铸造重试。
+    </p>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section id="hud">
+  <h2 class="sec"><span class="n">7</span>画面元素与箭头图例</h2>
+  <p>所有箭头绘制在一个依附于游戏窗口的透明叠层上，<b>只有游戏窗口处于前台时才会显示</b>。</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 680 300" role="img" aria-label="游戏窗口上的箭头叠层示意">
+      <rect x="20" y="16" width="640" height="250" rx="12" fill="#fbfcfd" stroke="#cdd3da"/>
+      <text x="36" y="40" font-family="system-ui, sans-serif" font-size="12" fill="#808a94">游戏窗口（客户区）</text>
+
+      <!-- arrow center -->
+      <circle cx="74" cy="70" r="3.5" fill="#0f766e"/>
+      <text x="84" y="66" font-family="system-ui, sans-serif" font-size="11.5" fill="#0f766e">箭头原点（约窗口左上角 8.4% / 15.4% 处）</text>
+
+      <!-- direction arrow (up-right) -->
+      <line x1="74" y1="70" x2="150" y2="42" stroke="#15803d" stroke-width="2.4"/>
+      <path d="M150,42 L138,40 L143,52 z" fill="#15803d"/>
+      <text x="158" y="40" font-family="system-ui, sans-serif" font-size="11.5" fill="#15803d">方向箭头：指向最近目标</text>
+
+      <!-- height arrow up -->
+      <line x1="74" y1="70" x2="74" y2="34" stroke="#15803d" stroke-width="2.4"/>
+      <path d="M74,34 L68,46 L80,46 z" fill="#15803d"/>
+      <text x="84" y="92" font-family="system-ui, sans-serif" font-size="11.5" fill="#15803d">高差箭头：向上＝目标在上方</text>
+
+      <!-- nearby markers -->
+      <line x1="300" y1="150" x2="300" y2="138" stroke="#b45309" stroke-width="2"/>
+      <path d="M300,138 L295,146 L305,146 z" fill="#b45309"/>
+      <line x1="360" y1="110" x2="360" y2="98" stroke="#b45309" stroke-width="2"/>
+      <path d="M360,98 L355,106 L365,106 z" fill="#b45309"/>
+      <line x1="240" y1="200" x2="240" y2="188" stroke="#b45309" stroke-width="2"/>
+      <path d="M240,188 L235,196 L245,196 z" fill="#b45309"/>
+      <text x="376" y="104" font-family="system-ui, sans-serif" font-size="11.5" fill="#b45309">黄色小箭头：附近未标记的点</text>
+      <text x="376" y="122" font-family="system-ui, sans-serif" font-size="11.5" fill="#59636e">（水平距离 ≤ 75.5 才会出现）</text>
+
+      <!-- status bar -->
+      <rect x="20" y="274" width="640" height="26" rx="7" fill="#e6f4f2" stroke="#cdd3da"/>
+      <text x="34" y="291" font-family="ui-monospace, Consolas, monospace" font-size="11.5" fill="#0f766e">目标=储藏箱III  距离XZ=42.180  角度=128.400°  接近: 高差Y=-0.062 (下方)</text>
+    </svg>
+    <figcaption>图 2 · 叠层元素示意（颜色为浅色主题下的示意色，游戏内实际为亮绿 / 亮黄）。</figcaption>
+  </figure>
+
+  <div class="legend">
+    <div class="row">
+      <div class="swatch">
+        <svg width="112" height="46" viewBox="0 0 112 46">
+          <line x1="14" y1="23" x2="86" y2="23" stroke="#15803d" stroke-width="2.6"/>
+          <path d="M86,23 L74,18 L74,28 z" fill="#15803d"/>
+        </svg>
+      </div>
+      <div class="txt">
+        <b>绿色方向箭头</b>
+        <span>从窗口左上角固定原点发出，指向当前最近目标的方向。长度 = 水平距离 × 1.144，但封顶为窗口短边的 8%——所以<b>它只表达方向，不表达精确距离</b>。</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="swatch">
+        <svg width="112" height="46" viewBox="0 0 112 46">
+          <line x1="34" y1="34" x2="34" y2="12" stroke="#15803d" stroke-width="2.6"/>
+          <path d="M34,12 L28,24 L40,24 z" fill="#15803d"/>
+          <line x1="78" y1="12" x2="78" y2="34" stroke="#15803d" stroke-width="2.6"/>
+          <path d="M78,34 L72,22 L84,22 z" fill="#15803d"/>
+        </svg>
+      </div>
+      <div class="txt">
+        <b>绿色高差箭头（同一原点）</b>
+        <span>向上＝目标在你上方，向下＝在下方。长度按 |ΔY| / 30 归一化，最长到窗口高度的 8%；|ΔY| 越大越长，到 30 以上不再变化。</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="swatch">
+        <svg width="112" height="46" viewBox="0 0 112 46">
+          <line x1="30" y1="30" x2="30" y2="18" stroke="#b45309" stroke-width="2.2"/>
+          <path d="M30,18 L25,26 L35,26 z" fill="#b45309"/>
+          <line x1="56" y1="34" x2="56" y2="22" stroke="#b45309" stroke-width="2.2"/>
+          <path d="M56,22 L51,30 L61,30 z" fill="#b45309"/>
+          <line x1="82" y1="28" x2="82" y2="16" stroke="#b45309" stroke-width="2.2"/>
+          <path d="M82,16 L77,24 L87,24 z" fill="#b45309"/>
+        </svg>
+      </div>
+      <div class="txt">
+        <b>黄色小箭头（附近点提示）</b>
+        <span>水平距离 ≤ 75.5 的<b>未标记</b>候选点都会各画一个小箭头，位置按相对坐标等比映射到原点周围，用来提示"这一片还有别的"。它们不代表当前导航目标。</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="swatch">
+        <svg width="112" height="46" viewBox="0 0 112 46">
+          <rect x="8" y="8" width="96" height="30" rx="5" fill="#1c1c1c" opacity="0.78"/>
+          <text x="15" y="19" font-family="system-ui, sans-serif" font-size="9.5" fill="#ffffff">晶锥天使</text>
+          <text x="15" y="30" font-family="system-ui, sans-serif" font-size="9.5" fill="#ffffff">距离 12.3 · 方位 东北</text>
+        </svg>
+      </div>
+      <div class="txt">
+        <b>浮层目标信息（可关闭）</b>
+        <span>在箭头下方直接显示<b>物品名</b>、<b>水平距离</b>、<b>八方位</b>与<b>上下高度</b>三行。方位与方向箭头共用同一坐标系，两者始终一致。由「浮层信息」开关控制，黑色底板与文字的透明度、字号可分别调整。</span>
+      </div>
+    </div>
+    <div class="row">
+      <div class="swatch">
+        <svg width="112" height="46" viewBox="0 0 112 46">
+          <rect x="8" y="13" width="96" height="20" rx="6" fill="#e6f4f2" stroke="#cdd3da"/>
+          <text x="18" y="27" font-family="ui-monospace, Consolas, monospace" font-size="10" fill="#0f766e">目标=… 距离XZ=…</text>
+        </svg>
+      </div>
+      <div class="txt">
+        <b>任务显示栏</b>
+        <span>格式为 <code>目标=物品名 距离XZ=数值 角度=数值°</code>；进入接近状态后追加 <code>接近: 高差Y=数值 (上方/下方/同高)</code>。想看准确距离就看这里。</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section id="mark">
+  <h2 class="sec"><span class="n">8</span>标记"已获取"的规则</h2>
+  <p>标记机制的设计目的是：<b>你亲手走到点位旁边确认拿过了，程序就不再指向它。</b></p>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>环节</th><th>条件 / 行为</th></tr></thead>
+      <tbody>
+        <tr><td>进入接近状态</td><td>当前最近目标的水平距离 ≤ <b>20</b> 时，锁定该目标为待标记对象</td></tr>
+        <tr><td>开始计时</td><td>按下「标记按键」的那一刻开始计时</td></tr>
+        <tr><td>标记成功</td><td>连续按住时长达到「标记按住时长」（默认 <b>2 秒</b>），且期间没有松开、没有走出 20 范围</td></tr>
+        <tr><td>取消</td><td>计时期间任意一帧检测到松键，或离开 20 范围 → 本次锁定作废，需重新按住</td></tr>
+        <tr><td>写入位置</td><td><code>configs/marked_points.json</code>，按地图 ID 分组</td></tr>
+        <tr><td>记录键</td><td><code>物品名|x|y|z</code>（坐标保留 3 位小数）——含物品名，所以不同物品同坐标不会互相覆盖</td></tr>
+        <tr><td>写盘时机</td><td>标记后延迟约 3 秒合并写盘一次，减少 IO；采用"先写临时文件再替换"的原子写入</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h3>重置标记</h3>
+  <p>已标记的点会一直被跳过。要重新导航某个物品，需要清理记录：</p>
+  <pre><code>configs/marked_points.json
+{
+  "map02": [
+    "见闻辑录|123.456|78.901|-234.567",
+    "储藏箱III|…"
+  ]
+}</code></pre>
+  <ul>
+    <li>删掉整个文件 → 所有地图的标记全部清空。</li>
+    <li>删掉某个地图 ID 的键 → 只清空该地图。</li>
+    <li>删掉某一行 → 只让那个点位重新参与导航。</li>
+    <li>改动在任务下一轮循环即生效（文件在任务初始化时加载，重新开始任务最稳妥）。</li>
+  </ul>
+  <div class="note">
+    <span class="t">旧路径会自动迁移</span>
+    <p>如果检测到旧路径 <code>assets/items/map/marked_points.json</code>，程序会自动迁移到 <code>configs/marked_points.json</code> 并删除旧文件。</p>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section id="data">
+  <h2 class="sec"><span class="n">9</span>点位数据与地图</h2>
+  <p>点位数据来自仓库内的两个文件，任务运行时按当前 <code>mapId</code> 取用：</p>
+  <ul>
+    <li><code>assets/items/map/summary.json</code> — 地图 → 物品 → 点位列表</li>
+    <li><code>assets/items/map/item_names.json</code> — 「选择物品」下拉框的候选项（168 项）</li>
+  </ul>
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr><th>mapId</th><th>物品数</th><th>点位数</th><th>示例条目</th></tr></thead>
+      <tbody>
+        <tr><td><code>base01</code></td><td>14</td><td>16</td><td>协议传送点、蚀像寻遗、会客室、展示区、访客终端</td></tr>
+        <tr><td><code>map01</code></td><td>84</td><td>2414</td><td>见闻辑录、醚质、储藏箱III、柑实、纯晶多齿叶</td></tr>
+        <tr><td><code>map02</code></td><td>105</td><td>4052</td><td>灼壳虫、燎石、蓝铁矿矿点、芽针、蓬茸锦草</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="note tip">
+    <span class="t">特殊坐标修正</span>
+    <p>「储藏箱」系列（<code>储藏箱I</code>~<code>IV</code>、<code>锁闭储藏箱</code>）在计算高差时会额外加一个 <code>-0.06055</code> 的 Y 偏移，用于对齐该系列点位的实际高度。这是内置修正，无需配置。</p>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section id="faq">
+  <h2 class="sec"><span class="n">10</span>常见问题</h2>
+
+  <details>
+    <summary>任务在跑，但游戏窗口上完全看不到箭头</summary>
+    <div class="body">
+      <ol>
+        <li><b>游戏窗口不是前台窗口</b> — 叠层只在游戏窗口为前台时显示，切出去就隐藏。先点回游戏。</li>
+        <li><b>没有位置数据</b> — 看任务显示栏：<code>WS位置数据待接收...</code> 说明本地服务在监听但没人连；
+          <code>地图WS位置数据待接收...</code> 说明官方客户端还没收到推送。</li>
+        <li><b>点位数据里没有你选的物品</b> — 当前地图不含该物品时不会有目标。</li>
+        <li><b>窗口尺寸读取失败</b> — 极少数情况下窗口客户区尺寸为 0，箭头会被跳过。</li>
+      </ol>
+    </div>
+  </details>
+
+  <details>
+    <summary>显示"WS位置数据待接收…"，但油猴脚本已经启用了</summary>
+    <div class="body">
+      <ul>
+        <li>确认浏览器控制台里有 <code>[坐标转发] 已连接到本地服务器 ws://localhost:3001</code>。</li>
+        <li>确认任务已经启动过——本地服务是任务启动时才创建的，脚本连不上会每 3 秒重连。</li>
+        <li>确认网页地图的"位置同步"开关是打开的（脚本会自动点，但若页面结构变化可能失效）。</li>
+        <li>检查本机防火墙 / 安全软件是否拦截了 3001 端口。</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>显示"无候选物品"或"无未标记候选"</summary>
+    <div class="body">
+      <ul>
+        <li><code>无候选物品</code>：<b>「选择物品」为空</b>，或当前地图里没有你勾选的物品。</li>
+        <li><code>无未标记候选</code>：该地图上你选的所有点位都已经标记过了。清 <code>configs/marked_points.json</code> 或删掉对应地图的键即可。</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>官方地图模式认证失败，日志报 10001 / 设备信息无效</summary>
+    <div class="body">
+      <p>这是 <code>dId</code> 被风控拒绝。程序会自动清除 <code>configs/map_device_id.json</code>、停掉旧客户端，并在下一个触发周期重新铸造。</p>
+      <p>如果持续失败，检查：本机是否装了 Edge 或 Chrome、能否访问 <code>fp-it.portal101.cn</code>、网络是否有代理拦截。</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>任务显示"游戏窗口不存在，等待重新选择/启动游戏"</summary>
+    <div class="body">
+      <p>程序检测到游戏窗口不存在或不可见，已主动停止位置同步并清空箭头。重新启动游戏、让窗口可见后，任务会在下一轮循环自动恢复。</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>地图 WS 客户端自己停了</summary>
+    <div class="body">
+      <p>两种自动回收条件：</p>
+      <ul>
+        <li>游戏窗口消失或不可见（日志：<code>物品导航：游戏窗口不存在或不可见，地图WS客户端停止</code>）。</li>
+        <li><b>10 秒内没有任何任务读取位置</b>（日志：<code>[地图WS] 10秒内没有任务读取位置，客户端自动停止</code>）——例如任务被停掉后，客户端不再空转。</li>
+      </ul>
+      <p>两种情况都会在任务下一轮循环按需重建连接。</p>
+    </div>
+  </details>
+
+  <details>
+    <summary>按住标记键没反应，标记不上</summary>
+    <div class="body">
+      <ul>
+        <li>必须<b>水平距离 ≤ 20</b> 才算接近，才允许标记。</li>
+        <li>必须<b>连续按住「标记按住时长」设定的秒数</b>（默认 2 秒）——中间松开一帧就作废，注意别连点。</li>
+        <li>「标记按键」只支持单个字符，填 <code>F1</code> 之类不会生效。</li>
+        <li>按住时长可以调：改「标记按住时长」即可（每轮生效，无需重启任务）；填 <code>0</code>、负数或非数字会回退为默认 2 秒。</li>
+      </ul>
+    </div>
+  </details>
+
+  <details>
+    <summary>已配置 content，但官方 WS 连不上，能不能自动改用本地脚本？</summary>
+    <div class="body">
+      <p>不能。回退只在"解析不出 content"时发生。要切本地模式，请清空任务的 <code>content</code> 并把「地图账号」也清空。</p>
+    </div>
+  </details>
+</section>
+
+<!-- ============ 11 ============ -->
+<section id="limits">
+  <h2 class="sec"><span class="n">11</span>限制与注意事项</h2>
+  <ul>
+    <li><b>不寻路。</b>只给方向与高差，怎么走过去由你决定；跨层、绕障都不在职责内。</li>
+    <li><b>方向箭头长度封顶。</b>距离超过阈值后箭头长度不再变化，别用它估距离——看任务显示栏的「距离XZ」。</li>
+    <li><b>同一时刻只有一个目标。</b>始终指向水平距离最近的未标记点，不排队、不轮换。</li>
+    <li><b>需要游戏窗口存在且可见。</b>虽然不截图，但叠层与窗口存活检测都依赖窗口句柄。</li>
+    <li><b>箭头需要游戏窗口在前台。</b>看攻略、切浏览器都会让箭头隐藏。</li>
+    <li><b>标记是手动的。</b>程序不会替你判断"是否真的拿到了"，按下标记键就等于你确认过了。</li>
+    <li><b>按住时长过短会误标。</b>「标记按住时长」可以调到很小，但越短越容易在你只是路过、随手按键时把点位标成已获取。</li>
+    <li><b>点位数据是离线快照。</b>游戏版本更新后点位可能偏移或新增，需要更新 <code>assets/items/map/</code> 下的数据文件。</li>
+  </ul>
+
+  <div class="note danger">
+    <span class="t">安全提示</span>
+    <p>
+      <code>content</code> 属于账号凭证，等同于登录态。不要把它贴到公开场合（issue、聊天群、截图）；
+      分享日志前请先确认其中不含 content 或 cred。
+    </p>
+  </div>
+</section>
+
+<footer>
+  <p>本文与 <code>src/tasks/trigger/ItemNavigatorTask.py</code>、<code>src/tasks/mixin/ws_position_mixin.py</code>、<code>src/core/base_mixin/window_arrow_drawing_mixin.py</code> 的当前实现对齐。
+  站点版文档见 <code>docs/zh-CN/物品导航与实时检测.md</code>；官方地图鉴权细节见 <code>docs/dev/地图官方WS客户端实现.md</code>。</p>
+</footer>
+
+</main>
+</div>
+</body>
+</html>

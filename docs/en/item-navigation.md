@@ -28,7 +28,7 @@ This document covers two trigger/debug tasks:
 | `地图账号` (Map account) | empty string | Optional. When `content` is empty, reads the map-sync content saved for that account on the account configuration page. |
 | `选择物品` (Select item) | `[]` | List of item names to navigate; no target is filtered when empty. |
 | `标记按键` (Mark key) | `f` | The key pressed to mark an item as "collected" when close to the target. |
-| `标记按住时长` (Mark hold duration) | `0.8` | Reserved item in the current UI; the runtime implementation does not read this value. In practice you need to hold the mark key for 2 continuous seconds within a horizontal distance of 20 of the target. |
+| `标记按住时长` (Mark hold duration) | `2.0` | Seconds the mark key must be held. Timing starts only within a horizontal distance of 20 of the target; reaching the duration marks it as collected. `0`, negative, or non-numeric values fall back to the default 2 seconds. |
 
 ### Data flow
 
@@ -53,7 +53,7 @@ flowchart TD
 - Item Navigation depends on the current map ID and coordinate data; without point data it cannot produce a valid direction.
 - The task draws a direction arrow on the window; if you cannot see the arrow, first check whether the WebSocket position data is working.
 - "Local WS fallback" only happens when the task has no `content`. If `content` is configured but the official auth or connection fails, the current run does not automatically switch to local WS; clear the task `content` and uncheck/clear the map account to use local mode.
-- Marking requires holding the key for 2 continuous seconds within a horizontal distance of 20; releasing the key early or leaving the range cancels the current timing.
+- Marking requires holding the key for the duration set by `标记按住时长` (default 2 seconds) within a horizontal distance of 20; releasing the key early or leaving the range cancels the current timing. The value is re-read every cycle, so changes apply without restarting the task.
 - The Tampermonkey-script help button opens the temporary help document and script directory.
 
 ---

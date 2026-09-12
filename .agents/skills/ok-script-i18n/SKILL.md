@@ -65,6 +65,16 @@ After merging all locales, run `task_i18n_helper.py check` to confirm no duplica
 - Preserve translator comments, flags, previous `msgid` data, and existing entry order when possible.
 - After editing `.po`, always compile `.mo`.
 
+### Line endings when writing catalogs
+
+On Windows, `polib.POFile.save()` and `Path.write_text()` default to `newline=None`, which translates `\n` into `os.linesep` and silently rewrites the whole catalog as CRLF. This repository stores `.po` files as LF (`* text=auto eol=lf`), so the diff still looks clean, but `git` starts warning and the file no longer matches the working-tree convention. After adding entries programmatically, normalize back to LF before compiling:
+
+```powershell
+uv run --locked python -c "import pathlib; [p.write_bytes(p.read_bytes().replace(b'\r\n', b'\n')) for p in pathlib.Path('i18n').rglob('*.po')]"
+```
+
+`task_i18n_helper.py compile` writes `.mo` as binary, so compiled catalogs are unaffected.
+
 ## Translation Guidance
 
 - Prefer concise UI text over literal word-for-word translation.
