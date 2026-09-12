@@ -56,8 +56,8 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
                 "选择物品": [],
                 # 标记按键（UI 映射），例如 'f'，当玩家按下且目标在阈值内时标记为已获取
                 "标记按键": "f",
-                # 标记时需要按住的最小时长（秒）
-                "标记按住时长": 0.8,
+                # 标记时需要按住的最小时长（秒）；小于等于 0 或非法值时回退到该默认值
+                "标记按住时长": 2.0,
             }
         )
 
@@ -137,8 +137,25 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
         # 锁定待标记的目标（在接近阈值内）
         # 格式: {'map_id': str, 'hash': str, 'start_time': float | None}
         self._mark_lock_target = None
-        # 标记所需的最短连续按住时长（秒）
-        self._mark_lock_required = 2.0
+
+    @staticmethod
+    def _format_seconds(value: float) -> str:
+        """把秒数格式化为界面友好文本：20.0 → 20，0.8 → 0.8。"""
+        text = f"{float(value):.2f}".rstrip("0").rstrip(".")
+        return text or "0"
+
+    def _mark_hold_seconds(self) -> float:
+        """读取「标记按住时长」配置（秒）。
+
+        缺失、非法或小于等于 0 时回退到 default_config 中的默认值。
+        每轮读取，便于在 UI 中即时调整而无需重启任务。
+        """
+        fallback = float(self.default_config.get("标记按住时长") or 2.0)
+        try:
+            seconds = float(self.config.get("标记按住时长", fallback))
+        except (TypeError, ValueError):
+            return fallback
+        return seconds if seconds > 0 else fallback
 
     @staticmethod
     def _get_map_account_options() -> list[str]:
@@ -559,9 +576,10 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
             self._draw_nav_arrow(dx, dz, tooltip=f"{best_meta} | XZ:{best_dxz:.3f} | Y:{dy_height:.3f}")
             self._draw_height_arrow(dy_height, tooltip=f"{best_meta} | Y:{dy_height:.3f}")
 
-            # 标记逻辑：锁定目标并要求连续按住指定时长（_mark_lock_required）才能标记
+            # 标记逻辑：锁定目标并要求连续按住配置时长（「标记按住时长」）才能标记
             mark_key = str(self.config.get("标记按键") or "").strip() or "f"
             cur_key = self._is_key_pressed(mark_key)
+            mark_hold_seconds = self._mark_hold_seconds()
 
             if near_xz:
                 # 计算目标哈希并确保锁定目标为当前最近目标
@@ -576,7 +594,7 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
                         self._mark_lock_target["start_time"] = now
                     else:
                         elapsed = now - self._mark_lock_target["start_time"]
-                        if elapsed >= float(self._mark_lock_required):
+                        if elapsed >= mark_hold_seconds:
                             # 最终确认未被提前标记
                             if h not in self._marked.get(map_id, set()):
                                 with self._marked_lock:
