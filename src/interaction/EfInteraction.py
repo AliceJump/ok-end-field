@@ -222,9 +222,7 @@ class EfInteraction(PostMessageInteraction):
                     time.sleep(0.02)
                 else:
                     if win32gui.GetForegroundWindow() != hwnd:
-                        logger.warning(
-                            f"按键置顶失败: key={key} 游戏={hwnd} 当前前台={win32gui.GetForegroundWindow()}"
-                        )
+                        logger.warning(f"按键置顶失败: key={key} 游戏={hwnd} 当前前台={win32gui.GetForegroundWindow()}")
                         return False
                 time.sleep(0.3)
         self.keyboard.press(self._convert_key(key))

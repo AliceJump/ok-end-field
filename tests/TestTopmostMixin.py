@@ -5,7 +5,6 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-
 _TOPMOST_MODULE = "src.core.base_mixin.topmost_mixin"
 if _TOPMOST_MODULE in sys.modules:
     from src.core.base_mixin.topmost_mixin import TopmostMixin

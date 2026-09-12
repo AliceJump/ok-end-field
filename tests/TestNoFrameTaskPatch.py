@@ -46,7 +46,7 @@ class _FakeExecutor:
         self.trigger_tasks = [object()]
         self.trigger_task_index = -1
 
-    def execute(self):  # noqa: D102 - 契约占位
+    def execute(self):
         return None
 
     def check_enabled(self, check_pause=True):
@@ -120,8 +120,7 @@ class TestNoFrameTaskPatch(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._saved_modules = {
-            name: sys.modules.get(name)
-            for name in ("ok", "ok.task", "ok.task.TaskExecutor", "ok.task.task")
+            name: sys.modules.get(name) for name in ("ok", "ok.task", "ok.task.TaskExecutor", "ok.task.task")
         }
 
         fake_executor_mod = types.ModuleType("ok.task.TaskExecutor")
