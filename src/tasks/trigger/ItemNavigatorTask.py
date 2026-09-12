@@ -18,6 +18,7 @@ from src.core.BaseEfTask import BaseEfTask
 from src.data import item_map_query
 from src.icons import Icons
 from src.tasks.account.account_scope_store import get_account_map_content, load_overrides, resolve_account_id
+from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.ws_position_mixin import WsPositionMixin
 
 logger = Logger.get_logger(__name__)
@@ -29,8 +30,15 @@ SPECIAL_ITEM_Y_OFFSET = {
     },
 }
 
+# 本地 WS 模式依赖的油猴脚本（相对仓库根目录）
+RELAY_USER_SCRIPT = "assets/scripts/endfield-ws-position-relay.user.js"
 
-class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
+# 「获取 content」使用说明里展示给用户的地址（用户手动访问 / 在开发者工具里筛选用）
+OFFICIAL_MAP_PAGE_URL = "https://game.skland.com/map/endfield"
+HG_CHECK_API_URL = "https://web-api.skland.com/account/info/hg/check"
+
+
+class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerTask):
     """实时从本地 WebSocket 拿玩家位置，指向已选物品的最近点，并支持按键标记已获取。
 
     设计原则：
@@ -56,8 +64,8 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
                 "选择物品": [],
                 # 标记按键（UI 映射），例如 'f'，当玩家按下且目标在阈值内时标记为已获取
                 "标记按键": "f",
-                # 标记时需要按住的最小时长（秒）
-                "标记按住时长": 0.8,
+                # 标记时需要按住的最小时长（秒）；小于等于 0 或非法值时回退到该默认值
+                "标记按住时长": 2.0,
             }
         )
 
@@ -79,11 +87,13 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
             {
                 "content": (
                     "可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
-                    "此项有值时优先使用，不再读取账号配置页。"
+                    "此项有值时优先使用，不再读取账号配置页。\n"
+                    "获取步骤见任务卡「使用说明」的「获取 content」一节。"
                 ),
                 "地图账号": (
                     "可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
-                    "账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
+                    "账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。\n"
+                    "在账号配置页填入 content 的步骤见任务卡「使用说明」。"
                 ),
                 "选择物品": ("选择要参与导航的物品列表。\n只会在当前地图里匹配这些物品。"),
                 "标记按键": ("接近目标后用于标记“已获取”的键位。\n默认按键为 f。"),
@@ -137,8 +147,115 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
         # 锁定待标记的目标（在接近阈值内）
         # 格式: {'map_id': str, 'hash': str, 'start_time': float | None}
         self._mark_lock_target = None
-        # 标记所需的最短连续按住时长（秒）
-        self._mark_lock_required = 2.0
+
+    @staticmethod
+    def _format_seconds(value: float) -> str:
+        """把秒数格式化为界面友好文本：20.0 → 20，0.8 → 0.8。"""
+        text = f"{float(value):.2f}".rstrip("0").rstrip(".")
+        return text or "0"
+
+    def _mark_hold_seconds(self) -> float:
+        """读取「标记按住时长」配置（秒）。
+
+        缺失、非法或小于等于 0 时回退到 default_config 中的默认值。
+        每轮读取，便于在 UI 中即时调整而无需重启任务。
+        """
+        fallback = float(self.default_config.get("标记按住时长") or 2.0)
+        try:
+            seconds = float(self.config.get("标记按住时长", fallback))
+        except (TypeError, ValueError):
+            return fallback
+        return seconds if math.isfinite(seconds) and seconds > 0 else fallback
+
+    def build_instructions(self):
+        """物品导航配置使用说明（简要）。
+
+        文本经 self.tr() 走 gettext i18n（msgid 写入 i18n/*/LC_MESSAGES/ok.po）；
+        emoji、树形符号与 HTML 样式留在代码里拼接，只有可翻译的纯文本进入目录。
+        由 InstructionsMixin 延迟构建，任务卡片上的「使用说明」按钮读取 instructions 时才会执行。
+        """
+        marked_display = str(self._marked_store).replace("\\", "/")
+        # 「获取 content」的分步说明。地址经 .format() 注入，避免把 URL 写进 msgid 收集池。
+        content_steps = [
+            inst_line(f"└─ {self.tr('1. 打开浏览器，按 F12 打开开发者工具')}", indent=1),
+            inst_line(
+                "└─ " + self.tr("2. 访问 {map_url} 并登录").format(map_url=OFFICIAL_MAP_PAGE_URL),
+                indent=1,
+            ),
+            inst_line(
+                "└─ " + self.tr("3. 切到「网络 / Network」标签，在筛选框输入 {api}").format(api=HG_CHECK_API_URL),
+                indent=1,
+            ),
+            inst_line(f"└─ {self.tr('4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值')}", indent=1),
+            inst_line(
+                f"└─ {self.tr('5. 把该值填入本任务 content；或填入账号配置页的「地图同步 content」，再用「地图账号」选择该账号')}",
+                indent=1,
+            ),
+        ]
+        return "<br>".join(
+            [
+                inst_line("📍 " + self.tr("物品导航配置说明"), "#FF5555", bold=True),
+                inst_line(
+                    "⚙️ " + self.tr("位置来源：content 有值时使用官方地图 WebSocket，为空时使用本地 WS"),
+                    "#FF5555",
+                    bold=True,
+                ),
+                inst_gap(),
+                inst_line("🧭 " + self.tr("关键配置"), "#FE821D", bold=True),
+                inst_line(f"└─ {self.tr('选择物品：勾选要导航的物品，只匹配当前地图；为空时不会有任何目标')}", indent=1),
+                inst_line(
+                    f"└─ {self.tr('地图账号：content 为空时从中读取地图同步 content，选项来自账号配置页')}", indent=1
+                ),
+                inst_line(f"└─ {self.tr('标记按键：接近目标后用于标记已获取的键位，仅支持单个字符')}", indent=1),
+                inst_line(
+                    f"└─ {self.tr('标记按住时长：连续按住标记键达到该时长即记为已获取（默认 2 秒）')}", indent=1
+                ),
+                inst_gap(),
+                # 浮层显示的文案分组：浮层功能本身在 feat/window-overlay-text 分支，
+                # 但使用说明只存在于本分支，因此该分组随使用说明一起落地。
+                inst_line("🎨 " + self.tr("浮层显示"), "#FE821D", bold=True),
+                inst_line(f"└─ {self.tr('浮层信息：开启后在浮层上显示物品名、距离、方位与高度（默认开启）')}", indent=1),
+                inst_line(
+                    f"└─ {self.tr('浮层文字透明度 / 浮层背景透明度：取值 0-100，0 表示完全透明')}", indent=1
+                ),
+                inst_line(
+                    f"└─ {self.tr('浮层字号：以 1080p 窗口高度为基准的像素值，会随窗口高度等比缩放')}", indent=1
+                ),
+                inst_gap(),
+                inst_line("🔑 " + self.tr("获取 content（官方地图同步）"), "#FE821D", bold=True),
+                *content_steps,
+                inst_gap(),
+                inst_line("🖱️ " + self.tr("标记已获取"), "#FE821D", bold=True),
+                inst_line(
+                    "└─ "
+                    + self.tr("水平距离 {distance} 以内连续按住标记键 {seconds} 秒即记为已获取，之后不再指向该点").format(
+                        distance=self._format_seconds(self._near_xz_threshold),
+                        seconds=self._format_seconds(self._mark_hold_seconds()),
+                    ),
+                    indent=1,
+                ),
+                inst_line(f"└─ {self.tr('中途松开或离开范围会取消本次标记')}", indent=1),
+                inst_line(
+                    f"└─ {self.tr('标记记录保存在 {path}，删除对应条目即可重新导航').format(path=marked_display)}",
+                    indent=1,
+                ),
+                inst_gap(),
+                inst_line("📡 " + self.tr("本地 WS 模式准备"), "#FE821D", bold=True),
+                inst_line(
+                    "└─ "
+                    + self.tr("安装 Tampermonkey 并导入 {path}（可用「油猴脚本帮助」按钮打开脚本目录）").format(
+                        path=RELAY_USER_SCRIPT
+                    ),
+                    indent=1,
+                ),
+                inst_line(f"└─ {self.tr('打开网页地图并保持页面存活，脚本会自动开启位置同步')}", indent=1),
+                inst_gap(),
+                inst_line("🪟 " + self.tr("显示条件"), "#FE821D", bold=True),
+                inst_line(f"└─ {self.tr('箭头仅在游戏窗口处于前台时显示')}", indent=1),
+                inst_line(f"└─ {self.tr('浮层同时显示当前指向的物品名、距离、方位（东西南北）与上下高度')}", indent=1),
+                inst_line(f"└─ {self.tr('游戏窗口不存在或不可见时任务会暂停并停止位置同步')}", indent=1),
+            ]
+        )
 
     @staticmethod
     def _get_map_account_options() -> list[str]:
@@ -559,9 +676,10 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
             self._draw_nav_arrow(dx, dz, tooltip=f"{best_meta} | XZ:{best_dxz:.3f} | Y:{dy_height:.3f}")
             self._draw_height_arrow(dy_height, tooltip=f"{best_meta} | Y:{dy_height:.3f}")
 
-            # 标记逻辑：锁定目标并要求连续按住指定时长（_mark_lock_required）才能标记
+            # 标记逻辑：锁定目标并要求连续按住配置时长（「标记按住时长」）才能标记
             mark_key = str(self.config.get("标记按键") or "").strip() or "f"
             cur_key = self._is_key_pressed(mark_key)
+            mark_hold_seconds = self._mark_hold_seconds()
 
             if near_xz:
                 # 计算目标哈希并确保锁定目标为当前最近目标
@@ -576,7 +694,7 @@ class ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask):
                         self._mark_lock_target["start_time"] = now
                     else:
                         elapsed = now - self._mark_lock_target["start_time"]
-                        if elapsed >= float(self._mark_lock_required):
+                        if elapsed >= mark_hold_seconds:
                             # 最终确认未被提前标记
                             if h not in self._marked.get(map_id, set()):
                                 with self._marked_lock:

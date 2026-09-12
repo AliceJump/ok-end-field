@@ -533,20 +533,6 @@ msgstr "Solo Comprar, No Vender"
 msgid "只填写 data.content 的字符串值"
 msgstr "Introduce solo el valor de cadena de data.content"
 
-msgid ""
-"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
-"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
-msgstr ""
-"Opcional. Cuando content está vacío, lee desde la página de configuración de cuentas el content de sincronización de mapa guardado para esa cuenta.\n"
-"La lista de cuentas viene de la página de configuración de cuentas. Déjalo vacío para intentar usar el contexto de cuenta de la tarea actual."
-
-msgid ""
-"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
-"此项有值时优先使用，不再读取账号配置页。"
-msgstr ""
-"Opcional. Pega directamente el valor data.content del JSON devuelto por web-api.skland.com/account/info/hg/check.\n"
-"Si este campo tiene valor, se usa primero y no se lee la página de configuración de cuentas."
-
 msgid "可选。设置外部命令的起始目录（工作目录）；留空则使用默认目录。"
 msgstr ""
 "Opcional. Directorio de trabajo del comando externo; vacío usa el "
@@ -2527,3 +2513,142 @@ msgstr "No se encontraron archivos de configuración en el ZIP"
 
 msgid "重启失败"
 msgstr "Error al reiniciar"
+
+msgid "物品导航配置说明"
+msgstr "Configuración de Navegación de Objetos"
+
+msgid "位置来源：content 有值时使用官方地图 WebSocket，为空时使用本地 WS"
+msgstr ""
+"Origen de posición: WebSocket del mapa oficial si content tiene valor, WS "
+"local si está vacío"
+
+msgid "关键配置"
+msgstr "Ajustes clave"
+
+msgid "选择物品：勾选要导航的物品，只匹配当前地图；为空时不会有任何目标"
+msgstr ""
+"Seleccionar objetos: elige los objetos a navegar; solo se compara el mapa "
+"actual y si está vacío no hay objetivo"
+
+msgid "地图账号：content 为空时从中读取地图同步 content，选项来自账号配置页"
+msgstr ""
+"Cuenta del mapa: lee el content de sincronización de esa cuenta cuando "
+"content está vacío; las opciones vienen de la página de cuentas"
+
+msgid "标记按键：接近目标后用于标记已获取的键位，仅支持单个字符"
+msgstr ""
+"Tecla de Marca: tecla para marcar como obtenido al acercarse al objetivo; "
+"solo un carácter"
+
+msgid "标记已获取"
+msgstr "Marcar como obtenido"
+
+msgid "水平距离 {distance} 以内连续按住标记键 {seconds} 秒即记为已获取，之后不再指向该点"
+msgstr ""
+"Mantén la tecla de marcado {seconds} segundos a una distancia horizontal de "
+"{distance} o menos para marcarlo como obtenido; después se omite"
+
+msgid "中途松开或离开范围会取消本次标记"
+msgstr "Soltar la tecla o salir del rango cancela el marcado"
+
+msgid "标记记录保存在 {path}，删除对应条目即可重新导航"
+msgstr ""
+"Los marcados se guardan en {path}; elimina una entrada para volver a navegar"
+" a ese punto"
+
+msgid "本地 WS 模式准备"
+msgstr "Preparación del modo WS local"
+
+msgid "安装 Tampermonkey 并导入 {path}（可用「油猴脚本帮助」按钮打开脚本目录）"
+msgstr ""
+"Instala Tampermonkey e importa {path} (usa el botón de ayuda del script de "
+"Tampermonkey para abrir la carpeta del script)"
+
+msgid "打开网页地图并保持页面存活，脚本会自动开启位置同步"
+msgstr ""
+"Abre el mapa web y mantén la página activa; el script activa la "
+"sincronización de posición automáticamente"
+
+msgid "显示条件"
+msgstr "Condiciones de visualización"
+
+msgid "箭头仅在游戏窗口处于前台时显示"
+msgstr ""
+"Las flechas solo se muestran cuando la ventana del juego está en primer "
+"plano"
+
+msgid "游戏窗口不存在或不可见时任务会暂停并停止位置同步"
+msgstr ""
+"Si la ventana del juego no existe o no es visible, la tarea se pausa y "
+"detiene la sincronización de posición"
+
+msgid "浮层同时显示当前指向的物品名、距离、方位（东西南北）与上下高度"
+msgstr ""
+"La superposición también muestra el nombre del objeto, la distancia, el "
+"rumbo (N/E/S/O) y la altura"
+
+msgid "标记按住时长：连续按住标记键达到该时长即记为已获取（默认 2 秒）"
+msgstr ""
+"Duración de pulsación: mantén la tecla de marcado este tiempo para marcarlo "
+"como obtenido (2 segundos por defecto)"
+
+msgid "浮层显示"
+msgstr "Visualización de superposición"
+
+msgid "浮层信息：开启后在浮层上显示物品名、距离、方位与高度（默认开启）"
+msgstr ""
+"Info de superposición: al activarlo muestra el nombre del objeto, la "
+"distancia, el rumbo y la altura (activado por defecto)"
+
+msgid "浮层文字透明度 / 浮层背景透明度：取值 0-100，0 表示完全透明"
+msgstr ""
+"Opacidad del texto / del fondo de superposición: 0-100, donde 0 es "
+"totalmente transparente"
+
+msgid "浮层字号：以 1080p 窗口高度为基准的像素值，会随窗口高度等比缩放"
+msgstr ""
+"Tamaño de fuente de superposición: valor en píxeles respecto a una ventana "
+"de 1080p; se escala con la altura de la ventana"
+
+msgid "获取 content（官方地图同步）"
+msgstr "Obtener content (sincronización del mapa oficial)"
+
+msgid "1. 打开浏览器，按 F12 打开开发者工具"
+msgstr ""
+"1. Abre el navegador y pulsa F12 para abrir las herramientas de "
+"desarrollador"
+
+msgid "2. 访问 {map_url} 并登录"
+msgstr "2. Entra en {map_url} e inicia sesión"
+
+msgid "3. 切到「网络 / Network」标签，在筛选框输入 {api}"
+msgstr "3. Cambia a la pestaña Network y escribe {api} en el cuadro de filtro"
+
+msgid "4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值"
+msgstr ""
+"4. Selecciona esa petición en la lista filtrada y copia data.content de "
+"Response"
+
+msgid "5. 把该值填入本任务 content；或填入账号配置页的「地图同步 content」，再用「地图账号」选择该账号"
+msgstr ""
+"5. Pégalo en el content de esta tarea, o guárdalo como «content de "
+"sincronizacion del mapa» en la página de cuentas y elige esa cuenta en "
+"«Cuenta del mapa»"
+
+msgid ""
+"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
+"此项有值时优先使用，不再读取账号配置页。\n"
+"获取步骤见任务卡「使用说明」的「获取 content」一节。"
+msgstr ""
+"Opcional. Pega directamente el valor data.content del JSON devuelto por web-api.skland.com/account/info/hg/check.\n"
+"Si este campo tiene valor, se usa primero y no se lee la página de configuración de cuentas.\n"
+"Consulta la sección «Obtener content» de las instrucciones de la tarjeta de tarea."
+
+msgid ""
+"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
+"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。\n"
+"在账号配置页填入 content 的步骤见任务卡「使用说明」。"
+msgstr ""
+"Opcional. Cuando content está vacío, lee desde la página de configuración de cuentas el content de sincronización de mapa guardado para esa cuenta.\n"
+"La lista de cuentas viene de la página de configuración de cuentas. Déjalo vacío para intentar usar el contexto de cuenta de la tarea actual.\n"
+"Consulta las instrucciones de la tarjeta de tarea para rellenar content en la página de cuentas."
