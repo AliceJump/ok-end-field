@@ -43,6 +43,28 @@ Support English and Chinese in both code review and generated code.
 - Use `supported_languages` only to hide a task in unsupported locales. Common locale names are `en_US`, `zh_CN`, `zh_TW`, `ja_JP`, `ko_KR`, and `es_ES`.
 - Do not hard-code assumptions from the source project used to study `ok-script` unless the target project explicitly uses them.
 
+## Config UI: Conditional Visibility and Numeric Ranges
+
+`self.config_type[key]` accepts two extra keys that drive the generated config UI. Both are honored by the shared resolver `ok/core/config_schema.py` and by the Qt card (`ok/ui/qt/tasks/ConfigCard.py`).
+
+- **`sub_configs`** — show child options only for specific parent values:
+
+  ```python
+  self.config_type["浮层信息"] = {
+      "sub_configs": {True: ["浮层文字透明度", "浮层背景透明度", "浮层字号"]},
+  }
+  ```
+
+  The rule maps *parent value* → *child keys*. A child is visible only when its parent's current value is a key of the map (lists union across selected values). A value with no entry (e.g. `False` here) hides every child. Children may themselves be parents, giving nested folding. Children are rendered indented, and the parent's switch/dropdown/multi-select drives updates live.
+  Project example: `src/core/BattleConfig.py` (`KEY_ENABLE_ROTATION`), `src/tasks/onetime/DeliveryTask.py`.
+  The parent must be a widget that emits change signals: bool → `SwitchButton`, `drop_down`, or multi-selection.
+
+- **`min` / `max`** — numeric bounds for `SpinBox`. Only **int** defaults get a bounded `SpinBox`; a `float` default becomes a `DoubleSpinBox` that ignores `min`/`max`. So expose bounded numbers as `int` (e.g. a 0-100 opacity percentage, or a pixel size), and convert to a float internally.
+
+- The widget kind is chosen from the **default value's type**, not the current value: `bool` → switch, `int` → `SpinBox`, `float` → `DoubleSpinBox`, `list` → list editor. Pick the default's type deliberately.
+
+- Config keys and `config_description` strings are user-visible and must go through gettext (see `$ok-script-i18n`).
+
 ## Essential Rules
 
 - Always call `super().__init__(*args, **kwargs)` before setting task fields.
