@@ -513,20 +513,6 @@ msgstr "구매만, 판매 없음"
 msgid "只填写 data.content 的字符串值"
 msgstr "data.content의 문자열 값만 입력"
 
-msgid ""
-"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
-"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
-msgstr ""
-"선택 사항입니다. content가 비어 있으면 계정 설정 페이지에서 해당 계정에 저장된 지도 동기화 content를 읽습니다.\n"
-"계정 목록은 계정 설정 페이지에서 가져옵니다. 비워 두면 현재 작업의 계정 컨텍스트를 사용합니다."
-
-msgid ""
-"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
-"此项有值时优先使用，不再读取账号配置页。"
-msgstr ""
-"선택 사항입니다. web-api.skland.com/account/info/hg/check 가 반환한 JSON의 data.content 값을 직접 입력합니다.\n"
-"이 항목에 값이 있으면 우선 사용하며 계정 설정 페이지를 읽지 않습니다."
-
 msgid "可选。设置外部命令的起始目录（工作目录）；留空则使用默认目录。"
 msgstr "선택 사항. 외부 명령의 시작 디렉터리(작업 디렉터리)를 설정합니다. 비워 두면 기본 디렉터리를 사용합니다."
 
@@ -2419,3 +2405,41 @@ msgstr "오버레이 텍스트 불투명도 / 오버레이 배경 불투명도: 
 
 msgid "浮层字号：以 1080p 窗口高度为基准的像素值，会随窗口高度等比缩放"
 msgstr "오버레이 글자 크기: 1080p 창 높이를 기준으로 한 픽셀 값이며 창 높이에 따라 비례해서 조정됩니다"
+
+msgid "获取 content（官方地图同步）"
+msgstr "content 가져오기(공식 지도 동기화)"
+
+msgid "1. 打开浏览器，按 F12 打开开发者工具"
+msgstr "1. 브라우저를 열고 F12를 눌러 개발자 도구를 엽니다"
+
+msgid "2. 访问 {map_url} 并登录"
+msgstr "2. {map_url} 에 접속해 로그인합니다"
+
+msgid "3. 切到「网络 / Network」标签，在筛选框输入 {api}"
+msgstr "3. 'Network / 네트워크' 탭으로 전환하고 필터 상자에 {api} 를 입력합니다"
+
+msgid "4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值"
+msgstr "4. 필터링된 목록에서 해당 요청을 선택하고 Response 에서 data.content 값을 확인합니다"
+
+msgid "5. 把该值填入本任务 content；或填入账号配置页的「地图同步 content」，再用「地图账号」选择该账号"
+msgstr ""
+"5. 그 값을 이 작업의 content 에 붙여넣거나, 계정 설정 페이지의 '지도 동기화 content' 에 저장한 뒤 '지도 계정' "
+"에서 해당 계정을 선택합니다"
+
+msgid ""
+"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
+"此项有值时优先使用，不再读取账号配置页。\n"
+"获取步骤见任务卡「使用说明」的「获取 content」一节。"
+msgstr ""
+"선택 사항입니다. web-api.skland.com/account/info/hg/check 가 반환한 JSON의 data.content 값을 직접 입력합니다.\n"
+"이 항목에 값이 있으면 우선 사용하며 계정 설정 페이지를 읽지 않습니다.\n"
+"가져오는 방법은 작업 카드의 '사용 설명'에서 'content 가져오기' 항목을 참고하세요."
+
+msgid ""
+"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
+"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。\n"
+"在账号配置页填入 content 的步骤见任务卡「使用说明」。"
+msgstr ""
+"선택 사항입니다. content가 비어 있으면 계정 설정 페이지에서 해당 계정에 저장된 지도 동기화 content를 읽습니다.\n"
+"계정 목록은 계정 설정 페이지에서 가져옵니다. 비워 두면 현재 작업의 계정 컨텍스트를 사용합니다.\n"
+"계정 설정 페이지에서 content 를 입력하는 방법은 작업 카드의 '사용 설명'을 참고하세요."

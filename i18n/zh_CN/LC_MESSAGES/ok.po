@@ -478,20 +478,6 @@ msgstr "只买不卖"
 msgid "只填写 data.content 的字符串值"
 msgstr "只填写 data.content 的字符串值"
 
-msgid ""
-"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
-"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
-msgstr ""
-"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
-"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
-
-msgid ""
-"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
-"此项有值时优先使用，不再读取账号配置页。"
-msgstr ""
-"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
-"此项有值时优先使用，不再读取账号配置页。"
-
 msgid "可选。设置外部命令的起始目录（工作目录）；留空则使用默认目录。"
 msgstr "可选。设置外部命令的起始目录（工作目录）；留空则使用默认目录。"
 
@@ -2398,3 +2384,39 @@ msgstr "浮层文字透明度 / 浮层背景透明度：取值 0-100，0 表示�
 
 msgid "浮层字号：以 1080p 窗口高度为基准的像素值，会随窗口高度等比缩放"
 msgstr "浮层字号：以 1080p 窗口高度为基准的像素值，会随窗口高度等比缩放"
+
+msgid "获取 content（官方地图同步）"
+msgstr "获取 content（官方地图同步）"
+
+msgid "1. 打开浏览器，按 F12 打开开发者工具"
+msgstr "1. 打开浏览器，按 F12 打开开发者工具"
+
+msgid "2. 访问 {map_url} 并登录"
+msgstr "2. 访问 {map_url} 并登录"
+
+msgid "3. 切到「网络 / Network」标签，在筛选框输入 {api}"
+msgstr "3. 切到「网络 / Network」标签，在筛选框输入 {api}"
+
+msgid "4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值"
+msgstr "4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值"
+
+msgid "5. 把该值填入本任务 content；或填入账号配置页的「地图同步 content」，再用「地图账号」选择该账号"
+msgstr "5. 把该值填入本任务 content；或填入账号配置页的「地图同步 content」，再用「地图账号」选择该账号"
+
+msgid ""
+"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
+"此项有值时优先使用，不再读取账号配置页。\n"
+"获取步骤见任务卡「使用说明」的「获取 content」一节。"
+msgstr ""
+"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
+"此项有值时优先使用，不再读取账号配置页。\n"
+"获取步骤见任务卡「使用说明」的「获取 content」一节。"
+
+msgid ""
+"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
+"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。\n"
+"在账号配置页填入 content 的步骤见任务卡「使用说明」。"
+msgstr ""
+"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
+"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。\n"
+"在账号配置页填入 content 的步骤见任务卡「使用说明」。"

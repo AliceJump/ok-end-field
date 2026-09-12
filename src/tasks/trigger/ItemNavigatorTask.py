@@ -33,6 +33,10 @@ SPECIAL_ITEM_Y_OFFSET = {
 # 本地 WS 模式依赖的油猴脚本（相对仓库根目录）
 RELAY_USER_SCRIPT = "assets/scripts/endfield-ws-position-relay.user.js"
 
+# 「获取 content」使用说明里展示给用户的地址（用户手动访问 / 在开发者工具里筛选用）
+OFFICIAL_MAP_PAGE_URL = "https://game.skland.com/map/endfield"
+HG_CHECK_API_URL = "https://web-api.skland.com/account/info/hg/check"
+
 
 class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerTask):
     """实时从本地 WebSocket 拿玩家位置，指向已选物品的最近点，并支持按键标记已获取。
@@ -83,11 +87,13 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
             {
                 "content": (
                     "可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
-                    "此项有值时优先使用，不再读取账号配置页。"
+                    "此项有值时优先使用，不再读取账号配置页。\n"
+                    "获取步骤见任务卡「使用说明」的「获取 content」一节。"
                 ),
                 "地图账号": (
                     "可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
-                    "账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
+                    "账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。\n"
+                    "在账号配置页填入 content 的步骤见任务卡「使用说明」。"
                 ),
                 "选择物品": ("选择要参与导航的物品列表。\n只会在当前地图里匹配这些物品。"),
                 "标记按键": ("接近目标后用于标记“已获取”的键位。\n默认按键为 f。"),
@@ -169,6 +175,23 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         由 InstructionsMixin 延迟构建，任务卡片上的「使用说明」按钮读取 instructions 时才会执行。
         """
         marked_display = str(self._marked_store).replace("\\", "/")
+        # 「获取 content」的分步说明。地址经 .format() 注入，避免把 URL 写进 msgid 收集池。
+        content_steps = [
+            inst_line(f"└─ {self.tr('1. 打开浏览器，按 F12 打开开发者工具')}", indent=1),
+            inst_line(
+                "└─ " + self.tr("2. 访问 {map_url} 并登录").format(map_url=OFFICIAL_MAP_PAGE_URL),
+                indent=1,
+            ),
+            inst_line(
+                "└─ " + self.tr("3. 切到「网络 / Network」标签，在筛选框输入 {api}").format(api=HG_CHECK_API_URL),
+                indent=1,
+            ),
+            inst_line(f"└─ {self.tr('4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值')}", indent=1),
+            inst_line(
+                f"└─ {self.tr('5. 把该值填入本任务 content；或填入账号配置页的「地图同步 content」，再用「地图账号」选择该账号')}",
+                indent=1,
+            ),
+        ]
         return "<br>".join(
             [
                 inst_line("📍 " + self.tr("物品导航配置说明"), "#FF5555", bold=True),
@@ -198,6 +221,9 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 inst_line(
                     f"└─ {self.tr('浮层字号：以 1080p 窗口高度为基准的像素值，会随窗口高度等比缩放')}", indent=1
                 ),
+                inst_gap(),
+                inst_line("🔑 " + self.tr("获取 content（官方地图同步）"), "#FE821D", bold=True),
+                *content_steps,
                 inst_gap(),
                 inst_line("🖱️ " + self.tr("标记已获取"), "#FE821D", bold=True),
                 inst_line(

@@ -7,7 +7,7 @@ from types import SimpleNamespace
 import polib
 
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
-from src.tasks.trigger.ItemNavigatorTask import ItemNavigatorTask
+from src.tasks.trigger.ItemNavigatorTask import HG_CHECK_API_URL, OFFICIAL_MAP_PAGE_URL, ItemNavigatorTask
 
 I18N_ROOT = Path("i18n")
 MARKED_STORE = Path("configs") / "marked_points.json"
@@ -93,12 +93,23 @@ class TestItemNavigatorInstructions(unittest.TestCase):
         for expected in (
             "物品导航配置说明",
             "关键配置",
+            "获取 content（官方地图同步）",
             "标记已获取",
             "本地 WS 模式准备",
             "浮层显示",
             "显示条件",
         ):
             self.assertIn(expected, self.html)
+
+    def test_instructions_explain_how_to_obtain_content(self):
+        """「获取 content」必须给出可照做的分步操作，而不是只说去哪个接口拿。"""
+        for expected in ("F12", "开发者工具", "网络 / Network", "响应 / Response", "data.content", "地图账号"):
+            self.assertIn(expected, self.html)
+
+    def test_content_steps_show_the_real_urls(self):
+        """URL 通过 .format() 注入，说明里必须能看到真实地址。"""
+        self.assertIn(OFFICIAL_MAP_PAGE_URL, self.html)
+        self.assertIn(HG_CHECK_API_URL, self.html)
 
     def test_instructions_show_configured_hold_seconds(self):
         self.assertIn("水平距离 20 以内连续按住标记键 2 秒", self.html)
@@ -110,9 +121,12 @@ class TestItemNavigatorInstructions(unittest.TestCase):
         """运行时数据只能经 .format() 注入；直接喂给 tr() 会污染 gettext 收集池。"""
         self.assertIn("configs/marked_points.json", self.html)
         self.assertIn("assets/scripts/endfield-ws-position-relay.user.js", self.html)
+        self.assertIn(OFFICIAL_MAP_PAGE_URL, self.html)
+        self.assertIn(HG_CHECK_API_URL, self.html)
         for text in self.recorded:
             self.assertNotIn("configs/marked_points.json", text)
             self.assertNotIn("endfield-ws-position-relay.user.js", text)
+            self.assertNotIn("http", text)
 
     def test_every_msgid_exists_in_all_locales(self):
         self.assertTrue(self.recorded)
