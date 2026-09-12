@@ -637,6 +637,8 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         return int((angle + 22.5) // 45.0) % 8
 
     def _height_label(self, dy_height: float) -> str:
+        if abs(dy_height) < 0.05:
+            return self.tr("同高")
         if dy_height > 0:
             return self.tr("上方")
         if dy_height < 0:

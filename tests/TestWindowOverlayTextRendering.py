@@ -158,6 +158,25 @@ class TestGdiOverlayTextRendering(unittest.TestCase):
         # 字形仍然要画出来
         self.assertGreater(self._bright(region), 0)
 
+    def test_text_alpha_zero_skips_glyphs_but_keeps_the_panel(self):
+        self.painter.add_text(_text_spec(alpha=0))
+        self._paint()
+
+        region = self._region(TEXT_ROWS, TEXT_COLS)
+        self.assertGreater(self._non_black(region), 0, "文字透明时仍应绘制底板")
+        self.assertEqual(self._bright(region), 0, "alpha=0 时不应绘制字形")
+
+    def test_text_color_uses_opaque_alpha_blending(self):
+        opaque = GdiArrowPainter.gdi_text_color((255, 128, 64), 255)
+        self.assertEqual(opaque, (255, 128, 64))
+
+        blended = GdiArrowPainter.gdi_text_color((255, 128, 64), 128)
+        expected = tuple(
+            round(channel * (128 / 255) + bg * (1 - 128 / 255))
+            for channel, bg in zip((255, 128, 64), GdiArrowPainter.PANEL_BLEND_BG, strict=True)
+        )
+        self.assertEqual(blended, expected)
+
     def test_panel_darkness_follows_alpha(self):
         """GDI 无逐像素 alpha，用混合色近似：alpha 越低颜色越浅，且永远不会是纯黑。"""
         opaque = np.array(GdiArrowPainter.gdi_panel_color(255))

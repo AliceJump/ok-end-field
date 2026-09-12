@@ -173,6 +173,19 @@ class TestTargetInfoLines(unittest.TestCase):
         self.assertEqual(below[2], "高度 下方 3.5")
         self.assertEqual(level[2], "高度 同高 0.0")
 
+    def test_height_label_matches_one_decimal_display_at_zero_boundary(self):
+        stub = _navigator_stub()
+        cases = (
+            (0.04, "高度 同高 0.0"),
+            (-0.04, "高度 同高 0.0"),
+            (0.05, "高度 上方 0.1"),
+            (-0.05, "高度 下方 0.1"),
+        )
+        for dy_height, expected in cases:
+            with self.subTest(dy_height=dy_height):
+                lines = ItemNavigatorTask.build_target_info_lines(stub, "物品", 0.0, 1.0, 5.0, dy_height)
+                self.assertEqual(lines[2], expected)
+
     def test_blank_item_name_is_omitted(self):
         stub = _navigator_stub()
         for name in (None, "", "   "):

@@ -599,10 +599,13 @@ class GdiArrowPainter:
                     gdi32.SelectObject(hdc_ref, old_pen)
                     gdi32.DeleteObject(brush)
 
-            gdi32.SetTextColor(hdc_ref, _rgb(*tuple(spec.color)[:3]))
-            gdi32.SetBkMode(hdc_ref, 1)  # TRANSPARENT
-            for index, line in enumerate(lines):
-                gdi32.TextOutW(hdc_ref, left + pad_x, top + pad_y + line_height * index, line, len(line))
+            text_alpha = max(0, min(255, int(spec.alpha)))
+            if text_alpha > 0:
+                text_color = self.gdi_text_color(spec.color, text_alpha)
+                gdi32.SetTextColor(hdc_ref, _rgb(*text_color))
+                gdi32.SetBkMode(hdc_ref, 1)  # TRANSPARENT
+                for index, line in enumerate(lines):
+                    gdi32.TextOutW(hdc_ref, left + pad_x, top + pad_y + line_height * index, line, len(line))
         finally:
             gdi32.SelectObject(hdc_ref, old_font)
             gdi32.DeleteObject(font)
@@ -621,6 +624,15 @@ class GdiArrowPainter:
         return tuple(
             round(color * ratio + bg * (1.0 - ratio))
             for color, bg in zip(cls.PANEL_COLOR, cls.PANEL_BLEND_BG, strict=True)
+        )
+
+    @classmethod
+    def gdi_text_color(cls, color, alpha) -> tuple[int, int, int]:
+        """把文字 alpha 近似成 GDI 可用的不透明颜色。"""
+        ratio = max(0.0, min(1.0, float(alpha) / 255.0))
+        return tuple(
+            round(channel * ratio + bg * (1.0 - ratio))
+            for channel, bg in zip(tuple(color)[:3], cls.PANEL_BLEND_BG, strict=True)
         )
 
     @staticmethod
