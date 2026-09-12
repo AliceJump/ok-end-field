@@ -2545,8 +2545,8 @@ msgstr "Marcar como obtenido"
 
 msgid "水平距离 {distance} 以内连续按住标记键 {seconds} 秒即记为已获取，之后不再指向该点"
 msgstr ""
-"Mantén la tecla de marcado {seconds} segundos a {distance} de distancia "
-"horizontal para marcarlo como obtenido; después se omite"
+"Mantén la tecla de marcado {seconds} segundos a una distancia horizontal de "
+"{distance} o menos para marcarlo como obtenido; después se omite"
 
 msgid "中途松开或离开范围会取消本次标记"
 msgstr "Soltar la tecla o salir del rango cancela el marcado"

@@ -2350,7 +2350,7 @@ msgstr "아이템 선택: 내비게이션할 아이템을 선택합니다. 현�
 
 msgid "地图账号：content 为空时从中读取地图同步 content，选项来自账号配置页"
 msgstr ""
-"지도 계정: content 가 비어 있을 때 해당 계정의 지도 동기화 content 를 읽습니다. 항목은 계정 설정 페이지에서 가져옵니다"
+"지도 계정: content가 비어 있을 때 해당 계정의 지도 동기화 content를 읽습니다. 항목은 계정 설정 페이지에서 가져옵니다"
 
 msgid "标记按键：接近目标后用于标记已获取的键位，仅支持单个字符"
 msgstr "마크 키: 목표에 접근했을 때 획득 완료로 표시하는 키. 한 글자만 지원"
@@ -2366,14 +2366,14 @@ msgid "中途松开或离开范围会取消本次标记"
 msgstr "도중에 키를 놓거나 범위를 벗어나면 이번 마크는 취소됩니다"
 
 msgid "标记记录保存在 {path}，删除对应条目即可重新导航"
-msgstr "마크 기록은 {path} 에 저장됩니다. 해당 항목을 삭제하면 다시 내비게이션할 수 있습니다"
+msgstr "마크 기록은 {path}에 저장됩니다. 해당 항목을 삭제하면 다시 내비게이션할 수 있습니다"
 
 msgid "本地 WS 模式准备"
 msgstr "로컬 WS 모드 준비"
 
 msgid "安装 Tampermonkey 并导入 {path}（可用「油猴脚本帮助」按钮打开脚本目录）"
 msgstr ""
-"Tampermonkey 를 설치하고 {path} 를 가져오기 (「브라우저 Tampermonkey 스크립트 도움말」 버튼으로 스크립트 "
+"Tampermonkey를 설치하고 {path}를 가져오기 (「브라우저 Tampermonkey 스크립트 도움말」 버튼으로 스크립트 "
 "폴더를 열 수 있습니다)"
 
 msgid "打开网页地图并保持页面存活，脚本会自动开启位置同步"
@@ -2413,25 +2413,25 @@ msgid "1. 打开浏览器，按 F12 打开开发者工具"
 msgstr "1. 브라우저를 열고 F12를 눌러 개발자 도구를 엽니다"
 
 msgid "2. 访问 {map_url} 并登录"
-msgstr "2. {map_url} 에 접속해 로그인합니다"
+msgstr "2. {map_url}에 접속해 로그인합니다"
 
 msgid "3. 切到「网络 / Network」标签，在筛选框输入 {api}"
-msgstr "3. 'Network / 네트워크' 탭으로 전환하고 필터 상자에 {api} 를 입력합니다"
+msgstr "3. 'Network / 네트워크' 탭으로 전환하고 필터 상자에 {api}를 입력합니다"
 
 msgid "4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值"
-msgstr "4. 필터링된 목록에서 해당 요청을 선택하고 Response 에서 data.content 값을 확인합니다"
+msgstr "4. 필터링된 목록에서 해당 요청을 선택하고 Response에서 data.content 값을 확인합니다"
 
 msgid "5. 把该值填入本任务 content；或填入账号配置页的「地图同步 content」，再用「地图账号」选择该账号"
 msgstr ""
-"5. 그 값을 이 작업의 content 에 붙여넣거나, 계정 설정 페이지의 '지도 동기화 content' 에 저장한 뒤 '지도 계정' "
-"에서 해당 계정을 선택합니다"
+"5. 그 값을 이 작업의 content에 붙여넣거나, 계정 설정 페이지의 '지도 동기화 content'에 저장한 뒤 "
+"'지도 계정'에서 해당 계정을 선택합니다"
 
 msgid ""
 "可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
 "此项有值时优先使用，不再读取账号配置页。\n"
 "获取步骤见任务卡「使用说明」的「获取 content」一节。"
 msgstr ""
-"선택 사항입니다. web-api.skland.com/account/info/hg/check 가 반환한 JSON의 data.content 값을 직접 입력합니다.\n"
+"선택 사항입니다. web-api.skland.com/account/info/hg/check가 반환한 JSON의 data.content 값을 직접 입력합니다.\n"
 "이 항목에 값이 있으면 우선 사용하며 계정 설정 페이지를 읽지 않습니다.\n"
 "가져오는 방법은 작업 카드의 '사용 설명'에서 'content 가져오기' 항목을 참고하세요."
 
@@ -2442,4 +2442,4 @@ msgid ""
 msgstr ""
 "선택 사항입니다. content가 비어 있으면 계정 설정 페이지에서 해당 계정에 저장된 지도 동기화 content를 읽습니다.\n"
 "계정 목록은 계정 설정 페이지에서 가져옵니다. 비워 두면 현재 작업의 계정 컨텍스트를 사용합니다.\n"
-"계정 설정 페이지에서 content 를 입력하는 방법은 작업 카드의 '사용 설명'을 참고하세요."
+"계정 설정 페이지에서 content를 입력하는 방법은 작업 카드의 '사용 설명'을 참고하세요."

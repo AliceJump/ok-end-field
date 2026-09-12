@@ -24,6 +24,16 @@ class _DemoInstructions(InstructionsMixin):
         return "EXTRA"
 
 
+class _FailingOnceInstructions(_DemoInstructions):
+    """首次构建失败，验证后续读取会重试。"""
+
+    def build_instructions(self):
+        self.build_count += 1
+        if self.build_count == 1:
+            raise OverflowError("invalid instruction value")
+        return "EXTRA"
+
+
 def _navigator_stub(recorded=None, hold_seconds=2.0):
     """构造只暴露 build_instructions 所需属性的物品导航替身。"""
 
@@ -71,6 +81,17 @@ class TestInstructionsMixin(unittest.TestCase):
 
         task.instructions = "OTHER"
         self.assertEqual(task.instructions, "OTHER<br><br>EXTRA")
+
+    def test_failed_build_remains_dirty_and_retries(self):
+        task = _FailingOnceInstructions()
+        task.instructions = "BASE"
+
+        with self.assertRaises(OverflowError):
+            _ = task.instructions
+
+        self.assertTrue(task._instructions_dirty)
+        self.assertEqual(task.instructions, "BASE<br><br>EXTRA")
+        self.assertEqual(task.build_count, 2)
 
     def test_inst_line_applies_indent_bold_and_color(self):
         self.assertEqual(inst_line("文本"), '<span style="color:;">文本</span>')
@@ -164,7 +185,8 @@ class TestMarkHoldSeconds(unittest.TestCase):
             self.assertEqual(ItemNavigatorTask._mark_hold_seconds(self._stub({"标记按住时长": value})), 2.0)
 
     def test_invalid_value_falls_back_to_default(self):
-        self.assertEqual(ItemNavigatorTask._mark_hold_seconds(self._stub({"标记按住时长": "abc"})), 2.0)
+        for value in ("abc", "inf"):
+            self.assertEqual(ItemNavigatorTask._mark_hold_seconds(self._stub({"标记按住时长": value})), 2.0)
 
     def test_numeric_string_is_accepted(self):
         self.assertEqual(ItemNavigatorTask._mark_hold_seconds(self._stub({"标记按住时长": "1.5"})), 1.5)

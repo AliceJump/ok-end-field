@@ -39,10 +39,10 @@ class InstructionsMixin:
     @property
     def instructions(self):
         if self._instructions_dirty:
-            self._instructions_dirty = False
             base = self._instructions_base
             extra = self.build_instructions()
             self._instructions_base = f"{base}<br><br>{extra}" if base else extra
+            self._instructions_dirty = False
         return self._instructions_base
 
     @instructions.setter

@@ -165,7 +165,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
             seconds = float(self.config.get("标记按住时长", fallback))
         except (TypeError, ValueError):
             return fallback
-        return seconds if seconds > 0 else fallback
+        return seconds if math.isfinite(seconds) and seconds > 0 else fallback
 
     def build_instructions(self):
         """物品导航配置使用说明（简要）。
