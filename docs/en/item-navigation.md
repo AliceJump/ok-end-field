@@ -29,6 +29,12 @@ This document covers two trigger/debug tasks:
 | `选择物品` (Select item) | `[]` | List of item names to navigate; no target is filtered when empty. |
 | `标记按键` (Mark key) | `f` | The key pressed to mark an item as "collected" when close to the target. |
 | `标记按住时长` (Mark hold duration) | `2.0` | Seconds the mark key must be held. Timing starts only within a horizontal distance of 20 of the target; reaching the duration marks it as collected. `0`, negative, or non-numeric values fall back to the default 2 seconds. |
+| `浮层信息` (Overlay info) | on | Shows the target item name, distance, bearing and height on the overlay. When off, the overlay keeps only the arrows. |
+| `浮层文字透明度` (Overlay text opacity) | `92` | Text opacity, 0-100 (0 fully transparent, 100 fully opaque). **Only shown while `浮层信息` is on.** |
+| `浮层背景透明度` (Overlay background opacity) | `59` | Opacity of the black text backdrop, 0-100 (`0` draws no backdrop). **Only shown while `浮层信息` is on.** |
+| `浮层字号` (Overlay font size) | `26` | Font size in pixels relative to a 1080p window height; scales with the window height. **Only shown while `浮层信息` is on.** |
+
+> Opacity and font size are re-read every cycle, so changes apply immediately without restarting the task. The three child options are hidden while `浮层信息` is off.
 
 ### Obtaining content
 
