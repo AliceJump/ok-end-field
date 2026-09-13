@@ -8,7 +8,7 @@ from types import SimpleNamespace
 
 import polib
 
-from src.tasks.trigger.ItemNavigatorTask import COMPASS_LABELS, ItemNavigatorTask
+from src.tasks.trigger.ItemNavigatorTask import COMPASS_LABELS, HEIGHT_SAME_THRESHOLD, ItemNavigatorTask
 
 I18N_ROOT = Path("i18n")
 TASK_SOURCE = Path("src/tasks/trigger/ItemNavigatorTask.py")
@@ -205,6 +205,57 @@ class TestTargetInfoLines(unittest.TestCase):
             self.assertNotIn("晶锥天使", text)
             self.assertNotIn("12.3", text)
             self.assertNotIn("4.3", text)
+
+
+class TestNearbyMarkerHeightDirection(unittest.TestCase):
+    def _marker_stub(self, drawn):
+        stub = SimpleNamespace(
+            _get_window_arrow_size=lambda: (1920, 1080),
+            _arrow_center_rel=(162 / 1920, 166 / 1080),
+            _nearby_marker_max_distance=75.524,
+            _marked={},
+            _point_hash=lambda pt, item_name: "point",
+            _arrow_scale=1.144,
+            _nearby_marker_min_len_px=12.0,
+            _nearby_marker_max_len_px=36.0,
+            _height_max_abs_dy=30.0,
+            _arrow_shaft_width_norm=0.005,
+            draw_window_arrow=lambda **kwargs: drawn.append(kwargs),
+            log_error=lambda message, **kwargs: None,
+        )
+        stub._point_height_delta = lambda pt, item_name, py: ItemNavigatorTask._point_height_delta(
+            stub, pt, item_name, py
+        )
+        stub._nearby_marker_length_px = lambda dy: ItemNavigatorTask._nearby_marker_length_px(stub, dy)
+        return stub
+
+    def _draw_marker(self, dy):
+        drawn = []
+        stub = self._marker_stub(drawn)
+        ItemNavigatorTask._draw_nearby_markers(
+            stub,
+            px=0.0,
+            pz=0.0,
+            py=0.0,
+            candidates={"物品": [{"x": 1.0, "y": dy, "z": 0.0}]},
+            map_id="map",
+        )
+        return drawn
+
+    def test_same_height_targets_do_not_draw_directional_shafts(self):
+        for dy in (0.0, HEIGHT_SAME_THRESHOLD / 2, -HEIGHT_SAME_THRESHOLD / 2):
+            with self.subTest(dy=dy):
+                self.assertEqual(self._draw_marker(dy), [])
+
+    def test_height_threshold_boundary_keeps_arrow_direction(self):
+        for dy, direction in ((HEIGHT_SAME_THRESHOLD, "up"), (-HEIGHT_SAME_THRESHOLD, "down")):
+            with self.subTest(dy=dy):
+                drawn = self._draw_marker(dy)
+                self.assertEqual(len(drawn), 1)
+                if direction == "up":
+                    self.assertGreater(drawn[0]["start_y_norm"], drawn[0]["end_y_norm"])
+                else:
+                    self.assertLess(drawn[0]["start_y_norm"], drawn[0]["end_y_norm"])
 
 
 class TestDrawTargetInfoText(unittest.TestCase):

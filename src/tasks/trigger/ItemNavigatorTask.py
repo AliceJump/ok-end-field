@@ -41,6 +41,7 @@ HG_CHECK_API_URL = "https://web-api.skland.com/account/info/hg/check"
 # 与方向箭头共用同一套坐标系（+Z 为地图上方/北，+X 为地图右侧/东），
 # 因此浮层文字与箭头朝向始终一致；若日后确认坐标系不同，只需调整此表顺序。
 COMPASS_LABELS = ("北", "东北", "东", "东南", "南", "西南", "西", "西北")
+HEIGHT_SAME_THRESHOLD = 0.05
 
 
 class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerTask):
@@ -412,9 +413,11 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                     screen_x = center_x + dx * self._arrow_scale
                     screen_y = center_y - dz * self._arrow_scale
 
-                    # 高差编码：箭尖固定在目标位置，尾巴长度随 |dy| 伸缩，
-                    # dy>0（目标在上）时尾巴在下方、箭头朝上；dy<0 时相反。
+                    # 高差编码：箭尖固定在目标位置，尾巴长度随 |dy| 伸缩。
+                    # 同高范围不画有方向箭身，避免和「同高」文字标签冲突。
                     dy = self._point_height_delta(pt, item_name, py)
+                    if abs(dy) < HEIGHT_SAME_THRESHOLD:
+                        continue
                     marker_len = self._nearby_marker_length_px(dy)
                     tail_y = screen_y + marker_len if dy > 0 else screen_y - marker_len
 
@@ -628,7 +631,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         return int((angle + 22.5) // 45.0) % 8
 
     def _height_label(self, dy_height: float) -> str:
-        if abs(dy_height) < 0.05:
+        if abs(dy_height) < HEIGHT_SAME_THRESHOLD:
             return self.tr("同高")
         if dy_height > 0:
             return self.tr("上方")
