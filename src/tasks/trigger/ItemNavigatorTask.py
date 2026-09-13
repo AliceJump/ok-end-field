@@ -37,6 +37,11 @@ RELAY_USER_SCRIPT = "assets/scripts/endfield-ws-position-relay.user.js"
 OFFICIAL_MAP_PAGE_URL = "https://game.skland.com/map/endfield"
 HG_CHECK_API_URL = "https://web-api.skland.com/account/info/hg/check"
 
+# 浮层方位文案：索引 0 为正北，顺时针每 45° 一档。
+# 与方向箭头共用同一套坐标系（+Z 为地图上方/北，+X 为地图右侧/东），
+# 因此浮层文字与箭头朝向始终一致；若日后确认坐标系不同，只需调整此表顺序。
+COMPASS_LABELS = ("北", "东北", "东", "东南", "南", "西南", "西", "西北")
+
 
 class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerTask):
     """实时从本地 WebSocket 拿玩家位置，指向已选物品的最近点，并支持按键标记已获取。
@@ -66,8 +71,22 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 "标记按键": "f",
                 # 标记时需要按住的最小时长（秒）；小于等于 0 或非法值时回退到该默认值
                 "标记按住时长": 2.0,
+                # 浮层目标信息（物品名 / 距离 / 方位 / 高度）
+                "浮层信息": True,
+                # 以下三项仅在「浮层信息」开启时显示（见 config_type 的 sub_configs）
+                "浮层文字透明度": 92,
+                "浮层背景透明度": 59,
+                "浮层字号": 26,
             }
         )
+
+        self.config_type["浮层信息"] = {
+            # 关闭浮层信息时，隐藏文字/背景透明度与字号选项
+            "sub_configs": {True: ["浮层文字透明度", "浮层背景透明度", "浮层字号"]},
+        }
+        self.config_type["浮层文字透明度"] = {"min": 0, "max": 100}
+        self.config_type["浮层背景透明度"] = {"min": 0, "max": 100}
+        self.config_type["浮层字号"] = {"min": 10, "max": 80}
 
         self.config_type["选择物品"] = {
             "options_available": item_map_query.get_supported_item_names(),
@@ -98,12 +117,20 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 "选择物品": ("选择要参与导航的物品列表。\n只会在当前地图里匹配这些物品。"),
                 "标记按键": ("接近目标后用于标记“已获取”的键位。\n默认按键为 f。"),
                 "标记按住时长": ("按住标记按键并持续达到这个时长后，\n才会把当前目标标记为已获取。"),
+                "浮层信息": ("在游戏窗口浮层上显示当前指向目标的物品名、\n距离、方位与高度。"),
+                "浮层文字透明度": ("浮层文字的透明度（0-100）。\n0 表示文字完全透明，100 表示完全不透明。"),
+                "浮层背景透明度": (
+                    "浮层文字底板（黑色背景）的透明度（0-100）。\n"
+                    "0 表示不绘制底板；headless 模式下该值为 0 才不显示底板。"
+                ),
+                "浮层字号": ("浮层文字字号，按 1080p 窗口高度为基准的像素值，\n会随窗口高度等比缩放。"),
                 "油猴脚本帮助": ("打开临时帮助文档。\n同时打开油猴脚本目录。"),
             }
         )
         self.default_config_group.update(
             {
                 "网页地图同步": ["content", "地图账号", "油猴脚本帮助"],
+                "浮层显示": ["浮层信息", "浮层文字透明度", "浮层背景透明度", "浮层字号"],
             }
         )
 
@@ -135,6 +162,21 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         self._height_arrow_max_len_norm = 0.08
         self._near_xz_threshold = 20.0
         self._height_arrow_max_abs_dy = 30.0
+
+        # 浮层目标信息文字（物品名 / 距离 / 方位 / 高度）
+        # 下面这些内部常量同时充当配置缺失/非法时的回退值（配置见 default_config）
+        self._info_text_key = "target_info"
+        # 左上角归一化坐标：x 固定；y 只作为下限，实际 y 由 _info_text_y_norm() 动态计算
+        self._info_text_pos = (0.015, 0.20)
+        # 附近标记云团的原始像素半径（与 _draw_nearby_markers 的偏移量同源）
+        self._nearby_marker_radius_px = self._nearby_marker_max_distance * self._arrow_scale
+        # 文字块与云团底边之间保留的原始像素间隙
+        self._info_text_gap_px = 16.0
+        self._info_text_font_size_norm = 0.024  # 字号（相对窗口高度）的回退值
+        self._info_text_color = (255, 255, 255)  # RGB
+        self._info_text_alpha = 235  # 文字 alpha 回退值（对应「浮层文字透明度」92）
+        self._info_text_line_spacing = 1.35
+        self._info_text_panel_alpha = 150  # 底板 alpha 回退值（对应「浮层背景透明度」59）
 
         self._load_marked()
         # dirty-save 控制：标记后延迟合并写盘
@@ -254,7 +296,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 inst_gap(),
                 inst_line("🪟 " + self.tr("显示条件"), "#FE821D", bold=True),
                 inst_line(f"└─ {self.tr('箭头仅在游戏窗口处于前台时显示')}", indent=1),
-                inst_line(f"└─ {self.tr('浮层同时显示当前指向的物品名、距离、方位（东西南北）与上下高度')}", indent=1),
+                inst_line(f"└─ {self.tr('浮层同时显示当前指向的物品名、距离、方位（北、东北、东、东南、南、西南、西、西北）与上下高度')}", indent=1),
                 inst_line(f"└─ {self.tr('游戏窗口不存在或不可见时任务会暂停并停止位置同步')}", indent=1),
             ]
         )
@@ -548,6 +590,128 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         except Exception as e:
             self.log_error(f"[箭头] 高差异常: {e}")
 
+    # --- 浮层目标信息文字（物品名 / 距离 / 方位 / 高度） ---
+
+    # 「浮层字号」以该窗口高度为基准换算成归一化字号（窗口变高时字号等比放大）
+    INFO_TEXT_FONT_REFERENCE_HEIGHT = 1080
+
+    @staticmethod
+    def _percent_to_alpha(value, fallback: int) -> int:
+        """把 0-100 的百分比透明度换算成 0-255 的 alpha。
+
+        缺失或非法（非数字 / NaN）时回退到 fallback；越界值截断到 [0, 100]。
+        与「标记按住时长」不同，0 是合法取值（完全透明），因此不做 ≤0 回退。
+        """
+        try:
+            percent = float(value)
+        except (TypeError, ValueError):
+            return fallback
+        if not math.isfinite(percent):
+            return fallback
+        return round(max(0.0, min(100.0, percent)) * 255.0 / 100.0)
+
+    def _overlay_info_enabled(self) -> bool:
+        """是否在浮层上显示目标信息文字。"""
+        return bool(self.config.get("浮层信息", True))
+
+    def _overlay_text_alpha(self) -> int:
+        """浮层文字 alpha（0-255），来自「浮层文字透明度」（0-100）。"""
+        return self._percent_to_alpha(self.config.get("浮层文字透明度"), self._info_text_alpha)
+
+    def _overlay_panel_alpha(self) -> int:
+        """浮层文字底板 alpha（0-255），来自「浮层背景透明度」（0-100）。"""
+        return self._percent_to_alpha(self.config.get("浮层背景透明度"), self._info_text_panel_alpha)
+
+    def _overlay_font_size_norm(self) -> float:
+        """浮层字号（像素，基准 1080p）换算成相对窗口高度的归一化字号。"""
+        try:
+            pixels = float(self.config.get("浮层字号"))
+        except (TypeError, ValueError):
+            return self._info_text_font_size_norm
+        if not math.isfinite(pixels) or pixels <= 0:
+            return self._info_text_font_size_norm
+        return pixels / self.INFO_TEXT_FONT_REFERENCE_HEIGHT
+
+    @staticmethod
+    def _compass_index(dx: float, dz: float) -> int:
+        """把「玩家 -> 目标」水平向量映射到八方位索引（0=正北，顺时针）。"""
+        angle = math.degrees(math.atan2(dx, dz)) % 360.0
+        return int((angle + 22.5) // 45.0) % 8
+
+    def _height_label(self, dy_height: float) -> str:
+        if abs(dy_height) < 0.05:
+            return self.tr("同高")
+        if dy_height > 0:
+            return self.tr("上方")
+        if dy_height < 0:
+            return self.tr("下方")
+        return self.tr("同高")
+
+    def build_target_info_lines(
+        self,
+        item_name: str | None,
+        dx: float,
+        dz: float,
+        dist_xz: float,
+        dy_height: float,
+    ) -> list[str]:
+        """拼装浮层上显示的目标信息：物品名 / 距离+方位 / 高度。"""
+        direction = self.tr(COMPASS_LABELS[self._compass_index(dx, dz)])
+        lines = [
+            str(item_name or "").strip(),
+            self.tr("距离 {distance} · 方位 {direction}").format(distance=f"{float(dist_xz):.1f}", direction=direction),
+            self.tr("高度 {direction} {height}").format(
+                direction=self._height_label(dy_height), height=f"{abs(float(dy_height)):.1f}"
+            ),
+        ]
+        return [line for line in lines if line]
+
+    def _info_text_y_norm(self, height: int) -> float:
+        """计算文字块的归一化 y：跟随「附近标记云团」的原始像素半径下移。
+
+        `_draw_nearby_markers` 的偏移量是原始像素（`距离 × _arrow_scale`，不随分辨率
+        缩放），而文字锚点是归一化的。若用固定归一化 y，低分辨率下云团的归一化尺寸
+        变大，底边会压到文字上（1280×720 实测重叠约 9.5k px²）。这里同样用原始像素
+        换算间隙，保证任意分辨率下文字都稳定位于云团下方。
+        """
+        safe_height = max(1, int(height))
+        cloud_bottom_px = safe_height * self._arrow_center_rel[1] + self._nearby_marker_radius_px
+        y_norm = (cloud_bottom_px + self._info_text_gap_px) / safe_height
+        return min(max(y_norm, self._info_text_pos[1]), 0.85)
+
+    def _draw_target_info_text(
+        self,
+        item_name: str | None,
+        dx: float,
+        dz: float,
+        dist_xz: float,
+        dy_height: float,
+    ) -> None:
+        try:
+            if not self._overlay_info_enabled():
+                # 关闭时主动清一次，保证运行中切换开关立即生效
+                self.clear_window_texts()
+                return
+            lines = self.build_target_info_lines(item_name, dx, dz, dist_xz, dy_height)
+            if not lines:
+                return
+            width, height = self._get_window_arrow_size()
+            if width <= 0 or height <= 0:
+                return
+            self.draw_window_text(
+                lines=lines,
+                text_key=self._info_text_key,
+                x_norm=self._info_text_pos[0],
+                y_norm=self._info_text_y_norm(height),
+                color=self._info_text_color,
+                alpha=self._overlay_text_alpha(),
+                font_size_norm=self._overlay_font_size_norm(),
+                line_spacing=self._info_text_line_spacing,
+                panel_alpha=self._overlay_panel_alpha(),
+            )
+        except Exception as e:
+            self.log_error(f"[目标信息] 绘制失败: {e}")
+
     # --- keyboard check (detect player pressing mark key) ---
     def _is_key_pressed(self, key: str) -> bool:
         # simple mapping for letters and function keys like 'f'
@@ -677,6 +841,14 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
             )
             self._draw_nav_arrow(dx, dz, tooltip=f"{best_meta} | XZ:{best_dxz:.3f} | Y:{dy_height:.3f}")
             self._draw_height_arrow(dy_height, tooltip=f"{best_meta} | Y:{dy_height:.3f}")
+            # 浮层文字：直接显示当前指向的物品名、距离方位与上下高度
+            self._draw_target_info_text(
+                item_name=best_meta,
+                dx=dx,
+                dz=dz,
+                dist_xz=best_dxz,
+                dy_height=dy_height,
+            )
 
             # 标记逻辑：锁定目标并要求连续按住配置时长（「标记按住时长」）才能标记
             mark_key = str(self.config.get("标记按键") or "").strip() or "f"

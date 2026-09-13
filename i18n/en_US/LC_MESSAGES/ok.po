@@ -2504,10 +2504,8 @@ msgstr ""
 "If the game window is missing or hidden, the task pauses and stops position "
 "sync"
 
-msgid "浮层同时显示当前指向的物品名、距离、方位（东西南北）与上下高度"
-msgstr ""
-"The overlay also shows the current target item name, distance, bearing "
-"(N/E/S/W) and vertical height"
+msgid "浮层同时显示当前指向的物品名、距离、方位（北、东北、东、东南、南、西南、西、西北）与上下高度"
+msgstr "The overlay also shows the current target item name, distance, bearing (N, NE, E, SE, S, SW, W, NW) and vertical height"
 
 msgid "标记按住时长：连续按住标记键达到该时长即记为已获取（默认 2 秒）"
 msgstr ""
@@ -2571,3 +2569,82 @@ msgstr ""
 "Optional. When content is empty, read the saved map sync content for this account from the account config page.\n"
 "The account list comes from the account config page. Leave blank to try the current task account context.\n"
 "See the task card's Instructions for how to fill in content on the account config page."
+
+msgid "距离 {distance} · 方位 {direction}"
+msgstr "Distance {distance} · Bearing {direction}"
+
+msgid "高度 {direction} {height}"
+msgstr "Height {direction} {height}"
+
+msgid "上方"
+msgstr "Above"
+
+msgid "下方"
+msgstr "Below"
+
+msgid "同高"
+msgstr "Level"
+
+msgid "北"
+msgstr "N"
+
+msgid "东北"
+msgstr "NE"
+
+msgid "东"
+msgstr "E"
+
+msgid "东南"
+msgstr "SE"
+
+msgid "南"
+msgstr "S"
+
+msgid "西南"
+msgstr "SW"
+
+msgid "西"
+msgstr "W"
+
+msgid "西北"
+msgstr "NW"
+
+msgid "浮层信息"
+msgstr "Overlay Info"
+
+msgid "浮层文字透明度"
+msgstr "Overlay Text Opacity"
+
+msgid "浮层背景透明度"
+msgstr "Overlay Background Opacity"
+
+msgid "浮层字号"
+msgstr "Overlay Font Size"
+
+msgid ""
+"在游戏窗口浮层上显示当前指向目标的物品名、\n"
+"距离、方位与高度。"
+msgstr ""
+"Show the target item name,\n"
+"distance, bearing and height on the game window overlay."
+
+msgid ""
+"浮层文字的透明度（0-100）。\n"
+"0 表示文字完全透明，100 表示完全不透明。"
+msgstr ""
+"Opacity of the overlay text (0-100).\n"
+"0 makes the text fully transparent, 100 fully opaque."
+
+msgid ""
+"浮层文字底板（黑色背景）的透明度（0-100）。\n"
+"0 表示不绘制底板；headless 模式下该值为 0 才不显示底板。"
+msgstr ""
+"Opacity of the overlay text backdrop (the black background) (0-100).\n"
+"0 draws no backdrop; in headless mode only 0 hides it."
+
+msgid ""
+"浮层文字字号，按 1080p 窗口高度为基准的像素值，\n"
+"会随窗口高度等比缩放。"
+msgstr ""
+"Font size of the overlay text, in pixels relative to a 1080p window height;\n"
+"it scales with the window height."
