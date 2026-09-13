@@ -294,7 +294,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 inst_gap(),
                 inst_line("🪟 " + self.tr("显示条件"), "#FE821D", bold=True),
                 inst_line(f"└─ {self.tr('箭头仅在游戏窗口处于前台时显示')}", indent=1),
-                inst_line(f"└─ {self.tr('浮层同时显示当前指向的物品名、距离、方位（东西南北）与上下高度')}", indent=1),
+                inst_line(f"└─ {self.tr('浮层同时显示当前指向的物品名、距离、方位（北、东北、东、东南、南、西南、西、西北）与上下高度')}", indent=1),
                 inst_line(f"└─ {self.tr('游戏窗口不存在或不可见时任务会暂停并停止位置同步')}", indent=1),
             ]
         )
