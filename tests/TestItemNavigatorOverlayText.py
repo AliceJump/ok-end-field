@@ -95,6 +95,7 @@ def _navigator_stub(recorded=None, drawn=None, size=(1920, 1080), config=None, c
         _get_window_arrow_size=lambda: size,
         _arrow_center_rel=(162 / 1920, 166 / 1080),
         _nearby_marker_radius_px=75.524 * 1.144,
+        _nearby_marker_max_len_px=36.0,
         _info_text_gap_px=16.0,
         _info_text_key="target_info",
         _info_text_pos=(0.015, 0.2),
@@ -232,7 +233,11 @@ class TestDrawTargetInfoText(unittest.TestCase):
 
         y_norm = drawn[0]["y_norm"]
         text_top_px = y_norm * 1080
-        cloud_bottom_px = 1080 * stub._arrow_center_rel[1] + stub._nearby_marker_radius_px
+        cloud_bottom_px = (
+            1080 * stub._arrow_center_rel[1]
+            + stub._nearby_marker_radius_px
+            + stub._nearby_marker_max_len_px
+        )
         self.assertGreater(text_top_px, cloud_bottom_px)
 
     def test_missing_window_size_skips_drawing(self):
@@ -551,7 +556,11 @@ class TestInfoTextYNorm(unittest.TestCase):
         self.stub = _navigator_stub()
 
     def _cloud_bottom_norm(self, height):
-        return (height * self.stub._arrow_center_rel[1] + self.stub._nearby_marker_radius_px) / height
+        return (
+            height * self.stub._arrow_center_rel[1]
+            + self.stub._nearby_marker_radius_px
+            + self.stub._nearby_marker_max_len_px
+        ) / height
 
     def test_y_clears_the_marker_cloud_at_common_resolutions(self):
         for height in (1440, 1080, 900, 768, 720, 648, 576):
@@ -564,7 +573,11 @@ class TestInfoTextYNorm(unittest.TestCase):
         for height in (1080, 900, 720, 576):
             y_norm = self.stub._info_text_y_norm(height)
             text_top_px = y_norm * height
-            cloud_bottom_px = height * self.stub._arrow_center_rel[1] + self.stub._nearby_marker_radius_px
+            cloud_bottom_px = (
+                height * self.stub._arrow_center_rel[1]
+                + self.stub._nearby_marker_radius_px
+                + self.stub._nearby_marker_max_len_px
+            )
             gaps.append(round(text_top_px - cloud_bottom_px))
         # 原始像素间隙应稳定（16px 附近），不随分辨率漂移
         self.assertLessEqual(max(gaps) - min(gaps), 2, f"间隙漂移过大: {gaps}")

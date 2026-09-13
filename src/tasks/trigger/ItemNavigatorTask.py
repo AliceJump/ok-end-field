@@ -152,16 +152,16 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         self._arrow_min_len_px = 20.0
         self._arrow_scale = 1.144
         self._nearby_marker_max_distance = 75.524
-        self._nearby_marker_len_px = 12
+        # 附近小箭头：箭尖固定在目标位置，尾巴长度表示高差（同高最短，高差越大越长）
+        self._nearby_marker_min_len_px = 12
+        self._nearby_marker_max_len_px = 36
         # 箭头样式参数（可调）
         self._arrow_color = (0, 255, 0)  # RGB
         self._arrow_alpha = 160  # 透明度 0-255，160 为半透明
         self._arrow_shaft_width_norm = 0.005  # 箭身宽度（细）
-        self._height_arrow_start_rel = (0.02, 0.12)
-        self._height_arrow_min_len_norm = 0.02
-        self._height_arrow_max_len_norm = 0.08
         self._near_xz_threshold = 20.0
-        self._height_arrow_max_abs_dy = 30.0
+        # 高差归一化上限：超过该值小箭头长度不再增加
+        self._height_max_abs_dy = 30.0
 
         # 浮层目标信息文字（物品名 / 距离 / 方位 / 高度）
         # 下面这些内部常量同时充当配置缺失/非法时的回退值（配置见 default_config）
@@ -361,10 +361,27 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
 
         return get_account_map_content(account_id or account_name, account_name=account_name)
 
+    def _point_height_delta(self, pt: dict, item_name: str | None, py: float) -> float:
+        """目标相对玩家的高度差（正值表示目标在上方），套用特殊物品的 Y 修正。"""
+        target_y = pt.get("y", 0)
+        for cfg in SPECIAL_ITEM_Y_OFFSET.values():
+            if cfg["pattern"].match(item_name or ""):
+                target_y += cfg["value"]
+                break
+        return target_y - py
+
+    def _nearby_marker_length_px(self, dy: float) -> float:
+        """附近小箭头的长度：按高差从最短伸缩到最长（超过上限后不再变长）。"""
+        t = min(abs(float(dy)) / max(1e-6, float(self._height_max_abs_dy)), 1.0)
+        return self._nearby_marker_min_len_px + (
+            self._nearby_marker_max_len_px - self._nearby_marker_min_len_px
+        ) * t
+
     def _draw_nearby_markers(
         self,
         px: float,
         pz: float,
+        py: float,
         candidates: dict[str, list],
         map_id: str,
     ):
@@ -377,7 +394,6 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
             center_y = height * self._arrow_center_rel[1]
 
             max_distance = self._nearby_marker_max_distance
-            marker_len = self._nearby_marker_len_px
             for item_name, pts in candidates.items():
                 for pt in pts:
                     h = self._point_hash(pt, item_name)
@@ -396,9 +412,15 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                     screen_x = center_x + dx * self._arrow_scale
                     screen_y = center_y - dz * self._arrow_scale
 
+                    # 高差编码：箭尖固定在目标位置，尾巴长度随 |dy| 伸缩，
+                    # dy>0（目标在上）时尾巴在下方、箭头朝上；dy<0 时相反。
+                    dy = self._point_height_delta(pt, item_name, py)
+                    marker_len = self._nearby_marker_length_px(dy)
+                    tail_y = screen_y + marker_len if dy > 0 else screen_y - marker_len
+
                     self.draw_window_arrow(
                         start_x_norm=screen_x / width,
-                        start_y_norm=(screen_y - marker_len) / height,
+                        start_y_norm=tail_y / height,
                         end_x_norm=screen_x / width,
                         end_y_norm=screen_y / height,
                         shaft_width_norm=self._arrow_shaft_width_norm * 0.5,
@@ -557,39 +579,6 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         except Exception as e:
             self.log_error(f"[箭头] 异常: {e}")
 
-    def _draw_height_arrow(self, dy_height: float, tooltip: str):
-        try:
-            abs_dy = abs(float(dy_height))
-            if abs_dy <= 1e-6:
-                return
-
-            max_abs_dy = max(1e-6, float(self._height_arrow_max_abs_dy))
-            t = min(abs_dy / max_abs_dy, 1.0)
-            draw_len_norm = self._height_arrow_max_len_norm * t
-            start_x_norm, start_y_norm = self._height_arrow_start_rel
-            end_x_norm = start_x_norm
-            end_y_norm = start_y_norm - draw_len_norm if dy_height > 0 else start_y_norm + draw_len_norm
-
-            success = self.draw_window_arrow(
-                start_x_norm=start_x_norm,
-                start_y_norm=start_y_norm,
-                end_x_norm=end_x_norm,
-                end_y_norm=end_y_norm,
-                shaft_width_norm=self._arrow_shaft_width_norm,
-                color=self._arrow_color,
-                alpha=self._arrow_alpha,
-                arrow_type="height",
-            )
-
-            if not success:
-                self.log_info("[箭头] 高差箭头绘制失败")
-                return
-
-            if tooltip:
-                self.info_set("高差箭头", tooltip)
-        except Exception as e:
-            self.log_error(f"[箭头] 高差异常: {e}")
-
     # --- 浮层目标信息文字（物品名 / 距离 / 方位 / 高度） ---
 
     # 「浮层字号」以该窗口高度为基准换算成归一化字号（窗口变高时字号等比放大）
@@ -675,7 +664,13 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         换算间隙，保证任意分辨率下文字都稳定位于云团下方。
         """
         safe_height = max(1, int(height))
-        cloud_bottom_px = safe_height * self._arrow_center_rel[1] + self._nearby_marker_radius_px
+        # 小箭头长度会随高差伸缩，云团底边要把最长的小箭头一并算进去，
+        # 否则高差大时文字会被箭头压住
+        cloud_bottom_px = (
+            safe_height * self._arrow_center_rel[1]
+            + self._nearby_marker_radius_px
+            + self._nearby_marker_max_len_px
+        )
         y_norm = (cloud_bottom_px + self._info_text_gap_px) / safe_height
         return min(max(y_norm, self._info_text_pos[1]), 0.85)
 
@@ -809,14 +804,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 return
 
             # y 是高度，方位与水平距离都在 xz 平面
-            target_y = best.get("y", 0)
-
-            for cfg in SPECIAL_ITEM_Y_OFFSET.values():
-                if cfg["pattern"].match(best_meta or ""):
-                    target_y += cfg["value"]
-                    break
-
-            dy_height = target_y - py
+            dy_height = self._point_height_delta(best, best_meta, py)
             near_xz = best_dxz <= float(self._near_xz_threshold)
 
             # direction angle in degrees for XZ vector (player->target) relative to +X
@@ -832,15 +820,15 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
             # publish minimal UI info (任务显示栏)
             self.info_set("导航", status)
 
-            # overlay: 默认方向箭头 + 高差箭头
+            # overlay: 方向箭头 + 附近目标标记（小箭头长度表示高差）
             self._draw_nearby_markers(
                 px=px,
                 pz=pz,
+                py=py,
                 candidates=candidates,
                 map_id=map_id,
             )
             self._draw_nav_arrow(dx, dz, tooltip=f"{best_meta} | XZ:{best_dxz:.3f} | Y:{dy_height:.3f}")
-            self._draw_height_arrow(dy_height, tooltip=f"{best_meta} | Y:{dy_height:.3f}")
             # 浮层文字：直接显示当前指向的物品名、距离方位与上下高度
             self._draw_target_info_text(
                 item_name=best_meta,
