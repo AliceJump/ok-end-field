@@ -55,14 +55,10 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 inst_gap(),
                 inst_line("📦 " + self.tr("送货相关键"), "#FE821D", bold=True),
                 inst_line(f"├─ {self.tr('{keys}：出发滑索距离').format(keys=' / '.join(start_keys))}", indent=1),
-                inst_line(
-                    f"└─ {self.tr('{keys}：各送货目标滑索序列').format(keys=' / '.join(target_keys))}", indent=1
-                ),
+                inst_line(f"└─ {self.tr('{keys}：各送货目标滑索序列').format(keys=' / '.join(target_keys))}", indent=1),
                 inst_gap(),
                 inst_line("🪫 " + self.tr("淤积点相关键"), "#FE821D", bold=True),
-                inst_line(
-                    f"└─ {self.tr('{keys}：能量淤积点滑索序列').format(keys=' / '.join(gather_keys))}", indent=1
-                ),
+                inst_line(f"└─ {self.tr('{keys}：能量淤积点滑索序列').format(keys=' / '.join(gather_keys))}", indent=1),
                 inst_gap(),
                 inst_line("🖱️ " + self.tr("是否启用滚动放大视角"), "#FE821D", bold=True),
                 inst_line(f"└─ {self.tr('对齐滑索时自动滚动放大视角，可能提高成功率，也可能明显降低')}", indent=1),
