@@ -186,7 +186,9 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 "└─ " + self.tr("3. 切到「网络 / Network」标签，在筛选框输入 {api}").format(api=HG_CHECK_API_URL),
                 indent=1,
             ),
-            inst_line(f"└─ {self.tr('4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值')}", indent=1),
+            inst_line(
+                f"└─ {self.tr('4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值')}", indent=1
+            ),
             inst_line(
                 f"└─ {self.tr('5. 把该值填入本任务 content；或填入账号配置页的「地图同步 content」，再用「地图账号」选择该账号')}",
                 indent=1,
@@ -202,25 +204,23 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 ),
                 inst_gap(),
                 inst_line("🧭 " + self.tr("关键配置"), "#FE821D", bold=True),
-                inst_line(f"└─ {self.tr('选择物品：勾选要导航的物品，只匹配当前地图；为空时不会有任何目标')}", indent=1),
+                inst_line(
+                    f"└─ {self.tr('选择物品：勾选要导航的物品，只匹配当前地图；为空时不会有任何目标')}", indent=1
+                ),
                 inst_line(
                     f"└─ {self.tr('地图账号：content 为空时从中读取地图同步 content，选项来自账号配置页')}", indent=1
                 ),
                 inst_line(f"└─ {self.tr('标记按键：接近目标后用于标记已获取的键位，仅支持单个字符')}", indent=1),
-                inst_line(
-                    f"└─ {self.tr('标记按住时长：连续按住标记键达到该时长即记为已获取（默认 2 秒）')}", indent=1
-                ),
+                inst_line(f"└─ {self.tr('标记按住时长：连续按住标记键达到该时长即记为已获取（默认 2 秒）')}", indent=1),
                 inst_gap(),
                 # 浮层显示的文案分组：浮层功能本身在 feat/window-overlay-text 分支，
                 # 但使用说明只存在于本分支，因此该分组随使用说明一起落地。
                 inst_line("🎨 " + self.tr("浮层显示"), "#FE821D", bold=True),
-                inst_line(f"└─ {self.tr('浮层信息：开启后在浮层上显示物品名、距离、方位与高度（默认开启）')}", indent=1),
                 inst_line(
-                    f"└─ {self.tr('浮层文字透明度 / 浮层背景透明度：取值 0-100，0 表示完全透明')}", indent=1
+                    f"└─ {self.tr('浮层信息：开启后在浮层上显示物品名、距离、方位与高度（默认开启）')}", indent=1
                 ),
-                inst_line(
-                    f"└─ {self.tr('浮层字号：以 1080p 窗口高度为基准的像素值，会随窗口高度等比缩放')}", indent=1
-                ),
+                inst_line(f"└─ {self.tr('浮层文字透明度 / 浮层背景透明度：取值 0-100，0 表示完全透明')}", indent=1),
+                inst_line(f"└─ {self.tr('浮层字号：以 1080p 窗口高度为基准的像素值，会随窗口高度等比缩放')}", indent=1),
                 inst_gap(),
                 inst_line("🔑 " + self.tr("获取 content（官方地图同步）"), "#FE821D", bold=True),
                 *content_steps,
@@ -228,7 +228,9 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 inst_line("🖱️ " + self.tr("标记已获取"), "#FE821D", bold=True),
                 inst_line(
                     "└─ "
-                    + self.tr("水平距离 {distance} 以内连续按住标记键 {seconds} 秒即记为已获取，之后不再指向该点").format(
+                    + self.tr(
+                        "水平距离 {distance} 以内连续按住标记键 {seconds} 秒即记为已获取，之后不再指向该点"
+                    ).format(
                         distance=self._format_seconds(self._near_xz_threshold),
                         seconds=self._format_seconds(self._mark_hold_seconds()),
                     ),
