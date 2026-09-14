@@ -262,5 +262,64 @@ class TestFailureDiagnostics(unittest.TestCase):
         self.assertIn("偏移 2 格", res.notes[0])
 
 
+class TestAdaptiveWeight(unittest.TestCase):
+    """精确搜索触顶后按 risk_cost 加权重搜：可行时保持最优，不可行时至少出路径。
+
+    用的是全未知格的大片区域：未知格步进代价是 risk_cost 倍，而启发式只按最小代价 1
+    估，所以精确搜索会像 Dijkstra 一样铺开；加权后直奔目标。机制与真实大图
+    （``map02_4``）上一样，只是规模小到可以放进单测。
+    """
+
+    @staticmethod
+    def _open_unknown(size=20):
+        return _grid(["." * size] * size)
+
+    def test_retry_after_cap_finds_route_and_notes_degradation(self):
+        # 精确搜索要展开几百格才到目标，把预算卡在中间即可稳定触发降级
+        res = GridPlanner(self._open_unknown(), risk_cost=5.0,
+                          max_expand=50).plan_cells((0, 0), (19, 19))
+        self.assertTrue(res.ok, res)
+        self.assertFalse(res.cap_exceeded)
+        self.assertTrue(any("加权" in note for note in res.notes), res.notes)
+
+    def test_exact_search_wins_when_budget_fits(self):
+        res = GridPlanner(self._open_unknown(), risk_cost=5.0,
+                          max_expand=400_000).plan_cells((0, 0), (19, 19))
+        self.assertTrue(res.ok, res)
+        self.assertEqual(res.notes, [])                 # 没触发降级
+        self.assertFalse(res.cap_exceeded)
+
+    def test_no_retry_when_failure_is_exhaustion_not_cap(self):
+        """真被阻挡隔断（可达区域穷尽）时不该白白重搜一次。"""
+        grid = _grid(["o#o"])
+        res = GridPlanner(grid, allow_unknown=True).plan_cells((0, 0), (0, 2))
+        self.assertFalse(res.ok)
+        self.assertNotIn("加权", res.reason)
+        self.assertEqual(res.notes, [])
+
+    def test_adaptive_weight_can_be_disabled(self):
+        res = GridPlanner(self._open_unknown(), risk_cost=5.0, max_expand=50,
+                          adaptive_weight=False).plan_cells((0, 0), (19, 19))
+        self.assertFalse(res.ok)
+        self.assertTrue(res.cap_exceeded)
+        self.assertIn("搜索规模超限", res.reason)
+
+    def test_weighted_route_is_still_wall_and_corner_safe(self):
+        """加权只改扩展顺序：路线依旧不穿阻挡格、不切阻挡角。"""
+        grid = _grid(["." * 3,
+                      "." * 3,
+                      ".#."])
+        planner = GridPlanner(grid, risk_cost=5.0, max_expand=6)
+        res = planner.plan_cells((0, 0), (2, 2))
+        self.assertTrue(res.ok, res)
+        self.assertTrue(any("加权" in note for note in res.notes), res.notes)
+        for i, j in res.cells:
+            self.assertTrue(planner.passable(i, j), (i, j))
+        for (ai, aj), (bi, bj) in zip(res.cells, res.cells[1:], strict=False):
+            if ai != bi and aj != bj:
+                self.assertTrue(
+                    planner._corner_ok(ai, aj, bi - ai, bj - aj), (ai, aj, bi, bj))
+
+
 if __name__ == "__main__":
     unittest.main()

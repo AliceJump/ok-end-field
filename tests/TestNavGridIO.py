@@ -141,6 +141,35 @@ class TestClearance(unittest.TestCase):
         dist = _grid(["oo", "oo"]).clearance()
         self.assertTrue((dist == -1).all())
 
+    def test_max_dist_truncates_wavefront(self):
+        """给了 max_dist 就只扩散这么多层：够用的距离照算，更远的留 -1。
+
+        规划器只用得到 ``min(距离, margin)``，而 ``-1`` 恰好表示"距离 ≥ max_dist"，
+        按"不欠安全距离"处理即可，所以截断不丢精度——大图上这是秒级 vs 毫秒级的差别。
+        """
+        grid = _grid(["ooooooo",
+                      "ooo#ooo",
+                      "ooooooo"])
+        full = grid.clearance()
+        capped = grid.clearance(max_dist=1)
+        self.assertEqual(capped[1, 3], 0)               # 阻挡格自身
+        self.assertEqual(capped[0, 3], 1)               # 一层之内照算
+        self.assertEqual(full[0, 0], 4)                 # 四连通波前，是曼哈顿距离
+        self.assertEqual(capped[0, 0], -1)              # 超过 max_dist -> -1
+        near = capped >= 0
+        self.assertTrue((capped[near] == full[near]).all())
+        self.assertTrue((full[~near] > 1).all())
+
+    def test_frontier_clearance_max_dist(self):
+        grid = _grid(["o.o",
+                      "ooo"])
+        full = grid.frontier_clearance()
+        capped = grid.frontier_clearance(max_dist=1)
+        self.assertEqual(full[0, 0], 1)
+        self.assertEqual(capped[0, 0], 1)
+        self.assertEqual(full[1, 0], 2)
+        self.assertEqual(capped[1, 0], -1)
+
 
     def test_frontier_clearance(self):
         grid = _grid(["o.o", "ooo"])

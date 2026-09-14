@@ -317,57 +317,64 @@ class DenseGrid:
     # ------------------------------------------------------------------ #
     # 贴墙安全距离
     # ------------------------------------------------------------------ #
-    def clearance(self) -> np.ndarray:
-        """每格到最近 ``CELL_BLOCKED`` 的 BFS 距离（单位：格）；阻挡格自身为 0。
+    @staticmethod
+    def _wavefront(seed: np.ndarray, max_dist: int | None,
+                   allowed: np.ndarray | None = None) -> np.ndarray:
+        """从 ``seed`` 逐层四连通扩散，返回每格到种子的层数；种子自身为 0。
 
-        ``int32`` 数组；``-1`` 表示该格与任何阻挡格都不连通（例如全图没有阻挡格）。
-        用 numpy 波前逐层扩散（每层几次数组移位），比逐格 Python BFS 快两个量级；
-        代价是层数 = 最大距离，所以**每张图算一次即可**，不要每帧调用。
+        ``allowed`` 非空时只扩散到这些格子，其余保持 ``-1``。
+
+        ``max_dist`` 给了就只扩散这么多层，未到达的格子保持 ``-1``——调用方按
+        "距离 ≥ max_dist" 解释即可。层数 = 最大距离，所以**不设上限时层数就是主要开销**：
+        521 万格的大图要扩散上千层、每层几次全数组运算，是秒级的。
         """
-        blocked = self.cells == CELL_BLOCKED
-        dist = np.where(blocked, 0, -1).astype(np.int32)
-        if not blocked.any():
+        dist = np.where(seed, 0, -1).astype(np.int32)
+        if max_dist is not None and int(max_dist) <= 0:
             return dist
-        frontier = blocked
+        if not seed.any():
+            return dist
+        frontier = seed
         step = 0
         while True:
             step += 1
-            grown = np.zeros_like(blocked)
+            grown = np.zeros_like(seed)
             grown[1:, :] |= frontier[:-1, :]
             grown[:-1, :] |= frontier[1:, :]
             grown[:, 1:] |= frontier[:, :-1]
             grown[:, :-1] |= frontier[:, 1:]
             grown &= dist < 0
+            if allowed is not None:
+                grown &= allowed
             if not grown.any():
                 return dist
             dist[grown] = step
+            if max_dist is not None and step >= int(max_dist):
+                return dist
             frontier = grown
 
-    def frontier_clearance(self) -> np.ndarray:
+    def clearance(self, max_dist: int | None = None) -> np.ndarray:
+        """每格到最近 ``CELL_BLOCKED`` 的 BFS 距离（单位：格）；阻挡格自身为 0。
+
+        ``int32`` 数组；``-1`` 表示该格与任何阻挡格都不连通（例如全图没有阻挡格），
+        或（给了 ``max_dist`` 时）距离已经超过 ``max_dist``。
+
+        ``max_dist`` 是给大图准备的：调用方
+        （:class:`~src.nav.grid_planner.GridPlanner`）只用得到 ``min(距离, margin)``，
+        而"未到达"恰好等价于"距离 ≥ max_dist"，按缺 0 格处理即可，所以截断到
+        ``margin`` 层不损失任何精度，500 万格的图能从秒级降到毫秒级。
+        """
+        return self._wavefront(self.cells == CELL_BLOCKED, max_dist)
+
+    def frontier_clearance(self, max_dist: int | None = None) -> np.ndarray:
         """每格到最近 ``CELL_UNKNOWN`` 的 BFS 距离（单位：格）。
 
         ``-1`` 表示该格无法在不穿过阻挡格的情况下到达未知边缘；
         没有未知格时全图返回 ``-1``。规划器用它偏好已知自由区域内部。
+
+        ``max_dist`` 的含义与 :meth:`clearance` 相同（截断到该层，其余留 ``-1``）。
         """
-        unknown = self.cells == CELL_UNKNOWN
-        dist = np.where(unknown, 0, -1).astype(np.int32)
-        if not unknown.any():
-            return dist
-        passable = self.cells != CELL_BLOCKED
-        frontier = unknown.copy()
-        step = 0
-        while True:
-            step += 1
-            grown = np.zeros_like(frontier)
-            grown[1:, :] |= frontier[:-1, :]
-            grown[:-1, :] |= frontier[1:, :]
-            grown[:, 1:] |= frontier[:, :-1]
-            grown[:, :-1] |= frontier[:, 1:]
-            grown &= passable & (dist < 0)
-            if not grown.any():
-                return dist
-            dist[grown] = step
-            frontier = grown
+        return self._wavefront(self.cells == CELL_UNKNOWN, max_dist,
+                               allowed=self.cells != CELL_BLOCKED)
 
     def nearest_free(self, i: int, j: int, max_radius: int = 8) -> tuple[int, int] | None:
         """最近的可行走格（落点修正用）；``max_radius`` 内找不到返回 None。"""
