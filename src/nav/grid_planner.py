@@ -47,6 +47,7 @@ from __future__ import annotations
 import heapq
 import itertools
 import math
+import time
 from array import array
 from dataclasses import dataclass, field
 
@@ -107,6 +108,8 @@ class PlanResult:
     expanded: int = 0
     #: 是否因扩展节点数触顶而放弃（与"真的没通路"区分，见 reason）
     cap_exceeded: bool = False
+    #: 是否因本轮规划时间预算耗尽而放弃
+    timed_out: bool = False
     #: 实际使用的起/终点格（起终点被判为不可通行时会挪到最近的格）
     start_cell: tuple | None = None
     goal_cell: tuple | None = None
@@ -176,22 +179,27 @@ class GridPlanner:
         self.adaptive_weight = bool(adaptive_weight)
         self._expanded = 0
         self._cap_exceeded = False
+        self._timed_out = False
         self._tables = None
 
     # ------------------------------------------------------------------ #
     # 对外
     # ------------------------------------------------------------------ #
-    def plan(self, start_world, goal_world) -> PlanResult:
+    def plan(self, start_world, goal_world, *, time_budget_s: float | None = None) -> PlanResult:
         """按世界坐标规划：``(x, z)`` 元组。坐标非有限时直接返回失败，不抛异常。"""
         for label, point in (("起点", start_world), ("终点", goal_world)):
             if not (math.isfinite(float(point[0])) and math.isfinite(float(point[1]))):
                 return PlanResult(False, f"{label}坐标非有限: {tuple(point)!r}")
         start = self.grid.index_of_world(start_world[0], start_world[1])
         goal = self.grid.index_of_world(goal_world[0], goal_world[1])
-        return self.plan_cells(start, goal)
+        return self.plan_cells(start, goal, time_budget_s=time_budget_s)
 
-    def plan_cells(self, start, goal) -> PlanResult:
+    def plan_cells(self, start, goal, *, time_budget_s: float | None = None) -> PlanResult:
         """按数组下标 ``(i, j)`` 规划。"""
+        deadline = (
+            None if time_budget_s is None
+            else time.monotonic() + max(0.0, float(time_budget_s))
+        )
         start_cell, note_start = self._snap(start, "起点")
         if start_cell is None:
             return PlanResult(False, note_start)
@@ -200,11 +208,11 @@ class GridPlanner:
             return PlanResult(False, note_goal)
         notes = [n for n in (note_start, note_goal) if n]
 
-        cells = self._astar(start_cell, goal_cell, self.heuristic_weight)
+        cells = self._astar(start_cell, goal_cell, self.heuristic_weight, deadline=deadline)
         if cells is None:
             first_expanded, first_cap = self._expanded, self._cap_exceeded
             if self._weighted_retry_allowed():
-                cells = self._astar(start_cell, goal_cell, self.risk_cost)
+                cells = self._astar(start_cell, goal_cell, self.risk_cost, deadline=deadline)
                 if cells is not None:
                     notes.append(
                         f"精确搜索触顶（扩展 {first_expanded} 格）后改用加权启发 "
@@ -220,7 +228,9 @@ class GridPlanner:
             #   1) 触顶            -> 调大 max_expand
             #   2) 关了穿越未知格  -> 该图未探索部分走不了（策略性不可达，不是数据坏了）
             #   3) 可达区域穷尽    -> 真的被阻挡隔断
-            if self._cap_exceeded:
+            if self._timed_out:
+                reason = "规划超时：本轮导航剩余时间不足以完成 A* 搜索"
+            elif self._cap_exceeded:
                 reason = (f"搜索规模超限：扩展节点超过 max_expand={self.max_expand} 仍未找到通路，"
                           "可能是目标确实不可达，或网格过大/未探索部分太多；可调大 max_expand")
             elif not self.allow_unknown:
@@ -233,7 +243,8 @@ class GridPlanner:
                           "可行走区域不连通，或全部需要穿过阻挡")
             return PlanResult(False, reason,
                               start_cell=start_cell, goal_cell=goal_cell, notes=notes,
-                              expanded=self._expanded, cap_exceeded=self._cap_exceeded)
+                              expanded=self._expanded, cap_exceeded=self._cap_exceeded,
+                              timed_out=self._timed_out)
 
         waypoints = [self.grid.world_of_index(i, j) for i, j in self._simplify(cells)]
         cost, risk = 0.0, 0
@@ -364,6 +375,7 @@ class GridPlanner:
         """
         return (
             self._cap_exceeded
+            and not self._timed_out
             and self.adaptive_weight
             and self.allow_unknown
             and self.risk_cost > 1.0
@@ -423,7 +435,7 @@ class GridPlanner:
         self._tables = cached
         return cached
 
-    def _astar(self, start, goal, weight: float = 1.0):
+    def _astar(self, start, goal, weight: float = 1.0, *, deadline: float | None = None):
         """标准 A*；路径输出后再用任意角度的视线优化减少航点。
 
         热路径走 :meth:`_search_tables` 的扁平查表：补齐索引 + 整数偏移，替代逐邻居的
@@ -435,7 +447,14 @@ class GridPlanner:
         """
         self._expanded = 0
         self._cap_exceeded = False
+        self._timed_out = False
+        if deadline is not None and time.monotonic() >= deadline:
+            self._timed_out = True
+            return None
         pad_w, passable, cost_orth, cost_diag, directions = self._search_tables()
+        if deadline is not None and time.monotonic() >= deadline:
+            self._timed_out = True
+            return None
         height, width = self.grid.shape
         size = (height + 2) * pad_w
 
@@ -461,6 +480,10 @@ class GridPlanner:
                 continue
             closed[current] = 1
             expanded += 1
+            if deadline is not None and expanded % 1024 == 0 and time.monotonic() >= deadline:
+                self._expanded = expanded
+                self._timed_out = True
+                return None
             if expanded > self.max_expand:
                 self._expanded = expanded
                 self._cap_exceeded = True

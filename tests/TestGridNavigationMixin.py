@@ -9,6 +9,7 @@ import numpy as np
 
 from src.nav.grid_io import CELL_FREE, DenseGrid, GridMeta, save_grid
 from src.nav.grid_planner import PlanResult
+from src.nav.route_follower import REPLAN, FollowerStep
 from src.tasks.mixin.grid_navigation_mixin import (
     CONFIG_GRID_FILE,
     GridNavigationMixin,
@@ -150,6 +151,42 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertTrue(any("目标 自动校准完成" in msg for msg in self.task.logs))
         self.assertTrue(any("校准后确认到达" in msg for msg in self.task.logs))
 
+    def test_waiting_for_position_releases_w_and_pauses_follower(self):
+        paused = []
+        self.task._grid_nav_follower = SimpleNamespace(pause=lambda: paused.append(True))
+        self.task._set_grid_walking(True)
+
+        self.task._wait_for_grid_position("测试等待")
+
+        self.assertFalse(self.task.w_down)
+        self.assertEqual(paused, [True])
+
+    def test_replan_action_obeys_hard_limit(self):
+        followers = []
+
+        class _ReplanningFollower:
+            def pause(self):
+                pass
+
+            def update(self, position, heading, now):
+                return FollowerStep(REPLAN, reason="测试偏航")
+
+        def create_route(start, goal, **kwargs):
+            follower = _ReplanningFollower()
+            followers.append(follower)
+            return follower, PlanResult(
+                ok=True,
+                cells=[],
+                waypoints=[start, goal],
+            )
+
+        self.task._create_grid_route = create_route
+        self.task.config["最大重规划次数"] = 2
+
+        self.assertFalse(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
+        self.assertEqual(len(followers), 3)
+        self.assertTrue(any("重规划次数已达上限" in msg for msg in self.task.logs))
+
     def test_navigate_turns_while_walking(self):
         self.task.config["移动转向最小目标距离(米)"] = 0.0
         self.task.heading = 60.0
@@ -259,6 +296,21 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertIn("搜索节点上限", text)   # 指向可调的那个配置项
         self.assertNotIn("已穷尽", text)
 
+    def test_failure_diagnostics_report_timeout(self):
+        result = PlanResult(
+            ok=False,
+            reason="规划超时：本轮导航剩余时间不足以完成 A* 搜索",
+            expanded=123,
+            timed_out=True,
+        )
+
+        self.task._log_grid_plan_failure(result)
+
+        text = "\n".join(self.task.logs)
+        self.assertIn("规划超时", text)
+        self.assertIn("剩余时间不足", text)
+        self.assertNotIn("已穷尽", text)
+
     def test_waypoint_calibration_waits_full_duration_and_samples(self):
         calls = []
 
@@ -301,6 +353,13 @@ class TestGridNavigationMixin(unittest.TestCase):
             for msg in self.task.logs
         ))
         self.assertAlmostEqual(self.task._grid_nav_distance_since_calibration, 0.0)
+
+    def test_calibration_respects_deadline(self):
+        started = self.task.t
+
+        self.task._calibrate_grid_position("截止时间测试", deadline=started + 0.5)
+
+        self.assertLessEqual(self.task.t - started, 0.75)
 
     def test_calibration_distance_uses_accumulated_travel(self):
         self.task.config["航点校准最小距离(米)"] = 100.0

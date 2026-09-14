@@ -12,6 +12,7 @@ WAIT = "wait"
 TURN = "turn"
 WALK = "walk"
 STUCK = "stuck"
+REPLAN = "replan"
 DONE = "done"
 FAILED = "failed"
 
@@ -73,6 +74,7 @@ class FollowerConfig:
     frontier_penalty: float = 1.0
     waypoint_tolerance: float = 2.0
     max_expand: int = 400_000
+    off_route_radius: float = 4.0
 
 
 @dataclass(frozen=True)
@@ -116,13 +118,25 @@ class GridRouteFollower:
         self.waypoint_index = 0
         self._move_started_at: float | None = None
         self._move_start_pos: tuple[float, float] | None = None
+        self._walk_aligned = False
 
-    def plan(self, start: tuple[float, float], goal: tuple[float, float]) -> PlanResult:
+    def pause(self) -> None:
+        """Freeze motion tracking while the outer loop is not controlling movement."""
+        self._reset_motion()
+
+    def plan(
+        self,
+        start: tuple[float, float],
+        goal: tuple[float, float],
+        *,
+        time_budget_s: float | None = None,
+    ) -> PlanResult:
         """Plan a fresh route and reset waypoint progress."""
         self.goal = (float(goal[0]), float(goal[1]))
-        self.plan_result = self.planner.plan(start, goal)
+        self.plan_result = self.planner.plan(start, goal, time_budget_s=time_budget_s)
         self.waypoint_index = 0
         self._reset_motion()
+        self._walk_aligned = False
         if self.plan_result.ok:
             self._advance_initial_waypoints((float(start[0]), float(start[1])))
         return self.plan_result
@@ -170,7 +184,28 @@ class GridRouteFollower:
             waypoint_distance = distance_xz(pos, waypoint)
             target_bearing = bearing_to_point(pos[0], pos[1], waypoint[0], waypoint[1])
 
+        off_route_distance = self._off_route_distance(pos)
+        if off_route_distance is not None:
+            self._walk_aligned = False
+            self._reset_motion()
+            return self._step(
+                REPLAN,
+                waypoint,
+                target_bearing=target_bearing,
+                heading_error=None,
+                waypoint_distance=waypoint_distance,
+                goal_distance=goal_distance,
+                arrived_waypoint_index=arrived_index,
+                skipped_waypoints=skipped,
+                shortcut_distance=shortcut_distance,
+                reason=(
+                    f"偏离路径 {off_route_distance:.2f}m，超过 "
+                    f"{max(0.0, float(self.config.off_route_radius)):.2f}m"
+                ),
+            )
+
         if heading is None:
+            self._walk_aligned = False
             self._reset_motion()
             return self._step(
                 WAIT,
@@ -186,7 +221,10 @@ class GridRouteFollower:
             )
 
         delta = angle_delta(target_bearing, heading)
-        if abs(delta) > self.config.heading_tolerance:
+        tolerance = max(0.0, float(self.config.heading_tolerance))
+        turn_threshold = tolerance if not self._walk_aligned else tolerance * 2.0
+        if abs(delta) > turn_threshold:
+            self._walk_aligned = False
             self._reset_motion()
             return self._step(
                 TURN,
@@ -200,6 +238,7 @@ class GridRouteFollower:
                 shortcut_distance=shortcut_distance,
             )
 
+        self._walk_aligned = True
         stuck = self._update_stuck(pos, now)
         if stuck:
             return self._step(
@@ -247,6 +286,21 @@ class GridRouteFollower:
             nearest = distance if nearest is None else min(nearest, distance)
             self.waypoint_index += 1
         return tuple(skipped), nearest
+
+    def _off_route_distance(self, position: tuple[float, float]) -> float | None:
+        """Distance to the active route segment, or None when off-route checking is disabled."""
+        radius = max(0.0, float(self.config.off_route_radius))
+        if radius <= 0 or self.plan_result is None:
+            return None
+        waypoints = self.plan_result.waypoints
+        if self.waypoint_index >= len(waypoints) - 1:
+            return None
+        distance, _ratio = point_segment_distance(
+            position,
+            waypoints[self.waypoint_index],
+            waypoints[self.waypoint_index + 1],
+        )
+        return distance if distance > radius else None
 
     def _shortcut_ok(
         self,

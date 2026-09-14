@@ -23,6 +23,7 @@ from src.nav.grid_planner import PlanResult
 from src.nav.route_follower import (
     DONE,
     FAILED,
+    REPLAN,
     STUCK,
     TURN,
     WAIT,
@@ -323,6 +324,7 @@ class GridNavigationMixin(MinimapPositionMixin):
         tick = max(0.05, self._cfg_float(CONFIG_GRID_TICK, 0.2))
         owns_position = not self._grid_nav_position_active
         started_at = self.active_time()
+        deadline = started_at + limit
         best_goal_distance = math.inf
         recovery_attempts = 0
         replans = 0
@@ -340,7 +342,7 @@ class GridNavigationMixin(MinimapPositionMixin):
         self._set_grid_walking(False)
 
         try:
-            while self.active_time() - started_at < limit:
+            while not self._grid_navigation_timed_out(deadline, limit):
                 frame = self.next_frame()
                 state = self.minimap_position(frame=frame)
                 x = state.get("x")
@@ -352,7 +354,6 @@ class GridNavigationMixin(MinimapPositionMixin):
                     self.sleep(tick)
                     continue
                 if not state.get("odom_ok"):
-                    self._set_grid_walking(False)
                     self._wait_for_grid_position(f"等待有效位移样本: {state.get('odom_reason')}")
                     self.sleep(tick)
                     continue
@@ -360,7 +361,9 @@ class GridNavigationMixin(MinimapPositionMixin):
 
                 if not self._grid_nav_start_calibrated:
                     self._set_grid_walking(False)
-                    calibrated, _position = self._calibrate_grid_position("开始")
+                    calibrated, _position = self._calibrate_grid_position("开始", deadline=deadline)
+                    if self._grid_navigation_timed_out(deadline, limit):
+                        return False
                     if calibrated:
                         self._grid_nav_start_calibrated = True
                     continue
@@ -371,21 +374,22 @@ class GridNavigationMixin(MinimapPositionMixin):
                 if heading_score is None or float(heading_score) < min_score:
                     heading = None
                 if heading is None:
-                    self._set_grid_walking(False)
                     self._wait_for_grid_position(f"等待可靠朝向: score={heading_score}")
                     self.sleep(tick)
                     continue
 
                 if self._grid_nav_follower is None or actual_map != self._grid_nav_map_id:
-                    if self._grid_nav_follower is not None:
-                        self.log_info(f"地图已切换 {self._grid_nav_map_id!r} -> {actual_map!r}，重新规划")
-                    elif had_plan:
-                        # 只有 follower 被清空（卡住/到达未确认等）才算"重规划"。首次规划
-                        # 不受上限约束，否则「最大重规划次数」设为 0 会在规划前就返回失败。
+                    map_changed = (
+                        self._grid_nav_follower is not None
+                        and actual_map != self._grid_nav_map_id
+                    )
+                    if had_plan:
                         if replans >= self._cfg_int(CONFIG_GRID_MAX_REPLANS, 8):
                             self.log_warning("导航重规划次数已达上限", notify=True)
                             return False
                         replans += 1
+                    if map_changed:
+                        self.log_info(f"地图已切换 {self._grid_nav_map_id!r} -> {actual_map!r}，重新规划")
                     follower, result = self._create_grid_route(
                         (float(x), float(z)),
                         goal,
@@ -393,8 +397,11 @@ class GridNavigationMixin(MinimapPositionMixin):
                         grid_path=grid_path,
                         grid_dir=grid_dir,
                         zoom=zoom,
+                        time_budget_s=max(0.0, deadline - self.active_time()),
                     )
                     had_plan = True
+                    if self._grid_navigation_timed_out(deadline, limit):
+                        return False
                     if follower is None or not result.ok:
                         self._log_grid_plan_failure(result, "导航规划失败")
                         return False
@@ -413,12 +420,23 @@ class GridNavigationMixin(MinimapPositionMixin):
                         f"路径点捷径：当前位置距下一段 {step.shortcut_distance:.2f}m，"
                         f"跳过航点 {skipped}，直接前往航点 {step.waypoint_index + 1}"
                     )
+                if step.action == REPLAN:
+                    self._set_grid_walking(False)
+                    self._grid_nav_follower.pause()
+                    self.log_warning(f"路径偏离，重新规划：{step.reason}")
+                    self._grid_nav_follower = None
+                    if self._grid_navigation_timed_out(deadline, limit):
+                        return False
+                    continue
                 if step.arrived_waypoint_index is not None:
                     if self._grid_calibration_due():
                         self._calibrate_grid_waypoint(
                             step.arrived_waypoint_index,
                             step.waypoint_count,
+                            deadline=deadline,
                         )
+                        if self._grid_navigation_timed_out(deadline, limit):
+                            return False
                     else:
                         minimum = max(
                             0.0,
@@ -444,7 +462,9 @@ class GridNavigationMixin(MinimapPositionMixin):
                 if step.action == DONE:
                     self._set_grid_walking(False)
                     goal_radius = max(0.0, self._cfg_float(CONFIG_GRID_GOAL_RADIUS, 2.0))
-                    calibrated, position = self._calibrate_grid_position("目标")
+                    calibrated, position = self._calibrate_grid_position("目标", deadline=deadline)
+                    if self._grid_navigation_timed_out(deadline, limit):
+                        return False
                     if calibrated and position is not None:
                         goal_distance = math.hypot(position[0] - goal[0], position[1] - goal[1])
                         if goal_distance <= goal_radius:
@@ -485,7 +505,9 @@ class GridNavigationMixin(MinimapPositionMixin):
                         f"导航卡住，尝试脱困 {recovery_attempts}/"
                         f"{self._cfg_int(CONFIG_GRID_MAX_RECOVERIES, 3)}：{step.reason}"
                     )
-                    self._recover_grid_stuck()
+                    self._recover_grid_stuck(deadline=deadline)
+                    if self._grid_navigation_timed_out(deadline, limit):
+                        return False
                     self._grid_nav_follower = None
                     continue
                 if step.action == TURN:
@@ -507,6 +529,8 @@ class GridNavigationMixin(MinimapPositionMixin):
                                 f"转向未到位：目标={step.target_bearing:.1f}°，"
                                 f"实测={turn.get('heading')}，误差={turn.get('error')}"
                             )
+                    if self._grid_navigation_timed_out(deadline, limit):
+                        return False
                     self.sleep(tick)
                     continue
                 if step.action == WALK:
@@ -520,7 +544,6 @@ class GridNavigationMixin(MinimapPositionMixin):
 
                 self.sleep(tick)
 
-            self.log_warning(f"导航超时（{limit:.1f}s）", notify=True)
             return False
         finally:
             self._set_grid_walking(False)
@@ -537,6 +560,7 @@ class GridNavigationMixin(MinimapPositionMixin):
         grid_path: str | None,
         grid_dir: str | None,
         zoom: str | None,
+        time_budget_s: float | None = None,
     ) -> tuple[GridRouteFollower | None, PlanResult]:
         grid = self.load_grid_for_map(
             map_id,
@@ -547,7 +571,7 @@ class GridNavigationMixin(MinimapPositionMixin):
         if grid is None:
             return None, PlanResult(False, f"未找到地图 {map_id!r} 的导航网格")
         follower = GridRouteFollower(grid, self._grid_follower_config())
-        result = follower.plan(start_xz, goal_xz)
+        result = follower.plan(start_xz, goal_xz, time_budget_s=time_budget_s)
         return follower, result
 
     def _grid_follower_config(self) -> FollowerConfig:
@@ -586,7 +610,9 @@ class GridNavigationMixin(MinimapPositionMixin):
         不看这两项根本判断不出该改什么。
         """
         self.log_warning(f"{prefix}: {result.reason}", notify=True)
-        if result.cap_exceeded:
+        if result.timed_out:
+            self.log_warning(f"{prefix}诊断: 本次导航剩余时间不足，未完成路径搜索")
+        elif result.cap_exceeded:
             self.log_warning(f"{prefix}诊断: 扩展节点已达上限，未搜索完；可调大「{CONFIG_GRID_MAX_EXPAND}」")
         else:
             self.log_warning(
@@ -660,22 +686,41 @@ class GridNavigationMixin(MinimapPositionMixin):
         self._set_grid_walking(True)
         self._send_rotation(dx)
 
-    def _calibrate_grid_waypoint(self, waypoint_index: int, waypoint_count: int) -> bool:
+    def _calibrate_grid_waypoint(
+        self,
+        waypoint_index: int,
+        waypoint_count: int,
+        *,
+        deadline: float | None = None,
+    ) -> bool:
         """Stop at an intermediate waypoint and keep sampling for automatic calibration."""
         calibrated, _position = self._calibrate_grid_position(
-            f"航点 {waypoint_index + 1}/{waypoint_count}"
+            f"航点 {waypoint_index + 1}/{waypoint_count}",
+            deadline=deadline,
         )
         return calibrated
 
-    def _calibrate_grid_position(self, tag: str) -> tuple[bool, tuple[float, float] | None]:
+    def _calibrate_grid_position(
+        self,
+        tag: str,
+        *,
+        deadline: float | None = None,
+    ) -> tuple[bool, tuple[float, float] | None]:
         """Stop and sample until an automatic static calibration completes."""
         self._set_grid_walking(False)
+        if self._grid_nav_follower is not None:
+            self._grid_nav_follower.pause()
         duration = max(0.0, self._cfg_float(CONFIG_GRID_WAYPOINT_CALIBRATION, 3.0))
         settle_required = max(
             0.0,
             self._cfg_float(CONFIG_GRID_CALIBRATION_SETTLE, 1.0),
         )
         duration = max(duration, settle_required + 1.0)
+        if deadline is not None:
+            remaining = deadline - self.active_time()
+            if remaining <= 0:
+                return False, None
+            duration = min(duration, remaining)
         if duration <= 0:
             return False, None
 
@@ -690,6 +735,8 @@ class GridNavigationMixin(MinimapPositionMixin):
             f"{tag}：停留 {duration:.1f}s 等待小地图自动校准"
         )
         while self.active_time() - started < duration:
+            if deadline is not None and self.active_time() >= deadline:
+                break
             remaining = duration - (self.active_time() - started)
             wait = min(tick, max(0.0, remaining))
             if wait <= 0:
@@ -802,17 +849,31 @@ class GridNavigationMixin(MinimapPositionMixin):
         minimum = max(0.0, self._cfg_float(CONFIG_GRID_CALIBRATION_DISTANCE, 100.0))
         return minimum <= 0 or self._grid_nav_distance_since_calibration >= minimum
 
-    def _recover_grid_stuck(self) -> None:
+    def _recover_grid_stuck(self, *, deadline: float | None = None) -> None:
         duration = max(0.1, self._cfg_float(CONFIG_GRID_RECOVERY_TIME, 0.45))
         for key in ("s", "a", "d"):
+            if deadline is not None:
+                remaining = deadline - self.active_time()
+                if remaining <= 0:
+                    return
+                duration = min(duration, remaining)
             self.press_key(key, down_time=duration)
 
     def _wait_for_grid_position(self, reason: str) -> None:
+        self._set_grid_walking(False)
+        if self._grid_nav_follower is not None:
+            self._grid_nav_follower.pause()
         now = self.active_time()
         if now - self._grid_nav_last_wait_log >= 5.0:
             self._grid_nav_last_wait_log = now
             self.log_info(f"网格导航暂停：{reason}")
             self.info_set("网格导航", reason)
+
+    def _grid_navigation_timed_out(self, deadline: float, limit: float) -> bool:
+        if self.active_time() < deadline:
+            return False
+        self.log_warning(f"导航超时（{limit:.1f}s）", notify=True)
+        return True
 
     @staticmethod
     def _grid_meta_matches_map(grid: DenseGrid, path: Path, map_id: str) -> bool:

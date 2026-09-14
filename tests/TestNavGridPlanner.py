@@ -252,6 +252,14 @@ class TestFailureDiagnostics(unittest.TestCase):
         self.assertTrue(res.cap_exceeded)
         self.assertIn("搜索规模超限", res.reason)
 
+    def test_time_budget_is_reported_separately(self):
+        grid = _grid(["oooooooo"])
+        res = GridPlanner(grid).plan_cells((0, 0), (0, 7), time_budget_s=0.0)
+        self.assertFalse(res.ok)
+        self.assertTrue(res.timed_out)
+        self.assertFalse(res.cap_exceeded)
+        self.assertIn("规划超时", res.reason)
+
     def test_snap_note_names_state_and_offset(self):
         """起点落在未知格并被挪走时，note 要说清原格状态和挪了多远。"""
         grid = _grid(["o#."])

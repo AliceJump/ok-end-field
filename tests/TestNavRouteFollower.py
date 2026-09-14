@@ -8,6 +8,7 @@ from src.nav.grid_io import CELL_FREE, DenseGrid, GridMeta
 from src.nav.grid_planner import PlanResult
 from src.nav.route_follower import (
     DONE,
+    REPLAN,
     STUCK,
     TURN,
     WAIT,
@@ -87,6 +88,46 @@ class TestGridRouteFollower(unittest.TestCase):
         )
         step = self.follower.update((0.5, 0.5), heading=90.0, now=2.1)
         self.assertEqual(step.action, STUCK)
+
+    def test_pause_resets_stuck_window(self):
+        self.follower.plan((0.5, 0.5), (4.5, 0.5))
+        self.assertEqual(
+            self.follower.update((0.5, 0.5), heading=90.0, now=0.0).action,
+            WALK,
+        )
+
+        self.follower.pause()
+        step = self.follower.update((0.5, 0.5), heading=90.0, now=2.1)
+
+        self.assertEqual(step.action, WALK)
+
+    def test_heading_hysteresis_avoids_turn_walk_flapping(self):
+        self.follower.plan((0.5, 0.5), (4.5, 0.5))
+
+        self.assertEqual(
+            self.follower.update((0.5, 0.5), heading=85.5, now=0.0).action,
+            WALK,
+        )
+        self.assertEqual(
+            self.follower.update((0.5, 0.5), heading=80.0, now=0.1).action,
+            WALK,
+        )
+        self.assertEqual(
+            self.follower.update((0.5, 0.5), heading=79.0, now=0.2).action,
+            TURN,
+        )
+
+    def test_off_route_requests_replan(self):
+        self.follower.plan_result = PlanResult(
+            ok=True,
+            cells=[(0, 0), (0, 10), (10, 10)],
+            waypoints=[(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)],
+        )
+
+        step = self.follower.update((0.0, 10.0), heading=0.0, now=0.0)
+
+        self.assertEqual(step.action, REPLAN)
+        self.assertIn("偏离路径", step.reason)
 
     def test_skips_current_waypoint_when_near_next_segment(self):
         self.follower.plan_result = PlanResult(
