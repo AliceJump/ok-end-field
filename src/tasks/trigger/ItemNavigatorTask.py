@@ -297,7 +297,10 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 inst_gap(),
                 inst_line("🪟 " + self.tr("显示条件"), "#FE821D", bold=True),
                 inst_line(f"└─ {self.tr('箭头仅在游戏窗口处于前台时显示')}", indent=1),
-                inst_line(f"└─ {self.tr('浮层同时显示当前指向的物品名、距离、方位（北、东北、东、东南、南、西南、西、西北）与上下高度')}", indent=1),
+                inst_line(
+                    f"└─ {self.tr('浮层同时显示当前指向的物品名、距离、方位（北、东北、东、东南、南、西南、西、西北）与上下高度')}",
+                    indent=1,
+                ),
                 inst_line(f"└─ {self.tr('游戏窗口不存在或不可见时任务会暂停并停止位置同步')}", indent=1),
             ]
         )
@@ -374,9 +377,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
     def _nearby_marker_length_px(self, dy: float) -> float:
         """附近小箭头的长度：按高差从最短伸缩到最长（超过上限后不再变长）。"""
         t = min(abs(float(dy)) / max(1e-6, float(self._height_max_abs_dy)), 1.0)
-        return self._nearby_marker_min_len_px + (
-            self._nearby_marker_max_len_px - self._nearby_marker_min_len_px
-        ) * t
+        return self._nearby_marker_min_len_px + (self._nearby_marker_max_len_px - self._nearby_marker_min_len_px) * t
 
     def _draw_nearby_markers(
         self,
@@ -670,9 +671,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         # 小箭头长度会随高差伸缩，云团底边要把最长的小箭头一并算进去，
         # 否则高差大时文字会被箭头压住
         cloud_bottom_px = (
-            safe_height * self._arrow_center_rel[1]
-            + self._nearby_marker_radius_px
-            + self._nearby_marker_max_len_px
+            safe_height * self._arrow_center_rel[1] + self._nearby_marker_radius_px + self._nearby_marker_max_len_px
         )
         y_norm = (cloud_bottom_px + self._info_text_gap_px) / safe_height
         return min(max(y_norm, self._info_text_pos[1]), 0.85)
