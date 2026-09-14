@@ -46,10 +46,7 @@ def _locked_versions(text: str) -> dict[str, str]:
     return {
         _normalize(package["name"]): package["version"]
         for package in packages
-        if any(
-            marker_applies(marker)
-            for marker in package.get("resolution-markers", [None])
-        )
+        if any(marker_applies(marker) for marker in package.get("resolution-markers", [None]))
     }
 
 
@@ -94,8 +91,7 @@ resolution-markers = ["sys_platform == 'darwin'"]
             [],
             "requirements.txt 与 uv.lock 版本不一致，请重新生成：\n"
             "  uv run --locked --with packaging python "
-            "scripts/release/gen_release_requirements.py\n"
-            + "\n".join(mismatched),
+            "scripts/release/gen_release_requirements.py\n" + "\n".join(mismatched),
         )
 
 

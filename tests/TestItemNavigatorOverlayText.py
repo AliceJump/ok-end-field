@@ -285,9 +285,7 @@ class TestDrawTargetInfoText(unittest.TestCase):
         y_norm = drawn[0]["y_norm"]
         text_top_px = y_norm * 1080
         cloud_bottom_px = (
-            1080 * stub._arrow_center_rel[1]
-            + stub._nearby_marker_radius_px
-            + stub._nearby_marker_max_len_px
+            1080 * stub._arrow_center_rel[1] + stub._nearby_marker_radius_px + stub._nearby_marker_max_len_px
         )
         self.assertGreater(text_top_px, cloud_bottom_px)
 
