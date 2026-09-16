@@ -109,13 +109,11 @@ class DailyOutpostMixin:
             normalized_goods = []
             for good in goods:
                 good_name = good.name.strip("|｜丨")  # 清理 OCR 将卡片边框识别成的竖线。
-                standard_name = next(
-                    (
-                        kw
-                        for kw in sorted(can_exchange_goods, key=lambda kw: (_edit_distance(good_name, kw), -len(kw)))
-                        if len(good_name) >= max(2, len(kw) - 1)
-                    ),
-                    None,
+                # 取argmin：返回编辑距离最小的货名，同距离优先长货名，无候选时返回 None。
+                standard_name = min(
+                    (kw for kw in can_exchange_goods if len(good_name) >= max(2, len(kw) - 1)),
+                    key=lambda kw: (_edit_distance(good_name, kw), -len(kw)),
+                    default=None,
                 )
 
                 if not standard_name:
