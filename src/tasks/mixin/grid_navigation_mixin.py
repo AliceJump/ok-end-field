@@ -6,7 +6,7 @@ advance along world X. Planned waypoints are therefore ``(x, z)`` cell centers.
 
 This mixin joins three existing pieces:
 
-- ``MinimapPositionMixin`` provides the live world ``(x, z)`` and compass heading;
+- ``MinimapPositionTask`` provides the shared live world ``(x, z)`` and heading;
 - ``GridPlanner`` provides an A* route over ``*.grid.npz``;
 - ``GridRouteFollower`` turns the route into turn/walk/wait/stuck decisions.
 
@@ -32,13 +32,17 @@ from src.nav.route_follower import (
     FollowerStep,
     GridRouteFollower,
 )
-from src.tasks.mixin.minimap_heading_mixin import CONFIG_MIN_SCORE, CONFIG_YAW_PER_PIXEL
+from src.tasks.mixin.minimap_heading_mixin import (
+    CONFIG_MIN_SCORE,
+    CONFIG_YAW_PER_PIXEL,
+    MinimapHeadingMixin,
+)
 from src.tasks.mixin.minimap_position_mixin import MinimapPositionMixin
+from src.tasks.trigger.MinimapPositionTask import MinimapPositionTask
 
 __all__ = [
     "CONFIG_GRID_ALLOW_UNKNOWN",
-    "CONFIG_GRID_CALIBRATION_DISTANCE",
-    "CONFIG_GRID_CALIBRATION_SETTLE",
+    "CONFIG_GRID_CALIBRATION_WAYPOINTS",
     "CONFIG_GRID_DIR",
     "CONFIG_GRID_FILE",
     "CONFIG_GRID_FRONTIER_MARGIN",
@@ -64,7 +68,6 @@ __all__ = [
     "CONFIG_GRID_TURN_TOLERANCE",
     "CONFIG_GRID_TURN_WHILE_MOVING",
     "CONFIG_GRID_WALL_PENALTY",
-    "CONFIG_GRID_WAYPOINT_CALIBRATION",
     "CONFIG_GRID_WAYPOINT_RADIUS",
     "CONFIG_GRID_WAYPOINT_TOLERANCE",
     "CONFIG_GRID_ZOOM",
@@ -74,8 +77,7 @@ __all__ = [
 CONFIG_GRID_DIR = "网格目录"
 CONFIG_GRID_FILE = "网格文件(可选)"
 CONFIG_GRID_ZOOM = "网格Zoom(可选)"
-CONFIG_GRID_CALIBRATION_DISTANCE = "航点校准最小距离(米)"
-CONFIG_GRID_CALIBRATION_SETTLE = "锚定前静止确认(秒)"
+CONFIG_GRID_CALIBRATION_WAYPOINTS = "航点校准间隔(个)"
 CONFIG_GRID_FRONTIER_MARGIN = "未知边缘安全距离(格)"
 CONFIG_GRID_FRONTIER_PENALTY = "未知边缘不足代价(每格)"
 CONFIG_GRID_GOAL_RADIUS = "到达目标半径(米)"
@@ -102,21 +104,20 @@ CONFIG_GRID_RECOVERY_TIME = "脱困按键时长(秒)"
 CONFIG_GRID_MAX_REPLANS = "最大重规划次数"
 CONFIG_GRID_TIMEOUT = "导航超时(秒)"
 CONFIG_GRID_TICK = "控制周期(秒)"
-CONFIG_GRID_WAYPOINT_CALIBRATION = "航点校准停留(秒)"
 
 
-class GridNavigationMixin(MinimapPositionMixin):
+class GridNavigationMixin(MinimapHeadingMixin):
     """Plan on ``*.grid.npz`` and drive the character toward a world ``(x, z)``."""
 
     @staticmethod
     def grid_navigation_default_config() -> dict:
         return {
+            # 旧定位配置暂时保留，供 MinimapPositionTask 首次启动时迁移。
             **MinimapPositionMixin.minimap_position_default_config(),
             CONFIG_GRID_DIR: "assets/nav",
             CONFIG_GRID_FILE: "",
             CONFIG_GRID_ZOOM: "",
-            CONFIG_GRID_CALIBRATION_DISTANCE: 100.0,
-            CONFIG_GRID_CALIBRATION_SETTLE: 1.0,
+            CONFIG_GRID_CALIBRATION_WAYPOINTS: 5,
             CONFIG_GRID_FRONTIER_MARGIN: 2,
             CONFIG_GRID_FRONTIER_PENALTY: 1.0,
             CONFIG_GRID_WAYPOINT_TOLERANCE: 2.0,
@@ -143,7 +144,6 @@ class GridNavigationMixin(MinimapPositionMixin):
             CONFIG_GRID_MAX_REPLANS: 8,
             CONFIG_GRID_TIMEOUT: 180.0,
             CONFIG_GRID_TICK: 0.2,
-            CONFIG_GRID_WAYPOINT_CALIBRATION: 3.0,
         }
 
     @staticmethod
@@ -153,8 +153,7 @@ class GridNavigationMixin(MinimapPositionMixin):
             CONFIG_GRID_DIR: "导航网格目录，默认 assets/nav",
             CONFIG_GRID_FILE: "可选。直接指定 *.grid.npz；填写后不再按地图 id 查找",
             CONFIG_GRID_ZOOM: "可选。地图存在多个 zoom 网格时指定，例如 4",
-            CONFIG_GRID_CALIBRATION_DISTANCE: "累计行走该距离后，在下一个到达的中间航点停留校准；未达到则跳过航点",
-            CONFIG_GRID_CALIBRATION_SETTLE: "小地图和 WS 连续稳定达到该时长后才允许重锚，避免使用尚未排空延迟的 WS 样本",
+            CONFIG_GRID_CALIBRATION_WAYPOINTS: "每经过多少个航点暂停一次，等待小地图静止自动校准；0=关闭",
             CONFIG_GRID_FRONTIER_MARGIN: "已知自由格期望远离未知边缘的距离（格）",
             CONFIG_GRID_FRONTIER_PENALTY: "自由格距未知边缘每缺一格增加的代价，减少贴着未探索区域边缘行走",
             CONFIG_GRID_WAYPOINT_TOLERANCE: "规划后允许合并航点的最大横向误差；越大航点越少",
@@ -184,21 +183,20 @@ class GridNavigationMixin(MinimapPositionMixin):
             CONFIG_GRID_MAX_REPLANS: "未取得新进展时允许的最大重规划次数",
             CONFIG_GRID_TIMEOUT: "整次导航的最长运行时间（秒）",
             CONFIG_GRID_TICK: "控制循环固定节拍（秒）",
-            CONFIG_GRID_WAYPOINT_CALIBRATION: "普通到达每个中间航点后停止移动并持续采样的秒数，用于等待小地图+WS自动静止校准",
         }
 
     def _init_grid_navigation_mixin(self) -> None:
-        """Initialize navigation state without starting position sources."""
-        self._init_minimap_position_mixin()
+        """Initialize navigation state without owning minimap position sources."""
+        self._init_minimap_heading_mixin()
         self._grid_nav_follower: GridRouteFollower | None = None
         self._grid_nav_map_id = ""
         self._grid_nav_w_held = False
-        self._grid_nav_position_active = False
         self._grid_nav_last_wait_log = 0.0
-        self._grid_nav_distance_since_calibration = 0.0
-        self._grid_nav_last_position: tuple[float, float] | None = None
-        self._grid_nav_last_position_map = ""
-        self._grid_nav_start_calibrated = False
+        self._grid_minimap_position_service: MinimapPositionTask | None = None
+        self._grid_nav_last_info_key = None
+        self._grid_nav_last_info_at = 0.0
+        self._grid_nav_last_debug_key = None
+        self._grid_nav_last_debug_at = 0.0
 
     def load_grid_for_map(
         self,
@@ -322,7 +320,14 @@ class GridNavigationMixin(MinimapPositionMixin):
         limit = self._cfg_float(CONFIG_GRID_TIMEOUT, 180.0) if timeout is None else float(timeout)
         limit = max(1.0, limit)
         tick = max(0.05, self._cfg_float(CONFIG_GRID_TICK, 0.2))
-        owns_position = not self._grid_nav_position_active
+        position_service = self._get_minimap_position_service()
+        if position_service is None:
+            self.log_warning("导航需要「小地图定位」触发任务，但当前任务未注册", notify=True)
+            return False
+        if not getattr(position_service, "enabled", True):
+            self.log_warning("导航需要启用「小地图定位」触发任务", notify=True)
+            return False
+        position_service.start_minimap_position(wait_stable=False)
         started_at = self.active_time()
         deadline = started_at + limit
         best_goal_distance = math.inf
@@ -330,44 +335,66 @@ class GridNavigationMixin(MinimapPositionMixin):
         replans = 0
         had_plan = False
         current_map = str(map_id or "")
+        next_sync_retry_at = 0.0
+        waypoints_since_calibration = 0
+        recovery_goal: tuple[float, float] | None = None
+        visited_cells: dict[tuple[int, int], tuple[float, float]] = {}
+        last_sync_seq = 0
 
-        if owns_position:
-            self.start_minimap_position(wait_stable=False)
-            self._grid_nav_position_active = True
         self._grid_nav_follower = None
-        self._grid_nav_distance_since_calibration = 0.0
-        self._grid_nav_last_position = None
-        self._grid_nav_last_position_map = ""
-        self._grid_nav_start_calibrated = False
         self._set_grid_walking(False)
 
         try:
             while not self._grid_navigation_timed_out(deadline, limit):
                 frame = self.next_frame()
-                state = self.minimap_position(frame=frame)
+                state = position_service.minimap_position(frame=frame, now=self.active_time())
                 x = state.get("x")
                 z = state.get("z")
                 actual_map = str(state.get("map_id") or current_map or "")
                 self._log_grid_navigation_debug(state, map_id=actual_map, tag="导航")
+                sync_seq = int(state.get("sync_seq") or 0)
+                if sync_seq != last_sync_seq:
+                    visited_cells.clear()
+                    last_sync_seq = sync_seq
                 if x is None or z is None:
                     self._wait_for_grid_position("等待融合坐标锚定")
+                    self.sleep(tick)
+                    continue
+                if not state.get("position_trusted", True):
+                    self._wait_for_grid_position(
+                        f"等待定位重新校准: {state.get('trust_reason') or 'untrusted'}"
+                    )
+                    if state.get("rest") and self.active_time() >= next_sync_retry_at:
+                        synced = self._wait_for_minimap_sync(
+                            position_service,
+                            sync_seq,
+                            deadline,
+                            tick,
+                        )
+                        if self._grid_navigation_timed_out(deadline, limit):
+                            return False
+                        if not synced:
+                            next_sync_retry_at = self.active_time() + 30.0
                     self.sleep(tick)
                     continue
                 if not state.get("odom_ok"):
                     self._wait_for_grid_position(f"等待有效位移样本: {state.get('odom_reason')}")
                     self.sleep(tick)
                     continue
-                self._update_grid_nav_travel((float(x), float(z)), actual_map)
-
-                if not self._grid_nav_start_calibrated:
-                    self._set_grid_walking(False)
-                    calibrated, _position = self._calibrate_grid_position("开始", deadline=deadline)
+                if state.get("sync_needed") and self.active_time() >= next_sync_retry_at:
+                    synced = self._wait_for_minimap_sync(
+                        position_service,
+                        int(state.get("sync_seq") or 0),
+                        deadline,
+                        tick,
+                    )
                     if self._grid_navigation_timed_out(deadline, limit):
                         return False
-                    if calibrated:
-                        self._grid_nav_start_calibrated = True
+                    if synced:
+                        waypoints_since_calibration = 0
+                    if not synced:
+                        next_sync_retry_at = self.active_time() + 30.0
                     continue
-
                 heading = state.get("heading")
                 heading_score = state.get("heading_score")
                 min_score = max(0.0, min(1.0, self._cfg_float(CONFIG_MIN_SCORE, 0.6)))
@@ -390,9 +417,12 @@ class GridNavigationMixin(MinimapPositionMixin):
                         replans += 1
                     if map_changed:
                         self.log_info(f"地图已切换 {self._grid_nav_map_id!r} -> {actual_map!r}，重新规划")
+                        visited_cells.clear()
+                        recovery_goal = None
+                    route_goal = recovery_goal if recovery_goal is not None else goal
                     follower, result = self._create_grid_route(
                         (float(x), float(z)),
-                        goal,
+                        route_goal,
                         map_id=actual_map,
                         grid_path=grid_path,
                         grid_dir=grid_dir,
@@ -406,9 +436,19 @@ class GridNavigationMixin(MinimapPositionMixin):
                         self._log_grid_plan_failure(result, "导航规划失败")
                         return False
                     self._grid_nav_follower = follower
+                    self._record_grid_visited_cell(
+                        follower,
+                        (float(x), float(z)),
+                        visited_cells,
+                    )
                     self._grid_nav_map_id = actual_map
                     self._log_grid_plan(result)
 
+                self._record_grid_visited_cell(
+                    self._grid_nav_follower,
+                    (float(x), float(z)),
+                    visited_cells,
+                )
                 step = self._grid_nav_follower.update(
                     (float(x), float(z)),
                     float(heading),
@@ -424,77 +464,126 @@ class GridNavigationMixin(MinimapPositionMixin):
                     self._set_grid_walking(False)
                     self._grid_nav_follower.pause()
                     self.log_warning(f"路径偏离，重新规划：{step.reason}")
+                    current_known = self._grid_position_is_known(
+                        self._grid_nav_follower,
+                        (float(x), float(z)),
+                    )
+                    recovery_target = None
+                    if not current_known:
+                        recovery_target = self._nearest_visited_grid_cell(
+                            (float(x), float(z)),
+                            visited_cells,
+                        )
                     self._grid_nav_follower = None
+                    if current_known:
+                        recovery_goal = None
+                        synced = self._wait_for_minimap_sync(
+                            position_service,
+                            int(state.get("sync_seq") or 0),
+                            deadline,
+                            tick,
+                        )
+                        if self._grid_navigation_timed_out(deadline, limit):
+                            return False
+                        if not synced:
+                            self.log_warning("偏航后的静止校准未完成，继续重规划")
+                    elif recovery_target is not None:
+                        recovery_goal = recovery_target
+                        self.log_info(
+                            "当前位置不在已知 free 格，先导航回最近走过的已知格再校准"
+                        )
+                    else:
+                        recovery_goal = None
+                        self.log_warning(
+                            "当前位置不在已知 free 格，但没有已走过的已知格可返回；"
+                            "先原地校准后重新规划"
+                        )
+                        synced = self._wait_for_minimap_sync(
+                            position_service,
+                            int(state.get("sync_seq") or 0),
+                            deadline,
+                            tick,
+                        )
+                        if self._grid_navigation_timed_out(deadline, limit):
+                            return False
+                        if not synced:
+                            self.log_warning("偏航后的静止校准未完成，继续重规划")
                     if self._grid_navigation_timed_out(deadline, limit):
                         return False
                     continue
                 if step.arrived_waypoint_index is not None:
-                    if self._grid_calibration_due():
-                        self._calibrate_grid_waypoint(
-                            step.arrived_waypoint_index,
-                            step.waypoint_count,
-                            deadline=deadline,
+                    waypoints_since_calibration += 1
+                    calibration_interval = max(
+                        0,
+                        self._cfg_int(CONFIG_GRID_CALIBRATION_WAYPOINTS, 5),
+                    )
+                    if (
+                        calibration_interval > 0
+                        and waypoints_since_calibration >= calibration_interval
+                    ):
+                        synced = self._wait_for_minimap_sync(
+                            position_service,
+                            int(state.get("sync_seq") or 0),
+                            deadline,
+                            tick,
                         )
                         if self._grid_navigation_timed_out(deadline, limit):
                             return False
-                    else:
-                        minimum = max(
-                            0.0,
-                            self._cfg_float(CONFIG_GRID_CALIBRATION_DISTANCE, 100.0),
-                        )
-                        self.log_info(
-                            f"到达航点 {step.arrived_waypoint_index + 1}/{step.waypoint_count}，"
-                            f"距上次校准仅 {self._grid_nav_distance_since_calibration:.1f}m"
-                            f"（阈值 {minimum:.1f}m），跳过校准停留"
-                        )
+                        waypoints_since_calibration = 0
+                        if not synced:
+                            self.log_warning("到达航点后的静止校准未完成，继续导航")
+                    self.log_info(
+                        f"到达航点 {step.arrived_waypoint_index + 1}/"
+                        f"{step.waypoint_count}，累计未校准航点={waypoints_since_calibration}"
+                    )
                     continue
                 if step.distance_to_goal is not None:
                     if step.distance_to_goal + 0.5 < best_goal_distance:
                         best_goal_distance = step.distance_to_goal
                         replans = 0
                         recovery_attempts = 0
-                    self.info_set(
-                        "网格导航",
-                        f"{step.action} | 目标距离={step.distance_to_goal:.2f}m | "
-                        f"航点={step.waypoint_index + 1}/{step.waypoint_count}",
+                    info_key = (
+                        step.action,
+                        step.waypoint_index,
+                        round(step.distance_to_goal, 0),
                     )
+                    now = self.active_time()
+                    if (
+                        info_key != self._grid_nav_last_info_key
+                        or now - self._grid_nav_last_info_at >= 5.0
+                    ):
+                        self.info_set(
+                            "网格导航",
+                            f"{step.action} | 目标距离={step.distance_to_goal:.2f}m | "
+                            f"航点={step.waypoint_index + 1}/{step.waypoint_count}",
+                        )
+                        self._grid_nav_last_info_key = info_key
+                        self._grid_nav_last_info_at = now
 
                 if step.action == DONE:
                     self._set_grid_walking(False)
-                    goal_radius = max(0.0, self._cfg_float(CONFIG_GRID_GOAL_RADIUS, 2.0))
-                    calibrated, position = self._calibrate_grid_position("目标", deadline=deadline)
-                    if self._grid_navigation_timed_out(deadline, limit):
-                        return False
-                    if calibrated and position is not None:
-                        goal_distance = math.hypot(position[0] - goal[0], position[1] - goal[1])
-                        if goal_distance <= goal_radius:
-                            self.log_info(
-                                f"校准后确认到达: ({position[0]:.2f}, {position[1]:.2f})，"
-                                f"误差 {goal_distance:.2f}m",
-                                notify=True,
-                            )
-                            return True
-                        self.log_warning(
-                            f"目标校准后仍在到达半径外：距离 {goal_distance:.2f}m > "
-                            f"{goal_radius:.2f}m，从校准位置重新规划",
-                            notify=True,
+                    if recovery_goal is not None:
+                        synced = self._wait_for_minimap_sync(
+                            position_service,
+                            int(state.get("sync_seq") or 0),
+                            deadline,
+                            tick,
                         )
-                    else:
-                        # 目标处没等到新的 WS 坐标 → 静止校准没完成。这不等于"没到"：follower
-                        # 是按同一套融合坐标判定 DONE 的，已经落在 goal_radius 内。丢弃这个到达
-                        # 去重规划只会原地打转（重规划后仍立刻 DONE、又没有新 WS 触发校准），
-                        # 最后在目标圈里报"重规划次数已达上限"。所以按 follower 的判定接受。
-                        distance_text = (
-                            f"{step.distance_to_goal:.2f}m"
-                            if step.distance_to_goal is not None else "未知"
-                        )
-                        self.log_warning(
-                            f"目标处未完成静止校准，按 follower 判定接受到达（距目标 {distance_text}）",
-                            notify=True,
-                        )
-                        return True
-                    self._grid_nav_follower = None
-                    continue
+                        if self._grid_navigation_timed_out(deadline, limit):
+                            return False
+                        recovery_goal = None
+                        self._grid_nav_follower = None
+                        if synced:
+                            self.log_info("已返回最近走过的已知格并完成校准，继续原目标")
+                        else:
+                            self.log_warning("返回已知格后校准未完成，继续原目标")
+                        continue
+                    distance_text = (
+                        f"{step.distance_to_goal:.2f}m"
+                        if step.distance_to_goal is not None else "未知"
+                    )
+                    self.log_info(f"已到达目标（距目标 {distance_text}）", notify=True)
+                    return True
                 if step.action == STUCK:
                     self._set_grid_walking(False)
                     if recovery_attempts >= self._cfg_int(CONFIG_GRID_MAX_RECOVERIES, 3):
@@ -505,7 +594,14 @@ class GridNavigationMixin(MinimapPositionMixin):
                         f"导航卡住，尝试脱困 {recovery_attempts}/"
                         f"{self._cfg_int(CONFIG_GRID_MAX_RECOVERIES, 3)}：{step.reason}"
                     )
-                    self._recover_grid_stuck(deadline=deadline)
+                    self._recover_grid_stuck(
+                        position=(float(x), float(z)),
+                        heading=float(heading),
+                        target_bearing=step.target_bearing,
+                        frame=frame,
+                        attempt=recovery_attempts,
+                        deadline=deadline,
+                    )
                     if self._grid_navigation_timed_out(deadline, limit):
                         return False
                     self._grid_nav_follower = None
@@ -547,9 +643,6 @@ class GridNavigationMixin(MinimapPositionMixin):
             return False
         finally:
             self._set_grid_walking(False)
-            if owns_position:
-                self.stop_minimap_position()
-                self._grid_nav_position_active = False
 
     def _create_grid_route(
         self,
@@ -573,6 +666,54 @@ class GridNavigationMixin(MinimapPositionMixin):
         follower = GridRouteFollower(grid, self._grid_follower_config())
         result = follower.plan(start_xz, goal_xz, time_budget_s=time_budget_s)
         return follower, result
+
+    def _get_minimap_position_service(self) -> MinimapPositionTask | None:
+        if self._grid_minimap_position_service is not None:
+            return self._grid_minimap_position_service
+        override = getattr(self, "_minimap_position_service", None)
+        if override is not None:
+            self._grid_minimap_position_service = override
+            return override
+        getter = getattr(self, "get_task_by_class", None)
+        if callable(getter):
+            self._grid_minimap_position_service = getter(MinimapPositionTask)
+        return self._grid_minimap_position_service
+
+    @staticmethod
+    def _grid_position_is_known(follower: GridRouteFollower, position: tuple[float, float]) -> bool:
+        grid = getattr(follower, "grid", None)
+        if grid is None:
+            return False
+        cell = grid.index_of_world(position[0], position[1])
+        return bool(grid.is_free(*cell))
+
+    @staticmethod
+    def _record_grid_visited_cell(
+        follower: GridRouteFollower,
+        position: tuple[float, float],
+        visited_cells: dict[tuple[int, int], tuple[float, float]],
+    ) -> None:
+        grid = getattr(follower, "grid", None)
+        if grid is None:
+            return
+        cell = grid.index_of_world(position[0], position[1])
+        if grid.is_free(*cell):
+            visited_cells[cell] = grid.world_of_index(*cell)
+
+    @staticmethod
+    def _nearest_visited_grid_cell(
+        position: tuple[float, float],
+        visited_cells: dict[tuple[int, int], tuple[float, float]],
+    ) -> tuple[float, float] | None:
+        if not visited_cells:
+            return None
+        return min(
+            visited_cells.values(),
+            key=lambda point: math.hypot(
+                point[0] - position[0],
+                point[1] - position[1],
+            ),
+        )
 
     def _grid_follower_config(self) -> FollowerConfig:
         return FollowerConfig(
@@ -686,123 +827,28 @@ class GridNavigationMixin(MinimapPositionMixin):
         self._set_grid_walking(True)
         self._send_rotation(dx)
 
-    def _calibrate_grid_waypoint(
-        self,
-        waypoint_index: int,
-        waypoint_count: int,
-        *,
-        deadline: float | None = None,
-    ) -> bool:
-        """Stop at an intermediate waypoint and keep sampling for automatic calibration."""
-        calibrated, _position = self._calibrate_grid_position(
-            f"航点 {waypoint_index + 1}/{waypoint_count}",
-            deadline=deadline,
-        )
-        return calibrated
-
-    def _calibrate_grid_position(
-        self,
-        tag: str,
-        *,
-        deadline: float | None = None,
-    ) -> tuple[bool, tuple[float, float] | None]:
-        """Stop and sample until an automatic static calibration completes."""
-        self._set_grid_walking(False)
-        if self._grid_nav_follower is not None:
-            self._grid_nav_follower.pause()
-        duration = max(0.0, self._cfg_float(CONFIG_GRID_WAYPOINT_CALIBRATION, 3.0))
-        settle_required = max(
-            0.0,
-            self._cfg_float(CONFIG_GRID_CALIBRATION_SETTLE, 1.0),
-        )
-        duration = max(duration, settle_required + 1.0)
-        if deadline is not None:
-            remaining = deadline - self.active_time()
-            if remaining <= 0:
-                return False, None
-            duration = min(duration, remaining)
-        if duration <= 0:
-            return False, None
-
-        tick = max(0.05, self._cfg_float(CONFIG_GRID_TICK, 0.2))
-        started = self.active_time()
-        stable_since = None
-        synced = False
-        checked = False
-        last_position = None
-        last_residual = None
-        self.log_info(
-            f"{tag}：停留 {duration:.1f}s 等待小地图自动校准"
-        )
-        while self.active_time() - started < duration:
-            if deadline is not None and self.active_time() >= deadline:
-                break
-            remaining = duration - (self.active_time() - started)
-            wait = min(tick, max(0.0, remaining))
-            if wait <= 0:
-                break
-            self.sleep(wait)
-            now = self.active_time()
-            allow_sync = (
-                stable_since is not None
-                and now - stable_since >= settle_required
-            )
-            state = self.minimap_position(
-                frame=self.next_frame(),
-                now=now,
-                allow_sync=allow_sync,
-            )
-            self._log_grid_navigation_debug(
-                state,
-                map_id=str(state.get("map_id") or self._grid_nav_map_id or ""),
-                tag=f"{tag}校准",
-            )
-            if state.get("rest") and state.get("odom_ok"):
-                if stable_since is None:
-                    stable_since = now
-            else:
-                stable_since = None
-            synced = synced or bool(state.get("just_synced"))
-            checked = checked or bool(state.get("sync_checked"))
-            if state.get("sync_residual") is not None:
-                last_residual = state["sync_residual"]
-            if state.get("x") is not None and state.get("z") is not None:
-                last_position = (float(state["x"]), float(state["z"]))
-            elapsed = min(duration, self.active_time() - started)
-            self.info_set(
-                "网格导航",
-                f"{tag} 校准中 {elapsed:.1f}/{duration:.1f}s",
-            )
-
-        if synced:
-            self.log_info(f"{tag} 自动校准完成")
-            if last_residual is not None:
-                self.log_info(
-                    f"{tag} 静止校准偏差："
-                    f"小地图推算=({last_residual['map_x']:.3f}, {last_residual['map_z']:.3f}) "
-                    f"WS=({last_residual['ws_x']:.3f}, {last_residual['ws_z']:.3f}) "
-                    f"偏差=({last_residual['dx']:+.3f}, {last_residual['dz']:+.3f}) "
-                    f"距离={last_residual['dist']:.3f}m"
-                )
-        elif checked:
-            self.log_info(f"{tag} 已静止且与 WS 对齐，无需重锚")
-        else:
-            diag = self.minimap_rest_diag() or {}
-            self.log_warning(
-                f"{tag} 停留结束但未触发自动校准："
-                f"reason={diag.get('reason')} speed={diag.get('map_speed_m_s')} "
-                f"ws_moved={diag.get('ws_moved_m')}"
-            )
-        if synced or checked:
-            self._grid_nav_distance_since_calibration = 0.0
-            if last_position is not None:
-                self._grid_nav_last_position = last_position
-        return synced or checked, last_position
-
     def _log_grid_navigation_debug(self, state: dict, *, map_id: str, tag: str) -> None:
         """Emit one detailed positioning line per frame when debug mode is enabled."""
         if not getattr(self, "debug", False):
             return
+        debug_key = (
+            tag,
+            map_id,
+            bool(state.get("rest")),
+            bool(state.get("anchor_set")),
+            bool(state.get("odom_ok")),
+            state.get("odom_reason"),
+            int(state.get("sync_seq") or 0),
+            state.get("heading") is None,
+        )
+        now = self.active_time()
+        if (
+            debug_key == self._grid_nav_last_debug_key
+            and now - self._grid_nav_last_debug_at < 1.0
+        ):
+            return
+        self._grid_nav_last_debug_key = debug_key
+        self._grid_nav_last_debug_at = now
         x, z = state.get("x"), state.get("z")
         pos_text = (
             f"({float(x):.3f}, {float(z):.3f})"
@@ -826,38 +872,117 @@ class GridNavigationMixin(MinimapPositionMixin):
             f"朝向={heading_text} score={score_text} 静止={bool(state.get('rest'))} "
             f"锚定={bool(state.get('anchor_set'))} "
             f"里程计={bool(state.get('odom_ok'))}:{state.get('odom_reason')} "
+            f"可信={bool(state.get('position_trusted', True))}:{state.get('trust_reason')} "
             f"校准检查={bool(state.get('sync_checked'))} "
-            f"距上次校准={self._grid_nav_distance_since_calibration:.2f}m"
+            f"校准序号={int(state.get('sync_seq') or 0)}"
         )
 
-    def _update_grid_nav_travel(self, position: tuple[float, float], map_id: str) -> None:
-        """Accumulate plausible movement since the last successful calibration."""
-        if (
-            self._grid_nav_last_position is not None
-            and map_id == self._grid_nav_last_position_map
-        ):
-            moved = math.hypot(
-                position[0] - self._grid_nav_last_position[0],
-                position[1] - self._grid_nav_last_position[1],
+    def _recover_grid_stuck(
+        self,
+        *,
+        position: tuple[float, float],
+        heading: float,
+        target_bearing: float | None,
+        frame,
+        attempt: int,
+        deadline: float | None = None,
+    ) -> None:
+        """三段式脱困：后退、侧向绕开、对准目标后跳跃。"""
+        duration = self._grid_recovery_duration(deadline)
+        if duration is None:
+            return
+        if attempt <= 1:
+            self.log_info("脱困尝试 1/3：按 S 后退")
+            self.press_key("s", down_time=duration)
+            return
+        if attempt == 2:
+            side = self._choose_grid_strafe_side(position, heading)
+            side_name = "A 左移" if side == "a" else "D 右移"
+            self.log_info(f"脱困尝试 2/3：按 S + {side_name}")
+            duration = self._grid_recovery_duration(deadline)
+            if duration is not None:
+                self._hold_grid_keys(("s", side), duration)
+            return
+
+        self.log_info("脱困尝试 3/3：对准目标后按住 W + Space 跳跃")
+        if target_bearing is not None:
+            self.turn_to_bearing(
+                target_bearing,
+                tolerance=self._cfg_float(CONFIG_GRID_TURN_TOLERANCE, 5.0),
+                max_rounds=1,
+                frame=frame,
             )
-            if moved <= 10.0:
-                self._grid_nav_distance_since_calibration += moved
-        self._grid_nav_last_position = position
-        self._grid_nav_last_position_map = map_id
+        duration = self._grid_recovery_duration(deadline, multiplier=1.5)
+        if duration is None:
+            return
+        self._set_grid_walking(True)
+        try:
+            self.press_key("space", down_time=duration)
+        finally:
+            self._set_grid_walking(False)
 
-    def _grid_calibration_due(self) -> bool:
-        minimum = max(0.0, self._cfg_float(CONFIG_GRID_CALIBRATION_DISTANCE, 100.0))
-        return minimum <= 0 or self._grid_nav_distance_since_calibration >= minimum
+    def _grid_recovery_duration(
+        self,
+        deadline: float | None,
+        *,
+        multiplier: float = 1.0,
+    ) -> float | None:
+        duration = max(
+            0.1,
+            self._cfg_float(CONFIG_GRID_RECOVERY_TIME, 0.45) * max(0.1, float(multiplier)),
+        )
+        if deadline is not None:
+            remaining = deadline - self.active_time()
+            if remaining <= 0:
+                return None
+            duration = min(duration, remaining)
+        return duration
 
-    def _recover_grid_stuck(self, *, deadline: float | None = None) -> None:
-        duration = max(0.1, self._cfg_float(CONFIG_GRID_RECOVERY_TIME, 0.45))
-        for key in ("s", "a", "d"):
-            if deadline is not None:
-                remaining = deadline - self.active_time()
-                if remaining <= 0:
-                    return
-                duration = min(duration, remaining)
-            self.press_key(key, down_time=duration)
+    def _hold_grid_keys(self, keys: tuple[str, ...], duration: float) -> None:
+        self._set_grid_walking(False)
+        for key in keys:
+            self.send_key_down(key)
+        try:
+            self.sleep(duration)
+        finally:
+            for key in reversed(keys):
+                self.send_key_up(key)
+
+    def _choose_grid_strafe_side(
+        self,
+        position: tuple[float, float],
+        heading: float,
+    ) -> str:
+        """选择左右侧可行空间更多的一边，默认优先 D。"""
+        follower = self._grid_nav_follower
+        if follower is None:
+            return "d"
+        grid = follower.grid
+        planner = follower.planner
+        radians = math.radians(float(heading))
+        right = (math.cos(radians), math.sin(radians))
+        left = (-right[0], -right[1])
+        cell_size = max(0.25, float(grid.meta.cell_size))
+
+        def score(direction: tuple[float, float]) -> int:
+            total = 0
+            for distance_index in range(1, 6):
+                distance = cell_size * distance_index
+                i, j = grid.index_of_world(
+                    position[0] + direction[0] * distance,
+                    position[1] + direction[1] * distance,
+                )
+                if planner.passable(i, j):
+                    total += 6 - distance_index
+            return total
+
+        left_score = score(left)
+        right_score = score(right)
+        chosen = "d" if right_score >= left_score else "a"
+        self.log_info(
+            f"脱困侧向选择：左={left_score} 右={right_score}，选择 {chosen.upper()}"
+        )
+        return chosen
 
     def _wait_for_grid_position(self, reason: str) -> None:
         self._set_grid_walking(False)
@@ -868,6 +993,40 @@ class GridNavigationMixin(MinimapPositionMixin):
             self._grid_nav_last_wait_log = now
             self.log_info(f"网格导航暂停：{reason}")
             self.info_set("网格导航", reason)
+
+    def _wait_for_minimap_sync(
+        self,
+        position_service,
+        start_sync_seq: int,
+        deadline: float,
+        tick: float,
+    ) -> bool:
+        """短暂停车，让共享定位服务完成一次静止自动校准。"""
+        self._set_grid_walking(False)
+        if self._grid_nav_follower is not None:
+            self._grid_nav_follower.pause()
+        self.info_set("网格导航", "等待静止定位校准")
+        started = self.active_time()
+        # WS 真值约每 5 秒推送一次，至少覆盖一个完整推送周期再判定失败。
+        timeout = min(8.0, max(0.0, deadline - started))
+        while self.active_time() - started < timeout:
+            frame = self.next_frame()
+            state = position_service.minimap_position(frame=frame, now=self.active_time())
+            if (
+                int(state.get("sync_seq") or 0) > start_sync_seq
+                or bool(state.get("sync_checked"))
+            ):
+                self.log_info("导航中静止定位校准完成")
+                return True
+            self.sleep(tick)
+        diagnostic = getattr(position_service, "minimap_rest_diag", lambda: None)() or {}
+        self.log_warning(
+            "导航中静止定位校准超时："
+            f"reason={diagnostic.get('reason')} "
+            f"speed={diagnostic.get('map_speed_m_s')} "
+            f"ws_moved={diagnostic.get('ws_moved_m')}"
+        )
+        return False
 
     def _grid_navigation_timed_out(self, deadline: float, limit: float) -> bool:
         if self.active_time() < deadline:

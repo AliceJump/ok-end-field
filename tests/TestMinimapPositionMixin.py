@@ -12,6 +12,7 @@
 """
 import cv2
 import numpy as np
+import time
 import unittest
 
 from src.tasks.mixin.minimap_position_mixin import (
@@ -118,6 +119,7 @@ class TestMinimapPositionMixin(unittest.TestCase):
         self.assertIsNone(st["x"])
         self.assertIsNone(st["z"])
         self.assertFalse(st["anchor_set"])
+        self.assertFalse(st["position_trusted"])
         # 位置还不知道，但方向是有的；且已换算成罗盘方位角（正东 90°）
         self.assertAlmostEqual(st["heading"], 76.5, delta=1e-6)
         # 刚建锚帧这一拍没有位移数据：odom_ok=False（别当成"在动"，也别当成"静止"）
@@ -130,6 +132,7 @@ class TestMinimapPositionMixin(unittest.TestCase):
         st = self.task.tick(self.frame, ws=(607.16, -136.13))    # 静止 + WS 不动 -> 首次校准
         self.assertTrue(st["just_synced"])
         self.assertTrue(st["anchor_set"])
+        self.assertTrue(st["position_trusted"])
         self.assertAlmostEqual(st["x"], 607.16, delta=1e-6)
         self.assertAlmostEqual(st["z"], -136.13, delta=1e-6)
         self.assertAlmostEqual(st["dmap_px"][0], 0.0, delta=1e-6)
@@ -178,6 +181,23 @@ class TestMinimapPositionMixin(unittest.TestCase):
         self.assertTrue(st["anchor_set"])
         self.assertAlmostEqual(st["x"], 0.0, delta=1e-6)
         self.assertAlmostEqual(st["z"], 0.0, delta=1e-6)
+        self.assertTrue(st["position_trusted"])
+
+    def test_reanchor_requires_new_sync_before_position_is_trusted(self):
+        self.task.start_minimap_position()
+        self.task.tick(self.frame)
+        self.assertTrue(self.task.tick(self.frame, ws=(100.0, 200.0))["position_trusted"])
+
+        # 人为把门限压到 0，制造一次重新锚定。
+        self.task._minimap_od._sample_max_dt = 0.0
+        rejected = self.task.tick(self.frame, dt=0.5)
+        self.assertFalse(rejected["odom_ok"])
+        self.assertFalse(rejected["position_trusted"])
+
+        self.task._minimap_od._sample_max_dt = 5.0
+        recovered = self.task.tick(self.frame, dt=0.5, ws=(100.0, 200.0))
+        self.assertTrue(recovered["odom_ok"])
+        self.assertTrue(recovered["position_trusted"])
 
     def test_start_reports_no_truth_without_content(self):
         """没配 content 时没有官方真值来源：返回 False，但仍建成里程计与融合。"""
@@ -185,6 +205,61 @@ class TestMinimapPositionMixin(unittest.TestCase):
         self.assertIsNotNone(self.task.minimap_odometry)
         self.assertIsNotNone(self.task.minimap_fusion)
         self.task.stop_minimap_position()
+
+    def test_start_is_idempotent(self):
+        self.task.start_minimap_position()
+        odometry = self.task.minimap_odometry
+        fusion = self.task.minimap_fusion
+
+        self.task.start_minimap_position()
+
+        self.assertIs(self.task.minimap_odometry, odometry)
+        self.assertIs(self.task.minimap_fusion, fusion)
+
+    def test_persistent_ws_ignores_idle_consumer_timeout(self):
+        self.task._map_ws_consumer_idle_timeout = 0.0
+        self.task._map_ws_last_consume_at = time.time() - 120.0
+
+        self.assertFalse(self.task._map_ws_should_stop_for_idle_consumer())
+
+    def test_start_restarts_stopped_map_ws_client(self):
+        self.task.start_minimap_position()
+        self.task._map_ws_auth_source = "cred"
+        self.task._is_map_ws_client_enabled = lambda: False
+        restarted = []
+        self.task._start_map_ws_client = lambda cred: restarted.append(cred) or True
+
+        self.task.start_minimap_position()
+
+        self.assertEqual(restarted, ["cred"])
+
+    def test_latest_state_tracks_freshness_and_sync_sequence(self):
+        self.task.start_minimap_position()
+        self.task.tick(self.frame)
+        synced = self.task.tick(self.frame, ws=(607.16, -136.13))
+
+        latest = self.task.latest_minimap_state(now=self.task.active_time())
+        self.assertEqual(latest["sync_seq"], 1)
+        self.assertEqual(latest["x"], 607.16)
+        self.assertEqual(latest["sample_t"], synced["sample_t"])
+
+        self.task._t += 1.0
+        self.assertIsNone(self.task.latest_minimap_state(max_age=0.5))
+        self.assertEqual(
+            self.task.latest_minimap_state()["sync_seq"],
+            1,
+        )
+
+    def test_distance_since_sync_requests_calibration(self):
+        self.task.config["航点校准最小距离(米)"] = 0.5
+        self.task.start_minimap_position()
+        self.task.tick(self.frame)
+        self.task.tick(self.frame, ws=(100.0, 200.0))
+
+        state = self.task.tick(_frame_at(3))
+
+        self.assertGreater(state["distance_since_sync"], 0.5)
+        self.assertTrue(state["sync_needed"])
 
 
 if __name__ == "__main__":

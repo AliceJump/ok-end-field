@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import hmac
 import json
+import math
 import queue
 import random
 import re
@@ -100,6 +101,26 @@ class WsPositionMixin:
         self._map_ws_last_error_at = 0.0
         self._map_ws_last_consume_at = 0.0
         self._map_ws_consumer_idle_timeout = 10.0
+        self._map_ws_last_position_log_at = 0.0
+        self._map_ws_last_position_log_map = None
+        self._map_ws_last_position_log_xz = None
+
+    def _should_log_map_position(self, map_id: str, x: float, z: float) -> bool:
+        now = time.time()
+        map_changed = map_id != self._map_ws_last_position_log_map
+        last_xz = self._map_ws_last_position_log_xz
+        jumped = (
+            last_xz is not None
+            and math.hypot(float(x) - last_xz[0], float(z) - last_xz[1]) >= 50.0
+        )
+        heartbeat = 5.0 if getattr(self, "debug", False) else 30.0
+        due = now - self._map_ws_last_position_log_at >= heartbeat
+        if self._map_ws_last_position_log_at > 0 and not (map_changed or jumped or due):
+            return False
+        self._map_ws_last_position_log_at = now
+        self._map_ws_last_position_log_map = map_id
+        self._map_ws_last_position_log_xz = (float(x), float(z))
+        return True
 
     def _is_ws_position_server_enabled(self) -> bool:
         thread = self._ws_server_thread
@@ -384,7 +405,9 @@ class WsPositionMixin:
 
     def _map_ws_should_stop_for_idle_consumer(self) -> bool:
         last_consume_at = float(getattr(self, "_map_ws_last_consume_at", 0.0) or 0.0)
-        timeout = float(getattr(self, "_map_ws_consumer_idle_timeout", 30.0) or 30.0)
+        timeout = float(getattr(self, "_map_ws_consumer_idle_timeout", 0.0) or 0.0)
+        if timeout <= 0:
+            return False
         if last_consume_at <= 0 or time.time() - last_consume_at < timeout:
             return False
 
@@ -472,7 +495,12 @@ class WsPositionMixin:
                         if msg_type == 1012:
                             self._push_ws_payload(payload)
                             pos, map_id, px, py, pz = self._extract_position_payload(payload)
-                            if pos is not None and map_id is not None and callable(log_info):
+                            if (
+                                pos is not None
+                                and map_id is not None
+                                and callable(log_info)
+                                and self._should_log_map_position(map_id, px, pz)
+                            ):
                                 log_info(f"[地图WS] 收到位置: mapId={map_id} pos=({px:.3f},{py:.3f},{pz:.3f})")
             except Exception as e:
                 if self._map_ws_stop_event.is_set():
@@ -631,7 +659,12 @@ class WsPositionMixin:
                     self._push_ws_payload(payload)
                     # 仅在有效位置数据时记录（避免过多日志）
                     pos, map_id, px, py, pz = self._extract_position_payload(payload)
-                    if pos is not None and map_id is not None and callable(log_info):
+                    if (
+                        pos is not None
+                        and map_id is not None
+                        and callable(log_info)
+                        and self._should_log_map_position(map_id, px, pz)
+                    ):
                         log_info(f"[WS] 收到位置: mapId={map_id} pos=({px:.3f},{py:.3f},{pz:.3f})")
                 except Exception as e:
                     if callable(log_error):

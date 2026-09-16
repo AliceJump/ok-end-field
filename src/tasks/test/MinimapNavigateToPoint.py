@@ -83,46 +83,45 @@ class MinimapNavigateToPoint(BaseEfTask, GridNavigationMixin):
 
     def _run_plan_only(self, goal: tuple[float, float], map_id: str) -> bool:
         """Sample the current position once, then print the planned route."""
-        owns_position = not self._grid_nav_position_active
-        if owns_position:
-            self.start_minimap_position(wait_stable=False)
-            self._grid_nav_position_active = True
-        try:
-            timeout = max(1.0, self._cfg_float("等待定位超时(秒)", 30.0))
-            started = self.active_time()
-            while self.active_time() - started < timeout:
-                frame = self.next_frame()
-                state = self.minimap_position(frame=frame)
-                x, z = state.get("x"), state.get("z")
-                if x is None or z is None:
-                    self.sleep(0.2)
-                    continue
-
-                actual_map = str(state.get("map_id") or map_id or "")
-                result = self.plan_grid_path(
-                    (float(x), float(z)),
-                    goal,
-                    map_id=actual_map,
-                )
-                if not result.ok:
-                    self._log_grid_plan_failure(result)
-                    return False
-
-                distance = math.hypot(result.waypoints[-1][0] - x, result.waypoints[-1][1] - z)
-                self.log_info(
-                    f"规划完成：当前位置=({x:.2f}, {z:.2f})，"
-                    f"目标=({result.waypoints[-1][0]:.2f}, {result.waypoints[-1][1]:.2f})，"
-                    f"直线距离={distance:.2f}m",
-                    notify=True,
-                )
-                return True
-
-            self.log_warning(f"等待定位超过 {timeout:.1f}s，无法规划", notify=True)
+        position_service = self._get_minimap_position_service()
+        if position_service is None:
+            self.log_warning("未注册「小地图定位」触发任务，无法获取当前位置", notify=True)
             return False
-        finally:
-            if owns_position:
-                self.stop_minimap_position()
-                self._grid_nav_position_active = False
+        if not getattr(position_service, "enabled", True):
+            self.log_warning("「小地图定位」触发任务未启用，无法获取当前位置", notify=True)
+            return False
+        position_service.start_minimap_position(wait_stable=False)
+        timeout = max(1.0, self._cfg_float("等待定位超时(秒)", 30.0))
+        started = self.active_time()
+        while self.active_time() - started < timeout:
+            frame = self.next_frame()
+            state = position_service.minimap_position(frame=frame, now=self.active_time())
+            x, z = state.get("x"), state.get("z")
+            if x is None or z is None:
+                self.sleep(0.2)
+                continue
+
+            actual_map = str(state.get("map_id") or map_id or "")
+            result = self.plan_grid_path(
+                (float(x), float(z)),
+                goal,
+                map_id=actual_map,
+            )
+            if not result.ok:
+                self._log_grid_plan_failure(result)
+                return False
+
+            distance = math.hypot(result.waypoints[-1][0] - x, result.waypoints[-1][1] - z)
+            self.log_info(
+                f"规划完成：当前位置=({x:.2f}, {z:.2f})，"
+                f"目标=({result.waypoints[-1][0]:.2f}, {result.waypoints[-1][1]:.2f})，"
+                f"直线距离={distance:.2f}m",
+                notify=True,
+            )
+            return True
+
+        self.log_warning(f"等待定位超过 {timeout:.1f}s，无法规划", notify=True)
+        return False
 
     def pause(self):
         """Release W immediately so pausing does not leave the character running."""

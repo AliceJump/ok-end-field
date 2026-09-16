@@ -210,6 +210,20 @@ class TestIntegration(unittest.TestCase):
         self.assertFalse(r1["sampled"])
         self.assertEqual(r1["reason"], "too_soon")
 
+    def test_normal_block_gap_keeps_displacement(self):
+        """正常转向/等待超过旧 1.5s 门限时，不应丢掉整段位移。"""
+        base = _texture(200, 200)
+        task, od = self._make([_bgr(base), _bgr(_shifted(base, 4, 0))])
+        od.sample(frame=None, now=0.0)
+
+        task._t = 2.5
+        result = od.sample(frame=None)
+
+        self.assertTrue(result["ok"], result)
+        self.assertTrue(result["sampled"], result)
+        self.assertEqual(result["reason"], "ok")
+        self.assertAlmostEqual(od.position_px()[0], -4.0, delta=0.8)
+
 
 class TestDecompose(unittest.TestCase):
     def test_axes_orthonormal(self):

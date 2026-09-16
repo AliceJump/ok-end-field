@@ -2452,3 +2452,27 @@ msgstr "No config files found in the zip archive"
 
 msgid "重启失败"
 msgstr "Restart Failed"
+
+msgid "小地图定位"
+msgstr "Minimap Position"
+
+msgid "持续融合小地图里程计、朝向和地图坐标，静止时自动校准"
+msgstr ""
+"Continuously fuses minimap odometry, heading, and map coordinates, with "
+"automatic calibration while stationary."
+
+msgid "航点校准最小距离(米)"
+msgstr "Waypoint Calibration Min Distance (m)"
+
+msgid "累计移动达到该距离后，请求导航暂停并等待静止自动校准"
+msgstr ""
+"After moving this distance, pause navigation and wait for stationary "
+"auto-calibration."
+
+msgid "航点校准间隔(个)"
+msgstr "Waypoint Calibration Interval (count)"
+
+msgid "每经过多少个航点暂停一次，等待小地图静止自动校准；0=关闭"
+msgstr ""
+"Pause after this many waypoints and wait for stationary minimap "
+"auto-calibration; 0 disables it."

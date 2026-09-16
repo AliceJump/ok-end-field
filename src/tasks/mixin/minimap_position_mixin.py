@@ -12,24 +12,9 @@
 移动中收到的 WS 样本直接忽略、不做暂存：那是移动途中的旧坐标，静止后应用它只会
 把里程计已经推进的位置拽回去。
 
-用法::
-
-    class MyTask(BaseEfTask, MinimapPositionMixin):
-        def __init__(self, *a, **kw):
-            super().__init__(*a, **kw)
-            self._init_minimap_position_mixin()
-            self.default_config = {..., **self.minimap_position_default_config()}
-
-        def run(self):
-            self.start_minimap_position()
-            try:
-                while ...:
-                    frame = self.next_frame()
-                    st = self.minimap_position(frame=frame)   # 方向 + 坐标
-                    if st["x"] is not None:
-                        use(st["x"], st["z"], st["heading"])
-            finally:
-                self.stop_minimap_position()
+定位状态由 ``MinimapPositionTask`` 这样的单一所有者维护，导航等消费方只读取
+``latest_minimap_state()``；需要主动采样时把当前帧交给同一个 owner，禁止每个任务
+各自启动一套里程计和 WS 位置源。
 
 ``minimap_position()`` 返回 dict：
 
@@ -51,6 +36,9 @@
                      "low_response"/"exceed_max_shift"/"too_long_dt"/"speed_anomaly"，
                      未采到时 odom_ok 为 False，odom_reason 说明为什么），
                      用来区分"位置在动"和"位置源已经没有数据了"。
+    position_trusted  当前绝对坐标是否可信。重新锚定、换地图或里程计守卫触发后会变为
+                     False，必须等到下一次静止 WS 校准才恢复。
+    trust_reason      position_trusted 的最近状态来源。
     just_synced/sync_residual  本拍是否刚触发静止校准、以及校准前的残差
                      （``{map_x, map_z, ws_x, ws_z, dx, dz, dist}``，即小地图推算偏了多少米）。
     sync_checked/sync_redundant  本拍收到 WS 后是否检查了静止校准，以及检查结果是否为
@@ -82,6 +70,7 @@ from src.tasks.mixin.ws_position_mixin import WsPositionMixin
 __all__ = [
     "CONFIG_MAP_TO_WORLD",
     "CONFIG_SCALE",
+    "CONFIG_SYNC_DISTANCE",
     "CONFIG_WS_ACCOUNT",
     "CONFIG_WS_CONTENT",
     "CONFIG_WS_MIN_HITS",
@@ -106,6 +95,7 @@ CONFIG_WS_CONTENT = "真值content"
 CONFIG_WS_ACCOUNT = "真值地图账号"
 CONFIG_WS_WAIT = "WS等待稳定秒数"
 CONFIG_WS_MIN_HITS = "WS稳定最小位置数"
+CONFIG_SYNC_DISTANCE = "航点校准最小距离(米)"
 
 
 def parse_map_to_world(value):
@@ -149,6 +139,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             CONFIG_WS_WAIT: 10.0,
             CONFIG_WS_MIN_HITS: 3,
             CONFIG_MIN_SCORE: 0.6,
+            CONFIG_SYNC_DISTANCE: 100.0,
         }
 
     @staticmethod
@@ -162,6 +153,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             CONFIG_WS_WAIT: "等 WS 位置流稳定（连续同一 mapId 的有效位置）的最大等待秒数",
             CONFIG_WS_MIN_HITS: "判为稳定所需连续有效位置个数",
             CONFIG_MIN_SCORE: "箭头角度检测最低置信度，低于该值朝向判为不可用",
+            CONFIG_SYNC_DISTANCE: "累计移动达到该距离后，请求导航暂停并等待静止自动校准",
         }
 
     # ------------------------------------------------------------------ #
@@ -176,6 +168,14 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
         self._minimap_ws_map_id: str | None = None
         self._minimap_last_ws: tuple[float, float] | None = None
         self._minimap_scale = 0.0
+        self._minimap_started = False
+        self._minimap_last_state: dict | None = None
+        self._minimap_sync_seq = 0
+        self._minimap_distance_since_sync = 0.0
+        self._minimap_prev_position: tuple[float, float] | None = None
+        self._minimap_prev_map_id: str | None = None
+        self._minimap_position_trusted = False
+        self._minimap_trust_reason = "uninitialized"
 
     def start_minimap_position(self, *, wait_stable: bool = True) -> bool:
         """建里程计 + 融合、启动位置源、等 WS 稳定并立即设锚点。
@@ -185,6 +185,12 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             False = 没有可用的官方 WS 真值（未配置 content / 认证失败 / 等稳定超时），
             此时若本地 WS 服务能提供位置，会在后续静止时自动完成首次锚定。
         """
+        if self._minimap_started and self._minimap_fusion is not None:
+            if self._map_ws_auth_source and not self._is_map_ws_client_enabled():
+                self._start_map_ws_client(self._map_ws_auth_source)
+            estimate = self._minimap_fusion.estimate()
+            return estimate is not None
+
         scale = max(0.0, self._cfg_float(self.MINIMAP_SCALE_KEY, self.MINIMAP_SCALE_DEFAULT))
         raw_matrix = self.config.get(CONFIG_MAP_TO_WORLD, DEFAULT_MAP_TO_WORLD)
         matrix = parse_map_to_world(raw_matrix)
@@ -212,6 +218,11 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
         )
         self._minimap_ws_map_id = None
         self._minimap_last_ws = None
+        self._minimap_distance_since_sync = 0.0
+        self._minimap_prev_position = None
+        self._minimap_prev_map_id = None
+        self._minimap_position_trusted = False
+        self._minimap_trust_reason = "uninitialized"
 
         try:
             cred = self._resolve_ws_cred()
@@ -220,6 +231,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             cred = ""
 
         self._ensure_ws_position_source(cred)
+        self._minimap_started = True
         if not cred:
             self.log_info(
                 "未配置地图 WS content（content/地图账号为空）：没有绝对基准，"
@@ -247,6 +259,8 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             # 用最后一条稳定位置立即设锚点，避免起步前几拍没有坐标
             self._minimap_fusion.sync(last_pos, map_id=map_id, now=self.active_time())
             self._minimap_last_ws = (last_pos[0], last_pos[2])
+            self._minimap_position_trusted = True
+            self._minimap_trust_reason = "initial_sync"
             self.log_info(
                 f"WS 已稳定并设置锚点: mapId={map_id} pos=({last_pos[0]:.2f},{last_pos[2]:.2f})",
                 notify=True,
@@ -259,6 +273,8 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             self._stop_position_sources()
         except Exception as e:
             self.log_warning(f"停止位置源失败: {e}")
+        finally:
+            self._minimap_started = False
 
     # ------------------------------------------------------------------ #
     # 位置源（官方地图 WS 客户端 / 本地 WS 服务）
@@ -371,13 +387,77 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
         last = self._minimap_od.last_result() or {}
         st["odom_ok"] = bool(last.get("ok") and last.get("sampled"))
         st["odom_reason"] = last.get("reason")
+        if last.get("reanchored"):
+            self._minimap_position_trusted = False
+            self._minimap_trust_reason = str(last.get("reason") or "reanchored")
 
         st["ws"] = self._minimap_last_ws
         st["error"] = None
         if st.get("x") is not None and st.get("z") is not None and self._minimap_last_ws is not None:
             st["error"] = math.hypot(
                 st["x"] - self._minimap_last_ws[0], st["z"] - self._minimap_last_ws[1])
+        st["sync_seq"] = self._minimap_sync_seq
+        st["sample_t"] = self._now(now)
+        st["position_trusted"] = bool(
+            self._minimap_position_trusted and st.get("anchor_set")
+        )
+        st["trust_reason"] = self._minimap_trust_reason
+        self._update_sync_request(st)
+        self._minimap_last_state = dict(st)
         return st
+
+    def _update_sync_request(self, st: dict) -> None:
+        """更新“距离上次校准的累计移动量”，供导航决定何时停车请求校准。"""
+        x, z = st.get("x"), st.get("z")
+        map_id = st.get("map_id")
+        if bool(st.get("just_synced")) or bool(st.get("sync_checked")):
+            self._minimap_distance_since_sync = 0.0
+            self._minimap_prev_position = (
+                (float(x), float(z)) if x is not None and z is not None else None
+            )
+            self._minimap_prev_map_id = str(map_id) if map_id is not None else None
+        elif x is not None and z is not None:
+            position = (float(x), float(z))
+            if (
+                self._minimap_prev_position is not None
+                and map_id == self._minimap_prev_map_id
+            ):
+                moved = math.hypot(
+                    position[0] - self._minimap_prev_position[0],
+                    position[1] - self._minimap_prev_position[1],
+                )
+                if moved <= 10.0:
+                    self._minimap_distance_since_sync += moved
+            self._minimap_prev_position = position
+            self._minimap_prev_map_id = str(map_id) if map_id is not None else None
+        elif self._minimap_prev_map_id != map_id:
+            self._minimap_distance_since_sync = 0.0
+            self._minimap_prev_position = None
+            self._minimap_prev_map_id = str(map_id) if map_id is not None else None
+
+        threshold = max(0.0, self._cfg_float(CONFIG_SYNC_DISTANCE, 100.0))
+        st["distance_since_sync"] = self._minimap_distance_since_sync
+        st["sync_needed"] = bool(
+            self._minimap_last_ws is not None
+            and threshold > 0
+            and self._minimap_distance_since_sync >= threshold
+        )
+
+    def latest_minimap_state(
+        self,
+        *,
+        max_age: float | None = None,
+        now: float | None = None,
+    ) -> dict | None:
+        """返回最近一次定位快照；超过 ``max_age`` 时返回 None。"""
+        state = self._minimap_last_state
+        if state is None:
+            return None
+        if max_age is not None:
+            sample_t = state.get("sample_t")
+            if sample_t is None or self._now(now) - float(sample_t) > max(0.0, float(max_age)):
+                return None
+        return dict(state)
 
     def _now(self, now):
         return self.active_time() if now is None else now
@@ -397,6 +477,8 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             self._minimap_ws_map_id = map_id
             self._minimap_fusion.reset()
             self._minimap_last_ws = (x, z)
+            self._minimap_position_trusted = False
+            self._minimap_trust_reason = "map_changed"
             self._apply_estimate(st, self._minimap_fusion.estimate())
             return False
 
@@ -412,9 +494,13 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
         # 空操作（估计已与 WS 重合）不算"刚校准"：不重读估计、也不产生新的残差，
         # 这样静止时不会每秒刷一条 [静止校准]，上一次真正有意义的残差也留得住。
         if synced and not self._minimap_fusion.last_sync_redundant:
+            self._minimap_sync_seq += 1
             self._apply_estimate(st, self._minimap_fusion.estimate())
             st["just_synced"] = True
             st["sync_residual"] = self._minimap_fusion.last_sync_residual
+        if synced:
+            self._minimap_position_trusted = True
+            self._minimap_trust_reason = "sync"
         return synced
 
     @staticmethod

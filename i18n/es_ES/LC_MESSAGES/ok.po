@@ -2527,3 +2527,27 @@ msgstr "No se encontraron archivos de configuración en el ZIP"
 
 msgid "重启失败"
 msgstr "Error al reiniciar"
+
+msgid "小地图定位"
+msgstr "Posición del minimapa"
+
+msgid "持续融合小地图里程计、朝向和地图坐标，静止时自动校准"
+msgstr ""
+"Fusiona continuamente la odometría, la orientación y las coordenadas del "
+"minimapa, con calibración automática al detenerse."
+
+msgid "航点校准最小距离(米)"
+msgstr "Distancia mínima de calibración (m)"
+
+msgid "累计移动达到该距离后，请求导航暂停并等待静止自动校准"
+msgstr ""
+"Tras recorrer esta distancia, pausa la navegación y espera la "
+"autocalibración en reposo."
+
+msgid "航点校准间隔(个)"
+msgstr "Intervalo de calibración por punto de ruta"
+
+msgid "每经过多少个航点暂停一次，等待小地图静止自动校准；0=关闭"
+msgstr ""
+"Hace una pausa cada esta cantidad de puntos de ruta y espera la "
+"autocalibración en reposo del minimapa; 0 lo desactiva."

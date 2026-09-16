@@ -7,9 +7,16 @@ from types import SimpleNamespace
 
 import numpy as np
 
-from src.nav.grid_io import CELL_FREE, DenseGrid, GridMeta, save_grid
+from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid, GridMeta, save_grid
 from src.nav.grid_planner import PlanResult
-from src.nav.route_follower import REPLAN, FollowerStep
+from src.nav.route_follower import (
+    DONE,
+    REPLAN,
+    WALK,
+    FollowerConfig,
+    FollowerStep,
+    GridRouteFollower,
+)
 from src.tasks.mixin.grid_navigation_mixin import (
     CONFIG_GRID_FILE,
     GridNavigationMixin,
@@ -39,7 +46,11 @@ class _FakeGridTask(GridNavigationMixin):
         self.turns: list[float] = []
         self.rotations: list[int] = []
         self.rotation_w_held: list[bool] = []
+        self.pressed_keys: list[str] = []
+        self.key_down_events: list[str] = []
+        self.key_up_events: list[str] = []
         self._init_grid_navigation_mixin()
+        self._minimap_position_service = self
 
     def active_time(self):
         return self.t
@@ -74,21 +85,28 @@ class _FakeGridTask(GridNavigationMixin):
             "odom_reason": "ok",
             "just_synced": allow_sync,
             "sync_checked": allow_sync,
+            "sync_seq": 0,
+            "sync_needed": False,
+            "distance_since_sync": 0.0,
             "map_id": "test",
+            "position_trusted": bool(getattr(self, "position_trusted", True)),
+            "trust_reason": "sync",
         }
 
     def minimap_rest_diag(self):
         return {"reason": "ok", "map_speed_m_s": 0.0, "ws_moved_m": 0.0}
 
     def send_key_down(self, key):
+        self.key_down_events.append(key)
         self.w_down = key == "w"
 
     def send_key_up(self, key):
+        self.key_up_events.append(key)
         if key == "w":
             self.w_down = False
 
     def press_key(self, key, **kwargs):
-        pass
+        self.pressed_keys.append(key)
 
     def turn_to_bearing(self, target_deg, **kwargs):
         self.turns.append(float(target_deg))
@@ -144,12 +162,10 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertGreaterEqual(self.task.x, 4.0)
         self.assertFalse(self.task.w_down)
         self.assertEqual(self.task.started, 1)
-        self.assertEqual(self.task.stopped, 1)
+        self.assertEqual(self.task.stopped, 0)
         self.assertTrue(any("规划完成" in msg for msg in self.task.logs))
         self.assertTrue(any("路径点：" in msg and " -> " in msg for msg in self.task.logs))
-        self.assertTrue(any("开始：停留 3.0s" in msg for msg in self.task.logs))
-        self.assertTrue(any("目标 自动校准完成" in msg for msg in self.task.logs))
-        self.assertTrue(any("校准后确认到达" in msg for msg in self.task.logs))
+        self.assertTrue(any("已到达目标" in msg for msg in self.task.logs))
 
     def test_waiting_for_position_releases_w_and_pauses_follower(self):
         paused = []
@@ -160,6 +176,214 @@ class TestGridNavigationMixin(unittest.TestCase):
 
         self.assertFalse(self.task.w_down)
         self.assertEqual(paused, [True])
+
+    def test_wait_for_minimap_sync_pauses_and_waits_for_new_sequence(self):
+        class _PositionService:
+            def __init__(self):
+                self.calls = 0
+
+            def minimap_position(self, frame=None, **kwargs):
+                self.calls += 1
+                return {
+                    "sync_seq": 1 if self.calls >= 2 else 0,
+                    "sync_checked": self.calls >= 2,
+                }
+
+            def minimap_rest_diag(self):
+                return {"reason": "ok"}
+
+        position_service = _PositionService()
+        self.task._set_grid_walking(True)
+
+        synced = self.task._wait_for_minimap_sync(
+            position_service,
+            start_sync_seq=0,
+            deadline=self.task.active_time() + 2.0,
+            tick=0.2,
+        )
+
+        self.assertTrue(synced)
+        self.assertFalse(self.task.w_down)
+        self.assertEqual(position_service.calls, 2)
+
+    def test_stuck_recovery_uses_back_side_then_jump(self):
+        self.task._choose_grid_strafe_side = lambda position, heading: "d"
+        deadline = self.task.active_time() + 10.0
+
+        self.task._recover_grid_stuck(
+            position=(0.0, 0.0),
+            heading=0.0,
+            target_bearing=90.0,
+            frame=object(),
+            attempt=1,
+            deadline=deadline,
+        )
+        self.assertEqual(self.task.pressed_keys, ["s"])
+
+        self.task.pressed_keys.clear()
+        self.task.key_down_events.clear()
+        self.task.key_up_events.clear()
+        self.task._recover_grid_stuck(
+            position=(0.0, 0.0),
+            heading=0.0,
+            target_bearing=90.0,
+            frame=object(),
+            attempt=2,
+            deadline=deadline,
+        )
+        self.assertEqual(self.task.key_down_events, ["s", "d"])
+        self.assertEqual(self.task.key_up_events, ["d", "s"])
+
+        self.task.pressed_keys.clear()
+        self.task.key_down_events.clear()
+        self.task.key_up_events.clear()
+        self.task._recover_grid_stuck(
+            position=(0.0, 0.0),
+            heading=0.0,
+            target_bearing=90.0,
+            frame=object(),
+            attempt=3,
+            deadline=deadline,
+        )
+        self.assertIn("w", self.task.key_down_events)
+        self.assertIn("space", self.task.pressed_keys)
+        self.assertFalse(self.task.w_down)
+        self.assertTrue(self.task.turns)
+
+    def test_stuck_recovery_chooses_open_strafe_side(self):
+        cells = np.full((21, 21), CELL_FREE, dtype=np.uint8)
+        cells[:, :10] = CELL_BLOCKED
+        grid = DenseGrid(
+            cells,
+            GridMeta(origin=(-10.0, 0.0, -10.0), cell_size=1.0),
+        )
+        self.task._grid_nav_follower = GridRouteFollower(
+            grid,
+            FollowerConfig(margin=0),
+        )
+
+        side = self.task._choose_grid_strafe_side((0.0, 0.0), heading=0.0)
+
+        self.assertEqual(side, "d")
+
+    def test_navigation_calibrates_after_five_waypoints(self):
+        calls = []
+
+        class _WaypointFollower:
+            def __init__(self):
+                self.count = 0
+
+            def pause(self):
+                pass
+
+            def update(self, position, heading, now):
+                self.count += 1
+                if self.count <= 5:
+                    return FollowerStep(
+                        WALK,
+                        arrived_waypoint_index=self.count - 1,
+                        waypoint_count=10,
+                        distance_to_goal=float(100 - self.count),
+                    )
+                return FollowerStep(DONE, distance_to_goal=0.0)
+
+        follower = _WaypointFollower()
+        self.task._create_grid_route = lambda start, goal, **kwargs: (
+            follower,
+            PlanResult(ok=True, waypoints=[start, goal]),
+        )
+        self.task._wait_for_minimap_sync = (
+            lambda service, start_seq, deadline, tick: calls.append(start_seq) or True
+        )
+
+        self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
+        self.assertEqual(calls, [0])
+
+    def test_known_cell_off_route_calibrates_before_replan(self):
+        calls = []
+
+        class _Follower:
+            def __init__(self):
+                self.count = 0
+
+            def pause(self):
+                pass
+
+            def update(self, position, heading, now):
+                self.count += 1
+                if self.count == 1:
+                    return FollowerStep(REPLAN, reason="测试偏航")
+                return FollowerStep(DONE, distance_to_goal=0.0)
+
+        follower = _Follower()
+        self.task._create_grid_route = lambda start, goal, **kwargs: (
+            follower,
+            PlanResult(ok=True, waypoints=[start, goal]),
+        )
+        self.task._grid_position_is_known = lambda follower, position: True
+        self.task._wait_for_minimap_sync = (
+            lambda service, start_seq, deadline, tick: calls.append(start_seq) or True
+        )
+
+        self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
+        self.assertEqual(calls, [0])
+
+    def test_untrusted_position_calibrates_before_first_plan(self):
+        calls = []
+        self.task.position_trusted = False
+
+        def sync(service, start_seq, deadline, tick):
+            calls.append(start_seq)
+            self.task.position_trusted = True
+            return True
+
+        self.task._wait_for_minimap_sync = sync
+
+        self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
+        self.assertEqual(calls, [0])
+
+    def test_unknown_cell_off_route_returns_to_visited_cell_then_calibrates(self):
+        calls = []
+
+        class _Follower:
+            def __init__(self):
+                self.count = 0
+
+            def pause(self):
+                pass
+
+            def update(self, position, heading, now):
+                self.count += 1
+                if self.count == 1:
+                    return FollowerStep(REPLAN, reason="测试偏航")
+                return FollowerStep(DONE, distance_to_goal=0.0)
+
+        follower = _Follower()
+        follower.grid = DenseGrid(
+            np.full((10, 10), CELL_FREE, dtype=np.uint8),
+            GridMeta(origin=(0.0, 0.0, 0.0), cell_size=1.0),
+        )
+        self.task._create_grid_route = lambda start, goal, **kwargs: (
+            follower,
+            PlanResult(ok=True, waypoints=[start, goal]),
+        )
+        self.task._grid_position_is_known = lambda follower, position: False
+        self.task._wait_for_minimap_sync = (
+            lambda service, start_seq, deadline, tick: calls.append(start_seq) or True
+        )
+
+        self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
+        self.assertEqual(calls, [0])
+
+    def test_nearest_visited_grid_cell_uses_only_walked_cells(self):
+        visited = {
+            (0, 0): (0.5, 0.5),
+            (3, 1): (1.5, 3.5),
+        }
+
+        target = self.task._nearest_visited_grid_cell((1.0, 3.0), visited)
+
+        self.assertEqual(target, (1.5, 3.5))
 
     def test_replan_action_obeys_hard_limit(self):
         followers = []
@@ -215,41 +439,19 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertTrue(self.task.turns)
         self.assertFalse(self.task.rotations)
 
-    def test_each_run_restarts_position_sources(self):
+    def test_each_run_reuses_shared_position_service(self):
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertEqual(self.task.started, 2)
-        self.assertEqual(self.task.stopped, 2)
+        self.assertEqual(self.task.stopped, 0)
 
-    def test_done_accepted_even_when_final_calibration_does_not_complete(self):
-        """目标处没等到 WS 新坐标（静止校准没完成）时，不能丢弃已满足的到达。"""
-        def position(frame=None, **kwargs):
-            allow_sync = kwargs.get("allow_sync", True)
-            # 起步位置能校准；走到目标后 WS 不再推新坐标 -> 校准始终不完成
-            synced = bool(allow_sync and self.task.x < 4.0)
-            return {
-                "x": self.task.x,
-                "z": self.task.z,
-                "heading": self.task.heading,
-                "heading_score": 0.9,
-                "anchor_set": True,
-                "rest": True,
-                "odom_ok": True,
-                "odom_reason": "ok",
-                "just_synced": synced,
-                "sync_checked": synced,
-                "map_id": "test",
-            }
-
-        self.task.minimap_position = position
+    def test_done_does_not_require_extra_calibration(self):
+        """静止校准由定位服务自动完成，导航只消费当前融合坐标。"""
         result = self.task.navigate_grid_to((4.5, 0.5), map_id="test")
 
         self.assertTrue(result)
         self.assertFalse(self.task.w_down)
-        self.assertTrue(any(
-            "未完成静止校准，按 follower 判定接受到达" in msg
-            for msg in self.task.logs
-        ))
+        self.assertTrue(any("已到达目标" in msg for msg in self.task.logs))
 
     def test_max_replans_zero_still_allows_the_first_plan(self):
         """上限语义是"重规划次数"：设为 0 表示不重规划，而不是连首次规划都禁止。"""
@@ -311,73 +513,6 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertIn("剩余时间不足", text)
         self.assertNotIn("已穷尽", text)
 
-    def test_waypoint_calibration_waits_full_duration_and_samples(self):
-        calls = []
-
-        def position(frame=None, **kwargs):
-            allow_sync = kwargs.get("allow_sync", True)
-            calls.append(allow_sync)
-            return {
-                "x": 10.5,
-                "z": 19.5,
-                "rest": True,
-                "odom_ok": True,
-                "just_synced": allow_sync,
-                "sync_checked": allow_sync,
-                "sync_residual": {
-                    "map_x": 10.0,
-                    "map_z": 20.0,
-                    "ws_x": 10.5,
-                    "ws_z": 19.5,
-                    "dx": -0.5,
-                    "dz": 0.5,
-                    "dist": 0.707,
-                } if allow_sync else None,
-            }
-
-        self.task.minimap_position = position
-        started = self.task.t
-        self.task._grid_nav_distance_since_calibration = 150.0
-
-        self.task._calibrate_grid_waypoint(1, 3)
-
-        self.assertGreaterEqual(len(calls), 10)
-        self.assertFalse(calls[0])
-        self.assertFalse(calls[1])
-        self.assertTrue(any(calls))
-        self.assertAlmostEqual(self.task.t - started, 3.0, delta=0.25)
-        self.assertTrue(any("自动校准完成" in msg for msg in self.task.logs))
-        self.assertTrue(any(
-            "静止校准偏差：小地图推算=(10.000, 20.000) WS=(10.500, 19.500) "
-            "偏差=(-0.500, +0.500) 距离=0.707m" in msg
-            for msg in self.task.logs
-        ))
-        self.assertAlmostEqual(self.task._grid_nav_distance_since_calibration, 0.0)
-
-    def test_calibration_respects_deadline(self):
-        started = self.task.t
-
-        self.task._calibrate_grid_position("截止时间测试", deadline=started + 0.5)
-
-        self.assertLessEqual(self.task.t - started, 0.75)
-
-    def test_calibration_distance_uses_accumulated_travel(self):
-        self.task.config["航点校准最小距离(米)"] = 100.0
-
-        self.task._update_grid_nav_travel((0.0, 0.0), "test")
-        self.assertFalse(self.task._grid_calibration_due())
-        for x in range(10, 91, 10):
-            self.task._update_grid_nav_travel((float(x), 0.0), "test")
-        self.assertFalse(self.task._grid_calibration_due())
-        self.task._update_grid_nav_travel((100.0, 0.0), "test")
-        self.assertTrue(self.task._grid_calibration_due())
-        self.assertAlmostEqual(self.task._grid_nav_distance_since_calibration, 100.0)
-
-    def test_map_change_does_not_count_as_travel(self):
-        self.task._update_grid_nav_travel((0.0, 0.0), "map_a")
-        self.task._update_grid_nav_travel((100.0, 0.0), "map_b")
-        self.assertAlmostEqual(self.task._grid_nav_distance_since_calibration, 0.0)
-
     def test_debug_logs_full_position_diagnostics(self):
         self.task.debug = True
         state = {
@@ -395,8 +530,8 @@ class TestGridNavigationMixin(unittest.TestCase):
             "odom_ok": True,
             "odom_reason": "ok",
             "sync_checked": False,
+            "sync_seq": 7,
         }
-        self.task._grid_nav_distance_since_calibration = 42.75
 
         self.task._log_grid_navigation_debug(state, map_id="test", tag="导航")
 
@@ -407,7 +542,7 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertIn("像素位移=(12.5, -4.0)", line)
         self.assertIn("世界位移=(8.000, 2.500)", line)
         self.assertIn("朝向=91.5", line)
-        self.assertIn("距上次校准=42.75m", line)
+        self.assertIn("校准序号=7", line)
 
 
 if __name__ == "__main__":

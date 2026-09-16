@@ -345,7 +345,9 @@ class MinimapOdometry:
         feather: int = 2,
         crop_pad_ratio: float = DEFAULT_CROP_PAD_RATIO,
         sample_min_dt: float = 0.15,
-        sample_max_dt: float = 1.5,
+        # 转向、停车校准等正常控制动作会阻塞数秒。只要相位相关仍然可信，
+        # 就不应该仅因为 dt 略长而丢掉整段位移；更大的异常间隔仍会重新锚定。
+        sample_max_dt: float = 5.0,
         response_low: float = 0.12,
         max_shift_ratio: float = 0.35,
         max_speed_px_s: float | None = None,

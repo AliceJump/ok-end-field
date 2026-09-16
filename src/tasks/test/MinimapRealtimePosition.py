@@ -25,18 +25,17 @@ WS 坐标为基准重新校准。校准发生的那一拍额外输出一行，�
 世界_z 与地图_y 符号相反（由矩阵处理）。用于验证"朝向 + 位移里程计 + WS 融合"
 整条实时定位链路；不写入正式配置。
 
-定位能力的实现（里程计 + 融合 + 位置源启停）在 ``MinimapPositionMixin``，
-本任务只负责配置与日志呈现。
+定位能力由 ``MinimapPositionTask`` 统一维护，本任务只负责采样与日志呈现。
 """
 
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
 from src.tasks.mixin.minimap_heading_mixin import CONFIG_MIN_SCORE
-from src.tasks.mixin.minimap_position_mixin import MinimapPositionMixin
+from src.tasks.trigger.MinimapPositionTask import MinimapPositionTask
 
 
-class MinimapRealtimePosition(BaseEfTask, MinimapPositionMixin):
+class MinimapRealtimePosition(BaseEfTask):
     """小地图实时位置测试（工具与调试分组）。"""
 
     requires_foreground = True  # 需要读取游戏画面/小地图
@@ -49,21 +48,15 @@ class MinimapRealtimePosition(BaseEfTask, MinimapPositionMixin):
         self.description = "每个采样拍输出 朝向 + 小地图计算位置 + 结合WS的融合位置"
         self.visible = self.debug
 
-        # 初始化 WS 与定位状态；实时采样期间也需要持续读 WS，避免被空闲超时踢掉
-        self._init_minimap_position_mixin()
-        self._map_ws_consumer_idle_timeout = 3600.0
-
         self.default_config = {
             "采样间隔(秒)": 0.5,
             "运行时长(秒)": 20.0,
             "日志间隔(拍)": 1,
-            **self.minimap_position_default_config(),
         }
         self.config_description = {
             "采样间隔(秒)": "固定采样周期(秒)：睡到下一个采样点，保证每拍间隔为该值（不会被单拍工作耗时撑大）",
             "运行时长(秒)": "本次采样运行的秒数",
             "日志间隔(拍)": "每几拍输出一行日志（1=每拍都输出）",
-            **self.minimap_position_config_description(),
         }
 
     # ------------------------------------------------------------------ #
@@ -75,12 +68,22 @@ class MinimapRealtimePosition(BaseEfTask, MinimapPositionMixin):
             self.log_info("当前不在大世界画面，无法读取小地图。请先进入大世界。", notify=True)
             return
 
-        self.start_minimap_position()
+        position_task = self.get_task_by_class(MinimapPositionTask)
+        if position_task is None:
+            self.log_warning("未注册「小地图定位」触发任务，无法读取实时位置", notify=True)
+            return
+        if not getattr(position_task, "enabled", True):
+            self.log_warning("「小地图定位」触发任务未启用，无法读取实时位置", notify=True)
+            return
+        position_task.start_minimap_position(wait_stable=False)
 
         interval = max(0.05, self._cfg_float("采样间隔(秒)", 0.5))
         duration = max(interval, self._cfg_float("运行时长(秒)", 20.0))
         log_every = max(1, self._cfg_int("日志间隔(拍)", 1))
-        min_score = max(0.0, min(1.0, self._cfg_float(CONFIG_MIN_SCORE, 0.6)))
+        min_score = max(
+            0.0,
+            min(1.0, float(position_task.config.get(CONFIG_MIN_SCORE, 0.6))),
+        )
 
         start = self.active_time()
         next_at = start
@@ -88,10 +91,10 @@ class MinimapRealtimePosition(BaseEfTask, MinimapPositionMixin):
         overruns = 0
         max_period = 0.0
         prev_tick = None
-        fusion = self.minimap_fusion
+        fusion = position_task.minimap_fusion
         self.log_info(
             f"开始实时采样: interval={interval:.2f}s duration={duration:.1f}s "
-            f"scale={self._minimap_scale} "
+            f"scale={getattr(position_task, '_minimap_scale', 0.0)} "
             f"matrix={fusion.map_to_world_px if fusion is not None else None}"
         )
         self.log_info(
@@ -101,67 +104,73 @@ class MinimapRealtimePosition(BaseEfTask, MinimapPositionMixin):
             "误差=位置与最新WS的距离(米; 移动时≈WS延迟, 静止时≈0) | "
             "最新WS=最近收到的官方地图坐标(可能滞后) | 位移=里程计原始位移(地图系像素)"
         )
-        try:
-            while True:
-                # 固定采样节拍：睡到下一个采样点（只睡剩余时间），而不是「sleep(interval) 后再干活」。
-                # 后者实际周期 = 采样间隔 + 单拍工作耗时，会明显大于设定的采样间隔。
-                next_at += interval
-                now = self.active_time()
-                if next_at > now:
-                    self.sleep(next_at - now)
-                elif now - next_at > interval:
-                    # 单拍工作远超采样间隔：重新对齐，不追赶补采（避免连续快采）
-                    overruns += 1
-                    next_at = now
-                now = self.active_time()
-                if now - start >= duration:
-                    break
-                if prev_tick is not None:
-                    max_period = max(max_period, now - prev_tick)
-                prev_tick = now
-                iteration += 1
+        while True:
+            # 固定采样节拍：睡到下一个采样点（只睡剩余时间），而不是「sleep(interval) 后再干活」。
+            # 后者实际周期 = 采样间隔 + 单拍工作耗时，会明显大于设定的采样间隔。
+            next_at += interval
+            now = self.active_time()
+            if next_at > now:
+                self.sleep(next_at - now)
+            elif now - next_at > interval:
+                # 单拍工作远超采样间隔：重新对齐，不追赶补采（避免连续快采）
+                overruns += 1
+                next_at = now
+            now = self.active_time()
+            if now - start >= duration:
+                break
+            if prev_tick is not None:
+                max_period = max(max_period, now - prev_tick)
+            prev_tick = now
+            iteration += 1
 
-                try:
-                    frame = self.next_frame()
-                except Exception as e:
-                    self.log_warning(f"next_frame 失败: {e}")
-                    continue
-                if frame is None:
-                    continue
+            try:
+                frame = self.next_frame()
+            except Exception as e:
+                self.log_warning(f"next_frame 失败: {e}")
+                continue
+            if frame is None:
+                continue
 
-                # 采样一拍：里程计 + 可能的待定 WS 校准 + 同一帧的朝向
-                st = self.minimap_position(frame=frame, now=now)
+            # 采样一拍：里程计 + 可能的待定 WS 校准 + 同一帧的朝向
+            st = position_task.minimap_position(frame=frame, now=now)
 
-                if iteration % log_every != 0:
-                    continue
+            if iteration % log_every != 0:
+                continue
 
-                # ---- 静止校准：输出校准前"小地图推算的坐标"与偏差 ----
-                residual = st.get("sync_residual") if st.get("just_synced") else None
-                if residual is not None:
-                    self.log_info(
-                        f"[静止校准] #{iteration:03d} 小地图推算="
-                        f"({residual['map_x']:.2f}, {residual['map_z']:.2f})m "
-                        f"WS=({residual['ws_x']:.2f}, {residual['ws_z']:.2f})m "
-                        f"偏差=({residual['dx']:+.2f}, {residual['dz']:+.2f})m "
-                        f"距离={residual['dist']:.2f}m"
-                    )
+            # ---- 静止校准：输出校准前"小地图推算的坐标"与偏差 ----
+            residual = st.get("sync_residual") if st.get("just_synced") else None
+            if residual is not None:
+                self.log_info(
+                    f"[静止校准] #{iteration:03d} 小地图推算="
+                    f"({residual['map_x']:.2f}, {residual['map_z']:.2f})m "
+                    f"WS=({residual['ws_x']:.2f}, {residual['ws_z']:.2f})m "
+                    f"偏差=({residual['dx']:+.2f}, {residual['dz']:+.2f})m "
+                    f"距离={residual['dist']:.2f}m"
+                )
 
-                self.log_info(self._format_tick(iteration, st, min_score))
+            self.log_info(self._format_tick(
+                iteration,
+                st,
+                min_score,
+                position_task.minimap_rest_diag(),
+            ))
 
-            elapsed = self.active_time() - start
-            avg = elapsed / iteration if iteration > 0 else 0.0
-            self.log_info(
-                f"实时采样结束: {iteration} 拍 / {elapsed:.1f}s，"
-                f"目标周期 {interval:.2f}s，实际平均 {avg:.3f}s，"
-                f"最大周期 {max_period:.3f}s，超时重对齐 {overruns} 次",
-                notify=True,
-            )
-        finally:
-            # 任务被停用/结束时 sleep 抛控制流异常，走不到正常收尾；
-            # 位置源线程必须在 finally 里停掉，否则会一直挂着。
-            self.stop_minimap_position()
+        elapsed = self.active_time() - start
+        avg = elapsed / iteration if iteration > 0 else 0.0
+        self.log_info(
+            f"实时采样结束: {iteration} 拍 / {elapsed:.1f}s，"
+            f"目标周期 {interval:.2f}s，实际平均 {avg:.3f}s，"
+            f"最大周期 {max_period:.3f}s，超时重对齐 {overruns} 次",
+            notify=True,
+        )
 
-    def _format_tick(self, iteration: int, st: dict, min_score: float) -> str:
+    def _format_tick(
+        self,
+        iteration: int,
+        st: dict,
+        min_score: float,
+        rest_diag: dict | None,
+    ) -> str:
         """把一拍的位置状态组装成一行可读日志。"""
         heading = st.get("heading")
         heading_score = st.get("heading_score")
@@ -177,7 +186,7 @@ class MinimapRealtimePosition(BaseEfTask, MinimapPositionMixin):
             heading_txt += "(低置信)"
 
         # 速度（米/秒）：取静止判定用的同一个量（世界系位移/时间），单位与阈值一致
-        spd = (self.minimap_rest_diag() or {}).get("map_speed_m_s")
+        spd = (rest_diag or {}).get("map_speed_m_s")
         speed_txt = f"{spd:.2f}m/s" if spd is not None else "-"
         # 本拍没有有效的位移样本时状态是"未知"，打 "?" 并附上原因（刚建锚帧/相关失败/…），
         # 别把"不知道"显示成"在动"；原因也能直接指出"位移被丢掉"的时刻。

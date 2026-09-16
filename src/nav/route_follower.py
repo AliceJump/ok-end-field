@@ -74,7 +74,8 @@ class FollowerConfig:
     frontier_penalty: float = 1.0
     waypoint_tolerance: float = 2.0
     max_expand: int = 400_000
-    off_route_radius: float = 4.0
+    off_route_radius: float = 6.0
+    off_route_hold_s: float = 1.5
 
 
 @dataclass(frozen=True)
@@ -119,10 +120,13 @@ class GridRouteFollower:
         self._move_started_at: float | None = None
         self._move_start_pos: tuple[float, float] | None = None
         self._walk_aligned = False
+        self._route_start: tuple[float, float] | None = None
+        self._off_route_since: float | None = None
 
     def pause(self) -> None:
         """Freeze motion tracking while the outer loop is not controlling movement."""
         self._reset_motion()
+        self._off_route_since = None
 
     def plan(
         self,
@@ -133,9 +137,11 @@ class GridRouteFollower:
     ) -> PlanResult:
         """Plan a fresh route and reset waypoint progress."""
         self.goal = (float(goal[0]), float(goal[1]))
+        self._route_start = (float(start[0]), float(start[1]))
         self.plan_result = self.planner.plan(start, goal, time_budget_s=time_budget_s)
         self.waypoint_index = 0
         self._reset_motion()
+        self._off_route_since = None
         self._walk_aligned = False
         if self.plan_result.ok:
             self._advance_initial_waypoints((float(start[0]), float(start[1])))
@@ -184,7 +190,7 @@ class GridRouteFollower:
             waypoint_distance = distance_xz(pos, waypoint)
             target_bearing = bearing_to_point(pos[0], pos[1], waypoint[0], waypoint[1])
 
-        off_route_distance = self._off_route_distance(pos)
+        off_route_distance = self._confirmed_off_route_distance(pos, now)
         if off_route_distance is not None:
             self._walk_aligned = False
             self._reset_motion()
@@ -288,19 +294,47 @@ class GridRouteFollower:
         return tuple(skipped), nearest
 
     def _off_route_distance(self, position: tuple[float, float]) -> float | None:
-        """Distance to the active route segment, or None when off-route checking is disabled."""
-        radius = max(0.0, float(self.config.off_route_radius))
-        if radius <= 0 or self.plan_result is None:
+        """Distance to either adjacent route segment around the active waypoint."""
+        if self.plan_result is None:
             return None
         waypoints = self.plan_result.waypoints
-        if self.waypoint_index >= len(waypoints) - 1:
+        if not waypoints:
             return None
-        distance, _ratio = point_segment_distance(
-            position,
-            waypoints[self.waypoint_index],
-            waypoints[self.waypoint_index + 1],
-        )
-        return distance if distance > radius else None
+        index = min(max(0, self.waypoint_index), len(waypoints) - 1)
+        distances = []
+        if index == 0 and self._route_start is not None:
+            distances.append(point_segment_distance(
+                position, self._route_start, waypoints[0])[0])
+        if index > 0:
+            distances.append(point_segment_distance(
+                position, waypoints[index - 1], waypoints[index])[0])
+        if index < len(waypoints) - 1:
+            distances.append(point_segment_distance(
+                position, waypoints[index], waypoints[index + 1])[0])
+        if not distances:
+            return None
+        return min(distances)
+
+    def _confirmed_off_route_distance(
+        self,
+        position: tuple[float, float],
+        now: float,
+    ) -> float | None:
+        """Require off-route deviation to persist before requesting a replan."""
+        radius = max(0.0, float(self.config.off_route_radius))
+        if radius <= 0:
+            self._off_route_since = None
+            return None
+        distance = self._off_route_distance(position)
+        if distance is None or distance <= radius:
+            self._off_route_since = None
+            return None
+        if self._off_route_since is None:
+            self._off_route_since = float(now)
+        hold_s = max(0.0, float(self.config.off_route_hold_s))
+        if float(now) - self._off_route_since < hold_s:
+            return None
+        return distance
 
     def _shortcut_ok(
         self,

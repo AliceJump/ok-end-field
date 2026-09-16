@@ -124,10 +124,52 @@ class TestGridRouteFollower(unittest.TestCase):
             waypoints=[(0.0, 0.0), (10.0, 0.0), (10.0, 10.0)],
         )
 
-        step = self.follower.update((0.0, 10.0), heading=0.0, now=0.0)
+        first = self.follower.update((0.0, 10.0), heading=0.0, now=0.0)
+        self.assertNotEqual(first.action, REPLAN)
+
+        step = self.follower.update((0.0, 10.0), heading=0.0, now=1.6)
 
         self.assertEqual(step.action, REPLAN)
         self.assertIn("偏离路径", step.reason)
+
+    def test_initial_waypoint_advance_does_not_look_ahead_to_second_segment(self):
+        """起点已靠近并跳过第一个航点时，不能拿后续长航段判定偏航。"""
+        self.follower.plan_result = PlanResult(
+            ok=True,
+            cells=[(-818, 41), (-822, 39), (-823, 37)],
+            waypoints=[(-818.5, 41.5), (-822.5, 39.5), (-823.5, 37.5)],
+        )
+        self.follower.waypoint_index = 1
+
+        step = self.follower.update((-818.739, 41.731), heading=239.3, now=0.0)
+
+        self.assertNotEqual(step.action, REPLAN)
+
+    def test_long_initial_segment_does_not_trigger_false_off_route(self):
+        """复现日志中的 48m 误判：起点仍属于上一航点所在段落。"""
+        self.follower.plan_result = PlanResult(
+            ok=True,
+            cells=[(-822, 38), (-828, -9), (-844, -10)],
+            waypoints=[(-822.5, 38.5), (-828.5, -9.5), (-844.5, -10.5)],
+        )
+        self.follower.waypoint_index = 1
+
+        step = self.follower.update((-822.152, 38.426), heading=270.0, now=0.0)
+
+        self.assertNotEqual(step.action, REPLAN)
+
+    def test_snapped_route_start_does_not_trigger_false_off_route(self):
+        """复现日志中的 4.97m 误判：规划器把起点吸附到 5 格外的自由格。"""
+        self.follower.plan_result = PlanResult(
+            ok=True,
+            cells=[(1821, 797), (1821, 796), (1822, 796)],
+            waypoints=[(-828.5, 5.5), (-827.5, 3.5), (-827.5, -8.5)],
+        )
+        self.follower._route_start = (-833.464, 5.084)
+
+        step = self.follower.update((-833.464, 5.084), heading=90.0, now=0.0)
+
+        self.assertNotEqual(step.action, REPLAN)
 
     def test_skips_current_waypoint_when_near_next_segment(self):
         self.follower.plan_result = PlanResult(
