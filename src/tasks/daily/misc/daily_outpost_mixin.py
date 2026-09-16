@@ -5,6 +5,17 @@ from src.data.world_map import areas_list, goods_dict, outpost_dict
 from src.data.world_map_utils import get_area_by_outpost_name, get_goods_by_outpost_name, get_world_map_text
 
 
+def _edit_distance(left: str, right: str) -> int:
+    """Levenshtein 距离：插入、删除、替换一个字符的代价均为 1。"""
+    previous = list(range(len(right) + 1))
+    for i, left_char in enumerate(left, 1):
+        current = [i]
+        for j, right_char in enumerate(right, 1):
+            current.append(min(current[-1] + 1, previous[j] + 1, previous[j - 1] + (left_char != right_char)))
+        previous = current
+    return previous[-1]
+
+
 class DailyOutpostMixin:
     def read_outpost_ticket_num(self, outpost_name):
         num_str = self.wait_ocr(
@@ -97,11 +108,12 @@ class DailyOutpostMixin:
 
             normalized_goods = []
             for good in goods:
+                good_name = good.name.strip("|｜丨")  # 清理 OCR 将卡片边框识别成的竖线。
                 standard_name = next(
                     (
                         kw
-                        for kw in sorted(can_exchange_goods, key=len, reverse=True)
-                        if (kw in good.name or good.name in kw) and len(good.name) >= max(2, len(kw) - 1)
+                        for kw in sorted(can_exchange_goods, key=lambda kw: (_edit_distance(good_name, kw), -len(kw)))
+                        if len(good_name) >= max(2, len(kw) - 1)
                     ),
                     None,
                 )
