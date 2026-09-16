@@ -112,7 +112,7 @@ class DailyOutpostMixin:
                 # 取argmin：返回编辑距离最小的货名，同距离优先长货名，无候选时返回 None。
                 standard_name = min(
                     (kw for kw in can_exchange_goods if len(good_name) >= max(2, len(kw) - 1)),
-                    key=lambda kw: (_edit_distance(good_name, kw), -len(kw)),
+                    key=lambda kw, name=good_name: (_edit_distance(name, kw), -len(kw)),
                     default=None,
                 )
 
