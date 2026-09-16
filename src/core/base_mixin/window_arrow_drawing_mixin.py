@@ -3,8 +3,8 @@ from dataclasses import dataclass
 
 import win32gui
 from ok.util.logger import Logger
-from PySide6.QtCore import QObject, QPointF, Qt, QTimer, Signal, Slot
-from PySide6.QtGui import QBrush, QColor, QPainter, QPen, QPolygonF
+from PySide6.QtCore import QObject, QPointF, QRectF, Qt, QTimer, Signal, Slot
+from PySide6.QtGui import QBrush, QColor, QFont, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import QApplication, QWidget
 
 logger = Logger.get_logger(__name__)
@@ -22,6 +22,22 @@ class ArrowSpec:
     head_len_norm: float | None
 
 
+@dataclass
+class TextSpec:
+    """叠层文字块：以左上角为锚点的多行文本，坐标与字号均按窗口尺寸归一化。"""
+
+    text_key: str
+    lines: list[str]
+    x_norm: float
+    y_norm: float
+    color: tuple[int, int, int] = (255, 255, 255)
+    alpha: int = 235
+    font_size_norm: float = 0.024
+    bold: bool = True
+    line_spacing: float = 1.35
+    panel_alpha: int = 150
+
+
 class WindowArrowOverlay(QWidget):
     """透明叠层窗口，依附到游戏窗口之上绘制箭头。"""
 
@@ -29,9 +45,19 @@ class WindowArrowOverlay(QWidget):
         super().__init__(parent)
         self._hwnd = hwnd
         self._arrows: list[ArrowSpec] = []
+        self._texts: list[TextSpec] = []
         self._arrow_head_angle_deg = 28.0
         self._arrow_head_len_ratio = 0.35
         self._base_color = QColor(0, 255, 0, 160)
+        # 叠层文字需要覆盖中英文，按可用性依次回退
+        self._text_font_families = (
+            "Microsoft YaHei UI",
+            "Microsoft YaHei",
+            "Segoe UI",
+            "Noto Sans CJK SC",
+            "Noto Sans SC",
+            "sans-serif",
+        )
 
         self._sync_timer = QTimer(self)
         self._sync_timer.timeout.connect(self._sync_geometry)
@@ -82,19 +108,41 @@ class WindowArrowOverlay(QWidget):
             unique_arrows[arrow_type] = spec
 
         self._arrows = [unique_arrows[arrow_type] for arrow_type in ordered_types]
+        self._apply_visibility()
+
+    def clear_arrows(self):
+        self._arrows = []
+        self._refresh()
+
+    def set_texts(self, texts: list[TextSpec]):
+        unique_texts: dict[str, TextSpec] = {}
+        ordered_keys: list[str] = []
+        for spec in texts:
+            text_key = getattr(spec, "text_key", None) or "default"
+            if text_key not in unique_texts:
+                ordered_keys.append(text_key)
+            unique_texts[text_key] = spec
+
+        self._texts = [unique_texts[text_key] for text_key in ordered_keys]
+        self._apply_visibility()
+
+    def clear_texts(self):
+        self._texts = []
+        self._refresh()
+
+    def _has_content(self) -> bool:
+        return bool(self._arrows or self._texts)
+
+    def _apply_visibility(self):
         self._sync_geometry()
-        if self._should_show_overlay():
+        if self._has_content() and self._should_show_overlay():
             self.show()
             self.raise_()
         else:
             self.hide()
-        self.update()
-        app = QApplication.instance()
-        if app is not None:
-            app.processEvents()
+        self._refresh()
 
-    def clear_arrows(self):
-        self._arrows = []
+    def _refresh(self):
         self.update()
         app = QApplication.instance()
         if app is not None:
@@ -122,7 +170,7 @@ class WindowArrowOverlay(QWidget):
                 max(1, int(round(lw))),
                 max(1, int(round(lh))),
             )
-            if self._arrows and self._should_show_overlay():
+            if self._has_content() and self._should_show_overlay():
                 self.show()
                 self.raise_()
             else:
@@ -143,16 +191,63 @@ class WindowArrowOverlay(QWidget):
             return QColor(0, 255, 0, self._base_color.alpha())
 
     def paintEvent(self, event):
-        if not self._arrows:
+        if not self._has_content():
             return
 
         painter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setRenderHint(QPainter.TextAntialiasing, True)
         width = max(1, self.width())
         height = max(1, self.height())
 
         for spec in self._arrows:
             self._paint_arrow(painter, spec, width, height)
+
+        for spec in self._texts:
+            self._paint_text(painter, spec, width, height)
+
+    def _paint_text(self, painter: QPainter, spec: TextSpec, width: int, height: int):
+        """绘制一个文字块：半透明底板 + 多行文本，保证在游戏画面上可读。"""
+        lines = [str(line) for line in (spec.lines or []) if str(line)]
+        if not lines:
+            return
+
+        pixel_size = max(8, round(float(spec.font_size_norm) * height))
+        font = QFont()
+        try:
+            font.setFamilies(list(self._text_font_families))
+        except AttributeError:
+            # 旧版 Qt 没有 setFamilies，退化为单字体
+            font.setFamily(self._text_font_families[0])
+        font.setPixelSize(pixel_size)
+        font.setBold(bool(spec.bold))
+        painter.setFont(font)
+
+        metrics = painter.fontMetrics()
+        line_height = metrics.height() * max(1.0, float(spec.line_spacing))
+        text_width = max(metrics.horizontalAdvance(line) for line in lines)
+        pad_x = max(6.0, pixel_size * 0.45)
+        pad_y = max(4.0, pixel_size * 0.28)
+
+        left = float(spec.x_norm) * width
+        top = float(spec.y_norm) * height
+        panel_width = text_width + pad_x * 2
+        panel_height = metrics.height() + line_height * (len(lines) - 1) + pad_y * 2
+
+        text_color = self._color_for(spec.color)
+        text_color.setAlpha(max(0, min(255, int(spec.alpha))))
+        panel_color = QColor(0, 0, 0)
+        panel_color.setAlpha(max(0, min(255, int(spec.panel_alpha))))
+
+        radius = max(2.0, pixel_size * 0.35)
+        painter.setPen(Qt.NoPen)
+        painter.setBrush(QBrush(panel_color))
+        painter.drawRoundedRect(QRectF(left, top, panel_width, panel_height), radius, radius)
+
+        painter.setPen(QPen(text_color))
+        baseline = top + pad_y + metrics.ascent()
+        for index, line in enumerate(lines):
+            painter.drawText(QPointF(left + pad_x, baseline + line_height * index), line)
 
     def _paint_arrow(self, painter: QPainter, spec: ArrowSpec, width: int, height: int):
         start_x = spec.start_x_norm * width
@@ -251,54 +346,82 @@ class WindowArrowOverlay(QWidget):
 
 
 class WindowArrowOverlayController(QObject):
-    """把箭头更新切回 GUI 线程执行。"""
+    """把箭头与文字更新切回 GUI 线程执行。"""
 
     arrow_updated = Signal(object)
+    text_updated = Signal(object)
     clear_requested = Signal()
+    texts_clear_requested = Signal()
     style_requested = Signal(tuple, float, float)
 
     def __init__(self, hwnd: int):
         super().__init__()
         self._arrow_timers: dict[str, QTimer] = {}
+        self._text_timers: dict[str, QTimer] = {}
         self._arrow_timeout_ms = 2000
         self._hwnd = hwnd
         self._overlay: WindowArrowOverlay | None = None
         self._arrow_map: dict[str, ArrowSpec] = {}
+        self._text_map: dict[str, TextSpec] = {}
         self.arrow_updated.connect(self._on_arrow_updated)
+        self.text_updated.connect(self._on_text_updated)
         self.clear_requested.connect(self._on_clear_requested)
+        self.texts_clear_requested.connect(self._on_texts_clear_requested)
         self.style_requested.connect(self._on_style_requested)
 
-    def _expire_arrow(self, arrow_type: str):
-        self._arrow_map.pop(arrow_type, None)
-
-        timer = self._arrow_timers.pop(arrow_type, None)
+    @staticmethod
+    def _drop_timer(timers: dict[str, QTimer], key: str):
+        timer = timers.pop(key, None)
         if timer is not None:
             timer.stop()
             timer.deleteLater()
 
-        self._apply_arrow_state()
+    @staticmethod
+    def _stop_all_timers(timers: dict[str, QTimer]):
+        for timer in timers.values():
+            timer.stop()
+            timer.deleteLater()
+        timers.clear()
 
-    def _restart_arrow_timer(self, arrow_type: str):
-        timer = self._arrow_timers.get(arrow_type)
+    @staticmethod
+    def _restart_timer(owner: QObject, timers: dict[str, QTimer], key: str, timeout_ms: int, on_expire):
+        timer = timers.get(key)
 
         if timer is None:
-            timer = QTimer(self)
+            timer = QTimer(owner)
             timer.setSingleShot(True)
 
-            timer.timeout.connect(lambda at=arrow_type: self._expire_arrow(at))
+            timer.timeout.connect(lambda k=key: on_expire(k))
 
-            self._arrow_timers[arrow_type] = timer
+            timers[key] = timer
 
-        timer.start(self._arrow_timeout_ms)
+        timer.start(timeout_ms)
+
+    def _expire_arrow(self, arrow_type: str):
+        self._arrow_map.pop(arrow_type, None)
+        self._drop_timer(self._arrow_timers, arrow_type)
+        self._apply_overlay_state()
+
+    def _expire_text(self, text_key: str):
+        self._text_map.pop(text_key, None)
+        self._drop_timer(self._text_timers, text_key)
+        self._apply_overlay_state()
+
+    def _restart_arrow_timer(self, arrow_type: str):
+        self._restart_timer(self, self._arrow_timers, arrow_type, self._arrow_timeout_ms, self._expire_arrow)
+
+    def _restart_text_timer(self, text_key: str):
+        self._restart_timer(self, self._text_timers, text_key, self._arrow_timeout_ms, self._expire_text)
 
     def _ensure_overlay(self) -> WindowArrowOverlay:
         if self._overlay is None:
             self._overlay = WindowArrowOverlay(self._hwnd)
         return self._overlay
 
-    def _apply_arrow_state(self):
+    def _apply_overlay_state(self):
         overlay = self._ensure_overlay()
         overlay.set_arrows(list(self._arrow_map.values()))
+        overlay.set_texts(list(self._text_map.values()))
 
     @Slot(object)
     def _on_arrow_updated(self, arrow: ArrowSpec):
@@ -308,20 +431,37 @@ class WindowArrowOverlayController(QObject):
 
         self._restart_arrow_timer(arrow_type)
 
-        self._apply_arrow_state()
+        self._apply_overlay_state()
+
+    @Slot(object)
+    def _on_text_updated(self, text: TextSpec):
+        text_key = getattr(text, "text_key", None) or "default"
+
+        self._text_map[text_key] = text
+
+        self._restart_text_timer(text_key)
+
+        self._apply_overlay_state()
 
     @Slot()
     def _on_clear_requested(self):
         self._arrow_map.clear()
+        self._text_map.clear()
 
-        for timer in self._arrow_timers.values():
-            timer.stop()
-            timer.deleteLater()
-
-        self._arrow_timers.clear()
+        self._stop_all_timers(self._arrow_timers)
+        self._stop_all_timers(self._text_timers)
 
         if self._overlay is not None:
             self._overlay.clear_arrows()
+            self._overlay.clear_texts()
+
+    @Slot()
+    def _on_texts_clear_requested(self):
+        self._text_map.clear()
+        self._stop_all_timers(self._text_timers)
+
+        if self._overlay is not None:
+            self._overlay.clear_texts()
 
     @Slot(tuple, float, float)
     def _on_style_requested(self, color: tuple[int, int, int], head_angle_deg: float, head_len_ratio: float):
@@ -330,13 +470,22 @@ class WindowArrowOverlayController(QObject):
 
 
 class GdiArrowPainter:
-    """headless 回退绘制器：用框架 Win32GdiOverlay 的自定义画笔画箭头（无 Qt）。
+    """headless 回退绘制器：用框架 Win32GdiOverlay 的自定义画笔画箭头与文字（无 Qt）。
 
-    生命周期由任务驱动：draw_window_arrow 每 ~0.3s 更新一次箭头并触发重绘，
-    每种箭头 2s 未刷新即消失（与 WindowArrowOverlayController 的超时语义一致）。
+    生命周期由任务驱动：draw_window_arrow / draw_window_text 每 ~0.3s 更新一次内容并触发重绘，
+    每个箭头/文字块 2s 未刷新即消失（与 WindowArrowOverlayController 的超时语义一致）。
     """
 
     FRESH_SECONDS = 2.0
+    TEXT_FONT_FACE = "Microsoft YaHei UI"
+    # GDI 浮层没有逐像素 alpha（框架按「像素是否纯黑」决定透明与否），因此文字底板只能
+    # 用不透明的深色填充；纯黑会让整块底板连同字形一起变透明，绝对不能用 (0, 0, 0)。
+    PANEL_COLOR = (24, 24, 24)
+    # GDI 路径没有逐像素 alpha，无法真正表现半透明底板。这里把底板色与一个中性底色
+    # 按 panel_alpha 混合，近似 Qt 路径的半透明观感；panel_alpha > 0 时混合结果不会
+    # 等于纯黑，因此不会被叠层的「纯黑即透明」规则误判。
+    PANEL_BLEND_BG = (96, 96, 96)
+    NULL_PEN = 9  # GetStockObject(NULL_PEN)
 
     def __init__(self, overlay):
         import threading
@@ -344,6 +493,7 @@ class GdiArrowPainter:
         self._overlay = overlay
         self._lock = threading.RLock()
         self._arrows: dict[str, tuple[ArrowSpec, float]] = {}
+        self._texts: dict[str, tuple[TextSpec, float]] = {}
         self._head_angle_deg = 28.0
         self._head_len_ratio = 0.35
 
@@ -360,10 +510,35 @@ class GdiArrowPainter:
             self._arrows[arrow_type] = (arrow, _time.monotonic())
         self._overlay._schedule_render()
 
+    def add_text(self, text: TextSpec):
+        import time as _time
+
+        text_key = getattr(text, "text_key", None) or "default"
+        with self._lock:
+            self._texts[text_key] = (text, _time.monotonic())
+        self._overlay._schedule_render()
+
     def clear(self):
         with self._lock:
             self._arrows.clear()
         self._overlay._schedule_render()
+
+    def clear_texts(self):
+        with self._lock:
+            self._texts.clear()
+        self._overlay._schedule_render()
+
+    def clear_all(self):
+        with self._lock:
+            self._arrows.clear()
+            self._texts.clear()
+        self._overlay._schedule_render()
+
+    @staticmethod
+    def _fresh_specs(store: dict, now: float) -> list:
+        for key in [k for k, (_, ts) in store.items() if now - ts > GdiArrowPainter.FRESH_SECONDS]:
+            store.pop(key, None)
+        return [spec for spec, _ts in store.values()]
 
     def paint(self, canvas, overlay):
         import time as _time
@@ -372,20 +547,109 @@ class GdiArrowPainter:
         height = max(1, int(getattr(overlay, "_height", 0) or 1))
         now = _time.monotonic()
         with self._lock:
-            for key in [k for k, (_, ts) in self._arrows.items() if now - ts > self.FRESH_SECONDS]:
-                self._arrows.pop(key, None)
-            specs = [spec for spec, _ts in self._arrows.values()]
-        if not specs:
+            arrow_specs = self._fresh_specs(self._arrows, now)
+            text_specs = self._fresh_specs(self._texts, now)
+        if not arrow_specs and not text_specs:
             return
         try:
             from ok.ui.overlay.win32_gdi import gdi32
 
-            for spec in specs:
+            for spec in arrow_specs:
                 self._paint_arrow_gdi(gdi32, canvas.hdc, spec, width, height)
+            for spec in text_specs:
+                self._paint_text_gdi(gdi32, canvas.hdc, spec, width, height)
         except Exception as e:
             from ok.util.logger import Logger
 
             Logger.get_logger(__name__).error(f"GDI 箭头绘制失败: {e}")
+
+    def _paint_text_gdi(self, gdi32, hdc, spec: TextSpec, width: int, height: int):
+        import ctypes
+
+        from ok.ui.overlay.win32_gdi import _rgb
+
+        lines = [str(line) for line in (spec.lines or []) if str(line)]
+        if not lines:
+            return
+
+        pixel_size = max(8, round(float(spec.font_size_norm) * height))
+        weight = 700 if spec.bold else 400
+        font = gdi32.CreateFontW(-pixel_size, 0, 0, 0, weight, 0, 0, 0, 1, 0, 0, 5, 0, self.TEXT_FONT_FACE)
+        hdc_ref = ctypes.c_void_p(hdc)
+        old_font = gdi32.SelectObject(hdc_ref, font)
+        try:
+            line_height = max(pixel_size, round(pixel_size * max(1.0, float(spec.line_spacing))))
+            widths = [self._gdi_text_width(gdi32, hdc_ref, line, pixel_size) for line in lines]
+            pad_x = max(6, int(pixel_size * 0.45))
+            pad_y = max(4, int(pixel_size * 0.28))
+            left = int(float(spec.x_norm) * width)
+            top = int(float(spec.y_norm) * height)
+            panel_width = max(widths) + pad_x * 2
+            panel_height = pixel_size + line_height * (len(lines) - 1) + pad_y * 2
+
+            if int(spec.panel_alpha) > 0:
+                panel_color = self.gdi_panel_color(spec.panel_alpha)
+                brush = gdi32.CreateSolidBrush(_rgb(*panel_color))
+                old_brush = gdi32.SelectObject(hdc_ref, brush)
+                old_pen = gdi32.SelectObject(hdc_ref, gdi32.GetStockObject(self.NULL_PEN))
+                try:
+                    gdi32.Rectangle(hdc_ref, left, top, left + panel_width, top + panel_height)
+                finally:
+                    gdi32.SelectObject(hdc_ref, old_brush)
+                    gdi32.SelectObject(hdc_ref, old_pen)
+                    gdi32.DeleteObject(brush)
+
+            text_alpha = max(0, min(255, int(spec.alpha)))
+            if text_alpha > 0:
+                text_color = self.gdi_text_color(spec.color, text_alpha)
+                gdi32.SetTextColor(hdc_ref, _rgb(*text_color))
+                gdi32.SetBkMode(hdc_ref, 1)  # TRANSPARENT
+                for index, line in enumerate(lines):
+                    gdi32.TextOutW(hdc_ref, left + pad_x, top + pad_y + line_height * index, line, len(line))
+        finally:
+            gdi32.SelectObject(hdc_ref, old_font)
+            gdi32.DeleteObject(font)
+
+    @classmethod
+    def gdi_panel_color(cls, panel_alpha) -> tuple[int, int, int]:
+        """把 0-255 的底板 alpha 近似成 GDI 可用的不透明颜色。
+
+        alpha 越低，颜色越接近 `PANEL_BLEND_BG`（观感更轻），alpha 为 255 时即 `PANEL_COLOR`。
+        """
+        try:
+            alpha = float(panel_alpha)
+        except (TypeError, ValueError):
+            alpha = 0.0
+        ratio = max(0.0, min(1.0, alpha / 255.0))
+        return tuple(
+            round(color * ratio + bg * (1.0 - ratio))
+            for color, bg in zip(cls.PANEL_COLOR, cls.PANEL_BLEND_BG, strict=True)
+        )
+
+    @classmethod
+    def gdi_text_color(cls, color, alpha) -> tuple[int, int, int]:
+        """把文字 alpha 近似成 GDI 可用的不透明颜色。"""
+        ratio = max(0.0, min(1.0, float(alpha) / 255.0))
+        return tuple(
+            round(channel * ratio + bg * (1.0 - ratio))
+            for channel, bg in zip(tuple(color)[:3], cls.PANEL_BLEND_BG, strict=True)
+        )
+
+    @staticmethod
+    def _gdi_text_width(gdi32, hdc_ref, text: str, pixel_size: int) -> int:
+        import ctypes
+
+        from ok.ui.overlay.win32_gdi import SIZE
+
+        try:
+            size = SIZE()
+            if gdi32.GetTextExtentPoint32W(hdc_ref, text, len(text), ctypes.byref(size)):
+                return int(size.cx)
+        except Exception:
+            pass
+        # 取不到 extent 时按字符宽度估算：CJK 约 1em，其余约 0.6em
+        wide = sum(1 for ch in text if ord(ch) > 0x2E80)
+        return int(pixel_size * (wide + (len(text) - wide) * 0.6))
 
     def _paint_arrow_gdi(self, gdi32, hdc, spec: ArrowSpec, width: int, height: int):
         import ctypes
@@ -462,7 +726,9 @@ class GdiArrowController:
     def __init__(self, painter: GdiArrowPainter):
         self._painter = painter
         self.arrow_updated = _GdiEmit(painter.add_arrow)
-        self.clear_requested = _GdiEmit(painter.clear)
+        self.text_updated = _GdiEmit(painter.add_text)
+        self.clear_requested = _GdiEmit(painter.clear_all)
+        self.texts_clear_requested = _GdiEmit(painter.clear_texts)
         self.style_requested = _GdiEmit(painter.set_style)
 
 
@@ -478,6 +744,9 @@ class WindowArrowDrawingMixin:
         self._window_arrow_shaft_width_norm = 0.005
         self._window_arrow_head_angle_deg = 28.0
         self._window_arrow_head_len_ratio = 0.35
+        # 叠层文字默认样式
+        self._window_arrow_text_alpha = 235
+        self._window_arrow_text_font_size_norm = 0.024
         self._window_arrow_overlay: WindowArrowOverlay | None = None
         self._window_arrow_controller: WindowArrowOverlayController | None = None
         self._window_arrow_gdi_controller: GdiArrowController | None = None
@@ -689,8 +958,89 @@ class WindowArrowDrawingMixin:
             arrow_type=arrow_type,
         )
 
+    def draw_window_text(
+        self,
+        lines,
+        text_key: str = "default",
+        x_norm: float = 0.015,
+        y_norm: float = 0.2,
+        color: tuple[int, int, int] | None = None,
+        alpha: int | None = None,
+        font_size_norm: float | None = None,
+        bold: bool = True,
+        line_spacing: float = 1.35,
+        panel_alpha: int = 150,
+    ) -> bool:
+        """
+        在游戏窗口上绘制一个多行文字块（左上角锚点，坐标与字号按窗口尺寸归一化）。
+
+        与 draw_window_arrow 共用同一套叠层与 2 秒超时语义：每次轮询刷新一次即可持续显示，
+        停止刷新后自动消失。同一 text_key 反复调用只保留最后一份内容。
+
+        Args:
+            lines: 文本行，支持 str 或 str 列表；空行会被忽略
+            text_key: 文字块标识，用于去重与独立超时
+            x_norm: 左上角归一化 X 坐标 [0, 1]
+            y_norm: 左上角归一化 Y 坐标 [0, 1]
+            color: 文字颜色 (RGB)，默认使用全局箭头颜色
+            alpha: 文字透明度 (0-255)，默认 235
+            font_size_norm: 字号（相对窗口高度），默认 0.024
+            bold: 是否加粗
+            line_spacing: 行距倍数
+            panel_alpha: 底板透明度 (0-255)，0 表示不画底板；headless GDI 路径无逐像素
+                alpha，底板会退化为不透明深色
+
+        Returns:
+            是否绘制成功
+        """
+        try:
+            controller = self._ensure_window_arrow_controller()
+            if controller is None:
+                return False
+
+            if isinstance(lines, str):
+                normalized_lines = [lines]
+            elif lines is None:
+                normalized_lines = []
+            else:
+                normalized_lines = [str(line) for line in lines]
+            normalized_lines = [line for line in normalized_lines if line]
+            if not normalized_lines:
+                return False
+
+            controller.text_updated.emit(
+                TextSpec(
+                    text_key=text_key or "default",
+                    lines=normalized_lines,
+                    x_norm=x_norm,
+                    y_norm=y_norm,
+                    color=color or self._window_arrow_color,
+                    alpha=self._window_arrow_text_alpha if alpha is None else alpha,
+                    font_size_norm=(
+                        self._window_arrow_text_font_size_norm if font_size_norm is None else font_size_norm
+                    ),
+                    bold=bold,
+                    line_spacing=line_spacing,
+                    panel_alpha=panel_alpha,
+                )
+            )
+            return True
+        except Exception as e:
+            logger.error(f"绘制窗口文字失败: {e}")
+            return False
+
+    def clear_window_texts(self):
+        """清空窗口上的所有文字块（保留箭头）。"""
+        try:
+            controller = self._ensure_window_arrow_controller()
+            if controller is None:
+                return
+            controller.texts_clear_requested.emit()
+        except Exception as e:
+            logger.error(f"清空窗口文字失败: {e}")
+
     def clear_window_arrows(self):
-        """清空窗口上的所有箭头。"""
+        """清空窗口上的所有箭头与文字块。"""
         try:
             controller = self._ensure_window_arrow_controller()
             if controller is None:

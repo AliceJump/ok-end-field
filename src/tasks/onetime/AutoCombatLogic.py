@@ -1,7 +1,5 @@
 import traceback
 
-import pyautogui
-
 from src.core.BaseEfTask import BaseEfTask
 from src.core.BattleConfig import (
     KEY_COND_ENABLED,
@@ -71,9 +69,9 @@ class AutoCombatLogic:
     def _sync_normal_attack_hold(self):
         if self._normal_attack_hold_enabled:
             self.task.active_and_send_mouse_delta(activate=True, only_activate=True)
-            pyautogui.mouseDown()
+            self.task.mouse_down(key="left")
         else:
-            pyautogui.mouseUp()
+            self.task.mouse_up(key="left")
 
     def _do_normal_combat_frame(self):
         """执行一帧普通战斗逻辑（非排轴模式 / normal_[n] 临时模式共用）。"""

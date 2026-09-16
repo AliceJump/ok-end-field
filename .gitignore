@@ -81,6 +81,8 @@ python/
 !.vscode/extensions.json
 !.vscode/settings.json
 .workbuddy/
+# WorkBuddy AI 的本地工作目录（记忆 / 临时文件，不入库）
+.workbuddy-ai/
 
 ############################
 # 🖥 PyInstaller

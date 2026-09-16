@@ -46,6 +46,7 @@ from src.core.config_migration import legacy_battle_mode_to_bool
 from src.core.global_config_store import get_global_config
 from src.core.sequence_parser import parse_sequence
 from src.data.FeatureList import FeatureList as fL
+from src.image.hsv_config import HSVRange as hR
 from src.image.recommend_skill_detector import PULSE_ON_RATIO, get_recommend_skill_detector
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
@@ -912,16 +913,14 @@ class BattleMixin(BaseEfTask):
         检测是否出现 LV 或等级 UI。
         """
 
-        lv = self.ocr(0.02, 0.89, 0.23, 0.93, match=self.lv_regex, name="lv_text")
-
-        if len(lv) > 0:
-            return True
-
-        lv = self.ocr(
-            0.02, 0.89, 0.23, 0.93, frame_processor=isolate_white_text_to_black, match=self.lv_regex, name="lv_text"
+        return bool(
+            self.find_one(
+                fL.battle_lv,
+                mask_function=self.make_hsv_isolator(hR.WHITE, invert=True),
+                threshold=0.7,
+                box=self.box_of_screen(0.02, 0.89, 0.23, 0.93),
+            )
         )
-
-        return len(lv) > 0
 
     def wait_in_combat(self, time_out=3, click=False):
         """

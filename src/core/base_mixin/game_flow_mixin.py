@@ -108,10 +108,19 @@ class GameFlowMixin:
             if self.active_time() - start_time > time_out:
                 self.log_info("skip_dialog 超时退出")
                 return False
-            if self.find_one(fL.skip_dialog_esc, horizontal_variance=0.05):
-                self.press_esc()
+            if result := self.wait_feature(
+                [fL.skip_dialog_esc, fL.skip_dialog_confirm],
+                horizontal_variance=0.05,
+                raise_if_not_found=False,
+                time_out=1,
+            ):
+                if result.name == "skip_dialog_esc":
+                    self.press_esc()
                 self.click_confirm()
+            else:
+                return True
             self.sleep(0.5)
+        return False
 
     def find_confirm(self):
         """
@@ -604,7 +613,7 @@ class GameFlowMixin:
             features = (
                 default_features + addtional_feature
                 if isinstance(addtional_feature, list)
-                else default_features + [addtional_feature]
+                else [*default_features, addtional_feature]
             )
         else:
             features = default_features

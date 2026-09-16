@@ -1,0 +1,421 @@
+"""临时 Windows TOPMOST 窗口置顶机制。
+
+任务 ``run()`` 启动时自动监测前台窗口，对符合条件的非游戏窗口临时设置
+HWND_TOPMOST，任务销毁时统一恢复为非 TOPMOST。
+
+无需手动调用，Mixin 在 ``run()`` 中自动启动监测，
+``disable()`` / ``on_destroy()`` 中自动停止并恢复。
+暂停时恢复窗口但保留记录，恢复时对仍存在的窗口重新置顶。
+"""
+
+from __future__ import annotations
+
+import ctypes
+import ctypes.wintypes
+import functools
+import threading
+
+import win32gui
+from ok.util.logger import Logger
+
+logger = Logger.get_logger(__name__)
+
+# ── Win32 常量 ──────────────────────────────────────────────
+GWL_EXSTYLE = -20
+WS_EX_TOPMOST = 0x00000008
+HWND_TOPMOST = -1
+HWND_NOTOPMOST = -2
+SWP_NOMOVE = 0x0002
+SWP_NOSIZE = 0x0001
+SWP_NOACTIVATE = 0x0010
+SWP_SHOWWINDOW = 0x0040
+
+_user32 = ctypes.windll.user32
+_user32.SetWindowPos.argtypes = (
+    ctypes.wintypes.HWND,
+    ctypes.wintypes.HWND,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.c_int,
+    ctypes.wintypes.UINT,
+)
+_user32.SetWindowPos.restype = ctypes.wintypes.BOOL
+
+# Windows 系统窗口类名——这些窗口不应被置顶
+_SYSTEM_CLASS_NAMES: frozenset[str] = frozenset(
+    {
+        "Shell_TrayWnd",  # 任务栏
+        "Shell_SecondaryTrayWnd",  # 多显示器副任务栏
+        "Progman",  # 桌面
+        "WorkerW",  # 桌面壁纸宿主
+        "SysListView32",  # 桌面图标列表（资源管理器子窗口）
+        "SHELLDLL_DefView",  # 桌面视图
+        "Windows.UI.Core.CoreWindow",  # UWP 系统 UI（开始菜单/Cortana 等）
+        "Shell_InputPanel_Host",  # 托盘输入法面板
+        "IME",  # 输入法窗口
+        "MSCTFIME UI",  # 输入法 UI
+        "NVIDIA GeForce Overlay",  # NVIDIA 覆盖层
+        "TextInputHost",  # Windows 输入体验
+        "Program Manager",  # Program Manager 桌面管理器
+        "NotifyIconOverflowWindow",  # 系统托盘溢出窗口
+        "tooltips_class32",  # 系统 Tooltip 弹出窗口
+        "ToolbarWindow32",  # 工具栏弹出窗口
+    }
+)
+
+
+def _is_system_window(hwnd: int) -> bool:
+    """判断窗口是否属于 Windows 系统级窗口（任务栏、桌面等）。"""
+    try:
+        cls = win32gui.GetClassName(hwnd)
+        return cls in _SYSTEM_CLASS_NAMES
+    except Exception:
+        return False
+
+
+def _is_window_topmost(hwnd: int) -> bool:
+    """通过扩展窗口样式判断窗口是否处于 TOPMOST。"""
+    try:
+        ex_style = win32gui.GetWindowLong(hwnd, GWL_EXSTYLE)
+        return bool(ex_style & WS_EX_TOPMOST)
+    except Exception:
+        return False
+
+
+def _set_window_topmost(hwnd: int) -> bool:
+    """将窗口设置为 HWND_TOPMOST（不激活、不移动、不调整大小）。"""
+    try:
+        return bool(
+            _user32.SetWindowPos(
+                hwnd,
+                HWND_TOPMOST,
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW,
+            )
+        )
+    except Exception:
+        return False
+
+
+def _remove_window_topmost(hwnd: int) -> bool:
+    """将窗口恢复为非 TOPMOST。"""
+    try:
+        return bool(
+            _user32.SetWindowPos(
+                hwnd,
+                HWND_NOTOPMOST,
+                0,
+                0,
+                0,
+                0,
+                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW,
+            )
+        )
+    except Exception:
+        return False
+
+
+class TopmostMixin:
+    """为 Task 提供临时 TOPMOST 窗口置顶能力。
+
+    监测前台窗口变化，对同时满足以下条件的窗口设置 TOPMOST：
+    - 当前为 Foreground Window
+    - 窗口可见（IsWindowVisible）
+    - 窗口未最小化（not IsIconic）
+    - 不是本游戏窗口
+    - 当前不是 TOPMOST
+
+    仅记录本次任务实际修改过的窗口，任务结束时统一恢复为非 TOPMOST。
+    """
+
+    # 触发式任务的 monitor 延迟启动阈值（秒）
+    # run() 执行超过此时间才启动 monitor，避免触发式任务的快速扫描 cycle 反复启停
+    _TOPMOST_START_DELAY: float = 2.0
+
+    def __init_subclass__(cls, **kwargs: object) -> None:
+        super().__init_subclass__(**kwargs)
+        # 自动包装子类的 run()，使其运行期间自动启动/停止 TOPMOST 监测
+        if "run" in cls.__dict__:
+            original_run = cls.run
+
+            @functools.wraps(original_run)
+            def _wrapped_run(self_inner: TopmostMixin, *args: object, **kw: object) -> object:
+                # 使用实例级计数判断嵌套 run()；monitor 可能尚在延迟启动期，
+                # 因此不能仅通过线程是否存活来判断所有权。
+                with self_inner._topmost_state_lock:
+                    owns_monitor = self_inner._topmost_run_depth == 0
+                    self_inner._topmost_run_depth += 1
+
+                if not owns_monitor:
+                    try:
+                        return original_run(self_inner, *args, **kw)
+                    finally:
+                        with self_inner._topmost_state_lock:
+                            self_inner._topmost_run_depth -= 1
+
+                # 延迟启动：等 _TOPMOST_START_DELAY 秒后再启动 monitor，
+                # 若 run() 在延迟期内返回则取消启动（适用于触发式任务的快速扫描 cycle）
+                delay_timer: threading.Timer | None = None
+
+                def _delayed_start() -> None:
+                    # pause() may happen while this timer is pending. Keep the
+                    # state check and start in one critical section so a paused
+                    # task cannot restart monitoring after its windows restore.
+                    with self_inner._topmost_state_lock:
+                        if self_inner._topmost_paused:
+                            return
+                        try:
+                            self_inner.start_topmost_monitor()
+                        except Exception:
+                            pass
+
+                try:
+                    delay_timer = threading.Timer(self_inner._TOPMOST_START_DELAY, _delayed_start)
+                    delay_timer.daemon = True
+                    delay_timer.start()
+                    return original_run(self_inner, *args, **kw)
+                finally:
+                    try:
+                        # 外层 owner 总是取消并等待 timer，确保回调不会在清理后启动 monitor。
+                        if delay_timer is not None:
+                            delay_timer.cancel()
+                            delay_timer.join()
+                    finally:
+                        # 无条件停止：监测线程也可能由 pause 后的 resume() 启动。
+                        try:
+                            self_inner.stop_topmost_monitor()
+                        finally:
+                            with self_inner._topmost_state_lock:
+                                self_inner._topmost_run_depth -= 1
+
+            cls.run = _wrapped_run  # type: ignore[attr-defined]
+
+    def _init_topmost_mixin(self) -> None:
+        self._topmost_stop_event = threading.Event()
+        self._topmost_state_lock = threading.RLock()
+        self._topmost_run_depth = 0
+        self._topmost_paused = False
+        self._topmost_executor_paused = False
+        self._topmost_lock = threading.Lock()
+        self._topmost_modified: set[int] = set()
+        self._topmost_thread: threading.Thread | None = None
+        self._topmost_prev_fg: int = 0
+
+    # ── 生命周期 ────────────────────────────────────────────
+
+    def on_create(self) -> None:
+        """任务框架初始化：仅初始化状态，不启动监测线程。"""
+        self._init_topmost_mixin()
+        super().on_create()
+
+    def on_destroy(self) -> None:
+        """框架销毁回调：安全兜底，确保监测线程和窗口状态被清理。"""
+        self.stop_topmost_monitor()
+        super().on_destroy()
+
+    def disable(self) -> None:
+        """任务禁用时停止监测（一次性任务 run() 结束后自动调用）。"""
+        self.stop_topmost_monitor()
+        super().disable()
+
+    def pause(self) -> None:
+        """任务暂停时恢复窗口并保留记录，resume 时重新置顶。"""
+        self.pause_topmost_monitor()
+        return super().pause()
+
+    def unpause(self) -> None:
+        """任务恢复时重新置顶暂停前记录的窗口。"""
+        self.resume_topmost_monitor()
+        return super().unpause()
+
+    # ── 公开 API ──────────────────────────────────────────────
+
+    def start_topmost_monitor(self) -> None:
+        """启动 TOPMOST 监测线程。重复调用安全（已运行则忽略）。"""
+        with self._topmost_state_lock:
+            if self._topmost_paused or (self._topmost_thread is not None and self._topmost_thread.is_alive()):
+                return
+            self._topmost_stop_event.clear()
+            self._topmost_prev_fg = 0
+            t = threading.Thread(
+                target=self._topmost_monitor_loop,
+                name="topmost-monitor",
+                daemon=True,
+            )
+            self._topmost_thread = t
+            t.start()
+            logger.info("topmost monitor 已启动")
+
+    def stop_topmost_monitor(self) -> None:
+        """停止监测并恢复所有被本机制修改过的窗口。
+
+        可安全重复调用。放在 try/finally 或 on_destroy 中均可靠。
+        """
+        # 状态转换必须保持原子性：阻止 start/resume 在旧线程退出和窗口恢复
+        # 之间清除停止事件或启动新线程。
+        with self._topmost_state_lock:
+            self._topmost_stop_event.set()
+            thread = self._topmost_thread
+            if thread is not None and thread.is_alive():
+                thread.join()
+            self._topmost_thread = None
+            self._restore_all_modified()
+
+    def pause_topmost_monitor(self) -> None:
+        """暂停监测：恢复所有窗口，但保留记录以便 resume 时重新置顶。
+
+        与 ``stop_topmost_monitor`` 的区别在于不清空 ``_topmost_modified`` 集合，
+        resume 时仅对仍存在的窗口重新置顶。
+        """
+        with self._topmost_state_lock:
+            self._topmost_paused = True
+            self._topmost_stop_event.set()
+            thread = self._topmost_thread
+            if thread is not None and thread.is_alive():
+                thread.join()
+            self._topmost_thread = None
+            # 恢复窗口但保留记录
+            self._restore_all_modified(keep_records=True)
+
+    def resume_topmost_monitor(self) -> None:
+        """恢复监测：对暂停前记录且仍存在的窗口重新置顶，然后重启监测线程。"""
+        with self._topmost_state_lock:
+            self._topmost_paused = False
+            # 先对暂停前记录的窗口重新置顶（仅仍存在的）
+            self._reapply_modified()
+            # 清除暂停状态后重启监测线程
+            self.start_topmost_monitor()
+
+    def _reapply_modified(self) -> None:
+        """对已记录但仍存在且可见、未最小化的窗口重新设置 TOPMOST。"""
+        with self._topmost_lock:
+            candidates = [
+                hwnd
+                for hwnd in self._topmost_modified
+                if win32gui.IsWindow(hwnd) and win32gui.IsWindowVisible(hwnd) and not win32gui.IsIconic(hwnd)
+            ]
+
+        reapplied = 0
+        for hwnd in candidates:
+            try:
+                if _set_window_topmost(hwnd):
+                    reapplied += 1
+            except Exception:
+                pass
+        if reapplied:
+            logger.info(f"topmost 恢复置顶: {reapplied} 个窗口")
+
+    def _is_executor_paused(self) -> bool:
+        """检查 executor 是否处于暂停状态。"""
+        try:
+            executor = getattr(self, "executor", None)
+            if executor is None:
+                return False
+            return getattr(executor, "paused", False)
+        except Exception:
+            return False
+
+    # ── 内部实现 ──────────────────────────────────────────────
+
+    def _topmost_monitor_loop(self) -> None:
+        """后台轮询线程：检测前台窗口变化并按需设置 TOPMOST。
+
+        同时检测 executor 级别的暂停状态（快捷键暂停），
+        暂停时恢复窗口但保留记录，恢复时重新置顶。
+        """
+        self._topmost_executor_paused = False
+        while not self._topmost_stop_event.is_set():
+            try:
+                executor_paused = self._is_executor_paused()
+                if executor_paused:
+                    if not self._topmost_executor_paused:
+                        self._topmost_executor_paused = True
+                        self._restore_all_modified(keep_records=True)
+                        logger.info("topmost: executor paused, windows restored")
+                else:
+                    if self._topmost_executor_paused:
+                        self._topmost_executor_paused = False
+                        self._reapply_modified()
+                        logger.info("topmost: executor resumed, windows reapplied")
+                    self._topmost_check_foreground()
+            except Exception as exc:
+                logger.debug(f"topmost monitor 异常: {exc}")
+            self._topmost_stop_event.wait(timeout=0.2)
+
+    def _topmost_check_foreground(self) -> None:
+        """检测当前前台窗口，符合条件则设置 TOPMOST。"""
+        try:
+            fg = win32gui.GetForegroundWindow()
+        except Exception:
+            return
+
+        if not fg or fg == self._topmost_prev_fg:
+            return
+        self._topmost_prev_fg = fg
+
+        # 跳过游戏窗口
+        try:
+            game_hwnd = self.get_game_hwnd()
+        except Exception:
+            game_hwnd = 0
+        if fg == game_hwnd:
+            return
+
+        # 跳过不可见或已最小化的窗口
+        try:
+            if not win32gui.IsWindowVisible(fg) or win32gui.IsIconic(fg):
+                return
+        except Exception:
+            return
+
+        # 跳过 Windows 系统窗口（任务栏、桌面等）
+        if _is_system_window(fg):
+            return
+
+        # 已经是 TOPMOST 的窗口不修改、不记录
+        if _is_window_topmost(fg):
+            return
+
+        with self._topmost_lock:
+            if self._topmost_stop_event.is_set() or not _set_window_topmost(fg):
+                return
+            self._topmost_modified.add(fg)
+
+        try:
+            cls_name = win32gui.GetClassName(fg)
+            logger.info(f"topmost 已置顶: hwnd=0x{fg:X}  class={cls_name}")
+        except Exception:
+            logger.info(f"topmost 已置顶: hwnd=0x{fg:X}")
+
+    def _restore_all_modified(self, keep_records: bool = False) -> None:
+        """将所有被本机制修改过的窗口恢复为非 TOPMOST。
+
+        Args:
+            keep_records: True 时仅恢复窗口但保留 ``_topmost_modified`` 记录，
+                供 ``resume_topmost_monitor`` 重新置顶使用。
+        """
+        with self._topmost_lock:
+            to_restore = list(self._topmost_modified)
+            if not keep_records:
+                self._topmost_modified.clear()
+        self._topmost_prev_fg = 0
+
+        restored = 0
+        failed = 0
+        for hwnd in to_restore:
+            try:
+                if win32gui.IsWindow(hwnd):
+                    if _remove_window_topmost(hwnd):
+                        logger.info(f"topmost 已恢复: hwnd=0x{hwnd:X}")
+                        restored += 1
+                    else:
+                        logger.warning(f"topmost 恢复失败: hwnd=0x{hwnd:X}")
+                        failed += 1
+            except Exception:
+                pass
+        if to_restore:
+            logger.info(f"topmost 恢复完成: 成功 {restored}，失败 {failed}，共 {len(to_restore)} 个窗口")

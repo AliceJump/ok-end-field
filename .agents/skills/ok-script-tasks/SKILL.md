@@ -43,6 +43,28 @@ Support English and Chinese in both code review and generated code.
 - Use `supported_languages` only to hide a task in unsupported locales. Common locale names are `en_US`, `zh_CN`, `zh_TW`, `ja_JP`, `ko_KR`, and `es_ES`.
 - Do not hard-code assumptions from the source project used to study `ok-script` unless the target project explicitly uses them.
 
+## Config UI: Conditional Visibility and Numeric Ranges
+
+`self.config_type[key]` accepts extra metadata for generated configuration UIs. `sub_configs` is honored by the shared resolver `ok/core/config_schema.py` and by the Qt card (`ok/ui/qt/tasks/ConfigCard.py`). The resolver also preserves `min` and `max` as `minimum` and `maximum` schema metadata for headless/web fields, including fields with `float` defaults; Qt widget behavior is described separately below.
+
+- **`sub_configs`** — show child options only for specific parent values:
+
+  ```python
+  self.config_type["浮层信息"] = {
+      "sub_configs": {True: ["浮层文字透明度", "浮层背景透明度", "浮层字号"]},
+  }
+  ```
+
+  The rule maps *parent value* → *child keys*. A child is visible only when its parent's current value is a key of the map (lists union across selected values). A value with no entry (e.g. `False` here) hides every child. Children may themselves be parents, giving nested folding. Children are rendered indented, and the parent's switch/dropdown/multi-select drives updates live.
+  Project example: `src/core/BattleConfig.py` (`KEY_ENABLE_ROTATION`), `src/tasks/onetime/DeliveryTask.py`.
+  The parent must be a widget that emits change signals: bool → `SwitchButton`, `drop_down`, or multi-selection.
+
+- **`min` / `max`** — on Qt config cards, these are numeric bounds for `SpinBox`. Only **int** defaults get a bounded `SpinBox`; a `float` default becomes a `DoubleSpinBox` that ignores `min`/`max`. This Qt limitation does not affect the headless/web schema: it still outputs `minimum` and `maximum` for fields with these keys, including `float` fields. Use an `int` default only when the Qt widget itself must enforce the bounds (e.g. a 0–100 opacity percentage or a pixel size), then convert to a float internally if needed.
+
+- An explicit `config_type[key]["type"]` takes priority. Only when `type` is absent is the widget kind inferred from the **default value's type**, not the current value: `bool` → switch, `int` → `SpinBox`, `float` → `DoubleSpinBox`, `list` → list editor. Pick the default's type deliberately for this fallback path.
+
+- Config keys and `config_description` strings are user-visible and must go through gettext (see `$ok-script-i18n`).
+
 ## Essential Rules
 
 - Always call `super().__init__(*args, **kwargs)` before setting task fields.

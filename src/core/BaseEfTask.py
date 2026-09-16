@@ -16,12 +16,12 @@ from src.core.base_mixin.account_override_mixin import AccountOverrideMixin
 from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.process_manager import ProcessManager
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
+from src.core.base_mixin.topmost_mixin import TopmostMixin
 from src.core.base_mixin.window_arrow_drawing_mixin import WindowArrowDrawingMixin
 from src.core.config_migration import migrate_config_file_keys, migrate_config_values
 from src.core.game_window import find_game_hwnd
 from src.core.global_config_store import (
     ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME,
-    INPUT_MODE_NAME,
     KEY_CONFIG_NAME,
     get_global_config,
     migrate_task_zip_line_values_to_global,
@@ -89,6 +89,7 @@ def _screenshot_timestamp_prefix():
 
 
 class BaseEfTask(
+    TopmostMixin,
     WindowArrowDrawingMixin,
     AccountOverrideMixin,
     GameFlowMixin,
@@ -97,10 +98,6 @@ class BaseEfTask(
     ProcessManager,
 ):
     """游戏自动化任务基类，提供通用的交互和识别功能。"""
-
-    # 该任务是否必须在前台模式下运行（涉及移动/战斗/视角操作）。
-    # 后台模式下此类任务会在启用时被拦截。
-    requires_foreground = False
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -288,39 +285,7 @@ class BaseEfTask(
         # 把任务文件中的滑索旧值转存到全局 Zip Line Config.json，避免全局侧 legacy 收集
         # 在任务文件滑索键已被删除后读不到值。
         migrate_task_zip_line_values_to_global(self.__class__.__name__)
-        # 注入后台模式任务级开关（布尔，置于配置最顶端，与战斗独立配置一致）
-        self.default_config = {"后台模式启用": False, **self.default_config}
-        self.config_description["后台模式启用"] = (
-            "后台模式启用：勾选后该任务强制后台模式（按键用完即恢复窗口，禁用移动/战斗/视角操作）；"
-            "不勾选则跟随全局输入模式。"
-        )
         super().load_config()
-
-    def input_mode(self) -> str:
-        """返回 'foreground' | 'background'，合并全局与任务级开关。
-
-        触发式任务始终返回前台模式（触发时用户已在前台，持续运行不受后台影响）。
-        """
-        if isinstance(self, TriggerTask):
-            return "foreground"
-        try:
-            task_override = self.config.get("后台模式启用", False)
-        except Exception:
-            task_override = False
-        if task_override:
-            return "background"
-        try:
-            global_mode = get_global_config(INPUT_MODE_NAME).get("输入模式", "前台模式")
-        except Exception:
-            global_mode = "前台模式"
-        return "background" if global_mode == "后台模式" else "foreground"
-
-    def enable(self):
-        """Enable the task if it is compatible with the current input mode."""
-        if self.input_mode() == "background" and getattr(self, "requires_foreground", False):
-            self.log_info("后台模式下该任务需要前台操作（移动/战斗/视角），无法启用", notify=True)
-            return
-        super().enable()
 
     def box_of_screen(
         self,
@@ -522,6 +487,7 @@ class BaseEfTask(
         self.log_info(str(message))
 
     def on_destroy(self):
+        self.stop_topmost_monitor()
         self.release_yolo_detector()
         super().on_destroy()
 

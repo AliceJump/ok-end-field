@@ -138,7 +138,7 @@ def active_and_send_mouse_delta(
     only_activate=False,
     delay=0.005,
     steps=5,
-):
+) -> bool:
     """
     激活指定窗口并发送相对鼠标移动。
 
@@ -159,6 +159,9 @@ def active_and_send_mouse_delta(
     Notes:
         - 使用 mouse_event 发送的是相对移动
         - steps 可以让移动更平滑，避免一次移动过大
+
+    Returns:
+        bool: 在请求激活时，目标窗口是否已成功成为前台窗口；未请求激活时返回 True。
     """
 
     # 如果只需要激活窗口，则强制 activate
@@ -166,16 +169,20 @@ def active_and_send_mouse_delta(
         activate = True
 
     if activate:
+        if not hwnd:
+            _safe_print(f"窗口激活失败: 无效的窗口句柄 {hwnd}")
+            return False
+
         try:
+            # 无论当前前台窗口为何，都先确认句柄有效；无效句柄不能被视为激活成功。
+            if not win32gui.IsWindow(hwnd):
+                _safe_print(f"窗口激活失败: 无效的窗口句柄 {hwnd}")
+                return False
+
             current_hwnd = win32gui.GetForegroundWindow()
 
             # 如果当前窗口不是目标窗口
             if current_hwnd != hwnd:
-                # 检查窗口句柄是否有效
-                if not win32gui.IsWindow(hwnd):
-                    _safe_print(f"窗口激活失败: 无效的窗口句柄 {hwnd}")
-                    return
-
                 # 如果窗口最小化，先恢复
                 if win32gui.IsIconic(hwnd):
                     win32gui.ShowWindow(hwnd, 9)  # SW_RESTORE
@@ -215,14 +222,15 @@ def active_and_send_mouse_delta(
                 final_hwnd = win32gui.GetForegroundWindow()
                 if final_hwnd != hwnd:
                     _safe_print(f"窗口激活警告: 窗口未完全置于前台 (目标:{hwnd}, 当前:{final_hwnd})")
+                    return False
 
         except win32gui.error as e:
-            # 错误码 0 通常不是严重错误
-            if e.winerror != 0:
-                _safe_print(f"窗口激活失败 (Win32错误 {e.winerror}): {e}")
+            _safe_print(f"窗口激活失败 (Win32错误 {e.winerror}): {e}")
+            return False
 
         except Exception as e:
             _safe_print(f"窗口激活失败 (未知错误): {type(e).__name__}: {e}")
+            return False
 
     # 只激活窗口不发送鼠标移动
     if not only_activate:
@@ -262,6 +270,8 @@ def active_and_send_mouse_delta(
 
             if delay > 0:
                 time.sleep(delay)
+
+    return True
 
 
 # ===== control =====

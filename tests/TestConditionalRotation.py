@@ -254,6 +254,12 @@ class _FakeTask:
     def active_and_send_mouse_delta(self, **k):
         pass
 
+    def mouse_down(self, **k):
+        pass
+
+    def mouse_up(self, **k):
+        pass
+
     def click(self, **k):
         pass
 
