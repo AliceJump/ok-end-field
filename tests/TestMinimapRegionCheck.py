@@ -13,6 +13,8 @@ from src.tasks.test.MinimapRegionCheck import MinimapRegionCheck
 
 
 class TestMinimapRegionCheckTask(TaskTestCase):
+    """验证小地图区域检查与里程计掩膜一致。"""
+
     task_class = MinimapRegionCheck
     config = config
 

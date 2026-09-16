@@ -354,6 +354,23 @@ class MinimapOdometry:
         scale_m_per_px: float | None = None,
         heading_convention: str = "compass",
     ):
+        """创建里程计实例。
+
+        Args:
+            task: 提供 ``width``/``height``/``next_frame``/``active_time`` 的任务对象。
+            center_ratio: 小地图圆心相对整帧的位置。
+            r_outer_ratio: 参与相关的外圈半径，相对画面宽度。
+            r_inner_ratio: 排除中心箭头扫掠区的内圈半径，相对画面宽度。
+            feather: 环带边缘羽化像素数。
+            crop_pad_ratio: crop 框相对外半径额外留出的比例。
+            sample_min_dt: 小于该间隔的采样直接跳过，避免对同一帧重复计算。
+            sample_max_dt: 超过该间隔视为锚帧过期并重新锚定；正常阻塞时不应触发。
+            response_low: 相位相关最低响应，低于该值认为位移不可信。
+            max_shift_ratio: 单次位移上限，相对外圈半径。
+            max_speed_px_s: 可选速度守卫；``None`` 表示不启用。
+            scale_m_per_px: 地图像素到世界米的换算比例。
+            heading_convention: 朝向约定，当前稳定使用 ``"compass"``。
+        """
         self._task = task
         self._center_ratio = center_ratio
         self._r_outer_ratio = r_outer_ratio
@@ -446,6 +463,7 @@ class MinimapOdometry:
             self._arm_anchor(frame, None)
 
     def reset_position(self):
+        """只清零累计位移，保留当前锚帧。"""
         self._pos_px = np.zeros(2, dtype=np.float64)
 
     def _arm_anchor(self, frame: np.ndarray, now: float | None):
@@ -636,4 +654,9 @@ class MinimapOdometry:
         return decompose_body(self.position_px(), heading_deg, self._scale_m_per_px, self._heading_convention)
 
     def last_sample(self) -> dict | None:
+        """返回最近一次**有效积分**的样本；失败或跳过采样时不覆盖该值。
+
+        静止判定依赖这里的字段，因此它与 :meth:`last_result` 的用途不同：
+        前者回答“最近一次有效位移是什么”，后者回答“最近一拍尝试结果是什么”。
+        """
         return self._last

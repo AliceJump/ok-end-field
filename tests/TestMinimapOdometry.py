@@ -88,6 +88,8 @@ class _FakeTask:
 
 
 class TestAnnulusMask(unittest.TestCase):
+    """验证小地图环带 mask 的几何与羽化。"""
+
     def test_shape_and_region(self):
         h, w = 200, 200
         center = (100.0, 100.0)
@@ -116,6 +118,8 @@ class TestAnnulusMask(unittest.TestCase):
 
 
 class TestPhaseShift(unittest.TestCase):
+    """验证相位相关的位移方向和响应。"""
+
     def test_sign_convention(self):
         h, w = 200, 200
         center = (100.0, 100.0)
@@ -132,6 +136,8 @@ class TestPhaseShift(unittest.TestCase):
 
 
 class TestIntegration(unittest.TestCase):
+    """验证采样、积分和重锚守卫。"""
+
     def _make(self, frames, **kwargs):
         task = _FakeTask(200, 200, frames=frames)
         od = MinimapOdometry(
@@ -226,6 +232,8 @@ class TestIntegration(unittest.TestCase):
 
 
 class TestDecompose(unittest.TestCase):
+    """验证朝向坐标约定和位移分解。"""
+
     def test_axes_orthonormal(self):
         for deg in (0, 90, 180, 270, 45):
             fwd, right = body_axes_from_heading(float(deg), "compass")

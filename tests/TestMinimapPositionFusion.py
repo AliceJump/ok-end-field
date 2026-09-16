@@ -39,6 +39,8 @@ class _StubOd:
 
 
 class TestSyncAndEstimate(unittest.TestCase):
+    """覆盖锚点设置、位移映射和估计输出。"""
+
     def test_sync_sets_anchor(self):
         od = _StubOd()
         fusion = MinimapPositionFusion(od, scale_m_per_px=2.0)
@@ -238,6 +240,8 @@ class TestSyncResidual(unittest.TestCase):
 
 
 class TestAxisMapping(unittest.TestCase):
+    """覆盖自定义轴矩阵。"""
+
     def test_custom_matrix(self):
         od = _StubOd()
         # 轴映射：地图 x -> 世界 z，地图 y -> 世界 -x（模拟交换+符号）
@@ -252,6 +256,8 @@ class TestAxisMapping(unittest.TestCase):
 
 
 class TestState(unittest.TestCase):
+    """覆盖同一帧内位置与朝向的一致性。"""
+
     def _arrow(self, captured):
         def fn(frame):
             captured.append(frame)

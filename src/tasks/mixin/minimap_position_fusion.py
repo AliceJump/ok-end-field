@@ -66,6 +66,17 @@ class MinimapPositionFusion:
         redundant_sync_m: float = 0.1,
         arrow_func=None,
     ):
+        """创建融合定位器。
+
+        Args:
+            odometry: 提供 ``sample/position_px/reset_position/last_sample`` 的里程计。
+            map_to_world_px: 地图像素位移到世界米位移的 2x2 矩阵。
+            scale_m_per_px: 未显式给矩阵时，用于构造默认轴缩放。
+            rest_speed_m_s: 小地图静止速度阈值。
+            rest_ws_m: 相邻 WS 样本允许的最大位移，用于过滤延迟样本。
+            redundant_sync_m: 估计与 WS 小于该距离时跳过重复重锚。
+            arrow_func: 可选的同帧朝向读取函数，签名为 ``f(frame) -> (angle, score)``。
+        """
         self._od = odometry
         scale = float(scale_m_per_px)
         if map_to_world_px is not None:
@@ -97,7 +108,7 @@ class MinimapPositionFusion:
     # 状态
     # ------------------------------------------------------------------ #
     def reset(self):
-        """清空锚点、静止判定状态与校准残差。"""
+        """清空绝对锚点、静止判定、残差和累计里程计。"""
         self._anchor_set = False
         self._last_ws = None
         self._ws_moved_m = None

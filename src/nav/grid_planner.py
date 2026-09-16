@@ -629,13 +629,14 @@ class GridPlanner:
         return cells
 
     def _rdp_simplify(self, points, cells) -> list:
-        """Further reduce near-collinear waypoints without increasing risk."""
+        """用 RDP 距离继续合并近共线航点，但不能增加未知格风险。"""
         if len(points) <= 2 or self.waypoint_tolerance <= 0:
             return list(points)
         cell_index = {cell: index for index, cell in enumerate(cells)}
         return self._rdp_segment(points, cells, cell_index)
 
     def _rdp_segment(self, points, cells, cell_index) -> list:
+        """递归简化一段折线；替换失败时保留最大偏离点作为分割点。"""
         if len(points) <= 2:
             return list(points)
         start, end = points[0], points[-1]
@@ -657,6 +658,10 @@ class GridPlanner:
         return left + right[1:]
 
     def _replacement_ok(self, start, end, cells, cell_index) -> bool:
+        """判断用 ``start -> end`` 替换原路径段是否安全且代价可接受。
+
+        这里同时约束三件事：线段无碰撞、未知格数不增加、替换后的代价不明显变差。
+        """
         if not self._line_clear(start, end):
             return False
         line = self._line_cells(start, end)
@@ -666,6 +671,7 @@ class GridPlanner:
         return self._path_cost(line) <= self._path_cost(original) * 1.25 + 1e-9
 
     def _perpendicular_distance(self, point, start, end) -> float:
+        """点到世界坐标线段的垂距（米），用于 RDP 简化。"""
         px, pz = self.grid.world_of_index(*point)
         ax, az = self.grid.world_of_index(*start)
         bx, bz = self.grid.world_of_index(*end)

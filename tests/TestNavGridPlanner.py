@@ -31,6 +31,8 @@ def _cells(res):
 
 
 class TestCostModel(unittest.TestCase):
+    """覆盖未知格、墙距和前沿的代价模型。"""
+
     def test_prefers_free_detour_over_unknown_shortcut(self):
         """未知格按 risk_cost 加价：绕路走可行走比直穿未知划算。"""
         grid = _grid(["ooo",
@@ -115,6 +117,8 @@ class TestCostModel(unittest.TestCase):
 
 
 class TestCornerCutting(unittest.TestCase):
+    """验证规划器不会斜穿墙角。"""
+
     def test_path_does_not_cut_blocked_corner(self):
         grid = _grid(["o#",
                       "oo"])
@@ -139,6 +143,8 @@ class TestCornerCutting(unittest.TestCase):
 
 
 class TestSnapping(unittest.TestCase):
+    """覆盖不可通行起终点的吸附行为。"""
+
     def test_start_in_blocked_is_moved_with_note(self):
         grid = _grid(["###",
                       "#oo",
@@ -165,6 +171,8 @@ class TestSnapping(unittest.TestCase):
 
 
 class TestSafetyMargin(unittest.TestCase):
+    """验证墙距参数只影响偏好、不封死窄路。"""
+
     def test_margin_keeps_only_dangerous_route_available(self):
         """窄路不满足离墙偏好时仍可通行；没有替代路线时必须继续规划。"""
         grid = _grid(["#####",
@@ -194,6 +202,8 @@ class TestSafetyMargin(unittest.TestCase):
 
 
 class TestWaypoints(unittest.TestCase):
+    """覆盖航点简化与替代线安全性。"""
+
     def test_waypoints_world_coords_and_simplified(self):
         grid = _grid(["ooooo",
                       "ooooo"], origin=(10.0, 0.0, 20.0), cell_size=0.5)
@@ -229,6 +239,8 @@ class TestWaypoints(unittest.TestCase):
 
 
 class TestFailureDiagnostics(unittest.TestCase):
+    """覆盖规划失败原因和诊断字段。"""
+
     """失败原因必须能区分「策略性不可达」（关了穿越未知格）和「真被阻挡隔断」。"""
 
     def test_unknown_disabled_reason_names_the_switch(self):
@@ -271,6 +283,8 @@ class TestFailureDiagnostics(unittest.TestCase):
 
 
 class TestAdaptiveWeight(unittest.TestCase):
+    """覆盖触顶后的加权降级搜索。"""
+
     """精确搜索触顶后按 risk_cost 加权重搜：可行时保持最优，不可行时至少出路径。
 
     用的是全未知格的大片区域：未知格步进代价是 risk_cost 倍，而启发式只按最小代价 1

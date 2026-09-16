@@ -70,6 +70,8 @@ class _FakeTurnTask(MinimapHeadingMixin):
 
 
 class TestReadHeading(unittest.TestCase):
+    """覆盖箭头角到罗盘方位角的读取契约。"""
+
     def test_returns_bearing_and_score(self):
         task = _FakeTurnTask(facing=90.0)
         self.assertEqual(task.read_heading(), (90.0, 0.9))
@@ -87,6 +89,8 @@ class TestReadHeading(unittest.TestCase):
 
 
 class TestTurnToBearing(unittest.TestCase):
+    """覆盖闭环转向的轮数、误差和失败行为。"""
+
     def test_already_at_target_does_nothing(self):
         task = _FakeTurnTask(facing=90.0)
         res = task.turn_to_bearing(90.0)
@@ -181,6 +185,8 @@ class TestTurnToBearing(unittest.TestCase):
 
 
 class TestOneShotAndDiagnostics(unittest.TestCase):
+    """覆盖一轮到位判定和比例尺诊断。"""
+
     """目标是**一轮到位**（只按一次 W）；没到位时要给出能照着改的提示。"""
 
     def test_one_shot_when_coefficient_is_good(self):

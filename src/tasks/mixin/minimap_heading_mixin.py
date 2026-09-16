@@ -84,6 +84,7 @@ class MinimapHeadingMixin:
     # ------------------------------------------------------------------ #
     @staticmethod
     def minimap_heading_default_config() -> dict:
+        """返回朝向检测和转向相关配置的默认值。"""
         return {
             CONFIG_YAW_PER_PIXEL: DEFAULT_YAW_PER_PIXEL,
             CONFIG_W_HOLD: DEFAULT_W_HOLD,
@@ -96,6 +97,7 @@ class MinimapHeadingMixin:
 
     @staticmethod
     def minimap_heading_config_description() -> dict:
+        """返回朝向配置键的用户说明，供任务界面直接合并。"""
         return {
             CONFIG_YAW_PER_PIXEL: "转视角系数（度/像素，正数=鼠标右移方位角增大）；"
                                   "由「鼠标视角旋转系数标定」任务实测，取该任务 k 的绝对值",
@@ -126,7 +128,7 @@ class MinimapHeadingMixin:
         return bool(raw)
 
     def _init_minimap_heading_mixin(self):
-        """在任务 __init__ 里调用。"""
+        """初始化朝向状态；必须在任务 ``__init__`` 中调用且不启动任何线程。"""
         self._last_turn_result = None
 
     # ------------------------------------------------------------------ #

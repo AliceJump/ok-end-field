@@ -1,3 +1,16 @@
+# -*- coding: utf-8 -*-
+"""小地图定位常驻任务。
+
+该 TriggerTask 是融合定位状态的唯一生产者：持续采样小地图里程计、消费地图 WS、
+执行静止校准，并把最新快照暴露给导航、物品导航和实时位置测试任务。
+
+关键约束：
+
+- 定位实例必须常驻，不能因执行器短暂暂停或暂无消费者而清理 WS；
+- 所有消费者都应调用 ``minimap_position(frame=...)``，把同一帧交给该实例；
+- 导航只读取 ``position_trusted`` 为真的绝对坐标，重锚后必须等待静校准。
+"""
+
 from ok import TriggerTask
 
 from src.core.BaseEfTask import BaseEfTask
@@ -6,11 +19,12 @@ from src.tasks.mixin.minimap_position_mixin import MinimapPositionMixin
 
 
 class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
-    """统一维护小地图融合定位，供导航和其他实时任务只读消费。"""
+    """统一维护小地图融合定位，供导航和其他实时任务消费。"""
 
     requires_foreground = True
 
     def __init__(self, *args, **kwargs):
+        """注册触发任务元数据并初始化常驻定位状态。"""
         super().__init__(*args, **kwargs)
         self.name = "小地图定位"
         self.description = "持续融合小地图里程计、朝向和地图坐标，静止时自动校准"
@@ -47,6 +61,7 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
                 self.log_info(f"已迁移定位配置 {key}: {old_value!r}")
 
     def run(self):
+        """采样一拍定位并发布节流后的状态；本任务不结束自身。"""
         if not self.in_world():
             return False
         self.start_minimap_position(wait_stable=False)
@@ -97,4 +112,5 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
         return False
 
     def on_destroy(self):
+        """任务销毁时停止 WS 客户端和本地位置源。"""
         self.stop_minimap_position()

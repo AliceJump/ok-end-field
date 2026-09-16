@@ -1,4 +1,20 @@
-"""Pure waypoint follower for a planned navigation grid route."""
+"""导航路线跟随器：把规划航点转换成离散执行动作。
+
+本模块不读画面、不发按键，只根据“当前位置 + 朝向 + 时间”输出下一步动作。
+任务层负责执行 ``TURN / WALK / WAIT``，并在 ``REPLAN / STUCK`` 时重新规划或脱困。
+
+状态机大致顺序::
+
+    到达终点 -> DONE
+    偏航持续超限 -> REPLAN
+    朝向不可用 -> WAIT
+    朝向误差过大 -> TURN
+    持续行走但位移不足 -> STUCK
+    其余情况 -> WALK
+
+所有坐标都是世界系 ``(x, z)``，距离单位为米，角度为罗盘方位角（北 0、东 90，
+顺时针）。偏航采用“半径 + 持续时间”双重判定，避免定位单拍跳动立即触发重规划。
+"""
 
 from __future__ import annotations
 
@@ -34,6 +50,7 @@ def bearing_to_point(x: float, z: float, target_x: float, target_z: float) -> fl
 
 
 def distance_xz(a: tuple[float, float], b: tuple[float, float]) -> float:
+    """返回世界 XZ 平面上的欧氏距离。"""
     return math.hypot(float(a[0]) - float(b[0]), float(a[1]) - float(b[1]))
 
 
@@ -58,7 +75,12 @@ def point_segment_distance(
 
 @dataclass(frozen=True)
 class FollowerConfig:
-    """Tuning for path following. All distances are in world meters."""
+    """路线跟随参数。
+
+    距离均为世界米。``arrive_radius`` 控制中间航点切换，``goal_radius`` 控制最终到达；
+    ``off_route_radius`` 与 ``off_route_hold_s`` 必须同时满足才判定偏航，用于过滤定位
+    抖动。其余墙距、未知格风险和航点合并参数会原样传给 :class:`GridPlanner`。
+    """
 
     arrive_radius: float = 1.0
     goal_radius: float = 2.0
@@ -80,7 +102,11 @@ class FollowerConfig:
 
 @dataclass(frozen=True)
 class FollowerStep:
-    """One decision produced by :class:`GridRouteFollower`."""
+    """一次跟随决策。
+
+    ``action`` 是 ``WAIT/TURN/WALK/STUCK/REPLAN/DONE/FAILED`` 之一。其余字段是该动作的
+    诊断快照，调用方不应自行推导状态，避免与跟随器内部航点索引不一致。
+    """
 
     action: str
     waypoint: tuple[float, float] | None = None
@@ -97,9 +123,10 @@ class FollowerStep:
 
 
 class GridRouteFollower:
-    """Follow a :class:`~src.nav.grid_planner.PlanResult` without game I/O."""
+    """跟随 :class:`~src.nav.grid_planner.PlanResult`，不直接操作游戏。"""
 
     def __init__(self, grid: DenseGrid, config: FollowerConfig | None = None):
+        """创建跟随器；配置缺省时使用 :class:`FollowerConfig` 默认值。"""
         self.grid = grid
         self.config = config or FollowerConfig()
         self.planner = GridPlanner(
@@ -124,7 +151,7 @@ class GridRouteFollower:
         self._off_route_since: float | None = None
 
     def pause(self) -> None:
-        """Freeze motion tracking while the outer loop is not controlling movement."""
+        """暂停跟随状态；外层停止控制输入时应调用，避免把停走误判为卡住。"""
         self._reset_motion()
         self._off_route_since = None
 
@@ -135,7 +162,7 @@ class GridRouteFollower:
         *,
         time_budget_s: float | None = None,
     ) -> PlanResult:
-        """Plan a fresh route and reset waypoint progress."""
+        """重新规划并重置航点进度、卡住窗口与偏航计时。"""
         self.goal = (float(goal[0]), float(goal[1]))
         self._route_start = (float(start[0]), float(start[1]))
         self.plan_result = self.planner.plan(start, goal, time_budget_s=time_budget_s)
@@ -153,7 +180,16 @@ class GridRouteFollower:
         heading: float | None,
         now: float,
     ) -> FollowerStep:
-        """Turn/pause/walk decision for the current position and heading."""
+        """根据当前位置和朝向生成下一步动作。
+
+        Args:
+            position: 当前融合位置 ``(x, z)``，世界米。
+            heading: 当前罗盘方位角；``None`` 表示朝向不可用。
+            now: 单调递增秒数，用于偏航持续时间和卡住窗口。
+
+        Returns:
+            :class:`FollowerStep`。位置不可用、规划失败或尚未规划时返回 ``FAILED``。
+        """
         result = self.plan_result
         if result is None or not result.ok or not result.waypoints:
             return FollowerStep(FAILED, reason="尚无有效导航路径")
@@ -358,6 +394,7 @@ class GridRouteFollower:
         return self.planner.line_risk(start_cell, end_cell) <= self.planner.line_risk(anchor_cell, end_cell)
 
     def _advance_initial_waypoints(self, start: tuple[float, float]) -> None:
+        """规划后跳过起点附近已经到达的初始航点。"""
         waypoints = self.plan_result.waypoints if self.plan_result else []
         while (
             self.waypoint_index < len(waypoints) - 1
@@ -366,6 +403,7 @@ class GridRouteFollower:
             self.waypoint_index += 1
 
     def _update_stuck(self, position: tuple[float, float], now: float) -> bool:
+        """按时间窗口更新卡住判定；窗口内移动足够远就重置窗口。"""
         if self._move_started_at is None or self._move_start_pos is None:
             self._move_started_at = float(now)
             self._move_start_pos = position
@@ -379,6 +417,7 @@ class GridRouteFollower:
         return float(now) - self._move_started_at >= self.config.stuck_window_s
 
     def _reset_motion(self) -> None:
+        """清空卡住窗口；不修改航点索引或偏航状态。"""
         self._move_started_at = None
         self._move_start_pos = None
 
@@ -396,6 +435,7 @@ class GridRouteFollower:
         shortcut_distance: float | None = None,
         reason: str = "",
     ) -> FollowerStep:
+        """构造完整诊断字段的动作结果。"""
         result = self.plan_result
         count = len(result.waypoints) if result is not None else 0
         return FollowerStep(

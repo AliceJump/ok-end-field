@@ -1,16 +1,25 @@
-"""Grid path planning and in-game route execution.
+"""网格规划与游戏内导航执行。
 
-The grid stores ``0=未知 / 1=可行走 / 2=阻挡``. Its world mapping is
-``world = origin + (i, j) * cell_size``: rows advance along world Z and columns
-advance along world X. Planned waypoints are therefore ``(x, z)`` cell centers.
+网格存 ``0=未知 / 1=可行走 / 2=阻挡``，世界换算为
+``world = origin + (i, j) * cell_size``：行沿世界 Z、列沿世界 X。
+规划航点因此统一使用 ``(x, z)`` 世界坐标。
 
-This mixin joins three existing pieces:
+本 mixin 只负责编排，不拥有定位源：
 
-- ``MinimapPositionTask`` provides the shared live world ``(x, z)`` and heading;
-- ``GridPlanner`` provides an A* route over ``*.grid.npz``;
-- ``GridRouteFollower`` turns the route into turn/walk/wait/stuck decisions.
+- ``MinimapPositionTask`` 提供共享的实时 ``(x, z)``、朝向和可信状态；
+- ``GridPlanner`` 在 ``*.grid.npz`` 上做 A*；
+- ``GridRouteFollower`` 输出 ``TURN/WALK/WAIT/STUCK/REPLAN/DONE``；
+- 本层把动作转换为鼠标、键盘输入，并处理校准、重规划和脱困。
 
-The game-facing layer only executes those decisions through mouse/keyboard input.
+导航主循环的信任顺序不可颠倒：
+
+1. 等绝对坐标锚定；
+2. 等 ``position_trusted=True``，重锚后必须先做静止校准；
+3. 等本拍有有效里程计样本；
+4. 再允许 follower 规划或继续行走。
+
+偏航恢复优先原地校准；若当前位置不属于已知 free 格，则先返回本次实际走过的最近
+已知格，校准后再重新规划。
 """
 
 from __future__ import annotations
@@ -107,10 +116,15 @@ CONFIG_GRID_TICK = "控制周期(秒)"
 
 
 class GridNavigationMixin(MinimapHeadingMixin):
-    """Plan on ``*.grid.npz`` and drive the character toward a world ``(x, z)``."""
+    """在 ``*.grid.npz`` 上规划并驱动角色前往世界坐标 ``(x, z)``。
+
+    定位由共享的 ``MinimapPositionTask`` 提供；本类只消费状态、执行动作和维护本次
+    导航的重规划/脱困/校准计数。各动作的纯决策逻辑在 ``GridRouteFollower``。
+    """
 
     @staticmethod
     def grid_navigation_default_config() -> dict:
+        """返回网格导航配置的默认值。"""
         return {
             # 旧定位配置暂时保留，供 MinimapPositionTask 首次启动时迁移。
             **MinimapPositionMixin.minimap_position_default_config(),
@@ -148,6 +162,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
 
     @staticmethod
     def grid_navigation_config_description() -> dict:
+        """返回导航配置键的用户说明。"""
         return {
             **MinimapPositionMixin.minimap_position_config_description(),
             CONFIG_GRID_DIR: "导航网格目录，默认 assets/nav",
@@ -285,7 +300,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
         grid_dir: str | None = None,
         zoom: str | None = None,
     ) -> PlanResult:
-        """Plan a world-space route without controlling the game."""
+        """只规划世界坐标路线，不执行任何游戏输入。"""
         follower, result = self._create_grid_route(
             start_xz,
             goal_xz,
@@ -311,10 +326,16 @@ class GridNavigationMixin(MinimapHeadingMixin):
         grid_dir: str | None = None,
         zoom: str | None = None,
     ) -> bool:
-        """Plan and follow a route to a world ``(x, z)`` target.
+        """规划并执行到世界坐标 ``(x, z)`` 的路线。
 
-        Returns ``True`` only after the fused minimap position enters the final
-        goal radius. All keyboard input is released on every exit path.
+        只有融合定位进入最终 ``goal_radius`` 才返回 True。任何退出路径都会松开
+        ``W``。循环内按以下优先级处理：
+
+        - 坐标未锚定、定位不可信、没有有效里程计样本时停车等待；
+        - 累计移动或到达航点触发周期校准时停车等待静止校准；
+        - 偏航时根据当前位置决定原地校准或返回最近走过的已知格；
+        - 卡住时按后退、侧移、跳跃的顺序脱困；
+        - 其余动作交给 ``GridRouteFollower`` 产生。
         """
         goal = (float(goal_xz[0]), float(goal_xz[1]))
         limit = self._cfg_float(CONFIG_GRID_TIMEOUT, 180.0) if timeout is None else float(timeout)
@@ -338,6 +359,8 @@ class GridNavigationMixin(MinimapHeadingMixin):
         next_sync_retry_at = 0.0
         waypoints_since_calibration = 0
         recovery_goal: tuple[float, float] | None = None
+        # 本次导航实际走过的已知格。只用于偏航后寻找安全返回点；每次 WS 重锚后
+        # 清空，因为历史坐标可能带着重锚前的定位误差。
         visited_cells: dict[tuple[int, int], tuple[float, float]] = {}
         last_sync_seq = 0
 
@@ -354,6 +377,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
                 self._log_grid_navigation_debug(state, map_id=actual_map, tag="导航")
                 sync_seq = int(state.get("sync_seq") or 0)
                 if sync_seq != last_sync_seq:
+                    # 真实静校准会整体平移世界坐标，旧的历史格不再是可靠的返回目标。
                     visited_cells.clear()
                     last_sync_seq = sync_seq
                 if x is None or z is None:
@@ -361,6 +385,8 @@ class GridNavigationMixin(MinimapHeadingMixin):
                     self.sleep(tick)
                     continue
                 if not state.get("position_trusted", True):
+                    # 重锚后里程计“有位移样本”不等于绝对坐标可信。必须先停车，
+                    # 等 WS 静校准恢复 position_trusted，再允许重新规划。
                     self._wait_for_grid_position(
                         f"等待定位重新校准: {state.get('trust_reason') or 'untrusted'}"
                     )
@@ -476,6 +502,8 @@ class GridNavigationMixin(MinimapHeadingMixin):
                         )
                     self._grid_nav_follower = None
                     if current_known:
+                        # 人仍站在已知 free 格：优先原地静止校准，消除定位偏差后
+                        # 再从可信位置重新规划。
                         recovery_goal = None
                         synced = self._wait_for_minimap_sync(
                             position_service,
@@ -488,6 +516,8 @@ class GridNavigationMixin(MinimapHeadingMixin):
                         if not synced:
                             self.log_warning("偏航后的静止校准未完成，继续重规划")
                     elif recovery_target is not None:
+                        # 已偏离已知区域：先回到本次实际走过的格，不能直接相信
+                        # 当前坐标去规划一条可能穿墙的新路线。
                         recovery_goal = recovery_target
                         self.log_info(
                             "当前位置不在已知 free 格，先导航回最近走过的已知格再校准"
@@ -521,6 +551,8 @@ class GridNavigationMixin(MinimapHeadingMixin):
                         calibration_interval > 0
                         and waypoints_since_calibration >= calibration_interval
                     ):
+                        # 航点间隔校准是主动停车点；WS 周期约 5 秒，等待函数会
+                        # 在停车期间持续采样，直到完成真实重锚或确认已对齐。
                         synced = self._wait_for_minimap_sync(
                             position_service,
                             int(state.get("sync_seq") or 0),
@@ -693,6 +725,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
         position: tuple[float, float],
         visited_cells: dict[tuple[int, int], tuple[float, float]],
     ) -> None:
+        """记录当前定位所属的已知 free 格，供偏航恢复使用。"""
         grid = getattr(follower, "grid", None)
         if grid is None:
             return
@@ -705,6 +738,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
         position: tuple[float, float],
         visited_cells: dict[tuple[int, int], tuple[float, float]],
     ) -> tuple[float, float] | None:
+        """返回距离当前位置最近的历史已知格中心。"""
         if not visited_cells:
             return None
         return min(
@@ -1001,7 +1035,11 @@ class GridNavigationMixin(MinimapHeadingMixin):
         deadline: float,
         tick: float,
     ) -> bool:
-        """短暂停车，让共享定位服务完成一次静止自动校准。"""
+        """停车采样，直到定位服务完成一次静止校准。
+
+        返回 True 包含两种情况：发生了真实重锚（``sync_seq`` 增加），或当前估计
+        已与 WS 对齐（``sync_checked``）。超时返回 False，并记录静止判定诊断。
+        """
         self._set_grid_walking(False)
         if self._grid_nav_follower is not None:
             self._grid_nav_follower.pause()

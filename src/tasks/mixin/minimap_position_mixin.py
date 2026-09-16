@@ -131,6 +131,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
     # ------------------------------------------------------------------ #
     @staticmethod
     def minimap_position_default_config() -> dict:
+        """返回小地图定位配置的默认值。"""
         return {
             CONFIG_SCALE: DEFAULT_SCALE,
             CONFIG_MAP_TO_WORLD: DEFAULT_MAP_TO_WORLD,
@@ -144,6 +145,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
 
     @staticmethod
     def minimap_position_config_description() -> dict:
+        """返回定位配置键的用户说明，包含矩阵方向和静止校准语义。"""
         return {
             CONFIG_SCALE: "小地图比例尺（米/像素），里程计位移换算用",
             CONFIG_MAP_TO_WORLD: "地图系像素->世界系米的 2x2 矩阵，逗号4值 a11,a12,a21,a22；"
@@ -171,9 +173,11 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
         self._minimap_started = False
         self._minimap_last_state: dict | None = None
         self._minimap_sync_seq = 0
+        # 距离上次真实校准的累计位移，用于触发周期性停车校准。
         self._minimap_distance_since_sync = 0.0
         self._minimap_prev_position: tuple[float, float] | None = None
         self._minimap_prev_map_id: str | None = None
+        # 绝对坐标信任位：重锚/换图/里程计守卫触发后清零，下一次静校准恢复。
         self._minimap_position_trusted = False
         self._minimap_trust_reason = "uninitialized"
 

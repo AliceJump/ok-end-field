@@ -24,6 +24,8 @@ from src.tasks.mixin.grid_navigation_mixin import (
 
 
 class _FakeGridTask(GridNavigationMixin):
+    """用可控位置、时间和输入事件驱动导航循环的测试任务。"""
+
     def __init__(self, grid_path: Path):
         self.config = {
             **self.grid_navigation_default_config(),
@@ -132,6 +134,8 @@ class _FakeGridTask(GridNavigationMixin):
 
 
 class TestGridNavigationMixin(unittest.TestCase):
+    """覆盖规划、跟随、校准、偏航恢复和脱困的集成行为。"""
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.path = Path(self.tmp.name) / "test_4.grid.npz"

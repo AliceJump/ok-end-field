@@ -46,22 +46,33 @@ GRID_SUFFIX = ".grid.npz"
 
 
 class Report:
+    """单个网格文件的诊断结果。
+
+    ``info`` 是正常统计，``warns`` 是可人工判断的可疑点，``errors`` 是硬错误。
+    只要存在 ``errors``，命令行最终退出码就是非零。
+    """
+
     def __init__(self, name: str):
+        """创建指定文件名的空报告。"""
         self.name = name
         self.errors: list[str] = []
         self.warns: list[str] = []
         self.lines: list[str] = []
 
     def info(self, text: str) -> None:
+        """记录一条普通统计信息。"""
         self.lines.append(text)
 
     def error(self, text: str) -> None:
+        """记录硬错误；会导致该文件校验不通过。"""
         self.errors.append(text)
 
     def warn(self, text: str) -> None:
+        """记录需要人工判断的可疑点，不影响通过状态。"""
         self.warns.append(text)
 
     def dump(self) -> None:
+        """按统计、可疑点、错误的顺序输出报告。"""
         head = f"=== {self.name}"
         print(head)
         for line in self.lines:
@@ -144,6 +155,7 @@ def load_raw(path: Path, rep: Report):
 
 
 def report_cells(cells: np.ndarray, meta: dict, rep: Report) -> None:
+    """输出形状、三态占比、世界范围和连通性诊断。"""
     if cells is None or meta is None or meta["cell_size"] is None or meta["origin"] is None:
         return
     h, w = int(cells.shape[0]), int(cells.shape[1])
@@ -334,6 +346,7 @@ def compare_legacy(cells: np.ndarray, meta: dict, legacy_path: Path, rep: Report
 
 
 def verify_one(path: Path, against: Path | None) -> Report:
+    """校验单个网格；可选与旧版 JSON 逐格对拍。"""
     rep = Report(path.name)
     if not path.name.endswith(GRID_SUFFIX):
         rep.error(f"文件名必须是 *{GRID_SUFFIX}")
@@ -346,6 +359,7 @@ def verify_one(path: Path, against: Path | None) -> Report:
 
 
 def collect(paths: list[Path]) -> list[Path]:
+    """展开输入目录中的 ``*.grid.npz``，保持每目录排序稳定。"""
     out: list[Path] = []
     for p in paths:
         if p.is_dir():
@@ -358,6 +372,7 @@ def collect(paths: list[Path]) -> list[Path]:
 
 
 def main(argv: list[str] | None = None) -> int:
+    """命令行入口；返回进程退出码，0 表示全部通过。"""
     ap = argparse.ArgumentParser(description="独立校验导航网格 *.grid.npz")
     ap.add_argument("paths", nargs="+", type=Path, help="npz 文件或目录")
     ap.add_argument("--against", type=Path, default=None,

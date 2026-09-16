@@ -1,3 +1,11 @@
+# -*- coding: utf-8 -*-
+"""扩展 ok-script 浮点配置控件的数值范围。
+
+上游 ``LabelAndDoubleSpinBox`` 未显式设置范围，Qt 默认会限制为
+``0.00..99.99``。世界坐标、比例尺和角度都可能需要负数或更大数值，本补丁在控件
+构造后放宽范围并重新读取配置值，避免用户首次交互时把已选值钳成 0。
+"""
+
 from __future__ import annotations
 
 _PATCH_INSTALLED = False
@@ -26,6 +34,7 @@ def install_double_spin_range_patch():
     orig_init = LabelAndDoubleSpinBox.__init__
 
     def patched_init(self, config_desc, config, key):
+        """替换上游构造器：先正常初始化，再放宽范围并回读原配置值。"""
         orig_init(self, config_desc, config, key)
         self.spin_box.setRange(-99999999.0, 99999999.0)
         # orig_init 里的 update_value() 是在默认范围 [0, 99.99] 下执行的，负数/

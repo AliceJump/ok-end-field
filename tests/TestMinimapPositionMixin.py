@@ -98,6 +98,8 @@ class _FakeTask(MinimapPositionMixin):
 
 
 class TestParseMapToWorld(unittest.TestCase):
+    """覆盖轴映射字符串解析。"""
+
     def test_parses_and_rejects(self):
         self.assertEqual(parse_map_to_world("0.67,0,0,-0.67"), [[0.67, 0.0], [0.0, -0.67]])
         for bad in ("", "1,2,3", "a,b,c,d", None):
@@ -105,6 +107,8 @@ class TestParseMapToWorld(unittest.TestCase):
 
 
 class TestMinimapPositionMixin(unittest.TestCase):
+    """覆盖生命周期、融合状态和对外字段契约。"""
+
     def setUp(self):
         self.task = _FakeTask()
         self.frame = _frame_at(0)

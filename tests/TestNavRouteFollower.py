@@ -26,6 +26,8 @@ def _line_grid(size: int = 11) -> DenseGrid:
 
 
 class TestBearing(unittest.TestCase):
+    """覆盖方位角与点到线段距离。"""
+
     def test_cardinal_directions(self):
         self.assertAlmostEqual(bearing_to_point(0.0, 0.0, 0.0, 1.0), 0.0)
         self.assertAlmostEqual(bearing_to_point(0.0, 0.0, 1.0, 0.0), 90.0)
@@ -39,6 +41,8 @@ class TestBearing(unittest.TestCase):
 
 
 class TestGridRouteFollower(unittest.TestCase):
+    """覆盖跟随器状态机和偏航迟滞。"""
+
     def setUp(self):
         self.follower = GridRouteFollower(
             _line_grid(),

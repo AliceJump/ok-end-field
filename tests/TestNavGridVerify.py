@@ -27,6 +27,8 @@ def _cells(rows):
 
 
 class TestSingleCellFacts(unittest.TestCase):
+    """覆盖单格孤立和围死诊断。"""
+
     def test_free_walled_in_all_eight(self):
         """可行走格八邻全是阻挡 = 真被困（唯一支持"多半是误点"的证据）。"""
         facts = _single_cell_facts(_cells(["###",
@@ -76,6 +78,8 @@ class TestSingleCellFacts(unittest.TestCase):
 
 
 class TestComponents(unittest.TestCase):
+    """覆盖连通块统计与禁斜穿规则。"""
+
     def test_two_bases_differ_when_unknown_bridges(self):
         """两个口径会给出不同块数：未知格能把"可行走到不了"的两块连起来。"""
         cells = _cells(["o.o"])

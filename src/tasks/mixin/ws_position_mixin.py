@@ -106,6 +106,12 @@ class WsPositionMixin:
         self._map_ws_last_position_log_xz = None
 
     def _should_log_map_position(self, map_id: str, x: float, z: float) -> bool:
+        """判断是否应输出一条地图 WS 位置日志。
+
+        位置流本身可能非常频繁；同一地图、近距离且未到心跳间隔时只更新状态，
+        不打印。地图切换、单次跳变超过 50m、debug 模式 5 秒心跳、正常模式
+        30 秒心跳会放行日志。
+        """
         now = time.time()
         map_changed = map_id != self._map_ws_last_position_log_map
         last_xz = self._map_ws_last_position_log_xz
@@ -404,6 +410,11 @@ class WsPositionMixin:
         return True
 
     def _map_ws_should_stop_for_idle_consumer(self) -> bool:
+        """判断无消费者时是否应自动关闭地图 WS。
+
+        ``timeout <= 0`` 表示常驻模式，永不因空闲停止，供小地图定位 TriggerTask
+        持续生产数据使用。
+        """
         last_consume_at = float(getattr(self, "_map_ws_last_consume_at", 0.0) or 0.0)
         timeout = float(getattr(self, "_map_ws_consumer_idle_timeout", 0.0) or 0.0)
         if timeout <= 0:

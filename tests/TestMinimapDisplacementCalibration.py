@@ -29,6 +29,8 @@ def _records_from(world_points, *, to_px, seg=0, map_id="m1"):
 
 
 class TestFitScaleAxis(unittest.TestCase):
+    """覆盖位移标定中的比例尺和轴矩阵拟合。"""
+
     #: 真实比例尺 米/像素
     SCALE = 0.67
 
@@ -99,6 +101,8 @@ class TestFitScaleAxis(unittest.TestCase):
 
 
 class _StubOd:
+    """记录标定输入并模拟里程计接口。"""
+
     def __init__(self, px=(0.0, 0.0)):
         self._px = (float(px[0]), float(px[1]))
 
@@ -122,6 +126,8 @@ def _make_task(px=(0.0, 0.0)):
 
 
 class TestSampleOnceSegmenting(unittest.TestCase):
+    """覆盖位移标定采样分段。"""
+
     """重锚/换地图会清零里程计，必须切段——这是标定精度的关键。"""
 
     @staticmethod

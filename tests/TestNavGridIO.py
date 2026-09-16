@@ -36,6 +36,8 @@ def _grid(rows, *, origin=(10.0, 0.0, 20.0), cell_size=1.0, map_name="t", zoom="
 
 
 class TestGridMeta(unittest.TestCase):
+    """覆盖网格元数据校验和序列化。"""
+
     def test_json_round_trip(self):
         meta = GridMeta(map_name="base01", zoom="4", origin=(-127.74, -10.0, -86.47),
                         cell_size=1.0, source="x")
@@ -61,6 +63,8 @@ class TestGridMeta(unittest.TestCase):
 
 
 class TestDenseGridValidation(unittest.TestCase):
+    """覆盖非法网格输入。"""
+
     def test_rejects_bad_state_values(self):
         with self.assertRaises(ValueError):
             DenseGrid(np.array([[0, 1], [2, 7]], dtype=np.uint8))
@@ -77,6 +81,8 @@ class TestDenseGridValidation(unittest.TestCase):
 
 
 class TestCoordinates(unittest.TestCase):
+    """覆盖世界坐标与数组下标换算。"""
+
     def setUp(self):
         # 3x2，origin=(10,0,20)，cell=1 → x:10~13, z:20~22
         self.grid = _grid(["ooo", "ooo"], origin=(10.0, 0.0, 20.0), cell_size=1.0)
@@ -110,6 +116,8 @@ class TestCoordinates(unittest.TestCase):
 
 
 class TestNeighbors(unittest.TestCase):
+    """覆盖四/八邻域和禁斜穿墙角。"""
+
     def test_four_and_eight(self):
         grid = _grid(["ooo", "ooo", "ooo"])
         self.assertEqual(len(grid.neighbors(1, 1, diagonal=False)), 4)
@@ -129,6 +137,8 @@ class TestNeighbors(unittest.TestCase):
 
 
 class TestClearance(unittest.TestCase):
+    """覆盖贴墙安全距离与前沿距离。"""
+
     def test_distance(self):
         grid = _grid(["ooo", "o#o", "ooo"])
         dist = grid.clearance()
@@ -183,6 +193,8 @@ class TestClearance(unittest.TestCase):
 
 
 class TestNearestFree(unittest.TestCase):
+    """覆盖最近可行走格查找。"""
+
     def test_finds_closest(self):
         grid = _grid(["###", "#o#", "###"])
         self.assertEqual(grid.nearest_free(0, 0), (1, 1))
@@ -193,6 +205,8 @@ class TestNearestFree(unittest.TestCase):
 
 
 class TestRoundTrip(unittest.TestCase):
+    """覆盖 npz 网格读写往返。"""
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.dir = Path(self.tmp.name)
@@ -244,6 +258,8 @@ class TestRoundTrip(unittest.TestCase):
 
 
 class TestNewGrid(unittest.TestCase):
+    """覆盖空网格构造。"""
+
     def test_defaults_to_unknown(self):
         grid = new_grid((3, 4), origin=(1.0, 0.0, 2.0), cell_size=0.5, map_name="m")
         self.assertEqual(grid.shape, (3, 4))

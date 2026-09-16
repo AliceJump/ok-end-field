@@ -138,9 +138,11 @@ class GridMeta:
             raise ValueError(f"cell_size 必须为有限正数，当前 {self.cell_size!r}")
 
     def to_dict(self) -> dict:
+        """返回可直接 JSON 序列化的元数据副本。"""
         return {f.name: getattr(self, f.name) for f in fields(self)}
 
     def to_json(self) -> str:
+        """序列化为 UTF-8 JSON；中文溯源字段不转义。"""
         return json.dumps(self.to_dict(), ensure_ascii=False)
 
     @classmethod
@@ -207,9 +209,11 @@ class DenseGrid:
     # ------------------------------------------------------------------ #
     @property
     def shape(self) -> tuple[int, int]:
+        """返回 ``(行数, 列数)``，即 ``(world_z 方向长度, world_x 方向长度)``。"""
         return int(self.cells.shape[0]), int(self.cells.shape[1])
 
     def counts(self) -> dict:
+        """返回三态计数，键是中文状态名，可直接用于诊断日志。"""
         return {CELL_NAMES[s]: int((self.cells == s).sum()) for s in
                 (CELL_UNKNOWN, CELL_FREE, CELL_BLOCKED)}
 
@@ -228,6 +232,7 @@ class DenseGrid:
     # 坐标换算
     # ------------------------------------------------------------------ #
     def in_bounds(self, i: int, j: int) -> bool:
+        """判断数组下标 ``(i, j)`` 是否位于网格内部。"""
         h, w = self.shape
         return 0 <= int(i) < h and 0 <= int(j) < w
 
@@ -258,9 +263,11 @@ class DenseGrid:
         return int(self.cells[int(i), int(j)])
 
     def is_free(self, i: int, j: int) -> bool:
+        """判断是否为已知可行走格；越界按阻挡处理。"""
         return self.state(i, j) == CELL_FREE
 
     def is_blocked(self, i: int, j: int) -> bool:
+        """判断是否为阻挡格；越界也视为阻挡。"""
         return self.state(i, j) == CELL_BLOCKED
 
     # ------------------------------------------------------------------ #
