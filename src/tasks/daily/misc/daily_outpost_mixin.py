@@ -69,7 +69,8 @@ class DailyOutpostMixin:
         ]
 
         goods_patterns = [
-            re.compile(get_world_map_text(self.lang, good)) for good in get_goods_by_outpost_name(outpost_name)
+            re.compile(re.escape(get_world_map_text(self.lang, good)))
+            for good in get_goods_by_outpost_name(outpost_name)
         ]
 
         max_attempts = 7
