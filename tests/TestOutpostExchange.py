@@ -3,12 +3,13 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from src.tasks.daily.daily_routine_mixin import DailyRoutineFeature
+from src.tasks.daily.misc.daily_outpost_mixin import _edit_distance
 
 
 class TestOutpostExchange(unittest.TestCase):
     def make_exchange_feature(self, ticket_numbers, goods=None):
         feature = object.__new__(DailyRoutineFeature)
-        available_goods = goods or [SimpleNamespace(name="息壤玉葫芦")]
+        available_goods = goods if goods is not None else [SimpleNamespace(name="息壤玉葫芦")]
         feature.lang = SimpleNamespace(
             daily_routine_mixin=SimpleNamespace(
                 k_bb6c696b="更换",
@@ -35,6 +36,136 @@ class TestOutpostExchange(unittest.TestCase):
         feature.wait_click_feature = Mock(return_value=True)
         feature.wait_pop_up = Mock(return_value=False)
         return feature
+
+    def test_edit_distance_counts_insertions_deletions_and_substitutions(self):
+        cases = [
+            ("", "", 0),
+            ("", "息壤", 2),
+            ("息壤龙泡泡", "息壤龙泡泡", 0),
+            ("息壤龙泡泡", "重息壤龙泡泡", 1),
+            ("息壤龙泡泡", "息壤龙炮泡", 1),
+            ("甲乙", "乙甲", 2),
+            ("kitten", "sitting", 3),
+        ]
+        for left, right, expected in cases:
+            with self.subTest(left=left, right=right):
+                self.assertEqual(_edit_distance(left, right), expected)
+                self.assertEqual(_edit_distance(right, left), expected)
+
+    def test_activity_goods_choose_nearest_candidate(self):
+        cases = [
+            ("息壤龙泡泡", "息壤龙泡泡"),
+            ("|息壤龙泡泡", "息壤龙泡泡"),
+            ("重息壤龙泡泡", "重息壤龙泡泡"),
+            ("|重息壤龙泡泡", "重息壤龙泡泡"),
+            ("重息壤龙泡", "重息壤龙泡泡"),
+            ("息壤龙泡", "息壤龙泡泡"),
+            ("息壤龙炮泡", "息壤龙泡泡"),
+            ("息壤龙小泡泡", "息壤龙泡泡"),
+            ("息壤龙泡泡货品", "息壤龙泡泡"),
+            ("｜赫铜零件丨", "赫铜零件"),
+            ("息壤葫芦", "息壤葫芦"),
+            ("|息壤玉葫芦", "息壤玉葫芦"),
+            ("息壤玉葫", "息壤玉葫芦"),
+        ]
+        for ocr_name, expected_name in cases:
+            with self.subTest(ocr_name=ocr_name):
+                feature = self.make_exchange_feature([1000, 999], [SimpleNamespace(name=ocr_name)])
+
+                with patch(
+                    "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+                    side_effect=lambda lang, text: text,
+                ):
+                    feature.perform_outpost_exchange(
+                        "天王坪援建点",
+                        priority_list=[expected_name],
+                        only_priority_goods=True,
+                    )
+
+                feature.plus_max.assert_called_once()
+                selected_good = feature.click.call_args_list[0].args[0]
+                self.assertEqual(selected_good.name, expected_name)
+
+    def test_matching_keeps_length_condition_without_substring_or_distance_limit(self):
+        cases = [
+            ("甲", ["甲", "乙"], None),
+            ("甲乙", ["甲乙丙丁"], None),
+            ("甲乙", ["甲乙丙丁", "丙丁"], "丙丁"),
+            ("甲乙", ["丙丁戊"], "丙丁戊"),
+            ("甲乙", [], None),
+            ("丁丙乙甲", ["甲乙丙丁", "丁丙乙戊"], "丁丙乙戊"),
+        ]
+        for text, candidates, expected in cases:
+            with self.subTest(text=text, candidates=candidates):
+                feature = self.make_exchange_feature([1000, 999], [SimpleNamespace(name=text)])
+                with (
+                    patch("src.tasks.daily.misc.daily_outpost_mixin.goods_dict", {"武陵": candidates}),
+                    patch(
+                        "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+                        side_effect=lambda lang, text: text,
+                    ),
+                ):
+                    feature.perform_outpost_exchange("天王坪援建点")
+                if expected is None:
+                    feature.click.assert_not_called()
+                    feature.plus_max.assert_not_called()
+                else:
+                    self.assertEqual(feature.click.call_args_list[0].args[0].name, expected)
+                    feature.plus_max.assert_called_once()
+
+    def test_equal_distances_keep_longer_candidate_first(self):
+        feature = self.make_exchange_feature([1000, 999], [SimpleNamespace(name="货物甲")])
+        with (
+            patch("src.tasks.daily.misc.daily_outpost_mixin.goods_dict", {"武陵": ["货物", "货物甲乙"]}),
+            patch(
+                "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+                side_effect=lambda lang, text: text,
+            ),
+        ):
+            feature.perform_outpost_exchange("天王坪援建点")
+        self.assertEqual(feature.click.call_args_list[0].args[0].name, "货物甲乙")
+
+    def test_both_activity_goods_follow_exact_priority(self):
+        names = ["重息壤龙泡泡", "息壤龙泡泡"]
+        for preferred in names:
+            with self.subTest(preferred=preferred):
+                feature = self.make_exchange_feature([1000, 999], [SimpleNamespace(name=name) for name in names])
+                with patch(
+                    "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+                    side_effect=lambda lang, text: text,
+                ):
+                    feature.perform_outpost_exchange(
+                        "天王坪援建点",
+                        priority_list=[preferred],
+                        only_priority_goods=True,
+                    )
+                self.assertEqual(feature.click.call_args_list[0].args[0].name, preferred)
+
+    def test_empty_selection_does_not_exchange_goods(self):
+        cases = [
+            ("no_goods", [], [], set()),
+            ("empty_ocr_text", [""], [], set()),
+            ("only_card_borders", ["|｜丨"], [], set()),
+            ("no_priority_match", ["重息壤龙泡泡"], ["息壤龙泡泡"], set()),
+            ("all_excluded", ["息壤玉葫芦"], [], {"息壤玉葫芦"}),
+        ]
+        for label, goods, priority_list, excluded_goods in cases:
+            with self.subTest(reason=label):
+                feature = self.make_exchange_feature([1000], [SimpleNamespace(name=name) for name in goods])
+
+                with patch(
+                    "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+                    side_effect=lambda lang, text: text,
+                ):
+                    feature.perform_outpost_exchange(
+                        "天王坪援建点",
+                        priority_list=priority_list,
+                        excluded_goods=excluded_goods,
+                        only_priority_goods=True,
+                    )
+
+                feature.plus_max.assert_not_called()
+                feature.click.assert_not_called()
 
     def test_full_good_names_use_exact_priority_matching(self):
         feature = self.make_exchange_feature(
