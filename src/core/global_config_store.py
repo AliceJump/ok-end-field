@@ -16,6 +16,7 @@ from src.core.BattleConfig import (
     BATTLE_CONFIG_TYPE,
     DEFAULT_BATTLE_CONFIG,
 )
+from src.core.NavConfig import DEFAULT_NAV_CONFIG, NAV_CONFIG_DESCRIPTION, NAV_CONFIG_NAME
 from src.data.delivery_area import DELIVERY_AREA_CONFIG
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING, stages_dict
 from src.icons import Icons
@@ -100,11 +101,19 @@ zip_line_config_option = ConfigOption(
     config_type=ZIP_LINE_CONFIG_TYPE,
     icon=Icons.Zipline,
 )
+nav_config_option = ConfigOption(
+    NAV_CONFIG_NAME,
+    DEFAULT_NAV_CONFIG,
+    description="导航配置：小地图定位的真值来源，以及按画面分辨率自适应的比例尺/轴映射",
+    config_description=NAV_CONFIG_DESCRIPTION,
+    icon=Icons.Navigation,
+)
 GLOBAL_CONFIG_OPTIONS = [
     key_config_option,
     battle_config_option,
     ensure_main_once_action_sleep_option,
     zip_line_config_option,
+    nav_config_option,
 ]
 
 _LOCK = threading.Lock()

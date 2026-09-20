@@ -10,13 +10,14 @@
 
 不需要游戏窗口，仅依赖 numpy/opencv。
 """
-import cv2
-import numpy as np
 import time
 import unittest
 
+import cv2
+import numpy as np
+
+from src.core.NavConfig import DEFAULT_NAV_CONFIG
 from src.tasks.mixin.minimap_position_mixin import (
-    DEFAULT_MAP_TO_WORLD,
     MinimapPositionMixin,
     parse_map_to_world,
 )
@@ -47,15 +48,14 @@ class _FakeTask(MinimapPositionMixin):
 
     def __init__(self):
         self.width, self.height = W, H
+        # 比例尺/轴映射/真值来源已移到全局「导航配置」，任务侧不再有这些键
         self.config = {
-            "比例尺(米/像素)": 0.6703,
-            "轴映射(逗号4值)": DEFAULT_MAP_TO_WORLD,
-            "真值content": "",
-            "真值地图账号": "",
             "WS等待稳定秒数": 0.2,
             "WS稳定最小位置数": 2,
             "朝向最低分数": 0.6,
         }
+        # 固定住全局导航配置，避免测试依赖 configs/ 下的真实文件
+        self.nav_config = dict(DEFAULT_NAV_CONFIG)
         self._t = 0.0
         self.logs = []
         self._payload = None
@@ -64,6 +64,10 @@ class _FakeTask(MinimapPositionMixin):
         self._ensure_ws_position_source = lambda cred: None
 
     # --- 任务侧接口 ---
+    def _nav_config(self):
+        """覆盖掉真实全局配置读取：测试要的是确定值，不是 configs/ 下的文件内容。"""
+        return self.nav_config
+
     def active_time(self):
         return self._t
 
@@ -187,20 +191,36 @@ class TestMinimapPositionMixin(unittest.TestCase):
         self.assertAlmostEqual(st["z"], 0.0, delta=1e-6)
         self.assertTrue(st["position_trusted"])
 
-    def test_reanchor_requires_new_sync_before_position_is_trusted(self):
+    def test_benign_reanchor_keeps_position_trusted(self):
+        """``too_long_dt`` 是良性换锚：相关可信、只是基线到了上限，不该撤销信任。
+
+        位移提交阈值开启后锚帧会被"扣住"等位移攒够，dt 涨到 sample_max_dt 是**常态**
+        （站着不动时每 5s 必然发生一次）。若撤销信任，导航会每次停车等约 6 秒重新校准
+        ——实测一段 5.4 分钟的导航被这样停了 27 次。
+        """
         self.task.start_minimap_position()
         self.task.tick(self.frame)
         self.assertTrue(self.task.tick(self.frame, ws=(100.0, 200.0))["position_trusted"])
 
-        # 人为把门限压到 0，制造一次重新锚定。
-        self.task._minimap_od._sample_max_dt = 0.0
+        self.task._minimap_od._sample_max_dt = 0.0      # 制造一次 too_long_dt
+        benign = self.task.tick(self.frame, dt=0.5)
+        self.assertFalse(benign["odom_ok"])
+        self.assertTrue(benign["position_trusted"], benign["trust_reason"])
+
+    def test_bad_measurement_reanchor_revokes_position_trusted(self):
+        """相关**不可信**导致的换锚必须撤销信任，等下一次静止校准才恢复。"""
+        self.task.start_minimap_position()
+        self.task.tick(self.frame)
+        self.assertTrue(self.task.tick(self.frame, ws=(100.0, 200.0))["position_trusted"])
+
+        self.task._minimap_od._response_low = 1.1       # 任何响应都判为不可信
         rejected = self.task.tick(self.frame, dt=0.5)
         self.assertFalse(rejected["odom_ok"])
         self.assertFalse(rejected["position_trusted"])
+        self.assertEqual(rejected["trust_reason"], "low_response")
 
-        self.task._minimap_od._sample_max_dt = 5.0
+        self.task._minimap_od._response_low = 0.12
         recovered = self.task.tick(self.frame, dt=0.5, ws=(100.0, 200.0))
-        self.assertTrue(recovered["odom_ok"])
         self.assertTrue(recovered["position_trusted"])
 
     def test_start_reports_no_truth_without_content(self):

@@ -204,6 +204,31 @@ class TestIntegration(unittest.TestCase):
         self.assertFalse(r1["ok"])
         self.assertIn(r1["reason"], ("low_response",))
 
+    def test_benign_reanchor_flag_only_for_too_long_dt(self):
+        """只有 ``too_long_dt`` 算良性换锚：相关可信、只是基线到了上限。
+
+        上层用它决定要不要撤销 ``position_trusted``——和"测坏了"混为一谈的话，
+        位移提交阈值开启后导航会反复停车等重新校准。
+        """
+        base = _texture(200, 200)
+        f0 = _bgr(base)
+
+        # too_long_dt：相关良好，只是 dt 到了上限
+        task, od = self._make([f0], sample_max_dt=1.0)
+        od.sample(frame=f0, now=0.0)
+        task._t = 2.0
+        r = od.sample(frame=_bgr(_shifted(base, 3, 0)))
+        self.assertEqual(r["reason"], "too_long_dt")
+        self.assertTrue(r["benign_reanchor"], r)
+
+        # exceed_max_shift：位移超出可信范围 -> 非良性
+        task2, od2 = self._make([f0], max_shift_ratio=0.35)
+        od2.sample(frame=f0, now=0.0)
+        task2._t = 0.5
+        r2 = od2.sample(frame=_bgr(_shifted(base, 50, 0)))
+        self.assertEqual(r2["reason"], "exceed_max_shift")
+        self.assertFalse(r2.get("benign_reanchor"), r2)
+
     def test_too_soon_skips(self):
         base = _texture(200, 200)
         task, od = self._make([_bgr(base), _bgr(_shifted(base, 3, 0))])
@@ -229,6 +254,156 @@ class TestIntegration(unittest.TestCase):
         self.assertTrue(result["sampled"], result)
         self.assertEqual(result["reason"], "ok")
         self.assertAlmostEqual(od.position_px()[0], -4.0, delta=0.8)
+
+
+class TestCommitShiftGate(unittest.TestCase):
+    """位移提交阈值：误差按**采样次数**累积，所以要让每米提交次数与走路快慢脱钩。
+
+    每样本误差大致是绝对量（亚像素），而每样本位移 = 速度 × 采样间隔；
+    慢走 / 原地小步走时每米要积更多样本，漂移更大。阈值让"没攒够就不提交"。
+    """
+
+    def _make(self, frames, **kwargs):
+        task = _FakeTask(200, 200, frames=frames)
+        od = MinimapOdometry(
+            task,
+            center_ratio=(0.5, 0.5),
+            r_outer_ratio=0.4,
+            r_inner_ratio=0.1,
+            feather=2,
+            **kwargs,
+        )
+        return task, od
+
+    def test_shift_gate_keeps_anchor_and_reports_pending(self):
+        """位移不够阈值：不提交、**不换锚帧**，但位置要带上待提交量（保持连续）。"""
+        base = _texture(200, 200)
+        f0 = _bgr(base)
+        f1 = _bgr(_shifted(base, 2, 0))
+        f2 = _bgr(_shifted(base, 7, 0))
+        task, od = self._make([f0, f1, f2], commit_min_shift_px=5.0)
+
+        od.sample(frame=f0, now=0.0)
+
+        task._t = 0.5
+        r1 = od.sample(frame=f1)
+        self.assertTrue(r1["ok"], r1)
+        # 必须是"有效测量"：is_rest() 靠 last_sample() 算速度，报成没采样会让静止校准失效
+        self.assertTrue(r1["sampled"], r1)
+        self.assertEqual(r1["reason"], "shift_too_small")
+        self.assertIsNotNone(od.last_sample())
+        # 待提交量已计入对外位置：位置连续，不是卡在 0
+        self.assertAlmostEqual(od.position_px()[0], -2.0, delta=0.8)
+
+        task._t = 1.0
+        r2 = od.sample(frame=f2)
+        self.assertEqual(r2["reason"], "ok", r2)
+        # 相对**最初锚帧**测出的 7px —— 若第二拍换了锚帧，这里只会是 5px
+        self.assertAlmostEqual(r2["dmap_px"][0], -7.0, delta=0.8)
+        self.assertAlmostEqual(od.position_px()[0], -7.0, delta=0.8)
+
+    def test_gate_off_matches_old_behaviour(self):
+        """阈值 0 = 关闭（旧行为）：小位移照常每拍提交。"""
+        base = _texture(200, 200)
+        f0 = _bgr(base)
+        f1 = _bgr(_shifted(base, 2, 0))
+        task, od = self._make([f0, f1], commit_min_shift_px=0.0)
+
+        od.sample(frame=f0, now=0.0)
+        task._t = 0.5
+        r1 = od.sample(frame=f1)
+        self.assertEqual(r1["reason"], "ok")
+        self.assertAlmostEqual(od.position_px()[0], -2.0, delta=0.8)
+
+    def test_slow_shuffle_never_commits(self):
+        """原地小步走：位移一直攒不够阈值 → 一次都不提交，漂移不累积。
+
+        这是本改动的核心目标。旧行为下每一拍都提交一次，每次都带一份样本误差。
+        """
+        base = _texture(200, 200)
+        # 每拍只挪 0.2px，跑 10 拍共 1.8px，始终 < 阈值 5px
+        frames = [_bgr(_shifted(base, 0.2 * i, 0)) for i in range(10)]
+        task, od = self._make(frames, commit_min_shift_px=5.0, sample_max_dt=100.0)
+
+        reasons = []
+        for i, f in enumerate(frames):
+            task._t = 0.5 * (i + 1)
+            reasons.append(od.sample(frame=f)["reason"])
+
+        self.assertEqual(reasons.count("ok"), 0, f"不该有提交，实际 {reasons}")
+        # 但位置照样跟着走（待提交量在报告里），不是卡死
+        self.assertAlmostEqual(od.position_px()[0], -1.8, delta=0.8)
+
+    def test_long_baseline_commits_instead_of_dropping(self):
+        """基线超时但相关可信：先把位移收下再换锚，不能白丢。
+
+        阈值开启后锚帧会活得更久，这条退出路径会真的被走到；丢了它位置会停止前进，
+        导航会当成"卡住"去重规划——比漂移更难查。
+        """
+        base = _texture(200, 200)
+        f0 = _bgr(base)
+        f1 = _bgr(_shifted(base, 3, 0))
+        task, od = self._make([f0, f1], commit_min_shift_px=10.0, sample_max_dt=1.0)
+
+        od.sample(frame=f0, now=0.0)
+        task._t = 2.0                                   # dt >= sample_max_dt
+        r1 = od.sample(frame=f1)
+
+        self.assertFalse(r1["ok"])
+        self.assertEqual(r1["reason"], "too_long_dt")
+        self.assertTrue(r1["reanchored"])
+        self.assertTrue(r1.get("committed"), r1)
+        self.assertAlmostEqual(od.position_px()[0], -3.0, delta=0.8)
+
+    def test_long_baseline_commits_even_with_gate_off(self):
+        """守卫链先判"相关可不可信"：能走到 too_long_dt 就说明相关是好的，该收下而不是丢。
+
+        顺带修掉的一处旧行为——原本这条路径不管相关好坏都会白丢最多一个 sample_max_dt
+        的位移。阈值关闭时也一样。
+        """
+        base = _texture(200, 200)
+        f0 = _bgr(base)
+        f1 = _bgr(_shifted(base, 3, 0))
+        task, od = self._make([f0, f1], commit_min_shift_px=0.0, sample_max_dt=1.0)
+
+        od.sample(frame=f0, now=0.0)
+        task._t = 2.0
+        r1 = od.sample(frame=f1)
+
+        self.assertEqual(r1["reason"], "too_long_dt")
+        self.assertFalse(r1["ok"])
+        self.assertTrue(r1.get("committed"), r1)
+        self.assertAlmostEqual(od.position_px()[0], -3.0, delta=0.8)
+
+    def test_low_response_still_discards(self):
+        """相关不可信时该丢就丢：不能把噪声当位移收下。"""
+        base = _texture(200, 200)
+        f0 = _bgr(base)
+        blank = np.zeros((200, 200, 3), np.uint8)
+        task, od = self._make([f0, blank], commit_min_shift_px=2.0, response_low=0.2)
+
+        od.sample(frame=f0, now=0.0)
+        task._t = 2.0
+        r1 = od.sample(frame=blank)
+
+        self.assertEqual(r1["reason"], "low_response")
+        self.assertFalse(r1.get("committed"), r1)
+        self.assertEqual(od.position_px(), (0.0, 0.0))
+
+    def test_reset_position_clears_pending(self):
+        """静止重锚会清零积分：待提交量也必须清零，否则位置会立刻跳一下。"""
+        base = _texture(200, 200)
+        f0 = _bgr(base)
+        f1 = _bgr(_shifted(base, 2, 0))
+        task, od = self._make([f0, f1], commit_min_shift_px=5.0)
+
+        od.sample(frame=f0, now=0.0)
+        task._t = 0.5
+        od.sample(frame=f1)
+        self.assertNotEqual(od.position_px(), (0.0, 0.0))
+
+        od.reset_position()
+        self.assertEqual(od.position_px(), (0.0, 0.0))
 
 
 class TestDecompose(unittest.TestCase):

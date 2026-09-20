@@ -33,11 +33,14 @@
     map_id           最近 WS 位置所属地图；None = 还没收到。
     error            |融合坐标 - 最近 WS|（米）。移动时≈WS 延迟（不是误差），静止校准后≈0。
     odom_ok/odom_reason  本拍是否采到有效位移样本及原因（"ok"/"too_soon"/"no_frame"/
-                     "low_response"/"exceed_max_shift"/"too_long_dt"/"speed_anomaly"，
+                     "shift_too_small"/"low_response"/"exceed_max_shift"/"too_long_dt"/
+                     "speed_anomaly"，
                      未采到时 odom_ok 为 False，odom_reason 说明为什么），
                      用来区分"位置在动"和"位置源已经没有数据了"。
     position_trusted  当前绝对坐标是否可信。重新锚定、换地图或里程计守卫触发后会变为
-                     False，必须等到下一次静止 WS 校准才恢复。
+                     False，必须等到下一次静止 WS 校准才恢复。**例外**：良性换锚
+                     （``too_long_dt``，相关可信、只是基线到了上限）不撤销信任——
+                     位移提交阈值开启后它会是常态，撤销信任会让导航反复停车等重新校准。
     trust_reason      position_trusted 的最近状态来源。
     just_synced/sync_residual  本拍是否刚触发静止校准、以及校准前的残差
                      （``{map_x, map_z, ws_x, ws_z, dx, dz, dist}``，即小地图推算偏了多少米）。
@@ -55,6 +58,18 @@ from __future__ import annotations
 
 import math
 
+from src.core.global_config_store import get_global_config
+from src.core.NavConfig import (
+    NAV_CONFIG_NAME,
+    NAV_CONTENT_KEY,
+    NAV_MATRIX_SUFFIX,
+    NAV_RESOLUTION_TIERS,
+    NAV_SCALE_CONSTANT_KEY,
+    NAV_SCALE_SUFFIX,
+    NAV_WS_ACCOUNT_KEY,
+    NavProfile,
+    nav_profile_for_width,
+)
 from src.tasks.account.account_scope_store import (
     get_account_map_content,
     resolve_account_id,
@@ -68,34 +83,24 @@ from src.tasks.mixin.minimap_position_fusion import MinimapPositionFusion
 from src.tasks.mixin.ws_position_mixin import WsPositionMixin
 
 __all__ = [
-    "CONFIG_MAP_TO_WORLD",
-    "CONFIG_SCALE",
+    "CONFIG_COMMIT_MIN_SHIFT",
     "CONFIG_SYNC_DISTANCE",
-    "CONFIG_WS_ACCOUNT",
-    "CONFIG_WS_CONTENT",
     "CONFIG_WS_MIN_HITS",
     "CONFIG_WS_WAIT",
-    "DEFAULT_MAP_TO_WORLD",
-    "DEFAULT_SCALE",
+    "DEFAULT_COMMIT_MIN_SHIFT_PX",
     "MinimapPositionMixin",
     "parse_map_to_world",
 ]
 
-# 默认轴映射（世界_x ≈ +s_x*map_x，世界_z ≈ -s_z*map_y）。逗号4值：a11,a12,a21,a22。
-# 标量来自 2026-09-10「小地图实时位置」30s 跑测的 4 个静止校准区间最小二乘拟合：
-# 该组值 Σ|误差| ≈ 0.65m / 约 100m 行程；同批数据里带非对角项的拟合（如
-# 0.671428,0.005240,0.040819,-0.639992）Σ|误差| 达 6.91m——非对角项是"行走近单方向"
-# 导致的病态拟合噪声，会把 37m 的向东走算成 2.3m 的 z 偏移，故默认置 0。
-DEFAULT_SCALE = 0.6703
-DEFAULT_MAP_TO_WORLD = "0.6703,0,0,-0.6698"
-
-CONFIG_SCALE = "比例尺(米/像素)"
-CONFIG_MAP_TO_WORLD = "轴映射(逗号4值)"
-CONFIG_WS_CONTENT = "真值content"
-CONFIG_WS_ACCOUNT = "真值地图账号"
 CONFIG_WS_WAIT = "WS等待稳定秒数"
 CONFIG_WS_MIN_HITS = "WS稳定最小位置数"
 CONFIG_SYNC_DISTANCE = "航点校准最小距离(米)"
+CONFIG_COMMIT_MIN_SHIFT = "位移提交阈值(像素)"
+
+#: 位移提交阈值默认值（1920 宽下约 1.8m）。0 = 关闭，回到"按时间提交"的旧行为。
+#: 误差按采样次数累积、每样本误差大致是绝对量，而每样本位移 = 速度 * 采样间隔，
+#: 所以慢走 / 原地小步走时每米提交次数暴涨、漂移更大。设阈值让每米提交次数与速度脱钩。
+DEFAULT_COMMIT_MIN_SHIFT_PX = 2.0
 
 
 def parse_map_to_world(value):
@@ -120,42 +125,39 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
     """小地图实时位置：同时给出方向（朝向角）和坐标（小地图推算 + WS 校准）。
 
     朝向相关的能力（读朝向、转到指定方位）来自 :class:`MinimapHeadingMixin`。
-    """
 
-    #: 里程计比例尺读哪个配置键 / 缺省值；子类键名或语义不同（如「0=自动」）时覆盖。
-    MINIMAP_SCALE_KEY = CONFIG_SCALE
-    MINIMAP_SCALE_DEFAULT = DEFAULT_SCALE
+    **比例尺、轴映射与 WS 真值来源都在全局「导航配置」里**（``src/core/NavConfig.py``），
+    任务侧不再配置：比例尺随画面宽变化（``比例尺 = C / 画面宽``），配在任务里必然会在
+    换分辨率时过期——历史上 2560 宽量出的 0.6703 被拿到 1920 下用，距离就系统性偏了 27%。
+    """
 
     # ------------------------------------------------------------------ #
     # 配置（任务把这两个 dict merge 进自己的 default_config / config_description）
     # ------------------------------------------------------------------ #
     @staticmethod
     def minimap_position_default_config() -> dict:
-        """返回小地图定位配置的默认值。"""
+        """返回小地图定位配置的默认值（不含比例尺/轴映射/真值——那些在全局导航配置）。"""
         return {
-            CONFIG_SCALE: DEFAULT_SCALE,
-            CONFIG_MAP_TO_WORLD: DEFAULT_MAP_TO_WORLD,
-            CONFIG_WS_CONTENT: "",
-            CONFIG_WS_ACCOUNT: "",
             CONFIG_WS_WAIT: 10.0,
             CONFIG_WS_MIN_HITS: 3,
             CONFIG_MIN_SCORE: 0.6,
             CONFIG_SYNC_DISTANCE: 100.0,
+            CONFIG_COMMIT_MIN_SHIFT: DEFAULT_COMMIT_MIN_SHIFT_PX,
         }
 
     @staticmethod
     def minimap_position_config_description() -> dict:
-        """返回定位配置键的用户说明，包含矩阵方向和静止校准语义。"""
+        """返回定位配置键的用户说明，包含静止校准语义。"""
         return {
-            CONFIG_SCALE: "小地图比例尺（米/像素），里程计位移换算用",
-            CONFIG_MAP_TO_WORLD: "地图系像素->世界系米的 2x2 矩阵，逗号4值 a11,a12,a21,a22；"
-                                 "默认 diag(+比例尺, -比例尺)（世界_z 与地图_y 符号相反）",
-            CONFIG_WS_CONTENT: "可选。官方地图 hg/check 的 data.content，提供绝对坐标（锚点/真值）",
-            CONFIG_WS_ACCOUNT: "可选。content 为空时从账号配置页读取该账号的地图同步 content",
             CONFIG_WS_WAIT: "等 WS 位置流稳定（连续同一 mapId 的有效位置）的最大等待秒数",
             CONFIG_WS_MIN_HITS: "判为稳定所需连续有效位置个数",
             CONFIG_MIN_SCORE: "箭头角度检测最低置信度，低于该值朝向判为不可用",
             CONFIG_SYNC_DISTANCE: "累计移动达到该距离后，请求导航暂停并等待静止自动校准",
+            CONFIG_COMMIT_MIN_SHIFT: "里程计位移提交阈值（像素）。误差是按采样次数累积的，"
+                                     "而每样本位移 = 速度 * 采样间隔，所以慢走 / 原地挪时每米要积更多样本、"
+                                     "漂移更大。设成 2~3 像素可让每米提交次数与速度脱钩（原地小步走几乎不提交），"
+                                     "同时位置仍连续（未提交部分照常计入位置）。"
+                                     "0 = 关闭，回到按时间提交的旧行为，便于 A/B 对比",
         }
 
     # ------------------------------------------------------------------ #
@@ -181,6 +183,33 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
         self._minimap_position_trusted = False
         self._minimap_trust_reason = "uninitialized"
 
+    def _nav_config(self):
+        """读全局「导航配置」。取不到时返回 None（由调用方决定怎么报）。"""
+        try:
+            return get_global_config(NAV_CONFIG_NAME)
+        except Exception as e:  # 该对象是框架 Config，异常类型不可控
+            self.log_warning(f"读取全局「{NAV_CONFIG_NAME}」失败: {e}")
+            return None
+
+    def _nav_profile(self) -> NavProfile | None:
+        """按**当前画面宽度**从全局「导航配置」选出比例尺与轴映射。
+
+        比例尺随画面宽变化是物理事实（``比例尺 = C / 画面宽``），所以这里永远按当前分辨率
+        现算，任务侧不再有"比例尺"这个配置项——配在任务里必然会在换分辨率时过期。
+        """
+        config = self._nav_config()
+        if config is None:
+            return None
+        values = {
+            NAV_SCALE_CONSTANT_KEY: config.get(NAV_SCALE_CONSTANT_KEY),
+            **{
+                f"{name}{suffix}": config.get(f"{name}{suffix}")
+                for name, _ in NAV_RESOLUTION_TIERS
+                for suffix in (NAV_SCALE_SUFFIX, NAV_MATRIX_SUFFIX)
+            },
+        }
+        return nav_profile_for_width(int(getattr(self, "width", 0) or 0), values)
+
     def start_minimap_position(self, *, wait_stable: bool = True) -> bool:
         """建里程计 + 融合、启动位置源、等 WS 稳定并立即设锚点。
 
@@ -195,25 +224,39 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             estimate = self._minimap_fusion.estimate()
             return estimate is not None
 
-        scale = max(0.0, self._cfg_float(self.MINIMAP_SCALE_KEY, self.MINIMAP_SCALE_DEFAULT))
-        raw_matrix = self.config.get(CONFIG_MAP_TO_WORLD, DEFAULT_MAP_TO_WORLD)
-        matrix = parse_map_to_world(raw_matrix)
-        if str(raw_matrix or "").strip() and matrix is None:
+        profile = self._nav_profile()
+        if profile is None:
             self.log_warning(
-                f"{CONFIG_MAP_TO_WORLD} 无法解析（应为 4 个逗号分隔数字）: {raw_matrix!r}，"
-                "将退回用「比例尺」构造默认轴（图右=东、图下=南）",
+                "无法确定导航比例尺：拿不到画面分辨率（游戏窗口还没就绪），或全局"
+                f"「{NAV_CONFIG_NAME}」里的档位与比例尺常数都是无效值。"
+                "请确认游戏窗口已连接，并检查全局配置里的导航配置。",
                 notify=True,
             )
-        if matrix is None and scale <= 0:
+            return False
+        matrix = parse_map_to_world(profile.map_to_world)
+        if matrix is None:
             self.log_warning(
-                "轴映射不可用且比例尺为 0：融合坐标会恒等于 WS 锚点（不随移动变化）。"
-                f"请填写有效的「{self.MINIMAP_SCALE_KEY}」或「{CONFIG_MAP_TO_WORLD}」",
+                f"全局「{NAV_CONFIG_NAME}」的轴映射无法解析（应为 4 个逗号分隔数字）: "
+                f"{profile.map_to_world!r}",
                 notify=True,
             )
+            return False
+        scale = profile.scale
+        self.log_info(
+            f"导航比例尺 {scale:.6f} 米/像素（{profile.source}），"
+            f"轴映射 {profile.map_to_world}"
+        )
 
         self._minimap_scale = scale
+        commit_min_shift = max(
+            0.0,
+            self._cfg_float(CONFIG_COMMIT_MIN_SHIFT, DEFAULT_COMMIT_MIN_SHIFT_PX),
+        )
         self._minimap_od = MinimapOdometry(
-            self, scale_m_per_px=(scale if scale > 0 else None))
+            self,
+            scale_m_per_px=(scale if scale > 0 else None),
+            commit_min_shift_px=commit_min_shift,
+        )
         self._minimap_fusion = MinimapPositionFusion(
             self._minimap_od,
             map_to_world_px=matrix,
@@ -284,11 +327,14 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
     # 位置源（官方地图 WS 客户端 / 本地 WS 服务）
     # ------------------------------------------------------------------ #
     def _resolve_ws_cred(self) -> str:
-        """按配置优先级解析地图同步 content（content > 地图账号 > 当前账号上下文）。"""
-        content = str(self.config.get(CONFIG_WS_CONTENT) or "").strip()
+        """按优先级解析地图同步 content（全局导航配置的 content > 地图账号 > 当前账号上下文）。"""
+        config = self._nav_config()
+        content = account = ""
+        if config is not None:
+            content = str(config.get(NAV_CONTENT_KEY) or "").strip()
+            account = str(config.get(NAV_WS_ACCOUNT_KEY) or "").strip()
         if content:
             return content
-        account = str(self.config.get(CONFIG_WS_ACCOUNT) or "").strip()
         if account:
             account_id = resolve_account_id(account, create_if_missing=False) or account
             return get_account_map_content(account_id, account_name=account)
@@ -391,7 +437,10 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
         last = self._minimap_od.last_result() or {}
         st["odom_ok"] = bool(last.get("ok") and last.get("sampled"))
         st["odom_reason"] = last.get("reason")
-        if last.get("reanchored"):
+        # 守卫换锚才撤销信任；"良性换锚"（too_long_dt：相关可信、只是基线到了上限）不算。
+        # 位移提交阈值开启后锚帧会被扣住等位移，dt 涨到 sample_max_dt 是**常态**——
+        # 若把它也当成"测坏了"，导航会停车等重新校准，一次停 6 秒，比漂移更影响体感。
+        if last.get("reanchored") and not last.get("benign_reanchor"):
             self._minimap_position_trusted = False
             self._minimap_trust_reason = str(last.get("reason") or "reanchored")
 

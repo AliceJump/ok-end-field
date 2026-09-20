@@ -351,6 +351,7 @@ class MinimapOdometry:
         response_low: float = 0.12,
         max_shift_ratio: float = 0.35,
         max_speed_px_s: float | None = None,
+        commit_min_shift_px: float = 0.0,
         scale_m_per_px: float | None = None,
         heading_convention: str = "compass",
     ):
@@ -368,6 +369,12 @@ class MinimapOdometry:
             response_low: 相位相关最低响应，低于该值认为位移不可信。
             max_shift_ratio: 单次位移上限，相对外圈半径。
             max_speed_px_s: 可选速度守卫；``None`` 表示不启用。
+            commit_min_shift_px: **位移提交阈值**（像素），``0`` = 关闭（按时间提交，旧行为）。
+                开启后只有"锚帧到当前帧的位移"攒够该值才提交一次积分并推进锚帧；
+                没攒够就只更新 :meth:`position_px` 里的待提交量、**不换锚帧**。
+                误差是**按采样次数**累积的（每样本误差大致是绝对量），而每样本位移 =
+                速度 × 采样间隔，所以慢走时每米要积更多样本、漂移更大。阈值让
+                "每米提交次数"与走路快慢脱钩，原地小步走则完全不提交。
             scale_m_per_px: 地图像素到世界米的换算比例。
             heading_convention: 朝向约定，当前稳定使用 ``"compass"``。
         """
@@ -382,6 +389,7 @@ class MinimapOdometry:
         self._response_low = response_low
         self._max_shift_ratio = max_shift_ratio
         self._max_speed_px_s = max_speed_px_s
+        self._commit_min_shift_px = max(0.0, float(commit_min_shift_px))
         self._scale_m_per_px = scale_m_per_px
         self._heading_convention = heading_convention
 
@@ -390,6 +398,9 @@ class MinimapOdometry:
         self._anchor_gray: np.ndarray | None = None
         self._anchor_t: float | None = None
         self._pos_px = np.zeros(2, dtype=np.float64)  # 地图系累计位移（像素）
+        # 相对当前锚帧、还没攒够 commit_min_shift_px 而不进积分的那部分位移。
+        # 只用于对外报告位置（否则慢走时位置会一格一格跳），不计入漂移累积。
+        self._pending_px = np.zeros(2, dtype=np.float64)
         self._last: dict | None = None
         self._last_result: dict | None = None
         self._scale_warned = False
@@ -456,6 +467,7 @@ class MinimapOdometry:
         """重置锚帧，可选清空积分位置。"""
         if reset_position:
             self._pos_px = np.zeros(2, dtype=np.float64)
+        self._pending_px = np.zeros(2, dtype=np.float64)
         self._anchor_gray = None
         self._anchor_t = None
         self._last = None
@@ -465,6 +477,8 @@ class MinimapOdometry:
     def reset_position(self):
         """只清零累计位移，保留当前锚帧。"""
         self._pos_px = np.zeros(2, dtype=np.float64)
+        # 待提交量也清零：调用方（静止重锚）要的是"位置正好等于锚点"，留着它位置会立刻跳一下
+        self._pending_px = np.zeros(2, dtype=np.float64)
 
     def _arm_anchor(self, frame: np.ndarray, now: float | None):
         gray = self._crop_gray(frame)
@@ -472,6 +486,8 @@ class MinimapOdometry:
         if now is None:
             now = self._now()
         self._anchor_t = now
+        # 换锚帧了：待提交量记的是"相对旧锚帧"的位移，已经失效
+        self._pending_px = np.zeros(2, dtype=np.float64)
         self._last = None
 
     def _now(self) -> float:
@@ -504,14 +520,24 @@ class MinimapOdometry:
         """采样一拍位移并积分。返回本次结果字典，永不抛出。
 
         返回字典字段：
-          - ok: 本次是否得到有效的位移样本并积分。
+          - ok: 本拍是否得到**可信的**位移测量。注意"可信"不等于"已进积分"——见 committed。
           - sampled: 是否实际做了相位相关（False 表示因时间间隔/锚帧未就绪而跳过）。
-          - reason: ``ok=False`` 或 ``sampled=False`` 的原因标记。
+          - reason: 采样结果标记：``ok`` / ``shift_too_small``（位移没攒够
+            ``commit_min_shift_px``，测量有效但未进积分）/ ``too_soon`` / ``no_frame`` /
+            ``no_gray`` / ``anchor_init`` / ``low_response`` / ``exceed_max_shift`` /
+            ``too_long_dt`` / ``speed_anomaly``。
           - dx_px / dy_px: 内容从锚帧到当前帧的图像系位移（像素）。
-          - dmap_px: 玩家地图系位移 (dx, dy) = (-dx_px, -dy_px)。
+          - dmap_px: 玩家地图系位移 (dx, dy) = (-dx_px, -dy_px)；``shift_too_small``
+            时是"相对当前锚帧、还没提交"的那一段。
           - response: 相位相关响应。
-          - dt: 采样间隔（秒）。
+          - dt: 距当前锚帧的时间（秒）。``shift_too_small`` 时窗口是完整锚帧区间，
+            正好与 dmap_px 配对，所以拿它算平均速度是对的。
           - reanchored: 本次是否因守卫触发而重置锚帧。
+          - committed: 本次的 dmap_px 是否真的进了累计积分（``_pos_px``）。
+            ``shift_too_small`` 恒为 False；守卫退出路径只有"相关可信"时才 True。
+          - benign_reanchor: 换锚是否**良性**（目前仅 ``too_long_dt``）：相关是可信的，
+            只是基线到了上限。上层据此决定要不要重新建立信任——把它当成"测坏了"会让
+            导航停车等重新校准，而阈值开启后这条路径会经常走到。
           - dmap_m: 玩家地图系位移（米，未配置比例尺时为像素值）。
         """
         if frame is None:
@@ -548,8 +574,10 @@ class MinimapOdometry:
         shift_len = math.hypot(dx_px, dy_px)
         w, _ = self._dimensions()
         max_shift = self._max_shift_ratio * (self._r_outer_ratio * w)
+        # 「相关可不可信」与「锚帧是不是太老」是两件事，退出路径要分开处理（见下）
+        trustworthy = math.isfinite(response) and response >= self._response_low
         reanchor_reason = None
-        if not math.isfinite(response) or response < self._response_low:
+        if not trustworthy:
             reanchor_reason = "low_response"
         elif dt >= self._sample_max_dt:
             reanchor_reason = "too_long_dt"
@@ -560,21 +588,60 @@ class MinimapOdometry:
             if px_speed > self._max_speed_px_s:
                 reanchor_reason = "speed_anomaly"
 
+        dmap = (-dx_px, -dy_px)
+
         if reanchor_reason is not None:
+            # 开启位移提交阈值后锚帧会活得更久（慢走时要等位移攒够），所以退出路径必须分清：
+            #   - 测不准（low_response / exceed_max_shift / speed_anomaly）：这段位移本身就
+            #     不可信，丢掉才是对的；
+            #   - 只是基线太长（too_long_dt）：相关是好的，**先把这段收下再换锚**。否则位置
+            #     会悄悄停止前进，导航会把它当成"卡住"去重规划——这比漂移更难查。
+            commit_on_exit = trustworthy and (
+                reanchor_reason == "too_long_dt"
+                or (self._commit_min_shift_px > 0 and shift_len >= self._commit_min_shift_px)
+            )
+            if commit_on_exit:
+                self._pos_px += np.array(dmap, dtype=np.float64)
             self._arm_anchor(frame, now)
+            # too_long_dt 是**良性**换锚：守卫链先判 low_response，能走到它说明相关是
+            # 可信的，只是基线到了上限（阈值开启后锚帧会被扣住等位移，这条路径会经常走到）。
+            # 上层用它区分"需要重新建立信任"和"只是换了个基线"。
+            benign = reanchor_reason == "too_long_dt"
             return self._result(
                 ok=False, sampled=True, reason=reanchor_reason,
                 dx_px=dx_px, dy_px=dy_px, response=response,
-                dmap_px=(-dx_px, -dy_px), dt=dt, reanchored=True,
+                dmap_px=dmap, dt=dt, reanchored=True,
+                committed=commit_on_exit, benign_reanchor=benign,
             )
 
+        # 位移门：没攒够一个"采样单位"就不提交、**也不换锚帧**。
+        #
+        # 关键在于不换锚帧：待提交量留在"锚帧相对量"里继续攒，下一拍测的还是同一锚帧到
+        # 当前的位移，所以这一段不会丢。于是每个**被提交**的样本位移都≈阈值，
+        # "每米提交次数"与走路快慢脱钩；原地小步走则完全不提交，漂移不累积。
+        #
+        # 注意这里必须报 ``sampled=True`` 并更新 ``_last``：这确实是一次**有效测量**
+        # （只是没进积分），而 ``is_rest()`` 是靠 ``last_sample()`` 的位移/时间窗算速度的
+        # ——报成"没采样"会让静止判定永远拿不到数据，WS 静止校准整个失效。
+        # ``dt`` 是"距锚帧"的完整窗口，正好与待提交量配对，算出来的才是真实平均速度。
+        if self._commit_min_shift_px > 0 and shift_len < self._commit_min_shift_px:
+            self._pending_px = np.array(dmap, dtype=np.float64)
+            out = self._result(
+                ok=True, sampled=True, reason="shift_too_small",
+                dx_px=dx_px, dy_px=dy_px, response=response,
+                dmap_px=dmap, dt=dt, reanchored=False,
+            )
+            out["dmap_m"] = self._to_m(dmap)
+            self._last = out
+            return out
+
         # 有效样本：积分玩家地图系位移（像素）-> (-dx, -dy)
-        dmap = (-dx_px, -dy_px)
         self._pos_px += np.array(dmap, dtype=np.float64)
 
-        # 更新锚帧为当前帧
+        # 更新锚帧为当前帧（待提交量随之清零）
         self._anchor_gray = gray
         self._anchor_t = now
+        self._pending_px = np.zeros(2, dtype=np.float64)
 
         out = self._result(
             ok=True, sampled=True, reason="ok",
@@ -614,12 +681,20 @@ class MinimapOdometry:
     # 读取
     # ------------------------------------------------------------------ #
     def position_px(self) -> tuple[float, float]:
-        """返回累计玩家位移（地图系，像素）。"""
-        return (float(self._pos_px[0]), float(self._pos_px[1]))
+        """返回累计玩家位移（地图系，像素），**含尚未提交的那部分**。
+
+        ``_pos_px`` 只在位移攒够 ``commit_min_shift_px`` 时才前进；把待提交量一起报出去，
+        位置才是连续平滑的——否则慢走时位置会一格一格跳，跟随器会画龙。
+        待提交量是**同一次**相关的结果、每拍刷新，误差只有一份样本量级（厘米级），
+        不进入积分所以也不累积：平滑与"少累积"两者可以兼得。
+        """
+        total = self._pos_px + self._pending_px
+        return (float(total[0]), float(total[1]))
 
     def position_m(self) -> tuple[float, float]:
         """返回累计玩家位移（地图系，米）。未配置比例尺时返回像素并告警。"""
-        return self._to_m((float(self._pos_px[0]), float(self._pos_px[1])))
+        total = self._pos_px + self._pending_px
+        return self._to_m((float(total[0]), float(total[1])))
 
     def read_yaw(self) -> tuple[float | None, float]:
         """读取朝向，返回 ``(bearing, score)``。
@@ -654,9 +729,13 @@ class MinimapOdometry:
         return decompose_body(self.position_px(), heading_deg, self._scale_m_per_px, self._heading_convention)
 
     def last_sample(self) -> dict | None:
-        """返回最近一次**有效积分**的样本；失败或跳过采样时不覆盖该值。
+        """返回最近一次**有效测量**的样本；失败或跳过采样（``too_soon``）时不覆盖该值。
 
         静止判定依赖这里的字段，因此它与 :meth:`last_result` 的用途不同：
-        前者回答“最近一次有效位移是什么”，后者回答“最近一拍尝试结果是什么”。
+        前者回答"最近一次有效位移是什么"，后者回答"最近一拍尝试结果是什么"。
+
+        开启 ``commit_min_shift_px`` 后，``reason="shift_too_small"`` 的样本也算有效测量
+        （位移有效、只是没攒够而不进积分），会出现在这里——否则静止判定拿不到数据，
+        WS 静止校准会整个失效。
         """
         return self._last
