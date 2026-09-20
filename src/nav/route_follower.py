@@ -1,7 +1,7 @@
-"""导航路线跟随器：把规划航点转换成离散执行动作。
+"""把规划航点转换为离散执行动作。
 
-本模块不读画面、不发按键，只根据“当前位置 + 朝向 + 时间”输出下一步动作。
-任务层负责执行 ``TURN / WALK / WAIT``，并在 ``REPLAN / STUCK`` 时重新规划或脱困。
+本模块不读画面、不发按键，只根据当前位置、朝向和时间输出下一步动作。任务层负责执行
+``TURN / WALK / WAIT``，并在收到 ``REPLAN / STUCK`` 时重新规划或脱困。
 
 状态机大致顺序::
 
@@ -12,8 +12,9 @@
     持续行走但位移不足 -> STUCK
     其余情况 -> WALK
 
-所有坐标都是世界系 ``(x, z)``，距离单位为米，角度为罗盘方位角（北 0、东 90，
-顺时针）。偏航采用“半径 + 持续时间”双重判定，避免定位单拍跳动立即触发重规划。
+坐标均为世界系 ``(x, z)``，距离单位为米；角度为罗盘方位角，正北 ``0°``、正东
+``90°``，顺时针增大。偏航使用“超限半径 + 持续时间”双重判定，避免单拍定位抖动触发
+重规划。
 """
 
 from __future__ import annotations
@@ -34,15 +35,14 @@ FAILED = "failed"
 
 
 def angle_delta(target: float, current: float) -> float:
-    """Return the shortest signed angular delta in degrees."""
+    """返回两个角度之间的最短有向差，范围为 ``(-180, 180]``。"""
     return (float(target) - float(current) + 180.0) % 360.0 - 180.0
 
 
 def bearing_to_point(x: float, z: float, target_x: float, target_z: float) -> float:
-    """Return the compass bearing from ``(x, z)`` to ``(target_x, target_z)``.
+    """返回从 ``(x, z)`` 指向 ``(target_x, target_z)`` 的罗盘方位角。
 
-    The world grid uses positive X as east and positive Z as north. Compass
-    bearings therefore increase clockwise: north 0, east 90, south 180, west 270.
+    世界 ``+x`` 为东、``+z`` 为北，因此方位角从正北顺时针增大。
     """
     dx = float(target_x) - float(x)
     dz = float(target_z) - float(z)
@@ -59,7 +59,7 @@ def point_segment_distance(
     start: tuple[float, float],
     end: tuple[float, float],
 ) -> tuple[float, float]:
-    """Return distance to a segment and the clamped projection ratio."""
+    """返回点到线段的距离，以及夹在 ``[0, 1]`` 内的投影比例。"""
     px, pz = (float(point[0]), float(point[1]))
     ax, az = (float(start[0]), float(start[1]))
     bx, bz = (float(end[0]), float(end[1]))
@@ -78,8 +78,8 @@ class FollowerConfig:
     """路线跟随参数。
 
     距离均为世界米。``arrive_radius`` 控制中间航点切换，``goal_radius`` 控制最终到达；
-    ``off_route_radius`` 与 ``off_route_hold_s`` 必须同时满足才判定偏航，用于过滤定位
-    抖动。其余墙距、未知格风险和航点合并参数会原样传给 :class:`GridPlanner`。
+    ``off_route_radius`` 与 ``off_route_hold_s`` 同时满足才判定偏航，用于过滤定位抖动。
+    其余墙距、未知格风险和航点合并参数会原样传给 :class:`GridPlanner`。
     """
 
     arrive_radius: float = 1.0
@@ -309,7 +309,7 @@ class GridRouteFollower:
         )
 
     def _skip_nearby_segments(self, position: tuple[float, float]) -> tuple[tuple[int, ...], float | None]:
-        """Skip waypoints when the player is already near the following segment."""
+        """当前位置已经靠近后续航段时，跳过这些已无必要返回的航点。"""
         radius = max(0.0, float(self.config.shortcut_radius))
         if radius <= 0 or self.plan_result is None:
             return (), None
@@ -330,7 +330,7 @@ class GridRouteFollower:
         return tuple(skipped), nearest
 
     def _off_route_distance(self, position: tuple[float, float]) -> float | None:
-        """Distance to either adjacent route segment around the active waypoint."""
+        """返回当前位置到相邻两个路线段中较近者的距离。"""
         if self.plan_result is None:
             return None
         waypoints = self.plan_result.waypoints
@@ -356,7 +356,7 @@ class GridRouteFollower:
         position: tuple[float, float],
         now: float,
     ) -> float | None:
-        """Require off-route deviation to persist before requesting a replan."""
+        """偏航必须持续超过保持时间，才返回距离并请求重新规划。"""
         radius = max(0.0, float(self.config.off_route_radius))
         if radius <= 0:
             self._off_route_since = None

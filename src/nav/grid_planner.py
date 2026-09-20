@@ -1,29 +1,19 @@
-"""导航规划：在 :class:`~src.nav.grid_io.DenseGrid` 上做 A* 寻路。
+"""在 :class:`~src.nav.grid_io.DenseGrid` 上执行 A* 规划。
 
-为什么未知格要"可冒险、按风险加价"
-----------------------------------
-网格里可行走是**已知走过**的稀疏种子（实测 ``base01_4``：可行走 8.3%、阻挡 51.9%、
-未知 39.8%）。只走可行走几乎无路可走；把未知当可行走又会直接穿墙。所以：
+规划器把“未知但可能可走”的地区建模为带风险代价的候选路径，而不是简单封死：
 
-- 可行走：代价 1（斜向 √2）
-- 未知：代价 × ``risk_cost``（默认 5），即"允许冒险穿过没探过的地方，但绕路更划算"
-- 阻挡：不可通行
-- 离墙不足 ``margin`` 格：每缺一格增加 ``wall_penalty``，只影响路线偏好，不封路
-- 已知自由格靠近未知边缘：按缺口格数增加 ``frontier_penalty``，尽量走已探索区域内部
+- 可行走格：基础代价 ``1``，斜向为 ``sqrt(2)``。
+- 未知格：允许通行时乘以 ``risk_cost``。
+- 阻挡格：不可通行，斜向移动不能穿过墙角。
+- ``margin`` / ``wall_penalty``：偏好离墙，但不会封死窄路。
+- ``frontier_margin`` / ``frontier_penalty``：偏好已知自由区域内部。
 
-规划结果里会给出 ``risk_cells``（路径穿过多少个未知格），调用方据此决定要不要冒险。
+``PlanResult`` 会返回路径、世界坐标航点、总代价、未知格数量和失败诊断。调用方应先看
+``ok`` 与 ``reason``；触顶、策略性不可达和真实不连通是不同问题，不应只按“失败”处理。
 
-大图触顶后的降级搜索
---------------------
-启发式用的是普通 octile（按单步最小代价 1 估），而未知格的真实步进代价是
-``risk_cost`` 倍。在一张 99.9% 都是未知的大图上，估价会低到 ``risk_cost`` 分之一，
-A* 于是退化成"搜遍整片可走区域"的 Dijkstra，必然撞上 ``max_expand``。
-
-所以 :meth:`GridPlanner.plan_cells` 先用 ``heuristic_weight``（默认 1.0，最优搜索）
-搜一次；只有**因为触顶而失败**时，才自动按 ``risk_cost`` 加权重搜一次
-（``f = g + w·h``，见 ``adaptive_weight``）。权重只影响扩展顺序，不改通行判定——
-降级出来的路线仍然不穿墙、不切角，只是代价不再保证最优（上界约 ``risk_cost`` 倍）。
-降级成功会在 ``PlanResult.notes`` 里留一条说明，不会无声发生。
+当精确搜索因 ``max_expand`` 触顶时，:meth:`GridPlanner.plan_cells` 可按 ``risk_cost``
+自动加权重搜。加权只改变节点扩展顺序，不改变通行与禁斜穿规则，因此降级路线仍不会
+穿墙；代价最优性不再保证，并会在 ``notes`` 中明确记录。
 
 用法::
 
@@ -31,15 +21,11 @@ A* 于是退化成"搜遍整片可走区域"的 Dijkstra，必然撞上 ``max_ex
     from src.nav.grid_planner import GridPlanner
 
     grid = load_grid("assets/nav/base01_4.grid.npz")
-    planner = GridPlanner(grid, margin=2)          # 离墙不足 2 格的路优先避开，但不会封死
-    res = planner.plan(start_world=(-40.0, -30.0), goal_world=(60.0, 68.0))
-    if res.ok:
-        for x, z in res.waypoints:                 # 世界坐标航点（已做视线简化）
-            ...
-        print(res.cost, res.risk_cells)
+    planner = GridPlanner(grid, margin=2)
+    result = planner.plan((-40.0, -30.0), (60.0, 68.0))
 
-``plan`` 收发的是**世界坐标**（调用方手里就是实时定位给的世界坐标）；
-要按格下标规划用 :meth:`GridPlanner.plan_cells`。
+``plan`` 接收世界坐标 ``(x, z)``；按格下标规划时使用 :meth:`GridPlanner.plan_cells`。
+分层设计和调参原则见 ``docs/dev/导航与小地图定位.md``。
 """
 
 from __future__ import annotations
@@ -298,7 +284,7 @@ class GridPlanner:
         return base + self._wall_cost(bi, bj) + self._frontier_cost(bi, bj, state)
 
     def _wall_cost(self, i: int, j: int) -> float:
-        """Soft preference for staying away from blocked cells."""
+        """离墙不足时的软代价；不会影响通行判定。"""
         if self._clearance is None:
             return 0.0
         clearance = int(self._clearance[i, j])
@@ -308,7 +294,7 @@ class GridPlanner:
         return missing * self.wall_penalty
 
     def _frontier_cost(self, i: int, j: int, state: int) -> float:
-        """Soft preference for interior known-free cells away from unknown edges."""
+        """已知自由格靠近未知边缘时的软代价；只用于路线排序。"""
         if self._frontier_clearance is None or state != CELL_FREE:
             return 0.0
         clearance = int(self._frontier_clearance[i, j])

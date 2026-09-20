@@ -1,4 +1,4 @@
-"""Debug task: plan on a navigation grid and walk the character to ``(x, z)``."""
+"""小地图网格导航调试任务：规划并移动到目标世界坐标。"""
 
 from __future__ import annotations
 
@@ -17,9 +17,9 @@ from src.tasks.mixin.grid_navigation_mixin import (
 
 
 class MinimapNavigateToPoint(BaseEfTask, GridNavigationMixin):
-    """Debug task for grid path planning and automatic movement."""
+    """用于验证网格加载、路径规划和自动移动的调试任务。"""
 
-    requires_foreground = True  # movement and camera turning require foreground input
+    requires_foreground = True  # 移动与转视角依赖前台输入
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -82,7 +82,7 @@ class MinimapNavigateToPoint(BaseEfTask, GridNavigationMixin):
         return result
 
     def _run_plan_only(self, goal: tuple[float, float], map_id: str) -> bool:
-        """Sample the current position once, then print the planned route."""
+        """只采样一次实时位置并输出规划结果，不发送移动输入。"""
         position_service = self._get_minimap_position_service()
         if position_service is None:
             self.log_warning("未注册「小地图定位」触发任务，无法获取当前位置", notify=True)
@@ -124,7 +124,7 @@ class MinimapNavigateToPoint(BaseEfTask, GridNavigationMixin):
         return False
 
     def pause(self):
-        """Release W immediately so pausing does not leave the character running."""
+        """暂停时立即松开 ``W``，避免角色继续移动。"""
         self._set_grid_walking(False)
         return super().pause()
 

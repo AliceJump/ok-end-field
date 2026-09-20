@@ -14,12 +14,14 @@
 导航主循环的信任顺序不可颠倒：
 
 1. 等绝对坐标锚定；
-2. 等 ``position_trusted=True``，重锚后必须先做静止校准；
+2. 等 ``position_trusted=True``；普通重锚后先做静止校准，良性 ``too_long_dt`` 不撤销信任；
 3. 等本拍有有效里程计样本；
 4. 再允许 follower 规划或继续行走。
 
 偏航恢复优先原地校准；若当前位置不属于已知 free 格，则先返回本次实际走过的最近
 已知格，校准后再重新规划。
+
+模块分层、坐标约定、规划代价与排查顺序见 ``docs/dev/导航与小地图定位.md``。
 """
 
 from __future__ import annotations
@@ -201,7 +203,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
         }
 
     def _init_grid_navigation_mixin(self) -> None:
-        """Initialize navigation state without owning minimap position sources."""
+        """初始化导航状态；不创建或启动任何定位、输入资源。"""
         self._init_minimap_heading_mixin()
         self._grid_nav_follower: GridRouteFollower | None = None
         self._grid_nav_map_id = ""
@@ -221,11 +223,11 @@ class GridNavigationMixin(MinimapHeadingMixin):
         grid_dir: str | None = None,
         zoom: str | None = None,
     ) -> DenseGrid | None:
-        """Load the best matching ``*.grid.npz`` for the current map id.
+        """为当前地图加载最匹配的 ``*.grid.npz``。
 
-        An explicit ``grid_path`` wins. Otherwise files named
-        ``<map_id>_<zoom>.grid.npz`` are preferred, with metadata used to verify
-        the map name. If no map id is available, a unique/latest grid is accepted.
+        显式 ``grid_path`` 优先；否则扫描目录并按地图、zoom 和文件元数据筛选。没有
+        ``map_id`` 时只接受唯一候选。多个候选无法判定时应返回 ``None`` 并提示用户，
+        不能静默挑一张可能错误的地图。
         """
         explicit = self.config.get(CONFIG_GRID_FILE, "") if grid_path is None else grid_path
         explicit = str(explicit or "").strip()
@@ -803,7 +805,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
         return self._cfg_bool(CONFIG_GRID_ALLOW_UNKNOWN, True)
 
     def _set_grid_walking(self, held: bool) -> None:
-        """Hold/release W using optimistic state because ok-script returns no key-down result."""
+        """按住或松开 ``W``；本地记录乐观状态，避免重复发送没有返回值的按键事件。"""
         held = bool(held)
         if held == self._grid_nav_w_held:
             return
@@ -814,7 +816,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
         self._grid_nav_w_held = held
 
     def _should_turn_grid_in_place(self, step: FollowerStep) -> bool:
-        """Large turns and nearby waypoints require a stationary turn."""
+        """大角度转向或接近航点时停车转向，避免画弧越过错过的航点。"""
         heading_error = step.heading_error
         if heading_error is not None:
             max_start = max(
@@ -840,7 +842,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
         return False
 
     def _turn_grid_while_moving(self, step: FollowerStep) -> None:
-        """Rotate toward the next waypoint while keeping W held for a curved turn."""
+        """保持 ``W`` 前进，同时用限幅鼠标位移连续修正朝向。"""
         heading_error = step.heading_error
         if heading_error is None:
             return
@@ -862,7 +864,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
         self._send_rotation(dx)
 
     def _log_grid_navigation_debug(self, state: dict, *, map_id: str, tag: str) -> None:
-        """Emit one detailed positioning line per frame when debug mode is enabled."""
+        """调试模式下节流输出单帧定位状态，便于关联规划、里程计与静止判定。"""
         if not getattr(self, "debug", False):
             return
         debug_key = (

@@ -8,7 +8,10 @@
 
 - 定位实例必须常驻，不能因执行器短暂暂停或暂无消费者而清理 WS；
 - 所有消费者都应调用 ``minimap_position(frame=...)``，把同一帧交给该实例；
-- 导航只读取 ``position_trusted`` 为真的绝对坐标，重锚后必须等待静校准。
+- 导航只读取 ``position_trusted`` 为真的绝对坐标；普通重锚后必须等待静止校准，
+  良性 ``too_long_dt`` 换锚不撤销信任。
+
+完整定位、导航与调试链路见 ``docs/dev/导航与小地图定位.md``。
 """
 
 from ok import TriggerTask

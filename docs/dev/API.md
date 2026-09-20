@@ -9,7 +9,8 @@
 - 基类组合：[BaseEfTask.py](../../src/core/BaseEfTask.py)
 - 核心能力：[src/core/base_mixin/](../../src/core/base_mixin/)
 - 业务能力：[src/tasks/mixin/](../../src/tasks/mixin/)
-- 配置：[global_config_store.py](../../src/core/global_config_store.py)、[BattleConfig.py](../../src/core/BattleConfig.py)、[KeyConfig.py](../../src/interaction/KeyConfig.py)
+- 导航：[src/nav/](../../src/nav/)
+- 配置：[global_config_store.py](../../src/core/global_config_store.py)、[NavConfig.py](../../src/core/NavConfig.py)、[BattleConfig.py](../../src/core/BattleConfig.py)、[KeyConfig.py](../../src/interaction/KeyConfig.py)
 
 ## 1. BaseEfTask 与 MRO
 
@@ -324,6 +325,7 @@ map_key = hotkeys.get("Map Key", "m")
 | `Battle Config` | `DEFAULT_BATTLE_CONFIG` 战斗参数 |
 | `Ensure Main Once Action Sleep` | `SingleActionWithDelay` |
 | `Zip Line Config` | 送货/淤积点滑索路线与滚动设置 |
+| `Nav Config` | 小地图定位真值、分辨率档位比例尺与轴映射 |
 
 `get_global_config(name)` 返回持久化 `ok.util.config.Config`。未知名称只有在已加载配置中能找到对应键时才回退返回该配置，否则抛 `RuntimeError`。全局配置页由 `get_all_visible_configs()` 和 `GlobalConfigTab` 构建。
 
