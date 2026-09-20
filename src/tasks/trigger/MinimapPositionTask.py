@@ -46,7 +46,11 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
         self._last_status_log_at = 0.0
 
     def post_init(self):
-        """首次升级时，把旧寻路任务里的非默认定位配置迁移过来。"""
+        """首次升级时，把旧寻路任务里的非默认运行参数迁移过来。
+
+        真值来源与分辨率标定由 ``global_config_store`` 在任务 Config 构造前处理；
+        这里只合并仍属于任务侧的 WS 等待、校准距离和里程计提交参数。
+        """
         executor = getattr(self, "_executor", None)
         if executor is None or not hasattr(executor, "get_all_tasks"):
             return
@@ -68,6 +72,8 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
         if not self.in_world():
             return False
         self.start_minimap_position(wait_stable=False)
+        if not self.minimap_position_ready:
+            return False
         frame = self.next_frame()
         if frame is None:
             return False

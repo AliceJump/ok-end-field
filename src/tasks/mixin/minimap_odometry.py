@@ -582,14 +582,14 @@ class MinimapOdometry:
         reanchor_reason = None
         if not trustworthy:
             reanchor_reason = "low_response"
-        elif dt >= self._sample_max_dt:
-            reanchor_reason = "too_long_dt"
         elif shift_len > max_shift:
             reanchor_reason = "exceed_max_shift"
         elif self._max_speed_px_s is not None and dt > 1e-6:
             px_speed = shift_len / dt
             if px_speed > self._max_speed_px_s:
                 reanchor_reason = "speed_anomaly"
+        elif dt >= self._sample_max_dt:
+            reanchor_reason = "too_long_dt"
 
         dmap = (-dx_px, -dy_px)
 
@@ -599,10 +599,7 @@ class MinimapOdometry:
             #     不可信，丢掉才是对的；
             #   - 只是基线太长（too_long_dt）：相关是好的，**先把这段收下再换锚**。否则位置
             #     会悄悄停止前进，导航会把它当成"卡住"去重规划——这比漂移更难查。
-            commit_on_exit = trustworthy and (
-                reanchor_reason == "too_long_dt"
-                or (self._commit_min_shift_px > 0 and shift_len >= self._commit_min_shift_px)
-            )
+            commit_on_exit = trustworthy and reanchor_reason == "too_long_dt"
             if commit_on_exit:
                 self._pos_px += np.array(dmap, dtype=np.float64)
             self._arm_anchor(frame, now)

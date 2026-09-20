@@ -171,6 +171,8 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
         self._minimap_fusion: MinimapPositionFusion | None = None
         self._minimap_ws_map_id: str | None = None
         self._minimap_last_ws: tuple[float, float] | None = None
+        self._minimap_profile_signature = None
+        self._minimap_source_cred = ""
         self._minimap_scale = 0.0
         self._minimap_started = False
         self._minimap_last_state: dict | None = None
@@ -218,12 +220,6 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             False = 没有可用的官方 WS 真值（未配置 content / 认证失败 / 等稳定超时），
             此时若本地 WS 服务能提供位置，会在后续静止时自动完成首次锚定。
         """
-        if self._minimap_started and self._minimap_fusion is not None:
-            if self._map_ws_auth_source and not self._is_map_ws_client_enabled():
-                self._start_map_ws_client(self._map_ws_auth_source)
-            estimate = self._minimap_fusion.estimate()
-            return estimate is not None
-
         profile = self._nav_profile()
         if profile is None:
             self.log_warning(
@@ -242,6 +238,44 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             )
             return False
         scale = profile.scale
+        signature = (
+            int(getattr(self, "width", 0) or 0),
+            int(getattr(self, "height", 0) or 0),
+            float(scale),
+            tuple(float(v) for v in matrix[0]),
+            tuple(float(v) for v in matrix[1]),
+        )
+
+        try:
+            cred = self._resolve_ws_cred()
+        except Exception as e:
+            self.log_warning(f"读取地图 WS content 失败，改用本地 WS 位置源: {e}")
+            cred = ""
+
+        if self._minimap_started and self._minimap_fusion is not None:
+            if signature != self._minimap_profile_signature:
+                self.log_info("导航比例尺或轴映射已变化，重建小地图定位器")
+                self.stop_minimap_position()
+                self._minimap_od = None
+                self._minimap_fusion = None
+                self._minimap_last_state = None
+            else:
+                if cred != self._minimap_source_cred:
+                    self.log_info("地图 WS 真值来源已变化，清空绝对锚点等待重新校准")
+                    self._minimap_fusion.reset()
+                    self._minimap_ws_map_id = None
+                    self._minimap_last_ws = None
+                    self._minimap_position_trusted = False
+                    self._minimap_trust_reason = "source_changed"
+                    self._minimap_distance_since_sync = 0.0
+                    self._minimap_prev_position = None
+                    self._minimap_prev_map_id = None
+                    self._minimap_last_state = None
+                    self._minimap_source_cred = cred
+                self._ensure_ws_position_source(cred)
+                estimate = self._minimap_fusion.estimate()
+                return estimate is not None
+
         self.log_info(
             f"导航比例尺 {scale:.6f} 米/像素（{profile.source}），"
             f"轴映射 {profile.map_to_world}"
@@ -270,12 +304,8 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
         self._minimap_prev_map_id = None
         self._minimap_position_trusted = False
         self._minimap_trust_reason = "uninitialized"
-
-        try:
-            cred = self._resolve_ws_cred()
-        except Exception as e:
-            self.log_warning(f"读取地图 WS content 失败，改用本地 WS 位置源: {e}")
-            cred = ""
+        self._minimap_profile_signature = signature
+        self._minimap_source_cred = cred
 
         self._ensure_ws_position_source(cred)
         self._minimap_started = True
@@ -579,6 +609,11 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
     def minimap_fusion(self) -> MinimapPositionFusion | None:
         """融合实例（``estimate()`` / ``last_sync_residual`` / ``rest_diag`` 等）。"""
         return self._minimap_fusion
+
+    @property
+    def minimap_position_ready(self) -> bool:
+        """定位器是否已完成初始化，可安全调用 :meth:`minimap_position`。"""
+        return self._minimap_od is not None and self._minimap_fusion is not None
 
     def minimap_rest_diag(self) -> dict | None:
         """最近一次静止判定的实测值（``map_speed_m_s`` / ``ws_moved_m`` / ``reason``）。"""

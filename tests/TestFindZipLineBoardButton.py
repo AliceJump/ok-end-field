@@ -1,7 +1,7 @@
 """验证传送后寻找「登上滑索架」按钮的三阶段逻辑（直接查找 + 踱步 + 前后移动）。"""
 
 import unittest
-from types import SimpleNamespace
+from types import MethodType, SimpleNamespace
 
 from src.tasks.onetime.DeliveryTask import DeliveryTask
 
@@ -45,6 +45,8 @@ def _make_stub(ocr_results, strafe_results=None, advance_per_strafe=None):
     stub.sleep = _sleep
     stub.log_info = lambda msg: stub.log_lines.append(msg)
     stub.press_key = lambda key, *a, **kw: stub.ctrl_calls.append(key)
+    stub.alt_clicks = []
+    stub.click_with_alt = lambda box, **kw: stub.alt_clicks.append((box, kw))
 
     def _strafe(check, passes=None, duration=0.2, keys=("s", "w", "a", "d"), time_out=-1):
         stub.strafe_calls.append({"keys": keys, "time_out": time_out})
@@ -59,6 +61,25 @@ def _make_stub(ocr_results, strafe_results=None, advance_per_strafe=None):
 
 
 class TestFindZipLineBoardButton(unittest.TestCase):
+    def test_distance_matcher_accepts_display_rounding_near_expected(self):
+        patterns = DeliveryTask._zip_line_distance_matcher(42.4, distance_tolerance=3)
+
+        self.assertTrue(any(pattern.search("45m") for pattern in patterns))
+        self.assertFalse(any(pattern.search("80m") for pattern in patterns))
+
+    def test_board_zip_line_clicks_found_button(self):
+        box = _FakeBox()
+        stub = _make_stub(ocr_results=[box])
+        stub._find_zip_line_board_button = MethodType(
+            DeliveryTask._find_zip_line_board_button,
+            stub,
+        )
+
+        self.assertTrue(DeliveryTask.board_zip_line(stub, direct_wait=1.0, total_time_out=5.0))
+
+        self.assertEqual(stub.alt_clicks, [(box, {"after_sleep": 2})])
+        self.assertTrue(any("已点击登上滑索架" in msg for msg in stub.log_lines))
+
     def test_direct_hit(self):
         """阶段一直接找到按钮：不进入踱步搜索，也不切换步行。"""
         box = _FakeBox()

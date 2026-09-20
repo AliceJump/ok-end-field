@@ -24,6 +24,8 @@ from src.core.global_config_store import (
     ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME,
     KEY_CONFIG_NAME,
     get_global_config,
+    migrate_task_minimap_values_to_owner,
+    migrate_task_nav_values_to_global,
     migrate_task_zip_line_values_to_global,
 )
 from src.data.lang import get_lang_accessor
@@ -281,9 +283,10 @@ class BaseEfTask(
                 value_migrations.update(vtable)
         migrate_config_file_keys(self.__class__.__name__, key_migrations)
         migrate_config_values(self.__class__.__name__, value_migrations)
-        # 在框架 Config 构造（verify_config 会删除任务文件中不在 default 的滑索键）之前，
-        # 把任务文件中的滑索旧值转存到全局 Zip Line Config.json，避免全局侧 legacy 收集
-        # 在任务文件滑索键已被删除后读不到值。
+        # 在框架 Config 构造（verify_config 会删除任务文件中不在 default 的旧键）之前，
+        # 把共享小地图参数、导航真值与滑索旧值转存到对应所有者，避免数据被提前删除。
+        migrate_task_minimap_values_to_owner(self)
+        migrate_task_nav_values_to_global(self.__class__.__name__)
         migrate_task_zip_line_values_to_global(self.__class__.__name__)
         super().load_config()
 

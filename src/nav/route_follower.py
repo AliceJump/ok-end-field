@@ -23,11 +23,20 @@ import math
 from dataclasses import dataclass
 
 from src.nav.grid_io import DenseGrid
-from src.nav.grid_planner import GridPlanner, PlanResult
+from src.nav.grid_planner import (
+    DEFAULT_ZIP_LINE_ACCESS_RADIUS,
+    DEFAULT_ZIP_LINE_BOARDING_COST,
+    DEFAULT_ZIP_LINE_COST_FACTOR,
+    GridPlanner,
+    PlanResult,
+    ZipLineRouteStep,
+)
+from src.nav.zip_line_graph import ZipLineGraph
 
 WAIT = "wait"
 TURN = "turn"
 WALK = "walk"
+ZIP_LINE = "zip_line"
 STUCK = "stuck"
 REPLAN = "replan"
 DONE = "done"
@@ -98,6 +107,9 @@ class FollowerConfig:
     max_expand: int = 400_000
     off_route_radius: float = 6.0
     off_route_hold_s: float = 1.5
+    zip_line_cost_factor: float = DEFAULT_ZIP_LINE_COST_FACTOR
+    zip_line_boarding_cost: float = DEFAULT_ZIP_LINE_BOARDING_COST
+    zip_line_access_radius: int = DEFAULT_ZIP_LINE_ACCESS_RADIUS
 
 
 @dataclass(frozen=True)
@@ -119,13 +131,20 @@ class FollowerStep:
     arrived_waypoint_index: int | None = None
     skipped_waypoints: tuple[int, ...] = ()
     shortcut_distance: float | None = None
+    zip_line_step: ZipLineRouteStep | None = None
     reason: str = ""
 
 
 class GridRouteFollower:
     """跟随 :class:`~src.nav.grid_planner.PlanResult`，不直接操作游戏。"""
 
-    def __init__(self, grid: DenseGrid, config: FollowerConfig | None = None):
+    def __init__(
+        self,
+        grid: DenseGrid,
+        config: FollowerConfig | None = None,
+        *,
+        zip_lines: ZipLineGraph | None = None,
+    ):
         """创建跟随器；配置缺省时使用 :class:`FollowerConfig` 默认值。"""
         self.grid = grid
         self.config = config or FollowerConfig()
@@ -140,10 +159,15 @@ class GridRouteFollower:
             frontier_penalty=self.config.frontier_penalty,
             waypoint_tolerance=self.config.waypoint_tolerance,
             max_expand=self.config.max_expand,
+            zip_lines=zip_lines,
+            zip_line_cost_factor=self.config.zip_line_cost_factor,
+            zip_line_boarding_cost=self.config.zip_line_boarding_cost,
+            zip_line_access_radius=self.config.zip_line_access_radius,
         )
         self.plan_result: PlanResult | None = None
         self.goal: tuple[float, float] | None = None
         self.waypoint_index = 0
+        self._zip_line_index = 0
         self._move_started_at: float | None = None
         self._move_start_pos: tuple[float, float] | None = None
         self._walk_aligned = False
@@ -167,6 +191,7 @@ class GridRouteFollower:
         self._route_start = (float(start[0]), float(start[1]))
         self.plan_result = self.planner.plan(start, goal, time_budget_s=time_budget_s)
         self.waypoint_index = 0
+        self._zip_line_index = 0
         self._reset_motion()
         self._off_route_since = None
         self._walk_aligned = False
@@ -210,12 +235,36 @@ class GridRouteFollower:
             )
 
         arrived_index = None
+        waypoint_limit = self._waypoint_limit(len(waypoints))
         while (
-            self.waypoint_index < len(waypoints) - 1
+            self.waypoint_index < waypoint_limit
             and distance_xz(pos, waypoints[self.waypoint_index]) <= self.config.arrive_radius
         ):
             arrived_index = self.waypoint_index
             self.waypoint_index += 1
+
+        zip_line_step = self._current_zip_line_step()
+        if zip_line_step is not None:
+            entry_index = zip_line_step.entry_waypoint_index
+            if self.waypoint_index > entry_index:
+                self.waypoint_index = entry_index
+            entry = waypoints[entry_index]
+            entry_distance = distance_xz(pos, entry)
+            if (
+                self.waypoint_index >= entry_index
+                and entry_distance <= self.config.arrive_radius
+            ):
+                self._walk_aligned = False
+                self._reset_motion()
+                return self._step(
+                    ZIP_LINE,
+                    entry,
+                    target_bearing=None,
+                    heading_error=None,
+                    waypoint_distance=entry_distance,
+                    goal_distance=goal_distance,
+                    zip_line_step=zip_line_step,
+                )
 
         waypoint = waypoints[self.waypoint_index]
         waypoint_distance = distance_xz(pos, waypoint)
@@ -316,7 +365,8 @@ class GridRouteFollower:
         waypoints = self.plan_result.waypoints
         skipped: list[int] = []
         nearest = None
-        while self.waypoint_index < len(waypoints) - 1:
+        limit = self._waypoint_limit(len(waypoints))
+        while self.waypoint_index < limit:
             start = waypoints[self.waypoint_index]
             end = waypoints[self.waypoint_index + 1]
             distance, _ratio = point_segment_distance(position, start, end)
@@ -329,22 +379,66 @@ class GridRouteFollower:
             self.waypoint_index += 1
         return tuple(skipped), nearest
 
+    def _current_zip_line_step(self) -> ZipLineRouteStep | None:
+        """返回下一项待执行的滑索步骤。"""
+        if self.plan_result is None:
+            return None
+        steps = self.plan_result.zip_line_steps
+        if self._zip_line_index >= len(steps):
+            return None
+        return steps[self._zip_line_index]
+
+    def _waypoint_limit(self, waypoint_count: int) -> int:
+        """普通行走不得越过下一步滑索的上索航点。"""
+        zip_line_step = self._current_zip_line_step()
+        if zip_line_step is None:
+            return max(0, waypoint_count - 1)
+        return min(max(0, waypoint_count - 1), zip_line_step.entry_waypoint_index)
+
+    def _walkable_ranges(self) -> list[tuple[int, int]]:
+        """返回滑索断点之外的连续行走航点区间。"""
+        if self.plan_result is None or not self.plan_result.waypoints:
+            return []
+        count = len(self.plan_result.waypoints)
+        ranges: list[tuple[int, int]] = []
+        start = 0
+        for step in self.plan_result.zip_line_steps:
+            ranges.append((start, min(step.entry_waypoint_index, count - 1)))
+            start = min(max(start, step.exit_waypoint_index), count - 1)
+        ranges.append((start, count - 1))
+        return ranges
+
+    @staticmethod
+    def _range_for_index(ranges: list[tuple[int, int]], index: int) -> tuple[int, int] | None:
+        for start, end in ranges:
+            if start <= index <= end:
+                return start, end
+        return None
+
     def _off_route_distance(self, position: tuple[float, float]) -> float | None:
-        """返回当前位置到相邻两个路线段中较近者的距离。"""
+        """返回当前位置到当前**连续行走段**中相邻路线段的较近距离。
+
+        滑索连接两端可能相距百米，不能把这段空中连线当成可行走路线，否则角色在
+        上索点附近会被误判为已接近下一航点。这里按 ``zip_line_steps`` 把路线切开。
+        """
         if self.plan_result is None:
             return None
         waypoints = self.plan_result.waypoints
         if not waypoints:
             return None
         index = min(max(0, self.waypoint_index), len(waypoints) - 1)
+        walk_range = self._range_for_index(self._walkable_ranges(), index)
+        if walk_range is None:
+            return None
+        range_start, range_end = walk_range
         distances = []
-        if index == 0 and self._route_start is not None:
+        if index == range_start and range_start == 0 and self._route_start is not None:
             distances.append(point_segment_distance(
                 position, self._route_start, waypoints[0])[0])
-        if index > 0:
+        if index > range_start:
             distances.append(point_segment_distance(
                 position, waypoints[index - 1], waypoints[index])[0])
-        if index < len(waypoints) - 1:
+        if index < range_end:
             distances.append(point_segment_distance(
                 position, waypoints[index], waypoints[index + 1])[0])
         if not distances:
@@ -393,11 +487,30 @@ class GridRouteFollower:
             return False
         return self.planner.line_risk(start_cell, end_cell) <= self.planner.line_risk(anchor_cell, end_cell)
 
+    def complete_zip_line(self) -> bool:
+        """滑索执行成功后推进到下索后的连续行走段。"""
+        step = self._current_zip_line_step()
+        if step is None:
+            return False
+        self.waypoint_index = min(
+            max(0, step.exit_waypoint_index),
+            max(0, len(self.plan_result.waypoints) - 1),
+        )
+        self._zip_line_index += 1
+        self._reset_motion()
+        self._off_route_since = None
+        self._walk_aligned = False
+        self._advance_initial_waypoints(
+            self.plan_result.waypoints[self.waypoint_index]
+        )
+        return True
+
     def _advance_initial_waypoints(self, start: tuple[float, float]) -> None:
         """规划后跳过起点附近已经到达的初始航点。"""
         waypoints = self.plan_result.waypoints if self.plan_result else []
+        limit = self._waypoint_limit(len(waypoints))
         while (
-            self.waypoint_index < len(waypoints) - 1
+            self.waypoint_index < limit
             and distance_xz(start, waypoints[self.waypoint_index]) <= self.config.arrive_radius
         ):
             self.waypoint_index += 1
@@ -433,6 +546,7 @@ class GridRouteFollower:
         arrived_waypoint_index: int | None = None,
         skipped_waypoints: tuple[int, ...] = (),
         shortcut_distance: float | None = None,
+        zip_line_step: ZipLineRouteStep | None = None,
         reason: str = "",
     ) -> FollowerStep:
         """构造完整诊断字段的动作结果。"""
@@ -450,5 +564,6 @@ class GridRouteFollower:
             arrived_waypoint_index=arrived_waypoint_index,
             skipped_waypoints=skipped_waypoints,
             shortcut_distance=shortcut_distance,
+            zip_line_step=zip_line_step,
             reason=reason,
         )

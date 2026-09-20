@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """MinimapHeadingMixin 单元测试：读朝向 + 闭环转到指定方位。
 
 用一个假任务模拟游戏机制：
@@ -21,16 +20,18 @@ class _FakeTurnTask(MinimapHeadingMixin):
     """模拟"鼠标转视角 + 按 W 转身"的假任务，绕开真实鼠标/键盘/截图。"""
 
     def __init__(self, facing=0.0, per_px=0.0675, k_error=1.0, score=0.9,
-                 arrow_fail=False, input_mode="foreground"):
+                 arrow_fail=False, input_mode="foreground",
+                 facing_follows_camera=False):
         self.config = {
             CONFIG_YAW_PER_PIXEL: per_px,
             CONFIG_MIN_SCORE: 0.6,
         }
         self.facing = float(facing)      # 角色朝向（方位角）
         self.camera = float(facing)      # 视角朝向
-        self.k_error = float(k_error)    # 实测系数 = 配置系数 × k_error（模拟标定偏差）
+        self.k_error = float(k_error)    # 实测系数 = 配置系数 x k_error（模拟标定偏差）
         self.score = float(score)
         self.arrow_fail = arrow_fail
+        self.facing_follows_camera = bool(facing_follows_camera)
         self._input_mode = input_mode
         self.sent: list[int] = []
         self.w_presses = 0
@@ -50,6 +51,8 @@ class _FakeTurnTask(MinimapHeadingMixin):
     def active_and_send_mouse_delta(self, dx=0, dy=0, steps=1, delay=0):
         self.sent.append(int(dx))
         self.camera = (self.camera + dx * self.config[CONFIG_YAW_PER_PIXEL] * self.k_error) % 360.0
+        if self.facing_follows_camera:
+            self.facing = self.camera
 
     def log_info(self, msg, notify=False):
         self.logs.append(str(msg))
@@ -115,7 +118,7 @@ class TestTurnToBearing(unittest.TestCase):
         self.assertTrue(res["ok"], res)
         self.assertGreaterEqual(res["rounds"], 2)
         self.assertLessEqual(abs(res["error"]), 5.0)
-        # 每轮的实测系数应稳定反映真实比例（配置 0.0675 × 0.8 = 0.054）
+        # 每轮的实测系数应稳定反映真实比例（配置 0.0675 x 0.8 = 0.054）
         for e in res["history"]:
             self.assertAlmostEqual(e["ratio"], 0.0675 * 0.8, delta=0.002)
 
@@ -182,6 +185,30 @@ class TestTurnToBearing(unittest.TestCase):
         self.assertFalse(res["ok"])
         self.assertIsNotNone(res["error"])
         self.assertLess(abs(res["error"]), 50.0)
+
+
+class TestAimViewToBearing(unittest.TestCase):
+    """覆盖滑索场景下只转视角、不按 W 的横向对准。"""
+
+    def test_turns_view_without_pressing_w(self):
+        task = _FakeTurnTask(facing=0.0, facing_follows_camera=True)
+
+        result = task.aim_view_to_bearing(90.0, tolerance=5.0)
+
+        self.assertTrue(result["ok"], result)
+        self.assertAlmostEqual(result["heading"], 90.0, delta=1.0)
+        self.assertEqual(task.w_presses, 0)
+        self.assertTrue(task.sent)
+
+    def test_already_aligned_does_not_move_mouse(self):
+        task = _FakeTurnTask(facing=135.0, facing_follows_camera=True)
+
+        result = task.aim_view_to_bearing(135.0, tolerance=5.0)
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(result["rounds"], 0)
+        self.assertEqual(task.sent, [])
+        self.assertEqual(task.w_presses, 0)
 
 
 class TestOneShotAndDiagnostics(unittest.TestCase):

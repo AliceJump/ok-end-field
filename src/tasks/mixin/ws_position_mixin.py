@@ -99,6 +99,7 @@ class WsPositionMixin:
         self._map_ws_auth_source = ""
         self._map_ws_account = None
         self._map_ws_last_error_at = 0.0
+        self._map_ws_auth_retry_after = 0.0
         self._map_ws_last_consume_at = 0.0
         self._map_ws_consumer_idle_timeout = 10.0
         self._map_ws_last_position_log_at = 0.0
@@ -525,24 +526,30 @@ class WsPositionMixin:
                     pass
 
     def _start_map_ws_client(self, raw_cred: str | None):
+        auth_source = str(raw_cred or "")
+        if not auth_source:
+            return False
+        if time.time() < float(getattr(self, "_map_ws_auth_retry_after", 0.0) or 0.0):
+            return False
         try:
-            auth_bundle = self._resolve_auth_bundle(raw_cred)
+            auth_bundle = self._resolve_auth_bundle(auth_source)
         except MapAuthError as e:
             # 仅捕获可预期的认证失败：不抛出阻断导航，记录一次后由后续
             # 触发周期重试（map_device_id 内部有 30 秒冷却，不会频繁铸造）
+            self._map_ws_auth_retry_after = time.time() + 30.0
             if not getattr(self, "_map_ws_auth_failed_logged", False):
                 self._map_ws_auth_failed_logged = True
                 log_error = getattr(self, "log_error", None)
                 if callable(log_error):
                     log_error(f"[地图WS] 认证失败，稍后将自动重试: {e}")
             return False
+        self._map_ws_auth_retry_after = 0.0
         self._map_ws_auth_failed_logged = False
         cred = str(auth_bundle.get("cred") or "")
         sign_token = str(auth_bundle.get("sign_token") or "")
         sign_time = auth_bundle.get("sign_time") if isinstance(auth_bundle.get("sign_time"), dict) else {}
         device_id = str(auth_bundle.get("d_id") or "")
         user_id = str(auth_bundle.get("user_id") or "")
-        auth_source = str(raw_cred or "")
         if not cred:
             return False
         if (
@@ -812,6 +819,7 @@ class WsPositionMixin:
             self._map_ws_user_id = ""
             self._map_ws_auth_source = ""
             self._map_ws_last_consume_at = 0.0
+            self._map_ws_auth_retry_after = 0.0
 
     # ---------- 任务级位置源管理（ItemNavigatorTask 等共用） ----------
 

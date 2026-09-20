@@ -12,6 +12,7 @@
 """
 import time
 import unittest
+from unittest.mock import Mock
 
 import cv2
 import numpy as np
@@ -21,6 +22,7 @@ from src.tasks.mixin.minimap_position_mixin import (
     MinimapPositionMixin,
     parse_map_to_world,
 )
+from src.tasks.mixin.ws_position_mixin import MapAuthError
 
 # 640x360：默认圆心/半径比例下环带外径约 28px，3px 的内容位移远小于 max_shift(~10px)
 W, H = 640, 360
@@ -59,14 +61,18 @@ class _FakeTask(MinimapPositionMixin):
         self._t = 0.0
         self.logs = []
         self._payload = None
+        self.ensure_calls = []
         self._init_minimap_position_mixin()
         # 测试里不起真实 WS 线程/端口
-        self._ensure_ws_position_source = lambda cred: None
+        self._ensure_ws_position_source = self._record_ensure
 
     # --- 任务侧接口 ---
     def _nav_config(self):
         """覆盖掉真实全局配置读取：测试要的是确定值，不是 configs/ 下的文件内容。"""
         return self.nav_config
+
+    def _record_ensure(self, cred):
+        self.ensure_calls.append(cred)
 
     def active_time(self):
         return self._t
@@ -239,6 +245,31 @@ class TestMinimapPositionMixin(unittest.TestCase):
 
         self.assertIs(self.task.minimap_odometry, odometry)
         self.assertIs(self.task.minimap_fusion, fusion)
+        self.assertEqual(self.task.ensure_calls, ["", ""])
+
+    def test_resolution_change_rebuilds_localizer(self):
+        self.task.start_minimap_position()
+        odometry = self.task.minimap_odometry
+        fusion = self.task.minimap_fusion
+        old_scale = self.task._minimap_scale
+
+        self.task.width = 1280
+        self.task.start_minimap_position()
+
+        self.assertIsNot(self.task.minimap_odometry, odometry)
+        self.assertIsNot(self.task.minimap_fusion, fusion)
+        self.assertNotEqual(self.task._minimap_scale, old_scale)
+        self.assertAlmostEqual(
+            self.task._minimap_scale,
+            self.task.nav_config["比例尺常数(米)"] / 1280,
+            places=9,
+        )
+
+    def test_invalid_profile_does_not_mark_ready(self):
+        self.task.nav_config.clear()
+
+        self.assertFalse(self.task.start_minimap_position())
+        self.assertFalse(self.task.minimap_position_ready)
 
     def test_persistent_ws_ignores_idle_consumer_timeout(self):
         self.task._map_ws_consumer_idle_timeout = 0.0
@@ -246,16 +277,35 @@ class TestMinimapPositionMixin(unittest.TestCase):
 
         self.assertFalse(self.task._map_ws_should_stop_for_idle_consumer())
 
-    def test_start_restarts_stopped_map_ws_client(self):
+    def test_start_rechecks_source_when_already_started(self):
+        self.task.nav_config["真值content"] = "cred"
         self.task.start_minimap_position()
-        self.task._map_ws_auth_source = "cred"
-        self.task._is_map_ws_client_enabled = lambda: False
-        restarted = []
-        self.task._start_map_ws_client = lambda cred: restarted.append(cred) or True
-
         self.task.start_minimap_position()
 
-        self.assertEqual(restarted, ["cred"])
+        self.assertEqual(self.task.ensure_calls, ["cred", "cred"])
+
+    def test_source_change_clears_absolute_anchor(self):
+        self.task.start_minimap_position()
+        self.task.tick(self.frame)
+        self.task.tick(self.frame, ws=(100.0, 200.0))
+        self.assertIsNotNone(self.task.latest_minimap_state()["x"])
+
+        self.task.nav_config["真值content"] = "new-cred"
+        self.task.start_minimap_position()
+
+        self.assertIsNone(self.task.latest_minimap_state())
+        self.assertIsNone(self.task.minimap_fusion.estimate())
+        self.assertFalse(self.task._minimap_position_trusted)
+
+    def test_map_ws_auth_failure_respects_retry_cooldown(self):
+        self.task._resolve_auth_bundle = Mock(side_effect=MapAuthError("temporary failure"))
+
+        self.assertFalse(self.task._start_map_ws_client("cred"))
+        self.assertGreater(self.task._map_ws_auth_retry_after, time.time())
+
+        self.task._resolve_auth_bundle.reset_mock()
+        self.assertFalse(self.task._start_map_ws_client("cred"))
+        self.task._resolve_auth_bundle.assert_not_called()
 
     def test_latest_state_tracks_freshness_and_sync_sequence(self):
         self.task.start_minimap_position()

@@ -76,6 +76,82 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
     def zip_line_scroll_enabled(self):
         return self.get_zip_line_config_value(ZIP_LINE_SCROLL_KEY, False)
 
+    def _find_zip_line_board_button(self, direct_wait=5.0, total_time_out=60.0):
+        """确保处于主界面，并寻找「登上滑索架」交互按钮。
+
+        复用自动送货已验证的三阶段策略：原地查找、WASD 踱步、W/S 前后移动。
+        """
+        self.ensure_main()
+        language = getattr(self.lang, "zip_line_mixin", None)
+        match = getattr(language, "k_b0e3a2da", None)
+        if match is None:
+            match = self.lang.DeliveryTask.k_b0e3a2da
+        box = self.box.bottom_right
+        start = self.active_time()
+        deadline = start + max(0.0, total_time_out)
+
+        def check():
+            frame = self.next_frame()
+            results = self.ocr(match=match, box=box, frame=frame, log=True)
+            return results[0] if results else None
+
+        while self.active_time() < min(start + direct_wait, deadline):
+            if found := check():
+                return found
+            self.sleep(0.1)
+
+        remaining = deadline - self.active_time()
+        if remaining <= 0:
+            self.log_info("总等待时间已耗尽，仍未找到登上滑索架")
+            return None
+
+        self.press_key("ctrl")
+        try:
+            self.log_info("短时间内未找到登上滑索架，可能被其他设备遮挡，切换步行开始踱步寻找（最长 10 秒）")
+            found = self.strafe_search(
+                check,
+                passes=None,
+                duration=0.2,
+                keys=("s", "w", "a", "d"),
+                time_out=min(10.0, remaining),
+            )
+            if found:
+                self.log_info("踱步寻找过程中找到登上滑索架")
+                return found
+
+            remaining = deadline - self.active_time()
+            if remaining <= 0:
+                self.log_info("踱步超时，仍未找到登上滑索架")
+                return None
+            self.log_info("踱步仍未找到登上滑索架，改为仅 W/S 前后移动继续寻找")
+            found = self.strafe_search(
+                check,
+                passes=None,
+                duration=0.2,
+                keys=("s", "w"),
+                time_out=remaining,
+            )
+            if found:
+                self.log_info("前后移动寻找过程中找到登上滑索架")
+                return found
+            self.log_info("前后移动超时，仍未找到登上滑索架")
+            return None
+        finally:
+            self.press_key("ctrl", after_sleep=0.01)
+            self.log_info("恢复奔跑模式")
+
+    def board_zip_line(self, direct_wait=5.0, total_time_out=60.0):
+        """点击当前滑索架的「登上滑索架」按钮。"""
+        result = self._find_zip_line_board_button(
+            direct_wait=direct_wait,
+            total_time_out=total_time_out,
+        )
+        if not result:
+            return False
+        self.click_with_alt(result, after_sleep=2)
+        self.log_info("已点击登上滑索架")
+        return True
+
     def on_zip_line_start(self, delivery_to, need_scroll=None, target=None, need_v=True):
         """进入滑索后，根据配置对齐并滑行至送货点
 
@@ -102,7 +178,29 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         zip_line_list = parse_int_sequence(zip_line_list_str)
         self.zip_line_list_go(zip_line_list, need_scroll, target, need_v=need_v)
 
-    def zip_line_list_go(self, zip_line_list, need_scroll=None, target=None, need_v=False):
+    @staticmethod
+    def _zip_line_distance_matcher(zip_line, distance_tolerance=None):
+        """构造距离匹配模式；容差只用于地图坐标与游戏显示距离存在偏差的场景。"""
+        if distance_tolerance is None:
+            return re.compile(str(zip_line))
+        center = round(float(zip_line))
+        tolerance = max(0, round(float(distance_tolerance)))
+        if tolerance <= 0:
+            return re.compile(str(center))
+        return [
+            re.compile(rf"(?<!\d){number}(?:\s*m)?", re.IGNORECASE)
+            for number in range(max(1, center - tolerance), center + tolerance + 1)
+        ]
+
+    def zip_line_list_go(
+        self,
+        zip_line_list,
+        need_scroll=None,
+        target=None,
+        need_v=False,
+        distance_tolerance=None,
+        target_bearing=None,
+    ):
         """按顺序对齐滑索并执行滑行
 
         Args:
@@ -110,11 +208,53 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             need_scroll: 是否需要滚动
             target: 目标信息，包含名称和类型(例如：("登上滑索架", "ocr"))
             need_v: 是否需要按V键追踪
+            distance_tolerance: 距离匹配容差（米）。地图坐标与游戏显示距离不一致时，
+                会按该半径依次匹配可见距离，普通送货仍保持精确匹配。
+            target_bearing: 当前滑索到下一滑索的世界方位角。提供后会先只转动视角
+                做横向对准，不按 W，不会让滑索上的角色发生位移。
 
         """
-        for zip_line in zip_line_list:
+        bearings = (
+            list(target_bearing)
+            if isinstance(target_bearing, (list, tuple))
+            else None
+        )
+        if bearings:
+            aim = getattr(self, "aim_view_to_bearing", None)
+            if callable(aim):
+                first_bearing = bearings[0]
+                result = aim(first_bearing, tolerance=8.0, max_rounds=2)
+                if result.get("ok"):
+                    self.log_info(
+                        f"已按滑索世界方位对准视角：目标={float(first_bearing):.1f}°，"
+                        f"实测={result.get('heading')}"
+                    )
+                else:
+                    self.log_warning(
+                        f"滑索世界方位粗对准未到位：目标={float(first_bearing):.1f}°，"
+                        f"实测={result.get('heading')}，继续使用距离 OCR 对中"
+                    )
+        elif target_bearing is not None:
+            bearings = [float(target_bearing)]
+
+        tolerances = (
+            list(distance_tolerance)
+            if isinstance(distance_tolerance, (list, tuple))
+            else None
+        )
+        for index, zip_line in enumerate(zip_line_list):
+            tolerance = (
+                tolerances[min(index, len(tolerances) - 1)]
+                if tolerances
+                else distance_tolerance
+            )
+            if bearings and index > 0:
+                aim = getattr(self, "aim_view_to_bearing", None)
+                if callable(aim):
+                    bearing = bearings[min(index, len(bearings) - 1)]
+                    aim(bearing, tolerance=8.0, max_rounds=2)
             self.align_ocr_or_find_target_to_center(
-                re.compile(str(zip_line)),
+                self._zip_line_distance_matcher(zip_line, tolerance),
                 is_num=True,
                 need_scroll=need_scroll,
                 ocr_frame_processor_list=[

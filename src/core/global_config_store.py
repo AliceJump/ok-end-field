@@ -16,7 +16,13 @@ from src.core.BattleConfig import (
     BATTLE_CONFIG_TYPE,
     DEFAULT_BATTLE_CONFIG,
 )
-from src.core.NavConfig import DEFAULT_NAV_CONFIG, NAV_CONFIG_DESCRIPTION, NAV_CONFIG_NAME
+from src.core.NavConfig import (
+    DEFAULT_NAV_CONFIG,
+    NAV_CONFIG_DESCRIPTION,
+    NAV_CONFIG_NAME,
+    NAV_CONTENT_KEY,
+    NAV_WS_ACCOUNT_KEY,
+)
 from src.data.delivery_area import DELIVERY_AREA_CONFIG
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING, stages_dict
 from src.icons import Icons
@@ -124,7 +130,10 @@ _MIGRATION_STATE_PATH = get_relative_path("configs", "_global_config_migrations.
 _MIGRATION_BACKUP_DIR = get_relative_path("configs", "global_config_migration_backup")
 _BATTLE_LEGACY_TASK_CONFIGS = ["DailyTask", "AutoCombatTask", "BattleTask"]
 _ZIP_LINE_LEGACY_TASK_CONFIGS = ["DeliveryTask", "DailyTask", "BattleTask"]
+_NAV_LEGACY_TASK_CONFIGS = ["MinimapPositionTask", "MinimapNavigateToPoint"]
+_MINIMAP_POSITION_TASK_CONFIG_NAME = "MinimapPositionTask"
 _ZIP_LINE_ACCOUNT_MIGRATION_MARKER = "zip_line_account_overrides_v1"
+_NAV_LEGACY_BACKUP_MARKER = "nav_legacy_task_config_backup_v1"
 _ZIP_LINE_KEY_MIGRATIONS = {
     # 历史任务配置中的固定键名，保留明确映射以确保迁移稳定。
     "通向送货点": "通向武陵城送货点",
@@ -173,9 +182,27 @@ def _backup_legacy_task_configs(state: dict[str, Any]) -> None:
     _write_migration_state(state)
 
 
+def _backup_legacy_nav_task_configs(state: dict[str, Any]) -> None:
+    """备份旧小地图定位任务配置，保留无法自动判定分辨率的比例尺/矩阵。"""
+    if state.get(_NAV_LEGACY_BACKUP_MARKER):
+        return
+
+    backup_dir = Path(_MIGRATION_BACKUP_DIR)
+    backup_dir.mkdir(parents=True, exist_ok=True)
+    for task_config_name in _NAV_LEGACY_TASK_CONFIGS:
+        source_path = Path(get_relative_path("configs", f"{task_config_name}.json"))
+        if source_path.is_file():
+            shutil.copy2(source_path, backup_dir / source_path.name)
+
+    state[_NAV_LEGACY_BACKUP_MARKER] = True
+    _write_migration_state(state)
+
+
 def _iter_legacy_config_data(option: ConfigOption):
     if option.name == BATTLE_CONFIG_NAME:
         task_config_names = _BATTLE_LEGACY_TASK_CONFIGS
+    elif option.name == NAV_CONFIG_NAME:
+        task_config_names = _NAV_LEGACY_TASK_CONFIGS
     else:
         task_config_names = []
 
@@ -317,6 +344,8 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
     state = _read_migration_state()
     if option.name == BATTLE_CONFIG_NAME:
         _backup_legacy_task_configs(state)
+    elif option.name == NAV_CONFIG_NAME:
+        _backup_legacy_nav_task_configs(state)
 
     # Battle Config 键名迁移：幂等执行（旧键值复制到新键，旧键保留），
     # 放在迁移状态标记检查之前，保证已迁移过的安装也能完成本次键名重命名。
@@ -331,6 +360,24 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
         _migrate_legacy_zip_line_account_overrides()
         state[_ZIP_LINE_ACCOUNT_MIGRATION_MARKER] = True
         _write_migration_state(state)
+
+    # Nav Config 的迁移标记可能已经由旧版新配置代码写入；真值 source 的
+    # 兜底迁移必须独立于标记执行，否则升级用户会永久丢失 content/账号。
+    if option.name == NAV_CONFIG_NAME:
+        config_file = get_relative_path("configs", f"{option.name}.json")
+        config = read_json_file(config_file)
+        if not isinstance(config, dict):
+            config = {}
+        values = _collect_legacy_values(option)
+        modified = False
+        for key, value in values.items():
+            default_value = option.default_config.get(key)
+            if key not in config or config.get(key) == default_value:
+                config[key] = value
+                modified = True
+        if modified:
+            write_json_file(config_file, config)
+
     if option.name in migrated_options:
         return
 
@@ -394,6 +441,102 @@ def migrate_task_zip_line_values_to_global(task_class_name: str) -> None:
         default_value = ZIP_LINE_DEFAULT_CONFIG.get(key)
         if key not in zlc or zlc.get(key) == default_value:
             zlc[key] = value
+
+
+def migrate_task_nav_values_to_global(task_class_name: str) -> None:
+    """在任务 Config 构造前转存旧小地图真值配置到全局 Nav Config。
+
+    比例尺和轴映射受分辨率影响，缺少历史分辨率时不能安全映射到某个档位；
+    它们由 :func:`_backup_legacy_nav_task_configs` 原样备份。`content` 与账号
+    是不受分辨率影响的真值来源，可在旧键被框架删除前可靠迁移。
+    """
+    if task_class_name not in _NAV_LEGACY_TASK_CONFIGS:
+        return
+
+    config_file = get_relative_path("configs", f"{task_class_name}.json")
+    data = read_json_file(config_file)
+    if not isinstance(data, dict):
+        return
+
+    # 先加载全局配置以触发任务配置备份；即使只有分辨率相关的旧标定，
+    # 也必须保留原文件，不能让框架 verify_config 直接删掉。
+    nav_config = get_global_config(NAV_CONFIG_NAME)
+
+    candidates = {}
+    for key in (NAV_CONTENT_KEY, NAV_WS_ACCOUNT_KEY):
+        value = str(data.get(key) or "").strip()
+        if value:
+            candidates[key] = value
+    if not candidates:
+        return
+
+    for key, value in candidates.items():
+        if key not in nav_config or not str(nav_config.get(key) or "").strip():
+            nav_config[key] = value
+
+
+def migrate_task_minimap_values_to_owner(task) -> None:
+    """把旧网格任务中的定位参数迁移到共享 ``MinimapPositionTask``。
+
+    网格任务只消费定位结果，WS 等待、位移提交和校准距离等参数属于定位任务。
+    本函数必须在框架 Config 校验删除旧键之前执行；若定位任务已经实例化，也同步
+    更新其内存配置，避免迁移要等下次启动才生效。
+    """
+    task_class_name = type(task).__name__
+    if task_class_name == _MINIMAP_POSITION_TASK_CONFIG_NAME:
+        return
+
+    config_file = get_relative_path("configs", f"{task_class_name}.json")
+    data = read_json_file(config_file)
+    if not isinstance(data, dict):
+        return
+
+    from src.tasks.mixin.minimap_position_mixin import MinimapPositionMixin
+
+    defaults = MinimapPositionMixin.minimap_position_default_config()
+    candidates = {
+        key: data[key]
+        for key, default_value in defaults.items()
+        if key in data and data[key] != default_value
+    }
+    if not candidates:
+        return
+
+    loaded_owner = None
+    executor = getattr(task, "_executor", None)
+    if executor is not None and hasattr(executor, "get_all_tasks"):
+        for candidate in executor.get_all_tasks():
+            if type(candidate).__name__ == _MINIMAP_POSITION_TASK_CONFIG_NAME:
+                loaded_owner = candidate
+                break
+    owner_config = getattr(loaded_owner, "config", None) if loaded_owner is not None else None
+    if not isinstance(owner_config, dict):
+        owner_config = None
+
+    owner_config_file = get_relative_path(
+        "configs", f"{_MINIMAP_POSITION_TASK_CONFIG_NAME}.json"
+    )
+    owner_data = read_json_file(owner_config_file)
+    if not isinstance(owner_data, dict):
+        owner_data = {}
+
+    modified = False
+    for key, value in candidates.items():
+        default_value = defaults[key]
+        file_value = owner_data.get(key, default_value)
+        memory_value = owner_config.get(key, default_value) if owner_config is not None else default_value
+        if file_value != default_value or memory_value != default_value:
+            authoritative = memory_value if memory_value != default_value else file_value
+            if owner_data.get(key) != authoritative:
+                owner_data[key] = authoritative
+                modified = True
+            continue
+        owner_data[key] = value
+        modified = True
+        if owner_config is not None:
+            owner_config[key] = value
+    if modified:
+        write_json_file(owner_config_file, owner_data)
 
 
 def get_global_config(name: str) -> Config:

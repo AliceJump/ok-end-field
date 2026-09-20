@@ -355,6 +355,26 @@ class TestCommitShiftGate(unittest.TestCase):
         self.assertTrue(r1.get("committed"), r1)
         self.assertAlmostEqual(od.position_px()[0], -3.0, delta=0.8)
 
+    def test_long_baseline_does_not_bypass_large_shift_guard(self):
+        """长间隔仍必须先过位移硬上限，不能被误判成良性换锚并注入大位移。"""
+        base = _texture(200, 200)
+        f0 = _bgr(base)
+        f1 = _bgr(_shifted(base, 50, 0))
+        task, od = self._make(
+            [f0, f1],
+            commit_min_shift_px=2.0,
+            sample_max_dt=1.0,
+        )
+
+        od.sample(frame=f0, now=0.0)
+        task._t = 2.0
+        result = od.sample(frame=f1)
+
+        self.assertEqual(result["reason"], "exceed_max_shift", result)
+        self.assertFalse(result["committed"])
+        self.assertFalse(result["benign_reanchor"])
+        self.assertEqual(od.position_px(), (0.0, 0.0))
+
     def test_long_baseline_commits_even_with_gate_off(self):
         """守卫链先判"相关可不可信"：能走到 too_long_dt 就说明相关是好的，该收下而不是丢。
 

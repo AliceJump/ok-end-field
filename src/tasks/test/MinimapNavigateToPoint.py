@@ -11,12 +11,14 @@ from src.icons import Icons
 from src.tasks.mixin.grid_navigation_mixin import (
     CONFIG_GRID_DIR,
     CONFIG_GRID_FILE,
+    CONFIG_GRID_USE_ZIP_LINES,
     CONFIG_GRID_ZOOM,
     GridNavigationMixin,
 )
+from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
 
-class MinimapNavigateToPoint(BaseEfTask, GridNavigationMixin):
+class MinimapNavigateToPoint(ZipLineMixin, GridNavigationMixin, BaseEfTask):
     """用于验证网格加载、路径规划和自动移动的调试任务。"""
 
     requires_foreground = True  # 移动与转视角依赖前台输入
@@ -26,7 +28,7 @@ class MinimapNavigateToPoint(BaseEfTask, GridNavigationMixin):
         self.name = "小地图网格导航"
         self.group_name = "工具与调试"
         self.group_icon = FluentIcon.DEVELOPER_TOOLS
-        self.description = "使用二维导航网格规划路径，并自动控制角色走到目标世界坐标"
+        self.description = "使用二维导航网格与用户滑索规划路径，并自动控制角色走到目标世界坐标"
         self.icon = Icons.Navigation
         self.visible = self.debug
 
@@ -55,6 +57,7 @@ class MinimapNavigateToPoint(BaseEfTask, GridNavigationMixin):
                 CONFIG_GRID_DIR,
                 CONFIG_GRID_FILE,
                 CONFIG_GRID_ZOOM,
+                CONFIG_GRID_USE_ZIP_LINES,
                 "仅规划不移动",
             ],
         })
@@ -91,6 +94,9 @@ class MinimapNavigateToPoint(BaseEfTask, GridNavigationMixin):
             self.log_warning("「小地图定位」触发任务未启用，无法获取当前位置", notify=True)
             return False
         position_service.start_minimap_position(wait_stable=False)
+        if not getattr(position_service, "minimap_position_ready", True):
+            self.log_warning("小地图定位器未完成初始化，请检查全局「Nav Config」和游戏窗口", notify=True)
+            return False
         timeout = max(1.0, self._cfg_float("等待定位超时(秒)", 30.0))
         started = self.active_time()
         while self.active_time() - started < timeout:

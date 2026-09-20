@@ -39,16 +39,18 @@ from src.nav.route_follower import (
     TURN,
     WAIT,
     WALK,
+    ZIP_LINE,
     FollowerConfig,
     FollowerStep,
     GridRouteFollower,
+    bearing_to_point,
 )
+from src.nav.zip_line_graph import ZipLineGraph
 from src.tasks.mixin.minimap_heading_mixin import (
     CONFIG_MIN_SCORE,
     CONFIG_YAW_PER_PIXEL,
     MinimapHeadingMixin,
 )
-from src.tasks.mixin.minimap_position_mixin import MinimapPositionMixin
 from src.tasks.trigger.MinimapPositionTask import MinimapPositionTask
 
 __all__ = [
@@ -78,6 +80,7 @@ __all__ = [
     "CONFIG_GRID_TIMEOUT",
     "CONFIG_GRID_TURN_TOLERANCE",
     "CONFIG_GRID_TURN_WHILE_MOVING",
+    "CONFIG_GRID_USE_ZIP_LINES",
     "CONFIG_GRID_WALL_PENALTY",
     "CONFIG_GRID_WAYPOINT_RADIUS",
     "CONFIG_GRID_WAYPOINT_TOLERANCE",
@@ -115,6 +118,7 @@ CONFIG_GRID_RECOVERY_TIME = "脱困按键时长(秒)"
 CONFIG_GRID_MAX_REPLANS = "最大重规划次数"
 CONFIG_GRID_TIMEOUT = "导航超时(秒)"
 CONFIG_GRID_TICK = "控制周期(秒)"
+CONFIG_GRID_USE_ZIP_LINES = "使用滑索路径"
 
 
 class GridNavigationMixin(MinimapHeadingMixin):
@@ -128,8 +132,6 @@ class GridNavigationMixin(MinimapHeadingMixin):
     def grid_navigation_default_config() -> dict:
         """返回网格导航配置的默认值。"""
         return {
-            # 旧定位配置暂时保留，供 MinimapPositionTask 首次启动时迁移。
-            **MinimapPositionMixin.minimap_position_default_config(),
             CONFIG_GRID_DIR: "assets/nav",
             CONFIG_GRID_FILE: "",
             CONFIG_GRID_ZOOM: "",
@@ -160,13 +162,13 @@ class GridNavigationMixin(MinimapHeadingMixin):
             CONFIG_GRID_MAX_REPLANS: 8,
             CONFIG_GRID_TIMEOUT: 180.0,
             CONFIG_GRID_TICK: 0.2,
+            CONFIG_GRID_USE_ZIP_LINES: True,
         }
 
     @staticmethod
     def grid_navigation_config_description() -> dict:
         """返回导航配置键的用户说明。"""
         return {
-            **MinimapPositionMixin.minimap_position_config_description(),
             CONFIG_GRID_DIR: "导航网格目录，默认 assets/nav",
             CONFIG_GRID_FILE: "可选。直接指定 *.grid.npz；填写后不再按地图 id 查找",
             CONFIG_GRID_ZOOM: "可选。地图存在多个 zoom 网格时指定，例如 4",
@@ -200,6 +202,10 @@ class GridNavigationMixin(MinimapHeadingMixin):
             CONFIG_GRID_MAX_REPLANS: "未取得新进展时允许的最大重规划次数",
             CONFIG_GRID_TIMEOUT: "整次导航的最长运行时间（秒）",
             CONFIG_GRID_TICK: "控制循环固定节拍（秒）",
+            CONFIG_GRID_USE_ZIP_LINES: (
+                "从当前官方地图账号读取用户滑索架，把 80m/110m 内的可连接点加入路线搜索。"
+                "需要全局「Nav Config」配置可用的 content；没有滑索数据时不改变原路线"
+            ),
         }
 
     def _init_grid_navigation_mixin(self) -> None:
@@ -214,6 +220,8 @@ class GridNavigationMixin(MinimapHeadingMixin):
         self._grid_nav_last_info_at = 0.0
         self._grid_nav_last_debug_key = None
         self._grid_nav_last_debug_at = 0.0
+        self._grid_nav_zip_line_cache: dict[str, ZipLineGraph] = {}
+        self._grid_nav_zip_line_empty: set[str] = set()
 
     def load_grid_for_map(
         self,
@@ -351,6 +359,9 @@ class GridNavigationMixin(MinimapHeadingMixin):
             self.log_warning("导航需要启用「小地图定位」触发任务", notify=True)
             return False
         position_service.start_minimap_position(wait_stable=False)
+        if not getattr(position_service, "minimap_position_ready", True):
+            self.log_warning("小地图定位器未完成初始化，请检查全局「Nav Config」和游戏窗口", notify=True)
+            return False
         started_at = self.active_time()
         deadline = started_at + limit
         best_goal_distance = math.inf
@@ -425,7 +436,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
                     continue
                 heading = state.get("heading")
                 heading_score = state.get("heading_score")
-                min_score = max(0.0, min(1.0, self._cfg_float(CONFIG_MIN_SCORE, 0.6)))
+                min_score = self._grid_heading_min_score(position_service)
                 if heading_score is None or float(heading_score) < min_score:
                     heading = None
                 if heading is None:
@@ -543,6 +554,18 @@ class GridNavigationMixin(MinimapHeadingMixin):
                     if self._grid_navigation_timed_out(deadline, limit):
                         return False
                     continue
+                if step.action == ZIP_LINE:
+                    self._set_grid_walking(False)
+                    if not self._execute_grid_zip_line(step.zip_line_step):
+                        return False
+                    if not self._grid_nav_follower.complete_zip_line():
+                        self.log_warning("滑索完成后路线状态无效，重新规划", notify=True)
+                        self._grid_nav_follower = None
+                    else:
+                        waypoints_since_calibration += 1
+                    if self._grid_navigation_timed_out(deadline, limit):
+                        return False
+                    continue
                 if step.arrived_waypoint_index is not None:
                     waypoints_since_calibration += 1
                     calibration_interval = max(
@@ -653,6 +676,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
                             tolerance=self._cfg_float(CONFIG_GRID_TURN_TOLERANCE, 5.0),
                             max_rounds=max(1, self._cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
                             frame=frame,
+                            min_score=min_score,
                         )
                         if not turn.get("ok"):
                             self.log_warning(
@@ -697,9 +721,83 @@ class GridNavigationMixin(MinimapHeadingMixin):
         )
         if grid is None:
             return None, PlanResult(False, f"未找到地图 {map_id!r} 的导航网格")
-        follower = GridRouteFollower(grid, self._grid_follower_config())
+        zip_lines = self._grid_zip_lines_for_map(map_id)
+        follower = GridRouteFollower(
+            grid,
+            self._grid_follower_config(),
+            zip_lines=zip_lines,
+        )
+        if zip_lines:
+            stats = follower.planner.zip_line_stats()
+            self.log_info(
+                f"滑索接入网格：原始节点={stats['nodes']}，可映射节点={stats['mapped_nodes']}，"
+                f"有效有向边={stats['directed_edges']}"
+            )
+            if stats["directed_edges"] == 0:
+                self.log_warning(
+                    "已读取用户滑索，但没有任何滑索端点能在当前网格附近映射为上下索点；"
+                    "本次只能使用普通网格路线"
+                )
         result = follower.plan(start_xz, goal_xz, time_budget_s=time_budget_s)
         return follower, result
+
+    def _grid_zip_lines_for_map(self, map_id: str) -> ZipLineGraph | None:
+        """读取当前账号的滑索图；认证或接口不可用时静默退回纯网格路线。"""
+        if not self._cfg_bool(CONFIG_GRID_USE_ZIP_LINES, True):
+            return None
+        if not callable(getattr(self, "zip_line_list_go", None)):
+            return None
+        map_id = str(map_id or "").strip()
+        if not map_id:
+            return None
+        if map_id in self._grid_nav_zip_line_cache:
+            return self._grid_nav_zip_line_cache[map_id]
+        if map_id in self._grid_nav_zip_line_empty:
+            return None
+
+        service = self._get_minimap_position_service()
+        api_get = getattr(service, "_map_api_get", None)
+        if not callable(api_get):
+            return None
+
+        account = getattr(service, "_map_ws_account", None)
+        if not isinstance(account, dict) or not account:
+            resolver = getattr(service, "_resolve_map_account_from_cred", None)
+            if not callable(resolver):
+                return None
+            try:
+                account = resolver()
+            except Exception as exc:
+                self.log_info(f"读取用户滑索失败，继续使用普通网格路线: {exc}")
+                return None
+        if not isinstance(account, dict) or not account:
+            return None
+
+        try:
+            response = api_get(
+                "/web/v1/game/endfield/map/mark/list",
+                {"mapId": map_id, **account},
+            )
+        except Exception as exc:
+            self.log_info(f"读取用户滑索失败，继续使用普通网格路线: {exc}")
+            return None
+        if not isinstance(response, dict) or response.get("code") not in (None, 0):
+            self.log_info("地图滑索接口未返回有效数据，继续使用普通网格路线")
+            return None
+
+        graph = ZipLineGraph.from_mark_payloads([response], map_id=map_id)
+        if graph:
+            self._grid_nav_zip_line_cache[map_id] = graph
+            summary = graph.summary()
+            self.log_info(
+                f"已加载用户滑索：节点={summary['nodes']}，连接={summary['links']}，"
+                f"类型={summary['by_name']}"
+            )
+            return graph
+        # 接口成功但没有滑索属于稳定结果，缓存空结果；认证/网络失败则不缓存，
+        # 下一次重规划或下一轮任务仍可重试。
+        self._grid_nav_zip_line_empty.add(map_id)
+        return None
 
     def _get_minimap_position_service(self) -> MinimapPositionTask | None:
         if self._grid_minimap_position_service is not None:
@@ -769,11 +867,92 @@ class GridNavigationMixin(MinimapHeadingMixin):
             max_expand=max(1, self._cfg_int(CONFIG_GRID_MAX_EXPAND, 400_000)),
         )
 
+    def _execute_grid_zip_line(self, route_step) -> bool:
+        """执行一次规划出的滑索移动。
+
+        具体对齐与交互复用任务已有的 ``ZipLineMixin.zip_line_list_go``，避免在导航
+        层复制 OCR 和按键流程。没有混入滑索能力的任务会明确失败，而不是把滑索
+        航点误当成普通步行目标。
+        """
+        if route_step is None:
+            return False
+        execute = getattr(self, "zip_line_list_go", None)
+        board = getattr(self, "board_zip_line", None)
+        if not callable(execute) or not callable(board):
+            self.log_warning(
+                "规划路线需要乘坐滑索，但当前任务未接入滑索执行能力",
+                notify=True,
+            )
+            return False
+        chain = route_step.steps
+        distances = [round(float(step.distance_m)) for step in chain]
+        if not distances or any(distance <= 0 for distance in distances):
+            self.log_warning(f"滑索距离无效: {route_step.distance_m!r}", notify=True)
+            return False
+        distance_tolerances = [
+            max(2, round(float(step.distance_m) * 0.08))
+            for step in chain
+        ]
+        target_bearings = [
+            bearing_to_point(
+                step.entry.x,
+                step.entry.z,
+                step.exit.x,
+                step.exit.z,
+            )
+            for step in chain
+        ]
+        scroll_enabled = getattr(self, "zip_line_scroll_enabled", None)
+        need_scroll = bool(scroll_enabled()) if callable(scroll_enabled) else False
+        chain_text = " -> ".join(
+            f"{step.entry.name}({step.distance_m:.1f}m)"
+            for step in chain
+        )
+        chain_text += f" -> {chain[-1].exit.name}"
+        self.log_info(
+            f"执行滑索链：{chain_text}，总距离={route_step.distance_m:.1f}m，"
+            f"OCR 目标={distances}，世界方位={[round(b, 1) for b in target_bearings]}"
+        )
+        try:
+            if not board(direct_wait=5.0, total_time_out=30.0):
+                self.log_warning("未找到「登上滑索架」按钮", notify=True)
+                return False
+            execute(
+                distances,
+                need_scroll=need_scroll,
+                need_v=False,
+                distance_tolerance=distance_tolerances,
+                target_bearing=target_bearings,
+            )
+        except Exception as exc:
+            self.log_warning(f"滑索执行失败: {exc}", notify=True)
+            return False
+        return True
+
+    def _grid_heading_min_score(self, position_service=None) -> float:
+        """朝向质量阈值属于共享定位服务，网格任务只读取，不另存一份。"""
+        service = position_service or self._get_minimap_position_service()
+        config = getattr(service, "config", None)
+        try:
+            value = config.get(CONFIG_MIN_SCORE, 0.6) if config is not None else 0.6
+            return max(0.0, min(1.0, float(value)))
+        except (TypeError, ValueError):
+            return 0.6
+
     def _log_grid_plan(self, result: PlanResult) -> None:
         self.log_info(
             f"规划完成：{len(result.cells)} 格 / {len(result.waypoints)} 航点，"
-            f"代价={result.cost:.1f}，未知格={result.risk_cells}"
+            f"代价={result.cost:.1f}，未知格={result.risk_cells}，"
+            f"滑索={len(result.zip_line_steps)}"
         )
+        if not result.zip_line_steps and self._grid_nav_follower is not None:
+            planner = getattr(self._grid_nav_follower, "planner", None)
+            stats = planner.zip_line_stats() if planner is not None else {}
+            if stats.get("directed_edges", 0) > 0:
+                self.log_info(
+                    f"本次路线未采用滑索：已接入 {stats['directed_edges']} 条有向边，"
+                    "但普通路线代价更低或滑索不在可达路径上"
+                )
         path_text = " -> ".join(f"({x:.3f}, {z:.3f})" for x, z in result.waypoints)
         self.log_info(f"路径点：{path_text}")
         for note in result.notes:
@@ -947,6 +1126,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
                 tolerance=self._cfg_float(CONFIG_GRID_TURN_TOLERANCE, 5.0),
                 max_rounds=1,
                 frame=frame,
+                min_score=self._grid_heading_min_score(),
             )
         duration = self._grid_recovery_duration(deadline, multiplier=1.5)
         if duration is None:

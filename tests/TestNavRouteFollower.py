@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from src.nav.grid_io import CELL_FREE, DenseGrid, GridMeta
+from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid, GridMeta
 from src.nav.grid_planner import PlanResult
 from src.nav.route_follower import (
     DONE,
@@ -13,11 +13,13 @@ from src.nav.route_follower import (
     TURN,
     WAIT,
     WALK,
+    ZIP_LINE,
     FollowerConfig,
     GridRouteFollower,
     bearing_to_point,
     point_segment_distance,
 )
+from src.nav.zip_line_graph import ZipLineGraph, ZipLineLink, ZipLineNode
 
 
 def _line_grid(size: int = 11) -> DenseGrid:
@@ -215,6 +217,45 @@ class TestGridRouteFollower(unittest.TestCase):
 
         self.assertEqual(step.arrived_waypoint_index, 1)
         self.assertEqual(step.waypoint, (4.0, 0.0))
+
+
+class TestZipLineRouteFollower(unittest.TestCase):
+    """验证滑索航点会生成独立动作，而不是被当成普通步行线段。"""
+
+    def test_returns_zip_line_action_and_advances_after_completion(self):
+        cells = np.full((1, 6), CELL_FREE, dtype=np.uint8)
+        cells[0, 2] = CELL_BLOCKED
+        grid = DenseGrid(
+            cells,
+            GridMeta(origin=(0.0, 0.0, 0.0), cell_size=1.0, map_name="test"),
+        )
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 4.5, 0.0, 0.5)
+        graph = ZipLineGraph(
+            [first, second],
+            [ZipLineLink("a", "b", distance_m=4.0, max_range_m=80.0)],
+        )
+        follower = GridRouteFollower(
+            grid,
+            FollowerConfig(
+                arrive_radius=0.5,
+                goal_radius=0.5,
+                margin=0,
+            ),
+            zip_lines=graph,
+        )
+
+        result = follower.plan((0.5, 0.5), (4.5, 0.5))
+        self.assertTrue(result.ok, result)
+
+        step = follower.update((0.5, 0.5), heading=90.0, now=0.0)
+        self.assertEqual(step.action, ZIP_LINE)
+        self.assertIsNotNone(step.zip_line_step)
+        self.assertEqual(step.zip_line_step.step.link_id, "a->b")
+
+        self.assertTrue(follower.complete_zip_line())
+        done = follower.update((4.5, 0.5), heading=90.0, now=1.0)
+        self.assertEqual(done.action, DONE)
 
 
 if __name__ == "__main__":

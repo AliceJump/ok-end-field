@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """小地图朝向能力（mixin）：读朝向角 + 转到指定罗盘方位。
 
 朝向来自小地图中心的箭头，经 :func:`minimap_odometry.arrow_angle_to_bearing` 统一成
@@ -233,7 +232,7 @@ class MinimapHeadingMixin:
             err = angle_delta(target, before)
             if abs(err) <= tolerance:
                 break
-            dx = int(round(err / per_px))
+            dx = round(err / per_px)
             if dx == 0:
                 # 残差不足一个像素：只能这样了
                 break
@@ -265,6 +264,76 @@ class MinimapHeadingMixin:
         result["ok"] = abs(result["error"]) <= tolerance
         # 目标是一轮到位（只按一次 W，角色只前移一小步）；多轮只是兜底
         result["one_shot"] = bool(result["ok"] and result["rounds"] <= 1)
+        return result
+
+    def aim_view_to_bearing(self, target_deg, *, tolerance=5.0, max_rounds=2,
+                            frame=None, min_score=None) -> dict:
+        """只转动视角到指定方位，不按 W，因此不会让角色向前移动。
+
+        滑索场景下小地图仍能提供角色朝向，但没有俯仰角；横向目标可以利用
+        世界坐标计算出的方位角先完成粗对准，再交给目标距离 OCR 做精细对中。
+        """
+        tolerance = max(0.0, float(tolerance))
+        target = float(target_deg)
+        result = {
+            "ok": False,
+            "target": target,
+            "heading": None,
+            "error": None,
+            "rounds": 0,
+            "history": [],
+        }
+        self._last_turn_result = result
+
+        per_px = self.yaw_per_pixel()
+        if per_px <= 0:
+            self.log_warning(
+                f"{CONFIG_YAW_PER_PIXEL} 必须为正数，当前 {per_px}；无法按世界坐标对准滑索")
+            return result
+        if not self._can_turn():
+            return result
+
+        before, score = self.read_heading(frame, min_score=min_score)
+        if before is None:
+            self.log_warning(f"读不到朝向（score={score:.3f}），无法对准滑索")
+            return result
+
+        settle = self._cfg_float(CONFIG_TURN_SETTLE, DEFAULT_TURN_SETTLE)
+        for i in range(1, max(1, int(max_rounds)) + 1):
+            err = angle_delta(target, before)
+            if abs(err) <= tolerance:
+                break
+            dx = round(err / per_px)
+            if dx == 0:
+                break
+            self._send_rotation(dx)
+            self.sleep(settle)
+            after, score = self.read_heading(min_score=min_score)
+            entry = {
+                "round": i,
+                "before": before,
+                "error_before": err,
+                "dx": dx,
+                "after": after,
+                "error_after": None if after is None else angle_delta(target, after),
+                "ratio": None,
+            }
+            if after is None:
+                self.log_warning(f"第 {i} 轮：转视角后读不到朝向（score={score:.3f}）")
+                result["history"].append(entry)
+                result["rounds"] = i
+                break
+            if dx:
+                entry["ratio"] = angle_delta(after, before) / dx
+            result["history"].append(entry)
+            result["rounds"] = i
+            before = after
+            if abs(entry["error_after"]) <= tolerance:
+                break
+
+        result["heading"] = before
+        result["error"] = angle_delta(target, before)
+        result["ok"] = abs(result["error"]) <= tolerance
         return result
 
     def _warn_if_ratio_off(self, ratio, configured: float, dx: int) -> None:

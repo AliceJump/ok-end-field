@@ -16,6 +16,7 @@ from src.nav.grid_io import (
     GridMeta,
 )
 from src.nav.grid_planner import GridPlanner
+from src.nav.zip_line_graph import ZipLineGraph, ZipLineLink, ZipLineNode
 
 _CHARS = {".": CELL_UNKNOWN, "o": CELL_FREE, "#": CELL_BLOCKED}
 
@@ -236,6 +237,71 @@ class TestWaypoints(unittest.TestCase):
         end_x, end_z = res.waypoints[-1]
         self.assertNotEqual(abs(end_x - start_x), abs(end_z - start_z))
         self.assertNotEqual(start_z, end_z)
+
+
+class TestZipLinePlanning(unittest.TestCase):
+    """验证滑索边能跨过普通网格不可达的阻挡区域。"""
+
+    def test_zip_line_connects_two_walkable_islands(self):
+        grid = _grid(["oo#oo"])
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.2, 0.0, 0.2)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 4.2, 0.0, 0.2)
+        graph = ZipLineGraph(
+            [first, second],
+            [ZipLineLink("a", "b", distance_m=4.0, max_range_m=80.0)],
+        )
+
+        blocked = GridPlanner(grid).plan_cells((0, 0), (0, 4))
+        self.assertFalse(blocked.ok)
+
+        result = GridPlanner(grid, zip_lines=graph).plan_cells((0, 0), (0, 4))
+
+        self.assertTrue(result.ok, result)
+        self.assertEqual(
+            GridPlanner(grid, zip_lines=graph).zip_line_stats(),
+            {
+                "nodes": 2,
+                "links": 1,
+                "mapped_nodes": 2,
+                "directed_edges": 2,
+            },
+        )
+        self.assertEqual(len(result.zip_line_steps), 1)
+        self.assertEqual(result.cells, [(0, 0), (0, 4)])
+        route_step = result.zip_line_steps[0]
+        self.assertEqual(route_step.entry_cell, (0, 0))
+        self.assertEqual(route_step.exit_cell, (0, 4))
+        self.assertEqual(result.waypoints[route_step.entry_waypoint_index], first.xz)
+        self.assertEqual(result.waypoints[route_step.exit_waypoint_index], second.xz)
+
+    def test_unmapped_intermediate_zipline_is_traversed_as_chain(self):
+        width = 61
+        cells = np.full((1, width), CELL_BLOCKED, dtype=np.uint8)
+        cells[0, :2] = CELL_FREE
+        cells[0, -2:] = CELL_FREE
+        grid = DenseGrid(cells, GridMeta(origin=(0.0, 0.0, 0.0), cell_size=1.0))
+        first = ZipLineNode("a", "test", "lv1", "长距滑索架", 0.5, 0.0, 0.5)
+        middle = ZipLineNode("b", "test", "lv1", "长距滑索架", 30.5, 0.0, 0.5)
+        last = ZipLineNode("c", "test", "lv1", "长距滑索架", 59.5, 0.0, 0.5)
+        graph = ZipLineGraph(
+            [first, middle, last],
+            [
+                ZipLineLink("a", "b", distance_m=30.0, max_range_m=110.0),
+                ZipLineLink("b", "c", distance_m=29.0, max_range_m=110.0),
+            ],
+        )
+
+        planner = GridPlanner(grid, zip_lines=graph)
+        result = planner.plan_cells((0, 0), (0, width - 1))
+
+        self.assertTrue(result.ok, result)
+        self.assertEqual(planner.zip_line_stats()["mapped_nodes"], 2)
+        self.assertEqual(planner.zip_line_stats()["directed_edges"], 2)
+        self.assertEqual(len(result.zip_line_steps), 1)
+        self.assertEqual(
+            [(step.entry.node_id, step.exit.node_id) for step in result.zip_line_steps[0].steps],
+            [("a", "b"), ("b", "c")],
+        )
 
 
 class TestFailureDiagnostics(unittest.TestCase):

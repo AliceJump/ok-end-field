@@ -6,7 +6,14 @@
 ——键名拼错会静默退化成常数路径，不报错但行为悄悄变了。
 """
 
+import os
+import tempfile
 import unittest
+from types import SimpleNamespace
+from unittest.mock import patch
+
+from ok.util import config as config_module
+from ok.util.file import read_json_file, write_json_file
 
 from src.core.NavConfig import (
     DEFAULT_NAV_CONFIG,
@@ -22,6 +29,7 @@ from src.core.NavConfig import (
     nav_profile_for_width,
     tier_for_width,
 )
+from src.core import global_config_store
 
 
 def _tier_keys() -> list[str]:
@@ -208,6 +216,197 @@ class TestMixinUsesGlobalNavConfig(unittest.TestCase):
     def test_profile_is_none_without_resolution(self):
         """窗口还没就绪（width=0）时不能瞎猜，要返回 None 让调用方报错。"""
         self.assertIsNone(self._task_at(0)._nav_profile())
+
+
+class TestNavConfigMigration(unittest.TestCase):
+    """旧任务配置升级：真值可靠迁移，分辨率相关旧标定完整备份。"""
+
+    def _write_configs(self, root: str, files: dict):
+        configs_dir = os.path.join(root, "configs")
+        os.makedirs(configs_dir, exist_ok=True)
+        for name, data in files.items():
+            write_json_file(os.path.join(configs_dir, name), data)
+
+    def _patched_store(self, tmp: str):
+        state_path = os.path.join(tmp, "configs", "_global_config_migrations.json")
+        backup_dir = os.path.join(tmp, "configs", "global_config_migration_backup")
+        return (
+            patch.object(
+                global_config_store,
+                "get_relative_path",
+                side_effect=lambda *parts: os.path.join(tmp, *parts),
+            ),
+            patch.object(
+                config_module,
+                "get_relative_path",
+                side_effect=lambda *parts: os.path.join(tmp, *parts),
+            ),
+            patch.object(global_config_store, "_MIGRATION_STATE_PATH", state_path),
+            patch.object(global_config_store, "_MIGRATION_BACKUP_DIR", backup_dir),
+        )
+
+    def test_global_init_migrates_legacy_truth_and_backs_up_calibration(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_configs(
+                tmp,
+                {
+                    "MinimapPositionTask.json": {
+                        NAV_CONTENT_KEY: "legacy-content",
+                        NAV_WS_ACCOUNT_KEY: "legacy-account",
+                        "比例尺(米/像素)": 0.6712,
+                        "轴映射(逗号4值)": "0.6712,0,0,-0.6710",
+                    },
+                },
+            )
+            previous = global_config_store._CONFIGS.copy()
+            global_config_store._CONFIGS.clear()
+            try:
+                patches = self._patched_store(tmp)
+                with patches[0], patches[1], patches[2], patches[3]:
+                    config = global_config_store.get_global_config(NAV_CONFIG_NAME)
+            finally:
+                global_config_store._CONFIGS.clear()
+                global_config_store._CONFIGS.update(previous)
+
+            self.assertEqual(config.get(NAV_CONTENT_KEY), "legacy-content")
+            self.assertEqual(config.get(NAV_WS_ACCOUNT_KEY), "legacy-account")
+
+            backup = read_json_file(
+                os.path.join(
+                    tmp,
+                    "configs",
+                    "global_config_migration_backup",
+                    "MinimapPositionTask.json",
+                )
+            )
+            self.assertEqual(backup["比例尺(米/像素)"], 0.6712)
+            self.assertEqual(backup["轴映射(逗号4值)"], "0.6712,0,0,-0.6710")
+
+    def test_task_side_fallback_copies_truth_after_global_was_loaded(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_configs(
+                tmp,
+                {
+                    "Nav Config.json": dict(DEFAULT_NAV_CONFIG),
+                    "MinimapPositionTask.json": {
+                        NAV_CONTENT_KEY: "late-content",
+                        NAV_WS_ACCOUNT_KEY: "late-account",
+                    },
+                },
+            )
+            previous = global_config_store._CONFIGS.copy()
+            global_config_store._CONFIGS.clear()
+            try:
+                patches = self._patched_store(tmp)
+                with patches[0], patches[1], patches[2], patches[3]:
+                    config = global_config_store.get_global_config(NAV_CONFIG_NAME)
+                    config[NAV_CONTENT_KEY] = ""
+                    config[NAV_WS_ACCOUNT_KEY] = ""
+                    global_config_store.migrate_task_nav_values_to_global(
+                        "MinimapPositionTask"
+                    )
+            finally:
+                global_config_store._CONFIGS.clear()
+                global_config_store._CONFIGS.update(previous)
+
+            self.assertEqual(config.get(NAV_CONTENT_KEY), "late-content")
+            self.assertEqual(config.get(NAV_WS_ACCOUNT_KEY), "late-account")
+
+    def test_task_side_fallback_backs_up_calibration_without_truth_keys(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_configs(
+                tmp,
+                {
+                    "MinimapPositionTask.json": {
+                        "比例尺(米/像素)": 0.6712,
+                        "轴映射(逗号4值)": "0.6712,0,0,-0.6710",
+                    },
+                },
+            )
+            previous = global_config_store._CONFIGS.copy()
+            global_config_store._CONFIGS.clear()
+            try:
+                patches = self._patched_store(tmp)
+                with patches[0], patches[1], patches[2], patches[3]:
+                    global_config_store.migrate_task_nav_values_to_global(
+                        "MinimapPositionTask"
+                    )
+            finally:
+                global_config_store._CONFIGS.clear()
+                global_config_store._CONFIGS.update(previous)
+
+            backup = read_json_file(
+                os.path.join(
+                    tmp,
+                    "configs",
+                    "global_config_migration_backup",
+                    "MinimapPositionTask.json",
+                )
+            )
+            self.assertEqual(backup["比例尺(米/像素)"], 0.6712)
+            self.assertEqual(backup["轴映射(逗号4值)"], "0.6712,0,0,-0.6710")
+
+    def test_grid_position_controls_migrate_to_owner_before_prune(self):
+        legacy_values = {
+            "WS等待稳定秒数": 20.0,
+            "WS稳定最小位置数": 5,
+            "朝向最低分数": 0.8,
+            "航点校准最小距离(米)": 55.0,
+            "位移提交阈值(像素)": 3.0,
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_configs(
+                tmp,
+                {
+                    "MinimapNavigateToPoint.json": legacy_values,
+                    "MinimapPositionTask.json": {},
+                },
+            )
+            source = type("MinimapNavigateToPoint", (), {})()
+            owner = type("MinimapPositionTask", (), {})()
+            owner.config = {}
+            source._executor = SimpleNamespace(get_all_tasks=lambda: [owner])
+
+            with patch.object(
+                global_config_store,
+                "get_relative_path",
+                side_effect=lambda *parts: os.path.join(tmp, *parts),
+            ):
+                global_config_store.migrate_task_minimap_values_to_owner(source)
+
+            owner_data = read_json_file(
+                os.path.join(tmp, "configs", "MinimapPositionTask.json")
+            )
+            for key, value in legacy_values.items():
+                self.assertEqual(owner_data[key], value)
+                self.assertEqual(owner.config[key], value)
+
+    def test_loaded_owner_values_win_over_legacy_grid_values(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_configs(
+                tmp,
+                {
+                    "MinimapNavigateToPoint.json": {"位移提交阈值(像素)": 9.0},
+                    "MinimapPositionTask.json": {},
+                },
+            )
+            source = type("MinimapNavigateToPoint", (), {})()
+            owner = type("MinimapPositionTask", (), {})()
+            owner.config = {"位移提交阈值(像素)": 4.0}
+            source._executor = SimpleNamespace(get_all_tasks=lambda: [owner])
+
+            with patch.object(
+                global_config_store,
+                "get_relative_path",
+                side_effect=lambda *parts: os.path.join(tmp, *parts),
+            ):
+                global_config_store.migrate_task_minimap_values_to_owner(source)
+
+            owner_data = read_json_file(
+                os.path.join(tmp, "configs", "MinimapPositionTask.json")
+            )
+            self.assertEqual(owner.config["位移提交阈值(像素)"], 4.0)
+            self.assertEqual(owner_data["位移提交阈值(像素)"], 4.0)
 
 
 if __name__ == "__main__":

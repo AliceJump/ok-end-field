@@ -77,6 +77,9 @@ class MinimapRealtimePosition(BaseEfTask):
             self.log_warning("「小地图定位」触发任务未启用，无法读取实时位置", notify=True)
             return
         position_task.start_minimap_position(wait_stable=False)
+        if not getattr(position_task, "minimap_position_ready", True):
+            self.log_warning("小地图定位器未完成初始化，请检查全局「Nav Config」和游戏窗口", notify=True)
+            return
 
         interval = max(0.05, self._cfg_float("采样间隔(秒)", 0.5))
         duration = max(interval, self._cfg_float("运行时长(秒)", 20.0))

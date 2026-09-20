@@ -48,13 +48,18 @@ from src.nav.grid_io import (
     DIRS8,
     DenseGrid,
 )
+from src.nav.zip_line_graph import ZipLineGraph, ZipLineLink, ZipLineStep
 
 __all__ = [
     "DEFAULT_FRONTIER_PENALTY",
     "DEFAULT_RISK_COST",
     "DEFAULT_WALL_PENALTY",
+    "DEFAULT_ZIP_LINE_ACCESS_RADIUS",
+    "DEFAULT_ZIP_LINE_BOARDING_COST",
+    "DEFAULT_ZIP_LINE_COST_FACTOR",
     "GridPlanner",
     "PlanResult",
+    "ZipLineRouteStep",
 ]
 
 #: 穿过一个未知格的代价倍数（相对可行走的 1）
@@ -63,6 +68,12 @@ DEFAULT_RISK_COST = 5.0
 DEFAULT_WALL_PENALTY = 1.0
 #: 已知自由格距未知边缘每缺一格的附加代价；只影响路线偏好，不阻挡通行
 DEFAULT_FRONTIER_PENALTY = 1.0
+#: 滑索移动按水平“等效步行距离”计价的系数；越小越优先滑索。
+DEFAULT_ZIP_LINE_COST_FACTOR = 0.2
+#: 一次上索/落索的固定等价步行距离。
+DEFAULT_ZIP_LINE_BOARDING_COST = 2.0
+#: 滑索点不在可行走格时，允许在多少格内寻找最近落脚点。
+DEFAULT_ZIP_LINE_ACCESS_RADIUS = 8
 _SQRT2 = math.sqrt(2.0)
 
 
@@ -101,12 +112,50 @@ class PlanResult:
     goal_cell: tuple | None = None
     #: 起/终点被挪动时的说明，交给调用方记日志
     notes: list = field(default_factory=list)
+    #: 路线中按顺序执行的滑索步骤。
+    zip_line_steps: list = field(default_factory=list)
 
     def __repr__(self) -> str:
         if not self.ok:
             return f"PlanResult(ok=False, reason={self.reason!r})"
         return (f"PlanResult(ok=True, cells={len(self.cells)}, waypoints={len(self.waypoints)}, "
-                f"cost={self.cost:.1f}, risk_cells={self.risk_cells}, expanded={self.expanded})")
+                f"cost={self.cost:.1f}, risk_cells={self.risk_cells}, "
+                f"zip_lines={len(self.zip_line_steps)}, expanded={self.expanded})")
+
+
+@dataclass(frozen=True)
+class ZipLineRouteStep:
+    """网格路线中的一次滑索移动及其航点边界。"""
+
+    step: ZipLineStep
+    entry_cell: tuple[int, int]
+    exit_cell: tuple[int, int]
+    entry_waypoint_index: int
+    exit_waypoint_index: int
+    cost: float
+    chain: tuple[ZipLineStep, ...] = ()
+
+    @property
+    def steps(self) -> tuple[ZipLineStep, ...]:
+        """完整滑索链；单段时返回首段。"""
+        return self.chain or (self.step,)
+
+    @property
+    def distance_m(self) -> float:
+        return sum(step.distance_m for step in self.steps)
+
+
+@dataclass(frozen=True)
+class _ZipLineEdge:
+    """A* 内部使用的有向滑索转移边。"""
+
+    edge_id: int
+    from_padded: int
+    to_padded: int
+    from_cell: tuple[int, int]
+    to_cell: tuple[int, int]
+    steps: tuple[ZipLineStep, ...]
+    cost: float
 
 
 class GridPlanner:
@@ -120,7 +169,11 @@ class GridPlanner:
                  waypoint_tolerance: float = 2.0,
                  max_expand: int = 400_000,
                  heuristic_weight: float = 1.0,
-                 adaptive_weight: bool = True):
+                 adaptive_weight: bool = True,
+                 zip_lines: ZipLineGraph | None = None,
+                 zip_line_cost_factor: float = DEFAULT_ZIP_LINE_COST_FACTOR,
+                 zip_line_boarding_cost: float = DEFAULT_ZIP_LINE_BOARDING_COST,
+                 zip_line_access_radius: int = DEFAULT_ZIP_LINE_ACCESS_RADIUS):
         """
         Args:
             grid: 网格（不会被改动）。
@@ -139,6 +192,10 @@ class GridPlanner:
                 大于 1 会更快但代价不再最优（上界 w 倍）。
             adaptive_weight: :meth:`plan_cells` 里 ``heuristic_weight`` 那次搜索触顶时，
                 是否自动按 ``risk_cost`` 加权重搜一次（见类文档"大图触顶后的降级搜索"）。
+            zip_lines: 用户滑索图。只使用与当前网格 ``meta.map_name`` 相同的节点。
+            zip_line_cost_factor: 滑索按三维距离换算为等价步行距离的系数。
+            zip_line_boarding_cost: 每次滑索转移的固定等价步行距离。
+            zip_line_access_radius: 滑索点落在阻挡/未知格时寻找最近可通行落点的格数上限。
         """
         self.grid = grid
         self.risk_cost = float(risk_cost)
@@ -163,10 +220,23 @@ class GridPlanner:
         self.max_expand = int(max_expand)
         self.heuristic_weight = max(1.0, float(heuristic_weight))
         self.adaptive_weight = bool(adaptive_weight)
+        self.zip_line_cost_factor = max(0.0, float(zip_line_cost_factor))
+        self.zip_line_boarding_cost = max(0.0, float(zip_line_boarding_cost))
+        self.zip_line_access_radius = max(0, int(zip_line_access_radius))
+        self.zip_lines = (
+            zip_lines.for_map(grid.meta.map_name)
+            if isinstance(zip_lines, ZipLineGraph) and zip_lines
+            else None
+        )
         self._expanded = 0
         self._cap_exceeded = False
         self._timed_out = False
         self._tables = None
+        self._zip_edges_by_padded: dict[int, tuple[_ZipLineEdge, ...]] = {}
+        self._zip_edges_by_id: dict[int, _ZipLineEdge] = {}
+        self._zip_line_mapped_node_count = 0
+        self._heuristic_scale = 1.0
+        self._build_zip_line_edges()
 
     # ------------------------------------------------------------------ #
     # 对外
@@ -194,12 +264,12 @@ class GridPlanner:
             return PlanResult(False, note_goal)
         notes = [n for n in (note_start, note_goal) if n]
 
-        cells = self._astar(start_cell, goal_cell, self.heuristic_weight, deadline=deadline)
-        if cells is None:
+        search = self._astar(start_cell, goal_cell, self.heuristic_weight, deadline=deadline)
+        if search is None:
             first_expanded, first_cap = self._expanded, self._cap_exceeded
             if self._weighted_retry_allowed():
-                cells = self._astar(start_cell, goal_cell, self.risk_cost, deadline=deadline)
-                if cells is not None:
+                search = self._astar(start_cell, goal_cell, self.risk_cost, deadline=deadline)
+                if search is not None:
                     notes.append(
                         f"精确搜索触顶（扩展 {first_expanded} 格）后改用加权启发 "
                         f"w={self.risk_cost:g} 重搜成功：路线仍不穿墙、不切角，"
@@ -209,7 +279,7 @@ class GridPlanner:
                     # 加权重搜也没找到：以首次精确搜索的结论为准——它才是"要不要调大
                     # max_expand"的依据，重搜的扩展数只会把诊断带偏。
                     self._expanded, self._cap_exceeded = first_expanded, first_cap
-        if cells is None:
+        if search is None:
             # 三种"没找到路"必须区分开，否则调用方无法判断该改什么：
             #   1) 触顶            -> 调大 max_expand
             #   2) 关了穿越未知格  -> 该图未探索部分走不了（策略性不可达，不是数据坏了）
@@ -232,15 +302,202 @@ class GridPlanner:
                               expanded=self._expanded, cap_exceeded=self._cap_exceeded,
                               timed_out=self._timed_out)
 
-        waypoints = [self.grid.world_of_index(i, j) for i, j in self._simplify(cells)]
-        cost, risk = 0.0, 0
-        for (ai, aj), (bi, bj) in itertools.pairwise(cells):
-            state = self.grid.state(bi, bj)
-            cost += self._step_cost(ai, aj, bi, bj, state)
-            risk += 1 if state == CELL_UNKNOWN else 0
-        return PlanResult(True, "", cells=cells, waypoints=waypoints, cost=cost,
-                          risk_cells=risk, expanded=self._expanded,
-                          start_cell=start_cell, goal_cell=goal_cell, notes=notes)
+        cells, via_edge_ids, cost = search
+        waypoints, zip_line_steps = self._route_with_zip_lines(cells, via_edge_ids)
+        risk = 0
+        for index, (i, j) in enumerate(cells):
+            if index > 0 and via_edge_ids[index - 1] >= 0:
+                continue
+            if self.grid.state(i, j) == CELL_UNKNOWN:
+                risk += 1
+        return PlanResult(
+            True,
+            "",
+            cells=cells,
+            waypoints=waypoints,
+            cost=cost,
+            risk_cells=risk,
+            zip_line_steps=zip_line_steps,
+            expanded=self._expanded,
+            start_cell=start_cell,
+            goal_cell=goal_cell,
+            notes=notes,
+        )
+
+    def _build_zip_line_edges(self) -> None:
+        """把滑索端点映射到网格落脚格，并缓存有向 A* 转移边。
+
+        网格只负责把角色带到滑索附近。真正的滑索边始终是“某个滑索节点 ->
+        另一个滑索节点”的整段转移，中间不会产生任何网格航点或上下索点。
+        """
+        if self.zip_lines is None:
+            return
+        access_cells: dict[str, tuple[int, int]] = {}
+        for node in self.zip_lines.nodes:
+            node_cell = self.grid.index_of_world(node.x, node.z)
+            cell = (
+                node_cell
+                if self._passable(*node_cell)
+                else self._nearest_passable(
+                    *node_cell,
+                    max_radius=self.zip_line_access_radius,
+                )
+            )
+            if cell is not None:
+                access_cells[node.node_id] = cell
+        self._zip_line_mapped_node_count = len(access_cells)
+
+        # 建立完整滑索网络。中间滑索架不需要映射到网格，因为角色不会在
+        # 中途上下索；只要首尾滑索可到达，就能把整条链作为一条 A* 边。
+        adjacency: dict[str, list[ZipLineLink]] = {
+            node.node_id: [] for node in self.zip_lines.nodes
+        }
+        for link in self.zip_lines.links:
+            adjacency.setdefault(link.first_id, []).append(link)
+            adjacency.setdefault(link.second_id, []).append(link)
+
+        directed: dict[tuple[str, str], tuple[tuple[ZipLineStep, ...], float]] = {}
+        for source_id, source_cell in sorted(access_cells.items()):
+            distances = {source_id: 0.0}
+            previous: dict[str, str | None] = {source_id: None}
+            queue = [(0.0, source_id)]
+            while queue:
+                path_cost, node_id = heapq.heappop(queue)
+                if path_cost > distances.get(node_id, math.inf) + 1e-9:
+                    continue
+                for link in adjacency.get(node_id, ()):
+                    other_id = link.other(node_id)
+                    next_cost = path_cost + link.distance_m * self.zip_line_cost_factor
+                    if next_cost + 1e-9 >= distances.get(other_id, math.inf):
+                        continue
+                    distances[other_id] = next_cost
+                    previous[other_id] = node_id
+                    heapq.heappush(queue, (next_cost, other_id))
+
+            for target_id, target_cell in sorted(access_cells.items()):
+                if target_id == source_id or target_cell == source_cell:
+                    continue
+                if target_id not in distances:
+                    continue
+                node_ids = []
+                cursor: str | None = target_id
+                while cursor is not None:
+                    node_ids.append(cursor)
+                    cursor = previous.get(cursor)
+                node_ids.reverse()
+                if len(node_ids) < 2:
+                    continue
+                steps = tuple(
+                    ZipLineStep(
+                        entry=self.zip_lines.node(first_id),
+                        exit=self.zip_lines.node(second_id),
+                        distance_m=next(
+                            link.distance_m
+                            for link in adjacency[first_id]
+                            if link.other(first_id) == second_id
+                        ),
+                    )
+                    for first_id, second_id in itertools.pairwise(node_ids)
+                )
+                directed[(source_id, target_id)] = (
+                    steps,
+                    distances[target_id] + self.zip_line_boarding_cost,
+                )
+
+        pad_w, _, _, _, _ = self._search_tables()
+        edges_by_padded: dict[int, list[_ZipLineEdge]] = {}
+        edges_by_id: dict[int, _ZipLineEdge] = {}
+        for (from_id, to_id), (steps, cost) in sorted(directed.items()):
+            from_cell = access_cells[from_id]
+            to_cell = access_cells[to_id]
+            edge_id = len(edges_by_id)
+            edge = _ZipLineEdge(
+                edge_id=edge_id,
+                from_padded=(from_cell[0] + 1) * pad_w + from_cell[1] + 1,
+                to_padded=(to_cell[0] + 1) * pad_w + to_cell[1] + 1,
+                from_cell=from_cell,
+                to_cell=to_cell,
+                steps=steps,
+                cost=max(1e-9, float(cost)),
+            )
+            edges_by_id[edge_id] = edge
+            edges_by_padded.setdefault(edge.from_padded, []).append(edge)
+
+        self._zip_edges_by_id = edges_by_id
+        self._zip_edges_by_padded = {
+            padded: tuple(edges)
+            for padded, edges in edges_by_padded.items()
+        }
+        self._heuristic_scale = (
+            min(1.0, self.zip_line_cost_factor)
+            if self._zip_edges_by_padded
+            else 1.0
+        )
+
+    def zip_line_stats(self) -> dict[str, int]:
+        """返回滑索图接入网格后的统计，便于定位“加载了但没使用”。"""
+        return {
+            "nodes": len(self.zip_lines.nodes) if self.zip_lines is not None else 0,
+            "links": len(self.zip_lines.links) if self.zip_lines is not None else 0,
+            "mapped_nodes": self._zip_line_mapped_node_count,
+            "directed_edges": len(self._zip_edges_by_id),
+        }
+
+    def _route_with_zip_lines(self, cells, via_edge_ids) -> tuple[list, list[ZipLineRouteStep]]:
+        """按滑索转移切段做视线简化，并保留每一步的航点边界。"""
+        if not via_edge_ids or all(edge_id < 0 for edge_id in via_edge_ids):
+            return (
+                [self.grid.world_of_index(i, j) for i, j in self._simplify(cells)],
+                [],
+            )
+
+        segments: list[list[tuple[int, int]]] = []
+        segment_start = 0
+        route_edges: list[_ZipLineEdge] = []
+        for index, edge_id in enumerate(via_edge_ids):
+            if edge_id < 0:
+                continue
+            edge = self._zip_edges_by_id[edge_id]
+            segments.append(cells[segment_start:index + 1])
+            route_edges.append(edge)
+            segment_start = index + 1
+        segments.append(cells[segment_start:])
+
+        simplified_segments = [self._simplify(segment) for segment in segments]
+        bounds: list[tuple[int, int]] = []
+        flat_cells: list[tuple[int, int]] = []
+        for segment in simplified_segments:
+            if flat_cells and segment and flat_cells[-1] == segment[0]:
+                segment = segment[1:]
+            if not segment:
+                end = max(0, len(flat_cells) - 1)
+                bounds.append((end, end))
+                continue
+            start = len(flat_cells)
+            flat_cells.extend(segment)
+            end = len(flat_cells) - 1
+            bounds.append((start, end))
+
+        waypoints = [self.grid.world_of_index(i, j) for i, j in flat_cells]
+        zip_line_steps: list[ZipLineRouteStep] = []
+        for index, edge in enumerate(route_edges):
+            entry_bounds = bounds[index]
+            exit_bounds = bounds[index + 1]
+            # 上下索点必须精确指向滑索节点，而不是吸附后的网格中心。
+            waypoints[entry_bounds[1]] = edge.steps[0].entry.xz
+            waypoints[exit_bounds[0]] = edge.steps[-1].exit.xz
+            zip_line_steps.append(
+                ZipLineRouteStep(
+                    step=edge.steps[0],
+                    entry_cell=edge.from_cell,
+                    exit_cell=edge.to_cell,
+                    entry_waypoint_index=entry_bounds[1],
+                    exit_waypoint_index=exit_bounds[0],
+                    cost=edge.cost,
+                    chain=edge.steps,
+                )
+            )
+        return waypoints, zip_line_steps
 
     # ------------------------------------------------------------------ #
     # 内部
@@ -345,12 +602,15 @@ class GridPlanner:
 
     @staticmethod
     def _heuristic(ai: int, aj: int, bi: int, bj: int, diagonal: bool,
-                   weight: float = 1.0) -> float:
+                   weight: float = 1.0, scale: float = 1.0) -> float:
         di, dj = abs(bi - ai), abs(bj - aj)
-        if diagonal:
-            # 八连通的可采纳启发：octile 距离（单步最小代价为 1）
-            return ((di + dj) + (_SQRT2 - 2.0) * min(di, dj)) * weight
-        return float(di + dj) * weight
+        # 八连通的可采纳启发是 octile 距离；四连通退化为曼哈顿距离。
+        base = (
+            (di + dj) + (_SQRT2 - 2.0) * min(di, dj)
+            if diagonal
+            else float(di + dj)
+        )
+        return base * weight * scale
 
     def _weighted_retry_allowed(self) -> bool:
         """触顶失败后是否值得按 ``risk_cost`` 加权重搜一次。
@@ -452,6 +712,7 @@ class GridPlanner:
         g_score[start_p] = 0.0
         # 补齐索引最大也就几百万，int32 足够；用 int64 会在 500 万格图上白占一倍内存
         came_from = np.full(size, -1, dtype=np.int32)
+        came_via = np.full(size, -1, dtype=np.int32)
         closed = bytearray(size)
 
         counter = itertools.count()
@@ -459,9 +720,11 @@ class GridPlanner:
         expanded = 0
         while open_heap:
             _, _, current = heapq.heappop(open_heap)
+            current_cost = g_score[current]
             if current == goal_p:
                 self._expanded = expanded
-                return self._rebuild_flat(came_from, current, pad_w)
+                path, via_edge_ids = self._rebuild_flat(came_from, came_via, current, pad_w)
+                return path, via_edge_ids, float(current_cost)
             if closed[current]:
                 continue
             closed[current] = 1
@@ -475,7 +738,6 @@ class GridPlanner:
                 self._cap_exceeded = True
                 return None
 
-            current_cost = g_score[current]
             ci, cj = divmod(current, pad_w)
             row = (ci - 1) * width + (cj - 1)
             for offset, is_diagonal, orth_a, orth_b, cost_delta in directions:
@@ -490,22 +752,44 @@ class GridPlanner:
                 if tentative < g_score[neighbor]:
                     g_score[neighbor] = tentative
                     came_from[neighbor] = current
+                    came_via[neighbor] = -1
                     ni, nj = divmod(neighbor, pad_w)
                     f = tentative + self._heuristic(
-                        ni - 1, nj - 1, goal_i, goal_j, self.diagonal, weight)
+                        ni - 1, nj - 1, goal_i, goal_j, self.diagonal, weight,
+                        self._heuristic_scale)
                     heapq.heappush(open_heap, (f, next(counter), neighbor))
+
+            for edge in self._zip_edges_by_padded.get(current, ()):
+                neighbor = edge.to_padded
+                tentative = current_cost + edge.cost
+                if tentative >= g_score[neighbor]:
+                    continue
+                g_score[neighbor] = tentative
+                came_from[neighbor] = current
+                came_via[neighbor] = edge.edge_id
+                ni, nj = divmod(neighbor, pad_w)
+                f = tentative + self._heuristic(
+                    ni - 1, nj - 1, goal_i, goal_j, self.diagonal, weight,
+                    self._heuristic_scale,
+                )
+                heapq.heappush(open_heap, (f, next(counter), neighbor))
         self._expanded = expanded
         return None
 
     @staticmethod
-    def _rebuild_flat(came_from, current: int, pad_w: int) -> list:
-        """补齐索引路径 → ``(i, j)`` 数组下标路径（含起终点）。"""
-        path = []
+    def _rebuild_flat(came_from, came_via, current: int, pad_w: int) -> tuple[list, list[int]]:
+        """补齐索引路径 → 数组下标路径与每一步来源的滑索边 ID。"""
+        path: list[tuple[int, int]] = []
+        via_edge_ids: list[int] = []
         while current >= 0:
             path.append((current // pad_w - 1, current % pad_w - 1))
-            current = int(came_from[current])
+            previous = int(came_from[current])
+            if previous >= 0:
+                via_edge_ids.append(int(came_via[current]))
+            current = previous
         path.reverse()
-        return path
+        via_edge_ids.reverse()
+        return path, via_edge_ids
 
     def _simplify(self, cells) -> list:
         """视线简化：把能直连的连续格合并成航点，减少无谓的拐点。
