@@ -3,6 +3,8 @@ from collections import defaultdict
 from pathlib import Path
 from urllib import parse, request
 
+from map_summary_order import canonical_summary
+
 API_HOST = "https://zonai.skland.com"
 
 HEADERS = {
@@ -22,9 +24,12 @@ def get_json(path: str):
 
 
 def write_json(path: Path, data):
+    # newline="\n" 必须显式指定：Windows 上 write_text 会把 "\n" 翻译成 CRLF，
+    # 与 CI（Linux）产出的文件换行不一致，会引入整文件级别的假 diff。
     path.write_text(
         json.dumps(data, ensure_ascii=False, indent=2),
         encoding="utf-8",
+        newline="\n",
     )
 
 
@@ -110,9 +115,13 @@ def main():
             for mark in data.get("saveMarks", []):
                 _add_point(mark)
 
-    summary = {
+    # 按坐标去重（dict 键为 (x, y, z)）。
+    # 顺序必须归一化后再落盘：dict 插入顺序来自上游接口的返回次序，并不稳定，
+    # 不排序会导致「数据没变但整文件重排」的巨型 diff。
+    deduped = {
         map_id: {name: list(points.values()) for name, points in groups.items()} for map_id, groups in all_maps.items()
     }
+    summary = canonical_summary(deduped)
 
     write_json(
         TARGET_DIR / "summary.json",

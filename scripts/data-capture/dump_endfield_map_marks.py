@@ -16,6 +16,7 @@ from urllib import error, parse, request
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
+from map_summary_order import canonical_summary
 from src.core.map_device_id import ensure_map_device_id
 
 
@@ -274,7 +275,13 @@ def collect_roles(binding_resp: Any) -> list[dict[str, str]]:
 
 
 def write_json(path: Path, data: Any):
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    # newline="\n" 必须显式指定：Windows 上 write_text 会把 "\n" 翻译成 CRLF，
+    # 与 CI（Linux）产出的文件换行不一致，会引入整文件级别的假 diff。
+    path.write_text(
+        json.dumps(data, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+        newline="\n",
+    )
 
 
 def safe_name(value: str) -> str:
@@ -328,8 +335,12 @@ def generate_simple_marks(out_dir: Path):
         for mark in data.get("saveMarks", []):
             _add_point(mark.get("mapId"), template_map.get(mark.get("templateId")), mark.get("pos"))
 
-    # 导出坐标
-    export = {map_id: dict(groups) for map_id, groups in all_maps.items()}
+    # 导出坐标。
+    # 顺序必须归一化后再落盘：物品名的插入顺序来自 glob 遍历次序 + 标记出现次序，
+    # 都不稳定，不排序会导致「数据没变但整文件重排」的巨型 diff。
+    # 注意：本函数按抓包文件逐个 append，不做坐标去重；与
+    # dump_endfield_map_marks_public.py（按坐标去重）产出的条数可能不同。
+    export = canonical_summary(all_maps)
     write_json(target_dir / "summary.json", export)
 
     # 导出所有物品名单（排序）
