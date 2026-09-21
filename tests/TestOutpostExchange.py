@@ -9,6 +9,7 @@ from src.tasks.daily.misc.daily_outpost_mixin import _edit_distance
 class TestOutpostExchange(unittest.TestCase):
     def make_exchange_feature(self, ticket_numbers, goods=None):
         feature = object.__new__(DailyRoutineFeature)
+        feature._get_outpost_trade_limit = Mock(return_value=None)
         available_goods = goods if goods is not None else [SimpleNamespace(name="息壤玉葫芦")]
         feature.lang = SimpleNamespace(
             daily_routine_mixin=SimpleNamespace(

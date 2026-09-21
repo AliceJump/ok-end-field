@@ -1,4 +1,5 @@
 import re
+from math import ceil
 
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import areas_list, goods_dict, outpost_dict
@@ -175,6 +176,10 @@ class DailyOutpostMixin:
                 self.log_info(f"货物不可交易，加入地区排除列表: {exchange_good.name}")
                 continue
 
+            quantity_limit = self._get_outpost_trade_limit(exchange_good.name, num)
+            if quantity_limit is not None:
+                self._limit_outpost_trade_quantity(quantity_limit)
+
             if not self.wait_click_feature(
                 feature=fL.to_max_produce_num,
                 box=self.box_of_screen(0.945, 0.894, 0.973, 0.944),
@@ -185,12 +190,18 @@ class DailyOutpostMixin:
                 self.log_info(f"货物不可交易，加入地区排除列表: {exchange_good.name}")
                 continue
 
+            if quantity_limit is not None:
+                self.sleep(2)
+                self.click_confirm(after_sleep=2)
+
             self.wait_pop_up()
             num = self.read_outpost_ticket_num(outpost_name)
             if num < 1000:
                 self.log_info(f"{outpost_name} 据点当前券数量不足 (<1000)，停止兑换")
                 break
 
+            if quantity_limit is not None:
+                continue  # 活动货物可能还有库存，留给后续据点继续兑换。
             excluded_goods.add(exchange_good.name)
             self.log_info(f"货物已兑换完，加入地区排除列表: {exchange_good.name}")
 
@@ -236,3 +247,56 @@ class DailyOutpostMixin:
 
         self.log_info("据点兑换任务完成")
         return True
+
+    def _get_outpost_trade_limit(self, good_name, tickets):
+        """返回活动货品的券余额对应数量；None 表示普通货品。"""
+        # 龙泡泡活动策略仅在此处；活动结束后清空价格表，通用交易与调量方法可继续复用。
+        # 券余额 // 单价作为调量参考；最低仍卖 10%，允许触发超额交易确认。
+        activity_prices = {
+            get_world_map_text(self.lang, "息壤龙泡泡"): 100,
+            get_world_map_text(self.lang, "重息壤龙泡泡"): 200,
+        }
+        unit_price = activity_prices.get(good_name)
+        return tickets // unit_price if unit_price is not None else None
+
+    def _limit_outpost_trade_quantity(self, limit) -> None:
+        """按十分档从右向左调量，最低保留 10% 继续出售，不使用加减号。
+
+        算法：
+        1. 调用前已执行 plus_max()，先检查 100% 档；全部库存可售时直接结束。
+        2. 最大数量为 M，以 ceil(10 * (limit - 1) / (M - 1)) 估算起始档位。
+           100% 已知超限，因此从 10%～90% 之间的估算档位开始，每次向左退 10%，最低到 10%。
+        3. 每档点击完整轨道上的对应位置，再读实际数量；首个满足 0 < Q <= limit
+           的档位即停止，不再微调。10% 即使仍超限，也交给调用方继续出售并确认。
+        最大数量读数异常时直接选择 10%；调量后的读数异常时继续向左尝试，最低到 10%。
+        点击使用整数像素，避免比例舍入改变落点；本方法只负责调量，不返回是否允许出售。
+        """
+        # 数量文字框留足上下边距，兼容数字居中时被一起识别的“份数”字样。
+        quantity_box = self.box_of_screen(2180 / 2560, 1065 / 1440, 2370 / 2560, 1133 / 1440)
+        quantity_pattern = re.compile(r"\d+$")
+        # 根据 2560x1440 原图估计完整轨道 x=2024..2344；2051..2315 仅是滑块中心范围。
+        slider_left, slider_right = 2024 / 2560, 2344 / 2560
+        slider_y = 1150 / 1440
+
+        def read_quantity():
+            result = self.wait_ocr(match=quantity_pattern, box=quantity_box, time_out=2, raise_if_not_found=False)
+            return int(quantity_pattern.search(result[0].name).group()) if len(result or []) == 1 else None
+
+        maximum = read_quantity()
+        if maximum is not None and 0 < maximum <= limit:
+            return
+
+        start_step = 1
+        if maximum is not None and maximum > 1:
+            start_step = max(1, min(9, ceil(10 * (limit - 1) / (maximum - 1))))
+        pixel_y = int(slider_y * self.height)
+        for step in range(start_step, 0, -1):
+            position = slider_left + (slider_right - slider_left) * step / 10
+            if step >= 5:
+                # 右半段相邻档位可能落在当前滑块内部，先移到左端以确保点击生效。
+                self.click(int(slider_left * self.width), pixel_y, after_sleep=2)
+            self.click(int(position * self.width), pixel_y, name="outpost_trade_quantity", after_sleep=2)
+            current = read_quantity()
+            self.log_info(f"据点调量：{step * 10}% 档，最大数量 {maximum}，可售 {limit}，点击后 {current}")
+            if current is not None and 0 < current <= limit:
+                return
