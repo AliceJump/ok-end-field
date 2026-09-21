@@ -1,15 +1,16 @@
+import re
 import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from src.tasks.daily.daily_routine_mixin import DailyRoutineFeature
-from src.tasks.daily.misc.daily_outpost_mixin import _edit_distance
+from src.tasks.daily.misc.daily_outpost_mixin import DailyOutpostMixin, _edit_distance
 
 
 class TestOutpostExchange(unittest.TestCase):
-    def make_exchange_feature(self, ticket_numbers, goods=None):
+    def make_exchange_feature(self, ticket_numbers, goods=None, quantities=(1,)):
         feature = object.__new__(DailyRoutineFeature)
-        feature._get_outpost_trade_limit = Mock(return_value=None)
+        feature.width, feature.height = 2560, 1440
         available_goods = goods if goods is not None else [SimpleNamespace(name="息壤玉葫芦")]
         feature.lang = SimpleNamespace(
             daily_routine_mixin=SimpleNamespace(
@@ -21,22 +22,111 @@ class TestOutpostExchange(unittest.TestCase):
         feature.log_info = Mock()
         feature.box_of_screen = Mock(return_value=object())
         feature.wait_click_ocr = Mock(return_value=True)
-        feature.wait_ocr = Mock(
-            side_effect=[
-                [],
-                [],
-                available_goods,
-                [],
-                available_goods,
-            ]
-        )
+        screens = iter([[], [], available_goods, [], available_goods])
+        quantity_readings = iter(quantities)
+
+        def read_screen(*, match, **kwargs):
+            if isinstance(match, re.Pattern) and match.pattern == r"\d+$":
+                quantity = next(quantity_readings)
+                return [] if quantity is None else [SimpleNamespace(name=str(quantity))]
+            return next(screens)
+
+        feature.wait_ocr = Mock(side_effect=read_screen)
         feature.read_outpost_ticket_num = Mock(side_effect=ticket_numbers)
         feature.click = Mock()
         feature.wait_feature = Mock(return_value=object())
         feature.plus_max = Mock(return_value=True)
         feature.wait_click_feature = Mock(return_value=True)
         feature.wait_pop_up = Mock(return_value=False)
+        feature.click_confirm = Mock(return_value=True)
+        feature.sleep = Mock()
         return feature
+
+    @patch("src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text", side_effect=lambda lang, text: text)
+    def test_activity_prices_round_down_and_ignore_other_goods(self, _translate):
+        feature = self.make_exchange_feature([])
+        for name, tickets, expected in [
+            ("息壤龙泡泡", 100, 1),
+            ("重息壤龙泡泡", 200, 1),
+            ("息壤龙泡泡", 299, 2),
+            ("重息壤龙泡泡", 299, 1),
+            ("息壤龙泡泡", 99, 0),
+            ("重息壤龙泡泡", 0, 0),
+            ("息壤玉葫芦", 299, None),
+        ]:
+            with self.subTest(name=name, tickets=tickets):
+                self.assertEqual(feature._get_outpost_trade_limit(name, tickets), expected)
+
+    def test_quantity_bins_and_ocr_fallback(self):
+        # 2560x1440 下 10/20/30/90% 档分别为 x=2056/2088/2120/2312。
+        cases = [
+            ("全部可售", 1001, [1001], []),
+            ("单份库存", 1, [1], []),
+            ("恰好20%", 201, [1001, 201], [2088]),
+            ("超过20%一份", 202, [1001, 301, 201], [2120, 2088]),
+            ("不足20%一份", 200, [1001, 201, 101], [2088, 2056]),
+            ("最高退到90%", 1000, [1001, 901], [2024, 2312]),
+            ("最低10%仍超额", 1, [1001, 101], [2056]),
+            ("无券仍卖10%", 0, [1001, 101], [2056]),
+            ("库存OCR缺失", 250, [None, 101], [2056]),
+            ("库存OCR为零", 250, [0, 101], [2056]),
+            ("调量OCR连续缺失", 250, [1001, None, None, None], [2120, 2088, 2056]),
+            ("带文字的数量", 201, ["交易份数1001", "份数201"], [2088]),
+        ]
+        for label, limit, readings, expected_x in cases:
+            with self.subTest(label=label):
+                feature = SimpleNamespace(
+                    width=2560,
+                    height=1440,
+                    box_of_screen=Mock(),
+                    click=Mock(),
+                    log_info=Mock(),
+                    wait_ocr=Mock(
+                        side_effect=[[] if value is None else [SimpleNamespace(name=str(value))] for value in readings]
+                    ),
+                )
+                self.assertIsNone(DailyOutpostMixin._limit_outpost_trade_quantity(feature, limit))
+                self.assertEqual([c.args[:2] for c in feature.click.call_args_list], [(x, 1150) for x in expected_x])
+                self.assertEqual(feature.wait_ocr.call_count, len(readings))
+
+    @patch("src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text", side_effect=lambda lang, text: text)
+    def test_over_limit_activity_trade_confirms_before_reading_balance(self, _translate):
+        for name in ("息壤龙泡泡", "重息壤龙泡泡"):
+            with self.subTest(name=name):
+                feature = self.make_exchange_feature([1000, 0], [SimpleNamespace(name=name)], [1001, 101])
+                feature.wait_pop_up.return_value = True
+                events = Mock()
+                for action in ("read_outpost_ticket_num", "wait_click_feature", "click_confirm", "wait_pop_up"):
+                    events.attach_mock(getattr(feature, action), action)
+                feature.perform_outpost_exchange("天王坪援建点")
+                self.assertEqual(
+                    [c[0] for c in events.mock_calls],
+                    [
+                        "read_outpost_ticket_num",
+                        "wait_click_feature",
+                        "click_confirm",
+                        "wait_pop_up",
+                        "read_outpost_ticket_num",
+                    ],
+                )
+                feature.click_confirm.assert_called_once_with(after_sleep=2)
+                self.assertEqual(feature.click.call_args_list[-1].args[:2], (2056, 1150))
+
+    @patch("src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text", side_effect=lambda lang, text: text)
+    def test_activity_stock_remains_available_to_next_outpost(self, _translate):
+        for name, price in (("息壤龙泡泡", 100), ("重息壤龙泡泡", 200)):
+            with self.subTest(name=name):
+                excluded_goods = set()
+                for outpost in ("天王坪援建点", "心脏修缮站"):
+                    feature = self.make_exchange_feature(
+                        [250 * price, 2000], [SimpleNamespace(name=name)], [1001, 301, 201]
+                    )
+                    feature.wait_pop_up.return_value = True
+                    feature.perform_outpost_exchange(outpost, excluded_goods=excluded_goods)
+                    self.assertNotIn(name, excluded_goods)
+                    feature.plus_max.assert_called_once()
+                    feature.wait_click_feature.assert_called_once()
+                    self.assertEqual(feature.read_outpost_ticket_num.call_count, 2)
 
     def test_edit_distance_counts_insertions_deletions_and_substitutions(self):
         cases = [
