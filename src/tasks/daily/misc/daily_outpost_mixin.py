@@ -1,5 +1,4 @@
 import re
-from math import ceil
 
 from src.data.FeatureList import FeatureList as fL
 from src.data.world_map import areas_list, goods_dict, outpost_dict
@@ -263,12 +262,10 @@ class DailyOutpostMixin:
         """按十分档从右向左调量，最低保留 10% 继续出售，不使用加减号。
 
         算法：
-        1. 调用前已执行 plus_max()，先检查 100% 档；全部库存可售时直接结束。
-        2. 最大数量为 M，以 ceil(10 * (limit - 1) / (M - 1)) 估算起始档位。
-           100% 已知超限，因此从 10%～90% 之间的估算档位开始，每次向左退 10%，最低到 10%。
-        3. 每档点击完整轨道上的对应位置，再读实际数量；首个满足 0 < Q <= limit
-           的档位即停止，不再微调。10% 即使仍超限，也交给调用方继续出售并确认。
-        最大数量读数异常时直接选择 10%；调量后的读数异常时继续向左尝试，最低到 10%。
+        1. 从 100% 到 10% 逐档遍历，每次向左退 10%，不估算起始位置。
+           调用前已执行 plus_max()，因此 100% 档只读数，后续档位先点击再读数。
+        2. 首个满足 0 < Q <= limit 的档位即停止，不再微调；超限或读数异常则继续向左。
+        3. 到 10% 后结束调量，即使仍超限或读数失败，也交给调用方继续出售并确认。
         点击使用整数像素，避免比例舍入改变落点；本方法只负责调量，不返回是否允许出售。
         """
         # 数量文字框留足上下边距，兼容数字居中时被一起识别的“份数”字样。
@@ -282,21 +279,15 @@ class DailyOutpostMixin:
             result = self.wait_ocr(match=quantity_pattern, box=quantity_box, time_out=2, raise_if_not_found=False)
             return int(quantity_pattern.search(result[0].name).group()) if len(result or []) == 1 else None
 
-        maximum = read_quantity()
-        if maximum is not None and 0 < maximum <= limit:
-            return
-
-        start_step = 1
-        if maximum is not None and maximum > 1:
-            start_step = max(1, min(9, ceil(10 * (limit - 1) / (maximum - 1))))
         pixel_y = int(slider_y * self.height)
-        for step in range(start_step, 0, -1):
-            position = slider_left + (slider_right - slider_left) * step / 10
-            if step >= 5:
-                # 右半段相邻档位可能落在当前滑块内部，先移到左端以确保点击生效。
-                self.click(int(slider_left * self.width), pixel_y, after_sleep=2)
-            self.click(int(position * self.width), pixel_y, name="outpost_trade_quantity", after_sleep=2)
+        for step in range(10, 0, -1):
+            if step < 10:
+                position = slider_left + (slider_right - slider_left) * step / 10
+                if step >= 5:
+                    # 右半段相邻档位可能落在当前滑块内部，先移到左端以确保点击生效。
+                    self.click(int(slider_left * self.width), pixel_y, after_sleep=2)
+                self.click(int(position * self.width), pixel_y, name="outpost_trade_quantity", after_sleep=2)
             current = read_quantity()
-            self.log_info(f"据点调量：{step * 10}% 档，最大数量 {maximum}，可售 {limit}，点击后 {current}")
+            self.log_info(f"据点调量：{step * 10}% 档，可售 {limit}，当前数量 {current}")
             if current is not None and 0 < current <= limit:
                 return

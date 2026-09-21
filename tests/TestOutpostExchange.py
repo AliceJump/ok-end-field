@@ -58,20 +58,23 @@ class TestOutpostExchange(unittest.TestCase):
                 self.assertEqual(feature._get_outpost_trade_limit(name, tickets), expected)
 
     def test_quantity_bins_and_ocr_fallback(self):
-        # 2560x1440 下 10/20/30/90% 档分别为 x=2056/2088/2120/2312。
+        # 100% 已选中；依次从 90% 点到 10%，右半段先点 x=2024 避开当前滑块。
+        quantities = list(range(1001, 100, -100))
+        clicks = [2024, 2312, 2024, 2280, 2024, 2248, 2024, 2216, 2024, 2184, 2152, 2120, 2088, 2056]
         cases = [
             ("全部可售", 1001, [1001], []),
             ("单份库存", 1, [1], []),
-            ("恰好20%", 201, [1001, 201], [2088]),
-            ("超过20%一份", 202, [1001, 301, 201], [2120, 2088]),
-            ("不足20%一份", 200, [1001, 201, 101], [2088, 2056]),
-            ("最高退到90%", 1000, [1001, 901], [2024, 2312]),
-            ("最低10%仍超额", 1, [1001, 101], [2056]),
-            ("无券仍卖10%", 0, [1001, 101], [2056]),
-            ("库存OCR缺失", 250, [None, 101], [2056]),
-            ("库存OCR为零", 250, [0, 101], [2056]),
-            ("调量OCR连续缺失", 250, [1001, None, None, None], [2120, 2088, 2056]),
-            ("带文字的数量", 201, ["交易份数1001", "份数201"], [2088]),
+            ("恰好20%", 201, quantities[:-1], clicks[:-1]),
+            ("超过20%一份", 202, quantities[:-1], clicks[:-1]),
+            ("不足20%一份", 200, quantities, clicks),
+            ("最高退到90%", 1000, quantities[:2], clicks[:2]),
+            ("最低10%仍超额", 1, quantities, clicks),
+            ("无券仍卖10%", 0, quantities, clicks),
+            ("100%读数缺失后继续遍历", 250, [None, *quantities[1:-1]], clicks[:-1]),
+            ("100%读数为零后继续遍历", 250, [0, *quantities[1:-1]], clicks[:-1]),
+            ("所有档位OCR缺失", 250, [None] * 10, clicks),
+            ("调量OCR连续缺失", 250, [1001] + [None] * 8 + [101], clicks),
+            ("带文字的数量", 201, [f"份数{value}" for value in quantities[:-1]], clicks[:-1]),
         ]
         for label, limit, readings, expected_x in cases:
             with self.subTest(label=label):
@@ -93,7 +96,7 @@ class TestOutpostExchange(unittest.TestCase):
     def test_over_limit_activity_trade_confirms_before_reading_balance(self, _translate):
         for name in ("息壤龙泡泡", "重息壤龙泡泡"):
             with self.subTest(name=name):
-                feature = self.make_exchange_feature([1000, 0], [SimpleNamespace(name=name)], [1001, 101])
+                feature = self.make_exchange_feature([1000, 0], [SimpleNamespace(name=name)], range(1001, 100, -100))
                 feature.wait_pop_up.return_value = True
                 events = Mock()
                 for action in ("read_outpost_ticket_num", "wait_click_feature", "click_confirm", "wait_pop_up"):
@@ -119,7 +122,7 @@ class TestOutpostExchange(unittest.TestCase):
                 excluded_goods = set()
                 for outpost in ("天王坪援建点", "心脏修缮站"):
                     feature = self.make_exchange_feature(
-                        [250 * price, 2000], [SimpleNamespace(name=name)], [1001, 301, 201]
+                        [250 * price, 2000], [SimpleNamespace(name=name)], range(1001, 200, -100)
                     )
                     feature.wait_pop_up.return_value = True
                     feature.perform_outpost_exchange(outpost, excluded_goods=excluded_goods)
