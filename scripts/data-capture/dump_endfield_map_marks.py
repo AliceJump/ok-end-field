@@ -315,7 +315,9 @@ def generate_simple_marks(out_dir: Path):
             if name and name not in EXCLUDE_MARKS:
                 all_names.add(name)
 
-        def _add_point(map_id: str, name: str, pos: Any):
+        def _add_point(map_id: Any, name: str, pos: Any):
+            if not isinstance(map_id, str) or not map_id:
+                return
             if not name or name in EXCLUDE_MARKS:
                 return
             if not isinstance(pos, dict):

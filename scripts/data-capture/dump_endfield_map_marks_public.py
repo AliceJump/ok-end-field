@@ -84,6 +84,9 @@ def main():
 
             def _add_point(mark: dict):
                 nonlocal duplicate_count
+                map_id = mark.get("mapId")
+                if not isinstance(map_id, str) or not map_id:
+                    return
                 name = template_map.get(mark.get("templateId"))
                 if not name or name in EXCLUDE_MARKS:
                     return
@@ -97,7 +100,7 @@ def main():
 
                 coord = (x, y, z)
 
-                points = all_maps[mark.get("mapId")][name]
+                points = all_maps[map_id][name]
 
                 if coord in points:
                     duplicate_count += 1
