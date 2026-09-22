@@ -58,7 +58,7 @@ class TestOutpostExchange(unittest.TestCase):
                 self.assertEqual(feature._get_outpost_trade_limit(name, tickets), expected)
 
     def test_quantity_bins_and_ocr_fallback(self):
-        # 依次点击 0% 到 100%，首次达到或超过上限时停在当前档位，不再回跳。
+        # 依次读取 0% 到 100%，首次达到或超过上限时停在当前档位。
         quantities = list(range(1, 1002, 100))
         clicks = [2024, 2056, 2088, 2120, 2152, 2184, 2216, 2248, 2280, 2312, 2344]
         cases = [
@@ -89,7 +89,14 @@ class TestOutpostExchange(unittest.TestCase):
                     ),
                 )
                 self.assertIsNone(DailyOutpostMixin._limit_outpost_trade_quantity(feature, limit))
-                self.assertEqual([c.args[:2] for c in feature.click.call_args_list], [(x, 1150) for x in expected_x])
+                target_clicks = feature.click.call_args_list[1::2]
+                reset_clicks = feature.click.call_args_list[::2]
+                self.assertEqual([c.args[:2] for c in target_clicks], [(x, 1150) for x in expected_x])
+                self.assertEqual(len(reset_clicks), len(target_clicks))
+                for reset, target in zip(reset_clicks, target_clicks):
+                    # 先移到端点，保证目标距端点至少半条轨道，避开手柄。
+                    self.assertIn(reset.args[:2], [(2024, 1150), (2344, 1150)])
+                    self.assertGreaterEqual(abs(reset.args[0] - target.args[0]), 160)
                 self.assertEqual(feature.wait_ocr.call_count, len(readings))
 
     @patch("src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text", side_effect=lambda lang, text: text)
