@@ -231,7 +231,9 @@ class GridNavigationMixin(MinimapHeadingMixin):
         self._grid_nav_zip_line_empty: set[str] = set()
         self._grid_nav_zip_line_start_hint: tuple[float, float] | None = None
         self._grid_nav_zip_line_failed_target_hint: tuple[float, float] | None = None
-        self._grid_nav_blocked_zip_links: set[frozenset[str]] = set()
+        self._grid_nav_blocked_zip_connections: set[
+            tuple[str, tuple[float, float, float], tuple[float, float, float]]
+        ] = set()
         self._grid_nav_skip_board_node_id: str | None = None
 
     def _reset_grid_navigation_run_state(self) -> None:
@@ -239,7 +241,6 @@ class GridNavigationMixin(MinimapHeadingMixin):
         self._grid_nav_follower = None
         self._grid_nav_zip_line_start_hint = None
         self._grid_nav_zip_line_failed_target_hint = None
-        self._grid_nav_blocked_zip_links.clear()
         self._grid_nav_skip_board_node_id = None
         self._set_grid_walking(False)
 
@@ -774,6 +775,27 @@ class GridNavigationMixin(MinimapHeadingMixin):
         )
         return None if nearest is None else str(nearest.node_id)
 
+    @staticmethod
+    def _zip_line_node_coordinate_key(node: ZipLineNode) -> tuple[float, float, float]:
+        """将滑索节点转换为跨快照稳定的三维坐标键。"""
+        return round(float(node.x), 2), round(float(node.y), 2), round(float(node.z), 2)
+
+    @classmethod
+    def _zip_line_connection_key(
+        cls,
+        map_id: str,
+        first: ZipLineNode,
+        second: ZipLineNode,
+    ) -> tuple[str, tuple[float, float, float], tuple[float, float, float]]:
+        """返回与节点哈希无关、按端点坐标排序的无向连接键。"""
+        endpoints = sorted(
+            (
+                cls._zip_line_node_coordinate_key(first),
+                cls._zip_line_node_coordinate_key(second),
+            )
+        )
+        return str(map_id or first.map_id or second.map_id), endpoints[0], endpoints[1]
+
     def _resolve_grid_replan_start(
         self,
         map_id: str,
@@ -856,12 +878,12 @@ class GridNavigationMixin(MinimapHeadingMixin):
         target_id = str(target_node.node_id)
         if start_id == target_id:
             return start_id
-        blocked = frozenset((start_id, target_id))
-        self._grid_nav_blocked_zip_links.add(blocked)
+        blocked = self._zip_line_connection_key(map_id, start_node, target_node)
+        self._grid_nav_blocked_zip_connections.add(blocked)
         self.log_warning(
             "滑索连接不可用："
             f"({start_node.x:.2f}, {start_node.z:.2f}) <-> "
-            f"({target_node.x:.2f}, {target_node.z:.2f})，后续规划将绕开",
+            f"({target_node.x:.2f}, {target_node.z:.2f})，后续导航将绕开",
             notify=True,
         )
         return start_id
@@ -869,14 +891,20 @@ class GridNavigationMixin(MinimapHeadingMixin):
     def _filter_blocked_grid_zip_lines(
         self,
         zip_lines: ZipLineGraph | None,
+        map_id: str = "",
     ) -> ZipLineGraph | None:
-        """返回移除了本次导航已确认不可用连接的滑索图。"""
-        if zip_lines is None or not self._grid_nav_blocked_zip_links:
+        """返回移除了当前会话已确认不可用连接的滑索图。"""
+        if zip_lines is None or not self._grid_nav_blocked_zip_connections:
             return zip_lines
         links = [
             link
             for link in zip_lines.links
-            if frozenset((link.first_id, link.second_id)) not in self._grid_nav_blocked_zip_links
+            if self._zip_line_connection_key(
+                map_id,
+                zip_lines.node(link.first_id),
+                zip_lines.node(link.second_id),
+            )
+            not in self._grid_nav_blocked_zip_connections
         ]
         if len(links) == len(zip_lines.links):
             return zip_lines
@@ -902,7 +930,10 @@ class GridNavigationMixin(MinimapHeadingMixin):
         )
         if grid is None:
             return None, PlanResult(False, f"未找到地图 {map_id!r} 的导航网格")
-        zip_lines = self._filter_blocked_grid_zip_lines(self._grid_zip_lines_for_map(map_id))
+        zip_lines = self._filter_blocked_grid_zip_lines(
+            self._grid_zip_lines_for_map(map_id),
+            map_id,
+        )
         follower = GridRouteFollower(
             grid,
             self._grid_follower_config(),

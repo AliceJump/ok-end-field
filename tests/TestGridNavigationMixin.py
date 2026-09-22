@@ -423,6 +423,36 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertIn("滑索连接不可用：(0.50, 0.50) <-> (10.50, 0.50)", logs)
         self.assertNotIn("a <-> b", logs)
 
+    def test_blocked_zip_link_survives_next_navigation_with_new_node_ids(self):
+        first = ZipLineNode("old-a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        second = ZipLineNode("old-b", "test", "lv1", "滑索架", 10.5, 0.0, 0.5)
+        old_graph = ZipLineGraph(
+            [first, second],
+            [ZipLineLink("old-a", "old-b", 10.0, 80.0)],
+        )
+        self.task._grid_zip_lines_for_map = lambda map_id: old_graph
+        self.task._block_grid_zip_link_from_exception(
+            ZipLineReplanRequired(
+                "blocked",
+                current_position=(0.5, 0.5),
+                failed_target_position=(10.5, 0.5),
+            ),
+            "test",
+        )
+
+        refreshed_first = ZipLineNode("new-a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        refreshed_second = ZipLineNode("new-b", "test", "lv1", "滑索架", 10.5, 0.0, 0.5)
+        refreshed_graph = ZipLineGraph(
+            [refreshed_first, refreshed_second],
+            [ZipLineLink("new-a", "new-b", 10.0, 80.0)],
+        )
+
+        self.task._reset_grid_navigation_run_state()
+        filtered = self.task._filter_blocked_grid_zip_lines(refreshed_graph, "test")
+
+        self.assertIsNotNone(filtered)
+        self.assertEqual(filtered.links, ())
+
     def test_navigate_holds_and_releases_w_until_goal(self):
         result = self.task.navigate_grid_to((4.5, 0.5), map_id="test")
         self.assertTrue(result)
