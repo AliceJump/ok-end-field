@@ -51,7 +51,7 @@ class TestGridRouteFollower(unittest.TestCase):
             FollowerConfig(
                 arrive_radius=0.5,
                 goal_radius=0.5,
-                heading_tolerance=5.0,
+                heading_tolerance=4.0,
                 stuck_window_s=2.0,
                 stuck_min_distance=0.3,
                 margin=0,
@@ -107,19 +107,15 @@ class TestGridRouteFollower(unittest.TestCase):
 
         self.assertEqual(step.action, WALK)
 
-    def test_heading_hysteresis_avoids_turn_walk_flapping(self):
+    def test_heading_tolerance_is_fixed_at_four_degrees(self):
         self.follower.plan((0.5, 0.5), (4.5, 0.5))
 
         self.assertEqual(
-            self.follower.update((0.5, 0.5), heading=85.5, now=0.0).action,
+            self.follower.update((0.5, 0.5), heading=86.0, now=0.0).action,
             WALK,
         )
         self.assertEqual(
-            self.follower.update((0.5, 0.5), heading=80.0, now=0.1).action,
-            WALK,
-        )
-        self.assertEqual(
-            self.follower.update((0.5, 0.5), heading=79.0, now=0.2).action,
+            self.follower.update((0.5, 0.5), heading=85.9, now=0.1).action,
             TURN,
         )
 

@@ -93,7 +93,7 @@ class FollowerConfig:
 
     arrive_radius: float = 1.0
     goal_radius: float = 2.0
-    heading_tolerance: float = 8.0
+    heading_tolerance: float = 4.0
     stuck_window_s: float = 2.5
     stuck_min_distance: float = 0.35
     shortcut_radius: float = 1.0
@@ -170,7 +170,6 @@ class GridRouteFollower:
         self._zip_line_index = 0
         self._move_started_at: float | None = None
         self._move_start_pos: tuple[float, float] | None = None
-        self._walk_aligned = False
         self._route_start: tuple[float, float] | None = None
         self._off_route_since: float | None = None
 
@@ -185,16 +184,21 @@ class GridRouteFollower:
         goal: tuple[float, float],
         *,
         time_budget_s: float | None = None,
+        required_zip_line_start_id: str | None = None,
     ) -> PlanResult:
         """重新规划并重置航点进度、卡住窗口与偏航计时。"""
         self.goal = (float(goal[0]), float(goal[1]))
         self._route_start = (float(start[0]), float(start[1]))
-        self.plan_result = self.planner.plan(start, goal, time_budget_s=time_budget_s)
+        self.plan_result = self.planner.plan(
+            start,
+            goal,
+            time_budget_s=time_budget_s,
+            required_zip_line_start_id=required_zip_line_start_id,
+        )
         self.waypoint_index = 0
         self._zip_line_index = 0
         self._reset_motion()
         self._off_route_since = None
-        self._walk_aligned = False
         if self.plan_result.ok:
             self._advance_initial_waypoints((float(start[0]), float(start[1])))
         return self.plan_result
@@ -250,11 +254,7 @@ class GridRouteFollower:
                 self.waypoint_index = entry_index
             entry = waypoints[entry_index]
             entry_distance = distance_xz(pos, entry)
-            if (
-                self.waypoint_index >= entry_index
-                and entry_distance <= self.config.arrive_radius
-            ):
-                self._walk_aligned = False
+            if self.waypoint_index >= entry_index and entry_distance <= self.config.arrive_radius:
                 self._reset_motion()
                 return self._step(
                     ZIP_LINE,
@@ -277,7 +277,6 @@ class GridRouteFollower:
 
         off_route_distance = self._confirmed_off_route_distance(pos, now)
         if off_route_distance is not None:
-            self._walk_aligned = False
             self._reset_motion()
             return self._step(
                 REPLAN,
@@ -290,13 +289,11 @@ class GridRouteFollower:
                 skipped_waypoints=skipped,
                 shortcut_distance=shortcut_distance,
                 reason=(
-                    f"偏离路径 {off_route_distance:.2f}m，超过 "
-                    f"{max(0.0, float(self.config.off_route_radius)):.2f}m"
+                    f"偏离路径 {off_route_distance:.2f}m，超过 {max(0.0, float(self.config.off_route_radius)):.2f}m"
                 ),
             )
 
         if heading is None:
-            self._walk_aligned = False
             self._reset_motion()
             return self._step(
                 WAIT,
@@ -313,9 +310,7 @@ class GridRouteFollower:
 
         delta = angle_delta(target_bearing, heading)
         tolerance = max(0.0, float(self.config.heading_tolerance))
-        turn_threshold = tolerance if not self._walk_aligned else tolerance * 2.0
-        if abs(delta) > turn_threshold:
-            self._walk_aligned = False
+        if abs(delta) > tolerance:
             self._reset_motion()
             return self._step(
                 TURN,
@@ -329,7 +324,6 @@ class GridRouteFollower:
                 shortcut_distance=shortcut_distance,
             )
 
-        self._walk_aligned = True
         stuck = self._update_stuck(pos, now)
         if stuck:
             return self._step(
@@ -433,14 +427,11 @@ class GridRouteFollower:
         range_start, range_end = walk_range
         distances = []
         if index == range_start and range_start == 0 and self._route_start is not None:
-            distances.append(point_segment_distance(
-                position, self._route_start, waypoints[0])[0])
+            distances.append(point_segment_distance(position, self._route_start, waypoints[0])[0])
         if index > range_start:
-            distances.append(point_segment_distance(
-                position, waypoints[index - 1], waypoints[index])[0])
+            distances.append(point_segment_distance(position, waypoints[index - 1], waypoints[index])[0])
         if index < range_end:
-            distances.append(point_segment_distance(
-                position, waypoints[index], waypoints[index + 1])[0])
+            distances.append(point_segment_distance(position, waypoints[index], waypoints[index + 1])[0])
         if not distances:
             return None
         return min(distances)
@@ -499,10 +490,7 @@ class GridRouteFollower:
         self._zip_line_index += 1
         self._reset_motion()
         self._off_route_since = None
-        self._walk_aligned = False
-        self._advance_initial_waypoints(
-            self.plan_result.waypoints[self.waypoint_index]
-        )
+        self._advance_initial_waypoints(self.plan_result.waypoints[self.waypoint_index])
         return True
 
     def _advance_initial_waypoints(self, start: tuple[float, float]) -> None:

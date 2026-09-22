@@ -32,6 +32,9 @@ KEY_CONFIG_NAME = "Game Hotkey Config"
 ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME = "Ensure Main Once Action Sleep"
 ZIP_LINE_CONFIG_NAME = "Zip Line Config"
 ZIP_LINE_SCROLL_KEY = "是否启用滚动放大视角"
+ZIP_LINE_TARGET_SELECT_KEY = "滑索目标选择方式"
+ZIP_LINE_TARGET_SELECT_OCR = "OCR"
+ZIP_LINE_TARGET_SELECT_DIRECT = "直接对准"
 ZIP_LINE_GROUP_KEY = "滑索配置分类"
 ZIP_LINE_DELIVERY_GROUP = "送货滑索"
 ZIP_LINE_GATHER_GROUP = "淤积点滑索"
@@ -54,6 +57,7 @@ ZIP_LINE_GATHER_KEYS = list(stages_dict.get(STAGE_CATEGORY_ENERGY_POOLING, []))
 ZIP_LINE_DELIVERY_KEYS = [key for key in ZIP_LINE_ROUTE_KEYS if key not in ZIP_LINE_GATHER_KEYS]
 ZIP_LINE_DEFAULT_CONFIG = {
     ZIP_LINE_SCROLL_KEY: False,
+    ZIP_LINE_TARGET_SELECT_KEY: ZIP_LINE_TARGET_SELECT_DIRECT,
     **dict.fromkeys(ZIP_LINE_ROUTE_KEYS, ""),
     ZIP_LINE_GROUP_KEY: ZIP_LINE_DELIVERY_GROUP,
 }
@@ -63,6 +67,12 @@ ZIP_LINE_CONFIG_DESCRIPTION = {
         "可能会提高对齐成功率，但也可能导致对齐成功率下降较为明显\n"
         "建议启用此项时不要使用非白发或有白帽角色"
     ),
+    ZIP_LINE_TARGET_SELECT_KEY: (
+        "选择如何寻找下一滑索：\n"
+        "直接对准：使用滑索世界坐标计算方位，误差在 ±3° 内后执行；"
+        "点击未生效时调整俯仰角重试\n"
+        "OCR：使用画面中的距离数字进行对中和点击"
+    ),
     ZIP_LINE_GROUP_KEY: "选择要显示的滑索配置分类。",
     **dict.fromkeys(ZIP_LINE_ROUTE_KEYS, "滑索距离序列，用逗号分隔。"),
 }
@@ -71,9 +81,21 @@ ZIP_LINE_CONFIG_TYPE = {
         "type": "drop_down",
         "options": [ZIP_LINE_DELIVERY_GROUP, ZIP_LINE_GATHER_GROUP],
         "sub_configs": {
-            ZIP_LINE_DELIVERY_GROUP: [ZIP_LINE_SCROLL_KEY] + ZIP_LINE_DELIVERY_KEYS,
-            ZIP_LINE_GATHER_GROUP: [ZIP_LINE_SCROLL_KEY] + ZIP_LINE_GATHER_KEYS,
+            ZIP_LINE_DELIVERY_GROUP: [
+                ZIP_LINE_SCROLL_KEY,
+                ZIP_LINE_TARGET_SELECT_KEY,
+                *ZIP_LINE_DELIVERY_KEYS,
+            ],
+            ZIP_LINE_GATHER_GROUP: [
+                ZIP_LINE_SCROLL_KEY,
+                ZIP_LINE_TARGET_SELECT_KEY,
+                *ZIP_LINE_GATHER_KEYS,
+            ],
         },
+    },
+    ZIP_LINE_TARGET_SELECT_KEY: {
+        "type": "drop_down",
+        "options": [ZIP_LINE_TARGET_SELECT_DIRECT, ZIP_LINE_TARGET_SELECT_OCR],
     },
 }
 

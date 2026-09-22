@@ -3,6 +3,8 @@
 import unittest
 from types import MethodType, SimpleNamespace
 
+from src.data.FeatureList import FeatureList as fL
+from src.tasks.mixin.zip_line_mixin import ZipLineReplanRequired
 from src.tasks.onetime.DeliveryTask import DeliveryTask
 
 
@@ -10,7 +12,7 @@ class _FakeBox:
     """模拟 OCR 命中的按钮 Box。"""
 
 
-def _make_stub(ocr_results, strafe_results=None, advance_per_strafe=None):
+def _make_stub(ocr_results, strafe_results=None, advance_per_strafe=None, template_results=None):
     """构造仅包含 _find_zip_line_board_button 所需接口的桩对象。
 
     strafe_results: 每次 strafe_search 调用依次返回的值；None 表示该次返回未命中。
@@ -18,6 +20,7 @@ def _make_stub(ocr_results, strafe_results=None, advance_per_strafe=None):
     """
     stub = SimpleNamespace()
     stub._ocr_results = list(ocr_results)
+    stub._template_results = list(template_results or [])
     stub._strafe_results = list(strafe_results or [])
     stub.strafe_calls = []
     stub.ctrl_calls = []
@@ -38,6 +41,7 @@ def _make_stub(ocr_results, strafe_results=None, advance_per_strafe=None):
         return []
 
     stub.ocr = _ocr
+    stub.find_feature = lambda **kwargs: [stub._template_results.pop(0)] if stub._template_results else []
 
     def _sleep(sec=0):
         clock["t"] += sec if isinstance(sec, (int, float)) else 0  # 桩时钟随等待前进
@@ -61,6 +65,196 @@ def _make_stub(ocr_results, strafe_results=None, advance_per_strafe=None):
 
 
 class TestFindZipLineBoardButton(unittest.TestCase):
+    def test_target_select_mode_supports_ocr_and_direct(self):
+        direct = SimpleNamespace(
+            get_zip_line_config_value=lambda key, default=None: "直接对准",
+        )
+        ocr = SimpleNamespace(
+            get_zip_line_config_value=lambda key, default=None: "OCR",
+        )
+
+        self.assertEqual(DeliveryTask.zip_line_target_select_mode(direct), "直接对准")
+        self.assertEqual(DeliveryTask.zip_line_target_select_mode(ocr), "OCR")
+
+    def test_direct_zip_line_adjusts_pitch_then_succeeds(self):
+        events = []
+        stub = SimpleNamespace(
+            log_info=lambda msg: events.append(("info", msg)),
+            log_warning=lambda msg: events.append(("warning", msg)),
+            active_and_send_mouse_delta=lambda **kwargs: events.append(("mouse", kwargs)),
+            click=lambda **kwargs: events.append(("click", kwargs)),
+            send_key=lambda key: events.append(("key", key)),
+            sleep=lambda seconds: None,
+            _zip_line_ws_position=lambda: (10.0, 10.0),
+        )
+        wait_results = iter([False, True])
+        stub._wait_zip_line_motion = lambda **kwargs: next(wait_results)
+        aim_results = [
+            {"ok": True, "heading": 90.0, "error": 0.0},
+            {"ok": True, "heading": 90.0, "error": 0.0},
+        ]
+        stub.aim_view_to_bearing = lambda target, **kwargs: events.append(("aim", target)) or aim_results.pop(0)
+
+        self.assertTrue(DeliveryTask._direct_zip_line_go(stub, 90.0, target_position=(1.0, 2.0)))
+
+        self.assertIn(
+            ("mouse", {"dx": 0, "dy": 24, "steps": 1, "delay": 0}),
+            events,
+        )
+
+    def test_direct_zip_line_replans_after_ten_failed_attempts(self):
+        events = []
+        stub = SimpleNamespace(
+            log_info=lambda msg: events.append(("info", msg)),
+            log_warning=lambda msg: events.append(("warning", msg)),
+            active_and_send_mouse_delta=lambda **kwargs: events.append(("mouse", kwargs)),
+            click=lambda **kwargs: events.append(("click", kwargs)),
+            send_key=lambda key: events.append(("key", key)),
+            sleep=lambda seconds: None,
+            _zip_line_ws_position=lambda: (10.0, 10.0),
+            _wait_zip_line_motion=lambda **kwargs: False,
+        )
+        stub.aim_view_to_bearing = lambda target, **kwargs: {
+            "ok": True,
+            "heading": 90.0,
+            "error": 0.0,
+        }
+
+        with self.assertRaises(ZipLineReplanRequired) as raised:
+            DeliveryTask._direct_zip_line_go(
+                stub,
+                90.0,
+                target_position=(50.0, 50.0),
+            )
+
+        self.assertEqual(
+            len([event for event in events if event[0] == "click"]),
+            10,
+        )
+        self.assertEqual(
+            len([event for event in events if event[0] == "key"]),
+            10,
+        )
+        self.assertEqual(raised.exception.current_position, (10.0, 10.0))
+        self.assertEqual(raised.exception.failed_target_position, (50.0, 50.0))
+
+    def test_wait_zip_line_motion_waits_while_template_missing_then_succeeds(self):
+        events = []
+        clock = {"t": 0.0}
+        on_rack_results = iter([False, True])
+        stub = SimpleNamespace(
+            active_time=lambda: clock["t"],
+            next_frame=lambda: "frame",
+            _zip_line_on_rack_visible=lambda frame: next(on_rack_results),
+            _zip_line_ws_position=lambda frame=None: (2.0, 0.0),
+            log_info=lambda msg: events.append(msg),
+            sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
+        )
+
+        self.assertTrue(
+            DeliveryTask._wait_zip_line_motion(
+                stub,
+                target_position=(0.0, 0.0),
+                start_position=(10.0, 0.0),
+                timeout=1.0,
+                near_distance=3.0,
+            )
+        )
+        self.assertTrue(any("滑索间移动中" in message for message in events))
+        self.assertTrue(any("WS 距离=2.00m" in message for message in events))
+
+    def test_wait_zip_line_motion_retries_when_ws_still_at_start(self):
+        events = []
+        clock = {"t": 0.0}
+        stub = SimpleNamespace(
+            active_time=lambda: clock["t"],
+            next_frame=lambda: "frame",
+            _zip_line_on_rack_visible=lambda frame: True,
+            _zip_line_ws_position=lambda frame=None: (10.0, 10.0),
+            log_info=lambda msg: events.append(msg),
+            sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
+        )
+
+        self.assertFalse(
+            DeliveryTask._wait_zip_line_motion(
+                stub,
+                target_position=(0.0, 0.0),
+                start_position=(10.0, 10.0),
+                timeout=1.0,
+                near_distance=3.0,
+            )
+        )
+        self.assertTrue(any("准备重试" in message for message in events))
+
+    def test_wait_zip_line_motion_replans_on_wrong_rack(self):
+        clock = {"t": 0.0}
+        stub = SimpleNamespace(
+            active_time=lambda: clock["t"],
+            next_frame=lambda: "frame",
+            _zip_line_on_rack_visible=lambda frame: True,
+            _zip_line_ws_position=lambda frame=None: (50.0, 50.0),
+            log_info=lambda msg: None,
+            sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
+        )
+
+        with self.assertRaises(ZipLineReplanRequired):
+            DeliveryTask._wait_zip_line_motion(
+                stub,
+                target_position=(0.0, 0.0),
+                start_position=(10.0, 10.0),
+                timeout=1.0,
+                near_distance=3.0,
+                stable_seconds=0.3,
+            )
+
+    def test_wait_zip_line_motion_replans_when_stopped_without_template(self):
+        clock = {"t": 0.0}
+        stub = SimpleNamespace(
+            active_time=lambda: clock["t"],
+            next_frame=lambda: "frame",
+            _zip_line_on_rack_visible=lambda frame: False,
+            _zip_line_ws_position=lambda frame=None: (50.0, 50.0),
+            log_info=lambda msg: None,
+            sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
+        )
+
+        with self.assertRaises(ZipLineReplanRequired):
+            DeliveryTask._wait_zip_line_motion(
+                stub,
+                target_position=(0.0, 0.0),
+                start_position=(10.0, 10.0),
+                timeout=2.0,
+                near_distance=3.0,
+                stable_seconds=0.3,
+            )
+
+    def test_template_match_prefers_visual_feature(self):
+        box = _FakeBox()
+        stub = _make_stub(ocr_results=[], template_results=[box])
+
+        result = DeliveryTask._find_zip_line_board_button(stub, direct_wait=1.0, total_time_out=5.0)
+
+        self.assertIs(result, box)
+
+    def test_on_rack_accepts_either_target_template(self):
+        calls = []
+        box = _FakeBox()
+
+        def _find_feature(**kwargs):
+            calls.append(kwargs["feature_name"])
+            return [box] if kwargs["feature_name"] == fL.move_to_the_target_2 else []
+
+        stub = SimpleNamespace(
+            find_feature=_find_feature,
+            box_of_screen=lambda *args: "target_box",
+        )
+
+        self.assertTrue(DeliveryTask._zip_line_on_rack_visible(stub, "frame"))
+        self.assertEqual(
+            calls,
+            [fL.move_to_the_target, fL.move_to_the_target_2],
+        )
+
     def test_distance_matcher_accepts_display_rounding_near_expected(self):
         patterns = DeliveryTask._zip_line_distance_matcher(42.4, distance_tolerance=3)
 
