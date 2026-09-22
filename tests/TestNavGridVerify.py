@@ -104,7 +104,7 @@ class TestPathSafety(unittest.TestCase):
             root = Path(temporary)
             resolved = _resolve_within_root(Path("nested") / "grid.json", root)
 
-            self.assertEqual(resolved, root / "nested" / "grid.json")
+            self.assertEqual(resolved, (root / "nested" / "grid.json").resolve())
 
     def test_rejects_parent_escape(self):
         with tempfile.TemporaryDirectory() as temporary:
