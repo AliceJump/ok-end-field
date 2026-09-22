@@ -190,7 +190,6 @@ class DailyOutpostMixin:
                 continue
 
             if quantity_limit is not None:
-                self.sleep(2)
                 self.click_confirm(after_sleep=2)
 
             self.wait_pop_up()
