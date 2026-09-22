@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """独立校验导航网格 ``*.grid.npz``（不依赖 src/nav/grid_io，专门用来独立验收编辑器产出）。
 
 刻意用原始 ``numpy`` + ``json`` 重新实现一遍规范检查，**不复用** ``grid_io``——
@@ -29,7 +28,6 @@ from __future__ import annotations
 
 import argparse
 import json
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -43,6 +41,16 @@ AXIS_CONVENTION = (
 VALID_STATES = {0, 1, 2}
 STATE_NAMES = {0: "未知", 1: "可行走", 2: "阻挡"}
 GRID_SUFFIX = ".grid.npz"
+
+
+def _resolve_within_root(path: Path, root: Path | None = None) -> Path:
+    """把 CLI 路径限制在当前工作区内，拒绝 ``..`` 或符号链接逃逸。"""
+    root_path = (root or Path.cwd()).resolve()
+    candidate = path if path.is_absolute() else root_path / path
+    resolved = candidate.resolve()
+    if not resolved.is_relative_to(root_path):
+        raise ValueError(f"路径必须位于工作区内: {path}")
+    return resolved
 
 
 class Report:
@@ -95,8 +103,7 @@ def load_raw(path: Path, rep: Report):
             cells = data["cells"]
             meta_raw = data["meta"]
     except Exception as exc:  # 含 "Object arrays cannot be loaded when allow_pickle=False"
-        rep.error(f"读取失败：{type(exc).__name__}: {exc}"
-                  "（meta 若是 object 数组就会这样，必须写成 numpy 字符串数组）")
+        rep.error(f"读取失败：{type(exc).__name__}: {exc}（meta 若是 object 数组就会这样，必须写成 numpy 字符串数组）")
         return None, None
 
     # ---- cells ----
@@ -144,8 +151,9 @@ def load_raw(path: Path, rep: Report):
         rep.error(f"cell_size 必须是正数，实际 {meta.get('cell_size')!r}")
         cell_size = None
     origin = meta.get("origin")
-    if not (isinstance(origin, (list, tuple)) and len(origin) == 3
-            and all(isinstance(v, (int, float)) for v in origin)):
+    if not (
+        isinstance(origin, (list, tuple)) and len(origin) == 3 and all(isinstance(v, (int, float)) for v in origin)
+    ):
         rep.error(f"origin 应是 3 个数字，实际 {origin!r}")
         origin = None
     for key in ("map_name", "zoom"):
@@ -162,14 +170,15 @@ def report_cells(cells: np.ndarray, meta: dict, rep: Report) -> None:
     total = h * w
     rep.info(f"cells: uint8 {cells.shape}，{total} 格")
     counts = {s: int((cells == s).sum()) for s in (0, 1, 2)}
-    rep.info("三态：" + "  ".join(
-        f"{STATE_NAMES[s]} {counts[s]} ({counts[s] / total * 100:.1f}%)" for s in (0, 1, 2)))
+    rep.info("三态：" + "  ".join(f"{STATE_NAMES[s]} {counts[s]} ({counts[s] / total * 100:.1f}%)" for s in (0, 1, 2)))
     origin, cs = meta["origin"], meta["cell_size"]
     rep.info(f"origin=({origin[0]:.2f}, {origin[1]:.2f}, {origin[2]:.2f})  cell_size={cs}")
     extent = (origin[0], origin[2], origin[0] + w * cs, origin[2] + h * cs)
     rep.info(f"extent(x/z)=({extent[0]:.2f}, {extent[1]:.2f}) ~ ({extent[2]:.2f}, {extent[3]:.2f})")
-    rep.info(f"map_name={meta['raw'].get('map_name')!r} zoom={meta['raw'].get('zoom')!r} "
-             f"source={meta['raw'].get('source')!r} created={meta['raw'].get('created')!r}")
+    rep.info(
+        f"map_name={meta['raw'].get('map_name')!r} zoom={meta['raw'].get('zoom')!r} "
+        f"source={meta['raw'].get('source')!r} created={meta['raw'].get('created')!r}"
+    )
 
     # 可疑点
     if counts[1] == 0:
@@ -196,37 +205,43 @@ def _report_connectivity(cells: np.ndarray, rep: Report) -> None:
     free_mask = cells == 1
     passable_mask = cells != 2
     parts: dict[str, list[int]] = {}
-    for label, mask in (("可行走（不冒险即可达）", free_mask),
-                        ("规划器可达（可行走∪未知）", passable_mask)):
+    for label, mask in (("可行走（不冒险即可达）", free_mask), ("规划器可达（可行走∪未知）", passable_mask)):
         if int(mask.sum()) > 200_000:
             rep.info(f"{label}：{int(mask.sum())} 格，数量过大，跳过连通性检查")
             continue
         sizes = _components(mask, blocked)
         parts[label] = sizes
-        rep.info(f"{label}：{len(sizes)} 块（大小 {sizes[:8]}{'…' if len(sizes) > 8 else ''}），"
-                 f"最大占比 {sizes[0] / int(mask.sum()) * 100:.1f}%")
+        rep.info(
+            f"{label}：{len(sizes)} 块（大小 {sizes[:8]}{'…' if len(sizes) > 8 else ''}），"
+            f"最大占比 {sizes[0] / int(mask.sum()) * 100:.1f}%"
+        )
 
     reachable = parts.get("规划器可达（可行走∪未知）")
     if reachable and len(reachable) > 1:
-        rep.warn(f"规划器可达域分成 {len(reachable)} 块：跨块导航必然失败"
-                 f"（隔的是阻挡，允许冒险也过不去）")
+        rep.warn(f"规划器可达域分成 {len(reachable)} 块：跨块导航必然失败（隔的是阻挡，允许冒险也过不去）")
 
     # 单格情况按**邻居事实**报，不用图论"单格块"——后者会被我们自己的禁斜穿规则放大：
     # 一个格只要对角有可通行格、而角上被挡，它在规划器图里就是孤立的，但游戏里人
     # 其实能从对角走过去。这种"我们自己造的孤立"不该提示用户。
     facts = _single_cell_facts(cells)
     if facts["free_walled"]:
-        rep.warn(f"{len(facts['free_walled'])} 个可行走格八邻全是阻挡（被彻底围住）："
-                 + "、".join(f"({i},{j})" for i, j in facts["free_walled"][:6])
-                 + " —— 若确认无用途可在编辑器里删掉")
+        rep.warn(
+            f"{len(facts['free_walled'])} 个可行走格八邻全是阻挡（被彻底围住）："
+            + "、".join(f"({i},{j})" for i, j in facts["free_walled"][:6])
+            + " —— 若确认无用途可在编辑器里删掉"
+        )
     if facts["free_lonely"]:
-        rep.info(f"{len(facts['free_lonely'])} 个可行走格没有可行走邻居（孤立）："
-                 + "、".join(f"({i},{j})" for i, j in facts["free_lonely"][:6])
-                 + " —— 邻接的是未知格，规划可冒险连出去；"
-                 "是「邻域还没标全」还是「误点」要看画它时的意图，工具不替用户判断")
+        rep.info(
+            f"{len(facts['free_lonely'])} 个可行走格没有可行走邻居（孤立）："
+            + "、".join(f"({i},{j})" for i, j in facts["free_lonely"][:6])
+            + " —— 邻接的是未知格，规划可冒险连出去；"
+            "是「邻域还没标全」还是「误点」要看画它时的意图，工具不替用户判断"
+        )
     if facts["unknown_walled"]:
-        rep.info(f"另有 {len(facts['unknown_walled'])} 个**未知**格八邻全是阻挡（封闭小空间）："
-                 "这些格没人画过，与误点无关，规划会绕开")
+        rep.info(
+            f"另有 {len(facts['unknown_walled'])} 个**未知**格八邻全是阻挡（封闭小空间）："
+            "这些格没人画过，与误点无关，规划会绕开"
+        )
 
 
 def _single_cell_facts(cells: np.ndarray) -> dict:
@@ -294,7 +309,7 @@ def _components(mask: np.ndarray, blocked: np.ndarray) -> list[int]:
                     if seen[ni, nj] or not mask[ni, nj]:
                         continue
                     if di and dj and (blocked[i + di, j] or blocked[i, j + dj]):
-                        continue          # 禁斜穿墙角，与规划器一致
+                        continue  # 禁斜穿墙角，与规划器一致
                     seen[ni, nj] = True
                     stack.append((ni, nj))
         sizes.append(size)
@@ -304,6 +319,11 @@ def _components(mask: np.ndarray, blocked: np.ndarray) -> list[int]:
 
 def compare_legacy(cells: np.ndarray, meta: dict, legacy_path: Path, rep: Report) -> None:
     """与编辑器旧 JSON 逐格对拍：自己实现 origin 平移、blocked 优先。"""
+    try:
+        legacy_path = _resolve_within_root(legacy_path)
+    except ValueError as exc:
+        rep.error(str(exc))
+        return
     try:
         raw = json.loads(legacy_path.read_text(encoding="utf-8"))
     except Exception as exc:
@@ -322,25 +342,29 @@ def compare_legacy(cells: np.ndarray, meta: dict, legacy_path: Path, rep: Report
     # 独立算出应有的 origin（新语义 = 边界盒最小角）
     want_origin = (float(origin[0]) + min_col * cs, float(origin[2]) + min_row * cs)
     got = (meta["origin"][0], meta["origin"][2])
-    if any(abs(a - b) > 1e-6 for a, b in zip(want_origin, got)):
-        rep.error(f"origin 平移不符：应为 {tuple(round(v, 3) for v in want_origin)}，"
-                  f"实际 {tuple(round(v, 3) for v in got)}")
+    if any(abs(a - b) > 1e-6 for a, b in zip(want_origin, got, strict=True)):
+        rep.error(
+            f"origin 平移不符：应为 {tuple(round(v, 3) for v in want_origin)}，实际 {tuple(round(v, 3) for v in got)}"
+        )
 
     want = np.zeros(cells.shape, dtype=np.uint8)
     for col, row in leg_cells:
         i, j = row - min_row, col - min_col
         if 0 <= i < cells.shape[0] and 0 <= j < cells.shape[1]:
             want[i, j] = 1
-    for col, row in leg_blocked:                  # 旧规则：blocked 覆盖 free
+    for col, row in leg_blocked:  # 旧规则：blocked 覆盖 free
         i, j = row - min_row, col - min_col
         if 0 <= i < cells.shape[0] and 0 <= j < cells.shape[1]:
             want[i, j] = 2
     diff = int((want != cells).sum())
     if diff:
         mism = np.argwhere(want != cells)[:5]
-        rep.error(f"对拍 {legacy_path.name}: {diff} 格不一致，例如 "
-                  + ", ".join(f"(i={i},j={j}) 旧={STATE_NAMES[int(want[i, j])]}"
-                              f"/新={STATE_NAMES[int(cells[i, j])]}" for i, j in mism))
+        rep.error(
+            f"对拍 {legacy_path.name}: {diff} 格不一致，例如 "
+            + ", ".join(
+                f"(i={i},j={j}) 旧={STATE_NAMES[int(want[i, j])]}/新={STATE_NAMES[int(cells[i, j])]}" for i, j in mism
+            )
+        )
     else:
         rep.info(f"对拍 {legacy_path.name}: 逐格一致（旧数据 {len(keys)} 个格坐标）")
 
@@ -375,17 +399,23 @@ def main(argv: list[str] | None = None) -> int:
     """命令行入口；返回进程退出码，0 表示全部通过。"""
     ap = argparse.ArgumentParser(description="独立校验导航网格 *.grid.npz")
     ap.add_argument("paths", nargs="+", type=Path, help="npz 文件或目录")
-    ap.add_argument("--against", type=Path, default=None,
-                    help="可选：与编辑器旧 grid.json 逐格对拍（单个文件时用）")
+    ap.add_argument("--against", type=Path, default=None, help="可选：与编辑器旧 grid.json 逐格对拍（单个文件时用）")
     args = ap.parse_args(argv)
 
-    files = collect(args.paths)
+    root = Path.cwd()
+    try:
+        paths = [_resolve_within_root(path, root) for path in args.paths]
+        against = _resolve_within_root(args.against, root) if args.against is not None else None
+    except ValueError as exc:
+        ap.error(str(exc))
+
+    files = collect(paths)
     if not files:
         print(f"没找到 *{GRID_SUFFIX}")
         return 1
     bad = 0
     for f in files:
-        rep = verify_one(f, args.against)
+        rep = verify_one(f, against)
         rep.dump()
         bad += bool(rep.errors)
     print(f"\n{len(files) - bad}/{len(files)} 通过")
