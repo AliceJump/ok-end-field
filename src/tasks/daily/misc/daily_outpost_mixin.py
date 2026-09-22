@@ -246,9 +246,11 @@ class DailyOutpostMixin:
         return True
 
     def _get_outpost_trade_limit(self, good_name, tickets):
-        """返回活动货品的券余额对应数量；None 表示普通货品。"""
-        # 龙泡泡活动策略仅在此处；活动结束后清空价格表，通用交易与调量方法可继续复用。
-        # 券余额 // 单价作为调量参考；选择首次达到或超过上限的档位出售，尽量用尽调度券。
+        """返回活动货品的券余额对应数量；None 表示普通货品。
+
+        活动结束后清空价格表即可停用此策略，通用交易与调量方法仍可复用。
+        券余额除以单价并向下取整作为调量参考，选择首次达到或超过上限的档位出售。
+        """
         activity_prices = {
             get_world_map_text(self.lang, "息壤龙泡泡"): 100,
             get_world_map_text(self.lang, "重息壤龙泡泡"): 200,
@@ -270,14 +272,14 @@ class DailyOutpostMixin:
         """
         # 数量文字框留足上下边距，兼容数字居中时被一起识别的“份数”字样。
         quantity_box = self.box_of_screen(2180 / 2560, 1065 / 1440, 2370 / 2560, 1133 / 1440)
-        quantity_pattern = re.compile(r"\d+$")
+        quantity_pattern = re.compile(r"^\D*(\d+)$")
         # 根据 2560x1440 原图估计完整轨道 x=2024..2344；2051..2315 仅是滑块中心范围。
         slider_left, slider_right = 2024 / 2560, 2344 / 2560
         slider_y = 1150 / 1440
 
         def read_quantity():
             result = self.wait_ocr(match=quantity_pattern, box=quantity_box, time_out=2, raise_if_not_found=False)
-            return int(quantity_pattern.search(result[0].name).group()) if len(result or []) == 1 else None
+            return int(quantity_pattern.search(result[0].name).group(1)) if len(result or []) == 1 else None
 
         pixel_y = int(slider_y * self.height)
 
