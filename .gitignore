@@ -79,7 +79,9 @@ python/
 !.idea/externalDependencies.xml
 .vscode/*
 !.vscode/extensions.json
-!.vscode/settings.json
+# settings.json 已被跟踪，仓库仅保留已跟踪版本；
+# 本地改动通过 skip-worktree 屏蔽，不再随提交进入仓库
+.vscode/settings.json
 .workbuddy/
 # WorkBuddy AI 的本地工作目录（记忆 / 临时文件，不入库）
 .workbuddy-ai/
