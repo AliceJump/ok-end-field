@@ -250,7 +250,7 @@ class DailyOutpostMixin:
     def _get_outpost_trade_limit(self, good_name, tickets):
         """返回活动货品的券余额对应数量；None 表示普通货品。"""
         # 龙泡泡活动策略仅在此处；活动结束后清空价格表，通用交易与调量方法可继续复用。
-        # 券余额 // 单价作为调量参考；最低仍卖 10%，允许触发超额交易确认。
+        # 券余额 // 单价作为调量参考；找到不超限的档位后多卖一档，尽量用尽调度券。
         activity_prices = {
             get_world_map_text(self.lang, "息壤龙泡泡"): 100,
             get_world_map_text(self.lang, "重息壤龙泡泡"): 200,
@@ -259,13 +259,15 @@ class DailyOutpostMixin:
         return tickets // unit_price if unit_price is not None else None
 
     def _limit_outpost_trade_quantity(self, limit) -> None:
-        """按十分档从右向左调量，最低保留 10% 继续出售，不使用加减号。
+        """逐档寻找不超限的数量，再提高一档出售，不使用加减号。
 
         算法：
-        1. 从 100% 到 10% 逐档遍历，每次向左退 10%，不估算起始位置。
+        1. 从 100% 到 0% 逐档遍历，每次向左退 10%，不估算起始位置。
            调用前已执行 plus_max()，因此 100% 档只读数，后续档位先点击再读数。
-        2. 首个满足 0 < Q <= limit 的档位即停止，不再微调；超限或读数异常则继续向左。
-        3. 到 10% 后结束调量，即使仍超限或读数失败，也交给调用方继续出售并确认。
+        2. 找到首个满足 0 < Q <= limit 的档位后，回到高一档出售，以用尽调度券。
+           例如 20% 对应卖 30%，90% 对应卖 100%；100% 已不超限时直接卖全部库存。
+        3. 超限或读数异常则继续向左；到 0%（最小数量）后统一回到 10% 出售。
+           超额确认由调用方处理，不再进行加减微调。
         点击使用整数像素，避免比例舍入改变落点；本方法只负责调量，不返回是否允许出售。
         """
         # 数量文字框留足上下边距，兼容数字居中时被一起识别的“份数”字样。
@@ -280,14 +282,18 @@ class DailyOutpostMixin:
             return int(quantity_pattern.search(result[0].name).group()) if len(result or []) == 1 else None
 
         pixel_y = int(slider_y * self.height)
-        for step in range(10, 0, -1):
+
+        def click_step(step):
+            position = slider_left + (slider_right - slider_left) * step / 10
+            self.click(int(position * self.width), pixel_y, name="outpost_trade_quantity", after_sleep=2)
+
+        for step in range(10, -1, -1):
             if step < 10:
-                position = slider_left + (slider_right - slider_left) * step / 10
-                if step >= 5:
-                    # 右半段相邻档位可能落在当前滑块内部，先移到左端以确保点击生效。
-                    self.click(int(slider_left * self.width), pixel_y, after_sleep=2)
-                self.click(int(position * self.width), pixel_y, name="outpost_trade_quantity", after_sleep=2)
+                click_step(step)
             current = read_quantity()
             self.log_info(f"据点调量：{step * 10}% 档，可售 {limit}，当前数量 {current}")
-            if current is not None and 0 < current <= limit:
+            if step == 0 or (current is not None and 0 < current <= limit):
+                if step < 10:
+                    click_step(step + 1)
+                self.log_info(f"据点调量：出售 {min(step + 1, 10) * 10}% 档")
                 return
