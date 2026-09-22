@@ -1,0 +1,261 @@
+/* web 自定义 tab 通用样式（global-config 与 account-config 共用同一套类名）。 */
+
+.ef-web-tab {
+  --ef-bg: #1f1f1f;
+  --ef-card: #2b2b2b;
+  --ef-border: #3d3d3d;
+  --ef-text: #e8e8e8;
+  --ef-text-dim: #9a9a9a;
+  --ef-accent: #60cdff;
+  --ef-danger: #ff7a7a;
+  color: var(--ef-text);
+  font-size: 14px;
+  padding: 8px 4px 32px;
+}
+
+.ef-web-tab.ef-light {
+  --ef-bg: #f6f6f6;
+  --ef-card: #ffffff;
+  --ef-border: #e2e2e2;
+  --ef-text: #1a1a1a;
+  --ef-text-dim: #6b6b6b;
+  --ef-accent: #0078d4;
+  --ef-danger: #c42b1c;
+}
+
+.ef-root {
+  max-width: 860px;
+  margin: 0 auto;
+}
+
+.ef-loading {
+  text-align: center;
+  color: var(--ef-text-dim);
+  padding: 48px 0;
+}
+
+.ef-group-title {
+  margin: 22px 4px 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ef-accent);
+}
+
+.ef-card {
+  background: var(--ef-card);
+  border: 1px solid var(--ef-border);
+  border-radius: 10px;
+  margin: 0 0 14px;
+  overflow: hidden;
+}
+
+.ef-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ef-border);
+}
+
+.ef-card-title {
+  font-weight: 600;
+}
+
+.ef-card-desc {
+  margin-top: 2px;
+  color: var(--ef-text-dim);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.ef-card-body {
+  padding: 6px 16px 12px;
+}
+
+.ef-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--ef-border);
+}
+
+.ef-item:last-child {
+  border-bottom: none;
+}
+
+.ef-item-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.ef-item-label {
+  font-weight: 500;
+  word-break: break-all;
+}
+
+.ef-item-desc {
+  margin-top: 2px;
+  color: var(--ef-text-dim);
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+.ef-control {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.ef-input,
+.ef-select,
+.ef-textarea {
+  background: var(--ef-bg);
+  color: var(--ef-text);
+  border: 1px solid var(--ef-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font: inherit;
+}
+
+.ef-input {
+  width: 240px;
+}
+
+.ef-input:focus,
+.ef-select:focus,
+.ef-textarea:focus {
+  outline: none;
+  border-color: var(--ef-accent);
+}
+
+.ef-select {
+  min-width: 140px;
+}
+
+.ef-textarea {
+  width: 100%;
+  min-height: 96px;
+  resize: vertical;
+}
+
+.ef-raw {
+  max-width: 320px;
+  max-height: 90px;
+  overflow: auto;
+  background: var(--ef-bg);
+  border: 1px solid var(--ef-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--ef-text-dim);
+}
+
+.ef-switch {
+  appearance: none;
+  width: 40px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--ef-border);
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin: 0;
+}
+
+.ef-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff;
+  transition: left 0.2s;
+}
+
+.ef-switch:checked {
+  background: var(--ef-accent);
+}
+
+.ef-switch:checked::after {
+  left: 20px;
+}
+
+.ef-button {
+  background: transparent;
+  color: var(--ef-accent);
+  border: 1px solid var(--ef-accent);
+  border-radius: 6px;
+  padding: 5px 12px;
+  font: inherit;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.ef-button:hover {
+  background: color-mix(in srgb, var(--ef-accent) 12%, transparent);
+}
+
+.ef-button.ef-primary {
+  background: var(--ef-accent);
+  color: #fff;
+}
+
+.ef-button.ef-danger {
+  color: var(--ef-danger);
+  border-color: var(--ef-danger);
+}
+
+.ef-hidden {
+  display: none;
+}
+
+.ef-status {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%) translateY(8px);
+  background: var(--ef-card);
+  border: 1px solid var(--ef-border);
+  border-radius: 8px;
+  padding: 8px 16px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s, transform 0.25s;
+  max-width: 70vw;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.ef-status.ef-status-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.ef-status.ef-status-error {
+  color: var(--ef-danger);
+  border-color: var(--ef-danger);
+}
+
+/* 账号页布局辅助 */
+.ef-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  flex-wrap: wrap;
+}
+
+.ef-row-label {
+  color: var(--ef-text-dim);
+  flex-shrink: 0;
+}
+
+.ef-grow {
+  flex: 1;
+}

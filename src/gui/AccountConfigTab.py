@@ -32,10 +32,23 @@ from src.core.global_config_store import (
     get_global_config,
 )
 from src.icons import Icons
+from src.tasks.account.account_config_schema import (
+    ALWAYS_HIDDEN_CONFIG_KEYS,
+    account_config_base_value,
+    account_config_rules,
+    account_config_schema,
+    account_name_by_key,
+    build_virtual_config,
+    coerce_like,
+    config_key_set,
+    is_supported_value,
+    parse_accounts,
+    resolve_account_key_by_username,
+    task_storage_name,
+)
 from src.tasks.account.account_scope_store import (
     get_account_map_content,
     load_overrides,
-    parse_account_list_text,
     sync_account_list_text,
     update_overrides,
 )
@@ -98,7 +111,22 @@ class InMemoryConfig(dict):
 class AccountConfigTab(CustomTab):
     """Tab for managing per-account configuration overrides and account list."""
 
-    ALWAYS_HIDDEN_CONFIG_KEYS = {"多账户模式", "多账户独立配置", "账号列表"}
+    # 纯逻辑委托给 src/tasks/account/account_config_schema.py（与 web 账号页共用）。
+    ALWAYS_HIDDEN_CONFIG_KEYS = ALWAYS_HIDDEN_CONFIG_KEYS
+    _is_supported_value = staticmethod(is_supported_value)
+    _config_key_set = staticmethod(config_key_set)
+    _task_storage_name = staticmethod(task_storage_name)
+    _account_config_schema = staticmethod(account_config_schema)
+    _account_config_base_value = staticmethod(account_config_base_value)
+    _coerce_like = staticmethod(coerce_like)
+
+    def _account_config_schema(self, task, task_override: dict[str, Any]) -> dict[str, Any]:
+        """Build the configuration schema for a task including default and account-specific settings."""
+        return account_config_schema(task, task_override)
+
+    def _account_config_rules(self, task) -> tuple[set[str], set[str]]:
+        """Determine configuration key blacklist and whitelist for account overrides."""
+        return account_config_rules(task)
 
     # 启动后空闲预热：提前完成账号页首屏构建，消除首次切换到本页的卡顿。
     # 与 GlobalConfigTab.PREBUILD_DELAY_MS 错开，避免两个页面的构建负载叠加。
@@ -317,164 +345,15 @@ class AccountConfigTab(CustomTab):
     @staticmethod
     def _parse_accounts(account_list_text: str) -> list[dict[str, str]]:
         """Parse account list text into structured account dictionaries with username and password."""
-        accounts: list[dict[str, str]] = []
-        seen = set()
-        for entry in parse_account_list_text(account_list_text):
-            username = str(entry.get("username", "")).strip()
-            if username and username not in seen:
-                seen.add(username)
-                accounts.append({"username": username, "password": str(entry.get("password", ""))})
-        return accounts
+        return parse_accounts(account_list_text)
 
     def _resolve_account_key_by_username(self, username: str) -> str:
         """Resolve the internal account key from a username by looking up the account registry."""
-        username = username.strip()
-        if not username:
-            return ""
-
-        registry = self.overrides_data.get("account_registry") or {}
-        for account_id, meta in registry.items():
-            if not isinstance(account_id, str) or not isinstance(meta, dict):
-                continue
-
-            current_name = str(meta.get("username", "") or "").strip()
-            if username == current_name:
-                return account_id
-
-        return ""
+        return resolve_account_key_by_username(self.overrides_data, username)
 
     def _get_account_name_by_key(self, account_key: str) -> str:
         """Get the account display name (username) from the internal account key."""
-        if not account_key:
-            return ""
-
-        registry = self.overrides_data.get("account_registry") or {}
-        meta = registry.get(account_key)
-        if isinstance(meta, dict):
-            username = str(meta.get("username", "") or "").strip()
-            if username:
-                return username
-        return account_key
-
-    @staticmethod
-    def _is_supported_value(value: Any) -> bool:
-        """Check if a value is a supported configuration type."""
-        return isinstance(value, (bool, int, float, str, list))
-
-    @staticmethod
-    def _config_key_set(task, attribute: str) -> set[str]:
-        """Extract configuration keys from a task attribute, handling strings, lists, tuples, and sets."""
-        value = getattr(task, attribute, None)
-        if isinstance(value, str):
-            return {value}
-        if isinstance(value, (list, tuple, set)):
-            return {str(key) for key in value}
-        return set()
-
-    @staticmethod
-    def _task_storage_name(task) -> str:
-        """Get the storage name for a task used in account override keys."""
-        return str(getattr(task, "account_override_name", task.__class__.__name__))
-
-    def _account_config_schema(self, task, task_override: dict[str, Any]) -> dict[str, Any]:
-        """Build the configuration schema for a task including default and account-specific settings."""
-        schema = dict(task.default_config)
-        extra_defaults = getattr(task, "account_config_defaults", None)
-        if isinstance(extra_defaults, dict):
-            schema.update(extra_defaults)
-
-        whitelist = self._config_key_set(task, "account_config_whitelist")
-        for key in whitelist:
-            if key in schema:
-                continue
-            if key in task_override:
-                schema[key] = task_override[key]
-            elif key in task.config:
-                schema[key] = dict.get(task.config, key)
-        return schema
-
-    def _account_config_rules(self, task) -> tuple[set[str], set[str]]:
-        """Determine configuration key blacklist and whitelist for account overrides."""
-        blacklist = self.ALWAYS_HIDDEN_CONFIG_KEYS | self._config_key_set(task, "account_config_blacklist")
-        whitelist = self._config_key_set(task, "account_config_whitelist")
-
-        config_types = dict(task.config_type or {})
-        config_types.update(getattr(task, "account_config_type", {}) or {})
-        for key, type_meta in config_types.items():
-            if not isinstance(type_meta, dict):
-                continue
-            if type_meta.get("type") == "button" or (
-                "type" not in type_meta and ("buttons" in type_meta or "callback" in type_meta)
-            ):
-                blacklist.add(key)
-            sub_configs = type_meta.get("sub_configs")
-            if isinstance(sub_configs, dict):
-                other_keys = sub_configs.get("其他配置", [])
-                if isinstance(other_keys, str):
-                    blacklist.add(other_keys)
-                elif isinstance(other_keys, (list, tuple, set)):
-                    blacklist.update(str(item) for item in other_keys)
-
-        if "配置选择" in task.default_config or "配置选择" in config_types:
-            whitelist.add("配置选择")
-
-        whitelist -= blacklist
-        return blacklist, whitelist
-
-    @staticmethod
-    def _account_config_base_value(task, key: str, default_value: Any) -> Any:
-        """Get the base configuration value for a key, falling back to default if not in task config."""
-        if key in task.config:
-            return dict.get(task.config, key, default_value)
-        provider = getattr(task, "get_account_config_base_value", None)
-        if callable(provider):
-            return provider(key, default_value)
-        return default_value
-
-    @staticmethod
-    def _coerce_like(base_value: Any, value: Any) -> Any:
-        """Coerce a value to match the type of the base value, with fallback for incompatible types."""
-        if base_value is None or value is None:
-            return value
-
-        if isinstance(base_value, bool):
-            if isinstance(value, bool):
-                return value
-            if isinstance(value, str):
-                text = value.strip().lower()
-                if text in {"true", "1", "yes", "on", "是", "开启"}:
-                    return True
-                if text in {"false", "0", "no", "off", "否", "关闭"}:
-                    return False
-            return base_value
-
-        if isinstance(base_value, int) and not isinstance(base_value, bool):
-            if isinstance(value, int):
-                return value
-            if isinstance(value, str):
-                try:
-                    return int(value.strip())
-                except ValueError:
-                    return base_value
-            return base_value
-
-        if isinstance(base_value, float):
-            if isinstance(value, (int, float)):
-                return float(value)
-            if isinstance(value, str):
-                try:
-                    return float(value.strip())
-                except ValueError:
-                    return base_value
-            return base_value
-
-        if isinstance(base_value, list):
-            return value if isinstance(value, list) else base_value
-
-        if isinstance(base_value, str):
-            return str(value)
-
-        return value if isinstance(value, type(base_value)) else base_value
+        return account_name_by_key(self.overrides_data, account_key)
 
     def _collect_tasks(self):
         """Collect all tasks that support multi-account configuration from the executor."""
@@ -707,53 +586,13 @@ class AccountConfigTab(CustomTab):
         self.render_task_editor()
 
     def _build_virtual_config(self, task, account_key: str, account_name: str, only_diff: bool = False):
-        task_class = AccountConfigTab._task_storage_name(task)
-        accounts = self.overrides_data.get("accounts") or {}
-        account_map = accounts.get(account_key, {})
-        if account_name and (not isinstance(account_map, dict) or (not account_map and account_name in accounts)):
-            legacy_account_map = accounts.get(account_name, {})
-            if isinstance(legacy_account_map, dict):
-                account_map = legacy_account_map
-        task_override = account_map.get(task_class, {}) if isinstance(account_map, dict) else {}
-
-        defaults = {}
-        initial = {}
-        base_values = {}
-        editable_keys = []
-        total_supported_keys = 0
-        blacklist, whitelist = self._account_config_rules(task)
-
-        for key, default_value in self._account_config_schema(task, task_override).items():
-            forced = key in whitelist
-            if key in blacklist:
-                continue
-            if str(key).startswith("_") and not forced:
-                continue
-
-            type_meta = task.config_type.get(key) if task.config_type else None
-            account_config_type = getattr(task, "account_config_type", None)
-            if isinstance(account_config_type, dict) and key in account_config_type:
-                type_meta = account_config_type.get(key)
-            if type_meta and type_meta.get("type") in {"global", "button"} and not forced:
-                continue
-
-            if not self._is_supported_value(default_value):
-                continue
-
-            total_supported_keys += 1
-
-            base_value = self._account_config_base_value(task, key, default_value)
-            override_value = task_override.get(key, base_value)
-            value = self._coerce_like(base_value, override_value)
-
-            if only_diff and value == base_value and not forced:
-                continue
-
-            defaults[key] = default_value
-            initial[key] = value
-            base_values[key] = base_value
-            editable_keys.append(key)
-
+        initial, defaults, editable_keys, base_values, total_supported_keys = build_virtual_config(
+            task,
+            account_key,
+            account_name,
+            self.overrides_data,
+            only_diff=only_diff,
+        )
         return InMemoryConfig(initial, defaults), editable_keys, base_values, total_supported_keys
 
     def _hide_task_editor(self):

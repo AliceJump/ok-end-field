@@ -151,6 +151,11 @@ config = {
         ["src.gui.GlobalConfigTab", "GlobalConfigTab"],
         ["src.gui.AccountConfigTab", "AccountConfigTab"],
     ],
+    # web 端自定义 tab（仅 web GUI 模式加载，见下方 OK_GUI 环境变量说明）。
+    "web_tabs": [
+        ["src.gui.web_tabs", "GlobalConfigWebTab"],
+        ["src.gui.web_tabs", "AccountWebTab"],
+    ],
     "trigger_tasks": [  # 不断执行的触发式任务
         ["src.tasks.trigger.AutoCombatTask", "AutoCombatTask"],
         ["src.tasks.trigger.AutoInteractionTask", "AutoInteractionTask"],
@@ -159,3 +164,20 @@ config = {
         ["src.tasks.trigger.TemplateMonitorTask", "TemplateMonitorTask"],
     ],
 }
+
+
+def _apply_gui_env_override(cfg: dict) -> None:
+    """OK_GUI=web 时以浏览器界面启动（默认仍是 Qt 桌面窗口）。
+
+    - OK_GUI=web            → 启动 web GUI
+    - OK_WEB_LAUNCH_MODE    → browser（默认，自动开浏览器）/ pywebview / server（只起服务不开界面）
+    端口由系统随机分配，启动日志会打印实际地址。
+    """
+    if os.environ.get("OK_GUI") == "web":
+        cfg["gui"] = {
+            "type": "web",
+            "launch_mode": os.environ.get("OK_WEB_LAUNCH_MODE", "browser"),
+        }
+
+
+_apply_gui_env_override(config)

@@ -107,6 +107,14 @@ GLOBAL_CONFIG_OPTIONS = [
     zip_line_config_option,
 ]
 
+# 「全局配置」页的分组展示顺序（桌面端 GlobalConfigTab 与 web 端共用）。
+GLOBAL_CONFIG_GROUPS = {
+    "战斗配置": [BATTLE_CONFIG_NAME],
+    "键位配置": [KEY_CONFIG_NAME],
+    "基础配置": [ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME],
+    "滑索配置": [ZIP_LINE_CONFIG_NAME],
+}
+
 _LOCK = threading.Lock()
 _CONFIGS: dict[str, Config] = {}
 _OPTIONS = {option.name: option for option in GLOBAL_CONFIG_OPTIONS}

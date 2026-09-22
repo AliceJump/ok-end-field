@@ -3,15 +3,7 @@ from ok.gui.widget.CustomTab import CustomTab
 from PySide6.QtCore import QTimer
 from qfluentwidgets import FluentIcon, NavigationItemPosition
 
-from src.core.BattleConfig import BATTLE_CONFIG_NAME
-from src.core.global_config_store import ZIP_LINE_CONFIG_NAME, get_all_visible_configs
-
-GLOBAL_CONFIG_GROUPS = {
-    "战斗配置": [BATTLE_CONFIG_NAME],
-    "键位配置": ["Game Hotkey Config"],
-    "基础配置": ["Ensure Main Once Action Sleep"],
-    "滑索配置": [ZIP_LINE_CONFIG_NAME],
-}
+from src.core.global_config_store import GLOBAL_CONFIG_GROUPS, get_all_visible_configs
 
 # 启动后空闲预热：在用户点进本页之前把配置卡片建好，消除首次切换的卡顿。
 # 事件循环空闲后才会触发，不影响启动速度。
