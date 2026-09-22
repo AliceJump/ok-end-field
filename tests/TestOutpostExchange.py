@@ -58,23 +58,23 @@ class TestOutpostExchange(unittest.TestCase):
                 self.assertEqual(feature._get_outpost_trade_limit(name, tickets), expected)
 
     def test_quantity_bins_and_ocr_fallback(self):
-        # 依次点击 0% 到 100%，首次超限时停在当前档位，不再回跳。
+        # 依次点击 0% 到 100%，首次达到或超过上限时停在当前档位，不再回跳。
         quantities = list(range(1, 1002, 100))
         clicks = [2024, 2056, 2088, 2120, 2152, 2184, 2216, 2248, 2280, 2312, 2344]
         cases = [
-            ("全部可售", 1001, quantities, clicks),
-            ("单份库存", 1, [1] * 11, clicks),
-            ("恰好20%继续到30%", 201, quantities[:4], clicks[:4]),
+            ("全部可售", 1002, quantities, clicks),
+            ("单份库存恰好达限", 1, [1], clicks[:1]),
+            ("恰好20%卖20%", 201, quantities[:3], clicks[:3]),
             ("超过20%一份卖30%", 202, quantities[:4], clicks[:4]),
             ("不足20%一份卖20%", 200, quantities[:3], clicks[:3]),
             ("100%首次超限", 1000, quantities, clicks),
-            ("10%首次超限", 1, quantities[:2], clicks[:2]),
+            ("10%首次超限", 2, quantities[:2], clicks[:2]),
             ("0%已超限", 0, quantities[:1], clicks[:1]),
             ("0%读数缺失后继续遍历", 250, [None, *quantities[1:4]], clicks[:4]),
             ("0%读数为零后继续遍历", 250, [0, *quantities[1:4]], clicks[:4]),
             ("所有档位OCR缺失", 250, [None] * 11, [*clicks, 2056]),
             ("调量OCR连续缺失", 250, [1] + [None] * 10, [*clicks, 2056]),
-            ("带文字的数量", 201, [f"份数{value}" for value in quantities[:4]], clicks[:4]),
+            ("带文字的数量", 201, [f"份数{value}" for value in quantities[:3]], clicks[:3]),
         ]
         for label, limit, readings, expected_x in cases:
             with self.subTest(label=label):

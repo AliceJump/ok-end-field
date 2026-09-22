@@ -248,7 +248,7 @@ class DailyOutpostMixin:
     def _get_outpost_trade_limit(self, good_name, tickets):
         """返回活动货品的券余额对应数量；None 表示普通货品。"""
         # 龙泡泡活动策略仅在此处；活动结束后清空价格表，通用交易与调量方法可继续复用。
-        # 券余额 // 单价作为调量参考；选择首次超限的档位出售，尽量用尽调度券。
+        # 券余额 // 单价作为调量参考；选择首次达到或超过上限的档位出售，尽量用尽调度券。
         activity_prices = {
             get_world_map_text(self.lang, "息壤龙泡泡"): 100,
             get_world_map_text(self.lang, "重息壤龙泡泡"): 200,
@@ -257,12 +257,12 @@ class DailyOutpostMixin:
         return tickets // unit_price if unit_price is not None else None
 
     def _limit_outpost_trade_quantity(self, limit) -> None:
-        """从 0% 逐档增加数量，首次超限即出售，不使用加减号。
+        """从 0% 逐档增加数量，首次达到或超过上限即出售，不使用加减号。
 
         算法：
         1. 从 0%（最小数量）到 100% 逐档遍历，每次增加 10%，先点击再读数。
-        2. 首次读到有效数量 Q > limit 时直接出售当前档位；相等或未超限时继续增加。
-           到 100% 仍未超限则出售全部库存，超额确认由调用方处理。
+        2. 首次读到有效数量 Q >= limit 时直接出售当前档位；小于上限时继续增加。
+           到 100% 仍未达到上限则出售全部库存，超额确认由调用方处理。
         3. 读数异常时继续向右尝试；到 100% 仍无法读数时回退到 10% 出售。
         点击使用整数像素，避免比例舍入改变落点；本方法只负责调量，不返回是否允许出售。
         """
@@ -287,7 +287,7 @@ class DailyOutpostMixin:
             click_step(step)
             current = read_quantity()
             self.log_info(f"据点调量：{step * 10}% 档，可售 {limit}，当前数量 {current}")
-            if current is not None and current > 0 and (current > limit or step == 10):
+            if current is not None and current > 0 and (current >= limit or step == 10):
                 self.log_info(f"据点调量：出售 {step * 10}% 档")
                 return
         click_step(1)
