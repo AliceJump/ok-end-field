@@ -122,4 +122,7 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
 
     def on_destroy(self):
         """任务销毁时停止 WS 客户端和本地位置源。"""
-        self.stop_minimap_position()
+        try:
+            self.stop_minimap_position()
+        finally:
+            super().on_destroy()

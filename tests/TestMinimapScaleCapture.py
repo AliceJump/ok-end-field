@@ -166,7 +166,17 @@ class TestMinimapScaleCaptureTask(TaskTestCase):
         两份记录必须同源——各写各的迟早会漂，而 region / x / z 都是要拿去算数的字段。
         """
         with tempfile.TemporaryDirectory() as tmp:
-            task, _ = self._prepare([_state()], tmp, target=2, rest_ticks=1)
+            task, _ = self._prepare(
+                [
+                    _state(),
+                    _state(),
+                    _state(rest=False),
+                    _state(x=200.0, z=300.0),
+                ],
+                tmp,
+                target=2,
+                rest_ticks=1,
+            )
             task.run()
 
             group_dir = Path(tmp) / "1920x1080" / "map02"
@@ -175,6 +185,10 @@ class TestMinimapScaleCaptureTask(TaskTestCase):
 
             index = json.loads((Path(tmp) / "index.json").read_text(encoding="utf-8"))
             self.assertEqual(len(index["samples"]), 2)
+            self.assertEqual(
+                {(sample["x"], sample["z"]) for sample in index["samples"]},
+                {(123.4, -456.2), (200.0, 300.0)},
+            )
             for sample in index["samples"]:
                 png = Path(tmp) / sample["file"]
                 sidecar = png.with_suffix(".json")

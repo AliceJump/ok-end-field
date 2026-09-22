@@ -107,6 +107,16 @@ class MinimapRegionCheck(BaseEfTask):
         r_in_ratio = self._cfg_float("内圈半径比例(占宽)", self.R_INNER_RATIO)
         pad_ratio = max(0.0, self._cfg_float("标记外扩比例", self.MARK_PAD_RATIO))
         zoom = max(1, int(self._cfg_float("裁剪放大倍数", self.ZOOM)))
+        if not (
+            0.0 <= cx_ratio <= 1.0
+            and 0.0 <= cy_ratio <= 1.0
+            and 0.0 <= r_in_ratio < r_out_ratio
+        ):
+            self.log_warning(
+                "小地图圆环几何参数无效，请检查圆心和内外半径比例",
+                notify=True,
+            )
+            return
 
         # 与里程计建掩膜同一个函数 -> 圈出来的就是实际参与相位相关的区域
         cx, cy, r_in, r_out = region_geometry(

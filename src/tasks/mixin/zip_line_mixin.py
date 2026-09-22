@@ -198,6 +198,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         timeout=60.0,
         near_distance=4.0,
         stable_seconds=6.0,
+        start_grace_seconds=None,
     ):
         """按目标模板和原始 WS 坐标判断滑索状态。
 
@@ -216,6 +217,11 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         last_position_changed_at = start
         threshold = max(0.1, float(near_distance))
         stable_seconds = max(0.1, float(stable_seconds))
+        start_grace_seconds = (
+            max(stable_seconds, 6.0)
+            if start_grace_seconds is None
+            else max(0.0, float(start_grace_seconds))
+        )
         while self.active_time() - start < max(0.1, float(timeout)):
             frame = self.next_frame()
             on_rack = self._zip_line_on_rack_visible(frame)
@@ -241,11 +247,13 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 self.log_info(f"已到达下一滑索附近且到达模板存在：WS 距离={target_distance:.2f}m")
                 return True
 
-            if on_rack and start_distance is not None and start_distance <= threshold:
-                self.log_info(f"到达模板存在且 WS 仍在起点附近：距离={start_distance:.2f}m，准备重试")
-                return False
-
             if on_rack and self.active_time() - last_position_changed_at >= stable_seconds:
+                if start_distance is not None and start_distance <= threshold:
+                    if self.active_time() - start < start_grace_seconds:
+                        self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
+                        continue
+                    self.log_info(f"到达模板存在且 WS 仍在起点附近：距离={start_distance:.2f}m，准备重试")
+                    return False
                 raise ZipLineReplanRequired(
                     "到达了非目标滑索架："
                     f"WS=({current_position[0]:.2f}, {current_position[1]:.2f})，"
@@ -259,6 +267,9 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                     self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
                     continue
                 if start_distance is not None and start_distance <= threshold:
+                    if self.active_time() - start < start_grace_seconds:
+                        self.sleep(ZIP_LINE_MOTION_POLL_SECONDS)
+                        continue
                     self.log_warning("WS 已在起点附近停稳但未触发滑索，准备重试")
                     return False
                 raise ZipLineReplanRequired(

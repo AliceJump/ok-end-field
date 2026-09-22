@@ -1193,7 +1193,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
 
     def allow_grid_unknown(self) -> bool:
         """当前是否允许穿越未知格（用任务配置，不是库默认）。"""
-        return self._cfg_bool(CONFIG_GRID_ALLOW_UNKNOWN, True)
+        return self._cfg_bool(CONFIG_GRID_ALLOW_UNKNOWN, False)
 
     def _set_grid_walking(self, held: bool) -> None:
         """按住或松开 ``W``；本地记录乐观状态，避免重复发送没有返回值的按键事件。"""

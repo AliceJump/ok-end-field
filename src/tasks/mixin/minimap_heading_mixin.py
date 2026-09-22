@@ -209,7 +209,7 @@ class MinimapHeadingMixin:
         target = float(target_deg)
         result = {
             "ok": False, "target": target, "heading": None,
-            "error": None, "rounds": 0, "history": [],
+            "error": None, "rounds": 0, "history": [], "one_shot": False,
         }
         self._last_turn_result = result
 

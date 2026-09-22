@@ -150,6 +150,7 @@ class MinimapScaleCapture(BaseEfTask):
         self._index = []
         self._created = datetime.now().isoformat(timespec="seconds")
         still = 0
+        wait_for_movement = False
         # 结束诊断用：分别数出"卡在哪一步"，避免失败时只剩一句"没采到"
         stats = {"ticks": 0, "no_frame": 0, "no_rest": 0, "no_ws": 0, "no_position": 0}
 
@@ -197,18 +198,22 @@ class MinimapScaleCapture(BaseEfTask):
             if not st.get("rest"):
                 stats["no_rest"] += 1
                 still = 0
+                wait_for_movement = False
             elif not st.get("ws"):
                 stats["no_ws"] += 1
                 still = 0
             elif st.get("x") is None or st.get("z") is None:
                 stats["no_position"] += 1
                 still = 0
+            elif wait_for_movement:
+                continue
             else:
                 still += 1
                 if still >= rest_ticks:
                     still = 0
                     self._capture(frame, st, save_dir)
                     self.info_set("比例尺采集", f"{len(self._index)}/{target}")
+                    wait_for_movement = True
 
         self._report(timeout_hit, target, rest_ticks, stats, save_dir)
 

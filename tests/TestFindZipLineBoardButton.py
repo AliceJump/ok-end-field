@@ -182,9 +182,35 @@ class TestFindZipLineBoardButton(unittest.TestCase):
                 start_position=(10.0, 10.0),
                 timeout=1.0,
                 near_distance=3.0,
+                stable_seconds=0.1,
+                start_grace_seconds=0.0,
             )
         )
         self.assertTrue(any("准备重试" in message for message in events))
+
+    def test_wait_zip_line_motion_keeps_start_state_during_grace_period(self):
+        clock = {"t": 0.0}
+        stub = SimpleNamespace(
+            active_time=lambda: clock["t"],
+            next_frame=lambda: "frame",
+            _zip_line_on_rack_visible=lambda frame: True,
+            _zip_line_ws_position=lambda frame=None: (10.0, 10.0),
+            log_info=lambda msg: None,
+            sleep=lambda seconds: clock.__setitem__("t", clock["t"] + seconds),
+        )
+
+        self.assertFalse(
+            DeliveryTask._wait_zip_line_motion(
+                stub,
+                target_position=(0.0, 0.0),
+                start_position=(10.0, 10.0),
+                timeout=8.0,
+                near_distance=3.0,
+                stable_seconds=0.1,
+                start_grace_seconds=6.0,
+            )
+        )
+        self.assertGreaterEqual(clock["t"], 6.0)
 
     def test_wait_zip_line_motion_replans_on_wrong_rack(self):
         clock = {"t": 0.0}

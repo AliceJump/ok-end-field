@@ -164,7 +164,14 @@ def load_raw(path: Path, rep: Report):
 
 def report_cells(cells: np.ndarray, meta: dict, rep: Report) -> None:
     """输出形状、三态占比、世界范围和连通性诊断。"""
-    if cells is None or meta is None or meta["cell_size"] is None or meta["origin"] is None:
+    if (
+        not isinstance(cells, np.ndarray)
+        or cells.ndim != 2
+        or cells.size == 0
+        or meta is None
+        or meta["cell_size"] is None
+        or meta["origin"] is None
+    ):
         return
     h, w = int(cells.shape[0]), int(cells.shape[1])
     total = h * w
@@ -206,14 +213,19 @@ def _report_connectivity(cells: np.ndarray, rep: Report) -> None:
     passable_mask = cells != 2
     parts: dict[str, list[int]] = {}
     for label, mask in (("可行走（不冒险即可达）", free_mask), ("规划器可达（可行走∪未知）", passable_mask)):
-        if int(mask.sum()) > 200_000:
-            rep.info(f"{label}：{int(mask.sum())} 格，数量过大，跳过连通性检查")
+        mask_count = int(mask.sum())
+        if mask_count == 0:
+            parts[label] = []
+            rep.info(f"{label}：0 块")
+            continue
+        if mask_count > 200_000:
+            rep.info(f"{label}：{mask_count} 格，数量过大，跳过连通性检查")
             continue
         sizes = _components(mask, blocked)
         parts[label] = sizes
         rep.info(
             f"{label}：{len(sizes)} 块（大小 {sizes[:8]}{'…' if len(sizes) > 8 else ''}），"
-            f"最大占比 {sizes[0] / int(mask.sum()) * 100:.1f}%"
+            f"最大占比 {sizes[0] / mask_count * 100:.1f}%"
         )
 
     reachable = parts.get("规划器可达（可行走∪未知）")
@@ -329,18 +341,35 @@ def compare_legacy(cells: np.ndarray, meta: dict, legacy_path: Path, rep: Report
     except Exception as exc:
         rep.error(f"读旧 JSON 失败 {legacy_path.name}: {exc}")
         return
-    leg_cells = [(int(c), int(r)) for c, r in (raw.get("cells") or [])]
-    leg_blocked = [(int(c), int(r)) for c, r in (raw.get("blocked") or [])]
+    if not isinstance(raw, dict):
+        rep.error(f"对拍 {legacy_path.name}: JSON 顶层应为对象")
+        return
+
+    leg_cells = _legacy_coordinates(raw, "cells", legacy_path, rep)
+    leg_blocked = _legacy_coordinates(raw, "blocked", legacy_path, rep)
+    if leg_cells is None or leg_blocked is None:
+        return
     if not (leg_cells or leg_blocked):
         rep.info(f"对拍 {legacy_path.name}: 旧文件为空，跳过")
         return
     origin = raw.get("origin") or [0.0, 0.0, 0.0]
-    cs = float(raw.get("cell_size") or 1.0)
+    if not (isinstance(origin, (list, tuple)) and len(origin) >= 3):
+        rep.error(f"对拍 {legacy_path.name}: origin 应为至少 3 项序列")
+        return
+    try:
+        origin_x, origin_z = float(origin[0]), float(origin[2])
+        cs = float(raw.get("cell_size") or 1.0)
+    except (TypeError, ValueError):
+        rep.error(f"对拍 {legacy_path.name}: origin 或 cell_size 不是数字")
+        return
+    if cs <= 0:
+        rep.error(f"对拍 {legacy_path.name}: cell_size 必须为正数")
+        return
     keys = leg_cells + leg_blocked
     min_col = min(k[0] for k in keys)
     min_row = min(k[1] for k in keys)
     # 独立算出应有的 origin（新语义 = 边界盒最小角）
-    want_origin = (float(origin[0]) + min_col * cs, float(origin[2]) + min_row * cs)
+    want_origin = (origin_x + min_col * cs, origin_z + min_row * cs)
     got = (meta["origin"][0], meta["origin"][2])
     if any(abs(a - b) > 1e-6 for a, b in zip(want_origin, got, strict=True)):
         rep.error(
@@ -367,6 +396,30 @@ def compare_legacy(cells: np.ndarray, meta: dict, legacy_path: Path, rep: Report
         )
     else:
         rep.info(f"对拍 {legacy_path.name}: 逐格一致（旧数据 {len(keys)} 个格坐标）")
+
+
+def _legacy_coordinates(
+    raw: dict,
+    key: str,
+    legacy_path: Path,
+    rep: Report,
+) -> list[tuple[int, int]] | None:
+    """读取旧 JSON 的 ``cells`` / ``blocked`` 坐标；结构非法时记录错误。"""
+    value = raw.get(key) or []
+    if not isinstance(value, list):
+        rep.error(f"对拍 {legacy_path.name}: {key} 应为数组")
+        return None
+    coordinates: list[tuple[int, int]] = []
+    for index, item in enumerate(value):
+        if not isinstance(item, (list, tuple)) or len(item) != 2:
+            rep.error(f"对拍 {legacy_path.name}: {key}[{index}] 应为 [列, 行]")
+            return None
+        try:
+            coordinates.append((int(item[0]), int(item[1])))
+        except (TypeError, ValueError, OverflowError):
+            rep.error(f"对拍 {legacy_path.name}: {key}[{index}] 不是整数坐标")
+            return None
+    return coordinates
 
 
 def verify_one(path: Path, against: Path | None) -> Report:

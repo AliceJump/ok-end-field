@@ -153,6 +153,7 @@ class TestTurnToBearing(unittest.TestCase):
         task = _FakeTurnTask(facing=0.0, per_px=0.0)
         res = task.turn_to_bearing(90.0)
         self.assertFalse(res["ok"])
+        self.assertFalse(res["one_shot"])
         self.assertEqual(task.w_presses, 0)
         self.assertEqual(task.sent, [])
         self.assertTrue(any("yaw_per_pixel" in m for m in task.logs))

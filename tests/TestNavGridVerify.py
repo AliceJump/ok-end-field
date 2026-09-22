@@ -17,7 +17,13 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts" / "nav"))
 
-from verify_grid import _components, _resolve_within_root, _single_cell_facts
+from verify_grid import (
+    Report,
+    _components,
+    _resolve_within_root,
+    _single_cell_facts,
+    report_cells,
+)
 
 UNKNOWN, FREE, BLOCKED = 0, 1, 2
 _CH = {".": UNKNOWN, "o": FREE, "#": BLOCKED}
@@ -49,10 +55,10 @@ class TestSingleCellFacts(unittest.TestCase):
 
         正交四邻全阻挡，只剩两个对角可达；这正是"规划器图里孤立、物理能到"的情形。
         """
-        facts = _single_cell_facts(_cells(["#o#", "#o#", "#o#"]))
+        facts = _single_cell_facts(_cells(["o#o", "#o#", "o#o"]))
         self.assertEqual(facts["free_walled"], [])
         self.assertEqual(facts["free_lonely"], [])
-        # 中间那格的正交邻居全是阻挡，但它在规划器图里并不孤立（对角连通）
+        # 中间那格的正交邻居全是阻挡，但四角可行走，因此并不孤立。
         self.assertNotIn((1, 1), facts["free_walled"])
 
     def test_unknown_walled_is_not_a_misclick(self):
@@ -123,6 +129,29 @@ class TestPathSafety(unittest.TestCase):
 
             with self.assertRaises(ValueError):
                 _resolve_within_root(outside, root)
+
+
+class TestInvalidGridShapes(unittest.TestCase):
+    """无效网格只报告原始错误，不应在统计阶段再次崩溃。"""
+
+    def test_report_cells_skips_non_2d_and_empty_arrays(self):
+        rep = Report("invalid")
+        meta = {"cell_size": 1.0, "origin": (0.0, 0.0, 0.0), "raw": {}}
+
+        report_cells(np.array([0, 1, 2], dtype=np.uint8), meta, rep)
+        report_cells(np.empty((0, 2), dtype=np.uint8), meta, rep)
+
+        self.assertEqual(rep.errors, [])
+        self.assertEqual(rep.lines, [])
+
+    def test_connectivity_handles_empty_masks(self):
+        rep = Report("blocked")
+        cells = _cells(["###"])
+
+        report_cells(cells, {"cell_size": 1.0, "origin": (0.0, 0.0, 0.0), "raw": {}}, rep)
+
+        self.assertIn("可行走（不冒险即可达）：0 块", rep.lines)
+        self.assertFalse(any("最大占比" in line for line in rep.lines))
 
 
 if __name__ == "__main__":

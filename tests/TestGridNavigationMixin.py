@@ -20,6 +20,7 @@ from src.nav.route_follower import (
 )
 from src.nav.zip_line_graph import ZipLineGraph, ZipLineLink, ZipLineNode, ZipLineStep
 from src.tasks.mixin.grid_navigation_mixin import (
+    CONFIG_GRID_ALLOW_UNKNOWN,
     CONFIG_GRID_FILE,
     GridNavigationMixin,
 )
@@ -174,6 +175,11 @@ class TestGridNavigationMixin(unittest.TestCase):
         service = SimpleNamespace(config={CONFIG_MIN_SCORE: 0.77})
 
         self.assertAlmostEqual(self.task._grid_heading_min_score(service), 0.77)
+
+    def test_allow_grid_unknown_defaults_to_false_when_key_is_missing(self):
+        self.task.config.pop(CONFIG_GRID_ALLOW_UNKNOWN, None)
+
+        self.assertFalse(self.task.allow_grid_unknown())
 
     def test_loads_user_zip_lines_from_position_service(self):
         payload = {

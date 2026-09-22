@@ -14,7 +14,6 @@ from typing import Any
 from urllib import error, parse, request
 
 import websockets
-import win32gui
 
 from src.tasks.account.account_scope_store import (
     get_account_map_content,
@@ -846,6 +845,10 @@ class WsPositionMixin:
 
     def _is_game_window_alive(self) -> bool:
         """游戏窗口是否存在且可见。"""
+        try:
+            import win32gui
+        except ImportError:
+            return False
         hwnd_window = getattr(getattr(self, "executor", None), "device_manager", None)
         hwnd_window = getattr(hwnd_window, "hwnd_window", None)
         hwnd = getattr(hwnd_window, "hwnd", None)

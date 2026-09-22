@@ -69,6 +69,25 @@ class TestMinimapRegionCheckTask(TaskTestCase):
                 task.config["保存目录"] = saved
         self.assertEqual(files, [])
 
+    def test_invalid_geometry_stops_before_capture(self):
+        task = self.task
+        task.next_frame = lambda *a, **k: np.zeros((1440, 2560, 3), np.uint8)
+        saved_inner = task.config.get("内圈半径比例(占宽)")
+        saved_outer = task.config.get("外圈半径比例(占宽)")
+        saved_dir = task.config.get("保存目录")
+        task.config["内圈半径比例(占宽)"] = 0.08
+        task.config["外圈半径比例(占宽)"] = 0.04
+        with tempfile.TemporaryDirectory() as tmp:
+            try:
+                task.config["保存目录"] = tmp
+                task.run()
+                files = list(Path(tmp).glob("*.png"))
+            finally:
+                task.config["内圈半径比例(占宽)"] = saved_inner
+                task.config["外圈半径比例(占宽)"] = saved_outer
+                task.config["保存目录"] = saved_dir
+        self.assertEqual(files, [])
+
 
 if __name__ == "__main__":
     unittest.main()
