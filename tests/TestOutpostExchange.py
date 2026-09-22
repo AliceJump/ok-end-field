@@ -8,7 +8,7 @@ from src.tasks.daily.misc.daily_outpost_mixin import DailyOutpostMixin, _edit_di
 
 
 class TestOutpostExchange(unittest.TestCase):
-    def make_exchange_feature(self, ticket_numbers, goods=None, quantities=(1,)):
+    def make_exchange_feature(self, ticket_numbers, goods=None, quantities=(1,) * 11):
         feature = object.__new__(DailyRoutineFeature)
         feature.width, feature.height = 2560, 1440
         available_goods = goods if goods is not None else [SimpleNamespace(name="息壤玉葫芦")]
@@ -58,23 +58,23 @@ class TestOutpostExchange(unittest.TestCase):
                 self.assertEqual(feature._get_outpost_trade_limit(name, tickets), expected)
 
     def test_quantity_bins_and_ocr_fallback(self):
-        # 100% 已选中；依次从 90% 点到 0%，找到不超限档位后回到高一档。
-        quantities = list(range(1001, 0, -100))
-        clicks = [2312, 2280, 2248, 2216, 2184, 2152, 2120, 2088, 2056, 2024]
+        # 依次点击 0% 到 100%，首次超限时停在当前档位，不再回跳。
+        quantities = list(range(1, 1002, 100))
+        clicks = [2024, 2056, 2088, 2120, 2152, 2184, 2216, 2248, 2280, 2312, 2344]
         cases = [
-            ("全部可售", 1001, [1001], []),
-            ("单份库存", 1, [1], []),
-            ("恰好20%也卖30%", 201, quantities[:-2], [*clicks[:-2], 2120]),
-            ("超过20%一份卖30%", 202, quantities[:-2], [*clicks[:-2], 2120]),
-            ("不足20%一份卖20%", 200, quantities[:-1], [*clicks[:-1], 2088]),
-            ("90%不超限卖100%", 1000, quantities[:2], [*clicks[:1], 2344]),
-            ("0%不超限卖10%", 1, quantities, [*clicks, 2056]),
-            ("无券仍卖10%", 0, quantities, [*clicks, 2056]),
-            ("100%读数缺失后继续遍历", 250, [None, *quantities[1:-2]], [*clicks[:-2], 2120]),
-            ("100%读数为零后继续遍历", 250, [0, *quantities[1:-2]], [*clicks[:-2], 2120]),
+            ("全部可售", 1001, quantities, clicks),
+            ("单份库存", 1, [1] * 11, clicks),
+            ("恰好20%继续到30%", 201, quantities[:4], clicks[:4]),
+            ("超过20%一份卖30%", 202, quantities[:4], clicks[:4]),
+            ("不足20%一份卖20%", 200, quantities[:3], clicks[:3]),
+            ("100%首次超限", 1000, quantities, clicks),
+            ("10%首次超限", 1, quantities[:2], clicks[:2]),
+            ("0%已超限", 0, quantities[:1], clicks[:1]),
+            ("0%读数缺失后继续遍历", 250, [None, *quantities[1:4]], clicks[:4]),
+            ("0%读数为零后继续遍历", 250, [0, *quantities[1:4]], clicks[:4]),
             ("所有档位OCR缺失", 250, [None] * 11, [*clicks, 2056]),
-            ("调量OCR连续缺失", 250, [1001] + [None] * 10, [*clicks, 2056]),
-            ("带文字的数量", 201, [f"份数{value}" for value in quantities[:-2]], [*clicks[:-2], 2120]),
+            ("调量OCR连续缺失", 250, [1] + [None] * 10, [*clicks, 2056]),
+            ("带文字的数量", 201, [f"份数{value}" for value in quantities[:4]], clicks[:4]),
         ]
         for label, limit, readings, expected_x in cases:
             with self.subTest(label=label):
@@ -96,7 +96,7 @@ class TestOutpostExchange(unittest.TestCase):
     def test_over_limit_activity_trade_confirms_before_reading_balance(self, _translate):
         for name in ("息壤龙泡泡", "重息壤龙泡泡"):
             with self.subTest(name=name):
-                feature = self.make_exchange_feature([1000, 0], [SimpleNamespace(name=name)], range(1001, 0, -100))
+                feature = self.make_exchange_feature([1000, 0], [SimpleNamespace(name=name)], [1, 101])
                 feature.wait_pop_up.return_value = True
                 events = Mock()
                 for action in ("read_outpost_ticket_num", "wait_click_feature", "click_confirm", "wait_pop_up"):
@@ -121,9 +121,7 @@ class TestOutpostExchange(unittest.TestCase):
             with self.subTest(name=name):
                 excluded_goods = set()
                 for outpost in ("天王坪援建点", "心脏修缮站"):
-                    feature = self.make_exchange_feature(
-                        [250 * price, 0], [SimpleNamespace(name=name)], range(1001, 200, -100)
-                    )
+                    feature = self.make_exchange_feature([250 * price, 0], [SimpleNamespace(name=name)], [1, 101, 201, 301])
                     feature.wait_pop_up.return_value = True
                     feature.perform_outpost_exchange(outpost, excluded_goods=excluded_goods)
                     self.assertNotIn(name, excluded_goods)
