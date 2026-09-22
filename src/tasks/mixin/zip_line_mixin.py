@@ -32,7 +32,7 @@ from src.tasks.mixin.navigation_mixin import NavigationMixin
 ZIP_LINE_TEMPLATE_THRESHOLD = 0.8
 ZIP_LINE_STATUS_BOX = (0.351, 0.943, 0.657, 0.981)
 ZIP_LINE_DIRECT_TOLERANCE_DEG = 3.0
-ZIP_LINE_DIRECT_PITCH_STEPS = (0, 24, -24, 48, -48, 0, 24, -24, 48, -48)
+ZIP_LINE_DIRECT_PITCH_STEPS = (0, 24, -24, 48, -48)
 ZIP_LINE_MOTION_POLL_SECONDS = 0.2
 ZIP_LINE_MOTION_CHANGE_METERS = 0.5
 
@@ -218,9 +218,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         threshold = max(0.1, float(near_distance))
         stable_seconds = max(0.1, float(stable_seconds))
         start_grace_seconds = (
-            max(stable_seconds, 6.0)
-            if start_grace_seconds is None
-            else max(0.0, float(start_grace_seconds))
+            max(stable_seconds, 6.0) if start_grace_seconds is None else max(0.0, float(start_grace_seconds))
         )
         while self.active_time() - start < max(0.1, float(timeout)):
             frame = self.next_frame()
@@ -322,7 +320,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
                 return True
             self.log_warning(f"直接对准第 {index + 1} 次点击未触发滑索")
         raise ZipLineReplanRequired(
-            "连续 10 次未移动到下一滑索，判定两滑索间存在阻挡，需要重新规划",
+            f"连续 {len(ZIP_LINE_DIRECT_PITCH_STEPS)} 次未移动到下一滑索，判定两滑索间存在阻挡，需要重新规划",
             current_position=last_start_position,
             failed_target_position=target_position,
         )

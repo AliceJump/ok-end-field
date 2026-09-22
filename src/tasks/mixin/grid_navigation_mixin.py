@@ -836,26 +836,32 @@ class GridNavigationMixin(MinimapHeadingMixin):
         if current_position is None:
             return None
         zip_lines = self._grid_zip_lines_for_map(map_id)
-        start_id = self._nearest_grid_zip_line_node_id(
+        start_node = self._nearest_grid_zip_line_node_info(
             zip_lines,
             current_position,
             max_distance=4.0,
         )
-        if not start_id:
+        if start_node is None:
             return None
+        start_id = str(start_node.node_id)
         if failed_target_position is None:
             return start_id
-        target_id = self._nearest_grid_zip_line_node_id(
+        target_node = self._nearest_grid_zip_line_node_info(
             zip_lines,
             failed_target_position,
             max_distance=4.0,
         )
-        if not target_id or start_id == target_id:
+        if target_node is None:
+            return start_id
+        target_id = str(target_node.node_id)
+        if start_id == target_id:
             return start_id
         blocked = frozenset((start_id, target_id))
         self._grid_nav_blocked_zip_links.add(blocked)
         self.log_warning(
-            f"滑索连接不可用：{start_id} <-> {target_id}，后续规划将绕开",
+            "滑索连接不可用："
+            f"({start_node.x:.2f}, {start_node.z:.2f}) <-> "
+            f"({target_node.x:.2f}, {target_node.z:.2f})，后续规划将绕开",
             notify=True,
         )
         return start_id

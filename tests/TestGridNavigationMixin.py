@@ -419,6 +419,9 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertFalse(
             any(frozenset((link.first_id, link.second_id)) == frozenset(("a", "b")) for link in filtered.links)
         )
+        logs = "\n".join(self.task.logs)
+        self.assertIn("滑索连接不可用：(0.50, 0.50) <-> (10.50, 0.50)", logs)
+        self.assertNotIn("a <-> b", logs)
 
     def test_navigate_holds_and_releases_w_until_goal(self):
         result = self.task.navigate_grid_to((4.5, 0.5), map_id="test")

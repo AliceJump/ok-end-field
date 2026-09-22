@@ -102,7 +102,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             events,
         )
 
-    def test_direct_zip_line_replans_after_ten_failed_attempts(self):
+    def test_direct_zip_line_replans_after_five_failed_attempts(self):
         events = []
         stub = SimpleNamespace(
             log_info=lambda msg: events.append(("info", msg)),
@@ -129,11 +129,11 @@ class TestFindZipLineBoardButton(unittest.TestCase):
 
         self.assertEqual(
             len([event for event in events if event[0] == "click"]),
-            10,
+            5,
         )
         self.assertEqual(
             len([event for event in events if event[0] == "key"]),
-            10,
+            5,
         )
         self.assertEqual(raised.exception.current_position, (10.0, 10.0))
         self.assertEqual(raised.exception.failed_target_position, (50.0, 50.0))

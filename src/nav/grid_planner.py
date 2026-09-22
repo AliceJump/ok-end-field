@@ -398,7 +398,7 @@ class GridPlanner:
         try:
             source_node = self.zip_lines.node(source_id)
         except Exception:
-            return PlanResult(False, f"滑索节点 {source_id!r} 不存在")
+            return PlanResult(False, "当前滑索节点不存在于本次地图滑索数据中")
 
         distances, previous = self._zip_line_shortest_paths(source_id)
 
@@ -525,7 +525,10 @@ class GridPlanner:
         )
         notes = [
             *base.notes,
-            (f"当前滑索节点 {source_node.node_id} 未映射到网格，先沿滑索连接到可映射节点 {target_id}"),
+            (
+                f"当前滑索架 ({source_node.x:.2f}, {source_node.z:.2f}) 未映射到网格，"
+                f"先沿滑索连接到可映射滑索架 ({target_node.x:.2f}, {target_node.z:.2f})"
+            ),
         ]
         return PlanResult(
             True,

@@ -306,6 +306,11 @@ class TestZipLinePlanning(unittest.TestCase):
         )
         self.assertEqual(result.waypoints[0], source.xz)
         self.assertEqual(result.waypoints[1], target.xz)
+        notes = "\n".join(result.notes)
+        self.assertIn("当前滑索架 (0.50, 0.50)", notes)
+        self.assertIn("可映射滑索架 (3.50, 0.50)", notes)
+        self.assertNotIn("source", notes)
+        self.assertNotIn("target", notes)
 
     def test_unmapped_prefix_merges_with_immediate_following_zip_edge(self):
         grid = _grid(["###o###o"])
