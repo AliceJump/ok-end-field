@@ -199,8 +199,6 @@ class DailyOutpostMixin:
                 self.log_info(f"{outpost_name} 据点当前券数量不足 (<1000)，停止兑换")
                 break
 
-            if quantity_limit is not None:
-                continue  # 活动货物可能还有库存，留给后续据点继续兑换。
             excluded_goods.add(exchange_good.name)
             self.log_info(f"货物已兑换完，加入地区排除列表: {exchange_good.name}")
 

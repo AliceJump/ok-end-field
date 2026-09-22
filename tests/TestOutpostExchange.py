@@ -122,7 +122,7 @@ class TestOutpostExchange(unittest.TestCase):
                 excluded_goods = set()
                 for outpost in ("天王坪援建点", "心脏修缮站"):
                     feature = self.make_exchange_feature(
-                        [250 * price, 2000], [SimpleNamespace(name=name)], range(1001, 200, -100)
+                        [250 * price, 0], [SimpleNamespace(name=name)], range(1001, 200, -100)
                     )
                     feature.wait_pop_up.return_value = True
                     feature.perform_outpost_exchange(outpost, excluded_goods=excluded_goods)
