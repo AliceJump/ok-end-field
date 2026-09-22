@@ -49,11 +49,14 @@ def _control_for(default_value: Any, type_meta: Any) -> tuple[str | None, Any]:
     kind = type_meta.get("type")
     if kind == "drop_down":
         return "select", list(type_meta.get("options", []))
+    if kind == "cascade_drop_down":
+        # 桌面端由 cascade_dropdown_patch 渲染的分类级联下拉（web 用 optgroup）。
+        return "cascade", type_meta
+    if kind == "cond_sequence_editor":
+        # 桌面端由 conditional_rotation_patch 渲染的实时条件编辑器。
+        return "cond_sequence", None
     if kind in {"button", "global"}:
         return None, None
-    if kind == "cond_sequence_editor":
-        # Qt 的条件序列编辑器暂无 web 对应控件，只读展示。
-        return "raw", None
     if isinstance(default_value, bool):
         return "switch", None
     if isinstance(default_value, (int, float)):
@@ -103,12 +106,16 @@ def _build_items(
         }
         if control == "select":
             item["options"] = options
+        if control == "cascade":
+            item["options"] = options.get("options", {}) if isinstance(options, dict) else {}
+            labels = options.get("labels", {}) if isinstance(options, dict) else {}
+            if labels:
+                item["labels"] = labels
         if control == "list" and options:
             item["options_available"] = options
-        if control == "raw":
-            item["readonly"] = True
-            raw = values.get(key, default_value)
-            item["value"] = raw if isinstance(raw, str) else copy.deepcopy(raw)
+        if control == "cond_sequence":
+            # 实时条件 AST 列表，前端提供结构化编辑器；值原样下发。
+            item["value"] = copy.deepcopy(values.get(key, default_value))
         if isinstance(type_meta, dict):
             sub_configs = _normalize_sub_configs(type_meta.get("sub_configs"))
             if sub_configs:
@@ -189,13 +196,29 @@ class GlobalConfigWebTab(WebCustomTab):
             raise ValueError(f"Unknown config key: {config_name}/{key}")
         option = next((opt for name, _cfg, opt in get_all_visible_configs() if name == config_name), None)
         type_meta = option.config_type.get(key) if option is not None and option.config_type else None
-        control, _ = _control_for(default_value, type_meta)
-        if control is None or control == "raw":
+        control, extra = _control_for(default_value, type_meta)
+        if control is None:
             raise ValueError(f"Config key is not editable: {config_name}/{key}")
-        coerced = coerce_like(default_value, value)
-        if not is_supported_value(coerced) or type(coerced) is not type(default_value):
-            raise ValueError(f"Invalid value type for {config_name}/{key}")
-        config[key] = coerced  # Config.__setitem__ 校验并自动保存
+        if control == "cascade":
+            # 分类级联下拉：值必须出现在某个分类的选项里。
+            allowed = {
+                str(value)
+                for values in (extra.get("options", {}) if isinstance(extra, dict) else {}).values()
+                for value in values
+            }
+            if str(value) not in allowed:
+                raise ValueError(f"Invalid option for {config_name}/{key}: {value!r}")
+        elif control == "cond_sequence":
+            # 实时条件 AST：清洗非法节点后再落盘（与桌面端 ConditionalRotationPanel 一致）。
+            from src.core.rotation_ast import normalize_ast
+
+            cleaned, _warnings = normalize_ast(value if isinstance(value, list) else [])
+            value = cleaned
+        else:
+            value = coerce_like(default_value, value)
+            if not is_supported_value(value) or type(value) is not type(default_value):
+                raise ValueError(f"Invalid value type for {config_name}/{key}")
+        config[key] = value  # Config.__setitem__ 校验并自动保存
         return {"ok": True, "value": config.get(key)}
 
     @task_tab_action("reset")

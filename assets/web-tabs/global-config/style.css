@@ -259,3 +259,79 @@
 .ef-grow {
   flex: 1;
 }
+
+/* 实时条件编辑器（cond_sequence_editor） */
+.ef-cond {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  min-width: 320px;
+}
+
+.ef-cond-summary {
+  color: var(--ef-text-dim);
+}
+
+.ef-cond-panel {
+  border: 1px solid var(--ef-border);
+  border-radius: 8px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ef-cond-card {
+  border: 1px solid var(--ef-border);
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ef-cond-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ef-cond-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.ef-cond-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ef-cond-label {
+  font-size: 12px;
+  color: var(--ef-text-dim);
+}
+
+.ef-cond-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ef-cond-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.ef-cond-num {
+  width: 70px !important;
+  flex: none !important;
+}
+
+.ef-cond-card .ef-button,
+.ef-cond-row .ef-button {
+  padding: 3px 8px;
+  font-size: 12px;
+}
