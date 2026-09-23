@@ -10,8 +10,9 @@
   导入前会把现有配置备份到 configs/backup/import_backup_<时间戳>/，
   覆盖完成后提示重启应用生效。
 
-配置目录由 ok.util.config.Config 以 cwd 相对路径 `configs` 解析，且配置对象
-在启动时读入内存、修改时写回磁盘，因此导入后必须重启应用才能生效。
+配置目录与 ok.util.config.Config 的解析方式保持一致：取 config 的
+`config_folder`（默认 `configs`），以 cwd 为基准解析；且配置对象在启动时
+读入内存、修改时写回磁盘，因此导入后必须重启应用才能生效。
 
 导出/导入均跳过 backup 与 global_config_migration_backup 两个备份目录，
 避免把备份产物当作配置反复打包。
@@ -45,7 +46,11 @@ _COPY_CHUNK_BYTES = 1024 * 1024
 
 def get_configs_dir() -> Path:
     """返回当前应用的配置目录（与 ok.util.config.Config 的解析方式一致）。"""
-    return Path.cwd() / "configs"
+    from ok.util.file import get_relative_path
+
+    from src.config import config as app_config
+
+    return Path(get_relative_path(app_config.get("config_folder") or "configs"))
 
 
 def _is_excluded(rel_parts) -> bool:

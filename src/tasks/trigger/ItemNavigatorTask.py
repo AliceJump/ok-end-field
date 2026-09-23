@@ -438,8 +438,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
 
     def open_userscript_help(self, *_):
         """打开浏览器油猴脚本使用帮助，并打开脚本目录。"""
-        script_rel = Path("assets") / "scripts" / "endfield-ws-position-relay.user.js"
-        script_abs = (Path.cwd() / script_rel).resolve()
+        script_abs = (Path.cwd() / RELAY_USER_SCRIPT).resolve()
         script_dir = script_abs.parent
         help_text = (
             "终末地坐标转发油猴脚本使用帮助\n\n"

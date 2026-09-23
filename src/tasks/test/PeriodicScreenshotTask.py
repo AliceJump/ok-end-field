@@ -7,10 +7,15 @@ import cv2
 from ok import Logger
 from qfluentwidgets import FluentIcon
 
+from src.config import config as app_config
 from src.config import make_bottom_left_black
 from src.core.BaseEfTask import BaseEfTask
 
 logger = Logger.get_logger(__name__)
+
+# 保存目录跟随全局 screenshots_folder 配置，避免同一段路径在默认值与兜底处各写一遍
+_SCREENSHOTS_FOLDER = str(app_config.get("screenshots_folder") or "screenshots").rstrip("/\\")
+DEFAULT_SAVE_DIR = f"{_SCREENSHOTS_FOLDER}/periodic"
 
 
 class PeriodicScreenshotTask(BaseEfTask):
@@ -25,7 +30,7 @@ class PeriodicScreenshotTask(BaseEfTask):
         self.visible = self.debug
         self.default_config = {
             "间隔秒数": 5,
-            "保存目录": "screenshots/periodic",
+            "保存目录": DEFAULT_SAVE_DIR,
         }
         self.config_description = {
             "间隔秒数": "每次截图的间隔时间（秒），最小 1 秒",
@@ -34,7 +39,7 @@ class PeriodicScreenshotTask(BaseEfTask):
 
     def run(self):
         interval = max(1.0, float(self.config.get("间隔秒数", 5)))
-        save_dir = Path(self.config.get("保存目录", "screenshots/periodic"))
+        save_dir = Path(self.config.get("保存目录", DEFAULT_SAVE_DIR))
         save_dir.mkdir(parents=True, exist_ok=True)
 
         self.log_info(f"开始定时截图，间隔 {interval} 秒，保存至 {save_dir}")
