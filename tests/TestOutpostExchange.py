@@ -3,12 +3,13 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from src.tasks.daily.daily_routine_mixin import DailyRoutineFeature
-from src.tasks.daily.misc.daily_outpost_mixin import _edit_distance
+from src.tasks.daily.misc.daily_outpost_mixin import DailyOutpostMixin, _edit_distance
 
 
 class TestOutpostExchange(unittest.TestCase):
     def make_exchange_feature(self, ticket_numbers, goods=None):
         feature = object.__new__(DailyRoutineFeature)
+        feature._get_outpost_trade_limit = Mock(return_value=None)
         available_goods = goods if goods is not None else [SimpleNamespace(name="息壤玉葫芦")]
         feature.lang = SimpleNamespace(
             daily_routine_mixin=SimpleNamespace(
@@ -36,6 +37,34 @@ class TestOutpostExchange(unittest.TestCase):
         feature.wait_click_feature = Mock(return_value=True)
         feature.wait_pop_up = Mock(return_value=False)
         return feature
+
+    def test_quantity_bins_and_ocr_fallback(self):
+        cases = [
+            ("最低卖10%", 50, [100], 2056),
+            ("等于上限即卖", 200, [100, "份数200"], 2088),
+            ("首次超限即卖", 193, [100, 200], 2088),
+            ("库存不足则全卖", 2000, list(range(100, 1001, 100)), 2344),
+            ("OCR失败回退10%", 200, [None] * 10, 2056),
+        ]
+        for label, limit, readings, expected_x in cases:
+            with self.subTest(label=label):
+                feature = SimpleNamespace(
+                    width=2560,
+                    height=1440,
+                    box_of_screen=Mock(),
+                    click=Mock(),
+                    log_info=Mock(),
+                    wait_ocr=Mock(
+                        side_effect=[[] if value is None else [SimpleNamespace(name=str(value))] for value in readings]
+                    ),
+                )
+                DailyOutpostMixin._limit_outpost_trade_quantity(feature, limit)
+                # 从远端跳回 10%，避免起点落在滑块手柄内。
+                self.assertEqual(
+                    [c.args[:2] for c in feature.click.call_args_list[:2]], [(2344, 1150), (2056, 1150)]
+                )
+                self.assertEqual(feature.click.call_args_list[-1].args[:2], (expected_x, 1150))
+                self.assertEqual(feature.wait_ocr.call_count, len(readings))
 
     def test_edit_distance_counts_insertions_deletions_and_substitutions(self):
         cases = [
