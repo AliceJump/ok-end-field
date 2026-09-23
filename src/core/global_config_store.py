@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import shutil
 import threading
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -40,14 +41,26 @@ ZIP_LINE_DELIVERY_GROUP = "送货滑索"
 ZIP_LINE_GATHER_GROUP = "淤积点滑索"
 
 
+def _delivery_entry_name(entry: Any) -> str | None:
+    if isinstance(entry, Mapping):
+        entry = entry.get("name")
+    if entry is None:
+        return None
+    name = str(entry).strip()
+    return name or None
+
+
 def _zip_line_route_keys() -> list[str]:
     keys = []
     for area in DELIVERY_AREA_CONFIG.values():
         locations = area.get("delivery_locations", [])
-        keys.extend(locations)
-        keys.extend(f"通向{location}送货点" for location in locations)
+        location_names = [name for location in locations if (name := _delivery_entry_name(location))]
+        keys.extend(location_names)
+        keys.extend(f"通向{location}送货点" for location in location_names)
         for targets in area.get("delivery_targets_by_location", {}).values():
-            keys.extend(targets)
+            for target in targets:
+                if name := _delivery_entry_name(target):
+                    keys.append(name)
     keys.extend(stages_dict.get(STAGE_CATEGORY_ENERGY_POOLING, []))
     return list(dict.fromkeys(str(key) for key in keys if key))
 
