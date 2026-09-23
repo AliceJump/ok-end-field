@@ -29,6 +29,7 @@ for _name in ("ok.ui.qt.tasks.ConfigCard", "ok.gui.tasks.ConfigCard"):
 
 from ok import og  # noqa: E402
 
+from src.core.global_config_store import get_all_visible_configs  # noqa: E402
 from src.gui.AccountConfigTab import AccountConfigTab  # noqa: E402
 from src.gui.GlobalConfigTab import GlobalConfigTab  # noqa: E402
 
@@ -112,7 +113,10 @@ class TestGlobalConfigTabBuild(TabTestCase):
 
         _drain_pending(self.app, tab)
         self.assertEqual(tab._pending_cards, [])
-        self.assertEqual(tab.vBoxLayout.count(), 4, "应构建全部 4 张配置卡片")
+        # 卡片数 = 可见全局配置数（未在 GLOBAL_CONFIG_GROUPS 里列出的也会落到「其他配置」），
+        # 从来源推导而不是写死数字，新增配置分组时不会误报。
+        self.assertEqual(tab.vBoxLayout.count(), len(get_all_visible_configs()),
+                         "应构建全部可见的配置卡片")
 
     def test_build_only_scheduled_once(self):
         tab = self._new_tab()
@@ -130,7 +134,7 @@ class TestGlobalConfigTabBuild(TabTestCase):
         tab = self._new_tab()
         tab._prewarm_build()
         _drain_pending(self.app, tab)
-        self.assertEqual(tab.vBoxLayout.count(), 4)
+        self.assertEqual(tab.vBoxLayout.count(), len(get_all_visible_configs()))
 
 
 _ACCOUNT_STORE = {

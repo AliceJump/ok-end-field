@@ -2583,7 +2583,9 @@ msgstr ""
 "detiene la sincronización de posición"
 
 msgid "浮层同时显示当前指向的物品名、距离、方位（北、东北、东、东南、南、西南、西、西北）与上下高度"
-msgstr "La superposición también muestra el nombre del objeto, la distancia, el rumbo (N, NE, E, SE, S, SO, O, NO) y la altura"
+msgstr ""
+"La superposición también muestra el nombre del objeto, la distancia, el "
+"rumbo (N, NE, E, SE, S, SO, O, NO) y la altura"
 
 msgid "标记按住时长：连续按住标记键达到该时长即记为已获取（默认 2 秒）"
 msgstr ""
@@ -2729,3 +2731,253 @@ msgid ""
 msgstr ""
 "Tamaño de fuente del texto de la superposición, en píxeles respecto a una ventana de 1080p;\n"
 "se escala con la altura de la ventana."
+
+msgid ""
+"可选。content 为空时，从账号配置页读取该账号保存的地图同步 content。\n"
+"账号列表来自账号配置页；留空则尝试使用当前任务账号上下文。"
+msgstr ""
+"Opcional. Cuando content está vacío, lee desde la página de configuración de cuentas el content de sincronización de mapa guardado para esa cuenta.\n"
+"La lista de cuentas viene de la página de configuración de cuentas. Déjalo vacío para intentar usar el contexto de cuenta de la tarea actual."
+
+msgid ""
+"可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
+"此项有值时优先使用，不再读取账号配置页。"
+msgstr ""
+"Opcional. Pega directamente el valor data.content del JSON devuelto por web-api.skland.com/account/info/hg/check.\n"
+"Si este campo tiene valor, se usa primero y no se lee la página de configuración de cuentas."
+
+msgid "小地图定位"
+msgstr "Posición del minimapa"
+
+msgid "持续融合小地图里程计、朝向和地图坐标，静止时自动校准"
+msgstr ""
+"Fusiona continuamente la odometría, la orientación y las coordenadas del "
+"minimapa, con calibración automática al detenerse."
+
+msgid "航点校准最小距离(米)"
+msgstr "Distancia mínima de calibración (m)"
+
+msgid "累计移动达到该距离后，请求导航暂停并等待静止自动校准"
+msgstr ""
+"Tras recorrer esta distancia, pausa la navegación y espera la "
+"autocalibración en reposo."
+
+msgid "航点校准间隔(个)"
+msgstr "Intervalo de calibración por punto de ruta"
+
+msgid "每经过多少个航点暂停一次，等待小地图静止自动校准；0=关闭"
+msgstr ""
+"Hace una pausa cada esta cantidad de puntos de ruta y espera la "
+"autocalibración en reposo del minimapa; 0 lo desactiva."
+
+msgid "到达方式"
+msgstr "Método de llegada"
+
+msgid "原流程"
+msgstr "Flujo original"
+
+msgid "网格导航"
+msgstr "Navegación por cuadrícula"
+
+msgid ""
+"选择取货和送达阶段的到达方式。\n"
+"原流程：使用原有滑索距离序列和蓝色标记搜索。\n"
+"网格导航：按取货点/终点坐标调用小地图网格导航，自动组合滑索和寻路。"
+msgstr ""
+"Elige cómo llegar a los puntos de recogida y entrega.\n"
+"Flujo original: usa la secuencia original de distancias de tirolina y la búsqueda con marcador azul.\n"
+"Navegación por cuadrícula: usa la navegación del minimapa desde las coordenadas de recogida y destino, combinando tirolinas y búsqueda de ruta."
+
+msgid "选择取货和送达阶段的到达方式：原流程使用原有滑索距离序列，网格导航按取货点和终点坐标自动组合滑索与寻路。"
+msgstr ""
+"Elige cómo llegar a los puntos de recogida y entrega: el flujo original usa "
+"la secuencia original de distancias de tirolina; la navegación por "
+"cuadrícula usa las coordenadas de recogida y destino para combinar tirolinas"
+" y búsqueda de ruta."
+
+msgid "A* 扩展节点数上限。触顶以『搜索规模超限』失败（与真的不可达区分），大图或未探索图上需调大"
+msgstr ""
+"Límite de nodos de expansión de A*. Al alcanzarlo se informa \"tamaño de "
+"búsqueda excedido\" (distinto de ser inalcanzable). Auméntalo para mapas "
+"grandes o sin explorar."
+
+msgid "content 为空时，从这个账号的地图同步里取 content。留空则用当前登录账号。"
+msgstr ""
+"Cuando content está vacío, obtiene el content de la sincronización del mapa "
+"de esta cuenta. Déjalo vacío para usar la cuenta actual."
+
+msgid ""
+"从当前官方地图账号读取用户滑索架，把 80m/110m 内的可连接点加入路线搜索。需要全局「Nav Config」配置可用的 "
+"content；没有滑索数据时不改变原路线"
+msgstr ""
+"Lee las tirolinas de la cuenta oficial del mapa actual y añade puntos "
+"conectables dentro de 80m/110m a la búsqueda de ruta. Requiere content "
+"válido en la configuración global \"Nav Config\"; sin datos de tirolinas no "
+"cambia la ruta original."
+
+msgid "到达航点后保持 W 前进并连续转向，不再先停车转向"
+msgstr ""
+"Tras alcanzar un punto de ruta, mantiene W y gira de forma continua en vez "
+"de detenerse y girar primero."
+
+msgid "卡住判定时间窗内要求的最小位移（米）"
+msgstr ""
+"Desplazamiento mínimo requerido dentro de la ventana de detección de bloqueo"
+" (m)."
+
+msgid "可选。地图存在多个 zoom 网格时指定，例如 4"
+msgstr ""
+"Opcional. Especifícalo cuando el mapa tenga varias cuadrículas zoom, por "
+"ejemplo 4."
+
+msgid "可选。留空时使用实时位置流里的 mapId 加载导航网格。"
+msgstr ""
+"Opcional. Déjalo vacío para usar mapId del flujo de posición en tiempo real "
+"para cargar la cuadrícula."
+
+msgid "可选。直接指定 *.grid.npz；填写后不再按地图 id 查找"
+msgstr ""
+"Opcional. Especifica directamente un *.grid.npz; si se indica, no se busca "
+"por id de mapa."
+
+msgid "官方地图 hg/check 的 data.content，提供绝对坐标（锚点/真值）。留空则按「真值地图账号」或当前登录账号自动取。"
+msgstr ""
+"data.content de hg/check del mapa oficial, que aporta coordenadas absolutas "
+"(ancla/valor real). Si está vacío, se obtiene de \"cuenta de mapa real\" o "
+"de la cuenta actual."
+
+msgid "导航网格目录，默认 assets/nav"
+msgstr "Directorio de cuadrículas de navegación; predeterminado assets/nav."
+
+msgid ""
+"小地图比例尺常数 C：```比例尺 = C / 画面宽度(px)```。分辨率不落在下面三个档位时的兜底，实测 C ≈ 1706.5 "
+"米（即画面整宽对应的世界距离）。"
+msgstr ""
+"Constante de escala del minimapa C: ```escala = C / ancho de "
+"pantalla(px)```. Valor de reserva cuando la resolución no coincide con los "
+"tres niveles; medido C ≈ 1706.5 m (distancia mundial del ancho completo de "
+"pantalla)."
+
+msgid "已知自由格期望远离未知边缘的距离（格）"
+msgstr ""
+"Distancia deseada de las celdas libres conocidas respecto a bordes "
+"desconocidos (celdas)."
+
+msgid "开启后只输出规划结果和路径日志，不按 W、不转鼠标。"
+msgstr ""
+"Si se activa, solo muestra resultados de planificación y registros de ruta; "
+"no pulsa W ni mueve el ratón."
+
+msgid "当前位置落到下一段航点路径附近该距离内时，跳过当前航点直接前往下一点"
+msgstr ""
+"Si la posición actual está dentro de esta distancia de la siguiente ruta de "
+"puntos, omite el punto actual y va directamente al siguiente."
+
+msgid "持续行走该时长但位移不足，判定卡住并重规划"
+msgstr ""
+"Si sigue caminando durante este tiempo sin desplazamiento suficiente, se "
+"considera bloqueado y se replantea."
+
+msgid "控制循环固定节拍（秒）"
+msgstr "Ritmo fijo del bucle de control (segundos)."
+
+msgid "整次导航的最长运行时间（秒）"
+msgstr "Tiempo máximo de ejecución de una navegación (segundos)."
+
+msgid ""
+"是否允许穿越未知格。默认关闭：未知格视同阻挡格，只在已知可行走区内寻路（找不到路时会明确提示是该开关导致，而不是数据坏了）。只有在这张图已充分探索、且你确实要冒险走未探明区域时才打开"
+msgstr ""
+"Permitir buscar rutas por celdas desconocidas. Desactivado por defecto: se "
+"tratan como bloqueadas y solo se busca en zonas transitables conocidas (si "
+"no hay ruta, se indica que este interruptor es la causa, no datos dañados). "
+"Actívalo solo con el mapa bien explorado y asumiendo el riesgo."
+
+msgid "朝向误差小于该值才持续按 W，否则先转向"
+msgstr ""
+"Mantiene W solo cuando el error de rumbo es menor que este valor; si no, "
+"gira primero."
+
+msgid "朝向误差超过该角度时禁止按住 W 画弧，改为停车转向"
+msgstr ""
+"Si el error de rumbo supera este ángulo, no mantiene W trazando un arco; se "
+"detiene y gira."
+
+msgid "期望离墙距离（格）。不足时只增加规划代价，不会封死窄路；0=关闭偏好"
+msgstr ""
+"Distancia deseada respecto a paredes (celdas). Si no se cumple solo añade "
+"coste y nunca bloquea pasos estrechos; 0 desactiva la preferencia."
+
+msgid "未取得新进展时允许的最大重规划次数"
+msgstr "Máximo de replanificaciones permitidas sin nuevo progreso."
+
+msgid "每个目标方位最多转几轮；每轮会按一次 W 让角色转身"
+msgstr ""
+"Máximo de rondas de giro por rumbo objetivo; cada ronda pulsa W una vez para"
+" girar al personaje."
+
+msgid "每次脱困时 S/A/D 各按下的时长（秒）"
+msgstr ""
+"Duración de cada pulsación de S/A/D en cada intento de desbloqueo "
+"(segundos)."
+
+msgid "离墙距离每缺一格增加的代价；越大越偏向安全路线"
+msgstr ""
+"Coste añadido por cada celda que falte hasta la distancia deseada de la "
+"pared; valores mayores favorecen rutas seguras."
+
+msgid "移动转向每拍使用的角度残差比例，过大可能画弧过弯"
+msgstr ""
+"Fracción del error de rumbo usada por cada ciclo de giro en movimiento; "
+"demasiado alta puede sobrepasar en arco."
+
+msgid "移动转向每拍最多修正的角度"
+msgstr "Corrección máxima de rumbo por ciclo de giro en movimiento."
+
+msgid "穿越未知格相对可行走格的代价倍数"
+msgstr ""
+"Multiplicador de coste para cruzar celdas desconocidas frente a "
+"transitables."
+
+msgid "自由格距未知边缘每缺一格增加的代价，减少贴着未探索区域边缘行走"
+msgstr ""
+"Coste añadido por cada celda que falte hasta la distancia deseada de bordes "
+"desconocidos, reduciendo el avance junto a zonas sin explorar."
+
+msgid "规划后允许合并航点的最大横向误差；越大航点越少"
+msgstr ""
+"Error lateral máximo al fusionar puntos de ruta tras la planificación; "
+"valores mayores producen menos puntos."
+
+msgid "规划或导航开始前，等待融合坐标锚定的最长时间。"
+msgstr ""
+"Tiempo máximo de espera al anclaje de coordenadas fusionadas antes de "
+"planificar o navegar."
+
+msgid "距中间航点小于该值即切到下一个航点（米）"
+msgstr ""
+"Cambia al siguiente punto de ruta cuando esté dentro de esta distancia del "
+"actual (m)."
+
+msgid "距最终目标小于该值即判定到达（世界 XZ 平面，米）"
+msgstr ""
+"Se considera alcanzado el objetivo final cuando esté dentro de esta "
+"distancia (plano XZ mundial, m)."
+
+msgid "距目标航点小于该距离时禁止移动转向，避免弧线越过近航点"
+msgstr ""
+"Desactiva el giro en movimiento a esta distancia del punto objetivo para no "
+"sobrepasarlo en arco."
+
+msgid "连续卡住时可尝试脱困的最多次数"
+msgstr "Máximo de intentos de recuperación tras bloqueos consecutivos."
+
+msgid "选择要显示的全局导航配置分类。"
+msgstr "Elige qué categoría de configuración global de navegación mostrar."
+
+msgid "闭环转向要求达到的方位误差（度）"
+msgstr "Error de rumbo requerido por el giro en bucle cerrado (grados)."
+
+msgid "导航配置：定位真值、分辨率比例尺，以及网格、滑索、规划和行走参数"
+msgstr ""
+"Configuración de navegación: valor real de posición, escala por resolución y"
+" opciones de cuadrícula, tirolina, planificación y movimiento"

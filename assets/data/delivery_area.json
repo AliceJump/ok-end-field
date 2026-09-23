@@ -12,23 +12,107 @@
       "task_model_area": "武陵",
       "feature_label_area_code": "wuling",
       "delivery_locations": [
-        "武陵城",
-        "试验园区"
+        {
+          "name": "武陵城",
+          "coordinate": {
+            "x": -779.633,
+            "y": 278.947,
+            "z": -651.515
+          }
+        },
+        {
+          "name": "试验园区",
+          "coordinate": {
+            "x": -377.978,
+            "y": 267.451,
+            "z": -543.635
+          }
+        }
       ],
       "delivery_targets_by_location": {
         "武陵城": [
-          "常沄",
-          "资源",
-          "彦宁",
-          "齐纶",
-          "于施",
-          "苏白易",
-          "普里莫"
+          {
+            "name": "常沄",
+            "coordinate": {
+              "x": null,
+              "y": null,
+              "z": null
+            }
+          },
+          {
+            "name": "资源",
+            "coordinate": {
+              "x": -1363.610,
+              "y": 325.989,
+              "z": -410.345
+            }
+          },
+          {
+            "name": "彦宁",
+            "coordinate": {
+              "x": null,
+              "y": null,
+              "z": null
+            }
+          },
+          {
+            "name": "齐纶",
+            "coordinate": {
+              "x": null,
+              "y": null,
+              "z": null
+            }
+          },
+          {
+            "name": "于施",
+            "coordinate": {
+              "x": -872.126,
+              "y": 265.228,
+              "z": -109.360
+            }
+          },
+          {
+            "name": "苏白易",
+            "coordinate": {
+              "x": -1329.865,
+              "y": 275.166,
+              "z": 124.790
+            }
+          },
+          {
+            "name": "普里莫",
+            "coordinate": {
+              "x": -1431.325,
+              "y": 315.386,
+              "z": -491.685
+            }
+          }
         ],
         "试验园区": [
-          "赵昭",
-          "裴令容",
-          "阿禾"
+          {
+            "name": "赵昭",
+            "coordinate": {
+              "x": -203.499,
+              "y": 253.658,
+              "z": -385.981
+            }
+          },
+          {
+            "name": "裴令容",
+            "coordinate": {
+              "x": -603.307,
+              "y": 244.834,
+              "z": -149.099
+            }
+          },
+          {
+            "name": "阿禾",
+            "coordinate": {
+              "x": -222.109,
+              "y": 259.169,
+              "z": -252.726
+            }
+          }
         ]
       },
       "transfer_search_area": {

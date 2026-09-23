@@ -43,6 +43,23 @@ Switching uses that region's:
 
 ---
 
+### Arrival method
+
+Available options:
+
+* **Legacy flow**: keeps the original zip-line distance sequence, blue-marker alignment, and forward search.
+* **Grid navigation**: reads pickup and destination coordinates from the region data and uses minimap grid navigation to combine zip lines with regular pathfinding.
+
+The default is **Legacy flow**. With **Grid navigation**:
+
+1. After teleporting, navigate to the accepted location's pickup coordinate.
+2. Prefer a direct `receive_good` template match; if missing, fall back to the original blue-marker and forward search.
+3. After pickup, recognize the destination on the left and navigate to its configured coordinate.
+4. Prefer a direct submit click; if missing, fall back to the original destination OCR navigation and submit flow.
+5. If a pickup or destination coordinate is missing, that stage falls back to the legacy flow.
+
+---
+
 ### Path to {location} delivery point
 
 > The zip-line distance sequence from the commission location to the corresponding delivery point

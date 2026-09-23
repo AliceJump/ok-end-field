@@ -167,6 +167,7 @@ ok-end-field/
 │   ├── core/
 │   │   ├── BaseEfTask.py
 │   │   ├── BattleConfig.py
+│   │   ├── NavConfig.py
 │   │   ├── config_migration.py
 │   │   ├── global_config_store.py
 │   │   ├── sequence_parser.py
@@ -176,6 +177,7 @@ ok-end-field/
 │   │       ├── process_manager.py
 │   │       ├── runtime_mixin.py
 │   │       └── window_arrow_drawing_mixin.py
+│   ├── nav/                      # 二维网格、A* 规划与路线跟随
 │   ├── tasks/
 │   │   ├── onetime/              # 一次性任务和 AutoCombatLogic
 │   │   ├── trigger/              # 四个已注册后台任务
@@ -295,8 +297,11 @@ self.default_config_group.update({...})
 - `Battle Config`
 - `Ensure Main Once Action Sleep`
 - `Zip Line Config`
+- `Nav Config`
 
 战斗任务通过 `BattleMixin.get_battle_config()` 读取。任务可通过「使用独立配置」开关选择全局或独立战斗配置；「使用独立配置」关闭时，`get_battle_config()` 直接返回全局配置，账号任务覆盖不会生效。仅当「使用独立配置」开启时，绑定账号上下文后，账号任务覆盖才为最高优先级。不要在多个任务中复制全局战斗默认值。
+
+网格导航的定位真值、分辨率档位比例尺与轴映射由 `Nav Config` 统一提供；运行策略仍留在任务配置。完整数据流见[网格导航与小地图定位](导航与小地图定位.md)。
 
 ### 6.4 Feature 资源
 
