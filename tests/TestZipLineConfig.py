@@ -68,8 +68,8 @@ class TestZipLineConfig(unittest.TestCase):
         with (
             patch.object(
                 global_config_store,
-                "get_relative_path",
-                side_effect=lambda *parts: os.path.join(*parts),
+                "config_path",
+                side_effect=lambda *parts: os.path.join("configs", *parts),
             ),
             patch.object(global_config_store, "read_json_file", side_effect=fake_read),
         ):
@@ -99,8 +99,8 @@ class TestZipLineConfig(unittest.TestCase):
         with (
             patch.object(
                 global_config_store,
-                "get_relative_path",
-                side_effect=lambda *parts: os.path.join(*parts),
+                "config_path",
+                side_effect=lambda *parts: os.path.join("configs", *parts),
             ),
             patch.object(global_config_store, "read_json_file", side_effect=fake_read),
         ):
@@ -144,8 +144,8 @@ class TestZipLineConfig(unittest.TestCase):
             )
             with patch.object(
                 config_migration,
-                "get_relative_path",
-                side_effect=lambda *parts: os.path.join(tmp, *parts),
+                "config_path",
+                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
             ):
                 config_migration.migrate_config_file_keys("DeliveryTask", self.ZIP_LINE_MIGRATIONS)
 
@@ -171,8 +171,8 @@ class TestZipLineConfig(unittest.TestCase):
             )
             with patch.object(
                 config_migration,
-                "get_relative_path",
-                side_effect=lambda *parts: os.path.join(tmp, *parts),
+                "config_path",
+                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
             ):
                 config_migration.migrate_config_file_keys("DailyTask", self.ZIP_LINE_MIGRATIONS)
 
@@ -206,15 +206,15 @@ class TestZipLineConfig(unittest.TestCase):
                 with (
                     patch.object(
                         global_config_store,
-                        "get_relative_path",
-                        side_effect=lambda *parts: os.path.join(tmp, *parts),
+                        "config_path",
+                        side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
                     ),
                     patch.object(
                         config_module, "get_relative_path", side_effect=lambda *parts: os.path.join(tmp, *parts)
                     ),
-                    patch.object(global_config_store, "_MIGRATION_STATE_PATH", state_path),
-                    patch.object(global_config_store, "_MIGRATION_BACKUP_DIR", backup_dir),
-                    patch.object(account_scope_store, "_STORE_PATH", store_path),
+                    patch.object(global_config_store, "get_migration_state_path", return_value=state_path),
+                    patch.object(global_config_store, "get_migration_backup_dir", return_value=backup_dir),
+                    patch.object(account_scope_store, "get_store_path", return_value=store_path),
                 ):
                     config = global_config_store.get_global_config(ZIP_LINE_CONFIG_NAME)
 
@@ -306,15 +306,15 @@ class TestZipLineConfig(unittest.TestCase):
                 with (
                     patch.object(
                         global_config_store,
-                        "get_relative_path",
-                        side_effect=lambda *parts: os.path.join(tmp, *parts),
+                        "config_path",
+                        side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
                     ),
                     patch.object(
                         config_module, "get_relative_path", side_effect=lambda *parts: os.path.join(tmp, *parts)
                     ),
-                    patch.object(global_config_store, "_MIGRATION_STATE_PATH", state_path),
-                    patch.object(global_config_store, "_MIGRATION_BACKUP_DIR", backup_dir),
-                    patch.object(account_scope_store, "_STORE_PATH", store_path),
+                    patch.object(global_config_store, "get_migration_state_path", return_value=state_path),
+                    patch.object(global_config_store, "get_migration_backup_dir", return_value=backup_dir),
+                    patch.object(account_scope_store, "get_store_path", return_value=store_path),
                 ):
                     # 模拟任务侧 load_config：迁移键名 → 转存全局 → 框架 Config 构造（删滑索键）
                     config_migration.migrate_config_file_keys("DeliveryTask", self.ZIP_LINE_MIGRATIONS)

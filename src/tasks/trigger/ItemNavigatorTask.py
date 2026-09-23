@@ -13,8 +13,8 @@ import win32gui
 from ok import Logger, TriggerTask
 from qfluentwidgets import FluentIcon
 
-from src.config import config
 from src.core.BaseEfTask import BaseEfTask
+from src.core.paths import config_folder
 from src.data import item_map_query
 from src.icons import Icons
 from src.tasks.account.account_scope_store import get_account_map_content, load_overrides, resolve_account_id
@@ -139,7 +139,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
 
         # internal constants (not user-facing)
         self._init_ws_position_mixin()
-        cfg_folder = Path(config.get("config_folder", "configs"))
+        cfg_folder = Path(config_folder())
         self._marked_store = cfg_folder / "marked_points.json"
         self._marked_lock = threading.Lock()
         self._marked: dict[str, set] = {}  # mapId -> set of point hashes

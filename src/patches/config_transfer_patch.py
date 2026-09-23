@@ -30,13 +30,14 @@ from pathlib import Path, PurePosixPath
 from PySide6.QtWidgets import QApplication, QFileDialog
 from qfluentwidgets import FluentIcon, MessageBox, PushButton
 
+from src.core.paths import config_folder, config_path
+
 _PATCH_INSTALLED = False
 
 # 备份/迁移产物目录不属于用户配置，导出、备份与导入清理时均跳过
 _EXCLUDED_DIR_NAMES = {"backup", "global_config_migration_backup"}
 
-# 导出 zip 内的根目录名；导入时优先识别该前缀
-_ZIP_ROOT_DIR = "configs"
+# 导出 zip 内的根目录名跟随配置目录；导入时优先识别该前缀
 
 # 防止压缩炸弹或异常大文件耗尽磁盘空间
 _MAX_IMPORT_MEMBER_BYTES = 16 * 1024 * 1024
@@ -45,12 +46,8 @@ _COPY_CHUNK_BYTES = 1024 * 1024
 
 
 def get_configs_dir() -> Path:
-    """返回当前应用的配置目录（与 ok.util.config.Config 的解析方式一致）。"""
-    from ok.util.file import get_relative_path
-
-    from src.config import config as app_config
-
-    return Path(get_relative_path(app_config.get("config_folder") or "configs"))
+    """返回当前应用的配置目录（目录名取 config_folder）。"""
+    return Path(config_path())
 
 
 def _is_excluded(rel_parts) -> bool:
@@ -68,7 +65,7 @@ def export_config_zip(configs_dir: Path, zip_path: Path) -> int:
             rel = path.relative_to(configs_dir)
             if _is_excluded(rel.parts):
                 continue
-            zf.write(path, Path(_ZIP_ROOT_DIR) / rel)
+            zf.write(path, Path(config_folder()) / rel)
             count += 1
     return count
 
@@ -94,7 +91,7 @@ def resolve_import_prefix(zip_path: Path) -> str | None:
     if not json_names:
         return None
 
-    root_prefix = f"{_ZIP_ROOT_DIR}/"
+    root_prefix = f"{config_folder()}/"
     if any(name.startswith(root_prefix) for name in json_names):
         return root_prefix
 
@@ -143,7 +140,7 @@ def apply_config_import(zip_path: Path, configs_dir: Path) -> Path:
         shutil.copy2(path, dest)
 
     with tempfile.TemporaryDirectory(prefix=".config_import_", dir=configs_dir.parent) as tmp:
-        staging_dir = Path(tmp) / "configs"
+        staging_dir = Path(tmp) / config_folder()
         staging_dir.mkdir()
         staging_root = staging_dir.resolve()
         extracted = 0
