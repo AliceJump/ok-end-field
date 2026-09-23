@@ -7,6 +7,7 @@ from types import SimpleNamespace
 
 import numpy as np
 
+from src.data.FeatureList import FeatureList as fL
 from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid, GridMeta, save_grid
 from src.nav.grid_planner import PlanResult, ZipLineRouteStep
 from src.nav.route_follower import (
@@ -46,6 +47,7 @@ class _FakeGridTask(GridNavigationMixin):
         self.info = {}
         self.x = 0.5
         self.z = 0.5
+        self.esc_visible = False
         self.heading = 90.0
         self.t = 0.0
         self.w_down = False
@@ -59,6 +61,14 @@ class _FakeGridTask(GridNavigationMixin):
         self.key_up_events: list[str] = []
         self._init_grid_navigation_mixin()
         self._minimap_position_service = self
+
+    def _grid_nav_config(self):
+        return self.config
+
+    def find_feature(self, feature_name=None, frame=None, **kwargs):
+        if feature_name == fL.esc:
+            return [object()] if self.esc_visible else []
+        return []
 
     def active_time(self):
         return self.t
@@ -181,6 +191,12 @@ class TestGridNavigationMixin(unittest.TestCase):
 
         self.assertFalse(self.task.allow_grid_unknown())
 
+    def test_grid_option_prefers_global_nav_config_over_task_config(self):
+        self.task.config[CONFIG_GRID_ALLOW_UNKNOWN] = False
+        self.task._grid_nav_config = lambda: {CONFIG_GRID_ALLOW_UNKNOWN: True}
+
+        self.assertTrue(self.task.allow_grid_unknown())
+
     def test_loads_user_zip_lines_from_position_service(self):
         payload = {
             "code": 0,
@@ -282,6 +298,52 @@ class TestGridNavigationMixin(unittest.TestCase):
         )
 
         self.assertEqual(calls, [("ride", [20])])
+
+    def test_execute_zip_line_retries_board_when_esc_remains(self):
+        calls = []
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 20.5, 0.0, 0.5)
+        route_step = ZipLineRouteStep(
+            step=ZipLineStep(first, second, distance_m=20.0),
+            entry_cell=(0, 0),
+            exit_cell=(0, 20),
+            entry_waypoint_index=0,
+            exit_waypoint_index=1,
+            cost=6.0,
+        )
+
+        def board(**kwargs):
+            calls.append("board")
+            self.task.esc_visible = len(calls) == 1
+            return True
+
+        self.task.board_zip_line = board
+        self.task.zip_line_list_go = lambda distances, **kwargs: calls.append(("ride", distances))
+
+        self.assertTrue(self.task._execute_grid_zip_line(route_step))
+
+        self.assertEqual(calls, ["board", "board", ("ride", [20])])
+        self.assertAlmostEqual(self.task.turns[-1], 90.0)
+
+    def test_execute_zip_line_fails_when_esc_remains_after_retry(self):
+        calls = []
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 20.5, 0.0, 0.5)
+        route_step = ZipLineRouteStep(
+            step=ZipLineStep(first, second, distance_m=20.0),
+            entry_cell=(0, 0),
+            exit_cell=(0, 20),
+            entry_waypoint_index=0,
+            exit_waypoint_index=1,
+            cost=6.0,
+        )
+        self.task.esc_visible = True
+        self.task.board_zip_line = lambda **kwargs: calls.append("board") or True
+        self.task.zip_line_list_go = lambda distances, **kwargs: calls.append(("ride", distances))
+
+        self.assertFalse(self.task._execute_grid_zip_line(route_step))
+
+        self.assertEqual(calls, ["board", "board"])
 
     def test_navigation_executes_zip_line_action_before_walking_to_exit(self):
         calls = []
@@ -463,6 +525,47 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertTrue(any("规划完成" in msg for msg in self.task.logs))
         self.assertTrue(any("路径点：" in msg and " -> " in msg for msg in self.task.logs))
         self.assertTrue(any("已到达目标" in msg for msg in self.task.logs))
+
+    def test_long_waypoint_segment_starts_sprint_once_per_w_hold(self):
+        self.task._grid_nav_follower = SimpleNamespace(
+            plan_result=SimpleNamespace(waypoints=[(0.0, 0.0), (20.0, 0.0)])
+        )
+        step = FollowerStep(
+            WALK,
+            waypoint=(20.0, 0.0),
+            distance_to_waypoint=20.0,
+            waypoint_index=1,
+        )
+        self.task._set_grid_walking(True)
+
+        self.task._maybe_start_grid_sprint(step)
+        self.task._maybe_start_grid_sprint(step)
+
+        self.assertEqual(self.task.pressed_keys, ["shift"])
+        self.assertTrue(self.task._grid_nav_sprint_active)
+
+        self.task._set_grid_walking(False)
+        self.task._set_grid_walking(True)
+        self.task._maybe_start_grid_sprint(step)
+
+        self.assertEqual(self.task.pressed_keys, ["shift", "shift"])
+
+    def test_short_waypoint_segment_does_not_start_sprint(self):
+        self.task._grid_nav_follower = SimpleNamespace(
+            plan_result=SimpleNamespace(waypoints=[(0.0, 0.0), (10.0, 0.0)])
+        )
+        step = FollowerStep(
+            WALK,
+            waypoint=(10.0, 0.0),
+            distance_to_waypoint=10.0,
+            waypoint_index=1,
+        )
+        self.task._set_grid_walking(True)
+
+        self.task._maybe_start_grid_sprint(step)
+
+        self.assertEqual(self.task.pressed_keys, [])
+        self.assertFalse(self.task._grid_nav_sprint_active)
 
     def test_waiting_for_position_releases_w_and_pauses_follower(self):
         paused = []

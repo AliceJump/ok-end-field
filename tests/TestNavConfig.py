@@ -6,25 +6,38 @@
 ——键名拼错会静默退化成常数路径，不报错但行为悄悄变了。
 """
 
+import ast
 import os
 import tempfile
 import unittest
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
 from ok.util import config as config_module
 from ok.util.file import read_json_file, write_json_file
 
+from src.core.GridNavConfig import (
+    CONFIG_GRID_DIR,
+    CONFIG_GRID_MAX_EXPAND,
+    CONFIG_GRID_TIMEOUT,
+    CONFIG_GRID_USE_ZIP_LINES,
+)
 from src.core.NavConfig import (
     DEFAULT_NAV_CONFIG,
     DEFAULT_SCALE_CONSTANT,
     NAV_CONFIG_DESCRIPTION,
+    NAV_CONFIG_GROUP_KEY,
+    NAV_CONFIG_TYPE,
     NAV_CONFIG_NAME,
     NAV_CONTENT_KEY,
+    NAV_MAP_ID_KEY,
     NAV_MATRIX_SUFFIX,
+    NAV_PLAN_ONLY_KEY,
     NAV_RESOLUTION_TIERS,
     NAV_SCALE_CONSTANT_KEY,
     NAV_SCALE_SUFFIX,
+    NAV_WAIT_POSITION_TIMEOUT_KEY,
     NAV_WS_ACCOUNT_KEY,
     nav_profile_for_width,
     tier_for_width,
@@ -128,6 +141,34 @@ class TestNavProfile(unittest.TestCase):
 class TestNavConfigShape(unittest.TestCase):
     """默认值 / 说明 / 注册的结构一致性。"""
 
+    def test_minimap_test_task_keeps_only_target_coordinates_in_task_config(self):
+        path = Path(__file__).parents[1] / "src" / "tasks" / "test" / "MinimapNavigateToPoint.py"
+        tree = ast.parse(path.read_text(encoding="utf-8"))
+        class_node = next(
+            node
+            for node in tree.body
+            if isinstance(node, ast.ClassDef) and node.name == "MinimapNavigateToPoint"
+        )
+        assigned = {}
+        for node in ast.walk(class_node):
+            if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Dict):
+                continue
+            for target in node.targets:
+                if (
+                    isinstance(target, ast.Attribute)
+                    and isinstance(target.value, ast.Name)
+                    and target.value.id == "self"
+                    and target.attr in {"default_config", "config_description"}
+                ):
+                    assigned[target.attr] = {
+                        key.value
+                        for key in node.value.keys
+                        if isinstance(key, ast.Constant) and isinstance(key.value, str)
+                    }
+
+        self.assertEqual(assigned.get("default_config"), {"目标X", "目标Z"})
+        self.assertEqual(assigned.get("config_description"), {"目标X", "目标Z"})
+
     def test_every_key_has_description(self):
         for key in DEFAULT_NAV_CONFIG:
             self.assertIn(key, NAV_CONFIG_DESCRIPTION, key)
@@ -155,16 +196,22 @@ class TestNavConfigShape(unittest.TestCase):
     def test_global_config_exposes_nav_config_keys(self):
         """注册到全局配置的那份必须覆盖 NavConfig 定义的全部键。
 
-        只比键与结构性默认值：``真值content`` / ``真值地图账号`` 是用户可改的，
-        真实配置文件里本来就可能不是默认值。
+        只比键：真实配置文件里的导航选项本来就可能已被用户覆盖。
         """
         from src.core.global_config_store import get_global_config
         config = get_global_config(NAV_CONFIG_NAME)
-        for key, default in DEFAULT_NAV_CONFIG.items():
+        for key in DEFAULT_NAV_CONFIG:
             self.assertIsNotNone(config.get(key), f"{key} 未注册到全局配置")
-            if key in (NAV_CONTENT_KEY, NAV_WS_ACCOUNT_KEY):
-                continue
-            self.assertEqual(config.get(key), default, key)
+
+    def test_config_type_groups_every_nav_option(self):
+        group_type = NAV_CONFIG_TYPE[NAV_CONFIG_GROUP_KEY]
+        grouped = {
+            key
+            for keys in group_type["sub_configs"].values()
+            for key in keys
+        }
+        expected = set(DEFAULT_NAV_CONFIG) - {NAV_CONFIG_GROUP_KEY}
+        self.assertEqual(grouped, expected)
 
     def test_gui_group_lists_nav_config(self):
         from src.gui.GlobalConfigTab import GLOBAL_CONFIG_GROUPS
@@ -345,6 +392,69 @@ class TestNavConfigMigration(unittest.TestCase):
             )
             self.assertEqual(backup["比例尺(米/像素)"], 0.6712)
             self.assertEqual(backup["轴映射(逗号4值)"], "0.6712,0,0,-0.6710")
+
+    def test_global_init_migrates_grid_navigation_and_task_controls(self):
+        legacy_values = {
+            NAV_MAP_ID_KEY: "map06",
+            NAV_PLAN_ONLY_KEY: True,
+            NAV_WAIT_POSITION_TIMEOUT_KEY: 45.0,
+            CONFIG_GRID_DIR: "custom/nav",
+            CONFIG_GRID_MAX_EXPAND: 800_000,
+            CONFIG_GRID_USE_ZIP_LINES: False,
+            CONFIG_GRID_TIMEOUT: 900.0,
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_configs(
+                tmp,
+                {
+                    "Nav Config.json": {},
+                    "MinimapNavigateToPoint.json": legacy_values,
+                },
+            )
+            previous = global_config_store._CONFIGS.copy()
+            global_config_store._CONFIGS.clear()
+            try:
+                patches = self._patched_store(tmp)
+                with patches[0], patches[1], patches[2], patches[3]:
+                    config = global_config_store.get_global_config(NAV_CONFIG_NAME)
+            finally:
+                global_config_store._CONFIGS.clear()
+                global_config_store._CONFIGS.update(previous)
+
+            for key, value in legacy_values.items():
+                self.assertEqual(config.get(key), value)
+
+    def test_task_side_fallback_copies_grid_options_after_global_was_loaded(self):
+        legacy_values = {
+            CONFIG_GRID_DIR: "late/nav",
+            CONFIG_GRID_MAX_EXPAND: 900_000,
+            CONFIG_GRID_USE_ZIP_LINES: False,
+        }
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_configs(
+                tmp,
+                {
+                    "Nav Config.json": dict(DEFAULT_NAV_CONFIG),
+                    "MinimapNavigateToPoint.json": legacy_values,
+                },
+            )
+            previous = global_config_store._CONFIGS.copy()
+            global_config_store._CONFIGS.clear()
+            try:
+                patches = self._patched_store(tmp)
+                with patches[0], patches[1], patches[2], patches[3]:
+                    config = global_config_store.get_global_config(NAV_CONFIG_NAME)
+                    for key, value in legacy_values.items():
+                        config[key] = DEFAULT_NAV_CONFIG[key]
+                    global_config_store.migrate_task_nav_values_to_global(
+                        "MinimapNavigateToPoint"
+                    )
+            finally:
+                global_config_store._CONFIGS.clear()
+                global_config_store._CONFIGS.update(previous)
+
+            for key, value in legacy_values.items():
+                self.assertEqual(config.get(key), value)
 
     def test_grid_position_controls_migrate_to_owner_before_prune(self):
         legacy_values = {

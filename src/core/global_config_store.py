@@ -21,9 +21,14 @@ from src.core.NavConfig import (
     DEFAULT_NAV_CONFIG,
     NAV_CONFIG_DESCRIPTION,
     NAV_CONFIG_NAME,
+    NAV_CONFIG_TYPE,
     NAV_CONTENT_KEY,
+    NAV_MAP_ID_KEY,
+    NAV_PLAN_ONLY_KEY,
+    NAV_WAIT_POSITION_TIMEOUT_KEY,
     NAV_WS_ACCOUNT_KEY,
 )
+from src.core.GridNavConfig import GRID_NAV_CONFIG_KEYS
 from src.data.delivery_area import DELIVERY_AREA_CONFIG
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING, stages_dict
 from src.icons import Icons
@@ -145,8 +150,9 @@ zip_line_config_option = ConfigOption(
 nav_config_option = ConfigOption(
     NAV_CONFIG_NAME,
     DEFAULT_NAV_CONFIG,
-    description="导航配置：小地图定位的真值来源，以及按画面分辨率自适应的比例尺/轴映射",
+    description="导航配置：定位真值、分辨率比例尺，以及网格、滑索、规划和行走参数",
     config_description=NAV_CONFIG_DESCRIPTION,
+    config_type=NAV_CONFIG_TYPE,
     icon=Icons.Navigation,
 )
 GLOBAL_CONFIG_OPTIONS = [
@@ -166,6 +172,14 @@ _MIGRATION_BACKUP_DIR = get_relative_path("configs", "global_config_migration_ba
 _BATTLE_LEGACY_TASK_CONFIGS = ["DailyTask", "AutoCombatTask", "BattleTask"]
 _ZIP_LINE_LEGACY_TASK_CONFIGS = ["DeliveryTask", "DailyTask", "BattleTask"]
 _NAV_LEGACY_TASK_CONFIGS = ["MinimapPositionTask", "MinimapNavigateToPoint"]
+_NAV_TASK_MIGRATION_KEYS = (
+    NAV_CONTENT_KEY,
+    NAV_WS_ACCOUNT_KEY,
+    NAV_MAP_ID_KEY,
+    NAV_PLAN_ONLY_KEY,
+    NAV_WAIT_POSITION_TIMEOUT_KEY,
+    *GRID_NAV_CONFIG_KEYS,
+)
 _MINIMAP_POSITION_TASK_CONFIG_NAME = "MinimapPositionTask"
 _ZIP_LINE_ACCOUNT_MIGRATION_MARKER = "zip_line_account_overrides_v1"
 _NAV_LEGACY_BACKUP_MARKER = "nav_legacy_task_config_backup_v1"
@@ -479,11 +493,11 @@ def migrate_task_zip_line_values_to_global(task_class_name: str) -> None:
 
 
 def migrate_task_nav_values_to_global(task_class_name: str) -> None:
-    """在任务 Config 构造前转存旧小地图真值配置到全局 Nav Config。
+    """在任务 Config 构造前转存旧导航配置到全局 Nav Config。
 
     比例尺和轴映射受分辨率影响，缺少历史分辨率时不能安全映射到某个档位；
-    它们由 :func:`_backup_legacy_nav_task_configs` 原样备份。`content` 与账号
-    是不受分辨率影响的真值来源，可在旧键被框架删除前可靠迁移。
+    它们由 :func:`_backup_legacy_nav_task_configs` 原样备份。真值来源、地图选择、
+    网格目录以及规划/执行参数不受历史分辨率影响，可在旧键被框架删除前可靠迁移。
     """
     if task_class_name not in _NAV_LEGACY_TASK_CONFIGS:
         return
@@ -498,15 +512,24 @@ def migrate_task_nav_values_to_global(task_class_name: str) -> None:
     nav_config = get_global_config(NAV_CONFIG_NAME)
 
     candidates = {}
-    for key in (NAV_CONTENT_KEY, NAV_WS_ACCOUNT_KEY):
-        value = str(data.get(key) or "").strip()
-        if value:
+    for key in _NAV_TASK_MIGRATION_KEYS:
+        if key not in data:
+            continue
+        default_value = DEFAULT_NAV_CONFIG.get(key)
+        value = data[key]
+        if not _same_type(value, default_value):
+            continue
+        if isinstance(default_value, str):
+            if str(value).strip():
+                candidates[key] = str(value).strip()
+        elif value != default_value:
             candidates[key] = value
     if not candidates:
         return
 
     for key, value in candidates.items():
-        if key not in nav_config or not str(nav_config.get(key) or "").strip():
+        default_value = DEFAULT_NAV_CONFIG.get(key)
+        if key not in nav_config or nav_config.get(key) == default_value:
             nav_config[key] = value
 
 

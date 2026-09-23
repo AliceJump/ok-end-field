@@ -33,6 +33,46 @@ from __future__ import annotations
 import math
 from pathlib import Path
 
+from src.core.GridNavConfig import (
+    CONFIG_GRID_ALLOW_UNKNOWN,
+    CONFIG_GRID_CALIBRATION_WAYPOINTS,
+    CONFIG_GRID_DIR,
+    CONFIG_GRID_FILE,
+    CONFIG_GRID_FRONTIER_MARGIN,
+    CONFIG_GRID_FRONTIER_PENALTY,
+    CONFIG_GRID_GOAL_RADIUS,
+    CONFIG_GRID_HEADING_TOLERANCE,
+    CONFIG_GRID_MARGIN,
+    CONFIG_GRID_MAX_EXPAND,
+    CONFIG_GRID_MAX_RECOVERIES,
+    CONFIG_GRID_MAX_REPLANS,
+    CONFIG_GRID_MAX_TURN_ROUNDS,
+    CONFIG_GRID_MOVING_TURN_GAIN,
+    CONFIG_GRID_MOVING_TURN_MAX_DEG,
+    CONFIG_GRID_MOVING_TURN_MAX_START_DEG,
+    CONFIG_GRID_MOVING_TURN_MIN_DISTANCE,
+    CONFIG_GRID_RECOVERY_TIME,
+    CONFIG_GRID_RISK_COST,
+    CONFIG_GRID_SHORTCUT_RADIUS,
+    CONFIG_GRID_STUCK_DISTANCE,
+    CONFIG_GRID_STUCK_WINDOW,
+    CONFIG_GRID_TICK,
+    CONFIG_GRID_TIMEOUT,
+    CONFIG_GRID_TURN_TOLERANCE,
+    CONFIG_GRID_TURN_WHILE_MOVING,
+    CONFIG_GRID_USE_ZIP_LINES,
+    CONFIG_GRID_WALL_PENALTY,
+    CONFIG_GRID_WAYPOINT_RADIUS,
+    CONFIG_GRID_WAYPOINT_TOLERANCE,
+    CONFIG_GRID_ZOOM,
+    DEFAULT_GRID_NAV_CONFIG,
+    GRID_HEADING_TOLERANCE_DEG,
+    GRID_NAV_CONFIG_DESCRIPTION,
+    GRID_TURN_TOLERANCE_DEG,
+)
+from src.core.NavConfig import NAV_CONFIG_NAME
+from src.core.global_config_store import get_global_config
+from src.data.FeatureList import FeatureList as fL
 from src.nav.grid_io import GRID_SUFFIX, DenseGrid, load_grid
 from src.nav.grid_planner import PlanResult
 from src.nav.route_follower import (
@@ -57,6 +97,9 @@ from src.tasks.mixin.minimap_heading_mixin import (
 )
 from src.tasks.mixin.zip_line_mixin import ZipLineReplanRequired
 from src.tasks.trigger.MinimapPositionTask import MinimapPositionTask
+
+GRID_ZIP_LINE_ESC_THRESHOLD = 0.8
+GRID_SPRINT_MIN_SEGMENT_METERS = 15.0
 
 __all__ = [
     "CONFIG_GRID_ALLOW_UNKNOWN",
@@ -93,41 +136,6 @@ __all__ = [
     "GridNavigationMixin",
 ]
 
-CONFIG_GRID_DIR = "网格目录"
-CONFIG_GRID_FILE = "网格文件(可选)"
-CONFIG_GRID_ZOOM = "网格Zoom(可选)"
-CONFIG_GRID_CALIBRATION_WAYPOINTS = "航点校准间隔(个)"
-CONFIG_GRID_FRONTIER_MARGIN = "未知边缘安全距离(格)"
-CONFIG_GRID_FRONTIER_PENALTY = "未知边缘不足代价(每格)"
-CONFIG_GRID_GOAL_RADIUS = "到达目标半径(米)"
-CONFIG_GRID_WAYPOINT_RADIUS = "航点到达半径(米)"
-CONFIG_GRID_HEADING_TOLERANCE = "行走朝向容差(度)"
-CONFIG_GRID_TURN_TOLERANCE = "转向到位容差(度)"
-CONFIG_GRID_MAX_TURN_ROUNDS = "最大转向轮数"
-CONFIG_GRID_TURN_WHILE_MOVING = "航点移动转向"
-CONFIG_GRID_MOVING_TURN_GAIN = "移动转向增益"
-CONFIG_GRID_MOVING_TURN_MAX_DEG = "移动转向单拍最大角度(度)"
-CONFIG_GRID_MOVING_TURN_MAX_START_DEG = "移动转向最大启用角度(度)"
-CONFIG_GRID_MOVING_TURN_MIN_DISTANCE = "移动转向最小目标距离(米)"
-CONFIG_GRID_MARGIN = "离墙安全边距(格)"
-CONFIG_GRID_WALL_PENALTY = "离墙不足代价(每格)"
-CONFIG_GRID_WAYPOINT_TOLERANCE = "航点简化容差(米)"
-CONFIG_GRID_MAX_EXPAND = "搜索节点上限"
-CONFIG_GRID_ALLOW_UNKNOWN = "允许穿越未知格"
-CONFIG_GRID_RISK_COST = "未知格风险代价"
-CONFIG_GRID_SHORTCUT_RADIUS = "路径点捷径半径(米)"
-CONFIG_GRID_STUCK_WINDOW = "卡住判定时间(秒)"
-CONFIG_GRID_STUCK_DISTANCE = "卡住判定位移(米)"
-CONFIG_GRID_MAX_RECOVERIES = "卡住脱困次数"
-CONFIG_GRID_RECOVERY_TIME = "脱困按键时长(秒)"
-CONFIG_GRID_MAX_REPLANS = "最大重规划次数"
-CONFIG_GRID_TIMEOUT = "导航超时(秒)"
-CONFIG_GRID_TICK = "控制周期(秒)"
-CONFIG_GRID_USE_ZIP_LINES = "使用滑索路径"
-GRID_HEADING_TOLERANCE_DEG = 4.0
-GRID_TURN_TOLERANCE_DEG = 4.0
-
-
 class GridNavigationMixin(MinimapHeadingMixin):
     """在 ``*.grid.npz`` 上规划并驱动角色前往世界坐标 ``(x, z)``。
 
@@ -137,83 +145,42 @@ class GridNavigationMixin(MinimapHeadingMixin):
 
     @staticmethod
     def grid_navigation_default_config() -> dict:
-        """返回网格导航配置的默认值。"""
-        return {
-            CONFIG_GRID_DIR: "assets/nav",
-            CONFIG_GRID_FILE: "",
-            CONFIG_GRID_ZOOM: "",
-            CONFIG_GRID_CALIBRATION_WAYPOINTS: 5,
-            CONFIG_GRID_FRONTIER_MARGIN: 2,
-            CONFIG_GRID_FRONTIER_PENALTY: 1.0,
-            CONFIG_GRID_WAYPOINT_TOLERANCE: 2.0,
-            CONFIG_GRID_MAX_EXPAND: 400_000,
-            CONFIG_GRID_GOAL_RADIUS: 2.0,
-            CONFIG_GRID_WAYPOINT_RADIUS: 1.0,
-            CONFIG_GRID_HEADING_TOLERANCE: GRID_HEADING_TOLERANCE_DEG,
-            CONFIG_GRID_TURN_TOLERANCE: GRID_TURN_TOLERANCE_DEG,
-            CONFIG_GRID_MAX_TURN_ROUNDS: 2,
-            CONFIG_GRID_TURN_WHILE_MOVING: True,
-            CONFIG_GRID_MOVING_TURN_GAIN: 0.8,
-            CONFIG_GRID_MOVING_TURN_MAX_DEG: 25.0,
-            CONFIG_GRID_MOVING_TURN_MAX_START_DEG: 45.0,
-            CONFIG_GRID_MOVING_TURN_MIN_DISTANCE: 5.0,
-            CONFIG_GRID_MARGIN: 1,
-            CONFIG_GRID_WALL_PENALTY: 1.0,
-            CONFIG_GRID_ALLOW_UNKNOWN: False,
-            CONFIG_GRID_RISK_COST: 5.0,
-            CONFIG_GRID_SHORTCUT_RADIUS: 1.0,
-            CONFIG_GRID_STUCK_WINDOW: 2.5,
-            CONFIG_GRID_STUCK_DISTANCE: 0.35,
-            CONFIG_GRID_MAX_RECOVERIES: 3,
-            CONFIG_GRID_RECOVERY_TIME: 0.45,
-            CONFIG_GRID_MAX_REPLANS: 8,
-            CONFIG_GRID_TIMEOUT: 180.0,
-            CONFIG_GRID_TICK: 0.2,
-            CONFIG_GRID_USE_ZIP_LINES: True,
-        }
+        """返回网格导航默认值；运行时实际读取全局 ``Nav Config``。"""
+        return dict(DEFAULT_GRID_NAV_CONFIG)
 
     @staticmethod
     def grid_navigation_config_description() -> dict:
-        """返回导航配置键的用户说明。"""
-        return {
-            CONFIG_GRID_DIR: "导航网格目录，默认 assets/nav",
-            CONFIG_GRID_FILE: "可选。直接指定 *.grid.npz；填写后不再按地图 id 查找",
-            CONFIG_GRID_ZOOM: "可选。地图存在多个 zoom 网格时指定，例如 4",
-            CONFIG_GRID_CALIBRATION_WAYPOINTS: "每经过多少个航点暂停一次，等待小地图静止自动校准；0=关闭",
-            CONFIG_GRID_FRONTIER_MARGIN: "已知自由格期望远离未知边缘的距离（格）",
-            CONFIG_GRID_FRONTIER_PENALTY: "自由格距未知边缘每缺一格增加的代价，减少贴着未探索区域边缘行走",
-            CONFIG_GRID_WAYPOINT_TOLERANCE: "规划后允许合并航点的最大横向误差；越大航点越少",
-            CONFIG_GRID_MAX_EXPAND: "A* 扩展节点数上限。触顶以『搜索规模超限』失败（与真的不可达区分），"
-            "大图或未探索图上需调大",
-            CONFIG_GRID_GOAL_RADIUS: "距最终目标小于该值即判定到达（世界 XZ 平面，米）",
-            CONFIG_GRID_WAYPOINT_RADIUS: "距中间航点小于该值即切到下一个航点（米）",
-            CONFIG_GRID_HEADING_TOLERANCE: "朝向误差小于该值才持续按 W，否则先转向",
-            CONFIG_GRID_TURN_TOLERANCE: "闭环转向要求达到的方位误差（度）",
-            CONFIG_GRID_MAX_TURN_ROUNDS: "每个目标方位最多转几轮；每轮会按一次 W 让角色转身",
-            CONFIG_GRID_TURN_WHILE_MOVING: "到达航点后保持 W 前进并连续转向，不再先停车转向",
-            CONFIG_GRID_MOVING_TURN_GAIN: "移动转向每拍使用的角度残差比例，过大可能画弧过弯",
-            CONFIG_GRID_MOVING_TURN_MAX_DEG: "移动转向每拍最多修正的角度",
-            CONFIG_GRID_MOVING_TURN_MAX_START_DEG: "朝向误差超过该角度时禁止按住 W 画弧，改为停车转向",
-            CONFIG_GRID_MOVING_TURN_MIN_DISTANCE: "距目标航点小于该距离时禁止移动转向，避免弧线越过近航点",
-            CONFIG_GRID_MARGIN: "期望离墙距离（格）。不足时只增加规划代价，不会封死窄路；0=关闭偏好",
-            CONFIG_GRID_WALL_PENALTY: "离墙距离每缺一格增加的代价；越大越偏向安全路线",
-            CONFIG_GRID_ALLOW_UNKNOWN: "是否允许穿越未知格。默认关闭：未知格视同阻挡格，只在已知可行走区内寻路"
-            "（找不到路时会明确提示是该开关导致，而不是数据坏了）。"
-            "只有在这张图已充分探索、且你确实要冒险走未探明区域时才打开",
-            CONFIG_GRID_RISK_COST: "穿越未知格相对可行走格的代价倍数",
-            CONFIG_GRID_SHORTCUT_RADIUS: "当前位置落到下一段航点路径附近该距离内时，跳过当前航点直接前往下一点",
-            CONFIG_GRID_STUCK_WINDOW: "持续行走该时长但位移不足，判定卡住并重规划",
-            CONFIG_GRID_STUCK_DISTANCE: "卡住判定时间窗内要求的最小位移（米）",
-            CONFIG_GRID_MAX_RECOVERIES: "连续卡住时可尝试脱困的最多次数",
-            CONFIG_GRID_RECOVERY_TIME: "每次脱困时 S/A/D 各按下的时长（秒）",
-            CONFIG_GRID_MAX_REPLANS: "未取得新进展时允许的最大重规划次数",
-            CONFIG_GRID_TIMEOUT: "整次导航的最长运行时间（秒）",
-            CONFIG_GRID_TICK: "控制循环固定节拍（秒）",
-            CONFIG_GRID_USE_ZIP_LINES: (
-                "从当前官方地图账号读取用户滑索架，把 80m/110m 内的可连接点加入路线搜索。"
-                "需要全局「Nav Config」配置可用的 content；没有滑索数据时不改变原路线"
-            ),
-        }
+        """返回网格导航说明；实值已在全局 ``Nav Config`` 中注册。"""
+        return dict(GRID_NAV_CONFIG_DESCRIPTION)
+
+    def _grid_nav_config(self):
+        """返回全局导航配置；测试替身可覆盖此方法注入内存配置。"""
+        return get_global_config(NAV_CONFIG_NAME)
+
+    def _grid_config_get(self, key: str, default=None):
+        """读取全局导航配置；兼容尚未完成迁移的旧任务配置。"""
+        nav_config = self._grid_nav_config()
+        if nav_config is not None and key in nav_config:
+            return nav_config.get(key, default)
+        return self.config.get(key, default)
+
+    def _grid_cfg_float(self, key: str, default) -> float:
+        try:
+            return float(self._grid_config_get(key, default))
+        except (TypeError, ValueError):
+            return float(default)
+
+    def _grid_cfg_int(self, key: str, default) -> int:
+        try:
+            return int(self._grid_config_get(key, default))
+        except (TypeError, ValueError):
+            return int(default)
+
+    def _grid_cfg_bool(self, key: str, default) -> bool:
+        raw = self._grid_config_get(key, default)
+        if isinstance(raw, str):
+            return raw.strip().lower() in ("1", "true", "yes", "on", "是", "开启", "开")
+        return bool(raw)
 
     def _init_grid_navigation_mixin(self) -> None:
         """初始化导航状态；不创建或启动任何定位、输入资源。"""
@@ -221,6 +188,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
         self._grid_nav_follower: GridRouteFollower | None = None
         self._grid_nav_map_id = ""
         self._grid_nav_w_held = False
+        self._grid_nav_sprint_active = False
         self._grid_nav_last_wait_log = 0.0
         self._grid_minimap_position_service: MinimapPositionTask | None = None
         self._grid_nav_last_info_key = None
@@ -258,7 +226,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
         ``map_id`` 时只接受唯一候选。多个候选无法判定时应返回 ``None`` 并提示用户，
         不能静默挑一张可能错误的地图。
         """
-        explicit = self.config.get(CONFIG_GRID_FILE, "") if grid_path is None else grid_path
+        explicit = self._grid_config_get(CONFIG_GRID_FILE, "") if grid_path is None else grid_path
         explicit = str(explicit or "").strip()
         if explicit:
             path = Path(explicit)
@@ -272,8 +240,12 @@ class GridNavigationMixin(MinimapHeadingMixin):
                 return None
             return grid
 
-        directory = str(self.config.get(CONFIG_GRID_DIR, "assets/nav") if grid_dir is None else grid_dir).strip()
-        requested_zoom = str(self.config.get(CONFIG_GRID_ZOOM, "") if zoom is None else zoom).strip()
+        directory = str(
+            self._grid_config_get(CONFIG_GRID_DIR, "assets/nav") if grid_dir is None else grid_dir
+        ).strip()
+        requested_zoom = str(
+            self._grid_config_get(CONFIG_GRID_ZOOM, "") if zoom is None else zoom
+        ).strip()
         root = Path(directory)
         if not root.is_dir():
             self.log_warning(f"导航网格目录不存在: {root}", notify=True)
@@ -364,9 +336,9 @@ class GridNavigationMixin(MinimapHeadingMixin):
         - 其余动作交给 ``GridRouteFollower`` 产生。
         """
         goal = (float(goal_xz[0]), float(goal_xz[1]))
-        limit = self._cfg_float(CONFIG_GRID_TIMEOUT, 180.0) if timeout is None else float(timeout)
+        limit = self._grid_cfg_float(CONFIG_GRID_TIMEOUT, 180.0) if timeout is None else float(timeout)
         limit = max(1.0, limit)
-        tick = max(0.05, self._cfg_float(CONFIG_GRID_TICK, 0.2))
+        tick = max(0.05, self._grid_cfg_float(CONFIG_GRID_TICK, 0.2))
         position_service = self._get_minimap_position_service()
         if position_service is None:
             self.log_warning("导航需要「小地图定位」触发任务，但当前任务未注册", notify=True)
@@ -461,7 +433,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
                 if self._grid_nav_follower is None or actual_map != self._grid_nav_map_id:
                     map_changed = self._grid_nav_follower is not None and actual_map != self._grid_nav_map_id
                     if had_plan:
-                        if replans >= self._cfg_int(CONFIG_GRID_MAX_REPLANS, 8):
+                        if replans >= self._grid_cfg_int(CONFIG_GRID_MAX_REPLANS, 8):
                             self.log_warning("导航重规划次数已达上限", notify=True)
                             return False
                         replans += 1
@@ -598,7 +570,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
                     waypoints_since_calibration += 1
                     calibration_interval = max(
                         0,
-                        self._cfg_int(CONFIG_GRID_CALIBRATION_WAYPOINTS, 5),
+                        self._grid_cfg_int(CONFIG_GRID_CALIBRATION_WAYPOINTS, 5),
                     )
                     if calibration_interval > 0 and waypoints_since_calibration >= calibration_interval:
                         # 航点间隔校准是主动停车点；WS 周期约 5 秒，等待函数会
@@ -662,13 +634,13 @@ class GridNavigationMixin(MinimapHeadingMixin):
                     return True
                 if step.action == STUCK:
                     self._set_grid_walking(False)
-                    if recovery_attempts >= self._cfg_int(CONFIG_GRID_MAX_RECOVERIES, 3):
+                    if recovery_attempts >= self._grid_cfg_int(CONFIG_GRID_MAX_RECOVERIES, 3):
                         self.log_warning(f"导航卡住: {step.reason}", notify=True)
                         return False
                     recovery_attempts += 1
                     self.log_warning(
                         f"导航卡住，尝试脱困 {recovery_attempts}/"
-                        f"{self._cfg_int(CONFIG_GRID_MAX_RECOVERIES, 3)}：{step.reason}"
+                        f"{self._grid_cfg_int(CONFIG_GRID_MAX_RECOVERIES, 3)}：{step.reason}"
                     )
                     self._recover_grid_stuck(
                         position=(float(x), float(z)),
@@ -683,7 +655,9 @@ class GridNavigationMixin(MinimapHeadingMixin):
                     self._grid_nav_follower = None
                     continue
                 if step.action == TURN:
-                    if self._cfg_bool(CONFIG_GRID_TURN_WHILE_MOVING, True) and not self._should_turn_grid_in_place(
+                    if self._grid_cfg_bool(
+                        CONFIG_GRID_TURN_WHILE_MOVING, True
+                    ) and not self._should_turn_grid_in_place(
                         step
                     ):
                         self._turn_grid_while_moving(step)
@@ -692,7 +666,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
                         turn = self.turn_to_bearing(
                             step.target_bearing,
                             tolerance=self._grid_turn_tolerance(),
-                            max_rounds=max(1, self._cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
+                            max_rounds=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
                             frame=frame,
                             min_score=min_score,
                         )
@@ -707,6 +681,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
                     continue
                 if step.action == WALK:
                     self._set_grid_walking(True)
+                    self._maybe_start_grid_sprint(step)
                 elif step.action == WAIT:
                     self._set_grid_walking(False)
                 elif step.action == FAILED:
@@ -959,7 +934,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
 
     def _grid_zip_lines_for_map(self, map_id: str) -> ZipLineGraph | None:
         """读取当前账号的滑索图；认证或接口不可用时静默退回纯网格路线。"""
-        if not self._cfg_bool(CONFIG_GRID_USE_ZIP_LINES, True):
+        if not self._grid_cfg_bool(CONFIG_GRID_USE_ZIP_LINES, True):
             return None
         if not callable(getattr(self, "zip_line_list_go", None)):
             return None
@@ -1080,25 +1055,25 @@ class GridNavigationMixin(MinimapHeadingMixin):
 
     def _grid_follower_config(self) -> FollowerConfig:
         return FollowerConfig(
-            arrive_radius=max(0.0, self._cfg_float(CONFIG_GRID_WAYPOINT_RADIUS, 1.0)),
-            goal_radius=max(0.0, self._cfg_float(CONFIG_GRID_GOAL_RADIUS, 2.0)),
+            arrive_radius=max(0.0, self._grid_cfg_float(CONFIG_GRID_WAYPOINT_RADIUS, 1.0)),
+            goal_radius=max(0.0, self._grid_cfg_float(CONFIG_GRID_GOAL_RADIUS, 2.0)),
             heading_tolerance=self._grid_heading_tolerance(),
-            stuck_window_s=max(0.1, self._cfg_float(CONFIG_GRID_STUCK_WINDOW, 2.5)),
-            stuck_min_distance=max(0.0, self._cfg_float(CONFIG_GRID_STUCK_DISTANCE, 0.35)),
-            risk_cost=max(0.1, self._cfg_float(CONFIG_GRID_RISK_COST, 5.0)),
-            shortcut_radius=max(0.0, self._cfg_float(CONFIG_GRID_SHORTCUT_RADIUS, 1.0)),
+            stuck_window_s=max(0.1, self._grid_cfg_float(CONFIG_GRID_STUCK_WINDOW, 2.5)),
+            stuck_min_distance=max(0.0, self._grid_cfg_float(CONFIG_GRID_STUCK_DISTANCE, 0.35)),
+            risk_cost=max(0.1, self._grid_cfg_float(CONFIG_GRID_RISK_COST, 5.0)),
+            shortcut_radius=max(0.0, self._grid_cfg_float(CONFIG_GRID_SHORTCUT_RADIUS, 1.0)),
             allow_unknown=self.allow_grid_unknown(),
-            margin=max(0, self._cfg_int(CONFIG_GRID_MARGIN, 1)),
-            wall_penalty=max(0.0, self._cfg_float(CONFIG_GRID_WALL_PENALTY, 1.0)),
-            frontier_margin=max(0, self._cfg_int(CONFIG_GRID_FRONTIER_MARGIN, 2)),
-            frontier_penalty=max(0.0, self._cfg_float(CONFIG_GRID_FRONTIER_PENALTY, 1.0)),
-            waypoint_tolerance=max(0.0, self._cfg_float(CONFIG_GRID_WAYPOINT_TOLERANCE, 2.0)),
-            max_expand=max(1, self._cfg_int(CONFIG_GRID_MAX_EXPAND, 400_000)),
+            margin=max(0, self._grid_cfg_int(CONFIG_GRID_MARGIN, 1)),
+            wall_penalty=max(0.0, self._grid_cfg_float(CONFIG_GRID_WALL_PENALTY, 1.0)),
+            frontier_margin=max(0, self._grid_cfg_int(CONFIG_GRID_FRONTIER_MARGIN, 2)),
+            frontier_penalty=max(0.0, self._grid_cfg_float(CONFIG_GRID_FRONTIER_PENALTY, 1.0)),
+            waypoint_tolerance=max(0.0, self._grid_cfg_float(CONFIG_GRID_WAYPOINT_TOLERANCE, 2.0)),
+            max_expand=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_EXPAND, 400_000)),
         )
 
     def _grid_heading_tolerance(self) -> float:
         """读取行走朝向容差，并限制在安全上限以内。"""
-        configured = self._cfg_float(
+        configured = self._grid_cfg_float(
             CONFIG_GRID_HEADING_TOLERANCE,
             GRID_HEADING_TOLERANCE_DEG,
         )
@@ -1106,11 +1081,49 @@ class GridNavigationMixin(MinimapHeadingMixin):
 
     def _grid_turn_tolerance(self) -> float:
         """读取闭环转向容差，并限制在安全上限以内。"""
-        configured = self._cfg_float(
+        configured = self._grid_cfg_float(
             CONFIG_GRID_TURN_TOLERANCE,
             GRID_TURN_TOLERANCE_DEG,
         )
         return min(GRID_TURN_TOLERANCE_DEG, max(0.0, configured))
+
+    def _grid_zip_line_esc_visible(self) -> bool | None:
+        """检测大世界 ESC 模板；存在表示尚未成功登上滑索。"""
+        find_feature = getattr(self, "find_feature", None)
+        if not callable(find_feature):
+            self.log_warning("当前任务无法检测 fL.esc 模板，不能确认是否登上滑索", notify=True)
+            return None
+        try:
+            results = find_feature(
+                feature_name=fL.esc,
+                frame=self.next_frame(),
+                threshold=GRID_ZIP_LINE_ESC_THRESHOLD,
+            )
+        except Exception as exc:
+            self.log_warning(f"检测 fL.esc 模板失败: {exc}", notify=True)
+            return None
+        return bool(results)
+
+    def _reaim_grid_zip_line_for_boarding(self, target_bearing: float) -> bool:
+        """登索失败后重新对正到本段滑索方向，再进行一次登索。"""
+        result = self.turn_to_bearing(
+            target_bearing,
+            tolerance=self._grid_turn_tolerance(),
+            max_rounds=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
+            min_score=self._grid_heading_min_score(),
+        )
+        if not result.get("ok"):
+            self.log_warning(
+                f"登索失败后重新对正未到位：目标={target_bearing:.1f}°，"
+                f"实测={result.get('heading')}，误差={result.get('error')}",
+                notify=True,
+            )
+            return False
+        self.log_info(
+            f"登索失败后已重新对正：目标={target_bearing:.1f}°，"
+            f"实测={result.get('heading')}，误差={result.get('error')}"
+        )
+        return True
 
     def _execute_grid_zip_line(
         self,
@@ -1165,6 +1178,24 @@ class GridNavigationMixin(MinimapHeadingMixin):
                 if not board(direct_wait=5.0, total_time_out=30.0):
                     self.log_warning("未找到「登上滑索架」按钮", notify=True)
                     return False
+                esc_visible = self._grid_zip_line_esc_visible()
+                if esc_visible is None:
+                    return False
+                if esc_visible:
+                    self.log_warning(
+                        "点击登上滑索后仍检测到 fL.esc，判定未登上滑索，重新对正后重试",
+                        notify=True,
+                    )
+                    if not self._reaim_grid_zip_line_for_boarding(target_bearings[0]):
+                        return False
+                    if not board(direct_wait=5.0, total_time_out=30.0):
+                        self.log_warning("重新对正后仍未找到「登上滑索架」按钮", notify=True)
+                        return False
+                    esc_visible = self._grid_zip_line_esc_visible()
+                    if esc_visible is None or esc_visible:
+                        self.log_warning("重新对正后仍检测到 fL.esc，登上滑索失败", notify=True)
+                        return False
+                self.log_info("fL.esc 不存在，已成功登上滑索")
             execute(
                 distances,
                 need_scroll=need_scroll,
@@ -1230,7 +1261,38 @@ class GridNavigationMixin(MinimapHeadingMixin):
 
     def allow_grid_unknown(self) -> bool:
         """当前是否允许穿越未知格（用任务配置，不是库默认）。"""
-        return self._cfg_bool(CONFIG_GRID_ALLOW_UNKNOWN, False)
+        return self._grid_cfg_bool(CONFIG_GRID_ALLOW_UNKNOWN, False)
+
+    def _grid_waypoint_leg_distance(self, step: FollowerStep) -> float:
+        """返回当前航段的规划长度；优先使用前后航点坐标而不是剩余距离。"""
+        follower = self._grid_nav_follower
+        plan_result = getattr(follower, "plan_result", None)
+        waypoints = getattr(plan_result, "waypoints", None) or []
+        index = int(step.waypoint_index or 0)
+        if 0 < index < len(waypoints):
+            previous = waypoints[index - 1]
+            current = waypoints[index]
+            return math.hypot(
+                float(current[0]) - float(previous[0]),
+                float(current[1]) - float(previous[1]),
+            )
+        if step.distance_to_waypoint is None:
+            return 0.0
+        return abs(float(step.distance_to_waypoint))
+
+    def _maybe_start_grid_sprint(self, step: FollowerStep) -> None:
+        """长航段保持 W 时按一次 shift 进入冲刺，避免每拍重复切换。"""
+        if self._grid_nav_sprint_active or not self._grid_nav_w_held:
+            return
+        leg_distance = self._grid_waypoint_leg_distance(step)
+        if leg_distance <= GRID_SPRINT_MIN_SEGMENT_METERS:
+            return
+        self.press_key("shift", after_sleep=0.05)
+        self._grid_nav_sprint_active = True
+        self.log_info(
+            f"当前航段 {leg_distance:.1f}m > {GRID_SPRINT_MIN_SEGMENT_METERS:g}m，"
+            "按住 W 时按 shift 进入冲刺"
+        )
 
     def _set_grid_walking(self, held: bool) -> None:
         """按住或松开 ``W``；本地记录乐观状态，避免重复发送没有返回值的按键事件。"""
@@ -1241,6 +1303,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
             self.send_key_down("w")
         else:
             self.send_key_up("w")
+            self._grid_nav_sprint_active = False
         self._grid_nav_w_held = held
 
     def _should_turn_grid_in_place(self, step: FollowerStep) -> bool:
@@ -1249,7 +1312,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
         if heading_error is not None:
             max_start = max(
                 1.0,
-                self._cfg_float(CONFIG_GRID_MOVING_TURN_MAX_START_DEG, 45.0),
+                self._grid_cfg_float(CONFIG_GRID_MOVING_TURN_MAX_START_DEG, 45.0),
             )
             if abs(float(heading_error)) > max_start:
                 self.log_info(f"转向角 {abs(float(heading_error)):.1f}° > {max_start:.1f}°，改为停车转向")
@@ -1258,7 +1321,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
         if distance is not None:
             min_distance = max(
                 0.0,
-                self._cfg_float(CONFIG_GRID_MOVING_TURN_MIN_DISTANCE, 5.0),
+                self._grid_cfg_float(CONFIG_GRID_MOVING_TURN_MIN_DISTANCE, 5.0),
             )
             if float(distance) < min_distance:
                 self.log_info(f"距目标航点 {float(distance):.2f}m < {min_distance:.2f}m，改为停车转向")
@@ -1278,8 +1341,8 @@ class GridNavigationMixin(MinimapHeadingMixin):
             self.log_warning(f"{CONFIG_YAW_PER_PIXEL} 无效，无法移动转向")
             self._set_grid_walking(False)
             return
-        gain = max(0.1, min(1.0, self._cfg_float(CONFIG_GRID_MOVING_TURN_GAIN, 0.8)))
-        max_angle = max(1.0, self._cfg_float(CONFIG_GRID_MOVING_TURN_MAX_DEG, 25.0))
+        gain = max(0.1, min(1.0, self._grid_cfg_float(CONFIG_GRID_MOVING_TURN_GAIN, 0.8)))
+        max_angle = max(1.0, self._grid_cfg_float(CONFIG_GRID_MOVING_TURN_MAX_DEG, 25.0))
         delta = max(-max_angle, min(max_angle, float(heading_error) * gain))
         dx = round(delta / per_px)
         if dx == 0:
@@ -1365,7 +1428,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
                     GRID_TURN_TOLERANCE_DEG,
                     max(
                         0.0,
-                        self._cfg_float(
+                        self._grid_cfg_float(
                             CONFIG_GRID_TURN_TOLERANCE,
                             GRID_TURN_TOLERANCE_DEG,
                         ),
@@ -1392,7 +1455,7 @@ class GridNavigationMixin(MinimapHeadingMixin):
     ) -> float | None:
         duration = max(
             0.1,
-            self._cfg_float(CONFIG_GRID_RECOVERY_TIME, 0.45) * max(0.1, float(multiplier)),
+            self._grid_cfg_float(CONFIG_GRID_RECOVERY_TIME, 0.45) * max(0.1, float(multiplier)),
         )
         if deadline is not None:
             remaining = deadline - self.active_time()

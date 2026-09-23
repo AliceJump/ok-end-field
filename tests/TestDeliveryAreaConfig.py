@@ -12,9 +12,9 @@ from src.tasks.onetime.DeliveryTask import DeliveryTask
 
 
 class TestDeliveryAreaConfig(unittest.TestCase):
-    def test_delivery_location_records_preserve_names_and_empty_coordinates(self):
+    def test_delivery_location_records_preserve_names_and_coordinates(self):
         self.assertEqual(get_delivery_locations("武陵"), ["武陵城", "试验园区"])
-        self.assertIsNone(get_delivery_location_coordinate("武陵", "武陵城"))
+        self.assertIsNotNone(get_delivery_location_coordinate("武陵", "武陵城"))
 
     def test_delivery_location_coordinate_reads_manual_xyz(self):
         location_config = {

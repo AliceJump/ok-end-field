@@ -2688,3 +2688,201 @@ msgid "每经过多少个航点暂停一次，等待小地图静止自动校准�
 msgstr ""
 "Pause after this many waypoints and wait for stationary minimap auto-"
 "calibration; 0 disables it."
+
+msgid "到达方式"
+msgstr "Arrival method"
+
+msgid "原流程"
+msgstr "Legacy flow"
+
+msgid "网格导航"
+msgstr "Grid navigation"
+
+msgid ""
+"选择取货和送达阶段的到达方式。\n"
+"原流程：使用原有滑索距离序列和蓝色标记搜索。\n"
+"网格导航：按取货点/终点坐标调用小地图网格导航，自动组合滑索和寻路。"
+msgstr ""
+"Choose how to reach pickup and delivery targets.\n"
+"Legacy flow: use the original zip-line distance sequence and blue-marker search.\n"
+"Grid navigation: use minimap grid navigation from pickup and destination coordinates, combining zip lines and pathfinding."
+
+msgid "选择取货和送达阶段的到达方式：原流程使用原有滑索距离序列，网格导航按取货点和终点坐标自动组合滑索与寻路。"
+msgstr ""
+"Choose how to reach pickup and delivery targets: Legacy flow uses the "
+"original zip-line distance sequence; Grid navigation uses pickup and "
+"destination coordinates to combine zip lines and pathfinding."
+
+msgid "A* 扩展节点数上限。触顶以『搜索规模超限』失败（与真的不可达区分），大图或未探索图上需调大"
+msgstr ""
+"A* expansion node limit. Hitting the cap reports search-size exceeded "
+"(distinct from genuinely unreachable). Increase it for large or unexplored "
+"maps."
+
+msgid "content 为空时，从这个账号的地图同步里取 content。留空则用当前登录账号。"
+msgstr ""
+"When content is empty, read this account's map sync content. Leave blank to "
+"use the current logged-in account."
+
+msgid ""
+"从当前官方地图账号读取用户滑索架，把 80m/110m 内的可连接点加入路线搜索。需要全局「Nav Config」配置可用的 "
+"content；没有滑索数据时不改变原路线"
+msgstr ""
+"Read the current official map account's zip lines and add connectable points"
+" within 80m/110m to route search. Requires valid content in the global Nav "
+"Config; without zip line data the original route is unchanged."
+
+msgid "到达航点后保持 W 前进并连续转向，不再先停车转向"
+msgstr ""
+"Keep holding W and steer continuously after reaching a waypoint instead of "
+"stopping to turn first."
+
+msgid "卡住判定时间窗内要求的最小位移（米）"
+msgstr "Minimum displacement required within the stuck detection window (m)."
+
+msgid "可选。地图存在多个 zoom 网格时指定，例如 4"
+msgstr "Optional. Specify when a map has multiple zoom grids, for example 4."
+
+msgid "可选。留空时使用实时位置流里的 mapId 加载导航网格。"
+msgstr "Optional. Leave blank to use mapId from the realtime position stream."
+
+msgid "可选。直接指定 *.grid.npz；填写后不再按地图 id 查找"
+msgstr ""
+"Optional. Specify a *.grid.npz directly; when set, map id lookup is skipped."
+
+msgid "官方地图 hg/check 的 data.content，提供绝对坐标（锚点/真值）。留空则按「真值地图账号」或当前登录账号自动取。"
+msgstr ""
+"Official map hg/check data.content, providing absolute coordinates "
+"(anchor/ground truth). If blank, it is obtained from 'Truth map account' or "
+"the current logged-in account."
+
+msgid "导航网格目录，默认 assets/nav"
+msgstr "Navigation grid directory; default assets/nav."
+
+msgid ""
+"小地图比例尺常数 C：```比例尺 = C / 画面宽度(px)```。分辨率不落在下面三个档位时的兜底，实测 C ≈ 1706.5 "
+"米（即画面整宽对应的世界距离）。"
+msgstr ""
+"Minimap scale constant C: ```scale = C / screen width(px)```. Fallback when "
+"the resolution matches none of the tiers below; measured C ≈ 1706.5 m (world"
+" distance across the full screen width)."
+
+msgid "已知自由格期望远离未知边缘的距离（格）"
+msgstr "Desired distance from unknown edges for known free cells (cells)."
+
+msgid "开启后只输出规划结果和路径日志，不按 W、不转鼠标。"
+msgstr ""
+"When enabled, only output planning results and route logs; do not press W or"
+" move the mouse."
+
+msgid "当前位置落到下一段航点路径附近该距离内时，跳过当前航点直接前往下一点"
+msgstr ""
+"When the current position is within this distance of the next waypoint "
+"segment, skip the current waypoint and head directly to the next one."
+
+msgid "持续行走该时长但位移不足，判定卡住并重规划"
+msgstr ""
+"If displacement remains insufficient for this duration while walking, treat "
+"it as stuck and replan."
+
+msgid "控制循环固定节拍（秒）"
+msgstr "Fixed tick of the control loop (seconds)."
+
+msgid "整次导航的最长运行时间（秒）"
+msgstr "Maximum runtime of one navigation attempt (seconds)."
+
+msgid ""
+"是否允许穿越未知格。默认关闭：未知格视同阻挡格，只在已知可行走区内寻路（找不到路时会明确提示是该开关导致，而不是数据坏了）。只有在这张图已充分探索、且你确实要冒险走未探明区域时才打开"
+msgstr ""
+"Allow route search through unknown cells. Off by default: unknown cells are "
+"treated as blocked and only known walkable areas are searched (failures "
+"explicitly report this switch instead of bad data). Enable only after the "
+"map is well explored and you accept the risk."
+
+msgid "朝向误差小于该值才持续按 W，否则先转向"
+msgstr ""
+"Hold W continuously only when heading error is below this value; otherwise "
+"turn first."
+
+msgid "朝向误差超过该角度时禁止按住 W 画弧，改为停车转向"
+msgstr ""
+"When heading error exceeds this angle, do not hold W while arcing; stop and "
+"turn instead."
+
+msgid "期望离墙距离（格）。不足时只增加规划代价，不会封死窄路；0=关闭偏好"
+msgstr ""
+"Desired distance from walls (cells). If unmet it only adds planning cost and"
+" never blocks narrow paths; 0 disables the preference."
+
+msgid "未取得新进展时允许的最大重规划次数"
+msgstr "Maximum replans allowed while making no new progress."
+
+msgid "每个目标方位最多转几轮；每轮会按一次 W 让角色转身"
+msgstr ""
+"Maximum turn rounds per target bearing; each round presses W once to turn "
+"the character."
+
+msgid "每次脱困时 S/A/D 各按下的时长（秒）"
+msgstr ""
+"Duration to hold each of S/A/D during each recovery attempt (seconds)."
+
+msgid "离墙距离每缺一格增加的代价；越大越偏向安全路线"
+msgstr ""
+"Added cost for each cell short of the desired wall distance; higher values "
+"favor safer routes."
+
+msgid "移动转向每拍使用的角度残差比例，过大可能画弧过弯"
+msgstr ""
+"Fraction of heading error used per moving-turn tick; too high can overshoot "
+"in an arc."
+
+msgid "移动转向每拍最多修正的角度"
+msgstr "Maximum heading correction per moving-turn tick."
+
+msgid "穿越未知格相对可行走格的代价倍数"
+msgstr ""
+"Cost multiplier for crossing unknown cells relative to walkable cells."
+
+msgid "自由格距未知边缘每缺一格增加的代价，减少贴着未探索区域边缘行走"
+msgstr ""
+"Added cost for each cell short of the desired distance from unknown edges, "
+"reducing travel along unexplored borders."
+
+msgid "规划后允许合并航点的最大横向误差；越大航点越少"
+msgstr ""
+"Maximum lateral error allowed when merging waypoints after planning; higher "
+"values produce fewer waypoints."
+
+msgid "规划或导航开始前，等待融合坐标锚定的最长时间。"
+msgstr ""
+"Maximum time to wait for fused-coordinate anchoring before planning or "
+"navigation starts."
+
+msgid "距中间航点小于该值即切到下一个航点（米）"
+msgstr ""
+"Switch to the next waypoint when within this distance of the current "
+"waypoint (m)."
+
+msgid "距最终目标小于该值即判定到达（世界 XZ 平面，米）"
+msgstr ""
+"Consider the final target reached when within this distance (world XZ plane,"
+" m)."
+
+msgid "距目标航点小于该距离时禁止移动转向，避免弧线越过近航点"
+msgstr ""
+"Disable moving turns when this close to the target waypoint to avoid arcing "
+"past it."
+
+msgid "连续卡住时可尝试脱困的最多次数"
+msgstr "Maximum recovery attempts after consecutive stuck detections."
+
+msgid "选择要显示的全局导航配置分类。"
+msgstr "Choose which global navigation config category to display."
+
+msgid "闭环转向要求达到的方位误差（度）"
+msgstr "Heading error required by closed-loop turning (degrees)."
+
+msgid "导航配置：定位真值、分辨率比例尺，以及网格、滑索、规划和行走参数"
+msgstr ""
+"Navigation config: positioning truth, resolution scale, and grid, zip line, "
+"planning, and movement options"

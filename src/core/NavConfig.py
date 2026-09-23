@@ -29,16 +29,61 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from src.core.GridNavConfig import (
+    CONFIG_GRID_ALLOW_UNKNOWN,
+    CONFIG_GRID_CALIBRATION_WAYPOINTS,
+    CONFIG_GRID_DIR,
+    CONFIG_GRID_FILE,
+    CONFIG_GRID_FRONTIER_MARGIN,
+    CONFIG_GRID_FRONTIER_PENALTY,
+    CONFIG_GRID_GOAL_RADIUS,
+    CONFIG_GRID_HEADING_TOLERANCE,
+    CONFIG_GRID_MARGIN,
+    CONFIG_GRID_MAX_EXPAND,
+    CONFIG_GRID_MAX_RECOVERIES,
+    CONFIG_GRID_MAX_REPLANS,
+    CONFIG_GRID_MAX_TURN_ROUNDS,
+    CONFIG_GRID_MOVING_TURN_GAIN,
+    CONFIG_GRID_MOVING_TURN_MAX_DEG,
+    CONFIG_GRID_MOVING_TURN_MAX_START_DEG,
+    CONFIG_GRID_MOVING_TURN_MIN_DISTANCE,
+    CONFIG_GRID_RECOVERY_TIME,
+    CONFIG_GRID_RISK_COST,
+    CONFIG_GRID_SHORTCUT_RADIUS,
+    CONFIG_GRID_STUCK_DISTANCE,
+    CONFIG_GRID_STUCK_WINDOW,
+    CONFIG_GRID_TICK,
+    CONFIG_GRID_TIMEOUT,
+    CONFIG_GRID_TURN_TOLERANCE,
+    CONFIG_GRID_TURN_WHILE_MOVING,
+    CONFIG_GRID_USE_ZIP_LINES,
+    CONFIG_GRID_WALL_PENALTY,
+    CONFIG_GRID_WAYPOINT_RADIUS,
+    CONFIG_GRID_WAYPOINT_TOLERANCE,
+    CONFIG_GRID_ZOOM,
+    DEFAULT_GRID_NAV_CONFIG,
+    GRID_NAV_CONFIG_DESCRIPTION,
+)
+
 __all__ = [
     "DEFAULT_NAV_CONFIG",
     "DEFAULT_SCALE_CONSTANT",
     "NAV_CONFIG_DESCRIPTION",
+    "NAV_CONFIG_GROUP_GRID",
+    "NAV_CONFIG_GROUP_KEY",
+    "NAV_CONFIG_GROUP_LOCALIZATION",
+    "NAV_CONFIG_GROUP_MOVEMENT",
+    "NAV_CONFIG_GROUP_PLANNING",
     "NAV_CONFIG_NAME",
+    "NAV_CONFIG_TYPE",
     "NAV_CONTENT_KEY",
+    "NAV_MAP_ID_KEY",
     "NAV_MATRIX_SUFFIX",
+    "NAV_PLAN_ONLY_KEY",
     "NAV_RESOLUTION_TIERS",
     "NAV_SCALE_CONSTANT_KEY",
     "NAV_SCALE_SUFFIX",
+    "NAV_WAIT_POSITION_TIMEOUT_KEY",
     "NAV_WS_ACCOUNT_KEY",
     "NavProfile",
     "nav_profile_for_width",
@@ -50,6 +95,15 @@ NAV_CONFIG_NAME = "Nav Config"
 NAV_CONTENT_KEY = "真值content"
 NAV_WS_ACCOUNT_KEY = "真值地图账号"
 NAV_SCALE_CONSTANT_KEY = "比例尺常数(米)"
+NAV_MAP_ID_KEY = "地图id(留空自动)"
+NAV_PLAN_ONLY_KEY = "仅规划不移动"
+NAV_WAIT_POSITION_TIMEOUT_KEY = "等待定位超时(秒)"
+
+NAV_CONFIG_GROUP_KEY = "导航配置分类"
+NAV_CONFIG_GROUP_LOCALIZATION = "定位与比例尺"
+NAV_CONFIG_GROUP_GRID = "网格与滑索"
+NAV_CONFIG_GROUP_PLANNING = "规划与代价"
+NAV_CONFIG_GROUP_MOVEMENT = "行走与脱困"
 
 #: 档位名与它对应的画面宽度（像素）。档位键名形如 ``1K比例尺(米/像素)`` / ``1K轴映射(逗号4值)``。
 NAV_RESOLUTION_TIERS: tuple[tuple[str, int], ...] = (("1K", 1920), ("2K", 2560), ("4K", 3840))
@@ -81,13 +135,19 @@ def _tier_defaults() -> dict[str, Any]:
 
 
 DEFAULT_NAV_CONFIG: dict[str, Any] = {
+    NAV_CONFIG_GROUP_KEY: NAV_CONFIG_GROUP_LOCALIZATION,
     NAV_CONTENT_KEY: "",
     NAV_WS_ACCOUNT_KEY: "",
     NAV_SCALE_CONSTANT_KEY: DEFAULT_SCALE_CONSTANT,
     **_tier_defaults(),
+    NAV_MAP_ID_KEY: "",
+    NAV_PLAN_ONLY_KEY: False,
+    NAV_WAIT_POSITION_TIMEOUT_KEY: 30.0,
+    **DEFAULT_GRID_NAV_CONFIG,
 }
 
 NAV_CONFIG_DESCRIPTION: dict[str, str] = {
+    NAV_CONFIG_GROUP_KEY: "选择要显示的全局导航配置分类。",
     NAV_CONTENT_KEY: "官方地图 hg/check 的 data.content，提供绝对坐标（锚点/真值）。"
                      "留空则按「真值地图账号」或当前登录账号自动取。",
     NAV_WS_ACCOUNT_KEY: "content 为空时，从这个账号的地图同步里取 content。"
@@ -106,6 +166,74 @@ NAV_CONFIG_DESCRIPTION: dict[str, str] = {
                                       f"逗号4值 a11,a12,a21,a22。默认 diag(+s, -s)"
                                       f"（地图系像素 -> 世界系米；世界_z 与地图_y 符号相反）。"
         for name, width in NAV_RESOLUTION_TIERS
+    },
+    NAV_MAP_ID_KEY: "可选。留空时使用实时位置流里的 mapId 加载导航网格。",
+    NAV_PLAN_ONLY_KEY: "开启后只输出规划结果和路径日志，不按 W、不转鼠标。",
+    NAV_WAIT_POSITION_TIMEOUT_KEY: "规划或导航开始前，等待融合坐标锚定的最长时间。",
+    **GRID_NAV_CONFIG_DESCRIPTION,
+}
+
+NAV_CONFIG_TYPE = {
+    NAV_CONFIG_GROUP_KEY: {
+        "type": "drop_down",
+        "options": [
+            NAV_CONFIG_GROUP_LOCALIZATION,
+            NAV_CONFIG_GROUP_GRID,
+            NAV_CONFIG_GROUP_PLANNING,
+            NAV_CONFIG_GROUP_MOVEMENT,
+        ],
+        "sub_configs": {
+            NAV_CONFIG_GROUP_LOCALIZATION: [
+                NAV_CONTENT_KEY,
+                NAV_WS_ACCOUNT_KEY,
+                NAV_SCALE_CONSTANT_KEY,
+                *[
+                    f"{name}{suffix}"
+                    for name, _ in NAV_RESOLUTION_TIERS
+                    for suffix in (NAV_SCALE_SUFFIX, NAV_MATRIX_SUFFIX)
+                ],
+            ],
+            NAV_CONFIG_GROUP_GRID: [
+                NAV_MAP_ID_KEY,
+                CONFIG_GRID_DIR,
+                CONFIG_GRID_FILE,
+                CONFIG_GRID_ZOOM,
+                CONFIG_GRID_USE_ZIP_LINES,
+                NAV_PLAN_ONLY_KEY,
+                NAV_WAIT_POSITION_TIMEOUT_KEY,
+            ],
+            NAV_CONFIG_GROUP_PLANNING: [
+                CONFIG_GRID_CALIBRATION_WAYPOINTS,
+                CONFIG_GRID_GOAL_RADIUS,
+                CONFIG_GRID_WAYPOINT_RADIUS,
+                CONFIG_GRID_WAYPOINT_TOLERANCE,
+                CONFIG_GRID_MAX_EXPAND,
+                CONFIG_GRID_ALLOW_UNKNOWN,
+                CONFIG_GRID_RISK_COST,
+                CONFIG_GRID_SHORTCUT_RADIUS,
+                CONFIG_GRID_MARGIN,
+                CONFIG_GRID_WALL_PENALTY,
+                CONFIG_GRID_FRONTIER_MARGIN,
+                CONFIG_GRID_FRONTIER_PENALTY,
+            ],
+            NAV_CONFIG_GROUP_MOVEMENT: [
+                CONFIG_GRID_HEADING_TOLERANCE,
+                CONFIG_GRID_TURN_TOLERANCE,
+                CONFIG_GRID_MAX_TURN_ROUNDS,
+                CONFIG_GRID_TURN_WHILE_MOVING,
+                CONFIG_GRID_MOVING_TURN_GAIN,
+                CONFIG_GRID_MOVING_TURN_MAX_DEG,
+                CONFIG_GRID_MOVING_TURN_MAX_START_DEG,
+                CONFIG_GRID_MOVING_TURN_MIN_DISTANCE,
+                CONFIG_GRID_STUCK_WINDOW,
+                CONFIG_GRID_STUCK_DISTANCE,
+                CONFIG_GRID_MAX_RECOVERIES,
+                CONFIG_GRID_RECOVERY_TIME,
+                CONFIG_GRID_MAX_REPLANS,
+                CONFIG_GRID_TIMEOUT,
+                CONFIG_GRID_TICK,
+            ],
+        },
     },
 }
 

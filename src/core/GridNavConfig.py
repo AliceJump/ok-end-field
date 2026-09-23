@@ -1,0 +1,160 @@
+# -*- coding: utf-8 -*-
+"""全局导航配置中的网格规划、行走与脱困选项。
+
+本模块只定义纯数据，供 :mod:`src.core.NavConfig` 合并到全局 ``Nav Config``，
+同时供网格导航实现读取。不要在这里 import 任务或 GUI，避免全局配置加载时形成循环依赖。
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+__all__ = [
+    "CONFIG_GRID_ALLOW_UNKNOWN",
+    "CONFIG_GRID_CALIBRATION_WAYPOINTS",
+    "CONFIG_GRID_DIR",
+    "CONFIG_GRID_FILE",
+    "CONFIG_GRID_FRONTIER_MARGIN",
+    "CONFIG_GRID_FRONTIER_PENALTY",
+    "CONFIG_GRID_GOAL_RADIUS",
+    "CONFIG_GRID_HEADING_TOLERANCE",
+    "CONFIG_GRID_MARGIN",
+    "CONFIG_GRID_MAX_EXPAND",
+    "CONFIG_GRID_MAX_RECOVERIES",
+    "CONFIG_GRID_MAX_REPLANS",
+    "CONFIG_GRID_MAX_TURN_ROUNDS",
+    "CONFIG_GRID_MOVING_TURN_GAIN",
+    "CONFIG_GRID_MOVING_TURN_MAX_DEG",
+    "CONFIG_GRID_MOVING_TURN_MAX_START_DEG",
+    "CONFIG_GRID_MOVING_TURN_MIN_DISTANCE",
+    "CONFIG_GRID_RECOVERY_TIME",
+    "CONFIG_GRID_RISK_COST",
+    "CONFIG_GRID_SHORTCUT_RADIUS",
+    "CONFIG_GRID_STUCK_DISTANCE",
+    "CONFIG_GRID_STUCK_WINDOW",
+    "CONFIG_GRID_TICK",
+    "CONFIG_GRID_TIMEOUT",
+    "CONFIG_GRID_TURN_TOLERANCE",
+    "CONFIG_GRID_TURN_WHILE_MOVING",
+    "CONFIG_GRID_USE_ZIP_LINES",
+    "CONFIG_GRID_WALL_PENALTY",
+    "CONFIG_GRID_WAYPOINT_RADIUS",
+    "CONFIG_GRID_WAYPOINT_TOLERANCE",
+    "CONFIG_GRID_ZOOM",
+    "DEFAULT_GRID_NAV_CONFIG",
+    "GRID_HEADING_TOLERANCE_DEG",
+    "GRID_NAV_CONFIG_DESCRIPTION",
+    "GRID_NAV_CONFIG_KEYS",
+    "GRID_TURN_TOLERANCE_DEG",
+]
+
+CONFIG_GRID_DIR = "网格目录"
+CONFIG_GRID_FILE = "网格文件(可选)"
+CONFIG_GRID_ZOOM = "网格Zoom(可选)"
+CONFIG_GRID_CALIBRATION_WAYPOINTS = "航点校准间隔(个)"
+CONFIG_GRID_FRONTIER_MARGIN = "未知边缘安全距离(格)"
+CONFIG_GRID_FRONTIER_PENALTY = "未知边缘不足代价(每格)"
+CONFIG_GRID_GOAL_RADIUS = "到达目标半径(米)"
+CONFIG_GRID_WAYPOINT_RADIUS = "航点到达半径(米)"
+CONFIG_GRID_HEADING_TOLERANCE = "行走朝向容差(度)"
+CONFIG_GRID_TURN_TOLERANCE = "转向到位容差(度)"
+CONFIG_GRID_MAX_TURN_ROUNDS = "最大转向轮数"
+CONFIG_GRID_TURN_WHILE_MOVING = "航点移动转向"
+CONFIG_GRID_MOVING_TURN_GAIN = "移动转向增益"
+CONFIG_GRID_MOVING_TURN_MAX_DEG = "移动转向单拍最大角度(度)"
+CONFIG_GRID_MOVING_TURN_MAX_START_DEG = "移动转向最大启用角度(度)"
+CONFIG_GRID_MOVING_TURN_MIN_DISTANCE = "移动转向最小目标距离(米)"
+CONFIG_GRID_MARGIN = "离墙安全边距(格)"
+CONFIG_GRID_WALL_PENALTY = "离墙不足代价(每格)"
+CONFIG_GRID_WAYPOINT_TOLERANCE = "航点简化容差(米)"
+CONFIG_GRID_MAX_EXPAND = "搜索节点上限"
+CONFIG_GRID_ALLOW_UNKNOWN = "允许穿越未知格"
+CONFIG_GRID_RISK_COST = "未知格风险代价"
+CONFIG_GRID_SHORTCUT_RADIUS = "路径点捷径半径(米)"
+CONFIG_GRID_STUCK_WINDOW = "卡住判定时间(秒)"
+CONFIG_GRID_STUCK_DISTANCE = "卡住判定位移(米)"
+CONFIG_GRID_MAX_RECOVERIES = "卡住脱困次数"
+CONFIG_GRID_RECOVERY_TIME = "脱困按键时长(秒)"
+CONFIG_GRID_MAX_REPLANS = "最大重规划次数"
+CONFIG_GRID_TIMEOUT = "导航超时(秒)"
+CONFIG_GRID_TICK = "控制周期(秒)"
+CONFIG_GRID_USE_ZIP_LINES = "使用滑索路径"
+
+GRID_HEADING_TOLERANCE_DEG = 4.0
+GRID_TURN_TOLERANCE_DEG = 4.0
+
+DEFAULT_GRID_NAV_CONFIG: dict[str, Any] = {
+    CONFIG_GRID_DIR: "assets/nav",
+    CONFIG_GRID_FILE: "",
+    CONFIG_GRID_ZOOM: "",
+    CONFIG_GRID_CALIBRATION_WAYPOINTS: 5,
+    CONFIG_GRID_FRONTIER_MARGIN: 2,
+    CONFIG_GRID_FRONTIER_PENALTY: 1.0,
+    CONFIG_GRID_WAYPOINT_TOLERANCE: 2.0,
+    CONFIG_GRID_MAX_EXPAND: 400_000,
+    CONFIG_GRID_GOAL_RADIUS: 2.0,
+    CONFIG_GRID_WAYPOINT_RADIUS: 1.0,
+    CONFIG_GRID_HEADING_TOLERANCE: GRID_HEADING_TOLERANCE_DEG,
+    CONFIG_GRID_TURN_TOLERANCE: GRID_TURN_TOLERANCE_DEG,
+    CONFIG_GRID_MAX_TURN_ROUNDS: 2,
+    CONFIG_GRID_TURN_WHILE_MOVING: True,
+    CONFIG_GRID_MOVING_TURN_GAIN: 0.8,
+    CONFIG_GRID_MOVING_TURN_MAX_DEG: 25.0,
+    CONFIG_GRID_MOVING_TURN_MAX_START_DEG: 45.0,
+    CONFIG_GRID_MOVING_TURN_MIN_DISTANCE: 5.0,
+    CONFIG_GRID_MARGIN: 1,
+    CONFIG_GRID_WALL_PENALTY: 1.0,
+    CONFIG_GRID_ALLOW_UNKNOWN: False,
+    CONFIG_GRID_RISK_COST: 5.0,
+    CONFIG_GRID_SHORTCUT_RADIUS: 1.0,
+    CONFIG_GRID_STUCK_WINDOW: 2.5,
+    CONFIG_GRID_STUCK_DISTANCE: 0.35,
+    CONFIG_GRID_MAX_RECOVERIES: 3,
+    CONFIG_GRID_RECOVERY_TIME: 0.45,
+    CONFIG_GRID_MAX_REPLANS: 8,
+    CONFIG_GRID_TIMEOUT: 180.0,
+    CONFIG_GRID_TICK: 0.2,
+    CONFIG_GRID_USE_ZIP_LINES: True,
+}
+
+GRID_NAV_CONFIG_KEYS: tuple[str, ...] = tuple(DEFAULT_GRID_NAV_CONFIG)
+
+GRID_NAV_CONFIG_DESCRIPTION: dict[str, str] = {
+    CONFIG_GRID_DIR: "导航网格目录，默认 assets/nav",
+    CONFIG_GRID_FILE: "可选。直接指定 *.grid.npz；填写后不再按地图 id 查找",
+    CONFIG_GRID_ZOOM: "可选。地图存在多个 zoom 网格时指定，例如 4",
+    CONFIG_GRID_CALIBRATION_WAYPOINTS: "每经过多少个航点暂停一次，等待小地图静止自动校准；0=关闭",
+    CONFIG_GRID_FRONTIER_MARGIN: "已知自由格期望远离未知边缘的距离（格）",
+    CONFIG_GRID_FRONTIER_PENALTY: "自由格距未知边缘每缺一格增加的代价，减少贴着未探索区域边缘行走",
+    CONFIG_GRID_WAYPOINT_TOLERANCE: "规划后允许合并航点的最大横向误差；越大航点越少",
+    CONFIG_GRID_MAX_EXPAND: "A* 扩展节点数上限。触顶以『搜索规模超限』失败（与真的不可达区分），"
+    "大图或未探索图上需调大",
+    CONFIG_GRID_GOAL_RADIUS: "距最终目标小于该值即判定到达（世界 XZ 平面，米）",
+    CONFIG_GRID_WAYPOINT_RADIUS: "距中间航点小于该值即切到下一个航点（米）",
+    CONFIG_GRID_HEADING_TOLERANCE: "朝向误差小于该值才持续按 W，否则先转向",
+    CONFIG_GRID_TURN_TOLERANCE: "闭环转向要求达到的方位误差（度）",
+    CONFIG_GRID_MAX_TURN_ROUNDS: "每个目标方位最多转几轮；每轮会按一次 W 让角色转身",
+    CONFIG_GRID_TURN_WHILE_MOVING: "到达航点后保持 W 前进并连续转向，不再先停车转向",
+    CONFIG_GRID_MOVING_TURN_GAIN: "移动转向每拍使用的角度残差比例，过大可能画弧过弯",
+    CONFIG_GRID_MOVING_TURN_MAX_DEG: "移动转向每拍最多修正的角度",
+    CONFIG_GRID_MOVING_TURN_MAX_START_DEG: "朝向误差超过该角度时禁止按住 W 画弧，改为停车转向",
+    CONFIG_GRID_MOVING_TURN_MIN_DISTANCE: "距目标航点小于该距离时禁止移动转向，避免弧线越过近航点",
+    CONFIG_GRID_MARGIN: "期望离墙距离（格）。不足时只增加规划代价，不会封死窄路；0=关闭偏好",
+    CONFIG_GRID_WALL_PENALTY: "离墙距离每缺一格增加的代价；越大越偏向安全路线",
+    CONFIG_GRID_ALLOW_UNKNOWN: "是否允许穿越未知格。默认关闭：未知格视同阻挡格，只在已知可行走区内寻路"
+    "（找不到路时会明确提示是该开关导致，而不是数据坏了）。"
+    "只有在这张图已充分探索、且你确实要冒险走未探明区域时才打开",
+    CONFIG_GRID_RISK_COST: "穿越未知格相对可行走格的代价倍数",
+    CONFIG_GRID_SHORTCUT_RADIUS: "当前位置落到下一段航点路径附近该距离内时，跳过当前航点直接前往下一点",
+    CONFIG_GRID_STUCK_WINDOW: "持续行走该时长但位移不足，判定卡住并重规划",
+    CONFIG_GRID_STUCK_DISTANCE: "卡住判定时间窗内要求的最小位移（米）",
+    CONFIG_GRID_MAX_RECOVERIES: "连续卡住时可尝试脱困的最多次数",
+    CONFIG_GRID_RECOVERY_TIME: "每次脱困时 S/A/D 各按下的时长（秒）",
+    CONFIG_GRID_MAX_REPLANS: "未取得新进展时允许的最大重规划次数",
+    CONFIG_GRID_TIMEOUT: "整次导航的最长运行时间（秒）",
+    CONFIG_GRID_TICK: "控制循环固定节拍（秒）",
+    CONFIG_GRID_USE_ZIP_LINES: (
+        "从当前官方地图账号读取用户滑索架，把 80m/110m 内的可连接点加入路线搜索。"
+        "需要全局「Nav Config」配置可用的 content；没有滑索数据时不改变原路线"
+    ),
+}

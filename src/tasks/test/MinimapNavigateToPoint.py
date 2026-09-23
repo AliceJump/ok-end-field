@@ -7,14 +7,13 @@ import math
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
-from src.icons import Icons
-from src.tasks.mixin.grid_navigation_mixin import (
-    CONFIG_GRID_DIR,
-    CONFIG_GRID_FILE,
-    CONFIG_GRID_USE_ZIP_LINES,
-    CONFIG_GRID_ZOOM,
-    GridNavigationMixin,
+from src.core.NavConfig import (
+    NAV_MAP_ID_KEY,
+    NAV_PLAN_ONLY_KEY,
+    NAV_WAIT_POSITION_TIMEOUT_KEY,
 )
+from src.icons import Icons
+from src.tasks.mixin.grid_navigation_mixin import GridNavigationMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
 
@@ -36,29 +35,15 @@ class MinimapNavigateToPoint(ZipLineMixin, GridNavigationMixin, BaseEfTask):
         self.default_config = {
             "目标X": 0.0,
             "目标Z": 0.0,
-            "地图id(留空自动)": "",
-            "仅规划不移动": False,
-            "等待定位超时(秒)": 30.0,
-            **self.grid_navigation_default_config(),
         }
         self.config_description = {
             "目标X": "目标世界坐标 X（米；导航网格列方向）",
             "目标Z": "目标世界坐标 Z（米；导航网格行方向）",
-            "地图id(留空自动)": "可选。留空时使用实时位置流里的 mapId 加载导航网格",
-            "仅规划不移动": "开启后只输出规划结果和路径日志，不按 W、不转鼠标",
-            "等待定位超时(秒)": "规划或导航开始前，等待融合坐标锚定的最长时间",
-            **self.grid_navigation_config_description(),
         }
         self.default_config_group.update({
-            "网格与目标": [
+            "目标坐标": [
                 "目标X",
                 "目标Z",
-                "地图id(留空自动)",
-                CONFIG_GRID_DIR,
-                CONFIG_GRID_FILE,
-                CONFIG_GRID_ZOOM,
-                CONFIG_GRID_USE_ZIP_LINES,
-                "仅规划不移动",
             ],
         })
 
@@ -71,10 +56,10 @@ class MinimapNavigateToPoint(ZipLineMixin, GridNavigationMixin, BaseEfTask):
             float(self.config.get("目标X", 0.0)),
             float(self.config.get("目标Z", 0.0)),
         )
-        map_id = str(self.config.get("地图id(留空自动)", "") or "").strip()
+        map_id = str(self._grid_config_get(NAV_MAP_ID_KEY, "") or "").strip()
         self.log_info(f"开始网格导航: 目标=({goal[0]:.2f}, {goal[1]:.2f})", notify=True)
 
-        if self._cfg_bool("仅规划不移动", False):
+        if self._grid_cfg_bool(NAV_PLAN_ONLY_KEY, False):
             return self._run_plan_only(goal, map_id)
 
         result = self.navigate_grid_to(goal, map_id=map_id)
@@ -97,7 +82,10 @@ class MinimapNavigateToPoint(ZipLineMixin, GridNavigationMixin, BaseEfTask):
         if not getattr(position_service, "minimap_position_ready", True):
             self.log_warning("小地图定位器未完成初始化，请检查全局「Nav Config」和游戏窗口", notify=True)
             return False
-        timeout = max(1.0, self._cfg_float("等待定位超时(秒)", 30.0))
+        timeout = max(
+            1.0,
+            self._grid_cfg_float(NAV_WAIT_POSITION_TIMEOUT_KEY, 30.0),
+        )
         started = self.active_time()
         while self.active_time() - started < timeout:
             frame = self.next_frame()
