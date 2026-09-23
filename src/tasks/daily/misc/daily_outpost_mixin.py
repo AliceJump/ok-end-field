@@ -175,6 +175,10 @@ class DailyOutpostMixin:
                 self.log_info(f"货物不可交易，加入地区排除列表: {exchange_good.name}")
                 continue
 
+            quantity_limit = self._get_outpost_trade_limit(exchange_good.name, num)
+            if quantity_limit is not None:
+                self._limit_outpost_trade_quantity(quantity_limit)
+
             if not self.wait_click_feature(
                 feature=fL.to_max_produce_num,
                 box=self.box_of_screen(0.945, 0.894, 0.973, 0.944),
@@ -184,6 +188,9 @@ class DailyOutpostMixin:
                 excluded_goods.add(exchange_good.name)
                 self.log_info(f"货物不可交易，加入地区排除列表: {exchange_good.name}")
                 continue
+
+            if quantity_limit is not None:
+                self.click_confirm(after_sleep=2)
 
             self.wait_pop_up()
             num = self.read_outpost_ticket_num(outpost_name)
@@ -236,3 +243,57 @@ class DailyOutpostMixin:
 
         self.log_info("据点兑换任务完成")
         return True
+
+    def _get_outpost_trade_limit(self, good_name, tickets):
+        """返回活动货品的券余额对应数量；None 表示普通货品。
+
+        活动结束后清空价格表即可停用此策略，通用交易与调量方法仍可复用。
+        券余额除以单价并向下取整作为调量参考，选择首次达到或超过上限的档位出售。
+        """
+        activity_prices = {
+            get_world_map_text(self.lang, "息壤龙泡泡"): 100,
+            get_world_map_text(self.lang, "重息壤龙泡泡"): 200,
+        }
+        unit_price = activity_prices.get(good_name)
+        return tickets // unit_price if unit_price is not None else None
+
+    def _limit_outpost_trade_quantity(self, limit) -> None:
+        """从 10% 逐档增加数量，首次达到或超过上限即出售，不使用加减号。
+
+        算法：
+        1. 从 10% 到 100% 逐档遍历，每次增加 10%，先点击再读数。
+           相邻档位可能落在当前滑块手柄内，因此先点离目标较远的一端，再点目标档位。
+           10%～50% 先点右端，60%～100% 先点左端；端点跳转只用于定位，不读数也不出售。
+        2. 首次读到有效数量 Q >= limit 时直接出售当前档位；小于上限时继续增加。
+           到 100% 仍未达到上限则出售全部库存，超额确认由调用方处理。
+        3. 读数异常时继续向右尝试；到 100% 仍无法读数时回退到 10% 出售。
+        点击使用整数像素，避免比例舍入改变落点；本方法只负责调量，不返回是否允许出售。
+        """
+        # 数量文字框留足上下边距，兼容数字居中时被一起识别的“份数”字样。
+        quantity_box = self.box_of_screen(2180 / 2560, 1065 / 1440, 2370 / 2560, 1133 / 1440)
+        quantity_pattern = re.compile(r"^\D*(\d+)$")
+        # 根据 2560x1440 原图估计完整轨道 x=2024..2344；2051..2315 仅是滑块中心范围。
+        slider_left, slider_right = 2024 / 2560, 2344 / 2560
+        slider_y = 1150 / 1440
+
+        def read_quantity():
+            result = self.wait_ocr(match=quantity_pattern, box=quantity_box, time_out=2, raise_if_not_found=False)
+            return int(quantity_pattern.search(result[0].name).group(1)) if len(result or []) == 1 else None
+
+        pixel_y = int(slider_y * self.height)
+
+        def click_step(step):
+            reset_position = slider_right if step <= 5 else slider_left  # 先把手柄移到离目标较远的一端。
+            self.click(int(reset_position * self.width), pixel_y, name="outpost_trade_quantity_reset", after_sleep=0.2)
+            position = slider_left + (slider_right - slider_left) * step / 10
+            self.click(int(position * self.width), pixel_y, name="outpost_trade_quantity", after_sleep=2)
+
+        for step in range(1, 11):
+            click_step(step)
+            current = read_quantity()
+            self.log_info(f"据点调量：{step * 10}% 档，可售 {limit}，当前数量 {current}")
+            if current is not None and current > 0 and (current >= limit or step == 10):
+                self.log_info(f"据点调量：出售 {step * 10}% 档")
+                return
+        click_step(1)
+        self.log_info("据点调量：读数异常，回退到 10% 档出售")
