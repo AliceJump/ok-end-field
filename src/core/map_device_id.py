@@ -50,17 +50,28 @@ import time
 import urllib.request
 from pathlib import Path
 
-from ok.util.file import ensure_dir_for_file, get_relative_path, write_json_file
+from ok.util.file import ensure_dir_for_file, write_json_file
 from websockets.sync.client import connect as ws_connect
+
+from src.core.paths import config_path
 
 MAP_PAGE_URL = "https://game.skland.com/map/endfield"
 _DEVICEPROFILE_URL = "https://fp-it.portal101.cn/deviceprofile/v4"
 
 _SHUMEI_LS_KEY = "SK_SHUMEI_DEVICE_ID_KEY"
-_STORE_PATH = get_relative_path("configs", "map_device_id.json")
-_PAYLOAD_STORE_PATH = get_relative_path("configs", "map_registration_payload.json")
 _DID_MIN_LENGTH = 16
 _MINT_TIMEOUT_SECONDS = 90.0
+
+
+def get_store_path() -> str:
+    """设备 ID 存储文件路径；目录名取 config_folder，避免写死 configs。"""
+    return config_path("map_device_id.json")
+
+
+def get_payload_store_path() -> str:
+    """设备注册载荷存储文件路径；目录名取 config_folder。"""
+    return config_path("map_registration_payload.json")
+
 
 _BROWSER_CANDIDATES = (
     r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
@@ -91,7 +102,7 @@ _RETRY_INTERVAL_SECONDS = 30.0
 def load_stored_device_id() -> str:
     """读取已持久化的自铸设备ID；不存在或格式非法时返回空串。"""
     try:
-        with open(_STORE_PATH, encoding="utf-8") as fp:
+        with open(get_store_path(), encoding="utf-8") as fp:
             data = json.load(fp)
     except (OSError, ValueError):
         return ""
@@ -101,9 +112,9 @@ def load_stored_device_id() -> str:
 
 def save_stored_device_id(device_id: str) -> None:
     """持久化自铸设备ID。"""
-    ensure_dir_for_file(_STORE_PATH)
+    ensure_dir_for_file(get_store_path())
     write_json_file(
-        _STORE_PATH,
+        get_store_path(),
         {
             "id": device_id,
             "minted_at": int(time.time() * 1000),
@@ -117,7 +128,7 @@ def clear_stored_device_id() -> None:
     _cached_device_id = ""
     _failed_at = 0.0
     try:
-        Path(_STORE_PATH).unlink()
+        Path(get_store_path()).unlink()
     except OSError as exc:
         del exc
 
@@ -125,7 +136,7 @@ def clear_stored_device_id() -> None:
 def load_captured_payload() -> dict:
     """读取浏览器铸造时顺带捕获的新鲜注册载荷；无则返回空 dict。"""
     try:
-        with open(_PAYLOAD_STORE_PATH, encoding="utf-8") as fp:
+        with open(get_payload_store_path(), encoding="utf-8") as fp:
             data = json.load(fp)
     except (OSError, ValueError):
         return {}
@@ -138,9 +149,9 @@ def save_captured_payload(payload: dict) -> None:
     """保存浏览器捕获的注册载荷，供后续纯 HTTP 铸造复用。"""
     if not (isinstance(payload, dict) and payload.get("ep") and payload.get("data")):
         return
-    ensure_dir_for_file(_PAYLOAD_STORE_PATH)
+    ensure_dir_for_file(get_payload_store_path())
     write_json_file(
-        _PAYLOAD_STORE_PATH,
+        get_payload_store_path(),
         {
             **payload,
             "captured_at": int(time.time() * 1000),
@@ -204,10 +215,14 @@ _RUNNER_PATH = Path(__file__).with_name("smsdk_runner.mjs")
 # 首次使用时下载到 configs/ 缓存（该目录已被 gitignore）。
 _SDK_JS_URL = "https://bbs.hycdn.cn/public/skland/others/skland-bbs/60e9c30fb0b1d1ca574c4522ca06fc7b.js"
 _SDK_JS_NAME = "smsdk_60e9c30fb0b1d1ca574c4522ca06fc7b.js"
-_SDK_JS_CACHE = get_relative_path("configs", _SDK_JS_NAME)
 _SDK_JS_SHA256 = "2dbd8228c80c13e05c05e2e3093fd1c5935fd62937a1b0add7c6fe28a1905f9f"
 _SDK_JS_MIN_SIZE = 200_000
 _DID_OUTPUT_RE = re.compile(r"^DID=(.+)$", re.MULTILINE)
+
+
+def get_sdk_js_cache_path() -> str:
+    """SMSdk 脚本缓存路径；目录名取 config_folder。"""
+    return config_path(_SDK_JS_NAME)
 
 
 def _sdk_js_sha256(path: str) -> str:
@@ -237,14 +252,14 @@ def _download_sdk_js(dest: str) -> None:
 
 
 def _ensure_sdk_js() -> str:
-    if Path(_SDK_JS_CACHE).is_file():
+    if Path(get_sdk_js_cache_path()).is_file():
         try:
-            if _sdk_js_sha256(_SDK_JS_CACHE) == _SDK_JS_SHA256:
-                return _SDK_JS_CACHE
+            if _sdk_js_sha256(get_sdk_js_cache_path()) == _SDK_JS_SHA256:
+                return get_sdk_js_cache_path()
         except OSError:
             pass
-    _download_sdk_js(_SDK_JS_CACHE)
-    return _SDK_JS_CACHE
+    _download_sdk_js(get_sdk_js_cache_path())
+    return get_sdk_js_cache_path()
 
 
 def mint_device_id_node(timeout: float = _MINT_TIMEOUT_SECONDS) -> str:
@@ -581,8 +596,8 @@ def main() -> int:
         clear_stored_device_id()
     current = ensure_map_device_id()
     print(current)
-    print(f"dId 存储位置: {_STORE_PATH}")
-    print(f"载荷存储位置: {_PAYLOAD_STORE_PATH}")
+    print(f"dId 存储位置: {get_store_path()}")
+    print(f"载荷存储位置: {get_payload_store_path()}")
     return 0
 
 
