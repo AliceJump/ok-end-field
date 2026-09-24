@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import time
+from collections import OrderedDict
 
 from ok import Logger, og
 from PySide6.QtCore import (
@@ -57,6 +58,10 @@ POP_MAX_HEIGHT_RATIO = 0.66
 SHOW_DELAY_MS = 0
 HIDE_DELAY_MS = 120
 SUPPRESS_MS = 1200
+
+# 渲染缓存上限（按任务名 LRU）：悬停轮切时复用已建好的内容卡，
+# 跳过 widget 重建与样式解析——这是轮切卡顿的主要来源
+RENDER_CACHE_LIMIT = 8
 
 logger = Logger.get_logger(__name__)
 # TODO(diag): 临时诊断日志，弹层"位置乱跳"问题定位后整体删除（搜 diag 标记）
@@ -100,6 +105,23 @@ def _build_preview(task):
     )
 
 
+def _task_fingerprint(task):
+    """任务内容摘要：config/default/config_type/group 任一值或结构变化
+    都会改变指纹 → 渲染缓存失效重建，保证弹层显示的不是过期值。"""
+    parts = [str(getattr(og.app, "lang", "") or "")]
+    for obj in (task.config, task.config_type,
+                getattr(task, "default_config", None),
+                getattr(task, "default_config_group", None)):
+        if not obj:
+            parts.append(())
+            continue
+        try:
+            parts.append(tuple(sorted((k, repr(v)) for k, v in obj.items())))
+        except Exception:
+            parts.append((id(obj),))
+    return tuple(parts)
+
+
 class ParamPreviewPopup(QWidget):
     """frameless Qt.ToolTip 浮层：半透明圆角面板 + 限高内滚的分组概要。"""
 
@@ -118,8 +140,10 @@ class ParamPreviewPopup(QWidget):
         self._root_layout.addWidget(self._panel)
 
         shadow = QGraphicsDropShadowEffect(self)
-        shadow.setBlurRadius(28)
-        shadow.setOffset(0, 5)
+        # blur 28 → 16：阴影重绘成本随半径平方增长，16 在视觉上几乎无差，
+        # 但悬停轮切（每帧 move + opacity 动画）时明显更流畅
+        shadow.setBlurRadius(16)
+        shadow.setOffset(0, 4)
         from PySide6.QtGui import QColor
 
         shadow.setColor(QColor(0, 0, 0, 90))
@@ -144,6 +168,14 @@ class ParamPreviewPopup(QWidget):
         self._content_layout.setSpacing(8)
         self._scroll.setWidget(self._content)
         self._panel_layout.addWidget(self._scroll)
+
+        # ── 渲染缓存：任务名 -> (指纹, 内容卡列表) ─────────────────
+        # 布局上挂的卡永远属于 _active_key 任务；切走时 _stow_current_cards
+        # 把它们取下存回缓存，命中时直接回挂（零 widget 创建）
+        self._render_cache = OrderedDict()
+        self._active_key = None
+        self._active_fp = None
+        self._style_key = None
 
         # ── 动效（对齐扩展 .gpop：160ms 淡入 + 4px 上浮，收起快速淡出）──
         self._show_anim = QPropertyAnimation(self, b"windowOpacity", self)
@@ -172,34 +204,60 @@ class ParamPreviewPopup(QWidget):
         # 会把下面 _position 定好的新位置又拉回去（位置乱跳）
         self._cancel_animations()
         task = card.task
-        preview = _build_preview(task)
-        if preview is None:
-            return False
+        key = task.name
+        fp = _task_fingerprint(task)
+        self._stow_current_cards()
 
-        colors = _colors()
-        self._apply_stylesheet(colors)
+        entry = self._render_cache.get(key)
+        if entry is not None and entry[0] == fp:
+            # 缓存命中：直接回挂已建好的内容卡，跳过全部 widget 重建
+            self._render_cache.pop(key)
+            for w in entry[1]:
+                self._content_layout.addWidget(w)  # 自动 reparent 回 content
+                w.show()
+        else:
+            preview = _build_preview(task)
+            if preview is None:
+                self._render_cache.pop(key, None)
+                return False
+            self._render_cache.pop(key, None)  # 指纹已过期，弃用旧卡
+            for block in preview["blocks"]:
+                group_card = self._make_group_card(block)
+                # 弹层可见状态下重建的新卡片带 hidden 标志，QLayout 会把它当
+                # 空项（item hint=0，content 高度量成 0 → 窗口塌成一行），
+                # 必须先 show() 清标志再量高；父级隐藏时 show() 不会真显示
+                group_card.show()
+                self._content_layout.addWidget(group_card)
+        self._active_key = key
+        self._active_fp = fp
+
+        self._apply_stylesheet_once()
         self._title_label.setText(og.app.tr(task.name))
 
-        while self._content_layout.count():
-            item = self._content_layout.takeAt(0)
-            widget = item.widget()
-            if widget is not None:
-                widget.deleteLater()
-
-        # ⚠️ 循环变量绝不能叫 card——参数 card 是任务卡，下面的
-        # _position(card) 靠它定位。曾因变量撞名把弹层内部的内容卡
-        # 传给 _position，其全局坐标又由弹层自身位置决定，形成自反馈
-        # 回路：弹层位置逐次向右漂移、最终被右缘钳位"停"在屏幕最右边
-        for block in preview["blocks"]:
-            group_card = self._make_group_card(block)
-            # 弹层可见状态下重建的新卡片带 hidden 标志，QLayout 会把它当
-            # 空项（item hint=0，content 高度量成 0 → 窗口塌成一行），
-            # 必须先 show() 清标志再量高；父级隐藏时 show() 不会真显示
-            group_card.show()
-            self._content_layout.addWidget(group_card)
-
+        # ⚠️ _position 必须以任务卡定位——曾因循环变量与参数 card 撞名，
+        # 把弹层内部内容卡传进来，其全局坐标由弹层自身位置决定，形成
+        # 自反馈回路：弹层位置逐次向右漂移、最终被右缘钳位"停"在屏幕最右边
         self._position(card)
         return True
+
+    def _stow_current_cards(self):
+        """把布局上当前任务的内容卡取下存回渲染缓存（LRU 超限回收）。"""
+        if self._active_key is None:
+            return
+        cards = []
+        while self._content_layout.count():
+            item = self._content_layout.takeAt(0)
+            w = item.widget()
+            if w is not None:
+                w.setParent(None)  # 脱离弹层，隐藏待复用
+                cards.append(w)
+        self._render_cache[self._active_key] = (self._active_fp, cards)
+        while len(self._render_cache) > RENDER_CACHE_LIMIT:
+            _, (_, old_cards) = self._render_cache.popitem(last=False)
+            for w in old_cards:
+                w.deleteLater()
+        self._active_key = None
+        self._active_fp = None
 
     def _make_group_card(self, block):
         """一个组块 = 一张圆角边框卡（静态组 / 条件组 / 其他参数）。"""
@@ -272,6 +330,15 @@ class ParamPreviewPopup(QWidget):
                 # 嵌套子组（depth < cap）：同款组卡
                 container.addWidget(self._make_group_card(node))
         return container
+
+    def _apply_stylesheet_once(self):
+        """样式表只在主题切换时重设（setStyleSheet 每次都重新解析，
+        悬停轮切时是纯浪费）。"""
+        key = bool(isDarkTheme())
+        if key == self._style_key:
+            return
+        self._style_key = key
+        self._apply_stylesheet(_colors())
 
     def _apply_stylesheet(self, c):
         self._panel.setStyleSheet(f"""
