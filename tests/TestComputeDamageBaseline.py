@@ -90,6 +90,17 @@ class TestSkillMultiplier(unittest.TestCase):
         mult, _, _ = mod._skill_multiplier(skill)
         self.assertEqual(mult, 0.0)
 
+    def test_buff_labels_do_not_add_to_damage_multiplier(self):
+        skill = {"rank_stats": self._rows([
+            ("初始伤害倍率", "140%"),
+            ("攻击力提升", "10%"),
+            ("攻击伤害提高", "12%"),
+            ("攻击倍率增加", "15%"),
+            ("暴击伤害倍率", "20%"),
+        ])}
+        mult, _, _ = mod._skill_multiplier(skill)
+        self.assertEqual(mult, 140.0)
+
 
 class TestCollectStats(unittest.TestCase):
     def test_set_effect_first_clause_only(self):
@@ -108,6 +119,33 @@ class TestCollectStats(unittest.TestCase):
         self.assertIn(("pct", "all_damage"), kinds)
         self.assertIn(("pct", "ult_charge"), kinds)
         self.assertEqual(sum(1 for m in mods if m["kind"] == "taken_reduction"), 1)
+
+
+class TestEquipmentStats(unittest.TestCase):
+    def test_refinement_percentage_replaces_lv70_value(self):
+        piece = {"lv70_stats": {"物理伤害加成": "+5%", "暴击率加成": "+12.5%"},
+                 "refinement_max": {"物理伤害加成": "+9%"}}
+        self.assertCountEqual(mod._piece_pct_mods(piece),
+                              [("elem_物理", 9.0), ("crit_rate", 12.5)])
+
+    def test_non_integer_lv70_value_is_not_flat_stat(self):
+        piece = {"lv70_stats": {"攻击力": "+5%", "力量": 42},
+                 "refinement_max": {"力量": "+51"}}
+        self.assertIsNone(mod._piece_stat(piece, "攻击力"))
+        self.assertEqual(mod._piece_stat(piece, "力量"), 51)
+
+    def test_set_effect_requires_three_matching_pieces(self):
+        piece = {"set": "主套", "set_effect": "3件套组效果：装备者攻击力+15%。"}
+        equipments = {"甲": piece, "乙": piece, "丙": piece,
+                      "异套": {"set": "副套", "set_effect": "3件套组效果：装备者攻击力+50%。"}}
+        char = {"name": "测试", "element": "物理", "skills": []}
+        for pieces, expected in [(["甲", "乙", "异套", None], 0),
+                                 (["甲", "乙", "丙", "异套"], 15),
+                                 (["甲", "乙", "missing", None], 0)]:
+            with self.subTest(pieces=pieces):
+                build = {"equipment": {"set_main": "主套", "pieces": pieces}}
+                result = mod.compute_character("test", char, build, {}, equipments, {}, {})
+                self.assertEqual(result["panel"]["atk_pct"], expected)
 
 
 if __name__ == "__main__":
