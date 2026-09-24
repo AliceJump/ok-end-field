@@ -60,9 +60,7 @@ class TestOutpostExchange(unittest.TestCase):
                 )
                 DailyOutpostMixin._limit_outpost_trade_quantity(feature, limit)
                 # 从远端跳回 10%，避免起点落在滑块手柄内。
-                self.assertEqual(
-                    [c.args[:2] for c in feature.click.call_args_list[:2]], [(2344, 1150), (2056, 1150)]
-                )
+                self.assertEqual([c.args[:2] for c in feature.click.call_args_list[:2]], [(2344, 1150), (2056, 1150)])
                 self.assertEqual(feature.click.call_args_list[-1].args[:2], (expected_x, 1150))
                 self.assertEqual(feature.wait_ocr.call_count, len(readings))
 
