@@ -21,7 +21,7 @@ from __future__ import annotations
 
 import time
 
-from ok import og
+from ok import Logger, og
 from PySide6.QtCore import (
     QEasingCurve,
     QEvent,
@@ -57,6 +57,9 @@ POP_MAX_HEIGHT_RATIO = 0.66
 SHOW_DELAY_MS = 0
 HIDE_DELAY_MS = 120
 SUPPRESS_MS = 1200
+
+logger = Logger.get_logger(__name__)
+# TODO(diag): 临时诊断日志，弹层"位置乱跳"问题定位后整体删除（搜 diag 标记）
 
 _LIGHT = {
     "panel_bg": "rgba(250, 250, 250, 244)",
@@ -183,13 +186,17 @@ class ParamPreviewPopup(QWidget):
             if widget is not None:
                 widget.deleteLater()
 
+        # ⚠️ 循环变量绝不能叫 card——参数 card 是任务卡，下面的
+        # _position(card) 靠它定位。曾因变量撞名把弹层内部的内容卡
+        # 传给 _position，其全局坐标又由弹层自身位置决定，形成自反馈
+        # 回路：弹层位置逐次向右漂移、最终被右缘钳位"停"在屏幕最右边
         for block in preview["blocks"]:
-            card = self._make_group_card(block)
+            group_card = self._make_group_card(block)
             # 弹层可见状态下重建的新卡片带 hidden 标志，QLayout 会把它当
             # 空项（item hint=0，content 高度量成 0 → 窗口塌成一行），
             # 必须先 show() 清标志再量高；父级隐藏时 show() 不会真显示
-            card.show()
-            self._content_layout.addWidget(card)
+            group_card.show()
+            self._content_layout.addWidget(group_card)
 
         self._position(card)
         return True
@@ -325,20 +332,25 @@ class ParamPreviewPopup(QWidget):
 
     def _position(self, card):
         """左缘贴卡右缘外 8px、顶对齐卡片；屏幕几何钳位，永不向左回退。"""
-        screen = QGuiApplication.screenAt(card.mapToGlobal(card.rect().center()))
+        center_global = card.mapToGlobal(card.rect().center())
+        screen = QGuiApplication.screenAt(center_global)
+        screen_fallback = screen is None
         if screen is None:
             screen = QGuiApplication.primaryScreen()
         avail = screen.availableGeometry()
 
+        card_top_left = card.mapToGlobal(card.rect().topLeft())
         card_top_right = card.mapToGlobal(card.rect().topRight())
         preferred_left = card_top_right.x() + POP_MARGIN
         avail_width = avail.right() - preferred_left - POP_MARGIN
         if avail_width >= POP_MIN_WIDTH:
             width = max(POP_MIN_WIDTH, min(POP_WIDTH, avail_width))
+            h_branch = "normal"
         else:
             # 连下限都放不下：允许少量压卡（悬停即走），仍在屏幕右缘内
             width = POP_MIN_WIDTH
             preferred_left = avail.right() - width - POP_MARGIN
+            h_branch = "right-clamp"
 
         self.setFixedWidth(width + 24)  # 两侧阴影留白
 
@@ -354,16 +366,43 @@ class ParamPreviewPopup(QWidget):
                     + self._title_label.sizeHint().height())
 
         max_height = int(avail.height() * POP_MAX_HEIGHT_RATIO)
-        scroll_h = min(max(1, self._content.sizeHint().height()),
-                       max(60, max_height - overhead))
+        content_h = self._content.sizeHint().height()
+        scroll_h = min(max(1, content_h), max(60, max_height - overhead))
         self._scroll.setFixedHeight(scroll_h)
         self.setFixedHeight(scroll_h + overhead)
 
         left = preferred_left - 12  # 面板左缘 = 弹层窗口左缘 + 阴影留白
         top = card_top_right.y() - 12
-        top = max(avail.top() + POP_MARGIN,
-                  min(top, avail.bottom() - self.height() - POP_MARGIN))
+        clamped_top = max(avail.top() + POP_MARGIN,
+                          min(top, avail.bottom() - self.height() - POP_MARGIN))
+        if clamped_top > top:
+            v_branch = "top-clamp"
+        elif clamped_top < top:
+            v_branch = "bottom-clamp"
+        else:
+            v_branch = "normal"
+        top = clamped_top
         self.move(left, top)
+
+        # TODO(diag): 定位全链路日志——区分「输入坐标异常」与「计算/钳位异常」
+        task = getattr(card, "task", None)
+        window = card.window()
+        # 注意：框架 Logger.debug(message) 只收单参数，不支持 %s 惰性格式化
+        logger.debug(
+            f"diag-position: task={getattr(task, 'name', '?')!r} "
+            f"card_geom={card.geometry()} card_visible={card.isVisible()} "
+            f"card_vis_to_win={card.isVisibleTo(window) if window is not None else None} "
+            f"card_tl_global=({card_top_left.x()},{card_top_left.y()}) "
+            f"card_tr_global=({card_top_right.x()},{card_top_right.y()}) "
+            f"card_center_global=({center_global.x()},{center_global.y()}) "
+            f"popup_geom={self.geometry()} "
+            f"window_geom={window.geometry() if window is not None else None} "
+            f"screen_geom={screen.geometry()} avail={avail} "
+            f"screen_fallback={screen_fallback} h_branch={h_branch} "
+            f"v_branch={v_branch} preferred_left={preferred_left} "
+            f"avail_width={avail_width} width={width} content_h={content_h} "
+            f"top_raw={card_top_right.y() - 12} final=({left},{top}) "
+            f"pos_after_move=({self.x()},{self.y()})")
 
     # ── 悬停保持 ─────────────────────────────────────────────
 
@@ -375,6 +414,7 @@ class ParamPreviewPopup(QWidget):
         self.setWindowOpacity(1.0)
 
     def showEvent(self, event):
+        pos_in_show = self.pos()  # TODO(diag): 与 position 设置值对比
         super().showEvent(event)
         # 每次弹出：透明度 0→1 + 从下方 4px 上浮到位（扩展 cubic-bezier 回弹
         # 在 Qt 里用 OutCubic 近似，4px 幅度下观感一致）
@@ -387,6 +427,11 @@ class ParamPreviewPopup(QWidget):
         self._slide_anim.setEndValue(target)
         self._show_anim.start()
         self._slide_anim.start()
+        # TODO(diag): pos_in_show ≠ anim_target 说明 show 时窗口位置被重置过
+        logger.debug(
+            f"diag-show: pos_in_showEvent=({pos_in_show.x()},{pos_in_show.y()}) "
+            f"anim_target=({target.x()},{target.y()}) "
+            f"geometry={self.geometry()} opacity={self.windowOpacity():.2f}")
 
     def hide_animated(self):
         """收起动效：90ms 淡出后真正隐藏；不可见时直接返回。"""
