@@ -3,7 +3,7 @@
 交互与定位规范来自设计文档
 ``ok-script-toolkit/.workbuddy/design/eye-popup-design.md`` 1.2 / 2.2 节：
 
-- 触发：**悬停整张任务卡** 500ms 弹出（无按钮），弹层**向右展开**
+- 触发：**悬停整张任务卡立即弹出**（无按钮），弹层**向右展开**
   （左缘贴卡右缘外 8px、顶对齐卡片）；空间不足先收窄（250 → 下限
   180px）；钳位用 ``QScreen.availableGeometry()``（弹层是独立顶级窗口，
   可画出主窗口边界）；连屏幕都放不下才允许少量压卡，**永不向左回退**。
@@ -51,8 +51,10 @@ POP_MIN_WIDTH = 180
 POP_MARGIN = 8
 POP_MAX_HEIGHT_RATIO = 0.66
 
-# 悬停节奏：整卡悬停 500ms 弹出；离开后 120ms 收起；切 tab 抑制 1.2s
-SHOW_DELAY_MS = 500
+# 悬停节奏：整卡悬停**立即弹出**（对齐扩展 mouseenter 即显）；
+# 离开后 120ms 收起；切 tab 抑制 1.2s。SHOW_DELAY_MS=0 仍保留定时器，
+# Enter+Leave 同批到达时定时器先启后停，天然防抖
+SHOW_DELAY_MS = 0
 HIDE_DELAY_MS = 120
 SUPPRESS_MS = 1200
 
@@ -488,7 +490,7 @@ class _CardHoverFilter(QObject):
 
 
 def install_param_preview_hover(card):
-    """给任务卡装悬停弹出：悬停整卡 500ms → 弹层向右展开（无按钮）。"""
+    """给任务卡装悬停弹出：悬停整卡立即弹出层、向右展开（无按钮）。"""
     if getattr(card, "_param_preview_hover", None) is not None:
         return
     if _build_preview(card.task) is None:
