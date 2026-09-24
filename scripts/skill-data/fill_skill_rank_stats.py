@@ -6,8 +6,11 @@
    ``{"levels": [...], "rows": [{"label": str, "values": [str]}]}``
 2. 将技能 description 同步为官方原文单行拼接版（仓库惯例：描述不含
    换行、不含 <br>、不嵌数值）。
-3. 只更新上述两个字段；其余字段（effects / enhancements 等）不动。
-4. 加载端 src/data/character_skills.py 不读取 rank_stats，运行时不受影响。
+3. 提取「干员属性」面板（干员等级 × 六维），写入角色 JSON 头部的
+   ``base_stats``：``{"levels": [...], "rows": {属性名: [各等级值]}}``。
+4. 只更新上述字段；其余字段（effects / enhancements 等）不动。
+5. 加载端 src/data/character_skills.py 不读取 rank_stats / base_stats，
+   运行时不受影响；skill_rotation（实际伤害排序）读取两者。
 
 匹配键为 (skill_type, name)。同名技能多形态（如「诀」的阵诀·智/意）：描述合并全形态文本，主形态表写入 rank_stats，其余进 rank_stats_variants。
 默认 dry-run，--write 才落盘。
@@ -62,13 +65,41 @@ def _rank_stats(rank_table: list[list[str]]) -> dict | None:
     return {"levels": levels, "rows": rows} if rows else None
 
 
+def _base_stats(document_map: dict) -> dict | None:
+    """提取「干员属性」面板：干员等级 × 六维（生命/攻击/力量/敏捷/智识/意志）。
+
+    属性表是独立 document（不在战斗 widget 内），按表头「干员等级」定位。
+    找不到时返回 None。
+    """
+    for doc_id, doc in document_map.items():
+        if "干员等级" not in json.dumps(doc, ensure_ascii=False):
+            continue
+        for table in _document_tables(document_map, doc_id):
+            if not table or not table[0] or table[0][0] != "干员等级":
+                continue
+            levels = [cell.strip() for cell in table[0][1:]]
+            if not any(levels):
+                continue
+            rows: dict[str, list[str]] = {}
+            for row in table[1:]:
+                if not row or not str(row[0]).strip():
+                    continue
+                label = str(row[0]).strip()
+                values = [cell.strip() for cell in row[1:]]
+                values += [""] * (len(levels) - len(values))
+                rows[label] = values[: len(levels)]
+            if "攻击力" in rows:
+                return {"levels": levels, "rows": rows}
+    return None
+
+
 def fill_operator(detail_path: Path, skills_by_file: dict[Path, dict]) -> dict:
     """解析一个干员快照，返回改动摘要（不落盘）。"""
     payload = json.loads(detail_path.read_text(encoding="utf-8"))
     item = payload.get("data", {}).get("item", {})
     name = str(item.get("name") or detail_path.stem)
     summary = {"name": name, "matched": False, "skills_updated": 0, "desc_updated": 0,
-               "variants": [], "unmatched": [], "preview": False}
+               "stats_updated": 0, "variants": [], "unmatched": [], "preview": False}
 
     document = item.get("document") or {}
     widget = _combat_widget(document)
@@ -136,6 +167,12 @@ def fill_operator(detail_path: Path, skills_by_file: dict[Path, dict]) -> dict:
                 summary["skills_updated"] += 1
             if variants:
                 summary["variants"].append(f"{skill_type}/{skill_name}多形态×{len(tabs)}")
+
+    # 干员属性面板（base_stats）：与技能无关联，直接挂角色头部
+    base_stats = _base_stats(document_map)
+    if base_stats is not None and base_stats != character.get("base_stats"):
+        character["base_stats"] = base_stats
+        summary["stats_updated"] = 1
     return summary
 
 
@@ -158,18 +195,20 @@ def main() -> int:
         paths[key] = path
         skills_by_file[key] = data
 
-    totals = {"matched": 0, "preview": 0, "no_file": 0, "skills_updated": 0, "desc_updated": 0}
+    totals = {"matched": 0, "preview": 0, "no_file": 0, "skills_updated": 0, "desc_updated": 0, "stats_updated": 0}
     for entry in manifest.get("operators", []):
         summary = fill_operator(snapshot_dir / str(entry["detail_file"]), skills_by_file)
         totals["matched" if summary["matched"] else ("preview" if summary["preview"] else "no_file")] += 1
         totals["skills_updated"] += summary["skills_updated"]
         totals["desc_updated"] += summary["desc_updated"]
+        totals["stats_updated"] += summary["stats_updated"]
         notes = []
         if summary["variants"]:
             notes.append(f"变体跳过: {', '.join(summary['variants'])}")
         if summary["unmatched"]:
             notes.append(f"本地无同名技能: {', '.join(summary['unmatched'])}")
         print(f"{summary['name']}: 技能表+{summary['skills_updated']} 描述+{summary['desc_updated']}"
+              f" 属性+{summary['stats_updated']}"
               + (f"  [{' | '.join(notes)}]" if notes else ""))
 
     print(f"\n快照 {snapshot}: {totals}")
