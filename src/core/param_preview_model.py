@@ -237,7 +237,7 @@ def build_param_preview(config, config_type, default_config, default_config_grou
             for child in rule["keys"]:
                 render_item(child, sub_nodes, depth + 1)
             block["rules"].append(
-                {"label": rule["label"], "count": len(rule["keys"]), "nodes": sub_nodes}
+                {"label": rule["label"], "count": len(sub_nodes), "nodes": sub_nodes}
             )
         nodes.append(block)
         return True
@@ -245,7 +245,7 @@ def build_param_preview(config, config_type, default_config, default_config_grou
     def append_static_group(group_name, nodes, depth, seen):
         children = groups.get(group_name, [])
         block = {"type": "static", "name": label_of(group_name),
-                 "count": len(children), "nodes": []}
+                 "count": 0, "nodes": []}
         for key in children:
             # 自引用组防环：跳过递归但仍渲染字段行（组名本体可见且只出现一次）
             if key in groups:
@@ -255,6 +255,7 @@ def build_param_preview(config, config_type, default_config, default_config_grou
                     append_static_group(key, block["nodes"], depth + 1, seen | {key})
             else:
                 render_item(key, block["nodes"], depth)
+        block["count"] = len(block["nodes"])
         nodes.append(block)
 
     blocks = []

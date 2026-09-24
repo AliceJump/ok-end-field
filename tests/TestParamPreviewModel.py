@@ -208,6 +208,7 @@ class TestParamPreviewModel(unittest.TestCase):
         static = [b for b in preview["blocks"] if b["type"] == "static"]
         self.assertEqual(len(static), 1)
         self.assertEqual(flat_items(static[0]["nodes"]), ["普通开关"])
+        self.assertEqual(static[0]["count"], 1)
 
     def test_rule_with_partially_unrenderable_children(self):
         """规则子项部分悬空/hidden：只渲染存在的，不崩溃（启动技能点数）。"""
@@ -224,6 +225,7 @@ class TestParamPreviewModel(unittest.TestCase):
         rule_nodes = cond_blocks[0]["rules"][0]["nodes"]
         # 「启动技能点数」三处皆无、「隐藏开关」被 hidden 过滤 → 都跳过
         self.assertEqual(flat_items(rule_nodes), ["真实开关"])
+        self.assertEqual(cond_blocks[0]["rules"][0]["count"], 1)
 
     def test_cycle_protection(self):
         """A→B→A 纯环：seen 防护不无限递归，无根显隐源 → 弹层为空（None）。"""
