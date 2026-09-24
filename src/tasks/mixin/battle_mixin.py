@@ -65,6 +65,21 @@ _TEMPLATE_ALIASES: dict[str, str] = {
     "battle_icon_endministrator_male": "battle_icon_endministrator",
 }
 
+# ── 切人图标（main_char 箭头）搜索框组：判定当前是第几个角色 ──────────────
+# 数据来源：ok_templates 子模块标注（基准分辨率 1920x1080）。
+# main_char 箭头标注框为 (80, 898, 8, 16)，指向编队槽位上方的当前角色；
+# 出现位置与 battle_icon 槽位一一平行（battle_icon 标注框 y=927、
+# w=37、h=46，x 槽位 57/173/290/407），x 公差 = (407-57)/3 ≈ 116.67px，
+# 归一化 ≈ 0.0608。箭头随当前角色切换在最多 4 个位置间移动。
+# 搜索区域 = 归一化标注框四周各向外扩大 1/8（相对框自身宽/高）。
+SWITCH_CHAR_BASE_X = 80 / 1920  # 箭头槽 0 归一化 x（≈0.041667）
+SWITCH_CHAR_X_PITCH = 0.0608  # 相邻槽位 x 公差（归一化）
+SWITCH_CHAR_Y = 898 / 1080  # 归一化 y（≈0.831481）
+SWITCH_CHAR_W = 8 / 1920  # 归一化宽
+SWITCH_CHAR_H = 16 / 1080  # 归一化高
+SWITCH_CHAR_SLOTS = 4  # 最多 4 个出现位置
+SWITCH_CHAR_EXPAND = 1 / 8  # 搜索框向外扩大的比例（相对框自身宽/高）
+
 
 def _load_char_name_map() -> dict[str, str]:
     """加载 characters.json，返回 en→zh 映射（如 ember→余烬）。"""
@@ -481,6 +496,52 @@ class BattleMixin(BaseEfTask):
         name_map = _load_char_name_map()
 
         return [(name_map.get(en, en), score) for en, score, _ in slot_results]
+
+    # ── 切人图标：判定当前是第几个角色 ──────────────────────────────────────
+
+    def get_switch_char_boxes(self) -> list[Box]:
+        """切人图标（main_char 箭头）各槽位搜索框（像素坐标，按 x 升序）。
+
+        以模块顶部 SWITCH_CHAR_* 归一化常量为基准生成：每个位置在
+        归一化标注框基础上四周向外扩大 SWITCH_CHAR_EXPAND，最多
+        SWITCH_CHAR_SLOTS 个，与 battle_icon 编队槽位一一平行。
+        """
+        dx = SWITCH_CHAR_W * SWITCH_CHAR_EXPAND
+        dy = SWITCH_CHAR_H * SWITCH_CHAR_EXPAND
+        boxes = []
+        for slot in range(SWITCH_CHAR_SLOTS):
+            nx = SWITCH_CHAR_BASE_X + slot * SWITCH_CHAR_X_PITCH
+            boxes.append(
+                self.box_of_screen(
+                    nx - dx,
+                    SWITCH_CHAR_Y - dy,
+                    nx + SWITCH_CHAR_W + dx,
+                    SWITCH_CHAR_Y + SWITCH_CHAR_H + dy,
+                    name=f"switch_char_slot_{slot}",
+                )
+            )
+        return boxes
+
+    def detect_current_char_index(self, frame=None) -> int | None:
+        """判定当前操作角色是编队第几个（0 起，未识别返回 None）。
+
+        在各切人图标搜索框内查找 main_char 白色指向箭头，箭头落在
+        第几个槽位即当前是第几个角色；取置信度最高的槽位。
+        """
+        best_index = None
+        best_score = 0.0
+        for index, box in enumerate(self.get_switch_char_boxes()):
+            result = self.find_one(fL.main_char, box=box, frame=frame, threshold=0.7)
+            if result is not None and result.confidence > best_score:
+                best_index = index
+                best_score = result.confidence
+        if best_index is None:
+            self.log_debug("切人图标未命中任何槽位，无法判定当前角色")
+        else:
+            self.log_debug(
+                f"切人图标命中槽位 {best_index}（score={best_score:.3f}）→ 当前第 {best_index + 1} 个角色"
+            )
+        return best_index
 
     def detect_team_stable(
         self,
