@@ -30,14 +30,16 @@ from pathlib import Path, PurePosixPath
 from PySide6.QtWidgets import QApplication, QFileDialog
 from qfluentwidgets import FluentIcon, MessageBox, PushButton
 
-from src.core.paths import config_folder, config_path
+from src.core.paths import config_path
 
 _PATCH_INSTALLED = False
 
 # 备份/迁移产物目录不属于用户配置，导出、备份与导入清理时均跳过
 _EXCLUDED_DIR_NAMES = {"backup", "global_config_migration_backup"}
 
-# 导出 zip 内的根目录名跟随配置目录；导入时优先识别该前缀
+_ZIP_ROOT = PurePosixPath("configs")
+_ZIP_IMPORT_PREFIX = f"{_ZIP_ROOT}/"
+_STAGING_RELATIVE_DIR = Path("staging") / "configs"
 
 # 防止压缩炸弹或异常大文件耗尽磁盘空间
 _MAX_IMPORT_MEMBER_BYTES = 16 * 1024 * 1024
@@ -65,7 +67,7 @@ def export_config_zip(configs_dir: Path, zip_path: Path) -> int:
             rel = path.relative_to(configs_dir)
             if _is_excluded(rel.parts):
                 continue
-            zf.write(path, Path(config_folder()) / rel)
+            zf.write(path, str(_ZIP_ROOT / rel.as_posix()))
             count += 1
     return count
 
@@ -91,9 +93,8 @@ def resolve_import_prefix(zip_path: Path) -> str | None:
     if not json_names:
         return None
 
-    root_prefix = f"{config_folder()}/"
-    if any(name.startswith(root_prefix) for name in json_names):
-        return root_prefix
+    if any(name.startswith(_ZIP_IMPORT_PREFIX) for name in json_names):
+        return _ZIP_IMPORT_PREFIX
 
     top_dirs = {name.split("/", 1)[0] for name in names if "/" in name}
     if len(top_dirs) == 1:
@@ -140,8 +141,8 @@ def apply_config_import(zip_path: Path, configs_dir: Path) -> Path:
         shutil.copy2(path, dest)
 
     with tempfile.TemporaryDirectory(prefix=".config_import_", dir=configs_dir.parent) as tmp:
-        staging_dir = Path(tmp) / config_folder()
-        staging_dir.mkdir()
+        staging_dir = Path(tmp) / _STAGING_RELATIVE_DIR
+        staging_dir.mkdir(parents=True)
         staging_root = staging_dir.resolve()
         extracted = 0
         total_bytes = 0

@@ -12,6 +12,7 @@ from src.core.paths import config_path
 
 _LOCK = threading.Lock()
 _CACHE_MTIME = object()
+_CACHE_PATH: str | None = None
 _EMPTY_STORE: dict[str, Any] = {
     "account_list_text": "",
     "account_registry": {},
@@ -373,15 +374,17 @@ def _sync_account_list_text_on_data(data: dict[str, Any], text: str) -> tuple[di
 def load_overrides(force: bool = False) -> dict[str, Any]:
     """Load account-scoped configuration overrides from storage, using cache unless force is True."""
     global _CACHE_MTIME
+    global _CACHE_PATH
     global _CACHE_DATA
 
     with _LOCK:
-        if os.path.exists(get_store_path()):
-            current_mtime: Any = os.path.getmtime(get_store_path())
+        store_path = get_store_path()
+        if os.path.exists(store_path):
+            current_mtime: Any = os.path.getmtime(store_path)
         else:
             current_mtime = None
 
-        if not force and current_mtime == _CACHE_MTIME:
+        if not force and store_path == _CACHE_PATH and current_mtime == _CACHE_MTIME:
             return copy.deepcopy(_CACHE_DATA)
 
         if current_mtime is None:
@@ -392,12 +395,14 @@ def load_overrides(force: bool = False) -> dict[str, Any]:
         normalized = _normalize(data)
         _CACHE_DATA = normalized
         _CACHE_MTIME = current_mtime
+        _CACHE_PATH = store_path
         return copy.deepcopy(normalized)
 
 
 def save_overrides(data: dict[str, Any]) -> dict[str, Any]:
     """Save account-scoped configuration overrides to storage and update cache."""
     global _CACHE_MTIME
+    global _CACHE_PATH
     global _CACHE_DATA
 
     normalized = _normalize(data)
@@ -405,6 +410,7 @@ def save_overrides(data: dict[str, Any]) -> dict[str, Any]:
     with _LOCK:
         _CACHE_MTIME = _atomic_write_json(normalized)
         _CACHE_DATA = normalized
+        _CACHE_PATH = get_store_path()
 
     return copy.deepcopy(normalized)
 
@@ -412,6 +418,7 @@ def save_overrides(data: dict[str, Any]) -> dict[str, Any]:
 def update_overrides(updater: Callable[[dict[str, Any]], dict[str, Any]]) -> dict[str, Any]:
     """Update account-scoped overrides by applying an updater function to the current data."""
     global _CACHE_MTIME
+    global _CACHE_PATH
     global _CACHE_DATA
 
     with _LOCK:
@@ -428,6 +435,7 @@ def update_overrides(updater: Callable[[dict[str, Any]], dict[str, Any]]) -> dic
 
         _CACHE_DATA = updated
         _CACHE_MTIME = current_mtime
+        _CACHE_PATH = get_store_path()
         return copy.deepcopy(updated)
 
 
