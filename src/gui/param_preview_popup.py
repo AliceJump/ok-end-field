@@ -462,15 +462,21 @@ class _CardEventFilter(QObject):
         self._card = card
 
     def eventFilter(self, obj, event):
-        etype = event.type()
-        if obj is self._card:
-            if etype == QEvent.Hide:
-                self._eye.note_tab_switch()
-            elif etype == QEvent.DeferredDelete or etype == QEvent.Destroyed:
+        # 事件过滤器里抛异常会在 Qt 过滤链上级联放大（曾把启动打断），
+        # 这里兜底吞掉：弹层是锦上添花，不能影响宿主
+        try:
+            etype = event.type()
+            if obj is self._card:
+                if etype == QEvent.Hide:
+                    self._eye.note_tab_switch()
+                elif etype == QEvent.DeferredDelete:
+                    # Qt6/PySide6 没有 QEvent.Destroyed 枚举，别再加
+                    ParamPreviewController.hide()
+            elif etype in (QEvent.Wheel, QEvent.Resize, QEvent.Move):
+                # 弹层自身是独立顶级窗口，事件不会到达宿主过滤器 → 内滚不收
                 ParamPreviewController.hide()
-        elif etype in (QEvent.Wheel, QEvent.Resize, QEvent.Move):
-            # 弹层自身是独立顶级窗口，事件不会到达宿主过滤器 → 内滚不收
-            ParamPreviewController.hide()
+        except Exception:
+            pass
         return False
 
 
