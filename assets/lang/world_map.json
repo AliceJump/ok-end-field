@@ -494,7 +494,7 @@
       "pattern": "Altopiano elettrico"
     },
     "ru_RU": {
-      "pattern": "Плато Энергии"
+      "pattern": "(?i)Плато Энергии"
     },
     "th_TH": {
       "pattern": "ที่ราบสูง​พลังงาน"
@@ -1080,19 +1080,19 @@
       "pattern": "干员经验"
     },
     "zh_TW": {
-      "pattern": "幹員經驗材料"
+      "pattern": "幹員經驗"
     },
     "en_US": {
       "pattern": "Operator EXP"
     },
     "ja_JP": {
-      "pattern": "経験値素材"
+      "pattern": "経験値"
     },
     "ko_KR": {
-      "pattern": "오퍼레이터 경험치 재료"
+      "pattern": "오퍼레이터 경험치"
     },
     "es_ES": {
-      "pattern": "Puntos de EXP de operador"
+      "pattern": "EXP de operador"
     },
     "pt_BR": {
       "pattern": "EXP de Operador"
@@ -1101,13 +1101,13 @@
       "pattern": "Operator-EP"
     },
     "fr_FR": {
-      "pattern": "EXP de l'opérateur"
+      "pattern": "EXP d'opérateur"
     },
     "id_ID": {
       "pattern": "EXP Operator"
     },
     "it_IT": {
-      "pattern": "ESP operatore"
+      "pattern": "ESP operatori"
     },
     "ru_RU": {
       "pattern": "Опыт оперативника"
@@ -1160,7 +1160,7 @@
       "pattern": "เลื่อนขั้น"
     },
     "vi_VN": {
-      "pattern": "Thăng bậc"
+      "pattern": "(?i)Thăng bậc"
     }
   },
   "k_7dfd1882": {
@@ -1740,16 +1740,16 @@
       "pattern": "武器经验"
     },
     "zh_TW": {
-      "pattern": "武器經驗材料"
+      "pattern": "武器經驗"
     },
     "en_US": {
       "pattern": "Weapon EXP"
     },
     "ja_JP": {
-      "pattern": "武器強化素材"
+      "pattern": "武器経験値"
     },
     "ko_KR": {
-      "pattern": "무기 경험치 재료"
+      "pattern": "무기 경험치"
     },
     "es_ES": {
       "pattern": "EXP de arma"
@@ -1767,13 +1767,13 @@
       "pattern": "EXP Senjata"
     },
     "it_IT": {
-      "pattern": "ESP arma"
+      "pattern": "ESP armi"
     },
     "ru_RU": {
       "pattern": "Опыт оружия"
     },
     "th_TH": {
-      "pattern": "EXP ของ​อาวุธ"
+      "pattern": "EXP อาวุธ"
     },
     "vi_VN": {
       "pattern": "EXP Vũ Khí"
@@ -1805,7 +1805,7 @@
       "pattern": "Waffenoptimierung"
     },
     "fr_FR": {
-      "pattern": "Optimisation des armes"
+      "pattern": "(?i)Optimisation des armes"
     },
     "id_ID": {
       "pattern": "Penyetelan Senjata"
@@ -1981,7 +1981,7 @@
       "pattern": "Qingbo-Palisade"
     },
     "fr_FR": {
-      "pattern": "Palanque de Qingbo"
+      "pattern": "(?i)Palanque de Qingbo"
     },
     "id_ID": {
       "pattern": "Kampung Benteng Qingbo"
@@ -1990,7 +1990,7 @@
       "pattern": "Palizzata di Qingbo"
     },
     "ru_RU": {
-      "pattern": "Лагерь Циньбо"
+      "pattern": "(?i)Лагерь Циньбо"
     },
     "th_TH": {
       "pattern": "ค่าย​ชิง​ป๋อ"
@@ -2861,7 +2861,7 @@
       "pattern": "Testzone"
     },
     "fr_FR": {
-      "pattern": "Zone de test"
+      "pattern": "(?i)Zone de test"
     },
     "id_ID": {
       "pattern": "Area Uji Coba"
@@ -2870,7 +2870,7 @@
       "pattern": "Area dei test"
     },
     "ru_RU": {
-      "pattern": "Область испытаний"
+      "pattern": "(?i)Область испытаний"
     },
     "th_TH": {
       "pattern": "เขต​ทดสอบ"
@@ -3213,7 +3213,7 @@
       "pattern": "T-Kreditscheine"
     },
     "fr_FR": {
-      "pattern": "Crédits T"
+      "pattern": "(?i)Crédits T"
     },
     "id_ID": {
       "pattern": "T-Cred"
@@ -3439,7 +3439,7 @@
       "pattern": "Batu Penanda"
     },
     "it_IT": {
-      "pattern": "Pietra di demarcazione"
+      "pattern": "(?i)Pietra di demarcazione"
     },
     "ru_RU": {
       "pattern": "Межевой камень"
@@ -3750,7 +3750,7 @@
       "pattern": "Valletta di Voltaspada"
     },
     "ru_RU": {
-      "pattern": "Долина Залежи Клинков"
+      "pattern": "(?i)Долина Залежи Клинков"
     },
     "th_TH": {
       "pattern": "เดล​คลัง​ดาบ"
@@ -3785,7 +3785,7 @@
       "pattern": "Yinglung-Pass"
     },
     "fr_FR": {
-      "pattern": "Col de Yinglung"
+      "pattern": "(?i)Col de Yinglung"
     },
     "id_ID": {
       "pattern": "Terusan Yinglung"
@@ -3794,7 +3794,7 @@
       "pattern": "Valico di Yinglung"
     },
     "ru_RU": {
-      "pattern": "Застава «Инлуна»"
+      "pattern": "(?i)Застава «Инлуна»"
     },
     "th_TH": {
       "pattern": "ทางผ่าน​ห​ยิง​หลง"
@@ -3811,16 +3811,16 @@
       "pattern": "北部禁區"
     },
     "en_US": {
-      "pattern": "North Wuling Exclusion Zone"
+      "pattern": "North Wuling EZ"
     },
     "ja_JP": {
-      "pattern": "武陵北部封鎖区域"
+      "pattern": "北部封鎖区域"
     },
     "ko_KR": {
       "pattern": "북쪽 금지 구역"
     },
     "es_ES": {
-      "pattern": "Zona de exclusión norte de Wuling"
+      "pattern": "ZE norte de Wuling"
     },
     "pt_BR": {
       "pattern": "Zona de Exclusão do Norte de Wuling"
@@ -3829,19 +3829,19 @@
       "pattern": "Sperrzone Nord-Wuling"
     },
     "fr_FR": {
-      "pattern": "Zone d'exclusion du nord de Wuling"
+      "pattern": "ZE du nord de Wuling"
     },
     "id_ID": {
-      "pattern": "Zona Eksklusi Wuling Utara"
+      "pattern": "ZE Wuling Utara"
     },
     "it_IT": {
       "pattern": "Area interdetta di Wuling Nord"
     },
     "ru_RU": {
-      "pattern": "Зона отчуждения северного Улина"
+      "pattern": "ЗО северного Улина"
     },
     "th_TH": {
-      "pattern": "เขต​พิเศษ​อู่​หลิง​เหนือ"
+      "pattern": "เขต​ EZ อู่​หลิง​ทางเหนือ"
     },
     "vi_VN": {
       "pattern": "Khu Cấm Bắc Võ Lăng"
@@ -4056,7 +4056,7 @@
       "pattern": "Foresta innevata"
     },
     "es_ES": {
-      "pattern": "Bosque nevado"
+      "pattern": "(?i)Bosque nevado"
     },
     "ru_RU": {
       "pattern": "Снежный лес"

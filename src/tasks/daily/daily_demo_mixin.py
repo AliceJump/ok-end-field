@@ -38,7 +38,9 @@ class DailyDemoFeature:
             refresh_times = 0
             this_time_double_reward = False
             while level <= 5:
-                level = self.click_random_and_wait_level_change(level)
+                level = self.click_random_and_wait_level_change(
+                    level, double_reward_opened=this_time_double_reward
+                )
                 if level < 0:
                     return False
                 refresh_times += 1
@@ -75,7 +77,7 @@ class DailyDemoFeature:
         self.click_confirm(time_out=3)
         return True
 
-    def click_random_and_wait_level_change(self, previous_level, max_retry=3):
+    def click_random_and_wait_level_change(self, previous_level, max_retry=3, double_reward_opened=False):
         for retry_index in range(max_retry):
             if not self.wait_click_feature(
                 feature=fL.demo_random_button,
@@ -89,6 +91,14 @@ class DailyDemoFeature:
             current_level = self.wait_level_change(previous_level, time_out=4)
             if current_level is not None:
                 return current_level
+
+            # 未开双倍时点击『随机』会弹出「仅可在第三抽之前调整奖励翻倍选项…是否确认抽取？」
+            # 确认框会拦截本次抽取导致等级不变；点掉确认框后等待等级变化。
+            # 已开双倍时不会弹此框，无需检测，直接重试。
+            if not double_reward_opened and self.click_confirm(time_out=1):
+                current_level = self.wait_level_change(previous_level, time_out=4)
+                if current_level is not None:
+                    return current_level
 
             self.log_warning(f"第 {retry_index + 1} 次点击随机按钮后等级未变化，重试点击")
 
