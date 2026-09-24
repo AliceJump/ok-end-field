@@ -208,7 +208,9 @@ def build_param_preview(config, config_type, default_config, default_config_grou
         return "；".join(parts)
 
     def render_item(key, nodes, depth):
-        if key in rendered:
+        # 被 groups / sub_configs 引用的键可能是 hidden、button 或三处皆无的
+        # 悬空引用（fields_by_key 里没有）——按「悬空引用跳过」语义跳过不渲染
+        if key in rendered or key not in fields_by_key:
             return
         rendered.add(key)
         node = {"type": "item", "key": key, "label": label_of(key), "badge": None}

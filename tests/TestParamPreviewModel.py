@@ -197,6 +197,34 @@ class TestParamPreviewModel(unittest.TestCase):
         others = [b for b in preview["blocks"] if b["type"] == "others"]
         self.assertEqual(flat_items(others[0]["nodes"]), ["开关A"])
 
+    def test_group_references_filtered_key_skipped(self):
+        """静态分组引用被过滤/三处皆无的键：跳过不渲染，不崩溃（多账户模式）。"""
+        preview = make_task(
+            ["普通开关"],
+            config_type={"普通开关": {}},
+            default_config_group={"基础": ["普通开关", "多账户模式"]},
+        )
+        self.assertIsNotNone(preview)
+        static = [b for b in preview["blocks"] if b["type"] == "static"]
+        self.assertEqual(len(static), 1)
+        self.assertEqual(flat_items(static[0]["nodes"]), ["普通开关"])
+
+    def test_rule_with_partially_unrenderable_children(self):
+        """规则子项部分悬空/hidden：只渲染存在的，不崩溃（启动技能点数）。"""
+        preview = make_task(
+            ["主开关", "真实开关"],
+            config_type={
+                "主开关": {"sub_configs": {True: ["真实开关", "启动技能点数", "隐藏开关"]}},
+                "真实开关": {},
+                "隐藏开关": {"hidden": True},
+            },
+        )
+        cond_blocks = find_cond_blocks(preview["blocks"])
+        self.assertEqual([b["key"] for b in cond_blocks], ["主开关"])
+        rule_nodes = cond_blocks[0]["rules"][0]["nodes"]
+        # 「启动技能点数」三处皆无、「隐藏开关」被 hidden 过滤 → 都跳过
+        self.assertEqual(flat_items(rule_nodes), ["真实开关"])
+
     def test_cycle_protection(self):
         """A→B→A 纯环：seen 防护不无限递归，无根显隐源 → 弹层为空（None）。"""
         config_type = {
