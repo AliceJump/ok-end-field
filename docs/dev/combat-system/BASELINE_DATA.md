@@ -127,3 +127,15 @@ python scripts/skill-data/compute_damage_baseline.py --char puqiena
   误判两侧都有兜底（冷启动漏排的 ult 走兜底；热启动排了的 ult 未就绪
   会被跳过），不会卡轴。已知限制：`battle_space_left` 仅标定 1080p
   （无 `_2k`/`_4k` 变体），更高分辨率下的可靠性待实测。
+
+- **脉冲探针**（独立诊断，默认开）：`src/image/pulse_probe.py` +
+  `battle_mixin.probe_pulse()`，挂在 `AutoCombatLogic.run` 主循环每帧
+  （所有走 `auto_battle` 的战斗——主线/日常/演示/影拓——全覆盖，
+  与战斗模式/配置组合无关）。复用白色圆周检测算法（独立去抖实例 +
+  0.25s 节流 + 全屏闪光过滤），**只记录不按键**：上升沿追加写入
+  `configs/pulse_probe_log.jsonl`，字段含时间、批次区域（批次1-4）、
+  按键编号、角色映射（`_battle_team` 尽力而为，缺队伍信息时记 null
+  并监测全部 4 区域）、白色占比、人数、任务名。用途：实战统计
+  「哪些强化态/技能有官方推荐脉冲」，为把推荐时机反哺排轴提供数据
+  （如增强态角色在轴上等脉冲再放）。覆盖范围限制：任务若有自己的
+  独立战斗循环（不走 `auto_battle`），探针不生效。
