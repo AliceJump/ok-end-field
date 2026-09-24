@@ -394,7 +394,11 @@ class _EyeButton(ToolButton):
     """卡头「小眼睛」：悬停 500ms 或点击 → 弹出参数概要，向右展开。"""
 
     def __init__(self, card, parent=None):
-        super().__init__(FluentIcon.VIEW, parent)
+        # 不能用 super().__init__(FluentIcon.VIEW, parent)：ToolButton.__init__
+        # 是 singledispatchmethod，FluentIconBase 分支会回调 self.__init__(parent)，
+        # 而实例上的 self.__init__ 是本类的 __init__，会无限递归（启动即 RecursionError）
+        super().__init__(parent)
+        self.setIcon(FluentIcon.VIEW)
         self._card = card
         self.setToolTip(og.app.tr("参数预览"))
         self._show_timer = QTimer(self)

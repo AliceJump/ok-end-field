@@ -40,9 +40,9 @@ def install_task_param_preview_patch():
         original_init(self, task, onetime)
         try:
             inject_param_preview_eye(self)
-        except Exception:
-            # 弹层注入失败不能影响任务卡本身
-            logger.warning("param preview eye inject failed", exc_info=True)
+        except Exception as e:
+            # 弹层注入失败不能影响任务卡本身；框架 Logger 没有 exc_info 参数
+            logger.error("param preview eye inject failed", exception=e)
 
     def _on_task_refresh(*_args):
         # 任务状态刷新（启停/运行态）时收起弹层，避免钉在旧内容上
