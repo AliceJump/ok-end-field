@@ -24,6 +24,9 @@ KEY_RECOMMEND_SKILL = "自动释放推荐技能"
 # 自动技能列表
 KEY_SKILL_ALLOWLIST = "自动技能列表"
 
+# 伤害优先排序（自动技能列表的子选项）
+KEY_DAMAGE_ROTATION = "伤害优先排序"
+
 
 # ==========================================================
 # Config Name / Mode
@@ -128,6 +131,8 @@ DEFAULT_RECOMMEND_SKILL = False
 
 DEFAULT_SKILL_ALLOWLIST = True
 
+DEFAULT_DAMAGE_ROTATION = True
+
 
 # ==========================================================
 # Default Battle Config
@@ -148,6 +153,7 @@ DEFAULT_BATTLE_CONFIG = {
     KEY_INSTANT_LINK: DEFAULT_INSTANT_LINK,
     KEY_RECOMMEND_SKILL: DEFAULT_RECOMMEND_SKILL,
     KEY_SKILL_ALLOWLIST: DEFAULT_SKILL_ALLOWLIST,
+    KEY_DAMAGE_ROTATION: DEFAULT_DAMAGE_ROTATION,
 }
 
 
@@ -190,7 +196,9 @@ BATTLE_CONFIG_TYPE = {
         "type": "cond_sequence_editor",
     },
     KEY_RECOMMEND_SKILL: {},
-    KEY_SKILL_ALLOWLIST: {"sub_configs": {False: BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST]}},
+    KEY_SKILL_ALLOWLIST: {"sub_configs": {False: BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST],
+                                          True: [KEY_DAMAGE_ROTATION]}},
+    KEY_DAMAGE_ROTATION: {},
 }
 
 
@@ -231,6 +239,12 @@ BATTLE_CONFIG_DESCRIPTION = {
         "启用后，战斗开始时自动识别左下角 4 个头像，\n"
         "跳过被增强机制接管的战技，"
         "只保留有意义释放的战技。"
+    ),
+    KEY_DAMAGE_ROTATION: (
+        "「自动技能列表」开启时生效。\n"
+        "按各角色战技的实际伤害（官方 WIKI 满配基准、暴击期望）\n"
+        "降序排列释放顺序：伤害高的先放；\n"
+        "基准数据缺失的角色排在最后（保持队位顺序）。"
     ),
 }
 
