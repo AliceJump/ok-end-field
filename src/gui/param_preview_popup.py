@@ -368,7 +368,10 @@ class ParamPreviewController:
     @classmethod
     def schedule_hide(cls):
         if cls._popup is not None and cls._popup.isVisible():
-            cls._ensure_popup()._hide_timer.start()
+            # 定时器挂在控制器类属性上（_ensure_popup 里创建），不在弹层实例上
+            cls._ensure_popup()
+            if cls._hide_timer is not None:
+                cls._hide_timer.start()
 
     @classmethod
     def cancel_hide(cls):
