@@ -1,0 +1,34 @@
+{
+  "character": "弭弗",
+  "character_key": "mifu",
+  "element": "物理",
+  "stars": null,
+  "weapon": {
+    "name": "赤缨",
+    "level_max": 90,
+    "skill_rank": 9,
+    "source": "官方游戏内武器推荐（森空岛WIKI）",
+    "evidence_level": 1,
+    "note": "官方游戏内武器推荐（森空岛WIKI 干员页），武器页反向互证=未列出（备选）"
+  },
+  "matrix": {
+    "name": "无瑕基质·巧技",
+    "source": "官方武器页「推荐武器基质」",
+    "evidence_level": 1,
+    "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
+  },
+  "equipment": {
+    "set_main": "点剑装备组",
+    "set_off": "碾骨装备组",
+    "pieces": [
+      "点剑纤维护甲",
+      "点剑战术手套",
+      "点剑定位信标",
+      "碾骨小雕像"
+    ],
+    "level_max": 70,
+    "refinement_max": 3,
+    "source": "启发式默认（元素 物理 模板，待专属攻略验证）",
+    "evidence_level": 3
+  }
+}

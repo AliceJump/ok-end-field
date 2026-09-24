@@ -1,0 +1,34 @@
+{
+  "character": "赛希",
+  "character_key": "seraph",
+  "element": "寒冷",
+  "stars": null,
+  "weapon": {
+    "name": "骑士精神",
+    "level_max": 90,
+    "skill_rank": 9,
+    "source": "官方游戏内武器推荐（森空岛WIKI）",
+    "evidence_level": 1,
+    "note": "官方游戏内武器推荐（森空岛WIKI 干员页），武器页反向互证=未列出（备选）"
+  },
+  "matrix": {
+    "name": "无瑕基质·医疗",
+    "source": "官方武器页「推荐武器基质」",
+    "evidence_level": 1,
+    "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
+  },
+  "equipment": {
+    "set_main": "长息装备组",
+    "set_off": "生物辅助装备组",
+    "pieces": [
+      "长息装甲",
+      "长息手套",
+      "长息加固板",
+      "生物辅助护板"
+    ],
+    "level_max": 70,
+    "refinement_max": 3,
+    "source": "新浪全干员装备适配一图流（毕业列）",
+    "evidence_level": 2
+  }
+}
