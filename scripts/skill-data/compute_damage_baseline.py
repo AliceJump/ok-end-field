@@ -509,8 +509,13 @@ def main() -> int:
 
     text = json.dumps(results, ensure_ascii=False, indent=2) + "\n"
     if args.char and not args.out:
-        # --char 是调试模式：单角色结果写回默认文件会把全量基准覆盖成 1 个角色
+        # --char 是调试模式：单角色结果写回默认文件会把全量基准覆盖成 1 个角色，
+        # 故默认 dry-run（计算 + 打印 trace/排行，不落盘）；需要落盘时显式 --out
         print("提示：--char 调试模式默认不写回（如需落盘请显式 --out 指定单角色文件）")
+        for r in results:
+            print(f"\n== {r['character']} 计算过程 ==")
+            for line in r.get("trace") or []:
+                print(line)
     else:
         out_path.write_bytes(text.encode("utf-8").replace(b"\r\n", b"\n"))
         print(f"已写入 {out_path}（{len(results)} 个角色）")
