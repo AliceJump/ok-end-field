@@ -312,7 +312,7 @@ def _operator_secondary_stats(snap_dir: Path) -> dict[str, str]:
 
 
 def compute_character(key: str, char: dict, build: dict, weapons: dict, equipments: dict,
-                      primary_map: dict[str, str], wiki_item_ids: dict[str, str],
+                      primary_map: dict[str, str], wiki_item_ids: dict[str, list[str]],
                       secondary_map: dict[str, str] | None = None) -> dict:
     trace: list[str] = []
     name = str(char.get("name") or key)
@@ -368,13 +368,20 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
     trace.append(f"  汇总词条: {merged}")
 
     # 主能力优先官方标注，缺失时按元素回退；副能力只取官方标注
-    op_id = wiki_item_ids.get(name)
-    official_primary = primary_map.get(op_id)
+    wiki_item_id_candidates = wiki_item_ids.get(name, [])
+    official_primary = next(
+        (primary_map[item_id] for item_id in wiki_item_id_candidates if item_id in primary_map),
+        None,
+    )
     primary = official_primary or ("力量" if element == "物理" else "智识")
     primary_total = base.get(primary, 0) + merged.get(f"flat_{primary}", 0)
     primary_source = "官方标签" if official_primary else "按元素推断"
     trace.append(f"  主能力: {primary}（{primary_source}）总值 {primary_total:.0f}")
-    secondary = (secondary_map or {}).get(op_id)
+    secondary_stats = secondary_map or {}
+    secondary = next(
+        (secondary_stats[item_id] for item_id in wiki_item_id_candidates if item_id in secondary_stats),
+        None,
+    )
     secondary_total = 0.0
     if secondary and secondary != primary:
         secondary_total = base.get(secondary, 0) + merged.get(f"flat_{secondary}", 0)
@@ -495,14 +502,14 @@ def main() -> int:
     primary_map = _operator_primary_stats(snap_dir)
     secondary_map = _operator_secondary_stats(snap_dir)
 
-    # wiki itemId 反查表（干员名 → itemId）
-    wiki_item_ids: dict[str, str] = {}
+    # wiki itemId 反查表（干员名 → 全部 itemId）；同名角色可能对应多个 WIKI 条目。
+    wiki_item_ids: dict[str, list[str]] = {}
     for f in sorted(snap_dir.glob("details/*.json")):
         payload = _load(f)
         item = payload["data"]["item"]
         name = _normalize_name(str((item.get("brief") or {}).get("name") or "").strip())
         if name:
-            wiki_item_ids[name] = str(item.get("itemId"))
+            wiki_item_ids.setdefault(name, []).append(str(item.get("itemId")))
 
     results = []
     for path in sorted((DATA_DIR / "character_skills").glob("*.json")):
