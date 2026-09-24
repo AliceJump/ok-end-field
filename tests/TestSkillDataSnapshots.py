@@ -44,6 +44,7 @@ class TestSnapshotChecks(unittest.TestCase):
             root = Path(tmp)
             snap = root / "snapshots" / "empty"
             snap.mkdir(parents=True)
+            # DATA_DIR 同步 mock 到 tmp：--out 写路径限定在 DATA_DIR 下（注入防御）
             output = root / "damage_baseline.json"
             output.write_text("unchanged", encoding="utf-8")
             for present in (None, "details", "rendered_text"):
@@ -55,6 +56,7 @@ class TestSnapshotChecks(unittest.TestCase):
                         (snap / "rendered_text").mkdir()
                         (snap / "rendered_text" / "1.txt").write_text("text", encoding="utf-8")
                     with mock.patch.object(baseline, "SNAP_ROOT", root / "snapshots"), \
+                         mock.patch.object(baseline, "DATA_DIR", root), \
                          mock.patch.object(sys, "argv", ["compute_damage_baseline.py", "--snapshot", "empty",
                                                         "--out", str(output)]):
                         self.assertEqual(baseline.main(), 1)
@@ -112,7 +114,8 @@ class TestSnapshotChecks(unittest.TestCase):
             _write(snapshots / "20260102" / "catalog.json", {"data": {"catalog": [{"typeSub": [{
                 "id": "1", "filterTagTree": [{"name": "主能力", "children": [
                     {"id": "10212", "name": "意志"}]}]}]}]}})
-            output = root / "damage_baseline.json"
+            # --out 放在 mock 的 DATA_DIR 内（写路径限定在 DATA_DIR 下）
+            output = data / "damage_baseline.json"
             with mock.patch.object(baseline, "DATA_DIR", data), \
                  mock.patch.object(baseline, "SNAP_ROOT", snapshots), \
                  mock.patch.object(baseline, "ZH_CN_DIR", root / "missing_catalog"), \

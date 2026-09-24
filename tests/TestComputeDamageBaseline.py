@@ -1,7 +1,9 @@
 """compute_damage_baseline 解析规则的单元测试。"""
 
 import importlib.util
+import sys
 import unittest
+import unittest.mock
 from pathlib import Path
 
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "skill-data" / "compute_damage_baseline.py"
@@ -146,6 +148,27 @@ class TestEquipmentStats(unittest.TestCase):
                 build = {"equipment": {"set_main": "主套", "pieces": pieces}}
                 result = mod.compute_character("test", char, build, {}, equipments, {}, {})
                 self.assertEqual(result["panel"]["atk_pct"], expected)
+
+
+class TestCliPathValidation(unittest.TestCase):
+    """--char/--out 输入校验（SonarCloud 路径注入热点）。"""
+
+    def test_char_rejects_path_traversal(self):
+        for bad in ("../evil", "a/b", "A", "puqiena;rm", "中文"):
+            with self.subTest(bad=bad), \
+                    unittest.mock.patch.object(sys, "argv", ["x", "--char", bad]):
+                self.assertEqual(mod.main(), 2)
+
+    def test_char_accepts_snake_case(self):
+        # 合法 key 不应在校验处返回 2；且调试模式默认不写回（见 main 的 dry-run）
+        with unittest.mock.patch.object(sys, "argv", ["x", "--char", "puqiena"]):
+            code = mod.main()
+        self.assertIn(code, (0, 1))
+
+    def test_out_rejects_outside_data_dir(self):
+        with unittest.mock.patch.object(sys, "argv",
+                                        ["x", "--out", "C:/Windows/evil.json"]):
+            self.assertEqual(mod.main(), 2)
 
 
 if __name__ == "__main__":
