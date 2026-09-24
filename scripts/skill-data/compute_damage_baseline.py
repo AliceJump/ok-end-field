@@ -31,7 +31,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 
 ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "assets/data"
-SNAP_DIR = ROOT / "tools/wiki_catalog/operator_details/20260924_154349"
+SNAP_ROOT = ROOT / "tools/wiki_catalog/operator_details"
 ZH_CN_DIR = ROOT / "tools/wiki_catalog/zh_cn"
 
 STAT_FLAT = ("生命值", "生命", "攻击力", "防御力", "力量", "敏捷", "智识", "意志", "源石技艺强度")
@@ -152,12 +152,14 @@ def _piece_stat(piece: dict, stat: str) -> int | None:
     """精锻3 优先（其值为最终总值），否则 LV70 基础值。"""
     ref = piece.get("refinement_max") or {}
     if stat in ref:
-        m = re.fullmatch(r"\+(\d+)", str(ref[stat]))
+        m = re.fullmatch(r"\+?(\d+)", str(ref[stat]))
         if m:
             return int(m.group(1))
     lv = piece.get("lv70_stats") or {}
     if stat in lv:
-        return int(lv[stat])
+        m = re.fullmatch(r"\+?(\d+)", str(lv[stat]))
+        if m:
+            return int(m.group(1))
     return None
 
 
@@ -191,6 +193,7 @@ def _skill_multiplier(skill: dict) -> tuple[float, float, list[str]]:
         last = str(values[-1])
         flat_label = label.replace("/", "").replace(" ", "")
         if "治疗" in label or "效果" in label or "技力" in label or "能量" in label \
+                or any(word in label for word in ("提升", "提高", "增加", "暴击")) \
                 or "时长" in label or "时间" in label or "消耗" in label:
             continue
         if "失衡" in label:
@@ -237,23 +240,23 @@ EQUIP_PCT_STAT_MAP = {
 def _piece_pct_mods(piece: dict) -> list[tuple[str, float]]:
     """装备精锻/基础属性中的百分比词条（含条件词条，由调用方过滤）。"""
     out: list[tuple[str, float]] = []
-    for table_key in ("refinement_max", "lv70_stats"):
-        for stat, value in (piece.get(table_key) or {}).items():
-            m = re.search(r"(\d+(?:\.\d+)?)\s*%", str(value))
-            if not m:
-                continue
-            v = float(m.group(1))
-            if stat in EQUIP_PCT_STAT_MAP:
-                for bucket in EQUIP_PCT_STAT_MAP[stat]:
-                    out.append((bucket, v))
-            elif stat == "对失衡目标伤害加成":
-                out.append(("vs_stagger_dmg", v))
-            elif stat == "全伤害减免":
-                out.append(("dmg_reduction", v))
+    stats = {**(piece.get("lv70_stats") or {}), **(piece.get("refinement_max") or {})}
+    for stat, value in stats.items():
+        m = re.search(r"(\d+(?:\.\d+)?)\s*%", str(value))
+        if not m:
+            continue
+        v = float(m.group(1))
+        if stat in EQUIP_PCT_STAT_MAP:
+            for bucket in EQUIP_PCT_STAT_MAP[stat]:
+                out.append((bucket, v))
+        elif stat == "对失衡目标伤害加成":
+            out.append(("vs_stagger_dmg", v))
+        elif stat == "全伤害减免":
+            out.append(("dmg_reduction", v))
     return out
 
 
-def _operator_primary_stats() -> dict[str, str]:
+def _operator_primary_stats(snap_dir: Path) -> dict[str, str]:
     """干员 itemId → 主能力（力量/敏捷/智识），来自官方 tagIds 10207 组。"""
     tags: dict[str, str] = {}
 
@@ -264,14 +267,16 @@ def _operator_primary_stats() -> dict[str, str]:
                 tags[nid] = str(n.get("name") or "")
             walk(n.get("children"), str(n.get("name") or group))
 
-    for f in sorted(ZH_CN_DIR.glob("*/m1_s1.json")):
+    for f in [snap_dir / "catalog.json", *sorted(ZH_CN_DIR.glob("*/m1_s1.json"))]:
+        if not f.is_file():
+            continue
         payload = _load(f)
         for c in payload.get("data", {}).get("catalog", []):
             for sub in c.get("typeSub", []):
                 if str(sub.get("id")) == "1":
                     walk(sub.get("filterTagTree") or [], "")
     result: dict[str, str] = {}
-    for f in sorted(SNAP_DIR.glob("details/*.json")):
+    for f in sorted(snap_dir.glob("details/*.json")):
         payload = _load(f)
         item = payload["data"]["item"]
         for tid in item.get("tagIds") or []:
@@ -286,14 +291,14 @@ _ABILITY_PAIR = re.compile(
 )
 
 
-def _operator_secondary_stats() -> dict[str, str]:
+def _operator_secondary_stats(snap_dir: Path) -> dict[str, str]:
     """干员 itemId → 副能力（力量/敏捷/智识/意志）。
 
     官方 WIKI 干员页属性表附注「金色=主能力、黑色=副能力」，渲染文本中
     以「主能力\\nX\\n副能力\\nY」相邻行出现；副能力不与主能力重复。
     """
     result: dict[str, str] = {}
-    for f in sorted((SNAP_DIR / "rendered_text").glob("*.txt")):
+    for f in sorted((snap_dir / "rendered_text").glob("*.txt")):
         item_id = f.stem.split("_", 1)[0]
         m = _ABILITY_PAIR.search(f.read_text(encoding="utf-8"))
         if m and m.group(1) != m.group(2):
@@ -346,11 +351,13 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
     # 套组效果（主套组 3 件）
     set_main = (build.get("equipment") or {}).get("set_main")
     if set_main:
-        for piece_name in pieces:
-            piece = equipments.get(piece_name or "")
-            if piece and piece.get("set") == set_main and piece.get("set_effect"):
-                _collect_stats(piece["set_effect"], mods, trace, f"套组 {set_main}")
-                break
+        set_pieces = [name for name in pieces if name and equipments.get(name, {}).get("set") == set_main]
+        if len(set_pieces) >= 3:
+            for piece_name in set_pieces:
+                piece = equipments[piece_name]
+                if piece.get("set_effect"):
+                    _collect_stats(piece["set_effect"], mods, trace, f"套组 {set_main}")
+                    break
 
     merged = _merge(mods)
     trace.append(f"  汇总词条: {merged}")
@@ -454,16 +461,23 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--char", default=None, help="仅计算指定角色（文件名，如 puqiena）")
     parser.add_argument("--out", default=str(DATA_DIR / "damage_baseline.json"))
+    parser.add_argument("--snapshot", help="operator_details 快照目录名（默认最新）")
     args = parser.parse_args()
+
+    candidates = sorted(p for p in SNAP_ROOT.iterdir() if p.is_dir()) if SNAP_ROOT.is_dir() else []
+    snap_dir = SNAP_ROOT / args.snapshot if args.snapshot else (candidates[-1] if candidates else SNAP_ROOT)
+    if not list(snap_dir.glob("details/*.json")) or not list(snap_dir.glob("rendered_text/*.txt")):
+        print(f"快照缺少 details/*.json 或 rendered_text/*: {snap_dir}", file=sys.stderr)
+        return 1
 
     weapons = _load(DATA_DIR / "weapons.json")
     equipments = _load(DATA_DIR / "equipments.json")
-    primary_map = _operator_primary_stats()
-    secondary_map = _operator_secondary_stats()
+    primary_map = _operator_primary_stats(snap_dir)
+    secondary_map = _operator_secondary_stats(snap_dir)
 
     # wiki itemId 反查表（干员名 → itemId）
     wiki_item_ids: dict[str, str] = {}
-    for f in sorted(SNAP_DIR.glob("details/*.json")):
+    for f in sorted(snap_dir.glob("details/*.json")):
         payload = _load(f)
         item = payload["data"]["item"]
         name = str((item.get("brief") or {}).get("name") or "").strip()

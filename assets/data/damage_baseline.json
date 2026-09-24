@@ -705,11 +705,11 @@
         "skill_id": "bounda_ultimate",
         "name": "巅峰闹剧",
         "type": "终结技",
-        "multiplier_pct": 1030.0,
+        "multiplier_pct": 1000.0,
         "stagger": 20.0,
         "bonus_pct": 29.9,
-        "non_crit": 31628.7,
-        "crit_expect": 33969.2,
+        "non_crit": 30707.5,
+        "crit_expect": 32979.8,
         "conditional_rows": []
       }
     ],
@@ -1013,11 +1013,11 @@
         "skill_id": "dapan_link",
         "name": "加料！",
         "type": "连携技",
-        "multiplier_pct": 670.0,
+        "multiplier_pct": 650.0,
         "stagger": 15.0,
         "bonus_pct": 102.8,
-        "non_crit": 64556.0,
-        "crit_expect": 66169.9,
+        "non_crit": 62628.9,
+        "crit_expect": 64194.6,
         "conditional_rows": []
       },
       {
@@ -1960,11 +1960,11 @@
         "skill_id": "liino_skill",
         "name": "闪耀焦点",
         "type": "战技",
-        "multiplier_pct": 370.0,
+        "multiplier_pct": 360.0,
         "stagger": 3.0,
         "bonus_pct": 17.9,
-        "non_crit": 16655.9,
-        "crit_expect": 17072.3,
+        "non_crit": 16205.8,
+        "crit_expect": 16610.9,
         "conditional_rows": []
       },
       {
@@ -1982,11 +1982,11 @@
         "skill_id": "liino_ultimate",
         "name": "晨星的协奏曲",
         "type": "终结技",
-        "multiplier_pct": 1030.0,
+        "multiplier_pct": 1020.0,
         "stagger": 20.0,
         "bonus_pct": 17.9,
-        "non_crit": 46366.5,
-        "crit_expect": 47525.7,
+        "non_crit": 45916.4,
+        "crit_expect": 47064.3,
         "conditional_rows": []
       }
     ],
@@ -2932,11 +2932,11 @@
         "skill_id": "typhoeus_link",
         "name": "野棘丛生",
         "type": "连携技",
-        "multiplier_pct": 310.0,
+        "multiplier_pct": 300.0,
         "stagger": 10.0,
         "bonus_pct": 73.2,
-        "non_crit": 15463.2,
-        "crit_expect": 15849.8,
+        "non_crit": 14964.4,
+        "crit_expect": 15338.5,
         "conditional_rows": []
       },
       {
@@ -3143,22 +3143,22 @@
         "skill_id": "wulfa_link",
         "name": "燎影时刻",
         "type": "连携技",
-        "multiplier_pct": 500.0,
+        "multiplier_pct": 450.0,
         "stagger": 5.0,
         "bonus_pct": 39.9,
-        "non_crit": 25419.8,
-        "crit_expect": 28533.8,
+        "non_crit": 22877.8,
+        "crit_expect": 25680.4,
         "conditional_rows": []
       },
       {
         "skill_id": "wulfa_ultimate",
         "name": "“利爪”奇袭",
         "type": "终结技",
-        "multiplier_pct": 1660.0,
+        "multiplier_pct": 1600.0,
         "stagger": 25.0,
         "bonus_pct": 39.9,
-        "non_crit": 84393.8,
-        "crit_expect": 94732.1,
+        "non_crit": 81343.4,
+        "crit_expect": 91308.0,
         "conditional_rows": []
       }
     ],
@@ -3261,11 +3261,11 @@
         "skill_id": "yvonne_ultimate",
         "name": "冷冻射手",
         "type": "终结技",
-        "multiplier_pct": 980.0,
+        "multiplier_pct": 920.0,
         "stagger": 20.0,
         "bonus_pct": 44.8,
-        "non_crit": 43603.1,
-        "crit_expect": 50034.6,
+        "non_crit": 40933.5,
+        "crit_expect": 46971.2,
         "conditional_rows": []
       }
     ],
