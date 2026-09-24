@@ -459,10 +459,23 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--char", default=None, help="仅计算指定角色（文件名，如 puqiena）")
-    parser.add_argument("--out", default=str(DATA_DIR / "damage_baseline.json"))
+    parser.add_argument("--char", default=None, help="仅计算指定角色（文件名，如 puqiena）；默认只打印不写回")
+    parser.add_argument("--out", default=None, help="输出路径（必须位于 assets/data 下；默认 damage_baseline.json）")
     parser.add_argument("--snapshot", help="operator_details 快照目录名（默认最新）")
     args = parser.parse_args()
+
+    # 输入/输出路径防御：--char 仅允许文件名字符，--out 仅允许写入 assets/data 下
+    # （CLI 参数来自外部，直接拼路径属 SonarCloud 路径注入热点）
+    if args.char and not re.fullmatch(r"[a-z0-9_]+", args.char):
+        print(f"错误：--char 仅接受小写字母/数字/下划线（文件名），收到: {args.char!r}")
+        return 2
+    if args.out:
+        out_path = Path(args.out).resolve()
+        if out_path.parent != DATA_DIR.resolve():
+            print(f"错误：--out 必须指向 {DATA_DIR} 目录下，收到: {args.out}")
+            return 2
+    else:
+        out_path = DATA_DIR / "damage_baseline.json"
 
     candidates = sorted(p for p in SNAP_ROOT.iterdir() if p.is_dir()) if SNAP_ROOT.is_dir() else []
     snap_dir = SNAP_ROOT / args.snapshot if args.snapshot else (candidates[-1] if candidates else SNAP_ROOT)
@@ -495,8 +508,12 @@ def main() -> int:
                                          primary_map, wiki_item_ids, secondary_map))
 
     text = json.dumps(results, ensure_ascii=False, indent=2) + "\n"
-    Path(args.out).write_bytes(text.encode("utf-8").replace(b"\r\n", b"\n"))
-    print(f"已写入 {args.out}（{len(results)} 个角色）")
+    if args.char and not args.out:
+        # --char 是调试模式：单角色结果写回默认文件会把全量基准覆盖成 1 个角色
+        print("提示：--char 调试模式默认不写回（如需落盘请显式 --out 指定单角色文件）")
+    else:
+        out_path.write_bytes(text.encode("utf-8").replace(b"\r\n", b"\n"))
+        print(f"已写入 {out_path}（{len(results)} 个角色）")
 
     # 排行：以「战技 暴击期望」为主指标
     def key_metric(r):

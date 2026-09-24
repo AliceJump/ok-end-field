@@ -99,9 +99,12 @@ python scripts/skill-data/compute_damage_baseline.py
 python scripts/skill-data/compute_damage_baseline.py --char puqiena
 ```
 
-运行时消费：`src/data/skill_rotation.py` 读取本文件，按各角色「战技暴击期望」
-降序生成两种产物；战斗配置「自动技能列表」+「伤害优先排序」开启时由
-`AutoCombatLogic` 使用，基准数据缺失的角色排最后。
+运行时消费：`src/data/skill_rotation.py` **只读 `assets/data/damage_baseline.json`**
+（不直接读技能 JSON）——按各角色「战技暴击期望」降序生成两种产物；战斗配置
+「自动技能列表」+「伤害优先排序」开启时由 `AutoCombatLogic` 使用，
+基准数据缺失的角色排最后。
+⚠️ 因此修改 `character_skills/*.json` 后必须重跑 `compute_damage_baseline.py`
+重算基准，才会影响排轴排序。
 
 - `generate_damage_rotation`：战技槽位列表（"1"-"4"），普通模式循环释放；
 - `generate_auto_rotation`：**自动排轴**——覆盖队内全部 1-4 号位的可重复循环轴：
