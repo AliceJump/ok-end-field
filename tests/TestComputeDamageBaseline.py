@@ -149,6 +149,12 @@ class TestEquipmentStats(unittest.TestCase):
                 result = mod.compute_character("test", char, build, {}, equipments, {}, {})
                 self.assertEqual(result["panel"]["atk_pct"], expected)
 
+    def test_primary_trace_marks_element_fallback(self):
+        char = {"name": "管理员", "element": "物理", "skills": []}
+        result = mod.compute_character("endmin", char, {}, {}, {}, {}, {})
+        self.assertEqual(result["primary_stat"], "力量")
+        self.assertIn("按元素推断", next(line for line in result["trace"] if "主能力:" in line))
+
 
 class TestCliPathValidation(unittest.TestCase):
     """--char/--out 输入校验（SonarCloud 路径注入热点）。"""

@@ -221,8 +221,8 @@ class TestAutoRotationStep(unittest.TestCase):
         logic = AutoCombatLogic(task)
         logic.auto_rotation_enabled = True
         logic.auto_rotation_active = True
-        logic.skill_sequence = rotation
-        logic.skill_index = 0
+        logic.auto_rotation_sequence = rotation
+        logic.auto_rotation_index = 0
         # normal_ 填充段内嵌循环依赖的计时状态（run() 中初始化，这里手动补齐）
         logic._last_exit_check_time = 0.0
         logic._exit_check_interval = 0.5
@@ -241,7 +241,7 @@ class TestAutoRotationStep(unittest.TestCase):
         steps = AutoCombatLogic._SKILL_RETRY_MAX_FRAMES + 3
         for _ in range(steps):
             logic._do_auto_rotation_step(None)
-        self.assertEqual(logic.skill_sequence[logic.skill_index], "normal_12.5")
+        self.assertEqual(logic.auto_rotation_sequence[logic.auto_rotation_index], "normal_12.5")
 
     def test_full_loop_returns_to_start(self):
         task = _FakeAutoTask(skill=3, ults=(1, 2, 3, 4), link=True)
@@ -250,10 +250,20 @@ class TestAutoRotationStep(unittest.TestCase):
         for _ in range(len(rotation)):
             logic._do_auto_rotation_step(None)
         # 全就绪时逐步推进，跑完一轮 index 回到起点（可重复循环）
-        self.assertEqual(logic.skill_index, 0)
+        self.assertEqual(logic.auto_rotation_index, 0)
         for digit in ("1", "2", "3", "4"):
             self.assertIn(digit, task.actions)
             self.assertIn(f"ult_{digit}", task.actions)
+
+    def test_auto_step_does_not_advance_manual_rotation(self):
+        task = _FakeAutoTask(skill=3)
+        logic = self._make_logic(task, ["1"])
+        logic.skill_sequence = ["4", "2"]
+        logic.skill_index = 1
+        logic._do_auto_rotation_step(None)
+        self.assertEqual(logic.skill_sequence, ["4", "2"])
+        self.assertEqual(logic.skill_index, 1)
+        self.assertEqual(logic.auto_rotation_index, 0)
 
     def test_fill_segment_does_not_use_digits(self):
         # 填充段（normal_）期间技力须留给轴上战技：即使技力充足也不发数字键
@@ -261,7 +271,7 @@ class TestAutoRotationStep(unittest.TestCase):
         logic = self._make_logic(task, ["normal_0.3"])
         logic._do_auto_rotation_step(None)
         self.assertEqual(task.actions, [])
-        self.assertEqual(logic.skill_index, 0)  # 单 token 轴取模回起点
+        self.assertEqual(logic.auto_rotation_index, 0)  # 单 token 轴取模回起点
 
     def test_link_window_tried_when_ready(self):
         task = _FakeAutoTask(skill=0, link=True)
@@ -278,6 +288,27 @@ class TestAutoRotationCombat(unittest.TestCase):
 
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
+    def test_manual_rotation_survives_team_detection_at_both_sites(self, _mu, _md):
+        from tests.TestConditionalRotation import _FakeTask
+
+        cfg = {
+            KEY_SKILL_ALLOWLIST: True,
+            KEY_DAMAGE_ROTATION: True,
+            "启用排轴": True,
+            "排轴序列": "4,2",
+        }
+        for start_sleep in (0.3, 0):
+            with self.subTest(start_sleep=start_sleep):
+                task = _FakeTask(cfg, skill=3)
+                task.stable_team_result = (["赛希", "弭弗", "莱万汀", "噗切娜"], True)
+                logic = AutoCombatLogic(task)
+                logic.run(start_sleep=start_sleep)
+                self.assertEqual(logic.skill_sequence, ["4", "2"])
+                self.assertEqual(logic.auto_rotation_sequence, [])
+                self.assertFalse(logic.auto_rotation_active)
+
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
     def test_run_activates_auto_rotation(self, _mu, _md):
         from tests.TestConditionalRotation import _FakeTask
 
@@ -291,10 +322,10 @@ class TestAutoRotationCombat(unittest.TestCase):
         self.assertTrue(logic.auto_rotation_active)
         self.assertTrue(logic.protocol_space_detected)
         # 轴覆盖全技能类型，且伤害最高的弭弗（2 号位）先手
-        self.assertEqual(logic.skill_sequence[0], "2")
-        self.assertIn("ult_2", logic.skill_sequence)
-        self.assertIn("e", logic.skill_sequence)
-        self.assertTrue(any(t.startswith("normal_") for t in logic.skill_sequence))
+        self.assertEqual(logic.auto_rotation_sequence[0], "2")
+        self.assertIn("ult_2", logic.auto_rotation_sequence)
+        self.assertIn("e", logic.auto_rotation_sequence)
+        self.assertTrue(any(t.startswith("normal_") for t in logic.auto_rotation_sequence))
 
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
@@ -310,10 +341,10 @@ class TestAutoRotationCombat(unittest.TestCase):
         logic.run(start_sleep=0)
         self.assertTrue(logic.auto_rotation_active)
         self.assertFalse(logic.protocol_space_detected)
-        self.assertFalse(any(t.startswith("ult_") for t in logic.skill_sequence))
-        self.assertEqual(logic.skill_sequence[0], "2")
-        self.assertIn("e", logic.skill_sequence)
-        self.assertTrue(any(t.startswith("normal_") for t in logic.skill_sequence))
+        self.assertFalse(any(t.startswith("ult_") for t in logic.auto_rotation_sequence))
+        self.assertEqual(logic.auto_rotation_sequence[0], "2")
+        self.assertIn("e", logic.auto_rotation_sequence)
+        self.assertTrue(any(t.startswith("normal_") for t in logic.auto_rotation_sequence))
 
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
@@ -328,7 +359,7 @@ class TestAutoRotationCombat(unittest.TestCase):
         logic.run(start_sleep=0)
         self.assertTrue(logic.auto_rotation_active)
         self.assertFalse(logic.protocol_space_detected)
-        self.assertFalse(any(t.startswith("ult_") for t in logic.skill_sequence))
+        self.assertFalse(any(t.startswith("ult_") for t in logic.auto_rotation_sequence))
 
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")

@@ -10,13 +10,14 @@
 伤害公式（docs/dev/combat-system/DAMAGE_FORMULA.md，标准假人下简化）：
   攻击力 = ((干员攻击 + 武器攻击) × (1+攻击%) + 攻击固定)
            × (1 + 0.005×主属性 + 0.002×副属性)
-           [主/副能力均取官方 WIKI 每干员标注；缺标注时该角色不计对应项]
+           [主能力优先取官方 WIKI 标签，缺失时按元素推断（物理→力量、其他→智识）；
+            副能力缺官方标注时不计对应项]
   非暴击伤害 = 攻击力 × 总倍率 × (1 + 元素伤害% + 技能类型伤害% + 所有技能伤害% + 所有类型伤害%)
   暴击期望   = 非暴击伤害 × (1 + 暴击率 × 暴击伤害)     （基础 5% / 50%）
 
 用法：
     python scripts/skill-data/compute_damage_baseline.py                # 全角色
-    python scripts/skill-data/compute_damage_baseline.py --char puqiena # 单角色（含计算过程）
+    python scripts/skill-data/compute_damage_baseline.py --char puqiena # 单角色 dry-run（打印 trace/排行）
 """
 
 from __future__ import annotations
@@ -30,6 +31,10 @@ from pathlib import Path
 sys.stdout.reconfigure(encoding="utf-8")
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
+from src.data.operator_names import _normalize_name  # noqa: E402
+
 DATA_DIR = ROOT / "assets/data"
 SNAP_ROOT = ROOT / "tools/wiki_catalog/operator_details"
 ZH_CN_DIR = ROOT / "tools/wiki_catalog/zh_cn"
@@ -362,11 +367,13 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
     merged = _merge(mods)
     trace.append(f"  汇总词条: {merged}")
 
-    # 主/副属性（官方标注）
+    # 主能力优先官方标注，缺失时按元素回退；副能力只取官方标注
     op_id = wiki_item_ids.get(name)
-    primary = primary_map.get(op_id) or ("力量" if element == "物理" else "智识")
+    official_primary = primary_map.get(op_id)
+    primary = official_primary or ("力量" if element == "物理" else "智识")
     primary_total = base.get(primary, 0) + merged.get(f"flat_{primary}", 0)
-    trace.append(f"  主能力: {primary}（官方标签）总值 {primary_total:.0f}")
+    primary_source = "官方标签" if official_primary else "按元素推断"
+    trace.append(f"  主能力: {primary}（{primary_source}）总值 {primary_total:.0f}")
     secondary = (secondary_map or {}).get(op_id)
     secondary_total = 0.0
     if secondary and secondary != primary:
@@ -493,7 +500,7 @@ def main() -> int:
     for f in sorted(snap_dir.glob("details/*.json")):
         payload = _load(f)
         item = payload["data"]["item"]
-        name = str((item.get("brief") or {}).get("name") or "").strip()
+        name = _normalize_name(str((item.get("brief") or {}).get("name") or "").strip())
         if name:
             wiki_item_ids[name] = str(item.get("itemId"))
 

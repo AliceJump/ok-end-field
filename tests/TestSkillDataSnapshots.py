@@ -72,9 +72,10 @@ class TestSnapshotChecks(unittest.TestCase):
             _write(data / "characters.json", {})
             _write(data / "equipments.json", {})
             _write(data / "matrices.json", {"推荐基质": {"item_id": "300"}})
-            _write(data / "character_skills" / "test.json", {"name": "测试", "element": "未知"})
+            _write(data / "character_skills" / "test.json", {"name": "管理员", "element": "未知"})
             catalog = {"data": {"catalog": [{"typeSub": [{"id": "1", "items": [
-                {"itemId": "100", "name": "测试"}]}]}]}}
+                {"itemId": "100", "name": "管理员·男"},
+                {"itemId": "101", "name": "管理员·女"}]}]}]}}
             _write(snapshots / "20260102" / "catalog.json", catalog)
             _write(snapshots / "20260101" / "details" / "100_测试.json", {"data": {"item": {
                 "itemId": "100", "document": {"documentMap": {}}}}})
@@ -85,6 +86,8 @@ class TestSnapshotChecks(unittest.TestCase):
                     {"kind": "entry", "entry": {"id": "200", "showType": "card-big"}}]}}}}}}
             _write(snapshots / "20260102" / "details" / "100_测试.json", {"data": {"item": {
                 "itemId": "100", "document": document}}})
+            _write(snapshots / "20260102" / "details" / "101_测试.json", {"data": {"item": {
+                "itemId": "101", "document": {"documentMap": {}}}}})
             with mock.patch.object(builds, "ROOT", root), \
                  mock.patch.object(builds, "DATA_DIR", data), \
                  mock.patch.object(builds, "CHAR_SKILLS_DIR", data / "character_skills"), \
@@ -104,10 +107,10 @@ class TestSnapshotChecks(unittest.TestCase):
             snapshots = root / "snapshots"
             _write(data / "weapons.json", {})
             _write(data / "equipments.json", {})
-            _write(data / "character_skills" / "test.json", {"name": "测试", "element": "物理", "skills": []})
+            _write(data / "character_skills" / "test.json", {"name": "管理员", "element": "物理", "skills": []})
             for name, secondary in (("20260101", "智识"), ("20260102", "敏捷")):
                 _write(snapshots / name / "details" / "100_测试.json", {"data": {"item": {
-                    "itemId": "100", "brief": {"name": "测试"}, "tagIds": ["10212"]}}})
+                    "itemId": "100", "brief": {"name": "管理员·男"}, "tagIds": ["10212"]}}})
                 path = snapshots / name / "rendered_text" / "100_测试.txt"
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(f"主能力\n力量\n副能力\n{secondary}\n", encoding="utf-8")
@@ -124,6 +127,7 @@ class TestSnapshotChecks(unittest.TestCase):
             result = json.loads(output.read_text(encoding="utf-8"))
             self.assertEqual(result[0]["primary_stat"], "意志")
             self.assertEqual(result[0]["secondary_stat"], "敏捷")
+            self.assertIn("官方标签", next(line for line in result[0]["trace"] if "主能力:" in line))
 
 
 if __name__ == "__main__":
