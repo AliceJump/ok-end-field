@@ -13,6 +13,7 @@
 
 from __future__ import annotations
 
+import argparse
 import json
 import re
 import sys
@@ -24,7 +25,7 @@ ROOT = Path(__file__).resolve().parents[2]
 DATA_DIR = ROOT / "assets/data"
 CHAR_SKILLS_DIR = DATA_DIR / "character_skills"
 BUILD_DIR = DATA_DIR / "character_builds"
-SNAP_DIR = ROOT / "tools/wiki_catalog/operator_details/20260924_154349"
+SNAP_ROOT = ROOT / "tools/wiki_catalog/operator_details"
 
 # 社区毕业配装（证据等级 2）。
 # 来源A：新浪「全干员装备适配一图流」（毕业列，3+1 格式）
@@ -142,12 +143,23 @@ def _extract_weapon_recs(payload: dict) -> list[str]:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--snapshot", help="operator_details 快照目录名（默认最新）")
+    args = parser.parse_args()
+    candidates = sorted(p for p in SNAP_ROOT.iterdir() if p.is_dir()) if SNAP_ROOT.is_dir() else []
+    snap_dir = SNAP_ROOT / args.snapshot if args.snapshot else (candidates[-1] if candidates else SNAP_ROOT)
+    if not list(snap_dir.glob("details/*.json")):
+        print(f"快照缺少 details/*.json: {snap_dir}", file=sys.stderr)
+        return 1
+
     weapons = _load_json(DATA_DIR / "weapons.json")
     characters = _load_json(DATA_DIR / "characters.json")
-    catalogs = sorted((ROOT / "tools/wiki_catalog/zh_cn").glob("*/m1_s*.json"))
+    catalogs = [snap_dir / "catalog.json", *sorted((ROOT / "tools/wiki_catalog/zh_cn").glob("*/m1_s*.json"))]
     id_to_name: dict[str, str] = {}
     op_names: set[str] = set()
     for f in catalogs:
+        if not f.is_file():
+            continue
         payload = _load_json(f)
         for catalog in payload.get("data", {}).get("catalog", []):
             for sub in catalog.get("typeSub", []):
@@ -157,11 +169,18 @@ def main() -> int:
                         if str(sub.get("id")) == "1":
                             op_names.add(str(it["itemId"]))
 
+    for filename in ("matrices.json", "equipments.json"):
+        source = DATA_DIR / filename
+        if source.is_file():
+            for item_name, item in _load_json(source).items():
+                if item.get("item_id"):
+                    id_to_name.setdefault(str(item["item_id"]), item_name)
+
     weapon_id_to_name = {w["item_id"]: n for n, w in weapons.items()}
 
     # 干员详情 → 武器推荐（干员侧）
     op_rec_weapons: dict[str, list[str]] = {}
-    for f in sorted(SNAP_DIR.glob("details/*.json")):
+    for f in sorted(snap_dir.glob("details/*.json")):
         payload = _load_json(f)
         item = payload["data"]["item"]
         op_id = str(item.get("itemId"))
@@ -189,7 +208,7 @@ def main() -> int:
         recs = [r for r in recs if r in weapons]
         if recs:
             weapon = recs[0]
-            cross = name in weapon_rec_ops.get(weapon, [])
+            cross = weapon in weapon_rec_ops.get(name, [])
             evidence_note = (
                 f"官方游戏内武器推荐（森空岛WIKI 干员页），武器页反向互证={'一致' if cross else '未列出（备选）'}"
             )

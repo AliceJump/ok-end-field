@@ -59,6 +59,7 @@ def _rank_stats(rank_table: list[list[str]]) -> dict | None:
             continue
         label = str(row[0]).strip()
         values = [cell.strip() for cell in row[1:]]
+        values = [cell.replace(",", ".") if re.fullmatch(r"\d+,\d+", cell) else cell for cell in values]
         # 列数不齐时按表头补空
         values += [""] * (len(levels) - len(values))
         rows.append({"label": label, "values": values[: len(levels)]})

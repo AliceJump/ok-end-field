@@ -42,6 +42,13 @@ class TestRankStats(unittest.TestCase):
         stats = fill._rank_stats(table)
         self.assertEqual(stats["rows"][0]["values"], ["100%", ""])
 
+    def test_comma_decimal_normalized_only_for_numeric_cells(self):
+        table = [["技能等级", "RANK 7", "专精3"], ["浮空时间（秒）", "1,5", "2,5"],
+                 ["说明", "1,5%", "1, 5"]]
+        stats = fill._rank_stats(table)
+        self.assertEqual(stats["rows"][0]["values"], ["1.5", "2.5"])
+        self.assertEqual(stats["rows"][1]["values"], ["1,5%", "1, 5"])
+
     def test_invalid_header_returns_none(self):
         self.assertIsNone(fill._rank_stats([]))
         self.assertIsNone(fill._rank_stats([["其他", "RANK 1"]]))

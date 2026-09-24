@@ -245,7 +245,7 @@ def parse_equip(item: dict, item_id: str, equip_tags: dict[str, tuple[str, str]]
         elif group == "属性":
             stat_tag = name
 
-    lv70: dict[str, int] = {}
+    lv70: dict[str, int | str] = {}
     refinement_max: dict[str, str] = {}
     set_effect_text = ""
     rec_operators: list[str] = []
@@ -275,9 +275,13 @@ def parse_equip(item: dict, item_id: str, equip_tags: dict[str, tuple[str, str]]
                         cell
                         and not cell.startswith("+")
                         and i + 1 < len(flat)
-                        and re.fullmatch(r"\+\d+", flat[i + 1])
+                        and re.fullmatch(r"\+\d+(?:\.\d+)?%?", flat[i + 1])
                     ):
-                        lv70[cell] = int(flat[i + 1].lstrip("+"))
+                        value = flat[i + 1]
+                        if "%" in value:
+                            lv70[cell] = value
+                        elif re.fullmatch(r"\+\d+", value):
+                            lv70[cell] = int(value[1:])
             elif header and header[0] == "可精锻属性":
                 for row in table[1:]:
                     if row and row[0].strip():
