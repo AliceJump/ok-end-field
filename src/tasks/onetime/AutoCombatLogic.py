@@ -219,6 +219,9 @@ class AutoCombatLogic:
                         return True, "break"
                 task.approach_enemy()
                 task.next_frame()
+                _probe_pulse = getattr(task, "probe_pulse", None)
+                if callable(_probe_pulse):
+                    _probe_pulse()
                 self._do_normal_combat_frame(allow_digits=not self.auto_rotation_active)
             task.log_info("普通战斗临时模式结束")
             return True, ""
@@ -606,6 +609,12 @@ class AutoCombatLogic:
 
                 task.approach_enemy()
                 task.next_frame()
+
+                # 独立脉冲探针：与战斗模式/配置无关，观测后立即继续本帧逻辑
+                # （getattr 守卫兼容无 probe_pulse 能力的测试替身）
+                _probe_pulse = getattr(task, "probe_pulse", None)
+                if callable(_probe_pulse):
+                    _probe_pulse()
 
                 # ── 模式分发：实时条件 > 普通排轴 > 自动排轴 > 普通 ──────────
                 if self.cond_rotation_enabled:

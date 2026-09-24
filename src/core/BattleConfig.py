@@ -27,6 +27,9 @@ KEY_SKILL_ALLOWLIST = "自动技能列表"
 # 伤害优先排序（自动技能列表的子选项）
 KEY_DAMAGE_ROTATION = "伤害优先排序"
 
+# 脉冲探针（独立诊断开关：观测推荐脉冲出现位置并落盘，不影响战斗行为）
+KEY_PULSE_PROBE = "脉冲探针记录"
+
 
 # ==========================================================
 # Config Name / Mode
@@ -133,6 +136,9 @@ DEFAULT_SKILL_ALLOWLIST = True
 
 DEFAULT_DAMAGE_ROTATION = True
 
+# 脉冲探针默认开启：诊断数据采集不影响战斗，攒实战样本
+DEFAULT_PULSE_PROBE = True
+
 
 # ==========================================================
 # Default Battle Config
@@ -154,6 +160,7 @@ DEFAULT_BATTLE_CONFIG = {
     KEY_RECOMMEND_SKILL: DEFAULT_RECOMMEND_SKILL,
     KEY_SKILL_ALLOWLIST: DEFAULT_SKILL_ALLOWLIST,
     KEY_DAMAGE_ROTATION: DEFAULT_DAMAGE_ROTATION,
+    KEY_PULSE_PROBE: DEFAULT_PULSE_PROBE,
 }
 
 
@@ -199,6 +206,7 @@ BATTLE_CONFIG_TYPE = {
     KEY_SKILL_ALLOWLIST: {"sub_configs": {False: BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST],
                                           True: [KEY_DAMAGE_ROTATION]}},
     KEY_DAMAGE_ROTATION: {},
+    KEY_PULSE_PROBE: {},
 }
 
 
@@ -249,6 +257,13 @@ BATTLE_CONFIG_DESCRIPTION = {
         "自动识别协议空间（战斗画面左上角「撤离」按钮）：\n"
         "协议空间开局终结技全满，轴含终结技；普通战斗（冷启动）\n"
         "轴不含终结技，就绪后由填充段兜底自动释放。"
+    ),
+    KEY_PULSE_PROBE: (
+        "独立诊断探针：战斗中观测技能按钮区域出现白色脉冲（官方推荐\n"
+        "释放时机）的位置与时间，追加记录到\n"
+        "「configs/pulse_probe_log.jsonl」，用于统计哪些强化态/技能\n"
+        "有官方脉冲提示。\n"
+        "只记录不按键，不影响任何战斗行为；关闭后停止记录。"
     ),
 }
 
