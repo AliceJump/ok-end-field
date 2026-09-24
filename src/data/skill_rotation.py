@@ -8,6 +8,8 @@
 - ``generate_auto_rotation``：完整循环轴，涵盖队内全部 1-4 号位的战技（数字键）、
   终结技（ult_N）与连携技窗口（e），段间以普通战斗填充段回技力，供排轴执行器
   ``% len`` 无限循环。终结技/连携未就绪时由执行端跳过推进，下一轮再试。
+  ``include_ult=False`` 为冷启动轴（协议空间外的普通战斗：开局终结技不可用，
+  不排 ult，由填充段兜底通道就绪后释放）。
 
 排序规则（两者一致）：
 - 主指标 = 该角色「战技」的暴击期望（crit_expect，含 5%/50% 基础暴击）；
@@ -114,20 +116,27 @@ def generate_damage_rotation(
 def generate_auto_rotation(
     team_members: list[str],
     baseline: dict[str, float] | None = None,
+    include_ult: bool = True,
 ) -> list[str]:
     """生成可重复循环的自动排轴 token 序列。
 
     每轮循环 = 按伤害降序遍历队内各号位：
-      [战技N] [ult_N]（每段） + [e]（第 1、3 段后） + [normal_12.5]（每段后）
+      [战技N] [ult_N]（每段，include_ult 时） + [e]（第 1、3 段后） + [normal_12.5]（每段后）
 
     - 战技（数字键）覆盖队内全部 1-4 号位，游戏内即「切到该号位释放战技」；
     - ult_N / e 由执行端就绪检测，未就绪跳过推进、下一轮循环再试，不卡轴；
     - normal_12.5 填充段保持普通战斗（普攻回技力 + 推荐技能/终结技兜底），
       时长 ≈ 一个战技的技力恢复，整轮 SP 收支平衡（见 _SP_REGEN_SECONDS 注释）。
 
+    冷启动（include_ult=False）：不把终结技排入轴。适用于协议空间之外的
+    普通战斗——开局终结技能量未满，轴上的 ult_N 会在前几轮循环全部空转。
+    冷启动轴的终结技由填充段的 use_ult() 兜底通道在就绪后自动释放。
+
     Args:
         team_members: 4 个角色名，索引 0-3 对应队位 1-4（"?" 为未识别）。
         baseline: {角色名: 期望伤害}；None 时加载 damage_baseline.json。
+        include_ult: 是否把终结技（ult_N）排入轴。协议空间（开局全满）传 True，
+            普通战斗（能量从零攒）传 False。
 
     Returns:
         循环轴 token 列表（执行器按 ``% len`` 无限循环）。
@@ -139,7 +148,8 @@ def generate_auto_rotation(
     for seg, slot in enumerate(_damage_sorted_slots(team_members, baseline)):
         token = str(slot + 1)
         rotation.append(token)
-        rotation.append(f"ult_{token}")
+        if include_ult:
+            rotation.append(f"ult_{token}")
         if seg in _LINK_AFTER_SEGMENT:
             rotation.append("e")
         rotation.append(f"normal_{_SP_REGEN_SECONDS}")

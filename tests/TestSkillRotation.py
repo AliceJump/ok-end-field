@@ -122,6 +122,27 @@ class TestGenerateAutoRotation(unittest.TestCase):
         self.assertIn("e", rotation)
         self.assertTrue(any(t.startswith("normal_") for t in rotation))
 
+    def test_cold_start_excludes_ult(self):
+        # 冷启动（协议空间外）：轴不含 ult_N，其余结构（战技/连携窗口/填充段）不变
+        rotation = generate_auto_rotation(["A", "B", "C", "D"], {"A": 4, "B": 3, "C": 2, "D": 1}, include_ult=False)
+        self.assertFalse(any(t.startswith("ult_") for t in rotation))
+        digits = [t for t in rotation if t.isdigit()]
+        links = [t for t in rotation if t == "e"]
+        fills = [t for t in rotation if t.startswith("normal_")]
+        self.assertEqual(len(digits), 4)
+        self.assertGreaterEqual(len(links), 1)
+        self.assertEqual(len(fills), 4)
+
+    def test_cold_start_tokens_valid_and_sp_balanced(self):
+        # 冷启动轴同样过执行器校验，且 SP 配平不变（填充段数 = 战技数）
+        rotation = generate_auto_rotation(["A", "B", "C", "D"], {"A": 4, "B": 3, "C": 2, "D": 1}, include_ult=False)
+        ast, warnings = normalize_ast(rotation)
+        self.assertEqual(ast, rotation)
+        self.assertEqual(warnings, [])
+        fills = [t for t in rotation if t.startswith("normal_")]
+        digits = [t for t in rotation if t.isdigit()]
+        self.assertEqual(len(fills), len(digits))
+
 
 class _FakeAutoTask:
     """模拟 BaseEfTask 的最小子集，供 _do_auto_rotation_step 测试。"""
@@ -263,14 +284,51 @@ class TestAutoRotationCombat(unittest.TestCase):
         cfg = {KEY_SKILL_ALLOWLIST: True, KEY_DAMAGE_ROTATION: True}
         task = _FakeTask(cfg, ults=("2",), link=False, skill=3)
         task.stable_team_result = (["赛希", "弭弗", "莱万汀", "噗切娜"], True)
+        # 检测到协议空间特征 → 热启动：轴含终结技
+        task.find_feature = lambda feature=None, **k: True
         logic = AutoCombatLogic(task)
         logic.run(start_sleep=0)
         self.assertTrue(logic.auto_rotation_active)
+        self.assertTrue(logic.protocol_space_detected)
         # 轴覆盖全技能类型，且伤害最高的弭弗（2 号位）先手
         self.assertEqual(logic.skill_sequence[0], "2")
         self.assertIn("ult_2", logic.skill_sequence)
         self.assertIn("e", logic.skill_sequence)
         self.assertTrue(any(t.startswith("normal_") for t in logic.skill_sequence))
+
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_run_cold_start_excludes_ult(self, _mu, _md):
+        # 协议空间特征检测未命中 → 冷启动：轴不含 ult，其余结构完整
+        from tests.TestConditionalRotation import _FakeTask
+
+        cfg = {KEY_SKILL_ALLOWLIST: True, KEY_DAMAGE_ROTATION: True}
+        task = _FakeTask(cfg, ults=("2",), link=False, skill=3)
+        task.stable_team_result = (["赛希", "弭弗", "莱万汀", "噗切娜"], True)
+        task.find_feature = lambda feature=None, **k: False
+        logic = AutoCombatLogic(task)
+        logic.run(start_sleep=0)
+        self.assertTrue(logic.auto_rotation_active)
+        self.assertFalse(logic.protocol_space_detected)
+        self.assertFalse(any(t.startswith("ult_") for t in logic.skill_sequence))
+        self.assertEqual(logic.skill_sequence[0], "2")
+        self.assertIn("e", logic.skill_sequence)
+        self.assertTrue(any(t.startswith("normal_") for t in logic.skill_sequence))
+
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_run_without_detector_defaults_cold_start(self, _mu, _md):
+        # 无 find_feature 能力（异常环境）→ 保守按冷启动处理，不抛异常
+        from tests.TestConditionalRotation import _FakeTask
+
+        cfg = {KEY_SKILL_ALLOWLIST: True, KEY_DAMAGE_ROTATION: True}
+        task = _FakeTask(cfg, ults=("2",), link=False, skill=3)
+        task.stable_team_result = (["赛希", "弭弗", "莱万汀", "噗切娜"], True)
+        logic = AutoCombatLogic(task)
+        logic.run(start_sleep=0)
+        self.assertTrue(logic.auto_rotation_active)
+        self.assertFalse(logic.protocol_space_detected)
+        self.assertFalse(any(t.startswith("ult_") for t in logic.skill_sequence))
 
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
