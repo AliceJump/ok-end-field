@@ -355,7 +355,9 @@ def guard_anchor_official_match(a_text: str, ranked: list, raw_texts: dict) -> b
     if not isinstance(cn_val, str) or not cn_val.strip():
         return True  # 官方无 CN 值，无从判断，交由既有流程
     cn_val = cn_val.strip()
-    if cn_val == a_text or cn_val.endswith(a_text):
+    norm_cn_val = _norm(cn_val)
+    norm_anchor = _norm(a_text)
+    if norm_cn_val == norm_anchor or norm_cn_val.endswith(norm_anchor):
         return True
     print(
         f"[sync-guard] 跳过可疑反查: 锚点 {a_text!r} 命中 key {top_key} 的官方 CN 值 "

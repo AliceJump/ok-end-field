@@ -93,10 +93,12 @@ class DailyDemoFeature:
                 return current_level
 
             # 未开双倍时点击『随机』会弹出「仅可在第三抽之前调整奖励翻倍选项…是否确认抽取？」
-            # 确认框会拦截本次抽取导致等级不变；点掉确认框后重试。
+            # 确认框会拦截本次抽取导致等级不变；点掉确认框后等待等级变化。
             # 已开双倍时不会弹此框，无需检测，直接重试。
-            if not double_reward_opened:
-                self.click_confirm(time_out=1)
+            if not double_reward_opened and self.click_confirm(time_out=1):
+                current_level = self.wait_level_change(previous_level, time_out=4)
+                if current_level is not None:
+                    return current_level
 
             self.log_warning(f"第 {retry_index + 1} 次点击随机按钮后等级未变化，重试点击")
 
