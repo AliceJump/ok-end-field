@@ -1,0 +1,34 @@
+{
+  "character": "卡缪",
+  "character_key": "camille",
+  "element": "灼热",
+  "stars": null,
+  "weapon": {
+    "name": "镀红祝福",
+    "level_max": 90,
+    "skill_rank": 9,
+    "source": "官方游戏内武器推荐（森空岛WIKI）",
+    "evidence_level": 1,
+    "note": "官方游戏内武器推荐（森空岛WIKI 干员页），武器页反向互证=未列出（备选）"
+  },
+  "matrix": {
+    "name": "无瑕基质·流转",
+    "source": "官方武器页「推荐武器基质」",
+    "evidence_level": 1,
+    "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
+  },
+  "equipment": {
+    "set_main": "动火用装备组",
+    "set_off": "潮涌装备组",
+    "pieces": [
+      "动火用外骨骼",
+      "动火用手套",
+      "动火用储能匣",
+      "悬河供氧栓"
+    ],
+    "level_max": 70,
+    "refinement_max": 3,
+    "source": "启发式默认（元素 灼热 模板，待专属攻略验证）",
+    "evidence_level": 3
+  }
+}
