@@ -164,6 +164,10 @@ class ParamPreviewPopup(QWidget):
 
     def show_for_task(self, card):
         """按任务卡定位并弹出；内容不可用时返回 False。"""
+        # 先停掉所有在途动画并复位透明度：本方法可能在弹层已可见时被
+        # 调用（悬停扫到另一张卡），在途的 slide 动画终点是旧卡位置，
+        # 会把下面 _position 定好的新位置又拉回去（位置乱跳）
+        self._cancel_animations()
         task = card.task
         preview = _build_preview(task)
         if preview is None:
@@ -363,6 +367,13 @@ class ParamPreviewPopup(QWidget):
 
     # ── 悬停保持 ─────────────────────────────────────────────
 
+    def _cancel_animations(self):
+        """停掉全部在途动效并复位为全显（切换目标卡前调用）。"""
+        self._show_anim.stop()
+        self._slide_anim.stop()
+        self._hide_anim.stop()
+        self.setWindowOpacity(1.0)
+
     def showEvent(self, event):
         super().showEvent(event)
         # 每次弹出：透明度 0→1 + 从下方 4px 上浮到位（扩展 cubic-bezier 回弹
@@ -422,6 +433,11 @@ class ParamPreviewController:
         cls.cancel_hide()
         popup = cls._ensure_popup()
         if not popup.show_for_task(card):
+            # 新卡无内容：Enter 已撤掉旧卡的收起定时器，弹层若继续挂着
+            # 上一张卡的内容会一直滞留到离开新卡为止，这里立刻收走
+            if popup.isVisible():
+                popup.hide_animated()
+                cls._owner = None
             return
         cls._owner = card
         popup.show()
