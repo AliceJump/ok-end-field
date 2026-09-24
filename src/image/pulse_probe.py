@@ -28,6 +28,7 @@ import contextlib
 import json
 import threading
 from datetime import datetime
+from pathlib import Path
 
 from src.core.BattleConfig import KEY_PULSE_PROBE, RECOMMEND_SKILL_REGIONS
 from src.image.recommend_skill_detector import (
@@ -71,7 +72,8 @@ class PulseProbe:
                 return
             now = task.active_time()
             with self._lock:
-                if now - self._last_sample_t < _SAMPLE_INTERVAL:
+                elapsed = now - self._last_sample_t
+                if 0 <= elapsed < _SAMPLE_INTERVAL:
                     return
                 self._last_sample_t = now
 
@@ -137,11 +139,11 @@ class PulseProbe:
         }
         try:
             if self._log_path is not None:
-                path = self._log_path
+                path = Path(self._log_path)
             else:
                 from src.core.paths import config_path
 
-                path = config_path("pulse_probe_log.jsonl")
+                path = Path(config_path("pulse_probe_log.jsonl"))
             path.parent.mkdir(parents=True, exist_ok=True)
             with open(path, "a", encoding="utf-8", newline="\n") as f:
                 f.write(json.dumps(entry, ensure_ascii=False) + "\n")
