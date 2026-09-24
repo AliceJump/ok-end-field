@@ -2729,3 +2729,24 @@ msgid ""
 msgstr ""
 "Tamaño de fuente del texto de la superposición, en píxeles respecto a una ventana de 1080p;\n"
 "se escala con la altura de la ventana."
+
+msgid "显隐组"
+msgstr "Condicional"
+
+msgid "其他参数"
+msgstr "Otros parámetros"
+
+msgid "参数"
+msgstr "Parámetros"
+
+msgid "{n} 项"
+msgstr "{n} elem."
+
+msgid "开"
+msgstr "Sí"
+
+msgid "关"
+msgstr "No"
+
+msgid "参数预览"
+msgstr "Vista previa de parámetros"

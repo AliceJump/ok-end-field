@@ -2499,3 +2499,24 @@ msgid ""
 msgstr ""
 "浮层文字字号，按 1080p 窗口高度为基准的像素值，\n"
 "会随窗口高度等比缩放。"
+
+msgid "显隐组"
+msgstr "显隐组"
+
+msgid "其他参数"
+msgstr "其他参数"
+
+msgid "参数"
+msgstr "参数"
+
+msgid "{n} 项"
+msgstr "{n} 项"
+
+msgid "开"
+msgstr "开"
+
+msgid "关"
+msgstr "关"
+
+msgid "参数预览"
+msgstr "参数预览"
