@@ -1,6 +1,8 @@
 import os
 import tempfile
 import unittest
+from contextlib import contextmanager
+from typing import ClassVar
 from unittest.mock import patch
 
 from ok.util import config as config_module
@@ -114,7 +116,7 @@ class TestZipLineConfig(unittest.TestCase):
 
     # ---- 端到端回归测试（#165 CodeRabbit review）----
 
-    ZIP_LINE_MIGRATIONS = {
+    ZIP_LINE_MIGRATIONS: ClassVar[dict[str, str]] = {
         "通向送货点": "通向武陵城送货点",
         "通向送货点试验园区": "通向试验园区送货点",
     }
@@ -128,6 +130,47 @@ class TestZipLineConfig(unittest.TestCase):
 
     def _read_config(self, root: str, name: str):
         return read_json_file(os.path.join(root, "configs", name))
+
+    @contextmanager
+    def _patch_global_store(self, tmp: str):
+        """把 global_config_store / account_scope_store 的路径全部指向临时仓库根。"""
+        with (
+            patch.object(
+                global_config_store,
+                "config_path",
+                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
+            ),
+            patch.object(
+                config_module, "get_relative_path", side_effect=lambda *parts: os.path.join(tmp, *parts)
+            ),
+            patch.object(
+                global_config_store,
+                "get_migration_state_path",
+                return_value=os.path.join(tmp, "configs", "_global_config_migrations.json"),
+            ),
+            patch.object(
+                global_config_store,
+                "get_migration_backup_dir",
+                return_value=os.path.join(tmp, "configs", "global_config_migration_backup"),
+            ),
+            patch.object(
+                account_scope_store,
+                "get_store_path",
+                return_value=os.path.join(tmp, "configs", "account_scoped_overrides.json"),
+            ),
+        ):
+            yield
+
+    @contextmanager
+    def _reset_configs_cache(self):
+        """临时清空 global_config_store._CONFIGS，结束后恢复。"""
+        previous = global_config_store._CONFIGS.copy()
+        global_config_store._CONFIGS.clear()
+        try:
+            yield
+        finally:
+            global_config_store._CONFIGS.clear()
+            global_config_store._CONFIGS.update(previous)
 
     def test_migrate_config_file_keys_delivery_task_e2e(self):
         """DeliveryTask 端到端：migrate_config_file_keys 把旧键复制到新键，旧键保留（回滚安全）。"""
@@ -197,26 +240,13 @@ class TestZipLineConfig(unittest.TestCase):
                 },
             )
             state_path = os.path.join(tmp, "configs", "_global_config_migrations.json")
-            backup_dir = os.path.join(tmp, "configs", "global_config_migration_backup")
             store_path = os.path.join(tmp, "configs", "account_scoped_overrides.json")
 
-            previous_configs = global_config_store._CONFIGS.copy()
-            global_config_store._CONFIGS.clear()
-            try:
-                with (
-                    patch.object(
-                        global_config_store,
-                        "config_path",
-                        side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
-                    ),
-                    patch.object(
-                        config_module, "get_relative_path", side_effect=lambda *parts: os.path.join(tmp, *parts)
-                    ),
-                    patch.object(global_config_store, "get_migration_state_path", return_value=state_path),
-                    patch.object(global_config_store, "get_migration_backup_dir", return_value=backup_dir),
-                    patch.object(account_scope_store, "get_store_path", return_value=store_path),
-                ):
-                    config = global_config_store.get_global_config(ZIP_LINE_CONFIG_NAME)
+            with (
+                self._reset_configs_cache(),
+                self._patch_global_store(tmp),
+            ):
+                config = global_config_store.get_global_config(ZIP_LINE_CONFIG_NAME)
 
                 # 全局结果：旧键值复制到新键
                 self.assertEqual(config.get("通向武陵城送货点"), "12,34")
@@ -231,9 +261,6 @@ class TestZipLineConfig(unittest.TestCase):
                 state = read_json_file(state_path)
                 self.assertTrue(state.get("zip_line_account_overrides_v1"))
                 self.assertIn(ZIP_LINE_CONFIG_NAME, state.get("global_config_store_v2_task_scoped", []))
-            finally:
-                global_config_store._CONFIGS.clear()
-                global_config_store._CONFIGS.update(previous_configs)
 
     def test_task_zip_line_values_survive_task_config_construction(self):
         """任务侧 load_config 顺序：滑索值在框架 verify_config 删键前转存全局。
@@ -296,35 +323,20 @@ class TestZipLineConfig(unittest.TestCase):
                 "测试对象": "无",
             }
             daily_default = {"_enabled": True, "使用独立配置": False, "⭐刷体力": True}
-            state_path = os.path.join(tmp, "configs", "_global_config_migrations.json")
-            backup_dir = os.path.join(tmp, "configs", "global_config_migration_backup")
-            store_path = os.path.join(tmp, "configs", "account_scoped_overrides.json")
 
-            previous_configs = global_config_store._CONFIGS.copy()
-            global_config_store._CONFIGS.clear()
-            try:
-                with (
-                    patch.object(
-                        global_config_store,
-                        "config_path",
-                        side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
-                    ),
-                    patch.object(
-                        config_module, "get_relative_path", side_effect=lambda *parts: os.path.join(tmp, *parts)
-                    ),
-                    patch.object(global_config_store, "get_migration_state_path", return_value=state_path),
-                    patch.object(global_config_store, "get_migration_backup_dir", return_value=backup_dir),
-                    patch.object(account_scope_store, "get_store_path", return_value=store_path),
-                ):
-                    # 模拟任务侧 load_config：迁移键名 → 转存全局 → 框架 Config 构造（删滑索键）
-                    config_migration.migrate_config_file_keys("DeliveryTask", self.ZIP_LINE_MIGRATIONS)
-                    migrate_task_zip_line_values_to_global("DeliveryTask")
-                    Config("DeliveryTask", delivery_default)
+            with (
+                self._reset_configs_cache(),
+                self._patch_global_store(tmp),
+            ):
+                # 模拟任务侧 load_config：迁移键名 → 转存全局 → 框架 Config 构造（删滑索键）
+                config_migration.migrate_config_file_keys("DeliveryTask", self.ZIP_LINE_MIGRATIONS)
+                migrate_task_zip_line_values_to_global("DeliveryTask")
+                Config("DeliveryTask", delivery_default)
 
-                    migrate_task_zip_line_values_to_global("DailyTask")
-                    Config("DailyTask", daily_default)
+                migrate_task_zip_line_values_to_global("DailyTask")
+                Config("DailyTask", daily_default)
 
-                    zlc = global_config_store.get_global_config(ZIP_LINE_CONFIG_NAME)
+                zlc = global_config_store.get_global_config(ZIP_LINE_CONFIG_NAME)
 
                 # 任务文件滑索键已被框架删除（模拟真实行为）……
                 self.assertNotIn("通向武陵城送货点", self._read_config(tmp, "DeliveryTask.json"))
@@ -338,9 +350,6 @@ class TestZipLineConfig(unittest.TestCase):
                 saved = self._read_config(tmp, "Zip Line Config.json")
                 self.assertEqual(saved["通向武陵城送货点"], "50")
                 self.assertEqual(saved["枢纽区"], "222")
-            finally:
-                global_config_store._CONFIGS.clear()
-                global_config_store._CONFIGS.update(previous_configs)
 
 
 if __name__ == "__main__":
