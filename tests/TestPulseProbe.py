@@ -156,6 +156,28 @@ class TestPulseProbe(unittest.TestCase):
             self.probe.observe(task)
         self.assertEqual(len(self._entries()), 1)
 
+    def test_clock_rollback_resets_throttle_and_samples(self):
+        task = self._task(member_count=4)
+        task.frame = frame_one(1, white=True)
+        self.probe.observe(task)
+        task._t -= 1
+        self.probe.observe(task)
+        self.assertEqual(self.probe._last_sample_t, task._t)
+        task._t += 0.1
+        self.probe.observe(task)
+        self.assertEqual(self.probe._last_sample_t, task._t - 0.1)
+
+    def test_string_log_paths_create_parent_directories(self):
+        task = self._task(member_count=4)
+        injected = Path(self._tmp.name) / "injected" / "pulse.jsonl"
+        PulseProbe(log_path=str(injected))._record(task, "批次1", 1, 1.0, 4)
+        self.assertTrue(injected.is_file())
+
+        default = Path(self._tmp.name) / "default" / "pulse.jsonl"
+        with patch("src.core.paths.config_path", return_value=str(default)):
+            PulseProbe()._record(task, "批次1", 1, 1.0, 4)
+        self.assertTrue(default.is_file())
+
     def test_disabled_no_record(self):
         task = self._task(cfg={KEY_PULSE_PROBE: False}, member_count=4)
         for _ in range(4):

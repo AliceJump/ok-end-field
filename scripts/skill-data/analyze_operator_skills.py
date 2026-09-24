@@ -35,7 +35,8 @@ sys.stdout.reconfigure(encoding="utf-8")
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from src.data.effects import EFFECT_TERMS, EffectType, match_effect_terms
+from src.data.effects import EFFECT_TERMS, EffectType, match_effect_terms  # noqa: E402
+from src.data.operator_names import _normalize_name  # noqa: E402
 
 SNAPSHOT_ROOT = ROOT / "tools" / "wiki_catalog" / "operator_details"
 CHARACTER_SKILLS_DIR = ROOT / "assets" / "data" / "character_skills"
@@ -310,12 +311,6 @@ def _load_current_characters() -> dict[str, dict]:
         data = json.loads(path.read_text(encoding="utf-8"))
         result[str(data.get("name") or path.stem)] = data
     return result
-
-
-def _normalize_name(name: str) -> str:
-    if name.startswith("管理员"):
-        return "管理员"
-    return name
 
 
 def _enhancements(skill: dict) -> list[dict]:

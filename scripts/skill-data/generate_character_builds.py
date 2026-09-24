@@ -22,6 +22,10 @@ from pathlib import Path
 sys.stdout.reconfigure(encoding="utf-8")
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
+from src.data.operator_names import _normalize_name  # noqa: E402
+
 DATA_DIR = ROOT / "assets/data"
 CHAR_SKILLS_DIR = DATA_DIR / "character_skills"
 BUILD_DIR = DATA_DIR / "character_builds"
@@ -184,22 +188,23 @@ def main() -> int:
         payload = _load_json(f)
         item = payload["data"]["item"]
         op_id = str(item.get("itemId"))
-        name = id_to_name.get(op_id) or f.stem.split("_", 1)[-1]
+        name = _normalize_name(id_to_name.get(op_id) or f.stem.split("_", 1)[-1])
         ids = _extract_weapon_recs(payload)
         names = [weapon_id_to_name.get(i, id_to_name.get(i, f"?{i}")) for i in ids]
-        op_rec_weapons[name] = names
+        recs = op_rec_weapons.setdefault(name, [])
+        recs.extend(weapon for weapon in names if weapon not in recs)
 
     # 武器页 → 推荐干员（武器侧，反向互证）
     weapon_rec_ops: dict[str, list[str]] = {}
     for wname, w in weapons.items():
         for oid in w.get("recommended_operator_ids") or []:
-            weapon_rec_ops.setdefault(id_to_name.get(oid, oid), []).append(wname)
+            weapon_rec_ops.setdefault(_normalize_name(id_to_name.get(oid, oid)), []).append(wname)
 
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
     report = []
     for path in sorted(CHAR_SKILLS_DIR.glob("*.json")):
         char = _load_json(path)
-        name = str(char.get("name") or path.stem)
+        name = _normalize_name(str(char.get("name") or path.stem))
         element = str(char.get("element") or "")
         weapon = None
         evidence_note = ""
