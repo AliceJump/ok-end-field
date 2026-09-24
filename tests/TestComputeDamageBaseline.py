@@ -155,6 +155,26 @@ class TestEquipmentStats(unittest.TestCase):
         self.assertEqual(result["primary_stat"], "力量")
         self.assertIn("按元素推断", next(line for line in result["trace"] if "主能力:" in line))
 
+    def test_same_name_wiki_candidates_use_item_with_ability_data(self):
+        char = {
+            "name": "同名角色",
+            "element": "物理",
+            "base_stats": {"rows": {"攻击力": [100], "力量": [10], "敏捷": [20]}, "levels": [90]},
+            "skills": [],
+        }
+        result = mod.compute_character(
+            "same_name",
+            char,
+            {},
+            {},
+            {},
+            {"item-with-abilities": "力量"},
+            {"同名角色": ["item-without-abilities", "item-with-abilities"]},
+            {"item-with-abilities": "敏捷"},
+        )
+        self.assertEqual(result["primary_stat"], "力量")
+        self.assertEqual(result["secondary_stat"], "敏捷")
+
 
 class TestCliPathValidation(unittest.TestCase):
     """--char/--out 输入校验（SonarCloud 路径注入热点）。"""
