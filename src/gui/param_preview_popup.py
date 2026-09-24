@@ -1,15 +1,18 @@
-"""任务卡「小眼睛」参数概要弹层（Qt.Popup 浮层）。
+"""任务卡悬停参数概要弹层（对齐 ok-script-toolkit 控制台行为）。
 
 交互与定位规范来自设计文档
 ``ok-script-toolkit/.workbuddy/design/eye-popup-design.md`` 1.2 / 2.2 节：
 
-- 展开方向：眼睛在卡头最右侧，弹层**向右展开**（左缘贴卡右缘外 8px、
-  顶对齐卡片）；空间不足先收窄（250 → 下限 180px）；钳位用
-  ``QScreen.availableGeometry()``（弹层是独立顶级窗口，可画出主窗口
-  边界）；连屏幕都放不下才允许少量压卡，**永不向左回退**。
+- 触发：**悬停整张任务卡** 500ms 弹出（无按钮），弹层**向右展开**
+  （左缘贴卡右缘外 8px、顶对齐卡片）；空间不足先收窄（250 → 下限
+  180px）；钳位用 ``QScreen.availableGeometry()``（弹层是独立顶级窗口，
+  可画出主窗口边界）；连屏幕都放不下才允许少量压卡，**永不向左回退**。
+- 窗口类型 Qt.ToolTip：不抢焦点、不抓鼠标——悬停展示期间卡片上的
+  开关/下拉/展开按钮照常可点（对齐扩展里 div 浮层不拦截交互的行为）。
 - 悬停保持：鼠标进弹层不消失（撤隐藏定时器），移走才收（120ms 延迟）。
 - 滚动收起：宿主列表滚动 / 窗口缩放移动 / 任务刷新立即收；弹层自身
   内滚不收（弹层是独立顶级窗口，事件到不了宿主过滤器）。
+- 卡片自身变形（展开配置卡）立即收起：位置过时，且说明用户开始操作。
 - 切 tab 抑制：卡片隐藏（切分段）后 1.2s 内不弹。
 - 快速移动防竞态：show 前先撤旧的隐藏定时器。
 """
@@ -38,7 +41,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from qfluentwidgets import FluentIcon, ScrollArea, ToolButton, isDarkTheme
+from qfluentwidgets import ScrollArea, isDarkTheme
 
 from src.core.param_preview_model import build_param_preview
 
@@ -48,14 +51,10 @@ POP_MIN_WIDTH = 180
 POP_MARGIN = 8
 POP_MAX_HEIGHT_RATIO = 0.66
 
-# 悬停节奏：卡头悬停 500ms 弹出；离开后 120ms 收起；切 tab 抑制 1.2s
+# 悬停节奏：整卡悬停 500ms 弹出；离开后 120ms 收起；切 tab 抑制 1.2s
 SHOW_DELAY_MS = 500
 HIDE_DELAY_MS = 120
 SUPPRESS_MS = 1200
-
-# 点击眼睛后的重开保护窗口（Qt.Popup 在点击外部时会先关闭弹层，
-# 同一次按压会继续派发到眼睛，靠时间戳避免「点一下又立刻弹回」）
-RECLICK_GUARD_S = 0.25
 
 _LIGHT = {
     "panel_bg": "rgba(250, 250, 250, 244)",
@@ -86,7 +85,7 @@ def _colors():
 
 
 def _build_preview(task):
-    """任务 → 弹层内容模型；无可展示内容返回 None（不显示眼睛）。"""
+    """任务 → 弹层内容模型；无可展示内容返回 None（不装悬停弹出）。"""
     return build_param_preview(
         task.config,
         task.config_type,
@@ -97,11 +96,14 @@ def _build_preview(task):
 
 
 class ParamPreviewPopup(QWidget):
-    """frameless Qt.Popup 浮层：半透明圆角面板 + 限高内滚的分组概要。"""
+    """frameless Qt.ToolTip 浮层：半透明圆角面板 + 限高内滚的分组概要。"""
 
     def __init__(self):
-        super().__init__(None, Qt.Popup | Qt.FramelessWindowHint)
+        # Qt.ToolTip：不激活、不抢焦点、不抓鼠标——悬停展示期间卡片控件
+        # 照常可点（Qt.Popup 会抓走第一次点击，不适合悬停展示场景）
+        super().__init__(None, Qt.ToolTip | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground, True)
+        self.setAttribute(Qt.WA_ShowWithoutActivating, True)
 
         self._root_layout = QVBoxLayout(self)
         self._root_layout.setContentsMargins(12, 12, 12, 14)
@@ -386,8 +388,6 @@ class ParamPreviewController:
     _popup: ParamPreviewPopup | None = None
     _owner = None
     _hide_timer: QTimer | None = None
-    _last_closed_at = 0.0
-    _last_owner = None
 
     @classmethod
     def _ensure_popup(cls):
@@ -404,9 +404,6 @@ class ParamPreviewController:
         """显示/切换弹层（快速移动防竞态：先撤旧隐藏定时器）。"""
         cls.cancel_hide()
         popup = cls._ensure_popup()
-        if cls._owner is card and popup.isVisible():
-            cls._hide_now()
-            return
         if not popup.show_for_task(card):
             return
         cls._owner = card
@@ -432,41 +429,24 @@ class ParamPreviewController:
             cls._hide_timer.stop()
 
     @classmethod
-    def recently_closed_for(cls, card):
-        """弹层刚因点击而关闭（Qt.Popup 点外自动关）→ 忽略同一次点击。"""
-        return (cls._last_owner is card
-                and time.monotonic() - cls._last_closed_at < RECLICK_GUARD_S)
-
-    @classmethod
     def _hide_now(cls):
         if cls._popup is not None and cls._popup.isVisible():
-            cls._last_closed_at = time.monotonic()
-            cls._last_owner = cls._owner
             cls._popup.hide_animated()
         cls._owner = None
 
 
-class _EyeButton(ToolButton):
-    """卡头「小眼睛」：悬停 500ms 或点击 → 弹出参数概要，向右展开。"""
+class _CardHoverFilter(QObject):
+    """整卡悬停过滤：Enter 延迟弹出、Leave 延迟收起、切 tab 抑制、
+    宿主滚动/主窗口变化/卡片变形立即收起（对齐扩展 showHoverPop 语义）。"""
 
-    def __init__(self, card, parent=None):
-        # 不能用 super().__init__(FluentIcon.VIEW, parent)：ToolButton.__init__
-        # 是 singledispatchmethod，FluentIconBase 分支会回调 self.__init__(parent)，
-        # 而实例上的 self.__init__ 是本类的 __init__，会无限递归（启动即 RecursionError）
-        super().__init__(parent)
-        self.setIcon(FluentIcon.VIEW)
+    def __init__(self, card):
+        super().__init__(None)
         self._card = card
-        self.setToolTip(og.app.tr("参数预览"))
         self._show_timer = QTimer(self)
         self._show_timer.setSingleShot(True)
         self._show_timer.setInterval(SHOW_DELAY_MS)
         self._show_timer.timeout.connect(self._show_popup)
         self._suppress_until = 0.0
-        self._event_filter = _CardEventFilter(self, card)
-        card.installEventFilter(self._event_filter)
-        self._install_host_filters(card)
-
-    # ── 弹出控制 ─────────────────────────────────────────────
 
     def _show_popup(self):
         if time.monotonic() < self._suppress_until:
@@ -478,76 +458,52 @@ class _EyeButton(ToolButton):
         self._suppress_until = time.monotonic() + SUPPRESS_MS / 1000.0
         ParamPreviewController.hide()
 
-    def _install_host_filters(self, card):
-        """宿主列表滚动（Wheel）/ 主窗口缩放移动 → 立即收起弹层。"""
-        parent = card.parentWidget()
-        while parent is not None:
-            if isinstance(parent, QAbstractScrollArea):
-                parent.viewport().installEventFilter(self._event_filter)
-                break
-            parent = parent.parentWidget()
-        window = card.window()
-        if window is not None:
-            window.installEventFilter(self._event_filter)
-
-    # ── 眼睛自身交互 ─────────────────────────────────────────
-
-    def enterEvent(self, event):
-        ParamPreviewController.cancel_hide()
-        self._show_timer.start()
-        super().enterEvent(event)
-
-    def leaveEvent(self, event):
-        self._show_timer.stop()
-        ParamPreviewController.schedule_hide()
-        super().leaveEvent(event)
-
-    def mousePressEvent(self, event):
-        self._show_timer.stop()
-        if not ParamPreviewController.recently_closed_for(self._card):
-            ParamPreviewController.show_for(self._card)
-        super().mousePressEvent(event)
-
-
-class _CardEventFilter(QObject):
-    """卡片与宿主的事件过滤：切 tab 抑制；宿主滚动/窗口变化立即收起。"""
-
-    def __init__(self, eye, card):
-        super().__init__(eye)
-        self._eye = eye
-        self._card = card
-
     def eventFilter(self, obj, event):
         # 事件过滤器里抛异常会在 Qt 过滤链上级联放大（曾把启动打断），
         # 这里兜底吞掉：弹层是锦上添花，不能影响宿主
         try:
             etype = event.type()
             if obj is self._card:
-                if etype == QEvent.Hide:
-                    self._eye.note_tab_switch()
+                if etype == QEvent.Enter:
+                    ParamPreviewController.cancel_hide()
+                    self._show_timer.start()
+                elif etype == QEvent.Leave:
+                    self._show_timer.stop()
+                    ParamPreviewController.schedule_hide()
+                elif etype == QEvent.Hide:
+                    self.note_tab_switch()
                 elif etype == QEvent.DeferredDelete:
                     # Qt6/PySide6 没有 QEvent.Destroyed 枚举，别再加
                     ParamPreviewController.hide()
+                elif etype == QEvent.Resize:
+                    # 卡片自身变形（如展开配置卡）→ 弹层位置过时，收起
+                    ParamPreviewController.hide()
             elif etype in (QEvent.Wheel, QEvent.Resize, QEvent.Move):
-                # 弹层自身是独立顶级窗口，事件不会到达宿主过滤器 → 内滚不收
+                # 宿主列表滚动 / 主窗口缩放移动 → 立即收；弹层自身是独立
+                # 顶级窗口，事件到不了宿主过滤器 → 弹层内滚不收
                 ParamPreviewController.hide()
         except Exception:
             pass
         return False
 
 
-def inject_param_preview_eye(card):
-    """给 TaskCard 卡头最右侧（expandButton 前）注入小眼睛。"""
-    if getattr(card, "_param_preview_eye", None) is not None:
+def install_param_preview_hover(card):
+    """给任务卡装悬停弹出：悬停整卡 500ms → 弹层向右展开（无按钮）。"""
+    if getattr(card, "_param_preview_hover", None) is not None:
         return
     if _build_preview(card.task) is None:
-        return  # 无组、无规则、无字段 → 不显示眼睛
+        return  # 无组、无规则、无字段 → 不装
 
-    eye = _EyeButton(card, card)
-    card._param_preview_eye = eye
-    layout = card.card.hBoxLayout
-    index = layout.indexOf(card.card.expandButton)
-    if index < 0:
-        layout.addWidget(eye, 0, Qt.AlignRight)
-    else:
-        layout.insertWidget(index, eye, 0, Qt.AlignRight)
+    hover = _CardHoverFilter(card)
+    card._param_preview_hover = hover
+    card.installEventFilter(hover)
+    # 宿主列表滚动（Wheel）/ 主窗口缩放移动 → 立即收起弹层
+    parent = card.parentWidget()
+    while parent is not None:
+        if isinstance(parent, QAbstractScrollArea):
+            parent.viewport().installEventFilter(hover)
+            break
+        parent = parent.parentWidget()
+    window = card.window()
+    if window is not None:
+        window.installEventFilter(hover)
