@@ -180,7 +180,12 @@ class ParamPreviewPopup(QWidget):
                 widget.deleteLater()
 
         for block in preview["blocks"]:
-            self._content_layout.addWidget(self._make_group_card(block))
+            card = self._make_group_card(block)
+            # 弹层可见状态下重建的新卡片带 hidden 标志，QLayout 会把它当
+            # 空项（item hint=0，content 高度量成 0 → 窗口塌成一行），
+            # 必须先 show() 清标志再量高；父级隐藏时 show() 不会真显示
+            card.show()
+            self._content_layout.addWidget(card)
 
         self._position(card)
         return True
@@ -332,13 +337,23 @@ class ParamPreviewPopup(QWidget):
             preferred_left = avail.right() - width - POP_MARGIN
 
         self.setFixedWidth(width + 24)  # 两侧阴影留白
-        self.adjustSize()
+
+        # 高度自适应：窗口高度 = 结构开销（margins/spacing/标题，皆为确定
+        # 值）+ scroll 高度；scroll 高度 = 内容实际高度，超过屏幕预算则压
+        # 回上限内滚。不依赖 sizeHint/adjustSize——QScrollArea 的 sizeHint
+        # 与 widgetResizable 拉伸互相干扰，内容少时窗口被硬撑、布局把
+        # 分组卡垂直分散填满
+        rm = self._root_layout.contentsMargins()
+        pm = self._panel_layout.contentsMargins()
+        overhead = (rm.top() + rm.bottom() + pm.top() + pm.bottom()
+                    + self._panel_layout.spacing()
+                    + self._title_label.sizeHint().height())
 
         max_height = int(avail.height() * POP_MAX_HEIGHT_RATIO)
-        if self.height() > max_height:
-            overhead = self.height() - self._scroll.height()
-            self._scroll.setFixedHeight(max(60, max_height - overhead))
-            self.adjustSize()
+        scroll_h = min(max(1, self._content.sizeHint().height()),
+                       max(60, max_height - overhead))
+        self._scroll.setFixedHeight(scroll_h)
+        self.setFixedHeight(scroll_h + overhead)
 
         left = preferred_left - 12  # 面板左缘 = 弹层窗口左缘 + 阴影留白
         top = card_top_right.y() - 12
