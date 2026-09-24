@@ -19,7 +19,15 @@ from __future__ import annotations
 import time
 
 from ok import og
-from PySide6.QtCore import QEvent, QObject, Qt, QTimer
+from PySide6.QtCore import (
+    QEasingCurve,
+    QEvent,
+    QObject,
+    QPoint,
+    QPropertyAnimation,
+    Qt,
+    QTimer,
+)
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtWidgets import (
     QAbstractScrollArea,
@@ -129,6 +137,24 @@ class ParamPreviewPopup(QWidget):
         self._content_layout.setSpacing(8)
         self._scroll.setWidget(self._content)
         self._panel_layout.addWidget(self._scroll)
+
+        # ── 动效（对齐扩展 .gpop：160ms 淡入 + 4px 上浮，收起快速淡出）──
+        self._show_anim = QPropertyAnimation(self, b"windowOpacity", self)
+        self._show_anim.setDuration(160)
+        self._show_anim.setStartValue(0.0)
+        self._show_anim.setEndValue(1.0)
+        self._show_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        self._slide_anim = QPropertyAnimation(self, b"pos", self)
+        self._slide_anim.setDuration(160)
+        self._slide_anim.setEasingCurve(QEasingCurve.Type.OutCubic)
+
+        self._hide_anim = QPropertyAnimation(self, b"windowOpacity", self)
+        self._hide_anim.setDuration(90)
+        self._hide_anim.setStartValue(1.0)
+        self._hide_anim.setEndValue(0.0)
+        self._hide_anim.setEasingCurve(QEasingCurve.Type.InQuad)
+        self._hide_anim.finished.connect(self._finish_hide)
 
     # ── 内容构建 ──────────────────────────────────────────────
 
@@ -318,6 +344,33 @@ class ParamPreviewPopup(QWidget):
 
     # ── 悬停保持 ─────────────────────────────────────────────
 
+    def showEvent(self, event):
+        super().showEvent(event)
+        # 每次弹出：透明度 0→1 + 从下方 4px 上浮到位（扩展 cubic-bezier 回弹
+        # 在 Qt 里用 OutCubic 近似，4px 幅度下观感一致）
+        self._hide_anim.stop()
+        self._slide_anim.stop()
+        self._show_anim.stop()
+        self.setWindowOpacity(0.0)
+        target = self.pos()
+        self._slide_anim.setStartValue(target + QPoint(0, 4))
+        self._slide_anim.setEndValue(target)
+        self._show_anim.start()
+        self._slide_anim.start()
+
+    def hide_animated(self):
+        """收起动效：90ms 淡出后真正隐藏；不可见时直接返回。"""
+        if not self.isVisible():
+            return
+        self._show_anim.stop()
+        self._slide_anim.stop()
+        self._hide_anim.stop()
+        self._hide_anim.start()
+
+    def _finish_hide(self):
+        self.hide()
+        self.setWindowOpacity(1.0)  # 复位，下次弹出从头淡入
+
     def enterEvent(self, event):
         ParamPreviewController.cancel_hide()
         super().enterEvent(event)
@@ -389,7 +442,7 @@ class ParamPreviewController:
         if cls._popup is not None and cls._popup.isVisible():
             cls._last_closed_at = time.monotonic()
             cls._last_owner = cls._owner
-            cls._popup.hide()
+            cls._popup.hide_animated()
         cls._owner = None
 
 
