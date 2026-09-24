@@ -4,7 +4,7 @@ from unittest.mock import patch
 
 import pyautogui
 
-from src.core.BattleConfig import KEY_SKILL_ALLOWLIST
+from src.core.BattleConfig import KEY_DAMAGE_ROTATION, KEY_SKILL_ALLOWLIST
 from src.core.rotation_ast import eval_cond, iter_actions, normalize_ast
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
@@ -372,7 +372,7 @@ class TestConditionalRotationCombat(unittest.TestCase):
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
     def test_team_detection_always_uses_a_fresh_frame(self, _mu, _md):
-        task = _FakeTask({KEY_SKILL_ALLOWLIST: True})
+        task = _FakeTask({KEY_SKILL_ALLOWLIST: True, KEY_DAMAGE_ROTATION: False})
         logic = AutoCombatLogic(task)
 
         logic.run(start_sleep=0.3)
@@ -381,11 +381,27 @@ class TestConditionalRotationCombat(unittest.TestCase):
         self.assertTrue(detect_indexes)
         self.assertTrue(all(index > 0 and task.frame_events[index - 1] == "frame" for index in detect_indexes))
 
+    @patch("src.tasks.onetime.AutoCombatLogic.generate_damage_rotation", return_value=["2", "4"])
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_damage_rotation_enabled_uses_damage_order(
+        self, _mu, _md, generate_damage
+    ):
+        """伤害优先排序开启（默认）时，序列由 generate_damage_rotation 生成。"""
+        task = _FakeTask({KEY_SKILL_ALLOWLIST: True, KEY_DAMAGE_ROTATION: True})
+        task.stable_team_result = (["余烬", "别礼", "伊冯", "洁尔佩塔"], True)
+        logic = AutoCombatLogic(task)
+
+        logic.run(start_sleep=0.3)
+
+        generate_damage.assert_called_with(task.stable_team_result[0])
+        self.assertEqual(logic.normal_skill_sequence, ["2", "4"])
+
     @patch("src.tasks.onetime.AutoCombatLogic.generate_skill_sequence", return_value=["4", "2"])
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
     def test_stable_team_is_assigned_with_generated_sequence(self, _mu, _md, generate_sequence):
-        task = _FakeTask({KEY_SKILL_ALLOWLIST: True})
+        task = _FakeTask({KEY_SKILL_ALLOWLIST: True, KEY_DAMAGE_ROTATION: False})
         task.stable_team_result = (["余烬", "别礼", "伊冯", "洁尔佩塔"], True)
         logic = AutoCombatLogic(task)
 
@@ -399,7 +415,7 @@ class TestConditionalRotationCombat(unittest.TestCase):
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
     def test_sequence_failure_leaves_team_eligible_for_retry(self, _mu, _md, _generate_sequence):
-        task = _FakeTask({KEY_SKILL_ALLOWLIST: True})
+        task = _FakeTask({KEY_SKILL_ALLOWLIST: True, KEY_DAMAGE_ROTATION: False})
         task.stable_team_result = (["余烬", "别礼", "伊冯", "洁尔佩塔"], True)
         logic = AutoCombatLogic(task)
 
@@ -412,7 +428,7 @@ class TestConditionalRotationCombat(unittest.TestCase):
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
     def test_combat_team_detection_is_throttled_and_bounded(self, _mu, _md):
-        task = _FakeTask({KEY_SKILL_ALLOWLIST: True})
+        task = _FakeTask({KEY_SKILL_ALLOWLIST: True, KEY_DAMAGE_ROTATION: False})
         logic = AutoCombatLogic(task)
 
         logic.run(start_sleep=0)

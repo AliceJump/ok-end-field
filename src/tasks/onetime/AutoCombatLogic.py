@@ -4,6 +4,7 @@ from src.core.BaseEfTask import BaseEfTask
 from src.core.BattleConfig import (
     KEY_COND_ENABLED,
     KEY_COND_SEQUENCE,
+    KEY_DAMAGE_ROTATION,
     KEY_INSTANT_LINK,
     KEY_INSTANT_ULT,
     KEY_SKILL_ALLOWLIST,
@@ -11,6 +12,7 @@ from src.core.BattleConfig import (
 from src.core.rotation_ast import iter_actions, normalize_ast
 from src.data.FeatureList import FeatureList as fL
 from src.data.skill_allowlist import generate_skill_sequence
+from src.data.skill_rotation import generate_damage_rotation
 from src.image.recommend_skill_detector import get_recommend_skill_detector
 
 
@@ -322,6 +324,10 @@ class AutoCombatLogic:
 
         # ── 自动技能列表：标记是否需要后续处理 ──
         _skill_allowlist_enabled = task.get_battle_config(KEY_SKILL_ALLOWLIST, False)
+        # 伤害优先排序：自动技能列表的子选项，按战技期望伤害降序排列释放顺序
+        _damage_rotation_enabled = _skill_allowlist_enabled and task.get_battle_config(
+            KEY_DAMAGE_ROTATION, True
+        )
 
         # 模式初始化：实时条件 > 排轴 > 普通
         # 实时条件优先：启用时自动忽略普通排轴
@@ -389,7 +395,10 @@ class AutoCombatLogic:
                     try:
                         team, stable = task.detect_team_stable(deadline=_sleep_end)
                         if stable and team and any(m != "?" for m in team):
-                            skill_sequence = generate_skill_sequence(team)
+                            if _damage_rotation_enabled:
+                                skill_sequence = generate_damage_rotation(team)
+                            else:
+                                skill_sequence = generate_skill_sequence(team)
                             task._battle_team, self.normal_skill_sequence = team, skill_sequence
                             task.log_info(f"初始等待期间识别到队伍: {team}")
                             task.log_info(f"自动技能列表已生成: {self.normal_skill_sequence}")
@@ -454,7 +463,10 @@ class AutoCombatLogic:
                     try:
                         team, stable = task.detect_team_stable()
                         if stable and team and any(m != "?" for m in team):
-                            skill_sequence = generate_skill_sequence(team)
+                            if _damage_rotation_enabled:
+                                skill_sequence = generate_damage_rotation(team)
+                            else:
+                                skill_sequence = generate_skill_sequence(team)
                             task._battle_team, self.normal_skill_sequence = team, skill_sequence
                             task.log_info(f"战斗中识别到队伍: {team}")
                             task.log_info(f"自动技能列表已生成: {self.normal_skill_sequence}")

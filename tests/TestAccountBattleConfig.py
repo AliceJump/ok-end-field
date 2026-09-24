@@ -6,6 +6,7 @@ from src.core.BattleConfig import (
     KEY_BATTLE_INITIAL_WAIT,
     KEY_COMPLETE_NOTIFY,
     KEY_COND_SEQUENCE,
+    KEY_DAMAGE_ROTATION,
     KEY_INSTANT_LINK,
     KEY_INSTANT_ULT,
     KEY_NO_NUMBER_OPERATION_INTERVAL,
@@ -339,6 +340,7 @@ class TestBattleConfigOverrides(unittest.TestCase):
             KEY_INSTANT_ULT,
             KEY_INSTANT_LINK,
             KEY_SKILL_ALLOWLIST,
+            KEY_DAMAGE_ROTATION,
         ]
         self.assertEqual(independent_keys, expected)
 

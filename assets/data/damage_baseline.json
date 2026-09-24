@@ -4,9 +4,10 @@
     "key": "aglina",
     "element": "自然",
     "primary_stat": "意志",
+    "secondary_stat": "智识",
     "panel": {
       "HP": 5495.0,
-      "ATK": 2864.2,
+      "ATK": 3262.1,
       "DEF": 140,
       "力量": 185.0,
       "敏捷": 167.0,
@@ -36,8 +37,8 @@
         "multiplier_pct": 532.0,
         "stagger": 0.0,
         "bonus_pct": 74.7,
-        "non_crit": 26619.9,
-        "crit_expect": 27285.4,
+        "non_crit": 30318.2,
+        "crit_expect": 31076.2,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -49,8 +50,8 @@
         "multiplier_pct": 349.0,
         "stagger": 10.0,
         "bonus_pct": 74.7,
-        "non_crit": 17463.1,
-        "crit_expect": 17899.7,
+        "non_crit": 19889.2,
+        "crit_expect": 20386.4,
         "conditional_rows": []
       },
       {
@@ -60,8 +61,8 @@
         "multiplier_pct": 315.0,
         "stagger": 5.0,
         "bonus_pct": 74.7,
-        "non_crit": 15761.8,
-        "crit_expect": 16155.9,
+        "non_crit": 17951.6,
+        "crit_expect": 18400.4,
         "conditional_rows": []
       },
       {
@@ -101,7 +102,8 @@
       "    [套组 拓荒装备组] 装备者连携技冷却缩减+15% -> {'kind': 'pct', 'stat': 'combo_cd', 'value': 15.0}",
       "  汇总词条: {'flat_意志': 320, 'pct_ult_charge': 62.4, 'pct_elem_自然': 44.8, 'flat_防御力': 140, 'flat_敏捷': 75, 'flat_智识': 113, 'flat_力量': 96, 'pct_all_skill_dmg': 29.9, 'pct_elem_物理': 29.9, 'pct_elem_寒冷': 29.9, 'pct_elem_电磁': 29.9, 'pct_combo_cd': 15.0}",
       "  主能力: 意志（官方标签）总值 491",
-      "  攻击力 = (829 × 1.0000 + 0) × (1 + 0.005×491) = 2864.2"
+      "  副能力: 智识（官方标注）总值 240",
+      "  攻击力 = (829 × 1.0000 + 0) × (1 + 0.005×491 + 0.002×240) = 3262.1"
     ]
   },
   {
@@ -109,9 +111,10 @@
     "key": "antal",
     "element": "电磁",
     "primary_stat": "智识",
+    "secondary_stat": "力量",
     "panel": {
       "HP": 5495.0,
-      "ATK": 2022.8,
+      "ATK": 2392.0,
       "DEF": 140,
       "力量": 204.0,
       "敏捷": 197.0,
@@ -141,8 +144,8 @@
         "multiplier_pct": 487.0,
         "stagger": 0.0,
         "bonus_pct": 17.9,
-        "non_crit": 11614.3,
-        "crit_expect": 11904.7,
+        "non_crit": 13734.5,
+        "crit_expect": 14077.9,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -154,8 +157,8 @@
         "multiplier_pct": 200.0,
         "stagger": 0.0,
         "bonus_pct": 17.9,
-        "non_crit": 4769.7,
-        "crit_expect": 4889.0,
+        "non_crit": 5640.4,
+        "crit_expect": 5781.5,
         "conditional_rows": []
       },
       {
@@ -165,8 +168,8 @@
         "multiplier_pct": 340.0,
         "stagger": 10.0,
         "bonus_pct": 116.6,
-        "non_crit": 14896.6,
-        "crit_expect": 15269.0,
+        "non_crit": 17616.0,
+        "crit_expect": 18056.4,
         "conditional_rows": []
       },
       {
@@ -204,7 +207,8 @@
       "    [套组 50式应龙装备组] 装备者攻击力+15% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 15.0}",
       "  汇总词条: {'flat_源石技艺强度': 78, 'flat_防御力': 140, 'flat_力量': 75, 'flat_意志': 195, 'pct_all_skill_dmg': 17.9, 'flat_敏捷': 111, 'flat_智识': 82, 'pct_combo_dmg': 98.69999999999999, 'pct_elem_灼热': 29.9, 'pct_elem_自然': 29.9, 'pct_atk_pct': 15.0}",
       "  主能力: 智识（官方标签）总值 247",
-      "  攻击力 = (787 × 1.1500 + 0) × (1 + 0.005×247) = 2022.8"
+      "  副能力: 力量（官方标注）总值 204",
+      "  攻击力 = (787 × 1.1500 + 0) × (1 + 0.005×247 + 0.002×204) = 2392.0"
     ]
   },
   {
@@ -212,9 +216,10 @@
     "key": "ardelia",
     "element": "自然",
     "primary_stat": "智识",
+    "secondary_stat": "意志",
     "panel": {
       "HP": 5495.0,
-      "ATK": 2511.3,
+      "ATK": 2972.6,
       "DEF": 140,
       "力量": 208.0,
       "敏捷": 168.0,
@@ -244,8 +249,8 @@
         "multiplier_pct": 580.0,
         "stagger": 0.0,
         "bonus_pct": 29.9,
-        "non_crit": 18920.3,
-        "crit_expect": 19393.3,
+        "non_crit": 22396.3,
+        "crit_expect": 22956.2,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -257,8 +262,8 @@
         "multiplier_pct": 320.0,
         "stagger": 10.0,
         "bonus_pct": 29.9,
-        "non_crit": 10438.8,
-        "crit_expect": 10699.8,
+        "non_crit": 12356.6,
+        "crit_expect": 12665.5,
         "conditional_rows": []
       },
       {
@@ -268,8 +273,8 @@
         "multiplier_pct": 350.0,
         "stagger": 10.0,
         "bonus_pct": 29.9,
-        "non_crit": 11417.4,
-        "crit_expect": 11702.9,
+        "non_crit": 13515.0,
+        "crit_expect": 13852.9,
         "conditional_rows": []
       },
       {
@@ -279,8 +284,8 @@
         "multiplier_pct": 165.0,
         "stagger": 3.0,
         "bonus_pct": 29.9,
-        "non_crit": 5382.5,
-        "crit_expect": 5517.1,
+        "non_crit": 6371.3,
+        "crit_expect": 6530.6,
         "conditional_rows": []
       }
     ],
@@ -308,7 +313,8 @@
       "    [套组 拓荒装备组] 装备者连携技冷却缩减+15% -> {'kind': 'pct', 'stat': 'combo_cd', 'value': 15.0}",
       "  汇总词条: {'flat_智识': 269, 'pct_heal_eff': 46.4, 'flat_防御力': 140, 'flat_敏捷': 75, 'pct_ult_charge': 16.0, 'flat_力量': 96, 'flat_意志': 164, 'pct_all_skill_dmg': 29.9, 'pct_elem_物理': 29.9, 'pct_elem_寒冷': 29.9, 'pct_elem_电磁': 29.9, 'pct_combo_cd': 15.0}",
       "  主能力: 智识（官方标签）总值 414",
-      "  攻击力 = (818 × 1.0000 + 0) × (1 + 0.005×414) = 2511.3"
+      "  副能力: 意志（官方标注）总值 282",
+      "  攻击力 = (818 × 1.0000 + 0) × (1 + 0.005×414 + 0.002×282) = 2972.6"
     ]
   },
   {
@@ -316,9 +322,10 @@
     "key": "aurora",
     "element": "寒冷",
     "primary_stat": "力量",
+    "secondary_stat": "意志",
     "panel": {
       "HP": 9781.1,
-      "ATK": 1619.6,
+      "ATK": 2414.8,
       "DEF": 140,
       "力量": 209.0,
       "敏捷": 104.0,
@@ -348,8 +355,8 @@
         "multiplier_pct": 661.0,
         "stagger": 0.0,
         "bonus_pct": 0,
-        "non_crit": 10705.8,
-        "crit_expect": 10973.5,
+        "non_crit": 15961.9,
+        "crit_expect": 16360.9,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -361,8 +368,8 @@
         "multiplier_pct": 450.0,
         "stagger": 20.0,
         "bonus_pct": 0,
-        "non_crit": 7288.4,
-        "crit_expect": 7470.6,
+        "non_crit": 10866.6,
+        "crit_expect": 11138.3,
         "conditional_rows": []
       },
       {
@@ -383,8 +390,8 @@
         "multiplier_pct": 565.0,
         "stagger": 20.0,
         "bonus_pct": 0,
-        "non_crit": 9151.0,
-        "crit_expect": 9379.7,
+        "non_crit": 13643.7,
+        "crit_expect": 13984.8,
         "conditional_rows": []
       }
     ],
@@ -413,7 +420,8 @@
       "    [套组 生物辅助装备组] 装备者治疗效率+20% -> {'kind': 'pct', 'stat': 'heal_eff', 'value': 20.0}",
       "  汇总词条: {'flat_意志': 394, 'pct_hp_pct': 78.0, 'pct_heal_eff': 83.9, 'flat_防御力': 140, 'flat_智识': 157, 'flat_力量': 55, 'pct_ult_charge': 33.4}",
       "  主能力: 力量（官方标签）总值 209",
-      "  攻击力 = (792 × 1.0000 + 0) × (1 + 0.005×209) = 1619.6"
+      "  副能力: 意志（官方标注）总值 502",
+      "  攻击力 = (792 × 1.0000 + 0) × (1 + 0.005×209 + 0.002×502) = 2414.8"
     ]
   },
   {
@@ -421,9 +429,10 @@
     "key": "avywen",
     "element": "电磁",
     "primary_stat": "意志",
+    "secondary_stat": "敏捷",
     "panel": {
       "HP": 5495.0,
-      "ATK": 3395.1,
+      "ATK": 3937.8,
       "DEF": 140,
       "力量": 182.0,
       "敏捷": 217.0,
@@ -453,8 +462,8 @@
         "multiplier_pct": 492.0,
         "stagger": 0.0,
         "bonus_pct": 17.9,
-        "non_crit": 19693.6,
-        "crit_expect": 20186.0,
+        "non_crit": 22841.7,
+        "crit_expect": 23412.7,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -466,8 +475,8 @@
         "multiplier_pct": 750.0,
         "stagger": 20.0,
         "bonus_pct": 17.9,
-        "non_crit": 30020.8,
-        "crit_expect": 30771.3,
+        "non_crit": 34819.7,
+        "crit_expect": 35690.1,
         "conditional_rows": []
       },
       {
@@ -477,8 +486,8 @@
         "multiplier_pct": 380.0,
         "stagger": 10.0,
         "bonus_pct": 116.6,
-        "non_crit": 27944.0,
-        "crit_expect": 28642.6,
+        "non_crit": 32410.9,
+        "crit_expect": 33221.2,
         "conditional_rows": []
       },
       {
@@ -488,8 +497,8 @@
         "multiplier_pct": 950.0,
         "stagger": 20.0,
         "bonus_pct": 17.9,
-        "non_crit": 38026.3,
-        "crit_expect": 38977.0,
+        "non_crit": 44104.9,
+        "crit_expect": 45207.5,
         "conditional_rows": []
       }
     ],
@@ -516,7 +525,8 @@
       "    [套组 50式应龙装备组] 装备者攻击力+15% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 15.0}",
       "  汇总词条: {'pct_atk_pct': 54.0, 'flat_防御力': 140, 'flat_力量': 75, 'flat_意志': 195, 'pct_all_skill_dmg': 17.9, 'flat_敏捷': 111, 'flat_智识': 82, 'pct_combo_dmg': 98.69999999999999, 'pct_elem_灼热': 29.9, 'pct_elem_自然': 29.9}",
       "  主能力: 意志（官方标签）总值 343",
-      "  攻击力 = (812 × 1.5400 + 0) × (1 + 0.005×343) = 3395.1"
+      "  副能力: 敏捷（官方标注）总值 217",
+      "  攻击力 = (812 × 1.5400 + 0) × (1 + 0.005×343 + 0.002×217) = 3937.8"
     ]
   },
   {
@@ -524,9 +534,10 @@
     "key": "azrila",
     "element": "灼热",
     "primary_stat": "力量",
+    "secondary_stat": "意志",
     "panel": {
       "HP": 9781.1,
-      "ATK": 2511.3,
+      "ATK": 3118.2,
       "DEF": 140,
       "力量": 414.0,
       "敏捷": 226.0,
@@ -556,8 +567,8 @@
         "multiplier_pct": 719.0,
         "stagger": 0.0,
         "bonus_pct": 0,
-        "non_crit": 18056.0,
-        "crit_expect": 18507.4,
+        "non_crit": 22420.0,
+        "crit_expect": 22980.5,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -569,8 +580,8 @@
         "multiplier_pct": 390.0,
         "stagger": 20.0,
         "bonus_pct": 0,
-        "non_crit": 9793.9,
-        "crit_expect": 10038.8,
+        "non_crit": 12161.0,
+        "crit_expect": 12465.1,
         "conditional_rows": []
       },
       {
@@ -580,8 +591,8 @@
         "multiplier_pct": 230.0,
         "stagger": 10.0,
         "bonus_pct": 0,
-        "non_crit": 5775.9,
-        "crit_expect": 5920.3,
+        "non_crit": 7171.9,
+        "crit_expect": 7351.2,
         "conditional_rows": []
       },
       {
@@ -591,8 +602,8 @@
         "multiplier_pct": 650.0,
         "stagger": 25.0,
         "bonus_pct": 0,
-        "non_crit": 16323.2,
-        "crit_expect": 16731.3,
+        "non_crit": 20268.4,
+        "crit_expect": 20775.1,
         "conditional_rows": []
       }
     ],
@@ -620,7 +631,8 @@
       "    [套组 生物辅助装备组] 装备者治疗效率+20% -> {'kind': 'pct', 'stat': 'heal_eff', 'value': 20.0}",
       "  汇总词条: {'flat_力量': 238, 'pct_hp_pct': 78.0, 'flat_防御力': 140, 'flat_敏捷': 130, 'flat_意志': 251, 'pct_ult_charge': 42.7, 'pct_heal_eff': 20.0}",
       "  主能力: 力量（官方标签）总值 414",
-      "  攻击力 = (818 × 1.0000 + 0) × (1 + 0.005×414) = 2511.3"
+      "  副能力: 意志（官方标注）总值 371",
+      "  攻击力 = (818 × 1.0000 + 0) × (1 + 0.005×414 + 0.002×371) = 3118.2"
     ]
   },
   {
@@ -628,9 +640,10 @@
     "key": "bounda",
     "element": "自然",
     "primary_stat": "敏捷",
+    "secondary_stat": "智识",
     "panel": {
       "HP": 5495.0,
-      "ATK": 1756.5,
+      "ATK": 2363.9,
       "DEF": 140,
       "力量": 186.0,
       "敏捷": 243.0,
@@ -660,8 +673,8 @@
         "multiplier_pct": 501.0,
         "stagger": 0.0,
         "bonus_pct": 29.9,
-        "non_crit": 11431.3,
-        "crit_expect": 12277.2,
+        "non_crit": 15384.5,
+        "crit_expect": 16522.9,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -673,8 +686,8 @@
         "multiplier_pct": 420.0,
         "stagger": 10.0,
         "bonus_pct": 29.9,
-        "non_crit": 9583.1,
-        "crit_expect": 10292.2,
+        "non_crit": 12897.1,
+        "crit_expect": 13851.5,
         "conditional_rows": []
       },
       {
@@ -684,8 +697,8 @@
         "multiplier_pct": 380.0,
         "stagger": 10.0,
         "bonus_pct": 29.9,
-        "non_crit": 8670.4,
-        "crit_expect": 9312.0,
+        "non_crit": 11668.8,
+        "crit_expect": 12532.3,
         "conditional_rows": []
       },
       {
@@ -695,8 +708,8 @@
         "multiplier_pct": 1030.0,
         "stagger": 20.0,
         "bonus_pct": 29.9,
-        "non_crit": 23501.4,
-        "crit_expect": 25240.5,
+        "non_crit": 31628.7,
+        "crit_expect": 33969.2,
         "conditional_rows": []
       }
     ],
@@ -725,7 +738,8 @@
       "    [套组 拓荒装备组] 装备者连携技冷却缩减+15% -> {'kind': 'pct', 'stat': 'combo_cd', 'value': 15.0}",
       "  汇总词条: {'flat_智识': 269, 'pct_elem_寒冷': 73.19999999999999, 'pct_crit_rate': 9.8, 'flat_防御力': 140, 'flat_敏捷': 75, 'pct_ult_charge': 16.0, 'flat_力量': 96, 'flat_意志': 164, 'pct_all_skill_dmg': 29.9, 'pct_elem_物理': 29.9, 'pct_elem_电磁': 29.9, 'pct_combo_cd': 15.0}",
       "  主能力: 敏捷（官方标签）总值 243",
-      "  攻击力 = (793 × 1.0000 + 0) × (1 + 0.005×243) = 1756.5"
+      "  副能力: 智识（官方标注）总值 383",
+      "  攻击力 = (793 × 1.0000 + 0) × (1 + 0.005×243 + 0.002×383) = 2363.9"
     ]
   },
   {
@@ -733,9 +747,10 @@
     "key": "camille",
     "element": "灼热",
     "primary_stat": "敏捷",
+    "secondary_stat": "智识",
     "panel": {
       "HP": 5495.0,
-      "ATK": 2518.3,
+      "ATK": 2728.6,
       "DEF": 140,
       "力量": 381.0,
       "敏捷": 418.0,
@@ -765,8 +780,8 @@
         "multiplier_pct": 539.0,
         "stagger": 0.0,
         "bonus_pct": 58.3,
-        "non_crit": 21487.5,
-        "crit_expect": 22024.7,
+        "non_crit": 23281.6,
+        "crit_expect": 23863.6,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -778,8 +793,8 @@
         "multiplier_pct": 300.0,
         "stagger": 10.0,
         "bonus_pct": 58.3,
-        "non_crit": 11959.6,
-        "crit_expect": 12258.6,
+        "non_crit": 12958.2,
+        "crit_expect": 13282.2,
         "conditional_rows": []
       },
       {
@@ -789,8 +804,8 @@
         "multiplier_pct": 800.0,
         "stagger": 30.0,
         "bonus_pct": 58.3,
-        "non_crit": 31892.4,
-        "crit_expect": 32689.7,
+        "non_crit": 34555.2,
+        "crit_expect": 35419.1,
         "conditional_rows": []
       },
       {
@@ -800,8 +815,8 @@
         "multiplier_pct": 600.0,
         "stagger": 15.0,
         "bonus_pct": 58.3,
-        "non_crit": 23919.3,
-        "crit_expect": 24517.3,
+        "non_crit": 25916.4,
+        "crit_expect": 26564.3,
         "conditional_rows": []
       }
     ],
@@ -830,7 +845,8 @@
       "    [套组 动火用装备组] 装备者源石技艺强度+30 -> {'kind': 'flat', 'stat': '源石技艺强度', 'value': 30}",
       "  汇总词条: {'flat_敏捷': 258, 'pct_elem_灼热': 58.3, 'pct_ult_charge': 50.4, 'flat_防御力': 140, 'flat_力量': 279, 'pct_elem_自然': 15.0, 'flat_意志': 82, 'flat_源石技艺强度': 127, 'pct_elem_寒冷': 29.9, 'pct_elem_电磁': 29.9}",
       "  主能力: 敏捷（官方标签）总值 418",
-      "  攻击力 = (815 × 1.0000 + 0) × (1 + 0.005×418) = 2518.3"
+      "  副能力: 智识（官方标注）总值 129",
+      "  攻击力 = (815 × 1.0000 + 0) × (1 + 0.005×418 + 0.002×129) = 2728.6"
     ]
   },
   {
@@ -838,9 +854,10 @@
     "key": "chen",
     "element": "物理",
     "primary_stat": "敏捷",
+    "secondary_stat": "力量",
     "panel": {
       "HP": 5495.0,
-      "ATK": 2574.0,
+      "ATK": 3033.4,
       "DEF": 140,
       "力量": 290.0,
       "敏捷": 450.0,
@@ -870,8 +887,8 @@
         "multiplier_pct": 497.0,
         "stagger": 0.0,
         "bonus_pct": 74.8,
-        "non_crit": 22361.8,
-        "crit_expect": 25101.1,
+        "non_crit": 26352.5,
+        "crit_expect": 29580.7,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -883,8 +900,8 @@
         "multiplier_pct": 380.0,
         "stagger": 10.0,
         "bonus_pct": 74.8,
-        "non_crit": 17097.5,
-        "crit_expect": 19192.0,
+        "non_crit": 20148.8,
+        "crit_expect": 22617.0,
         "conditional_rows": []
       },
       {
@@ -894,8 +911,8 @@
         "multiplier_pct": 270.0,
         "stagger": 0.0,
         "bonus_pct": 74.8,
-        "non_crit": 12148.3,
-        "crit_expect": 13636.4,
+        "non_crit": 14316.2,
+        "crit_expect": 16070.0,
         "conditional_rows": []
       },
       {
@@ -905,8 +922,8 @@
         "multiplier_pct": 1104.0,
         "stagger": 35.0,
         "bonus_pct": 74.8,
-        "non_crit": 49672.8,
-        "crit_expect": 55757.8,
+        "non_crit": 58537.5,
+        "crit_expect": 65708.4,
         "conditional_rows": []
       }
     ],
@@ -933,7 +950,8 @@
       "    [套组 点剑装备组] 装备者失衡效率加成+20% -> {'kind': 'pct', 'stat': 'stagger_eff', 'value': 20.0}",
       "  汇总词条: {'pct_crit_rate': 19.5, 'flat_防御力': 140, 'flat_力量': 184, 'flat_敏捷': 279, 'pct_elem_物理': 74.8, 'flat_源石技艺强度': 44, 'pct_stagger_eff': 20.0}",
       "  主能力: 敏捷（官方标签）总值 450",
-      "  攻击力 = (792 × 1.0000 + 0) × (1 + 0.005×450) = 2574.0"
+      "  副能力: 力量（官方标注）总值 290",
+      "  攻击力 = (792 × 1.0000 + 0) × (1 + 0.005×450 + 0.002×290) = 3033.4"
     ]
   },
   {
@@ -941,9 +959,10 @@
     "key": "dapan",
     "element": "物理",
     "primary_stat": "力量",
+    "secondary_stat": "意志",
     "panel": {
       "HP": 5495.0,
-      "ATK": 4043.7,
+      "ATK": 4751.1,
       "DEF": 140,
       "力量": 454.0,
       "敏捷": 96.0,
@@ -973,8 +992,8 @@
         "multiplier_pct": 567.0,
         "stagger": 0.0,
         "bonus_pct": 102.8,
-        "non_crit": 46498.1,
-        "crit_expect": 47660.5,
+        "non_crit": 54631.7,
+        "crit_expect": 55997.5,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -986,8 +1005,8 @@
         "multiplier_pct": 300.0,
         "stagger": 10.0,
         "bonus_pct": 102.8,
-        "non_crit": 24602.2,
-        "crit_expect": 25217.2,
+        "non_crit": 28905.7,
+        "crit_expect": 29628.3,
         "conditional_rows": []
       },
       {
@@ -997,8 +1016,8 @@
         "multiplier_pct": 670.0,
         "stagger": 15.0,
         "bonus_pct": 102.8,
-        "non_crit": 54944.8,
-        "crit_expect": 56318.4,
+        "non_crit": 64556.0,
+        "crit_expect": 66169.9,
         "conditional_rows": []
       },
       {
@@ -1008,8 +1027,8 @@
         "multiplier_pct": 450.0,
         "stagger": 0.0,
         "bonus_pct": 102.8,
-        "non_crit": 36903.2,
-        "crit_expect": 37825.8,
+        "non_crit": 43358.5,
+        "crit_expect": 44442.4,
         "conditional_rows": []
       }
     ],
@@ -1037,7 +1056,8 @@
       "    [套组 50式应龙装备组] 装备者攻击力+15% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 15.0}",
       "  汇总词条: {'pct_atk_pct': 54.0, 'pct_elem_物理': 102.80000000000001, 'flat_防御力': 140, 'flat_力量': 279, 'flat_意志': 184, 'flat_源石技艺强度': 44}",
       "  主能力: 力量（官方标签）总值 454",
-      "  攻击力 = (803 × 1.5400 + 0) × (1 + 0.005×454) = 4043.7"
+      "  副能力: 意志（官方标注）总值 286",
+      "  攻击力 = (803 × 1.5400 + 0) × (1 + 0.005×454 + 0.002×286) = 4751.1"
     ]
   },
   {
@@ -1045,9 +1065,10 @@
     "key": "deepfin",
     "element": "寒冷",
     "primary_stat": "力量",
+    "secondary_stat": "智识",
     "panel": {
       "HP": 5495.0,
-      "ATK": 2372.1,
+      "ATK": 2762.8,
       "DEF": 140,
       "力量": 378.0,
       "敏捷": 170.0,
@@ -1077,8 +1098,8 @@
         "multiplier_pct": 490.0,
         "stagger": 0.0,
         "bonus_pct": 94.5,
-        "non_crit": 22607.4,
-        "crit_expect": 23172.6,
+        "non_crit": 26331.0,
+        "crit_expect": 26989.3,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -1090,8 +1111,8 @@
         "multiplier_pct": 450.0,
         "stagger": 10.0,
         "bonus_pct": 94.5,
-        "non_crit": 20761.9,
-        "crit_expect": 21281.0,
+        "non_crit": 24181.5,
+        "crit_expect": 24786.1,
         "conditional_rows": []
       },
       {
@@ -1101,8 +1122,8 @@
         "multiplier_pct": 780.0,
         "stagger": 10.0,
         "bonus_pct": 94.5,
-        "non_crit": 35987.3,
-        "crit_expect": 36887.0,
+        "non_crit": 41914.6,
+        "crit_expect": 42962.5,
         "conditional_rows": []
       },
       {
@@ -1112,8 +1133,8 @@
         "multiplier_pct": 980.0,
         "stagger": 20.0,
         "bonus_pct": 94.5,
-        "non_crit": 45214.8,
-        "crit_expect": 46345.2,
+        "non_crit": 52662.0,
+        "crit_expect": 53978.5,
         "conditional_rows": []
       }
     ],
@@ -1142,7 +1163,8 @@
       "    [套组 拓荒装备组] 装备者连携技冷却缩减+15% -> {'kind': 'pct', 'stat': 'combo_cd', 'value': 15.0}",
       "  汇总词条: {'flat_力量': 220, 'pct_elem_寒冷': 64.6, 'pct_atk_pct': 14.0, 'flat_防御力': 140, 'flat_敏捷': 75, 'flat_智识': 113, 'pct_ult_charge': 16.0, 'flat_意志': 164, 'pct_all_skill_dmg': 29.9, 'pct_elem_物理': 29.9, 'pct_elem_电磁': 29.9, 'pct_combo_cd': 15.0}",
       "  主能力: 力量（官方标签）总值 378",
-      "  攻击力 = (720 × 1.1400 + 0) × (1 + 0.005×378) = 2372.1"
+      "  副能力: 智识（官方标注）总值 238",
+      "  攻击力 = (720 × 1.1400 + 0) × (1 + 0.005×378 + 0.002×238) = 2762.8"
     ]
   },
   {
@@ -1150,6 +1172,7 @@
     "key": "endmin",
     "element": "物理",
     "primary_stat": "力量",
+    "secondary_stat": null,
     "panel": {
       "HP": 5495.0,
       "ATK": 913.9,
@@ -1244,7 +1267,8 @@
       "    [套组 点剑装备组] 装备者失衡效率加成+20% -> {'kind': 'pct', 'stat': 'stagger_eff', 'value': 20.0}",
       "  汇总词条: {'flat_防御力': 140, 'flat_力量': 250, 'flat_意志': 171, 'pct_elem_物理': 39.9, 'flat_源石技艺强度': 53, 'flat_敏捷': 27, 'pct_skill_dmg': 53.8, 'pct_stagger_eff': 20.0}",
       "  主能力: 力量（官方标签）总值 373",
-      "  攻击力 = (319 × 1.0000 + 0) × (1 + 0.005×373) = 913.9"
+      "  副能力: 无官方标注，副属性系数项不计",
+      "  攻击力 = (319 × 1.0000 + 0) × (1 + 0.005×373 + 0.002×0) = 913.9"
     ]
   },
   {
@@ -1252,9 +1276,10 @@
     "key": "etra",
     "element": "寒冷",
     "primary_stat": "意志",
+    "secondary_stat": "力量",
     "panel": {
       "HP": 5495.0,
-      "ATK": 3488.8,
+      "ATK": 3936.5,
       "DEF": 134,
       "力量": 179.0,
       "敏捷": 208.0,
@@ -1284,8 +1309,8 @@
         "multiplier_pct": 473.0,
         "stagger": 0.0,
         "bonus_pct": 17.9,
-        "non_crit": 19456.1,
-        "crit_expect": 19942.5,
+        "non_crit": 21952.6,
+        "crit_expect": 22501.4,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -1297,8 +1322,8 @@
         "multiplier_pct": 350.0,
         "stagger": 10.0,
         "bonus_pct": 17.9,
-        "non_crit": 14396.7,
-        "crit_expect": 14756.6,
+        "non_crit": 16244.0,
+        "crit_expect": 16650.1,
         "conditional_rows": []
       },
       {
@@ -1308,8 +1333,8 @@
         "multiplier_pct": 1005.0,
         "stagger": 10.0,
         "bonus_pct": 116.6,
-        "non_crit": 75946.1,
-        "crit_expect": 77844.8,
+        "non_crit": 85691.2,
+        "crit_expect": 87833.4,
         "conditional_rows": []
       },
       {
@@ -1319,8 +1344,8 @@
         "multiplier_pct": 1100.0,
         "stagger": 20.0,
         "bonus_pct": 17.9,
-        "non_crit": 45246.8,
-        "crit_expect": 46377.9,
+        "non_crit": 51052.6,
+        "crit_expect": 52328.9,
         "conditional_rows": []
       }
     ],
@@ -1347,7 +1372,8 @@
       "    [套组 50式应龙装备组] 装备者攻击力+15% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 15.0}",
       "  汇总词条: {'pct_atk_pct': 54.0, 'flat_防御力': 134, 'flat_力量': 75, 'flat_意志': 207, 'pct_all_skill_dmg': 17.9, 'flat_敏捷': 111, 'flat_智识': 55, 'pct_combo_dmg': 98.69999999999999}",
       "  主能力: 意志（官方标签）总值 358",
-      "  攻击力 = (812 × 1.5400 + 0) × (1 + 0.005×358) = 3488.8"
+      "  副能力: 力量（官方标注）总值 179",
+      "  攻击力 = (812 × 1.5400 + 0) × (1 + 0.005×358 + 0.002×179) = 3936.5"
     ]
   },
   {
@@ -1355,9 +1381,10 @@
     "key": "ikut",
     "element": "电磁",
     "primary_stat": "敏捷",
+    "secondary_stat": "智识",
     "panel": {
       "HP": 5495.0,
-      "ATK": 2126.4,
+      "ATK": 2508.8,
       "DEF": 140,
       "力量": 182.0,
       "敏捷": 256.0,
@@ -1387,8 +1414,8 @@
         "multiplier_pct": 478.0,
         "stagger": 0.0,
         "bonus_pct": 17.9,
-        "non_crit": 11983.8,
-        "crit_expect": 12283.4,
+        "non_crit": 14138.8,
+        "crit_expect": 14492.3,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -1400,8 +1427,8 @@
         "multiplier_pct": 607.0,
         "stagger": 10.0,
         "bonus_pct": 17.9,
-        "non_crit": 15217.9,
-        "crit_expect": 15598.4,
+        "non_crit": 17954.5,
+        "crit_expect": 18403.4,
         "conditional_rows": []
       },
       {
@@ -1411,8 +1438,8 @@
         "multiplier_pct": 350.0,
         "stagger": 5.0,
         "bonus_pct": 116.6,
-        "non_crit": 16120.6,
-        "crit_expect": 16523.6,
+        "non_crit": 19019.4,
+        "crit_expect": 19494.9,
         "conditional_rows": []
       },
       {
@@ -1422,8 +1449,8 @@
         "multiplier_pct": 900.0,
         "stagger": 20.0,
         "bonus_pct": 17.9,
-        "non_crit": 22563.7,
-        "crit_expect": 23127.8,
+        "non_crit": 26621.2,
+        "crit_expect": 27286.7,
         "conditional_rows": []
       }
     ],
@@ -1450,7 +1477,8 @@
       "    [套组 50式应龙装备组] 装备者攻击力+15% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 15.0}",
       "  汇总词条: {'flat_源石技艺强度': 78, 'flat_防御力': 140, 'flat_力量': 75, 'flat_意志': 195, 'pct_all_skill_dmg': 17.9, 'flat_敏捷': 111, 'flat_智识': 82, 'pct_combo_dmg': 98.69999999999999, 'pct_elem_灼热': 29.9, 'pct_elem_自然': 29.9, 'pct_atk_pct': 15.0}",
       "  主能力: 敏捷（官方标签）总值 256",
-      "  攻击力 = (811 × 1.1500 + 0) × (1 + 0.005×256) = 2126.4"
+      "  副能力: 智识（官方标注）总值 205",
+      "  攻击力 = (811 × 1.1500 + 0) × (1 + 0.005×256 + 0.002×205) = 2508.8"
     ]
   },
   {
@@ -1458,9 +1486,10 @@
     "key": "karin",
     "element": "灼热",
     "primary_stat": "敏捷",
+    "secondary_stat": "智识",
     "panel": {
       "HP": 5495.0,
-      "ATK": 2985.8,
+      "ATK": 3577.5,
       "DEF": 140,
       "力量": 165.0,
       "敏捷": 242.0,
@@ -1490,8 +1519,8 @@
         "multiplier_pct": 471.0,
         "stagger": 0.0,
         "bonus_pct": 29.9,
-        "non_crit": 18267.8,
-        "crit_expect": 18724.5,
+        "non_crit": 21888.4,
+        "crit_expect": 22435.6,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -1503,8 +1532,8 @@
         "multiplier_pct": 320.0,
         "stagger": 10.0,
         "bonus_pct": 83.7,
-        "non_crit": 17551.6,
-        "crit_expect": 17990.4,
+        "non_crit": 21030.1,
+        "crit_expect": 21555.9,
         "conditional_rows": []
       },
       {
@@ -1514,8 +1543,8 @@
         "multiplier_pct": 180.0,
         "stagger": 5.0,
         "bonus_pct": 29.9,
-        "non_crit": 6981.3,
-        "crit_expect": 7155.9,
+        "non_crit": 8365.0,
+        "crit_expect": 8574.1,
         "conditional_rows": []
       },
       {
@@ -1555,7 +1584,8 @@
       "    [套组 拓荒装备组] 装备者连携技冷却缩减+15% -> {'kind': 'pct', 'stat': 'combo_cd', 'value': 15.0}",
       "  汇总词条: {'flat_意志': 334, 'pct_atk_pct': 67.0, 'flat_防御力': 140, 'flat_敏捷': 102, 'flat_智识': 113, 'pct_ult_charge': 16.0, 'flat_力量': 55, 'pct_all_skill_dmg': 29.9, 'pct_elem_物理': 29.9, 'pct_skill_dmg': 53.8, 'pct_combo_cd': 15.0}",
       "  主能力: 敏捷（官方标签）总值 242",
-      "  攻击力 = (809 × 1.6700 + 0) × (1 + 0.005×242) = 2985.8"
+      "  副能力: 智识（官方标注）总值 219",
+      "  攻击力 = (809 × 1.6700 + 0) × (1 + 0.005×242 + 0.002×219) = 3577.5"
     ]
   },
   {
@@ -1563,9 +1593,10 @@
     "key": "laevat",
     "element": "灼热",
     "primary_stat": "智识",
+    "secondary_stat": "力量",
     "panel": {
       "HP": 5495.0,
-      "ATK": 3067.2,
+      "ATK": 3987.9,
       "DEF": 140,
       "力量": 400.0,
       "敏捷": 201.0,
@@ -1595,8 +1626,8 @@
         "multiplier_pct": 533.0,
         "stagger": 0.0,
         "bonus_pct": 59.8,
-        "non_crit": 26124.4,
-        "crit_expect": 26777.5,
+        "non_crit": 33966.6,
+        "crit_expect": 34815.8,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -1608,8 +1639,8 @@
         "multiplier_pct": 924.0,
         "stagger": 50.0,
         "bonus_pct": 59.8,
-        "non_crit": 45288.8,
-        "crit_expect": 46421.1,
+        "non_crit": 58884.0,
+        "crit_expect": 60356.1,
         "conditional_rows": [
           "终结技期间 / 第一段倍率: 330%",
           "终结技期间 / 第二段倍率: 370%",
@@ -1623,8 +1654,8 @@
         "multiplier_pct": 540.0,
         "stagger": 10.0,
         "bonus_pct": 59.8,
-        "non_crit": 26467.5,
-        "crit_expect": 27129.2,
+        "non_crit": 34412.7,
+        "crit_expect": 35273.0,
         "conditional_rows": []
       },
       {
@@ -1634,8 +1665,8 @@
         "multiplier_pct": 1044.0,
         "stagger": 0.0,
         "bonus_pct": 59.8,
-        "non_crit": 51170.5,
-        "crit_expect": 52449.8,
+        "non_crit": 66531.2,
+        "crit_expect": 68194.5,
         "conditional_rows": []
       }
     ],
@@ -1664,7 +1695,8 @@
       "    [套组 动火用装备组] 装备者源石技艺强度+30 -> {'kind': 'flat', 'stat': '源石技艺强度', 'value': 30}",
       "  汇总词条: {'flat_智识': 156, 'pct_atk_pct': 39.0, 'pct_elem_灼热': 59.8, 'flat_防御力': 140, 'flat_力量': 279, 'flat_敏捷': 102, 'pct_elem_自然': 15.0, 'flat_意志': 82, 'flat_源石技艺强度': 127, 'pct_elem_寒冷': 29.9, 'pct_elem_电磁': 29.9}",
       "  主能力: 智识（官方标签）总值 333",
-      "  攻击力 = (828 × 1.3900 + 0) × (1 + 0.005×333) = 3067.2"
+      "  副能力: 力量（官方标注）总值 400",
+      "  攻击力 = (828 × 1.3900 + 0) × (1 + 0.005×333 + 0.002×400) = 3987.9"
     ]
   },
   {
@@ -1672,9 +1704,10 @@
     "key": "lastrite",
     "element": "寒冷",
     "primary_stat": "力量",
+    "secondary_stat": "意志",
     "panel": {
       "HP": 5495.0,
-      "ATK": 3967.3,
+      "ATK": 4379.2,
       "DEF": 140,
       "力量": 482.0,
       "敏捷": 301.0,
@@ -1704,8 +1737,8 @@
         "multiplier_pct": 728.0,
         "stagger": 0.0,
         "bonus_pct": 85.9,
-        "non_crit": 53691.5,
-        "crit_expect": 56376.1,
+        "non_crit": 59265.3,
+        "crit_expect": 62228.6,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -1717,8 +1750,8 @@
         "multiplier_pct": 320.0,
         "stagger": 0.0,
         "bonus_pct": 130.8,
-        "non_crit": 29300.9,
-        "crit_expect": 30765.9,
+        "non_crit": 32342.7,
+        "crit_expect": 33959.8,
         "conditional_rows": []
       },
       {
@@ -1728,8 +1761,8 @@
         "multiplier_pct": 320.0,
         "stagger": 15.0,
         "bonus_pct": 85.9,
-        "non_crit": 23600.7,
-        "crit_expect": 24780.7,
+        "non_crit": 26050.7,
+        "crit_expect": 27353.2,
         "conditional_rows": []
       },
       {
@@ -1739,8 +1772,8 @@
         "multiplier_pct": 1600.0,
         "stagger": 20.0,
         "bonus_pct": 85.9,
-        "non_crit": 118003.3,
-        "crit_expect": 123903.4,
+        "non_crit": 130253.5,
+        "crit_expect": 136766.1,
         "conditional_rows": []
       }
     ],
@@ -1769,7 +1802,8 @@
       "    [套组 M.I.警用装备组] 装备者暴击率+5% -> {'kind': 'pct', 'stat': 'crit_rate', 'value': 5.0}",
       "  汇总词条: {'flat_力量': 327, 'pct_atk_pct': 39.0, 'pct_all_skill_dmg': 56.0, 'flat_防御力': 140, 'flat_敏捷': 197, 'flat_源石技艺强度': 26, 'pct_skill_dmg': 44.9, 'flat_智识': 27, 'flat_意志': 68, 'pct_elem_灼热': 29.9, 'pct_elem_自然': 29.9, 'pct_elem_寒冷': 29.9, 'pct_elem_电磁': 29.9, 'pct_crit_rate': 5.0}",
       "  主能力: 力量（官方标签）总值 482",
-      "  攻击力 = (837 × 1.3900 + 0) × (1 + 0.005×482) = 3967.3"
+      "  副能力: 意志（官方标注）总值 177",
+      "  攻击力 = (837 × 1.3900 + 0) × (1 + 0.005×482 + 0.002×177) = 4379.2"
     ]
   },
   {
@@ -1777,9 +1811,10 @@
     "key": "lifeng",
     "element": "物理",
     "primary_stat": "敏捷",
+    "secondary_stat": "力量",
     "panel": {
       "HP": 5495.0,
-      "ATK": 2773.0,
+      "ATK": 3318.6,
       "DEF": 140,
       "力量": 336.0,
       "敏捷": 483.0,
@@ -1809,8 +1844,8 @@
         "multiplier_pct": 531.0,
         "stagger": 0.0,
         "bonus_pct": 118.1,
-        "non_crit": 32114.2,
-        "crit_expect": 32917.0,
+        "non_crit": 38433.6,
+        "crit_expect": 39394.4,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -1822,8 +1857,8 @@
         "multiplier_pct": 440.0,
         "stagger": 10.0,
         "bonus_pct": 118.1,
-        "non_crit": 26610.6,
-        "crit_expect": 27275.9,
+        "non_crit": 31847.0,
+        "crit_expect": 32643.2,
         "conditional_rows": []
       },
       {
@@ -1833,8 +1868,8 @@
         "multiplier_pct": 480.0,
         "stagger": 10.0,
         "bonus_pct": 118.1,
-        "non_crit": 29029.8,
-        "crit_expect": 29755.5,
+        "non_crit": 34742.2,
+        "crit_expect": 35610.8,
         "conditional_rows": []
       },
       {
@@ -1844,8 +1879,8 @@
         "multiplier_pct": 1400.0,
         "stagger": 15.0,
         "bonus_pct": 118.1,
-        "non_crit": 84670.2,
-        "crit_expect": 86786.9,
+        "non_crit": 101331.5,
+        "crit_expect": 103864.8,
         "conditional_rows": []
       }
     ],
@@ -1873,7 +1908,8 @@
       "    [套组 点剑装备组] 装备者失衡效率加成+20% -> {'kind': 'pct', 'stat': 'stagger_eff', 'value': 20.0}",
       "  汇总词条: {'flat_敏捷': 351, 'pct_elem_物理': 118.1, 'flat_防御力': 140, 'flat_力量': 213, 'flat_意志': 55, 'flat_源石技艺强度': 44, 'pct_stagger_eff': 20.0}",
       "  主能力: 敏捷（官方标签）总值 483",
-      "  攻击力 = (812 × 1.0000 + 0) × (1 + 0.005×483) = 2773.0"
+      "  副能力: 力量（官方标注）总值 336",
+      "  攻击力 = (812 × 1.0000 + 0) × (1 + 0.005×483 + 0.002×336) = 3318.6"
     ]
   },
   {
@@ -1881,9 +1917,10 @@
     "key": "liino",
     "element": "电磁",
     "primary_stat": "意志",
+    "secondary_stat": "敏捷",
     "panel": {
       "HP": 5495.0,
-      "ATK": 3386.5,
+      "ATK": 3818.2,
       "DEF": 140,
       "力量": 164.0,
       "敏捷": 232.0,
@@ -1913,8 +1950,8 @@
         "multiplier_pct": 523.0,
         "stagger": 0.0,
         "bonus_pct": 17.9,
-        "non_crit": 20881.6,
-        "crit_expect": 21403.6,
+        "non_crit": 23543.4,
+        "crit_expect": 24132.0,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -1926,8 +1963,8 @@
         "multiplier_pct": 370.0,
         "stagger": 3.0,
         "bonus_pct": 17.9,
-        "non_crit": 14772.8,
-        "crit_expect": 15142.1,
+        "non_crit": 16655.9,
+        "crit_expect": 17072.3,
         "conditional_rows": []
       },
       {
@@ -1937,8 +1974,8 @@
         "multiplier_pct": 360.0,
         "stagger": 5.0,
         "bonus_pct": 116.6,
-        "non_crit": 26406.4,
-        "crit_expect": 27066.5,
+        "non_crit": 29772.5,
+        "crit_expect": 30516.8,
         "conditional_rows": []
       },
       {
@@ -1948,8 +1985,8 @@
         "multiplier_pct": 1030.0,
         "stagger": 20.0,
         "bonus_pct": 17.9,
-        "non_crit": 41124.3,
-        "crit_expect": 42152.4,
+        "non_crit": 46366.5,
+        "crit_expect": 47525.7,
         "conditional_rows": []
       }
     ],
@@ -1977,7 +2014,8 @@
       "    [套组 50式应龙装备组] 装备者攻击力+15% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 15.0}",
       "  汇总词条: {'flat_意志': 351, 'pct_heal_eff': 46.4, 'flat_防御力': 140, 'flat_力量': 75, 'pct_all_skill_dmg': 17.9, 'flat_敏捷': 111, 'flat_智识': 82, 'pct_combo_dmg': 98.69999999999999, 'pct_elem_灼热': 29.9, 'pct_elem_自然': 29.9, 'pct_atk_pct': 15.0}",
       "  主能力: 意志（官方标签）总值 528",
-      "  攻击力 = (809 × 1.1500 + 0) × (1 + 0.005×528) = 3386.5"
+      "  副能力: 敏捷（官方标注）总值 232",
+      "  攻击力 = (809 × 1.1500 + 0) × (1 + 0.005×528 + 0.002×232) = 3818.2"
     ]
   },
   {
@@ -1985,9 +2023,10 @@
     "key": "lizhiyan",
     "element": "自然",
     "primary_stat": "智识",
+    "secondary_stat": "意志",
     "panel": {
       "HP": 5495.0,
-      "ATK": 3815.2,
+      "ATK": 4489.5,
       "DEF": 140,
       "力量": 187.0,
       "敏捷": 168.0,
@@ -2017,8 +2056,8 @@
         "multiplier_pct": 531.0,
         "stagger": 0.0,
         "bonus_pct": 29.9,
-        "non_crit": 26316.3,
-        "crit_expect": 26974.2,
+        "non_crit": 30967.5,
+        "crit_expect": 31741.7,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -2030,8 +2069,8 @@
         "multiplier_pct": 500.0,
         "stagger": 10.0,
         "bonus_pct": 29.9,
-        "non_crit": 24779.9,
-        "crit_expect": 25399.4,
+        "non_crit": 29159.6,
+        "crit_expect": 29888.6,
         "conditional_rows": []
       },
       {
@@ -2041,8 +2080,8 @@
         "multiplier_pct": 700.0,
         "stagger": 10.0,
         "bonus_pct": 29.9,
-        "non_crit": 34691.9,
-        "crit_expect": 35559.2,
+        "non_crit": 40823.4,
+        "crit_expect": 41844.0,
         "conditional_rows": []
       },
       {
@@ -2052,8 +2091,8 @@
         "multiplier_pct": 1980.0,
         "stagger": 20.0,
         "bonus_pct": 29.9,
-        "non_crit": 98128.4,
-        "crit_expect": 100581.6,
+        "non_crit": 115472.0,
+        "crit_expect": 118358.8,
         "conditional_rows": []
       }
     ],
@@ -2082,7 +2121,8 @@
       "    [套组 拓荒装备组] 装备者连携技冷却缩减+15% -> {'kind': 'pct', 'stat': 'combo_cd', 'value': 15.0}",
       "  汇总词条: {'flat_智识': 269, 'pct_ult_charge': 62.4, 'pct_atk_pct': 44.8, 'flat_防御力': 140, 'flat_敏捷': 75, 'flat_力量': 96, 'flat_意志': 164, 'pct_all_skill_dmg': 29.9, 'pct_elem_物理': 29.9, 'pct_elem_寒冷': 29.9, 'pct_elem_电磁': 29.9, 'pct_combo_cd': 15.0}",
       "  主能力: 智识（官方标签）总值 445",
-      "  攻击力 = (817 × 1.4480 + 0) × (1 + 0.005×445) = 3815.2"
+      "  副能力: 意志（官方标注）总值 285",
+      "  攻击力 = (817 × 1.4480 + 0) × (1 + 0.005×445 + 0.002×285) = 4489.5"
     ]
   },
   {
@@ -2090,9 +2130,10 @@
     "key": "meurs",
     "element": "物理",
     "primary_stat": "力量",
+    "secondary_stat": "意志",
     "panel": {
       "HP": 9781.1,
-      "ATK": 1876.2,
+      "ATK": 2714.1,
       "DEF": 140,
       "力量": 272.0,
       "敏捷": 96.0,
@@ -2122,8 +2163,8 @@
         "multiplier_pct": 628.0,
         "stagger": 0.0,
         "bonus_pct": 0,
-        "non_crit": 11782.5,
-        "crit_expect": 12077.1,
+        "non_crit": 17044.7,
+        "crit_expect": 17470.9,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -2135,8 +2176,8 @@
         "multiplier_pct": 400.0,
         "stagger": 20.0,
         "bonus_pct": 0,
-        "non_crit": 7504.8,
-        "crit_expect": 7692.4,
+        "non_crit": 10856.5,
+        "crit_expect": 11127.9,
         "conditional_rows": []
       },
       {
@@ -2146,8 +2187,8 @@
         "multiplier_pct": 280.0,
         "stagger": 10.0,
         "bonus_pct": 0,
-        "non_crit": 5253.4,
-        "crit_expect": 5384.7,
+        "non_crit": 7599.6,
+        "crit_expect": 7789.6,
         "conditional_rows": []
       },
       {
@@ -2157,8 +2198,8 @@
         "multiplier_pct": 870.0,
         "stagger": 20.0,
         "bonus_pct": 0,
-        "non_crit": 16322.9,
-        "crit_expect": 16731.0,
+        "non_crit": 23612.9,
+        "crit_expect": 24203.3,
         "conditional_rows": []
       }
     ],
@@ -2187,7 +2228,8 @@
       "    [套组 生物辅助装备组] 装备者治疗效率+20% -> {'kind': 'pct', 'stat': 'heal_eff', 'value': 20.0}",
       "  汇总词条: {'flat_意志': 421, 'pct_hp_pct': 78.0, 'pct_heal_eff': 83.9, 'flat_防御力': 140, 'flat_智识': 102, 'flat_力量': 96, 'pct_elem_寒冷': 29.9, 'pct_elem_电磁': 29.9}",
       "  主能力: 力量（官方标签）总值 272",
-      "  攻击力 = (795 × 1.0000 + 0) × (1 + 0.005×272) = 1876.2"
+      "  副能力: 意志（官方标注）总值 527",
+      "  攻击力 = (795 × 1.0000 + 0) × (1 + 0.005×272 + 0.002×527) = 2714.1"
     ]
   },
   {
@@ -2195,9 +2237,10 @@
     "key": "mifu",
     "element": "物理",
     "primary_stat": "力量",
+    "secondary_stat": "意志",
     "panel": {
       "HP": 5495.0,
-      "ATK": 4466.6,
+      "ATK": 5131.7,
       "DEF": 140,
       "力量": 579.0,
       "敏捷": 119.0,
@@ -2227,8 +2270,8 @@
         "multiplier_pct": 650.0,
         "stagger": 0.0,
         "bonus_pct": 84.7,
-        "non_crit": 53623.7,
-        "crit_expect": 54964.3,
+        "non_crit": 61608.7,
+        "crit_expect": 63148.9,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -2240,8 +2283,8 @@
         "multiplier_pct": 950.0,
         "stagger": 15.0,
         "bonus_pct": 138.5,
-        "non_crit": 101201.8,
-        "crit_expect": 103731.8,
+        "non_crit": 116271.6,
+        "crit_expect": 119178.4,
         "conditional_rows": []
       },
       {
@@ -2251,8 +2294,8 @@
         "multiplier_pct": 250.0,
         "stagger": 10.0,
         "bonus_pct": 84.7,
-        "non_crit": 20624.5,
-        "crit_expect": 21140.1,
+        "non_crit": 23695.7,
+        "crit_expect": 24288.0,
         "conditional_rows": []
       },
       {
@@ -2262,8 +2305,8 @@
         "multiplier_pct": 700.0,
         "stagger": 20.0,
         "bonus_pct": 84.7,
-        "non_crit": 57748.6,
-        "crit_expect": 59192.3,
+        "non_crit": 66347.8,
+        "crit_expect": 68006.5,
         "conditional_rows": []
       }
     ],
@@ -2292,7 +2335,8 @@
       "    [套组 点剑装备组] 装备者失衡效率加成+20% -> {'kind': 'pct', 'stat': 'stagger_eff', 'value': 20.0}",
       "  汇总词条: {'flat_力量': 406, 'pct_atk_pct': 39.0, 'pct_elem_物理': 84.69999999999999, 'flat_防御力': 140, 'flat_意志': 171, 'flat_源石技艺强度': 53, 'flat_敏捷': 27, 'pct_skill_dmg': 53.8, 'pct_stagger_eff': 20.0}",
       "  主能力: 力量（官方标签）总值 579",
-      "  攻击力 = (825 × 1.3900 + 0) × (1 + 0.005×579) = 4466.6"
+      "  副能力: 意志（官方标注）总值 290",
+      "  攻击力 = (825 × 1.3900 + 0) × (1 + 0.005×579 + 0.002×290) = 5131.7"
     ]
   },
   {
@@ -2300,9 +2344,10 @@
     "key": "pelica",
     "element": "电磁",
     "primary_stat": "智识",
+    "secondary_stat": "意志",
     "panel": {
       "HP": 5495.0,
-      "ATK": 2748.5,
+      "ATK": 3313.8,
       "DEF": 140,
       "力量": 166.0,
       "敏捷": 204.0,
@@ -2332,8 +2377,8 @@
         "multiplier_pct": 516.0,
         "stagger": 0.0,
         "bonus_pct": 17.9,
-        "non_crit": 16721.0,
-        "crit_expect": 18309.4,
+        "non_crit": 20160.1,
+        "crit_expect": 22075.3,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -2345,8 +2390,8 @@
         "multiplier_pct": 400.0,
         "stagger": 10.0,
         "bonus_pct": 17.9,
-        "non_crit": 12962.0,
-        "crit_expect": 14193.4,
+        "non_crit": 15628.0,
+        "crit_expect": 17112.6,
         "conditional_rows": []
       },
       {
@@ -2356,8 +2401,8 @@
         "multiplier_pct": 180.0,
         "stagger": 10.0,
         "bonus_pct": 116.6,
-        "non_crit": 10715.9,
-        "crit_expect": 11733.9,
+        "non_crit": 12919.9,
+        "crit_expect": 14147.3,
         "conditional_rows": []
       },
       {
@@ -2367,8 +2412,8 @@
         "multiplier_pct": 1000.0,
         "stagger": 20.0,
         "bonus_pct": 17.9,
-        "non_crit": 32405.0,
-        "crit_expect": 35483.4,
+        "non_crit": 39069.9,
+        "crit_expect": 42781.5,
         "conditional_rows": []
       }
     ],
@@ -2396,7 +2441,8 @@
       "    [套组 50式应龙装备组] 装备者攻击力+15% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 15.0}",
       "  汇总词条: {'flat_智识': 238, 'pct_crit_rate': 14.0, 'flat_防御力': 140, 'flat_力量': 75, 'flat_意志': 195, 'pct_all_skill_dmg': 17.9, 'flat_敏捷': 111, 'pct_combo_dmg': 98.69999999999999, 'pct_elem_灼热': 29.9, 'pct_elem_自然': 29.9, 'pct_atk_pct': 15.0}",
       "  主能力: 智识（官方标签）总值 399",
-      "  攻击力 = (798 × 1.1500 + 0) × (1 + 0.005×399) = 2748.5"
+      "  副能力: 意志（官方标注）总值 308",
+      "  攻击力 = (798 × 1.1500 + 0) × (1 + 0.005×399 + 0.002×308) = 3313.8"
     ]
   },
   {
@@ -2404,9 +2450,10 @@
     "key": "pograni",
     "element": "物理",
     "primary_stat": "意志",
+    "secondary_stat": "敏捷",
     "panel": {
       "HP": 5495.0,
-      "ATK": 4576.9,
+      "ATK": 5135.7,
       "DEF": 140,
       "力量": 176.0,
       "敏捷": 221.0,
@@ -2436,8 +2483,8 @@
         "multiplier_pct": 552.0,
         "stagger": 0.0,
         "bonus_pct": 62.7,
-        "non_crit": 41105.4,
-        "crit_expect": 42133.1,
+        "non_crit": 46124.4,
+        "crit_expect": 47277.5,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -2449,8 +2496,8 @@
         "multiplier_pct": 430.0,
         "stagger": 10.0,
         "bonus_pct": 62.7,
-        "non_crit": 32020.5,
-        "crit_expect": 32821.0,
+        "non_crit": 35930.2,
+        "crit_expect": 36828.5,
         "conditional_rows": []
       },
       {
@@ -2460,8 +2507,8 @@
         "multiplier_pct": 663.0,
         "stagger": 19.0,
         "bonus_pct": 161.4,
-        "non_crit": 79321.6,
-        "crit_expect": 81304.7,
+        "non_crit": 89006.7,
+        "crit_expect": 91231.9,
         "conditional_rows": []
       },
       {
@@ -2471,8 +2518,8 @@
         "multiplier_pct": 850.0,
         "stagger": 25.0,
         "bonus_pct": 62.7,
-        "non_crit": 63296.4,
-        "crit_expect": 64878.8,
+        "non_crit": 71024.8,
+        "crit_expect": 72800.5,
         "conditional_rows": []
       }
     ],
@@ -2501,7 +2548,8 @@
       "    [套组 50式应龙装备组] 装备者攻击力+15% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 15.0}",
       "  汇总词条: {'flat_意志': 351, 'pct_atk_pct': 54.0, 'pct_elem_物理': 44.8, 'flat_防御力': 140, 'flat_力量': 75, 'pct_all_skill_dmg': 17.9, 'flat_敏捷': 111, 'flat_智识': 82, 'pct_combo_dmg': 98.69999999999999, 'pct_elem_灼热': 29.9, 'pct_elem_自然': 29.9}",
       "  主能力: 意志（官方标签）总值 524",
-      "  攻击力 = (821 × 1.5400 + 0) × (1 + 0.005×524) = 4576.9"
+      "  副能力: 敏捷（官方标注）总值 221",
+      "  攻击力 = (821 × 1.5400 + 0) × (1 + 0.005×524 + 0.002×221) = 5135.7"
     ]
   },
   {
@@ -2509,9 +2557,10 @@
     "key": "puqiena",
     "element": "物理",
     "primary_stat": "力量",
+    "secondary_stat": "意志",
     "panel": {
       "HP": 7033.6,
-      "ATK": 2671.2,
+      "ATK": 3080.2,
       "DEF": 140,
       "力量": 542.0,
       "敏捷": 120.0,
@@ -2541,8 +2590,8 @@
         "multiplier_pct": 634.0,
         "stagger": 0.0,
         "bonus_pct": 39.9,
-        "non_crit": 23692.6,
-        "crit_expect": 24285.0,
+        "non_crit": 27320.0,
+        "crit_expect": 28003.0,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -2554,8 +2603,8 @@
         "multiplier_pct": 400.0,
         "stagger": 20.0,
         "bonus_pct": 93.7,
-        "non_crit": 20696.5,
-        "crit_expect": 21213.9,
+        "non_crit": 23865.1,
+        "crit_expect": 24461.7,
         "conditional_rows": []
       },
       {
@@ -2565,8 +2614,8 @@
         "multiplier_pct": 450.0,
         "stagger": 10.0,
         "bonus_pct": 39.9,
-        "non_crit": 16816.5,
-        "crit_expect": 17237.0,
+        "non_crit": 19391.1,
+        "crit_expect": 19875.9,
         "conditional_rows": []
       },
       {
@@ -2576,8 +2625,8 @@
         "multiplier_pct": 1050.0,
         "stagger": 25.0,
         "bonus_pct": 39.9,
-        "non_crit": 39238.6,
-        "crit_expect": 40219.6,
+        "non_crit": 45246.0,
+        "crit_expect": 46377.2,
         "conditional_rows": []
       }
     ],
@@ -2606,7 +2655,8 @@
       "    [套组 点剑装备组] 装备者失衡效率加成+20% -> {'kind': 'pct', 'stat': 'stagger_eff', 'value': 20.0}",
       "  汇总词条: {'flat_力量': 374, 'pct_heal_eff': 37.1, 'pct_hp_pct': 28.0, 'flat_防御力': 140, 'flat_意志': 171, 'pct_elem_物理': 39.9, 'flat_源石技艺强度': 53, 'flat_敏捷': 27, 'pct_skill_dmg': 53.8, 'pct_stagger_eff': 20.0}",
       "  主能力: 力量（官方标签）总值 542",
-      "  攻击力 = (720 × 1.0000 + 0) × (1 + 0.005×542) = 2671.2"
+      "  副能力: 意志（官方标注）总值 284",
+      "  攻击力 = (720 × 1.0000 + 0) × (1 + 0.005×542 + 0.002×284) = 3080.2"
     ]
   },
   {
@@ -2614,9 +2664,10 @@
     "key": "seraph",
     "element": "寒冷",
     "primary_stat": "意志",
+    "secondary_stat": "智识",
     "panel": {
       "HP": 11561.1,
-      "ATK": 3092.4,
+      "ATK": 3447.8,
       "DEF": 134,
       "力量": 89.0,
       "敏捷": 146.0,
@@ -2646,8 +2697,8 @@
         "multiplier_pct": 495.0,
         "stagger": 0.0,
         "bonus_pct": 0,
-        "non_crit": 15307.2,
-        "crit_expect": 15689.9,
+        "non_crit": 17066.5,
+        "crit_expect": 17493.1,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -2670,8 +2721,8 @@
         "multiplier_pct": 450.0,
         "stagger": 10.0,
         "bonus_pct": 0,
-        "non_crit": 13915.6,
-        "crit_expect": 14263.5,
+        "non_crit": 15515.0,
+        "crit_expect": 15902.8,
         "conditional_rows": []
       },
       {
@@ -2711,7 +2762,8 @@
       "    [套组 长息装备组] 装备者生命值+1000 -> {'kind': 'flat', 'stat': '生命值', 'value': 1000}",
       "  汇总词条: {'flat_意志': 447, 'pct_hp_pct': 78.0, 'pct_heal_eff': 28.0, 'flat_防御力': 134, 'flat_智识': 102, 'flat_源石技艺强度': 26, 'flat_敏捷': 55, 'pct_ult_charge': 26.7, 'flat_生命值': 1000}",
       "  主能力: 意志（官方标签）总值 597",
-      "  攻击力 = (776 × 1.0000 + 0) × (1 + 0.005×597) = 3092.4"
+      "  副能力: 智识（官方标注）总值 229",
+      "  攻击力 = (776 × 1.0000 + 0) × (1 + 0.005×597 + 0.002×229) = 3447.8"
     ]
   },
   {
@@ -2719,9 +2771,10 @@
     "key": "tangtang",
     "element": "寒冷",
     "primary_stat": "敏捷",
+    "secondary_stat": "力量",
     "panel": {
       "HP": 5495.0,
-      "ATK": 4202.2,
+      "ATK": 4783.2,
       "DEF": 140,
       "力量": 253.0,
       "敏捷": 532.0,
@@ -2751,8 +2804,8 @@
         "multiplier_pct": 561.0,
         "stagger": 0.0,
         "bonus_pct": 44.8,
-        "non_crit": 34135.6,
-        "crit_expect": 35842.4,
+        "non_crit": 38854.9,
+        "crit_expect": 40797.6,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -2764,8 +2817,8 @@
         "multiplier_pct": 480.0,
         "stagger": 10.0,
         "bonus_pct": 89.7,
-        "non_crit": 38263.5,
-        "crit_expect": 40176.7,
+        "non_crit": 43553.5,
+        "crit_expect": 45731.1,
         "conditional_rows": []
       },
       {
@@ -2775,8 +2828,8 @@
         "multiplier_pct": 240.0,
         "stagger": 10.0,
         "bonus_pct": 44.8,
-        "non_crit": 14603.5,
-        "crit_expect": 15333.6,
+        "non_crit": 16622.4,
+        "crit_expect": 17453.5,
         "conditional_rows": []
       },
       {
@@ -2786,8 +2839,8 @@
         "multiplier_pct": 1420.0,
         "stagger": 35.0,
         "bonus_pct": 44.8,
-        "non_crit": 86403.8,
-        "crit_expect": 90724.0,
+        "non_crit": 98349.2,
+        "crit_expect": 103266.7,
         "conditional_rows": []
       }
     ],
@@ -2816,7 +2869,8 @@
       "    [套组 M.I.警用装备组] 装备者暴击率+5% -> {'kind': 'pct', 'stat': 'crit_rate', 'value': 5.0}",
       "  汇总词条: {'flat_敏捷': 353, 'pct_atk_pct': 39.0, 'pct_elem_寒冷': 44.8, 'flat_防御力': 140, 'flat_力量': 130, 'flat_源石技艺强度': 26, 'pct_skill_dmg': 44.9, 'flat_智识': 82, 'flat_意志': 41, 'pct_elem_灼热': 29.9, 'pct_elem_自然': 29.9, 'pct_ult_charge': 33.4, 'pct_crit_rate': 5.0}",
       "  主能力: 敏捷（官方标签）总值 532",
-      "  攻击力 = (826 × 1.3900 + 0) × (1 + 0.005×532) = 4202.2"
+      "  副能力: 力量（官方标注）总值 253",
+      "  攻击力 = (826 × 1.3900 + 0) × (1 + 0.005×532 + 0.002×253) = 4783.2"
     ]
   },
   {
@@ -2824,9 +2878,10 @@
     "key": "tifuluosi",
     "element": "自然",
     "primary_stat": "敏捷",
+    "secondary_stat": "意志",
     "panel": {
       "HP": 5495.0,
-      "ATK": 2426.0,
+      "ATK": 2880.0,
       "DEF": 140,
       "力量": 193.0,
       "敏捷": 405.0,
@@ -2856,8 +2911,8 @@
         "multiplier_pct": 588.0,
         "stagger": 0.0,
         "bonus_pct": 73.2,
-        "non_crit": 24707.3,
-        "crit_expect": 25325.0,
+        "non_crit": 29330.2,
+        "crit_expect": 30063.5,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -2869,8 +2924,8 @@
         "multiplier_pct": 345.0,
         "stagger": 20.0,
         "bonus_pct": 73.2,
-        "non_crit": 14496.6,
-        "crit_expect": 14859.0,
+        "non_crit": 17209.0,
+        "crit_expect": 17639.3,
         "conditional_rows": []
       },
       {
@@ -2880,8 +2935,8 @@
         "multiplier_pct": 310.0,
         "stagger": 10.0,
         "bonus_pct": 73.2,
-        "non_crit": 13025.9,
-        "crit_expect": 13351.6,
+        "non_crit": 15463.2,
+        "crit_expect": 15849.8,
         "conditional_rows": []
       },
       {
@@ -2891,8 +2946,8 @@
         "multiplier_pct": 575.0,
         "stagger": 20.0,
         "bonus_pct": 73.2,
-        "non_crit": 24161.0,
-        "crit_expect": 24765.1,
+        "non_crit": 28681.7,
+        "crit_expect": 29398.8,
         "conditional_rows": []
       }
     ],
@@ -2921,7 +2976,8 @@
       "    [套组 拓荒装备组] 装备者连携技冷却缩减+15% -> {'kind': 'pct', 'stat': 'combo_cd', 'value': 15.0}",
       "  汇总词条: {'flat_敏捷': 231, 'pct_elem_自然': 43.3, 'flat_源石技艺强度': 42, 'flat_防御力': 140, 'flat_智识': 113, 'pct_ult_charge': 16.0, 'flat_力量': 96, 'flat_意志': 164, 'pct_all_skill_dmg': 29.9, 'pct_elem_物理': 29.9, 'pct_elem_寒冷': 29.9, 'pct_elem_电磁': 29.9, 'pct_combo_cd': 15.0}",
       "  主能力: 敏捷（官方标签）总值 405",
-      "  攻击力 = (802 × 1.0000 + 0) × (1 + 0.005×405) = 2426.0"
+      "  副能力: 意志（官方标注）总值 283",
+      "  攻击力 = (802 × 1.0000 + 0) × (1 + 0.005×405 + 0.002×283) = 2880.0"
     ]
   },
   {
@@ -2929,9 +2985,10 @@
     "key": "wolfgd",
     "element": "灼热",
     "primary_stat": "力量",
+    "secondary_stat": "敏捷",
     "panel": {
       "HP": 5495.0,
-      "ATK": 2179.5,
+      "ATK": 2617.0,
       "DEF": 140,
       "力量": 356.0,
       "敏捷": 279.0,
@@ -2961,8 +3018,8 @@
         "multiplier_pct": 604.0,
         "stagger": 0.0,
         "bonus_pct": 15.0,
-        "non_crit": 15138.9,
-        "crit_expect": 15517.4,
+        "non_crit": 18177.6,
+        "crit_expect": 18632.1,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -2974,8 +3031,8 @@
         "multiplier_pct": 1080.0,
         "stagger": 10.0,
         "bonus_pct": 15.0,
-        "non_crit": 27069.6,
-        "crit_expect": 27746.4,
+        "non_crit": 32503.0,
+        "crit_expect": 33315.6,
         "conditional_rows": []
       },
       {
@@ -2985,8 +3042,8 @@
         "multiplier_pct": 135.0,
         "stagger": 10.0,
         "bonus_pct": 15.0,
-        "non_crit": 3383.7,
-        "crit_expect": 3468.3,
+        "non_crit": 4062.9,
+        "crit_expect": 4164.5,
         "conditional_rows": []
       },
       {
@@ -2996,8 +3053,8 @@
         "multiplier_pct": 72.0,
         "stagger": 15.0,
         "bonus_pct": 15.0,
-        "non_crit": 1804.6,
-        "crit_expect": 1849.8,
+        "non_crit": 2166.9,
+        "crit_expect": 2221.0,
         "conditional_rows": []
       }
     ],
@@ -3023,7 +3080,8 @@
       "    [套组 动火用装备组] 装备者源石技艺强度+30 -> {'kind': 'flat', 'stat': '源石技艺强度', 'value': 30}",
       "  汇总词条: {'flat_防御力': 140, 'flat_力量': 195, 'flat_敏捷': 184, 'pct_elem_灼热': 15.0, 'pct_elem_自然': 15.0, 'flat_意志': 84, 'pct_ult_charge': 26.7, 'flat_源石技艺强度': 136}",
       "  主能力: 力量（官方标签）总值 356",
-      "  攻击力 = (784 × 1.0000 + 0) × (1 + 0.005×356) = 2179.5"
+      "  副能力: 敏捷（官方标注）总值 279",
+      "  攻击力 = (784 × 1.0000 + 0) × (1 + 0.005×356 + 0.002×279) = 2617.0"
     ]
   },
   {
@@ -3031,9 +3089,10 @@
     "key": "wulfa",
     "element": "物理",
     "primary_stat": "敏捷",
+    "secondary_stat": "智识",
     "panel": {
       "HP": 5495.0,
-      "ATK": 3351.0,
+      "ATK": 3634.0,
       "DEF": 140,
       "力量": 347.0,
       "敏捷": 359.0,
@@ -3063,8 +3122,8 @@
         "multiplier_pct": 593.0,
         "stagger": 0.0,
         "bonus_pct": 39.9,
-        "non_crit": 27800.5,
-        "crit_expect": 31206.1,
+        "non_crit": 30147.9,
+        "crit_expect": 33841.0,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -3076,8 +3135,8 @@
         "multiplier_pct": 480.0,
         "stagger": 20.0,
         "bonus_pct": 93.7,
-        "non_crit": 31156.7,
-        "crit_expect": 34973.4,
+        "non_crit": 33787.5,
+        "crit_expect": 37926.4,
         "conditional_rows": []
       },
       {
@@ -3087,8 +3146,8 @@
         "multiplier_pct": 500.0,
         "stagger": 5.0,
         "bonus_pct": 39.9,
-        "non_crit": 23440.6,
-        "crit_expect": 26312.1,
+        "non_crit": 25419.8,
+        "crit_expect": 28533.8,
         "conditional_rows": []
       },
       {
@@ -3098,8 +3157,8 @@
         "multiplier_pct": 1660.0,
         "stagger": 25.0,
         "bonus_pct": 39.9,
-        "non_crit": 77822.7,
-        "crit_expect": 87356.0,
+        "non_crit": 84393.8,
+        "crit_expect": 94732.1,
         "conditional_rows": []
       }
     ],
@@ -3128,7 +3187,8 @@
       "    [套组 点剑装备组] 装备者失衡效率加成+20% -> {'kind': 'pct', 'stat': 'stagger_eff', 'value': 20.0}",
       "  汇总词条: {'flat_敏捷': 183, 'pct_crit_rate': 19.5, 'pct_atk_pct': 44.8, 'flat_防御力': 140, 'flat_力量': 250, 'flat_意志': 171, 'pct_elem_物理': 39.9, 'flat_源石技艺强度': 53, 'pct_skill_dmg': 53.8, 'pct_stagger_eff': 20.0}",
       "  主能力: 敏捷（官方标签）总值 359",
-      "  攻击力 = (828 × 1.4480 + 0) × (1 + 0.005×359) = 3351.0"
+      "  副能力: 智识（官方标注）总值 118",
+      "  攻击力 = (828 × 1.4480 + 0) × (1 + 0.005×359 + 0.002×118) = 3634.0"
     ]
   },
   {
@@ -3136,9 +3196,10 @@
     "key": "yvonne",
     "element": "寒冷",
     "primary_stat": "智识",
+    "secondary_stat": "敏捷",
     "panel": {
       "HP": 5495.0,
-      "ATK": 2535.8,
+      "ATK": 3072.7,
       "DEF": 140,
       "力量": 212.0,
       "敏捷": 325.0,
@@ -3168,8 +3229,8 @@
         "multiplier_pct": 578.0,
         "stagger": 0.0,
         "bonus_pct": 44.8,
-        "non_crit": 21223.4,
-        "crit_expect": 24353.8,
+        "non_crit": 25716.9,
+        "crit_expect": 29510.2,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -3181,8 +3242,8 @@
         "multiplier_pct": 400.0,
         "stagger": 10.0,
         "bonus_pct": 89.7,
-        "non_crit": 19241.8,
-        "crit_expect": 22080.0,
+        "non_crit": 23315.8,
+        "crit_expect": 26754.9,
         "conditional_rows": []
       },
       {
@@ -3192,8 +3253,8 @@
         "multiplier_pct": 200.0,
         "stagger": 10.0,
         "bonus_pct": 44.8,
-        "non_crit": 7343.7,
-        "crit_expect": 8426.9,
+        "non_crit": 8898.6,
+        "crit_expect": 10211.1,
         "conditional_rows": []
       },
       {
@@ -3203,8 +3264,8 @@
         "multiplier_pct": 980.0,
         "stagger": 20.0,
         "bonus_pct": 44.8,
-        "non_crit": 35984.3,
-        "crit_expect": 41292.0,
+        "non_crit": 43603.1,
+        "crit_expect": 50034.6,
         "conditional_rows": []
       }
     ],
@@ -3233,7 +3294,8 @@
       "    [套组 M.I.警用装备组] 装备者暴击率+5% -> {'kind': 'pct', 'stat': 'crit_rate', 'value': 5.0}",
       "  汇总词条: {'flat_智识': 238, 'pct_crit_rate': 24.5, 'pct_elem_寒冷': 44.8, 'flat_防御力': 140, 'flat_力量': 130, 'flat_敏捷': 197, 'flat_源石技艺强度': 26, 'pct_skill_dmg': 44.9, 'flat_意志': 41, 'pct_elem_灼热': 29.9, 'pct_elem_自然': 29.9, 'pct_ult_charge': 33.4}",
       "  主能力: 智识（官方标签）总值 414",
-      "  攻击力 = (826 × 1.0000 + 0) × (1 + 0.005×414) = 2535.8"
+      "  副能力: 敏捷（官方标注）总值 325",
+      "  攻击力 = (826 × 1.0000 + 0) × (1 + 0.005×414 + 0.002×325) = 3072.7"
     ]
   },
   {
@@ -3241,9 +3303,10 @@
     "key": "zhuangfy",
     "element": "电磁",
     "primary_stat": "意志",
+    "secondary_stat": "智识",
     "panel": {
       "HP": 5495.0,
-      "ATK": 4731.3,
+      "ATK": 5259.2,
       "DEF": 140,
       "力量": 174.0,
       "敏捷": 210.0,
@@ -3273,8 +3336,8 @@
         "multiplier_pct": 551.0,
         "stagger": 0.0,
         "bonus_pct": 62.7,
-        "non_crit": 42415.4,
-        "crit_expect": 43475.8,
+        "non_crit": 47147.5,
+        "crit_expect": 48326.1,
         "conditional_rows": [
           "处决攻击倍率: 900%"
         ]
@@ -3286,8 +3349,8 @@
         "multiplier_pct": 45.0,
         "stagger": 15.0,
         "bonus_pct": 62.7,
-        "non_crit": 3464.1,
-        "crit_expect": 3550.7,
+        "non_crit": 3850.5,
+        "crit_expect": 3946.8,
         "conditional_rows": [
           "终结技期间 / 雷击伤害倍率: 81%"
         ]
@@ -3299,8 +3362,8 @@
         "multiplier_pct": 360.0,
         "stagger": 10.0,
         "bonus_pct": 161.4,
-        "non_crit": 44523.8,
-        "crit_expect": 45636.9,
+        "non_crit": 49491.1,
+        "crit_expect": 50728.4,
         "conditional_rows": [
           "终结技期间 / 伤害倍率: 540%"
         ]
@@ -3346,7 +3409,8 @@
       "    [套组 50式应龙装备组] 装备者攻击力+15% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 15.0}",
       "  汇总词条: {'flat_意志': 351, 'pct_atk_pct': 54.0, 'pct_elem_电磁': 44.8, 'flat_防御力': 140, 'flat_力量': 75, 'pct_all_skill_dmg': 17.9, 'flat_敏捷': 111, 'flat_智识': 82, 'pct_combo_dmg': 98.69999999999999, 'pct_elem_灼热': 29.9, 'pct_elem_自然': 29.9}",
       "  主能力: 意志（官方标签）总值 535",
-      "  攻击力 = (836 × 1.5400 + 0) × (1 + 0.005×535) = 4731.3"
+      "  副能力: 智识（官方标注）总值 205",
+      "  攻击力 = (836 × 1.5400 + 0) × (1 + 0.005×535 + 0.002×205) = 5259.2"
     ]
   }
 ]

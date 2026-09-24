@@ -8,8 +8,9 @@
 - B 层（技能自身状态）：暂不实现，缺口见输出 note。
 
 伤害公式（docs/dev/combat-system/DAMAGE_FORMULA.md，标准假人下简化）：
-  攻击力 = ((干员攻击 + 武器攻击) × (1+攻击%) + 攻击固定) × (1 + 0.005×主属性)
-           [副属性 0.002 系数项暂缺每角色副属性定义，未计入，输出中标注]
+  攻击力 = ((干员攻击 + 武器攻击) × (1+攻击%) + 攻击固定)
+           × (1 + 0.005×主属性 + 0.002×副属性)
+           [主/副能力均取官方 WIKI 每干员标注；缺标注时该角色不计对应项]
   非暴击伤害 = 攻击力 × 总倍率 × (1 + 元素伤害% + 技能类型伤害% + 所有技能伤害% + 所有类型伤害%)
   暴击期望   = 非暴击伤害 × (1 + 暴击率 × 暴击伤害)     （基础 5% / 50%）
 
@@ -279,8 +280,30 @@ def _operator_primary_stats() -> dict[str, str]:
     return result
 
 
+_STAT_NAMES = ("力量", "敏捷", "智识", "意志")
+_ABILITY_PAIR = re.compile(
+    r"主能力\s*\n(" + "|".join(_STAT_NAMES) + r")\s*\n副能力\s*\n(" + "|".join(_STAT_NAMES) + r")"
+)
+
+
+def _operator_secondary_stats() -> dict[str, str]:
+    """干员 itemId → 副能力（力量/敏捷/智识/意志）。
+
+    官方 WIKI 干员页属性表附注「金色=主能力、黑色=副能力」，渲染文本中
+    以「主能力\\nX\\n副能力\\nY」相邻行出现；副能力不与主能力重复。
+    """
+    result: dict[str, str] = {}
+    for f in sorted((SNAP_DIR / "rendered_text").glob("*.txt")):
+        item_id = f.stem.split("_", 1)[0]
+        m = _ABILITY_PAIR.search(f.read_text(encoding="utf-8"))
+        if m and m.group(1) != m.group(2):
+            result[item_id] = m.group(2)
+    return result
+
+
 def compute_character(key: str, char: dict, build: dict, weapons: dict, equipments: dict,
-                      primary_map: dict[str, str], wiki_item_ids: dict[str, str]) -> dict:
+                      primary_map: dict[str, str], wiki_item_ids: dict[str, str],
+                      secondary_map: dict[str, str] | None = None) -> dict:
     trace: list[str] = []
     name = str(char.get("name") or key)
     element = str(char.get("element") or "")
@@ -332,18 +355,31 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
     merged = _merge(mods)
     trace.append(f"  汇总词条: {merged}")
 
-    # 主属性（官方 tagIds）
+    # 主/副属性（官方标注）
     op_id = wiki_item_ids.get(name)
     primary = primary_map.get(op_id) or ("力量" if element == "物理" else "智识")
     primary_total = base.get(primary, 0) + merged.get(f"flat_{primary}", 0)
     trace.append(f"  主能力: {primary}（官方标签）总值 {primary_total:.0f}")
+    secondary = (secondary_map or {}).get(op_id)
+    secondary_total = 0.0
+    if secondary and secondary != primary:
+        secondary_total = base.get(secondary, 0) + merged.get(f"flat_{secondary}", 0)
+        trace.append(f"  副能力: {secondary}（官方标注）总值 {secondary_total:.0f}")
+    else:
+        secondary = None
+        trace.append("  副能力: 无官方标注，副属性系数项不计")
 
     # 攻击力
     atk_base = base.get("攻击力", 0) + weapon_atk
     atk_pct = merged.get("pct_atk_pct", 0) / 100
     atk_fixed = merged.get("flat_攻击力", 0)
-    atk = (atk_base * (1 + atk_pct) + atk_fixed) * (1 + 0.005 * primary_total)
-    trace.append(f"  攻击力 = ({atk_base:.0f} × {1 + atk_pct:.4f} + {atk_fixed:.0f}) × (1 + 0.005×{primary_total:.0f}) = {atk:.1f}")
+    atk = (atk_base * (1 + atk_pct) + atk_fixed) * (
+        1 + 0.005 * primary_total + 0.002 * secondary_total
+    )
+    trace.append(
+        f"  攻击力 = ({atk_base:.0f} × {1 + atk_pct:.4f} + {atk_fixed:.0f})"
+        f" × (1 + 0.005×{primary_total:.0f} + 0.002×{secondary_total:.0f}) = {atk:.1f}"
+    )
 
     # 暴击
     crit_rate = 0.05 + merged.get("pct_crit_rate", 0) / 100
@@ -400,6 +436,7 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
         "key": key,
         "element": element,
         "primary_stat": primary,
+        "secondary_stat": secondary,
         "panel": panel,
         "skills": skill_results,
         "build": {
@@ -422,6 +459,7 @@ def main() -> int:
     weapons = _load(DATA_DIR / "weapons.json")
     equipments = _load(DATA_DIR / "equipments.json")
     primary_map = _operator_primary_stats()
+    secondary_map = _operator_secondary_stats()
 
     # wiki itemId 反查表（干员名 → itemId）
     wiki_item_ids: dict[str, str] = {}
@@ -440,7 +478,7 @@ def main() -> int:
         build_path = DATA_DIR / "character_builds" / f"{path.stem}.json"
         build = _load(build_path) if build_path.exists() else {}
         results.append(compute_character(path.stem, char, build, weapons, equipments,
-                                         primary_map, wiki_item_ids))
+                                         primary_map, wiki_item_ids, secondary_map))
 
     text = json.dumps(results, ensure_ascii=False, indent=2) + "\n"
     Path(args.out).write_bytes(text.encode("utf-8").replace(b"\r\n", b"\n"))
