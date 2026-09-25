@@ -175,6 +175,20 @@ class TestEquipmentStats(unittest.TestCase):
         self.assertEqual(result["primary_stat"], "力量")
         self.assertEqual(result["secondary_stat"], "敏捷")
 
+    def test_primary_ability_equip_word_applies_multiplier(self):
+        # 插板/护板类装备的「主能力」词条：主能力总值乘 (1+X%)，仅主能力、副能力不吃
+        char = {"name": "测试", "element": "物理",
+                "base_stats": {"rows": {"攻击力": [100], "力量": [10], "敏捷": [20]}, "levels": [90]},
+                "skills": []}
+        piece = {"set": "生物辅助装备组", "lv70_stats": {}, "refinement_max": {"主能力": "+26.9%"}}
+        equipments = {"护板": piece}
+        result = mod.compute_character("t", char, {"equipment": {"pieces": ["护板"]}},
+                                       {}, equipments, {}, {})
+        self.assertIn("含主能力词条+26.9%",
+                      next(line for line in result["trace"] if "主能力:" in line))
+        # ATK = 100 x (1 + 0.005 x 10 x 1.269) = 106.3（无词条时为 105.0）
+        self.assertAlmostEqual(result["panel"]["ATK"], 106.3, places=1)
+
 
 class TestCliPathValidation(unittest.TestCase):
     """--char/--out 输入校验（SonarCloud 路径注入热点）。"""

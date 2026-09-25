@@ -238,6 +238,9 @@ EQUIP_PCT_STAT_MAP = {
     "治疗效率加成": ["heal_eff"],
     "终结技充能效率": ["ult_charge"],
     "终结技充能效率加成": ["ult_charge"],
+    # 插板/护板类装备的「主能力」词条：按装备者主能力属性取百分比，
+    # 仅作用于主能力总值（compute_character 内乘区），副能力不吃
+    "主能力": ["primary"],
     # 对失衡目标伤害加成 / 全伤害减免：条件/防御词条，A 层不计，另行记录
 }
 
@@ -375,8 +378,12 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
     )
     primary = official_primary or ("力量" if element == "物理" else "智识")
     primary_total = base.get(primary, 0) + merged.get(f"flat_{primary}", 0)
+    primary_pct = merged.get("pct_primary", 0)
+    if primary_pct:
+        primary_total *= 1 + primary_pct / 100
     primary_source = "官方标签" if official_primary else "按元素推断"
-    trace.append(f"  主能力: {primary}（{primary_source}）总值 {primary_total:.0f}")
+    pct_note = f"，含主能力词条+{primary_pct:g}%" if primary_pct else ""
+    trace.append(f"  主能力: {primary}（{primary_source}）总值 {primary_total:.0f}{pct_note}")
     secondary_stats = secondary_map or {}
     secondary = next(
         (secondary_stats[item_id] for item_id in wiki_item_id_candidates if item_id in secondary_stats),
