@@ -38,9 +38,11 @@ _cached_damage: dict[str, float] | None = None
 
 
 def load_damage_baseline(path: Path | None = None) -> dict[str, float]:
-    """加载基准数据，返回 {角色名: 战技暴击期望}。
+    """加载基准数据，返回 {角色名: 循环期望伤害}。
 
-    角色无战技（纯辅助）或字段缺失时取 non_crit 兜底，再兜 0。
+    优先取顶层 cycle_expect（战技完整伤害 + 连携 + 2x 普攻，含召唤物/多段
+    机制修正，见 compute_damage_baseline.py）；缺失时回退单发战技暴击期望
+    （non_crit 兜底），再兜 0。
     """
     global _cached_damage
     if _cached_damage is not None:
@@ -57,11 +59,20 @@ def load_damage_baseline(path: Path | None = None) -> dict[str, float]:
             name = str(entry.get("character") or "").strip()
             if not name:
                 continue
+            raw_cycle = entry.get("cycle_expect")
+            if raw_cycle is not None:
+                try:
+                    result[name] = float(raw_cycle)
+                    continue
+                except (TypeError, ValueError):
+                    pass
             best = 0.0
             for skill in entry.get("skills") or []:
                 if skill.get("type") != "战技":
                     continue
-                value = skill.get("crit_expect")
+                value = skill.get("full_expect")
+                if value is None:
+                    value = skill.get("crit_expect")
                 if value is None:
                     value = skill.get("non_crit")
                 try:
@@ -134,7 +145,8 @@ def generate_auto_rotation(
 
     Args:
         team_members: 4 个角色名，索引 0-3 对应队位 1-4（"?" 为未识别）。
-        baseline: {角色名: 期望伤害}；None 时加载 damage_baseline.json。
+        baseline: {角色名: 循环期望伤害}（排序口径，见 load_damage_baseline）；
+            None 时加载 damage_baseline.json。
         include_ult: 是否把终结技（ult_N）排入轴。协议空间（开局全满）传 True，
             普通战斗（能量从零攒）传 False。
 

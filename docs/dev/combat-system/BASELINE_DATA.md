@@ -74,7 +74,10 @@ compute_damage_baseline.py          # 面板 + 逐技能伤害 + 完整计算过
 
 - `管理员`（endmin）的男/女官方条目统一映射到角色名，武器推荐与主/副能力按官方数据计入。
 - 赛希战技为治疗/增幅技能（无伤害倍率），伤害记 0 属正常。
-- 庄方宜战技为多段低倍率（雷击 45%/跳），裸倍率排行不能直接反映实战。
+- 庄方宜战技为召唤物多段机制：单击倍率 45% 只是雷击单发，完整战技 =
+  3 柄青霆剑依次雷击 + 最后一击 6 倍（45% x (2+6) = 360%，按 wiki 专精 3
+  技能表、满导电常态 3 柄上限建模）→ 已入 `_SKILL_FULL_MULTIPLIER_OVERRIDES`
+  覆盖表（`full_expect` 字段），导电等级加成（9%/级）等条件词条不计入。
 - 「诀」的阵诀·智/意多形态只取主形态 rank_stats（变体在 `rank_stats_variants`）。
 - 武器潜能（满潜能）数值官方页面为图片，未数据化（见 §5）。
 - 条件型套组效果按基准口径不计入裸伤害（壤流「消耗导电→电磁+15%/层」、
@@ -101,6 +104,9 @@ compute_damage_baseline.py          # 面板 + 逐技能伤害 + 完整计算过
 - **P1** 武器潜能（满潜能）面板数值 → 目前 Rank9 视为满配上限。
 - **P1** 基质随机词条的附加属性选择（每角色最优 2 条）→ 目前只记官方推荐基质名。
 - **P1** 技能 B 层（技能自身施加的状态吃自身伤害，如噗切娜终结技法术脆弱 2.5%）。
+- **P2** 机制型战技的完整倍率覆盖表扩充：`_SKILL_FULL_MULTIPLIER_OVERRIDES`
+  目前仅庄方宜（青霆剑多段）；新增召唤物/引导多段角色时需对照 wiki 技能表
+  人工补录（社区全自动模拟器 endfield.metriclabs.net 的逐技能适配是同思路）。
 - **P1** 处决伤害期望未单列（处决=失衡窗口首普攻，倍率/承伤系数链路已确认，
   待 C 层状态建模时并入）。
 - **P2** 装备散件第 4 件的角色级最优选择（现在按套组自动选件，未逐角色论证）。
@@ -116,11 +122,17 @@ python scripts/skill-data/compute_damage_baseline.py --char puqiena
 ```
 
 运行时消费：`src/data/skill_rotation.py` **只读 `assets/data/damage_baseline.json`**
-（不直接读技能 JSON）——按各角色「战技暴击期望」降序生成两种产物；战斗配置
+（不直接读技能 JSON）——按顶层 `cycle_expect`（**循环期望** = 战技完整伤害
+含召唤物/多段 + 连携 + 2x 普攻，对应自动轴 12.5s 填充段的站场普攻）降序
+生成两种产物；旧数据无 `cycle_expect` 时回退单发战技暴击期望。战斗配置
 「自动技能列表」+「伤害优先排序」开启时由 `AutoCombatLogic` 使用，
 基准数据缺失的角色排最后。
 ⚠️ 因此修改 `character_skills/*.json` 后必须重跑 `compute_damage_baseline.py`
 重算基准，才会影响排轴排序。
+⚠️ 循环期望是**启发式排序口径**（非帧级 DPS）：社区排轴/模拟站点
+（endfield.metriclabs.net 全自动伤害模拟器、end-axis.com 排轴器、
+perlica.tech Perlica Calc）做帧级 buff/状态追踪，精度更高；本基准的优势是
+随官方数据自动重算、零维护。
 
 - `generate_damage_rotation`：战技槽位列表（"1"-"4"），普通模式循环释放；
 - `generate_auto_rotation`：**自动排轴**——覆盖队内全部 1-4 号位的可重复循环轴：
