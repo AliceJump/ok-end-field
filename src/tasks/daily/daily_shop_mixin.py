@@ -5,7 +5,9 @@ from src.data.lang import LangAccessor
 
 # 优先商品模板标签 → 官方中文名。
 # 模板标签（weapon_quota/orobertyl）直接打进日志不可读，先映射为游戏内官方名称
-# （解包文本 assets/data/i18n_texts/*.json，key=e38d9b5bba114f81 / 8a3b3efb79c0131f）。
+# （解包文本 assets/data/i18n_texts/*.json：武库配额 key=814f11ba5b9b8de3，
+# 2026-09-26 重解包后旧 key e38d9b5bba114f81 已被官方清理；嵌晶玉无独立文本条目，
+# 旧 key 8a3b3efb79c0131f 同批删除，名称现仅出现于活动长句中）。
 # 带动态值的日志统一走 tr+format：外层静态模板先经 tr 查表（msgid=稳定模板串进 ok.po），
 # 内层已知静态文本值也过一层 tr，最后 .format 用已译值填充已译模板；
 # 禁止 f-string 整句拼接——填充后的整句作 msgid 无法命中 po 条目，外语 UI 下不翻译。
