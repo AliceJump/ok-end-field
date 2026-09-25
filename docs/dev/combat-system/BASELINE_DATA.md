@@ -72,7 +72,7 @@ compute_damage_baseline.py          # 面板 + 逐技能伤害 + 完整计算过
 
 ## 4. 已知偏差与边界
 
-- `管理员`（endmin）的男/女官方条目统一映射到角色名，武器推荐与主/副能力按官方数据计入。
+- `管理员`（endministrator）的男/女官方条目统一映射到角色名，武器推荐与主/副能力按官方数据计入。
 - 赛希战技为治疗/增幅技能（无伤害倍率），伤害记 0 属正常。
 - 庄方宜战技为召唤物多段机制：单击倍率 45% 只是雷击单发，完整战技 =
   3 柄青霆剑依次雷击 + 最后一击 6 倍（45% x (2+6) = 360%，按 wiki 专精 3
@@ -133,7 +133,7 @@ compute_damage_baseline.py          # 面板 + 逐技能伤害 + 完整计算过
 # 全角色重算
 python scripts/skill-data/compute_damage_baseline.py
 # 单角色 dry-run：打印 trace 和排行，不写入共享基准；写入需显式传 --out
-python scripts/skill-data/compute_damage_baseline.py --char puqiena
+python scripts/skill-data/compute_damage_baseline.py --char purrchena
 ```
 
 运行时消费：`src/data/skill_rotation.py` **只读 `assets/data/damage_baseline.json`**
@@ -186,9 +186,9 @@ perlica.tech Perlica Calc）做帧级 buff/状态追踪，精度更高；本基�
   覆盖表注释）。
 
 - **消耗型机制家族**（2026-09-26 扫描，待逐个核对完整倍率口径）：
-  阿列什（deepfin）战技「消耗 N 层寒冷附着」行经核实是**恢复技力**
-  （SP 经济）非伤害倍率，450% 完整；弧光（ikut，消耗电磁附着→导电）、
-  别礼（lastrite）/伊冯（yvonne，消耗寒冷附着/冻结）、洛茜（wulfa，
+  阿列什（alesh）战技「消耗 N 层寒冷附着」行经核实是**恢复技力**
+  （SP 经济）非伤害倍率，450% 完整；弧光（arclight，消耗电磁附着→导电）、
+  别礼（last_rite）/伊冯（yvonne，消耗寒冷附着/冻结）、洛茜（rossi，
   消耗法术附着）、艾尔黛拉（ardelia，消耗腐蚀）的消耗是否影响其伤害
   倍率口径尚未逐个审计——若存在提弗洛斯式低估，走覆盖表 +
   FULL_CALIBER_REQUIREMENTS 同一管线补录。

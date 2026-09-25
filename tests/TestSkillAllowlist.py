@@ -48,7 +48,7 @@ class TestSkillAllowlist(unittest.TestCase):
             {name: characters[name] for name in ("黎风", "莱万汀")},
         )
 
-        for key in (("黎风", "lifeng_skill"), ("莱万汀", "laevat_ultimate")):
+        for key in (("黎风", "lifeng_skill"), ("莱万汀", "laevatain_ultimate")):
             enhancements = context["enhancement_triggers"][key]
             self.assertIn(
                 [{"operator": "all", "effects": set()}],
@@ -252,7 +252,7 @@ class TestSkillAllowlist(unittest.TestCase):
         self.assertTrue(result[0][0])  # 产出者被允许（自我依赖）
         self.assertFalse(result[1][0])  # 依赖者被禁止（增强态优先，非自我依赖）
 
-    def test_real_seraph_skill_remains_in_generated_sequence(self):
+    def test_real_xaihi_skill_remains_in_generated_sequence(self):
         characters = load_characters()
         team = ["赛希", "伊冯", "洁尔佩塔", "余烬"]
 
@@ -267,7 +267,7 @@ class TestSkillAllowlist(unittest.TestCase):
     def test_real_zhuang_fang_yi_dynamic_fallback_is_not_static(self):
         characters = load_characters()
         zhuang = characters["庄方宜"]
-        skill = next(skill for skill in zhuang["skills"] if skill["skill_id"] == "zhuangfy_skill")
+        skill = next(skill for skill in zhuang["skills"] if skill["skill_id"] == "zhuang_fangyi_skill")
         # 验证 trigger_condition.effects 是 dict 结构
         tc_effects = skill["enhancements"][1]["trigger_condition"]["effects"]
         self.assertIsInstance(tc_effects, dict)
@@ -294,7 +294,7 @@ class TestSkillAllowlist(unittest.TestCase):
 
     def test_real_zhuang_fang_yi_link_release_gate_is_an_enhancement(self):
         zhuang = load_characters()["庄方宜"]
-        link = next(skill for skill in zhuang["skills"] if skill["skill_id"] == "zhuangfy_link")
+        link = next(skill for skill in zhuang["skills"] if skill["skill_id"] == "zhuang_fangyi_link")
 
         self.assertNotIn("trigger_condition", link)
         self.assertEqual(len(link["enhancements"]), 2)
@@ -305,17 +305,17 @@ class TestSkillAllowlist(unittest.TestCase):
         self.assertEqual(link["enhancements"][0]["effects"], [])
         self.assertEqual(link["enhancements"][1]["effects"][0]["effect_id"], "STATUS_CONDUCTING")
 
-    def test_real_laevat_threshold_is_not_statically_satisfied(self):
+    def test_real_laevatain_threshold_is_not_statically_satisfied(self):
         characters = load_characters()
-        laevat = characters["莱万汀"]
-        skill = next(skill for skill in laevat["skills"] if skill["skill_id"] == "laevat_skill")
+        laevatain = characters["莱万汀"]
+        skill = next(skill for skill in laevatain["skills"] if skill["skill_id"] == "laevatain_skill")
 
         # 验证 trigger_condition.effects 是 dict 结构
         tc_effects = skill["enhancements"][0]["trigger_condition"]["effects"]
         self.assertIsInstance(tc_effects, dict)
         # 仅验证战技本身时，没有其他技能生产 STACK_MOLTEN，所以允许释放
-        laevat_skill_only = {**laevat, "skills": [skill]}
-        self.assertTrue(build_skill_allowlist(["莱万汀"], {"莱万汀": laevat_skill_only})[0][0])
+        laevatain_skill_only = {**laevatain, "skills": [skill]}
+        self.assertTrue(build_skill_allowlist(["莱万汀"], {"莱万汀": laevatain_skill_only})[0][0])
 
 
 if __name__ == "__main__":

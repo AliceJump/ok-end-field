@@ -1,5 +1,5 @@
 {
-  "zhuang_fang_yi": {
+  "zhuang_fangyi": {
     "zh_CN": {
       "string": "庄方宜"
     },
@@ -43,7 +43,7 @@
       "string": "Zhuang Fangyi"
     }
   },
-  "luo_qian": {
+  "rossi": {
     "zh_CN": {
       "string": "洛茜"
     },
@@ -87,7 +87,7 @@
       "string": "Rossi"
     }
   },
-  "tang_tang": {
+  "tangtang": {
     "zh_CN": {
       "string": "汤汤"
     },
@@ -131,7 +131,7 @@
       "string": "Tangtang"
     }
   },
-  "guan_li_yuan": {
+  "endministrator": {
     "zh_CN": {
       "string": "管理员"
     },
@@ -175,7 +175,7 @@
       "string": "Endministrator"
     }
   },
-  "li_feng": {
+  "lifeng": {
     "zh_CN": {
       "string": "黎风"
     },
@@ -219,7 +219,7 @@
       "string": "Lifeng"
     }
   },
-  "yu_jin": {
+  "ember": {
     "zh_CN": {
       "string": "余烬"
     },
@@ -263,7 +263,7 @@
       "string": "Ember"
     }
   },
-  "jie_er_pei_ta": {
+  "gilberta": {
     "zh_CN": {
       "string": "洁尔佩塔"
     },
@@ -307,7 +307,7 @@
       "string": "Gilberta"
     }
   },
-  "ai_er_dai_la": {
+  "ardelia": {
     "zh_CN": {
       "string": "艾尔黛拉"
     },
@@ -351,7 +351,7 @@
       "string": "Ardelia"
     }
   },
-  "jun_wei": {
+  "pogranichnik": {
     "zh_CN": {
       "string": "骏卫"
     },
@@ -395,7 +395,7 @@
       "string": "Pogranichnik"
     }
   },
-  "lai_wan_ting": {
+  "laevatain": {
     "zh_CN": {
       "string": "莱万汀"
     },
@@ -439,7 +439,7 @@
       "string": "Laevatain"
     }
   },
-  "yi_feng": {
+  "yvonne": {
     "zh_CN": {
       "string": "伊冯"
     },
@@ -483,7 +483,7 @@
       "string": "Yvonne"
     }
   },
-  "bie_li": {
+  "last_rite": {
     "zh_CN": {
       "string": "别礼"
     },
@@ -527,7 +527,7 @@
       "string": "Last Rite"
     }
   },
-  "chen_qian_yu": {
+  "chen_qianyu": {
     "zh_CN": {
       "string": "陈千语"
     },
@@ -571,7 +571,7 @@
       "string": "Chen Qianyu"
     }
   },
-  "zhou_xue": {
+  "snowshine": {
     "zh_CN": {
       "string": "昼雪"
     },
@@ -615,7 +615,7 @@
       "string": "Snowshine"
     }
   },
-  "sai_xi": {
+  "xaihi": {
     "zh_CN": {
       "string": "赛希"
     },
@@ -659,7 +659,7 @@
       "string": "Xaihi"
     }
   },
-  "lang_wei": {
+  "wulfgard": {
     "zh_CN": {
       "string": "狼卫"
     },
@@ -703,7 +703,7 @@
       "string": "Wulfgard"
     }
   },
-  "pei_li_ka": {
+  "perlica": {
     "zh_CN": {
       "string": "佩丽卡"
     },
@@ -747,7 +747,7 @@
       "string": "Perlica"
     }
   },
-  "hu_guang": {
+  "arclight": {
     "zh_CN": {
       "string": "弧光"
     },
@@ -791,7 +791,7 @@
       "string": "Arclight"
     }
   },
-  "a_lie_shi": {
+  "alesh": {
     "zh_CN": {
       "string": "阿列什"
     },
@@ -835,7 +835,7 @@
       "string": "Alesh"
     }
   },
-  "ai_wei_wen_na": {
+  "avywenna": {
     "zh_CN": {
       "string": "艾维文娜"
     },
@@ -923,7 +923,7 @@
       "string": "Da Pan"
     }
   },
-  "ai_te_la": {
+  "estella": {
     "zh_CN": {
       "string": "埃特拉"
     },
@@ -967,7 +967,7 @@
       "string": "Estella"
     }
   },
-  "ka_qi_er": {
+  "catcher": {
     "zh_CN": {
       "string": "卡契尔"
     },
@@ -1011,7 +1011,7 @@
       "string": "Catcher"
     }
   },
-  "an_ta_er": {
+  "antal": {
     "zh_CN": {
       "string": "安塔尔"
     },
@@ -1055,7 +1055,7 @@
       "string": "Antal"
     }
   },
-  "ying_shi": {
+  "fluorite": {
     "zh_CN": {
       "string": "萤石"
     },
@@ -1099,7 +1099,7 @@
       "string": "Fluorite"
     }
   },
-  "qiu_li": {
+  "akekuri": {
     "zh_CN": {
       "string": "秋栗"
     },
@@ -1143,7 +1143,7 @@
       "string": "Akekuri"
     }
   },
-  "jue": {
+  "arcane": {
     "zh_CN": {
       "string": "诀"
     },
@@ -1187,7 +1187,7 @@
       "string": "Arcane"
     }
   },
-  "ka_miao": {
+  "camille": {
     "zh_CN": {
       "string": "卡缪"
     },
@@ -1275,7 +1275,7 @@
       "string": "Mi Fu"
     }
   },
-  "li_nuo": {
+  "liino": {
     "zh_CN": {
       "string": "梨诺"
     },
@@ -1319,7 +1319,7 @@
       "string": "Liino"
     }
   },
-  "ti_fu_luo_si": {
+  "typhoeus": {
     "zh_CN": {
       "string": "提弗洛斯"
     },
@@ -1363,7 +1363,7 @@
       "string": "Typhoeus"
     }
   },
-  "pu_qie_na": {
+  "purrchena": {
     "zh_CN": {
       "string": "噗切娜"
     },

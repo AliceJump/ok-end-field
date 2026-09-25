@@ -20,7 +20,7 @@
 
 用法：
     python scripts/skill-data/compute_damage_baseline.py                # 全角色
-    python scripts/skill-data/compute_damage_baseline.py --char puqiena # 单角色 dry-run（打印 trace/排行）
+    python scripts/skill-data/compute_damage_baseline.py --char purrchena # 单角色 dry-run（打印 trace/排行）
 """
 
 from __future__ import annotations
@@ -197,9 +197,9 @@ def _piece_stat(piece: dict, stat: str) -> int | None:
 #   表行加总仅 575%（箭雨只计 1 轮）。wiki 快照：operator_details/2116_提弗洛斯。
 # 赛希战技为治疗/增幅（无伤害倍率），不在此列。
 _SKILL_FULL_MULTIPLIER_OVERRIDES: dict[tuple[str, str], float] = {
-    ("zhuangfy", "zhuangfy_skill"): 360.0,
-    ("tifuluosi", "typhoeus_skill"): 1060.0,
-    ("tifuluosi", "typhoeus_ultimate"): 800.0,
+    ("zhuang_fangyi", "zhuang_fangyi_skill"): 360.0,
+    ("typhoeus", "typhoeus_skill"): 1060.0,
+    ("typhoeus", "typhoeus_ultimate"): 800.0,
 }
 
 # 满口径前置条件：部分角色的满倍率口径依赖队伍供给，单角色口径并非任何队伍下都成立。
@@ -214,12 +214,12 @@ _SKILL_FULL_MULTIPLIER_OVERRIDES: dict[tuple[str, str], float] = {
 # cycle_expect（满口径）与 cycle_expect_conservative（保守口径）间选择；
 # 无队伍上下文的调用方（默认 load_damage_baseline）保持满口径不变。
 FULL_CALIBER_REQUIREMENTS: dict[str, dict[str, str | list[str]]] = {
-    "tifuluosi": {"attach": "自然"},
+    "typhoeus": {"attach": "自然"},
 }
 
 # 保守口径覆盖：满口径前置不满足时使用的完整倍率（即引入满猎矢口径前的数值）。
 CONSERVATIVE_FULL_OVERRIDES: dict[tuple[str, str], float] = {
-    ("tifuluosi", "typhoeus_skill"): 540.0,
+    ("typhoeus", "typhoeus_skill"): 540.0,
 }
 
 
@@ -589,7 +589,7 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--char", default=None, help="仅计算指定角色（文件名，如 puqiena）；默认只打印不写回")
+    parser.add_argument("--char", default=None, help="仅计算指定角色（文件名，如 purrchena）；默认只打印不写回")
     parser.add_argument("--out", default=None, help="输出路径（必须位于 assets/data 下；默认 damage_baseline.json）")
     parser.add_argument("--snapshot", help="operator_details 快照目录名（默认最新）")
     args = parser.parse_args()

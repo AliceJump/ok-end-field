@@ -151,7 +151,7 @@ class TestEquipmentStats(unittest.TestCase):
 
     def test_primary_trace_marks_element_fallback(self):
         char = {"name": "管理员", "element": "物理", "skills": []}
-        result = mod.compute_character("endmin", char, {}, {}, {}, {}, {})
+        result = mod.compute_character("endministrator", char, {}, {}, {}, {}, {})
         self.assertEqual(result["primary_stat"], "力量")
         self.assertIn("按元素推断", next(line for line in result["trace"] if "主能力:" in line))
 
@@ -194,14 +194,14 @@ class TestCliPathValidation(unittest.TestCase):
     """--char/--out 输入校验（SonarCloud 路径注入热点）。"""
 
     def test_char_rejects_path_traversal(self):
-        for bad in ("../evil", "a/b", "A", "puqiena;rm", "中文"):
+        for bad in ("../evil", "a/b", "A", "purrchena;rm", "中文"):
             with self.subTest(bad=bad), \
                     unittest.mock.patch.object(sys, "argv", ["x", "--char", bad]):
                 self.assertEqual(mod.main(), 2)
 
     def test_char_accepts_snake_case(self):
         # 合法 key 不应在校验处返回 2；且调试模式默认不写回（见 main 的 dry-run）
-        with unittest.mock.patch.object(sys, "argv", ["x", "--char", "puqiena"]):
+        with unittest.mock.patch.object(sys, "argv", ["x", "--char", "purrchena"]):
             code = mod.main()
         self.assertIn(code, (0, 1))
 
@@ -226,7 +226,7 @@ class TestFullMultiplierAndCycleExpect(unittest.TestCase):
             "element": "电磁",
             "base_stats": {"rows": {"攻击力": [1000], "意志": [10]}, "levels": [90]},
             "skills": [
-                {"skill_id": "zhuangfy_skill", "skill_type": "战技", "name": "惊霆诀",
+                {"skill_id": "zhuang_fangyi_skill", "skill_type": "战技", "name": "惊霆诀",
                  "rank_stats": self._rows([("雷击伤害倍率", "45%")])},
                 {"skill_id": "x_link", "skill_type": "连携技", "name": "连携",
                  "rank_stats": self._rows([("伤害倍率", "360%")])},
@@ -235,8 +235,8 @@ class TestFullMultiplierAndCycleExpect(unittest.TestCase):
             ],
         }
 
-    def test_zhuangfy_skill_full_multiplier_applies(self):
-        result = mod.compute_character("zhuangfy", self._char(), {}, {}, {}, {}, {}, {})
+    def test_zhuang_fangyi_skill_full_multiplier_applies(self):
+        result = mod.compute_character("zhuang_fangyi", self._char(), {}, {}, {}, {}, {}, {})
         skill = result["skills"][0]
         self.assertEqual(skill["multiplier_pct"], 45.0)
         self.assertEqual(skill["full_multiplier_pct"], 360.0)
@@ -271,7 +271,7 @@ class TestFullMultiplierAndCycleExpect(unittest.TestCase):
         }
 
     def test_typhoeus_air_attack_overrides(self):
-        result = mod.compute_character("tifuluosi", self._typhoeus_char(), {}, {}, {}, {}, {}, {})
+        result = mod.compute_character("typhoeus", self._typhoeus_char(), {}, {}, {}, {}, {}, {})
         skill = {s["skill_id"]: s for s in result["skills"]}
         self.assertEqual(skill["typhoeus_skill"]["multiplier_pct"], 345.0)
         # 满猎矢口径：基础段 410% + 猎矢消耗自然爆发 130% x 5 = 1060%（无猎矢保守口径为 540%）
@@ -289,7 +289,7 @@ class TestFullMultiplierAndCycleExpect(unittest.TestCase):
                     "满口径依赖角色必须配置保守口径覆盖",
                 )
         result = mod.compute_character(
-            "tifuluosi", self._typhoeus_char(), {}, {}, {}, {}, {}, {},
+            "typhoeus", self._typhoeus_char(), {}, {}, {}, {}, {}, {},
             full_overrides={**mod._SKILL_FULL_MULTIPLIER_OVERRIDES, **mod.CONSERVATIVE_FULL_OVERRIDES},
         )
         skill = {s["skill_id"]: s for s in result["skills"]}
@@ -303,7 +303,7 @@ class TestFullMultiplierAndCycleExpect(unittest.TestCase):
 
     def test_cycle_expect_link4_field(self):
         """满连击口径：仅战技段 ×1.75（连击只加成下一发战技/终结技）。"""
-        result = mod.compute_character("zhuangfy", self._char(), {}, {}, {}, {}, {}, {})
+        result = mod.compute_character("zhuang_fangyi", self._char(), {}, {}, {}, {}, {}, {})
         skills = {s["type"]: s for s in result["skills"]}
         expected = (skills["战技"]["full_expect"] * 1.75
                     + skills["连携技"]["crit_expect"]
@@ -312,7 +312,7 @@ class TestFullMultiplierAndCycleExpect(unittest.TestCase):
         self.assertGreater(result["cycle_expect_link4"], result["cycle_expect"])
 
     def test_cycle_expect_combines_full_skill_link_and_normals(self):
-        result = mod.compute_character("zhuangfy", self._char(), {}, {}, {}, {}, {}, {})
+        result = mod.compute_character("zhuang_fangyi", self._char(), {}, {}, {}, {}, {}, {})
         skills = {s["type"]: s for s in result["skills"]}
         expected = (skills["战技"]["full_expect"]
                     + skills["连携技"]["crit_expect"]
