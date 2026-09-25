@@ -207,7 +207,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.CONSUME_ALL: "清空所有层数/效果",
     EffectType.CONSUME_STACK: "消耗特定层数",
     EffectType.CLEAR_ATTACH: "清空所有元素附着",
-    EffectType.CLEAR_STATUS: "清空所有异常状态",
+    EffectType.CLEAR_STATUS: "清空所有异常状态（官方名「清除异常状态」，社区攻略常转述为「净化」）",
     EffectType.CLEAR_COLD: "清空敌人寒冷附着",
     EffectType.CLEAR_NATURAL: "清空敌人自然附着",
     EffectType.CLEAR_FROZEN: "消耗敌人冻结状态",
@@ -314,6 +314,7 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "消耗灼热附着": EffectType.CLEAR_ATTACH,
     "清空附着": EffectType.CLEAR_ATTACH,
     "清空状态": EffectType.CLEAR_STATUS,
+    "净化": EffectType.CLEAR_STATUS,
     "自然爆发脆弱": EffectType.VULN_NATURAL_BURST,
 }
 
