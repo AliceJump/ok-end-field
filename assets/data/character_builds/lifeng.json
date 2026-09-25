@@ -18,17 +18,17 @@
     "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
   },
   "equipment": {
-    "set_main": "点剑装备组",
-    "set_off": "碾骨装备组",
+    "set_main": "轻超域装备组",
+    "set_off": null,
     "pieces": [
-      "点剑重装甲·壹型",
-      "点剑战术手甲·壹型",
-      "点剑火石",
-      "点剑火石"
+      "M.I.警用护甲",
+      "轻超域护手",
+      "轻超域轻护手",
+      "轻超域稳定盘"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "新浪全干员装备适配一图流（毕业列）",
-    "evidence_level": 2
+    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
+    "evidence_level": 1
   }
 }

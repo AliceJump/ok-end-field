@@ -100,6 +100,45 @@ class TestSnapshotChecks(unittest.TestCase):
             self.assertIn("反向互证=一致", result["weapon"]["note"])
             self.assertEqual(result["matrix"]["name"], "推荐基质")
 
+    def test_build_equipment_prefers_official_equip_page_chain(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            data = root / "assets" / "data"
+            snapshots = root / "tools" / "wiki_catalog" / "operator_details"
+            _write(data / "weapons.json", {})
+            _write(data / "characters.json", {})
+            _write(data / "equipments.json", {
+                "壤流轻甲": {"item_id": "1429", "set": "壤流装备组", "part": "护甲",
+                            "quality": "金色品质", "recommended_operator_ids": ["100"]},
+                "壤流护手": {"item_id": "1214", "set": "壤流装备组", "part": "护手",
+                            "quality": "金色品质", "recommended_operator_ids": ["100"]},
+                "壤流短棍": {"item_id": "1428", "set": "壤流装备组", "part": "配件",
+                            "quality": "金色品质", "recommended_operator_ids": ["100"]},
+                "无关装备": {"item_id": "1999", "set": "其他装备组", "part": "配件",
+                            "quality": "金色品质", "recommended_operator_ids": ["999"]},
+            })
+            _write(data / "matrices.json", {})
+            _write(data / "character_skills" / "test.json", {"name": "测试", "element": "电磁"})
+            catalog = {"data": {"catalog": [{"typeSub": [{"id": "1", "items": [
+                {"itemId": "100", "name": "测试"}]}]}]}}
+            _write(snapshots / "20260102" / "catalog.json", catalog)
+            _write(snapshots / "20260102" / "details" / "100_测试.json", {"data": {"item": {
+                "itemId": "100", "document": {"documentMap": {}}}}})
+            with mock.patch.object(builds, "ROOT", root), \
+                 mock.patch.object(builds, "DATA_DIR", data), \
+                 mock.patch.object(builds, "CHAR_SKILLS_DIR", data / "character_skills"), \
+                 mock.patch.object(builds, "BUILD_DIR", data / "character_builds"), \
+                 mock.patch.object(builds, "SNAP_ROOT", snapshots), \
+                 mock.patch.object(sys, "argv", ["generate_character_builds.py"]):
+                self.assertEqual(builds.main(), 0)
+            result = json.loads((data / "character_builds" / "test.json").read_text(encoding="utf-8"))
+            equip = result["equipment"]
+            self.assertEqual(equip["evidence_level"], 1)
+            self.assertEqual(equip["set_main"], "壤流装备组")
+            self.assertIsNone(equip["set_off"])
+            self.assertEqual(equip["pieces"], ["壤流轻甲", "壤流护手", "壤流短棍"])
+            self.assertIn("自由散件", equip["note"])
+
     def test_baseline_defaults_to_newest_snapshot_for_secondary_stats(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

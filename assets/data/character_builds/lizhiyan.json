@@ -18,17 +18,17 @@
     "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
   },
   "equipment": {
-    "set_main": "拓荒装备组",
-    "set_off": "潮涌装备组",
+    "set_main": "动火用装备组",
+    "set_off": null,
     "pieces": [
-      "拓荒护服",
-      "拓荒纤维手套",
-      "拓荒供氧栓",
-      "悬河供氧栓"
+      "动火用辅助骨骼",
+      "动火用护手",
+      "动火用隔温板",
+      "生物辅助护板"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "启发式默认（元素 自然 模板，待专属攻略验证）",
-    "evidence_level": 3
+    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
+    "evidence_level": 1
   }
 }
