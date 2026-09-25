@@ -198,6 +198,25 @@ _SKILL_FULL_MULTIPLIER_OVERRIDES: dict[tuple[str, str], float] = {
     ("tifuluosi", "typhoeus_ultimate"): 800.0,
 }
 
+# 满口径前置条件：部分角色的满倍率口径依赖队伍供给，单角色口径并非任何队伍下都成立。
+# - 提弗洛斯：满猎矢口径（1060%）依赖「连携 8 启示 → 转化 4 猎矢」，而启示只能
+#   靠消耗敌人身上的自然附着获得——其自身技能只消耗、不施加自然附着（快照文案
+#   逐句核实），队伍无自然附着施加者时回退无猎矢保守口径 540%（终结技 800%
+#   自带 2 层猎矢、自洽，不受影响）。
+# attach 值与快照 element 字段同口径（中文元素名），与
+# character_capabilities.attach_elements 直接比对。
+# 消费方：skill_rotation.load_damage_baseline_for_team 按队伍构成在
+# cycle_expect（满口径）与 cycle_expect_conservative（保守口径）间选择；
+# 无队伍上下文的调用方（默认 load_damage_baseline）保持满口径不变。
+FULL_CALIBER_REQUIREMENTS: dict[str, dict[str, str]] = {
+    "tifuluosi": {"attach": "自然"},
+}
+
+# 保守口径覆盖：满口径前置不满足时使用的完整倍率（即引入满猎矢口径前的数值）。
+CONSERVATIVE_FULL_OVERRIDES: dict[tuple[str, str], float] = {
+    ("tifuluosi", "typhoeus_skill"): 540.0,
+}
+
 
 def _skill_multiplier(skill: dict) -> tuple[float, float, list[str]]:
     """从 rank_stats 提取（总倍率%, 总失衡值, 条件行说明）。
@@ -347,7 +366,8 @@ def _operator_secondary_stats(snap_dir: Path) -> dict[str, str]:
 
 def compute_character(key: str, char: dict, build: dict, weapons: dict, equipments: dict,
                       primary_map: dict[str, str], wiki_item_ids: dict[str, list[str]],
-                      secondary_map: dict[str, str] | None = None) -> dict:
+                      secondary_map: dict[str, str] | None = None,
+                      full_overrides: dict[tuple[str, str], float] | None = None) -> dict:
     trace: list[str] = []
     name = str(char.get("name") or key)
     element = str(char.get("element") or "")
@@ -489,7 +509,8 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
             "crit_expect": round(crit_expect, 1),
             "conditional_rows": conditional,
         }
-        full_mult = _SKILL_FULL_MULTIPLIER_OVERRIDES.get((key, str(skill.get("skill_id") or "")))
+        overrides = _SKILL_FULL_MULTIPLIER_OVERRIDES if full_overrides is None else full_overrides
+        full_mult = overrides.get((key, str(skill.get("skill_id") or "")))
         if full_mult is not None and full_mult != mult:
             full_non_crit = atk * (full_mult / 100) * dmg_mult
             entry["full_multiplier_pct"] = round(full_mult, 1)
@@ -608,8 +629,24 @@ def main() -> int:
         char = _load(path)
         build_path = DATA_DIR / "character_builds" / f"{path.stem}.json"
         build = _load(build_path) if build_path.exists() else {}
-        results.append(compute_character(path.stem, char, build, weapons, equipments,
-                                         primary_map, wiki_item_ids, secondary_map))
+        result = compute_character(path.stem, char, build, weapons, equipments,
+                                   primary_map, wiki_item_ids, secondary_map)
+        requirement = FULL_CALIBER_REQUIREMENTS.get(path.stem)
+        if requirement:
+            # 满口径依赖队伍供给：同时计算保守口径，供排轴器按队伍构成选择
+            # （skill_rotation.load_damage_baseline_for_team）。
+            conservative = compute_character(
+                path.stem, char, build, weapons, equipments,
+                primary_map, wiki_item_ids, secondary_map,
+                full_overrides={**_SKILL_FULL_MULTIPLIER_OVERRIDES, **CONSERVATIVE_FULL_OVERRIDES},
+            )
+            result["full_caliber_requires"] = dict(requirement)
+            result["cycle_expect_conservative"] = conservative["cycle_expect"]
+            result["trace"].append(
+                f"  保守口径循环期望: {conservative['cycle_expect']:.0f}"
+                f"（满口径依赖 {requirement}，队伍不满足时使用）"
+            )
+        results.append(result)
 
     text = json.dumps(results, ensure_ascii=False, indent=2) + "\n"
     if args.char and not args.out:
