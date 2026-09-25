@@ -109,6 +109,12 @@
 
 - 本仓库 `enhancements[].trigger_condition`（all/any 效果组）即静态可解析子集；文本类触发条件需手写规则库。
 
+### 6.1 实现位：语义元数据 / 战斗快照 / 反应规则
+
+- `src/data/effect_semantics.py`：87 个效果 ID 的建模属性（归属 enemy/team/self/field × 类型 pool/state/event × 上限/消耗/刷新策略）。
+- `src/data/combat_model.py`：`EnemyCombatState`（附着互斥结构 + 破防池 + 状态字典）、`TeamCombatState`（连击池与官方加成数值表）、`ReactionRule`/`SPELL_BURST_RULE`/`SPELL_REACTION_BY_ELEMENT`/`PHYSICAL_RULES`（本文 §2/§4 的机器可执行版）。
+- 附着层数即异常等级（I~IV），直接作为反应伤害 ×(1+异常等级) 乘区输入。
+
 ## 7. 对 Rotation Optimizer 的影响
 
 1. **法术队**：最优循环 = A 元素叠 4 层 → B 元素触发高等级反应 → 重新叠层；同元素连打只拿 Burst（低效）。
