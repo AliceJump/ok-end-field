@@ -109,9 +109,12 @@ def _task_fingerprint(task):
     """任务内容摘要：config/default/config_type/group 任一值或结构变化
     都会改变指纹 → 渲染缓存失效重建，保证弹层显示的不是过期值。"""
     parts = [str(getattr(og.app, "lang", "") or "")]
-    for obj in (task.config, task.config_type,
-                getattr(task, "default_config", None),
-                getattr(task, "default_config_group", None)):
+    for obj in (
+        task.config,
+        task.config_type,
+        getattr(task, "default_config", None),
+        getattr(task, "default_config_group", None),
+    ):
         if not obj:
             parts.append(())
             continue
@@ -263,8 +266,7 @@ class ParamPreviewPopup(QWidget):
         """一个组块 = 一张圆角边框卡（静态组 / 条件组 / 其他参数）。"""
         is_cond = block["type"] == "cond"
         card = QFrame(self._content)
-        card.setObjectName("paramPreviewGroupCardCond" if is_cond
-                           else "paramPreviewGroupCard")
+        card.setObjectName("paramPreviewGroupCardCond" if is_cond else "paramPreviewGroupCard")
         layout = QVBoxLayout(card)
         layout.setContentsMargins(10, 8, 10, 8)
         layout.setSpacing(4)
@@ -343,45 +345,45 @@ class ParamPreviewPopup(QWidget):
     def _apply_stylesheet(self, c):
         self._panel.setStyleSheet(f"""
             QFrame#paramPreviewPanel {{
-                background-color: {c['panel_bg']};
-                border: 1px solid {c['panel_border']};
+                background-color: {c["panel_bg"]};
+                border: 1px solid {c["panel_border"]};
                 border-radius: 12px;
             }}
             QFrame#paramPreviewGroupCard {{
                 background-color: transparent;
-                border: 1px solid {c['group_border']};
+                border: 1px solid {c["group_border"]};
                 border-radius: 8px;
             }}
             QFrame#paramPreviewGroupCardCond {{
                 background-color: transparent;
-                border: 1px solid {c['cond_border']};
+                border: 1px solid {c["cond_border"]};
                 border-radius: 8px;
             }}
             QLabel#paramPreviewTitle {{
-                color: {c['text']};
+                color: {c["text"]};
                 font-weight: 600;
                 font-size: 13px;
             }}
             QLabel#paramPreviewGroupName {{
-                color: {c['text']};
+                color: {c["text"]};
                 font-weight: 600;
                 font-size: 12px;
             }}
             QLabel#paramPreviewItem {{
-                color: {c['text']};
+                color: {c["text"]};
                 font-size: 12px;
             }}
             QLabel#paramPreviewRuleValue {{
-                color: {c['cond_title']};
+                color: {c["cond_title"]};
                 font-size: 12px;
             }}
             QLabel#paramPreviewCount {{
-                color: {c['secondary']};
+                color: {c["secondary"]};
                 font-size: 11px;
             }}
             QLabel#paramPreviewBadge {{
-                color: {c['badge_text']};
-                background-color: {c['badge_bg']};
+                color: {c["badge_text"]};
+                background-color: {c["badge_bg"]};
                 border-radius: 6px;
                 padding: 1px 6px;
                 font-size: 11px;
@@ -428,9 +430,14 @@ class ParamPreviewPopup(QWidget):
         # 分组卡垂直分散填满
         rm = self._root_layout.contentsMargins()
         pm = self._panel_layout.contentsMargins()
-        overhead = (rm.top() + rm.bottom() + pm.top() + pm.bottom()
-                    + self._panel_layout.spacing()
-                    + self._title_label.sizeHint().height())
+        overhead = (
+            rm.top()
+            + rm.bottom()
+            + pm.top()
+            + pm.bottom()
+            + self._panel_layout.spacing()
+            + self._title_label.sizeHint().height()
+        )
 
         max_height = int(avail.height() * POP_MAX_HEIGHT_RATIO)
         content_h = self._content.sizeHint().height()
@@ -440,8 +447,7 @@ class ParamPreviewPopup(QWidget):
 
         left = preferred_left - 12  # 面板左缘 = 弹层窗口左缘 + 阴影留白
         top = card_top_right.y() - 12
-        clamped_top = max(avail.top() + POP_MARGIN,
-                          min(top, avail.bottom() - self.height() - POP_MARGIN))
+        clamped_top = max(avail.top() + POP_MARGIN, min(top, avail.bottom() - self.height() - POP_MARGIN))
         if clamped_top > top:
             v_branch = "top-clamp"
         elif clamped_top < top:
@@ -469,7 +475,8 @@ class ParamPreviewPopup(QWidget):
             f"v_branch={v_branch} preferred_left={preferred_left} "
             f"avail_width={avail_width} width={width} content_h={content_h} "
             f"top_raw={card_top_right.y() - 12} final=({left},{top}) "
-            f"pos_after_move=({self.x()},{self.y()})")
+            f"pos_after_move=({self.x()},{self.y()})"
+        )
 
     # ── 悬停保持 ─────────────────────────────────────────────
 
@@ -498,7 +505,8 @@ class ParamPreviewPopup(QWidget):
         logger.debug(
             f"diag-show: pos_in_showEvent=({pos_in_show.x()},{pos_in_show.y()}) "
             f"anim_target=({target.x()},{target.y()}) "
-            f"geometry={self.geometry()} opacity={self.windowOpacity():.2f}")
+            f"geometry={self.geometry()} opacity={self.windowOpacity():.2f}"
+        )
 
     def hide_animated(self):
         """收起动效：90ms 淡出后真正隐藏；不可见时直接返回。"""

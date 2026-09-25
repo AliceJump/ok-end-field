@@ -18,8 +18,7 @@ def identity_tr(key):
     return key
 
 
-def make_task(config_order, config_type=None, default_config_group=None,
-              default_config=None):
+def make_task(config_order, config_type=None, default_config_group=None, default_config=None):
     """构造任务数据：config 的键序即 fields 顺序，值统一 False/[] 占位。"""
     config = {}
     for key in config_order:
@@ -69,14 +68,12 @@ ROTATION_SEQUENCE = "排轴序列"
 COND_ENABLED = "启用实时条件"
 COND_SEQUENCE = "实时条件序列"
 
-BATTLE_KEYS = [BATTLE_MODE, ENABLE_ROTATION, ROTATION_SEQUENCE,
-               COND_ENABLED, COND_SEQUENCE, SKILL_ALLOWLIST]
+BATTLE_KEYS = [BATTLE_MODE, ENABLE_ROTATION, ROTATION_SEQUENCE, COND_ENABLED, COND_SEQUENCE, SKILL_ALLOWLIST]
 
 
 def battle_config_type():
     return {
-        BATTLE_MODE: {"sub_configs": {True: [ENABLE_ROTATION, ROTATION_SEQUENCE,
-                                             COND_ENABLED, COND_SEQUENCE]}},
+        BATTLE_MODE: {"sub_configs": {True: [ENABLE_ROTATION, ROTATION_SEQUENCE, COND_ENABLED, COND_SEQUENCE]}},
         ENABLE_ROTATION: {"sub_configs": {True: [ROTATION_SEQUENCE]}},
         COND_ENABLED: {"sub_configs": {True: [COND_SEQUENCE]}},
         SKILL_ALLOWLIST: {"sub_configs": {False: [ENABLE_ROTATION, COND_ENABLED]}},
@@ -139,22 +136,30 @@ class TestParamPreviewModel(unittest.TestCase):
         # 根源、中继建组；深层在 depth 2 触顶不再建组
         self.assertEqual(cond_keys, ["根源", "中继"])
         # 深层变成带摘要徽标的字段行，深层不再建嵌套组
-        items = [n for b in find_cond_blocks(preview["blocks"])
-                 for r in b["rules"] for n in r["nodes"] if n["type"] == "item"]
+        items = [
+            n
+            for b in find_cond_blocks(preview["blocks"])
+            for r in b["rules"]
+            for n in r["nodes"]
+            if n["type"] == "item"
+        ]
         deep = next(n for n in items if n["key"] == "深层")
         self.assertEqual(deep["badge"], "开→叶子")
         # 叶子不在深层组里渲染（只剩徽标摘要），但会落回其他参数作普通行
-        leaf_items = [n for b in find_cond_blocks(preview["blocks"])
-                      for r in b["rules"] for n in r["nodes"]
-                      if n["type"] == "item" and n["key"] == "叶子"]
+        leaf_items = [
+            n
+            for b in find_cond_blocks(preview["blocks"])
+            for r in b["rules"]
+            for n in r["nodes"]
+            if n["type"] == "item" and n["key"] == "叶子"
+        ]
         self.assertEqual(leaf_items, [])
         others = [b for b in preview["blocks"] if b["type"] == "others"]
         self.assertEqual(flat_items(others[0]["nodes"]), ["叶子"])
 
     def test_controlled_source_before_root_keeps_chain(self):
         """被控字段（启用排轴）即使 fields 顺序排在根源前也不自己开顶层组。"""
-        order = [ENABLE_ROTATION, ROTATION_SEQUENCE, BATTLE_MODE,
-                 COND_ENABLED, COND_SEQUENCE, SKILL_ALLOWLIST]
+        order = [ENABLE_ROTATION, ROTATION_SEQUENCE, BATTLE_MODE, COND_ENABLED, COND_SEQUENCE, SKILL_ALLOWLIST]
         preview = make_task(order, battle_config_type())
         top_conds = [b for b in preview["blocks"] if b["type"] == "cond"]
         self.assertEqual([b["key"] for b in top_conds], [BATTLE_MODE])
@@ -171,8 +176,7 @@ class TestParamPreviewModel(unittest.TestCase):
         static_blocks = [b for b in preview["blocks"] if b["type"] == "static"]
         self.assertEqual(len(static_blocks), 1)
         self.assertEqual(static_blocks[0]["name"], group)
-        self.assertEqual(flat_items(static_blocks[0]["nodes"]),
-                         [group, "账号A", "账号B"])
+        self.assertEqual(flat_items(static_blocks[0]["nodes"]), [group, "账号A", "账号B"])
 
     def test_group_absorbs_own_sub_configs(self):
         """规则 1：组名字段自身的 sub_configs 子项吸收进组 children。"""

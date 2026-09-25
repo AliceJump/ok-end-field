@@ -140,9 +140,7 @@ class TestZipLineConfig(unittest.TestCase):
                 "config_path",
                 side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
             ),
-            patch.object(
-                config_module, "get_relative_path", side_effect=lambda *parts: os.path.join(tmp, *parts)
-            ),
+            patch.object(config_module, "get_relative_path", side_effect=lambda *parts: os.path.join(tmp, *parts)),
             patch.object(
                 global_config_store,
                 "get_migration_state_path",

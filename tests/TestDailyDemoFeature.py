@@ -37,9 +37,7 @@ class DailyDemoFeatureTests(unittest.TestCase):
             patch.object(feature, "_demo_click_track_and_transfer", return_value=True),
             patch.object(feature, "enter_page", return_value=True),
             patch.object(feature, "read_level", side_effect=[5, 5, 5]),
-            patch.object(
-                feature, "click_random_and_wait_level_change", side_effect=[6, 6, 5, -1]
-            ) as click_random,
+            patch.object(feature, "click_random_and_wait_level_change", side_effect=[6, 6, 5, -1]) as click_random,
             patch.object(feature, "wait_click_feature", return_value=True),
             patch.object(feature, "box_of_screen", return_value=object(), create=True),
             patch.object(feature, "ensure_main", create=True),

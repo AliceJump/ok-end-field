@@ -67,8 +67,7 @@ def find_group_selector(config_type, declared_groups):
         if not options or not declared_groups:
             continue
         if not all(
-            normalized.get(str(group_name)) == list(children)
-            for group_name, children in declared_groups.items()
+            normalized.get(str(group_name)) == list(children) for group_name, children in declared_groups.items()
         ):
             continue
         if not all(str(option) in normalized for option in options):
@@ -111,17 +110,12 @@ def build_param_preview(config, config_type, default_config, default_config_grou
     # ── 静态分组：default_config_group + 分组下拉（find_group_selector 同源）──
     groups = {}
     for group_name, children in (default_config_group or {}).items():
-        groups[str(group_name)] = [
-            str(key) for key in _as_key_list(children)
-        ]
+        groups[str(group_name)] = [str(key) for key in _as_key_list(children)]
     _selector, selector_groups = find_group_selector(config_type, groups)
     groups.update(selector_groups)
 
     # ── 字段集合：config → default_config → config_type 的键序，过滤不可展示项 ──
-    pure_group_labels = {
-        name for name in groups
-        if name not in default_config and name not in config
-    }
+    pure_group_labels = {name for name in groups if name not in default_config and name not in config}
     fields = []
     fields_by_key = {}
     for key in dict.fromkeys([*config.keys(), *default_config.keys(), *config_type.keys()]):
@@ -179,7 +173,8 @@ def build_param_preview(config, config_type, default_config, default_config_grou
 
     # ── 条件组父字段 = 根显隐源 ──
     cond_parents = [
-        field for field in fields
+        field
+        for field in fields
         if field["key"] not in groups
         and field["key"] not in group_children
         and field["key"] not in controlled_all
@@ -188,7 +183,8 @@ def build_param_preview(config, config_type, default_config, default_config_grou
     cond_parent_keys = {field["key"] for field in cond_parents}
 
     orphan_count = sum(
-        1 for field in fields
+        1
+        for field in fields
         if field["key"] not in groups
         and field["key"] not in group_children
         and field["key"] not in controlled_all
@@ -223,29 +219,22 @@ def build_param_preview(config, config_type, default_config, default_config_grou
 
     def append_cond_group(key, rules, nodes, depth):
         """一个父字段 = 一个条件组；受控字段已全部归属 → 整组跳过返回 False。"""
-        has_pending = any(
-            child in fields_by_key and child not in rendered
-            for rule in rules for child in rule["keys"]
-        )
+        has_pending = any(child in fields_by_key and child not in rendered for rule in rules for child in rule["keys"])
         if not has_pending:
             return False
         rendered.add(key)
-        block = {"type": "cond", "key": key, "name": label_of(key),
-                 "tag": tr("显隐组"), "rules": []}
+        block = {"type": "cond", "key": key, "name": label_of(key), "tag": tr("显隐组"), "rules": []}
         for rule in rules:
             sub_nodes = []
             for child in rule["keys"]:
                 render_item(child, sub_nodes, depth + 1)
-            block["rules"].append(
-                {"label": rule["label"], "count": len(sub_nodes), "nodes": sub_nodes}
-            )
+            block["rules"].append({"label": rule["label"], "count": len(sub_nodes), "nodes": sub_nodes})
         nodes.append(block)
         return True
 
     def append_static_group(group_name, nodes, depth, seen):
         children = groups.get(group_name, [])
-        block = {"type": "static", "name": label_of(group_name),
-                 "count": 0, "nodes": []}
+        block = {"type": "static", "name": label_of(group_name), "count": 0, "nodes": []}
         for key in children:
             # 自引用组防环：跳过递归但仍渲染字段行（组名本体可见且只出现一次）
             if key in groups:
@@ -261,10 +250,7 @@ def build_param_preview(config, config_type, default_config, default_config_grou
     blocks = []
 
     # 静态组：嵌套子组随父组渲染；自引用不算被嵌套
-    nested = {
-        key for group_name, children in groups.items()
-        for key in children if key in groups and key != group_name
-    }
+    nested = {key for group_name, children in groups.items() for key in children if key in groups and key != group_name}
     for group_name in groups:
         if group_name not in nested:
             append_static_group(group_name, blocks, 0, {group_name})
@@ -277,14 +263,14 @@ def build_param_preview(config, config_type, default_config, default_config_grou
 
     # 其他参数：未渲染的剩余字段 + 被整组跳过的条件源
     others = [
-        field["key"] for field in fields
+        field["key"]
+        for field in fields
         if field["key"] not in rendered
         and field["key"] not in groups
         and (field["key"] not in cond_parent_keys or field["key"] in skipped_cond_parents)
     ]
     if others:
-        block = {"type": "others", "name": tr("其他参数") if groups else tr("参数"),
-                 "count": len(others), "nodes": []}
+        block = {"type": "others", "name": tr("其他参数") if groups else tr("参数"), "count": len(others), "nodes": []}
         for key in others:
             render_item(key, block["nodes"], 0)
         blocks.append(block)
@@ -309,7 +295,5 @@ def cond_rules_of(key, config_type, config, default_config, tr):
         key_list = [str(child) for child in _as_key_list(keys)]
         if not key_list:
             continue
-        rules.append(
-            {"label": rule_value_label(choice, is_bool, tr), "keys": key_list}
-        )
+        rules.append({"label": rule_value_label(choice, is_bool, tr), "keys": key_list})
     return rules

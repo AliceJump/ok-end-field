@@ -538,9 +538,7 @@ class BattleMixin(BaseEfTask):
         if best_index is None:
             self.log_debug("切人图标未命中任何槽位，无法判定当前角色")
         else:
-            self.log_debug(
-                f"切人图标命中槽位 {best_index}（score={best_score:.3f}）→ 当前第 {best_index + 1} 个角色"
-            )
+            self.log_debug(f"切人图标命中槽位 {best_index}（score={best_score:.3f}）→ 当前第 {best_index + 1} 个角色")
         return best_index
 
     def detect_team_stable(
