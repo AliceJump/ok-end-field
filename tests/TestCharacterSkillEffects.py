@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from src.data.character_skills import _load_character_from_json, load_all_characters
-from src.data.effects import EffectType, match_effect_terms
+from src.data.effects import EFFECT_DESCRIPTIONS, EffectType, match_effect_terms
 from src.data.skill_types import TriggerEffectGroup
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -96,6 +96,15 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertEqual(match_effect_terms("重击会造成18点失衡"), [("失衡", EffectType.STATUS_STAGGER)])
         self.assertEqual(match_effect_terms("造成击飞"), [("击飞", EffectType.STATUS_HEAVY_HIT)])
         self.assertEqual(match_effect_terms("造成猛击"), [("猛击", EffectType.STATUS_HEAVY_STRIKE)])
+
+    def test_link_is_team_shared_stack_not_character_owned(self):
+        # 连击是官方队伍共享机制（Link），术语应命中 STACK_COMBO
+        self.assertEqual(match_effect_terms("获得连击"), [("连击", EffectType.STACK_COMBO)])
+        self.assertEqual(
+            match_effect_terms("若该技能消耗了连击"),
+            [("连击", EffectType.STACK_COMBO)],
+        )
+        self.assertIn("队伍连击层数", EFFECT_DESCRIPTIONS[EffectType.STACK_COMBO])
 
     def test_has_enhancement_is_derived_from_parsed_branches(self):
         branch = {

@@ -162,7 +162,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STACK_SHRED: "敌人身上的破防层数",
     EffectType.STACK_IRON_OATH: "余烬的铁誓层数",
     EffectType.STACK_BLOOD_WING: "卡缪的衔火血翼盘桓层数",
-    EffectType.STACK_COMBO: "黎风的连击层数",
+    EffectType.STACK_COMBO: "队伍连击层数（官方名 Link/连击）：最多 4 层，持有时下一发战技（加成更大）或终结技伤害提升，使用后消耗；黎风、秋栗等干员可施加，黎风终结技消耗连击追加伤害",
     EffectType.STACK_MORALE: "骏卫的士气激昂层数",
     EffectType.STACK_WHIRLPOOL: "汤汤的涡流数量",
     EffectType.STACK_SEED: "诀的种子层数",
