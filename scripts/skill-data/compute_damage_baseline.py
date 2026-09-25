@@ -168,6 +168,19 @@ def _piece_stat(piece: dict, stat: str) -> int | None:
     return None
 
 
+# 战技完整倍率覆盖表：部分角色的战技伤害不止单击倍率（召唤物/多段），
+# 单击倍率会严重低估其输出，需按官方机制补全。
+# 依据 wiki 技能数据表（专精 3）与机制描述：
+# - 庄方宜「惊霆诀」：消耗导电生成至多 3 柄青霆剑，依次雷击目标（45%/击），
+#   最后一击造成 6 倍伤害 → 完整倍率 = 45% x (2 + 6) = 360%。
+#   按「满导电常态 3 柄（生成上限）」建模；消耗每级导电的额外倍率（9%/级）
+#   属条件词条不计入。wiki 快照：operator_details/1132_庄方宜。
+# 赛希战技为治疗/增幅（无伤害倍率），不在此列。
+_SKILL_FULL_MULTIPLIER_OVERRIDES: dict[tuple[str, str], float] = {
+    ("zhuangfy", "zhuangfy_skill"): 360.0,
+}
+
+
 def _skill_multiplier(skill: dict) -> tuple[float, float, list[str]]:
     """从 rank_stats 提取（总倍率%, 总失衡值, 条件行说明）。
 
@@ -447,7 +460,7 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
         dmg_mult = 1 + bonus / 100
         non_crit = atk * (mult / 100) * dmg_mult
         crit_expect = non_crit * (1 + crit_rate * crit_dmg)
-        skill_results.append({
+        entry = {
             "skill_id": skill.get("skill_id"),
             "name": skill.get("name"),
             "type": stype,
@@ -457,7 +470,40 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
             "non_crit": round(non_crit, 1),
             "crit_expect": round(crit_expect, 1),
             "conditional_rows": conditional,
-        })
+        }
+        full_mult = _SKILL_FULL_MULTIPLIER_OVERRIDES.get((key, str(skill.get("skill_id") or "")))
+        if full_mult is not None and full_mult != mult:
+            full_non_crit = atk * (full_mult / 100) * dmg_mult
+            entry["full_multiplier_pct"] = round(full_mult, 1)
+            entry["full_non_crit"] = round(full_non_crit, 1)
+            entry["full_expect"] = round(full_non_crit * (1 + crit_rate * crit_dmg), 1)
+            trace.append(
+                f"  技能完整倍率覆盖: {skill.get('name')} {mult:.0f}%→{full_mult:.0f}%"
+                f"（召唤物/多段机制，依据 wiki 技能表）"
+            )
+        skill_results.append(entry)
+
+    # 循环期望（排序口径）：一次标准循环 = 战技完整伤害（含召唤物/多段）
+    # + 连携 + 2 次普攻（对应自动轴 12.5s 填充段的站场普攻抽样）。
+    # 仅用于 skill_rotation 排序，单技能明细仍以上表为准。
+    def _best_expect(skill_type: str) -> float:
+        best = 0.0
+        for s in skill_results:
+            if s.get("type") != skill_type:
+                continue
+            value = s.get("full_expect") or s.get("crit_expect") or s.get("non_crit") or 0
+            try:
+                best = max(best, float(value))
+            except (TypeError, ValueError):
+                continue
+        return best
+
+    cycle_expect = round(_best_expect("战技") + _best_expect("连携技") + 2 * _best_expect("普通攻击"), 1)
+    trace.append(
+        f"  循环期望: {cycle_expect:.0f}"
+        f"（战技 {_best_expect('战技'):.0f} + 连携 {_best_expect('连携技'):.0f}"
+        f" + 2x普攻 {_best_expect('普通攻击') * 2:.0f}）"
+    )
 
     return {
         "character": name,
@@ -466,6 +512,7 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
         "primary_stat": primary,
         "secondary_stat": secondary,
         "panel": panel,
+        "cycle_expect": cycle_expect,
         "skills": skill_results,
         "build": {
             "weapon": weapon_name,

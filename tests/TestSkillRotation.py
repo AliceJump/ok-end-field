@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 import pyautogui
@@ -57,6 +60,24 @@ class TestGenerateDamageRotation(unittest.TestCase):
         # 真实队伍：位置1=赛希(0，纯辅助) 2=弭弗(最高) 3=莱万汀 4=噗切娜
         tokens = generate_damage_rotation(["赛希", "弭弗", "莱万汀", "噗切娜"], baseline)
         self.assertEqual(tokens, ["2", "3", "4", "1"])
+
+    def test_load_prefers_cycle_expect(self):
+        # 有 cycle_expect 的角色用它排序；缺失的回退单发战技期望
+        clear_cache()
+        try:
+            with tempfile.TemporaryDirectory() as tmp:
+                p = Path(tmp) / "baseline.json"
+                p.write_text(json.dumps([
+                    {"character": "甲", "cycle_expect": 999.0,
+                     "skills": [{"type": "战技", "crit_expect": 5.0}]},
+                    {"character": "乙",
+                     "skills": [{"type": "战技", "crit_expect": 7.0}]},
+                ], ensure_ascii=False), encoding="utf-8")
+                baseline = load_damage_baseline(p)
+        finally:
+            clear_cache()
+        self.assertEqual(baseline["甲"], 999.0)
+        self.assertEqual(baseline["乙"], 7.0)
 
 
 class TestGenerateAutoRotation(unittest.TestCase):
