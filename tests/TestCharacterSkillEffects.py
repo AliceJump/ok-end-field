@@ -97,6 +97,10 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertEqual(match_effect_terms("造成击飞"), [("击飞", EffectType.STATUS_HEAVY_HIT)])
         self.assertEqual(match_effect_terms("造成猛击"), [("猛击", EffectType.STATUS_HEAVY_STRIKE)])
 
+    def test_purge_colloquialism_maps_to_clear_status(self):
+        # 「净化」是社区对官方「清除异常状态」（CLEAR_STATUS）的转述
+        self.assertEqual(match_effect_terms("净化目标"), [("净化", EffectType.CLEAR_STATUS)])
+
     def test_shatter_term_maps_to_status_broken(self):
         # STATUS_BROKEN 官方名即「碎冰」（Shatter），枚举名带历史包袱但不可删除
         self.assertEqual(match_effect_terms("碎冰"), [("碎冰", EffectType.STATUS_BROKEN)])
