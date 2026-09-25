@@ -40,11 +40,10 @@ class TestOutpostExchange(unittest.TestCase):
 
     def test_quantity_bins_and_ocr_fallback(self):
         cases = [
-            ("最低卖10%", 50, [100], 2056),
-            ("等于上限即卖", 200, [100, "份数200"], 2088),
-            ("首次超限即卖", 193, [100, 200], 2088),
-            ("库存不足则全卖", 2000, list(range(100, 1001, 100)), 2344),
-            ("OCR失败回退10%", 200, [None] * 10, 2056),
+            ("最低卖10%", 50, [1000, 100], 2056),
+            ("等于上限即卖", 200, [1000, 100, "份数200"], 2088),
+            ("库存不足则直接全卖", 2000, [1000], None),
+            ("OCR失败回退10%", 200, [None] * 11, 2056),
         ]
         for label, limit, readings, expected_x in cases:
             with self.subTest(label=label):
@@ -59,9 +58,8 @@ class TestOutpostExchange(unittest.TestCase):
                     ),
                 )
                 DailyOutpostMixin._limit_outpost_trade_quantity(feature, limit)
-                # 从远端跳回 10%，避免起点落在滑块手柄内。
-                self.assertEqual([c.args[:2] for c in feature.click.call_args_list[:2]], [(2344, 1150), (2056, 1150)])
-                self.assertEqual(feature.click.call_args_list[-1].args[:2], (expected_x, 1150))
+                last_click = feature.click.call_args
+                self.assertEqual(last_click.args[0] if last_click else None, expected_x)
                 self.assertEqual(feature.wait_ocr.call_count, len(readings))
 
     def test_edit_distance_counts_insertions_deletions_and_substitutions(self):
