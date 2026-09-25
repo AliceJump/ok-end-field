@@ -44,11 +44,15 @@ def _flatten_description(text: str) -> str:
 
 
 def _rank_stats(rank_table: list[list[str]]) -> dict | None:
-    """把 WIKI 数值表转换为 {levels, rows}；表头不合法时返回 None。"""
+    """把 WIKI 数值表转换为 {levels, rows}；表头不合法时返回 None。
+
+    表头首列官方有两种写法：「技能等级」（常规技能）与「详细属性」
+    （个别终结技，如洁尔佩塔「秘杖·重力场」），列结构相同。
+    """
     if not rank_table or not rank_table[0]:
         return None
     header = rank_table[0]
-    if header[0] != "技能等级":
+    if header[0] not in ("技能等级", "详细属性"):
         return None
     levels = [cell.strip() for cell in header[1:]]
     if not any(levels):
