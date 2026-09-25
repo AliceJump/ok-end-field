@@ -18,17 +18,17 @@
     "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
   },
   "equipment": {
-    "set_main": "50式应龙装备组",
-    "set_off": "M.I.警用装备组",
+    "set_main": null,
+    "set_off": null,
     "pieces": [
-      "50式应龙轻甲",
-      "50式应龙护手",
-      "50式应龙短刃",
-      "M.I.警用刺刃"
+      "M.I.警用罩衣·贰型",
+      "50式应龙护手·壹型",
+      "50式应龙短刃"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "新浪全干员装备适配一图流（毕业列）",
-    "evidence_level": 2
+    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
+    "evidence_level": 1,
+    "note": "官方仅推荐 3 件，其余槽位为自由散件"
   }
 }

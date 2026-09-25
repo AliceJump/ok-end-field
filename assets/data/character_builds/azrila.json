@@ -19,16 +19,16 @@
   },
   "equipment": {
     "set_main": "生物辅助装备组",
-    "set_off": "生物辅助装备组",
+    "set_off": null,
     "pieces": [
-      "生物辅助胸甲·壹型",
-      "生物辅助手甲·壹型",
-      "生物辅助接驳器·壹型",
+      "生物辅助重甲",
+      "生物辅助臂甲",
       "生物辅助接驳器·壹型"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "新浪全干员装备适配一图流（毕业列）",
-    "evidence_level": 2
+    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
+    "evidence_level": 1,
+    "note": "官方仅推荐 3 件，其余槽位为自由散件"
   }
 }

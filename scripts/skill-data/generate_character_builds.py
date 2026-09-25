@@ -1,7 +1,8 @@
 """生成角色毕业配置文件（第一阶段：静态伤害基准数据库）。
 
 证据链（evidence_level 越小越权威）：
-1 = 官方游戏内推荐（森空岛 WIKI 干员页「武器推荐」/ 武器页「推荐装备干员」互证）
+1 = 官方游戏内推荐（森空岛 WIKI 干员页「武器推荐」/ 武器页「推荐装备干员」互证
+    / 装备页「推荐干员」反查）
 2 = 高质量社区攻略（新浪全干员装备适配一图流 / ldcapple 精确四件套，见 references）
 3 = 启发式默认（按元素/定位套用同源社区模板，标记 heuristic）
 
@@ -15,8 +16,8 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
+from collections import Counter
 from pathlib import Path
 
 sys.stdout.reconfigure(encoding="utf-8")
@@ -157,7 +158,7 @@ def main() -> int:
         return 1
 
     weapons = _load_json(DATA_DIR / "weapons.json")
-    characters = _load_json(DATA_DIR / "characters.json")
+    equipments = _load_json(DATA_DIR / "equipments.json")
     catalogs = [snap_dir / "catalog.json", *sorted((ROOT / "tools/wiki_catalog/zh_cn").glob("*/m1_s*.json"))]
     id_to_name: dict[str, str] = {}
     op_names: set[str] = set()
@@ -179,7 +180,6 @@ def main() -> int:
             for item_name, item in _load_json(source).items():
                 if item.get("item_id"):
                     id_to_name.setdefault(str(item["item_id"]), item_name)
-
     weapon_id_to_name = {w["item_id"]: n for n, w in weapons.items()}
 
     # 干员详情 → 武器推荐（干员侧）
@@ -199,6 +199,13 @@ def main() -> int:
     for wname, w in weapons.items():
         for oid in w.get("recommended_operator_ids") or []:
             weapon_rec_ops.setdefault(_normalize_name(id_to_name.get(oid, oid)), []).append(wname)
+
+    # 装备页 → 推荐干员（装备侧官方链，反向反查干员的官方推荐装备件）
+    equip_rec_pieces: dict[str, list[str]] = {}
+    for ename, e in equipments.items():
+        for oid in e.get("recommended_operator_ids") or []:
+            op_name = _normalize_name(id_to_name.get(str(oid), str(oid)))
+            equip_rec_pieces.setdefault(op_name, []).append(ename)
 
     BUILD_DIR.mkdir(parents=True, exist_ok=True)
     report = []
@@ -222,27 +229,46 @@ def main() -> int:
             evidence_note = "未找到官方武器推荐"
             evidence_level = 3
 
-        # 套组：社区攻略 → 元素模板
+        # 套组/装备件：官方装备页推荐链 → 社区攻略 → 元素模板
         set_main = set_off = None
         set_level = 3
         set_source = ""
-        if name in COMMUNITY_SETS:
-            m, o = COMMUNITY_SETS[name]
-            set_main, set_off = SET_ALIASES[m], SET_ALIASES[o]
-            set_level = 2
-            set_source = "新浪全干员装备适配一图流（毕业列）"
-        elif element in ELEMENT_DEFAULT_SETS:
-            m, o = ELEMENT_DEFAULT_SETS[element]
-            set_main, set_off = SET_ALIASES[m], SET_ALIASES[o]
-            set_source = f"启发式默认（元素 {element} 模板，待专属攻略验证）"
+        official_pieces: list[str] = []
+        equip_note = ""
+        if name in equip_rec_pieces:
+            parts_order = {"护甲": 0, "护手": 1, "配件": 2}
+            official_pieces = sorted(
+                set(equip_rec_pieces[name]),
+                key=lambda p: (parts_order.get(equipments[p].get("part"), 9), p),
+            )[:4]
+            set_counts = Counter(equipments[p].get("set") for p in official_pieces)
+            top_set, top_n = set_counts.most_common(1)[0]
+            if top_n >= 3:
+                set_main = top_set
+            set_level = 1
+            set_source = "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）"
+            if len(official_pieces) < 4:
+                equip_note = f"官方仅推荐 {len(official_pieces)} 件，其余槽位为自由散件"
+        if not official_pieces:
+            if name in COMMUNITY_SETS:
+                m, o = COMMUNITY_SETS[name]
+                set_main, set_off = SET_ALIASES[m], SET_ALIASES[o]
+                set_level = 2
+                set_source = "新浪全干员装备适配一图流（毕业列）"
+            elif element in ELEMENT_DEFAULT_SETS:
+                m, o = ELEMENT_DEFAULT_SETS[element]
+                set_main, set_off = SET_ALIASES[m], SET_ALIASES[o]
+                set_source = f"启发式默认（元素 {element} 模板，待专属攻略验证）"
 
-        # 精确四件套（若社区有）→ 否则按套组在库内选件（部位默认取第一件，后续可换）
-        exact = EXACT_PIECES.get(name)
+        # 精确四件套（仅官方链未覆盖时社区有）→ 否则按套组在库内选件（部位默认取第一件，后续可换）
+        exact = EXACT_PIECES.get(name) if not official_pieces else None
         pieces = None
-        if exact:
+        if official_pieces:
+            pieces = official_pieces
+        elif exact:
             pieces = exact
         elif set_main:
-            eq = _load_json(DATA_DIR / "equipments.json")
+            eq = equipments
             by_part: dict[str, list[str]] = {}
             for ename, e in eq.items():
                 if e.get("set") == set_main and e.get("quality") == "金色品质":
@@ -290,6 +316,7 @@ def main() -> int:
                 "refinement_max": 3,
                 "source": set_source,
                 "evidence_level": set_level,
+                **({"note": equip_note} if equip_note else {}),
             },
         }
         out = BUILD_DIR / f"{path.stem}.json"

@@ -19,16 +19,16 @@
   },
   "equipment": {
     "set_main": "点剑装备组",
-    "set_off": "碾骨装备组",
+    "set_off": null,
     "pieces": [
-      "点剑纤维护甲",
-      "点剑战术手套",
-      "点剑定位信标",
-      "碾骨小雕像"
+      "点剑重装甲",
+      "点剑战术手甲",
+      "点剑火石"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "启发式默认（元素 物理 模板，待专属攻略验证）",
-    "evidence_level": 3
+    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
+    "evidence_level": 1,
+    "note": "官方仅推荐 3 件，其余槽位为自由散件"
   }
 }

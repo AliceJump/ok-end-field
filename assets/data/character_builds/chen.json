@@ -19,16 +19,16 @@
   },
   "equipment": {
     "set_main": "点剑装备组",
-    "set_off": "碾骨装备组",
+    "set_off": null,
     "pieces": [
-      "点剑重装甲·壹型",
-      "轻超域护手",
-      "点剑火石",
+      "点剑重装甲",
+      "点剑战术手甲",
       "点剑火石"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "新浪全干员装备适配一图流（毕业列）",
-    "evidence_level": 2
+    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
+    "evidence_level": 1,
+    "note": "官方仅推荐 3 件，其余槽位为自由散件"
   }
 }
