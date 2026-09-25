@@ -38,9 +38,7 @@ class DailyDemoFeature:
             refresh_times = 0
             this_time_double_reward = False
             while level <= 5:
-                level = self.click_random_and_wait_level_change(
-                    level, double_reward_opened=this_time_double_reward
-                )
+                level = self.click_random_and_wait_level_change(level, double_reward_opened=this_time_double_reward)
                 if level < 0:
                     return False
                 refresh_times += 1
