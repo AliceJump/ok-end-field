@@ -2919,7 +2919,7 @@
       "heal_eff": 0,
       "ult_charge": 16.0
     },
-    "cycle_expect": 93104.8,
+    "cycle_expect": 103074.8,
     "skills": [
       {
         "skill_id": "typhoeus_normal",
@@ -2943,7 +2943,10 @@
         "bonus_pct": 73.2,
         "non_crit": 17209.0,
         "crit_expect": 17639.3,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "full_multiplier_pct": 540.0,
+        "full_non_crit": 26935.9,
+        "full_expect": 27609.3
       },
       {
         "skill_id": "typhoeus_link",
@@ -2965,7 +2968,10 @@
         "bonus_pct": 73.2,
         "non_crit": 28681.7,
         "crit_expect": 29398.8,
-        "conditional_rows": []
+        "conditional_rows": [],
+        "full_multiplier_pct": 800.0,
+        "full_non_crit": 39905.0,
+        "full_expect": 40902.7
       }
     ],
     "build": {
@@ -2995,7 +3001,9 @@
       "  主能力: 敏捷（官方标签）总值 405",
       "  副能力: 意志（官方标注）总值 283",
       "  攻击力 = (802 × 1.0000 + 0) × (1 + 0.005×405 + 0.002×283) = 2880.0",
-      "  循环期望: 93105（战技 17639 + 连携 15338 + 2x普攻 60127）"
+      "  技能完整倍率覆盖: 风矢穿林 345%→540%（召唤物/多段机制，依据 wiki 技能表）",
+      "  技能完整倍率覆盖: 冰山呼告 575%→800%（召唤物/多段机制，依据 wiki 技能表）",
+      "  循环期望: 103075（战技 27609 + 连携 15338 + 2x普攻 60127）"
     ]
   },
   {

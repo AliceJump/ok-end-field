@@ -247,6 +247,42 @@ class TestFullMultiplierAndCycleExpect(unittest.TestCase):
         result = mod.compute_character("someone_else", self._char(), {}, {}, {}, {}, {}, {})
         self.assertNotIn("full_expect", result["skills"][0])
 
+    def _typhoeus_char(self):
+        # 提弗洛斯：浮空多段空中普攻 + 终结技箭雨，表行加总低估（wiki 2116）
+        return {
+            "name": "空中猎手",
+            "element": "自然",
+            "base_stats": {"rows": {"攻击力": [1000], "意志": [10]}, "levels": [90]},
+            "skills": [
+                {"skill_id": "typhoeus_skill", "skill_type": "战技", "name": "风矢穿林",
+                 "rank_stats": self._rows([
+                     ("起跳射击伤害倍率", "50%"),
+                     ("空中普通攻击伤害", "65%"),
+                     ("空中重击伤害", "100%"),
+                     ("强化射击自然爆发伤害倍率", "1.3"),
+                 ])},
+                {"skill_id": "typhoeus_ultimate", "skill_type": "终结技", "name": "冰山呼告",
+                 "rank_stats": self._rows([
+                     ("强力箭爆炸伤害", "300%"),
+                     ("常规箭雨伤害", "75%"),
+                     ("强化箭雨伤害", "200%"),
+                 ])},
+            ],
+        }
+
+    def test_typhoeus_air_attack_overrides(self):
+        result = mod.compute_character("tifuluosi", self._typhoeus_char(), {}, {}, {}, {}, {}, {})
+        skill = {s["skill_id"]: s for s in result["skills"]}
+        self.assertEqual(skill["typhoeus_skill"]["multiplier_pct"], 345.0)
+        self.assertEqual(skill["typhoeus_skill"]["full_multiplier_pct"], 540.0)
+        self.assertEqual(skill["typhoeus_ultimate"]["multiplier_pct"], 575.0)
+        self.assertEqual(skill["typhoeus_ultimate"]["full_multiplier_pct"], 800.0)
+
+    def test_typhoeus_override_key_scoped(self):
+        result = mod.compute_character("someone_else", self._typhoeus_char(), {}, {}, {}, {}, {}, {})
+        for s in result["skills"]:
+            self.assertNotIn("full_expect", s)
+
     def test_cycle_expect_combines_full_skill_link_and_normals(self):
         result = mod.compute_character("zhuangfy", self._char(), {}, {}, {}, {}, {}, {})
         skills = {s["type"]: s for s in result["skills"]}
