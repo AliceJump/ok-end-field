@@ -4,6 +4,9 @@
 - 角色 90 级 / 技能专精3满级（rank_stats 末列）/ 武器 90 级 + 武器技能 Rank9（官方推荐
   基质解锁）/ 装备 4 件（护甲+护手+配件×2）LV70 满精锻（精锻3）/ 3件套组效果。
 - 标准假人：DEF=0、RES=0、无失衡、无连击、无队友增益（防御倍率=抗性倍率=1）。
+- 连击口径：cycle_expect 为无连击基准（skill_rotation 排序用）；
+  cycle_expect_link4 为满连击 4 层的规划参考，仅战技段 ×1.75
+  （连击只加成下一发战技/终结技，连携/普攻不受影响）。
 - A 层裸伤害：仅统计「无条件」属性词条（武器技能/套组效果中含触发词的句子不计）。
 - B 层（技能自身状态）：暂不实现，缺口见输出 note。
 
@@ -33,6 +36,7 @@ sys.stdout.reconfigure(encoding="utf-8")
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
+from src.data.combat_model import MAX_LINK_STACKS, TeamCombatState  # noqa: E402
 from src.data.operator_names import _normalize_name  # noqa: E402
 
 DATA_DIR = ROOT / "assets/data"
@@ -519,6 +523,23 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
         f" + 2x普攻 {_best_expect('普通攻击') * 2:.0f}）"
     )
 
+    # 满连击口径（规划参考，非基准）：连击为队伍共享池（combat_model.TeamCombatState，
+    # 上限 4 层），只加成下一发战技/终结技；标准循环口径不含终结技，连携/普攻不受
+    # 连击影响。基准假人「无连击」口径保持 cycle_expect 不变，排序仍用基准值。
+    team_full_link = TeamCombatState()
+    team_full_link.add_link(MAX_LINK_STACKS)
+    skill_link_mult = 1.0 + team_full_link.link_bonus(is_ult=False)
+    cycle_expect_link4 = round(
+        _best_expect("战技") * skill_link_mult
+        + _best_expect("连携技")
+        + 2 * _best_expect("普通攻击"),
+        1,
+    )
+    trace.append(
+        f"  满连击循环期望: {cycle_expect_link4:.0f}（战技 x{skill_link_mult:.2f}，"
+        f"连击加成 +{team_full_link.link_bonus(is_ult=False) * 100:.0f}%）"
+    )
+
     return {
         "character": name,
         "key": key,
@@ -527,6 +548,7 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
         "secondary_stat": secondary,
         "panel": panel,
         "cycle_expect": cycle_expect,
+        "cycle_expect_link4": cycle_expect_link4,
         "skills": skill_results,
         "build": {
             "weapon": weapon_name,
