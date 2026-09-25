@@ -13,6 +13,9 @@
 
 排序规则（两者一致）：
 - 主指标 = 该角色「战技」的暴击期望（crit_expect，含 5%/50% 基础暴击）；
+- 排序口径按队伍构成选择（load_damage_baseline_for_team）：满口径依赖
+  队伍供给的角色（如提弗洛斯的满猎矢口径需自然附着施加者）在不满足时
+  回退保守口径；队伍有连击施加者时采用满连击口径（cycle_expect_link4）；
 - 基准数据缺失的角色（含未识别成员 "?"）视为 0 伤害，排在已知角色之后，
   同伤害按队位顺序稳定排列。
 """
@@ -21,6 +24,8 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+
+from src.data.character_capabilities import load_character_capabilities
 
 _ROOT = Path(__file__).resolve().parent.parent.parent
 _BASELINE_FILE = _ROOT / "assets" / "data" / "damage_baseline.json"
@@ -35,6 +40,19 @@ _SP_REGEN_SECONDS = 12.5
 _LINK_AFTER_SEGMENT = (0, 2)
 
 _cached_damage: dict[str, float] | None = None
+_cached_team_damage: dict[tuple[str, ...], dict[str, float]] = {}
+
+
+def _read_entries(path: Path | None) -> list[dict]:
+    """读取基准文件原始条目（损坏/缺失时返回空列表）。"""
+    p = path or _BASELINE_FILE
+    if not p.exists():
+        return []
+    try:
+        data = json.loads(p.read_text(encoding="utf-8"))
+    except (json.JSONDecodeError, OSError):
+        return []
+    return data if isinstance(data, list) else []
 
 
 def load_damage_baseline(path: Path | None = None) -> dict[str, float]:
@@ -49,38 +67,103 @@ def load_damage_baseline(path: Path | None = None) -> dict[str, float]:
         return _cached_damage
 
     result: dict[str, float] = {}
-    p = path or _BASELINE_FILE
-    if p.exists():
-        try:
-            data = json.loads(p.read_text(encoding="utf-8"))
-        except (json.JSONDecodeError, OSError):
-            data = []
-        for entry in data if isinstance(data, list) else []:
-            name = str(entry.get("character") or "").strip()
-            if not name:
+    for entry in _read_entries(path):
+        name = str(entry.get("character") or "").strip()
+        if not name:
+            continue
+        raw_cycle = entry.get("cycle_expect")
+        if raw_cycle is not None:
+            try:
+                result[name] = float(raw_cycle)
                 continue
-            raw_cycle = entry.get("cycle_expect")
-            if raw_cycle is not None:
+            except (TypeError, ValueError):
+                pass
+        best = 0.0
+        for skill in entry.get("skills") or []:
+            if skill.get("type") != "战技":
+                continue
+            value = skill.get("full_expect")
+            if value is None:
+                value = skill.get("crit_expect")
+            if value is None:
+                value = skill.get("non_crit")
+            try:
+                best = max(best, float(value or 0))
+            except (TypeError, ValueError):
+                continue
+        result[name] = best
+    _cached_damage = result
+    return result
+
+
+def load_damage_baseline_for_team(
+    team_members: list[str],
+    path: Path | None = None,
+    capabilities: dict | None = None,
+) -> dict[str, float]:
+    """队伍感知口径的基准数据，返回 {角色名: 循环期望伤害}。
+
+    在无队伍口径（load_damage_baseline，满口径）之上按队伍构成修正：
+
+    - 满口径依赖回退：条目带 ``full_caliber_requires``（如提弗洛斯的
+      ``{"attach": "natural"}``）且队伍（除自身外）没有可施加该元素附着的
+      成员时，改用 ``cycle_expect_conservative``（保守口径）；
+    - 满连击口径：队伍中有连击施加者（character_capabilities 识别，当前
+      仅黎风）且角色未触发上述回退时，改用 ``cycle_expect_link4``
+      （战技 x1.75 规划口径，见 compute_damage_baseline.py）。
+
+    Args:
+        team_members: 队伍角色名列表（"?" 为未识别，忽略）。
+        path: 基准文件路径；None 时用 damage_baseline.json。
+        capabilities: 注入能力表（测试用）；None 时加载真实快照。
+
+    Returns:
+        {角色名: 该队伍构成下的排序期望}；结果按队伍元组缓存。
+    """
+    cache_key = tuple(m or "?" for m in team_members)
+    cached = _cached_team_damage.get(cache_key)
+    if cached is not None:
+        return cached
+
+    full = load_damage_baseline(path)
+    caps = capabilities if capabilities is not None else load_character_capabilities()
+    team = [m for m in cache_key if m != "?"]
+    has_combo = any(
+        (caps.get(m).combo_applier if caps.get(m) else False) for m in team
+    )
+
+    result: dict[str, float] = {}
+    for entry in _read_entries(path):
+        name = str(entry.get("character") or "").strip()
+        if not name:
+            continue
+        value = full.get(name, 0.0)
+        requirement = entry.get("full_caliber_requires") or {}
+        need_attach = requirement.get("attach")
+        attach_ok = True
+        if need_attach:
+            attach_ok = any(
+                need_attach in (caps.get(m).attach_elements if caps.get(m) else ())
+                for m in team
+                if m != name
+            )
+        if not attach_ok:
+            # 回退保守口径；保守口径不与满连击口径叠加（后者基于满口径计算）
+            conservative = entry.get("cycle_expect_conservative")
+            if conservative is not None:
                 try:
-                    result[name] = float(raw_cycle)
-                    continue
+                    value = float(conservative)
                 except (TypeError, ValueError):
                     pass
-            best = 0.0
-            for skill in entry.get("skills") or []:
-                if skill.get("type") != "战技":
-                    continue
-                value = skill.get("full_expect")
-                if value is None:
-                    value = skill.get("crit_expect")
-                if value is None:
-                    value = skill.get("non_crit")
+        elif has_combo:
+            link4 = entry.get("cycle_expect_link4")
+            if link4 is not None:
                 try:
-                    best = max(best, float(value or 0))
+                    value = float(link4)
                 except (TypeError, ValueError):
-                    continue
-            result[name] = best
-    _cached_damage = result
+                    pass
+        result[name] = value
+    _cached_team_damage[cache_key] = result
     return result
 
 
@@ -88,6 +171,7 @@ def clear_cache() -> None:
     """清除缓存（测试用 / 基准数据更新后调用）。"""
     global _cached_damage
     _cached_damage = None
+    _cached_team_damage.clear()
 
 
 def _damage_sorted_slots(
@@ -114,13 +198,14 @@ def generate_damage_rotation(
 
     Args:
         team_members: 4 个角色名，索引 0-3 对应技能键 "1"-"4"（"?" 为未识别）。
-        baseline: {角色名: 期望伤害}；None 时加载 damage_baseline.json。
+        baseline: {角色名: 期望伤害}；None 时按队伍构成加载
+            （load_damage_baseline_for_team）。
 
     Returns:
         按伤害降序的槽位 token；全部未知/缺数据时退化为队位顺序。
     """
     if baseline is None:
-        baseline = load_damage_baseline()
+        baseline = load_damage_baseline_for_team(team_members)
     return [str(i + 1) for i in _damage_sorted_slots(team_members, baseline)]
 
 
@@ -145,8 +230,8 @@ def generate_auto_rotation(
 
     Args:
         team_members: 4 个角色名，索引 0-3 对应队位 1-4（"?" 为未识别）。
-        baseline: {角色名: 循环期望伤害}（排序口径，见 load_damage_baseline）；
-            None 时加载 damage_baseline.json。
+        baseline: {角色名: 循环期望伤害}（排序口径，见
+            load_damage_baseline_for_team）；None 时按队伍构成加载。
         include_ult: 是否把终结技（ult_N）排入轴。协议空间（开局全满）传 True，
             普通战斗（能量从零攒）传 False。
 
@@ -154,7 +239,7 @@ def generate_auto_rotation(
         循环轴 token 列表（执行器按 ``% len`` 无限循环）。
     """
     if baseline is None:
-        baseline = load_damage_baseline()
+        baseline = load_damage_baseline_for_team(team_members)
 
     rotation: list[str] = []
     for seg, slot in enumerate(_damage_sorted_slots(team_members, baseline)):
