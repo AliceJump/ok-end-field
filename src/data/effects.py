@@ -40,7 +40,7 @@ class EffectType(Enum):
     STATUS_SPELL_BURST = "STATUS_SPELL_BURST"  # 法术爆发伤害（同元素再次附着触发）
     STATUS_SPELL_ANOMALY = "STATUS_SPELL_ANOMALY"  # 法术异常状态（通用）
     STATUS_SLOW = "STATUS_SLOW"  # 缓速
-    STATUS_BROKEN = "STATUS_BROKEN"  # 破碎
+    STATUS_BROKEN = "STATUS_BROKEN"  # 碎冰（官方名 Shatter：固结敌人受到物理异常触发，勿被枚举名误导）
     STATUS_FOCUS = "STATUS_FOCUS"  # 安塔尔施加的聚焦状态
     STATUS_CONFINEMENT = "STATUS_CONFINEMENT"  # 诀施加的囹圄状态
     STATUS_ORIGINIUM_CRYSTAL = "STATUS_ORIGINIUM_CRYSTAL"  # 管理员施加的源石结晶
@@ -150,7 +150,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STATUS_SPELL_BURST: "法术爆发伤害（同元素再次附着时触发）",
     EffectType.STATUS_SPELL_ANOMALY: "法术异常状态（通用）",
     EffectType.STATUS_SLOW: "敌人被施加缓速",
-    EffectType.STATUS_BROKEN: "敌人处于破碎状态",
+    EffectType.STATUS_BROKEN: "碎冰（官方名 Shatter）：处于固结/冻结状态的敌人受到物理异常（或破防）时触发，造成大量物理伤害（120%）并结束固结",
     EffectType.STATUS_FOCUS: "安塔尔施加的聚焦状态，同一时间最多存在于一个敌人",
     EffectType.STATUS_CONFINEMENT: "诀施加的囹圄状态，使目标所有行动减缓",
     EffectType.STATUS_ORIGINIUM_CRYSTAL: "管理员附着的源石结晶，可被物理异常或破防消耗",
@@ -240,6 +240,7 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "法术脆弱": EffectType.VULN_ALL,
     # 异常状态
     "冻结": EffectType.STATUS_FROZEN,
+    "碎冰": EffectType.STATUS_BROKEN,
     "燃烧": EffectType.STATUS_BURNING,
     "导电": EffectType.STATUS_CONDUCTING,
     "腐蚀": EffectType.STATUS_CORROSION,
