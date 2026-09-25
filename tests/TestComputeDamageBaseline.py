@@ -274,7 +274,8 @@ class TestFullMultiplierAndCycleExpect(unittest.TestCase):
         result = mod.compute_character("tifuluosi", self._typhoeus_char(), {}, {}, {}, {}, {}, {})
         skill = {s["skill_id"]: s for s in result["skills"]}
         self.assertEqual(skill["typhoeus_skill"]["multiplier_pct"], 345.0)
-        self.assertEqual(skill["typhoeus_skill"]["full_multiplier_pct"], 540.0)
+        # 满猎矢口径：基础段 410% + 猎矢消耗自然爆发 130% x 5 = 1060%（无猎矢保守口径为 540%）
+        self.assertEqual(skill["typhoeus_skill"]["full_multiplier_pct"], 1060.0)
         self.assertEqual(skill["typhoeus_ultimate"]["multiplier_pct"], 575.0)
         self.assertEqual(skill["typhoeus_ultimate"]["full_multiplier_pct"], 800.0)
 
@@ -282,6 +283,16 @@ class TestFullMultiplierAndCycleExpect(unittest.TestCase):
         result = mod.compute_character("someone_else", self._typhoeus_char(), {}, {}, {}, {}, {}, {})
         for s in result["skills"]:
             self.assertNotIn("full_expect", s)
+
+    def test_cycle_expect_link4_field(self):
+        """满连击口径：仅战技段 ×1.75（连击只加成下一发战技/终结技）。"""
+        result = mod.compute_character("zhuangfy", self._char(), {}, {}, {}, {}, {}, {})
+        skills = {s["type"]: s for s in result["skills"]}
+        expected = (skills["战技"]["full_expect"] * 1.75
+                    + skills["连携技"]["crit_expect"]
+                    + 2 * skills["普通攻击"]["crit_expect"])
+        self.assertAlmostEqual(result["cycle_expect_link4"], expected, places=0)
+        self.assertGreater(result["cycle_expect_link4"], result["cycle_expect"])
 
     def test_cycle_expect_combines_full_skill_link_and_normals(self):
         result = mod.compute_character("zhuangfy", self._char(), {}, {}, {}, {}, {}, {})
