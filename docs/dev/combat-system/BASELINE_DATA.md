@@ -174,6 +174,25 @@ perlica.tech Perlica Calc）做帧级 buff/状态追踪，精度更高；本基�
   会被跳过），不会卡轴。已知限制：`battle_space_left` 仅标定 1080p
   （无 `_2k`/`_4k` 变体），更高分辨率下的可靠性待实测。
 
+- **资源喂养排序**（2026-09-26）：`skill_rotation._ordered_slots_with_dependencies`
+  消费 `full_caliber_requires` × `character_capabilities.attach_elements`：
+  满口径依赖被队伍满足时，附着施加者先于依赖者出手（首轮循环即吃满口径）；
+  不满足时该角色用 `cycle_expect_conservative` 且无顺序约束。
+  `requires.attach` 支持元素列表（任一满足，表达「非 X 附着」类依赖）。
+  当前唯一条目 = 提弗洛斯（自然）。庄方宜经复核**不依赖队伍**：首次施放
+  必定生成 3 柄青霆剑（终结技万钧风雷描述），导电由自身连携「强制施加
+  导电」供给（消耗其终结技末击施加的电磁附着），轴内自循环；无导电兜底
+  1 柄 = 270%、导电 I 级 2 柄 = 315%（详见 compute_damage_baseline.py
+  覆盖表注释）。
+
+- **消耗型机制家族**（2026-09-26 扫描，待逐个核对完整倍率口径）：
+  阿列什（deepfin）战技「消耗 N 层寒冷附着」行经核实是**恢复技力**
+  （SP 经济）非伤害倍率，450% 完整；弧光（ikut，消耗电磁附着→导电）、
+  别礼（lastrite）/伊冯（yvonne，消耗寒冷附着/冻结）、洛茜（wulfa，
+  消耗法术附着）、艾尔黛拉（ardelia，消耗腐蚀）的消耗是否影响其伤害
+  倍率口径尚未逐个审计——若存在提弗洛斯式低估，走覆盖表 +
+  FULL_CALIBER_REQUIREMENTS 同一管线补录。
+
 - **脉冲探针**（独立诊断，默认开）：`src/image/pulse_probe.py` +
   `battle_mixin.probe_pulse()`，挂在 `AutoCombatLogic.run` 主循环每帧
   （所有走 `auto_battle` 的战斗——主线/日常/演示/影拓——全覆盖，

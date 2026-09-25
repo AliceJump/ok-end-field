@@ -17,6 +17,7 @@ from src.data.skill_rotation import (
     generate_auto_rotation,
     generate_damage_rotation,
     load_damage_baseline,
+    load_team_baseline_entries,
 )
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
@@ -78,6 +79,126 @@ class TestGenerateDamageRotation(unittest.TestCase):
             clear_cache()
         self.assertEqual(baseline["甲"], 999.0)
         self.assertEqual(baseline["乙"], 7.0)
+
+
+def _caps_map(**members) -> dict:
+    from src.data.character_capabilities import CharacterCapabilities
+
+    return {
+        name: CharacterCapabilities(key=name, name=name,
+                                     attach_elements=tuple(spec[0]), combo_applier=spec[1])
+        for name, spec in members.items()
+    }
+
+
+class TestDependencyAwareOrdering(unittest.TestCase):
+    """资源喂养约束：满口径依赖附着的角色排在其喂养者之后。"""
+
+    _ENTRIES = [
+        {"character": "提弗洛斯", "cycle_expect": 129661.5,
+         "cycle_expect_conservative": 103074.8,
+         "full_caliber_requires": {"attach": "自然"}},
+        {"character": "莱万汀", "cycle_expect": 100000.0},
+        {"character": "洁尔佩塔", "cycle_expect": 30000.0},
+        {"character": "弭弗", "cycle_expect": 50000.0},
+    ]
+
+    _CAPS = _caps_map(
+        提弗洛斯=((), False),
+        莱万汀=((), False),
+        洁尔佩塔=(("自然",), False),
+        弭弗=((), False),
+    )
+
+    def setUp(self):
+        clear_cache()
+        self._tmp = tempfile.TemporaryDirectory()
+        self._path = Path(self._tmp.name) / "damage_baseline.json"
+        self._path.write_text(json.dumps(self._ENTRIES, ensure_ascii=False), encoding="utf-8")
+
+    def tearDown(self):
+        clear_cache()
+        self._tmp.cleanup()
+
+    def _rotate(self, team):
+        return generate_damage_rotation(team, path=self._path, capabilities=self._CAPS)
+
+    def test_feeder_ordered_before_consumer(self):
+        # 纯伤害序：提弗洛斯(129661) > 莱万汀(100000) > 洁尔佩塔(30000)；
+        # 喂养约束：洁尔佩塔（自然附着施加者）先于提弗洛斯出手
+        self.assertEqual(self._rotate(["提弗洛斯", "莱万汀", "洁尔佩塔", "?"]), ["2", "3", "1", "4"])
+
+    def test_no_feeder_falls_back_to_damage_order(self):
+        # 无自然附着施加者：提弗洛斯回退保守口径（103074.8，仍最高），
+        # 无喂养约束 → 纯伤害序
+        self.assertEqual(self._rotate(["提弗洛斯", "莱万汀", "弭弗", "?"]), ["1", "2", "3", "4"])
+
+    def test_any_of_multiple_feeders(self):
+        # 任一喂养者先手即满足约束（不要求全部先手）
+        entries = self._ENTRIES + [{"character": "噗切娜", "cycle_expect": 20000.0}]
+        caps = dict(self._CAPS)
+        caps["噗切娜"] = _caps_map(噗切娜=(("自然",), False))["噗切娜"]
+        path2 = Path(self._tmp.name) / "two_feeders.json"
+        path2.write_text(json.dumps(entries, ensure_ascii=False), encoding="utf-8")
+        tokens = generate_damage_rotation(
+            ["提弗洛斯", "莱万汀", "洁尔佩塔", "噗切娜"], path=path2, capabilities=caps
+        )
+        # 洁尔佩塔(30000) 先于噗切娜(20000) 满足约束即可，提弗洛斯随即出手
+        self.assertEqual(tokens, ["2", "3", "1", "4"])
+
+    def test_explicit_baseline_skips_dependency_check(self):
+        # 显式 baseline：无依赖信息、不查能力表 → 纯伤害序
+        baseline = {"提弗洛斯": 129661.5, "莱万汀": 100000.0, "洁尔佩塔": 30000.0}
+        self.assertEqual(
+            generate_damage_rotation(["提弗洛斯", "莱万汀", "洁尔佩塔", "?"], baseline),
+            ["1", "2", "3", "4"],
+        )
+
+    def test_auto_rotation_segments_follow_feeder_order(self):
+        rotation = generate_auto_rotation(
+            ["提弗洛斯", "莱万汀", "洁尔佩塔", "?"], path=self._path, capabilities=self._CAPS
+        )
+        digits = [t for t in rotation if t.isdigit()]
+        self.assertEqual(digits, ["2", "3", "1", "4"])
+        # 段结构随新顺序：战技后紧跟对应号位终结技
+        self.assertIn("ult_2", rotation)
+        self.assertIn("ult_1", rotation)
+
+    def test_entries_expose_requires_only_when_fed(self):
+        entries = load_team_baseline_entries(
+            ["提弗洛斯", "洁尔佩塔", "?", "?"], path=self._path, capabilities=self._CAPS
+        )
+        self.assertEqual(entries["提弗洛斯"]["requires_attach"], ["自然"])
+        self.assertEqual(entries["提弗洛斯"]["value"], 129661.5)
+        starved = load_team_baseline_entries(
+            ["提弗洛斯", "弭弗", "?", "?"], path=self._path, capabilities=self._CAPS
+        )
+        self.assertIsNone(starved["提弗洛斯"]["requires_attach"])
+        self.assertEqual(starved["提弗洛斯"]["value"], 103074.8)
+
+    def test_attach_requirement_accepts_element_list(self):
+        # requires.attach 支持列表（任一元素满足）——「非 X 附着」类依赖预留
+        entries = [dict(self._ENTRIES[0], full_caliber_requires={"attach": ["灼热", "自然"]})]
+        entries += self._ENTRIES[1:]
+        caps = dict(self._CAPS)
+        caps["莱万汀"] = _caps_map(莱万汀=(("灼热",), False))["莱万汀"]
+        path2 = Path(self._tmp.name) / "list_requires.json"
+        path2.write_text(json.dumps(entries, ensure_ascii=False), encoding="utf-8")
+        tokens = generate_damage_rotation(
+            ["提弗洛斯", "莱万汀", "洁尔佩塔", "?"], path=path2, capabilities=caps
+        )
+        # 莱万汀（灼热）先手即满足任一元素 → 提弗洛斯紧随其后
+        self.assertEqual(tokens, ["2", "1", "3", "4"])
+
+    def test_real_data_feeder_precedes_tifuluosi(self):
+        from src.data.character_capabilities import load_character_capabilities
+
+        real_caps = load_character_capabilities()
+        feeders = [n for n, c in real_caps.items() if "自然" in c.attach_elements]
+        self.assertTrue(feeders, "真实快照应含自然附着施加者（洁尔佩塔/噗切娜等）")
+        tokens = generate_damage_rotation(["提弗洛斯", feeders[0], "?", "?"], capabilities=real_caps)
+        # 提弗洛斯在 1 号位（token "1"），喂养者必须先手
+        self.assertLess(tokens.index("2"), tokens.index("1"))
 
 
 class TestGenerateAutoRotation(unittest.TestCase):
