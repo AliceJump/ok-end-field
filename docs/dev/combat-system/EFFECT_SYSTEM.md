@@ -13,7 +13,7 @@
 | 自然 Nature | 法术 | 绿 | 自然附着 → 腐蚀 |
 
 - 法术附着（Arts Infliction）与物理破防（Vulnerable）**相互独立、可共存**。`[已确认]`
-- 本仓库 effects.py 对应：`ATTACH_NATURAL`/`ATTACH_COLD`（附着）、`STATUS_CORROSION`/`STATUS_FROZEN`/`STATUS_CONDUCTING`/`STATUS_BURNING`（法术异常）、`STATUS_SHRED`/`STATUS_SHATTER`/`STATUS_HEAVY_STRIKE`/`STATUS_KNOCKDOWN`/`STATUS_HEAVY_HIT`（物理链）。
+- 本仓库 effects.py 对应：`ATTACH_NATURAL`/`ATTACH_COLD`（附着）、`STATUS_CORROSION`/`STATUS_FROZEN`/`STATUS_CONDUCTING`/`STATUS_BURNING`（法术异常）、`STATUS_SHRED`/`STATUS_SHATTER`/`STATUS_HEAVY_STRIKE`/`STATUS_KNOCKDOWN`/`STATUS_HEAVY_HIT`（物理链）、`STATUS_BROKEN`（碎冰 Shatter——枚举名带历史包袱，官方名与多语言表均为「碎冰」，勿删）。
 
 ## 2. 法术附着 / 元素爆发 / 元素反应
 
@@ -30,7 +30,7 @@
 | 任意非电磁 | 电磁 | **导电 Electrification** | 敌人受到的法术伤害+（易伤区） |
 | 任意非寒冷 | 寒冷 | **固结 Solidification** | 无法移动（仅中小型敌人） |
 | 任意非自然 | 自然 | **腐蚀 Corrosion** | 全抗性持续降低 |
-| 固结中 | 物理状态/破防 | **碎冰 Shatter** | 大量物理伤害，结束固结 |
+| 固结中 | 物理状态/破防 | **碎冰 Shatter** | 大量物理伤害，结束固结（本仓库效果 ID：`STATUS_BROKEN`，术语「碎冰」） |
 
 `[已确认]`；反应本身的伤害倍率见 §4；反应是否有内部 CD `[未确认]`。
 

@@ -97,6 +97,13 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertEqual(match_effect_terms("造成击飞"), [("击飞", EffectType.STATUS_HEAVY_HIT)])
         self.assertEqual(match_effect_terms("造成猛击"), [("猛击", EffectType.STATUS_HEAVY_STRIKE)])
 
+    def test_shatter_term_maps_to_status_broken(self):
+        # STATUS_BROKEN 官方名即「碎冰」（Shatter），枚举名带历史包袱但不可删除
+        self.assertEqual(match_effect_terms("碎冰"), [("碎冰", EffectType.STATUS_BROKEN)])
+        # 与「碎甲」（STATUS_SHATTER）术语互不混淆
+        self.assertEqual(match_effect_terms("碎甲"), [("碎甲", EffectType.STATUS_SHATTER)])
+        self.assertIn("碎冰", EFFECT_DESCRIPTIONS[EffectType.STATUS_BROKEN])
+
     def test_link_is_team_shared_stack_not_character_owned(self):
         # 连击是官方队伍共享机制（Link），术语应命中 STACK_COMBO
         self.assertEqual(match_effect_terms("获得连击"), [("连击", EffectType.STACK_COMBO)])
