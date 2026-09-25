@@ -1,0 +1,34 @@
+{
+  "character": "艾维文娜",
+  "character_key": "avywenna",
+  "element": "电磁",
+  "stars": null,
+  "weapon": {
+    "name": "J.E.T.",
+    "level_max": 90,
+    "skill_rank": 9,
+    "source": "官方游戏内武器推荐（森空岛WIKI）",
+    "evidence_level": 1,
+    "note": "官方游戏内武器推荐（森空岛WIKI 干员页），武器页反向互证=一致"
+  },
+  "matrix": {
+    "name": "无瑕基质·压制",
+    "source": "官方武器页「推荐武器基质」",
+    "evidence_level": 1,
+    "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
+  },
+  "equipment": {
+    "set_main": null,
+    "set_off": null,
+    "pieces": [
+      "碾骨披巾·壹型",
+      "50式应龙护手·壹型",
+      "碾骨小雕像"
+    ],
+    "level_max": 70,
+    "refinement_max": 3,
+    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
+    "evidence_level": 1,
+    "note": "官方仅推荐 3 件，其余槽位为自由散件"
+  }
+}

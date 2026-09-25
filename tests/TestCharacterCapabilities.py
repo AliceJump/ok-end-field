@@ -36,7 +36,7 @@ class TestCapabilityRegistry(unittest.TestCase):
         self.assertGreaterEqual(len(caps), 32)
         self.assertIn("提弗洛斯", caps)
         self.assertIn("黎风", caps)
-        self.assertEqual(caps["提弗洛斯"].key, "tifuluosi")
+        self.assertEqual(caps["提弗洛斯"].key, "typhoeus")
 
     def test_nature_appliers_detected(self):
         caps = load_character_capabilities()

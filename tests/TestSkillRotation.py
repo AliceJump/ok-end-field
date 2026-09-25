@@ -190,7 +190,7 @@ class TestDependencyAwareOrdering(unittest.TestCase):
         # 莱万汀（灼热）先手即满足任一元素 → 提弗洛斯紧随其后
         self.assertEqual(tokens, ["2", "1", "3", "4"])
 
-    def test_real_data_feeder_precedes_tifuluosi(self):
+    def test_real_data_feeder_precedes_typhoeus(self):
         from src.data.character_capabilities import load_character_capabilities
 
         real_caps = load_character_capabilities()

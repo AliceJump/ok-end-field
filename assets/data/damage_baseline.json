@@ -1,7 +1,7 @@
 [
   {
     "character": "洁尔佩塔",
-    "key": "aglina",
+    "key": "gilberta",
     "element": "自然",
     "primary_stat": "意志",
     "secondary_stat": "智识",
@@ -33,7 +33,7 @@
     "cycle_expect_link4": 105419.0,
     "skills": [
       {
-        "skill_id": "aglina_normal",
+        "skill_id": "gilberta_normal",
         "name": "秘杖·束能技艺",
         "type": "普通攻击",
         "multiplier_pct": 532.0,
@@ -46,7 +46,7 @@
         ]
       },
       {
-        "skill_id": "aglina_skill",
+        "skill_id": "gilberta_skill",
         "name": "秘杖·引力模式",
         "type": "战技",
         "multiplier_pct": 349.0,
@@ -57,7 +57,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "aglina_link",
+        "skill_id": "gilberta_link",
         "name": "秘杖·矩阵位移",
         "type": "连携技",
         "multiplier_pct": 315.0,
@@ -68,7 +68,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "aglina_ultimate",
+        "skill_id": "gilberta_ultimate",
         "name": "秘杖·重力场",
         "type": "终结技",
         "multiplier_pct": 750.0,
@@ -327,7 +327,7 @@
   },
   {
     "character": "昼雪",
-    "key": "aurora",
+    "key": "snowshine",
     "element": "寒冷",
     "primary_stat": "力量",
     "secondary_stat": "意志",
@@ -359,7 +359,7 @@
     "cycle_expect_link4": 65108.9,
     "skills": [
       {
-        "skill_id": "aurora_normal",
+        "skill_id": "snowshine_normal",
         "name": "失温猛击",
         "type": "普通攻击",
         "multiplier_pct": 661.0,
@@ -372,7 +372,7 @@
         ]
       },
       {
-        "skill_id": "aurora_skill",
+        "skill_id": "snowshine_skill",
         "name": "饱和性防御",
         "type": "战技",
         "multiplier_pct": 450.0,
@@ -383,7 +383,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "aurora_link",
+        "skill_id": "snowshine_link",
         "name": "极地救援",
         "type": "连携技",
         "multiplier_pct": 0.0,
@@ -394,7 +394,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "aurora_ultimate",
+        "skill_id": "snowshine_ultimate",
         "name": "凛冽寒霜",
         "type": "终结技",
         "multiplier_pct": 565.0,
@@ -436,7 +436,7 @@
   },
   {
     "character": "艾维文娜",
-    "key": "avywen",
+    "key": "avywenna",
     "element": "电磁",
     "primary_stat": "意志",
     "secondary_stat": "敏捷",
@@ -468,7 +468,7 @@
     "cycle_expect_link4": 142067.2,
     "skills": [
       {
-        "skill_id": "avywen_normal",
+        "skill_id": "avywenna_normal",
         "name": "雷枪·疾袭",
         "type": "普通攻击",
         "multiplier_pct": 492.0,
@@ -481,7 +481,7 @@
         ]
       },
       {
-        "skill_id": "avywen_skill",
+        "skill_id": "avywenna_skill",
         "name": "雷枪·截回",
         "type": "战技",
         "multiplier_pct": 750.0,
@@ -492,7 +492,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "avywen_link",
+        "skill_id": "avywenna_link",
         "name": "雷枪·掣击",
         "type": "连携技",
         "multiplier_pct": 380.0,
@@ -503,7 +503,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "avywen_ultimate",
+        "skill_id": "avywenna_ultimate",
         "name": "雷枪·决颤",
         "type": "终结技",
         "multiplier_pct": 950.0,
@@ -542,7 +542,7 @@
   },
   {
     "character": "余烬",
-    "key": "azrila",
+    "key": "ember",
     "element": "灼热",
     "primary_stat": "力量",
     "secondary_stat": "意志",
@@ -574,7 +574,7 @@
     "cycle_expect_link4": 86793.0,
     "skills": [
       {
-        "skill_id": "azrila_normal",
+        "skill_id": "ember_normal",
         "name": "陷阵剑术",
         "type": "普通攻击",
         "multiplier_pct": 719.0,
@@ -587,7 +587,7 @@
         ]
       },
       {
-        "skill_id": "azrila_skill",
+        "skill_id": "ember_skill",
         "name": "进军",
         "type": "战技",
         "multiplier_pct": 390.0,
@@ -598,7 +598,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "azrila_link",
+        "skill_id": "ember_link",
         "name": "前线援护",
         "type": "连携技",
         "multiplier_pct": 230.0,
@@ -609,7 +609,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "azrila_ultimate",
+        "skill_id": "ember_ultimate",
         "name": "重燃誓约",
         "type": "终结技",
         "multiplier_pct": 650.0,
@@ -650,7 +650,7 @@
   },
   {
     "character": "萤石",
-    "key": "bounda",
+    "key": "fluorite",
     "element": "自然",
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
@@ -682,7 +682,7 @@
     "cycle_expect_link4": 69818.2,
     "skills": [
       {
-        "skill_id": "bounda_normal",
+        "skill_id": "fluorite_normal",
         "name": "独门射击法",
         "type": "普通攻击",
         "multiplier_pct": 501.0,
@@ -695,7 +695,7 @@
         ]
       },
       {
-        "skill_id": "bounda_skill",
+        "skill_id": "fluorite_skill",
         "name": "小惊喜",
         "type": "战技",
         "multiplier_pct": 420.0,
@@ -706,7 +706,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "bounda_link",
+        "skill_id": "fluorite_link",
         "name": "免费赠礼",
         "type": "连携技",
         "multiplier_pct": 380.0,
@@ -717,7 +717,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "bounda_ultimate",
+        "skill_id": "fluorite_ultimate",
         "name": "巅峰闹剧",
         "type": "终结技",
         "multiplier_pct": 1000.0,
@@ -870,7 +870,7 @@
   },
   {
     "character": "陈千语",
-    "key": "chen",
+    "key": "chen_qianyu",
     "element": "物理",
     "primary_stat": "敏捷",
     "secondary_stat": "力量",
@@ -902,7 +902,7 @@
     "cycle_expect_link4": 79550.5,
     "skills": [
       {
-        "skill_id": "chen_normal",
+        "skill_id": "chen_qianyu_normal",
         "name": "破飞霞",
         "type": "普通攻击",
         "multiplier_pct": 497.0,
@@ -915,7 +915,7 @@
         ]
       },
       {
-        "skill_id": "chen_skill",
+        "skill_id": "chen_qianyu_skill",
         "name": "归穹宇",
         "type": "战技",
         "multiplier_pct": 380.0,
@@ -926,7 +926,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "chen_link",
+        "skill_id": "chen_qianyu_link",
         "name": "见天河",
         "type": "连携技",
         "multiplier_pct": 270.0,
@@ -937,7 +937,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "chen_ultimate",
+        "skill_id": "chen_qianyu_ultimate",
         "name": "冽风霜",
         "type": "终结技",
         "multiplier_pct": 1104.0,
@@ -977,7 +977,7 @@
   },
   {
     "character": "大潘",
-    "key": "dapan",
+    "key": "da_pan",
     "element": "物理",
     "primary_stat": "力量",
     "secondary_stat": "意志",
@@ -1009,7 +1009,7 @@
     "cycle_expect_link4": 187219.6,
     "skills": [
       {
-        "skill_id": "dapan_normal",
+        "skill_id": "da_pan_normal",
         "name": "滚刀切！",
         "type": "普通攻击",
         "multiplier_pct": 567.0,
@@ -1022,7 +1022,7 @@
         ]
       },
       {
-        "skill_id": "dapan_skill",
+        "skill_id": "da_pan_skill",
         "name": "颠勺！",
         "type": "战技",
         "multiplier_pct": 300.0,
@@ -1033,7 +1033,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "dapan_link",
+        "skill_id": "da_pan_link",
         "name": "加料！",
         "type": "连携技",
         "multiplier_pct": 650.0,
@@ -1044,7 +1044,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "dapan_ultimate",
+        "skill_id": "da_pan_ultimate",
         "name": "切丝入锅！",
         "type": "终结技",
         "multiplier_pct": 450.0,
@@ -1084,7 +1084,7 @@
   },
   {
     "character": "阿列什",
-    "key": "deepfin",
+    "key": "alesh",
     "element": "寒冷",
     "primary_stat": "力量",
     "secondary_stat": "智识",
@@ -1116,7 +1116,7 @@
     "cycle_expect_link4": 143828.9,
     "skills": [
       {
-        "skill_id": "deepfin_normal",
+        "skill_id": "alesh_normal",
         "name": "基本挥竿法",
         "type": "普通攻击",
         "multiplier_pct": 490.0,
@@ -1129,7 +1129,7 @@
         ]
       },
       {
-        "skill_id": "deepfin_skill",
+        "skill_id": "alesh_skill",
         "name": "非常规路亚",
         "type": "战技",
         "multiplier_pct": 450.0,
@@ -1140,7 +1140,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "deepfin_link",
+        "skill_id": "alesh_link",
         "name": "凿孔底钓术",
         "type": "连携技",
         "multiplier_pct": 780.0,
@@ -1151,7 +1151,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "deepfin_ultimate",
+        "skill_id": "alesh_ultimate",
         "name": "大鳞，上钩!",
         "type": "终结技",
         "multiplier_pct": 980.0,
@@ -1192,7 +1192,7 @@
   },
   {
     "character": "管理员",
-    "key": "endmin",
+    "key": "endministrator",
     "element": "物理",
     "primary_stat": "敏捷",
     "secondary_stat": "力量",
@@ -1224,7 +1224,7 @@
     "cycle_expect_link4": 139037.4,
     "skills": [
       {
-        "skill_id": "endmin_normal",
+        "skill_id": "endministrator_normal",
         "name": "毁伤序列",
         "type": "普通攻击",
         "multiplier_pct": 528.0,
@@ -1237,7 +1237,7 @@
         ]
       },
       {
-        "skill_id": "endmin_skill",
+        "skill_id": "endministrator_skill",
         "name": "构成序列",
         "type": "战技",
         "multiplier_pct": 350.0,
@@ -1248,7 +1248,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "endmin_link",
+        "skill_id": "endministrator_link",
         "name": "锁闭序列",
         "type": "连携技",
         "multiplier_pct": 500.0,
@@ -1259,7 +1259,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "endmin_ultimate",
+        "skill_id": "endministrator_ultimate",
         "name": "轰击序列",
         "type": "终结技",
         "multiplier_pct": 1400.0,
@@ -1301,7 +1301,7 @@
   },
   {
     "character": "埃特拉",
-    "key": "etra",
+    "key": "estella",
     "element": "寒冷",
     "primary_stat": "意志",
     "secondary_stat": "力量",
@@ -1333,7 +1333,7 @@
     "cycle_expect_link4": 161973.9,
     "skills": [
       {
-        "skill_id": "etra_normal",
+        "skill_id": "estella_normal",
         "name": "噪点",
         "type": "普通攻击",
         "multiplier_pct": 473.0,
@@ -1346,7 +1346,7 @@
         ]
       },
       {
-        "skill_id": "etra_skill",
+        "skill_id": "estella_skill",
         "name": "凝声",
         "type": "战技",
         "multiplier_pct": 350.0,
@@ -1357,7 +1357,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "etra_link",
+        "skill_id": "estella_link",
         "name": "失真",
         "type": "连携技",
         "multiplier_pct": 1005.0,
@@ -1368,7 +1368,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "etra_ultimate",
+        "skill_id": "estella_ultimate",
         "name": "震音",
         "type": "终结技",
         "multiplier_pct": 1100.0,
@@ -1410,7 +1410,7 @@
   },
   {
     "character": "弧光",
-    "key": "ikut",
+    "key": "arclight",
     "element": "电磁",
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
@@ -1442,7 +1442,7 @@
     "cycle_expect_link4": 82188.8,
     "skills": [
       {
-        "skill_id": "ikut_normal",
+        "skill_id": "arclight_normal",
         "name": "循迹逐猎",
         "type": "普通攻击",
         "multiplier_pct": 478.0,
@@ -1455,7 +1455,7 @@
         ]
       },
       {
-        "skill_id": "ikut_skill",
+        "skill_id": "arclight_skill",
         "name": "疾风迅雷",
         "type": "战技",
         "multiplier_pct": 607.0,
@@ -1466,7 +1466,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "ikut_link",
+        "skill_id": "arclight_link",
         "name": "鸣雷",
         "type": "连携技",
         "multiplier_pct": 350.0,
@@ -1477,7 +1477,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "ikut_ultimate",
+        "skill_id": "arclight_ultimate",
         "name": "轰雷掣电",
         "type": "终结技",
         "multiplier_pct": 900.0,
@@ -1517,7 +1517,7 @@
   },
   {
     "character": "秋栗",
-    "key": "karin",
+    "key": "akekuri",
     "element": "灼热",
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
@@ -1549,7 +1549,7 @@
     "cycle_expect_link4": 91168.1,
     "skills": [
       {
-        "skill_id": "karin_normal",
+        "skill_id": "akekuri_normal",
         "name": "进取剑锋",
         "type": "普通攻击",
         "multiplier_pct": 471.0,
@@ -1562,7 +1562,7 @@
         ]
       },
       {
-        "skill_id": "karin_skill",
+        "skill_id": "akekuri_skill",
         "name": "热情迸发",
         "type": "战技",
         "multiplier_pct": 320.0,
@@ -1573,7 +1573,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "karin_link",
+        "skill_id": "akekuri_link",
         "name": "快闪冲击",
         "type": "连携技",
         "multiplier_pct": 180.0,
@@ -1584,7 +1584,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "karin_ultimate",
+        "skill_id": "akekuri_ultimate",
         "name": "小队，集结！",
         "type": "终结技",
         "multiplier_pct": 0.0,
@@ -1628,7 +1628,7 @@
   },
   {
     "character": "莱万汀",
-    "key": "laevat",
+    "key": "laevatain",
     "element": "灼热",
     "primary_stat": "智识",
     "secondary_stat": "力量",
@@ -1660,7 +1660,7 @@
     "cycle_expect_link4": 330326.1,
     "skills": [
       {
-        "skill_id": "laevat_normal",
+        "skill_id": "laevatain_normal",
         "name": "燃烬",
         "type": "普通攻击",
         "multiplier_pct": 533.0,
@@ -1673,7 +1673,7 @@
         ]
       },
       {
-        "skill_id": "laevat_skill",
+        "skill_id": "laevatain_skill",
         "name": "焚灭",
         "type": "战技",
         "multiplier_pct": 924.0,
@@ -1688,7 +1688,7 @@
         ]
       },
       {
-        "skill_id": "laevat_link",
+        "skill_id": "laevatain_link",
         "name": "沸腾",
         "type": "连携技",
         "multiplier_pct": 540.0,
@@ -1699,7 +1699,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "laevat_ultimate",
+        "skill_id": "laevatain_ultimate",
         "name": "黄昏",
         "type": "终结技",
         "multiplier_pct": 1044.0,
@@ -1740,7 +1740,7 @@
   },
   {
     "character": "别礼",
-    "key": "lastrite",
+    "key": "last_rite",
     "element": "寒冷",
     "primary_stat": "力量",
     "secondary_stat": "意志",
@@ -1772,7 +1772,7 @@
     "cycle_expect_link4": 251157.9,
     "skills": [
       {
-        "skill_id": "lastrite_normal",
+        "skill_id": "last_rite_normal",
         "name": "严霜之舞",
         "type": "普通攻击",
         "multiplier_pct": 728.0,
@@ -1785,7 +1785,7 @@
         ]
       },
       {
-        "skill_id": "lastrite_skill",
+        "skill_id": "last_rite_skill",
         "name": "塞什卡的秘传",
         "type": "战技",
         "multiplier_pct": 320.0,
@@ -1796,7 +1796,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "lastrite_link",
+        "skill_id": "last_rite_link",
         "name": "噬冬",
         "type": "连携技",
         "multiplier_pct": 320.0,
@@ -1807,7 +1807,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "lastrite_ultimate",
+        "skill_id": "last_rite_ultimate",
         "name": "临终别礼",
         "type": "终结技",
         "multiplier_pct": 1600.0,
@@ -2069,7 +2069,7 @@
   },
   {
     "character": "诀",
-    "key": "lizhiyan",
+    "key": "arcane",
     "element": "自然",
     "primary_stat": "智识",
     "secondary_stat": "意志",
@@ -2101,7 +2101,7 @@
     "cycle_expect_link4": 305014.5,
     "skills": [
       {
-        "skill_id": "lizhiyan_normal",
+        "skill_id": "arcane_normal",
         "name": "重火力截击",
         "type": "普通攻击",
         "multiplier_pct": 531.0,
@@ -2114,7 +2114,7 @@
         ]
       },
       {
-        "skill_id": "lizhiyan_skill",
+        "skill_id": "arcane_skill",
         "name": "摧玉网格",
         "type": "战技",
         "multiplier_pct": 500.0,
@@ -2125,7 +2125,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "lizhiyan_link",
+        "skill_id": "arcane_link",
         "name": "应龙四式",
         "type": "连携技",
         "multiplier_pct": 700.0,
@@ -2136,7 +2136,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "lizhiyan_ultimate",
+        "skill_id": "arcane_ultimate",
         "name": "破晦",
         "type": "终结技",
         "multiplier_pct": 1980.0,
@@ -2180,7 +2180,7 @@
   },
   {
     "character": "卡契尔",
-    "key": "meurs",
+    "key": "catcher",
     "element": "物理",
     "primary_stat": "力量",
     "secondary_stat": "意志",
@@ -2212,7 +2212,7 @@
     "cycle_expect_link4": 68871.0,
     "skills": [
       {
-        "skill_id": "meurs_normal",
+        "skill_id": "catcher_normal",
         "name": "基础战术",
         "type": "普通攻击",
         "multiplier_pct": 628.0,
@@ -2225,7 +2225,7 @@
         ]
       },
       {
-        "skill_id": "meurs_skill",
+        "skill_id": "catcher_skill",
         "name": "刚性阻击",
         "type": "战技",
         "multiplier_pct": 400.0,
@@ -2236,7 +2236,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "meurs_link",
+        "skill_id": "catcher_link",
         "name": "即时压制",
         "type": "连携技",
         "multiplier_pct": 280.0,
@@ -2247,7 +2247,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "meurs_ultimate",
+        "skill_id": "catcher_ultimate",
         "name": "教科书式猛攻",
         "type": "终结技",
         "multiplier_pct": 870.0,
@@ -2291,7 +2291,7 @@
   },
   {
     "character": "弭弗",
-    "key": "mifu",
+    "key": "mi_fu",
     "element": "物理",
     "primary_stat": "力量",
     "secondary_stat": "意志",
@@ -2323,7 +2323,7 @@
     "cycle_expect_link4": 396553.1,
     "skills": [
       {
-        "skill_id": "mifu_normal",
+        "skill_id": "mi_fu_normal",
         "name": "剑形拳意",
         "type": "普通攻击",
         "multiplier_pct": 650.0,
@@ -2336,7 +2336,7 @@
         ]
       },
       {
-        "skill_id": "mifu_skill",
+        "skill_id": "mi_fu_skill",
         "name": "清波三艺",
         "type": "战技",
         "multiplier_pct": 950.0,
@@ -2347,7 +2347,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "mifu_link",
+        "skill_id": "mi_fu_link",
         "name": "拳出无悔",
         "type": "连携技",
         "multiplier_pct": 250.0,
@@ -2358,7 +2358,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "mifu_ultimate",
+        "skill_id": "mi_fu_ultimate",
         "name": "绝心",
         "type": "终结技",
         "multiplier_pct": 700.0,
@@ -2402,7 +2402,7 @@
   },
   {
     "character": "佩丽卡",
-    "key": "pelica",
+    "key": "perlica",
     "element": "电磁",
     "primary_stat": "智识",
     "secondary_stat": "意志",
@@ -2434,7 +2434,7 @@
     "cycle_expect_link4": 75884.1,
     "skills": [
       {
-        "skill_id": "pelica_normal",
+        "skill_id": "perlica_normal",
         "name": "协议α·突破",
         "type": "普通攻击",
         "multiplier_pct": 516.0,
@@ -2447,7 +2447,7 @@
         ]
       },
       {
-        "skill_id": "pelica_skill",
+        "skill_id": "perlica_skill",
         "name": "协议ω·雷击",
         "type": "战技",
         "multiplier_pct": 400.0,
@@ -2458,7 +2458,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "pelica_link",
+        "skill_id": "perlica_link",
         "name": "即时协议·闪链",
         "type": "连携技",
         "multiplier_pct": 180.0,
@@ -2469,7 +2469,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "pelica_ultimate",
+        "skill_id": "perlica_ultimate",
         "name": "协议ε·70.41κ",
         "type": "终结技",
         "multiplier_pct": 1000.0,
@@ -2509,7 +2509,7 @@
   },
   {
     "character": "骏卫",
-    "key": "pograni",
+    "key": "pogranichnik",
     "element": "物理",
     "primary_stat": "意志",
     "secondary_stat": "敏捷",
@@ -2541,7 +2541,7 @@
     "cycle_expect_link4": 230230.5,
     "skills": [
       {
-        "skill_id": "pograni_normal",
+        "skill_id": "pogranichnik_normal",
         "name": "全面攻势",
         "type": "普通攻击",
         "multiplier_pct": 552.0,
@@ -2554,7 +2554,7 @@
         ]
       },
       {
-        "skill_id": "pograni_skill",
+        "skill_id": "pogranichnik_skill",
         "name": "粉碎阵线",
         "type": "战技",
         "multiplier_pct": 430.0,
@@ -2565,7 +2565,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "pograni_link",
+        "skill_id": "pogranichnik_link",
         "name": "盈月邀击",
         "type": "连携技",
         "multiplier_pct": 663.0,
@@ -2576,7 +2576,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "pograni_ultimate",
+        "skill_id": "pogranichnik_ultimate",
         "name": "盾卫旗队，上前",
         "type": "终结技",
         "multiplier_pct": 850.0,
@@ -2617,7 +2617,7 @@
   },
   {
     "character": "噗切娜",
-    "key": "puqiena",
+    "key": "purrchena",
     "element": "物理",
     "primary_stat": "力量",
     "secondary_stat": "意志",
@@ -2649,7 +2649,7 @@
     "cycle_expect_link4": 118689.9,
     "skills": [
       {
-        "skill_id": "puqiena_normal",
+        "skill_id": "purrchena_normal",
         "name": "点心，尝尝！",
         "type": "普通攻击",
         "multiplier_pct": 634.0,
@@ -2662,7 +2662,7 @@
         ]
       },
       {
-        "skill_id": "puqiena_skill",
+        "skill_id": "purrchena_skill",
         "name": "我没有睡着！",
         "type": "战技",
         "multiplier_pct": 400.0,
@@ -2673,7 +2673,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "puqiena_link",
+        "skill_id": "purrchena_link",
         "name": "点心还是“礼物”",
         "type": "连携技",
         "multiplier_pct": 450.0,
@@ -2684,7 +2684,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "puqiena_ultimate",
+        "skill_id": "purrchena_ultimate",
         "name": "不许干坏事！",
         "type": "终结技",
         "multiplier_pct": 1050.0,
@@ -2728,7 +2728,7 @@
   },
   {
     "character": "赛希",
-    "key": "seraph",
+    "key": "xaihi",
     "element": "寒冷",
     "primary_stat": "意志",
     "secondary_stat": "智识",
@@ -2760,7 +2760,7 @@
     "cycle_expect_link4": 42035.2,
     "skills": [
       {
-        "skill_id": "seraph_normal",
+        "skill_id": "xaihi_normal",
         "name": "冷却",
         "type": "普通攻击",
         "multiplier_pct": 495.0,
@@ -2773,7 +2773,7 @@
         ]
       },
       {
-        "skill_id": "seraph_skill",
+        "skill_id": "xaihi_skill",
         "name": "分布式拒绝服务",
         "type": "战技",
         "multiplier_pct": 0.0,
@@ -2784,7 +2784,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "seraph_link",
+        "skill_id": "xaihi_link",
         "name": "压力测试",
         "type": "连携技",
         "multiplier_pct": 450.0,
@@ -2795,7 +2795,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "seraph_ultimate",
+        "skill_id": "xaihi_ultimate",
         "name": "栈溢出",
         "type": "终结技",
         "multiplier_pct": 0.0,
@@ -2945,7 +2945,7 @@
   },
   {
     "character": "提弗洛斯",
-    "key": "tifuluosi",
+    "key": "typhoeus",
     "element": "自然",
     "primary_stat": "敏捷",
     "secondary_stat": "意志",
@@ -3069,7 +3069,7 @@
   },
   {
     "character": "狼卫",
-    "key": "wolfgd",
+    "key": "wulfgard",
     "element": "灼热",
     "primary_stat": "力量",
     "secondary_stat": "敏捷",
@@ -3101,7 +3101,7 @@
     "cycle_expect_link4": 101254.5,
     "skills": [
       {
-        "skill_id": "wolfgd_normal",
+        "skill_id": "wulfgard_normal",
         "name": "多重连射",
         "type": "普通攻击",
         "multiplier_pct": 604.0,
@@ -3114,7 +3114,7 @@
         ]
       },
       {
-        "skill_id": "wolfgd_skill",
+        "skill_id": "wulfgard_skill",
         "name": "灼热弹痕",
         "type": "战技",
         "multiplier_pct": 1080.0,
@@ -3125,7 +3125,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "wolfgd_link",
+        "skill_id": "wulfgard_link",
         "name": "爆裂手雷·β型",
         "type": "连携技",
         "multiplier_pct": 135.0,
@@ -3136,7 +3136,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "wolfgd_ultimate",
+        "skill_id": "wulfgard_ultimate",
         "name": "狼之怒",
         "type": "终结技",
         "multiplier_pct": 72.0,
@@ -3174,7 +3174,7 @@
   },
   {
     "character": "洛茜",
-    "key": "wulfa",
+    "key": "rossi",
     "element": "物理",
     "primary_stat": "敏捷",
     "secondary_stat": "智识",
@@ -3206,7 +3206,7 @@
     "cycle_expect_link4": 146618.4,
     "skills": [
       {
-        "skill_id": "wulfa_normal",
+        "skill_id": "rossi_normal",
         "name": "沸腾狼血",
         "type": "普通攻击",
         "multiplier_pct": 593.0,
@@ -3219,7 +3219,7 @@
         ]
       },
       {
-        "skill_id": "wulfa_skill",
+        "skill_id": "rossi_skill",
         "name": "血红之影",
         "type": "战技",
         "multiplier_pct": 480.0,
@@ -3230,7 +3230,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "wulfa_link",
+        "skill_id": "rossi_link",
         "name": "燎影时刻",
         "type": "连携技",
         "multiplier_pct": 450.0,
@@ -3241,7 +3241,7 @@
         "conditional_rows": []
       },
       {
-        "skill_id": "wulfa_ultimate",
+        "skill_id": "rossi_ultimate",
         "name": "“利爪”奇袭",
         "type": "终结技",
         "multiplier_pct": 1600.0,
@@ -3391,7 +3391,7 @@
   },
   {
     "character": "庄方宜",
-    "key": "zhuangfy",
+    "key": "zhuang_fangyi",
     "element": "电磁",
     "primary_stat": "意志",
     "secondary_stat": "智识",
@@ -3423,7 +3423,7 @@
     "cycle_expect_link4": 238793.1,
     "skills": [
       {
-        "skill_id": "zhuangfy_normal",
+        "skill_id": "zhuang_fangyi_normal",
         "name": "疾电法",
         "type": "普通攻击",
         "multiplier_pct": 551.0,
@@ -3436,7 +3436,7 @@
         ]
       },
       {
-        "skill_id": "zhuangfy_skill",
+        "skill_id": "zhuang_fangyi_skill",
         "name": "惊霆诀",
         "type": "战技",
         "multiplier_pct": 45.0,
@@ -3452,7 +3452,7 @@
         "full_expect": 48782.9
       },
       {
-        "skill_id": "zhuangfy_link",
+        "skill_id": "zhuang_fangyi_link",
         "name": "一息万变",
         "type": "连携技",
         "multiplier_pct": 360.0,
@@ -3465,7 +3465,7 @@
         ]
       },
       {
-        "skill_id": "zhuangfy_ultimate",
+        "skill_id": "zhuang_fangyi_ultimate",
         "name": "万钧风雷",
         "type": "终结技",
         "multiplier_pct": 0.0,
