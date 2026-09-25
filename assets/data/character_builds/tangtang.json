@@ -18,17 +18,17 @@
     "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
   },
   "equipment": {
-    "set_main": "M.I.警用装备组",
-    "set_off": "纾难装备组",
+    "set_main": "碾骨装备组",
+    "set_off": null,
     "pieces": [
-      "M.I.警用护甲",
-      "M.I.警用手套",
-      "M.I.警用刺刃",
-      "纾难印章"
+      "碾骨重护甲·贰型",
+      "碾骨腕带·壹型",
+      "碾骨面具·贰型"
     ],
     "level_max": 70,
     "refinement_max": 3,
-    "source": "启发式默认（元素 寒冷 模板，待专属攻略验证）",
-    "evidence_level": 3
+    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
+    "evidence_level": 1,
+    "note": "官方仅推荐 3 件，其余槽位为自由散件"
   }
 }
