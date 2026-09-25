@@ -211,5 +211,51 @@ class TestCliPathValidation(unittest.TestCase):
             self.assertEqual(mod.main(), 2)
 
 
+class TestFullMultiplierAndCycleExpect(unittest.TestCase):
+    """战技完整倍率覆盖（召唤物/多段机制）与循环期望排序口径。"""
+
+    @staticmethod
+    def _rows(rows):
+        return {"levels": ["R1"] * 12, "rows": [
+            {"label": label, "values": [value] * 12} for label, value in rows
+        ]}
+
+    def _char(self):
+        return {
+            "name": "青霆使",
+            "element": "电磁",
+            "base_stats": {"rows": {"攻击力": [1000], "意志": [10]}, "levels": [90]},
+            "skills": [
+                {"skill_id": "zhuangfy_skill", "skill_type": "战技", "name": "惊霆诀",
+                 "rank_stats": self._rows([("雷击伤害倍率", "45%")])},
+                {"skill_id": "x_link", "skill_type": "连携技", "name": "连携",
+                 "rank_stats": self._rows([("伤害倍率", "360%")])},
+                {"skill_id": "x_normal", "skill_type": "普通攻击", "name": "普攻",
+                 "rank_stats": self._rows([("伤害倍率", "551%")])},
+            ],
+        }
+
+    def test_zhuangfy_skill_full_multiplier_applies(self):
+        result = mod.compute_character("zhuangfy", self._char(), {}, {}, {}, {}, {}, {})
+        skill = result["skills"][0]
+        self.assertEqual(skill["multiplier_pct"], 45.0)
+        self.assertEqual(skill["full_multiplier_pct"], 360.0)
+        self.assertAlmostEqual(skill["full_expect"], skill["crit_expect"] * 8, places=0)
+
+    def test_override_key_scoped(self):
+        # 其他角色不吃庄方宜的覆盖表
+        result = mod.compute_character("someone_else", self._char(), {}, {}, {}, {}, {}, {})
+        self.assertNotIn("full_expect", result["skills"][0])
+
+    def test_cycle_expect_combines_full_skill_link_and_normals(self):
+        result = mod.compute_character("zhuangfy", self._char(), {}, {}, {}, {}, {}, {})
+        skills = {s["type"]: s for s in result["skills"]}
+        expected = (skills["战技"]["full_expect"]
+                    + skills["连携技"]["crit_expect"]
+                    + 2 * skills["普通攻击"]["crit_expect"])
+        self.assertAlmostEqual(result["cycle_expect"], expected, places=0)
+        self.assertGreater(result["cycle_expect"], skills["战技"]["crit_expect"] * 8)
+
+
 if __name__ == "__main__":
     unittest.main()
