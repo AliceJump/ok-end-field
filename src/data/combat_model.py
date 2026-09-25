@@ -110,3 +110,92 @@ _ELEMENT_REACTION: dict[EffectType, EffectType] = {
     EffectType.ATTACH_COLD: EffectType.STATUS_FROZEN,
     EffectType.ATTACH_NATURAL: EffectType.STATUS_CORROSION,
 }
+
+
+# ---------------------------------------------------------------------------
+# 异常反应规则表：EFFECT_SYSTEM §2（反应组合）/ §4（倍率）的机器可执行版
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True)
+class ReactionRule:
+    """一条「前置状态/池 + 新施加输入 → 消耗 + 结算 + 施加结果」的反应规则。
+
+    结算伤害 = multiplier% ×(1+异常等级)[若 scales_with_stacks]
+              ×(1+源石技艺强度/100)×等级系数（法术域）；
+    物理域走 DAMAGE_FORMULA §3 的物理异常公式（无等级系数）。
+    倍率均为 NGA 实测社区数值 [社区测试]，冻结/碎冰/爆发为固定倍率。
+    """
+
+    name: str
+    domain: str  # "spell"（法术附着域）| "physical"（物理异常域）
+    requires: EffectType  # 前置池/状态：STATUS_SPELL_INFLICT=任意元素附着
+    same_element_only: bool  # 仅当新施加元素 == 已附着元素时触发
+    consumes_all: bool  # 是否消耗全部前置层数/状态
+    multiplier: float  # 专精 3 基础倍率（百分数）
+    scales_with_stacks: bool  # 是否 ×(1+异常等级)（异常等级=前置层数）
+    applies: EffectType | None  # 结算后进入的持续状态
+
+
+SPELL_BURST_RULE = ReactionRule(
+    name="法术爆发",
+    domain="spell",
+    requires=EffectType.STATUS_SPELL_INFLICT,
+    same_element_only=True,
+    consumes_all=False,  # 层数保留并 +1（apply_infliction 负责）
+    multiplier=160.0,
+    scales_with_stacks=False,
+    applies=None,
+)
+
+SPELL_REACTION_BY_ELEMENT: dict[EffectType, ReactionRule] = {
+    EffectType.ATTACH_BURN: ReactionRule(
+        name="燃烧", domain="spell", requires=EffectType.STATUS_SPELL_INFLICT,
+        same_element_only=False, consumes_all=True, multiplier=80.0,
+        scales_with_stacks=True, applies=EffectType.STATUS_BURNING,
+    ),
+    EffectType.ATTACH_ELECTROMAGNETIC: ReactionRule(
+        name="导电", domain="spell", requires=EffectType.STATUS_SPELL_INFLICT,
+        same_element_only=False, consumes_all=True, multiplier=80.0,
+        scales_with_stacks=True, applies=EffectType.STATUS_CONDUCTING,
+    ),
+    EffectType.ATTACH_COLD: ReactionRule(
+        name="冻结", domain="spell", requires=EffectType.STATUS_SPELL_INFLICT,
+        same_element_only=False, consumes_all=True, multiplier=130.0,
+        scales_with_stacks=False, applies=EffectType.STATUS_FROZEN,
+    ),
+    EffectType.ATTACH_NATURAL: ReactionRule(
+        name="腐蚀", domain="spell", requires=EffectType.STATUS_SPELL_INFLICT,
+        same_element_only=False, consumes_all=True, multiplier=80.0,
+        scales_with_stacks=True, applies=EffectType.STATUS_CORROSION,
+    ),
+}
+
+PHYSICAL_RULES: tuple[ReactionRule, ...] = (
+    ReactionRule(
+        name="碎冰", domain="physical", requires=EffectType.STATUS_FROZEN,
+        same_element_only=False, consumes_all=True, multiplier=120.0,
+        scales_with_stacks=False, applies=None,  # 结束固结
+    ),
+    ReactionRule(
+        name="击飞", domain="physical", requires=EffectType.STATUS_SHRED,
+        same_element_only=False, consumes_all=False,  # 叠层型：调用方 add_shred(1)
+        multiplier=120.0, scales_with_stacks=False,
+        applies=EffectType.STATUS_HEAVY_HIT,
+    ),
+    ReactionRule(
+        name="倒地", domain="physical", requires=EffectType.STATUS_SHRED,
+        same_element_only=False, consumes_all=False,
+        multiplier=120.0, scales_with_stacks=False,
+        applies=EffectType.STATUS_KNOCKDOWN,
+    ),
+    ReactionRule(
+        name="猛击", domain="physical", requires=EffectType.STATUS_SHRED,
+        same_element_only=False, consumes_all=True, multiplier=150.0,
+        scales_with_stacks=True, applies=None,
+    ),
+    ReactionRule(
+        name="碎甲", domain="physical", requires=EffectType.STATUS_SHRED,
+        same_element_only=False, consumes_all=True, multiplier=50.0,
+        scales_with_stacks=True, applies=EffectType.STATUS_SHATTER,
+    ),
+)
