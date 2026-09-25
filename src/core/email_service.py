@@ -24,9 +24,10 @@ from email.mime.text import MIMEText
 from email.utils import formataddr
 from pathlib import Path
 
-from ok.util.file import get_relative_path, read_json_file, write_json_file
+from ok.util.file import read_json_file, write_json_file
 
 from src.core.email_config import DEFAULT_EMAIL_CONFIG, EMAIL_CONFIG_NAME
+from src.core.paths import config_path
 
 # 项目根目录（src/core/email_service.py -> 上三级为项目根）
 ROOT = Path(__file__).resolve().parents[2]
@@ -46,7 +47,7 @@ def _safe_int(value, default: int) -> int:
 
 def ensure_email_config_file() -> Path:
     """若 ``configs/Email Config.json`` 不存在，则自动生成默认配置项。"""
-    path = Path(get_relative_path("configs", f"{EMAIL_CONFIG_NAME}.json"))
+    path = Path(config_path(f"{EMAIL_CONFIG_NAME}.json"))
     if not path.exists():
         path.parent.mkdir(parents=True, exist_ok=True)
         write_json_file(str(path), DEFAULT_EMAIL_CONFIG)

@@ -2522,3 +2522,24 @@ msgid ""
 msgstr ""
 "오버레이 텍스트 글자 크기. 1080p 창 높이를 기준으로 한 픽셀 값이며,\n"
 "창 높이에 따라 비례해서 조정됩니다."
+
+msgid "显隐组"
+msgstr "조건 표시"
+
+msgid "其他参数"
+msgstr "기타 파라미터"
+
+msgid "参数"
+msgstr "매개변수"
+
+msgid "{n} 项"
+msgstr "{n}개"
+
+msgid "开"
+msgstr "켬"
+
+msgid "关"
+msgstr "끔"
+
+msgid "参数预览"
+msgstr "파라미터 미리보기"

@@ -16,7 +16,7 @@ else:
 
 TOKEN = os.getenv("GITHUB_TOKEN", "").strip()
 
-ASSETS_DIR = Path("assets")
+ASSETS_DIR = Path(__file__).resolve().parents[2] / "assets"
 OUTPUT_FILE = ASSETS_DIR / "downloads.svg"
 
 HEADERS = {

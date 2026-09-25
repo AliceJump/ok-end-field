@@ -1,10 +1,109 @@
 {
     "character_id": "pu_qie_na",
-    "wiki_item_id": "2117",
     "name": "噗切娜",
-    "star": 0,
-    "element": null,
-    "profession": null,
-    "weapon_type": null,
-    "skills": []
+    "star": 5,
+    "element": "物理",
+    "profession": "重装",
+    "weapon_type": "单手剑",
+    "skills": [
+        {
+            "skill_id": "puqiena_normal",
+            "name": "点心，尝尝！",
+            "skill_type": "普通攻击",
+            "element": "物理",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "普通攻击：对敌人进行至多3段攻击，造成物理伤害。作为主控干员时，重击会造成21点失衡。下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
+            "damage_multiplier": "108%（普攻第一段）+ 116%（普攻第二段）+ 230%（普攻第三段）+ 900%（处决攻击）+ 180%（下落攻击）",
+            "stagger_value": 21,
+            "cooldown": null,
+            "spirit_cost": 0,
+            "effects": []
+        },
+        {
+            "skill_id": "puqiena_skill",
+            "name": "我没有睡着！",
+            "skill_type": "战技",
+            "element": "自然",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "架起盾牌格挡攻击，立盾期间使自身及周围干员获得庇护（90%），并立即返还一定技力（20）。立盾状态持续3秒，立盾期间首次成功格挡后延长立盾时间3秒，并额外返还20点技力。立盾期间提供的庇护效果会随格挡次数增加而降低。施放后战技在一段时间内替换为「离我的朋友远点！」：对面前的目标使用头槌撞击，造成自然伤害，并施加自然附着。",
+            "damage_multiplier": "400%（头槌撞击）",
+            "stagger_value": 20,
+            "cooldown": null,
+            "spirit_cost": 100,
+            "effects": [
+                {
+                    "effect_id": "BUFF_PROTECTION",
+                    "value": 1,
+                    "duration": null,
+                    "target": "ally",
+                    "count": 1
+                },
+                {
+                    "effect_id": "ATTACH_NATURAL",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ]
+        },
+        {
+            "skill_id": "puqiena_link",
+            "name": "点心还是“礼物”",
+            "skill_type": "连携技",
+            "element": "物理",
+            "has_enhancement": true,
+            "description": "主控干员受到攻击后可以发动。向主控干员扔出一个礼物匣子，礼物匣子会在短暂延迟后开启，治疗范围内的干员（基础值486，每点意志增加1.13），随机开出一个以下物品并触发对应效果：炸弹：对范围内的敌人造成物理伤害并且额外造成一定失衡（10）。手工作业：持续吸引附近的敌人并对其造成物理伤害。好吃的点心：治疗主控干员（基础值324，每点意志增加0.76）。意志可以额外提高治疗量。开启礼物匣子后获得10点终结技能量。",
+            "damage_multiplier": "300%（炸弹）+ 150%（手工作业）",
+            "stagger_value": 10,
+            "cooldown": "22秒",
+            "spirit_cost": 0,
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "礼物匣子治疗",
+                    "trigger_condition": {
+                        "text": "主控干员受到攻击后可以发动",
+                        "effects": {
+                            "all": []
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "BUFF_HEAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "ally",
+                            "count": 1
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "skill_id": "puqiena_ultimate",
+            "name": "不许干坏事！",
+            "skill_type": "终结技",
+            "element": "物理",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "打开三个大菲林礼盒。每个大菲林礼盒将随机开出炸弹（300%倍率、失衡值10）或手工作业（150%倍率）。有一定概率（20%）开出代言人的特殊赠礼，对敌人造成物理伤害（600%），额外造成15点失衡，并且施加法术脆弱（5秒内受到的法术伤害增加2.5%）。",
+            "damage_multiplier": "300%（炸弹）+ 150%（手工作业）+ 600%（代言人的特殊赠礼）",
+            "stagger_value": 15,
+            "cooldown": "20秒",
+            "spirit_cost": 100,
+            "effects": [
+                {
+                    "effect_id": "VULN_ALL",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ],
+            "enhancements": []
+        }
+    ]
 }

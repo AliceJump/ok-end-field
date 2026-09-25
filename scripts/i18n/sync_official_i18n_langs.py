@@ -340,6 +340,33 @@ def is_regex_like(node: dict, lang: str) -> bool:
     return isinstance(p, str) and bool(_STRONG_REGEX_META.search(p))
 
 
+def guard_anchor_official_match(a_text: str, ranked: list, raw_texts: dict) -> bool:
+    """防错配护栏：反查最高票 key 的官方 zh_CN 值必须与锚点精确一致，
+    或以锚点结尾（关卡语境「前缀·核心」，如「协议空间·干员经验」）。
+
+    锚点是官方条目**前缀**的派生条目（如锚点「干员经验」→「干员经验素材」物品名）
+    一律视为可疑并跳过——2026-09 干员经验/武器经验多语言错配到制造材料物品名的
+    事故（5eaa228e）即源于此。返回 True 可写入，False 跳过该分支。
+    """
+    if not ranked:
+        return False
+    top_key = ranked[0][0]
+    cn_val = (raw_texts.get("zh_CN") or {}).get(top_key)
+    if not isinstance(cn_val, str) or not cn_val.strip():
+        return True  # 官方无 CN 值，无从判断，交由既有流程
+    cn_val = cn_val.strip()
+    norm_cn_val = _norm(cn_val)
+    norm_anchor = _norm(a_text)
+    if norm_cn_val == norm_anchor or norm_cn_val.endswith(norm_anchor):
+        return True
+    print(
+        f"[sync-guard] 跳过可疑反查: 锚点 {a_text!r} 命中 key {top_key} 的官方 CN 值 "
+        f"{cn_val!r}（既不相等也不以锚点结尾，疑似物品/派生条目错配）。"
+        "如确认应同步，请人工核对后处理。"
+    )
+    return False
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--dry", action="store_true", help="只预览不写入")
@@ -374,6 +401,8 @@ def main() -> int:
                 format_anchor = {"天": "%d天", "小时": "%d小时"}.get(a_text) if len(anchors) > 1 else None
                 if format_anchor:
                     ranked_format = pick_keys([("zh_CN", format_anchor, False)], index)
+                    if not guard_anchor_official_match(format_anchor, ranked_format, raw_texts):
+                        continue
                     ov_b = official_format_vals(raw_texts, index, format_anchor)
                     if ov_b:
                         branch_ovs.append(ov_b)
@@ -381,6 +410,8 @@ def main() -> int:
                     continue
                 ranked_b = pick_keys([(a_lang, a_text, a_is_pattern)], index)
                 if not ranked_b:
+                    continue
+                if not guard_anchor_official_match(a_text, ranked_b, raw_texts):
                     continue
                 ov_b = official_vals_multi(raw_texts, ranked_b)
                 if ov_b:

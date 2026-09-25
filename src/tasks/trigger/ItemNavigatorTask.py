@@ -13,8 +13,8 @@ import win32gui
 from ok import Logger, TriggerTask
 from qfluentwidgets import FluentIcon
 
-from src.config import config
 from src.core.BaseEfTask import BaseEfTask
+from src.core.paths import config_folder
 from src.data import item_map_query
 from src.icons import Icons
 from src.tasks.account.account_scope_store import get_account_map_content, load_overrides, resolve_account_id
@@ -139,7 +139,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
 
         # internal constants (not user-facing)
         self._init_ws_position_mixin()
-        cfg_folder = Path(config.get("config_folder", "configs"))
+        cfg_folder = Path(config_folder())
         self._marked_store = cfg_folder / "marked_points.json"
         self._marked_lock = threading.Lock()
         self._marked: dict[str, set] = {}  # mapId -> set of point hashes
@@ -438,8 +438,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
 
     def open_userscript_help(self, *_):
         """打开浏览器油猴脚本使用帮助，并打开脚本目录。"""
-        script_rel = Path("assets") / "scripts" / "endfield-ws-position-relay.user.js"
-        script_abs = (Path.cwd() / script_rel).resolve()
+        script_abs = (Path.cwd() / RELAY_USER_SCRIPT).resolve()
         script_dir = script_abs.parent
         help_text = (
             "终末地坐标转发油猴脚本使用帮助\n\n"

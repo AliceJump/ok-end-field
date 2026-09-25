@@ -169,6 +169,7 @@ class FeatureList(str, Enum):
     login_reward_icon = "login_reward_icon"
     logout = "logout"
     main_centre_icon = "main_centre_icon"
+    main_char = "main_char"
     main_out = "main_out"
     make_room = "make_room"
     make_simply_entrance = "make_simply_entrance"

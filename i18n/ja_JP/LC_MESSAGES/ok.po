@@ -2511,3 +2511,24 @@ msgid ""
 msgstr ""
 "オーバーレイ文字のサイズ。1080p のウィンドウ高さを基準としたピクセル値で、\n"
 "ウィンドウの高さに合わせて拡大縮小します。"
+
+msgid "显隐组"
+msgstr "表示条件"
+
+msgid "其他参数"
+msgstr "その他のパラメータ"
+
+msgid "参数"
+msgstr "パラメータ"
+
+msgid "{n} 项"
+msgstr "{n} 件"
+
+msgid "开"
+msgstr "オン"
+
+msgid "关"
+msgstr "オフ"
+
+msgid "参数预览"
+msgstr "パラメータプレビュー"

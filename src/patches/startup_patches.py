@@ -20,6 +20,7 @@ def install_startup_patches():
     from src.patches.screenshot_sidecar_patch import install_screenshot_sidecar_patch
     from src.patches.startup_window_patch import install_startup_window_patch
     from src.patches.task_config_lock_patch import install_task_config_lock_patch
+    from src.patches.task_param_preview_patch import install_task_param_preview_patch
     from src.patches.win32_gdi_point_patch import install_win32_gdi_point_patch
 
     install_no_frame_task_patch()
@@ -33,6 +34,7 @@ def install_startup_patches():
     install_screenshot_sidecar_patch()
     install_startup_window_patch()
     install_task_config_lock_patch()
+    install_task_param_preview_patch()
     install_win32_gdi_point_patch()
     install_qfluent_navigation_patch()
     _PATCH_INSTALLED = True

@@ -2648,3 +2648,24 @@ msgid ""
 msgstr ""
 "Font size of the overlay text, in pixels relative to a 1080p window height;\n"
 "it scales with the window height."
+
+msgid "显隐组"
+msgstr "Conditional"
+
+msgid "其他参数"
+msgstr "Other parameters"
+
+msgid "参数"
+msgstr "Parameters"
+
+msgid "{n} 项"
+msgstr "{n} item(s)"
+
+msgid "开"
+msgstr "On"
+
+msgid "关"
+msgstr "Off"
+
+msgid "参数预览"
+msgstr "Parameter preview"

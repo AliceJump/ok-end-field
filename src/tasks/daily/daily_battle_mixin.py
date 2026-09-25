@@ -334,14 +334,16 @@ class DailyBattleFeature:
         if auto_stage:
             stage_name = auto_stage
             self.log_info(explain)
+        elif not seq:
+            # 用户未配置刷本序列属正常用法（直接用手动配置的体力本），不要打成"失败"
+            self.log_info("未配置刷本序列自动轮换，使用手动配置副本")
         else:
             self.log_info(explain or "刷体力自动选择失败，使用原配置体力本")
-            if seq:
-                fallback_tier = self.config.get(self.CFG_STAGE_REWARD_TIER, self.REWARD_TIER_KEEP)
-                self.log_info(
-                    f"刷本序列未生效，回退体力本配置: 关卡={stage_name}, "
-                    f"奖励档位={fallback_tier if stage_name in self.REWARD_TIER_STAGE_SET else self.REWARD_TIER_KEEP}"
-                )
+            fallback_tier = self.config.get(self.CFG_STAGE_REWARD_TIER, self.REWARD_TIER_KEEP)
+            self.log_info(
+                f"刷本序列未生效，回退体力本配置: 关卡={stage_name}, "
+                f"奖励档位={fallback_tier if stage_name in self.REWARD_TIER_STAGE_SET else self.REWARD_TIER_KEEP}"
+            )
 
         self.battle_ctx.stage_name = stage_name
         self.battle_ctx.stage_reward_tier_override = stage_reward_tier_override

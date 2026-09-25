@@ -22,7 +22,9 @@ except ImportError:
     polib = None
 
 ROOT = Path(__file__).resolve().parents[2]
-I18N_DIR = ROOT / "i18n"
+# git 内的仓库相对路径固定用正斜杠；目录名单独取一处，避免与 I18N_DIR 各写一遍
+I18N_DIR_NAME = "i18n"
+I18N_DIR = ROOT / I18N_DIR_NAME
 LOCALES = ("zh_CN", "zh_TW", "en_US", "ja_JP", "ko_KR", "es_ES")
 
 # git ref 名与常见 revision 语法（HEAD~1 / HEAD^ / @{upstream} 等）的
@@ -40,7 +42,7 @@ def load_history(loc: str, ref: str) -> polib.POFile | None:
     if not is_safe_ref(ref):
         print(f"  [po] {loc}: 非法 ref 被拒绝: {ref!r}")
         return None
-    rel = f"i18n/{loc}/LC_MESSAGES/ok.po"
+    rel = f"{I18N_DIR_NAME}/{loc}/LC_MESSAGES/ok.po"
     proc = subprocess.run(
         ["git", "show", f"{ref}:{rel}"],
         cwd=str(ROOT),
