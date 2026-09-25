@@ -175,10 +175,14 @@ def _piece_stat(piece: dict, stat: str) -> int | None:
 # 战技完整倍率覆盖表：部分角色的战技伤害不止单击倍率（召唤物/多段），
 # 单击倍率会严重低估其输出，需按官方机制补全。
 # 依据 wiki 技能数据表（专精 3）与机制描述：
-# - 庄方宜「惊霆诀」：消耗导电生成至多 3 柄青霆剑，依次雷击目标（45%/击），
-#   最后一击造成 6 倍伤害 → 完整倍率 = 45% x (2 + 6) = 360%。
-#   按「满导电常态 3 柄（生成上限）」建模；消耗每级导电的额外倍率（9%/级）
-#   属条件词条不计入。wiki 快照：operator_details/1132_庄方宜。
+# - 庄方宜「惊霆诀」：伤害全部来自青霆剑雷击（45%/击），无独立基准段；
+#   末击 6 倍 → 满口径 = 3 柄（2 普击 + 6 倍末击）= 45% x (2 + 6) = 360%。
+#   满口径不依赖队伍构成（2026-09-26 复核，不进 FULL_CALIBER_REQUIREMENTS）：
+#   首次施放必定生成 3 柄（终结技万钧风雷描述，无论有无导电）；后续导电由
+#   自身连携「强制施加导电」供给（消耗其终结技末击施加的电磁附着），轴内
+#   自循环。导电等级决定剑数：I 级 2 柄 = 315%、II 级起 3 柄（生成上限）；
+#   无导电兜底 1 柄 = 270%（单剑即末击）。每级导电 +9% 额外倍率属条件词条
+#   不计入。wiki 快照：operator_details/1132_庄方宜。
 # - 提弗洛斯「风矢穿林」（战技）：跃入浮空可施放 5 次空中普通攻击（每次至多
 #   2 目标，单目标口径按 1 目标计），第 5 次同时视为重击与强化射击（无需猎矢，
 #   强制触发自然爆发）→ 基础段 = 起跳 50% + 空中普攻 65% x 4 + 空中重击 100%
@@ -204,11 +208,12 @@ _SKILL_FULL_MULTIPLIER_OVERRIDES: dict[tuple[str, str], float] = {
 #   逐句核实），队伍无自然附着施加者时回退无猎矢保守口径 540%（终结技 800%
 #   自带 2 层猎矢、自洽，不受影响）。
 # attach 值与快照 element 字段同口径（中文元素名），与
-# character_capabilities.attach_elements 直接比对。
+# character_capabilities.attach_elements 直接比对；元素列表（任一满足）
+# 表达「非 X 附着」类依赖，如 {"attach": ["灼热", "寒冷", "自然"]}。
 # 消费方：skill_rotation.load_damage_baseline_for_team 按队伍构成在
 # cycle_expect（满口径）与 cycle_expect_conservative（保守口径）间选择；
 # 无队伍上下文的调用方（默认 load_damage_baseline）保持满口径不变。
-FULL_CALIBER_REQUIREMENTS: dict[str, dict[str, str]] = {
+FULL_CALIBER_REQUIREMENTS: dict[str, dict[str, str | list[str]]] = {
     "tifuluosi": {"attach": "自然"},
 }
 
