@@ -2,7 +2,13 @@
 
 import unittest
 
-from src.data.combat_model import EnemyCombatState, TeamCombatState
+from src.data.combat_model import (
+    PHYSICAL_RULES,
+    SPELL_BURST_RULE,
+    SPELL_REACTION_BY_ELEMENT,
+    EnemyCombatState,
+    TeamCombatState,
+)
 from src.data.effects import EffectType
 
 
@@ -99,6 +105,57 @@ class TestTeamCombatState(unittest.TestCase):
         team.add_link(3)
         self.assertEqual(team.consume_link(), 3)
         self.assertEqual(team.link_stacks, 0)
+
+
+class TestReactionRules(unittest.TestCase):
+    def test_spell_rules_cover_all_four_elements(self):
+        self.assertEqual(set(SPELL_REACTION_BY_ELEMENT), {
+            EffectType.ATTACH_BURN,
+            EffectType.ATTACH_ELECTROMAGNETIC,
+            EffectType.ATTACH_COLD,
+            EffectType.ATTACH_NATURAL,
+        })
+        # 每条异元素规则：消耗全部附着、进入对应状态
+        for element, rule in SPELL_REACTION_BY_ELEMENT.items():
+            with self.subTest(element=element):
+                self.assertTrue(rule.consumes_all)
+                self.assertIsNotNone(rule.applies)
+
+    def test_burst_is_same_element_fixed_multiplier(self):
+        self.assertTrue(SPELL_BURST_RULE.same_element_only)
+        self.assertFalse(SPELL_BURST_RULE.consumes_all)
+        self.assertEqual(SPELL_BURST_RULE.multiplier, 160.0)
+        self.assertFalse(SPELL_BURST_RULE.scales_with_stacks)
+
+    def test_frozen_has_fixed_multiplier_while_others_scale(self):
+        # §4：冻结初始伤害 130% 固定；燃烧/导电/腐蚀触发 80%×(1+异常等级)
+        self.assertEqual(SPELL_REACTION_BY_ELEMENT[EffectType.ATTACH_COLD].multiplier, 130.0)
+        self.assertFalse(SPELL_REACTION_BY_ELEMENT[EffectType.ATTACH_COLD].scales_with_stacks)
+        for element in (EffectType.ATTACH_BURN, EffectType.ATTACH_ELECTROMAGNETIC, EffectType.ATTACH_NATURAL):
+            rule = SPELL_REACTION_BY_ELEMENT[element]
+            with self.subTest(element=element):
+                self.assertEqual(rule.multiplier, 80.0)
+                self.assertTrue(rule.scales_with_stacks)
+
+    def test_physical_chain_official_multipliers(self):
+        by_name = {r.name: r for r in PHYSICAL_RULES}
+        # 层数无关固定倍率
+        self.assertEqual(by_name["碎冰"].multiplier, 120.0)
+        self.assertEqual(by_name["击飞"].multiplier, 120.0)
+        self.assertEqual(by_name["倒地"].multiplier, 120.0)
+        # 层数相关（×(1+异常等级)）：猛击 150%、碎甲 50%，且都消耗全部破防层
+        self.assertEqual(by_name["猛击"].multiplier, 150.0)
+        self.assertTrue(by_name["猛击"].consumes_all)
+        self.assertTrue(by_name["猛击"].scales_with_stacks)
+        self.assertEqual(by_name["碎甲"].multiplier, 50.0)
+        self.assertTrue(by_name["碎甲"].consumes_all)
+        self.assertTrue(by_name["碎甲"].scales_with_stacks)
+        # 击飞/倒地不消耗破防层（叠层型）
+        self.assertFalse(by_name["击飞"].consumes_all)
+        self.assertFalse(by_name["倒地"].consumes_all)
+        # 碎冰由固结触发，碎冰后无新状态（结束固结）
+        self.assertIs(by_name["碎冰"].requires, EffectType.STATUS_FROZEN)
+        self.assertIsNone(by_name["碎冰"].applies)
 
 
 if __name__ == "__main__":
