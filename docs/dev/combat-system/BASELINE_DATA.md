@@ -116,6 +116,12 @@ compute_damage_baseline.py          # 面板 + 逐技能伤害 + 完整计算过
   endfield.metriclabs.net 的逐技能适配是同思路）。审计注意：机制句式除
   「造成 N 次/每段」外还有「可施放 N 次」「中文数字 N 次（五轮箭雨）」，
   关键词扫描需覆盖这两种变体。
+- **满口径依赖队伍供给**（2026-09-26）：`FULL_CALIBER_REQUIREMENTS`（当前仅
+  提弗洛斯 `attach=自然`——其自身只消耗不施加自然附着，满猎矢口径依赖队友）。
+  基准条目输出 `full_caliber_requires` + `cycle_expect_conservative`（保守口径，
+  战技按无猎矢 540% 计）；`skill_rotation.load_damage_baseline_for_team` 按队伍
+  构成选择口径，并在有连击施加者（黎风）时采用 `cycle_expect_link4`；
+  无队伍上下文的 `load_damage_baseline` 保持满口径不变。
 - **P1** 处决伤害期望未单列（处决=失衡窗口首普攻，倍率/承伤系数链路已确认，
   待 C 层状态建模时并入）。
 - **P2** 装备散件第 4 件的角色级最优选择（现在按套组自动选件，未逐角色论证）。

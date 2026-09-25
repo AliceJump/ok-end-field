@@ -279,6 +279,23 @@ class TestFullMultiplierAndCycleExpect(unittest.TestCase):
         self.assertEqual(skill["typhoeus_ultimate"]["multiplier_pct"], 575.0)
         self.assertEqual(skill["typhoeus_ultimate"]["full_multiplier_pct"], 800.0)
 
+    def test_full_caliber_requirements_consistent(self):
+        # 满口径依赖角色必须有保守口径覆盖，且注入保守覆盖后战技回退到 540%
+        for key, requirement in mod.FULL_CALIBER_REQUIREMENTS.items():
+            with self.subTest(key=key):
+                self.assertIn("attach", requirement)
+                self.assertTrue(
+                    any(k[0] == key for k in mod.CONSERVATIVE_FULL_OVERRIDES),
+                    "满口径依赖角色必须配置保守口径覆盖",
+                )
+        result = mod.compute_character(
+            "tifuluosi", self._typhoeus_char(), {}, {}, {}, {}, {}, {},
+            full_overrides={**mod._SKILL_FULL_MULTIPLIER_OVERRIDES, **mod.CONSERVATIVE_FULL_OVERRIDES},
+        )
+        skill = {s["skill_id"]: s for s in result["skills"]}
+        self.assertEqual(skill["typhoeus_skill"]["full_multiplier_pct"], 540.0)
+        self.assertEqual(skill["typhoeus_ultimate"]["full_multiplier_pct"], 800.0)
+
     def test_typhoeus_override_key_scoped(self):
         result = mod.compute_character("someone_else", self._typhoeus_char(), {}, {}, {}, {}, {}, {})
         for s in result["skills"]:
