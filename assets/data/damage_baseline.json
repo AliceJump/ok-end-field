@@ -70,11 +70,11 @@
         "skill_id": "aglina_ultimate",
         "name": "秘杖·重力场",
         "type": "终结技",
-        "multiplier_pct": 0.0,
-        "stagger": 0.0,
+        "multiplier_pct": 750.0,
+        "stagger": 20.0,
         "bonus_pct": 44.8,
-        "non_crit": 0.0,
-        "crit_expect": 0.0,
+        "non_crit": 38766.7,
+        "crit_expect": 39735.8,
         "conditional_rows": []
       }
     ],
