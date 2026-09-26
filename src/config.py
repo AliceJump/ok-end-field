@@ -137,6 +137,9 @@ config = {
         ["src.tasks.onetime.BattleTask", "BattleTask"],
         ["src.tasks.onetime.DemoDrawTask", "DemoDrawTask"],
         ["src.tasks.onetime.YingTuoTask", "YingTuoTask"],
+        # 日常子任务独立任务类：经 DailyFeature 接入一键日常，也可单独运行
+        ["src.tasks.onetime.MailTask", "MailTask"],
+        ["src.tasks.onetime.CreditCollectTask", "CreditCollectTask"],
         ["src.tasks.onetime.TestStartGame", "TestStartGame"],
         ["src.tasks.test.RealtimeDetectTask", "RealtimeYoloScanTask"],
         ["src.tasks.test.RealtimeDetectTask", "RealtimeDetectTask"],

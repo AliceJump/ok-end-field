@@ -32,7 +32,6 @@ class DailyRoutineFeature(
                 "⭐造装备": True,
                 "⭐简易制作": True,
                 "⭐收信用": True,
-                "尝试仅收培育室": True,
                 "⭐帝江号收菜": self.BOAT_STAGES,
                 "⭐活动奖励": self.ACTIVITY_REWARDS,
                 "⭐日常奖励": True,
@@ -73,9 +72,6 @@ class DailyRoutineFeature(
                     "是否前往好友的「帝江号」并在「访客终端」上进行助力获得信用。\n"
                     "助力结束后，前往「采购中心/信用交易所」收取全部助力。"
                 ),
-                "尝试仅收培育室": (
-                    "若选项开启，则优先尝试仅助力好友「帝江号」上的「培养仓」。\n如果不能，至少助力一次其它舱室。"
-                ),
                 "⭐帝江号收菜": (
                     "选择帝江号收菜内容：\n"
                     "收集线索：前往会客室收集线索，集齐后开启情报交流。\n"
@@ -93,7 +89,6 @@ class DailyRoutineFeature(
         task.default_config_group.update(
             {
                 "⭐据点兑换": ["交易货品优先序列", "据点兑换仅购买优先商品"],
-                "⭐收信用": ["尝试仅收培育室"],
             }
         )
 
