@@ -1,8 +1,43 @@
+from qfluentwidgets import FluentIcon
+
 from src.data.characters_utils import get_contact_list_with_feature_list
 from src.data.FeatureList import FeatureList as fL
+from src.icons import Icons
+from src.tasks.mixin.common import Common
 
 
-class DailyBoatMixin:
+class BoatHarvestTask(Common):
+    """帝江号收菜子任务：收集线索与制造舱助力，日常任务经 DailyFeature 接入。"""
+
+    BOAT_STAGES = ["收集线索", "使用制造舱助力"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "帝江号收菜"
+        self.icon = Icons.Collect
+        self.group_name = "日常任务"
+        self.group_icon = FluentIcon.CALENDAR
+        self.description = "执行帝江号收菜：收集线索、使用制造舱助力。"
+        self.support_multi_account = True
+        self.default_config.update(
+            {
+                "⭐帝江号收菜": self.BOAT_STAGES,
+            }
+        )
+        self.config_type["⭐帝江号收菜"] = {
+            "type": "multi_selection",
+            "options": self.BOAT_STAGES,
+        }
+        self.config_description.update(
+            {
+                "⭐帝江号收菜": (
+                    "选择帝江号收菜内容：\n"
+                    "收集线索：前往会客室收集线索，集齐后开启情报交流。\n"
+                    "使用制造舱助力：好友可为你的制造舱提供助力，你可在制造时使用这些助力。"
+                ),
+            }
+        )
+
     def _boat_stages(self):
         stages = self.config.get("⭐帝江号收菜", [])
         # 迁移后 ⭐帝江号收菜 恒为列表；非列表时按未启用处理，不再应用旧布尔开关值。
@@ -211,3 +246,7 @@ class DailyBoatMixin:
             raise_if_not_found=False,
         )
         return
+
+    def run(self):
+        self.ensure_main(time_out=420)
+        return self.boat_claim_rewards()

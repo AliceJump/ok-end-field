@@ -2765,3 +2765,97 @@ msgstr "Visitar el Dijiang de un amigo para intercambiar y ayudar, y recoger el 
 
 msgid "未找到 {task_class} 的已注册实例，{switch_key} 记为失败"
 msgstr "No se encontró una instancia registrada de {task_class}; {switch_key} se marca como fallida"
+
+msgid "送礼"
+msgstr "Regalar"
+
+msgid "帝江号整理"
+msgstr "Organizar Dijiang"
+
+msgid "帝江号收菜"
+msgstr "Recolección del Dijiang"
+
+msgid "转交运送委托"
+msgstr "Transferir encargos de entrega"
+
+msgid "地区建设"
+msgstr "Operaciones regionales"
+
+msgid "造装备"
+msgstr "Fabricar Equipo"
+
+msgid "买信用商店"
+msgstr "Comprar Tienda de Crédito"
+
+msgid "活动奖励"
+msgstr "Recompensas de Evento"
+
+msgid "日常奖励"
+msgstr "Recompensas Diarias"
+
+msgid "演算"
+msgstr "Cálculo"
+
+msgid "传送到帝江号右侧传送点"
+msgstr "Teletransportarse al punto derecho del Dijiang"
+
+msgid "通过「帝江号/干员联络台/赠送礼物」提升干员好感度。"
+msgstr "Sube la afinidad de los operadores regalando en el Dijiang / Puesto de enlace."
+
+msgid "在「帝江号」打开背包并执行「一键存放」与「简易制作」。"
+msgstr "Abre la mochila en el Dijiang y ejecuta Guardar con un clic y Fabricación sencilla."
+
+msgid "执行帝江号收菜：收集线索、使用制造舱助力。"
+msgstr "Ejecuta la recolección del Dijiang: recoger pistas y usar la ayuda de la cabina de fabricación."
+
+msgid "在「地区建设/仓储结点」中转交全部运送委托，并领取转交委托奖励。"
+msgstr "Transfiere todos los encargos de entrega en el Nodo de almacenamiento y reclama la recompensa."
+
+msgid "按地区执行据点兑换、买卖货与买物资。"
+msgstr "Ejecuta canje de avanzada, compraventa y compra de suministros por región."
+
+msgid "前往「装备制造/套组装备制造」并制作一件列表首位的装备。"
+msgstr "Ve a Fabricación de equipo y fabrica el primer equipo de la lista."
+
+msgid "在「采购中心/信用交易所」自动刷新并采购优先商品。"
+msgstr "Actualiza automáticamente y compra artículos prioritarios en la Tienda de crédito."
+
+msgid "领取活动中心奖励：每周事务、理智补给与刮刮乐。"
+msgstr "Reclama recompensas del Centro de eventos: tareas semanales, suministro de cordura y raspado."
+
+msgid "领取「行动手册/日常」和「通行证」中的奖励。"
+msgstr "Reclama las recompensas del Manual/Diario y del Pase."
+
+msgid "执行演武集算任务：自动抽取关卡并战斗。"
+msgstr "Ejecuta la tarea de Cálculo: extrae etapas automáticamente y combate."
+
+msgid "传送到「帝江号」右侧传送点，作为日常任务的收尾。"
+msgstr "Teletranspórtate al punto derecho del Dijiang como cierre de las diarias."
+
+msgid ""
+"子任务开关用⭐标出，自上而下顺序执行，默认展开在最前面的『⭐⭐⭐ 默认』分组，最后执行『日常奖励』。\n"
+"子任务参数在各子任务卡片上配置（任务列表「日常任务」分组），并支持在「账号配置」页按账号覆盖。\n"
+"如果出现反复按ESC的情形，请调高『设置/主界面单次动作后延迟』（建议1.5以上）。"
+msgstr ""
+"Los interruptores de subtareas se marcan con ⭐ y se ejecutan de arriba abajo; el grupo 'Predeterminado' inicial aparece expandido y Recompensas Diarias se ejecuta al final.\n"
+"Los parámetros de cada subtarea se configuran en su tarjeta (grupo Tareas diarias de la lista) y admiten anulaciones por cuenta en la página de Configuración de cuentas.\n"
+"Si ESC se pulsa repetidamente, sube Configuración / Retardo de acción única (se recomienda 1.5 o más)."
+
+msgid "日常刷体力"
+msgstr "Gasto diario de energía"
+
+msgid "日常自动送货"
+msgstr "Entrega automática diaria"
+
+msgid "一键日常专用，配置独立于「刷体力」。"
+msgstr ""
+"Para las tareas diarias; la configuración es independiente de Gasto de "
+"energía."
+
+msgid "一键日常专用，配置独立于「自动送货」。"
+msgstr ""
+"Para las tareas diarias; la configuración es independiente de Entrega "
+"automática."
+
+msgid "每次送礼时送给联络台干员的礼物个数。"
+msgstr "Cantidad de regalos que se dan al operador de enlace cada vez."

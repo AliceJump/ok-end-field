@@ -167,23 +167,11 @@ class BattleMixin(BaseEfTask):
 
     def get_battle_config(self, key: str, default=None):
         global_value = self.battle_config_manager.get(key, DEFAULT_BATTLE_CONFIG.get(key, default))
-        raw_config_get = getattr(self, "_raw_cfg_get", None)
-        if callable(raw_config_get):
-            try:
-                raw_value = raw_config_get(BATTLE_CONFIG_MODE_KEY, False)
-            except (TypeError, AttributeError):
-                raw_value = self.config.get(BATTLE_CONFIG_MODE_KEY, False)
-        else:
-            raw_value = self.config.get(BATTLE_CONFIG_MODE_KEY, False)
-
+        # config.get 在运行中已绑定账号覆盖；日常子任务按当前账号取战斗模式和参数。
+        raw_value = self.config.get(BATTLE_CONFIG_MODE_KEY, False)
         use_independent = self._parse_use_independent(raw_value)
         if not use_independent:
             return global_value
-        if callable(raw_config_get):
-            try:
-                return raw_config_get(key, global_value)
-            except (TypeError, AttributeError):
-                pass
         return self.config.get(key, global_value)
 
     def _parse_use_independent(self, value):

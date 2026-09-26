@@ -29,8 +29,11 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+
 # 帝江号共享状态属性名：与 LiaisonMixin / DailyTaskRunner 的约定保持一致
 _BOAT_STATE_ATTR = "_daily_boat_state_confirmed"
+_MISSING = object()
 
 
 class DailyFeature:
@@ -69,6 +72,45 @@ class DailyFeature:
                 return task
         return None
 
+    @contextmanager
+    def _account_context(self, impl):
+        """让子任务临时使用日常宿主的运行状态和账号覆盖。"""
+        backup = (
+            getattr(impl, "running", False),
+            getattr(impl, "current_account_id", ""),
+            getattr(impl, "current_user", ""),
+        )
+        try:
+            impl.running = True
+            impl.set_current_account(
+                getattr(self.host, "current_user", "") or "",
+                getattr(self.host, "current_account_id", "") or "",
+            )
+            yield
+        finally:
+            impl.running, impl.current_account_id, impl.current_user = backup
+
+    @staticmethod
+    def _restore_attr(impl, name, previous):
+        """恢复临时注入的属性，包括原本不存在的情况。"""
+        if previous is _MISSING:
+            if hasattr(impl, name):
+                delattr(impl, name)
+        else:
+            setattr(impl, name, previous)
+
+    def impl_config(self, key, default=None):
+        """读取已注册子任务实例的配置值；实例缺失时返回 default。
+
+        供任务清单的开关谓词使用：参数迁到子任务卡片后，宿主侧的
+        开关判定（如多选列表非空即启用、多开关 OR）改读子任务配置。
+        """
+        impl = self._resolve_impl()
+        if impl is None:
+            return default
+        with self._account_context(impl):
+            return impl.config.get(key, default)
+
     def run(self):
         """在子任务实例上执行业务流程，前后注入/恢复宿主的账号上下文。"""
         impl = self._resolve_impl()
@@ -83,28 +125,15 @@ class DailyFeature:
             return False
 
         host_boat_state = getattr(self.host, _BOAT_STATE_ATTR, False)
-        # 注入前备份子任务原值，结束后恢复，避免污染独立运行/GUI 场景
-        backup = (
-            getattr(impl, "running", False),
-            getattr(impl, "current_account_id", ""),
-            getattr(impl, "current_user", ""),
-        )
-        # running=True 是账号覆盖读取的闸门（AccountOverrideMixin）；
-        # set_current_account 绑定账号上下文并给子任务的 config.get 打覆盖补丁
-        impl.running = True
-        impl.set_current_account(
-            getattr(self.host, "current_user", "") or "",
-            getattr(self.host, "current_account_id", "") or "",
-        )
-        # 帝江号共享状态：执行前从宿主带入（runner 已按 shared_state_task_keys 处理过宿主侧）
-        setattr(impl, _BOAT_STATE_ATTR, host_boat_state)
-        try:
-            return getattr(impl, self.run_method)()
-        finally:
-            # 子任务执行期间可能置位/重置共享状态，带回宿主供 runner 后续任务判定
-            setattr(self.host, _BOAT_STATE_ATTR, getattr(impl, _BOAT_STATE_ATTR, host_boat_state))
-            (
-                impl.running,
-                impl.current_account_id,
-                impl.current_user,
-            ) = backup
+        previous_boat_state = getattr(impl, _BOAT_STATE_ATTR, _MISSING)
+        previous_runner = getattr(impl, "daily_runner", _MISSING)
+        with self._account_context(impl):
+            # 日常 runner 负责汇总失败详情；帝江号状态只在本次组合执行中共享。
+            impl.daily_runner = getattr(self.host, "daily_runner", None)
+            setattr(impl, _BOAT_STATE_ATTR, host_boat_state)
+            try:
+                return getattr(impl, self.run_method)()
+            finally:
+                setattr(self.host, _BOAT_STATE_ATTR, getattr(impl, _BOAT_STATE_ATTR, host_boat_state))
+                self._restore_attr(impl, _BOAT_STATE_ATTR, previous_boat_state)
+                self._restore_attr(impl, "daily_runner", previous_runner)

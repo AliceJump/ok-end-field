@@ -129,10 +129,10 @@ class TestDailySplitConfigMigration(unittest.TestCase):
             self.assertEqual(source_segments[0]["DailyTask"]["⭐收信用"], True)
 
     def test_callable_entry_transforms_value(self):
-        """callable 条目基于来源配置计算值，返回 _NO_MIGRATION 时跳过。"""
+        """callable 条目基于来源与目标配置计算值，返回 _NO_MIGRATION 时跳过。"""
         from src.core.config_migration import _NO_MIGRATION
 
-        def transform(source_config):
+        def transform(source_config, target_config, target_key):
             if not source_config.get("旧开关"):
                 return _NO_MIGRATION
             return ["选项A"]
@@ -145,6 +145,176 @@ class TestDailySplitConfigMigration(unittest.TestCase):
 
             data = self._read_config(configs, "SomeTargetTask.json")
             self.assertEqual(data["新键"], ["选项A"])
+
+    def test_daily_battle_and_delivery_configs_do_not_change_standalone_tasks(self):
+        """日常专属配置从旧日常卡片迁入，已有独立任务配置保持原值。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            configs = os.path.join(tmp, "configs")
+            self._write_configs(
+                configs,
+                {
+                    "DailyTask.json": {
+                        "体力本": "技能提升",
+                        "刷本序列": ["干员经验", "技能提升"],
+                        "使用独立配置": True,
+                        "目标券数": ["73100"],
+                        "地区切换": "四号谷地",
+                    },
+                    "BattleTask.json": {"体力本": "干员经验"},
+                    "DeliveryTask.json": {"目标券数": ["119000"], "地区切换": "武陵城"},
+                },
+            )
+            self._run(configs, DAILY_SPLIT_IMPORTS)
+
+            daily_battle = self._read_config(configs, "DailyBattleTask.json")
+            daily_delivery = self._read_config(configs, "DailyDeliveryTask.json")
+            self.assertEqual(daily_battle["体力本"], "技能提升")
+            self.assertEqual(daily_battle["刷本序列"], ["干员经验", "技能提升"])
+            self.assertTrue(daily_battle["使用独立配置"])
+            self.assertEqual(daily_delivery["目标券数"], ["73100"])
+            self.assertEqual(daily_delivery["地区切换"], "四号谷地")
+            self.assertEqual(self._read_config(configs, "BattleTask.json")["体力本"], "干员经验")
+            standalone_delivery = self._read_config(configs, "DeliveryTask.json")
+            self.assertEqual(standalone_delivery["目标券数"], ["119000"])
+            self.assertEqual(standalone_delivery["地区切换"], "武陵城")
+
+    def test_v3_uses_v2_backup_after_old_daily_keys_were_removed(self):
+        """已运行 phase2 的用户仍能从备份恢复日常刷体力和送货参数。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            configs = os.path.join(tmp, "configs")
+            backup_dir = os.path.join(configs, "daily_split_migration_backup", "daily_split_v2")
+            self._write_configs(
+                configs,
+                {
+                    "DailyTask.json": {"⭐刷体力": True, "⭐自动送货": True},
+                    "_daily_split_migrations.json": {
+                        "completed_batches": ["daily_split_pilot_v1", "daily_split_v2"]
+                    },
+                },
+            )
+            self._write_configs(
+                backup_dir,
+                {"DailyTask.json": {"体力本": "干员进阶", "目标券数": ["79800"]}},
+            )
+            self._run(configs, DAILY_SPLIT_IMPORTS)
+
+            self.assertEqual(self._read_config(configs, "DailyBattleTask.json")["体力本"], "干员进阶")
+            self.assertEqual(self._read_config(configs, "DailyDeliveryTask.json")["目标券数"], ["79800"])
+
+    def test_v3_restores_account_overrides_from_v2_backup(self):
+        """旧日常账号段被清理后，日常专属配置仍可按原账号恢复。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            configs = os.path.join(tmp, "configs")
+            backup_dir = os.path.join(configs, "daily_split_migration_backup", "daily_split_v2")
+            self._write_configs(
+                configs,
+                {
+                    "_daily_split_migrations.json": {
+                        "completed_batches": ["daily_split_pilot_v1", "daily_split_v2"]
+                    },
+                    "account_scoped_overrides.json": {
+                        "account_registry": {"acc_test": {"username": "玩家A", "aliases": ["玩家A"]}},
+                        "accounts": {"acc_test": {"DailyTask": {"⭐刷体力": True}}},
+                    },
+                },
+            )
+            self._write_configs(
+                backup_dir,
+                {
+                    "account_scoped_overrides.json": {
+                        "accounts": {
+                            "acc_test": {"DailyTask": {"体力本": "干员进阶"}},
+                            "玩家A": {
+                                "DailyTask": {
+                                    "体力本": "技能提升",
+                                    "目标券数": ["73100"],
+                                    "⭐地区建设": True,
+                                    "⭐据点兑换": True,
+                                }
+                            }
+                        }
+                    }
+                },
+            )
+            self._run(configs, DAILY_SPLIT_IMPORTS)
+
+            store = self._read_config(configs, "account_scoped_overrides.json")
+            tasks = store["accounts"]["acc_test"]
+            self.assertEqual(tasks["DailyBattleTask"]["体力本"], "干员进阶")
+            self.assertEqual(tasks["DailyDeliveryTask"]["目标券数"], ["73100"])
+            self.assertEqual(tasks["RegionalBuildTask"]["⭐地区建设"], ["据点兑换"])
+
+    def test_v3_skips_backup_alias_shared_by_two_accounts(self):
+        """共用别名无法确定归属，不能把旧参数恢复到任一账号。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            configs = os.path.join(tmp, "configs")
+            backup_dir = os.path.join(configs, "daily_split_migration_backup", "daily_split_v2")
+            self._write_configs(
+                configs,
+                {
+                    "_daily_split_migrations.json": {
+                        "completed_batches": ["daily_split_pilot_v1", "daily_split_v2"]
+                    },
+                    "account_scoped_overrides.json": {
+                        "account_registry": {
+                            "acc_a": {"username": "玩家A", "aliases": ["玩家A", "shared"]},
+                            "acc_b": {"username": "shared", "aliases": ["shared", "玩家B"]},
+                        }
+                    },
+                },
+            )
+            self._write_configs(
+                backup_dir,
+                {
+                    "account_scoped_overrides.json": {
+                        "accounts": {
+                            "shared": {"DailyTask": {"目标券数": ["73100"]}},
+                            "玩家A": {"DailyTask": {"体力本": "技能提升"}},
+                            "acc_b": {"DailyTask": {"地区切换": "四号谷地"}},
+                        }
+                    }
+                },
+            )
+            self._run(configs, DAILY_SPLIT_IMPORTS)
+
+            accounts = self._read_config(configs, "account_scoped_overrides.json")["accounts"]
+            self.assertEqual(accounts["acc_a"]["DailyBattleTask"]["体力本"], "技能提升")
+            self.assertNotIn("目标券数", accounts["acc_a"].get("DailyDeliveryTask", {}))
+            self.assertEqual(accounts["acc_b"]["DailyDeliveryTask"]["地区切换"], "四号谷地")
+            self.assertNotIn("目标券数", accounts["acc_b"]["DailyDeliveryTask"])
+
+    def test_legacy_account_overrides_convert_to_lists(self):
+        """旧布尔覆盖转换为列表，同时保留目标段已有的有效列表。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            configs = os.path.join(tmp, "configs")
+            self._write_configs(
+                configs,
+                {
+                    "DailyTask.json": {"⭐帝江号收菜": True, "⭐活动奖励": True},
+                    "account_scoped_overrides.json": {
+                        "accounts": {
+                            "acct-1": {
+                                "DailyTask": {
+                                    "⭐帝江号收菜": True,
+                                    "帝江号收菜操作": ["收集线索"],
+                                    "⭐活动奖励": False,
+                                    "⭐据点兑换": True,
+                                    "⭐买物资": False,
+                                    "⭐买卖货": True,
+                                },
+                                "ActivityRewardTask": {"⭐活动奖励": ["周常奖励"]},
+                            }
+                        }
+                    },
+                },
+            )
+            self._run(configs, DAILY_SPLIT_IMPORTS)
+
+            store = self._read_config(configs, "account_scoped_overrides.json")
+            tasks = next(iter(store["accounts"].values()))
+            self.assertEqual(tasks["BoatHarvestTask"]["⭐帝江号收菜"], ["收集线索"])
+            self.assertEqual(tasks["RegionalBuildTask"]["⭐地区建设"], ["据点兑换", "买卖货"])
+            self.assertEqual(tasks["ActivityRewardTask"]["⭐活动奖励"], ["周常奖励"])
 
     def test_maybe_run_only_once_per_process(self):
         """maybe_run_pending_config_imports 进程内只真正执行一次。
