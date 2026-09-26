@@ -1804,7 +1804,9 @@
         "bonus_pct": 110.8,
         "non_crit": 33566.0,
         "crit_expect": 34405.2,
-        "conditional_rows": []
+        "conditional_rows": [
+          "消耗每层附着 / 额外伤害倍率: 240%（按消耗层数，A 层不计）"
+        ]
       },
       {
         "skill_id": "last_rite_ultimate",
@@ -3238,7 +3240,9 @@
         "bonus_pct": 0,
         "non_crit": 23739.1,
         "crit_expect": 26647.1,
-        "conditional_rows": []
+        "conditional_rows": [
+          "消耗每层附着 / 额外伤害倍率: 180%（按消耗层数，A 层不计）"
+        ]
       },
       {
         "skill_id": "rossi_ultimate",
@@ -3335,7 +3339,9 @@
         "bonus_pct": 44.8,
         "non_crit": 21146.1,
         "crit_expect": 25692.5,
-        "conditional_rows": []
+        "conditional_rows": [
+          "消耗每层附着 / 额外伤害倍率: 200%（按消耗层数，A 层不计）"
+        ]
       },
       {
         "skill_id": "yvonne_link",
@@ -3445,7 +3451,9 @@
         "non_crit": 5949.1,
         "crit_expect": 6097.9,
         "conditional_rows": [
-          "终结技期间 / 雷击伤害倍率: 81%"
+          "消耗每级导电 / 额外伤害倍率: 9%（按消耗层数，A 层不计）",
+          "终结技期间 / 雷击伤害倍率: 81%",
+          "终结技期间 / 消耗每级导电 / 额外伤害倍率: 18%（按消耗层数，A 层不计）"
         ],
         "full_multiplier_pct": 360.0,
         "full_non_crit": 47593.0,
