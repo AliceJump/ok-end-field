@@ -12,6 +12,7 @@ from src.tasks.account.account_mixin import AccountMixin
 from src.tasks.daily.daily_battle_mixin import DailyBattleFeature
 from src.tasks.daily.daily_buy_mixin import DailyBuyFeature
 from src.tasks.daily.daily_demo_mixin import DailyDemoFeature
+from src.tasks.daily.daily_feature import DailyFeature
 from src.tasks.daily.daily_liaison_mixin import DailyLiaisonFeature
 from src.tasks.daily.daily_regional_runner import DailyRegionalRunner
 from src.tasks.daily.daily_routine_mixin import DailyRoutineFeature
@@ -28,7 +29,9 @@ from src.tasks.mixin.liaison_mixin import LiaisonMixin
 from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.mouse_scan_mixin import MouseScanMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.onetime.CreditCollectTask import CreditCollectTask
 from src.tasks.onetime.DeliveryTask import DeliveryFeature
+from src.tasks.onetime.MailTask import MailTask
 
 
 class DailyTask(
@@ -108,6 +111,12 @@ class DailyTask(
         self.daily_demo = DailyDemoFeature(self)
         self.daily_regional = DailyRegionalRunner(self)
         self.delivery = DeliveryFeature(self)
+        # 已拆分为独立任务类的子任务：经 DailyFeature 包装接入，复用注册实例
+        # 的配置与业务逻辑（日常不继承子任务，详见 src/tasks/daily/daily_feature.py）
+        self.mail_feature = DailyFeature(self, MailTask, switch_key="⭐收邮件", run_method="run_mail")
+        self.credit_feature = DailyFeature(
+            self, CreditCollectTask, switch_key="⭐收信用", run_method="run_credit_collect"
+        )
 
         self.config_description.update(
             {
@@ -175,12 +184,12 @@ class DailyTask(
                 lambda: self.config.get("⭐帝江号一键存放", False) or self.config.get("⭐简易制作", False),
             ),
             ("⭐帝江号收菜", self.daily_routine.boat_claim_rewards),
-            ("⭐收邮件", self.daily_routine.claim_mail),
+            self.mail_feature.plan_item(),
             ("⭐转交运送委托", self.daily_routine.delivery_send_others),
             ("⭐自动送货", self.delivery.run_daily),
             ("⭐地区建设", self.daily_regional.run),
             ("⭐造装备", self.daily_routine.make_weapon),
-            ("⭐收信用", self.daily_routine.collect_credit),
+            self.credit_feature.plan_item(),
             ("⭐买信用商店", self.daily_shop.credit_shop),
             ("⭐刷体力", self.daily_battle.battle),
             ("⭐活动奖励", self.daily_routine.claim_activity_rewards),

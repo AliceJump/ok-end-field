@@ -2750,3 +2750,18 @@ msgstr "No"
 
 msgid "参数预览"
 msgstr "Vista previa de parámetros"
+
+msgid "收邮件"
+msgstr "Recoger Correo"
+
+msgid "前往「邮箱」领取全部邮件附件。"
+msgstr "Ir al buzón y recoger todos los adjuntos del correo."
+
+msgid "收信用"
+msgstr "Recoger Crédito"
+
+msgid "前往好友的「帝江号」进行交流与助力，并前往「采购中心/信用交易所」收取信用。"
+msgstr "Visitar el Dijiang de un amigo para intercambiar y ayudar, y recoger el crédito en la Tienda de crédito."
+
+msgid "未找到 {task_class} 的已注册实例，{switch_key} 记为失败"
+msgstr "No se encontró una instancia registrada de {task_class}; {switch_key} se marca como fallida"

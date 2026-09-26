@@ -2520,3 +2520,18 @@ msgstr "关"
 
 msgid "参数预览"
 msgstr "参数预览"
+
+msgid "收邮件"
+msgstr "收邮件"
+
+msgid "前往「邮箱」领取全部邮件附件。"
+msgstr "前往「邮箱」领取全部邮件附件。"
+
+msgid "收信用"
+msgstr "收信用"
+
+msgid "前往好友的「帝江号」进行交流与助力，并前往「采购中心/信用交易所」收取信用。"
+msgstr "前往好友的「帝江号」进行交流与助力，并前往「采购中心/信用交易所」收取信用。"
+
+msgid "未找到 {task_class} 的已注册实例，{switch_key} 记为失败"
+msgstr "未找到 {task_class} 的已注册实例，{switch_key} 记为失败"
