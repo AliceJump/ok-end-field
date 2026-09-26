@@ -39,4 +39,4 @@ class CreditCollectTask(Common, DailyCreditMixin):
 
     def run_credit_collect(self):
         """收信用流程，独立运行与被日常执行（DailyFeature）共用。"""
-        self.collect_credit()
+        return self.collect_credit()

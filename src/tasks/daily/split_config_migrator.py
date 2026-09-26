@@ -39,8 +39,6 @@ _LOCK = threading.Lock()
 # 进程内一次性标记：状态文件读写有 IO 成本，本进程内只检查一次
 _PROCESS_DONE = False
 
-# 来源任务名：拆分前所有日常参数都存放在 DailyTask 的配置与账号覆盖段下
-_SOURCE_TASK_NAME = "DailyTask"
 _STATE_FILE_NAME = "_daily_split_migrations.json"
 _BACKUP_DIR_NAME = "daily_split_migration_backup"
 # 账号覆盖存储文件名（与 account_scope_store.get_store_path 保持一致）
@@ -146,7 +144,7 @@ def _import_task_config(target_name: str, key_map: dict[str, Any], source_config
     return modified
 
 
-def _import_account_overrides(target_name: str, key_map: dict[str, Any]) -> None:
+def _import_account_overrides(target_name: str, source_name: str, key_map: dict[str, Any]) -> None:
     """把账号覆盖存储中来源任务段的参数键复制到目标类名段（旧键保留）。
 
     callable 条目面向来源任务配置文件做值转换，覆盖段里按
@@ -161,7 +159,7 @@ def _import_account_overrides(target_name: str, key_map: dict[str, Any]) -> None
         for account_tasks in accounts.values():
             if not isinstance(account_tasks, dict):
                 continue
-            source_segment = account_tasks.get(_SOURCE_TASK_NAME, {})
+            source_segment = account_tasks.get(source_name, {})
             if not isinstance(source_segment, dict):
                 continue
             target_segment = account_tasks.setdefault(target_name, {})
@@ -190,9 +188,8 @@ def _run_batch(batch_id: str, batch: dict[str, dict[str, dict[str, Any]]], state
             if not isinstance(source_config, dict):
                 source_config = {}
             _import_task_config(target_name, key_map, source_config)
-        # 账号覆盖段迁移与任务配置迁移共用同一份键映射
-        for _source_name, key_map in source_map.items():
-            _import_account_overrides(target_name, key_map)
+            # 账号覆盖段迁移与任务配置迁移共用同一份键映射
+            _import_account_overrides(target_name, source_name, key_map)
     state.setdefault("completed_batches", []).append(batch_id)
     _write_state(state)
 

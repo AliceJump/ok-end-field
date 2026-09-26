@@ -25,4 +25,4 @@ class MailTask(Common, DailyLogisticsMixin):
 
     def run_mail(self):
         """收邮件流程，独立运行与被日常执行（DailyFeature）共用。"""
-        self.claim_mail()
+        return self.claim_mail()
