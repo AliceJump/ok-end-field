@@ -558,12 +558,28 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         if self.CFG_FULL_CYCLE_LOCATION in self.config:
             if self.config.get(self.CFG_FULL_CYCLE_LOCATION) not in self.full_cycle_locations:
                 self.config[self.CFG_FULL_CYCLE_LOCATION] = self.full_cycle_locations[0]
-        # 日常模式（DeliveryFeature）未注册这两个配置项，仅独立任务模式同步下拉选项
+        # 独立任务与日常模式（DailyTask 经 DailyFeature 调 run_daily）共用同一份
+        # 本任务配置，两处下拉选项保持同步
         if self.CFG_FULL_CYCLE_LOCATION in self.config_type and self.CFG_TEST_TARGET in self.config_type:
             self.config_type[self.CFG_TEST_TARGET]["options"] = (
                 [self.TEST_NONE] + self.to_delivery_point_config_keys + self.ends + [self.TEST_FULL_CYCLE]
             )
             self.config_type[self.CFG_FULL_CYCLE_LOCATION]["options"] = self.full_cycle_locations
+
+    def run_daily(self):
+        """执行一轮日常自动送货，由 DailyTask 负责多账号循环。
+
+        日常任务经 DailyFeature 包装调用本方法（复用本任务实例的配置），
+        与独立运行共用 _run_single_delivery_cycle 流程。
+        """
+        self._ensure_delivery_area_config()
+
+        self._daily_delivery_mode = True
+        try:
+            self._run_single_delivery_cycle()
+            return True
+        finally:
+            self._daily_delivery_mode = False
 
     def run(self):
         """运输委托任务的主入口，支持与日常任务一致的多账号执行逻辑。"""
@@ -584,59 +600,3 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
 
         except Exception as e:
             self.handle_task_exception(e, "DeliveryTask_Exception")
-
-
-class DeliveryFeature(DeliveryTask):
-    """日常任务使用的自动送货功能。"""
-
-    DAILY_ENABLE_KEY = "⭐自动送货"
-
-    def __init__(self, task):
-        self._task = task
-        self._daily_delivery_mode = False
-        self._accepted_delivery_location = None
-        self._last_refresh_ts = 0
-        self.try_time = 0
-        self._configure_delivery_area(DEFAULT_DELIVERY_AREA)
-
-        task.default_config.update(
-            {
-                self.DAILY_ENABLE_KEY: False,
-                self.CFG_TARGET_TICKET_NUM: ["119000"],
-                self.CFG_DELIVERY_AREA: DEFAULT_DELIVERY_AREA,
-            }
-        )
-        task.config_description.update(
-            {
-                self.DAILY_ENABLE_KEY: "是否执行自动接取并完成运输委托。",
-                self.CFG_TARGET_TICKET_NUM: ("目标券数优先级序列，用逗号分隔多个券数。"),
-                self.CFG_DELIVERY_AREA: "通过下拉框切换送货地区配置。",
-            }
-        )
-        task.config_type[self.CFG_DELIVERY_AREA] = {
-            "type": "drop_down",
-            "options": list(DELIVERY_AREA_CONFIG.keys()),
-        }
-        task.config_type[self.CFG_TARGET_TICKET_NUM] = {
-            "options_available": DELIVERY_TARGET_TICKET_NUM_OPTIONS,
-            "allow_duplication": False,
-        }
-        task.default_config_group.update(
-            {
-                self.DAILY_ENABLE_KEY: [self.CFG_TARGET_TICKET_NUM, self.CFG_DELIVERY_AREA],
-            }
-        )
-
-    def __getattr__(self, name):
-        return getattr(self._task, name)
-
-    def run_daily(self):
-        """执行一轮日常自动送货，由 DailyTask 负责多账号循环。"""
-        self._ensure_delivery_area_config()
-
-        self._daily_delivery_mode = True
-        try:
-            self._run_single_delivery_cycle()
-            return True
-        finally:
-            self._daily_delivery_mode = False

@@ -86,6 +86,20 @@ class TestDailyFeatureRun(unittest.TestCase):
         feature = DailyFeature(host, MailTask, switch_key="⭐收邮件", run_method=run_method)
         return feature, impl, captured, host
 
+    def test_impl_config_reads_registered_impl(self):
+        """impl_config 读已注册实例的配置；实例缺失回落 default。"""
+        impl = _make_impl()
+        impl.config = {"⭐帝江号一键存放": True}
+        host = _FakeHost([impl])
+        feature = DailyFeature(host, MailTask, switch_key="⭐收邮件")
+        self.assertTrue(feature.impl_config("⭐帝江号一键存放"))
+        self.assertFalse(feature.impl_config("⭐简易制作", False))
+
+        missing_host = _FakeHost([])
+        missing_feature = DailyFeature(missing_host, MailTask, switch_key="⭐收邮件")
+        self.assertIsNone(missing_feature.impl_config("⭐简易制作"))
+        self.assertFalse(missing_feature.impl_config("⭐简易制作", False))
+
     def test_run_resolves_impl_and_injects_context(self):
         feature, _, captured, _host = self._feature_and_impl(account_id="acc_x", account_name="0705", boat_state=True)
         self.assertEqual(feature.run(), "done")

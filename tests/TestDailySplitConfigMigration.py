@@ -129,10 +129,10 @@ class TestDailySplitConfigMigration(unittest.TestCase):
             self.assertEqual(source_segments[0]["DailyTask"]["⭐收信用"], True)
 
     def test_callable_entry_transforms_value(self):
-        """callable 条目基于来源配置计算值，返回 _NO_MIGRATION 时跳过。"""
+        """callable 条目基于来源与目标配置计算值，返回 _NO_MIGRATION 时跳过。"""
         from src.core.config_migration import _NO_MIGRATION
 
-        def transform(source_config):
+        def transform(source_config, target_config, target_key):
             if not source_config.get("旧开关"):
                 return _NO_MIGRATION
             return ["选项A"]

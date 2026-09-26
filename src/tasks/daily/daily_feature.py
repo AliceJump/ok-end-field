@@ -69,6 +69,17 @@ class DailyFeature:
                 return task
         return None
 
+    def impl_config(self, key, default=None):
+        """读取已注册子任务实例的配置值；实例缺失时返回 default。
+
+        供任务清单的开关谓词使用：参数迁到子任务卡片后，宿主侧的
+        开关判定（如多选列表非空即启用、多开关 OR）改读子任务配置。
+        """
+        impl = self._resolve_impl()
+        if impl is None:
+            return default
+        return impl.config.get(key, default)
+
     def run(self):
         """在子任务实例上执行业务流程，前后注入/恢复宿主的账号上下文。"""
         impl = self._resolve_impl()

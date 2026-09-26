@@ -14,13 +14,15 @@ default_config 的键，而 DailyTask 在注册列表第一位、最先加载—
 - 完成状态记录在 ``_daily_split_migrations.json``，按批次累积；
 - 首次执行某批次前，把涉及的来源配置文件与账号覆盖存储备份到
   ``daily_split_migration_backup/<批次>/``（回滚安全）；
-- 账号覆盖（``account_scoped_overrides.json``）同批迁移：来源任务段的
-  参数键复制到目标类名段（旧键保留）。
+- 账号覆盖（``account_scoped_overrides.json``）同批迁移：来源任务段
+  的参数键复制到目标类名段（旧键保留）。
 
 键映射条目两种形态（dict 键 = 目标键名）：
-- ``{"新键": "旧键"}``            —— 纯值复制；
-- ``{"新键": callable}``          —— 转换函数 ``fn(source_config) -> value``，
-  返回 ``_NO_MIGRATION`` 表示跳过（用于兼容旧布尔键等旧格式）。
+- ``{"新键": "旧键"}``            —— 纯值复制（setdefault：目标已有该键则跳过）；
+- ``{"新键": callable}``          —— 转换函数
+  ``fn(source_config, target_config, target_key) -> value``，
+  返回 ``_NO_MIGRATION`` 表示跳过；返回值与目标现值不同时写入（用于
+  兼容旧布尔键等旧格式，或「目标值仍为默认时用来源值填充」）。
 
 路径一律经 ``src.core.paths.config_path`` 惰性求值，不在模块级固化。
 """
@@ -34,15 +36,88 @@ from typing import Any
 
 from src.core.config_migration import _NO_MIGRATION
 from src.core.paths import config_path
-
-_LOCK = threading.Lock()
-# 进程内一次性标记：状态文件读写有 IO 成本，本进程内只检查一次
-_PROCESS_DONE = False
+from src.data.delivery_area import DEFAULT_DELIVERY_AREA
+from src.data.world_map import areas_list
+from src.tasks.onetime.ActivityRewardTask import ActivityRewardTask
+from src.tasks.onetime.BoatHarvestTask import BoatHarvestTask
 
 _STATE_FILE_NAME = "_daily_split_migrations.json"
 _BACKUP_DIR_NAME = "daily_split_migration_backup"
 # 账号覆盖存储文件名（与 account_scope_store.get_store_path 保持一致）
 _ACCOUNT_OVERRIDE_STORE = "account_scoped_overrides"
+# 类常量：收菜阶段 / 活动奖励选项（随类定义，导入类后取属性）
+BOAT_STAGES = BoatHarvestTask.BOAT_STAGES
+ACTIVITY_REWARDS = ActivityRewardTask.ACTIVITY_REWARDS
+
+_LOCK = threading.Lock()
+# 进程内一次性标记：状态文件读写有 IO 成本，本进程内只检查一次
+_PROCESS_DONE = False
+
+
+def fill_if_target_default(source_key: str, default_value: Any):
+    """callable 工厂：来源值存在且非默认、目标缺失或仍为默认值时写入来源值。
+
+    用于「目标任务本就声明同名参数」的场景（如 DeliveryTask 的目标券数）：
+    目标已被用户自定义时不覆盖；目标仍是默认值时用日常卡片上的旧值填充。
+    """
+
+    def transform(source_config: dict, target_config: dict, target_key: str):
+        source_value = source_config.get(source_key)
+        if source_value is None or source_value == default_value:
+            return _NO_MIGRATION
+        if target_config.get(target_key, default_value) != default_value:
+            return _NO_MIGRATION
+        return source_value
+
+    return transform
+
+
+def _area_trade_key_map() -> dict[str, str]:
+    """按地区生成买卖货键（{area} / {area}买入价 / {area}卖出价）的等名映射。"""
+    key_map: dict[str, str] = {}
+    for area in areas_list:
+        key_map[area] = area
+        key_map[f"{area}买入价"] = f"{area}买入价"
+        key_map[f"{area}卖出价"] = f"{area}卖出价"
+    return key_map
+
+
+def _import_boat_stages(source_config: dict, target_config: dict, target_key: str):
+    """⭐帝江号收菜：新列表值直接搬；旧「布尔开关 + 操作列表」转换为列表。"""
+    value = source_config.get(target_key)
+    if isinstance(value, list):
+        return value
+    if value is True:
+        ops = source_config.get("帝江号收菜操作")
+        return list(ops) if isinstance(ops, list) else list(BOAT_STAGES)
+    if value is False:
+        return []
+    return _NO_MIGRATION
+
+
+def _import_activity_rewards(source_config: dict, target_config: dict, target_key: str):
+    """⭐活动奖励：新列表值直接搬；旧「布尔开关 + 操作列表」转换为列表。"""
+    value = source_config.get(target_key)
+    if isinstance(value, list):
+        return value
+    if value is True:
+        ops = source_config.get("活动奖励")
+        return list(ops) if isinstance(ops, list) else list(ACTIVITY_REWARDS)
+    if value is False:
+        return []
+    return _NO_MIGRATION
+
+
+def _import_region_options(source_config: dict, target_config: dict, target_key: str):
+    """⭐地区建设：新列表值直接搬；旧三个布尔开关合并为选项列表。"""
+    value = source_config.get(target_key)
+    if isinstance(value, list):
+        return value
+    option_keys = {"据点兑换": "⭐据点兑换", "买物资": "⭐买物资", "买卖货": "⭐买卖货"}
+    if not any(key in source_config for key in option_keys.values()):
+        return _NO_MIGRATION
+    return [name for name, key in option_keys.items() if source_config.get(key)]
+
 
 # 批次声明。键值映射的 dict 键 = 目标键名；值为来源键名（str）或转换函数（callable）。
 # 新批次往后追加即可，已完成批次受状态文件标记保护不会重复执行。
@@ -51,6 +126,55 @@ DAILY_SPLIT_IMPORTS: dict[str, dict[str, dict[str, dict[str, Any]]]] = {
         "CreditCollectTask": {
             "DailyTask": {
                 "尝试仅收培育室": "尝试仅收培育室",
+            },
+        },
+    },
+    "daily_split_v2": {
+        "LiaisonGiftTask": {
+            "DailyTask": {
+                "一次送礼个数": "一次送礼个数",
+                "送礼任务最多尝试次数": "送礼任务最多尝试次数",
+                "优先送礼对象": "优先送礼对象",
+            },
+        },
+        "BoatOrganizeTask": {
+            "DailyTask": {
+                "⭐帝江号一键存放": "⭐帝江号一键存放",
+                "⭐简易制作": "⭐简易制作",
+            },
+        },
+        "BoatHarvestTask": {
+            "DailyTask": {
+                "⭐帝江号收菜": _import_boat_stages,
+            },
+        },
+        "RegionalBuildTask": {
+            "DailyTask": {
+                "⭐地区建设": _import_region_options,
+                "交易货品优先序列": "交易货品优先序列",
+                "据点兑换仅购买优先商品": "据点兑换仅购买优先商品",
+                "只买不卖": "只买不卖",
+                "购物白名单": "购物白名单",
+                "是否买礼物": "是否买礼物",
+                **_area_trade_key_map(),
+            },
+        },
+        "CreditShopTask": {
+            "DailyTask": {
+                "信用商店保留信用": "信用商店保留信用",
+            },
+        },
+        "ActivityRewardTask": {
+            "DailyTask": {
+                "⭐活动奖励": _import_activity_rewards,
+            },
+        },
+        # DeliveryTask 自身声明同名参数（独立运行早已存在）：
+        # 目标仍是默认值时用日常卡片上的旧值填充，目标已有自定义值则不动。
+        "DeliveryTask": {
+            "DailyTask": {
+                "目标券数": fill_if_target_default("目标券数", ["119000"]),
+                "地区切换": fill_if_target_default("地区切换", DEFAULT_DELIVERY_AREA),
             },
         },
     },
@@ -107,17 +231,20 @@ def _backup_source_configs(batch_id: str, batch: dict[str, dict[str, dict[str, A
     state[backup_marker] = True
 
 
-def _resolve_entry_value(entry: Any, source_config: dict) -> Any:
+def _resolve_entry_value(entry: Any, source_config: dict, target_config: dict, target_key: str) -> Any:
     """解析单条映射的来源值。返回 _NO_MIGRATION 表示本条跳过。"""
     if callable(entry):
-        return entry(source_config)
+        return entry(source_config, target_config, target_key)
     if entry not in source_config:
         return _NO_MIGRATION
     return source_config[entry]
 
 
 def _import_task_config(target_name: str, key_map: dict[str, Any], source_config: dict) -> bool:
-    """把来源任务配置中的键值按映射导入目标任务配置（setdefault 语义）。
+    """把来源任务配置中的键值按映射导入目标任务配置。
+
+    str 条目 setdefault（目标已有则跳过）；callable 条目总是求值，
+    返回值与目标现值不同且非 _NO_MIGRATION 时写入。
 
     Returns:
         目标文件是否有改动。
@@ -131,10 +258,12 @@ def _import_task_config(target_name: str, key_map: dict[str, Any], source_config
 
     modified = False
     for target_key, entry in key_map.items():
-        if target_key in target_config:
+        if not callable(entry) and target_key in target_config:
             continue
-        value = _resolve_entry_value(entry, source_config)
+        value = _resolve_entry_value(entry, source_config, target_config, target_key)
         if value is _NO_MIGRATION:
+            continue
+        if target_key in target_config and target_config[target_key] == value:
             continue
         target_config[target_key] = value
         modified = True
