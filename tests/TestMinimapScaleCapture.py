@@ -17,7 +17,7 @@ from ok.test.TaskTestCase import TaskTestCase
 from src.config import config
 from src.runtime_state.state_hub import RuntimeStateHub
 from src.runtime_state.topics import RuntimeTopic
-from src.tasks.navigation.MinimapScaleCapture import (
+from src.tasks.localization.MinimapScaleCapture import (
     CONFIG_INTERVAL,
     CONFIG_REST_TICKS,
     CONFIG_SAMPLES,

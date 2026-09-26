@@ -14,7 +14,7 @@ import unittest
 import cv2
 import numpy as np
 
-from src.tasks.navigation.mixin.minimap_odometry import (
+from src.localization.minimap_odometry import (
     MinimapOdometry,
     angle_delta,
     annulus_mask,

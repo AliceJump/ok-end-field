@@ -12,10 +12,9 @@ class TestRuntimeStateArchitecture(unittest.TestCase):
         self.assertTrue((root / "runtime_state" / "__init__.py").is_file())
         self.assertFalse((root / "runtime" / "__init__.py").exists())
 
-    def test_navigation_tasks_live_in_the_navigation_domain_package(self):
+    def test_localization_tasks_live_in_the_localization_domain_package(self):
         root = Path(__file__).parents[1] / "src" / "tasks"
         names = (
-            "MinimapNavigateToPoint.py",
             "MinimapPositionTask.py",
             "MinimapRealtimePosition.py",
             "MinimapRegionCheck.py",
@@ -24,7 +23,8 @@ class TestRuntimeStateArchitecture(unittest.TestCase):
         )
 
         for name in names:
-            self.assertTrue((root / "navigation" / name).is_file())
+            self.assertTrue((root / "localization" / name).is_file())
+            self.assertFalse((root / "navigation" / name).exists())
             self.assertFalse((root / "test" / name).exists())
             self.assertFalse((root / "trigger" / name).exists())
 
@@ -33,18 +33,21 @@ class TestRuntimeStateArchitecture(unittest.TestCase):
         names = (
             "grid_navigation_mixin.py",
             "map_mixin.py",
-            "minimap_heading_mixin.py",
-            "minimap_odometry.py",
-            "minimap_position_fusion.py",
-            "minimap_position_mixin.py",
             "navigation_mixin.py",
-            "ws_position_mixin.py",
             "zip_line_mixin.py",
         )
 
         for name in names:
             self.assertTrue((root / "navigation" / "mixin" / name).is_file())
             self.assertFalse((root / "mixin" / name).exists())
+
+    def test_navigation_depends_on_pose_interface_not_localization_impl(self):
+        root = Path(__file__).parents[1] / "src"
+        navigation_root = root / "tasks" / "navigation"
+        for path in navigation_root.rglob("*.py"):
+            source = path.read_text(encoding="utf-8")
+            self.assertNotIn("src.localization", source, str(path))
+            self.assertNotIn("MinimapHeadingMixin", source, str(path))
 
     def test_business_modules_do_not_call_owner_sampling_method(self):
         root = Path(__file__).parents[1] / "src" / "tasks"

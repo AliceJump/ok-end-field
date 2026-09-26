@@ -8,7 +8,7 @@ import numpy as np
 from ok.test.TaskTestCase import TaskTestCase
 
 from src.config import config
-from src.tasks.navigation.MinimapRegionCheck import MinimapRegionCheck
+from src.tasks.localization.MinimapRegionCheck import MinimapRegionCheck
 
 
 class TestMinimapRegionCheckTask(TaskTestCase):

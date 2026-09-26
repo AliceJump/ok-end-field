@@ -12,7 +12,7 @@
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
-from src.tasks.navigation.mixin.minimap_heading_mixin import (
+from src.localization.minimap_heading_mixin import (
     CONFIG_ANGLE_REFRESH,
     CONFIG_MIN_SCORE,
     CONFIG_MOUSE_CHUNK,

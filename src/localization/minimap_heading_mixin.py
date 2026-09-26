@@ -31,7 +31,7 @@
 
 from __future__ import annotations
 
-from src.tasks.navigation.mixin.minimap_odometry import angle_delta, arrow_angle_to_bearing
+from src.localization.minimap_odometry import angle_delta, arrow_angle_to_bearing
 
 __all__ = [
     "CONFIG_ANGLE_REFRESH",
@@ -168,6 +168,21 @@ class MinimapHeadingMixin:
     def yaw_per_pixel(self) -> float:
         """当前旋转系数（度/像素，正数=鼠标右移方位角增大）。"""
         return self._cfg_float(CONFIG_YAW_PER_PIXEL, DEFAULT_YAW_PER_PIXEL)
+
+    def heading_min_score(self) -> float:
+        """返回当前配置的朝向最低置信度。"""
+
+        return self._cfg_float(CONFIG_MIN_SCORE, DEFAULT_MIN_SCORE)
+
+    def can_turn(self) -> bool:
+        """返回当前是否允许转动视角。"""
+
+        return self._can_turn()
+
+    def send_rotation(self, dx: int) -> None:
+        """发送转视角位移。"""
+
+        self._send_rotation(int(dx))
 
     def last_turn_result(self) -> dict | None:
         """最近一次 :meth:`turn_to_bearing` 的结果（没转过为 None）。"""

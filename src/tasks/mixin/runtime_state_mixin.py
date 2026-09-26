@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
+from src.runtime_state.pose_provider import PoseProvider
 from src.runtime_state.state_hub import RuntimeStateHub, StateSnapshot, get_runtime_state_hub
 from src.runtime_state.topics import RuntimeTopic
 
@@ -116,7 +117,7 @@ class RuntimeStateMixin:
             return override
         getter = getattr(self, "get_task_by_class", None)
         if callable(getter):
-            from src.tasks.navigation.MinimapPositionTask import MinimapPositionTask
+            from src.tasks.localization.MinimapPositionTask import MinimapPositionTask
 
             self._runtime_position_service = getter(MinimapPositionTask)
         return self._runtime_position_service
@@ -142,6 +143,58 @@ class RuntimeStateMixin:
             self.log_warning("小地图定位器未完成初始化，请检查全局「Nav Config」和游戏窗口", notify=True)
             return None
         return service
+
+    def _pose_provider(self) -> PoseProvider | None:
+        """确保定位提供者可用，并返回接口对象。"""
+
+        return self.ensure_runtime_position_service()
+
+    def pose_turn_to_bearing(self, target_deg: float, **kwargs) -> dict[str, Any]:
+        """通过定位接口执行朝向控制。"""
+
+        provider = self._pose_provider()
+        if provider is None:
+            return {"ok": False, "error": "position provider unavailable"}
+        return provider.turn_to_bearing(target_deg, **kwargs)
+
+    def pose_aim_view_to_bearing(self, target_deg: float, **kwargs) -> dict[str, Any]:
+        """通过定位接口调整视角。"""
+
+        provider = self._pose_provider()
+        if provider is None:
+            return {"ok": False, "error": "position provider unavailable"}
+        return provider.aim_view_to_bearing(target_deg, **kwargs)
+
+    def pose_yaw_per_pixel(self) -> float:
+        """通过定位接口读取旋转比例。"""
+
+        provider = self._pose_provider()
+        return 0.0 if provider is None else float(provider.yaw_per_pixel())
+
+    def pose_heading_min_score(self) -> float:
+        """通过定位接口读取朝向最低置信度。"""
+
+        provider = self._pose_provider()
+        return 0.0 if provider is None else float(provider.heading_min_score())
+
+    def pose_can_turn(self) -> bool:
+        """通过定位接口判断当前是否允许转动视角。"""
+
+        provider = self._pose_provider()
+        return False if provider is None else bool(provider.can_turn())
+
+    def pose_send_rotation(self, dx: int) -> None:
+        """通过定位接口发送转视角位移。"""
+
+        provider = self._pose_provider()
+        if provider is not None:
+            provider.send_rotation(int(dx))
+
+    def pose_rest_diag(self) -> dict[str, Any] | None:
+        """通过定位接口读取静止判定诊断。"""
+
+        provider = self._pose_provider()
+        return None if provider is None else provider.minimap_rest_diag()
 
     def refresh_world_pose(
         self,

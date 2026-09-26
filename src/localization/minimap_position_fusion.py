@@ -26,7 +26,7 @@ import math
 
 import numpy as np
 
-from src.tasks.navigation.mixin.minimap_odometry import _reraise_control_flow
+from src.localization.minimap_odometry import _reraise_control_flow
 
 __all__ = ["MinimapPositionFusion"]
 

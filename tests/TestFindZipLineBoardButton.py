@@ -93,7 +93,9 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             {"ok": True, "heading": 90.0, "error": 0.0},
             {"ok": True, "heading": 90.0, "error": 0.0},
         ]
-        stub.aim_view_to_bearing = lambda target, **kwargs: events.append(("aim", target)) or aim_results.pop(0)
+        stub.pose_aim_view_to_bearing = (
+            lambda target, **kwargs: events.append(("aim", target)) or aim_results.pop(0)
+        )
 
         self.assertTrue(DeliveryTask._direct_zip_line_go(stub, 90.0, target_position=(1.0, 2.0)))
 
@@ -114,7 +116,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             _zip_line_ws_position=lambda: (10.0, 10.0),
             _wait_zip_line_motion=lambda **kwargs: False,
         )
-        stub.aim_view_to_bearing = lambda target, **kwargs: {
+        stub.pose_aim_view_to_bearing = lambda target, **kwargs: {
             "ok": True,
             "heading": 90.0,
             "error": 0.0,

@@ -18,11 +18,11 @@ import numpy as np
 
 from src.core.NavConfig import DEFAULT_NAV_CONFIG
 from src.runtime_state.topics import RuntimeTopic
-from src.tasks.navigation.mixin.minimap_position_mixin import (
+from src.localization.minimap_position_mixin import (
     MinimapPositionMixin,
     parse_map_to_world,
 )
-from src.tasks.navigation.mixin.ws_position_mixin import MapAuthError
+from src.localization.ws_position_mixin import MapAuthError
 
 # 640x360：默认圆心/半径比例下环带外径约 28px，3px 的内容位移远小于 max_shift(~10px)
 W, H = 640, 360

@@ -26,8 +26,8 @@ from src.tasks.navigation.mixin.grid_navigation_mixin import (
     CONFIG_GRID_FILE,
     GridNavigationMixin,
 )
-from src.tasks.navigation.mixin.minimap_heading_mixin import CONFIG_MIN_SCORE
-from src.tasks.navigation.mixin.minimap_position_mixin import MinimapPositionMixin
+from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE
+from src.localization.minimap_position_mixin import MinimapPositionMixin
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineReplanRequired
 
 
@@ -155,6 +155,23 @@ class _FakeGridTask(GridNavigationMixin):
         self.heading = float(target_deg)
         return {"ok": True, "heading": self.heading, "error": 0.0}
 
+    def aim_view_to_bearing(self, target_deg, **kwargs):
+        self.heading = float(target_deg)
+        return {"ok": True, "heading": self.heading, "error": 0.0}
+
+    def heading_min_score(self):
+        return float(self.config.get(CONFIG_MIN_SCORE, 0.6))
+
+    def yaw_per_pixel(self):
+        return 0.07125
+
+    def can_turn(self):
+        return True
+
+    def send_rotation(self, dx):
+        self._send_rotation(int(dx))
+
+
     def _send_rotation(self, dx: int):
         self.rotations.append(int(dx))
         self.rotation_w_held.append(self.w_down)
@@ -206,9 +223,15 @@ class TestGridNavigationMixin(unittest.TestCase):
             self.assertNotIn(key, descriptions)
 
     def test_grid_heading_threshold_reads_position_owner_config(self):
-        service = SimpleNamespace(config={CONFIG_MIN_SCORE: 0.77})
+        service = SimpleNamespace(
+            enabled=True,
+            _minimap_started=True,
+            minimap_position_ready=True,
+            heading_min_score=lambda: 0.77,
+        )
+        self.task._runtime_position_service = service
 
-        self.assertAlmostEqual(self.task._grid_heading_min_score(service), 0.77)
+        self.assertAlmostEqual(self.task._grid_heading_min_score(), 0.77)
 
     def test_allow_grid_unknown_defaults_to_false_when_key_is_missing(self):
         self.task.config.pop(CONFIG_GRID_ALLOW_UNKNOWN, None)
@@ -637,7 +660,6 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.task._set_grid_walking(True)
 
         synced = self.task._wait_for_minimap_sync(
-            position_service,
             start_sync_seq=0,
             deadline=self.task.active_time() + 2.0,
             tick=0.2,
@@ -733,7 +755,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             follower,
             PlanResult(ok=True, waypoints=[start, goal]),
         )
-        self.task._wait_for_minimap_sync = lambda service, start_seq, deadline, tick: calls.append(start_seq) or True
+        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: calls.append(start_seq) or True
 
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertEqual(calls, [0])
@@ -760,7 +782,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             PlanResult(ok=True, waypoints=[start, goal]),
         )
         self.task._grid_position_is_known = lambda follower, position: True
-        self.task._wait_for_minimap_sync = lambda service, start_seq, deadline, tick: calls.append(start_seq) or True
+        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: calls.append(start_seq) or True
 
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertEqual(calls, [0])
@@ -769,7 +791,7 @@ class TestGridNavigationMixin(unittest.TestCase):
         calls = []
         self.task.position_trusted = False
 
-        def sync(service, start_seq, deadline, tick):
+        def sync(start_seq, deadline, tick):
             calls.append(start_seq)
             self.task.position_trusted = True
             return True
@@ -805,7 +827,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             PlanResult(ok=True, waypoints=[start, goal]),
         )
         self.task._grid_position_is_known = lambda follower, position: False
-        self.task._wait_for_minimap_sync = lambda service, start_seq, deadline, tick: calls.append(start_seq) or True
+        self.task._wait_for_minimap_sync = lambda start_seq, deadline, tick: calls.append(start_seq) or True
 
         self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
         self.assertEqual(calls, [0])

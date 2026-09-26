@@ -282,7 +282,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
     def _direct_zip_line_go(self, target_bearing, target_position=None):
         """按世界方位直接对准并点击目标，失败时调整俯仰角重试。"""
-        aim = getattr(self, "aim_view_to_bearing", None)
+        aim = getattr(self, "pose_aim_view_to_bearing", None)
         if not callable(aim):
             self.log_warning("当前任务不支持读取小地图朝向，无法直接对准滑索目标")
             return False

@@ -123,10 +123,10 @@ ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask)
 | 6    | `DemoDrawTask`             | `src.tasks.onetime.DemoDrawTask`          |
 | 7    | `YingTuoTask`              | `src.tasks.onetime.YingTuoTask`           |
 | 8    | `TestStartGame`            | `src.tasks.onetime.TestStartGame`         |
-| 9    | `MinimapRealtimePosition`  | `src.tasks.navigation.MinimapRealtimePosition` |
-| 10   | `MinimapRegionCheck`       | `src.tasks.navigation.MinimapRegionCheck` |
-| 11   | `MinimapScaleCapture`      | `src.tasks.navigation.MinimapScaleCapture` |
-| 12   | `MinimapTurnToHeading`     | `src.tasks.navigation.MinimapTurnToHeading` |
+| 9    | `MinimapRealtimePosition`  | `src.tasks.localization.MinimapRealtimePosition` |
+| 10   | `MinimapRegionCheck`       | `src.tasks.localization.MinimapRegionCheck` |
+| 11   | `MinimapScaleCapture`      | `src.tasks.localization.MinimapScaleCapture` |
+| 12   | `MinimapTurnToHeading`     | `src.tasks.localization.MinimapTurnToHeading` |
 | 13   | `MinimapNavigateToPoint`   | `src.tasks.navigation.MinimapNavigateToPoint` |
 | 14   | `RealtimeYoloScanTask`     | `src.tasks.test.RealtimeDetectTask`       |
 | 15   | `RealtimeDetectTask`       | `src.tasks.test.RealtimeDetectTask`       |
@@ -145,7 +145,7 @@ ItemNavigatorTask(WsPositionMixin, BaseEfTask, TriggerTask)
 
 | 顺序 | 类                    | 模块                                    |
 | ---- | --------------------- | --------------------------------------- |
-| 1    | `MinimapPositionTask` | `src.tasks.navigation.MinimapPositionTask` |
+| 1    | `MinimapPositionTask` | `src.tasks.localization.MinimapPositionTask` |
 | 2    | `AutoCombatTask`      | `src.tasks.trigger.AutoCombatTask`      |
 | 3    | `AutoInteractionTask` | `src.tasks.trigger.AutoInteractionTask` |
 | 4    | `AutoPickTask`        | `src.tasks.trigger.AutoPickTask`        |
@@ -187,11 +187,13 @@ ok-end-field/
 │   │       ├── process_manager.py
 │   │       ├── runtime_mixin.py
 │   │       └── window_arrow_drawing_mixin.py
+│   ├── localization/             # 小地图定位、融合、朝向与位置接口
 │   ├── nav/                      # 二维网格、A* 规划与路线跟随
 │   ├── runtime_state/            # 进程内 latest-value 状态网关与主题契约
 │   ├── tasks/
 │   │   ├── onetime/              # 一次性任务和 AutoCombatLogic
-│   │   ├── navigation/           # 小地图定位、标定、导航任务与领域 Mixin
+│   │   ├── localization/         # 定位、标定和朝向任务
+│   │   ├── navigation/           # 导航任务与导航领域 Mixin
 │   │   ├── trigger/              # 通用后台触发任务
 │   │   ├── test/                 # 通用诊断与算法测试任务
 │   │   ├── mixin/                # 业务能力 Mixin

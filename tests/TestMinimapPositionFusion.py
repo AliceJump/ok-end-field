@@ -9,7 +9,7 @@
 import math
 import unittest
 
-from src.tasks.navigation.mixin.minimap_position_fusion import MinimapPositionFusion
+from src.localization.minimap_position_fusion import MinimapPositionFusion
 
 
 class _StubOd:

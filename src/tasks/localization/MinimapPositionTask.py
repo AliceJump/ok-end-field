@@ -17,7 +17,7 @@ from ok import TriggerTask
 
 from src.core.BaseEfTask import BaseEfTask
 from src.icons import Icons
-from src.tasks.navigation.mixin.minimap_position_mixin import MinimapPositionMixin
+from src.localization.minimap_position_mixin import MinimapPositionMixin
 
 
 class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):

@@ -32,7 +32,7 @@ from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
 from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
-from src.tasks.navigation.mixin.minimap_heading_mixin import CONFIG_MIN_SCORE
+from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE
 
 
 class MinimapRealtimePosition(RuntimeStateMixin, BaseEfTask):

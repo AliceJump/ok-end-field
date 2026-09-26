@@ -91,11 +91,6 @@ from src.nav.route_follower import (
 )
 from src.nav.zip_line_graph import ZipLineGraph, ZipLineNode
 from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
-from src.tasks.navigation.mixin.minimap_heading_mixin import (
-    CONFIG_MIN_SCORE,
-    CONFIG_YAW_PER_PIXEL,
-    MinimapHeadingMixin,
-)
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineReplanRequired
 
 GRID_ZIP_LINE_ESC_THRESHOLD = 0.8
@@ -136,7 +131,7 @@ __all__ = [
     "GridNavigationMixin",
 ]
 
-class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
+class GridNavigationMixin(RuntimeStateMixin):
     """在 ``*.grid.npz`` 上规划并驱动角色前往世界坐标 ``(x, z)``。
 
     定位由共享的 ``MinimapPositionTask`` 提供；本类只消费状态、执行动作和维护本次
@@ -185,7 +180,6 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
     def _init_grid_navigation_mixin(self) -> None:
         """初始化导航状态；不创建或启动任何定位、输入资源。"""
         self._init_runtime_state_mixin()
-        self._init_minimap_heading_mixin()
         self._grid_nav_follower: GridRouteFollower | None = None
         self._grid_nav_map_id = ""
         self._grid_nav_w_held = False
@@ -391,7 +385,6 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
                     self._wait_for_grid_position(f"等待定位重新校准: {state.get('trust_reason') or 'untrusted'}")
                     if state.get("rest") and self.active_time() >= next_sync_retry_at:
                         synced = self._wait_for_minimap_sync(
-                            position_service,
                             sync_seq,
                             deadline,
                             tick,
@@ -408,7 +401,6 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
                     continue
                 if state.get("sync_needed") and self.active_time() >= next_sync_retry_at:
                     synced = self._wait_for_minimap_sync(
-                        position_service,
                         int(state.get("sync_seq") or 0),
                         deadline,
                         tick,
@@ -422,7 +414,7 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
                     continue
                 heading = state.get("heading")
                 heading_score = state.get("heading_score")
-                min_score = self._grid_heading_min_score(position_service)
+                min_score = self._grid_heading_min_score()
                 if heading_score is None or float(heading_score) < min_score:
                     heading = None
                 if heading is None:
@@ -507,7 +499,6 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
                         # 再从可信位置重新规划。
                         recovery_goal = None
                         synced = self._wait_for_minimap_sync(
-                            position_service,
                             int(state.get("sync_seq") or 0),
                             deadline,
                             tick,
@@ -525,7 +516,6 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
                         recovery_goal = None
                         self.log_warning("当前位置不在已知 free 格，但没有已走过的已知格可返回；先原地校准后重新规划")
                         synced = self._wait_for_minimap_sync(
-                            position_service,
                             int(state.get("sync_seq") or 0),
                             deadline,
                             tick,
@@ -576,7 +566,6 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
                         # 航点间隔校准是主动停车点；WS 周期约 5 秒，等待函数会
                         # 在停车期间持续采样，直到完成真实重锚或确认已对齐。
                         synced = self._wait_for_minimap_sync(
-                            position_service,
                             int(state.get("sync_seq") or 0),
                             deadline,
                             tick,
@@ -615,7 +604,6 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
                     self._set_grid_walking(False)
                     if recovery_goal is not None:
                         synced = self._wait_for_minimap_sync(
-                            position_service,
                             int(state.get("sync_seq") or 0),
                             deadline,
                             tick,
@@ -663,7 +651,7 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
                         self._turn_grid_while_moving(step)
                     else:
                         self._set_grid_walking(False)
-                        turn = self.turn_to_bearing(
+                        turn = self.pose_turn_to_bearing(
                             step.target_bearing,
                             tolerance=self._grid_turn_tolerance(),
                             max_rounds=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
@@ -1101,7 +1089,7 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
 
     def _reaim_grid_zip_line_for_boarding(self, target_bearing: float) -> bool:
         """登索失败后重新对正到本段滑索方向，再进行一次登索。"""
-        result = self.turn_to_bearing(
+        result = self.pose_aim_view_to_bearing(
             target_bearing,
             tolerance=self._grid_turn_tolerance(),
             max_rounds=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
@@ -1206,14 +1194,11 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
             return False
         return True
 
-    def _grid_heading_min_score(self, position_service=None) -> float:
+    def _grid_heading_min_score(self) -> float:
         """朝向质量阈值属于共享定位服务，网格任务只读取，不另存一份。"""
-        service = position_service or self._get_minimap_position_service()
-        config = getattr(service, "config", None)
         try:
-            value = config.get(CONFIG_MIN_SCORE, 0.6) if config is not None else 0.6
-            return max(0.0, min(1.0, float(value)))
-        except (TypeError, ValueError):
+            return max(0.0, min(1.0, float(self.pose_heading_min_score())))
+        except (AttributeError, TypeError, ValueError):
             return 0.6
 
     def _log_grid_plan(self, result: PlanResult) -> None:
@@ -1328,12 +1313,12 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
         heading_error = step.heading_error
         if heading_error is None:
             return
-        if not self._can_turn():
+        if not self.pose_can_turn():
             self._set_grid_walking(False)
             return
-        per_px = self.yaw_per_pixel()
+        per_px = self.pose_yaw_per_pixel()
         if per_px <= 0:
-            self.log_warning(f"{CONFIG_YAW_PER_PIXEL} 无效，无法移动转向")
+            self.log_warning("定位接口未提供有效旋转比例，无法移动转向")
             self._set_grid_walking(False)
             return
         gain = max(0.1, min(1.0, self._grid_cfg_float(CONFIG_GRID_MOVING_TURN_GAIN, 0.8)))
@@ -1343,7 +1328,7 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
         if dx == 0:
             return
         self._set_grid_walking(True)
-        self._send_rotation(dx)
+        self.pose_send_rotation(dx)
 
     def _log_grid_navigation_debug(self, state: dict, *, map_id: str, tag: str) -> None:
         """调试模式下节流输出单帧定位状态，便于关联规划、里程计与静止判定。"""
@@ -1417,7 +1402,7 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
 
         self.log_info("脱困尝试 3/3：对准目标后按住 W + Space 跳跃")
         if target_bearing is not None:
-            self.turn_to_bearing(
+            self.pose_turn_to_bearing(
                 target_bearing,
                 tolerance=min(
                     GRID_TURN_TOLERANCE_DEG,
@@ -1515,7 +1500,6 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
 
     def _wait_for_minimap_sync(
         self,
-        position_service,
         start_sync_seq: int,
         deadline: float,
         tick: float,
@@ -1545,7 +1529,7 @@ class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
                 self.log_info("导航中静止定位校准完成")
                 return True
             self.sleep(tick)
-        diagnostic = getattr(position_service, "minimap_rest_diag", lambda: None)() or {}
+        diagnostic = self.pose_rest_diag() or {}
         self.log_warning(
             "导航中静止定位校准超时："
             f"reason={diagnostic.get('reason')} "
