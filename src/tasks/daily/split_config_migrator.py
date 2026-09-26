@@ -304,6 +304,34 @@ def _import_task_config(target_name: str, key_map: dict[str, Any], source_config
     return modified
 
 
+def _backup_account_keys(account_id: str, registry: dict) -> list[str]:
+    """仅用归属明确的账号名查询旧备份，账号 ID 始终保留。"""
+    account_meta = registry.get(account_id, {})
+    if not isinstance(account_meta, dict):
+        return [account_id]
+
+    used_by_others = set()
+    for other_id, other_meta in registry.items():
+        if other_id == account_id:
+            continue
+        used_by_others.add(other_id)
+        if isinstance(other_meta, dict):
+            other_username = other_meta.get("username")
+            if isinstance(other_username, str):
+                used_by_others.add(other_username)
+            other_aliases = other_meta.get("aliases")
+            if isinstance(other_aliases, list):
+                used_by_others.update(alias for alias in other_aliases if isinstance(alias, str))
+
+    aliases = account_meta.get("aliases")
+    candidates = [*(aliases if isinstance(aliases, list) else []), account_meta.get("username")]
+    keys = [account_id]
+    for alias in candidates:
+        if isinstance(alias, str) and alias and alias not in used_by_others and alias not in keys:
+            keys.append(alias)
+    return keys
+
+
 def _read_source_account_segment(account_id: str, source_name: str, batch_id: str, data: dict) -> dict:
     """v3 从旧批次备份找回已从 DailyTask 账号段清理的参数。"""
     from ok.util.file import read_json_file
@@ -311,19 +339,15 @@ def _read_source_account_segment(account_id: str, source_name: str, batch_id: st
     source_segment: dict[str, Any] = {}
     if source_name == "DailyTask" and batch_id == "daily_split_v3":
         registry = data.get("account_registry") or {}
-        account_meta = registry.get(account_id, {}) if isinstance(registry, dict) else {}
-        aliases = [account_id]
-        if isinstance(account_meta, dict):
-            aliases.extend(account_meta.get("aliases", []) if isinstance(account_meta.get("aliases"), list) else [])
-            aliases.append(account_meta.get("username", ""))
+        backup_keys = _backup_account_keys(account_id, registry if isinstance(registry, dict) else {})
         for backup_batch in ("daily_split_pilot_v1", "daily_split_v2"):
             backup_file = Path(_migration_backup_dir(backup_batch)) / f"{_ACCOUNT_OVERRIDE_STORE}.json"
             backup = read_json_file(str(backup_file))
             backup_accounts = backup.get("accounts", {}) if isinstance(backup, dict) else {}
             if not isinstance(backup_accounts, dict):
                 continue
-            for alias in aliases:
-                task_map = backup_accounts.get(alias, {})
+            for key in backup_keys:
+                task_map = backup_accounts.get(key, {})
                 segment = task_map.get(source_name, {}) if isinstance(task_map, dict) else {}
                 if isinstance(segment, dict):
                     source_segment.update(segment)
@@ -342,7 +366,7 @@ def _import_account_overrides(target_name: str, source_name: str, key_map: dict[
     from src.tasks.account.account_scope_store import update_overrides
 
     def apply(data):
-        accounts = data.get("accounts") or {}
+        accounts = data.setdefault("accounts", {})
         if not isinstance(accounts, dict):
             return data
         account_ids = list(accounts)

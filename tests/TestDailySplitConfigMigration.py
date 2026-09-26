@@ -243,6 +243,45 @@ class TestDailySplitConfigMigration(unittest.TestCase):
             self.assertEqual(tasks["DailyDeliveryTask"]["目标券数"], ["73100"])
             self.assertEqual(tasks["RegionalBuildTask"]["⭐地区建设"], ["据点兑换"])
 
+    def test_v3_skips_backup_alias_shared_by_two_accounts(self):
+        """共用别名无法确定归属，不能把旧参数恢复到任一账号。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            configs = os.path.join(tmp, "configs")
+            backup_dir = os.path.join(configs, "daily_split_migration_backup", "daily_split_v2")
+            self._write_configs(
+                configs,
+                {
+                    "_daily_split_migrations.json": {
+                        "completed_batches": ["daily_split_pilot_v1", "daily_split_v2"]
+                    },
+                    "account_scoped_overrides.json": {
+                        "account_registry": {
+                            "acc_a": {"username": "玩家A", "aliases": ["玩家A", "shared"]},
+                            "acc_b": {"username": "shared", "aliases": ["shared", "玩家B"]},
+                        }
+                    },
+                },
+            )
+            self._write_configs(
+                backup_dir,
+                {
+                    "account_scoped_overrides.json": {
+                        "accounts": {
+                            "shared": {"DailyTask": {"目标券数": ["73100"]}},
+                            "玩家A": {"DailyTask": {"体力本": "技能提升"}},
+                            "acc_b": {"DailyTask": {"地区切换": "四号谷地"}},
+                        }
+                    }
+                },
+            )
+            self._run(configs, DAILY_SPLIT_IMPORTS)
+
+            accounts = self._read_config(configs, "account_scoped_overrides.json")["accounts"]
+            self.assertEqual(accounts["acc_a"]["DailyBattleTask"]["体力本"], "技能提升")
+            self.assertNotIn("目标券数", accounts["acc_a"].get("DailyDeliveryTask", {}))
+            self.assertEqual(accounts["acc_b"]["DailyDeliveryTask"]["地区切换"], "四号谷地")
+            self.assertNotIn("目标券数", accounts["acc_b"]["DailyDeliveryTask"])
+
     def test_legacy_account_overrides_convert_to_lists(self):
         """旧布尔覆盖转换为列表，同时保留目标段已有的有效列表。"""
         with tempfile.TemporaryDirectory() as tmp:
