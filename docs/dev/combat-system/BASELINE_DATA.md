@@ -203,3 +203,7 @@ perlica.tech Perlica Calc）做帧级 buff/状态追踪，精度更高；本基�
   「哪些强化态/技能有官方推荐脉冲」，为把推荐时机反哺排轴提供数据
   （如增强态角色在轴上等脉冲再放）。覆盖范围限制：任务若有自己的
   独立战斗循环（不走 `auto_battle`），探针不生效。
+  分析入口：`scripts/maintenance/analyze_pulse_probe_log.py`——按
+  active_t 回退切分战斗，聚合每身份（角色/槽位）的触发次数、出场
+  战斗数、场内首发时刻与触发间隔中位数、队伍构成；支持
+  `--char` / `--slot` / `--max-battles` 过滤与 `--json` 机器可读输出。
