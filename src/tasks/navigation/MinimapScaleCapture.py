@@ -51,8 +51,8 @@ import cv2
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
-from src.tasks.mixin.minimap_odometry import region_geometry
 from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
+from src.tasks.navigation.mixin.minimap_odometry import region_geometry
 
 CONFIG_INTERVAL = "采样间隔(秒)"
 CONFIG_SAMPLES = "采集张数"

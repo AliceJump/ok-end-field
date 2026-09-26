@@ -22,9 +22,9 @@ from src.data.delivery_area_service import (
 from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
 from src.tasks.account.account_mixin import AccountMixin
-from src.tasks.mixin.grid_navigation_mixin import GridNavigationMixin
-from src.tasks.mixin.map_mixin import MapMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin
+from src.tasks.navigation.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 
 secondary_objective_direction_dot = [
     fL.secondary_objective_direction_dot,

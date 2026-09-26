@@ -27,7 +27,7 @@ from src.core.sequence_parser import parse_int_sequence
 from src.data.FeatureList import FeatureList as fL
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
-from src.tasks.mixin.navigation_mixin import NavigationMixin
+from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin
 
 ZIP_LINE_TEMPLATE_THRESHOLD = 0.8
 ZIP_LINE_STATUS_BOX = (0.351, 0.943, 0.657, 0.981)

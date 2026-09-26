@@ -25,9 +25,9 @@ from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.end_command_mixin import EndCommandMixin
 from src.tasks.mixin.liaison_mixin import LiaisonMixin
-from src.tasks.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.map_mixin import MapMixin
 from src.tasks.mixin.mouse_scan_mixin import MouseScanMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 from src.tasks.onetime.DeliveryTask import DeliveryFeature
 
 

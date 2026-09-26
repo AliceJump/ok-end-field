@@ -574,7 +574,7 @@ def migrate_task_minimap_values_to_owner(task) -> None:
     if not isinstance(data, dict):
         return
 
-    from src.tasks.mixin.minimap_position_mixin import MinimapPositionMixin
+    from src.tasks.navigation.mixin.minimap_position_mixin import MinimapPositionMixin
 
     defaults = MinimapPositionMixin.minimap_position_default_config()
     candidates = {

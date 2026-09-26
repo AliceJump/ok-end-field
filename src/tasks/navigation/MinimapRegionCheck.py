@@ -26,7 +26,7 @@ import cv2
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
-from src.tasks.mixin.minimap_odometry import (
+from src.tasks.navigation.mixin.minimap_odometry import (
     DEFAULT_CENTER_RATIO,
     DEFAULT_R_INNER_RATIO,
     DEFAULT_R_OUTER_RATIO,

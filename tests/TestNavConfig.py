@@ -228,7 +228,7 @@ class TestMixinUsesGlobalNavConfig(unittest.TestCase):
 
     def _task_at(self, width):
         from src.core.NavConfig import DEFAULT_NAV_CONFIG as _defaults
-        from src.tasks.mixin.minimap_position_mixin import MinimapPositionMixin
+        from src.tasks.navigation.mixin.minimap_position_mixin import MinimapPositionMixin
 
         class _Task(MinimapPositionMixin):
             def __init__(self, w):

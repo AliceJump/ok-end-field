@@ -7,7 +7,7 @@ from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.core.BattleConfig import ULT_RELEASE_MODE_ALT, ULT_RELEASE_MODE_HOLD
 from src.tasks.mixin.battle_mixin import BattleMixin
-from src.tasks.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.map_mixin import MapMixin
 
 
 class _EnsureMainHarness(GameFlowMixin):

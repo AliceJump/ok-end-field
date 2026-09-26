@@ -13,7 +13,9 @@ def _load_navigation_mixin():
     pyautogui = ModuleType("pyautogui")
     search_mixin = ModuleType("src.tasks.mixin.search_mixin")
     search_mixin.SearchMixin = type("SearchMixin", (), {})
-    module_path = Path(__file__).parents[1] / "src/tasks/mixin/navigation_mixin.py"
+    module_path = (
+        Path(__file__).parents[1] / "src/tasks/navigation/mixin/navigation_mixin.py"
+    )
     spec = importlib.util.spec_from_file_location("navigation_mixin_under_test", module_path)
     module = importlib.util.module_from_spec(spec)
     with patch.dict(

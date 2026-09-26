@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """MinimapOdometry 单元测试。
 
 覆盖：
@@ -9,18 +8,16 @@
 
 这些测试不需要游戏窗口，仅依赖 numpy/opencv。
 """
-import cv2
 import math
-import numpy as np
 import unittest
 
-from src.tasks.mixin.minimap_odometry import (
-    DEFAULT_CENTER_RATIO,
-    DEFAULT_R_INNER_RATIO,
-    DEFAULT_R_OUTER_RATIO,
+import cv2
+import numpy as np
+
+from src.tasks.navigation.mixin.minimap_odometry import (
     MinimapOdometry,
-    annulus_mask,
     angle_delta,
+    annulus_mask,
     arrow_angle_to_bearing,
     bearing_to_arrow_angle,
     body_axes_from_heading,

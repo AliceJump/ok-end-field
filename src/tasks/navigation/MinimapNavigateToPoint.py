@@ -13,8 +13,8 @@ from src.core.NavConfig import (
     NAV_WAIT_POSITION_TIMEOUT_KEY,
 )
 from src.icons import Icons
-from src.tasks.mixin.grid_navigation_mixin import GridNavigationMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 
 
 class MinimapNavigateToPoint(ZipLineMixin, GridNavigationMixin, BaseEfTask):

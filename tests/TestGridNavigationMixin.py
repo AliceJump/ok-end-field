@@ -21,14 +21,14 @@ from src.nav.route_follower import (
 )
 from src.nav.zip_line_graph import ZipLineGraph, ZipLineLink, ZipLineNode, ZipLineStep
 from src.runtime_state.topics import RuntimeTopic
-from src.tasks.mixin.grid_navigation_mixin import (
+from src.tasks.navigation.mixin.grid_navigation_mixin import (
     CONFIG_GRID_ALLOW_UNKNOWN,
     CONFIG_GRID_FILE,
     GridNavigationMixin,
 )
-from src.tasks.mixin.minimap_heading_mixin import CONFIG_MIN_SCORE
-from src.tasks.mixin.minimap_position_mixin import MinimapPositionMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineReplanRequired
+from src.tasks.navigation.mixin.minimap_heading_mixin import CONFIG_MIN_SCORE
+from src.tasks.navigation.mixin.minimap_position_mixin import MinimapPositionMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineReplanRequired
 
 
 class _FakeGridTask(GridNavigationMixin):

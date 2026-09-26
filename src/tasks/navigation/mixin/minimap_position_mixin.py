@@ -76,14 +76,14 @@ from src.tasks.account.account_scope_store import (
     get_account_map_content,
     resolve_account_id,
 )
-from src.tasks.mixin.minimap_heading_mixin import (
+from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
+from src.tasks.navigation.mixin.minimap_heading_mixin import (
     CONFIG_MIN_SCORE,
     MinimapHeadingMixin,
 )
-from src.tasks.mixin.minimap_odometry import MinimapOdometry
-from src.tasks.mixin.minimap_position_fusion import MinimapPositionFusion
-from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
-from src.tasks.mixin.ws_position_mixin import WsPositionMixin
+from src.tasks.navigation.mixin.minimap_odometry import MinimapOdometry
+from src.tasks.navigation.mixin.minimap_position_fusion import MinimapPositionFusion
+from src.tasks.navigation.mixin.ws_position_mixin import WsPositionMixin
 
 __all__ = [
     "CONFIG_COMMIT_MIN_SHIFT",

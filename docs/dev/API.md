@@ -8,7 +8,8 @@
 
 - 基类组合：[BaseEfTask.py](../../src/core/BaseEfTask.py)
 - 核心能力：[src/core/base_mixin/](../../src/core/base_mixin/)
-- 业务能力：[src/tasks/mixin/](../../src/tasks/mixin/)
+- 通用业务能力：[src/tasks/mixin/](../../src/tasks/mixin/)
+- 导航领域能力：[src/tasks/navigation/](../../src/tasks/navigation/)
 - 运行时状态：[src/runtime_state/](../../src/runtime_state/)
 - 导航：[src/nav/](../../src/nav/)
 - 配置：[global_config_store.py](../../src/core/global_config_store.py)、[NavConfig.py](../../src/core/NavConfig.py)、[BattleConfig.py](../../src/core/BattleConfig.py)、[KeyConfig.py](../../src/interaction/KeyConfig.py)
@@ -425,7 +426,7 @@ def auto_battle(self, no_battle: bool = False)
 ### 3.2 MapMixin
 
 ```text
-from src.tasks.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.map_mixin import MapMixin
 
 def task_to_transfer_point(self, need_location_list=None)
 def clear_icon_in_map(self, need_reserve_icon_name=None, ocr=False)
@@ -437,7 +438,7 @@ def to_near_transfer_point(self, need_track, need_location_list=None, need_reser
 ### 3.3 NavigationMixin
 
 ```text
-from src.tasks.mixin.navigation_mixin import NavigationMixin
+from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin
 
 def navigate_until_target(
     self, target, nav=None,
@@ -498,7 +499,7 @@ def collect_and_give_gifts(self)
 ### 3.5 ZipLineMixin
 
 ```text
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 
 def on_zip_line_start(
     self, delivery_to, need_scroll=None, target=None, need_v=True,

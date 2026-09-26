@@ -9,7 +9,7 @@
 """
 import unittest
 
-from src.tasks.mixin.minimap_heading_mixin import (
+from src.tasks.navigation.mixin.minimap_heading_mixin import (
     CONFIG_MIN_SCORE,
     CONFIG_YAW_PER_PIXEL,
     MinimapHeadingMixin,

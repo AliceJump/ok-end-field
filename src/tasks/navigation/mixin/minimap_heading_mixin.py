@@ -31,7 +31,7 @@
 
 from __future__ import annotations
 
-from src.tasks.mixin.minimap_odometry import angle_delta, arrow_angle_to_bearing
+from src.tasks.navigation.mixin.minimap_odometry import angle_delta, arrow_angle_to_bearing
 
 __all__ = [
     "CONFIG_ANGLE_REFRESH",

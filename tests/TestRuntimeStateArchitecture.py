@@ -28,9 +28,27 @@ class TestRuntimeStateArchitecture(unittest.TestCase):
             self.assertFalse((root / "test" / name).exists())
             self.assertFalse((root / "trigger" / name).exists())
 
+    def test_navigation_mixins_live_in_the_navigation_domain_package(self):
+        root = Path(__file__).parents[1] / "src" / "tasks"
+        names = (
+            "grid_navigation_mixin.py",
+            "map_mixin.py",
+            "minimap_heading_mixin.py",
+            "minimap_odometry.py",
+            "minimap_position_fusion.py",
+            "minimap_position_mixin.py",
+            "navigation_mixin.py",
+            "ws_position_mixin.py",
+            "zip_line_mixin.py",
+        )
+
+        for name in names:
+            self.assertTrue((root / "navigation" / "mixin" / name).is_file())
+            self.assertFalse((root / "mixin" / name).exists())
+
     def test_business_modules_do_not_call_owner_sampling_method(self):
         root = Path(__file__).parents[1] / "src" / "tasks"
-        allowed = {root / "mixin" / "minimap_position_mixin.py"}
+        allowed = {root / "navigation" / "mixin" / "minimap_position_mixin.py"}
         violations = []
 
         for path in root.rglob("*.py"):

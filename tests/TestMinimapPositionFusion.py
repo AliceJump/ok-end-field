@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """MinimapPositionFusion 单元测试。
 
 用桩里程计验证：
@@ -10,7 +9,7 @@
 import math
 import unittest
 
-from src.tasks.mixin.minimap_position_fusion import MinimapPositionFusion
+from src.tasks.navigation.mixin.minimap_position_fusion import MinimapPositionFusion
 
 
 class _StubOd:

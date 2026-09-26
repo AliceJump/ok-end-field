@@ -174,7 +174,7 @@ flowchart TD
 
 | 文件 | 职责 |
 |------|------|
-| `src/tasks/mixin/ws_position_mixin.py` | WS 客户端核心：OAuth 换取、HTTP 签名、WS 协议、退出控制 |
+| `src/tasks/navigation/mixin/ws_position_mixin.py` | WS 客户端核心：OAuth 换取、HTTP 签名、WS 协议、退出控制 |
 | `src/tasks/navigation/MinimapPositionTask.py` | 共享定位生产者：凭证解析、WS 生命周期、`world.pose` 发布 |
 | `src/tasks/mixin/runtime_state_mixin.py` | 任务侧状态读取与定位采样控制面 |
 | `src/tasks/trigger/ItemNavigatorTask.py` | 物品导航：读取 `world.pose`、箭头渲染、标记逻辑 |

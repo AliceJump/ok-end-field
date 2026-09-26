@@ -47,7 +47,7 @@ def _get_shumei_device_id() -> str:
         return ""
     try:
         did = ensure_map_device_id()
-    except Exception as exc:  # noqa: BLE001 - 铸造失败（无浏览器/网络异常/注册超时）时按间隔降级重试
+    except Exception as exc:
         _shumei_did_failed_at = time.time()
         del exc
         return ""
@@ -402,7 +402,7 @@ class WsPositionMixin:
             log_info = getattr(self, "log_info", None)
             if callable(log_info):
                 log_info("物品导航：游戏窗口不存在或不可见，地图WS客户端停止")
-            setattr(self, "_navigator_window_missing_logged", True)
+            self._navigator_window_missing_logged = True
 
         info_set = getattr(self, "info_set", None)
         if callable(info_set):
@@ -483,7 +483,7 @@ class WsPositionMixin:
 
                         try:
                             msg = await asyncio.wait_for(ws.recv(), timeout=1.0)
-                        except asyncio.TimeoutError:
+                        except TimeoutError:
                             continue
                         if isinstance(msg, (bytes, bytearray)):
                             msg = msg.decode("utf-8", errors="ignore")
@@ -521,7 +521,7 @@ class WsPositionMixin:
                     log_error(f"[地图WS] 客户端异常，30秒后重试: {e}")
                 try:
                     await asyncio.wait_for(self._map_ws_stop_event.wait(), timeout=30.0)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     pass
 
     def _start_map_ws_client(self, raw_cred: str | None):
@@ -662,7 +662,7 @@ class WsPositionMixin:
 
         try:
             if callable(log_info):
-                log_info(f"[WS] 客户端已连接")
+                log_info("[WS] 客户端已连接")
 
             async for msg in ws:
                 if isinstance(msg, (bytes, bytearray)):
@@ -692,7 +692,7 @@ class WsPositionMixin:
                 log_error(f"[WS handler] 异常: {e}")
         finally:
             if callable(log_info):
-                log_info(f"[WS] 客户端已断开")
+                log_info("[WS] 客户端已断开")
 
     async def _ws_server_main(self):
         log_info = getattr(self, "log_info", None)
@@ -736,7 +736,7 @@ class WsPositionMixin:
                 except Exception:
                     pass
                 if callable(log_info):
-                    log_info(f"[WS] 服务器已关闭")
+                    log_info("[WS] 服务器已关闭")
 
         self._ws_server_thread = threading.Thread(target=_runner, name="WsPositionServer", daemon=True)
         self._ws_server_thread.start()

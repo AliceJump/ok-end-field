@@ -4,7 +4,7 @@ import unittest
 from types import MethodType, SimpleNamespace
 
 from src.data.FeatureList import FeatureList as fL
-from src.tasks.mixin.zip_line_mixin import ZipLineReplanRequired
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineReplanRequired
 from src.tasks.onetime.DeliveryTask import DeliveryTask
 
 

@@ -68,7 +68,7 @@ BaseEfTask(
 
 ### 2.2 业务 Mixin
 
-`src/tasks/mixin/` 保留跨任务业务能力：
+`src/tasks/mixin/` 保留跨领域通用能力，`src/tasks/navigation/mixin/` 保留导航领域能力：
 
 ```text
 BaseEfTask
@@ -191,7 +191,7 @@ ok-end-field/
 │   ├── runtime_state/            # 进程内 latest-value 状态网关与主题契约
 │   ├── tasks/
 │   │   ├── onetime/              # 一次性任务和 AutoCombatLogic
-│   │   ├── navigation/           # 小地图定位、标定与导航领域任务
+│   │   ├── navigation/           # 小地图定位、标定、导航任务与领域 Mixin
 │   │   ├── trigger/              # 通用后台触发任务
 │   │   ├── test/                 # 通用诊断与算法测试任务
 │   │   ├── mixin/                # 业务能力 Mixin
@@ -284,7 +284,8 @@ class MyTask(BaseEfTask):
 
 ### 6.2 新增业务 Mixin
 
-- 跨任务业务能力放 `src/tasks/mixin/`。
+- 跨领域通用能力放 `src/tasks/mixin/`。
+- 导航、定位和滑索能力放 `src/tasks/navigation/mixin/`。
 - 基础运行时能力才放 `src/core/base_mixin/`。
 - Mixin 不定义最终任务的 `name`、`description` 或 `run()`。
 - 若继承 `BaseEfTask`，使用协作式 `super()`。

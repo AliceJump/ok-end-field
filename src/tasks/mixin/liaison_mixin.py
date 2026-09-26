@@ -23,7 +23,7 @@ from src.data.characters import characters
 from src.data.characters_utils import get_contact_list_with_feature_list, get_localized_name_by_canonical
 from src.data.FeatureList import FeatureList as fL
 from src.tasks.mixin.common import LiaisonResult, build_name_patterns
-from src.tasks.mixin.navigation_mixin import NavigationMixin
+from src.tasks.navigation.mixin.navigation_mixin import NavigationMixin
 
 
 class LiaisonMixin(NavigationMixin):

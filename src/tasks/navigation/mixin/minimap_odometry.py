@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """小地图位移里程计（minimap odometry）。
 
 在"地图固定不随视角转、玩家箭头位于小地图中心"的前提下，通过比较小地图纹理
@@ -47,11 +46,11 @@ import numpy as np
 __all__ = [
     "DEFAULT_CENTER_RATIO",
     "DEFAULT_CROP_PAD_RATIO",
-    "DEFAULT_R_OUTER_RATIO",
     "DEFAULT_R_INNER_RATIO",
+    "DEFAULT_R_OUTER_RATIO",
     "MinimapOdometry",
-    "annulus_mask",
     "angle_delta",
+    "annulus_mask",
     "arrow_angle_to_bearing",
     "bearing_to_arrow_angle",
     "body_axes_from_heading",
@@ -547,7 +546,7 @@ class MinimapOdometry:
         if frame is None:
             try:
                 frame = self._task.next_frame()
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 _reraise_control_flow(e)   # 任务被禁用/结束必须放行，不能吞
                 self._log("log_warning", f"minimap_odometry next_frame 失败: {e}")
                 frame = None
@@ -712,7 +711,7 @@ class MinimapOdometry:
             if angle is None:
                 return None, score
             return arrow_angle_to_bearing(angle), score
-        except Exception as e:  # noqa: BLE001
+        except Exception as e:
             self._log("log_warning", f"read_yaw 失败: {e}")
             return None, 0.0
 

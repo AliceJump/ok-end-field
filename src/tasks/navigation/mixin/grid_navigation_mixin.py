@@ -90,13 +90,13 @@ from src.nav.route_follower import (
     bearing_to_point,
 )
 from src.nav.zip_line_graph import ZipLineGraph, ZipLineNode
-from src.tasks.mixin.minimap_heading_mixin import (
+from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
+from src.tasks.navigation.mixin.minimap_heading_mixin import (
     CONFIG_MIN_SCORE,
     CONFIG_YAW_PER_PIXEL,
     MinimapHeadingMixin,
 )
-from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineReplanRequired
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineReplanRequired
 
 GRID_ZIP_LINE_ESC_THRESHOLD = 0.8
 GRID_SPRINT_MIN_SEGMENT_METERS = 15.0

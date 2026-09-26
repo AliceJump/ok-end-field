@@ -99,7 +99,7 @@ gettext-side rules that stay here:
 
 - UI explanations (e.g. `instructions` rich text) do NOT go in lang JSON — use `self.tr("中文msgid")` through ok gettext: msgid into `i18n/*/LC_MESSAGES/ok.po` (msgid must match the code string verbatim, including full-width punctuation / `{placeholders}`), then `task_i18n_helper.py compile`.
 - **Minimal principle**: emoji (`📍` `⚙️` `🖱️`), tree chars (`└─`/`├─`), HTML tags/colors that need no translation stay concatenated in code (e.g. `"📍 " + self.tr("滑索配置说明")`); only translatable plain text goes into i18n data (msgid/msgstr exclude emoji and decoration).
-- **Dynamic key-name translation**: config key names read dynamically in `instructions` (delivery points / target names / deposit-point names) must also pass through `self.tr(键名)` for display; msgid goes into ok.po (zh_TW in Traditional; other locales may keep Simplified for cross-referencing the config JSON key name). Look up config values with the raw key, display with the translated key (see `src/tasks/mixin/zip_line_mixin.py`).
+- **Dynamic key-name translation**: config key names read dynamically in `instructions` (delivery points / target names / deposit-point names) must also pass through `self.tr(键名)` for display; msgid goes into ok.po (zh_TW in Traditional; other locales may keep Simplified for cross-referencing the config JSON key name). Look up config values with the raw key, display with the translated key (see `src/tasks/navigation/mixin/zip_line_mixin.py`).
 
 ## Collection-Pool Safety
 

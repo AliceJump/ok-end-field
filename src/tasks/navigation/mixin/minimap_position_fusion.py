@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """融合小地图里程计增量与 WS 绝对坐标。
 
 WS 坐标绝对但存在网络/服务延迟，里程计高频但会随时间漂移。融合策略是：
@@ -27,7 +26,7 @@ import math
 
 import numpy as np
 
-from src.tasks.mixin.minimap_odometry import _reraise_control_flow
+from src.tasks.navigation.mixin.minimap_odometry import _reraise_control_flow
 
 __all__ = ["MinimapPositionFusion"]
 
