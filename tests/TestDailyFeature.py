@@ -124,6 +124,28 @@ class TestDailyFeatureRun(unittest.TestCase):
         self.assertEqual(impl.current_account_id, "")
         self.assertEqual(impl.current_user, "")
 
+    def test_host_account_override_switch_controls_child_config(self):
+        """宿主关闭账号独立配置时，子任务谓词和执行都只读全局值。"""
+        impl = _make_impl()
+        impl.config = _FakeConfig({"参数": "全局值"})
+        impl.run_mail = lambda: impl.config.get("参数")
+        host = _FakeHost([impl], account_id="acc_x", account_name="user")
+        feature = DailyFeature(host, MailTask, switch_key="⭐收邮件", run_method="run_mail")
+
+        with patch(
+            "src.core.base_mixin.account_override_mixin.get_account_task_overrides",
+            return_value={"参数": "账号值"},
+        ):
+            host._is_account_override_enabled = lambda: False
+            self.assertEqual(feature.impl_config("参数"), "全局值")
+            self.assertEqual(feature.run(), "全局值")
+
+            host._is_account_override_enabled = lambda: True
+            self.assertEqual(feature.impl_config("参数"), "账号值")
+            self.assertEqual(feature.run(), "账号值")
+
+        self.assertFalse(hasattr(impl, "_daily_host_account_overrides_enabled"))
+
     def test_run_resolves_impl_and_injects_context(self):
         feature, _, captured, _host = self._feature_and_impl(account_id="acc_x", account_name="0705", boat_state=True)
         self.assertEqual(feature.run(), "done")
@@ -151,6 +173,7 @@ class TestDailyFeatureRun(unittest.TestCase):
             feature.run()
         self.assertFalse(getattr(impl, "running", True))
         self.assertEqual(getattr(impl, "current_account_id", "x"), "")
+        self.assertFalse(hasattr(impl, "_daily_host_account_overrides_enabled"))
 
     def test_run_returns_false_when_impl_missing(self):
         feature, _, _, host = self._feature_and_impl(tasks=[])

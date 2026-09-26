@@ -80,7 +80,12 @@ class DailyFeature:
             getattr(impl, "current_account_id", ""),
             getattr(impl, "current_user", ""),
         )
+        previous_override_policy = getattr(impl, "_daily_host_account_overrides_enabled", _MISSING)
         try:
+            host_override_checker = getattr(self.host, "_is_account_override_enabled", None)
+            impl._daily_host_account_overrides_enabled = (
+                bool(host_override_checker()) if callable(host_override_checker) else True
+            )
             impl.running = True
             impl.set_current_account(
                 getattr(self.host, "current_user", "") or "",
@@ -89,6 +94,7 @@ class DailyFeature:
             yield
         finally:
             impl.running, impl.current_account_id, impl.current_user = backup
+            self._restore_attr(impl, "_daily_host_account_overrides_enabled", previous_override_policy)
 
     @staticmethod
     def _restore_attr(impl, name, previous):
