@@ -4,9 +4,10 @@ from src.data.characters_utils import get_contact_list_with_feature_list
 from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
 from src.tasks.mixin.common import Common
+from src.tasks.mixin.liaison_mixin import LiaisonMixin
 
 
-class BoatHarvestTask(Common):
+class BoatHarvestTask(Common, LiaisonMixin):
     """帝江号收菜子任务：收集线索与制造舱助力，日常任务经 DailyFeature 接入。"""
 
     BOAT_STAGES = ["收集线索", "使用制造舱助力"]
