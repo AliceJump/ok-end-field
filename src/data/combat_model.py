@@ -82,7 +82,7 @@ class TeamCombatState:
     link_stacks: int = 0
 
     def add_link(self, stacks: int = 1) -> None:
-        """叠连击层（黎风获得、秋栗大招期间全队 +1 等）。"""
+        """叠连击层（黎风获得、秋栗大招期间自身获得等；无全队赠层来源）。"""
         self.link_stacks = min(self.link_stacks + stacks, MAX_LINK_STACKS)
 
     def consume_link(self) -> int:
@@ -123,7 +123,8 @@ class ReactionRule:
     结算伤害 = multiplier% ×(1+异常等级)[若 scales_with_stacks]
               ×(1+源石技艺强度/100)×等级系数（法术域）；
     物理域走 DAMAGE_FORMULA §3 的物理异常公式（无等级系数）。
-    倍率均为 NGA 实测社区数值 [社区测试]，冻结/碎冰/爆发为固定倍率。
+    倍率均为 NGA 实测社区数值 [社区测试]，碎冰/爆发为固定倍率；
+    冻结按公测口径 ×(1+异常等级)（早期 130% 固定为二测口径，待打桩复核）。
     """
 
     name: str
@@ -160,8 +161,8 @@ SPELL_REACTION_BY_ELEMENT: dict[EffectType, ReactionRule] = {
     ),
     EffectType.ATTACH_COLD: ReactionRule(
         name="冻结", domain="spell", requires=EffectType.STATUS_SPELL_INFLICT,
-        same_element_only=False, consumes_all=True, multiplier=130.0,
-        scales_with_stacks=False, applies=EffectType.STATUS_FROZEN,
+        same_element_only=False, consumes_all=True, multiplier=80.0,
+        scales_with_stacks=True, applies=EffectType.STATUS_FROZEN,
     ),
     EffectType.ATTACH_NATURAL: ReactionRule(
         name="腐蚀", domain="spell", requires=EffectType.STATUS_SPELL_INFLICT,

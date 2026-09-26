@@ -127,11 +127,15 @@ class TestReactionRules(unittest.TestCase):
         self.assertEqual(SPELL_BURST_RULE.multiplier, 160.0)
         self.assertFalse(SPELL_BURST_RULE.scales_with_stacks)
 
-    def test_frozen_has_fixed_multiplier_while_others_scale(self):
-        # §4：冻结初始伤害 130% 固定；燃烧/导电/腐蚀触发 80%×(1+异常等级)
-        self.assertEqual(SPELL_REACTION_BY_ELEMENT[EffectType.ATTACH_COLD].multiplier, 130.0)
-        self.assertFalse(SPELL_REACTION_BY_ELEMENT[EffectType.ATTACH_COLD].scales_with_stacks)
-        for element in (EffectType.ATTACH_BURN, EffectType.ATTACH_ELECTROMAGNETIC, EffectType.ATTACH_NATURAL):
+    def test_all_spell_reactions_scale_with_stacks(self):
+        # §4：公测口径四种法术反应触发伤害均为 80%×(1+异常等级)
+        # （冻结 130% 固定为二测口径，已按 calc-framework/gamekee 公测口径修正）
+        for element in (
+            EffectType.ATTACH_BURN,
+            EffectType.ATTACH_ELECTROMAGNETIC,
+            EffectType.ATTACH_COLD,
+            EffectType.ATTACH_NATURAL,
+        ):
             rule = SPELL_REACTION_BY_ELEMENT[element]
             with self.subTest(element=element):
                 self.assertEqual(rule.multiplier, 80.0)
