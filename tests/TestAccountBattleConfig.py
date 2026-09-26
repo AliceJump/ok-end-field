@@ -16,6 +16,7 @@ from src.core.BattleConfig import (
     BattleConfigManager,
 )
 from src.gui.AccountConfigTab import AccountConfigTab
+from src.tasks.onetime.BattleTask import BattleTask
 from src.tasks.mixin.battle_mixin import BattleMixin
 
 
@@ -361,6 +362,24 @@ class TestBattleConfigOverrides(unittest.TestCase):
         )
 
         self.assertEqual(task.get_battle_config("启动技能点数"), 2)
+
+    def test_running_task_uses_account_override_for_mode_and_value(self):
+        class ConfigWithAttributes(dict):
+            pass
+
+        task = object.__new__(BattleTask)
+        task.config = ConfigWithAttributes({BATTLE_CONFIG_MODE_KEY: False, "启动技能点数": 3})
+        task.battle_config_manager = BattleConfigManager({"启动技能点数": 2})
+        task.running = True
+        task.current_account_id = "acc_test"
+        task.current_user = "玩家A"
+        task._bind_account_aware_config_get()
+
+        with patch(
+            "src.core.base_mixin.account_override_mixin.get_account_task_overrides",
+            return_value={BATTLE_CONFIG_MODE_KEY: True, "启动技能点数": 4},
+        ):
+            self.assertEqual(task.get_battle_config("启动技能点数"), 4)
 
 
 class TestUseIndependentParsing(unittest.TestCase):

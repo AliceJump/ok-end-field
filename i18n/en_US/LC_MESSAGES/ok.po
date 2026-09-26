@@ -2759,3 +2759,19 @@ msgstr ""
 "Sub-task switches are marked with ⭐ and run top-down; the leading 'Default' group is expanded by default and Daily Rewards runs last.\n"
 "Sub-task parameters are configured on each sub-task card (Daily Tasks group in the task list) and support per-account overrides on the Account Config page.\n"
 "If ESC is pressed repeatedly, raise Settings / Single Action Delay on Main Screen (1.5 or above recommended)."
+
+msgid "日常刷体力"
+msgstr "Daily Stamina Farming"
+
+msgid "日常自动送货"
+msgstr "Daily Auto Delivery"
+
+msgid "一键日常专用，配置独立于「刷体力」。"
+msgstr ""
+"For one-click daily tasks; settings are separate from Stamina Farming."
+
+msgid "一键日常专用，配置独立于「自动送货」。"
+msgstr "For one-click daily tasks; settings are separate from Auto Delivery."
+
+msgid "每次送礼时送给联络台干员的礼物个数。"
+msgstr "Number of gifts given to the liaison officer each time."

@@ -16,7 +16,6 @@ from src.tasks.daily.finally_file import (
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.end_command_mixin import EndCommandMixin
 from src.tasks.onetime.ActivityRewardTask import ActivityRewardTask
-from src.tasks.onetime.BattleTask import BattleTask
 from src.tasks.onetime.BoatHarvestTask import BoatHarvestTask
 from src.tasks.onetime.BoatOrganizeTask import BoatOrganizeTask
 from src.tasks.onetime.CraftWeaponTask import CraftWeaponTask
@@ -24,7 +23,8 @@ from src.tasks.onetime.CreditCollectTask import CreditCollectTask
 from src.tasks.onetime.CreditShopTask import CreditShopTask
 from src.tasks.onetime.DailyRewardTask import DailyRewardTask
 from src.tasks.onetime.DeliverySendTask import DeliverySendTask
-from src.tasks.onetime.DeliveryTask import DeliveryTask
+from src.tasks.onetime.DailyBattleTask import DailyBattleTask
+from src.tasks.onetime.DailyDeliveryTask import DailyDeliveryTask
 from src.tasks.onetime.DemoBattleTask import DemoBattleTask
 from src.tasks.onetime.HomePointTask import HomePointTask
 from src.tasks.onetime.LiaisonGiftTask import LiaisonGiftTask
@@ -92,7 +92,9 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         self.delivery_send_feature = DailyFeature(
             self, DeliverySendTask, switch_key="⭐转交运送委托", run_method="delivery_send_others"
         )
-        self.delivery_feature = DailyFeature(self, DeliveryTask, switch_key="⭐自动送货", run_method="run_daily")
+        self.delivery_feature = DailyFeature(
+            self, DailyDeliveryTask, switch_key="⭐自动送货", run_method="run_daily"
+        )
         self.regional_feature = DailyFeature(
             self,
             RegionalBuildTask,
@@ -105,7 +107,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             self, CreditCollectTask, switch_key="⭐收信用", run_method="run_credit_collect"
         )
         self.shop_feature = DailyFeature(self, CreditShopTask, switch_key="⭐买信用商店", run_method="credit_shop")
-        self.battle_feature = DailyFeature(self, BattleTask, switch_key="⭐刷体力", run_method="run_battle")
+        self.battle_feature = DailyFeature(self, DailyBattleTask, switch_key="⭐刷体力", run_method="run_battle")
         self.activity_feature = DailyFeature(
             self,
             ActivityRewardTask,

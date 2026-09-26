@@ -201,6 +201,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
     def _reset_battle_state(self):
         self.battle_ctx = BattleContext(today_reward_tier=self.REWARD_TIER_KEEP)
 
+    @property
     def _battle_stage_cost(self):
         return stages_cost[self.battle_ctx.category_name]
 

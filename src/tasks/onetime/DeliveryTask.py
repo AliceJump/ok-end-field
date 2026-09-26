@@ -558,8 +558,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         if self.CFG_FULL_CYCLE_LOCATION in self.config:
             if self.config.get(self.CFG_FULL_CYCLE_LOCATION) not in self.full_cycle_locations:
                 self.config[self.CFG_FULL_CYCLE_LOCATION] = self.full_cycle_locations[0]
-        # 独立任务与日常模式（DailyTask 经 DailyFeature 调 run_daily）共用同一份
-        # 本任务配置，两处下拉选项保持同步
+        # 当前实例的下拉选项与地区配置保持同步；独立任务和日常专属任务
+        # 分别由 DeliveryTask / DailyDeliveryTask 实例保存自己的配置。
         if self.CFG_FULL_CYCLE_LOCATION in self.config_type and self.CFG_TEST_TARGET in self.config_type:
             self.config_type[self.CFG_TEST_TARGET]["options"] = (
                 [self.TEST_NONE] + self.to_delivery_point_config_keys + self.ends + [self.TEST_FULL_CYCLE]
@@ -569,8 +569,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
     def run_daily(self):
         """执行一轮日常自动送货，由 DailyTask 负责多账号循环。
 
-        日常任务经 DailyFeature 包装调用本方法（复用本任务实例的配置），
-        与独立运行共用 _run_single_delivery_cycle 流程。
+        日常任务经 DailyFeature 包装调用 DailyDeliveryTask 实例上的本方法，
+        使用该实例的配置，并与独立运行共用 _run_single_delivery_cycle 流程。
         """
         self._ensure_delivery_area_config()
 

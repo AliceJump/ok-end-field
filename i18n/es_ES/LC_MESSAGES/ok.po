@@ -2840,3 +2840,22 @@ msgstr ""
 "Los interruptores de subtareas se marcan con ⭐ y se ejecutan de arriba abajo; el grupo 'Predeterminado' inicial aparece expandido y Recompensas Diarias se ejecuta al final.\n"
 "Los parámetros de cada subtarea se configuran en su tarjeta (grupo Tareas diarias de la lista) y admiten anulaciones por cuenta en la página de Configuración de cuentas.\n"
 "Si ESC se pulsa repetidamente, sube Configuración / Retardo de acción única (se recomienda 1.5 o más)."
+
+msgid "日常刷体力"
+msgstr "Gasto diario de energía"
+
+msgid "日常自动送货"
+msgstr "Entrega automática diaria"
+
+msgid "一键日常专用，配置独立于「刷体力」。"
+msgstr ""
+"Para las tareas diarias; la configuración es independiente de Gasto de "
+"energía."
+
+msgid "一键日常专用，配置独立于「自动送货」。"
+msgstr ""
+"Para las tareas diarias; la configuración es independiente de Entrega "
+"automática."
+
+msgid "每次送礼时送给联络台干员的礼物个数。"
+msgstr "Cantidad de regalos que se dan al operador de enlace cada vez."

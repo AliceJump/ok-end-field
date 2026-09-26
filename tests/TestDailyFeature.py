@@ -10,6 +10,7 @@
 """
 
 import unittest
+from unittest.mock import patch
 
 from src.tasks.daily.daily_feature import DailyFeature
 from src.tasks.onetime.MailTask import MailTask
@@ -18,6 +19,10 @@ from src.tasks.onetime.MailTask import MailTask
 def _make_impl():
     """构造绕过框架初始化的 MailTask 实例（只填测试所需的属性）。"""
     return object.__new__(MailTask)
+
+
+class _FakeConfig(dict):
+    """允许账号覆盖补丁绑定 get 方法的最小配置对象。"""
 
 
 class _FakeExecutor:
@@ -33,6 +38,7 @@ class _FakeHost:
         self.current_account_id = account_id
         self.current_user = account_name
         self._daily_boat_state_confirmed = boat_state
+        self.daily_runner = None
         self.logged = []
 
     def _account_override_for(self, config_name):
@@ -89,7 +95,7 @@ class TestDailyFeatureRun(unittest.TestCase):
     def test_impl_config_reads_registered_impl(self):
         """impl_config 读已注册实例的配置；实例缺失回落 default。"""
         impl = _make_impl()
-        impl.config = {"⭐帝江号一键存放": True}
+        impl.config = _FakeConfig({"⭐帝江号一键存放": True})
         host = _FakeHost([impl])
         feature = DailyFeature(host, MailTask, switch_key="⭐收邮件")
         self.assertTrue(feature.impl_config("⭐帝江号一键存放"))
@@ -99,6 +105,24 @@ class TestDailyFeatureRun(unittest.TestCase):
         missing_feature = DailyFeature(missing_host, MailTask, switch_key="⭐收邮件")
         self.assertIsNone(missing_feature.impl_config("⭐简易制作"))
         self.assertFalse(missing_feature.impl_config("⭐简易制作", False))
+
+    def test_impl_config_uses_current_account_override(self):
+        """日常谓词在运行前也须按宿主账号读取子任务覆盖。"""
+        impl = _make_impl()
+        impl.config = _FakeConfig({"⭐地区建设": ["据点兑换"]})
+        impl.running = False
+        impl.current_account_id = ""
+        impl.current_user = ""
+        host = _FakeHost([impl], account_id="acc_x", account_name="user")
+        feature = DailyFeature(host, MailTask, switch_key="⭐地区建设")
+        with patch(
+            "src.core.base_mixin.account_override_mixin.get_account_task_overrides",
+            return_value={"⭐地区建设": []},
+        ):
+            self.assertEqual(feature.impl_config("⭐地区建设"), [])
+        self.assertFalse(impl.running)
+        self.assertEqual(impl.current_account_id, "")
+        self.assertEqual(impl.current_user, "")
 
     def test_run_resolves_impl_and_injects_context(self):
         feature, _, captured, _host = self._feature_and_impl(account_id="acc_x", account_name="0705", boat_state=True)
@@ -156,6 +180,29 @@ class TestDailyFeatureRun(unittest.TestCase):
         impl.run_mail = confirm_boat_state
         feature.run()
         self.assertTrue(host._daily_boat_state_confirmed)
+        self.assertFalse(hasattr(impl, "_daily_boat_state_confirmed"))
+
+    def test_run_forwards_failure_details_to_daily_runner(self):
+        """子任务的 mark_task_failure 应进入日常汇总并在结束后撤销注入。"""
+        feature, impl, _, host = self._feature_and_impl()
+
+        class _Runner:
+            def __init__(self):
+                self.failures = []
+
+            def get_current_task_name(self):
+                return "⭐收邮件"
+
+            def set_task_failure(self, message, task_name=None, screenshot_taken=False):
+                self.failures.append((message, task_name, screenshot_taken))
+
+        host.daily_runner = _Runner()
+        impl.screenshot = lambda *_args, **_kwargs: None
+        impl.run_mail = lambda: impl.mark_task_failure("收邮件失败")
+        feature.run()
+
+        self.assertEqual(host.daily_runner.failures, [("收邮件失败", None, True)])
+        self.assertFalse(hasattr(impl, "daily_runner"))
 
 
 if __name__ == "__main__":

@@ -36,6 +36,8 @@ class RegionalBuildTask(Common, MapMixin, ZipLineMixin):
 
     OPTIONS = ["据点兑换", "买物资", "买卖货"]
     DEFAULT_OPTIONS = ["据点兑换", "买卖货"]
+    CFG_SHOP_WHITELIST = "购物白名单"
+    CFG_BUY_GIFT = "是否买礼物"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

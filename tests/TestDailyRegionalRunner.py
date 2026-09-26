@@ -43,6 +43,15 @@ def _make_runner(
 class TestDailyRegionalRunner(unittest.TestCase):
     AREAS = ["武陵", "试验园区"]
 
+    def test_buy_staple_goods_accepts_config_keys_before_navigation(self):
+        runner = object.__new__(RegionalBuildTask)
+        runner.config = {"购物白名单": []}
+        runner.info_set = Mock()
+        runner.log_info = Mock()
+
+        self.assertTrue(runner.buy_staple_goods(target_areas=[]))
+        runner.info_set.assert_called_once_with("current_task", "buy_staple_goods")
+
     def run_runner(self, runner):
         with patch("src.tasks.onetime.RegionalBuildTask.areas_list", self.AREAS):
             return runner.run_regional()

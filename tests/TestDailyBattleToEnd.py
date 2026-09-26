@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from src.tasks.onetime.BattleTask import BattleContext, BattleTask
+from src.data.world_map import stages_cost
 
 
 class _ToEndTaskHarness:
@@ -75,6 +76,13 @@ def _make_impl(task):
 
 
 class TestDailyBattleToEnd(unittest.TestCase):
+    def test_stage_cost_is_numeric_property(self):
+        category, expected_cost = next(iter(stages_cost.items()))
+        task = BattleTask.__new__(BattleTask)
+        task.battle_ctx = BattleContext(category_name=category)
+
+        self.assertEqual(task._battle_stage_cost, expected_cost)
+
     def test_yolo_hit_disables_subsequent_middle_clicks(self):
         task = _ToEndTaskHarness()
         feature = _make_impl(task)

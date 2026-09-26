@@ -34,9 +34,9 @@ import threading
 from pathlib import Path
 from typing import Any
 
+from src.core.BattleConfig import BATTLE_CONFIG_MODE_KEY, DEFAULT_BATTLE_CONFIG
 from src.core.config_migration import _NO_MIGRATION
 from src.core.paths import config_path
-from src.data.delivery_area import DEFAULT_DELIVERY_AREA
 from src.data.world_map import areas_list
 from src.tasks.onetime.ActivityRewardTask import ActivityRewardTask
 from src.tasks.onetime.BoatHarvestTask import BoatHarvestTask
@@ -54,24 +54,6 @@ _LOCK = threading.Lock()
 _PROCESS_DONE = False
 
 
-def fill_if_target_default(source_key: str, default_value: Any):
-    """callable 工厂：来源值存在且非默认、目标缺失或仍为默认值时写入来源值。
-
-    用于「目标任务本就声明同名参数」的场景（如 DeliveryTask 的目标券数）：
-    目标已被用户自定义时不覆盖；目标仍是默认值时用日常卡片上的旧值填充。
-    """
-
-    def transform(source_config: dict, target_config: dict, target_key: str):
-        source_value = source_config.get(source_key)
-        if source_value is None or source_value == default_value:
-            return _NO_MIGRATION
-        if target_config.get(target_key, default_value) != default_value:
-            return _NO_MIGRATION
-        return source_value
-
-    return transform
-
-
 def _area_trade_key_map() -> dict[str, str]:
     """按地区生成买卖货键（{area} / {area}买入价 / {area}卖出价）的等名映射。"""
     key_map: dict[str, str] = {}
@@ -84,6 +66,8 @@ def _area_trade_key_map() -> dict[str, str]:
 
 def _import_boat_stages(source_config: dict, target_config: dict, target_key: str):
     """⭐帝江号收菜：新列表值直接搬；旧「布尔开关 + 操作列表」转换为列表。"""
+    if isinstance(target_config.get(target_key), list):
+        return _NO_MIGRATION
     value = source_config.get(target_key)
     if isinstance(value, list):
         return value
@@ -97,6 +81,8 @@ def _import_boat_stages(source_config: dict, target_config: dict, target_key: st
 
 def _import_activity_rewards(source_config: dict, target_config: dict, target_key: str):
     """⭐活动奖励：新列表值直接搬；旧「布尔开关 + 操作列表」转换为列表。"""
+    if isinstance(target_config.get(target_key), list):
+        return _NO_MIGRATION
     value = source_config.get(target_key)
     if isinstance(value, list):
         return value
@@ -110,6 +96,8 @@ def _import_activity_rewards(source_config: dict, target_config: dict, target_ke
 
 def _import_region_options(source_config: dict, target_config: dict, target_key: str):
     """⭐地区建设：新列表值直接搬；旧三个布尔开关合并为选项列表。"""
+    if isinstance(target_config.get(target_key), list):
+        return _NO_MIGRATION
     value = source_config.get(target_key)
     if isinstance(value, list):
         return value
@@ -169,14 +157,40 @@ DAILY_SPLIT_IMPORTS: dict[str, dict[str, dict[str, dict[str, Any]]]] = {
                 "⭐活动奖励": _import_activity_rewards,
             },
         },
-        # DeliveryTask 自身声明同名参数（独立运行早已存在）：
-        # 目标仍是默认值时用日常卡片上的旧值填充，目标已有自定义值则不动。
-        "DeliveryTask": {
+    },
+    # phase2 已启动过的用户，旧日常参数可能已被 verify_config 从 DailyTask.json
+    # 清除；本批次读取 phase2 的预清理备份，且不覆盖日常专属任务已有的配置。
+    "daily_split_v3": {
+        "DailyBattleTask": {
             "DailyTask": {
-                "目标券数": fill_if_target_default("目标券数", ["119000"]),
-                "地区切换": fill_if_target_default("地区切换", DEFAULT_DELIVERY_AREA),
+                **{key: key for key in DEFAULT_BATTLE_CONFIG},
+                BATTLE_CONFIG_MODE_KEY: BATTLE_CONFIG_MODE_KEY,
+                "战斗配置": "战斗配置",
+                **{
+                    key: key
+                    for key in (
+                        "消耗限时体力药",
+                        "体力本",
+                        "体力本奖励档位",
+                        "刷体力开始日期",
+                        "刷本序列",
+                        "仅站桩",
+                        "体力刷完后继续刷取次数",
+                        "指定的队伍编号",
+                    )
+                },
             },
         },
+        "DailyDeliveryTask": {
+            "DailyTask": {
+                "目标券数": "目标券数",
+                "地区切换": "地区切换",
+            },
+        },
+        # 修复已完成 v2 批次时原样复制的旧布尔账号覆盖；有效列表保持不变。
+        "BoatHarvestTask": {"DailyTask": {"⭐帝江号收菜": _import_boat_stages}},
+        "RegionalBuildTask": {"DailyTask": {"⭐地区建设": _import_region_options}},
+        "ActivityRewardTask": {"DailyTask": {"⭐活动奖励": _import_activity_rewards}},
     },
 }
 
@@ -191,6 +205,23 @@ def _migration_backup_dir(batch_id: str) -> str:
 
 def _task_config_path(name: str) -> str:
     return config_path(f"{name}.json")
+
+
+def _read_source_task_config(source_name: str, batch_id: str) -> dict[str, Any]:
+    """读取当前来源配置；v3 缺失的旧日常键从此前批次备份补回。"""
+    from ok.util.file import read_json_file
+
+    source_config: dict[str, Any] = {}
+    if source_name == "DailyTask" and batch_id == "daily_split_v3":
+        for backup_batch in ("daily_split_pilot_v1", "daily_split_v2"):
+            backup_file = Path(_migration_backup_dir(backup_batch)) / "DailyTask.json"
+            backup = read_json_file(str(backup_file))
+            if isinstance(backup, dict):
+                source_config.update(backup)
+    current = read_json_file(_task_config_path(source_name))
+    if isinstance(current, dict):
+        source_config.update(current)
+    return source_config
 
 
 def _read_state() -> dict[str, Any]:
@@ -273,11 +304,40 @@ def _import_task_config(target_name: str, key_map: dict[str, Any], source_config
     return modified
 
 
-def _import_account_overrides(target_name: str, source_name: str, key_map: dict[str, Any]) -> None:
+def _read_source_account_segment(account_id: str, source_name: str, batch_id: str, data: dict) -> dict:
+    """v3 从旧批次备份找回已从 DailyTask 账号段清理的参数。"""
+    from ok.util.file import read_json_file
+
+    source_segment: dict[str, Any] = {}
+    if source_name == "DailyTask" and batch_id == "daily_split_v3":
+        registry = data.get("account_registry") or {}
+        account_meta = registry.get(account_id, {}) if isinstance(registry, dict) else {}
+        aliases = [account_id]
+        if isinstance(account_meta, dict):
+            aliases.extend(account_meta.get("aliases", []) if isinstance(account_meta.get("aliases"), list) else [])
+            aliases.append(account_meta.get("username", ""))
+        for backup_batch in ("daily_split_pilot_v1", "daily_split_v2"):
+            backup_file = Path(_migration_backup_dir(backup_batch)) / f"{_ACCOUNT_OVERRIDE_STORE}.json"
+            backup = read_json_file(str(backup_file))
+            backup_accounts = backup.get("accounts", {}) if isinstance(backup, dict) else {}
+            if not isinstance(backup_accounts, dict):
+                continue
+            for alias in aliases:
+                task_map = backup_accounts.get(alias, {})
+                segment = task_map.get(source_name, {}) if isinstance(task_map, dict) else {}
+                if isinstance(segment, dict):
+                    source_segment.update(segment)
+    current_task_map = (data.get("accounts") or {}).get(account_id, {})
+    current_segment = current_task_map.get(source_name, {}) if isinstance(current_task_map, dict) else {}
+    if isinstance(current_segment, dict):
+        source_segment.update(current_segment)
+    return source_segment
+
+
+def _import_account_overrides(target_name: str, source_name: str, key_map: dict[str, Any], batch_id: str) -> None:
     """把账号覆盖存储中来源任务段的参数键复制到目标类名段（旧键保留）。
 
-    callable 条目面向来源任务配置文件做值转换，覆盖段里按
-    「目标键 = 来源段同名键」处理（覆盖值与任务配置同形，直接复制即可）。
+    callable 条目同任务配置文件一样执行转换；已迁移的有效目标值优先。
     """
     from src.tasks.account.account_scope_store import update_overrides
 
@@ -285,40 +345,44 @@ def _import_account_overrides(target_name: str, source_name: str, key_map: dict[
         accounts = data.get("accounts") or {}
         if not isinstance(accounts, dict):
             return data
-        for account_tasks in accounts.values():
+        account_ids = list(accounts)
+        if source_name == "DailyTask" and batch_id == "daily_split_v3":
+            account_ids.extend(
+                account_id
+                for account_id in (data.get("account_registry") or {})
+                if account_id not in accounts
+            )
+        for account_id in account_ids:
+            account_tasks = accounts.setdefault(account_id, {})
             if not isinstance(account_tasks, dict):
                 continue
-            source_segment = account_tasks.get(source_name, {})
-            if not isinstance(source_segment, dict):
+            source_segment = _read_source_account_segment(account_id, source_name, batch_id, data)
+            if not source_segment:
                 continue
             target_segment = account_tasks.setdefault(target_name, {})
             if not isinstance(target_segment, dict):
                 target_segment = {}
                 account_tasks[target_name] = target_segment
             for target_key, entry in key_map.items():
-                if target_key in target_segment:
+                if not callable(entry) and target_key in target_segment:
                     continue
-                source_key = entry if isinstance(entry, str) else target_key
-                if source_key not in source_segment:
+                value = _resolve_entry_value(entry, source_segment, target_segment, target_key)
+                if value is _NO_MIGRATION or target_segment.get(target_key, _NO_MIGRATION) == value:
                     continue
-                target_segment[target_key] = source_segment[source_key]
+                target_segment[target_key] = value
         return data
 
     update_overrides(apply)
 
 
 def _run_batch(batch_id: str, batch: dict[str, dict[str, dict[str, Any]]], state: dict[str, Any]) -> None:
-    from ok.util.file import read_json_file
-
     _backup_source_configs(batch_id, batch, state)
     for target_name, source_map in batch.items():
         for source_name, key_map in source_map.items():
-            source_config = read_json_file(_task_config_path(source_name))
-            if not isinstance(source_config, dict):
-                source_config = {}
+            source_config = _read_source_task_config(source_name, batch_id)
             _import_task_config(target_name, key_map, source_config)
             # 账号覆盖段迁移与任务配置迁移共用同一份键映射
-            _import_account_overrides(target_name, source_name, key_map)
+            _import_account_overrides(target_name, source_name, key_map, batch_id)
     state.setdefault("completed_batches", []).append(batch_id)
     _write_state(state)
 
