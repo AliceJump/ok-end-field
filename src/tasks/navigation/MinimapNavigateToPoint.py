@@ -1,4 +1,4 @@
-"""小地图网格导航调试任务：规划并移动到目标世界坐标。"""
+"""小地图网格导航领域任务：规划并移动到目标世界坐标。"""
 
 from __future__ import annotations
 
@@ -71,16 +71,8 @@ class MinimapNavigateToPoint(ZipLineMixin, GridNavigationMixin, BaseEfTask):
 
     def _run_plan_only(self, goal: tuple[float, float], map_id: str) -> bool:
         """只采样一次实时位置并输出规划结果，不发送移动输入。"""
-        position_service = self._get_minimap_position_service()
+        position_service = self.ensure_runtime_position_service(force_start=True)
         if position_service is None:
-            self.log_warning("未注册「小地图定位」触发任务，无法获取当前位置", notify=True)
-            return False
-        if not getattr(position_service, "enabled", True):
-            self.log_warning("「小地图定位」触发任务未启用，无法获取当前位置", notify=True)
-            return False
-        position_service.start_minimap_position(wait_stable=False)
-        if not getattr(position_service, "minimap_position_ready", True):
-            self.log_warning("小地图定位器未完成初始化，请检查全局「Nav Config」和游戏窗口", notify=True)
             return False
         timeout = max(
             1.0,
@@ -89,7 +81,13 @@ class MinimapNavigateToPoint(ZipLineMixin, GridNavigationMixin, BaseEfTask):
         started = self.active_time()
         while self.active_time() - started < timeout:
             frame = self.next_frame()
-            state = position_service.minimap_position(frame=frame, now=self.active_time())
+            state = self.world_pose(
+                frame=frame,
+                max_age=0.6,
+            )
+            if state is None:
+                self.sleep(0.2)
+                continue
             x, z = state.get("x"), state.get("z")
             if x is None or z is None:
                 self.sleep(0.2)

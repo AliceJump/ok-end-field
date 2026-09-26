@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """全局「导航配置」（src/core/NavConfig.py）的选档逻辑与注册。
 
 比例尺随画面宽变化（``比例尺 = 常数 / 画面宽``），所以这里最要紧的是：
@@ -17,6 +16,7 @@ from unittest.mock import patch
 from ok.util import config as config_module
 from ok.util.file import read_json_file, write_json_file
 
+from src.core import global_config_store
 from src.core.GridNavConfig import (
     CONFIG_GRID_DIR,
     CONFIG_GRID_MAX_EXPAND,
@@ -28,8 +28,8 @@ from src.core.NavConfig import (
     DEFAULT_SCALE_CONSTANT,
     NAV_CONFIG_DESCRIPTION,
     NAV_CONFIG_GROUP_KEY,
-    NAV_CONFIG_TYPE,
     NAV_CONFIG_NAME,
+    NAV_CONFIG_TYPE,
     NAV_CONTENT_KEY,
     NAV_MAP_ID_KEY,
     NAV_MATRIX_SUFFIX,
@@ -42,7 +42,6 @@ from src.core.NavConfig import (
     nav_profile_for_width,
     tier_for_width,
 )
-from src.core import global_config_store
 
 
 def _tier_keys() -> list[str]:
@@ -142,7 +141,13 @@ class TestNavConfigShape(unittest.TestCase):
     """默认值 / 说明 / 注册的结构一致性。"""
 
     def test_minimap_test_task_keeps_only_target_coordinates_in_task_config(self):
-        path = Path(__file__).parents[1] / "src" / "tasks" / "test" / "MinimapNavigateToPoint.py"
+        path = (
+            Path(__file__).parents[1]
+            / "src"
+            / "tasks"
+            / "navigation"
+            / "MinimapNavigateToPoint.py"
+        )
         tree = ast.parse(path.read_text(encoding="utf-8"))
         class_node = next(
             node
@@ -444,7 +449,7 @@ class TestNavConfigMigration(unittest.TestCase):
                 patches = self._patched_store(tmp)
                 with patches[0], patches[1], patches[2], patches[3]:
                     config = global_config_store.get_global_config(NAV_CONFIG_NAME)
-                    for key, value in legacy_values.items():
+                    for key, _value in legacy_values.items():
                         config[key] = DEFAULT_NAV_CONFIG[key]
                     global_config_store.migrate_task_nav_values_to_global(
                         "MinimapNavigateToPoint"
@@ -455,6 +460,34 @@ class TestNavConfigMigration(unittest.TestCase):
 
             for key, value in legacy_values.items():
                 self.assertEqual(config.get(key), value)
+
+    def test_item_navigator_truth_keys_migrate_to_global_nav_config(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self._write_configs(
+                tmp,
+                {
+                    "Nav Config.json": dict(DEFAULT_NAV_CONFIG),
+                    "ItemNavigatorTask.json": {
+                        "content": "item-content",
+                        "地图账号": "item-account",
+                    },
+                },
+            )
+            previous = global_config_store._CONFIGS.copy()
+            global_config_store._CONFIGS.clear()
+            try:
+                patches = self._patched_store(tmp)
+                with patches[0], patches[1], patches[2], patches[3]:
+                    config = global_config_store.get_global_config(NAV_CONFIG_NAME)
+                    global_config_store.migrate_task_nav_values_to_global(
+                        "ItemNavigatorTask"
+                    )
+            finally:
+                global_config_store._CONFIGS.clear()
+                global_config_store._CONFIGS.update(previous)
+
+            self.assertEqual(config.get(NAV_CONTENT_KEY), "item-content")
+            self.assertEqual(config.get(NAV_WS_ACCOUNT_KEY), "item-account")
 
     def test_grid_position_controls_migrate_to_owner_before_prune(self):
         legacy_values = {

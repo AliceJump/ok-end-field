@@ -17,7 +17,7 @@
 最小角的世界坐标。当前只支持二维网格，``origin[1]`` 仅作记录。
 
 选择稠密数组的原因、完整格式说明和性能数据见
-``docs/dev/导航与小地图定位.md``。
+``docs/dev/网格导航.md``。
 """
 
 from __future__ import annotations

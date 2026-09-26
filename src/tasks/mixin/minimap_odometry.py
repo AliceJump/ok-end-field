@@ -33,7 +33,8 @@
 
 本模块为纯视觉/数学实现，不依赖 ``ok`` 框架，便于做单元测试；任务层通过传入一个
 “任务对象”（提供 ``next_frame`` / ``width`` / ``height`` / ``active_time`` /
-``log_*`` 等）来驱动。融合与导航分层见 ``docs/dev/导航与小地图定位.md``。
+``log_*`` 等）来驱动。融合链路见 ``docs/dev/小地图定位.md``，导航消费见
+``docs/dev/网格导航.md``。
 """
 
 from __future__ import annotations

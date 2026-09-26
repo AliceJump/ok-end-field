@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-"""小地图区域检查：截一帧游戏画面，圈出里程计所用的小地图圆环区域并保存图片。
+"""小地图区域检查任务：截一帧游戏画面，圈出里程计所用的小地图圆环区域并保存图片。
 
 用途：核对「小地图里程计」假设的圆心与内/外半径是否真的对准了游戏小地图。
 区域不对（圆心偏了、半径过大过小）会直接导致相位相关失效、位移恒为 0，
@@ -24,7 +23,6 @@ from datetime import datetime
 from pathlib import Path
 
 import cv2
-import numpy as np
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
@@ -135,11 +133,11 @@ class MinimapRegionCheck(BaseEfTask):
         overlay[band] = (0, 255, 255)  # BGR：环带染黄
         vis = cv2.addWeighted(overlay, 0.35, vis, 0.65, 0)
 
-        c = (int(round(cx)), int(round(cy)))
+        c = (round(cx), round(cy))
         cv2.drawMarker(vis, c, (0, 0, 255), markerType=cv2.MARKER_CROSS,
                        markerSize=40, thickness=2)
-        cv2.circle(vis, c, int(round(r_out)), (0, 255, 0), 2)   # 外圈绿
-        cv2.circle(vis, c, int(round(r_in)), (0, 0, 255), 2)    # 内圈红
+        cv2.circle(vis, c, round(r_out), (0, 255, 0), 2)   # 外圈绿
+        cv2.circle(vis, c, round(r_in), (0, 0, 255), 2)    # 内圈红
 
         task_w = int(getattr(self, "width", 0) or 0)
         task_h = int(getattr(self, "height", 0) or 0)

@@ -29,7 +29,7 @@
     result = planner.plan((-40.0, -30.0), (60.0, 68.0))
 
 ``plan`` 接收世界坐标 ``(x, z)``；按格下标规划时使用 :meth:`GridPlanner.plan_cells`。
-分层设计和调参原则见 ``docs/dev/导航与小地图定位.md``。
+分层设计和调参原则见 ``docs/dev/网格导航.md``。
 """
 
 from __future__ import annotations

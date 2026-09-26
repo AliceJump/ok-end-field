@@ -17,6 +17,7 @@ from src.core.BattleConfig import (
     BATTLE_CONFIG_TYPE,
     DEFAULT_BATTLE_CONFIG,
 )
+from src.core.GridNavConfig import GRID_NAV_CONFIG_KEYS
 from src.core.NavConfig import (
     DEFAULT_NAV_CONFIG,
     NAV_CONFIG_DESCRIPTION,
@@ -28,7 +29,6 @@ from src.core.NavConfig import (
     NAV_WAIT_POSITION_TIMEOUT_KEY,
     NAV_WS_ACCOUNT_KEY,
 )
-from src.core.GridNavConfig import GRID_NAV_CONFIG_KEYS
 from src.data.delivery_area import DELIVERY_AREA_CONFIG
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING, stages_dict
 from src.icons import Icons
@@ -171,7 +171,11 @@ _MIGRATION_STATE_PATH = get_relative_path("configs", "_global_config_migrations.
 _MIGRATION_BACKUP_DIR = get_relative_path("configs", "global_config_migration_backup")
 _BATTLE_LEGACY_TASK_CONFIGS = ["DailyTask", "AutoCombatTask", "BattleTask"]
 _ZIP_LINE_LEGACY_TASK_CONFIGS = ["DeliveryTask", "DailyTask", "BattleTask"]
-_NAV_LEGACY_TASK_CONFIGS = ["MinimapPositionTask", "MinimapNavigateToPoint"]
+_NAV_LEGACY_TASK_CONFIGS = [
+    "MinimapPositionTask",
+    "MinimapNavigateToPoint",
+    "ItemNavigatorTask",
+]
 _NAV_TASK_MIGRATION_KEYS = (
     NAV_CONTENT_KEY,
     NAV_WS_ACCOUNT_KEY,
@@ -180,6 +184,12 @@ _NAV_TASK_MIGRATION_KEYS = (
     NAV_WAIT_POSITION_TIMEOUT_KEY,
     *GRID_NAV_CONFIG_KEYS,
 )
+_NAV_TASK_KEY_ALIASES = {
+    "ItemNavigatorTask": {
+        "content": NAV_CONTENT_KEY,
+        "地图账号": NAV_WS_ACCOUNT_KEY,
+    },
+}
 _MINIMAP_POSITION_TASK_CONFIG_NAME = "MinimapPositionTask"
 _ZIP_LINE_ACCOUNT_MIGRATION_MARKER = "zip_line_account_overrides_v1"
 _NAV_LEGACY_BACKUP_MARKER = "nav_legacy_task_config_backup_v1"
@@ -512,6 +522,21 @@ def migrate_task_nav_values_to_global(task_class_name: str) -> None:
     nav_config = get_global_config(NAV_CONFIG_NAME)
 
     candidates = {}
+    aliases = _NAV_TASK_KEY_ALIASES.get(task_class_name, {})
+    for raw_key, key in aliases.items():
+        if raw_key not in data:
+            continue
+        default_value = DEFAULT_NAV_CONFIG.get(key)
+        value = data[raw_key]
+        if not _same_type(value, default_value):
+            continue
+        if isinstance(default_value, str):
+            value = str(value).strip()
+            if value:
+                candidates[key] = value
+        elif value != default_value:
+            candidates[key] = value
+
     for key in _NAV_TASK_MIGRATION_KEYS:
         if key not in data:
             continue

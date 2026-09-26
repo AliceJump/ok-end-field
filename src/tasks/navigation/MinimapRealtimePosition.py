@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-"""小地图实时位置测试任务。
+"""小地图实时位置领域任务。
 
 每个采样拍输出一行**易读**日志（开头有一次字段说明）：
   [实时位置] #003 | 位置=(-323.32, 461.00)m 朝向=353.5° 速度=0.96m/s 状态=静止 |
@@ -26,23 +25,24 @@
 整条实时定位链路；不写入正式配置。
 
 定位能力由 ``MinimapPositionTask`` 统一维护，本任务只负责采样与日志呈现。
-完整链路见 ``docs/dev/导航与小地图定位.md``。
+完整链路见 ``docs/dev/小地图定位.md``。
 """
 
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
 from src.tasks.mixin.minimap_heading_mixin import CONFIG_MIN_SCORE
-from src.tasks.trigger.MinimapPositionTask import MinimapPositionTask
+from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 
 
-class MinimapRealtimePosition(BaseEfTask):
+class MinimapRealtimePosition(RuntimeStateMixin, BaseEfTask):
     """小地图实时位置测试（工具与调试分组）。"""
 
     requires_foreground = True  # 需要读取游戏画面/小地图
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._init_runtime_state_mixin()
         self.name = "小地图实时位置"
         self.group_name = "工具与调试"
         self.group_icon = FluentIcon.DEVELOPER_TOOLS
@@ -69,16 +69,8 @@ class MinimapRealtimePosition(BaseEfTask):
             self.log_info("当前不在大世界画面，无法读取小地图。请先进入大世界。", notify=True)
             return
 
-        position_task = self.get_task_by_class(MinimapPositionTask)
+        position_task = self.ensure_runtime_position_service(force_start=True)
         if position_task is None:
-            self.log_warning("未注册「小地图定位」触发任务，无法读取实时位置", notify=True)
-            return
-        if not getattr(position_task, "enabled", True):
-            self.log_warning("「小地图定位」触发任务未启用，无法读取实时位置", notify=True)
-            return
-        position_task.start_minimap_position(wait_stable=False)
-        if not getattr(position_task, "minimap_position_ready", True):
-            self.log_warning("小地图定位器未完成初始化，请检查全局「Nav Config」和游戏窗口", notify=True)
             return
 
         interval = max(0.05, self._cfg_float("采样间隔(秒)", 0.5))
@@ -136,7 +128,14 @@ class MinimapRealtimePosition(BaseEfTask):
                 continue
 
             # 采样一拍：里程计 + 可能的待定 WS 校准 + 同一帧的朝向
-            st = position_task.minimap_position(frame=frame, now=now)
+            st = self.world_pose(
+                frame=frame,
+                max_age=max(0.5, interval * 2.0),
+                now=now,
+            )
+            if st is None:
+                self.log_warning("运行时定位状态不可用或已过期")
+                continue
 
             if iteration % log_every != 0:
                 continue

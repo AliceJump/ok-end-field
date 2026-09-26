@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """MinimapPositionMixin 单元测试。
 
 用桩任务 + 合成小地图帧验证对外契约：
@@ -18,6 +17,7 @@ import cv2
 import numpy as np
 
 from src.core.NavConfig import DEFAULT_NAV_CONFIG
+from src.runtime_state.topics import RuntimeTopic
 from src.tasks.mixin.minimap_position_mixin import (
     MinimapPositionMixin,
     parse_map_to_world,
@@ -323,6 +323,26 @@ class TestMinimapPositionMixin(unittest.TestCase):
             self.task.latest_minimap_state()["sync_seq"],
             1,
         )
+
+    def test_sample_world_pose_publishes_stable_state_contract(self):
+        self.task.start_minimap_position()
+        self.task.tick(self.frame)
+        self.task._t += 0.5
+        self.task.push_ws(607.16, -136.13)
+
+        state = self.task.sample_world_pose(frame=self.frame)
+        pose = self.task.runtime_state_hub.value(
+            RuntimeTopic.WORLD_POSE,
+            now=state["sample_t"],
+        )
+
+        self.assertIsNotNone(pose)
+        self.assertEqual(pose["x"], 607.16)
+        self.assertEqual(pose["z"], -136.13)
+        self.assertEqual(pose["y"], 0.0)
+        self.assertEqual(pose["ws_xyz"], (607.16, 0.0, -136.13))
+        self.assertTrue(pose["position_trusted"])
+        self.assertEqual(pose["source"], "minimap")
 
     def test_distance_since_sync_requests_calibration(self):
         self.task.config["航点校准最小距离(米)"] = 0.5

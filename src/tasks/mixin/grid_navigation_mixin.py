@@ -25,7 +25,7 @@
 偏航恢复优先原地校准；若当前位置不属于已知 free 格，则先返回本次实际走过的最近
 已知格，校准后再重新规划。
 
-模块分层、坐标约定、规划代价与排查顺序见 ``docs/dev/导航与小地图定位.md``。
+模块分层、坐标约定、规划代价与排查顺序见 ``docs/dev/网格导航.md``。
 """
 
 from __future__ import annotations
@@ -33,6 +33,7 @@ from __future__ import annotations
 import math
 from pathlib import Path
 
+from src.core.global_config_store import get_global_config
 from src.core.GridNavConfig import (
     CONFIG_GRID_ALLOW_UNKNOWN,
     CONFIG_GRID_CALIBRATION_WAYPOINTS,
@@ -71,7 +72,6 @@ from src.core.GridNavConfig import (
     GRID_TURN_TOLERANCE_DEG,
 )
 from src.core.NavConfig import NAV_CONFIG_NAME
-from src.core.global_config_store import get_global_config
 from src.data.FeatureList import FeatureList as fL
 from src.nav.grid_io import GRID_SUFFIX, DenseGrid, load_grid
 from src.nav.grid_planner import PlanResult
@@ -95,8 +95,8 @@ from src.tasks.mixin.minimap_heading_mixin import (
     CONFIG_YAW_PER_PIXEL,
     MinimapHeadingMixin,
 )
+from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineReplanRequired
-from src.tasks.trigger.MinimapPositionTask import MinimapPositionTask
 
 GRID_ZIP_LINE_ESC_THRESHOLD = 0.8
 GRID_SPRINT_MIN_SEGMENT_METERS = 15.0
@@ -136,7 +136,7 @@ __all__ = [
     "GridNavigationMixin",
 ]
 
-class GridNavigationMixin(MinimapHeadingMixin):
+class GridNavigationMixin(RuntimeStateMixin, MinimapHeadingMixin):
     """在 ``*.grid.npz`` 上规划并驱动角色前往世界坐标 ``(x, z)``。
 
     定位由共享的 ``MinimapPositionTask`` 提供；本类只消费状态、执行动作和维护本次
@@ -184,13 +184,14 @@ class GridNavigationMixin(MinimapHeadingMixin):
 
     def _init_grid_navigation_mixin(self) -> None:
         """初始化导航状态；不创建或启动任何定位、输入资源。"""
+        self._init_runtime_state_mixin()
         self._init_minimap_heading_mixin()
         self._grid_nav_follower: GridRouteFollower | None = None
         self._grid_nav_map_id = ""
         self._grid_nav_w_held = False
         self._grid_nav_sprint_active = False
         self._grid_nav_last_wait_log = 0.0
-        self._grid_minimap_position_service: MinimapPositionTask | None = None
+        self._grid_minimap_position_service = None
         self._grid_nav_last_info_key = None
         self._grid_nav_last_info_at = 0.0
         self._grid_nav_last_debug_key = None
@@ -339,16 +340,8 @@ class GridNavigationMixin(MinimapHeadingMixin):
         limit = self._grid_cfg_float(CONFIG_GRID_TIMEOUT, 180.0) if timeout is None else float(timeout)
         limit = max(1.0, limit)
         tick = max(0.05, self._grid_cfg_float(CONFIG_GRID_TICK, 0.2))
-        position_service = self._get_minimap_position_service()
+        position_service = self.ensure_runtime_position_service(force_start=True)
         if position_service is None:
-            self.log_warning("导航需要「小地图定位」触发任务，但当前任务未注册", notify=True)
-            return False
-        if not getattr(position_service, "enabled", True):
-            self.log_warning("导航需要启用「小地图定位」触发任务", notify=True)
-            return False
-        position_service.start_minimap_position(wait_stable=False)
-        if not getattr(position_service, "minimap_position_ready", True):
-            self.log_warning("小地图定位器未完成初始化，请检查全局「Nav Config」和游戏窗口", notify=True)
             return False
         self._refresh_grid_zip_lines()
         started_at = self.active_time()
@@ -371,7 +364,14 @@ class GridNavigationMixin(MinimapHeadingMixin):
         try:
             while not self._grid_navigation_timed_out(deadline, limit):
                 frame = self.next_frame()
-                state = position_service.minimap_position(frame=frame, now=self.active_time())
+                state = self.world_pose(
+                    frame=frame,
+                    max_age=self._grid_position_max_age(tick),
+                )
+                if state is None:
+                    self._wait_for_grid_position("等待运行时定位状态")
+                    self.sleep(tick)
+                    continue
                 x = state.get("x")
                 z = state.get("z")
                 actual_map = str(state.get("map_id") or current_map or "")
@@ -1003,17 +1003,12 @@ class GridNavigationMixin(MinimapHeadingMixin):
         self._grid_nav_zip_line_cache.clear()
         self._grid_nav_zip_line_empty.clear()
 
-    def _get_minimap_position_service(self) -> MinimapPositionTask | None:
+    def _get_minimap_position_service(self):
         if self._grid_minimap_position_service is not None:
             return self._grid_minimap_position_service
-        override = getattr(self, "_minimap_position_service", None)
-        if override is not None:
-            self._grid_minimap_position_service = override
-            return override
-        getter = getattr(self, "get_task_by_class", None)
-        if callable(getter):
-            self._grid_minimap_position_service = getter(MinimapPositionTask)
-        return self._grid_minimap_position_service
+        service = self.get_runtime_position_service()
+        self._grid_minimap_position_service = service
+        return service
 
     @staticmethod
     def _grid_position_is_known(follower: GridRouteFollower, position: tuple[float, float]) -> bool:
@@ -1539,7 +1534,13 @@ class GridNavigationMixin(MinimapHeadingMixin):
         timeout = min(8.0, max(0.0, deadline - started))
         while self.active_time() - started < timeout:
             frame = self.next_frame()
-            state = position_service.minimap_position(frame=frame, now=self.active_time())
+            state = self.world_pose(
+                frame=frame,
+                max_age=self._grid_position_max_age(tick),
+            )
+            if state is None:
+                self.sleep(tick)
+                continue
             if int(state.get("sync_seq") or 0) > start_sync_seq or bool(state.get("sync_checked")):
                 self.log_info("导航中静止定位校准完成")
                 return True
@@ -1552,6 +1553,12 @@ class GridNavigationMixin(MinimapHeadingMixin):
             f"ws_moved={diagnostic.get('ws_moved_m')}"
         )
         return False
+
+    @staticmethod
+    def _grid_position_max_age(tick: float) -> float:
+        """按导航控制周期计算可接受的位置快照时效。"""
+
+        return max(0.5, float(tick) * 2.5)
 
     def _grid_navigation_timed_out(self, deadline: float, limit: float) -> bool:
         if self.active_time() < deadline:

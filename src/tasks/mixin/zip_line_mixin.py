@@ -171,18 +171,17 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
     def _zip_line_ws_position(self, frame=None):
         """读取滑索场景最新 WS 坐标；融合坐标不作为滑索到达依据。"""
-        service_getter = getattr(self, "_get_minimap_position_service", None)
-        if not callable(service_getter):
+        world_pose_getter = getattr(self, "world_pose", None)
+        if not callable(world_pose_getter):
             return None
         try:
-            service = service_getter()
-            if service is None:
-                return None
             sample_frame = frame if frame is not None else self.next_frame()
-            state = service.minimap_position(
+            state = world_pose_getter(
                 frame=sample_frame,
-                now=self.active_time(),
+                max_age=2.0,
             )
+            if state is None:
+                return None
             position = state.get("ws")
             if position is None:
                 return None

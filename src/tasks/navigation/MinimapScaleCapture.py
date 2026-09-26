@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-"""小地图比例尺采集：静止时成对保存「整帧截图 + 该拍 WS 精确坐标 + 画面分辨率」。
+"""小地图比例尺采集任务：静止时成对保存「整帧截图 + 该拍 WS 精确坐标 + 画面分辨率」。
 
 为什么需要这个任务
 ------------------
@@ -53,7 +52,7 @@ from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
 from src.tasks.mixin.minimap_odometry import region_geometry
-from src.tasks.trigger.MinimapPositionTask import MinimapPositionTask
+from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 
 CONFIG_INTERVAL = "采样间隔(秒)"
 CONFIG_SAMPLES = "采集张数"
@@ -62,7 +61,7 @@ CONFIG_TIMEOUT = "采集超时(秒)"
 CONFIG_SAVE_DIR = "保存目录"
 
 
-class MinimapScaleCapture(BaseEfTask):
+class MinimapScaleCapture(RuntimeStateMixin, BaseEfTask):
     """静止时成对采集整帧截图与 WS 精确坐标，用于标定小地图比例尺（工具与调试分组）。"""
 
     requires_foreground = True  # 需要读取游戏画面/小地图
@@ -73,6 +72,7 @@ class MinimapScaleCapture(BaseEfTask):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._init_runtime_state_mixin()
         self.name = "小地图比例尺采集"
         self.group_name = "工具与调试"
         self.group_icon = FluentIcon.DEVELOPER_TOOLS
@@ -122,20 +122,8 @@ class MinimapScaleCapture(BaseEfTask):
             self.log_info("当前不在大世界画面，无法读取小地图。请先进入大世界。", notify=True)
             return
 
-        position_task = self.get_task_by_class(MinimapPositionTask)
+        position_task = self.ensure_runtime_position_service(force_start=True)
         if position_task is None:
-            self.log_warning("未注册「小地图定位」触发任务，无法读取 WS 真值", notify=True)
-            return
-        if not getattr(position_task, "enabled", True):
-            self.log_warning(
-                "「小地图定位」触发任务未启用。它同时负责消费 WS 真值，"
-                "请先在触发任务里启用后再运行本任务。",
-                notify=True,
-            )
-            return
-        position_task.start_minimap_position(wait_stable=False)
-        if not getattr(position_task, "minimap_position_ready", True):
-            self.log_warning("小地图定位器未完成初始化，请检查全局「Nav Config」和游戏窗口", notify=True)
             return
 
         interval = max(0.05, self._cfg_float(CONFIG_INTERVAL, 0.5))
@@ -190,7 +178,15 @@ class MinimapScaleCapture(BaseEfTask):
                 continue
 
             stats["ticks"] += 1
-            st = position_task.minimap_position(frame=frame, now=now)
+            st = self.world_pose(
+                frame=frame,
+                max_age=max(0.5, interval * 2.0),
+                now=now,
+            )
+            if st is None:
+                stats["no_position"] += 1
+                still = 0
+                continue
 
             # 三个条件必须同时成立才允许落盘：静止、有 WS 真值、已锚定出坐标。
             # 缺任何一个都当作"这一拍不算静止"并把连续计数清零——否则"连续 N 拍静止"

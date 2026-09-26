@@ -6,7 +6,7 @@ Back: [Documentation home](index.md) / [README](https://github.com/AliceJump/ok-
 
 This document covers two trigger/debug tasks:
 
-- `ItemNavigatorTask` (UI name: Item Navigation): uses the official-map WebSocket when a valid `content` is available; otherwise starts a local WebSocket service pointing to the nearest gathering point of the selected item, and supports pressing a key to mark it as collected.
+- `ItemNavigatorTask` (UI name: Item Navigation): reads the shared `world.pose` runtime state to point to the nearest gathering point of the selected item, and supports pressing a key to mark it as collected.
 - `RealtimeDetectTask` (UI name: Realtime Detection): runs YOLO detection in a loop for observing model, target-class, and confidence performance online.
 
 ---
@@ -15,8 +15,9 @@ This document covers two trigger/debug tasks:
 
 ### Prerequisites
 
-- It is recommended to save the official-map sync `content` on the account configuration page, or fill in `content` directly in the task config.
-- When `content` is not configured, an external script or tool is needed to push position data to the local `ws://127.0.0.1:3001`.
+- It is recommended to save the official-map sync `content` on the account configuration page and select its `真值地图账号` in the global Nav Config, or fill in `真值content` there directly.
+- When official truth is not configured, the Tampermonkey relay pushes position data to the local `ws://127.0.0.1:3001`.
+- Item Navigation automatically requests the Minimap Positioning trigger task and does not start a second positioning source.
 - Item point data comes from `assets/items/map/summary.json` and `assets/items/map/item_names.json`.
 - Mark results are written to `configs/marked_points.json`, used to avoid re-pointing to already-marked points.
 
@@ -24,8 +25,6 @@ This document covers two trigger/debug tasks:
 
 | Config item | Default | Description |
 |---|---:|---|
-| `content` | empty string | Optional. Fill in the `data.content` from the JSON returned by `web-api.skland.com/account/info/hg/check`. When present, the official-map WebSocket is preferred. See "Obtaining content" below. |
-| `地图账号` (Map account) | empty string | Optional. When `content` is empty, reads the map-sync content saved for that account on the account configuration page. |
 | `选择物品` (Select item) | `[]` | List of item names to navigate; no target is filtered when empty. |
 | `标记按键` (Mark key) | `f` | The key pressed to mark an item as "collected" when close to the target. |
 | `标记按住时长` (Mark hold duration) | `2.0` | Seconds the mark key must be held. Timing starts only within a horizontal distance of 20 of the target; reaching the duration marks it as collected. `0`, negative, or non-numeric values fall back to the default 2 seconds. |
@@ -45,10 +44,10 @@ This document covers two trigger/debug tasks:
 3. Switch to the **Network** tab and type `https://web-api.skland.com/account/info/hg/check` in the filter box.
 4. Select that request in the filtered list and read `data.content` from the **Response**
    (a long string).
-5. Paste it into the task's `content` parameter; **or** save it as `地图同步 content` on the
-   account configuration page and then pick that account via `地图账号` in the task.
+5. Paste it into `真值content` in the global Nav Config; **or** save it on the
+   account configuration page and select that account via `真值地图账号`.
 
-> Pick either route: putting it directly in `content` is handy for a one-off run, while saving it on
+> Pick either route: putting it directly in `真值content` is handy for a one-off run, while saving it on
 > the account page suits long-term multi-account use. `content` is equivalent to a login session —
 > never paste it into issues, chat groups, or screenshots.
 
@@ -56,18 +55,16 @@ This document covers two trigger/debug tasks:
 
 ```mermaid
 flowchart TD
-    A[Task content] --> D{Has content}
-    B[Account config page map_contents] --> D
-    C[Local WS port 3001] --> H[Unified position queue]
-    D -->|Yes| E[OAuth exchange for official credentials]
-    E --> F[Get official WS token]
-    F --> G[Connect ws.skland.com]
-    D -->|No| C
-    G --> H
-    H --> I[Parse mapId and coordinates]
-    I --> J[Query assets/items/map data]
-    J --> K[Draw direction arrow]
-    K --> L[Hold mark key and write configs/marked_points.json]
+    A[Nav Config 真值content / 真值地图账号] --> D{Has official truth}
+    B[Local WS port 3001] --> C[Minimap Positioning sole producer]
+    D -->|Yes| E[Official map WS]
+    D -->|No| B
+    E --> C
+    C --> F[RuntimeStateHub: world.pose]
+    F --> G[Item Navigation reads x/y/z/map_id]
+    G --> H[Query assets/items/map data]
+    H --> I[Draw direction arrow]
+    I --> J[Hold mark key and write configs/marked_points.json]
 ```
 
 ### Notes

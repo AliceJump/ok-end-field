@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-"""小地图转向测试任务：把角色转到指定罗盘方位，误差要求 ±N 度。
+"""小地图转向领域任务：把角色转到指定罗盘方位，误差要求 ±N 度。
 
 每个目标输出一段日志：起始朝向、每轮的残差/鼠标位移/实测朝向/实测系数、
 最终误差与 PASS/FAIL。转向能力本身在 ``MinimapHeadingMixin.turn_to_bearing``。
@@ -130,9 +129,12 @@ class MinimapTurnToHeading(BaseEfTask, MinimapHeadingMixin):
     def _turn_one(self, target: float, tolerance: float, max_rounds: int) -> dict:
         """转到一个目标并输出逐轮日志。返回 turn_to_bearing 的结果 dict。"""
         start, start_score = self.read_heading()
-        self.log_info(
-            f"[转向] 目标={target:.2f}°  起始={('%0.2f°' % start) if start is not None else f'读不到(score={start_score:.3f})'}"
+        start_text = (
+            f"{start:.2f}°"
+            if start is not None
+            else f"读不到(score={start_score:.3f})"
         )
+        self.log_info(f"[转向] 目标={target:.2f}°  起始={start_text}")
         res = self.turn_to_bearing(target, tolerance=tolerance, max_rounds=max_rounds)
 
         for e in res["history"]:

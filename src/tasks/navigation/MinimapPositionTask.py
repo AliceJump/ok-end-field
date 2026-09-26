@@ -1,5 +1,4 @@
-# -*- coding: utf-8 -*-
-"""小地图定位常驻任务。
+"""小地图定位领域常驻任务。
 
 该 TriggerTask 是融合定位状态的唯一生产者：持续采样小地图里程计、消费地图 WS、
 执行静止校准，并把最新快照暴露给导航、物品导航和实时位置测试任务。
@@ -7,11 +6,11 @@
 关键约束：
 
 - 定位实例必须常驻，不能因执行器短暂暂停或暂无消费者而清理 WS；
-- 所有消费者都应调用 ``minimap_position(frame=...)``，把同一帧交给该实例；
+- 消费者通过 ``RuntimeStateMixin.world_pose(frame=...)`` 读取统一状态快照；
 - 导航只读取 ``position_trusted`` 为真的绝对坐标；普通重锚后必须等待静止校准，
   良性 ``too_long_dt`` 换锚不撤销信任。
 
-完整定位、导航与调试链路见 ``docs/dev/导航与小地图定位.md``。
+完整定位链路见 ``docs/dev/小地图定位.md``。
 """
 
 from ok import TriggerTask
@@ -32,7 +31,7 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
         self.name = "小地图定位"
         self.description = "持续融合小地图里程计、朝向和地图坐标，静止时自动校准"
         self.icon = Icons.Navigation
-        self.trigger_interval = 0.5
+        self.trigger_interval = 0.2
 
         self.default_config.update({
             "_enabled": True,
@@ -77,7 +76,7 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
         frame = self.next_frame()
         if frame is None:
             return False
-        state = self.minimap_position(frame=frame, now=self.active_time())
+        state = self.sample_world_pose(frame=frame, now=self.active_time())
         x, z = state.get("x"), state.get("z")
         status_reported = False
         if state.get("just_synced") and state.get("sync_residual") is not None:
@@ -90,13 +89,7 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
             )
             self.info_set("小地图校准", f"{float(residual['dist']):.2f}m")
             status_reported = True
-        if x is not None and z is not None:
-            if not state.get("position_trusted", True):
-                status = "待校准"
-            else:
-                status = "静止" if state.get("rest") else "移动"
-        else:
-            status = f"未锚定({state.get('odom_reason') or 'no_position'})"
+        status = self._position_status_text(state, x, z)
         status_key = (
             str(state.get("map_id") or ""),
             bool(state.get("anchor_set")),
@@ -119,6 +112,17 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
             self._last_status_key = status_key
             self._last_status_log_at = now
         return False
+
+    @staticmethod
+    def _position_status_text(state: dict, x, z) -> str:
+        """生成定位任务状态栏文本。"""
+
+        if x is None or z is None:
+            reason = state.get("odom_reason") or "no_position"
+            return f"未锚定({reason})"
+        if not state.get("position_trusted", True):
+            return "待校准"
+        return "静止" if state.get("rest") else "移动"
 
     def on_destroy(self):
         """任务销毁时停止 WS 客户端和本地位置源。"""

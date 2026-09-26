@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """小地图区域检查任务：实例化/配置与"标注图可生成"的冒烟测试。"""
 
 import tempfile
@@ -6,10 +5,10 @@ import unittest
 from pathlib import Path
 
 import numpy as np
-
 from ok.test.TaskTestCase import TaskTestCase
+
 from src.config import config
-from src.tasks.test.MinimapRegionCheck import MinimapRegionCheck
+from src.tasks.navigation.MinimapRegionCheck import MinimapRegionCheck
 
 
 class TestMinimapRegionCheckTask(TaskTestCase):

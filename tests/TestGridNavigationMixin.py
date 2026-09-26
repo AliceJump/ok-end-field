@@ -20,6 +20,7 @@ from src.nav.route_follower import (
     GridRouteFollower,
 )
 from src.nav.zip_line_graph import ZipLineGraph, ZipLineLink, ZipLineNode, ZipLineStep
+from src.runtime_state.topics import RuntimeTopic
 from src.tasks.mixin.grid_navigation_mixin import (
     CONFIG_GRID_ALLOW_UNKNOWN,
     CONFIG_GRID_FILE,
@@ -61,6 +62,7 @@ class _FakeGridTask(GridNavigationMixin):
         self.key_up_events: list[str] = []
         self._init_grid_navigation_mixin()
         self._minimap_position_service = self
+        self._minimap_ready = False
 
     def _grid_nav_config(self):
         return self.config
@@ -84,11 +86,22 @@ class _FakeGridTask(GridNavigationMixin):
     def start_minimap_position(self, *, wait_stable=True):
         self.started += 1
         self._minimap_fusion = object()
+        self._minimap_started = True
+        self._minimap_ready = True
         return True
 
     def stop_minimap_position(self):
         self.stopped += 1
         self._minimap_fusion = None
+        self._minimap_ready = False
+
+    @property
+    def minimap_position_ready(self):
+        return self._minimap_ready
+
+    @minimap_position_ready.setter
+    def minimap_position_ready(self, value):
+        self._minimap_ready = bool(value)
 
     def minimap_position(self, frame=None, **kwargs):
         allow_sync = kwargs.get("allow_sync", True)
@@ -110,6 +123,17 @@ class _FakeGridTask(GridNavigationMixin):
             "position_trusted": bool(getattr(self, "position_trusted", True)),
             "trust_reason": "sync",
         }
+
+    def sample_world_pose(self, frame=None, *, now=None):
+        state = self.minimap_position(frame=frame)
+        self.runtime_state_hub.publish(
+            RuntimeTopic.WORLD_POSE,
+            state,
+            source="test",
+            now=now,
+            ttl=2.0,
+        )
+        return state
 
     def minimap_rest_diag(self):
         return {"reason": "ok", "map_speed_m_s": 0.0, "ws_moved_m": 0.0}
@@ -582,17 +606,34 @@ class TestGridNavigationMixin(unittest.TestCase):
             def __init__(self):
                 self.calls = 0
 
-            def minimap_position(self, frame=None, **kwargs):
+            def start_minimap_position(self, *, wait_stable=True):
+                return True
+
+            @property
+            def minimap_position_ready(self):
+                return True
+
+            def sample_world_pose(self, frame=None, *, now=None):
                 self.calls += 1
-                return {
+                state = {
                     "sync_seq": 1 if self.calls >= 2 else 0,
                     "sync_checked": self.calls >= 2,
                 }
+                self.task.runtime_state_hub.publish(
+                    RuntimeTopic.WORLD_POSE,
+                    state,
+                    source="test",
+                    now=now,
+                    ttl=2.0,
+                )
+                return state
 
             def minimap_rest_diag(self):
                 return {"reason": "ok"}
 
         position_service = _PositionService()
+        position_service.task = self.task
+        self.task._runtime_position_service = position_service
         self.task._set_grid_walking(True)
 
         synced = self.task._wait_for_minimap_sync(
@@ -839,13 +880,15 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertEqual(self.task.started, 2)
         self.assertEqual(self.task.stopped, 0)
 
-    def test_uninitialized_position_service_fails_cleanly(self):
-        self.task.minimap_position_ready = False
+    def test_unavailable_position_service_fails_cleanly(self):
+        self.task._runtime_position_service = None
+        self.task._minimap_position_service = None
+        self.task.get_task_by_class = lambda cls: None
 
         result = self.task.navigate_grid_to((1.0, 1.0), timeout=1.0)
 
         self.assertFalse(result)
-        self.assertTrue(any("定位器未完成初始化" in msg for msg in self.task.logs))
+        self.assertTrue(any("未注册「小地图定位」" in msg for msg in self.task.logs))
 
     def test_done_does_not_require_extra_calibration(self):
         """静止校准由定位服务自动完成，导航只消费当前融合坐标。"""

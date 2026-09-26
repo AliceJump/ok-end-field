@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """小地图实时位置能力（mixin）：一次调用同时给出「方向」和「坐标」。
 
 坐标 = 小地图位移里程计（相对、高频） + 官方地图 WS 绝对坐标（绝对、有延迟）的融合：
@@ -11,9 +10,9 @@
 WS 有传输延迟，只在两边都停住时才能安全地用它做基准。移动中收到的 WS 样本直接忽略、
 不做暂存：那是移动途中的旧坐标，静止后应用它只会把里程计已经推进的位置拽回去。
 
-定位状态由 ``MinimapPositionTask`` 这样的单一所有者维护，导航等消费方只读取
-``latest_minimap_state()``；需要主动采样时把当前帧交给同一个 owner，禁止每个任务
-各自启动一套里程计和 WS 位置源。
+定位状态由 ``MinimapPositionTask`` 这样的单一所有者维护。生产者每次采样后通过
+``sample_world_pose()`` 把稳定契约发布到 ``RuntimeStateHub``；导航等消费方使用
+``RuntimeStateMixin.world_pose()``，禁止每个任务各自启动里程计和 WS 位置源。
 
 ``minimap_position()`` 返回 dict：
 
@@ -46,12 +45,13 @@ WS 有传输延迟，只在两边都停住时才能安全地用它做基准。�
     sync_checked/sync_redundant  本拍收到 WS 后是否检查了静止校准，以及检查结果是否为
                      “当前估计已与 WS 对齐，无需重锚”。
 
-调用方注意：**务必把当前帧传进来**（``frame=frame``）。不传的话内部会用
-``next_frame()`` 自己抓一帧，于是朝向你手里的帧与算位移的帧不是同一时刻，两者会错位。
+``minimap_position()`` 是定位所有者内部的低层采样入口。普通消费者不要直接调用它，
+应通过 ``RuntimeStateMixin.world_pose(frame=...)`` 请求采样并读取发布快照；这样当前帧、
+朝向和里程计仍由同一个所有者按同一拍处理。
 
 本模块只做编排，几何/融合分别在 ``minimap_odometry`` 与 ``minimap_position_fusion``；
 位置源（官方地图 WS 客户端 / 本地 WS 服务）的启停复用 ``WsPositionMixin``。完整链路见
-``docs/dev/导航与小地图定位.md``。
+``docs/dev/小地图定位.md``。
 """
 
 from __future__ import annotations
@@ -70,6 +70,8 @@ from src.core.NavConfig import (
     NavProfile,
     nav_profile_for_width,
 )
+from src.runtime_state.topics import RuntimeTopic
+from src.runtime_state.world_pose import publish_world_pose
 from src.tasks.account.account_scope_store import (
     get_account_map_content,
     resolve_account_id,
@@ -80,6 +82,7 @@ from src.tasks.mixin.minimap_heading_mixin import (
 )
 from src.tasks.mixin.minimap_odometry import MinimapOdometry
 from src.tasks.mixin.minimap_position_fusion import MinimapPositionFusion
+from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 from src.tasks.mixin.ws_position_mixin import WsPositionMixin
 
 __all__ = [
@@ -121,7 +124,7 @@ def parse_map_to_world(value):
     return [[nums[0], nums[1]], [nums[2], nums[3]]]
 
 
-class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
+class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMixin):
     """小地图实时位置：同时给出方向（朝向角）和坐标（小地图推算 + WS 校准）。
 
     朝向相关的能力（读朝向、转到指定方位）来自 :class:`MinimapHeadingMixin`。
@@ -166,11 +169,13 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
     def _init_minimap_position_mixin(self):
         """在任务 __init__ 里调用（只建状态，不起线程、不抓帧）。"""
         self._init_minimap_heading_mixin()
+        self._init_runtime_state_mixin()
         self._init_ws_position_mixin()
         self._minimap_od: MinimapOdometry | None = None
         self._minimap_fusion: MinimapPositionFusion | None = None
         self._minimap_ws_map_id: str | None = None
         self._minimap_last_ws: tuple[float, float] | None = None
+        self._minimap_last_ws_xyz: tuple[float, float, float] | None = None
         self._minimap_profile_signature = None
         self._minimap_source_cred = ""
         self._minimap_scale = 0.0
@@ -265,6 +270,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
                     self._minimap_fusion.reset()
                     self._minimap_ws_map_id = None
                     self._minimap_last_ws = None
+                    self._minimap_last_ws_xyz = None
                     self._minimap_position_trusted = False
                     self._minimap_trust_reason = "source_changed"
                     self._minimap_distance_since_sync = 0.0
@@ -299,6 +305,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
         )
         self._minimap_ws_map_id = None
         self._minimap_last_ws = None
+        self._minimap_last_ws_xyz = None
         self._minimap_distance_since_sync = 0.0
         self._minimap_prev_position = None
         self._minimap_prev_map_id = None
@@ -336,6 +343,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             # 用最后一条稳定位置立即设锚点，避免起步前几拍没有坐标
             self._minimap_fusion.sync(last_pos, map_id=map_id, now=self.active_time())
             self._minimap_last_ws = (last_pos[0], last_pos[2])
+            self._minimap_last_ws_xyz = (last_pos[0], last_pos[1], last_pos[2])
             self._minimap_position_trusted = True
             self._minimap_trust_reason = "initial_sync"
             self.log_info(
@@ -352,6 +360,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             self.log_warning(f"停止位置源失败: {e}")
         finally:
             self._minimap_started = False
+            self.runtime_state_hub.clear(RuntimeTopic.WORLD_POSE)
 
     # ------------------------------------------------------------------ #
     # 位置源（官方地图 WS 客户端 / 本地 WS 服务）
@@ -475,6 +484,8 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             self._minimap_trust_reason = str(last.get("reason") or "reanchored")
 
         st["ws"] = self._minimap_last_ws
+        st["ws_xyz"] = self._minimap_last_ws_xyz
+        st["y"] = self._minimap_last_ws_xyz[1] if self._minimap_last_ws_xyz is not None else None
         st["error"] = None
         if st.get("x") is not None and st.get("z") is not None and self._minimap_last_ws is not None:
             st["error"] = math.hypot(
@@ -488,6 +499,27 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
         self._update_sync_request(st)
         self._minimap_last_state = dict(st)
         return st
+
+    def sample_world_pose(self, frame=None, *, now=None) -> dict:
+        """采样并发布一帧世界坐标，供状态总线消费者使用。"""
+
+        state = self.minimap_position(frame=frame, now=now)
+        publish_world_pose(
+            self.runtime_state_hub,
+            state,
+            source=self._minimap_position_source_name(),
+            now=self._now(now),
+        )
+        return state
+
+    def _minimap_position_source_name(self) -> str:
+        """返回当前定位数据源名称，用于状态契约和诊断。"""
+
+        if self._is_map_ws_client_enabled():
+            return "official_ws"
+        if self._is_ws_position_server_enabled():
+            return "local_ws"
+        return "minimap"
 
     def _update_sync_request(self, st: dict) -> None:
         """更新“距离上次校准的累计移动量”，供导航决定何时停车请求校准。"""
@@ -550,7 +582,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
         pos_ws = self._poll_ws_position(timeout=0.0)
         if pos_ws is None:
             return False
-        x, _y, z, map_id = pos_ws
+        x, y, z, map_id = pos_ws
         if self._minimap_ws_map_id is None:
             self._minimap_ws_map_id = map_id
         elif self._minimap_ws_map_id != map_id:
@@ -560,6 +592,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             self._minimap_ws_map_id = map_id
             self._minimap_fusion.reset()
             self._minimap_last_ws = (x, z)
+            self._minimap_last_ws_xyz = (x, y, z)
             self._minimap_position_trusted = False
             self._minimap_trust_reason = "map_changed"
             self._apply_estimate(st, self._minimap_fusion.estimate())
@@ -572,6 +605,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, WsPositionMixin):
             allow_sync=allow_sync,
         )
         self._minimap_last_ws = (x, z)
+        self._minimap_last_ws_xyz = (x, y, z)
         st["sync_checked"] = synced
         st["sync_redundant"] = bool(synced and self._minimap_fusion.last_sync_redundant)
         # 空操作（估计已与 WS 重合）不算"刚校准"：不重读估计、也不产生新的残差，

@@ -2886,3 +2886,16 @@ msgid "导航配置：定位真值、分辨率比例尺，以及网格、滑索�
 msgstr ""
 "Navigation config: positioning truth, resolution scale, and grid, zip line, "
 "planning, and movement options"
+
+msgid "5. 把该值填入全局「导航配置」的「真值content」；或填入账号配置页后用「真值地图账号」选择"
+msgstr ""
+"5. Put the value into 真值content in the global Nav Config, or save it in "
+"Account Config and select it with 真值地图账号"
+
+msgid "位置来源：由「小地图定位」和全局「导航配置」统一提供"
+msgstr "Position source: provided by Minimap Positioning and the global Nav Config"
+
+msgid "定位服务：首次读取坐标时会自动启用「小地图定位」触发任务"
+msgstr ""
+"Positioning service: the Minimap Positioning trigger task is enabled "
+"automatically when coordinates are first requested"

@@ -120,7 +120,7 @@ all potential risks.**
 - [Auto Combat](docs/zh-CN/自动战斗.md): battle-state detection and automatic skill release
 - Auto Interaction: auto skip dialog + auto click teleport
 - Auto Pickup: whitelist pickup + blacklist filtering
-- [Item Navigation](docs/zh-CN/物品导航与实时检测.md): official-map WebSocket or local WebSocket driven item gathering point navigation
+- [Item Navigation](docs/zh-CN/物品导航与实时检测.md): item gathering point navigation driven by the shared `world.pose` runtime state
 
 ### Scheduled tasks
 - Daily Task, Auto Delivery, Yingtuo Monument, and `启动一次游戏,120s后自动关闭` declare built-in scheduling support

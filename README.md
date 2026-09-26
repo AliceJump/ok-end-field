@@ -109,7 +109,7 @@ An image-recognition-based automation tool for End Field, with partial backgroun
 - [自动战斗](docs/zh-CN/自动战斗.md)：检测战斗状态并按技能序列自动释放
 - 自动交互：自动跳过剧情并点击地图传送
 - 自动拾取：白名单拾取 + 黑名单过滤
-- [物品导航](docs/zh-CN/物品导航与实时检测.md)：使用官方地图或本地 WebSocket 坐标指向最近采集点
+- [物品导航](docs/zh-CN/物品导航与实时检测.md)：通过共享 `world.pose` 实时坐标指向最近采集点
 
 ### 定时任务
 - 日常任务、自动送货、影拓丰碑和“`启动一次游戏,120s后自动关闭`”声明支持内置计划任务

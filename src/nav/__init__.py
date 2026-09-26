@@ -12,7 +12,7 @@
 
 任务层（``GridNavigationMixin``）负责把这里输出的动作转换成键盘、鼠标和定位校准；
 本包不依赖 ``ok`` 框架，便于独立测试与复用。完整架构见
-``docs/dev/导航与小地图定位.md``。
+``docs/dev/网格导航.md``。
 """
 
 from src.nav.grid_io import (

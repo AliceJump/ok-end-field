@@ -2981,3 +2981,19 @@ msgid "导航配置：定位真值、分辨率比例尺，以及网格、滑索�
 msgstr ""
 "Configuración de navegación: valor real de posición, escala por resolución y"
 " opciones de cuadrícula, tirolina, planificación y movimiento"
+
+msgid "5. 把该值填入全局「导航配置」的「真值content」；或填入账号配置页后用「真值地图账号」选择"
+msgstr ""
+"5. Introduce el valor en «真值content» de la configuración global de "
+"navegación, o guárdalo en la configuración de cuenta y selecciónalo con "
+"«真值地图账号»"
+
+msgid "位置来源：由「小地图定位」和全局「导航配置」统一提供"
+msgstr ""
+"Origen de posición: lo proporcionan el posicionamiento del minimapa y la "
+"configuración global de navegación"
+
+msgid "定位服务：首次读取坐标时会自动启用「小地图定位」触发任务"
+msgstr ""
+"Servicio de posicionamiento: la tarea activadora de posicionamiento del "
+"minimapa se activa automáticamente al solicitar coordenadas por primera vez"

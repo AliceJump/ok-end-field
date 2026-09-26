@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """小地图比例尺采集任务：实例化/配置与"成对落盘"的冒烟测试。
 
 定位源用假对象替身：只驱动本任务自己的逻辑（等待连续静止、落盘、索引），
@@ -16,7 +15,9 @@ import numpy as np
 from ok.test.TaskTestCase import TaskTestCase
 
 from src.config import config
-from src.tasks.test.MinimapScaleCapture import (
+from src.runtime_state.state_hub import RuntimeStateHub
+from src.runtime_state.topics import RuntimeTopic
+from src.tasks.navigation.MinimapScaleCapture import (
     CONFIG_INTERVAL,
     CONFIG_REST_TICKS,
     CONFIG_SAMPLES,
@@ -45,17 +46,27 @@ class _FakePositionTask:
     """MinimapPositionTask 的替身：按预设序列吐状态。"""
 
     enabled = True
+    minimap_position_ready = True
+    _minimap_started = True
 
-    def __init__(self, states):
+    def __init__(self, states, hub):
         self._states = list(states)
+        self._hub = hub
         self.calls = 0
 
     def start_minimap_position(self, *, wait_stable=True):
         return True
 
-    def minimap_position(self, frame=None, *, now=None, feed_ws=True, allow_sync=True):
+    def sample_world_pose(self, frame=None, *, now=None):
         st = self._states[min(self.calls, len(self._states) - 1)]
         self.calls += 1
+        self._hub.publish(
+            RuntimeTopic.WORLD_POSE,
+            st,
+            source="test",
+            now=now,
+            ttl=2.0,
+        )
         return dict(st)
 
 
@@ -70,7 +81,10 @@ class TestMinimapScaleCaptureTask(TaskTestCase):
         task.in_world = lambda: True
         frame_w, frame_h = frame_size
         task.next_frame = lambda *a, **k: np.zeros((frame_h, frame_w, 3), np.uint8)
-        fake = _FakePositionTask(states)
+        hub = RuntimeStateHub()
+        task._runtime_state_hub = hub
+        fake = _FakePositionTask(states, hub)
+        task._runtime_position_service = fake
         task.get_task_by_class = lambda cls: fake
         task.config[CONFIG_SAVE_DIR] = tmp
         task.config[CONFIG_SAMPLES] = target
@@ -333,6 +347,7 @@ class TestMinimapScaleCaptureTask(TaskTestCase):
         """没有定位触发任务时不硬跑。"""
         task = self.task
         task.in_world = lambda: True
+        task._runtime_position_service = None
         task.get_task_by_class = lambda cls: None
         with tempfile.TemporaryDirectory() as tmp:
             task.config[CONFIG_SAVE_DIR] = tmp
