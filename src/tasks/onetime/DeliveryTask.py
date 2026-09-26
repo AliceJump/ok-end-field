@@ -446,7 +446,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
             self.ensure_main()
 
     def _run_single_delivery_cycle(self):
-        if getattr(self, "_daily_delivery_mode", False) or self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE:
+        daily_mode = getattr(self, "_daily_delivery_mode", False)
+        if daily_mode or self.config.get(self.CFG_TEST_TARGET, self.TEST_NONE) == self.TEST_NONE:
             ends_list_pattern_dict = {}
             for end in self.ends:
                 pattern = get_delivery_target_ocr_pattern(self.delivery_area, end, self.lang)
@@ -460,11 +461,11 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     self.ensure_main()
                 self.back()
                 self.ensure_main()
-                if self.config.get(self.CFG_ONLY_ACCEPT):
+                if not daily_mode and self.config.get(self.CFG_ONLY_ACCEPT):
                     self.accept_order()
                     break
                 else:
-                    if not self.config.get(self.CFG_ONLY_DELIVER):
+                    if daily_mode or not self.config.get(self.CFG_ONLY_DELIVER):
                         if not self.accept_order():
                             return
                     success = None
@@ -513,7 +514,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                                 )
                                 break
                     self.to_end_and_submit(end_pattern)
-                    if self.config.get(self.CFG_ONLY_DELIVER):
+                    if not daily_mode and self.config.get(self.CFG_ONLY_DELIVER):
                         break
         elif self.config.get(self.CFG_TEST_TARGET) == self.TEST_FULL_CYCLE:
             test_location = self.config.get(self.CFG_FULL_CYCLE_LOCATION)
@@ -572,10 +573,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         日常任务经 DailyFeature 包装调用 DailyDeliveryTask 实例上的本方法，
         使用该实例的配置，并与独立运行共用 _run_single_delivery_cycle 流程。
         """
-        self._ensure_delivery_area_config()
-
         self._daily_delivery_mode = True
         try:
+            self._ensure_delivery_area_config()
             self._run_single_delivery_cycle()
             return True
         finally:
@@ -586,7 +586,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         try:
             self._ensure_delivery_area_config()
             allow_multi = (
-                self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE
+                self.config.get(self.CFG_TEST_TARGET, self.TEST_NONE) == self.TEST_NONE
                 and not self.config.get(self.CFG_ONLY_ACCEPT)
                 and not self.config.get(self.CFG_ONLY_DELIVER)
             )
