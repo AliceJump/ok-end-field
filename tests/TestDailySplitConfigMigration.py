@@ -316,6 +316,19 @@ class TestDailySplitConfigMigration(unittest.TestCase):
             self.assertEqual(tasks["RegionalBuildTask"]["⭐地区建设"], ["据点兑换", "买卖货"])
             self.assertEqual(tasks["ActivityRewardTask"]["⭐活动奖励"], ["周常奖励"])
 
+    def test_legacy_operation_lists_without_switches_are_imported(self):
+        """旧版纯操作列表仍按旧键名迁移规则成为子任务多选值。"""
+        with tempfile.TemporaryDirectory() as tmp:
+            configs = os.path.join(tmp, "configs")
+            self._write_configs(
+                configs,
+                {"DailyTask.json": {"帝江号收菜操作": ["收集线索"], "活动奖励": ["周常奖励"]}},
+            )
+            self._run(configs, DAILY_SPLIT_IMPORTS)
+
+            self.assertEqual(self._read_config(configs, "BoatHarvestTask.json")["⭐帝江号收菜"], ["收集线索"])
+            self.assertEqual(self._read_config(configs, "ActivityRewardTask.json")["⭐活动奖励"], ["周常奖励"])
+
     def test_maybe_run_only_once_per_process(self):
         """maybe_run_pending_config_imports 进程内只真正执行一次。
 

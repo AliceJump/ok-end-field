@@ -65,7 +65,7 @@ def _area_trade_key_map() -> dict[str, str]:
 
 
 def _import_boat_stages(source_config: dict, target_config: dict, target_key: str):
-    """⭐帝江号收菜：新列表值直接搬；旧「布尔开关 + 操作列表」转换为列表。"""
+    """⭐帝江号收菜：兼容新列表、旧开关与更早的纯操作列表。"""
     if isinstance(target_config.get(target_key), list):
         return _NO_MIGRATION
     value = source_config.get(target_key)
@@ -76,11 +76,15 @@ def _import_boat_stages(source_config: dict, target_config: dict, target_key: st
         return list(ops) if isinstance(ops, list) else list(BOAT_STAGES)
     if value is False:
         return []
+    if target_key not in source_config:
+        ops = source_config.get("帝江号收菜操作")
+        if isinstance(ops, list):
+            return list(ops)
     return _NO_MIGRATION
 
 
 def _import_activity_rewards(source_config: dict, target_config: dict, target_key: str):
-    """⭐活动奖励：新列表值直接搬；旧「布尔开关 + 操作列表」转换为列表。"""
+    """⭐活动奖励：兼容新列表、旧开关与更早的纯操作列表。"""
     if isinstance(target_config.get(target_key), list):
         return _NO_MIGRATION
     value = source_config.get(target_key)
@@ -91,6 +95,10 @@ def _import_activity_rewards(source_config: dict, target_config: dict, target_ke
         return list(ops) if isinstance(ops, list) else list(ACTIVITY_REWARDS)
     if value is False:
         return []
+    if target_key not in source_config:
+        ops = source_config.get("活动奖励")
+        if isinstance(ops, list):
+            return list(ops)
     return _NO_MIGRATION
 
 
