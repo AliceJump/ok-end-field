@@ -12,7 +12,11 @@ from src.core.BattleConfig import (
 from src.core.rotation_ast import iter_actions, normalize_ast
 from src.data.FeatureList import FeatureList as fL
 from src.data.skill_allowlist import generate_skill_sequence
-from src.data.skill_rotation import generate_auto_rotation, generate_damage_rotation
+from src.data.skill_rotation import (
+    generate_auto_rotation,
+    generate_damage_rotation,
+    rotate_auto_rotation_for_current,
+)
 from src.image.recommend_skill_detector import get_recommend_skill_detector
 
 
@@ -96,6 +100,27 @@ class AutoCombatLogic:
             self.protocol_space_detected = True
             self.task.log_info("检测到协议空间特征（左上角撤离按钮）: 热启动排轴（含终结技）")
         return hit
+
+    def _align_auto_rotation_to_current(self, task, sequence: list[str]) -> list[str]:
+        """把自动轴旋转到当前主控角色的段开头（切人图标判定成功时）。
+
+        循环轴起点本无语义，但从站场角色的段开始更自然：第一发战技由当前
+        主控释放、首个填充段普攻也来自其自身。判定走
+        ``battle_mixin.detect_current_char_index``（0 基槽位），尽力而为——
+        无该方法（测试替身）、识别失败（None）或异常时原轴返回，绝不因
+        对齐失败阻塞排轴。
+        """
+        detector = getattr(task, "detect_current_char_index", None)
+        if not callable(detector):
+            return sequence
+        try:
+            current_slot = detector()
+        except Exception:
+            return sequence
+        rotated = rotate_auto_rotation_for_current(sequence, current_slot)
+        if rotated is not sequence:
+            task.log_info(f"自动排轴对齐当前主控: 槽位 {current_slot + 1} 段先手")
+        return rotated
 
     def _sync_normal_attack_hold(self):
         if self._normal_attack_hold_enabled:
@@ -514,7 +539,9 @@ class AutoCombatLogic:
                                             "冷启动排轴: 未检测到协议空间特征，轴不含终结技"
                                             "（就绪后由普通模式兜底释放）"
                                         )
-                                    self.auto_rotation_sequence = generate_auto_rotation(team, include_ult=include_ult)
+                                    self.auto_rotation_sequence = self._align_auto_rotation_to_current(
+                                        task, generate_auto_rotation(team, include_ult=include_ult)
+                                    )
                                     self.auto_rotation_index = 0
                                     self.auto_rotation_active = True
                                     task.log_info(f"自动排轴已生成（可重复循环）: {self.auto_rotation_sequence}")
@@ -597,7 +624,9 @@ class AutoCombatLogic:
                                             "冷启动排轴: 未检测到协议空间特征，轴不含终结技"
                                             "（就绪后由普通模式兜底释放）"
                                         )
-                                    self.auto_rotation_sequence = generate_auto_rotation(team, include_ult=include_ult)
+                                    self.auto_rotation_sequence = self._align_auto_rotation_to_current(
+                                        task, generate_auto_rotation(team, include_ult=include_ult)
+                                    )
                                     self.auto_rotation_index = 0
                                     self.auto_rotation_active = True
                                     task.log_info(f"自动排轴已生成（可重复循环）: {self.auto_rotation_sequence}")

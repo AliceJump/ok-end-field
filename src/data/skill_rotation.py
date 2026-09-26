@@ -362,3 +362,34 @@ def generate_auto_rotation(
             rotation.append("e")
         rotation.append(f"normal_{_SP_REGEN_SECONDS}")
     return rotation
+
+
+def rotate_auto_rotation_for_current(
+    sequence: list[str],
+    slot_index: int | None,
+) -> list[str]:
+    """把循环轴旋转到当前主控角色的段开头（执行端尽力而为的对齐）。
+
+    自动轴是可 ``% len`` 无限循环的序列，起点本无语义；但开局从「当前
+    主控角色」的段开始更自然——第一发战技由站场角色释放，首个填充段的
+    普攻也来自其自身。``slot_index`` 为
+    ``battle_mixin.detect_current_char_index`` 的 0 基槽位判定结果；
+    None（未识别）、轴为空或轴中无该角色段时原样返回。
+
+    Args:
+        sequence: ``generate_auto_rotation`` 产物。
+        slot_index: 当前主控槽位（0 基）；None 表示未识别。
+
+    Returns:
+        旋转后的序列（无变化时返回原列表对象）。
+    """
+    if slot_index is None or not sequence:
+        return sequence
+    token = str(slot_index + 1)
+    try:
+        start = sequence.index(token)
+    except ValueError:
+        return sequence
+    if start == 0:
+        return sequence
+    return sequence[start:] + sequence[:start]

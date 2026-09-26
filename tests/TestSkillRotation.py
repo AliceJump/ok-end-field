@@ -18,6 +18,7 @@ from src.data.skill_rotation import (
     generate_damage_rotation,
     load_damage_baseline,
     load_team_baseline_entries,
+    rotate_auto_rotation_for_current,
 )
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 
@@ -425,6 +426,30 @@ class TestAutoRotationStep(unittest.TestCase):
         self.assertIn("e", task.actions)
 
 
+class TestRotateAutoRotationForCurrent(unittest.TestCase):
+    """循环轴按当前主控槽位对齐起点的纯函数规则。"""
+
+    def test_rotates_to_current_char_segment(self):
+        sequence = ["2", "ult_2", "normal_12.5", "3", "ult_3", "e", "normal_12.5"]
+        rotated = rotate_auto_rotation_for_current(sequence, 2)  # 槽位 3
+        self.assertEqual(rotated[0], "3")
+        self.assertEqual(
+            rotated, ["3", "ult_3", "e", "normal_12.5", "2", "ult_2", "normal_12.5"]
+        )
+        # 循环序保持：旋转后首尾相接与原序列一致
+        self.assertEqual(rotated[-1], sequence[sequence.index("3") - 1])
+
+    def test_none_or_missing_token_returns_original(self):
+        sequence = ["2", "normal_12.5", "1", "normal_12.5"]
+        self.assertIs(rotate_auto_rotation_for_current(sequence, None), sequence)
+        self.assertIs(rotate_auto_rotation_for_current(sequence, 3), sequence)  # 无槽位 4 段
+        self.assertEqual(rotate_auto_rotation_for_current([], 0), [])
+
+    def test_already_at_start_returns_original(self):
+        sequence = ["2", "ult_2", "normal_12.5"]
+        self.assertIs(rotate_auto_rotation_for_current(sequence, 1), sequence)
+
+
 class TestAutoRotationCombat(unittest.TestCase):
     """AutoCombatLogic.run() 自动排轴路径集成测试（mock task）。"""
 
@@ -468,6 +493,41 @@ class TestAutoRotationCombat(unittest.TestCase):
         self.assertIn("ult_2", logic.auto_rotation_sequence)
         self.assertIn("e", logic.auto_rotation_sequence)
         self.assertTrue(any(t.startswith("normal_") for t in logic.auto_rotation_sequence))
+
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_run_aligns_rotation_to_current_char(self, _mu, _md):
+        # 切人图标判定当前主控为 3 号位（莱万汀）→ 轴旋转到 "3" 段开头
+        from tests.TestConditionalRotation import _FakeTask
+
+        cfg = {KEY_SKILL_ALLOWLIST: True, KEY_DAMAGE_ROTATION: True}
+        task = _FakeTask(cfg, ults=("2",), link=False, skill=3)
+        task.stable_team_result = (["赛希", "弭弗", "莱万汀", "噗切娜"], True)
+        task.find_feature = lambda feature=None, **k: True
+        task.detect_current_char_index = lambda frame=None: 2
+        logic = AutoCombatLogic(task)
+        logic.run(start_sleep=0)
+        self.assertTrue(logic.auto_rotation_active)
+        self.assertEqual(logic.auto_rotation_sequence[0], "3")
+        self.assertIn("ult_2", logic.auto_rotation_sequence)
+
+    @patch.object(pyautogui, "mouseDown")
+    @patch.object(pyautogui, "mouseUp")
+    def test_run_alignment_failure_keeps_damage_order(self, _mu, _md):
+        # 判定失败（None）或异常时保持伤害降序原轴，不阻塞排轴
+        from tests.TestConditionalRotation import _FakeTask
+
+        for detector in (lambda frame=None: None, lambda frame=None: (_ for _ in ()).throw(RuntimeError("boom"))):
+            with self.subTest(detector=detector):
+                cfg = {KEY_SKILL_ALLOWLIST: True, KEY_DAMAGE_ROTATION: True}
+                task = _FakeTask(cfg, ults=("2",), link=False, skill=3)
+                task.stable_team_result = (["赛希", "弭弗", "莱万汀", "噗切娜"], True)
+                task.find_feature = lambda feature=None, **k: True
+                task.detect_current_char_index = detector
+                logic = AutoCombatLogic(task)
+                logic.run(start_sleep=0)
+                self.assertTrue(logic.auto_rotation_active)
+                self.assertEqual(logic.auto_rotation_sequence[0], "2")
 
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
