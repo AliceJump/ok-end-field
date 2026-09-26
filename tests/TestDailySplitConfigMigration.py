@@ -187,9 +187,7 @@ class TestDailySplitConfigMigration(unittest.TestCase):
                 configs,
                 {
                     "DailyTask.json": {"⭐刷体力": True, "⭐自动送货": True},
-                    "_daily_split_migrations.json": {
-                        "completed_batches": ["daily_split_pilot_v1", "daily_split_v2"]
-                    },
+                    "_daily_split_migrations.json": {"completed_batches": ["daily_split_pilot_v1", "daily_split_v2"]},
                 },
             )
             self._write_configs(
@@ -209,9 +207,7 @@ class TestDailySplitConfigMigration(unittest.TestCase):
             self._write_configs(
                 configs,
                 {
-                    "_daily_split_migrations.json": {
-                        "completed_batches": ["daily_split_pilot_v1", "daily_split_v2"]
-                    },
+                    "_daily_split_migrations.json": {"completed_batches": ["daily_split_pilot_v1", "daily_split_v2"]},
                     "account_scoped_overrides.json": {
                         "account_registry": {"acc_test": {"username": "玩家A", "aliases": ["玩家A"]}},
                         "accounts": {"acc_test": {"DailyTask": {"⭐刷体力": True}}},
@@ -231,7 +227,7 @@ class TestDailySplitConfigMigration(unittest.TestCase):
                                     "⭐地区建设": True,
                                     "⭐据点兑换": True,
                                 }
-                            }
+                            },
                         }
                     }
                 },
@@ -252,9 +248,7 @@ class TestDailySplitConfigMigration(unittest.TestCase):
             self._write_configs(
                 configs,
                 {
-                    "_daily_split_migrations.json": {
-                        "completed_batches": ["daily_split_pilot_v1", "daily_split_v2"]
-                    },
+                    "_daily_split_migrations.json": {"completed_batches": ["daily_split_pilot_v1", "daily_split_v2"]},
                     "account_scoped_overrides.json": {
                         "account_registry": {
                             "acc_a": {"username": "玩家A", "aliases": ["玩家A", "shared"]},

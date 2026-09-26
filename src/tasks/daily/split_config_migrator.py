@@ -335,7 +335,13 @@ def _backup_account_keys(account_id: str, registry: dict) -> list[str]:
     candidates = [*(aliases if isinstance(aliases, list) else []), account_meta.get("username")]
     keys = []
     for alias in candidates:
-        if isinstance(alias, str) and alias and alias != account_id and alias not in used_by_others and alias not in keys:
+        if (
+            isinstance(alias, str)
+            and alias
+            and alias != account_id
+            and alias not in used_by_others
+            and alias not in keys
+        ):
             keys.append(alias)
     keys.append(account_id)
     return keys
@@ -381,9 +387,7 @@ def _import_account_overrides(target_name: str, source_name: str, key_map: dict[
         account_ids = list(accounts)
         if source_name == "DailyTask" and batch_id == "daily_split_v3":
             account_ids.extend(
-                account_id
-                for account_id in (data.get("account_registry") or {})
-                if account_id not in accounts
+                account_id for account_id in (data.get("account_registry") or {}) if account_id not in accounts
             )
         for account_id in account_ids:
             account_tasks = accounts.setdefault(account_id, {})
