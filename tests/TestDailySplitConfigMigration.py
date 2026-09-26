@@ -223,6 +223,7 @@ class TestDailySplitConfigMigration(unittest.TestCase):
                 {
                     "account_scoped_overrides.json": {
                         "accounts": {
+                            "acc_test": {"DailyTask": {"体力本": "干员进阶"}},
                             "玩家A": {
                                 "DailyTask": {
                                     "体力本": "技能提升",
@@ -239,7 +240,7 @@ class TestDailySplitConfigMigration(unittest.TestCase):
 
             store = self._read_config(configs, "account_scoped_overrides.json")
             tasks = store["accounts"]["acc_test"]
-            self.assertEqual(tasks["DailyBattleTask"]["体力本"], "技能提升")
+            self.assertEqual(tasks["DailyBattleTask"]["体力本"], "干员进阶")
             self.assertEqual(tasks["DailyDeliveryTask"]["目标券数"], ["73100"])
             self.assertEqual(tasks["RegionalBuildTask"]["⭐地区建设"], ["据点兑换"])
 

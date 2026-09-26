@@ -305,7 +305,7 @@ def _import_task_config(target_name: str, key_map: dict[str, Any], source_config
 
 
 def _backup_account_keys(account_id: str, registry: dict) -> list[str]:
-    """仅用归属明确的账号名查询旧备份，账号 ID 始终保留。"""
+    """先合并归属明确的别名，最后用账号 ID 段覆盖同名参数。"""
     account_meta = registry.get(account_id, {})
     if not isinstance(account_meta, dict):
         return [account_id]
@@ -325,10 +325,11 @@ def _backup_account_keys(account_id: str, registry: dict) -> list[str]:
 
     aliases = account_meta.get("aliases")
     candidates = [*(aliases if isinstance(aliases, list) else []), account_meta.get("username")]
-    keys = [account_id]
+    keys = []
     for alias in candidates:
-        if isinstance(alias, str) and alias and alias not in used_by_others and alias not in keys:
+        if isinstance(alias, str) and alias and alias != account_id and alias not in used_by_others and alias not in keys:
             keys.append(alias)
+    keys.append(account_id)
     return keys
 
 
