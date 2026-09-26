@@ -84,6 +84,22 @@ class TestSkillMultiplier(unittest.TestCase):
         self.assertAlmostEqual(mult, 140.0)
         self.assertEqual(len(cond), 2)
 
+    def test_consumption_stack_damage_row_not_counted_but_visible(self):
+        # 消耗型伤害行（如别礼「消耗每层附着 / 额外伤害倍率」）按消耗层数结算，
+        # 每层口径待打桩（P1-8 C9），A 层不计入但必须出现在条件行里供审计
+        skill = {"rank_stats": self._rows([
+            ("冰刺伤害倍率", "160%"),
+            ("斩击基础伤害倍率", "160%"),
+            ("消耗每层附着 / 额外伤害倍率", "240%"),
+            ("基础获得 / 终结技能量", "40"),
+            ("消耗每层附着额外 / 获得终结技能量", "15"),
+        ])}
+        mult, _, cond = mod._skill_multiplier(skill)
+        self.assertAlmostEqual(mult, 320.0)
+        self.assertEqual(len(cond), 1)
+        self.assertIn("240%", cond[0])
+        self.assertIn("按消耗层数", cond[0])
+
     def test_support_skill_zero(self):
         skill = {"rank_stats": self._rows([
             ("基础治疗值", "324"),
