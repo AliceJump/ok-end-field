@@ -24,6 +24,12 @@ KEY_RECOMMEND_SKILL = "自动释放推荐技能"
 # 自动技能列表
 KEY_SKILL_ALLOWLIST = "自动技能列表"
 
+# 伤害优先排序（自动技能列表的子选项）
+KEY_DAMAGE_ROTATION = "伤害优先排序"
+
+# 脉冲探针（独立诊断开关：观测推荐脉冲出现位置并落盘，不影响战斗行为）
+KEY_PULSE_PROBE = "脉冲探针记录"
+
 
 # ==========================================================
 # Config Name / Mode
@@ -128,6 +134,11 @@ DEFAULT_RECOMMEND_SKILL = False
 
 DEFAULT_SKILL_ALLOWLIST = True
 
+DEFAULT_DAMAGE_ROTATION = True
+
+# 脉冲探针默认开启：诊断数据采集不影响战斗，攒实战样本
+DEFAULT_PULSE_PROBE = True
+
 
 # ==========================================================
 # Default Battle Config
@@ -148,6 +159,8 @@ DEFAULT_BATTLE_CONFIG = {
     KEY_INSTANT_LINK: DEFAULT_INSTANT_LINK,
     KEY_RECOMMEND_SKILL: DEFAULT_RECOMMEND_SKILL,
     KEY_SKILL_ALLOWLIST: DEFAULT_SKILL_ALLOWLIST,
+    KEY_DAMAGE_ROTATION: DEFAULT_DAMAGE_ROTATION,
+    KEY_PULSE_PROBE: DEFAULT_PULSE_PROBE,
 }
 
 
@@ -190,7 +203,10 @@ BATTLE_CONFIG_TYPE = {
         "type": "cond_sequence_editor",
     },
     KEY_RECOMMEND_SKILL: {},
-    KEY_SKILL_ALLOWLIST: {"sub_configs": {False: BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST]}},
+    KEY_SKILL_ALLOWLIST: {"sub_configs": {False: BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST],
+                                          True: [KEY_DAMAGE_ROTATION]}},
+    KEY_DAMAGE_ROTATION: {},
+    KEY_PULSE_PROBE: {},
 }
 
 
@@ -231,6 +247,25 @@ BATTLE_CONFIG_DESCRIPTION = {
         "启用后，战斗开始时自动识别左下角 4 个头像，\n"
         "跳过被增强机制接管的战技，"
         "只保留有意义释放的战技。"
+    ),
+    KEY_DAMAGE_ROTATION: (
+        "「自动技能列表」开启时生效。\n"
+        "按各角色战技的实际伤害（官方 WIKI 满配基准、暴击期望）降序，\n"
+        "生成覆盖队内 1-4 号位的可重复循环自动排轴：\n"
+        "战技 → 终结技 → 普攻回技力填充段，并按就绪窗口尝试连携技；\n"
+        "终结技/连携未就绪时自动跳过，循环继续，不卡轴。\n"
+        "自动识别协议空间（战斗画面左上角「撤离」按钮）：\n"
+        "协议空间开局终结技全满，轴含终结技；普通战斗（冷启动）\n"
+        "轴不含终结技，就绪后由填充段兜底自动释放。\n"
+        "注意：与增强链过滤互斥（二选一）——关闭本项时「自动技能列表」\n"
+        "按增强链闭包过滤「技能释放」序列；开启本项时改为伤害排序自动排轴。"
+    ),
+    KEY_PULSE_PROBE: (
+        "独立诊断探针：战斗中观测技能按钮区域出现白色脉冲（官方推荐\n"
+        "释放时机）的位置与时间，追加记录到\n"
+        "「configs/pulse_probe_log.jsonl」，用于统计哪些强化态/技能\n"
+        "有官方脉冲提示。\n"
+        "只记录不按键，不影响任何战斗行为；关闭后停止记录。"
     ),
 }
 

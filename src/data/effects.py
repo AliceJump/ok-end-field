@@ -40,7 +40,7 @@ class EffectType(Enum):
     STATUS_SPELL_BURST = "STATUS_SPELL_BURST"  # 法术爆发伤害（同元素再次附着触发）
     STATUS_SPELL_ANOMALY = "STATUS_SPELL_ANOMALY"  # 法术异常状态（通用）
     STATUS_SLOW = "STATUS_SLOW"  # 缓速
-    STATUS_BROKEN = "STATUS_BROKEN"  # 破碎
+    STATUS_BROKEN = "STATUS_BROKEN"  # 碎冰（官方名 Shatter：固结敌人受到物理异常触发，勿被枚举名误导）
     STATUS_FOCUS = "STATUS_FOCUS"  # 安塔尔施加的聚焦状态
     STATUS_CONFINEMENT = "STATUS_CONFINEMENT"  # 诀施加的囹圄状态
     STATUS_ORIGINIUM_CRYSTAL = "STATUS_ORIGINIUM_CRYSTAL"  # 管理员施加的源石结晶
@@ -150,7 +150,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STATUS_SPELL_BURST: "法术爆发伤害（同元素再次附着时触发）",
     EffectType.STATUS_SPELL_ANOMALY: "法术异常状态（通用）",
     EffectType.STATUS_SLOW: "敌人被施加缓速",
-    EffectType.STATUS_BROKEN: "敌人处于破碎状态",
+    EffectType.STATUS_BROKEN: "碎冰（官方名 Shatter）：处于固结/冻结状态的敌人受到物理异常（或破防）时触发，造成大量物理伤害（120%）并结束固结",
     EffectType.STATUS_FOCUS: "安塔尔施加的聚焦状态，同一时间最多存在于一个敌人",
     EffectType.STATUS_CONFINEMENT: "诀施加的囹圄状态，使目标所有行动减缓",
     EffectType.STATUS_ORIGINIUM_CRYSTAL: "管理员附着的源石结晶，可被物理异常或破防消耗",
@@ -162,7 +162,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STACK_SHRED: "敌人身上的破防层数",
     EffectType.STACK_IRON_OATH: "余烬的铁誓层数",
     EffectType.STACK_BLOOD_WING: "卡缪的衔火血翼盘桓层数",
-    EffectType.STACK_COMBO: "黎风的连击层数",
+    EffectType.STACK_COMBO: "队伍连击层数（官方名 Link/连击）：最多 4 层，持有时下一发战技（加成更大）或终结技伤害提升，使用后消耗；黎风、秋栗等干员可施加，黎风终结技消耗连击追加伤害",
     EffectType.STACK_MORALE: "骏卫的士气激昂层数",
     EffectType.STACK_WHIRLPOOL: "汤汤的涡流数量",
     EffectType.STACK_SEED: "诀的种子层数",
@@ -207,7 +207,7 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.CONSUME_ALL: "清空所有层数/效果",
     EffectType.CONSUME_STACK: "消耗特定层数",
     EffectType.CLEAR_ATTACH: "清空所有元素附着",
-    EffectType.CLEAR_STATUS: "清空所有异常状态",
+    EffectType.CLEAR_STATUS: "清空所有异常状态（官方名「清除异常状态」，社区攻略常转述为「净化」）",
     EffectType.CLEAR_COLD: "清空敌人寒冷附着",
     EffectType.CLEAR_NATURAL: "清空敌人自然附着",
     EffectType.CLEAR_FROZEN: "消耗敌人冻结状态",
@@ -240,6 +240,7 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "法术脆弱": EffectType.VULN_ALL,
     # 异常状态
     "冻结": EffectType.STATUS_FROZEN,
+    "碎冰": EffectType.STATUS_BROKEN,
     "燃烧": EffectType.STATUS_BURNING,
     "导电": EffectType.STATUS_CONDUCTING,
     "腐蚀": EffectType.STATUS_CORROSION,
@@ -313,6 +314,7 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "消耗灼热附着": EffectType.CLEAR_ATTACH,
     "清空附着": EffectType.CLEAR_ATTACH,
     "清空状态": EffectType.CLEAR_STATUS,
+    "净化": EffectType.CLEAR_STATUS,
     "自然爆发脆弱": EffectType.VULN_NATURAL_BURST,
 }
 

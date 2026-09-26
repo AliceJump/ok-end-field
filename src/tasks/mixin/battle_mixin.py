@@ -751,6 +751,17 @@ class BattleMixin(BaseEfTask):
             pressed = True
         return pressed
 
+    def probe_pulse(self):
+        """独立脉冲探针：观测当前帧各技能按钮区域的白色脉冲并落盘。
+
+        只记录不按键，不受「自动技能列表 / 推荐技能」等配置影响
+        （自带独立开关 KEY_PULSE_PROBE，默认开）。由战斗循环每帧调用；
+        探针内部自带节流与异常兜底，绝不干扰战斗行为。
+        """
+        from src.image.pulse_probe import get_pulse_probe
+
+        get_pulse_probe().observe(self)
+
     def in_combat(self, required_yellow=1):
         """
         判断当前是否处于战斗中。
