@@ -2694,3 +2694,23 @@ msgstr "等待画面刷新后再读取箭头角度的时间"
 
 msgid "发送鼠标位移后等待滑索上的视角转动完成的时间，不按 W 刷新朝向"
 msgstr "发送鼠标位移后等待滑索上的视角转动完成的时间，不按 W 刷新朝向"
+msgid "显隐组"
+msgstr "显隐组"
+
+msgid "其他参数"
+msgstr "其他参数"
+
+msgid "参数"
+msgstr "参数"
+
+msgid "{n} 项"
+msgstr "{n} 项"
+
+msgid "开"
+msgstr "开"
+
+msgid "关"
+msgstr "关"
+
+msgid "参数预览"
+msgstr "参数预览"

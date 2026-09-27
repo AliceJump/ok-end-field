@@ -8,7 +8,7 @@ from typing import Any
 
 from ok import ConfigOption
 from ok.util.config import Config
-from ok.util.file import get_relative_path, read_json_file, write_json_file
+from ok.util.file import read_json_file, write_json_file
 from qfluentwidgets import FluentIcon
 
 from src.core.BattleConfig import (
@@ -29,6 +29,7 @@ from src.core.NavConfig import (
     NAV_WAIT_POSITION_TIMEOUT_KEY,
     NAV_WS_ACCOUNT_KEY,
 )
+from src.core.paths import config_path
 from src.data.delivery_area import DELIVERY_AREA_CONFIG
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING, stages_dict
 from src.icons import Icons
@@ -167,8 +168,6 @@ _LOCK = threading.Lock()
 _CONFIGS: dict[str, Config] = {}
 _OPTIONS = {option.name: option for option in GLOBAL_CONFIG_OPTIONS}
 _MIGRATION_MARKER = "global_config_store_v2_task_scoped"
-_MIGRATION_STATE_PATH = get_relative_path("configs", "_global_config_migrations.json")
-_MIGRATION_BACKUP_DIR = get_relative_path("configs", "global_config_migration_backup")
 _BATTLE_LEGACY_TASK_CONFIGS = ["DailyTask", "AutoCombatTask", "BattleTask"]
 _ZIP_LINE_LEGACY_TASK_CONFIGS = ["DeliveryTask", "DailyTask", "BattleTask"]
 _NAV_LEGACY_TASK_CONFIGS = [
@@ -204,6 +203,16 @@ _BATTLE_KEY_MIGRATIONS = {
 }
 
 
+def get_migration_state_path() -> str:
+    """全局配置迁移状态文件路径；目录名取 config_folder，避免写死 configs。"""
+    return config_path("_global_config_migrations.json")
+
+
+def get_migration_backup_dir() -> str:
+    """全局配置迁移备份目录路径；目录名取 config_folder。"""
+    return config_path("global_config_migration_backup")
+
+
 def _same_type(value: Any, default_value: Any) -> bool:
     return isinstance(value, type(default_value))
 
@@ -217,12 +226,12 @@ def _coerce_legacy_value(key: str, value: Any, default_value: Any) -> Any:
 
 
 def _read_migration_state() -> dict[str, Any]:
-    state = read_json_file(_MIGRATION_STATE_PATH)
+    state = read_json_file(get_migration_state_path())
     return state if isinstance(state, dict) else {}
 
 
 def _write_migration_state(state: dict[str, Any]) -> None:
-    write_json_file(_MIGRATION_STATE_PATH, state)
+    write_json_file(get_migration_state_path(), state)
 
 
 def _backup_legacy_task_configs(state: dict[str, Any]) -> None:
@@ -230,10 +239,10 @@ def _backup_legacy_task_configs(state: dict[str, Any]) -> None:
     if state.get(backup_marker):
         return
 
-    backup_dir = Path(_MIGRATION_BACKUP_DIR)
+    backup_dir = Path(get_migration_backup_dir())
     backup_dir.mkdir(parents=True, exist_ok=True)
     for task_config_name in _BATTLE_LEGACY_TASK_CONFIGS:
-        source_path = Path(get_relative_path("configs", f"{task_config_name}.json"))
+        source_path = Path(config_path(f"{task_config_name}.json"))
         if source_path.is_file():
             shutil.copy2(source_path, backup_dir / source_path.name)
 
@@ -246,10 +255,10 @@ def _backup_legacy_nav_task_configs(state: dict[str, Any]) -> None:
     if state.get(_NAV_LEGACY_BACKUP_MARKER):
         return
 
-    backup_dir = Path(_MIGRATION_BACKUP_DIR)
+    backup_dir = Path(get_migration_backup_dir())
     backup_dir.mkdir(parents=True, exist_ok=True)
     for task_config_name in _NAV_LEGACY_TASK_CONFIGS:
-        source_path = Path(get_relative_path("configs", f"{task_config_name}.json"))
+        source_path = Path(config_path(f"{task_config_name}.json"))
         if source_path.is_file():
             shutil.copy2(source_path, backup_dir / source_path.name)
 
@@ -266,20 +275,20 @@ def _iter_legacy_config_data(option: ConfigOption):
         task_config_names = []
 
     for task_config_name in task_config_names:
-        config_path = Path(get_relative_path("configs", f"{task_config_name}.json"))
-        data = read_json_file(str(config_path))
+        legacy_path = Path(config_path(f"{task_config_name}.json"))
+        data = read_json_file(str(legacy_path))
         if isinstance(data, dict):
-            mtime = config_path.stat().st_mtime if config_path.is_file() else -1
+            mtime = legacy_path.stat().st_mtime if legacy_path.is_file() else -1
             yield data, mtime
 
 
 def _iter_legacy_zip_line_task_data():
     """遍历 legacy 任务配置文件中的滑索键值（不含账号覆盖，避免账号路线污染全局迁移）。"""
     for task_config_name in _ZIP_LINE_LEGACY_TASK_CONFIGS:
-        config_path = Path(get_relative_path("configs", f"{task_config_name}.json"))
-        data = read_json_file(str(config_path))
+        legacy_path = Path(config_path(f"{task_config_name}.json"))
+        data = read_json_file(str(legacy_path))
         if isinstance(data, dict):
-            yield data, config_path.stat().st_mtime if config_path.is_file() else -1
+            yield data, legacy_path.stat().st_mtime if legacy_path.is_file() else -1
 
 
 def _collect_legacy_values(option: ConfigOption) -> dict[str, Any]:
@@ -361,12 +370,12 @@ def _migrate_key_names_in_file(option_name: str, migrations: dict[str, str], def
       这样即使文件里新键已被框架补全成空默认值，旧值也能搬入。
     - 反向（新键 → 旧键）：旧键缺失时补一份，保证回滚安全。
 
-    使用本模块的 get_relative_path，避免跨模块补丁遗漏读写真实 configs 目录。
+    使用本模块的 config_path，避免跨模块补丁遗漏读写真实配置目录。
     """
     if not migrations:
         return
 
-    config_file = get_relative_path("configs", f"{option_name}.json")
+    config_file = config_path(f"{option_name}.json")
     config = read_json_file(config_file)
     if not isinstance(config, dict):
         return
@@ -423,7 +432,7 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
     # Nav Config 的迁移标记可能已经由旧版新配置代码写入；真值 source 的
     # 兜底迁移必须独立于标记执行，否则升级用户会永久丢失 content/账号。
     if option.name == NAV_CONFIG_NAME:
-        config_file = get_relative_path("configs", f"{option.name}.json")
+        config_file = config_path(f"{option.name}.json")
         config = read_json_file(config_file)
         if not isinstance(config, dict):
             config = {}
@@ -445,7 +454,7 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
         _migrate_key_names_in_file(option.name, _ZIP_LINE_KEY_MIGRATIONS, ZIP_LINE_DEFAULT_CONFIG)
 
     # 2. 读取当前配置文件（键名复制后）
-    config_file = get_relative_path("configs", f"{option.name}.json")
+    config_file = config_path(f"{option.name}.json")
     config = read_json_file(config_file)
     if not isinstance(config, dict):
         config = {}
@@ -479,7 +488,7 @@ def migrate_task_zip_line_values_to_global(task_class_name: str) -> None:
     全局（setdefault 语义：全局已有非默认值则不覆盖）。不依赖迁移标记，
     因此迁移标记已打的历史场景也能兜底继承。
     """
-    config_file = get_relative_path("configs", f"{task_class_name}.json")
+    config_file = config_path(f"{task_class_name}.json")
     data = read_json_file(config_file)
     if not isinstance(data, dict):
         return
@@ -512,7 +521,7 @@ def migrate_task_nav_values_to_global(task_class_name: str) -> None:
     if task_class_name not in _NAV_LEGACY_TASK_CONFIGS:
         return
 
-    config_file = get_relative_path("configs", f"{task_class_name}.json")
+    config_file = config_path(f"{task_class_name}.json")
     data = read_json_file(config_file)
     if not isinstance(data, dict):
         return
@@ -569,7 +578,7 @@ def migrate_task_minimap_values_to_owner(task) -> None:
     if task_class_name == _MINIMAP_POSITION_TASK_CONFIG_NAME:
         return
 
-    config_file = get_relative_path("configs", f"{task_class_name}.json")
+    config_file = config_path(f"{task_class_name}.json")
     data = read_json_file(config_file)
     if not isinstance(data, dict):
         return
@@ -596,9 +605,7 @@ def migrate_task_minimap_values_to_owner(task) -> None:
     if not isinstance(owner_config, dict):
         owner_config = None
 
-    owner_config_file = get_relative_path(
-        "configs", f"{_MINIMAP_POSITION_TASK_CONFIG_NAME}.json"
-    )
+    owner_config_file = config_path(f"{_MINIMAP_POSITION_TASK_CONFIG_NAME}.json")
     owner_data = read_json_file(owner_config_file)
     if not isinstance(owner_data, dict):
         owner_data = {}

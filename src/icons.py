@@ -8,14 +8,15 @@ import threading
 import weakref
 from pathlib import Path
 
+from ok.util.file import get_relative_path
 from PySide6.QtCore import QObject, QRectF, QSize, Qt
 from PySide6.QtGui import QIcon, QIconEngine, QMovie, QPixmap
 from PySide6.QtWidgets import QWidget
 from qfluentwidgets import FluentIconBase, Theme, isDarkTheme
 
-_ICONS_DIR = Path("assets") / "ui" / "material_icons"
+_ICONS_DIR = Path(get_relative_path("assets", "ui", "material_icons"))
 # 反转图标缓存目录（根级 cache/ 已在 .gitignore 中忽略）
-_CACHE_DIR = Path("cache") / "icons"
+_CACHE_DIR = Path(get_relative_path("cache", "icons"))
 _CACHE_LOCK = threading.Lock()
 logger = logging.getLogger(__name__)
 

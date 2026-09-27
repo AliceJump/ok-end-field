@@ -2709,3 +2709,23 @@ msgstr "画面更新後に矢印角度を読み取るまでの待ち時間"
 
 msgid "发送鼠标位移后等待滑索上的视角转动完成的时间，不按 W 刷新朝向"
 msgstr "マウス変位送信後、ジップライン上の視点回転が完了するまでの待ち時間。W を押して向きを更新しません"
+msgid "显隐组"
+msgstr "表示条件"
+
+msgid "其他参数"
+msgstr "その他のパラメータ"
+
+msgid "参数"
+msgstr "パラメータ"
+
+msgid "{n} 项"
+msgstr "{n} 件"
+
+msgid "开"
+msgstr "オン"
+
+msgid "关"
+msgstr "オフ"
+
+msgid "参数预览"
+msgstr "パラメータプレビュー"

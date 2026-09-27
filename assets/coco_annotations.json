@@ -917,6 +917,9 @@
   }, {
     "id" : 279,
     "name" : "move_to_the_target_2"
+  }, {
+    "id" : 280,
+    "name" : "main_char"
   } ],
   "annotations" : [ {
     "id" : 1,
@@ -2870,6 +2873,13 @@
     "category_id" : 277,
     "bbox" : [ 1686, 914, 228, 72 ],
     "area" : 16416,
+    "iscrowd" : 0
+  }, {
+    "id" : 280,
+    "image_id" : 10,
+    "category_id" : 280,
+    "bbox" : [ 80, 898, 8, 16 ],
+    "area" : 128,
     "iscrowd" : 0
   } ]
 }

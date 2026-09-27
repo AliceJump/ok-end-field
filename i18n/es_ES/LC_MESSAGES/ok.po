@@ -3012,3 +3012,23 @@ msgid "发送鼠标位移后等待滑索上的视角转动完成的时间，不�
 msgstr ""
 "Tiempo de espera a que termine el giro de la vista en la tirolina tras "
 "enviar el desplazamiento; no se pulsa W para actualizar el rumbo"
+msgid "显隐组"
+msgstr "Condicional"
+
+msgid "其他参数"
+msgstr "Otros parámetros"
+
+msgid "参数"
+msgstr "Parámetros"
+
+msgid "{n} 项"
+msgstr "{n} elem."
+
+msgid "开"
+msgstr "Sí"
+
+msgid "关"
+msgstr "No"
+
+msgid "参数预览"
+msgstr "Vista previa de parámetros"

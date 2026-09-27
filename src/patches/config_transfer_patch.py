@@ -10,8 +10,9 @@
   导入前会把现有配置备份到 configs/backup/import_backup_<时间戳>/，
   覆盖完成后提示重启应用生效。
 
-配置目录由 ok.util.config.Config 以 cwd 相对路径 `configs` 解析，且配置对象
-在启动时读入内存、修改时写回磁盘，因此导入后必须重启应用才能生效。
+配置目录与 ok.util.config.Config 的解析方式保持一致：取 config 的
+`config_folder`（默认 `configs`），以 cwd 为基准解析；且配置对象在启动时
+读入内存、修改时写回磁盘，因此导入后必须重启应用才能生效。
 
 导出/导入均跳过 backup 与 global_config_migration_backup 两个备份目录，
 避免把备份产物当作配置反复打包。
@@ -29,13 +30,16 @@ from pathlib import Path, PurePosixPath
 from PySide6.QtWidgets import QApplication, QFileDialog
 from qfluentwidgets import FluentIcon, MessageBox, PushButton
 
+from src.core.paths import config_path
+
 _PATCH_INSTALLED = False
 
 # 备份/迁移产物目录不属于用户配置，导出、备份与导入清理时均跳过
 _EXCLUDED_DIR_NAMES = {"backup", "global_config_migration_backup"}
 
-# 导出 zip 内的根目录名；导入时优先识别该前缀
-_ZIP_ROOT_DIR = "configs"
+_ZIP_ROOT = PurePosixPath("configs")
+_ZIP_IMPORT_PREFIX = f"{_ZIP_ROOT}/"
+_STAGING_RELATIVE_DIR = Path("staging") / "configs"
 
 # 防止压缩炸弹或异常大文件耗尽磁盘空间
 _MAX_IMPORT_MEMBER_BYTES = 16 * 1024 * 1024
@@ -44,8 +48,8 @@ _COPY_CHUNK_BYTES = 1024 * 1024
 
 
 def get_configs_dir() -> Path:
-    """返回当前应用的配置目录（与 ok.util.config.Config 的解析方式一致）。"""
-    return Path.cwd() / "configs"
+    """返回当前应用的配置目录（目录名取 config_folder）。"""
+    return Path(config_path())
 
 
 def _is_excluded(rel_parts) -> bool:
@@ -63,7 +67,7 @@ def export_config_zip(configs_dir: Path, zip_path: Path) -> int:
             rel = path.relative_to(configs_dir)
             if _is_excluded(rel.parts):
                 continue
-            zf.write(path, Path(_ZIP_ROOT_DIR) / rel)
+            zf.write(path, str(_ZIP_ROOT / rel.as_posix()))
             count += 1
     return count
 
@@ -89,9 +93,8 @@ def resolve_import_prefix(zip_path: Path) -> str | None:
     if not json_names:
         return None
 
-    root_prefix = f"{_ZIP_ROOT_DIR}/"
-    if any(name.startswith(root_prefix) for name in json_names):
-        return root_prefix
+    if any(name.startswith(_ZIP_IMPORT_PREFIX) for name in json_names):
+        return _ZIP_IMPORT_PREFIX
 
     top_dirs = {name.split("/", 1)[0] for name in names if "/" in name}
     if len(top_dirs) == 1:
@@ -138,8 +141,8 @@ def apply_config_import(zip_path: Path, configs_dir: Path) -> Path:
         shutil.copy2(path, dest)
 
     with tempfile.TemporaryDirectory(prefix=".config_import_", dir=configs_dir.parent) as tmp:
-        staging_dir = Path(tmp) / "configs"
-        staging_dir.mkdir()
+        staging_dir = Path(tmp) / _STAGING_RELATIVE_DIR
+        staging_dir.mkdir(parents=True)
         staging_root = staging_dir.resolve()
         extracted = 0
         total_bytes = 0

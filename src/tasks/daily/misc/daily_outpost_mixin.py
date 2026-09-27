@@ -258,9 +258,10 @@ class DailyOutpostMixin:
         return tickets // unit_price if unit_price is not None else None
 
     def _limit_outpost_trade_quantity(self, limit) -> None:
-        """从 10% 逐档增加数量，首次达到或超过上限即出售，不使用加减号。
+        """全卖不超过当前调度券储量直接出售，否则从 10% 逐档调量。
 
         算法：
+        0. 全卖该货物不超过当前调度券储量则直接出售全部库存。
         1. 从 10% 到 100% 逐档遍历，每次增加 10%，先点击再读数。
            相邻档位可能落在当前滑块手柄内，因此先点离目标较远的一端，再点目标档位。
            10%～50% 先点右端，60%～100% 先点左端；端点跳转只用于定位，不读数也不出售。
@@ -279,6 +280,12 @@ class DailyOutpostMixin:
         def read_quantity():
             result = self.wait_ocr(match=quantity_pattern, box=quantity_box, time_out=2, raise_if_not_found=False)
             return int(quantity_pattern.search(result[0].name).group(1)) if len(result or []) == 1 else None
+
+        # 先读取最大数量；有效且不超过上限时直接出售全部库存
+        maximum = read_quantity()
+        if maximum is not None and 0 < maximum <= limit:
+            self.log_info(f"据点调量：全部库存 {maximum} 不超过可售 {limit}，直接出售")
+            return
 
         pixel_y = int(slider_y * self.height)
 

@@ -6,11 +6,13 @@ import uuid
 from collections.abc import Callable
 from typing import Any
 
-from ok.util.file import ensure_dir_for_file, get_relative_path
+from ok.util.file import ensure_dir_for_file
 
-_STORE_PATH = get_relative_path("configs", "account_scoped_overrides.json")
+from src.core.paths import config_path
+
 _LOCK = threading.Lock()
 _CACHE_MTIME = object()
+_CACHE_PATH: str | None = None
 _EMPTY_STORE: dict[str, Any] = {
     "account_list_text": "",
     "account_registry": {},
@@ -21,8 +23,8 @@ _CACHE_DATA: dict[str, Any] = copy.deepcopy(_EMPTY_STORE)
 
 
 def get_store_path() -> str:
-    """Get the file path to the account-scoped overrides storage file."""
-    return _STORE_PATH
+    """账号覆盖存储文件路径；目录名取 config_folder，避免写死 configs。"""
+    return config_path("account_scoped_overrides.json")
 
 
 def _new_store() -> dict[str, Any]:
@@ -31,12 +33,12 @@ def _new_store() -> dict[str, Any]:
 
 def _backup_corrupt_store() -> str:
     """把疑似损坏的存储文件移到 .corrupt；失败时如实报告，不假装已备份。"""
-    backup_path = f"{_STORE_PATH}.corrupt"
+    backup_path = f"{get_store_path()}.corrupt"
     try:
-        os.replace(_STORE_PATH, backup_path)
+        os.replace(get_store_path(), backup_path)
         return backup_path
     except OSError:
-        return f"{_STORE_PATH}（备份失败：{backup_path} 无法写入）"
+        return f"{get_store_path()}（备份失败：{backup_path} 无法写入）"
 
 
 def _load_store_json() -> tuple[dict[str, Any], Any]:
@@ -45,9 +47,9 @@ def _load_store_json() -> tuple[dict[str, Any], Any]:
     - JSON 解析错误 / 编码错误 / 顶层类型异常：视为文件损坏，备份后抛错，绝不静默回退到空存储
     - 文件读取 OSError（权限等）：与损坏无关，直接抛出原异常，不动源文件
     """
-    current_mtime: Any = os.path.getmtime(_STORE_PATH)
+    current_mtime: Any = os.path.getmtime(get_store_path())
     try:
-        with open(_STORE_PATH, encoding="utf-8") as fp:
+        with open(get_store_path(), encoding="utf-8") as fp:
             raw = fp.read()
     except OSError:
         raise
@@ -64,14 +66,14 @@ def _load_store_json() -> tuple[dict[str, Any], Any]:
 
 def _atomic_write_json(data: dict[str, Any]) -> Any:
     """先写临时文件再原子替换，避免写入中途崩溃留下截断的 JSON。"""
-    ensure_dir_for_file(_STORE_PATH)
-    tmp_path = f"{_STORE_PATH}.tmp"
+    ensure_dir_for_file(get_store_path())
+    tmp_path = f"{get_store_path()}.tmp"
     with open(tmp_path, "w", encoding="utf-8") as fp:
         json.dump(data, fp, ensure_ascii=False, indent=2)
         fp.flush()
         os.fsync(fp.fileno())
-    os.replace(tmp_path, _STORE_PATH)
-    return os.path.getmtime(_STORE_PATH)
+    os.replace(tmp_path, get_store_path())
+    return os.path.getmtime(get_store_path())
 
 
 def _clean_text(value: Any) -> str:
@@ -372,15 +374,17 @@ def _sync_account_list_text_on_data(data: dict[str, Any], text: str) -> tuple[di
 def load_overrides(force: bool = False) -> dict[str, Any]:
     """Load account-scoped configuration overrides from storage, using cache unless force is True."""
     global _CACHE_MTIME
+    global _CACHE_PATH
     global _CACHE_DATA
 
     with _LOCK:
-        if os.path.exists(_STORE_PATH):
-            current_mtime: Any = os.path.getmtime(_STORE_PATH)
+        store_path = get_store_path()
+        if os.path.exists(store_path):
+            current_mtime: Any = os.path.getmtime(store_path)
         else:
             current_mtime = None
 
-        if not force and current_mtime == _CACHE_MTIME:
+        if not force and store_path == _CACHE_PATH and current_mtime == _CACHE_MTIME:
             return copy.deepcopy(_CACHE_DATA)
 
         if current_mtime is None:
@@ -391,12 +395,14 @@ def load_overrides(force: bool = False) -> dict[str, Any]:
         normalized = _normalize(data)
         _CACHE_DATA = normalized
         _CACHE_MTIME = current_mtime
+        _CACHE_PATH = store_path
         return copy.deepcopy(normalized)
 
 
 def save_overrides(data: dict[str, Any]) -> dict[str, Any]:
     """Save account-scoped configuration overrides to storage and update cache."""
     global _CACHE_MTIME
+    global _CACHE_PATH
     global _CACHE_DATA
 
     normalized = _normalize(data)
@@ -404,6 +410,7 @@ def save_overrides(data: dict[str, Any]) -> dict[str, Any]:
     with _LOCK:
         _CACHE_MTIME = _atomic_write_json(normalized)
         _CACHE_DATA = normalized
+        _CACHE_PATH = get_store_path()
 
     return copy.deepcopy(normalized)
 
@@ -411,10 +418,11 @@ def save_overrides(data: dict[str, Any]) -> dict[str, Any]:
 def update_overrides(updater: Callable[[dict[str, Any]], dict[str, Any]]) -> dict[str, Any]:
     """Update account-scoped overrides by applying an updater function to the current data."""
     global _CACHE_MTIME
+    global _CACHE_PATH
     global _CACHE_DATA
 
     with _LOCK:
-        if os.path.exists(_STORE_PATH):
+        if os.path.exists(get_store_path()):
             current, current_mtime = _load_store_json()
             current = _normalize(current)
         else:
@@ -427,6 +435,7 @@ def update_overrides(updater: Callable[[dict[str, Any]], dict[str, Any]]) -> dic
 
         _CACHE_DATA = updated
         _CACHE_MTIME = current_mtime
+        _CACHE_PATH = get_store_path()
         return copy.deepcopy(updated)
 
 

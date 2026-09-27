@@ -94,6 +94,28 @@ class TestConfigTransferPatch(unittest.TestCase):
             )
             self.assertEqual(count, 3)
 
+    def test_absolute_config_folder_does_not_enter_archive_or_staging_paths(self):
+        from ok.util.config import Config
+
+        with tempfile.TemporaryDirectory() as tmp:
+            configs_dir = Path(tmp) / "external" / "custom"
+            configs_dir.mkdir(parents=True)
+            _write_file(configs_dir / "old.json", "old")
+            zip_path = Path(tmp) / "export.zip"
+
+            with patch.object(Config, "config_folder", str(configs_dir)):
+                self.assertEqual(export_config_zip(configs_dir, zip_path), 1)
+                with zipfile.ZipFile(zip_path) as zf:
+                    self.assertEqual(zf.namelist(), ["configs/old.json"])
+                self.assertEqual(resolve_import_prefix(zip_path), "configs/")
+
+                incoming_zip = Path(tmp) / "incoming.zip"
+                _make_zip(incoming_zip, {"configs/new.json": "new"})
+                apply_config_import(incoming_zip, configs_dir)
+
+            self.assertEqual((configs_dir / "new.json").read_text(encoding="utf-8"), "new")
+            self.assertFalse((configs_dir / "old.json").exists())
+
     def test_resolve_import_prefix_for_all_layouts(self):
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)

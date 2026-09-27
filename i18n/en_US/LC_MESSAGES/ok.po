@@ -2912,3 +2912,23 @@ msgid "发送鼠标位移后等待滑索上的视角转动完成的时间，不�
 msgstr ""
 "Time to wait for the zipline view rotation to finish after sending mouse "
 "displacement; W is not pressed to refresh the heading"
+msgid "显隐组"
+msgstr "Conditional"
+
+msgid "其他参数"
+msgstr "Other parameters"
+
+msgid "参数"
+msgstr "Parameters"
+
+msgid "{n} 项"
+msgstr "{n} item(s)"
+
+msgid "开"
+msgstr "On"
+
+msgid "关"
+msgstr "Off"
+
+msgid "参数预览"
+msgstr "Parameter preview"

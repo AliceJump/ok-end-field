@@ -896,7 +896,7 @@
       "string": "판"
     },
     "es_ES": {
-      "string": "Da Pan"
+      "string": "Da pan"
     },
     "id_ID": {
       "string": "Da Pan"
@@ -1361,6 +1361,50 @@
     },
     "vi_VN": {
       "string": "Typhoeus"
+    }
+  },
+  "pu_qie_na": {
+    "zh_CN": {
+      "string": "噗切娜"
+    },
+    "zh_TW": {
+      "string": "噗切娜"
+    },
+    "en_US": {
+      "string": "Purrchena"
+    },
+    "ja_JP": {
+      "string": "プチエナ"
+    },
+    "ko_KR": {
+      "string": "푸치나"
+    },
+    "es_ES": {
+      "string": "Purrchena"
+    },
+    "pt_BR": {
+      "string": "Purrchena"
+    },
+    "de_DE": {
+      "string": "Purrchena"
+    },
+    "fr_FR": {
+      "string": "Purrchena"
+    },
+    "id_ID": {
+      "string": "Purrchena"
+    },
+    "it_IT": {
+      "string": "Purrchena"
+    },
+    "ru_RU": {
+      "string": "Муррчена"
+    },
+    "th_TH": {
+      "string": "เพอร์​ซี​น่า"
+    },
+    "vi_VN": {
+      "string": "Purrchena"
     }
   }
 }

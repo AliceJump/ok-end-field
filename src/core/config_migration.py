@@ -19,7 +19,9 @@ class MyMixin:
     }
 """
 
-from ok.util.file import get_relative_path, read_json_file, write_json_file
+from ok.util.file import read_json_file, write_json_file
+
+from src.core.paths import config_path
 
 # 哨兵：转换函数返回它表示「无需迁移 / 不生成新键」。
 _NO_MIGRATION = object()
@@ -37,7 +39,7 @@ def migrate_config_file_keys(task_class_name: str, migrations: dict[str, str]) -
     if not migrations:
         return
 
-    config_file = get_relative_path("configs", f"{task_class_name}.json")
+    config_file = config_path(f"{task_class_name}.json")
     config = read_json_file(config_file)
     if not isinstance(config, dict):
         return
@@ -95,7 +97,7 @@ def migrate_config_values(task_class_name: str, value_migrations: dict) -> None:
     if not value_migrations:
         return
 
-    config_file = get_relative_path("configs", f"{task_class_name}.json")
+    config_file = config_path(f"{task_class_name}.json")
     config = read_json_file(config_file)
     if not isinstance(config, dict):
         return

@@ -101,7 +101,9 @@ def _build_logs_zip(note_text: str = ""):
             zipf.writestr("info.txt", note_text or "")
 
             image_entries = []
-            for folder in ["screenshots", "logs"]:
+            # 截图目录跟随 screenshots_folder 配置（框架 screenshot 模块读的是同一个键）
+            screenshots_dir_name = og.config.get("screenshots_folder") or "screenshots"
+            for folder in (screenshots_dir_name, "logs"):
                 source_dir = Path.cwd() / folder
                 if not source_dir.is_dir():
                     continue

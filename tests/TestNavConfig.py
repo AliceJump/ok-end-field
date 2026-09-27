@@ -285,16 +285,24 @@ class TestNavConfigMigration(unittest.TestCase):
         return (
             patch.object(
                 global_config_store,
-                "get_relative_path",
-                side_effect=lambda *parts: os.path.join(tmp, *parts),
+                "config_path",
+                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
             ),
             patch.object(
-                config_module,
-                "get_relative_path",
-                side_effect=lambda *parts: os.path.join(tmp, *parts),
+                global_config_store,
+                "get_migration_state_path",
+                return_value=state_path,
             ),
-            patch.object(global_config_store, "_MIGRATION_STATE_PATH", state_path),
-            patch.object(global_config_store, "_MIGRATION_BACKUP_DIR", backup_dir),
+            patch.object(
+                global_config_store,
+                "get_migration_backup_dir",
+                return_value=backup_dir,
+            ),
+            patch.object(
+                config_module.Config,
+                "config_folder",
+                os.path.join(tmp, "configs"),
+            ),
         )
 
     def test_global_init_migrates_legacy_truth_and_backs_up_calibration(self):
@@ -512,8 +520,8 @@ class TestNavConfigMigration(unittest.TestCase):
 
             with patch.object(
                 global_config_store,
-                "get_relative_path",
-                side_effect=lambda *parts: os.path.join(tmp, *parts),
+                "config_path",
+                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
             ):
                 global_config_store.migrate_task_minimap_values_to_owner(source)
 
@@ -540,8 +548,8 @@ class TestNavConfigMigration(unittest.TestCase):
 
             with patch.object(
                 global_config_store,
-                "get_relative_path",
-                side_effect=lambda *parts: os.path.join(tmp, *parts),
+                "config_path",
+                side_effect=lambda *parts: os.path.join(tmp, "configs", *parts),
             ):
                 global_config_store.migrate_task_minimap_values_to_owner(source)
 
