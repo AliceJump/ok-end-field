@@ -11,7 +11,7 @@
 | `ok-script-codegen` | 根据描述或截图生成任务 `run()` 自动化代码 | `.agents/skills/ok-script-codegen/SKILL.md` |
 | `ok-script-i18n` | gettext UI 文案、PO/MO、收集池防污染与目录冲突合并 | `.agents/skills/ok-script-i18n/SKILL.md` |
 | `ok-script-ocr-lang` | OCR 匹配语言节点、active locale、`assets/lang/` lang JSON 约定与归档、`ocr_text_fix.json` 与语言引用排错 | `.agents/skills/ok-script-ocr-lang/SKILL.md` |
-| `ok-config-migration` | 修改持久化配置键名并安全迁移用户数据 | `.agents/skills/ok-config-migration/SKILL.md` |
+| `ok-config-migration` | 修改持久化任务配置的键名、值格式或所属任务，并迁移账号覆盖数据 | `.agents/skills/ok-config-migration/SKILL.md` |
 | `wiki-skill-sync` | 从官方/第三方 wiki 同步干员技能数据、修复技能描述与效果数值 | `.agents/skills/wiki-skill-sync/SKILL.md` |
 | `ok-script-pr-review` | 触发、等待、核验、回复和解析 CodeRabbit PR 审阅 | `.agents/skills/ok-script-pr-review/SKILL.md` |
 | `github-workflows` | 编辑或排查 GitHub Actions YAML、权限、actionlint 与 SonarCloud 规则 | `.agents/skills/github-workflows/SKILL.md` |

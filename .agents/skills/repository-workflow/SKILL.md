@@ -1,72 +1,27 @@
 ---
 name: repository-workflow
-description: "Apply ok-end-field repository-wide engineering rules. Use when committing or opening/editing a PR, handling Markdown through PowerShell, checking secrets, choosing commit style, running the standard test suite, reading runtime logs, changing dependency files, or performing broad automated source edits that need structural verification."
+description: Apply ok-end-field repository rules for tests, commits, PRs, secrets, PowerShell text handling, and broad source edits. Use alongside a narrower skill when its domain applies.
 ---
 
 # Repository Workflow
 
-## Scope
+Use `$use-local-venv` for Python and the standard/focused test entry points. Skill script regressions run with `uv run --locked python -m unittest tests.TestSkillScripts -v`. Runtime logs are `logs/ok-script.log` and dated rotations.
 
-Use this skill for repository-wide rules that do not belong to a narrower domain skill. If a task also matches a specialized skill, load both; the specialized workflow controls its domain details.
+## Commit and PR
 
-## Python environment and generated files
+1. Inspect `git status --short --branch`, working and staged diffs. Keep unrelated user changes out of the commit. Run focused verification and the standard suite when the change warrants it.
+2. Never commit tokens, passwords, PEM/private keys, credential exports, or secret-bearing config. Use recent commit language and a suitable prefix such as `fix:`, `feat:`, `docs:`, `refactor:`, or `ci:`.
+3. Remote `master` is locked. Fetch `origin`, branch from `origin/master`, and rebase before pushing if behind. Land code through a PR; one PR should cover one responsibility. Never push code commits directly to `master`.
+4. For a persisted task config key, value format, or owning-task change, load `$ok-config-migration` before changing defaults or running the app.
 
-- Python environment, dependency, and test-entry rules are owned by the `use-local-venv` skill; read `.agents/skills/use-local-venv/SKILL.md` for command forms and the standard/focused test entry points.
-- Run skill/helper-script regressions with `uv run --locked python -m unittest tests.TestSkillScripts -v`.
-- Runtime diagnostics are in `logs/ok-script.log`; rotated files use `logs/ok-script.YYYY-MM-DD.log`.
+## Windows text handling
 
-## Commit and PR checklist
+PowerShell double-quoted strings treat Markdown backticks as escapes. Use a single-quoted here-string or body file for PR text, then compare the fetched PR body with the intended text rather than checking only for a substring. See [references/powershell-pr-body.md](references/powershell-pr-body.md).
 
-1. Inspect `git status --short --branch`, the relevant working diff, and the staged diff. Never include unrelated user changes.
-2. Run focused verification, then the standard suite when the change warrants it.
-3. Do not commit tokens, passwords, private keys, PEM files, credential exports, or secret-bearing config. GitHub App IDs may be repository variables; private keys belong only in Secrets.
-4. Follow recent repository commit language and use the established conventional prefix where applicable: `fix:`, `feat:`, `docs:`, `refactor:`, or `ci:`.
-5. A persisted task config-key rename must also load `ok-config-migration` and follow its strict sequence.
-6. Remote `master` is locked: never push code commits to it directly. Every code change to `master` must land through a PR; tags and other refs follow their own rulesets.
-7. One PR carries exactly one feature or one responsibility. Keep each PR's scope clear, and split mixed-responsibility changes into separate PRs before pushing.
-8. Base every PR branch on the remote `master`: run `git fetch origin` first, branch from `origin/master`, and rebase onto it before pushing when behind. Never open a PR from a stale local `master`.
+A non-ASCII `.ps1` script that must run in Windows PowerShell 5.1 needs UTF-8 **with BOM**; console output encoding does not fix source decoding. Keep ASCII-only scripts plain UTF-8 unless another convention applies.
 
-## PowerShell Markdown safety
+## Broad automated source edits
 
-PowerShell backticks are escapes inside double-quoted strings. Passing Markdown containing code backticks through `"..."` can remove backticks or introduce control characters such as BEL (`^G`).
+For batch docstring, annotation, formatting, or source rewrites, record the baseline first. Parse every changed Python file (read BOM-bearing files with `utf-8-sig`), compare executable statements by qualified function name against the baseline, and review any unexpected reduction. Run focused tests, inspect the full diff, and use `git diff --check` before committing.
 
-- Store Markdown bodies in a single-quoted string or a single-quoted here-string (`@' ... '@`).
-- Pass the variable to `gh pr create/edit --body $body`; never place Markdown with backticks directly in a double-quoted `--body` value.
-- After creating or editing a PR, fetch the remote body and compare it byte-for-byte or text-for-text with the intended local body. A substring search for backticks is insufficient.
-
-Recommended verification:
-
-```powershell
-$body = @'
-Markdown containing `code`.
-'@
-gh pr create --base master --head $branch --title $title --body $body
-$remoteBase64 = gh pr view $branch --json body --jq '.body | @base64'
-$normalizedBody = $body.Replace("`r`n", "`n")
-$localBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($normalizedBody))
-if ($remoteBase64 -cne $localBase64) {
-    throw "Remote PR body differs from the intended body"
-}
-```
-
-## Windows PowerShell 5.1 encoding
-
-- A `.ps1` file that contains non-ASCII text and supports Windows PowerShell 5.1 must be saved as UTF-8 with BOM. PowerShell 5.1 otherwise decodes UTF-8 source using the active ANSI code page.
-- `[Console]::OutputEncoding` only controls subprocess/output encoding; it does not fix source-file decoding and is not a substitute for the BOM.
-- Keep ASCII-only PowerShell scripts as plain UTF-8 unless another repository convention requires a BOM.
-
-## Broad automated edits
-
-Textual batch tools can preserve Python syntax while deleting or duplicating executable statements. For broad docstring, annotation, formatting, or source-rewrite operations:
-
-1. Establish a clean baseline or record pre-existing user changes before running the tool.
-2. Parse every changed Python file.
-3. Compare each function by qualified name (`Class.method`, not bare method name) against the baseline and flag reductions in non-docstring executable statements.
-4. Review every flagged reduction; intentional code removal is allowed only when explained by the requested change.
-5. Run focused tests and inspect `git diff --check` plus the full diff before committing.
-
-`ast.parse` may reject a UTF-8 BOM when fed decoded text; read candidate source with `utf-8-sig` for structural comparison.
-
-## Completion report
-
-Report changed areas, verification performed, known pre-existing failures, and whether commit/PR/push operations were performed. Never describe a test or push as successful unless its command completed successfully.
+Report changed areas, verification, known pre-existing failures, and whether commit/PR/push actually completed.
