@@ -11,9 +11,9 @@ Use [森空岛](https://wiki.skland.com/endfield) as the primary source; [Endfie
 
 1. Inspect the target `assets/data/character_skills/<operator>.json` and any existing capture. Capture fresh official data when needed:
 
-   `uv run --locked python scripts/data-capture/capture_skland_operator_details.py --limit 5`
+   `uv run --locked python scripts/data-capture/capture_skland_operator_details.py`
 
-   Captures go under `tools/wiki_catalog/operator_details/<timestamp>/`. Omit `--limit` for a full capture; check the script's supported flags before selecting an individual operator.
+   Captures go under `tools/wiki_catalog/operator_details/<timestamp>/`. Check the script's supported flags before selecting an individual operator.
 
 2. Compare one operator or the full catalog:
 

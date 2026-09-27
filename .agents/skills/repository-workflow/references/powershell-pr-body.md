@@ -8,13 +8,13 @@ Markdown containing `code`.
 '@
 $bodyPath = Join-Path $env:TEMP 'codex-pr-body.md'
 [IO.File]::WriteAllText($bodyPath, $body, [Text.UTF8Encoding]::new($false))
-gh pr create --base master --head $branch --title $title --body-file $bodyPath
+$pr = gh pr create --base master --head $branch --title $title --body-file $bodyPath
 ```
 
-For an edit, use `gh pr edit <n> --body-file $bodyPath`. Fetch and compare the entire remote body after either operation:
+For an edit, set `$pr` to the PR number and use `gh pr edit $pr --body-file $bodyPath`. Fetch and compare the entire remote body after either operation:
 
 ```powershell
-$remoteBase64 = gh pr view $branch --json body --jq '.body | @base64'
+$remoteBase64 = gh pr view $pr --json body --jq '.body | @base64'
 $localBase64 = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($body.Replace("`r`n", "`n")))
 if ($remoteBase64 -cne $localBase64) {
     throw 'Remote PR body differs from the intended body'
