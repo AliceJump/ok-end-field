@@ -1,8 +1,10 @@
+import types
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from src.tasks.daily.daily_battle_mixin import BattleContext, DailyBattleFeature
+from src.tasks.onetime.BattleTask import BattleContext, BattleTask
+from src.data.world_map import stages_cost
 
 
 class _ToEndTaskHarness:
@@ -60,15 +62,34 @@ class _ToEndTaskHarness:
         pass
 
 
+def _make_impl(task):
+    """裸 BattleTask 实例绑定 harness 的属性与方法，避免触发框架 __init__/property。"""
+    impl = BattleTask.__new__(BattleTask)
+    impl.__dict__.update(vars(task))
+    for name in dir(_ToEndTaskHarness):
+        if name.startswith("_"):
+            continue
+        member = getattr(_ToEndTaskHarness, name)
+        if callable(member):
+            setattr(impl, name, types.MethodType(member, impl))
+    return impl
+
+
 class TestDailyBattleToEnd(unittest.TestCase):
+    def test_stage_cost_is_numeric_property(self):
+        category, expected_cost = next(iter(stages_cost.items()))
+        task = BattleTask.__new__(BattleTask)
+        task.battle_ctx = BattleContext(category_name=category)
+
+        self.assertEqual(task._battle_stage_cost, expected_cost)
+
     def test_yolo_hit_disables_subsequent_middle_clicks(self):
         task = _ToEndTaskHarness()
-        feature = DailyBattleFeature.__new__(DailyBattleFeature)
-        feature._task = task
+        feature = _make_impl(task)
         feature.battle_ctx = BattleContext(category_name="normal")
 
         with patch(
-            "src.tasks.daily.daily_battle_mixin.is_world_map_text",
+            "src.tasks.onetime.BattleTask.is_world_map_text",
             return_value=False,
         ):
             result = feature.to_end()
@@ -83,13 +104,13 @@ class TestDailyBattleToEnd(unittest.TestCase):
 
     def test_normal_reward_search_has_no_redundant_one_second_sleep(self):
         task = _ToEndTaskHarness()
+        task = _ToEndTaskHarness()
         task.yolo_detect = lambda *args, **kwargs: []
-        feature = DailyBattleFeature.__new__(DailyBattleFeature)
-        feature._task = task
+        feature = _make_impl(task)
         feature.battle_ctx = BattleContext(category_name="normal")
 
         with patch(
-            "src.tasks.daily.daily_battle_mixin.is_world_map_text",
+            "src.tasks.onetime.BattleTask.is_world_map_text",
             return_value=False,
         ):
             result = feature.to_end()

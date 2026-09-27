@@ -270,6 +270,13 @@ class BaseEfTask(
         先做纯键名复制（config_key_migrations），再做值转换（config_value_migrations），
         确保旧格式值（如布尔开关）在复制后仍能被正确转换为新格式（如列表）。
         """
+        # 日常子任务拆分的跨文件配置导入必须先于本任务（以及任何任务）的
+        # 框架 verify_config：DailyTask 在注册列表第一位、最先加载，其文件中
+        # 待迁移到子任务文件的参数键会在 verify_config 时被删除，导入晚了
+        # 就只能读到空值。延迟导入避免 core ← tasks 的模块级反向依赖。
+        from src.tasks.daily.split_config_migrator import maybe_run_pending_config_imports
+
+        maybe_run_pending_config_imports()
         key_migrations = {}
         value_migrations = {}
         for klass in type(self).__mro__:

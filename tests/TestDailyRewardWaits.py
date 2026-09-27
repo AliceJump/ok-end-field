@@ -1,10 +1,10 @@
 import unittest
 from types import SimpleNamespace
 
-from src.tasks.daily.misc.daily_reward_mixin import DailyRewardMixin
+from src.tasks.onetime.DailyRewardTask import DailyRewardTask
 
 
-class _DailyRewardHarness(DailyRewardMixin):
+class _DailyRewardHarness(DailyRewardTask):
     def __init__(self, final_reward_clicked):
         self.click_results = iter([True, False, True, False, final_reward_clicked])
         self.popup_waits = 0

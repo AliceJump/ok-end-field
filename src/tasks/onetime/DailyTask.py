@@ -6,75 +6,44 @@ from pathlib import Path
 
 from qfluentwidgets import FluentIcon
 
-from src.core.config_migration import legacy_bool_switch_to_list, merge_bool_options
 from src.core.email_service import send_daily_summary_email
 from src.tasks.account.account_mixin import AccountMixin
-from src.tasks.daily.daily_battle_mixin import DailyBattleFeature
-from src.tasks.daily.daily_buy_mixin import DailyBuyFeature
-from src.tasks.daily.daily_demo_mixin import DailyDemoFeature
-from src.tasks.daily.daily_liaison_mixin import DailyLiaisonFeature
-from src.tasks.daily.daily_regional_runner import DailyRegionalRunner
-from src.tasks.daily.daily_routine_mixin import DailyRoutineFeature
-from src.tasks.daily.daily_shop_mixin import DailyShopFeature
+from src.tasks.daily.daily_feature import DailyFeature
 from src.tasks.daily.daily_task_runner import DailyTaskRunner
-from src.tasks.daily.daily_trade_mixin import DailyTradeFeature
 from src.tasks.daily.finally_file import (
     create_task_summary_report,
 )
-from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.end_command_mixin import EndCommandMixin
-from src.tasks.mixin.liaison_mixin import LiaisonMixin
-from src.tasks.mixin.map_mixin import MapMixin
-from src.tasks.mixin.mouse_scan_mixin import MouseScanMixin
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
-from src.tasks.onetime.DeliveryTask import DeliveryFeature
+from src.tasks.onetime.ActivityRewardTask import ActivityRewardTask
+from src.tasks.onetime.BoatHarvestTask import BoatHarvestTask
+from src.tasks.onetime.BoatOrganizeTask import BoatOrganizeTask
+from src.tasks.onetime.CraftWeaponTask import CraftWeaponTask
+from src.tasks.onetime.CreditCollectTask import CreditCollectTask
+from src.tasks.onetime.CreditShopTask import CreditShopTask
+from src.tasks.onetime.DailyRewardTask import DailyRewardTask
+from src.tasks.onetime.DeliverySendTask import DeliverySendTask
+from src.tasks.onetime.DailyBattleTask import DailyBattleTask
+from src.tasks.onetime.DailyDeliveryTask import DailyDeliveryTask
+from src.tasks.onetime.DemoBattleTask import DemoBattleTask
+from src.tasks.onetime.HomePointTask import HomePointTask
+from src.tasks.onetime.LiaisonGiftTask import LiaisonGiftTask
+from src.tasks.onetime.MailTask import MailTask
+from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask
 
 
-class DailyTask(
-    Common, MapMixin, ZipLineMixin, BattleMixin, LiaisonMixin, EndCommandMixin, AccountMixin, MouseScanMixin
-):
-    """日常任务聚合执行器。"""
+class DailyTask(Common, EndCommandMixin, AccountMixin):
+    """日常任务聚合执行器。
 
-    # 旧版日常配置键迁移（CodeRabbit 线程4/8）：
-    # 纯键名复制（config_key_migrations）由 BaseEfTask.load_config 走 MRO 自动收集；
-    # 值转换（config_value_migrations）处理旧布尔开关 → 多选列表，
-    # 两类迁移均为类属性声明方式，逻辑集中在 src/core/config_migration.py。
-    config_key_migrations = {
-        "帝江号收菜操作": "⭐帝江号收菜",
-        "活动奖励": "⭐活动奖励",
-    }
-    config_value_migrations = {
-        # 旧版三个地区布尔开关 → 新的多选列表键。
-        "⭐地区建设": merge_bool_options(
-            {
-                "据点兑换": "⭐据点兑换",
-                "买物资": "⭐买物资",
-                "买卖货": "⭐买卖货",
-            }
-        ),
-        # 旧布尔开关 + 操作列表 → 新多选列表键。
-        "⭐帝江号收菜": legacy_bool_switch_to_list(
-            ops_key="帝江号收菜操作",
-            defaults=DailyRoutineFeature.BOAT_STAGES,
-        ),
-        "⭐活动奖励": legacy_bool_switch_to_list(
-            ops_key="活动奖励",
-            defaults=DailyRoutineFeature.ACTIVITY_REWARDS,
-        ),
-    }
+    子任务均为独立任务类（可单独运行），经 DailyFeature 包装组合接入，
+    日常不继承子任务业务逻辑；子任务参数存在各自任务的配置文件里，
+    经「账号配置」页可按账号覆盖。
+    """
 
     BOAT_STATE_TASK_KEYS = frozenset(
         {
             "⭐帝江号整理",
             "⭐帝江号收菜",
-        }
-    )
-    MULTI_SELECTION_TASK_KEYS = frozenset(
-        {
-            "⭐地区建设",
-            "⭐帝江号收菜",
-            "⭐活动奖励",
         }
     )
 
@@ -92,25 +61,90 @@ class DailyTask(
         self.icon = FluentIcon.CALENDAR
         self.group_name = "日常任务"
         self.group_icon = FluentIcon.CALENDAR
-        self.description = "子任务开关用⭐标出，自上而下顺序执行，默认展开在最前面的『⭐⭐⭐ 默认』分组，最后执行『日常奖励』。\n如果出现反复按ESC的情形，请调高『设置/主界面单次动作后延迟』（建议1.5以上）。"
+        self.description = "子任务开关用⭐标出，自上而下顺序执行，默认展开在最前面的『⭐⭐⭐ 默认』分组，最后执行『日常奖励』。\n子任务参数在各子任务卡片上配置（任务列表「日常任务」分组），并支持在「账号配置」页按账号覆盖。\n如果出现反复按ESC的情形，请调高『设置/主界面单次动作后延迟』（建议1.5以上）。"
 
         self.support_schedule_task = True
         self.support_multi_account = True
         self.daily_runner: DailyTaskRunner | None = None
 
-        # 组合各个功能模块
-        self.daily_buy = DailyBuyFeature(self)
-        self.daily_battle = DailyBattleFeature(self)
-        self.daily_trade = DailyTradeFeature(self)
-        self.daily_shop = DailyShopFeature(self)
-        self.daily_routine = DailyRoutineFeature(self)
-        self.daily_liaison = DailyLiaisonFeature(self)
-        self.daily_demo = DailyDemoFeature(self)
-        self.daily_regional = DailyRegionalRunner(self)
-        self.delivery = DeliveryFeature(self)
+        # 子任务包装器：执行时从 executor 解析已注册实例（机制见 daily_feature.py）。
+        # 参数已迁到子任务配置的三项（帝江号收菜/地区建设/活动奖励）与多开关 OR 的
+        # 帝江号整理，开关判定改用谓词读取子任务配置。
+        self.gift_feature = DailyFeature(self, LiaisonGiftTask, switch_key="⭐送礼", run_method="execute_gift_task")
+        self.organize_feature = DailyFeature(
+            self,
+            BoatOrganizeTask,
+            switch_key="⭐帝江号整理",
+            run_method="boat_organize",
+            predicate=lambda: (
+                bool(self.organize_feature.impl_config("⭐帝江号一键存放"))
+                or bool(self.organize_feature.impl_config("⭐简易制作"))
+            ),
+        )
+        self.harvest_feature = DailyFeature(
+            self,
+            BoatHarvestTask,
+            switch_key="⭐帝江号收菜",
+            run_method="boat_claim_rewards",
+            predicate=lambda: bool(self.harvest_feature.impl_config("⭐帝江号收菜")),
+        )
+        self.mail_feature = DailyFeature(self, MailTask, switch_key="⭐收邮件", run_method="run_mail")
+        self.delivery_send_feature = DailyFeature(
+            self, DeliverySendTask, switch_key="⭐转交运送委托", run_method="delivery_send_others"
+        )
+        self.delivery_feature = DailyFeature(
+            self, DailyDeliveryTask, switch_key="⭐自动送货", run_method="run_daily"
+        )
+        self.regional_feature = DailyFeature(
+            self,
+            RegionalBuildTask,
+            switch_key="⭐地区建设",
+            run_method="run_regional",
+            predicate=lambda: bool(self.regional_feature.impl_config("⭐地区建设")),
+        )
+        self.craft_feature = DailyFeature(self, CraftWeaponTask, switch_key="⭐造装备", run_method="make_weapon")
+        self.credit_feature = DailyFeature(
+            self, CreditCollectTask, switch_key="⭐收信用", run_method="run_credit_collect"
+        )
+        self.shop_feature = DailyFeature(self, CreditShopTask, switch_key="⭐买信用商店", run_method="credit_shop")
+        self.battle_feature = DailyFeature(self, DailyBattleTask, switch_key="⭐刷体力", run_method="run_battle")
+        self.activity_feature = DailyFeature(
+            self,
+            ActivityRewardTask,
+            switch_key="⭐活动奖励",
+            run_method="claim_activity_rewards",
+            predicate=lambda: bool(self.activity_feature.impl_config("⭐活动奖励")),
+        )
+        self.daily_reward_feature = DailyFeature(
+            self, DailyRewardTask, switch_key="⭐日常奖励", run_method="claim_daily_rewards"
+        )
+        self.demo_feature = DailyFeature(self, DemoBattleTask, switch_key="⭐演算", run_method="battle_demo")
+        self.home_point_feature = DailyFeature(
+            self, HomePointTask, switch_key="⭐传送到帝江号右侧传送点", run_method="run_home_point"
+        )
 
         self.config_description.update(
             {
+                "⭐送礼": (
+                    "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。\n"
+                    "如果途中偶遇干员，则直接交互完成送礼。\n"
+                    "任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
+                ),
+                "⭐收邮件": "是否前往「邮箱」领取邮件。",
+                "⭐转交运送委托": ("是否在「地区建设/仓储结点」中转交全部运送委托，并领取一次转交委托奖励。"),
+                "⭐自动送货": "是否执行自动接取并完成运输委托。",
+                "⭐造装备": (
+                    "是否前往「装备制造/套组装备制造」并制作一件列表首位的装备。\n请确保有足够的装备原件和调度券。"
+                ),
+                "⭐收信用": (
+                    "是否前往好友的「帝江号」并在「访客终端」上进行助力获得信用。\n"
+                    "助力结束后，前往「采购中心/信用交易所」收取全部助力。"
+                ),
+                "⭐买信用商店": ("是否在「采购中心/信用交易所」采购。\n自动刷新 且 仅购买「武库配额」「嵌晶玉」。"),
+                "⭐刷体力": ("是否消耗所有「理智」刷取培养材料。"),
+                "⭐日常奖励": ("是否领取「行动手册/日常」和「通行证」中的奖励。"),
+                "⭐演算": "是否执行演武集算任务",
+                "⭐传送到帝江号右侧传送点": "是否在日常任务结束后传送到帝江号右侧传送点。",
                 "仅退出游戏": "是否在完成所有任务后仅退出游戏，开启后会自动关闭游戏进程,但不关闭软件\n开启发生异常时终止游戏时此选项不生效",
                 "发生异常时终止游戏": "勾选这个选项：如果「完成后退出」被选定，那么抛出异常也会退出游戏和App。",
             }
@@ -126,7 +160,16 @@ class DailyTask(
         )
         self.default_config.update(
             {
-                "⭐地区建设": DailyRegionalRunner.DEFAULT_OPTIONS,
+                "⭐送礼": True,
+                "⭐收邮件": True,
+                "⭐转交运送委托": True,
+                "⭐自动送货": False,
+                "⭐造装备": True,
+                "⭐收信用": True,
+                "⭐买信用商店": True,
+                "⭐刷体力": True,
+                "⭐日常奖励": True,
+                "⭐演算": True,
                 "⭐传送到帝江号右侧传送点": True,
                 "配置选择": "⭐⭐⭐ 默认",
                 "发生异常时终止游戏": False,
@@ -135,23 +178,9 @@ class DailyTask(
                 "邮件发送汇总": False,
             }
         )
-        self.config_description.update(
-            {
-                "⭐地区建设": (
-                    "按地区执行所选操作：先据点兑换，再执行买卖货的买；启用买物资时，买完后切换到稳定物资需求购买，最后切回弹性需求物资执行卖。"
-                ),
-                "⭐传送到帝江号右侧传送点": "是否在日常任务结束后传送到帝江号右侧传送点。",
-                "自动打开汇总文件": "任务完成后自动用系统默认程序打开汇总文件。关闭则仅创建文件不打开。",
-                "邮件发送汇总": "任务完成后是否将最终执行汇总通过邮件发送（收件人取“设置 → 邮件发送配置”中的默认收件人）。",
-            }
-        )
-        self.config_type["⭐地区建设"] = {
-            "type": "multi_selection",
-            "options": DailyRegionalRunner.OPTIONS,
-        }
         task_group = {
-            "⭐⭐⭐ 默认": [item[0] for item in self.build_task_plan() if item[0] not in self.MULTI_SELECTION_TASK_KEYS]
-            + ["⭐帝江号一键存放", "⭐简易制作", "⭐地区建设", "⭐帝江号收菜", "⭐活动奖励", "⭐执行外部命令"],
+            "⭐⭐⭐ 默认": [item[0] for item in self.build_task_plan() if item[0] in self.default_config]
+            + ["⭐执行外部命令"],
         }
 
         # 合并两个分组字典
@@ -168,25 +197,21 @@ class DailyTask(
 
     def build_task_plan(self):
         return [
-            ("⭐送礼", self.daily_liaison.execute_gift_task),
-            (
-                "⭐帝江号整理",
-                self.daily_routine.boat_organize,
-                lambda: self.config.get("⭐帝江号一键存放", False) or self.config.get("⭐简易制作", False),
-            ),
-            ("⭐帝江号收菜", self.daily_routine.boat_claim_rewards),
-            ("⭐收邮件", self.daily_routine.claim_mail),
-            ("⭐转交运送委托", self.daily_routine.delivery_send_others),
-            ("⭐自动送货", self.delivery.run_daily),
-            ("⭐地区建设", self.daily_regional.run),
-            ("⭐造装备", self.daily_routine.make_weapon),
-            ("⭐收信用", self.daily_routine.collect_credit),
-            ("⭐买信用商店", self.daily_shop.credit_shop),
-            ("⭐刷体力", self.daily_battle.battle),
-            ("⭐活动奖励", self.daily_routine.claim_activity_rewards),
-            ("⭐日常奖励", self.daily_routine.claim_daily_rewards),
-            ("⭐演算", self.daily_demo.battle_demo),
-            ("⭐传送到帝江号右侧传送点", lambda: self.transfer_to_home_point(box=self.box.right)),
+            self.gift_feature.plan_item(),
+            self.organize_feature.plan_item(),
+            self.harvest_feature.plan_item(),
+            self.mail_feature.plan_item(),
+            self.delivery_send_feature.plan_item(),
+            self.delivery_feature.plan_item(),
+            self.regional_feature.plan_item(),
+            self.craft_feature.plan_item(),
+            self.credit_feature.plan_item(),
+            self.shop_feature.plan_item(),
+            self.battle_feature.plan_item(),
+            self.activity_feature.plan_item(),
+            self.daily_reward_feature.plan_item(),
+            self.demo_feature.plan_item(),
+            self.home_point_feature.plan_item(),
         ]
 
     def run(self):
