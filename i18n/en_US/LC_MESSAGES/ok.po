@@ -2899,3 +2899,16 @@ msgid "定位服务：首次读取坐标时会自动启用「小地图定位」�
 msgstr ""
 "Positioning service: the Minimap Positioning trigger task is enabled "
 "automatically when coordinates are first requested"
+
+msgid "在滑索上发送已知鼠标位移实测并标定 yaw_per_pixel 旋转系数"
+msgstr ""
+"Send known mouse displacement while on a zipline to calibrate the "
+"yaw_per_pixel rotation coefficient"
+
+msgid "等待画面刷新后再读取箭头角度的时间"
+msgstr "Time to wait for the view to refresh before reading the arrow angle"
+
+msgid "发送鼠标位移后等待滑索上的视角转动完成的时间，不按 W 刷新朝向"
+msgstr ""
+"Time to wait for the zipline view rotation to finish after sending mouse "
+"displacement; W is not pressed to refresh the heading"

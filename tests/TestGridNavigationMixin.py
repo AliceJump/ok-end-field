@@ -8,6 +8,8 @@ from types import SimpleNamespace
 import numpy as np
 
 from src.data.FeatureList import FeatureList as fL
+from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE
+from src.localization.minimap_position_mixin import MinimapPositionMixin
 from src.nav.grid_io import CELL_BLOCKED, CELL_FREE, DenseGrid, GridMeta, save_grid
 from src.nav.grid_planner import PlanResult, ZipLineRouteStep
 from src.nav.route_follower import (
@@ -26,8 +28,6 @@ from src.tasks.navigation.mixin.grid_navigation_mixin import (
     CONFIG_GRID_FILE,
     GridNavigationMixin,
 )
-from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE
-from src.localization.minimap_position_mixin import MinimapPositionMixin
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineReplanRequired
 
 
@@ -49,11 +49,13 @@ class _FakeGridTask(GridNavigationMixin):
         self.x = 0.5
         self.z = 0.5
         self.esc_visible = False
+        self.board_template_visible = False
         self.heading = 90.0
         self.t = 0.0
         self.w_down = False
         self.started = 0
         self.stopped = 0
+        self.aims: list[float] = []
         self.turns: list[float] = []
         self.rotations: list[int] = []
         self.rotation_w_held: list[bool] = []
@@ -70,7 +72,12 @@ class _FakeGridTask(GridNavigationMixin):
     def find_feature(self, feature_name=None, frame=None, **kwargs):
         if feature_name == fL.esc:
             return [object()] if self.esc_visible else []
+        if feature_name == fL.climb_the_zip_line:
+            return [object()] if self.board_template_visible else []
         return []
+
+    def _zip_line_ws_position(self):
+        return self.x, self.z
 
     def active_time(self):
         return self.t
@@ -156,6 +163,7 @@ class _FakeGridTask(GridNavigationMixin):
         return {"ok": True, "heading": self.heading, "error": 0.0}
 
     def aim_view_to_bearing(self, target_deg, **kwargs):
+        self.aims.append(float(target_deg))
         self.heading = float(target_deg)
         return {"ok": True, "heading": self.heading, "error": 0.0}
 
@@ -170,7 +178,6 @@ class _FakeGridTask(GridNavigationMixin):
 
     def send_rotation(self, dx):
         self._send_rotation(int(dx))
-
 
     def _send_rotation(self, dx: int):
         self.rotations.append(int(dx))
@@ -364,13 +371,17 @@ class TestGridNavigationMixin(unittest.TestCase):
             self.task.esc_visible = len(calls) == 1
             return True
 
+        self.task.x = 0.5
+        self.task.z = 5.5
         self.task.board_zip_line = board
         self.task.zip_line_list_go = lambda distances, **kwargs: calls.append(("ride", distances))
 
         self.assertTrue(self.task._execute_grid_zip_line(route_step))
 
         self.assertEqual(calls, ["board", "board", ("ride", [20])])
-        self.assertAlmostEqual(self.task.turns[-1], 90.0)
+        self.assertEqual(self.task.turns, [])
+        self.assertAlmostEqual(self.task.aims[-1], 180.0)
+        self.assertEqual((self.task.x, self.task.z), (0.5, 5.5))
 
     def test_execute_zip_line_fails_when_esc_remains_after_retry(self):
         calls = []
@@ -434,6 +445,107 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertEqual(calls[0][0], "board")
         self.assertEqual(calls[1], ("ride", [4]))
         self.assertEqual(calls[2], "complete")
+
+    def test_navigation_approaches_zip_line_in_walk_mode_and_boards_with_f(self):
+        calls = []
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 4.5, 0.0, 0.5)
+        route_step = ZipLineRouteStep(
+            step=ZipLineStep(first, second, distance_m=4.0),
+            entry_cell=(0, 0),
+            exit_cell=(0, 4),
+            entry_waypoint_index=0,
+            exit_waypoint_index=1,
+            cost=2.8,
+        )
+
+        class _ApproachFollower:
+            def __init__(self):
+                self.completed = False
+
+            def pause(self):
+                pass
+
+            def _current_zip_line_step(self):
+                return None if self.completed else route_step
+
+            def update(self, position, heading, now):
+                if self.completed:
+                    return FollowerStep(DONE, distance_to_goal=0.0)
+                return FollowerStep(
+                    WALK,
+                    waypoint=first.xz,
+                    target_bearing=270.0,
+                    heading_error=0.0,
+                    distance_to_waypoint=3.0,
+                    distance_to_goal=1.0,
+                )
+
+            def complete_zip_line(self):
+                calls.append("complete")
+                self.completed = True
+                return True
+
+        self.task._create_grid_route = lambda start, goal, **kwargs: (
+            _ApproachFollower(),
+            PlanResult(ok=True, waypoints=[start, goal], zip_line_steps=[route_step]),
+        )
+        self.task.x = 3.5
+        self.task.heading = 270.0
+        self.task.board_template_visible = True
+        self.task.board_zip_line = lambda **kwargs: calls.append(("board", kwargs)) or True
+        self.task.zip_line_list_go = lambda distances, **kwargs: calls.append(("ride", distances))
+
+        self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
+
+        self.assertEqual(calls, [("ride", [4]), "complete"])
+        self.assertEqual(self.task.pressed_keys.count("ctrl"), 2)
+        self.assertIn("f", self.task.pressed_keys)
+        self.assertFalse(self.task._grid_nav_zip_line_walk_mode)
+
+    def test_navigation_retreats_and_retries_when_board_template_is_missing(self):
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 4.5, 0.0, 0.5)
+        route_step = ZipLineRouteStep(
+            step=ZipLineStep(first, second, distance_m=4.0),
+            entry_cell=(0, 0),
+            exit_cell=(0, 4),
+            entry_waypoint_index=0,
+            exit_waypoint_index=1,
+            cost=2.8,
+        )
+
+        class _MissingTemplateFollower:
+            def pause(self):
+                pass
+
+            def _current_zip_line_step(self):
+                return route_step
+
+            def update(self, position, heading, now):
+                return FollowerStep(
+                    ZIP_LINE,
+                    zip_line_step=route_step,
+                    distance_to_goal=1.0,
+                )
+
+        self.task._create_grid_route = lambda start, goal, **kwargs: (
+            _MissingTemplateFollower(),
+            PlanResult(ok=True, waypoints=[start, goal], zip_line_steps=[route_step]),
+        )
+        self.task.x = 3.5
+
+        self.assertFalse(
+            self.task.navigate_grid_to(
+                (4.5, 0.5),
+                timeout=5.0,
+                map_id="test",
+            )
+        )
+
+        self.assertGreaterEqual(self.task.key_down_events.count("s"), 2)
+        self.assertEqual(self.task.pressed_keys[0], "ctrl")
+        self.assertTrue(any("远离滑索" in message for message in self.task.logs))
 
     def test_navigation_replans_when_zip_line_lands_on_wrong_rack(self):
         calls = []

@@ -282,11 +282,15 @@ class MinimapHeadingMixin:
         return result
 
     def aim_view_to_bearing(self, target_deg, *, tolerance=5.0, max_rounds=2,
-                            frame=None, min_score=None) -> dict:
+                            frame=None, min_score=None, verify_heading=True) -> dict:
         """只转动视角到指定方位，不按 W，因此不会让角色向前移动。
 
         滑索场景下小地图仍能提供角色朝向，但没有俯仰角；横向目标可以利用
         世界坐标计算出的方位角先完成粗对准，再交给目标距离 OCR 做精细对中。
+
+        ``verify_heading=True`` 时用小地图角色朝向闭环校验，适用于角色朝向会
+        随视角变化的滑索场景；在普通地面重试登索时应传 ``False``，否则鼠标虽然
+        已转动视角，角色朝向不会变化，结果会被误判为未到位。
         """
         tolerance = max(0.0, float(tolerance))
         target = float(target_deg)
@@ -297,6 +301,8 @@ class MinimapHeadingMixin:
             "error": None,
             "rounds": 0,
             "history": [],
+            "view_rotation_sent": False,
+            "verified_heading": True,
         }
         self._last_turn_result = result
 
@@ -314,6 +320,20 @@ class MinimapHeadingMixin:
             return result
 
         settle = self._cfg_float(CONFIG_TURN_SETTLE, DEFAULT_TURN_SETTLE)
+        if not verify_heading:
+            err = angle_delta(target, before)
+            dx = round(err / per_px)
+            if dx:
+                self._send_rotation(dx)
+                result["view_rotation_sent"] = True
+                self.sleep(settle)
+            result["heading"] = before
+            result["error"] = err
+            result["rounds"] = 0 if dx == 0 else 1
+            result["ok"] = True
+            result["verified_heading"] = False
+            return result
+
         for i in range(1, max(1, int(max_rounds)) + 1):
             err = angle_delta(target, before)
             if abs(err) <= tolerance:

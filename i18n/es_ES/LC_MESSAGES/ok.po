@@ -2997,3 +2997,18 @@ msgid "定位服务：首次读取坐标时会自动启用「小地图定位」�
 msgstr ""
 "Servicio de posicionamiento: la tarea activadora de posicionamiento del "
 "minimapa se activa automáticamente al solicitar coordenadas por primera vez"
+
+msgid "在滑索上发送已知鼠标位移实测并标定 yaw_per_pixel 旋转系数"
+msgstr ""
+"Envía desplazamientos de ratón conocidos sobre una tirolina para medir y "
+"calibrar el coeficiente de rotación yaw_per_pixel"
+
+msgid "等待画面刷新后再读取箭头角度的时间"
+msgstr ""
+"Tiempo de espera para que se actualice la vista antes de leer el ángulo de "
+"la flecha"
+
+msgid "发送鼠标位移后等待滑索上的视角转动完成的时间，不按 W 刷新朝向"
+msgstr ""
+"Tiempo de espera a que termine el giro de la vista en la tirolina tras "
+"enviar el desplazamiento; no se pulsa W para actualizar el rumbo"

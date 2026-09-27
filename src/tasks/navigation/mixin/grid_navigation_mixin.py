@@ -94,6 +94,9 @@ from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineReplanRequired
 
 GRID_ZIP_LINE_ESC_THRESHOLD = 0.8
+GRID_ZIP_LINE_APPROACH_DISTANCE_M = 5.0
+GRID_ZIP_LINE_APPROACH_TIMEOUT_S = 10.0
+GRID_ZIP_LINE_RETREAT_DURATION_S = 2.0
 GRID_SPRINT_MIN_SEGMENT_METERS = 15.0
 
 __all__ = [
@@ -194,6 +197,9 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_zip_line_empty: set[str] = set()
         self._grid_nav_zip_line_start_hint: tuple[float, float] | None = None
         self._grid_nav_zip_line_failed_target_hint: tuple[float, float] | None = None
+        self._grid_nav_zip_line_approach_entry_id: str | None = None
+        self._grid_nav_zip_line_approach_started_at: float | None = None
+        self._grid_nav_zip_line_walk_mode = False
         self._grid_nav_blocked_zip_connections: set[
             tuple[str, tuple[float, float, float], tuple[float, float, float]]
         ] = set()
@@ -204,6 +210,8 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_follower = None
         self._grid_nav_zip_line_start_hint = None
         self._grid_nav_zip_line_failed_target_hint = None
+        self._grid_nav_zip_line_approach_entry_id = None
+        self._grid_nav_zip_line_approach_started_at = None
         self._grid_nav_skip_board_node_id = None
         self._set_grid_walking(False)
 
@@ -479,6 +487,65 @@ class GridNavigationMixin(RuntimeStateMixin):
                         f"路径点捷径：当前位置距下一段 {step.shortcut_distance:.2f}m，"
                         f"跳过航点 {skipped}，直接前往航点 {step.waypoint_index + 1}"
                     )
+                current_zip_step_getter = getattr(
+                    self._grid_nav_follower,
+                    "_current_zip_line_step",
+                    None,
+                )
+                pending_zip_step = (
+                    current_zip_step_getter()
+                    if callable(current_zip_step_getter)
+                    else None
+                )
+                if pending_zip_step is not None:
+                    zip_entry_id = str(pending_zip_step.step.entry.node_id)
+                    zip_entry_distance = self._grid_zip_line_entry_distance(
+                        pending_zip_step,
+                        (float(x), float(z)),
+                    )
+                    approach_active = (
+                        self._grid_nav_zip_line_approach_entry_id == zip_entry_id
+                    )
+                    skip_board = self._grid_nav_skip_board_node_id == zip_entry_id
+                    if approach_active and zip_entry_distance > GRID_ZIP_LINE_APPROACH_DISTANCE_M:
+                        self._grid_nav_zip_line_approach_entry_id = None
+                        self._grid_nav_zip_line_approach_started_at = None
+                        approach_active = False
+                    if (
+                        not skip_board
+                        and step.action in (WALK, TURN, WAIT, ZIP_LINE)
+                        and (
+                            zip_entry_distance <= GRID_ZIP_LINE_APPROACH_DISTANCE_M
+                            or approach_active
+                        )
+                    ):
+                        approach_result = self._approach_grid_zip_line_for_boarding(
+                            route_step=pending_zip_step,
+                            step=step,
+                            frame=frame,
+                            min_score=min_score,
+                            deadline=deadline,
+                            tick=tick,
+                        )
+                        if approach_result is True:
+                            self._set_grid_walking(False)
+                            zip_result = self._handle_grid_zip_line_route_step(
+                                pending_zip_step,
+                                already_on_rack=True,
+                            )
+                            if zip_result == "failed":
+                                return False
+                            if zip_result == "replan":
+                                recovery_goal = None
+                            else:
+                                waypoints_since_calibration += 1
+                            if self._grid_navigation_timed_out(deadline, limit):
+                                return False
+                            continue
+                        if approach_result is False:
+                            return False
+                        self.sleep(tick)
+                        continue
                 if step.action == REPLAN:
                     self._set_grid_walking(False)
                     self._grid_nav_follower.pause()
@@ -532,25 +599,14 @@ class GridNavigationMixin(RuntimeStateMixin):
                     route_entry_id = step.zip_line_step.step.entry.node_id
                     skip_board = self._grid_nav_skip_board_node_id == route_entry_id
                     self._grid_nav_skip_board_node_id = None
-                    try:
-                        if not self._execute_grid_zip_line(
-                            step.zip_line_step,
-                            already_on_rack=skip_board,
-                        ):
-                            return False
-                    except ZipLineReplanRequired as exc:
-                        self.log_warning(
-                            f"{exc}，从当前滑索架重新规划",
-                            notify=True,
-                        )
-                        self._grid_nav_zip_line_start_hint = exc.current_position
-                        self._grid_nav_zip_line_failed_target_hint = exc.failed_target_position
+                    zip_result = self._handle_grid_zip_line_route_step(
+                        step.zip_line_step,
+                        already_on_rack=skip_board,
+                    )
+                    if zip_result == "failed":
+                        return False
+                    if zip_result == "replan":
                         recovery_goal = None
-                        self._grid_nav_follower = None
-                        continue
-                    if not self._grid_nav_follower.complete_zip_line():
-                        self.log_warning("滑索完成后路线状态无效，重新规划", notify=True)
-                        self._grid_nav_follower = None
                     else:
                         waypoints_since_calibration += 1
                     if self._grid_navigation_timed_out(deadline, limit):
@@ -682,6 +738,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             return False
         finally:
             self._set_grid_walking(False)
+            self._restore_grid_zip_line_run_mode()
 
     @staticmethod
     def _nearest_grid_zip_line_node_info(
@@ -1087,13 +1144,214 @@ class GridNavigationMixin(RuntimeStateMixin):
             return None
         return bool(results)
 
-    def _reaim_grid_zip_line_for_boarding(self, target_bearing: float) -> bool:
-        """登索失败后重新对正到本段滑索方向，再进行一次登索。"""
+    def _find_grid_zip_line_board_prompt(self, frame) -> bool:
+        """接近滑索时检测「登上滑索架」交互模板。"""
+        find_feature = getattr(self, "find_feature", None)
+        if not callable(find_feature):
+            return False
+        box = getattr(getattr(self, "box", None), "bottom_right", None)
+        try:
+            results = find_feature(
+                feature_name=fL.climb_the_zip_line,
+                frame=frame,
+                box=box,
+                threshold=GRID_ZIP_LINE_ESC_THRESHOLD,
+            )
+        except Exception as exc:
+            self.log_warning(f"检测「登上滑索架」模板失败: {exc}", notify=True)
+            return False
+        return bool(results)
+
+    @staticmethod
+    def _grid_zip_line_entry_distance(
+        route_step,
+        position: tuple[float, float],
+    ) -> float:
+        entry = route_step.step.entry
+        return math.hypot(
+            float(entry.x) - float(position[0]),
+            float(entry.z) - float(position[1]),
+        )
+
+    def _enter_grid_zip_line_walk_mode(self) -> None:
+        """接近滑索时只切换一次步行模式。"""
+        if self._grid_nav_zip_line_walk_mode:
+            return
+        self.press_key("ctrl", after_sleep=0.05)
+        self._grid_nav_zip_line_walk_mode = True
+        self.log_info("距滑索约 5m，切换步行模式接近并搜索登上滑索架")
+
+    def _restore_grid_zip_line_run_mode(self) -> None:
+        """登索成功后恢复默认奔跑模式。"""
+        if not self._grid_nav_zip_line_walk_mode:
+            return
+        self.press_key("ctrl", after_sleep=0.01)
+        self._grid_nav_zip_line_walk_mode = False
+        self.log_info("登索结束，恢复奔跑模式")
+
+    def _retreat_from_grid_zip_line(
+        self,
+        deadline: float,
+        *,
+        reason: str,
+    ) -> bool:
+        """按 S 远离滑索，随后让原路线重新接近。"""
+        self._set_grid_walking(False)
+        remaining = deadline - self.active_time()
+        if remaining <= 0:
+            return False
+        duration = min(GRID_ZIP_LINE_RETREAT_DURATION_S, remaining)
+        self.log_info(f"{reason}，按 S 远离滑索 {duration:.1f}s 后重试")
+        self._hold_grid_keys(("s",), duration)
+        if self._grid_nav_follower is not None:
+            self._grid_nav_follower.pause()
+        self._grid_nav_zip_line_approach_entry_id = None
+        self._grid_nav_zip_line_approach_started_at = None
+        return True
+
+    def _approach_grid_zip_line_for_boarding(
+        self,
+        *,
+        route_step,
+        step: FollowerStep,
+        frame,
+        min_score: float,
+        deadline: float,
+        tick: float,
+    ) -> bool | None:
+        """边走边搜模板，命中后立即按 F；失败则远离滑索重试。
+
+        Returns:
+            True: 已成功按 F 登索。
+            False: 无法确认登索或导航时间耗尽。
+            None: 本轮尚未完成，外层继续下一拍。
+        """
+        self._enter_grid_zip_line_walk_mode()
+        entry_id = str(route_step.step.entry.node_id)
+        if self._grid_nav_zip_line_approach_entry_id != entry_id:
+            self._grid_nav_zip_line_approach_entry_id = entry_id
+            self._grid_nav_zip_line_approach_started_at = self.active_time()
+
+        if self._find_grid_zip_line_board_prompt(frame):
+            self._set_grid_walking(False)
+            self.log_info("搜索到「登上滑索架」，立即按 F 登索")
+            self.press_key("f", after_sleep=0.2)
+            esc_visible = self._grid_zip_line_esc_visible()
+            if esc_visible is False:
+                self._restore_grid_zip_line_run_mode()
+                self.log_info("F 登索成功")
+                return True
+            if esc_visible is None:
+                self._restore_grid_zip_line_run_mode()
+                return False
+            if not self._retreat_from_grid_zip_line(
+                deadline,
+                reason="按 F 后仍未登上滑索",
+            ):
+                self._restore_grid_zip_line_run_mode()
+                return False
+            return None
+
+        if step.action == TURN:
+            if self._grid_cfg_bool(
+                CONFIG_GRID_TURN_WHILE_MOVING, True
+            ) and not self._should_turn_grid_in_place(step):
+                self._turn_grid_while_moving(step)
+            else:
+                self._set_grid_walking(False)
+                self.pose_turn_to_bearing(
+                    step.target_bearing,
+                    tolerance=self._grid_turn_tolerance(),
+                    max_rounds=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
+                    frame=frame,
+                    min_score=min_score,
+                )
+        elif step.action == WALK:
+            # 登索接近阶段保持步行，不启动冲刺。
+            self._set_grid_walking(True)
+        else:
+            self._set_grid_walking(False)
+
+        now = self.active_time()
+        started_at = self._grid_nav_zip_line_approach_started_at
+        search_timed_out = (
+            started_at is not None
+            and now - started_at >= GRID_ZIP_LINE_APPROACH_TIMEOUT_S
+        )
+        if step.action == ZIP_LINE or search_timed_out:
+            reason = "到达滑索入口仍未搜索到「登上滑索架」" if step.action == ZIP_LINE else "接近滑索时搜索模板超时"
+            if not self._retreat_from_grid_zip_line(deadline, reason=reason):
+                self._restore_grid_zip_line_run_mode()
+                return False
+        return None
+
+    def _handle_grid_zip_line_route_step(
+        self,
+        route_step,
+        *,
+        already_on_rack: bool = False,
+    ) -> str:
+        """执行滑索步骤并返回 completed/replan/failed。"""
+        try:
+            if not self._execute_grid_zip_line(
+                route_step,
+                already_on_rack=already_on_rack,
+            ):
+                return "failed"
+        except ZipLineReplanRequired as exc:
+            self.log_warning(
+                f"{exc}，从当前滑索架重新规划",
+                notify=True,
+            )
+            self._grid_nav_zip_line_start_hint = exc.current_position
+            self._grid_nav_zip_line_failed_target_hint = exc.failed_target_position
+            self._grid_nav_follower = None
+            return "replan"
+        if self._grid_nav_follower is None or not self._grid_nav_follower.complete_zip_line():
+            self.log_warning("滑索完成后路线状态无效，重新规划", notify=True)
+            self._grid_nav_follower = None
+            return "replan"
+        return "completed"
+
+    def _reaim_grid_zip_line_for_boarding(self, route_step) -> bool:
+        """按当前 WS 到入口滑索架的方位重新对准，不移动角色。"""
+        position_getter = getattr(self, "_zip_line_ws_position", None)
+        if not callable(position_getter):
+            self.log_warning("无法读取 WS 或调整视角，不能重新对准入口滑索架", notify=True)
+            return False
+
+        ws_position = position_getter()
+        if ws_position is None:
+            self.log_warning("无法读取当前 WS 坐标，不能重新对准入口滑索架", notify=True)
+            return False
+
+        first = route_step.steps[0]
+        entry = first.entry
+        distance_to_entry = math.hypot(
+            float(entry.x) - float(ws_position[0]),
+            float(entry.z) - float(ws_position[1]),
+        )
+        if distance_to_entry > 0.2:
+            target_bearing = bearing_to_point(
+                float(ws_position[0]),
+                float(ws_position[1]),
+                float(entry.x),
+                float(entry.z),
+            )
+        else:
+            target_bearing = bearing_to_point(
+                float(entry.x),
+                float(entry.z),
+                float(first.exit.x),
+                float(first.exit.z),
+            )
+
         result = self.pose_aim_view_to_bearing(
             target_bearing,
             tolerance=self._grid_turn_tolerance(),
-            max_rounds=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
+            max_rounds=2,
             min_score=self._grid_heading_min_score(),
+            verify_heading=False,
         )
         if not result.get("ok"):
             self.log_warning(
@@ -1103,8 +1361,9 @@ class GridNavigationMixin(RuntimeStateMixin):
             )
             return False
         self.log_info(
-            f"登索失败后已重新对正：目标={target_bearing:.1f}°，"
-            f"实测={result.get('heading')}，误差={result.get('error')}"
+            f"登索失败后已发送重新对准视角位移：目标={target_bearing:.1f}°，"
+            f"估算当前朝向={result.get('heading')}，估算误差={result.get('error')}，"
+            f"距入口滑索架={distance_to_entry:.2f}m"
         )
         return True
 
@@ -1169,7 +1428,7 @@ class GridNavigationMixin(RuntimeStateMixin):
                         "点击登上滑索后仍检测到 fL.esc，判定未登上滑索，重新对正后重试",
                         notify=True,
                     )
-                    if not self._reaim_grid_zip_line_for_boarding(target_bearings[0]):
+                    if not self._reaim_grid_zip_line_for_boarding(route_step):
                         return False
                     if not board(direct_wait=5.0, total_time_out=30.0):
                         self.log_warning("重新对正后仍未找到「登上滑索架」按钮", notify=True)

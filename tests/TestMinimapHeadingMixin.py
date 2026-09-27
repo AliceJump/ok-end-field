@@ -211,6 +211,22 @@ class TestAimViewToBearing(unittest.TestCase):
         self.assertEqual(task.sent, [])
         self.assertEqual(task.w_presses, 0)
 
+    def test_unverified_ground_aim_sends_view_rotation_without_w(self):
+        task = _FakeTurnTask(facing=0.0, facing_follows_camera=False)
+
+        result = task.aim_view_to_bearing(
+            90.0,
+            tolerance=5.0,
+            verify_heading=False,
+        )
+
+        self.assertTrue(result["ok"], result)
+        self.assertTrue(result["view_rotation_sent"])
+        self.assertFalse(result["verified_heading"])
+        self.assertEqual(task.facing, 0.0)
+        self.assertAlmostEqual(task.camera, 90.0, delta=1.0)
+        self.assertEqual(task.w_presses, 0)
+
 
 class TestOneShotAndDiagnostics(unittest.TestCase):
     """覆盖一轮到位判定和比例尺诊断。"""
