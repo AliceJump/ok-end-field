@@ -75,6 +75,43 @@ class TestDailyDeliveryTask(unittest.TestCase):
         task.accept_order.assert_called_once_with()
         self.assertEqual(task.task_to_transfer_point.call_count, 3)
 
+    def test_daily_cycle_reports_each_failure(self):
+        for failure in ("accept_order", "task_to_transfer_point", "to_storage_point_and_back_zip_line"):
+            with self.subTest(failure=failure):
+                task = self._make_cycle({}, daily_mode=True)
+                task.task_to_transfer_point.return_value = failure == "to_storage_point_and_back_zip_line"
+                task.to_storage_point_and_back_zip_line = Mock(return_value=False)
+                if failure == "accept_order":
+                    task.accept_order.return_value = False
+
+                with patch("src.tasks.onetime.DeliveryTask.get_delivery_locations", return_value=[]):
+                    self.assertIs(task._run_single_delivery_cycle(), False)
+
+    def test_daily_cycle_reports_success(self):
+        task = self._make_cycle({}, daily_mode=True)
+        task.task_to_transfer_point.return_value = True
+        task.to_storage_point_and_back_zip_line = Mock(return_value=True)
+        task.box = SimpleNamespace(left=object(), bottom_right=object())
+        task.lang = SimpleNamespace(DeliveryTask=SimpleNamespace(k_b0e3a2da="board"))
+        task.wait_ocr = Mock(return_value=[SimpleNamespace(name="target")])
+        task.wait_click_ocr = Mock()
+        task.to_end_and_submit = Mock()
+
+        with patch("src.tasks.onetime.DeliveryTask.get_delivery_locations", return_value=[]):
+            self.assertIs(task._run_single_delivery_cycle(), True)
+        self.assertEqual(task.to_end_and_submit.call_count, 3)
+
+    def test_run_daily_propagates_cycle_result_and_resets_mode(self):
+        task = self._make_cycle({}, daily_mode=False)
+        task._ensure_delivery_area_config = Mock()
+        task._run_single_delivery_cycle = Mock(return_value=False)
+
+        self.assertIs(task.run_daily(), False)
+        self.assertIs(task._daily_delivery_mode, False)
+        task._run_single_delivery_cycle.return_value = True
+        self.assertIs(task.run_daily(), True)
+        self.assertIs(task._daily_delivery_mode, False)
+
 
 if __name__ == "__main__":
     unittest.main()

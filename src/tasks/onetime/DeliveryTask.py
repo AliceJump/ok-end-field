@@ -467,7 +467,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 else:
                     if daily_mode or not self.config.get(self.CFG_ONLY_DELIVER):
                         if not self.accept_order():
-                            return
+                            return False
                     success = None
                     for attempt in range(3):
                         success = self.task_to_transfer_point(
@@ -477,7 +477,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                             break
                     if not success:
                         self.log_info("传送失败（未找到传送按钮），终止本轮送货")
-                        return
+                        return False
                     # 缓存为空时用地图上记录的地区回填（覆盖仅送货模式等未接取委托的场景）
                     if not self._accepted_delivery_location and self.location:
                         self._accepted_delivery_location = extract_delivery_location(
@@ -486,7 +486,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                         if self._accepted_delivery_location:
                             self.log_info(f"通过地图自动回填送货地点: {self._accepted_delivery_location}")
                     if not self.to_storage_point_and_back_zip_line():
-                        return
+                        return False
                     results = self.wait_ocr(
                         match=list(ends_list_pattern_dict.keys()), box=self.box.left, time_out=10, log=True
                     )
@@ -546,6 +546,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     zip_line_list,
                     need_scroll=self.zip_line_scroll_enabled(),
                 )
+        return True
 
     def _ensure_delivery_area_config(self):
         """校验并应用配置中的送货地区，必要时同步相关下拉选项。"""
@@ -576,8 +577,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         self._daily_delivery_mode = True
         try:
             self._ensure_delivery_area_config()
-            self._run_single_delivery_cycle()
-            return True
+            return self._run_single_delivery_cycle()
         finally:
             self._daily_delivery_mode = False
 
