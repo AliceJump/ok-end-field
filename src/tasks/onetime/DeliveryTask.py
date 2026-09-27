@@ -338,6 +338,12 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
             return self._legacy_pickup_search()
         return False
 
+    def _resolve_delivery_submit_pattern(self, end_pattern):
+        """资源终点在提交阶段使用“交货”按钮，其他终点沿用目标文本。"""
+        if end_pattern == self.lang.DeliveryTask.k_6536f6f1:
+            return self.lang.DeliveryTask.k_0c1ef9f5
+        return end_pattern
+
     def to_end_and_submit(self, end_pattern):
         """从仓储点出发到目标点并提交委托。
 
@@ -347,8 +353,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
         Returns:
             bool: 成功点击提交并回到主界面时返回 True。
         """
-        if end_pattern == self.lang.DeliveryTask.k_6536f6f1:
-            end_pattern = self.lang.DeliveryTask.k_0c1ef9f5
+        end_pattern = self._resolve_delivery_submit_pattern(end_pattern)
         self.align_ocr_or_find_target_to_center(
             ocr_match_or_feature_name_list=secondary_objective_direction_dot,
             threshold=0.8,
@@ -473,8 +478,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
         return None, None
 
     def _submit_at_destination(self, end_pattern) -> bool:
+        submit_pattern = self._resolve_delivery_submit_pattern(end_pattern)
         if self.wait_click_ocr(
-            match=end_pattern,
+            match=submit_pattern,
             box=self.box.bottom_right,
             settle_time=1,
             time_out=2,

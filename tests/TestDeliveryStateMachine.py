@@ -2,6 +2,7 @@
 
 import re
 import unittest
+from types import SimpleNamespace
 
 from src.data.delivery_area_service import (
     get_delivery_location_coordinate,
@@ -88,6 +89,45 @@ class TestDeliveryStateMachine(unittest.TestCase):
         self.assertTrue(task._run_grid_delivery_state_machine({target_pattern: "常沄"}))
         self.assertEqual(calls[-2][0], "ride")
         self.assertEqual(calls[-1], ("submit", target_pattern))
+
+    def test_direct_submit_uses_handover_button_for_resource_destination(self):
+        task = self._task()
+        resource_pattern = re.compile("资源")
+        handover_pattern = re.compile("交货")
+        task.lang = SimpleNamespace(
+            DeliveryTask=SimpleNamespace(
+                k_6536f6f1=resource_pattern,
+                k_0c1ef9f5=handover_pattern,
+            )
+        )
+        task.box = SimpleNamespace(bottom_right=object())
+        calls = []
+        task.wait_click_ocr = lambda **kwargs: calls.append(kwargs["match"]) or True
+        task.skip_dialog = lambda **kwargs: None
+        task.ensure_main = lambda: None
+
+        self.assertTrue(task._submit_at_destination(resource_pattern))
+        self.assertEqual(calls, [handover_pattern])
+
+    def test_direct_submit_keeps_destination_pattern_for_regular_target(self):
+        task = self._task()
+        resource_pattern = re.compile("资源")
+        handover_pattern = re.compile("交货")
+        target_pattern = re.compile("常沄")
+        task.lang = SimpleNamespace(
+            DeliveryTask=SimpleNamespace(
+                k_6536f6f1=resource_pattern,
+                k_0c1ef9f5=handover_pattern,
+            )
+        )
+        task.box = SimpleNamespace(bottom_right=object())
+        calls = []
+        task.wait_click_ocr = lambda **kwargs: calls.append(kwargs["match"]) or True
+        task.skip_dialog = lambda **kwargs: None
+        task.ensure_main = lambda: None
+
+        self.assertTrue(task._submit_at_destination(target_pattern))
+        self.assertEqual(calls, [target_pattern])
 
 
 if __name__ == "__main__":
