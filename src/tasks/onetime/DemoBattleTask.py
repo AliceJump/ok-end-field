@@ -1,4 +1,5 @@
 from qfluentwidgets import FluentIcon
+
 from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
 from src.tasks.mixin.battle_mixin import BattleMixin

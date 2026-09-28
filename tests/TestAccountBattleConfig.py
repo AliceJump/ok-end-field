@@ -16,8 +16,8 @@ from src.core.BattleConfig import (
     BattleConfigManager,
 )
 from src.gui.AccountConfigTab import AccountConfigTab
-from src.tasks.onetime.BattleTask import BattleTask
 from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.onetime.BattleTask import BattleTask
 
 
 class _DummyTask:
