@@ -21,10 +21,10 @@ from src.tasks.onetime.BoatOrganizeTask import BoatOrganizeTask
 from src.tasks.onetime.CraftWeaponTask import CraftWeaponTask
 from src.tasks.onetime.CreditCollectTask import CreditCollectTask
 from src.tasks.onetime.CreditShopTask import CreditShopTask
-from src.tasks.onetime.DailyRewardTask import DailyRewardTask
-from src.tasks.onetime.DeliverySendTask import DeliverySendTask
 from src.tasks.onetime.DailyBattleTask import DailyBattleTask
 from src.tasks.onetime.DailyDeliveryTask import DailyDeliveryTask
+from src.tasks.onetime.DailyRewardTask import DailyRewardTask
+from src.tasks.onetime.DeliverySendTask import DeliverySendTask
 from src.tasks.onetime.DemoBattleTask import DemoBattleTask
 from src.tasks.onetime.HomePointTask import HomePointTask
 from src.tasks.onetime.LiaisonGiftTask import LiaisonGiftTask
@@ -92,9 +92,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         self.delivery_send_feature = DailyFeature(
             self, DeliverySendTask, switch_key="⭐转交运送委托", run_method="delivery_send_others"
         )
-        self.delivery_feature = DailyFeature(
-            self, DailyDeliveryTask, switch_key="⭐自动送货", run_method="run_daily"
-        )
+        self.delivery_feature = DailyFeature(self, DailyDeliveryTask, switch_key="⭐自动送货", run_method="run_daily")
         self.regional_feature = DailyFeature(
             self,
             RegionalBuildTask,

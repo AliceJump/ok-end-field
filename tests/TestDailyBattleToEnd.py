@@ -3,8 +3,8 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from src.tasks.onetime.BattleTask import BattleContext, BattleTask
 from src.data.world_map import stages_cost
+from src.tasks.onetime.BattleTask import BattleContext, BattleTask
 
 
 class _ToEndTaskHarness:
