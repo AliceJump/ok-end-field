@@ -496,7 +496,9 @@ class GridRouteFollower:
     def _advance_initial_waypoints(self, start: tuple[float, float]) -> None:
         """规划后跳过起点附近已经到达的初始航点。"""
         waypoints = self.plan_result.waypoints if self.plan_result else []
-        limit = self._waypoint_limit(len(waypoints))
+        if not waypoints:
+            return
+        limit = min(self._waypoint_limit(len(waypoints)), len(waypoints))
         while (
             self.waypoint_index < limit
             and distance_xz(start, waypoints[self.waypoint_index]) <= self.config.arrive_radius
