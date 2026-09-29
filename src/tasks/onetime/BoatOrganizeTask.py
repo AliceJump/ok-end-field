@@ -1,7 +1,41 @@
+from qfluentwidgets import FluentIcon
+
 from src.data.FeatureList import FeatureList as fL
+from src.icons import Icons
+from src.tasks.mixin.common import Common
+from src.tasks.mixin.liaison_mixin import LiaisonMixin
 
 
-class DailyCraftMixin:
+class BoatOrganizeTask(Common, LiaisonMixin):
+    """帝江号整理子任务：一键存放与简易制作，日常任务经 DailyFeature 接入。"""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "帝江号整理"
+        self.icon = Icons.ItemTransfer
+        self.group_name = "日常任务"
+        self.group_icon = FluentIcon.CALENDAR
+        self.description = "在「帝江号」打开背包并执行「一键存放」与「简易制作」。"
+        self.support_multi_account = True
+        self.default_config.update(
+            {
+                "⭐帝江号一键存放": False,
+                "⭐简易制作": True,
+            }
+        )
+        self.config_description.update(
+            {
+                "⭐帝江号一键存放": (
+                    "是否在「帝江号」打开背包并点击「一键存放」。\n"
+                    "与「简易制作」合并执行，共享传送与开背包。\n"
+                    "确认不会自动存可用道具导致治疗药被存入后再开启"
+                ),
+                "⭐简易制作": (
+                    "是否前往「帝江号/简易制作」制作物品。\n与「帝江号一键存放」合并执行，共享传送与开背包。"
+                ),
+            }
+        )
+
     def boat_organize(self):
         """帝江号整理：合并「一键存放」与「简易制作」，共享传送与开背包。
 
@@ -66,34 +100,6 @@ class DailyCraftMixin:
             return False
         return True
 
-    def make_weapon(self):
-        self.info_set("current_task", "make_weapon")
-        self.log_info("开始造装备任务")
-
-        self.back()
-        self.log_info("打开终端界面")
-
-        if not self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_1faf3321, box=self.box.right, time_out=5):
-            self.mark_task_failure("未找到装备按钮，任务失败")
-            return False
-        self.log_info("找到装备按钮并点击")
-        self.wait_click_ocr(
-            match=self.lang.daily_routine_mixin.k_557911d7,
-            box=self.box_of_screen(0, 0, 0.5, 80 / 1080),
-            time_out=5,
-            recheck_time=1,
-            after_sleep=1,
-        )
-        if not self.wait_click_feature(
-            feature=fL.select_confirm,
-            box=self.box_of_screen(0.938, 0.902, 0.964, 0.941),
-            time_out=5,
-            raise_if_not_found=False,
-        ):
-            self.mark_task_failure("未找到制作按钮，任务失败")
-            return False
-        self.log_info("找到制作按钮并点击")
-        self.log_info("等待弹窗完成，造装备任务准备完成")
-        self.wait_pop_up()
-
-        return True
+    def run(self):
+        self.ensure_main(time_out=420)
+        return self.boat_organize()

@@ -1,23 +1,24 @@
+from qfluentwidgets import FluentIcon
+
 from src.data.FeatureList import FeatureList as fL
-from src.data.lang import LangAccessor
+from src.icons import Icons
+from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.mixin.common import Common
+from src.tasks.navigation.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 
 
-class DailyDemoFeature:
-    # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
-    lang: LangAccessor
+class DemoBattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
+    """演算任务：执行演武集算，日常任务经 DailyFeature 接入。"""
 
-    def __init__(self, task):
-        self._task = task
-        task.default_config.update(
-            {
-                "⭐演算": True,
-            }
-        )
-        task.config_description.update({"⭐演算": "是否执行演武集算任务"})
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "演算"
+        self.icon = Icons.SwordChallenge
+        self.group_name = "日常任务"
+        self.group_icon = FluentIcon.CALENDAR
+        self.description = "执行演武集算任务：自动抽取关卡并战斗。"
         self.left_time = True
-
-    def __getattr__(self, name):
-        return getattr(self._task, name)
 
     def battle_demo(self):
         if not self.go_to_demo_graphic():
@@ -90,7 +91,7 @@ class DailyDemoFeature:
             if current_level is not None:
                 return current_level
 
-            # 未开双倍时点击『随机』会弹出「仅可在第三抽之前调整奖励翻倍选项…是否确认抽取？」
+            # 未开双倍时点击『随机』会弹出「仅可在第三抽之前调整奖励翻倍选项…是否确认抽取?」
             # 确认框会拦截本次抽取导致等级不变；点掉确认框后等待等级变化。
             # 已开双倍时不会弹此框，无需检测，直接重试。
             if not double_reward_opened and self.click_confirm(time_out=1):
@@ -227,3 +228,7 @@ class DailyDemoFeature:
             )
         )
         return level
+
+    def run(self):
+        self.ensure_main(time_out=420)
+        return self.battle_demo()

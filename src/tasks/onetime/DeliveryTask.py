@@ -1,5 +1,6 @@
 import webbrowser
 from enum import Enum, auto
+from typing import ClassVar
 
 from qfluentwidgets import FluentIcon
 
@@ -71,12 +72,12 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
     TUTORIAL_TIPS = "游戏内开启全屏模式时请确保游戏内分辨率与你的屏幕分辨率一致"
 
     # 滑索配置键迁移：旧键 → 新键
-    config_key_migrations = {
+    config_key_migrations: ClassVar[dict[str, str]] = {
         "通向送货点": "通向武陵城送货点",
         "通向送货点试验园区": "通向试验园区送货点",
     }
 
-    account_config_blacklist = {
+    account_config_blacklist: ClassVar[set[str]] = {
         CFG_TEST_TARGET,
         CFG_ONLY_ACCEPT,
         CFG_ONLY_DELIVER,
@@ -152,7 +153,12 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
         }
         self.config_type[self.CFG_TEST_TARGET] = {
             "type": "drop_down",
-            "options": [self.TEST_NONE] + self.to_delivery_point_config_keys + self.ends + [self.TEST_FULL_CYCLE],
+            "options": [
+                self.TEST_NONE,
+                *self.to_delivery_point_config_keys,
+                *self.ends,
+                self.TEST_FULL_CYCLE,
+            ],
             "sub_configs": {
                 self.TEST_NONE: [self.CFG_ONLY_ACCEPT, self.CFG_ONLY_DELIVER],
                 self.TEST_FULL_CYCLE: [self.CFG_FULL_CYCLE_LOCATION],
@@ -497,9 +503,12 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
         """执行原滑索距离、蓝色标记和模板搜索组成的取货送达流程。"""
         if not self.to_storage_point_and_back_zip_line():
             return False
-        end, end_pattern = self._recognize_delivery_end(ends_pattern_dict)
-        if end is None:
-            return False
+        results = self.wait_ocr(
+            match=list(ends_pattern_dict.keys()),
+            box=self.box.left,
+            time_out=10,
+            log=True,
+        )
         self.wait_click_ocr(
             match=self.lang.DeliveryTask.k_b0e3a2da,
             box=self.box.bottom_right,
@@ -508,12 +517,22 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
             after_sleep=2,
             alt=True,
         )
-        self.on_zip_line_start(
-            end,
-            need_scroll=self.zip_line_scroll_enabled(),
-            target=(secondary_objective_direction_dot, "feature"),
-        )
-        return self.to_end_and_submit(end_pattern)
+        if not results:
+            raise RuntimeError("未识别到送货目标")
+
+        end_pattern = None
+        for result in results:
+            for pattern, end in ends_pattern_dict.items():
+                if pattern.search(result.name):
+                    end_pattern = pattern
+                    self.on_zip_line_start(
+                        end,
+                        need_scroll=self.zip_line_scroll_enabled(),
+                        target=(secondary_objective_direction_dot, "feature"),
+                    )
+                    break
+        self.to_end_and_submit(end_pattern)
+        return True
 
     def _run_grid_delivery_state_machine(self, ends_pattern_dict: dict) -> bool:
         """按坐标状态机执行取货和送达，移动由网格导航统一负责。"""
@@ -571,7 +590,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
         return phase == DeliveryPhase.DONE
 
     def _run_single_delivery_cycle(self) -> bool:
-        if getattr(self, "_daily_delivery_mode", False) or self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE:
+        daily_mode = getattr(self, "_daily_delivery_mode", False)
+        if daily_mode or self.config.get(self.CFG_TEST_TARGET, self.TEST_NONE) == self.TEST_NONE:
             ends_list_pattern_dict = self._delivery_end_patterns()
             completed = False
             for _ in range(3):
@@ -583,10 +603,11 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
                     self.ensure_main()
                 self.back()
                 self.ensure_main()
-                if self.config.get(self.CFG_ONLY_ACCEPT):
-                    return self.accept_order()
+                if not daily_mode and self.config.get(self.CFG_ONLY_ACCEPT):
+                    self.accept_order()
+                    break
                 else:
-                    if not self.config.get(self.CFG_ONLY_DELIVER) and not self.accept_order():
+                    if (daily_mode or not self.config.get(self.CFG_ONLY_DELIVER)) and not self.accept_order():
                         return False
                     success = None
                     for _attempt in range(3):
@@ -612,7 +633,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
                         if not self._run_legacy_delivery_leg(ends_list_pattern_dict):
                             return False
                     completed = True
-                    if self.config.get(self.CFG_ONLY_DELIVER):
+                    if not daily_mode and self.config.get(self.CFG_ONLY_DELIVER):
                         break
             return completed
         elif self.config.get(self.CFG_TEST_TARGET) == self.TEST_FULL_CYCLE:
@@ -646,7 +667,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
                     zip_line_list,
                     need_scroll=self.zip_line_scroll_enabled(),
                 )
-            return True
+        return True
 
     def _ensure_delivery_area_config(self):
         """校验并应用配置中的送货地区，必要时同步相关下拉选项。"""
@@ -657,26 +678,45 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
         if current_area != self.delivery_area:
             self._configure_delivery_area(current_area)
         # 地区未变时也要修正无效的完整循环测试区域（如地区数据更新后旧地点失效）
-        if self.CFG_FULL_CYCLE_LOCATION in self.config:
-            if self.config.get(self.CFG_FULL_CYCLE_LOCATION) not in self.full_cycle_locations:
-                self.config[self.CFG_FULL_CYCLE_LOCATION] = self.full_cycle_locations[0]
-        # 日常模式（DeliveryFeature）未注册这两个配置项，仅独立任务模式同步下拉选项
+        if (
+            self.CFG_FULL_CYCLE_LOCATION in self.config
+            and self.config.get(self.CFG_FULL_CYCLE_LOCATION) not in self.full_cycle_locations
+        ):
+            self.config[self.CFG_FULL_CYCLE_LOCATION] = self.full_cycle_locations[0]
+        # 当前实例的下拉选项与地区配置保持同步；独立任务和日常专属任务
+        # 分别由 DeliveryTask / DailyDeliveryTask 实例保存自己的配置。
         if self.CFG_FULL_CYCLE_LOCATION in self.config_type and self.CFG_TEST_TARGET in self.config_type:
-            self.config_type[self.CFG_TEST_TARGET]["options"] = (
-                [self.TEST_NONE] + self.to_delivery_point_config_keys + self.ends + [self.TEST_FULL_CYCLE]
-            )
+            self.config_type[self.CFG_TEST_TARGET]["options"] = [
+                self.TEST_NONE,
+                *self.to_delivery_point_config_keys,
+                *self.ends,
+                self.TEST_FULL_CYCLE,
+            ]
             self.config_type[self.CFG_FULL_CYCLE_LOCATION]["options"] = self.full_cycle_locations
+
+    def run_daily(self):
+        """执行一轮日常自动送货，由 DailyTask 负责多账号循环。
+
+        日常任务经 DailyFeature 包装调用 DailyDeliveryTask 实例上的本方法，
+        使用该实例的配置，并与独立运行共用 _run_single_delivery_cycle 流程。
+        """
+        self._daily_delivery_mode = True
+        try:
+            self._ensure_delivery_area_config()
+            return self._run_single_delivery_cycle()
+        finally:
+            self._daily_delivery_mode = False
 
     def run(self):
         """运输委托任务的主入口，支持与日常任务一致的多账号执行逻辑。"""
         try:
             self._ensure_delivery_area_config()
             allow_multi = (
-                self.config.get(self.CFG_TEST_TARGET) == self.TEST_NONE
+                self.config.get(self.CFG_TEST_TARGET, self.TEST_NONE) == self.TEST_NONE
                 and not self.config.get(self.CFG_ONLY_ACCEPT)
                 and not self.config.get(self.CFG_ONLY_DELIVER)
             )
-            for repeat_idx, repeat_times in self.iter_multi_account_context(
+            for _ in self.iter_multi_account_context(
                 repeat_times=1,
                 empty_accounts_message="多账户模式已开启，但账号列表为空，自动送货任务结束",
                 account_log_suffix=self.tr("自动送货"),
@@ -686,72 +726,3 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
 
         except Exception as e:
             self.handle_task_exception(e, "DeliveryTask_Exception")
-
-
-class DeliveryFeature(DeliveryTask):
-    """日常任务使用的自动送货功能。"""
-
-    DAILY_ENABLE_KEY = "⭐自动送货"
-
-    def __init__(self, task):
-        self._task = task
-        self._daily_delivery_mode = False
-        self._accepted_delivery_location = None
-        self._last_refresh_ts = 0
-        self.try_time = 0
-        self._configure_delivery_area(DEFAULT_DELIVERY_AREA)
-        self._init_grid_navigation_mixin()
-
-        task.default_config.update(
-            {
-                self.DAILY_ENABLE_KEY: False,
-                self.CFG_TARGET_TICKET_NUM: ["119000"],
-                self.CFG_DELIVERY_AREA: DEFAULT_DELIVERY_AREA,
-                self.CFG_ARRIVAL_MODE: self.ARRIVAL_MODE_LEGACY,
-            }
-        )
-        task.config_description.update(
-            {
-                self.DAILY_ENABLE_KEY: "是否执行自动接取并完成运输委托。",
-                self.CFG_TARGET_TICKET_NUM: ("目标券数优先级序列，用逗号分隔多个券数。"),
-                self.CFG_DELIVERY_AREA: "通过下拉框切换送货地区配置。",
-                self.CFG_ARRIVAL_MODE: (
-                    "选择取货和送达阶段的到达方式：原流程使用原有滑索距离序列，"
-                    "网格导航按取货点和终点坐标自动组合滑索与寻路。"
-                ),
-            }
-        )
-        task.config_type[self.CFG_DELIVERY_AREA] = {
-            "type": "drop_down",
-            "options": list(DELIVERY_AREA_CONFIG.keys()),
-        }
-        task.config_type[self.CFG_TARGET_TICKET_NUM] = {
-            "options_available": DELIVERY_TARGET_TICKET_NUM_OPTIONS,
-            "allow_duplication": False,
-        }
-        task.config_type[self.CFG_ARRIVAL_MODE] = {
-            "type": "drop_down",
-            "options": [self.ARRIVAL_MODE_LEGACY, self.ARRIVAL_MODE_GRID],
-        }
-        task.default_config_group.update(
-            {
-                self.DAILY_ENABLE_KEY: [
-                    self.CFG_TARGET_TICKET_NUM,
-                    self.CFG_DELIVERY_AREA,
-                    self.CFG_ARRIVAL_MODE,
-                ],
-            }
-        )
-
-    def __getattr__(self, name):
-        return getattr(self._task, name)
-
-    def run_daily(self):
-        """执行一轮日常自动送货，由 DailyTask 负责多账号循环。"""
-        self._ensure_delivery_area_config()
-
-        self._daily_delivery_mode = True
-        try:
-            return bool(self._run_single_delivery_cycle())
-        finally:
-            self._daily_delivery_mode = False

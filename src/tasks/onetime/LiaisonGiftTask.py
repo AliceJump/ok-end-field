@@ -4,63 +4,47 @@ from PySide6.QtCore import QTimer
 from qfluentwidgets import FluentIcon
 
 from src.data.characters import all_list
-from src.data.characters_utils import get_contact_list_with_feature_list
-from src.data.lang import LangAccessor
-from src.tasks.mixin.common import LiaisonResult, build_name_patterns
+from src.icons import Icons
+from src.tasks.mixin.common import Common, LiaisonResult
+from src.tasks.mixin.liaison_mixin import LiaisonMixin
 
 
-class DailyLiaisonFeature:
-    # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task，此处声明仅为 IDE/类型检查
-    lang: LangAccessor
+class LiaisonGiftTask(Common, LiaisonMixin):
+    """送礼子任务：干员联络台赠送礼物，日常任务经 DailyFeature 接入。"""
+
     HELP_LINK = "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/docs/日常任务.md"
     CFG_PRIORITY_GIFT_TARGET = "优先送礼对象"
     CFG_GIFT_MAX_RETRY = "送礼任务最多尝试次数"
 
-    def __init__(self, task):
-        self._task = task
-
-        self.can_contact_dict = get_contact_list_with_feature_list(self._task.lang)
-        self.contact_name_patterns = {name: build_name_patterns(name) for name in self.can_contact_dict.keys()}
-        #
-        self._task.config_type[self.CFG_PRIORITY_GIFT_TARGET] = {"type": "drop_down", "options": all_list}
-        self._task.config_type["帮助"] = {
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "送礼"
+        self.icon = Icons.Interact
+        self.group_name = "日常任务"
+        self.group_icon = FluentIcon.CALENDAR
+        self.description = "通过「帝江号/干员联络台/赠送礼物」提升干员好感度。"
+        self.support_multi_account = True
+        self.config_type[self.CFG_PRIORITY_GIFT_TARGET] = {"type": "drop_down", "options": all_list}
+        self.config_type["帮助"] = {
             "type": "button",
             "text": "打开帮助",
             "icon": FluentIcon.LINK,
             "callback": self.open_help_link,
         }
-        self._task.default_config.update(
+        self.default_config.update(
             {
-                "⭐送礼": True,
                 "一次送礼个数": 2,
-                "⭐帝江号一键存放": False,
                 self.CFG_GIFT_MAX_RETRY: 2,
                 self.CFG_PRIORITY_GIFT_TARGET: all_list[0],
             }
         )
-        self._task.config_description.update(
+        self.config_description.update(
             {
-                "⭐送礼": (
-                    "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。\n"
-                    "如果途中偶遇干员，则直接交互完成送礼。\n"
-                    "任务开始时候，角色不能位于「帝江号/剑桥」传送点附近。"
-                ),
-                "⭐帝江号一键存放": (
-                    "是否在「帝江号」打开背包并点击「一键存放」。\n"
-                    "与「简易制作」合并执行，共享传送与开背包。\n"
-                    "确认不会自动存可用道具导致治疗药被存入后再开启"
-                ),
+                "一次送礼个数": "每次送礼时送给联络台干员的礼物个数。",
                 "帮助": "打开日常任务使用说明网页。",
             }
         )
-        self._task.default_config_group.update(
-            {
-                "⭐送礼": [self.CFG_GIFT_MAX_RETRY, "一次送礼个数", self.CFG_PRIORITY_GIFT_TARGET],
-            }
-        )
-
-    def __getattr__(self, name):
-        return getattr(self._task, name)
+        # can_contact_dict / contact_name_patterns 由 LiaisonMixin.__init__ 构建，无需重复
 
     def open_help_link(self, *_):
         """打开帮助链接，使用独立的内嵌 WebView 对话框。"""
@@ -160,3 +144,7 @@ class DailyLiaisonFeature:
 
         self.mark_task_failure("送礼任务最终失败")
         return False
+
+    def run(self):
+        self.ensure_main(time_out=420)
+        return self.execute_gift_task()
