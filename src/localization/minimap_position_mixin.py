@@ -67,16 +67,10 @@ from src.core.NavConfig import (
     NAV_SCALE_CONSTANT_KEY,
     NAV_SCALE_SUFFIX,
     NAV_WS_ACCOUNT_KEY,
+    NAV_YAW_PER_PIXEL_KEY,
     NavProfile,
     nav_profile_for_width,
 )
-from src.runtime_state.topics import RuntimeTopic
-from src.runtime_state.world_pose import publish_world_pose
-from src.tasks.account.account_scope_store import (
-    get_account_map_content,
-    resolve_account_id,
-)
-from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 from src.localization.minimap_heading_mixin import (
     CONFIG_MIN_SCORE,
     MinimapHeadingMixin,
@@ -84,6 +78,13 @@ from src.localization.minimap_heading_mixin import (
 from src.localization.minimap_odometry import MinimapOdometry
 from src.localization.minimap_position_fusion import MinimapPositionFusion
 from src.localization.ws_position_mixin import WsPositionMixin
+from src.runtime_state.topics import RuntimeTopic
+from src.runtime_state.world_pose import publish_world_pose
+from src.tasks.account.account_scope_store import (
+    get_account_map_content,
+    resolve_account_id,
+)
+from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 
 __all__ = [
     "CONFIG_COMMIT_MIN_SHIFT",
@@ -157,10 +158,10 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             CONFIG_MIN_SCORE: "箭头角度检测最低置信度，低于该值朝向判为不可用",
             CONFIG_SYNC_DISTANCE: "累计移动达到该距离后，请求导航暂停并等待静止自动校准",
             CONFIG_COMMIT_MIN_SHIFT: "里程计位移提交阈值（像素）。误差是按采样次数累积的，"
-                                     "而每样本位移 = 速度 * 采样间隔，所以慢走 / 原地挪时每米要积更多样本、"
-                                     "漂移更大。设成 2~3 像素可让每米提交次数与速度脱钩（原地小步走几乎不提交），"
-                                     "同时位置仍连续（未提交部分照常计入位置）。"
-                                     "0 = 关闭，回到按时间提交的旧行为，便于 A/B 对比",
+            "而每样本位移 = 速度 * 采样间隔，所以慢走 / 原地挪时每米要积更多样本、"
+            "漂移更大。设成 2~3 像素可让每米提交次数与速度脱钩（原地小步走几乎不提交），"
+            "同时位置仍连续（未提交部分照常计入位置）。"
+            "0 = 关闭，回到按时间提交的旧行为，便于 A/B 对比",
         }
 
     # ------------------------------------------------------------------ #
@@ -197,6 +198,20 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         except Exception as e:  # 该对象是框架 Config，异常类型不可控
             self.log_warning(f"读取全局「{NAV_CONFIG_NAME}」失败: {e}")
             return None
+
+    def yaw_per_pixel(self) -> float:
+        """正式导航转向优先使用全局 Nav Config 的标定系数。"""
+        nav_config = self._nav_config()
+        if nav_config is not None:
+            raw = nav_config.get(NAV_YAW_PER_PIXEL_KEY)
+            if raw not in (None, ""):
+                try:
+                    value = abs(float(raw))
+                except (TypeError, ValueError):
+                    value = 0.0
+                if value > 0:
+                    return value
+        return super().yaw_per_pixel()
 
     def _nav_profile(self) -> NavProfile | None:
         """按**当前画面宽度**从全局「导航配置」选出比例尺与轴映射。
@@ -237,8 +252,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         matrix = parse_map_to_world(profile.map_to_world)
         if matrix is None:
             self.log_warning(
-                f"全局「{NAV_CONFIG_NAME}」的轴映射无法解析（应为 4 个逗号分隔数字）: "
-                f"{profile.map_to_world!r}",
+                f"全局「{NAV_CONFIG_NAME}」的轴映射无法解析（应为 4 个逗号分隔数字）: {profile.map_to_world!r}",
                 notify=True,
             )
             return False
@@ -282,10 +296,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
                 estimate = self._minimap_fusion.estimate()
                 return estimate is not None
 
-        self.log_info(
-            f"导航比例尺 {scale:.6f} 米/像素（{profile.source}），"
-            f"轴映射 {profile.map_to_world}"
-        )
+        self.log_info(f"导航比例尺 {scale:.6f} 米/像素（{profile.source}），轴映射 {profile.map_to_world}")
 
         self._minimap_scale = scale
         commit_min_shift = max(
@@ -319,7 +330,8 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         if not cred:
             self.log_info(
                 "未配置地图 WS content（content/地图账号为空）：没有绝对基准，"
-                "位置需等本地 WS 提供坐标并在静止时自动锚定")
+                "位置需等本地 WS 提供坐标并在静止时自动锚定"
+            )
             return False
         if not self._is_map_ws_client_enabled():
             self.log_warning("地图 WS 客户端未启动（认证失败或缺少设备ID），稍后由触发周期重试")
@@ -333,8 +345,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         stable, map_id, last_pos = self._wait_ws_stable(timeout=wait, min_hits=min_hits)
         if not stable:
             self.log_warning(
-                f"WS 位置流未在 {wait:.1f}s 内稳定（mapId={map_id}）："
-                "先只用里程计与朝向，等 WS 稳定且静止时再自动锚定",
+                f"WS 位置流未在 {wait:.1f}s 内稳定（mapId={map_id}）：先只用里程计与朝向，等 WS 稳定且静止时再自动锚定",
                 notify=True,
             )
             return False
@@ -488,13 +499,10 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         st["y"] = self._minimap_last_ws_xyz[1] if self._minimap_last_ws_xyz is not None else None
         st["error"] = None
         if st.get("x") is not None and st.get("z") is not None and self._minimap_last_ws is not None:
-            st["error"] = math.hypot(
-                st["x"] - self._minimap_last_ws[0], st["z"] - self._minimap_last_ws[1])
+            st["error"] = math.hypot(st["x"] - self._minimap_last_ws[0], st["z"] - self._minimap_last_ws[1])
         st["sync_seq"] = self._minimap_sync_seq
         st["sample_t"] = self._now(now)
-        st["position_trusted"] = bool(
-            self._minimap_position_trusted and st.get("anchor_set")
-        )
+        st["position_trusted"] = bool(self._minimap_position_trusted and st.get("anchor_set"))
         st["trust_reason"] = self._minimap_trust_reason
         self._update_sync_request(st)
         self._minimap_last_state = dict(st)
@@ -527,16 +535,11 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         map_id = st.get("map_id")
         if bool(st.get("just_synced")) or bool(st.get("sync_checked")):
             self._minimap_distance_since_sync = 0.0
-            self._minimap_prev_position = (
-                (float(x), float(z)) if x is not None and z is not None else None
-            )
+            self._minimap_prev_position = (float(x), float(z)) if x is not None and z is not None else None
             self._minimap_prev_map_id = str(map_id) if map_id is not None else None
         elif x is not None and z is not None:
             position = (float(x), float(z))
-            if (
-                self._minimap_prev_position is not None
-                and map_id == self._minimap_prev_map_id
-            ):
+            if self._minimap_prev_position is not None and map_id == self._minimap_prev_map_id:
                 moved = math.hypot(
                     position[0] - self._minimap_prev_position[0],
                     position[1] - self._minimap_prev_position[1],
@@ -553,9 +556,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         threshold = max(0.0, self._cfg_float(CONFIG_SYNC_DISTANCE, 100.0))
         st["distance_since_sync"] = self._minimap_distance_since_sync
         st["sync_needed"] = bool(
-            self._minimap_last_ws is not None
-            and threshold > 0
-            and self._minimap_distance_since_sync >= threshold
+            self._minimap_last_ws is not None and threshold > 0 and self._minimap_distance_since_sync >= threshold
         )
 
     def latest_minimap_state(
@@ -624,10 +625,15 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
     def _apply_estimate(st: dict, est: dict | None) -> None:
         """把融合估计写回本拍结果；未锚定（``est is None``）时把坐标字段清成 None。"""
         if est is None:
-            st.update({
-                "x": None, "z": None, "anchor_set": False,
-                "dmap_px": (0.0, 0.0), "world_delta": (0.0, 0.0),
-            })
+            st.update(
+                {
+                    "x": None,
+                    "z": None,
+                    "anchor_set": False,
+                    "dmap_px": (0.0, 0.0),
+                    "world_delta": (0.0, 0.0),
+                }
+            )
             return
         st.update(est)
 

@@ -25,9 +25,11 @@ from src.core.GridNavConfig import (
 )
 from src.core.NavConfig import (
     DEFAULT_NAV_CONFIG,
+    DEFAULT_NAV_YAW_PER_PIXEL,
     DEFAULT_SCALE_CONSTANT,
     NAV_CONFIG_DESCRIPTION,
     NAV_CONFIG_GROUP_KEY,
+    NAV_CONFIG_GROUP_LOCALIZATION,
     NAV_CONFIG_NAME,
     NAV_CONFIG_TYPE,
     NAV_CONTENT_KEY,
@@ -39,17 +41,14 @@ from src.core.NavConfig import (
     NAV_SCALE_SUFFIX,
     NAV_WAIT_POSITION_TIMEOUT_KEY,
     NAV_WS_ACCOUNT_KEY,
+    NAV_YAW_PER_PIXEL_KEY,
     nav_profile_for_width,
     tier_for_width,
 )
 
 
 def _tier_keys() -> list[str]:
-    return [
-        f"{name}{suffix}"
-        for name, _ in NAV_RESOLUTION_TIERS
-        for suffix in (NAV_SCALE_SUFFIX, NAV_MATRIX_SUFFIX)
-    ]
+    return [f"{name}{suffix}" for name, _ in NAV_RESOLUTION_TIERS for suffix in (NAV_SCALE_SUFFIX, NAV_MATRIX_SUFFIX)]
 
 
 class TestTierSelection(unittest.TestCase):
@@ -86,8 +85,7 @@ class TestNavProfile(unittest.TestCase):
 
     def test_tier_entry_can_be_overridden_by_measurement(self):
         """某个分辨率下单独标定过 → 覆盖成实测值，不再用常数反推值。"""
-        profile = nav_profile_for_width(
-            2560, self._values(**{f"2K{NAV_SCALE_SUFFIX}": 0.7001}))
+        profile = nav_profile_for_width(2560, self._values(**{f"2K{NAV_SCALE_SUFFIX}": 0.7001}))
         self.assertAlmostEqual(profile.scale, 0.7001, places=6)
         self.assertEqual(profile.map_to_world, DEFAULT_NAV_CONFIG[f"2K{NAV_MATRIX_SUFFIX}"])
 
@@ -102,14 +100,13 @@ class TestNavProfile(unittest.TestCase):
         a11, a12, a21, a22 = (float(v) for v in profile.map_to_world.split(","))
         self.assertAlmostEqual(a12, 0.0, places=9)
         self.assertAlmostEqual(a21, 0.0, places=9)
-        self.assertAlmostEqual(a11, -a22, places=6)      # 世界_z 与地图_y 符号相反
+        self.assertAlmostEqual(a11, -a22, places=6)  # 世界_z 与地图_y 符号相反
         self.assertGreater(a11, 0.0)
 
     def test_broken_tier_entry_falls_back_to_constant(self):
         """档位值坏掉（空/0/非数字）时不能返回一个坏 profile，要退到常数。"""
         for bad in ("", "0", "abc", None):
-            profile = nav_profile_for_width(
-                1920, self._values(**{f"1K{NAV_SCALE_SUFFIX}": bad}))
+            profile = nav_profile_for_width(1920, self._values(**{f"1K{NAV_SCALE_SUFFIX}": bad}))
             self.assertIsNotNone(profile, bad)
             self.assertIsNone(profile.tier, bad)
             self.assertAlmostEqual(profile.scale, DEFAULT_SCALE_CONSTANT / 1920, places=6)
@@ -122,10 +119,8 @@ class TestNavProfile(unittest.TestCase):
     def test_missing_or_invalid_values_return_none(self):
         self.assertIsNone(nav_profile_for_width(1920, None))
         self.assertIsNone(nav_profile_for_width(1920, {}))
-        self.assertIsNone(nav_profile_for_width(
-            1600, {NAV_SCALE_CONSTANT_KEY: 0}))
-        self.assertIsNone(nav_profile_for_width(
-            1600, {NAV_SCALE_CONSTANT_KEY: "abc"}))
+        self.assertIsNone(nav_profile_for_width(1600, {NAV_SCALE_CONSTANT_KEY: 0}))
+        self.assertIsNone(nav_profile_for_width(1600, {NAV_SCALE_CONSTANT_KEY: "abc"}))
 
     def test_tier_and_constant_paths_are_continuous(self):
         """档位默认值由常数反推：同一宽度下两条路径必须给同一个数，否则换分辨率会跳变。"""
@@ -141,18 +136,10 @@ class TestNavConfigShape(unittest.TestCase):
     """默认值 / 说明 / 注册的结构一致性。"""
 
     def test_minimap_test_task_keeps_only_target_coordinates_in_task_config(self):
-        path = (
-            Path(__file__).parents[1]
-            / "src"
-            / "tasks"
-            / "navigation"
-            / "MinimapNavigateToPoint.py"
-        )
+        path = Path(__file__).parents[1] / "src" / "tasks" / "navigation" / "MinimapNavigateToPoint.py"
         tree = ast.parse(path.read_text(encoding="utf-8"))
         class_node = next(
-            node
-            for node in tree.body
-            if isinstance(node, ast.ClassDef) and node.name == "MinimapNavigateToPoint"
+            node for node in tree.body if isinstance(node, ast.ClassDef) and node.name == "MinimapNavigateToPoint"
         )
         assigned = {}
         for node in ast.walk(class_node):
@@ -192,8 +179,18 @@ class TestNavConfigShape(unittest.TestCase):
         self.assertIn(NAV_CONTENT_KEY, DEFAULT_NAV_CONFIG)
         self.assertIn(NAV_WS_ACCOUNT_KEY, DEFAULT_NAV_CONFIG)
 
+    def test_yaw_per_pixel_is_registered_in_localization_group(self):
+        self.assertEqual(
+            DEFAULT_NAV_CONFIG[NAV_YAW_PER_PIXEL_KEY],
+            DEFAULT_NAV_YAW_PER_PIXEL,
+        )
+        self.assertIn(NAV_YAW_PER_PIXEL_KEY, NAV_CONFIG_DESCRIPTION)
+        localization_keys = NAV_CONFIG_TYPE[NAV_CONFIG_GROUP_KEY]["sub_configs"][NAV_CONFIG_GROUP_LOCALIZATION]
+        self.assertIn(NAV_YAW_PER_PIXEL_KEY, localization_keys)
+
     def test_registered_as_global_config(self):
         from src.core.global_config_store import GLOBAL_CONFIG_OPTIONS, get_all_visible_configs
+
         names = [option.name for option in GLOBAL_CONFIG_OPTIONS]
         self.assertIn(NAV_CONFIG_NAME, names)
         self.assertIn(NAV_CONFIG_NAME, [name for name, _c, _o in get_all_visible_configs()])
@@ -204,22 +201,20 @@ class TestNavConfigShape(unittest.TestCase):
         只比键：真实配置文件里的导航选项本来就可能已被用户覆盖。
         """
         from src.core.global_config_store import get_global_config
+
         config = get_global_config(NAV_CONFIG_NAME)
         for key in DEFAULT_NAV_CONFIG:
             self.assertIsNotNone(config.get(key), f"{key} 未注册到全局配置")
 
     def test_config_type_groups_every_nav_option(self):
         group_type = NAV_CONFIG_TYPE[NAV_CONFIG_GROUP_KEY]
-        grouped = {
-            key
-            for keys in group_type["sub_configs"].values()
-            for key in keys
-        }
+        grouped = {key for keys in group_type["sub_configs"].values() for key in keys}
         expected = set(DEFAULT_NAV_CONFIG) - {NAV_CONFIG_GROUP_KEY}
         self.assertEqual(grouped, expected)
 
     def test_gui_group_lists_nav_config(self):
         from src.gui.GlobalConfigTab import GLOBAL_CONFIG_GROUPS
+
         self.assertIn(NAV_CONFIG_NAME, GLOBAL_CONFIG_GROUPS.get("导航配置", []))
 
 
@@ -254,8 +249,7 @@ class TestMixinUsesGlobalNavConfig(unittest.TestCase):
             profile = task._nav_profile()
             self.assertIsNotNone(profile, width)
             self.assertEqual(profile.tier, expect_tier, width)
-            self.assertAlmostEqual(profile.scale,
-                                   DEFAULT_NAV_CONFIG[f"{expect_tier}{NAV_SCALE_SUFFIX}"], places=6)
+            self.assertAlmostEqual(profile.scale, DEFAULT_NAV_CONFIG[f"{expect_tier}{NAV_SCALE_SUFFIX}"], places=6)
 
     def test_profile_scales_with_width_when_not_a_tier(self):
         """换一个非档位分辨率，比例尺必须跟着宽度变——这就是"自适应"的核心。"""
@@ -362,9 +356,7 @@ class TestNavConfigMigration(unittest.TestCase):
                     config = global_config_store.get_global_config(NAV_CONFIG_NAME)
                     config[NAV_CONTENT_KEY] = ""
                     config[NAV_WS_ACCOUNT_KEY] = ""
-                    global_config_store.migrate_task_nav_values_to_global(
-                        "MinimapPositionTask"
-                    )
+                    global_config_store.migrate_task_nav_values_to_global("MinimapPositionTask")
             finally:
                 global_config_store._CONFIGS.clear()
                 global_config_store._CONFIGS.update(previous)
@@ -388,9 +380,7 @@ class TestNavConfigMigration(unittest.TestCase):
             try:
                 patches = self._patched_store(tmp)
                 with patches[0], patches[1], patches[2], patches[3]:
-                    global_config_store.migrate_task_nav_values_to_global(
-                        "MinimapPositionTask"
-                    )
+                    global_config_store.migrate_task_nav_values_to_global("MinimapPositionTask")
             finally:
                 global_config_store._CONFIGS.clear()
                 global_config_store._CONFIGS.update(previous)
@@ -442,6 +432,7 @@ class TestNavConfigMigration(unittest.TestCase):
             CONFIG_GRID_DIR: "late/nav",
             CONFIG_GRID_MAX_EXPAND: 900_000,
             CONFIG_GRID_USE_ZIP_LINES: False,
+            NAV_YAW_PER_PIXEL_KEY: 0.091,
         }
         with tempfile.TemporaryDirectory() as tmp:
             self._write_configs(
@@ -459,9 +450,7 @@ class TestNavConfigMigration(unittest.TestCase):
                     config = global_config_store.get_global_config(NAV_CONFIG_NAME)
                     for key, _value in legacy_values.items():
                         config[key] = DEFAULT_NAV_CONFIG[key]
-                    global_config_store.migrate_task_nav_values_to_global(
-                        "MinimapNavigateToPoint"
-                    )
+                    global_config_store.migrate_task_nav_values_to_global("MinimapNavigateToPoint")
             finally:
                 global_config_store._CONFIGS.clear()
                 global_config_store._CONFIGS.update(previous)
@@ -487,9 +476,7 @@ class TestNavConfigMigration(unittest.TestCase):
                 patches = self._patched_store(tmp)
                 with patches[0], patches[1], patches[2], patches[3]:
                     config = global_config_store.get_global_config(NAV_CONFIG_NAME)
-                    global_config_store.migrate_task_nav_values_to_global(
-                        "ItemNavigatorTask"
-                    )
+                    global_config_store.migrate_task_nav_values_to_global("ItemNavigatorTask")
             finally:
                 global_config_store._CONFIGS.clear()
                 global_config_store._CONFIGS.update(previous)
@@ -525,9 +512,7 @@ class TestNavConfigMigration(unittest.TestCase):
             ):
                 global_config_store.migrate_task_minimap_values_to_owner(source)
 
-            owner_data = read_json_file(
-                os.path.join(tmp, "configs", "MinimapPositionTask.json")
-            )
+            owner_data = read_json_file(os.path.join(tmp, "configs", "MinimapPositionTask.json"))
             for key, value in legacy_values.items():
                 self.assertEqual(owner_data[key], value)
                 self.assertEqual(owner.config[key], value)
@@ -553,9 +538,7 @@ class TestNavConfigMigration(unittest.TestCase):
             ):
                 global_config_store.migrate_task_minimap_values_to_owner(source)
 
-            owner_data = read_json_file(
-                os.path.join(tmp, "configs", "MinimapPositionTask.json")
-            )
+            owner_data = read_json_file(os.path.join(tmp, "configs", "MinimapPositionTask.json"))
             self.assertEqual(owner.config["位移提交阈值(像素)"], 4.0)
             self.assertEqual(owner_data["位移提交阈值(像素)"], 4.0)
 

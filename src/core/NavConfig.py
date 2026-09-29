@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """全局「导航配置」的默认值、说明与**分辨率自适应**选档逻辑。
 
 为什么要独立成全局配置
@@ -67,6 +66,7 @@ from src.core.GridNavConfig import (
 
 __all__ = [
     "DEFAULT_NAV_CONFIG",
+    "DEFAULT_NAV_YAW_PER_PIXEL",
     "DEFAULT_SCALE_CONSTANT",
     "NAV_CONFIG_DESCRIPTION",
     "NAV_CONFIG_GROUP_GRID",
@@ -85,6 +85,7 @@ __all__ = [
     "NAV_SCALE_SUFFIX",
     "NAV_WAIT_POSITION_TIMEOUT_KEY",
     "NAV_WS_ACCOUNT_KEY",
+    "NAV_YAW_PER_PIXEL_KEY",
     "NavProfile",
     "nav_profile_for_width",
     "tier_for_width",
@@ -95,6 +96,7 @@ NAV_CONFIG_NAME = "Nav Config"
 NAV_CONTENT_KEY = "真值content"
 NAV_WS_ACCOUNT_KEY = "真值地图账号"
 NAV_SCALE_CONSTANT_KEY = "比例尺常数(米)"
+NAV_YAW_PER_PIXEL_KEY = "yaw_per_pixel(度/像素)"
 NAV_MAP_ID_KEY = "地图id(留空自动)"
 NAV_PLAN_ONLY_KEY = "仅规划不移动"
 NAV_WAIT_POSITION_TIMEOUT_KEY = "等待定位超时(秒)"
@@ -113,6 +115,7 @@ NAV_MATRIX_SUFFIX = "轴映射(逗号4值)"
 
 #: ``s = C / 画面宽``。实测：1920 下 5 个位置中位 0.8886、残差全 (0,0)、离散 0.08%。
 DEFAULT_SCALE_CONSTANT = 1706.5
+DEFAULT_NAV_YAW_PER_PIXEL = 0.07875
 
 
 def _tier_scale(width: int) -> float:
@@ -140,6 +143,7 @@ DEFAULT_NAV_CONFIG: dict[str, Any] = {
     NAV_WS_ACCOUNT_KEY: "",
     NAV_SCALE_CONSTANT_KEY: DEFAULT_SCALE_CONSTANT,
     **_tier_defaults(),
+    NAV_YAW_PER_PIXEL_KEY: DEFAULT_NAV_YAW_PER_PIXEL,
     NAV_MAP_ID_KEY: "",
     NAV_PLAN_ONLY_KEY: False,
     NAV_WAIT_POSITION_TIMEOUT_KEY: 30.0,
@@ -149,22 +153,23 @@ DEFAULT_NAV_CONFIG: dict[str, Any] = {
 NAV_CONFIG_DESCRIPTION: dict[str, str] = {
     NAV_CONFIG_GROUP_KEY: "选择要显示的全局导航配置分类。",
     NAV_CONTENT_KEY: "官方地图 hg/check 的 data.content，提供绝对坐标（锚点/真值）。"
-                     "留空则按「真值地图账号」或当前登录账号自动取。",
-    NAV_WS_ACCOUNT_KEY: "content 为空时，从这个账号的地图同步里取 content。"
-                        "留空则用当前登录账号。",
+    "留空则按「真值地图账号」或当前登录账号自动取。",
+    NAV_WS_ACCOUNT_KEY: "content 为空时，从这个账号的地图同步里取 content。留空则用当前登录账号。",
     NAV_SCALE_CONSTANT_KEY: "小地图比例尺常数 C：```比例尺 = C / 画面宽度(px)```。"
-                            "分辨率不落在下面三个档位时的兜底，实测 C ≈ 1706.5 米"
-                            "（即画面整宽对应的世界距离）。",
+    "分辨率不落在下面三个档位时的兜底，实测 C ≈ 1706.5 米"
+    "（即画面整宽对应的世界距离）。",
+    NAV_YAW_PER_PIXEL_KEY: "正式导航转向的鼠标视角系数（度/像素，正数=鼠标右移方位角增大）。"
+    "由「鼠标视角旋转系数标定」任务实测；若填入标定结果的负值会自动取绝对值。",
     **{
         f"{name}{NAV_SCALE_SUFFIX}": f"画面宽 {width}px（{name}）下的比例尺（米/像素）。"
-                                     f"默认由常数反推：{DEFAULT_SCALE_CONSTANT}/{width}。"
-                                     f"若在这个分辨率下单独标定过，可覆盖成实测值。"
+        f"默认由常数反推：{DEFAULT_SCALE_CONSTANT}/{width}。"
+        f"若在这个分辨率下单独标定过，可覆盖成实测值。"
         for name, width in NAV_RESOLUTION_TIERS
     },
     **{
         f"{name}{NAV_MATRIX_SUFFIX}": f"画面宽 {width}px（{name}）下的轴映射（米/像素），"
-                                      f"逗号4值 a11,a12,a21,a22。默认 diag(+s, -s)"
-                                      f"（地图系像素 -> 世界系米；世界_z 与地图_y 符号相反）。"
+        f"逗号4值 a11,a12,a21,a22。默认 diag(+s, -s)"
+        f"（地图系像素 -> 世界系米；世界_z 与地图_y 符号相反）。"
         for name, width in NAV_RESOLUTION_TIERS
     },
     NAV_MAP_ID_KEY: "可选。留空时使用实时位置流里的 mapId 加载导航网格。",
@@ -192,6 +197,7 @@ NAV_CONFIG_TYPE = {
                     for name, _ in NAV_RESOLUTION_TIERS
                     for suffix in (NAV_SCALE_SUFFIX, NAV_MATRIX_SUFFIX)
                 ],
+                NAV_YAW_PER_PIXEL_KEY,
             ],
             NAV_CONFIG_GROUP_GRID: [
                 NAV_MAP_ID_KEY,
@@ -304,7 +310,6 @@ def nav_profile_for_width(width: Any, values: Mapping[str, Any] | None) -> NavPr
     constant = _positive_float(values.get(NAV_SCALE_CONSTANT_KEY))
     if constant > 0:
         scale = constant / width_value
-        return NavProfile(scale, f"{scale:.6f},0,0,{-scale:.6f}",
-                          f"比例尺常数/宽度({int(width_value)}px)")
+        return NavProfile(scale, f"{scale:.6f},0,0,{-scale:.6f}", f"比例尺常数/宽度({int(width_value)}px)")
 
     return None

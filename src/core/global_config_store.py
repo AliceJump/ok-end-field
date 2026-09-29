@@ -28,6 +28,7 @@ from src.core.NavConfig import (
     NAV_PLAN_ONLY_KEY,
     NAV_WAIT_POSITION_TIMEOUT_KEY,
     NAV_WS_ACCOUNT_KEY,
+    NAV_YAW_PER_PIXEL_KEY,
 )
 from src.core.paths import config_path
 from src.data.delivery_area import DELIVERY_AREA_CONFIG
@@ -181,6 +182,7 @@ _NAV_TASK_MIGRATION_KEYS = (
     NAV_MAP_ID_KEY,
     NAV_PLAN_ONLY_KEY,
     NAV_WAIT_POSITION_TIMEOUT_KEY,
+    NAV_YAW_PER_PIXEL_KEY,
     *GRID_NAV_CONFIG_KEYS,
 )
 _NAV_TASK_KEY_ALIASES = {
@@ -587,9 +589,7 @@ def migrate_task_minimap_values_to_owner(task) -> None:
 
     defaults = MinimapPositionMixin.minimap_position_default_config()
     candidates = {
-        key: data[key]
-        for key, default_value in defaults.items()
-        if key in data and data[key] != default_value
+        key: data[key] for key, default_value in defaults.items() if key in data and data[key] != default_value
     }
     if not candidates:
         return

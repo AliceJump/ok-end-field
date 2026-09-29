@@ -9,6 +9,7 @@
 
 不需要游戏窗口，仅依赖 numpy/opencv。
 """
+
 import time
 import unittest
 from unittest.mock import Mock
@@ -16,13 +17,14 @@ from unittest.mock import Mock
 import cv2
 import numpy as np
 
-from src.core.NavConfig import DEFAULT_NAV_CONFIG
-from src.runtime_state.topics import RuntimeTopic
+from src.core.NavConfig import DEFAULT_NAV_CONFIG, NAV_YAW_PER_PIXEL_KEY
+from src.localization.minimap_heading_mixin import CONFIG_YAW_PER_PIXEL
 from src.localization.minimap_position_mixin import (
     MinimapPositionMixin,
     parse_map_to_world,
 )
 from src.localization.ws_position_mixin import MapAuthError
+from src.runtime_state.topics import RuntimeTopic
 
 # 640x360：默认圆心/半径比例下环带外径约 28px，3px 的内容位移远小于 max_shift(~10px)
 W, H = 640, 360
@@ -123,6 +125,17 @@ class TestMinimapPositionMixin(unittest.TestCase):
         self.task = _FakeTask()
         self.frame = _frame_at(0)
 
+    def test_yaw_per_pixel_prefers_global_nav_config(self):
+        self.task.nav_config[NAV_YAW_PER_PIXEL_KEY] = 0.123
+        self.assertAlmostEqual(self.task.yaw_per_pixel(), 0.123)
+
+        self.task.nav_config[NAV_YAW_PER_PIXEL_KEY] = -0.123
+        self.assertAlmostEqual(self.task.yaw_per_pixel(), 0.123)
+
+        self.task.nav_config[NAV_YAW_PER_PIXEL_KEY] = None
+        self.task.config[CONFIG_YAW_PER_PIXEL] = 0.456
+        self.assertAlmostEqual(self.task.yaw_per_pixel(), 0.456)
+
     def test_requires_start(self):
         with self.assertRaises(RuntimeError):
             self.task.minimap_position(frame=self.frame)
@@ -142,8 +155,8 @@ class TestMinimapPositionMixin(unittest.TestCase):
 
     def test_anchors_on_ws_when_rest(self):
         self.task.start_minimap_position()
-        self.task.tick(self.frame)                              # 先建锚帧
-        st = self.task.tick(self.frame, ws=(607.16, -136.13))    # 静止 + WS 不动 -> 首次校准
+        self.task.tick(self.frame)  # 先建锚帧
+        st = self.task.tick(self.frame, ws=(607.16, -136.13))  # 静止 + WS 不动 -> 首次校准
         self.assertTrue(st["just_synced"])
         self.assertTrue(st["anchor_set"])
         self.assertTrue(st["position_trusted"])
@@ -160,7 +173,7 @@ class TestMinimapPositionMixin(unittest.TestCase):
         self.assertFalse(again["just_synced"])
         self.assertIsNone(again["sync_residual"])
         self.assertTrue(self.task.minimap_fusion.last_sync_redundant)
-        self.assertAlmostEqual(again["x"], 607.16, delta=1e-6)   # 位置不受影响
+        self.assertAlmostEqual(again["x"], 607.16, delta=1e-6)  # 位置不受影响
 
     def test_moving_updates_coords_and_heading_same_tick(self):
         self.task.start_minimap_position()
@@ -172,7 +185,7 @@ class TestMinimapPositionMixin(unittest.TestCase):
         st = self.task.tick(_frame_at(3))
         self.assertLess(st["dmap_px"][0], 0.0, st["dmap_px"])
         self.assertGreater(abs(st["world_delta"][0]), 0.0)
-        self.assertLess(st["x"], 100.0)                  # 世界 x 减小
+        self.assertLess(st["x"], 100.0)  # 世界 x 减小
         # 同一拍里方向与坐标都在；方向是罗盘方位角（与里程计无关，独立读取）
         self.assertAlmostEqual(st["heading"], 76.5, delta=1e-6)
 
@@ -208,7 +221,7 @@ class TestMinimapPositionMixin(unittest.TestCase):
         self.task.tick(self.frame)
         self.assertTrue(self.task.tick(self.frame, ws=(100.0, 200.0))["position_trusted"])
 
-        self.task._minimap_od._sample_max_dt = 0.0      # 制造一次 too_long_dt
+        self.task._minimap_od._sample_max_dt = 0.0  # 制造一次 too_long_dt
         benign = self.task.tick(self.frame, dt=0.5)
         self.assertFalse(benign["odom_ok"])
         self.assertTrue(benign["position_trusted"], benign["trust_reason"])
@@ -219,7 +232,7 @@ class TestMinimapPositionMixin(unittest.TestCase):
         self.task.tick(self.frame)
         self.assertTrue(self.task.tick(self.frame, ws=(100.0, 200.0))["position_trusted"])
 
-        self.task._minimap_od._response_low = 1.1       # 任何响应都判为不可信
+        self.task._minimap_od._response_low = 1.1  # 任何响应都判为不可信
         rejected = self.task.tick(self.frame, dt=0.5)
         self.assertFalse(rejected["odom_ok"])
         self.assertFalse(rejected["position_trusted"])

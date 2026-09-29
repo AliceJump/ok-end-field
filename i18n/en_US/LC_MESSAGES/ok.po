@@ -2767,6 +2767,15 @@ msgstr ""
 "the resolution matches none of the tiers below; measured C ≈ 1706.5 m (world"
 " distance across the full screen width)."
 
+msgid ""
+"正式导航转向的鼠标视角系数（度/像素，正数=鼠标右移方位角增大）。"
+"由「鼠标视角旋转系数标定」任务实测；若填入标定结果的负值会自动取绝对值。"
+msgstr ""
+"Mouse yaw coefficient for formal navigation turning (degrees/pixel; positive "
+"means moving the mouse right increases the compass bearing). Measured by the "
+"Mouse Rotation Calibration task; a negative calibration result is converted "
+"to its absolute value."
+
 msgid "已知自由格期望远离未知边缘的距离（格）"
 msgstr "Desired distance from unknown edges for known free cells (cells)."
 
