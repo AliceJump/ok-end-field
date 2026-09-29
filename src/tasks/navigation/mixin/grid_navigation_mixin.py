@@ -138,6 +138,7 @@ __all__ = [
     "GridNavigationMixin",
 ]
 
+
 class GridNavigationMixin(RuntimeStateMixin):
     """在 ``*.grid.npz`` 上规划并驱动角色前往世界坐标 ``(x, z)``。
 
@@ -247,12 +248,8 @@ class GridNavigationMixin(RuntimeStateMixin):
                 return None
             return grid
 
-        directory = str(
-            self._grid_config_get(CONFIG_GRID_DIR, "assets/nav") if grid_dir is None else grid_dir
-        ).strip()
-        requested_zoom = str(
-            self._grid_config_get(CONFIG_GRID_ZOOM, "") if zoom is None else zoom
-        ).strip()
+        directory = str(self._grid_config_get(CONFIG_GRID_DIR, "assets/nav") if grid_dir is None else grid_dir).strip()
+        requested_zoom = str(self._grid_config_get(CONFIG_GRID_ZOOM, "") if zoom is None else zoom).strip()
         root = Path(directory)
         if not root.is_dir():
             self.log_warning(f"导航网格目录不存在: {root}", notify=True)
@@ -496,20 +493,14 @@ class GridNavigationMixin(RuntimeStateMixin):
                     "_current_zip_line_step",
                     None,
                 )
-                pending_zip_step = (
-                    current_zip_step_getter()
-                    if callable(current_zip_step_getter)
-                    else None
-                )
+                pending_zip_step = current_zip_step_getter() if callable(current_zip_step_getter) else None
                 if pending_zip_step is not None:
                     zip_entry_id = str(pending_zip_step.step.entry.node_id)
                     zip_entry_distance = self._grid_zip_line_entry_distance(
                         pending_zip_step,
                         (float(x), float(z)),
                     )
-                    approach_active = (
-                        self._grid_nav_zip_line_approach_entry_id == zip_entry_id
-                    )
+                    approach_active = self._grid_nav_zip_line_approach_entry_id == zip_entry_id
                     skip_board = self._grid_nav_skip_board_node_id == zip_entry_id
                     if approach_active and zip_entry_distance > GRID_ZIP_LINE_APPROACH_DISTANCE_M:
                         self._grid_nav_zip_line_approach_entry_id = None
@@ -518,10 +509,7 @@ class GridNavigationMixin(RuntimeStateMixin):
                     if (
                         not skip_board
                         and step.action in (WALK, TURN, WAIT, ZIP_LINE)
-                        and (
-                            zip_entry_distance <= GRID_ZIP_LINE_APPROACH_DISTANCE_M
-                            or approach_active
-                        )
+                        and (zip_entry_distance <= GRID_ZIP_LINE_APPROACH_DISTANCE_M or approach_active)
                     ):
                         approach_result = self._approach_grid_zip_line_for_boarding(
                             route_step=pending_zip_step,
@@ -702,9 +690,7 @@ class GridNavigationMixin(RuntimeStateMixin):
                     self._grid_nav_follower = None
                     continue
                 if step.action == TURN:
-                    if self._grid_cfg_bool(
-                        CONFIG_GRID_TURN_WHILE_MOVING, True
-                    ) and not self._should_turn_grid_in_place(
+                    if self._grid_cfg_bool(CONFIG_GRID_TURN_WHILE_MOVING, True) and not self._should_turn_grid_in_place(
                         step
                     ):
                         self._turn_grid_while_moving(step)
@@ -860,9 +846,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             self.log_warning("错误落点附近未匹配到滑索节点，按当前坐标重新规划")
         else:
             self._grid_nav_skip_board_node_id = str(node.node_id)
-            self.log_info(
-                f"错误落点已匹配滑索架节点，按当前滑索重新规划：({node.x:.2f}, {node.z:.2f})"
-            )
+            self.log_info(f"错误落点已匹配滑索架节点，按当前滑索重新规划：({node.x:.2f}, {node.z:.2f})")
 
         self._grid_nav_zip_line_start_hint = None
         self._grid_nav_zip_line_failed_target_hint = None
@@ -1308,8 +1292,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             else:
                 self._set_grid_walking(False)
                 self.log_warning(
-                    "按 WS 到滑索入口的方位调整视角失败："
-                    f"目标={target_bearing:.1f}°，实测={result.get('heading')}"
+                    f"按 WS 到滑索入口的方位调整视角失败：目标={target_bearing:.1f}°，实测={result.get('heading')}"
                 )
         else:
             self._set_grid_walking(False)
@@ -1319,17 +1302,13 @@ class GridNavigationMixin(RuntimeStateMixin):
 
         now = self.active_time()
         started_at = self._grid_nav_zip_line_approach_started_at
-        search_timed_out = (
-            started_at is not None
-            and now - started_at >= GRID_ZIP_LINE_APPROACH_TIMEOUT_S
-        )
-        if search_timed_out:
-            if not self._retreat_from_grid_zip_line(
-                deadline,
-                reason="接近滑索时搜索模板超时",
-            ):
-                self._restore_grid_zip_line_run_mode()
-                return False
+        search_timed_out = started_at is not None and now - started_at >= GRID_ZIP_LINE_APPROACH_TIMEOUT_S
+        if search_timed_out and not self._retreat_from_grid_zip_line(
+            deadline,
+            reason="接近滑索时搜索模板超时",
+        ):
+            self._restore_grid_zip_line_run_mode()
+            return False
         return None
 
     def _handle_grid_zip_line_route_step(
@@ -1631,10 +1610,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             return
         self.press_key("shift", after_sleep=0.05)
         self._grid_nav_sprint_active = True
-        self.log_info(
-            f"当前航段 {leg_distance:.1f}m > {GRID_SPRINT_MIN_SEGMENT_METERS:g}m，"
-            "按住 W 时按 shift 进入冲刺"
-        )
+        self.log_info(f"当前航段 {leg_distance:.1f}m > {GRID_SPRINT_MIN_SEGMENT_METERS:g}m，按住 W 时按 shift 进入冲刺")
 
     def _set_grid_walking(self, held: bool) -> None:
         """按住或松开 ``W``；本地记录乐观状态，避免重复发送没有返回值的按键事件。"""
@@ -1828,7 +1804,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         grid = follower.grid
         planner = follower.planner
         radians = math.radians(float(heading))
-        right = (math.cos(radians), math.sin(radians))
+        right = (math.cos(radians), -math.sin(radians))
         left = (-right[0], -right[1])
         cell_size = max(0.25, float(grid.meta.cell_size))
 

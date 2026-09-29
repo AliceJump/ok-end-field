@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """扩展 ok-script 浮点配置控件的数值范围。
 
 上游 ``LabelAndDoubleSpinBox`` 未显式设置范围，Qt 默认会限制为
@@ -9,6 +8,7 @@
 from __future__ import annotations
 
 _PATCH_INSTALLED = False
+_CONTROL_DECIMALS = 6
 
 
 def install_double_spin_range_patch():
@@ -36,10 +36,10 @@ def install_double_spin_range_patch():
     def patched_init(self, config_desc, config, key):
         """替换上游构造器：先正常初始化，再放宽范围并回读原配置值。"""
         orig_init(self, config_desc, config, key)
+        self.spin_box.setDecimals(_CONTROL_DECIMALS)
         self.spin_box.setRange(-99999999.0, 99999999.0)
-        # orig_init 里的 update_value() 是在默认范围 [0, 99.99] 下执行的，负数/
-        # 大数值已被钳掉；放宽范围后必须回读一次，否则界面显示的是钳过的值，
-        # 用户一交互就会把错值写回配置。此时值等于配置原值，回写是幂等的。
+        # orig_init 里的 update_value() 在默认精度/范围下执行，界面值可能已经
+        # 被舍入或钳制；先放宽精度和范围，再按配置原值回读，用户后续交互才不会写坏配置。
         self.update_value()
 
     LabelAndDoubleSpinBox.__init__ = patched_init

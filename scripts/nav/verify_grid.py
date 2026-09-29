@@ -368,6 +368,15 @@ def compare_legacy(cells: np.ndarray, meta: dict, legacy_path: Path, rep: Report
     keys = leg_cells + leg_blocked
     min_col = min(k[0] for k in keys)
     min_row = min(k[1] for k in keys)
+    if not isinstance(cells, np.ndarray) or cells.ndim != 2:
+        rep.error(f"对拍 {legacy_path.name}: 新网格不是二维数组")
+        return
+    max_col = max(k[0] for k in keys)
+    max_row = max(k[1] for k in keys)
+    expected_shape = (max_row - min_row + 1, max_col - min_col + 1)
+    if cells.shape != expected_shape:
+        rep.error(f"对拍 {legacy_path.name}: 新网格形状不符，旧坐标范围应为 {expected_shape}，实际 {cells.shape}")
+        return
     # 独立算出应有的 origin（新语义 = 边界盒最小角）
     want_origin = (origin_x + min_col * cs, origin_z + min_row * cs)
     got = (meta["origin"][0], meta["origin"][2])

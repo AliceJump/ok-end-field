@@ -416,7 +416,11 @@ class GridPlanner:
                 self.heuristic_weight,
                 self._heuristic_scale,
             )
-            total = distances[target_id] + self.zip_line_boarding_cost + estimate * max(0.1, self.zip_line_cost_factor)
+            total = (
+                distances[target_id]
+                + self._meters_to_grid_cost(self.zip_line_boarding_cost)
+                + estimate * max(0.1, self.zip_line_cost_factor)
+            )
             candidates.append((total, target_id, target_cell))
 
         last_failure = PlanResult(
@@ -452,7 +456,7 @@ class GridPlanner:
                 target_id=target_id,
                 target_cell=target_cell,
                 prefix_steps=prefix_steps,
-                prefix_cost=(distances[target_id] + self.zip_line_boarding_cost),
+                prefix_cost=(distances[target_id] + self._meters_to_grid_cost(self.zip_line_boarding_cost)),
                 base=base,
             )
             if best_result is None or candidate_result.cost < best_result.cost - 1e-9:
@@ -557,13 +561,17 @@ class GridPlanner:
                 continue
             for link in self._zip_line_adjacency.get(node_id, ()):
                 other_id = link.other(node_id)
-                next_cost = path_cost + link.distance_m * self.zip_line_cost_factor
+                next_cost = path_cost + self._meters_to_grid_cost(link.distance_m) * self.zip_line_cost_factor
                 if next_cost + 1e-9 >= distances.get(other_id, math.inf):
                     continue
                 distances[other_id] = next_cost
                 previous[other_id] = node_id
                 heapq.heappush(queue, (next_cost, other_id))
         return distances, previous
+
+    def _meters_to_grid_cost(self, meters: float) -> float:
+        """把滑索配置中的“等效步行米数”换算成 A* 使用的格代价。"""
+        return max(0.0, float(meters)) / max(1e-9, float(self.grid.meta.cell_size))
 
     def _zip_line_steps_from_previous(
         self,
@@ -638,7 +646,7 @@ class GridPlanner:
                     continue
                 directed[(source_id, target_id)] = (
                     steps,
-                    distances[target_id] + self.zip_line_boarding_cost,
+                    distances[target_id] + self._meters_to_grid_cost(self.zip_line_boarding_cost),
                 )
 
         pad_w, _, _, _, _ = self._search_tables()

@@ -310,36 +310,44 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             return False
 
         last_start_position = None
-        for index, pitch in enumerate(ZIP_LINE_DIRECT_PITCH_STEPS):
-            if pitch:
-                self.log_info(f"直接对准未触发滑索，调整俯仰角 {pitch:+d}px 后重试")
-                self.active_and_send_mouse_delta(dx=0, dy=pitch, steps=1, delay=0)
-                self.sleep(0.2)
-            result = aim(
-                target_bearing,
-                tolerance=ZIP_LINE_DIRECT_TOLERANCE_DEG,
-                max_rounds=2,
-            )
-            if not result.get("ok"):
-                self.log_warning(
-                    f"滑索方位误差未进入 ±{ZIP_LINE_DIRECT_TOLERANCE_DEG:g}°："
-                    f"目标={float(target_bearing):.1f}°，"
+        applied_pitch = 0
+        try:
+            for index, pitch in enumerate(ZIP_LINE_DIRECT_PITCH_STEPS):
+                delta = pitch - applied_pitch
+                if delta:
+                    self.log_info(f"直接对准未触发滑索，调整俯仰角 {pitch:+d}px 后重试")
+                    self.active_and_send_mouse_delta(dx=0, dy=delta, steps=1, delay=0)
+                    applied_pitch = pitch
+                    self.sleep(0.2)
+                result = aim(
+                    target_bearing,
+                    tolerance=ZIP_LINE_DIRECT_TOLERANCE_DEG,
+                    max_rounds=2,
+                )
+                if not result.get("ok"):
+                    self.log_warning(
+                        f"滑索方位误差未进入 ±{ZIP_LINE_DIRECT_TOLERANCE_DEG:g}°："
+                        f"目标={float(target_bearing):.1f}°，"
+                        f"实测={result.get('heading')}，误差={result.get('error')}"
+                    )
+                    continue
+                self.log_info(
+                    f"滑索方位已对准：目标={float(target_bearing):.1f}°，"
                     f"实测={result.get('heading')}，误差={result.get('error')}"
                 )
-                continue
-            self.log_info(
-                f"滑索方位已对准：目标={float(target_bearing):.1f}°，"
-                f"实测={result.get('heading')}，误差={result.get('error')}"
-            )
-            last_start_position = self._zip_line_ws_position()
-            self.click(after_sleep=0.1)
-            self.send_key("e")
-            if self._wait_zip_line_motion(
-                target_position=target_position,
-                start_position=last_start_position,
-            ):
-                return True
-            self.log_warning(f"直接对准第 {index + 1} 次点击未触发滑索")
+                last_start_position = self._zip_line_ws_position()
+                self.click(after_sleep=0.1)
+                self.send_key("e")
+                if self._wait_zip_line_motion(
+                    target_position=target_position,
+                    start_position=last_start_position,
+                ):
+                    return True
+                self.log_warning(f"直接对准第 {index + 1} 次点击未触发滑索")
+        finally:
+            if applied_pitch:
+                self.active_and_send_mouse_delta(dx=0, dy=-applied_pitch, steps=1, delay=0)
+                self.sleep(0.2)
         raise ZipLineReplanRequired(
             f"连续 {len(ZIP_LINE_DIRECT_PITCH_STEPS)} 次未移动到下一滑索，判定两滑索间存在阻挡，需要重新规划",
             current_position=last_start_position,
@@ -488,13 +496,13 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
     def _zip_line_distance_matcher(zip_line, distance_tolerance=None):
         """构造距离匹配模式；容差只用于地图坐标与游戏显示距离存在偏差的场景。"""
         if distance_tolerance is None:
-            return re.compile(str(zip_line))
+            return re.compile(rf"(?<!\d){int(zip_line)}(?!\d)")
         center = round(float(zip_line))
         tolerance = max(0, round(float(distance_tolerance)))
         if tolerance <= 0:
-            return re.compile(str(center))
+            return re.compile(rf"(?<!\d){center}(?!\d)")
         return [
-            re.compile(rf"(?<!\d){number}(?:\s*m)?", re.IGNORECASE)
+            re.compile(rf"(?<!\d){number}(?!\d)(?:\s*m)?", re.IGNORECASE)
             for number in range(max(1, center - tolerance), center + tolerance + 1)
         ]
 

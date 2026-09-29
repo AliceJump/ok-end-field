@@ -71,7 +71,7 @@ flowchart TD
 
 - Item Navigation depends on the current map ID and coordinate data; without point data it cannot produce a valid direction.
 - The task draws a direction arrow on the window; if you cannot see the arrow, first check whether the WebSocket position data is working.
-- "Local WS fallback" only happens when the task has no `content`. If `content` is configured but the official auth or connection fails, the current run does not automatically switch to local WS; clear the task `content` and uncheck/clear the map account to use local mode.
+- "Local WS fallback" only happens when the global Nav Config has no `content`. If `content` is configured but the official auth or connection fails, the current run does not automatically switch to local WS; clear the global `真值content` and `真值地图账号` to use local mode.
 - Marking requires holding the key for the duration set by `标记按住时长` (default 2 seconds) within a horizontal distance of 20; releasing the key early or leaving the range cancels the current timing. The value is re-read every cycle, so changes apply without restarting the task.
 - The Tampermonkey-script help button opens the temporary help document and script directory.
 

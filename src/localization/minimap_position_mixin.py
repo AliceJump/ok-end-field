@@ -390,6 +390,13 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             return get_account_map_content(account_id, account_name=account)
         account_id = str(getattr(self, "current_account_id", "") or "").strip()
         account_name = str(getattr(self, "current_user", "") or "").strip()
+
+        executor = getattr(self, "executor", None)
+        current_task = getattr(executor, "current_task", None) if executor is not None else None
+        if current_task is not None and current_task is not self:
+            account_id = account_id or str(getattr(current_task, "current_account_id", "") or "").strip()
+            account_name = account_name or str(getattr(current_task, "current_user", "") or "").strip()
+
         return get_account_map_content(account_id or account_name, account_name=account_name)
 
     def _poll_ws_position(self, timeout: float = 0.0):

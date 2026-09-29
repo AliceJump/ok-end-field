@@ -93,6 +93,20 @@ class TestRuntimeStateMixin(unittest.TestCase):
             self.task.runtime_state(RuntimeTopic.WORLD_SCENE, now=1.6),
         )
 
+    def test_position_service_issue_is_notified_once_until_state_changes(self):
+        self.task._runtime_position_service = None
+
+        self.assertIsNone(self.task.ensure_runtime_position_service())
+        self.assertIsNone(self.task.ensure_runtime_position_service())
+        self.assertEqual(sum("未注册「小地图定位」" in message for message in self.task.logs), 1)
+
+        self.task._runtime_position_service = self.service
+        self.assertIs(self.task.ensure_runtime_position_service(), self.service)
+
+        self.task._runtime_position_service = None
+        self.assertIsNone(self.task.ensure_runtime_position_service())
+        self.assertEqual(sum("未注册「小地图定位」" in message for message in self.task.logs), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

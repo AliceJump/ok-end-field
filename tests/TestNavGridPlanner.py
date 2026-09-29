@@ -249,6 +249,25 @@ class TestZipLinePlanning(unittest.TestCase):
         self.assertEqual(result.waypoints[route_step.entry_waypoint_index], first.xz)
         self.assertEqual(result.waypoints[route_step.exit_waypoint_index], second.xz)
 
+    def test_zip_line_edge_cost_uses_grid_cell_units(self):
+        grid = _grid(["oo"], cell_size=0.5)
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.25, 0.0, 0.25)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 1.25, 0.0, 0.25)
+        graph = ZipLineGraph(
+            [first, second],
+            [ZipLineLink("a", "b", distance_m=1.0, max_range_m=80.0)],
+        )
+
+        result = GridPlanner(
+            grid,
+            zip_lines=graph,
+            zip_line_cost_factor=1.0,
+            zip_line_boarding_cost=0.0,
+        ).plan_cells((0, 0), (0, 1), required_zip_line_start_id="a")
+
+        self.assertTrue(result.ok, result)
+        self.assertEqual(result.zip_line_steps[0].cost, 2.0)
+
     def test_required_zip_start_forces_first_move_to_zip_line(self):
         grid = _grid(["ooo"])
         first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
@@ -432,10 +451,7 @@ class TestZipLinePlanning(unittest.TestCase):
         self.assertTrue(result.ok, result)
         self.assertEqual(len(result.zip_line_steps), 1)
         self.assertEqual(
-            [
-                (step.entry.node_id, step.exit.node_id)
-                for step in result.zip_line_steps[0].steps
-            ],
+            [(step.entry.node_id, step.exit.node_id) for step in result.zip_line_steps[0].steps],
             [("a", "b"), ("b", "c")],
         )
 

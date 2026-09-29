@@ -82,13 +82,59 @@ class TestDeliveryStateMachine(unittest.TestCase):
         task._navigate_delivery_coordinate = lambda coordinate, label: calls.append((label, coordinate)) or True
         task._pickup_receive_good_with_fallback = lambda: True
         task._recognize_delivery_end = lambda patterns: ("常沄", target_pattern)
+        task.board_zip_line = lambda: calls.append(("board", None)) or True
         task.zip_line_scroll_enabled = lambda: False
         task.on_zip_line_start = lambda end, **kwargs: calls.append(("ride", end, kwargs))
         task.to_end_and_submit = lambda pattern: calls.append(("submit", pattern)) or True
 
         self.assertTrue(task._run_grid_delivery_state_machine({target_pattern: "常沄"}))
+        self.assertEqual(calls[-3][0], "board")
         self.assertEqual(calls[-2][0], "ride")
         self.assertEqual(calls[-1], ("submit", target_pattern))
+
+    def test_missing_destination_coordinate_stops_when_boarding_fails(self):
+        task = self._task()
+        target_pattern = re.compile("常沄")
+        task._navigate_delivery_coordinate = lambda coordinate, label: True
+        task._pickup_receive_good_with_fallback = lambda: True
+        task._recognize_delivery_end = lambda patterns: ("常沄", target_pattern)
+        task.board_zip_line = lambda: False
+        task.on_zip_line_start = lambda *args, **kwargs: self.fail("boarding failed, must not start zip line")
+        task.to_end_and_submit = lambda pattern: self.fail("boarding failed, must not submit")
+
+        self.assertFalse(task._run_grid_delivery_state_machine({target_pattern: "常沄"}))
+
+    def test_legacy_delivery_leg_returns_submit_result_and_stops_on_match(self):
+        task = self._task()
+        first = re.compile("常沄")
+        second = re.compile("资源")
+        calls = []
+        task.box = SimpleNamespace(left=object(), bottom_right=object())
+        task.lang = SimpleNamespace(DeliveryTask=SimpleNamespace(k_b0e3a2da="board"))
+        task.to_storage_point_and_back_zip_line = lambda: True
+        task.wait_ocr = lambda **_kwargs: [
+            SimpleNamespace(name="常沄"),
+            SimpleNamespace(name="资源"),
+        ]
+        task.wait_click_ocr = lambda **_kwargs: True
+        task.zip_line_scroll_enabled = lambda: False
+        task.on_zip_line_start = lambda end, **kwargs: calls.append(("ride", end))
+        task.to_end_and_submit = lambda pattern: calls.append(("submit", pattern)) or False
+
+        self.assertFalse(task._run_legacy_delivery_leg({first: "常沄", second: "资源"}))
+        self.assertEqual(calls, [("ride", "常沄"), ("submit", first)])
+
+    def test_legacy_delivery_leg_rejects_unmatched_target(self):
+        task = self._task()
+        target_pattern = re.compile("常沄")
+        task.box = SimpleNamespace(left=object(), bottom_right=object())
+        task.lang = SimpleNamespace(DeliveryTask=SimpleNamespace(k_b0e3a2da="board"))
+        task.to_storage_point_and_back_zip_line = lambda: True
+        task.wait_ocr = lambda **_kwargs: [SimpleNamespace(name="别的目标")]
+        task.wait_click_ocr = lambda **_kwargs: True
+        task.to_end_and_submit = lambda pattern: self.fail("unmatched target must not be submitted")
+
+        self.assertFalse(task._run_legacy_delivery_leg({target_pattern: "常沄"}))
 
     def test_direct_submit_uses_handover_button_for_resource_destination(self):
         task = self._task()

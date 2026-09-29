@@ -8,6 +8,7 @@
 才有验收意义，所以测试直接从脚本导入。
 """
 
+import json
 import sys
 import tempfile
 import unittest
@@ -22,6 +23,7 @@ from verify_grid import (
     _components,
     _resolve_within_root,
     _single_cell_facts,
+    compare_legacy,
     report_cells,
 )
 
@@ -106,7 +108,7 @@ class TestPathSafety(unittest.TestCase):
     """CLI 输入必须限制在当前工作区内，防止路径穿越读取任意文件。"""
 
     def test_accepts_relative_path_inside_root(self):
-        with tempfile.TemporaryDirectory() as temporary:
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as temporary:
             root = Path(temporary)
             resolved = _resolve_within_root(Path("nested") / "grid.json", root)
 
@@ -152,6 +154,29 @@ class TestInvalidGridShapes(unittest.TestCase):
 
         self.assertIn("可行走（不冒险即可达）：0 块", rep.lines)
         self.assertFalse(any("最大占比" in line for line in rep.lines))
+
+    def test_compare_legacy_rejects_grid_shape_mismatch(self):
+        with tempfile.TemporaryDirectory(dir=Path.cwd()) as temporary:
+            root = Path(temporary)
+            legacy = root / "legacy.json"
+            legacy.write_text(
+                json.dumps(
+                    {
+                        "cells": [[0, 0], [1, 0]],
+                        "blocked": [],
+                        "origin": [0.0, 0.0, 0.0],
+                        "cell_size": 1.0,
+                    }
+                ),
+                encoding="utf-8",
+            )
+            rep = Report("shape")
+            cells = _cells(["oo", "oo"])
+            meta = {"cell_size": 1.0, "origin": (0.0, 0.0, 0.0), "raw": {}}
+
+            compare_legacy(cells, meta, legacy, rep)
+
+        self.assertTrue(any("新网格形状不符" in error for error in rep.errors))
 
 
 if __name__ == "__main__":

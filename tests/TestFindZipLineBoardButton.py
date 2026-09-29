@@ -93,14 +93,16 @@ class TestFindZipLineBoardButton(unittest.TestCase):
             {"ok": True, "heading": 90.0, "error": 0.0},
             {"ok": True, "heading": 90.0, "error": 0.0},
         ]
-        stub.pose_aim_view_to_bearing = (
-            lambda target, **kwargs: events.append(("aim", target)) or aim_results.pop(0)
-        )
+        stub.pose_aim_view_to_bearing = lambda target, **kwargs: events.append(("aim", target)) or aim_results.pop(0)
 
         self.assertTrue(DeliveryTask._direct_zip_line_go(stub, 90.0, target_position=(1.0, 2.0)))
 
         self.assertIn(
             ("mouse", {"dx": 0, "dy": 24, "steps": 1, "delay": 0}),
+            events,
+        )
+        self.assertIn(
+            ("mouse", {"dx": 0, "dy": -24, "steps": 1, "delay": 0}),
             events,
         )
 
@@ -139,6 +141,10 @@ class TestFindZipLineBoardButton(unittest.TestCase):
         )
         self.assertEqual(raised.exception.current_position, (10.0, 10.0))
         self.assertEqual(raised.exception.failed_target_position, (50.0, 50.0))
+        self.assertEqual(
+            [event[1]["dy"] for event in events if event[0] == "mouse"],
+            [24, -48, 72, -96, 48],
+        )
 
     def test_direct_zip_line_replan_preserves_attempted_3d_link(self):
         stub = SimpleNamespace(
@@ -315,6 +321,14 @@ class TestFindZipLineBoardButton(unittest.TestCase):
 
         self.assertTrue(any(pattern.search("45m") for pattern in patterns))
         self.assertFalse(any(pattern.search("80m") for pattern in patterns))
+
+    def test_distance_matcher_rejects_larger_number_prefixes(self):
+        exact = DeliveryTask._zip_line_distance_matcher(22)
+        tolerance = DeliveryTask._zip_line_distance_matcher(42, distance_tolerance=3)
+
+        self.assertFalse(exact.search("220m"))
+        self.assertFalse(any(pattern.search("420m") for pattern in tolerance))
+        self.assertTrue(exact.search("22m"))
 
     def test_board_zip_line_presses_f_after_found_button(self):
         box = _FakeBox()

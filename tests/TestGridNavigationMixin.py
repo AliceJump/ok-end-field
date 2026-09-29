@@ -563,9 +563,7 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.task.board_zip_line = lambda **kwargs: calls.append(("board", kwargs)) or True
         self.task.zip_line_list_go = lambda distances, **kwargs: calls.append(("ride", distances))
 
-        self.assertTrue(
-            self.task.navigate_grid_to((4.5, 0.5), map_id="test")
-        )
+        self.assertTrue(self.task.navigate_grid_to((4.5, 0.5), map_id="test"))
 
         self.assertEqual(
             calls,
@@ -797,12 +795,7 @@ class TestGridNavigationMixin(unittest.TestCase):
             frozenset((filtered.links[0].first_id, filtered.links[0].second_id)),
             frozenset(("a", "b")),
         )
-        self.assertTrue(
-            any(
-                "(10.50, 0.00, 0.50) <-> (10.50, 100.00, 0.50)" in message
-                for message in self.task.logs
-            )
-        )
+        self.assertTrue(any("(10.50, 0.00, 0.50) <-> (10.50, 100.00, 0.50)" in message for message in self.task.logs))
 
     def test_replan_blocks_failed_segment_but_starts_from_actual_landing_node(self):
         first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
@@ -844,9 +837,7 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertTrue(any("已到达目标" in msg for msg in self.task.logs))
 
     def test_long_waypoint_segment_starts_sprint_once_per_w_hold(self):
-        self.task._grid_nav_follower = SimpleNamespace(
-            plan_result=SimpleNamespace(waypoints=[(0.0, 0.0), (20.0, 0.0)])
-        )
+        self.task._grid_nav_follower = SimpleNamespace(plan_result=SimpleNamespace(waypoints=[(0.0, 0.0), (20.0, 0.0)]))
         step = FollowerStep(
             WALK,
             waypoint=(20.0, 0.0),
@@ -868,9 +859,7 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertEqual(self.task.pressed_keys, ["shift", "shift"])
 
     def test_short_waypoint_segment_does_not_start_sprint(self):
-        self.task._grid_nav_follower = SimpleNamespace(
-            plan_result=SimpleNamespace(waypoints=[(0.0, 0.0), (10.0, 0.0)])
-        )
+        self.task._grid_nav_follower = SimpleNamespace(plan_result=SimpleNamespace(waypoints=[(0.0, 0.0), (10.0, 0.0)]))
         step = FollowerStep(
             WALK,
             waypoint=(10.0, 0.0),
@@ -998,6 +987,22 @@ class TestGridNavigationMixin(unittest.TestCase):
         side = self.task._choose_grid_strafe_side((0.0, 0.0), heading=0.0)
 
         self.assertEqual(side, "d")
+
+    def test_stuck_recovery_uses_compass_right_side(self):
+        cells = np.full((21, 21), CELL_FREE, dtype=np.uint8)
+        cells[:10, :] = CELL_BLOCKED
+        grid = DenseGrid(
+            cells,
+            GridMeta(origin=(-10.0, 0.0, -10.0), cell_size=1.0),
+        )
+        self.task._grid_nav_follower = GridRouteFollower(
+            grid,
+            FollowerConfig(margin=0),
+        )
+
+        side = self.task._choose_grid_strafe_side((0.0, 0.0), heading=90.0)
+
+        self.assertEqual(side, "a")
 
     def test_navigation_calibrates_after_five_waypoints(self):
         calls = []

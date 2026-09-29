@@ -12,7 +12,8 @@
 
 import time
 import unittest
-from unittest.mock import Mock
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 import cv2
 import numpy as np
@@ -135,6 +136,24 @@ class TestMinimapPositionMixin(unittest.TestCase):
         self.task.nav_config[NAV_YAW_PER_PIXEL_KEY] = None
         self.task.config[CONFIG_YAW_PER_PIXEL] = 0.456
         self.assertAlmostEqual(self.task.yaw_per_pixel(), 0.456)
+
+    def test_resolve_ws_cred_falls_back_to_executor_current_task(self):
+        self.task.current_account_id = ""
+        self.task.current_user = ""
+        self.task.executor = SimpleNamespace(
+            current_task=SimpleNamespace(
+                current_account_id="acc_test",
+                current_user="tester",
+            )
+        )
+
+        with patch(
+            "src.localization.minimap_position_mixin.get_account_map_content",
+            return_value="map-content",
+        ) as get_content:
+            self.assertEqual(self.task._resolve_ws_cred(), "map-content")
+
+        get_content.assert_called_once_with("acc_test", account_name="tester")
 
     def test_requires_start(self):
         with self.assertRaises(RuntimeError):

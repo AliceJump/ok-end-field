@@ -23,6 +23,7 @@ class RuntimeStateMixin:
     def _init_runtime_state_mixin(self, *, hub: RuntimeStateHub | None = None) -> None:
         self._runtime_state_hub = hub or get_runtime_state_hub()
         self._runtime_position_service = None
+        self._runtime_position_service_issue = None
 
     @property
     def runtime_state_hub(self) -> RuntimeStateHub:
@@ -127,10 +128,16 @@ class RuntimeStateMixin:
 
         service = self.get_runtime_position_service()
         if service is None:
-            self.log_warning("未注册「小地图定位」触发任务，无法获取实时位置", notify=True)
+            self._report_runtime_position_service_issue(
+                "missing",
+                "未注册「小地图定位」触发任务，无法获取实时位置",
+            )
             return None
         if not getattr(service, "enabled", True):
-            self.log_warning("「小地图定位」触发任务未启用，无法获取实时位置", notify=True)
+            self._report_runtime_position_service_issue(
+                "disabled",
+                "「小地图定位」触发任务未启用，无法获取实时位置",
+            )
             return None
         needs_start = (
             force_start
@@ -140,9 +147,20 @@ class RuntimeStateMixin:
         if needs_start:
             service.start_minimap_position(wait_stable=False)
         if not bool(getattr(service, "minimap_position_ready", False)):
-            self.log_warning("小地图定位器未完成初始化，请检查全局「Nav Config」和游戏窗口", notify=True)
+            self._report_runtime_position_service_issue(
+                "uninitialized",
+                "小地图定位器未完成初始化，请检查全局「Nav Config」和游戏窗口",
+            )
             return None
+        self._runtime_position_service_issue = None
         return service
+
+    def _report_runtime_position_service_issue(self, issue: str, message: str) -> None:
+        """相同不可用状态只提示一次；恢复后再次故障可重新提示。"""
+        if self._runtime_position_service_issue == issue:
+            return
+        self._runtime_position_service_issue = issue
+        self.log_warning(message, notify=True)
 
     def _pose_provider(self) -> PoseProvider | None:
         """确保定位提供者可用，并返回接口对象。"""

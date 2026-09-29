@@ -531,8 +531,12 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
                         target=(secondary_objective_direction_dot, "feature"),
                     )
                     break
-        self.to_end_and_submit(end_pattern)
-        return True
+            if end_pattern is not None:
+                break
+        if end_pattern is None:
+            self.log_warning("左侧目标文本未匹配配置的送货终点")
+            return False
+        return self.to_end_and_submit(end_pattern)
 
     def _run_grid_delivery_state_machine(self, ends_pattern_dict: dict) -> bool:
         """按坐标状态机执行取货和送达，移动由网格导航统一负责。"""
@@ -571,6 +575,9 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
                 )
                 if target_coordinate is None:
                     self.log_warning(f"送货终点 {end!r} 缺少坐标，回退原送达流程")
+                    if not self.board_zip_line():
+                        self.log_warning("回退原送达流程时未能登上滑索架")
+                        return False
                     self.on_zip_line_start(
                         end,
                         need_scroll=self.zip_line_scroll_enabled(),

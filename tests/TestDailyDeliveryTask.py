@@ -1,3 +1,4 @@
+import re
 import tempfile
 import unittest
 from pathlib import Path
@@ -93,8 +94,11 @@ class TestDailyDeliveryTask(unittest.TestCase):
         task.to_storage_point_and_back_zip_line = Mock(return_value=True)
         task.box = SimpleNamespace(left=object(), bottom_right=object())
         task.lang = SimpleNamespace(DeliveryTask=SimpleNamespace(k_b0e3a2da="board"))
+        task._delivery_end_patterns = lambda: {re.compile("target"): "常沄"}
         task.wait_ocr = Mock(return_value=[SimpleNamespace(name="target")])
         task.wait_click_ocr = Mock()
+        task.on_zip_line_start = Mock()
+        task.zip_line_scroll_enabled = Mock(return_value=False)
         task.to_end_and_submit = Mock()
 
         with patch("src.tasks.onetime.DeliveryTask.get_delivery_locations", return_value=[]):
