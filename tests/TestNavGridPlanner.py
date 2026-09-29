@@ -409,6 +409,60 @@ class TestZipLinePlanning(unittest.TestCase):
             [("a", "b"), ("b", "c")],
         )
 
+    def test_mapped_intermediate_zipline_remains_continuous_chain(self):
+        grid = _grid(["o#o#o"])
+        first = ZipLineNode("a", "test", "lv1", "长距滑索架", 0.5, 0.0, 0.5)
+        middle = ZipLineNode("b", "test", "lv1", "长距滑索架", 2.5, 0.0, 0.5)
+        last = ZipLineNode("c", "test", "lv1", "长距滑索架", 4.5, 0.0, 0.5)
+        graph = ZipLineGraph(
+            [first, middle, last],
+            [
+                ZipLineLink("a", "b", distance_m=2.0, max_range_m=110.0),
+                ZipLineLink("b", "c", distance_m=2.0, max_range_m=110.0),
+            ],
+        )
+
+        result = GridPlanner(
+            grid,
+            zip_lines=graph,
+            zip_line_cost_factor=100.0,
+            zip_line_boarding_cost=100.0,
+        ).plan_cells((0, 0), (0, 4))
+
+        self.assertTrue(result.ok, result)
+        self.assertEqual(len(result.zip_line_steps), 1)
+        self.assertEqual(
+            [
+                (step.entry.node_id, step.exit.node_id)
+                for step in result.zip_line_steps[0].steps
+            ],
+            [("a", "b"), ("b", "c")],
+        )
+
+    def test_blocked_chain_tail_can_disembark_and_walk_from_middle(self):
+        grid = _grid(["o#ooo"])
+        first = ZipLineNode("a", "test", "lv1", "长距滑索架", 0.5, 0.0, 0.5)
+        middle = ZipLineNode("b", "test", "lv1", "长距滑索架", 2.5, 0.0, 0.5)
+        graph = ZipLineGraph(
+            [first, middle],
+            [ZipLineLink("a", "b", distance_m=2.0, max_range_m=110.0)],
+        )
+
+        result = GridPlanner(
+            grid,
+            zip_lines=graph,
+            zip_line_cost_factor=100.0,
+            zip_line_boarding_cost=100.0,
+        ).plan_cells((0, 0), (0, 4))
+
+        self.assertTrue(result.ok, result)
+        self.assertEqual(len(result.zip_line_steps), 1)
+        self.assertEqual(
+            [(step.entry.node_id, step.exit.node_id) for step in result.zip_line_steps[0].steps],
+            [("a", "b")],
+        )
+        self.assertEqual(result.waypoints[-1], (4.5, 0.5))
+
 
 class TestFailureDiagnostics(unittest.TestCase):
     """覆盖规划失败原因和诊断字段。"""

@@ -140,6 +140,33 @@ class TestFindZipLineBoardButton(unittest.TestCase):
         self.assertEqual(raised.exception.current_position, (10.0, 10.0))
         self.assertEqual(raised.exception.failed_target_position, (50.0, 50.0))
 
+    def test_direct_zip_line_replan_preserves_attempted_3d_link(self):
+        stub = SimpleNamespace(
+            zip_line_target_select_mode=lambda: "直接对准",
+            _direct_zip_line_go=lambda *args, **kwargs: (_ for _ in ()).throw(
+                ZipLineReplanRequired(
+                    "blocked",
+                    current_position=(9.0, 8.0),
+                    failed_target_position=(7.0, 6.0),
+                )
+            ),
+        )
+        stub._normalize_values = DeliveryTask._normalize_values
+        stub._value_for_index = DeliveryTask._value_for_index
+
+        with self.assertRaises(ZipLineReplanRequired) as raised:
+            DeliveryTask.zip_line_list_go(
+                stub,
+                [10],
+                target_bearing=[90.0],
+                target_positions=[(7.0, 6.0)],
+                source_positions_xyz=[(1.0, 2.0, 3.0)],
+                target_positions_xyz=[(4.0, 5.0, 6.0)],
+            )
+
+        self.assertEqual(raised.exception.current_position, (1.0, 2.0, 3.0))
+        self.assertEqual(raised.exception.failed_target_position, (4.0, 5.0, 6.0))
+
     def test_wait_zip_line_motion_waits_while_template_missing_then_succeeds(self):
         events = []
         clock = {"t": 0.0}
@@ -258,7 +285,7 @@ class TestFindZipLineBoardButton(unittest.TestCase):
 
     def test_template_match_prefers_visual_feature(self):
         box = _FakeBox()
-        stub = _make_stub(ocr_results=[], template_results=[box])
+        stub = _make_stub(ocr_results=[], template_results=[box, box])
 
         result = DeliveryTask._find_zip_line_board_button(stub, direct_wait=1.0, total_time_out=5.0)
 
@@ -289,9 +316,9 @@ class TestFindZipLineBoardButton(unittest.TestCase):
         self.assertTrue(any(pattern.search("45m") for pattern in patterns))
         self.assertFalse(any(pattern.search("80m") for pattern in patterns))
 
-    def test_board_zip_line_clicks_found_button(self):
+    def test_board_zip_line_presses_f_after_found_button(self):
         box = _FakeBox()
-        stub = _make_stub(ocr_results=[box])
+        stub = _make_stub(ocr_results=[box, box])
         stub._find_zip_line_board_button = MethodType(
             DeliveryTask._find_zip_line_board_button,
             stub,
@@ -299,18 +326,32 @@ class TestFindZipLineBoardButton(unittest.TestCase):
 
         self.assertTrue(DeliveryTask.board_zip_line(stub, direct_wait=1.0, total_time_out=5.0))
 
-        self.assertEqual(stub.alt_clicks, [(box, {"after_sleep": 2})])
-        self.assertTrue(any("已点击登上滑索架" in msg for msg in stub.log_lines))
+        self.assertEqual(stub.ctrl_calls, ["f"])
+        self.assertEqual(stub.alt_clicks, [])
+        self.assertTrue(any("已按 F 登上滑索架" in msg for msg in stub.log_lines))
 
     def test_direct_hit(self):
         """阶段一直接找到按钮：不进入踱步搜索，也不切换步行。"""
         box = _FakeBox()
-        stub = _make_stub(ocr_results=[None, box])
+        stub = _make_stub(ocr_results=[None, box, box])
         result = DeliveryTask._find_zip_line_board_button(stub, direct_wait=5.0, total_time_out=60.0)
         self.assertIs(result, box)
         self.assertEqual(len(stub.ensure_main_calls), 1)  # 先确认主界面
         self.assertEqual(stub.strafe_calls, [])  # 未触发踱步
         self.assertEqual(stub.ctrl_calls, [])  # 未切换步行/奔跑
+
+    def test_candidate_moves_during_settle_and_recheck_uses_latest_box(self):
+        old_box = _FakeBox()
+        latest_box = _FakeBox()
+        stub = _make_stub(ocr_results=[old_box, latest_box])
+
+        result = DeliveryTask._find_zip_line_board_button(
+            stub,
+            direct_wait=1.0,
+            total_time_out=5.0,
+        )
+
+        self.assertIs(result, latest_box)
 
     def test_strafe_hit_after_direct_miss(self):
         """阶段一找不到时进入 WASD 踱步搜索并命中，时限不超过 10 秒。"""

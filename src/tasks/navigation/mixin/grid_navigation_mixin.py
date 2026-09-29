@@ -97,6 +97,10 @@ GRID_ZIP_LINE_ESC_THRESHOLD = 0.8
 GRID_ZIP_LINE_APPROACH_DISTANCE_M = 5.0
 GRID_ZIP_LINE_APPROACH_TIMEOUT_S = 10.0
 GRID_ZIP_LINE_RETREAT_DURATION_S = 2.0
+GRID_ZIP_LINE_BOARD_CONFIRM_TIMEOUT_S = 1.5
+GRID_ZIP_LINE_BOARD_CONFIRM_POLL_S = 0.15
+GRID_ZIP_LINE_WS_STEP_DURATION_S = 0.18
+GRID_ZIP_LINE_WS_STOP_DISTANCE_M = 0.6
 GRID_SPRINT_MIN_SEGMENT_METERS = 15.0
 
 __all__ = [
@@ -521,7 +525,6 @@ class GridNavigationMixin(RuntimeStateMixin):
                     ):
                         approach_result = self._approach_grid_zip_line_for_boarding(
                             route_step=pending_zip_step,
-                            step=step,
                             frame=frame,
                             min_score=min_score,
                             deadline=deadline,
@@ -750,18 +753,21 @@ class GridNavigationMixin(RuntimeStateMixin):
         """返回距离位置最近的滑索节点；超出范围或节点图不可用时返回 ``None``。"""
         if zip_lines is None or position is None or not zip_lines.nodes:
             return None
-        nearest = min(
-            zip_lines.nodes,
-            key=lambda node: math.hypot(
+        use_xyz = len(position) >= 3
+
+        def distance(node: ZipLineNode) -> float:
+            if use_xyz:
+                return math.dist(node.xyz, tuple(float(value) for value in position[:3]))
+            return math.hypot(
                 float(node.x) - float(position[0]),
                 float(node.z) - float(position[1]),
-            ),
+            )
+
+        nearest = min(
+            zip_lines.nodes,
+            key=distance,
         )
-        distance = math.hypot(
-            float(nearest.x) - float(position[0]),
-            float(nearest.z) - float(position[1]),
-        )
-        return nearest if distance <= max(0.0, float(max_distance)) else None
+        return nearest if distance(nearest) <= max(0.0, float(max_distance)) else None
 
     @classmethod
     def _nearest_grid_zip_line_node(
@@ -822,39 +828,45 @@ class GridNavigationMixin(RuntimeStateMixin):
         fallback: tuple[float, float],
     ) -> tuple[float, float]:
         """把错误滑索落点映射到当前滑索节点；无提示时返回定位坐标。"""
-        if self._grid_nav_zip_line_start_hint is None:
+        failed_source = self._grid_nav_zip_line_start_hint
+        if failed_source is None:
             return fallback
 
-        replan_position = self._grid_nav_zip_line_start_hint
-        position_getter = getattr(self, "_zip_line_ws_position", None)
-        if callable(position_getter):
-            latest_position = position_getter()
-            if latest_position is not None:
-                replan_position = latest_position
+        actual_position = failed_source
+        xyz_getter = getattr(self, "_zip_line_ws_position_xyz", None)
+        if callable(xyz_getter):
+            latest_xyz = xyz_getter()
+            if latest_xyz is not None:
+                actual_position = latest_xyz
+        if actual_position is failed_source:
+            position_getter = getattr(self, "_zip_line_ws_position", None)
+            if callable(position_getter):
+                latest_position = position_getter()
+                if latest_position is not None:
+                    actual_position = latest_position
 
-        blocked_start_id = self._block_grid_zip_link_from_positions(
-            replan_position,
+        self._block_grid_zip_link_from_positions(
+            failed_source,
             self._grid_nav_zip_line_failed_target_hint,
             map_id,
         )
-        if blocked_start_id:
-            self._grid_nav_skip_board_node_id = blocked_start_id
 
-        node_position = self._nearest_grid_zip_line_node(
+        node = self._nearest_grid_zip_line_node_info(
             self._grid_zip_lines_for_map(map_id),
-            replan_position,
+            actual_position,
             max_distance=12.0,
         )
-        if node_position is None:
+        if node is None:
             self.log_warning("错误落点附近未匹配到滑索节点，按当前坐标重新规划")
         else:
+            self._grid_nav_skip_board_node_id = str(node.node_id)
             self.log_info(
-                f"错误落点已匹配滑索架节点，按当前滑索重新规划：({node_position[0]:.2f}, {node_position[1]:.2f})"
+                f"错误落点已匹配滑索架节点，按当前滑索重新规划：({node.x:.2f}, {node.z:.2f})"
             )
 
         self._grid_nav_zip_line_start_hint = None
         self._grid_nav_zip_line_failed_target_hint = None
-        return node_position if node_position is not None else fallback
+        return node.xz if node is not None else fallback
 
     def _block_grid_zip_link_from_exception(
         self,
@@ -902,8 +914,9 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_blocked_zip_connections.add(blocked)
         self.log_warning(
             "滑索连接不可用："
-            f"({start_node.x:.2f}, {start_node.z:.2f}) <-> "
-            f"({target_node.x:.2f}, {target_node.z:.2f})，后续导航将绕开",
+            f"({start_node.x:.2f}, {start_node.y:.2f}, {start_node.z:.2f}) <-> "
+            f"({target_node.x:.2f}, {target_node.y:.2f}, {target_node.z:.2f})，"
+            "后续导航将绕开",
             notify=True,
         )
         return start_id
@@ -1195,7 +1208,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         *,
         reason: str,
     ) -> bool:
-        """按 S 远离滑索，随后让原路线重新接近。"""
+        """按 S 远离滑索，下一轮重新按最新 WS 计算入口方位。"""
         self._set_grid_walking(False)
         remaining = deadline - self.active_time()
         if remaining <= 0:
@@ -1209,17 +1222,40 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_zip_line_approach_started_at = None
         return True
 
+    def _press_f_for_grid_zip_line(
+        self,
+        deadline: float,
+    ) -> bool | None:
+        """发现模板后立即按 F；失败则远离滑索，返回外层重试。"""
+        self._set_grid_walking(False)
+        self.log_info("搜索到「登上滑索架」，立即按 F 登索")
+        self.press_key("f", after_sleep=0.2)
+        esc_visible = self._wait_grid_zip_line_esc_clear()
+        if esc_visible is False:
+            self._restore_grid_zip_line_run_mode()
+            self.log_info("F 登索成功")
+            return True
+        if esc_visible is None:
+            self._restore_grid_zip_line_run_mode()
+            return False
+        if not self._retreat_from_grid_zip_line(
+            deadline,
+            reason="按 F 后仍未登上滑索",
+        ):
+            self._restore_grid_zip_line_run_mode()
+            return False
+        return None
+
     def _approach_grid_zip_line_for_boarding(
         self,
         *,
         route_step,
-        step: FollowerStep,
         frame,
         min_score: float,
         deadline: float,
         tick: float,
     ) -> bool | None:
-        """边走边搜模板，命中后立即按 F；失败则远离滑索重试。
+        """仅按最新 WS 与入口坐标算方位，走过去并同步搜索登索模板。
 
         Returns:
             True: 已成功按 F 登索。
@@ -1233,44 +1269,53 @@ class GridNavigationMixin(RuntimeStateMixin):
             self._grid_nav_zip_line_approach_started_at = self.active_time()
 
         if self._find_grid_zip_line_board_prompt(frame):
+            return self._press_f_for_grid_zip_line(deadline)
+
+        entry = route_step.steps[0].entry
+        ws_position = self._zip_line_ws_position()
+        if ws_position is None:
             self._set_grid_walking(False)
-            self.log_info("搜索到「登上滑索架」，立即按 F 登索")
-            self.press_key("f", after_sleep=0.2)
-            esc_visible = self._grid_zip_line_esc_visible()
-            if esc_visible is False:
-                self._restore_grid_zip_line_run_mode()
-                self.log_info("F 登索成功")
-                return True
-            if esc_visible is None:
-                self._restore_grid_zip_line_run_mode()
-                return False
-            if not self._retreat_from_grid_zip_line(
-                deadline,
-                reason="按 F 后仍未登上滑索",
-            ):
-                self._restore_grid_zip_line_run_mode()
-                return False
+            self.sleep(tick)
             return None
 
-        if step.action == TURN:
-            if self._grid_cfg_bool(
-                CONFIG_GRID_TURN_WHILE_MOVING, True
-            ) and not self._should_turn_grid_in_place(step):
-                self._turn_grid_while_moving(step)
+        distance_to_entry = math.hypot(
+            float(entry.x) - float(ws_position[0]),
+            float(entry.z) - float(ws_position[1]),
+        )
+        if distance_to_entry > GRID_ZIP_LINE_WS_STOP_DISTANCE_M:
+            target_bearing = bearing_to_point(
+                float(ws_position[0]),
+                float(ws_position[1]),
+                float(entry.x),
+                float(entry.z),
+            )
+            result = self.pose_aim_view_to_bearing(
+                target_bearing,
+                tolerance=self._grid_turn_tolerance(),
+                max_rounds=1,
+                min_score=min_score,
+                verify_heading=False,
+            )
+            if result.get("ok"):
+                self._set_grid_walking(True)
+                self.sleep(
+                    min(
+                        GRID_ZIP_LINE_WS_STEP_DURATION_S,
+                        max(tick, distance_to_entry / 4.0),
+                    )
+                )
+                self._set_grid_walking(False)
             else:
                 self._set_grid_walking(False)
-                self.pose_turn_to_bearing(
-                    step.target_bearing,
-                    tolerance=self._grid_turn_tolerance(),
-                    max_rounds=max(1, self._grid_cfg_int(CONFIG_GRID_MAX_TURN_ROUNDS, 2)),
-                    frame=frame,
-                    min_score=min_score,
+                self.log_warning(
+                    "按 WS 到滑索入口的方位调整视角失败："
+                    f"目标={target_bearing:.1f}°，实测={result.get('heading')}"
                 )
-        elif step.action == WALK:
-            # 登索接近阶段保持步行，不启动冲刺。
-            self._set_grid_walking(True)
         else:
             self._set_grid_walking(False)
+
+        if self._find_grid_zip_line_board_prompt(self.next_frame()):
+            return self._press_f_for_grid_zip_line(deadline)
 
         now = self.active_time()
         started_at = self._grid_nav_zip_line_approach_started_at
@@ -1278,9 +1323,11 @@ class GridNavigationMixin(RuntimeStateMixin):
             started_at is not None
             and now - started_at >= GRID_ZIP_LINE_APPROACH_TIMEOUT_S
         )
-        if step.action == ZIP_LINE or search_timed_out:
-            reason = "到达滑索入口仍未搜索到「登上滑索架」" if step.action == ZIP_LINE else "接近滑索时搜索模板超时"
-            if not self._retreat_from_grid_zip_line(deadline, reason=reason):
+        if search_timed_out:
+            if not self._retreat_from_grid_zip_line(
+                deadline,
+                reason="接近滑索时搜索模板超时",
+            ):
                 self._restore_grid_zip_line_run_mode()
                 return False
         return None
@@ -1313,28 +1360,51 @@ class GridNavigationMixin(RuntimeStateMixin):
             return "replan"
         return "completed"
 
-    def _reaim_grid_zip_line_for_boarding(self, route_step) -> bool:
-        """按当前 WS 到入口滑索架的方位重新对准，不移动角色。"""
-        position_getter = getattr(self, "_zip_line_ws_position", None)
-        if not callable(position_getter):
-            self.log_warning("无法读取 WS 或调整视角，不能重新对准入口滑索架", notify=True)
-            return False
+    def _reaim_grid_zip_line_for_boarding(
+        self,
+        route_step,
+        *,
+        notify: bool = True,
+        log_prefix: str = "登索失败后",
+    ) -> bool:
+        """按当前融合坐标到入口滑索架的方位重新对准，不移动角色。"""
+        position = None
+        world_pose_getter = getattr(self, "world_pose", None)
+        if callable(world_pose_getter):
+            try:
+                state = world_pose_getter(
+                    frame=self.next_frame(),
+                    max_age=2.0,
+                )
+            except Exception:
+                state = None
+            if state is not None:
+                x = state.get("x")
+                z = state.get("z")
+                if x is not None and z is not None:
+                    position = (float(x), float(z))
 
-        ws_position = position_getter()
-        if ws_position is None:
-            self.log_warning("无法读取当前 WS 坐标，不能重新对准入口滑索架", notify=True)
+        if position is None:
+            position_getter = getattr(self, "_zip_line_ws_position", None)
+            if callable(position_getter):
+                try:
+                    position = position_getter()
+                except Exception:
+                    position = None
+        if position is None:
+            self.log_warning("无法读取当前坐标，不能重新对准入口滑索架", notify=notify)
             return False
 
         first = route_step.steps[0]
         entry = first.entry
         distance_to_entry = math.hypot(
-            float(entry.x) - float(ws_position[0]),
-            float(entry.z) - float(ws_position[1]),
+            float(entry.x) - float(position[0]),
+            float(entry.z) - float(position[1]),
         )
         if distance_to_entry > 0.2:
             target_bearing = bearing_to_point(
-                float(ws_position[0]),
-                float(ws_position[1]),
+                float(position[0]),
+                float(position[1]),
                 float(entry.x),
                 float(entry.z),
             )
@@ -1355,17 +1425,36 @@ class GridNavigationMixin(RuntimeStateMixin):
         )
         if not result.get("ok"):
             self.log_warning(
-                f"登索失败后重新对正未到位：目标={target_bearing:.1f}°，"
+                f"{log_prefix}重新对正未到位：目标={target_bearing:.1f}°，"
                 f"实测={result.get('heading')}，误差={result.get('error')}",
-                notify=True,
+                notify=notify,
             )
             return False
         self.log_info(
-            f"登索失败后已发送重新对准视角位移：目标={target_bearing:.1f}°，"
+            f"{log_prefix}已发送重新对准视角位移：目标={target_bearing:.1f}°，"
             f"估算当前朝向={result.get('heading')}，估算误差={result.get('error')}，"
             f"距入口滑索架={distance_to_entry:.2f}m"
         )
         return True
+
+    def _wait_grid_zip_line_esc_clear(
+        self,
+        *,
+        timeout: float = GRID_ZIP_LINE_BOARD_CONFIRM_TIMEOUT_S,
+        poll_interval: float = GRID_ZIP_LINE_BOARD_CONFIRM_POLL_S,
+    ) -> bool | None:
+        """等待大世界 ESC 模板消失，避免把登索过渡帧误判为失败。"""
+        deadline = self.active_time() + max(0.0, float(timeout))
+        interval = max(0.05, float(poll_interval))
+        while True:
+            visible = self._grid_zip_line_esc_visible()
+            if visible is False:
+                return False
+            if visible is None:
+                return None
+            if self.active_time() >= deadline:
+                return True
+            self.sleep(interval)
 
     def _execute_grid_zip_line(
         self,
@@ -1405,6 +1494,8 @@ class GridNavigationMixin(RuntimeStateMixin):
             for step in chain
         ]
         target_positions = [(step.exit.x, step.exit.z) for step in chain]
+        source_positions_xyz = [step.entry.xyz for step in chain]
+        target_positions_xyz = [step.exit.xyz for step in chain]
         scroll_enabled = getattr(self, "zip_line_scroll_enabled", None)
         need_scroll = bool(scroll_enabled()) if callable(scroll_enabled) else False
         chain_text = " -> ".join(f"{step.entry.name}({step.distance_m:.1f}m)" for step in chain)
@@ -1417,10 +1508,15 @@ class GridNavigationMixin(RuntimeStateMixin):
             if already_on_rack:
                 self.log_info("当前已在滑索架上，跳过登上操作，直接对准下一目标")
             else:
-                if not board(direct_wait=5.0, total_time_out=30.0):
+                switch_walk_mode = not self._grid_nav_zip_line_walk_mode
+                if not board(
+                    direct_wait=5.0,
+                    total_time_out=30.0,
+                    switch_walk_mode=switch_walk_mode,
+                ):
                     self.log_warning("未找到「登上滑索架」按钮", notify=True)
                     return False
-                esc_visible = self._grid_zip_line_esc_visible()
+                esc_visible = self._wait_grid_zip_line_esc_clear()
                 if esc_visible is None:
                     return False
                 if esc_visible:
@@ -1430,14 +1526,19 @@ class GridNavigationMixin(RuntimeStateMixin):
                     )
                     if not self._reaim_grid_zip_line_for_boarding(route_step):
                         return False
-                    if not board(direct_wait=5.0, total_time_out=30.0):
+                    if not board(
+                        direct_wait=5.0,
+                        total_time_out=30.0,
+                        switch_walk_mode=switch_walk_mode,
+                    ):
                         self.log_warning("重新对正后仍未找到「登上滑索架」按钮", notify=True)
                         return False
-                    esc_visible = self._grid_zip_line_esc_visible()
+                    esc_visible = self._wait_grid_zip_line_esc_clear()
                     if esc_visible is None or esc_visible:
                         self.log_warning("重新对正后仍检测到 fL.esc，登上滑索失败", notify=True)
                         return False
                 self.log_info("fL.esc 不存在，已成功登上滑索")
+            self._restore_grid_zip_line_run_mode()
             execute(
                 distances,
                 need_scroll=need_scroll,
@@ -1445,6 +1546,8 @@ class GridNavigationMixin(RuntimeStateMixin):
                 distance_tolerance=distance_tolerances,
                 target_bearing=target_bearings,
                 target_positions=target_positions,
+                source_positions_xyz=source_positions_xyz,
+                target_positions_xyz=target_positions_xyz,
             )
         except ZipLineReplanRequired:
             raise

@@ -131,21 +131,21 @@ class TestTurnToBearing(unittest.TestCase):
         self.assertGreater(task.sent[0], 0)            # 鼠标右移 = 方位角增大
         self.assertAlmostEqual(res["heading"], 10.0, delta=1.0)
 
-    def test_gives_up_after_max_rounds(self):
-        """系数差 10 倍时 2 轮内到不了位：必须如实报 FAIL，不能假成功。"""
+    def test_adapts_to_ten_times_lower_coefficient(self):
+        """首轮实测比例偏小时，下一轮必须改用实测值完成补偿。"""
         task = _FakeTurnTask(facing=0.0, k_error=0.1)
         res = task.turn_to_bearing(90.0, tolerance=5.0, max_rounds=2)
-        self.assertFalse(res["ok"])
+        self.assertTrue(res["ok"], res)
         self.assertEqual(res["rounds"], 2)
         self.assertEqual(task.w_presses, 2)
-        self.assertGreater(abs(res["error"]), 5.0)
+        self.assertLessEqual(abs(res["error"]), 5.0)
 
     def test_large_turn_is_chunked_but_total_is_kept(self):
-        """1333px 的位移要拆成 ≤200px 的多段，但总和不变（避免单次事件被截断）。"""
+        """1333px 的位移要拆成 ≤100px 的多段，但总和不变（避免单次事件被截断）。"""
         task = _FakeTurnTask(facing=0.0)
         task.turn_to_bearing(90.0, tolerance=5.0)
         self.assertGreater(len(task.sent), 1)
-        self.assertTrue(all(abs(step) <= 200 for step in task.sent), task.sent)
+        self.assertTrue(all(abs(step) <= 100 for step in task.sent), task.sent)
         self.assertEqual(sum(task.sent), 1333)
         self.assertAlmostEqual(task.facing, 90.0, delta=1.0)
 
@@ -225,6 +225,24 @@ class TestAimViewToBearing(unittest.TestCase):
         self.assertFalse(result["verified_heading"])
         self.assertEqual(task.facing, 0.0)
         self.assertAlmostEqual(task.camera, 90.0, delta=1.0)
+        self.assertEqual(task.w_presses, 0)
+
+    def test_aim_adapts_to_lower_coefficient_in_second_round(self):
+        task = _FakeTurnTask(
+            facing=0.0,
+            k_error=0.5,
+            facing_follows_camera=True,
+        )
+
+        result = task.aim_view_to_bearing(
+            90.0,
+            tolerance=5.0,
+            max_rounds=2,
+        )
+
+        self.assertTrue(result["ok"], result)
+        self.assertEqual(result["rounds"], 2)
+        self.assertLessEqual(abs(result["error"]), 5.0)
         self.assertEqual(task.w_presses, 0)
 
 

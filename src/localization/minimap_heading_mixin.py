@@ -66,9 +66,9 @@ DEFAULT_TURN_SETTLE = 0.3
 DEFAULT_ANGLE_REFRESH = 0.1
 DEFAULT_MIN_SCORE = 0.6
 #: 单次相对位移过大可能被游戏/系统截断，拆成不超过这个像素数的多次发送
-DEFAULT_MOUSE_CHUNK = 200
-#: 分段之间的间隔：略大于一帧（60fps≈16.7ms），让每段各自生效
-DEFAULT_MOUSE_CHUNK_DELAY = 0.02
+DEFAULT_MOUSE_CHUNK = 100
+#: 分段之间的间隔：留出多个游戏帧，避免连续事件被合并或截断
+DEFAULT_MOUSE_CHUNK_DELAY = 0.04
 #: 实测系数与配置值偏差超过这个相对比例就给出提示（见 _warn_if_ratio_off）
 RATIO_HINT_TOLERANCE = 0.2
 #: 位移小于这个像素数时，实测比例被量化噪声主导，不据此提示
@@ -243,11 +243,12 @@ class MinimapHeadingMixin:
             return result
 
         settle = self._cfg_float(CONFIG_TURN_SETTLE, DEFAULT_TURN_SETTLE)
+        control_per_px = per_px
         for i in range(1, max(1, int(max_rounds)) + 1):
             err = angle_delta(target, before)
             if abs(err) <= tolerance:
                 break
-            dx = round(err / per_px)
+            dx = round(err / control_per_px)
             if dx == 0:
                 # 残差不足一个像素：只能这样了
                 break
@@ -268,6 +269,11 @@ class MinimapHeadingMixin:
             entry["error_after"] = angle_delta(target, after)
             entry["ratio"] = angle_delta(after, before) / dx if dx else None
             self._warn_if_ratio_off(entry["ratio"], per_px, dx)
+            control_per_px = self._adapted_yaw_per_pixel(
+                per_px,
+                entry["ratio"],
+                dx,
+            )
             result["history"].append(entry)
             result["rounds"] = i
             before = after
@@ -320,9 +326,10 @@ class MinimapHeadingMixin:
             return result
 
         settle = self._cfg_float(CONFIG_TURN_SETTLE, DEFAULT_TURN_SETTLE)
+        control_per_px = per_px
         if not verify_heading:
             err = angle_delta(target, before)
-            dx = round(err / per_px)
+            dx = round(err / control_per_px)
             if dx:
                 self._send_rotation(dx)
                 result["view_rotation_sent"] = True
@@ -338,7 +345,7 @@ class MinimapHeadingMixin:
             err = angle_delta(target, before)
             if abs(err) <= tolerance:
                 break
-            dx = round(err / per_px)
+            dx = round(err / control_per_px)
             if dx == 0:
                 break
             self._send_rotation(dx)
@@ -360,6 +367,11 @@ class MinimapHeadingMixin:
                 break
             if dx:
                 entry["ratio"] = angle_delta(after, before) / dx
+                control_per_px = self._adapted_yaw_per_pixel(
+                    per_px,
+                    entry["ratio"],
+                    dx,
+                )
             result["history"].append(entry)
             result["rounds"] = i
             before = after
@@ -370,6 +382,22 @@ class MinimapHeadingMixin:
         result["error"] = angle_delta(target, before)
         result["ok"] = abs(result["error"]) <= tolerance
         return result
+
+    @staticmethod
+    def _adapted_yaw_per_pixel(
+        configured: float,
+        ratio: float | None,
+        dx: int,
+    ) -> float:
+        """用本轮实测比例修正下一轮；极端异常值不参与自适应。"""
+        if ratio is None or abs(int(dx)) < RATIO_HINT_MIN_DX:
+            return configured
+        measured = abs(float(ratio))
+        lower = configured * 0.05
+        upper = configured * 5.0
+        if lower <= measured <= upper:
+            return measured
+        return configured
 
     def _warn_if_ratio_off(self, ratio, configured: float, dx: int) -> None:
         """实测系数与配置值差得多时给出可执行的提示。

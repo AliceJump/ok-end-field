@@ -321,12 +321,24 @@ class TestGridNavigationMixin(unittest.TestCase):
 
         self.assertTrue(self.task._execute_grid_zip_line(route_step))
 
-        self.assertEqual(calls[0], ("board", {"direct_wait": 5.0, "total_time_out": 30.0}))
+        self.assertEqual(
+            calls[0],
+            (
+                "board",
+                {
+                    "direct_wait": 5.0,
+                    "total_time_out": 30.0,
+                    "switch_walk_mode": True,
+                },
+            ),
+        )
         self.assertEqual(calls[1][0], [20])
         self.assertTrue(calls[1][1]["need_scroll"])
         self.assertFalse(calls[1][1]["need_v"])
         self.assertGreaterEqual(calls[1][1]["distance_tolerance"][0], 2)
         self.assertEqual(calls[1][1]["target_positions"], [(20.5, 0.5)])
+        self.assertEqual(calls[1][1]["source_positions_xyz"], [(0.5, 0.0, 0.5)])
+        self.assertEqual(calls[1][1]["target_positions_xyz"], [(20.5, 0.0, 0.5)])
         self.assertAlmostEqual(calls[1][1]["target_bearing"][0], 90.0)
 
     def test_execute_zip_line_skips_board_when_already_on_rack(self):
@@ -503,7 +515,8 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertIn("f", self.task.pressed_keys)
         self.assertFalse(self.task._grid_nav_zip_line_walk_mode)
 
-    def test_navigation_retreats_and_retries_when_board_template_is_missing(self):
+    def test_navigation_boards_at_zip_line_entry_with_ws_approach_without_board_fallback(self):
+        calls = []
         first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
         second = ZipLineNode("b", "test", "lv1", "滑索架", 4.5, 0.0, 0.5)
         route_step = ZipLineRouteStep(
@@ -515,37 +528,115 @@ class TestGridNavigationMixin(unittest.TestCase):
             cost=2.8,
         )
 
-        class _MissingTemplateFollower:
+        class _ZipLineFollower:
+            def __init__(self):
+                self.completed = False
+
             def pause(self):
                 pass
 
             def _current_zip_line_step(self):
-                return route_step
+                return None if self.completed else route_step
 
             def update(self, position, heading, now):
+                if self.completed:
+                    return FollowerStep(DONE, distance_to_goal=0.0)
                 return FollowerStep(
                     ZIP_LINE,
                     zip_line_step=route_step,
                     distance_to_goal=1.0,
                 )
 
+            def complete_zip_line(self):
+                calls.append("complete")
+                self.completed = True
+                return True
+
         self.task._create_grid_route = lambda start, goal, **kwargs: (
-            _MissingTemplateFollower(),
+            _ZipLineFollower(),
             PlanResult(ok=True, waypoints=[start, goal], zip_line_steps=[route_step]),
         )
         self.task.x = 3.5
+        self.task.esc_visible = False
+        self.task.board_template_visible = True
+        self.task._grid_nav_zip_line_walk_mode = True
+        self.task.board_zip_line = lambda **kwargs: calls.append(("board", kwargs)) or True
+        self.task.zip_line_list_go = lambda distances, **kwargs: calls.append(("ride", distances))
 
-        self.assertFalse(
-            self.task.navigate_grid_to(
-                (4.5, 0.5),
-                timeout=5.0,
-                map_id="test",
-            )
+        self.assertTrue(
+            self.task.navigate_grid_to((4.5, 0.5), map_id="test")
         )
 
-        self.assertGreaterEqual(self.task.key_down_events.count("s"), 2)
-        self.assertEqual(self.task.pressed_keys[0], "ctrl")
-        self.assertTrue(any("远离滑索" in message for message in self.task.logs))
+        self.assertEqual(
+            calls,
+            [
+                ("ride", [4]),
+                "complete",
+            ],
+        )
+        self.assertNotIn("s", self.task.key_down_events)
+        self.assertFalse(self.task._grid_nav_zip_line_walk_mode)
+
+    def test_navigation_ws_approach_uses_latest_ws_and_retreats_after_timeout(self):
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 4.5, 0.0, 0.5)
+        route_step = ZipLineRouteStep(
+            step=ZipLineStep(first, second, distance_m=4.0),
+            entry_cell=(0, 0),
+            exit_cell=(0, 4),
+            entry_waypoint_index=0,
+            exit_waypoint_index=1,
+            cost=2.8,
+        )
+        self.task.x = 3.5
+        self.task.z = 0.5
+        self.task.heading = 270.0
+        self.task.board_template_visible = False
+        self.task._zip_line_ws_position = lambda: (100.0, 100.0)
+        self.task.t = 0.0
+        self.task.sleep = lambda seconds: setattr(
+            self.task,
+            "t",
+            self.task.t + seconds,
+        )
+
+        result = self.task._approach_grid_zip_line_for_boarding(
+            route_step=route_step,
+            frame=object(),
+            min_score=0.6,
+            deadline=30.0,
+            tick=0.2,
+        )
+
+        self.assertIsNone(result)
+        self.assertNotIn("s", self.task.key_down_events)
+
+        self.task.t = 10.1
+        result = self.task._approach_grid_zip_line_for_boarding(
+            route_step=route_step,
+            frame=object(),
+            min_score=0.6,
+            deadline=30.0,
+            tick=0.2,
+        )
+
+        self.assertIsNone(result)
+        self.assertIn("s", self.task.key_down_events)
+        self.assertAlmostEqual(self.task.aims[-1], 225.0)
+        self.assertTrue(any("按 S 远离滑索" in message for message in self.task.logs))
+
+    def test_wait_zip_line_esc_clear_ignores_transition_frame(self):
+        results = iter([True, True, False])
+        self.task._grid_zip_line_esc_visible = lambda: next(results)
+        self.task.t = 0.0
+
+        result = self.task._wait_grid_zip_line_esc_clear(
+            timeout=1.5,
+            poll_interval=0.2,
+        )
+
+        self.assertFalse(result)
+        self.assertGreaterEqual(self.task.t, 0.4)
 
     def test_navigation_replans_when_zip_line_lands_on_wrong_rack(self):
         calls = []
@@ -641,7 +732,10 @@ class TestGridNavigationMixin(unittest.TestCase):
             any(frozenset((link.first_id, link.second_id)) == frozenset(("a", "b")) for link in filtered.links)
         )
         logs = "\n".join(self.task.logs)
-        self.assertIn("滑索连接不可用：(0.50, 0.50) <-> (10.50, 0.50)", logs)
+        self.assertIn(
+            "滑索连接不可用：(0.50, 0.00, 0.50) <-> (10.50, 0.00, 0.50)",
+            logs,
+        )
         self.assertNotIn("a <-> b", logs)
 
     def test_blocked_zip_link_survives_next_navigation_with_new_node_ids(self):
@@ -673,6 +767,70 @@ class TestGridNavigationMixin(unittest.TestCase):
 
         self.assertIsNotNone(filtered)
         self.assertEqual(filtered.links, ())
+
+    def test_vertical_zip_line_failure_blocks_attempted_link_not_same_xz_projection(self):
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 10.5, 0.0, 0.5)
+        third = ZipLineNode("c", "test", "lv1", "滑索架", 10.5, 100.0, 0.5)
+        graph = ZipLineGraph(
+            [first, second, third],
+            [
+                ZipLineLink("a", "b", 10.0, 80.0),
+                ZipLineLink("b", "c", 100.0, 110.0),
+            ],
+        )
+        self.task._grid_zip_lines_for_map = lambda map_id: graph
+
+        self.task._block_grid_zip_link_from_exception(
+            ZipLineReplanRequired(
+                "blocked",
+                current_position=second.xyz,
+                failed_target_position=third.xyz,
+            ),
+            "test",
+        )
+        filtered = self.task._filter_blocked_grid_zip_lines(graph, "test")
+
+        self.assertIsNotNone(filtered)
+        self.assertEqual(len(filtered.links), 1)
+        self.assertEqual(
+            frozenset((filtered.links[0].first_id, filtered.links[0].second_id)),
+            frozenset(("a", "b")),
+        )
+        self.assertTrue(
+            any(
+                "(10.50, 0.00, 0.50) <-> (10.50, 100.00, 0.50)" in message
+                for message in self.task.logs
+            )
+        )
+
+    def test_replan_blocks_failed_segment_but_starts_from_actual_landing_node(self):
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 10.5, 0.0, 0.5)
+        third = ZipLineNode("c", "test", "lv1", "长距滑索架", 10.5, 100.0, 0.5)
+        graph = ZipLineGraph(
+            [first, second, third],
+            [
+                ZipLineLink("a", "b", 10.0, 80.0),
+                ZipLineLink("b", "c", 100.0, 110.0),
+            ],
+        )
+        self.task._grid_zip_lines_for_map = lambda map_id: graph
+        self.task._grid_nav_zip_line_start_hint = second.xyz
+        self.task._grid_nav_zip_line_failed_target_hint = third.xyz
+        self.task._zip_line_ws_position_xyz = lambda: first.xyz
+
+        start = self.task._resolve_grid_replan_start("test", (0.5, 0.5))
+        filtered = self.task._filter_blocked_grid_zip_lines(graph, "test")
+
+        self.assertEqual(start, first.xz)
+        self.assertEqual(self.task._grid_nav_skip_board_node_id, "a")
+        self.assertIsNotNone(filtered)
+        self.assertEqual(len(filtered.links), 1)
+        self.assertEqual(
+            frozenset((filtered.links[0].first_id, filtered.links[0].second_id)),
+            frozenset(("a", "b")),
+        )
 
     def test_navigate_holds_and_releases_w_until_goal(self):
         result = self.task.navigate_grid_to((4.5, 0.5), map_id="test")

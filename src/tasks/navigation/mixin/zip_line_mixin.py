@@ -35,6 +35,8 @@ ZIP_LINE_DIRECT_TOLERANCE_DEG = 3.0
 ZIP_LINE_DIRECT_PITCH_STEPS = (0, 24, -24, 48, -48)
 ZIP_LINE_MOTION_POLL_SECONDS = 0.2
 ZIP_LINE_MOTION_CHANGE_METERS = 0.5
+ZIP_LINE_BOARD_MOVE_DURATION_S = 0.12
+ZIP_LINE_BOARD_RECHECK_SETTLE_S = 0.25
 
 
 class ZipLineReplanRequired(Exception):
@@ -189,6 +191,26 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         except Exception:
             return None
 
+    def _zip_line_ws_position_xyz(self, frame=None):
+        """读取最新 WS 三维坐标，用于区分同层投影但不同高度的滑索节点。"""
+        world_pose_getter = getattr(self, "world_pose", None)
+        if not callable(world_pose_getter):
+            return None
+        try:
+            sample_frame = frame if frame is not None else self.next_frame()
+            state = world_pose_getter(
+                frame=sample_frame,
+                max_age=2.0,
+            )
+            if state is None:
+                return None
+            position = state.get("ws_xyz")
+            if position is None or len(position) < 3:
+                return None
+            return float(position[0]), float(position[1]), float(position[2])
+        except Exception:
+            return None
+
     def _wait_zip_line_motion(
         self,
         target_position,
@@ -324,7 +346,13 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             failed_target_position=target_position,
         )
 
-    def _find_zip_line_board_button(self, direct_wait=5.0, total_time_out=60.0):
+    def _find_zip_line_board_button(
+        self,
+        direct_wait=5.0,
+        total_time_out=60.0,
+        *,
+        switch_walk_mode=True,
+    ):
         """确保处于主界面，并寻找「登上滑索架」交互按钮。
 
         复用自动送货已验证的三阶段策略：原地查找、WASD 踱步、W/S 前后移动。
@@ -338,7 +366,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         start = self.active_time()
         deadline = start + max(0.0, total_time_out)
 
-        def check():
+        def find_once():
             frame = self.next_frame()
             find_feature = getattr(self, "find_feature", None)
             if callable(find_feature):
@@ -353,6 +381,17 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             results = self.ocr(match=match, box=box, frame=frame, log=True)
             return results[0] if results else None
 
+        def check():
+            candidate = find_once()
+            if not candidate:
+                return None
+            # 移动后先停稳，再用新画面复核；防止沿旧框点击时角色/镜头已经移动。
+            self.sleep(ZIP_LINE_BOARD_RECHECK_SETTLE_S)
+            stable = find_once()
+            if stable is None:
+                self.log_info("停稳后登索提示消失，继续移动搜索")
+            return stable
+
         while self.active_time() < min(start + direct_wait, deadline):
             if found := check():
                 return found
@@ -363,13 +402,14 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             self.log_info("总等待时间已耗尽，仍未找到登上滑索架")
             return None
 
-        self.press_key("ctrl")
+        if switch_walk_mode:
+            self.press_key("ctrl")
         try:
             self.log_info("短时间内未找到登上滑索架，可能被其他设备遮挡，切换步行开始踱步寻找（最长 10 秒）")
             found = self.strafe_search(
                 check,
                 passes=None,
-                duration=0.2,
+                duration=ZIP_LINE_BOARD_MOVE_DURATION_S,
                 keys=("s", "w", "a", "d"),
                 time_out=min(10.0, remaining),
             )
@@ -385,7 +425,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             found = self.strafe_search(
                 check,
                 passes=None,
-                duration=0.2,
+                duration=ZIP_LINE_BOARD_MOVE_DURATION_S,
                 keys=("s", "w"),
                 time_out=remaining,
             )
@@ -395,19 +435,27 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             self.log_info("前后移动超时，仍未找到登上滑索架")
             return None
         finally:
-            self.press_key("ctrl", after_sleep=0.01)
-            self.log_info("恢复奔跑模式")
+            if switch_walk_mode:
+                self.press_key("ctrl", after_sleep=0.01)
+                self.log_info("恢复奔跑模式")
 
-    def board_zip_line(self, direct_wait=5.0, total_time_out=60.0):
+    def board_zip_line(
+        self,
+        direct_wait=5.0,
+        total_time_out=60.0,
+        *,
+        switch_walk_mode=True,
+    ):
         """点击当前滑索架的「登上滑索架」按钮。"""
         result = self._find_zip_line_board_button(
             direct_wait=direct_wait,
             total_time_out=total_time_out,
+            switch_walk_mode=switch_walk_mode,
         )
         if not result:
             return False
-        self.click_with_alt(result, after_sleep=2)
-        self.log_info("已点击登上滑索架")
+        self.press_key("f", after_sleep=0.2)
+        self.log_info("已按 F 登上滑索架")
         return True
 
     def on_zip_line_start(self, delivery_to, need_scroll=None, target=None, need_v=True):
@@ -491,6 +539,8 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         distance_tolerance=None,
         target_bearing=None,
         target_positions=None,
+        source_positions_xyz=None,
+        target_positions_xyz=None,
     ):
         """按顺序对齐滑索并执行滑行
 
@@ -504,11 +554,15 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             target_bearing: 当前滑索到下一滑索的世界方位角。提供后会先只转动视角
                 做横向对准，不按 W，不会让滑索上的角色发生位移。
             target_positions: 每段滑索目标滑索架的世界坐标列表。
+            source_positions_xyz: 每段滑索三维起点列表，仅用于失败时精确标记连接。
+            target_positions_xyz: 每段滑索三维终点列表，仅用于失败时精确标记连接。
 
         """
         bearings = self._normalize_values(target_bearing, scalar=True)
         positions = self._normalize_values(target_positions, scalar=True)
         tolerances = self._normalize_values(distance_tolerance, scalar=True)
+        source_positions_3d = self._normalize_values(source_positions_xyz)
+        target_positions_3d = self._normalize_values(target_positions_xyz)
         target_mode = self.zip_line_target_select_mode()
         for index, zip_line in enumerate(zip_line_list):
             tolerance = self._value_for_index(
@@ -518,9 +572,18 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             )
             bearing = self._value_for_index(bearings, index)
             target_position = self._value_for_index(positions, index)
+            source_xyz = self._value_for_index(source_positions_3d, index)
+            target_xyz = self._value_for_index(target_positions_3d, index)
             if target_mode == ZIP_LINE_TARGET_SELECT_DIRECT and bearing is not None:
-                if not self._direct_zip_line_go(bearing, target_position):
-                    raise RuntimeError(f"直接对准滑索目标失败: {float(bearing):.1f}°")
+                try:
+                    if not self._direct_zip_line_go(bearing, target_position):
+                        raise RuntimeError(f"直接对准滑索目标失败: {float(bearing):.1f}°")
+                except ZipLineReplanRequired as exc:
+                    if source_xyz is not None:
+                        exc.current_position = tuple(float(value) for value in source_xyz)
+                    if target_xyz is not None:
+                        exc.failed_target_position = tuple(float(value) for value in target_xyz)
+                    raise
                 continue
             self._ride_zip_line_by_ocr(
                 zip_line,
