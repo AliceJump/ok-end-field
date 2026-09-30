@@ -1,7 +1,10 @@
 import re
 
+from qfluentwidgets import FluentIcon
+
 from src.data.FeatureList import FeatureList as fL
-from src.data.lang import LangAccessor
+from src.icons import Icons
+from src.tasks.mixin.common import Common
 
 # 优先商品模板标签 → 官方中文名。
 # 模板标签（weapon_quota/orobertyl）直接打进日志不可读，先映射为游戏内官方名称
@@ -17,40 +20,34 @@ _PRIORITY_ITEM_NAMES = {
 }
 
 
-class DailyShopFeature:
-    # 类型提示：lang 等属性实际由 __getattr__ 转发到 self._task
-    lang: LangAccessor
+class CreditShopTask(Common):
+    """买信用商店子任务：信用交易所自动采购，日常任务经 DailyFeature 接入。"""
+
     CFG_BUY_CREDIT_SHOP = "⭐买信用商店"
     CFG_KEEP_CREDIT = "信用商店保留信用"
     CFG_CREDIT_SHOP_WARNING = "信用商店警告"
 
-    def __init__(self, task):
-        self._task = task
-        task.default_config.update(
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "买信用商店"
+        self.icon = Icons.Fetch
+        self.group_name = "日常任务"
+        self.group_icon = FluentIcon.CALENDAR
+        self.description = "在「采购中心/信用交易所」自动刷新并采购优先商品。"
+        self.support_multi_account = True
+        self.default_config.update(
             {
-                self.CFG_BUY_CREDIT_SHOP: True,
                 self.CFG_KEEP_CREDIT: 300,
             }
         )
-        task.config_description.update(
+        self.config_description.update(
             {
-                self.CFG_BUY_CREDIT_SHOP: (
-                    "是否在「采购中心/信用交易所」采购。\n自动刷新 且 仅购买「武库配额」「嵌晶玉」。"
-                ),
                 self.CFG_KEEP_CREDIT: ("若剩余信用小于这个数值，则终止采购。"),
             }
         )
         self.refresh_count = 0
         self.refresh_cost_list = [80, 120, 160, 201]
         self.credit_good_search_box = None
-        task.default_config_group.update(
-            {
-                self.CFG_BUY_CREDIT_SHOP: [self.CFG_KEEP_CREDIT],
-            }
-        )
-
-    def __getattr__(self, name):
-        return getattr(self._task, name)
 
     def refresh(self, sum_credit):
         if self.refresh_count >= len(self.refresh_cost_list):
@@ -313,3 +310,7 @@ class DailyShopFeature:
                 )
                 return True
         return True
+
+    def run(self):
+        self.ensure_main(time_out=420)
+        return self.credit_shop()

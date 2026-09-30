@@ -32,6 +32,9 @@ class AccountOverrideMixin:
         return dict.get(cfg, key, default)
 
     def _is_account_override_enabled(self):
+        # 一键日常借用独立子任务实例时，仍须尊重日常宿主的账号独立配置开关。
+        if getattr(self, "_daily_host_account_overrides_enabled", True) is False:
+            return False
         cfg = getattr(self, "config", None)
         if cfg is None:
             return False

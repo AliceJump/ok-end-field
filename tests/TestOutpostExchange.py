@@ -2,13 +2,12 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from src.tasks.daily.daily_routine_mixin import DailyRoutineFeature
-from src.tasks.daily.misc.daily_outpost_mixin import DailyOutpostMixin, _edit_distance
+from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask, _edit_distance
 
 
 class TestOutpostExchange(unittest.TestCase):
     def make_exchange_feature(self, ticket_numbers, goods=None):
-        feature = object.__new__(DailyRoutineFeature)
+        feature = object.__new__(RegionalBuildTask)
         feature._get_outpost_trade_limit = Mock(return_value=None)
         available_goods = goods if goods is not None else [SimpleNamespace(name="息壤玉葫芦")]
         feature.lang = SimpleNamespace(
@@ -40,11 +39,10 @@ class TestOutpostExchange(unittest.TestCase):
 
     def test_quantity_bins_and_ocr_fallback(self):
         cases = [
-            ("最低卖10%", 50, [100], 2056),
-            ("等于上限即卖", 200, [100, "份数200"], 2088),
-            ("首次超限即卖", 193, [100, 200], 2088),
-            ("库存不足则全卖", 2000, list(range(100, 1001, 100)), 2344),
-            ("OCR失败回退10%", 200, [None] * 10, 2056),
+            ("最低卖10%", 50, [1000, 100], 2056),
+            ("等于上限即卖", 200, [1000, 100, "份数200"], 2088),
+            ("库存不足则直接全卖", 2000, [1000], None),
+            ("OCR失败回退10%", 200, [None] * 11, 2056),
         ]
         for label, limit, readings, expected_x in cases:
             with self.subTest(label=label):
@@ -58,10 +56,9 @@ class TestOutpostExchange(unittest.TestCase):
                         side_effect=[[] if value is None else [SimpleNamespace(name=str(value))] for value in readings]
                     ),
                 )
-                DailyOutpostMixin._limit_outpost_trade_quantity(feature, limit)
-                # 从远端跳回 10%，避免起点落在滑块手柄内。
-                self.assertEqual([c.args[:2] for c in feature.click.call_args_list[:2]], [(2344, 1150), (2056, 1150)])
-                self.assertEqual(feature.click.call_args_list[-1].args[:2], (expected_x, 1150))
+                RegionalBuildTask._limit_outpost_trade_quantity(feature, limit)
+                last_click = feature.click.call_args
+                self.assertEqual(last_click.args[0] if last_click else None, expected_x)
                 self.assertEqual(feature.wait_ocr.call_count, len(readings))
 
     def test_edit_distance_counts_insertions_deletions_and_substitutions(self):
@@ -100,7 +97,7 @@ class TestOutpostExchange(unittest.TestCase):
                 feature = self.make_exchange_feature([1000, 999], [SimpleNamespace(name=ocr_name)])
 
                 with patch(
-                    "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+                    "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
                     side_effect=lambda lang, text: text,
                 ):
                     feature.perform_outpost_exchange(
@@ -126,9 +123,9 @@ class TestOutpostExchange(unittest.TestCase):
             with self.subTest(text=text, candidates=candidates):
                 feature = self.make_exchange_feature([1000, 999], [SimpleNamespace(name=text)])
                 with (
-                    patch("src.tasks.daily.misc.daily_outpost_mixin.goods_dict", {"武陵": candidates}),
+                    patch("src.tasks.onetime.RegionalBuildTask.goods_dict", {"武陵": candidates}),
                     patch(
-                        "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+                        "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
                         side_effect=lambda lang, text: text,
                     ),
                 ):
@@ -143,9 +140,9 @@ class TestOutpostExchange(unittest.TestCase):
     def test_equal_distances_keep_longer_candidate_first(self):
         feature = self.make_exchange_feature([1000, 999], [SimpleNamespace(name="货物甲")])
         with (
-            patch("src.tasks.daily.misc.daily_outpost_mixin.goods_dict", {"武陵": ["货物", "货物甲乙"]}),
+            patch("src.tasks.onetime.RegionalBuildTask.goods_dict", {"武陵": ["货物", "货物甲乙"]}),
             patch(
-                "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+                "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
                 side_effect=lambda lang, text: text,
             ),
         ):
@@ -158,7 +155,7 @@ class TestOutpostExchange(unittest.TestCase):
             with self.subTest(preferred=preferred):
                 feature = self.make_exchange_feature([1000, 999], [SimpleNamespace(name=name) for name in names])
                 with patch(
-                    "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+                    "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
                     side_effect=lambda lang, text: text,
                 ):
                     feature.perform_outpost_exchange(
@@ -181,7 +178,7 @@ class TestOutpostExchange(unittest.TestCase):
                 feature = self.make_exchange_feature([1000], [SimpleNamespace(name=name) for name in goods])
 
                 with patch(
-                    "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+                    "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
                     side_effect=lambda lang, text: text,
                 ):
                     feature.perform_outpost_exchange(
@@ -204,7 +201,7 @@ class TestOutpostExchange(unittest.TestCase):
         )
 
         with patch(
-            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+            "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(
@@ -225,7 +222,7 @@ class TestOutpostExchange(unittest.TestCase):
         )
 
         with patch(
-            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+            "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(
@@ -246,7 +243,7 @@ class TestOutpostExchange(unittest.TestCase):
         )
 
         with patch(
-            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+            "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(
@@ -265,7 +262,7 @@ class TestOutpostExchange(unittest.TestCase):
         )
 
         with patch(
-            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+            "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(
@@ -277,7 +274,7 @@ class TestOutpostExchange(unittest.TestCase):
         self.assertEqual(selected_good.name, "息壤玉葫芦")
 
     def test_exchange_outposts_share_exclusions_only_within_area(self):
-        feature = object.__new__(DailyRoutineFeature)
+        feature = object.__new__(RegionalBuildTask)
         feature.info_set = Mock()
         feature.log_info = Mock()
         feature.to_model_area = Mock()
@@ -294,11 +291,11 @@ class TestOutpostExchange(unittest.TestCase):
 
         with (
             patch(
-                "src.tasks.daily.misc.daily_outpost_mixin.areas_list",
+                "src.tasks.onetime.RegionalBuildTask.areas_list",
                 ["地区甲", "地区乙"],
             ),
             patch(
-                "src.tasks.daily.misc.daily_outpost_mixin.outpost_dict",
+                "src.tasks.onetime.RegionalBuildTask.outpost_dict",
                 {"地区甲": ["据点甲", "据点乙"], "地区乙": ["据点丙"]},
             ),
         ):
@@ -321,7 +318,7 @@ class TestOutpostExchange(unittest.TestCase):
         excluded_goods = set()
 
         with patch(
-            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+            "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(
@@ -339,7 +336,7 @@ class TestOutpostExchange(unittest.TestCase):
         excluded_goods = set()
 
         with patch(
-            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+            "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(
@@ -357,7 +354,7 @@ class TestOutpostExchange(unittest.TestCase):
         excluded_goods = set()
 
         with patch(
-            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+            "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(
@@ -375,7 +372,7 @@ class TestOutpostExchange(unittest.TestCase):
         excluded_goods = set()
 
         with patch(
-            "src.tasks.daily.misc.daily_outpost_mixin.get_world_map_text",
+            "src.tasks.onetime.RegionalBuildTask.get_world_map_text",
             side_effect=lambda lang, text: text,
         ):
             feature.perform_outpost_exchange(

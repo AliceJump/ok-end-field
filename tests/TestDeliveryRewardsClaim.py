@@ -2,14 +2,14 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from src.tasks.daily.misc.daily_logistics_mixin import DailyLogisticsMixin
+from src.tasks.onetime.DeliverySendTask import DeliverySendTask
 
 
 class TestClaimDeliveryRewardsStatus(unittest.TestCase):
     """_claim_delivery_rewards_in_current_node 的显式返回状态（线程5）。"""
 
     def make_claim_feature(self, node_found=True, results=None, pop_up=True):
-        feature = object.__new__(DailyLogisticsMixin)
+        feature = object.__new__(DeliverySendTask)
         feature.log_info = Mock()
         feature.wait_click_ocr = Mock(return_value=node_found)
         feature.wait_ocr = Mock(return_value=results or [])
@@ -49,7 +49,7 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
     """
 
     def make_send_feature(self, claim_results):
-        feature = object.__new__(DailyLogisticsMixin)
+        feature = object.__new__(DeliverySendTask)
         feature.info_set = Mock()
         feature.log_info = Mock()
         feature.tr = lambda message, **kwargs: message
@@ -82,7 +82,7 @@ class TestDeliverySendOthersClaimRetry(unittest.TestCase):
 
     def run_send_others(self, feature):
         with patch(
-            "src.tasks.daily.misc.daily_logistics_mixin.areas_list",
+            "src.tasks.onetime.DeliverySendTask.areas_list",
             ["武陵", "试验园区"],
         ):
             return feature.delivery_send_others()

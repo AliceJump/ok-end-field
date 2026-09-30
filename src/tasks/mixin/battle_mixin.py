@@ -167,23 +167,11 @@ class BattleMixin(BaseEfTask):
 
     def get_battle_config(self, key: str, default=None):
         global_value = self.battle_config_manager.get(key, DEFAULT_BATTLE_CONFIG.get(key, default))
-        raw_config_get = getattr(self, "_raw_cfg_get", None)
-        if callable(raw_config_get):
-            try:
-                raw_value = raw_config_get(BATTLE_CONFIG_MODE_KEY, False)
-            except (TypeError, AttributeError):
-                raw_value = self.config.get(BATTLE_CONFIG_MODE_KEY, False)
-        else:
-            raw_value = self.config.get(BATTLE_CONFIG_MODE_KEY, False)
-
+        # config.get 在运行中已绑定账号覆盖；日常子任务按当前账号取战斗模式和参数。
+        raw_value = self.config.get(BATTLE_CONFIG_MODE_KEY, False)
         use_independent = self._parse_use_independent(raw_value)
         if not use_independent:
             return global_value
-        if callable(raw_config_get):
-            try:
-                return raw_config_get(key, global_value)
-            except (TypeError, AttributeError):
-                pass
         return self.config.get(key, global_value)
 
     def _parse_use_independent(self, value):
@@ -538,9 +526,7 @@ class BattleMixin(BaseEfTask):
         if best_index is None:
             self.log_debug("切人图标未命中任何槽位，无法判定当前角色")
         else:
-            self.log_debug(
-                f"切人图标命中槽位 {best_index}（score={best_score:.3f}）→ 当前第 {best_index + 1} 个角色"
-            )
+            self.log_debug(f"切人图标命中槽位 {best_index}（score={best_score:.3f}）→ 当前第 {best_index + 1} 个角色")
         return best_index
 
     def detect_team_stable(

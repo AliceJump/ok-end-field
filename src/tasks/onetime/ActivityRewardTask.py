@@ -1,22 +1,43 @@
-import re
+from qfluentwidgets import FluentIcon
 
 from src.data.FeatureList import FeatureList as fL
+from src.icons import Icons
+from src.tasks.mixin.common import Common
+from src.tasks.mixin.mouse_scan_mixin import MouseScanMixin
 
 
-class DailyRewardMixin:
-    def _click_ocr_with_info(self, match_str, box, time_out=5, after_sleep=2):
-        if not self.wait_click_ocr(
-            match=re.compile(match_str),
-            box=box,
-            time_out=time_out,
-            after_sleep=after_sleep,
-        ):
-            # match_str 是调用方传入的 OCR 匹配文本（运行时参数）不过 tr
-            self.mark_task_failure(self.tr("未找到{name}按钮，任务失败").format(name=match_str))
-            return False
+class ActivityRewardTask(Common, MouseScanMixin):
+    """活动奖励子任务：每周事务/理智补给/刮刮乐，日常任务经 DailyFeature 接入。"""
 
-        self.log_info(self.tr("找到{name}按钮并点击").format(name=match_str))
-        return True
+    ACTIVITY_REWARDS = ["周常奖励", "理智补给", "刮刮乐"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.name = "活动奖励"
+        self.icon = Icons.Collect
+        self.group_name = "日常任务"
+        self.group_icon = FluentIcon.CALENDAR
+        self.description = "领取活动中心奖励：每周事务、理智补给与刮刮乐。"
+        self.support_multi_account = True
+        self.default_config.update(
+            {
+                "⭐活动奖励": self.ACTIVITY_REWARDS,
+            }
+        )
+        self.config_type["⭐活动奖励"] = {
+            "type": "multi_selection",
+            "options": self.ACTIVITY_REWARDS,
+        }
+        self.config_description.update(
+            {
+                "⭐活动奖励": (
+                    "选择要领取的活动奖励：\n"
+                    "周常奖励：领取每周事务奖励。\n"
+                    "理智补给：领取理智补给。\n"
+                    "刮刮乐：执行刮刮乐。"
+                ),
+            }
+        )
 
     def claim_weekly_rewards(self):
         self.log_info("开始领取每周事务")
@@ -126,91 +147,6 @@ class DailyRewardMixin:
 
         return True
 
-    def claim_daily_rewards(self):
-        self.info_set("current_task", "claim_daily_rewards")
-        self.log_info("开始领取日常奖励任务")
-
-        self.press_key("f8")
-        self.log_info("按下 F8 打开日常奖励界面")
-
-        if not self.wait_click_ocr(
-            match=self.lang.daily_routine_mixin.k_8d0e83fc,
-            box=self.box.top,
-            time_out=5,
-        ):
-            self.mark_task_failure("未找到日常奖励按钮，任务失败")
-            return False
-        self.log_info("找到日常奖励按钮并点击")
-
-        self.wait_click_ocr(
-            match=self.lang.daily_routine_mixin.k_39d12e73_1,
-            box=self.box.right,
-            time_out=5,
-        )
-
-        if result := self.find_one(feature=fL.claim_gift, box=self.box.left, threshold=0.8):
-            self.log_info("发现可领取的额外奖励，点击领取")
-            self.click(result)
-            self.wait_pop_up()
-            self.log_info("额外奖励领取完成")
-
-        self.log_info("日常奖励领取完成")
-
-        if not self.wait_click_ocr(
-            match=self.lang.daily_routine_mixin.k_23926d61,
-            box=self.box.bottom_right,
-            time_out=5,
-        ):
-            self.mark_task_failure("未找到通行证奖励入口，任务失败")
-            return False
-
-        if self.wait_click_ocr(
-            match=self.lang.daily_routine_mixin.k_d7613f0e,
-            box=self.box.top,
-            time_out=5,
-        ):
-            mission_boxes = (
-                self.wait_ocr(
-                    x=0.12,
-                    y=0.33,
-                    to_x=0.31,
-                    to_y=0.80,
-                    match=self.lang.daily_routine_mixin.k_105cdd5a,
-                    time_out=2,
-                    raise_if_not_found=False,
-                )
-                or []
-            )
-            for box in mission_boxes:
-                self.click_box(box=box)
-                self.wait_click_ocr(
-                    match=self.lang.daily_routine_mixin.k_3ecdd4bb,
-                    box=self.box.bottom,
-                    time_out=2,
-                )
-            self.wait_click_ocr(
-                match=self.lang.daily_routine_mixin.k_727d1bec,
-                box=self.box.top,
-                time_out=5,
-            )
-
-        reward_clicked = self.wait_click_ocr(
-            match=self.lang.daily_routine_mixin.k_39d12e73_1,
-            box=self.box.bottom,
-            time_out=2,
-        )
-        if reward_clicked:
-            self.wait_pop_up()
-        self.send_key("esc")
-        pass_page = self.wait_until(
-            lambda: self.ocr(match=self.lang.daily_routine_mixin.k_25d2b666, box=self.box.top_right),
-            time_out=2,
-            raise_if_not_found=False,
-        )
-        if pass_page:
-            self.send_key("esc")
-            self.wait_click_ocr(match=self.lang.daily_routine_mixin.k_4d0b4688, time_out=5)
-            if len(self.ocr(match=self.lang.daily_routine_mixin.k_1c5ad36e, box=self.box.center)) > 0:
-                self.click_confirm(time_out=5)
-
-        return True
+    def run(self):
+        self.ensure_main(time_out=420)
+        return self.claim_activity_rewards()

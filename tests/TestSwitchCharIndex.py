@@ -97,9 +97,7 @@ class TestDetectCurrentCharIndex(unittest.TestCase):
         self.assertEqual(len(task.searched_features), SWITCH_CHAR_SLOTS)
 
     def test_returns_slot_with_highest_confidence(self):
-        task = _SwitchCharHarness(
-            slot_scores={"switch_char_slot_0": 0.8, "switch_char_slot_2": 0.95}
-        )
+        task = _SwitchCharHarness(slot_scores={"switch_char_slot_0": 0.8, "switch_char_slot_2": 0.95})
         self.assertEqual(BattleMixin.detect_current_char_index(task), 2)
 
     def test_returns_first_slot_index(self):
