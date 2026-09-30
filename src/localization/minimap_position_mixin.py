@@ -626,6 +626,22 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         if synced:
             self._minimap_position_trusted = True
             self._minimap_trust_reason = "sync"
+        elif not self._minimap_position_trusted and self._minimap_fusion.should_force_sync():
+            self._minimap_fusion.force_sync(pos_ws, map_id=map_id, now=now)
+            self._minimap_sync_seq += 1
+            self._apply_estimate(st, self._minimap_fusion.estimate())
+            st["just_synced"] = True
+            st["sync_checked"] = True
+            st["sync_residual"] = self._minimap_fusion.last_sync_residual
+            self._minimap_position_trusted = True
+            self._minimap_trust_reason = "forced_sync"
+            last_result = self._minimap_od.last_result() or {}
+            self.log_warning(
+                "连续稳定 WS 但地图里程计无法确认静止，执行强制重锚: "
+                f"ws_hits={self._minimap_fusion.ws_stable_hits} "
+                f"odom_reason={last_result.get('reason')}"
+            )
+            return True
         return synced
 
     @staticmethod

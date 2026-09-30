@@ -6,6 +6,7 @@
 - try_sync 只在静止时校准；移动中收到的样本直接忽略（不暂存，避免把位置拽回去）；
 - 自定义轴映射（含符号/交换）生效。
 """
+
 import math
 import unittest
 
@@ -28,10 +29,20 @@ class _StubOd:
     def last_sample(self):
         return self._last
 
+    def last_result(self):
+        return self._last
+
     def add(self, dx, dy, dt):
         self._pos[0] += dx
         self._pos[1] += dy
-        self._last = {"sampled": True, "ok": True, "dt": dt, "dmap_px": (dx, dy)}
+        self._last = {
+            "sampled": True,
+            "ok": True,
+            "reason": "ok",
+            "dt": dt,
+            "dmap_px": (dx, dy),
+            "committed": True,
+        }
 
     def sample(self, frame=None):
         return self._last
@@ -69,7 +80,7 @@ class TestSyncAndEstimate(unittest.TestCase):
         od = _StubOd()
         fusion = MinimapPositionFusion(od, scale_m_per_px=2.0)
         fusion.sync((0.0, 0.0, 0.0))
-        od.add(0.0, 5.0, 0.5)   # 图上往下（南）
+        od.add(0.0, 5.0, 0.5)  # 图上往下（南）
         est = fusion.step()
         self.assertAlmostEqual(est["x"], 0.0, delta=1e-6)
         self.assertAlmostEqual(est["z"], -10.0, delta=1e-6)
@@ -157,7 +168,7 @@ class TestRestGatedSync(unittest.TestCase):
         od = _StubOd()
         fusion = MinimapPositionFusion(od)
         fusion.sync((100.0, 0.0, 200.0))
-        od.add(0.0, 0.0, 1.0)                       # 小地图静止：估计 == 锚点 == WS
+        od.add(0.0, 0.0, 1.0)  # 小地图静止：估计 == 锚点 == WS
         self.assertTrue(fusion.try_sync((100.0, 0.0, 200.0)))
         self.assertTrue(fusion.last_sync_redundant)
         self.assertIsNone(fusion.last_sync_residual)
@@ -167,8 +178,8 @@ class TestRestGatedSync(unittest.TestCase):
         od = _StubOd()
         fusion = MinimapPositionFusion(od, scale_m_per_px=1.0)
         fusion.sync((100.0, 0.0, 200.0))
-        od.add(3.0, 4.0, 1.0)                       # 估计漂到 (103, 196)
-        od.add(0.0, 0.0, 1.0)                       # 然后停下（最后一条样本速度为 0）
+        od.add(3.0, 4.0, 1.0)  # 估计漂到 (103, 196)
+        od.add(0.0, 0.0, 1.0)  # 然后停下（最后一条样本速度为 0）
         self.assertTrue(fusion.try_sync((100.0, 0.0, 200.0)))
         self.assertFalse(fusion.last_sync_redundant)
         self.assertAlmostEqual(fusion.last_sync_residual["dist"], 5.0, delta=1e-6)
@@ -180,7 +191,7 @@ class TestRestGatedSync(unittest.TestCase):
         od = _StubOd()
         fusion = MinimapPositionFusion(od)
         fusion.sync((0.0, 0.0, 0.0))
-        od.add(0.0, 0.0, 1.0)                         # 小地图没动
+        od.add(0.0, 0.0, 1.0)  # 小地图没动
         applied = fusion.try_sync((30.0, 0.0, 40.0))  # WS 移动了 50m
         self.assertFalse(applied)
         self.assertEqual(fusion.rest_diag["reason"], "ws_moving")
@@ -208,6 +219,46 @@ class TestRestGatedSync(unittest.TestCase):
         self.assertEqual(fusion.rest_diag["reason"], "map_moving")
         self.assertAlmostEqual(fusion.rest_diag["map_speed_m_s"], 1.1, delta=0.01)
 
+    def test_force_sync_after_stable_ws_and_uncommitted_odometry(self):
+        od = _StubOd()
+        fusion = MinimapPositionFusion(od, scale_m_per_px=0.64)
+        fusion.sync((10.0, 0.0, 20.0))
+        od._last = {
+            "sampled": True,
+            "ok": True,
+            "reason": "shift_too_small",
+            "dt": 0.1,
+            "dmap_px": (1.0, 0.0),
+            "committed": False,
+        }
+
+        for _ in range(3):
+            self.assertFalse(fusion.try_sync((10.0, 0.0, 20.0)))
+
+        self.assertEqual(fusion.ws_stable_hits, 3)
+        self.assertTrue(fusion.should_force_sync(min_ws_hits=3))
+        fusion.force_sync((10.0, 0.0, 20.0))
+        self.assertEqual(fusion.ws_stable_hits, 0)
+
+    def test_force_sync_rejected_after_committed_map_motion(self):
+        od = _StubOd()
+        fusion = MinimapPositionFusion(od, scale_m_per_px=0.64)
+        fusion.sync((10.0, 0.0, 20.0))
+        od._last = {
+            "sampled": True,
+            "ok": True,
+            "reason": "shift_too_small",
+            "dt": 0.1,
+            "dmap_px": (1.0, 0.0),
+            "committed": False,
+        }
+        for _ in range(3):
+            fusion.try_sync((10.0, 0.0, 20.0))
+
+        od._last["committed"] = True
+
+        self.assertFalse(fusion.should_force_sync(min_ws_hits=3))
+
 
 class TestSyncResidual(unittest.TestCase):
     """静止校准时记录"校准前小地图推算坐标 vs WS"，用来量小地图漂了多少。"""
@@ -223,7 +274,7 @@ class TestSyncResidual(unittest.TestCase):
         od = _StubOd()
         fusion = MinimapPositionFusion(od, scale_m_per_px=1.0)
         fusion.sync((100.0, 0.0, 200.0))
-        od.add(3.0, 4.0, 1.0)   # 小地图推算又走 (3,4)px -> 世界 (3,-4)（图下=南）
+        od.add(3.0, 4.0, 1.0)  # 小地图推算又走 (3,4)px -> 世界 (3,-4)（图下=南）
         fusion.sync((106.0, 0.0, 204.0))
         res = fusion.last_sync_residual
         self.assertAlmostEqual(res["map_x"], 103.0, delta=1e-6)
@@ -261,6 +312,7 @@ class TestState(unittest.TestCase):
         def fn(frame):
             captured.append(frame)
             return (45.0, 0.9)
+
         return fn
 
     def test_state_returns_heading_and_position_same_frame(self):

@@ -4,6 +4,7 @@ from typing import ClassVar
 
 from qfluentwidgets import FluentIcon
 
+from src.core.config_migration import rename_choice_value
 from src.core.sequence_parser import parse_int_sequence
 from src.data.delivery_area import (
     DEFAULT_DELIVERY_AREA,
@@ -89,8 +90,12 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
     # 配置值常量
     TEST_NONE = "无"
     TEST_FULL_CYCLE = "完整循环测试"
-    ARRIVAL_MODE_LEGACY = "原流程"
+    ARRIVAL_MODE_LEGACY = "仅滑索"
     ARRIVAL_MODE_GRID = "网格导航"
+
+    config_value_migrations: ClassVar[dict[str, object]] = {
+        CFG_ARRIVAL_MODE: rename_choice_value("原流程", ARRIVAL_MODE_LEGACY),
+    }
 
     def _configure_delivery_area(self, area_name: str):
         if area_name not in DELIVERY_AREA_CONFIG:
@@ -103,6 +108,28 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
                 [self._to_delivery_point_config_key(location_name) for location_name in self.full_cycle_locations]
             )
         )
+
+    def _stop_position_service_for_transfer(self) -> bool:
+        """传送前停掉定位服务，避免把场景切换误判成里程计位移。"""
+
+        stopper = getattr(self, "stop_runtime_position_service", None)
+        if not callable(stopper):
+            return False
+        try:
+            return bool(stopper())
+        except Exception as exc:
+            if hasattr(self, "logger"):
+                self.log_warning(f"传送前停止定位服务失败，继续原传送流程: {exc}")
+            return False
+
+    def _start_position_service_after_transfer(self) -> None:
+        """传送到达后重建定位器，并等待稳定 WS 建立新场景锚点。"""
+
+        starter = getattr(self, "start_runtime_position_service", None)
+        if not callable(starter):
+            return
+        if not starter(wait_stable=True):
+            self.log_warning("传送后定位服务未能用稳定 WS 重新锚定，网格导航将继续等待")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -122,7 +149,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
                 self.CFG_TEST_TARGET: "默认是无，表示正常执行相关任务\n也可以选择特定的滑索分叉序列来测试滑索功能\n选择完整循环测试则会依次测试每个送货目标的完整流程\n(需要锁定次要任务在送货任务上或附近)",
                 self.CFG_ARRIVAL_MODE: (
                     "选择取货和送达阶段的到达方式。\n"
-                    "原流程：使用原有滑索距离序列和蓝色标记搜索。\n"
+                    "仅滑索：使用原有滑索距离序列和蓝色标记搜索。\n"
                     "网格导航：按取货点/终点坐标调用小地图网格导航，自动组合滑索和寻路。"
                 ),
                 self.CFG_ONLY_ACCEPT: f'前置是选择测试对象部分选择"{self.TEST_NONE}"\n仅接取当前地区委托，不送货',
@@ -616,13 +643,18 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
                 else:
                     if (daily_mode or not self.config.get(self.CFG_ONLY_DELIVER)) and not self.accept_order():
                         return False
-                    success = None
-                    for _attempt in range(3):
-                        success = self.task_to_transfer_point(
-                            need_location_list=get_delivery_locations(self.delivery_area, self.lang),
-                        )
-                        if success:
-                            break
+                    position_service_paused = self._stop_position_service_for_transfer()
+                    try:
+                        success = None
+                        for _attempt in range(3):
+                            success = self.task_to_transfer_point(
+                                need_location_list=get_delivery_locations(self.delivery_area, self.lang),
+                            )
+                            if success:
+                                break
+                    finally:
+                        if position_service_paused:
+                            self._start_position_service_after_transfer()
                     if not success:
                         self.log_info("传送失败（未找到传送按钮），终止本轮送货")
                         return False

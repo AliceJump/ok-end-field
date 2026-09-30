@@ -25,9 +25,9 @@ The UI shows it as a priority sequence of target ticket amounts, default `119000
 Auto Delivery can run as a standalone task or as the `⭐Auto Delivery` subtask of Daily Tasks. The standalone task keeps the full multi-account and test entries; the daily subtask reuses the daily task's account loop and only runs the full delivery flow.
 
 * With 「Multi-account mode」 enabled, the task switches through the accounts in the 「Account list」 one by one to run Auto Delivery.
-* With 「Multi-account independent configuration」 enabled, the same delivery task can override regular configs like target ticket amount and region switching per account; the zip-line config lives in 「Global Config / Zip Line Config」 and is shared across tasks, but each account can also have its own zip-line overrides on the account page.
+* With 「Multi-account independent configuration」 enabled, the same delivery task can override regular configs like target ticket amount, region switching, and arrival method per account; the zip-line config lives in 「Global Config / Zip Line Config」 and is shared across tasks, but each account can also have its own zip-line overrides on the account page.
 * The account list has one account per row; the old `账号, 密码` format is compatible but the password field is ignored. Account switching uses the 「Recent」 list on the game login page and does not enter a password.
-* The standalone task keeps debug options like 「Select test target」, 「Accept only」, and 「Deliver only」; the daily-task entry does not show these options.
+* The standalone task keeps debug options like 「Select test target」, 「Accept only」, and 「Deliver only」; the daily-task entry does not show these options, but does expose the arrival method.
 
 ---
 
@@ -47,16 +47,16 @@ Switching uses that region's:
 
 Available options:
 
-* **Legacy flow**: keeps the original zip-line distance sequence, blue-marker alignment, and forward search.
+* **Zip-line only**: keeps the original zip-line distance sequence, blue-marker alignment, and forward search.
 * **Grid navigation**: reads pickup and destination coordinates from the region data and uses minimap grid navigation to combine zip lines with regular pathfinding.
 
-The default is **Legacy flow**. With **Grid navigation**:
+The default is **Zip-line only**. With **Grid navigation**:
 
 1. After teleporting, navigate to the accepted location's pickup coordinate.
 2. Prefer a direct `receive_good` template match; if missing, fall back to the original blue-marker and forward search.
 3. After pickup, recognize the destination on the left and navigate to its configured coordinate.
 4. Prefer a direct submit click; if missing, fall back to the original destination OCR navigation and submit flow.
-5. If a pickup or destination coordinate is missing, that stage falls back to the legacy flow.
+5. If a pickup or destination coordinate is missing, that stage falls back to the zip-line-only flow.
 
 ---
 
@@ -86,7 +86,7 @@ flowchart TD
     A[Start auto delivery] --> A1{Multi-account mode}
     A1 -->|Yes| A2[Enter current account context by account list]
     A1 -->|No| B[Use current account config]
-    A2 --> B[Read region switch and target ticket amount after overrides]
+    A2 --> B[Read region switch, target ticket amount, and arrival method after overrides]
     B --> C{Select test target}
     C -->|Specified test| D[Run single-segment or full-loop test]
     C -->|None| E{Deliver only}

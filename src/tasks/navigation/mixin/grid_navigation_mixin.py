@@ -1833,7 +1833,13 @@ class GridNavigationMixin(RuntimeStateMixin):
         now = self.active_time()
         if now - self._grid_nav_last_wait_log >= 5.0:
             self._grid_nav_last_wait_log = now
-            self.log_info(f"网格导航暂停：{reason}")
+            diagnostic = self.pose_rest_diag() or {}
+            self.log_info(
+                f"网格导航暂停：{reason}"
+                f"（rest_reason={diagnostic.get('reason')} "
+                f"speed={diagnostic.get('map_speed_m_s')} "
+                f"ws_moved={diagnostic.get('ws_moved_m')}）"
+            )
             self.info_set("网格导航", reason)
 
     def _wait_for_minimap_sync(

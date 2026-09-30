@@ -93,6 +93,8 @@ class MinimapPositionFusion:
         self._last_sync_residual = None
         # 最近一次 try_sync 是否因"空操作"而跳过（见 _is_sync_redundant）
         self._last_sync_redundant = False
+        # 连续多少条新 WS 样本都表明玩家没有移动。
+        self._ws_stable_hits = 0
         # 最近一次 is_rest() 的两个实测值（排查"为什么没判静止"）
         self._rest_diag = None
 
@@ -106,6 +108,7 @@ class MinimapPositionFusion:
         self._ws_moved_m = None
         self._last_sync_residual = None
         self._last_sync_redundant = False
+        self._ws_stable_hits = 0
         self._od.reset_position()
 
     @property
@@ -136,6 +139,11 @@ class MinimapPositionFusion:
     def ws_moved_m(self) -> float | None:
         """相邻两次 WS 坐标的位移（米）；从未收到过两次样本时为 None。"""
         return self._ws_moved_m
+
+    @property
+    def ws_stable_hits(self) -> int:
+        """连续稳定 WS 样本数。"""
+        return self._ws_stable_hits
 
     @property
     def rest_diag(self) -> dict | None:
@@ -189,8 +197,13 @@ class MinimapPositionFusion:
         """记录一次 WS 坐标，并更新"相邻两次 WS 之间的位移"（静止判定条件 2）。"""
         if self._last_ws is not None:
             self._ws_moved_m = math.hypot(float(x) - self._last_ws[0], float(z) - self._last_ws[1])
+            if self._ws_moved_m <= self._rest_ws_m:
+                self._ws_stable_hits += 1
+            else:
+                self._ws_stable_hits = 0
         else:
             self._ws_moved_m = None   # 还没有两次样本，条件 2 暂不参与
+            self._ws_stable_hits = 1
         self._last_ws = (float(x), float(z))
 
     def _apply_sync(self, ws_x: float, ws_z: float, now) -> dict | None:
@@ -212,6 +225,7 @@ class MinimapPositionFusion:
         self._anchor_set = True
         self._last_sync_t = now
         self._last_sync_redundant = False
+        self._ws_stable_hits = 0
         self._od.reset_position()
         return self.estimate()
 
@@ -269,6 +283,23 @@ class MinimapPositionFusion:
             return True
         self._apply_sync(x, z, now)
         return True
+
+    def should_force_sync(self, *, min_ws_hits: int = 3) -> bool:
+        """连续稳定 WS 且最新里程计没有提交位移时，允许绕过静止判定强制重锚。"""
+
+        if self._ws_stable_hits < max(2, int(min_ws_hits)):
+            return False
+        last_result = getattr(self._od, "last_result", None)
+        last = last_result() if callable(last_result) else None
+        return not bool(last and last.get("committed"))
+
+    def force_sync(self, world_xyz, *, map_id=None, now=None):
+        """调用方已确认 WS 稳定时，无条件用该坐标重锚。"""
+
+        if world_xyz is None:
+            return self.estimate()
+        x, z = float(world_xyz[0]), float(world_xyz[2])
+        return self._apply_sync(x, z, now)
 
     # ------------------------------------------------------------------ #
     # 定位

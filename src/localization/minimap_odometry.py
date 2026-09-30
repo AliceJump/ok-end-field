@@ -647,6 +647,7 @@ class MinimapOdometry:
             ok=True, sampled=True, reason="ok",
             dx_px=dx_px, dy_px=dy_px, response=response,
             dmap_px=dmap, dt=dt, reanchored=False,
+            committed=True,
         )
         out["dmap_m"] = self._to_m(dmap)
         self._last = out
@@ -673,6 +674,7 @@ class MinimapOdometry:
             "dmap_m": (0.0, 0.0),
             "dt": 0.0,
             "reanchored": False,
+            "committed": False,
         }
         base.update(kwargs)
         return base

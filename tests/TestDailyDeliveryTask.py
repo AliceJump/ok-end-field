@@ -21,9 +21,9 @@ class TestDailyDeliveryTask(unittest.TestCase):
 
         self.assertEqual(
             set(task.default_config),
-            {"_enabled", "目标券数", "地区切换"},
+            {"_enabled", "目标券数", "地区切换", "到达方式"},
         )
-        self.assertEqual(set(task.config_type), {"目标券数", "地区切换"})
+        self.assertEqual(set(task.config_type), {"目标券数", "地区切换", "到达方式"})
         self.assertNotIn("多账户独立配置", task.default_config)
         self.assertIn("选择测试对象", standalone.default_config)
         self.assertIn("仅接取", standalone.default_config)
@@ -104,6 +104,32 @@ class TestDailyDeliveryTask(unittest.TestCase):
         with patch("src.tasks.onetime.DeliveryTask.get_delivery_locations", return_value=[]):
             self.assertIs(task._run_single_delivery_cycle(), True)
         self.assertEqual(task.to_end_and_submit.call_count, 3)
+
+    def test_daily_cycle_uses_grid_navigation_when_selected(self):
+        task = self._make_cycle({"到达方式": "网格导航"}, daily_mode=True)
+        task.task_to_transfer_point.return_value = True
+        task._run_grid_delivery_state_machine = Mock(return_value=True)
+        task._run_legacy_delivery_leg = Mock(return_value=True)
+
+        with patch("src.tasks.onetime.DeliveryTask.get_delivery_locations", return_value=[]):
+            self.assertIs(task._run_single_delivery_cycle(), True)
+
+        self.assertEqual(task._run_grid_delivery_state_machine.call_count, 3)
+        task._run_legacy_delivery_leg.assert_not_called()
+
+    def test_daily_cycle_restarts_position_service_around_transfer(self):
+        task = self._make_cycle({"到达方式": "仅滑索"}, daily_mode=True)
+        task.task_to_transfer_point.return_value = True
+        task.stop_runtime_position_service = Mock(return_value=True)
+        task.start_runtime_position_service = Mock(return_value=True)
+        task._run_legacy_delivery_leg = Mock(return_value=True)
+
+        with patch("src.tasks.onetime.DeliveryTask.get_delivery_locations", return_value=[]):
+            self.assertIs(task._run_single_delivery_cycle(), True)
+
+        self.assertEqual(task.stop_runtime_position_service.call_count, 3)
+        self.assertEqual(task.start_runtime_position_service.call_count, 3)
+        task.start_runtime_position_service.assert_called_with(wait_stable=True)
 
     def test_run_daily_propagates_cycle_result_and_resets_mode(self):
         task = self._make_cycle({}, daily_mode=False)

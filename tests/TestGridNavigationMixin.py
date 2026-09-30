@@ -883,6 +883,21 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertFalse(self.task.w_down)
         self.assertEqual(paused, [True])
 
+    def test_waiting_for_position_logs_rest_diagnostics(self):
+        self.task.t = 6.0
+        self.task.minimap_rest_diag = lambda: {
+            "reason": "map_moving",
+            "map_speed_m_s": 1.25,
+            "ws_moved_m": 0.0,
+        }
+
+        self.task._wait_for_grid_position("等待定位重新校准")
+
+        line = next(msg for msg in self.task.logs if "等待定位重新校准" in msg and "rest_reason" in msg)
+        self.assertIn("rest_reason=map_moving", line)
+        self.assertIn("speed=1.25", line)
+        self.assertIn("ws_moved=0.0", line)
+
     def test_wait_for_minimap_sync_pauses_and_waits_for_new_sequence(self):
         class _PositionService:
             def __init__(self):

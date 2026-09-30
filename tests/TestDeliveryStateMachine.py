@@ -4,6 +4,7 @@ import re
 import unittest
 from types import SimpleNamespace
 
+from src.core.config_migration import apply_value_migrations
 from src.data.delivery_area_service import (
     get_delivery_location_coordinate,
     get_delivery_target_coordinate,
@@ -31,6 +32,24 @@ class TestDeliveryStateMachine(unittest.TestCase):
         task = self._task(mode="")
 
         self.assertEqual(task._arrival_mode(), DeliveryNavigationMode.LEGACY)
+
+    def test_legacy_arrival_value_migrates_to_zip_line_only(self):
+        config, modified = apply_value_migrations(
+            {DeliveryTask.CFG_ARRIVAL_MODE: "原流程"},
+            DeliveryTask.config_value_migrations,
+        )
+
+        self.assertTrue(modified)
+        self.assertEqual(config[DeliveryTask.CFG_ARRIVAL_MODE], "仅滑索")
+
+    def test_grid_arrival_value_is_not_changed_by_migration(self):
+        config, modified = apply_value_migrations(
+            {DeliveryTask.CFG_ARRIVAL_MODE: DeliveryTask.ARRIVAL_MODE_GRID},
+            DeliveryTask.config_value_migrations,
+        )
+
+        self.assertFalse(modified)
+        self.assertEqual(config[DeliveryTask.CFG_ARRIVAL_MODE], DeliveryTask.ARRIVAL_MODE_GRID)
 
     def test_grid_state_machine_navigates_pickup_then_destination(self):
         task = self._task()

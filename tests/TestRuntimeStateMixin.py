@@ -15,10 +15,20 @@ class _PositionService:
     def __init__(self, hub):
         self.hub = hub
         self.samples = 0
+        self.stop_calls = 0
+        self.start_calls = []
+        self.stopped = False
 
     def start_minimap_position(self, *, wait_stable=True):
+        self.start_calls.append(wait_stable)
         self._minimap_started = True
+        self.stopped = False
         return True
+
+    def stop_minimap_position(self):
+        self.stop_calls += 1
+        self._minimap_started = False
+        self.stopped = True
 
     def sample_world_pose(self, frame=None, *, now=None):
         self.samples += 1
@@ -106,6 +116,15 @@ class TestRuntimeStateMixin(unittest.TestCase):
         self.task._runtime_position_service = None
         self.assertIsNone(self.task.ensure_runtime_position_service())
         self.assertEqual(sum("未注册「小地图定位」" in message for message in self.task.logs), 2)
+
+    def test_stop_and_start_position_service_rebuilds_anchor(self):
+        self.assertTrue(self.task.start_runtime_position_service(wait_stable=True))
+        self.assertTrue(self.task.stop_runtime_position_service())
+        self.assertTrue(self.task.start_runtime_position_service(wait_stable=True))
+
+        self.assertEqual(self.service.start_calls, [True, True])
+        self.assertEqual(self.service.stop_calls, 1)
+        self.assertFalse(self.service.stopped)
 
 
 if __name__ == "__main__":

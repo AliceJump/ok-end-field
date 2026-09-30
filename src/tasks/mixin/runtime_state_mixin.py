@@ -155,6 +155,55 @@ class RuntimeStateMixin:
         self._runtime_position_service_issue = None
         return service
 
+    def stop_runtime_position_service(self) -> bool:
+        """停止共享定位服务；用于传送等会跨场景切换的流程。"""
+
+        service = self.get_runtime_position_service()
+        stopper = getattr(service, "stop_minimap_position", None)
+        if service is None or not callable(stopper):
+            self.log_warning("无法停止小地图定位服务，传送后可能继续使用旧场景锚点", notify=True)
+            return False
+        try:
+            stopper()
+        except Exception as exc:
+            self.log_warning(f"停止小地图定位服务失败: {exc}", notify=True)
+            return False
+        return True
+
+    def start_runtime_position_service(self, *, wait_stable: bool = True) -> bool:
+        """启动共享定位服务；``wait_stable`` 为真时等待稳定 WS 并建立新锚点。"""
+
+        service = self.get_runtime_position_service()
+        if service is None:
+            self._report_runtime_position_service_issue(
+                "missing",
+                "未注册「小地图定位」触发任务，无法重新启动定位",
+            )
+            return False
+        if not getattr(service, "enabled", True):
+            self._report_runtime_position_service_issue(
+                "disabled",
+                "「小地图定位」触发任务未启用，无法重新启动定位",
+            )
+            return False
+        starter = getattr(service, "start_minimap_position", None)
+        if not callable(starter):
+            self.log_warning("小地图定位服务未实现启动接口", notify=True)
+            return False
+        try:
+            started = bool(starter(wait_stable=wait_stable))
+        except Exception as exc:
+            self.log_warning(f"重新启动小地图定位服务失败: {exc}", notify=True)
+            return False
+        if not bool(getattr(service, "minimap_position_ready", False)):
+            self._report_runtime_position_service_issue(
+                "uninitialized",
+                "小地图定位器未完成初始化，请检查全局「Nav Config」和游戏窗口",
+            )
+            return False
+        self._runtime_position_service_issue = None
+        return started
+
     def _report_runtime_position_service_issue(self, issue: str, message: str) -> None:
         """相同不可用状态只提示一次；恢复后再次故障可重新提示。"""
         if self._runtime_position_service_issue == issue:

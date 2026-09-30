@@ -261,6 +261,27 @@ class TestMinimapPositionMixin(unittest.TestCase):
         recovered = self.task.tick(self.frame, dt=0.5, ws=(100.0, 200.0))
         self.assertTrue(recovered["position_trusted"])
 
+    def test_stable_ws_forces_reanchor_when_rest_detection_is_stuck(self):
+        self.task.start_minimap_position()
+        fusion = self.task._minimap_fusion
+        fusion.sync((100.0, 0.0, 200.0), now=self.task.active_time())
+        fusion.try_sync = Mock(return_value=False)
+        fusion.should_force_sync = Mock(return_value=True)
+        fusion.force_sync = Mock(side_effect=lambda *args, **kwargs: fusion.estimate())
+        fusion._ws_stable_hits = 3
+        self.task._minimap_position_trusted = False
+        self.task._minimap_trust_reason = "low_response"
+        self.task._minimap_od.last_result = Mock(return_value={"reason": "shift_too_small"})
+        self.task.push_ws(100.0, 200.0)
+
+        state = self.task.minimap_position(frame=self.frame)
+
+        self.assertTrue(state["position_trusted"])
+        self.assertTrue(state["just_synced"])
+        self.assertEqual(state["trust_reason"], "forced_sync")
+        self.assertEqual(state["sync_seq"], 1)
+        fusion.force_sync.assert_called_once()
+
     def test_start_reports_no_truth_without_content(self):
         """没配 content 时没有官方真值来源：返回 False，但仍建成里程计与融合。"""
         self.assertFalse(self.task.start_minimap_position())
