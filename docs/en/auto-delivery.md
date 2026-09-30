@@ -54,8 +54,8 @@ The default is **Zip-line only**. With **Grid navigation**:
 
 1. After teleporting, navigate to the accepted location's pickup coordinate.
 2. Prefer a direct `receive_good` template match; if missing, fall back to the original blue-marker and forward search.
-3. After pickup, recognize the destination on the left and navigate to its configured coordinate.
-4. Prefer a direct submit click; if missing, fall back to the original destination OCR navigation and submit flow.
+3. After pickup, recognize the destination on the left and navigate to its configured coordinate; switch to walking about 5 meters before the target.
+4. During the final approach, keep moving while searching for the submit/handover button and click it as soon as it appears; otherwise fall back to the original destination OCR navigation and submit flow.
 5. If a pickup or destination coordinate is missing, that stage falls back to the zip-line-only flow.
 
 ---

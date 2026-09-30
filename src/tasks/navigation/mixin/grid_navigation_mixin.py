@@ -327,6 +327,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         grid_path: str | None = None,
         grid_dir: str | None = None,
         zoom: str | None = None,
+        stop_distance: float | None = None,
     ) -> bool:
         """规划并执行到世界坐标 ``(x, z)`` 的路线。
 
@@ -430,6 +431,15 @@ class GridNavigationMixin(RuntimeStateMixin):
                     self._wait_for_grid_position(f"等待可靠朝向: score={heading_score}")
                     self.sleep(tick)
                     continue
+                if stop_distance is not None:
+                    distance_to_goal = math.hypot(
+                        float(x) - goal[0],
+                        float(z) - goal[1],
+                    )
+                    if distance_to_goal <= max(0.0, float(stop_distance)):
+                        self._set_grid_walking(False)
+                        self.log_info(f"进入终点接近范围（距目标 {distance_to_goal:.2f}m），停止网格导航")
+                        return True
 
                 if self._grid_nav_follower is None or actual_map != self._grid_nav_map_id:
                     map_changed = self._grid_nav_follower is not None and actual_map != self._grid_nav_map_id

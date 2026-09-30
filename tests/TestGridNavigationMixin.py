@@ -303,6 +303,21 @@ class TestGridNavigationMixin(unittest.TestCase):
 
         self.assertEqual(refreshes, [""])
 
+    def test_navigation_can_stop_before_goal_for_final_approach(self):
+        self.task.x = 1.0
+        self.task.z = 0.5
+
+        self.assertTrue(
+            self.task.navigate_grid_to(
+                (4.5, 0.5),
+                map_id="test",
+                stop_distance=5.0,
+            )
+        )
+
+        self.assertTrue(any("进入终点接近范围" in msg for msg in self.task.logs))
+        self.assertFalse(self.task.w_down)
+
     def test_execute_zip_line_uses_existing_zip_line_mixin(self):
         calls = []
         first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)

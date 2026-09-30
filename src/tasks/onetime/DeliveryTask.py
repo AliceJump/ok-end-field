@@ -1,3 +1,4 @@
+import math
 import webbrowser
 from enum import Enum, auto
 from typing import ClassVar
@@ -23,6 +24,7 @@ from src.data.delivery_area_service import (
 )
 from src.data.FeatureList import FeatureList as fL
 from src.icons import Icons
+from src.nav.route_follower import bearing_to_point
 from src.tasks.account.account_mixin import AccountMixin
 from src.tasks.navigation.mixin.grid_navigation_mixin import GridNavigationMixin
 from src.tasks.navigation.mixin.map_mixin import MapMixin
@@ -35,6 +37,11 @@ secondary_objective_direction_dot = [
     fL.secondary_objective_direction_dot_light_three,
     fL.secondary_objective_direction_dot_light_fourth,
 ]
+
+DELIVERY_APPROACH_DISTANCE_M = 5.0
+DELIVERY_APPROACH_STOP_DISTANCE_M = 0.6
+DELIVERY_APPROACH_TIMEOUT_S = 10.0
+DELIVERY_APPROACH_STEP_S = 0.18
 
 
 class DeliveryNavigationMode(Enum):
@@ -134,6 +141,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._init_grid_navigation_mixin()
+        self._delivery_approach_walk_mode = False
+        self._delivery_target_coordinate = None
         self.default_config.update({"_enabled": True})
         self.name = "自动送货"
         self.icon = Icons.Deliver
@@ -433,13 +442,13 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
     def _delivery_end_patterns(self) -> dict:
         return {get_delivery_target_ocr_pattern(self.delivery_area, end, self.lang): end for end in self.ends}
 
-    def _navigate_delivery_coordinate(self, coordinate, label: str) -> bool:
+    def _navigate_delivery_coordinate(self, coordinate, label: str, stop_distance: float | None = None) -> bool:
         if coordinate is None:
             self.log_warning(f"缺少{label}坐标，无法使用网格导航")
             return False
         goal = (float(coordinate[0]), float(coordinate[2]))
         self.log_info(f"网格导航前往{label}: ({goal[0]:.2f}, {goal[1]:.2f})")
-        if not self.navigate_grid_to(goal):
+        if not self.navigate_grid_to(goal, stop_distance=stop_distance):
             self.log_warning(f"网格导航未能到达{label}")
             return False
         return True
@@ -510,18 +519,113 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
         self.log_warning("左侧目标文本未匹配配置的送货终点")
         return None, None
 
-    def _submit_at_destination(self, end_pattern) -> bool:
-        submit_pattern = self._resolve_delivery_submit_pattern(end_pattern)
-        if self.wait_click_ocr(
+    def _enter_delivery_approach_walk_mode(self) -> None:
+        """交货点附近只切换一次步行模式。"""
+        if self._delivery_approach_walk_mode:
+            return
+        self.press_key("ctrl", after_sleep=0.05)
+        self._delivery_approach_walk_mode = True
+        self.log_info("距送货点约 5m，切换步行模式接近并搜索交货按钮")
+
+    def _restore_delivery_approach_run_mode(self) -> None:
+        """交货接近结束后恢复奔跑模式。"""
+        if not self._delivery_approach_walk_mode:
+            return
+        self.press_key("ctrl", after_sleep=0.01)
+        self._delivery_approach_walk_mode = False
+        self.log_info("送货接近结束，恢复奔跑模式")
+
+    def _find_delivery_submit_candidate(self, submit_pattern, frame=None):
+        frame = self.next_frame() if frame is None else frame
+        results = self.ocr(
             match=submit_pattern,
             box=self.box.bottom_right,
-            settle_time=1,
-            time_out=2,
-            log=True,
-            alt=True,
-        ):
-            self.skip_dialog(time_out=5)
-            self.ensure_main()
+            frame=frame,
+            log=False,
+        )
+        return results[0] if results else None
+
+    def _click_delivery_submit(self, candidate) -> bool:
+        self._set_grid_walking(False)
+        self._restore_delivery_approach_run_mode()
+        self.click_with_alt(candidate, after_sleep=2)
+        self.skip_dialog(time_out=5)
+        self.ensure_main()
+        return True
+
+    def _try_click_delivery_submit(self, submit_pattern, frame=None) -> bool:
+        candidate = self._find_delivery_submit_candidate(submit_pattern, frame=frame)
+        if candidate is None:
+            return False
+        return self._click_delivery_submit(candidate)
+
+    def _approach_delivery_destination_for_submit(self, submit_pattern) -> bool:
+        """从终点前几米开始步行接近，并在移动中搜索交货按钮。"""
+        coordinate = getattr(self, "_delivery_target_coordinate", None)
+        if coordinate is None:
+            return False
+        goal = (float(coordinate[0]), float(coordinate[2]))
+        self._enter_delivery_approach_walk_mode()
+        started = self.active_time()
+        try:
+            while self.active_time() - started < DELIVERY_APPROACH_TIMEOUT_S:
+                frame = self.next_frame()
+                if self._try_click_delivery_submit(submit_pattern, frame=frame):
+                    return True
+                state = self.world_pose(frame=frame, max_age=1.0)
+                if state is None or not state.get("position_trusted", True):
+                    self._set_grid_walking(False)
+                    self.sleep(DELIVERY_APPROACH_STEP_S)
+                    continue
+                x, z = state.get("x"), state.get("z")
+                if x is None or z is None:
+                    self._set_grid_walking(False)
+                    self.sleep(DELIVERY_APPROACH_STEP_S)
+                    continue
+                distance = math.hypot(float(x) - goal[0], float(z) - goal[1])
+                if distance > DELIVERY_APPROACH_STOP_DISTANCE_M:
+                    target_bearing = bearing_to_point(
+                        float(x),
+                        float(z),
+                        goal[0],
+                        goal[1],
+                    )
+                    result = self.pose_aim_view_to_bearing(
+                        target_bearing,
+                        tolerance=self._grid_turn_tolerance(),
+                        max_rounds=1,
+                        min_score=self._grid_heading_min_score(),
+                        verify_heading=False,
+                    )
+                    if result.get("ok"):
+                        self._set_grid_walking(True)
+                        self.sleep(
+                            min(
+                                DELIVERY_APPROACH_STEP_S,
+                                max(0.05, distance / 4.0),
+                            )
+                        )
+                        self._set_grid_walking(False)
+                    else:
+                        self._set_grid_walking(False)
+                        self.log_warning(
+                            f"向送货点调整视角失败：目标={target_bearing:.1f}°，实测={result.get('heading')}"
+                        )
+                else:
+                    self._set_grid_walking(False)
+                    self.sleep(DELIVERY_APPROACH_STEP_S)
+            self.log_warning("接近送货点时未搜索到交货按钮")
+            return False
+        finally:
+            self._set_grid_walking(False)
+            if self._delivery_approach_walk_mode:
+                self._restore_delivery_approach_run_mode()
+
+    def _submit_at_destination(self, end_pattern) -> bool:
+        submit_pattern = self._resolve_delivery_submit_pattern(end_pattern)
+        if self._try_click_delivery_submit(submit_pattern):
+            return True
+        if self._approach_delivery_destination_for_submit(submit_pattern):
             return True
         self.log_info("网格导航到达后未直接找到提交按钮，回退原送达搜索")
         return self.to_end_and_submit(end_pattern)
@@ -567,6 +671,8 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
 
     def _run_grid_delivery_state_machine(self, ends_pattern_dict: dict) -> bool:
         """按坐标状态机执行取货和送达，移动由网格导航统一负责。"""
+        self._delivery_target_coordinate = None
+        self._delivery_approach_walk_mode = False
         pickup_coordinate = get_delivery_location_coordinate(
             self.delivery_area,
             self._accepted_delivery_location or "",
@@ -611,12 +717,17 @@ class DeliveryTask(AccountMixin, ZipLineMixin, GridNavigationMixin, MapMixin):
                         target=(secondary_objective_direction_dot, "feature"),
                     )
                     return self.to_end_and_submit(end_pattern)
+                self._delivery_target_coordinate = target_coordinate
                 pickup_coordinate = target_coordinate
                 phase = DeliveryPhase.NAVIGATE_TO_DESTINATION
             elif phase == DeliveryPhase.NAVIGATE_TO_DESTINATION:
                 phase = (
                     DeliveryPhase.SUBMIT
-                    if self._navigate_delivery_coordinate(pickup_coordinate, "送货点")
+                    if self._navigate_delivery_coordinate(
+                        pickup_coordinate,
+                        "送货点",
+                        stop_distance=DELIVERY_APPROACH_DISTANCE_M,
+                    )
                     else DeliveryPhase.FAILED
                 )
             elif phase == DeliveryPhase.SUBMIT:

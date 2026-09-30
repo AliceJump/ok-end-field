@@ -23,6 +23,11 @@ class TestDeliveryStateMachine(unittest.TestCase):
         task.delivery_area = "武陵"
         task._accepted_delivery_location = location
         task.config = {task.CFG_ARRIVAL_MODE: mode}
+        task.box = SimpleNamespace(bottom_right=object())
+        task._grid_nav_w_held = False
+        task._grid_nav_sprint_active = False
+        task._delivery_approach_walk_mode = False
+        task._delivery_target_coordinate = None
         task.logs = []
         task.log_info = lambda message: task.logs.append(("info", message))
         task.log_warning = lambda message: task.logs.append(("warning", message))
@@ -55,7 +60,9 @@ class TestDeliveryStateMachine(unittest.TestCase):
         task = self._task()
         calls = []
         target_pattern = re.compile("资源")
-        task._navigate_delivery_coordinate = lambda coordinate, label: calls.append((label, coordinate)) or True
+        task._navigate_delivery_coordinate = lambda coordinate, label, stop_distance=None: (
+            calls.append((label, coordinate, stop_distance)) or True
+        )
         task._pickup_receive_good_with_fallback = lambda: calls.append(("pickup", None)) or True
         task._recognize_delivery_end = lambda patterns: ("资源", target_pattern)
         task._submit_at_destination = lambda pattern: calls.append(("submit", pattern)) or True
@@ -64,9 +71,9 @@ class TestDeliveryStateMachine(unittest.TestCase):
         self.assertEqual(
             calls,
             [
-                ("取货点", get_delivery_location_coordinate("武陵", "武陵城")),
+                ("取货点", get_delivery_location_coordinate("武陵", "武陵城"), None),
                 ("pickup", None),
-                ("送货点", get_delivery_target_coordinate("武陵", "资源", "武陵城")),
+                ("送货点", get_delivery_target_coordinate("武陵", "资源", "武陵城"), 5.0),
                 ("submit", target_pattern),
             ],
         )
@@ -167,7 +174,10 @@ class TestDeliveryStateMachine(unittest.TestCase):
         )
         task.box = SimpleNamespace(bottom_right=object())
         calls = []
-        task.wait_click_ocr = lambda **kwargs: calls.append(kwargs["match"]) or True
+        task._delivery_approach_walk_mode = False
+        task.next_frame = lambda: object()
+        task.ocr = lambda **kwargs: calls.append(kwargs["match"]) or [object()]
+        task.click_with_alt = lambda candidate, **kwargs: None
         task.skip_dialog = lambda **kwargs: None
         task.ensure_main = lambda: None
 
@@ -187,12 +197,42 @@ class TestDeliveryStateMachine(unittest.TestCase):
         )
         task.box = SimpleNamespace(bottom_right=object())
         calls = []
-        task.wait_click_ocr = lambda **kwargs: calls.append(kwargs["match"]) or True
+        task._delivery_approach_walk_mode = False
+        task.next_frame = lambda: object()
+        task.ocr = lambda **kwargs: calls.append(kwargs["match"]) or [object()]
+        task.click_with_alt = lambda candidate, **kwargs: None
         task.skip_dialog = lambda **kwargs: None
         task.ensure_main = lambda: None
 
         self.assertTrue(task._submit_at_destination(target_pattern))
         self.assertEqual(calls, [target_pattern])
+
+    def test_destination_approach_walks_and_searches_submit(self):
+        task = self._task()
+        target_pattern = re.compile("交货")
+        task._delivery_target_coordinate = (0.0, 0.0, 10.0)
+        task._delivery_approach_walk_mode = False
+        task.t = 0.0
+        task.active_time = lambda: task.t
+        task.next_frame = lambda: object()
+        task.press_key = lambda key, **kwargs: task.logs.append(("key", key))
+        task._set_grid_walking = lambda held: task.logs.append(("walk", held))
+        task.sleep = lambda seconds: setattr(task, "t", task.t + float(seconds))
+        task.world_pose = lambda **kwargs: {"x": 0.0, "z": 8.0, "position_trusted": True}
+        task.pose_aim_view_to_bearing = lambda *args, **kwargs: {"ok": True, "heading": 180.0}
+        task._grid_turn_tolerance = lambda: 4.0
+        task._grid_heading_min_score = lambda: 0.6
+        submit_calls = []
+        ocr_results = iter(([], [object()]))
+        task.ocr = lambda **kwargs: next(ocr_results, [object()])
+        task.click_with_alt = lambda candidate, **kwargs: submit_calls.append(candidate) or None
+        task.skip_dialog = lambda **kwargs: None
+        task.ensure_main = lambda: None
+
+        self.assertTrue(task._approach_delivery_destination_for_submit(target_pattern))
+        self.assertTrue(any(key == "ctrl" for kind, key in task.logs if kind == "key"))
+        self.assertTrue(any(kind == "walk" and held for kind, held in task.logs))
+        self.assertEqual(len(submit_calls), 1)
 
 
 if __name__ == "__main__":
