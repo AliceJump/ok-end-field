@@ -12,6 +12,8 @@ from src.data.timing_dps import build_options, load_damage_quotes, optimize_cycl
 class TimedCombatLogic:
     _NORMAL_ATTACK_REASSERT_INTERVAL = 0.25
     _FULL_SKILL_POINTS = 3
+    _ASSUME_SUCCESS_SP_THRESHOLD = 25.0
+    _ASSUME_SUCCESS_PAUSE = 0.1
 
     def __init__(self, task, store=None):
         self.task = task
@@ -175,19 +177,35 @@ class TimedCombatLogic:
         token = self.order[self.cursor]
         profiles = self.store.profiles(self.team[int(token) - 1], "battle")
         costs = [profile.skill_points for profile in profiles]
+        sp_costs = [profile.sp_cost for profile in profiles]
         if not (self._ready(profiles, slot=token, kind="battle") and None not in costs and points >= max(costs)):
             return False
 
         started = self.task.active_time()
         self.task.send_key(token)
         self._begin(profiles, started, slot=token, kind="battle")
-        if max(costs) > 0:
+
+        max_sp_cost = None if None in sp_costs else max(sp_costs)
+        if max_sp_cost is not None and max_sp_cost <= self._ASSUME_SUCCESS_SP_THRESHOLD:
+            # 25 SP and below is too small/noisy to require visual consumption
+            # confirmation. State-ending variants can also be 0 SP. Treat the
+            # accepted key press as success, but keep a short handoff pause so
+            # the game has time to commit the state transition.
+            self.task.sleep(self._ASSUME_SUCCESS_PAUSE)
+            self._observe_battle()
+            self.cursor = (self.cursor + 1) % len(self.order)
+            self._set_cooldowns()
+            self.task.log_info(
+                f"时间排轴: 战技 {token} 消耗 {max_sp_cost:g} SP <= "
+                f"{self._ASSUME_SUCCESS_SP_THRESHOLD:g}，按键后直接视为成功"
+            )
+        elif max(costs) > 0:
             self.pending = (points, token)
             if overflow:
                 self.task.log_info(f"时间排轴: 技力已满，防溢出抢占尝试战技 {token}")
         else:
-            # No resource transition exists for a zero-cost skill. This is
-            # explicitly an attempt; use its timeline/CD to prevent spam.
+            # Unknown exact SP cost but no full-bar cost: keep the previous
+            # explicit-attempt behavior rather than inventing a consumption.
             self._observe_battle()
             self.cursor = (self.cursor + 1) % len(self.order)
             self._set_cooldowns()
