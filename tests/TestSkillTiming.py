@@ -46,15 +46,15 @@ class TestSkillTiming(unittest.TestCase):
         self.assertEqual(len(profiles), 2)
         self.assertEqual({profile.duration for profile in profiles}, {215 / 30, 250 / 30})
 
-    def test_window_whitelist_and_exclusive_boundaries(self):
+    def test_window_whitelist_and_actionable_boundaries(self):
         (profile,) = load_skill_timings().profiles("佩丽卡", "battle")
         (other,) = load_skill_timings().profiles("狼卫", "battle")
-        self.assertFalse(profile.allows(0.95, (profile,)))
-        self.assertTrue(profile.allows(1.1, (profile,)))
-        self.assertFalse(profile.allows(1.1, (other,)))
-        self.assertFalse(profile.allows(1.1, ()))
-        self.assertFalse(profile.allows(2, (profile,)))
-        self.assertTrue(profile.allows(6, (other,)))
+        self.assertFalse(profile.allows(profile.hard_lock - 0.01, (profile,)))
+        self.assertTrue(profile.allows(1.1, (profile,)))  # explicit allow-next window
+        self.assertLess(profile.actionable, profile.duration)
+        self.assertFalse(profile.allows(profile.actionable - 0.01, (other,)))
+        self.assertTrue(profile.allows(profile.actionable + 0.01, (other,)))
+        self.assertTrue(profile.allows(profile.actionable + 0.01, ()))
 
     def test_full_record_is_lazy_and_detects_corruption(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -130,10 +130,11 @@ class FakeTask:
     def _find_battle_ult(self, name):
         return name[4:] in self.ults
 
-    def use_ult(self, ult_sequence=None):
+    def use_ult(self, ult_sequence=None, wait_for_team_recovery=True):
         self.keys.append("ult_" + ult_sequence)
         self.ults.remove(ult_sequence)
-        self.now += 2  # Existing helper waits for animation/HUD recovery.
+        if wait_for_team_recovery:
+            self.now += 2
         return True
 
     def mouse_up(self, key):
@@ -188,14 +189,14 @@ class TestTimedCombat(unittest.TestCase):
         task.points = 0
         logic.step()
         self.assertEqual(logic.cursor, 1)
-        task.now = 6
+        task.now = logic.started + max(profile.actionable for profile in logic.active) + 0.01
         logic.step()
         self.assertEqual(task.keys, ["1"])
         self.assertEqual(task.mouse[-1], "down")
         task.points = 1
         logic.step()
         self.assertEqual(task.keys, ["1", "2"])
-        self.assertLess(task.now, 12.5)
+        self.assertLess(task.now, 6)
 
     def test_failed_attempt_preserves_sequence_and_guard(self):
         task = FakeTask()
@@ -205,11 +206,11 @@ class TestTimedCombat(unittest.TestCase):
         logic.step()
         self.assertEqual(logic.cursor, 0)
         self.assertEqual(task.keys, ["1"])  # Pending timeout is not an early cancel proof.
-        task.now = 6
+        task.now = logic.started + max(profile.actionable for profile in logic.active) + 0.01
         logic.step()
         self.assertEqual(task.keys, ["1", "1"])
 
-    def test_monitor_ready_link_and_ult_and_elapsed_helper_time(self):
+    def test_monitor_ready_link_and_nonblocking_alt_ult(self):
         task = FakeTask()
         logic = logic_for(task)
         task.link = True
@@ -220,7 +221,7 @@ class TestTimedCombat(unittest.TestCase):
         logic.step()
         self.assertEqual(task.keys, ["e", "ult_1"])
         self.assertEqual(logic.started, 100)
-        self.assertEqual(task.now, 102)
+        self.assertEqual(task.now, 100)
 
     def test_no_battle_sends_no_inputs(self):
         task = FakeTask()

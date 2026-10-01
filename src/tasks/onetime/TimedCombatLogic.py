@@ -166,7 +166,7 @@ class TimedCombatLogic:
             profiles = self.store.profiles(self.team[int(token) - 1], "ult")
             if self._ready(profiles) and self.task._find_battle_ult("ult_" + token):
                 quote = self.damage_quotes.get(self.team[int(token) - 1])
-                rate = quote.ult / max(max(p.duration, p.exclusive, 0.3) for p in profiles) if quote else 0
+                rate = quote.ult / max(max(p.actionable, 0.3) for p in profiles) if quote else 0
                 ready_ults.append((rate, token, profiles))
         # Sort simultaneously ready ults by their own damage/time. The existing
         # monitor remains authoritative and unknown utility skills still cast.
@@ -174,7 +174,7 @@ class TimedCombatLogic:
         for _rate, token, profiles in ready_ults:
             self._hold(False)
             started = self.task.active_time()
-            if self.task.use_ult(ult_sequence=token):
+            if self.task.use_ult(ult_sequence=token, wait_for_team_recovery=False):
                 self._begin(profiles, started)
                 self._observe_bonus("ult", token)
                 self._set_cooldowns()

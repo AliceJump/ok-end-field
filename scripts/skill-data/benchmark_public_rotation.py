@@ -137,6 +137,7 @@ def benchmark(regen=8.0, seconds=180.0):
         "ultimate_guard_replay": {
             "native_duration_seconds": max(p.duration for p in profiles),
             "native_exclusive_seconds": max(p.exclusive for p in profiles),
+            "scheduler_actionable_seconds": max(p.actionable for p in profiles),
             "first_normal_attack_input_seconds": first_attack,
             "observed_damage": None,
         },

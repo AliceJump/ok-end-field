@@ -12,6 +12,8 @@ from pathlib import Path
 
 SNAPSHOT = Path(__file__).resolve().parents[2] / "assets/data/skill_timings/20261002"
 _SUFFIX = {"battle": "normal_skill", "link": "combo_skill", "ult": "ultimate_skill"}
+_MIN_HARD_LOCK_SECONDS = 0.3
+_ACTIONABLE_GRACE_SECONDS = 0.15
 
 
 @dataclass(frozen=True)
@@ -24,15 +26,33 @@ class SkillTiming:
     allow_next: tuple[tuple[float, float, tuple[str, ...]], ...]
     sp_cost: float | None = None
 
+    @property
+    def hard_lock(self) -> float:
+        """Absolute no-input window from the native exclusive timeline."""
+        return max(_MIN_HARD_LOCK_SECONDS, self.exclusive)
+
+    @property
+    def actionable(self) -> float:
+        """Fallback handoff point when no candidate-specific allow-next window matches.
+
+        duration is the complete authored timeline, not a generic input lock.
+        Keep a small grace after exclusive to avoid scheduling exactly on a
+        boundary while still allowing the next action far earlier than full duration.
+        """
+        return max(
+            self.hard_lock,
+            min(self.duration, self.hard_lock + _ACTIONABLE_GRACE_SECONDS),
+        )
+
     def allows(self, elapsed: float, candidates: tuple[SkillTiming, ...]) -> bool:
-        if elapsed < max(0.3, self.exclusive):
+        if elapsed < self.hard_lock:
             return False
-        if elapsed >= self.duration:
-            return True
-        return bool(candidates) and any(
+        if candidates and any(
             start <= elapsed <= end and all(candidate.skill_id in allowed for candidate in candidates)
             for start, end, allowed in self.allow_next
-        )
+        ):
+            return True
+        return elapsed >= self.actionable
 
 
 class SkillTimingStore:

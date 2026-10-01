@@ -249,12 +249,18 @@ class BattleMixin(BaseEfTask):
     # 终结技释放后延迟退出检查的时间（秒）
     ULT_EXIT_DELAY = 3.0
 
-    def use_ult(self, ult_sequence: str | None = None):
+    def use_ult(self, ult_sequence: str | None = None, wait_for_team_recovery: bool = True):
         """
         尝试释放终极技。
 
         依次检测技能键：
             1 -> 2 -> 3 -> 4
+
+        Args:
+            ult_sequence: 指定要释放的终结技槽位；None 时按 1..4 检测。
+            wait_for_team_recovery: Alt 释放后是否同步等待头像消失并恢复。
+                默认 True 保持旧行为；时间排轴传 False，由外层时间保护和
+                HUD 监测继续推进。长按模式仍保留旧同步等待以保证按键释放。
 
         Returns:
             bool
@@ -275,9 +281,11 @@ class BattleMixin(BaseEfTask):
                     self.send_key_up("alt")
                     # 从实际完成按键操作的时刻开始计算退出延迟
                     self._last_ult_release_time = self.active_time()
-                    # 等待技能释放导致战斗状态变化，然后等待重新识别到至少一个人
-                    self._has_detected_team_member(time_out=1, require_four_unknown=True)
-                    self._has_detected_team_member()
+                    # 旧策略需要等待终结技动画期间 HUD 消失再恢复；时间排轴模式
+                    # 已有技能时间保护，可跳过这段同步等待，让外层监测继续刷新。
+                    if wait_for_team_recovery:
+                        self._has_detected_team_member(time_out=1, require_four_unknown=True)
+                        self._has_detected_team_member()
                     return True
                 self.send_key_down(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，不经过KeyConfigManager管理
                 # 等待技能释放导致战斗状态变化
