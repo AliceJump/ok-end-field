@@ -179,14 +179,14 @@ schema 是完整文本的 `OCR 错误文本 -> 正确文本`：
 6. 运行语言引用测试并实测 OCR 区域。
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest tests.TestCheckLang
+uv run --locked python -X utf8 -m unittest tests.TestCheckLang -v
 ```
 
-`TestCheckLang` 当前只扫描形如 `self.lang.<module>.k_xxx` 的引用，只校验 `zh_CN` 和 `zh_TW`：
+`TestCheckLang` 使用 AST 扫描 `self.lang.<module>.<key>`，同时覆盖语义 key 和旧 `k_*` key：
 
-- 模块文件不存在或两个 locale 都缺 key：失败。
-- 只缺一个活动 locale：记录 warning，不导致失败。
-- 非 `k_` 命名的访问（例如 `self.lang.login_mixin.ms`）不在该测试正则的覆盖范围内，需要人工检查。
+- 模块文件不存在，或引用的 key 缺少任一当前活动 locale：失败。活动 locale 来自 `get_supported_locales()`，当前为 `zh_CN`、`zh_TW`。
+- 全部 lang JSON 的节点必须只含一种合法类型，值非空且类型正确，`pattern` 必须能编译为 Python 正则。
+- 动态属性访问不属于这类静态引用的覆盖范围；OCR 区域、实际匹配效果和专有名词仍需人工核验。新增 key 优先使用语义名称，已有 `k_*` key 无需强制改名。
 
 ## 7. GUI gettext
 
@@ -199,8 +199,8 @@ i18n/<locale>/LC_MESSAGES/ok.po
 当前仓库有 `zh_CN`、`zh_TW`、`en_US`、`ja_JP`、`ko_KR`、`es_ES` catalog。相关验证：
 
 ```powershell
-.\.venv\Scripts\python.exe -m unittest tests.TestGuiI18n
-.\.venv\Scripts\python.exe -m unittest tests.TestPoLocaleConsistency
+uv run --locked python -X utf8 -m unittest tests.TestGuiI18n -v
+uv run --locked python -X utf8 -m unittest tests.TestPoLocaleConsistency -v
 ```
 
 `TestPoLocaleConsistency` 检查 catalog 重复/空翻译、占位符一致性、部分语言不应复制英文 fallback，以及已知运行时污染 msgid。它不决定 OCR `SUPPORTED_LOCALES`。
@@ -210,13 +210,13 @@ i18n/<locale>/LC_MESSAGES/ok.po
 `scripts/i18n/` 下的可用工具：
 
 - `sync_*.py`：官方译名同步进 lang JSON 与 ok.po（world_map / map_mark / wiki_item / character / official_i18n 各数据源一个脚本）。
-- `gen_lang_stubs.py`：扫描 OCR/业务 lang JSON 生成 `src/data/lang/_lang_typed.py` 类型提示存根；`effect_names.json` 是 data-only 模块，由生成器显式排除，不暴露为 `self.lang` OCR 模块。
+- `gen_lang_stubs.py`：扫描 OCR/业务 lang JSON 生成 `src/data/lang/_lang_typed.py` 类型提示存根；`DATA_ONLY_MODULES` 中的模块（当前为 `effect_names`、`yingtuo_stages`）被显式排除，不暴露为 `self.lang` OCR 模块。
 - `lang_fill_missing.py`：缺失语言节点补全与审计（`--dry-run` 幂等）。
 - `restore_empty_po_entries.py`：从任意 git ref 的历史 po 恢复被清空的翻译。
 
 针对旧 `assets/lang/<module>/<locale>.json` 目录 schema 的批量翻译与迁移工具已随 schema 切换删除。
 
-当前可靠流程是手工编辑统一 JSON，使用 `TestCheckLang` 校验引用，再人工复核正则和游戏专有名词。
+当前可靠流程是编辑统一 JSON，使用 `TestCheckLang` 校验引用和节点，再人工复核实际匹配与游戏专有名词。更新后运行 `uv run --locked python scripts/i18n/gen_lang_stubs.py`，确认生成 diff 中每一项都对应本次资源改动。已跟踪的完整业务文本维护六种核心 locale，并保留额外 locale；本地生成文件保持原路径和忽略状态。
 
 ## 9. 排查清单
 
@@ -227,6 +227,6 @@ i18n/<locale>/LC_MESSAGES/ok.po
 3. 运行时 locale 是否在 `ACTIVE_LOCALES_CONFIG` 中启用。
 4. locale 节点是否只包含一个合法类型字段。
 5. 正则字符串是否为有效 Python 正则。
-6. `TestCheckLang` 未覆盖的非 `k_` key 是否人工补齐。
+6. 重新运行 `TestCheckLang` 并生成类型存根，确认语义 key、旧 key 和生成 diff 与资源改动一致；动态引用另行人工检查。
 
 OCR 稳定误识时，先确认是否只是匹配问题。只有等长字符混淆适合加入 `ocr_text_fix.json`；长度变化、词序变化或仅某一业务成立的纠错应在语言 pattern 或业务解析中处理。

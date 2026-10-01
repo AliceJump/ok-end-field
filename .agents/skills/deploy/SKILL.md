@@ -15,6 +15,8 @@ Remote `master` accepts code only through PRs. On `master`, fetch `origin` and r
 
 Use `.agents/skills/deploy/scripts/next_tag.py` with `--remote origin`; stop if remote tag lookup or the locked Python environment fails. `release` increments the latest stable patch. `beta` and `alpha` each continue their own suffix on an unreleased next patch; a stable release closes that prerelease base. Never reuse, move, or delete a tag.
 
+Bare `deploy` and `deploy release` select `release`; `deploy beta` selects `beta`; `deploy alpha` and `release alpha` select `alpha`.
+
 ```powershell
 uv run --locked python .agents/skills/deploy/scripts/next_tag.py release --remote origin
 # substitute beta or alpha for a prerelease
@@ -23,7 +25,7 @@ uv run --locked python .agents/skills/deploy/scripts/next_tag.py release --remot
 ## Release steps
 
 1. Inspect `git status --short --branch`, relevant/staged diffs, and the latest non-merge subject (`git log --no-merges -1 --format=%s`). Run focused verification; stop on failure unless the user explicitly accepts it. Use the subject's natural language and a concise repository-style prefix for a new commit.
-2. Calculate the tag before committing. Stage only intended files; inspect `git diff --cached --stat` and `git diff --cached`. Create one nonempty commit when needed.
+2. Calculate the tag before committing. Stage only intended files; inspect `git diff --cached --stat` and `git diff --cached`. Create one commit when needed; an empty commit requires an explicit user request and still obeys the branch gate.
 3. Create an annotated tag: `git tag -a "<tag>" -m "<tag>"`. Confirm it points to the intended commit with `git show --no-patch --decorate HEAD`.
 4. Push to the publishing remote unless local-only. On `master`, push **only the tag**: `git push origin "<tag>"`. On another branch: `git push origin HEAD "<tag>"`. Report commit subject, tag, remote, and actual push result; a local tag or successful push does not prove CI publishing succeeded.
 

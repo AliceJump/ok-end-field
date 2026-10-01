@@ -7,13 +7,15 @@ description: Generate or refine Python automation code for ok-script task run me
 
 ## Output
 
-- Produce code for `run(self)` when the user asks for automation code. Return code only unless they ask for an explanation; then explain placement in a `BaseTask` subclass and any templates or setup they must provide.
+- Produce code for `run(self)` when the user asks for automation code. Return code only unless they ask for an explanation; then put the code first and explain placement in a `BaseTask` subclass and any templates or setup they must provide.
 - Put a concise **Chinese inline comment on every nonblank generated Python line**, including imports and control flow. State when a coordinate is estimated from a screenshot.
 - Ask at most a few short questions only when an assumption would make the automation unsafe or unusable.
 
 ## Choose task APIs
 
-Check APIs already used by the target project or the [official ok-script API](https://raw.githubusercontent.com/ok-oldking/ok-script/refs/heads/master/docs/api_doc/README.md). Do not invent methods or add libraries without a concrete need.
+Check APIs already used by the target project or the [official ok-script API](https://raw.githubusercontent.com/ok-oldking/ok-script/refs/heads/master/docs/api_doc/README.md). Do not invent methods. Adding external libraries requires an explicit user request.
+
+For a screenshot, prefer OCR for stable text and template matching for stable icons; use estimated relative coordinates when neither is suitable, and label the estimate.
 
 - Prefer `wait_ocr`, `wait_click_ocr`, `wait_feature`, or `wait_click_feature` for state-dependent transitions. Use `ocr`, `find_one`, or `find_feature` for a single frame or a custom loop.
 - Prefer `click_relative(x, y)` with values from 0 to 1 for approximate positions; use `click_box(box)` for a detected target.
@@ -36,3 +38,7 @@ In a polling loop, use **one** refresh per iteration (`sleep()` or `next_frame()
 ## Failure handling
 
 Use `raise_if_not_found=False` for optional waits and check the result; use `True` when absence should stop the task. Log and return for a recoverable absence. Keep `try/except` around meaningful failure boundaries and log the error.
+
+## Setup explanations
+
+When requested, explain saving the task under the project's `src/tasks/` or `ok_tasks/` convention, registering its class, starting the app, and selecting the task. For window, browser, or emulator/ADB capture setup, point to the project's `capture_config` and existing device configuration. Debug failed detection with OCR regions/thresholds, marked templates, coordinates, logs, and a fresh screenshot.
