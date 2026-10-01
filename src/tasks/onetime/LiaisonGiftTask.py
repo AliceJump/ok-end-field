@@ -12,7 +12,7 @@ from src.tasks.mixin.liaison_mixin import LiaisonMixin
 class LiaisonGiftTask(Common, LiaisonMixin):
     """送礼子任务：干员联络台赠送礼物，日常任务经 DailyFeature 接入。"""
 
-    HELP_LINK = "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/docs/日常任务.md"
+    HELP_LINK = "https://ok-script.com/ok-end-field/docs/日常任务/"
     CFG_PRIORITY_GIFT_TARGET = "优先送礼对象"
     CFG_GIFT_MAX_RETRY = "送礼任务最多尝试次数"
 

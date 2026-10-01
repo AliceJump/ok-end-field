@@ -2648,3 +2648,29 @@ msgstr "일일 작업 전용이며 설정은 「자동 배송」과 별도로 �
 
 msgid "每次送礼时送给联络台干员的礼物个数。"
 msgstr "연락소 오퍼레이터에게 한 번에 줄 선물의 개수입니다."
+
+msgid "使用说明参见选项，更多用法参见 https://ok-script.com/ok-end-field/docs/体力本/"
+msgstr ""
+"사용법은 옵션을, 자세한 내용은 https://ok-script.com/ok-end-field/docs/体力本/ 페이지를 "
+"참조하세요."
+
+msgid ""
+"默认留空，交易货品顺序随机。\n"
+"更多用法参见 https://ok-script.com/ok-end-field/docs/日常任务/ > 优先货品交易序列 。"
+msgstr ""
+"기본값은 비워 둡니다. 거래 물품 순서는 무작위입니다.\n"
+"자세한 내용은 https://ok-script.com/ok-end-field/docs/日常任务/ 의 우선 거래 물품 순서를 참조하세요."
+
+msgid ""
+"默认留空，表示购买「日用消耗」「工业货品」「人文物产」首行首个物资。\n"
+"更多用法参见 https://ok-script.com/ok-end-field/docs/日常任务/ > 买物资 。"
+msgstr ""
+"비워 두면 일용 소모품, 공업 상품, 문화 상품의 첫 번째 행에서 첫 번째 물자를 구매합니다.\n"
+"자세한 내용은 https://ok-script.com/ok-end-field/docs/日常任务/ 의 물자 구매를 참조하세요."
+
+msgid ""
+"打开官网物品导航使用说明。\n"
+"同时打开油猴脚本目录。"
+msgstr ""
+"공식 사이트의 아이템 탐색 사용 설명서를 엽니다.\n"
+"Tampermonkey 스크립트 폴더도 엽니다."
