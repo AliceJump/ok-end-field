@@ -58,6 +58,21 @@ class TestSkillTiming(unittest.TestCase):
         self.assertFalse(profile.allows(profile.actionable - 0.01, (other,)))
         self.assertTrue(profile.allows(profile.actionable + 0.01, (other,)))
 
+    def test_normal_attack_finisher_sp_gain_comes_from_lossless_records(self):
+        store = load_skill_timings()
+        self.assertEqual(store.normal_attack_sp_gain("庄方宜"), 20)
+        self.assertEqual(store.normal_attack_sp_gain("诀"), 20)
+        self.assertEqual(store.normal_attack_sp_gain("梨诺"), 18)
+        self.assertGreaterEqual(store.global_normal_attack_sp_gain(), 20)
+
+    def test_state_skill_is_derived_from_end_variant_and_native_actions(self):
+        spec = load_skill_timings().battle_state("梨诺")
+        self.assertIsNotNone(spec)
+        self.assertEqual(spec.base_skill_id, "chr_0035_liino_normal_skill")
+        self.assertEqual(spec.end_skill_id, "chr_0035_liino_normal_skill_end")
+        self.assertAlmostEqual(spec.duration, 60.0)
+        self.assertEqual(spec.end_cooldown, 3)
+
     def test_full_record_is_lazy_and_detects_corruption(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory)
@@ -84,6 +99,7 @@ class FakeTask:
     def __init__(self):
         self.now = 0.0
         self.points = 1
+        self.sp = None
         self.keys = []
         self.messages = []
         self.mouse = []
@@ -114,6 +130,9 @@ class FakeTask:
         if key == "完成通知":
             return False
         raise AssertionError(f"Read legacy combat strategy: {key}")
+
+    def get_skill_bar_sp(self):
+        return self.points * 100.0 if self.sp is None else self.sp
 
     def get_skill_bar_count(self):
         return self.points
@@ -350,6 +369,36 @@ class TestTimedCombat(unittest.TestCase):
         self.assertTrue(
             any("25 SP <= 25，按键后直接视为成功" in message for message in task.messages)
         )
+
+    def test_precise_sp_readiness_uses_partial_bar_value(self):
+        task = FakeTask()
+        task.sp = 24.0
+        logic = logic_for(task)
+        logic.team[0] = "梨诺"
+
+        logic.step()
+        self.assertEqual(task.keys, [])
+
+        task.sp = 25.0
+        logic.step()
+        self.assertEqual(task.keys, ["1"])
+
+    def test_state_skill_is_not_pressed_again_while_state_is_active(self):
+        task = FakeTask()
+        task.sp = 25.0
+        logic = logic_for(task)
+        logic.team[0] = "梨诺"
+        logic.order = ["1"]
+        logic.state_specs["1"] = logic.store.battle_state("梨诺")
+
+        logic.step()
+        self.assertEqual(task.keys, ["1"])
+        self.assertGreater(logic.state_until["1"], task.now)
+
+        task.sp = 300.0
+        task.now += 1.0
+        logic.step()
+        self.assertEqual(task.keys, ["1"])
 
     def test_detection_exception_releases_held_mouse(self):
         task = FakeTask()

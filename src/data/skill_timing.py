@@ -63,7 +63,107 @@ _COSMETIC_BUFF_HINTS = (
 
 
 def _action_type_name(action: dict) -> str:
-    return str(action.get("$type") or "").rsplit(".", 1)[-1]
+    return str(action.get("$type") or "").split(",", 1)[0].rsplit(".", 1)[-1]
+
+
+def _action_body(action: dict) -> dict:
+    body = action.get("$value")
+    return body if isinstance(body, dict) else action
+
+
+def _walk_actions(value):
+    if isinstance(value, dict):
+        if "$type" in value:
+            yield value
+        for child in value.values():
+            yield from _walk_actions(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _walk_actions(child)
+
+
+def _blackboard_numbers(data: dict) -> dict[str, float]:
+    values = {}
+    for item in data.get("blackboard") or ():
+        key = item.get("key")
+        value = item.get("valueDouble")
+        if key and isinstance(value, (int, float)):
+            values[str(key)] = float(value)
+    return values
+
+
+def _resolve_numeric(value: dict | None, blackboard: dict[str, float]) -> float | None:
+    if not isinstance(value, dict):
+        return None
+    if value.get("useBlackboardKey"):
+        resolved = blackboard.get(str(value.get("blackboardKey") or ""))
+        return resolved if resolved is not None and resolved > 0 else None
+    direct = value.get("value")
+    return float(direct) if isinstance(direct, (int, float)) else None
+
+
+def _normal_attack_sp_gain(data: dict, allow_blackboard_hint=False) -> float | None:
+    """Read explicit normal-attack ATB gain from one decoded SkillData record."""
+
+    blackboard = _blackboard_numbers(data)
+    gains = []
+    for action in _walk_actions(data.get("actionGroupData") or {}):
+        if _action_type_name(action) != "ObtainCostAction+Data":
+            continue
+        body = _action_body(action)
+        if (
+            body.get("costType") != "Atb"
+            or body.get("atbSourceType") != "NormalAttack"
+            or body.get("atbGainMethod") != "Gain"
+        ):
+            continue
+        value = _resolve_numeric(body.get("costValue"), blackboard)
+        if value is not None and value > 0:
+            gains.append(value)
+
+    # Some terminal attacks pass their ATB value to a projectile/ability child.
+    # The child contains ObtainCostAction while the parent owns the static "atb"
+    # blackboard value, so the terminal parent is also valid evidence.
+    if allow_blackboard_hint:
+        atb = blackboard.get("atb")
+        if atb is not None and atb > 0:
+            gains.append(atb)
+    return max(gains) if gains else None
+
+
+def _state_span_frames(data: dict) -> int | None:
+    """Longest top-level gameplay-buff span for a replaceable state skill."""
+
+    spans = []
+    for timeline in data.get("actionGroupData", {}).get("timelineActions") or ():
+        sequence = timeline.get("_sequenceActionData")
+        if not sequence:
+            continue
+        start = timeline.get("_startFrame")
+        end = timeline.get("_endFrame")
+        if not isinstance(start, int) or not isinstance(end, int) or end <= start:
+            continue
+        for action in sequence.get("actionData") or ():
+            if _action_type_name(action) != "CreateBuffAction+Data":
+                continue
+            if _meaningful_buff_ids(_action_body(action)):
+                spans.append(end - start)
+    return max(spans) if spans else None
+
+
+def _set_skill_cd_seconds(data: dict, skill_id: str) -> float | None:
+    blackboard = _blackboard_numbers(data)
+    values = []
+    for action in _walk_actions(data.get("actionGroupData") or {}):
+        if _action_type_name(action) != "SetSkillCdAtOnce+Data":
+            continue
+        body = _action_body(action)
+        if body.get("skillId") != skill_id:
+            continue
+        value = _resolve_numeric(body.get("value"), blackboard)
+        if value is not None and value >= 0:
+            values.append(value)
+    return max(values) if values else None
 
 
 def _meaningful_buff_ids(body: dict) -> tuple[str, ...]:
@@ -174,6 +274,15 @@ class SkillTiming:
         return elapsed >= max(self.handoff, self.actionable)
 
 
+@dataclass(frozen=True)
+class BattleStateSpec:
+    base_skill_id: str
+    end_skill_id: str
+    duration: float
+    end_cooldown: float | None
+    evidence: tuple[str, ...]
+
+
 class SkillTimingStore:
     def __init__(self, path: Path = SNAPSHOT):
         self.path = path
@@ -185,6 +294,9 @@ class SkillTimingStore:
             raise ValueError("Unverified timing snapshot")
         self._records = None
         self._effect_start_frames = {}
+        self._normal_attack_sp_gains = {}
+        self._global_normal_attack_sp_gain = None
+        self._battle_state_specs = {}
 
     def profiles(self, character: str, kind: str) -> tuple[SkillTiming, ...]:
         """Keep both administrator variants; never guess gender from a shared portrait."""
@@ -231,19 +343,135 @@ class SkillTimingStore:
             )
         return tuple(profiles)
 
+    def _character_ids(self, character: str) -> tuple[str, ...]:
+        return tuple(
+            cid
+            for cid, row in self.index["characters"].items()
+            if character in (row["name"], row["key"], row["english_name"], cid)
+        )
+
+    def _terminal_normal_attack_id(self, cid: str) -> str | None:
+        candidates = []
+        prefix = cid + "_attack"
+        for skill_id in self.index["skills"]:
+            if not skill_id.startswith(prefix):
+                continue
+            suffix = skill_id[len(prefix) :]
+            if suffix.isdigit():
+                candidates.append((int(suffix), skill_id))
+        return max(candidates, default=(None, None))[1]
+
+    def normal_attack_sp_gain(self, character: str) -> float | None:
+        """Return the combo-finisher ATB/SP refund encoded in packaged records."""
+
+        if character in self._normal_attack_sp_gains:
+            return self._normal_attack_sp_gains[character]
+
+        gains = []
+        for cid in self._character_ids(character):
+            terminal = self._terminal_normal_attack_id(cid)
+            if terminal is None:
+                continue
+            for record_id, record in self._all_records().items():
+                if record_id != terminal and not record_id.startswith(terminal + "_"):
+                    continue
+                value = _normal_attack_sp_gain(
+                    record["data"],
+                    allow_blackboard_hint=record_id == terminal,
+                )
+                if value is not None:
+                    gains.append(value)
+
+        result = max(gains) if gains else None
+        self._normal_attack_sp_gains[character] = result
+        return result
+
+    def global_normal_attack_sp_gain(self) -> float | None:
+        if self._global_normal_attack_sp_gain is None:
+            gains = [
+                self.normal_attack_sp_gain(cid)
+                for cid in self.index["characters"]
+            ]
+            known = [gain for gain in gains if gain is not None]
+            self._global_normal_attack_sp_gain = max(known) if known else -1.0
+        return None if self._global_normal_attack_sp_gain < 0 else self._global_normal_attack_sp_gain
+
+    def team_normal_attack_sp_gains(self, team) -> dict[str, float | None]:
+        return {name: self.normal_attack_sp_gain(name) for name in team}
+
+    def battle_state(self, character: str) -> BattleStateSpec | None:
+        """Detect a battle skill that exposes an explicit zero-cost end variant."""
+
+        if character in self._battle_state_specs:
+            return self._battle_state_specs[character]
+
+        specs = []
+        fps = self.index["frames_per_second"]
+        for cid in self._character_ids(character):
+            base_id = f"{cid}_normal_skill"
+            end_id = f"{cid}_normal_skill_end"
+            base = self.index["skills"].get(base_id)
+            end = self.index["skills"].get(end_id)
+            if base is None or end is None:
+                continue
+
+            allowed = any(
+                end_id in (window.get("allowed_skill_ids") or ())
+                for window in base.get("allow_next_windows") or ()
+            )
+            casts = end["level_patches"] or [
+                {
+                    "coolDown": end["raw_cast_data"]["cooldownTime"],
+                    **end["raw_cast_data"]["costData"],
+                }
+            ]
+            zero_cost = casts and all(cast.get("costValue") == 0 for cast in casts)
+            if not allowed or not zero_cost:
+                continue
+
+            base_record = self.record(base_id)["data"]
+            span = _state_span_frames(base_record)
+            duration = (
+                span / fps
+                if span is not None
+                else max(0, base["duration_frame"]) / fps
+            )
+            end_cd = _set_skill_cd_seconds(base_record, base_id)
+            specs.append(
+                BattleStateSpec(
+                    base_skill_id=base_id,
+                    end_skill_id=end_id,
+                    duration=duration,
+                    end_cooldown=end_cd,
+                    evidence=(
+                        f"allow_next:{end_id}",
+                        "end_cost=0",
+                        f"state_span={duration:.2f}s",
+                        "end_cd=" + ("unknown" if end_cd is None else f"{end_cd:g}s"),
+                    ),
+                )
+            )
+
+        result = specs[0] if len(specs) == 1 else None
+        self._battle_state_specs[character] = result
+        return result
+
     def effect_start_frame(self, skill_id: str) -> int | None:
         if skill_id not in self._effect_start_frames:
             self._effect_start_frames[skill_id] = _effect_start_frame(self.record(skill_id)["data"])
         return self._effect_start_frames[skill_id]
 
-    def record(self, skill_id: str) -> dict:
-        """Full lossless records are loaded only for inspection, outside the hot loop."""
+    def _all_records(self) -> dict:
         if self._records is None:
             compressed = (self.path / "records.json.gz").read_bytes()
             if hashlib.sha256(compressed).hexdigest() != self.index["records_sha256"]:
                 raise ValueError("Timing records hash mismatch")
             self._records = json.loads(gzip.decompress(compressed))
-        return self._records[skill_id]
+        return self._records
+
+    def record(self, skill_id: str) -> dict:
+        """Full lossless records are loaded only for inspection, outside the hot loop."""
+        return self._all_records()[skill_id]
 
 
 @lru_cache(maxsize=1)
