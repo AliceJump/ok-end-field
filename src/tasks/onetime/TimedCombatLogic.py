@@ -11,9 +11,11 @@ from src.data.timing_dps import build_options, load_damage_quotes, optimize_cycl
 
 class TimedCombatLogic:
     _NORMAL_ATTACK_REASSERT_INTERVAL = 0.25
-    _FULL_SKILL_POINTS = 3
-    _ASSUME_SUCCESS_SP_THRESHOLD = 25.0
+    _FULL_SKILL_SP = 295.0
+    _DEFAULT_ASSUME_SUCCESS_SP_THRESHOLD = 25.0
     _ASSUME_SUCCESS_PAUSE = 0.1
+    _SP_ERROR_MARGIN = 5.0
+    _NATURAL_SP_PER_SECOND = 8.0
 
     def __init__(self, task, store=None):
         self.task = task
@@ -36,6 +38,10 @@ class TimedCombatLogic:
         self._cycle_start = None
         self._cycle_bonus = 0.0
         self._completed_cycles = 0
+        self.normal_attack_sp_gains = {}
+        self.assume_success_sp_threshold = self._DEFAULT_ASSUME_SUCCESS_SP_THRESHOLD
+        self.state_specs = {}
+        self.state_until = {}
 
     def _hold(self, enabled, force=False):
         if enabled:
@@ -95,17 +101,48 @@ class TimedCombatLogic:
         self.started = self.task.active_time() if now is None else now
         self.unconfirmed = False
 
+    def _accept_battle_skill(self, token):
+        self._observe_battle()
+        self._set_cooldowns()
+        spec = self.state_specs.get(token)
+        if spec is not None:
+            until = self.started + spec.duration
+            self.state_until[token] = until
+            if spec.end_cooldown is not None:
+                for profile in self.active:
+                    self.cooldowns[profile.skill_id] = max(
+                        self.cooldowns.get(profile.skill_id, 0),
+                        until + spec.end_cooldown,
+                    )
+            self.task.log_info(
+                f"时间排轴: 战技 {token} 进入特殊状态 {spec.duration:.2f}s"
+                + (
+                    ""
+                    if spec.end_cooldown is None
+                    else f"，自然结束后冷却约 {spec.end_cooldown:g}s"
+                )
+            )
+        self.cursor = (self.cursor + 1) % len(self.order)
+
     def _confirm_battle(self, now):
         if self.pending is None:
             return
-        before, token = self.pending
-        points = self.task.get_skill_bar_count()
-        if 0 <= points < before:
+        before_sp, token, expected_cost = self.pending
+        current_sp = self.task.get_skill_bar_sp()
+        elapsed = max(0.0, now - self.started)
+        minimum_drop = max(
+            2.0,
+            expected_cost
+            - self.assume_success_sp_threshold
+            - self._NATURAL_SP_PER_SECOND * elapsed,
+        )
+        if current_sp >= 0 and before_sp - current_sp >= minimum_drop:
             self.pending = None
-            self._observe_battle()
-            self.cursor = (self.cursor + 1) % len(self.order)
-            self._set_cooldowns()
-            self.task.log_info(f"时间排轴: 战技 {token} 技力消耗已确认")
+            self._accept_battle_skill(token)
+            self.task.log_info(
+                f"时间排轴: 战技 {token} 技力消耗已确认 "
+                f"({before_sp:.1f}->{current_sp:.1f}, 阈值 {minimum_drop:.1f})"
+            )
         elif now - self.started >= 0.8:
             self.pending = None
             self.unconfirmed = True
@@ -132,6 +169,47 @@ class TimedCombatLogic:
             self.ult_order = generate_damage_rotation(team)
             self.order = [token for token in self.ult_order if self.store.profiles(team[int(token) - 1], "battle")]
             self.task.log_info(f"时间排轴队伍: {team}, 战技顺序: {self.order}")
+
+            self.normal_attack_sp_gains = self.store.team_normal_attack_sp_gains(team)
+            known_gains = [
+                value
+                for value in self.normal_attack_sp_gains.values()
+                if value is not None
+            ]
+            unknown_names = [
+                name
+                for name, value in self.normal_attack_sp_gains.items()
+                if value is None
+            ]
+            fallback_gain = self.store.global_normal_attack_sp_gain() if not known_gains else None
+            threshold_gain = max(
+                known_gains + ([fallback_gain] if fallback_gain is not None else []),
+                default=self._DEFAULT_ASSUME_SUCCESS_SP_THRESHOLD - self._SP_ERROR_MARGIN,
+            )
+            self.assume_success_sp_threshold = threshold_gain + self._SP_ERROR_MARGIN
+            self.task.log_info(
+                f"时间排轴技力确认阈值: 重击回复 {self.normal_attack_sp_gains}, "
+                f"最大值 {threshold_gain:g} + 误差 {self._SP_ERROR_MARGIN:g} = "
+                f"{self.assume_success_sp_threshold:g} SP"
+                + (
+                    f"；未解析 {unknown_names}"
+                    + ("，全队均未知时使用全局保守上界" if not known_gains else "")
+                    if unknown_names
+                    else ""
+                )
+            )
+
+            self.state_specs = {
+                str(index + 1): self.store.battle_state(name)
+                for index, name in enumerate(team)
+            }
+            for token, spec in self.state_specs.items():
+                if spec is not None:
+                    self.task.log_info(
+                        f"时间排轴状态战技: {team[int(token) - 1]}({token}) "
+                        f"{spec.base_skill_id} -> {spec.end_skill_id}, "
+                        + ", ".join(spec.evidence)
+                    )
 
             self.damage_quotes = load_damage_quotes(team)
             self.plan = optimize_cycle(build_options(team, self.store, self.damage_quotes))
@@ -173,43 +251,57 @@ class TimedCombatLogic:
             # Unknown owner: credit the lower bound, never four links for one key.
             self._cycle_bonus += min(self.damage_quotes[name].link for name in self.team)
 
-    def _try_planned_battle_skill(self, points, overflow=False):
+    def _skip_active_state_slots(self):
+        if not self.order:
+            return
+        now = self.task.active_time()
+        for _ in range(len(self.order)):
+            token = self.order[self.cursor]
+            if now >= self.state_until.get(token, 0):
+                return
+            self.cursor = (self.cursor + 1) % len(self.order)
+
+    def _try_planned_battle_skill(self, sp, overflow=False):
         token = self.order[self.cursor]
+        if self.task.active_time() < self.state_until.get(token, 0):
+            return False
+
         profiles = self.store.profiles(self.team[int(token) - 1], "battle")
-        costs = [profile.skill_points for profile in profiles]
+        point_costs = [profile.skill_points for profile in profiles]
         sp_costs = [profile.sp_cost for profile in profiles]
-        if not (self._ready(profiles, slot=token, kind="battle") and None not in costs and points >= max(costs)):
+        max_sp_cost = None if None in sp_costs else max(sp_costs)
+        if max_sp_cost is None:
+            max_sp_cost = None if None in point_costs else max(point_costs) * 100.0
+        if (
+            max_sp_cost is None
+            or sp < 0
+            or sp < max_sp_cost
+            or not self._ready(profiles, slot=token, kind="battle")
+        ):
             return False
 
         started = self.task.active_time()
         self.task.send_key(token)
         self._begin(profiles, started, slot=token, kind="battle")
 
-        max_sp_cost = None if None in sp_costs else max(sp_costs)
-        if max_sp_cost is not None and max_sp_cost <= self._ASSUME_SUCCESS_SP_THRESHOLD:
-            # 25 SP and below is too small/noisy to require visual consumption
-            # confirmation. State-ending variants can also be 0 SP. Treat the
-            # accepted key press as success, but keep a short handoff pause so
-            # the game has time to commit the state transition.
+        if max_sp_cost <= self.assume_success_sp_threshold:
+            # A combo finisher can refund enough SP to hide a small skill cost.
+            # For costs no larger than the current team's largest possible
+            # finisher refund plus 5 SP visual error, trust the accepted input.
             self.task.sleep(self._ASSUME_SUCCESS_PAUSE)
-            self._observe_battle()
-            self.cursor = (self.cursor + 1) % len(self.order)
-            self._set_cooldowns()
+            self._accept_battle_skill(token)
             self.task.log_info(
                 f"时间排轴: 战技 {token} 消耗 {max_sp_cost:g} SP <= "
-                f"{self._ASSUME_SUCCESS_SP_THRESHOLD:g}，按键后直接视为成功"
+                f"{self.assume_success_sp_threshold:g}，按键后直接视为成功"
             )
-        elif max(costs) > 0:
-            self.pending = (points, token)
+        elif max_sp_cost > 0:
+            self.pending = (sp, token, max_sp_cost)
             if overflow:
                 self.task.log_info(f"时间排轴: 技力已满，防溢出抢占尝试战技 {token}")
         else:
-            # Unknown exact SP cost but no full-bar cost: keep the previous
-            # explicit-attempt behavior rather than inventing a consumption.
-            self._observe_battle()
-            self.cursor = (self.cursor + 1) % len(self.order)
-            self._set_cooldowns()
-            self.task.log_info(f"时间排轴: 尝试零消耗战技 {token}")
+            self.task.sleep(self._ASSUME_SUCCESS_PAUSE)
+            self._accept_battle_skill(token)
+            self.task.log_info(f"时间排轴: 零消耗战技 {token} 按键后直接视为成功")
         return True
 
     def step(self):
@@ -220,12 +312,13 @@ class TimedCombatLogic:
             self._hold(True)
             return
 
-        points = self.task.get_skill_bar_count()
-        # Prevent full-SP starvation: once the HUD shows all three bars, the
+        self._skip_active_state_slots()
+        sp = self.task.get_skill_bar_sp()
+        # Prevent full-SP starvation: once the HUD is effectively full, the
         # next planned battle skill gets priority over link/ult as soon as the
-        # current cast has committed. Same-operator continuation still keeps
-        # the conservative native continuation guard.
-        if points >= self._FULL_SKILL_POINTS and self._try_planned_battle_skill(points, overflow=True):
+        # current cast has committed. get_skill_bar_sp() already uses the
+        # optimized 1+0 / n+1 / worst-case 3+1 staged bar scan.
+        if sp >= self._FULL_SKILL_SP and self._try_planned_battle_skill(sp, overflow=True):
             return
 
         # The existing link detector cannot identify its owner. Protect the
@@ -266,7 +359,7 @@ class TimedCombatLogic:
                 )
                 return
 
-        if self._try_planned_battle_skill(points):
+        if self._try_planned_battle_skill(sp):
             return
         self._hold(True)
 
