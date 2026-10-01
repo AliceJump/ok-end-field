@@ -53,10 +53,8 @@ from pathlib import Path
 from ok.util.file import ensure_dir_for_file, write_json_file
 from websockets.sync.client import connect as ws_connect
 
+from src.core.map_device_registration import MAP_PAGE_URL, post_device_registration
 from src.core.paths import config_path
-
-MAP_PAGE_URL = "https://game.skland.com/map/endfield"
-_DEVICEPROFILE_URL = "https://fp-it.portal101.cn/deviceprofile/v4"
 
 _SHUMEI_LS_KEY = "SK_SHUMEI_DEVICE_ID_KEY"
 _DID_MIN_LENGTH = 16
@@ -161,19 +159,7 @@ def save_captured_payload(payload: dict) -> None:
 
 def _post_registration_payload(payload: dict, timeout: float) -> str:
     """提交一份注册载荷并返回 ``B + deviceId``；服务端拒绝时抛出异常。"""
-    req = urllib.request.Request(
-        _DEVICEPROFILE_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        method="POST",
-        headers={
-            "Content-Type": "application/json;charset=UTF-8",
-            "User-Agent": "Mozilla/5.0 ok-ef map websocket client",
-            "Origin": MAP_PAGE_URL.rsplit("/", 2)[0],
-            "Referer": MAP_PAGE_URL,
-        },
-    )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        result = json.loads(resp.read().decode("utf-8"))
+    result = post_device_registration(payload, timeout)
     device_id = str(((result.get("detail") or {}).get("deviceId")) or "").strip()
     if len(device_id) < _DID_MIN_LENGTH:
         raise RuntimeError(f"数美注册接口未签发 deviceId: {result}")
