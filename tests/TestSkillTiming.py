@@ -210,6 +210,16 @@ class TestTimedCombat(unittest.TestCase):
         logic.step()
         self.assertEqual(task.keys, ["1", "1"])
 
+    def test_skill_timeline_does_not_release_normal_attack(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        logic._hold(True)
+        self.assertEqual(task.mouse[-1], "down")
+        logic.step()
+        self.assertEqual(task.keys, ["1"])
+        self.assertEqual(task.mouse[-1], "down")
+        self.assertNotIn("up", task.mouse)
+
     def test_monitor_ready_link_and_nonblocking_alt_ult(self):
         task = FakeTask()
         logic = logic_for(task)
@@ -236,7 +246,7 @@ class TestTimedCombat(unittest.TestCase):
         self.assertFalse(logic.run(deadline=2))
         self.assertGreaterEqual(task.monitored, 3)
         self.assertEqual(task.keys, [])
-        self.assertNotIn("down", task.mouse)
+        self.assertIn("down", task.mouse)
         self.assertEqual(task.mouse[-1], "up")
 
     def test_exit_confirmation_resets_and_blocks_actions(self):
@@ -266,7 +276,7 @@ class TestTimedCombat(unittest.TestCase):
         task.now = 1
         logic.step()
         self.assertEqual(task.keys, ["1"])
-        self.assertEqual(task.mouse[-1], "up")
+        self.assertEqual(task.mouse[-1], "down")
 
     def test_detection_exception_releases_held_mouse(self):
         task = FakeTask()

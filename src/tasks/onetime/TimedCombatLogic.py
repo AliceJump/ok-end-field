@@ -58,7 +58,6 @@ class TimedCombatLogic:
         self.active = profiles
         self.started = started
         self.unconfirmed = False
-        self._hold(False)
 
     def _confirm_battle(self, now):
         if self.pending is None:
@@ -153,7 +152,6 @@ class TimedCombatLogic:
             and self._allowed(links)
             and self.task.is_link_skill_ready()
         ):
-            self._hold(False)
             started = self.task.active_time()
             if self.task.use_link_skill():
                 self._begin(links, started)
@@ -172,7 +170,6 @@ class TimedCombatLogic:
         # monitor remains authoritative and unknown utility skills still cast.
         ready_ults.sort(key=lambda item: -item[0])
         for _rate, token, profiles in ready_ults:
-            self._hold(False)
             started = self.task.active_time()
             if self.task.use_ult(ult_sequence=token, wait_for_team_recovery=False):
                 self._begin(profiles, started)
@@ -186,7 +183,6 @@ class TimedCombatLogic:
         points = self.task.get_skill_bar_count()
         costs = [profile.skill_points for profile in profiles]
         if self._ready(profiles) and None not in costs and points >= max(costs):
-            self._hold(False)
             started = self.task.active_time()
             self.task.send_key(token)
             self._begin(profiles, started)
@@ -200,7 +196,7 @@ class TimedCombatLogic:
                 self._set_cooldowns()
                 self.task.log_info(f"时间排轴: 尝试零消耗战技 {token}")
             return
-        self._hold(self._allowed())
+        self._hold(True)
 
     def run(self, start_sleep=None, no_battle=False, deadline=None):
         task = self.task
@@ -234,7 +230,14 @@ class TimedCombatLogic:
                     self._hold(False)
                     task.sleep(0.1)
                     continue
-                if no_battle or now < ready_at:
+                if no_battle:
+                    self._hold(False)
+                    task.sleep(0.1)
+                    continue
+                # Timed mode only schedules skill handoffs. Normal attack stays
+                # held throughout combat, including skill/ult/link timelines.
+                self._hold(True)
+                if now < ready_at:
                     task.sleep(0.1)
                     continue
                 if not self.team and now >= next_team:
