@@ -398,6 +398,21 @@ class TestStateDrivenWaits(unittest.TestCase):
         )
         self.assertEqual(task._last_ult_release_time, 42)
 
+    def test_alt_ult_can_skip_team_recovery_for_timed_scheduler(self):
+        task = _UltHarness(ULT_RELEASE_MODE_ALT)
+
+        self.assertTrue(BattleMixin.use_ult(task, "2", wait_for_team_recovery=False))
+        self.assertEqual(
+            task.events,
+            [
+                ("down", "alt"),
+                ("press", "2"),
+                ("up", "alt"),
+                ("timestamp", None),
+            ],
+        )
+        self.assertEqual(task._last_ult_release_time, 42)
+
     def test_hold_ult_records_release_immediately_after_key_up(self):
         task = _UltHarness(ULT_RELEASE_MODE_HOLD)
 

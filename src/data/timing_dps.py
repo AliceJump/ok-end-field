@@ -91,6 +91,7 @@ class CastOption:
     slot: str
     damage: DamageQuote
     duration: float
+    actionable: float
     cooldown: float
     sp_cost: float
     sp_gate: float
@@ -123,6 +124,7 @@ def evaluate_cycle(sequence: tuple[CastOption, ...], regen: float = 8.0) -> Cycl
             math.isfinite(value) and value >= 0
             for value in (
                 cast.duration,
+                cast.actionable,
                 cast.cooldown,
                 cast.sp_cost,
                 cast.sp_gate,
@@ -165,12 +167,12 @@ def evaluate_cycle(sequence: tuple[CastOption, ...], regen: float = 8.0) -> Cycl
                 attached = None
             points -= cast.sp_cost
             ready[cast.slot] = start + cast.cooldown
-            now = start + max(0.3, cast.duration)
+            now = start + max(0.3, cast.actionable)
             points = min(300, points + (now - start) * regen)
             if now >= expires:
                 attached = None
-            # Credit the attachment at the end of its protected cast, not at
-            # an unverified hit frame. Cross-element applications consume both.
+            # Credit the attachment at the scheduler handoff point, not at an
+            # unverified hit frame. Cross-element applications consume both.
             if len(cast.damage.produces) == 1:
                 element = next(iter(cast.damage.produces))
                 attached = element if attached in (None, element) else None
@@ -193,7 +195,8 @@ def build_options(team, store, quotes) -> tuple[CastOption, ...]:
             CastOption(
                 str(index + 1),
                 quotes[name],
-                max(max(profile.duration, profile.exclusive, 0.3) for profile in profiles),
+                max(profile.duration for profile in profiles),
+                max(profile.actionable for profile in profiles),
                 max(profile.cooldown for profile in profiles),
                 max(profile.sp_cost for profile in profiles),
                 max(profile.skill_points for profile in profiles) * 100,
