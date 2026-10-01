@@ -52,6 +52,20 @@ This document covers two trigger/debug tasks:
 > the account page suits long-term multi-account use. `content` is equivalent to a login session —
 > never paste it into issues, chat groups, or screenshots.
 
+### Local WebSocket (Tampermonkey)
+
+When no `content` is configured, a browser userscript can relay position data to the application:
+
+1. Install the **Tampermonkey** browser extension.
+2. Click the task's Tampermonkey-script help button to open the official guide and locate the script.
+   Import `assets/scripts/endfield-ws-position-relay.user.js` into Tampermonkey and enable it.
+3. Visit <https://game.skland.com/map/endfield>, log in, and allow the script to run on that site.
+4. Clear the task's `content` and its map-account selection so the task has no official-map credential.
+5. Select the target items and start Item Navigation. The application listens on `ws://127.0.0.1:3001`;
+   after connecting, the script relays position data from the web map.
+
+> If no position data arrives, check that the local firewall allows port `3001` and that Tampermonkey permits the script to run on the target site.
+
 ### Data flow
 
 ```mermaid
@@ -76,7 +90,7 @@ flowchart TD
 - The task draws a direction arrow on the window; if you cannot see the arrow, first check whether the WebSocket position data is working.
 - "Local WS fallback" only happens when the task has no `content`. If `content` is configured but the official auth or connection fails, the current run does not automatically switch to local WS; clear the task `content` and uncheck/clear the map account to use local mode.
 - Marking requires holding the key for the duration set by `标记按住时长` (default 2 seconds) within a horizontal distance of 20; releasing the key early or leaving the range cancels the current timing. The value is re-read every cycle, so changes apply without restarting the task.
-- The Tampermonkey-script help button opens the temporary help document and script directory.
+- The Tampermonkey-script help button opens the official Item Navigation guide and the script directory.
 
 ---
 
