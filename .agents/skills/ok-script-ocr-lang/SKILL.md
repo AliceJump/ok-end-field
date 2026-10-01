@@ -16,10 +16,10 @@ description: Maintain ok-end-field OCR matcher language JSON and OCR text-fix ma
 ## Add or change a key
 
 1. Edit `assets/lang/<module>.json` with a semantic key (legacy `k_*` hash keys can remain). Supply both active OCR locales. Reference it as `self.lang.<module>.<key>`.
-2. Run `uv run --locked python -m unittest tests.TestCheckLang -v`. It checks code references, node shape, nonempty values, and regex syntax for active locales. Review the actual OCR region in a game window when behavior depends on visual matching.
+2. Run `uv run --locked python -m unittest tests.TestCheckLang -v`. It checks code references in active locales and node shape, nonempty values, and regex syntax across all lang JSON nodes. Review the actual OCR region in a game window when behavior depends on visual matching.
 3. Regenerate `src/data/lang/_lang_typed.py` with `uv run --locked python scripts/i18n/gen_lang_stubs.py` and inspect its diff.
 
-Tracked full-locale business text belongs in `assets/lang/`; structured canonical data belongs in `assets/data/`. Preserve existing locale nodes, including extra locales. When adding a data-only module, update `DATA_ONLY_MODULES` in the stub generator; task OCR modules stay in the generated accessor hints.
+Tracked full-locale business text belongs in `assets/lang/`; maintain the six core locales `zh_CN`, `zh_TW`, `en_US`, `ja_JP`, `ko_KR`, and `es_ES`, preserving extra locale nodes too. Structured canonical data belongs in `assets/data/`. Keep local generated files at their existing paths and preserve their ignored status; do not change ignore rules to commit them. When adding a data-only module, update `DATA_ONLY_MODULES` in the stub generator; task OCR modules stay in the generated accessor hints.
 
 ## OCR confusion map
 

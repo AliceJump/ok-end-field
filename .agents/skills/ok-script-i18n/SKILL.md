@@ -8,7 +8,7 @@ description: Maintain gettext translations for ok-script task UI and runtime mes
 ## Sync task strings
 
 1. Inspect every changed task class for visible names, descriptions, config keys/help/options, instructions, and runtime messages. In ok-end-field, `DailyTask` composes independent subtasks; scanning it alone misses strings in those classes.
-2. Discover locales from `i18n/*/LC_MESSAGES/ok.po`. Keep `msgid` identical to the source text, add missing entries in **every** locale, and preserve existing translations and entry metadata.
+2. Discover locales from `i18n/*/LC_MESSAGES/ok.po`. Keep `msgid` identical to the source text, append missing entries at the end of **every** locale, and preserve existing translations, entry metadata, and entry order; do not sort the catalogs.
 3. Run the helper in the locked environment. Its scanner catches literal metadata assignments and `.update(...)` calls, but constants, imports, f-strings, comprehensions, and helper-built values still need manual review:
 
    `uv run --locked python .agents/skills/ok-script-i18n/scripts/task_i18n_helper.py scan --task src/tasks/onetime/DailyDeliveryTask.py`
@@ -21,7 +21,7 @@ description: Maintain gettext translations for ok-script task UI and runtime mes
    uv run --locked python -m unittest tests.TestPoLocaleConsistency -v
    ```
 
-Translate concise UI text, preserving placeholders and code-significant punctuation. An empty `msgstr` is appropriate only for an intentional source-language fallback. Do not add log-only strings unless requested.
+Translate concise UI text, preserving placeholders, code-significant punctuation, and hotkey names such as `F8` or `Ctrl`. An empty `msgstr` is appropriate only for an intentional source-language fallback. Do not add log-only strings unless requested.
 
 ## Keep translation inputs stable
 
