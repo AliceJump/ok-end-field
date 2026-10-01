@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "boxes": [
+    {
+      "path": "screen.essence_throw_confirm",
+      "rect": [0.934375, 0.252778, 0.947656, 0.276389]
+    }
+  ]
+}
