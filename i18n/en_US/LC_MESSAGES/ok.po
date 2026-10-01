@@ -2801,3 +2801,13 @@ msgid ""
 msgstr ""
 "Open the official Item Navigation guide.\n"
 "Also open the Tampermonkey script folder."
+
+msgid "技能时间排轴"
+msgstr "Skill timing rotation"
+
+msgid ""
+"独立实验模式，优先于其他战斗策略开关。\n"
+"利用实时监测和本地技能时间数据安排出技。"
+msgstr ""
+"Independent experimental mode, with priority over other combat strategy switches.\n"
+"Schedules skills using live monitoring and local skill timing data."

@@ -2886,3 +2886,13 @@ msgid ""
 msgstr ""
 "Abrir la guía oficial de navegación de objetos.\n"
 "Abrir también la carpeta del script de Tampermonkey."
+
+msgid "技能时间排轴"
+msgstr "Rotación según los tiempos de habilidad"
+
+msgid ""
+"独立实验模式，优先于其他战斗策略开关。\n"
+"利用实时监测和本地技能时间数据安排出技。"
+msgstr ""
+"Modo experimental independiente con prioridad sobre las demás opciones de estrategia de combate.\n"
+"Programa las habilidades mediante la detección en tiempo real y los datos locales de duración."

@@ -656,11 +656,19 @@ class BattleMixin(BaseEfTask):
 
         return False
 
+    def is_link_skill_ready(self):
+        """Shared link readiness monitor, without sending a combat key."""
+        return bool(
+            self.find_one(
+                fL.default_link_skill, threshold=0.7, vertical_variance=0.005, horizontal_variance=0.005,
+            )
+        )
+
     def use_link_skill(self):
         """
         使用连携技能。
         """
-        if self.find_one(fL.default_link_skill, threshold=0.7, vertical_variance=0.005, horizontal_variance=0.005):
+        if self.is_link_skill_ready():
             self.press_combat_key("e")
             return True
 
