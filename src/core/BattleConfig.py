@@ -27,6 +27,9 @@ KEY_SKILL_ALLOWLIST = "自动技能列表"
 # 伤害优先排序（自动技能列表的子选项）
 KEY_DAMAGE_ROTATION = "伤害优先排序"
 
+# Independent timing mode takes precedence over every strategy switch.
+KEY_TIMING_ROTATION = "技能时间排轴"
+
 # 脉冲探针（独立诊断开关：观测推荐脉冲出现位置并落盘，不影响战斗行为）
 KEY_PULSE_PROBE = "脉冲探针记录"
 
@@ -145,6 +148,7 @@ DEFAULT_PULSE_PROBE = True
 # ==========================================================
 
 DEFAULT_BATTLE_CONFIG = {
+    KEY_TIMING_ROTATION: False,
     KEY_ULT_RELEASE_MODE: DEFAULT_ULT_RELEASE_MODE,
     KEY_SKILL_RELEASE: DEFAULT_SKILL_RELEASE,
     KEY_START_SKILL_POINT: DEFAULT_START_SKILL_POINT,
@@ -181,6 +185,7 @@ BATTLE_GROUP_CONFIGS = {
 # ==========================================================
 
 BATTLE_CONFIG_TYPE = {
+    KEY_TIMING_ROTATION: {},
     KEY_ULT_RELEASE_MODE: {
         "type": "drop_down",
         "options": [
@@ -215,6 +220,7 @@ BATTLE_CONFIG_TYPE = {
 # ==========================================================
 
 BATTLE_CONFIG_DESCRIPTION = {
+    KEY_TIMING_ROTATION: "独立实验模式，优先于其他战斗策略开关。\n利用实时监测和本地技能时间数据安排出技。",
     KEY_ULT_RELEASE_MODE: "配置终结技的释放方式",
     KEY_SKILL_RELEASE: ("按列表顺序自动循环释放「战技」。\n可从 1/2/3/4 中选择并排序，至少保留一个。"),
     KEY_START_SKILL_POINT: ("当「技力条」达到该数值时，\n开始执行技能序列。取值范围1-3。"),

@@ -404,6 +404,7 @@ class TestBattleConfigOverrides(unittest.TestCase):
         independent_keys = mode_type["sub_configs"][True]
         # independent_keys 应包含 DEFAULT_BATTLE_CONFIG 中排除 BATTLE_GROUP_CONFIGS 的键
         expected = [
+            "技能时间排轴",
             KEY_ULT_RELEASE_MODE,
             KEY_START_SKILL_POINT,
             KEY_COMPLETE_NOTIFY,

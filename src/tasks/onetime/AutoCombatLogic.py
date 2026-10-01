@@ -8,6 +8,7 @@ from src.core.BattleConfig import (
     KEY_INSTANT_LINK,
     KEY_INSTANT_ULT,
     KEY_SKILL_ALLOWLIST,
+    KEY_TIMING_ROTATION,
 )
 from src.core.rotation_ast import iter_actions, normalize_ast
 from src.data.FeatureList import FeatureList as fL
@@ -18,6 +19,7 @@ from src.data.skill_rotation import (
     rotate_auto_rotation_for_current,
 )
 from src.image.recommend_skill_detector import get_recommend_skill_detector
+from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 
 
 class _TaskProbe:
@@ -437,6 +439,9 @@ class AutoCombatLogic:
         if not getattr(task, "_recommend_detector_in_combat", False):
             get_recommend_skill_detector().reset()
             task._recommend_detector_in_combat = True
+
+        if task.get_battle_config(KEY_TIMING_ROTATION, False):
+            return TimedCombatLogic(task).run(start_sleep=start_sleep, no_battle=no_battle, deadline=deadline)
 
         # 初始化普通战斗配置属性（排轴与普通模式共用）
         self.normal_skill_sequence = task.get_battle_config("技能释放", ["1", "2", "3"])
