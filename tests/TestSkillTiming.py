@@ -220,6 +220,15 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(task.mouse[-1], "down")
         self.assertNotIn("up", task.mouse)
 
+    def test_force_hold_reasserts_normal_attack(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        logic._hold(True)
+        logic._hold(True)
+        self.assertEqual(task.mouse.count("down"), 1)
+        logic._hold(True, force=True)
+        self.assertEqual(task.mouse.count("down"), 2)
+
     def test_monitor_ready_link_and_nonblocking_alt_ult(self):
         task = FakeTask()
         logic = logic_for(task)
@@ -246,7 +255,7 @@ class TestTimedCombat(unittest.TestCase):
         self.assertFalse(logic.run(deadline=2))
         self.assertGreaterEqual(task.monitored, 3)
         self.assertEqual(task.keys, [])
-        self.assertIn("down", task.mouse)
+        self.assertGreaterEqual(task.mouse.count("down"), 2)
         self.assertEqual(task.mouse[-1], "up")
 
     def test_exit_confirmation_resets_and_blocks_actions(self):
