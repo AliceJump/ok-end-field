@@ -40,7 +40,7 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
 
-          git add assets/downloads.svg
+          git add .github/stats/downloads.svg
 
           if ! git diff --cached --quiet; then
             BRANCH="chore/update-download-stats-$(date -u +%Y%m%d%H%M%S)"
