@@ -1,4 +1,5 @@
 import os
+import time
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 import unittest
@@ -23,6 +24,12 @@ class TestConditionEditDialog(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.parent.close()
+
+    def wait_for(self, condition, timeout=2):
+        deadline = time.monotonic() + timeout
+        while not condition() and time.monotonic() < deadline:
+            QTest.qWait(10)
+        self.assertTrue(condition())
 
     @patch("src.gui.ConditionalRotationPanel._tr", side_effect=lambda x: x)
     def test_dialog_roundtrip_simple(self, _):
@@ -50,11 +57,11 @@ class TestConditionEditDialog(unittest.TestCase):
                 with self.subTest(dialog=dialog_type.__name__, result=result):
                     dlg = dialog_type(value, self.parent)
                     dlg.show()
-                    QTest.qWait(250)
+                    self.wait_for(lambda: isinstance(dlg.widget.graphicsEffect(), QGraphicsDropShadowEffect))
                     self.assertTrue(dlg.isVisible())
                     self.assertIsInstance(dlg.widget.graphicsEffect(), QGraphicsDropShadowEffect)
                     dlg.done(result)
-                    QTest.qWait(200)
+                    self.wait_for(lambda: not dlg.isVisible())
                     self.assertFalse(dlg.isVisible())
                     self.assertEqual(dlg.result(), result)
                     self.assertIsNone(dlg.widget.graphicsEffect())
