@@ -33,7 +33,9 @@ class TestRuntimeHelp(unittest.TestCase):
             self.assertFalse((app_root / "assets/help").exists())
             self.assertEqual(errors, [])
             open_browser.assert_called_once_with(HELP_URL)
-            open_explorer.assert_called_once_with(["explorer", f"/select,{script_file}"])
+            # 生产侧会对路径 .resolve()，期望值需同样规范化：
+            # runner 的 TEMP 可能是 8.3 短名（RUNNER~1），不规范化会断言失败。
+            open_explorer.assert_called_once_with(["explorer", f"/select,{script_file.resolve()}"])
 
     def test_browser_failure_still_opens_the_script(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -51,6 +53,8 @@ class TestRuntimeHelp(unittest.TestCase):
                 navigator.ItemNavigatorTask.open_userscript_help(task)
 
             open_browser.assert_called_once_with(HELP_URL)
-            open_explorer.assert_called_once_with(["explorer", f"/select,{script_file}"])
+            # 生产侧会对路径 .resolve()，期望值需同样规范化：
+            # runner 的 TEMP 可能是 8.3 短名（RUNNER~1），不规范化会断言失败。
+            open_explorer.assert_called_once_with(["explorer", f"/select,{script_file.resolve()}"])
             self.assertEqual(len(errors), 1)
             self.assertIn("打开油猴脚本帮助失败", errors[0])
