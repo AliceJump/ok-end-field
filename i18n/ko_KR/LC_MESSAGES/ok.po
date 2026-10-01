@@ -2651,7 +2651,7 @@ msgstr "연락소 오퍼레이터에게 한 번에 줄 선물의 개수입니다
 
 msgid "使用说明参见选项，更多用法参见 https://ok-script.com/ok-end-field/docs/体力本/"
 msgstr ""
-"사용법은 옵션을, 자세한 내용은 https://ok-script.com/ok-end-field/docs/体力本/ 페이지를 "
+"사용법은 옵션을, 자세한 내용은 https://ok-script.com/ok-end-field/en/docs/stamina-farming/ 페이지를 "
 "참조하세요."
 
 msgid ""
@@ -2659,14 +2659,14 @@ msgid ""
 "更多用法参见 https://ok-script.com/ok-end-field/docs/日常任务/ > 优先货品交易序列 。"
 msgstr ""
 "기본값은 비워 둡니다. 거래 물품 순서는 무작위입니다.\n"
-"자세한 내용은 https://ok-script.com/ok-end-field/docs/日常任务/ 의 우선 거래 물품 순서를 참조하세요."
+"자세한 내용은 https://ok-script.com/ok-end-field/en/docs/daily-tasks/ 의 우선 거래 물품 순서를 참조하세요."
 
 msgid ""
 "默认留空，表示购买「日用消耗」「工业货品」「人文物产」首行首个物资。\n"
 "更多用法参见 https://ok-script.com/ok-end-field/docs/日常任务/ > 买物资 。"
 msgstr ""
 "비워 두면 일용 소모품, 공업 상품, 문화 상품의 첫 번째 행에서 첫 번째 물자를 구매합니다.\n"
-"자세한 내용은 https://ok-script.com/ok-end-field/docs/日常任务/ 의 물자 구매를 참조하세요."
+"자세한 내용은 https://ok-script.com/ok-end-field/en/docs/daily-tasks/ 의 물자 구매를 참조하세요."
 
 msgid ""
 "打开官网物品导航使用说明。\n"

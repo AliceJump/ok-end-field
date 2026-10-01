@@ -13,6 +13,7 @@ class LiaisonGiftTask(Common, LiaisonMixin):
     """送礼子任务：干员联络台赠送礼物，日常任务经 DailyFeature 接入。"""
 
     HELP_LINK = "https://ok-script.com/ok-end-field/docs/日常任务/"
+    HELP_LINK_EN = "https://ok-script.com/ok-end-field/en/docs/daily-tasks/"
     CFG_PRIORITY_GIFT_TARGET = "优先送礼对象"
     CFG_GIFT_MAX_RETRY = "送礼任务最多尝试次数"
 
@@ -51,8 +52,10 @@ class LiaisonGiftTask(Common, LiaisonMixin):
         from src.gui.WebViewDialog import WebViewDialog
 
         def _show_dialog():
+            locale = (self.runtime_locale or "zh_CN").lower().replace("-", "_")
+            help_link = self.HELP_LINK if locale.split("_")[0] == "zh" else self.HELP_LINK_EN
             try:
-                dialog = WebViewDialog("日常任务帮助", self.HELP_LINK, None)
+                dialog = WebViewDialog("日常任务帮助", help_link, None)
                 dialog.show()
                 self._help_dialog = dialog
                 self.log_info("已打开帮助 WebView 对话框")
@@ -61,7 +64,7 @@ class LiaisonGiftTask(Common, LiaisonMixin):
                 # 如果 WebView 失败，回退到打开浏览器
                 import webbrowser
 
-                webbrowser.open(self.HELP_LINK)
+                webbrowser.open(help_link)
 
         # 确保在 GUI 线程中执行
         if threading.current_thread() is threading.main_thread():
