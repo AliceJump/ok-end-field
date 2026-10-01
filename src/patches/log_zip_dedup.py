@@ -76,11 +76,30 @@ def read_dedup_info(zip_path: str | Path) -> dict | None:
             return json.load(info_file)
 
 
+def resolve_extract_target(root: str | Path, arcname: str) -> Path | None:
+    """把 zip 内条目名安全地映射到 ``root`` 之下的路径，越界时返回 ``None``。
+
+    zip 条目名与去重信息都来自外部 zip，属不可信输入：可能带绝对路径、盘符或
+    ``..``。不做校验直接拼接会把文件写到 ``root`` 之外（zip slip）。
+    """
+    name = str(arcname).replace("\\", "/")
+    parts = [part for part in name.split("/") if part not in ("", ".")]
+    if name.startswith("/") or not parts or ".." in parts or ":" in parts[0]:
+        return None
+    root_path = Path(root)
+    target = root_path.joinpath(*parts)
+    if root_path.resolve() not in target.resolve().parents:
+        return None
+    return target
+
+
 def restore_duplicates(zip_path: str | Path, output_dir: str | Path) -> list[str]:
     """恢复 zip 中被去重的重复图片。
 
     先把 zip 全部内容解压到 ``output_dir``，再按去重信息把保留文件复制到
     每个重复文件名，得到与去重前完全一致的文件集。
+
+    越界（zip slip）的条目名会被跳过，不会写到 ``output_dir`` 之外。
 
     Returns:
         已恢复的重复图片 arcname 列表（zip 内没有去重信息时为空列表）。
@@ -93,7 +112,9 @@ def restore_duplicates(zip_path: str | Path, output_dir: str | Path) -> list[str
     restored = []
     with zipfile.ZipFile(zip_path) as zipf:
         for entry in zipf.namelist():
-            target = output_dir / entry
+            target = resolve_extract_target(output_dir, entry)
+            if target is None:
+                continue
             target.parent.mkdir(parents=True, exist_ok=True)
             with zipf.open(entry) as src, open(target, "wb") as dst:
                 dst.write(src.read())
@@ -106,7 +127,9 @@ def restore_duplicates(zip_path: str | Path, output_dir: str | Path) -> list[str
             duplicate = record["duplicate"]
             if kept not in zipf.namelist():
                 continue
-            target = output_dir / duplicate
+            target = resolve_extract_target(output_dir, duplicate)
+            if target is None:
+                continue
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(zipf.read(kept))
             restored.append(duplicate)
