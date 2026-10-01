@@ -79,6 +79,36 @@ SWITCH_CHAR_H = 16 / 1080  # 归一化高
 SWITCH_CHAR_SLOTS = 4  # 最多 4 个出现位置
 SWITCH_CHAR_EXPAND = 1 / 8  # 搜索框向外扩大的比例（相对框自身宽/高）
 
+# ── 技力条：4K 基准坐标 ──────────────────────────────────────────────────────
+# 技力从左向右填充。完整格检测从右向左查，可以在满 3 格时只做一次颜色检测；
+# 若第 n 格完整，只额外读取第 n+1 格的部分填充。部分填充识别等待样图补全。
+SKILL_BAR_AREA_4K = (1586, 1940, 2266, 1983)
+SKILL_BAR_Y_4K = (1958, 1970)
+SKILL_BAR_X_4K = ((1604, 1796), (1824, 2013), (2043, 2231))
+
+
+def _resolve_skill_bar_progress(is_full, read_fill):
+    """Resolve 0..3 bars with at most 3 full checks + 1 partial check.
+
+    is_full(index) and read_fill(index) use zero-based bar indices. read_fill
+    returns a 0..1 fraction or None when the partial detector is unavailable.
+    """
+    for index in (2, 1, 0):
+        if not is_full(index):
+            continue
+        whole = index + 1
+        if whole == 3:
+            return 3.0
+        fraction = read_fill(whole)
+        if fraction is None:
+            return float(whole)
+        return min(3.0, whole + max(0.0, min(float(fraction), 1.0)))
+
+    fraction = read_fill(0)
+    if fraction is None:
+        return None
+    return max(0.0, min(float(fraction), 1.0))
+
 
 def _load_char_name_map() -> dict[str, str]:
     """加载 characters.json，返回 en→zh 映射（如 ember→余烬）。"""
@@ -1001,43 +1031,63 @@ class BattleMixin(BaseEfTask):
         self.dodge_forward(pre_hold=0.05, dodge_down_time=0.03, after_sleep=0.02)
         self.last_no_number_action_time = self.active_time()
 
-    def get_skill_bar_count(self):
+    def _is_skill_bar_full(self, index):
+        x1, x2 = SKILL_BAR_X_4K[index]
+        y_start, y_end = SKILL_BAR_Y_4K
+        return self.check_is_pure_color_in_4k(x1, y_start, x2, y_end, yellow_skill_color)
+
+    def _read_skill_bar_fill_ratio(self, index):
+        """读取单格技力的部分填充比例（0..1）。
+
+        这里只先搭接口。后续根据不同填充量样图确定取样线、HSV/颜色阈值和
+        抗高光策略；未完成前返回 None，调用方会安全退化到完整格数量。
         """
-        获取当前技能条数量。
+        return None
 
-        Returns:
-            int
-                -1 表示未检测到
+    def get_skill_bar_progress(self):
+        """获取技力条精细进度，范围 0..3；-1 表示未检测到。
+
+        优化顺序：
+        - 先检测第 3 格是否完整，命中直接返回 3（1+0 次检测）；
+        - 否则检测第 2 格，命中后只读取第 3 格部分填充；
+        - 再检测第 1 格，命中后只读取第 2 格部分填充；
+        - 三格都不完整时，只读取第 1 格部分填充（最坏 3+1 次检测）。
         """
 
-        skill_area_box = self.box_of_screen_scaled(3840, 2160, 1586, 1940, 2266, 1983)
-
+        x1, y1, x2, y2 = SKILL_BAR_AREA_4K
+        skill_area_box = self.box_of_screen_scaled(3840, 2160, x1, y1, x2, y2)
         skill_area = skill_area_box.crop_frame(self.frame)
-
         if not has_rectangles(skill_area):
-            return -1
+            return -1.0
 
-        count = 0
+        progress = _resolve_skill_bar_progress(
+            self._is_skill_bar_full,
+            self._read_skill_bar_fill_ratio,
+        )
+        if progress is not None:
+            return progress
 
-        y_start, y_end = 1958, 1970
+        # 部分填充识别尚未接入时保留旧行为：白色左边界存在代表技力条有效，
+        # 只是当前没有完整黄色格；否则视为未检测到。
+        y_start, y_end = SKILL_BAR_Y_4K
+        first_x1, _ = SKILL_BAR_X_4K[0]
+        has_white_left = self.check_is_pure_color_in_4k(
+            first_x1, y_start, first_x1 + 10, y_end, white_skill_color, threshold=0.1
+        )
+        return 0.0 if has_white_left else -1.0
 
-        bars = [(1604, 1796), (1824, 2013), (2043, 2231)]
+    def get_skill_bar_sp(self):
+        """获取近似技力值（0..300）；部分填充识别完成后可直接用于 25/50/75 SP 技能。"""
+        progress = self.get_skill_bar_progress()
+        return -1.0 if progress < 0 else progress * 100.0
 
-        for x1, x2 in bars:
-            if self.check_is_pure_color_in_4k(x1, y_start, x2, y_end, yellow_skill_color):
-                count += 1
-            else:
-                break
+    def get_skill_bar_count(self):
+        """获取完整技能条数量；-1 表示未检测到。
 
-        if count == 0:
-            has_white_left = self.check_is_pure_color_in_4k(
-                1604, y_start, 1614, y_end, white_skill_color, threshold=0.1
-            )
-
-            if not has_white_left:
-                count = -1
-
-        return count
+        保持旧 API 语义，内部复用从右向左的快速扫描。
+        """
+        progress = self.get_skill_bar_progress()
+        return -1 if progress < 0 else int(progress)
 
     def check_is_pure_color_in_4k(self, x1, y1, x2, y2, color_range=None, threshold=0.9):
         skill_area_box = self.box_of_screen_scaled(3840, 2160, x1, y1, x2, y2)

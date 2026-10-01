@@ -6,7 +6,7 @@ from ok import Box
 from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.core.BattleConfig import ULT_RELEASE_MODE_ALT, ULT_RELEASE_MODE_HOLD
-from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.mixin.battle_mixin import BattleMixin, _resolve_skill_bar_progress
 from src.tasks.mixin.map_mixin import MapMixin
 
 
@@ -248,6 +248,54 @@ class _TaskMapHarness:
 
 
 class TestStateDrivenWaits(unittest.TestCase):
+    def test_skill_bar_progress_full_scan_short_circuits_from_right(self):
+        full_calls = []
+        fill_calls = []
+
+        def is_full(index):
+            full_calls.append(index)
+            return index == 2
+
+        def read_fill(index):
+            fill_calls.append(index)
+            return 0.5
+
+        self.assertEqual(_resolve_skill_bar_progress(is_full, read_fill), 3.0)
+        self.assertEqual(full_calls, [2])
+        self.assertEqual(fill_calls, [])
+
+    def test_skill_bar_progress_reads_only_next_partial_bar(self):
+        full_calls = []
+        fill_calls = []
+
+        def is_full(index):
+            full_calls.append(index)
+            return index == 1
+
+        def read_fill(index):
+            fill_calls.append(index)
+            return 0.25
+
+        self.assertEqual(_resolve_skill_bar_progress(is_full, read_fill), 2.25)
+        self.assertEqual(full_calls, [2, 1])
+        self.assertEqual(fill_calls, [2])
+
+    def test_skill_bar_progress_worst_case_is_three_plus_one(self):
+        full_calls = []
+        fill_calls = []
+
+        def is_full(index):
+            full_calls.append(index)
+            return False
+
+        def read_fill(index):
+            fill_calls.append(index)
+            return 0.75
+
+        self.assertEqual(_resolve_skill_bar_progress(is_full, read_fill), 0.75)
+        self.assertEqual(full_calls, [2, 1, 0])
+        self.assertEqual(fill_calls, [0])
+
     def test_ensure_main_observes_before_enabling_recovery(self):
         task = _EnsureMainHarness([None, True, True])
 
