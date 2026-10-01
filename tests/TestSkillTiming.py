@@ -116,6 +116,8 @@ class FakeTask:
         self.exit_check_count = 0
         self.monitored = 0
         self._battle_team = None
+        self._battle_team_disabled_slots = set()
+        self.detected_team = ["佩丽卡", "狼卫", "陈千语", "管理员"]
 
     def active_time(self):
         return self.now
@@ -130,6 +132,7 @@ class FakeTask:
         self.messages.append(message)
 
     log_warning = log_info
+    log_debug = log_info
 
     def get_battle_config(self, key, default=None):
         if key == KEY_TIMING_ROTATION:
@@ -189,7 +192,7 @@ class FakeTask:
         return self.exit_check_count >= 2
 
     def detect_team_stable(self, **kwargs):
-        return ["佩丽卡", "狼卫", "陈千语", "管理员"], True
+        return list(self.detected_team), True
 
 
 def logic_for(task):
@@ -424,6 +427,47 @@ class TestTimedCombat(unittest.TestCase):
         task.sp = 100.0
         logic.step()
         self.assertEqual(task.keys, ["ult_1"])
+
+    def test_dead_slot_is_masked_by_position_without_renumbering_team(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        task._battle_team = list(logic.team)
+        logic.order = ["2", "1"]
+        logic.ult_order = ["2", "1"]
+        task.detected_team = ["佩丽卡", "?", "陈千语", "管理员"]
+
+        logic._refresh_team_slots(1)
+
+        self.assertEqual(logic.team, ["佩丽卡", "狼卫", "陈千语", "管理员"])
+        self.assertEqual(logic.disabled_slots, {"2"})
+        self.assertEqual(task._battle_team_disabled_slots, {1})
+
+        task.sp = 100
+        logic.step()
+        self.assertEqual(task.keys, ["1"])
+
+    def test_partial_scan_with_known_slot_mismatch_does_not_mask_anyone(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        task.detected_team = ["佩丽卡", "?", "狼卫", "管理员"]
+
+        logic._refresh_team_slots(1)
+
+        self.assertEqual(logic.disabled_slots, set())
+        self.assertTrue(any("位置不匹配" in message for message in task.messages))
+
+    def test_dead_slot_cancels_its_pending_skill_confirmation(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        logic.pending = (100.0, "2", 100.0)
+        logic.active_slot = "2"
+        task.detected_team = ["佩丽卡", "?", "陈千语", "管理员"]
+
+        logic._refresh_team_slots(1)
+
+        self.assertIsNone(logic.pending)
+        self.assertEqual(logic.active, ())
+        self.assertIsNone(logic.active_slot)
 
     def test_detection_exception_releases_held_mouse(self):
         task = FakeTask()

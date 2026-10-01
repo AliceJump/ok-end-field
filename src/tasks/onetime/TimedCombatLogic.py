@@ -43,6 +43,7 @@ class TimedCombatLogic:
         self.state_specs = {}
         self.ult_state_specs = {}
         self.state_until = {}
+        self.disabled_slots = set()
 
     def _hold(self, enabled, force=False):
         if enabled:
@@ -156,6 +157,86 @@ class TimedCombatLogic:
         for profile in profiles:
             self.cooldowns[profile.skill_id] = started + profile.cooldown
 
+    def _slot_available(self, token):
+        return token not in self.disabled_slots
+
+    def _active_team_names(self):
+        return [
+            name
+            for index, name in enumerate(self.team, 1)
+            if str(index) not in self.disabled_slots and name != "?"
+        ]
+
+    def _refresh_sp_threshold(self):
+        active_names = self._active_team_names()
+        active_gains = {
+            name: self.normal_attack_sp_gains.get(name)
+            for name in active_names
+        }
+        known_gains = [value for value in active_gains.values() if value is not None]
+        fallback_gain = self.store.global_normal_attack_sp_gain() if active_names and not known_gains else None
+        threshold_gain = max(
+            known_gains + ([fallback_gain] if fallback_gain is not None else []),
+            default=self._DEFAULT_ASSUME_SUCCESS_SP_THRESHOLD - self._SP_ERROR_MARGIN,
+        )
+        self.assume_success_sp_threshold = threshold_gain + self._SP_ERROR_MARGIN
+        self.task.log_info(
+            f"时间排轴技力确认阈值: 存活槽位重击回复 {active_gains}, "
+            f"最大值 {threshold_gain:g} + 误差 {self._SP_ERROR_MARGIN:g} = "
+            f"{self.assume_success_sp_threshold:g} SP"
+        )
+
+    def _refresh_team_slots(self, deadline):
+        if not self.team:
+            return
+        detected, stable = self.task.detect_team_stable(
+            max_attempts=2,
+            interval=0.05,
+            confidence=2,
+            deadline=deadline,
+        )
+        if not stable or len(detected) != len(self.team) or all(member == "?" for member in detected):
+            return
+
+        mismatches = [
+            (index + 1, expected, current)
+            for index, (expected, current) in enumerate(zip(self.team, detected))
+            if current != "?" and current != expected
+        ]
+        if mismatches:
+            self.task.log_debug(f"时间排轴忽略槽位刷新，已知角色位置不匹配: {mismatches}")
+            return
+
+        newly_disabled = {
+            str(index + 1)
+            for index, (expected, current) in enumerate(zip(self.team, detected))
+            if expected != "?" and current == "?" and str(index + 1) not in self.disabled_slots
+        }
+        if not newly_disabled:
+            return
+
+        self.disabled_slots.update(newly_disabled)
+        self.task._battle_team_disabled_slots = {
+            int(token) - 1 for token in self.disabled_slots
+        }
+
+        if self.pending is not None and self.pending[1] in newly_disabled:
+            self.pending = None
+            self.unconfirmed = False
+        if self.active_slot in newly_disabled:
+            self._clear_active()
+        for token in newly_disabled:
+            self.state_until.pop(token, None)
+
+        self._refresh_sp_threshold()
+        details = [
+            f"{token}:{self.team[int(token) - 1]}"
+            for token in sorted(newly_disabled, key=int)
+        ]
+        self.task.log_info(
+            f"时间排轴屏蔽失效槽位 {details}，保留原始槽位编号，后续不再调度这些位置"
+        )
+
     def _detect_team(self, deadline):
         team, stable = self.task.detect_team_stable(
             max_attempts=2,
@@ -170,34 +251,10 @@ class TimedCombatLogic:
             self.order = [token for token in self.ult_order if self.store.profiles(team[int(token) - 1], "battle")]
             self.task.log_info(f"时间排轴队伍: {team}, 战技顺序: {self.order}")
 
+            self.disabled_slots.clear()
+            self.task._battle_team_disabled_slots = set()
             self.normal_attack_sp_gains = self.store.team_normal_attack_sp_gains(team)
-            known_gains = [
-                value
-                for value in self.normal_attack_sp_gains.values()
-                if value is not None
-            ]
-            unknown_names = [
-                name
-                for name, value in self.normal_attack_sp_gains.items()
-                if value is None
-            ]
-            fallback_gain = self.store.global_normal_attack_sp_gain() if not known_gains else None
-            threshold_gain = max(
-                known_gains + ([fallback_gain] if fallback_gain is not None else []),
-                default=self._DEFAULT_ASSUME_SUCCESS_SP_THRESHOLD - self._SP_ERROR_MARGIN,
-            )
-            self.assume_success_sp_threshold = threshold_gain + self._SP_ERROR_MARGIN
-            self.task.log_info(
-                f"时间排轴技力确认阈值: 重击回复 {self.normal_attack_sp_gains}, "
-                f"最大值 {threshold_gain:g} + 误差 {self._SP_ERROR_MARGIN:g} = "
-                f"{self.assume_success_sp_threshold:g} SP"
-                + (
-                    f"；未解析 {unknown_names}"
-                    + ("，全队均未知时使用全局保守上界" if not known_gains else "")
-                    if unknown_names
-                    else ""
-                )
-            )
+            self._refresh_sp_threshold()
 
             self.state_specs = {
                 str(index + 1): self.store.battle_state(name)
@@ -252,9 +309,11 @@ class TimedCombatLogic:
         if kind == "ult":
             quote = self.damage_quotes.get(self.team[int(token) - 1])
             self._cycle_bonus += quote.ult if quote else 0
-        elif all(name in self.damage_quotes for name in self.team):
-            # Unknown owner: credit the lower bound, never four links for one key.
-            self._cycle_bonus += min(self.damage_quotes[name].link for name in self.team)
+        else:
+            active_names = self._active_team_names()
+            if active_names and all(name in self.damage_quotes for name in active_names):
+                # Unknown owner: credit the lower bound among currently active slots.
+                self._cycle_bonus += min(self.damage_quotes[name].link for name in active_names)
 
     def _skip_active_state_slots(self):
         if not self.order:
@@ -262,13 +321,13 @@ class TimedCombatLogic:
         now = self.task.active_time()
         for _ in range(len(self.order)):
             token = self.order[self.cursor]
-            if now >= self.state_until.get(token, 0):
+            if self._slot_available(token) and now >= self.state_until.get(token, 0):
                 return
             self.cursor = (self.cursor + 1) % len(self.order)
 
     def _try_planned_battle_skill(self, sp, overflow=False):
         token = self.order[self.cursor]
-        if self.task.active_time() < self.state_until.get(token, 0):
+        if not self._slot_available(token) or self.task.active_time() < self.state_until.get(token, 0):
             return False
 
         profiles = self.store.profiles(self.team[int(token) - 1], "battle")
@@ -328,9 +387,11 @@ class TimedCombatLogic:
 
         # The existing link detector cannot identify its owner. Protect the
         # longest possible team link timeline instead of inventing an owner.
-        links = tuple(profile for name in self.team for profile in self.store.profiles(name, "link"))
+        active_names = self._active_team_names()
+        links = tuple(profile for name in active_names for profile in self.store.profiles(name, "link"))
         if (
-            all(self.store.profiles(name, "link") for name in self.team)
+            active_names
+            and all(self.store.profiles(name, "link") for name in active_names)
             and links
             and self._allowed(links, candidate_kind="link")
             and self.task.is_link_skill_ready()
@@ -344,6 +405,8 @@ class TimedCombatLogic:
 
         ready_ults = []
         for token in self.ult_order:
+            if not self._slot_available(token):
+                continue
             profiles = self.store.profiles(self.team[int(token) - 1], "ult")
             if self._ready(profiles, slot=token, kind="ult") and self.task._find_battle_ult("ult_" + token):
                 quote = self.damage_quotes.get(self.team[int(token) - 1])
@@ -381,6 +444,7 @@ class TimedCombatLogic:
             entered = task.active_time()
             ready_at = entered + max(0, start_sleep or 0)
             next_exit, next_team, next_lock = entered, entered, entered
+            next_team_refresh = entered
             next_normal_attack = entered
             exit_pending = False
             while True:
@@ -421,6 +485,11 @@ class TimedCombatLogic:
                     next_team = now + 1
                     detect_deadline = min(now + 0.3, deadline) if deadline is not None else now + 0.3
                     self._detect_team(detect_deadline)
+                    next_team_refresh = task.active_time() + 1
+                elif self.team and now >= next_team_refresh:
+                    next_team_refresh = now + 1
+                    refresh_deadline = min(now + 0.2, deadline) if deadline is not None else now + 0.2
+                    self._refresh_team_slots(refresh_deadline)
                 if deadline is not None and task.active_time() >= deadline:
                     return False
                 self.step()

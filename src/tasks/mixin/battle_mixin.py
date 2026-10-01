@@ -625,10 +625,21 @@ class BattleMixin(BaseEfTask):
         return (last_result or ["?"], False)
 
     def _is_detected_team_frame_matched(self, team, battle_team, require_four_unknown):
-        """判断当前帧的队伍识别结果是否满足等待条件。"""
+        """判断当前帧的队伍识别结果是否满足等待条件。
+
+        战斗中已经确认失效/阵亡的槽位不再要求头像恢复；其余槽位仍必须
+        与开场队伍按位置完全一致。这样终结技动画结束后的 HUD 恢复不会
+        因一个已经永久变成 "?" 的槽位每次都等到超时。
+        """
         if require_four_unknown:
             return bool(team) and len(team) == 4 and all(member == "?" for member in team)
-        return bool(team) and not any(member == "?" for member in team) and team == battle_team
+        if not team or not battle_team or len(team) != len(battle_team):
+            return False
+        disabled = set(getattr(self, "_battle_team_disabled_slots", set()) or ())
+        return all(
+            index in disabled or (current != "?" and current == expected)
+            for index, (current, expected) in enumerate(zip(team, battle_team))
+        )
 
     def _log_detected_team_member_result(self, team, battle_team, require_four_unknown, time_out, success):
         """记录队伍检测成功或超时的结果。"""
