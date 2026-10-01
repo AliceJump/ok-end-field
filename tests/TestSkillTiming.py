@@ -331,26 +331,25 @@ class TestTimedCombat(unittest.TestCase):
         self.assertGreaterEqual(task.monitored, 4)
         self.assertEqual(task.mouse[-1], "up")
 
-    def test_fractional_cost_channel_waits_for_a_detectable_skill_bar(self):
+    def test_low_cost_skill_is_assumed_success_after_short_pause(self):
         task = FakeTask()
         task.points = 0
         logic = logic_for(task)
         logic.team[0] = "梨诺"
         logic.step()
         self.assertEqual(task.keys, [])
+
         task.points = 1
+        before = task.now
         logic.step()
+
         self.assertEqual(task.keys, ["1"])
-        self.assertIsNotNone(logic.pending)
-        task.points = 0
-        task.now = 0.1
-        logic.step()
         self.assertIsNone(logic.pending)
         self.assertEqual(logic.cursor, 1)
-        task.now = 1
-        logic.step()
-        self.assertEqual(task.keys, ["1"])
-        self.assertEqual(task.mouse[-1], "down")
+        self.assertAlmostEqual(task.now - before, 0.1)
+        self.assertTrue(
+            any("25 SP <= 25，按键后直接视为成功" in message for message in task.messages)
+        )
 
     def test_detection_exception_releases_held_mouse(self):
         task = FakeTask()
