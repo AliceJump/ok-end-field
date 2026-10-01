@@ -4,6 +4,8 @@ REST review comments have numeric `id`, opaque `node_id`, and `in_reply_to_id`; 
 
 For location evidence, record `path`, `line`, `originalLine`, and `isOutdated` on threads, and REST `line`/`original_line` on comments. A current thread normally has a current line; an outdated thread may have only an original line. Fall back to the original location to find the old code, then verify the finding against the current code. Neither an outdated flag nor a moved line proves resolution.
 
+When implementing or changing mapping/API helpers, verify REST-to-GraphQL mapping with at least one current thread and one outdated thread, including the original-line fallback.
+
 ## Pagination
 
 As specified in the [GitHub CLI manual](https://cli.github.com/manual/gh_api), `gh api graphql --paginate` requires a query variable `$endCursor: String` and `pageInfo { hasNextPage endCursor }`; pass the cursor as `after: $endCursor`. Use separate queries for the PR's threads and each thread's comments; one automatically paginated query cannot independently advance all nested connections.
