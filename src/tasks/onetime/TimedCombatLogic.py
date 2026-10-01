@@ -41,6 +41,7 @@ class TimedCombatLogic:
         self.normal_attack_sp_gains = {}
         self.assume_success_sp_threshold = self._DEFAULT_ASSUME_SUCCESS_SP_THRESHOLD
         self.state_specs = {}
+        self.ult_state_specs = {}
         self.state_until = {}
 
     def _hold(self, enabled, force=False):
@@ -101,27 +102,26 @@ class TimedCombatLogic:
         self.started = self.task.active_time() if now is None else now
         self.unconfirmed = False
 
+    def _activate_state(self, token, spec, source, started=None):
+        if spec is None:
+            return
+        started = self.started if started is None else started
+        until = started + spec.duration
+        self.state_until[token] = max(self.state_until.get(token, 0), until)
+        self.task.log_info(
+            f"时间排轴: {source} {token} 进入特殊状态 {spec.duration:.2f}s，"
+            f"{spec.end_skill_id} 仅作为主动中止"
+            + (
+                ""
+                if spec.end_cooldown is None
+                else f"，主动中止冷却约 {spec.end_cooldown:g}s"
+            )
+        )
+
     def _accept_battle_skill(self, token):
         self._observe_battle()
         self._set_cooldowns()
-        spec = self.state_specs.get(token)
-        if spec is not None:
-            until = self.started + spec.duration
-            self.state_until[token] = until
-            if spec.end_cooldown is not None:
-                for profile in self.active:
-                    self.cooldowns[profile.skill_id] = max(
-                        self.cooldowns.get(profile.skill_id, 0),
-                        until + spec.end_cooldown,
-                    )
-            self.task.log_info(
-                f"时间排轴: 战技 {token} 进入特殊状态 {spec.duration:.2f}s"
-                + (
-                    ""
-                    if spec.end_cooldown is None
-                    else f"，自然结束后冷却约 {spec.end_cooldown:g}s"
-                )
-            )
+        self._activate_state(token, self.state_specs.get(token), "战技")
         self.cursor = (self.cursor + 1) % len(self.order)
 
     def _confirm_battle(self, now):
@@ -203,13 +203,18 @@ class TimedCombatLogic:
                 str(index + 1): self.store.battle_state(name)
                 for index, name in enumerate(team)
             }
-            for token, spec in self.state_specs.items():
-                if spec is not None:
-                    self.task.log_info(
-                        f"时间排轴状态战技: {team[int(token) - 1]}({token}) "
-                        f"{spec.base_skill_id} -> {spec.end_skill_id}, "
-                        + ", ".join(spec.evidence)
-                    )
+            self.ult_state_specs = {
+                str(index + 1): self.store.ultimate_state(name)
+                for index, name in enumerate(team)
+            }
+            for source, specs in (("战技", self.state_specs), ("终结技", self.ult_state_specs)):
+                for token, spec in specs.items():
+                    if spec is not None:
+                        self.task.log_info(
+                            f"时间排轴状态{source}: {team[int(token) - 1]}({token}) "
+                            f"{spec.base_skill_id} -> {spec.end_skill_id}, "
+                            + ", ".join(spec.evidence)
+                        )
 
             self.damage_quotes = load_damage_quotes(team)
             self.plan = optimize_cycle(build_options(team, self.store, self.damage_quotes))
@@ -353,6 +358,7 @@ class TimedCombatLogic:
                 ended = self.task.active_time()
                 self._observe_bonus("ult", token)
                 self._set_cooldowns(profiles, started)
+                self._activate_state(token, self.ult_state_specs.get(token), "终结技", started)
                 self._clear_active(ended)
                 self.task.log_info(
                     f"时间排轴: 终结技 {token} 动画结束后继续，HUD 动画锁 {ended - started:.2f}s"

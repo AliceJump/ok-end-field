@@ -66,12 +66,19 @@ class TestSkillTiming(unittest.TestCase):
         self.assertGreaterEqual(store.global_normal_attack_sp_gain(), 20)
 
     def test_state_skill_is_derived_from_end_variant_and_native_actions(self):
-        spec = load_skill_timings().battle_state("梨诺")
+        store = load_skill_timings()
+        spec = store.battle_state("梨诺")
         self.assertIsNotNone(spec)
         self.assertEqual(spec.base_skill_id, "chr_0035_liino_normal_skill")
         self.assertEqual(spec.end_skill_id, "chr_0035_liino_normal_skill_end")
         self.assertAlmostEqual(spec.duration, 60.0)
         self.assertEqual(spec.end_cooldown, 3)
+
+        ultimate = store.ultimate_state("梨诺")
+        self.assertIsNotNone(ultimate)
+        self.assertEqual(ultimate.base_skill_id, "chr_0035_liino_ultimate_skill")
+        self.assertEqual(ultimate.end_skill_id, "chr_0035_liino_normal_skill_end")
+        self.assertGreater(ultimate.duration, 0)
 
     def test_full_record_is_lazy_and_detects_corruption(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -399,6 +406,24 @@ class TestTimedCombat(unittest.TestCase):
         task.now += 1.0
         logic.step()
         self.assertEqual(task.keys, ["1"])
+
+    def test_ultimate_state_prevents_auto_pressing_its_end_button(self):
+        task = FakeTask()
+        task.sp = 100.0
+        task.ults = {"1"}
+        logic = logic_for(task)
+        logic.team = ["梨诺", "庄方宜", "诀", "佩丽卡"]
+        logic.order = ["1"]
+        logic.ult_order = ["1"]
+        logic.ult_state_specs["1"] = logic.store.ultimate_state("梨诺")
+
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertGreater(logic.state_until["1"], task.now)
+
+        task.sp = 100.0
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
 
     def test_detection_exception_releases_held_mouse(self):
         task = FakeTask()
