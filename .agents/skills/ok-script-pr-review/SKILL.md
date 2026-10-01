@@ -30,7 +30,9 @@ Do not retry a refused trigger unchanged. For `Review rate limited.`, use `wait-
 1. Fix valid findings and run the focused test before closing a correctness thread. Mark stale or rejected findings with a concrete explanation tied to the current SHA.
 2. Reply to an **inline finding in its review thread**, using `POST repos/<owner>/<repo>/pulls/<n>/comments/<top-level-comment-id>/replies`. If the target comment is itself a reply, use its `in_reply_to_id` to find the top-level comment. Do not post a thread disposition as a general PR comment.
 3. For an **outside-diff finding**, first check for an existing inline thread about the same issue and reply there. Otherwise reply in the main PR conversation, stating the finding, disposition, and SHA.
-4. Resolve only a thread whose current `isResolved` is false and whose issue is confirmed fixed or no longer applicable; verify `isResolved` afterward. Use the GraphQL `resolveReviewThread` mutation with the thread ID, never the comment ID. Do not dismiss a `CHANGES_REQUESTED` review as part of routine thread cleanup.
+4. **不要抢在 CodeRabbit 前面手动 resolve。** CodeRabbit 会自己收线：它**接受**（确认已修复）或**撤回**（认同你的说明）时，都会把对应线程置为 resolved；**它不同意你的处置时不会 resolve**。所以「线程仍是 unresolved」正是它不同意的信号 —— 此时应继续在**同一线程**内补证据或改代码，而不是用 `resolveReviewThread` 把它关掉，手动关闭会把这个信号抹掉。
+   手动 resolve 只用于 CodeRabbit 不会处理的线程（例如人工评审留下的），且必须先确认该线程当前 `isResolved` 为 false，解决后复验。用 GraphQL `resolveReviewThread` 传 thread ID（不是 comment ID）。
+   不要把 `CHANGES_REQUESTED` 的评审当作例行清理对象 dismiss 掉。
 
 When mapping comments to threads or resolving them, read [references/thread-api.md](references/thread-api.md) for identifiers, outdated line locations, and independent pagination of threads and comments.
 
