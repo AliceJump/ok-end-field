@@ -1,8 +1,10 @@
 import random
+from copy import copy
 
 import pyautogui
 
 from src.data.FeatureList import FeatureList as fL
+from src.tasks.mixin.navigation_detection_scope import get_navigation_detection_scope
 from src.tasks.mixin.search_mixin import SearchMixin
 
 TOLERANCE = 50
@@ -103,6 +105,7 @@ class NavigationMixin(SearchMixin):
         nav_missing_start_time = None
         nav_missing_recovered = False
         nav_not_found_time_out = 5
+        observations = get_navigation_detection_scope(self)
 
         def check_target():
             if target_is_ocr:
@@ -178,13 +181,26 @@ class NavigationMixin(SearchMixin):
         # Task.send_key_down 不透传底层是否按下成功（ok-script 2.0.4 恒返回 None），
         # 按下后只能乐观标记为已按住；若底层置顶失败未实际按下，
         # EfInteraction 的配对保护会让后续 send_key_up 静默跳过，不会误释放。
-        self.send_key_down("w")
-        self._walk_key_held = True
+        if observations is None:
+            self.send_key_down("w")
+        self._walk_key_held = observations is None
 
         try:
             while True:
+                if observations is not None and self.active_time() - start_time > time_out:
+                    self.log_info("导航超时")
+                    return False
                 enforce_max_run_time()
                 reached = check_target()
+                if observations is not None and not reached:
+                    kind = "ocr" if target_is_ocr else "yolo" if target_is_yolo else "feature"
+                    if observations.latest(kind, target):
+                        # 近期出现过交互提示时先停步重检，不以缓存判定到达。
+                        if self._walk_key_held:
+                            self.send_key_up("w")
+                            self._walk_key_held = False
+                        self.sleep(0.03)
+                        continue
                 if reached:
                     self.send_key_up("w")  # 确认使用send_key：释放方向键
                     self._walk_key_held = False
@@ -215,17 +231,23 @@ class NavigationMixin(SearchMixin):
                     self.log_info("确认期间目标丢失，开始小幅度 WASD 移动搜索")
                     if self.strafe_search(check_target, passes=3, duration=0.2, time_out=10):
                         self.log_info("WASD 移动过程中重新找到目标")
+                        if observations is not None:
+                            continue
                     else:
                         self.log_info("小幅度移动未找到目标，开始后退搜索")
                         self.send_key_down("s")  # 确认使用send_key：s为方向移动键，不属于游戏可配置热键，用于后退搜索
                         search_start = self.active_time()
+                        target_recovered = False
                         while self.active_time() - search_start < 10:
                             if check_target():
                                 self.log_info("后退过程中重新找到目标")
                                 self.send_key_up("s")  # 确认使用send_key：释放方向键
+                                target_recovered = True
                                 break
                             self.sleep(0.02)
                         self.send_key_up("s")  # 确认使用send_key：释放方向键
+                        if observations is not None and target_recovered:
+                            continue
 
                 if self.active_time() - start_time > time_out:
                     self.log_info("导航超时")
@@ -241,6 +263,10 @@ class NavigationMixin(SearchMixin):
                 if pre_loop_callback:
                     pre_loop_callback()
 
+                if observations is not None and nav is None and not self._walk_key_held:
+                    self.send_key_down("w")
+                    self._walk_key_held = True
+
                 # ===== nav=None -> 纯前进搜索模式 =====
                 if nav is None:
                     if not run_bool and run_allowed:
@@ -251,6 +277,19 @@ class NavigationMixin(SearchMixin):
                     continue
 
                 nav_result = check_nav()
+                if observations is not None and not nav_result:
+                    # 残影只用于停步找回方向，不允许旧坐标恢复前进。
+                    if self._walk_key_held:
+                        self.send_key_up("w")
+                        self._walk_key_held = False
+                    kind = "ocr" if nav_is_ocr else "yolo" if nav_is_yolo else "feature"
+                    if observations.latest(kind, nav):
+                        self.align_ocr_or_find_target_to_center(
+                            nav, only_x=True, ocr=nav_is_ocr, use_yolo=nav_is_yolo,
+                            threshold=0.7, max_time=1, raise_if_fail=False, allow_random_move=False,
+                        )
+                        self.sleep(0.005)
+                        continue
 
                 if nav_result:
                     nav_missing_start_time = None
@@ -308,6 +347,8 @@ class NavigationMixin(SearchMixin):
                     ):
                         self.log_info(f"导航目标连续丢失超过 {nav_not_found_time_out} 秒，进入兜底搜索")
                         self.send_key_up("w")
+                        if observations is not None:
+                            self._walk_key_held = False
                         self.sleep(0.1)
                         nav_result = None
                         if allow_rotate_search:
@@ -319,6 +360,9 @@ class NavigationMixin(SearchMixin):
                             self.log_info("旋转搜索已禁用，跳过旋转直接后退搜索")
 
                         if not nav_result:
+                            if observations is not None and observations.has_recent_target():
+                                nav_missing_recovered = True
+                                continue
                             self.click(key="middle", after_sleep=1)
                             self.log_info("按下中键后开始后退搜索")
                             self.send_key_down("s")  # 确认使用send_key：s为方向移动键，用于后退搜索
@@ -408,6 +452,8 @@ class NavigationMixin(SearchMixin):
             Exception: 对中失败且raise_if_fail=True时抛出异常
         """
         scaled_tolerance = self.scale_distance(tolerance)
+        observations = get_navigation_detection_scope(self)
+        detection_kind = "ocr" if ocr else "yolo" if use_yolo else "feature"
         if box:
             feature_box = box
         else:
@@ -448,6 +494,8 @@ class NavigationMixin(SearchMixin):
                             break
                     if result:
                         break
+                    if observations is not None:
+                        break
                     self.sleep(0.03)
             else:
                 if isinstance(ocr_match_or_feature_name_list, str):
@@ -479,6 +527,8 @@ class NavigationMixin(SearchMixin):
                                 break
                     if result:
                         break
+                    if observations is not None:
+                        break
                     self.sleep(0.03)
             if result:
                 success = True
@@ -487,6 +537,8 @@ class NavigationMixin(SearchMixin):
                 # OCR 成功
                 if isinstance(result, list):
                     result = result[0]
+                if observations is not None:
+                    result = copy(result)
                 if is_num:
                     result.y = result.y - int(self.height * ((525 - 486) / 1080))
                 if only_y:
@@ -521,7 +573,18 @@ class NavigationMixin(SearchMixin):
                     sum_dy += dy
 
             else:
-                if not allow_random_move:
+                if observations is not None:
+                    recent = observations.latest(detection_kind, ocr_match_or_feature_name_list, threshold=threshold)
+                    if recent is None:
+                        last_target = None
+                    elif last_target is None:
+                        last_target = recent.boxes[0]
+                        if only_x:
+                            last_target.y = self.screen_center()[1] - last_target.height // 2
+                        if only_y:
+                            last_target.x = self.screen_center()[0] - last_target.width // 2
+                        success = True
+                if not allow_random_move and (observations is None or last_target is None):
                     continue
                 # 每次 OCR 失败，直接随机移动
                 max_offset = self.scale_distance(60)  # 最大随机偏移
