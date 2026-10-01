@@ -71,7 +71,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         self.name = "刷体力"
         self.group_name = "战斗"
         self.group_icon = Icons.Battle
-        self.description = "使用说明参见选项，更多用法参见 ./docs/体力本.md"
+        self.description = "使用说明参见选项，更多用法参见 https://ok-script.com/ok-end-field/docs/体力本/"
         self.icon = Icons.Battle
         self.stages_list = stages_list
         self._reset_battle_state()
