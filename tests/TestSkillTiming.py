@@ -229,6 +229,31 @@ class TestTimedCombat(unittest.TestCase):
         logic._hold(True, force=True)
         self.assertEqual(task.mouse.count("down"), 2)
 
+    def test_full_skill_points_preempt_link_and_ult_with_planned_battle(self):
+        task = FakeTask()
+        task.points = 3
+        task.link = True
+        task.ults = {"1"}
+        logic = logic_for(task)
+
+        logic.step()
+
+        self.assertEqual(task.keys, ["1"])
+        self.assertTrue(any("技力已满，防溢出抢占尝试战技 1" in message for message in task.messages))
+        self.assertTrue(task.link)
+        self.assertIn("1", task.ults)
+
+    def test_below_full_skill_points_keeps_link_priority(self):
+        task = FakeTask()
+        task.points = 2
+        task.link = True
+        task.ults = {"1"}
+        logic = logic_for(task)
+
+        logic.step()
+
+        self.assertEqual(task.keys, ["e"])
+
     def test_monitor_ready_link_and_nonblocking_alt_ult(self):
         task = FakeTask()
         logic = logic_for(task)

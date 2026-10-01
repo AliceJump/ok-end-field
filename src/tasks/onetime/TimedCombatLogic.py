@@ -11,6 +11,7 @@ from src.data.timing_dps import build_options, load_damage_quotes, optimize_cycl
 
 class TimedCombatLogic:
     _NORMAL_ATTACK_REASSERT_INTERVAL = 0.25
+    _FULL_SKILL_POINTS = 3
 
     def __init__(self, task, store=None):
         self.task = task
@@ -140,12 +141,43 @@ class TimedCombatLogic:
             # Unknown owner: credit the lower bound, never four links for one key.
             self._cycle_bonus += min(self.damage_quotes[name].link for name in self.team)
 
+    def _try_planned_battle_skill(self, points, overflow=False):
+        token = self.order[self.cursor]
+        profiles = self.store.profiles(self.team[int(token) - 1], "battle")
+        costs = [profile.skill_points for profile in profiles]
+        if not (self._ready(profiles) and None not in costs and points >= max(costs)):
+            return False
+
+        started = self.task.active_time()
+        self.task.send_key(token)
+        self._begin(profiles, started)
+        if max(costs) > 0:
+            self.pending = (points, token)
+            if overflow:
+                self.task.log_info(f"时间排轴: 技力已满，防溢出抢占尝试战技 {token}")
+        else:
+            # No resource transition exists for a zero-cost skill. This is
+            # explicitly an attempt; use its timeline/CD to prevent spam.
+            self._observe_battle()
+            self.cursor = (self.cursor + 1) % len(self.order)
+            self._set_cooldowns()
+            self.task.log_info(f"时间排轴: 尝试零消耗战技 {token}")
+        return True
+
     def step(self):
         """One refreshed HUD observation; no legacy strategy switches are read."""
         now = self.task.active_time()
         self._confirm_battle(now)
         if not self.team or not self.order:
             self._hold(True)
+            return
+
+        points = self.task.get_skill_bar_count()
+        # Prevent full-SP starvation: once the HUD shows all three bars, the
+        # next planned battle skill gets priority over link/ult as soon as the
+        # current timeline permits it. This preserves order and never bypasses
+        # exclusive/actionable guards.
+        if points >= self._FULL_SKILL_POINTS and self._try_planned_battle_skill(points, overflow=True):
             return
 
         # The existing link detector cannot identify its owner. Protect the
@@ -183,23 +215,7 @@ class TimedCombatLogic:
                 self.task.log_info(f"时间排轴: 终结技 {token} 按现有就绪检测释放")
                 return
 
-        token = self.order[self.cursor]
-        profiles = self.store.profiles(self.team[int(token) - 1], "battle")
-        points = self.task.get_skill_bar_count()
-        costs = [profile.skill_points for profile in profiles]
-        if self._ready(profiles) and None not in costs and points >= max(costs):
-            started = self.task.active_time()
-            self.task.send_key(token)
-            self._begin(profiles, started)
-            if max(costs) > 0:
-                self.pending = (points, token)
-            else:
-                # No resource transition exists for a zero-cost skill. This is
-                # explicitly an attempt; use its timeline/CD to prevent spam.
-                self._observe_battle()
-                self.cursor = (self.cursor + 1) % len(self.order)
-                self._set_cooldowns()
-                self.task.log_info(f"时间排轴: 尝试零消耗战技 {token}")
+        if self._try_planned_battle_skill(points):
             return
         self._hold(True)
 
