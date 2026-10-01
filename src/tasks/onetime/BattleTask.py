@@ -21,6 +21,7 @@ from src.icons import Icons
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.common import Common
 from src.tasks.mixin.map_mixin import MapMixin
+from src.tasks.mixin.navigation_detection_scope import NavigationDetectionScope, get_navigation_detection_scope
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
 MAX_STORAGE_TICKET = 1000
@@ -936,6 +937,11 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         return self.auto_battle(no_battle=self.battle_ctx.no_battle)
 
     def to_end(self):
+        # 仅在战斗后的终点寻找中启用；return、异常和任务停止都会自动关闭。
+        with NavigationDetectionScope(self):
+            return self._find_end()
+
+    def _find_end(self):
         click_key = (
             self.lang.daily_battle_mixin.k_b8a81b7a
             if self.battle_ctx.is_extra_mode
@@ -948,7 +954,38 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             STAGE_CATEGORY_ENERGY_POOLING,
         )
 
-        def try_click_reward(allow_middle_click=True, deep_search=False):
+        observations = get_navigation_detection_scope(self)
+        end_feature_name = [fL.gather_icon_out_map2, fL.gather_icon_out_map] if is_gather else "battle_end"
+        use_yolo = not is_gather
+        search_box = self.box_of_screen(
+            (1920 - 1550) / 1920,
+            150 / 1080 if is_gather else 0,
+            1550 / 1920,
+            (1080 - 150) / 1080,
+        )
+        marker_kind = "feature" if is_gather else "yolo"
+        observations.track(marker_kind, end_feature_name)
+        observations.track("ocr", click_key)
+        observations.track("ocr", re.compile(click_key))
+
+        def detect_marker():
+            if use_yolo:
+                return self.yolo_detect(name=end_feature_name, box=search_box, conf=0.7)
+            for feature in end_feature_name:
+                self.sleep(0.05)
+                if result := self.find_feature(feature=feature, box=search_box, threshold=0.7):
+                    return result
+            return None
+
+        def search_marker():
+            result = detect_marker()
+            if result:
+                return result
+            # 搜索中短暂漏检时，将近期观测交给后续残影跟踪，停止继续旋转。
+            recent = observations.latest(marker_kind, end_feature_name)
+            return list(recent.boxes) if recent else None
+
+        def try_click_reward(deep_search=False):
             def check():
                 return self.wait_ocr(
                     match=re.compile(click_key),
@@ -979,57 +1016,28 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                     self.log_info("已放弃未领取的奖励")
 
                 return True
-            if allow_middle_click:
-                self.click(key="middle", after_sleep=0.3)
+            if not observations.has_recent_target():
+                detect_marker()
+            self.click(key="middle", after_sleep=0.3)
             return False
 
-        def search_gather_reward():
-            feature_box = self.box_of_screen(
-                (1920 - 1550) / 1920,
-                150 / 1080,
-                1550 / 1920,
-                (1080 - 150) / 1080,
-            )
-
-            end_features = [
-                fL.gather_icon_out_map2,
-                fL.gather_icon_out_map,
-            ]
-
-            def check():
-                for feature in end_features:
-                    self.sleep(0.05)
-                    if self.find_feature(
-                        feature=feature,
-                        box=feature_box,
-                    ):
-                        return True
-                return False
-
-            return bool(self.rotate_search(check))
-
-        def search_normal_reward(end_feature_name, search_box):
-            return bool(self.rotate_search(lambda: self.yolo_detect(end_feature_name, box=search_box)))
+        def search_reward():
+            # 已有有效目标时禁止再转动搜索，避免把刚找到的目标转出视野。
+            if observations.latest(marker_kind, end_feature_name):
+                return True
+            return bool(self.rotate_search(search_marker))
 
         try:
-            target_found_by_yolo = False
-
             # 已经到领奖点
             if try_click_reward():
                 return True
 
             if is_gather:
-                end_feature_name = [
-                    fL.gather_icon_out_map2,
-                    fL.gather_icon_out_map,
-                ]
-                use_yolo = False
-                search_box = None
-
-                need_follow = not search_gather_reward()
+                need_follow = not search_reward()
 
                 # F8 二次追踪
                 if need_follow:
+                    observations.clear()
                     self._open_index()
 
                     if not self.to_stage():
@@ -1044,6 +1052,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                     ):
                         self.click(result)
                         self.ensure_main()
+                        observations.clear()
                     else:
                         raise RuntimeError("未找到追踪按钮")
 
@@ -1051,29 +1060,17 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
 
             else:
                 # 协议空间战斗结束后最多等两秒让界面特征刷新，找到或超时后继续
-                end_feature_name = "battle_end"
-                use_yolo = True
-                search_box = self.box_of_screen(
-                    (1920 - 1550) / 1920,
-                    0,
-                    1550 / 1920,
-                    (1080 - 150) / 1080,
-                )
-
                 refresh_start = self.active_time()
                 while self.active_time() - refresh_start <= 2:
-                    if self.yolo_detect(name=end_feature_name, box=search_box):
+                    if detect_marker():
                         self.log_info("协议空间战斗结束，界面特征已刷新")
                         break
                     self.sleep(0.1)
 
-                target_found_by_yolo = search_normal_reward(
-                    end_feature_name,
-                    search_box,
-                )
+                search_reward()
 
             # 搜索过程中可能已经到达
-            if try_click_reward(allow_middle_click=not target_found_by_yolo):
+            if try_click_reward():
                 return True
 
             # 对准领奖点
@@ -1088,20 +1085,18 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                 tolerance=100,
                 raise_if_fail=False,
             )
-            if target_aligned:
-                target_found_by_yolo = target_found_by_yolo or use_yolo
-                if not self.navigate_until_target(
-                    target=click_key,
-                    nav=end_feature_name,
-                    nav_is_yolo=use_yolo,
-                    target_is_ocr=True,
-                    time_out=60,
-                    box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
-                    max_run_time=1,
-                ):
-                    raise RuntimeError("导航奖励点失败")
+            if target_aligned and not self.navigate_until_target(
+                target=re.compile(click_key),
+                nav=end_feature_name,
+                nav_is_yolo=use_yolo,
+                target_is_ocr=True,
+                time_out=60,
+                box=self.box_of_screen(0.679, 0.620, 0.714, 0.769),
+                max_run_time=1,
+            ):
+                raise RuntimeError("导航奖励点失败")
 
-            return try_click_reward(allow_middle_click=not target_found_by_yolo, deep_search=True) or True
+            return try_click_reward(deep_search=True) or True
 
         except Exception as e:
             if isinstance(e, TaskDisabledException):
