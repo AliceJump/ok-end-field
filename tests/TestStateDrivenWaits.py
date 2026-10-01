@@ -429,6 +429,36 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertEqual(combat_logic.return_value.run.call_count, 2)
         self.assertEqual(task.frames, 2)
 
+    def test_team_recovery_ignores_confirmed_dead_slots(self):
+        task = type("TeamMatchHarness", (), {})()
+        task._battle_team_disabled_slots = {1}
+        battle_team = ["佩丽卡", "狼卫", "陈千语", "管理员"]
+
+        self.assertTrue(
+            BattleMixin._is_detected_team_frame_matched(
+                task,
+                ["佩丽卡", "?", "陈千语", "管理员"],
+                battle_team,
+                False,
+            )
+        )
+        self.assertFalse(
+            BattleMixin._is_detected_team_frame_matched(
+                task,
+                ["佩丽卡", "?", "?", "管理员"],
+                battle_team,
+                False,
+            )
+        )
+        self.assertTrue(
+            BattleMixin._is_detected_team_frame_matched(
+                task,
+                ["?", "?", "?", "?"],
+                battle_team,
+                True,
+            )
+        )
+
     def test_alt_ult_records_release_before_wait_and_team_detection(self):
         task = _UltHarness(ULT_RELEASE_MODE_ALT)
 
