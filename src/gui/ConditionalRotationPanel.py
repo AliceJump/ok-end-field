@@ -635,34 +635,8 @@ class _ConditionEditor(QWidget):
 
 
 # 编辑弹窗
-class _ConditionEditDialog(MessageBoxBase):
-    """条件块编辑弹窗（项目 MessageBoxBase 范式）。"""
-
-    def __init__(self, node: dict, parent=None):
-        super().__init__(parent)
-        self.widget.hide()
-        self.setUpdatesEnabled(False)
-        self.setWindowTitle(_tr("编辑条件块"))
-        node = node if isinstance(node, dict) else {}
-        cond = node.get("if", "link")
-        then_nodes = node.get("then", []) if isinstance(node.get("then"), list) else []
-
-        self.titleLabel = SubtitleLabel(_tr("编辑条件块"), self)
-        self.viewLayout.addWidget(self.titleLabel)
-
-        self.cond_editor = _ConditionEditor(cond)
-        self.viewLayout.addWidget(self.cond_editor)
-
-        self.then_editor = _ActionListEditor(_tr("运行："))
-        self.then_editor.load(then_nodes)
-        self.viewLayout.addWidget(self.then_editor)
-
-        self.yesButton.setText(_tr("确定"))
-        self.cancelButton.setText(_tr("取消"))
-        self.widget.setFixedWidth(460)
-        self.widget.adjustSize()
-        self.setUpdatesEnabled(True)
-        self.widget.show()
+class _AnimatedConditionDialog(MessageBoxBase):
+    """条件编辑弹窗共用的淡入淡出与阴影恢复。"""
 
     def showEvent(self, event):
         opacityEffect = QGraphicsOpacityEffect(self.widget)
@@ -697,6 +671,36 @@ class _ConditionEditDialog(MessageBoxBase):
     def _onCloseAniFinished(self, code):
         self.widget.setGraphicsEffect(None)
         QDialog.done(self, code)
+
+
+class _ConditionEditDialog(_AnimatedConditionDialog):
+    """条件块编辑弹窗（项目 MessageBoxBase 范式）。"""
+
+    def __init__(self, node: dict, parent=None):
+        super().__init__(parent)
+        self.widget.hide()
+        self.setUpdatesEnabled(False)
+        self.setWindowTitle(_tr("编辑条件块"))
+        node = node if isinstance(node, dict) else {}
+        cond = node.get("if", "link")
+        then_nodes = node.get("then", []) if isinstance(node.get("then"), list) else []
+
+        self.titleLabel = SubtitleLabel(_tr("编辑条件块"), self)
+        self.viewLayout.addWidget(self.titleLabel)
+
+        self.cond_editor = _ConditionEditor(cond)
+        self.viewLayout.addWidget(self.cond_editor)
+
+        self.then_editor = _ActionListEditor(_tr("运行："))
+        self.then_editor.load(then_nodes)
+        self.viewLayout.addWidget(self.then_editor)
+
+        self.yesButton.setText(_tr("确定"))
+        self.cancelButton.setText(_tr("取消"))
+        self.widget.setFixedWidth(460)
+        self.widget.adjustSize()
+        self.setUpdatesEnabled(True)
+        self.widget.show()
 
     def to_node(self) -> dict:
         return {"if": self.cond_editor.to_cond(), "then": self.then_editor.to_list()}
@@ -776,7 +780,7 @@ class _ConditionDisplayCard(QFrame):
 
 
 # ── 条件列表编辑弹窗 ──────
-class _ConditionListEditDialog(MessageBoxBase):
+class _ConditionListEditDialog(_AnimatedConditionDialog):
     """条件列表编辑弹窗: 卡片列表 + 工具栏, 固定高度滚动."""
 
     def __init__(self, ast: list, parent=None):
@@ -843,40 +847,6 @@ class _ConditionListEditDialog(MessageBoxBase):
         self.widget.setMinimumWidth(520)
         self.widget.setFixedHeight(520)
         self.setUpdatesEnabled(True)
-
-    def showEvent(self, event):
-        opacityEffect = QGraphicsOpacityEffect(self.widget)
-        self.widget.setGraphicsEffect(opacityEffect)
-        opacityEffect.setOpacity(0.0)
-        QDialog.showEvent(self, event)
-        self.widget.adjustSize()
-        ani = QPropertyAnimation(opacityEffect, b"opacity", self)
-        ani.setStartValue(0.0)
-        ani.setEndValue(1.0)
-        ani.setDuration(150)
-        ani.setEasingCurve(QEasingCurve.InSine)
-        ani.finished.connect(lambda: self._onShowAniFinished())
-        ani.start()
-
-    def _onShowAniFinished(self):
-        self.widget.setGraphicsEffect(None)
-        self.setShadowEffect()  # 恢复构建时被替换的阴影
-
-    def done(self, code):
-        self.widget.setGraphicsEffect(None)  # 清除阴影
-        opacityEffect = QGraphicsOpacityEffect(self.widget)
-        self.widget.setGraphicsEffect(opacityEffect)
-        ani = QPropertyAnimation(opacityEffect, b"opacity", self)
-        ani.setStartValue(1.0)
-        ani.setEndValue(0.0)
-        ani.setDuration(100)
-        ani.setEasingCurve(QEasingCurve.InSine)
-        ani.finished.connect(lambda c=code: self._onCloseAniFinished(c))
-        ani.start()
-
-    def _onCloseAniFinished(self, code):
-        self.widget.setGraphicsEffect(None)
-        QDialog.done(self, code)
 
     @staticmethod
     def _est_card_height(node: dict) -> int:

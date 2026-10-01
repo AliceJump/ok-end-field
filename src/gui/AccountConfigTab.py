@@ -22,6 +22,7 @@ from qfluentwidgets import (
     TextEdit,
 )
 
+from src.core.base_mixin.account_override_mixin import AccountOverrideMixin
 from src.core.global_config_store import (
     KEY_CONFIG_DEFAULTS,
     KEY_CONFIG_NAME,
@@ -433,47 +434,7 @@ class AccountConfigTab(CustomTab):
     @staticmethod
     def _coerce_like(base_value: Any, value: Any) -> Any:
         """Coerce a value to match the type of the base value, with fallback for incompatible types."""
-        if base_value is None or value is None:
-            return value
-
-        if isinstance(base_value, bool):
-            if isinstance(value, bool):
-                return value
-            if isinstance(value, str):
-                text = value.strip().lower()
-                if text in {"true", "1", "yes", "on", "是", "开启"}:
-                    return True
-                if text in {"false", "0", "no", "off", "否", "关闭"}:
-                    return False
-            return base_value
-
-        if isinstance(base_value, int) and not isinstance(base_value, bool):
-            if isinstance(value, int):
-                return value
-            if isinstance(value, str):
-                try:
-                    return int(value.strip())
-                except ValueError:
-                    return base_value
-            return base_value
-
-        if isinstance(base_value, float):
-            if isinstance(value, (int, float)):
-                return float(value)
-            if isinstance(value, str):
-                try:
-                    return float(value.strip())
-                except ValueError:
-                    return base_value
-            return base_value
-
-        if isinstance(base_value, list):
-            return value if isinstance(value, list) else base_value
-
-        if isinstance(base_value, str):
-            return str(value)
-
-        return value if isinstance(value, type(base_value)) else base_value
+        return AccountOverrideMixin._coerce_override_value(base_value, value)
 
     def _collect_tasks(self):
         """Collect all tasks that support multi-account configuration from the executor."""
