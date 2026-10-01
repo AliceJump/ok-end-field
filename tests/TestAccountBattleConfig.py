@@ -112,7 +112,6 @@ class TestAccountConfigRules(unittest.TestCase):
         tab.current_task = _DummyTask()
         tab.current_account_key = "acc"
         tab.current_editable_keys = ["普通配置"]
-        tab.current_base_values = {"普通配置": 1}
         tab.current_original_values = {"普通配置": 1}
         tab.overrides_data = {
             "accounts": {
@@ -144,7 +143,6 @@ class TestAccountConfigRules(unittest.TestCase):
         tab.current_task = _DummyTask()
         tab.current_account_key = "acc"
         tab.current_editable_keys = ["普通配置"]
-        tab.current_base_values = {"普通配置": 1}
         tab.current_original_values = {"普通配置": 5}
         tab.overrides_data = {
             "accounts": {
@@ -174,7 +172,6 @@ class TestAccountConfigRules(unittest.TestCase):
         tab.current_task = _DummyTask()
         tab.current_account_key = "acc"
         tab.current_editable_keys = ["普通配置"]
-        tab.current_base_values = {"普通配置": 1}
         tab.current_original_values = {"普通配置": 5}
         tab.overrides_data = {
             "accounts": {
@@ -200,7 +197,6 @@ class TestAccountConfigRules(unittest.TestCase):
         tab.current_account_key = "acc"
         tab.current_account_name = ""
         tab.current_editable_keys = ["普通配置"]
-        tab.current_base_values = {"普通配置": 1}
         tab.current_original_values = {"普通配置": 4}
         tab.overrides_data = {
             "accounts": {
@@ -234,7 +230,6 @@ class TestAccountConfigRules(unittest.TestCase):
         tab.current_account_key = "acc"
         tab.current_account_name = ""
         tab.current_editable_keys = ["普通配置"]
-        tab.current_base_values = {"普通配置": 1}
         tab.current_original_values = {"普通配置": 1}
         tab.current_map_account_key = ""
         tab.overrides_data = {"accounts": {}}
@@ -262,7 +257,6 @@ class TestAccountConfigRules(unittest.TestCase):
         tab.current_task = _DummyTask()
         tab.current_account_key = "acc"
         tab.current_editable_keys = ["普通配置"]
-        tab.current_base_values = {"普通配置": 1}
         tab.current_original_values = {"普通配置": 5}
         tab.current_map_account_key = ""
         tab.overrides_data = {"accounts": {"acc": {"_DummyTask": {"普通配置": 5}}}}
@@ -291,7 +285,6 @@ class TestAccountConfigRules(unittest.TestCase):
         tab.current_task = _DummyTask()
         tab.current_account_key = "acc"
         tab.current_editable_keys = ["普通配置"]
-        tab.current_base_values = {"普通配置": 1}
         tab.current_original_values = {"普通配置": 5}
         tab.current_map_account_key = ""
         latest = {"accounts": {"acc": {"_DummyTask": {"普通配置": 6}}}}

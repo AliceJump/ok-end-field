@@ -29,8 +29,6 @@ class AutoPickTask(BaseEfTask, TriggerTask):
                 "苦叶椒、砂叶、灰芦麦、柑实、荞花、酮化灌木。"
             ),
         }
-        self.last_box_name = None
-        self.last_pick_time = 0
         self.white_list = set(WHITE_LIST)
         self.black_list = set(BLACK_LIST)
 

@@ -19,7 +19,6 @@ class OpenVinoYolo8Detect:
     ):
         self.dic_labels = labels or {0: "battle_end"}
         self.weights = weights
-        self.model_size = (model_w, model_h)
         self.iou_threshold = iou_thres
         self.openfile_name_model = weights
 
