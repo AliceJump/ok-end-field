@@ -150,7 +150,6 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         # 箭头渲染可调参数（便于快速微调视觉）
         self._arrow_center_rel = (162 / 1920, 166 / 1080)  # 相对于窗口的箭头中心位置（比例），默认在左上角稍微偏右下
         self._arrow_max_len_ratio = 0.08
-        self._arrow_min_len_px = 20.0
         self._arrow_scale = 1.144
         self._nearby_marker_max_distance = 75.524
         # 附近小箭头：箭尖固定在目标位置，尾巴长度表示高差（同高最短，高差越大越长）
@@ -183,10 +182,6 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         # dirty-save 控制：标记后延迟合并写盘
         self._dirty = False
         self._last_save_time = 0.0
-        # 标记按键状态：记录本次按住期间是否已标记（防止按住期间反复标记）
-        self._mark_key_held_in_cycle = False
-        # 按键按下计时：用于判断按住持续时间（None 表示当前未按下）
-        self._mark_key_hold_start = None
         # 锁定待标记的目标（在接近阈值内）
         # 格式: {'map_id': str, 'hash': str, 'start_time': float | None}
         self._mark_lock_target = None

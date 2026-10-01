@@ -117,7 +117,6 @@ class AccountConfigTab(CustomTab):
         self.current_account_key = ""
         self.current_account_name = ""
         self.current_editable_keys: list[str] = []
-        self.current_base_values: dict[str, Any] = {}
         self.current_original_values: dict[str, Any] = {}
         self.current_editor_card = None
         self.current_account_list_value = ""
@@ -789,7 +788,6 @@ class AccountConfigTab(CustomTab):
         self.current_account_key = ""
         self.current_account_name = ""
         self.current_editable_keys = []
-        self.current_base_values = {}
         self.current_original_values = {}
 
         account_key = self._current_account_key()
@@ -806,7 +804,7 @@ class AccountConfigTab(CustomTab):
             return
 
         only_diff = bool(self.only_diff_switch.isChecked())
-        virtual_config, editable_keys, base_values, total_supported_keys = self._build_virtual_config(
+        virtual_config, editable_keys, _base_values, total_supported_keys = self._build_virtual_config(
             task,
             account_key,
             account_name,
@@ -876,7 +874,6 @@ class AccountConfigTab(CustomTab):
         self.current_account_key = account_key
         self.current_account_name = account_name
         self.current_editable_keys = editable_keys
-        self.current_base_values = base_values
         self.current_original_values = copy.deepcopy(dict(card.config))
         self.current_editor_card = card
         self._set_current_task_editor_enabled(not bool(task.running))

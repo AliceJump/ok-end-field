@@ -468,8 +468,6 @@ class NavigationMixin(SearchMixin):
         success = False
         random_move_count = 0
         move_count = 0
-        sum_dx = 0
-        sum_dy = 0
         for _ in range(max_time * 2):
             start_action_time = self.active_time()
             if need_scroll:
@@ -562,15 +560,13 @@ class NavigationMixin(SearchMixin):
                 if abs(dx) <= scaled_tolerance and abs(dy) <= scaled_tolerance:
                     return target_center
                 else:
-                    dx, dy = self.move_to_target_once(
+                    self.move_to_target_once(
                         result,
                         max_step=max_step,
                         min_step=min_step,
                         slow_radius=slow_radius,
                         deadzone=deadzone,
                     )
-                    sum_dx += dx
-                    sum_dy += dy
 
             else:
                 if observations is not None:
@@ -602,9 +598,7 @@ class NavigationMixin(SearchMixin):
                     last_target.y = screen_center_y - offset_y
                     last_target.width = offset_width
                     last_target.height = offset_height
-                    dx, dy = self.move_to_target_once(last_target)
-                    sum_dx += dx
-                    sum_dy += dy
+                    self.move_to_target_once(last_target)
                     last_target_fail_count += 1
                     random_move_count = 0
                     move_count += 1
@@ -630,8 +624,6 @@ class NavigationMixin(SearchMixin):
                         steps=5,
                         delay=0.003,
                     )
-                    sum_dx += dx
-                    sum_dy += dy
                     move_count = 0
                     random_move_count += 1
                     if random_move_count >= 10:

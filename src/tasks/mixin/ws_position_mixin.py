@@ -88,8 +88,6 @@ class WsPositionMixin:
         self._map_ws_device_id = ""
         self._map_ws_user_id = ""
         self._map_ws_auth_source = ""
-        self._map_ws_account = None
-        self._map_ws_last_error_at = 0.0
         self._map_ws_last_consume_at = 0.0
         self._map_ws_consumer_idle_timeout = 10.0
 
@@ -401,7 +399,6 @@ class WsPositionMixin:
                     return
 
                 account = await asyncio.to_thread(self._resolve_map_account_from_cred)
-                self._map_ws_account = account
                 if callable(log_info):
                     log_info(f"[地图WS] 已解析角色: serverId={account['serverId']} roleId={account['roleId']}")
 
@@ -471,7 +468,6 @@ class WsPositionMixin:
             except Exception as e:
                 if self._map_ws_stop_event.is_set():
                     break
-                self._map_ws_last_error_at = time.time()
                 if callable(log_error):
                     log_error(f"[地图WS] 客户端异常，30秒后重试: {e}")
                 try:
@@ -755,7 +751,6 @@ class WsPositionMixin:
             self._map_ws_loop = None
             self._map_ws_stop_event = None
             self._map_ws_enabled = False
-            self._map_ws_account = None
             self._map_ws_sign_token = ""
             self._map_ws_sign_time = {}
             self._map_ws_device_id = ""

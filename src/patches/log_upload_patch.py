@@ -32,18 +32,6 @@ from src.patches.log_zip_dedup import (
 _PATCH_INSTALLED = False
 
 
-def _normalize_note_filename(note_text: str) -> str:
-    note_text = (note_text or "").strip()
-    if not note_text:
-        return ""
-
-    invalid_chars = '<>:"/\\|?*'
-    for char in invalid_chars:
-        note_text = note_text.replace(char, "_")
-
-    return note_text.strip(" ._")
-
-
 def _build_logs_zip(note_text: str = ""):
     from ok import Logger, og
     from ok.gui.util.Alert import alert_error
