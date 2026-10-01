@@ -16,8 +16,9 @@ else:
 
 TOKEN = os.getenv("GITHUB_TOKEN", "").strip()
 
-ASSETS_DIR = Path(__file__).resolve().parents[2] / "assets"
-OUTPUT_FILE = ASSETS_DIR / "downloads.svg"
+# Keep daily statistics outside the release paths listed in deploy.txt.
+STATS_DIR = Path(__file__).resolve().parents[2] / ".github" / "stats"
+OUTPUT_FILE = STATS_DIR / "downloads.svg"
 
 HEADERS = {
     "Accept": "application/vnd.github+json",
@@ -163,7 +164,7 @@ def main():
     releases = get_all_releases()
     items = build_monthly_downloads(releases)
 
-    ASSETS_DIR.mkdir(exist_ok=True)
+    STATS_DIR.mkdir(parents=True, exist_ok=True)
     OUTPUT_FILE.write_text(generate_svg(items), encoding="utf-8")
 
     print(f"generated {OUTPUT_FILE}")
