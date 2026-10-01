@@ -41,6 +41,38 @@ class TestTimingRuntimeBinary(unittest.TestCase):
         self.assertEqual(battle.end_skill_id, "chr_0035_liino_normal_skill_end")
         self.assertEqual(battle.end_cooldown, 3)
 
+    def test_all_runtime_values_match_source_store(self):
+        self.assertEqual(
+            self.bundle.global_normal_attack_sp_gain(),
+            self.store.global_normal_attack_sp_gain(),
+        )
+        for cid in self.store.index["characters"]:
+            self.assertEqual(
+                self.bundle.normal_attack_sp_gain(cid),
+                self.store.normal_attack_sp_gain(cid),
+                cid,
+            )
+            for kind in ("battle", "link", "ult"):
+                self.assertEqual(
+                    self.bundle.profiles(cid, kind),
+                    self.store.profiles(cid, kind),
+                    f"{cid}:{kind}",
+                )
+            self.assertEqual(
+                self.bundle.battle_state(cid),
+                self.store.battle_state(cid),
+                f"{cid}:battle_state",
+            )
+            self.assertEqual(
+                self.bundle.ultimate_state(cid),
+                self.store.ultimate_state(cid),
+                f"{cid}:ult_state",
+            )
+
+    def test_committed_bundle_is_exact_current_export(self):
+        committed = (SNAPSHOT / "runtime_timing.bin").read_bytes()
+        self.assertEqual(committed, self.binary)
+
     def test_binary_is_much_smaller_than_current_runtime_sources(self):
         source_size = (SNAPSHOT / "index.json").stat().st_size + (SNAPSHOT / "records.json.gz").stat().st_size
 
