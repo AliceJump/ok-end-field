@@ -1,0 +1,32 @@
+name: Timing Runtime Binary Experiment
+
+on:
+  push:
+    branches:
+      - codex/timing-runtime-binary
+
+permissions:
+  contents: read
+
+jobs:
+  export-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Export compact runtime bundle
+        run: python -X utf8 scripts/skill-data/export_runtime_timing.py
+
+      - name: Run focused runtime-binary tests
+        run: python -X utf8 -m unittest tests.TestTimingRuntimeBinary -v
+
+      - name: Upload runtime bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-timing-bin
+          path: assets/data/skill_timings/20261002/runtime_timing.bin
+          if-no-files-found: error
