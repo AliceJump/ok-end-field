@@ -10,6 +10,7 @@ from src.patches.log_zip_dedup import (
     collect_image_duplicates,
     md5_hex,
     read_dedup_info,
+    resolve_extract_target,
     restore_duplicates,
 )
 
@@ -122,6 +123,70 @@ class TestLogZipDedup(unittest.TestCase):
             restored = restore_duplicates(zip_path, output_dir)
             self.assertEqual(restored, [])
             self.assertFalse((output_dir / "screenshots/a_dup.png").exists())
+
+    def test_resolve_extract_target_keeps_safe_names(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "out"
+            root.mkdir()
+            self.assertEqual(resolve_extract_target(root, "a.png"), root / "a.png")
+            self.assertEqual(
+                resolve_extract_target(root, "screenshots/a_dup.png"),
+                root / "screenshots/a_dup.png",
+            )
+
+    def test_resolve_extract_target_rejects_escaping_names(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "out"
+            root.mkdir()
+            for unsafe in (
+                "../evil.txt",
+                "a/../../evil.txt",
+                "..\\evil.txt",
+                "/evil.txt",
+                "C:/evil.txt",
+                "",
+                ".",
+            ):
+                self.assertIsNone(resolve_extract_target(root, unsafe), unsafe)
+
+    def test_restore_duplicates_skips_zip_slip_entry(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            zip_path = tmp_path / "evil-log.zip"
+            with zipfile.ZipFile(zip_path, "w") as zipf:
+                zipf.writestr("screenshots/a_original.png", b"x")
+                zipf.writestr("../escaped.txt", b"pwned")
+            output_dir = tmp_path / "restored"
+            restored = restore_duplicates(zip_path, output_dir)
+            self.assertEqual(restored, [])
+            self.assertEqual((output_dir / "screenshots/a_original.png").read_bytes(), b"x")
+            self.assertFalse((tmp_path / "escaped.txt").exists())
+
+    def test_restore_duplicates_skips_zip_slip_duplicate_name(self):
+        kept_bytes = b"identical-image-bytes"
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            zip_path = tmp_path / "evil-log.zip"
+            with zipfile.ZipFile(zip_path, "w") as zipf:
+                zipf.writestr("screenshots/a_original.png", kept_bytes)
+                zipf.writestr(
+                    DEDUP_INFO_FILENAME,
+                    json.dumps(
+                        build_dedup_info(
+                            [
+                                {
+                                    "hash": md5_hex(kept_bytes),
+                                    "kept": "screenshots/a_original.png",
+                                    "duplicate": "../escaped.png",
+                                },
+                            ]
+                        )
+                    ),
+                )
+            output_dir = tmp_path / "restored"
+            restored = restore_duplicates(zip_path, output_dir)
+            self.assertEqual(restored, [])
+            self.assertFalse((tmp_path / "escaped.png").exists())
 
 
 if __name__ == "__main__":
