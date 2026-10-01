@@ -698,7 +698,10 @@ class BattleMixin(BaseEfTask):
         """Shared link readiness monitor, without sending a combat key."""
         return bool(
             self.find_one(
-                fL.default_link_skill, threshold=0.7, vertical_variance=0.005, horizontal_variance=0.005,
+                fL.default_link_skill,
+                threshold=0.7,
+                vertical_variance=0.005,
+                horizontal_variance=0.005,
             )
         )
 
@@ -1037,12 +1040,47 @@ class BattleMixin(BaseEfTask):
         return self.check_is_pure_color_in_4k(x1, y_start, x2, y_end, yellow_skill_color)
 
     def _read_skill_bar_fill_ratio(self, index):
-        """读取单格技力的部分填充比例（0..1）。
+        x1, x2 = SKILL_BAR_X_4K[index]
+        y1, y2 = SKILL_BAR_Y_4K
 
-        这里只先搭接口。后续根据不同填充量样图确定取样线、HSV/颜色阈值和
-        抗高光策略；未完成前返回 None，调用方会安全退化到完整格数量。
-        """
-        return None
+        # 收缩，避开边框
+        box = self.box_of_screen_scaled(3840, 2160, x1 + 3, y1 + 2, x2 - 3, y2 - 2)
+        bar = box.crop_frame(self.frame)
+        if bar.size == 0:
+            return None
+
+        hsv = cv2.cvtColor(bar, cv2.COLOR_BGR2HSV)
+
+        white_mask = cv2.inRange(hsv, (0, 0, 170), (180, 60, 255))
+        yellow_mask = cv2.inRange(hsv, (20, 80, 140), (45, 255, 255))
+
+        fill_mask = cv2.bitwise_or(white_mask, yellow_mask)
+
+        h, w = fill_mask.shape
+        filled_cols = 0
+        gap = 0
+
+        for x in range(w):
+            col = fill_mask[:, x]
+            ratio = np.count_nonzero(col) / h
+
+            if ratio >= 0.55:
+                filled_cols = x + 1
+                gap = 0
+            else:
+                gap += 1
+                # 允许少量抖动，不要一断就停
+                if gap >= 2:
+                    break
+
+        ratio = filled_cols / w
+
+        # 收尾修正
+        if ratio < 0.02:
+            return 0.0
+        if ratio > 0.98:
+            return 1.0
+        return ratio
 
     def get_skill_bar_progress(self):
         """获取技力条精细进度，范围 0..3；-1 表示未检测到。
