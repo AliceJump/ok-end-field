@@ -92,6 +92,7 @@ class CastOption:
     damage: DamageQuote
     duration: float
     actionable: float
+    handoff: float
     cooldown: float
     sp_cost: float
     sp_gate: float
@@ -125,6 +126,7 @@ def evaluate_cycle(sequence: tuple[CastOption, ...], regen: float = 8.0) -> Cycl
             for value in (
                 cast.duration,
                 cast.actionable,
+                cast.handoff,
                 cast.cooldown,
                 cast.sp_cost,
                 cast.sp_gate,
@@ -167,16 +169,22 @@ def evaluate_cycle(sequence: tuple[CastOption, ...], regen: float = 8.0) -> Cycl
                 attached = None
             points -= cast.sp_cost
             ready[cast.slot] = start + cast.cooldown
-            now = start + max(0.3, cast.actionable)
+
+            # Different operators can overlap after the current skill commits;
+            # a one-slot cycle repeats the same operator and therefore keeps the
+            # conservative same-actor actionable boundary.
+            effect_time = start + max(0.3, cast.handoff)
+            delay = cast.actionable if len(sequence) == 1 else cast.handoff
+            now = start + max(0.3, delay)
             points = min(300, points + (now - start) * regen)
             if now >= expires:
                 attached = None
-            # Credit the attachment at the scheduler handoff point, not at an
-            # unverified hit frame. Cross-element applications consume both.
+            # Credit the attachment when the gameplay effect starts, not when a
+            # same-actor repeat eventually becomes legal.
             if len(cast.damage.produces) == 1:
                 element = next(iter(cast.damage.produces))
                 attached = element if attached in (None, element) else None
-                expires = now + 20 if attached else 0
+                expires = effect_time + 20 if attached else 0
         previous_damage = damage
         if cycle == 0:
             opening_damage = damage
@@ -197,6 +205,7 @@ def build_options(team, store, quotes) -> tuple[CastOption, ...]:
                 quotes[name],
                 max(profile.duration for profile in profiles),
                 max(profile.actionable for profile in profiles),
+                max(profile.handoff for profile in profiles),
                 max(profile.cooldown for profile in profiles),
                 max(profile.sp_cost for profile in profiles),
                 max(profile.skill_points for profile in profiles) * 100,

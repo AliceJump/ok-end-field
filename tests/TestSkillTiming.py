@@ -46,15 +46,17 @@ class TestSkillTiming(unittest.TestCase):
         self.assertEqual(len(profiles), 2)
         self.assertEqual({profile.duration for profile in profiles}, {215 / 30, 250 / 30})
 
-    def test_window_whitelist_and_actionable_boundaries(self):
+    def test_window_whitelist_and_effect_handoff_boundaries(self):
         (profile,) = load_skill_timings().profiles("佩丽卡", "battle")
         (other,) = load_skill_timings().profiles("狼卫", "battle")
-        self.assertFalse(profile.allows(profile.hard_lock - 0.01, (profile,)))
-        self.assertTrue(profile.allows(1.1, (profile,)))  # explicit allow-next window
-        self.assertLess(profile.actionable, profile.duration)
+        self.assertAlmostEqual(profile.effect_start, 13 / 30)
+        self.assertAlmostEqual(profile.handoff, 13 / 30 + 0.05)
+        self.assertFalse(profile.committed(profile.handoff - 0.01))
+        self.assertTrue(profile.committed(profile.handoff + 0.01))
+        self.assertTrue(profile.allows(1.1, (profile,)))  # explicit same-actor allow-next window
+        self.assertLess(profile.handoff, profile.hard_lock)
         self.assertFalse(profile.allows(profile.actionable - 0.01, (other,)))
         self.assertTrue(profile.allows(profile.actionable + 0.01, (other,)))
-        self.assertTrue(profile.allows(profile.actionable + 0.01, ()))
 
     def test_full_record_is_lazy_and_detects_corruption(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -210,6 +212,43 @@ class TestTimedCombat(unittest.TestCase):
         logic.step()
         self.assertEqual(task.keys, ["1", "1"])
 
+    def test_different_slot_can_handoff_after_effect_before_exclusive(self):
+        task = FakeTask()
+        logic = logic_for(task)
+
+        logic.step()
+        self.assertEqual(task.keys, ["1"])
+        task.points = 0
+        task.now = 0.1
+        logic.step()
+        self.assertEqual(logic.cursor, 1)
+
+        first = logic.active[0]
+        self.assertLess(first.handoff, first.actionable)
+        task.points = 1
+        task.now = logic.started + first.handoff + 0.01
+        logic.step()
+        self.assertEqual(task.keys, ["1", "2"])
+
+    def test_same_slot_stays_conservative_after_effect_start(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        logic.order = ["1"]
+
+        logic.step()
+        task.points = 0
+        task.now = 0.1
+        logic.step()
+        task.points = 1
+        first = logic.active[0]
+        task.now = logic.started + first.handoff + 0.01
+        logic.step()
+        self.assertEqual(task.keys, ["1"])
+
+        task.now = logic.started + first.actionable + 0.01
+        logic.step()
+        self.assertEqual(task.keys, ["1", "1"])
+
     def test_skill_timeline_does_not_release_normal_attack(self):
         task = FakeTask()
         logic = logic_for(task)
@@ -254,7 +293,7 @@ class TestTimedCombat(unittest.TestCase):
 
         self.assertEqual(task.keys, ["e"])
 
-    def test_monitor_ready_link_and_nonblocking_alt_ult(self):
+    def test_monitor_ready_link_and_hud_blocked_alt_ult(self):
         task = FakeTask()
         logic = logic_for(task)
         task.link = True
@@ -264,8 +303,9 @@ class TestTimedCombat(unittest.TestCase):
         task.now = 100
         logic.step()
         self.assertEqual(task.keys, ["e", "ult_1"])
-        self.assertEqual(logic.started, 100)
-        self.assertEqual(task.now, 100)
+        self.assertEqual(task.now, 102)
+        self.assertEqual(logic.active, ())
+        self.assertTrue(any("HUD 动画锁 2.00s" in message for message in task.messages))
 
     def test_no_battle_sends_no_inputs(self):
         task = FakeTask()

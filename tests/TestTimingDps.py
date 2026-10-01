@@ -16,12 +16,15 @@ from src.data.timing_dps import (
 from tests.TestSkillTiming import FakeTask, logic_for
 
 
-def option(slot, damage, duration=1, actionable=None, cost=100, cooldown=0, **quote):
+def option(slot, damage, duration=1, actionable=None, handoff=None, cost=100, cooldown=0, **quote):
+    actionable = duration if actionable is None else actionable
+    handoff = actionable if handoff is None else handoff
     return CastOption(
         slot,
         DamageQuote(damage, quote.pop("conservative", damage), 0, 0, **quote),
         duration,
-        duration if actionable is None else actionable,
+        actionable,
+        handoff,
         cooldown,
         cost,
         max(100, cost) if cost else 0,
@@ -47,6 +50,16 @@ class TestTimingDps(unittest.TestCase):
         plan = evaluate_cycle((option("1", 100, duration=30, actionable=1, cost=0),))
         self.assertAlmostEqual(plan.seconds, 1)
         self.assertAlmostEqual(plan.dps, 100)
+
+    def test_cross_actor_handoff_does_not_shorten_same_actor_repeat(self):
+        first = option("1", 100, duration=30, actionable=10, handoff=1, cost=0)
+        second = option("2", 100, duration=30, actionable=10, handoff=1, cost=0)
+
+        single = evaluate_cycle((first,))
+        pair = evaluate_cycle((first, second))
+
+        self.assertAlmostEqual(single.seconds, 10)
+        self.assertAlmostEqual(pair.seconds, 2)
 
     def test_fractional_cost_uses_exact_sp_but_integer_hud_gate(self):
         plan = evaluate_cycle((option("1", 100, cost=25),))

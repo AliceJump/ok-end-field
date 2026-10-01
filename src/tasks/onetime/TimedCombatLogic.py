@@ -21,6 +21,8 @@ class TimedCombatLogic:
         self.ult_order = ["1", "2", "3", "4"]
         self.cursor = 0
         self.active: tuple[SkillTiming, ...] = ()
+        self.active_slot = None
+        self.active_kind = None
         self.started = 0.0
         self.cooldowns = {}
         self.pending = None
@@ -46,23 +48,49 @@ class TimedCombatLogic:
         self._holding = False
         self.task.mouse_up(key="left")
 
-    def _allowed(self, candidates=()):
+    def _allowed(self, candidates=(), candidate_slot=None, candidate_kind=None):
+        if self.pending is not None:
+            return False
+        if not self.active:
+            return True
         elapsed = self.task.active_time() - self.started
         if self.unconfirmed:
-            candidates = ()
-        return self.pending is None and all(profile.allows(elapsed, candidates) for profile in self.active)
+            return all(profile.allows(elapsed, ()) for profile in self.active)
 
-    def _ready(self, profiles):
+        # Different operators can act once the previous skill has actually
+        # started producing gameplay effects. Link ownership is unknown, but
+        # its HUD readiness is authoritative enough after the current cast
+        # commits. Same-operator continuation stays conservative.
+        cross_actor = (
+            (self.active_slot is not None and candidate_slot is not None and candidate_slot != self.active_slot)
+            or (candidate_kind == "link")
+            or (self.active_kind == "link" and candidate_kind in {"battle", "ult"})
+            or (not candidates and candidate_slot is None and candidate_kind is None)
+        )
+        if cross_actor:
+            return all(profile.committed(elapsed) for profile in self.active)
+        return all(profile.allows(elapsed, candidates) for profile in self.active)
+
+    def _ready(self, profiles, slot=None, kind=None):
         now = self.task.active_time()
         return (
             bool(profiles)
-            and self._allowed(profiles)
+            and self._allowed(profiles, candidate_slot=slot, candidate_kind=kind)
             and all(now >= self.cooldowns.get(profile.skill_id, 0) for profile in profiles)
         )
 
-    def _begin(self, profiles, started):
+    def _begin(self, profiles, started, slot=None, kind=None):
         self.active = profiles
+        self.active_slot = slot
+        self.active_kind = kind
         self.started = started
+        self.unconfirmed = False
+
+    def _clear_active(self, now=None):
+        self.active = ()
+        self.active_slot = None
+        self.active_kind = None
+        self.started = self.task.active_time() if now is None else now
         self.unconfirmed = False
 
     def _confirm_battle(self, now):
@@ -83,9 +111,11 @@ class TimedCombatLogic:
             # guard. A sent key alone is not proof that the skill was accepted.
             self.task.log_info(f"时间排轴: 战技 {token} 未确认消耗，保护窗口结束后重试")
 
-    def _set_cooldowns(self):
-        for profile in self.active:
-            self.cooldowns[profile.skill_id] = self.started + profile.cooldown
+    def _set_cooldowns(self, profiles=None, started=None):
+        profiles = self.active if profiles is None else profiles
+        started = self.started if started is None else started
+        for profile in profiles:
+            self.cooldowns[profile.skill_id] = started + profile.cooldown
 
     def _detect_team(self, deadline):
         team, stable = self.task.detect_team_stable(
@@ -145,12 +175,12 @@ class TimedCombatLogic:
         token = self.order[self.cursor]
         profiles = self.store.profiles(self.team[int(token) - 1], "battle")
         costs = [profile.skill_points for profile in profiles]
-        if not (self._ready(profiles) and None not in costs and points >= max(costs)):
+        if not (self._ready(profiles, slot=token, kind="battle") and None not in costs and points >= max(costs)):
             return False
 
         started = self.task.active_time()
         self.task.send_key(token)
-        self._begin(profiles, started)
+        self._begin(profiles, started, slot=token, kind="battle")
         if max(costs) > 0:
             self.pending = (points, token)
             if overflow:
@@ -175,8 +205,8 @@ class TimedCombatLogic:
         points = self.task.get_skill_bar_count()
         # Prevent full-SP starvation: once the HUD shows all three bars, the
         # next planned battle skill gets priority over link/ult as soon as the
-        # current timeline permits it. This preserves order and never bypasses
-        # exclusive/actionable guards.
+        # current cast has committed. Same-operator continuation still keeps
+        # the conservative native continuation guard.
         if points >= self._FULL_SKILL_POINTS and self._try_planned_battle_skill(points, overflow=True):
             return
 
@@ -186,12 +216,12 @@ class TimedCombatLogic:
         if (
             all(self.store.profiles(name, "link") for name in self.team)
             and links
-            and self._allowed(links)
+            and self._allowed(links, candidate_kind="link")
             and self.task.is_link_skill_ready()
         ):
             started = self.task.active_time()
             if self.task.use_link_skill():
-                self._begin(links, started)
+                self._begin(links, started, kind="link")
                 self._observe_bonus("link")
                 self.task.log_info("时间排轴: 连携技按现有就绪检测释放")
                 return
@@ -199,7 +229,7 @@ class TimedCombatLogic:
         ready_ults = []
         for token in self.ult_order:
             profiles = self.store.profiles(self.team[int(token) - 1], "ult")
-            if self._ready(profiles) and self.task._find_battle_ult("ult_" + token):
+            if self._ready(profiles, slot=token, kind="ult") and self.task._find_battle_ult("ult_" + token):
                 quote = self.damage_quotes.get(self.team[int(token) - 1])
                 rate = quote.ult / max(max(p.actionable, 0.3) for p in profiles) if quote else 0
                 ready_ults.append((rate, token, profiles))
@@ -208,11 +238,14 @@ class TimedCombatLogic:
         ready_ults.sort(key=lambda item: -item[0])
         for _rate, token, profiles in ready_ults:
             started = self.task.active_time()
-            if self.task.use_ult(ult_sequence=token, wait_for_team_recovery=False):
-                self._begin(profiles, started)
+            if self.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
+                ended = self.task.active_time()
                 self._observe_bonus("ult", token)
-                self._set_cooldowns()
-                self.task.log_info(f"时间排轴: 终结技 {token} 按现有就绪检测释放")
+                self._set_cooldowns(profiles, started)
+                self._clear_active(ended)
+                self.task.log_info(
+                    f"时间排轴: 终结技 {token} 动画结束后继续，HUD 动画锁 {ended - started:.2f}s"
+                )
                 return
 
         if self._try_planned_battle_skill(points):
