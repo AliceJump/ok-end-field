@@ -10,6 +10,8 @@ from src.data.timing_dps import build_options, load_damage_quotes, optimize_cycl
 
 
 class TimedCombatLogic:
+    _NORMAL_ATTACK_REASSERT_INTERVAL = 0.25
+
     def __init__(self, task, store=None):
         self.task = task
         self.store = store
@@ -30,15 +32,18 @@ class TimedCombatLogic:
         self._cycle_bonus = 0.0
         self._completed_cycles = 0
 
-    def _hold(self, enabled):
-        if enabled == self._holding:
-            return
-        self._holding = enabled
+    def _hold(self, enabled, force=False):
         if enabled:
+            if self._holding and not force:
+                return
+            self._holding = True
             self.task.active_and_send_mouse_delta(activate=True, only_activate=True)
             self.task.mouse_down(key="left")
-        else:
-            self.task.mouse_up(key="left")
+            return
+        if not self._holding and not force:
+            return
+        self._holding = False
+        self.task.mouse_up(key="left")
 
     def _allowed(self, candidates=()):
         elapsed = self.task.active_time() - self.started
@@ -210,6 +215,7 @@ class TimedCombatLogic:
             entered = task.active_time()
             ready_at = entered + max(0, start_sleep or 0)
             next_exit, next_team, next_lock = entered, entered, entered
+            next_normal_attack = entered
             exit_pending = False
             while True:
                 now = task.active_time()
@@ -234,9 +240,14 @@ class TimedCombatLogic:
                     self._hold(False)
                     task.sleep(0.1)
                     continue
-                # Timed mode only schedules skill handoffs. Normal attack stays
-                # held throughout combat, including skill/ult/link timelines.
-                self._hold(True)
+                # Timed mode only schedules skill handoffs. Reassert the normal
+                # attack periodically because skill animations, focus changes or
+                # the game itself may drop a previous synthetic LBUTTONDOWN while
+                # our local state still says it is held.
+                force_normal_attack = now >= next_normal_attack
+                self._hold(True, force=force_normal_attack)
+                if force_normal_attack:
+                    next_normal_attack = now + self._NORMAL_ATTACK_REASSERT_INTERVAL
                 if now < ready_at:
                     task.sleep(0.1)
                     continue
