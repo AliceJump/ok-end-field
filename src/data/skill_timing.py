@@ -296,7 +296,7 @@ class SkillTimingStore:
         self._effect_start_frames = {}
         self._normal_attack_sp_gains = {}
         self._global_normal_attack_sp_gain = None
-        self._battle_state_specs = {}
+        self._state_specs = {}
 
     def profiles(self, character: str, kind: str) -> tuple[SkillTiming, ...]:
         """Keep both administrator variants; never guess gender from a shared portrait."""
@@ -399,25 +399,29 @@ class SkillTimingStore:
     def team_normal_attack_sp_gains(self, team) -> dict[str, float | None]:
         return {name: self.normal_attack_sp_gain(name) for name in team}
 
-    def battle_state(self, character: str) -> BattleStateSpec | None:
-        """Detect a battle skill that exposes an explicit zero-cost end variant."""
+    def state_skill(self, character: str, kind: str = "battle") -> BattleStateSpec | None:
+        """Detect a skill whose active state replaces the battle button with *_end."""
 
-        if character in self._battle_state_specs:
-            return self._battle_state_specs[character]
+        if kind not in ("battle", "ult"):
+            return None
+        cache_key = (character, kind)
+        if cache_key in self._state_specs:
+            return self._state_specs[cache_key]
 
         specs = []
         fps = self.index["frames_per_second"]
         for cid in self._character_ids(character):
-            base_id = f"{cid}_normal_skill"
+            battle_id = f"{cid}_normal_skill"
+            source_id = battle_id if kind == "battle" else f"{cid}_ultimate_skill"
             end_id = f"{cid}_normal_skill_end"
-            base = self.index["skills"].get(base_id)
+            source = self.index["skills"].get(source_id)
             end = self.index["skills"].get(end_id)
-            if base is None or end is None:
+            if source is None or end is None:
                 continue
 
             allowed = any(
                 end_id in (window.get("allowed_skill_ids") or ())
-                for window in base.get("allow_next_windows") or ()
+                for window in source.get("allow_next_windows") or ()
             )
             casts = end["level_patches"] or [
                 {
@@ -429,17 +433,18 @@ class SkillTimingStore:
             if not allowed or not zero_cost:
                 continue
 
-            base_record = self.record(base_id)["data"]
-            span = _state_span_frames(base_record)
+            source_record = self.record(source_id)["data"]
+            span = _state_span_frames(source_record)
             duration = (
                 span / fps
                 if span is not None
-                else max(0, base["duration_frame"]) / fps
+                else max(0, source["exclusive_frame"]) / fps
             )
-            end_cd = _set_skill_cd_seconds(base_record, base_id)
+            battle_record = self.record(battle_id)["data"]
+            end_cd = _set_skill_cd_seconds(battle_record, battle_id)
             specs.append(
                 BattleStateSpec(
-                    base_skill_id=base_id,
+                    base_skill_id=source_id,
                     end_skill_id=end_id,
                     duration=duration,
                     end_cooldown=end_cd,
@@ -447,14 +452,20 @@ class SkillTimingStore:
                         f"allow_next:{end_id}",
                         "end_cost=0",
                         f"state_span={duration:.2f}s",
-                        "end_cd=" + ("unknown" if end_cd is None else f"{end_cd:g}s"),
+                        "manual_end_cd=" + ("unknown" if end_cd is None else f"{end_cd:g}s"),
                     ),
                 )
             )
 
         result = specs[0] if len(specs) == 1 else None
-        self._battle_state_specs[character] = result
+        self._state_specs[cache_key] = result
         return result
+
+    def battle_state(self, character: str) -> BattleStateSpec | None:
+        return self.state_skill(character, "battle")
+
+    def ultimate_state(self, character: str) -> BattleStateSpec | None:
+        return self.state_skill(character, "ult")
 
     def effect_start_frame(self, skill_id: str) -> int | None:
         if skill_id not in self._effect_start_frames:
