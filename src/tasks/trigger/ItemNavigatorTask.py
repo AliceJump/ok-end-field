@@ -44,6 +44,7 @@ HG_CHECK_API_URL = "https://web-api.skland.com/account/info/hg/check"
 COMPASS_LABELS = ("北", "东北", "东", "东南", "南", "西南", "西", "西北")
 HEIGHT_SAME_THRESHOLD = 0.05
 
+MAP_SOURCE_KEY = "地图数据来源"
 MAP_SOURCE_AUTO = "自动当前账号"
 MAP_SOURCE_ACCOUNT = "账号配置"
 MAP_SOURCE_MANUAL = "手动 content"
@@ -69,7 +70,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
     - 轮询使用固定内部 WS 端点（可在部署时改代码），物品选择从任务配置读取
     """
 
-    config_value_migrations = {"地图数据来源": _legacy_map_source}
+    config_value_migrations = {MAP_SOURCE_KEY: _legacy_map_source}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -81,7 +82,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         # 只把面向用户的选项放在 default_config
         self.default_config.update(
             {
-                "地图数据来源": MAP_SOURCE_AUTO,
+                MAP_SOURCE_KEY: MAP_SOURCE_AUTO,
                 # 可选：直接填写 hg/check 的 data.content。
                 "content": "",
                 # 可选：从账号配置页读取对应账号的地图同步 content。
@@ -101,7 +102,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
             }
         )
 
-        self.config_type["地图数据来源"] = {
+        self.config_type[MAP_SOURCE_KEY] = {
             "type": "drop_down",
             "options": [MAP_SOURCE_AUTO, MAP_SOURCE_ACCOUNT, MAP_SOURCE_MANUAL],
             "sub_configs": {
@@ -133,7 +134,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         }
         self.config_description.update(
             {
-                "地图数据来源": (
+                MAP_SOURCE_KEY: (
                     "选择地图同步凭据来源。自动当前账号会读取当前任务账号上下文；"
                     "账号配置会读取指定账号；手动 content 直接使用填写值。"
                 ),
@@ -160,7 +161,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         )
         self.default_config_group.update(
             {
-                "网页地图同步": ["地图数据来源", "油猴脚本帮助"],
+                "网页地图同步": [MAP_SOURCE_KEY, "油猴脚本帮助"],
                 "浮层显示": ["浮层信息", "浮层文字透明度", "浮层背景透明度", "浮层字号"],
             }
         )
@@ -259,7 +260,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                 f"└─ {self.tr('4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值')}", indent=1
             ),
             inst_line(
-                f"└─ {self.tr('5. 把该值填入本任务 content；或填入账号配置页的「地图同步 content」，再用「地图账号」选择该账号')}",
+                f"└─ {self.tr('5. 使用「手动 content」时把该值填入本任务 content；使用「账号配置」时把它保存到账号配置页并选择对应地图账号')}",
                 indent=1,
             ),
         ]
@@ -267,7 +268,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
             [
                 inst_line("📍 " + self.tr("物品导航配置说明"), "#FF5555", bold=True),
                 inst_line(
-                    "⚙️ " + self.tr("位置来源：content 有值时使用官方地图 WebSocket，为空时使用本地 WS"),
+                    "⚙️ " + self.tr("地图数据来源：自动当前账号读取当前任务账号；账号配置读取指定账号；手动 content 使用本任务 content"),
                     "#FF5555",
                     bold=True,
                 ),
@@ -277,7 +278,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                     f"└─ {self.tr('选择物品：勾选要导航的物品，只匹配当前地图；为空时不会有任何目标')}", indent=1
                 ),
                 inst_line(
-                    f"└─ {self.tr('地图账号：content 为空时从中读取地图同步 content，选项来自账号配置页')}", indent=1
+                    f"└─ {self.tr('地图账号：仅在「地图数据来源 = 账号配置」时使用，选项来自账号配置页')}", indent=1
                 ),
                 inst_line(f"└─ {self.tr('标记按键：接近目标后用于标记已获取的键位，仅支持单个字符')}", indent=1),
                 inst_line(f"└─ {self.tr('标记按住时长：连续按住标记键达到该时长即记为已获取（默认 2 秒）')}", indent=1),
@@ -371,7 +372,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
         self._ws_server_start_logged = False
 
     def _get_account_map_content(self) -> str:
-        source = self.config.get("地图数据来源", MAP_SOURCE_AUTO)
+        source = self.config.get(MAP_SOURCE_KEY, MAP_SOURCE_AUTO)
         if source == MAP_SOURCE_MANUAL:
             return str(self.config.get("content") or "").strip()
 
