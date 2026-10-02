@@ -46,7 +46,9 @@ def load_damage_quotes(team: list[str], path: Path | None = None) -> dict[str, D
 
         def best(kind, row=row):
             values = []
-            for skill in row.get("skills", []):
+            for skill in row.get("skills") or []:
+                if not isinstance(skill, dict):
+                    continue
                 if skill.get("type") == kind:
                     value = skill.get("full_expect", skill.get("crit_expect", skill.get("non_crit", 0)))
                     try:
@@ -64,11 +66,11 @@ def load_damage_quotes(team: list[str], path: Path | None = None) -> dict[str, D
         if required and row.get("cycle_expect_conservative") is not None:
             conservative = max(0, battle + float(row["cycle_expect_conservative"]) - float(row["cycle_expect"]))
         produced, retain = set(), False
-        for skill in snapshots.get(name, {}).get("skills", []):
-            if skill.get("skill_type") != "战技":
+        for skill in snapshots.get(name, {}).get("skills") or []:
+            if not isinstance(skill, dict) or skill.get("skill_type") != "战技":
                 continue
-            retain |= bool(_SUPPORT.search(skill.get("description", "")))
-            for effect in skill.get("effects", []):
+            retain |= bool(_SUPPORT.search(skill.get("description") or ""))
+            for effect in skill.get("effects") or []:
                 if not isinstance(effect, dict) or (effect.get("count") or 0) <= 0:
                     continue
                 element = _ATTACH.get(effect.get("effect_id"))
