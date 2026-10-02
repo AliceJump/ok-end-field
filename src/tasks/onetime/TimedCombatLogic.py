@@ -174,7 +174,8 @@ class TimedCombatLogic:
             for name in active_names
         }
         known_gains = [value for value in active_gains.values() if value is not None]
-        fallback_gain = self.store.global_normal_attack_sp_gain() if active_names and not known_gains else None
+        has_unknown = any(value is None for value in active_gains.values())
+        fallback_gain = self.store.global_normal_attack_sp_gain() if active_names and has_unknown else None
         threshold_gain = max(
             known_gains + ([fallback_gain] if fallback_gain is not None else []),
             default=self._DEFAULT_ASSUME_SUCCESS_SP_THRESHOLD - self._SP_ERROR_MARGIN,
