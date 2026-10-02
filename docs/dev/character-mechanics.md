@@ -164,7 +164,7 @@ ABSENT   已检查固定区域但没有敌人证据
 - 不释放战技、连携、终结技；
 - 不执行周期锁敌输入；
 - 不结束战斗，只等待敌人重新出现；
-- `active_time()` 继续推进，不修改 `state_until`、cooldown 或 native timeline 起始时间，因此这段等待会真实消耗角色状态/技能窗口；
+- `combat_time()` 继续推进，不修改 `state_until`、cooldown 或 native timeline 起始时间，因此这段等待会真实消耗角色状态/技能窗口；
 - 一旦进入 ABSENT 暂停，UNKNOWN 不会误恢复，必须等明确 PRESENT。
 
 当前 hook 默认返回 UNKNOWN，因此在 detector 尚未实现前不会改变现有实战行为。
@@ -192,3 +192,34 @@ DURING_SKILL  当前技能期间无法释放此技能（较长文本）
 ```
 
 `DURING_SKILL` 不触发位移恢复，只取消失败尝试并稍后重试。
+
+## 战斗时间与脚本暂停分离
+
+角色技能相关时间不能使用会排除脚本暂停时长的 `active_time()`。
+
+现在区分两套时钟：
+
+```
+active_time()
+  -> 自动化任务时间
+  -> 脚本 / executor 暂停时冻结
+  -> 用于任务 deadline、初始等待、周期检查等
+
+combat_time()
+  -> 游戏战斗真实单调时间
+  -> 脚本暂停时仍继续推进
+  -> 用于角色技能和战斗状态
+```
+
+时间排轴中的以下数据改为 `combat_time()`：
+
+- native 技能 timeline 的 `started` / handoff / actionable elapsed；
+- 技能 cooldown 截止时间；
+- `state_until`（梨诺等持续状态）；
+- 伊冯终结技后的主控保护窗口；
+- 技能按键后的受阻提示观察窗口；
+- 未确认战技的短退避；
+- 技力采样缓存的刷新期限；
+- “场内暂无敌人”暂停的真实持续时间。
+
+因此如果脚本暂停 10 秒而游戏仍在继续，7 秒角色状态不会在恢复脚本后再剩 7 秒；恢复时会按真实经过的战斗时间判定为已经过期。脚本本身的 deadline / 配置等待仍保持原来的暂停语义。
