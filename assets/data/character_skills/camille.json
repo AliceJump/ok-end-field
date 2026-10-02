@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "camille_skill",
@@ -180,43 +181,110 @@
                 {
                     "effect_id": "DEBUFF_WEAKEN",
                     "value": 1,
-                    "duration": null,
+                    "duration": 45,
                     "target": "enemy",
                     "count": 1
                 },
                 {
                     "effect_id": "VULN_BURN",
                     "value": 1,
-                    "duration": null,
+                    "duration": 45,
+                    "target": "enemy",
+                    "count": 1
+                },
+                {
+                    "effect_id": "STACK_BLOOD_WING",
+                    "value": 1,
+                    "duration": 45,
                     "target": "enemy",
                     "count": 1
                 }
             ],
             "enhancements": [
                 {
-                    "name": "衔火血翼盘桓",
+                    "name": "追猎替换动作",
                     "trigger_condition": {
-                        "text": "战技命中敌人后召唤衔火血翼盘桓",
+                        "text": "猩红坠雨后15秒内下一次战技替换为追猎；追猎视为连携技且不消耗技力",
                         "effects": {
-                            "all": []
+                            "all": [
+                                "STATUS_CAMILLE_PURSUIT_READY"
+                            ]
                         }
                     },
-                    "enhancement_effect": "召唤效果",
+                    "enhancement_effect": "完全替换驱火焚影；造成追猎伤害，恢复40技力，并无条件触发追罪之人天赋",
+                    "enhancement_visible_pulse": false,
+                    "replaces_base_action": true,
+                    "spirit_cost_override": 0,
+                    "damage_multiplier_override": "500%",
+                    "stagger_value_override": 20,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_CAMILLE_PURSUIT_READY",
+                            "value": 1,
+                            "duration": null,
+                            "target": "self",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "BUFF_HEAL",
+                            "value": "60 + 智识×0.3",
+                            "duration": null,
+                            "target": "self",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "STACK_COMBO",
+                            "value": 1,
+                            "duration": 15,
+                            "target": "team",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "STACK_CAMILLE_BLOOD_SURGE",
+                            "value": "每层灼热伤害+4%；生命已满时本次获得2层",
+                            "duration": 40,
+                            "target": "self",
+                            "count": null
+                        }
+                    ],
+                    "resource_changes": [
+                        {
+                            "resource": "skill_point",
+                            "target": "team",
+                            "kind": "fixed",
+                            "amount": 40
+                        },
+                        {
+                            "resource": "ultimate_energy",
+                            "target": "self",
+                            "kind": "fixed",
+                            "amount": 10
+                        }
+                    ]
+                },
+                {
+                    "name": "追猎命中衔火血翼",
+                    "trigger_condition": {
+                        "text": "追猎命中衔火血翼盘桓的敌人时，仍触发血翼爆裂",
+                        "effects": {
+                            "all": [
+                                "STATUS_CAMILLE_PURSUIT_READY",
+                                "STACK_BLOOD_WING"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "额外触发衔火血翼爆裂；追罪之人本身无需血翼即可触发",
                     "enhancement_visible_pulse": false,
                     "effects": [
                         {
-                            "effect_id": "ATTACH_BURN",
-                            "value": 1,
+                            "effect_id": "TRIGGER_EXPLOSION",
+                            "value": "100%（专精3血翼爆裂）",
                             "duration": null,
-                            "target": "enemy"
-                        },
-                        {
-                            "effect_id": "VULN_BURN",
-                            "value": 1,
-                            "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": 1
                         }
-                    ]
+                    ],
+                    "resource_changes": []
                 }
             ],
             "rank_stats": {
@@ -374,14 +442,54 @@
                 {
                     "name": "锥心之棘",
                     "trigger_condition": {
-                        "text": "当有敌人的灼热附着被消耗或吸收后可以发动",
+                        "text": "有敌人的灼热附着被消耗或吸收后（历史事件触发，不等同于当前仍有灼热附着）",
+                        "effects": null
+                    },
+                    "effects": []
+                },
+                {
+                    "name": "衔火血翼命中与追罪之人",
+                    "trigger_condition": {
+                        "text": "锥心之棘命中衔火血翼盘桓的敌人",
                         "effects": {
                             "all": [
-                                "ATTACH_BURN"
+                                "STACK_BLOOD_WING"
                             ]
                         }
                     },
-                    "effects": []
+                    "enhancement_effect": "触发血翼爆裂；回复自身生命值并获得连击15秒；技能治疗触发血涌苏生",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_EXPLOSION",
+                            "value": "100%（专精3血翼爆裂）",
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "BUFF_HEAL",
+                            "value": "60 + 智识×0.3",
+                            "duration": null,
+                            "target": "self",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "STACK_COMBO",
+                            "value": 1,
+                            "duration": 15,
+                            "target": "team",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "STACK_CAMILLE_BLOOD_SURGE",
+                            "value": "每层灼热伤害+4%；生命已满时本次获得2层",
+                            "duration": 40,
+                            "target": "self",
+                            "count": null
+                        }
+                    ],
+                    "resource_changes": []
                 }
             ],
             "rank_stats": {
@@ -538,7 +646,21 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "kind": "fixed",
+                    "amount": 20
+                },
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "kind": "fixed",
+                    "amount": 10
+                }
+            ]
         },
         {
             "skill_id": "camille_ultimate",
@@ -558,6 +680,13 @@
                     "duration": null,
                     "target": "enemy",
                     "count": 1
+                },
+                {
+                    "effect_id": "STATUS_CAMILLE_PURSUIT_READY",
+                    "value": 1,
+                    "duration": 15,
+                    "target": "self",
+                    "count": 1
                 }
             ],
             "enhancements": [
@@ -565,9 +694,7 @@
                     "name": "追猎状态",
                     "trigger_condition": {
                         "text": "施放终结技后",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "enhancement_effect": "追猎状态",
                     "enhancement_visible_pulse": false,
@@ -694,7 +821,15 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "kind": "fixed",
+                    "amount": 40
+                }
+            ]
         }
     ],
     "base_stats": {

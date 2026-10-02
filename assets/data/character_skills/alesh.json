@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "alesh_skill",
@@ -195,7 +196,23 @@
                             "effect_id": "STATUS_FROZEN",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
+                        }
+                    ],
+                    "resource_changes": [
+                        {
+                            "resource": "skill_point",
+                            "target": "team",
+                            "kind": "piecewise_by_count",
+                            "source_effect_id": "ATTACH_COLD",
+                            "values_by_count": {
+                                "1": 15,
+                                "2": 25,
+                                "3": 35,
+                                "4": 45
+                            },
+                            "count_basis": "consumed"
                         }
                     ]
                 }
@@ -503,7 +520,28 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "kind": "fixed",
+                    "amount": 15
+                },
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "kind": "fixed",
+                    "amount": 10
+                },
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "kind": "dynamic",
+                    "amount": 10,
+                    "formula": "钓起珍鳞时额外恢复10技力；基础概率10%，天赋按智识额外提高，最多+30%"
+                }
+            ]
         },
         {
             "skill_id": "alesh_ultimate",
@@ -663,7 +701,21 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": [],
+            "resource_changes": [
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "trigger": "终结技命中后基础恢复，击败敌人额外恢复；总计上限100",
+                    "kind": "dynamic",
+                    "amount": 25,
+                    "per_unit": 15,
+                    "max_amount": 100,
+                    "count_basis": "kills",
+                    "formula": "min(25 + 15 × 本次终结技击败目标数, 100)"
+                }
+            ]
         }
     ],
     "base_stats": {

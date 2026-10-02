@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "arcane_skill",
@@ -318,6 +319,56 @@
                         }
                     ]
                 }
+            ],
+            "enhancements": [
+                {
+                    "name": "阵诀·智：战技命中囹圄敌人",
+                    "trigger_condition": {
+                        "text": "智识值 ≥ 意志值，阵诀·智生效中，自身战技命中处于囹圄状态的敌人时",
+                        "effects": null
+                    },
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_CONFINEMENT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "VULN_NATURAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "VULN_COLD",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "TRIGGER_ADDITIONAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ],
+                    "resource_changes": [
+                        {
+                            "resource": "skill_point",
+                            "target": "team",
+                            "trigger": "阵诀·智下自身战技命中囹圄敌人，提前结束囹圄后",
+                            "kind": "fixed",
+                            "amount": 30
+                        }
+                    ],
+                    "evaluation_point": "on_hit"
+                }
             ]
         },
         {
@@ -345,7 +396,7 @@
                     },
                     "effects": [
                         {
-                            "effect_id": "STATUS_SPELL_INFLICT",
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
                             "value": 1,
                             "duration": null,
                             "target": "enemy",
@@ -367,48 +418,6 @@
                         },
                         {
                             "effect_id": "STATUS_CONFINEMENT",
-                            "value": 1,
-                            "duration": null,
-                            "target": "enemy",
-                            "count": 1
-                        }
-                    ]
-                },
-                {
-                    "name": "阵诀·智：战技命中囹圄敌人",
-                    "trigger_condition": {
-                        "text": "智识值 ≥ 意志值，阵诀·智生效中，自身战技命中处于囹圄状态的敌人时",
-                        "effects": {
-                            "all": [
-                                "STATUS_CONFINEMENT"
-                            ]
-                        }
-                    },
-                    "enhancement_visible_pulse": false,
-                    "effects": [
-                        {
-                            "effect_id": "STATUS_CONFINEMENT",
-                            "value": 1,
-                            "duration": null,
-                            "target": "enemy",
-                            "count": -1
-                        },
-                        {
-                            "effect_id": "VULN_NATURAL",
-                            "value": 1,
-                            "duration": null,
-                            "target": "enemy",
-                            "count": 1
-                        },
-                        {
-                            "effect_id": "VULN_COLD",
-                            "value": 1,
-                            "duration": null,
-                            "target": "enemy",
-                            "count": 1
-                        },
-                        {
-                            "effect_id": "TRIGGER_ADDITIONAL",
                             "value": 1,
                             "duration": null,
                             "target": "enemy",
@@ -811,6 +820,15 @@
                         }
                     ]
                 }
+            ],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "trigger": "连携技成功命中后",
+                    "kind": "fixed",
+                    "amount": 10
+                }
             ]
         },
         {
@@ -825,28 +843,35 @@
             "stagger_value": 0,
             "cooldown": "20秒",
             "spirit_cost": 100,
-            "effects": [
-                {
-                    "effect_id": "STATUS_SPELL_INFLICT",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                }
-            ],
+            "effects": [],
             "enhancements": [
                 {
                     "name": "阵诀·智：强制施加腐蚀",
                     "trigger_condition": {
                         "text": "智识值 ≥ 意志值，阵诀·智生效中，破晦阵生成时",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "enhancement_visible_pulse": false,
                     "effects": [
                         {
                             "effect_id": "STATUS_CORROSION",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "阵诀·意：重复法术附着",
+                    "trigger_condition": {
+                        "text": "意志值 > 智识值，阵诀·意生效中，破晦阵生成时对处于法术附着状态的敌人",
+                        "effects": null
+                    },
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
                             "value": 1,
                             "duration": null,
                             "target": "enemy",

@@ -122,7 +122,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "snowshine_skill",
@@ -142,13 +143,6 @@
                     "value": 1,
                     "duration": null,
                     "target": "ally",
-                    "count": 1
-                },
-                {
-                    "effect_id": "ATTACH_COLD",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
                     "count": 1
                 }
             ],
@@ -255,7 +249,36 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": [
+                {
+                    "name": "格挡反击",
+                    "trigger_condition": {
+                        "text": "立盾期间受到攻击后发动反击并成功命中",
+                        "effects": null
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "ATTACH_COLD",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ],
+                    "resource_changes": [],
+                    "evaluation_point": "on_counter_hit"
+                }
+            ],
+            "resource_changes": [
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "trigger": "架盾动作成功施放时立即返还",
+                    "kind": "fixed",
+                    "amount": 30
+                }
+            ]
         },
         {
             "skill_id": "snowshine_link",
@@ -274,9 +297,7 @@
                     "name": "极地救援",
                     "trigger_condition": {
                         "text": "当主控干员受到攻击后，如果生命值低于60%可以发动",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "effects": [
                         {
@@ -586,7 +607,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

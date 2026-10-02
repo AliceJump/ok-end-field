@@ -2746,5 +2746,225 @@
     "es_ES": {
       "string": "Vulnerabilidad de ráfaga natural"
     }
+  },
+  "MECH_THUNDER_SPEAR": {
+    "zh_CN": {
+      "string": "雷枪"
+    },
+    "zh_TW": {
+      "string": "雷槍"
+    },
+    "en_US": {
+      "string": "Thunderlance"
+    },
+    "ja_JP": {
+      "string": "雷槍"
+    },
+    "ko_KR": {
+      "string": "썬더랜스"
+    },
+    "es_ES": {
+      "string": "Lanzatrueno"
+    }
+  },
+  "MECH_STRONG_THUNDER_SPEAR": {
+    "zh_CN": {
+      "string": "强雷枪"
+    },
+    "zh_TW": {
+      "string": "強雷槍"
+    },
+    "en_US": {
+      "string": "Empowered Thunderlance"
+    },
+    "ja_JP": {
+      "string": "強化雷槍"
+    },
+    "ko_KR": {
+      "string": "강화 썬더랜스"
+    },
+    "es_ES": {
+      "string": "Lanzatrueno potenciado"
+    }
+  },
+  "STATUS_TIANLI_HEZHEN": {
+    "zh_CN": {
+      "string": "天理合真"
+    },
+    "zh_TW": {
+      "string": "天理合真"
+    },
+    "en_US": {
+      "string": "Tianli Hezhen"
+    },
+    "ja_JP": {
+      "string": "天理合真"
+    },
+    "ko_KR": {
+      "string": "천리합진"
+    },
+    "es_ES": {
+      "string": "Tianli Hezhen"
+    }
+  },
+  "STATUS_TIANLI_FIRST_SKILL_READY": {
+    "zh_CN": {
+      "string": "天理合真·首次惊霆诀"
+    },
+    "zh_TW": {
+      "string": "天理合真·首次驚霆訣"
+    },
+    "en_US": {
+      "string": "Tianli Hezhen: First Skill"
+    },
+    "ja_JP": {
+      "string": "天理合真・初回戦技"
+    },
+    "ko_KR": {
+      "string": "천리합진·첫 전투 스킬"
+    },
+    "es_ES": {
+      "string": "Tianli Hezhen: primera habilidad"
+    }
+  },
+  "BUFF_INVULNERABLE": {
+    "zh_CN": {
+      "string": "免疫伤害"
+    },
+    "zh_TW": {
+      "string": "免疫傷害"
+    },
+    "en_US": {
+      "string": "Invulnerable"
+    },
+    "ja_JP": {
+      "string": "無敵"
+    },
+    "ko_KR": {
+      "string": "무적"
+    },
+    "es_ES": {
+      "string": "Invulnerable"
+    }
+  },
+  "MECH_ANCIENT_PATTERN": {
+    "zh_CN": {
+      "string": "古老图形"
+    },
+    "zh_TW": {
+      "string": "古老圖形"
+    },
+    "en_US": {
+      "string": "Ancient Pattern"
+    },
+    "ja_JP": {
+      "string": "古代図形"
+    },
+    "ko_KR": {
+      "string": "고대 도형"
+    },
+    "es_ES": {
+      "string": "Patrón antiguo"
+    }
+  },
+  "EVENT_SHRED_CONSUMED": {
+    "zh_CN": {
+      "string": "破防已消费"
+    },
+    "zh_TW": {
+      "string": "破防已消耗"
+    },
+    "en_US": {
+      "string": "Shred Consumed"
+    },
+    "ja_JP": {
+      "string": "破防消費"
+    },
+    "ko_KR": {
+      "string": "파괴 소모"
+    },
+    "es_ES": {
+      "string": "Ruptura consumida"
+    }
+  },
+  "STATUS_MIFU_ZHUIXING_READY": {
+    "zh_CN": {
+      "string": "追形待发"
+    },
+    "zh_TW": {
+      "string": "追形待發"
+    },
+    "en_US": {
+      "string": "Pursuit Ready"
+    },
+    "ja_JP": {
+      "string": "追形準備"
+    },
+    "ko_KR": {
+      "string": "추형 준비"
+    },
+    "es_ES": {
+      "string": "Persecución lista"
+    }
+  },
+  "STATUS_MIFU_KAITIAN_READY": {
+    "zh_CN": {
+      "string": "开天待发"
+    },
+    "zh_TW": {
+      "string": "開天待發"
+    },
+    "en_US": {
+      "string": "Skybreak Ready"
+    },
+    "ja_JP": {
+      "string": "開天準備"
+    },
+    "ko_KR": {
+      "string": "개천 준비"
+    },
+    "es_ES": {
+      "string": "Apertura lista"
+    }
+  },
+  "STATUS_CAMILLE_PURSUIT_READY": {
+    "zh_CN": {
+      "string": "追猎待发"
+    },
+    "zh_TW": {
+      "string": "追獵待發"
+    },
+    "en_US": {
+      "string": "Pursuit Ready"
+    },
+    "ja_JP": {
+      "string": "追猟準備"
+    },
+    "ko_KR": {
+      "string": "추적 준비"
+    },
+    "es_ES": {
+      "string": "Cacería lista"
+    }
+  },
+  "STACK_CAMILLE_BLOOD_SURGE": {
+    "zh_CN": {
+      "string": "血涌苏生"
+    },
+    "zh_TW": {
+      "string": "血湧蘇生"
+    },
+    "en_US": {
+      "string": "Blood Resurgence"
+    },
+    "ja_JP": {
+      "string": "血湧再生"
+    },
+    "ko_KR": {
+      "string": "혈용소생"
+    },
+    "es_ES": {
+      "string": "Resurgir de sangre"
+    }
   }
 }

@@ -20,6 +20,7 @@ _DATA_DIR = _ROOT / "assets" / "data" / "character_skills"
 
 _SHRED_STACK_PRODUCERS = {
     "STATUS_SHRED",
+    "STACK_SHRED",
     "STATUS_HEAVY_HIT",
     "STATUS_KNOCKDOWN",
     "STATUS_SHATTER",  # 碎甲
@@ -33,14 +34,16 @@ _CATEGORY_SPELL_ANOMALIES = {
     "STATUS_BURNING",
 }
 
-# 豁免名单：这些角色的战技跳过所有检查，直接允许释放
-EXEMPT_CHARACTERS: set[str] = {
-    "梨诺"  # 梨诺战技无消耗
-}
-NO_ALLOW_CHARACTERS: set[str] = {
-    "余烬"  # 余烬战技基本无用
+_PREDICATE_ALIASES = {
+    "STACK_SHRED": ("STATUS_SHRED",),
+    "ATTACH_COLD": ("STATUS_SPELL_INFLICT",),
+    "ATTACH_BURN": ("STATUS_SPELL_INFLICT",),
+    "ATTACH_ELECTROMAGNETIC": ("STATUS_SPELL_INFLICT",),
+    "ATTACH_NATURAL": ("STATUS_SPELL_INFLICT",),
 }
 
+# 旧版曾按角色名硬编码“必放/禁放”（梨诺/余烬）。
+# 这会绕过真实机制与共享 SP 机会成本，现已移除；这里只保留通用依赖闭包 fallback。
 # ── 数据加载 ──────────────────────────────────────────────────────────────────
 
 _cached_characters: dict[str, dict] | None = None
@@ -96,13 +99,14 @@ def _produced_effect_id(effect) -> str:
 
 
 def _expanded_produced_effect_ids(effect) -> tuple[str, ...]:
-    """展开正向产出效果的依赖 ID，并保留原始类别效果。"""
+    """展开正向产出效果的依赖 ID，并补充仅用于条件查询的 predicate 别名。"""
     effect_id = _produced_effect_id(effect)
     if not effect_id:
         return ()
+    aliases = list(_PREDICATE_ALIASES.get(effect_id, ()))
     if effect_id in _CATEGORY_SPELL_ANOMALIES:
-        return effect_id, "STATUS_SPELL_ANOMALY"
-    return (effect_id,)
+        aliases.append("STATUS_SPELL_ANOMALY")
+    return (effect_id, *aliases)
 
 
 def _register_effect_producer(
@@ -136,23 +140,40 @@ def _parse_trigger_groups(trigger_condition: dict | str) -> list[dict]:
     for operator in ("all", "any"):
         effect_list = effects.get(operator) or []
         effect_set = {_effect_id(e) for e in effect_list if _effect_id(e)}
-        if effect_set or (operator == "all" and effects.get(operator) == []):
-            groups.append({"operator": operator, "effects": effect_set})
+        if not effect_set:
+            continue
+        minimum_counts = {
+            _effect_id(e): int(e.get("min_count", 1))
+            for e in effect_list
+            if isinstance(e, dict) and _effect_id(e)
+        }
+        groups.append(
+            {
+                "operator": operator,
+                "effects": effect_set,
+                "minimum_counts": minimum_counts,
+            }
+        )
 
     return groups
 
 
 def _is_trigger_satisfied(trigger_groups: list[dict], current_effects: set[str]) -> bool:
-    """判断触发条件组是否被当前 effects 满足。
+    """静态 allowlist 只证明“存在 producer”，不能证明 2+ 层等运行时阈值。
 
-    组间隐含 AND 关系：每组都必须满足。
-    "all" 组：所有效果都必须在 current_effects 中。
-    "any" 组：至少一个效果在 current_effects 中。
+    因此任何 min_count > 1 的条件都保守视为动态未知，避免把“能产生一次”
+    错当成“必然达到所需层数”。完整层数判断由运行时机制状态负责。
     """
-    return all(
-        current_effects >= group["effects"] if group["operator"] == "all" else bool(current_effects & group["effects"])
-        for group in trigger_groups
-    )
+    for group in trigger_groups:
+        minimum_counts = group.get("minimum_counts", {})
+        if any(min_count > 1 for min_count in minimum_counts.values()):
+            return False
+        if group["operator"] == "all":
+            if not current_effects >= group["effects"]:
+                return False
+        elif not (current_effects & group["effects"]):
+            return False
+    return True
 
 
 def _is_non_skill_enhancement(skill_type: str) -> bool:
@@ -482,13 +503,6 @@ def build_skill_allowlist(
 
         key = (char_name, skill.get("skill_id", ""))
 
-        if char_name in EXEMPT_CHARACTERS:
-            result[idx] = (True, "")
-            continue
-        if char_name in NO_ALLOW_CHARACTERS:
-            result[idx] = (False, "战技基本无用")
-            continue
-
         if key in forbidden_skills:
             result[idx] = (False, "增强态优先")
         elif key in allowed_skills:
@@ -512,23 +526,3 @@ def generate_skill_sequence(
     allowlist = build_skill_allowlist(team_members, characters)
     result = [str(i + 1) for i, (ok, _) in allowlist.items() if ok]
     return result if result else [str(i + 1) for i in range(len(team_members))]
-
-
-def filter_skill_sequence(
-    team_members: list[str],
-    skill_sequence: list[str],
-    characters: dict[str, dict] | None = None,
-) -> list[str]:
-    """根据自动技能列表过滤技能释放序列。"""
-    allowlist = build_skill_allowlist(team_members, characters)
-    allowed_digits = {str(i + 1) for i, (ok, _) in allowlist.items() if ok}
-
-    filtered = []
-    for token in skill_sequence:
-        if token in _NORMAL_SKILL_TOKENS:
-            if token in allowed_digits:
-                filtered.append(token)
-        else:
-            filtered.append(token)
-
-    return filtered if filtered else list(skill_sequence)
