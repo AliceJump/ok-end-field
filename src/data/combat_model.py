@@ -43,6 +43,9 @@ class EnemyCombatState:
     shred_stacks: int = 0
     # 其余持续状态 → 剩余持续时间（秒）；由编排器负责 tick 与过期
     states: dict[EffectType, float] = field(default_factory=dict)
+    # 当前 action/结算窗口产生的瞬时事件 → 携带的整数 payload。
+    # 事件不属于持久世界状态，下一 action 开始前由调用方 clear_transient_events()。
+    transient_events: dict[EffectType, int] = field(default_factory=dict)
 
     def apply_infliction(self, element: EffectType) -> EffectType | None:
         """对敌人施加法术附着，按官方规则转移并返回应结算的事件。
@@ -89,10 +92,23 @@ class EnemyCombatState:
         self.shred_stacks = min(self.shred_stacks + stacks, MAX_SHRED_STACKS)
 
     def consume_shred(self) -> int:
-        """消耗全部破防层（猛击/碎甲触发时），返回被消耗的层数。"""
+        """消耗全部破防层，并累计 EVENT_SHRED_CONSUMED(count)。
+
+        返回值保持旧接口兼容；瞬时事件用于“消费后”才能触发的机制，
+        例如骏卫连携技和弭弗追形→开天判断。同一 action 内多次正数消费
+        会累加，零层消费不会清除前面已经产生的事件；只由
+        clear_transient_events() 在 action 边界统一清理。
+        """
         consumed = self.shred_stacks
         self.shred_stacks = 0
+        if consumed > 0:
+            event = EffectType.EVENT_SHRED_CONSUMED
+            self.transient_events[event] = self.transient_events.get(event, 0) + consumed
         return consumed
+
+    def clear_transient_events(self) -> None:
+        """清除上一 action 的瞬时事件；不影响任何持续状态/资源。"""
+        self.transient_events.clear()
 
 
 @dataclass

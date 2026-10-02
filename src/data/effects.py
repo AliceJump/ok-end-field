@@ -47,6 +47,16 @@ class EffectType(Enum):
     STATUS_SINGING = "STATUS_SINGING"  # 梨诺的演唱姿态
     STATUS_HIGH_SINGING = "STATUS_HIGH_SINGING"  # 梨诺的高歌姿态
     STATUS_HOVERING = "STATUS_HOVERING"
+    STATUS_YVONNE_ASSISTED = "STATUS_YVONNE_ASSISTED"
+    STATUS_LAEVATAIN_SWORD = "STATUS_LAEVATAIN_SWORD"
+    STATUS_TIANLI_HEZHEN = "STATUS_TIANLI_HEZHEN"
+    STATUS_TIANLI_FIRST_SKILL_READY = "STATUS_TIANLI_FIRST_SKILL_READY"
+    STATUS_MIFU_ZHUIXING_READY = "STATUS_MIFU_ZHUIXING_READY"
+    STATUS_MIFU_KAITIAN_READY = "STATUS_MIFU_KAITIAN_READY"
+    STATUS_CAMILLE_PURSUIT_READY = "STATUS_CAMILLE_PURSUIT_READY"
+
+    # 结算后事件
+    EVENT_SHRED_CONSUMED = "EVENT_SHRED_CONSUMED"
 
     # 层数系统
     STACK_MOLTEN = "STACK_MOLTEN"
@@ -62,6 +72,9 @@ class EffectType(Enum):
     STACK_QINGTING_SWORD = "STACK_QINGTING_SWORD"
     STACK_SIGN = "STACK_SIGN"  # 提弗洛斯的启示层数
     STACK_HUNTING_ARROW = "STACK_HUNTING_ARROW"  # 提弗洛斯的猎矢数量
+    STACK_CAMILLE_BLOOD_SURGE = "STACK_CAMILLE_BLOOD_SURGE"
+    STACK_AIR_ATTACKS = "STACK_AIR_ATTACKS"
+    STACK_YVONNE_CRIT = "STACK_YVONNE_CRIT"
 
     # 增益效果
     BUFF_ATTACK_UP = "BUFF_ATTACK_UP"
@@ -77,6 +90,7 @@ class EffectType(Enum):
     BUFF_NATURAL_UP = "BUFF_NATURAL_UP"
     BUFF_SPELL_UP = "BUFF_SPELL_UP"
     BUFF_PROTECTION = "BUFF_PROTECTION"
+    BUFF_INVULNERABLE = "BUFF_INVULNERABLE"
 
     # 减益效果
     DEBUFF_DEF_DOWN = "DEBUFF_DEF_DOWN"
@@ -95,9 +109,12 @@ class EffectType(Enum):
     MECH_RADAR = "MECH_RADAR"
     MECH_TURRET = "MECH_TURRET"
     MECH_SUPPORT_CRYSTAL = "MECH_SUPPORT_CRYSTAL"
+    MECH_ANCIENT_PATTERN = "MECH_ANCIENT_PATTERN"
+    MECH_THUNDER_SPEAR = "MECH_THUNDER_SPEAR"
+    MECH_STRONG_THUNDER_SPEAR = "MECH_STRONG_THUNDER_SPEAR"
 
-    # 放置物
-    PLACE_THUNDER_SPEAR = "PLACE_THUNDER_SPEAR"
+    # 放置物操作
+    PLACE_THUNDER_SPEAR = "PLACE_THUNDER_SPEAR"  # 历史生成动作 ID，运行时实体改用 MECH_*_THUNDER_SPEAR
     REMOVE_THUNDER_SPEAR = "REMOVE_THUNDER_SPEAR"
 
     # 消耗/清除
@@ -146,9 +163,9 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STATUS_CONDUCTING: "导电：电磁+其他元素→消耗所有附着→初始电磁伤害+法术伤害提高",
     EffectType.STATUS_BURNING: "燃烧：灼热+其他元素→消耗所有附着→初始灼热伤害+持续灼热伤害",
     # 其他状态
-    EffectType.STATUS_SPELL_INFLICT: "通用的法术附着状态",
+    EffectType.STATUS_SPELL_INFLICT: "条件谓词：目标当前存在任意法术附着；真实附着存于 ATTACH_*，本 ID 不应独立存储",
     EffectType.STATUS_SPELL_BURST: "法术爆发伤害（同元素再次附着时触发）",
-    EffectType.STATUS_SPELL_ANOMALY: "法术异常状态（通用）",
+    EffectType.STATUS_SPELL_ANOMALY: "条件谓词：目标当前存在任意法术异常；真实异常存于四种具体 STATUS_*，本 ID 不应独立存储",
     EffectType.STATUS_SLOW: "敌人被施加缓速",
     EffectType.STATUS_BROKEN: "碎冰（官方名 Shatter）：处于固结/冻结状态的敌人受到物理异常（或破防）时触发，造成大量物理伤害（120%）并结束固结",
     EffectType.STATUS_FOCUS: "安塔尔施加的聚焦状态，同一时间最多存在于一个敌人",
@@ -156,21 +173,32 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.STATUS_ORIGINIUM_CRYSTAL: "管理员附着的源石结晶，可被物理异常或破防消耗",
     EffectType.STATUS_SINGING: "梨诺的演唱姿态，持续强化全队并周期追加攻击与治疗",
     EffectType.STATUS_HIGH_SINGING: "梨诺的高歌姿态，替代演唱姿态并提供强化效果",
-    EffectType.STATUS_HOVERING: "目标进入浮空状态",
+    EffectType.STATUS_HOVERING: "提弗洛斯自身的浮空姿态（历史 ID）；敌人浮空由击飞 STATUS_HEAVY_HIT 表达",
+    EffectType.STATUS_YVONNE_ASSISTED: "伊冯小嘀嗒辅助强化普攻姿态，持续7秒",
+    EffectType.STATUS_LAEVATAIN_SWORD: "莱万汀烈焰魔剑强化普攻姿态，持续15秒",
+    EffectType.STATUS_TIANLI_HEZHEN: "庄方宜终结技进入的天理合真姿态，持续25秒，改写普攻/战技/连携技",
+    EffectType.STATUS_TIANLI_FIRST_SKILL_READY: "天理合真期间首次惊霆诀的一次性强化标记：不消耗技力与导电，并固定生成3柄青霆剑",
+    EffectType.STATUS_MIFU_ZHUIXING_READY: "弭弗下一次战技替换为追形的一次性状态",
+    EffectType.STATUS_MIFU_KAITIAN_READY: "弭弗下一次战技替换为开天的一次性状态",
+    EffectType.STATUS_CAMILLE_PURSUIT_READY: "卡缪下一次战技替换为追猎的一次性状态，追猎视为连携技且不消耗技力",
+    EffectType.EVENT_SHRED_CONSUMED: "最近一次猛击/碎甲等结算实际消费的破防层数事件；count用于后续连携/替换条件",
     # 层数系统
-    EffectType.STACK_MOLTEN: "莱万汀的熔火灼痕层数",
+    EffectType.STACK_MOLTEN: "莱万汀自身的熔火层数，最多4层",
+    EffectType.STACK_AIR_ATTACKS: "提弗洛斯剩余空中普攻次数，最多5次；战技/连携/终结技重置为5",
+    EffectType.STACK_YVONNE_CRIT: "伊冯终结技期间强化普攻累计暴击层数，最多10层，每层暴击率+3%",
     EffectType.STACK_SHRED: "敌人身上的破防层数",
-    EffectType.STACK_IRON_OATH: "余烬的铁誓层数",
-    EffectType.STACK_BLOOD_WING: "卡缪的衔火血翼盘桓层数",
+    EffectType.STACK_IRON_OATH: "骏卫终结技生成的铁誓，固定生成5点、逐点消耗、持续30秒",
+    EffectType.STACK_BLOOD_WING: "历史 STACK 命名；实际为卡缪衔火血翼盘桓在某个敌人身上的可转移标记/实体",
     EffectType.STACK_COMBO: "队伍连击层数（官方名 Link/连击）：最多 4 层，持有时下一发战技（加成更大）或终结技伤害提升，使用后消耗；黎风、秋栗等干员可施加，黎风终结技消耗连击追加伤害",
-    EffectType.STACK_MORALE: "骏卫的士气激昂层数",
-    EffectType.STACK_WHIRLPOOL: "汤汤的涡流数量",
-    EffectType.STACK_SEED: "诀的种子层数",
-    EffectType.STACK_TRACE: "洛茜的爪印斫痕层数",
-    EffectType.STACK_CHARGE: "卡契尔的蓄力层数",
-    EffectType.STACK_QINGTING_SWORD: "庄方宜的青霆剑数量，可按导电异常等级动态生成，单次战技最多生成3柄，并在逐柄雷击后消费",
+    EffectType.STACK_MORALE: "干员身上的士气激昂，最多3层，每层独立计算持续时间",
+    EffectType.STACK_WHIRLPOOL: "汤汤在场上生成的涡流实体计数，最多2处；完整模拟需记录各实体寿命/位置",
+    EffectType.STACK_SEED: "旧版/未解析占位；当前版本无可信 producer，不参与自动机制推断",
+    EffectType.STACK_TRACE: "历史 STACK 命名；实际为洛茜施加在敌人身上的爪印斫痕标记，无法叠加",
+    EffectType.STACK_CHARGE: "旧版/误解占位；敌人开始蓄力是连携触发事件，不等于卡契尔拥有蓄力资源",
+    EffectType.STACK_QINGTING_SWORD: "庄方宜的场上青霆剑实体计数，场上最多9柄；单次战技最多生成3柄，并在逐柄雷击后消费",
     EffectType.STACK_SIGN: "提弗洛斯的启示层数，最多8点，满时可发动连携技",
     EffectType.STACK_HUNTING_ARROW: "提弗洛斯的猎矢数量，最多4枚，消耗后强化射击触发自然爆发",
+    EffectType.STACK_CAMILLE_BLOOD_SURGE: "卡缪天赋“血涌苏生”的灼热伤害提升层数，最多5层，持续40秒",
     # 增益效果
     EffectType.BUFF_ATTACK_UP: "攻击力增加",
     EffectType.BUFF_CRIT_RATE_UP: "暴击率增加",
@@ -185,27 +213,31 @@ EFFECT_DESCRIPTIONS: dict[EffectType, str] = {
     EffectType.BUFF_NATURAL_UP: "自然伤害增加",
     EffectType.BUFF_SPELL_UP: "法术伤害增加",
     EffectType.BUFF_PROTECTION: "干员获得庇护效果",
+    EffectType.BUFF_INVULNERABLE: "干员在指定动作/姿态期间免疫所有伤害",
     # 减益效果
-    EffectType.DEBUFF_DEF_DOWN: "敌人防御力下降",
-    EffectType.DEBUFF_SPEED_DOWN: "敌人移动速度下降",
-    EffectType.DEBUFF_HEAL_DOWN: "敌人受到的治疗效果降低",
+    EffectType.DEBUFF_DEF_DOWN: "旧版/未解析占位；当前角色技能/天赋无可信 producer",
+    EffectType.DEBUFF_SPEED_DOWN: "历史减速别名；当前统一使用 STATUS_SLOW，不参与自动机制推断",
+    EffectType.DEBUFF_HEAL_DOWN: "旧版/未解析占位；当前角色技能/天赋无可信 producer",
     EffectType.DEBUFF_WEAKEN: "敌人被施加虚弱效果",
     # 特殊机制
-    EffectType.MECH_VACUUM: "洁尔佩塔的真空牵引效果",
-    EffectType.MECH_GRAVITY: "洁尔佩塔的重力场效果",
+    EffectType.MECH_VACUUM: "历史命名；洁尔佩塔的重力牵引/聚怪控制事件",
+    EffectType.MECH_GRAVITY: "洁尔佩塔的持续重力场实体/区域效果",
     EffectType.MECH_FREEZE_FIELD: "伊冯的冰冻领域效果",
     EffectType.MECH_FIRE_FIELD: "莱万汀的火焰领域效果",
     EffectType.MECH_LIGHTNING_FIELD: "梨诺的雷电领域效果",
     EffectType.MECH_NATURE_FIELD: "艾尔黛拉的自然领域效果",
-    EffectType.MECH_BOMB: "萤石的炸弹效果",
-    EffectType.MECH_RADAR: "安塔尔的雷达效果",
-    EffectType.MECH_TURRET: "佩丽卡的炮台效果",
+    EffectType.MECH_BOMB: "萤石黏附在目标敌人身上的自制炸弹实体，场上同时只能存在一个",
+    EffectType.MECH_RADAR: "旧版/未解析占位；当前安塔尔技能数据无可信雷达机制",
+    EffectType.MECH_TURRET: "旧版/未解析占位；当前佩丽卡技能数据无可信炮台机制",
     EffectType.MECH_SUPPORT_CRYSTAL: "赛希召唤的支援晶体",
-    EffectType.PLACE_THUNDER_SPEAR: "艾维文娜的雷枪放置物",
-    EffectType.REMOVE_THUNDER_SPEAR: "艾维文娜的雷枪召回",
+    EffectType.MECH_ANCIENT_PATTERN: "汤汤终结技释放的古老图形场地，持续4秒，封锁范围内敌人并使其暂停行动",
+    EffectType.MECH_THUNDER_SPEAR: "艾维文娜连携技生成的普通雷枪场上实体，默认存在30秒",
+    EffectType.MECH_STRONG_THUNDER_SPEAR: "艾维文娜终结技生成的强雷枪场上实体，默认存在30秒",
+    EffectType.PLACE_THUNDER_SPEAR: "历史生成动作 ID；新数据应直接产出具体雷枪实体",
+    EffectType.REMOVE_THUNDER_SPEAR: "召回/移除场上全部普通雷枪与强雷枪的操作",
     # 消耗/清除
-    EffectType.CONSUME_ALL: "清空所有层数/效果",
-    EffectType.CONSUME_STACK: "消耗特定层数",
+    EffectType.CONSUME_ALL: "消费某个明确资源的全部数量；必须由调用上下文提供被消费对象",
+    EffectType.CONSUME_STACK: "消费某个明确资源的指定层数；必须由调用上下文提供被消费对象",
     EffectType.CLEAR_ATTACH: "清空所有元素附着",
     EffectType.CLEAR_STATUS: "清空所有异常状态（官方名「清除异常状态」，社区攻略常转述为「净化」）",
     EffectType.CLEAR_COLD: "清空敌人寒冷附着",
@@ -261,6 +293,7 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "演唱姿态": EffectType.STATUS_SINGING,
     "高歌姿态": EffectType.STATUS_HIGH_SINGING,
     "浮空": EffectType.STATUS_HOVERING,
+    "天理合真": EffectType.STATUS_TIANLI_HEZHEN,
     # 层数系统
     "消耗破防层数": EffectType.STACK_SHRED,
     "破防层数": EffectType.STACK_SHRED,
@@ -269,8 +302,6 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "连击": EffectType.STACK_COMBO,
     "士气": EffectType.STACK_MORALE,
     "涡流": EffectType.STACK_WHIRLPOOL,
-    "种子": EffectType.STACK_SEED,
-    "蓄力": EffectType.STACK_CHARGE,
     "青霆剑": EffectType.STACK_QINGTING_SWORD,
     "启示": EffectType.STACK_SIGN,
     "猎矢": EffectType.STACK_HUNTING_ARROW,
@@ -288,21 +319,18 @@ EFFECT_TERMS: dict[str, EffectType] = {
     "自然伤害提升": EffectType.BUFF_NATURAL_UP,
     "法术增幅": EffectType.BUFF_SPELL_UP,
     "庇护": EffectType.BUFF_PROTECTION,
+    "免疫所有伤害": EffectType.BUFF_INVULNERABLE,
     # 减益效果
-    "防御力降低": EffectType.DEBUFF_DEF_DOWN,
-    "减速": EffectType.DEBUFF_SPEED_DOWN,
-    "治疗效果降低": EffectType.DEBUFF_HEAL_DOWN,
+    "减速": EffectType.STATUS_SLOW,
     "虚弱": EffectType.DEBUFF_WEAKEN,
     # 特殊机制
-    "真空": EffectType.MECH_VACUUM,
-    "重力": EffectType.MECH_GRAVITY,
-    "冰冻领域": EffectType.MECH_FREEZE_FIELD,
-    "火焰领域": EffectType.MECH_FIRE_FIELD,
-    "雷电领域": EffectType.MECH_LIGHTNING_FIELD,
-    "自然领域": EffectType.MECH_NATURE_FIELD,
-    "炸弹": EffectType.MECH_BOMB,
-    "雷达": EffectType.MECH_RADAR,
-    "炮台": EffectType.MECH_TURRET,
+    "重力牵引": EffectType.MECH_VACUUM,
+    "重力场": EffectType.MECH_GRAVITY,
+    "自制炸弹": EffectType.MECH_BOMB,
+    "支援晶体": EffectType.MECH_SUPPORT_CRYSTAL,
+    "古老图形": EffectType.MECH_ANCIENT_PATTERN,
+    "强雷枪": EffectType.MECH_STRONG_THUNDER_SPEAR,
+    "雷枪": EffectType.MECH_THUNDER_SPEAR,
     # 消耗/清除（保留明确的组合术语；避免动词"消耗""清空"误报）
     "消耗寒冷附着": EffectType.CLEAR_COLD,
     "消耗自然附着": EffectType.CLEAR_NATURAL,

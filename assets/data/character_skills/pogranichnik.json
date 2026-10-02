@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "pogranichnik_skill",
@@ -182,16 +183,31 @@
                 {
                     "name": "破防层数消耗",
                     "trigger_condition": {
-                        "text": "战技命中敌人时消耗破防层数恢复技力",
+                        "text": "碎甲结算实际消费了破防层数",
                         "effects": {
                             "all": [
-                                "STACK_SHRED"
+                                "EVENT_SHRED_CONSUMED"
                             ]
                         }
                     },
                     "enhancement_effect": "破防层数消耗",
                     "enhancement_visible_pulse": false,
-                    "effects": []
+                    "effects": [],
+                    "resource_changes": [
+                        {
+                            "resource": "skill_point",
+                            "target": "team",
+                            "kind": "piecewise_by_count",
+                            "source_effect_id": "EVENT_SHRED_CONSUMED",
+                            "values_by_count": {
+                                "1": 5,
+                                "2": 15,
+                                "3": 25,
+                                "4": 35
+                            },
+                            "count_basis": "consumed"
+                        }
+                    ]
                 }
             ],
             "rank_stats": {
@@ -383,10 +399,13 @@
                 {
                     "name": "消耗4层破防→第3次斩击强化",
                     "trigger_condition": {
-                        "text": "消耗4层破防",
+                        "text": "最近一次猛击或碎甲实际消费4层破防",
                         "effects": {
                             "all": [
-                                "STACK_SHRED"
+                                {
+                                    "effect_id": "EVENT_SHRED_CONSUMED",
+                                    "min_count": 4
+                                }
                             ]
                         }
                     },
@@ -397,10 +416,10 @@
                 {
                     "name": "盈月邀击",
                     "trigger_condition": {
-                        "text": "当有敌人被猛击或者碎甲消耗破防层数后可以发动",
+                        "text": "有敌人被猛击或碎甲实际消费了至少1层破防",
                         "effects": {
                             "all": [
-                                "STATUS_SHRED"
+                                "EVENT_SHRED_CONSUMED"
                             ]
                         }
                     },
@@ -646,7 +665,23 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "kind": "piecewise_by_count",
+                    "source_effect_id": "EVENT_SHRED_CONSUMED",
+                    "values_by_count": {
+                        "1": 5,
+                        "2": 12,
+                        "3": 25,
+                        "4": 35
+                    },
+                    "formula": "按最近一次猛击/碎甲实际消费层数决定斩击次数；4层时第三击强化，技力恢复为5+7+23=35",
+                    "count_basis": "consumed"
+                }
+            ]
         },
         {
             "skill_id": "pogranichnik_ultimate",
@@ -659,12 +694,8 @@
                 {
                     "name": "铁誓袭扰",
                     "trigger_condition": {
-                        "text": "敌人受到物理异常效果或骏卫的连携技伤害",
-                        "effects": {
-                            "all": [
-                                "STACK_IRON_OATH"
-                            ]
-                        }
+                        "text": "敌人受到物理异常或骏卫连携伤害，消费的铁誓不是最后一点时",
+                        "effects": null
                     },
                     "enhancement_effect": "消耗1点铁誓召唤盾卫袭扰",
                     "enhancement_visible_pulse": false,
@@ -680,7 +711,17 @@
                             "effect_id": "TRIGGER_ADDITIONAL",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ],
+                    "resource_changes": [
+                        {
+                            "resource": "skill_point",
+                            "target": "team",
+                            "trigger": "非最后铁誓袭扰结算后",
+                            "kind": "fixed",
+                            "amount": 10
                         }
                     ]
                 },
@@ -688,11 +729,7 @@
                     "name": "最后铁誓决胜",
                     "trigger_condition": {
                         "text": "消耗的铁誓是最后一点",
-                        "effects": {
-                            "all": [
-                                "STACK_IRON_OATH"
-                            ]
-                        }
+                        "effects": null
                     },
                     "enhancement_effect": "四名盾卫发动决胜",
                     "enhancement_visible_pulse": false,
@@ -701,7 +738,17 @@
                             "effect_id": "TRIGGER_ADDITIONAL",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ],
+                    "resource_changes": [
+                        {
+                            "resource": "skill_point",
+                            "target": "team",
+                            "trigger": "最后铁誓决胜结算；替代普通袭扰恢复量，不叠加10",
+                            "kind": "fixed",
+                            "amount": 40
                         }
                     ]
                 }
@@ -715,7 +762,7 @@
                 {
                     "effect_id": "STACK_IRON_OATH",
                     "value": 5,
-                    "duration": null,
+                    "duration": 30,
                     "target": "self",
                     "count": 5
                 }

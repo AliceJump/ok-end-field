@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "antal_skill",
@@ -279,7 +280,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "antal_link",
@@ -309,7 +311,7 @@
                         {
                             "effect_id": "TRIGGER_REPEAT_EFFECT",
                             "value": 1,
-                            "duration": "",
+                            "duration": null,
                             "target": "enemy",
                             "count": 1
                         }
@@ -397,7 +399,7 @@
                         {
                             "effect_id": "TRIGGER_REPEAT_EFFECT",
                             "value": 1,
-                            "duration": "",
+                            "duration": null,
                             "target": "enemy",
                             "count": 1
                         }
@@ -606,7 +608,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

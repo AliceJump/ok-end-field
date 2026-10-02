@@ -1,0 +1,261 @@
+{
+  "chr_9000_endmin_potential_1": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 50,
+      "trigger": "战技构成序列实际消耗源石结晶后",
+      "count_basis": "consumed"
+    }
+  ],
+  "chr_9000_endmin_potential_3": [
+    {
+      "resource": "ultimate_energy",
+      "target": "self",
+      "kind": "fixed",
+      "amount": 15,
+      "trigger": "终结技轰击序列实际消耗源石结晶后",
+      "count_basis": "consumed",
+      "affected_by_energy_gain": false
+    }
+  ],
+  "chr_0024_deepfin_talent_1_2": [
+    {
+      "resource": "ultimate_energy",
+      "target": "self",
+      "kind": "fixed",
+      "amount": 4,
+      "trigger": "附近敌人新被施加冻结或源石结晶；合并触发，每3秒最多一次"
+    },
+    {
+      "resource": "ultimate_energy",
+      "target": "self",
+      "kind": "fixed",
+      "amount": 8,
+      "trigger": "同一次触发由阿列什自身造成冻结时追加；与基础4能量共用3秒冷却"
+    }
+  ],
+  "chr_0012_avywen_talent_1_2": [
+    {
+      "resource": "ultimate_energy",
+      "target": "self",
+      "kind": "fixed",
+      "amount": 4,
+      "trigger": "掷出或召回普通/强雷枪命中敌人后"
+    }
+  ],
+  "chr_0012_avywen_potential_1": [
+    {
+      "resource": "ultimate_energy",
+      "target": "self",
+      "kind": "fixed",
+      "amount": 2,
+      "trigger": "天赋高效派送触发时追加；修改原天赋数值，不是独立命中事件"
+    }
+  ],
+  "chr_0021_whiten_talent_1_2": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 15,
+      "trigger": "碎冰成功触发后下一次战技凝声；不可叠加、触发后消费准备标记"
+    }
+  ],
+  "chr_0021_whiten_potential_5": [
+    {
+      "resource": "ultimate_energy",
+      "target": "self",
+      "kind": "fixed",
+      "amount": 5,
+      "trigger": "敌人新被施加冻结；每1秒最多一次"
+    }
+  ],
+  "chr_0035_liino_talent_2_2": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 10,
+      "trigger": "连携技悦心音调后的30秒内电磁或自然干员下一次施放战技；每个接收者触发后结束、不可叠加"
+    }
+  ],
+  "chr_0014_aurora_talent_2_2": [
+    {
+      "resource": "ultimate_energy",
+      "target": "self",
+      "kind": "fixed",
+      "amount": 10,
+      "trigger": "战技饱和性防御成功格挡攻击后"
+    }
+  ],
+  "chr_0006_wolfgd_talent_2_2": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 10,
+      "trigger": "战技灼热弹痕实际消耗燃烧或导电后",
+      "count_basis": "consumed"
+    }
+  ],
+  "chr_0006_wolfgd_potential_2": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 10,
+      "trigger": "天赋节制准则触发时追加；修改原天赋返还数值"
+    }
+  ],
+  "chr_0024_deepfin_potential_1": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 10,
+      "trigger": "战技非常规路亚成功触发附着消耗恢复技力效果时追加",
+      "count_basis": "consumed"
+    }
+  ],
+  "chr_0007_ikut_potential_1": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 10,
+      "trigger": "战技疾风迅雷成功触发消耗导电的额外效果后",
+      "count_basis": "consumed"
+    }
+  ],
+  "chr_0020_meurs_potential_5": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 10,
+      "trigger": "卡契尔存在护盾且战技刚性阻击成功命中后"
+    }
+  ],
+  "chr_0014_aurora_potential_5": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 10,
+      "trigger": "战技饱和性防御成功反击命中敌人时"
+    }
+  ],
+  "chr_0023_antal_potential_3": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 15,
+      "trigger": "被聚焦的敌人在聚焦持续期间被击败"
+    }
+  ],
+  "chr_0038_purrche_talent_1_2": [
+    {
+      "resource": "ultimate_energy",
+      "target": "self",
+      "kind": "fixed",
+      "amount": 10,
+      "trigger": "本次战技立盾期间首次成功格挡；每次立盾最多一次"
+    }
+  ],
+  "chr_0032_lizhiyan_potential_1": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 10,
+      "trigger": "阵诀·智下自身战技命中囹圄敌人，触发原战技返还后追加；不适用于阵诀·意"
+    }
+  ],
+  "chr_0016_laevat_potential_1": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 20,
+      "trigger": "焚灭的追加攻击成功命中后；普通战技命中不触发"
+    }
+  ],
+  "chr_0026_lastrite_potential_5": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 5,
+      "trigger": "塞什卡的秘传触发原返还技力效果时追加；不生成第二个独立施放事件"
+    }
+  ],
+  "chr_0035_liino_potential_1": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 25,
+      "trigger": "不处于演唱姿态进入战斗后，首次施放闪耀焦点；一次性消费准备标记"
+    }
+  ],
+  "chr_0029_pograni_potential_1": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 15,
+      "trigger": "粉碎阵线本次命中至少两个敌人时；一次技能结算一次"
+    }
+  ],
+  "chr_0028_wulfa_potential_1": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 10,
+      "trigger": "血红之影释放的狼之珀成功命中敌人后"
+    }
+  ],
+  "chr_0017_yvonne_potential_1": [
+    {
+      "resource": "ultimate_energy",
+      "target": "self",
+      "kind": "fixed",
+      "amount": 15,
+      "trigger": "速冻仔·υ37造成伤害后追加；原连携10变25，命中多个敌人不重复结算"
+    }
+  ],
+  "chr_0017_yvonne_potential_4": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 10,
+      "trigger": "冰冰弹·β型的爆炸仅命中单个敌人时"
+    }
+  ],
+  "chr_0030_zhuangfy_potential_3": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "fixed",
+      "amount": 10,
+      "trigger": "惊霆诀实际消耗导电后；包含天理合真变体，未消费导电不返还"
+    }
+  ],
+  "chr_0027_tangtang_potential_1": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "kind": "per_effect_count",
+      "per_unit": 5,
+      "source_effect_id": "STACK_WHIRLPOOL",
+      "count_basis": "consumed",
+      "max_units": 2,
+      "trigger": "踏潮卷浪实际消费涡流形成水龙卷后；对原每处20返还追加5"
+    }
+  ]
+}
