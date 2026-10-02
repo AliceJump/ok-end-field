@@ -1,4 +1,4 @@
-name: Timing Runtime Binary Experiment
+name: Final Runtime Timing Binary
 
 on:
   push:
@@ -6,10 +6,11 @@ on:
       - codex/timing-runtime-binary
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   export-and-test:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -18,15 +19,34 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Export compact runtime bundle
+      - name: Export final fixed-id runtime table
         run: python -X utf8 scripts/skill-data/export_runtime_timing.py
 
-      - name: Run focused runtime-binary tests
-        run: python -X utf8 -m unittest tests.TestTimingRuntimeBinary -v
+      - name: Compile reader and exporter
+        run: python -m py_compile src/data/runtime_timing.py scripts/skill-data/export_runtime_timing.py
 
-      - name: Upload runtime bundle
+      - name: Verify all runtime records
+        run: python -X utf8 -m unittest tests.TestRuntimeTiming -v
+
+      - name: Show binary size
+        run: ls -lh assets/data/skill_timings/runtime.bin
+
+      - name: Commit generated binary
+        shell: bash
+        run: |
+          if git diff --quiet -- assets/data/skill_timings/runtime.bin; then
+            echo "runtime.bin unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/data/skill_timings/runtime.bin
+          git commit -m "data: refresh final runtime timing binary"
+          git push
+
+      - name: Upload final binary
         uses: actions/upload-artifact@v4
         with:
-          name: runtime-timing-bin
-          path: assets/data/skill_timings/runtime_timing.bin
+          name: runtime-bin
+          path: assets/data/skill_timings/runtime.bin
           if-no-files-found: error
