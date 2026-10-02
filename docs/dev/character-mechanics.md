@@ -197,7 +197,7 @@ DURING_SKILL  当前技能期间无法释放此技能（较长文本）
 
 角色技能相关时间不能使用会排除脚本暂停时长的 `active_time()`。
 
-现在区分两套时钟：
+这里不再在 `BaseEfTask` 上额外封装 `combat_time()`。生产运行时的技能/状态计时直接使用 `time.monotonic()`；`TimedCombatLogic` 只保留一个可注入的 `_clock`，用于测试传入 fake monotonic clock。
 
 ```
 active_time()
@@ -205,13 +205,13 @@ active_time()
   -> 脚本 / executor 暂停时冻结
   -> 用于任务 deadline、初始等待、周期检查等
 
-combat_time()
-  -> 游戏战斗真实单调时间
+time.monotonic() / TimedCombatLogic._clock
+  -> 游戏技能/状态真实经过时间
   -> 脚本暂停时仍继续推进
   -> 用于角色技能和战斗状态
 ```
 
-时间排轴中的以下数据改为 `combat_time()`：
+以下时间数据使用 monotonic clock：
 
 - native 技能 timeline 的 `started` / handoff / actionable elapsed；
 - 技能 cooldown 截止时间；
@@ -222,4 +222,4 @@ combat_time()
 - 技力采样缓存的刷新期限；
 - “场内暂无敌人”暂停的真实持续时间。
 
-因此如果脚本暂停 10 秒而游戏仍在继续，7 秒角色状态不会在恢复脚本后再剩 7 秒；恢复时会按真实经过的战斗时间判定为已经过期。脚本本身的 deadline / 配置等待仍保持原来的暂停语义。
+因此如果脚本暂停 10 秒而游戏仍在继续，7 秒角色状态不会在恢复脚本后再剩 7 秒；恢复时会按真实经过的时间判定为已经过期。脚本本身的 deadline / 配置等待仍保持原来的暂停语义。
