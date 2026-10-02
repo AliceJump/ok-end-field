@@ -4,6 +4,7 @@ from unittest.mock import patch
 from src.core.BattleConfig import (
     BATTLE_CONFIG_MODE_KEY,
     KEY_BATTLE_INITIAL_WAIT,
+    KEY_BATTLE_INITIAL_WAIT_PROTOCOL_ONLY,
     KEY_COMPLETE_NOTIFY,
     KEY_COND_SEQUENCE,
     KEY_DAMAGE_ROTATION,
@@ -331,6 +332,7 @@ class TestBattleConfigOverrides(unittest.TestCase):
             KEY_COMPLETE_NOTIFY,
             KEY_NO_NUMBER_OPERATION_INTERVAL,
             KEY_BATTLE_INITIAL_WAIT,
+            KEY_BATTLE_INITIAL_WAIT_PROTOCOL_ONLY,
             KEY_ROTATION_SEQUENCE,
             KEY_COND_SEQUENCE,
             KEY_INSTANT_ULT,

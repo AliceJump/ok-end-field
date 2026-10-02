@@ -2,6 +2,8 @@ import traceback
 
 from src.core.BaseEfTask import BaseEfTask
 from src.core.BattleConfig import (
+    KEY_BATTLE_INITIAL_WAIT,
+    KEY_BATTLE_INITIAL_WAIT_PROTOCOL_ONLY,
     KEY_COND_ENABLED,
     KEY_COND_SEQUENCE,
     KEY_DAMAGE_ROTATION,
@@ -83,24 +85,72 @@ class AutoCombatLogic:
     _TEAM_DETECT_MAX_ATTEMPTS = 6  # 战斗主循环中的队伍识别尝试上限
 
     def _try_detect_protocol_space(self):
-        """单次检测协议空间特征（战斗画面左上角「撤离」按钮）。
+        """Best-effort protocol-space classification without sending input.
 
-        检测到时记录并打一次日志；无 find_feature 能力（假任务/异常）按未检出处理。
-        返回 True 表示本次检测命中（之后不再重复检测）。
+        Protocol space is a hot start: every visible team member begins with an
+        available ultimate. Reuse battle_mixin's exact per-slot ultimate-ready
+        detector first; keep the left-top retreat button as a fallback because
+        it is an explicit protocol-space UI marker.
         """
         if self.protocol_space_detected:
             return True
+
+        all_ults_ready = getattr(self.task, "are_all_battle_ults_ready", None)
+        if callable(all_ults_ready):
+            try:
+                if all_ults_ready():
+                    self.protocol_space_detected = True
+                    self.task.log_info(
+                        "检测到协议空间热启动：当前队伍终结技全部就绪"
+                    )
+                    return True
+            except Exception:
+                pass
+
         find_feature = getattr(self.task, "find_feature", None)
-        if find_feature is None:
-            return False
+        if callable(find_feature):
+            try:
+                if find_feature(feature=fL.battle_space_left):
+                    self.protocol_space_detected = True
+                    self.task.log_info(
+                        "检测到协议空间特征（左上角撤离按钮）"
+                    )
+                    return True
+            except Exception:
+                pass
+        return False
+
+    def _resolve_initial_wait(self, start_sleep: float | None) -> float:
+        """Resolve the configured pre-action delay for this combat.
+
+        Timing mode only replaces combat strategy. The initial wait remains a
+        battle setting. When protocol-only mode is enabled, ordinary battles
+        skip the delay while protocol space keeps the configured value.
+        """
+        task = self.task
+        value = (
+            start_sleep
+            if start_sleep is not None
+            else task.get_battle_config(KEY_BATTLE_INITIAL_WAIT, 3)
+        )
         try:
-            hit = bool(find_feature(feature=fL.battle_space_left))
-        except Exception:
-            return False
-        if hit:
-            self.protocol_space_detected = True
-            self.task.log_info("检测到协议空间特征（左上角撤离按钮）: 热启动排轴（含终结技）")
-        return hit
+            wait_seconds = max(0.0, float(value))
+        except (TypeError, ValueError):
+            wait_seconds = 0.0
+
+        if wait_seconds <= 0:
+            return 0.0
+        if not task.get_battle_config(KEY_BATTLE_INITIAL_WAIT_PROTOCOL_ONLY, False):
+            return wait_seconds
+
+        if self._try_detect_protocol_space():
+            task.log_info(
+                f"协议空间初始等待启用：按配置等待 {wait_seconds:g}s"
+            )
+            return wait_seconds
+
+        task.log_info("仅协议空间启用初始等待：当前未判定为协议空间，跳过初始等待")
+        return 0.0
 
     def _align_auto_rotation_to_current(self, task, sequence: list[str]) -> list[str]:
         """把自动轴旋转到当前主控角色的段开头（切人图标判定成功时）。
@@ -430,6 +480,8 @@ class AutoCombatLogic:
 
         # 已确认进入战斗，记录进入时刻（用于“秒退”判定）
         combat_enter_time = task.active_time()
+        self.protocol_space_detected = False
+        effective_start_sleep = self._resolve_initial_wait(start_sleep)
 
         # 非战斗 → 战斗 转换时复位推荐技能检测器，每场战斗仅一次：
         # 上一场结束时可能残留 active 标签（战斗外不调用 detect，不会自复位），
@@ -441,7 +493,11 @@ class AutoCombatLogic:
             task._recommend_detector_in_combat = True
 
         if task.get_battle_config(KEY_TIMING_ROTATION, False):
-            return TimedCombatLogic(task).run(start_sleep=start_sleep, no_battle=no_battle, deadline=deadline)
+            return TimedCombatLogic(task).run(
+                start_sleep=effective_start_sleep,
+                no_battle=no_battle,
+                deadline=deadline,
+            )
 
         # 初始化普通战斗配置属性（排轴与普通模式共用）
         self.normal_skill_sequence = task.get_battle_config("技能释放", ["1", "2", "3"])
@@ -461,7 +517,6 @@ class AutoCombatLogic:
         self.auto_rotation_sequence = []
         self.auto_rotation_index = 0
         self.skill_index = 0
-        self.protocol_space_detected = False
 
         # 模式初始化：实时条件 > 排轴 > 普通
         # 实时条件优先：启用时自动忽略普通排轴
@@ -516,9 +571,7 @@ class AutoCombatLogic:
             self._sync_normal_attack_hold()
 
             # 初始等待期间持续尝试识别队伍，识别出就不再识别
-            _target_sleep = (
-                start_sleep if start_sleep is not None else task.get_battle_config("进入战斗后的初始等待时间", 3)
-            )
+            _target_sleep = effective_start_sleep
             _sleep_end = task.active_time() + _target_sleep
             while task.active_time() < _sleep_end:
                 # 已识别出队伍则跳出等待

@@ -33,6 +33,7 @@ from src.core.BattleConfig import (
     BATTLE_CONFIG_TYPE,
     BATTLE_GROUP_CONFIGS,
     DEFAULT_BATTLE_CONFIG,
+    KEY_BATTLE_INITIAL_WAIT,
     KEY_RECOMMEND_SKILL,
     KEY_SKILL_ALLOWLIST,
     KEY_ULT_RELEASE_MODE,
@@ -922,6 +923,22 @@ class BattleMixin(BaseEfTask):
                 return result
         return None
 
+    def are_all_battle_ults_ready(self) -> bool:
+        """Return whether every current team member's ultimate is ready.
+
+        in_combat() calls in_team() first, so _battle_member_count normally
+        already reflects the visible team by the time combat logic starts.
+        Keep this as a read-only readiness probe: it reuses the same per-slot
+        template mapping as actual ultimate release and never presses a key.
+        """
+        member_count = int(getattr(self, "_battle_member_count", 0) or 0)
+        if member_count < 1 or member_count > 4:
+            return False
+        return all(
+            bool(self._find_battle_ult(f"ult_{index}"))
+            for index in range(1, member_count + 1)
+        )
+
     def _find_battle_ult(self, feature: str):
         """根据本次队伍人数，将终结技模板映射到实际技能框。"""
         boxes = self._battle_feature_boxes("ult")
@@ -1204,7 +1221,7 @@ class BattleMixin(BaseEfTask):
         start_time = self.active_time()
         deadline = start_time + 420
         last_battle_time = None
-        sleep_time = self.get_battle_config("进入战斗后的初始等待时间", 3)
+        sleep_time = self.get_battle_config(KEY_BATTLE_INITIAL_WAIT, 3)
 
         while True:
             # 全局超时保护

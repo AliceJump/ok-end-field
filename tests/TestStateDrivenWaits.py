@@ -459,6 +459,33 @@ class TestStateDrivenWaits(unittest.TestCase):
             )
         )
 
+    def test_all_ultimate_ready_probe_reuses_current_team_slot_mapping(self):
+        task = type("UltReadyHarness", (), {})()
+        task._battle_member_count = 3
+        calls = []
+        task._find_battle_ult = lambda feature: calls.append(feature) or object()
+
+        self.assertTrue(BattleMixin.are_all_battle_ults_ready(task))
+        self.assertEqual(calls, ["ult_1", "ult_2", "ult_3"])
+
+    def test_all_ultimate_ready_probe_stops_on_missing_slot(self):
+        task = type("UltReadyHarness", (), {})()
+        task._battle_member_count = 4
+        calls = []
+        task._find_battle_ult = lambda feature: calls.append(feature) or (
+            None if feature == "ult_3" else object()
+        )
+
+        self.assertFalse(BattleMixin.are_all_battle_ults_ready(task))
+        self.assertEqual(calls, ["ult_1", "ult_2", "ult_3"])
+
+    def test_all_ultimate_ready_probe_requires_known_member_count(self):
+        task = type("UltReadyHarness", (), {})()
+        task._battle_member_count = 0
+        task._find_battle_ult = lambda feature: object()
+
+        self.assertFalse(BattleMixin.are_all_battle_ults_ready(task))
+
     def test_alt_ult_records_release_before_wait_and_team_detection(self):
         task = _UltHarness(ULT_RELEASE_MODE_ALT)
 

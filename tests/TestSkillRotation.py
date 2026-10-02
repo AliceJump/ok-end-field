@@ -10,7 +10,13 @@ from unittest.mock import patch
 
 import pyautogui
 
-from src.core.BattleConfig import KEY_DAMAGE_ROTATION, KEY_SKILL_ALLOWLIST
+from src.core.BattleConfig import (
+    KEY_BATTLE_INITIAL_WAIT,
+    KEY_BATTLE_INITIAL_WAIT_PROTOCOL_ONLY,
+    KEY_DAMAGE_ROTATION,
+    KEY_SKILL_ALLOWLIST,
+    KEY_TIMING_ROTATION,
+)
 from src.core.rotation_ast import normalize_ast
 from src.data.skill_rotation import (
     clear_cache,
@@ -457,6 +463,92 @@ class TestRotateAutoRotationForCurrent(unittest.TestCase):
     def test_already_at_start_returns_original(self):
         sequence = ["2", "ult_2", "normal_12.5"]
         self.assertIs(rotate_auto_rotation_for_current(sequence, 1), sequence)
+
+
+class TestInitialBattleWait(unittest.TestCase):
+    def test_default_wait_still_applies_without_protocol_only_switch(self):
+        from tests.TestConditionalRotation import _FakeTask
+
+        task = _FakeTask({KEY_BATTLE_INITIAL_WAIT: 4})
+        logic = AutoCombatLogic(task)
+
+        self.assertEqual(logic._resolve_initial_wait(None), 4)
+        self.assertFalse(logic.protocol_space_detected)
+
+    def test_protocol_only_wait_uses_all_ultimate_ready_probe(self):
+        from tests.TestConditionalRotation import _FakeTask
+
+        task = _FakeTask(
+            {
+                KEY_BATTLE_INITIAL_WAIT: 4,
+                KEY_BATTLE_INITIAL_WAIT_PROTOCOL_ONLY: True,
+            }
+        )
+        task.are_all_battle_ults_ready = lambda: True
+        task.find_feature = lambda **kwargs: False
+        logic = AutoCombatLogic(task)
+
+        self.assertEqual(logic._resolve_initial_wait(None), 4)
+        self.assertTrue(logic.protocol_space_detected)
+        self.assertTrue(any("终结技全部就绪" in message for message in task.logs))
+
+    def test_protocol_only_wait_skips_normal_battle(self):
+        from tests.TestConditionalRotation import _FakeTask
+
+        task = _FakeTask(
+            {
+                KEY_BATTLE_INITIAL_WAIT: 4,
+                KEY_BATTLE_INITIAL_WAIT_PROTOCOL_ONLY: True,
+            }
+        )
+        task.are_all_battle_ults_ready = lambda: False
+        task.find_feature = lambda **kwargs: False
+        logic = AutoCombatLogic(task)
+
+        self.assertEqual(logic._resolve_initial_wait(None), 0)
+        self.assertFalse(logic.protocol_space_detected)
+
+    @patch("src.tasks.onetime.AutoCombatLogic.TimedCombatLogic")
+    def test_timing_mode_receives_resolved_configured_wait(self, timed_logic):
+        from tests.TestConditionalRotation import _FakeTask
+
+        task = _FakeTask(
+            {
+                KEY_TIMING_ROTATION: True,
+                KEY_BATTLE_INITIAL_WAIT: 3.5,
+                KEY_BATTLE_INITIAL_WAIT_PROTOCOL_ONLY: False,
+            }
+        )
+        timed_logic.return_value.run.return_value = True
+
+        self.assertTrue(AutoCombatLogic(task).run())
+        timed_logic.return_value.run.assert_called_once_with(
+            start_sleep=3.5,
+            no_battle=False,
+            deadline=None,
+        )
+
+    @patch("src.tasks.onetime.AutoCombatLogic.TimedCombatLogic")
+    def test_timing_mode_protocol_only_wait_skips_non_protocol_combat(self, timed_logic):
+        from tests.TestConditionalRotation import _FakeTask
+
+        task = _FakeTask(
+            {
+                KEY_TIMING_ROTATION: True,
+                KEY_BATTLE_INITIAL_WAIT: 3,
+                KEY_BATTLE_INITIAL_WAIT_PROTOCOL_ONLY: True,
+            }
+        )
+        task.are_all_battle_ults_ready = lambda: False
+        task.find_feature = lambda **kwargs: False
+        timed_logic.return_value.run.return_value = True
+
+        self.assertTrue(AutoCombatLogic(task).run())
+        timed_logic.return_value.run.assert_called_once_with(
+            start_sleep=0.0,
+            no_battle=False,
+            deadline=None,
+        )
 
 
 class TestAutoRotationCombat(unittest.TestCase):
