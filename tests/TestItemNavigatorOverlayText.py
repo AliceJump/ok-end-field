@@ -83,11 +83,11 @@ def _config_type_literals():
             isinstance(target, ast.Subscript)
             and isinstance(target.value, ast.Attribute)
             and target.value.attr == "config_type"
-            and isinstance(target.slice, ast.Constant)
         ):
             continue
         try:
-            entries[target.slice.value] = _task_literal_eval(node.value, tree)
+            key = _task_literal_eval(target.slice, tree)
+            entries[key] = _task_literal_eval(node.value, tree)
         except (TypeError, ValueError):
             continue
     return entries
