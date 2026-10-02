@@ -285,16 +285,17 @@ class TestTimedCombat(unittest.TestCase):
         self.assertIsNone(_measure_combat_too_far_text_band(short))
 
     def test_too_far_feedback_requires_two_stable_band_frames_without_ocr(self):
-        frame = self._synthetic_too_far_band()
+        band = self._synthetic_too_far_band()
+        current = {"frame": band}
         calls = []
 
         class CropBox:
             def crop_frame(self, _frame):
-                return frame
+                return current["frame"]
 
         class Harness:
             def __init__(self):
-                self.frame = frame
+                self.frame = band
                 self.now = 0.0
 
             def box_of_screen(self, *args, **kwargs):
@@ -316,6 +317,47 @@ class TestTimedCombat(unittest.TestCase):
             (0.4703, 0.1593, 0.5266, 0.1815),
         )
         self.assertEqual(calls[0][1]["name"], "combat_action_feedback")
+
+    def test_too_far_feedback_ignores_stale_band_until_it_clears_and_reappears(self):
+        band = self._synthetic_too_far_band()
+        blank = np.zeros_like(band)
+        current = {"frame": band}
+
+        class CropBox:
+            def crop_frame(self, _frame):
+                return current["frame"]
+
+        class Harness:
+            def __init__(self):
+                self.frame = band
+                self.now = 0.0
+
+            def box_of_screen(self, *args, **kwargs):
+                return CropBox()
+
+            def active_time(self):
+                return self.now
+
+        harness = Harness()
+        BattleMixin.arm_combat_action_feedback_probe(harness)
+
+        harness.now = 0.05
+        self.assertIsNone(BattleMixin.probe_combat_action_block_reason(harness))
+        harness.now = 0.10
+        self.assertIsNone(BattleMixin.probe_combat_action_block_reason(harness))
+
+        current["frame"] = blank
+        harness.now = 0.15
+        self.assertIsNone(BattleMixin.probe_combat_action_block_reason(harness))
+
+        current["frame"] = band
+        harness.now = 0.20
+        self.assertIsNone(BattleMixin.probe_combat_action_block_reason(harness))
+        harness.now = 0.25
+        self.assertEqual(
+            BattleMixin.probe_combat_action_block_reason(harness),
+            ActionBlockReason.TOO_FAR,
+        )
 
     def test_too_far_feedback_cancels_unstarted_skill_and_calls_recovery_hook(self):
         task = FakeTask()
@@ -362,6 +404,7 @@ class TestTimedCombat(unittest.TestCase):
         task.points = 0
         logic.step()
         self.assertEqual(logic.cursor, 1)
+        self.assertIsNone(logic.last_action_attempt)
         task.now = logic.started + max(profile.actionable for profile in logic.active) + 0.01
         logic.step()
         self.assertEqual(task.keys, ["1"])
