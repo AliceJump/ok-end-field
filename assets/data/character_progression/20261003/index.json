@@ -1,0 +1,470 @@
+{
+  "characters_sha256": "376472bb3a1e19e1df9a0de3702f91ef06a9fabc189e5faba4a2061d13b97dc6",
+  "counts": {
+    "characters": 32,
+    "description_resource_clauses": 62,
+    "description_unresolved": 0,
+    "potentials": 160,
+    "resource_action_occurrences": 481,
+    "resource_records": 325,
+    "supplement_records": 26,
+    "talent_ranks": 127
+  },
+  "description_resource_review_sha256": "2f3cdaf800c22f9905dfc3c846f1b487ee246f4a0eac08e7c581bb7a4cd20a0c",
+  "endmin_reward_scan_sha256": "3ac58af86f5736349f1db4d441bd7f0b38c264bcfe7c7e3eae474a5875d5e1ce",
+  "input_sha256": {
+    "CharGrowthTable": "b9dea29609a8de50a410424e6b0a8c0228e52ba5a9b3bc7c66824f0f32ac34e7",
+    "CharWpnRecommendTable": "c9ed73c6438caffaedec252f4f5ccfdc5a7b7ff6b2c4da38153c10f100ac2023",
+    "CharacterPotentialTable": "fa3af49b8bc721ddfd0a16ba23b20402bbd5d2d88178e65f74596ad2b4f628da",
+    "ItemTable": "1740693b8da01fc0743b4f818689985daf98483fb450f804f48e8d93fb67652a",
+    "PotentialTalentEffectTable": "51a8aac73f574184d961fef6f0069bd4b0106461de75b080d4e52e6786189a82",
+    "RewardTable": "e9db78d19c8c7e18daaff52616858d5894be9b803c6b800b43e1b4fc21ad1386",
+    "WeaponBasicTable": "8590e670dfbc7361f4da043414799e34ffa566156dffa3ef2d327e0b15280bbc"
+  },
+  "native_inputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "raw_sha256": "66836496863bca8f741a28415fdef2e6fb5823af9794c1cf4ab368fb09099fe6",
+  "resource_audit_sha256": "abfe0284a45482b50f4b182aa6f87f61081127fb821dff360f0b0320bd8bf51e",
+  "resource_modifier_rules_sha256": "ebef7020f13a48e0b6000e71be3c6b17bdbc8ec582b16d2c1e8fe10d94035c0d",
+  "schema_version": 1,
+  "semantic_rules_sha256": "afef17e1e138ce45b5f6410981a6a901d2a477d30f55153f89bc9ca42af879bd",
+  "snapshot_date": "2026-10-03",
+  "supplement_sha256": "bc69d5017b44e9d64d1bde546676187326aed9270e5ca493f3de8415e7244252",
+  "supplement_verification": {
+    "buff_chr_0004_pelica_potential_3": {
+      "byte_identical": true,
+      "bytes": 630,
+      "md5": "106af53ff280f421d02a314a4af008d6",
+      "sha256": "0a3fe68f1f790bbbe294037b2163fd0c6bd52b703beaf416a9553af166d08e79"
+    },
+    "buff_chr_0004_pelica_potential_3_atkup": {
+      "byte_identical": true,
+      "bytes": 347,
+      "md5": "499551134c3acabe24d609a44c367fb6",
+      "sha256": "ed90d3418bac21e95b335cb782eccc3a284dbf987287f02b64d98027f3f543ce"
+    },
+    "buff_chr_0007_ikut_finish_count_p5": {
+      "byte_identical": true,
+      "bytes": 544,
+      "md5": "6b1c114cd204a2c90e0ab379615177c1",
+      "sha256": "182392b68b8ecdf10ebb10d50a8144e3d9f1092a9b66a77a98f5cd21e105018d"
+    },
+    "buff_chr_0007_ikut_talent_2": {
+      "byte_identical": true,
+      "bytes": 501,
+      "md5": "9bb8b68c1a62afcd9bf4503f16b7bb9b",
+      "sha256": "676dc3b5d42d142ceb15c4fdd0a5c49b6082eec1e6b0f45873d71b4bb84b1fb2"
+    },
+    "buff_chr_0007_ikut_talent_2_immune": {
+      "byte_identical": true,
+      "bytes": 263,
+      "md5": "845a57746033f757939cb100d84e055e",
+      "sha256": "bf0d6b092700e13680e9cc770dbaedc1d71c371761a83074c6ee9557e4b5c14a"
+    },
+    "buff_chr_0014_aurora_talent_0": {
+      "byte_identical": true,
+      "bytes": 433,
+      "md5": "ba1251210b4203c16b6ff1aea6bf0308",
+      "sha256": "f0dcc9155b15962f05e411b9d524d8fffcbf46c9fbcf0b89add3851376e15321"
+    },
+    "buff_chr_0019_karin_potential_1": {
+      "byte_identical": true,
+      "bytes": 601,
+      "md5": "4f447b07b39ac5c489857c727ab263f1",
+      "sha256": "3966ff8d7fd6d42893c0538e03bc2773f898b1802d53c2ed683334063fc89d92"
+    },
+    "buff_chr_0019_karin_potential_1_1": {
+      "byte_identical": true,
+      "bytes": 369,
+      "md5": "f0fea2827f6d55c536e5aa79fcee19dc",
+      "sha256": "c1b7ff8b1806dfb13b808ba679ea1f5c722c2c90b505aded0990d47da1458b1d"
+    },
+    "buff_chr_0020_meurs_potential_1": {
+      "byte_identical": true,
+      "bytes": 2200,
+      "md5": "9f255f1307f5d387eb276271fc0f2976",
+      "sha256": "ba8ea7621ca521a48e72a69abd183f59f12e3feedfee554b84d896e11919ffe7"
+    },
+    "buff_chr_0020_meurs_talent_0": {
+      "byte_identical": true,
+      "bytes": 459,
+      "md5": "140f00cc5ff8a348100dad2f973aed65",
+      "sha256": "71b985ffbf7536afa02434e981a403f98bd0996059102187d360e56610ad2a79"
+    },
+    "buff_chr_0021_whiten_potential_5": {
+      "byte_identical": true,
+      "bytes": 779,
+      "md5": "3f877a09c33b3b720f8814c1a31edf4b",
+      "sha256": "65a04d3797522e636c75f930bd35740fda55c04213331c6fefa582f7fcb6b1aa"
+    },
+    "buff_chr_0021_whiten_potential_5_inaura": {
+      "byte_identical": true,
+      "bytes": 804,
+      "md5": "9527c6f74e5b17e5d09f5ca37c0b184d",
+      "sha256": "dc1f3b458a49287a62c11149b34b334dcb48c45bfb224d143b23338248e4c992"
+    },
+    "buff_chr_0021_whiten_talent_0": {
+      "byte_identical": true,
+      "bytes": 514,
+      "md5": "0e3af7398b3cdea473ab1f718254d62e",
+      "sha256": "ba0c58731b51ce459020c4492cb2b85b04ef598681b9291ddbe122092c161ce1"
+    },
+    "buff_chr_0021_whiten_talent_1": {
+      "byte_identical": true,
+      "bytes": 333,
+      "md5": "7f8719b84fc3a57b86cbb7fa6c9fd13a",
+      "sha256": "c6a4f9346401b94f9762e675cc736c7fb1a1d9605dd45719cfbc9f847a61f74f"
+    },
+    "buff_chr_0022_bounda_potential_5_auro": {
+      "byte_identical": true,
+      "bytes": 795,
+      "md5": "c5a2045a4dc21028db7902abd023adaf",
+      "sha256": "8e73967d7a2dea297d1b66a5fa647f8263c1b0da4cb08ae5f43d8cb1e9e1ce8b"
+    },
+    "buff_chr_0022_bounda_potential_5_cd": {
+      "byte_identical": true,
+      "bytes": 698,
+      "md5": "2a35a955439a43c07e6a1b46ee06d099",
+      "sha256": "a5f54a289a7058ae6fd1b5635a8154ab389a5280afdbdb21fb630e72cfe12124"
+    },
+    "buff_chr_0024_deepfin_talent_1": {
+      "byte_identical": true,
+      "bytes": 1282,
+      "md5": "80f2ef36d0e3a003e27eccbc2d268cf6",
+      "sha256": "7e1bfb423f371876ba480e38b57fd654253637fc351e65a23f74d521f1aad6b4"
+    },
+    "buff_chr_0024_deepfin_talent_1_auro": {
+      "byte_identical": true,
+      "bytes": 1401,
+      "md5": "e1f67b1a61c713bf322db0d9cf122ebd",
+      "sha256": "47fbd873e125e4373fe55e3514c691814ed867c276dc4b05139f9823c2454181"
+    },
+    "buff_chr_0026_lastrite_talent_1": {
+      "byte_identical": true,
+      "bytes": 785,
+      "md5": "24eeb16eb774c559770281e6d78e01be",
+      "sha256": "c82601189f32fd8c205a431ec0cbb12dc554cb7be01c643b38cff069cead3b58"
+    },
+    "buff_chr_0026_lastrite_talent_1_vul": {
+      "byte_identical": true,
+      "bytes": 690,
+      "md5": "da87084f85b2a022322df118373e57cb",
+      "sha256": "03fc83e6b22412d69e33252af75f5eac9504f169015de15454ff733f837a8a4a"
+    },
+    "buff_chr_0030_zhuangfy_potential1": {
+      "byte_identical": true,
+      "bytes": 462,
+      "md5": "c036890cf74efbd679b5a34620768e86",
+      "sha256": "c25819d75c850f176b978330d179693909e7312e059682b94c72eacd85f74cea"
+    },
+    "buff_chr_0030_zhuangfy_potential5": {
+      "byte_identical": true,
+      "bytes": 487,
+      "md5": "c9ecc5bcbc4e6e9da433609217b16d5e",
+      "sha256": "b879b49284075244eb591b56c1277330f3c2b68775ecf1a00c1642937703f80b"
+    },
+    "buff_chr_0034_typhoea_potential_decrease_sheildcd": {
+      "byte_identical": true,
+      "bytes": 285,
+      "md5": "87e15285c9e048d0af53a3e91dfe1683",
+      "sha256": "ce0d7623a6a07fdd9aae338fecdb6beee5793e712a5d9584cc1c352e04beb149"
+    },
+    "buff_chr_0034_typhoea_talent_linken_sphere": {
+      "byte_identical": true,
+      "bytes": 2397,
+      "md5": "1e1d0e615a8f259b1dbd83e96e5c8c39",
+      "sha256": "0679d5703a7b19fbda6e993491e659be8da37d8d62555f6c04a7f9479914d689"
+    },
+    "buff_chr_0034_typhoea_talent_linken_sphere_cd": {
+      "byte_identical": true,
+      "bytes": 404,
+      "md5": "a6d6eeabc8a428b0917c7c4410118ce2",
+      "sha256": "f92dcd52288d241fb160b9839981cbbfbf4fece78fc9fca24ff89cacd3b9ef6e"
+    },
+    "buff_chr_0035_liino_potential": {
+      "byte_identical": true,
+      "bytes": 885,
+      "md5": "8c8a96fcd4bae0ba188feb15da2c7a38",
+      "sha256": "5999898d15f4d83d134f309928e0f5d6328ca14feee3bbb8497d424c836badb3"
+    }
+  },
+  "tables_sha256": "7aa3a06bbc6810cea9e8ee6c8605f98eb1392e900e480f3ecdb8c8eed4a73730",
+  "texts_sha256": "4694e6c7514700e6b874653b7cb84ed1048748cae235b8064bf9f3241b26904c",
+  "timing_snapshot": "../../skill_timings/20261002",
+  "vfs_sources": {
+    "Json/BuffData/buff_chr_0004_pelica_potential_3.json": {
+      "bucket": "775A31D1",
+      "bytes": 630,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 308604,
+      "md5": "106AF53FF280F421D02A314A4AF008D6",
+      "sha256": "0a3fe68f1f790bbbe294037b2163fd0c6bd52b703beaf416a9553af166d08e79"
+    },
+    "Json/BuffData/buff_chr_0004_pelica_potential_3_atkup.json": {
+      "bucket": "775A31D1",
+      "bytes": 347,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 121471,
+      "md5": "499551134C3ACABE24D609A44C367FB6",
+      "sha256": "ed90d3418bac21e95b335cb782eccc3a284dbf987287f02b64d98027f3f543ce"
+    },
+    "Json/BuffData/buff_chr_0007_ikut_finish_count_p5.json": {
+      "bucket": "775A31D1",
+      "bytes": 544,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 236570,
+      "md5": "6B1C114CD204A2C90E0AB379615177C1",
+      "sha256": "182392b68b8ecdf10ebb10d50a8144e3d9f1092a9b66a77a98f5cd21e105018d"
+    },
+    "Json/BuffData/buff_chr_0007_ikut_talent_2.json": {
+      "bucket": "775A31D1",
+      "bytes": 501,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 197536,
+      "md5": "9BB8B68C1A62AFCD9BF4503F16B7BB9B",
+      "sha256": "676dc3b5d42d142ceb15c4fdd0a5c49b6082eec1e6b0f45873d71b4bb84b1fb2"
+    },
+    "Json/BuffData/buff_chr_0007_ikut_talent_2_immune.json": {
+      "bucket": "775A31D1",
+      "bytes": 263,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 51239,
+      "md5": "845A57746033F757939CB100D84E055E",
+      "sha256": "bf0d6b092700e13680e9cc770dbaedc1d71c371761a83074c6ee9557e4b5c14a"
+    },
+    "Json/BuffData/buff_chr_0014_aurora_talent_0.json": {
+      "bucket": "775A31D1",
+      "bytes": 433,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 165113,
+      "md5": "BA1251210B4203C16B6FF1AEA6BF0308",
+      "sha256": "f0dcc9155b15962f05e411b9d524d8fffcbf46c9fbcf0b89add3851376e15321"
+    },
+    "Json/BuffData/buff_chr_0019_karin_potential_1.json": {
+      "bucket": "775A31D1",
+      "bytes": 601,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 287010,
+      "md5": "4F447B07B39AC5C489857C727AB263F1",
+      "sha256": "3966ff8d7fd6d42893c0538e03bc2773f898b1802d53c2ed683334063fc89d92"
+    },
+    "Json/BuffData/buff_chr_0019_karin_potential_1_1.json": {
+      "bucket": "775A31D1",
+      "bytes": 369,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 135694,
+      "md5": "F0FEA2827F6D55C536E5AA79FCEE19DC",
+      "sha256": "c1b7ff8b1806dfb13b808ba679ea1f5c722c2c90b505aded0990d47da1458b1d"
+    },
+    "Json/BuffData/buff_chr_0020_meurs_potential_1.json": {
+      "bucket": "775A31D1",
+      "bytes": 2200,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 1231374,
+      "md5": "9F255F1307F5D387EB276271FC0F2976",
+      "sha256": "ba8ea7621ca521a48e72a69abd183f59f12e3feedfee554b84d896e11919ffe7"
+    },
+    "Json/BuffData/buff_chr_0020_meurs_talent_0.json": {
+      "bucket": "775A31D1",
+      "bytes": 459,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 177973,
+      "md5": "140F00CC5FF8A348100DAD2F973AED65",
+      "sha256": "71b985ffbf7536afa02434e981a403f98bd0996059102187d360e56610ad2a79"
+    },
+    "Json/BuffData/buff_chr_0021_whiten_potential_5.json": {
+      "bucket": "775A31D1",
+      "bytes": 779,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 378887,
+      "md5": "3F877A09C33B3B720F8814C1A31EDF4B",
+      "sha256": "65a04d3797522e636c75f930bd35740fda55c04213331c6fefa582f7fcb6b1aa"
+    },
+    "Json/BuffData/buff_chr_0021_whiten_potential_5_inaura.json": {
+      "bucket": "775A31D1",
+      "bytes": 804,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 385199,
+      "md5": "9527C6F74E5B17E5D09F5CA37C0B184D",
+      "sha256": "dc1f3b458a49287a62c11149b34b334dcb48c45bfb224d143b23338248e4c992"
+    },
+    "Json/BuffData/buff_chr_0021_whiten_talent_0.json": {
+      "bucket": "775A31D1",
+      "bytes": 514,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 211743,
+      "md5": "0E3AF7398B3CDEA473AB1F718254D62E",
+      "sha256": "ba0c58731b51ce459020c4492cb2b85b04ef598681b9291ddbe122092c161ce1"
+    },
+    "Json/BuffData/buff_chr_0021_whiten_talent_1.json": {
+      "bucket": "775A31D1",
+      "bytes": 333,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 108880,
+      "md5": "7F8719B84FC3A57B86CBB7FA6C9FD13A",
+      "sha256": "c6a4f9346401b94f9762e675cc736c7fb1a1d9605dd45719cfbc9f847a61f74f"
+    },
+    "Json/BuffData/buff_chr_0022_bounda_potential_5_auro.json": {
+      "bucket": "775A31D1",
+      "bytes": 795,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 383602,
+      "md5": "C5A2045A4DC21028DB7902ABD023ADAF",
+      "sha256": "8e73967d7a2dea297d1b66a5fa647f8263c1b0da4cb08ae5f43d8cb1e9e1ce8b"
+    },
+    "Json/BuffData/buff_chr_0022_bounda_potential_5_cd.json": {
+      "bucket": "775A31D1",
+      "bytes": 698,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 345170,
+      "md5": "2A35A955439A43C07E6A1B46EE06D099",
+      "sha256": "a5f54a289a7058ae6fd1b5635a8154ab389a5280afdbdb21fb630e72cfe12124"
+    },
+    "Json/BuffData/buff_chr_0024_deepfin_talent_1.json": {
+      "bucket": "775A31D1",
+      "bytes": 1282,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 754807,
+      "md5": "80F2EF36D0E3A003E27ECCBC2D268CF6",
+      "sha256": "7e1bfb423f371876ba480e38b57fd654253637fc351e65a23f74d521f1aad6b4"
+    },
+    "Json/BuffData/buff_chr_0024_deepfin_talent_1_auro.json": {
+      "bucket": "775A31D1",
+      "bytes": 1401,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 821321,
+      "md5": "E1F67B1A61C713BF322DB0D9CF122EBD",
+      "sha256": "47fbd873e125e4373fe55e3514c691814ed867c276dc4b05139f9823c2454181"
+    },
+    "Json/BuffData/buff_chr_0026_lastrite_talent_1.json": {
+      "bucket": "775A31D1",
+      "bytes": 785,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 380446,
+      "md5": "24EEB16EB774C559770281E6D78E01BE",
+      "sha256": "c82601189f32fd8c205a431ec0cbb12dc554cb7be01c643b38cff069cead3b58"
+    },
+    "Json/BuffData/buff_chr_0026_lastrite_talent_1_vul.json": {
+      "bucket": "775A31D1",
+      "bytes": 690,
+      "chunk_md5": "E014C293AEB2F50DDF96E92FF5CBE327",
+      "file_off": 342404,
+      "md5": "DA87084F85B2A022322DF118373E57CB",
+      "sha256": "03fc83e6b22412d69e33252af75f5eac9504f169015de15454ff733f837a8a4a"
+    },
+    "Json/BuffData/buff_chr_0030_zhuangfy_potential1.json": {
+      "bucket": "775A31D1",
+      "bytes": 462,
+      "chunk_md5": "45185C351764CE173F7F5B67EF858047",
+      "file_off": 21103,
+      "md5": "C036890CF74EFBD679B5A34620768E86",
+      "sha256": "c25819d75c850f176b978330d179693909e7312e059682b94c72eacd85f74cea"
+    },
+    "Json/BuffData/buff_chr_0030_zhuangfy_potential5.json": {
+      "bucket": "775A31D1",
+      "bytes": 487,
+      "chunk_md5": "45185C351764CE173F7F5B67EF858047",
+      "file_off": 22515,
+      "md5": "C9ECC5BCBC4E6E9DA433609217B16D5E",
+      "sha256": "b879b49284075244eb591b56c1277330f3c2b68775ecf1a00c1642937703f80b"
+    },
+    "Json/BuffData/buff_chr_0034_typhoea_potential_decrease_sheildcd.json": {
+      "bucket": "775A31D1",
+      "bytes": 285,
+      "chunk_md5": "187AD4A91E103D54A30B86BA65BB53D0",
+      "file_off": 14497,
+      "md5": "87E15285C9E048D0AF53A3E91DFE1683",
+      "sha256": "ce0d7623a6a07fdd9aae338fecdb6beee5793e712a5d9584cc1c352e04beb149"
+    },
+    "Json/BuffData/buff_chr_0034_typhoea_talent_linken_sphere.json": {
+      "bucket": "775A31D1",
+      "bytes": 2397,
+      "chunk_md5": "187AD4A91E103D54A30B86BA65BB53D0",
+      "file_off": 202726,
+      "md5": "1E1D0E615A8F259B1DBD83E96E5C8C39",
+      "sha256": "0679d5703a7b19fbda6e993491e659be8da37d8d62555f6c04a7f9479914d689"
+    },
+    "Json/BuffData/buff_chr_0034_typhoea_talent_linken_sphere_cd.json": {
+      "bucket": "775A31D1",
+      "bytes": 404,
+      "chunk_md5": "187AD4A91E103D54A30B86BA65BB53D0",
+      "file_off": 25992,
+      "md5": "A6D6EEABC8A428B0917C7C4410118CE2",
+      "sha256": "f92dcd52288d241fb160b9839981cbbfbf4fece78fc9fca24ff89cacd3b9ef6e"
+    },
+    "Json/BuffData/buff_chr_0035_liino_potential.json": {
+      "bucket": "775A31D1",
+      "bytes": 885,
+      "chunk_md5": "187AD4A91E103D54A30B86BA65BB53D0",
+      "file_off": 87000,
+      "md5": "8C8A96FCD4BAE0BA188FEB15DA2C7A38",
+      "sha256": "5999898d15f4d83d134f309928e0f5d6328ca14feee3bbb8497d424c836badb3"
+    },
+    "TableCfg/CharGrowthTable.bytes": {
+      "bucket": "42A8FCA6",
+      "bytes": 300028,
+      "chunk_md5": "85212AE8250DB969A03D7C3BCF007B92",
+      "file_off": 587668,
+      "md5": "D6136D85E560B351C31160937C924897",
+      "sha256": "77b09117520fd31dc81d5bb0c05eb62d502b5914e1cefd7f7de8128391961afc"
+    },
+    "TableCfg/CharWpnRecommendTable.bytes": {
+      "bucket": "42A8FCA6",
+      "bytes": 3888,
+      "chunk_md5": "85212AE8250DB969A03D7C3BCF007B92",
+      "file_off": 33032,
+      "md5": "E902F0FD366567461AA6BDF7DC9712CB",
+      "sha256": "8624c60fde74c901a4b09a2383ab3e58b97ad65ecc1fbfdb9f2284f7a7c673e6"
+    },
+    "TableCfg/CharacterPotentialTable.bytes": {
+      "bucket": "42A8FCA6",
+      "bytes": 22504,
+      "chunk_md5": "85212AE8250DB969A03D7C3BCF007B92",
+      "file_off": 147180,
+      "md5": "9F51C64B909874FB5F3135945B0344EE",
+      "sha256": "f78260f122d24dc560dece753b6447a9c366b0279ddb8222e296a3b1b9b09cd9"
+    },
+    "TableCfg/I18nTextTable_CN.bytes": {
+      "bucket": "42A8FCA6",
+      "bytes": 9513700,
+      "chunk_md5": "5A335206B0AE4886177F824C1558557A",
+      "file_off": 0,
+      "md5": "BE13DE555D7C0812A322FB8B364F1961",
+      "sha256": "fca1a4ea03ccd38dd20c664e5c4efc53178cb4e9df722c1ebba10e37f4426ea1"
+    },
+    "TableCfg/ItemTable.bytes": {
+      "bucket": "42A8FCA6",
+      "bytes": 659740,
+      "chunk_md5": "DB4A19150AB04D4E62C4B96B3A596971",
+      "file_off": 691340,
+      "md5": "57ACA9E85E99E9CF29EF8B1F1B0C52EB",
+      "sha256": "e2c6aab73a489d2687bfacbf3fb0cbc60de6269db7c21981d90de49e49c247ad"
+    },
+    "TableCfg/PotentialTalentEffectTable.bytes": {
+      "bucket": "42A8FCA6",
+      "bytes": 120916,
+      "chunk_md5": "85212AE8250DB969A03D7C3BCF007B92",
+      "file_off": 466752,
+      "md5": "32CC796C27B3D51051AD682298D2AF44",
+      "sha256": "7d07adaf24927937b0392da645083bb85a385ee59296ccfd9b0a629224948cea"
+    },
+    "TableCfg/RewardTable.bytes": {
+      "bucket": "42A8FCA6",
+      "bytes": 916076,
+      "chunk_md5": "DB4A19150AB04D4E62C4B96B3A596971",
+      "file_off": 1351080,
+      "md5": "73937771B2962F673CC04CF7816E88DF",
+      "sha256": "0f2c0e6b511537d4c9822cd2fcfeb864c1f62878613f31575ab335ad78273851"
+    },
+    "TableCfg/WeaponBasicTable.bytes": {
+      "bucket": "42A8FCA6",
+      "bytes": 17940,
+      "chunk_md5": "85212AE8250DB969A03D7C3BCF007B92",
+      "file_off": 129240,
+      "md5": "6DDAEE5E042E91A83EE6A83218D45823",
+      "sha256": "9ea7a1f8b28bb86b59326378694c890bcf065573f35f9724819c72c3f1f9a448"
+    }
+  }
+}

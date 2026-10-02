@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "lifeng_skill",
@@ -166,9 +167,7 @@
                     "name": "不破防时施加物理脆弱",
                     "trigger_condition": {
                         "text": "最后一击命中的敌人若不处于破防状态则额外施加物理脆弱",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "enhancement_effect": "物理脆弱",
                     "enhancement_visible_pulse": false,
@@ -177,7 +176,8 @@
                             "effect_id": "VULN_PHYSICAL",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
                         }
                     ]
                 }
@@ -332,7 +332,15 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [],
+            "effects": [
+                {
+                    "effect_id": "STACK_COMBO",
+                    "value": 1,
+                    "duration": 20,
+                    "target": "team",
+                    "count": 1
+                }
+            ],
             "enhancements": [
                 {
                     "name": "忿怒相",
@@ -341,7 +349,7 @@
                         "effects": {
                             "any": [
                                 "VULN_PHYSICAL",
-                                "STATUS_SHRED"
+                                "STATUS_SHATTER"
                             ]
                         }
                     },
@@ -491,7 +499,8 @@
                             "effect_id": "TRIGGER_ADDITIONAL",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
                         }
                     ]
                 }

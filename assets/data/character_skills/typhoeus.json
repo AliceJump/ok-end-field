@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "typhoeus_skill",
@@ -176,6 +177,13 @@
                     "duration": null,
                     "target": "self",
                     "count": 1
+                },
+                {
+                    "effect_id": "STACK_AIR_ATTACKS",
+                    "value": 5,
+                    "duration": null,
+                    "target": "self",
+                    "count": 5
                 }
             ],
             "enhancements": [
@@ -204,17 +212,24 @@
                             "target": "self",
                             "count": 1
                         }
+                    ],
+                    "evaluation_point": "on_air_attack_hit",
+                    "resource_changes": [
+                        {
+                            "resource": "ultimate_energy",
+                            "target": "self",
+                            "trigger": "每次空中普攻实际消耗目标自然附着后",
+                            "kind": "fixed",
+                            "amount": 12,
+                            "count_basis": "consumed"
+                        }
                     ]
                 },
                 {
                     "name": "消耗猎矢强化射击",
                     "trigger_condition": {
-                        "text": "自身存有猎矢时",
-                        "effects": {
-                            "all": [
-                                "STACK_HUNTING_ARROW"
-                            ]
-                        }
+                        "text": "空中普攻且自身存有猎矢；主控第五次普攻无需消费猎矢",
+                        "effects": null
                     },
                     "enhancement_effect": "强化射击",
                     "enhancement_visible_pulse": false,
@@ -225,8 +240,54 @@
                             "duration": null,
                             "target": "self",
                             "count": -1
+                        },
+                        {
+                            "effect_id": "STATUS_SPELL_BURST",
+                            "subject_effect_id": "ATTACH_NATURAL",
+                            "target": "enemy",
+                            "value": null,
+                            "duration": null,
+                            "count": 1
                         }
-                    ]
+                    ],
+                    "evaluation_point": "on_air_attack"
+                },
+                {
+                    "name": "空中普攻次数消费",
+                    "trigger_condition": {
+                        "text": "每次成功施放空中普攻；一次最多攻击两目标，只消费一次次数",
+                        "effects": null
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STACK_AIR_ATTACKS",
+                            "value": 1,
+                            "duration": null,
+                            "target": "self",
+                            "count": -1
+                        }
+                    ],
+                    "resource_changes": [],
+                    "evaluation_point": "on_air_attack"
+                },
+                {
+                    "name": "第五次免费强化重击",
+                    "trigger_condition": {
+                        "text": "主控且本轮剩余空中普攻次数为1时，本次攻击视为重击和强化射击，无需消费猎矢",
+                        "effects": null
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_SPELL_BURST",
+                            "subject_effect_id": "ATTACH_NATURAL",
+                            "target": "enemy",
+                            "value": null,
+                            "duration": null,
+                            "count": 1
+                        }
+                    ],
+                    "resource_changes": [],
+                    "evaluation_point": "on_air_attack"
                 }
             ],
             "rank_stats": {
@@ -381,7 +442,7 @@
             "spirit_cost": 0,
             "effects": [
                 {
-                    "effect_id": "DEBUFF_SPEED_DOWN",
+                    "effect_id": "STATUS_SLOW",
                     "value": 1,
                     "duration": null,
                     "target": "enemy",
@@ -393,6 +454,13 @@
                     "duration": null,
                     "target": "enemy",
                     "count": 1
+                },
+                {
+                    "effect_id": "STACK_AIR_ATTACKS",
+                    "value": 5,
+                    "duration": null,
+                    "target": "self",
+                    "count": 5
                 }
             ],
             "enhancements": [
@@ -402,7 +470,10 @@
                         "text": "当自身启示已满时可以发动",
                         "effects": {
                             "all": [
-                                "STACK_SIGN"
+                                {
+                                    "effect_id": "STACK_SIGN",
+                                    "min_count": 8
+                                }
                             ]
                         }
                     },
@@ -561,7 +632,16 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "trigger": "连携技成功施放",
+                    "kind": "fixed",
+                    "amount": 10
+                }
+            ]
         },
         {
             "skill_id": "typhoeus_ultimate",
@@ -589,6 +669,13 @@
                     "duration": null,
                     "target": "self",
                     "count": 1
+                },
+                {
+                    "effect_id": "STACK_AIR_ATTACKS",
+                    "value": 5,
+                    "duration": null,
+                    "target": "self",
+                    "count": 5
                 }
             ],
             "enhancements": [],

@@ -118,6 +118,7 @@ def _parse_stat_clause(sentence: str) -> dict | None:
         (r"连携技冷却缩减\+(\d+(?:\.\d+)?)%", "combo_cd"),
         (r"失衡效率加成\+(\d+(?:\.\d+)?)%", "stagger_eff"),
         (r"最大生命值\+(\d+(?:\.\d+)?)%", "hp_pct"),
+        (r"副能力\+(\d+(?:\.\d+)?)%", "secondary"),
     ]
     for pat, key in patterns:
         m = re.fullmatch(pat, s)
@@ -273,6 +274,9 @@ def _skill_multiplier(skill: dict) -> tuple[float, float, list[str]]:
             continue
         last = str(values[-1])
         flat_label = label.replace("/", "").replace(" ", "")
+        if "受击后" in flat_label:
+            conditional.append(f"{label}: {last}（需要施放过程中受到伤害）")
+            continue
         if "消耗" in label and ("倍率" in label or "伤害" in label):
             # 消耗型伤害行（如「消耗每层附着 / 额外伤害倍率」）：按消耗层数结算，
             # 触发条件通常保证层数供给，但每层倍率口径（平叠 vs ×(1+异常等级)）
@@ -297,7 +301,7 @@ def _skill_multiplier(skill: dict) -> tuple[float, float, list[str]]:
                 stagger += nums[-1]
             continue
         if "倍率" in label or "伤害" in label or "攻击" in label:
-            if "处决" in flat_label or "终结技期间" in flat_label:
+            if "处决" in flat_label or "下落" in flat_label or "终结技期间" in flat_label:
                 conditional.append(f"{label}: {last}")
                 continue
             v = _parse_pct(last)
@@ -492,6 +496,7 @@ def compute_character(
     secondary_total = 0.0
     if secondary and secondary != primary:
         secondary_total = base.get(secondary, 0) + merged.get(f"flat_{secondary}", 0)
+        secondary_total *= 1 + merged.get("pct_secondary", 0) / 100
         trace.append(f"  副能力: {secondary}（官方标注）总值 {secondary_total:.0f}")
     else:
         secondary = None
@@ -531,6 +536,9 @@ def compute_character(
         "heal_eff": merged.get("pct_heal_eff", 0),
         "ult_charge": merged.get("pct_ult_charge", 0),
     }
+    panel[primary] = round(primary_total, 2)
+    if secondary:
+        panel[secondary] = round(secondary_total, 2)
 
     # 技能伤害（A 层裸伤害）
     skill_results = []
@@ -541,7 +549,8 @@ def compute_character(
         bonus = merged.get("pct_all_damage", 0) + merged.get("pct_all_skill_dmg", 0)
         if bucket:
             bonus += merged.get(f"pct_{bucket}", 0)
-        bonus += merged.get(f"pct_elem_{element}", 0)
+        skill_element = skill.get("element") or element
+        bonus += merged.get(f"pct_elem_{skill_element}", 0)
         dmg_mult = 1 + bonus / 100
         non_crit = atk * (mult / 100) * dmg_mult
         crit_expect = non_crit * (1 + crit_rate * crit_dmg)

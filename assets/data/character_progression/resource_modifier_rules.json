@@ -1,0 +1,55 @@
+{
+  "chr_0033_camille_potential_3": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "scope": "recovery",
+      "operation": "multiply",
+      "value": 1.15,
+      "skill_ids": [
+        "chr_0033_camille_combo_skill",
+        "chr_0033_camille_combo_skill_2"
+      ],
+      "trigger": "普通连携锥心之棘和追猎原技力恢复结算时；不单独产生回复",
+      "native_bb_keys": [
+        "atb",
+        "atb_ex"
+      ]
+    }
+  ],
+  "chr_0029_pograni_potential_5": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "scope": "recovery",
+      "operation": "multiply",
+      "value": 1.2,
+      "skill_ids": [
+        "chr_0029_pograni_combo_skill"
+      ],
+      "trigger": "盈月邀击各段原技力恢复结算时；不作用于战技或终结技",
+      "native_bb_keys": [
+        "atb_ratio"
+      ]
+    }
+  ],
+  "chr_0019_karin_talent_1_2": [
+    {
+      "resource": "skill_point",
+      "target": "team",
+      "scope": "recovery",
+      "operation": "multiply",
+      "value": null,
+      "formula": "1 + min(actor.intellect / rate * sub_ratio, max_ratio)",
+      "skill_ids": [
+        "chr_0019_karin_combo_skill"
+      ],
+      "trigger": "快闪冲击每段原技力恢复结算时；参数取同天赋BB，不产生独立回复",
+      "native_bb_keys": [
+        "rate",
+        "sub_ratio",
+        "max_ratio"
+      ]
+    }
+  ]
+}
