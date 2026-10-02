@@ -18,6 +18,13 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
     - `min_reward`: 最低报酬金额（万）。
     """
 
+    CFG_ACCEPT_VALLEY = "接取谷地券"
+    CFG_VALLEY_MIN = "接取谷地券最低金额(万)"
+    CFG_VALLEY_MAX = "接取谷地券最高金额(万)"
+    CFG_ACCEPT_WULING = "接取武陵券"
+    CFG_WULING_MIN = "接取武陵券最低金额(万)"
+    CFG_WULING_MAX = "接取武陵券最高金额(万)"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.name = "接取委托"
@@ -28,19 +35,19 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
 
         self.default_config.update(
             {
-                "接取谷地券": False,
-                "接取谷地券最低金额(万)": 5.0,
-                "接取谷地券最高金额(万)": 40.0,
-                "接取武陵券": True,
-                "接取武陵券最低金额(万)": 5.0,
-                "接取武陵券最高金额(万)": 15.0,
+                self.CFG_ACCEPT_VALLEY: False,
+                self.CFG_VALLEY_MIN: 5.0,
+                self.CFG_VALLEY_MAX: 40.0,
+                self.CFG_ACCEPT_WULING: True,
+                self.CFG_WULING_MIN: 5.0,
+                self.CFG_WULING_MAX: 15.0,
             }
         )
-        self.config_type["接取谷地券"] = {
-            "sub_configs": {True: ["接取谷地券最低金额(万)", "接取谷地券最高金额(万)"]},
+        self.config_type[self.CFG_ACCEPT_VALLEY] = {
+            "sub_configs": {True: [self.CFG_VALLEY_MIN, self.CFG_VALLEY_MAX]},
         }
-        self.config_type["接取武陵券"] = {
-            "sub_configs": {True: ["接取武陵券最低金额(万)", "接取武陵券最高金额(万)"]},
+        self.config_type[self.CFG_ACCEPT_WULING] = {
+            "sub_configs": {True: [self.CFG_WULING_MIN, self.CFG_WULING_MAX]},
         }
         self.validate_unique_sub_config_parents()
 
@@ -138,8 +145,8 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
             self.log_error("未找到‘仓储节点’按钮，任务中止。")
             return
 
-        enable_valley = self.config.get("接取谷地券", False)
-        enable_wuling = self.config.get("接取武陵券", True)
+        enable_valley = self.config.get(self.CFG_ACCEPT_VALLEY, False)
+        enable_wuling = self.config.get(self.CFG_ACCEPT_WULING, True)
         delivery_box = self.wait_ocr(match=self.lang.TakeDeliveryTask.k_ae8fb114, time_out=5)
         if delivery_box:
             self.click(delivery_box[0])
@@ -160,10 +167,10 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         reward_pattern = re.compile(reward_regex, re.I)
 
         # 读取券种配置
-        valley_min = float(self.config.get("接取谷地券最低金额(万)", 5.0))
-        valley_max = float(self.config.get("接取谷地券最高金额(万)", 40.0))
-        wuling_min = float(self.config.get("接取武陵券最低金额(万)", 5.0))
-        wuling_max = float(self.config.get("接取武陵券最高金额(万)", 15.0))
+        valley_min = float(self.config.get(self.CFG_VALLEY_MIN, 5.0))
+        valley_max = float(self.config.get(self.CFG_VALLEY_MAX, 40.0))
+        wuling_min = float(self.config.get(self.CFG_WULING_MIN, 5.0))
+        wuling_max = float(self.config.get(self.CFG_WULING_MAX, 15.0))
 
         ticket_types = []
         if enable_valley:
