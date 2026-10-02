@@ -358,9 +358,11 @@ class TeamPhasePlanner:
         )
 
         if self.state.phase == CombatPhase.CHARGE:
+            if net_sp_cost <= 0:
+                return True
             if is_next:
                 return False
-            return current_sp - max(0.0, net_sp_cost) >= self.active_plan.reserve_floor
+            return current_sp - net_sp_cost >= self.reserve_floor
 
         if self.state.phase == CombatPhase.BURST_READY:
             return is_next or net_sp_cost <= 0
