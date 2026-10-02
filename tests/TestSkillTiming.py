@@ -1,18 +1,20 @@
 import gzip
 import hashlib
 import json
-import re
+import numpy as np
 import tempfile
 import unittest
 from pathlib import Path
-from types import SimpleNamespace
 from unittest.mock import patch
 
 from src.core.BattleConfig import DEFAULT_BATTLE_CONFIG, KEY_TIMING_ROTATION
 from src.data.combat_observation import ActionBlockReason, EnemyPresence
 from src.data.skill_timing import SNAPSHOT, SkillTiming, SkillTimingStore, load_skill_timings
 from src.data.team_phase_planner import CombatPhase, build_team_burst_plans
-from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.mixin.battle_mixin import (
+    BattleMixin,
+    _measure_combat_too_far_text_band,
+)
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 
@@ -264,37 +266,58 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(task.keys, [])
         self.assertEqual(task.mouse[-1], "up")
 
-    def test_too_far_feedback_uses_validated_top_center_text_band(self):
-        matcher = re.compile(r"离(?:目标|敌人)太远")
-        calls = {}
+    @staticmethod
+    def _synthetic_too_far_band():
+        frame = np.zeros((24, 108, 3), dtype=np.uint8)
+        for start in (3, 23, 43, 63, 83):
+            frame[2:21, start : start + 2] = 255
+            frame[2:4, start : start + 18] = 255
+            frame[10:12, start : start + 18] = 255
+            frame[19:21, start : start + 18] = 255
+        return frame
 
-        def box_of_screen(*args, **kwargs):
-            calls["box"] = (args, kwargs)
-            return "feedback-box"
+    def test_too_far_text_band_geometry_accepts_expected_length_and_rejects_short_band(self):
+        frame = self._synthetic_too_far_band()
+        signature = _measure_combat_too_far_text_band(frame)
+        self.assertIsNotNone(signature)
+        self.assertGreater(signature[0], 0.88)
 
-        def ocr(**kwargs):
-            calls["ocr"] = kwargs
-            return [object()]
+        short = frame.copy()
+        short[:, 62:] = 0
+        self.assertIsNone(_measure_combat_too_far_text_band(short))
 
-        harness = SimpleNamespace(
-            lang=SimpleNamespace(
-                daily_battle_mixin=SimpleNamespace(combat_too_far_prompt=matcher),
-            ),
-            box_of_screen=box_of_screen,
-            ocr=ocr,
-        )
+    def test_too_far_feedback_requires_two_stable_band_frames_without_ocr(self):
+        frame = self._synthetic_too_far_band()
+        calls = []
 
+        class CropBox:
+            def crop_frame(self, _frame):
+                return frame
+
+        class Harness:
+            def __init__(self):
+                self.frame = frame
+                self.now = 0.0
+
+            def box_of_screen(self, *args, **kwargs):
+                calls.append((args, kwargs))
+                return CropBox()
+
+            def active_time(self):
+                return self.now
+
+        harness = Harness()
+        self.assertIsNone(BattleMixin.probe_combat_action_block_reason(harness))
+        harness.now = 0.05
         self.assertEqual(
             BattleMixin.probe_combat_action_block_reason(harness),
             ActionBlockReason.TOO_FAR,
         )
         self.assertEqual(
-            calls["box"][0],
+            calls[0][0],
             (0.4703, 0.1593, 0.5266, 0.1815),
         )
-        self.assertEqual(calls["box"][1]["name"], "combat_action_feedback")
-        self.assertIs(calls["ocr"]["match"], matcher)
-        self.assertEqual(calls["ocr"]["box"], "feedback-box")
+        self.assertEqual(calls[0][1]["name"], "combat_action_feedback")
 
     def test_too_far_feedback_cancels_unstarted_skill_and_calls_recovery_hook(self):
         task = FakeTask()

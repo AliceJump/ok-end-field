@@ -150,11 +150,10 @@ class TimedCombatLogic:
             self._clear_active(now)
 
     def _probe_action_feedback(self):
-        """Consume the reserved top-center action-failure hook.
+        """Consume the top-center action-failure hook.
 
-        The actual fixed-region white-text detector is intentionally not
-        implemented yet. Once it returns a reason, this method already provides
-        scheduler semantics:
+        TOO_FAR is detected by the cheap fixed-position white text-band probe;
+        DURING_SKILL remains reserved for a later detector. Scheduler semantics:
         - too_far: cancel the unstarted action and enter the distance-recovery
           hook (future target-lock -> settle -> long forward rush);
         - during_skill: cancel the unstarted action and retry later without
