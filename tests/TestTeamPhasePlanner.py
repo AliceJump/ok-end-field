@@ -76,6 +76,8 @@ class TestTeamPhasePlanner(unittest.TestCase):
         self.assertEqual(planner.state.phase, CombatPhase.CHARGE)
         self.assertFalse(planner.can_spend("1", "battle", 120, 50))
         self.assertFalse(planner.can_spend("2", "battle", 120, 100))
+        self.assertTrue(planner.can_spend("2", "battle", 120, 0))
+        self.assertTrue(planner.can_spend("2", "battle", 120, -20))
 
         planner.observe_sp(149)
         self.assertEqual(planner.state.phase, CombatPhase.CHARGE)
