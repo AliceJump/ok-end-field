@@ -8,6 +8,7 @@ from unittest.mock import patch
 
 from src.core.BattleConfig import DEFAULT_BATTLE_CONFIG, KEY_TIMING_ROTATION
 from src.data.skill_timing import SNAPSHOT, SkillTiming, SkillTimingStore, load_skill_timings
+from src.data.team_phase_planner import CombatPhase, build_team_burst_plans
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 
@@ -608,4 +609,45 @@ class TestTimedCombat(unittest.TestCase):
         task.now = logic.forced_main_control_until + 0.01
         logic.step()
         self.assertEqual(task.keys, ["ult_1", "ult_2"])
+
+    def test_team_burst_charge_reserves_shared_sp_before_mifu_chain(self):
+        task = FakeTask()
+        task.sp = 120.0
+        logic = TimedCombatLogic(task, load_skill_timings())
+        logic.team = ["弭弗", "佩丽卡", "诀", "洛茜"]
+        logic.order = ["2", "1", "3", "4"]
+        logic.ult_order = []
+        logic.team_mechanics = {"1": logic.mechanics["弭弗"]}
+        logic.battle_phase_indices = {"1": 0}
+        plans = build_team_burst_plans(logic.team, logic.mechanics, logic.store)
+        logic.phase_planner.configure(plans, preferred_slots=("1", "2", "3", "4"))
+
+        logic.step()
+
+        self.assertEqual(task.keys, [])
+        self.assertEqual(logic.phase_planner.state.phase, CombatPhase.CHARGE)
+        self.assertEqual(logic.phase_planner.target_sp, 150)
+
+        task.now += logic._SP_LOW_PROBE_INTERVAL + 0.01
+        task.sp = 150.0
+        logic.step()
+
+        self.assertEqual(task.keys, ["1"])
+        self.assertEqual(logic.phase_planner.state.phase, CombatPhase.BURST)
+        self.assertEqual(logic.phase_planner.next_action.label, "断云")
+        self.assertEqual(logic.pending, (150.0, "1", 50.0))
+
+    def test_non_core_mifu_does_not_force_team_into_charge_phase(self):
+        task = FakeTask()
+        logic = TimedCombatLogic(task, load_skill_timings())
+        logic.team = ["弭弗", "佩丽卡", "诀", "洛茜"]
+        plans = build_team_burst_plans(logic.team, logic.mechanics, logic.store)
+
+        selected = logic.phase_planner.configure(
+            plans,
+            preferred_slots=("2", "1", "3", "4"),
+        )
+
+        self.assertIsNone(selected)
+        self.assertEqual(logic.phase_planner.state.phase, CombatPhase.NORMAL)
 
