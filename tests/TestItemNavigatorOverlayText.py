@@ -1,6 +1,7 @@
 """物品导航浮层目标信息（物品名 / 距离 / 方位 / 高度）与叠层文字绘制测试。"""
 
 import ast
+import copy
 import math
 import unittest
 from pathlib import Path
@@ -20,12 +21,43 @@ def _task_ast():
     return ast.parse(TASK_SOURCE.read_text(encoding="utf-8"))
 
 
+def _module_literal_constants(tree):
+    """收集模块顶层可安全 literal_eval 的常量，供配置 AST 解析引用。"""
+    constants = {}
+    for node in tree.body:
+        if not isinstance(node, ast.Assign) or len(node.targets) != 1 or not isinstance(node.targets[0], ast.Name):
+            continue
+        try:
+            constants[node.targets[0].id] = ast.literal_eval(node.value)
+        except (TypeError, ValueError):
+            continue
+    return constants
+
+
+class _LiteralNameResolver(ast.NodeTransformer):
+    def __init__(self, constants):
+        self.constants = constants
+
+    def visit_Name(self, node):
+        if node.id not in self.constants:
+            return node
+        replacement = ast.parse(repr(self.constants[node.id]), mode="eval").body
+        return ast.copy_location(replacement, node)
+
+
+def _task_literal_eval(node, tree):
+    """安全解析配置字面量，并允许引用模块顶层的字面量常量。"""
+    resolved = _LiteralNameResolver(_module_literal_constants(tree)).visit(copy.deepcopy(node))
+    return ast.literal_eval(resolved)
+
+
 def _literal_update_dict(attr_name):
-    """解析 `self.<attr_name>.update({...})` 的字面量字典。
+    """解析 `self.<attr_name>.update({...})` 的静态配置字典。
 
     用 AST 而不是实例化任务：任务构造依赖设备与配置，测试里不可用。
     """
-    for node in ast.walk(_task_ast()):
+    tree = _task_ast()
+    for node in ast.walk(tree):
         if (
             isinstance(node, ast.Call)
             and isinstance(node.func, ast.Attribute)
@@ -35,14 +67,15 @@ def _literal_update_dict(attr_name):
             and node.args
             and isinstance(node.args[0], ast.Dict)
         ):
-            return ast.literal_eval(node.args[0])
-    raise AssertionError(f"未找到 self.{attr_name}.update(...) 字面量")
+            return _task_literal_eval(node.args[0], tree)
+    raise AssertionError(f"未找到 self.{attr_name}.update(...) 静态配置字典")
 
 
 def _config_type_literals():
-    """解析所有 `self.config_type["key"] = {...}` 的字面量。"""
+    """解析所有 `self.config_type["key"] = {...}` 的静态配置。"""
     entries = {}
-    for node in ast.walk(_task_ast()):
+    tree = _task_ast()
+    for node in ast.walk(tree):
         if not isinstance(node, ast.Assign) or len(node.targets) != 1:
             continue
         target = node.targets[0]
@@ -54,8 +87,8 @@ def _config_type_literals():
         ):
             continue
         try:
-            entries[target.slice.value] = ast.literal_eval(node.value)
-        except ValueError:
+            entries[target.slice.value] = _task_literal_eval(node.value, tree)
+        except (TypeError, ValueError):
             continue
     return entries
 
