@@ -3,7 +3,7 @@
 交互与定位规范来自设计文档
 ``ok-script-toolkit/.workbuddy/design/eye-popup-design.md`` 1.2 / 2.2 节：
 
-- 触发：**悬停整张任务卡立即弹出**（无按钮），顶对齐卡片。
+- 触发：**仅悬停任务卡头立即弹出**（无按钮），顶对齐卡片。
   水平位置仅有三种：主窗口右侧、主窗口左侧、任务卡中心，按此顺序
   选择；用 ``QScreen.availableGeometry()`` 判断整层是否放得下（含阴影），
   两侧都放不下时固定在任务卡水平中心，不收窄、不向屏幕边缘挪动。
@@ -51,7 +51,7 @@ POP_WIDTH = 250
 POP_MARGIN = 8
 POP_MAX_HEIGHT_RATIO = 0.66
 
-# 悬停节奏：整卡悬停**立即弹出**（对齐扩展 mouseenter 即显）；
+# 悬停节奏：卡片头悬停**立即弹出**（对齐扩展 mouseenter 即显）；
 # 离开后 120ms 收起；切 tab 抑制 1.2s。SHOW_DELAY_MS=0 仍保留定时器，
 # Enter+Leave 同批到达时定时器先启后停，天然防抖
 SHOW_DELAY_MS = 0
@@ -591,12 +591,13 @@ class ParamPreviewController:
 
 
 class _CardHoverFilter(QObject):
-    """整卡悬停过滤：Enter 延迟弹出、Leave 延迟收起、切 tab 抑制、
+    """卡片头悬停过滤：Enter 延迟弹出、Leave 延迟收起、切 tab 抑制、
     宿主滚动/主窗口变化/卡片变形立即收起（对齐扩展 showHoverPop 语义）。"""
 
     def __init__(self, card):
         super().__init__(None)
         self._card = card
+        self._hover_target = card.card
         self._show_timer = QTimer(self)
         self._show_timer.setSingleShot(True)
         self._show_timer.setInterval(SHOW_DELAY_MS)
@@ -618,14 +619,15 @@ class _CardHoverFilter(QObject):
         # 这里兜底吞掉：弹层是锦上添花，不能影响宿主
         try:
             etype = event.type()
-            if obj is self._card:
+            if obj is self._hover_target:
                 if etype == QEvent.Enter:
                     ParamPreviewController.cancel_hide()
                     self._show_timer.start()
                 elif etype == QEvent.Leave:
                     self._show_timer.stop()
                     ParamPreviewController.schedule_hide()
-                elif etype == QEvent.Hide:
+            elif obj is self._card:
+                if etype == QEvent.Hide:
                     self.note_tab_switch()
                 elif etype == QEvent.DeferredDelete:
                     # Qt6/PySide6 没有 QEvent.Destroyed 枚举，别再加
@@ -643,7 +645,7 @@ class _CardHoverFilter(QObject):
 
 
 def install_param_preview_hover(card):
-    """给任务卡装悬停弹出：悬停整卡立即弹出层（无按钮）。"""
+    """给任务卡装悬停弹出：仅悬停卡片头立即弹出层（无按钮）。"""
     if getattr(card, "_param_preview_hover", None) is not None:
         return
     if _build_preview(card.task) is None:
@@ -651,6 +653,8 @@ def install_param_preview_hover(card):
 
     hover = _CardHoverFilter(card)
     card._param_preview_hover = hover
+    card.card.installEventFilter(hover)
+    # TaskCard 本体只保留生命周期/尺寸变化监听；配置区 Enter 不再触发预览
     card.installEventFilter(hover)
     # 宿主列表滚动（Wheel）/ 主窗口缩放移动 → 立即收起弹层
     parent = card.parentWidget()
