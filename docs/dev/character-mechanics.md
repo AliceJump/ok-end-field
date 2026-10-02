@@ -23,6 +23,7 @@
 
 - 连携 HUD 目前不能识别具体 owner，因此弭弗“连携后直接追形”暂时不能可靠地只更新弭弗状态。
 - 提弗洛斯的启示/猎矢数量、庄方宜导电等级/青霆剑数量、伊冯目标附着层数还没有画面状态检测；现阶段依赖游戏自身的连携/终结技就绪 HUD 做触发证据。
+- 连携释放不能因为任一队员缺失 native link timing 就全局关闭。洛茜的原生连携入口是 `combo_1_skill -> combo_2_skill -> combo_3_skill`，不是标准 `combo_skill`；运行时需解析编号入口，并且 HUD 已确认连携就绪时即使仍有个别角色缺 timing，也只能降低时间轴保护精度，不能阻断 E。
 - 机制数据稳定后再定义 runtime binary schema；二进制必须保留这些状态与 transition，而不是只存 battle/link/ult 三个伤害值。
 
 
