@@ -235,15 +235,19 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(task.keys, ["1", "2"])
         self.assertLess(task.now, 6)
 
-    def test_failed_attempt_preserves_sequence_and_guard(self):
+    def test_failed_attempt_clears_unproven_timeline_and_retries_after_short_backoff(self):
         task = FakeTask()
         logic = logic_for(task)
         logic.step()
         task.now = 1
         logic.step()
+
         self.assertEqual(logic.cursor, 0)
-        self.assertEqual(task.keys, ["1"])  # Pending timeout is not an early cancel proof.
-        task.now = logic.started + max(profile.actionable for profile in logic.active) + 0.01
+        self.assertEqual(task.keys, ["1"])
+        self.assertEqual(logic.active, ())
+        self.assertGreater(logic.battle_retry_after["1"], task.now)
+
+        task.now = logic.battle_retry_after["1"] + 0.01
         logic.step()
         self.assertEqual(task.keys, ["1", "1"])
 
@@ -303,7 +307,7 @@ class TestTimedCombat(unittest.TestCase):
         logic._hold(True, force=True)
         self.assertEqual(task.mouse.count("down"), 2)
 
-    def test_sp_probe_rate_slows_below_two_bars_and_fast_checks_above_two(self):
+    def test_sp_probe_rate_escalates_near_dynamic_pressure_line(self):
         task = FakeTask()
         task.sp = 150.0
         logic = logic_for(task)
@@ -326,17 +330,27 @@ class TestTimedCombat(unittest.TestCase):
         task.full_fast = False
         self.assertEqual(logic._sample_sp(), 220.0)
         self.assertEqual(task.sp_reads, 2)
+        self.assertEqual(task.full_fast_reads, 0)
+
+        task.now += logic._SP_MEDIUM_PROBE_INTERVAL
+        task.sp = 270.0
+        self.assertEqual(logic._sample_sp(), 270.0)
+        self.assertEqual(task.sp_reads, 3)
+
+        task.now += 0.04
+        self.assertEqual(logic._sample_sp(), 270.0)
+        self.assertEqual(task.sp_reads, 3)
         self.assertEqual(task.full_fast_reads, 1)
 
-        task.now += 0.05
+        task.now += 0.04
         task.full_fast = True
         self.assertEqual(logic._sample_sp(), 300.0)
-        self.assertEqual(task.sp_reads, 2)
+        self.assertEqual(task.sp_reads, 3)
         self.assertEqual(task.full_fast_reads, 2)
 
-    def test_full_sp_can_insert_other_safe_slot_when_cursor_is_blocked(self):
+    def test_high_sp_can_insert_other_safe_slot_when_cursor_is_blocked(self):
         task = FakeTask()
-        task.sp = 300.0
+        task.sp = 270.0
         logic = logic_for(task)
         logic.order = ["1"]
         logic.state_until["1"] = 100.0
@@ -352,6 +366,29 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(logic.cursor, 0)
         self.assertTrue(any("插入安全收益战技 2" in message for message in task.messages))
 
+    def test_dynamic_pressure_line_uses_finisher_headroom(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        logic.team = ["伊冯", "洁尔佩塔", "别礼", "余烬"]
+        logic.normal_attack_sp_gains = logic.store.team_normal_attack_sp_gains(logic.team)
+
+        logic._refresh_sp_threshold()
+
+        self.assertEqual(logic.assume_success_sp_threshold, 30)
+        self.assertEqual(logic.sp_pressure_threshold, 265)
+
+    def test_high_pressure_uses_other_slot_during_failed_cursor_backoff(self):
+        task = FakeTask()
+        task.sp = 270.0
+        logic = logic_for(task)
+        logic.order = ["1"]
+        logic.battle_retry_after["1"] = 100.0
+
+        logic.step()
+
+        self.assertEqual(task.keys, ["2"])
+        self.assertTrue(any("高技力抢占" in message for message in task.messages))
+
     def test_full_skill_points_preempt_link_and_ult_with_planned_battle(self):
         task = FakeTask()
         task.points = 3
@@ -362,7 +399,7 @@ class TestTimedCombat(unittest.TestCase):
         logic.step()
 
         self.assertEqual(task.keys, ["1"])
-        self.assertTrue(any("技力已满，防溢出抢占尝试战技 1" in message for message in task.messages))
+        self.assertTrue(any("高技力防溢出" in message and "战技 1" in message for message in task.messages))
         self.assertTrue(task.link)
         self.assertIn("1", task.ults)
 
@@ -493,7 +530,8 @@ class TestTimedCombat(unittest.TestCase):
         logic.ult_order = ["2", "1"]
         task.detected_team = ["佩丽卡", "?", "陈千语", "管理员"]
 
-        logic._refresh_team_slots(1)
+        for _ in range(logic._DEAD_SLOT_CONFIRM_REFRESHES):
+            logic._refresh_team_slots(1)
 
         self.assertEqual(logic.team, ["佩丽卡", "狼卫", "陈千语", "管理员"])
         self.assertEqual(logic.disabled_slots, {"2"})
@@ -502,6 +540,23 @@ class TestTimedCombat(unittest.TestCase):
         task.sp = 100
         logic.step()
         self.assertEqual(task.keys, ["1"])
+
+    def test_transient_unknown_slot_recovers_without_false_death_mask(self):
+        task = FakeTask()
+        logic = logic_for(task)
+
+        task.detected_team = ["?", "狼卫", "陈千语", "管理员"]
+        logic._refresh_team_slots(1)
+        self.assertEqual(logic.dead_slot_evidence["1"], 1)
+
+        task.detected_team = ["佩丽卡", "狼卫", "陈千语", "管理员"]
+        logic._refresh_team_slots(1)
+        self.assertNotIn("1", logic.dead_slot_evidence)
+
+        task.detected_team = ["?", "狼卫", "陈千语", "管理员"]
+        logic._refresh_team_slots(1)
+        logic._refresh_team_slots(1)
+        self.assertEqual(logic.disabled_slots, set())
 
     def test_partial_scan_with_known_slot_mismatch_does_not_mask_anyone(self):
         task = FakeTask()
@@ -520,7 +575,8 @@ class TestTimedCombat(unittest.TestCase):
         logic.active_slot = "2"
         task.detected_team = ["佩丽卡", "?", "陈千语", "管理员"]
 
-        logic._refresh_team_slots(1)
+        for _ in range(logic._DEAD_SLOT_CONFIRM_REFRESHES):
+            logic._refresh_team_slots(1)
 
         self.assertIsNone(logic.pending)
         self.assertEqual(logic.active, ())
@@ -587,7 +643,7 @@ class TestTimedCombat(unittest.TestCase):
         self.assertIsNone(logic.forced_battle_token)
         self.assertTrue(any("终结技恢复插入机制战技 1" in message for message in task.messages))
 
-    def test_yvonne_ultimate_protects_forced_main_control_window_from_other_ults(self):
+    def test_yvonne_main_control_window_allows_other_operator_ult(self):
         task = FakeTask()
         task.sp = 0.0
         task.ults = {"1", "2"}
@@ -603,12 +659,26 @@ class TestTimedCombat(unittest.TestCase):
         self.assertGreater(logic.forced_main_control_until, task.now)
 
         logic.step()
-        self.assertEqual(task.keys, ["ult_1"])
-        self.assertIn("2", task.ults)
+        self.assertEqual(task.keys, ["ult_1", "ult_2"])
+        self.assertNotIn("2", task.ults)
+        self.assertLess(task.now, logic.forced_main_control_until)
+
+    def test_yvonne_main_control_window_only_blocks_her_own_battle(self):
+        task = FakeTask()
+        task.sp = 100.0
+        logic = TimedCombatLogic(task, load_skill_timings())
+        logic.team = ["伊冯", "佩丽卡", "诀", "洛茜"]
+        logic.order = ["1"]
+        logic.ult_order = []
+        logic.team_mechanics = {"1": logic.mechanics["伊冯"]}
+        logic._after_ultimate_mechanic("1", 0.0)
+
+        logic.step()
+        self.assertEqual(task.keys, [])
 
         task.now = logic.forced_main_control_until + 0.01
         logic.step()
-        self.assertEqual(task.keys, ["ult_1", "ult_2"])
+        self.assertEqual(task.keys, ["1"])
 
     def test_team_burst_charge_reserves_shared_sp_before_mifu_chain(self):
         task = FakeTask()
