@@ -45,17 +45,16 @@ class EndCommandMixin:
                 "外部命令执行时机": "选择执行时机：任务最开始时最先执行，或任务最后执行。",
             }
         )
-        self.default_config_group.update(
-            {
-                self._SWITCH_KEY: [
-                    "外部命令",
-                    "外部命令起始于",
-                    "外部命令等待退出",
-                    "外部命令已运行时跳过",
-                    "外部命令执行时机",
-                ],
-            }
-        )
+        command_keys = [
+            "外部命令",
+            "外部命令起始于",
+            "外部命令等待退出",
+            "外部命令已运行时跳过",
+            "外部命令执行时机",
+        ]
+        self.config_type[self._SWITCH_KEY] = {
+            "sub_configs": {True: command_keys},
+        }
         self.config_type["外部命令执行时机"] = {
             "type": "drop_down",
             "options": ["任务最开始", "任务最后"],

@@ -182,6 +182,34 @@ Copy the content into a new xml file, make the following changes, and save:
 
 `-t 1` runs the 1st item of `onetime_tasks` in [src/config.py](../../src/config.py), i.e. Daily Tasks. The number changes when the list order changes; verify the current registration order before changing to another number. `-e` exits ok-ef after the task finishes.
 
+Current main one-time task indexes (matching their task-list order):
+
+| -t | Task |
+|---:|---|
+| 1 | Daily Tasks |
+| 2 | Gift Giving |
+| 3 | Dijiang Organize |
+| 4 | Dijiang Harvest |
+| 5 | Collect Mail |
+| 6 | Handover Delivery Commissions |
+| 7 | Region Building |
+| 8 | Craft Equipment |
+| 9 | Collect Credit |
+| 10 | Buy Credit Shop |
+| 11 | Daily Stamina Farming |
+| 12 | Computation |
+| 13 | Event Rewards |
+| 14 | Daily Rewards |
+| 15 | Daily Auto Delivery |
+| 16 | Teleport to Dijiang right-side transfer point |
+| 17 | Accept Commission |
+| 18 | Warehouse Transfer |
+| 19 | Auto Delivery |
+| 20 | Stamina Farming |
+| 21 | Computation Draw |
+| 22 | Yingtuo Monument |
+
+
 > **Index auto-correction at startup**: tasks created through ok-ef's built-in 「Scheduled Tasks」 feature (the 「Scheduled Tasks」 tab in the GUI) store their `-t` argument in `configs/schedule_tasks_cache.json` and in the Windows scheduled task. On every app startup, it reads this app's tasks (`\ok-ef\`) from the cache, compares each name against the current `onetime_tasks` order, automatically rewrites `-t` to the correct current index, and syncs the Windows scheduled task. So after reordering `onetime_tasks` you don't need to fix the number manually — the next startup corrects it automatically; if this run was triggered by the scheduled task, it also corrects before running, ensuring the right task runs. Other ok-* apps' tasks (e.g. `\ok-gf2\`) are not modified.
 
 Use `Win + R` and run `taskschd.msc` to open the Task Scheduler. Click `Action > Import Task` to add the xml file above. Change the `Name` and click `OK`.

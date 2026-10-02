@@ -21,24 +21,33 @@ class TemplateMonitorTask(BaseEfTask, TriggerTask):
         feature_options = [member.value for member in fL]
         hsv_options = [member.name for member in hR]
 
-        self.default_config = {
-            "模板ID": fL.b.value,
-            "识别框": "",
-            "模板HSV处理器": "",
-            "启用反转": False,
-        }
+        self.default_config.update(
+            {
+                "模板ID": fL.b.value,
+                "识别框": "",
+                "模板HSV处理器": "",
+                "启用反转": False,
+            }
+        )
 
-        self.config_type = {
-            "模板ID": {"type": "drop_down", "options": feature_options},
-            "模板HSV处理器": {"type": "drop_down", "options": [""] + hsv_options},
-        }
+        self.config_type.update(
+            {
+                "模板ID": {"type": "drop_down", "options": feature_options},
+                "模板HSV处理器": {
+                    "type": "drop_down",
+                    "options": [""] + hsv_options,
+                    "sub_configs": {name: ["启用反转"] for name in hsv_options},
+                },
+            }
+        )
 
-        self.config_description = {
+        self.config_description.update({
             "模板ID": "要检测的模板ID（FeatureList枚举值）。必填。",
             "识别框": "检测区域框，格式：x1,y1,x2,y2（相对坐标0-1）。留空表示全屏。",
             "模板HSV处理器": "处理模板图像，只保留指定颜色区域参与匹配。留空表示不使用。",
             "启用反转": "是否启用HSV处理器的反转功能。",
-        }
+        })
+        self.validate_unique_sub_config_parents()
 
     def _parse_box(self, box_str):
         if not box_str or not box_str.strip():

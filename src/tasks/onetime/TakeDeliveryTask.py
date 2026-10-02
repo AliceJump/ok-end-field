@@ -26,14 +26,23 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
         self.group_icon = Icons.Deliver
         self.description = "自动抢送货委托单"
 
-        self.default_config = {
-            "接取谷地券": False,
-            "接取谷地券最低金额(万)": 5.0,
-            "接取谷地券最高金额(万)": 40.0,
-            "接取武陵券": True,
-            "接取武陵券最低金额(万)": 5.0,
-            "接取武陵券最高金额(万)": 15.0,
+        self.default_config.update(
+            {
+                "接取谷地券": False,
+                "接取谷地券最低金额(万)": 5.0,
+                "接取谷地券最高金额(万)": 40.0,
+                "接取武陵券": True,
+                "接取武陵券最低金额(万)": 5.0,
+                "接取武陵券最高金额(万)": 15.0,
+            }
+        )
+        self.config_type["接取谷地券"] = {
+            "sub_configs": {True: ["接取谷地券最低金额(万)", "接取谷地券最高金额(万)"]},
         }
+        self.config_type["接取武陵券"] = {
+            "sub_configs": {True: ["接取武陵券最低金额(万)", "接取武陵券最高金额(万)"]},
+        }
+        self.validate_unique_sub_config_parents()
 
     def process_ocr_results(self, full_texts, filter_min, reward_pattern):
         """

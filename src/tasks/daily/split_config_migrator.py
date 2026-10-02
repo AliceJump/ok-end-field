@@ -195,6 +195,11 @@ DAILY_SPLIT_IMPORTS: dict[str, dict[str, dict[str, dict[str, Any]]]] = {
         "RegionalBuildTask": {"DailyTask": {"⭐地区建设": _import_region_options}},
         "ActivityRewardTask": {"DailyTask": {"⭐活动奖励": _import_activity_rewards}},
     },
+    # 日常总开关由一串 bool 改为固定分组列表前，先备份 DailyTask 与账号覆盖。
+    # 实际值转换由 DailyTask.config_value_migrations 完成；空映射只承担备份/批次标记职责。
+    "daily_task_group_selection_v4": {
+        "DailyTask": {"DailyTask": {}},
+    },
 }
 
 
