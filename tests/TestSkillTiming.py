@@ -106,6 +106,7 @@ class TestSkillTiming(unittest.TestCase):
 class FakeTask:
     def __init__(self):
         self.now = 0.0
+        self.combat_now = None
         self.points = 1
         self.sp = None
         self.sp_reads = 0
@@ -125,6 +126,9 @@ class FakeTask:
 
     def active_time(self):
         return self.now
+
+    def combat_time(self):
+        return self.now if self.combat_now is None else self.combat_now
 
     def next_frame(self):
         self.now += 0.05
@@ -548,6 +552,59 @@ class TestTimedCombat(unittest.TestCase):
         task.sp = 25.0
         task.now += logic._SP_LOW_PROBE_INTERVAL + 0.01
         logic.step()
+        self.assertEqual(task.keys, ["1"])
+
+    def test_skill_state_time_keeps_aging_while_script_clock_is_paused(self):
+        task = FakeTask()
+        task.sp = 100.0
+        task.now = 10.0
+        task.combat_now = 10.0
+        logic = logic_for(task)
+        logic.order = ["1"]
+        logic.state_until["1"] = 15.0
+
+        # Simulate pausing only the automation clock for 10 real/game seconds:
+        # active_time stays at 10, combat_time advances to 20.
+        task.combat_now = 20.0
+        logic.step()
+
+        self.assertEqual(task.now, 10.0)
+        self.assertEqual(task.keys, ["1"])
+
+    def test_cooldown_and_native_handoff_ignore_script_pause_duration(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        (profile,) = logic.store.profiles("佩丽卡", "battle")
+        logic.active = (profile,)
+        logic.active_slot = "1"
+        logic.active_kind = "battle"
+        logic.started = 10.0
+        logic.cooldowns[profile.skill_id] = 15.0
+
+        task.now = 10.0
+        task.combat_now = 20.0
+
+        self.assertTrue(logic._allowed((profile,), candidate_slot="2", candidate_kind="battle"))
+        self.assertTrue(logic._ready((profile,), slot="1", kind="battle"))
+
+    def test_yvonne_main_control_window_expires_during_script_pause(self):
+        task = FakeTask()
+        task.sp = 100.0
+        task.now = 5.0
+        task.combat_now = 5.0
+        logic = TimedCombatLogic(task, load_skill_timings())
+        logic.team = ["伊冯", "佩丽卡", "诀", "洛茜"]
+        logic.order = ["1"]
+        logic.ult_order = []
+        logic.team_mechanics = {"1": logic.mechanics["伊冯"]}
+        logic._after_ultimate_mechanic("1", task.combat_time())
+
+        self.assertGreater(logic.forced_main_control_until, task.combat_time())
+
+        task.combat_now += 8.0
+        logic.step()
+
+        self.assertEqual(task.now, 5.0)
         self.assertEqual(task.keys, ["1"])
 
     def test_state_skill_is_not_pressed_again_while_state_is_active(self):

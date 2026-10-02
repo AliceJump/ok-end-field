@@ -140,6 +140,15 @@ class BaseEfTask(
         self._task_pause_started_at = None
         self._seen_executor_pause_start = getattr(self.executor, "pause_start", None)
 
+    def combat_time(self) -> float:
+        """Return monotonic game/combat time that ignores automation pauses.
+
+        Skill timelines, cooldowns and in-game buff/state durations must keep
+        aging while the script/executor is paused. active_time() is still the
+        right clock for task deadlines and configured automation waits.
+        """
+        return time.monotonic()
+
     def active_time(self) -> float:
         """Return monotonic task time with framework pauses excluded."""
         now = time.monotonic()
