@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "liino_skill",
@@ -388,7 +389,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "liino_link",
@@ -544,7 +546,16 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "trigger": "连携技成功施放",
+                    "kind": "fixed",
+                    "amount": 20
+                }
+            ]
         },
         {
             "skill_id": "liino_ultimate",
@@ -875,7 +886,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

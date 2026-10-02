@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from src.data.character_progression import load_character_progression
 from src.data.effects import EffectType, match_effect_terms
 from src.data.skill_types import (
     Character,
@@ -12,8 +13,10 @@ from src.data.skill_types import (
     Skill,
     SkillEffect,
     SkillEnhancement,
+    SkillResourceChange,
     SkillType,
     TriggerEffectGroup,
+    TriggerEffectRequirement,
 )
 
 # 类型映射
@@ -36,18 +39,36 @@ _SKILL_TYPE_MAP: dict[str, SkillType] = {
 
 
 def _load_skill_effects(effects_data: list[dict]) -> list[SkillEffect]:
-    """加载技能效果列表。"""
+    """加载技能效果列表，严格保留“未知”和“未声明”。
+
+    旧实现会把缺失字段静默补成 value=0 / duration="" / target=enemy / count=1，
+    这会把不完整数据伪装成确定机制。现在只有 JSON 明确给出的值才进入模型。
+    空字符串 duration 统一归一为 None。
+    """
     effects = []
     for effect_data in effects_data:
+        duration = effect_data.get("duration") if "duration" in effect_data else None
+        if duration == "":
+            duration = None
         effect = SkillEffect(
             effect_id=EffectType(effect_data["effect_id"]),
-            value=effect_data.get("value", 0),
-            duration=effect_data.get("duration", ""),
-            target=effect_data.get("target", "enemy"),
-            count=effect_data.get("count", 1),
+            value=effect_data.get("value") if "value" in effect_data else None,
+            duration=duration,
+            target=effect_data.get("target") if "target" in effect_data else None,
+            count=effect_data.get("count") if "count" in effect_data else None,
+            subject_effect_id=(
+                EffectType(effect_data["subject_effect_id"])
+                if effect_data.get("subject_effect_id")
+                else None
+            ),
         )
         effects.append(effect)
     return effects
+
+
+def _load_resource_changes(changes_data: list[dict]) -> list[SkillResourceChange]:
+    """加载技力/SP 与终结技能量变化规则。"""
+    return [SkillResourceChange.from_dict(data) for data in changes_data]
 
 
 def _skill_type_of(skill_type: str) -> SkillType:
@@ -88,14 +109,33 @@ def _load_trigger_condition(
         text = trigger_data.get("text", "")
         raw_effects = trigger_data.get("effects") or []
         if isinstance(raw_effects, dict):
-            trigger_effect_groups = [
-                TriggerEffectGroup(
-                    operator=operator,
-                    effects=tuple(EffectType(effect_id) for effect_id in raw_effects.get(operator) or []),
+            # {"all": []} / {"any": []} 不是“永远满足”的条件。
+            # 条件项既兼容旧字符串，也支持 {"effect_id": "...", "min_count": N}。
+            trigger_effect_groups = []
+            for operator in ("all", "any"):
+                raw_requirements = raw_effects.get(operator) or []
+                if not raw_requirements:
+                    continue
+                requirements = []
+                for raw_requirement in raw_requirements:
+                    if isinstance(raw_requirement, str):
+                        effect_id = raw_requirement
+                        min_count = 1
+                    else:
+                        effect_id = raw_requirement["effect_id"]
+                        min_count = int(raw_requirement.get("min_count", 1))
+                    requirements.append(
+                        TriggerEffectRequirement(
+                            effect=EffectType(effect_id),
+                            min_count=min_count,
+                        )
+                    )
+                trigger_effect_groups.append(
+                    TriggerEffectGroup(
+                        operator=operator,
+                        requirements=tuple(requirements),
+                    )
                 )
-                for operator in ("all", "any")
-                if raw_effects.get(operator) or (operator == "all" and operator in raw_effects)
-            ]
             effects = [effect for group in trigger_effect_groups for effect in group.effects]
         else:
             effects = [EffectType(effect_id) for effect_id in raw_effects]
@@ -116,7 +156,13 @@ def _load_enhancement(enh_data: dict) -> SkillEnhancement:
         trigger_effects=trigger_effects,
         trigger_effect_groups=trigger_effect_groups,
         effects=_load_skill_effects(enh_data.get("effects") or []),
+        resource_changes=_load_resource_changes(enh_data.get("resource_changes") or []),
+        replaces_base_action=bool(enh_data.get("replaces_base_action", False)),
+        spirit_cost_override=enh_data.get("spirit_cost_override"),
+        damage_multiplier_override=enh_data.get("damage_multiplier_override"),
+        stagger_value_override=enh_data.get("stagger_value_override"),
         enhancement_visible_pulse=enh_data.get("enhancement_visible_pulse", False),
+        evaluation_point=enh_data.get("evaluation_point"),
     )
 
 
@@ -154,6 +200,7 @@ def _load_character_from_json(file_path: Path) -> Character:
             # 已解析分支是唯一真源；JSON 中的旧布尔标记不参与运行时判定。
             enhancements=enhancements,
             effects=effects,
+            resource_changes=_load_resource_changes(skill_data.get("resource_changes") or []),
             description=skill_data.get("description", ""),
             damage_multiplier=skill_data.get("damage_multiplier", ""),
             stagger_value=skill_data.get("stagger_value", 0),
@@ -170,6 +217,7 @@ def _load_character_from_json(file_path: Path) -> Character:
         profession=data.get("profession", ""),
         weapon_type=data.get("weapon_type", ""),
         skills=skills,
+        progression=load_character_progression(character_id),
     )
 
 

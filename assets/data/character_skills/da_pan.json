@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "da_pan_skill",
@@ -248,7 +249,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "da_pan_link",
@@ -269,7 +271,10 @@
                         "text": "当有敌人达到4层破防时可以发动",
                         "effects": {
                             "all": [
-                                "STATUS_SHRED"
+                                {
+                                    "effect_id": "STACK_SHRED",
+                                    "min_count": 4
+                                }
                             ]
                         }
                     },
@@ -486,7 +491,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

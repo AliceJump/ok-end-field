@@ -122,7 +122,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "purrchena_skill",
@@ -306,7 +307,36 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": [
+                {
+                    "name": "首次格挡额外返还",
+                    "trigger_condition": {
+                        "text": "本次立盾期间首次成功格挡；每次立盾最多一次",
+                        "effects": null
+                    },
+                    "effects": [],
+                    "resource_changes": [
+                        {
+                            "resource": "skill_point",
+                            "target": "team",
+                            "trigger": "本次立盾期间首次成功格挡",
+                            "kind": "fixed",
+                            "amount": 20
+                        }
+                    ],
+                    "evaluation_point": "on_first_block"
+                }
+            ],
+            "resource_changes": [
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "trigger": "架盾动作成功施放时立即返还",
+                    "kind": "fixed",
+                    "amount": 20
+                }
+            ]
         },
         {
             "skill_id": "purrchena_link",
@@ -325,9 +355,7 @@
                     "name": "礼物匣子治疗",
                     "trigger_condition": {
                         "text": "主控干员受到攻击后可以发动",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "effects": [
                         {
@@ -511,7 +539,16 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "trigger": "连携技成功施放",
+                    "kind": "fixed",
+                    "amount": 10
+                }
+            ]
         },
         {
             "skill_id": "purrchena_ultimate",

@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "catcher_skill",
@@ -154,13 +155,6 @@
             "cooldown": null,
             "spirit_cost": 100,
             "effects": [
-                {
-                    "effect_id": "STATUS_SHRED",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                },
                 {
                     "effect_id": "BUFF_PROTECTION",
                     "value": 1,
@@ -272,7 +266,36 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": [
+                {
+                    "name": "格挡反击",
+                    "trigger_condition": {
+                        "text": "立盾期间受到攻击后发动反击并成功命中",
+                        "effects": null
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STACK_SHRED",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ],
+                    "resource_changes": [],
+                    "evaluation_point": "on_counter_hit"
+                }
+            ],
+            "resource_changes": [
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "trigger": "架盾动作成功施放时立即返还",
+                    "kind": "fixed",
+                    "amount": 30
+                }
+            ]
         },
         {
             "skill_id": "catcher_link",
@@ -291,9 +314,7 @@
                     "name": "即时压制",
                     "trigger_condition": {
                         "text": "当敌人开始蓄力，或主控干员受到攻击后生命值低于40%可以发动",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "effects": [
                         {
@@ -661,7 +682,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

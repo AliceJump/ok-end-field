@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "ember_skill",
@@ -166,9 +167,7 @@
                     "name": "受伤后额外失衡",
                     "trigger_condition": {
                         "text": "施放过程中受到过来自敌人的伤害",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "enhancement_effect": "命中时额外造成一定失衡",
                     "enhancement_visible_pulse": false,
@@ -280,9 +279,7 @@
                     "name": "前线援护",
                     "trigger_condition": {
                         "text": "主控干员受到攻击后可以发动",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "effects": [
                         {
@@ -423,8 +420,8 @@
                 {
                     "effect_id": "BUFF_SHIELD",
                     "value": 1,
-                    "duration": null,
-                    "target": "ally",
+                    "duration": 10,
+                    "target": "team",
                     "count": 1
                 }
             ],
@@ -548,7 +545,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "wulfgard_skill",
@@ -152,32 +153,39 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 100,
-            "effects": [
-                {
-                    "effect_id": "ATTACH_BURN",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                }
-            ],
+            "effects": [],
             "enhancements": [
                 {
-                    "name": "燃烧/导电消耗追加射击",
+                    "name": "无燃烧/导电时施加灼热附着",
                     "trigger_condition": {
-                        "text": "目标处于燃烧或导电状态时消耗该状态并追加射击",
-                        "effects": {
-                            "any": [
-                                "STATUS_BURNING",
-                                "STATUS_CONDUCTING"
-                            ]
-                        }
+                        "text": "目标不处于燃烧或导电状态时，最后一次射击施加灼热附着",
+                        "effects": null
                     },
-                    "enhancement_effect": "追加射击",
                     "enhancement_visible_pulse": false,
                     "effects": [
                         {
-                            "effect_id": "STATUS_SPELL_ANOMALY",
+                            "effect_id": "ATTACH_BURN",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "燃烧消耗追加射击",
+                    "trigger_condition": {
+                        "text": "目标处于燃烧状态时，消耗燃烧并追加一次射击",
+                        "effects": {
+                            "all": [
+                                "STATUS_BURNING"
+                            ]
+                        }
+                    },
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_BURNING",
                             "value": 1,
                             "duration": null,
                             "target": "enemy",
@@ -187,7 +195,36 @@
                             "effect_id": "TRIGGER_ADDITIONAL",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "导电消耗追加射击",
+                    "trigger_condition": {
+                        "text": "目标处于导电状态时，消耗导电并追加一次射击",
+                        "effects": {
+                            "all": [
+                                "STATUS_CONDUCTING"
+                            ]
+                        }
+                    },
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_CONDUCTING",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "TRIGGER_ADDITIONAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
                         }
                     ]
                 }
@@ -509,7 +546,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

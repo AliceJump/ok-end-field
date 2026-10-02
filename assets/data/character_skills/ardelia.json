@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "ardelia_skill",
@@ -178,13 +179,15 @@
                             "effect_id": "VULN_PHYSICAL",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
                         },
                         {
                             "effect_id": "VULN_ALL",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
                         }
                     ]
                 }
@@ -311,9 +314,7 @@
                     "name": "火山蘑菇云",
                     "trigger_condition": {
                         "text": "当主控干员对不处于破防或法术附着状态的敌人造成重击后可以发动",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "effects": [
                         {
@@ -547,7 +548,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "laevatain_skill",
@@ -169,23 +170,18 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 100,
-            "effects": [
-                {
-                    "effect_id": "STACK_MOLTEN",
-                    "value": 1,
-                    "duration": null,
-                    "target": "self",
-                    "count": 1
-                }
-            ],
+            "effects": [],
             "enhancements": [
                 {
                     "name": "熔火层数",
                     "trigger_condition": {
-                        "text": "战技命中敌人获得1层熔火，4层时触发追加攻击",
+                        "text": "本次战技施放前已经拥有4层熔火",
                         "effects": {
                             "all": [
-                                "STACK_MOLTEN"
+                                {
+                                    "effect_id": "STACK_MOLTEN",
+                                    "min_count": 4
+                                }
                             ]
                         }
                     },
@@ -201,17 +197,47 @@
                         },
                         {
                             "effect_id": "TRIGGER_ADDITIONAL",
-                            "value": 1,
+                            "value": "770%",
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": 1
                         },
                         {
                             "effect_id": "STATUS_BURNING",
                             "value": 1,
-                            "duration": null,
-                            "target": "enemy"
+                            "duration": 5,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ],
+                    "evaluation_point": "before_action",
+                    "resource_changes": [
+                        {
+                            "resource": "ultimate_energy",
+                            "target": "self",
+                            "trigger": "4层熔火追加攻击成功命中后",
+                            "kind": "fixed",
+                            "amount": 100
                         }
                     ]
+                },
+                {
+                    "name": "战技命中获得熔火",
+                    "trigger_condition": {
+                        "text": "基础战技成功命中敌人时；不是施放即获得",
+                        "effects": null
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STACK_MOLTEN",
+                            "value": 1,
+                            "duration": null,
+                            "target": "self",
+                            "count": 1
+                        }
+                    ],
+                    "resource_changes": [],
+                    "evaluation_point": "on_hit"
                 }
             ],
             "rank_stats": {
@@ -644,7 +670,22 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "trigger": "连携技成功命中后，按本次命中敌人数一次结算",
+                    "kind": "piecewise_by_count",
+                    "values_by_count": {
+                        "1": 25,
+                        "2": 30,
+                        "3": 35
+                    },
+                    "max_units": 3,
+                    "count_basis": "hit_targets"
+                }
+            ]
         },
         {
             "skill_id": "laevatain_ultimate",
@@ -659,25 +700,31 @@
             "spirit_cost": 300,
             "effects": [
                 {
-                    "effect_id": "ATTACH_BURN",
+                    "effect_id": "STATUS_LAEVATAIN_SWORD",
                     "value": 1,
-                    "duration": null,
-                    "target": "enemy",
+                    "duration": 15,
+                    "target": "self",
                     "count": 1
                 }
             ],
             "enhancements": [
                 {
-                    "name": "强化普攻",
+                    "name": "烈焰魔剑普攻第三段附着",
                     "trigger_condition": {
-                        "text": "施放终结技后",
-                        "effects": {
-                            "all": []
-                        }
+                        "text": "烈焰魔剑姿态期间普通攻击第三段成功命中敌人",
+                        "effects": null
                     },
-                    "enhancement_effect": "强化普攻",
-                    "enhancement_visible_pulse": false,
-                    "effects": []
+                    "effects": [
+                        {
+                            "effect_id": "ATTACH_BURN",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ],
+                    "resource_changes": [],
+                    "evaluation_point": "on_normal_attack_hit"
                 }
             ],
             "rank_stats": {

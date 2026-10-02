@@ -1,0 +1,498 @@
+{
+  "chr_0004_pelica_potential_2": {
+    "character": "perlica",
+    "description": "终结技协议ε·70.41κ所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0004_pelica/potentialUnlockBundle/1",
+    "status": "mapped_modifier"
+  },
+  "chr_0005_chen_potential_4": {
+    "character": "chen_qianyu",
+    "description": "终结技冽风霜所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0005_chen/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0006_wolfgd_potential_2": {
+    "character": "wulfgard",
+    "description": "天赋节制准则效果加强：额外返还10点技力。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0006_wolfgd/potentialUnlockBundle/1",
+    "status": "mapped_recovery"
+  },
+  "chr_0006_wolfgd_potential_4": {
+    "character": "wulfgard",
+    "description": "终结技狼之怒所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0006_wolfgd/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0006_wolfgd_talent_2_2": {
+    "character": "wulfgard",
+    "description": "战技灼热弹痕成功消耗法术异常时，返还10点技力。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharGrowthTable/chr_0006_wolfgd/talentNodeMap/chr_0006_wolfgd_passive_skill_1_2",
+    "status": "mapped_recovery"
+  },
+  "chr_0007_ikut_potential_1": {
+    "character": "arclight",
+    "description": "使用战技疾风迅雷成功触发额外效果后，额外恢复10点技力。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0007_ikut/potentialUnlockBundle/0",
+    "status": "mapped_recovery"
+  },
+  "chr_0007_ikut_potential_4": {
+    "character": "arclight",
+    "description": "终结技轰雷掣电所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0007_ikut/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0009_azrila_potential_4": {
+    "character": "ember",
+    "description": "终结技重燃誓约所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0009_azrila/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0011_seraph_potential_2": {
+    "character": "xaihi",
+    "description": "终结技栈溢出所需的终结技能量-10%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0011_seraph/potentialUnlockBundle/1",
+    "status": "mapped_modifier"
+  },
+  "chr_0012_avywen_potential_1": {
+    "character": "avywenna",
+    "description": "天赋高效派送效果加强：获得的终结技能量+2点。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0012_avywen/potentialUnlockBundle/0",
+    "status": "mapped_recovery"
+  },
+  "chr_0012_avywen_potential_4": {
+    "character": "avywenna",
+    "description": "终结技雷枪·决颤所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0012_avywen/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0012_avywen_talent_1_2": {
+    "character": "avywenna",
+    "description": "掷出、召回雷枪、强雷枪命中敌人后，获得4点终结技能量。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharGrowthTable/chr_0012_avywen/talentNodeMap/chr_0012_avywen_passive_skill_0_2",
+    "status": "mapped_recovery"
+  },
+  "chr_0013_aglina_potential_4": {
+    "character": "gilberta",
+    "description": "终结技秘杖·重力场所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0013_aglina/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0014_aurora_potential_5": {
+    "character": "snowshine",
+    "description": "战技饱和性防御成功反击敌人时，返还10点技力。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0014_aurora/potentialUnlockBundle/4",
+    "status": "mapped_recovery"
+  },
+  "chr_0014_aurora_talent_2_2": {
+    "character": "snowshine",
+    "description": "战技饱和性防御成功格挡攻击后，额外获得10终结技能量。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharGrowthTable/chr_0014_aurora/talentNodeMap/chr_0014_aurora_passive_skill_1_2",
+    "status": "mapped_recovery"
+  },
+  "chr_0015_lifeng_potential_4": {
+    "character": "lifeng",
+    "description": "终结技不动心所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0015_lifeng/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0016_laevat_potential_1": {
+    "character": "laevatain",
+    "description": "战技焚灭的追加攻击的伤害倍率提升至原本的1.2倍，且命中后返还20点技力。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0016_laevat/potentialUnlockBundle/0",
+    "status": "mapped_recovery"
+  },
+  "chr_0016_laevat_potential_4": {
+    "character": "laevatain",
+    "description": "终结技黄昏所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0016_laevat/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0017_yvonne_potential_1": {
+    "character": "yvonne",
+    "description": "连携技速冻仔·υ37的作用范围+20%，额外施放2次能量，且造成伤害后，额外获得15点终结技能量。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0017_yvonne/potentialUnlockBundle/0",
+    "status": "mapped_recovery"
+  },
+  "chr_0017_yvonne_potential_4": {
+    "character": "yvonne",
+    "description": "战技冰冰弹·β型的爆炸仅命中单个敌人时，返还10点技力。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0017_yvonne/potentialUnlockBundle/3",
+    "status": "mapped_recovery"
+  },
+  "chr_0018_dapan_potential_4": {
+    "character": "da_pan",
+    "description": "终结技切丝入锅！所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0018_dapan/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0019_karin_potential_1": {
+    "character": "akekuri",
+    "description": "通过技能恢复技力后，攻击力+10%，持续10秒，该效果最多叠加5层。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0019_karin/potentialUnlockBundle/0",
+    "status": "resource_observer"
+  },
+  "chr_0019_karin_potential_4": {
+    "character": "akekuri",
+    "description": "终结技小队，集结！所需的终结技能量-10%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0019_karin/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0019_karin_talent_1_2": {
+    "character": "akekuri",
+    "description": "每10点智识会使连携技快闪冲击的技力恢复量+1.5%，最多提高75%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharGrowthTable/chr_0019_karin/talentNodeMap/chr_0019_karin_passive_skill_0_2",
+    "status": "mapped_modifier"
+  },
+  "chr_0020_meurs_potential_4": {
+    "character": "catcher",
+    "description": "终结技教科书式猛攻所需的终结技能量-10%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0020_meurs/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0020_meurs_potential_5": {
+    "character": "catcher",
+    "description": "卡契尔存在护盾时，战技刚性阻击成功命中敌人后返还10点技力。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0020_meurs/potentialUnlockBundle/4",
+    "status": "mapped_recovery"
+  },
+  "chr_0021_whiten_potential_2": {
+    "character": "estella",
+    "description": "终结技震音所需的终结技能量-10%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0021_whiten/potentialUnlockBundle/1",
+    "status": "mapped_modifier"
+  },
+  "chr_0021_whiten_potential_5": {
+    "character": "estella",
+    "description": "每当有敌人被施加冻结后，获得5点终结技能量，该效果每1秒最多触发一次。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0021_whiten/potentialUnlockBundle/4",
+    "status": "mapped_recovery"
+  },
+  "chr_0021_whiten_talent_1_2": {
+    "character": "estella",
+    "description": "每当触发碎冰效果后，下一次战技凝声会返还15技力，该效果无法叠加。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharGrowthTable/chr_0021_whiten/talentNodeMap/chr_0021_whiten_passive_skill_0_2",
+    "status": "mapped_recovery"
+  },
+  "chr_0022_bounda_potential_4": {
+    "character": "fluorite",
+    "description": "终结技巅峰闹剧所需的终结技能量-10%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0022_bounda/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0023_antal_potential_2": {
+    "character": "antal",
+    "description": "终结技超频时刻所需的终结技能量-10%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0023_antal/potentialUnlockBundle/1",
+    "status": "mapped_modifier"
+  },
+  "chr_0023_antal_potential_3": {
+    "character": "antal",
+    "description": "若被聚焦的敌人在聚焦期间被击败，返还15点技力。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0023_antal/potentialUnlockBundle/2",
+    "status": "mapped_recovery"
+  },
+  "chr_0024_deepfin_potential_1": {
+    "character": "alesh",
+    "description": "战技非常规路亚触发恢复技力效果时，额外恢复10点技力。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0024_deepfin/potentialUnlockBundle/0",
+    "status": "mapped_recovery"
+  },
+  "chr_0024_deepfin_potential_4": {
+    "character": "alesh",
+    "description": "终结技大鳞，上钩！所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0024_deepfin/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0024_deepfin_talent_1_2": {
+    "character": "alesh",
+    "description": "附近有敌人被冻结或被附着源石结晶后，自身获得4点终结技能量。自身造成冻结触发上述效果时，额外获得8点终结技能量。该效果每3秒内最多触发一次。",
+    "resource_changes_count": 2,
+    "resource_modifiers_count": 0,
+    "source": "CharGrowthTable/chr_0024_deepfin/talentNodeMap/chr_0024_deepfin_passive_skill_0_2",
+    "status": "mapped_recovery"
+  },
+  "chr_0025_ardelia_potential_4": {
+    "character": "ardelia",
+    "description": "终结技毛茸茸派对所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0025_ardelia/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0026_lastrite_potential_4": {
+    "character": "last_rite",
+    "description": "终结技临终别礼所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0026_lastrite/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0026_lastrite_potential_5": {
+    "character": "last_rite",
+    "description": "战技塞什卡的秘传返还的技力额外提高5点，并额外提高生成的幻影追击伤害倍率至原本的1.2倍。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0026_lastrite/potentialUnlockBundle/4",
+    "status": "mapped_recovery"
+  },
+  "chr_0027_tangtang_potential_1": {
+    "character": "tangtang",
+    "description": "连携技河水，助我！的伤害倍率提升至原本的1.2倍，冷却时间{coolDown:0}秒。\n战技踏潮卷浪！每消耗一处涡流形成水龙卷，额外返还5点技力。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0027_tangtang/potentialUnlockBundle/0",
+    "status": "mapped_recovery"
+  },
+  "chr_0027_tangtang_potential_4": {
+    "character": "tangtang",
+    "description": "终结技大当家盯着呢！所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0027_tangtang/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0028_wulfa_potential_1": {
+    "character": "rossi",
+    "description": "战技血红之影和连携技燎影时刻的伤害倍率提升至原本的1.15倍。\n战技释放的狼之珀在命中敌人后返还10点技力。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0028_wulfa/potentialUnlockBundle/0",
+    "status": "mapped_recovery"
+  },
+  "chr_0028_wulfa_potential_4": {
+    "character": "rossi",
+    "description": "终结技“利爪”奇袭所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0028_wulfa/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0029_pograni_potential_1": {
+    "character": "pogranichnik",
+    "description": "战技粉碎阵线命中至少两个敌人时，返还15点技力。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0029_pograni/potentialUnlockBundle/0",
+    "status": "mapped_recovery"
+  },
+  "chr_0029_pograni_potential_3": {
+    "character": "pogranichnik",
+    "description": "天赋活着的旗帜效果加强：获得士气激昂所需的技力恢复量降低至60点。自身士气激昂最大叠加层数+2。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0029_pograni/potentialUnlockBundle/2",
+    "status": "resource_observer"
+  },
+  "chr_0029_pograni_potential_4": {
+    "character": "pogranichnik",
+    "description": "终结技盾卫旗队，上前所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0029_pograni/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0029_pograni_potential_5": {
+    "character": "pogranichnik",
+    "description": "连携技盈月邀击冷却时间{coolDown:0}秒，且技力恢复量变为原本的1.2倍。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0029_pograni/potentialUnlockBundle/4",
+    "status": "mapped_modifier"
+  },
+  "chr_0029_pograni_talent_1_2": {
+    "character": "pogranichnik",
+    "description": "战斗中，通过自身技能每恢复80点技力后，获得持续20秒的士气激昂。\n士气激昂效果：攻击力+8%，源石技艺强度+8。\n该效果最多叠加3层，每层单独计算时间。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 0,
+    "source": "CharGrowthTable/chr_0029_pograni/talentNodeMap/chr_0029_pograni_passive_skill_0_2",
+    "status": "resource_observer"
+  },
+  "chr_0030_zhuangfy_potential_3": {
+    "character": "zhuang_fangyi",
+    "description": "战技惊霆诀消耗导电后返还10点技力。青霆剑的存在时间+10秒。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0030_zhuangfy/potentialUnlockBundle/2",
+    "status": "mapped_recovery"
+  },
+  "chr_0030_zhuangfy_potential_4": {
+    "character": "zhuang_fangyi",
+    "description": "终结技万钧风雷所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0030_zhuangfy/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0031_mifu_potential_4": {
+    "character": "mi_fu",
+    "description": "终结技绝心所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0031_mifu/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0032_lizhiyan_potential_1": {
+    "character": "arcane",
+    "description": "连携技应龙四式效果加强：\n伤害倍率提升至原本的1.3倍。\n阵诀·智：当自身战技命中处于囹圄状态的敌人时，额外返还10点技力。\n阵诀·意：施加的自然脆弱和寒冷脆弱效果额外+6%。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0032_lizhiyan/potentialUnlockBundle/0",
+    "status": "mapped_recovery"
+  },
+  "chr_0032_lizhiyan_potential_4": {
+    "character": "arcane",
+    "description": "终结技破晦所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0032_lizhiyan/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0033_camille_potential_3": {
+    "character": "camille",
+    "description": "连携技锥心之棘冷却时间{coolDown:0}秒，锥心之棘和追猎伤害倍率提升至原本的1.3倍，技力恢复量提升至原本的1.15倍。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0033_camille/potentialUnlockBundle/2",
+    "status": "mapped_modifier"
+  },
+  "chr_0033_camille_potential_4": {
+    "character": "camille",
+    "description": "终结技猩红坠雨所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0033_camille/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0034_typhoea_potential_4": {
+    "character": "typhoeus",
+    "description": "终结技冰山呼告所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0034_typhoea/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0035_liino_potential_1": {
+    "character": "liino",
+    "description": "不处于演唱姿态进入战斗后，首次施放战技闪耀焦点，额外返还25点技力。\n演唱姿态和高歌姿态的攻击力提升效果额外+6%。\n",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_0035_liino/potentialUnlockBundle/0",
+    "status": "mapped_recovery"
+  },
+  "chr_0035_liino_potential_4": {
+    "character": "liino",
+    "description": "终结技晨星的协奏曲所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0035_liino/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0035_liino_talent_2_2": {
+    "character": "liino",
+    "description": "施放连携技悦心音调后，队伍中电磁或自然属性的干员下次施放战技时，返还10技力。该效果持续30秒，无法叠加，触发后效果结束。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharGrowthTable/chr_0035_liino/talentNodeMap/chr_0035_liino_passive_skill_1_2",
+    "status": "mapped_recovery"
+  },
+  "chr_0038_purrche_potential_4": {
+    "character": "purrchena",
+    "description": "终结技不许干坏事！所需的终结技能量-15%。",
+    "resource_changes_count": 0,
+    "resource_modifiers_count": 1,
+    "source": "CharacterPotentialTable/chr_0038_purrche/potentialUnlockBundle/3",
+    "status": "mapped_modifier"
+  },
+  "chr_0038_purrche_talent_1_2": {
+    "character": "purrchena",
+    "description": "战技我没有睡着！首次成功格挡敌人攻击后，额外获得10点终结技能量，并提升10%下一次终结技不许干坏事！开出代言人的特殊赠礼的概率，该效果最多叠加3层。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharGrowthTable/chr_0038_purrche/talentNodeMap/chr_0038_purrche_passive_skill_0_2",
+    "status": "mapped_recovery"
+  },
+  "chr_9000_endmin_potential_1": {
+    "character": "endministrator",
+    "description": "战技构成序列消耗源石结晶时，返还50点技力。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_9000_endmin/potentialUnlockBundle/0",
+    "status": "mapped_recovery"
+  },
+  "chr_9000_endmin_potential_3": {
+    "character": "endministrator",
+    "description": "终结技轰击序列消耗源石结晶后，获得15点终结技能量。\n该效果无法被加成。",
+    "resource_changes_count": 1,
+    "resource_modifiers_count": 0,
+    "source": "CharacterPotentialTable/chr_9000_endmin/potentialUnlockBundle/2",
+    "status": "mapped_recovery"
+  }
+}

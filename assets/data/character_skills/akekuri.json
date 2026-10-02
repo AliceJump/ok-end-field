@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "akekuri_skill",
@@ -231,7 +232,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "akekuri_link",
@@ -345,7 +347,22 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "kind": "per_hit",
+                    "per_unit": 7.5,
+                    "max_units": 2
+                },
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "kind": "fixed",
+                    "amount": 10
+                }
+            ]
         },
         {
             "skill_id": "akekuri_ultimate",
@@ -429,7 +446,18 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": [],
+            "resource_changes": [
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "kind": "per_hit",
+                    "per_unit": 80,
+                    "max_units": 3,
+                    "formula": "每枚集结信号弹恢复80技力（专精3），共发射3枚"
+                }
+            ]
         }
     ],
     "base_stats": {
