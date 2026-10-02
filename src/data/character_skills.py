@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 from pathlib import Path
 
@@ -140,10 +141,8 @@ def _load_character_from_json(file_path: Path) -> Character:
             legacy_ids.extend(skill_data.get(legacy_key, []) or [])
         for legacy_id in legacy_ids:
             if all(e.effect_id.value != legacy_id for e in effects):
-                try:
+                with contextlib.suppress(ValueError):
                     effects.append(SkillEffect(effect_id=EffectType(legacy_id)))
-                except ValueError:
-                    pass
 
         skill_type = _skill_type_of(skill_data["skill_type"])
         skill = Skill(

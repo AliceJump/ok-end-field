@@ -1,3 +1,4 @@
+import contextlib
 import threading
 import time
 from datetime import datetime
@@ -183,10 +184,8 @@ class BaseEfTask(
                     return
             except Exception:
                 # 前台输入已开始后异常：清理（释放按键）并结束，不再次调用父类返回
-                try:
+                with contextlib.suppress(Exception):
                     interaction.send_key_up("esc", foreground=True)
-                except Exception:
-                    pass
                 return
         super().back(*args, after_sleep=after_sleep, **kwargs)
 
@@ -456,10 +455,8 @@ class BaseEfTask(
         - 根据配置 `发生异常时终止游戏` 决定是继续（记录日志）还是终止（记录并不抛出）
         - 对于 `TaskDisabledException` 总是重新抛出以便上层处理
         """
-        try:
+        with contextlib.suppress(Exception):
             self.screenshot(prefix)
-        except Exception:
-            pass
 
         if not self.config.get("发生异常时终止游戏", False):
             self.log_info("发生异常，继续游戏", notify=True)
@@ -481,10 +478,8 @@ class BaseEfTask(
         name = task_name or getattr(self, "current_task", None) or "UnknownTask"
         if runner is not None and hasattr(runner, "get_current_task_name"):
             name = task_name or runner.get_current_task_name() or name
-        try:
+        with contextlib.suppress(Exception):
             self.screenshot(f"fail_{name}")
-        except Exception:
-            pass
 
         if runner is not None and hasattr(runner, "set_task_failure"):
             runner.set_task_failure(message, task_name=task_name, screenshot_taken=True)
@@ -528,11 +523,8 @@ class BaseEfTask(
         # 3. 为所有配置项补充默认值（安全处理）
         for group_items in groups.values():
             for item in group_items:
-                if isinstance(item, str):
-                    key = item
-                else:
-                    # 处理 self.CFG_XXX 常量的情况
-                    key = str(item)
+                # 处理 self.CFG_XXX 常量的情况
+                key = item if isinstance(item, str) else str(item)
 
                 # 关键修复：避免 NoneType 错误
                 if key not in self.default_config:

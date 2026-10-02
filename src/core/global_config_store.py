@@ -65,8 +65,8 @@ ZIP_LINE_CONFIG_TYPE = {
         "type": "drop_down",
         "options": [ZIP_LINE_DELIVERY_GROUP, ZIP_LINE_GATHER_GROUP],
         "sub_configs": {
-            ZIP_LINE_DELIVERY_GROUP: [ZIP_LINE_SCROLL_KEY] + ZIP_LINE_DELIVERY_KEYS,
-            ZIP_LINE_GATHER_GROUP: [ZIP_LINE_SCROLL_KEY] + ZIP_LINE_GATHER_KEYS,
+            ZIP_LINE_DELIVERY_GROUP: [ZIP_LINE_SCROLL_KEY, *ZIP_LINE_DELIVERY_KEYS],
+            ZIP_LINE_GATHER_GROUP: [ZIP_LINE_SCROLL_KEY, *ZIP_LINE_GATHER_KEYS],
         },
     },
 }
@@ -174,10 +174,7 @@ def _backup_legacy_task_configs(state: dict[str, Any]) -> None:
 
 
 def _iter_legacy_config_data(option: ConfigOption):
-    if option.name == BATTLE_CONFIG_NAME:
-        task_config_names = _BATTLE_LEGACY_TASK_CONFIGS
-    else:
-        task_config_names = []
+    task_config_names = _BATTLE_LEGACY_TASK_CONFIGS if option.name == BATTLE_CONFIG_NAME else []
 
     for task_config_name in task_config_names:
         legacy_path = Path(config_path(f"{task_config_name}.json"))

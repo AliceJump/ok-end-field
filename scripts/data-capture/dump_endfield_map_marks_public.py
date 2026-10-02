@@ -82,7 +82,7 @@ def main():
 
             all_names.update(name for name in template_map.values() if name and name not in EXCLUDE_MARKS)
 
-            def _add_point(mark: dict):
+            def _add_point(mark: dict, template_map=template_map):
                 nonlocal duplicate_count
                 map_id = mark.get("mapId")
                 if not isinstance(map_id, str) or not map_id:

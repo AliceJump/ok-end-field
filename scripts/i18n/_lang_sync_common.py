@@ -339,7 +339,7 @@ def fill_missing_from_index(data: dict, index: dict, langs: tuple = REPO_LANGS) 
         zh, style = _node_style(node)
         if not zh:
             continue
-        have = node_have_langs(node, langs + ("zh_CN",))
+        have = node_have_langs(node, (*langs, "zh_CN"))
         missing = [lang for lang in langs if lang not in have]
         if not missing:
             continue
@@ -376,7 +376,7 @@ def fill_missing_cross_files(data_map: dict, langs: tuple = REPO_LANGS) -> tuple
     - 候选对某缺失语言给出唯一值时才补；冲突/无值跳过。
     返回 (每文件统计, 变更列表 [(fname, key, zh, lang, val)])。
     """
-    all_langs = ("zh_CN",) + langs
+    all_langs = ("zh_CN", *langs)
     loaded = []  # (path, key, node, have, style, zh)
     for path, data in data_map.items():
         for key, node in data.items():

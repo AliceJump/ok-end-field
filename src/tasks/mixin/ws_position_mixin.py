@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # ruff: noqa: UP009
 import asyncio
+import contextlib
 import hashlib
 import hmac
 import json
@@ -12,6 +13,8 @@ from typing import Any
 from urllib import error, parse, request
 
 import websockets
+
+from src.core.map_device_id import clear_stored_device_id, ensure_map_device_id
 
 ENDFIELD_MAP_WS_URL = "wss://ws.skland.com/ws/v1/game/endfield/map"
 ENDFIELD_MAP_API_HOST = "https://zonai.skland.com"
@@ -26,7 +29,6 @@ ENDFIELD_MAP_REFERER = "https://game.skland.com/map/endfield"
 # 但官方 SDK 注册流程自铸的全新设备ID可以从 Python 直接使用、与账号无关且可长期复用；
 # 自铸流程见 src/core/map_device_id.py：临时浏览器配置匿名访问官方地图页（无需登录）
 # 完成注册，并持久化到 configs/map_device_id.json。
-from src.core.map_device_id import clear_stored_device_id, ensure_map_device_id
 
 _shumei_did_failed_at = 0.0
 _SHUMEI_DID_RETRY_INTERVAL = 30.0
@@ -470,10 +472,8 @@ class WsPositionMixin:
                     break
                 if callable(log_error):
                     log_error(f"[地图WS] 客户端异常，30秒后重试: {e}")
-                try:
+                with contextlib.suppress(TimeoutError):
                     await asyncio.wait_for(self._map_ws_stop_event.wait(), timeout=30.0)
-                except TimeoutError:
-                    pass
 
     def _start_map_ws_client(self, raw_cred: str | None):
         try:
@@ -531,14 +531,10 @@ class WsPositionMixin:
                 if callable(log_error):
                     log_error(f"[地图WS] 客户端启动异常: {e}")
             finally:
-                try:
+                with contextlib.suppress(Exception):
                     loop.stop()
-                except Exception:
-                    pass
-                try:
+                with contextlib.suppress(Exception):
                     loop.close()
-                except Exception:
-                    pass
                 if callable(log_info):
                     log_info("[地图WS] 客户端已关闭")
                 self._map_ws_enabled = False
@@ -583,7 +579,7 @@ class WsPositionMixin:
     def _push_ws_payload(self, payload: dict[str, Any]):
         try:
             # 缓存有效的位置数据
-            pos, map_id, px, py, pz = self._extract_position_payload(payload)
+            pos, map_id, _px, _py, _pz = self._extract_position_payload(payload)
             if pos is not None and map_id is not None:
                 with self._ws_position_lock:
                     self._ws_last_position_payload = payload
@@ -591,15 +587,10 @@ class WsPositionMixin:
             self._ws_payload_queue.put_nowait(payload)
         except queue.Full:
             # 队列已满，弹出旧数据后重试
-            try:
+            with contextlib.suppress(queue.Empty):
                 self._ws_payload_queue.get_nowait()
-            except queue.Empty:
-                pass
-            try:
+            with contextlib.suppress(queue.Full):
                 self._ws_payload_queue.put_nowait(payload)
-            except queue.Full:
-                # 仍然满，放弃此消息
-                pass
 
     async def _ws_handler(self, ws):
         log_info = getattr(self, "log_info", None)
@@ -667,14 +658,10 @@ class WsPositionMixin:
                 if callable(log_error):
                     log_error(f"[WS] 服务器异常: {e}")
             finally:
-                try:
+                with contextlib.suppress(Exception):
                     loop.stop()
-                except Exception:
-                    pass
-                try:
+                with contextlib.suppress(Exception):
                     loop.close()
-                except Exception:
-                    pass
                 if callable(log_info):
                     log_info("[WS] 服务器已关闭")
 

@@ -74,11 +74,10 @@ class _FakeExecutor:
         self.current_task = task
         cycled = True
         is_trigger_task = True
-        if cycled or self._frame is None:
-            if self.next_frame(time_out=4) is None and is_trigger_task:
-                self.skipped = True
-                self.current_task = None
-                return "SKIPPED"
+        if (cycled or self._frame is None) and self.next_frame(time_out=4) is None and is_trigger_task:
+            self.skipped = True
+            self.current_task = None
+            return "SKIPPED"
         if is_trigger_task:
             task.run()
             self.ran_tasks.append(task.name)
@@ -233,7 +232,7 @@ class TestNoFrameTaskPatch(unittest.TestCase):
 
     def test_sentinel_frame_access_raises_clear_error(self):
         with self.assertRaises(AttributeError) as ctx:
-            nf._FRAME_READY.shape
+            nf._FRAME_READY.__getattr__("shape")
         self.assertIn("needs_frame=False", str(ctx.exception))
 
 

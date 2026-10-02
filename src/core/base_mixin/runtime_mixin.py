@@ -233,7 +233,7 @@ class RuntimeMixin:
         Returns:
             int: 缩放后的距离。
         """
-        return max(minimum, int(round(value * self.resolution_scale())))
+        return max(minimum, round(value * self.resolution_scale()))
 
     def find_danger(self):
         """
@@ -579,14 +579,10 @@ class RuntimeMixin:
             def target_visible():
                 if match is not None and self.ocr(match=match, box=box):
                     return True
-                if feature is not None and self.find_one(
-                    feature,
-                    vertical_variance=0.05,
-                    horizontal_variance=0.05,
-                    box=box,
-                ):
-                    return True
-                return False
+                return bool(
+                    feature is not None
+                    and self.find_one(feature, vertical_variance=0.05, horizontal_variance=0.05, box=box)
+                )
 
             if self.wait_until(
                 target_visible,
@@ -729,7 +725,7 @@ class RuntimeMixin:
             raise ValueError("yolo_detect 至少需要传入一个 name")
         raw_names = [name] if isinstance(name, str) else name
         ordered_target_names = [str(n.value) if isinstance(n, Enum) else str(n) for n in raw_names if n is not None]
-        target_names = {n for n in ordered_target_names}
+        target_names = set(ordered_target_names)
         if not ordered_target_names:
             raise ValueError("yolo_detect 至少需要一个有效 name")
 

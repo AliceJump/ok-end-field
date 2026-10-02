@@ -417,7 +417,7 @@ class MouseRotationCalibration(BaseEfTask):
         """
         self.log_info(f"=== Verification: {target_yaw:+.2f}° ===", notify=True)
         k = k_neg if target_yaw > 0 else k_pos
-        dx = int(round(target_yaw / k)) if abs(k) > 1e-9 else 0
+        dx = round(target_yaw / k) if abs(k) > 1e-9 else 0
         if dx == 0:
             self.log_info("Verify skipped:  invalid k or dx = 0", notify=True)
             return

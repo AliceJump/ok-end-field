@@ -10,6 +10,7 @@ HWND_TOPMOST，任务销毁时统一恢复为非 TOPMOST。
 
 from __future__ import annotations
 
+import contextlib
 import ctypes
 import ctypes.wintypes
 import functools
@@ -168,10 +169,8 @@ class TopmostMixin:
                     with self_inner._topmost_state_lock:
                         if self_inner._topmost_paused:
                             return
-                        try:
+                        with contextlib.suppress(Exception):
                             self_inner.start_topmost_monitor()
-                        except Exception:
-                            pass
 
                 try:
                     delay_timer = threading.Timer(self_inner._TOPMOST_START_DELAY, _delayed_start)

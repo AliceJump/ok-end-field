@@ -3,6 +3,7 @@ import tempfile
 import threading
 import webbrowser
 from pathlib import Path
+from typing import ClassVar
 
 from qfluentwidgets import FluentIcon
 
@@ -47,7 +48,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         }
     )
 
-    account_config_blacklist = {
+    account_config_blacklist: ClassVar = {
         "发生异常时终止游戏",
         "仅退出游戏",
         "自动打开汇总文件",

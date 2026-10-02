@@ -3,6 +3,7 @@ import re
 import tempfile
 import unittest
 from pathlib import Path
+from typing import ClassVar
 from unittest.mock import patch
 
 import json5
@@ -37,7 +38,7 @@ class LangReferenceVisitor(ast.NodeVisitor):
 
 class LangTestCase(unittest.TestCase):
     # 缓存 lang json，避免重复读取
-    lang_cache = {}
+    lang_cache: ClassVar = {}
 
     # =========================
     # 提取源码中的 lang 引用

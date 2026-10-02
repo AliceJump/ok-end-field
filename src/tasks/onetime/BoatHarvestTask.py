@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from qfluentwidgets import FluentIcon
 
 from src.data.characters_utils import get_contact_list_with_feature_list
@@ -10,7 +12,7 @@ from src.tasks.mixin.liaison_mixin import LiaisonMixin
 class BoatHarvestTask(Common, LiaisonMixin):
     """帝江号收菜子任务：收集线索与制造舱助力，日常任务经 DailyFeature 接入。"""
 
-    BOAT_STAGES = ["收集线索", "使用制造舱助力"]
+    BOAT_STAGES: ClassVar = ["收集线索", "使用制造舱助力"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -52,10 +54,9 @@ class BoatHarvestTask(Common, LiaisonMixin):
         ok_bool_clue = True
         ok_up_room = True
         self._one_click_collect()
-        if "使用制造舱助力" in self._boat_stages():
-            if not self.up_make_room_num(exchange_help_box):
-                self.mark_task_failure("制造舱任务失败")
-                ok_up_room = False
+        if "使用制造舱助力" in self._boat_stages() and not self.up_make_room_num(exchange_help_box):
+            self.mark_task_failure("制造舱任务失败")
+            ok_up_room = False
         if not self.safe_back(feature=fL.operation_report_icon):
             self.log_info("无法返回到运转界面")
             return False
@@ -66,9 +67,7 @@ class BoatHarvestTask(Common, LiaisonMixin):
         if not self.collect_clue(exchange_help_box):
             self.mark_task_failure("收集线索任务失败")
             ok_bool_clue = False
-        if ok_bool_clue and ok_up_room:
-            return True
-        return False
+        return bool(ok_bool_clue and ok_up_room)
 
     def _one_click_collect(self):
         """
@@ -80,11 +79,10 @@ class BoatHarvestTask(Common, LiaisonMixin):
         stages = self._boat_stages()
         clue_box = self.box_of_screen(1627 / 1920, 178 / 1080, (1627 + 76) / 1920, (178 + 154) / 1080)
         start_time = self.active_time()
-        if "收集线索" in stages:
-            if self.wait_click_feature(
-                feature=fL.clue_collect_icon, time_out=3, box=clue_box, raise_if_not_found=False
-            ):
-                self.wait_pop_up(time_out=5)
+        if "收集线索" in stages and self.wait_click_feature(
+            feature=fL.clue_collect_icon, time_out=3, box=clue_box, raise_if_not_found=False
+        ):
+            self.wait_pop_up(time_out=5)
         result = self.wait_click_feature(
             feature=fL.products_collect_icon,
             time_out=max(1, 3 - (self.active_time() - start_time)),

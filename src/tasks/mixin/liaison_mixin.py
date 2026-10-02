@@ -53,7 +53,7 @@ class LiaisonMixin(NavigationMixin):
         self.can_contact_dict = get_contact_list_with_feature_list(self.lang)
 
         # 为每个干员构建 OCR 名称匹配规则
-        self.contact_name_patterns = {name: build_name_patterns(name) for name in self.can_contact_dict.keys()}
+        self.contact_name_patterns = {name: build_name_patterns(name) for name in self.can_contact_dict}
 
     def transfer_to_home_point(self, box=None, should_check_out_boat=False):
         """
@@ -91,13 +91,12 @@ class LiaisonMixin(NavigationMixin):
         target_area = self.wait_click_feature(
             feature=fL.boat_entrance_icon, time_out=2, raise_if_not_found=False, after_sleep=2, settle_time=1
         )
-        if should_check_out_boat:
-            if not target_area:
-                self.log_info("已在帝江号区域内，无需传送")
-                self.ensure_main()
-                # 已在帝江号区域即视为已确认，后续共享帝江号状态的任务不必重复传送确认。
-                self._daily_boat_state_confirmed = True
-                return True
+        if should_check_out_boat and not target_area:
+            self.log_info("已在帝江号区域内，无需传送")
+            self.ensure_main()
+            # 已在帝江号区域即视为已确认，后续共享帝江号状态的任务不必重复传送确认。
+            self._daily_boat_state_confirmed = True
+            return True
         self.log_info("找到帝江号区域，点击进入")
 
         # 查找传送点
@@ -316,7 +315,7 @@ class LiaisonMixin(NavigationMixin):
 
             self.log_info("找到联络对象")
 
-            self.click(list(result.values())[0], after_sleep=0.5)
+            self.click(next(iter(result.values())), after_sleep=0.5)
 
             if not self.wait_click_feature(
                 feature=fL.liaison_confirm,
@@ -424,7 +423,7 @@ class LiaisonMixin(NavigationMixin):
     def _finish_give_gift_after_clicked(self):
         """在已点击『赠送』后，完成选礼与确认赠送流程。"""
         self.wait_feature(feature=fL.map_filter_icon, box=self.box_of_screen(0.282, 0.907, 0.303, 0.937), time_out=5)
-        for i in range(self.config.get("一次送礼个数", 2)):
+        for _i in range(self.config.get("一次送礼个数", 2)):
             self.click(360 / 2560, 1150 / 1440, after_sleep=0.5)  # 点击礼物位置
         self.log_info("点击赠送礼物位置")
         if self.wait_click_feature(

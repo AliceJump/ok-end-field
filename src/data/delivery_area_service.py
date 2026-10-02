@@ -77,7 +77,7 @@ def extract_delivery_location(text: str, area_name: str, lang_accessor=None) -> 
     """Extract the canonical location name from text by matching against known locations."""
     canonical_locations = get_delivery_locations(area_name)
     localized_locations = get_delivery_locations(area_name, lang_accessor=lang_accessor)
-    for canonical_name, localized_name in zip(canonical_locations, localized_locations):
+    for canonical_name, localized_name in zip(canonical_locations, localized_locations, strict=False):
         if canonical_name in text or localized_name in text:
             return canonical_name
     return None

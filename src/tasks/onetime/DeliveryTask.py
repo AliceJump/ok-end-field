@@ -1,4 +1,5 @@
 import webbrowser
+from typing import ClassVar
 
 from qfluentwidgets import FluentIcon
 
@@ -47,12 +48,12 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
     TUTORIAL_TIPS = "游戏内开启全屏模式时请确保游戏内分辨率与你的屏幕分辨率一致"
 
     # 滑索配置键迁移：旧键 → 新键
-    config_key_migrations = {
+    config_key_migrations: ClassVar = {
         "通向送货点": "通向武陵城送货点",
         "通向送货点试验园区": "通向试验园区送货点",
     }
 
-    account_config_blacklist = {
+    account_config_blacklist: ClassVar = {
         CFG_TEST_TARGET,
         CFG_ONLY_ACCEPT,
         CFG_ONLY_DELIVER,
@@ -119,7 +120,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         }
         self.config_type[self.CFG_TEST_TARGET] = {
             "type": "drop_down",
-            "options": [self.TEST_NONE] + self.to_delivery_point_config_keys + self.ends + [self.TEST_FULL_CYCLE],
+            "options": [self.TEST_NONE, *self.to_delivery_point_config_keys, *self.ends, self.TEST_FULL_CYCLE],
             "sub_configs": {
                 self.TEST_NONE: [self.CFG_ONLY_ACCEPT, self.CFG_ONLY_DELIVER],
                 self.TEST_FULL_CYCLE: [self.CFG_FULL_CYCLE_LOCATION],
@@ -465,11 +466,10 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                     self.accept_order()
                     break
                 else:
-                    if daily_mode or not self.config.get(self.CFG_ONLY_DELIVER):
-                        if not self.accept_order():
-                            return False
+                    if (daily_mode or not self.config.get(self.CFG_ONLY_DELIVER)) and not self.accept_order():
+                        return False
                     success = None
-                    for attempt in range(3):
+                    for _attempt in range(3):
                         success = self.task_to_transfer_point(
                             need_location_list=get_delivery_locations(self.delivery_area, self.lang),
                         )
@@ -557,15 +557,20 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
         if current_area != self.delivery_area:
             self._configure_delivery_area(current_area)
         # 地区未变时也要修正无效的完整循环测试区域（如地区数据更新后旧地点失效）
-        if self.CFG_FULL_CYCLE_LOCATION in self.config:
-            if self.config.get(self.CFG_FULL_CYCLE_LOCATION) not in self.full_cycle_locations:
-                self.config[self.CFG_FULL_CYCLE_LOCATION] = self.full_cycle_locations[0]
+        if (
+            self.CFG_FULL_CYCLE_LOCATION in self.config
+            and self.config.get(self.CFG_FULL_CYCLE_LOCATION) not in self.full_cycle_locations
+        ):
+            self.config[self.CFG_FULL_CYCLE_LOCATION] = self.full_cycle_locations[0]
         # 当前实例的下拉选项与地区配置保持同步；独立任务和日常专属任务
         # 分别由 DeliveryTask / DailyDeliveryTask 实例保存自己的配置。
         if self.CFG_FULL_CYCLE_LOCATION in self.config_type and self.CFG_TEST_TARGET in self.config_type:
-            self.config_type[self.CFG_TEST_TARGET]["options"] = (
-                [self.TEST_NONE] + self.to_delivery_point_config_keys + self.ends + [self.TEST_FULL_CYCLE]
-            )
+            self.config_type[self.CFG_TEST_TARGET]["options"] = [
+                self.TEST_NONE,
+                *self.to_delivery_point_config_keys,
+                *self.ends,
+                self.TEST_FULL_CYCLE,
+            ]
             self.config_type[self.CFG_FULL_CYCLE_LOCATION]["options"] = self.full_cycle_locations
 
     def run_daily(self):
@@ -590,7 +595,7 @@ class DeliveryTask(AccountMixin, ZipLineMixin, MapMixin):
                 and not self.config.get(self.CFG_ONLY_ACCEPT)
                 and not self.config.get(self.CFG_ONLY_DELIVER)
             )
-            for repeat_idx, repeat_times in self.iter_multi_account_context(
+            for _repeat_idx, _repeat_times in self.iter_multi_account_context(
                 repeat_times=1,
                 empty_accounts_message="多账户模式已开启，但账号列表为空，自动送货任务结束",
                 account_log_suffix=self.tr("自动送货"),

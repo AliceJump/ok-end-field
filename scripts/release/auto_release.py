@@ -148,7 +148,7 @@ class VersionManager:
             self.logger.warning(f"获取commit信息失败: {e}，使用默认注释")
             return "Release"
 
-    def create_tag(self, tag: str, message: str = None) -> bool:
+    def create_tag(self, tag: str, message: str | None = None) -> bool:
         """创建 git tag
 
         Args:
@@ -257,7 +257,7 @@ class VersionManager:
         print()
         print("⟳ 正在推送最新commit到远程...")
         try:
-            result = subprocess.run(["git", "push"], capture_output=True, text=True, check=True)
+            subprocess.run(["git", "push"], capture_output=True, text=True, check=True)
             print("✓ 成功推送最新commit")
         except subprocess.CalledProcessError as e:
             print(f"✗ 推送commit失败: {e.stderr if e.stderr else '未知错误'}")

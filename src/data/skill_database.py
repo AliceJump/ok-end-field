@@ -14,9 +14,9 @@ if _root not in sys.path:
     sys.path.insert(0, _root)
 
 
-from src.data.character_skills import load_all_characters
-from src.data.effects import EffectType
-from src.data.skill_types import (
+from src.data.character_skills import load_all_characters  # noqa: E402
+from src.data.effects import EffectType  # noqa: E402
+from src.data.skill_types import (  # noqa: E402
     AutoReleaseRestriction,
     Character,
     ConditionType,
@@ -139,7 +139,7 @@ def create_example_database() -> SkillDatabase:
 
     # 从JSON文件加载所有角色
     all_characters = load_all_characters()
-    for char_id, char in all_characters.items():
+    for _char_id, char in all_characters.items():
         db.add_character(char)
 
     # 添加反应

@@ -25,10 +25,7 @@ def isolate_by_hsv_ranges(frame, ranges, invert=True, kernel_size=2):
 
         mask = cv2.inRange(hsv, lower_np, upper_np)
 
-        if combined_mask is None:
-            combined_mask = mask
-        else:
-            combined_mask = cv2.bitwise_or(combined_mask, mask)
+        combined_mask = mask if combined_mask is None else cv2.bitwise_or(combined_mask, mask)
 
     # ===== 形态学 =====
     if kernel_size > 0:

@@ -71,9 +71,8 @@ class BoatOrganizeTask(Common, LiaisonMixin):
                 self.click(store_btn[0], after_sleep=0.5)
 
         # 简易制作：复用已打开的背包页面，不再按 B
-        if do_craft:
-            if not self._make_simply_from_backpack():
-                return False
+        if do_craft and not self._make_simply_from_backpack():
+            return False
 
         return ok
 
