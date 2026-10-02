@@ -248,7 +248,7 @@ def _zhuang(key: str, payload: dict) -> CharacterMechanic | None:
         archetype="consume_status_build_stack_burst",
         generic_cycle_safe=False,
         resources=(
-            MechanicResource("conducting", "导电等级"),
+            MechanicResource("conducting", "导电等级", 4),
             MechanicResource("qingting_sword", "青霆剑", sword_cap),
             MechanicResource("ult_state", "天理合真"),
         ),
@@ -277,6 +277,7 @@ def _zhuang(key: str, payload: dict) -> CharacterMechanic | None:
                 sp_gate=0,
                 sp_cost=0,
                 requires=("ult_state", "first_battle_in_ult"),
+                consumes=("STACK_QINGTING_SWORD:all_on_attack",),
                 produces=("STACK_QINGTING_SWORD:3", "ATTACH_ELECTROMAGNETIC"),
             ),
         ),
@@ -316,7 +317,7 @@ def _yvonne(key: str, payload: dict) -> CharacterMechanic | None:
         archetype="consume_attachment_freeze_control",
         generic_cycle_safe=False,
         resources=(
-            MechanicResource("spell_attach", "法术附着层数"),
+            MechanicResource("spell_attach", "法术附着层数", 4),
             MechanicResource("frozen", "冻结", 1),
             MechanicResource("ult_crit_stack", "终结技暴击层数", max_crit),
         ),

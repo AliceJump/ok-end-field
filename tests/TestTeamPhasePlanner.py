@@ -130,6 +130,34 @@ class TestTeamPhasePlanner(unittest.TestCase):
         planner.observe_sp(100)
         self.assertEqual(planner.state.phase, CombatPhase.BURST_READY)
 
+    def test_hidden_resource_damage_uses_expected_value_not_full_value(self):
+        plans = build_team_burst_plans(
+            ["提弗洛斯", "庄方宜", "伊冯", "洁尔佩塔"],
+            load_character_mechanics(),
+            load_skill_timings(),
+        )
+        by_actor = {plan.actions[0].actor: plan for plan in plans}
+
+        ty_battle = next(action for action in by_actor["提弗洛斯"].actions if action.kind == "battle")
+        self.assertGreater(ty_battle.expected_damage, ty_battle.damage_low)
+        self.assertLess(ty_battle.expected_damage, ty_battle.damage_high)
+        self.assertAlmostEqual(ty_battle.full_probability, 0.2)
+        self.assertAlmostEqual(ty_battle.expected_fraction, 0.5)
+
+        zhuang_free = next(
+            action
+            for action in by_actor["庄方宜"].actions
+            if action.label == "天理合真首次惊霆诀"
+        )
+        self.assertAlmostEqual(zhuang_free.expected_damage, zhuang_free.damage_high)
+        self.assertEqual(zhuang_free.full_probability, 1)
+
+        yvonne_battle = next(action for action in by_actor["伊冯"].actions if action.kind == "battle")
+        self.assertGreater(yvonne_battle.expected_damage, yvonne_battle.damage_low)
+        self.assertLess(yvonne_battle.expected_damage, yvonne_battle.damage_high)
+        self.assertAlmostEqual(yvonne_battle.full_probability, 0.2)
+        self.assertAlmostEqual(yvonne_battle.expected_fraction, 0.5)
+
     def test_diagnostic_plans_preserve_non_sp_dimensions_without_auto_execution(self):
         plans = build_team_burst_plans(
             ["提弗洛斯", "庄方宜", "伊冯", "佩丽卡"],

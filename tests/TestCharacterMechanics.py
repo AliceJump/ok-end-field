@@ -54,6 +54,10 @@ class TestCharacterMechanics(unittest.TestCase):
         self.assertEqual(free.sp_gate, 0)
         self.assertEqual(free.sp_cost, 0)
         self.assertIn("STACK_QINGTING_SWORD:3", free.produces)
+        self.assertIn("STACK_QINGTING_SWORD:all_on_attack", free.consumes)
+        resources = {item.key: item.maximum for item in mechanic.resources}
+        self.assertEqual(resources["conducting"], 4)
+        self.assertEqual(resources["qingting_sword"], 9)
         self.assertEqual(mechanic.state_seconds, 25)
 
     def test_yvonne_freeze_consumption_and_control_window_are_explicit(self):
@@ -63,6 +67,8 @@ class TestCharacterMechanics(unittest.TestCase):
         self.assertIn("ATTACH_COLD|ATTACH_NATURAL", battle.requires)
         self.assertIn("spell_attach:all", battle.consumes)
         self.assertIn("STATUS_FROZEN", battle.produces)
+        resources = {item.key: item.maximum for item in mechanic.resources}
+        self.assertEqual(resources["spell_attach"], 4)
         self.assertEqual(mechanic.forced_main_control_seconds, 7)
         self.assertIn("STATUS_FROZEN:on_final_attack_if_present", ult.consumes)
 

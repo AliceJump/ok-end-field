@@ -17,6 +17,11 @@ from dataclasses import dataclass, field
 from enum import Enum
 
 from src.data.character_mechanics import CharacterMechanic
+from src.data.hidden_state_expectation import (
+    ExpectedDamage,
+    HiddenStateExpectation,
+    load_damage_envelopes,
+)
 
 
 class CombatPhase(str, Enum):
@@ -39,6 +44,11 @@ class BurstAction:
     sp_refund: float = 0.0
     duration: float = 0.0
     expected_damage: float | None = None
+    damage_low: float | None = None
+    damage_high: float | None = None
+    full_probability: float | None = None
+    expected_fraction: float | None = None
+    damage_basis: str | None = None
     repeats: int = 1
     requires: tuple[str, ...] = ()
     consumes: tuple[str, ...] = ()
@@ -135,7 +145,13 @@ def make_burst_plan(
     )
 
 
-def _transition_action(slot: str, actor: str, transition, duration: float = 0.0) -> BurstAction:
+def _transition_action(
+    slot: str,
+    actor: str,
+    transition,
+    duration: float = 0.0,
+    expected: ExpectedDamage | None = None,
+) -> BurstAction:
     return BurstAction(
         slot=slot,
         actor=actor,
@@ -145,6 +161,12 @@ def _transition_action(slot: str, actor: str, transition, duration: float = 0.0)
         sp_cost=float(transition.sp_cost or 0),
         sp_refund=float(transition.sp_refund or 0),
         duration=max(0.0, duration),
+        expected_damage=None if expected is None else expected.expected,
+        damage_low=None if expected is None else expected.low,
+        damage_high=None if expected is None else expected.high,
+        full_probability=None if expected is None else expected.full_probability,
+        expected_fraction=None if expected is None else expected.expected_fraction,
+        damage_basis=None if expected is None else expected.basis,
         repeats=max(1, int(transition.repeats)),
         requires=tuple(transition.requires),
         consumes=tuple(transition.consumes),
@@ -157,13 +179,29 @@ def build_team_burst_plans(
     mechanics: dict[str, CharacterMechanic],
     store,
 ) -> tuple[BurstPlan, ...]:
-    """Build conservative finite-window plans from mechanics already evidenced.
-
-    v1 only marks a plan runtime_executable when the runtime can observe every
-    step well enough to advance it without guessing. Other plans remain useful
-    diagnostics and define the future binary/runtime schema.
-    """
+    """Build finite-window plans with expected, not assumed-full, hidden damage."""
     plans = []
+    envelopes = load_damage_envelopes()
+    kind_name = {"battle": "战技", "link": "连携技", "ult": "终结技"}
+
+    def build_actions(slot, actor, transitions, profiles=()):
+        belief = HiddenStateExpectation(team, mechanics)
+        actions = []
+        for index, transition in enumerate(transitions):
+            envelope = envelopes.get((actor, kind_name.get(transition.action, "")))
+            estimate = belief.estimate_damage(
+                actor,
+                kind_name.get(transition.action, ""),
+                envelope,
+                transition,
+            )
+            duration = profiles[index].handoff if index < len(profiles) else 0.0
+            action = _transition_action(slot, actor, transition, duration, estimate)
+            actions.append(action)
+            for _ in range(max(1, action.repeats)):
+                belief.apply_action(action)
+        return tuple(actions)
+
     for index, actor in enumerate(team, 1):
         if actor == "?":
             continue
@@ -176,10 +214,7 @@ def build_team_burst_plans(
             transitions = tuple(t for t in mechanic.transitions if t.action == "battle")
             profiles = store.battle_phase_profiles(actor)
             if transitions and len(transitions) == len(profiles):
-                actions = tuple(
-                    _transition_action(slot, actor, transition, profile.handoff)
-                    for transition, profile in zip(transitions, profiles)
-                )
+                actions = build_actions(slot, actor, transitions, profiles)
                 plans.append(
                     make_burst_plan(
                         f"{slot}:{mechanic.key}:battle-chain",
@@ -192,11 +227,12 @@ def build_team_burst_plans(
             continue
 
         if mechanic.archetype == "main_control_attack_channel":
-            actions = tuple(
-                _transition_action(slot, actor, transition)
+            transitions = tuple(
+                transition
                 for transition in mechanic.transitions
                 if transition.action in {"battle", "normal", "link", "ult"}
             )
+            actions = build_actions(slot, actor, transitions)
             if actions:
                 plans.append(
                     make_burst_plan(
@@ -210,21 +246,19 @@ def build_team_burst_plans(
             continue
 
         if mechanic.archetype == "consume_status_build_stack_burst":
-            ordered = []
             ult = next((t for t in mechanic.transitions if t.action == "ult"), None)
             free = next((t for t in mechanic.transitions if t.phase.startswith("天理合真首次")), None)
             normal = next(
                 (t for t in mechanic.transitions if t.action == "battle" and t is not free),
                 None,
             )
-            for transition in (ult, free, normal):
-                if transition is not None:
-                    ordered.append(_transition_action(slot, actor, transition))
-            if ordered:
+            transitions = tuple(t for t in (ult, free, normal) if t is not None)
+            actions = build_actions(slot, actor, transitions)
+            if actions:
                 plans.append(
                     make_burst_plan(
                         f"{slot}:{mechanic.key}:ult-window",
-                        tuple(ordered),
+                        actions,
                         owner_slot=slot,
                         runtime_executable=False,
                         evidence=mechanic.evidence,
@@ -233,16 +267,18 @@ def build_team_burst_plans(
             continue
 
         if mechanic.archetype == "consume_attachment_freeze_control":
-            ordered = []
-            for kind in ("battle", "link", "ult"):
-                transition = next((t for t in mechanic.transitions if t.action == kind), None)
-                if transition is not None:
-                    ordered.append(_transition_action(slot, actor, transition))
-            if ordered:
+            transitions = tuple(
+                transition
+                for kind in ("battle", "link", "ult")
+                for transition in mechanic.transitions
+                if transition.action == kind
+            )
+            actions = build_actions(slot, actor, transitions)
+            if actions:
                 plans.append(
                     make_burst_plan(
                         f"{slot}:{mechanic.key}:freeze-window",
-                        tuple(ordered),
+                        actions,
                         owner_slot=slot,
                         runtime_executable=False,
                         evidence=mechanic.evidence,

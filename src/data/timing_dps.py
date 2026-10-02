@@ -8,7 +8,8 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from src.data.character_mechanics import mechanic_blockers
+from src.data.character_mechanics import load_character_mechanics, mechanic_blockers
+from src.data.hidden_state_expectation import HiddenStateExpectation, load_damage_envelopes
 from src.data.skill_allowlist import load_characters
 from src.data.skill_rotation import _read_entries
 
@@ -39,6 +40,9 @@ def load_damage_quotes(team: list[str], path: Path | None = None) -> dict[str, D
     No full-link4 multiplier is applied: its shared consumable pool is not monitored.
     """
     snapshots = load_characters()
+    mechanics = load_character_mechanics()
+    hidden = HiddenStateExpectation(team, mechanics)
+    envelopes = load_damage_envelopes(path)
     quotes = {}
     for row in _read_entries(path):
         name = row.get("character")
@@ -61,10 +65,29 @@ def load_damage_quotes(team: list[str], path: Path | None = None) -> dict[str, D
             return max(values, default=0.0)
 
         battle = best("战技")
-        conservative = battle
+        hidden_estimate = None
+        mechanic = mechanics.get(name)
+        if mechanic is not None:
+            transition = next(
+                (item for item in mechanic.transitions if item.action == "battle"),
+                None,
+            )
+            hidden_estimate = hidden.estimate_damage(
+                name,
+                "战技",
+                envelopes.get((name, "战技")),
+                transition,
+            )
+            if hidden_estimate is not None:
+                battle = hidden_estimate.expected
+        conservative = hidden_estimate.low if hidden_estimate is not None else battle
         required = (row.get("full_caliber_requires") or {}).get("attach", [])
         required = [required] if isinstance(required, str) else required
-        if required and row.get("cycle_expect_conservative") is not None:
+        if (
+            hidden_estimate is None
+            and required
+            and row.get("cycle_expect_conservative") is not None
+        ):
             conservative = max(0, battle + float(row["cycle_expect_conservative"]) - float(row["cycle_expect"]))
         produced, retain = set(), False
         for skill in snapshots.get(name, {}).get("skills") or []:
