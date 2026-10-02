@@ -2339,8 +2339,8 @@ msgstr "다시 시작 실패"
 msgid "物品导航配置说明"
 msgstr "아이템 내비게이션 설정 설명"
 
-msgid "位置来源：content 有值时使用官方地图 WebSocket，为空时使用本地 WS"
-msgstr "위치 소스: content 값이 있으면 공식 지도 WebSocket, 비어 있으면 로컬 WS 사용"
+msgid "地图数据来源：自动当前账号读取当前任务账号；账号配置读取指定账号；手动 content 使用本任务 content"
+msgstr "지도 데이터 소스: 자동 현재 계정은 현재 작업 계정을, 계정 설정은 지정한 계정을, 수동 content는 이 작업의 content를 사용합니다"
 
 msgid "关键配置"
 msgstr "주요 설정"
@@ -2348,9 +2348,8 @@ msgstr "주요 설정"
 msgid "选择物品：勾选要导航的物品，只匹配当前地图；为空时不会有任何目标"
 msgstr "아이템 선택: 내비게이션할 아이템을 선택합니다. 현재 지도만 대조하며 비어 있으면 대상이 없습니다"
 
-msgid "地图账号：content 为空时从中读取地图同步 content，选项来自账号配置页"
-msgstr ""
-"지도 계정: content가 비어 있을 때 해당 계정의 지도 동기화 content를 읽습니다. 항목은 계정 설정 페이지에서 가져옵니다"
+msgid "地图账号：仅在「地图数据来源 = 账号配置」时使用，选项来自账号配置页"
+msgstr "지도 계정: ‘지도 데이터 소스 = 계정 설정’일 때만 사용하며, 항목은 계정 설정 페이지에서 가져옵니다"
 
 msgid "标记按键：接近目标后用于标记已获取的键位，仅支持单个字符"
 msgstr "마크 키: 목표에 접근했을 때 획득 완료로 표시하는 키. 한 글자만 지원"
@@ -2421,10 +2420,8 @@ msgstr "3. 'Network / 네트워크' 탭으로 전환하고 필터 상자에 {api
 msgid "4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值"
 msgstr "4. 필터링된 목록에서 해당 요청을 선택하고 Response에서 data.content 값을 확인합니다"
 
-msgid "5. 把该值填入本任务 content；或填入账号配置页的「地图同步 content」，再用「地图账号」选择该账号"
-msgstr ""
-"5. 그 값을 이 작업의 content에 붙여넣거나, 계정 설정 페이지의 '지도 동기화 content'에 저장한 뒤 "
-"'지도 계정'에서 해당 계정을 선택합니다"
+msgid "5. 使用「手动 content」时把该值填入本任务 content；使用「账号配置」时把它保存到账号配置页并选择对应地图账号"
+msgstr "5. ‘수동 content’를 사용할 때는 값을 이 작업의 content에 붙여넣고, ‘계정 설정’을 사용할 때는 계정 설정 페이지에 저장한 뒤 해당 지도 계정을 선택합니다"
 
 msgid ""
 "可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
