@@ -896,14 +896,14 @@ class BattleMixin(BaseEfTask):
         return None
 
     def recover_target_too_far(self) -> bool:
-        """Hook for future distance recovery after a TOO_FAR prompt.
-
-        Intentionally a no-op for now. The reserved flow is:
-        target/lock so the camera turns toward the enemy -> allow a short settle
-        delay -> perform a long forward rush. Return True once a concrete
-        implementation has actually started that recovery action.
-        """
-        return False
+        """Lock the current target and dodge forward immediately to close range."""
+        self.log_info("时间排轴距离恢复: 中键索敌后向前闪避贴近敌人")
+        self.click(key="middle", down_time=0.002)
+        # Give target lock/camera steering one short beat before deciding the
+        # forward direction for the dodge.
+        self.sleep(0.05)
+        self.dodge_forward(pre_hold=0.05, dodge_down_time=0.03, after_sleep=0.02)
+        return True
     def is_link_skill_ready(self):
         """Shared link readiness monitor, without sending a combat key."""
         return bool(
