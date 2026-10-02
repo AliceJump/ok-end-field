@@ -492,6 +492,22 @@ class TimedCombatLogic:
                     f"{burst_plan.expected_end_sp:g} SP，阶段伤害 {damage}，"
                     f"runtime={'yes' if burst_plan.runtime_executable else 'diagnostic'}"
                 )
+                for action in burst_plan.actions:
+                    if (
+                        action.expected_damage is None
+                        or action.damage_low is None
+                        or action.damage_high is None
+                        or action.damage_high <= action.damage_low
+                    ):
+                        continue
+                    self.task.log_info(
+                        f"时间排轴隐藏状态期望: {action.actor}/{action.label} "
+                        f"{action.expected_damage:.0f} "
+                        f"(下界 {action.damage_low:.0f}, 上界 {action.damage_high:.0f}, "
+                        f"满层概率 {action.full_probability:.1%}, "
+                        f"期望层级比例 {action.expected_fraction:.1%}, "
+                        f"{action.damage_basis})"
+                    )
             if active_burst is not None:
                 self.task.log_info(
                     f"时间排轴爆发蓄力: 选择 {active_burst.key}，"

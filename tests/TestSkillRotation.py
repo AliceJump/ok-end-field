@@ -191,6 +191,15 @@ class TestDependencyAwareOrdering(unittest.TestCase):
         # 莱万汀（灼热）先手即满足任一元素 → 提弗洛斯紧随其后
         self.assertEqual(tokens, ["2", "1", "3", "4"])
 
+    def test_real_typhoeus_value_is_expected_between_conservative_and_full(self):
+        entries = load_team_baseline_entries(
+            ["提弗洛斯", "洁尔佩塔", "?", "?"],
+        )
+        value = entries["提弗洛斯"]["value"]
+        self.assertGreater(value, 103074.8)
+        self.assertLess(value, 129661.5)
+        self.assertAlmostEqual(value, (103074.8 + 129661.5) / 2, places=1)
+
     def test_real_data_feeder_precedes_typhoeus(self):
         from src.data.character_capabilities import load_character_capabilities
 

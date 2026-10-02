@@ -27,6 +27,8 @@ import json
 from pathlib import Path
 
 from src.data.character_capabilities import load_character_capabilities
+from src.data.character_mechanics import load_character_mechanics
+from src.data.hidden_state_expectation import HiddenStateExpectation, load_damage_envelopes
 
 _ROOT = Path(__file__).resolve().parent.parent.parent
 _BASELINE_FILE = _ROOT / "assets" / "data" / "damage_baseline.json"
@@ -98,6 +100,84 @@ def load_damage_baseline(path: Path | None = None) -> dict[str, float]:
     return result
 
 
+def _expected_mechanic_cycle_value(
+    row: dict,
+    team: list[str],
+    mechanics: dict,
+    capabilities: dict | None = None,
+    path: Path | None = None,
+) -> tuple[float | None, float | None]:
+    """Expected cycle/battle values for hidden mechanic state.
+
+    The baseline's full-caliber value remains an upper bound.  Complex
+    characters use the hidden-state belief model instead of silently receiving
+    that upper bound whenever their exact stacks are not observable.
+    """
+    name = str(row.get("character") or "")
+    mechanic = mechanics.get(name)
+    if mechanic is None:
+        return None, None
+
+    envelopes = load_damage_envelopes(path)
+    envelope = envelopes.get((name, "战技"))
+    if envelope is None:
+        return None, None
+
+    belief = HiddenStateExpectation(team, mechanics, capabilities=capabilities)
+    transition = next(
+        (item for item in mechanic.transitions if item.action == "battle"),
+        None,
+    )
+    estimate = belief.estimate_damage(name, "战技", envelope, transition)
+    if estimate is None:
+        return None, None
+
+    try:
+        full_cycle = float(row.get("cycle_expect"))
+    except (TypeError, ValueError):
+        return None, estimate.expected
+
+    required = (row.get("full_caliber_requires") or {}).get("attach")
+    conservative = row.get("cycle_expect_conservative")
+    if required and conservative is not None:
+        try:
+            conservative = float(conservative)
+        except (TypeError, ValueError):
+            conservative = None
+        if conservative is not None:
+            # For a baseline explicitly carrying a conservative/full pair, use
+            # the belief-derived readiness fraction to interpolate the *whole*
+            # cycle instead of reconstructing an incomplete skill formula.
+            if estimate.high > estimate.low:
+                fraction = (estimate.expected - estimate.low) / (estimate.high - estimate.low)
+            else:
+                fraction = 0.0
+            fraction = max(0.0, min(1.0, fraction))
+            return conservative + (full_cycle - conservative) * fraction, estimate.expected
+
+    battle_row = next(
+        (
+            skill
+            for skill in row.get("skills") or ()
+            if isinstance(skill, dict) and skill.get("type") == "战技"
+        ),
+        None,
+    )
+    if battle_row is None:
+        return full_cycle, estimate.expected
+    try:
+        original_battle = float(
+            battle_row.get(
+                "full_expect",
+                battle_row.get("crit_expect", battle_row.get("non_crit", 0)),
+            )
+            or 0
+        )
+    except (TypeError, ValueError):
+        original_battle = 0.0
+    return max(0.0, full_cycle - original_battle + estimate.expected), estimate.expected
+
+
 def load_team_baseline_entries(
     team_members: list[str],
     path: Path | None = None,
@@ -130,6 +210,7 @@ def load_team_baseline_entries(
 
     full = load_damage_baseline(path)
     caps = capabilities if capabilities is not None else load_character_capabilities()
+    mechanics = load_character_mechanics()
     team = [m for m in cache_key[0] if m != "?"]
     has_combo = any(
         (caps.get(m).combo_applier if caps.get(m) else False) for m in team
@@ -141,6 +222,17 @@ def load_team_baseline_entries(
         if not name:
             continue
         value = full.get(name, 0.0)
+        expected_battle = None
+        expected_cycle, expected_battle = _expected_mechanic_cycle_value(
+            entry,
+            team,
+            mechanics,
+            capabilities=caps,
+            path=path,
+        )
+        if expected_cycle is not None:
+            value = expected_cycle
+
         requirement = entry.get("full_caliber_requires") or {}
         need_attach = requirement.get("attach")
         required_elements = [need_attach] if isinstance(need_attach, str) else list(need_attach or [])
@@ -166,12 +258,18 @@ def load_team_baseline_entries(
         else:
             requires = required_elements or None
             if has_combo:
-                link4 = entry.get("cycle_expect_link4")
-                if link4 is not None:
-                    try:
-                        value = float(link4)
-                    except (TypeError, ValueError):
-                        pass
+                if expected_battle is not None:
+                    # Existing link4 baseline is defined as battle x1.75.
+                    # Preserve that rule, but apply it to the expected hidden-
+                    # state battle value rather than the full-state endpoint.
+                    value += expected_battle * 0.75
+                else:
+                    link4 = entry.get("cycle_expect_link4")
+                    if link4 is not None:
+                        try:
+                            value = float(link4)
+                        except (TypeError, ValueError):
+                            pass
         result[name] = {"value": value, "requires_attach": requires}
     _cached_team_entries[cache_key] = result
     return result
