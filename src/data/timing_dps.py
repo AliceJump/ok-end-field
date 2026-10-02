@@ -8,6 +8,7 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
+from src.data.character_mechanics import mechanic_blockers
 from src.data.skill_allowlist import load_characters
 from src.data.skill_rotation import _read_entries
 
@@ -194,6 +195,12 @@ def evaluate_cycle(sequence: tuple[CastOption, ...], regen: float = 8.0) -> Cycl
 
 
 def build_options(team, store, quotes) -> tuple[CastOption, ...]:
+    # Characters with native multi-stage/resource state machines must not be
+    # flattened into the legacy one-battle-button optimizer. Their semantics
+    # are preserved by character_mechanics and consumed by the mechanic runner.
+    if mechanic_blockers(team):
+        return ()
+
     options = []
     for index, name in enumerate(team):
         profiles = store.profiles(name, "battle")

@@ -22,10 +22,7 @@ class TestSkillTiming(unittest.TestCase):
                 continue
             self.assertTrue(any(skill.startswith(cid + "_") for skill in store.index["skills"]), cid)
             self.assertTrue(store.profiles(cid, "ult"), cid)
-            if cid not in ("chr_0031_mifu", "chr_0034_typhoea"):
-                self.assertTrue(store.profiles(cid, "battle"), cid)
-            else:
-                self.assertEqual(store.profiles(cid, "battle"), ())
+            self.assertTrue(store.profiles(cid, "battle"), cid)
             if cid != "chr_0028_wulfa":
                 self.assertTrue(store.profiles(cid, "link"), cid)
             else:
@@ -377,7 +374,7 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(logic.cursor, 1)
         self.assertAlmostEqual(task.now - before, 0.1)
         self.assertTrue(
-            any("25 SP <= 25，按键后直接视为成功" in message for message in task.messages)
+            any("消耗证据 25 SP <= 25，按键后直接视为成功" in message for message in task.messages)
         )
 
     def test_precise_sp_readiness_uses_partial_bar_value(self):
@@ -475,12 +472,85 @@ class TestTimedCombat(unittest.TestCase):
             self.assertFalse(TimedCombatLogic(task).run(deadline=2))
         self.assertEqual(task.mouse[-1], "up")
 
-    def test_missing_state_mapping_preserves_other_team_slots(self):
+    def test_mechanic_team_keeps_native_entry_slots_and_disables_flat_optimizer(self):
         task = FakeTask()
         task.detect_team_stable = lambda **kwargs: (["弭弗", "佩丽卡", "提弗洛斯", "洛茜"], True)
         logic = TimedCombatLogic(task, load_skill_timings())
         logic._detect_team(1)
-        self.assertEqual(set(logic.order), {"2", "4"})
-        task.link = True
+
+        self.assertEqual(set(logic.order), {"1", "2", "3", "4"})
+        self.assertIsNone(logic.plan)
+        self.assertEqual(logic.battle_phase_indices["1"], 0)
+        self.assertTrue(any("不能压成单战技循环" in message for message in task.messages))
+
+    def test_mifu_first_cast_uses_net_cost_then_prioritizes_second_phase(self):
+        task = FakeTask()
+        task.sp = 100.0
+        logic = TimedCombatLogic(task, load_skill_timings())
+        logic.team = ["弭弗", "佩丽卡", "诀", "洛茜"]
+        logic.order = ["1"]
+        logic.ult_order = []
+        logic.team_mechanics = {"1": logic.mechanics["弭弗"]}
+        logic.battle_phase_indices = {"1": 0}
+
         logic.step()
-        self.assertNotIn("e", task.keys)  # Unknown staged link owner must not get a guessed timer.
+        self.assertEqual(task.keys, ["1"])
+        self.assertEqual(logic.pending, (100.0, "1", 50.0))
+        self.assertEqual(logic.active[0].skill_id, "chr_0031_mifu_normalskill_1")
+
+        task.now = 0.1
+        task.sp = 50.0
+        logic.step()
+        self.assertEqual(logic.battle_phase_indices["1"], 1)
+        self.assertEqual(logic.forced_battle_token, "1")
+        self.assertEqual(task.keys, ["1"])
+
+        task.now = 0.5
+        logic.step()
+        self.assertEqual(task.keys, ["1", "1"])
+        self.assertEqual(logic.active[0].skill_id, "chr_0031_mifu_normalskill_2")
+        self.assertEqual(logic.pending, (50.0, "1", 50.0))
+
+    def test_zhuang_ultimate_prioritizes_free_first_battle(self):
+        task = FakeTask()
+        task.sp = 0.0
+        task.ults = {"1"}
+        logic = TimedCombatLogic(task, load_skill_timings())
+        logic.team = ["庄方宜", "佩丽卡", "诀", "洛茜"]
+        logic.order = ["1"]
+        logic.ult_order = ["1"]
+        logic.team_mechanics = {"1": logic.mechanics["庄方宜"]}
+
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertIn("1", logic.free_battle_once)
+        self.assertEqual(logic.forced_battle_token, "1")
+
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1", "1"])
+        self.assertNotIn("1", logic.free_battle_once)
+        self.assertIsNone(logic.forced_battle_token)
+
+    def test_yvonne_ultimate_protects_forced_main_control_window_from_other_ults(self):
+        task = FakeTask()
+        task.sp = 0.0
+        task.ults = {"1", "2"}
+        logic = TimedCombatLogic(task, load_skill_timings())
+        logic.team = ["伊冯", "佩丽卡", "诀", "洛茜"]
+        logic.order = ["3"]
+        logic.ult_order = ["1", "2"]
+        logic.team_mechanics = {"1": logic.mechanics["伊冯"]}
+
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertEqual(logic.forced_main_control_slot, "1")
+        self.assertGreater(logic.forced_main_control_until, task.now)
+
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1"])
+        self.assertIn("2", task.ults)
+
+        task.now = logic.forced_main_control_until + 0.01
+        logic.step()
+        self.assertEqual(task.keys, ["ult_1", "ult_2"])
+
