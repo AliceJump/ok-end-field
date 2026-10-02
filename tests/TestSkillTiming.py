@@ -1,20 +1,18 @@
 import gzip
 import hashlib
 import json
-import numpy as np
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+import numpy as np
+
 from src.core.BattleConfig import DEFAULT_BATTLE_CONFIG, KEY_TIMING_ROTATION
 from src.data.combat_observation import ActionBlockReason, EnemyPresence
 from src.data.skill_timing import SNAPSHOT, SkillTiming, SkillTimingStore, load_skill_timings
 from src.data.team_phase_planner import CombatPhase, build_team_burst_plans
-from src.tasks.mixin.battle_mixin import (
-    BattleMixin,
-    _measure_combat_too_far_text_band,
-)
+from src.tasks.mixin.battle_mixin import BattleMixin, _measure_combat_too_far_text_band
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 
