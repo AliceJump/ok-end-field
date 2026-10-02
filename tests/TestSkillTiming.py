@@ -359,6 +359,33 @@ class TestTimedCombat(unittest.TestCase):
             ActionBlockReason.TOO_FAR,
         )
 
+    def test_too_far_recovery_locks_then_dodges_forward(self):
+        events = []
+
+        class Harness:
+            def log_info(self, message):
+                events.append(("log", message))
+
+            def click(self, **kwargs):
+                events.append(("click", kwargs))
+
+            def sleep(self, seconds):
+                events.append(("sleep", seconds))
+
+            def dodge_forward(self, **kwargs):
+                events.append(("dodge", kwargs))
+
+        self.assertTrue(BattleMixin.recover_target_too_far(Harness()))
+        self.assertEqual(events[1], ("click", {"key": "middle", "down_time": 0.002}))
+        self.assertEqual(events[2], ("sleep", 0.05))
+        self.assertEqual(
+            events[3],
+            (
+                "dodge",
+                {"pre_hold": 0.05, "dodge_down_time": 0.03, "after_sleep": 0.02},
+            ),
+        )
+
     def test_too_far_feedback_cancels_unstarted_skill_and_calls_recovery_hook(self):
         task = FakeTask()
         task.sp = 100.0
