@@ -1,15 +1,18 @@
 import gzip
 import hashlib
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import patch
 
 from src.core.BattleConfig import DEFAULT_BATTLE_CONFIG, KEY_TIMING_ROTATION
 from src.data.combat_observation import ActionBlockReason, EnemyPresence
 from src.data.skill_timing import SNAPSHOT, SkillTiming, SkillTimingStore, load_skill_timings
 from src.data.team_phase_planner import CombatPhase, build_team_burst_plans
+from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 
@@ -114,6 +117,7 @@ class FakeTask:
         self.keys = []
         self.messages = []
         self.mouse = []
+        self.clicks = []
         self.link = False
         self.ults = set()
         self.exits = []
@@ -187,7 +191,7 @@ class FakeTask:
         pass
 
     def click(self, **kwargs):
-        pass
+        self.clicks.append(kwargs.get("key"))
 
     def in_combat(self, **kwargs):
         return True
@@ -223,7 +227,7 @@ class TestTimedCombat(unittest.TestCase):
         self.assertTrue(task.keys)
         self.assertEqual(task.mouse[-1], "up")
 
-    def test_enemy_absence_hook_pauses_input_without_freezing_state_time(self):
+    def test_enemy_absence_hook_pauses_skills_without_releasing_normal_attack(self):
         task = FakeTask()
         logic = logic_for(task)
         logic.state_until["1"] = 2.0
@@ -233,12 +237,13 @@ class TestTimedCombat(unittest.TestCase):
         logic._hold(True)
         task.now = 1.0
         self.assertTrue(logic._enemy_operation_paused())
-        self.assertEqual(task.mouse[-1], "up")
+        self.assertEqual(task.mouse[-1], "down")
         self.assertEqual(logic.enemy_pause_started, 1.0)
 
         task.now = 5.0
         state["value"] = EnemyPresence.UNKNOWN
         self.assertTrue(logic._enemy_operation_paused())
+        self.assertEqual(task.mouse[-1], "down")
         self.assertEqual(logic.enemy_pause_started, 1.0)
 
         task.now = 6.0
@@ -247,6 +252,49 @@ class TestTimedCombat(unittest.TestCase):
         self.assertIsNone(logic.enemy_pause_started)
         self.assertLess(logic.state_until["1"], task.now)
         self.assertTrue(any("暂停 5.00s 已计入状态耗时" in message for message in task.messages))
+
+    def test_enemy_absence_run_keeps_normal_attack_and_middle_lock(self):
+        task = FakeTask()
+        task.probe_enemy_presence = lambda: EnemyPresence.ABSENT
+
+        self.assertFalse(TimedCombatLogic(task).run(deadline=0.3))
+
+        self.assertIn("down", task.mouse)
+        self.assertIn("middle", task.clicks)
+        self.assertEqual(task.keys, [])
+        self.assertEqual(task.mouse[-1], "up")
+
+    def test_too_far_feedback_uses_validated_top_center_text_band(self):
+        matcher = re.compile(r"离(?:目标|敌人)太远")
+        calls = {}
+
+        def box_of_screen(*args, **kwargs):
+            calls["box"] = (args, kwargs)
+            return "feedback-box"
+
+        def ocr(**kwargs):
+            calls["ocr"] = kwargs
+            return [object()]
+
+        harness = SimpleNamespace(
+            lang=SimpleNamespace(
+                daily_battle_mixin=SimpleNamespace(combat_too_far_prompt=matcher),
+            ),
+            box_of_screen=box_of_screen,
+            ocr=ocr,
+        )
+
+        self.assertEqual(
+            BattleMixin.probe_combat_action_block_reason(harness),
+            ActionBlockReason.TOO_FAR,
+        )
+        self.assertEqual(
+            calls["box"][0],
+            (0.4703, 0.1593, 0.5266, 0.1815),
+        )
+        self.assertEqual(calls["box"][1]["name"], "combat_action_feedback")
+        self.assertIs(calls["ocr"]["match"], matcher)
+        self.assertEqual(calls["ocr"]["box"], "feedback-box")
 
     def test_too_far_feedback_cancels_unstarted_skill_and_calls_recovery_hook(self):
         task = FakeTask()

@@ -204,6 +204,9 @@ class DailyBattleMixinModule(_LangModuleBaseT):
     k_70b20820: re.Pattern[str]
     """选择"""
 
+    combat_too_far_prompt: re.Pattern[str]
+    """离(?:目标|敌人)太远"""
+
     k_unit_day: str
     """天"""
 

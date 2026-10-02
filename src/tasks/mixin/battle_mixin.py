@@ -762,23 +762,32 @@ class BattleMixin(BaseEfTask):
 
         ABSENT must only be returned when the detector has positively checked
         those regions and found no enemy evidence while the outer combat HUD is
-        still active. TimedCombatLogic will then pause all combat input but
-        will not freeze elapsed time, so temporary buffs/states can expire
-        naturally during the wait.
+        still active. TimedCombatLogic will pause skill scheduling but keep
+        normal attack and middle-button target acquisition running so a later
+        enemy can be acquired without freezing elapsed time.
         """
         return EnemyPresence.UNKNOWN
 
     def probe_combat_action_block_reason(self) -> ActionBlockReason | None:
-        """Hook for the short white top-center combat feedback text.
+        """Read the short white top-center combat feedback text.
 
-        Placeholder only. The planned detector uses a fixed top-center region
-        and can classify by the white-text band geometry/length before OCR:
-
-        - TOO_FAR: the short "离敌人太远" style prompt;
-        - DURING_SKILL: the longer "当前技能期间无法释放此技能" prompt.
-
-        Returning None means no actionable feedback was observed.
+        The 1920x1080 sample supplied for the distance prompt gives a tight,
+        complete text band at normalized coordinates
+        (0.4703, 0.1593, 0.5266, 0.1815). Keep this probe narrow because it runs
+        only inside the short post-action feedback window.
         """
+        feedback_box = self.box_of_screen(
+            0.4703,
+            0.1593,
+            0.5266,
+            0.1815,
+            name="combat_action_feedback",
+        )
+        if self.ocr(
+            match=self.lang.daily_battle_mixin.combat_too_far_prompt,
+            box=feedback_box,
+        ):
+            return ActionBlockReason.TOO_FAR
         return None
 
     def recover_target_too_far(self) -> bool:
