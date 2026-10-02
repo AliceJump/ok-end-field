@@ -2322,8 +2322,8 @@ msgstr "重啟失敗"
 msgid "物品导航配置说明"
 msgstr "物品導航設定說明"
 
-msgid "位置来源：content 有值时使用官方地图 WebSocket，为空时使用本地 WS"
-msgstr "位置來源：content 有值時使用官方地圖 WebSocket，為空時使用本地 WS"
+msgid "地图数据来源：自动当前账号读取当前任务账号；账号配置读取指定账号；手动 content 使用本任务 content"
+msgstr "地圖資料來源：自動目前帳號讀取目前任務帳號；帳號設定讀取指定帳號；手動 content 使用本任務 content"
 
 msgid "关键配置"
 msgstr "關鍵設定"
@@ -2331,8 +2331,8 @@ msgstr "關鍵設定"
 msgid "选择物品：勾选要导航的物品，只匹配当前地图；为空时不会有任何目标"
 msgstr "選擇物品：勾選要導航的物品，只比對當前地圖；為空時不會有任何目標"
 
-msgid "地图账号：content 为空时从中读取地图同步 content，选项来自账号配置页"
-msgstr "地圖帳號：content 為空時從中讀取地圖同步 content，選項來自帳號設定頁"
+msgid "地图账号：仅在「地图数据来源 = 账号配置」时使用，选项来自账号配置页"
+msgstr "地圖帳號：僅在「地圖資料來源 = 帳號設定」時使用，選項來自帳號設定頁"
 
 msgid "标记按键：接近目标后用于标记已获取的键位，仅支持单个字符"
 msgstr "標記按鍵：接近目標後用於標記已取得的鍵位，僅支援單一字元"
@@ -2400,8 +2400,8 @@ msgstr "3. 切到「Network / 網路」分頁，在篩選框輸入 {api}"
 msgid "4. 在筛选结果里选中该请求，从「响应 / Response」中取 data.content 的值"
 msgstr "4. 在篩選結果中選中該請求，從「Response / 回應」取得 data.content 的值"
 
-msgid "5. 把该值填入本任务 content；或填入账号配置页的「地图同步 content」，再用「地图账号」选择该账号"
-msgstr "5. 將該值填入本任務 content；或填入帳號設定頁的「地圖同步 content」，再用「地圖帳號」選擇該帳號"
+msgid "5. 使用「手动 content」时把该值填入本任务 content；使用「账号配置」时把它保存到账号配置页并选择对应地图账号"
+msgstr "5. 使用「手動 content」時將該值填入本任務 content；使用「帳號設定」時將它儲存到帳號設定頁並選擇對應地圖帳號"
 
 msgid ""
 "可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
