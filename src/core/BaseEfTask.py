@@ -24,6 +24,8 @@ from src.core.global_config_store import (
     ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME,
     KEY_CONFIG_NAME,
     get_global_config,
+    migrate_account_battle_mode_selectors,
+    migrate_task_battle_mode_selector,
     migrate_task_zip_line_values_to_global,
 )
 from src.data.lang import get_lang_accessor
@@ -286,6 +288,10 @@ class BaseEfTask(
                 value_migrations.update(vtable)
         migrate_config_file_keys(self.__class__.__name__, key_migrations)
         migrate_config_values(self.__class__.__name__, value_migrations)
+        # 新「战斗模式」是由多个历史 bool 合并而来，必须在 verify_config
+        # 补默认值之前推导；账号覆盖同理，保留旧键以便回滚。
+        migrate_task_battle_mode_selector(self.__class__.__name__)
+        migrate_account_battle_mode_selectors()
         # 在框架 Config 构造（verify_config 会删除任务文件中不在 default 的滑索键）之前，
         # 把任务文件中的滑索旧值转存到全局 Zip Line Config.json，避免全局侧 legacy 收集
         # 在任务文件滑索键已被删除后读不到值。

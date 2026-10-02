@@ -2771,3 +2771,19 @@ msgid ""
 msgstr ""
 "獨立實驗模式，優先於其他戰鬥策略開關。\n"
 "利用即時監測和本機技能時間資料安排出技。"
+
+
+msgid "战斗模式"
+msgstr "戰鬥模式"
+
+msgid "普通模式"
+msgstr "一般模式"
+
+msgid "伤害优先排轴"
+msgstr "傷害優先排軸"
+
+msgid "固定排轴"
+msgstr "固定排軸"
+
+msgid "实时条件"
+msgstr "即時條件"

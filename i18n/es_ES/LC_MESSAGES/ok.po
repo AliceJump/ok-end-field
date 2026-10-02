@@ -3055,3 +3055,19 @@ msgid ""
 msgstr ""
 "Modo experimental independiente con prioridad sobre las demás opciones de estrategia de combate.\n"
 "Programa las habilidades mediante la detección en tiempo real y los datos locales de duración."
+
+
+msgid "战斗模式"
+msgstr "Modo de combate"
+
+msgid "普通模式"
+msgstr "Modo normal"
+
+msgid "伤害优先排轴"
+msgstr "Rotación con prioridad de daño"
+
+msgid "固定排轴"
+msgstr "Rotación fija"
+
+msgid "实时条件"
+msgstr "Condiciones en tiempo real"

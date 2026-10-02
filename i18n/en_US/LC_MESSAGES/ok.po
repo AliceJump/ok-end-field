@@ -2960,3 +2960,19 @@ msgid ""
 msgstr ""
 "Independent experimental mode, with priority over other combat strategy switches.\n"
 "Schedules skills using live monitoring and local skill timing data."
+
+
+msgid "战斗模式"
+msgstr "Combat Mode"
+
+msgid "普通模式"
+msgstr "Normal Mode"
+
+msgid "伤害优先排轴"
+msgstr "Damage-Priority Rotation"
+
+msgid "固定排轴"
+msgstr "Fixed Rotation"
+
+msgid "实时条件"
+msgstr "Realtime Conditions"
