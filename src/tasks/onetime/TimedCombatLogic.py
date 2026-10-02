@@ -5,6 +5,12 @@ from __future__ import annotations
 from collections import deque
 
 from src.data.character_mechanics import load_character_mechanics, mechanic_blockers
+from src.data.combat_observation import (
+    ActionBlockReason,
+    EnemyPresence,
+    normalize_action_block_reason,
+    normalize_enemy_presence,
+)
 from src.data.skill_rotation import generate_damage_rotation
 from src.data.team_phase_planner import (
     CombatPhase,
@@ -29,6 +35,7 @@ class TimedCombatLogic:
     _SP_PRESSURE_MAX = 275.0
     _SP_PRESSURE_HEADROOM = 10.0
     _FAILED_CAST_RETRY_DELAY = 0.20
+    _ACTION_FEEDBACK_WINDOW = 1.20
     _DEAD_SLOT_CONFIRM_REFRESHES = 3
 
     def __init__(self, task, store=None):
@@ -72,6 +79,8 @@ class TimedCombatLogic:
         self.sp_pressure_threshold = 265.0
         self.battle_retry_after = {}
         self.dead_slot_evidence = {}
+        self.enemy_pause_started = None
+        self.last_action_attempt = None
         self.phase_planner = TeamPhasePlanner()
         self._last_phase_log = None
 
@@ -87,6 +96,96 @@ class TimedCombatLogic:
             return
         self._holding = False
         self.task.mouse_up(key="left")
+
+    def _enemy_operation_paused(self):
+        """Pause all combat input while a future detector says no enemy exists.
+
+        UNKNOWN preserves current behavior. Once an explicit ABSENT observation
+        starts a pause, UNKNOWN does not resume it; a positive PRESENT
+        observation is required. No timestamps are shifted while paused, so
+        cooldowns, state_until and native timeline elapsed time keep advancing.
+        """
+        probe = getattr(self.task, "probe_enemy_presence", None)
+        state = normalize_enemy_presence(probe() if callable(probe) else None)
+        now = self.task.active_time()
+
+        if state == EnemyPresence.ABSENT:
+            if self.enemy_pause_started is None:
+                self.enemy_pause_started = now
+                self.task.log_info(
+                    "时间排轴敌人占位检测: 战斗UI仍在但未见敌人证据，暂停普攻/技能/索敌输入；"
+                    "状态与冷却时间继续流逝"
+                )
+            self._hold(False)
+            return True
+
+        if self.enemy_pause_started is not None:
+            if state != EnemyPresence.PRESENT:
+                self._hold(False)
+                return True
+            elapsed = max(0.0, now - self.enemy_pause_started)
+            self.enemy_pause_started = None
+            self.task.log_info(
+                f"时间排轴敌人占位检测: 敌人重新出现，恢复操作；暂停 {elapsed:.2f}s 已计入状态耗时"
+            )
+        return False
+
+    def _note_action_attempt(self, kind, token=None):
+        self.last_action_attempt = (self.task.active_time(), kind, token)
+
+    def _cancel_unstarted_action(self, kind, token, now):
+        if kind == "battle":
+            if self.pending is not None and self.pending[1] == token:
+                self.pending = None
+                self.pending_advance_cursor = True
+            if token is not None:
+                self.battle_retry_after[token] = now + self._FAILED_CAST_RETRY_DELAY
+            if self.active_kind == "battle" and self.active_slot == token:
+                self._clear_active(now)
+            return
+        if self.active_kind == kind:
+            self._clear_active(now)
+
+    def _probe_action_feedback(self):
+        """Consume the reserved top-center action-failure hook.
+
+        The actual fixed-region white-text detector is intentionally not
+        implemented yet. Once it returns a reason, this method already provides
+        scheduler semantics:
+        - too_far: cancel the unstarted action and enter the distance-recovery
+          hook (future target-lock -> settle -> long forward rush);
+        - during_skill: cancel the unstarted action and retry later without
+          inventing a successful skill timeline.
+        """
+        if self.last_action_attempt is None:
+            return None
+
+        now = self.task.active_time()
+        attempted_at, kind, token = self.last_action_attempt
+        if now - attempted_at > self._ACTION_FEEDBACK_WINDOW:
+            self.last_action_attempt = None
+            return None
+
+        probe = getattr(self.task, "probe_combat_action_block_reason", None)
+        reason = normalize_action_block_reason(probe() if callable(probe) else None)
+        if reason is None:
+            return None
+
+        self.last_action_attempt = None
+        self._cancel_unstarted_action(kind, token, now)
+
+        if reason == ActionBlockReason.TOO_FAR:
+            recover = getattr(self.task, "recover_target_too_far", None)
+            started = bool(recover()) if callable(recover) else False
+            self.task.log_info(
+                "时间排轴动作受阻: 离敌人太远；进入距离恢复钩子"
+                + ("（已启动）" if started else "（占位，尚未实现移动）")
+            )
+        elif reason == ActionBlockReason.DURING_SKILL:
+            self.task.log_info(
+                "时间排轴动作受阻: 当前技能期间无法释放此技能；取消未证实时间轴并稍后重试"
+            )
+        return reason
 
     def _sp_probe_interval(self, sp):
         if sp < 0:
@@ -650,11 +749,14 @@ class TimedCombatLogic:
         self.phase_planner.start_if_ready(token, "battle")
         started = self.task.active_time()
         self.task.send_key(token)
+        self._note_action_attempt("battle", token)
         self._begin(profiles, started, slot=token, kind="battle")
         self.pending_advance_cursor = advance_cursor
 
         if expected_cost <= self.assume_success_sp_threshold:
             self.task.sleep(self._ASSUME_SUCCESS_PAUSE)
+            if self._probe_action_feedback() is not None:
+                return True
             self._note_assumed_sp_spend(sp, expected_cost)
             self.pending_advance_cursor = True
             self._accept_battle_skill(token, advance_cursor=advance_cursor)
@@ -674,6 +776,8 @@ class TimedCombatLogic:
                 )
         else:
             self.task.sleep(self._ASSUME_SUCCESS_PAUSE)
+            if self._probe_action_feedback() is not None:
+                return True
             self._note_assumed_sp_spend(sp, 0.0)
             self.pending_advance_cursor = True
             self._accept_battle_skill(token, advance_cursor=advance_cursor)
@@ -775,6 +879,8 @@ class TimedCombatLogic:
     def step(self):
         """One refreshed HUD observation; no legacy strategy switches are read."""
         now = self.task.active_time()
+        if self._probe_action_feedback() is not None:
+            return
         self._confirm_battle(now)
         if not self.team or not self.order:
             self._hold(True)
@@ -841,6 +947,7 @@ class TimedCombatLogic:
         ):
             started = self.task.active_time()
             if self.task.use_link_skill():
+                self._note_action_attempt("link")
                 if links:
                     self._begin(links, started, kind="link")
                 else:
@@ -878,6 +985,7 @@ class TimedCombatLogic:
         for _rate, token, profiles in ready_ults:
             started = self.task.active_time()
             if self.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
+                self._note_action_attempt("ult", token)
                 ended = self.task.active_time()
                 self._observe_bonus("ult", token)
                 self._observe_phase_action(token, "ult")
@@ -949,6 +1057,9 @@ class TimedCombatLogic:
                 if no_battle:
                     self._hold(False)
                     task.sleep(0.1)
+                    continue
+                if self._enemy_operation_paused():
+                    task.sleep(0.05)
                     continue
                 # Timed mode only schedules skill handoffs. Reassert the normal
                 # attack periodically because skill animations, focus changes or

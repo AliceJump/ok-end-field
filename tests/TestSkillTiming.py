@@ -7,6 +7,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from src.core.BattleConfig import DEFAULT_BATTLE_CONFIG, KEY_TIMING_ROTATION
+from src.data.combat_observation import ActionBlockReason, EnemyPresence
 from src.data.skill_timing import SNAPSHOT, SkillTiming, SkillTimingStore, load_skill_timings
 from src.data.team_phase_planner import CombatPhase, build_team_burst_plans
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
@@ -217,6 +218,66 @@ class TestTimedCombat(unittest.TestCase):
         self.assertFalse(AutoCombatLogic(task).run(start_sleep=0, deadline=1))
         self.assertTrue(task.keys)
         self.assertEqual(task.mouse[-1], "up")
+
+    def test_enemy_absence_hook_pauses_input_without_freezing_state_time(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        logic.state_until["1"] = 2.0
+        state = {"value": EnemyPresence.ABSENT}
+        task.probe_enemy_presence = lambda: state["value"]
+
+        logic._hold(True)
+        task.now = 1.0
+        self.assertTrue(logic._enemy_operation_paused())
+        self.assertEqual(task.mouse[-1], "up")
+        self.assertEqual(logic.enemy_pause_started, 1.0)
+
+        task.now = 5.0
+        state["value"] = EnemyPresence.UNKNOWN
+        self.assertTrue(logic._enemy_operation_paused())
+        self.assertEqual(logic.enemy_pause_started, 1.0)
+
+        task.now = 6.0
+        state["value"] = EnemyPresence.PRESENT
+        self.assertFalse(logic._enemy_operation_paused())
+        self.assertIsNone(logic.enemy_pause_started)
+        self.assertLess(logic.state_until["1"], task.now)
+        self.assertTrue(any("暂停 5.00s 已计入状态耗时" in message for message in task.messages))
+
+    def test_too_far_feedback_cancels_unstarted_skill_and_calls_recovery_hook(self):
+        task = FakeTask()
+        task.sp = 100.0
+        recoveries = []
+        task.probe_combat_action_block_reason = lambda: ActionBlockReason.TOO_FAR
+        task.recover_target_too_far = lambda: recoveries.append(task.now) or True
+        logic = logic_for(task)
+
+        self.assertTrue(logic._try_battle_token("1", 100.0))
+        self.assertIsNotNone(logic.pending)
+        self.assertTrue(logic.active)
+
+        task.now += 0.05
+        self.assertEqual(logic._probe_action_feedback(), ActionBlockReason.TOO_FAR)
+        self.assertIsNone(logic.pending)
+        self.assertEqual(logic.active, ())
+        self.assertEqual(len(recoveries), 1)
+        self.assertGreater(logic.battle_retry_after["1"], task.now)
+
+    def test_during_skill_feedback_retries_without_distance_recovery(self):
+        task = FakeTask()
+        task.sp = 100.0
+        recoveries = []
+        task.probe_combat_action_block_reason = lambda: ActionBlockReason.DURING_SKILL
+        task.recover_target_too_far = lambda: recoveries.append(task.now) or True
+        logic = logic_for(task)
+
+        self.assertTrue(logic._try_battle_token("1", 100.0))
+        task.now += 0.05
+        self.assertEqual(logic._probe_action_feedback(), ActionBlockReason.DURING_SKILL)
+        self.assertIsNone(logic.pending)
+        self.assertEqual(logic.active, ())
+        self.assertEqual(recoveries, [])
+        self.assertTrue(any("当前技能期间无法释放此技能" in message for message in task.messages))
 
     def test_consumption_confirmation_and_resource_driven_next_skill(self):
         task = FakeTask()
