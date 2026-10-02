@@ -1099,6 +1099,14 @@
       "pattern": "Chọn"
     }
   },
+  "combat_too_far_prompt": {
+    "zh_CN": {
+      "pattern": "离(?:目标|敌人)太远"
+    },
+    "zh_TW": {
+      "pattern": "離(?:目標|敵人)太遠"
+    }
+  },
   "k_unit_day": {
     "zh_CN": {
       "string": "天"

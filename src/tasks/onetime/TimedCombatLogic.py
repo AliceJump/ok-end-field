@@ -100,13 +100,15 @@ class TimedCombatLogic:
         self.task.mouse_up(key="left")
 
     def _enemy_operation_paused(self):
-        """Pause all combat input while a future detector says no enemy exists.
+        """Pause skill scheduling while an explicit detector says no enemy exists.
 
         UNKNOWN preserves current behavior. Once an explicit ABSENT observation
-        starts a pause, UNKNOWN does not resume it; a positive PRESENT
-        observation is required. No timestamps are shifted while paused, so
-        cooldowns, state_until and native timeline elapsed time keep advancing
-        on the monotonic combat clock, including while the automation itself is paused.
+        starts a pause, UNKNOWN does not resume skill scheduling; a positive
+        PRESENT observation is required. Normal attack and middle-button target
+        acquisition must keep running during this pause because those inputs are
+        what let a newly spawned or newly reachable enemy become targetable.
+        No timestamps are shifted, so cooldowns, state_until and native timeline
+        elapsed time keep advancing on the monotonic combat clock.
         """
         probe = getattr(self.task, "probe_enemy_presence", None)
         state = normalize_enemy_presence(probe() if callable(probe) else None)
@@ -116,20 +118,18 @@ class TimedCombatLogic:
             if self.enemy_pause_started is None:
                 self.enemy_pause_started = now
                 self.task.log_info(
-                    "时间排轴敌人占位检测: 战斗UI仍在但未见敌人证据，暂停普攻/技能/索敌输入；"
-                    "状态与冷却时间继续流逝"
+                    "时间排轴敌人占位检测: 战斗UI仍在但未见敌人证据，暂停技能调度；"
+                    "保持普攻和中键索敌，状态与冷却时间继续流逝"
                 )
-            self._hold(False)
             return True
 
         if self.enemy_pause_started is not None:
             if state != EnemyPresence.PRESENT:
-                self._hold(False)
                 return True
             elapsed = max(0.0, now - self.enemy_pause_started)
             self.enemy_pause_started = None
             self.task.log_info(
-                f"时间排轴敌人占位检测: 敌人重新出现，恢复操作；暂停 {elapsed:.2f}s 已计入状态耗时"
+                f"时间排轴敌人占位检测: 敌人重新出现，恢复技能调度；暂停 {elapsed:.2f}s 已计入状态耗时"
             )
         return False
 
@@ -1062,6 +1062,16 @@ class TimedCombatLogic:
                     task.sleep(0.1)
                     continue
                 if self._enemy_operation_paused():
+                    # No visible enemy pauses only the skill scheduler. Keep
+                    # normal attack and middle-button lock/search alive so the
+                    # game can acquire enemies that spawn or enter range later.
+                    force_normal_attack = now >= next_normal_attack
+                    self._hold(True, force=force_normal_attack)
+                    if force_normal_attack:
+                        next_normal_attack = now + self._NORMAL_ATTACK_REASSERT_INTERVAL
+                    if now >= next_lock:
+                        next_lock = now + 1
+                        task.click(key="middle")
                     task.sleep(0.05)
                     continue
                 # Timed mode only schedules skill handoffs. Reassert the normal
