@@ -33,6 +33,8 @@ from src.data.runtime_timing import (
     _NONE_U8,
     _NONE_U16,
     _mapping_crc,
+    combination_offset,
+    combination_rank,
     encode_axis,
     total_combinations,
     RuntimeTimingTable,
@@ -92,6 +94,46 @@ def _frame(value):
     return round(float(value) * FPS)
 
 
+def _aggregate_profiles(profiles):
+    """Collapse aliases/variants into one conservative final runtime profile."""
+    if not profiles:
+        return None
+
+    duration = max(profile.duration for profile in profiles)
+    exclusive = max(profile.exclusive for profile in profiles)
+    cooldown = max(profile.cooldown for profile in profiles)
+    skill_points = (
+        None
+        if any(profile.skill_points is None for profile in profiles)
+        else max(profile.skill_points for profile in profiles)
+    )
+    sp_cost = (
+        None
+        if any(profile.sp_cost is None for profile in profiles)
+        else max(profile.sp_cost for profile in profiles)
+    )
+    actionable = max(profile.actionable for profile in profiles)
+    handoff = max(profile.handoff for profile in profiles)
+    effect_start = None if abs(handoff - actionable) < 1e-9 else max(0.0, handoff - 0.05)
+
+    # Multiple underlying aliases (currently the two Administrator variants)
+    # deliberately drop candidate-specific early windows. The legacy runtime
+    # required every ambiguous candidate id to appear in one native window,
+    # which never happened, so its effective behavior was the conservative
+    # actionable boundary as well.
+    allow_next = profiles[0].allow_next if len(profiles) == 1 else ()
+    return {
+        "duration": duration,
+        "exclusive": exclusive,
+        "cooldown": cooldown,
+        "skill_points": skill_points,
+        "sp_cost": sp_cost,
+        "effect_start": effect_start,
+        "allow_next": allow_next,
+        "source": profiles[0] if len(profiles) == 1 else None,
+    }
+
+
 def _character_section(keys, characters, store):
     output = bytearray()
     for runtime_id, key in enumerate(keys):
@@ -99,17 +141,18 @@ def _character_section(keys, characters, store):
         gain = store.normal_attack_sp_gain(name)
         output.extend(_half_u8(gain))
 
-        profiles_by_kind = {}
-        for kind in KINDS:
-            profiles = store.profiles(name, kind)
-            if len(profiles) > 1:
-                raise ValueError(f"Ambiguous runtime profile for {name}:{kind}")
-            profiles_by_kind[kind] = profiles[0] if profiles else None
-
+        source_profiles = {
+            kind: store.profiles(name, kind)
+            for kind in KINDS
+        }
+        profiles_by_kind = {
+            kind: _aggregate_profiles(profiles)
+            for kind, profiles in source_profiles.items()
+        }
         standard_ids = {
-            kind: profile.skill_id
-            for kind, profile in profiles_by_kind.items()
-            if profile is not None
+            kind: profiles[0].skill_id
+            for kind, profiles in source_profiles.items()
+            if len(profiles) == 1
         }
 
         for kind in KINDS:
@@ -118,15 +161,19 @@ def _character_section(keys, characters, store):
                 output.extend(_u8(0))
                 continue
             output.extend(_u8(1))
-            output.extend(_u16(_frame(profile.duration)))
-            output.extend(_u16(_frame(profile.exclusive)))
-            output.extend(_cs_u16(profile.cooldown))
-            output.extend(_u8(_NONE_U8 if profile.skill_points is None else profile.skill_points))
-            output.extend(_half_u16(profile.sp_cost))
-            output.extend(_u16(_NONE_U16 if profile.effect_start is None else _frame(profile.effect_start)))
+            output.extend(_u16(_frame(profile["duration"])))
+            output.extend(_u16(_frame(profile["exclusive"])))
+            output.extend(_cs_u16(profile["cooldown"]))
+            output.extend(_u8(_NONE_U8 if profile["skill_points"] is None else profile["skill_points"]))
+            output.extend(_half_u16(profile["sp_cost"]))
+            output.extend(_u16(
+                _NONE_U16
+                if profile["effect_start"] is None
+                else _frame(profile["effect_start"])
+            ))
 
             windows = []
-            for start, end, allowed in profile.allow_next:
+            for start, end, allowed in profile["allow_next"]:
                 mask = 0
                 for target, skill_id in standard_ids.items():
                     if skill_id in allowed:
@@ -278,10 +325,11 @@ def export_runtime_table(path: Path = RUNTIME_TABLE):
 
     combo_count = total_combinations(len(keys))
     combo_section = bytearray(combo_count * COMBO_RECORD_SIZE)
-    cursor = 0
     counts = {}
+    written = 0
     for size in range(1, MAX_TEAM + 1):
         counts[size] = 0
+        section_offset = combination_offset(len(keys), size)
         for ids in combinations(range(len(keys)), size):
             team = tuple(names[index] for index in ids)
             record = _combo_record(
@@ -294,12 +342,14 @@ def export_runtime_table(path: Path = RUNTIME_TABLE):
                 gains,
                 global_gain,
             )
-            combo_section[cursor:cursor + COMBO_RECORD_SIZE] = record
-            cursor += COMBO_RECORD_SIZE
+            record_index = section_offset + combination_rank(ids)
+            byte_offset = record_index * COMBO_RECORD_SIZE
+            combo_section[byte_offset:byte_offset + COMBO_RECORD_SIZE] = record
+            written += 1
             counts[size] += 1
 
-    if cursor != len(combo_section):
-        raise RuntimeError("Runtime combo writer length mismatch")
+    if written != combo_count:
+        raise RuntimeError("Runtime combo writer count mismatch")
 
     header = _HEADER.pack(
         MAGIC,

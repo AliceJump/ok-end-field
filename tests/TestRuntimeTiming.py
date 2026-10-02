@@ -53,20 +53,33 @@ class TestRuntimeTiming(unittest.TestCase):
             for kind in ("battle", "link", "ult"):
                 old = self.legacy.profiles(name, kind)
                 new = self.runtime.profiles(name, kind)
-                self.assertEqual(len(new), len(old), f"{name}:{kind}")
+                self.assertEqual(len(new), 1 if old else 0, f"{name}:{kind}")
                 if not old:
                     continue
-                self.assertAlmostEqual(new[0].duration, old[0].duration, places=5)
-                self.assertAlmostEqual(new[0].exclusive, old[0].exclusive, places=5)
-                self.assertAlmostEqual(new[0].cooldown, old[0].cooldown, places=2)
-                self.assertEqual(new[0].skill_points, old[0].skill_points)
-                self.assertEqual(new[0].sp_cost, old[0].sp_cost)
-                if old[0].effect_start is None:
-                    self.assertIsNone(new[0].effect_start)
-                else:
-                    self.assertAlmostEqual(new[0].effect_start, old[0].effect_start, places=5)
-                self.assertAlmostEqual(new[0].handoff, old[0].handoff, places=5)
-                self.assertAlmostEqual(new[0].actionable, old[0].actionable, places=5)
+
+                merged = new[0]
+                self.assertAlmostEqual(merged.duration, max(p.duration for p in old), places=5)
+                self.assertAlmostEqual(merged.exclusive, max(p.exclusive for p in old), places=5)
+                self.assertAlmostEqual(merged.cooldown, max(p.cooldown for p in old), places=2)
+                expected_points = (
+                    None
+                    if any(p.skill_points is None for p in old)
+                    else max(p.skill_points for p in old)
+                )
+                expected_sp = (
+                    None
+                    if any(p.sp_cost is None for p in old)
+                    else max(p.sp_cost for p in old)
+                )
+                self.assertEqual(merged.skill_points, expected_points)
+                self.assertEqual(merged.sp_cost, expected_sp)
+                self.assertAlmostEqual(merged.handoff, max(p.handoff for p in old), places=5)
+                self.assertAlmostEqual(merged.actionable, max(p.actionable for p in old), places=5)
+                if len(old) == 1:
+                    if old[0].effect_start is None:
+                        self.assertIsNone(merged.effect_start)
+                    else:
+                        self.assertAlmostEqual(merged.effect_start, old[0].effect_start, places=5)
 
             for kind in ("battle", "ult"):
                 old = self.legacy.state_skill(name, kind)
