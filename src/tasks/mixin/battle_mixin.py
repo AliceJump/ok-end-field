@@ -95,6 +95,7 @@ SWITCH_CHAR_EXPAND = 1 / 8  # 搜索框向外扩大的比例（相对框自身�
 # 1920x1080 实测样本「离目标太远」完整文本带；归一化后可直接覆盖 4K/2K。
 COMBAT_TOO_FAR_TEXT_REGION = (0.4703, 0.1593, 0.5266, 0.1815)
 COMBAT_TOO_FAR_STABLE_FRAMES = 2
+COMBAT_TOO_FAR_STABLE_MIN_GAP = 0.01
 COMBAT_TOO_FAR_STABLE_MAX_GAP = 0.20
 COMBAT_TOO_FAR_SIGNATURE_TOLERANCE = (0.03, 0.08, 0.08, 0.025)
 
@@ -844,7 +845,7 @@ class BattleMixin(BaseEfTask):
         stable = (
             previous is not None
             and last_seen_at is not None
-            and 0 <= now - last_seen_at <= COMBAT_TOO_FAR_STABLE_MAX_GAP
+            and COMBAT_TOO_FAR_STABLE_MIN_GAP <= now - last_seen_at <= COMBAT_TOO_FAR_STABLE_MAX_GAP
             and all(
                 abs(current - old) <= tolerance
                 for current, old, tolerance in zip(
