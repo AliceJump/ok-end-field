@@ -104,6 +104,9 @@ class FakeTask:
         self.now = 0.0
         self.points = 1
         self.sp = None
+        self.sp_reads = 0
+        self.full_fast = False
+        self.full_fast_reads = 0
         self.keys = []
         self.messages = []
         self.mouse = []
@@ -139,7 +142,12 @@ class FakeTask:
         raise AssertionError(f"Read legacy combat strategy: {key}")
 
     def get_skill_bar_sp(self):
+        self.sp_reads += 1
         return self.points * 100.0 if self.sp is None else self.sp
+
+    def is_skill_bar_full_fast(self):
+        self.full_fast_reads += 1
+        return self.full_fast
 
     def get_skill_bar_count(self):
         return self.points
@@ -294,6 +302,55 @@ class TestTimedCombat(unittest.TestCase):
         logic._hold(True, force=True)
         self.assertEqual(task.mouse.count("down"), 2)
 
+    def test_sp_probe_rate_slows_below_two_bars_and_fast_checks_above_two(self):
+        task = FakeTask()
+        task.sp = 150.0
+        logic = logic_for(task)
+
+        self.assertEqual(logic._sample_sp(force=True), 150.0)
+        self.assertEqual(task.sp_reads, 1)
+
+        task.now += 0.10
+        task.sp = 180.0
+        self.assertEqual(logic._sample_sp(), 150.0)
+        self.assertEqual(task.sp_reads, 1)
+        self.assertEqual(task.full_fast_reads, 0)
+
+        task.now += logic._SP_LOW_PROBE_INTERVAL
+        task.sp = 220.0
+        self.assertEqual(logic._sample_sp(), 220.0)
+        self.assertEqual(task.sp_reads, 2)
+
+        task.now += 0.05
+        task.full_fast = False
+        self.assertEqual(logic._sample_sp(), 220.0)
+        self.assertEqual(task.sp_reads, 2)
+        self.assertEqual(task.full_fast_reads, 1)
+
+        task.now += 0.05
+        task.full_fast = True
+        self.assertEqual(logic._sample_sp(), 300.0)
+        self.assertEqual(task.sp_reads, 2)
+        self.assertEqual(task.full_fast_reads, 2)
+
+    def test_full_sp_can_insert_other_safe_slot_when_cursor_is_blocked(self):
+        task = FakeTask()
+        task.sp = 300.0
+        logic = logic_for(task)
+        logic.order = ["1"]
+        logic.state_until["1"] = 100.0
+        logic.damage_quotes = {
+            "狼卫": type("Quote", (), {"battle": 200.0})(),
+            "陈千语": type("Quote", (), {"battle": 100.0})(),
+            "管理员": type("Quote", (), {"battle": 50.0})(),
+        }
+
+        logic.step()
+
+        self.assertEqual(task.keys, ["2"])
+        self.assertEqual(logic.cursor, 0)
+        self.assertTrue(any("插入安全收益战技 2" in message for message in task.messages))
+
     def test_full_skill_points_preempt_link_and_ult_with_planned_battle(self):
         task = FakeTask()
         task.points = 3
@@ -366,6 +423,7 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(task.keys, [])
 
         task.points = 1
+        task.now += logic._SP_LOW_PROBE_INTERVAL + 0.01
         before = task.now
         logic.step()
 
@@ -387,6 +445,7 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(task.keys, [])
 
         task.sp = 25.0
+        task.now += logic._SP_LOW_PROBE_INTERVAL + 0.01
         logic.step()
         self.assertEqual(task.keys, ["1"])
 
@@ -522,14 +581,10 @@ class TestTimedCombat(unittest.TestCase):
         logic.team_mechanics = {"1": logic.mechanics["庄方宜"]}
 
         logic.step()
-        self.assertEqual(task.keys, ["ult_1"])
-        self.assertIn("1", logic.free_battle_once)
-        self.assertEqual(logic.forced_battle_token, "1")
-
-        logic.step()
         self.assertEqual(task.keys, ["ult_1", "1"])
         self.assertNotIn("1", logic.free_battle_once)
         self.assertIsNone(logic.forced_battle_token)
+        self.assertTrue(any("终结技恢复插入机制战技 1" in message for message in task.messages))
 
     def test_yvonne_ultimate_protects_forced_main_control_window_from_other_ults(self):
         task = FakeTask()
