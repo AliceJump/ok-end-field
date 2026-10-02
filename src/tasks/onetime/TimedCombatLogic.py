@@ -17,15 +17,19 @@ from src.data.timing_dps import build_options, load_damage_quotes, optimize_cycl
 
 class TimedCombatLogic:
     _NORMAL_ATTACK_REASSERT_INTERVAL = 0.25
-    _FULL_SKILL_SP = 295.0
     _DEFAULT_ASSUME_SUCCESS_SP_THRESHOLD = 25.0
     _ASSUME_SUCCESS_PAUSE = 0.1
     _SP_ERROR_MARGIN = 5.0
     _NATURAL_SP_PER_SECOND = 8.0
-    _SP_FAST_PROBE_THRESHOLD = 200.0
     _SP_LOW_PROBE_INTERVAL = 0.25
-    _SP_HIGH_PROBE_INTERVAL = 0.10
+    _SP_MEDIUM_PROBE_INTERVAL = 0.15
+    _SP_HIGH_PROBE_INTERVAL = 0.08
     _SP_UNKNOWN_PROBE_INTERVAL = 0.10
+    _SP_PRESSURE_MIN = 250.0
+    _SP_PRESSURE_MAX = 275.0
+    _SP_PRESSURE_HEADROOM = 10.0
+    _FAILED_CAST_RETRY_DELAY = 0.20
+    _DEAD_SLOT_CONFIRM_REFRESHES = 3
 
     def __init__(self, task, store=None):
         self.task = task
@@ -65,6 +69,9 @@ class TimedCombatLogic:
         self.cached_sp = -1.0
         self.next_sp_probe_at = 0.0
         self.last_sp_probe_at = 0.0
+        self.sp_pressure_threshold = 265.0
+        self.battle_retry_after = {}
+        self.dead_slot_evidence = {}
         self.phase_planner = TeamPhasePlanner()
         self._last_phase_log = None
 
@@ -84,8 +91,10 @@ class TimedCombatLogic:
     def _sp_probe_interval(self, sp):
         if sp < 0:
             return self._SP_UNKNOWN_PROBE_INTERVAL
-        if sp >= self._SP_FAST_PROBE_THRESHOLD:
+        if sp >= self.sp_pressure_threshold:
             return self._SP_HIGH_PROBE_INTERVAL
+        if sp >= max(0.0, self.sp_pressure_threshold - 50.0):
+            return self._SP_MEDIUM_PROBE_INTERVAL
         return self._SP_LOW_PROBE_INTERVAL
 
     def _cache_sp(self, sp, now=None):
@@ -98,16 +107,15 @@ class TimedCombatLogic:
     def _sample_sp(self, force=False):
         """Dynamically sample the expensive precise bar detector.
 
-        Below two bars the last precise value is reused briefly. Once the last
-        observation reaches 2.x bars, every scheduler frame performs only the
-        cheap third-bar full check; precise partial-fill scans run more often.
-        A positive full check returns 300 immediately so overflow prevention
-        can fire in the same scheduler step.
+        Precise scans accelerate as the cached value approaches the team-
+        specific overflow pressure line. Once that line is crossed, every
+        scheduler frame also performs only the cheap third-bar full check.
+        A positive full check returns 300 immediately.
         """
         now = self.task.active_time()
         if (
             not force
-            and self.cached_sp >= self._SP_FAST_PROBE_THRESHOLD
+            and self.cached_sp >= self.sp_pressure_threshold
             and hasattr(self.task, "is_skill_bar_full_fast")
             and self.task.is_skill_bar_full_fast()
         ):
@@ -314,11 +322,17 @@ class TimedCombatLogic:
         elif now - self.started >= 0.8:
             self.pending = None
             self.pending_advance_cursor = True
-            self.unconfirmed = True
             self._reset_conditional_battle_phase_after_failed_attempt(token)
-            # Keep the same feeder/consumer position and the complete timeline
-            # guard. A sent key alone is not proof that the skill was accepted.
-            self.task.log_info(f"时间排轴: 战技 {token} 未确认消耗，保护窗口结束后重试")
+            # No SP drop means the key press is not evidence that the authored
+            # skill timeline actually started. Keeping that unproven timeline
+            # active can stall the whole team for 10+ seconds on long skills.
+            self.battle_retry_after[token] = now + self._FAILED_CAST_RETRY_DELAY
+            self._clear_active(now)
+            self.next_sp_probe_at = min(self.next_sp_probe_at, now)
+            self.task.log_info(
+                f"时间排轴: 战技 {token} 未确认消耗，清除未证实时间轴，"
+                f"{self._FAILED_CAST_RETRY_DELAY:.2f}s 后可重试"
+            )
 
     def _set_cooldowns(self, profiles=None, started=None):
         profiles = self.active if profiles is None else profiles
@@ -350,10 +364,18 @@ class TimedCombatLogic:
             default=self._DEFAULT_ASSUME_SUCCESS_SP_THRESHOLD - self._SP_ERROR_MARGIN,
         )
         self.assume_success_sp_threshold = threshold_gain + self._SP_ERROR_MARGIN
+        self.sp_pressure_threshold = max(
+            self._SP_PRESSURE_MIN,
+            min(
+                self._SP_PRESSURE_MAX,
+                300.0 - threshold_gain - self._SP_PRESSURE_HEADROOM,
+            ),
+        )
         self.task.log_info(
             f"时间排轴技力确认阈值: 存活槽位重击回复 {active_gains}, "
             f"最大值 {threshold_gain:g} + 误差 {self._SP_ERROR_MARGIN:g} = "
-            f"{self.assume_success_sp_threshold:g} SP"
+            f"{self.assume_success_sp_threshold:g} SP；"
+            f"防溢出压力线 {self.sp_pressure_threshold:g} SP"
         )
 
     def _refresh_team_slots(self, deadline):
@@ -377,15 +399,36 @@ class TimedCombatLogic:
             self.task.log_debug(f"时间排轴忽略槽位刷新，已知角色位置不匹配: {mismatches}")
             return
 
-        newly_disabled = {
-            str(index + 1)
-            for index, (expected, current) in enumerate(zip(self.team, detected))
-            if expected != "?" and current == "?" and str(index + 1) not in self.disabled_slots
-        }
+        # Combat portraits can transiently disappear during effects/animation.
+        # A slot is only considered dead after the same position is unknown in
+        # several independent 1s refresh cycles. A later positive recognition
+        # immediately clears the suspicion.
+        candidates = set()
+        for index, (expected, current) in enumerate(zip(self.team, detected), 1):
+            token = str(index)
+            if expected == "?" or token in self.disabled_slots:
+                continue
+            if current == expected:
+                self.dead_slot_evidence.pop(token, None)
+                continue
+            if current == "?":
+                count = self.dead_slot_evidence.get(token, 0) + 1
+                self.dead_slot_evidence[token] = count
+                if count >= self._DEAD_SLOT_CONFIRM_REFRESHES:
+                    candidates.add(token)
+                else:
+                    self.task.log_debug(
+                        f"时间排轴槽位 {token}:{expected} 暂时未识别，"
+                        f"死亡确认 {count}/{self._DEAD_SLOT_CONFIRM_REFRESHES}"
+                    )
+
+        newly_disabled = candidates - self.disabled_slots
         if not newly_disabled:
             return
 
         self.disabled_slots.update(newly_disabled)
+        for token in newly_disabled:
+            self.dead_slot_evidence.pop(token, None)
         self.task._battle_team_disabled_slots = {
             int(token) - 1 for token in self.disabled_slots
         }
@@ -404,6 +447,7 @@ class TimedCombatLogic:
             self.state_until.pop(token, None)
             self.free_battle_once.discard(token)
             self.battle_phase_indices.pop(token, None)
+            self.battle_retry_after.pop(token, None)
 
         if self.phase_planner.disable_slots(newly_disabled):
             self.task.log_info("时间排轴阶段: 爆发参与槽位失效，取消当前爆发计划")
@@ -414,7 +458,8 @@ class TimedCombatLogic:
             for token in sorted(newly_disabled, key=int)
         ]
         self.task.log_info(
-            f"时间排轴屏蔽失效槽位 {details}，保留原始槽位编号，后续不再调度这些位置"
+            f"时间排轴屏蔽失效槽位 {details}，已跨 "
+            f"{self._DEAD_SLOT_CONFIRM_REFRESHES} 次刷新确认，保留原始槽位编号"
         )
 
     def _detect_team(self, deadline):
@@ -452,6 +497,8 @@ class TimedCombatLogic:
                 )
 
             self.disabled_slots.clear()
+            self.dead_slot_evidence.clear()
+            self.battle_retry_after.clear()
             self.task._battle_team_disabled_slots = set()
             self.normal_attack_sp_gains = self.store.team_normal_attack_sp_gains(team)
             self._refresh_sp_threshold()
@@ -579,6 +626,8 @@ class TimedCombatLogic:
         now = self.task.active_time()
         if not self._slot_available(token) or now < self.state_until.get(token, 0):
             return False
+        if now < self.battle_retry_after.get(token, 0):
+            return False
         if (
             self.forced_main_control_slot == token
             and now < self.forced_main_control_until
@@ -619,7 +668,10 @@ class TimedCombatLogic:
         elif expected_cost > 0:
             self.pending = (sp, token, expected_cost)
             if overflow:
-                self.task.log_info(f"时间排轴: 技力已满，防溢出抢占尝试战技 {token}")
+                self.task.log_info(
+                    f"时间排轴: 高技力防溢出 {sp:.1f}/{self.sp_pressure_threshold:.1f} SP，"
+                    f"抢占尝试战技 {token}"
+                )
         else:
             self.task.sleep(self._ASSUME_SUCCESS_PAUSE)
             self._note_assumed_sp_spend(sp, 0.0)
@@ -652,19 +704,21 @@ class TimedCombatLogic:
         return damage / handoff
 
     def _try_overflow_battle_skill(self, sp, checkpoint):
-        """Spend a confirmed full bar at more than one legal insertion point.
+        """Spend before a projected incoming gain would cap the shared SP bar.
 
-        The planned cursor keeps first priority. If it cannot act, scan the
+        The pressure threshold is derived from the team's largest known/upper-
+        bound finisher gain. The planned cursor keeps first priority. If it
+        cannot act, scan the
         remaining *generic-safe* slots by marginal battle damage / handoff.
         Complex mechanic slots are never opportunistically pulled out of order.
         """
-        if sp < self._FULL_SKILL_SP or not self.order:
+        if sp < self.sp_pressure_threshold or not self.order:
             return False
 
         current = self.order[self.cursor]
         if self._try_battle_token(current, sp, overflow=True, advance_cursor=True):
             self.task.log_info(
-                f"时间排轴: 满技力抢占[{checkpoint}]，释放当前计划战技 {current}"
+                f"时间排轴: 高技力抢占[{checkpoint}]，释放当前计划战技 {current}"
             )
             return True
 
@@ -681,7 +735,7 @@ class TimedCombatLogic:
         for _score, token in candidates:
             if self._try_battle_token(token, sp, overflow=True, advance_cursor=False):
                 self.task.log_info(
-                    f"时间排轴: 满技力抢占[{checkpoint}]，当前计划战技不可用，"
+                    f"时间排轴: 高技力抢占[{checkpoint}]，当前计划战技不可用，"
                     f"插入安全收益战技 {token}"
                 )
                 return True
@@ -713,8 +767,9 @@ class TimedCombatLogic:
             self.forced_main_control_slot = token
             self.forced_main_control_until = ended + mechanic.forced_main_control_seconds
             self.task.log_info(
-                f"时间排轴机制: 终结技 {token} 锁定主控输出窗口 "
-                f"{mechanic.forced_main_control_seconds:.1f}s；期间不插入其他终结技"
+                f"时间排轴机制: 终结技 {token} 保护自身主控普攻窗口 "
+                f"{mechanic.forced_main_control_seconds:.1f}s；"
+                "仅抑制该角色自身战技，其他角色技能/终结技照常"
             )
 
     def step(self):
@@ -758,10 +813,10 @@ class TimedCombatLogic:
             if not self._slot_available(token):
                 self.forced_battle_token = None
 
-        # Prevent full-SP starvation: once the HUD is effectively full, the
-        # next planned battle skill gets priority over link/ult as soon as the
-        # current cast has committed. get_skill_bar_sp() already uses the
-        # optimized 1+0 / n+1 / worst-case 3+1 staged bar scan.
+        # Prevent projected overflow before the bar is actually full. The
+        # pressure line is derived from the largest plausible incoming finisher
+        # gain; burst reserve checks still veto spending that would break a
+        # prepared finite-window plan.
         if self._try_overflow_battle_skill(sp, "主循环"):
             return
 
@@ -789,12 +844,6 @@ class TimedCombatLogic:
             self.forced_main_control_until = 0.0
         for token in self.ult_order:
             if not self._slot_available(token):
-                continue
-            if (
-                self.forced_main_control_slot is not None
-                and now < self.forced_main_control_until
-                and token != self.forced_main_control_slot
-            ):
                 continue
             profiles = self.store.profiles(self.team[int(token) - 1], "ult")
             if self._ready(profiles, slot=token, kind="ult") and self.task._find_battle_ult("ult_" + token):

@@ -343,14 +343,14 @@ def _yvonne(key: str, payload: dict) -> CharacterMechanic | None:
                 requires=("prefer:STATUS_FROZEN",),
                 consumes=("STATUS_FROZEN:on_final_attack_if_present",),
                 produces=("forced_main_control",),
-                notes=("必须保留普通攻击直到持续时间结束前最后一击",),
+                notes=("保留伊冯自身主控普攻直到持续时间结束前最后一击；队友技能可后台并行",),
             ),
         ),
         forced_main_control_seconds=ult_duration,
         evidence=(
             "战技要求寒冷或自然附着并消费目标全部法术附着后冻结",
             "连携要求冻结目标受到主控重击",
-            f"终结技强制主控约 {ult_duration:g}s" if ult_duration else "终结技强制切换主控",
+            f"终结技强制主控约 {ult_duration:g}s；不构成全队技能锁" if ult_duration else "终结技强制切换主控；不构成全队技能锁",
             "终结技最后一次普通攻击为重击；冻结存在时追加伤害并消耗冻结",
         ),
     )
