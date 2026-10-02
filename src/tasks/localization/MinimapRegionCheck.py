@@ -49,8 +49,8 @@ class MinimapRegionCheck(BaseEfTask):
     CENTER_Y_RATIO = DEFAULT_CENTER_RATIO[1]
     R_OUTER_RATIO = DEFAULT_R_OUTER_RATIO
     R_INNER_RATIO = DEFAULT_R_INNER_RATIO
-    ZOOM = 5                       # 放大图倍数（最近邻）
-    MARK_PAD_RATIO = 0.5           # 裁剪范围在外圈之外再留的余量（占外半径比例）
+    ZOOM = 5  # 放大图倍数（最近邻）
+    MARK_PAD_RATIO = 0.5  # 裁剪范围在外圈之外再留的余量（占外半径比例）
     SAVE_DIR = "screenshots/minimap_region"
 
     def __init__(self, *args, **kwargs):
@@ -105,11 +105,7 @@ class MinimapRegionCheck(BaseEfTask):
         r_in_ratio = self._cfg_float("内圈半径比例(占宽)", self.R_INNER_RATIO)
         pad_ratio = max(0.0, self._cfg_float("标记外扩比例", self.MARK_PAD_RATIO))
         zoom = max(1, int(self._cfg_float("裁剪放大倍数", self.ZOOM)))
-        if not (
-            0.0 <= cx_ratio <= 1.0
-            and 0.0 <= cy_ratio <= 1.0
-            and 0.0 <= r_in_ratio < r_out_ratio
-        ):
+        if not (0.0 <= cx_ratio <= 1.0 and 0.0 <= cy_ratio <= 1.0 and 0.0 <= r_in_ratio < r_out_ratio):
             self.log_warning(
                 "小地图圆环几何参数无效，请检查圆心和内外半径比例",
                 notify=True,
@@ -117,9 +113,7 @@ class MinimapRegionCheck(BaseEfTask):
             return
 
         # 与里程计建掩膜同一个函数 -> 圈出来的就是实际参与相位相关的区域
-        cx, cy, r_in, r_out = region_geometry(
-            w, h, (cx_ratio, cy_ratio), r_out_ratio, r_in_ratio
-        )
+        cx, cy, r_in, r_out = region_geometry(w, h, (cx_ratio, cy_ratio), r_out_ratio, r_in_ratio)
         mask = annulus_mask(h, w, (cx, cy), r_in, r_out)
 
         # 环带灰度标准差：区域没圈对时基本是纯色，标准差会很低
@@ -134,10 +128,9 @@ class MinimapRegionCheck(BaseEfTask):
         vis = cv2.addWeighted(overlay, 0.35, vis, 0.65, 0)
 
         c = (round(cx), round(cy))
-        cv2.drawMarker(vis, c, (0, 0, 255), markerType=cv2.MARKER_CROSS,
-                       markerSize=40, thickness=2)
-        cv2.circle(vis, c, round(r_out), (0, 255, 0), 2)   # 外圈绿
-        cv2.circle(vis, c, round(r_in), (0, 0, 255), 2)    # 内圈红
+        cv2.drawMarker(vis, c, (0, 0, 255), markerType=cv2.MARKER_CROSS, markerSize=40, thickness=2)
+        cv2.circle(vis, c, round(r_out), (0, 255, 0), 2)  # 外圈绿
+        cv2.circle(vis, c, round(r_in), (0, 0, 255), 2)  # 内圈红
 
         task_w = int(getattr(self, "width", 0) or 0)
         task_h = int(getattr(self, "height", 0) or 0)
@@ -151,10 +144,10 @@ class MinimapRegionCheck(BaseEfTask):
         # （放大图是从圆心裁的，若文字在上面会被一起裁进去挡住画面）。
         for i, text in enumerate(lines):
             y = h - 20 - (len(lines) - 1 - i) * 32
-            cv2.putText(vis, text, (14, y), cv2.FONT_HERSHEY_SIMPLEX, 0.85,
-                        (0, 0, 0), 4, cv2.LINE_AA)      # 描边，深色背景下也看得清
-            cv2.putText(vis, text, (14, y), cv2.FONT_HERSHEY_SIMPLEX, 0.85,
-                        (0, 255, 255), 2, cv2.LINE_AA)
+            cv2.putText(
+                vis, text, (14, y), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (0, 0, 0), 4, cv2.LINE_AA
+            )  # 描边，深色背景下也看得清
+            cv2.putText(vis, text, (14, y), cv2.FONT_HERSHEY_SIMPLEX, 0.85, (0, 255, 255), 2, cv2.LINE_AA)
 
         # ---- 裁剪放大（从标注图上裁，保留圆圈） ----
         pad = r_out * pad_ratio
@@ -167,8 +160,7 @@ class MinimapRegionCheck(BaseEfTask):
             # 放大后过大的话自动降倍数，避免写出几十 MB 的图
             max_side = 4096
             eff_zoom = max(1, min(zoom, max_side // max(crop.shape[0], crop.shape[1]) or 1))
-            zoom_img = cv2.resize(crop, None, fx=eff_zoom, fy=eff_zoom,
-                                  interpolation=cv2.INTER_NEAREST)
+            zoom_img = cv2.resize(crop, None, fx=eff_zoom, fy=eff_zoom, interpolation=cv2.INTER_NEAREST)
         else:
             eff_zoom, zoom_img = 1, crop
 

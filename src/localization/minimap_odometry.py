@@ -38,6 +38,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import math
 
 import cv2
@@ -132,13 +133,12 @@ def minimap_crop_box(
     Args:
         pad_ratio: 外半径之外再留的余量（占外半径比例），给羽化边缘留空间。
     """
-    cx, cy, _r_inner, r_outer = region_geometry(
-        width, height, center_ratio, r_outer_ratio)
+    cx, cy, _r_inner, r_outer = region_geometry(width, height, center_ratio, r_outer_ratio)
     pad = r_outer * max(0.0, float(pad_ratio))
-    x0 = max(0, int(math.floor(cx - r_outer - pad)))
-    y0 = max(0, int(math.floor(cy - r_outer - pad)))
-    x1 = min(int(width), int(math.ceil(cx + r_outer + pad)))
-    y1 = min(int(height), int(math.ceil(cy + r_outer + pad)))
+    x0 = max(0, math.floor(cx - r_outer - pad))
+    y0 = max(0, math.floor(cy - r_outer - pad))
+    x1 = min(int(width), math.ceil(cx + r_outer + pad))
+    y1 = min(int(height), math.ceil(cy + r_outer + pad))
     if x1 <= x0 or y1 <= y0:
         # 尺寸异常（宽/高为 0 等）：退回整帧，让上层按原来的方式报错/降级
         return 0, 0, int(width), int(height)
@@ -230,10 +230,7 @@ def _to_gray_norm_masked(frame: np.ndarray, mask: np.ndarray) -> np.ndarray | No
     if mask is None:
         return None
     h, w = mask.shape[:2]
-    if frame.ndim == 3:
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    else:
-        gray = frame
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if frame.ndim == 3 else frame
     if gray.shape[0] != h or gray.shape[1] != w:
         gray = cv2.resize(gray, (w, h), interpolation=cv2.INTER_AREA)
     gray = gray.astype(np.float32)
@@ -427,7 +424,11 @@ class MinimapOdometry:
             x0, y0, x1, y1 = self._box()
             # 框内建掩膜：圆心换成框内坐标，其余几何参数与整帧版完全一致
             self._mask_cache[key] = annulus_mask(
-                y1 - y0, x1 - x0, (cx - x0, cy - y0), r_inner, r_outer,
+                y1 - y0,
+                x1 - x0,
+                (cx - x0, cy - y0),
+                r_inner,
+                r_outer,
                 feather=self._feather,
             )
         return self._mask_cache[key]
@@ -437,8 +438,7 @@ class MinimapOdometry:
         w, h = self._dimensions()
         key = (w, h)
         if key not in self._box_cache:
-            self._box_cache[key] = minimap_crop_box(
-                w, h, self._center_ratio, self._r_outer_ratio, self._crop_pad_ratio)
+            self._box_cache[key] = minimap_crop_box(w, h, self._center_ratio, self._r_outer_ratio, self._crop_pad_ratio)
         return self._box_cache[key]
 
     def _crop_gray(self, frame: np.ndarray) -> np.ndarray | None:
@@ -458,10 +458,8 @@ class MinimapOdometry:
     def _log(self, meth, msg: str):
         fn = getattr(self._task, meth, None)
         if callable(fn):
-            try:
+            with contextlib.suppress(Exception):
                 fn(msg)
-            except Exception:
-                pass
 
     # ------------------------------------------------------------------ #
     # 状态操作
@@ -547,7 +545,7 @@ class MinimapOdometry:
             try:
                 frame = self._task.next_frame()
             except Exception as e:
-                _reraise_control_flow(e)   # 任务被禁用/结束必须放行，不能吞
+                _reraise_control_flow(e)  # 任务被禁用/结束必须放行，不能吞
                 self._log("log_warning", f"minimap_odometry next_frame 失败: {e}")
                 frame = None
         if frame is None:
@@ -562,9 +560,15 @@ class MinimapOdometry:
         if self._anchor_gray is None:
             self._arm_anchor(frame, now)
             return self._result(
-                ok=True, sampled=False, reason="anchor_init",
-                dx_px=0.0, dy_px=0.0, response=1.0, dmap_px=(0.0, 0.0),
-                dt=0.0, reanchored=False,
+                ok=True,
+                sampled=False,
+                reason="anchor_init",
+                dx_px=0.0,
+                dy_px=0.0,
+                response=1.0,
+                dmap_px=(0.0, 0.0),
+                dt=0.0,
+                reanchored=False,
             )
 
         anchor_t = self._anchor_t if self._anchor_t is not None else now
@@ -608,10 +612,17 @@ class MinimapOdometry:
             # 上层用它区分"需要重新建立信任"和"只是换了个基线"。
             benign = reanchor_reason == "too_long_dt"
             return self._result(
-                ok=False, sampled=True, reason=reanchor_reason,
-                dx_px=dx_px, dy_px=dy_px, response=response,
-                dmap_px=dmap, dt=dt, reanchored=True,
-                committed=commit_on_exit, benign_reanchor=benign,
+                ok=False,
+                sampled=True,
+                reason=reanchor_reason,
+                dx_px=dx_px,
+                dy_px=dy_px,
+                response=response,
+                dmap_px=dmap,
+                dt=dt,
+                reanchored=True,
+                committed=commit_on_exit,
+                benign_reanchor=benign,
             )
 
         # 位移门：没攒够一个"采样单位"就不提交、**也不换锚帧**。
@@ -627,9 +638,15 @@ class MinimapOdometry:
         if self._commit_min_shift_px > 0 and shift_len < self._commit_min_shift_px:
             self._pending_px = np.array(dmap, dtype=np.float64)
             out = self._result(
-                ok=True, sampled=True, reason="shift_too_small",
-                dx_px=dx_px, dy_px=dy_px, response=response,
-                dmap_px=dmap, dt=dt, reanchored=False,
+                ok=True,
+                sampled=True,
+                reason="shift_too_small",
+                dx_px=dx_px,
+                dy_px=dy_px,
+                response=response,
+                dmap_px=dmap,
+                dt=dt,
+                reanchored=False,
             )
             out["dmap_m"] = self._to_m(dmap)
             self._last = out
@@ -644,9 +661,15 @@ class MinimapOdometry:
         self._pending_px = np.zeros(2, dtype=np.float64)
 
         out = self._result(
-            ok=True, sampled=True, reason="ok",
-            dx_px=dx_px, dy_px=dy_px, response=response,
-            dmap_px=dmap, dt=dt, reanchored=False,
+            ok=True,
+            sampled=True,
+            reason="ok",
+            dx_px=dx_px,
+            dy_px=dy_px,
+            response=response,
+            dmap_px=dmap,
+            dt=dt,
+            reanchored=False,
             committed=True,
         )
         out["dmap_m"] = self._to_m(dmap)

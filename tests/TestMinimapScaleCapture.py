@@ -89,7 +89,7 @@ class TestMinimapScaleCaptureTask(TaskTestCase):
         task.config[CONFIG_SAVE_DIR] = tmp
         task.config[CONFIG_SAMPLES] = target
         task.config[CONFIG_REST_TICKS] = rest_ticks
-        task.config[CONFIG_INTERVAL] = 0.05   # 让多拍循环在测试里跑得快
+        task.config[CONFIG_INTERVAL] = 0.05  # 让多拍循环在测试里跑得快
         task.config[CONFIG_TIMEOUT] = 30.0
         return task, fake
 
@@ -99,8 +99,7 @@ class TestMinimapScaleCaptureTask(TaskTestCase):
         self.assertEqual(task.group_name, "工具与调试")
         self.assertTrue(task.requires_foreground)
         self.assertTrue(task.visible)
-        for key in (CONFIG_INTERVAL, CONFIG_SAMPLES, CONFIG_REST_TICKS,
-                    CONFIG_TIMEOUT, CONFIG_SAVE_DIR):
+        for key in (CONFIG_INTERVAL, CONFIG_SAMPLES, CONFIG_REST_TICKS, CONFIG_TIMEOUT, CONFIG_SAVE_DIR):
             self.assertIn(key, task.default_config)
             self.assertIn(key, task.config_description)
         # 默认目录必须在 logs/ 下：screenshots/ 每次启动会被清空
@@ -138,16 +137,14 @@ class TestMinimapScaleCaptureTask(TaskTestCase):
     def test_frames_are_grouped_by_resolution_and_map(self):
         """按 分辨率/地图 两级归档；索引里的 file 是相对保存目录的路径，并带 group。"""
         with tempfile.TemporaryDirectory() as tmp:
-            task, _ = self._prepare([_state()], tmp, target=1, rest_ticks=1,
-                                    frame_size=(OTHER_W, OTHER_H))
+            task, _ = self._prepare([_state()], tmp, target=1, rest_ticks=1, frame_size=(OTHER_W, OTHER_H))
             task.run()
 
             expected_dir = Path(tmp) / "2560x1440" / "map02"
             pngs = sorted(expected_dir.glob("*.png"))
             self.assertEqual(len(pngs), 1, list(Path(tmp).rglob("*.png")))
             # 分组目录与 index.json 平级，截图不散在根目录
-            self.assertEqual(set(Path(tmp).iterdir()),
-                             {Path(tmp) / "index.json", Path(tmp) / "2560x1440"})
+            self.assertEqual(set(Path(tmp).iterdir()), {Path(tmp) / "index.json", Path(tmp) / "2560x1440"})
 
             sample = json.loads((Path(tmp) / "index.json").read_text(encoding="utf-8"))["samples"][0]
             self.assertEqual(sample["group"], "2560x1440/map02")

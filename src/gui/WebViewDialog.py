@@ -1,5 +1,7 @@
 """内嵌 WebView 对话框组件，用于显示网页内容。"""
 
+import contextlib
+
 from ok.gui.tasks.ConfigCard import og
 from PySide6.QtCore import QUrl
 from PySide6.QtWebEngineWidgets import QWebEngineView
@@ -75,10 +77,8 @@ class WebViewDialog(QDialog):
         self.web_view.urlChanged.connect(self._on_url_changed)
 
         # 应用样式
-        try:
+        with contextlib.suppress(Exception):
             FluentStyleSheet.DIALOG.apply(self)
-        except Exception:
-            pass
 
     def _load_url(self):
         """加载指定的 URL。"""

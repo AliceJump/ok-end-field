@@ -99,7 +99,7 @@ class MinimapHeadingMixin:
         """返回朝向配置键的用户说明，供任务界面直接合并。"""
         return {
             CONFIG_YAW_PER_PIXEL: "转视角系数（度/像素，正数=鼠标右移方位角增大）；"
-                                  "由「鼠标视角旋转系数标定」任务实测，取该任务 k 的绝对值",
+            "由「鼠标视角旋转系数标定」任务实测，取该任务 k 的绝对值",
             CONFIG_W_HOLD: "按 W 让角色转身时的长按时长；太短角色不会真正转身",
             CONFIG_TURN_SETTLE: "发完鼠标位移后、按 W 之前等待视角转完的时间",
             CONFIG_ANGLE_REFRESH: "按 W 之后等待画面刷新再读朝向的时间",
@@ -159,8 +159,7 @@ class MinimapHeadingMixin:
         读朝向**不需要按 W**：小地图箭头一直显示角色当前朝向。
         """
         bearing, score = self._read_arrow(frame)
-        limit = (self._cfg_float(CONFIG_MIN_SCORE, DEFAULT_MIN_SCORE)
-                 if min_score is None else float(min_score))
+        limit = self._cfg_float(CONFIG_MIN_SCORE, DEFAULT_MIN_SCORE) if min_score is None else float(min_score)
         if bearing is None or score < limit:
             return None, score
         return bearing, score
@@ -191,8 +190,7 @@ class MinimapHeadingMixin:
     # ------------------------------------------------------------------ #
     # 转到指定方位
     # ------------------------------------------------------------------ #
-    def turn_to_bearing(self, target_deg, *, tolerance=5.0, max_rounds=3,
-                        frame=None, min_score=None) -> dict:
+    def turn_to_bearing(self, target_deg, *, tolerance=5.0, max_rounds=3, frame=None, min_score=None) -> dict:
         """转到指定罗盘方位（正北 0°、正东 90°），闭环逼近到 ±``tolerance``。
 
         **目标是一轮到位**（只按一次 W，角色只前移一小步）：系数准的话第一轮就该进容差。
@@ -223,8 +221,13 @@ class MinimapHeadingMixin:
         tolerance = max(0.0, float(tolerance))
         target = float(target_deg)
         result = {
-            "ok": False, "target": target, "heading": None,
-            "error": None, "rounds": 0, "history": [], "one_shot": False,
+            "ok": False,
+            "target": target,
+            "heading": None,
+            "error": None,
+            "rounds": 0,
+            "history": [],
+            "one_shot": False,
         }
         self._last_turn_result = result
 
@@ -232,7 +235,8 @@ class MinimapHeadingMixin:
         if per_px <= 0:
             self.log_warning(
                 f"{CONFIG_YAW_PER_PIXEL} 必须为正数（鼠标右移=方位角增大），当前 {per_px}；"
-                "请用「鼠标视角旋转系数标定」任务实测后再填")
+                "请用「鼠标视角旋转系数标定」任务实测后再填"
+            )
             return result
         if not self._can_turn():
             return result
@@ -258,8 +262,13 @@ class MinimapHeadingMixin:
             after, score = self._arrow_after_w(min_score=min_score)
 
             entry = {
-                "round": i, "before": before, "error_before": err, "dx": dx,
-                "after": after, "error_after": None, "ratio": None,
+                "round": i,
+                "before": before,
+                "error_before": err,
+                "dx": dx,
+                "after": after,
+                "error_after": None,
+                "ratio": None,
             }
             if after is None:
                 self.log_warning(f"第 {i} 轮：按 W 后读不到朝向（score={score:.3f}）")
@@ -287,8 +296,9 @@ class MinimapHeadingMixin:
         result["one_shot"] = bool(result["ok"] and result["rounds"] <= 1)
         return result
 
-    def aim_view_to_bearing(self, target_deg, *, tolerance=5.0, max_rounds=2,
-                            frame=None, min_score=None, verify_heading=True) -> dict:
+    def aim_view_to_bearing(
+        self, target_deg, *, tolerance=5.0, max_rounds=2, frame=None, min_score=None, verify_heading=True
+    ) -> dict:
         """只转动视角到指定方位，不按 W，因此不会让角色向前移动。
 
         滑索场景下小地图仍能提供角色朝向，但没有俯仰角；横向目标可以利用
@@ -314,8 +324,7 @@ class MinimapHeadingMixin:
 
         per_px = self.yaw_per_pixel()
         if per_px <= 0:
-            self.log_warning(
-                f"{CONFIG_YAW_PER_PIXEL} 必须为正数，当前 {per_px}；无法按世界坐标对准滑索")
+            self.log_warning(f"{CONFIG_YAW_PER_PIXEL} 必须为正数，当前 {per_px}；无法按世界坐标对准滑索")
             return result
         if not self._can_turn():
             return result
@@ -417,11 +426,13 @@ class MinimapHeadingMixin:
             self.log_warning(
                 f"实测系数 {abs(ratio):.5f}°/px 明显低于配置 {configured:.5f}°/px："
                 "位移可能被游戏截断（调小「单次鼠标位移上限」或加大「分段间隔」），"
-                "或配置系数偏大；修正后即可一次到位")
+                "或配置系数偏大；修正后即可一次到位"
+            )
         elif rel > 1.0 + RATIO_HINT_TOLERANCE:
             self.log_warning(
                 f"实测系数 {abs(ratio):.5f}°/px 明显高于配置 {configured:.5f}°/px："
-                f"配置系数偏小，改成实测值后即可一次到位")
+                f"配置系数偏小，改成实测值后即可一次到位"
+            )
 
     # ------------------------------------------------------------------ #
     # 输入

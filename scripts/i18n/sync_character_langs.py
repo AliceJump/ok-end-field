@@ -137,7 +137,7 @@ def get_operator_infoboxes() -> dict:
                 "format": "json",
             }
         )
-        for pid, pg in d["query"]["pages"].items():
+        for _pid, pg in d["query"]["pages"].items():
             if "revisions" not in pg:
                 continue
             txt = pg["revisions"][0]["slots"]["main"]["*"]

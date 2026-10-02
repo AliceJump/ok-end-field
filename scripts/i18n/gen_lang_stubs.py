@@ -92,10 +92,7 @@ def build_module_class(module_name: str, data: dict) -> tuple[str, int]:
         if picked is None:
             continue
         node_type, value = picked
-        if node_type == "pattern":
-            ann = "re.Pattern[str]"
-        else:
-            ann = "str"
+        ann = "re.Pattern[str]" if node_type == "pattern" else "str"
         lines.append("")
         lines.append(f"    {key}: {ann}")
         lines.append(f'    """{_doc(value)}"""')

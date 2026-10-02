@@ -51,8 +51,8 @@ import cv2
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
-from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 from src.localization.minimap_odometry import region_geometry
+from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 
 CONFIG_INTERVAL = "采样间隔(秒)"
 CONFIG_SAMPLES = "采集张数"
@@ -90,7 +90,7 @@ class MinimapScaleCapture(RuntimeStateMixin, BaseEfTask):
             CONFIG_INTERVAL: "每拍采样的间隔（秒）；越小越不容易错过静止窗口",
             CONFIG_SAMPLES: "采集多少张后自动结束（一次性任务）",
             CONFIG_REST_TICKS: "要求连续多少拍同时满足「小地图与 WS 都没动」才落盘。"
-                               "WS 有传输延迟，只有静止时它才是无延迟真值；拍数太少会采到刹车的残余",
+            "WS 有传输延迟，只有静止时它才是无延迟真值；拍数太少会采到刹车的残余",
             CONFIG_TIMEOUT: "最长运行时间（秒）。一直等不到静止/WS 真值时到点结束，并说明卡在哪一步",
             CONFIG_SAVE_DIR: "样本保存目录（screenshots/ 每次启动会清空，勿填那里）",
         }
@@ -131,8 +131,7 @@ class MinimapScaleCapture(RuntimeStateMixin, BaseEfTask):
         rest_ticks = max(1, self._cfg_int(CONFIG_REST_TICKS, 3))
         timeout = max(1.0, self._cfg_float(CONFIG_TIMEOUT, 180.0))
         save_dir = Path(
-            str(self.config.get(CONFIG_SAVE_DIR, self.SAVE_DIR_DEFAULT) or "").strip()
-            or self.SAVE_DIR_DEFAULT
+            str(self.config.get(CONFIG_SAVE_DIR, self.SAVE_DIR_DEFAULT) or "").strip() or self.SAVE_DIR_DEFAULT
         )
 
         self._index = []
@@ -266,8 +265,7 @@ class MinimapScaleCapture(RuntimeStateMixin, BaseEfTask):
             "z": round(float(st["z"]), 3),
             "map_id": st.get("map_id"),
             "heading": None if st.get("heading") is None else round(float(st["heading"]), 3),
-            "region": [round(float(cx), 3), round(float(cy), 3),
-                       round(float(r_inner), 3), round(float(r_outer), 3)],
+            "region": [round(float(cx), 3), round(float(cy), 3), round(float(r_inner), 3), round(float(r_outer), 3)],
         }
         # **同一份 dict** 既进总索引、又落同名 sidecar：两份记录各写各的迟早会漂，
         # 而 region / x / z 都是要拿去算数的字段。
@@ -296,9 +294,7 @@ class MinimapScaleCapture(RuntimeStateMixin, BaseEfTask):
         try:
             path.write_text(json.dumps(record, ensure_ascii=False, indent=2), encoding="utf-8")
         except OSError as e:
-            self.log_warning(
-                f"坐标 sidecar 写入失败（图片已保存，但这张没有同名 .json）: {path}: {e}"
-            )
+            self.log_warning(f"坐标 sidecar 写入失败（图片已保存，但这张没有同名 .json）: {path}: {e}")
 
     def _write_index(self, save_dir: Path) -> None:
         """把本次样本并进盘上已有的 ``index.json``（按 ``file`` 去重），再原子替换。
@@ -337,8 +333,7 @@ class MinimapScaleCapture(RuntimeStateMixin, BaseEfTask):
         }
         tmp_path = path.parent / (path.name + ".tmp")
         try:
-            tmp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2),
-                                encoding="utf-8")
+            tmp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
             tmp_path.replace(path)
         except OSError as e:
             self.log_warning(f"index.json 写入失败: {e}")
@@ -346,8 +341,7 @@ class MinimapScaleCapture(RuntimeStateMixin, BaseEfTask):
     # ------------------------------------------------------------------ #
     # 结束报告
     # ------------------------------------------------------------------ #
-    def _report(self, timeout_hit: bool, target: int, rest_ticks: int,
-                stats: dict, save_dir: Path) -> None:
+    def _report(self, timeout_hit: bool, target: int, rest_ticks: int, stats: dict, save_dir: Path) -> None:
         count = len(self._index)
         if count >= target:
             self.log_info(
@@ -362,8 +356,7 @@ class MinimapScaleCapture(RuntimeStateMixin, BaseEfTask):
             hints.append("一拍都没取到画面（窗口是否在前台 / 是否在大世界）")
         else:
             if stats["no_ws"]:
-                hints.append(f"{stats['no_ws']} 拍没有 WS 真值"
-                             "（触发任务未启用 / 未连上 / 没选地图账号）")
+                hints.append(f"{stats['no_ws']} 拍没有 WS 真值（触发任务未启用 / 未连上 / 没选地图账号）")
             if stats["no_position"]:
                 hints.append(f"{stats['no_position']} 拍还没锚定出坐标（启动后需先静止校准一次）")
             if stats["no_rest"]:

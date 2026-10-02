@@ -169,14 +169,15 @@ class MapMixin(BaseEfTask):
         """
 
         # 地图右上角显示当前地区名，命中候选地名则记录到 self.location
-        if need_location_list:
-            if location := self.wait_ocr(
+        if need_location_list and (
+            location := self.wait_ocr(
                 match=need_location_list,
                 box=self.box.top_right,
                 time_out=4,
                 log=True,
-            ):
-                self.location = location[0].name
+            )
+        ):
+            self.location = location[0].name
 
         if need_track:
             # 需要追踪时：点击『追踪』按钮

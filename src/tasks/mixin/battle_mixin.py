@@ -20,6 +20,7 @@ BattleMixin
 
 import json
 from pathlib import Path
+from typing import ClassVar
 
 import cv2
 import numpy as np
@@ -115,10 +116,10 @@ class BattleMixin(BaseEfTask):
     """
 
     # 配置键迁移：旧「战斗配置」下拉框 → 新「使用独立配置」开关
-    config_key_migrations = {
+    config_key_migrations: ClassVar = {
         "战斗配置": BATTLE_CONFIG_MODE_KEY,
     }
-    config_value_migrations = {
+    config_value_migrations: ClassVar = {
         BATTLE_CONFIG_MODE_KEY: legacy_battle_mode_to_bool,
     }
 
@@ -1109,7 +1110,7 @@ def has_rectangles(frame):
     if frame is None:
         return False
 
-    original_h, original_w = frame.shape[:2]
+    _original_h, original_w = frame.shape[:2]
     scale_factor = 4
     resized = cv2.resize(frame, None, fx=scale_factor, fy=scale_factor, interpolation=cv2.INTER_CUBIC)
     gray = cv2.cvtColor(resized, cv2.COLOR_BGR2GRAY)
@@ -1120,7 +1121,7 @@ def has_rectangles(frame):
 
     min_width = (original_w * scale_factor) * 0.25
     for cnt in contours:
-        x, y, w, h = cv2.boundingRect(cnt)
+        _x, _y, w, h = cv2.boundingRect(cnt)
         if w > min_width and w > h > 10:
             return True
     return False

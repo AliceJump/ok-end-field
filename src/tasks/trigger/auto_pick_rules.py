@@ -110,10 +110,8 @@ def should_skip_pick(item_name: str, black_list=BLACK_LIST, skip_producible: boo
     """
     if black_list and any(text in item_name for text in black_list):
         return True
-    if (
+    return bool(
         skip_producible
         and not any(variant in item_name for variant in PICKABLE_PLANT_VARIANTS)
         and any(plant in item_name for plant in PRODUCIBLE_PLANTS)
-    ):
-        return True
-    return False
+    )

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """全局导航配置中的网格规划、行走与脱困选项。
 
 本模块只定义纯数据，供 :mod:`src.core.NavConfig` 合并到全局 ``Nav Config``，
@@ -127,8 +126,7 @@ GRID_NAV_CONFIG_DESCRIPTION: dict[str, str] = {
     CONFIG_GRID_FRONTIER_MARGIN: "已知自由格期望远离未知边缘的距离（格）",
     CONFIG_GRID_FRONTIER_PENALTY: "自由格距未知边缘每缺一格增加的代价，减少贴着未探索区域边缘行走",
     CONFIG_GRID_WAYPOINT_TOLERANCE: "规划后允许合并航点的最大横向误差；越大航点越少",
-    CONFIG_GRID_MAX_EXPAND: "A* 扩展节点数上限。触顶以『搜索规模超限』失败（与真的不可达区分），"
-    "大图或未探索图上需调大",
+    CONFIG_GRID_MAX_EXPAND: "A* 扩展节点数上限。触顶以『搜索规模超限』失败（与真的不可达区分），大图或未探索图上需调大",
     CONFIG_GRID_GOAL_RADIUS: "距最终目标小于该值即判定到达（世界 XZ 平面，米）",
     CONFIG_GRID_WAYPOINT_RADIUS: "距中间航点小于该值即切到下一个航点（米）",
     CONFIG_GRID_HEADING_TOLERANCE: "朝向误差小于该值才持续按 W，否则先转向",

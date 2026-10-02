@@ -37,19 +37,19 @@ class MinimapTurnToHeading(BaseEfTask, MinimapHeadingMixin):
     requires_foreground = True  # 转视角/按 W 需要前台
 
     # 旋转参数（可通过任务配置覆盖，集中在此处便于统一调整）
-    YAW_PER_PIXEL = DEFAULT_YAW_PER_PIXEL            # 度/像素（鼠标右移=方位角增大），由标定任务实测
-    W_HOLD_TIME = DEFAULT_W_HOLD                     # 按 W 让角色转身的长按时长（秒）
-    TURN_SETTLE_DELAY = DEFAULT_TURN_SETTLE          # 发完鼠标位移后等视角转完（秒）
-    ANGLE_REFRESH_DELAY = DEFAULT_ANGLE_REFRESH      # 按 W 后等画面刷新再读朝向（秒）
-    MIN_SCORE = DEFAULT_MIN_SCORE                    # 箭头角度检测最低置信度
-    MOUSE_CHUNK = DEFAULT_MOUSE_CHUNK                # 单次鼠标位移上限（像素）
-    MOUSE_CHUNK_DELAY = DEFAULT_MOUSE_CHUNK_DELAY    # 拆分发送时每段间隔（秒）
+    YAW_PER_PIXEL = DEFAULT_YAW_PER_PIXEL  # 度/像素（鼠标右移=方位角增大），由标定任务实测
+    W_HOLD_TIME = DEFAULT_W_HOLD  # 按 W 让角色转身的长按时长（秒）
+    TURN_SETTLE_DELAY = DEFAULT_TURN_SETTLE  # 发完鼠标位移后等视角转完（秒）
+    ANGLE_REFRESH_DELAY = DEFAULT_ANGLE_REFRESH  # 按 W 后等画面刷新再读朝向（秒）
+    MIN_SCORE = DEFAULT_MIN_SCORE  # 箭头角度检测最低置信度
+    MOUSE_CHUNK = DEFAULT_MOUSE_CHUNK  # 单次鼠标位移上限（像素）
+    MOUSE_CHUNK_DELAY = DEFAULT_MOUSE_CHUNK_DELAY  # 拆分发送时每段间隔（秒）
 
     # 测试参数
-    TARGET_HEADING = 90.0      # 目标方位角（度）：0=正北 90=正东 180=正南 270=正西
-    TARGET_LIST = ""           # 多个目标（逗号分隔，如 "0, 90, 180, 270"）；留空则用单个目标
-    TOLERANCE = 5.0            # 允许误差（度）
-    MAX_ROUNDS = 3             # 每个目标最多转几轮
+    TARGET_HEADING = 90.0  # 目标方位角（度）：0=正北 90=正东 180=正南 270=正西
+    TARGET_LIST = ""  # 多个目标（逗号分隔，如 "0, 90, 180, 270"）；留空则用单个目标
+    TOLERANCE = 5.0  # 允许误差（度）
+    MAX_ROUNDS = 3  # 每个目标最多转几轮
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -80,7 +80,7 @@ class MinimapTurnToHeading(BaseEfTask, MinimapHeadingMixin):
             "误差容差(度)": "最终朝向与目标的允许误差，超过判 FAIL",
             "最大轮数": "每个目标最多转几轮（每轮都会按一次 W，角色会前移一小段）",
             CONFIG_YAW_PER_PIXEL: "转视角系数（度/像素，正数=鼠标右移方位角增大）；"
-                                  "由「鼠标视角旋转系数标定」任务实测，取该任务 k 的绝对值",
+            "由「鼠标视角旋转系数标定」任务实测，取该任务 k 的绝对值",
             CONFIG_W_HOLD: "按 W 让角色转身时的长按时长；太短角色不会真正转身",
             CONFIG_TURN_SETTLE: "发完鼠标位移后、按 W 之前等待视角转完的时间",
             CONFIG_ANGLE_REFRESH: "按 W 之后等待画面刷新再读朝向的时间",
@@ -107,8 +107,7 @@ class MinimapTurnToHeading(BaseEfTask, MinimapHeadingMixin):
         per_px = self.yaw_per_pixel()
 
         self.log_info(
-            f"参数: 目标={targets}  容差=±{tolerance:.1f}°  最大轮数={max_rounds}  "
-            f"yaw_per_pixel={per_px}°/px"
+            f"参数: 目标={targets}  容差=±{tolerance:.1f}°  最大轮数={max_rounds}  yaw_per_pixel={per_px}°/px"
         )
         if per_px <= 0:
             self.log_warning("yaw_per_pixel 必须为正数，请先跑「鼠标视角旋转系数标定」任务", notify=True)
@@ -129,11 +128,7 @@ class MinimapTurnToHeading(BaseEfTask, MinimapHeadingMixin):
     def _turn_one(self, target: float, tolerance: float, max_rounds: int) -> dict:
         """转到一个目标并输出逐轮日志。返回 turn_to_bearing 的结果 dict。"""
         start, start_score = self.read_heading()
-        start_text = (
-            f"{start:.2f}°"
-            if start is not None
-            else f"读不到(score={start_score:.3f})"
-        )
+        start_text = f"{start:.2f}°" if start is not None else f"读不到(score={start_score:.3f})"
         self.log_info(f"[转向] 目标={target:.2f}°  起始={start_text}")
         res = self.turn_to_bearing(target, tolerance=tolerance, max_rounds=max_rounds)
 

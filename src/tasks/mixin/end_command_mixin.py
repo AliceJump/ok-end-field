@@ -1,6 +1,7 @@
 import os
 import shlex
 import subprocess
+from typing import ClassVar
 
 import psutil
 
@@ -10,7 +11,7 @@ class EndCommandMixin:
 
     _SWITCH_KEY = "⭐执行外部命令"
 
-    config_key_migrations = {
+    config_key_migrations: ClassVar = {
         "⭐执行结尾外部命令": "⭐执行外部命令",
         "结尾外部命令": "外部命令",
         "结尾外部命令起始于": "外部命令起始于",

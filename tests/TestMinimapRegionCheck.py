@@ -21,8 +21,15 @@ class TestMinimapRegionCheckTask(TaskTestCase):
         task = self.task
         self.assertEqual(task.name, "小地图区域检查")
         self.assertTrue(task.requires_foreground)
-        for key in ("圆心x比例(占宽)", "圆心y比例(占高)", "外圈半径比例(占宽)",
-                    "内圈半径比例(占宽)", "裁剪放大倍数", "标记外扩比例", "保存目录"):
+        for key in (
+            "圆心x比例(占宽)",
+            "圆心y比例(占高)",
+            "外圈半径比例(占宽)",
+            "内圈半径比例(占宽)",
+            "裁剪放大倍数",
+            "标记外扩比例",
+            "保存目录",
+        ):
             self.assertIn(key, task.default_config)
         # 默认几何与里程计一致
         self.assertAlmostEqual(task.default_config["圆心x比例(占宽)"], 0.084)
@@ -33,7 +40,7 @@ class TestMinimapRegionCheckTask(TaskTestCase):
     def test_run_writes_annotated_images(self):
         task = self.task
         frame = np.zeros((1440, 2560, 3), np.uint8)
-        frame[120:340, 110:330] = 200          # 默认圆心附近放一块亮区（模拟小地图）
+        frame[120:340, 110:330] = 200  # 默认圆心附近放一块亮区（模拟小地图）
         task.next_frame = lambda *a, **k: frame
 
         saved = task.config.get("保存目录")

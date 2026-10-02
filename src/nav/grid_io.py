@@ -113,13 +113,12 @@ class GridMeta:
         if not isinstance(data, dict):
             raise ValueError("网格元数据必须是 JSON 对象")
         if str(data.get("magic", "")) != GRID_MAGIC:
-            raise ValueError(
-                f"不是本项目的网格文件（magic={data.get('magic')!r}，应为 {GRID_MAGIC!r}）")
+            raise ValueError(f"不是本项目的网格文件（magic={data.get('magic')!r}，应为 {GRID_MAGIC!r}）")
         version = int(data.get("schema_version") or 0)
         if version != SCHEMA_VERSION:
             raise ValueError(
-                f"网格结构版本不匹配（文件 {version}，当前 {SCHEMA_VERSION}）："
-                "请用配套版本的编辑器重新导出")
+                f"网格结构版本不匹配（文件 {version}，当前 {SCHEMA_VERSION}）：请用配套版本的编辑器重新导出"
+            )
         meta = cls()
         try:
             meta.map_name = str(data.get("map_name") or "")
@@ -154,9 +153,7 @@ class DenseGrid:
         # 正好放过这里要拦的输入。浮点 1.0 与整数 1 在这里相等，仍算合法。
         bad = set(np.unique(raw).tolist()) - _VALID_STATES
         if bad:
-            raise ValueError(
-                f"网格里有非法状态 {sorted(bad)}；只允许 {sorted(_VALID_STATES)}"
-                f"（{CELL_NAMES}）")
+            raise ValueError(f"网格里有非法状态 {sorted(bad)}；只允许 {sorted(_VALID_STATES)}（{CELL_NAMES}）")
         arr = raw if raw.dtype == np.uint8 else raw.astype(np.uint8)
         self.cells = arr
         self.meta = meta if isinstance(meta, GridMeta) else GridMeta()
@@ -172,8 +169,7 @@ class DenseGrid:
 
     def counts(self) -> dict:
         """返回三态计数，键是中文状态名，可直接用于诊断日志。"""
-        return {CELL_NAMES[s]: int((self.cells == s).sum()) for s in
-                (CELL_UNKNOWN, CELL_FREE, CELL_BLOCKED)}
+        return {CELL_NAMES[s]: int((self.cells == s).sum()) for s in (CELL_UNKNOWN, CELL_FREE, CELL_BLOCKED)}
 
     def extent(self) -> tuple[float, float, float, float]:
         """世界坐标范围 ``(x_min, z_min, x_max, z_max)``。"""
@@ -183,8 +179,10 @@ class DenseGrid:
         return (x0, z0, x0 + w * cs, z0 + h * cs)
 
     def __repr__(self) -> str:
-        return (f"DenseGrid(shape={self.shape}, cell_size={self.meta.cell_size}, "
-                f"map={self.meta.map_name!r}, counts={self.counts()})")
+        return (
+            f"DenseGrid(shape={self.shape}, cell_size={self.meta.cell_size}, "
+            f"map={self.meta.map_name!r}, counts={self.counts()})"
+        )
 
     # ------------------------------------------------------------------ #
     # 坐标换算
@@ -208,8 +206,7 @@ class DenseGrid:
     def world_of_index(self, i: int, j: int) -> tuple[float, float]:
         """数组下标 → 该格**中心**的世界 (x, z)。"""
         cs = self.meta.cell_size
-        return (self.meta.origin[0] + (int(j) + 0.5) * cs,
-                self.meta.origin[2] + (int(i) + 0.5) * cs)
+        return (self.meta.origin[0] + (int(j) + 0.5) * cs, self.meta.origin[2] + (int(i) + 0.5) * cs)
 
     # ------------------------------------------------------------------ #
     # 查询
@@ -248,7 +245,7 @@ class DenseGrid:
         i, j = int(i) + 1, int(j) + 1
         blk = CELL_BLOCKED
         out = []
-        for di, dj in (DIRS8 if diagonal else DIRS4):
+        for di, dj in DIRS8 if diagonal else DIRS4:
             if p[i + di, j + dj] == blk:
                 continue
             if di and dj and self._padded_corner_cut(p, i, j, di, dj):
@@ -283,8 +280,7 @@ class DenseGrid:
     # 贴墙安全距离
     # ------------------------------------------------------------------ #
     @staticmethod
-    def _wavefront(seed: np.ndarray, max_dist: int | None,
-                   allowed: np.ndarray | None = None) -> np.ndarray:
+    def _wavefront(seed: np.ndarray, max_dist: int | None, allowed: np.ndarray | None = None) -> np.ndarray:
         """从 ``seed`` 逐层四连通扩散，返回每格到种子的层数；种子自身为 0。
 
         ``allowed`` 非空时只扩散到这些格子，其余保持 ``-1``。
@@ -338,8 +334,7 @@ class DenseGrid:
 
         ``max_dist`` 的含义与 :meth:`clearance` 相同（截断到该层，其余留 ``-1``）。
         """
-        return self._wavefront(self.cells == CELL_UNKNOWN, max_dist,
-                               allowed=self.cells != CELL_BLOCKED)
+        return self._wavefront(self.cells == CELL_UNKNOWN, max_dist, allowed=self.cells != CELL_BLOCKED)
 
     def nearest_free(self, i: int, j: int, max_radius: int = 8) -> tuple[int, int] | None:
         """最近的可行走格（落点修正用）；``max_radius`` 内找不到返回 None。"""
@@ -365,15 +360,26 @@ class DenseGrid:
 # ---------------------------------------------------------------------- #
 # 构造 / 读写
 # ---------------------------------------------------------------------- #
-def new_grid(shape, *, origin=(0.0, 0.0, 0.0), cell_size: float = 1.0,
-             map_name: str = "", zoom: str = "", fill: int = CELL_UNKNOWN) -> DenseGrid:
+def new_grid(
+    shape,
+    *,
+    origin=(0.0, 0.0, 0.0),
+    cell_size: float = 1.0,
+    map_name: str = "",
+    zoom: str = "",
+    fill: int = CELL_UNKNOWN,
+) -> DenseGrid:
     """建一张全 ``fill`` 的空网格。"""
     if int(fill) not in _VALID_STATES:
         raise ValueError(f"fill 必须是 {sorted(_VALID_STATES)}")
     height, width = int(shape[0]), int(shape[1])
-    meta = GridMeta(map_name=map_name, zoom=zoom,
-                    origin=(float(origin[0]), float(origin[1]), float(origin[2])),
-                    cell_size=float(cell_size), source="new")
+    meta = GridMeta(
+        map_name=map_name,
+        zoom=zoom,
+        origin=(float(origin[0]), float(origin[1]), float(origin[2])),
+        cell_size=float(cell_size),
+        source="new",
+    )
     return DenseGrid(np.full((height, width), int(fill), dtype=np.uint8), meta)
 
 
@@ -403,8 +409,12 @@ def save_grid(path, grid: DenseGrid) -> Path:
         stem = p.name[:-4] if p.name.lower().endswith(".npz") else p.name
         p = p.with_name(stem + GRID_SUFFIX)
     p.parent.mkdir(parents=True, exist_ok=True)
-    meta = replace(grid.meta, magic=GRID_MAGIC, schema_version=SCHEMA_VERSION,
-                   created=grid.meta.created or datetime.now().isoformat(timespec="seconds"))
+    meta = replace(
+        grid.meta,
+        magic=GRID_MAGIC,
+        schema_version=SCHEMA_VERSION,
+        created=grid.meta.created or datetime.now().isoformat(timespec="seconds"),
+    )
     if not meta.source:
         meta = replace(meta, source=f"npz:{p.name}")
     # meta 用 numpy 字符串数组存，读的时候不必开 allow_pickle

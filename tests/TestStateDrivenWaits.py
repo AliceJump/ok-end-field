@@ -1,4 +1,5 @@
 import unittest
+from typing import ClassVar
 from unittest.mock import patch
 
 from ok import Box
@@ -551,7 +552,7 @@ class TestStateDrivenWaits(unittest.TestCase):
 
         class StubTask:
             frame = np.zeros((10, 10, 3), dtype=np.uint8)
-            _battle_team = ["余烬", "赵昭"]
+            _battle_team: ClassVar = ["余烬", "赵昭"]
             detect_calls = 0
 
             def next_frame(self):
@@ -579,7 +580,7 @@ class TestStateDrivenWaits(unittest.TestCase):
 
             def active_time(self):
                 # 利用 detect_team 的调用次数模拟时间推进
-                return float(detect_team.call_count)
+                return float(self.detect_calls)
 
             def next_frame(self):
                 return object()
@@ -605,7 +606,7 @@ class TestStateDrivenWaits(unittest.TestCase):
         detect_team.return_value = ["余烬", "别礼"]
 
         class StubTask(BattleMixin):
-            _battle_team = ["余烬", "别礼"]
+            _battle_team: ClassVar = ["余烬", "别礼"]
             _call_count = 0
 
             def __init__(self):

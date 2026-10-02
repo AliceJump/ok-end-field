@@ -282,7 +282,7 @@ class AutoCombatLogic:
             task._last_low_res_warn_time = now
             task.log_warning("1080p以下自动战斗匹配不良，请切换1080p以及以上分辨率", notify=True)
 
-    def run(self, start_sleep: float = None, no_battle: bool = False, deadline: float = None):
+    def run(self, start_sleep: float | None = None, no_battle: bool = False, deadline: float | None = None):
         self._last_exit_check_time = 0
         self._exit_check_interval = 0.5
         self._last_team_detect_time = 0

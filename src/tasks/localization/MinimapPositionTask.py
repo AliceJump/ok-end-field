@@ -33,10 +33,12 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
         self.icon = Icons.Navigation
         self.trigger_interval = 0.2
 
-        self.default_config.update({
-            "_enabled": True,
-            **self.minimap_position_default_config(),
-        })
+        self.default_config.update(
+            {
+                "_enabled": True,
+                **self.minimap_position_default_config(),
+            }
+        )
         self.config_description.update(self.minimap_position_config_description())
         self._init_minimap_position_mixin()
         # 定位服务是常驻生产者，不能因为执行器暂停或暂无消费者而主动断开 WS。
@@ -97,17 +99,8 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
             status,
         )
         now = self.active_time()
-        if (
-            not status_reported
-            and (
-                status_key != self._last_status_key
-                or now - self._last_status_log_at >= 30.0
-            )
-        ):
-            text = (
-                f"({float(x):.1f}, {float(z):.1f}) {status}"
-                if x is not None and z is not None else status
-            )
+        if not status_reported and (status_key != self._last_status_key or now - self._last_status_log_at >= 30.0):
+            text = f"({float(x):.1f}, {float(z):.1f}) {status}" if x is not None and z is not None else status
             self.info_set("小地图定位", text)
             self._last_status_key = status_key
             self._last_status_log_at = now

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import copy
 from collections import OrderedDict
-from typing import Any
+from typing import Any, ClassVar
 
 from ok.gui.Communicate import communicate
 from ok.gui.tasks.ConfigCard import ConfigCard, og
@@ -54,11 +54,11 @@ class GlobalZipLineConfigProxy:
     config = get_global_config(ZIP_LINE_CONFIG_NAME)
     config_description = ZIP_LINE_CONFIG_DESCRIPTION
     config_type = ZIP_LINE_CONFIG_TYPE
-    account_config_blacklist = set()
-    account_config_whitelist = set()
-    account_config_defaults = {}
-    account_config_description = {}
-    account_config_type = {}
+    account_config_blacklist: ClassVar = set()
+    account_config_whitelist: ClassVar = set()
+    account_config_defaults: ClassVar = {}
+    account_config_description: ClassVar = {}
+    account_config_type: ClassVar = {}
 
 
 class GlobalKeyConfigProxy:
@@ -71,13 +71,13 @@ class GlobalKeyConfigProxy:
     running = False
     default_config = KEY_CONFIG_DEFAULTS
     config = get_global_config(KEY_CONFIG_NAME)
-    config_description = {}
-    config_type = {}
-    account_config_blacklist = set()
-    account_config_whitelist = set()
-    account_config_defaults = {}
-    account_config_description = {}
-    account_config_type = {}
+    config_description: ClassVar = {}
+    config_type: ClassVar = {}
+    account_config_blacklist: ClassVar = set()
+    account_config_whitelist: ClassVar = set()
+    account_config_defaults: ClassVar = {}
+    account_config_description: ClassVar = {}
+    account_config_type: ClassVar = {}
 
 
 class InMemoryConfig(dict):
@@ -99,7 +99,7 @@ class InMemoryConfig(dict):
 class AccountConfigTab(CustomTab):
     """Tab for managing per-account configuration overrides and account list."""
 
-    ALWAYS_HIDDEN_CONFIG_KEYS = {"多账户模式", "多账户独立配置", "账号列表"}
+    ALWAYS_HIDDEN_CONFIG_KEYS: ClassVar = {"多账户模式", "多账户独立配置", "账号列表"}
 
     # 启动后空闲预热：提前完成账号页首屏构建，消除首次切换到本页的卡顿。
     # 与 GlobalConfigTab.PREBUILD_DELAY_MS 错开，避免两个页面的构建负载叠加。
@@ -548,11 +548,11 @@ class AccountConfigTab(CustomTab):
             account_key = self._resolve_account_key_by_username(username) or username
             raw_items.append((account_key, username))
 
-        for account_key in (self.overrides_data.get("accounts") or {}).keys():
+        for account_key in self.overrides_data.get("accounts") or {}:
             display_name = self._get_account_name_by_key(account_key)
             raw_items.append((str(account_key), display_name))
 
-        for account_key in (self.overrides_data.get("map_contents") or {}).keys():
+        for account_key in self.overrides_data.get("map_contents") or {}:
             display_name = self._get_account_name_by_key(account_key)
             raw_items.append((str(account_key), display_name))
 
@@ -772,10 +772,7 @@ class AccountConfigTab(CustomTab):
             only_diff=only_diff,
         )
         if not editable_keys:
-            if only_diff:
-                empty_text = og.app.tr("当前账号在该任务下没有差异项")
-            else:
-                empty_text = og.app.tr("该任务暂无可编辑配置项")
+            empty_text = og.app.tr("当前账号在该任务下没有差异项") if only_diff else og.app.tr("该任务暂无可编辑配置项")
             self.editor_empty_label.setText(empty_text)
             self.editor_empty_label.show()
             return

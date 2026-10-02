@@ -87,8 +87,8 @@ class MinimapPositionFusion:
         self._anchor_set = False
         self._last_sync_t: float | None = None
         # 静止判定：最近一次收到的 WS 坐标 + 相邻两次 WS 之间的位移（米）
-        self._last_ws = None          # (x, z)
-        self._ws_moved_m = None       # None = 还没收到过两次 WS 样本
+        self._last_ws = None  # (x, z)
+        self._ws_moved_m = None  # None = 还没收到过两次 WS 样本
         # 最近一次静止校准的残差：校准前"小地图推算坐标" vs WS 坐标
         self._last_sync_residual = None
         # 最近一次 try_sync 是否因"空操作"而跳过（见 _is_sync_redundant）
@@ -176,8 +176,7 @@ class MinimapPositionFusion:
             diag["reason"] = "bad_dt"
             return False
         dpx = last.get("dmap_px") or (0.0, 0.0)
-        world = self._map_to_world_px @ np.asarray(
-            [float(dpx[0]), float(dpx[1])], dtype=np.float64)
+        world = self._map_to_world_px @ np.asarray([float(dpx[0]), float(dpx[1])], dtype=np.float64)
         speed = math.hypot(float(world[0]), float(world[1])) / dt
         diag["map_speed_m_s"] = speed
         if speed >= self._rest_speed_m_s:
@@ -202,13 +201,13 @@ class MinimapPositionFusion:
             else:
                 self._ws_stable_hits = 0
         else:
-            self._ws_moved_m = None   # 还没有两次样本，条件 2 暂不参与
+            self._ws_moved_m = None  # 还没有两次样本，条件 2 暂不参与
             self._ws_stable_hits = 1
         self._last_ws = (float(x), float(z))
 
     def _apply_sync(self, ws_x: float, ws_z: float, now) -> dict | None:
         """执行锚点替换：先记录校准前残差，再以 WS 为基准重设锚点并清零里程计。"""
-        pre = self.estimate()          # 校准前的"小地图推算位置"
+        pre = self.estimate()  # 校准前的"小地图推算位置"
         self._last_sync_residual = None
         if pre is not None:
             mx, mz = float(pre["x"]), float(pre["z"])

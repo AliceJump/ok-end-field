@@ -510,7 +510,7 @@ def main() -> int:
     # ok.po 同步（仅 UI 支持的 6 种 locale；不新增 msgid，只更新已有条目）
     print("\n=== i18n ok.po 同步 ===")
     if po_official and not args.dry:
-        po_stats, po_touched = sync_po_entries(po_official, PO_LANGS, PO_DIR, create_missing=False)
+        po_stats, _po_touched = sync_po_entries(po_official, PO_LANGS, PO_DIR, create_missing=False)
         for loc, n in po_stats.items():
             print(f"  {loc}: {n} entries updated")
     else:

@@ -278,10 +278,7 @@ class TakeDeliveryTask(BaseEfTask, TriggerTask):
                     self.log_debug("未找到符合条件(金额+类型)的委托")
 
                     # 1. 更新刷新按钮位置记忆
-                    if refresh_btn:
-                        last_refresh_box = refresh_btn
-                    else:
-                        last_refresh_box = getattr(self, "last_known_refresh_btn", None)
+                    last_refresh_box = refresh_btn or getattr(self, "last_known_refresh_btn", None)
 
                     # 2. 检查是否需要滚动 (每轮刷新之间最多滚动1次)
                     if scroll_step < 1:

@@ -8,6 +8,7 @@
 
 这些测试不需要游戏窗口，仅依赖 numpy/opencv。
 """
+
 import math
 import unittest
 
@@ -182,7 +183,7 @@ class TestIntegration(unittest.TestCase):
         # 内容整体右移 50px > max_shift(=0.35*0.4*200=28)，但仍在窗口内所以可测出
         f1 = _bgr(_shifted(base, 50, 0))
         task, od = self._make([f0, f1], max_shift_ratio=0.35)
-        r0 = od.sample(frame=f0, now=0.0)
+        od.sample(frame=f0, now=0.0)
         task._t = 0.3
         r1 = od.sample(frame=f1)
         self.assertFalse(r1["ok"])
@@ -195,7 +196,7 @@ class TestIntegration(unittest.TestCase):
         f0 = _bgr(base)
         blank = np.zeros((200, 200, 3), np.uint8)
         task, od = self._make([f0, blank], response_low=0.2)
-        r0 = od.sample(frame=f0, now=0.0)
+        od.sample(frame=f0, now=0.0)
         task._t = 0.3
         r1 = od.sample(frame=blank)
         self.assertFalse(r1["ok"])
@@ -343,7 +344,7 @@ class TestCommitShiftGate(unittest.TestCase):
         task, od = self._make([f0, f1], commit_min_shift_px=10.0, sample_max_dt=1.0)
 
         od.sample(frame=f0, now=0.0)
-        task._t = 2.0                                   # dt >= sample_max_dt
+        task._t = 2.0  # dt >= sample_max_dt
         r1 = od.sample(frame=f1)
 
         self.assertFalse(r1["ok"])
@@ -435,27 +436,26 @@ class TestDecompose(unittest.TestCase):
 
     def test_arrow_angle_to_bearing_is_mirror(self):
         """箭头角（屏幕上逆时针）与罗盘方位角（顺时针）互为镜像。"""
-        self.assertAlmostEqual(arrow_angle_to_bearing(0.0), 0.0, delta=1e-6)      # 北
-        self.assertAlmostEqual(arrow_angle_to_bearing(90.0), 270.0, delta=1e-6)   # 箭头 90°=西 -> 方位 270°
-        self.assertAlmostEqual(arrow_angle_to_bearing(270.0), 90.0, delta=1e-6)   # 箭头 270°=东 -> 方位 90°
+        self.assertAlmostEqual(arrow_angle_to_bearing(0.0), 0.0, delta=1e-6)  # 北
+        self.assertAlmostEqual(arrow_angle_to_bearing(90.0), 270.0, delta=1e-6)  # 箭头 90°=西 -> 方位 270°
+        self.assertAlmostEqual(arrow_angle_to_bearing(270.0), 90.0, delta=1e-6)  # 箭头 270°=东 -> 方位 90°
         for deg in (13.0, 76.5, 283.5, 359.0):
             self.assertAlmostEqual(bearing_to_arrow_angle(arrow_angle_to_bearing(deg)), deg, delta=1e-6)
 
     def test_compass_convention(self):
         """罗盘方位角：0°=北、90°=东、180°=南、270°=西（顺时针）。"""
-        fwd, _ = body_axes_from_heading(0.0, "compass")     # 北 -> 图像 y 向上
+        fwd, _ = body_axes_from_heading(0.0, "compass")  # 北 -> 图像 y 向上
         self.assertAlmostEqual(fwd[0], 0.0, delta=1e-6)
         self.assertAlmostEqual(fwd[1], -1.0, delta=1e-6)
-        fwd, _ = body_axes_from_heading(90.0, "compass")    # 东 -> 图像 x 向右
+        fwd, _ = body_axes_from_heading(90.0, "compass")  # 东 -> 图像 x 向右
         self.assertAlmostEqual(fwd[0], 1.0, delta=1e-6)
         self.assertAlmostEqual(fwd[1], 0.0, delta=1e-6)
-        fwd, _ = body_axes_from_heading(180.0, "compass")   # 南 -> 图像 y 向下
+        fwd, _ = body_axes_from_heading(180.0, "compass")  # 南 -> 图像 y 向下
         self.assertAlmostEqual(fwd[1], 1.0, delta=1e-6)
-        fwd, _ = body_axes_from_heading(270.0, "compass")   # 西 -> 图像 x 向左
+        fwd, _ = body_axes_from_heading(270.0, "compass")  # 西 -> 图像 x 向左
         self.assertAlmostEqual(fwd[0], -1.0, delta=1e-6)
         # "north_up" 是历史别名，语义相同
-        self.assertEqual(body_axes_from_heading(90.0, "north_up"),
-                         body_axes_from_heading(90.0, "compass"))
+        self.assertEqual(body_axes_from_heading(90.0, "north_up"), body_axes_from_heading(90.0, "compass"))
 
     def test_right_is_player_right_hand(self):
         """right 必须是玩家右手侧：朝北时右手在东，朝东时右手在南。"""
@@ -478,9 +478,7 @@ class TestDecompose(unittest.TestCase):
             fwd, _ = body_axes_from_heading(arrow_angle_to_bearing(arrow_deg), "compass")
             predicted = math.degrees(math.atan2(fwd[0], -fwd[1])) % 360.0
             diff = abs((predicted - measured_bearing + 180.0) % 360.0 - 180.0)
-            self.assertLess(
-                diff, 5.0,
-                f"箭头角 {arrow_deg}° 预测 {predicted:.1f}°，实测 {measured_bearing}°")
+            self.assertLess(diff, 5.0, f"箭头角 {arrow_deg}° 预测 {predicted:.1f}°，实测 {measured_bearing}°")
 
     def test_decompose_heading(self):
         # 朝北走 10 米（地图系：东 x、南 y），北= (0,-1)
@@ -515,7 +513,7 @@ class TestReadYaw(unittest.TestCase):
     def test_converts_arrow_angle_to_bearing(self):
         task = _FakeTask(width=200, height=200, arrow_angle=90.0)  # 箭头 90° = 正西
         bearing, score = MinimapOdometry(task).read_yaw()
-        self.assertAlmostEqual(bearing, 270.0, delta=1e-6)        # 方位 270° = 正西
+        self.assertAlmostEqual(bearing, 270.0, delta=1e-6)  # 方位 270° = 正西
         self.assertAlmostEqual(score, 1.0, delta=1e-6)
 
     def test_none_angle_stays_none(self):
@@ -547,7 +545,7 @@ class TestCropRestIsExactlyStill(unittest.TestCase):
 
     def _rest_shift(self, w, h, noise, blur):
         task = _FakeTask(w, h)
-        od = MinimapOdometry(task)                 # 默认 pad
+        od = MinimapOdometry(task)  # 默认 pad
         frame = self._frame(w, h, noise, blur)
         od.sample(frame=frame, now=0.0)
         task._t = 0.5
@@ -565,9 +563,9 @@ class TestRegionGeometry(unittest.TestCase):
 
     def test_default_values_at_2560x1440(self):
         cx, cy, r_in, r_out = region_geometry(2560, 1440)
-        self.assertAlmostEqual(cx, 0.084 * 2560, delta=1e-6)     # 215.04
-        self.assertAlmostEqual(cy, 0.154 * 1440, delta=1e-6)     # 221.76
-        self.assertAlmostEqual(r_in, 0.014 * 2560, delta=1e-6)   # 35.84
+        self.assertAlmostEqual(cx, 0.084 * 2560, delta=1e-6)  # 215.04
+        self.assertAlmostEqual(cy, 0.154 * 1440, delta=1e-6)  # 221.76
+        self.assertAlmostEqual(r_in, 0.014 * 2560, delta=1e-6)  # 35.84
         self.assertAlmostEqual(r_out, 0.044 * 2560, delta=1e-6)  # 112.64
 
     def test_radii_follow_width_only(self):
@@ -579,8 +577,7 @@ class TestRegionGeometry(unittest.TestCase):
         self.assertNotAlmostEqual(cy1, cy2, delta=1.0)
 
     def test_custom_ratios(self):
-        cx, cy, r_in, r_out = region_geometry(
-            1000, 500, (0.1, 0.2), r_outer_ratio=0.05, r_inner_ratio=0.01)
+        cx, cy, r_in, r_out = region_geometry(1000, 500, (0.1, 0.2), r_outer_ratio=0.05, r_inner_ratio=0.01)
         self.assertAlmostEqual(cx, 100.0, delta=1e-6)
         self.assertAlmostEqual(cy, 100.0, delta=1e-6)
         self.assertAlmostEqual(r_in, 10.0, delta=1e-6)
@@ -629,9 +626,9 @@ class TestCropKeepsDisplacement(unittest.TestCase):
         f0 = _bgr(base)
         f1 = _bgr(_shifted(base, 4, 3))
         task = _FakeTask(w, h, frames=[f0, f1])
-        od = MinimapOdometry(task)                 # 默认几何：环带在左上角的小框内
+        od = MinimapOdometry(task)  # 默认几何：环带在左上角的小框内
         x0, y0, x1, y1 = od._box()
-        self.assertLess((x1 - x0) * (y1 - y0), w * h * 0.1)   # 确实裁掉了一大块
+        self.assertLess((x1 - x0) * (y1 - y0), w * h * 0.1)  # 确实裁掉了一大块
         od.sample(frame=f0, now=0.0)
         task._t = 0.5
         r = od.sample(frame=f1)

@@ -13,7 +13,7 @@ _ANGLE_FACTOR = 1000  # 3 位小数（deg）
 
 def _quantize_scale(scale: float) -> int:
     """将浮点缩放量化为整数 key，避免浮点字典键误差。"""
-    return int(round(float(scale) * _SCALE_FACTOR))
+    return round(float(scale) * _SCALE_FACTOR)
 
 
 def _dequantize_scale(scale_q: int) -> float:
@@ -22,7 +22,7 @@ def _dequantize_scale(scale_q: int) -> float:
 
 def _quantize_angle(angle: float) -> int:
     """归一化到 [0,360) 后量化为整数 key。"""
-    return int(round(float(angle % 360) * _ANGLE_FACTOR))
+    return round(float(angle % 360) * _ANGLE_FACTOR)
 
 
 def _dequantize_angle(angle_q: int) -> float:
@@ -49,10 +49,10 @@ def _to_rgba(img: np.ndarray) -> np.ndarray:
 def _safe_roi(img: np.ndarray, x: int, y: int, w: int, h: int) -> np.ndarray | None:
     """安全 ROI 提取：正常返回 view，越界时 padding copy"""
     H, W = img.shape[:2]
-    x0 = int(round(x))
-    y0 = int(round(y))
-    x1 = x0 + int(round(w))
-    y1 = y0 + int(round(h))
+    x0 = x
+    y0 = y
+    x1 = x0 + (w)
+    y1 = y0 + (h)
 
     if x1 <= 0 or y1 <= 0 or x0 >= W or y0 >= H:
         return None
@@ -81,8 +81,8 @@ def _scale_template(template_rgba: np.ndarray, scale: float) -> np.ndarray:
     if _is_identity_scale(scale):
         return template_rgba
     h, w = template_rgba.shape[:2]
-    new_h = max(1, int(round(h * scale)))
-    new_w = max(1, int(round(w * scale)))
+    new_h = max(1, round(h * scale))
+    new_w = max(1, round(w * scale))
 
     rgb_scaled = cv2.resize(template_rgba[:, :, :3], (new_w, new_h), interpolation=cv2.INTER_LINEAR)
     alpha_scaled = cv2.resize(template_rgba[:, :, 3], (new_w, new_h), interpolation=cv2.INTER_NEAREST)
@@ -104,7 +104,7 @@ class ArrowAngleMatcher:
     def __init__(
         self,
         template_path: str | None = None,
-        template_center: tuple[int, int] = None,
+        template_center: tuple[int, int] | None = None,
         benchmark_width: int = 2560,
         max_cache_scales: int = 12,
     ):
@@ -213,7 +213,7 @@ class ArrowAngleMatcher:
 
     def _get_angles_with_wrap(self, center_angle: float, radius: float, step: float) -> list[float]:
         """生成环绕角度列表，量化去重后排序。"""
-        n = int(round(2 * radius / step)) + 1
+        n = round(2 * radius / step) + 1
         raw = [center_angle - radius + i * step for i in range(n)]
         # 量化去重（处理浮点累积误差与跨 0/360 边界）
         seen: dict[int, float] = {}

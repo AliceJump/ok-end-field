@@ -7,6 +7,7 @@
 
 真机上"箭头角 -> 方位角"的换算已由 TestMinimapOdometry 覆盖，这里只测控制逻辑。
 """
+
 import unittest
 
 from src.localization.minimap_heading_mixin import (
@@ -19,16 +20,23 @@ from src.localization.minimap_heading_mixin import (
 class _FakeTurnTask(MinimapHeadingMixin):
     """模拟"鼠标转视角 + 按 W 转身"的假任务，绕开真实鼠标/键盘/截图。"""
 
-    def __init__(self, facing=0.0, per_px=0.0675, k_error=1.0, score=0.9,
-                 arrow_fail=False, input_mode="foreground",
-                 facing_follows_camera=False):
+    def __init__(
+        self,
+        facing=0.0,
+        per_px=0.0675,
+        k_error=1.0,
+        score=0.9,
+        arrow_fail=False,
+        input_mode="foreground",
+        facing_follows_camera=False,
+    ):
         self.config = {
             CONFIG_YAW_PER_PIXEL: per_px,
             CONFIG_MIN_SCORE: 0.6,
         }
-        self.facing = float(facing)      # 角色朝向（方位角）
-        self.camera = float(facing)      # 视角朝向
-        self.k_error = float(k_error)    # 实测系数 = 配置系数 x k_error（模拟标定偏差）
+        self.facing = float(facing)  # 角色朝向（方位角）
+        self.camera = float(facing)  # 视角朝向
+        self.k_error = float(k_error)  # 实测系数 = 配置系数 x k_error（模拟标定偏差）
         self.score = float(score)
         self.arrow_fail = arrow_fail
         self.facing_follows_camera = bool(facing_follows_camera)
@@ -68,7 +76,7 @@ class _FakeTurnTask(MinimapHeadingMixin):
 
     def _arrow_after_w(self, *, min_score=None):
         self.press_key("w", down_time=0.3)
-        self.facing = self.camera          # 角色转到视角方向
+        self.facing = self.camera  # 角色转到视角方向
         return self.read_heading(min_score=min_score)
 
 
@@ -99,8 +107,8 @@ class TestTurnToBearing(unittest.TestCase):
         res = task.turn_to_bearing(90.0)
         self.assertTrue(res["ok"])
         self.assertEqual(res["rounds"], 0)
-        self.assertEqual(task.w_presses, 0)   # 一次 W 都不按
-        self.assertEqual(task.sent, [])       # 一点鼠标都不动
+        self.assertEqual(task.w_presses, 0)  # 一次 W 都不按
+        self.assertEqual(task.sent, [])  # 一点鼠标都不动
 
     def test_converges_in_one_round_with_exact_coefficient(self):
         task = _FakeTurnTask(facing=0.0)
@@ -128,7 +136,7 @@ class TestTurnToBearing(unittest.TestCase):
         res = task.turn_to_bearing(10.0, tolerance=5.0)
         self.assertTrue(res["ok"], res)
         self.assertEqual(res["rounds"], 1)
-        self.assertGreater(task.sent[0], 0)            # 鼠标右移 = 方位角增大
+        self.assertGreater(task.sent[0], 0)  # 鼠标右移 = 方位角增大
         self.assertAlmostEqual(res["heading"], 10.0, delta=1.0)
 
     def test_adapts_to_ten_times_lower_coefficient(self):
@@ -256,7 +264,7 @@ class TestOneShotAndDiagnostics(unittest.TestCase):
         res = task.turn_to_bearing(90.0)
         self.assertTrue(res["ok"])
         self.assertTrue(res["one_shot"])
-        self.assertEqual(task.w_presses, 1)      # 只按了一次 W
+        self.assertEqual(task.w_presses, 1)  # 只按了一次 W
 
     def test_not_one_shot_when_correction_needed(self):
         task = _FakeTurnTask(facing=0.0, k_error=0.8)

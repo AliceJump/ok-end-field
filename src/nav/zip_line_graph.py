@@ -131,10 +131,7 @@ class ZipLineGraph:
         for link in self.links:
             links_by_node.setdefault(link.first_id, []).append(link)
             links_by_node.setdefault(link.second_id, []).append(link)
-        self._links_by_node = {
-            node_id: tuple(node_links)
-            for node_id, node_links in links_by_node.items()
-        }
+        self._links_by_node = {node_id: tuple(node_links) for node_id, node_links in links_by_node.items()}
 
     def __bool__(self) -> bool:
         return bool(self.nodes)
@@ -157,11 +154,7 @@ class ZipLineGraph:
             return self
         nodes = [node for node in self.nodes if not node.map_id or node.map_id == map_id]
         node_ids = {node.node_id for node in nodes}
-        links = [
-            link
-            for link in self.links
-            if link.first_id in node_ids and link.second_id in node_ids
-        ]
+        links = [link for link in self.links if link.first_id in node_ids and link.second_id in node_ids]
         return ZipLineGraph(nodes, links)
 
     def summary(self) -> dict:
@@ -237,7 +230,7 @@ class ZipLineGraph:
         links: list[ZipLineLink] = []
         tolerance = max(0.0, float(distance_tolerance_m))
         for index, first in enumerate(nodes):
-            for second in nodes[index + 1:]:
+            for second in nodes[index + 1 :]:
                 if first.map_id != second.map_id:
                     continue
                 if first.level_id and second.level_id and first.level_id != second.level_id:

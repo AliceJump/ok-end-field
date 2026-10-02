@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # ruff: noqa: UP009
 import asyncio
+import contextlib
 import hashlib
 import hmac
 import json
@@ -15,6 +16,7 @@ from urllib import error, parse, request
 
 import websockets
 
+from src.core.map_device_id import clear_stored_device_id, ensure_map_device_id
 from src.tasks.account.account_scope_store import (
     get_account_map_content,
     load_overrides,
@@ -34,8 +36,6 @@ ENDFIELD_MAP_REFERER = "https://game.skland.com/map/endfield"
 # 但官方 SDK 注册流程自铸的全新设备ID可以从 Python 直接使用、与账号无关且可长期复用；
 # 自铸流程见 src/core/map_device_id.py：临时浏览器配置匿名访问官方地图页（无需登录）
 # 完成注册，并持久化到 configs/map_device_id.json。
-from src.core.map_device_id import clear_stored_device_id, ensure_map_device_id
-
 _shumei_did_failed_at = 0.0
 _SHUMEI_DID_RETRY_INTERVAL = 30.0
 
@@ -115,10 +115,7 @@ class WsPositionMixin:
         now = time.time()
         map_changed = map_id != self._map_ws_last_position_log_map
         last_xz = self._map_ws_last_position_log_xz
-        jumped = (
-            last_xz is not None
-            and math.hypot(float(x) - last_xz[0], float(z) - last_xz[1]) >= 50.0
-        )
+        jumped = last_xz is not None and math.hypot(float(x) - last_xz[0], float(z) - last_xz[1]) >= 50.0
         heartbeat = 5.0 if getattr(self, "debug", False) else 30.0
         due = now - self._map_ws_last_position_log_at >= heartbeat
         if self._map_ws_last_position_log_at > 0 and not (map_changed or jumped or due):
@@ -162,11 +159,14 @@ class WsPositionMixin:
     def _request_hg_grant_code(self, hg_token: str) -> str:
         """调用 HG 授权接口换取 oauth code；异常时抛出 MapAuthError。"""
         try:
-            grant_resp = self._post_json(ENDFIELD_MAP_HG_GRANT_URL, {
-                "token": hg_token,
-                "appCode": ENDFIELD_MAP_HG_APP_CODE,
-                "type": 0,
-            })
+            grant_resp = self._post_json(
+                ENDFIELD_MAP_HG_GRANT_URL,
+                {
+                    "token": hg_token,
+                    "appCode": ENDFIELD_MAP_HG_APP_CODE,
+                    "type": 0,
+                },
+            )
         except RuntimeError as e:
             raise MapAuthError(f"HG 授权接口请求失败: {e}") from e
         except (error.URLError, TimeoutError) as e:
@@ -211,8 +211,7 @@ class WsPositionMixin:
             raise MapAuthError(f"地图 cred 换取接口返回异常: {cred_resp}{hint}")
 
         data = cred_resp.get("data") or {}
-        if not str(data.get("cred") or "").strip() or \
-                not str(data.get("token") or "").strip():
+        if not str(data.get("cred") or "").strip() or not str(data.get("token") or "").strip():
             raise MapAuthError("地图 cred 换取接口缺少 cred 或 token")
         return cred_resp
 
@@ -406,7 +405,7 @@ class WsPositionMixin:
 
         info_set = getattr(self, "info_set", None)
         if callable(info_set):
-            info_set('导航', '游戏窗口不存在，地图WS已停止')
+            info_set("导航", "游戏窗口不存在，地图WS已停止")
         return True
 
     def _map_ws_should_stop_for_idle_consumer(self) -> bool:
@@ -428,7 +427,7 @@ class WsPositionMixin:
 
         info_set = getattr(self, "info_set", None)
         if callable(info_set):
-            info_set('导航', '地图WS已停止：长时间无任务读取位置')
+            info_set("导航", "地图WS已停止：长时间无任务读取位置")
         return True
 
     async def _map_ws_client_main(self):
@@ -454,10 +453,10 @@ class WsPositionMixin:
 
                 headers = self._map_api_headers(self._map_ws_cred)
                 async with websockets.connect(
-                        ENDFIELD_MAP_WS_URL,
-                        additional_headers=headers,
-                        open_timeout=15,
-                        ping_interval=None,
+                    ENDFIELD_MAP_WS_URL,
+                    additional_headers=headers,
+                    open_timeout=15,
+                    ping_interval=None,
                 ) as ws:
                     if callable(log_info):
                         log_info(f"[地图WS] 已连接: {ENDFIELD_MAP_WS_URL}")
@@ -519,10 +518,8 @@ class WsPositionMixin:
                 self._map_ws_last_error_at = time.time()
                 if callable(log_error):
                     log_error(f"[地图WS] 客户端异常，30秒后重试: {e}")
-                try:
+                with contextlib.suppress(TimeoutError):
                     await asyncio.wait_for(self._map_ws_stop_event.wait(), timeout=30.0)
-                except TimeoutError:
-                    pass
 
     def _start_map_ws_client(self, raw_cred: str | None):
         auth_source = str(raw_cred or "")
@@ -552,12 +549,12 @@ class WsPositionMixin:
         if not cred:
             return False
         if (
-                self._is_map_ws_client_enabled()
-                and self._map_ws_cred == cred
-                and self._map_ws_sign_token == sign_token
-                and self._map_ws_user_id == user_id
-                and self._map_ws_auth_source == auth_source
-                and self._map_ws_device_id == device_id  # dId 变化（如10001后重新铸造）时不复用旧客户端
+            self._is_map_ws_client_enabled()
+            and self._map_ws_cred == cred
+            and self._map_ws_sign_token == sign_token
+            and self._map_ws_user_id == user_id
+            and self._map_ws_auth_source == auth_source
+            and self._map_ws_device_id == device_id  # dId 变化（如10001后重新铸造）时不复用旧客户端
         ):
             return True
 
@@ -586,14 +583,10 @@ class WsPositionMixin:
                 if callable(log_error):
                     log_error(f"[地图WS] 客户端启动异常: {e}")
             finally:
-                try:
+                with contextlib.suppress(Exception):
                     loop.stop()
-                except Exception:
-                    pass
-                try:
+                with contextlib.suppress(Exception):
                     loop.close()
-                except Exception:
-                    pass
                 if callable(log_info):
                     log_info("[地图WS] 客户端已关闭")
                 self._map_ws_enabled = False
@@ -638,7 +631,7 @@ class WsPositionMixin:
     def _push_ws_payload(self, payload: dict[str, Any]):
         try:
             # 缓存有效的位置数据
-            pos, map_id, px, py, pz = self._extract_position_payload(payload)
+            pos, map_id, _px, _py, _pz = self._extract_position_payload(payload)
             if pos is not None and map_id is not None:
                 with self._ws_position_lock:
                     self._ws_last_position_payload = payload
@@ -646,15 +639,11 @@ class WsPositionMixin:
             self._ws_payload_queue.put_nowait(payload)
         except queue.Full:
             # 队列已满，弹出旧数据后重试
-            try:
+            with contextlib.suppress(queue.Empty):
                 self._ws_payload_queue.get_nowait()
-            except queue.Empty:
-                pass
-            try:
-                self._ws_payload_queue.put_nowait(payload)
-            except queue.Full:
+            with contextlib.suppress(queue.Full):
                 # 仍然满，放弃此消息
-                pass
+                self._ws_payload_queue.put_nowait(payload)
 
     async def _ws_handler(self, ws):
         log_info = getattr(self, "log_info", None)
@@ -727,14 +716,10 @@ class WsPositionMixin:
                 if callable(log_error):
                     log_error(f"[WS] 服务器异常: {e}")
             finally:
-                try:
+                with contextlib.suppress(Exception):
                     loop.stop()
-                except Exception:
-                    pass
-                try:
+                with contextlib.suppress(Exception):
                     loop.close()
-                except Exception:
-                    pass
                 if callable(log_info):
                     log_info("[WS] 服务器已关闭")
 
@@ -752,7 +737,7 @@ class WsPositionMixin:
 
     def _recv_ws_position_payload_or_cached(self, timeout: float = 0.5):
         """获取最新的位置数据，如果没有新数据则返回缓存的上一次数据。
-        
+
         返回：
             - 新的位置数据（从队列获取）
             - 或缓存的位置数据（如果队列为空）
@@ -913,10 +898,19 @@ class WsPositionMixin:
         if m:
             return 0x70 + int(m.group(1)) - 1  # VK_F1 = 0x70
         named = {
-            "space": 0x20, "enter": 0x0D, "esc": 0x1B, "tab": 0x09,
-            "backspace": 0x08, "delete": 0x2E, "insert": 0x2D,
-            "lshift": 0xA0, "rshift": 0xA1, "lctrl": 0xA2, "rctrl": 0xA3,
-            "lalt": 0xA4, "ralt": 0xA5,
+            "space": 0x20,
+            "enter": 0x0D,
+            "esc": 0x1B,
+            "tab": 0x09,
+            "backspace": 0x08,
+            "delete": 0x2E,
+            "insert": 0x2D,
+            "lshift": 0xA0,
+            "rshift": 0xA1,
+            "lctrl": 0xA2,
+            "rctrl": 0xA3,
+            "lalt": 0xA4,
+            "ralt": 0xA5,
         }
         if key in named:
             return named[key]

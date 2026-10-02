@@ -40,12 +40,14 @@ class MinimapNavigateToPoint(ZipLineMixin, GridNavigationMixin, BaseEfTask):
             "目标X": "目标世界坐标 X（米；导航网格列方向）",
             "目标Z": "目标世界坐标 Z（米；导航网格行方向）",
         }
-        self.default_config_group.update({
-            "目标坐标": [
-                "目标X",
-                "目标Z",
-            ],
-        })
+        self.default_config_group.update(
+            {
+                "目标坐标": [
+                    "目标X",
+                    "目标Z",
+                ],
+            }
+        )
 
     def run(self):
         if not self.in_world():

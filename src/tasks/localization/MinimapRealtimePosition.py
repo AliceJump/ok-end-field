@@ -31,8 +31,8 @@
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
-from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 from src.localization.minimap_heading_mixin import CONFIG_MIN_SCORE
+from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 
 
 class MinimapRealtimePosition(RuntimeStateMixin, BaseEfTask):
@@ -151,12 +151,14 @@ class MinimapRealtimePosition(RuntimeStateMixin, BaseEfTask):
                     f"距离={residual['dist']:.2f}m"
                 )
 
-            self.log_info(self._format_tick(
-                iteration,
-                st,
-                min_score,
-                position_task.minimap_rest_diag(),
-            ))
+            self.log_info(
+                self._format_tick(
+                    iteration,
+                    st,
+                    min_score,
+                    position_task.minimap_rest_diag(),
+                )
+            )
 
         elapsed = self.active_time() - start
         avg = elapsed / iteration if iteration > 0 else 0.0

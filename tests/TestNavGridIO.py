@@ -4,6 +4,7 @@
 贴墙安全距离与往返一致性。真实地图（尺寸/未知比例都大得多）的规划行为见
 ``tests/TestNavGridPlanner.py`` 与 :mod:`src.nav.grid_planner` 的说明。
 """
+
 import json
 import tempfile
 import unittest
@@ -31,16 +32,14 @@ def _grid(rows, *, origin=(10.0, 0.0, 20.0), cell_size=1.0, map_name="t", zoom="
     """用字符画建网格：'.' 未知、'o' 可行走、'#' 阻挡（第一行是 i=0）。"""
     table = {".": CELL_UNKNOWN, "o": CELL_FREE, "#": CELL_BLOCKED}
     arr = np.array([[table[ch] for ch in row] for row in rows], dtype=np.uint8)
-    return DenseGrid(arr, GridMeta(map_name=map_name, zoom=zoom, origin=origin,
-                                   cell_size=cell_size, source="test"))
+    return DenseGrid(arr, GridMeta(map_name=map_name, zoom=zoom, origin=origin, cell_size=cell_size, source="test"))
 
 
 class TestGridMeta(unittest.TestCase):
     """覆盖网格元数据校验和序列化。"""
 
     def test_json_round_trip(self):
-        meta = GridMeta(map_name="base01", zoom="4", origin=(-127.74, -10.0, -86.47),
-                        cell_size=1.0, source="x")
+        meta = GridMeta(map_name="base01", zoom="4", origin=(-127.74, -10.0, -86.47), cell_size=1.0, source="x")
         again = GridMeta.from_json(meta.to_json())
         self.assertEqual(again.map_name, "base01")
         self.assertEqual(again.origin, (-127.74, -10.0, -86.47))
@@ -76,7 +75,7 @@ class TestDenseGridValidation(unittest.TestCase):
             DenseGrid(np.zeros((2, 2, 2), dtype=np.uint8))
 
     def test_counts(self):
-        grid = _grid(["o#.", ".oo"])     # 可行走 3、阻挡 1、未知 2
+        grid = _grid(["o#.", ".oo"])  # 可行走 3、阻挡 1、未知 2
         self.assertEqual(grid.counts(), {"未知": 2, "可行走": 3, "阻挡": 1})
 
 
@@ -129,7 +128,7 @@ class TestNeighbors(unittest.TestCase):
 
     def test_no_corner_cutting(self):
         """斜向目标虽是可行走，但会擦过阻挡格的一角 -> 不许走。"""
-        grid = _grid(["o#", ".o"])          # (0,1) 阻挡，(1,0) 未知，(1,1) 可行走
+        grid = _grid(["o#", ".o"])  # (0,1) 阻挡，(1,0) 未知，(1,1) 可行走
         self.assertNotIn((1, 1), grid.neighbors(0, 0, diagonal=True))
         # 两侧都不是阻挡时，同样的斜向允许走
         grid2 = _grid(["o.", "oo"])
@@ -142,8 +141,8 @@ class TestClearance(unittest.TestCase):
     def test_distance(self):
         grid = _grid(["ooo", "o#o", "ooo"])
         dist = grid.clearance()
-        self.assertEqual(dist[1, 1], 0)                 # 阻挡格自身
-        self.assertEqual(dist[0, 0], 2)                 # 斜对角到最近阻挡是 2（4 连通 BFS）
+        self.assertEqual(dist[1, 1], 0)  # 阻挡格自身
+        self.assertEqual(dist[0, 0], 2)  # 斜对角到最近阻挡是 2（4 连通 BFS）
         self.assertEqual(dist[1, 0], 1)
         self.assertEqual(dist[0, 1], 1)
 
@@ -157,22 +156,19 @@ class TestClearance(unittest.TestCase):
         规划器只用得到 ``min(距离, margin)``，而 ``-1`` 恰好表示"距离 ≥ max_dist"，
         按"不欠安全距离"处理即可，所以截断不丢精度——大图上这是秒级 vs 毫秒级的差别。
         """
-        grid = _grid(["ooooooo",
-                      "ooo#ooo",
-                      "ooooooo"])
+        grid = _grid(["ooooooo", "ooo#ooo", "ooooooo"])
         full = grid.clearance()
         capped = grid.clearance(max_dist=1)
-        self.assertEqual(capped[1, 3], 0)               # 阻挡格自身
-        self.assertEqual(capped[0, 3], 1)               # 一层之内照算
-        self.assertEqual(full[0, 0], 4)                 # 四连通波前，是曼哈顿距离
-        self.assertEqual(capped[0, 0], -1)              # 超过 max_dist -> -1
+        self.assertEqual(capped[1, 3], 0)  # 阻挡格自身
+        self.assertEqual(capped[0, 3], 1)  # 一层之内照算
+        self.assertEqual(full[0, 0], 4)  # 四连通波前，是曼哈顿距离
+        self.assertEqual(capped[0, 0], -1)  # 超过 max_dist -> -1
         near = capped >= 0
         self.assertTrue((capped[near] == full[near]).all())
         self.assertTrue((full[~near] > 1).all())
 
     def test_frontier_clearance_max_dist(self):
-        grid = _grid(["o.o",
-                      "ooo"])
+        grid = _grid(["o.o", "ooo"])
         full = grid.frontier_clearance()
         capped = grid.frontier_clearance(max_dist=1)
         self.assertEqual(full[0, 0], 1)
@@ -180,11 +176,10 @@ class TestClearance(unittest.TestCase):
         self.assertEqual(full[1, 0], 2)
         self.assertEqual(capped[1, 0], -1)
 
-
     def test_frontier_clearance(self):
         grid = _grid(["o.o", "ooo"])
         dist = grid.frontier_clearance()
-        self.assertEqual(dist[0, 1], 0)                  # 未知格自身
+        self.assertEqual(dist[0, 1], 0)  # 未知格自身
         self.assertEqual(dist[0, 0], 1)
         self.assertEqual(dist[0, 2], 1)
         self.assertEqual(dist[1, 1], 1)
@@ -215,8 +210,7 @@ class TestRoundTrip(unittest.TestCase):
         self.tmp.cleanup()
 
     def test_npz_round_trip(self):
-        grid = _grid(["o#.", ".oo", "###"], origin=(-127.74, -10.0, -86.47),
-                     map_name="base01", zoom="4")
+        grid = _grid(["o#.", ".oo", "###"], origin=(-127.74, -10.0, -86.47), map_name="base01", zoom="4")
         path = save_grid(self.dir / "base01_4", grid)
         self.assertTrue(path.name.endswith(GRID_SUFFIX), path.name)
 
@@ -228,7 +222,7 @@ class TestRoundTrip(unittest.TestCase):
         self.assertEqual(again.meta.cell_size, 1.0)
         self.assertEqual(again.meta.magic, GRID_MAGIC)
         self.assertEqual(again.meta.schema_version, SCHEMA_VERSION)
-        self.assertTrue(again.meta.created)             # 落盘时会补上时间
+        self.assertTrue(again.meta.created)  # 落盘时会补上时间
         self.assertEqual(again.counts(), grid.counts())
 
     def test_save_normalizes_extension(self):

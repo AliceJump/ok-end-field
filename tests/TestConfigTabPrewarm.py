@@ -115,8 +115,7 @@ class TestGlobalConfigTabBuild(TabTestCase):
         self.assertEqual(tab._pending_cards, [])
         # 卡片数 = 可见全局配置数（未在 GLOBAL_CONFIG_GROUPS 里列出的也会落到「其他配置」），
         # 从来源推导而不是写死数字，新增配置分组时不会误报。
-        self.assertEqual(tab.vBoxLayout.count(), len(get_all_visible_configs()),
-                         "应构建全部可见的配置卡片")
+        self.assertEqual(tab.vBoxLayout.count(), len(get_all_visible_configs()), "应构建全部可见的配置卡片")
 
     def test_build_only_scheduled_once(self):
         tab = self._new_tab()
