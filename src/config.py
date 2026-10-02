@@ -52,8 +52,6 @@ config = {
     "config_folder": "configs",  # 最好不要修改
     "screenshot_processor": make_bottom_left_black,  # 在截图的时候对frame进行修改, 可选
     "gui_icon": "icons/icon.png",  # 窗口图标, 最好不需要修改文件名
-    "wait_until_before_delay": 0,
-    "wait_until_check_delay": 0,
     "wait_until_settle_time": 0,  # 调用 wait_until时候, 在第一次满足条件的时候, 会等待再次检测, 以避免某些滑动动画没到预定位置就在动画路径中被检测到
     "ocr": {
         "lib": "onnxocr",
@@ -99,7 +97,7 @@ config = {
             "sponsor": "https://www.paypal.com/ncp/payment/JWQBH7JZKNGCQ",
             "qq_group": "https://qm.qq.com/q/NcWHQU6q8k",
             "share": "https://1drv.ms/f/c/0c7567d06cc5b5f3/IgAudOtrzHPVT6sJgWeWSiByAZNvwAzcehIdj3hEcprRlP0?e=nsEBmm",
-            "faq": "https://github.com/AliceJump/ok-end-field",
+            "faq": "https://ok-script.com/ok-end-field/en/docs/guides/troubleshooting/",
             "qq_channel": "https://pd.qq.com/s/djmm6l44y",
         },
         "zh_CN": {
@@ -107,7 +105,7 @@ config = {
             "discord": "https://discord.gg/vVyCatEBgA",
             "sponsor": "https://afdian.com/a/AliceJump",
             "share": "https://1drv.ms/f/c/0c7567d06cc5b5f3/IgAudOtrzHPVT6sJgWeWSiByAZNvwAzcehIdj3hEcprRlP0?e=nsEBmm",
-            "faq": "https://cnb.cool/ok-oldking/ok-ef-update/-/blob/main/README.md",
+            "faq": "https://ok-script.com/ok-end-field/docs/guides/troubleshooting/",
             "qq_group": "https://qm.qq.com/q/NcWHQU6q8k",
             "qq_channel": "https://pd.qq.com/s/djmm6l44y",
         },

@@ -737,9 +737,8 @@ class WindowArrowDrawingMixin:
 
     def _init_window_arrow_drawing_mixin(self):
         # 默认样式（调用方可通过函数参数直接传入覆盖）
-        # 颜色使用 RGB 三元组，alpha 单独配置
+        # 颜色使用 RGB 三元组，透明度由浮层默认样式或调用参数决定
         self._window_arrow_color = (0, 255, 0)
-        self._window_arrow_alpha = 160
         # 细一些的默认箭身宽度
         self._window_arrow_shaft_width_norm = 0.005
         self._window_arrow_head_angle_deg = 28.0

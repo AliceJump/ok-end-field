@@ -22,6 +22,7 @@ from qfluentwidgets import (
     TextEdit,
 )
 
+from src.core.base_mixin.account_override_mixin import AccountOverrideMixin
 from src.core.global_config_store import (
     KEY_CONFIG_DEFAULTS,
     KEY_CONFIG_NAME,
@@ -117,7 +118,6 @@ class AccountConfigTab(CustomTab):
         self.current_account_key = ""
         self.current_account_name = ""
         self.current_editable_keys: list[str] = []
-        self.current_base_values: dict[str, Any] = {}
         self.current_original_values: dict[str, Any] = {}
         self.current_editor_card = None
         self.current_account_list_value = ""
@@ -434,47 +434,7 @@ class AccountConfigTab(CustomTab):
     @staticmethod
     def _coerce_like(base_value: Any, value: Any) -> Any:
         """Coerce a value to match the type of the base value, with fallback for incompatible types."""
-        if base_value is None or value is None:
-            return value
-
-        if isinstance(base_value, bool):
-            if isinstance(value, bool):
-                return value
-            if isinstance(value, str):
-                text = value.strip().lower()
-                if text in {"true", "1", "yes", "on", "是", "开启"}:
-                    return True
-                if text in {"false", "0", "no", "off", "否", "关闭"}:
-                    return False
-            return base_value
-
-        if isinstance(base_value, int) and not isinstance(base_value, bool):
-            if isinstance(value, int):
-                return value
-            if isinstance(value, str):
-                try:
-                    return int(value.strip())
-                except ValueError:
-                    return base_value
-            return base_value
-
-        if isinstance(base_value, float):
-            if isinstance(value, (int, float)):
-                return float(value)
-            if isinstance(value, str):
-                try:
-                    return float(value.strip())
-                except ValueError:
-                    return base_value
-            return base_value
-
-        if isinstance(base_value, list):
-            return value if isinstance(value, list) else base_value
-
-        if isinstance(base_value, str):
-            return str(value)
-
-        return value if isinstance(value, type(base_value)) else base_value
+        return AccountOverrideMixin._coerce_override_value(base_value, value)
 
     def _collect_tasks(self):
         """Collect all tasks that support multi-account configuration from the executor."""
@@ -789,7 +749,6 @@ class AccountConfigTab(CustomTab):
         self.current_account_key = ""
         self.current_account_name = ""
         self.current_editable_keys = []
-        self.current_base_values = {}
         self.current_original_values = {}
 
         account_key = self._current_account_key()
@@ -806,7 +765,7 @@ class AccountConfigTab(CustomTab):
             return
 
         only_diff = bool(self.only_diff_switch.isChecked())
-        virtual_config, editable_keys, base_values, total_supported_keys = self._build_virtual_config(
+        virtual_config, editable_keys, _base_values, total_supported_keys = self._build_virtual_config(
             task,
             account_key,
             account_name,
@@ -876,7 +835,6 @@ class AccountConfigTab(CustomTab):
         self.current_account_key = account_key
         self.current_account_name = account_name
         self.current_editable_keys = editable_keys
-        self.current_base_values = base_values
         self.current_original_values = copy.deepcopy(dict(card.config))
         self.current_editor_card = card
         self._set_current_task_editor_enabled(not bool(task.running))

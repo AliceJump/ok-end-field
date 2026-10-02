@@ -47,7 +47,6 @@ class AutoCombatLogic:
         self.normal_start_trigger: int = 2
         self.normal_skill_index: int = 0
         self._last_search_time = 0
-        self._search_interval = 1.0
         # 实时条件状态
         self.cond_rotation_enabled = False
         self.cond_ast: list = []
@@ -177,7 +176,6 @@ class AutoCombatLogic:
                 if now_check - self._last_exit_check_time >= self._exit_check_interval:
                     self._last_exit_check_time = now_check
                     if task._check_single_exit_condition():
-                        self._end = True
                         return True, "break"
                 task.approach_enemy()
                 task.next_frame()
@@ -428,7 +426,6 @@ class AutoCombatLogic:
                                 self._warn_low_resolution_if_due()
                             task.log_info("自动战斗结束!", notify=task.get_battle_config("完成通知"))
                             task.log_info("退出战斗主循环")
-                            self._end = True
                             self._normal_attack_hold_enabled = False
                             self._sync_normal_attack_hold()
                             # 战斗结束确认：清战斗标记，下次进入战斗（含结算未出现时

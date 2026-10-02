@@ -1,37 +1,24 @@
 ---
 name: ok-config-migration
-description: Rename config keys in ok-script tasks without losing user data. Use when modifying default_config key names, key-name constants, or key-generation functions in a task class — the operation must follow a strict order (migration table → migrate test → i18n sync → docs sync → recovery fallback) to avoid losing user configuration stored in configs/*.json. Based on the DeliveryTask config_key_migrations pattern.
+description: Migrate persisted ok-end-field task settings when a key, value format, or owning task changes. Use for task JSON and account-specific overrides so existing user values survive.
 ---
 
-# OK Script Config Key Migration
+# OK Script Config Migration
 
-## Purpose
+`Config.verify_config` deletes keys absent from a task's `default_config` on load. Implement the migration **before** changing the schema and ship both in the same commit; do not deploy them in stages. Test old persisted data before launching the app, and keep the new key in the target defaults. Paths come from `config_folder`, not a hard-coded `configs/` directory.
 
-Rename config keys in ok-script task classes safely. `configs/` JSON holds user runtime data; changing key names out of order silently orphans user values. Always follow the order below, in a single commit for the code pair.
+## Same task file
 
-## Workflow (strict order)
+- Rename: add `config_key_migrations = {"旧键": "新键"}` to the task or mixin. `BaseEfTask.load_config` collects MRO tables and copies values before framework loading; an existing new value wins. The copy helper retains the old key only at that stage: framework loading subsequently removes keys absent from defaults. If rollback must retain the old value, back up the source file or temporarily retain the old default key.
+- Value format: add `config_value_migrations = {"新键": transform}`. Key copies run first; see `src/core/config_migration.py` for helpers and `_NO_MIGRATION`.
+- These tables touch only `<TaskClass>.json`. If accounts can override the setting, migrate the matching entries in `account_scoped_overrides.json` through `src/tasks/account/account_scope_store.py:update_overrides`, preserving existing new values.
 
-1. **先加迁移表，再改键名** — in the same task class:
-   - Add `config_key_migrations = {旧键: 新键}` FIRST
-   - Then modify `default_config` / key-name constants / key-generation functions
-   - Both must land in the **same commit**. Never deploy in steps.
-2. **迁移表生效前禁止运行程序** — do NOT launch the app to verify after renaming. Run the actual migration test first:
-   ```powershell
-   uv run --locked python -m unittest tests.TestZipLineConfig -v
-   ```
-   The test asserts the old key value was migrated to the new key (the function under test is `migrate_config_file_keys(<任务名>, migrations)`, defined in `src/core/config_migration.py`; the migration table lives in `src/tasks/onetime/DeliveryTask.py`).
-3. **同步 i18n** — after key changes, sync all `i18n/*/LC_MESSAGES/ok.po` msgid (msgid must match the code key name exactly), then compile:
-   ```powershell
-   uv run --locked python .agents/skills/ok-script-i18n/scripts/task_i18n_helper.py check
-   uv run --locked python .agents/skills/ok-script-i18n/scripts/task_i18n_helper.py compile
-   ```
-4. **同步文档** — search `docs/` for the old key names and update them (e.g. the「通向送货点」key family).
-5. **配置丢失可恢复** — if a user config was already lost:
-   - `logs/ok-script.log` logs `Config:init self.config = {...}` (DEBUG level) with the full historical config per run.
-   - Recover the user value from the last log line that still contains the old key name.
-   - Confirm the restore on the next run's log.
+## Between task files
 
-## Reference
+For the daily task split, append a **new batch ID** to `DAILY_SPLIT_IMPORTS` in `src/tasks/daily/split_config_migrator.py`. Map source task/key to target task/key or a converter; never edit a completed batch because its marker prevents reruns. `BaseEfTask.load_config` runs pending imports before any task's `verify_config`. The migrator backs up sources and copies account overrides without deleting source values itself; later framework loading can still remove obsolete keys. For another cross-task move, preserve the same pre-load ordering. Check older migration backups when a previous app version may already have removed source keys.
 
-- Pattern source: `src/tasks/onetime/DeliveryTask.py` (`config_key_migrations`).
-- Migration helper: `migrate_config_file_keys(<任务名>, migrations)`.
+## Verify
+
+Add a focused test for the actual change: old-only data, existing target value, missing data, rerun, conversion, and account overrides as applicable. Existing examples are `tests.TestZipLineConfig` and `tests.TestDailySplitConfigMigration`; they do not cover a new mapping automatically. Update docs that mention renamed keys, including internal keys; update gettext when visible names or options change (`$ok-script-i18n`).
+
+For recovery, prefer surviving source values or `daily_split_migration_backup/<batch>/`. If neither exists, inspect the last `Config:init` log containing the old key rather than the latest initialization, which may already reflect its deletion; logs may contain private data. Restore the value through the migration, then verify the target value survives the next framework load and save before reporting recovery complete.

@@ -19,7 +19,6 @@ BattleMixin
 """
 
 import json
-import re
 from pathlib import Path
 
 import cv2
@@ -133,8 +132,6 @@ class BattleMixin(BaseEfTask):
         self._last_ult_release_time = 0
         self.battle_config_manager = BattleConfigManager(get_global_config(BATTLE_CONFIG_NAME))
         self._register_battle_config()
-        # 用于识别 LV 或等级文字
-        self.lv_regex = re.compile(r"(?i)lv|\d{2}")
 
     def _register_battle_config(self):
         if not hasattr(self, "default_config") or self.default_config is None:
@@ -933,27 +930,6 @@ class BattleMixin(BaseEfTask):
         self.log_info(f"退出检查通过: has_lv={has_lv}, in_team={in_team},")
 
         return True
-
-    def _check_center_area_has_number(self):
-        """
-        检测屏幕中心是否存在伤害数字。
-        """
-
-        try:
-            box = self.box_of_screen(0.20, 0.00, 0.80, 0.65)
-
-            self.next_frame()
-
-            center_area = self.ocr(match=r"^\d+$", box=box, name="center_number", log=True)
-
-            if len(center_area) > 0:
-                self.log_info(f"中间区域识别到数字: {[r.name for r in center_area]}")
-
-            return len(center_area) > 0
-
-        except (ValueError, AttributeError, TypeError) as e:
-            self.log_error(f"OCR检测数字失败: {e}")
-            return False
 
     def ocr_lv(self):
         """

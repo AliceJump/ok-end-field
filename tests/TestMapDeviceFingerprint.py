@@ -50,7 +50,7 @@ class TestMapDeviceFingerprint(unittest.TestCase):
             def __exit__(self, *args):
                 return False
 
-        with mock.patch.object(fp.urllib.request, "urlopen", return_value=_FakeResp()):
+        with mock.patch("src.core.map_device_registration.urllib.request.urlopen", return_value=_FakeResp()):
             with self.assertRaises(RuntimeError) as ctx:
                 fp.mint_device_id_synthetic()
             self.assertIn("1902", str(ctx.exception))
@@ -76,7 +76,7 @@ class TestMapDeviceFingerprint(unittest.TestCase):
             def __exit__(self, *args):
                 return False
 
-        with mock.patch.object(fp.urllib.request, "urlopen", return_value=_FakeResp()):
+        with mock.patch("src.core.map_device_registration.urllib.request.urlopen", return_value=_FakeResp()):
             did = fp.mint_device_id_synthetic()
         self.assertEqual(did, "B" + "x" * 32)
 

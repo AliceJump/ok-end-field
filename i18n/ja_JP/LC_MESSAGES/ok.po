@@ -2841,3 +2841,29 @@ msgstr "日課専用です。設定は「自動配達」と別に保存されま
 
 msgid "每次送礼时送给联络台干员的礼物个数。"
 msgstr "連絡所のオペレーターに一度に渡すプレゼントの個数。"
+
+msgid "使用说明参见选项，更多用法参见 https://ok-script.com/ok-end-field/docs/体力本/"
+msgstr ""
+"使い方はオプションを、詳細は https://ok-script.com/ok-end-field/en/docs/stamina-farming/ "
+"を参照してください。"
+
+msgid ""
+"默认留空，交易货品顺序随机。\n"
+"更多用法参见 https://ok-script.com/ok-end-field/docs/日常任务/ > 优先货品交易序列 。"
+msgstr ""
+"既定では空欄です。取引品の順序はランダムです。\n"
+"詳細は https://ok-script.com/ok-end-field/en/docs/daily-tasks/ の優先取引品の順序を参照してください。"
+
+msgid ""
+"默认留空，表示购买「日用消耗」「工业货品」「人文物产」首行首个物资。\n"
+"更多用法参见 https://ok-script.com/ok-end-field/docs/日常任务/ > 买物资 。"
+msgstr ""
+"空欄の場合、「日用消耗」「工業貨品」「人文物産」の最初の行の最初の物資を購入します。\n"
+"詳細は https://ok-script.com/ok-end-field/en/docs/daily-tasks/ の物資購入を参照してください。"
+
+msgid ""
+"打开官网物品导航使用说明。\n"
+"同时打开油猴脚本目录。"
+msgstr ""
+"公式サイトのアイテムナビ使用説明を開きます。\n"
+"同時に Tampermonkey スクリプトのフォルダーを開きます。"

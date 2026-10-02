@@ -8,7 +8,7 @@
 
 ## Downloads
 
-![downloads](./assets/downloads.svg)
+![downloads](./.github/stats/downloads.svg)
 </p>
 
 <h1 align="center">ok-ef</h1>

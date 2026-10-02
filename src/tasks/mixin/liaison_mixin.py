@@ -193,12 +193,7 @@ class LiaisonMixin(NavigationMixin):
                 self.send_key_up("w")  # 确认使用send_key：释放方向键（W为移动键，不属于可配置热键）
                 self.log_info("发现干员，点击交互图标")
 
-                self.send_key_down("alt")  # 确认使用send_key：alt为系统修饰键，用于alt+点击交互，非游戏可配置热键
-                self.sleep(0.5)
-
-                self.click(chat_box, after_sleep=0)
-
-                self.send_key_up("alt")  # 确认使用send_key：释放alt修饰键
+                self.click_with_alt(chat_box, after_sleep=0)
 
                 return LiaisonResult.FIND_CHAT_ICON
 
@@ -509,22 +504,6 @@ class LiaisonMixin(NavigationMixin):
 
         # 命中『赠送』时，入口已被点击，直接执行送礼后续。
         return self.give_gifts(time_out=30, gift_entry_clicked=True)
-
-    def _loop_wait_click_ocr(self, match, box, time_out, log_msg=None):
-        start_time = self.active_time()
-
-        while True:
-            if self.active_time() - start_time > time_out:
-                if log_msg:
-                    self.log_info(log_msg)
-                return None
-
-            self.click(0.5, 0.5, after_sleep=0.5)
-
-            result = self.wait_click_ocr(match=match, box=box, time_out=1, after_sleep=0.5)
-
-            if result:
-                return result
 
     def _loop_wait_click_feature(self, feature, box, time_out, log_msg=None):
         start_time = self.active_time()

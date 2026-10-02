@@ -2826,3 +2826,27 @@ msgstr "一键日常专用，配置独立于「自动送货」。"
 
 msgid "每次送礼时送给联络台干员的礼物个数。"
 msgstr "每次送礼时送给联络台干员的礼物个数。"
+
+msgid "使用说明参见选项，更多用法参见 https://ok-script.com/ok-end-field/docs/体力本/"
+msgstr "使用说明参见选项，更多用法参见 https://ok-script.com/ok-end-field/docs/体力本/"
+
+msgid ""
+"默认留空，交易货品顺序随机。\n"
+"更多用法参见 https://ok-script.com/ok-end-field/docs/日常任务/ > 优先货品交易序列 。"
+msgstr ""
+"默认留空，交易货品顺序随机。\n"
+"更多用法参见 https://ok-script.com/ok-end-field/docs/日常任务/ > 优先货品交易序列 。"
+
+msgid ""
+"默认留空，表示购买「日用消耗」「工业货品」「人文物产」首行首个物资。\n"
+"更多用法参见 https://ok-script.com/ok-end-field/docs/日常任务/ > 买物资 。"
+msgstr ""
+"默认留空，表示购买「日用消耗」「工业货品」「人文物产」首行首个物资。\n"
+"更多用法参见 https://ok-script.com/ok-end-field/docs/日常任务/ > 买物资 。"
+
+msgid ""
+"打开官网物品导航使用说明。\n"
+"同时打开油猴脚本目录。"
+msgstr ""
+"打开官网物品导航使用说明。\n"
+"同时打开油猴脚本目录。"

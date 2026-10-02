@@ -24,7 +24,6 @@ import gzip
 import hashlib
 import json
 import time
-import urllib.request
 import uuid
 import warnings
 
@@ -39,8 +38,7 @@ except ImportError:  # pragma: no cover - 兼容旧版本
 from cryptography.hazmat.primitives.ciphers.base import Cipher
 from cryptography.hazmat.primitives.ciphers.modes import CBC, ECB
 
-DEVICEPROFILE_URL = "https://fp-it.portal101.cn/deviceprofile/v4"
-MAP_PAGE_URL = "https://game.skland.com/map/endfield"
+from src.core.map_device_registration import post_device_registration
 
 _SM_CONFIG = {
     "organization": "UWXspnCCJN4sfYlNfqps",
@@ -218,19 +216,7 @@ def mint_device_id_synthetic(timeout: float = 15.0) -> str:
     失败（网络异常/非 1100 响应/未签发）抛出异常，由调用方回退到下一条路径。
     """
     payload, _uid = build_registration_payload()
-    req = urllib.request.Request(
-        DEVICEPROFILE_URL,
-        data=json.dumps(payload).encode("utf-8"),
-        method="POST",
-        headers={
-            "Content-Type": "application/json;charset=UTF-8",
-            "User-Agent": "Mozilla/5.0 ok-ef map websocket client",
-            "Origin": MAP_PAGE_URL.rsplit("/", 2)[0],
-            "Referer": MAP_PAGE_URL,
-        },
-    )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
-        result = json.loads(resp.read().decode("utf-8"))
+    result = post_device_registration(payload, timeout)
     if result.get("code") != 1100:
         raise RuntimeError(f"数美合成指纹注册失败: {result}")
     device_id = str((result.get("detail") or {}).get("deviceId") or "").strip()

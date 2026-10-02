@@ -272,7 +272,7 @@ class RuntimeMixin:
         vcenter=False,
     ):
         """
-        带危险态检查的点击封装。
+        仅在左键点击前检查危险态的点击封装。
 
         Args:
             x: 点击位置 X 或目标框。
@@ -293,11 +293,12 @@ class RuntimeMixin:
         Raises:
             Exception: 检测到危险状态时抛出。
         """
-        self.sleep(0.1)
-        if self.find_danger():
-            self.log_info("dangerous")
-            self.kill_game()
-            raise Exception("dangerous")
+        if key == "left":
+            self.sleep(0.1)
+            if self.find_danger():
+                self.log_info("dangerous")
+                self.kill_game()
+                raise Exception("dangerous")
         return super().click(
             x,
             y,

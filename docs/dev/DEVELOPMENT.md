@@ -442,7 +442,7 @@ checkout(LFS)
 
 其它当前 workflow：
 
-- `download_stats.yml`：每日/手动生成并提交 `assets/downloads.svg`。
+- `download_stats.yml`：每日/手动生成并提交 `.github/stats/downloads.svg`（位于 `deploy.txt` 发版监测路径之外）。
 - `mirrorchyan_uploading.yml`、`mirrorchyan_release_note.yml`：MirrorChyan 发布流程。
 - `update-endfield-map-data.yml`：地图数据更新。
 - `stale.yml`：issue/PR 维护。

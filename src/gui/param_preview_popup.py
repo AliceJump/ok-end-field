@@ -3,10 +3,10 @@
 交互与定位规范来自设计文档
 ``ok-script-toolkit/.workbuddy/design/eye-popup-design.md`` 1.2 / 2.2 节：
 
-- 触发：**悬停整张任务卡立即弹出**（无按钮），弹层**向右展开**
-  （左缘贴卡右缘外 8px、顶对齐卡片）；空间不足先收窄（250 → 下限
-  180px）；钳位用 ``QScreen.availableGeometry()``（弹层是独立顶级窗口，
-  可画出主窗口边界）；连屏幕都放不下才允许少量压卡，**永不向左回退**。
+- 触发：**悬停整张任务卡立即弹出**（无按钮），顶对齐卡片。
+  水平位置仅有三种：主窗口右侧、主窗口左侧、任务卡中心，按此顺序
+  选择；用 ``QScreen.availableGeometry()`` 判断整层是否放得下（含阴影），
+  两侧都放不下时固定在任务卡水平中心，不收窄、不向屏幕边缘挪动。
 - 窗口类型 Qt.ToolTip：不抢焦点、不抓鼠标——悬停展示期间卡片上的
   开关/下拉/展开按钮照常可点（对齐扩展里 div 浮层不拦截交互的行为）。
 - 悬停保持：鼠标进弹层不消失（撤隐藏定时器），移走才收（120ms 延迟）。
@@ -46,9 +46,8 @@ from qfluentwidgets import ScrollArea, isDarkTheme
 
 from src.core.param_preview_model import build_param_preview
 
-# 弹层几何（对齐扩展 .gpop：宽 250、收窄下限 180、边距 8）
+# 弹层几何：面板固定宽 250，窗口外侧间距及屏幕边距 8
 POP_WIDTH = 250
-POP_MIN_WIDTH = 180
 POP_MARGIN = 8
 POP_MAX_HEIGHT_RATIO = 0.66
 
@@ -400,7 +399,7 @@ class ParamPreviewPopup(QWidget):
     # ── 定位 ─────────────────────────────────────────────────
 
     def _position(self, card):
-        """左缘贴卡右缘外 8px、顶对齐卡片；屏幕几何钳位，永不向左回退。"""
+        """依次选择主窗口右侧、左侧、任务卡水平中心；仅垂直方向钳位。"""
         center_global = card.mapToGlobal(card.rect().center())
         screen = QGuiApplication.screenAt(center_global)
         screen_fallback = screen is None
@@ -410,25 +409,30 @@ class ParamPreviewPopup(QWidget):
 
         card_top_left = card.mapToGlobal(card.rect().topLeft())
         card_top_right = card.mapToGlobal(card.rect().topRight())
-        preferred_left = card_top_right.x() + POP_MARGIN
-        avail_width = avail.right() - preferred_left - POP_MARGIN
-        if avail_width >= POP_MIN_WIDTH:
-            width = max(POP_MIN_WIDTH, min(POP_WIDTH, avail_width))
-            h_branch = "normal"
+        rm = self._root_layout.contentsMargins()
+        self.setFixedWidth(POP_WIDTH + rm.left() + rm.right())
+        window = card.window()
+        window_rect = window.frameGeometry()
+        right_left = window_rect.right() + 1 + POP_MARGIN
+        left_left = window_rect.left() - POP_MARGIN - self.width()
+        min_left = avail.left() + POP_MARGIN
+        max_left = avail.right() + 1 - POP_MARGIN - self.width()
+        if min_left <= right_left <= max_left:
+            left = right_left
+            h_branch = "right"
+        elif min_left <= left_left <= max_left:
+            left = left_left
+            h_branch = "left"
         else:
-            # 连下限都放不下：允许少量压卡（悬停即走），仍在屏幕右缘内
-            width = POP_MIN_WIDTH
-            preferred_left = avail.right() - width - POP_MARGIN
-            h_branch = "right-clamp"
-
-        self.setFixedWidth(width + 24)  # 两侧阴影留白
+            # 两侧均不足时只允许任务卡中心兜底，不做水平钳位或收窄。
+            left = center_global.x() - (self.width() - 1) // 2
+            h_branch = "center"
 
         # 高度自适应：窗口高度 = 结构开销（margins/spacing/标题，皆为确定
         # 值）+ scroll 高度；scroll 高度 = 内容实际高度，超过屏幕预算则压
         # 回上限内滚。不依赖 sizeHint/adjustSize——QScrollArea 的 sizeHint
         # 与 widgetResizable 拉伸互相干扰，内容少时窗口被硬撑、布局把
         # 分组卡垂直分散填满
-        rm = self._root_layout.contentsMargins()
         pm = self._panel_layout.contentsMargins()
         overhead = (
             rm.top()
@@ -445,7 +449,6 @@ class ParamPreviewPopup(QWidget):
         self._scroll.setFixedHeight(scroll_h)
         self.setFixedHeight(scroll_h + overhead)
 
-        left = preferred_left - 12  # 面板左缘 = 弹层窗口左缘 + 阴影留白
         top = card_top_right.y() - 12
         clamped_top = max(avail.top() + POP_MARGIN, min(top, avail.bottom() - self.height() - POP_MARGIN))
         if clamped_top > top:
@@ -459,7 +462,6 @@ class ParamPreviewPopup(QWidget):
 
         # TODO(diag): 定位全链路日志——区分「输入坐标异常」与「计算/钳位异常」
         task = getattr(card, "task", None)
-        window = card.window()
         # 注意：框架 Logger.debug(message) 只收单参数，不支持 %s 惰性格式化
         logger.debug(
             f"diag-position: task={getattr(task, 'name', '?')!r} "
@@ -472,8 +474,8 @@ class ParamPreviewPopup(QWidget):
             f"window_geom={window.geometry() if window is not None else None} "
             f"screen_geom={screen.geometry()} avail={avail} "
             f"screen_fallback={screen_fallback} h_branch={h_branch} "
-            f"v_branch={v_branch} preferred_left={preferred_left} "
-            f"avail_width={avail_width} width={width} content_h={content_h} "
+            f"v_branch={v_branch} right_left={right_left} left_left={left_left} "
+            f"width={self.width()} content_h={content_h} "
             f"top_raw={card_top_right.y() - 12} final=({left},{top}) "
             f"pos_after_move=({self.x()},{self.y()})"
         )
@@ -641,7 +643,7 @@ class _CardHoverFilter(QObject):
 
 
 def install_param_preview_hover(card):
-    """给任务卡装悬停弹出：悬停整卡立即弹出层、向右展开（无按钮）。"""
+    """给任务卡装悬停弹出：悬停整卡立即弹出层（无按钮）。"""
     if getattr(card, "_param_preview_hover", None) is not None:
         return
     if _build_preview(card.task) is None:

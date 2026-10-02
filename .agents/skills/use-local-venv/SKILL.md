@@ -29,6 +29,14 @@ uv run --locked python -m unittest tests.TestCheckLang -v
 uv run --locked python -m py_compile path/to/script.py
 ```
 
+If a Windows shell uses a legacy code page, run Python in UTF-8 mode for scripts or tests that read UTF-8 files without an explicit encoding or emit Chinese/emoji logs:
+
+```powershell
+uv run --locked python -X utf8 -m unittest tests.TestZipLineConfig -v
+```
+
+Without UTF-8 mode, a test can exit successfully while its logging handler prints `UnicodeEncodeError`, or a text-reading script can fail with `UnicodeDecodeError`.
+
 Direct-interpreter bootstrap diagnostic after confirming it exists:
 
 ```powershell

@@ -36,7 +36,7 @@ An image-recognition-based automation tool for End Field, with partial backgroun
 
 ## Downloads
 
-![downloads](./assets/downloads.svg)
+![downloads](./.github/stats/downloads.svg)
 
 ### [English Readme](README_en.md) | 中文说明
 

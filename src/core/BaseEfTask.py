@@ -29,7 +29,6 @@ from src.core.global_config_store import (
     migrate_task_zip_line_values_to_global,
 )
 from src.data.lang import get_lang_accessor
-from src.interaction.KeyConfig import KeyConfigManager
 from src.interaction.ScreenPosition import ScreenPosition
 
 _ok_screenshot.get_current_time_formatted = lambda: datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -115,11 +114,10 @@ class BaseEfTask(
         self.account_config_description = dict(getattr(self, "account_config_description", {}))
         self.account_config_type = dict(getattr(self, "account_config_type", {}))
         self.box = ScreenPosition(self)  # 屏幕位置辅助对象，提供top/bottom/left/right等边界
-        self.key_config = get_global_config(KEY_CONFIG_NAME)  # 获取全局热键配置
+        get_global_config(KEY_CONFIG_NAME)  # 初始化全局热键配置；运行时按当前账号解析键位
         self.once_sleep_time = get_global_config(ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME).get(
             "SingleActionWithDelay", 1.5
         )  # 获取全局配置的单次动作睡眠时间
-        self.key_manager = KeyConfigManager(self.key_config)  # 初始化热键管理器
         # 初始化窗口箭头绘制 Mixin
         self._init_window_arrow_drawing_mixin()
 

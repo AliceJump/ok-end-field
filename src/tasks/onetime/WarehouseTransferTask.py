@@ -55,8 +55,6 @@ class WarehouseTransferTask(BaseEfTask):
             "type": "drop_down",
             "options": list(item_to_warehouse_dict.keys()),
         }
-        self._template_cache: dict[str, object] = {}
-        self._item_name_cache: dict[str, str] | None = None
 
     def _to_one_type_page(self, item_name: str):
         category_en_name = ITEM_WAREHOUSE_CATEGORY_EN_BY_ZH.get(item_to_warehouse_dict.get(item_name, ""), "")
