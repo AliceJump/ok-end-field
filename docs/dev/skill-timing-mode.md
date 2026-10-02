@@ -10,6 +10,8 @@
 
 ## 数据接口与范围
 
+实验分支默认运行时读取稳定路径 `assets/data/skill_timings/runtime_timing.bin`（当前约 4.4 KiB）。该文件已预计算标准技能时序、effect-start、SP/CD、普攻终段重击回复和状态技能信息；实际战斗不再解析约 5 MiB 的 `index.json + records.json.gz`。完整快照仅保留给离线导出与等价测试，二进制格式见 [timing-runtime-binary.md](timing-runtime-binary.md)。
+
 `assets/data/skill_timings/20261002/` 包含：
 
 | 文件 | 内容 |

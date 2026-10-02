@@ -5,8 +5,9 @@ from __future__ import annotations
 from collections import deque
 
 from src.data.skill_rotation import generate_damage_rotation
-from src.data.skill_timing import SkillTiming, load_skill_timings
+from src.data.skill_timing import SkillTiming
 from src.data.timing_dps import build_options, load_damage_quotes, optimize_cycle
+from src.data.timing_runtime_binary import load_runtime_timing_bundle
 
 
 class TimedCombatLogic:
@@ -245,15 +246,42 @@ class TimedCombatLogic:
             confidence=2,
             deadline=deadline,
         )
-        if stable and len(team) == 4 and "?" not in team:
+        member_count = int(getattr(self.task, "_battle_member_count", 0) or 0)
+        known_count = sum(member != "?" for member in team) if len(team) == 4 else 0
+        complete_team = stable and len(team) == 4 and known_count == 4
+        partial_team = (
+            stable
+            and len(team) == 4
+            and 0 < member_count < 4
+            and known_count == member_count
+        )
+        if complete_team or partial_team:
             self.team = team
             self.task._battle_team = team
-            self.ult_order = generate_damage_rotation(team)
-            self.order = [token for token in self.ult_order if self.store.profiles(team[int(token) - 1], "battle")]
-            self.task.log_info(f"时间排轴队伍: {team}, 战技顺序: {self.order}")
+            self.disabled_slots = {
+                str(index + 1)
+                for index, member in enumerate(team)
+                if member == "?"
+            }
+            self.task._battle_team_disabled_slots = {
+                int(token) - 1 for token in self.disabled_slots
+            }
+            self.ult_order = [
+                token
+                for token in generate_damage_rotation(team)
+                if token not in self.disabled_slots
+            ]
+            self.order = [
+                token
+                for token in self.ult_order
+                if self.store.profiles(team[int(token) - 1], "battle")
+            ]
+            self.task.log_info(
+                f"时间排轴队伍: {team}, 有效槽位: "
+                f"{[token for token in ('1', '2', '3', '4') if token not in self.disabled_slots]}, "
+                f"战技顺序: {self.order}"
+            )
 
-            self.disabled_slots.clear()
-            self.task._battle_team_disabled_slots = set()
             self.normal_attack_sp_gains = self.store.team_normal_attack_sp_gains(team)
             self._refresh_sp_threshold()
 
@@ -440,8 +468,8 @@ class TimedCombatLogic:
         task.mouse_up(key="left")
         try:
             if self.store is None:
-                self.store = load_skill_timings()
-            task.log_info("技能时间排轴接管战斗策略")
+                self.store = load_runtime_timing_bundle()
+            task.log_info("技能时间排轴接管战斗策略（runtime binary）")
             entered = task.active_time()
             ready_at = entered + max(0, start_sleep or 0)
             next_exit, next_team, next_lock = entered, entered, entered

@@ -117,6 +117,7 @@ class FakeTask:
         self.monitored = 0
         self._battle_team = None
         self._battle_team_disabled_slots = set()
+        self._battle_member_count = 4
         self.detected_team = ["佩丽卡", "狼卫", "陈千语", "管理员"]
 
     def active_time(self):
@@ -468,6 +469,30 @@ class TestTimedCombat(unittest.TestCase):
         self.assertIsNone(logic.pending)
         self.assertEqual(logic.active, ())
         self.assertIsNone(logic.active_slot)
+
+    def test_partial_initial_team_preserves_slots_and_masks_empty_positions(self):
+        task = FakeTask()
+        task._battle_member_count = 2
+        task.detected_team = ["佩丽卡", "?", "陈千语", "?"]
+        logic = TimedCombatLogic(task, load_skill_timings())
+
+        logic._detect_team(1)
+
+        self.assertEqual(logic.team, ["佩丽卡", "?", "陈千语", "?"])
+        self.assertEqual(logic.disabled_slots, {"2", "4"})
+        self.assertEqual(task._battle_team_disabled_slots, {1, 3})
+        self.assertTrue(all(token in {"1", "3"} for token in logic.ult_order))
+        self.assertTrue(all(token in {"1", "3"} for token in logic.order))
+
+    def test_partial_initial_team_requires_all_live_members_to_be_identified(self):
+        task = FakeTask()
+        task._battle_member_count = 3
+        task.detected_team = ["佩丽卡", "?", "陈千语", "?"]
+        logic = TimedCombatLogic(task, load_skill_timings())
+
+        logic._detect_team(1)
+
+        self.assertEqual(logic.team, [])
 
     def test_detection_exception_releases_held_mouse(self):
         task = FakeTask()

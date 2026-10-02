@@ -13,11 +13,13 @@ import zlib
 from functools import lru_cache
 from pathlib import Path
 
-from src.data.skill_timing import SNAPSHOT, BattleStateSpec, SkillTiming
+from src.data.skill_timing import BattleStateSpec, SkillTiming
 
 MAGIC = b"OKETB1\0\0"
 SCHEMA_VERSION = 1
-DEFAULT_RUNTIME_BUNDLE = SNAPSHOT / "runtime_timing.bin"
+DEFAULT_RUNTIME_BUNDLE = (
+    Path(__file__).resolve().parents[2] / "assets/data/skill_timings/runtime_timing.bin"
+)
 _HEADER = struct.Struct("<8sBII")
 
 
@@ -251,6 +253,15 @@ class RuntimeTimingBundle:
             )
 
         max_gain = max(gains) if gains else None
+        has_unknown_gain = any(
+            slot.get("character_ids")
+            and slot.get("normal_attack_sp_gain") is None
+            for slot in slots
+        )
+        if has_unknown_gain:
+            fallback = self.global_normal_attack_sp_gain()
+            if fallback is not None:
+                max_gain = fallback if max_gain is None else max(max_gain, fallback)
         return {
             "slots": slots,
             "max_normal_attack_sp_gain": max_gain,

@@ -1,7 +1,12 @@
 import unittest
 
 from src.data.skill_timing import SNAPSHOT, load_skill_timings
-from src.data.timing_runtime_binary import RuntimeTimingBundle, build_runtime_payload, dumps_runtime_payload
+from src.data.timing_runtime_binary import (
+    DEFAULT_RUNTIME_BUNDLE,
+    RuntimeTimingBundle,
+    build_runtime_payload,
+    dumps_runtime_payload,
+)
 
 
 class TestTimingRuntimeBinary(unittest.TestCase):
@@ -31,6 +36,26 @@ class TestTimingRuntimeBinary(unittest.TestCase):
         self.assertEqual(result["slots"][2]["name"], "诀")
         self.assertEqual(result["max_normal_attack_sp_gain"], 20)
         self.assertEqual(result["assume_success_sp_threshold"], 25)
+
+    def test_unknown_finisher_uses_global_upper_bound_for_team_threshold(self):
+        unknown = next(
+            (
+                row["n"]
+                for row in self.bundle.payload["c"].values()
+                if row["g"] is None and row["p"].get("battle")
+            ),
+            None,
+        )
+        self.assertIsNotNone(unknown)
+        result = self.bundle.team([unknown])
+        self.assertEqual(
+            result["max_normal_attack_sp_gain"],
+            self.bundle.global_normal_attack_sp_gain(),
+        )
+        self.assertEqual(
+            result["assume_success_sp_threshold"],
+            self.bundle.global_normal_attack_sp_gain() + 5,
+        )
 
     def test_state_data_is_precomputed(self):
         battle = self.bundle.battle_state("梨诺")
@@ -70,7 +95,7 @@ class TestTimingRuntimeBinary(unittest.TestCase):
             )
 
     def test_committed_bundle_is_exact_current_export(self):
-        committed = (SNAPSHOT / "runtime_timing.bin").read_bytes()
+        committed = DEFAULT_RUNTIME_BUNDLE.read_bytes()
         self.assertEqual(committed, self.binary)
 
     def test_binary_is_much_smaller_than_current_runtime_sources(self):

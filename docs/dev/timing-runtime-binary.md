@@ -47,7 +47,7 @@ uv run python -X utf8 scripts/skill-data/export_runtime_timing.py
 It produces:
 
 ```text
-assets/data/skill_timings/20261002/runtime_timing.bin
+assets/data/skill_timings/runtime_timing.bin
 ```
 
 The exporter performs a read-back verification and prints:
@@ -91,5 +91,8 @@ lossless snapshot yet. The intended migration is:
 1. keep lossless extraction in the external data repository;
 2. export and verify `runtime_timing.bin`;
 3. copy only that artifact into this repository;
-4. switch timed combat to `RuntimeTimingBundle`;
-5. after equivalence tests pass, stop shipping `records.json.gz` to runtime.
+4. timed combat reads `RuntimeTimingBundle` by default;
+5. after equivalence tests pass, the lossless snapshot can remain an offline/export fixture rather than a runtime dependency.
+
+The path is intentionally stable (no snapshot date in the filename), so a game-data
+update can replace exactly one binary file without changing application code.

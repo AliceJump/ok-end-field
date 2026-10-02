@@ -16,7 +16,11 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from src.data.skill_timing import SNAPSHOT, SkillTimingStore
-from src.data.timing_runtime_binary import RuntimeTimingBundle, export_runtime_bundle
+from src.data.timing_runtime_binary import (
+    DEFAULT_RUNTIME_BUNDLE,
+    RuntimeTimingBundle,
+    export_runtime_bundle,
+)
 
 
 def main():
@@ -25,7 +29,7 @@ def main():
         "output",
         nargs="?",
         type=Path,
-        default=SNAPSHOT / "runtime_timing.bin",
+        default=DEFAULT_RUNTIME_BUNDLE,
     )
     args = parser.parse_args()
 
