@@ -298,50 +298,94 @@ class SkillTimingStore:
         self._global_normal_attack_sp_gain = None
         self._state_specs = {}
 
-    def profiles(self, character: str, kind: str) -> tuple[SkillTiming, ...]:
-        """Keep both administrator variants; never guess gender from a shared portrait."""
-        profiles = []
+    def _entry_skill_id(self, cid: str, kind: str) -> str | None:
+        """Resolve the button's native entry skill without character-name exceptions.
+
+        Most characters use *_normal_skill. Stateful characters may expose
+        the same battle button as *_normalskill_1 or
+        *_normal_skill_floating_start; those are real native entry skills
+        and must not disappear from scheduling merely because the id differs.
+        """
+        exact = f"{cid}_{_SUFFIX[kind]}"
+        if exact in self.index["skills"]:
+            return exact
+        if kind != "battle":
+            return None
+
+        numbered = []
+        prefix = f"{cid}_normalskill_"
+        for skill_id in self.index["skills"]:
+            if not skill_id.startswith(prefix):
+                continue
+            suffix = skill_id[len(prefix):]
+            if suffix.isdigit():
+                numbered.append((int(suffix), skill_id))
+        if numbered:
+            return min(numbered)[1]
+
+        floating = f"{cid}_normal_skill_floating_start"
+        return floating if floating in self.index["skills"] else None
+
+    def _profile_for_skill_id(self, skill_id: str) -> SkillTiming:
         fps = self.index["frames_per_second"]
+        data = self.index["skills"][skill_id]
+        casts = data["level_patches"] or [
+            {
+                "coolDown": data["raw_cast_data"]["cooldownTime"],
+                **data["raw_cast_data"]["costData"],
+            }
+        ]
+        costs = [
+            math.ceil(cast["costValue"] / 100)
+            if cast["costType"] == 1
+            else 0 if cast["costValue"] == 0 else None
+            for cast in casts
+        ]
+        effect_frame = self.effect_start_frame(skill_id)
+        return SkillTiming(
+            skill_id=skill_id,
+            duration=max(0, data["duration_frame"]) / fps,
+            exclusive=max(0, data["exclusive_frame"]) / fps,
+            cooldown=max(cast["coolDown"] for cast in casts),
+            skill_points=None if None in costs else max(costs),
+            sp_cost=None if None in costs else max(cast["costValue"] for cast in casts),
+            allow_next=tuple(
+                (
+                    window["start_frame"] / fps,
+                    window["end_frame"] / fps,
+                    tuple(window["allowed_skill_ids"] or ()),
+                )
+                for window in data["allow_next_windows"]
+            ),
+            effect_start=None if effect_frame is None else effect_frame / fps,
+        )
+
+    def profiles(self, character: str, kind: str) -> tuple[SkillTiming, ...]:
+        """Resolve native entry skills; keep both administrator portrait variants."""
+        profiles = []
         for cid, row in self.index["characters"].items():
             if character not in (row["name"], row["key"], row["english_name"], cid):
                 continue
-            skill_id = f"{cid}_{_SUFFIX[kind]}"
-            data = self.index["skills"].get(skill_id)
-            if data is None:
-                continue
-            casts = data["level_patches"] or [
-                {
-                    "coolDown": data["raw_cast_data"]["cooldownTime"],
-                    **data["raw_cast_data"]["costData"],
-                }
-            ]
-            # One complete HUD skill bar corresponds to 100 SP. Unknown cost types
-            # are deliberately not translated into skill-point readiness.
-            costs = [
-                math.ceil(cast["costValue"] / 100) if cast["costType"] == 1 else 0 if cast["costValue"] == 0 else None
-                for cast in casts
-            ]
-            effect_frame = self.effect_start_frame(skill_id)
-            profiles.append(
-                SkillTiming(
-                    skill_id=skill_id,
-                    duration=max(0, data["duration_frame"]) / fps,
-                    exclusive=max(0, data["exclusive_frame"]) / fps,
-                    cooldown=max(cast["coolDown"] for cast in casts),
-                    skill_points=None if None in costs else max(costs),
-                    sp_cost=None if None in costs else max(cast["costValue"] for cast in casts),
-                    allow_next=tuple(
-                        (
-                            window["start_frame"] / fps,
-                            window["end_frame"] / fps,
-                            tuple(window["allowed_skill_ids"] or ()),
-                        )
-                        for window in data["allow_next_windows"]
-                    ),
-                    effect_start=None if effect_frame is None else effect_frame / fps,
-                )
-            )
+            skill_id = self._entry_skill_id(cid, kind)
+            if skill_id is not None:
+                profiles.append(self._profile_for_skill_id(skill_id))
         return tuple(profiles)
+
+    def battle_phase_profiles(self, character: str) -> tuple[SkillTiming, ...]:
+        """Return explicit numbered battle-button phases when native data exposes them."""
+        phases = []
+        for cid in self._character_ids(character):
+            prefix = f"{cid}_normalskill_"
+            numbered = []
+            for skill_id in self.index["skills"]:
+                if not skill_id.startswith(prefix):
+                    continue
+                suffix = skill_id[len(prefix):]
+                if suffix.isdigit():
+                    numbered.append((int(suffix), skill_id))
+            if numbered:
+                phases.extend(self._profile_for_skill_id(skill_id) for _, skill_id in sorted(numbered))
+        return tuple(phases)
 
     def _character_ids(self, character: str) -> tuple[str, ...]:
         return tuple(
