@@ -1050,6 +1050,15 @@ class BattleMixin(BaseEfTask):
         y_start, y_end = SKILL_BAR_Y_4K
         return self.check_is_pure_color_in_4k(x1, y_start, x2, y_end, yellow_skill_color)
 
+    def is_skill_bar_full_fast(self):
+        """Cheap full-SP probe: check only the third skill bar.
+
+        Timed combat uses this every scheduler frame only after a previous
+        precise observation has already reached 2.x bars. It avoids repeating
+        the full staged 3+1 scan while still reacting to 3 bars immediately.
+        """
+        return self._is_skill_bar_full(2)
+
     def _read_skill_bar_fill_ratio(self, index):
         x1, x2 = SKILL_BAR_X_4K[index]
         y1, y2 = SKILL_BAR_Y_4K
