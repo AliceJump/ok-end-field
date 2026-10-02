@@ -33,3 +33,50 @@
 - 第 3 格一旦确认满，当前帧立即进入防溢出抢占，不等待下一次精细扫描。
 - 满技力时先尝试当前计划战技；若该槽位因状态、冷却或同角色窗口不可用，则在其他非复杂机制槽位中按战技伤害 / handoff 选择可释放项临时插入，原计划 cursor 不前移。
 - 终结技 HUD 恢复后立即强制刷新一次技力，并再次执行机制战技/满技力抢占，避免动画期间积满后还等待下一轮。
+
+
+## TeamPhasePlanner v1
+
+复杂机制不再继续塞进旧的稳态 `evaluate_cycle()`。新增队伍级有限窗口模型：
+
+- `TeamCombatState`：共享 SP、PREP/CHARGE/BURST_READY/BURST/RECOVER 阶段、当前 burst、动作进度、失效槽位，以及后续私有资源/敌方状态扩展位。
+- `BurstAction`：动作所属槽位/角色、battle/link/ult/normal、SP 门槛、实际消耗、确定返还、持续时间、阶段伤害（可未知）、requires/consumes/produces。
+- `BurstPlan`：允许多个槽位共同参与；从整段动作的 SP 流倒推 `min_start_sp`，而不是固定写死 300。
+- SP 预算默认不把 8 SP/s 自然回复算作必要条件；自然回复只作为窗口里的额外余量，因此计划不会靠理想帧时序才能成立。
+- 若阶段伤害数据不足则保持 `expected_damage=None`，不拿旧的整技能 DamageQuote 强行拆给多段状态技能。
+
+### 当前可执行范围
+
+弭弗三段战技是第一条 runtime-executable burst：
+
+```
+断云: gate 100, cost 100, refund 50
+追形: gate 50,  cost 50
+开天: gate 50,  cost 50
+```
+
+整段从共享 SP 倒推得到：
+
+```
+min_start_sp = 150
+expected_end_sp = 0
+```
+
+当现有伤害排序把弭弗视为首要核心槽位时，运行时会进入 CHARGE：
+
+- 未达到 150 SP 时，普通战技不能把共享 SP 花到 reserve 以下；
+- 达到 150 SP 后进入 BURST_READY，并优先开始弭弗链；
+- 爆发过程中只允许下一合法 burst 动作或零净消耗动作插入；
+- 条件开天未确认时重置到首段，避免卡死；
+- 弭弗终结技把战技 shortcut 到追形时，同步把 burst action index 移到追形，剩余起手目标重新计算为 100 SP。
+
+为了避免“队伍里只是带了一个机制角色就劫持全队 SP”，v1 仅在 runtime-executable burst 的 owner 与当前伤害排序第一槽一致时自动选择该 burst。多角色 `BurstPlan` 的数据结构和 SP 预算已经支持，但实际自动选择要等参与者的关键状态/连携 owner 有可靠观测证据后再开启。
+
+### 与旧伤害模型的边界
+
+`timing_dps.py` 继续作为简单队伍的稳态 fallback；`TeamPhasePlanner` 负责有限爆发窗口和共享资源保留。二者不再互相假装：
+
+- 稳态模型回答“长期重复哪个循环平均收益高”；
+- 阶段模型回答“为了下一次完整爆发，现在需要保留多少共享 SP、哪些动作可以插入、什么时候开始整段 burst”。
+
+后续阶段伤害应由状态感知的 ActionOutcome 提供，而不是把 `DamageQuote.battle` 生硬拆给每一段。

@@ -6,6 +6,11 @@ from collections import deque
 
 from src.data.character_mechanics import load_character_mechanics, mechanic_blockers
 from src.data.skill_rotation import generate_damage_rotation
+from src.data.team_phase_planner import (
+    CombatPhase,
+    TeamPhasePlanner,
+    build_team_burst_plans,
+)
 from src.data.skill_timing import SkillTiming, load_skill_timings
 from src.data.timing_dps import build_options, load_damage_quotes, optimize_cycle
 
@@ -60,6 +65,8 @@ class TimedCombatLogic:
         self.cached_sp = -1.0
         self.next_sp_probe_at = 0.0
         self.last_sp_probe_at = 0.0
+        self.phase_planner = TeamPhasePlanner()
+        self._last_phase_log = None
 
     def _hold(self, enabled, force=False):
         if enabled:
@@ -116,6 +123,34 @@ class TimedCombatLogic:
             self.next_sp_probe_at = self.task.active_time()
             return
         self._cache_sp(max(0.0, before_sp - max(0.0, expected_cost)))
+
+    def _log_phase_transition(self, old, new):
+        if old == new:
+            return
+        plan = self.phase_planner.active_plan
+        target = self.phase_planner.target_sp if plan is not None else 0
+        reserve = self.phase_planner.reserve_floor if plan is not None else 0
+        key = (old, new, plan.key if plan else None)
+        if key == self._last_phase_log:
+            return
+        self._last_phase_log = key
+        self.task.log_info(
+            f"时间排轴阶段: {old.value} -> {new.value}"
+            + (
+                f"，爆发 {plan.key}，目标 {target:g} SP，保留 {reserve:g} SP"
+                if plan is not None
+                else ""
+            )
+        )
+
+    def _observe_phase_sp(self, sp):
+        old, new = self.phase_planner.observe_sp(sp)
+        self._log_phase_transition(old, new)
+        return new
+
+    def _observe_phase_action(self, token, kind):
+        old, new = self.phase_planner.observe_action(token, kind)
+        self._log_phase_transition(old, new)
 
     def _allowed(self, candidates=(), candidate_slot=None, candidate_kind=None):
         if self.pending is not None:
@@ -242,12 +277,14 @@ class TimedCombatLogic:
             self.battle_phase_indices[token] = 0
             if self.forced_battle_token == token:
                 self.forced_battle_token = None
+            self.phase_planner.reset_cycle()
             self.task.log_info(f"时间排轴: 战技 {token} 条件段未确认，重置到首段状态")
 
     def _accept_battle_skill(self, token, advance_cursor=True):
         self._observe_battle()
         self._set_cooldowns()
         self._activate_state(token, self.state_specs.get(token), "战技")
+        self._observe_phase_action(token, "battle")
         self._advance_mechanic_battle(token)
         self.free_battle_once.discard(token)
         if advance_cursor and self.order:
@@ -368,6 +405,9 @@ class TimedCombatLogic:
             self.free_battle_once.discard(token)
             self.battle_phase_indices.pop(token, None)
 
+        if self.phase_planner.disable_slots(newly_disabled):
+            self.task.log_info("时间排轴阶段: 爆发参与槽位失效，取消当前爆发计划")
+
         self._refresh_sp_threshold()
         details = [
             f"{token}:{self.team[int(token) - 1]}"
@@ -434,6 +474,31 @@ class TimedCombatLogic:
                         )
 
             self.damage_quotes = load_damage_quotes(team)
+            burst_plans = build_team_burst_plans(team, self.mechanics, self.store)
+            active_burst = self.phase_planner.configure(
+                burst_plans,
+                preferred_slots=tuple(self.ult_order),
+            )
+            for burst_plan in burst_plans:
+                participants = ",".join(burst_plan.participants)
+                damage = (
+                    "unknown"
+                    if burst_plan.expected_damage is None
+                    else f"{burst_plan.expected_damage:.0f}"
+                )
+                self.task.log_info(
+                    f"时间排轴爆发候选: {burst_plan.key} 槽位[{participants}] "
+                    f"起手至少 {burst_plan.min_start_sp:g} SP，结束预计 "
+                    f"{burst_plan.expected_end_sp:g} SP，阶段伤害 {damage}，"
+                    f"runtime={'yes' if burst_plan.runtime_executable else 'diagnostic'}"
+                )
+            if active_burst is not None:
+                self.task.log_info(
+                    f"时间排轴爆发蓄力: 选择 {active_burst.key}，"
+                    f"保留 {active_burst.reserve_floor:g} SP，"
+                    f"达到 {active_burst.min_start_sp:g} SP 后开始"
+                )
+
             blockers = mechanic_blockers(team)
             if blockers:
                 self.plan = None
@@ -514,7 +579,10 @@ class TimedCombatLogic:
             or not self._ready(profiles, slot=token, kind="battle")
         ):
             return False
+        if not self.phase_planner.can_spend(token, "battle", sp, expected_cost):
+            return False
 
+        self.phase_planner.start_if_ready(token, "battle")
         started = self.task.active_time()
         self.task.send_key(token)
         self._begin(profiles, started, slot=token, kind="battle")
@@ -613,6 +681,7 @@ class TimedCombatLogic:
             if len(phases) > 1:
                 self.battle_phase_indices[token] = 1
                 self.forced_battle_token = token
+                self.phase_planner.seek_action(token, "battle", "追形")
                 self.task.log_info(
                     f"时间排轴机制: 终结技 {token} 后战技切到第2段，优先尝试后续段"
                 )
@@ -642,6 +711,25 @@ class TimedCombatLogic:
 
         self._skip_active_state_slots()
         sp = self._sample_sp()
+        phase = self._observe_phase_sp(sp)
+
+        burst_action = self.phase_planner.next_action
+        if (
+            phase == CombatPhase.BURST_READY
+            and burst_action is not None
+            and burst_action.kind == "battle"
+            and self._slot_available(burst_action.slot)
+            and self._try_battle_token(
+                burst_action.slot,
+                sp,
+                advance_cursor=False,
+            )
+        ):
+            self.task.log_info(
+                f"时间排轴爆发: 开始 {self.phase_planner.active_plan.key}，"
+                f"动作 {burst_action.actor}/{burst_action.label}"
+            )
+            return
 
         if self.forced_battle_token is not None:
             token = self.forced_battle_token
@@ -705,6 +793,7 @@ class TimedCombatLogic:
             if self.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
                 ended = self.task.active_time()
                 self._observe_bonus("ult", token)
+                self._observe_phase_action(token, "ult")
                 self._set_cooldowns(profiles, started)
                 self._activate_state(token, self.ult_state_specs.get(token), "终结技", started)
                 self._after_ultimate_mechanic(token, ended)
@@ -716,6 +805,7 @@ class TimedCombatLogic:
                 # HUD recovery can block for seconds. Re-read SP immediately
                 # instead of waiting for the next outer scheduler tick.
                 post_ult_sp = self._sample_sp(force=True)
+                self._observe_phase_sp(post_ult_sp)
                 if self.forced_battle_token is not None:
                     forced = self.forced_battle_token
                     if self._slot_available(forced) and self._try_battle_token(
