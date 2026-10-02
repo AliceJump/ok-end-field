@@ -106,7 +106,6 @@ class TestSkillTiming(unittest.TestCase):
 class FakeTask:
     def __init__(self):
         self.now = 0.0
-        self.combat_now = None
         self.points = 1
         self.sp = None
         self.sp_reads = 0
@@ -126,9 +125,6 @@ class FakeTask:
 
     def active_time(self):
         return self.now
-
-    def combat_time(self):
-        return self.now if self.combat_now is None else self.combat_now
 
     def next_frame(self):
         self.now += 0.05
@@ -208,8 +204,12 @@ class FakeTask:
         return list(self.detected_team), True
 
 
-def logic_for(task):
-    logic = TimedCombatLogic(task, load_skill_timings())
+def logic_for(task, clock=None):
+    logic = TimedCombatLogic(
+        task,
+        load_skill_timings(),
+        clock=clock or (lambda: task.now),
+    )
     logic.team = ["佩丽卡", "狼卫", "陈千语", "管理员"]
     logic.order = ["1", "2", "3", "4"]
     return logic
@@ -558,14 +558,13 @@ class TestTimedCombat(unittest.TestCase):
         task = FakeTask()
         task.sp = 100.0
         task.now = 10.0
-        task.combat_now = 10.0
-        logic = logic_for(task)
+        combat_clock = {"now": 10.0}
+        logic = logic_for(task, clock=lambda: combat_clock["now"])
         logic.order = ["1"]
         logic.state_until["1"] = 15.0
 
-        # Simulate pausing only the automation clock for 10 real/game seconds:
-        # active_time stays at 10, combat_time advances to 20.
-        task.combat_now = 20.0
+        # Automation time is frozen at 10 while monotonic game time advances.
+        combat_clock["now"] = 20.0
         logic.step()
 
         self.assertEqual(task.now, 10.0)
@@ -573,16 +572,15 @@ class TestTimedCombat(unittest.TestCase):
 
     def test_cooldown_and_native_handoff_ignore_script_pause_duration(self):
         task = FakeTask()
-        logic = logic_for(task)
+        combat_clock = {"now": 20.0}
+        logic = logic_for(task, clock=lambda: combat_clock["now"])
         (profile,) = logic.store.profiles("佩丽卡", "battle")
         logic.active = (profile,)
         logic.active_slot = "1"
         logic.active_kind = "battle"
         logic.started = 10.0
         logic.cooldowns[profile.skill_id] = 15.0
-
         task.now = 10.0
-        task.combat_now = 20.0
 
         self.assertTrue(logic._allowed((profile,), candidate_slot="2", candidate_kind="battle"))
         self.assertTrue(logic._ready((profile,), slot="1", kind="battle"))
@@ -591,17 +589,21 @@ class TestTimedCombat(unittest.TestCase):
         task = FakeTask()
         task.sp = 100.0
         task.now = 5.0
-        task.combat_now = 5.0
-        logic = TimedCombatLogic(task, load_skill_timings())
+        combat_clock = {"now": 5.0}
+        logic = TimedCombatLogic(
+            task,
+            load_skill_timings(),
+            clock=lambda: combat_clock["now"],
+        )
         logic.team = ["伊冯", "佩丽卡", "诀", "洛茜"]
         logic.order = ["1"]
         logic.ult_order = []
         logic.team_mechanics = {"1": logic.mechanics["伊冯"]}
-        logic._after_ultimate_mechanic("1", task.combat_time())
+        logic._after_ultimate_mechanic("1", combat_clock["now"])
 
-        self.assertGreater(logic.forced_main_control_until, task.combat_time())
+        self.assertGreater(logic.forced_main_control_until, combat_clock["now"])
 
-        task.combat_now += 8.0
+        combat_clock["now"] += 8.0
         logic.step()
 
         self.assertEqual(task.now, 5.0)
@@ -712,7 +714,7 @@ class TestTimedCombat(unittest.TestCase):
         task = FakeTask()
         task.sp = 0.0
         task.link = True
-        logic = TimedCombatLogic(task, load_skill_timings())
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
         logic.team = ["提弗洛斯", "洛茜", "梨诺", "洁尔佩塔"]
         logic.order = ["2", "4", "1", "3"]
         logic.ult_order = []
@@ -748,7 +750,7 @@ class TestTimedCombat(unittest.TestCase):
     def test_mechanic_team_keeps_native_entry_slots_and_disables_flat_optimizer(self):
         task = FakeTask()
         task.detect_team_stable = lambda **kwargs: (["弭弗", "佩丽卡", "提弗洛斯", "洛茜"], True)
-        logic = TimedCombatLogic(task, load_skill_timings())
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
         logic._detect_team(1)
 
         self.assertEqual(set(logic.order), {"1", "2", "3", "4"})
@@ -759,7 +761,7 @@ class TestTimedCombat(unittest.TestCase):
     def test_mifu_first_cast_uses_net_cost_then_prioritizes_second_phase(self):
         task = FakeTask()
         task.sp = 100.0
-        logic = TimedCombatLogic(task, load_skill_timings())
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
         logic.team = ["弭弗", "佩丽卡", "诀", "洛茜"]
         logic.order = ["1"]
         logic.ult_order = []
@@ -788,7 +790,7 @@ class TestTimedCombat(unittest.TestCase):
         task = FakeTask()
         task.sp = 0.0
         task.ults = {"1"}
-        logic = TimedCombatLogic(task, load_skill_timings())
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
         logic.team = ["庄方宜", "佩丽卡", "诀", "洛茜"]
         logic.order = ["1"]
         logic.ult_order = ["1"]
@@ -804,7 +806,7 @@ class TestTimedCombat(unittest.TestCase):
         task = FakeTask()
         task.sp = 0.0
         task.ults = {"1", "2"}
-        logic = TimedCombatLogic(task, load_skill_timings())
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
         logic.team = ["伊冯", "佩丽卡", "诀", "洛茜"]
         logic.order = ["3"]
         logic.ult_order = ["1", "2"]
@@ -823,7 +825,7 @@ class TestTimedCombat(unittest.TestCase):
     def test_yvonne_main_control_window_only_blocks_her_own_battle(self):
         task = FakeTask()
         task.sp = 100.0
-        logic = TimedCombatLogic(task, load_skill_timings())
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
         logic.team = ["伊冯", "佩丽卡", "诀", "洛茜"]
         logic.order = ["1"]
         logic.ult_order = []
@@ -840,7 +842,7 @@ class TestTimedCombat(unittest.TestCase):
     def test_team_burst_charge_reserves_shared_sp_before_mifu_chain(self):
         task = FakeTask()
         task.sp = 120.0
-        logic = TimedCombatLogic(task, load_skill_timings())
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
         logic.team = ["弭弗", "佩丽卡", "诀", "洛茜"]
         logic.order = ["2", "1", "3", "4"]
         logic.ult_order = []
@@ -866,7 +868,7 @@ class TestTimedCombat(unittest.TestCase):
 
     def test_non_core_mifu_does_not_force_team_into_charge_phase(self):
         task = FakeTask()
-        logic = TimedCombatLogic(task, load_skill_timings())
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: task.now)
         logic.team = ["弭弗", "佩丽卡", "诀", "洛茜"]
         plans = build_team_burst_plans(logic.team, logic.mechanics, logic.store)
 

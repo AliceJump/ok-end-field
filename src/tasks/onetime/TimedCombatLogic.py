@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from collections import deque
 
 from src.data.character_mechanics import load_character_mechanics, mechanic_blockers
@@ -38,9 +39,10 @@ class TimedCombatLogic:
     _ACTION_FEEDBACK_WINDOW = 1.20
     _DEAD_SLOT_CONFIRM_REFRESHES = 3
 
-    def __init__(self, task, store=None):
+    def __init__(self, task, store=None, clock=None):
         self.task = task
         self.store = store
+        self._clock = clock or time.monotonic
         self.team = []
         self.order = []
         self.ult_order = ["1", "2", "3", "4"]
@@ -84,11 +86,6 @@ class TimedCombatLogic:
         self.phase_planner = TeamPhasePlanner()
         self._last_phase_log = None
 
-    def _combat_time(self):
-        """Clock for in-game skill state; automation pause must not stop it."""
-        clock = getattr(self.task, "combat_time", None)
-        return clock() if callable(clock) else self.task.active_time()
-
     def _hold(self, enabled, force=False):
         if enabled:
             if self._holding and not force:
@@ -109,11 +106,11 @@ class TimedCombatLogic:
         starts a pause, UNKNOWN does not resume it; a positive PRESENT
         observation is required. No timestamps are shifted while paused, so
         cooldowns, state_until and native timeline elapsed time keep advancing
-        on combat_time(), including while the automation itself is paused.
+        on the monotonic combat clock, including while the automation itself is paused.
         """
         probe = getattr(self.task, "probe_enemy_presence", None)
         state = normalize_enemy_presence(probe() if callable(probe) else None)
-        now = self._combat_time()
+        now = self._clock()
 
         if state == EnemyPresence.ABSENT:
             if self.enemy_pause_started is None:
@@ -137,7 +134,7 @@ class TimedCombatLogic:
         return False
 
     def _note_action_attempt(self, kind, token=None):
-        self.last_action_attempt = (self._combat_time(), kind, token)
+        self.last_action_attempt = (self._clock(), kind, token)
 
     def _cancel_unstarted_action(self, kind, token, now):
         if kind == "battle":
@@ -166,7 +163,7 @@ class TimedCombatLogic:
         if self.last_action_attempt is None:
             return None
 
-        now = self._combat_time()
+        now = self._clock()
         attempted_at, kind, token = self.last_action_attempt
         if now - attempted_at > self._ACTION_FEEDBACK_WINDOW:
             self.last_action_attempt = None
@@ -203,7 +200,7 @@ class TimedCombatLogic:
         return self._SP_LOW_PROBE_INTERVAL
 
     def _cache_sp(self, sp, now=None):
-        now = self._combat_time() if now is None else now
+        now = self._clock() if now is None else now
         self.cached_sp = float(sp)
         self.last_sp_probe_at = now
         self.next_sp_probe_at = now + self._sp_probe_interval(self.cached_sp)
@@ -217,7 +214,7 @@ class TimedCombatLogic:
         scheduler frame also performs only the cheap third-bar full check.
         A positive full check returns 300 immediately.
         """
-        now = self._combat_time()
+        now = self._clock()
         if (
             not force
             and self.cached_sp >= self.sp_pressure_threshold
@@ -233,7 +230,7 @@ class TimedCombatLogic:
 
     def _note_assumed_sp_spend(self, before_sp, expected_cost):
         if before_sp < 0:
-            self.next_sp_probe_at = self._combat_time()
+            self.next_sp_probe_at = self._clock()
             return
         self._cache_sp(max(0.0, before_sp - max(0.0, expected_cost)))
 
@@ -270,7 +267,7 @@ class TimedCombatLogic:
             return False
         if not self.active:
             return True
-        elapsed = self._combat_time() - self.started
+        elapsed = self._clock() - self.started
         if self.unconfirmed:
             return all(profile.allows(elapsed, ()) for profile in self.active)
 
@@ -289,7 +286,7 @@ class TimedCombatLogic:
         return all(profile.allows(elapsed, candidates) for profile in self.active)
 
     def _ready(self, profiles, slot=None, kind=None):
-        now = self._combat_time()
+        now = self._clock()
         return (
             bool(profiles)
             and self._allowed(profiles, candidate_slot=slot, candidate_kind=kind)
@@ -307,7 +304,7 @@ class TimedCombatLogic:
         self.active = ()
         self.active_slot = None
         self.active_kind = None
-        self.started = self._combat_time() if now is None else now
+        self.started = self._clock() if now is None else now
         self.unconfirmed = False
 
     def _activate_state(self, token, spec, source, started=None):
@@ -720,7 +717,7 @@ class TimedCombatLogic:
     def _skip_active_state_slots(self):
         if not self.order:
             return
-        now = self._combat_time()
+        now = self._clock()
         for _ in range(len(self.order)):
             token = self.order[self.cursor]
             if self._slot_available(token) and now >= self.state_until.get(token, 0):
@@ -728,7 +725,7 @@ class TimedCombatLogic:
             self.cursor = (self.cursor + 1) % len(self.order)
 
     def _try_battle_token(self, token, sp, overflow=False, advance_cursor=True):
-        now = self._combat_time()
+        now = self._clock()
         if not self._slot_available(token) or now < self.state_until.get(token, 0):
             return False
         if now < self.battle_retry_after.get(token, 0):
@@ -753,7 +750,7 @@ class TimedCombatLogic:
             return False
 
         self.phase_planner.start_if_ready(token, "battle")
-        started = self._combat_time()
+        started = self._clock()
         self.task.send_key(token)
         self._note_action_attempt("battle", token)
         self._begin(profiles, started, slot=token, kind="battle")
@@ -884,7 +881,7 @@ class TimedCombatLogic:
 
     def step(self):
         """One refreshed HUD observation; no legacy strategy switches are read."""
-        now = self._combat_time()
+        now = self._clock()
         if self._probe_action_feedback() is not None:
             return
         self._confirm_battle(now)
@@ -951,7 +948,7 @@ class TimedCombatLogic:
             and self._allowed(links, candidate_kind="link")
             and self.task.is_link_skill_ready()
         ):
-            started = self._combat_time()
+            started = self._clock()
             if self.task.use_link_skill():
                 self._note_action_attempt("link")
                 if links:
@@ -989,10 +986,10 @@ class TimedCombatLogic:
         # monitor remains authoritative and unknown utility skills still cast.
         ready_ults.sort(key=lambda item: -item[0])
         for _rate, token, profiles in ready_ults:
-            started = self._combat_time()
+            started = self._clock()
             if self.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
                 self._note_action_attempt("ult", token)
-                ended = self._combat_time()
+                ended = self._clock()
                 self._observe_bonus("ult", token)
                 self._observe_phase_action(token, "ult")
                 self._set_cooldowns(profiles, started)
