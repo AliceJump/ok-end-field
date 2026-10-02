@@ -27,6 +27,34 @@ from src.core.paths import config_path
 _NO_MIGRATION = object()
 
 
+def copy_migrated_config_keys(
+    config: dict, migrations: dict[str, str], *, defaults: dict | None = None, copy_policy: str = "missing_only"
+) -> bool:
+    """就地补齐新旧键；replace_defaults 仅用旧非默认值补缺失或默认的新值。"""
+    if copy_policy not in {"missing_only", "replace_defaults"}:
+        raise ValueError(f"Unknown key copy policy: {copy_policy}")
+    reverse = {v: k for k, v in migrations.items()}
+    modified = False
+    for json_key in list(config.keys()):
+        if json_key in migrations:
+            new_key = migrations[json_key]
+            should_copy = new_key not in config
+            if copy_policy == "replace_defaults":
+                default_value = defaults.get(new_key) if defaults is not None else None
+                should_copy = config[json_key] != default_value and (
+                    should_copy or config.get(new_key) == default_value
+                )
+            if should_copy:
+                config[new_key] = config[json_key]
+                modified = True
+        elif json_key in reverse:
+            old_key = reverse[json_key]
+            if old_key not in config:
+                config[old_key] = config[json_key]
+                modified = True
+    return modified
+
+
 def migrate_config_file_keys(task_class_name: str, migrations: dict[str, str]) -> None:
     """扫描 JSON 中的每个 key，到 migrations 中双向查找并同步。
 
@@ -44,23 +72,7 @@ def migrate_config_file_keys(task_class_name: str, migrations: dict[str, str]) -
     if not isinstance(config, dict):
         return
 
-    # 构建反向查找表：新key → 旧key
-    reverse = {v: k for k, v in migrations.items()}
-
-    modified = False
-    for json_key in list(config.keys()):
-        if json_key in migrations:
-            new_key = migrations[json_key]
-            if new_key not in config:
-                config[new_key] = config[json_key]
-                modified = True
-        elif json_key in reverse:
-            old_key = reverse[json_key]
-            if old_key not in config:
-                config[old_key] = config[json_key]
-                modified = True
-
-    if modified:
+    if copy_migrated_config_keys(config, migrations):
         write_json_file(config_file, config)
 
 

@@ -63,6 +63,18 @@ class TestAccountOverrideFor(unittest.TestCase):
 
 
 class TestAccountKeyConfig(unittest.TestCase):
+    def test_all_key_categories_forward_timing_and_return_value(self):
+        task = _PressTask()
+        result = object()
+        for method in (task.press_key, task.press_industry_key, task.press_combat_key):
+            with (
+                self.subTest(method=method.__name__),
+                patch.object(task, "_resolve_config_key", return_value="mapped"),
+                patch.object(task, "send_key", return_value=result) as send_key,
+            ):
+                self.assertIs(method("e", down_time=0.4, after_sleep=0.5, interval=123), result)
+                send_key.assert_called_once_with("mapped", interval=123, down_time=0.4, after_sleep=0.5)
+
     @patch("src.core.base_mixin.account_override_mixin.get_account_task_overrides")
     @patch("src.core.base_mixin.runtime_mixin.get_global_config", return_value=BASE_KEYS)
     def test_press_key_uses_account_override(self, _get_config, get_overrides):
