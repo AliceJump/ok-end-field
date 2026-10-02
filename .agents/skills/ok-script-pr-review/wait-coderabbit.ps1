@@ -104,7 +104,12 @@ function Get-ForcePushEvent {
         "-F", "number=$PrNumber",
         "--jq", '.data.repository.pullRequest.timelineItems.nodes[] | [(.beforeCommit.oid), (.afterCommit.oid), .createdAt] | @tsv'
     )
-    $lines = if ($out) { @($out -split "`n") } else { @() }
+    # 注意：不能写成 $lines = if (...) { @(...) } else { @() }——PowerShell 会把分支里
+    # 的空数组展开成 $null，随后 Select-ForcePushEvent 的 [string[]] 参数绑定会直接
+    # 报 "Cannot bind argument to parameter 'EventLines' because it is null"，
+    # 掩盖掉本该给出的 "pass -SinceTime explicitly" 提示。
+    $lines = @()
+    if ($out) { $lines = @($out -split "`n") }
     return Select-ForcePushEvent -SinceCommit $Commit -EventLines $lines
 }
 
