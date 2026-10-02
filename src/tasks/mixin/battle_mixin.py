@@ -91,6 +91,57 @@ SWITCH_CHAR_H = 16 / 1080  # 归一化高
 SWITCH_CHAR_SLOTS = 4  # 最多 4 个出现位置
 SWITCH_CHAR_EXPAND = 1 / 8  # 搜索框向外扩大的比例（相对框自身宽/高）
 
+# ── 战斗顶部反馈文本带：固定位置 + 白色几何，不走 OCR ───────────────────────
+# 1920x1080 实测样本「离目标太远」完整文本带；归一化后可直接覆盖 4K/2K。
+COMBAT_TOO_FAR_TEXT_REGION = (0.4703, 0.1593, 0.5266, 0.1815)
+COMBAT_TOO_FAR_STABLE_FRAMES = 2
+COMBAT_TOO_FAR_STABLE_MAX_GAP = 0.20
+COMBAT_TOO_FAR_SIGNATURE_TOLERANCE = (0.03, 0.08, 0.08, 0.025)
+
+
+def _measure_combat_too_far_text_band(frame):
+    """Return a cheap geometry signature for the fixed white feedback band.
+
+    Signature = (width_ratio, height_ratio, white_fill_ratio, center_x_ratio).
+    The accepted ranges are intentionally wider than the single 1080p sample,
+    while still requiring the band to nearly span this tight fixed region.
+    """
+    if frame is None or getattr(frame, "size", 0) == 0 or frame.ndim != 3:
+        return None
+
+    mask = cv2.inRange(frame, (180, 180, 180), (255, 255, 255))
+    points = cv2.findNonZero(mask)
+    if points is None:
+        return None
+
+    x, y, width, height = cv2.boundingRect(points)
+    frame_height, frame_width = mask.shape
+    if frame_width <= 0 or frame_height <= 0:
+        return None
+
+    width_ratio = width / frame_width
+    height_ratio = height / frame_height
+    fill_ratio = cv2.countNonZero(mask) / (frame_width * frame_height)
+    left_ratio = x / frame_width
+    right_ratio = (x + width) / frame_width
+    top_ratio = y / frame_height
+    bottom_ratio = (y + height) / frame_height
+
+    if not (
+        0.88 <= width_ratio <= 0.98
+        and 0.60 <= height_ratio <= 0.92
+        and 0.12 <= fill_ratio <= 0.34
+        and left_ratio <= 0.10
+        and right_ratio >= 0.90
+        and top_ratio <= 0.20
+        and bottom_ratio >= 0.72
+    ):
+        return None
+
+    center_x_ratio = (x + width / 2) / frame_width
+    return width_ratio, height_ratio, fill_ratio, center_x_ratio
+
+
 # ── 技力条：4K 基准坐标 ──────────────────────────────────────────────────────
 # 技力从左向右填充。完整格检测从右向左查，可以在满 3 格时只做一次颜色检测；
 # 若第 n 格完整，只额外读取第 n+1 格的部分填充。部分填充识别等待样图补全。
@@ -769,24 +820,47 @@ class BattleMixin(BaseEfTask):
         return EnemyPresence.UNKNOWN
 
     def probe_combat_action_block_reason(self) -> ActionBlockReason | None:
-        """Read the short white top-center combat feedback text.
+        """Detect the fixed white top-center failure band without OCR.
 
-        The 1920x1080 sample supplied for the distance prompt gives a tight,
-        complete text band at normalized coordinates
-        (0.4703, 0.1593, 0.5266, 0.1815). Keep this probe narrow because it runs
-        only inside the short post-action feedback window.
+        The prompt is identified by its unique fixed position, near-full band
+        width, white-pixel geometry, and two consecutive stable frames.
         """
         feedback_box = self.box_of_screen(
-            0.4703,
-            0.1593,
-            0.5266,
-            0.1815,
+            *COMBAT_TOO_FAR_TEXT_REGION,
             name="combat_action_feedback",
         )
-        if self.ocr(
-            match=self.lang.daily_battle_mixin.combat_too_far_prompt,
-            box=feedback_box,
-        ):
+        signature = _measure_combat_too_far_text_band(feedback_box.crop_frame(self.frame))
+        now = self.active_time()
+
+        if signature is None:
+            self._combat_too_far_band_streak = 0
+            self._combat_too_far_band_signature = None
+            self._combat_too_far_band_last_seen_at = None
+            return None
+
+        previous = getattr(self, "_combat_too_far_band_signature", None)
+        last_seen_at = getattr(self, "_combat_too_far_band_last_seen_at", None)
+        streak = getattr(self, "_combat_too_far_band_streak", 0)
+        stable = (
+            previous is not None
+            and last_seen_at is not None
+            and 0 <= now - last_seen_at <= COMBAT_TOO_FAR_STABLE_MAX_GAP
+            and all(
+                abs(current - old) <= tolerance
+                for current, old, tolerance in zip(
+                    signature,
+                    previous,
+                    COMBAT_TOO_FAR_SIGNATURE_TOLERANCE,
+                    strict=True,
+                )
+            )
+        )
+
+        self._combat_too_far_band_signature = signature
+        self._combat_too_far_band_last_seen_at = now
+        self._combat_too_far_band_streak = streak + 1 if stable else 1
+
+        if self._combat_too_far_band_streak >= COMBAT_TOO_FAR_STABLE_FRAMES:
             return ActionBlockReason.TOO_FAR
         return None
 
