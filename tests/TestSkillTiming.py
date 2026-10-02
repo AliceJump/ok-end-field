@@ -24,13 +24,15 @@ class TestSkillTiming(unittest.TestCase):
             self.assertTrue(any(skill.startswith(cid + "_") for skill in store.index["skills"]), cid)
             self.assertTrue(store.profiles(cid, "ult"), cid)
             self.assertTrue(store.profiles(cid, "battle"), cid)
-            if cid != "chr_0028_wulfa":
-                self.assertTrue(store.profiles(cid, "link"), cid)
-            else:
-                self.assertEqual(store.profiles(cid, "link"), ())
+            self.assertTrue(store.profiles(cid, "link"), cid)
             with_skills += 1
         self.assertEqual(with_skills, 33)
         self.assertEqual(store.profiles("?", "battle"), ())
+
+    def test_numbered_link_entry_resolves_rossi_first_phase(self):
+        (profile,) = load_skill_timings().profiles("洛茜", "link")
+        self.assertEqual(profile.skill_id, "chr_0028_wulfa_combo_1_skill")
+        self.assertAlmostEqual(profile.cooldown, 15)
 
     def test_patch_cost_and_battle_semantics(self):
         (profile,) = load_skill_timings().profiles("佩丽卡", "battle")
@@ -587,6 +589,43 @@ class TestTimedCombat(unittest.TestCase):
         with patch.object(task, "detect_team_stable", side_effect=ValueError("bad frame")):
             self.assertFalse(TimedCombatLogic(task).run(deadline=2))
         self.assertEqual(task.mouse[-1], "up")
+
+    def test_typhoeus_full_insight_link_is_not_blocked_by_rossi_numbered_link(self):
+        task = FakeTask()
+        task.sp = 0.0
+        task.link = True
+        logic = TimedCombatLogic(task, load_skill_timings())
+        logic.team = ["提弗洛斯", "洛茜", "梨诺", "洁尔佩塔"]
+        logic.order = ["2", "4", "1", "3"]
+        logic.ult_order = []
+
+        logic.step()
+
+        self.assertEqual(task.keys, ["e"])
+        self.assertFalse(task.link)
+        self.assertTrue(any("连携技按现有就绪检测释放" in message for message in task.messages))
+
+    def test_missing_one_link_timing_never_disables_shared_ready_link(self):
+        task = FakeTask()
+        task.sp = 0.0
+        task.link = True
+        store = load_skill_timings()
+        logic = TimedCombatLogic(task, store)
+        logic.team = ["提弗洛斯", "洛茜", "梨诺", "洁尔佩塔"]
+        logic.order = ["2", "4", "1", "3"]
+        logic.ult_order = []
+
+        original_profiles = store.profiles
+        store.profiles = lambda name, kind: (
+            () if name == "洛茜" and kind == "link" else original_profiles(name, kind)
+        )
+        try:
+            logic.step()
+        finally:
+            del store.profiles
+
+        self.assertEqual(task.keys, ["e"])
+        self.assertTrue(any("缺少时间轴" in message for message in task.messages))
 
     def test_mechanic_team_keeps_native_entry_slots_and_disables_flat_optimizer(self):
         task = FakeTask()

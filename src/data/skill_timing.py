@@ -309,6 +309,24 @@ class SkillTimingStore:
         exact = f"{cid}_{_SUFFIX[kind]}"
         if exact in self.index["skills"]:
             return exact
+
+        if kind == "link":
+            # Multi-stage link buttons may expose numbered native entry ids
+            # instead of the usual *_combo_skill. Rossi is the current packaged
+            # example: combo_1_skill -> combo_2_skill -> combo_3_skill.
+            numbered_links = []
+            prefix = f"{cid}_combo_"
+            suffix = "_skill"
+            for skill_id in self.index["skills"]:
+                if not skill_id.startswith(prefix) or not skill_id.endswith(suffix):
+                    continue
+                stage = skill_id[len(prefix):-len(suffix)]
+                if stage.isdigit():
+                    numbered_links.append((int(stage), skill_id))
+            if numbered_links:
+                return min(numbered_links)[1]
+            return None
+
         if kind != "battle":
             return None
 

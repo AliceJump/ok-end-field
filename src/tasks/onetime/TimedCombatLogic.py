@@ -820,22 +820,44 @@ class TimedCombatLogic:
         if self._try_overflow_battle_skill(sp, "主循环"):
             return
 
-        # The existing link detector cannot identify its owner. Protect the
-        # longest possible team link timeline instead of inventing an owner.
+        # The HUD-ready detector is authoritative for link availability.
+        # It cannot identify the owner, so protect all *known* team link
+        # timelines. A missing timing profile must never disable E for the whole
+        # party (Rossi's numbered combo entry used to do exactly that).
         active_names = self._active_team_names()
-        links = tuple(profile for name in active_names for profile in self.store.profiles(name, "link"))
+        link_profiles = {
+            name: self.store.profiles(name, "link")
+            for name in active_names
+        }
+        links = tuple(
+            profile
+            for profiles in link_profiles.values()
+            for profile in profiles
+        )
         if (
             active_names
-            and all(self.store.profiles(name, "link") for name in active_names)
-            and links
             and self._allowed(links, candidate_kind="link")
             and self.task.is_link_skill_ready()
         ):
             started = self.task.active_time()
             if self.task.use_link_skill():
-                self._begin(links, started, kind="link")
+                if links:
+                    self._begin(links, started, kind="link")
+                else:
+                    self._clear_active(started)
                 self._observe_bonus("link")
-                self.task.log_info("时间排轴: 连携技按现有就绪检测释放")
+                missing = [
+                    name for name, profiles in link_profiles.items()
+                    if not profiles
+                ]
+                self.task.log_info(
+                    "时间排轴: 连携技按现有就绪检测释放"
+                    + (
+                        f"；缺少时间轴 {missing}，不阻断释放"
+                        if missing
+                        else ""
+                    )
+                )
                 return
 
         ready_ults = []
