@@ -2659,3 +2659,19 @@ msgid ""
 msgstr ""
 "独立实验模式，优先于其他战斗策略开关。\n"
 "利用实时监测和本地技能时间数据安排出技。"
+
+
+msgid "战斗模式"
+msgstr "战斗模式"
+
+msgid "普通模式"
+msgstr "普通模式"
+
+msgid "伤害优先排轴"
+msgstr "伤害优先排轴"
+
+msgid "固定排轴"
+msgstr "固定排轴"
+
+msgid "实时条件"
+msgstr "实时条件"

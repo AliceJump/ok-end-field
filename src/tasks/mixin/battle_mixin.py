@@ -31,12 +31,22 @@ from src.core.BattleConfig import (
     BATTLE_CONFIG_MODE_KEY,
     BATTLE_CONFIG_NAME,
     BATTLE_CONFIG_TYPE,
-    BATTLE_GROUP_CONFIGS,
+    BATTLE_ROOT_CONFIGS,
     DEFAULT_BATTLE_CONFIG,
+    DEFAULT_LEGACY_COMBAT_MODE,
     KEY_BATTLE_INITIAL_WAIT,
+    KEY_COND_ENABLED,
+    KEY_DAMAGE_ROTATION,
+    KEY_ENABLE_ROTATION,
+    KEY_LEGACY_COMBAT_MODE,
     KEY_RECOMMEND_SKILL,
     KEY_SKILL_ALLOWLIST,
     KEY_ULT_RELEASE_MODE,
+    LEGACY_COMBAT_MODE_AUTO_FILTER,
+    LEGACY_COMBAT_MODE_CONDITIONAL,
+    LEGACY_COMBAT_MODE_DAMAGE,
+    LEGACY_COMBAT_MODE_NORMAL,
+    LEGACY_COMBAT_MODE_ROTATION,
     RECOMMEND_SKILL_REGIONS,
     ULT_RELEASE_MODE_ALT,
     ULT_RELEASE_MODE_HOLD,
@@ -172,13 +182,11 @@ class BattleMixin(BaseEfTask):
             self.config_description = {}
         if not hasattr(self, "config_type") or self.config_type is None:
             self.config_type = {}
-        # 「使用独立配置」开关：勾选后展开显示当前任务的独立战斗配置项。
-        # 实时条件的 3 个内部数据 key（序列/立即释放开关）不单独展开为行——
-        # 它们由「启用实时条件」面板承载（KEY_COND_ENABLED 渲染为面板行，随开关显隐）
-        # KEY_INSTANT_ULT / KEY_INSTANT_LINK 已从 DEFAULT_BATTLE_CONFIG 移除，无需再排除
+        # 「使用独立配置」只引用 Battle Config 的根节点。模式子项继续由
+        # 「技能时间排轴」/「战斗模式」各自展开，避免同一个配置被两个父项引用。
         battle_mode_type = {
             "sub_configs": {
-                True: [key for key in DEFAULT_BATTLE_CONFIG if key not in BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST]],
+                True: BATTLE_ROOT_CONFIGS,
             },
         }
 
@@ -194,14 +202,49 @@ class BattleMixin(BaseEfTask):
         self.config_type.update(BATTLE_CONFIG_TYPE)
         self.config_type[BATTLE_CONFIG_MODE_KEY] = battle_mode_type
 
-    def get_battle_config(self, key: str, default=None):
+    def _raw_battle_config(self, key: str, default=None):
+        """Read one battle value from the active global/task config source."""
         global_value = self.battle_config_manager.get(key, DEFAULT_BATTLE_CONFIG.get(key, default))
         # config.get 在运行中已绑定账号覆盖；日常子任务按当前账号取战斗模式和参数。
         raw_value = self.config.get(BATTLE_CONFIG_MODE_KEY, False)
-        use_independent = self._parse_use_independent(raw_value)
-        if not use_independent:
+        if not self._parse_use_independent(raw_value):
             return global_value
         return self.config.get(key, global_value)
+
+    @staticmethod
+    def _legacy_mode_flag(mode: str, key: str):
+        """Map the single legacy-mode selector back to old internal booleans."""
+        if mode not in {
+            LEGACY_COMBAT_MODE_NORMAL,
+            LEGACY_COMBAT_MODE_AUTO_FILTER,
+            LEGACY_COMBAT_MODE_DAMAGE,
+            LEGACY_COMBAT_MODE_ROTATION,
+            LEGACY_COMBAT_MODE_CONDITIONAL,
+        }:
+            mode = DEFAULT_LEGACY_COMBAT_MODE
+
+        if key == KEY_COND_ENABLED:
+            return mode == LEGACY_COMBAT_MODE_CONDITIONAL
+        if key == KEY_ENABLE_ROTATION:
+            return mode == LEGACY_COMBAT_MODE_ROTATION
+        if key == KEY_SKILL_ALLOWLIST:
+            return mode in {LEGACY_COMBAT_MODE_AUTO_FILTER, LEGACY_COMBAT_MODE_DAMAGE}
+        if key == KEY_DAMAGE_ROTATION:
+            return mode == LEGACY_COMBAT_MODE_DAMAGE
+        return None
+
+    def get_battle_config(self, key: str, default=None):
+        # 旧执行逻辑仍读取四个历史 bool；它们不再由 UI 独立控制，而是统一
+        # 从「战斗模式」推导，保证同一时间只有一个旧策略生效。
+        if key in {
+            KEY_COND_ENABLED,
+            KEY_ENABLE_ROTATION,
+            KEY_SKILL_ALLOWLIST,
+            KEY_DAMAGE_ROTATION,
+        }:
+            mode = self._raw_battle_config(KEY_LEGACY_COMBAT_MODE, DEFAULT_LEGACY_COMBAT_MODE)
+            return self._legacy_mode_flag(mode, key)
+        return self._raw_battle_config(key, default)
 
     def _parse_use_independent(self, value):
         """解析「使用独立配置」值，支持布尔值、旧字符串格式和未识别值回退。
