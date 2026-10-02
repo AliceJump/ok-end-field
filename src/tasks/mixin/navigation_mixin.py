@@ -285,8 +285,14 @@ class NavigationMixin(SearchMixin):
                     kind = "ocr" if nav_is_ocr else "yolo" if nav_is_yolo else "feature"
                     if observations.latest(kind, nav):
                         self.align_ocr_or_find_target_to_center(
-                            nav, only_x=True, ocr=nav_is_ocr, use_yolo=nav_is_yolo,
-                            threshold=0.7, max_time=1, raise_if_fail=False, allow_random_move=False,
+                            nav,
+                            only_x=True,
+                            ocr=nav_is_ocr,
+                            use_yolo=nav_is_yolo,
+                            threshold=0.7,
+                            max_time=1,
+                            raise_if_fail=False,
+                            allow_random_move=False,
                         )
                         self.sleep(0.005)
                         continue
