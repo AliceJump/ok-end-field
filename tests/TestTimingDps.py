@@ -143,6 +143,29 @@ class TestTimingDps(unittest.TestCase):
         self.assertEqual(quote.ult, 2000)
         self.assertEqual(quote.link, 1000)
 
+    def test_loader_accepts_null_effects_in_character_snapshot(self):
+        quote = load_damage_quotes(["伊冯"])["伊冯"]
+        self.assertIsInstance(quote, DamageQuote)
+        self.assertEqual(quote.produces, frozenset())
+
+    def test_unknown_team_finisher_uses_global_conservative_upper_bound(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        logic.team = ["伊冯", "洁尔佩塔", "别礼", "余烬"]
+        logic.normal_attack_sp_gains = logic.store.team_normal_attack_sp_gains(logic.team)
+
+        self.assertEqual(logic.normal_attack_sp_gains["伊冯"], 8)
+        self.assertTrue(any(value is None for value in logic.normal_attack_sp_gains.values()))
+
+        logic._refresh_sp_threshold()
+
+        expected = max(
+            [value for value in logic.normal_attack_sp_gains.values() if value is not None]
+            + [logic.store.global_normal_attack_sp_gain()]
+        ) + logic._SP_ERROR_MARGIN
+        self.assertEqual(logic.assume_success_sp_threshold, expected)
+        self.assertGreater(logic.assume_success_sp_threshold, 13)
+
     def test_missing_state_or_damage_mapping_keeps_legacy_fallback(self):
         store = load_skill_timings()
         self.assertEqual(build_options(["佩丽卡"], store, {}), ())
