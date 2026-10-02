@@ -598,6 +598,19 @@ class _CardHoverFilter(QObject):
         super().__init__(None)
         self._card = card
         self._hover_target = card.card
+        self._interactive_targets = tuple(
+            widget
+            for widget in (
+                getattr(card.card, "expandButton", None),
+                getattr(card, "instructions_button", None),
+                getattr(card, "edit_button", None),
+                getattr(card, "pause_button", None),
+                getattr(card, "stop_button", None),
+                getattr(card, "start_button", None),
+                getattr(card, "enable_button", None),
+            )
+            if widget is not None
+        )
         self._show_timer = QTimer(self)
         self._show_timer.setSingleShot(True)
         self._show_timer.setInterval(SHOW_DELAY_MS)
@@ -606,6 +619,8 @@ class _CardHoverFilter(QObject):
 
     def _show_popup(self):
         if time.monotonic() < self._suppress_until:
+            return
+        if any(widget.isVisible() and widget.underMouse() for widget in self._interactive_targets):
             return
         ParamPreviewController.show_for(self._card)
 
@@ -626,6 +641,14 @@ class _CardHoverFilter(QObject):
                 elif etype == QEvent.Leave:
                     self._show_timer.stop()
                     ParamPreviewController.schedule_hide()
+            elif obj in self._interactive_targets:
+                if etype == QEvent.Enter:
+                    self._show_timer.stop()
+                    ParamPreviewController.hide()
+                elif etype == QEvent.Leave and self._hover_target.underMouse():
+                    # 从按钮回到卡片头空白区时允许重新触发；若是进入相邻按钮，
+                    # 对方的 Enter 会在 0ms show timer 执行前再次取消。
+                    self._show_timer.start()
             elif obj is self._card:
                 if etype == QEvent.Hide:
                     self.note_tab_switch()
@@ -654,6 +677,8 @@ def install_param_preview_hover(card):
     hover = _CardHoverFilter(card)
     card._param_preview_hover = hover
     card.card.installEventFilter(hover)
+    for widget in hover._interactive_targets:
+        widget.installEventFilter(hover)
     # TaskCard 本体只保留生命周期/尺寸变化监听；配置区 Enter 不再触发预览
     card.installEventFilter(hover)
     # 宿主列表滚动（Wheel）/ 主窗口缩放移动 → 立即收起弹层
