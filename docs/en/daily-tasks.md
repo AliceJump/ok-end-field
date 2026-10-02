@@ -4,78 +4,43 @@ Back: [Documentation home](index.md) / [README](https://github.com/AliceJump/ok-
 
 ## Overview
 
-Subtasks are toggled with ⭐ marks and run top-down in order. Except for 「⭐Dijiang one-click store」 and 「⭐Run external command」 which default to off, all current daily-plan subtasks default to on; the 「Buy materials」 option in 『⭐Region Building』 is not enabled by default. 『⭐Run external command』 can be scheduled to run at the very start or the very end of the task via the 「External command timing」 dropdown.
+The Daily Tasks card no longer uses a "config selection" dropdown just to hide parameters. Task choices are shown directly in fixed execution groups. A list item means that task participates in this daily run; the program owns the order so users cannot split shared-state groups or the combat block.
 
-If ESC is pressed repeatedly, raise 『Settings / Delay after main-screen single action』 (1.5 or higher recommended).
+Subtask parameters still live on each subtask's own card and can be overridden per account from Account Configuration. Daily stamina farming and daily auto delivery continue to use the dedicated "Daily Stamina Farming" and "Daily Auto Delivery" cards.
+
+If ESC is pressed repeatedly, raise "Settings / Delay after main-screen single action" (1.5 or higher recommended).
 
 ### Subtasks and run order
 
-The subtasks and run order are defined in `build_task_plan()` of [DailyTask.py](../../src/tasks/onetime/DailyTask.py). Brief summary:
+The fixed order is defined in `build_task_plan()` in [DailyTask.py](../../src/tasks/onetime/DailyTask.py):
 
 ```mermaid
 flowchart TD
-    A[Start daily tasks] --> B[Gift giving\nTeleport to specific location]
-    B --> C[Dijiang task group]
-    C --> C1{Confirmed on Dijiang}
-    C1 -->|No| C2[Dijiang one-click store\nRun confirmation once]
-    C1 -->|Yes| C2
-    C2 --> C3[Simple crafting\nReuse Dijiang state]
-    C3 --> C4[Dijiang harvest\nReuse Dijiang state]
-    C4 --> D[Collect mail]
-    D --> E[Handover commissions and claim rewards]
-    E --> E1[Auto delivery]
-    E1 --> F[Region building loop]
-    F --> F1[Switch to current region]
-    F1 --> F2{Outpost exchange enabled}
-    F2 -->|Yes| F3[Outpost exchange]
-    F2 -->|No| F4{Buy/sell enabled}
-    F3 --> F4
-    F4 -->|Yes| F6[Buy/sell: buy first]
-    F4 -->|No| F7{Buy materials enabled}
-    F6 --> F8{Buy materials enabled}
-    F8 -->|Yes| F9[Switch to stable material demand\nBuy materials]
-    F9 --> F10[Switch to flexible demand materials\nContinue selling]
-    F8 -->|No| F10
-    F7 -->|Yes| F11[Buy materials]
-    F7 -->|No| F5[safe_back\nRegion building overview]
-    F10 --> F5
-    F11 --> F5
-    F5 --> F12{More regions}
-    F12 -->|Yes| F1
-    F12 -->|No| G[Region building done]
-    G --> M[Craft equipment]
-    M --> N[Collect credit]
-    N --> O[Buy credit shop]
-    O --> P[Stamina farming]
-    P --> Q[Event rewards]
-    Q --> R[Daily rewards]
-    R --> S[Computation]
-    S --> T[Teleport to right transfer point of Dijiang]
-    T --> U[Task ends]
+    A[Start daily tasks] --> B[Dijiang block\nGift → Organize → Harvest]
+    B --> C[Other dailies\nMail → Handover → Region Building → Craft → Credit → Credit Shop]
+    C --> D[Combat block\nStamina Farming → Computation]
+    D --> E[Rewards\nEvent Rewards → Daily Rewards]
+    E --> F{Auto Delivery enabled?}
+    F -->|No| H[Final reset]
+    F -->|Yes| G[Auto Delivery]
+    G -->|Success| H
+    G -->|Failure/exception| X[Stop remaining tasks and close the game]
+    H --> I[End]
 ```
 
-> Normal case
+Default selections:
+- Dijiang tasks: Gift Giving, Dijiang Organize, Dijiang Harvest.
+- Other tasks: Collect Mail, Handover Delivery Commissions, Region Building, Craft Equipment, Collect Credit, Buy Credit Shop.
+- Combat tasks: Stamina Farming, Computation.
+- Reward tasks: Event Rewards, Daily Rewards.
+- Auto Delivery: disabled by default.
+- Final reset: Teleport to the right-side Dijiang transfer point.
 
-  1. Gift giving: raise operator favorability via 「Dijiang / Operator Contact Station / Give Gift」; this subtask needs to teleport to a specific location
-  2. Dijiang one-click store: open the backpack and click 「One-click Store」 (off by default)
-  3. Simple crafting: go to the 「Simple Crafting」 interface and craft items
-  4. Dijiang harvest: choose to collect clues, manufacturing bay, and training bay per 『⭐Dijiang harvest』
-  5. Collect mail: go to the 「Mailbox」 and claim mail
-  6. Handover commissions and claim rewards: the first time entering a region's 「Warehouse Node」, claim the 「Commissions I handed over」 rewards once, then hand over all delivery commissions
-  7. Auto delivery: automatically accept the commissions of the currently selected region and deliver goods to the corresponding receivers along the configured paths
-  8. Region building: per region, first run 「Outpost Exchange」, then buy/sell (buy first); if 「Buy materials」 is enabled, switch directly to the stable material demand to buy, then switch back to flexible-demand materials to sell
-  9. Craft equipment: go to 「Equipment Crafting / Set Equipment Crafting」 and craft the first item in the list
-  10. Collect credit: visit a friend's 「Dijiang」 and boost at the 「Visitor Terminal」 to earn credit
-  11. Buy credit shop: prioritize 「Arsenal Quota」, 「Inlaid Jade」, and recognized discounted items; after refreshing, try buying other purchasable items
-  12. Stamina farming: spend 「Stamina」 farming training materials
-  13. Event rewards: claim weekly rewards, stamina supply, and scratch cards per 『⭐Event rewards』
-  14. Daily rewards: claim rewards in 「Operation Handbook / Daily」 and 「Pass」 (Battle Pass)
-  15. Computation: run the computation tasks
-  16. Teleport to the right transfer point of Dijiang and wait for the next run
+Consecutive Dijiang tasks reuse the confirmed Dijiang state. The combat tasks always stay together. Rewards are pinned after the normal business tasks.
 
-> When 「Dijiang one-click store」, 「Simple crafting」, and 「Dijiang harvest」 run consecutively, only the first task confirms being on Dijiang; the following tasks share that state. Gift giving still teleports separately to specific locations like Cambridge.
+Auto Delivery is isolated as a high-risk long-running task after rewards and immediately before the final reset. It only counts as successful after delivery submission is confirmed. If any critical step returns failure or raises, Daily Tasks stops immediately, skips the final reset and any remaining end-of-run command, and closes the game instead of attempting a protocol teleport while carrying cargo.
 
-> External commands run at the very end of the task by default; you can change 「External command timing」 to 「At the very start of the task」 to run them first.
+> External commands run at the end by default. If Auto Delivery causes a fatal stop, an end-of-run external command is skipped. Set "External command timing" to the beginning if it must run first.
 
 ### Execution flow
 

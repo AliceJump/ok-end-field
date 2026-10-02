@@ -6,6 +6,7 @@ from pathlib import Path
 
 from qfluentwidgets import FluentIcon
 
+from src.core.config_migration import _NO_MIGRATION
 from src.core.email_service import send_daily_summary_email
 from src.tasks.account.account_mixin import AccountMixin
 from src.tasks.daily.daily_feature import DailyFeature
@@ -32,6 +33,23 @@ from src.tasks.onetime.MailTask import MailTask
 from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask
 
 
+def _legacy_daily_task_list(entries, defaults):
+    """把旧的一串日常 bool 开关迁成固定顺序的多选列表。"""
+
+    def transform(config, new_key):
+        if isinstance(config.get(new_key), list):
+            return _NO_MIGRATION
+        if not any(old_key in config for _, old_key in entries):
+            return _NO_MIGRATION
+        return [
+            name
+            for name, old_key in entries
+            if bool(config.get(old_key, defaults.get(name, False)))
+        ]
+
+    return transform
+
+
 class DailyTask(Common, EndCommandMixin, AccountMixin):
     """日常任务聚合执行器。
 
@@ -39,6 +57,82 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
     日常不继承子任务业务逻辑；子任务参数存在各自任务的配置文件里，
     经「账号配置」页可按账号覆盖。
     """
+
+    CFG_BOAT_TASKS = "帝江号任务"
+    CFG_OTHER_TASKS = "其他任务"
+    CFG_BATTLE_TASKS = "战斗任务"
+    CFG_REWARD_TASKS = "奖励任务"
+    CFG_DELIVERY_TASKS = "自动送货任务"
+    CFG_TAIL_TASKS = "收尾任务"
+
+    BOAT_TASKS = ["送礼", "帝江号整理", "帝江号收菜"]
+    OTHER_TASKS = ["收邮件", "转交运送委托", "地区建设", "造装备", "收信用", "买信用商店"]
+    BATTLE_TASKS = ["刷体力", "演算"]
+    REWARD_TASKS = ["活动奖励", "日常奖励"]
+    DELIVERY_TASKS = ["自动送货"]
+    TAIL_TASKS = ["传送到帝江号右侧传送点"]
+
+    _LEGACY_TASK_KEYS = {
+        "送礼": "⭐送礼",
+        "帝江号整理": "⭐帝江号整理",
+        "帝江号收菜": "⭐帝江号收菜",
+        "收邮件": "⭐收邮件",
+        "转交运送委托": "⭐转交运送委托",
+        "地区建设": "⭐地区建设",
+        "造装备": "⭐造装备",
+        "收信用": "⭐收信用",
+        "买信用商店": "⭐买信用商店",
+        "刷体力": "⭐刷体力",
+        "演算": "⭐演算",
+        "活动奖励": "⭐活动奖励",
+        "日常奖励": "⭐日常奖励",
+        "自动送货": "⭐自动送货",
+        "传送到帝江号右侧传送点": "⭐传送到帝江号右侧传送点",
+    }
+
+    _LEGACY_DEFAULTS = {
+        **{name: True for name in BOAT_TASKS + OTHER_TASKS + BATTLE_TASKS + REWARD_TASKS},
+        "自动送货": False,
+        "传送到帝江号右侧传送点": True,
+    }
+
+    config_value_migrations = {
+        CFG_BOAT_TASKS: _legacy_daily_task_list(
+            [
+                ("送礼", "⭐送礼"),
+                ("帝江号整理", "⭐帝江号整理"),
+                ("帝江号收菜", "⭐帝江号收菜"),
+            ],
+            _LEGACY_DEFAULTS,
+        ),
+        CFG_OTHER_TASKS: _legacy_daily_task_list(
+            [
+                ("收邮件", "⭐收邮件"),
+                ("转交运送委托", "⭐转交运送委托"),
+                ("地区建设", "⭐地区建设"),
+                ("造装备", "⭐造装备"),
+                ("收信用", "⭐收信用"),
+                ("买信用商店", "⭐买信用商店"),
+            ],
+            _LEGACY_DEFAULTS,
+        ),
+        CFG_BATTLE_TASKS: _legacy_daily_task_list(
+            [("刷体力", "⭐刷体力"), ("演算", "⭐演算")],
+            _LEGACY_DEFAULTS,
+        ),
+        CFG_REWARD_TASKS: _legacy_daily_task_list(
+            [("活动奖励", "⭐活动奖励"), ("日常奖励", "⭐日常奖励")],
+            _LEGACY_DEFAULTS,
+        ),
+        CFG_DELIVERY_TASKS: _legacy_daily_task_list(
+            [("自动送货", "⭐自动送货")],
+            _LEGACY_DEFAULTS,
+        ),
+        CFG_TAIL_TASKS: _legacy_daily_task_list(
+            [("传送到帝江号右侧传送点", "⭐传送到帝江号右侧传送点")],
+            _LEGACY_DEFAULTS,
+        ),
+    }
 
     BOAT_STATE_TASK_KEYS = frozenset(
         {
@@ -61,7 +155,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         self.icon = FluentIcon.CALENDAR
         self.group_name = "日常任务"
         self.group_icon = FluentIcon.CALENDAR
-        self.description = "子任务开关用⭐标出，自上而下顺序执行，默认展开在最前面的『⭐⭐⭐ 默认』分组，最后执行『日常奖励』。\n子任务参数在各子任务卡片上配置（任务列表「日常任务」分组），并支持在「账号配置」页按账号覆盖。\n如果出现反复按ESC的情形，请调高『设置/主界面单次动作后延迟』（建议1.5以上）。"
+        self.description = "日常子任务按帝江号、其他、战斗、奖励与收尾分组选择，实际执行顺序由程序固定。\n子任务参数在各子任务卡片上配置（任务列表「日常任务」分组），并支持在「账号配置」页按账号覆盖。\n如果出现反复按ESC的情形，请调高『设置/主界面单次动作后延迟』（建议1.5以上）。"
 
         self.support_schedule_task = True
         self.support_multi_account = True
@@ -70,13 +164,20 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         # 子任务包装器：执行时从 executor 解析已注册实例（机制见 daily_feature.py）。
         # 参数已迁到子任务配置的三项（帝江号收菜/地区建设/活动奖励）与多开关 OR 的
         # 帝江号整理，开关判定改用谓词读取子任务配置。
-        self.gift_feature = DailyFeature(self, LiaisonGiftTask, switch_key="⭐送礼", run_method="execute_gift_task")
+        self.gift_feature = DailyFeature(
+            self,
+            LiaisonGiftTask,
+            switch_key="⭐送礼",
+            run_method="execute_gift_task",
+            predicate=lambda: self._task_selected(self.CFG_BOAT_TASKS, "送礼"),
+        )
         self.organize_feature = DailyFeature(
             self,
             BoatOrganizeTask,
             switch_key="⭐帝江号整理",
             run_method="boat_organize",
-            predicate=lambda: (
+            predicate=lambda: self._task_selected(self.CFG_BOAT_TASKS, "帝江号整理")
+            and (
                 bool(self.organize_feature.impl_config("⭐帝江号一键存放"))
                 or bool(self.organize_feature.impl_config("⭐简易制作"))
             ),
@@ -86,43 +187,104 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             BoatHarvestTask,
             switch_key="⭐帝江号收菜",
             run_method="boat_claim_rewards",
-            predicate=lambda: bool(self.harvest_feature.impl_config("⭐帝江号收菜")),
+            predicate=lambda: self._task_selected(self.CFG_BOAT_TASKS, "帝江号收菜")
+            and bool(self.harvest_feature.impl_config("⭐帝江号收菜")),
         )
-        self.mail_feature = DailyFeature(self, MailTask, switch_key="⭐收邮件", run_method="run_mail")
+        self.mail_feature = DailyFeature(
+            self,
+            MailTask,
+            switch_key="⭐收邮件",
+            run_method="run_mail",
+            predicate=lambda: self._task_selected(self.CFG_OTHER_TASKS, "收邮件"),
+        )
         self.delivery_send_feature = DailyFeature(
-            self, DeliverySendTask, switch_key="⭐转交运送委托", run_method="delivery_send_others"
+            self,
+            DeliverySendTask,
+            switch_key="⭐转交运送委托",
+            run_method="delivery_send_others",
+            predicate=lambda: self._task_selected(self.CFG_OTHER_TASKS, "转交运送委托"),
         )
-        self.delivery_feature = DailyFeature(self, DailyDeliveryTask, switch_key="⭐自动送货", run_method="run_daily")
+        self.delivery_feature = DailyFeature(
+            self,
+            DailyDeliveryTask,
+            switch_key="⭐自动送货",
+            run_method="run_daily",
+            predicate=lambda: self._task_selected(self.CFG_DELIVERY_TASKS, "自动送货"),
+        )
         self.regional_feature = DailyFeature(
             self,
             RegionalBuildTask,
             switch_key="⭐地区建设",
             run_method="run_regional",
-            predicate=lambda: bool(self.regional_feature.impl_config("⭐地区建设")),
+            predicate=lambda: self._task_selected(self.CFG_OTHER_TASKS, "地区建设")
+            and bool(self.regional_feature.impl_config("⭐地区建设")),
         )
-        self.craft_feature = DailyFeature(self, CraftWeaponTask, switch_key="⭐造装备", run_method="make_weapon")
+        self.craft_feature = DailyFeature(
+            self,
+            CraftWeaponTask,
+            switch_key="⭐造装备",
+            run_method="make_weapon",
+            predicate=lambda: self._task_selected(self.CFG_OTHER_TASKS, "造装备"),
+        )
         self.credit_feature = DailyFeature(
-            self, CreditCollectTask, switch_key="⭐收信用", run_method="run_credit_collect"
+            self,
+            CreditCollectTask,
+            switch_key="⭐收信用",
+            run_method="run_credit_collect",
+            predicate=lambda: self._task_selected(self.CFG_OTHER_TASKS, "收信用"),
         )
-        self.shop_feature = DailyFeature(self, CreditShopTask, switch_key="⭐买信用商店", run_method="credit_shop")
-        self.battle_feature = DailyFeature(self, DailyBattleTask, switch_key="⭐刷体力", run_method="run_battle")
+        self.shop_feature = DailyFeature(
+            self,
+            CreditShopTask,
+            switch_key="⭐买信用商店",
+            run_method="credit_shop",
+            predicate=lambda: self._task_selected(self.CFG_OTHER_TASKS, "买信用商店"),
+        )
+        self.battle_feature = DailyFeature(
+            self,
+            DailyBattleTask,
+            switch_key="⭐刷体力",
+            run_method="run_battle",
+            predicate=lambda: self._task_selected(self.CFG_BATTLE_TASKS, "刷体力"),
+        )
         self.activity_feature = DailyFeature(
             self,
             ActivityRewardTask,
             switch_key="⭐活动奖励",
             run_method="claim_activity_rewards",
-            predicate=lambda: bool(self.activity_feature.impl_config("⭐活动奖励")),
+            predicate=lambda: self._task_selected(self.CFG_REWARD_TASKS, "活动奖励")
+            and bool(self.activity_feature.impl_config("⭐活动奖励")),
         )
         self.daily_reward_feature = DailyFeature(
-            self, DailyRewardTask, switch_key="⭐日常奖励", run_method="claim_daily_rewards"
+            self,
+            DailyRewardTask,
+            switch_key="⭐日常奖励",
+            run_method="claim_daily_rewards",
+            predicate=lambda: self._task_selected(self.CFG_REWARD_TASKS, "日常奖励"),
         )
-        self.demo_feature = DailyFeature(self, DemoBattleTask, switch_key="⭐演算", run_method="battle_demo")
+        self.demo_feature = DailyFeature(
+            self,
+            DemoBattleTask,
+            switch_key="⭐演算",
+            run_method="battle_demo",
+            predicate=lambda: self._task_selected(self.CFG_BATTLE_TASKS, "演算"),
+        )
         self.home_point_feature = DailyFeature(
-            self, HomePointTask, switch_key="⭐传送到帝江号右侧传送点", run_method="run_home_point"
+            self,
+            HomePointTask,
+            switch_key="⭐传送到帝江号右侧传送点",
+            run_method="run_home_point",
+            predicate=lambda: self._task_selected(self.CFG_TAIL_TASKS, "传送到帝江号右侧传送点"),
         )
 
         self.config_description.update(
             {
+                self.CFG_BOAT_TASKS: "选择参加一键日常的帝江号任务；执行顺序固定为送礼、帝江号整理、帝江号收菜。",
+                self.CFG_OTHER_TASKS: "选择参加一键日常的其他任务；顺序由程序固定，避免打散可复用的场景状态。",
+                self.CFG_BATTLE_TASKS: "选择参加一键日常的战斗任务；刷体力与演算连续执行。",
+                self.CFG_REWARD_TASKS: "选择参加一键日常的奖励任务；奖励块固定安排在普通业务任务之后。",
+                self.CFG_DELIVERY_TASKS: "自动送货是高风险长流程，固定在奖励之后、最终归位之前执行。",
+                self.CFG_TAIL_TASKS: "最终归位固定在所有业务任务之后执行；自动送货失败时会跳过归位。",
                 "⭐送礼": (
                     "是否通过「帝江号/干员联络台/赠送礼物」提升员好感度。\n"
                     "如果途中偶遇干员，则直接交互完成送礼。\n"
@@ -158,40 +320,72 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
         )
         self.default_config.update(
             {
-                "⭐送礼": True,
-                "⭐收邮件": True,
-                "⭐转交运送委托": True,
-                "⭐自动送货": False,
-                "⭐造装备": True,
-                "⭐收信用": True,
-                "⭐买信用商店": True,
-                "⭐刷体力": True,
-                "⭐日常奖励": True,
-                "⭐演算": True,
-                "⭐传送到帝江号右侧传送点": True,
-                "配置选择": "⭐⭐⭐ 默认",
+                self.CFG_BOAT_TASKS: list(self.BOAT_TASKS),
+                self.CFG_OTHER_TASKS: list(self.OTHER_TASKS),
+                self.CFG_BATTLE_TASKS: list(self.BATTLE_TASKS),
+                self.CFG_REWARD_TASKS: list(self.REWARD_TASKS),
+                self.CFG_DELIVERY_TASKS: [],
+                self.CFG_TAIL_TASKS: ["传送到帝江号右侧传送点"],
                 "发生异常时终止游戏": False,
                 "仅退出游戏": False,
                 "自动打开汇总文件": True,
                 "邮件发送汇总": False,
             }
         )
-        task_group = {
-            "⭐⭐⭐ 默认": [item[0] for item in self.build_task_plan() if item[0] in self.default_config]
-            + ["⭐执行外部命令"],
-        }
+        for key, options in (
+            (self.CFG_BOAT_TASKS, self.BOAT_TASKS),
+            (self.CFG_OTHER_TASKS, self.OTHER_TASKS),
+            (self.CFG_BATTLE_TASKS, self.BATTLE_TASKS),
+            (self.CFG_REWARD_TASKS, self.REWARD_TASKS),
+            (self.CFG_DELIVERY_TASKS, self.DELIVERY_TASKS),
+            (self.CFG_TAIL_TASKS, self.TAIL_TASKS),
+        ):
+            self.config_type[key] = {
+                "type": "multi_selection",
+                "options": list(options),
+            }
 
-        # 合并两个分组字典
-        all_groups = {
-            **task_group,
-            **self.default_config_group,
-            **{"其他配置": ["发生异常时终止游戏", "仅退出游戏", "邮件发送汇总", "自动打开汇总文件"]},
-        }
-
-        self.register_config_groups(all_groups)
+        self.default_config_group.update(
+            {
+                "帝江号": [self.CFG_BOAT_TASKS],
+                "其他日常": [self.CFG_OTHER_TASKS],
+                "战斗": [self.CFG_BATTLE_TASKS],
+                "奖励": [self.CFG_REWARD_TASKS],
+                "自动送货": [self.CFG_DELIVERY_TASKS],
+                "最终归位": [self.CFG_TAIL_TASKS],
+                "其他配置": ["发生异常时终止游戏", "仅退出游戏", "邮件发送汇总", "自动打开汇总文件"],
+            }
+        )
         self.add_exit_after_config()
         if self.debug:
             self.default_config.update({"重复测试的次数": 1})
+
+        # 去掉「配置选择」后，确保任务选择块始终排在卡片最前面；
+        # 其余 mixin / 收尾配置保持原有相对顺序。
+        task_selector_keys = (
+            self.CFG_BOAT_TASKS,
+            self.CFG_OTHER_TASKS,
+            self.CFG_BATTLE_TASKS,
+            self.CFG_REWARD_TASKS,
+            self.CFG_DELIVERY_TASKS,
+            self.CFG_TAIL_TASKS,
+        )
+        ordered_config = {key: self.default_config[key] for key in task_selector_keys}
+        ordered_config.update(self.default_config)
+        self.default_config = ordered_config
+        self.validate_unique_sub_config_parents()
+
+    def _task_selected(self, group_key: str, task_name: str) -> bool:
+        selected = self.config.get(group_key, [])
+        enabled = isinstance(selected, list) and task_name in selected
+
+        # 兼容旧的按账号 bool 覆盖：新列表尚未写入该账号时，仅用对应旧开关覆盖这一项。
+        overrides = self._account_override_for(self.__class__.__name__)
+        if group_key not in overrides:
+            legacy_key = self._LEGACY_TASK_KEYS.get(task_name)
+            if legacy_key in overrides:
+                return bool(overrides[legacy_key])
+        return enabled
 
     def build_task_plan(self):
         return [
@@ -200,15 +394,15 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             self.harvest_feature.plan_item(),
             self.mail_feature.plan_item(),
             self.delivery_send_feature.plan_item(),
-            self.delivery_feature.plan_item(),
             self.regional_feature.plan_item(),
             self.craft_feature.plan_item(),
             self.credit_feature.plan_item(),
             self.shop_feature.plan_item(),
             self.battle_feature.plan_item(),
+            self.demo_feature.plan_item(),
             self.activity_feature.plan_item(),
             self.daily_reward_feature.plan_item(),
-            self.demo_feature.plan_item(),
+            self.delivery_feature.plan_item(),
             self.home_point_feature.plan_item(),
         ]
 
@@ -228,6 +422,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
                 self,
                 task_plan,
                 shared_state_task_keys=self.BOAT_STATE_TASK_KEYS,
+                fatal_task_keys={"⭐自动送货"},
             )
             self.daily_runner.run(repeat_times=repeat_times)
         finally:
@@ -274,6 +469,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             "部分失败": "PARTIAL",
             "运行中": "RUNNING",
             "异常结束": "FAILED",
+            "关键任务失败": "FAILED",
             "未开始": "IDLE",
         }
         # 未知状态不默认当作成功，避免邮件把异常/新增状态误标为绿色完成

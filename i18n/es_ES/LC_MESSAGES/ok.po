@@ -2517,10 +2517,8 @@ msgstr "Error al reiniciar"
 msgid "物品导航配置说明"
 msgstr "Configuración de Navegación de Objetos"
 
-msgid "位置来源：content 有值时使用官方地图 WebSocket，为空时使用本地 WS"
-msgstr ""
-"Origen de posición: WebSocket del mapa oficial si content tiene valor, WS "
-"local si está vacío"
+msgid "地图数据来源：自动当前账号读取当前任务账号；账号配置读取指定账号；手动 content 使用本任务 content"
+msgstr "Origen de datos del mapa: Cuenta actual automática usa la cuenta actual de la tarea; Configuración de cuenta usa la cuenta seleccionada; content manual usa el content de esta tarea"
 
 msgid "关键配置"
 msgstr "Ajustes clave"
@@ -2530,10 +2528,8 @@ msgstr ""
 "Seleccionar objetos: elige los objetos a navegar; solo se compara el mapa "
 "actual y si está vacío no hay objetivo"
 
-msgid "地图账号：content 为空时从中读取地图同步 content，选项来自账号配置页"
-msgstr ""
-"Cuenta del mapa: lee el content de sincronización de esa cuenta cuando "
-"content está vacío; las opciones vienen de la página de cuentas"
+msgid "地图账号：仅在「地图数据来源 = 账号配置」时使用，选项来自账号配置页"
+msgstr "Cuenta del mapa: se usa solo cuando «Origen de datos del mapa = Configuración de cuenta»; las opciones vienen de la página de configuración de cuentas"
 
 msgid "标记按键：接近目标后用于标记已获取的键位，仅支持单个字符"
 msgstr ""
@@ -2627,11 +2623,8 @@ msgstr ""
 "4. Selecciona esa petición en la lista filtrada y copia data.content de "
 "Response"
 
-msgid "5. 把该值填入本任务 content；或填入账号配置页的「地图同步 content」，再用「地图账号」选择该账号"
-msgstr ""
-"5. Pégalo en el content de esta tarea, o guárdalo como «content de "
-"sincronizacion del mapa» en la página de cuentas y elige esa cuenta en "
-"«Cuenta del mapa»"
+msgid "5. 使用「手动 content」时把该值填入本任务 content；使用「账号配置」时把它保存到账号配置页并选择对应地图账号"
+msgstr "5. Con «content manual», pega el valor en el content de esta tarea; con «Configuración de cuenta», guárdalo en la página de cuentas y selecciona la Cuenta del mapa correspondiente"
 
 msgid ""
 "可选。直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
@@ -2886,3 +2879,84 @@ msgid ""
 msgstr ""
 "Abrir la guía oficial de navegación de objetos.\n"
 "Abrir también la carpeta del script de Tampermonkey."
+
+msgid "日常子任务按帝江号、其他、战斗、奖励与收尾分组选择，实际执行顺序由程序固定。\n子任务参数在各子任务卡片上配置（任务列表「日常任务」分组），并支持在「账号配置」页按账号覆盖。\n如果出现反复按ESC的情形，请调高『设置/主界面单次动作后延迟』（建议1.5以上）。"
+msgstr "Selecciona las subtareas diarias por grupos de Dijiang, otras, combate, recompensas y cierre; el programa fija el orden real de ejecución.\nConfigura los parámetros de cada subtarea en su propia tarjeta (grupo «Tareas diarias») y usa Configuración de cuenta para sobrescribirlos por cuenta.\nSi ESC se pulsa repetidamente, aumenta «Configuración / Retraso tras una acción en la pantalla principal» (se recomienda 1,5 o más)."
+
+msgid "帝江号任务"
+msgstr "Tareas del Dijiang"
+
+msgid "其他任务"
+msgstr "Otras tareas"
+
+msgid "战斗任务"
+msgstr "Tareas de combate"
+
+msgid "奖励任务"
+msgstr "Tareas de recompensas"
+
+msgid "自动送货任务"
+msgstr "Tarea de entrega automática"
+
+msgid "收尾任务"
+msgstr "Tareas de cierre"
+
+msgid "选择参加一键日常的帝江号任务；执行顺序固定为送礼、帝江号整理、帝江号收菜。"
+msgstr "Selecciona las tareas del Dijiang que participarán en las tareas diarias; el orden fijo es Regalos, Organización del Dijiang y Recolección del Dijiang."
+
+msgid "选择参加一键日常的其他任务；顺序由程序固定，避免打散可复用的场景状态。"
+msgstr "Selecciona otras tareas diarias; el programa fija su orden para no separar estados de escena reutilizables."
+
+msgid "选择参加一键日常的战斗任务；刷体力与演算连续执行。"
+msgstr "Selecciona las tareas de combate; Consumo de energía y Cálculo se ejecutan de forma consecutiva."
+
+msgid "选择参加一键日常的奖励任务；奖励块固定安排在普通业务任务之后。"
+msgstr "Selecciona las tareas de recompensas; el bloque de recompensas queda fijado después de las tareas normales."
+
+msgid "自动送货是高风险长流程，固定在奖励之后、最终归位之前执行。"
+msgstr "La entrega automática es un flujo largo y de alto riesgo, fijado después de las recompensas y antes del restablecimiento final."
+
+msgid "最终归位固定在所有业务任务之后执行；自动送货失败时会跳过归位。"
+msgstr "El restablecimiento final se ejecuta después de todas las tareas; se omite si falla la entrega automática."
+
+msgid "其他日常"
+msgstr "Otras diarias"
+
+msgid "最终归位"
+msgstr "Restablecimiento final"
+
+msgid "运行模式"
+msgstr "Modo de ejecución"
+
+msgid "正常送货"
+msgstr "Entrega normal"
+
+msgid "正常送货会接取并完成委托；仅接取只抢单；仅送货从游戏当前已接取的运送委托继续。"
+msgstr "Entrega normal acepta y completa un encargo; Solo aceptar únicamente toma el encargo; Solo entregar continúa desde el encargo de entrega ya aceptado en el juego."
+
+msgid "默认是无，表示按「运行模式」执行任务\n也可以选择特定的滑索分叉序列来测试滑索功能\n选择完整循环测试则会依次测试每个送货目标的完整流程\n(需要锁定次要任务在送货任务上或附近)"
+msgstr "«Ninguno» ejecuta la tarea según el Modo de ejecución.\nTambién puedes seleccionar una secuencia concreta de ramales de tirolina para probar la función.\nLa prueba de ciclo completo recorre todos los destinos de entrega.\n(La misión secundaria debe estar fijada en la misión de entrega o cerca de ella.)"
+
+msgid "地图数据来源"
+msgstr "Fuente de datos del mapa"
+
+msgid "自动当前账号"
+msgstr "Cuenta actual automáticamente"
+
+msgid "手动 content"
+msgstr "content manual"
+
+msgid "选择地图同步凭据来源。自动当前账号会读取当前任务账号上下文；账号配置会读取指定账号；手动 content 直接使用填写值。"
+msgstr "Elige la fuente de credenciales de sincronización del mapa. Cuenta actual automáticamente usa el contexto de la cuenta de la tarea; Configuración de cuenta usa una cuenta seleccionada; content manual usa directamente el valor introducido."
+
+msgid "直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n仅在「地图数据来源 = 手动 content」时使用。"
+msgstr "Introduce el valor data.content devuelto por web-api.skland.com/account/info/hg/check.\nSolo se usa cuando Fuente de datos del mapa = content manual."
+
+msgid "从账号配置页读取该账号保存的地图同步 content。\n仅在「地图数据来源 = 账号配置」时使用。"
+msgstr "Lee desde Configuración de cuenta el content de sincronización del mapa guardado para esta cuenta.\nSolo se usa cuando Fuente de datos del mapa = Configuración de cuenta."
+
+msgid "自动送货阶段"
+msgstr "Etapa de entrega automática"
+
+msgid "关键任务失败"
+msgstr "Tarea crítica fallida"

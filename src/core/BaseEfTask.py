@@ -496,6 +496,39 @@ class BaseEfTask(
         self.release_yolo_detector()
         super().on_destroy()
 
+    @staticmethod
+    def _iter_sub_config_children(meta):
+        """迭代一个配置项声明的条件子项，并统一转成字符串键。"""
+        if not isinstance(meta, dict):
+            return
+        sub_configs = meta.get("sub_configs")
+        if not isinstance(sub_configs, dict):
+            return
+        for children in sub_configs.values():
+            if isinstance(children, str):
+                children = [children]
+            if isinstance(children, (list, tuple, set)):
+                yield from (str(child_key) for child_key in children)
+
+    def validate_unique_sub_config_parents(self) -> dict[str, str]:
+        """校验条件显隐关系：同一个子项只能归一个父控件管理。
+
+        同一父控件的多个取值可以重复引用同一子项；不同父控件同时控制同一
+        子项会导致 ConfigCard 显隐状态互相覆盖，因此直接拒绝这种 schema。
+        """
+        owners: dict[str, str] = {}
+        for parent_key, meta in (self.config_type or {}).items():
+            parent_key = str(parent_key)
+            for child_key in self._iter_sub_config_children(meta):
+                previous = owners.get(child_key)
+                if previous is not None and previous != parent_key:
+                    raise ValueError(
+                        f"配置项 {child_key!r} 同时受 {previous!r} 与 {parent_key!r} 控制；"
+                        "sub_configs 子项必须只有一个父控件"
+                    )
+                owners[child_key] = parent_key
+        return owners
+
     def register_config_groups(self, groups: dict, dropdown_name: str = "配置选择"):
         """
         注册配置分组，支持下拉切换 + 子配置折叠显示
