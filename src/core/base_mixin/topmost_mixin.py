@@ -83,13 +83,13 @@ def _is_window_topmost(hwnd: int) -> bool:
         return False
 
 
-def _set_window_topmost(hwnd: int) -> bool:
-    """将窗口设置为 HWND_TOPMOST（不激活、不移动、不调整大小）。"""
+def _change_window_topmost(hwnd: int, *, enabled: bool) -> bool:
+    """切换窗口置顶，不激活、不移动、不调整大小。"""
     try:
         return bool(
             _user32.SetWindowPos(
                 hwnd,
-                HWND_TOPMOST,
+                HWND_TOPMOST if enabled else HWND_NOTOPMOST,
                 0,
                 0,
                 0,
@@ -99,24 +99,16 @@ def _set_window_topmost(hwnd: int) -> bool:
         )
     except Exception:
         return False
+
+
+def _set_window_topmost(hwnd: int) -> bool:
+    """将窗口设置为 HWND_TOPMOST（不激活、不移动、不调整大小）。"""
+    return _change_window_topmost(hwnd, enabled=True)
 
 
 def _remove_window_topmost(hwnd: int) -> bool:
     """将窗口恢复为非 TOPMOST。"""
-    try:
-        return bool(
-            _user32.SetWindowPos(
-                hwnd,
-                HWND_NOTOPMOST,
-                0,
-                0,
-                0,
-                0,
-                SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_SHOWWINDOW,
-            )
-        )
-    except Exception:
-        return False
+    return _change_window_topmost(hwnd, enabled=False)
 
 
 class TopmostMixin:

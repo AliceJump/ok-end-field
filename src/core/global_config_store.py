@@ -16,6 +16,7 @@ from src.core.BattleConfig import (
     BATTLE_CONFIG_TYPE,
     DEFAULT_BATTLE_CONFIG,
 )
+from src.core.config_migration import copy_migrated_config_keys
 from src.core.paths import config_path
 from src.data.delivery_area import DELIVERY_AREA_CONFIG
 from src.data.world_map import STAGE_CATEGORY_ENERGY_POOLING, stages_dict
@@ -285,24 +286,7 @@ def _migrate_key_names_in_file(option_name: str, migrations: dict[str, str], def
     if not isinstance(config, dict):
         return
 
-    reverse = {v: k for k, v in migrations.items()}
-    modified = False
-    for json_key in list(config.keys()):
-        if json_key in migrations:
-            new_key = migrations[json_key]
-            old_value = config[json_key]
-            new_value = config.get(new_key)
-            default_value = defaults.get(new_key)
-            if old_value != default_value and (new_key not in config or new_value == default_value):
-                config[new_key] = old_value
-                modified = True
-        elif json_key in reverse:
-            old_key = reverse[json_key]
-            if old_key not in config:
-                config[old_key] = config[json_key]
-                modified = True
-
-    if modified:
+    if copy_migrated_config_keys(config, migrations, defaults=defaults, copy_policy="replace_defaults"):
         write_json_file(config_file, config)
 
 

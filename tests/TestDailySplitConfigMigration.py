@@ -19,6 +19,20 @@ def _pilot_table():
 
 
 class TestDailySplitConfigMigration(unittest.TestCase):
+    def test_selection_imports_keep_earliest_operation_lists(self):
+        for importer, ops_key in (
+            (split_config_migrator._import_boat_stages, "帝江号收菜操作"),
+            (split_config_migrator._import_activity_rewards, "活动奖励"),
+        ):
+            with self.subTest(importer=importer.__name__):
+                source = {ops_key: ["用户选择"]}
+                imported = importer(source, {}, "新多选键")
+                self.assertEqual(imported, ["用户选择"])
+                self.assertIsNot(imported, source[ops_key])
+                self.assertIs(importer(source, {"新多选键": []}, "新多选键"), split_config_migrator._NO_MIGRATION)
+                self.assertEqual(importer({**source, "新多选键": False}, {}, "新多选键"), [])
+                self.assertIs(importer({}, {}, "新多选键"), split_config_migrator._NO_MIGRATION)
+
     def _write_configs(self, configs_dir, files):
         os.makedirs(configs_dir, exist_ok=True)
         for name, data in files.items():
