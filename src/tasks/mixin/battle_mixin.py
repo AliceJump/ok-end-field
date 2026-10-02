@@ -820,20 +820,50 @@ class BattleMixin(BaseEfTask):
         """
         return EnemyPresence.UNKNOWN
 
-    def probe_combat_action_block_reason(self) -> ActionBlockReason | None:
-        """Detect the fixed white top-center failure band without OCR.
-
-        The prompt is identified by its unique fixed position, near-full band
-        width, white-pixel geometry, and two consecutive stable frames.
-        """
+    def _read_combat_too_far_text_band(self):
         feedback_box = self.box_of_screen(
             *COMBAT_TOO_FAR_TEXT_REGION,
             name="combat_action_feedback",
         )
-        signature = _measure_combat_too_far_text_band(feedback_box.crop_frame(self.frame))
+        return _measure_combat_too_far_text_band(feedback_box.crop_frame(self.frame))
+
+    def reset_combat_action_feedback_probe(self):
+        """Drop all temporal state for the top-center action-feedback detector."""
+        self._combat_too_far_band_streak = 0
+        self._combat_too_far_band_signature = None
+        self._combat_too_far_band_last_seen_at = None
+        self._combat_too_far_wait_for_clear = False
+
+    def arm_combat_action_feedback_probe(self):
+        """Arm feedback detection for a new input without accepting stale text.
+
+        The current frame is sampled before the combat key is sent. If an old
+        TOO_FAR prompt is still visible, the detector waits for that band to
+        disappear before it can treat a later reappearance as feedback for the
+        new action.
+        """
+        stale_visible = self._read_combat_too_far_text_band() is not None
+        self.reset_combat_action_feedback_probe()
+        self._combat_too_far_wait_for_clear = stale_visible
+
+    def probe_combat_action_block_reason(self) -> ActionBlockReason | None:
+        """Detect a newly appeared fixed white top-center failure band.
+
+        The prompt is identified by its unique fixed position, near-full band
+        width, white-pixel geometry, and two consecutive stable frames. A band
+        already visible when the action was armed is ignored until it clears.
+        """
+        signature = self._read_combat_too_far_text_band()
         now = self.active_time()
 
         if signature is None:
+            self._combat_too_far_band_streak = 0
+            self._combat_too_far_band_signature = None
+            self._combat_too_far_band_last_seen_at = None
+            self._combat_too_far_wait_for_clear = False
+            return None
+
+        if getattr(self, "_combat_too_far_wait_for_clear", False):
             self._combat_too_far_band_streak = 0
             self._combat_too_far_band_signature = None
             self._combat_too_far_band_last_seen_at = None

@@ -133,6 +133,17 @@ class TimedCombatLogic:
             )
         return False
 
+    def _arm_action_feedback(self):
+        arm = getattr(self.task, "arm_combat_action_feedback_probe", None)
+        if callable(arm):
+            arm()
+
+    def _clear_action_attempt_feedback(self):
+        self.last_action_attempt = None
+        reset = getattr(self.task, "reset_combat_action_feedback_probe", None)
+        if callable(reset):
+            reset()
+
     def _note_action_attempt(self, kind, token=None):
         self.last_action_attempt = (self._clock(), kind, token)
 
@@ -173,7 +184,7 @@ class TimedCombatLogic:
         if reason is None:
             return None
 
-        self.last_action_attempt = None
+        self._clear_action_attempt_feedback()
         self._cancel_unstarted_action(kind, token, now)
 
         if reason == ActionBlockReason.TOO_FAR:
@@ -390,6 +401,9 @@ class TimedCombatLogic:
             self.task.log_info(f"时间排轴: 战技 {token} 条件段未确认，重置到首段状态")
 
     def _accept_battle_skill(self, token, advance_cursor=True):
+        # Once resource/timeline evidence accepts the cast, later prompt pixels
+        # must not retroactively reclassify this already-confirmed action.
+        self._clear_action_attempt_feedback()
         self._observe_battle()
         self._set_cooldowns()
         self._activate_state(token, self.state_specs.get(token), "战技")
@@ -422,6 +436,7 @@ class TimedCombatLogic:
             )
         elif now - self.started >= 0.8:
             self.pending = None
+            self._clear_action_attempt_feedback()
             self.pending_advance_cursor = True
             self._reset_conditional_battle_phase_after_failed_attempt(token)
             # No SP drop means the key press is not evidence that the authored
@@ -750,6 +765,7 @@ class TimedCombatLogic:
 
         self.phase_planner.start_if_ready(token, "battle")
         started = self._clock()
+        self._arm_action_feedback()
         self.task.send_key(token)
         self._note_action_attempt("battle", token)
         self._begin(profiles, started, slot=token, kind="battle")
@@ -948,6 +964,7 @@ class TimedCombatLogic:
             and self.task.is_link_skill_ready()
         ):
             started = self._clock()
+            self._arm_action_feedback()
             if self.task.use_link_skill():
                 self._note_action_attempt("link")
                 if links:
@@ -986,6 +1003,7 @@ class TimedCombatLogic:
         ready_ults.sort(key=lambda item: -item[0])
         for _rate, token, profiles in ready_ults:
             started = self._clock()
+            self._arm_action_feedback()
             if self.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
                 self._note_action_attempt("ult", token)
                 ended = self._clock()
