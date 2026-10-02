@@ -46,6 +46,7 @@ from src.core.config_migration import legacy_battle_mode_to_bool
 from src.core.global_config_store import get_global_config
 from src.core.sequence_parser import parse_sequence
 from src.data.FeatureList import FeatureList as fL
+from src.data.combat_observation import ActionBlockReason, EnemyPresence
 from src.image.hsv_config import HSVRange as hR
 from src.image.recommend_skill_detector import PULSE_ON_RATIO, get_recommend_skill_detector
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
@@ -706,6 +707,46 @@ class BattleMixin(BaseEfTask):
 
         return False
 
+    def probe_enemy_presence(self) -> EnemyPresence:
+        """Hook for fixed-region enemy-presence detection.
+
+        Placeholder only; current behavior stays unchanged by returning
+        UNKNOWN. The concrete detector can later classify PRESENT when either
+        of these fixed UI evidences is visible:
+
+        - boss: the large red health bar near the top of the screen;
+        - normal enemies: one or more small-enemy health bars / enemy markers.
+
+        ABSENT must only be returned when the detector has positively checked
+        those regions and found no enemy evidence while the outer combat HUD is
+        still active. TimedCombatLogic will then pause all combat input but
+        will not freeze elapsed time, so temporary buffs/states can expire
+        naturally during the wait.
+        """
+        return EnemyPresence.UNKNOWN
+
+    def probe_combat_action_block_reason(self) -> ActionBlockReason | None:
+        """Hook for the short white top-center combat feedback text.
+
+        Placeholder only. The planned detector uses a fixed top-center region
+        and can classify by the white-text band geometry/length before OCR:
+
+        - TOO_FAR: the short "离敌人太远" style prompt;
+        - DURING_SKILL: the longer "当前技能期间无法释放此技能" prompt.
+
+        Returning None means no actionable feedback was observed.
+        """
+        return None
+
+    def recover_target_too_far(self) -> bool:
+        """Hook for future distance recovery after a TOO_FAR prompt.
+
+        Intentionally a no-op for now. The reserved flow is:
+        target/lock so the camera turns toward the enemy -> allow a short settle
+        delay -> perform a long forward rush. Return True once a concrete
+        implementation has actually started that recovery action.
+        """
+        return False
     def is_link_skill_ready(self):
         """Shared link readiness monitor, without sending a combat key."""
         return bool(
