@@ -22,7 +22,7 @@ SNAPSHOT = Path(__file__).resolve().parents[2] / "assets/data/character_progress
 
 @dataclass(frozen=True)
 class CombatBaseline:
-    potential: int
+    potential: int | None
     talent_policy: str
     potential_basis: str
     character_level: int | None = None
@@ -83,6 +83,8 @@ class CharacterProgression:
 
     @property
     def active_potentials(self) -> tuple[NativePassive, ...]:
+        if self.baseline.potential is None:
+            raise ValueError("Potential baseline is unverified; select an explicit potential before evaluation")
         return tuple(p for p in self.potentials if p.level <= self.baseline.potential)
 
 
