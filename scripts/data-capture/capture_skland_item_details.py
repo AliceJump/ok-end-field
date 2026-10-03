@@ -119,6 +119,7 @@ def main() -> int:
     index: list[dict] = []
     failures: list[dict] = []
     catalog_counts: dict[str, int] = {}
+    captured_counts: dict[str, int] = {}
 
     with sync_playwright() as playwright:
         try:
@@ -162,13 +163,27 @@ def main() -> int:
                 continue
 
             items = _catalog_items(catalog_payload, sub_id)
+            catalog_counts[sub_id] = len(items)
             if args.limit > 0:
                 items = items[: args.limit]
-            catalog_counts[sub_id] = len(items)
-            print(f"[{kind}] catalog: {len(items)} entries", flush=True)
+            captured_counts[sub_id] = len(items)
+            print(
+                f"[{kind}] catalog: {len(items)}/{catalog_counts[sub_id]} entries"
+                + (f" (--limit {args.limit})" if args.limit > 0 else ""),
+                flush=True,
+            )
 
             for position, item in enumerate(items, start=1):
-                item_id = str(item["itemId"])
+                item_id = str(item.get("itemId", "")).strip()
+                if not item_id.isdigit():
+                    failures.append({
+                        "subtype": sub_id,
+                        "stage": "catalog_item",
+                        "item_id": item_id,
+                        "error": "itemId 必须为纯数字",
+                    })
+                    print(f"[{kind}] invalid itemId: {item_id!r}", flush=True)
+                    continue
                 name = str(item.get("name") or f"{kind}_{item_id}").strip()
                 stem = f"{kind}_{item_id}_{_safe_name(name)}"
                 detail_url = (
@@ -237,11 +252,21 @@ def main() -> int:
 
         browser.close()
 
+    complete = (
+        args.limit <= 0
+        and not failures
+        and set(catalog_counts) == set(sub_ids)
+        and all(captured_counts.get(sub_id) == catalog_counts.get(sub_id) for sub_id in sub_ids)
+        and len(index) == sum(catalog_counts.values())
+    )
     manifest = {
         "source": "https://wiki.skland.com/endfield/catalog",
         "captured_at": stamp,
         "subtypes": sub_ids,
+        "limit": args.limit,
+        "complete": complete,
         "catalog_counts": catalog_counts,
+        "captured_counts": captured_counts,
         "success_count": len(index),
         "failure_count": len(failures),
         "items": index,
