@@ -14,9 +14,12 @@ from src.data.combat_simulation import (
     ActionProgram,
     CombatEvent,
     NativeBuffChange,
+    NativeBuffQuery,
+    NativeIteration,
     NativeListener,
     NativeResourceChange,
     NativeTarget,
+    NativeTargetBinding,
     UnresolvedMechanic,
 )
 from src.data.damage_resolution import DamageHit
@@ -104,6 +107,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
     bb.update(event_blackboard or {})
     events = []
     buff_ids = set()
+    buff_queries = {}
     timer_ids = set()
     event_defaults = {}
     ability_events = {v["value"]: k for k, v in native_enums()["Beyond.Gameplay.Core.AbilitySystem+Event"].items()}
@@ -112,6 +116,18 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
     def resource_target(value):
         kinds = {0: "action_target", 1: "source", 2: "context", 4: "owner", 5: "main", 6: "main_target"}
         source = value["targetSource"]
+        if source == 3:
+            selector = value["selectorData"]
+            finder = selector["finderData"]
+            if finder is None or selector["validatorData"] or selector["postProcessorData"]:
+                raise UnresolvedMechanic(f"Native target filters require binding: {profile.skill_id}")
+            choices = {"Selector+CharacterTeamFinder+Data": "squad", "Selector+MainTargetFinder+Data": "main_target",
+                       "Selector+SourceFinder+Data": "source", "Selector+AllEnemyFinder+Data": "enemy",
+                       "Selector+HitBoxFinder+Data": "enemy"}
+            name = finder["$type"].rsplit(".", 1)[-1]
+            if name not in choices:
+                raise UnresolvedMechanic(f"Native finder requires binding: {profile.skill_id}/{name}")
+            return NativeTarget(choices[name])
         if source not in kinds:
             raise UnresolvedMechanic(f"Native instant target search requires selector binding: {profile.skill_id}")
         return NativeTarget(kinds[source], value["targetGroupKey"] if source == 2 else "")
@@ -129,12 +145,13 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             if tags == ["21281e40"]:
                 return combat_input("count.STACK_SHRED")
             raise UnresolvedMechanic(f"Unbound native buff tag query: {tags}")
-        prefix = "enemy" if target["targetSource"] in {0, 2, 6} else "self"
-        terms = []
-        for buff_id in settings["buffIdList"]:
-            buff_ids.add(buff_id)
-            terms.append(combat_input(f"native.{prefix}.{buff_id}"))
-        return CombatExpression("add", tuple(terms))
+        selector = resource_target(target)
+        identity = (selector, tuple(settings["buffIdList"]))
+        if identity not in buff_queries:
+            key = f"native.query.{len(buff_queries)}"
+            buff_queries[identity] = NativeBuffQuery(key, selector, identity[1])
+        buff_ids.update(identity[1])
+        return combat_input(buff_queries[identity].key)
 
     def number(value):
         if value["useBlackboardKey"]:
@@ -271,12 +288,23 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             finder = selector["finderData"]
             if finder is None or finder["$type"].rsplit(".", 1)[-1] not in {
                 "Selector+HitBoxFinder+Data", "Selector+AllEnemyFinder+Data", "Selector+MainTargetFinder+Data",
+                "Selector+CharacterTeamFinder+Data", "Selector+SourceFinder+Data",
             } or selector["validatorData"] or selector["postProcessorData"]:
                 raise UnresolvedMechanic(f"Native target filtering: {profile.skill_id}/{body['targetGroupKey']}")
             # The declared scenario has one live stationary enemy inside these
             # hit boxes. Entity/team/buff-filtered selectors need separate counts.
-            emit(CombatEvent(at, "native_target", assignments=(("target." + body["targetGroupKey"] + ".count",
-                                                                CombatExpression("literal", (1.0,))),)))
+            choice = resource_target({"targetSource": 3, "selectorData": selector})
+            emit(CombatEvent(at, "native_target", target_bindings=(NativeTargetBinding(body["targetGroupKey"], (choice,)),)))
+        elif name == "ConvertToTargetContext+Data":
+            if body["operationType"] != 0 or body["excludeTarget"] != 0:
+                raise UnresolvedMechanic(f"Native target conversion needs geometry/exclusion binding: {profile.skill_id}")
+            emit(CombatEvent(at, "native_target", target_bindings=(NativeTargetBinding(
+                body["targetGroupKey"], (resource_target(body["convertFrom"]),)),)))
+        elif name == "MergeTargetAction+Data":
+            if body["mergeHittableTargets"]:
+                raise UnresolvedMechanic(f"Native hittable-target merge requires binding: {profile.skill_id}")
+            emit(CombatEvent(at, "native_target", target_bindings=(NativeTargetBinding(
+                body["targetGroupKey"], tuple(resource_target(v) for v in body["targets"])),)))
         elif name == "IfElseAction+IfElseActionData":
             arms = (body["succeedActions"], body["failActions"])
             if not any(_has_gameplay(arm) for arm in arms):
@@ -297,19 +325,12 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 raise UnresolvedMechanic(f"Unbound repeated channel: {profile.skill_id}/{body['serverActionIndex']}")
             sequence(body["actionOnTick"], at, end, guard)
         elif name == "ForEachAction+Data":
-            # This scenario has one enemy, but owner-spawned entities and squad
-            # selectors may contain many objects and cannot be collapsed to one.
-            target = body["target"]
-            if target["targetSource"] not in {0, 2, 6}:
-                raise UnresolvedMechanic(f"Unbound native iteration target: {profile.skill_id}")
-            count = target_count(target)
-            present = CombatExpression("eq", (count, 1.0))
-            multiple = CombatExpression("gt", (count, 1.0))
-            events.append(CombatEvent(at, "unresolved_iteration",
-                                      condition=CombatExpression("all", (guard, multiple)) if guard else multiple,
-                                      unresolved=(f"Multiple native iteration targets: {profile.skill_id}",)))
-            guarded = CombatExpression("all", (guard, present)) if guard else present
-            sequence(body["action"], at, end, guarded)
+            selector = resource_target(body["target"])
+            begin = len(events)
+            sequence(body["action"], at, end)
+            callbacks = tuple(events[begin:])
+            del events[begin:]
+            emit(CombatEvent(at, "native_iteration", iterations=(NativeIteration(selector, callbacks),)))
         elif name == "DamageAction+DamageActionData":
             for unit in body["damageUnits"]:
                 if unit["damageAttributeType"] != 0:
@@ -336,11 +357,13 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 hit_guard = guard
                 if unit["onlyEnableForMainChar"]:
                     hit_guard = CombatExpression("all", (guard, combat_input("source.is_main"))) if guard else combat_input("source.is_main")
-                events.append(CombatEvent(at, "on_hit", hit=DamageHit(
+                hit_event = CombatEvent(at, "on_hit", hit=DamageHit(
                     actor, "target", element, 0, panel.bonus_for(element, tags) if panel else damage_bonus,
                     tags[0] if tags else "unclassified", can_crit="physical_anomaly" not in tags,
                     damage_tags=tags,
-                ), hit_multiplier_formula=multiplier, condition=hit_guard))
+                ), hit_multiplier_formula=multiplier)
+                events.append(CombatEvent(at, "native_damage_targets", condition=hit_guard,
+                                          iterations=(NativeIteration(resource_target(body["targetSettings"]), (hit_event,)),)))
         elif name in _PHYSICAL:
             eid = _PHYSICAL[name]
             duration = native_number(body["duration"], bb) if "duration" in body else None
@@ -462,7 +485,8 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                     target = "enemy" if body["targetSettings"]["targetSource"] in {0, 2, 6} else "self"
                     change = NativeBuffChange(buff_id, number(body["count"]),
                                               CombatExpression("literal", (duration,)) if duration is not None else None,
-                                              permanent=data["lifeType"] == 1, maximum=maximum, target=target)
+                                              permanent=data["lifeType"] == 1, maximum=maximum, target=target,
+                                              selector=resource_target(body["targetSettings"]))
                     emit(CombatEvent(at, "native_buff_created", native_buffs=(change,)))
                     # Preserve the presence/count even when another part of the
                     # buff still needs an interpreter; it is not zero damage proof.
@@ -504,7 +528,8 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                     buff_ids.add(buff_id)
                     target = "enemy" if body["buffOwner"]["targetSource"] in {0, 2, 6} else "self"
                     emit(CombatEvent(at, "native_buff_removed", native_buffs=(NativeBuffChange(
-                        buff_id, CombatExpression("literal", (-float(amount),)), remove_all=body["finishAll"], target=target),)))
+                        buff_id, CombatExpression("literal", (-float(amount),)), remove_all=body["finishAll"], target=target,
+                        selector=resource_target(body["buffOwner"])),)))
         else:
             # Movement, target selection, projectile/entity hits, listeners and
             # formulas are not presentation. Keep them explicit until interpreted.
@@ -529,4 +554,4 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                             + (("target.smart_target.count", 1.0),),
                             next_action_windows=profile.allow_next, native_buff_ids=tuple(sorted(buff_ids)),
                             native_timer_ids=tuple(sorted(timer_ids)))
-    return replace(program, gate=cost)
+    return replace(program, gate=cost, native_buff_queries=tuple(buff_queries.values()))
