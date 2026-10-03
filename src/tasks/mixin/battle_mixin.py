@@ -386,9 +386,10 @@ class BattleMixin(BaseEfTask):
 
         Args:
             ult_sequence: 指定要释放的终结技槽位；None 时按 1..4 检测。
-            wait_for_team_recovery: Alt 释放后是否同步等待头像消失并恢复。
-                默认 True 保持旧行为；时间排轴传 False，由外层时间保护和
-                HUD 监测继续推进。长按模式仍保留旧同步等待以保证按键释放。
+            wait_for_team_recovery: 仅控制 Alt 释放后是否同步等待头像消失并恢复。
+                默认 True；当前时间排轴同样传 True，因此保留 HUD 恢复等待。
+                显式传 False 可跳过 Alt 路径的同步等待；长按模式无论该参数
+                取值都保留旧同步等待以保证按键释放。
 
         Returns:
             bool
@@ -409,8 +410,8 @@ class BattleMixin(BaseEfTask):
                     self.send_key_up("alt")
                     # 从实际完成按键操作的时刻开始计算退出延迟
                     self._last_ult_release_time = self.active_time()
-                    # 旧策略需要等待终结技动画期间 HUD 消失再恢复；时间排轴模式
-                    # 已有技能时间保护，可跳过这段同步等待，让外层监测继续刷新。
+                    # Alt 路径允许调用方显式跳过同步等待；当前时间排轴调用仍传 True，
+                    # 因此会等待头像消失并恢复后再继续调度。
                     if wait_for_team_recovery:
                         self._has_detected_team_member(time_out=1, require_four_unknown=True)
                         self._has_detected_team_member()
