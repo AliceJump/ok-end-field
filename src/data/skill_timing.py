@@ -522,7 +522,9 @@ class SkillTimingStore:
 
     def effect_start_frame(self, skill_id: str) -> int | None:
         if skill_id not in self._effect_start_frames:
-            self._effect_start_frames[skill_id] = _effect_start_frame(self.record(skill_id)["data"])
+            summary = self.index["skills"][skill_id]
+            self._effect_start_frames[skill_id] = (summary["effect_start_frame"] if "effect_start_frame" in summary
+                                                   else _effect_start_frame(self.record(skill_id)["data"]))
         return self._effect_start_frames[skill_id]
 
     def _all_records(self) -> dict:
@@ -539,6 +541,17 @@ class SkillTimingStore:
 
     def ranked_parameter(self, skill_id: str, parameter: str, rank: int | None = None) -> float:
         """Read an explicitly captured level patch, never a SkillData default."""
+        row = self.ranked_skill(skill_id, rank)
+        values = [item for item in row["blackboard"] if item["key"] == parameter]
+        if len(values) != 1 or values[0]["valueStr"]:
+            raise ValueError(f"Ambiguous/missing numeric skill parameter: {skill_id}/{parameter}")
+        value = float(values[0]["value"])
+        if not math.isfinite(value):
+            raise ValueError("Non-finite skill parameter")
+        return value
+
+    def ranked_skill(self, skill_id: str, rank: int | None = None) -> dict:
+        """Return a selected native level patch, including SP/energy cost and CD."""
         if self._ranked_blackboards is None:
             compressed = (self.path / "ranked_blackboards.json.gz").read_bytes()
             if hashlib.sha256(compressed).hexdigest() != self.index["ranked_blackboards_sha256"]:
@@ -551,13 +564,9 @@ class SkillTimingStore:
         matches = [row for row in rows if row["level"] == selected]
         if len(matches) != 1:
             raise ValueError(f"Unavailable skill rank {rank}: {skill_id}")
-        values = [item for item in matches[0]["blackboard"] if item["key"] == parameter]
-        if len(values) != 1 or values[0]["valueStr"]:
-            raise ValueError(f"Ambiguous/missing numeric skill parameter: {skill_id}/{parameter}")
-        value = float(values[0]["value"])
-        if not math.isfinite(value):
-            raise ValueError("Non-finite skill parameter")
-        return value
+        from copy import deepcopy
+
+        return deepcopy(matches[0])
 
 
 @lru_cache(maxsize=1)

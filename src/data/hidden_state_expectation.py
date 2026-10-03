@@ -457,14 +457,22 @@ class HiddenStateExpectation:
             )
 
         if envelope.stack_resource == "spell_attach" and envelope.stack_maximum:
-            expected_fraction = self.spell_attach.expected / envelope.stack_maximum
+            belief = self.spell_attach
+            if transition is not None:
+                relevant = [self.attachments[token] for requirement in transition.requires
+                            for token in requirement.split("|") if token in self.attachments]
+                if relevant:
+                    # The enemy holds one element. A fire/electric provider
+                    # does not satisfy a cold-or-natural consumption branch.
+                    belief = max(relevant, key=lambda b: b.expected)
+            expected_fraction = belief.expected / envelope.stack_maximum
             return ExpectedDamage(
                 envelope.low,
                 envelope.expected(expected_fraction),
                 envelope.high,
-                self.spell_attach.full_probability,
+                belief.full_probability,
                 expected_fraction,
-                f"spell_attach_expectation={self.spell_attach.expected:.2f}/{envelope.stack_maximum}",
+                f"spell_attach_expectation={belief.expected:.2f}/{envelope.stack_maximum}",
             )
 
         fraction, basis = self._full_probability_for(actor, kind, transition)

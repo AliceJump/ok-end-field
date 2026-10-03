@@ -1,0 +1,944 @@
+"""Transactional combat actions shared by planning and confirmed runtime feedback.
+
+An ActionProgram contains explicit gameplay events. Display descriptions and legacy
+marker values are never executable formulas. Missing outcomes remain unresolved.
+"""
+
+from __future__ import annotations
+
+import copy
+import heapq
+import math
+from dataclasses import dataclass, field
+
+from src.data.combat_expressions import CombatExpression, MissingCombatInput
+from src.data.combat_model import ATTACH_ELEMENTS, PHYSICAL_RULES, EnemyCombatState
+from src.data.damage_modifiers import DamageModifierSpec
+from src.data.damage_resolution import DamageHit, FixedDamagePanel, TimedDamageState
+from src.data.effect_semantics import EFFECT_SEMANTICS, EffectKind, EffectOwner, RefreshPolicy
+from src.data.effects import EffectType
+from src.data.skill_types import CombatResourceType, ResourceChangeKind, SkillEffect, SkillResourceChange
+
+
+class UnresolvedMechanic(ValueError):
+    """A missing gameplay parameter must not become an implicit zero or one."""
+
+
+@dataclass(frozen=True)
+class EffectInstance:
+    effect: EffectType
+    owner: str
+    source: str
+    count: int
+    expires_at: float | None
+    instance_id: str | None = None
+
+
+@dataclass
+class CharacterCombatState:
+    energy: float = 0
+    energy_cap: float = 200
+    alive: bool = True
+    attributes: dict[str, float] = field(default_factory=dict)
+    panel: FixedDamagePanel | None = None
+    blackboard: dict[str, float] = field(default_factory=dict)
+
+
+@dataclass(frozen=True)
+class EffectRequirement:
+    effect: EffectType
+    minimum: int = 1
+    maximum: int | None = None
+
+
+@dataclass(frozen=True)
+class NativeBuffChange:
+    key: str
+    count: CombatExpression
+    duration: CombatExpression | None = None
+    permanent: bool = False
+    remove_all: bool = False
+    maximum: int | None = None
+    target: str = "self"
+
+
+@dataclass(frozen=True)
+class CombatEvent:
+    """One authored event, timed relative to the action's actual start."""
+
+    at: float
+    name: str
+    effects: tuple[SkillEffect, ...] = ()
+    resources: tuple[SkillResourceChange, ...] = ()
+    modifiers: tuple[DamageModifierSpec, ...] = ()
+    hit: DamageHit | None = None
+    inputs: tuple[tuple[str, float], ...] = ()
+    requires: tuple[EffectRequirement, ...] = ()
+    field_id: str | None = None
+    any_requires: tuple[tuple[EffectRequirement, ...], ...] = ()
+    field_duration: float | None = None
+    remove_field: bool = False
+    hit_multiplier_input: str | None = None
+    unresolved: tuple[str, ...] = ()
+    condition: CombatExpression | None = None
+    assignments: tuple[tuple[str, CombatExpression], ...] = ()
+    hit_multiplier_formula: CombatExpression | None = None
+    resource_formulas: tuple[CombatExpression | None, ...] = ()
+    persists_after_interrupt: bool = True
+    native_buffs: tuple[NativeBuffChange, ...] = ()
+    listeners: tuple[NativeListener, ...] = ()
+    timers: tuple[tuple[str, CombatExpression], ...] = ()
+
+
+@dataclass(frozen=True)
+class NativeListener:
+    buff_id: str
+    trigger: str
+    events: tuple[CombatEvent, ...]
+
+
+@dataclass(frozen=True)
+class ActionProgram:
+    key: str
+    actor: str
+    kind: str
+    sp_cost: float
+    duration: float
+    cooldown: float
+    events: tuple[CombatEvent, ...]
+    requires: tuple[EffectRequirement, ...] = ()
+    energy_cost: float = 0
+    enemy: str = "target"
+    replacement: str | None = None
+    gate: float | None = None
+    any_requires: tuple[tuple[EffectRequirement, ...], ...] = ()
+    forbids: tuple[EffectRequirement, ...] = ()
+    actor_lock: float | None = None
+    cooldown_key: str | None = None
+    parameters: tuple[tuple[str, float], ...] = ()
+    next_action_windows: tuple[tuple[float, float, tuple[str, ...]], ...] = ()
+    native_buff_ids: tuple[str, ...] = ()
+    native_timer_ids: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class CombatSnapshot:
+    time: float
+    sp: float
+    energy: tuple[tuple[str, float], ...]
+    effects: tuple[tuple[str, str, int, float | None], ...]
+    cooldowns: tuple[tuple[str, float], ...]
+    damage: float
+
+
+@dataclass(frozen=True)
+class ActionOutcome:
+    program: str
+    before: CombatSnapshot
+    after: CombatSnapshot
+    damage: float
+    consumed: tuple[tuple[str, int], ...]
+    events: tuple[str, ...]
+    sp_overflow: float
+    unresolved: tuple[str, ...]
+
+
+class CombatWorldState:
+    """One enemy/character/team/field state, including the pending event queue."""
+
+    def __init__(self, actors: tuple[str, ...], *, sp=300.0, regen=8.0):
+        if not math.isfinite(sp) or not 0 <= sp <= 300 or not math.isfinite(regen) or regen < 0:
+            raise ValueError("Invalid initial team resources")
+        self.time = 0.0
+        self.sp = float(sp)
+        self.regen = float(regen)
+        self.characters = {actor: CharacterCombatState() for actor in actors}
+        self.enemies: dict[str, EnemyCombatState] = {"target": EnemyCombatState()}
+        self.effects: list[EffectInstance] = []
+        self.damage_state = TimedDamageState(actors)
+        self.cooldowns: dict[str, float] = {}
+        self.actor_ready: dict[str, float] = {}
+        self.active_actions: dict[str, tuple[str, ActionProgram, float]] = {}
+        self.damage = 0.0
+        self.sp_overflow = 0.0
+        self.unresolved: set[str] = set()
+        self._queue = []
+        self._sequence = 0
+        self._actions_started = 0
+        self._seen_events: set[tuple[str, int]] = set()
+        self._events: list[str] = []
+        self._consumed: dict[tuple[str, EffectType], int] = {}
+        self._action_consumed: dict[str, dict[tuple[str, EffectType], int]] = {}
+        self._action_inputs: dict[str, dict[str, float]] = {}
+        self._executing_action: str | None = None
+        self._started_ids: set[str] = set()
+        # Scalar reaction parameters are supplied by the chosen damage profile.
+        # A state transition still occurs when its damage policy is unresolved.
+        self.reaction_inputs: dict[str, float] = {}
+        self.passive_modifiers: dict[str, tuple[DamageModifierSpec, ...]] = {}
+        self.main_control = actors[0] if actors else None
+        self.default_energy_per_sp: dict[str, float] = {}
+        self.native_buffs: dict[tuple[str, str], tuple[int, float | None]] = {}
+        self.native_listeners: list[tuple[str, str, ActionProgram, NativeListener]] = []
+        self.native_timers: dict[tuple[str, str], float] = {}
+        self.native_character_hooks: list[tuple[str, ActionProgram]] = []
+        self.native_buff_tags: dict[str, tuple[int, ...]] = {}
+        self.pool_expiries: dict[tuple[str, EffectType], float] = {}
+
+    def register_damage_passives(self, actor, modifiers):
+        self.passive_modifiers[actor] = tuple(modifiers)
+        self.emit("battle_start", actor)
+
+    def damage_inputs(self, actor, enemy="target"):
+        values = {f"source.{k}": v for k, v in self.characters[actor].attributes.items()}
+        values.update({
+            "source.is_main": float(actor == self.main_control),
+            "enemy.has_crystal": float(self.count(actor, enemy, EffectType.STATUS_ORIGINIUM_CRYSTAL) > 0),
+            "enemy.slowed": float(self.count(actor, enemy, EffectType.STATUS_SLOW) > 0),
+            "enemy.staggered": float(self.count(actor, enemy, EffectType.STATUS_STAGGER) > 0),
+        })
+        return values
+
+    def emit(self, event, actor, enemy="target", inputs=None):
+        """Emit only a resolved outcome; registering a passive is not its trigger."""
+        values = self.damage_inputs(actor, enemy)
+        values.update(inputs or {})
+        for spec in self.passive_modifiers.get(actor, ()):
+            if spec.trigger == event:
+                self.damage_state.apply(spec, source_actor=actor, enemy=enemy, now=self.time,
+                                        event=event, inputs=values)
+        self._events.append(event)
+
+    def fork(self):
+        return copy.deepcopy(self)
+
+    def _owner(self, actor, enemy, effect):
+        owner = EFFECT_SEMANTICS[effect].owner
+        return enemy if owner == EffectOwner.ENEMY else "team" if owner == EffectOwner.TEAM else actor
+
+    def count(self, actor: str, enemy: str, effect: EffectType) -> int:
+        self._expire()
+        target = self.enemies.setdefault(enemy, EnemyCombatState())
+        if effect in ATTACH_ELEMENTS:
+            return target.infliction_stacks if target.infliction_element == effect else 0
+        if effect in {EffectType.STACK_SHRED, EffectType.STATUS_SHRED}:
+            return target.shred_stacks
+        if effect == EffectType.STATUS_SPELL_INFLICT:
+            return target.infliction_stacks
+        if effect == EffectType.STATUS_SPELL_ANOMALY:
+            return max((self.count(actor, enemy, x) for x in (
+                EffectType.STATUS_FROZEN, EffectType.STATUS_BURNING,
+                EffectType.STATUS_CONDUCTING, EffectType.STATUS_CORROSION,
+            )), default=0)
+        if effect == EffectType.EVENT_SHRED_CONSUMED:
+            return target.transient_events.get(effect, 0)
+        owner = self._owner(actor, enemy, effect)
+        return sum(x.count for x in self.effects if x.effect == effect and x.owner == owner)
+
+    def satisfies(self, actor, enemy, requirements, any_groups=()):
+        return all(
+            self.count(actor, enemy, r.effect) >= r.minimum
+            and (r.maximum is None or self.count(actor, enemy, r.effect) <= r.maximum)
+            for r in requirements
+        ) and all(any(self.satisfies(actor, enemy, (r,)) for r in group) for group in any_groups)
+
+    def _expire(self):
+        for (owner, effect), expires in tuple(self.pool_expiries.items()):
+            if expires <= self.time:
+                if effect == EffectType.STACK_SHRED:
+                    self.enemies[owner].shred_stacks = 0
+                del self.pool_expiries[owner, effect]
+        self.native_buffs = {key: value for key, value in self.native_buffs.items()
+                             if value[1] is None or value[1] > self.time}
+        self.native_listeners[:] = [entry for entry in self.native_listeners
+                                   if (entry[0], entry[3].buff_id) in self.native_buffs]
+        for instance in self.effects:
+            if instance.instance_id and instance.expires_at is not None and self.time >= instance.expires_at:
+                self.damage_state.remove_field(instance.instance_id)
+        self.effects[:] = [x for x in self.effects if x.expires_at is None or self.time < x.expires_at]
+        self.damage_state.expire(self.time)
+
+    def snapshot(self):
+        self._expire()
+        effects = [(x.owner, x.effect.value, x.count, x.expires_at) for x in self.effects]
+        for name, enemy in self.enemies.items():
+            if enemy.shred_stacks:
+                effects.append((name, EffectType.STACK_SHRED.value, enemy.shred_stacks,
+                                self.pool_expiries.get((name, EffectType.STACK_SHRED))))
+            if enemy.infliction_element is not None:
+                effects.append((name, enemy.infliction_element.value, enemy.infliction_stacks, None))
+        return CombatSnapshot(
+            self.time, self.sp, tuple(sorted((a, s.energy) for a, s in self.characters.items())),
+            tuple(sorted(effects, key=repr)), tuple(sorted(self.cooldowns.items())), self.damage,
+        )
+
+    def _advance_clock(self, now):
+        gained = self.regen * (now - self.time)
+        self.sp_overflow += max(0, self.sp + gained - 300)
+        self.sp = min(300, self.sp + gained)
+        self.time = now
+        self._expire()
+
+    def advance(self, now: float):
+        if not math.isfinite(now) or now < self.time:
+            raise ValueError("Combat time cannot move backwards")
+        while self._queue and self._queue[0][0] <= now:
+            at, sequence, action_id, program, event = heapq.heappop(self._queue)
+            self._advance_clock(at)
+            self._execute_event(action_id, sequence, program, event)
+        self._advance_clock(now)
+
+    def consume(self, actor, enemy, effect, amount: int | None = None):
+        available = self.count(actor, enemy, effect)
+        used = available if amount is None else min(available, max(0, amount))
+        target = self.enemies[enemy]
+        if effect in {EffectType.STACK_SHRED, EffectType.STATUS_SHRED}:
+            target.shred_stacks -= used
+            if target.shred_stacks == 0:
+                self.pool_expiries.pop((enemy, EffectType.STACK_SHRED), None)
+            if used:
+                target.transient_events[EffectType.EVENT_SHRED_CONSUMED] = (
+                    target.transient_events.get(EffectType.EVENT_SHRED_CONSUMED, 0) + used
+                )
+        elif effect in ATTACH_ELEMENTS or effect == EffectType.STATUS_SPELL_INFLICT:
+            target.infliction_stacks -= used
+            if target.infliction_stacks == 0:
+                target.infliction_element = None
+        else:
+            owner = self._owner(actor, enemy, effect)
+            remaining = used
+            updated = []
+            for instance in self.effects:
+                if instance.effect == effect and instance.owner == owner and remaining:
+                    take = min(instance.count, remaining)
+                    remaining -= take
+                    if instance.count > take:
+                        updated.append(EffectInstance(effect, owner, instance.source, instance.count - take,
+                                                      instance.expires_at, instance.instance_id))
+                    elif instance.instance_id:
+                        self.damage_state.remove_field(instance.instance_id)
+                else:
+                    updated.append(instance)
+            self.effects = updated
+        identity = (actor, effect)
+        self._consumed[identity] = self._consumed.get(identity, 0) + used
+        if self._executing_action is not None:
+            counts = self._action_consumed.setdefault(self._executing_action, {})
+            counts[identity] = counts.get(identity, 0) + used
+        if used and effect == EffectType.STATUS_ORIGINIUM_CRYSTAL:
+            self.emit("originium_crystal_consumed", actor, enemy)
+        return used
+
+    def apply_effect(self, actor, enemy, effect: SkillEffect, inputs=None):
+        """Apply a typed effect after a proven event, preserving holder semantics."""
+        inputs = inputs or {}
+        eid = effect.effect_id
+        semantics = EFFECT_SEMANTICS[eid]
+        count = effect.count
+        if effect.damage_modifier is not None:
+            return  # The modifier's precise event/recipient is handled separately.
+        if eid == EffectType.CONSUME_ALL:
+            if effect.subject_effect_id is None:
+                raise UnresolvedMechanic("CONSUME_ALL requires subject_effect_id")
+            self.consume(actor, enemy, effect.subject_effect_id)
+            return
+        if eid == EffectType.REMOVE_THUNDER_SPEAR:
+            for subject in (EffectType.MECH_THUNDER_SPEAR, EffectType.MECH_STRONG_THUNDER_SPEAR):
+                self.consume(actor, enemy, subject)
+            return
+        if eid in {EffectType.CLEAR_ATTACH, EffectType.CLEAR_COLD, EffectType.CLEAR_NATURAL}:
+            subject = {EffectType.CLEAR_COLD: EffectType.ATTACH_COLD, EffectType.CLEAR_NATURAL: EffectType.ATTACH_NATURAL}.get(eid, EffectType.STATUS_SPELL_INFLICT)
+            self.consume(actor, enemy, subject)
+            return
+        if semantics.kind in {EffectKind.OPERATION, EffectKind.UNRESOLVED}:
+            raise UnresolvedMechanic(f"Unbound operation: {eid.value}")
+        if count is not None and count < 0:
+            self.consume(actor, enemy, eid, None if effect.consumes_all else -count)
+            return
+        if eid in {EffectType.STATUS_HEAVY_HIT, EffectType.STATUS_KNOCKDOWN,
+                   EffectType.STATUS_HEAVY_STRIKE, EffectType.STATUS_SHATTER}:
+            self._physical_anomaly(actor, enemy, effect, inputs)
+            return
+        if semantics.kind == EffectKind.PREDICATE:
+            raise UnresolvedMechanic(f"Predicate cannot be produced: {eid.value}")
+        if semantics.kind == EffectKind.EVENT:
+            self._events.append(eid.value)
+            return
+        if count is None:
+            count = inputs.get(f"effect.{eid.value}.count")
+        if count is None or count != int(count) or count < 0:
+            raise UnresolvedMechanic(f"Unknown count: {eid.value}")
+        count = int(count)
+        if count == 0:
+            return
+        if eid in ATTACH_ELEMENTS:
+            for _ in range(count):
+                reaction = self.enemies[enemy].apply_infliction(eid)
+                if reaction is not None:
+                    self._events.append(reaction.value)
+                    # Reaction damage/lifetimes require the native reaction policy;
+                    # do not price an attachment producer while omitting this damage.
+                    self.unresolved.add(f"Unbound spell reaction: {reaction.value}")
+            return
+        if eid == EffectType.STACK_SHRED:
+            self.add_shred(enemy, count)
+            return
+        duration = effect.duration
+        if duration is None:
+            duration = inputs.get(f"effect.{eid.value}.duration")
+        if duration is not None and (not isinstance(duration, (float, int)) or not math.isfinite(duration) or duration < 0):
+            raise UnresolvedMechanic(f"Unknown duration: {eid.value}")
+        if duration is None and semantics.kind in {EffectKind.STATE, EffectKind.ENTITY} and not inputs.get(f"effect.{eid.value}.permanent"):
+            raise UnresolvedMechanic(f"Unknown lifetime: {eid.value}")
+        owner = self._owner(actor, enemy, eid)
+        if semantics.owner == EffectOwner.ACTOR:
+            recipients = self.characters if effect.target == "team" else (actor,)
+        else:
+            recipients = (owner,)
+        for recipient in recipients:
+            same = [x for x in self.effects if x.owner == recipient and x.effect == eid]
+            current = sum(x.count for x in same)
+            if semantics.refresh == RefreshPolicy.STACK:
+                count_now = current + count
+            else:
+                count_now = count
+            if semantics.cap is not None:
+                count_now = min(semantics.cap, count_now)
+            if inputs.get(f"effect.{eid.value}.independent"):
+                # New layers have their own expiry. Overflow removes the oldest,
+                # never refreshes all existing layers to the newest lifetime.
+                keep = max(0, count_now - count)
+                retained = []
+                for instance in reversed(same):
+                    n = min(keep, instance.count)
+                    if n:
+                        retained.append(EffectInstance(eid, recipient, instance.source, n, instance.expires_at))
+                        keep -= n
+                self.effects[:] = [x for x in self.effects if x not in same]
+                self.effects.extend(reversed(retained))
+                self.effects.append(EffectInstance(eid, recipient, actor, min(count, count_now),
+                                                   self.time + duration if duration is not None else None))
+                continue
+            if semantics.kind == EffectKind.ENTITY:
+                # Entity identity is separate from effect ID. Two fields born at
+                # different times must not inherit one another's expiry.
+                instance_id = f"{actor}:{eid.value}:{self._sequence}:{len(self.effects)}"
+                self.effects.append(EffectInstance(eid, recipient, actor, count,
+                                                   self.time + duration if duration is not None else None, instance_id))
+                if semantics.owner == EffectOwner.FIELD and duration is not None and duration > 0:
+                    self.damage_state.spawn_field(instance_id, source_actor=actor, now=self.time, duration=duration)
+                continue
+            self.effects[:] = [x for x in self.effects if x not in same]
+            self.effects.append(EffectInstance(eid, recipient, actor, count_now, self.time + duration if duration is not None else None))
+        if eid == EffectType.STATUS_ORIGINIUM_CRYSTAL:
+            self.emit("crystal_attached", actor, enemy)
+        elif eid == EffectType.STACK_TRACE:
+            self.emit("claw_mark_applied", actor, enemy)
+        elif eid == EffectType.STATUS_BURNING:
+            self.emit("burning_applied", actor, enemy)
+
+    def add_shred(self, enemy, count):
+        self.enemies[enemy].add_shred(count)
+        duration = self.reaction_inputs.get("physical.shred.duration")
+        if duration is not None:
+            if not math.isfinite(duration) or duration <= 0:
+                raise UnresolvedMechanic("Invalid native shred lifetime")
+            self.pool_expiries[enemy, EffectType.STACK_SHRED] = self.time + duration
+
+    def _physical_anomaly(self, actor, enemy, effect, inputs):
+        target = self.enemies[enemy]
+        eid = effect.effect_id
+        previous = target.shred_stacks
+        if previous == 0:
+            self.add_shred(enemy, 1)
+            self._events.append("physical:first_shred")
+            return
+        index = {EffectType.STATUS_HEAVY_HIT: 1, EffectType.STATUS_KNOCKDOWN: 2,
+                 EffectType.STATUS_HEAVY_STRIKE: 3, EffectType.STATUS_SHATTER: 4}[eid]
+        native_type = {EffectType.STATUS_HEAVY_HIT: 0, EffectType.STATUS_KNOCKDOWN: 1,
+                       EffectType.STATUS_HEAVY_STRIKE: 3, EffectType.STATUS_SHATTER: 2}[eid]
+        self.dispatch_native("OnBeforeOutputPhysicalInfliction", actor,
+                             {"event.physical_type": float(native_type), "event.shred_before": float(previous)})
+        native_buff = {EffectType.STATUS_HEAVY_STRIKE: "buff_physical_crushed",
+                       EffectType.STATUS_SHATTER: "buff_physical_do_fracture"}.get(eid)
+        if native_buff is not None:
+            self.dispatch_character_event("OnBeforeAddedBuff", actor, enemy, native_buff)
+        rule = PHYSICAL_RULES[index]
+        if rule.consumes_all:
+            self.consume(actor, enemy, EffectType.STACK_SHRED)
+        else:
+            self.add_shred(enemy, 1)
+        coefficient = self.reaction_inputs.get(f"physical.{eid.value}.multiplier.{previous}")
+        native_row = coefficient is not None
+        if coefficient is None:
+            coefficient = self.reaction_inputs.get(f"physical.{eid.value}.multiplier")
+        arts = self.characters[actor].attributes.get("arts_strength")
+        panel = self.characters[actor].panel
+        if coefficient is None or arts is None or panel is None:
+            self.unresolved.add(f"Unbound physical damage: {eid.value}")
+        else:
+            scale = coefficient * (1 + arts / 100)
+            if not native_row and rule.scales_with_stacks:
+                scale *= 1 + previous
+            hit = DamageHit(actor, enemy, "物理", scale, panel.bonus_for("物理", ("physical_anomaly",)),
+                            damage_tag="physical_anomaly", can_crit=False)
+            result = self.damage_state.resolve_hit(panel, hit, now=self.time, inputs=inputs)
+            if result.expected is None:
+                self.unresolved.update(result.unknown)
+            else:
+                self.damage += result.expected
+        if eid == EffectType.STATUS_SHATTER:
+            duration = self.reaction_inputs.get(f"physical.STATUS_SHATTER.duration.{previous}",
+                                                self.reaction_inputs.get("physical.STATUS_SHATTER.duration"))
+            magnitude = self.reaction_inputs.get(f"physical.STATUS_SHATTER.damage_taken.{previous}")
+            if duration is None or magnitude is None:
+                self.unresolved.add("Unbound shatter lifetime/magnitude")
+            else:
+                from src.data.damage_modifiers import DamageBucket, ModifierMagnitude
+                from src.data.native_reactions import reaction_enhancement
+
+                if native_row:
+                    magnitude *= 1 + reaction_enhancement("Debuff", arts)
+
+                modifier = DamageModifierSpec("physical:shatter", DamageBucket.DAMAGE_TAKEN, ("物理",), "enemy",
+                                              ModifierMagnitude(magnitude), "on_shatter", duration=duration)
+                self.damage_state.apply(modifier, source_actor=actor, enemy=enemy, now=self.time, event="on_shatter")
+        elif eid != EffectType.STATUS_HEAVY_STRIKE:
+            duration = effect.duration if effect.duration is not None else inputs.get(f"effect.{eid.value}.duration")
+            if duration is None:
+                self.unresolved.add(f"Unknown lifetime: {eid.value}")
+            else:
+                self.effects[:] = [x for x in self.effects if not (x.effect == eid and x.owner == enemy)]
+                self.effects.append(EffectInstance(eid, enemy, actor, 1, self.time + duration))
+        self._events.append(eid.value)
+
+    def register_character_hook(self, trigger, program):
+        """CharacterData callbacks belong to their character, independent of a cast."""
+        if program.actor not in self.characters or any(event.at != 0 for event in program.events):
+            raise ValueError("Invalid immediate character event program")
+        self.native_character_hooks.append((trigger, program))
+
+    def dispatch_character_event(self, trigger, source_actor, target, buff_id):
+        # Enemy buff events are visible to the squad's CharacterData conditions.
+        # The callback source is its owning character; the triggering attacker
+        # remains separate and must never steal the recipient's marker or BB.
+        previous_action = self._executing_action
+        try:
+            for event_type, program in tuple(self.native_character_hooks):
+                if event_type != trigger or not self.characters[program.actor].alive:
+                    continue
+                self._sequence += 1
+                action_id = f"character_event:{self._sequence}:{program.actor}"
+                self._action_inputs[action_id] = dict(program.parameters)
+                enemy_target = target in self.enemies
+                values = {
+                    "target.trigger.count": 1.0,
+                    "event.target_is_enemy": float(enemy_target),
+                    "event.target_object_type": 16.0 if enemy_target else 8.0,
+                    "event.source_is_owner": float(source_actor == program.actor),
+                    f"event.buff_id.{buff_id}": 1.0,
+                    **{f"event.buff_tag.{tag}": 1.0 for tag in self.native_buff_tags.get(buff_id, ())},
+                }
+                from dataclasses import replace
+
+                for event in program.events:
+                    self._sequence += 1
+                    self._execute_event(action_id, self._sequence, program,
+                                        replace(event, inputs=(*event.inputs, *values.items())))
+        finally:
+            self._executing_action = previous_action
+
+    def dispatch_native(self, trigger, actor, payload=None):
+        """Callbacks read the event's state before its producer consumes a pool."""
+        previous_action = self._executing_action
+        try:
+            for owner, action_id, program, listener in tuple(self.native_listeners):
+                if owner != actor or listener.trigger != trigger or (owner, listener.buff_id) not in self.native_buffs:
+                    continue
+                for event in listener.events:
+                    from dataclasses import replace
+
+                    self._sequence += 1
+                    invoked = replace(event, inputs=(*event.inputs, *(payload or {}).items()))
+                    self._execute_event(action_id, self._sequence, program, invoked)
+        finally:
+            self._executing_action = previous_action
+
+    def _resource_amount(self, actor, change, inputs):
+        kind = change.kind
+        if kind == ResourceChangeKind.FIXED:
+            amount = change.amount
+        else:
+            units = inputs.get("hit_count") if kind == ResourceChangeKind.PER_HIT else None
+            if change.source_effect_id is not None:
+                subject = change.source_effect_id
+                consumed = self._action_consumed.get(self._executing_action, {})
+                units = consumed.get((actor, subject), 0) if change.count_basis == "consumed" else inputs.get(f"count.{subject.value}")
+                if subject == EffectType.EVENT_SHRED_CONSUMED:
+                    units = (inputs.get("trigger.EVENT_SHRED_CONSUMED") if change.count_basis == "trigger_event"
+                             else consumed.get((actor, EffectType.STACK_SHRED), 0))
+            if change.count_basis == "hit_targets":
+                units = inputs.get("hit_targets")
+            if kind == ResourceChangeKind.DYNAMIC:
+                amount = inputs.get(f"resource.{change.resource.value}")
+            elif units is None:
+                amount = None
+            elif kind == ResourceChangeKind.PIECEWISE_BY_COUNT:
+                amount = change.values_by_count.get(int(units)) if units == int(units) else None
+            else:
+                if change.max_units is not None:
+                    units = min(units, change.max_units)
+                amount = units * change.per_unit if change.per_unit is not None else None
+        if amount is None or not math.isfinite(amount):
+            raise UnresolvedMechanic(f"Unbound {kind.value} {change.resource.value}: {change.formula or change.trigger}")
+        return min(amount, change.max_amount) if change.max_amount is not None else amount
+
+    def _execute_event(self, action_id, sequence, program, event):
+        if (action_id, sequence) in self._seen_events:
+            return
+        self._seen_events.add((action_id, sequence))
+        actor, enemy = program.actor, program.enemy
+        if not self.characters[actor].alive or not self.satisfies(actor, enemy, event.requires, event.any_requires):
+            return
+        self._executing_action = action_id
+        inputs = self.damage_inputs(actor, enemy)
+        inputs.update(self._action_inputs.get(action_id, {}))
+        inputs.update({"bb." + k: v for k, v in self.characters[actor].blackboard.items()})
+        inputs.update(event.inputs)
+        for subject in EffectType:
+            inputs[f"count.{subject.value}"] = self.count(actor, enemy, subject)
+        for buff_id in program.native_buff_ids:
+            for owner, prefix in ((actor, "self"), (enemy, "enemy")):
+                inputs[f"native.{prefix}.{buff_id}"] = self.native_buffs.get((owner, buff_id), (0, None))[0]
+        for timer_id in program.native_timer_ids:
+            inputs[f"timer.{timer_id}.ready"] = float(self.native_timers.get((actor, timer_id), 0) <= self.time)
+        inputs["consumed.STACK_SHRED"] = self._action_consumed.get(action_id, {}).get((actor, EffectType.STACK_SHRED), 0)
+        try:
+            if event.condition is not None and not event.condition.evaluate(inputs):
+                self._executing_action = None
+                return
+            for key, expression in event.assignments:
+                value = expression.evaluate(inputs)
+                inputs[key] = value
+                if key.startswith("bb.EntityBB_"):
+                    self.characters[actor].blackboard[key[3:]] = value
+                else:
+                    self._action_inputs[action_id][key] = value
+        except MissingCombatInput as error:
+            self.unresolved.add(str(error))
+            self._executing_action = None
+            return
+        self.unresolved.update(event.unresolved)
+        for key, expression in event.timers:
+            try:
+                duration = expression.evaluate(inputs)
+                if duration < 0:
+                    raise UnresolvedMechanic(f"Invalid native timer: {key}")
+                self.native_timers[actor, key] = self.time + duration
+            except MissingCombatInput as error:
+                self.unresolved.add(str(error))
+        for listener in event.listeners:
+            identity = (actor, action_id, program, listener)
+            self.native_listeners[:] = [old for old in self.native_listeners
+                                       if (old[0], old[3].buff_id, old[3].trigger) != (actor, listener.buff_id, listener.trigger)]
+            self.native_listeners.append(identity)
+        if event.field_id and event.field_duration is not None:
+            self.damage_state.spawn_field(event.field_id, source_actor=actor, now=self.time, duration=event.field_duration)
+        if event.field_id and event.remove_field:
+            self.damage_state.remove_field(event.field_id)
+        for change in event.native_buffs:
+            try:
+                delta = change.count.evaluate(inputs)
+                if delta != int(delta):
+                    raise UnresolvedMechanic(f"Non-integer native buff layers: {change.key}")
+                owner = enemy if change.target == "enemy" else actor
+                identity = (owner, change.key)
+                old_count, old_expiry = self.native_buffs.get(identity, (0, None))
+                count = 0 if change.remove_all else max(0, old_count + int(delta))
+                if change.maximum is not None:
+                    count = min(count, change.maximum)
+                if count == 0:
+                    self.native_buffs.pop(identity, None)
+                    continue
+                if delta < 0:
+                    expires = old_expiry
+                elif change.permanent:
+                    expires = None
+                elif change.duration is not None:
+                    duration = change.duration.evaluate(inputs)
+                    if duration <= 0:
+                        raise UnresolvedMechanic(f"Invalid native buff lifetime: {change.key}")
+                    expires = self.time + duration
+                else:
+                    raise UnresolvedMechanic(f"Missing native buff lifetime: {change.key}")
+                self.native_buffs[identity] = (count, expires)
+            except (UnresolvedMechanic, MissingCombatInput) as error:
+                self.unresolved.add(str(error))
+        # Conditions snapshot before mutation; explicit consumers precede the event's
+        # damage, then producers follow it, enabling actual-consumption followups.
+        consumers = [e for e in event.effects if (e.count is not None and e.count < 0) or EFFECT_SEMANTICS[e.effect_id].kind == EffectKind.OPERATION]
+        for effect in consumers:
+            try:
+                self.apply_effect(actor, enemy, effect, inputs)
+            except UnresolvedMechanic as error:
+                self.unresolved.add(str(error))
+        for (consumer, subject), amount in self._action_consumed.get(action_id, {}).items():
+            if consumer == actor:
+                inputs[f"consumed.{subject.value}"] = amount
+        inputs["consumed.STACK_SHRED"] = self._action_consumed.get(action_id, {}).get((actor, EffectType.STACK_SHRED), 0)
+        inputs["count.EVENT_SHRED_CONSUMED"] = inputs["consumed.STACK_SHRED"]
+        if event.hit is not None:
+            panel = self.characters[actor].panel
+            if panel is None:
+                self.unresolved.add(f"Missing fixed panel: {actor}")
+            else:
+                hit = event.hit
+                if event.hit_multiplier_formula is not None:
+                    from dataclasses import replace
+
+                    try:
+                        hit = replace(hit, multiplier=event.hit_multiplier_formula.evaluate(inputs))
+                    except MissingCombatInput as error:
+                        self.unresolved.add(str(error))
+                        hit = replace(hit, multiplier=0)
+                if event.hit_multiplier_input:
+                    from dataclasses import replace
+
+                    multiplier = inputs.get(event.hit_multiplier_input)
+                    if multiplier is None or not math.isfinite(multiplier):
+                        self.unresolved.add(f"Unbound damage multiplier: {event.hit_multiplier_input}")
+                        multiplier = 0
+                    hit = replace(hit, multiplier=multiplier)
+                result = self.damage_state.resolve_hit(panel, hit, now=self.time, inputs=inputs)
+                if result.expected is None:
+                    self.unresolved.update(result.unknown)
+                else:
+                    self.damage += result.expected
+            if program.kind == "ult":
+                self.emit("ultimate_hit", actor, enemy, inputs)
+            elif program.kind == "link" and (
+                inputs.get("count.ATTACH_COLD", 0) > 0 or inputs.get("count.STATUS_FROZEN", 0) > 0
+            ):
+                self.emit("combo_hit_cold_attached_or_frozen", actor, enemy, inputs)
+        for effect in event.effects:
+            if effect not in consumers:
+                try:
+                    self.apply_effect(actor, enemy, effect, inputs)
+                except UnresolvedMechanic as error:
+                    self.unresolved.add(str(error))
+        for modifier in event.modifiers:
+            self.damage_state.apply(modifier, source_actor=actor, enemy=enemy, now=self.time, event=event.name, inputs=inputs, field_id=event.field_id)
+        if event.resource_formulas and len(event.resource_formulas) != len(event.resources):
+            raise ValueError("Each resource change needs one matching formula slot")
+        for index, change in enumerate(event.resources):
+            try:
+                formula = event.resource_formulas[index] if event.resource_formulas else None
+                amount = formula.evaluate(inputs) if formula is not None else self._resource_amount(actor, change, inputs)
+                if change.max_amount is not None:
+                    amount = min(amount, change.max_amount)
+                if change.resource == CombatResourceType.SKILL_POINT:
+                    credited = min(amount, 300 - self.sp) if amount > 0 else 0
+                    self.sp_overflow += max(0, self.sp + amount - 300)
+                    self.sp = max(0, min(300, self.sp + amount))
+                    state = self.characters[actor]
+                    recovery = state.attributes.get("sp_recovered", 0) + credited
+                    thresholds = [spec for spec in self.passive_modifiers.get(actor, ())
+                                  if spec.trigger == "own_skill_recovery_threshold_80"]
+                    if thresholds:
+                        while recovery >= 80:
+                            self.emit("own_skill_recovery_threshold_80", actor, enemy)
+                            recovery -= 80
+                    state.attributes["sp_recovered"] = recovery
+                else:
+                    recipients = self.characters if change.target == "team" else (actor,)
+                    for recipient in recipients:
+                        character = self.characters[recipient]
+                        value = amount * (1 + character.attributes.get("energy_gain", 0)) if change.affected_by_energy_gain else amount
+                        character.energy = max(0, min(character.energy_cap, character.energy + value))
+            except (UnresolvedMechanic, MissingCombatInput) as error:
+                self.unresolved.add(str(error))
+        self._events.append(event.name)
+        self._executing_action = None
+
+    def start(self, program: ActionProgram, *, action_id: str):
+        """Commit cast cost once; gameplay events can finish after the next actor starts."""
+        if action_id in self._started_ids:
+            return False
+        actor = self.characters[program.actor]
+        gate = program.sp_cost if program.gate is None else max(program.sp_cost, program.gate)
+        if not all(math.isfinite(v) and v >= 0 for v in (program.sp_cost, program.energy_cost, program.duration, program.cooldown, gate)):
+            raise ValueError("Invalid action parameters")
+        if not actor.alive or self.sp < gate or actor.energy < program.energy_cost:
+            return False
+        cooldown_key = program.cooldown_key or program.key
+        if self.time < self.ready_at(program):
+            return False
+        if not self.satisfies(program.actor, program.enemy, program.requires, program.any_requires):
+            return False
+        if any(self.satisfies(program.actor, program.enemy, (r,)) for r in program.forbids):
+            return False
+        if any(not math.isfinite(e.at) or e.at < 0 for e in program.events):
+            raise ValueError("Invalid event timestamp")
+        self._seen_events.add((action_id, -1))
+        self._started_ids.add(action_id)
+        self._actions_started += 1
+        self._action_inputs[action_id] = {
+            f"trigger.{effect.value}": self.count(program.actor, program.enemy, effect)
+            for effect in EffectType
+        }
+        self._action_inputs[action_id].update(program.parameters)
+        self._action_inputs[action_id]["event.skill_type"] = {"battle": 2.0, "link": 6.0, "ult": 7.0, "normal": 0.0}[program.kind]
+        self._consumed = {key: v for key, v in self._consumed.items() if key[0] != program.actor}
+        for enemy in self.enemies.values():
+            enemy.clear_transient_events()
+        self.sp -= program.sp_cost
+        actor.energy -= program.energy_cost
+        self.cooldowns[cooldown_key] = self.time + program.cooldown
+        self.actor_ready[program.actor] = self.time + (program.duration if program.actor_lock is None else program.actor_lock)
+        previous = self.active_actions.get(program.actor)
+        if previous:
+            self._queue[:] = [row for row in self._queue if row[2] != previous[0] or row[4].persists_after_interrupt]
+            heapq.heapify(self._queue)
+        self.active_actions[program.actor] = (action_id, program, self.time)
+        if program.kind == "battle":
+            self.emit("battle_cast", program.actor, program.enemy)
+        for event in program.events:
+            self._sequence += 1
+            heapq.heappush(self._queue, (self.time + event.at, self._sequence, action_id, program, event))
+        self.advance(self.time)
+        return True
+
+    def ready_at(self, program):
+        ready = self.actor_ready.get(program.actor, 0)
+        previous = self.active_actions.get(program.actor)
+        if previous:
+            _, active, start = previous
+            for begin, end, allowed in active.next_action_windows:
+                if program.key in allowed and self.time <= start + end:
+                    ready = min(ready, max(self.time, start + begin))
+        return max(self.time, self.cooldowns.get(program.cooldown_key or program.key, 0), ready)
+
+    def simulate(self, program: ActionProgram, *, strict=True) -> tuple[CombatWorldState, ActionOutcome] | None:
+        """Counterfactual evaluation leaves the caller's state completely unchanged."""
+        result = self.fork()
+        before = result.snapshot()
+        previous_damage, previous_overflow = result.damage, result.sp_overflow
+        previous_events = len(result._events)
+        action_id = f"simulate:{result._actions_started}:{program.key}"
+        if not result.start(program, action_id=action_id):
+            return None
+        result.advance(before.time + program.duration)
+        unknown = tuple(sorted(result.unresolved))
+        if strict and unknown:
+            return None
+        outcome = ActionOutcome(
+            program.key, before, result.snapshot(), result.damage - previous_damage,
+            tuple(sorted((e.value, n) for (a, e), n in result._action_consumed.get(action_id, {}).items() if a == program.actor)),
+            tuple(result._events[previous_events:]), result.sp_overflow - previous_overflow, unknown,
+        )
+        return result, outcome
+
+    def observe_resources(self, *, sp: float | None = None, energy: dict[str, float] | None = None):
+        """HUD observations replace predictions; they are not additional resource payouts."""
+        if sp is not None and math.isfinite(sp) and 0 <= sp <= 300:
+            self.sp = sp
+        for actor, amount in (energy or {}).items():
+            if actor in self.characters and math.isfinite(amount) and amount >= 0:
+                self.characters[actor].energy = min(self.characters[actor].energy_cap, amount)
+
+    def disable_actor(self, actor):
+        self.characters[actor].alive = False
+        self._queue[:] = [row for row in self._queue if row[3].actor != actor]
+        heapq.heapify(self._queue)
+
+
+@dataclass(frozen=True)
+class MechanismPlan:
+    actions: tuple[str, ...]
+    damage: float
+    seconds: float
+    ending_sp: float
+    overflow: float
+    outcomes: tuple[ActionOutcome, ...]
+
+
+def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram, ...], *, depth=4, horizon=20.0, beam_width=128):
+    """Compare complete resource/state transitions, including waits and producer value.
+
+    Resource and unlock value are realized by subsequent legal actions, not assigned
+    a fictitious SP-to-damage exchange rate. Unsupported outcomes cannot win a plan.
+    """
+    if not 1 <= depth <= 8 or not math.isfinite(horizon) or horizon <= 0 or beam_width < 1:
+        raise ValueError("Invalid search bounds")
+    initial = world.time
+    frontier = [(world.fork(), ())]
+    best = None
+    for _ in range(depth):
+        next_frontier = []
+        for state, outcomes in frontier:
+            for program in programs:
+                candidate = state.fork()
+                wait = candidate.ready_at(program)
+                gate = max(program.sp_cost, program.gate or 0)
+                if candidate.sp < gate:
+                    if candidate.regen <= 0:
+                        continue
+                    wait = max(wait, candidate.time + (gate - candidate.sp) / candidate.regen)
+                if wait - initial >= horizon:
+                    continue
+                candidate.advance(wait)
+                executed = candidate.simulate(program)
+                if executed is None:
+                    continue
+                after, outcome = executed
+                if after.time - initial > horizon:
+                    continue
+                path = (*outcomes, outcome)
+                tail = after.fork()
+                if tail._queue:
+                    tail.advance(min(initial + horizon, max(row[0] for row in tail._queue)))
+                if tail.unresolved:
+                    continue
+                plan = MechanismPlan(tuple(o.program for o in path), tail.damage - world.damage, tail.time - initial, tail.sp,
+                                     sum(o.sp_overflow for o in path), path)
+                if best is None or (plan.damage, -plan.seconds, plan.ending_sp) > (best.damage, -best.seconds, best.ending_sp):
+                    best = plan
+                next_frontier.append((after, path))
+        # A state key includes resources, pending hits, buffs and unlocks. Keep one
+        # best path per identical state before the explicitly bounded beam search.
+        distinct = {}
+        for state, path in next_frontier:
+            snapshot = state.snapshot()
+            identity = (snapshot.time, snapshot.sp, snapshot.energy, snapshot.effects, snapshot.cooldowns,
+                        tuple(sorted(state.actor_ready.items())), tuple((a, s.alive) for a, s in state.characters.items()),
+                        tuple(sorted((a, p.key, at) for a, (_, p, at) in state.active_actions.items())),
+                        state.damage_state.phase_signature(state.time),
+                        state.main_control, tuple(sorted(state.native_buffs.items())),
+                        tuple(sorted(state.native_timers.items())),
+                        tuple(sorted((a, tuple(sorted(s.attributes.items()))) for a, s in state.characters.items())),
+                        tuple(sorted((a, tuple(sorted(s.blackboard.items()))) for a, s in state.characters.items())),
+                        tuple((a, action, p.key, repr(listener), tuple(sorted(state._action_inputs.get(action, {}).items())))
+                              for a, action, p, listener in state.native_listeners),
+                        tuple((row[0], row[3].key, repr(row[4]), tuple(sorted(state._action_inputs.get(row[2], {}).items())),
+                               tuple(sorted((a, e.value, n) for (a, e), n in state._action_consumed.get(row[2], {}).items())))
+                              for row in state._queue))
+            previous = distinct.get(identity)
+            if previous is None or state.damage > previous[0].damage:
+                distinct[identity] = (state, path)
+        # Reserve one path per first action so a low-damage producer survives the
+        # first cut until the search can realize its unlocked consumer's value.
+        grouped = {}
+        for state, path in distinct.values():
+            first = path[0].program
+            grouped.setdefault(first, []).append((state, path))
+        for group in grouped.values():
+            group.sort(key=lambda item: (-item[0].damage, -item[0].sp, item[0].time))
+        frontier = []
+        while grouped and len(frontier) < beam_width:
+            for first in tuple(grouped):
+                frontier.append(grouped[first].pop(0))
+                if not grouped[first]:
+                    del grouped[first]
+                if len(frontier) == beam_width:
+                    break
+    return best
