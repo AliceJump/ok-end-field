@@ -1,0 +1,157 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+
+import polib
+
+ROOT = Path(__file__).resolve().parents[1]
+
+
+def replace_once(path: str, old: str, new: str) -> None:
+    target = ROOT / path
+    text = target.read_text(encoding="utf-8")
+    count = text.count(old)
+    if count != 1:
+        raise SystemExit(f"{path}: expected one replacement target, found {count}")
+    target.write_text(text.replace(old, new, 1), encoding="utf-8", newline="\n")
+
+
+replace_once(
+    "src/core/BattleConfig.py",
+    '''    KEY_TIMING_ROTATION: (
+        "当前分支的独立时间排轴模式。\\n"
+        "开启后由时间排轴接管战斗策略，并隐藏旧 AutoCombat 模式配置；"
+        "关闭后通过「战斗模式」选择原有策略。"
+    ),''',
+    '''    KEY_TIMING_ROTATION: (
+        "独立实验模式，优先于其他战斗策略开关。\\n"
+        "利用实时监测和本地技能时间数据安排出技。"
+    ),''',
+)
+
+replace_once(
+    "src/data/hidden_state_expectation.py",
+    '''    result = {}
+    for row in rows:
+        actor = str(row.get("character") or "")''',
+    '''    result = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        actor = str(row.get("character") or "")''',
+)
+
+test_path = ROOT / "tests/TestHiddenStateExpectation.py"
+test_text = test_path.read_text(encoding="utf-8")
+old_imports = '''import unittest
+
+from src.data.character_mechanics import load_character_mechanics'''
+new_imports = '''import json
+import tempfile
+import unittest
+from pathlib import Path
+
+from src.data.character_mechanics import load_character_mechanics'''
+if old_imports not in test_text:
+    raise SystemExit("TestHiddenStateExpectation.py: import insertion target not found")
+test_text = test_text.replace(old_imports, new_imports, 1)
+marker = '''    def test_typhoeus_with_natural_provider_uses_expected_stack_fraction_not_full(self):'''
+new_test = '''    def test_damage_envelope_loader_skips_non_dict_rows(self):
+        rows = [
+            None,
+            "bad-row",
+            7,
+            {
+                "character": "测试角色",
+                "skills": [
+                    {"type": "战技", "crit_expect": 10, "full_expect": 20},
+                ],
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "damage_baseline.json"
+            path.write_text(json.dumps(rows, ensure_ascii=False), encoding="utf-8")
+            envelopes = load_damage_envelopes(path)
+        self.assertEqual(set(envelopes), {("测试角色", "战技")})
+        self.assertEqual(envelopes[("测试角色", "战技")].low, 10.0)
+        self.assertEqual(envelopes[("测试角色", "战技")].high, 20.0)
+
+'''
+if marker not in test_text:
+    raise SystemExit("TestHiddenStateExpectation.py: test insertion target not found")
+test_path.write_text(test_text.replace(marker, new_test + marker, 1), encoding="utf-8", newline="\n")
+
+replace_once(
+    "docs/dev/skill-timing-mode.md",
+    "当技力 HUD 显示 3 格已满时，当前规划序列的下一个战技在前一个角色达到 effect handoff 后会抢占连携与终结技，优先消耗技力防止长期饥饿和溢出；同一角色自身仍保留保守接续限制，不会因为 allow-next 存在就主动打断持续姿态。",
+    "当实时技力达到按队伍重击回技量动态计算的压力阈值（当前约 250–275 SP）时，防溢出路径会优先尝试当前规划序列的下一个战技，抢占连携与终结技；若该战技当前不可用，则按伤害与 handoff 从其他安全槽位选择可释放战技，并且不会移动主序列 cursor。跨槽位仍在前一角色达到 effect handoff 后接续；同一槽位保留保守接续限制，不会因为 allow-next 存在就主动打断持续姿态。",
+)
+
+entries = {
+    "仅在「技能时间排轴」关闭时显示。\n选择原有 AutoCombat 的执行模式；同一时刻只启用一种模式。": {
+        "en_US": "Shown only when Skill Timing Rotation is disabled.\nSelect the execution mode for the legacy AutoCombat logic; only one mode is active at a time.",
+        "es_ES": "Solo se muestra cuando «Programación temporal de habilidades» está desactivada.\nSelecciona el modo de ejecución del AutoCombat anterior; solo puede haber un modo activo a la vez.",
+        "ja_JP": "「スキル時間ローテーション」がオフのときのみ表示されます。\n従来の AutoCombat の実行モードを選択します。同時に有効になるモードは1つだけです。",
+        "ko_KR": "스킬 타이밍 로테이션이 꺼져 있을 때만 표시됩니다.\n기존 AutoCombat 실행 모드를 선택합니다. 한 번에 하나의 모드만 활성화됩니다.",
+        "zh_CN": "仅在「技能时间排轴」关闭时显示。\n选择原有 AutoCombat 的执行模式；同一时刻只启用一种模式。",
+        "zh_TW": "僅在「技能時間排軸」關閉時顯示。\n選擇原有 AutoCombat 的執行模式；同一時間只啟用一種模式。",
+    },
+    "仅协议空间启用初始等待": {
+        "en_US": "Initial Wait in Protocol Space Only",
+        "es_ES": "Espera inicial solo en Espacio de Protocolo",
+        "ja_JP": "初期待機はプロトコル空間のみ",
+        "ko_KR": "초기 대기는 프로토콜 공간에서만",
+        "zh_CN": "仅协议空间启用初始等待",
+        "zh_TW": "僅協議空間啟用初始等待",
+    },
+    "开启后，初始等待时间只在协议空间生效；普通战斗检测到战斗 UI 后立即开始自动操作。协议空间优先通过开局全队终结技就绪判定，并保留左上角撤离按钮作为兜底。": {
+        "en_US": "When enabled, the initial wait applies only in Protocol Space; normal combat starts auto-operation immediately after the combat UI is detected. In Protocol Space, full-team Ultimate readiness is checked first, with the top-left Evacuate button kept as a fallback.",
+        "es_ES": "Al activarlo, la espera inicial solo se aplica en Espacio de Protocolo; el combate normal empieza a operar automáticamente en cuanto se detecta la interfaz de combate. En Espacio de Protocolo se comprueba primero si todo el equipo tiene la definitiva lista y se conserva el botón Evacuar de la esquina superior izquierda como alternativa.",
+        "ja_JP": "有効にすると、初期待機はプロトコル空間でのみ適用され、通常戦闘では戦闘 UI を検出するとすぐ自動操作を開始します。プロトコル空間では開幕時に全員の必殺技準備完了を優先して確認し、左上の撤退ボタンをフォールバックとして残します。",
+        "ko_KR": "활성화하면 초기 대기는 프로토콜 공간에서만 적용되며, 일반 전투는 전투 UI를 감지하는 즉시 자동 조작을 시작합니다. 프로토콜 공간에서는 시작 시 전원 궁극기 준비 상태를 먼저 확인하고 왼쪽 위 철수 버튼을 예비 수단으로 유지합니다.",
+        "zh_CN": "开启后，初始等待时间只在协议空间生效；普通战斗检测到战斗 UI 后立即开始自动操作。协议空间优先通过开局全队终结技就绪判定，并保留左上角撤离按钮作为兜底。",
+        "zh_TW": "開啟後，初始等待時間只在協議空間生效；普通戰鬥偵測到戰鬥 UI 後立即開始自動操作。協議空間優先透過開局全隊終結技就緒判定，並保留左上角撤離按鈕作為備援。",
+    },
+    "脉冲探针记录": {
+        "en_US": "Pulse Probe Logging",
+        "es_ES": "Registro de sonda de pulso",
+        "ja_JP": "パルスプローブ記録",
+        "ko_KR": "펄스 프로브 기록",
+        "zh_CN": "脉冲探针记录",
+        "zh_TW": "脈衝探針記錄",
+    },
+    "独立诊断探针：战斗中观测技能按钮区域出现白色脉冲（官方推荐\n释放时机）的位置与时间，追加记录到\n「configs/pulse_probe_log.jsonl」，用于统计哪些强化态/技能\n有官方脉冲提示。\n只记录不按键，不影响任何战斗行为；关闭后停止记录。": {
+        "en_US": "Standalone diagnostic probe: observes the position and timing of white pulses in the skill-button area (official recommended cast timing) during combat and appends records to configs/pulse_probe_log.jsonl to identify which enhanced states/skills have official pulse prompts.\nRecords only and never presses keys; disabling stops logging.",
+        "es_ES": "Sonda de diagnóstico independiente: durante el combate observa la posición y el momento de los pulsos blancos en la zona de botones de habilidad (momento de lanzamiento recomendado oficialmente) y añade registros a configs/pulse_probe_log.jsonl para identificar qué estados mejorados/habilidades tienen avisos de pulso oficiales.\nSolo registra y nunca pulsa teclas; al desactivarla se detiene el registro.",
+        "ja_JP": "独立した診断プローブです。戦闘中、スキルボタン領域に出る白いパルス（公式推奨の発動タイミング）の位置と時刻を観測し、configs/pulse_probe_log.jsonl に追記して、どの強化状態／スキルに公式パルス表示があるかを集計します。\n記録のみでキー入力は行わず、無効にすると記録を停止します。",
+        "ko_KR": "독립 진단 프로브입니다. 전투 중 스킬 버튼 영역의 흰색 펄스(공식 권장 사용 타이밍) 위치와 시간을 관측해 configs/pulse_probe_log.jsonl에 추가하고, 어떤 강화 상태/스킬에 공식 펄스 안내가 있는지 집계합니다.\n기록만 하며 키 입력은 하지 않습니다. 끄면 기록을 중지합니다.",
+        "zh_CN": "独立诊断探针：战斗中观测技能按钮区域出现白色脉冲（官方推荐\n释放时机）的位置与时间，追加记录到\n「configs/pulse_probe_log.jsonl」，用于统计哪些强化态/技能\n有官方脉冲提示。\n只记录不按键，不影响任何战斗行为；关闭后停止记录。",
+        "zh_TW": "獨立診斷探針：戰鬥中觀測技能按鈕區域出現白色脈衝（官方推薦\n釋放時機）的位置與時間，追加記錄到\n「configs/pulse_probe_log.jsonl」，用於統計哪些強化態／技能\n有官方脈衝提示。\n只記錄不按鍵，不影響任何戰鬥行為；關閉後停止記錄。",
+    },
+    "自动技能列表": {
+        "en_US": "Auto Skill List",
+        "es_ES": "Lista automática de habilidades",
+        "ja_JP": "自動スキルリスト",
+        "ko_KR": "자동 스킬 목록",
+        "zh_CN": "自动技能列表",
+        "zh_TW": "自動技能列表",
+    },
+}
+
+locales = ("en_US", "es_ES", "ja_JP", "ko_KR", "zh_CN", "zh_TW")
+for locale in locales:
+    po_path = ROOT / "i18n" / locale / "LC_MESSAGES" / "ok.po"
+    po = polib.pofile(str(po_path))
+    blocks = []
+    for msgid, translations in entries.items():
+        if po.find(msgid) is None:
+            blocks.append(str(polib.POEntry(msgid=msgid, msgstr=translations[locale])))
+    if blocks:
+        with po_path.open("a", encoding="utf-8", newline="\n") as fh:
+            if po_path.stat().st_size:
+                fh.write("\n")
+            fh.write("\n\n".join(blocks))
+            fh.write("\n")
+    compiled = polib.pofile(str(po_path))
+    compiled.save_as_mofile(str(po_path.with_name("ok.mo")))
