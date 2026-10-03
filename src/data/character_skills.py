@@ -74,9 +74,20 @@ def _load_skill_effects(effects_data: list[dict], *, skill_id="", skills=None, r
     return effects
 
 
-def _load_resource_changes(changes_data: list[dict]) -> list[SkillResourceChange]:
+def _load_resource_changes(changes_data: list[dict], *, rank=None) -> list[SkillResourceChange]:
     """加载技力/SP 与终结技能量变化规则。"""
-    return [SkillResourceChange.from_dict(data) for data in changes_data]
+    changes = []
+    for data in changes_data:
+        resolved = dict(data)
+        reference = resolved.pop("ranked_amount", None)
+        if reference is not None:
+            from src.data.skill_timing import load_skill_timings
+
+            resolved["amount"] = load_skill_timings().ranked_parameter(
+                reference["native_skill"], reference["parameter"], rank
+            )
+        changes.append(SkillResourceChange.from_dict(resolved))
+    return changes
 
 
 def _skill_type_of(skill_type: str) -> SkillType:
@@ -164,7 +175,7 @@ def _load_enhancement(enh_data: dict, **effect_context) -> SkillEnhancement:
         trigger_effects=trigger_effects,
         trigger_effect_groups=trigger_effect_groups,
         effects=_load_skill_effects(enh_data.get("effects") or [], **effect_context),
-        resource_changes=_load_resource_changes(enh_data.get("resource_changes") or []),
+        resource_changes=_load_resource_changes(enh_data.get("resource_changes") or [], rank=effect_context.get("rank")),
         replaces_base_action=bool(enh_data.get("replaces_base_action", False)),
         spirit_cost_override=enh_data.get("spirit_cost_override"),
         damage_multiplier_override=enh_data.get("damage_multiplier_override"),
@@ -216,7 +227,7 @@ def _load_character_from_json(file_path: Path, *, skill_rank: int | None = None,
             # 已解析分支是唯一真源；JSON 中的旧布尔标记不参与运行时判定。
             enhancements=enhancements,
             effects=effects,
-            resource_changes=_load_resource_changes(skill_data.get("resource_changes") or []),
+            resource_changes=_load_resource_changes(skill_data.get("resource_changes") or [], rank=skill_rank),
             description=skill_data.get("description", ""),
             damage_multiplier=skill_data.get("damage_multiplier", ""),
             stagger_value=skill_data.get("stagger_value", 0),

@@ -526,3 +526,277 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertEqual(zhuang_fangyi_skill.enhancements[1].effects[0].target, "field")
         self.assertEqual(zhuang_fangyi_skill.enhancements[1].trigger_effect_groups, [])
         self.assertEqual([effect.effect_id for effect in zhuang_fangyi_skill.effects], [EffectType.STACK_QINGTING_SWORD])
+        self.assertEqual(zhuang_fangyi_skill.effects[0].count, -1)
+        self.assertEqual(zhuang_fangyi_skill.effects[0].target, "field")
+        self.assertEqual(zhuang_fangyi_skill.stagger_value, 15)
+        self.assertIn("45%", zhuang_fangyi_skill.damage_multiplier)
+        self.assertIn("9%", zhuang_fangyi_skill.damage_multiplier)
+        self.assertIn("6倍", zhuang_fangyi_skill.damage_multiplier)
+        stance_branch = next(
+            enhancement for enhancement in zhuang_fangyi_skill.enhancements
+            if enhancement.name == "天理合真期间强化"
+        )
+        self.assertEqual(stance_branch.trigger_effects, [EffectType.STATUS_TIANLI_HEZHEN])
+        first_skill_branch = next(
+            enhancement for enhancement in zhuang_fangyi_skill.enhancements
+            if enhancement.name == "天理合真首次惊霆诀"
+        )
+        self.assertEqual(
+            [effect.effect_id for effect in first_skill_branch.effects],
+            [EffectType.STATUS_TIANLI_FIRST_SKILL_READY, EffectType.STACK_QINGTING_SWORD],
+        )
+        self.assertEqual(first_skill_branch.effects[0].count, -1)
+        self.assertEqual(first_skill_branch.effects[1].count, 3)
+
+        zhuang_fangyi_ultimate = next(
+            skill for skill in zhuang_fangyi.skills if skill.skill_id == "zhuang_fangyi_ultimate"
+        )
+        self.assertEqual(
+            [effect.effect_id for effect in zhuang_fangyi_ultimate.effects],
+            [EffectType.STATUS_TIANLI_HEZHEN, EffectType.STATUS_TIANLI_FIRST_SKILL_READY],
+        )
+        self.assertTrue(all(effect.duration == 25 for effect in zhuang_fangyi_ultimate.effects))
+        self.assertEqual(zhuang_fangyi_ultimate.spirit_cost, 240)
+        self.assertEqual(zhuang_fangyi_ultimate.cooldown, "15秒")
+        self.assertEqual(zhuang_fangyi_ultimate.stagger_value, 0)
+
+        arcane = characters["arcane"]
+        arcane_skill = next(skill for skill in arcane.skills if skill.skill_id == "arcane_skill")
+        self.assertTrue(arcane_skill.has_enhancement)
+        self.assertEqual(arcane_skill.enhancement.evaluation_point, "on_hit")
+        self.assertEqual(arcane_skill.enhancement.resource_changes[0].amount, 30)
+        arcane_link = next(skill for skill in arcane.skills if skill.skill_id == "arcane_link")
+        self.assertEqual(
+            [effect.effect_id for effect in arcane_link.enhancement.effects],
+            [
+                EffectType.VULN_NATURAL,
+                EffectType.VULN_COLD,
+                EffectType.STATUS_CONFINEMENT,
+            ],
+        )
+        will_link = next(e for e in arcane_link.enhancements if e.name == "应龙四式·阵诀·意")
+        self.assertEqual(will_link.effects[0].effect_id, EffectType.TRIGGER_REPEAT_EFFECT)
+
+        ardelia = characters["ardelia"]
+        ardelia_skill = next(skill for skill in ardelia.skills if skill.skill_id == "ardelia_skill")
+        self.assertEqual(ardelia_skill.effects, [])
+        self.assertEqual(ardelia_skill.enhancement.effects[0].count, -1)
+
+        gilberta = characters["gilberta"]
+        gilberta_link = next(skill for skill in gilberta.skills if skill.skill_id == "gilberta_link")
+        self.assertEqual(
+            [effect.effect_id for effect in gilberta_link.enhancement.effects],
+            [EffectType.MECH_VACUUM, EffectType.STATUS_HEAVY_HIT],
+        )
+        gilberta_ultimate = next(skill for skill in gilberta.skills if skill.skill_id == "gilberta_ultimate")
+        gravity = next(effect for effect in gilberta_ultimate.effects if effect.effect_id is EffectType.MECH_GRAVITY)
+        self.assertEqual(gravity.target, "field")
+        self.assertEqual(gravity.duration, 5)
+        self.assertEqual(gravity.count, 1)
+
+    def test_remaining_character_review_fixes(self):
+        characters = load_all_characters()
+
+        antal = characters["antal"]
+        antal_skill = next(skill for skill in antal.skills if skill.skill_id == "antal_skill")
+        self.assertEqual(
+            [effect.effect_id for effect in antal_skill.effects],
+            [EffectType.STATUS_FOCUS, EffectType.VULN_ELECTROMAGNETIC, EffectType.VULN_BURN],
+        )
+        antal_link = next(skill for skill in antal.skills if skill.skill_id == "antal_link")
+        self.assertEqual(
+            [effect.effect_id for effect in antal_link.enhancement.effects], [EffectType.TRIGGER_REPEAT_EFFECT]
+        )
+
+        arclight = characters["arclight"]
+        arclight_skill = next(skill for skill in arclight.skills if skill.skill_id == "arclight_skill")
+        self.assertEqual(arclight_skill.enhancement.effects[0].count, -1)
+        arclight_ultimate = next(skill for skill in arclight.skills if skill.skill_id == "arclight_ultimate")
+        self.assertEqual(arclight_ultimate.enhancement.effects[0].count, -1)
+
+        avywenna = characters["avywenna"]
+        avywenna_skill = next(skill for skill in avywenna.skills if skill.skill_id == "avywenna_skill")
+        self.assertEqual(avywenna_skill.effects[0].effect_id, EffectType.REMOVE_THUNDER_SPEAR)
+        self.assertEqual(
+            set(avywenna_skill.enhancement.trigger_effects),
+            {EffectType.MECH_THUNDER_SPEAR, EffectType.MECH_STRONG_THUNDER_SPEAR},
+        )
+        avywenna_link = next(skill for skill in avywenna.skills if skill.skill_id == "avywenna_link")
+        self.assertEqual([effect.effect_id for effect in avywenna_link.effects], [EffectType.MECH_THUNDER_SPEAR])
+        self.assertEqual(avywenna_link.effects[0].count, 3)
+        self.assertEqual(avywenna_link.effects[0].duration, 30)
+        avywenna_ultimate = next(skill for skill in avywenna.skills if skill.skill_id == "avywenna_ultimate")
+        self.assertEqual(
+            [effect.effect_id for effect in avywenna_ultimate.effects],
+            [EffectType.MECH_STRONG_THUNDER_SPEAR],
+        )
+        self.assertEqual(avywenna_ultimate.effects[0].count, 1)
+        self.assertEqual(avywenna_ultimate.effects[0].duration, 30)
+
+        camille = characters["camille"]
+        camille_skill = next(skill for skill in camille.skills if skill.skill_id == "camille_skill")
+        self.assertIn(EffectType.STACK_BLOOD_WING, [effect.effect_id for effect in camille_skill.effects])
+        blood_wing = next(effect for effect in camille_skill.effects if effect.effect_id is EffectType.STACK_BLOOD_WING)
+        self.assertEqual(blood_wing.target, "enemy")
+        self.assertEqual(blood_wing.duration, 45)
+        self.assertTrue(camille_skill.has_enhancement)
+        pursuit = next(
+            enhancement for enhancement in camille_skill.enhancements
+            if enhancement.name == "追猎替换动作"
+        )
+        self.assertTrue(pursuit.replaces_base_action)
+        self.assertEqual(pursuit.spirit_cost_override, 0)
+        self.assertEqual(pursuit.damage_multiplier_override, "500%")
+        self.assertEqual(
+            [effect.effect_id for effect in pursuit.effects],
+            [
+                EffectType.STATUS_CAMILLE_PURSUIT_READY,
+                EffectType.BUFF_HEAL,
+                EffectType.STACK_COMBO,
+                EffectType.STACK_CAMILLE_BLOOD_SURGE,
+            ],
+        )
+        camille_link = next(skill for skill in camille.skills if skill.skill_id == "camille_link")
+        self.assertFalse(camille_link.enhancements[0].trigger_effect_groups)
+        self.assertEqual(camille_link.resource_changes[0].amount, 20)
+        self.assertEqual(camille_link.resource_changes[1].amount, 10)
+        camille_ultimate = next(skill for skill in camille.skills if skill.skill_id == "camille_ultimate")
+        self.assertIn(
+            EffectType.STATUS_CAMILLE_PURSUIT_READY,
+            [effect.effect_id for effect in camille_ultimate.effects],
+        )
+        self.assertEqual(camille_ultimate.resource_changes[0].amount, 40)
+
+        fluorite = characters["fluorite"]
+        fluorite_skill = next(skill for skill in fluorite.skills if skill.skill_id == "fluorite_skill")
+        self.assertEqual(fluorite_skill.effects[0].effect_id, EffectType.MECH_BOMB)
+        fluorite_link = next(skill for skill in fluorite.skills if skill.skill_id == "fluorite_link")
+        self.assertEqual(
+            [effect.effect_id for effect in fluorite_link.enhancement.effects], [EffectType.TRIGGER_REPEAT_EFFECT]
+        )
+        self.assertFalse(fluorite_skill.has_enhancement)
+
+        alesh = characters["alesh"]
+        alesh_skill = next(skill for skill in alesh.skills if skill.skill_id == "alesh_skill")
+        self.assertEqual(alesh_skill.effects, [])
+        self.assertEqual(alesh_skill.enhancement.effects[0].count, -1)
+
+        endministrator = characters["endministrator"]
+        endministrator_normal = next(skill for skill in endministrator.skills if skill.skill_id == "endministrator_normal")
+        endministrator_link = next(skill for skill in endministrator.skills if skill.skill_id == "endministrator_link")
+        endministrator_ultimate = next(skill for skill in endministrator.skills if skill.skill_id == "endministrator_ultimate")
+        self.assertNotIn(EffectType.STATUS_ORIGINIUM_CRYSTAL, [effect.effect_id for effect in endministrator_normal.effects])
+        self.assertEqual([effect.effect_id for effect in endministrator_link.effects], [EffectType.STATUS_ORIGINIUM_CRYSTAL])
+        self.assertEqual(
+            [effect.effect_id for effect in endministrator_link.enhancement.effects],
+            [EffectType.STATUS_ORIGINIUM_CRYSTAL, EffectType.TRIGGER_ADDITIONAL],
+        )
+        self.assertEqual(endministrator_link.enhancement.effects[0].count, -1)
+        self.assertEqual(endministrator_ultimate.enhancement.trigger_effects, [EffectType.STATUS_ORIGINIUM_CRYSTAL])
+        self.assertEqual(endministrator_ultimate.enhancement.effects[0].effect_id, EffectType.STATUS_ORIGINIUM_CRYSTAL)
+        self.assertEqual(endministrator_ultimate.enhancement.effects[0].count, -1)
+
+        catcher = characters["catcher"]
+        catcher_skill = next(skill for skill in catcher.skills if skill.skill_id == "catcher_skill")
+        self.assertIn(EffectType.BUFF_PROTECTION, [effect.effect_id for effect in catcher_skill.effects])
+        catcher_ultimate = next(skill for skill in catcher.skills if skill.skill_id == "catcher_ultimate")
+        self.assertEqual(catcher_ultimate.effects[0].effect_id, EffectType.DEBUFF_WEAKEN)
+
+        xaihi = characters["xaihi"]
+        xaihi_skill = next(skill for skill in xaihi.skills if skill.skill_id == "xaihi_skill")
+        self.assertEqual(xaihi_skill.effects[0].effect_id, EffectType.MECH_SUPPORT_CRYSTAL)
+        self.assertEqual(xaihi_skill.effects[0].duration, 20)
+        self.assertEqual(xaihi_skill.enhancements[0].effects[0].effect_id, EffectType.BUFF_HEAL)
+        self.assertEqual(xaihi_skill.enhancements[1].effects[0].effect_id, EffectType.BUFF_SPELL_UP)
+        self.assertEqual(xaihi_skill.enhancements[1].effects[0].duration, 25)
+        self.assertTrue(all(not enhancement.trigger_effect_groups for enhancement in xaihi_skill.enhancements))
+        xaihi_link = next(skill for skill in xaihi.skills if skill.skill_id == "xaihi_link")
+        self.assertEqual(
+            [effect.effect_id for effect in xaihi_link.enhancement.effects],
+            [EffectType.MECH_SUPPORT_CRYSTAL, EffectType.ATTACH_COLD],
+        )
+        self.assertEqual(xaihi_link.enhancement.effects[0].count, -1)
+        self.assertEqual(xaihi_link.enhancement.effects[0].target, "field")
+
+        xaihi_ultimate = next(skill for skill in xaihi.skills if skill.skill_id == "xaihi_ultimate")
+        self.assertEqual(
+            [effect.effect_id for effect in xaihi_ultimate.effects],
+            [EffectType.BUFF_COLD_UP, EffectType.BUFF_NATURAL_UP],
+        )
+        self.assertTrue(all(effect.target == "team" for effect in xaihi_ultimate.effects))
+        self.assertTrue(all(effect.duration == 12 for effect in xaihi_ultimate.effects))
+
+        last_rite = characters["last_rite"]
+        last_rite_link = next(skill for skill in last_rite.skills if skill.skill_id == "last_rite_link")
+        self.assertEqual(last_rite_link.enhancement.effects[0].effect_id, EffectType.CLEAR_COLD)
+        self.assertEqual(last_rite_link.enhancement.effects[0].count, -1)
+
+        liino = characters["liino"]
+        liino_skill = next(skill for skill in liino.skills if skill.skill_id == "liino_skill")
+        self.assertEqual(liino_skill.effects[0].effect_id, EffectType.STATUS_SINGING)
+        liino_ultimate = next(skill for skill in liino.skills if skill.skill_id == "liino_ultimate")
+        self.assertIn(EffectType.STATUS_HIGH_SINGING, [effect.effect_id for effect in liino_ultimate.effects])
+
+        pogranichnik = characters["pogranichnik"]
+        pogranichnik_ultimate = next(skill for skill in pogranichnik.skills if skill.skill_id == "pogranichnik_ultimate")
+        self.assertEqual(len(pogranichnik_ultimate.enhancements), 2)
+        self.assertEqual(pogranichnik_ultimate.effects[0].duration, 30)
+        self.assertEqual(pogranichnik_ultimate.enhancements[0].effects[0].count, -1)
+        self.assertTrue(all(not enhancement.trigger_effect_groups for enhancement in pogranichnik_ultimate.enhancements))
+
+        fluorite_ultimate = next(skill for skill in fluorite.skills if skill.skill_id == "fluorite_ultimate")
+        self.assertEqual(len(fluorite_ultimate.enhancements), 2)
+        self.assertEqual(fluorite_ultimate.enhancements[1].effects[0].effect_id, EffectType.TRIGGER_REPEAT_EFFECT)
+
+        pogranichnik_skill = next(skill for skill in pogranichnik.skills if skill.skill_id == "pogranichnik_skill")
+        shred_refund = pogranichnik_skill.enhancement.resource_changes[0]
+        self.assertIs(shred_refund.source_effect_id, EffectType.EVENT_SHRED_CONSUMED)
+        self.assertEqual(shred_refund.values_by_count, {1: 5, 2: 15, 3: 25, 4: 35})
+        pogranichnik_link = next(skill for skill in pogranichnik.skills if skill.skill_id == "pogranichnik_link")
+        self.assertTrue(
+            all(
+                EffectType.EVENT_SHRED_CONSUMED in enhancement.trigger_effects
+                for enhancement in pogranichnik_link.enhancements
+            )
+        )
+        self.assertEqual(
+            pogranichnik_link.resource_changes[0].values_by_count,
+            {1: 5, 2: 12, 3: 25, 4: 35},
+        )
+
+        mi_fu = characters["mi_fu"]
+        mi_fu_skill = next(skill for skill in mi_fu.skills if skill.skill_id == "mi_fu_skill")
+        self.assertEqual(
+            [effect.effect_id for effect in mi_fu_skill.effects],
+            [EffectType.STATUS_MIFU_ZHUIXING_READY],
+        )
+        self.assertEqual(mi_fu_skill.resource_changes[0].amount, 50)
+        zhuixing = next(
+            enhancement for enhancement in mi_fu_skill.enhancements
+            if enhancement.name == "追形替换动作"
+        )
+        kaitian = next(
+            enhancement for enhancement in mi_fu_skill.enhancements
+            if enhancement.name == "开天替换动作"
+        )
+        self.assertTrue(zhuixing.replaces_base_action)
+        self.assertEqual(zhuixing.spirit_cost_override, 50)
+        self.assertIn(EffectType.STATUS_HEAVY_STRIKE, [effect.effect_id for effect in zhuixing.effects])
+        self.assertTrue(kaitian.replaces_base_action)
+        self.assertEqual(kaitian.spirit_cost_override, 50)
+        mi_fu_link = next(skill for skill in mi_fu.skills if skill.skill_id == "mi_fu_link")
+        self.assertEqual(mi_fu_link.enhancement.effects[0].duration, 16)
+        self.assertIn(
+            EffectType.STATUS_MIFU_ZHUIXING_READY,
+            [effect.effect_id for effect in mi_fu_link.enhancement.effects],
+        )
+        self.assertEqual(mi_fu_link.resource_changes[0].amount, 10)
+        mi_fu_ultimate = next(skill for skill in mi_fu.skills if skill.skill_id == "mi_fu_ultimate")
+        self.assertIn(
+            EffectType.STATUS_MIFU_ZHUIXING_READY,
+            [effect.effect_id for effect in mi_fu_ultimate.effects],
+        )
+
+
+if __name__ == "__main__":
+    unittest.main()

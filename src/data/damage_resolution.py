@@ -55,6 +55,13 @@ class ActiveDamageModifier:
     expires_at: float | None
     inputs: dict[str, float]
     value: float | None
+    field_id: str | None = None
+
+
+@dataclass(frozen=True)
+class DamageField:
+    source_actor: str
+    expires_at: float
 
 
 class TimedDamageState:
@@ -63,28 +70,49 @@ class TimedDamageState:
     def __init__(self, team: tuple[str, ...]):
         self.team = team
         self.modifiers: list[ActiveDamageModifier] = []
+        self.fields: dict[str, DamageField] = {}
 
     def expire(self, now: float):
+        for field_id, instance in tuple(self.fields.items()):
+            if now >= instance.expires_at:
+                self.remove_field(field_id)
         self.modifiers[:] = [m for m in self.modifiers if m.expires_at is None or now < m.expires_at]
+
+    def spawn_field(self, field_id: str, *, source_actor: str, now: float, duration: float):
+        """Register an actual spawned field; cast/handoff time is not its birth time."""
+        if not math.isfinite(duration) or duration <= 0 or not math.isfinite(now):
+            raise ValueError("Invalid field lifetime")
+        self.expire(now)
+        if field_id in self.fields:
+            raise ValueError("Field instance already exists")
+        self.fields[field_id] = DamageField(source_actor, now + duration)
+
+    def leave_field(self, field_id: str, recipient: str):
+        self.modifiers[:] = [m for m in self.modifiers if not (m.field_id == field_id and m.recipient == recipient)]
+
+    def remove_field(self, field_id: str):
+        self.fields.pop(field_id, None)
+        self.modifiers[:] = [m for m in self.modifiers if m.field_id != field_id]
 
     def phase_signature(self, now: float) -> tuple:
         self.expire(now)
-        return tuple(
-            sorted(
-                (
-                    (
-                        m.spec.key,
-                        m.source_actor,
-                        m.recipient,
-                        m.value,
-                        None if m.expires_at is None else round(m.expires_at - now, 5),
-                        tuple(sorted(m.inputs.items())),
-                    )
-                    for m in self.modifiers
-                ),
-                key=repr,
+        entries = [
+            (
+                m.spec.key,
+                m.source_actor,
+                m.recipient,
+                m.field_id,
+                m.value,
+                None if m.expires_at is None else round(m.expires_at - now, 5),
+                tuple(sorted(m.inputs.items())),
             )
+            for m in self.modifiers
+        ]
+        entries.extend(
+            ("field", key, instance.source_actor, round(instance.expires_at - now, 5))
+            for key, instance in self.fields.items()
         )
+        return tuple(sorted(entries, key=repr))
 
     def apply(
         self,
@@ -96,10 +124,20 @@ class TimedDamageState:
         inputs: dict[str, float] | None = None,
         enemy: str | None = None,
         main_control: str | None = None,
+        field_id: str | None = None,
     ) -> bool:
         if event != spec.trigger:
             return False
         inputs = dict(inputs or {})
+        self.expire(now)
+        if spec.lifetime_scope not in {"timed", "field"}:
+            raise ValueError("Unknown damage modifier lifetime scope")
+        field = self.fields.get(field_id) if field_id is not None else None
+        if spec.lifetime_scope == "field":
+            if field is None or field.source_actor != source_actor:
+                return False
+        elif field_id is not None:
+            raise ValueError("Timed modifier cannot inherit a field lifetime")
         if spec.recipient == "team":
             recipients = self.team
         elif spec.recipient == "other_allies":
@@ -119,6 +157,8 @@ class TimedDamageState:
         duration = inputs.get(spec.duration_input) if spec.duration_input else spec.duration
         if duration is not None and (not math.isfinite(duration) or duration < 0):
             raise ValueError("Invalid damage modifier duration")
+        if field is not None:
+            duration = min(duration, field.expires_at - now) if duration is not None else field.expires_at - now
         value = spec.magnitude.evaluate(inputs) if spec.evaluation == "application" else None
         unresolved = spec.unresolved or ("unknown duration" if duration is None and not spec.permanent else None)
         self.expire(now)
@@ -127,6 +167,7 @@ class TimedDamageState:
                 m
                 for m in self.modifiers
                 if m.spec.key == spec.key and m.source_actor == source_actor and m.recipient == recipient
+                and m.field_id == field_id
             ]
             if spec.stack_policy == "replace":
                 self.modifiers[:] = [m for m in self.modifiers if m not in same]
@@ -142,6 +183,7 @@ class TimedDamageState:
                     now + duration if duration is not None else None,
                     inputs,
                     None if unresolved else value,
+                    field_id,
                 )
             )
         return True
@@ -161,6 +203,7 @@ class TimedDamageState:
         self.expire(now)
         buckets = {bucket.value: 0.0 for bucket in DamageBucket}
         unknown = []
+        field_values = {}
         for modifier in self.modifiers:
             spec = modifier.spec
             recipient = (
@@ -183,8 +226,17 @@ class TimedDamageState:
                 value = spec.magnitude.evaluate(current_inputs)
             if value is None:
                 unknown.append(spec.key)
+            elif modifier.field_id is not None:
+                # Identical auras from one producer are one effect. Different strengths
+                # need an explicit native priority rule before they can be priced.
+                identity = (spec.key, modifier.source_actor, modifier.recipient, spec.bucket)
+                if identity in field_values and field_values[identity] != value:
+                    unknown.append(spec.key)
+                field_values[identity] = value
             else:
                 buckets[spec.bucket.value] += value
+        for (_, _, _, bucket), value in field_values.items():
+            buckets[bucket.value] += value
         if unknown:
             return DamageResult(None, None, buckets, tuple(sorted(set(unknown))))
         attack = panel.attack(buckets[DamageBucket.ATTACK.value])

@@ -60186,5 +60186,16 @@
       "byteIdentical": 1348,
       "failures": []
     }
+  },
+  "ranked_blackboards_sha256": "7042d688bfbff9a886f400bbfce0387b0b26d9cfa844fc35f8f24de11ea56f35",
+  "ranked_blackboards_source": {
+    "table": "SkillPatchTable",
+    "source_sha256": "15a09a9bc108d6a6e62b76e34b1721a7bdfa7ddb1af59ec0ab1f7a64596e4c7d",
+    "skills": [
+      "chr_0032_lizhiyan_combo_skill",
+      "chr_0034_typhoea_combo_skill"
+    ],
+    "levels_per_skill": 12,
+    "crosscheck": "two local decoded captures agree"
   }
 }
