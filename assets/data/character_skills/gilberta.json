@@ -399,10 +399,39 @@
                 },
                 {
                     "effect_id": "VULN_ALL",
-                    "value": 1,
+                    "value": null,
                     "duration": null,
                     "target": "enemy",
-                    "count": 1
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "gilberta_gravity:vulnerability",
+                        "bucket": "vulnerability",
+                        "elements": [
+                            "寒冷",
+                            "灼热",
+                            "电磁",
+                            "自然"
+                        ],
+                        "recipient": "enemy",
+                        "trigger": "gravity_field_enter",
+                        "strength": {
+                            "base": {
+                                "row": "基础法术脆弱效果"
+                            },
+                            "terms": [
+                                {
+                                    "input": "enemy.shred",
+                                    "coefficient": {
+                                        "row": "每层破防提升 / 法术脆弱"
+                                    }
+                                }
+                            ]
+                        },
+                        "duration": {
+                            "row": "力场持续时间（秒）"
+                        },
+                        "evaluation": "hit"
+                    }
                 }
             ],
             "enhancements": [
@@ -421,10 +450,39 @@
                     "effects": [
                         {
                             "effect_id": "VULN_ALL",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
-                            "count": null
+                            "count": null,
+                            "damage_modifier": {
+                                "key": "gilberta_gravity:vulnerability",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷",
+                                    "灼热",
+                                    "电磁",
+                                    "自然"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "gravity_field_enter",
+                                "strength": {
+                                    "base": {
+                                        "row": "基础法术脆弱效果"
+                                    },
+                                    "terms": [
+                                        {
+                                            "input": "enemy.shred",
+                                            "coefficient": {
+                                                "row": "每层破防提升 / 法术脆弱"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "duration": {
+                                    "row": "力场持续时间（秒）"
+                                },
+                                "evaluation": "hit"
+                            }
                         }
                     ]
                 },

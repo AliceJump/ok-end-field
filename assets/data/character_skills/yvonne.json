@@ -613,7 +613,29 @@
                             "value": "0.03 × min(STACK_YVONNE_CRIT, 10)",
                             "duration": "终结技剩余时间",
                             "target": "self",
-                            "count": 1
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "yvonne_ultimate:BUFF_CRIT_RATE_UP",
+                                "bucket": "crit_rate",
+                                "elements": [
+                                    "all"
+                                ],
+                                "recipient": "self",
+                                "trigger": "enhanced_normal_crit_stack_changed",
+                                "strength": {
+                                    "terms": [
+                                        {
+                                            "input": "source.crit_stacks",
+                                            "coefficient": {
+                                                "row": "每层暴击率增加"
+                                            },
+                                            "cap": 0.3
+                                        }
+                                    ]
+                                },
+                                "duration_input": "ultimate.remaining",
+                                "evaluation": "hit"
+                            }
                         }
                     ],
                     "resource_changes": [],
@@ -639,7 +661,22 @@
                             "value": 0.6,
                             "duration": "终结技剩余时间",
                             "target": "self",
-                            "count": 1
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "yvonne_ultimate:BUFF_CRIT_DMG_UP",
+                                "bucket": "crit_damage",
+                                "elements": [
+                                    "all"
+                                ],
+                                "recipient": "self",
+                                "trigger": "crit_stacks_reached_10",
+                                "strength": {
+                                    "base": {
+                                        "row": "满层暴击伤害增加"
+                                    }
+                                },
+                                "duration_input": "ultimate.remaining"
+                            }
                         }
                     ],
                     "resource_changes": [],

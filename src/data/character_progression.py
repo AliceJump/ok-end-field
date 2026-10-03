@@ -59,6 +59,7 @@ class NativePassive:
     slot: int | None = None
     resource_changes: tuple[SkillResourceChange, ...] = ()
     resource_modifiers: tuple[PassiveResourceModifier, ...] = ()
+    damage_modifier_bindings: tuple[dict, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -87,6 +88,17 @@ class CharacterProgression:
             raise ValueError("Potential baseline is unverified; select an explicit potential before evaluation")
         return tuple(p for p in self.potentials if p.level <= self.baseline.potential)
 
+    @property
+    def damage_modifiers(self):
+        """Only selected highest-rank talents and baseline potentials produce modifiers."""
+        from src.data.damage_modifiers import bind_damage_modifier
+
+        return tuple(
+            bind_damage_modifier(binding, skill_id="", skills={}, rank=None, progression=self)
+            for passive in (*self.talents, *self.active_potentials)
+            for binding in passive.damage_modifier_bindings
+        )
+
 
 @lru_cache(maxsize=1)
 def _records() -> dict:
@@ -113,6 +125,7 @@ def load_character_progression(character_id: str) -> CharacterProgression | None
             description_template=row["description_template"],
             parameters=dict(row["parameters"]),
             modifiers=tuple(deepcopy(row["modifiers"])),
+            damage_modifier_bindings=tuple(deepcopy(row.get("damage_modifier_bindings", []))),
             source=row["source"],
             slot=row.get("slot"),
             resource_changes=tuple(SkillResourceChange.from_dict(c) for c in row.get("resource_changes", [])),

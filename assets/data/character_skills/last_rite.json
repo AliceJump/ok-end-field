@@ -178,10 +178,34 @@
                     "effects": [
                         {
                             "effect_id": "VULN_COLD",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
-                            "count": null
+                            "count": null,
+                            "damage_modifier": {
+                                "key": "last_rite_skill:VULN_COLD",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "spell_attachment_consumed",
+                                "strength": {
+                                    "terms": [
+                                        {
+                                            "input": "consumed.spell_attachment",
+                                            "coefficient": {
+                                                "passive": "chr_0026_lastrite_talent_1_2",
+                                                "parameter": "crystal_up"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "duration": {
+                                    "passive": "chr_0026_lastrite_talent_1_2",
+                                    "parameter": "duration"
+                                }
+                            }
                         }
                     ]
                 }

@@ -338,17 +338,57 @@
                         },
                         {
                             "effect_id": "VULN_NATURAL",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
-                            "count": 1
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "arcane_skill:VULN_NATURAL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "自然"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "wisdom_confinement_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果",
+                                        "skill": "arcane_link"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "额外脆弱持续时间（秒）",
+                                    "skill": "arcane_link"
+                                },
+                                "unresolved": "意志形态的属性缩放与上限需绑定；阵诀·智命中分支需核实实际形态"
+                            }
                         },
                         {
                             "effect_id": "VULN_COLD",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
-                            "count": 1
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "arcane_skill:VULN_COLD",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "wisdom_confinement_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果",
+                                        "skill": "arcane_link"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "额外脆弱持续时间（秒）",
+                                    "skill": "arcane_link"
+                                },
+                                "unresolved": "意志形态的属性缩放与上限需绑定；阵诀·智命中分支需核实实际形态"
+                            }
                         },
                         {
                             "effect_id": "TRIGGER_ADDITIONAL",
@@ -404,17 +444,57 @@
                         },
                         {
                             "effect_id": "VULN_NATURAL",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
-                            "count": 1
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "arcane_link:VULN_NATURAL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "自然"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "combo_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果",
+                                        "skill": "arcane_link"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "囹圄及脆弱 / 持续时间（秒）",
+                                    "skill": "arcane_link"
+                                },
+                                "unresolved": "意志形态的属性缩放与上限需绑定；阵诀·智命中分支需核实实际形态"
+                            }
                         },
                         {
                             "effect_id": "VULN_COLD",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
-                            "count": 1
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "arcane_link:VULN_COLD",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "combo_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果",
+                                        "skill": "arcane_link"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "囹圄及脆弱 / 持续时间（秒）",
+                                    "skill": "arcane_link"
+                                },
+                                "unresolved": "意志形态的属性缩放与上限需绑定；阵诀·智命中分支需核实实际形态"
+                            }
                         },
                         {
                             "effect_id": "STATUS_CONFINEMENT",
