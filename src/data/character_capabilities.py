@@ -33,10 +33,10 @@ _COMBO_RE = re.compile(r"(获得|赋予|附加)[^。]{0,8}连击")
 class CharacterCapabilities:
     """单个角色的队伍供给能力。"""
 
-    key: str                      # 快照文件名（拼音 key，如 typhoeus）
-    name: str                     # 中文角色名（与队伍识别/baseline 键一致）
+    key: str  # 快照文件名（拼音 key，如 typhoeus）
+    name: str  # 中文角色名（与队伍识别/baseline 键一致）
     attach_elements: tuple[str, ...]  # 可施加的元素附着
-    combo_applier: bool           # 可施加连击（队伍共享层）
+    combo_applier: bool  # 可施加连击（队伍共享层）
 
 
 _cached_caps: dict[str, CharacterCapabilities] | None = None
@@ -65,10 +65,11 @@ def load_character_capabilities() -> dict[str, CharacterCapabilities]:
     if _SKILLS_DIR.is_dir():
         for path in sorted(_SKILLS_DIR.glob("*.json")):
             try:
-                payload = json.loads(path.read_text(encoding="utf-8"))
+                raw_text = path.read_text(encoding="utf-8")
+                payload = json.loads(raw_text)
             except (json.JSONDecodeError, OSError):
                 continue
-            caps = _parse_capabilities(path.stem, payload, path.read_text(encoding="utf-8"))
+            caps = _parse_capabilities(path.stem, payload, raw_text)
             result[caps.name] = caps
     _cached_caps = result
     return result

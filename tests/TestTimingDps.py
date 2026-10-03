@@ -32,6 +32,27 @@ def option(slot, damage, duration=1, actionable=None, handoff=None, cost=100, co
 
 
 class TestTimingDps(unittest.TestCase):
+    def test_invalid_conservative_cycle_metadata_keeps_other_team_quotes(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "baseline.json"
+            for value in (None, "invalid"):
+                with self.subTest(value=value):
+                    row = {
+                        "character": "测试",
+                        "cycle_expect_conservative": 5,
+                        "full_caliber_requires": {"attach": "自然"},
+                        "skills": [{"type": "战技", "crit_expect": 10}],
+                    }
+                    if value is not None:
+                        row["cycle_expect"] = value
+                    path.write_text(
+                        json.dumps([row, {"character": "队友", "skills": [{"type": "战技", "crit_expect": 20}]}]),
+                        encoding="utf-8",
+                    )
+                    quotes = load_damage_quotes(["测试", "队友"], path)
+                    self.assertEqual(quotes["测试"].conservative, 10)
+                    self.assertEqual(quotes["队友"].battle, 20)
+
     def test_more_damage_can_be_less_dps_and_dropped(self):
         slow = option("1", 100, duration=30)
         fast = option("2", 80)
@@ -46,6 +67,7 @@ class TestTimingDps(unittest.TestCase):
         self.assertAlmostEqual(plan.seconds, 12.5)
         self.assertAlmostEqual(plan.dps, 8)
         self.assertNotEqual(plan.seconds, 1)
+
     def test_full_animation_duration_does_not_block_periodic_handoff(self):
         plan = evaluate_cycle((option("1", 100, duration=30, actionable=1, cost=0),))
         self.assertAlmostEqual(plan.seconds, 1)
@@ -166,10 +188,13 @@ class TestTimingDps(unittest.TestCase):
 
         logic._refresh_sp_threshold()
 
-        expected = max(
-            [value for value in logic.normal_attack_sp_gains.values() if value is not None]
-            + [logic.store.global_normal_attack_sp_gain()]
-        ) + logic._SP_ERROR_MARGIN
+        expected = (
+            max(
+                [value for value in logic.normal_attack_sp_gains.values() if value is not None]
+                + [logic.store.global_normal_attack_sp_gain()]
+            )
+            + logic._SP_ERROR_MARGIN
+        )
         self.assertEqual(logic.assume_success_sp_threshold, expected)
         self.assertGreater(logic.assume_success_sp_threshold, 13)
 

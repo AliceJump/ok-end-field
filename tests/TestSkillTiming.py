@@ -12,6 +12,7 @@ from src.core.BattleConfig import DEFAULT_BATTLE_CONFIG, KEY_TIMING_ROTATION
 from src.data.combat_observation import ActionBlockReason, EnemyPresence
 from src.data.skill_timing import SNAPSHOT, SkillTiming, SkillTimingStore, load_skill_timings
 from src.data.team_phase_planner import CombatPhase, build_team_burst_plans
+from src.image.enemy_health_probe import probe_enemy_presence_fast
 from src.tasks.mixin.battle_mixin import BattleMixin, _measure_combat_too_far_text_band
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
 from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
@@ -230,6 +231,49 @@ def logic_for(task, clock=None):
 
 
 class TestTimedCombat(unittest.TestCase):
+    def test_low_cost_feedback_uses_two_fresh_frames_before_accepting_cast(self):
+        band = self._synthetic_too_far_band()
+        recoveries = []
+
+        class FeedbackTask(FakeTask):
+            arm_combat_action_feedback_probe = BattleMixin.arm_combat_action_feedback_probe
+            reset_combat_action_feedback_probe = BattleMixin.reset_combat_action_feedback_probe
+            probe_combat_action_block_reason = BattleMixin.probe_combat_action_block_reason
+
+            def _read_combat_too_far_text_band(self):
+                return _measure_combat_too_far_text_band(self.frame)
+
+            def next_frame(self):
+                super().next_frame()
+                self.frame = band.copy()
+                self.refreshes += 1
+
+            def recover_target_too_far(self):
+                recoveries.append(self.now)
+                return True
+
+        task = FeedbackTask()
+        task.frame = np.zeros_like(band)
+        task.refreshes = 0
+        task.sp = 25
+        logic = logic_for(task)
+        logic.team[0] = "梨诺"
+        logic.step()
+        self.assertEqual(task.keys, ["1"])
+        self.assertEqual(task.refreshes, 2)
+        self.assertEqual(len(recoveries), 1)
+        self.assertEqual(logic.cursor, 0)
+        self.assertNotIn("1", logic.state_until)
+
+    def test_new_run_requires_fresh_enemy_absence_confirmation(self):
+        task = FakeTask()
+        task.frame = np.zeros((1080, 1920, 3), dtype=np.uint8)
+        task._enemy_hp_clean_rounds = 2
+        task._enemy_hp_checked_mask = 7
+        task._enemy_hp_last_slice = 2
+        TimedCombatLogic(task).run(deadline=0)
+        self.assertEqual(probe_enemy_presence_fast(task), EnemyPresence.UNKNOWN)
+
     def test_opt_in_entry_bypasses_legacy_config(self):
         self.assertFalse(DEFAULT_BATTLE_CONFIG[KEY_TIMING_ROTATION])
         task = FakeTask()

@@ -42,7 +42,7 @@ _SP_REGEN_SECONDS = 12.5
 # 每轮尝试 2 次，未就绪由执行端跳过。
 _LINK_AFTER_SEGMENT = (0, 2)
 
-_cached_damage: dict[str, float] | None = None
+_cached_damage: dict[Path, dict[str, float]] = {}
 _cached_team_damage: dict[tuple, dict[str, float]] = {}
 _cached_team_entries: dict[tuple, dict[str, dict]] = {}
 
@@ -66,9 +66,9 @@ def load_damage_baseline(path: Path | None = None) -> dict[str, float]:
     机制修正，见 compute_damage_baseline.py）；缺失时回退单发战技暴击期望
     （non_crit 兜底），再兜 0。
     """
-    global _cached_damage
-    if _cached_damage is not None:
-        return _cached_damage
+    cache_key = (path or _BASELINE_FILE).resolve()
+    if cache_key in _cached_damage:
+        return _cached_damage[cache_key]
 
     result: dict[str, float] = {}
     for entry in _read_entries(path):
@@ -96,7 +96,7 @@ def load_damage_baseline(path: Path | None = None) -> dict[str, float]:
             except (TypeError, ValueError):
                 continue
         result[name] = best
-    _cached_damage = result
+    _cached_damage[cache_key] = result
     return result
 
 
@@ -156,11 +156,7 @@ def _expected_mechanic_cycle_value(
             return conservative + (full_cycle - conservative) * fraction, estimate.expected
 
     battle_row = next(
-        (
-            skill
-            for skill in row.get("skills") or ()
-            if isinstance(skill, dict) and skill.get("type") == "战技"
-        ),
+        (skill for skill in row.get("skills") or () if isinstance(skill, dict) and skill.get("type") == "战技"),
         None,
     )
     if battle_row is None:
@@ -212,9 +208,7 @@ def load_team_baseline_entries(
     caps = capabilities if capabilities is not None else load_character_capabilities()
     mechanics = load_character_mechanics()
     team = [m for m in cache_key[0] if m != "?"]
-    has_combo = any(
-        (caps.get(m).combo_applier if caps.get(m) else False) for m in team
-    )
+    has_combo = any((caps.get(m).combo_applier if caps.get(m) else False) for m in team)
 
     result: dict[str, dict] = {}
     for entry in _read_entries(path):
@@ -239,10 +233,7 @@ def load_team_baseline_entries(
         attach_ok = True
         if required_elements:
             attach_ok = any(
-                any(
-                    e in (caps.get(m).attach_elements if caps.get(m) else ())
-                    for e in required_elements
-                )
+                any(e in (caps.get(m).attach_elements if caps.get(m) else ()) for e in required_elements)
                 for m in team
                 if m != name
             )
@@ -311,8 +302,7 @@ def load_damage_baseline_for_team(
 
 def clear_cache() -> None:
     """清除缓存（测试用 / 基准数据更新后调用）。"""
-    global _cached_damage
-    _cached_damage = None
+    _cached_damage.clear()
     _cached_team_damage.clear()
     _cached_team_entries.clear()
 
@@ -340,23 +330,21 @@ def _ordered_slots_with_dependencies(
     for i, name in enumerate(team_members):
         entry = entries.get(name) or {}
         cap = caps.get(name) if caps else None
-        nodes.append({
-            "slot": i,
-            "value": 0.0 if name == "?" else float(entry.get("value", 0.0)),
-            "requires": entry.get("requires_attach") or [],
-            "inflict": cap.attach_elements if cap else (),
-        })
+        nodes.append(
+            {
+                "slot": i,
+                "value": 0.0 if name == "?" else float(entry.get("value", 0.0)),
+                "requires": entry.get("requires_attach") or [],
+                "inflict": cap.attach_elements if cap else (),
+            }
+        )
     nodes.sort(key=lambda nd: (-nd["value"], nd["slot"]))
     placed: list[dict] = []
     remaining = list(nodes)
     while remaining:
         for nd in remaining:
             req = nd["requires"]
-            fed = (
-                not req
-                or any(e in nd["inflict"] for e in req)
-                or any(e in p["inflict"] for p in placed for e in req)
-            )
+            fed = not req or any(e in nd["inflict"] for e in req) or any(e in p["inflict"] for p in placed for e in req)
             if fed:
                 placed.append(nd)
                 remaining.remove(nd)

@@ -20,12 +20,14 @@ from src.data.team_phase_planner import (
 )
 from src.data.skill_timing import SkillTiming, load_skill_timings
 from src.data.timing_dps import build_options, load_damage_quotes, optimize_cycle
+from src.image.enemy_health_probe import reset_enemy_presence_probe
 
 
 class TimedCombatLogic:
     _NORMAL_ATTACK_REASSERT_INTERVAL = 0.25
     _DEFAULT_ASSUME_SUCCESS_SP_THRESHOLD = 25.0
     _ASSUME_SUCCESS_PAUSE = 0.1
+    _ACTION_FEEDBACK_PROBE_GAP = 0.02
     _SP_ERROR_MARGIN = 5.0
     _NATURAL_SP_PER_SECOND = 8.0
     _SP_LOW_PROBE_INTERVAL = 0.25
@@ -128,9 +130,7 @@ class TimedCombatLogic:
                 return True
             elapsed = max(0.0, now - self.enemy_pause_started)
             self.enemy_pause_started = None
-            self.task.log_info(
-                f"时间排轴敌人占位检测: 敌人重新出现，恢复技能调度；暂停 {elapsed:.2f}s 已计入状态耗时"
-            )
+            self.task.log_info(f"时间排轴敌人占位检测: 敌人重新出现，恢复技能调度；暂停 {elapsed:.2f}s 已计入状态耗时")
         return False
 
     def _arm_action_feedback(self):
@@ -195,9 +195,7 @@ class TimedCombatLogic:
                 + ("（已启动）" if started else "（占位，尚未实现移动）")
             )
         elif reason == ActionBlockReason.DURING_SKILL:
-            self.task.log_info(
-                "时间排轴动作受阻: 当前技能期间无法释放此技能；取消未证实时间轴并稍后重试"
-            )
+            self.task.log_info("时间排轴动作受阻: 当前技能期间无法释放此技能；取消未证实时间轴并稍后重试")
         return reason
 
     def _sp_probe_interval(self, sp):
@@ -256,11 +254,7 @@ class TimedCombatLogic:
         self._last_phase_log = key
         self.task.log_info(
             f"时间排轴阶段: {old.value} -> {new.value}"
-            + (
-                f"，爆发 {plan.key}，目标 {target:g} SP，保留 {reserve:g} SP"
-                if plan is not None
-                else ""
-            )
+            + (f"，爆发 {plan.key}，目标 {target:g} SP，保留 {reserve:g} SP" if plan is not None else "")
         )
 
     def _observe_phase_sp(self, sp):
@@ -322,11 +316,7 @@ class TimedCombatLogic:
         self.task.log_info(
             f"时间排轴: {source} {token} 进入特殊状态 {spec.duration:.2f}s，"
             f"{spec.end_skill_id} 仅作为主动中止"
-            + (
-                ""
-                if spec.end_cooldown is None
-                else f"，主动中止冷却约 {spec.end_cooldown:g}s"
-            )
+            + ("" if spec.end_cooldown is None else f"，主动中止冷却约 {spec.end_cooldown:g}s")
         )
 
     def _mechanic_for_token(self, token):
@@ -410,9 +400,7 @@ class TimedCombatLogic:
         elapsed = max(0.0, now - self.started)
         minimum_drop = max(
             2.0,
-            expected_cost
-            - self.assume_success_sp_threshold
-            - self._NATURAL_SP_PER_SECOND * elapsed,
+            expected_cost - self.assume_success_sp_threshold - self._NATURAL_SP_PER_SECOND * elapsed,
         )
         if current_sp >= 0 and before_sp - current_sp >= minimum_drop:
             self.pending = None
@@ -420,8 +408,7 @@ class TimedCombatLogic:
             self.pending_advance_cursor = True
             self._accept_battle_skill(token, advance_cursor=advance_cursor)
             self.task.log_info(
-                f"时间排轴: 战技 {token} 技力消耗已确认 "
-                f"({before_sp:.1f}->{current_sp:.1f}, 阈值 {minimum_drop:.1f})"
+                f"时间排轴: 战技 {token} 技力消耗已确认 ({before_sp:.1f}->{current_sp:.1f}, 阈值 {minimum_drop:.1f})"
             )
         elif now - self.started >= 0.8:
             self.pending = None
@@ -432,8 +419,7 @@ class TimedCombatLogic:
             self._clear_active(now)
             self.next_sp_probe_at = min(self.next_sp_probe_at, now)
             self.task.log_info(
-                f"时间排轴: 战技 {token} 未确认消耗，清除未证实时间轴，"
-                f"{self._FAILED_CAST_RETRY_DELAY:.2f}s 后可重试"
+                f"时间排轴: 战技 {token} 未确认消耗，清除未证实时间轴，{self._FAILED_CAST_RETRY_DELAY:.2f}s 后可重试"
             )
 
     def _set_cooldowns(self, profiles=None, started=None):
@@ -453,17 +439,12 @@ class TimedCombatLogic:
 
     def _active_team_names(self):
         return [
-            name
-            for index, name in enumerate(self.team, 1)
-            if str(index) not in self.disabled_slots and name != "?"
+            name for index, name in enumerate(self.team, 1) if str(index) not in self.disabled_slots and name != "?"
         ]
 
     def _refresh_sp_threshold(self):
         active_names = self._active_team_names()
-        active_gains = {
-            name: self.normal_attack_sp_gains.get(name)
-            for name in active_names
-        }
+        active_gains = {name: self.normal_attack_sp_gains.get(name) for name in active_names}
         known_gains = [value for value in active_gains.values() if value is not None]
         has_unknown = any(value is None for value in active_gains.values())
         fallback_gain = self.store.global_normal_attack_sp_gain() if active_names and has_unknown else None
@@ -513,9 +494,7 @@ class TimedCombatLogic:
         previous_team = list(self.team)
         previous_order = list(self.order)
         current_token = (
-            previous_order[self.cursor]
-            if previous_order and 0 <= self.cursor < len(previous_order)
-            else None
+            previous_order[self.cursor] if previous_order and 0 <= self.cursor < len(previous_order) else None
         )
         previous_phase_indices = dict(self.battle_phase_indices)
 
@@ -535,8 +514,7 @@ class TimedCombatLogic:
         self.order = [
             token
             for token in self.ult_order
-            if team[int(token) - 1] != "?"
-            and self.store.profiles(team[int(token) - 1], "battle")
+            if team[int(token) - 1] != "?" and self.store.profiles(team[int(token) - 1], "battle")
         ]
 
         self.team_mechanics = {
@@ -549,14 +527,8 @@ class TimedCombatLogic:
             if mechanic.archetype != "multi_stage_battle":
                 continue
             index = int(token) - 1
-            unchanged = (
-                not reset_runtime
-                and index < len(previous_team)
-                and previous_team[index] == team[index]
-            )
-            self.battle_phase_indices[token] = (
-                previous_phase_indices.get(token, 0) if unchanged else 0
-            )
+            unchanged = not reset_runtime and index < len(previous_team) and previous_team[index] == team[index]
+            self.battle_phase_indices[token] = previous_phase_indices.get(token, 0) if unchanged else 0
 
         available_tokens = {
             str(index + 1)
@@ -570,35 +542,25 @@ class TimedCombatLogic:
             self.forced_main_control_slot = None
             self.forced_main_control_until = 0.0
         self.battle_retry_after = {
-            token: value
-            for token, value in self.battle_retry_after.items()
-            if token in available_tokens
+            token: value for token, value in self.battle_retry_after.items() if token in available_tokens
         }
         self.dead_slot_evidence = {
-            token: value
-            for token, value in self.dead_slot_evidence.items()
-            if token in available_tokens
+            token: value for token, value in self.dead_slot_evidence.items() if token in available_tokens
         }
 
         known_team = [name for name in team if name != "?"]
         self.normal_attack_sp_gains = self.store.team_normal_attack_sp_gains(known_team)
         self._refresh_sp_threshold()
         self.state_specs = {
-            str(index + 1): self.store.battle_state(name)
-            for index, name in enumerate(team)
-            if name != "?"
+            str(index + 1): self.store.battle_state(name) for index, name in enumerate(team) if name != "?"
         }
         self.ult_state_specs = {
-            str(index + 1): self.store.ultimate_state(name)
-            for index, name in enumerate(team)
-            if name != "?"
+            str(index + 1): self.store.ultimate_state(name) for index, name in enumerate(team) if name != "?"
         }
         self.damage_quotes = load_damage_quotes(team)
 
         burst_plans = build_team_burst_plans(team, self.mechanics, self.store)
-        preferred_slots = tuple(
-            token for token in self.ult_order if self._slot_available(token)
-        )
+        preferred_slots = tuple(token for token in self.ult_order if self._slot_available(token))
         active_burst = self.phase_planner.configure(
             burst_plans,
             preferred_slots=preferred_slots,
@@ -618,23 +580,18 @@ class TimedCombatLogic:
             self.task.log_info(f"时间排轴队伍: {team}, 战技顺序: {self.order}{suffix}")
         elif filled_slots:
             details = [f"{token}:{name}" for token, name in filled_slots]
-            self.task.log_info(
-                f"时间排轴补全槽位 {details}，队伍更新为 {team}，战技顺序重算: {self.order}"
-            )
+            self.task.log_info(f"时间排轴补全槽位 {details}，队伍更新为 {team}，战技顺序重算: {self.order}")
 
         changed_tokens = {
             str(index + 1)
             for index, name in enumerate(team)
-            if reset_runtime
-            or index >= len(previous_team)
-            or previous_team[index] != name
+            if reset_runtime or index >= len(previous_team) or previous_team[index] != name
         }
         for token, mechanic in self.team_mechanics.items():
             if token not in changed_tokens:
                 continue
             self.task.log_info(
-                f"时间排轴机制: {team[int(token) - 1]}({token}) {mechanic.archetype}; "
-                + "；".join(mechanic.evidence)
+                f"时间排轴机制: {team[int(token) - 1]}({token}) {mechanic.archetype}; " + "；".join(mechanic.evidence)
             )
         for source, specs in (("战技", self.state_specs), ("终结技", self.ult_state_specs)):
             for token, spec in specs.items():
@@ -642,18 +599,13 @@ class TimedCombatLogic:
                     continue
                 self.task.log_info(
                     f"时间排轴状态{source}: {team[int(token) - 1]}({token}) "
-                    f"{spec.base_skill_id} -> {spec.end_skill_id}, "
-                    + ", ".join(spec.evidence)
+                    f"{spec.base_skill_id} -> {spec.end_skill_id}, " + ", ".join(spec.evidence)
                 )
 
         if reset_runtime or filled_slots:
             for burst_plan in burst_plans:
                 participants = ",".join(burst_plan.participants)
-                damage = (
-                    "unknown"
-                    if burst_plan.expected_damage is None
-                    else f"{burst_plan.expected_damage:.0f}"
-                )
+                damage = "unknown" if burst_plan.expected_damage is None else f"{burst_plan.expected_damage:.0f}"
                 self.task.log_info(
                     f"时间排轴爆发候选: {burst_plan.key} 槽位[{participants}] "
                     f"起手至少 {burst_plan.min_start_sp:g} SP，结束预计 "
@@ -685,17 +637,14 @@ class TimedCombatLogic:
 
         if unknown_slots:
             self.plan = None
-            self.task.log_info(
-                "时间排轴DPS规划: 队伍仍有未识别槽位，先使用已知角色伤害顺序；补全后自动重算"
-            )
+            self.task.log_info("时间排轴DPS规划: 队伍仍有未识别槽位，先使用已知角色伤害顺序；补全后自动重算")
         else:
             blockers = mechanic_blockers(team)
             if blockers:
                 self.plan = None
                 labels = ", ".join(mechanic.blocker_reason for mechanic in blockers)
                 self.task.log_info(
-                    f"时间排轴机制规划: {labels} 不能压成单战技循环，"
-                    "禁用旧DPS子集搜索并保留完整战技顺序"
+                    f"时间排轴机制规划: {labels} 不能压成单战技循环，禁用旧DPS子集搜索并保留完整战技顺序"
                 )
             else:
                 self.plan = optimize_cycle(build_options(team, self.store, self.damage_quotes))
@@ -796,13 +745,9 @@ class TimedCombatLogic:
             self.task.log_info("时间排轴阶段: 爆发参与槽位失效，取消当前爆发计划")
 
         self._refresh_sp_threshold()
-        details = [
-            f"{token}:{self.team[int(token) - 1]}"
-            for token in sorted(newly_disabled, key=int)
-        ]
+        details = [f"{token}:{self.team[int(token) - 1]}" for token in sorted(newly_disabled, key=int)]
         self.task.log_info(
-            f"时间排轴屏蔽失效槽位 {details}，已跨 "
-            f"{self._DEAD_SLOT_CONFIRM_REFRESHES} 次刷新确认，保留原始槽位编号"
+            f"时间排轴屏蔽失效槽位 {details}，已跨 {self._DEAD_SLOT_CONFIRM_REFRESHES} 次刷新确认，保留原始槽位编号"
         )
 
     def _detect_team(self, deadline):
@@ -861,10 +806,7 @@ class TimedCombatLogic:
             return False
         if now < self.battle_retry_after.get(token, 0):
             return False
-        if (
-            self.forced_main_control_slot == token
-            and now < self.forced_main_control_until
-        ):
+        if self.forced_main_control_slot == token and now < self.forced_main_control_until:
             return False
 
         profiles, sp_gate, expected_cost = self._battle_context(token)
@@ -889,8 +831,7 @@ class TimedCombatLogic:
         self.pending_advance_cursor = advance_cursor
 
         if expected_cost <= self.assume_success_sp_threshold:
-            self.task.sleep(self._ASSUME_SUCCESS_PAUSE)
-            if self._probe_action_feedback() is not None:
+            if self._wait_assumed_success_feedback():
                 return True
             self._note_assumed_sp_spend(sp, expected_cost)
             self.pending_advance_cursor = True
@@ -906,18 +847,28 @@ class TimedCombatLogic:
             self.pending = (sp, token, expected_cost)
             if overflow:
                 self.task.log_info(
-                    f"时间排轴: 高技力防溢出 {sp:.1f}/{self.sp_pressure_threshold:.1f} SP，"
-                    f"抢占尝试战技 {token}"
+                    f"时间排轴: 高技力防溢出 {sp:.1f}/{self.sp_pressure_threshold:.1f} SP，抢占尝试战技 {token}"
                 )
         else:
-            self.task.sleep(self._ASSUME_SUCCESS_PAUSE)
-            if self._probe_action_feedback() is not None:
+            if self._wait_assumed_success_feedback():
                 return True
             self._note_assumed_sp_spend(sp, 0.0)
             self.pending_advance_cursor = True
             self._accept_battle_skill(token, advance_cursor=advance_cursor)
             self.task.log_info(f"时间排轴: 零净消耗战技 {token} 按键后直接视为成功")
         return True
+
+    def _wait_assumed_success_feedback(self):
+        self.task.sleep(self._ASSUME_SUCCESS_PAUSE)
+        if not callable(getattr(self.task, "probe_combat_action_block_reason", None)):
+            return False
+        for attempt in range(2):
+            self.task.next_frame()
+            if self._probe_action_feedback() is not None:
+                return True
+            if attempt == 0:
+                self.task.sleep(self._ACTION_FEEDBACK_PROBE_GAP)
+        return False
 
     def _try_planned_battle_skill(self, sp, overflow=False):
         if not self.order:
@@ -950,9 +901,7 @@ class TimedCombatLogic:
 
         current = self.order[self.cursor]
         if self._try_battle_token(current, sp, overflow=True, advance_cursor=True):
-            self.task.log_info(
-                f"时间排轴: 高技力抢占[{checkpoint}]，释放当前计划战技 {current}"
-            )
+            self.task.log_info(f"时间排轴: 高技力抢占[{checkpoint}]，释放当前计划战技 {current}")
             return True
 
         candidates = []
@@ -967,10 +916,7 @@ class TimedCombatLogic:
 
         for _score, token in candidates:
             if self._try_battle_token(token, sp, overflow=True, advance_cursor=False):
-                self.task.log_info(
-                    f"时间排轴: 高技力抢占[{checkpoint}]，当前计划战技不可用，"
-                    f"插入安全收益战技 {token}"
-                )
+                self.task.log_info(f"时间排轴: 高技力抢占[{checkpoint}]，当前计划战技不可用，插入安全收益战技 {token}")
                 return True
         return False
 
@@ -985,16 +931,12 @@ class TimedCombatLogic:
                 self.battle_phase_indices[token] = 1
                 self.forced_battle_token = token
                 self.phase_planner.seek_action(token, "battle", "追形")
-                self.task.log_info(
-                    f"时间排轴机制: 终结技 {token} 后战技切到第2段，优先尝试后续段"
-                )
+                self.task.log_info(f"时间排轴机制: 终结技 {token} 后战技切到第2段，优先尝试后续段")
 
         if mechanic.archetype == "consume_status_build_stack_burst":
             self.free_battle_once.add(token)
             self.forced_battle_token = token
-            self.task.log_info(
-                f"时间排轴机制: 终结技 {token} 后首次战技按免费强化段处理并优先释放"
-            )
+            self.task.log_info(f"时间排轴机制: 终结技 {token} 后首次战技按免费强化段处理并优先释放")
 
         if mechanic.forced_main_control_seconds:
             self.forced_main_control_slot = token
@@ -1052,20 +994,9 @@ class TimedCombatLogic:
             return
 
         active_names = self._active_team_names()
-        link_profiles = {
-            name: self.store.profiles(name, "link")
-            for name in active_names
-        }
-        links = tuple(
-            profile
-            for profiles in link_profiles.values()
-            for profile in profiles
-        )
-        if (
-            active_names
-            and self._allowed(links, candidate_kind="link")
-            and self.task.is_link_skill_ready()
-        ):
+        link_profiles = {name: self.store.profiles(name, "link") for name in active_names}
+        links = tuple(profile for profiles in link_profiles.values() for profile in profiles)
+        if active_names and self._allowed(links, candidate_kind="link") and self.task.is_link_skill_ready():
             started = self._clock()
             self._arm_action_feedback()
             if self.task.use_link_skill():
@@ -1075,17 +1006,9 @@ class TimedCombatLogic:
                 else:
                     self._clear_active(started)
                 self._observe_bonus("link")
-                missing = [
-                    name for name, profiles in link_profiles.items()
-                    if not profiles
-                ]
+                missing = [name for name, profiles in link_profiles.items() if not profiles]
                 self.task.log_info(
-                    "时间排轴: 连携技按现有就绪检测释放"
-                    + (
-                        f"；缺少时间轴 {missing}，不阻断释放"
-                        if missing
-                        else ""
-                    )
+                    "时间排轴: 连携技按现有就绪检测释放" + (f"；缺少时间轴 {missing}，不阻断释放" if missing else "")
                 )
                 return
 
@@ -1114,9 +1037,7 @@ class TimedCombatLogic:
                 self._activate_state(token, self.ult_state_specs.get(token), "终结技", started)
                 self._after_ultimate_mechanic(token, ended)
                 self._clear_active(ended)
-                self.task.log_info(
-                    f"时间排轴: 终结技 {token} 动画结束后继续，HUD 动画锁 {ended - started:.2f}s"
-                )
+                self.task.log_info(f"时间排轴: 终结技 {token} 动画结束后继续，HUD 动画锁 {ended - started:.2f}s")
 
                 post_ult_sp = self._sample_sp(force=True)
                 self._observe_phase_sp(post_ult_sp)
@@ -1127,9 +1048,7 @@ class TimedCombatLogic:
                         post_ult_sp,
                         advance_cursor=False,
                     ):
-                        self.task.log_info(
-                            f"时间排轴: 终结技恢复插入机制战技 {forced}"
-                        )
+                        self.task.log_info(f"时间排轴: 终结技恢复插入机制战技 {forced}")
                         return
                 if self._try_overflow_battle_skill(post_ult_sp, "终结技恢复"):
                     return
@@ -1142,6 +1061,7 @@ class TimedCombatLogic:
     def run(self, start_sleep=None, no_battle=False, deadline=None):
         task = self.task
         task.exit_check_count = 0
+        reset_enemy_presence_probe(task)
         task.mouse_up(key="left")
         try:
             if self.store is None:

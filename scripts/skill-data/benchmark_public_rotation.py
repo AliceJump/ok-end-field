@@ -86,9 +86,11 @@ def benchmark(regen=8.0, seconds=180.0):
     options = build_options(TEAM, store, quotes)
     plan = optimize_cycle(options, regen)
     by_slot = {cast.slot: cast for cast in options}
-    baseline = evaluate_cycle(tuple(by_slot[slot] for slot in generate_damage_rotation(TEAM)), regen)
+    baseline = evaluate_cycle(tuple(by_slot[slot] for slot in generate_damage_rotation(TEAM) if slot in by_slot), regen)
     if plan is None:
         raise ValueError("No periodic plan")
+    if baseline is None or baseline.dps <= 0:
+        raise ValueError("No valid baseline periodic plan")
     hud = ReplayHud(options, regen)
     logic = TimedCombatLogic(hud, store, clock=lambda: hud.now)
     logic.team = TEAM
@@ -121,7 +123,7 @@ def benchmark(regen=8.0, seconds=180.0):
 
     battle = next(
         row
-        for row in json.loads(Path("assets/data/damage_baseline.json").read_text(encoding="utf-8"))
+        for row in json.loads((ROOT / "assets/data/damage_baseline.json").read_text(encoding="utf-8"))
         if row["character"] == TEAM[0]
     )
     battle = next(skill for skill in battle["skills"] if skill["type"] == "战技")

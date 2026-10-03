@@ -39,9 +39,7 @@ class TestGenerateDamageRotation(unittest.TestCase):
     def test_order_by_damage_desc(self):
         baseline = {"A": 3000.0, "B": 1000.0, "C": 2000.0}
         # D 无基准数据 → 排最后
-        self.assertEqual(
-            generate_damage_rotation(["A", "B", "C", "D"], baseline), ["1", "3", "2", "4"]
-        )
+        self.assertEqual(generate_damage_rotation(["A", "B", "C", "D"], baseline), ["1", "3", "2", "4"])
 
     def test_unknown_member_placeholder_last(self):
         baseline = {"A": 100.0, "B": 200.0}
@@ -58,9 +56,16 @@ class TestGenerateDamageRotation(unittest.TestCase):
     def test_baseline_argument_overrides_cache(self):
         # 显式传入 baseline 时不读取缓存文件
         clear_cache()
-        self.assertEqual(
-            generate_damage_rotation(["A", "B"], {"A": 1.0}), ["1", "2"]
-        )
+        self.assertEqual(generate_damage_rotation(["A", "B"], {"A": 1.0}), ["1", "2"])
+
+    def test_loading_multiple_paths_preserves_each_baseline_without_clearing_cache(self):
+        with tempfile.TemporaryDirectory() as directory:
+            first, second = (Path(directory) / name for name in ("first.json", "second.json"))
+            first.write_text(json.dumps([{"character": "A", "cycle_expect": 10}]), encoding="utf-8")
+            second.write_text(json.dumps([{"character": "A", "cycle_expect": 20}]), encoding="utf-8")
+            self.assertEqual(load_damage_baseline(first)["A"], 10)
+            self.assertEqual(load_damage_baseline(second)["A"], 20)
+            self.assertEqual(load_damage_baseline(first)["A"], 10)
 
     def test_real_baseline_loads_and_orders(self):
         baseline = load_damage_baseline()
@@ -75,12 +80,20 @@ class TestGenerateDamageRotation(unittest.TestCase):
         try:
             with tempfile.TemporaryDirectory() as tmp:
                 p = Path(tmp) / "baseline.json"
-                p.write_text(json.dumps([
-                    {"character": "甲", "cycle_expect": 999.0,
-                     "skills": [{"type": "战技", "crit_expect": 5.0}]},
-                    {"character": "乙",
-                     "skills": [{"type": "战技", "crit_expect": 7.0}]},
-                ], ensure_ascii=False), encoding="utf-8")
+                p.write_text(
+                    json.dumps(
+                        [
+                            {
+                                "character": "甲",
+                                "cycle_expect": 999.0,
+                                "skills": [{"type": "战技", "crit_expect": 5.0}],
+                            },
+                            {"character": "乙", "skills": [{"type": "战技", "crit_expect": 7.0}]},
+                        ],
+                        ensure_ascii=False,
+                    ),
+                    encoding="utf-8",
+                )
                 baseline = load_damage_baseline(p)
         finally:
             clear_cache()
@@ -92,8 +105,7 @@ def _caps_map(**members) -> dict:
     from src.data.character_capabilities import CharacterCapabilities
 
     return {
-        name: CharacterCapabilities(key=name, name=name,
-                                     attach_elements=tuple(spec[0]), combo_applier=spec[1])
+        name: CharacterCapabilities(key=name, name=name, attach_elements=tuple(spec[0]), combo_applier=spec[1])
         for name, spec in members.items()
     }
 
@@ -102,9 +114,12 @@ class TestDependencyAwareOrdering(unittest.TestCase):
     """资源喂养约束：满口径依赖附着的角色排在其喂养者之后。"""
 
     _ENTRIES = [
-        {"character": "提弗洛斯", "cycle_expect": 129661.5,
-         "cycle_expect_conservative": 103074.8,
-         "full_caliber_requires": {"attach": "自然"}},
+        {
+            "character": "提弗洛斯",
+            "cycle_expect": 129661.5,
+            "cycle_expect_conservative": 103074.8,
+            "full_caliber_requires": {"attach": "自然"},
+        },
         {"character": "莱万汀", "cycle_expect": 100000.0},
         {"character": "洁尔佩塔", "cycle_expect": 30000.0},
         {"character": "弭弗", "cycle_expect": 50000.0},
@@ -147,9 +162,7 @@ class TestDependencyAwareOrdering(unittest.TestCase):
         caps["噗切娜"] = _caps_map(噗切娜=(("自然",), False))["噗切娜"]
         path2 = Path(self._tmp.name) / "two_feeders.json"
         path2.write_text(json.dumps(entries, ensure_ascii=False), encoding="utf-8")
-        tokens = generate_damage_rotation(
-            ["提弗洛斯", "莱万汀", "洁尔佩塔", "噗切娜"], path=path2, capabilities=caps
-        )
+        tokens = generate_damage_rotation(["提弗洛斯", "莱万汀", "洁尔佩塔", "噗切娜"], path=path2, capabilities=caps)
         # 洁尔佩塔(30000) 先于噗切娜(20000) 满足约束即可，提弗洛斯随即出手
         self.assertEqual(tokens, ["2", "3", "1", "4"])
 
@@ -177,9 +190,7 @@ class TestDependencyAwareOrdering(unittest.TestCase):
         )
         self.assertEqual(entries["提弗洛斯"]["requires_attach"], ["自然"])
         self.assertEqual(entries["提弗洛斯"]["value"], 129661.5)
-        starved = load_team_baseline_entries(
-            ["提弗洛斯", "弭弗", "?", "?"], path=self._path, capabilities=self._CAPS
-        )
+        starved = load_team_baseline_entries(["提弗洛斯", "弭弗", "?", "?"], path=self._path, capabilities=self._CAPS)
         self.assertIsNone(starved["提弗洛斯"]["requires_attach"])
         self.assertEqual(starved["提弗洛斯"]["value"], 103074.8)
 
@@ -191,9 +202,7 @@ class TestDependencyAwareOrdering(unittest.TestCase):
         caps["莱万汀"] = _caps_map(莱万汀=(("灼热",), False))["莱万汀"]
         path2 = Path(self._tmp.name) / "list_requires.json"
         path2.write_text(json.dumps(entries, ensure_ascii=False), encoding="utf-8")
-        tokens = generate_damage_rotation(
-            ["提弗洛斯", "莱万汀", "洁尔佩塔", "?"], path=path2, capabilities=caps
-        )
+        tokens = generate_damage_rotation(["提弗洛斯", "莱万汀", "洁尔佩塔", "?"], path=path2, capabilities=caps)
         # 莱万汀（灼热）先手即满足任一元素 → 提弗洛斯紧随其后
         self.assertEqual(tokens, ["2", "1", "3", "4"])
 
@@ -448,9 +457,7 @@ class TestRotateAutoRotationForCurrent(unittest.TestCase):
         sequence = ["2", "ult_2", "normal_12.5", "3", "ult_3", "e", "normal_12.5"]
         rotated = rotate_auto_rotation_for_current(sequence, 2)  # 槽位 3
         self.assertEqual(rotated[0], "3")
-        self.assertEqual(
-            rotated, ["3", "ult_3", "e", "normal_12.5", "2", "ult_2", "normal_12.5"]
-        )
+        self.assertEqual(rotated, ["3", "ult_3", "e", "normal_12.5", "2", "ult_2", "normal_12.5"])
         # 循环序保持：旋转后首尾相接与原序列一致
         self.assertEqual(rotated[-1], sequence[sequence.index("3") - 1])
 

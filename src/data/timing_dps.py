@@ -83,12 +83,14 @@ def load_damage_quotes(team: list[str], path: Path | None = None) -> dict[str, D
         conservative = hidden_estimate.low if hidden_estimate is not None else battle
         required = (row.get("full_caliber_requires") or {}).get("attach", [])
         required = [required] if isinstance(required, str) else required
-        if (
-            hidden_estimate is None
-            and required
-            and row.get("cycle_expect_conservative") is not None
-        ):
-            conservative = max(0, battle + float(row["cycle_expect_conservative"]) - float(row["cycle_expect"]))
+        if hidden_estimate is None and required and row.get("cycle_expect_conservative") is not None:
+            try:
+                adjustment = float(row["cycle_expect_conservative"]) - float(row["cycle_expect"])
+            except (KeyError, TypeError, ValueError):
+                pass
+            else:
+                if math.isfinite(adjustment):
+                    conservative = max(0, battle + adjustment)
         produced, retain = set(), False
         for skill in snapshots.get(name, {}).get("skills") or []:
             if not isinstance(skill, dict) or skill.get("skill_type") != "战技":

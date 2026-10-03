@@ -2,6 +2,7 @@ import argparse
 import importlib.util
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts/skill-data/benchmark_public_rotation.py"
@@ -11,6 +12,28 @@ _SPEC.loader.exec_module(benchmark)
 
 
 class TestBenchmarkReportPaths(unittest.TestCase):
+    def test_missing_options_report_unavailable_plan(self):
+        with patch.object(benchmark, "build_options", return_value=()):
+            with self.assertRaisesRegex(ValueError, "No periodic plan"):
+                benchmark.benchmark(seconds=1)
+
+    def test_unstable_baseline_is_reported(self):
+        with patch.object(benchmark, "evaluate_cycle", return_value=None):
+            with self.assertRaisesRegex(ValueError, "baseline periodic plan"):
+                benchmark.benchmark(seconds=1)
+
+    def test_replay_data_paths_are_independent_of_current_directory(self):
+        import os
+        import tempfile
+
+        previous = Path.cwd()
+        with tempfile.TemporaryDirectory() as directory:
+            try:
+                os.chdir(directory)
+                self.assertTrue(benchmark.benchmark(seconds=1)["laevatain_battle_quote"])
+            finally:
+                os.chdir(previous)
+
     def test_offline_replay_runs_with_precise_sp_and_simulated_time(self):
         result = benchmark.benchmark(seconds=2)
         casts = result["runtime_replay"]["first_12_casts"]

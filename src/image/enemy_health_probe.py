@@ -35,6 +35,13 @@ _RUN_KERNELS: dict[int, np.ndarray] = {}
 _FULL_SLICE_MASK = (1 << ENEMY_NORMAL_HP_SLICES) - 1
 
 
+def reset_enemy_presence_probe(task) -> None:
+    task._enemy_hp_last_slice = None
+    task._enemy_hp_checked_mask = 0
+    task._enemy_hp_clean_rounds = 0
+    task._enemy_hp_scan_cursor = 0
+
+
 def _scaled_px(value: int, _screen_width: int, screen_height: int) -> int:
     scale = screen_height / 1080.0
     return max(1, int(round(value * scale)))
