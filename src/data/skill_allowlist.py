@@ -98,6 +98,17 @@ def _produced_effect_id(effect) -> str:
     return effect_id
 
 
+def _consumed_effect_id(effect) -> str:
+    """Explicit consumption is a possible dependency even when timing is unknown."""
+    if not isinstance(effect, dict):
+        return ""
+    effect_id = _effect_id(effect)
+    count = effect.get("count")
+    if (isinstance(count, (int, float)) and count < 0) or effect_id in {"CONSUME_ALL", "CONSUME_STACK"}:
+        return effect.get("subject_effect_id") or effect_id
+    return ""
+
+
 def _expanded_produced_effect_ids(effect) -> tuple[str, ...]:
     """展开正向产出效果的依赖 ID，并补充仅用于条件查询的 predicate 别名。"""
     effect_id = _produced_effect_id(effect)
@@ -164,7 +175,11 @@ def _is_trigger_satisfied(trigger_groups: list[dict], current_effects: set[str])
     因此任何 min_count > 1 的条件都保守视为动态未知，避免把“能产生一次”
     错当成“必然达到所需层数”。完整层数判断由运行时机制状态负责。
     """
+    if not trigger_groups:
+        return False
     for group in trigger_groups:
+        if not group["effects"]:
+            return False
         minimum_counts = group.get("minimum_counts", {})
         if any(min_count > 1 for min_count in minimum_counts.values()):
             return False
@@ -304,6 +319,7 @@ def _build_team_skill_context(
     skill_effects: dict[tuple[str, str], list[str]] = {}
     enhancement_triggers: dict[tuple[str, str], list[dict]] = {}
     effect_producers: dict[str, list[tuple[str, str]]] = {}
+    consumed_effects: set[str] = set()
 
     for name, cdata in characters.items():
         if name not in team_set:
@@ -319,6 +335,9 @@ def _build_team_skill_context(
             # 收集技能产出的效果
             effects = []
             for eff in s.get("effects") or []:
+                consumed = _consumed_effect_id(eff)
+                if consumed:
+                    consumed_effects.add(consumed)
                 for effect_id in _expanded_produced_effect_ids(eff):
                     effects.append(effect_id)
                     _register_effect_producer(effect_producers, effect_id, key)
@@ -333,6 +352,9 @@ def _build_team_skill_context(
                 trigger_groups = _parse_trigger_groups(trigger)
                 enh_effects = []
                 for eff in enh.get("effects") or []:
+                    consumed = _consumed_effect_id(eff)
+                    if consumed:
+                        consumed_effects.add(consumed)
                     for eid in _expanded_produced_effect_ids(eff):
                         enh_effects.append(eid)
                         _register_effect_producer(effect_producers, eid, key)
@@ -353,6 +375,7 @@ def _build_team_skill_context(
         "skill_effects": skill_effects,
         "enhancement_triggers": enhancement_triggers,
         "effect_producers": effect_producers,
+        "consumed_effects": consumed_effects,
     }
 
 
@@ -424,7 +447,10 @@ def _filter_remaining_skills(
         # 检查战技产出的效果是否与任何已可激活的强化态的触发条件有交集
         # 破防链特殊规则：
         # 破防、击飞、倒地、碎甲、猛击统一视为同一条物理强化链。
-        has_contribution = _has_break_chain_contribution(skill_effects)
+        # A dynamic condition is not proof that its input has no consumer.
+        # Preserve explicitly consumed entities/pools for the runtime to evaluate.
+        has_contribution = bool(skill_effects & ctx["consumed_effects"])
+        has_contribution |= _has_break_chain_contribution(skill_effects)
         if not has_contribution:
             has_contribution = _contributes_to_active_enhancement(
                 skill_effects,
