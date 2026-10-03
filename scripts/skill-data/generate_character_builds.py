@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from src.data.operator_names import _normalize_name  # noqa: E402
+from src.data.wiki_snapshots import resolve_operator_snapshot  # noqa: E402
 
 DATA_DIR = ROOT / "assets/data"
 CHAR_SKILLS_DIR = DATA_DIR / "character_skills"
@@ -147,12 +148,33 @@ def _extract_weapon_recs(payload: dict) -> list[str]:
     return []
 
 
+def select_official_pieces(names: list[str], equipments: dict) -> list[str | None]:
+    quotas = {"护甲": 1, "护手": 1, "配件": 2}
+    names = sorted(set(names))
+    sets = {equipments[name].get("set") for name in names if equipments[name].get("set")}
+    def available_slots(set_name):
+        return sum(min(limit, sum(equipments[name].get("part") == part and
+                                 equipments[name].get("set") == set_name for name in names))
+                   for part, limit in quotas.items())
+    preferred = min(sets, key=lambda name: (-available_slots(name), name)) if sets else None
+    pieces = []
+    for part, limit in quotas.items():
+        candidates = sorted((name for name in names if equipments[name].get("part") == part),
+                            key=lambda name: (equipments[name].get("set") != preferred, name))
+        pieces.extend(candidates[:limit] + [None] * max(0, limit - len(candidates)))
+    return pieces
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--snapshot", help="operator_details 快照目录名（默认最新）")
+    parser.add_argument("--snapshot", help="operator_details 快照目录名（默认 latest.json 指向的完整快照）")
+    parser.add_argument("--allow-partial", action="store_true", help="显式允许不完整快照")
     args = parser.parse_args()
-    candidates = sorted(p for p in SNAP_ROOT.iterdir() if p.is_dir()) if SNAP_ROOT.is_dir() else []
-    snap_dir = SNAP_ROOT / args.snapshot if args.snapshot else (candidates[-1] if candidates else SNAP_ROOT)
+    try:
+        snap_dir = resolve_operator_snapshot(SNAP_ROOT, args.snapshot, allow_partial=args.allow_partial)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        print(f"无法使用干员快照: {exc}", file=sys.stderr)
+        return 1
     if not list(snap_dir.glob("details/*.json")):
         print(f"快照缺少 details/*.json: {snap_dir}", file=sys.stderr)
         return 1
@@ -233,22 +255,21 @@ def main() -> int:
         set_main = set_off = None
         set_level = 3
         set_source = ""
-        official_pieces: list[str] = []
+        official_pieces: list[str | None] = []
         equip_note = ""
         if name in equip_rec_pieces:
-            parts_order = {"护甲": 0, "护手": 1, "配件": 2}
-            official_pieces = sorted(
-                set(equip_rec_pieces[name]),
-                key=lambda p: (parts_order.get(equipments[p].get("part"), 9), p),
-            )[:4]
-            set_counts = Counter(equipments[p].get("set") for p in official_pieces)
-            top_set, top_n = set_counts.most_common(1)[0]
-            if top_n >= 3:
+            official_pieces = select_official_pieces(equip_rec_pieces[name], equipments)
+            set_counts = Counter(equipments[p].get("set") for p in official_pieces if p)
+            top_set, top_n = set_counts.most_common(1)[0] if set_counts else (None, 0)
+            if top_set and top_n >= 3:
                 set_main = top_set
             set_level = 1
             set_source = "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）"
-            if len(official_pieces) < 4:
-                equip_note = f"官方仅推荐 {len(official_pieces)} 件，其余槽位为自由散件"
+            count = sum(piece is not None for piece in official_pieces)
+            if count < 4:
+                equip_note = f"官方仅推荐 {count} 件可用装备，其余槽位为自由散件（护甲1、护手1、配件2）"
+            if not count:
+                official_pieces = []
         if not official_pieces:
             if name in COMMUNITY_SETS:
                 m, o = COMMUNITY_SETS[name]

@@ -38,6 +38,7 @@ sys.path.insert(0, str(ROOT))
 
 from src.data.combat_model import MAX_LINK_STACKS, TeamCombatState  # noqa: E402
 from src.data.operator_names import _normalize_name  # noqa: E402
+from src.data.wiki_snapshots import resolve_operator_snapshot  # noqa: E402
 
 DATA_DIR = ROOT / "assets/data"
 SNAP_ROOT = ROOT / "tools/wiki_catalog/operator_details"
@@ -597,7 +598,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--char", default=None, help="仅计算指定角色（文件名，如 purrchena）；默认只打印不写回")
     parser.add_argument("--out", default=None, help="输出路径（必须位于 assets/data 下；默认 damage_baseline.json）")
-    parser.add_argument("--snapshot", help="operator_details 快照目录名（默认最新）")
+    parser.add_argument("--snapshot", help="operator_details 快照目录名（默认 latest.json 指向的完整快照）")
+    parser.add_argument("--allow-partial", action="store_true", help="显式允许不完整快照")
     args = parser.parse_args()
 
     # 输入/输出路径防御：--char 仅允许文件名字符，--out 仅允许写入 assets/data 下
@@ -613,8 +615,11 @@ def main() -> int:
     else:
         out_path = DATA_DIR / "damage_baseline.json"
 
-    candidates = sorted(p for p in SNAP_ROOT.iterdir() if p.is_dir()) if SNAP_ROOT.is_dir() else []
-    snap_dir = SNAP_ROOT / args.snapshot if args.snapshot else (candidates[-1] if candidates else SNAP_ROOT)
+    try:
+        snap_dir = resolve_operator_snapshot(SNAP_ROOT, args.snapshot, allow_partial=args.allow_partial)
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        print(f"无法使用干员快照: {exc}", file=sys.stderr)
+        return 1
     if not list(snap_dir.glob("details/*.json")) or not list(snap_dir.glob("rendered_text/*.txt")):
         print(f"快照缺少 details/*.json 或 rendered_text/*: {snap_dir}", file=sys.stderr)
         return 1

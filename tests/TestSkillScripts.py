@@ -41,9 +41,16 @@ LANG_STUBS = load_script_module(
     "script_gen_lang_stubs",
     "scripts/i18n/gen_lang_stubs.py",
 )
+CHARACTER_LANGS = load_script_module(
+    "script_sync_character_langs", "scripts/i18n/sync_character_langs.py",
+)
 
 
 class SkillScriptTestCase(unittest.TestCase):
+    def test_character_language_keys_match_canonical_ids(self):
+        self.assertEqual(CHARACTER_LANGS.ZH_KEY_MAP["提弗洛斯"], "typhoeus")
+        self.assertEqual(CHARACTER_LANGS.ZH_KEY_MAP["噗切娜"], "purrchena")
+
     def test_next_tag_variants(self):
         cases = [
             ("release", ["v1.2.3"], "v1.2.4"),

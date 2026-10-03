@@ -8,6 +8,8 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
+from src.data.wiki_snapshots import resolve_operator_snapshot
+
 _REPO = Path(__file__).resolve().parents[1]
 
 
@@ -28,11 +30,55 @@ def _write(path: Path, value) -> None:
     path.write_text(json.dumps(value, ensure_ascii=False), encoding="utf-8")
 
 
+def _complete(root: Path, name: str) -> None:
+    _write(root / name / "manifest.json", {"complete": True})
+    _write(root / "latest.json", {"snapshot": name})
+
+
 class TestSnapshotChecks(unittest.TestCase):
+    def test_snapshot_selection_rejects_partial_and_escape(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp) / "captures"
+            _complete(root, "complete")
+            _write(root / "partial" / "manifest.json", {"complete": False})
+            self.assertEqual(resolve_operator_snapshot(root).name, "complete")
+            with self.assertRaises(ValueError):
+                resolve_operator_snapshot(root, "partial")
+            self.assertEqual(resolve_operator_snapshot(root, "partial", allow_partial=True).name, "partial")
+            with self.assertRaises(ValueError):
+                resolve_operator_snapshot(root, "../outside", allow_partial=True)
+
+    def test_equipment_selection_obeys_slots_and_preserves_three_piece_set(self):
+        equipment = {"A甲1": {"set": "A", "part": "护甲"},
+                     "A甲2": {"set": "A", "part": "护甲"},
+                     "B甲": {"set": "B", "part": "护甲"},
+                     "A手": {"set": "A", "part": "护手"},
+                     "A配": {"set": "A", "part": "配件"},
+                     "B配": {"set": "B", "part": "配件"}}
+        pieces = builds.select_official_pieces(list(equipment) + ["A甲1"], equipment)
+        self.assertEqual(pieces, ["A甲1", "A手", "A配", "B配"])
+        self.assertEqual(builds.select_official_pieces(["A甲1", "A甲2", "A手"], equipment),
+                         ["A甲1", "A手", None, None])
+
+    def test_partial_operator_snapshot_does_not_overwrite_output(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            snap = root / "snapshots"
+            _write(snap / "partial" / "manifest.json", {"complete": False})
+            output = root / "damage_baseline.json"
+            output.write_text("unchanged", encoding="utf-8")
+            with mock.patch.object(baseline, "SNAP_ROOT", snap), \
+                 mock.patch.object(baseline, "DATA_DIR", root), \
+                 mock.patch.object(sys, "argv", ["compute_damage_baseline.py", "--snapshot", "partial",
+                                                "--out", str(output)]):
+                self.assertEqual(baseline.main(), 1)
+            self.assertEqual(output.read_text(encoding="utf-8"), "unchanged")
+
     def test_build_generator_fails_before_writing_without_details(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             (root / "snapshots" / "empty").mkdir(parents=True)
+            _complete(root / "snapshots", "empty")
             with mock.patch.object(builds, "SNAP_ROOT", root / "snapshots"), \
                  mock.patch.object(builds, "BUILD_DIR", root / "output"), \
                  mock.patch.object(sys, "argv", ["generate_character_builds.py", "--snapshot", "empty"]):
@@ -44,6 +90,7 @@ class TestSnapshotChecks(unittest.TestCase):
             root = Path(tmp)
             snap = root / "snapshots" / "empty"
             snap.mkdir(parents=True)
+            _complete(root / "snapshots", "empty")
             # DATA_DIR 同步 mock 到 tmp：--out 写路径限定在 DATA_DIR 下（注入防御）
             output = root / "damage_baseline.json"
             output.write_text("unchanged", encoding="utf-8")
@@ -62,11 +109,13 @@ class TestSnapshotChecks(unittest.TestCase):
                         self.assertEqual(baseline.main(), 1)
                     self.assertEqual(output.read_text(encoding="utf-8"), "unchanged")
 
-    def test_build_generator_defaults_to_newest_snapshot_and_checks_reverse_recommendation(self):
+    def test_build_generator_uses_complete_pointer_and_checks_reverse_recommendation(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             data = root / "assets" / "data"
             snapshots = root / "tools" / "wiki_catalog" / "operator_details"
+            _complete(snapshots, "20260102")
+            _write(snapshots / "20260103" / "manifest.json", {"complete": False})
             _write(data / "weapons.json", {"推荐武器": {"item_id": "200", "recommended_operator_ids": ["100"],
                                                     "recommended_matrix_ids": ["300"]}})
             _write(data / "characters.json", {})
@@ -105,6 +154,7 @@ class TestSnapshotChecks(unittest.TestCase):
             root = Path(tmp)
             data = root / "assets" / "data"
             snapshots = root / "tools" / "wiki_catalog" / "operator_details"
+            _complete(snapshots, "20260102")
             _write(data / "weapons.json", {})
             _write(data / "characters.json", {})
             _write(data / "equipments.json", {
@@ -136,7 +186,7 @@ class TestSnapshotChecks(unittest.TestCase):
             self.assertEqual(equip["evidence_level"], 1)
             self.assertEqual(equip["set_main"], "壤流装备组")
             self.assertIsNone(equip["set_off"])
-            self.assertEqual(equip["pieces"], ["壤流轻甲", "壤流护手", "壤流短棍"])
+            self.assertEqual(equip["pieces"], ["壤流轻甲", "壤流护手", "壤流短棍", None])
             self.assertIn("自由散件", equip["note"])
 
     def test_baseline_defaults_to_newest_snapshot_for_secondary_stats(self):
@@ -148,6 +198,7 @@ class TestSnapshotChecks(unittest.TestCase):
             _write(data / "equipments.json", {})
             _write(data / "character_skills" / "test.json", {"name": "管理员", "element": "物理", "skills": []})
             for name, secondary in (("20260101", "智识"), ("20260102", "敏捷")):
+                _complete(snapshots, name)
                 _write(snapshots / name / "details" / "100_测试.json", {"data": {"item": {
                     "itemId": "100", "brief": {"name": "管理员·男"}, "tagIds": ["10212"]}}})
                 path = snapshots / name / "rendered_text" / "100_测试.txt"
