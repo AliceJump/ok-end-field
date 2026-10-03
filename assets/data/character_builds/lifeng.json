@@ -1,0 +1,34 @@
+{
+  "character": "黎风",
+  "character_key": "lifeng",
+  "element": "物理",
+  "stars": null,
+  "weapon": {
+    "name": "负山",
+    "level_max": 90,
+    "skill_rank": 9,
+    "source": "官方游戏内武器推荐（森空岛WIKI）",
+    "evidence_level": 1,
+    "note": "官方游戏内武器推荐（森空岛WIKI 干员页），武器页反向互证=一致"
+  },
+  "matrix": {
+    "name": "无瑕基质·效益",
+    "source": "官方武器页「推荐武器基质」",
+    "evidence_level": 1,
+    "note": "基质词条=武器技能等级提升（wiki.gg），面板取武器技能 Rank9 满级值"
+  },
+  "equipment": {
+    "set_main": "轻超域装备组",
+    "set_off": null,
+    "pieces": [
+      "M.I.警用护甲",
+      "轻超域护手",
+      "轻超域轻护手",
+      "轻超域稳定盘"
+    ],
+    "level_max": 70,
+    "refinement_max": 3,
+    "source": "官方 wiki 装备页推荐（森空岛WIKI 装备页推荐卡片反查）",
+    "evidence_level": 1
+  }
+}

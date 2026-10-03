@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 from src.data.character_skills import _load_character_from_json, load_all_characters
-from src.data.effects import EffectType, match_effect_terms
+from src.data.effects import EFFECT_DESCRIPTIONS, EffectType, match_effect_terms
 from src.data.skill_types import TriggerEffectGroup
 
 _ROOT = Path(__file__).resolve().parent.parent
@@ -96,6 +96,26 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertEqual(match_effect_terms("重击会造成18点失衡"), [("失衡", EffectType.STATUS_STAGGER)])
         self.assertEqual(match_effect_terms("造成击飞"), [("击飞", EffectType.STATUS_HEAVY_HIT)])
         self.assertEqual(match_effect_terms("造成猛击"), [("猛击", EffectType.STATUS_HEAVY_STRIKE)])
+
+    def test_purge_colloquialism_maps_to_clear_status(self):
+        # 「净化」是社区对官方「清除异常状态」（CLEAR_STATUS）的转述
+        self.assertEqual(match_effect_terms("净化目标"), [("净化", EffectType.CLEAR_STATUS)])
+
+    def test_shatter_term_maps_to_status_broken(self):
+        # STATUS_BROKEN 官方名即「碎冰」（Shatter），枚举名带历史包袱但不可删除
+        self.assertEqual(match_effect_terms("碎冰"), [("碎冰", EffectType.STATUS_BROKEN)])
+        # 与「碎甲」（STATUS_SHATTER）术语互不混淆
+        self.assertEqual(match_effect_terms("碎甲"), [("碎甲", EffectType.STATUS_SHATTER)])
+        self.assertIn("碎冰", EFFECT_DESCRIPTIONS[EffectType.STATUS_BROKEN])
+
+    def test_link_is_team_shared_stack_not_character_owned(self):
+        # 连击是官方队伍共享机制（Link），术语应命中 STACK_COMBO
+        self.assertEqual(match_effect_terms("获得连击"), [("连击", EffectType.STACK_COMBO)])
+        self.assertEqual(
+            match_effect_terms("若该技能消耗了连击"),
+            [("连击", EffectType.STACK_COMBO)],
+        )
+        self.assertIn("队伍连击层数", EFFECT_DESCRIPTIONS[EffectType.STACK_COMBO])
 
     def test_has_enhancement_is_derived_from_parsed_branches(self):
         branch = {
@@ -186,7 +206,7 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertTrue(dynamic_enhancement.is_trigger_satisfied(set()))
 
         typhoeus_link = next(
-            skill for skill in load_all_characters()["ti_fu_luo_si"].skills if skill.skill_id == "typhoeus_link"
+            skill for skill in load_all_characters()["typhoeus"].skills if skill.skill_id == "typhoeus_link"
         )
         self.assertFalse(typhoeus_link.enhancement.is_trigger_satisfied(set()))
         self.assertFalse(typhoeus_link.enhancement.is_trigger_satisfied({EffectType.STACK_SIGN: 7}))
@@ -206,13 +226,13 @@ class TestCharacterSkillEffects(unittest.TestCase):
             data = json.loads((_CHARACTER_SKILLS_DIR / file_name).read_text(encoding="utf-8"))
             return next(skill for skill in data["skills"] if skill["skill_id"] == skill_id)
 
-        aglina = load_skill("aglina.json", "aglina_ultimate")
+        gilberta = load_skill("gilberta.json", "gilberta_ultimate")
         self.assertEqual(
-            [branch["trigger_condition"]["effects"] for branch in aglina["enhancements"]],
+            [branch["trigger_condition"]["effects"] for branch in gilberta["enhancements"]],
             [{"all": ["STATUS_SHRED"]}, {"all": ["STATUS_HEAVY_HIT"]}],
         )
         self.assertEqual(
-            [[effect["effect_id"] for effect in branch["effects"]] for branch in aglina["enhancements"]],
+            [[effect["effect_id"] for effect in branch["effects"]] for branch in gilberta["enhancements"]],
             [["VULN_ALL"], ["STATUS_HEAVY_HIT"]],
         )
 
@@ -237,7 +257,7 @@ class TestCharacterSkillEffects(unittest.TestCase):
         )
 
     def test_enhancement_compatibility_view_tracks_enhancements(self):
-        skill_fields = {field.name for field in dataclasses.fields(load_all_characters()["sai_xi"].skills[1])}
+        skill_fields = {field.name for field in dataclasses.fields(load_all_characters()["xaihi"].skills[1])}
         self.assertIn("enhancements", skill_fields)
         self.assertNotIn("enhancement", skill_fields)
         self.assertNotIn("has_enhancement", skill_fields)
@@ -245,13 +265,13 @@ class TestCharacterSkillEffects(unittest.TestCase):
     def test_physical_review_fixes(self):
         characters = load_all_characters()
 
-        dapan = characters["da_pan"]
-        dapan_link = next(skill for skill in dapan.skills if skill.skill_id == "dapan_link")
+        da_pan = characters["da_pan"]
+        da_pan_link = next(skill for skill in da_pan.skills if skill.skill_id == "da_pan_link")
         self.assertEqual(
-            [effect.effect_id for effect in dapan_link.enhancement.effects], [EffectType.STATUS_HEAVY_STRIKE]
+            [effect.effect_id for effect in da_pan_link.enhancement.effects], [EffectType.STATUS_HEAVY_STRIKE]
         )
 
-        lifeng = characters["li_feng"]
+        lifeng = characters["lifeng"]
         lifeng_skill = next(skill for skill in lifeng.skills if skill.skill_id == "lifeng_skill")
         self.assertEqual([effect.effect_id for effect in lifeng_skill.effects], [EffectType.STATUS_KNOCKDOWN])
         self.assertEqual(
@@ -264,28 +284,28 @@ class TestCharacterSkillEffects(unittest.TestCase):
             [EffectType.TRIGGER_ADDITIONAL],
         )
 
-        azrila = characters["yu_jin"]
-        azrila_skill = next(skill for skill in azrila.skills if skill.skill_id == "azrila_skill")
-        self.assertEqual(azrila_skill.enhancement.effects, [])
+        ember = characters["ember"]
+        ember_skill = next(skill for skill in ember.skills if skill.skill_id == "ember_skill")
+        self.assertEqual(ember_skill.enhancement.effects, [])
 
-        wulfa = characters["luo_qian"]
-        wulfa_link = next(skill for skill in wulfa.skills if skill.skill_id == "wulfa_link")
+        rossi = characters["rossi"]
+        rossi_link = next(skill for skill in rossi.skills if skill.skill_id == "rossi_link")
         self.assertEqual(
-            [effect.effect_id for effect in wulfa_link.enhancements[0].effects],
+            [effect.effect_id for effect in rossi_link.enhancements[0].effects],
             [EffectType.BUFF_CRIT_RATE_UP, EffectType.BUFF_CRIT_DMG_UP],
         )
         self.assertEqual(
-            [effect.effect_id for effect in wulfa_link.enhancements[1].effects],
+            [effect.effect_id for effect in rossi_link.enhancements[1].effects],
             [EffectType.STACK_SHRED],
         )
-        wulfa_ultimate = next(skill for skill in wulfa.skills if skill.skill_id == "wulfa_ultimate")
-        self.assertFalse(wulfa_ultimate.has_enhancement)
-        self.assertIsNone(wulfa_ultimate.enhancement)
+        rossi_ultimate = next(skill for skill in rossi.skills if skill.skill_id == "rossi_ultimate")
+        self.assertFalse(rossi_ultimate.has_enhancement)
+        self.assertIsNone(rossi_ultimate.enhancement)
 
     def test_spell_reaction_review_fixes(self):
         characters = load_all_characters()
 
-        yvonne = characters["yi_feng"]
+        yvonne = characters["yvonne"]
         yvonne_skill = next(skill for skill in yvonne.skills if skill.skill_id == "yvonne_skill")
         self.assertEqual(
             [effect.effect_id for effect in yvonne_skill.enhancement.effects],
@@ -298,40 +318,40 @@ class TestCharacterSkillEffects(unittest.TestCase):
         )
         self.assertEqual(yvonne_ultimate.enhancement.effects[1].count, -1)
 
-        laevat = characters["lai_wan_ting"]
-        laevat_skill = next(skill for skill in laevat.skills if skill.skill_id == "laevat_skill")
-        self.assertEqual(laevat_skill.enhancement.effects[0].effect_id, EffectType.STACK_MOLTEN)
-        self.assertEqual(laevat_skill.enhancement.effects[0].count, -4)
-        laevat_link = next(skill for skill in laevat.skills if skill.skill_id == "laevat_link")
-        self.assertEqual([effect.effect_id for effect in laevat_link.enhancement.effects], [EffectType.STACK_MOLTEN])
+        laevatain = characters["laevatain"]
+        laevatain_skill = next(skill for skill in laevatain.skills if skill.skill_id == "laevatain_skill")
+        self.assertEqual(laevatain_skill.enhancement.effects[0].effect_id, EffectType.STACK_MOLTEN)
+        self.assertEqual(laevatain_skill.enhancement.effects[0].count, -4)
+        laevatain_link = next(skill for skill in laevatain.skills if skill.skill_id == "laevatain_link")
+        self.assertEqual([effect.effect_id for effect in laevatain_link.enhancement.effects], [EffectType.STACK_MOLTEN])
 
-        zhuangfy = characters["zhuang_fang_yi"]
-        zhuangfy_skill = next(skill for skill in zhuangfy.skills if skill.skill_id == "zhuangfy_skill")
-        self.assertEqual(len(zhuangfy_skill.enhancements), 2)
+        zhuang_fangyi = characters["zhuang_fangyi"]
+        zhuang_fangyi_skill = next(skill for skill in zhuang_fangyi.skills if skill.skill_id == "zhuang_fangyi_skill")
+        self.assertEqual(len(zhuang_fangyi_skill.enhancements), 2)
         self.assertEqual(
-            [effect.effect_id for effect in zhuangfy_skill.enhancements[0].effects],
+            [effect.effect_id for effect in zhuang_fangyi_skill.enhancements[0].effects],
             [EffectType.STATUS_CONDUCTING, EffectType.STACK_QINGTING_SWORD],
         )
-        self.assertEqual(zhuangfy_skill.enhancements[0].effects[0].count, -1)
-        self.assertIsNone(zhuangfy_skill.enhancements[0].effects[1].count)
+        self.assertEqual(zhuang_fangyi_skill.enhancements[0].effects[0].count, -1)
+        self.assertIsNone(zhuang_fangyi_skill.enhancements[0].effects[1].count)
         self.assertEqual(
-            [effect.effect_id for effect in zhuangfy_skill.enhancements[1].effects],
+            [effect.effect_id for effect in zhuang_fangyi_skill.enhancements[1].effects],
             [EffectType.STACK_QINGTING_SWORD],
         )
-        self.assertEqual(zhuangfy_skill.enhancements[1].effects[0].count, 1)
-        self.assertEqual([effect.effect_id for effect in zhuangfy_skill.effects], [EffectType.STACK_QINGTING_SWORD])
-        self.assertEqual(zhuangfy_skill.effects[0].count, -1)
-        self.assertEqual(zhuangfy_skill.stagger_value, 15)
-        self.assertIn("45%", zhuangfy_skill.damage_multiplier)
-        self.assertIn("9%", zhuangfy_skill.damage_multiplier)
-        self.assertIn("6倍", zhuangfy_skill.damage_multiplier)
+        self.assertEqual(zhuang_fangyi_skill.enhancements[1].effects[0].count, 1)
+        self.assertEqual([effect.effect_id for effect in zhuang_fangyi_skill.effects], [EffectType.STACK_QINGTING_SWORD])
+        self.assertEqual(zhuang_fangyi_skill.effects[0].count, -1)
+        self.assertEqual(zhuang_fangyi_skill.stagger_value, 15)
+        self.assertIn("45%", zhuang_fangyi_skill.damage_multiplier)
+        self.assertIn("9%", zhuang_fangyi_skill.damage_multiplier)
+        self.assertIn("6倍", zhuang_fangyi_skill.damage_multiplier)
 
-        jue = characters["jue"]
-        jue_skill = next(skill for skill in jue.skills if skill.skill_id == "lizhiyan_skill")
-        self.assertFalse(jue_skill.has_enhancement)
-        jue_link = next(skill for skill in jue.skills if skill.skill_id == "lizhiyan_link")
+        arcane = characters["arcane"]
+        arcane_skill = next(skill for skill in arcane.skills if skill.skill_id == "arcane_skill")
+        self.assertFalse(arcane_skill.has_enhancement)
+        arcane_link = next(skill for skill in arcane.skills if skill.skill_id == "arcane_link")
         self.assertEqual(
-            [effect.effect_id for effect in jue_link.enhancement.effects],
+            [effect.effect_id for effect in arcane_link.enhancement.effects],
             [
                 EffectType.STATUS_SPELL_INFLICT,
                 EffectType.VULN_NATURAL,
@@ -340,21 +360,21 @@ class TestCharacterSkillEffects(unittest.TestCase):
             ],
         )
 
-        ardelia = characters["ai_er_dai_la"]
+        ardelia = characters["ardelia"]
         ardelia_skill = next(skill for skill in ardelia.skills if skill.skill_id == "ardelia_skill")
         self.assertEqual(ardelia_skill.effects, [])
         self.assertEqual(ardelia_skill.enhancement.effects[0].count, -1)
 
-        aglina = characters["jie_er_pei_ta"]
-        aglina_link = next(skill for skill in aglina.skills if skill.skill_id == "aglina_link")
+        gilberta = characters["gilberta"]
+        gilberta_link = next(skill for skill in gilberta.skills if skill.skill_id == "gilberta_link")
         self.assertEqual(
-            [effect.effect_id for effect in aglina_link.enhancement.effects], [EffectType.STATUS_HEAVY_HIT]
+            [effect.effect_id for effect in gilberta_link.enhancement.effects], [EffectType.STATUS_HEAVY_HIT]
         )
 
     def test_remaining_character_review_fixes(self):
         characters = load_all_characters()
 
-        antal = characters["an_ta_er"]
+        antal = characters["antal"]
         antal_skill = next(skill for skill in antal.skills if skill.skill_id == "antal_skill")
         self.assertEqual(
             [effect.effect_id for effect in antal_skill.effects],
@@ -365,76 +385,76 @@ class TestCharacterSkillEffects(unittest.TestCase):
             [effect.effect_id for effect in antal_link.enhancement.effects], [EffectType.TRIGGER_REPEAT_EFFECT]
         )
 
-        ikut = characters["hu_guang"]
-        ikut_skill = next(skill for skill in ikut.skills if skill.skill_id == "ikut_skill")
-        self.assertEqual(ikut_skill.enhancement.effects[0].count, -1)
-        ikut_ultimate = next(skill for skill in ikut.skills if skill.skill_id == "ikut_ultimate")
-        self.assertEqual(ikut_ultimate.enhancement.effects[0].count, -1)
+        arclight = characters["arclight"]
+        arclight_skill = next(skill for skill in arclight.skills if skill.skill_id == "arclight_skill")
+        self.assertEqual(arclight_skill.enhancement.effects[0].count, -1)
+        arclight_ultimate = next(skill for skill in arclight.skills if skill.skill_id == "arclight_ultimate")
+        self.assertEqual(arclight_ultimate.enhancement.effects[0].count, -1)
 
-        bounda = characters["ying_shi"]
-        bounda_skill = next(skill for skill in bounda.skills if skill.skill_id == "bounda_skill")
-        self.assertEqual(bounda_skill.effects[0].effect_id, EffectType.MECH_BOMB)
-        bounda_link = next(skill for skill in bounda.skills if skill.skill_id == "bounda_link")
+        fluorite = characters["fluorite"]
+        fluorite_skill = next(skill for skill in fluorite.skills if skill.skill_id == "fluorite_skill")
+        self.assertEqual(fluorite_skill.effects[0].effect_id, EffectType.MECH_BOMB)
+        fluorite_link = next(skill for skill in fluorite.skills if skill.skill_id == "fluorite_link")
         self.assertEqual(
-            [effect.effect_id for effect in bounda_link.enhancement.effects], [EffectType.STATUS_SPELL_INFLICT]
+            [effect.effect_id for effect in fluorite_link.enhancement.effects], [EffectType.STATUS_SPELL_INFLICT]
         )
 
-        deepfin = characters["a_lie_shi"]
-        deepfin_skill = next(skill for skill in deepfin.skills if skill.skill_id == "deepfin_skill")
-        self.assertEqual(deepfin_skill.effects, [])
-        self.assertEqual(deepfin_skill.enhancement.effects[0].count, -1)
+        alesh = characters["alesh"]
+        alesh_skill = next(skill for skill in alesh.skills if skill.skill_id == "alesh_skill")
+        self.assertEqual(alesh_skill.effects, [])
+        self.assertEqual(alesh_skill.enhancement.effects[0].count, -1)
 
-        endmin = characters["guan_li_yuan"]
-        endmin_normal = next(skill for skill in endmin.skills if skill.skill_id == "endmin_normal")
-        endmin_link = next(skill for skill in endmin.skills if skill.skill_id == "endmin_link")
-        endmin_ultimate = next(skill for skill in endmin.skills if skill.skill_id == "endmin_ultimate")
-        self.assertNotIn(EffectType.STATUS_ORIGINIUM_CRYSTAL, [effect.effect_id for effect in endmin_normal.effects])
-        self.assertEqual([effect.effect_id for effect in endmin_link.effects], [EffectType.STATUS_ORIGINIUM_CRYSTAL])
+        endministrator = characters["endministrator"]
+        endministrator_normal = next(skill for skill in endministrator.skills if skill.skill_id == "endministrator_normal")
+        endministrator_link = next(skill for skill in endministrator.skills if skill.skill_id == "endministrator_link")
+        endministrator_ultimate = next(skill for skill in endministrator.skills if skill.skill_id == "endministrator_ultimate")
+        self.assertNotIn(EffectType.STATUS_ORIGINIUM_CRYSTAL, [effect.effect_id for effect in endministrator_normal.effects])
+        self.assertEqual([effect.effect_id for effect in endministrator_link.effects], [EffectType.STATUS_ORIGINIUM_CRYSTAL])
         self.assertEqual(
-            [effect.effect_id for effect in endmin_link.enhancement.effects],
+            [effect.effect_id for effect in endministrator_link.enhancement.effects],
             [EffectType.STATUS_ORIGINIUM_CRYSTAL, EffectType.TRIGGER_ADDITIONAL],
         )
-        self.assertEqual(endmin_link.enhancement.effects[0].count, -1)
-        self.assertEqual(endmin_ultimate.enhancement.trigger_effects, [EffectType.STATUS_ORIGINIUM_CRYSTAL])
-        self.assertEqual(endmin_ultimate.enhancement.effects[0].effect_id, EffectType.STATUS_ORIGINIUM_CRYSTAL)
-        self.assertEqual(endmin_ultimate.enhancement.effects[0].count, -1)
+        self.assertEqual(endministrator_link.enhancement.effects[0].count, -1)
+        self.assertEqual(endministrator_ultimate.enhancement.trigger_effects, [EffectType.STATUS_ORIGINIUM_CRYSTAL])
+        self.assertEqual(endministrator_ultimate.enhancement.effects[0].effect_id, EffectType.STATUS_ORIGINIUM_CRYSTAL)
+        self.assertEqual(endministrator_ultimate.enhancement.effects[0].count, -1)
 
-        meurs = characters["ka_qi_er"]
-        meurs_skill = next(skill for skill in meurs.skills if skill.skill_id == "meurs_skill")
-        self.assertIn(EffectType.BUFF_PROTECTION, [effect.effect_id for effect in meurs_skill.effects])
-        meurs_ultimate = next(skill for skill in meurs.skills if skill.skill_id == "meurs_ultimate")
-        self.assertEqual(meurs_ultimate.effects[0].effect_id, EffectType.DEBUFF_WEAKEN)
+        catcher = characters["catcher"]
+        catcher_skill = next(skill for skill in catcher.skills if skill.skill_id == "catcher_skill")
+        self.assertIn(EffectType.BUFF_PROTECTION, [effect.effect_id for effect in catcher_skill.effects])
+        catcher_ultimate = next(skill for skill in catcher.skills if skill.skill_id == "catcher_ultimate")
+        self.assertEqual(catcher_ultimate.effects[0].effect_id, EffectType.DEBUFF_WEAKEN)
 
-        seraph = characters["sai_xi"]
-        seraph_skill = next(skill for skill in seraph.skills if skill.skill_id == "seraph_skill")
-        self.assertEqual(seraph_skill.effects[0].effect_id, EffectType.MECH_SUPPORT_CRYSTAL)
-        self.assertEqual(seraph_skill.enhancements[0].effects[0].effect_id, EffectType.BUFF_HEAL)
-        self.assertEqual(seraph_skill.enhancements[1].effects[0].effect_id, EffectType.BUFF_SPELL_UP)
-        seraph_ultimate = next(skill for skill in seraph.skills if skill.skill_id == "seraph_ultimate")
+        xaihi = characters["xaihi"]
+        xaihi_skill = next(skill for skill in xaihi.skills if skill.skill_id == "xaihi_skill")
+        self.assertEqual(xaihi_skill.effects[0].effect_id, EffectType.MECH_SUPPORT_CRYSTAL)
+        self.assertEqual(xaihi_skill.enhancements[0].effects[0].effect_id, EffectType.BUFF_HEAL)
+        self.assertEqual(xaihi_skill.enhancements[1].effects[0].effect_id, EffectType.BUFF_SPELL_UP)
+        xaihi_ultimate = next(skill for skill in xaihi.skills if skill.skill_id == "xaihi_ultimate")
         self.assertEqual(
-            [effect.effect_id for effect in seraph_ultimate.effects],
+            [effect.effect_id for effect in xaihi_ultimate.effects],
             [EffectType.BUFF_COLD_UP, EffectType.BUFF_NATURAL_UP],
         )
 
-        lastrite = characters["bie_li"]
-        lastrite_link = next(skill for skill in lastrite.skills if skill.skill_id == "lastrite_link")
-        self.assertEqual(lastrite_link.enhancement.effects[0].effect_id, EffectType.CLEAR_COLD)
-        self.assertEqual(lastrite_link.enhancement.effects[0].count, -1)
+        last_rite = characters["last_rite"]
+        last_rite_link = next(skill for skill in last_rite.skills if skill.skill_id == "last_rite_link")
+        self.assertEqual(last_rite_link.enhancement.effects[0].effect_id, EffectType.CLEAR_COLD)
+        self.assertEqual(last_rite_link.enhancement.effects[0].count, -1)
 
-        liino = characters["li_nuo"]
+        liino = characters["liino"]
         liino_skill = next(skill for skill in liino.skills if skill.skill_id == "liino_skill")
         self.assertEqual(liino_skill.effects[0].effect_id, EffectType.STATUS_SINGING)
         liino_ultimate = next(skill for skill in liino.skills if skill.skill_id == "liino_ultimate")
         self.assertIn(EffectType.STATUS_HIGH_SINGING, [effect.effect_id for effect in liino_ultimate.effects])
 
-        pograni = characters["jun_wei"]
-        pograni_ultimate = next(skill for skill in pograni.skills if skill.skill_id == "pograni_ultimate")
-        self.assertEqual(len(pograni_ultimate.enhancements), 2)
-        self.assertEqual(pograni_ultimate.enhancements[0].effects[0].count, -1)
+        pogranichnik = characters["pogranichnik"]
+        pogranichnik_ultimate = next(skill for skill in pogranichnik.skills if skill.skill_id == "pogranichnik_ultimate")
+        self.assertEqual(len(pogranichnik_ultimate.enhancements), 2)
+        self.assertEqual(pogranichnik_ultimate.enhancements[0].effects[0].count, -1)
 
-        bounda_ultimate = next(skill for skill in bounda.skills if skill.skill_id == "bounda_ultimate")
-        self.assertEqual(len(bounda_ultimate.enhancements), 2)
-        self.assertEqual(bounda_ultimate.enhancements[1].effects[0].effect_id, EffectType.STATUS_SPELL_INFLICT)
+        fluorite_ultimate = next(skill for skill in fluorite.skills if skill.skill_id == "fluorite_ultimate")
+        self.assertEqual(len(fluorite_ultimate.enhancements), 2)
+        self.assertEqual(fluorite_ultimate.enhancements[1].effects[0].effect_id, EffectType.STATUS_SPELL_INFLICT)
 
 
 if __name__ == "__main__":

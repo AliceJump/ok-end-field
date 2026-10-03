@@ -35,6 +35,8 @@ label_class
 /assets/data/map_marks.json
 /assets/data/wiki_items.json
 /assets/data/i18n_texts/
+/assets/data/skill_timings/*/raw.zip
+/assets/data/skill_timings/*/native_read_plans.json.gz
 ############################
 # 🧠 OCR / 标注输出
 ############################

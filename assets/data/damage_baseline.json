@@ -1,0 +1,3521 @@
+[
+  {
+    "character": "洁尔佩塔",
+    "key": "gilberta",
+    "element": "自然",
+    "primary_stat": "意志",
+    "secondary_stat": "智识",
+    "panel": {
+      "HP": 6495.0,
+      "ATK": 3569.7,
+      "DEF": 119,
+      "力量": 89.0,
+      "敏捷": 92.0,
+      "智识": 313.0,
+      "意志": 536.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 26,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 44.8
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 105.1
+    },
+    "cycle_expect": 91551.2,
+    "cycle_expect_link4": 105419.0,
+    "skills": [
+      {
+        "skill_id": "gilberta_normal",
+        "name": "秘杖·束能技艺",
+        "type": "普通攻击",
+        "multiplier_pct": 532.0,
+        "stagger": 0.0,
+        "bonus_pct": 44.8,
+        "non_crit": 27498.5,
+        "crit_expect": 28185.9,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "gilberta_skill",
+        "name": "秘杖·引力模式",
+        "type": "战技",
+        "multiplier_pct": 349.0,
+        "stagger": 10.0,
+        "bonus_pct": 44.8,
+        "non_crit": 18039.4,
+        "crit_expect": 18490.4,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "gilberta_link",
+        "name": "秘杖·矩阵位移",
+        "type": "连携技",
+        "multiplier_pct": 315.0,
+        "stagger": 5.0,
+        "bonus_pct": 44.8,
+        "non_crit": 16282.0,
+        "crit_expect": 16689.0,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "gilberta_ultimate",
+        "name": "秘杖·重力场",
+        "type": "终结技",
+        "multiplier_pct": 750.0,
+        "stagger": 20.0,
+        "bonus_pct": 44.8,
+        "non_crit": 38766.7,
+        "crit_expect": 39735.8,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "使命必达",
+      "matrix": "无瑕基质·追袭",
+      "set_main": "长息装备组",
+      "set_off": null,
+      "pieces": [
+        "长息装甲",
+        "长息护手·壹型",
+        "长息辅助臂"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 329.0, '力量': 89.0, '敏捷': 92.0, '智识': 127.0, '意志': 171.0}",
+      "    [武器技能 Rank 9] 意志+156 -> {'kind': 'flat', 'stat': '意志', 'value': 156}",
+      "    [武器技能 Rank 9] 终结技充能效率+46.4% -> {'kind': 'pct', 'stat': 'ult_charge', 'value': 46.4}",
+      "    [武器技能 Rank 9] 自然伤害+44.8% -> {'kind': 'pct', 'stat': 'elem_自然', 'value': 44.8}",
+      "  武器: 使命必达（满级攻击 500，武器技能 Rank9 词条已计入）",
+      "    [装备] 长息装甲（长息装备组）: {'意志': '+113', '智识': '+75', '源石技艺强度': '+26'}",
+      "    [装备] 长息护手·壹型（长息装备组）: {'智识': '+84', '意志': '+55', '终结技充能效率': '+26.7%'}",
+      "    [装备] 长息辅助臂（长息装备组）: {'意志': '+41', '智识': '+27', '终结技充能效率': '32.0%'}",
+      "    [套组 长息装备组] 装备者生命值+1000 -> {'kind': 'flat', 'stat': '生命值', 'value': 1000}",
+      "  汇总词条: {'flat_意志': 365, 'pct_ult_charge': 105.1, 'pct_elem_自然': 44.8, 'flat_防御力': 119, 'flat_智识': 186, 'flat_源石技艺强度': 26, 'flat_生命值': 1000}",
+      "  主能力: 意志（官方标签）总值 536",
+      "  副能力: 智识（官方标注）总值 313",
+      "  攻击力 = (829 × 1.0000 + 0) × (1 + 0.005×536 + 0.002×313) = 3569.7",
+      "  循环期望: 91551（战技 18490 + 连携 16689 + 2x普攻 56372）",
+      "  满连击循环期望: 105419（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "安塔尔",
+    "key": "antal",
+    "element": "电磁",
+    "primary_stat": "智识",
+    "secondary_stat": "力量",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 2392.0,
+      "DEF": 140,
+      "力量": 204.0,
+      "敏捷": 197.0,
+      "智识": 247.0,
+      "意志": 277.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 78,
+      "atk_pct": 15.0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 29.9,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 29.9
+      },
+      "all_skill_dmg": 17.9,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 51993.7,
+    "cycle_expect_link4": 56329.8,
+    "skills": [
+      {
+        "skill_id": "antal_normal",
+        "name": "交换电流",
+        "type": "普通攻击",
+        "multiplier_pct": 487.0,
+        "stagger": 0.0,
+        "bonus_pct": 17.9,
+        "non_crit": 13734.5,
+        "crit_expect": 14077.9,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "antal_skill",
+        "name": "指定研究对象",
+        "type": "战技",
+        "multiplier_pct": 200.0,
+        "stagger": 0.0,
+        "bonus_pct": 17.9,
+        "non_crit": 5640.4,
+        "crit_expect": 5781.5,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "antal_link",
+        "name": "磁暴试验场",
+        "type": "连携技",
+        "multiplier_pct": 340.0,
+        "stagger": 10.0,
+        "bonus_pct": 116.6,
+        "non_crit": 17616.0,
+        "crit_expect": 18056.4,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "antal_ultimate",
+        "name": "超频时刻",
+        "type": "终结技",
+        "multiplier_pct": 0.0,
+        "stagger": 0.0,
+        "bonus_pct": 17.9,
+        "non_crit": 0.0,
+        "crit_expect": 0.0,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "爆破单元",
+      "matrix": null,
+      "set_main": "50式应龙装备组",
+      "set_off": "M.I.警用装备组",
+      "pieces": [
+        "50式应龙轻甲",
+        "50式应龙护手",
+        "50式应龙短刃",
+        "M.I.警用刺刃"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 297.0, '力量': 129.0, '敏捷': 86.0, '智识': 165.0, '意志': 82.0}",
+      "    [武器技能 Rank 9] 源石技艺强度+78 -> {'kind': 'flat', 'stat': '源石技艺强度', 'value': 78}",
+      "  武器: 爆破单元（满级攻击 490，武器技能 Rank9 词条已计入）",
+      "    [装备] 50式应龙轻甲（50式应龙装备组）: {'意志': '+113', '力量': '+75', '所有技能伤害加成': '+17.9%'}",
+      "    [装备] 50式应龙护手（50式应龙装备组）: {'敏捷': '+84', '智识': '+55', '连携技伤害加成': '+44.9%'}",
+      "    [装备] 50式应龙短刃（50式应龙装备组）: {'意志': '+41', '敏捷': '+27', '连携技伤害加成': '+53.8%'}",
+      "    [装备] M.I.警用刺刃（M.I.警用装备组）: {'意志': '+41', '智识': '+27', '灼热和自然伤害加成': '+29.9%'}",
+      "    [套组 50式应龙装备组] 装备者攻击力+15% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 15.0}",
+      "  汇总词条: {'flat_源石技艺强度': 78, 'flat_防御力': 140, 'flat_力量': 75, 'flat_意志': 195, 'pct_all_skill_dmg': 17.9, 'flat_敏捷': 111, 'flat_智识': 82, 'pct_combo_dmg': 98.69999999999999, 'pct_elem_灼热': 29.9, 'pct_elem_自然': 29.9, 'pct_atk_pct': 15.0}",
+      "  主能力: 智识（官方标签）总值 247",
+      "  副能力: 力量（官方标注）总值 204",
+      "  攻击力 = (787 × 1.1500 + 0) × (1 + 0.005×247 + 0.002×204) = 2392.0",
+      "  循环期望: 51994（战技 5782 + 连携 18056 + 2x普攻 28156）",
+      "  满连击循环期望: 56330（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "艾尔黛拉",
+    "key": "ardelia",
+    "element": "自然",
+    "primary_stat": "智识",
+    "secondary_stat": "意志",
+    "panel": {
+      "HP": 6495.0,
+      "ATK": 3344.8,
+      "DEF": 119,
+      "力量": 112.0,
+      "敏捷": 93.0,
+      "智识": 487.0,
+      "意志": 327.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 26,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 46.4,
+      "ult_charge": 58.7
+    },
+    "cycle_expect": 62740.1,
+    "cycle_expect_link4": 70968.4,
+    "skills": [
+      {
+        "skill_id": "ardelia_normal",
+        "name": "岩石的轻语",
+        "type": "普通攻击",
+        "multiplier_pct": 580.0,
+        "stagger": 0.0,
+        "bonus_pct": 0,
+        "non_crit": 19399.9,
+        "crit_expect": 19884.8,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "ardelia_skill",
+        "name": "奔腾的多利",
+        "type": "战技",
+        "multiplier_pct": 320.0,
+        "stagger": 10.0,
+        "bonus_pct": 0,
+        "non_crit": 10703.4,
+        "crit_expect": 10971.0,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "ardelia_link",
+        "name": "火山蘑菇云",
+        "type": "连携技",
+        "multiplier_pct": 350.0,
+        "stagger": 10.0,
+        "bonus_pct": 0,
+        "non_crit": 11706.8,
+        "crit_expect": 11999.5,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "ardelia_ultimate",
+        "name": "毛茸茸派对",
+        "type": "终结技",
+        "multiplier_pct": 165.0,
+        "stagger": 3.0,
+        "bonus_pct": 0,
+        "non_crit": 5518.9,
+        "crit_expect": 5656.9,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "沧溟星梦",
+      "matrix": "无瑕基质·附术",
+      "set_main": "长息装备组",
+      "set_off": null,
+      "pieces": [
+        "长息装甲",
+        "长息护手·壹型",
+        "长息辅助臂"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 323.0, '力量': 112.0, '敏捷': 93.0, '智识': 145.0, '意志': 118.0}",
+      "    [武器技能 Rank 9] 智识+156 -> {'kind': 'flat', 'stat': '智识', 'value': 156}",
+      "    [武器技能 Rank 9] 治疗效率+46.4% -> {'kind': 'pct', 'stat': 'heal_eff', 'value': 46.4}",
+      "  武器: 沧溟星梦（满级攻击 495，武器技能 Rank9 词条已计入）",
+      "    [装备] 长息装甲（长息装备组）: {'意志': '+113', '智识': '+75', '源石技艺强度': '+26'}",
+      "    [装备] 长息护手·壹型（长息装备组）: {'智识': '+84', '意志': '+55', '终结技充能效率': '+26.7%'}",
+      "    [装备] 长息辅助臂（长息装备组）: {'意志': '+41', '智识': '+27', '终结技充能效率': '32.0%'}",
+      "    [套组 长息装备组] 装备者生命值+1000 -> {'kind': 'flat', 'stat': '生命值', 'value': 1000}",
+      "  汇总词条: {'flat_智识': 342, 'pct_heal_eff': 46.4, 'flat_防御力': 119, 'flat_意志': 209, 'flat_源石技艺强度': 26, 'pct_ult_charge': 58.7, 'flat_生命值': 1000}",
+      "  主能力: 智识（官方标签）总值 487",
+      "  副能力: 意志（官方标注）总值 327",
+      "  攻击力 = (818 × 1.0000 + 0) × (1 + 0.005×487 + 0.002×327) = 3344.8",
+      "  循环期望: 62740（战技 10971 + 连携 12000 + 2x普攻 39770）",
+      "  满连击循环期望: 70968（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "昼雪",
+    "key": "snowshine",
+    "element": "寒冷",
+    "primary_stat": "力量",
+    "secondary_stat": "意志",
+    "panel": {
+      "HP": 9781.1,
+      "ATK": 3011.2,
+      "DEF": 119,
+      "力量": 392.0,
+      "敏捷": 104.0,
+      "智识": 93.0,
+      "意志": 421.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 61.5,
+      "ult_charge": 26.7
+    },
+    "cycle_expect": 54692.1,
+    "cycle_expect_link4": 65108.9,
+    "skills": [
+      {
+        "skill_id": "snowshine_normal",
+        "name": "失温猛击",
+        "type": "普通攻击",
+        "multiplier_pct": 661.0,
+        "stagger": 0.0,
+        "bonus_pct": 0,
+        "non_crit": 19903.9,
+        "crit_expect": 20401.5,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "snowshine_skill",
+        "name": "饱和性防御",
+        "type": "战技",
+        "multiplier_pct": 450.0,
+        "stagger": 20.0,
+        "bonus_pct": 0,
+        "non_crit": 13550.3,
+        "crit_expect": 13889.1,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "snowshine_link",
+        "name": "极地救援",
+        "type": "连携技",
+        "multiplier_pct": 0.0,
+        "stagger": 0.0,
+        "bonus_pct": 0,
+        "non_crit": 0.0,
+        "crit_expect": 0.0,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "snowshine_ultimate",
+        "name": "凛冽寒霜",
+        "type": "终结技",
+        "multiplier_pct": 565.0,
+        "stagger": 20.0,
+        "bonus_pct": 0,
+        "non_crit": 17013.2,
+        "crit_expect": 17438.5,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "昔日精品",
+      "matrix": "无瑕基质·效益",
+      "set_main": "生物辅助装备组",
+      "set_off": null,
+      "pieces": [
+        "生物辅助重甲",
+        "生物辅助臂甲",
+        "生物辅助接驳器·壹型"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 297.0, '力量': 154.0, '敏捷': 104.0, '智识': 93.0, '意志': 108.0}",
+      "    [武器技能 Rank 9] 意志+156 -> {'kind': 'flat', 'stat': '意志', 'value': 156}",
+      "    [武器技能 Rank 9] 最大生命值+78.0% -> {'kind': 'pct', 'stat': 'hp_pct', 'value': 78.0}",
+      "    [武器技能 Rank 9] 治疗效率+28.0% -> {'kind': 'pct', 'stat': 'heal_eff', 'value': 28.0}",
+      "  武器: 昔日精品（满级攻击 495，武器技能 Rank9 词条已计入）",
+      "    [装备] 生物辅助重甲（生物辅助装备组）: {'力量': '+113', '意志': '+75', '治疗效率加成': '+13.5%'}",
+      "    [装备] 生物辅助臂甲（生物辅助装备组）: {'力量': '+84', '意志': '+55', '终结技充能效率': '+26.7%'}",
+      "    [装备] 生物辅助接驳器·壹型（生物辅助装备组）: {'力量': '+41', '意志': '+27', '生命值': '+53.8%'}",
+      "    [套组 生物辅助装备组] 装备者治疗效率+20% -> {'kind': 'pct', 'stat': 'heal_eff', 'value': 20.0}",
+      "  汇总词条: {'flat_意志': 313, 'pct_hp_pct': 78.0, 'pct_heal_eff': 61.5, 'flat_防御力': 119, 'flat_力量': 238, 'pct_ult_charge': 26.7}",
+      "  主能力: 力量（官方标签）总值 392",
+      "  副能力: 意志（官方标注）总值 421",
+      "  攻击力 = (792 × 1.0000 + 0) × (1 + 0.005×392 + 0.002×421) = 3011.2",
+      "  循环期望: 54692（战技 13889 + 连携 0 + 2x普攻 40803）",
+      "  满连击循环期望: 65109（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "艾维文娜",
+    "key": "avywenna",
+    "element": "电磁",
+    "primary_stat": "意志",
+    "secondary_stat": "敏捷",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 3900.7,
+      "DEF": 119,
+      "力量": 107.0,
+      "敏捷": 263.0,
+      "智识": 110.0,
+      "意志": 386.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 39.0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 16.0
+    },
+    "cycle_expect": 107477.4,
+    "cycle_expect_link4": 142067.2,
+    "skills": [
+      {
+        "skill_id": "avywenna_normal",
+        "name": "雷枪·疾袭",
+        "type": "普通攻击",
+        "multiplier_pct": 492.0,
+        "stagger": 0.0,
+        "bonus_pct": 0,
+        "non_crit": 19191.5,
+        "crit_expect": 19671.3,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "avywenna_skill",
+        "name": "雷枪·截回",
+        "type": "战技",
+        "multiplier_pct": 750.0,
+        "stagger": 20.0,
+        "bonus_pct": 53.8,
+        "non_crit": 44994.8,
+        "crit_expect": 46119.7,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "avywenna_link",
+        "name": "雷枪·掣击",
+        "type": "连携技",
+        "multiplier_pct": 380.0,
+        "stagger": 10.0,
+        "bonus_pct": 44.9,
+        "non_crit": 21478.1,
+        "crit_expect": 22015.1,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "avywenna_ultimate",
+        "name": "雷枪·决颤",
+        "type": "终结技",
+        "multiplier_pct": 950.0,
+        "stagger": 20.0,
+        "bonus_pct": 0,
+        "non_crit": 37056.8,
+        "crit_expect": 37983.2,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "J.E.T.",
+      "matrix": "无瑕基质·压制",
+      "set_main": null,
+      "set_off": null,
+      "pieces": [
+        "碾骨披巾·壹型",
+        "50式应龙护手·壹型",
+        "碾骨小雕像"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 312.0, '力量': 107.0, '敏捷': 106.0, '智识': 110.0, '意志': 148.0}",
+      "    [武器技能 Rank 9] 攻击力+39.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 39.0}",
+      "  武器: J.E.T.（满级攻击 500，武器技能 Rank9 词条已计入）",
+      "    [装备] 碾骨披巾·壹型（碾骨装备组）: {'意志': '+113', '敏捷': '+75', '终结技充能效率': '+16.0%'}",
+      "    [装备] 50式应龙护手·壹型（50式应龙装备组）: {'意志': '+84', '敏捷': '+55', '连携技伤害加成': '+44.9%'}",
+      "    [装备] 碾骨小雕像（碾骨装备组）: {'意志': '+41', '敏捷': '+27', '战技伤害加成': '+53.8%'}",
+      "  汇总词条: {'pct_atk_pct': 39.0, 'flat_防御力': 119, 'flat_敏捷': 157, 'flat_意志': 238, 'pct_ult_charge': 16.0, 'pct_combo_dmg': 44.9, 'pct_skill_dmg': 53.8}",
+      "  主能力: 意志（官方标签）总值 386",
+      "  副能力: 敏捷（官方标注）总值 263",
+      "  攻击力 = (812 × 1.3900 + 0) × (1 + 0.005×386 + 0.002×263) = 3900.7",
+      "  循环期望: 107477（战技 46120 + 连携 22015 + 2x普攻 39343）",
+      "  满连击循环期望: 142067（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "余烬",
+    "key": "ember",
+    "element": "灼热",
+    "primary_stat": "力量",
+    "secondary_stat": "意志",
+    "panel": {
+      "HP": 9781.1,
+      "ATK": 3602.5,
+      "DEF": 119,
+      "力量": 570.0,
+      "敏捷": 96.0,
+      "智识": 86.0,
+      "意志": 277.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 33.5,
+      "ult_charge": 26.7
+    },
+    "cycle_expect": 75992.3,
+    "cycle_expect_link4": 86793.0,
+    "skills": [
+      {
+        "skill_id": "ember_normal",
+        "name": "陷阵剑术",
+        "type": "普通攻击",
+        "multiplier_pct": 719.0,
+        "stagger": 0.0,
+        "bonus_pct": 0,
+        "non_crit": 25901.8,
+        "crit_expect": 26549.3,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "ember_skill",
+        "name": "进军",
+        "type": "战技",
+        "multiplier_pct": 390.0,
+        "stagger": 20.0,
+        "bonus_pct": 0,
+        "non_crit": 14049.6,
+        "crit_expect": 14400.9,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "ember_link",
+        "name": "前线援护",
+        "type": "连携技",
+        "multiplier_pct": 230.0,
+        "stagger": 10.0,
+        "bonus_pct": 0,
+        "non_crit": 8285.7,
+        "crit_expect": 8492.8,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "ember_ultimate",
+        "name": "重燃誓约",
+        "type": "终结技",
+        "multiplier_pct": 650.0,
+        "stagger": 25.0,
+        "bonus_pct": 0,
+        "non_crit": 23416.1,
+        "crit_expect": 24001.5,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "大雷斑",
+      "matrix": "无瑕基质·医疗",
+      "set_main": "生物辅助装备组",
+      "set_off": null,
+      "pieces": [
+        "生物辅助重甲",
+        "生物辅助臂甲",
+        "生物辅助接驳器·壹型"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 323.0, '力量': 176.0, '敏捷': 96.0, '智识': 86.0, '意志': 120.0}",
+      "    [武器技能 Rank 9] 力量+156 -> {'kind': 'flat', 'stat': '力量', 'value': 156}",
+      "    [武器技能 Rank 9] 最大生命值+78.0% -> {'kind': 'pct', 'stat': 'hp_pct', 'value': 78.0}",
+      "  武器: 大雷斑（满级攻击 495，武器技能 Rank9 词条已计入）",
+      "    [装备] 生物辅助重甲（生物辅助装备组）: {'力量': '+113', '意志': '+75', '治疗效率加成': '+13.5%'}",
+      "    [装备] 生物辅助臂甲（生物辅助装备组）: {'力量': '+84', '意志': '+55', '终结技充能效率': '+26.7%'}",
+      "    [装备] 生物辅助接驳器·壹型（生物辅助装备组）: {'力量': '+41', '意志': '+27', '生命值': '+53.8%'}",
+      "    [套组 生物辅助装备组] 装备者治疗效率+20% -> {'kind': 'pct', 'stat': 'heal_eff', 'value': 20.0}",
+      "  汇总词条: {'flat_力量': 394, 'pct_hp_pct': 78.0, 'flat_防御力': 119, 'flat_意志': 157, 'pct_heal_eff': 33.5, 'pct_ult_charge': 26.7}",
+      "  主能力: 力量（官方标签）总值 570",
+      "  副能力: 意志（官方标注）总值 277",
+      "  攻击力 = (818 × 1.0000 + 0) × (1 + 0.005×570 + 0.002×277) = 3602.5",
+      "  循环期望: 75992（战技 14401 + 连携 8493 + 2x普攻 53099）",
+      "  满连击循环期望: 86793（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "萤石",
+    "key": "fluorite",
+    "element": "自然",
+    "primary_stat": "敏捷",
+    "secondary_stat": "智识",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 2363.9,
+      "DEF": 140,
+      "力量": 186.0,
+      "敏捷": 243.0,
+      "智识": 383.0,
+      "意志": 255.0,
+      "暴击率": 0.148,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 29.9,
+        "灼热": 0,
+        "寒冷": 73.19999999999999,
+        "电磁": 29.9,
+        "自然": 0
+      },
+      "all_skill_dmg": 29.9,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 16.0
+    },
+    "cycle_expect": 59429.6,
+    "cycle_expect_link4": 69818.2,
+    "skills": [
+      {
+        "skill_id": "fluorite_normal",
+        "name": "独门射击法",
+        "type": "普通攻击",
+        "multiplier_pct": 501.0,
+        "stagger": 0.0,
+        "bonus_pct": 29.9,
+        "non_crit": 15384.5,
+        "crit_expect": 16522.9,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "fluorite_skill",
+        "name": "小惊喜",
+        "type": "战技",
+        "multiplier_pct": 420.0,
+        "stagger": 10.0,
+        "bonus_pct": 29.9,
+        "non_crit": 12897.1,
+        "crit_expect": 13851.5,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "fluorite_link",
+        "name": "免费赠礼",
+        "type": "连携技",
+        "multiplier_pct": 380.0,
+        "stagger": 10.0,
+        "bonus_pct": 29.9,
+        "non_crit": 11668.8,
+        "crit_expect": 12532.3,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "fluorite_ultimate",
+        "name": "巅峰闹剧",
+        "type": "终结技",
+        "multiplier_pct": 1000.0,
+        "stagger": 20.0,
+        "bonus_pct": 29.9,
+        "non_crit": 30707.5,
+        "crit_expect": 32979.8,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "领航者",
+      "matrix": "无瑕基质·附术",
+      "set_main": "拓荒装备组",
+      "set_off": "潮涌装备组",
+      "pieces": [
+        "拓荒护服",
+        "拓荒纤维手套",
+        "拓荒供氧栓",
+        "悬河供氧栓"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 303.0, '力量': 90.0, '敏捷': 168.0, '智识': 114.0, '意志': 91.0}",
+      "    [武器技能 Rank 9] 智识+156 -> {'kind': 'flat', 'stat': '智识', 'value': 156}",
+      "    [武器技能 Rank 9] 寒冷伤害+43.3% -> {'kind': 'pct', 'stat': 'elem_寒冷', 'value': 43.3}",
+      "    [武器技能 Rank 9] 暴击率+9.8% -> {'kind': 'pct', 'stat': 'crit_rate', 'value': 9.8}",
+      "  武器: 领航者（满级攻击 490，武器技能 Rank9 词条已计入）",
+      "    [装备] 拓荒护服（拓荒装备组）: {'智识': '+113', '敏捷': '+75', '终结技充能效率': '+16.0%'}",
+      "    [装备] 拓荒纤维手套（拓荒装备组）: {'意志': '+84', '力量': '+55', '所有技能伤害加成': '+29.9%'}",
+      "    [装备] 拓荒供氧栓（拓荒装备组）: {'意志': '+53', '物理伤害加成': '+29.9%'}",
+      "    [装备] 悬河供氧栓（潮涌装备组）: {'力量': '+41', '意志': '+27', '寒冷和电磁伤害加成': '+29.9%'}",
+      "    [套组 拓荒装备组] 装备者连携技冷却缩减+15% -> {'kind': 'pct', 'stat': 'combo_cd', 'value': 15.0}",
+      "  汇总词条: {'flat_智识': 269, 'pct_elem_寒冷': 73.19999999999999, 'pct_crit_rate': 9.8, 'flat_防御力': 140, 'flat_敏捷': 75, 'pct_ult_charge': 16.0, 'flat_力量': 96, 'flat_意志': 164, 'pct_all_skill_dmg': 29.9, 'pct_elem_物理': 29.9, 'pct_elem_电磁': 29.9, 'pct_combo_cd': 15.0}",
+      "  主能力: 敏捷（官方标签）总值 243",
+      "  副能力: 智识（官方标注）总值 383",
+      "  攻击力 = (793 × 1.0000 + 0) × (1 + 0.005×243 + 0.002×383) = 2363.9",
+      "  循环期望: 59430（战技 13852 + 连携 12532 + 2x普攻 33046）",
+      "  满连击循环期望: 69818（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "卡缪",
+    "key": "camille",
+    "element": "灼热",
+    "primary_stat": "敏捷",
+    "secondary_stat": "智识",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 3340.7,
+      "DEF": 119,
+      "力量": 102.0,
+      "敏捷": 473.0,
+      "智识": 367.0,
+      "意志": 92.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 43.3,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 93.10000000000001
+    },
+    "cycle_expect": 106871.9,
+    "cycle_expect_link4": 117912.3,
+    "skills": [
+      {
+        "skill_id": "camille_normal",
+        "name": "歃血涤罪",
+        "type": "普通攻击",
+        "multiplier_pct": 539.0,
+        "stagger": 0.0,
+        "bonus_pct": 43.3,
+        "non_crit": 25803.0,
+        "crit_expect": 26448.1,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "camille_skill",
+        "name": "驱火焚影",
+        "type": "战技",
+        "multiplier_pct": 300.0,
+        "stagger": 10.0,
+        "bonus_pct": 43.3,
+        "non_crit": 14361.6,
+        "crit_expect": 14720.6,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "camille_link",
+        "name": "锥心之棘",
+        "type": "连携技",
+        "multiplier_pct": 800.0,
+        "stagger": 30.0,
+        "bonus_pct": 43.3,
+        "non_crit": 38297.6,
+        "crit_expect": 39255.1,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "camille_ultimate",
+        "name": "猩红坠雨",
+        "type": "终结技",
+        "multiplier_pct": 600.0,
+        "stagger": 15.0,
+        "bonus_pct": 43.3,
+        "non_crit": 28723.2,
+        "crit_expect": 29441.3,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "镀红祝福",
+      "matrix": "无瑕基质·流转",
+      "set_main": "拓荒装备组",
+      "set_off": null,
+      "pieces": [
+        "拓荒护服",
+        "拓荒纤维手套·壹型",
+        "拓荒增量供氧栓·壹型"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 315.0, '力量': 102.0, '敏捷': 160.0, '智识': 129.0, '意志': 92.0}",
+      "    [武器技能 Rank 9] 敏捷+156 -> {'kind': 'flat', 'stat': '敏捷', 'value': 156}",
+      "    [武器技能 Rank 9] 灼热伤害+43.3% -> {'kind': 'pct', 'stat': 'elem_灼热', 'value': 43.3}",
+      "    [武器技能 Rank 9] 终结技充能效率+50.4% -> {'kind': 'pct', 'stat': 'ult_charge', 'value': 50.4}",
+      "  武器: 镀红祝福（满级攻击 500，武器技能 Rank9 词条已计入）",
+      "    [装备] 拓荒护服（拓荒装备组）: {'智识': '+113', '敏捷': '+75', '终结技充能效率': '+16.0%'}",
+      "    [装备] 拓荒纤维手套·壹型（拓荒装备组）: {'智识': '+84', '敏捷': '+55', '终结技充能效率': '+26.7%'}",
+      "    [装备] 拓荒增量供氧栓·壹型（拓荒装备组）: {'智识': '+41', '敏捷': '+27', '副能力': '+26.9%'}",
+      "    [套组 拓荒装备组] 装备者连携技冷却缩减+15% -> {'kind': 'pct', 'stat': 'combo_cd', 'value': 15.0}",
+      "  汇总词条: {'flat_敏捷': 313, 'pct_elem_灼热': 43.3, 'pct_ult_charge': 93.10000000000001, 'flat_防御力': 119, 'flat_智识': 238, 'pct_combo_cd': 15.0}",
+      "  主能力: 敏捷（官方标签）总值 473",
+      "  副能力: 智识（官方标注）总值 367",
+      "  攻击力 = (815 × 1.0000 + 0) × (1 + 0.005×473 + 0.002×367) = 3340.7",
+      "  循环期望: 106872（战技 14721 + 连携 39255 + 2x普攻 52896）",
+      "  满连击循环期望: 117912（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "陈千语",
+    "key": "chen_qianyu",
+    "element": "物理",
+    "primary_stat": "敏捷",
+    "secondary_stat": "力量",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 2828.2,
+      "DEF": 119,
+      "力量": 263.0,
+      "敏捷": 409.0,
+      "智识": 85.0,
+      "意志": 93.0,
+      "暴击率": 0.245,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 26,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 29.9,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 67797.3,
+    "cycle_expect_link4": 79550.5,
+    "skills": [
+      {
+        "skill_id": "chen_qianyu_normal",
+        "name": "破飞霞",
+        "type": "普通攻击",
+        "multiplier_pct": 497.0,
+        "stagger": 0.0,
+        "bonus_pct": 29.9,
+        "non_crit": 18259.2,
+        "crit_expect": 20495.9,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "chen_qianyu_skill",
+        "name": "归穹宇",
+        "type": "战技",
+        "multiplier_pct": 380.0,
+        "stagger": 10.0,
+        "bonus_pct": 29.9,
+        "non_crit": 13960.7,
+        "crit_expect": 15670.9,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "chen_qianyu_link",
+        "name": "见天河",
+        "type": "连携技",
+        "multiplier_pct": 270.0,
+        "stagger": 0.0,
+        "bonus_pct": 29.9,
+        "non_crit": 9919.5,
+        "crit_expect": 11134.6,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "chen_qianyu_ultimate",
+        "name": "冽风霜",
+        "type": "终结技",
+        "multiplier_pct": 1104.0,
+        "stagger": 35.0,
+        "bonus_pct": 86.0,
+        "non_crit": 58076.0,
+        "crit_expect": 65190.4,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "扶摇",
+      "matrix": "无瑕基质·夜幕",
+      "set_main": "点剑装备组",
+      "set_off": null,
+      "pieces": [
+        "点剑重装甲",
+        "点剑战术手甲",
+        "点剑火石"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 297.0, '力量': 106.0, '敏捷': 171.0, '智识': 85.0, '意志': 93.0}",
+      "    [武器技能 Rank 9] 暴击率+19.5% -> {'kind': 'pct', 'stat': 'crit_rate', 'value': 19.5}",
+      "  武器: 扶摇（满级攻击 495，武器技能 Rank9 词条已计入）",
+      "    [装备] 点剑重装甲（点剑装备组）: {'敏捷': '+113', '力量': '+75', '源石技艺强度': '+26'}",
+      "    [装备] 点剑战术手甲（点剑装备组）: {'敏捷': '+84', '力量': '+55', '终结技伤害加成': '+56.1%'}",
+      "    [装备] 点剑火石（点剑装备组）: {'敏捷': '+41', '力量': '+27', '物理伤害加成': '+29.9%'}",
+      "    [套组 点剑装备组] 装备者失衡效率加成+20% -> {'kind': 'pct', 'stat': 'stagger_eff', 'value': 20.0}",
+      "  汇总词条: {'pct_crit_rate': 19.5, 'flat_防御力': 119, 'flat_力量': 157, 'flat_敏捷': 238, 'flat_源石技艺强度': 26, 'pct_ult_dmg': 56.1, 'pct_elem_物理': 29.9, 'pct_stagger_eff': 20.0}",
+      "  主能力: 敏捷（官方标签）总值 409",
+      "  副能力: 力量（官方标注）总值 263",
+      "  攻击力 = (792 × 1.0000 + 0) × (1 + 0.005×409 + 0.002×263) = 2828.2",
+      "  循环期望: 67797（战技 15671 + 连携 11135 + 2x普攻 40992）",
+      "  满连击循环期望: 79550（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "大潘",
+    "key": "da_pan",
+    "element": "物理",
+    "primary_stat": "力量",
+    "secondary_stat": "意志",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 3999.2,
+      "DEF": 119,
+      "力量": 413.0,
+      "敏捷": 96.0,
+      "智识": 94.0,
+      "意志": 259.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 39.0,
+      "elem_dmg_pct": {
+        "物理": 97.80000000000001,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 168976.0,
+    "cycle_expect_link4": 187219.6,
+    "skills": [
+      {
+        "skill_id": "da_pan_normal",
+        "name": "滚刀切！",
+        "type": "普通攻击",
+        "multiplier_pct": 567.0,
+        "stagger": 0.0,
+        "bonus_pct": 97.8,
+        "non_crit": 44852.5,
+        "crit_expect": 45973.8,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "da_pan_skill",
+        "name": "颠勺！",
+        "type": "战技",
+        "multiplier_pct": 300.0,
+        "stagger": 10.0,
+        "bonus_pct": 97.8,
+        "non_crit": 23731.5,
+        "crit_expect": 24324.8,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "da_pan_link",
+        "name": "加料！",
+        "type": "连携技",
+        "multiplier_pct": 650.0,
+        "stagger": 15.0,
+        "bonus_pct": 97.8,
+        "non_crit": 51418.2,
+        "crit_expect": 52703.6,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "da_pan_ultimate",
+        "name": "切丝入锅！",
+        "type": "终结技",
+        "multiplier_pct": 450.0,
+        "stagger": 0.0,
+        "bonus_pct": 97.8,
+        "non_crit": 35597.2,
+        "crit_expect": 36487.1,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "典范",
+      "matrix": "无瑕基质·压制",
+      "set_main": null,
+      "set_off": null,
+      "pieces": [
+        "50式应龙重甲",
+        "点剑战术手套",
+        "50式应龙雷达"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 303.0, '力量': 175.0, '敏捷': 96.0, '智识': 94.0, '意志': 102.0}",
+      "    [武器技能 Rank 9] 攻击力+39.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 39.0}",
+      "    [武器技能 Rank 9] 物理伤害+28.0% -> {'kind': 'pct', 'stat': 'elem_物理', 'value': 28.0}",
+      "  武器: 典范（满级攻击 500，武器技能 Rank9 词条已计入）",
+      "    [装备] 50式应龙重甲（50式应龙装备组）: {'力量': '+113', '意志': '+75', '物理伤害加成': '+15.0%'}",
+      "    [装备] 点剑战术手套（点剑装备组）: {'力量': '+84', '意志': '+55', '物理伤害加成': '+24.9%'}",
+      "    [装备] 50式应龙雷达（50式应龙装备组）: {'力量': '+41', '意志': '+27', '物理伤害加成': '+29.9%'}",
+      "  汇总词条: {'pct_atk_pct': 39.0, 'pct_elem_物理': 97.80000000000001, 'flat_防御力': 119, 'flat_力量': 238, 'flat_意志': 157}",
+      "  主能力: 力量（官方标签）总值 413",
+      "  副能力: 意志（官方标注）总值 259",
+      "  攻击力 = (803 × 1.3900 + 0) × (1 + 0.005×413 + 0.002×259) = 3999.2",
+      "  循环期望: 168976（战技 24325 + 连携 52704 + 2x普攻 91948）",
+      "  满连击循环期望: 187220（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "阿列什",
+    "key": "alesh",
+    "element": "寒冷",
+    "primary_stat": "力量",
+    "secondary_stat": "智识",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 3346.4,
+      "DEF": 119,
+      "力量": 491.0,
+      "敏捷": 95.0,
+      "智识": 311.0,
+      "意志": 89.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 14.0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 64.6,
+        "电磁": 29.9,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 26.7
+    },
+    "cycle_expect": 124774.0,
+    "cycle_expect_link4": 143828.9,
+    "skills": [
+      {
+        "skill_id": "alesh_normal",
+        "name": "基本挥竿法",
+        "type": "普通攻击",
+        "multiplier_pct": 490.0,
+        "stagger": 0.0,
+        "bonus_pct": 64.6,
+        "non_crit": 26990.1,
+        "crit_expect": 27664.8,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "alesh_skill",
+        "name": "非常规路亚",
+        "type": "战技",
+        "multiplier_pct": 450.0,
+        "stagger": 10.0,
+        "bonus_pct": 64.6,
+        "non_crit": 24786.8,
+        "crit_expect": 25406.5,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "alesh_link",
+        "name": "凿孔底钓术",
+        "type": "连携技",
+        "multiplier_pct": 780.0,
+        "stagger": 10.0,
+        "bonus_pct": 64.6,
+        "non_crit": 42963.8,
+        "crit_expect": 44037.9,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "alesh_ultimate",
+        "name": "大鳞，上钩!",
+        "type": "终结技",
+        "multiplier_pct": 980.0,
+        "stagger": 20.0,
+        "bonus_pct": 98.2,
+        "non_crit": 64999.2,
+        "crit_expect": 66624.1,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "逐鳞3.0",
+      "matrix": "无瑕基质·压制",
+      "set_main": null,
+      "set_off": null,
+      "pieces": [
+        "拓荒护甲",
+        "长息护手",
+        "拓荒通信器·壹型"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 309.0, '力量': 158.0, '敏捷': 95.0, '智识': 125.0, '意志': 89.0}",
+      "    [武器技能 Rank 9] 力量+124 -> {'kind': 'flat', 'stat': '力量', 'value': 124}",
+      "    [武器技能 Rank 9] 寒冷伤害+34.7% -> {'kind': 'pct', 'stat': 'elem_寒冷', 'value': 34.7}",
+      "    [武器技能 Rank 9] 攻击力+14.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 14.0}",
+      "  武器: 逐鳞3.0（满级攻击 411，武器技能 Rank9 词条已计入）",
+      "    [装备] 拓荒护甲（拓荒装备组）: {'力量': '+113', '智识': '+75', '终结技伤害加成': '+33.6%'}",
+      "    [装备] 长息护手（长息装备组）: {'智识': '+84', '力量': '+55', '终结技充能效率': '+26.7%'}",
+      "    [装备] 拓荒通信器·壹型（拓荒装备组）: {'力量': '+41', '智识': '+27', '寒冷和电磁伤害加成': '+29.9%'}",
+      "  汇总词条: {'flat_力量': 333, 'pct_elem_寒冷': 64.6, 'pct_atk_pct': 14.0, 'flat_防御力': 119, 'flat_智识': 186, 'pct_ult_dmg': 33.6, 'pct_ult_charge': 26.7, 'pct_elem_电磁': 29.9}",
+      "  主能力: 力量（官方标签）总值 491",
+      "  副能力: 智识（官方标注）总值 311",
+      "  攻击力 = (720 × 1.1400 + 0) × (1 + 0.005×491 + 0.002×311) = 3346.4",
+      "  循环期望: 124774（战技 25406 + 连携 44038 + 2x普攻 55330）",
+      "  满连击循环期望: 143829（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "管理员",
+    "key": "endministrator",
+    "element": "物理",
+    "primary_stat": "敏捷",
+    "secondary_stat": "力量",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 4815.5,
+      "DEF": 119,
+      "力量": 280.0,
+      "敏捷": 534.0,
+      "智识": 96.0,
+      "意志": 107.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 110,
+      "atk_pct": 39.0,
+      "elem_dmg_pct": {
+        "物理": 29.9,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 122206.7,
+    "cycle_expect_link4": 139037.4,
+    "skills": [
+      {
+        "skill_id": "endministrator_normal",
+        "name": "毁伤序列",
+        "type": "普通攻击",
+        "multiplier_pct": 528.0,
+        "stagger": 0.0,
+        "bonus_pct": 29.9,
+        "non_crit": 33028.0,
+        "crit_expect": 33853.7,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "endministrator_skill",
+        "name": "构成序列",
+        "type": "战技",
+        "multiplier_pct": 350.0,
+        "stagger": 10.0,
+        "bonus_pct": 29.9,
+        "non_crit": 21893.6,
+        "crit_expect": 22440.9,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "endministrator_link",
+        "name": "锁闭序列",
+        "type": "连携技",
+        "multiplier_pct": 500.0,
+        "stagger": 10.0,
+        "bonus_pct": 29.9,
+        "non_crit": 31276.5,
+        "crit_expect": 32058.4,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "endministrator_ultimate",
+        "name": "轰击序列",
+        "type": "终结技",
+        "multiplier_pct": 1400.0,
+        "stagger": 25.0,
+        "bonus_pct": 86.0,
+        "non_crit": 125395.0,
+        "crit_expect": 128529.8,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "宏愿",
+      "matrix": "无瑕基质·附术",
+      "set_main": "点剑装备组",
+      "set_off": null,
+      "pieces": [
+        "点剑重装甲",
+        "点剑战术手甲",
+        "点剑火石"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 319.0, '力量': 123.0, '敏捷': 140.0, '智识': 96.0, '意志': 107.0}",
+      "    [武器技能 Rank 9] 敏捷+156 -> {'kind': 'flat', 'stat': '敏捷', 'value': 156}",
+      "    [武器技能 Rank 9] 攻击力+39.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 39.0}",
+      "    [武器技能 Rank 9] 源石技艺强度+84 -> {'kind': 'flat', 'stat': '源石技艺强度', 'value': 84}",
+      "  武器: 宏愿（满级攻击 500，武器技能 Rank9 词条已计入）",
+      "    [装备] 点剑重装甲（点剑装备组）: {'敏捷': '+113', '力量': '+75', '源石技艺强度': '+26'}",
+      "    [装备] 点剑战术手甲（点剑装备组）: {'敏捷': '+84', '力量': '+55', '终结技伤害加成': '+56.1%'}",
+      "    [装备] 点剑火石（点剑装备组）: {'敏捷': '+41', '力量': '+27', '物理伤害加成': '+29.9%'}",
+      "    [套组 点剑装备组] 装备者失衡效率加成+20% -> {'kind': 'pct', 'stat': 'stagger_eff', 'value': 20.0}",
+      "  汇总词条: {'flat_敏捷': 394, 'pct_atk_pct': 39.0, 'flat_源石技艺强度': 110, 'flat_防御力': 119, 'flat_力量': 157, 'pct_ult_dmg': 56.1, 'pct_elem_物理': 29.9, 'pct_stagger_eff': 20.0}",
+      "  主能力: 敏捷（官方标签）总值 534",
+      "  副能力: 力量（官方标注）总值 280",
+      "  攻击力 = (819 × 1.3900 + 0) × (1 + 0.005×534 + 0.002×280) = 4815.5",
+      "  循环期望: 122207（战技 22441 + 连携 32058 + 2x普攻 67707）",
+      "  满连击循环期望: 139037（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "埃特拉",
+    "key": "estella",
+    "element": "寒冷",
+    "primary_stat": "意志",
+    "secondary_stat": "力量",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 3936.5,
+      "DEF": 134,
+      "力量": 179.0,
+      "敏捷": 208.0,
+      "智识": 165.0,
+      "意志": 358.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 54.0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 17.9,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 149486.3,
+    "cycle_expect_link4": 161973.9,
+    "skills": [
+      {
+        "skill_id": "estella_normal",
+        "name": "噪点",
+        "type": "普通攻击",
+        "multiplier_pct": 473.0,
+        "stagger": 0.0,
+        "bonus_pct": 17.9,
+        "non_crit": 21952.6,
+        "crit_expect": 22501.4,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "estella_skill",
+        "name": "凝声",
+        "type": "战技",
+        "multiplier_pct": 350.0,
+        "stagger": 10.0,
+        "bonus_pct": 17.9,
+        "non_crit": 16244.0,
+        "crit_expect": 16650.1,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "estella_link",
+        "name": "失真",
+        "type": "连携技",
+        "multiplier_pct": 1005.0,
+        "stagger": 10.0,
+        "bonus_pct": 116.6,
+        "non_crit": 85691.2,
+        "crit_expect": 87833.4,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "estella_ultimate",
+        "name": "震音",
+        "type": "终结技",
+        "multiplier_pct": 1100.0,
+        "stagger": 20.0,
+        "bonus_pct": 17.9,
+        "non_crit": 51052.6,
+        "crit_expect": 52328.9,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "J.E.T.",
+      "matrix": "无瑕基质·压制",
+      "set_main": "50式应龙装备组",
+      "set_off": "长息装备组",
+      "pieces": [
+        "50式应龙轻甲",
+        "50式应龙护手",
+        "50式应龙短刃",
+        "长息加固板"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 312.0, '力量': 104.0, '敏捷': 97.0, '智识': 110.0, '意志': 151.0}",
+      "    [武器技能 Rank 9] 攻击力+39.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 39.0}",
+      "  武器: J.E.T.（满级攻击 500，武器技能 Rank9 词条已计入）",
+      "    [装备] 50式应龙轻甲（50式应龙装备组）: {'意志': '+113', '力量': '+75', '所有技能伤害加成': '+17.9%'}",
+      "    [装备] 50式应龙护手（50式应龙装备组）: {'敏捷': '+84', '智识': '+55', '连携技伤害加成': '+44.9%'}",
+      "    [装备] 50式应龙短刃（50式应龙装备组）: {'意志': '+41', '敏捷': '+27', '连携技伤害加成': '+53.8%'}",
+      "    [装备] 长息加固板（长息装备组）: {'意志': '+53', '副能力': '+26.9%'}",
+      "    [套组 50式应龙装备组] 装备者攻击力+15% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 15.0}",
+      "  汇总词条: {'pct_atk_pct': 54.0, 'flat_防御力': 134, 'flat_力量': 75, 'flat_意志': 207, 'pct_all_skill_dmg': 17.9, 'flat_敏捷': 111, 'flat_智识': 55, 'pct_combo_dmg': 98.69999999999999}",
+      "  主能力: 意志（官方标签）总值 358",
+      "  副能力: 力量（官方标注）总值 179",
+      "  攻击力 = (812 × 1.5400 + 0) × (1 + 0.005×358 + 0.002×179) = 3936.5",
+      "  循环期望: 149486（战技 16650 + 连携 87833 + 2x普攻 45003）",
+      "  满连击循环期望: 161974（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "弧光",
+    "key": "arclight",
+    "element": "电磁",
+    "primary_stat": "敏捷",
+    "secondary_stat": "智识",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 2818.2,
+      "DEF": 119,
+      "力量": 107.0,
+      "敏捷": 383.0,
+      "智识": 280.0,
+      "意志": 100.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 78,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 63133.4,
+    "cycle_expect_link4": 82188.8,
+    "skills": [
+      {
+        "skill_id": "arclight_normal",
+        "name": "循迹逐猎",
+        "type": "普通攻击",
+        "multiplier_pct": 478.0,
+        "stagger": 0.0,
+        "bonus_pct": 0,
+        "non_crit": 13471.1,
+        "crit_expect": 13807.9,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "arclight_skill",
+        "name": "疾风迅雷",
+        "type": "战技",
+        "multiplier_pct": 607.0,
+        "stagger": 10.0,
+        "bonus_pct": 44.9,
+        "non_crit": 24787.5,
+        "crit_expect": 25407.2,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "arclight_link",
+        "name": "鸣雷",
+        "type": "连携技",
+        "multiplier_pct": 350.0,
+        "stagger": 5.0,
+        "bonus_pct": 0,
+        "non_crit": 9863.8,
+        "crit_expect": 10110.4,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "arclight_ultimate",
+        "name": "轰雷掣电",
+        "type": "终结技",
+        "multiplier_pct": 900.0,
+        "stagger": 20.0,
+        "bonus_pct": 0,
+        "non_crit": 25364.0,
+        "crit_expect": 25998.1,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "白夜新星",
+      "matrix": "无瑕基质·附术",
+      "set_main": "拓荒装备组",
+      "set_off": null,
+      "pieces": [
+        "拓荒护甲·叄型",
+        "拓荒耐蚀手套",
+        "拓荒增量供氧栓"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 306.0, '力量': 107.0, '敏捷': 145.0, '智识': 123.0, '意志': 100.0}",
+      "    [武器技能 Rank 9] 源石技艺强度+78 -> {'kind': 'flat', 'stat': '源石技艺强度', 'value': 78}",
+      "  武器: 白夜新星（满级攻击 505，武器技能 Rank9 词条已计入）",
+      "    [装备] 拓荒护甲·叄型（拓荒装备组）: {'敏捷': '+113', '智识': '+75', '副能力': '+13.5%'}",
+      "    [装备] 拓荒耐蚀手套（拓荒装备组）: {'敏捷': '+84', '智识': '+55', '战技伤害加成': '+44.9%'}",
+      "    [装备] 拓荒增量供氧栓（拓荒装备组）: {'敏捷': '+41', '智识': '+27', '副能力': '+26.9%'}",
+      "    [套组 拓荒装备组] 装备者连携技冷却缩减+15% -> {'kind': 'pct', 'stat': 'combo_cd', 'value': 15.0}",
+      "  汇总词条: {'flat_源石技艺强度': 78, 'flat_防御力': 119, 'flat_敏捷': 238, 'flat_智识': 157, 'pct_skill_dmg': 44.9, 'pct_combo_cd': 15.0}",
+      "  主能力: 敏捷（官方标签）总值 383",
+      "  副能力: 智识（官方标注）总值 280",
+      "  攻击力 = (811 × 1.0000 + 0) × (1 + 0.005×383 + 0.002×280) = 2818.2",
+      "  循环期望: 63133（战技 25407 + 连携 10110 + 2x普攻 27616）",
+      "  满连击循环期望: 82189（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "秋栗",
+    "key": "akekuri",
+    "element": "灼热",
+    "primary_stat": "敏捷",
+    "secondary_stat": "智识",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 3577.5,
+      "DEF": 140,
+      "力量": 165.0,
+      "敏捷": 242.0,
+      "智识": 219.0,
+      "意志": 442.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 67.0,
+      "elem_dmg_pct": {
+        "物理": 29.9,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 29.9,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 16.0
+    },
+    "cycle_expect": 75001.2,
+    "cycle_expect_link4": 91168.1,
+    "skills": [
+      {
+        "skill_id": "akekuri_normal",
+        "name": "进取剑锋",
+        "type": "普通攻击",
+        "multiplier_pct": 471.0,
+        "stagger": 0.0,
+        "bonus_pct": 29.9,
+        "non_crit": 21888.4,
+        "crit_expect": 22435.6,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "akekuri_skill",
+        "name": "热情迸发",
+        "type": "战技",
+        "multiplier_pct": 320.0,
+        "stagger": 10.0,
+        "bonus_pct": 83.7,
+        "non_crit": 21030.1,
+        "crit_expect": 21555.9,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "akekuri_link",
+        "name": "快闪冲击",
+        "type": "连携技",
+        "multiplier_pct": 180.0,
+        "stagger": 5.0,
+        "bonus_pct": 29.9,
+        "non_crit": 8365.0,
+        "crit_expect": 8574.1,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "akekuri_ultimate",
+        "name": "小队，集结！",
+        "type": "终结技",
+        "multiplier_pct": 0.0,
+        "stagger": 0.0,
+        "bonus_pct": 29.9,
+        "non_crit": 0.0,
+        "crit_expect": 0.0,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "热熔切割器",
+      "matrix": "无瑕基质·流转",
+      "set_main": "拓荒装备组",
+      "set_off": "碾骨装备组",
+      "pieces": [
+        "拓荒护服",
+        "拓荒纤维手套",
+        "拓荒供氧栓",
+        "碾骨小雕像"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 319.0, '力量': 110.0, '敏捷': 140.0, '智识': 106.0, '意志': 108.0}",
+      "    [武器技能 Rank 9] 意志+156 -> {'kind': 'flat', 'stat': '意志', 'value': 156}",
+      "    [武器技能 Rank 9] 攻击力+39.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 39.0}",
+      "    [武器技能 Rank 9] 攻击力+28.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 28.0}",
+      "  武器: 热熔切割器（满级攻击 490，武器技能 Rank9 词条已计入）",
+      "    [装备] 拓荒护服（拓荒装备组）: {'智识': '+113', '敏捷': '+75', '终结技充能效率': '+16.0%'}",
+      "    [装备] 拓荒纤维手套（拓荒装备组）: {'意志': '+84', '力量': '+55', '所有技能伤害加成': '+29.9%'}",
+      "    [装备] 拓荒供氧栓（拓荒装备组）: {'意志': '+53', '物理伤害加成': '+29.9%'}",
+      "    [装备] 碾骨小雕像（碾骨装备组）: {'意志': '+41', '敏捷': '+27', '战技伤害加成': '+53.8%'}",
+      "    [套组 拓荒装备组] 装备者连携技冷却缩减+15% -> {'kind': 'pct', 'stat': 'combo_cd', 'value': 15.0}",
+      "  汇总词条: {'flat_意志': 334, 'pct_atk_pct': 67.0, 'flat_防御力': 140, 'flat_敏捷': 102, 'flat_智识': 113, 'pct_ult_charge': 16.0, 'flat_力量': 55, 'pct_all_skill_dmg': 29.9, 'pct_elem_物理': 29.9, 'pct_skill_dmg': 53.8, 'pct_combo_cd': 15.0}",
+      "  主能力: 敏捷（官方标签）总值 242",
+      "  副能力: 智识（官方标注）总值 219",
+      "  攻击力 = (809 × 1.6700 + 0) × (1 + 0.005×242 + 0.002×219) = 3577.5",
+      "  循环期望: 75001（战技 21556 + 连携 8574 + 2x普攻 44871）",
+      "  满连击循环期望: 91168（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "莱万汀",
+    "key": "laevatain",
+    "element": "灼热",
+    "primary_stat": "智识",
+    "secondary_stat": "力量",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 5083.6,
+      "DEF": 119,
+      "力量": 251.0,
+      "敏捷": 99.0,
+      "智识": 583.0,
+      "意志": 89.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 39.0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 69.69999999999999,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 24.9
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 16.0
+    },
+    "cycle_expect": 249619.9,
+    "cycle_expect_link4": 330326.1,
+    "skills": [
+      {
+        "skill_id": "laevatain_normal",
+        "name": "燃烬",
+        "type": "普通攻击",
+        "multiplier_pct": 533.0,
+        "stagger": 0.0,
+        "bonus_pct": 69.7,
+        "non_crit": 45981.3,
+        "crit_expect": 47130.9,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "laevatain_skill",
+        "name": "焚灭",
+        "type": "战技",
+        "multiplier_pct": 924.0,
+        "stagger": 50.0,
+        "bonus_pct": 123.5,
+        "non_crit": 104983.7,
+        "crit_expect": 107608.3,
+        "conditional_rows": [
+          "终结技期间 / 第一段倍率: 330%",
+          "终结技期间 / 第二段倍率: 370%",
+          "终结技期间 / 追加攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "laevatain_link",
+        "name": "沸腾",
+        "type": "连携技",
+        "multiplier_pct": 540.0,
+        "stagger": 10.0,
+        "bonus_pct": 69.7,
+        "non_crit": 46585.2,
+        "crit_expect": 47749.8,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "laevatain_ultimate",
+        "name": "黄昏",
+        "type": "终结技",
+        "multiplier_pct": 1044.0,
+        "stagger": 0.0,
+        "bonus_pct": 69.7,
+        "non_crit": 90064.8,
+        "crit_expect": 92316.4,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "熔铸火焰",
+      "matrix": "无瑕基质·夜幕",
+      "set_main": null,
+      "set_off": null,
+      "pieces": [
+        "落潮轻甲",
+        "动火用手甲",
+        "动火用测温镜"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 318.0, '力量': 121.0, '敏捷': 99.0, '智识': 177.0, '意志': 89.0}",
+      "    [武器技能 Rank 9] 智识+156 -> {'kind': 'flat', 'stat': '智识', 'value': 156}",
+      "    [武器技能 Rank 9] 攻击力+39.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 39.0}",
+      "    [武器技能 Rank 9] 灼热伤害+44.8% -> {'kind': 'pct', 'stat': 'elem_灼热', 'value': 44.8}",
+      "  武器: 熔铸火焰（满级攻击 510，武器技能 Rank9 词条已计入）",
+      "    [装备] 落潮轻甲（潮涌装备组）: {'智识': '+113', '力量': '+75', '终结技充能效率': '+16.0%'}",
+      "    [装备] 动火用手甲（动火用装备组）: {'智识': '+84', '力量': '+55', '灼热和自然伤害加成': '+24.9%'}",
+      "    [装备] 动火用测温镜（动火用装备组）: {'智识': '+53', '战技伤害加成': '+53.8%'}",
+      "  汇总词条: {'flat_智识': 406, 'pct_atk_pct': 39.0, 'pct_elem_灼热': 69.69999999999999, 'flat_防御力': 119, 'flat_力量': 130, 'pct_ult_charge': 16.0, 'pct_elem_自然': 24.9, 'pct_skill_dmg': 53.8}",
+      "  主能力: 智识（官方标签）总值 583",
+      "  副能力: 力量（官方标注）总值 251",
+      "  攻击力 = (828 × 1.3900 + 0) × (1 + 0.005×583 + 0.002×251) = 5083.6",
+      "  循环期望: 249620（战技 107608 + 连携 47750 + 2x普攻 94262）",
+      "  满连击循环期望: 330326（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "别礼",
+    "key": "last_rite",
+    "element": "寒冷",
+    "primary_stat": "力量",
+    "secondary_stat": "意志",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 4976.0,
+      "DEF": 119,
+      "力量": 549.0,
+      "敏捷": 104.0,
+      "智识": 93.0,
+      "意志": 266.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 39.0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 54.8,
+        "电磁": 54.8,
+        "自然": 0
+      },
+      "all_skill_dmg": 56.0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 225354.0,
+    "cycle_expect_link4": 251157.9,
+    "skills": [
+      {
+        "skill_id": "last_rite_normal",
+        "name": "严霜之舞",
+        "type": "普通攻击",
+        "multiplier_pct": 728.0,
+        "stagger": 0.0,
+        "bonus_pct": 110.8,
+        "non_crit": 76362.7,
+        "crit_expect": 78271.8,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "last_rite_skill",
+        "name": "塞什卡的秘传",
+        "type": "战技",
+        "multiplier_pct": 320.0,
+        "stagger": 0.0,
+        "bonus_pct": 110.8,
+        "non_crit": 33566.0,
+        "crit_expect": 34405.2,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "last_rite_link",
+        "name": "噬冬",
+        "type": "连携技",
+        "multiplier_pct": 320.0,
+        "stagger": 15.0,
+        "bonus_pct": 110.8,
+        "non_crit": 33566.0,
+        "crit_expect": 34405.2,
+        "conditional_rows": [
+          "消耗每层附着 / 额外伤害倍率: 240%（按消耗层数，A 层不计）"
+        ]
+      },
+      {
+        "skill_id": "last_rite_ultimate",
+        "name": "临终别礼",
+        "type": "终结技",
+        "multiplier_pct": 1600.0,
+        "stagger": 20.0,
+        "bonus_pct": 110.8,
+        "non_crit": 167830.2,
+        "crit_expect": 172025.9,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "赫拉芬格",
+      "matrix": "无瑕基质·迸发",
+      "set_main": null,
+      "set_off": null,
+      "pieces": [
+        "轻超域护板",
+        "潮涌手甲",
+        "悬河供氧栓"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 332.0, '力量': 155.0, '敏捷': 104.0, '智识': 93.0, '意志': 109.0}",
+      "    [武器技能 Rank 9] 力量+156 -> {'kind': 'flat', 'stat': '力量', 'value': 156}",
+      "    [武器技能 Rank 9] 攻击力+39.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 39.0}",
+      "    [武器技能 Rank 9] 所有技能伤害+56.0% -> {'kind': 'pct', 'stat': 'all_skill_dmg', 'value': 56.0}",
+      "  武器: 赫拉芬格（满级攻击 505，武器技能 Rank9 词条已计入）",
+      "    [装备·条件] 轻超域护板 vs_stagger_dmg+26.9%（A 层不计）",
+      "    [装备] 轻超域护板（轻超域装备组）: {'力量': '+113', '意志': '+75', '对失衡目标伤害加成': '+26.9%'}",
+      "    [装备] 潮涌手甲（潮涌装备组）: {'力量': '+84', '意志': '+55', '寒冷和电磁伤害加成': '+24.9%'}",
+      "    [装备] 悬河供氧栓（潮涌装备组）: {'力量': '+41', '意志': '+27', '寒冷和电磁伤害加成': '+29.9%'}",
+      "  汇总词条: {'flat_力量': 394, 'pct_atk_pct': 39.0, 'pct_all_skill_dmg': 56.0, 'flat_防御力': 119, 'flat_意志': 157, 'pct_elem_寒冷': 54.8, 'pct_elem_电磁': 54.8}",
+      "  主能力: 力量（官方标签）总值 549",
+      "  副能力: 意志（官方标注）总值 266",
+      "  攻击力 = (837 × 1.3900 + 0) × (1 + 0.005×549 + 0.002×266) = 4976.0",
+      "  循环期望: 225354（战技 34405 + 连携 34405 + 2x普攻 156544）",
+      "  满连击循环期望: 251158（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "黎风",
+    "key": "lifeng",
+    "element": "物理",
+    "primary_stat": "敏捷",
+    "secondary_stat": "力量",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 3915.6,
+      "DEF": 161,
+      "力量": 280.0,
+      "敏捷": 581.0,
+      "智识": 115.0,
+      "意志": 201.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 123,
+      "atk_pct": 8.0,
+      "elem_dmg_pct": {
+        "物理": 43.3,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 29.9,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 137777.0,
+    "cycle_expect_link4": 160716.6,
+    "skills": [
+      {
+        "skill_id": "lifeng_normal",
+        "name": "摧破",
+        "type": "普通攻击",
+        "multiplier_pct": 531.0,
+        "stagger": 0.0,
+        "bonus_pct": 73.2,
+        "non_crit": 36011.7,
+        "crit_expect": 36912.0,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "lifeng_skill",
+        "name": "荡浊身",
+        "type": "战技",
+        "multiplier_pct": 440.0,
+        "stagger": 10.0,
+        "bonus_pct": 73.2,
+        "non_crit": 29840.2,
+        "crit_expect": 30586.2,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "lifeng_link",
+        "name": "忿怒相",
+        "type": "连携技",
+        "multiplier_pct": 480.0,
+        "stagger": 10.0,
+        "bonus_pct": 73.2,
+        "non_crit": 32553.0,
+        "crit_expect": 33366.8,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "lifeng_ultimate",
+        "name": "不动心",
+        "type": "终结技",
+        "multiplier_pct": 1400.0,
+        "stagger": 15.0,
+        "bonus_pct": 73.2,
+        "non_crit": 94946.1,
+        "crit_expect": 97319.8,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "负山",
+      "matrix": "无瑕基质·效益",
+      "set_main": "轻超域装备组",
+      "set_off": null,
+      "pieces": [
+        "M.I.警用护甲",
+        "轻超域护手",
+        "轻超域轻护手",
+        "轻超域稳定盘"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 312.0, '力量': 123.0, '敏捷': 132.0, '智识': 115.0, '意志': 117.0}",
+      "    [武器技能 Rank 9] 敏捷+156 -> {'kind': 'flat', 'stat': '敏捷', 'value': 156}",
+      "    [武器技能 Rank 9] 物理伤害+43.3% -> {'kind': 'pct', 'stat': 'elem_物理', 'value': 43.3}",
+      "  武器: 负山（满级攻击 500，武器技能 Rank9 词条已计入）",
+      "    [装备] M.I.警用护甲（M.I.警用装备组）: {'敏捷': '+113', '力量': '+75', '源石技艺强度': '+26'}",
+      "    [装备] 轻超域护手（轻超域装备组）: {'敏捷': '+84', '力量': '+55', '源石技艺强度': '+44'}",
+      "    [装备] 轻超域轻护手（轻超域装备组）: {'意志': '+84', '敏捷': '+55', '所有技能伤害加成': '+29.9%'}",
+      "    [装备] 轻超域稳定盘（轻超域装备组）: {'敏捷': '+41', '力量': '+27', '源石技艺强度': '+53'}",
+      "    [套组 轻超域装备组] 装备者攻击力+8% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 8.0}",
+      "  汇总词条: {'flat_敏捷': 449, 'pct_elem_物理': 43.3, 'flat_防御力': 161, 'flat_力量': 157, 'flat_源石技艺强度': 123, 'flat_意志': 84, 'pct_all_skill_dmg': 29.9, 'pct_atk_pct': 8.0}",
+      "  主能力: 敏捷（官方标签）总值 581",
+      "  副能力: 力量（官方标注）总值 280",
+      "  攻击力 = (812 × 1.0800 + 0) × (1 + 0.005×581 + 0.002×280) = 3915.6",
+      "  循环期望: 137777（战技 30586 + 连携 33367 + 2x普攻 73824）",
+      "  满连击循环期望: 160717（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "梨诺",
+    "key": "liino",
+    "element": "电磁",
+    "primary_stat": "意志",
+    "secondary_stat": "敏捷",
+    "panel": {
+      "HP": 6495.0,
+      "ATK": 4389.2,
+      "DEF": 140,
+      "力量": 89.0,
+      "敏捷": 176.0,
+      "智识": 145.0,
+      "意志": 642.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 46.4,
+      "ult_charge": 74.7
+    },
+    "cycle_expect": 79451.4,
+    "cycle_expect_link4": 91598.6,
+    "skills": [
+      {
+        "skill_id": "liino_normal",
+        "name": "怦然星动",
+        "type": "普通攻击",
+        "multiplier_pct": 523.0,
+        "stagger": 0.0,
+        "bonus_pct": 0,
+        "non_crit": 22955.6,
+        "crit_expect": 23529.5,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "liino_skill",
+        "name": "闪耀焦点",
+        "type": "战技",
+        "multiplier_pct": 360.0,
+        "stagger": 3.0,
+        "bonus_pct": 0,
+        "non_crit": 15801.2,
+        "crit_expect": 16196.2,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "liino_link",
+        "name": "悦心音调",
+        "type": "连携技",
+        "multiplier_pct": 360.0,
+        "stagger": 5.0,
+        "bonus_pct": 0,
+        "non_crit": 15801.2,
+        "crit_expect": 16196.2,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "liino_ultimate",
+        "name": "晨星的协奏曲",
+        "type": "终结技",
+        "multiplier_pct": 1020.0,
+        "stagger": 20.0,
+        "bonus_pct": 0,
+        "non_crit": 44770.1,
+        "crit_expect": 45889.3,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "曜夜的首演",
+      "matrix": "无瑕基质·医疗",
+      "set_main": "长息装备组",
+      "set_off": null,
+      "pieces": [
+        "长息轻护甲",
+        "长息手套",
+        "生物辅助护板",
+        "长息辅助臂"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 309.0, '力量': 89.0, '敏捷': 121.0, '智识': 91.0, '意志': 177.0}",
+      "    [武器技能 Rank 9] 意志+156 -> {'kind': 'flat', 'stat': '意志', 'value': 156}",
+      "    [武器技能 Rank 9] 治疗效率+46.4% -> {'kind': 'pct', 'stat': 'heal_eff', 'value': 46.4}",
+      "  武器: 曜夜的首演（满级攻击 500，武器技能 Rank9 词条已计入）",
+      "    [装备] 长息轻护甲（长息装备组）: {'意志': '+143', '终结技充能效率': '+16.0%'}",
+      "    [装备] 长息手套（长息装备组）: {'意志': '+84', '敏捷': '+55', '终结技充能效率': '+26.7%'}",
+      "    [装备] 生物辅助护板（生物辅助装备组）: {'意志': '+41', '智识': '+27', '主能力': '+26.9%'}",
+      "    [装备] 长息辅助臂（长息装备组）: {'意志': '+41', '智识': '+27', '终结技充能效率': '32.0%'}",
+      "    [套组 长息装备组] 装备者生命值+1000 -> {'kind': 'flat', 'stat': '生命值', 'value': 1000}",
+      "  汇总词条: {'flat_意志': 465, 'pct_heal_eff': 46.4, 'flat_防御力': 140, 'pct_ult_charge': 74.7, 'flat_敏捷': 55, 'flat_智识': 54, 'pct_primary': 26.9, 'flat_生命值': 1000}",
+      "  主能力: 意志（官方标签）总值 815，含主能力词条+26.9%",
+      "  副能力: 敏捷（官方标注）总值 176",
+      "  攻击力 = (809 × 1.0000 + 0) × (1 + 0.005×815 + 0.002×176) = 4389.2",
+      "  循环期望: 79451（战技 16196 + 连携 16196 + 2x普攻 47059）",
+      "  满连击循环期望: 91599（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "诀",
+    "key": "arcane",
+    "element": "自然",
+    "primary_stat": "智识",
+    "secondary_stat": "意志",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 6419.0,
+      "DEF": 140,
+      "力量": 91.0,
+      "敏捷": 93.0,
+      "智识": 597.0,
+      "意志": 319.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 30,
+      "atk_pct": 44.8,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 39.9,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 39.9
+      },
+      "all_skill_dmg": 35.9,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 46.4
+    },
+    "cycle_expect": 261639.3,
+    "cycle_expect_link4": 305014.5,
+    "skills": [
+      {
+        "skill_id": "arcane_normal",
+        "name": "重火力截击",
+        "type": "普通攻击",
+        "multiplier_pct": 531.0,
+        "stagger": 0.0,
+        "bonus_pct": 75.8,
+        "non_crit": 59921.3,
+        "crit_expect": 61419.3,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "arcane_skill",
+        "name": "摧玉网格",
+        "type": "战技",
+        "multiplier_pct": 500.0,
+        "stagger": 10.0,
+        "bonus_pct": 75.8,
+        "non_crit": 56423.0,
+        "crit_expect": 57833.6,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "arcane_link",
+        "name": "应龙四式",
+        "type": "连携技",
+        "multiplier_pct": 700.0,
+        "stagger": 10.0,
+        "bonus_pct": 75.8,
+        "non_crit": 78992.3,
+        "crit_expect": 80967.1,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "arcane_ultimate",
+        "name": "破晦",
+        "type": "终结技",
+        "multiplier_pct": 1980.0,
+        "stagger": 20.0,
+        "bonus_pct": 75.8,
+        "non_crit": 223435.2,
+        "crit_expect": 229021.1,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "四二式·肃阵",
+      "matrix": "无瑕基质·迸发",
+      "set_main": "动火用装备组",
+      "set_off": null,
+      "pieces": [
+        "动火用辅助骨骼",
+        "动火用护手",
+        "动火用隔温板",
+        "生物辅助护板"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 312.0, '力量': 91.0, '敏捷': 93.0, '智识': 176.0, '意志': 121.0}",
+      "    [武器技能 Rank 9] 智识+156 -> {'kind': 'flat', 'stat': '智识', 'value': 156}",
+      "    [武器技能 Rank 9] 终结技充能效率+46.4% -> {'kind': 'pct', 'stat': 'ult_charge', 'value': 46.4}",
+      "    [武器技能 Rank 9] 攻击力+44.8% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 44.8}",
+      "  武器: 四二式·肃阵（满级攻击 505，武器技能 Rank9 词条已计入）",
+      "    [装备] 动火用辅助骨骼（动火用装备组）: {'智识': '+113', '意志': '+75', '灼热和自然伤害加成': '+15.0%'}",
+      "    [装备] 动火用护手（动火用装备组）: {'智识': '+84', '意志': '+55', '灼热和自然伤害加成': '+24.9%'}",
+      "    [装备] 动火用隔温板（动火用装备组）: {'智识': '+41', '意志': '+27', '所有技能伤害加成': '+35.9%'}",
+      "    [装备] 生物辅助护板（生物辅助装备组）: {'意志': '+41', '智识': '+27', '主能力': '+26.9%'}",
+      "    [套组 动火用装备组] 装备者源石技艺强度+30 -> {'kind': 'flat', 'stat': '源石技艺强度', 'value': 30}",
+      "  汇总词条: {'flat_智识': 421, 'pct_ult_charge': 46.4, 'pct_atk_pct': 44.8, 'flat_防御力': 140, 'flat_意志': 198, 'pct_elem_灼热': 39.9, 'pct_elem_自然': 39.9, 'pct_all_skill_dmg': 35.9, 'pct_primary': 26.9, 'flat_源石技艺强度': 30}",
+      "  主能力: 智识（官方标签）总值 758，含主能力词条+26.9%",
+      "  副能力: 意志（官方标注）总值 319",
+      "  攻击力 = (817 × 1.4480 + 0) × (1 + 0.005×758 + 0.002×319) = 6419.0",
+      "  循环期望: 261639（战技 57834 + 连携 80967 + 2x普攻 122839）",
+      "  满连击循环期望: 305014（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "卡契尔",
+    "key": "catcher",
+    "element": "物理",
+    "primary_stat": "力量",
+    "secondary_stat": "意志",
+    "panel": {
+      "HP": 9781.1,
+      "ATK": 3005.0,
+      "DEF": 140,
+      "力量": 272.0,
+      "敏捷": 96.0,
+      "智识": 188.0,
+      "意志": 527.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 29.9,
+        "电磁": 29.9,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 83.9,
+      "ult_charge": 0
+    },
+    "cycle_expect": 59630.7,
+    "cycle_expect_link4": 68871.0,
+    "skills": [
+      {
+        "skill_id": "catcher_normal",
+        "name": "基础战术",
+        "type": "普通攻击",
+        "multiplier_pct": 628.0,
+        "stagger": 0.0,
+        "bonus_pct": 0,
+        "non_crit": 18871.2,
+        "crit_expect": 19343.0,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "catcher_skill",
+        "name": "刚性阻击",
+        "type": "战技",
+        "multiplier_pct": 400.0,
+        "stagger": 20.0,
+        "bonus_pct": 0,
+        "non_crit": 12019.9,
+        "crit_expect": 12320.4,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "catcher_link",
+        "name": "即时压制",
+        "type": "连携技",
+        "multiplier_pct": 280.0,
+        "stagger": 10.0,
+        "bonus_pct": 0,
+        "non_crit": 8413.9,
+        "crit_expect": 8624.3,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "catcher_ultimate",
+        "name": "教科书式猛攻",
+        "type": "终结技",
+        "multiplier_pct": 870.0,
+        "stagger": 20.0,
+        "bonus_pct": 0,
+        "non_crit": 26143.3,
+        "crit_expect": 26796.8,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "昔日精品",
+      "matrix": "无瑕基质·效益",
+      "set_main": "生物辅助装备组",
+      "set_off": "潮涌装备组",
+      "pieces": [
+        "生物辅助胸甲",
+        "生物辅助手甲",
+        "生物辅助护板",
+        "悬河供氧栓"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 300.0, '力量': 176.0, '敏捷': 96.0, '智识': 86.0, '意志': 106.0}",
+      "    [武器技能 Rank 9] 意志+156 -> {'kind': 'flat', 'stat': '意志', 'value': 156}",
+      "    [武器技能 Rank 9] 最大生命值+78.0% -> {'kind': 'pct', 'stat': 'hp_pct', 'value': 78.0}",
+      "    [武器技能 Rank 9] 治疗效率+28.0% -> {'kind': 'pct', 'stat': 'heal_eff', 'value': 28.0}",
+      "  武器: 昔日精品（满级攻击 495，武器技能 Rank9 词条已计入）",
+      "    [装备] 生物辅助胸甲（生物辅助装备组）: {'意志': '+113', '智识': '+75', '治疗效率加成': '+13.5%'}",
+      "    [装备] 生物辅助手甲（生物辅助装备组）: {'意志': '+84', '力量': '+55', '治疗效率加成': '+22.4%'}",
+      "    [装备] 生物辅助护板（生物辅助装备组）: {'意志': '+41', '智识': '+27', '主能力': '+26.9%'}",
+      "    [装备] 悬河供氧栓（潮涌装备组）: {'力量': '+41', '意志': '+27', '寒冷和电磁伤害加成': '+29.9%'}",
+      "    [套组 生物辅助装备组] 装备者治疗效率+20% -> {'kind': 'pct', 'stat': 'heal_eff', 'value': 20.0}",
+      "  汇总词条: {'flat_意志': 421, 'pct_hp_pct': 78.0, 'pct_heal_eff': 83.9, 'flat_防御力': 140, 'flat_智识': 102, 'flat_力量': 96, 'pct_primary': 26.9, 'pct_elem_寒冷': 29.9, 'pct_elem_电磁': 29.9}",
+      "  主能力: 力量（官方标签）总值 345，含主能力词条+26.9%",
+      "  副能力: 意志（官方标注）总值 527",
+      "  攻击力 = (795 × 1.0000 + 0) × (1 + 0.005×345 + 0.002×527) = 3005.0",
+      "  循环期望: 59631（战技 12320 + 连携 8624 + 2x普攻 38686）",
+      "  满连击循环期望: 68871（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "弭弗",
+    "key": "mi_fu",
+    "element": "物理",
+    "primary_stat": "力量",
+    "secondary_stat": "意志",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 5484.1,
+      "DEF": 140,
+      "力量": 594.0,
+      "敏捷": 133.0,
+      "智识": 90.0,
+      "意志": 276.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 44,
+      "atk_pct": 47.0,
+      "elem_dmg_pct": {
+        "物理": 119.6,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 308601.6,
+    "cycle_expect_link4": 396553.1,
+    "skills": [
+      {
+        "skill_id": "mi_fu_normal",
+        "name": "剑形拳意",
+        "type": "普通攻击",
+        "multiplier_pct": 650.0,
+        "stagger": 0.0,
+        "bonus_pct": 119.6,
+        "non_crit": 78279.4,
+        "crit_expect": 80236.4,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "mi_fu_skill",
+        "name": "清波三艺",
+        "type": "战技",
+        "multiplier_pct": 950.0,
+        "stagger": 15.0,
+        "bonus_pct": 119.6,
+        "non_crit": 114408.4,
+        "crit_expect": 117268.6,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "mi_fu_link",
+        "name": "拳出无悔",
+        "type": "连携技",
+        "multiplier_pct": 250.0,
+        "stagger": 10.0,
+        "bonus_pct": 119.6,
+        "non_crit": 30107.5,
+        "crit_expect": 30860.2,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "mi_fu_ultimate",
+        "name": "绝心",
+        "type": "终结技",
+        "multiplier_pct": 700.0,
+        "stagger": 20.0,
+        "bonus_pct": 119.6,
+        "non_crit": 84300.9,
+        "crit_expect": 86408.4,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "赤缨",
+      "matrix": "无瑕基质·巧技",
+      "set_main": "旧锋装备组",
+      "set_off": null,
+      "pieces": [
+        "旧锋装甲",
+        "旧锋手甲",
+        "旧锋刺刃",
+        "旧锋刺刃·壹型"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 315.0, '力量': 173.0, '敏捷': 92.0, '智识': 90.0, '意志': 119.0}",
+      "    [武器技能 Rank 9] 力量+156 -> {'kind': 'flat', 'stat': '力量', 'value': 156}",
+      "    [武器技能 Rank 9] 攻击力+39.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 39.0}",
+      "    [武器技能 Rank 9] 物理伤害+44.8% -> {'kind': 'pct', 'stat': 'elem_物理', 'value': 44.8}",
+      "  武器: 赤缨（满级攻击 510，武器技能 Rank9 词条已计入）",
+      "    [装备] 旧锋装甲（旧锋装备组）: {'力量': '+113', '意志': '+75', '物理伤害加成': '+15.0%'}",
+      "    [装备] 旧锋手甲（旧锋装备组）: {'力量': '+84', '意志': '+55', '源石技艺强度': '+44'}",
+      "    [装备] 旧锋刺刃（旧锋装备组）: {'力量': '+41', '意志': '+27', '物理伤害加成': '+29.9%'}",
+      "    [装备] 旧锋刺刃·壹型（旧锋装备组）: {'敏捷': '+41', '力量': '+27', '物理伤害加成': '+29.9%'}",
+      "    [套组 旧锋装备组] 装备者攻击力+8% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 8.0}",
+      "  汇总词条: {'flat_力量': 421, 'pct_atk_pct': 47.0, 'pct_elem_物理': 119.6, 'flat_防御力': 140, 'flat_意志': 157, 'flat_源石技艺强度': 44, 'flat_敏捷': 41}",
+      "  主能力: 力量（官方标签）总值 594",
+      "  副能力: 意志（官方标注）总值 276",
+      "  攻击力 = (825 × 1.4700 + 0) × (1 + 0.005×594 + 0.002×276) = 5484.1",
+      "  循环期望: 308602（战技 117269 + 连携 30860 + 2x普攻 160473）",
+      "  满连击循环期望: 396553（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "佩丽卡",
+    "key": "perlica",
+    "element": "电磁",
+    "primary_stat": "智识",
+    "secondary_stat": "意志",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 3448.2,
+      "DEF": 119,
+      "力量": 91.0,
+      "敏捷": 93.0,
+      "智识": 567.0,
+      "意志": 243.0,
+      "暴击率": 0.302,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 79,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 63977.6,
+    "cycle_expect_link4": 75884.1,
+    "skills": [
+      {
+        "skill_id": "perlica_normal",
+        "name": "协议α·突破",
+        "type": "普通攻击",
+        "multiplier_pct": 516.0,
+        "stagger": 0.0,
+        "bonus_pct": 0,
+        "non_crit": 17792.5,
+        "crit_expect": 20479.2,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "perlica_skill",
+        "name": "协议ω·雷击",
+        "type": "战技",
+        "multiplier_pct": 400.0,
+        "stagger": 10.0,
+        "bonus_pct": 0,
+        "non_crit": 13792.6,
+        "crit_expect": 15875.3,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "perlica_link",
+        "name": "即时协议·闪链",
+        "type": "连携技",
+        "multiplier_pct": 180.0,
+        "stagger": 10.0,
+        "bonus_pct": 0,
+        "non_crit": 6206.7,
+        "crit_expect": 7143.9,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "perlica_ultimate",
+        "name": "协议ε·70.41κ",
+        "type": "终结技",
+        "multiplier_pct": 1000.0,
+        "stagger": 20.0,
+        "bonus_pct": 0,
+        "non_crit": 34481.6,
+        "crit_expect": 39688.3,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "遗忘",
+      "matrix": "无瑕基质·夜幕",
+      "set_main": null,
+      "set_off": null,
+      "pieces": [
+        "脉冲式干扰服",
+        "M.I.警用手环·壹型",
+        "脉冲式校准器"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 303.0, '力量': 91.0, '敏捷': 93.0, '智识': 161.0, '意志': 113.0}",
+      "    [武器技能 Rank 9] 智识+156 -> {'kind': 'flat', 'stat': '智识', 'value': 156}",
+      "    [武器技能 Rank 9] 暴击率+14.0% -> {'kind': 'pct', 'stat': 'crit_rate', 'value': 14.0}",
+      "  武器: 遗忘（满级攻击 495，武器技能 Rank9 词条已计入）",
+      "    [装备] 脉冲式干扰服（脉冲式装备组）: {'智识': '+113', '意志': '+75', '源石技艺强度': '+26'}",
+      "    [装备] M.I.警用手环·壹型（M.I.警用装备组）: {'智识': '+84', '意志': '+55', '暴击率': '+11.2%'}",
+      "    [装备] 脉冲式校准器（脉冲式装备组）: {'智识': '+53', '源石技艺强度': '+53'}",
+      "  汇总词条: {'flat_智识': 406, 'pct_crit_rate': 25.2, 'flat_防御力': 119, 'flat_意志': 130, 'flat_源石技艺强度': 79}",
+      "  主能力: 智识（官方标签）总值 567",
+      "  副能力: 意志（官方标注）总值 243",
+      "  攻击力 = (798 × 1.0000 + 0) × (1 + 0.005×567 + 0.002×243) = 3448.2",
+      "  循环期望: 63978（战技 15875 + 连携 7144 + 2x普攻 40958）",
+      "  满连击循环期望: 75884（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "骏卫",
+    "key": "pogranichnik",
+    "element": "物理",
+    "primary_stat": "意志",
+    "secondary_stat": "敏捷",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 4985.9,
+      "DEF": 119,
+      "力量": 101.0,
+      "敏捷": 267.0,
+      "智识": 97.0,
+      "意志": 567.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 39.0,
+      "elem_dmg_pct": {
+        "物理": 44.8,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 201931.9,
+    "cycle_expect_link4": 230230.5,
+    "skills": [
+      {
+        "skill_id": "pogranichnik_normal",
+        "name": "全面攻势",
+        "type": "普通攻击",
+        "multiplier_pct": 552.0,
+        "stagger": 0.0,
+        "bonus_pct": 44.8,
+        "non_crit": 39851.8,
+        "crit_expect": 40848.1,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "pogranichnik_skill",
+        "name": "粉碎阵线",
+        "type": "战技",
+        "multiplier_pct": 430.0,
+        "stagger": 10.0,
+        "bonus_pct": 71.7,
+        "non_crit": 36811.1,
+        "crit_expect": 37731.4,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "pogranichnik_link",
+        "name": "盈月邀击",
+        "type": "连携技",
+        "multiplier_pct": 663.0,
+        "stagger": 19.0,
+        "bonus_pct": 143.5,
+        "non_crit": 80492.0,
+        "crit_expect": 82504.3,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "pogranichnik_ultimate",
+        "name": "盾卫旗队，上前",
+        "type": "终结技",
+        "multiplier_pct": 850.0,
+        "stagger": 25.0,
+        "bonus_pct": 44.8,
+        "non_crit": 61366.0,
+        "crit_expect": 62900.1,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "不知归",
+      "matrix": "无瑕基质·流转",
+      "set_main": null,
+      "set_off": null,
+      "pieces": [
+        "M.I.警用罩衣·贰型",
+        "50式应龙护手·壹型",
+        "50式应龙短刃"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 321.0, '力量': 101.0, '敏捷': 110.0, '智识': 97.0, '意志': 173.0}",
+      "    [武器技能 Rank 9] 意志+156 -> {'kind': 'flat', 'stat': '意志', 'value': 156}",
+      "    [武器技能 Rank 9] 攻击力+39.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 39.0}",
+      "    [武器技能 Rank 9] 物理伤害+44.8% -> {'kind': 'pct', 'stat': 'elem_物理', 'value': 44.8}",
+      "  武器: 不知归（满级攻击 500，武器技能 Rank9 词条已计入）",
+      "    [装备] M.I.警用罩衣·贰型（M.I.警用装备组）: {'意志': '+113', '敏捷': '+75', '战技伤害加成': '+26.9%'}",
+      "    [装备] 50式应龙护手·壹型（50式应龙装备组）: {'意志': '+84', '敏捷': '+55', '连携技伤害加成': '+44.9%'}",
+      "    [装备] 50式应龙短刃（50式应龙装备组）: {'意志': '+41', '敏捷': '+27', '连携技伤害加成': '+53.8%'}",
+      "  汇总词条: {'flat_意志': 394, 'pct_atk_pct': 39.0, 'pct_elem_物理': 44.8, 'flat_防御力': 119, 'flat_敏捷': 157, 'pct_skill_dmg': 26.9, 'pct_combo_dmg': 98.69999999999999}",
+      "  主能力: 意志（官方标签）总值 567",
+      "  副能力: 敏捷（官方标注）总值 267",
+      "  攻击力 = (821 × 1.3900 + 0) × (1 + 0.005×567 + 0.002×267) = 4985.9",
+      "  循环期望: 201932（战技 37731 + 连携 82504 + 2x普攻 81696）",
+      "  满连击循环期望: 230230（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "噗切娜",
+    "key": "purrchena",
+    "element": "物理",
+    "primary_stat": "力量",
+    "secondary_stat": "意志",
+    "panel": {
+      "HP": 7033.6,
+      "ATK": 3080.2,
+      "DEF": 140,
+      "力量": 542.0,
+      "敏捷": 120.0,
+      "智识": 89.0,
+      "意志": 284.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 53,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 39.9,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 37.1,
+      "ult_charge": 0
+    },
+    "cycle_expect": 100343.6,
+    "cycle_expect_link4": 118689.9,
+    "skills": [
+      {
+        "skill_id": "purrchena_normal",
+        "name": "点心，尝尝！",
+        "type": "普通攻击",
+        "multiplier_pct": 634.0,
+        "stagger": 0.0,
+        "bonus_pct": 39.9,
+        "non_crit": 27320.0,
+        "crit_expect": 28003.0,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "purrchena_skill",
+        "name": "我没有睡着！",
+        "type": "战技",
+        "multiplier_pct": 400.0,
+        "stagger": 20.0,
+        "bonus_pct": 93.7,
+        "non_crit": 23865.1,
+        "crit_expect": 24461.7,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "purrchena_link",
+        "name": "点心还是“礼物”",
+        "type": "连携技",
+        "multiplier_pct": 450.0,
+        "stagger": 10.0,
+        "bonus_pct": 39.9,
+        "non_crit": 19391.1,
+        "crit_expect": 19875.9,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "purrchena_ultimate",
+        "name": "不许干坏事！",
+        "type": "终结技",
+        "multiplier_pct": 1050.0,
+        "stagger": 25.0,
+        "bonus_pct": 39.9,
+        "non_crit": 45246.0,
+        "crit_expect": 46377.2,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "点心时刻",
+      "matrix": "无瑕基质·医疗",
+      "set_main": "点剑装备组",
+      "set_off": "碾骨装备组",
+      "pieces": [
+        "点剑纤维护甲",
+        "点剑战术手套",
+        "点剑定位信标",
+        "碾骨小雕像"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 309.0, '力量': 168.0, '敏捷': 93.0, '智识': 89.0, '意志': 113.0}",
+      "    [武器技能 Rank 9] 力量+124 -> {'kind': 'flat', 'stat': '力量', 'value': 124}",
+      "    [武器技能 Rank 9] 治疗效率+37.1% -> {'kind': 'pct', 'stat': 'heal_eff', 'value': 37.1}",
+      "    [武器技能 Rank 9] 最大生命值+28.0% -> {'kind': 'pct', 'stat': 'hp_pct', 'value': 28.0}",
+      "  武器: 点心时刻（满级攻击 411，武器技能 Rank9 词条已计入）",
+      "    [装备] 点剑纤维护甲（点剑装备组）: {'力量': '+113', '意志': '+75', '物理伤害加成': '+15.0%'}",
+      "    [装备] 点剑战术手套（点剑装备组）: {'力量': '+84', '意志': '+55', '物理伤害加成': '+24.9%'}",
+      "    [装备] 点剑定位信标（点剑装备组）: {'力量': '+53', '源石技艺强度': '+53'}",
+      "    [装备] 碾骨小雕像（碾骨装备组）: {'意志': '+41', '敏捷': '+27', '战技伤害加成': '+53.8%'}",
+      "    [套组 点剑装备组] 装备者失衡效率加成+20% -> {'kind': 'pct', 'stat': 'stagger_eff', 'value': 20.0}",
+      "  汇总词条: {'flat_力量': 374, 'pct_heal_eff': 37.1, 'pct_hp_pct': 28.0, 'flat_防御力': 140, 'flat_意志': 171, 'pct_elem_物理': 39.9, 'flat_源石技艺强度': 53, 'flat_敏捷': 27, 'pct_skill_dmg': 53.8, 'pct_stagger_eff': 20.0}",
+      "  主能力: 力量（官方标签）总值 542",
+      "  副能力: 意志（官方标注）总值 284",
+      "  攻击力 = (720 × 1.0000 + 0) × (1 + 0.005×542 + 0.002×284) = 3080.2",
+      "  循环期望: 100344（战技 24462 + 连携 19876 + 2x普攻 56006）",
+      "  满连击循环期望: 118690（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "赛希",
+    "key": "xaihi",
+    "element": "寒冷",
+    "primary_stat": "意志",
+    "secondary_stat": "智识",
+    "panel": {
+      "HP": 9781.1,
+      "ATK": 2847.9,
+      "DEF": 119,
+      "力量": 164.0,
+      "敏捷": 91.0,
+      "智识": 365.0,
+      "意志": 388.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 54.9,
+      "ult_charge": 42.7
+    },
+    "cycle_expect": 42035.2,
+    "cycle_expect_link4": 42035.2,
+    "skills": [
+      {
+        "skill_id": "xaihi_normal",
+        "name": "冷却",
+        "type": "普通攻击",
+        "multiplier_pct": 495.0,
+        "stagger": 0.0,
+        "bonus_pct": 0,
+        "non_crit": 14097.2,
+        "crit_expect": 14449.6,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "xaihi_skill",
+        "name": "分布式拒绝服务",
+        "type": "战技",
+        "multiplier_pct": 0.0,
+        "stagger": 0.0,
+        "bonus_pct": 0,
+        "non_crit": 0.0,
+        "crit_expect": 0.0,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "xaihi_link",
+        "name": "压力测试",
+        "type": "连携技",
+        "multiplier_pct": 450.0,
+        "stagger": 10.0,
+        "bonus_pct": 0,
+        "non_crit": 12815.6,
+        "crit_expect": 13136.0,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "xaihi_ultimate",
+        "name": "栈溢出",
+        "type": "终结技",
+        "multiplier_pct": 0.0,
+        "stagger": 0.0,
+        "bonus_pct": 0,
+        "non_crit": 0.0,
+        "crit_expect": 0.0,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "骑士精神",
+      "matrix": "无瑕基质·医疗",
+      "set_main": null,
+      "set_off": null,
+      "pieces": [
+        "落潮轻甲",
+        "长息护手·壹型",
+        "长息蓄电核·壹型"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 291.0, '力量': 89.0, '敏捷': 91.0, '智识': 127.0, '意志': 150.0}",
+      "    [武器技能 Rank 9] 意志+156 -> {'kind': 'flat', 'stat': '意志', 'value': 156}",
+      "    [武器技能 Rank 9] 最大生命值+78.0% -> {'kind': 'pct', 'stat': 'hp_pct', 'value': 78.0}",
+      "    [武器技能 Rank 9] 治疗效率+28.0% -> {'kind': 'pct', 'stat': 'heal_eff', 'value': 28.0}",
+      "  武器: 骑士精神（满级攻击 485，武器技能 Rank9 词条已计入）",
+      "    [装备] 落潮轻甲（潮涌装备组）: {'智识': '+113', '力量': '+75', '终结技充能效率': '+16.0%'}",
+      "    [装备] 长息护手·壹型（长息装备组）: {'智识': '+84', '意志': '+55', '终结技充能效率': '+26.7%'}",
+      "    [装备] 长息蓄电核·壹型（长息装备组）: {'智识': '+41', '意志': '+27', '治疗效率加成': '+26.9%'}",
+      "  汇总词条: {'flat_意志': 238, 'pct_hp_pct': 78.0, 'pct_heal_eff': 54.9, 'flat_防御力': 119, 'flat_力量': 75, 'flat_智识': 238, 'pct_ult_charge': 42.7}",
+      "  主能力: 意志（官方标签）总值 388",
+      "  副能力: 智识（官方标注）总值 365",
+      "  攻击力 = (776 × 1.0000 + 0) × (1 + 0.005×388 + 0.002×365) = 2847.9",
+      "  循环期望: 42035（战技 0 + 连携 13136 + 2x普攻 28899）",
+      "  满连击循环期望: 42035（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "汤汤",
+    "key": "tangtang",
+    "element": "寒冷",
+    "primary_stat": "敏捷",
+    "secondary_stat": "力量",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 5628.8,
+      "DEF": 119,
+      "力量": 280.0,
+      "敏捷": 573.0,
+      "智识": 85.0,
+      "意志": 102.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 54.0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 84.69999999999999,
+        "电磁": 39.9,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 211187.4,
+    "cycle_expect_link4": 260724.3,
+    "skills": [
+      {
+        "skill_id": "tangtang_normal",
+        "name": "崩你脑壳！",
+        "type": "普通攻击",
+        "multiplier_pct": 561.0,
+        "stagger": 0.0,
+        "bonus_pct": 84.7,
+        "non_crit": 58323.5,
+        "crit_expect": 59781.6,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "tangtang_skill",
+        "name": "踏潮卷浪！",
+        "type": "战技",
+        "multiplier_pct": 480.0,
+        "stagger": 10.0,
+        "bonus_pct": 138.5,
+        "non_crit": 64438.2,
+        "crit_expect": 66049.2,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "tangtang_link",
+        "name": "河水，助我！",
+        "type": "连携技",
+        "multiplier_pct": 240.0,
+        "stagger": 10.0,
+        "bonus_pct": 84.7,
+        "non_crit": 24951.2,
+        "crit_expect": 25575.0,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "tangtang_ultimate",
+        "name": "大当家盯着呢！",
+        "type": "终结技",
+        "multiplier_pct": 1420.0,
+        "stagger": 35.0,
+        "bonus_pct": 84.7,
+        "non_crit": 147628.2,
+        "crit_expect": 151318.9,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "落草",
+      "matrix": "无瑕基质·迸发",
+      "set_main": "碾骨装备组",
+      "set_off": null,
+      "pieces": [
+        "碾骨重护甲·贰型",
+        "碾骨腕带·壹型",
+        "碾骨面具·贰型"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 321.0, '力量': 123.0, '敏捷': 179.0, '智识': 85.0, '意志': 102.0}",
+      "    [武器技能 Rank 9] 敏捷+156 -> {'kind': 'flat', 'stat': '敏捷', 'value': 156}",
+      "    [武器技能 Rank 9] 攻击力+39.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 39.0}",
+      "    [武器技能 Rank 9] 寒冷伤害+44.8% -> {'kind': 'pct', 'stat': 'elem_寒冷', 'value': 44.8}",
+      "  武器: 落草（满级攻击 505，武器技能 Rank9 词条已计入）",
+      "    [装备] 碾骨重护甲·贰型（碾骨装备组）: {'敏捷': '+113', '力量': '+75', '寒冷和电磁伤害加成': '+15.0%'}",
+      "    [装备] 碾骨腕带·壹型（碾骨装备组）: {'敏捷': '+84', '力量': '+55', '寒冷和电磁伤害加成': '+24.9%'}",
+      "    [装备] 碾骨面具·贰型（碾骨装备组）: {'敏捷': '+41', '力量': '+27', '战技伤害加成': '+53.8%'}",
+      "    [套组 碾骨装备组] 装备者攻击力+15% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 15.0}",
+      "  汇总词条: {'flat_敏捷': 394, 'pct_atk_pct': 54.0, 'pct_elem_寒冷': 84.69999999999999, 'flat_防御力': 119, 'flat_力量': 157, 'pct_elem_电磁': 39.9, 'pct_skill_dmg': 53.8}",
+      "  主能力: 敏捷（官方标签）总值 573",
+      "  副能力: 力量（官方标注）总值 280",
+      "  攻击力 = (826 × 1.5400 + 0) × (1 + 0.005×573 + 0.002×280) = 5628.8",
+      "  循环期望: 211187（战技 66049 + 连携 25575 + 2x普攻 119563）",
+      "  满连击循环期望: 260724（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "提弗洛斯",
+    "key": "typhoeus",
+    "element": "自然",
+    "primary_stat": "敏捷",
+    "secondary_stat": "意志",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 2880.0,
+      "DEF": 140,
+      "力量": 193.0,
+      "敏捷": 405.0,
+      "智识": 212.0,
+      "意志": 283.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 42,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 29.9,
+        "灼热": 0,
+        "寒冷": 29.9,
+        "电磁": 29.9,
+        "自然": 43.3
+      },
+      "all_skill_dmg": 29.9,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 16.0
+    },
+    "cycle_expect": 129661.5,
+    "cycle_expect_link4": 170308.5,
+    "skills": [
+      {
+        "skill_id": "typhoeus_normal",
+        "name": "追猎荒原",
+        "type": "普通攻击",
+        "multiplier_pct": 588.0,
+        "stagger": 0.0,
+        "bonus_pct": 73.2,
+        "non_crit": 29330.2,
+        "crit_expect": 30063.5,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "typhoeus_skill",
+        "name": "风矢穿林",
+        "type": "战技",
+        "multiplier_pct": 345.0,
+        "stagger": 20.0,
+        "bonus_pct": 73.2,
+        "non_crit": 17209.0,
+        "crit_expect": 17639.3,
+        "conditional_rows": [],
+        "full_multiplier_pct": 1060.0,
+        "full_non_crit": 52874.2,
+        "full_expect": 54196.0
+      },
+      {
+        "skill_id": "typhoeus_link",
+        "name": "野棘丛生",
+        "type": "连携技",
+        "multiplier_pct": 300.0,
+        "stagger": 10.0,
+        "bonus_pct": 73.2,
+        "non_crit": 14964.4,
+        "crit_expect": 15338.5,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "typhoeus_ultimate",
+        "name": "冰山呼告",
+        "type": "终结技",
+        "multiplier_pct": 575.0,
+        "stagger": 20.0,
+        "bonus_pct": 73.2,
+        "non_crit": 28681.7,
+        "crit_expect": 29398.8,
+        "conditional_rows": [],
+        "full_multiplier_pct": 800.0,
+        "full_non_crit": 39905.0,
+        "full_expect": 40902.7
+      }
+    ],
+    "build": {
+      "weapon": "苦难的尽头",
+      "matrix": "无瑕基质·迸发",
+      "set_main": "拓荒装备组",
+      "set_off": "潮涌装备组",
+      "pieces": [
+        "拓荒护服",
+        "拓荒纤维手套",
+        "拓荒供氧栓",
+        "悬河供氧栓"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 312.0, '力量': 97.0, '敏捷': 174.0, '智识': 99.0, '意志': 119.0}",
+      "    [武器技能 Rank 9] 敏捷+156 -> {'kind': 'flat', 'stat': '敏捷', 'value': 156}",
+      "    [武器技能 Rank 9] 自然伤害+43.3% -> {'kind': 'pct', 'stat': 'elem_自然', 'value': 43.3}",
+      "    [武器技能 Rank 9] 源石技艺强度+42 -> {'kind': 'flat', 'stat': '源石技艺强度', 'value': 42}",
+      "  武器: 苦难的尽头（满级攻击 490，武器技能 Rank9 词条已计入）",
+      "    [装备] 拓荒护服（拓荒装备组）: {'智识': '+113', '敏捷': '+75', '终结技充能效率': '+16.0%'}",
+      "    [装备] 拓荒纤维手套（拓荒装备组）: {'意志': '+84', '力量': '+55', '所有技能伤害加成': '+29.9%'}",
+      "    [装备] 拓荒供氧栓（拓荒装备组）: {'意志': '+53', '物理伤害加成': '+29.9%'}",
+      "    [装备] 悬河供氧栓（潮涌装备组）: {'力量': '+41', '意志': '+27', '寒冷和电磁伤害加成': '+29.9%'}",
+      "    [套组 拓荒装备组] 装备者连携技冷却缩减+15% -> {'kind': 'pct', 'stat': 'combo_cd', 'value': 15.0}",
+      "  汇总词条: {'flat_敏捷': 231, 'pct_elem_自然': 43.3, 'flat_源石技艺强度': 42, 'flat_防御力': 140, 'flat_智识': 113, 'pct_ult_charge': 16.0, 'flat_力量': 96, 'flat_意志': 164, 'pct_all_skill_dmg': 29.9, 'pct_elem_物理': 29.9, 'pct_elem_寒冷': 29.9, 'pct_elem_电磁': 29.9, 'pct_combo_cd': 15.0}",
+      "  主能力: 敏捷（官方标签）总值 405",
+      "  副能力: 意志（官方标注）总值 283",
+      "  攻击力 = (802 × 1.0000 + 0) × (1 + 0.005×405 + 0.002×283) = 2880.0",
+      "  技能完整倍率覆盖: 风矢穿林 345%→1060%（召唤物/多段机制，依据 wiki 技能表）",
+      "  技能完整倍率覆盖: 冰山呼告 575%→800%（召唤物/多段机制，依据 wiki 技能表）",
+      "  循环期望: 129662（战技 54196 + 连携 15338 + 2x普攻 60127）",
+      "  满连击循环期望: 170308（战技 x1.75，连击加成 +75%）",
+      "  保守口径循环期望: 103075（满口径依赖 {'attach': '自然'}，队伍不满足时使用）"
+    ],
+    "full_caliber_requires": {
+      "attach": "自然"
+    },
+    "cycle_expect_conservative": 103074.8
+  },
+  {
+    "character": "狼卫",
+    "key": "wulfgard",
+    "element": "灼热",
+    "primary_stat": "力量",
+    "secondary_stat": "敏捷",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 2657.0,
+      "DEF": 119,
+      "力量": 399.0,
+      "敏捷": 197.0,
+      "智识": 92.0,
+      "意志": 166.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 53,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 15.0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 15.0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 26.7
+    },
+    "cycle_expect": 75886.1,
+    "cycle_expect_link4": 101254.5,
+    "skills": [
+      {
+        "skill_id": "wulfgard_normal",
+        "name": "多重连射",
+        "type": "普通攻击",
+        "multiplier_pct": 604.0,
+        "stagger": 0.0,
+        "bonus_pct": 15.0,
+        "non_crit": 18455.4,
+        "crit_expect": 18916.7,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "wulfgard_skill",
+        "name": "灼热弹痕",
+        "type": "战技",
+        "multiplier_pct": 1080.0,
+        "stagger": 10.0,
+        "bonus_pct": 15.0,
+        "non_crit": 32999.6,
+        "crit_expect": 33824.6,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "wulfgard_link",
+        "name": "爆裂手雷·β型",
+        "type": "连携技",
+        "multiplier_pct": 135.0,
+        "stagger": 10.0,
+        "bonus_pct": 15.0,
+        "non_crit": 4125.0,
+        "crit_expect": 4228.1,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "wulfgard_ultimate",
+        "name": "狼之怒",
+        "type": "终结技",
+        "multiplier_pct": 72.0,
+        "stagger": 15.0,
+        "bonus_pct": 15.0,
+        "non_crit": 2200.0,
+        "crit_expect": 2255.0,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "同类相食",
+      "matrix": "无瑕基质·附术",
+      "set_main": null,
+      "set_off": null,
+      "pieces": [
+        "动火用外骨骼",
+        "生物辅助臂甲",
+        "动火用储能匣"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 294.0, '力量': 161.0, '敏捷': 95.0, '智识': 92.0, '意志': 111.0}",
+      "  武器: 同类相食（满级攻击 490，武器技能 Rank9 词条已计入）",
+      "    [装备] 动火用外骨骼（动火用装备组）: {'力量': '+113', '敏捷': '+75', '灼热和自然伤害加成': '+15.0%'}",
+      "    [装备] 生物辅助臂甲（生物辅助装备组）: {'力量': '+84', '意志': '+55', '终结技充能效率': '+26.7%'}",
+      "    [装备] 动火用储能匣（动火用装备组）: {'力量': '+41', '敏捷': '+27', '源石技艺强度': '+53'}",
+      "  汇总词条: {'flat_防御力': 119, 'flat_力量': 238, 'flat_敏捷': 102, 'pct_elem_灼热': 15.0, 'pct_elem_自然': 15.0, 'flat_意志': 55, 'pct_ult_charge': 26.7, 'flat_源石技艺强度': 53}",
+      "  主能力: 力量（官方标签）总值 399",
+      "  副能力: 敏捷（官方标注）总值 197",
+      "  攻击力 = (784 × 1.0000 + 0) × (1 + 0.005×399 + 0.002×197) = 2657.0",
+      "  循环期望: 75886（战技 33825 + 连携 4228 + 2x普攻 37833）",
+      "  满连击循环期望: 101254（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "洛茜",
+    "key": "rossi",
+    "element": "物理",
+    "primary_stat": "敏捷",
+    "secondary_stat": "智识",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 5275.4,
+      "DEF": 119,
+      "力量": 97.0,
+      "敏捷": 570.0,
+      "智识": 275.0,
+      "意志": 89.0,
+      "暴击率": 0.245,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 44.8,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 0,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 16.0
+    },
+    "cycle_expect": 125300.7,
+    "cycle_expect_link4": 146618.4,
+    "skills": [
+      {
+        "skill_id": "rossi_normal",
+        "name": "沸腾狼血",
+        "type": "普通攻击",
+        "multiplier_pct": 593.0,
+        "stagger": 0.0,
+        "bonus_pct": 0,
+        "non_crit": 31282.8,
+        "crit_expect": 35115.0,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "rossi_skill",
+        "name": "血红之影",
+        "type": "战技",
+        "multiplier_pct": 480.0,
+        "stagger": 20.0,
+        "bonus_pct": 0,
+        "non_crit": 25321.7,
+        "crit_expect": 28423.6,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "rossi_link",
+        "name": "燎影时刻",
+        "type": "连携技",
+        "multiplier_pct": 450.0,
+        "stagger": 5.0,
+        "bonus_pct": 0,
+        "non_crit": 23739.1,
+        "crit_expect": 26647.1,
+        "conditional_rows": [
+          "消耗每层附着 / 额外伤害倍率: 180%（按消耗层数，A 层不计）"
+        ]
+      },
+      {
+        "skill_id": "rossi_ultimate",
+        "name": "“利爪”奇袭",
+        "type": "终结技",
+        "multiplier_pct": 1600.0,
+        "stagger": 25.0,
+        "bonus_pct": 56.1,
+        "non_crit": 131757.2,
+        "crit_expect": 147897.5,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "狼之绯",
+      "matrix": "无瑕基质·切骨",
+      "set_main": null,
+      "set_off": null,
+      "pieces": [
+        "M.I.警用护甲·壹型",
+        "M.I.警用手套·壹型",
+        "拓荒增量供氧栓"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 323.0, '力量': 97.0, '敏捷': 176.0, '智识': 118.0, '意志': 89.0}",
+      "    [武器技能 Rank 9] 敏捷+156 -> {'kind': 'flat', 'stat': '敏捷', 'value': 156}",
+      "    [武器技能 Rank 9] 暴击率+19.5% -> {'kind': 'pct', 'stat': 'crit_rate', 'value': 19.5}",
+      "    [武器技能 Rank 9] 攻击力+44.8% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 44.8}",
+      "  武器: 狼之绯（满级攻击 505，武器技能 Rank9 词条已计入）",
+      "    [装备] M.I.警用护甲·壹型（M.I.警用装备组）: {'敏捷': '+113', '智识': '+75', '终结技充能效率': '+16.0%'}",
+      "    [装备] M.I.警用手套·壹型（M.I.警用装备组）: {'敏捷': '+84', '智识': '+55', '终结技伤害加成': '+56.1%'}",
+      "    [装备] 拓荒增量供氧栓（拓荒装备组）: {'敏捷': '+41', '智识': '+27', '副能力': '+26.9%'}",
+      "  汇总词条: {'flat_敏捷': 394, 'pct_crit_rate': 19.5, 'pct_atk_pct': 44.8, 'flat_防御力': 119, 'flat_智识': 157, 'pct_ult_charge': 16.0, 'pct_ult_dmg': 56.1}",
+      "  主能力: 敏捷（官方标签）总值 570",
+      "  副能力: 智识（官方标注）总值 275",
+      "  攻击力 = (828 × 1.4480 + 0) × (1 + 0.005×570 + 0.002×275) = 5275.4",
+      "  循环期望: 125301（战技 28424 + 连携 26647 + 2x普攻 70230）",
+      "  满连击循环期望: 146618（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "伊冯",
+    "key": "yvonne",
+    "element": "寒冷",
+    "primary_stat": "智识",
+    "secondary_stat": "敏捷",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 3650.9,
+      "DEF": 119,
+      "力量": 82.0,
+      "敏捷": 285.0,
+      "智识": 570.0,
+      "意志": 105.0,
+      "暴击率": 0.43,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 44.8,
+        "电磁": 0,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 137301.4,
+    "cycle_expect_link4": 156570.8,
+    "skills": [
+      {
+        "skill_id": "yvonne_normal",
+        "name": "雀跃扳机",
+        "type": "普通攻击",
+        "multiplier_pct": 578.0,
+        "stagger": 0.0,
+        "bonus_pct": 92.6,
+        "non_crit": 40643.1,
+        "crit_expect": 49381.3,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "yvonne_skill",
+        "name": "冰冰弹·β型",
+        "type": "战技",
+        "multiplier_pct": 400.0,
+        "stagger": 10.0,
+        "bonus_pct": 44.8,
+        "non_crit": 21146.1,
+        "crit_expect": 25692.5,
+        "conditional_rows": [
+          "消耗每层附着 / 额外伤害倍率: 200%（按消耗层数，A 层不计）"
+        ]
+      },
+      {
+        "skill_id": "yvonne_link",
+        "name": "速冻仔·u37",
+        "type": "连携技",
+        "multiplier_pct": 200.0,
+        "stagger": 10.0,
+        "bonus_pct": 44.8,
+        "non_crit": 10573.1,
+        "crit_expect": 12846.3,
+        "conditional_rows": []
+      },
+      {
+        "skill_id": "yvonne_ultimate",
+        "name": "冷冻射手",
+        "type": "终结技",
+        "multiplier_pct": 920.0,
+        "stagger": 20.0,
+        "bonus_pct": 44.8,
+        "non_crit": 48636.1,
+        "crit_expect": 59092.9,
+        "conditional_rows": []
+      }
+    ],
+    "build": {
+      "weapon": "艺术暴君",
+      "matrix": "无瑕基质·切骨",
+      "set_main": "M.I.警用装备组",
+      "set_off": null,
+      "pieces": [
+        "M.I.警用罩衣",
+        "M.I.警用手环",
+        "M.I.警用工具组"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 321.0, '力量': 82.0, '敏捷': 128.0, '智识': 176.0, '意志': 105.0}",
+      "    [武器技能 Rank 9] 智识+156 -> {'kind': 'flat', 'stat': '智识', 'value': 156}",
+      "    [武器技能 Rank 9] 暴击率+19.5% -> {'kind': 'pct', 'stat': 'crit_rate', 'value': 19.5}",
+      "    [武器技能 Rank 9] 寒冷伤害+44.8% -> {'kind': 'pct', 'stat': 'elem_寒冷', 'value': 44.8}",
+      "  武器: 艺术暴君（满级攻击 505，武器技能 Rank9 词条已计入）",
+      "    [装备] M.I.警用罩衣（M.I.警用装备组）: {'智识': '+113', '敏捷': '+75', '普通攻击伤害加成': '+17.9%'}",
+      "    [装备] M.I.警用手环（M.I.警用装备组）: {'智识': '+84', '敏捷': '+55', '普通攻击伤害加成': '+29.9%'}",
+      "    [装备] M.I.警用工具组（M.I.警用装备组）: {'智识': '+41', '敏捷': '+27', '暴击率': '+13.5%'}",
+      "    [套组 M.I.警用装备组] 装备者暴击率+5% -> {'kind': 'pct', 'stat': 'crit_rate', 'value': 5.0}",
+      "  汇总词条: {'flat_智识': 394, 'pct_crit_rate': 38.0, 'pct_elem_寒冷': 44.8, 'flat_防御力': 119, 'flat_敏捷': 157, 'pct_normal_attack_dmg': 47.8}",
+      "  主能力: 智识（官方标签）总值 570",
+      "  副能力: 敏捷（官方标注）总值 285",
+      "  攻击力 = (826 × 1.0000 + 0) × (1 + 0.005×570 + 0.002×285) = 3650.9",
+      "  循环期望: 137301（战技 25692 + 连携 12846 + 2x普攻 98763）",
+      "  满连击循环期望: 156571（战技 x1.75，连击加成 +75%）"
+    ]
+  },
+  {
+    "character": "庄方宜",
+    "key": "zhuang_fangyi",
+    "element": "电磁",
+    "primary_stat": "意志",
+    "secondary_stat": "智识",
+    "panel": {
+      "HP": 5495.0,
+      "ATK": 5543.1,
+      "DEF": 119,
+      "力量": 99.0,
+      "敏捷": 99.0,
+      "智识": 280.0,
+      "意志": 578.0,
+      "暴击率": 0.05,
+      "暴击伤害": 0.5,
+      "源石技艺强度": 0,
+      "atk_pct": 49.0,
+      "elem_dmg_pct": {
+        "物理": 0,
+        "灼热": 0,
+        "寒冷": 39.9,
+        "电磁": 84.69999999999999,
+        "自然": 0
+      },
+      "all_skill_dmg": 0,
+      "all_damage": 0,
+      "heal_eff": 0,
+      "ult_charge": 0
+    },
+    "cycle_expect": 202205.9,
+    "cycle_expect_link4": 238793.1,
+    "skills": [
+      {
+        "skill_id": "zhuang_fangyi_normal",
+        "name": "疾电法",
+        "type": "普通攻击",
+        "multiplier_pct": 551.0,
+        "stagger": 0.0,
+        "bonus_pct": 84.7,
+        "non_crit": 56411.9,
+        "crit_expect": 57822.2,
+        "conditional_rows": [
+          "处决攻击倍率: 900%"
+        ]
+      },
+      {
+        "skill_id": "zhuang_fangyi_skill",
+        "name": "惊霆诀",
+        "type": "战技",
+        "multiplier_pct": 45.0,
+        "stagger": 15.0,
+        "bonus_pct": 138.5,
+        "non_crit": 5949.1,
+        "crit_expect": 6097.9,
+        "conditional_rows": [
+          "消耗每级导电 / 额外伤害倍率: 9%（按消耗层数，A 层不计）",
+          "终结技期间 / 雷击伤害倍率: 81%",
+          "终结技期间 / 消耗每级导电 / 额外伤害倍率: 18%（按消耗层数，A 层不计）"
+        ],
+        "full_multiplier_pct": 360.0,
+        "full_non_crit": 47593.0,
+        "full_expect": 48782.9
+      },
+      {
+        "skill_id": "zhuang_fangyi_link",
+        "name": "一息万变",
+        "type": "连携技",
+        "multiplier_pct": 360.0,
+        "stagger": 10.0,
+        "bonus_pct": 84.7,
+        "non_crit": 36857.2,
+        "crit_expect": 37778.6,
+        "conditional_rows": [
+          "终结技期间 / 伤害倍率: 540%"
+        ]
+      },
+      {
+        "skill_id": "zhuang_fangyi_ultimate",
+        "name": "万钧风雷",
+        "type": "终结技",
+        "multiplier_pct": 0.0,
+        "stagger": 0.0,
+        "bonus_pct": 84.7,
+        "non_crit": 0.0,
+        "crit_expect": 0.0,
+        "conditional_rows": [
+          "终结技期间 / 普攻第一段倍率: 150%",
+          "终结技期间 / 普攻第二段倍率: 210%",
+          "终结技期间 / 普攻第三段倍率: 300%"
+        ]
+      }
+    ],
+    "build": {
+      "weapon": "孤舟",
+      "matrix": "无瑕基质·压制",
+      "set_main": "壤流装备组",
+      "set_off": null,
+      "pieces": [
+        "壤流轻甲",
+        "壤流护手",
+        "壤流短棍"
+      ]
+    },
+    "trace": [
+      "  基础面板（90级）: {'生命值': 5495.0, '攻击力': 326.0, '力量': 99.0, '敏捷': 99.0, '智识': 123.0, '意志': 184.0}",
+      "    [武器技能 Rank 9] 意志+156 -> {'kind': 'flat', 'stat': '意志', 'value': 156}",
+      "    [武器技能 Rank 9] 攻击力+39.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 39.0}",
+      "    [武器技能 Rank 9] 电磁伤害+44.8% -> {'kind': 'pct', 'stat': 'elem_电磁', 'value': 44.8}",
+      "  武器: 孤舟（满级攻击 510，武器技能 Rank9 词条已计入）",
+      "    [装备] 壤流轻甲（壤流装备组）: {'意志': '+113', '智识': '+75', '寒冷和电磁伤害加成': '+15.0%'}",
+      "    [装备] 壤流护手（壤流装备组）: {'意志': '+84', '智识': '+55', '寒冷和电磁伤害加成': '+24.9%'}",
+      "    [装备] 壤流短棍（壤流装备组）: {'意志': '+41', '智识': '+27', '战技伤害加成': '+53.8%'}",
+      "    [套组 壤流装备组] 装备者攻击力+10.0% -> {'kind': 'pct', 'stat': 'atk_pct', 'value': 10.0}",
+      "  汇总词条: {'flat_意志': 394, 'pct_atk_pct': 49.0, 'pct_elem_电磁': 84.69999999999999, 'flat_防御力': 119, 'flat_智识': 157, 'pct_elem_寒冷': 39.9, 'pct_skill_dmg': 53.8}",
+      "  主能力: 意志（官方标签）总值 578",
+      "  副能力: 智识（官方标注）总值 280",
+      "  攻击力 = (836 × 1.4900 + 0) × (1 + 0.005×578 + 0.002×280) = 5543.1",
+      "  技能完整倍率覆盖: 惊霆诀 45%→360%（召唤物/多段机制，依据 wiki 技能表）",
+      "  循环期望: 202206（战技 48783 + 连携 37779 + 2x普攻 115644）",
+      "  满连击循环期望: 238793（战技 x1.75，连击加成 +75%）"
+    ]
+  }
+]
