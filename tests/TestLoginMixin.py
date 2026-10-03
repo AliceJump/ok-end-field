@@ -63,6 +63,46 @@ class TestLoginMixin(unittest.TestCase):
         task._click_account_from_recent_list.assert_called_once_with(username, account_box)
         self.assertEqual(task.click_text.call_args_list[1], call("登录", box=task.box.center))
 
+    def test_account_candidates_pair_prefix_and_suffix_on_same_row(self):
+        task = self._make_task()
+        prefix = SimpleNamespace(name="138", x=100, y=20, width=30, height=10)
+        suffix = SimpleNamespace(name="5678", x=180, y=21, width=40, height=10)
+        other_suffix = SimpleNamespace(name="5678", x=180, y=70, width=40, height=10)
+
+        candidates = LoginMixin._account_candidates_from_ocr_results(
+            task, [prefix, suffix, other_suffix], "13812345678"
+        )
+
+        self.assertEqual(len(candidates), 1)
+        candidate = candidates[0]
+        self.assertEqual((candidate.x, candidate.y, candidate.width, candidate.height), (100, 20, 120, 11))
+
+    def test_account_candidates_accept_single_ocr_box_containing_both_parts(self):
+        task = self._make_task()
+        combined = SimpleNamespace(name="138****5678", x=100, y=20, width=120, height=12)
+
+        candidates = LoginMixin._account_candidates_from_ocr_results(task, [combined], "13812345678")
+
+        self.assertEqual(candidates, [combined])
+
+    def test_account_candidates_do_not_pair_parts_from_different_rows(self):
+        task = self._make_task()
+        prefix = SimpleNamespace(name="138", x=100, y=20, width=30, height=10)
+        suffix = SimpleNamespace(name="5678", x=180, y=45, width=40, height=10)
+
+        candidates = LoginMixin._account_candidates_from_ocr_results(task, [prefix, suffix], "13812345678")
+
+        self.assertEqual(candidates, [])
+
+    def test_account_candidates_require_digit_boundaries(self):
+        task = self._make_task()
+        false_prefix = SimpleNamespace(name="91380", x=100, y=20, width=50, height=10)
+        suffix = SimpleNamespace(name="5678", x=180, y=20, width=40, height=10)
+
+        candidates = LoginMixin._account_candidates_from_ocr_results(task, [false_prefix, suffix], "13812345678")
+
+        self.assertEqual(candidates, [])
+
     def test_duplicate_visible_accounts_choose_non_recent_when_switching_from_same_mask(self):
         task = self._make_task()
         task._previous_account_user = "13800005678"
