@@ -61,6 +61,7 @@ class NativeBuffChange:
     maximum: int | None = None
     target: str = "self"
     selector: NativeTarget | None = None
+    definition: NativeBuffProgram | None = None
 
 
 @dataclass(frozen=True)
@@ -97,6 +98,28 @@ class NativeBuffQuery:
 
 
 @dataclass(frozen=True)
+class NativeBuffProgram:
+    parameters: tuple[tuple[str, float], ...]
+    inherited: tuple[tuple[str, CombatExpression], ...]
+    duration: CombatExpression | None
+    period: CombatExpression
+    trigger_limit: CombatExpression
+    wait_first: bool
+    stacking: int
+    maximum: CombatExpression
+    callbacks: tuple[tuple[int, ActionProgram], ...]
+    subscriptions: tuple[tuple[str, ActionProgram], ...] = ()
+    unresolved: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class NativeBuffControl:
+    instance: str
+    kind: str
+    expected_at: float | None = None
+
+
+@dataclass(frozen=True)
 class NativeIteration:
     target: NativeTarget
     events: tuple[CombatEvent, ...]
@@ -109,6 +132,12 @@ def walk_combat_events(events):
             yield from walk_combat_events(iteration.events)
         for listener in event.listeners:
             yield from walk_combat_events(listener.events)
+        for change in event.native_buffs:
+            if change.definition is not None:
+                if change.definition.unresolved:
+                    yield CombatEvent(0, "unresolved_native_buff", unresolved=change.definition.unresolved)
+                for _, program in (*change.definition.callbacks, *change.definition.subscriptions):
+                    yield from walk_combat_events(program.events)
 
 
 @dataclass(frozen=True)
@@ -140,6 +169,7 @@ class CombatEvent:
     native_resources: tuple[NativeResourceChange, ...] = ()
     target_bindings: tuple[NativeTargetBinding, ...] = ()
     iterations: tuple[NativeIteration, ...] = ()
+    buff_controls: tuple[NativeBuffControl, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -234,6 +264,7 @@ class CombatWorldState:
         self.main_control = actors[0] if actors else None
         self.default_energy_per_sp: dict[str, float] = {}
         self.native_buffs: dict[tuple[str, str], tuple[int, float | None]] = {}
+        self.native_buff_instances: dict[str, object] = {}
         self.native_listeners: list[tuple[str, str, ActionProgram, NativeListener]] = []
         self.native_timers: dict[tuple[str, str], float] = {}
         self.native_character_hooks: list[tuple[str, ActionProgram]] = []
@@ -303,8 +334,9 @@ class CombatWorldState:
                 if effect == EffectType.STACK_SHRED:
                     self.enemies[owner].shred_stacks = 0
                 del self.pool_expiries[owner, effect]
+        running = {(v.owner, v.key) for v in self.native_buff_instances.values()}
         self.native_buffs = {key: value for key, value in self.native_buffs.items()
-                             if value[1] is None or value[1] > self.time}
+                             if key in running or value[1] is None or value[1] > self.time}
         self.native_listeners[:] = [entry for entry in self.native_listeners
                                    if (entry[0], entry[3].buff_id) in self.native_buffs]
         for instance in self.effects:
@@ -608,6 +640,9 @@ class CombatWorldState:
         """Callbacks read the event's state before its producer consumes a pool."""
         previous_action = self._executing_action
         try:
+            from src.data.native_buff_runtime import dispatch_buff_event
+
+            dispatch_buff_event(self, trigger, actor, payload or {})
             for owner, action_id, program, listener in tuple(self.native_listeners):
                 if owner != actor or listener.trigger != trigger or (owner, listener.buff_id) not in self.native_buffs:
                     continue
@@ -715,11 +750,17 @@ class CombatWorldState:
                 value *= coefficient
             character.energy = max(0, min(character.energy_cap, character.energy + value))
 
-    def _apply_native_buff(self, owner, change, inputs):
+    def _apply_native_buff(self, owner, change, inputs, action_id, program):
         delta = change.count.evaluate(inputs)
         if delta != int(delta):
             raise UnresolvedMechanic(f"Non-integer native buff layers: {change.key}")
         identity = (owner, change.key)
+        if change.definition is not None or any(v.owner == owner and v.key == change.key
+                                                for v in self.native_buff_instances.values()):
+            from src.data.native_buff_runtime import change_buff
+
+            change_buff(self, owner, change, inputs, action_id, program, int(delta))
+            return
         old_count, old_expiry = self.native_buffs.get(identity, (0, None))
         count = 0 if change.remove_all else max(0, old_count + int(delta))
         if change.maximum is not None:
@@ -751,6 +792,12 @@ class CombatWorldState:
         if (action_id, sequence) in self._seen_events:
             return
         self._seen_events.add((action_id, sequence))
+        if event.buff_controls:
+            from src.data.native_buff_runtime import control_buff
+
+            for control in event.buff_controls:
+                control_buff(self, control)
+            return
         actor, enemy = program.actor, program.enemy
         if not self.characters[actor].alive or not self.satisfies(actor, enemy, event.requires, event.any_requires):
             return
@@ -842,7 +889,7 @@ class CombatWorldState:
                 owners = self.native_targets(change.selector, action_id, program) if change.selector is not None else (
                     enemy if change.target == "enemy" else actor,)
                 for owner in owners:
-                    self._apply_native_buff(owner, change, inputs)
+                    self._apply_native_buff(owner, change, inputs, action_id, program)
             except (UnresolvedMechanic, MissingCombatInput) as error:
                 self.unresolved.add(str(error))
         # Conditions snapshot before mutation; explicit consumers precede the event's
@@ -1027,7 +1074,9 @@ class CombatWorldState:
 
     def disable_actor(self, actor):
         self.characters[actor].alive = False
-        self._queue[:] = [row for row in self._queue if row[3].actor != actor]
+        self._queue[:] = [row for row in self._queue if row[3].actor != actor or row[4].buff_controls]
+        if any(instance.source == actor or instance.owner == actor for instance in self.native_buff_instances.values()):
+            self.unresolved.add("Native buff death policy needs binding")
         heapq.heapify(self._queue)
 
 
@@ -1074,7 +1123,9 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                     continue
                 path = (*outcomes, outcome)
                 tail = after.fork()
-                if tail._queue:
+                if any(v.expires is None and v.period > 0 and v.remaining != 0 for v in tail.native_buff_instances.values()):
+                    tail.advance(initial + horizon)
+                elif tail._queue:
                     tail.advance(min(initial + horizon, max(row[0] for row in tail._queue)))
                 if tail.unresolved:
                     continue
@@ -1093,6 +1144,8 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                         tuple(sorted((a, p.key, at) for a, (_, p, at) in state.active_actions.items())),
                         state.damage_state.phase_signature(state.time),
                         state.main_control, state.returned_sp, tuple(sorted(state.native_buffs.items())),
+                        tuple((v.owner, v.key, v.source, v.expires, v.period, v.remaining, repr(v.definition),
+                               tuple(sorted(state._action_inputs[v.uid].items()))) for v in state.native_buff_instances.values()),
                         tuple(sorted(state.native_timers.items())),
                         tuple(sorted((a, tuple(sorted(s.attributes.items()))) for a, s in state.characters.items())),
                         tuple(sorted((a, tuple(sorted(s.blackboard.items()))) for a, s in state.characters.items())),

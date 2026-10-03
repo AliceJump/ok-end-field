@@ -41,6 +41,12 @@
 
 ## 还未完成的关键工作
 
+buff执行新增独立实例与BB快照，Source与Owner分别保存。已接OnBuffStart、OnBuffEnable、DuringBuffEnable、OnBuffTrigger、OnBuffFinish及已发布事件的订阅；默认终结能量现直接执行原生buff开始动作，不再在CreateBuff按名字补一份公式。周期事件支持waitFirst、触发次数限制和独立到期，原生OnTick先更新周期计时再处理到期，因此同一截止时点的末次触发仅执行一次。移除/栈溢出取消实例后续事件，Unique重复添加保留原实例，Stack分层到期、满层移除最早实例，Unlimited新建实例。动态继承从inputValueKey读取本次实际BB值，随后不会随生产者BB改变。周期、结束和订阅动作均使用接收者的独立上下文。
+
+生命周期核验标识：OnStart60698/RVA0x3fa5260/9000字节SHA256 `3acf329987a4c34cd2c835c1731411234501c97f2308e6f26090e3de28898c9e`；OnEnable60699/RVA0x3739a90/4000字节 `cdcb7877461295ea9aeb4aae90e255da733fa2ef9fccb12114f6abccbd534bd9`；OnTrigger60703/RVA0x41f1c80/3500字节 `161134b93e358edb08c2e4633aadc0f79720cd23aeb6261b1cf2bdd88a11e52b`；OnTick60704/RVA0x3106030/15000字节 `2e2612a5cdbe038bec483c473c05feb26dc998698b02a93c193cb462b2495a76`；StackBuff60757/RVA0x373af10/13000字节 `94144f9b51e85b3ea463460484b9f7bdde92f06e872880dd3f454adfc49c6649`。只绑定上述已核验分支，其他堆叠政策、共享stackingKey、buff时间暂停、ignite/timeline及未发布的事件仍明确报缺口。原生提弗洛斯普攻返SP的buff开始动作已验证动态继承并执行。32角色当前能编译101个动作，尚未完整计价；原生资产与JSON标签两种编码已统一读取，未知标签继续阻止对应条件。
+
+buff专项八项覆盖持有者、继承快照、期限末次触发、触发次数、移除、独立层期限/溢出、Unique、结束及订阅解绑、预测隔离和真实原生开始动作。该阶段全仓1000项通过，变更文件Ruff I/F与差异检查通过。
+
 1. 全角色被动事件、EntityBB/SkillBB/BuffBB作用域和上下文选择器；同一角色的原生buff堆叠、重复触发、监听解绑及默认终结能量继承。
 2. 投射物、子技能、场地实体和持续伤害的完整生命周期；法术附着、燃烧/导电/腐蚀/冻结/碎冰等反应的真实伤害与计时。
 3. 原生追加攻击、暴击层、普攻次数、治疗与护盾、条件武器/套装生产者，以及具体敌人的防御、抗性、失衡窗口。
