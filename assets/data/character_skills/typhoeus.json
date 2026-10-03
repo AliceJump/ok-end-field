@@ -450,10 +450,28 @@
                 },
                 {
                     "effect_id": "VULN_NATURAL_BURST",
-                    "value": 1,
+                    "value": null,
                     "duration": null,
                     "target": "enemy",
-                    "count": 1
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "typhoeus_link:VULN_NATURAL_BURST",
+                        "bucket": "damage_taken",
+                        "elements": [
+                            "自然"
+                        ],
+                        "recipient": "enemy",
+                        "trigger": "arrow_field_enter",
+                        "strength": {
+                            "base": {
+                                "row": "自然爆发伤害提高"
+                            }
+                        },
+                        "damage_tags": [
+                            "natural_burst"
+                        ],
+                        "unresolved": "箭阵实体持续时间及离场清理尚未绑定"
+                    }
                 },
                 {
                     "effect_id": "STACK_AIR_ATTACKS",

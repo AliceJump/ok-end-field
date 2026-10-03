@@ -244,6 +244,7 @@ def build(research: Path, texts: Path, out: Path):
     effects = tables["PotentialTalentEffectTable"]
     semantic_rules = read(ROOT / "assets/data/character_progression/semantic_rules.json")
     modifier_rules = read(ROOT / "assets/data/character_progression/resource_modifier_rules.json")
+    damage_rules = read(ROOT / "assets/data/character_progression/damage_modifier_rules.json")
     characters = {}
 
     def passive(effect_id, name, level, source, slot=None):
@@ -319,6 +320,7 @@ def build(research: Path, texts: Path, out: Path):
             "source": source,
             "resource_changes": semantic_rules.get(effect_id, []),
             "resource_modifiers": resource_modifiers,
+            "damage_modifier_bindings": damage_rules.get(effect_id, []),
         }
 
     for path in sorted((ROOT / "assets/data/character_skills").glob("*.json")):
@@ -454,6 +456,9 @@ def build(research: Path, texts: Path, out: Path):
         "native_inputs": index["native_inputs"],
         "timing_snapshot": "../../skill_timings/20261002",
         "characters_sha256": hashlib.sha256(char_raw).hexdigest(),
+        "damage_modifier_rules_sha256": hashlib.sha256(
+            (ROOT / "assets/data/character_progression/damage_modifier_rules.json").read_bytes()
+        ).hexdigest(),
         "description_resource_review_sha256": hashlib.sha256(review_raw).hexdigest(),
         "resource_modifier_rules_sha256": hashlib.sha256(
             (ROOT / "assets/data/character_progression/resource_modifier_rules.json").read_bytes()

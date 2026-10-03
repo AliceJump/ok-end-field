@@ -26,7 +26,22 @@
     "all_skill_dmg": 0,
     "all_damage": 0,
     "heal_eff": 33.5,
-    "ult_charge": 26.7
+    "ult_charge": 26.7,
+    "damage_basis": {
+      "attack_white": 702.0,
+      "attack_percent": 0.0,
+      "attack_flat": 0,
+      "attribute_factor": 4.5092,
+      "crit_rate": 0.05,
+      "crit_damage": 0.5,
+      "amplification": {
+        "物理": 0.0,
+        "灼热": 0.0,
+        "寒冷": 0.0,
+        "电磁": 0.0,
+        "自然": 0.0
+      }
+    }
   },
   "skills": [
     {
@@ -36,6 +51,7 @@
       "multiplier_pct": 431.0,
       "stagger": 0.0,
       "bonus_pct": 0,
+      "amplification_pct": 0,
       "non_crit": 13643.1,
       "crit_expect": 13984.2,
       "conditional_rows": [
@@ -50,6 +66,7 @@
       "multiplier_pct": 312.0,
       "stagger": 10.0,
       "bonus_pct": 0,
+      "amplification_pct": 0,
       "non_crit": 9876.2,
       "crit_expect": 10123.1,
       "conditional_rows": [
@@ -63,6 +80,7 @@
       "multiplier_pct": 184.0,
       "stagger": 10.0,
       "bonus_pct": 0,
+      "amplification_pct": 0,
       "non_crit": 5824.4,
       "crit_expect": 5970.1,
       "conditional_rows": []
@@ -74,6 +92,7 @@
       "multiplier_pct": 520.0,
       "stagger": 25.0,
       "bonus_pct": 0,
+      "amplification_pct": 0,
       "non_crit": 16460.4,
       "crit_expect": 16871.9,
       "conditional_rows": []

@@ -1,0 +1,304 @@
+{
+  "chr_9000_endmin_talent_1_2": [
+    {
+      "key": "chr_9000_endmin_talent_1_2:attack",
+      "bucket": "attack",
+      "elements": [
+        "all"
+      ],
+      "recipient": "self",
+      "trigger": "originium_crystal_consumed",
+      "strength": {
+        "base": {
+          "passive": "chr_9000_endmin_talent_1_2",
+          "parameter": "atk_up"
+        }
+      },
+      "duration": {
+        "passive": "chr_9000_endmin_talent_1_2",
+        "parameter": "duration"
+      }
+    }
+  ],
+  "chr_9000_endmin_talent_2_2": [
+    {
+      "key": "chr_9000_endmin_talent_2_2:damage_taken",
+      "bucket": "damage_taken",
+      "elements": [
+        "物理"
+      ],
+      "recipient": "enemy",
+      "trigger": "crystal_attached",
+      "strength": {
+        "base": {
+          "passive": "chr_9000_endmin_talent_2_2",
+          "parameter": "dmg"
+        }
+      },
+      "permanent": true,
+      "condition_inputs": [
+        "enemy.has_crystal"
+      ]
+    }
+  ],
+  "chr_9000_endmin_potential_2": [
+    {
+      "key": "chr_9000_endmin_potential_2:attack",
+      "bucket": "attack",
+      "elements": [
+        "all"
+      ],
+      "recipient": "other_allies",
+      "trigger": "originium_crystal_consumed",
+      "strength": {
+        "base": {
+          "passive": "chr_9000_endmin_talent_1_2",
+          "parameter": "atk_up"
+        },
+        "multiplier": {
+          "passive": "chr_9000_endmin_potential_2",
+          "parameter": "ratio"
+        }
+      },
+      "duration": {
+        "passive": "chr_9000_endmin_talent_1_2",
+        "parameter": "duration"
+      }
+    }
+  ],
+  "chr_0011_seraph_talent_1_2": [
+    {
+      "key": "chr_0011_seraph_talent_1_2:damage_taken",
+      "bucket": "damage_taken",
+      "elements": [
+        "寒冷"
+      ],
+      "recipient": "enemy",
+      "trigger": "combo_hit_cold_attached_or_frozen",
+      "strength": {
+        "base": {
+          "passive": "chr_0011_seraph_talent_1_2",
+          "parameter": "cryst_up"
+        }
+      },
+      "duration": {
+        "passive": "chr_0011_seraph_talent_1_2",
+        "parameter": "duration"
+      }
+    }
+  ],
+  "chr_0012_avywen_talent_2_2": [
+    {
+      "key": "chr_0012_avywen_talent_2_2:vulnerability",
+      "bucket": "vulnerability",
+      "elements": [
+        "电磁"
+      ],
+      "recipient": "enemy",
+      "trigger": "ultimate_hit",
+      "strength": {
+        "base": {
+          "passive": "chr_0012_avywen_talent_2_2",
+          "parameter": "pulse_vul_rate"
+        }
+      },
+      "duration": {
+        "passive": "chr_0012_avywen_talent_2_2",
+        "parameter": "pulse_vul_duration"
+      }
+    }
+  ],
+  "chr_0006_wolfgd_talent_1_2": [
+    {
+      "key": "chr_0006_wolfgd_talent_1_2:damage_bonus",
+      "bucket": "damage_bonus",
+      "elements": [
+        "灼热"
+      ],
+      "recipient": "self",
+      "trigger": "burning_applied",
+      "strength": {
+        "base": {
+          "passive": "chr_0006_wolfgd_talent_1_2",
+          "parameter": "add"
+        }
+      },
+      "duration": {
+        "passive": "chr_0006_wolfgd_talent_1_2",
+        "parameter": "duration"
+      }
+    }
+  ],
+  "chr_0007_ikut_talent_1_2": [
+    {
+      "key": "chr_0007_ikut_talent_1_2:damage_bonus",
+      "bucket": "damage_bonus",
+      "elements": [
+        "电磁"
+      ],
+      "recipient": "team",
+      "trigger": "third_battle_extra_effect",
+      "strength": {
+        "terms": [
+          {
+            "input": "source.智识",
+            "coefficient": {
+              "passive": "chr_0007_ikut_talent_1_2",
+              "parameter": "pulse_up"
+            }
+          }
+        ]
+      },
+      "duration": {
+        "passive": "chr_0007_ikut_talent_1_2",
+        "parameter": "duration"
+      },
+      "potential_adjustments": [
+        {
+          "passive": "chr_0007_ikut_potential_3",
+          "parameter": "pulse_up",
+          "operation": "multiply_strength"
+        }
+      ]
+    }
+  ],
+  "chr_0022_bounda_talent_2_2": [
+    {
+      "key": "chr_0022_bounda_talent_2_2:attack",
+      "bucket": "attack",
+      "elements": [
+        "all"
+      ],
+      "recipient": "self",
+      "trigger": "spell_damage_immunity_succeeded",
+      "strength": {
+        "base": {
+          "passive": "chr_0022_bounda_talent_2_2",
+          "parameter": "atk_up"
+        }
+      },
+      "duration": {
+        "passive": "chr_0022_bounda_talent_2_2",
+        "parameter": "duration"
+      }
+    }
+  ],
+  "chr_0022_bounda_talent_1_2": [
+    {
+      "key": "chr_0022_bounda_talent_1_2:damage_bonus",
+      "bucket": "damage_bonus",
+      "elements": [
+        "all"
+      ],
+      "recipient": "self",
+      "trigger": "battle_start",
+      "strength": {
+        "base": {
+          "passive": "chr_0022_bounda_talent_1_2",
+          "parameter": "dmg_up"
+        }
+      },
+      "permanent": true,
+      "condition_inputs": [
+        "enemy.slowed"
+      ]
+    }
+  ],
+  "chr_0004_pelica_talent_1_2": [
+    {
+      "key": "chr_0004_pelica_talent_1_2:damage_bonus",
+      "bucket": "damage_bonus",
+      "elements": [
+        "all"
+      ],
+      "recipient": "self",
+      "trigger": "battle_start",
+      "strength": {
+        "base": {
+          "passive": "chr_0004_pelica_talent_1_2",
+          "parameter": "dmg"
+        }
+      },
+      "permanent": true,
+      "condition_inputs": [
+        "enemy.staggered"
+      ]
+    }
+  ],
+  "chr_0028_wulfa_talent_1_2": [
+    {
+      "key": "chr_0028_wulfa_talent_1_2:damage_taken",
+      "bucket": "damage_taken",
+      "elements": [
+        "物理",
+        "灼热"
+      ],
+      "recipient": "enemy",
+      "trigger": "claw_mark_applied",
+      "strength": {
+        "base": {
+          "passive": "chr_0028_wulfa_talent_1_2",
+          "parameter": "damage_up"
+        }
+      },
+      "duration": {
+        "passive": "chr_0028_wulfa_talent_1_2",
+        "parameter": "duration_bleed"
+      }
+    }
+  ],
+  "chr_0029_pograni_talent_1_2": [
+    {
+      "key": "chr_0029_pograni_talent_1_2:attack",
+      "bucket": "attack",
+      "elements": [
+        "all"
+      ],
+      "recipient": "self",
+      "trigger": "own_skill_recovery_threshold_80",
+      "strength": {
+        "base": {
+          "passive": "chr_0029_pograni_talent_1_2",
+          "parameter": "atk_up"
+        }
+      },
+      "duration": {
+        "passive": "chr_0029_pograni_talent_1_2",
+        "parameter": "duration"
+      },
+      "max_stacks": 3,
+      "stack_policy": "independent"
+    }
+  ],
+  "chr_0030_zhuangfy_talent_1_2": [
+    {
+      "key": "chr_0030_zhuangfy_talent_1_2:amplification",
+      "bucket": "amplification",
+      "elements": [
+        "电磁"
+      ],
+      "recipient": "self",
+      "trigger": "battle_cast",
+      "strength": {
+        "base": {
+          "passive": "chr_0030_zhuangfy_talent_1_2",
+          "parameter": "base_rate"
+        },
+        "terms": [
+          {
+            "input": "source.battle_lightning_hits",
+            "coefficient": {
+              "passive": "chr_0030_zhuangfy_talent_1_2",
+              "parameter": "enhance_rate"
+            }
+          }
+        ]
+      },
+      "duration": {
+        "passive": "chr_0030_zhuangfy_talent_1_2",
+        "parameter": "duration"
+      },
+      "evaluation": "hit"
+    }
+  ]
+}

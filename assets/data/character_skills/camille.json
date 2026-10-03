@@ -187,10 +187,27 @@
                 },
                 {
                     "effect_id": "VULN_BURN",
-                    "value": 1,
+                    "value": null,
                     "duration": 45,
                     "target": "enemy",
-                    "count": 1
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "camille_skill:VULN_BURN",
+                        "bucket": "vulnerability",
+                        "elements": [
+                            "灼热"
+                        ],
+                        "recipient": "enemy",
+                        "trigger": "blood_wing_attached",
+                        "strength": {
+                            "base": {
+                                "row": "灼热脆弱效果"
+                            }
+                        },
+                        "duration": {
+                            "row": "衔火血翼持续时间（秒）"
+                        }
+                    }
                 },
                 {
                     "effect_id": "STACK_BLOOD_WING",

@@ -332,17 +332,51 @@
                         },
                         {
                             "effect_id": "BUFF_CRIT_RATE_UP",
-                            "value": 1,
+                            "value": null,
                             "duration": 15,
                             "target": "self",
-                            "count": 1
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "rossi_link:BUFF_CRIT_RATE_UP",
+                                "bucket": "crit_rate",
+                                "elements": [
+                                    "all"
+                                ],
+                                "recipient": "self",
+                                "trigger": "second_combo_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "暴击率提升"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "增益效果持续时间 / （秒）"
+                                }
+                            }
                         },
                         {
                             "effect_id": "BUFF_CRIT_DMG_UP",
-                            "value": 1,
+                            "value": null,
                             "duration": 15,
                             "target": "self",
-                            "count": 1
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "rossi_link:BUFF_CRIT_DMG_UP",
+                                "bucket": "crit_damage",
+                                "elements": [
+                                    "all"
+                                ],
+                                "recipient": "self",
+                                "trigger": "second_combo_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "暴击伤害提升"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "增益效果持续时间 / （秒）"
+                                }
+                            }
                         }
                     ]
                 },
