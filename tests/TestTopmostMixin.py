@@ -61,6 +61,32 @@ class _ResumeDuringRunTask(TopmostMixin):
 
 
 class TestTopmostMixin(unittest.TestCase):
+    def test_topmost_changes_keep_nonactivating_window_flags(self):
+        namespace = TopmostMixin._restore_all_modified.__globals__
+        flags = (
+            namespace["SWP_NOMOVE"]
+            | namespace["SWP_NOSIZE"]
+            | namespace["SWP_NOACTIVATE"]
+            | namespace["SWP_SHOWWINDOW"]
+        )
+        for method, mode in (("_set_window_topmost", "HWND_TOPMOST"), ("_remove_window_topmost", "HWND_NOTOPMOST")):
+            with (
+                self.subTest(method=method),
+                patch.object(namespace["_user32"], "SetWindowPos", return_value=1) as set_pos,
+            ):
+                self.assertTrue(namespace[method](123))
+                set_pos.assert_called_once_with(123, namespace[mode], 0, 0, 0, 0, flags)
+
+    def test_topmost_changes_return_false_on_api_failure_or_exception(self):
+        namespace = TopmostMixin._restore_all_modified.__globals__
+        for method in ("_set_window_topmost", "_remove_window_topmost"):
+            for side_effect in (None, OSError("window disappeared")):
+                with (
+                    self.subTest(method=method, side_effect=side_effect),
+                    patch.object(namespace["_user32"], "SetWindowPos", return_value=0, side_effect=side_effect),
+                ):
+                    self.assertFalse(namespace[method](123))
+
     def setUp(self):
         _DeferredTimer.instances.clear()
 

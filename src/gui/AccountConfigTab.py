@@ -933,6 +933,26 @@ class AccountConfigTab(CustomTab):
             return
         self._save_pending_changes(show_status=True, cleanup_blacklist=True)
 
+    def _clear_overrides_and_refresh(self, clear):
+        """保留未保存的地图编辑，清空指定覆盖，再刷新账号与任务界面。"""
+        map_dirty = bool(
+            self.current_map_account_key and self.map_content_edit.text().strip() != self.current_map_value
+        )
+
+        def apply(latest):
+            self.overrides_data = latest
+            if map_dirty:
+                self._apply_current_map_content()
+            clear(self.overrides_data.get("accounts", {}))
+            return self.overrides_data
+
+        self.overrides_data = update_overrides(apply)
+        if map_dirty:
+            self.current_map_value = self.map_content_edit.text().strip()
+        self.rebuild_account_selector()
+        self.load_current_map_content()
+        self.render_task_editor()
+
     def clear_current_task_override(self):
         """Clear the configuration override for the current account and task combination."""
         account_key = self._current_account_key()
@@ -942,16 +962,9 @@ class AccountConfigTab(CustomTab):
             self._set_status(og.app.tr("请先选择账号与任务"))
             return
 
-        map_dirty = bool(
-            self.current_map_account_key and self.map_content_edit.text().strip() != self.current_map_value
-        )
         task_class = AccountConfigTab._task_storage_name(task)
 
-        def clear_task(latest):
-            self.overrides_data = latest
-            if map_dirty:
-                self._apply_current_map_content()
-            accounts = self.overrides_data.get("accounts", {})
+        def clear_task(accounts):
             target_key = account_key
             account_map = accounts.get(target_key, {})
             if account_name and (not isinstance(account_map, dict) or (not account_map and account_name in accounts)):
@@ -962,14 +975,8 @@ class AccountConfigTab(CustomTab):
             account_map.pop(task_class, None)
             if not account_map:
                 accounts.pop(target_key, None)
-            return self.overrides_data
 
-        self.overrides_data = update_overrides(clear_task)
-        if map_dirty:
-            self.current_map_value = self.map_content_edit.text().strip()
-        self.rebuild_account_selector()
-        self.load_current_map_content()
-        self.render_task_editor()
+        self._clear_overrides_and_refresh(clear_task)
         self._set_status(
             og.app.tr("已清空：{account} / {task} 覆盖").format(account=account_name or account_key, task=task.name)
         )
@@ -982,26 +989,11 @@ class AccountConfigTab(CustomTab):
             self._set_status(og.app.tr("请先选择账号"))
             return
 
-        map_dirty = bool(
-            self.current_map_account_key and self.map_content_edit.text().strip() != self.current_map_value
-        )
-
-        def clear_account(latest):
-            self.overrides_data = latest
-            if map_dirty:
-                self._apply_current_map_content()
-            accounts = self.overrides_data.get("accounts", {})
+        def clear_account(accounts):
             if account_key in accounts:
                 accounts.pop(account_key, None)
             elif account_name in accounts:
                 accounts.pop(account_name, None)
-            return self.overrides_data
 
-        self.overrides_data = update_overrides(clear_account)
-        if map_dirty:
-            self.current_map_value = self.map_content_edit.text().strip()
-
-        self.rebuild_account_selector()
-        self.load_current_map_content()
-        self.render_task_editor()
+        self._clear_overrides_and_refresh(clear_account)
         self._set_status(og.app.tr("已清空账号全部覆盖：{account}").format(account=account_name or account_key))

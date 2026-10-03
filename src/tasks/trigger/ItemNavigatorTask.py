@@ -115,6 +115,7 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
                 "浮层显示": ["浮层信息", "浮层文字透明度", "浮层背景透明度", "浮层字号"],
             }
         )
+        self.validate_unique_sub_config_parents()
 
         self.needs_frame = False  # 纯 WS 驱动，不识别画面
 

@@ -28,9 +28,12 @@ class TestDeliveryStateMachine(unittest.TestCase):
         task._grid_nav_sprint_active = False
         task._delivery_approach_walk_mode = False
         task._delivery_target_coordinate = None
+        task._delivery_stage = "未开始"
+        task._delivery_failure_recorded = False
         task.logs = []
-        task.log_info = lambda message: task.logs.append(("info", message))
-        task.log_warning = lambda message: task.logs.append(("warning", message))
+        task.log_info = lambda message, **_kwargs: task.logs.append(("info", message))
+        task.log_warning = lambda message, **_kwargs: task.logs.append(("warning", message))
+        task.mark_task_failure = lambda message, **_kwargs: task.logs.append(("failure", message))
         return task
 
     def test_arrival_mode_defaults_to_legacy(self):

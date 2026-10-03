@@ -4,7 +4,7 @@ Back: [Documentation home](index.md) / [README](https://github.com/AliceJump/ok-
 
 ## Overview
 
-Automatically accepts commissions of the currently selected region and delivers goods to the corresponding receivers along the configured paths. In normal mode each account runs at most 3 rounds of accept-and-deliver. The task supports multi-account execution and per-account configuration; the accept-only, deliver-only, and path-test modes do not rotate accounts.
+Automatically accepts commissions of the currently selected region and delivers goods to the corresponding receivers along the configured paths. In normal mode each account runs at most 3 rounds of accept-and-deliver. The standalone task now uses a single 「Run mode」 selector for 「Normal delivery / Accept only / Deliver only」 so the old conflicting pair of booleans cannot both be enabled; non-normal and path-test modes do not rotate accounts.
 
 The configuration, regions, and targets come from [DeliveryTask.py](../../src/tasks/onetime/DeliveryTask.py) and [delivery_area.py](../../src/data/delivery_area.py).
 
@@ -27,7 +27,8 @@ Auto Delivery can run as a standalone task or as the `⭐Auto Delivery` subtask 
 * With 「Multi-account mode」 enabled, the task switches through the accounts in the 「Account list」 one by one to run Auto Delivery.
 * With 「Multi-account independent configuration」 enabled, the same delivery task can override regular configs like target ticket amount, region switching, and arrival method per account; the zip-line config lives in 「Global Config / Zip Line Config」 and is shared across tasks, but each account can also have its own zip-line overrides on the account page.
 * The account list has one account per row; the old `账号, 密码` format is compatible but the password field is ignored. Account switching uses the 「Recent」 list on the game login page and does not enter a password.
-* The standalone task keeps debug options like 「Select test target」, 「Accept only」, and 「Deliver only」; the daily-task entry does not show these options, but does expose the arrival method.
+* The standalone task keeps 「Select test target」 plus a single 「Run mode」 selector with 「Normal delivery / Accept only / Deliver only」. The daily-task entry shows the target ticket amount, region, and arrival method.
+* Auto Delivery is a fatal task inside Daily Tasks: only a fully confirmed submission returns success. A failure or exception stops the remaining daily flow and closes the game instead of running the final reset.
 
 ---
 
@@ -40,23 +41,6 @@ Switching uses that region's:
 * Commission location recognition rules
 * Delivery target list
 * The corresponding delivery-point zip-line config (matched by location)
-
----
-
-### Arrival method
-
-Available options:
-
-* **Zip-line only**: keeps the original zip-line distance sequence, blue-marker alignment, and forward search.
-* **Grid navigation**: reads pickup and destination coordinates from the region data and uses minimap grid navigation to combine zip lines with regular pathfinding.
-
-The default is **Zip-line only**. With **Grid navigation**:
-
-1. After teleporting, navigate to the accepted location's pickup coordinate.
-2. Prefer a direct `receive_good` template match; if missing, fall back to the original blue-marker and forward search.
-3. After pickup, recognize the destination on the left and navigate to its configured coordinate; switch to walking about 5 meters before the target.
-4. During the final approach, keep moving while searching for the submit/handover button and click it as soon as it appears; otherwise fall back to the original destination OCR navigation and submit flow.
-5. If a pickup or destination coordinate is missing, that stage falls back to the zip-line-only flow.
 
 ---
 
@@ -83,30 +67,33 @@ When the corresponding location config is empty, this round of delivery fails di
 
 ```mermaid
 flowchart TD
-    A[Start auto delivery] --> A1{Multi-account mode}
-    A1 -->|Yes| A2[Enter current account context by account list]
-    A1 -->|No| B[Use current account config]
-    A2 --> B[Read region switch, target ticket amount, and arrival method after overrides]
+    A[Start Auto Delivery] --> A1{Multi-account mode}
+    A1 -->|Yes| A2[Enter current account context]
+    A1 -->|No| B[Read current config]
+    A2 --> B
     B --> C{Select test target}
-    C -->|Specified test| D[Run single-segment or full-loop test]
-    C -->|None| E{Deliver only}
-    E -->|Yes| H[Recognize current commission target]
-    E -->|No| F[Accept commission by target ticket amount]
-    F --> G{Accept only}
-    G -->|Yes| Z[End]
-    G -->|No| H
-    H --> I[Teleport to task area]
-    I --> J[Pick up goods by path-to-{location} zip-line sequence]
-    J --> K[OCR recognize target NPC or recycling target]
-    K --> L[Go by target zip-line sequence]
-    L --> M[Submit goods]
-    M --> N{More accept rounds}
-    N -->|Yes| F
-    N -->|No| A3{More accounts}
-    A3 -->|Yes| A2
-    A3 -->|No| Z
+    C -->|Specified test| D[Run segment or full-loop test]
+    C -->|None| E{Run mode}
+    E -->|Accept only| F[Accept by target ticket amount] --> Z[End]
+    E -->|Deliver only| H[Read currently accepted commission]
+    E -->|Normal delivery| G[Accept by target ticket amount] --> H
+    H --> I[Locate task and teleport to departure area]
+    I --> J{Arrival method}
+    J -->|Zip line only| J1[Use configured zip-line sequence and marker search]
+    J -->|Grid navigation| J2[Navigate to pickup coordinates and combine zip lines with pathfinding]
+    J1 --> K[Confirm pickup and recognize delivery target]
+    J2 --> K
+    K --> L[Travel to the destination]
+    L --> M[Submit delivery]
+    M --> N{Tracked target disappeared?}
+    N -->|No| X[Failure]
+    N -->|Yes| O{More delivery rounds?}
+    O -->|Yes| G
+    O -->|No| P[Success]
     D --> Z
 ```
+
+Normal and daily delivery record the current stage (accept, transfer, pickup, post-pickup target recognition, zip line, submission). Grid navigation uses pickup/destination coordinates and automatically combines zip lines with normal pathfinding; the legacy mode keeps the configured zip-line sequences. Any critical step that cannot be confirmed returns failure. In particular, a post-pickup failure does not attempt the Daily Tasks final-reset teleport.
 
 ### Changyun
 

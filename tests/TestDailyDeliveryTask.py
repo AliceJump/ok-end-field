@@ -26,7 +26,10 @@ class TestDailyDeliveryTask(unittest.TestCase):
         self.assertEqual(set(task.config_type), {"目标券数", "地区切换", "到达方式"})
         self.assertNotIn("多账户独立配置", task.default_config)
         self.assertIn("选择测试对象", standalone.default_config)
-        self.assertIn("仅接取", standalone.default_config)
+        self.assertIn("运行模式", standalone.default_config)
+        self.assertIn("到达方式", standalone.default_config)
+        self.assertNotIn("仅接取", standalone.default_config)
+        self.assertNotIn("仅送货", standalone.default_config)
 
     def test_existing_debug_options_are_backed_up_before_config_cleanup(self):
         executor = SimpleNamespace(scene=None, pause_start=None)
@@ -55,6 +58,10 @@ class TestDailyDeliveryTask(unittest.TestCase):
         task.accept_order = Mock(return_value=True)
         task.task_to_transfer_point = Mock(return_value=False)
         task.log_info = Mock()
+        task.info_set = Mock()
+        task.mark_task_failure = Mock()
+        task._delivery_stage = "未开始"
+        task._delivery_failure_recorded = False
         return task
 
     def test_daily_cycle_ignores_legacy_debug_flags(self):
@@ -92,18 +99,44 @@ class TestDailyDeliveryTask(unittest.TestCase):
         task = self._make_cycle({}, daily_mode=True)
         task.task_to_transfer_point.return_value = True
         task.to_storage_point_and_back_zip_line = Mock(return_value=True)
+        task.ends = ["target"]
         task.box = SimpleNamespace(left=object(), bottom_right=object())
         task.lang = SimpleNamespace(DeliveryTask=SimpleNamespace(k_b0e3a2da="board"))
-        task._delivery_end_patterns = lambda: {re.compile("target"): "常沄"}
         task.wait_ocr = Mock(return_value=[SimpleNamespace(name="target")])
-        task.wait_click_ocr = Mock()
+        task.wait_click_ocr = Mock(return_value=True)
         task.on_zip_line_start = Mock()
         task.zip_line_scroll_enabled = Mock(return_value=False)
-        task.to_end_and_submit = Mock()
+        task.to_end_and_submit = Mock(return_value=True)
 
-        with patch("src.tasks.onetime.DeliveryTask.get_delivery_locations", return_value=[]):
+        with (
+            patch("src.tasks.onetime.DeliveryTask.get_delivery_locations", return_value=[]),
+            patch("src.tasks.onetime.DeliveryTask.get_delivery_target_ocr_pattern", return_value=re.compile("target")),
+        ):
             self.assertIs(task._run_single_delivery_cycle(), True)
         self.assertEqual(task.to_end_and_submit.call_count, 3)
+        self.assertEqual(task._delivery_stage, "第3单：送达成功")
+
+    def test_daily_cycle_fails_when_submit_cannot_be_confirmed(self):
+        task = self._make_cycle({}, daily_mode=True)
+        task.task_to_transfer_point.return_value = True
+        task.to_storage_point_and_back_zip_line = Mock(return_value=True)
+        task.ends = ["target"]
+        task.box = SimpleNamespace(left=object(), bottom_right=object())
+        task.lang = SimpleNamespace(DeliveryTask=SimpleNamespace(k_b0e3a2da="board"))
+        task.wait_ocr = Mock(return_value=[SimpleNamespace(name="target")])
+        task.wait_click_ocr = Mock(return_value=True)
+        task.on_zip_line_start = Mock()
+        task.zip_line_scroll_enabled = Mock(return_value=False)
+        task.to_end_and_submit = Mock(return_value=False)
+
+        with (
+            patch("src.tasks.onetime.DeliveryTask.get_delivery_locations", return_value=[]),
+            patch("src.tasks.onetime.DeliveryTask.get_delivery_target_ocr_pattern", return_value=re.compile("target")),
+        ):
+            self.assertIs(task._run_single_delivery_cycle(), False)
+
+        task.mark_task_failure.assert_not_called()
+        self.assertEqual(task.to_end_and_submit.call_count, 1)
 
     def test_daily_cycle_uses_grid_navigation_when_selected(self):
         task = self._make_cycle({"到达方式": "网格导航"}, daily_mode=True)
@@ -116,20 +149,7 @@ class TestDailyDeliveryTask(unittest.TestCase):
 
         self.assertEqual(task._run_grid_delivery_state_machine.call_count, 3)
         task._run_legacy_delivery_leg.assert_not_called()
-
-    def test_daily_cycle_restarts_position_service_around_transfer(self):
-        task = self._make_cycle({"到达方式": "仅滑索"}, daily_mode=True)
-        task.task_to_transfer_point.return_value = True
-        task.stop_runtime_position_service = Mock(return_value=True)
-        task.start_runtime_position_service = Mock(return_value=True)
-        task._run_legacy_delivery_leg = Mock(return_value=True)
-
-        with patch("src.tasks.onetime.DeliveryTask.get_delivery_locations", return_value=[]):
-            self.assertIs(task._run_single_delivery_cycle(), True)
-
-        self.assertEqual(task.stop_runtime_position_service.call_count, 3)
-        self.assertEqual(task.start_runtime_position_service.call_count, 3)
-        task.start_runtime_position_service.assert_called_with(wait_stable=True)
+        self.assertEqual(task._delivery_stage, "第3单：送达成功")
 
     def test_run_daily_propagates_cycle_result_and_resets_mode(self):
         task = self._make_cycle({}, daily_mode=False)

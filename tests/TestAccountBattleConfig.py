@@ -1,6 +1,7 @@
 import unittest
+from types import SimpleNamespace
 from typing import ClassVar
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 from src.core.BattleConfig import (
     BATTLE_CONFIG_MODE_KEY,
@@ -74,6 +75,84 @@ class _AccountConfigHarness:
     _apply_current_map_content = AccountConfigTab._apply_current_map_content
     _has_current_task_changes = AccountConfigTab._has_current_task_changes
     _save_pending_changes = AccountConfigTab._save_pending_changes
+    _clear_overrides_and_refresh = AccountConfigTab._clear_overrides_and_refresh
+    clear_current_task_override = AccountConfigTab.clear_current_task_override
+    clear_current_account_overrides = AccountConfigTab.clear_current_account_overrides
+
+
+class TestAccountOverrideClear(unittest.TestCase):
+    def make_tab(self, map_text="edited map"):
+        tab = _AccountConfigHarness()
+        tab._current_account_key = Mock(return_value="acc")
+        tab._current_account_name = Mock(return_value="legacy-name")
+        tab._current_task = Mock(return_value=_DummyTask())
+        tab.current_map_account_key = "acc"
+        tab.current_map_value = "original map"
+        tab.map_content_edit = SimpleNamespace(text=lambda: map_text)
+        tab.overrides_data = {"accounts": {}}
+        tab.rebuild_account_selector = Mock()
+        tab.load_current_map_content = Mock()
+        tab.render_task_editor = Mock()
+        tab._set_status = Mock()
+        return tab
+
+    def clear(self, tab, latest, *, all_tasks=False):
+        with (
+            patch("src.gui.AccountConfigTab.update_overrides", side_effect=lambda updater: updater(latest)),
+            patch("src.gui.AccountConfigTab.og.app", SimpleNamespace(tr=lambda text: text)),
+        ):
+            if all_tasks:
+                tab.clear_current_account_overrides()
+            else:
+                tab.clear_current_task_override()
+
+    def test_task_clear_preserves_pending_map_and_latest_other_overrides(self):
+        tab = self.make_tab()
+        latest = {
+            "accounts": {"acc": {"_DummyTask": {"x": 1}, "OtherTask": {"x": 2}}, "other": {"Task": {"x": 3}}},
+            "map_contents": {"other": "other map"},
+        }
+        self.clear(tab, latest)
+        self.assertEqual(tab.overrides_data["accounts"], {"acc": {"OtherTask": {"x": 2}}, "other": {"Task": {"x": 3}}})
+        self.assertEqual(tab.overrides_data["map_contents"], {"acc": "edited map", "other": "other map"})
+        self.assertEqual(tab.current_map_value, "edited map")
+        tab.rebuild_account_selector.assert_called_once()
+        tab.load_current_map_content.assert_called_once()
+        tab.render_task_editor.assert_called_once()
+
+    def test_task_clear_falls_back_to_legacy_account_and_removes_empty_entry(self):
+        tab = self.make_tab()
+        latest = {"accounts": {"legacy-name": {"_DummyTask": {"x": 1}}, "other": {"Task": {"x": 3}}}}
+        self.clear(tab, latest)
+        self.assertEqual(tab.overrides_data["accounts"], {"other": {"Task": {"x": 3}}})
+
+    def test_account_clear_keeps_id_precedence_and_preserves_map_deletion(self):
+        tab = self.make_tab(map_text=" ")
+        latest = {
+            "accounts": {"acc": {"Task": {}}, "legacy-name": {"Task": {}}, "other": {"Task": {}}},
+            "map_contents": {"acc": "original map", "other": "other map"},
+        }
+        self.clear(tab, latest, all_tasks=True)
+        self.assertEqual(tab.overrides_data["accounts"], {"legacy-name": {"Task": {}}, "other": {"Task": {}}})
+        self.assertEqual(tab.overrides_data["map_contents"], {"other": "other map"})
+        self.assertEqual(tab.current_map_value, "")
+
+    def test_account_clear_falls_back_to_legacy_name(self):
+        tab = self.make_tab()
+        self.clear(tab, {"accounts": {"legacy-name": {"Task": {}}}}, all_tasks=True)
+        self.assertEqual(tab.overrides_data["accounts"], {})
+
+    def test_missing_selection_does_not_write_or_refresh(self):
+        tab = self.make_tab()
+        tab._current_account_key.return_value = ""
+        with (
+            patch("src.gui.AccountConfigTab.update_overrides") as update,
+            patch("src.gui.AccountConfigTab.og.app", SimpleNamespace(tr=lambda text: text)),
+        ):
+            tab.clear_current_task_override()
+            tab.clear_current_account_overrides()
+        update.assert_not_called()
+        tab.rebuild_account_selector.assert_not_called()
 
 
 class TestAccountConfigRules(unittest.TestCase):

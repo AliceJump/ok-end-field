@@ -17,10 +17,17 @@ def _new_task_status(task_items: Iterable[TaskItem | TaskItemWithSwitch]) -> dic
 class DailyTaskRunner:
     """DailyTask 的编排执行器。"""
 
-    def __init__(self, task, task_items: Iterable[TaskItem], shared_state_task_keys: Iterable[str] = ()):
+    def __init__(
+        self,
+        task,
+        task_items: Iterable[TaskItem],
+        shared_state_task_keys: Iterable[str] = (),
+        fatal_task_keys: Iterable[str] = (),
+    ):
         self.task = task
         self.task_items = list(task_items)
         self.shared_state_task_keys = set(shared_state_task_keys)
+        self.fatal_task_keys = set(fatal_task_keys)
         self.task_status = _new_task_status(self.task_items)
         self.current_task_key: str | None = None
         self.failure_details: dict[str, dict[str, str]] = {}
@@ -163,6 +170,23 @@ class DailyTaskRunner:
         self.final_summary["current_task"] = ""
         return True
 
+    def _abort_after_fatal_failure(self, key: str, repeat_idx: int, repeat_total: int) -> None:
+        remaining = list(self.task_status.get("all", []))
+        self.task_status["all"].clear()
+        self.task_status["skipped"].extend(remaining)
+        self.final_summary["status"] = "关键任务失败"
+        self.final_summary["current_task"] = key
+        self.task.log_info(
+            self.task.tr("关键任务 {key} 失败，已跳过后续任务并关闭游戏").format(key=self.task.tr(key)),
+            notify=True,
+        )
+        self._append_round_summary(repeat_idx, repeat_total)
+        self._sync_task_status_info()
+        try:
+            self.task.kill_game()
+        except Exception as e:
+            self.task.log_info(self.task.tr("关键任务失败后关闭游戏失败: {err}").format(err=e), notify=True)
+
     def run(self, repeat_times: int = 1):
         self.task.log_info("开始执行日常任务...", notify=True)
         self.final_summary["status"] = "运行中"
@@ -191,7 +215,23 @@ class DailyTaskRunner:
                 for item in self.task_items:
                     key, func = item[0], item[1]
                     predicate = item[2] if len(item) > 2 else None
-                    self.execute_task(key, func, predicate)
+                    try:
+                        success = self.execute_task(key, func, predicate)
+                    except Exception as e:
+                        if key not in self.fatal_task_keys:
+                            raise
+                        if key not in self.task_status["failed"]:
+                            self.task_status["failed"].append(key)
+                        self.set_task_failure(self.task.tr("异常: {err}").format(err=e), task_name=key)
+                        if key not in self.failure_screenshot_tasks:
+                            with contextlib.suppress(Exception):
+                                self.task.screenshot(f"DailyTask_FatalTask_{key}")
+                        self._abort_after_fatal_failure(key, repeat_idx + 1, repeat_total)
+                        return
+
+                    if success is False and key in self.fatal_task_keys:
+                        self._abort_after_fatal_failure(key, repeat_idx + 1, repeat_total)
+                        return
 
                 if self.task_status["failed"]:
                     self.task.log_info(

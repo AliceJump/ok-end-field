@@ -999,6 +999,13 @@ class RuntimeMixin:
         """按当前账号上下文解析实际按键。"""
         return KeyConfigManager(self._account_key_config()).resolve_key(key, key_type)
 
+    def _press_mapped_key(
+        self, key: str, *, category: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1
+    ):
+        """按指定键位类别解析并发送按键。"""
+        actual_key = self._resolve_config_key(key, category)
+        return self.send_key(actual_key, interval=interval, down_time=down_time, after_sleep=after_sleep)
+
     def press_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
         """
         按配置映射后的通用按键。
@@ -1012,8 +1019,9 @@ class RuntimeMixin:
         Returns:
             Any: send_key 的返回值。
         """
-        actual_key = self._resolve_config_key(key, "common")
-        return self.send_key(actual_key, interval=interval, down_time=down_time, after_sleep=after_sleep)
+        return self._press_mapped_key(
+            key, category="common", down_time=down_time, after_sleep=after_sleep, interval=interval
+        )
 
     def press_industry_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
         """
@@ -1028,8 +1036,9 @@ class RuntimeMixin:
         Returns:
             Any: send_key 的返回值。
         """
-        actual_key = self._resolve_config_key(key, "industry")
-        return self.send_key(actual_key, interval=interval, down_time=down_time, after_sleep=after_sleep)
+        return self._press_mapped_key(
+            key, category="industry", down_time=down_time, after_sleep=after_sleep, interval=interval
+        )
 
     def press_combat_key(self, key: str, down_time: float = 0.02, after_sleep: float = 0, interval: int = -1):
         """
@@ -1044,8 +1053,9 @@ class RuntimeMixin:
         Returns:
             Any: send_key 的返回值。
         """
-        actual_key = self._resolve_config_key(key, "combat")
-        return self.send_key(actual_key, interval=interval, down_time=down_time, after_sleep=after_sleep)
+        return self._press_mapped_key(
+            key, category="combat", down_time=down_time, after_sleep=after_sleep, interval=interval
+        )
 
     def move_keys(self, keys, duration, need_back=False):
         """

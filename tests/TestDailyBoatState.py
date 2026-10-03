@@ -9,6 +9,9 @@ class _RunnerHarness:
         self.config = {}
         self._daily_boat_state_confirmed = False
         self.observed_states = []
+        self.debug = False
+        self._logged_in = True
+        self.killed = False
 
     def ensure_main(self):
         pass
@@ -27,6 +30,12 @@ class _RunnerHarness:
 
     def info_set(self, *args):
         pass
+
+    def kill_game(self):
+        self.killed = True
+
+    def iter_multi_account_context(self, **kwargs):
+        yield 0, 1
 
     def task(self, key):
         def run():
@@ -122,6 +131,50 @@ class TestDailyBoatState(unittest.TestCase):
         self.assertTrue(task._daily_boat_state_confirmed)
         self.assertTrue(runner.execute_task("other", lambda: True))
         self.assertFalse(task._daily_boat_state_confirmed)
+
+    def test_fatal_task_failure_stops_following_tasks_and_kills_game(self):
+        task = _RunnerHarness()
+        task.config = {"critical": True, "after": True}
+        calls = []
+
+        runner = DailyTaskRunner(
+            task,
+            [
+                ("critical", lambda: False),
+                ("after", lambda: calls.append("after") or True),
+            ],
+            fatal_task_keys={"critical"},
+        )
+        runner.run()
+
+        self.assertTrue(task.killed)
+        self.assertEqual(calls, [])
+        self.assertEqual(runner.final_summary["status"], "关键任务失败")
+        self.assertEqual(runner.final_summary["per_round"][0]["failed"], ["critical"])
+        self.assertEqual(runner.final_summary["per_round"][0]["skipped"], ["after"])
+
+    def test_fatal_task_exception_stops_following_tasks_and_kills_game(self):
+        task = _RunnerHarness()
+        task.config = {"critical": True, "after": True}
+        calls = []
+
+        def explode():
+            raise RuntimeError("boom")
+
+        runner = DailyTaskRunner(
+            task,
+            [
+                ("critical", explode),
+                ("after", lambda: calls.append("after") or True),
+            ],
+            fatal_task_keys={"critical"},
+        )
+        runner.run()
+
+        self.assertTrue(task.killed)
+        self.assertEqual(calls, [])
+        self.assertEqual(runner.final_summary["status"], "关键任务失败")
+        self.assertIn("boom", runner.failure_details[""]["critical"])
 
     def test_confirmed_boat_state_skips_map_transfer(self):
         task = _LiaisonHarness()

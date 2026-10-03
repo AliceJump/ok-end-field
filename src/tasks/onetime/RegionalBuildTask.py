@@ -93,7 +93,16 @@ class RegionalBuildTask(Common, MapMixin, ZipLineMixin):
         self.config_type["⭐地区建设"] = {
             "type": "multi_selection",
             "options": self.OPTIONS,
+            "sub_configs": {
+                "据点兑换": ["据点兑换仅购买优先商品"],
+                "买物资": [self.CFG_SHOP_WHITELIST, self.CFG_BUY_GIFT],
+                "买卖货": ["只买不卖", *areas_list],
+            },
         }
+        for area in areas_list:
+            self.config_type[area] = {
+                "sub_configs": {True: [f"{area}买入价", f"{area}卖出价"]},
+            }
         all_goods = []
         for goods_list in goods_dict.values():
             all_goods.extend(goods_list)
@@ -101,6 +110,7 @@ class RegionalBuildTask(Common, MapMixin, ZipLineMixin):
             "options_available": all_goods,
             "allow_duplication": False,
         }
+        self.validate_unique_sub_config_parents()
 
     def read_outpost_ticket_num(self, outpost_name):
         num_str = self.wait_ocr(
