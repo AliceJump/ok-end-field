@@ -2,19 +2,25 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from src.core import global_config_store
 from src.core.BattleConfig import (
     BATTLE_CONFIG_MODE_KEY,
-    KEY_BATTLE_INITIAL_WAIT,
-    KEY_COMPLETE_NOTIFY,
-    KEY_COND_SEQUENCE,
-    KEY_INSTANT_LINK,
-    KEY_INSTANT_ULT,
+    BATTLE_CONFIG_TYPE,
+    BATTLE_ROOT_CONFIGS,
+    KEY_COND_ENABLED,
+    KEY_DAMAGE_ROTATION,
+    KEY_ENABLE_ROTATION,
+    KEY_LEGACY_COMBAT_MODE,
     KEY_NO_NUMBER_OPERATION_INTERVAL,
-    KEY_ROTATION_SEQUENCE,
+    KEY_PULSE_PROBE,
     KEY_SKILL_ALLOWLIST,
-    KEY_START_SKILL_POINT,
-    KEY_ULT_RELEASE_MODE,
+    LEGACY_COMBAT_MODE_AUTO_FILTER,
+    LEGACY_COMBAT_MODE_CONDITIONAL,
+    LEGACY_COMBAT_MODE_DAMAGE,
+    LEGACY_COMBAT_MODE_NORMAL,
+    LEGACY_COMBAT_MODE_ROTATION,
     BattleConfigManager,
+    infer_legacy_combat_mode,
 )
 from src.gui.AccountConfigTab import AccountConfigTab
 from src.tasks.mixin.battle_mixin import BattleMixin
@@ -397,23 +403,97 @@ class TestBattleConfigOverrides(unittest.TestCase):
         task._register_battle_config()
 
         mode_type = task.config_type[BATTLE_CONFIG_MODE_KEY]
-        # 开关类型：无 options，sub_configs 以 True 为键
+        # 任务级独立配置只引用 Battle Config 根节点；模式子项由各自父配置展开。
         self.assertNotIn("options", mode_type)
-        independent_keys = mode_type["sub_configs"][True]
-        # independent_keys 应包含 DEFAULT_BATTLE_CONFIG 中排除 BATTLE_GROUP_CONFIGS 的键
-        expected = [
-            KEY_ULT_RELEASE_MODE,
-            KEY_START_SKILL_POINT,
-            KEY_COMPLETE_NOTIFY,
-            KEY_NO_NUMBER_OPERATION_INTERVAL,
-            KEY_BATTLE_INITIAL_WAIT,
-            KEY_ROTATION_SEQUENCE,
-            KEY_COND_SEQUENCE,
-            KEY_INSTANT_ULT,
-            KEY_INSTANT_LINK,
-            KEY_SKILL_ALLOWLIST,
+        self.assertEqual(mode_type["sub_configs"][True], BATTLE_ROOT_CONFIGS)
+
+    def test_timing_mode_owns_legacy_visibility_tree(self):
+        timing_rules = BATTLE_CONFIG_TYPE["技能时间排轴"]["sub_configs"]
+        self.assertEqual(
+            timing_rules[False],
+            [KEY_LEGACY_COMBAT_MODE, KEY_NO_NUMBER_OPERATION_INTERVAL, KEY_PULSE_PROBE],
+        )
+        self.assertNotIn(True, timing_rules)
+
+        selector = BATTLE_CONFIG_TYPE[KEY_LEGACY_COMBAT_MODE]
+        self.assertEqual(selector["type"], "drop_down")
+
+        # 一个具体配置只归属一个模式分支；共享配置归外层 timing=False。
+        children = [
+            key
+            for mode_children in selector["sub_configs"].values()
+            for key in mode_children
         ]
-        self.assertEqual(independent_keys, expected)
+        self.assertEqual(len(children), len(set(children)))
+
+        for hidden_key in (
+            KEY_COND_ENABLED,
+            KEY_ENABLE_ROTATION,
+            KEY_SKILL_ALLOWLIST,
+            KEY_DAMAGE_ROTATION,
+        ):
+            self.assertTrue(BATTLE_CONFIG_TYPE[hidden_key]["hidden"])
+
+    def test_legacy_mode_selector_drives_internal_strategy_flags(self):
+        expected = {
+            LEGACY_COMBAT_MODE_NORMAL: (False, False, False, False),
+            LEGACY_COMBAT_MODE_AUTO_FILTER: (False, False, True, False),
+            LEGACY_COMBAT_MODE_DAMAGE: (False, False, True, True),
+            LEGACY_COMBAT_MODE_ROTATION: (False, True, False, False),
+            LEGACY_COMBAT_MODE_CONDITIONAL: (True, False, False, False),
+        }
+        for mode, flags in expected.items():
+            with self.subTest(mode=mode):
+                task = self.make_battle_task(
+                    {
+                        BATTLE_CONFIG_MODE_KEY: True,
+                        KEY_LEGACY_COMBAT_MODE: mode,
+                    }
+                )
+                self.assertEqual(
+                    (
+                        task.get_battle_config(KEY_COND_ENABLED),
+                        task.get_battle_config(KEY_ENABLE_ROTATION),
+                        task.get_battle_config(KEY_SKILL_ALLOWLIST),
+                        task.get_battle_config(KEY_DAMAGE_ROTATION),
+                    ),
+                    flags,
+                )
+
+    def test_legacy_mode_inference_matches_old_dispatch_priority(self):
+        self.assertEqual(
+            infer_legacy_combat_mode(
+                {
+                    KEY_COND_ENABLED: True,
+                    KEY_ENABLE_ROTATION: True,
+                    KEY_SKILL_ALLOWLIST: True,
+                    KEY_DAMAGE_ROTATION: True,
+                }
+            ),
+            LEGACY_COMBAT_MODE_CONDITIONAL,
+        )
+        self.assertEqual(
+            infer_legacy_combat_mode(
+                {
+                    KEY_COND_ENABLED: False,
+                    KEY_ENABLE_ROTATION: True,
+                    KEY_SKILL_ALLOWLIST: True,
+                    KEY_DAMAGE_ROTATION: True,
+                }
+            ),
+            LEGACY_COMBAT_MODE_ROTATION,
+        )
+        self.assertEqual(
+            infer_legacy_combat_mode(
+                {
+                    KEY_COND_ENABLED: False,
+                    KEY_ENABLE_ROTATION: False,
+                    KEY_SKILL_ALLOWLIST: True,
+                    KEY_DAMAGE_ROTATION: False,
+                }
+            ),
+            LEGACY_COMBAT_MODE_AUTO_FILTER,
+        )
 
     def test_task_config_overrides_global_battle_config(self):
         task = self.make_battle_task(
@@ -452,6 +532,59 @@ class TestBattleConfigOverrides(unittest.TestCase):
             return_value={BATTLE_CONFIG_MODE_KEY: True, "启动技能点数": 4},
         ):
             self.assertEqual(task.get_battle_config("启动技能点数"), 4)
+
+
+class TestBattleModeSelectorMigration(unittest.TestCase):
+    @patch("src.core.global_config_store.write_json_file")
+    @patch("src.core.global_config_store.read_json_file")
+    def test_task_file_old_flags_gain_selector_before_verify(self, read_json_file, write_json_file):
+        read_json_file.return_value = {
+            KEY_COND_ENABLED: False,
+            KEY_ENABLE_ROTATION: True,
+            KEY_SKILL_ALLOWLIST: False,
+            KEY_DAMAGE_ROTATION: False,
+        }
+
+        global_config_store.migrate_task_battle_mode_selector("BattleTask")
+
+        migrated = write_json_file.call_args.args[1]
+        self.assertEqual(migrated[KEY_LEGACY_COMBAT_MODE], LEGACY_COMBAT_MODE_ROTATION)
+        self.assertTrue(migrated[KEY_ENABLE_ROTATION])
+
+    @patch("src.core.global_config_store.write_json_file")
+    @patch("src.core.global_config_store.read_json_file")
+    def test_existing_selector_wins_over_legacy_flags(self, read_json_file, write_json_file):
+        read_json_file.return_value = {
+            KEY_LEGACY_COMBAT_MODE: LEGACY_COMBAT_MODE_NORMAL,
+            KEY_COND_ENABLED: True,
+        }
+
+        global_config_store.migrate_task_battle_mode_selector("BattleTask")
+
+        write_json_file.assert_not_called()
+
+    @patch("src.tasks.account.account_scope_store.update_overrides")
+    def test_account_overrides_gain_selector_without_deleting_old_flags(self, update_overrides):
+        global_config_store.migrate_account_battle_mode_selectors()
+        updater = update_overrides.call_args.args[0]
+        data = {
+            "accounts": {
+                "acc": {
+                    "AutoCombatTask": {
+                        KEY_COND_ENABLED: False,
+                        KEY_ENABLE_ROTATION: False,
+                        KEY_SKILL_ALLOWLIST: True,
+                        KEY_DAMAGE_ROTATION: False,
+                    }
+                }
+            }
+        }
+
+        migrated = updater(data)
+        task_config = migrated["accounts"]["acc"]["AutoCombatTask"]
+        self.assertEqual(task_config[KEY_LEGACY_COMBAT_MODE], LEGACY_COMBAT_MODE_AUTO_FILTER)
+        self.assertTrue(task_config[KEY_SKILL_ALLOWLIST])
+        self.assertFalse(task_config[KEY_DAMAGE_ROTATION])
 
 
 class TestUseIndependentParsing(unittest.TestCase):

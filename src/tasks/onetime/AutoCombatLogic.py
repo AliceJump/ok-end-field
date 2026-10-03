@@ -2,16 +2,26 @@ import traceback
 
 from src.core.BaseEfTask import BaseEfTask
 from src.core.BattleConfig import (
+    KEY_BATTLE_INITIAL_WAIT,
+    KEY_BATTLE_INITIAL_WAIT_PROTOCOL_ONLY,
     KEY_COND_ENABLED,
     KEY_COND_SEQUENCE,
+    KEY_DAMAGE_ROTATION,
     KEY_INSTANT_LINK,
     KEY_INSTANT_ULT,
     KEY_SKILL_ALLOWLIST,
+    KEY_TIMING_ROTATION,
 )
 from src.core.rotation_ast import iter_actions, normalize_ast
 from src.data.FeatureList import FeatureList as fL
 from src.data.skill_allowlist import generate_skill_sequence
+from src.data.skill_rotation import (
+    generate_auto_rotation,
+    generate_damage_rotation,
+    rotate_auto_rotation_for_current,
+)
 from src.image.recommend_skill_detector import get_recommend_skill_detector
+from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 
 
 class _TaskProbe:
@@ -55,6 +65,15 @@ class AutoCombatLogic:
         # 立即释放开关（本帧无动作时生效）
         self.instant_ult_enabled = False
         self.instant_link_enabled = False
+        # 自动排轴（伤害优先循环轴）：识别队伍后生成，覆盖战技+终结技+连携
+        self.auto_rotation_enabled = False
+        self.auto_rotation_active = False
+        self.auto_rotation_sequence: list[str] = []
+        self.auto_rotation_index = 0
+        # 协议空间检测（热启动判定）：战斗画面出现左上角「撤离」按钮
+        # （battle_space_left）即为协议空间——开局终结技全满，轴应包含 ult_N；
+        # 未出现则视为普通战斗（冷启动），轴不含 ult，由填充段兜底释放。
+        self.protocol_space_detected = False
         # 战技失败暂存：技力不足时保留 token 下帧重试，不推进生成器
         self._pending_skill_token = None
         self._pending_skill_frames = 0  # 已重试帧数
@@ -65,6 +84,95 @@ class AutoCombatLogic:
     _TEAM_DETECT_INTERVAL = 1.0  # 战斗主循环中的队伍识别间隔（秒）
     _TEAM_DETECT_MAX_ATTEMPTS = 6  # 战斗主循环中的队伍识别尝试上限
 
+    def _try_detect_protocol_space(self):
+        """Best-effort protocol-space classification without sending input.
+
+        Protocol space is a hot start: every visible team member begins with an
+        available ultimate. Reuse battle_mixin's exact per-slot ultimate-ready
+        detector first; keep the left-top retreat button as a fallback because
+        it is an explicit protocol-space UI marker.
+        """
+        if self.protocol_space_detected:
+            return True
+
+        all_ults_ready = getattr(self.task, "are_all_battle_ults_ready", None)
+        if callable(all_ults_ready):
+            try:
+                if all_ults_ready():
+                    self.protocol_space_detected = True
+                    self.task.log_info(
+                        "检测到协议空间热启动：当前队伍终结技全部就绪"
+                    )
+                    return True
+            except Exception:
+                pass
+
+        find_feature = getattr(self.task, "find_feature", None)
+        if callable(find_feature):
+            try:
+                if find_feature(feature=fL.battle_space_left):
+                    self.protocol_space_detected = True
+                    self.task.log_info(
+                        "检测到协议空间特征（左上角撤离按钮）"
+                    )
+                    return True
+            except Exception:
+                pass
+        return False
+
+    def _resolve_initial_wait(self, start_sleep: float | None) -> float:
+        """Resolve the configured pre-action delay for this combat.
+
+        Timing mode only replaces combat strategy. The initial wait remains a
+        battle setting. When protocol-only mode is enabled, ordinary battles
+        skip the delay while protocol space keeps the configured value.
+        """
+        task = self.task
+        value = (
+            start_sleep
+            if start_sleep is not None
+            else task.get_battle_config(KEY_BATTLE_INITIAL_WAIT, 3)
+        )
+        try:
+            wait_seconds = max(0.0, float(value))
+        except (TypeError, ValueError):
+            wait_seconds = 0.0
+
+        if wait_seconds <= 0:
+            return 0.0
+        if not task.get_battle_config(KEY_BATTLE_INITIAL_WAIT_PROTOCOL_ONLY, False):
+            return wait_seconds
+
+        if self._try_detect_protocol_space():
+            task.log_info(
+                f"协议空间初始等待启用：按配置等待 {wait_seconds:g}s"
+            )
+            return wait_seconds
+
+        task.log_info("仅协议空间启用初始等待：当前未判定为协议空间，跳过初始等待")
+        return 0.0
+
+    def _align_auto_rotation_to_current(self, task, sequence: list[str]) -> list[str]:
+        """把自动轴旋转到当前主控角色的段开头（切人图标判定成功时）。
+
+        循环轴起点本无语义，但从站场角色的段开始更自然：第一发战技由当前
+        主控释放、首个填充段普攻也来自其自身。判定走
+        ``battle_mixin.detect_current_char_index``（0 基槽位），尽力而为——
+        无该方法（测试替身）、识别失败（None）或异常时原轴返回，绝不因
+        对齐失败阻塞排轴。
+        """
+        detector = getattr(task, "detect_current_char_index", None)
+        if not callable(detector):
+            return sequence
+        try:
+            current_slot = detector()
+        except Exception:
+            return sequence
+        rotated = rotate_auto_rotation_for_current(sequence, current_slot)
+        if rotated is not sequence:
+            task.log_info(f"自动排轴对齐当前主控: 槽位 {current_slot + 1} 段先手")
+        return rotated
+
     def _sync_normal_attack_hold(self):
         if self._normal_attack_hold_enabled:
             self.task.active_and_send_mouse_delta(activate=True, only_activate=True)
@@ -72,8 +180,14 @@ class AutoCombatLogic:
         else:
             self.task.mouse_up(key="left")
 
-    def _do_normal_combat_frame(self):
-        """执行一帧普通战斗逻辑（非排轴模式 / normal_[n] 临时模式共用）。"""
+    def _do_normal_combat_frame(self, allow_digits: bool = True):
+        """执行一帧普通战斗逻辑（非排轴模式 / normal_[n] 临时模式共用）。
+
+        Args:
+            allow_digits: 是否允许释放数字战技。自动排轴的 normal_[n] 填充段
+                          传 False——技力须留给轴上的战技，填充段只保留
+                          连携/推荐技能/终结技兜底与普攻回能。
+        """
         task = self.task
 
         # 技能优先级：连携技 > 推荐技能 > 终结技
@@ -82,6 +196,9 @@ class AutoCombatLogic:
         if task.use_recommend_skill():
             return
         if task.use_ult():
+            return
+
+        if not allow_digits:
             return
 
         skill_count = task.get_skill_bar_count()
@@ -179,7 +296,10 @@ class AutoCombatLogic:
                         return True, "break"
                 task.approach_enemy()
                 task.next_frame()
-                self._do_normal_combat_frame()
+                _probe_pulse = getattr(task, "probe_pulse", None)
+                if callable(_probe_pulse):
+                    _probe_pulse()
+                self._do_normal_combat_frame(allow_digits=not self.auto_rotation_active)
             task.log_info("普通战斗临时模式结束")
             return True, ""
 
@@ -246,6 +366,63 @@ class AutoCombatLogic:
             self._pending_skill_frames = 0
         return signal, True
 
+    def _advance_auto_rotation(self):
+        """推进自动排轴索引（循环取模）。"""
+        self.auto_rotation_index = (self.auto_rotation_index + 1) % len(self.auto_rotation_sequence)
+
+    def _do_auto_rotation_step(self, deadline) -> tuple[str, bool]:
+        """执行自动排轴的一个动作 token（可重复循环轴）。
+
+        与手动排轴的差别在于失败语义——自动轴永不卡死：
+        - 数字战技（技力不足）→ 暂存重试（上限 15 帧），超时跳过推进；
+        - ult_N / e 未就绪 → 立即跳过推进，下一轮循环再试；
+        - normal_[n] 填充段必定成功，为循环兜底（期间普攻回技力）。
+
+        Returns:
+            tuple[signal, had_action]:
+                signal —— "" 正常 / "break" / "return_false"（来自 normal_ 内嵌循环）。
+                had_action —— 本帧是否消费了 token（恒 True，阻断立即释放判断）。
+        """
+        # 战技重试：上一帧 digit token 因技力不足失败，本帧重试同一 token
+        if self._pending_skill_token is not None:
+            token = self._pending_skill_token
+            self._pending_skill_frames += 1
+            if self._pending_skill_frames >= self._SKILL_RETRY_MAX_FRAMES:
+                self.task.log_info(f"技力不足超时，跳过战技 {token}")
+                self._pending_skill_token = None
+                self._pending_skill_frames = 0
+                self._advance_auto_rotation()
+                return "", True
+
+            self._pending_skill_token = None  # 先清掉，若仍失败下面会重设
+            success, signal = self._exec_rotation_token(token, deadline)
+            if not success and signal == "":
+                # 仍然技力不足，继续暂存等待下帧
+                self._pending_skill_token = token
+                return "", True
+            self._pending_skill_frames = 0
+            if success:
+                self._advance_auto_rotation()
+                self.last_rotation_ok_time = self.task.active_time()
+            return signal, True
+
+        token = self.auto_rotation_sequence[self.auto_rotation_index]
+        success, signal = self._exec_rotation_token(token, deadline)
+        if signal in ("break", "return_false"):
+            return signal, True
+        if success:
+            self._advance_auto_rotation()
+            self.last_rotation_ok_time = self.task.active_time()
+        elif token.isdigit():
+            # 技力不足：暂存重试，不推进
+            self._pending_skill_token = token
+            self._pending_skill_frames = 0
+        else:
+            # ult_N / e 未就绪：跳过推进，下一轮循环再试
+            self.task.log_info(f"{token} 未就绪，跳过")
+            self._advance_auto_rotation()
+        return "", True
+
     def _do_instant_release(self):
         """本帧无条件动作时，按开关尝试立即释放终结技 / 连携技。
 
@@ -282,7 +459,7 @@ class AutoCombatLogic:
             task._last_low_res_warn_time = now
             task.log_warning("1080p以下自动战斗匹配不良，请切换1080p以及以上分辨率", notify=True)
 
-    def run(self, start_sleep: float = None, no_battle: bool = False, deadline: float = None):
+    def run(self, start_sleep: float | None = None, no_battle: bool = False, deadline: float | None = None):
         self._last_exit_check_time = 0
         self._exit_check_interval = 0.5
         self._last_team_detect_time = 0
@@ -303,6 +480,8 @@ class AutoCombatLogic:
 
         # 已确认进入战斗，记录进入时刻（用于“秒退”判定）
         combat_enter_time = task.active_time()
+        self.protocol_space_detected = False
+        effective_start_sleep = self._resolve_initial_wait(start_sleep)
 
         # 非战斗 → 战斗 转换时复位推荐技能检测器，每场战斗仅一次：
         # 上一场结束时可能残留 active 标签（战斗外不调用 detect，不会自复位），
@@ -313,6 +492,13 @@ class AutoCombatLogic:
             get_recommend_skill_detector().reset()
             task._recommend_detector_in_combat = True
 
+        if task.get_battle_config(KEY_TIMING_ROTATION, False):
+            return TimedCombatLogic(task).run(
+                start_sleep=effective_start_sleep,
+                no_battle=no_battle,
+                deadline=deadline,
+            )
+
         # 初始化普通战斗配置属性（排轴与普通模式共用）
         self.normal_skill_sequence = task.get_battle_config("技能释放", ["1", "2", "3"])
         self.normal_start_trigger = task.get_battle_config("启动技能点数", 2)
@@ -320,6 +506,17 @@ class AutoCombatLogic:
 
         # ── 自动技能列表：标记是否需要后续处理 ──
         _skill_allowlist_enabled = task.get_battle_config(KEY_SKILL_ALLOWLIST, False)
+        # 伤害优先排轴：自动技能列表的子选项。启用时识别队伍后生成
+        # 「战技+终结技+连携+普攻填充」的可重复循环轴并接管执行；
+        # 关闭时仅生成伤害降序的战技槽位列表（普通模式循环释放）。
+        _damage_rotation_enabled = _skill_allowlist_enabled and task.get_battle_config(
+            KEY_DAMAGE_ROTATION, True
+        )
+        self.auto_rotation_enabled = _damage_rotation_enabled
+        self.auto_rotation_active = False
+        self.auto_rotation_sequence = []
+        self.auto_rotation_index = 0
+        self.skill_index = 0
 
         # 模式初始化：实时条件 > 排轴 > 普通
         # 实时条件优先：启用时自动忽略普通排轴
@@ -374,26 +571,45 @@ class AutoCombatLogic:
             self._sync_normal_attack_hold()
 
             # 初始等待期间持续尝试识别队伍，识别出就不再识别
-            _target_sleep = (
-                start_sleep if start_sleep is not None else task.get_battle_config("进入战斗后的初始等待时间", 3)
-            )
+            _target_sleep = effective_start_sleep
             _sleep_end = task.active_time() + _target_sleep
             while task.active_time() < _sleep_end:
                 # 已识别出队伍则跳出等待
                 if getattr(task, "_battle_team", None):
                     break
+                # 等待窗口内顺带检测协议空间特征（进入动画期间可能延迟出现，
+                # 多轮尝试提高命中率；命中一次即不再检测）
+                if _damage_rotation_enabled:
+                    self._try_detect_protocol_space()
                 # 尝试识别
                 if _skill_allowlist_enabled:
                     try:
                         team, stable = task.detect_team_stable(deadline=_sleep_end)
                         if stable and team and any(m != "?" for m in team):
-                            skill_sequence = generate_skill_sequence(team)
+                            if _damage_rotation_enabled:
+                                skill_sequence = generate_damage_rotation(team)
+                                if not self.rotation_enabled:
+                                    include_ult = self.protocol_space_detected
+                                    if not include_ult:
+                                        task.log_info(
+                                            "冷启动排轴: 未检测到协议空间特征，轴不含终结技"
+                                            "（就绪后由普通模式兜底释放）"
+                                        )
+                                    self.auto_rotation_sequence = self._align_auto_rotation_to_current(
+                                        task, generate_auto_rotation(team, include_ult=include_ult)
+                                    )
+                                    self.auto_rotation_index = 0
+                                    self.auto_rotation_active = True
+                                    task.log_info(f"自动排轴已生成（可重复循环）: {self.auto_rotation_sequence}")
+                            else:
+                                skill_sequence = generate_skill_sequence(team)
                             task._battle_team, self.normal_skill_sequence = team, skill_sequence
                             task.log_info(f"初始等待期间识别到队伍: {team}")
                             task.log_info(f"自动技能列表已生成: {self.normal_skill_sequence}")
                             break
                     except Exception as exc:
                         task._battle_team = None
+                        self.auto_rotation_active = False
                         task.log_info(f"队伍识别或自动技能列表生成失败: {exc}")
                 retry_delay = min(0.2, _sleep_end - task.active_time())
                 if retry_delay > 0:
@@ -448,15 +664,35 @@ class AutoCombatLogic:
                     and team_detect_available
                 ):
                     self._team_detect_attempts += 1
+                    if _damage_rotation_enabled:
+                        # 战斗中识别尝试时顺带补检协议空间特征
+                        self._try_detect_protocol_space()
                     try:
                         team, stable = task.detect_team_stable()
                         if stable and team and any(m != "?" for m in team):
-                            skill_sequence = generate_skill_sequence(team)
+                            if _damage_rotation_enabled:
+                                skill_sequence = generate_damage_rotation(team)
+                                if not self.rotation_enabled:
+                                    include_ult = self.protocol_space_detected
+                                    if not include_ult:
+                                        task.log_info(
+                                            "冷启动排轴: 未检测到协议空间特征，轴不含终结技"
+                                            "（就绪后由普通模式兜底释放）"
+                                        )
+                                    self.auto_rotation_sequence = self._align_auto_rotation_to_current(
+                                        task, generate_auto_rotation(team, include_ult=include_ult)
+                                    )
+                                    self.auto_rotation_index = 0
+                                    self.auto_rotation_active = True
+                                    task.log_info(f"自动排轴已生成（可重复循环）: {self.auto_rotation_sequence}")
+                            else:
+                                skill_sequence = generate_skill_sequence(team)
                             task._battle_team, self.normal_skill_sequence = team, skill_sequence
                             task.log_info(f"战斗中识别到队伍: {team}")
                             task.log_info(f"自动技能列表已生成: {self.normal_skill_sequence}")
                     except Exception as exc:
                         task._battle_team = None
+                        self.auto_rotation_active = False
                         task.log_info(f"队伍识别或自动技能列表生成失败: {exc}")
                     finally:
                         self._last_team_detect_time = task.active_time()
@@ -464,7 +700,13 @@ class AutoCombatLogic:
                 task.approach_enemy()
                 task.next_frame()
 
-                # ── 模式分发：实时条件 > 普通排轴 > 普通 ──────────────
+                # 独立脉冲探针：与战斗模式/配置无关，观测后立即继续本帧逻辑
+                # （getattr 守卫兼容无 probe_pulse 能力的测试替身）
+                _probe_pulse = getattr(task, "probe_pulse", None)
+                if callable(_probe_pulse):
+                    _probe_pulse()
+
+                # ── 模式分发：实时条件 > 普通排轴 > 自动排轴 > 普通 ──────────
                 if self.cond_rotation_enabled:
                     signal, had_action = self._do_conditional_rotation_step(deadline)
                     if signal == "return_false":
@@ -487,6 +729,13 @@ class AutoCombatLogic:
                     if success:
                         self.skill_index = (self.skill_index + 1) % len(self.skill_sequence)
                         self.last_rotation_ok_time = task.active_time()
+                elif self.auto_rotation_enabled and self.auto_rotation_active:
+                    # 自动排轴：循环轴 + 失败跳过推进，不卡轴也不超时退出
+                    signal, _ = self._do_auto_rotation_step(deadline)
+                    if signal == "return_false":
+                        return False
+                    if signal == "break":
+                        break
                 else:
                     self._do_normal_combat_frame()
         except Exception as exc:
