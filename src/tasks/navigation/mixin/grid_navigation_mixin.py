@@ -95,12 +95,16 @@ from src.tasks.navigation.mixin.zip_line_mixin import ZipLineReplanRequired
 
 GRID_ZIP_LINE_ESC_THRESHOLD = 0.8
 GRID_ZIP_LINE_APPROACH_DISTANCE_M = 5.0
-GRID_ZIP_LINE_APPROACH_TIMEOUT_S = 10.0
-GRID_ZIP_LINE_RETREAT_DURATION_S = 2.0
+GRID_ZIP_LINE_APPROACH_TIMEOUT_S = 20.0
+GRID_ZIP_LINE_RETREAT_DURATION_S = 0.6
 GRID_ZIP_LINE_BOARD_CONFIRM_TIMEOUT_S = 1.5
 GRID_ZIP_LINE_BOARD_CONFIRM_POLL_S = 0.15
-GRID_ZIP_LINE_WS_STEP_DURATION_S = 0.18
+GRID_ZIP_LINE_WS_STEP_DURATION_S = 0.6
+GRID_ZIP_LINE_WS_MIN_STEP_DURATION_S = 0.3
 GRID_ZIP_LINE_WS_STOP_DISTANCE_M = 0.6
+GRID_ZIP_LINE_PROMPT_POLL_S = 0.1
+GRID_ZIP_LINE_LOCAL_SEARCH_STEP_S = 0.15
+GRID_ZIP_LINE_APPROACH_MAX_ATTEMPTS = 3
 GRID_SPRINT_MIN_SEGMENT_METERS = 15.0
 
 __all__ = [
@@ -204,6 +208,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_zip_line_failed_target_hint: tuple[float, float] | None = None
         self._grid_nav_zip_line_approach_entry_id: str | None = None
         self._grid_nav_zip_line_approach_started_at: float | None = None
+        self._grid_nav_zip_line_approach_attempts = 0
         self._grid_nav_zip_line_walk_mode = False
         self._grid_nav_blocked_zip_connections: set[
             tuple[str, tuple[float, float, float], tuple[float, float, float]]
@@ -217,6 +222,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         self._grid_nav_zip_line_failed_target_hint = None
         self._grid_nav_zip_line_approach_entry_id = None
         self._grid_nav_zip_line_approach_started_at = None
+        self._grid_nav_zip_line_approach_attempts = 0
         self._grid_nav_skip_board_node_id = None
         self._set_grid_walking(False)
 
@@ -1214,6 +1220,7 @@ class GridNavigationMixin(RuntimeStateMixin):
             self._grid_nav_follower.pause()
         self._grid_nav_zip_line_approach_entry_id = None
         self._grid_nav_zip_line_approach_started_at = None
+        self._grid_nav_zip_line_approach_attempts = 0
         return True
 
     def _press_f_for_grid_zip_line(
@@ -1226,6 +1233,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         self.press_key("f", after_sleep=0.2)
         esc_visible = self._wait_grid_zip_line_esc_clear()
         if esc_visible is False:
+            self._grid_nav_zip_line_approach_attempts = 0
             self._restore_grid_zip_line_run_mode()
             self.log_info("F 登索成功")
             return True
@@ -1239,6 +1247,50 @@ class GridNavigationMixin(RuntimeStateMixin):
             self._restore_grid_zip_line_run_mode()
             return False
         return None
+
+    def _walk_grid_zip_line_until_prompt(
+        self,
+        *,
+        duration: float,
+        deadline: float,
+    ) -> bool:
+        """保持 W 连续前进，同时轮询登索模板；命中后立即停车。"""
+        end = min(
+            self.active_time() + max(0.0, float(duration)),
+            deadline,
+        )
+        if end <= self.active_time():
+            return False
+        self._set_grid_walking(True)
+        try:
+            while self.active_time() < end:
+                if self._find_grid_zip_line_board_prompt(self.next_frame()):
+                    return True
+                remaining = end - self.active_time()
+                if remaining <= 0:
+                    return False
+                self.sleep(min(GRID_ZIP_LINE_PROMPT_POLL_S, remaining))
+            return False
+        finally:
+            self._set_grid_walking(False)
+
+    def _search_grid_zip_line_board_prompt_locally(
+        self,
+        *,
+        deadline: float,
+    ) -> bool:
+        """在入口附近用短距 W/A/D/S 搜索模板，避免直接长距离后退。"""
+        for key in ("w", "a", "d", "s"):
+            remaining = deadline - self.active_time()
+            if remaining <= 0:
+                return False
+            self._hold_grid_keys(
+                (key,),
+                min(GRID_ZIP_LINE_LOCAL_SEARCH_STEP_S, remaining),
+            )
+            if self._find_grid_zip_line_board_prompt(self.next_frame()):
+                return True
+        return False
 
     def _approach_grid_zip_line_for_boarding(
         self,
@@ -1261,6 +1313,7 @@ class GridNavigationMixin(RuntimeStateMixin):
         if self._grid_nav_zip_line_approach_entry_id != entry_id:
             self._grid_nav_zip_line_approach_entry_id = entry_id
             self._grid_nav_zip_line_approach_started_at = self.active_time()
+            self._grid_nav_zip_line_approach_attempts = 0
 
         if self._find_grid_zip_line_board_prompt(frame):
             return self._press_f_for_grid_zip_line(deadline)
@@ -1291,14 +1344,18 @@ class GridNavigationMixin(RuntimeStateMixin):
                 verify_heading=False,
             )
             if result.get("ok"):
-                self._set_grid_walking(True)
-                self.sleep(
-                    min(
-                        GRID_ZIP_LINE_WS_STEP_DURATION_S,
-                        max(tick, distance_to_entry / 4.0),
-                    )
+                step_duration = min(
+                    GRID_ZIP_LINE_WS_STEP_DURATION_S,
+                    max(
+                        GRID_ZIP_LINE_WS_MIN_STEP_DURATION_S,
+                        distance_to_entry / 4.0,
+                    ),
                 )
-                self._set_grid_walking(False)
+                if self._walk_grid_zip_line_until_prompt(
+                    duration=step_duration,
+                    deadline=deadline,
+                ):
+                    return self._press_f_for_grid_zip_line(deadline)
             else:
                 self._set_grid_walking(False)
                 self.log_warning(
@@ -1307,18 +1364,24 @@ class GridNavigationMixin(RuntimeStateMixin):
         else:
             self._set_grid_walking(False)
 
-        if self._find_grid_zip_line_board_prompt(self.next_frame()):
-            return self._press_f_for_grid_zip_line(deadline)
-
         now = self.active_time()
         started_at = self._grid_nav_zip_line_approach_started_at
         search_timed_out = started_at is not None and now - started_at >= GRID_ZIP_LINE_APPROACH_TIMEOUT_S
-        if search_timed_out and not self._retreat_from_grid_zip_line(
-            deadline,
-            reason="接近滑索时搜索模板超时",
-        ):
-            self._restore_grid_zip_line_run_mode()
-            return False
+        if search_timed_out:
+            self.log_info(f"接近滑索搜索超时（距入口 {distance_to_entry:.2f}m），在入口附近短距搜索，不先后退")
+            if self._search_grid_zip_line_board_prompt_locally(deadline=deadline):
+                return self._press_f_for_grid_zip_line(deadline)
+            self._grid_nav_zip_line_approach_attempts += 1
+            if self._grid_nav_zip_line_approach_attempts < GRID_ZIP_LINE_APPROACH_MAX_ATTEMPTS:
+                self._grid_nav_zip_line_approach_started_at = now
+                return None
+            if not self._retreat_from_grid_zip_line(
+                deadline,
+                reason="多次短距搜索仍未找到登上滑索架",
+            ):
+                self._restore_grid_zip_line_run_mode()
+                return False
+            self._grid_nav_zip_line_approach_attempts = 0
         return None
 
     def _handle_grid_zip_line_route_step(

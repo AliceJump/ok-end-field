@@ -590,7 +590,7 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertNotIn("s", self.task.key_down_events)
         self.assertFalse(self.task._grid_nav_zip_line_walk_mode)
 
-    def test_navigation_ws_approach_uses_latest_ws_and_retreats_after_timeout(self):
+    def test_navigation_ws_approach_keeps_searching_before_short_retreat(self):
         first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
         second = ZipLineNode("b", "test", "lv1", "滑索架", 4.5, 0.0, 0.5)
         route_step = ZipLineRouteStep(
@@ -624,7 +624,7 @@ class TestGridNavigationMixin(unittest.TestCase):
         self.assertIsNone(result)
         self.assertNotIn("s", self.task.key_down_events)
 
-        self.task.t = 10.1
+        self.task.t = 20.1
         result = self.task._approach_grid_zip_line_for_boarding(
             route_step=route_step,
             frame=object(),
@@ -634,9 +634,64 @@ class TestGridNavigationMixin(unittest.TestCase):
         )
 
         self.assertIsNone(result)
+        self.assertIn("w", self.task.key_down_events)
         self.assertIn("s", self.task.key_down_events)
         self.assertAlmostEqual(self.task.aims[-1], 225.0)
-        self.assertTrue(any("按 S 远离滑索" in message for message in self.task.logs))
+        self.assertTrue(any("不先后退" in message for message in self.task.logs))
+
+    def test_navigation_ws_approach_waits_past_old_timeout_for_prompt(self):
+        first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        second = ZipLineNode("b", "test", "lv1", "滑索架", 4.5, 0.0, 0.5)
+        route_step = ZipLineRouteStep(
+            step=ZipLineStep(first, second, distance_m=4.0),
+            entry_cell=(0, 0),
+            exit_cell=(0, 4),
+            entry_waypoint_index=0,
+            exit_waypoint_index=1,
+            cost=2.8,
+        )
+        self.task.x = 3.5
+        self.task.z = 0.5
+        self.task.board_template_visible = False
+        self.task._zip_line_ws_position = lambda: (100.0, 100.0)
+        self.task.t = 0.0
+        self.task.sleep = lambda seconds: setattr(self.task, "t", self.task.t + seconds)
+
+        self.assertIsNone(
+            self.task._approach_grid_zip_line_for_boarding(
+                route_step=route_step,
+                frame=object(),
+                min_score=0.6,
+                deadline=30.0,
+                tick=0.2,
+            )
+        )
+
+        self.task.t = 12.1
+        self.task.board_template_visible = True
+        self.task.esc_visible = False
+        result = self.task._approach_grid_zip_line_for_boarding(
+            route_step=route_step,
+            frame=object(),
+            min_score=0.6,
+            deadline=30.0,
+            tick=0.2,
+        )
+
+        self.assertTrue(result)
+        self.assertIn("f", self.task.pressed_keys)
+        self.assertFalse(any("不先后退" in message for message in self.task.logs))
+
+    def test_failed_f_boarding_uses_short_retreat(self):
+        self.task.board_template_visible = True
+        self.task.esc_visible = True
+        self.task.t = 0.0
+        self.task.sleep = lambda seconds: setattr(self.task, "t", self.task.t + seconds)
+
+        result = self.task._press_f_for_grid_zip_line(10.0)
+
+        self.assertIsNone(result)
+        self.assertTrue(any("按 S 远离滑索 0.6s" in message for message in self.task.logs))
 
     def test_wait_zip_line_esc_clear_ignores_transition_frame(self):
         results = iter([True, True, False])

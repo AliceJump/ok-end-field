@@ -46,13 +46,19 @@ def _to_rgba(img: np.ndarray) -> np.ndarray:
     raise ValueError(f"Unsupported image shape: {img.shape}")
 
 
-def _safe_roi(img: np.ndarray, x: int, y: int, w: int, h: int) -> np.ndarray | None:
+def _safe_roi(
+    img: np.ndarray,
+    x: float | int,
+    y: float | int,
+    w: float | int,
+    h: float | int,
+) -> np.ndarray | None:
     """安全 ROI 提取：正常返回 view，越界时 padding copy"""
     H, W = img.shape[:2]
-    x0 = x
-    y0 = y
-    x1 = x0 + (w)
-    y1 = y0 + (h)
+    x0 = round(x)
+    y0 = round(y)
+    x1 = x0 + round(w)
+    y1 = y0 + round(h)
 
     if x1 <= 0 or y1 <= 0 or x0 >= W or y0 >= H:
         return None
