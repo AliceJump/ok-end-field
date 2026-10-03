@@ -19,6 +19,14 @@ class FixedDamagePanel:
     crit_rate: float
     crit_damage: float
     amplification: dict[str, float] = field(default_factory=dict)
+    damage_bonus: dict[str, float] = field(default_factory=dict)
+
+    def bonus_for(self, element, tags=()):
+        """Fixed bonuses follow each native hit's element and decoration flags."""
+        value = self.damage_bonus.get("all", 0) + self.damage_bonus.get(element, 0)
+        if any(tag in {"normal", "skill", "combo", "ultimate"} for tag in tags):
+            value += self.damage_bonus.get("all_skill", 0)
+        return value + sum(self.damage_bonus.get(tag, 0) for tag in set(tags))
 
     def attack(self, additional_percent=0.0):
         return (
@@ -36,6 +44,7 @@ class DamageHit:
     damage_tag: str = "skill"
     can_crit: bool = True
     enemy_multiplier: float = 1.0
+    damage_tags: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -213,7 +222,7 @@ class TimedDamageState:
                 continue
             if hit.element not in spec.elements and "all" not in spec.elements:
                 continue
-            if spec.damage_tags and hit.damage_tag not in spec.damage_tags:
+            if spec.damage_tags and not set(spec.damage_tags).intersection(hit.damage_tags or (hit.damage_tag,)):
                 continue
             current_inputs = {**modifier.inputs, **(inputs or {})}
             if any(current_inputs.get(key) == 0 for key in spec.condition_inputs):

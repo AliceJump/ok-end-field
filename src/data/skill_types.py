@@ -110,6 +110,7 @@ class SkillEffect:
     count: int | None = None  # 正=施加/增加，负=消费/减少，None=未知或动态
     subject_effect_id: EffectType | None = None  # operation/predicate 所指向的具体资源/状态
     damage_modifier: DamageModifierSpec | None = None
+    consumes_all: bool = False
 
 
 @dataclass(frozen=True)
