@@ -9,9 +9,9 @@ from pathlib import Path
 from src.data.character_skills import get_character
 from src.data.combat_simulation import CombatWorldState, EffectRequirement, UnresolvedMechanic
 from src.data.damage_resolution import FixedDamagePanel
-from src.data.native_action_program import compile_native_action
+from src.data.native_action_program import _nodes, compile_native_action
 from src.data.native_character_events import bind_character_events
-from src.data.native_gameplay import native_asset
+from src.data.native_gameplay import native_asset, native_record
 from src.data.native_reactions import reaction_parameters
 from src.data.skill_types import SkillType
 
@@ -31,7 +31,7 @@ class CombatCatalog:
     def available(self, actor, kind):
         # Replacements are selected through state requirements, not phase counters.
         return tuple(p for p in self.candidates(actor, kind)
-                     if self.world.satisfies(actor, p.enemy, p.requires, p.any_requires)
+                     if self.world.selects_program(p) and self.world.satisfies(actor, p.enemy, p.requires, p.any_requires)
                      and not any(self.world.satisfies(actor, p.enemy, (r,)) for r in p.forbids))
 
 
@@ -44,6 +44,32 @@ def _groups(groups):
         else:
             any_of.append(values)
     return tuple(all_of), tuple(any_of)
+
+
+def _referenced_replacements(store, roots):
+    pending = list(roots)
+    seen, replacements, missing = set(), set(), set()
+    while pending:
+        key = pending.pop()
+        if key in seen:
+            continue
+        seen.add(key)
+        try:
+            record = native_record(store, key)["data"]
+        except KeyError:
+            missing.add(key)
+            continue
+        for node in _nodes(record):
+            name = node["$type"].rsplit(".", 1)[-1]
+            body = node["$value"]
+            if not body.get("isEnable", True):
+                continue
+            if name == "CreateBuffAction+Data":
+                pending.extend(ref["buffId"] for ref in body["buffs"])
+            elif name == "ChangeSkillAction+Data":
+                replacements.add((body["skillSlot"], body["targetSkillId"]))
+                pending.append(body["targetSkillId"])
+    return replacements, missing
 
 
 def build_combat_catalog(team, store, *, baseline=BASELINE):
@@ -91,6 +117,8 @@ def build_combat_catalog(team, store, *, baseline=BASELINE):
                     program = compile_native_action(store, character, timing, actor, kind,
                                                     damage_bonus=(quote or {}).get("bonus_pct", 0) / 100,
                                                     attributes=state.attributes, panel=state.panel)
+                    program = replace(program, native_slot={"battle": 0, "link": 1, "ult": 2}[kind],
+                                      cooldown_key=f"{actor}:{program.key}")
                     if kind == "ult":
                         state.energy_cap = program.energy_cost
                     if kind == "battle" and len(profiles) > 1 and replacements:
@@ -113,4 +141,27 @@ def build_combat_catalog(team, store, *, baseline=BASELINE):
                     diagnostics.extend(bind_character_events(world, store, character, profiles[0], actor))
                 except (KeyError, ValueError, StopIteration) as error:
                     diagnostics.append(f"{name}/CharacterData: {error}")
+        references, missing = _referenced_replacements(store, (p.key for (a, _), group in programs.items() if a == actor for p in group))
+        diagnostics.extend(f"Missing native replacement dependency: {name}/{key}" for key in sorted(missing))
+        for slot, key in sorted(references):
+            kind = {0: "battle", 1: "link", 2: "ult"}.get(slot)
+            if kind is None or not key.startswith(character.progression.native_id + "_"):
+                diagnostics.append(f"Unbound native replacement character/slot: {name}/{key}/{slot}")
+                continue
+            if any(p.key == key for p in programs.get((actor, kind), ())):
+                continue
+            try:
+                program = compile_native_action(store, character, store.profile(key), actor, kind,
+                                                attributes=state.attributes, panel=state.panel)
+                program = replace(program, native_slot=slot, native_requires_override=True, replacement=key,
+                                  cooldown_key=f"{actor}:{key}")
+                programs[actor, kind] = (*programs.get((actor, kind), ()), program)
+            except (KeyError, ValueError) as error:
+                diagnostics.append(f"Native replacement: {name}/{key}: {error}")
+    for group in programs.values():
+        for index, program in enumerate(group):
+            # Legacy Mifu phases remain guarded by the typed ready states until
+            # their native input-cache actions have also been bound.
+            default = index == 0 and not any(p.requires for p in group[1:])
+            world.register_native_program(program, default=default)
     return CombatCatalog(world, programs, tuple(diagnostics))
