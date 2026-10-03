@@ -63,6 +63,26 @@ class NativeBuffChange:
 
 
 @dataclass(frozen=True)
+class NativeTarget:
+    kind: str
+    key: str = ""
+
+
+@dataclass(frozen=True)
+class NativeResourceChange:
+    resource: CombatResourceType
+    amount: CombatExpression
+    coefficient: CombatExpression
+    source: NativeTarget
+    target: NativeTarget
+    percent: bool = False
+    ignore_energy_gain: bool = False
+    returned_sp: bool = False
+    only_main_source: bool = False
+    default_energy: tuple[float, float] | None = None
+
+
+@dataclass(frozen=True)
 class CombatEvent:
     """One authored event, timed relative to the action's actual start."""
 
@@ -88,6 +108,7 @@ class CombatEvent:
     native_buffs: tuple[NativeBuffChange, ...] = ()
     listeners: tuple[NativeListener, ...] = ()
     timers: tuple[tuple[str, CombatExpression], ...] = ()
+    native_resources: tuple[NativeResourceChange, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -151,6 +172,7 @@ class CombatWorldState:
             raise ValueError("Invalid initial team resources")
         self.time = 0.0
         self.sp = float(sp)
+        self.returned_sp = 0.0
         self.regen = float(regen)
         self.characters = {actor: CharacterCombatState() for actor in actors}
         self.enemies: dict[str, EnemyCombatState] = {"target": EnemyCombatState()}
@@ -170,6 +192,7 @@ class CombatWorldState:
         self._consumed: dict[tuple[str, EffectType], int] = {}
         self._action_consumed: dict[str, dict[tuple[str, EffectType], int]] = {}
         self._action_inputs: dict[str, dict[str, float]] = {}
+        self._action_targets: dict[str, dict[str, tuple[str, ...]]] = {}
         self._executing_action: str | None = None
         self._started_ids: set[str] = set()
         # Scalar reaction parameters are supplied by the chosen damage profile.
@@ -593,6 +616,70 @@ class CombatWorldState:
             raise UnresolvedMechanic(f"Unbound {kind.value} {change.resource.value}: {change.formula or change.trigger}")
         return min(amount, change.max_amount) if change.max_amount is not None else amount
 
+    def native_targets(self, selector, action_id, program):
+        if selector.kind in {"source", "owner"}:
+            return (program.actor,)
+        if selector.kind == "main":
+            return (self.main_control,) if self.main_control else ()
+        if selector.kind == "squad":
+            return tuple(self.characters)
+        if selector.kind in {"action_target", "main_target"}:
+            return self._action_targets.get(action_id, {}).get("current", (program.enemy,))
+        if selector.kind == "context":
+            targets = self._action_targets.get(action_id, {})
+            if selector.key not in targets:
+                raise UnresolvedMechanic(f"Unbound native target group: {selector.key}")
+            return targets[selector.key]
+        raise UnresolvedMechanic(f"Unknown native target: {selector.kind}")
+
+    def _credit_sp(self, actor, enemy, amount, *, returned=False):
+        credited = min(amount, 300 - self.sp) if amount > 0 else 0
+        self.sp_overflow += max(0, self.sp + amount - 300)
+        self.sp = max(0, min(300, self.sp + amount))
+        if returned:
+            self.returned_sp += credited
+        self.returned_sp = min(self.returned_sp, self.sp)
+        state = self.characters[actor]
+        recovery = state.attributes.get("sp_recovered", 0) + credited
+        thresholds = [spec for spec in self.passive_modifiers.get(actor, ())
+                      if spec.trigger == "own_skill_recovery_threshold_80"]
+        if thresholds:
+            while recovery >= 80:
+                self.emit("own_skill_recovery_threshold_80", actor, enemy)
+                recovery -= 80
+        state.attributes["sp_recovered"] = recovery
+
+    def _native_resource(self, action_id, program, change, inputs):
+        sources = self.native_targets(change.source, action_id, program)
+        if not sources or sources[0] not in self.characters:
+            return
+        source = sources[0]
+        if change.only_main_source and source != self.main_control:
+            return
+        amount = change.amount.evaluate(inputs)
+        coefficient = change.coefficient.evaluate(inputs)
+        for recipient in self.native_targets(change.target, action_id, program):
+            if recipient not in self.characters:
+                continue  # Native ObtainCost accepts character recipients only.
+            character = self.characters[recipient]
+            value = amount
+            if change.resource == CombatResourceType.SKILL_POINT:
+                if change.percent:
+                    raise UnresolvedMechanic("Native percent SP operation requires a proven policy")
+                self._credit_sp(source, program.enemy, value * coefficient, returned=change.returned_sp)
+                continue
+            if change.default_energy is not None:
+                value *= change.default_energy[0 if recipient == source else 1]
+                value *= coefficient
+            # CalculateUltimateSp ignores gain scalar for nonpositive base values.
+            if value > 0 and not change.ignore_energy_gain:
+                value *= 1 + character.attributes.get("energy_gain", 0)
+            if change.percent:
+                value *= character.energy_cap
+            if change.default_energy is None:
+                value *= coefficient
+            character.energy = max(0, min(character.energy_cap, character.energy + value))
+
     def _execute_event(self, action_id, sequence, program, event):
         if (action_id, sequence) in self._seen_events:
             return
@@ -728,6 +815,11 @@ class CombatWorldState:
                     self.unresolved.add(str(error))
         for modifier in event.modifiers:
             self.damage_state.apply(modifier, source_actor=actor, enemy=enemy, now=self.time, event=event.name, inputs=inputs, field_id=event.field_id)
+        for change in event.native_resources:
+            try:
+                self._native_resource(action_id, program, change, inputs)
+            except (UnresolvedMechanic, MissingCombatInput) as error:
+                self.unresolved.add(str(error))
         if event.resource_formulas and len(event.resource_formulas) != len(event.resources):
             raise ValueError("Each resource change needs one matching formula slot")
         for index, change in enumerate(event.resources):
@@ -737,23 +829,12 @@ class CombatWorldState:
                 if change.max_amount is not None:
                     amount = min(amount, change.max_amount)
                 if change.resource == CombatResourceType.SKILL_POINT:
-                    credited = min(amount, 300 - self.sp) if amount > 0 else 0
-                    self.sp_overflow += max(0, self.sp + amount - 300)
-                    self.sp = max(0, min(300, self.sp + amount))
-                    state = self.characters[actor]
-                    recovery = state.attributes.get("sp_recovered", 0) + credited
-                    thresholds = [spec for spec in self.passive_modifiers.get(actor, ())
-                                  if spec.trigger == "own_skill_recovery_threshold_80"]
-                    if thresholds:
-                        while recovery >= 80:
-                            self.emit("own_skill_recovery_threshold_80", actor, enemy)
-                            recovery -= 80
-                    state.attributes["sp_recovered"] = recovery
+                    self._credit_sp(actor, enemy, amount)
                 else:
                     recipients = self.characters if change.target == "team" else (actor,)
                     for recipient in recipients:
                         character = self.characters[recipient]
-                        value = amount * (1 + character.attributes.get("energy_gain", 0)) if change.affected_by_energy_gain else amount
+                        value = amount * (1 + character.attributes.get("energy_gain", 0)) if amount > 0 and change.affected_by_energy_gain else amount
                         character.energy = max(0, min(character.energy_cap, character.energy + value))
             except (UnresolvedMechanic, MissingCombatInput) as error:
                 self.unresolved.add(str(error))
@@ -787,6 +868,10 @@ class CombatWorldState:
             for effect in EffectType
         }
         self._action_inputs[action_id].update(program.parameters)
+        returned_used = min(self.returned_sp, program.sp_cost)
+        self.returned_sp -= returned_used
+        self._action_inputs[action_id]["cast.non_returned_sp"] = program.sp_cost - returned_used
+        self._action_targets[action_id] = {"current": (program.enemy,)}
         self._action_inputs[action_id]["event.skill_type"] = {"battle": 2.0, "link": 6.0, "ult": 7.0, "normal": 0.0}[program.kind]
         self._consumed = {key: v for key, v in self._consumed.items() if key[0] != program.actor}
         for enemy in self.enemies.values():
@@ -842,6 +927,7 @@ class CombatWorldState:
         """HUD observations replace predictions; they are not additional resource payouts."""
         if sp is not None and math.isfinite(sp) and 0 <= sp <= 300:
             self.sp = sp
+            self.returned_sp = min(self.returned_sp, self.sp)
         for actor, amount in (energy or {}).items():
             if actor in self.characters and math.isfinite(amount) and amount >= 0:
                 self.characters[actor].energy = min(self.characters[actor].energy_cap, amount)
@@ -913,7 +999,7 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                         tuple(sorted(state.actor_ready.items())), tuple((a, s.alive) for a, s in state.characters.items()),
                         tuple(sorted((a, p.key, at) for a, (_, p, at) in state.active_actions.items())),
                         state.damage_state.phase_signature(state.time),
-                        state.main_control, tuple(sorted(state.native_buffs.items())),
+                        state.main_control, state.returned_sp, tuple(sorted(state.native_buffs.items())),
                         tuple(sorted(state.native_timers.items())),
                         tuple(sorted((a, tuple(sorted(s.attributes.items()))) for a, s in state.characters.items())),
                         tuple(sorted((a, tuple(sorted(s.blackboard.items()))) for a, s in state.characters.items())),

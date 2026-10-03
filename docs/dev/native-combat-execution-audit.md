@@ -27,7 +27,13 @@
 | `Attributes.GetPhysicalAndSpellInflictionEnhancedValue` | Linear为A×x，InverseProportion为A×x/(B+x) | 60539 / `0x603702c` / 1400字节 `c452e53e7a559cedf585a7edd47c0ebf1039dd9a125e202264ef4c4601804fb4` |
 | `ReadSkillSettingData.ExecuteInternal` | 调用端按1+上述增量乘原生表行，并读取技艺强度 | 59349 / `0x4247890` / 2500字节 `34c86f12d585f299b640cb951d5f025630a8ce0e32d51bffffaf399b79ec9f2f` |
 | `SimpleCalcBBAction.ExecuteInternal` | 已核验Add和Mul路径；其他运算仍需继续核对 | 59920 / `0x3df8c50` / 1100字节 `5219be2bf03ed0ce7e2089d5940fd5694917e6afdcb9f8af3502acc627375985` |
-| `ObtainUspInNormalSkill.ExecuteInternal` | 已定位默认能量的系数乘法；继承参数和自身/队友分支的全量对应仍需核对 | 59018 / `0x3c651c0` / 3500字节 `95d9e73f8d65271261e3f5145d84888ff9521f9f4b97c543d541231c4be9cfed` |
+| `ObtainUspInNormalSkill.ExecuteInternal` | SkillCastInfo非返还SP消耗×buff的ratio×自身/队友系数，再按接收角色计算能量增幅；不读取旧usp_self/everyone字面值 | 59018 / `0x3c651c0` / 9000字节 `50de1132ce3aa9d99a67f3e46edbf510953e5a1f87cbededabb83ac9428dd7e8` |
+| `BattleManager.GainAtb` | Return将实际入账量加入全队m_returnedAtb；SP溢出不进入返还池 | 61786 / `0x3b22910` / 6000字节 `01c2cedb44fd3e9ad8491f1f69b4d83d63d6027fe2f542eadca8a98b6c34bbe0` |
+| `BattleManager.SpendAtb` | 消耗先扣m_returnedAtb，输出本次非返还SP消耗；Skill._ApplyCost将其存入施放信息 | `0x3b203a0` / 6500字节 `1ce747c0c024b82be12a627faf92472dd0bd2031437d0e34718425cd482b8e6b` |
+| `ObtainCostAction.ExecuteInternal` | 能量回复先按接收者增幅，再乘百分比容量，最后乘coefficient；SP区分Gain/Return及主控source限制 | 59013 / `0x3b23580` / 12000字节 `ab71666ed2f8e324381c0f72f1159bee1f9cf2a653e5af3924d10352dc879941` |
+| `BattleFormula.CalculateUltimateSp` | 仅正的基础回复量且未ignore时乘接收者能量获取率；负基础值不放大 | 60627 / `0x3c65630` / 1800字节 `0c017f4173b893109c1c2c21bce5bae00371925c314c15493b4968b20d0c2c1b` |
+
+返还池属于全队，不是“本次消耗减本次返还”。例如初始没有返还池时，断云100SP施放信息仍记录100；返还50后，追形优先消费该50，非返还消耗为0。默认能量读取各动作在施放时保存的值，事后返还不追溯改写。搜索状态也包含返还池，避免将同SP、不同能量潜力的路径合并。资源目标保留Source/Owner/MainCharacter/Target/Context/MainTarget枚举；未绑定上下文和InstantSearch仍明确报缺口，不能全部改成施放者。尚未把这组目标解析扩展到所有buff持有者与场地实体。
 
 原生非简单伤害计算读取 `AtkScaleCalculation`，不误用处于非激活分支的字面倍率。条件分支先保存一次判断结果，再消费或修改状态；未知条件阻止后续序列。动作参数按已选技能等级、最高阶天赋和实际潜能应用Add/Mul/Overwrite；缺少数值不自动按0补算。原生buff的全部堆叠政策、上下文持有者、动态继承和物理异常暴击资格尚未全量核验，不能用当前执行器结果替代完整伤害真值。
 
