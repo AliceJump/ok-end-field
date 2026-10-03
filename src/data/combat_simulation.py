@@ -60,6 +60,7 @@ class NativeBuffChange:
     remove_all: bool = False
     maximum: int | None = None
     target: str = "self"
+    selector: NativeTarget | None = None
 
 
 @dataclass(frozen=True)
@@ -80,6 +81,34 @@ class NativeResourceChange:
     returned_sp: bool = False
     only_main_source: bool = False
     default_energy: tuple[float, float] | None = None
+
+
+@dataclass(frozen=True)
+class NativeTargetBinding:
+    key: str
+    selectors: tuple[NativeTarget, ...]
+
+
+@dataclass(frozen=True)
+class NativeBuffQuery:
+    key: str
+    target: NativeTarget
+    buff_ids: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class NativeIteration:
+    target: NativeTarget
+    events: tuple[CombatEvent, ...]
+
+
+def walk_combat_events(events):
+    for event in events:
+        yield event
+        for iteration in event.iterations:
+            yield from walk_combat_events(iteration.events)
+        for listener in event.listeners:
+            yield from walk_combat_events(listener.events)
 
 
 @dataclass(frozen=True)
@@ -109,6 +138,8 @@ class CombatEvent:
     listeners: tuple[NativeListener, ...] = ()
     timers: tuple[tuple[str, CombatExpression], ...] = ()
     native_resources: tuple[NativeResourceChange, ...] = ()
+    target_bindings: tuple[NativeTargetBinding, ...] = ()
+    iterations: tuple[NativeIteration, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -140,6 +171,7 @@ class ActionProgram:
     next_action_windows: tuple[tuple[float, float, tuple[str, ...]], ...] = ()
     native_buff_ids: tuple[str, ...] = ()
     native_timer_ids: tuple[str, ...] = ()
+    native_buff_queries: tuple[NativeBuffQuery, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -553,6 +585,7 @@ class CombatWorldState:
                 self._sequence += 1
                 action_id = f"character_event:{self._sequence}:{program.actor}"
                 self._action_inputs[action_id] = dict(program.parameters)
+                self._action_targets[action_id] = {"current": (target,), "trigger": (target,)}
                 enemy_target = target in self.enemies
                 values = {
                     "target.trigger.count": 1.0,
@@ -618,13 +651,15 @@ class CombatWorldState:
 
     def native_targets(self, selector, action_id, program):
         if selector.kind in {"source", "owner"}:
-            return (program.actor,)
+            return self._action_targets.get(action_id, {}).get(selector.kind, (program.actor,))
         if selector.kind == "main":
             return (self.main_control,) if self.main_control else ()
         if selector.kind == "squad":
             return tuple(self.characters)
-        if selector.kind in {"action_target", "main_target"}:
+        if selector.kind == "action_target":
             return self._action_targets.get(action_id, {}).get("current", (program.enemy,))
+        if selector.kind in {"main_target", "enemy"}:
+            return (program.enemy,)
         if selector.kind == "context":
             targets = self._action_targets.get(action_id, {})
             if selector.key not in targets:
@@ -680,7 +715,39 @@ class CombatWorldState:
                 value *= coefficient
             character.energy = max(0, min(character.energy_cap, character.energy + value))
 
+    def _apply_native_buff(self, owner, change, inputs):
+        delta = change.count.evaluate(inputs)
+        if delta != int(delta):
+            raise UnresolvedMechanic(f"Non-integer native buff layers: {change.key}")
+        identity = (owner, change.key)
+        old_count, old_expiry = self.native_buffs.get(identity, (0, None))
+        count = 0 if change.remove_all else max(0, old_count + int(delta))
+        if change.maximum is not None:
+            count = min(count, change.maximum)
+        if count == 0:
+            self.native_buffs.pop(identity, None)
+            return
+        if delta < 0:
+            expires = old_expiry
+        elif change.permanent:
+            expires = None
+        elif change.duration is not None:
+            duration = change.duration.evaluate(inputs)
+            if duration <= 0:
+                raise UnresolvedMechanic(f"Invalid native buff lifetime: {change.key}")
+            expires = self.time + duration
+        else:
+            raise UnresolvedMechanic(f"Missing native buff lifetime: {change.key}")
+        self.native_buffs[identity] = (count, expires)
+
     def _execute_event(self, action_id, sequence, program, event):
+        previous_action = self._executing_action
+        try:
+            self._execute_event_body(action_id, sequence, program, event)
+        finally:
+            self._executing_action = previous_action
+
+    def _execute_event_body(self, action_id, sequence, program, event):
         if (action_id, sequence) in self._seen_events:
             return
         self._seen_events.add((action_id, sequence))
@@ -692,11 +759,22 @@ class CombatWorldState:
         inputs.update(self._action_inputs.get(action_id, {}))
         inputs.update({"bb." + k: v for k, v in self.characters[actor].blackboard.items()})
         inputs.update(event.inputs)
+        for group, targets in self._action_targets.get(action_id, {}).items():
+            inputs[f"target.{group}.count"] = float(len(targets))
         for subject in EffectType:
             inputs[f"count.{subject.value}"] = self.count(actor, enemy, subject)
         for buff_id in program.native_buff_ids:
             for owner, prefix in ((actor, "self"), (enemy, "enemy")):
                 inputs[f"native.{prefix}.{buff_id}"] = self.native_buffs.get((owner, buff_id), (0, None))[0]
+        for query in program.native_buff_queries:
+            try:
+                inputs[query.key] = sum(self.native_buffs.get((owner, buff_id), (0, None))[0]
+                                        for owner in self.native_targets(query.target, action_id, program)
+                                        for buff_id in query.buff_ids)
+            except UnresolvedMechanic:
+                # A later branch may not read this group; only an evaluated
+                # expression should reject the branch for its missing input.
+                inputs.pop(query.key, None)
         for timer_id in program.native_timer_ids:
             inputs[f"timer.{timer_id}.ready"] = float(self.native_timers.get((actor, timer_id), 0) <= self.time)
         inputs["consumed.STACK_SHRED"] = self._action_consumed.get(action_id, {}).get((actor, EffectType.STACK_SHRED), 0)
@@ -716,6 +794,32 @@ class CombatWorldState:
             self._executing_action = None
             return
         self.unresolved.update(event.unresolved)
+        for binding in event.target_bindings:
+            try:
+                targets = tuple(dict.fromkeys(target for selector in binding.selectors
+                                               for target in self.native_targets(selector, action_id, program)))
+                self._action_targets.setdefault(action_id, {})[binding.key] = targets
+                self._action_inputs[action_id][f"target.{binding.key}.count"] = float(len(targets))
+            except UnresolvedMechanic as error:
+                self.unresolved.add(str(error))
+        for iteration in event.iterations:
+            try:
+                targets = self.native_targets(iteration.target, action_id, program)
+                context = self._action_targets.setdefault(action_id, {})
+                previous = context.get("current")
+                try:
+                    for target in targets:
+                        context["current"] = (target,)
+                        for callback in iteration.events:
+                            self._sequence += 1
+                            self._execute_event(action_id, self._sequence, program, callback)
+                finally:
+                    if previous is None:
+                        context.pop("current", None)
+                    else:
+                        context["current"] = previous
+            except UnresolvedMechanic as error:
+                self.unresolved.add(str(error))
         for key, expression in event.timers:
             try:
                 duration = expression.evaluate(inputs)
@@ -735,30 +839,10 @@ class CombatWorldState:
             self.damage_state.remove_field(event.field_id)
         for change in event.native_buffs:
             try:
-                delta = change.count.evaluate(inputs)
-                if delta != int(delta):
-                    raise UnresolvedMechanic(f"Non-integer native buff layers: {change.key}")
-                owner = enemy if change.target == "enemy" else actor
-                identity = (owner, change.key)
-                old_count, old_expiry = self.native_buffs.get(identity, (0, None))
-                count = 0 if change.remove_all else max(0, old_count + int(delta))
-                if change.maximum is not None:
-                    count = min(count, change.maximum)
-                if count == 0:
-                    self.native_buffs.pop(identity, None)
-                    continue
-                if delta < 0:
-                    expires = old_expiry
-                elif change.permanent:
-                    expires = None
-                elif change.duration is not None:
-                    duration = change.duration.evaluate(inputs)
-                    if duration <= 0:
-                        raise UnresolvedMechanic(f"Invalid native buff lifetime: {change.key}")
-                    expires = self.time + duration
-                else:
-                    raise UnresolvedMechanic(f"Missing native buff lifetime: {change.key}")
-                self.native_buffs[identity] = (count, expires)
+                owners = self.native_targets(change.selector, action_id, program) if change.selector is not None else (
+                    enemy if change.target == "enemy" else actor,)
+                for owner in owners:
+                    self._apply_native_buff(owner, change, inputs)
             except (UnresolvedMechanic, MissingCombatInput) as error:
                 self.unresolved.add(str(error))
         # Conditions snapshot before mutation; explicit consumers precede the event's
@@ -775,11 +859,20 @@ class CombatWorldState:
         inputs["consumed.STACK_SHRED"] = self._action_consumed.get(action_id, {}).get((actor, EffectType.STACK_SHRED), 0)
         inputs["count.EVENT_SHRED_CONSUMED"] = inputs["consumed.STACK_SHRED"]
         if event.hit is not None:
+            current = self._action_targets.get(action_id, {}).get("current", (enemy,))
+            if len(current) != 1 or current[0] not in self.enemies:
+                self.unresolved.add("Damage target requires enemy binding")
+                return
+            enemy = current[0]
             panel = self.characters[actor].panel
             if panel is None:
                 self.unresolved.add(f"Missing fixed panel: {actor}")
             else:
                 hit = event.hit
+                if hit.enemy != enemy:
+                    from dataclasses import replace
+
+                    hit = replace(hit, enemy=enemy)
                 if event.hit_multiplier_formula is not None:
                     from dataclasses import replace
 
@@ -1006,6 +1099,7 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                         tuple((a, action, p.key, repr(listener), tuple(sorted(state._action_inputs.get(action, {}).items())))
                               for a, action, p, listener in state.native_listeners),
                         tuple((row[0], row[3].key, repr(row[4]), tuple(sorted(state._action_inputs.get(row[2], {}).items())),
+                               tuple(sorted(state._action_targets.get(row[2], {}).items())),
                                tuple(sorted((a, e.value, n) for (a, e), n in state._action_consumed.get(row[2], {}).items())))
                               for row in state._queue))
             previous = distinct.get(identity)

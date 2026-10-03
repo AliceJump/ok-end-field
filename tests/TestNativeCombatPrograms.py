@@ -7,7 +7,17 @@ from src.data.character_skills import get_character
 from src.data.combat_catalog import build_combat_catalog
 from src.data.combat_expressions import CombatExpression
 from src.data.combat_runtime import CombatRuntime
-from src.data.combat_simulation import ActionProgram, CombatEvent, NativeResourceChange, NativeTarget
+from src.data.combat_simulation import (
+    ActionProgram,
+    CombatEvent,
+    NativeBuffChange,
+    NativeBuffQuery,
+    NativeIteration,
+    NativeResourceChange,
+    NativeTarget,
+    NativeTargetBinding,
+    walk_combat_events,
+)
 from src.data.damage_resolution import FixedDamagePanel
 from src.data.effects import EffectType
 from src.data.native_action_program import _nodes, compile_native_action
@@ -124,6 +134,84 @@ class TestNativeCombatPrograms(unittest.TestCase):
         self.world.start(p, action_id="default")
         self.assertEqual([c.energy for c in self.world.characters.values()], [12, 6, 6])
 
+    def test_squad_iteration_keeps_each_recipient_and_restores_parent_target(self):
+        payout = self.resource_program(amount=.1, target="action_target", percent=True).events[0]
+        self.world.characters["1"].energy_cap = 100
+        self.world.characters["2"].energy_cap = 200
+        self.world.characters["3"].energy_cap = 300
+        for character in self.world.characters.values():
+            character.attributes["energy_gain"] = 0
+        p = ActionProgram("iterate", "1", "normal", 0, 0, 0, (
+            CombatEvent(0, "select_team", target_bindings=(NativeTargetBinding("allies", (NativeTarget("squad"),)),)),
+            CombatEvent(0, "foreach", iterations=(NativeIteration(NativeTarget("context", "allies"), (payout,)),)),
+            payout,  # Restored parent target is the enemy, so this grants nothing.
+        ))
+        self.world.start(p, action_id="iterate")
+        self.assertEqual([c.energy for c in self.world.characters.values()], [10, 20, 30])
+        self.assertEqual(self.world._action_targets["iterate"]["current"], ("target",))
+        self.assertEqual(self.world._action_inputs["iterate"]["target.allies.count"], 3)
+        self.assertFalse(self.world.unresolved)
+
+    def test_merge_deduplicates_targets_and_empty_group_is_not_one_enemy(self):
+        self.world.main_control = "2"
+        payout = self.resource_program(amount=10, target="action_target").events[0]
+        p = ActionProgram("merge", "1", "normal", 0, 0, 0, (
+            CombatEvent(0, "merge", target_bindings=(NativeTargetBinding("selected", (NativeTarget("main"), NativeTarget("main"))),)),
+            CombatEvent(0, "selected", iterations=(NativeIteration(NativeTarget("context", "selected"), (payout,)),)),
+            CombatEvent(0, "empty", target_bindings=(NativeTargetBinding("none", ()),)),
+            CombatEvent(0, "none", iterations=(NativeIteration(NativeTarget("context", "none"), (payout,)),)),
+        ))
+        self.world.characters["2"].attributes["energy_gain"] = 0
+        self.world.start(p, action_id="merge")
+        self.assertEqual(self.world.characters["2"].energy, 10)
+        self.assertEqual(self.world._action_inputs["merge"]["target.none.count"], 0)
+
+    def test_buff_holder_and_query_follow_selected_character(self):
+        self.world.main_control = "2"
+        literal = lambda value: CombatExpression("literal", (float(value),))
+        change = NativeBuffChange("marker", literal(1), literal(6), selector=NativeTarget("main"))
+        query = NativeBuffQuery("selected.marker", NativeTarget("main"), ("marker",))
+        p = ActionProgram("marker", "1", "normal", 0, 0, 0, (
+            CombatEvent(0, "mark", native_buffs=(change,)),
+            CombatEvent(0, "query", assignments=(("bb.seen", CombatExpression("input", (query.key,))),)),
+        ), native_buff_queries=(query,))
+        self.world.start(p, action_id="marker")
+        self.assertEqual(self.world.native_buffs, {("2", "marker"): (1, 6)})
+        self.assertEqual(self.world._action_inputs["marker"]["bb.seen"], 1)
+        self.assertNotIn(("1", "marker"), self.world.native_buffs)
+
+    def test_missing_group_cannot_pay_resource_and_nested_unknown_is_reported(self):
+        payout = self.resource_program(amount=50, target="action_target").events[0]
+        p = ActionProgram("missing", "1", "normal", 0, 0, 0, (CombatEvent(0, "missing", iterations=(
+            NativeIteration(NativeTarget("context", "not_bound"), (payout,)),)),))
+        self.world.start(p, action_id="missing")
+        self.assertTrue(all(c.energy == 0 for c in self.world.characters.values()))
+        self.assertIn("Unbound native target group: not_bound", self.world.unresolved)
+        self.assertIsNone(self.world._executing_action)
+
+    def test_native_team_finder_and_foreach_compile_to_three_recipients(self):
+        data = self.store.record(self.base.key)["data"]
+        root = copy.deepcopy(data["actionGroupData"]["timelineActions"][0]["_sequenceActionData"])
+        finder = copy.deepcopy(next(n for n in _nodes(data) if n["$type"].endswith("FindTargetActionData")))
+        finder["$value"]["targetGroupKey"] = "allies"
+        finder["$value"]["selectorData"] = {"finderData": {
+            "$type": "Beyond.Gameplay.Core.Selector+CharacterTeamFinder+Data", "$value": {},
+        }, "validatorData": [], "postProcessorData": []}
+        iteration = copy.deepcopy(next(n for n in _nodes(self.store.record(self.finish.key)["data"])
+                                       if n["$type"].endswith("ForEachAction+Data")))
+        iteration["$value"]["target"]["targetGroupKey"] = "allies"
+        iteration["$value"]["target"]["targetSource"] = 2
+        payout = copy.deepcopy(next(n for n in _nodes(data) if n["$type"].endswith("ObtainCostAction+Data")))
+        payout["$value"].update(costType=0, isPercentValue=True, ignoreUspGainScalar=True)
+        payout["$value"]["costValue"] = {"useBlackboardKey": False, "blackboardKey": "", "value": .1}
+        payout["$value"]["target"]["targetSource"] = 0
+        iteration["$value"]["action"] = {"actionData": [payout]}
+        root["actionData"] = [finder, iteration]
+        p = self.compile_sequence(root)
+        self.world.start(p, action_id="native_allies")
+        for c in self.world.characters.values():
+            self.assertAlmostEqual(c.energy, c.energy_cap * .1)
+
     def test_two_layers_do_not_unlock_and_zero_layers_only_create_first_shred(self):
         self.follow_with_shred(2)
         self.assertEqual(self.world.count("1", "target", EffectType.STATUS_MIFU_KAITIAN_READY), 0)
@@ -153,7 +241,7 @@ class TestNativeCombatPrograms(unittest.TestCase):
         values = self.world._action_inputs["finish"]
         arts = self.world.characters["1"].attributes["arts_strength"]
         self.assertAlmostEqual(values["bb.yuanshi_multi"], 1 + reaction_enhancement("Damage", arts))
-        hits = [e.hit for e in self.finish.events if e.hit]
+        hits = [e.hit for e in walk_combat_events(self.finish.events) if e.hit]
         self.assertEqual(hits[-1].damage_tags, ("physical_anomaly",))
         self.assertFalse(hits[-1].can_crit)
         panel = self.world.characters["1"].panel
@@ -161,7 +249,7 @@ class TestNativeCombatPrograms(unittest.TestCase):
 
     def test_native_blackboard_formula_is_used_instead_of_inactive_literal(self):
         p = self.catalog.candidates("2", "battle")[0]
-        formulas = [e.hit_multiplier_formula for e in p.events if e.hit]
+        formulas = [e.hit_multiplier_formula for e in walk_combat_events(p.events) if e.hit]
         self.assertTrue(formulas)
         inputs = dict(p.parameters)
         self.assertTrue(any(f.evaluate(inputs) != 2 for f in formulas))
@@ -189,7 +277,7 @@ class TestNativeCombatPrograms(unittest.TestCase):
         p = self.compile_sequence(root)
         self.world.start(p, action_id="unknown")
         self.assertEqual(self.world.sp, 200)
-        self.assertFalse(any(e.resources for e in p.events))
+        self.assertFalse(any(e.resources or e.native_resources for e in walk_combat_events(p.events)))
         self.assertTrue(self.world.unresolved)
 
     def test_fixed_bonuses_follow_element_and_hit_tags(self):
