@@ -9,6 +9,7 @@ from typing import Any
 from ok.util.file import ensure_dir_for_file
 
 from src.core.paths import config_path
+from src.tasks.account.account_identity import account_name_from_line
 
 _LOCK = threading.Lock()
 _CACHE_MTIME = object()
@@ -98,26 +99,18 @@ def _parse_account_list_text_internal(account_list_text: Any) -> tuple[list[dict
         if not line:
             continue
 
-        # 账号页默认每行仅填写账号名；兼容旧格式：账号,密码。
-        if "," in line:
-            username_part, password_part = line.split(",", 1)
-            username = username_part.strip()
-            password = password_part.strip()
-        else:
-            username = line.strip()
-            password = ""
-
+        username = account_name_from_line(line)
         if not username:
             invalid_lines.append(line)
             continue
 
-        entries.append({"username": username, "password": password})
+        entries.append({"username": username})
 
     return entries, invalid_lines
 
 
 def parse_account_list_text(account_list_text: Any) -> list[dict[str, str]]:
-    """Parse account list text into a list of account dictionaries with username and password fields."""
+    """Parse account list text into account dictionaries containing only usernames."""
     entries, _ = _parse_account_list_text_internal(account_list_text)
     return entries
 
@@ -355,7 +348,7 @@ def _sync_account_list_text_on_data(data: dict[str, Any], text: str) -> tuple[di
         if account_id not in keep_ids and not accounts.get(account_id):
             registry.pop(account_id, None)
 
-    # 为了不在持久化存储中保留密码，保存时只写入用户名（每行一个）以替换原始文本
+    # 持久化时统一为每行一个账号名；若输入包含逗号，逗号后的内容不会保存。
     cleaned_lines = [entry.get("username", "") for entry in new_entries if entry.get("username", "")]
     normalized["account_list_text"] = "\n".join(cleaned_lines)
 
@@ -365,7 +358,6 @@ def _sync_account_list_text_on_data(data: dict[str, Any], text: str) -> tuple[di
         "reused_count": reused_count,
         "created_count": created_count,
         "identity_by_username_only": True,
-        "password_ignored_for_identity": True,
         "username_change_creates_new_id": True,
     }
     return normalized, summary
