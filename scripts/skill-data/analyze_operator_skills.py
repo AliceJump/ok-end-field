@@ -35,7 +35,8 @@ sys.stdout.reconfigure(encoding="utf-8")
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from src.data.effects import EFFECT_TERMS, EffectType, match_effect_terms
+from src.data.effects import EFFECT_TERMS, EffectType, match_effect_terms  # noqa: E402
+from src.data.operator_names import _normalize_name  # noqa: E402
 
 SNAPSHOT_ROOT = ROOT / "tools" / "wiki_catalog" / "operator_details"
 CHARACTER_SKILLS_DIR = ROOT / "assets" / "data" / "character_skills"
@@ -283,15 +284,21 @@ def _conditions(description: str) -> list[ConditionAnalysis]:
 
 
 def _skill_tables(tables: list[list[list[str]]]) -> tuple[list[list[str]], list[list[str]]]:
+    """识别技能数值表与材料表。
+
+    表头首列官方有两种写法：「技能等级」（常规）与「详细属性」（个别
+    终结技，如洁尔佩塔「秘杖·重力场」），列结构一致。
+    """
     rank_table: list[list[str]] = []
     material_table: list[list[str]] = []
     for table in tables:
         if not table:
             continue
         first = table[0][0] if table[0] else ""
-        if first == "技能等级" and any("材料消耗" in cell for row in table for cell in row):
+        is_skill_table = first in ("技能等级", "详细属性")
+        if is_skill_table and any("材料消耗" in cell for row in table for cell in row):
             material_table = table
-        elif first == "技能等级":
+        elif is_skill_table:
             rank_table = table
     return rank_table, material_table
 
@@ -310,12 +317,6 @@ def _load_current_characters() -> dict[str, dict]:
         data = json.loads(path.read_text(encoding="utf-8"))
         result[str(data.get("name") or path.stem)] = data
     return result
-
-
-def _normalize_name(name: str) -> str:
-    if name.startswith("管理员"):
-        return "管理员"
-    return name
 
 
 def _enhancements(skill: dict) -> list[dict]:
