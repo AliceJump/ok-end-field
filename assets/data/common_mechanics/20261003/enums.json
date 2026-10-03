@@ -1130,6 +1130,46 @@
         "value": 0
       }
     },
+    "Beyond.Gameplay.Core.ChangeSkillAction+LifeTimeType": {
+      "FinishByAction": {
+        "data_offset": 37072,
+        "field_index": 42295,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "Infinite": {
+        "data_offset": 37071,
+        "field_index": 42294,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "SpecificTime": {
+        "data_offset": 37070,
+        "field_index": 42293,
+        "raw_hex": "00",
+        "value": 0
+      }
+    },
+    "Beyond.Gameplay.Core.ChangeSkillAction+SkillSlot": {
+      "ComboSkill": {
+        "data_offset": 37068,
+        "field_index": 42290,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "NormalSkill": {
+        "data_offset": 37067,
+        "field_index": 42289,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "UltimateSkill": {
+        "data_offset": 37069,
+        "field_index": 42291,
+        "raw_hex": "04",
+        "value": 2
+      }
+    },
     "Beyond.Gameplay.Core.GameplayTagQuery+QueryType": {
       "ExceptAll": {
         "data_offset": 43762,

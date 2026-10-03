@@ -18,6 +18,7 @@ from src.data.combat_simulation import (
     NativeIteration,
     NativeListener,
     NativeResourceChange,
+    NativeSkillChange,
     NativeTarget,
     NativeTargetBinding,
     UnresolvedMechanic,
@@ -430,6 +431,14 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
         elif name == "AddGlobalCDTimer+Data":
             timer_ids.add(body["buffId"])
             emit(CombatEvent(at, "native_timer", timers=((body["buffId"], number(body["cdTime"])),)))
+        elif name == "ChangeSkillAction+Data":
+            if body["overrideCacheTime"]:
+                raise UnresolvedMechanic("Native replacement input cache override needs binding")
+            emit(CombatEvent(at, "native_skill_changed", skill_changes=(NativeSkillChange(
+                body["skillSlot"], body["targetSkillId"], resource_target(body["skillSource"]), body["lifeTimeType"],
+                number(body["duration"]), inherit_cooldown=body["inheritOriginSkillCdProgress"],
+                reverted_skill=body["revertedSkillId"] if body["specificRevertedSkillId"] else None,
+            ),)))
         elif name == "ObtainUspInNormalSkill+Data":
             settings = native_asset("SkillSetting")
             emit(CombatEvent(at, "battle_energy", native_resources=(NativeResourceChange(
