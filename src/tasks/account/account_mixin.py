@@ -20,7 +20,7 @@ class AccountMixin(LoginMixin):
                 "账号列表": (
                     "账号列表，每行一个手机号。\n"
                     "若一行包含逗号，只使用逗号前的账号内容，逗号后内容会直接忽略。\n"
-                    "切换账号时按登录界面可见的手机号前三位和后四位匹配；若可见号码重复，则优先选择未标记为『最近』的账号。"
+                    "切换账号时按登录界面可见的手机号前三位和后四位匹配；若可见号码重复，则结合『最近』标识与切换前账号确认目标。"
                 ),
             }
         )
@@ -37,6 +37,11 @@ class AccountMixin(LoginMixin):
                 True: ["多账户独立配置", "账号列表"],
             },
         }
+
+    def set_current_account(self, username, account_id):
+        """Bind the target account while retaining the last known logged-in account identity."""
+        self._previous_account_user = str(getattr(self, "current_user", "") or "").strip()
+        return super().set_current_account(username, account_id)
 
     def get_account_list(self):
         account_str = self.config.get("账号列表", "")
