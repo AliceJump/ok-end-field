@@ -74,6 +74,18 @@ class TestSkillMultiplier(unittest.TestCase):
         mult, _, _ = mod._skill_multiplier(skill)
         self.assertAlmostEqual(mult, 50 + 130 + 65)
 
+    def test_damage_interval_is_not_treated_as_multiplier(self):
+        skill = {"rank_stats": self._rows([
+            ("持续伤害倍率", "55%"),
+            ("持续伤害间隔（秒）", "0.5"),
+            ("爆炸伤害倍率", "450%"),
+            ("初始爆炸失衡值", "10"),
+        ])}
+        mult, stagger, cond = mod._skill_multiplier(skill)
+        self.assertAlmostEqual(mult, 505.0)
+        self.assertAlmostEqual(stagger, 10.0)
+        self.assertEqual(cond, [])
+
     def test_excludes_finisher_and_ult_window(self):
         skill = {"rank_stats": self._rows([
             ("初始爆炸伤害倍率", "140%"),
