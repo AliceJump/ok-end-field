@@ -3,6 +3,7 @@ import sys
 import threading
 import unittest
 from types import SimpleNamespace
+from typing import ClassVar
 from unittest.mock import MagicMock, patch
 
 _TOPMOST_MODULE = "src.core.base_mixin.topmost_mixin"
@@ -18,7 +19,7 @@ else:
 
 
 class _DeferredTimer:
-    instances: list["_DeferredTimer"] = []
+    instances: ClassVar[list["_DeferredTimer"]] = []
 
     def __init__(self, _interval, callback):
         self.callback = callback

@@ -97,10 +97,9 @@ class DeliverySendTask(Common):
 
                 self.to_model_area(area, "仓储节点")
 
-                if not claim_rewards_done:
-                    # 仅在领取流程真正完成时才置位，失败留到后续地区重试。
-                    if self._claim_delivery_rewards_in_current_node():
-                        claim_rewards_done = True
+                # 仅在领取流程真正完成时才置位，失败留到后续地区重试。
+                if not claim_rewards_done and self._claim_delivery_rewards_in_current_node():
+                    claim_rewards_done = True
 
                 if not self.wait_click_ocr(
                     match=self.lang.daily_routine_mixin.k_298d3284, box=self.box.top_left, time_out=5

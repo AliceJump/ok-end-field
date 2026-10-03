@@ -6,24 +6,26 @@
 
 在保留油猴脚本转发兼容模式的同时，项目内集成终末地官方地图的 `wss://ws.skland.com/ws/v1/game/endfield/map` WebSocket 客户端。
 每个账号（玩家角色）需要独立的 `hg/check` credential 才能建立连接。
-凭证可填写在任务直接输入（`content` 字段）或存储在账号配置页（`map_contents` 中），项目自动执行 OAuth 换取流程。
+凭证统一配置在全局「导航配置」的「真值content」，或存储在账号配置页
+（`map_contents` 中）后用「真值地图账号」选择。项目自动执行 OAuth 换取流程。
 
 ## 凭证输入方式
 
-### 方式一：任务直接输入
-`ItemNavigatorTask.default_config['content']` —— 直接填入 `hg/check` 接口返回的 `data.content` 字符串。
+### 方式一：全局导航配置直接输入
+`Nav Config` 的「真值content」直接填入 `hg/check` 接口返回的 `data.content` 字符串。
 
 ### 方式二：账号配置页（推荐）
 `AccountConfigTab` 中的"地图同步 content"区域，每个账号存储一份 `data.content`。
 数据持久化在 `configs/account_scoped_overrides.json` 的 `map_contents` 字段中。
 
 ### 凭证解析优先级
-1. 任务 `content` 非空 → 直接使用
-2. 任务 `地图账号` 非空 → 从 `map_contents` 读取该账号的 content
-3. 任务当前登录账号 context → 从 `map_contents` 读取；触发任务自身没有 context 时，还会读取 executor 当前运行任务的 `current_account_id/current_user`
+1. 全局「真值content」非空 → 直接使用
+2. 全局「真值地图账号」非空 → 从 `map_contents` 读取该账号的 content
+3. `MinimapPositionTask` 当前账号 context → 从 `map_contents` 读取
 
 ### 不带凭证时的回退
-`content` 和 `地图账号` 均为空时，自动启动旧的本地 WS 服务端模式（监听 `ws://127.0.0.1:3001`），兼容油猴脚本或其他外部来源。
+官方真值为空时，`MinimapPositionTask` 自动启动本地 WS 服务端模式
+（监听 `ws://127.0.0.1:3001`），兼容油猴脚本或其他外部来源。
 
 ## OAuth → WebSocket 登录全链路
 
@@ -91,7 +93,8 @@ sequenceDiagram
 | 1011 | C→S | 初始化/刷新：`{roleId, serverId}`（鉴权后每 5s 发送一次） |
 | 1012 | S→C | 位置数据：`{data: {pos: {x,y,z}, mapId, levelId}}` |
 
-客户端收到的位置数据通过 `_push_ws_payload()` 放入统一队列，与本地 WS 服务端模式共用同一套消费逻辑。
+客户端收到的位置数据通过 `_push_ws_payload()` 放入位置所有者队列。定位任务消费后，
+统一把融合坐标发布为 `RuntimeStateHub` 的 `world.pose` 主题，业务任务只读取该快照。
 
 ### 角色解析规则
 
@@ -107,8 +110,8 @@ flowchart TD
     A[AccountConfigTab 保存地图同步 content] --> B[account_scope_store.set_account_map_content]
     B --> C[configs/account_scoped_overrides.json]
     C --> D[map_contents account_id -> content]
-    E[ItemNavigatorTask 地图账号配置] --> F[get_account_map_content]
-    G[当前任务账号上下文] --> F
+    E[Nav Config 真值地图账号] --> F[get_account_map_content]
+    G[MinimapPositionTask 账号上下文] --> F
     D --> F
     F --> H[官方地图 WS 凭证解析]
 ```
@@ -146,49 +149,35 @@ configs/account_scoped_overrides.json
 ### 1. 游戏窗口退出检测
 `_is_game_window_alive()` 检查 `win32gui.IsWindow(hwnd) && win32gui.IsWindowVisible(hwnd)`。
 - WS 客户端主循环每轮收包前检查，窗口不存在则 `return` 退出协程，不会自动重连。
-- `ItemNavigatorTask.run()` 第一行也检查，失效时调用 `_cleanup_navigator_runtime()` 清理所有 WS 资源和箭头。
+- `ItemNavigatorTask.run()` 第一行也检查，失效时清理箭头；定位任务自行管理共享 WS 生命周期。
 
 ### 2. 消费者空闲超时
-导航任务每次通过 `_recv_ws_position_payload()` 或 `_recv_ws_position_payload_or_cached()` 读取位置时，更新 `_map_ws_last_consume_at = time.time()`。
+定位任务每次通过 `_recv_ws_position_payload()` 读取位置时，更新 `_map_ws_last_consume_at = time.time()`。
 WS 客户端线程检查 `_map_ws_should_stop_for_idle_consumer()`，若超过 `_map_ws_consumer_idle_timeout`（初始化默认 10s）未被读取，则主动退出。每次从队列取得新位置，或在队列为空时返回有效缓存位置，都会刷新消费时间。
 解决 executor disable 任务后 WS 线程继续空转的问题。
 
-## ItemNavigatorTask 关键变更
+## 运行时状态消费
 
-### 移除的功能
-- `support_multi_account` 标记 —— 不再参与多账号覆盖 UI
-- 旧版 JSON/Cookie/`key=value` 格式凭证解析
-
-### 新增配置项
-| 配置键 | 类型 | 说明 |
-|--------|------|------|
-| `content` | str | 可选。直接填写 `hg/check data.content` |
-| `地图账号` | dropdown | 可选。从账号配置页选择已保存 content 的账号 |
-
-### `run()` 流程
+### `ItemNavigatorTask.run()` 流程
 ```mermaid
 flowchart TD
     A[ItemNavigatorTask.run] --> B{游戏窗口是否存在}
-    B -->|否| C[清理 WS 和箭头]
-    B -->|是| D[读取 content 或地图账号 content]
-    D --> E{有凭证}
-    E -->|是| F[停止本地 WS 服务]
-    F --> G[启动官方地图 WS 客户端]
-    E -->|否| H[停止官方 WS 客户端]
-    H --> I[启动本地 WS 服务]
-    G --> J[读取位置 payload 或缓存]
-    I --> J
-    J --> K[匹配物品点位并绘制箭头]
-    K --> L[处理标记按键]
-    L --> M[延迟保存 marked_points.json]
+    B -->|否| C[清理箭头]
+    B -->|是| D[确保小地图定位服务可用]
+    D --> E[world_pose 请求采样并读取快照]
+    E --> F[匹配物品点位并绘制箭头]
+    F --> G[处理标记按键]
+    G --> H[延迟保存 marked_points.json]
 ```
 
 ## 相关文件
 
 | 文件 | 职责 |
 |------|------|
-| `src/tasks/mixin/ws_position_mixin.py` | WS 客户端核心：OAuth 换取、HTTP 签名、WS 协议、退出控制 |
-| `src/tasks/trigger/ItemNavigatorTask.py` | 导航任务：凭证解析、位置消费、箭头渲染、标记逻辑 |
+| `src/localization/ws_position_mixin.py` | WS 客户端核心：OAuth 换取、HTTP 签名、WS 协议、退出控制 |
+| `src/tasks/localization/MinimapPositionTask.py` | 共享定位生产者：凭证解析、WS 生命周期、`world.pose` 发布 |
+| `src/tasks/mixin/runtime_state_mixin.py` | 任务侧状态读取与定位采样控制面 |
+| `src/tasks/trigger/ItemNavigatorTask.py` | 物品导航：读取 `world.pose`、箭头渲染、标记逻辑 |
 | `src/tasks/account/account_scope_store.py` | 持久化：`map_contents` 字段的读写、账号解析 |
 | `src/gui/AccountConfigTab.py` | UI：账号配置页，包含地图 content 编辑 |
 

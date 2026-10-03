@@ -145,6 +145,17 @@ def merge_bool_options(option_keys: dict):
     return transform
 
 
+def rename_choice_value(old_value: str, new_value: str):
+    """把下拉框旧显示值迁移为新显示值；其他值保持不变。"""
+
+    def transform(config, new_key):
+        if config.get(new_key) == old_value:
+            return new_value
+        return _NO_MIGRATION
+
+    return transform
+
+
 def legacy_battle_mode_to_bool(config, new_key):
     """把旧「战斗配置」下拉框值迁移为「使用独立配置」布尔开关。
 

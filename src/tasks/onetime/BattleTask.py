@@ -3,6 +3,7 @@ import re
 import traceback
 from dataclasses import dataclass
 from datetime import datetime
+from typing import ClassVar
 
 from ok import TaskDisabledException
 
@@ -20,9 +21,9 @@ from src.data.world_map_utils import get_stage_category, get_world_map_matcher, 
 from src.icons import Icons
 from src.tasks.mixin.battle_mixin import BattleMixin
 from src.tasks.mixin.common import Common
-from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.navigation_detection_scope import NavigationDetectionScope, get_navigation_detection_scope
-from src.tasks.mixin.zip_line_mixin import ZipLineMixin
+from src.tasks.navigation.mixin.map_mixin import MapMixin
+from src.tasks.navigation.mixin.zip_line_mixin import ZipLineMixin
 
 MAX_STORAGE_TICKET = 1000
 ONE_MEDICINE_RESTORE_ENERGY = 40
@@ -59,10 +60,10 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
     REWARD_TIER_KEEP = "保持当前"
     REWARD_TIER_LOW = "低阶"
     REWARD_TIER_HIGH = "高阶"
-    REWARD_TIER_STAGE_SET = {"干员经验", "干员进阶", "技能提升", "武器进阶"}
+    REWARD_TIER_STAGE_SET: ClassVar[set[str]] = {"干员经验", "干员进阶", "技能提升", "武器进阶"}
     CFG_PRE_ENTER_TEAM_SWITCH = "指定的队伍编号"
     PRE_ENTER_TEAM_SWITCH_NONE = "不换队伍"
-    PRE_ENTER_TEAM_SWITCH_TEAM_OPTIONS = ["1", "2", "3", "4", "5"]
+    PRE_ENTER_TEAM_SWITCH_TEAM_OPTIONS: ClassVar[list[str]] = ["1", "2", "3", "4", "5"]
     CFG_USE_LIMITED_STAMINA_POTION = "消耗限时体力药"
     CFG_STAMINA_START_DATE = "刷体力开始日期"
     CFG_STAMINA_CONTINUE_COUNT = "体力刷完后继续刷取次数"
@@ -141,7 +142,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
         }
         self.config_type[self.CFG_PRE_ENTER_TEAM_SWITCH] = {
             "type": "drop_down",
-            "options": [self.PRE_ENTER_TEAM_SWITCH_NONE] + self.PRE_ENTER_TEAM_SWITCH_TEAM_OPTIONS,
+            "options": [self.PRE_ENTER_TEAM_SWITCH_NONE, *self.PRE_ENTER_TEAM_SWITCH_TEAM_OPTIONS],
         }
         task_group = {"隐藏": []}
         all_groups = {
@@ -426,9 +427,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
                 # 只消耗一种类型后退出（如需全部消耗可去掉break）
                 break
         # 统一出口，保证异常时也能返回主界面
-        if not self.safe_back(feature=fL.battle_page_icon, time_out=10, once_time_out=2):
-            return False
-        return True
+        return self.safe_back(feature=fL.battle_page_icon, time_out=10, once_time_out=2)
 
     def battle(self):
         self._reset_battle_state()
@@ -1105,10 +1104,7 @@ class BattleTask(Common, MapMixin, ZipLineMixin, BattleMixin):
             if is_gather:
                 self.log_info(f"未找到奖励发放点，尝试二次寻路: {e}")
 
-                if self._gather_retry_navigate():
-                    return True
-
-                return False
+                return bool(self._gather_retry_navigate())
 
             raise
 

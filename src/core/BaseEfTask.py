@@ -1,3 +1,4 @@
+import contextlib
 import threading
 import time
 from datetime import datetime
@@ -24,6 +25,8 @@ from src.core.global_config_store import (
     ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME,
     KEY_CONFIG_NAME,
     get_global_config,
+    migrate_task_minimap_values_to_owner,
+    migrate_task_nav_values_to_global,
     migrate_task_zip_line_values_to_global,
 )
 from src.data.lang import get_lang_accessor
@@ -183,10 +186,8 @@ class BaseEfTask(
                     return
             except Exception:
                 # 前台输入已开始后异常：清理（释放按键）并结束，不再次调用父类返回
-                try:
+                with contextlib.suppress(Exception):
                     interaction.send_key_up("esc", foreground=True)
-                except Exception:
-                    pass
                 return
         super().back(*args, after_sleep=after_sleep, **kwargs)
 
@@ -286,9 +287,10 @@ class BaseEfTask(
                 value_migrations.update(vtable)
         migrate_config_file_keys(self.__class__.__name__, key_migrations)
         migrate_config_values(self.__class__.__name__, value_migrations)
-        # 在框架 Config 构造（verify_config 会删除任务文件中不在 default 的滑索键）之前，
-        # 把任务文件中的滑索旧值转存到全局 Zip Line Config.json，避免全局侧 legacy 收集
-        # 在任务文件滑索键已被删除后读不到值。
+        # 在框架 Config 构造（verify_config 会删除任务文件中不在 default 的旧键）之前，
+        # 把共享小地图参数、导航真值与滑索旧值转存到对应所有者，避免数据被提前删除。
+        migrate_task_minimap_values_to_owner(self)
+        migrate_task_nav_values_to_global(self.__class__.__name__)
         migrate_task_zip_line_values_to_global(self.__class__.__name__)
         super().load_config()
 
@@ -456,10 +458,8 @@ class BaseEfTask(
         - 根据配置 `发生异常时终止游戏` 决定是继续（记录日志）还是终止（记录并不抛出）
         - 对于 `TaskDisabledException` 总是重新抛出以便上层处理
         """
-        try:
+        with contextlib.suppress(Exception):
             self.screenshot(prefix)
-        except Exception:
-            pass
 
         if not self.config.get("发生异常时终止游戏", False):
             self.log_info("发生异常，继续游戏", notify=True)
@@ -481,10 +481,8 @@ class BaseEfTask(
         name = task_name or getattr(self, "current_task", None) or "UnknownTask"
         if runner is not None and hasattr(runner, "get_current_task_name"):
             name = task_name or runner.get_current_task_name() or name
-        try:
+        with contextlib.suppress(Exception):
             self.screenshot(f"fail_{name}")
-        except Exception:
-            pass
 
         if runner is not None and hasattr(runner, "set_task_failure"):
             runner.set_task_failure(message, task_name=task_name, screenshot_taken=True)
@@ -561,11 +559,8 @@ class BaseEfTask(
         # 3. 为所有配置项补充默认值（安全处理）
         for group_items in groups.values():
             for item in group_items:
-                if isinstance(item, str):
-                    key = item
-                else:
-                    # 处理 self.CFG_XXX 常量的情况
-                    key = str(item)
+                # 处理 self.CFG_XXX 常量的情况
+                key = item if isinstance(item, str) else str(item)
 
                 # 关键修复：避免 NoneType 错误
                 if key not in self.default_config:

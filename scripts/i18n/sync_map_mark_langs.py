@@ -188,7 +188,7 @@ def main():
     if ITEM_NAMES_JSON.exists():
         item_names = json.loads(ITEM_NAMES_JSON.read_text(encoding="utf-8"))
         official_zh = set()
-        for tid, langs in merged.items():
+        for _tid, langs in merged.items():
             zh = langs.get("zh_CN")
             if zh:
                 official_zh.add(zh.strip())

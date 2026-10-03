@@ -24,8 +24,8 @@ DELIVERY_TARGET_TICKET_NUM_OPTIONS = _DATA["delivery_target_ticket_num_options"]
 # 结构说明：
 # - task_model_area: 进入任务地图后使用的任务区域名，可省略，省略时默认等于地区名
 # - feature_label_area_code: 接单特征标签前缀
-# - delivery_locations: 当前地区下可识别的委托地点名
-# - delivery_targets_by_location: 每个地点对应的送货目标 NPC 列表
+# - delivery_locations: 当前地区下可识别的委托地点列表，每项为 {name, coordinate: {x, y, z}}
+# - delivery_targets_by_location: 每个地点对应的送货终点列表，每项为 {name, coordinate: {x, y, z}}
 # - transfer_search_area: 每个地点在地图中搜索传送点时使用的区域，支持 preset 或坐标两种写法
 # - ocr_priority_locations: OCR 识别时优先匹配的地点顺序
 DELIVERY_AREA_CONFIG = _DATA["delivery_area_config"]

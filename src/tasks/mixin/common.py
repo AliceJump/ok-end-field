@@ -31,10 +31,7 @@ def build_name_patterns(find_name: str):
     """
 
     # 1️⃣ 滑窗拆分
-    if len(find_name) >= 2:
-        keys = [find_name[i : i + 2] for i in range(len(find_name) - 1)]
-    else:
-        keys = [find_name]
+    keys = [find_name[i : i + 2] for i in range(len(find_name) - 1)] if len(find_name) >= 2 else [find_name]
 
     patterns = []
 

@@ -1,6 +1,8 @@
 # ===== device layer =====
+import contextlib
 import ctypes
 import ctypes.wintypes
+import math
 import time
 
 import win32gui
@@ -9,9 +11,6 @@ user32 = ctypes.windll.user32
 
 # Windows 鼠标事件：相对移动
 MOUSEEVENTF_MOVE = 0x0001
-
-
-import math
 
 
 def smooth_drag(
@@ -53,10 +52,8 @@ def smooth_drag(
 
 
 def _safe_print(message):
-    try:
+    with contextlib.suppress(OSError):
         print(message)
-    except OSError:
-        pass
 
 
 def calc_direction_step(
@@ -242,7 +239,7 @@ def active_and_send_mouse_delta(
         base_dy = dy // abs_steps
         remain_dy = dy % abs_steps
 
-        for i in range(abs_steps):
+        for _i in range(abs_steps):
             move_dx = base_dx
             move_dy = base_dy
 
@@ -376,7 +373,5 @@ def run_in_window(hwnd, func, *args, **kwargs):
 
     finally:
         if need_restore and prev and win32gui.IsWindow(prev):
-            try:
+            with contextlib.suppress(Exception):
                 win32gui.SetForegroundWindow(prev)
-            except Exception:
-                pass

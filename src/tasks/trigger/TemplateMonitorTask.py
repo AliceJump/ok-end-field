@@ -35,7 +35,7 @@ class TemplateMonitorTask(BaseEfTask, TriggerTask):
                 "模板ID": {"type": "drop_down", "options": feature_options},
                 "模板HSV处理器": {
                     "type": "drop_down",
-                    "options": [""] + hsv_options,
+                    "options": ["", *hsv_options],
                     "sub_configs": {name: ["启用反转"] for name in hsv_options},
                 },
             }

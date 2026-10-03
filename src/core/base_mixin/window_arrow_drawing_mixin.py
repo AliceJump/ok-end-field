@@ -165,10 +165,10 @@ class WindowArrowOverlay(QWidget):
             lx, ly, lw, lh = physical_rect_to_logical(left, top, width, height)
 
             self.setGeometry(
-                int(round(lx)),
-                int(round(ly)),
-                max(1, int(round(lw))),
-                max(1, int(round(lh))),
+                round(lx),
+                round(ly),
+                max(1, round(lw)),
+                max(1, round(lh)),
             )
             if self._has_content() and self._should_show_overlay():
                 self.show()

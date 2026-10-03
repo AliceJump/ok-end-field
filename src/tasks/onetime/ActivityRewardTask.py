@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from qfluentwidgets import FluentIcon
 
 from src.data.FeatureList import FeatureList as fL
@@ -9,7 +11,7 @@ from src.tasks.mixin.mouse_scan_mixin import MouseScanMixin
 class ActivityRewardTask(Common, MouseScanMixin):
     """活动奖励子任务：每周事务/理智补给/刮刮乐，日常任务经 DailyFeature 接入。"""
 
-    ACTIVITY_REWARDS = ["周常奖励", "理智补给", "刮刮乐"]
+    ACTIVITY_REWARDS: ClassVar = ["周常奖励", "理智补给", "刮刮乐"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

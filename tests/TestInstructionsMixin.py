@@ -124,7 +124,15 @@ class TestItemNavigatorInstructions(unittest.TestCase):
 
     def test_instructions_explain_how_to_obtain_content(self):
         """「获取 content」必须给出可照做的分步操作，而不是只说去哪个接口拿。"""
-        for expected in ("F12", "开发者工具", "网络 / Network", "响应 / Response", "data.content", "地图账号"):
+        for expected in (
+            "F12",
+            "开发者工具",
+            "网络 / Network",
+            "响应 / Response",
+            "data.content",
+            "真值content",
+            "真值地图账号",
+        ):
             self.assertIn(expected, self.html)
 
     def test_content_steps_show_the_real_urls(self):

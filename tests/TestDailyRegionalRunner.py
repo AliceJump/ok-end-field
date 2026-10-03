@@ -1,5 +1,6 @@
 import unittest
 from types import SimpleNamespace
+from typing import ClassVar
 from unittest.mock import Mock, patch
 
 from src.tasks.onetime.RegionalBuildTask import RegionalBuildTask
@@ -41,7 +42,7 @@ def _make_runner(
 
 
 class TestDailyRegionalRunner(unittest.TestCase):
-    AREAS = ["武陵", "试验园区"]
+    AREAS: ClassVar = ["武陵", "试验园区"]
 
     def test_buy_staple_goods_accepts_config_keys_before_navigation(self):
         runner = object.__new__(RegionalBuildTask)

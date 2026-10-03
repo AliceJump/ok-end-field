@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextlib
+
 from ok import og
 from ok.gui.tasks.LabelAndWidget import LabelAndWidget
 from PySide6.QtCore import QEasingCurve, QPoint, QPropertyAnimation, QSize, Qt, Signal
@@ -296,31 +298,23 @@ class _ActionRow(QWidget):
         if token.startswith("sleep_"):
             self.combo.setCurrentIndex(self.combo.findData(_SLEEP_KEY))
             self._update_spin_visibility()
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 self.spin.setValue(max(0.1, float(token[6:])))
-            except (ValueError, TypeError):
-                pass
         elif token.startswith("normal_"):
             self.combo.setCurrentIndex(self.combo.findData(_NORMAL_KEY))
             self._update_spin_visibility()
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 self.spin.setValue(max(0.1, float(token[7:])))
-            except (ValueError, TypeError):
-                pass
         elif token.startswith("ult_"):
             self.combo.setCurrentIndex(self.combo.findData(_ULT_ACTION_KEY))
             self._update_spin_visibility()
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 self.spin.setValue(max(1, int(token[4:])))
-            except (ValueError, TypeError):
-                pass
         elif token.isdigit():
             self.combo.setCurrentIndex(self.combo.findData(_SKILL_ACTION_KEY))
             self._update_spin_visibility()
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 self.spin.setValue(max(1, int(token)))
-            except (ValueError, TypeError):
-                pass
         else:
             idx = self.combo.findData(token)
             self.combo.setCurrentIndex(idx if idx >= 0 else 0)
@@ -986,10 +980,8 @@ class ConditionalRotationPanel(QWidget):
         raw_ast = self.config.get(KEY_COND_SEQUENCE, [])
         clean_ast, warnings = normalize_ast(raw_ast)
         for w in warnings:
-            try:
+            with contextlib.suppress(Exception):
                 og.app.logger.info(f"实时条件: {w}")
-            except Exception:
-                pass
         dlg = _ConditionListEditDialog(clean_ast, self.window())
         if dlg.exec():
             self.config[KEY_COND_SEQUENCE] = dlg.to_ast()

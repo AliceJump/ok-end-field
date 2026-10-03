@@ -5,12 +5,14 @@ from qfluentwidgets import FluentIcon, NavigationItemPosition
 
 from src.core.BattleConfig import BATTLE_CONFIG_NAME
 from src.core.global_config_store import ZIP_LINE_CONFIG_NAME, get_all_visible_configs
+from src.core.NavConfig import NAV_CONFIG_NAME
 
 GLOBAL_CONFIG_GROUPS = {
     "战斗配置": [BATTLE_CONFIG_NAME],
     "键位配置": ["Game Hotkey Config"],
     "基础配置": ["Ensure Main Once Action Sleep"],
     "滑索配置": [ZIP_LINE_CONFIG_NAME],
+    "导航配置": [NAV_CONFIG_NAME],
 }
 
 # 启动后空闲预热：在用户点进本页之前把配置卡片建好，消除首次切换的卡顿。

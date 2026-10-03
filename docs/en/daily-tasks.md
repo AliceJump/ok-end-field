@@ -6,7 +6,7 @@ Back: [Documentation home](index.md) / [README](https://github.com/AliceJump/ok-
 
 The Daily Tasks card no longer uses a "config selection" dropdown just to hide parameters. Task choices are shown directly in fixed execution groups. A list item means that task participates in this daily run; the program owns the order so users cannot split shared-state groups or the combat block.
 
-Subtask parameters still live on each subtask's own card and can be overridden per account from Account Configuration. Daily stamina farming and daily auto delivery continue to use the dedicated "Daily Stamina Farming" and "Daily Auto Delivery" cards.
+Subtask parameters still live on each subtask's own card and can be overridden per account from Account Configuration. Daily stamina farming and daily auto delivery continue to use the dedicated "Daily Stamina Farming" and "Daily Auto Delivery" cards; the latter exposes target ticket amount, region, and arrival method.
 
 If ESC is pressed repeatedly, raise "Settings / Delay after main-screen single action" (1.5 or higher recommended).
 
