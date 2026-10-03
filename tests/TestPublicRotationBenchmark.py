@@ -43,11 +43,21 @@ class TestBenchmarkReportPaths(unittest.TestCase):
         self.assertIsNotNone(result["ultimate_guard_replay"]["first_normal_attack_input_seconds"])
 
     def test_json_report_under_scratch_directory_is_accepted(self):
-        with tempfile.TemporaryDirectory(dir=benchmark.ROOT / "tmp") as directory:
-            path = Path(directory) / "nested" / "report.json"
-            with patch.object(benchmark, "benchmark", return_value={"scope": "offline"}):
-                self.assertEqual(benchmark.main(["--output", str(path)]), 0)
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            path = root / benchmark.REPORT_FILE
+            with patch.object(benchmark, "ROOT", root), \
+                 patch.object(benchmark, "benchmark", return_value={"scope": "offline"}):
+                self.assertEqual(benchmark.main(["--output", benchmark.REPORT_FILE]), 0)
             self.assertEqual(json.loads(path.read_text(encoding="utf-8")), {"scope": "offline"})
+
+    def test_output_flag_uses_the_fixed_report_path(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            with patch.object(benchmark, "ROOT", root), \
+                 patch.object(benchmark, "benchmark", return_value={}):
+                self.assertEqual(benchmark.main(["--output"]), 0)
+            self.assertTrue((root / benchmark.REPORT_FILE).is_file())
 
     def assert_invalid_output(self, path):
         with patch.object(benchmark, "benchmark") as calculate:

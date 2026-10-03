@@ -45,4 +45,6 @@ uv run --locked python -X utf8 scripts/skill-data/benchmark_public_rotation.py -
 uv run --locked python -X utf8 scripts/skill-data/benchmark_public_rotation.py --regen 10
 ```
 
+`--output` 将报告保存到固定的 `tmp/rotation-benchmark/prydwen-laevatain.json`；也可省略参数值。脚本仅比较上述固定队伍，因此不接受其他输出路径。
+
 下一步应直接用游戏内日志比较：战技确认间隔、终结技到下一动作的间隔、实际循环窗口，以及是否出现技能被过早打断。

@@ -3,7 +3,6 @@
 import argparse
 import json
 import math
-import os
 import sys
 from dataclasses import asdict
 from pathlib import Path
@@ -18,6 +17,7 @@ from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 
 TEAM = ["莱万汀", "狼卫", "安塔尔", "艾尔黛拉"]
 SOURCE = "https://www.prydwen.gg/arknights-endfield/characters/laevatain/"
+REPORT_FILE = "tmp/rotation-benchmark/prydwen-laevatain.json"
 
 
 class ReplayHud:
@@ -159,22 +159,21 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--regen", type=float, default=8.0)
     parser.add_argument("--seconds", type=float, default=180.0)
-    parser.add_argument("--output", type=Path)
+    parser.add_argument("--output", nargs="?", const=REPORT_FILE, choices=[REPORT_FILE],
+                        help=f"保存报告到固定路径 {REPORT_FILE}")
     args = parser.parse_args(argv)
     output_path = None
     if args.output:
-        # Canonicalize symlinks and require the directory separator after tmp.
-        # Keep the checked canonical value as the one used by the write below.
-        output_path = os.path.realpath(args.output)
-        allowed_root = os.path.realpath(ROOT / "tmp")
-        if not output_path.startswith(allowed_root + os.sep) or Path(output_path).suffix.lower() != ".json":
-            parser.error("output must be a JSON file under the repository tmp directory")
+        # The selector never becomes a path: this benchmark has one fixed report.
+        output_path = (ROOT / REPORT_FILE).resolve()
+        if not output_path.is_relative_to((ROOT / "tmp").resolve()):
+            parser.error("report path must remain under the repository tmp directory")
     if not all(math.isfinite(value) and value > 0 for value in (args.seconds, args.regen)):
         parser.error("seconds and regen must be finite and positive")
     result = json.dumps(benchmark(args.regen, args.seconds), ensure_ascii=False, indent=2)
     if output_path:
-        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        Path(output_path).write_text(result + "\n", encoding="utf-8")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(result + "\n", encoding="utf-8")
     print(result)
     return 0
 
