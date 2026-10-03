@@ -13,6 +13,35 @@ from src.data.effects import EffectType
 
 
 class TestEnemyCombatState(unittest.TestCase):
+    def test_infliction_expires_at_twenty_seconds(self):
+        enemy = EnemyCombatState()
+        enemy.apply_infliction(EffectType.ATTACH_COLD)
+        enemy.tick(19.9)
+        self.assertIs(enemy.infliction_element, EffectType.ATTACH_COLD)
+        enemy.tick(0.1 + 1e-9)
+        self.assertIsNone(enemy.infliction_element)
+        self.assertEqual(enemy.infliction_stacks, 0)
+        self.assertEqual(enemy.infliction_time_left, 0)
+        self.assertIsNone(enemy.apply_infliction(EffectType.ATTACH_BURN))
+
+    def test_same_element_refreshes_timer_and_cross_element_clears_it(self):
+        enemy = EnemyCombatState()
+        enemy.apply_infliction(EffectType.ATTACH_COLD)
+        enemy.tick(19)
+        enemy.apply_infliction(EffectType.ATTACH_COLD)
+        self.assertEqual(enemy.infliction_time_left, 20)
+        enemy.tick(19)
+        self.assertEqual(enemy.infliction_stacks, 2)
+        enemy.apply_infliction(EffectType.ATTACH_BURN)
+        self.assertEqual(enemy.infliction_time_left, 0)
+
+    def test_tick_expires_timed_states_without_affecting_shred(self):
+        enemy = EnemyCombatState(shred_stacks=3, states={EffectType.STATUS_FROZEN: 2,
+                                                      EffectType.STATUS_BURNING: 4})
+        enemy.tick(2)
+        self.assertEqual(enemy.states, {EffectType.STATUS_BURNING: 2})
+        self.assertEqual(enemy.shred_stacks, 3)
+
     def test_first_infliction_sets_one_stack_without_event(self):
         enemy = EnemyCombatState()
         self.assertIsNone(enemy.apply_infliction(EffectType.ATTACH_NATURAL))

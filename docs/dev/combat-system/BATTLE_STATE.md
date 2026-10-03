@@ -39,7 +39,9 @@ BattleState:
       stagger_max: float
       staggered: bool              # 失衡中 → 承伤×1.3，普攻=处决 [已确认]
       finisher_used: bool          # 本次失衡是否已消耗处决 [已确认机制]
-      arts_inflictions: {heat: {stacks: 0-4, t_left}, ...}  # 20s 刷新，4层上限 [已确认]
+      infliction_element: heat|cold|electromagnetic|natural|null  # 任意时刻最多一种法术附着
+      infliction_stacks: 0-4       # 同元素叠层；异元素反应消耗全部已有附着
+      infliction_time_left: float # 首次/同元素附着刷新为20s；到期清空元素和层数
       vulnerable: {stacks: 0-4}    # 物理破防层 [已确认]
       solidified: bool             # 固结（中小型敌人）[已确认]
       electrified: bool
@@ -57,7 +59,7 @@ BattleState:
 模拟器**只推进事件**，伤害是事件的产物。事件类型（含本地排轴 token 对应）：
 
 ```
-CastSkill(char, skill)          # 战技，扣100技力 [已确认]
+CastSkill(char, skill)          # 按当前技能/阶段的实际技力消耗扣费；常见100，特殊阶段可为0或其他值
 HitEnemy(char, skill, enemy, t) # 命中：伤害结算+附着+失衡+充能（结算帧 ? 未确认）
 GainSP(amount, source)          # 重击/处决/返还/极限闪避
 CastLinkCombo(char)             # 连携技（按E，窗口5s）→ 排轴 token "e"
@@ -102,16 +104,22 @@ Wait(t)                         # 排轴 token "sleep_N"
 ```python
 while not battle_over:
     ev = event_queue.pop()
+    dt = ev.time - state.time
+    for enemy in state.enemies:
+        enemy.tick(dt)              # 命中前推进附着/持续状态计时，避免过期附着触发反应
+    regen_sp(dt)                   # 自然恢复约8点/秒
+    state.time = ev.time
     apply_state_changes(ev)          # SP/能量/附着/层数/CD
     if ev is HitEnemy:
         dmg = compute_damage(state, ev)   # DAMAGE_FORMULA 全乘区
         enemy.hp -= dmg; enemy.stagger += skill.stagger
-        apply_infliction(enemy, skill.element)
+        for effect in skill.effects:
+            if effect in ATTACH_ELEMENTS:  # 仅显式 ATTACH_* 效果；伤害元素不等于附着
+                enemy.apply_infliction(effect)
         char.energy += skill.energy_gain
         if enemy.stagger >= enemy.stagger_max:
             trigger StaggerBreak
     if ev is BasicAttack and enemy.staggered and not enemy.finisher_used:
         convert to Finisher          # 处决倍率 + 回技力
     check_link_triggers(state)       # 5s 窗口开启
-    regen_sp(dt)                     # 100点/12.5s
 ```

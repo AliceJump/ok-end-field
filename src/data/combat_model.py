@@ -25,6 +25,7 @@ ATTACH_ELEMENTS: frozenset[EffectType] = frozenset(
 )
 
 MAX_INFLICTION_STACKS = 4  # 附着层数上限（状态等级 I~IV）
+INFLICTION_DURATION_SECONDS = 20.0
 MAX_SHRED_STACKS = 4  # 破防层数上限
 MAX_LINK_STACKS = 4  # 连击层数上限
 
@@ -36,6 +37,7 @@ class EnemyCombatState:
     # 当前法术附着：互斥结构（官方：异元素反应消耗全部已有附着）
     infliction_element: EffectType | None = None
     infliction_stacks: int = 0
+    infliction_time_left: float = 0.0
     # 破防层数（物理侧独立于法术附着，二者可共存）
     shred_stacks: int = 0
     # 其余持续状态 → 剩余持续时间（秒）；由编排器负责 tick 与过期
@@ -55,14 +57,27 @@ class EnemyCombatState:
         if self.infliction_element is None:
             self.infliction_element = element
             self.infliction_stacks = 1
+            self.infliction_time_left = INFLICTION_DURATION_SECONDS
             return None
         if self.infliction_element is element:
             self.infliction_stacks = min(self.infliction_stacks + 1, MAX_INFLICTION_STACKS)
+            self.infliction_time_left = INFLICTION_DURATION_SECONDS
             return EffectType.STATUS_SPELL_BURST
         # 异元素交叉：反应类型由新施加元素决定（EFFECT_SYSTEM §2 反应组合表）
         self.infliction_element = None
         self.infliction_stacks = 0
+        self.infliction_time_left = 0.0
         return _ELEMENT_REACTION[element]
+
+    def tick(self, elapsed: float) -> None:
+        if elapsed <= 0:
+            return
+        self.infliction_time_left = max(0.0, self.infliction_time_left - elapsed)
+        if self.infliction_time_left == 0:
+            self.infliction_element = None
+            self.infliction_stacks = 0
+        self.states = {effect: remaining - elapsed for effect, remaining in self.states.items()
+                       if remaining > elapsed}
 
     def add_shred(self, stacks: int = 1) -> None:
         """叠破防层（击飞/倒地 +1；首次物理异常只叠层不触发效果）。"""

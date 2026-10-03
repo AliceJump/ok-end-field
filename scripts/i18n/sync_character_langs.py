@@ -58,6 +58,8 @@ NEW_OP_LANGS = ("en_US", "ja_JP", "ko_KR", "es_ES")
 # 新角色默认由 pypinyin 自动生成拼音 key；此处仅保留已验证的
 # 官方拼写与多音字例外（如 什/缪/茜 等，拼音库默认读音可能错误）。
 ZH_KEY_MAP = {
+    "提弗洛斯": "typhoeus",
+    "噗切娜": "purrchena",
     "庄方宜": "zhuang_fangyi",
     "洛茜": "rossi",
     "汤汤": "tangtang",

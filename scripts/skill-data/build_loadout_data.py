@@ -228,7 +228,6 @@ def parse_weapon(item: dict, item_id: str) -> dict:
 
 def parse_equip(item: dict, item_id: str, equip_tags: dict[str, tuple[str, str]]) -> dict:
     doc = item.get("document") or {}
-    tables = _all_tables(doc)
 
     part = set_name = ability = stat_tag = None
     quality = None
@@ -333,9 +332,33 @@ def parse_matrix(item: dict, item_id: str, matrix_tags: dict[str, tuple[str, str
 
 # ---------------------------------------------------------------- 主流程
 
+def validate_snapshot(manifest: dict, snap_dir: Path) -> None:
+    """Refuse truncated captures before overwriting the exported databases."""
+    required = {"2": "weapon", "4": "equip", "7": "matrix"}
+    items = manifest.get("items", [])
+    counts = manifest.get("catalog_counts", {})
+    if manifest.get("failure_count") != 0 or manifest.get("failures"):
+        raise ValueError("快照包含抓取失败")
+    if set(manifest.get("subtypes", [])) != set(required):
+        raise ValueError("快照必须覆盖武器、装备和基质")
+    if manifest.get("success_count") != len(items):
+        raise ValueError("成功计数与条目数不一致")
+    for subtype, kind in required.items():
+        entries = [entry for entry in items if entry.get("subtype") == subtype]
+        expected = counts.get(subtype)
+        if not isinstance(expected, int) or expected <= 0 or len(entries) != expected:
+            raise ValueError(f"子类 {subtype} 的抓取不完整")
+        if len({entry.get("item_id") for entry in entries}) != expected:
+            raise ValueError(f"子类 {subtype} 存在重复条目")
+        if any(entry.get("kind") != kind or not (snap_dir / entry["detail_file"]).is_file()
+               for entry in entries):
+            raise ValueError(f"子类 {subtype} 缺少有效详情")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--snapshot", default=None, help="item_details 快照目录名（默认最新）")
+    parser.add_argument("--allow-partial", action="store_true", help="显式允许不完整快照覆盖导出数据")
     args = parser.parse_args()
 
     if args.snapshot:
@@ -347,6 +370,12 @@ def main() -> int:
             return 1
         snap_dir = candidates[-1]
     manifest = json.loads((snap_dir / "manifest.json").read_text(encoding="utf-8"))
+    if not args.allow_partial:
+        try:
+            validate_snapshot(manifest, snap_dir)
+        except (ValueError, KeyError, TypeError) as exc:
+            print(f"无法使用物品快照: {exc}", file=sys.stderr)
+            return 1
     print(f"快照: {snap_dir.name}  成功 {manifest['success_count']} 条")
 
     # itemId → name 解析器：zh_cn catalog 全子类 + 本快照 manifest
