@@ -348,9 +348,9 @@ def build(research: Path, texts: Path, out: Path):
             for i, p in enumerate(tables["CharacterPotentialTable"][native]["potentialUnlockBundle"])
         ]
         baseline = {
-            "potential": None if key == "endministrator" else 0 if canonical["star"] == 6 else 5,
+            "potential": 3 if key == "endministrator" else 0 if canonical["star"] == 6 else 5,
             "talent_policy": "all_combat_talents_max_rank",
-            "potential_basis": "unverified_unlocks"
+            "potential_basis": "user_endministrator_p3"
             if key == "endministrator"
             else "user_six_star_p0"
             if canonical["star"] == 6

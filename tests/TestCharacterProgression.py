@@ -32,13 +32,9 @@ class TestCharacterProgression(unittest.TestCase):
             with self.subTest(character=key):
                 self.assertIsNotNone(p)
                 self.assertEqual(len(character.skills), 4)
-                expected = None if key == "endministrator" else 0 if character.star == 6 else 5
+                expected = 3 if key == "endministrator" else 0 if character.star == 6 else 5
                 self.assertEqual(p.baseline.potential, expected)
-                if expected is None:
-                    with self.assertRaisesRegex(ValueError, "unverified"):
-                        _ = p.active_potentials
-                else:
-                    self.assertEqual(len(p.active_potentials), expected)
+                self.assertEqual(len(p.active_potentials), expected)
                 for talent in p.talents:
                     self.assertEqual(talent.level, max(t.level for t in p.talent_ranks if t.slot == talent.slot))
         self.assertEqual(next(t for t in characters["typhoeus"].progression.talents if t.slot == 0).level, 3)
@@ -46,9 +42,8 @@ class TestCharacterProgression(unittest.TestCase):
     def test_endministrator_uses_shared_current_talents_and_can_override_potential(self):
         p = load_character_progression("endministrator")
         self.assertEqual(p.native_id, "chr_9000_endmin")
-        self.assertEqual(p.baseline.potential_basis, "unverified_unlocks")
-        self.assertIsNone(p.baseline.potential)
-        p = replace(p, baseline=replace(p.baseline, potential=3))
+        self.assertEqual(p.baseline.potential_basis, "user_endministrator_p3")
+        self.assertEqual(p.baseline.potential, 3)
         self.assertTrue(all(t.effect_id.startswith("chr_9000_endmin") for t in p.talents))
         self.assertIn("+30%", p.talents[0].description)
         self.assertEqual(p.active_potentials[0].resource_changes[0].amount, 50)
@@ -59,6 +54,9 @@ class TestCharacterProgression(unittest.TestCase):
         p0 = replace(p, baseline=replace(p.baseline, potential=0))
         self.assertEqual(p0.active_potentials, ())
         self.assertEqual(p0.talents, p.talents)
+        unknown = replace(p, baseline=replace(p.baseline, potential=None))
+        with self.assertRaisesRegex(ValueError, "unverified"):
+            _ = unknown.active_potentials
 
     def test_snapshot_hashes_and_resource_paths_point_to_complete_native_trees(self):
         index = json.loads((SNAPSHOT / "index.json").read_text(encoding="utf-8"))
