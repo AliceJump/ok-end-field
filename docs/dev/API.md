@@ -386,7 +386,7 @@ def is_combat_ended(self)
 def wait_in_combat(self, time_out=3, click=False)
 def get_skill_bar_count(self)
 def ocr_lv(self)
-def use_ult(self, ult_sequence: str = None)
+def use_ult(self, ult_sequence: str = None, wait_for_team_recovery: bool = True)
 def use_link_skill(self)
 def approach_enemy(self)
 def auto_battle(self, no_battle: bool = False)
@@ -397,7 +397,7 @@ def auto_battle(self, no_battle: bool = False)
 - `in_team` 从首个框开始匹配 `skill_1`，随后再命中一个连续技能即确认队伍状态（至少 2 个特征；`skill_1` 位于最后一个框时为单人队伍，1 个即可）。
 - `in_combat` 要求技能条数量达到阈值、处于队伍且没有等级 UI。
 - `is_combat_ended` 要求内部退出条件连续命中两次；该条件是“出现等级 UI 或不在队伍”。
-- `use_ult(None)` 按 `1..4` 寻找可用终极技；传值时只尝试该角色。返回是否释放成功。
+- `use_ult(None)` 按 `1..4` 寻找可用终极技；传值时只尝试该角色。`wait_for_team_recovery` 只影响 Alt 释放路径：`False` 可显式跳过头像消失/恢复同步等待，默认 `True`。当前 `TimedCombatLogic` 同样传 `True`，因此时间排轴会保留该 HUD 恢复等待；长按释放路径无论该参数取值都保留原同步等待。返回是否释放成功。
 - `use_link_skill` 仅在识别到连携技特征后发送配置化战斗键 `e`。
 - `auto_battle` 每轮委托 `AutoCombatLogic.run`，全局保护超时 420 秒；`no_battle=True` 传给战斗逻辑，使其等待而不主动战斗。成功/失败返回布尔值。
 - 战斗结束并非通过 YOLO 单一判断；当前循环还结合战斗时间和 `battle_space_left`/`b` 特征。
