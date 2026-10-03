@@ -47,6 +47,7 @@ BattleState:
       electrified: bool
       corrosion: {t_left}
       combustion: {t_left}         # DoT
+      dot_effects: {effect: DoTRef} # 事件编排器保存source/level/generation/expires_at/period；与计时容器分离
       buffs: [BuffRef]             # 增幅/脆弱/易伤/弱化/庇护(我方)…
 
   global:
@@ -62,6 +63,7 @@ BattleState:
 CastSkill(char, skill)          # 按当前技能/阶段的实际技力消耗扣费；常见100，特殊阶段可为0或其他值
 HitEnemy(char, skill, enemy, t) # 命中：伤害结算+附着+失衡+充能（结算帧 ? 未确认）
 GainSP(amount, source)          # 重击/处决/返还/极限闪避
+                               # 未知重击回复量不生成GainSP；定量来源和命中必须确认
 CastLinkCombo(char)             # 连携技（按E，窗口5s）→ 排轴 token "e"
 CastUltimate(char)              # 终结技 → 排轴 token "ult_N"
 BasicAttack(char, seg)          # 普攻第N段 → 排轴 token "normal_N"
@@ -73,6 +75,9 @@ VulnerableConsumed(enemy, n)    # 猛击/碎甲消耗破防层（触发骏卫类
 SwapChar(from, to)              # 切人换位
 Interrupt(enemy)                # 打断蓄力（+失衡）
 Wait(t)                         # 排轴 token "sleep_N"
+ApplyDoT(enemy, effect, source, level, duration, period, t) # 由明确的持续伤害效果/反应产生
+DoTTick(enemy, effect, source, level, generation, t)       # 定时结算，按当前面板、不暴击
+ClearDoT(enemy, effect)          # 净化/移除；使已入队的旧版本tick失效
 ```
 
 排轴序列示例（对应 AutoCombatLogic 已有 token 语法）：
@@ -101,6 +106,8 @@ Wait(t)                         # 排轴 token "sleep_N"
 
 ## 4. 模拟器最小可行循环（伪代码）
 
+`EnemyCombatState.tick(dt)` 只负责计时和状态过期，不计算伤害或入队。模拟器的事件编排器在施加DoT时保存来源、异常等级、截止时间和版本，并安排首个结算事件；清除或重新施加时旧版本事件失效。燃烧按社区口径每秒一跳、持续10秒，倍率口径仍须按 `ROTATION_REQUIREMENTS C4` 的假设选择。截止时刻已到点的末次tick由DoT记录结算，即使计时容器已移除到期状态；之后删除记录，不再安排下一次。
+
 ```python
 while not battle_over:
     ev = event_queue.pop()
@@ -110,6 +117,22 @@ while not battle_over:
     regen_sp(dt)                   # 自然恢复约8点/秒
     state.time = ev.time
     apply_state_changes(ev)          # SP/能量/附着/层数/CD
+    if ev is ApplyDoT:
+        dot = register_dot(enemy, ev)  # 新generation；expires_at=ev.time+duration，保留source/level
+        enemy.dot_effects[ev.effect] = dot
+        if ev.time + dot.period <= dot.expires_at:
+            event_queue.push(DoTTick.from_dot(dot, ev.time + dot.period))
+    if ev is ClearDoT:
+        enemy.dot_effects.pop(ev.effect, None)
+    if ev is DoTTick:
+        dot = enemy.dot_effects.get(ev.effect)
+        if dot and ev.generation == dot.generation and ev.time <= dot.expires_at:
+            enemy.hp -= compute_dot_damage(state, ev)  # 当前source面板，使用记录的异常等级，不暴击
+            next_tick = ev.time + dot.period
+            if next_tick <= dot.expires_at:
+                event_queue.push(DoTTick.from_dot(dot, next_tick))
+            else:
+                enemy.dot_effects.pop(ev.effect, None) # 末次结算后停止；旧版本/取消的事件不扣血
     if ev is HitEnemy:
         dmg = compute_damage(state, ev)   # DAMAGE_FORMULA 全乘区
         enemy.hp -= dmg; enemy.stagger += skill.stagger

@@ -26,6 +26,7 @@ ATTACH_ELEMENTS: frozenset[EffectType] = frozenset(
 
 MAX_INFLICTION_STACKS = 4  # 附着层数上限（状态等级 I~IV）
 INFLICTION_DURATION_SECONDS = 20.0
+EXPIRY_EPSILON_SECONDS = 1e-9
 MAX_SHRED_STACKS = 4  # 破防层数上限
 MAX_LINK_STACKS = 4  # 连击层数上限
 
@@ -72,12 +73,13 @@ class EnemyCombatState:
     def tick(self, elapsed: float) -> None:
         if elapsed <= 0:
             return
-        self.infliction_time_left = max(0.0, self.infliction_time_left - elapsed)
+        remaining = self.infliction_time_left - elapsed
+        self.infliction_time_left = remaining if remaining > EXPIRY_EPSILON_SECONDS else 0.0
         if self.infliction_time_left == 0:
             self.infliction_element = None
             self.infliction_stacks = 0
         self.states = {effect: remaining - elapsed for effect, remaining in self.states.items()
-                       if remaining > elapsed}
+                       if remaining - elapsed > EXPIRY_EPSILON_SECONDS}
 
     def add_shred(self, stacks: int = 1) -> None:
         """叠破防层（击飞/倒地 +1；首次物理异常只叠层不触发效果）。"""
