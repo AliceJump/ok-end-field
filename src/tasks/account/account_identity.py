@@ -25,11 +25,3 @@ def visible_account_label(username: str) -> str:
     if prefix:
         return f"{prefix}****{suffix}"
     return suffix
-
-
-def visible_account_pattern(username: str) -> re.Pattern:
-    """Build a tolerant OCR pattern for the visible account prefix and suffix."""
-    prefix, suffix = visible_account_parts(username)
-    if prefix:
-        return re.compile(rf"{re.escape(prefix)}\D*{re.escape(suffix)}")
-    return re.compile(re.escape(suffix))
