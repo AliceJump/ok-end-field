@@ -132,7 +132,7 @@ class TestDailyBoatState(unittest.TestCase):
         self.assertTrue(runner.execute_task("other", lambda: True))
         self.assertFalse(task._daily_boat_state_confirmed)
 
-    def test_fatal_task_failure_stops_following_tasks_and_kills_game(self):
+    def test_fatal_task_failure_skips_following_tasks_without_killing_game(self):
         task = _RunnerHarness()
         task.config = {"critical": True, "after": True}
         calls = []
@@ -147,13 +147,13 @@ class TestDailyBoatState(unittest.TestCase):
         )
         runner.run()
 
-        self.assertTrue(task.killed)
+        self.assertFalse(task.killed)
         self.assertEqual(calls, [])
-        self.assertEqual(runner.final_summary["status"], "关键任务失败")
+        self.assertEqual(runner.final_summary["status"], "部分失败")
         self.assertEqual(runner.final_summary["per_round"][0]["failed"], ["critical"])
         self.assertEqual(runner.final_summary["per_round"][0]["skipped"], ["after"])
 
-    def test_fatal_task_exception_stops_following_tasks_and_kills_game(self):
+    def test_fatal_task_exception_skips_following_tasks_without_killing_game(self):
         task = _RunnerHarness()
         task.config = {"critical": True, "after": True}
         calls = []
@@ -171,9 +171,9 @@ class TestDailyBoatState(unittest.TestCase):
         )
         runner.run()
 
-        self.assertTrue(task.killed)
+        self.assertFalse(task.killed)
         self.assertEqual(calls, [])
-        self.assertEqual(runner.final_summary["status"], "关键任务失败")
+        self.assertEqual(runner.final_summary["status"], "部分失败")
         self.assertIn("boom", runner.failure_details[""]["critical"])
 
     def test_confirmed_boat_state_skips_map_transfer(self):
