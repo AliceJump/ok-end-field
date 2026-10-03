@@ -3,9 +3,12 @@
 from __future__ import annotations
 
 import json
+import re
+from dataclasses import replace
 from pathlib import Path
 
 from src.data.character_progression import load_character_progression
+from src.data.damage_modifiers import bind_damage_modifier
 from src.data.effects import EffectType, match_effect_terms
 from src.data.skill_types import (
     Character,
@@ -38,7 +41,7 @@ _SKILL_TYPE_MAP: dict[str, SkillType] = {
 }
 
 
-def _load_skill_effects(effects_data: list[dict]) -> list[SkillEffect]:
+def _load_skill_effects(effects_data: list[dict], *, skill_id="", skills=None, rank=None, progression=None) -> list[SkillEffect]:
     """加载技能效果列表，严格保留“未知”和“未声明”。
 
     旧实现会把缺失字段静默补成 value=0 / duration="" / target=enemy / count=1，
@@ -60,6 +63,11 @@ def _load_skill_effects(effects_data: list[dict]) -> list[SkillEffect]:
                 EffectType(effect_data["subject_effect_id"])
                 if effect_data.get("subject_effect_id")
                 else None
+            ),
+            damage_modifier=(
+                bind_damage_modifier(effect_data["damage_modifier"], skill_id=skill_id,
+                                     skills=skills or {}, rank=rank, progression=progression)
+                if effect_data.get("damage_modifier") else None
             ),
         )
         effects.append(effect)
@@ -145,7 +153,7 @@ def _load_trigger_condition(
     return text, [eff for _, eff in match_effect_terms(text)], []
 
 
-def _load_enhancement(enh_data: dict) -> SkillEnhancement:
+def _load_enhancement(enh_data: dict, **effect_context) -> SkillEnhancement:
     """加载一个独立条件效果。"""
     trigger_condition, trigger_effects, trigger_effect_groups = _load_trigger_condition(
         enh_data.get("trigger_condition", ""),
@@ -155,7 +163,7 @@ def _load_enhancement(enh_data: dict) -> SkillEnhancement:
         trigger_condition=trigger_condition,
         trigger_effects=trigger_effects,
         trigger_effect_groups=trigger_effect_groups,
-        effects=_load_skill_effects(enh_data.get("effects") or []),
+        effects=_load_skill_effects(enh_data.get("effects") or [], **effect_context),
         resource_changes=_load_resource_changes(enh_data.get("resource_changes") or []),
         replaces_base_action=bool(enh_data.get("replaces_base_action", False)),
         spirit_cost_override=enh_data.get("spirit_cost_override"),
@@ -166,21 +174,29 @@ def _load_enhancement(enh_data: dict) -> SkillEnhancement:
     )
 
 
-def _load_character_from_json(file_path: Path) -> Character:
+def _load_character_from_json(file_path: Path, *, skill_rank: int | None = None, potential: int | None = None) -> Character:
     """从JSON文件加载角色数据（兼容新旧两种格式）。"""
     with open(file_path, encoding="utf-8") as f:
         data = json.load(f)
 
     character_id = data["character_id"]
     character_element = _element_of(data.get("element", ""))
+    progression = load_character_progression(character_id)
+    if potential is not None:
+        if not isinstance(potential, int) or not 0 <= potential <= 5 or progression is None:
+            raise ValueError("Potential override requires native progression and an integer in 0..5")
+        progression = replace(progression, baseline=replace(progression.baseline, potential=potential, potential_basis="explicit_override"))
+    skill_rows = {s.get("skill_id") or _default_skill_id(character_id, s["skill_type"]): s for s in data.get("skills", [])}
 
     # 解析技能列表
     skills: list[Skill] = []
     for skill_data in data.get("skills", []):
-        enhancements = [_load_enhancement(enh_data) for enh_data in skill_data.get("enhancements") or []]
+        effect_context = {"skill_id": skill_data.get("skill_id") or _default_skill_id(character_id, skill_data["skill_type"]),
+                          "skills": skill_rows, "rank": skill_rank, "progression": progression}
+        enhancements = [_load_enhancement(enh_data, **effect_context) for enh_data in skill_data.get("enhancements") or []]
 
         # 加载技能基础效果；旧格式的 attach/status/clear 纯ID列表合并进 effects
-        effects = _load_skill_effects(skill_data.get("effects") or [])
+        effects = _load_skill_effects(skill_data.get("effects") or [], **effect_context)
         legacy_ids = []
         for legacy_key in ("attach_effects", "status_effects", "clear_effects"):
             legacy_ids.extend(skill_data.get(legacy_key, []) or [])
@@ -217,27 +233,29 @@ def _load_character_from_json(file_path: Path) -> Character:
         profession=data.get("profession", ""),
         weapon_type=data.get("weapon_type", ""),
         skills=skills,
-        progression=load_character_progression(character_id),
+        progression=progression,
     )
 
 
-def load_all_characters() -> dict[str, Character]:
+def load_all_characters(*, skill_rank: int | None = None) -> dict[str, Character]:
     """加载所有角色数据。"""
     characters: dict[str, Character] = {}
     # JSON 文件位于 assets/data/character_skills/ 目录
     characters_dir = Path(__file__).resolve().parent.parent.parent / "assets" / "data" / "character_skills"
 
     for json_file in sorted(characters_dir.glob("*.json")):
-        character = _load_character_from_json(json_file)
+        character = _load_character_from_json(json_file, skill_rank=skill_rank)
         characters[character.character_id] = character
 
     return characters
 
 
-def get_character(character_id: str) -> Character | None:
+def get_character(character_id: str, *, skill_rank: int | None = None, potential: int | None = None) -> Character | None:
     """获取指定角色。"""
-    all_chars = load_all_characters()
-    return all_chars.get(character_id)
+    if not re.fullmatch(r"[a-z0-9_]+", character_id):
+        return None
+    path = Path(__file__).resolve().parents[2] / "assets/data/character_skills" / (character_id + ".json")
+    return _load_character_from_json(path, skill_rank=skill_rank, potential=potential) if path.is_file() else None
 
 
 __all__ = [

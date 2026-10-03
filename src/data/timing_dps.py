@@ -9,6 +9,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from src.data.character_mechanics import load_character_mechanics, mechanic_blockers
+from src.data.character_skills import get_character, load_all_characters
+from src.data.damage_modifiers import DamageModifierSpec
+from src.data.damage_resolution import FixedDamagePanel, TimedDamageState
 from src.data.hidden_state_expectation import HiddenStateExpectation, load_damage_envelopes
 from src.data.skill_allowlist import load_characters
 from src.data.skill_rotation import _read_entries
@@ -20,6 +23,7 @@ _ATTACH = {
     "ATTACH_NATURAL": "自然",
 }
 _SUPPORT = re.compile(r"增幅|脆弱|易伤|连击|恢复.{0,6}技力|回复.{0,6}技力|提高.{0,6}攻击力")
+_FIXED_BASELINE = Path(__file__).resolve().parents[2] / "assets/data/fixed_damage_baseline.json"
 
 
 @dataclass(frozen=True)
@@ -31,6 +35,13 @@ class DamageQuote:
     requires: frozenset[str] = frozenset()
     produces: frozenset[str] = frozenset()
     retain: bool = False
+    element: str = "物理"
+    damage_bonus: float = 0.0
+    crit_rate: float = 0.0
+    crit_damage: float = 0.0
+    amplification: float = 0.0
+    panel: FixedDamagePanel | None = None
+    modifiers: tuple[DamageModifierSpec, ...] = ()
 
 
 def load_damage_quotes(team: list[str], path: Path | None = None) -> dict[str, DamageQuote]:
@@ -39,7 +50,9 @@ def load_damage_quotes(team: list[str], path: Path | None = None) -> dict[str, D
     The existing conservative snapshot changes only the dependent battle skill.
     No full-link4 multiplier is applied: its shared consumable pool is not monitored.
     """
+    path = path or _FIXED_BASELINE
     snapshots = load_characters()
+    canonical = {c.name: c for c in load_all_characters().values()}
     mechanics = load_character_mechanics()
     hidden = HiddenStateExpectation(team, mechanics)
     envelopes = load_damage_envelopes(path)
@@ -48,6 +61,11 @@ def load_damage_quotes(team: list[str], path: Path | None = None) -> dict[str, D
         name = row.get("character")
         if name not in team:
             continue
+        profile = row.get("profile") or {}
+        character = canonical.get(name)
+        if character is not None and profile:
+            character = get_character(character.character_id, skill_rank=profile.get("skill_rank"), potential=profile.get("potential"))
+        battle_skills = [s for s in (row.get("skills") or []) if isinstance(s, dict) and s.get("type") == "战技"]
 
         def best(kind, row=row):
             values = []
@@ -108,6 +126,15 @@ def load_damage_quotes(team: list[str], path: Path | None = None) -> dict[str, D
             frozenset(required),
             frozenset(produced),
             retain,
+            element=next((s.element.value for s in character.skills if s.skill_type.value == "战技"), row.get("element", "物理")) if character else row.get("element", "物理"),
+            damage_bonus=max((float(s.get("bonus_pct", 0)) / 100 for s in battle_skills), default=0),
+            crit_rate=float((row.get("panel") or {}).get("暴击率", 0)),
+            crit_damage=float((row.get("panel") or {}).get("暴击伤害", 0)),
+            amplification=max((float(s.get("amplification_pct", 0)) / 100 for s in battle_skills), default=0),
+            panel=FixedDamagePanel(**row["panel"]["damage_basis"]) if (row.get("panel") or {}).get("damage_basis") else None,
+            modifiers=tuple(e.damage_modifier for s in character.skills if s.skill_type.value == "战技"
+                            for e in s.effects if e.damage_modifier is not None
+                            and e.damage_modifier.trigger in {"on_hit", "on_cast"}) if character else (),
         )
     return quotes
 
@@ -130,6 +157,8 @@ class CyclePlan:
     seconds: float
     damage: float
     opening_damage: float
+    required_sp: tuple[tuple[str, float], ...] = ()
+    support_followups: tuple[tuple[str, str, float], ...] = ()
 
     @property
     def dps(self):
@@ -166,6 +195,8 @@ def evaluate_cycle(sequence: tuple[CastOption, ...], regen: float = 8.0) -> Cycl
     ):
         return None
     now, points = 0.0, 300.0
+    modifier_state = TimedDamageState(tuple(cast.slot for cast in sequence))
+    required_sp, support_followups = {}, {}
     ready = {}
     attached, expires = None, 0.0
     previous_phase, previous_start = None, 0.0
@@ -173,7 +204,22 @@ def evaluate_cycle(sequence: tuple[CastOption, ...], regen: float = 8.0) -> Cycl
     for cycle in range(64):
         damage = 0.0
         for index, cast in enumerate(sequence):
-            start = max(now, ready.get(cast.slot, 0), now + max(0, cast.sp_gate - points) / regen)
+            gate, followup_ready = cast.sp_gate, now
+            if len(sequence) > 1:
+                followup = sequence[(index + 1) % len(sequence)]
+                matches = any(
+                    followup.damage.element in spec.elements or "all" in spec.elements
+                    for spec in cast.damage.modifiers
+                )
+                if matches:
+                    # Fund the following attack before applying a short support effect.
+                    # Otherwise the estimator spends its entire lifetime waiting for SP/CD.
+                    delay = max(.3, cast.handoff)
+                    gate = min(300, max(gate, cast.sp_cost + followup.sp_gate - delay * regen))
+                    followup_ready = ready.get(followup.slot, 0) - delay
+                    support_followups[cast.slot] = (cast.slot, followup.slot, delay)
+            required_sp[cast.slot] = gate
+            start = max(now, ready.get(cast.slot, 0), followup_ready, now + max(0, gate - points) / regen)
             points = min(300, points + (start - now) * regen)
             if start >= expires:
                 attached = None
@@ -183,14 +229,32 @@ def evaluate_cycle(sequence: tuple[CastOption, ...], regen: float = 8.0) -> Cycl
                     tuple(round(max(0, ready.get(item.slot, 0) - start), 5) for item in sequence),
                     attached,
                     round(max(0, expires - start), 5) if attached else 0,
+                    modifier_state.phase_signature(start),
                 )
                 if cycle > 0 and phase == previous_phase:
                     return CyclePlan(
-                        tuple(item.slot for item in sequence), start - previous_start, previous_damage, opening_damage
+                        tuple(item.slot for item in sequence), start - previous_start, previous_damage, opening_damage,
+                        tuple(required_sp.items()), tuple(support_followups.values()),
                     )
                 previous_phase, previous_start = phase, start
             funded = not cast.damage.requires or attached in cast.damage.requires
-            damage += cast.damage.battle if funded else cast.damage.conservative
+            # This generic estimator only applies explicit base cast/hit producers.
+            # Conditional branches, random outcomes and passive listeners need actual outcomes.
+            for spec in cast.damage.modifiers:
+                modifier_state.apply(spec, source_actor=cast.slot, now=start, event="on_cast", enemy="target")
+            effect_time = start + max(0.3, cast.handoff)
+            quoted = modifier_state.resolve_quote(
+                cast.damage.battle if funded else cast.damage.conservative,
+                actor=cast.slot, enemy="target", element=cast.damage.element, now=effect_time,
+                damage_bonus=cast.damage.damage_bonus, crit_rate=cast.damage.crit_rate,
+                crit_damage=cast.damage.crit_damage, amplification=cast.damage.amplification,
+                panel=cast.damage.panel,
+            )
+            if quoted is None:
+                return None
+            damage += quoted
+            for spec in cast.damage.modifiers:
+                modifier_state.apply(spec, source_actor=cast.slot, now=effect_time, event="on_hit", enemy="target")
             if funded and cast.damage.requires:
                 attached = None
             points -= cast.sp_cost
@@ -199,7 +263,6 @@ def evaluate_cycle(sequence: tuple[CastOption, ...], regen: float = 8.0) -> Cycl
             # Different operators can overlap after the current skill commits;
             # a one-slot cycle repeats the same operator and therefore keeps the
             # conservative same-actor actionable boundary.
-            effect_time = start + max(0.3, cast.handoff)
             delay = cast.actionable if len(sequence) == 1 else cast.handoff
             now = start + max(0.3, delay)
             points = min(300, points + (now - start) * regen)

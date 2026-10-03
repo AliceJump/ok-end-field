@@ -103,7 +103,14 @@ def _parse_stat_clause(sentence: str) -> dict | None:
         m = re.fullmatch(pat, s)
         if m:
             return {"kind": "pct", "stat": key, "value": float(m.group(1))}
+    for skill_type, bucket in SKILL_TYPE_BUCKETS.items():
+        m = re.fullmatch(rf"{skill_type}伤害(?:\+|提升|提高)(\d+(?:\.\d+)?)%", s)
+        if m:
+            return {"kind": "pct", "stat": bucket, "value": float(m.group(1))}
     for el in ELEMENTS:
+        m = re.fullmatch(rf"{el}增幅\+(\d+(?:\.\d+)?)%", s)
+        if m:
+            return {"kind": "pct", "stat": f"amp_{el}", "value": float(m.group(1))}
         m = re.fullmatch(rf"{el}伤害\+(\d+(?:\.\d+)?)%", s)
         if m:
             return {"kind": "pct", "stat": f"elem_{el}", "value": float(m.group(1))}
@@ -382,11 +389,12 @@ def _operator_secondary_stats(snap_dir: Path) -> dict[str, str]:
 def compute_character(key: str, char: dict, build: dict, weapons: dict, equipments: dict,
                       primary_map: dict[str, str], wiki_item_ids: dict[str, list[str]],
                       secondary_map: dict[str, str] | None = None,
-                      full_overrides: dict[tuple[str, str], float] | None = None) -> dict:
+                      full_overrides: dict[tuple[str, str], float] | None = None,
+                      additional_mods: list[dict] | None = None) -> dict:
     trace: list[str] = []
     name = str(char.get("name") or key)
     element = str(char.get("element") or "")
-    mods: list[dict] = []
+    mods: list[dict] = list(additional_mods or [])
 
     base_rows = (char.get("base_stats") or {}).get("rows") or {}
     levels = (char.get("base_stats") or {}).get("levels") or []
@@ -503,6 +511,14 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
     panel[primary] = round(primary_total, 2)
     if secondary:
         panel[secondary] = round(secondary_total, 2)
+    # Fixed gear/attribute components are reusable by per-hit combat resolution.
+    # Temporary attack bonuses apply to the white attack, without multiplying flat attack again.
+    panel["damage_basis"] = {
+        "attack_white": atk_base, "attack_percent": atk_pct, "attack_flat": atk_fixed,
+        "attribute_factor": 1 + 0.005 * primary_total + 0.002 * secondary_total,
+        "crit_rate": crit_rate, "crit_damage": crit_dmg,
+        "amplification": {el: merged.get(f"pct_amp_{el}", 0) / 100 for el in ELEMENTS},
+    }
 
     # 技能伤害（A 层裸伤害）
     skill_results = []
@@ -516,7 +532,8 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
         skill_element = skill.get("element") or element
         bonus += merged.get(f"pct_elem_{skill_element}", 0)
         dmg_mult = 1 + bonus / 100
-        non_crit = atk * (mult / 100) * dmg_mult
+        amplification = merged.get(f"pct_amp_{skill_element}", 0)
+        non_crit = atk * (mult / 100) * dmg_mult * (1 + amplification / 100)
         crit_expect = non_crit * (1 + crit_rate * crit_dmg)
         entry = {
             "skill_id": skill.get("skill_id"),
@@ -525,6 +542,7 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
             "multiplier_pct": round(mult, 1),
             "stagger": stagger,
             "bonus_pct": round(bonus, 1),
+            "amplification_pct": round(amplification, 1),
             "non_crit": round(non_crit, 1),
             "crit_expect": round(crit_expect, 1),
             "conditional_rows": conditional,
@@ -532,7 +550,7 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
         overrides = _SKILL_FULL_MULTIPLIER_OVERRIDES if full_overrides is None else full_overrides
         full_mult = overrides.get((key, str(skill.get("skill_id") or "")))
         if full_mult is not None and full_mult != mult:
-            full_non_crit = atk * (full_mult / 100) * dmg_mult
+            full_non_crit = atk * (full_mult / 100) * dmg_mult * (1 + amplification / 100)
             entry["full_multiplier_pct"] = round(full_mult, 1)
             entry["full_non_crit"] = round(full_non_crit, 1)
             entry["full_expect"] = round(full_non_crit * (1 + crit_rate * crit_dmg), 1)

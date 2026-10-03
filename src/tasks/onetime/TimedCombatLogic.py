@@ -13,12 +13,12 @@ from src.data.combat_observation import (
     normalize_enemy_presence,
 )
 from src.data.skill_rotation import generate_damage_rotation
+from src.data.skill_timing import SkillTiming, load_skill_timings
 from src.data.team_phase_planner import (
     CombatPhase,
     TeamPhasePlanner,
     build_team_burst_plans,
 )
-from src.data.skill_timing import SkillTiming, load_skill_timings
 from src.data.timing_dps import build_options, load_damage_quotes, optimize_cycle
 
 
@@ -751,6 +751,16 @@ class TimedCombatLogic:
             return False
 
         profiles, sp_gate, expected_cost = self._battle_context(token)
+        if self.plan is not None and sp_gate is not None:
+            followup = next((item for item in self.plan.support_followups if item[0] == token), None)
+            if followup is not None and self._slot_available(followup[1]):
+                _, next_token, delay = followup
+                next_profiles, _, _ = self._battle_context(next_token)
+                if not next_profiles or now + delay < self.state_until.get(next_token, 0):
+                    return False
+                if any(now + delay < self.cooldowns.get(profile.skill_id, 0) for profile in next_profiles):
+                    return False
+                sp_gate = max(sp_gate, dict(self.plan.required_sp).get(token, sp_gate))
         if (
             not profiles
             or sp_gate is None

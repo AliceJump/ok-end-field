@@ -565,10 +565,37 @@
             "effects": [
                 {
                     "effect_id": "VULN_ALL",
-                    "value": 1,
+                    "value": null,
                     "duration": null,
                     "target": "enemy",
-                    "count": 1
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "purrchena_ultimate:VULN_ALL",
+                        "bucket": "vulnerability",
+                        "elements": [
+                            "寒冷",
+                            "灼热",
+                            "电磁",
+                            "自然"
+                        ],
+                        "recipient": "enemy",
+                        "trigger": "special_gift_hit",
+                        "strength": {
+                            "base": {
+                                "row": "脆弱效果"
+                            }
+                        },
+                        "duration": {
+                            "row": "脆弱持续时间（秒）"
+                        },
+                        "potential_adjustments": [
+                            {
+                                "passive": "chr_0038_purrche_potential_5",
+                                "parameter": "rate_vul",
+                                "operation": "multiply_strength"
+                            }
+                        ]
+                    }
                 }
             ],
             "enhancements": [],

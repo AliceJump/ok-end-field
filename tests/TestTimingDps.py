@@ -3,6 +3,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+from src.data.damage_modifiers import DamageBucket, DamageModifierSpec, ModifierMagnitude
 from src.data.skill_timing import load_skill_timings
 from src.data.timing_dps import (
     CastOption,
@@ -143,12 +144,69 @@ class TestTimingDps(unittest.TestCase):
         self.assertEqual(quote.ult, 2000)
         self.assertEqual(quote.link, 1000)
 
-    def test_complex_hidden_battle_quote_uses_expected_value_not_full_endpoint(self):
-        quote = load_damage_quotes(["提弗洛斯", "洁尔佩塔"])["提弗洛斯"]
+    def test_legacy_complex_hidden_battle_quote_uses_expected_value_not_full_endpoint(self):
+        legacy = Path(__file__).resolve().parents[1] / "assets/data/damage_baseline.json"
+        quote = load_damage_quotes(["提弗洛斯", "洁尔佩塔"], legacy)["提弗洛斯"]
         self.assertGreater(quote.battle, quote.conservative)
         self.assertLess(quote.battle, 54196.0)
         self.assertAlmostEqual(quote.battle, (17639.3 + 54196.0) / 2, places=1)
         self.assertAlmostEqual(quote.conservative, 17639.3, places=1)
+
+    def test_default_quotes_use_fixed_build_and_explicit_ember_rank9_profile(self):
+        quote = load_damage_quotes(["余烬"])["余烬"]
+        self.assertAlmostEqual(quote.panel.attack(), 3165.5, places=1)
+        self.assertAlmostEqual(quote.battle, quote.conservative)
+        self.assertAlmostEqual(quote.battle, 3165.4584 * 3.12 * 1.025, places=1)
+
+    def test_timed_vulnerability_changes_following_damage_and_optimal_order(self):
+        spec = DamageModifierSpec("short_vuln", DamageBucket.VULNERABILITY, ("寒冷",),
+                                  "enemy", ModifierMagnitude(.5), "on_hit", duration=1)
+        support = option("1", 0, cost=0, duration=.3, modifiers=(spec,), retain=True)
+        carry = option("2", 1000, duration=.3, element="寒冷")
+        supported = evaluate_cycle((support, carry))
+        unsupported = evaluate_cycle((carry, support))
+        self.assertAlmostEqual(supported.damage, 1500)
+        self.assertAlmostEqual(unsupported.damage, 1500)
+        self.assertAlmostEqual(supported.opening_damage, 1500)
+        self.assertAlmostEqual(unsupported.opening_damage, 1000)
+        self.assertEqual(optimize_cycle((carry, support)).slots, ("1", "2"))
+
+    def test_timed_modifier_does_not_buff_wrong_element_or_after_expiry(self):
+        spec = DamageModifierSpec("short_vuln", DamageBucket.VULNERABILITY, ("寒冷",),
+                                  "enemy", ModifierMagnitude(.5), "on_hit", duration=1)
+        support = option("1", 0, cost=0, duration=.3, modifiers=(spec,))
+        wrong = option("2", 1000, duration=.3, element="物理")
+        delayed = option("2", 1000, duration=2, element="寒冷")
+        self.assertEqual(evaluate_cycle((support, wrong)).damage, 1000)
+        self.assertEqual(evaluate_cycle((support, delayed)).damage, 1000)
+
+    def test_unknown_modifier_inputs_make_cycle_unpriced(self):
+        spec = DamageModifierSpec("unknown", DamageBucket.VULNERABILITY, ("寒冷",),
+                                  "enemy", ModifierMagnitude(.5), "on_hit", unresolved="missing duration")
+        support = option("1", 0, cost=0, duration=.3, modifiers=(spec,))
+        carry = option("2", 1000, duration=.3, element="寒冷")
+        self.assertIsNone(evaluate_cycle((support, carry)))
+
+    def test_runtime_support_waits_for_planned_sp_and_followup_cooldown(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        logic.plan = CyclePlan(("1", "2"), 25, 100, 100, (("1", 190),), (("1", "2", .3),))
+        self.assertFalse(logic._try_battle_token("1", 100))
+        self.assertEqual(task.keys, [])
+        profiles = logic.store.profiles(logic.team[1], "battle")
+        for profile in profiles:
+            logic.cooldowns[profile.skill_id] = 10
+        self.assertFalse(logic._try_battle_token("1", 190))
+        task.now = 9.8
+        self.assertTrue(logic._try_battle_token("1", 190))
+        self.assertEqual(task.keys, ["1"])
+
+    def test_dead_followup_does_not_block_surviving_support_forever(self):
+        task = FakeTask()
+        logic = logic_for(task)
+        logic.plan = CyclePlan(("1", "2"), 25, 100, 100, (("1", 190),), (("1", "2", .3),))
+        logic.disabled_slots.add("2")
+        self.assertTrue(logic._try_battle_token("1", 100))
 
     def test_loader_accepts_null_effects_in_character_snapshot(self):
         quote = load_damage_quotes(["伊冯"])["伊冯"]
