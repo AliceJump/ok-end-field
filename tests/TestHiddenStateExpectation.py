@@ -37,11 +37,7 @@ class TestHiddenDamageExpectation(unittest.TestCase):
         self.envelopes = load_damage_envelopes()
 
     def _battle_transition(self, actor):
-        return next(
-            item
-            for item in self.mechanics[actor].transitions
-            if item.action == "battle"
-        )
+        return next(item for item in self.mechanics[actor].transitions if item.action == "battle")
 
     def test_typhoeus_with_natural_provider_uses_expected_stack_fraction_not_full(self):
         hidden = HiddenStateExpectation(
@@ -96,8 +92,9 @@ class TestHiddenDamageExpectation(unittest.TestCase):
 
     def test_yvonne_without_attachment_provider_does_not_invent_stack_damage(self):
         hidden = HiddenStateExpectation(
-            ["伊冯", "佩丽卡", "狼卫", "管理员"],
+            ["伊冯", "陈千语", "黎风", "管理员"],
             self.mechanics,
+            capabilities={},
         )
         estimate = hidden.estimate_damage(
             "伊冯",
@@ -114,11 +111,7 @@ class TestHiddenDamageExpectation(unittest.TestCase):
             ["庄方宜", "佩丽卡", "诀", "洛茜"],
             self.mechanics,
         )
-        transition = next(
-            item
-            for item in self.mechanics["庄方宜"].transitions
-            if item.phase == "天理合真首次惊霆诀"
-        )
+        transition = next(item for item in self.mechanics["庄方宜"].transitions if item.phase == "天理合真首次惊霆诀")
         estimate = hidden.estimate_damage(
             "庄方宜",
             "战技",

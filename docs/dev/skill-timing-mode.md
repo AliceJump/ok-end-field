@@ -16,8 +16,8 @@
 | --- | --- |
 | `index.json` | 753 个角色技能的轻量索引、原生角色 ID 与仓库角色名称映射、等级补丁、来源摘要和验证结果 |
 | `records.json.gz` | 754 个 SkillData、594 个 BuffData，共 1,348 个完整记录；保留条件分支、原始曲线、空串/null 等细节 |
-| `raw.zip` | 同一批 1,348 份原始二进制文件 |
-| `native_read_plans.json.gz` | 原生读取计划，用于独立重新编码复验 |
+
+仓库只保留运行时使用的二级导出资源。一级原始二进制包 `raw.zip` 和原生读取计划 `native_read_plans.json.gz` 仅供本地重新编码复验，不随仓库发布；索引中的来源哈希与验证摘要保留用于追溯。
 
 数据覆盖 33 个标准角色 ID（男/女管理员分开），另保留实际文件前缀 `chr_032_lizhiyan`，不猜测合并；CharacterTable 中虚拟 `chr_9000_endmin` 没有独立技能记录。各技能是原生名称，不能与 WIKI 命名直接拼接：原生 `normal_skill` 表示战技，仓库 WIKI 的 `*_normal` 表示普通攻击。
 

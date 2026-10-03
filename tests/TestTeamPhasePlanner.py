@@ -34,7 +34,7 @@ class TestTeamPhasePlanner(unittest.TestCase):
             load_character_mechanics(),
             load_skill_timings(),
         )
-        plan = next(plan for plan in plans if "mifu:battle-chain" in plan.key)
+        plan = next(plan for plan in plans if "mi_fu:battle-chain" in plan.key)
         self.assertTrue(plan.runtime_executable)
         self.assertEqual(plan.min_start_sp, 150)
         self.assertEqual(plan.expected_end_sp, 0)
@@ -144,11 +144,7 @@ class TestTeamPhasePlanner(unittest.TestCase):
         self.assertAlmostEqual(ty_battle.full_probability, 0.2)
         self.assertAlmostEqual(ty_battle.expected_fraction, 0.5)
 
-        zhuang_free = next(
-            action
-            for action in by_actor["庄方宜"].actions
-            if action.label == "天理合真首次惊霆诀"
-        )
+        zhuang_free = next(action for action in by_actor["庄方宜"].actions if action.label == "天理合真首次惊霆诀")
         self.assertAlmostEqual(zhuang_free.expected_damage, zhuang_free.damage_high)
         self.assertEqual(zhuang_free.full_probability, 1)
 

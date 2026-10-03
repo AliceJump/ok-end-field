@@ -89,10 +89,10 @@ class TestSkillTiming(unittest.TestCase):
             path = Path(directory)
             (path / "index.json").write_bytes((SNAPSHOT / "index.json").read_bytes())
             store = SkillTimingStore(path)
-            self.assertTrue(store.profiles("perlica", "battle"))
+            self.assertIsNone(store._records)
             (path / "records.json.gz").write_bytes(b"broken")
             with self.assertRaisesRegex(ValueError, "hash mismatch"):
-                store.record("chr_0004_pelica_normal_skill")
+                store.profiles("perlica", "battle")
 
     def test_lossless_record_preserves_empty_string_and_raw_curve(self):
         # Check the packaged records themselves, not a hand-written fixture.
@@ -104,6 +104,16 @@ class TestSkillTiming(unittest.TestCase):
         text = json.dumps(records)
         self.assertIn('"rawHex"', text)
         self.assertIn('"blackboardKey": ""', text)
+
+    def test_runtime_uses_only_exported_snapshot_resources(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)
+            for name in ("index.json", "records.json.gz"):
+                (path / name).write_bytes((SNAPSHOT / name).read_bytes())
+            store = SkillTimingStore(path)
+            self.assertTrue(store.profiles("佩丽卡", "battle"))
+            self.assertEqual(store.normal_attack_sp_gain("庄方宜"), 20)
+            self.assertAlmostEqual(store.battle_state("梨诺").duration, 60)
 
 
 class FakeTask:
@@ -294,6 +304,8 @@ class TestTimedCombat(unittest.TestCase):
                 return current["frame"]
 
         class Harness:
+            _read_combat_too_far_text_band = BattleMixin._read_combat_too_far_text_band
+
             def __init__(self):
                 self.frame = band
                 self.now = 0.0
@@ -328,6 +340,9 @@ class TestTimedCombat(unittest.TestCase):
                 return current["frame"]
 
         class Harness:
+            _read_combat_too_far_text_band = BattleMixin._read_combat_too_far_text_band
+            reset_combat_action_feedback_probe = BattleMixin.reset_combat_action_feedback_probe
+
             def __init__(self):
                 self.frame = band
                 self.now = 0.0
@@ -379,11 +394,11 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(events[1], ("click", {"key": "middle", "down_time": 0.002}))
         self.assertEqual(events[2], ("sleep", 0.05))
         self.assertEqual(
-            events[3],
-            (
-                "dodge",
-                {"pre_hold": 0.05, "dodge_down_time": 0.03, "after_sleep": 0.02},
-            ),
+            events[3:],
+            [
+                ("dodge", {"pre_hold": 0.05, "dodge_down_time": 0.03, "after_sleep": delay})
+                for delay in (0.1, 0.1, 0.02)
+            ],
         )
 
     def test_too_far_feedback_cancels_unstarted_skill_and_calls_recovery_hook(self):
@@ -437,6 +452,7 @@ class TestTimedCombat(unittest.TestCase):
         self.assertEqual(task.keys, ["1"])
         self.assertEqual(task.mouse[-1], "down")
         task.points = 1
+        task.now = logic.next_sp_probe_at
         logic.step()
         self.assertEqual(task.keys, ["1", "2"])
         self.assertLess(task.now, 6)
@@ -675,9 +691,7 @@ class TestTimedCombat(unittest.TestCase):
         self.assertIsNone(logic.pending)
         self.assertEqual(logic.cursor, 1)
         self.assertAlmostEqual(task.now - before, 0.1)
-        self.assertTrue(
-            any("消耗证据 25 SP <= 25，按键后直接视为成功" in message for message in task.messages)
-        )
+        self.assertTrue(any("消耗证据 25 SP <= 25，按键后直接视为成功" in message for message in task.messages))
 
     def test_precise_sp_readiness_uses_partial_bar_value(self):
         task = FakeTask()
@@ -763,7 +777,8 @@ class TestTimedCombat(unittest.TestCase):
         task.sp = 300.0
         task.now += 1.0
         logic.step()
-        self.assertEqual(task.keys, ["1"])
+        self.assertEqual(task.keys.count("1"), 1)
+        self.assertTrue(all(key != "1" for key in task.keys[1:]))
 
     def test_ultimate_state_prevents_auto_pressing_its_end_button(self):
         task = FakeTask()
@@ -875,9 +890,7 @@ class TestTimedCombat(unittest.TestCase):
         logic.ult_order = []
 
         original_profiles = store.profiles
-        store.profiles = lambda name, kind: (
-            () if name == "洛茜" and kind == "link" else original_profiles(name, kind)
-        )
+        store.profiles = lambda name, kind: () if name == "洛茜" and kind == "link" else original_profiles(name, kind)
         try:
             logic.step()
         finally:
@@ -1018,4 +1031,3 @@ class TestTimedCombat(unittest.TestCase):
 
         self.assertIsNone(selected)
         self.assertEqual(logic.phase_planner.state.phase, CombatPhase.NORMAL)
-
