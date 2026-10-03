@@ -729,6 +729,11 @@ class GridNavigationMixin(RuntimeStateMixin):
                     self.sleep(tick)
                     continue
                 if step.action == WALK:
+                    if self._grid_nav_skip_board_node_id is not None:
+                        # A* 已选择从当前滑索架下索步行；若之后再次进入滑索，
+                        # 必须重新执行登索，不能沿用本次“已在上索点”的状态。
+                        self._grid_nav_skip_board_node_id = None
+                        self.log_info("已从滑索架下索步行，后续滑索将重新登索")
                     self._set_grid_walking(True)
                     self._maybe_start_grid_sprint(step)
                 elif step.action == WAIT:

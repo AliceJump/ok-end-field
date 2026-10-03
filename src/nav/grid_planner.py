@@ -242,6 +242,7 @@ class GridPlanner:
         self._zip_edges_by_padded: dict[int, tuple[_ZipLineEdge, ...]] = {}
         self._zip_edges_by_id: dict[int, _ZipLineEdge] = {}
         self._zip_access_cells: dict[str, tuple[int, int]] = {}
+        self._zip_dismountable_node_ids: set[str] = set()
         self._zip_line_adjacency: dict[str, tuple[ZipLineLink, ...]] = {}
         self._zip_line_mapped_node_count = 0
         self._heuristic_scale = 1.0
@@ -287,15 +288,20 @@ class GridPlanner:
         force_zip_start = False
         note_start = ""
         if required_zip_line_start_id is not None:
-            access_cell = self._zip_access_cells.get(str(required_zip_line_start_id))
+            start_id = str(required_zip_line_start_id)
+            access_cell = self._zip_access_cells.get(start_id)
             if access_cell is None:
                 return self._plan_from_unmapped_zip_line_start(
-                    str(required_zip_line_start_id),
+                    start_id,
                     goal_cell,
                     deadline=deadline,
                 )
             start_cell = access_cell
-            force_zip_start = True
+            if start_id in self._zip_dismountable_node_ids:
+                note_start = "当前滑索架位于可通行格，可原地下索步行"
+            else:
+                note_start = "当前滑索架不在可通行格，必须继续乘坐滑索"
+                force_zip_start = True
         else:
             start_cell, note_start = self._snap(start, "起点")
             if start_cell is None:
@@ -406,6 +412,8 @@ class GridPlanner:
         goal_i, goal_j = goal_cell
         for target_id, target_cell in self._zip_access_cells.items():
             if target_id == source_id or target_id not in distances:
+                continue
+            if target_id not in self._zip_dismountable_node_ids:
                 continue
             estimate = self._heuristic(
                 target_cell[0],
@@ -609,20 +617,22 @@ class GridPlanner:
         if self.zip_lines is None:
             return
         access_cells: dict[str, tuple[int, int]] = {}
+        dismountable_node_ids: set[str] = set()
         for node in self.zip_lines.nodes:
             node_cell = self.grid.index_of_world(node.x, node.z)
-            cell = (
-                node_cell
-                if self._passable(*node_cell)
-                else self._nearest_passable(
-                    *node_cell,
-                    max_radius=self.zip_line_access_radius,
-                )
+            if self._passable(*node_cell):
+                access_cells[node.node_id] = node_cell
+                dismountable_node_ids.add(node.node_id)
+                continue
+            cell = self._nearest_passable(
+                *node_cell,
+                max_radius=self.zip_line_access_radius,
             )
             if cell is not None:
                 access_cells[node.node_id] = cell
         self._zip_line_mapped_node_count = len(access_cells)
         self._zip_access_cells = access_cells
+        self._zip_dismountable_node_ids = dismountable_node_ids
 
         # 建立完整滑索网络。中间滑索架不需要映射到网格，因为角色不会在
         # 中途上下索；只要首尾滑索可到达，就能把整条链作为一条 A* 边。
@@ -638,6 +648,8 @@ class GridPlanner:
 
             for target_id, target_cell in sorted(access_cells.items()):
                 if target_id == source_id or target_cell == source_cell:
+                    continue
+                if target_id not in dismountable_node_ids:
                     continue
                 if target_id not in distances:
                     continue

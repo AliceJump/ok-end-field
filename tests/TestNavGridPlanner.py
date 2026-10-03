@@ -250,7 +250,7 @@ class TestZipLinePlanning(unittest.TestCase):
         self.assertEqual(result.waypoints[route_step.exit_waypoint_index], second.xz)
 
     def test_zip_line_edge_cost_uses_grid_cell_units(self):
-        grid = _grid(["oo"], cell_size=0.5)
+        grid = _grid(["o#o"], cell_size=0.5)
         first = ZipLineNode("a", "test", "lv1", "滑索架", 0.25, 0.0, 0.25)
         second = ZipLineNode("b", "test", "lv1", "滑索架", 1.25, 0.0, 0.25)
         graph = ZipLineGraph(
@@ -263,12 +263,12 @@ class TestZipLinePlanning(unittest.TestCase):
             zip_lines=graph,
             zip_line_cost_factor=1.0,
             zip_line_boarding_cost=0.0,
-        ).plan_cells((0, 0), (0, 1), required_zip_line_start_id="a")
+        ).plan_cells((0, 0), (0, 2), required_zip_line_start_id="a")
 
         self.assertTrue(result.ok, result)
         self.assertEqual(result.zip_line_steps[0].cost, 2.0)
 
-    def test_required_zip_start_forces_first_move_to_zip_line(self):
+    def test_required_zip_start_can_dismount_when_node_cell_is_walkable(self):
         grid = _grid(["ooo"])
         first = ZipLineNode("a", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
         second = ZipLineNode("b", "test", "lv1", "滑索架", 2.5, 0.0, 0.5)
@@ -293,10 +293,49 @@ class TestZipLinePlanning(unittest.TestCase):
         self.assertTrue(walking.ok, walking)
         self.assertEqual(walking.zip_line_steps, [])
         self.assertTrue(forced.ok, forced)
-        self.assertEqual(
-            [(step.entry.node_id, step.exit.node_id) for step in forced.zip_line_steps[0].steps],
-            [("a", "b")],
+        self.assertEqual(forced.zip_line_steps, [])
+        self.assertIn("可原地下索步行", "\n".join(forced.notes))
+
+    def test_required_zip_start_forces_zip_line_when_node_cell_is_blocked(self):
+        grid = _grid(["##oo"])
+        source = ZipLineNode("source", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        target = ZipLineNode("target", "test", "lv1", "滑索架", 3.5, 0.0, 0.5)
+        graph = ZipLineGraph(
+            [source, target],
+            [ZipLineLink("source", "target", distance_m=3.0, max_range_m=80.0)],
         )
+
+        result = GridPlanner(
+            grid,
+            zip_lines=graph,
+            zip_line_access_radius=4,
+        ).plan_cells(
+            (0, 0),
+            (0, 3),
+            required_zip_line_start_id="source",
+        )
+
+        self.assertTrue(result.ok, result)
+        self.assertEqual(
+            [(step.entry.node_id, step.exit.node_id) for step in result.zip_line_steps[0].steps],
+            [("source", "target")],
+        )
+        self.assertIn("必须继续乘坐滑索", "\n".join(result.notes))
+
+    def test_zip_line_target_must_be_walkable_to_dismount(self):
+        grid = _grid(["o#oo"])
+        source = ZipLineNode("source", "test", "lv1", "滑索架", 0.5, 0.0, 0.5)
+        target = ZipLineNode("target", "test", "lv1", "滑索架", 1.5, 0.0, 0.5)
+        graph = ZipLineGraph(
+            [source, target],
+            [ZipLineLink("source", "target", distance_m=1.0, max_range_m=80.0)],
+        )
+        planner = GridPlanner(grid, zip_lines=graph, zip_line_access_radius=4)
+
+        result = planner.plan_cells((0, 0), (0, 3))
+
+        self.assertFalse(result.ok)
+        self.assertEqual(planner.zip_line_stats()["directed_edges"], 0)
 
     def test_unmapped_required_start_continues_along_zip_line_graph(self):
         grid = _grid(["###oo"])
