@@ -470,7 +470,11 @@
                         "damage_tags": [
                             "natural_burst"
                         ],
-                        "unresolved": "箭阵实体持续时间及离场清理尚未绑定"
+                        "duration": {
+                            "native_skill": "chr_0034_typhoea_combo_skill",
+                            "parameter": "persistent_time"
+                        },
+                        "lifetime_scope": "field"
                     }
                 },
                 {
