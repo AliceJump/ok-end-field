@@ -679,7 +679,7 @@
                         "4": 35
                     },
                     "formula": "按最近一次猛击/碎甲实际消费层数决定斩击次数；4层时第三击强化，技力恢复为5+7+23=35",
-                    "count_basis": "consumed"
+                    "count_basis": "trigger_event"
                 }
             ]
         },

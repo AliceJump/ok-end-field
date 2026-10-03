@@ -349,6 +349,7 @@ class TestTimedCombat(unittest.TestCase):
 
         class Harness:
             _read_combat_too_far_text_band = BattleMixin._read_combat_too_far_text_band
+            reset_combat_action_feedback_probe = BattleMixin.reset_combat_action_feedback_probe
 
             def __init__(self):
                 self.frame = band

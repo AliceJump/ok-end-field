@@ -198,7 +198,8 @@
                             "value": 1,
                             "duration": null,
                             "target": "enemy",
-                            "count": -1
+                            "count": -1,
+                            "consumes_all": true
                         }
                     ]
                 }

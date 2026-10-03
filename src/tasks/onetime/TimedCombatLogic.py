@@ -6,14 +6,16 @@ import time
 from collections import deque
 
 from src.data.character_mechanics import load_character_mechanics, mechanic_blockers
+from src.data.combat_catalog import build_combat_catalog
 from src.data.combat_observation import (
     ActionBlockReason,
     EnemyPresence,
     normalize_action_block_reason,
     normalize_enemy_presence,
 )
+from src.data.combat_runtime import CombatRuntime
 from src.data.skill_rotation import generate_damage_rotation
-from src.data.skill_timing import SkillTiming, load_skill_timings
+from src.data.skill_timing import SkillTiming, SkillTimingStore, load_skill_timings
 from src.data.team_phase_planner import (
     CombatPhase,
     TeamPhasePlanner,
@@ -87,6 +89,7 @@ class TimedCombatLogic:
         self.last_action_attempt = None
         self.phase_planner = TeamPhasePlanner()
         self._last_phase_log = None
+        self.combat_runtime = None
 
     def _hold(self, enabled, force=False):
         if enabled:
@@ -148,6 +151,8 @@ class TimedCombatLogic:
         self.last_action_attempt = (self._clock(), kind, token)
 
     def _cancel_unstarted_action(self, kind, token, now):
+        if self.combat_runtime is not None:
+            self.combat_runtime.cancel(token, kind)
         if kind == "battle":
             if self.pending is not None and self.pending[1] == token:
                 self.pending = None
@@ -229,12 +234,30 @@ class TimedCombatLogic:
             and hasattr(self.task, "is_skill_bar_full_fast")
             and self.task.is_skill_bar_full_fast()
         ):
+            if self.combat_runtime is not None:
+                self.combat_runtime.observe_sp(300.0, now)
             return self._cache_sp(300.0, now)
 
         if not force and now < self.next_sp_probe_at:
             return self.cached_sp
 
-        return self._cache_sp(self.task.get_skill_bar_sp(), now)
+        sp = self.task.get_skill_bar_sp()
+        if self.combat_runtime is not None:
+            self.combat_runtime.observe_sp(sp, now)
+        return self._cache_sp(sp, now)
+
+    def _stage_combat_action(self, token, kind, profiles, now, *, energy_ready=False):
+        runtime = self.combat_runtime
+        if runtime is None:
+            return True
+        runtime.cancel()
+        keys = {profile.skill_id for profile in profiles}
+        candidates = [p for p in runtime.catalog.available(token, kind) if p.key in keys]
+        if not candidates:
+            return not runtime.catalog.candidates(token, kind)
+        # Administrator gender entries share a button. The context has already
+        # narrowed genuine action replacements through their ready predicates.
+        return runtime.stage(candidates[0], now, energy_ready=energy_ready)
 
     def _note_assumed_sp_spend(self, before_sp, expected_cost):
         if before_sp < 0:
@@ -258,6 +281,8 @@ class TimedCombatLogic:
         )
 
     def _observe_phase_sp(self, sp):
+        if self.combat_runtime is not None:
+            self.combat_runtime.advance(self._clock())
         old, new = self.phase_planner.observe_sp(sp)
         self._log_phase_transition(old, new)
         return new
@@ -325,6 +350,25 @@ class TimedCombatLogic:
     def _battle_context(self, token):
         """Resolve the currently visible battle-button phase and its SP semantics."""
         name = self.team[int(token) - 1]
+        runtime = self.combat_runtime
+        if runtime is not None and runtime.catalog.candidates(token, "battle"):
+            runtime.advance(self._clock())
+            available = runtime.catalog.available(token, "battle")
+            if not available:
+                return (), None, None
+            selected = available[0]
+            profiles = self.store.battle_phase_profiles(name) or self.store.profiles(name, "battle")
+            matching = tuple(p for p in profiles if p.skill_id == selected.key)
+            if matching:
+                # Immediate native refunds change the observable SP drop, but
+                # never lower the SP budget needed to start the action.
+                predicted = runtime.world.fork()
+                before = predicted.sp
+                if predicted.start(selected, action_id="confirmation-preview"):
+                    net_cost = before - predicted.sp
+                else:
+                    net_cost = selected.sp_cost
+                return matching, max(selected.sp_cost, selected.gate or 0), max(0, net_cost)
         mechanic = self._mechanic_for_token(token)
         if mechanic is not None and mechanic.archetype == "multi_stage_battle":
             phases = self.store.battle_phase_profiles(name)
@@ -383,6 +427,8 @@ class TimedCombatLogic:
 
     def _accept_battle_skill(self, token, advance_cursor=True):
         self._clear_action_attempt_feedback()
+        if self.combat_runtime is not None:
+            self.combat_runtime.confirm(token, "battle", self._clock())
         self._observe_battle()
         self._set_cooldowns()
         self._activate_state(token, self.state_specs.get(token), "战技")
@@ -411,6 +457,8 @@ class TimedCombatLogic:
                 f"时间排轴: 战技 {token} 技力消耗已确认 ({before_sp:.1f}->{current_sp:.1f}, 阈值 {minimum_drop:.1f})"
             )
         elif now - self.started >= 0.8:
+            if self.combat_runtime is not None:
+                self.combat_runtime.cancel(token, "battle")
             self.pending = None
             self._clear_action_attempt_feedback()
             self.pending_advance_cursor = True
@@ -558,6 +606,11 @@ class TimedCombatLogic:
             str(index + 1): self.store.ultimate_state(name) for index, name in enumerate(team) if name != "?"
         }
         self.damage_quotes = load_damage_quotes(team)
+        if isinstance(self.store, SkillTimingStore):
+            catalog = build_combat_catalog(team, self.store)
+            self.combat_runtime = CombatRuntime(catalog, epoch=self._clock())
+            for diagnostic in catalog.diagnostics:
+                self.task.log_info(f"时间排轴机制数据: {diagnostic}")
 
         burst_plans = build_team_burst_plans(team, self.mechanics, self.store)
         preferred_slots = tuple(token for token in self.ult_order if self._slot_available(token))
@@ -721,6 +774,9 @@ class TimedCombatLogic:
             return
 
         self.disabled_slots.update(newly_disabled)
+        if self.combat_runtime is not None:
+            for token in newly_disabled:
+                self.combat_runtime.disable_actor(token, self._clock())
         for token in newly_disabled:
             self.dead_slot_evidence.pop(token, None)
         self._sync_task_team_slots()
@@ -832,8 +888,10 @@ class TimedCombatLogic:
         if not self.phase_planner.can_spend(token, "battle", sp, expected_cost):
             return False
 
-        self.phase_planner.start_if_ready(token, "battle")
         started = self._clock()
+        if not self._stage_combat_action(token, "battle", profiles, started):
+            return False
+        self.phase_planner.start_if_ready(token, "battle")
         self._arm_action_feedback()
         self.task.send_key(token)
         self._note_action_attempt("battle", token)
@@ -960,6 +1018,11 @@ class TimedCombatLogic:
     def step(self):
         """One refreshed HUD observation; no legacy strategy switches are read."""
         now = self._clock()
+        if self.combat_runtime is not None:
+            detector = getattr(self.task, "detect_current_char_index", None)
+            current = detector() if detector is not None else None
+            if isinstance(current, int) and 0 <= current < len(self.team):
+                self.combat_runtime.observe_main_control(str(current + 1), now)
         if self._probe_action_feedback() is not None:
             return
         self._confirm_battle(now)
@@ -1037,10 +1100,14 @@ class TimedCombatLogic:
         ready_ults.sort(key=lambda item: -item[0])
         for _rate, token, profiles in ready_ults:
             started = self._clock()
+            if not self._stage_combat_action(token, "ult", profiles, started, energy_ready=True):
+                continue
             self._arm_action_feedback()
             if self.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
                 self._note_action_attempt("ult", token)
                 ended = self._clock()
+                if self.combat_runtime is not None:
+                    self.combat_runtime.confirm(token, "ult", ended)
                 self._observe_bonus("ult", token)
                 self._observe_phase_action(token, "ult")
                 self._set_cooldowns(profiles, started)
@@ -1063,6 +1130,8 @@ class TimedCombatLogic:
                 if self._try_overflow_battle_skill(post_ult_sp, "终结技恢复"):
                     return
                 return
+            if self.combat_runtime is not None:
+                self.combat_runtime.cancel(token, "ult")
 
         if self._try_planned_battle_skill(sp):
             return

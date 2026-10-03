@@ -59,6 +59,7 @@ def _load_skill_effects(effects_data: list[dict], *, skill_id="", skills=None, r
             duration=duration,
             target=effect_data.get("target") if "target" in effect_data else None,
             count=effect_data.get("count") if "count" in effect_data else None,
+            consumes_all=bool(effect_data.get("consumes_all", False)),
             subject_effect_id=(
                 EffectType(effect_data["subject_effect_id"])
                 if effect_data.get("subject_effect_id")
