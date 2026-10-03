@@ -14,14 +14,16 @@ from src.data.effects import EffectType
 
 class TestEnemyCombatState(unittest.TestCase):
     def test_infliction_expires_at_twenty_seconds(self):
-        enemy = EnemyCombatState()
+        enemy = EnemyCombatState(states={EffectType.STATUS_BURNING: 20.0})
         enemy.apply_infliction(EffectType.ATTACH_COLD)
         enemy.tick(19.9)
         self.assertIs(enemy.infliction_element, EffectType.ATTACH_COLD)
-        enemy.tick(0.1 + 1e-9)
+        self.assertIn(EffectType.STATUS_BURNING, enemy.states)
+        enemy.tick(0.1)
         self.assertIsNone(enemy.infliction_element)
         self.assertEqual(enemy.infliction_stacks, 0)
         self.assertEqual(enemy.infliction_time_left, 0)
+        self.assertEqual(enemy.states, {})
         self.assertIsNone(enemy.apply_infliction(EffectType.ATTACH_BURN))
 
     def test_same_element_refreshes_timer_and_cross_element_clears_it(self):
