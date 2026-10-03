@@ -56,14 +56,76 @@ class TestSnapshotSafety(unittest.TestCase):
                 (root / filename).write_text("{}", encoding="utf-8")
                 entries.append({"subtype": subtype, "kind": kind, "item_id": subtype,
                                 "detail_file": filename})
-            manifest = {"subtypes": ["2", "4", "7"], "catalog_counts": {"2": 1, "4": 1, "7": 1},
-                        "success_count": 3, "failure_count": 0, "items": entries, "failures": []}
+            manifest = {
+                "subtypes": ["2", "4", "7"],
+                "limit": 0,
+                "complete": True,
+                "catalog_counts": {"2": 1, "4": 1, "7": 1},
+                "captured_counts": {"2": 1, "4": 1, "7": 1},
+                "success_count": 3,
+                "failure_count": 0,
+                "items": entries,
+                "failures": [],
+            }
             mod.validate_snapshot(manifest, root)
-            for change in ({"failure_count": 1}, {"catalog_counts": {"2": 2, "4": 1, "7": 1}},
-                           {"success_count": 2}, {"catalog_counts": {"2": 1, "4": 1}}):
+            for change in (
+                {"failure_count": 1},
+                {"catalog_counts": {"2": 2, "4": 1, "7": 1}},
+                {"captured_counts": {"2": 0, "4": 1, "7": 1}},
+                {"success_count": 2},
+                {"catalog_counts": {"2": 1, "4": 1}},
+                {"complete": False},
+            ):
                 with self.subTest(change=change), self.assertRaises(ValueError):
                     mod.validate_snapshot({**manifest, **change}, root)
             (root / "7.json").unlink()
+            with self.assertRaises(ValueError):
+                mod.validate_snapshot(manifest, root)
+
+    def test_limited_capture_is_rejected_even_when_selected_counts_match(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entries = []
+            for subtype, kind in (("2", "weapon"), ("4", "equip"), ("7", "matrix")):
+                filename = f"{subtype}.json"
+                (root / filename).write_text("{}", encoding="utf-8")
+                entries.append({"subtype": subtype, "kind": kind, "item_id": subtype,
+                                "detail_file": filename})
+            manifest = {
+                "subtypes": ["2", "4", "7"],
+                "limit": 1,
+                "complete": False,
+                "catalog_counts": {"2": 20, "4": 30, "7": 40},
+                "captured_counts": {"2": 1, "4": 1, "7": 1},
+                "success_count": 3,
+                "failure_count": 0,
+                "items": entries,
+                "failures": [],
+            }
+            with self.assertRaisesRegex(ValueError, "--limit"):
+                mod.validate_snapshot(manifest, root)
+
+    def test_invalid_item_id_is_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            entries = []
+            for subtype, kind in (("2", "weapon"), ("4", "equip"), ("7", "matrix")):
+                filename = f"{subtype}.json"
+                (root / filename).write_text("{}", encoding="utf-8")
+                item_id = "../7" if subtype == "7" else subtype
+                entries.append({"subtype": subtype, "kind": kind, "item_id": item_id,
+                                "detail_file": filename})
+            manifest = {
+                "subtypes": ["2", "4", "7"],
+                "limit": 0,
+                "complete": True,
+                "catalog_counts": {"2": 1, "4": 1, "7": 1},
+                "captured_counts": {"2": 1, "4": 1, "7": 1},
+                "success_count": 3,
+                "failure_count": 0,
+                "items": entries,
+                "failures": [],
+            }
             with self.assertRaises(ValueError):
                 mod.validate_snapshot(manifest, root)
 
