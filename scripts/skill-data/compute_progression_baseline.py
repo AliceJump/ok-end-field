@@ -68,6 +68,13 @@ def comparison(key: str) -> dict:
         {char["name"]: ["native"]},
         {"native": ATTRIBUTES[growth["subAttrType"]]},
     )
+    # This comparison has no validated action sequence or team resource supply.
+    # Keep the generic calculator's illustrative rotation out of this artifact.
+    for field in ("cycle_expect", "cycle_expect_link4"):
+        result.pop(field, None)
+    result["trace"] = [
+        line for line in result["trace"] if not line.strip().startswith(("循环期望:", "满连击循环期望:"))
+    ]
     result["profile"] = {
         "character_level": profile.character_level,
         "skill_rank": profile.skill_rank,

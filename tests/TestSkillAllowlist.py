@@ -29,19 +29,19 @@ def _character(name: str, effects=None, enhancements=None) -> dict:
 
 
 class TestSkillAllowlist(unittest.TestCase):
-    def test_explicit_empty_all_is_parsed_as_static_trigger(self):
+    def test_explicit_empty_all_remains_unknown(self):
         self.assertEqual(
             _parse_trigger_groups({"effects": {"all": []}}),
-            [{"operator": "all", "effects": set()}],
+            [],
         )
         self.assertEqual(_parse_trigger_groups({"effects": {}}), [])
 
-    def test_empty_all_trigger_is_satisfied(self):
+    def test_empty_all_trigger_is_not_satisfied(self):
         groups = [{"operator": "all", "effects": set()}]
 
-        self.assertTrue(_is_trigger_satisfied(groups, set()))
+        self.assertFalse(_is_trigger_satisfied(groups, set()))
 
-    def test_real_empty_all_enhancements_are_kept_in_context(self):
+    def test_real_dynamic_enhancements_keep_outputs_without_static_gates(self):
         characters = load_characters()
         context = _build_team_skill_context(
             ["黎风", "莱万汀"],
@@ -50,9 +50,12 @@ class TestSkillAllowlist(unittest.TestCase):
 
         for key in (("黎风", "lifeng_skill"), ("莱万汀", "laevatain_ultimate")):
             enhancements = context["enhancement_triggers"][key]
-            self.assertIn(
-                [{"operator": "all", "effects": set()}],
-                [enhancement["trigger_groups"] for enhancement in enhancements],
+            self.assertTrue(any(not enhancement["trigger_groups"] for enhancement in enhancements))
+            self.assertFalse(
+                any(
+                    group and not group[0]["effects"]
+                    for group in (enhancement["trigger_groups"] for enhancement in enhancements)
+                )
             )
 
     def test_list_effects_remain_dynamic(self):
@@ -258,6 +261,24 @@ class TestSkillAllowlist(unittest.TestCase):
 
         self.assertIn("1", generate_skill_sequence(team, characters))
 
+    def test_dynamic_entity_consumption_keeps_its_producer(self):
+        producer = _character("晶体生产者", effects=[_effect("CRYSTAL")])
+        consumer = _character(
+            "动态消费者",
+            enhancements=[
+                {
+                    "trigger_condition": {"text": "治疗次数用尽后", "effects": None},
+                    "effects": [{"effect_id": "CONSUME_ALL", "subject_effect_id": "CRYSTAL", "count": None}],
+                }
+            ],
+        )
+        physical = _character("物理链", effects=[_effect("STACK_SHRED")])
+        team = {c["name"]: c for c in (producer, consumer, physical)}
+        self.assertTrue(build_skill_allowlist(list(team), team)[0][0])
+        ctx = _build_team_skill_context(list(team), team)
+        self.assertIn("CRYSTAL", ctx["consumed_effects"])
+        self.assertNotIn("CRYSTAL", ctx["skill_effects"][("动态消费者", "动态消费者_skill")])
+
     def test_real_yvonne_any_gate_accepts_one_attachment_type(self):
         characters = load_characters()
         team = ["伊冯", "洁尔佩塔"]
@@ -268,9 +289,9 @@ class TestSkillAllowlist(unittest.TestCase):
         characters = load_characters()
         zhuang = characters["庄方宜"]
         skill = next(skill for skill in zhuang["skills"] if skill["skill_id"] == "zhuang_fangyi_skill")
-        # 验证 trigger_condition.effects 是 dict 结构
+        # 无导电兜底是动态分支，不能用空 all 把它标成总是满足。
         tc_effects = skill["enhancements"][1]["trigger_condition"]["effects"]
-        self.assertIsInstance(tc_effects, dict)
+        self.assertIsNone(tc_effects)
 
         sword_consumer = _character(
             "青霆剑消费者",
