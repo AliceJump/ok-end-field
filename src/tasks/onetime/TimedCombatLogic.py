@@ -281,10 +281,6 @@ class TimedCombatLogic:
         if self.unconfirmed:
             return all(profile.allows(elapsed, ()) for profile in self.active)
 
-        # Different operators can act once the previous skill has actually
-        # started producing gameplay effects. Link ownership is unknown, but
-        # its HUD readiness is authoritative enough after the current cast
-        # commits. Same-operator continuation stays conservative.
         cross_actor = (
             (self.active_slot is not None and candidate_slot is not None and candidate_slot != self.active_slot)
             or (candidate_kind == "link")
@@ -378,8 +374,6 @@ class TimedCombatLogic:
         next_index = (index + 1) % len(phases)
         self.battle_phase_indices[token] = next_index
 
-        # 断云成功后优先接一次追形。追形→开天有破防层数条件，
-        # 当前没有敌方层数视觉证据，因此不把第三段设成强制续按。
         if index == 0 and len(phases) > 1:
             self.forced_battle_token = token
         elif self.forced_battle_token == token:
@@ -391,9 +385,6 @@ class TimedCombatLogic:
             return
         phases = self.store.battle_phase_profiles(self.team[int(token) - 1])
         if phases and self.battle_phase_indices.get(token, 0) >= len(phases) - 1:
-            # The last native phase is conditionally exposed (e.g. 弭弗开天).
-            # If the input did not consume SP, do not pin the scheduler forever
-            # to a replacement skill that may never have been unlocked.
             self.battle_phase_indices[token] = 0
             if self.forced_battle_token == token:
                 self.forced_battle_token = None
@@ -401,8 +392,6 @@ class TimedCombatLogic:
             self.task.log_info(f"时间排轴: 战技 {token} 条件段未确认，重置到首段状态")
 
     def _accept_battle_skill(self, token, advance_cursor=True):
-        # Once resource/timeline evidence accepts the cast, later prompt pixels
-        # must not retroactively reclassify this already-confirmed action.
         self._clear_action_attempt_feedback()
         self._observe_battle()
         self._set_cooldowns()
@@ -439,9 +428,6 @@ class TimedCombatLogic:
             self._clear_action_attempt_feedback()
             self.pending_advance_cursor = True
             self._reset_conditional_battle_phase_after_failed_attempt(token)
-            # No SP drop means the key press is not evidence that the authored
-            # skill timeline actually started. Keeping that unproven timeline
-            # active can stall the whole team for 10+ seconds on long skills.
             self.battle_retry_after[token] = now + self._FAILED_CAST_RETRY_DELAY
             self._clear_active(now)
             self.next_sp_probe_at = min(self.next_sp_probe_at, now)
@@ -457,7 +443,13 @@ class TimedCombatLogic:
             self.cooldowns[profile.skill_id] = started + profile.cooldown
 
     def _slot_available(self, token):
-        return token not in self.disabled_slots
+        if token in self.disabled_slots:
+            return False
+        try:
+            index = int(token) - 1
+        except (TypeError, ValueError):
+            return False
+        return 0 <= index < len(self.team) and self.team[index] != "?"
 
     def _active_team_names(self):
         return [
@@ -494,6 +486,235 @@ class TimedCombatLogic:
             f"防溢出压力线 {self.sp_pressure_threshold:g} SP"
         )
 
+    def _sync_task_team_slots(self):
+        """Make BattleMixin's HUD-recovery matcher ignore unknown/dead slots only.
+
+        Unknown slots are deliberately *not* scheduler-disabled: they stay eligible
+        for later background completion. The BattleMixin recovery matcher uses the
+        task-level set as a positional don't-care mask, so partial entry teams do
+        not make every ultimate wait for a literal '?' portrait to reappear.
+        """
+        ignored = {index for index, name in enumerate(self.team) if name == "?"}
+        ignored.update(int(token) - 1 for token in self.disabled_slots)
+        self.task._battle_team_disabled_slots = ignored
+
+    def _configure_team(self, team, *, reset_runtime=False, filled_slots=()):
+        """Apply a stable full-or-partial four-slot snapshot to the scheduler.
+
+        Composition-derived data is rebuilt whenever a '?' slot is completed,
+        while cooldowns, active timelines and already-authored state timers stay
+        intact. Initial detection resets per-battle slot failure state; later
+        completion does not.
+        """
+        team = list(team)
+        if len(team) != 4 or all(name == "?" for name in team):
+            return False
+
+        previous_team = list(self.team)
+        previous_order = list(self.order)
+        current_token = (
+            previous_order[self.cursor]
+            if previous_order and 0 <= self.cursor < len(previous_order)
+            else None
+        )
+        previous_phase_indices = dict(self.battle_phase_indices)
+
+        if reset_runtime:
+            self.disabled_slots.clear()
+            self.dead_slot_evidence.clear()
+            self.battle_retry_after.clear()
+            self.forced_battle_token = None
+            self.free_battle_once.clear()
+            self.forced_main_control_slot = None
+            self.forced_main_control_until = 0.0
+            previous_phase_indices = {}
+
+        self.team = team
+        self.task._battle_team = list(team)
+        self.ult_order = generate_damage_rotation(team)
+        self.order = [
+            token
+            for token in self.ult_order
+            if team[int(token) - 1] != "?"
+            and self.store.profiles(team[int(token) - 1], "battle")
+        ]
+
+        self.team_mechanics = {
+            str(index + 1): self.mechanics.get(name)
+            for index, name in enumerate(team)
+            if name != "?" and self.mechanics.get(name) is not None
+        }
+        self.battle_phase_indices = {}
+        for token, mechanic in self.team_mechanics.items():
+            if mechanic.archetype != "multi_stage_battle":
+                continue
+            index = int(token) - 1
+            unchanged = (
+                not reset_runtime
+                and index < len(previous_team)
+                and previous_team[index] == team[index]
+            )
+            self.battle_phase_indices[token] = (
+                previous_phase_indices.get(token, 0) if unchanged else 0
+            )
+
+        available_tokens = {
+            str(index + 1)
+            for index, name in enumerate(team)
+            if name != "?" and str(index + 1) not in self.disabled_slots
+        }
+        if self.forced_battle_token not in available_tokens:
+            self.forced_battle_token = None
+        self.free_battle_once.intersection_update(available_tokens)
+        if self.forced_main_control_slot not in available_tokens:
+            self.forced_main_control_slot = None
+            self.forced_main_control_until = 0.0
+        self.battle_retry_after = {
+            token: value
+            for token, value in self.battle_retry_after.items()
+            if token in available_tokens
+        }
+        self.dead_slot_evidence = {
+            token: value
+            for token, value in self.dead_slot_evidence.items()
+            if token in available_tokens
+        }
+
+        known_team = [name for name in team if name != "?"]
+        self.normal_attack_sp_gains = self.store.team_normal_attack_sp_gains(known_team)
+        self._refresh_sp_threshold()
+        self.state_specs = {
+            str(index + 1): self.store.battle_state(name)
+            for index, name in enumerate(team)
+            if name != "?"
+        }
+        self.ult_state_specs = {
+            str(index + 1): self.store.ultimate_state(name)
+            for index, name in enumerate(team)
+            if name != "?"
+        }
+        self.damage_quotes = load_damage_quotes(team)
+
+        burst_plans = build_team_burst_plans(team, self.mechanics, self.store)
+        preferred_slots = tuple(
+            token for token in self.ult_order if self._slot_available(token)
+        )
+        active_burst = self.phase_planner.configure(
+            burst_plans,
+            preferred_slots=preferred_slots,
+        )
+        if self.disabled_slots:
+            self.phase_planner.disable_slots(set(self.disabled_slots))
+        self._last_phase_log = None
+
+        self.cycle_samples.clear()
+        self._cycle_start = None
+        self._cycle_bonus = 0.0
+        self._completed_cycles = 0
+
+        unknown_slots = [str(index + 1) for index, name in enumerate(team) if name == "?"]
+        if reset_runtime:
+            suffix = f"，未识别槽位 {unknown_slots} 后台继续补全" if unknown_slots else ""
+            self.task.log_info(f"时间排轴队伍: {team}, 战技顺序: {self.order}{suffix}")
+        elif filled_slots:
+            details = [f"{token}:{name}" for token, name in filled_slots]
+            self.task.log_info(
+                f"时间排轴补全槽位 {details}，队伍更新为 {team}，战技顺序重算: {self.order}"
+            )
+
+        changed_tokens = {
+            str(index + 1)
+            for index, name in enumerate(team)
+            if reset_runtime
+            or index >= len(previous_team)
+            or previous_team[index] != name
+        }
+        for token, mechanic in self.team_mechanics.items():
+            if token not in changed_tokens:
+                continue
+            self.task.log_info(
+                f"时间排轴机制: {team[int(token) - 1]}({token}) {mechanic.archetype}; "
+                + "；".join(mechanic.evidence)
+            )
+        for source, specs in (("战技", self.state_specs), ("终结技", self.ult_state_specs)):
+            for token, spec in specs.items():
+                if token not in changed_tokens or spec is None:
+                    continue
+                self.task.log_info(
+                    f"时间排轴状态{source}: {team[int(token) - 1]}({token}) "
+                    f"{spec.base_skill_id} -> {spec.end_skill_id}, "
+                    + ", ".join(spec.evidence)
+                )
+
+        if reset_runtime or filled_slots:
+            for burst_plan in burst_plans:
+                participants = ",".join(burst_plan.participants)
+                damage = (
+                    "unknown"
+                    if burst_plan.expected_damage is None
+                    else f"{burst_plan.expected_damage:.0f}"
+                )
+                self.task.log_info(
+                    f"时间排轴爆发候选: {burst_plan.key} 槽位[{participants}] "
+                    f"起手至少 {burst_plan.min_start_sp:g} SP，结束预计 "
+                    f"{burst_plan.expected_end_sp:g} SP，阶段伤害 {damage}，"
+                    f"runtime={'yes' if burst_plan.runtime_executable else 'diagnostic'}"
+                )
+                for action in burst_plan.actions:
+                    if (
+                        action.expected_damage is None
+                        or action.damage_low is None
+                        or action.damage_high is None
+                        or action.damage_high <= action.damage_low
+                    ):
+                        continue
+                    self.task.log_info(
+                        f"时间排轴隐藏状态期望: {action.actor}/{action.label} "
+                        f"{action.expected_damage:.0f} "
+                        f"(下界 {action.damage_low:.0f}, 上界 {action.damage_high:.0f}, "
+                        f"满层概率 {action.full_probability:.1%}, "
+                        f"期望层级比例 {action.expected_fraction:.1%}, "
+                        f"{action.damage_basis})"
+                    )
+            if active_burst is not None:
+                self.task.log_info(
+                    f"时间排轴爆发蓄力: 选择 {active_burst.key}，"
+                    f"保留 {active_burst.reserve_floor:g} SP，"
+                    f"达到 {active_burst.min_start_sp:g} SP 后开始"
+                )
+
+        if unknown_slots:
+            self.plan = None
+            self.task.log_info(
+                "时间排轴DPS规划: 队伍仍有未识别槽位，先使用已知角色伤害顺序；补全后自动重算"
+            )
+        else:
+            blockers = mechanic_blockers(team)
+            if blockers:
+                self.plan = None
+                labels = ", ".join(mechanic.blocker_reason for mechanic in blockers)
+                self.task.log_info(
+                    f"时间排轴机制规划: {labels} 不能压成单战技循环，"
+                    "禁用旧DPS子集搜索并保留完整战技顺序"
+                )
+            else:
+                self.plan = optimize_cycle(build_options(team, self.store, self.damage_quotes))
+                if self.plan is not None:
+                    self.order = list(self.plan.slots)
+                    self.task.log_info(
+                        f"时间排轴DPS规划: 战技 {self.order}, 可重复窗口 {self.plan.seconds:.2f}s, "
+                        f"预计战技伤害 {self.plan.damage:.0f}, 战技增量DPS {self.plan.dps:.1f}"
+                    )
+                else:
+                    self.task.log_info("时间排轴DPS规划: 数据或状态映射不足，保留原伤害顺序")
+
+        if current_token in self.order:
+            self.cursor = self.order.index(current_token)
+        else:
+            self.cursor = 0
+        self._sync_task_team_slots()
+        return True
+
     def _refresh_team_slots(self, deadline):
         if not self.team:
             return
@@ -509,16 +730,24 @@ class TimedCombatLogic:
         mismatches = [
             (index + 1, expected, current)
             for index, (expected, current) in enumerate(zip(self.team, detected))
-            if current != "?" and current != expected
+            if expected != "?" and current != "?" and current != expected
         ]
         if mismatches:
             self.task.log_debug(f"时间排轴忽略槽位刷新，已知角色位置不匹配: {mismatches}")
             return
 
-        # Combat portraits can transiently disappear during effects/animation.
-        # A slot is only considered dead after the same position is unknown in
-        # several independent 1s refresh cycles. A later positive recognition
-        # immediately clears the suspicion.
+        filled_slots = [
+            (str(index + 1), current)
+            for index, (expected, current) in enumerate(zip(self.team, detected))
+            if expected == "?" and current != "?"
+        ]
+        if filled_slots:
+            completed = list(self.team)
+            for token, name in filled_slots:
+                completed[int(token) - 1] = name
+                self.dead_slot_evidence.pop(token, None)
+            self._configure_team(completed, reset_runtime=False, filled_slots=filled_slots)
+
         candidates = set()
         for index, (expected, current) in enumerate(zip(self.team, detected), 1):
             token = str(index)
@@ -545,9 +774,7 @@ class TimedCombatLogic:
         self.disabled_slots.update(newly_disabled)
         for token in newly_disabled:
             self.dead_slot_evidence.pop(token, None)
-        self.task._battle_team_disabled_slots = {
-            int(token) - 1 for token in self.disabled_slots
-        }
+        self._sync_task_team_slots()
 
         if self.pending is not None and self.pending[1] in newly_disabled:
             self.pending = None
@@ -585,117 +812,8 @@ class TimedCombatLogic:
             confidence=2,
             deadline=deadline,
         )
-        if stable and len(team) == 4 and "?" not in team:
-            self.team = team
-            self.task._battle_team = team
-            self.ult_order = generate_damage_rotation(team)
-            self.order = [token for token in self.ult_order if self.store.profiles(team[int(token) - 1], "battle")]
-            self.task.log_info(f"时间排轴队伍: {team}, 战技顺序: {self.order}")
-
-            self.team_mechanics = {
-                str(index + 1): self.mechanics.get(name)
-                for index, name in enumerate(team)
-                if self.mechanics.get(name) is not None
-            }
-            self.battle_phase_indices = {
-                token: 0
-                for token, mechanic in self.team_mechanics.items()
-                if mechanic.archetype == "multi_stage_battle"
-            }
-            self.forced_battle_token = None
-            self.free_battle_once.clear()
-            self.forced_main_control_slot = None
-            self.forced_main_control_until = 0.0
-            for token, mechanic in self.team_mechanics.items():
-                self.task.log_info(
-                    f"时间排轴机制: {team[int(token) - 1]}({token}) {mechanic.archetype}; "
-                    + "；".join(mechanic.evidence)
-                )
-
-            self.disabled_slots.clear()
-            self.dead_slot_evidence.clear()
-            self.battle_retry_after.clear()
-            self.task._battle_team_disabled_slots = set()
-            self.normal_attack_sp_gains = self.store.team_normal_attack_sp_gains(team)
-            self._refresh_sp_threshold()
-
-            self.state_specs = {
-                str(index + 1): self.store.battle_state(name)
-                for index, name in enumerate(team)
-            }
-            self.ult_state_specs = {
-                str(index + 1): self.store.ultimate_state(name)
-                for index, name in enumerate(team)
-            }
-            for source, specs in (("战技", self.state_specs), ("终结技", self.ult_state_specs)):
-                for token, spec in specs.items():
-                    if spec is not None:
-                        self.task.log_info(
-                            f"时间排轴状态{source}: {team[int(token) - 1]}({token}) "
-                            f"{spec.base_skill_id} -> {spec.end_skill_id}, "
-                            + ", ".join(spec.evidence)
-                        )
-
-            self.damage_quotes = load_damage_quotes(team)
-            burst_plans = build_team_burst_plans(team, self.mechanics, self.store)
-            active_burst = self.phase_planner.configure(
-                burst_plans,
-                preferred_slots=tuple(self.ult_order),
-            )
-            for burst_plan in burst_plans:
-                participants = ",".join(burst_plan.participants)
-                damage = (
-                    "unknown"
-                    if burst_plan.expected_damage is None
-                    else f"{burst_plan.expected_damage:.0f}"
-                )
-                self.task.log_info(
-                    f"时间排轴爆发候选: {burst_plan.key} 槽位[{participants}] "
-                    f"起手至少 {burst_plan.min_start_sp:g} SP，结束预计 "
-                    f"{burst_plan.expected_end_sp:g} SP，阶段伤害 {damage}，"
-                    f"runtime={'yes' if burst_plan.runtime_executable else 'diagnostic'}"
-                )
-                for action in burst_plan.actions:
-                    if (
-                        action.expected_damage is None
-                        or action.damage_low is None
-                        or action.damage_high is None
-                        or action.damage_high <= action.damage_low
-                    ):
-                        continue
-                    self.task.log_info(
-                        f"时间排轴隐藏状态期望: {action.actor}/{action.label} "
-                        f"{action.expected_damage:.0f} "
-                        f"(下界 {action.damage_low:.0f}, 上界 {action.damage_high:.0f}, "
-                        f"满层概率 {action.full_probability:.1%}, "
-                        f"期望层级比例 {action.expected_fraction:.1%}, "
-                        f"{action.damage_basis})"
-                    )
-            if active_burst is not None:
-                self.task.log_info(
-                    f"时间排轴爆发蓄力: 选择 {active_burst.key}，"
-                    f"保留 {active_burst.reserve_floor:g} SP，"
-                    f"达到 {active_burst.min_start_sp:g} SP 后开始"
-                )
-
-            blockers = mechanic_blockers(team)
-            if blockers:
-                self.plan = None
-                labels = ", ".join(mechanic.blocker_reason for mechanic in blockers)
-                self.task.log_info(
-                    f"时间排轴机制规划: {labels} 不能压成单战技循环，"
-                    "禁用旧DPS子集搜索并保留完整战技顺序"
-                )
-            else:
-                self.plan = optimize_cycle(build_options(team, self.store, self.damage_quotes))
-                if self.plan is not None:
-                    self.order = list(self.plan.slots)
-                    self.task.log_info(
-                        f"时间排轴DPS规划: 战技 {self.order}, 可重复窗口 {self.plan.seconds:.2f}s, "
-                        f"预计战技伤害 {self.plan.damage:.0f}, 战技增量DPS {self.plan.dps:.1f}"
-                    )
-                else:
-                    self.task.log_info("时间排轴DPS规划: 数据或状态映射不足，保留原伤害顺序")
+        if stable and len(team) == 4 and any(member != "?" for member in team):
+            self._configure_team(team, reset_runtime=True)
 
     def _observe_battle(self):
         if self.plan is None or self.cursor != 0:
@@ -725,7 +843,6 @@ class TimedCombatLogic:
         else:
             active_names = self._active_team_names()
             if active_names and all(name in self.damage_quotes for name in active_names):
-                # Unknown owner: credit the lower bound among currently active slots.
                 self._cycle_bonus += min(self.damage_quotes[name].link for name in active_names)
 
     def _skip_active_state_slots(self):
@@ -803,6 +920,8 @@ class TimedCombatLogic:
         return True
 
     def _try_planned_battle_skill(self, sp, overflow=False):
+        if not self.order:
+            return False
         return self._try_battle_token(
             self.order[self.cursor],
             sp,
@@ -826,14 +945,6 @@ class TimedCombatLogic:
         return damage / handoff
 
     def _try_overflow_battle_skill(self, sp, checkpoint):
-        """Spend before a projected incoming gain would cap the shared SP bar.
-
-        The pressure threshold is derived from the team's largest known/upper-
-        bound finisher gain. The planned cursor keeps first priority. If it
-        cannot act, scan the
-        remaining *generic-safe* slots by marginal battle damage / handoff.
-        Complex mechanic slots are never opportunistically pulled out of order.
-        """
         if sp < self.sp_pressure_threshold or not self.order:
             return False
 
@@ -900,7 +1011,7 @@ class TimedCombatLogic:
         if self._probe_action_feedback() is not None:
             return
         self._confirm_battle(now)
-        if not self.team or not self.order:
+        if not self.team:
             self._hold(True)
             return
 
@@ -937,17 +1048,9 @@ class TimedCombatLogic:
             if not self._slot_available(token):
                 self.forced_battle_token = None
 
-        # Prevent projected overflow before the bar is actually full. The
-        # pressure line is derived from the largest plausible incoming finisher
-        # gain; burst reserve checks still veto spending that would break a
-        # prepared finite-window plan.
         if self._try_overflow_battle_skill(sp, "主循环"):
             return
 
-        # The HUD-ready detector is authoritative for link availability.
-        # It cannot identify the owner, so protect all *known* team link
-        # timelines. A missing timing profile must never disable E for the whole
-        # party (Rossi's numbered combo entry used to do exactly that).
         active_names = self._active_team_names()
         link_profiles = {
             name: self.store.profiles(name, "link")
@@ -998,8 +1101,6 @@ class TimedCombatLogic:
                 quote = self.damage_quotes.get(self.team[int(token) - 1])
                 rate = quote.ult / max(max(p.actionable, 0.3) for p in profiles) if quote else 0
                 ready_ults.append((rate, token, profiles))
-        # Sort simultaneously ready ults by their own damage/time. The existing
-        # monitor remains authoritative and unknown utility skills still cast.
         ready_ults.sort(key=lambda item: -item[0])
         for _rate, token, profiles in ready_ults:
             started = self._clock()
@@ -1017,8 +1118,6 @@ class TimedCombatLogic:
                     f"时间排轴: 终结技 {token} 动画结束后继续，HUD 动画锁 {ended - started:.2f}s"
                 )
 
-                # HUD recovery can block for seconds. Re-read SP immediately
-                # instead of waiting for the next outer scheduler tick.
                 post_ult_sp = self._sample_sp(force=True)
                 self._observe_phase_sp(post_ult_sp)
                 if self.forced_battle_token is not None:
@@ -1043,7 +1142,6 @@ class TimedCombatLogic:
     def run(self, start_sleep=None, no_battle=False, deadline=None):
         task = self.task
         task.exit_check_count = 0
-        # Clear a possible held button from a previous run before any loading.
         task.mouse_up(key="left")
         try:
             if self.store is None:
@@ -1064,8 +1162,6 @@ class TimedCombatLogic:
                     next_exit = now + 0.5
                     condition = task._check_single_exit_condition()
                     exit_pending = bool(condition)
-                    # Pass false as well, so an intervening valid HUD resets
-                    # the existing consecutive-exit confirmation counter.
                     if task.is_combat_ended(condition):
                         task._recommend_detector_in_combat = False
                         task.log_info("自动战斗结束!", notify=task.get_battle_config("完成通知"))
@@ -1079,9 +1175,6 @@ class TimedCombatLogic:
                     task.sleep(0.1)
                     continue
                 if self._enemy_operation_paused():
-                    # No visible enemy pauses only the skill scheduler. Keep
-                    # normal attack and middle-button lock/search alive so the
-                    # game can acquire enemies that spawn or enter range later.
                     force_normal_attack = now >= next_normal_attack
                     self._hold(True, force=force_normal_attack)
                     if force_normal_attack:
@@ -1091,10 +1184,6 @@ class TimedCombatLogic:
                         task.click(key="middle")
                     task.sleep(0.05)
                     continue
-                # Timed mode only schedules skill handoffs. Reassert the normal
-                # attack periodically because skill animations, focus changes or
-                # the game itself may drop a previous synthetic LBUTTONDOWN while
-                # our local state still says it is held.
                 force_normal_attack = now >= next_normal_attack
                 self._hold(True, force=force_normal_attack)
                 if force_normal_attack:
@@ -1117,8 +1206,6 @@ class TimedCombatLogic:
                 if self._allowed() and task.active_time() >= next_lock:
                     next_lock = task.active_time() + 1
                     task.click(key="middle")
-                # Refresh monitors even through long channels. Do not call the
-                # legacy approach_enemy dodge while a timeline is protected.
                 remaining = deadline - task.active_time() if deadline is not None else 0.05
                 if remaining > 0:
                     task.sleep(min(0.05, remaining))
