@@ -343,7 +343,7 @@
                             "target": "enemy",
                             "count": 1,
                             "damage_modifier": {
-                                "key": "arcane_skill:VULN_NATURAL",
+                                "key": "arcane_link:VULN_NATURAL",
                                 "bucket": "vulnerability",
                                 "elements": [
                                     "自然"
@@ -359,8 +359,7 @@
                                 "duration": {
                                     "row": "额外脆弱持续时间（秒）",
                                     "skill": "arcane_link"
-                                },
-                                "unresolved": "意志形态的属性缩放与上限需绑定；阵诀·智命中分支需核实实际形态"
+                                }
                             }
                         },
                         {
@@ -370,7 +369,7 @@
                             "target": "enemy",
                             "count": 1,
                             "damage_modifier": {
-                                "key": "arcane_skill:VULN_COLD",
+                                "key": "arcane_link:VULN_COLD",
                                 "bucket": "vulnerability",
                                 "elements": [
                                     "寒冷"
@@ -386,8 +385,7 @@
                                 "duration": {
                                     "row": "额外脆弱持续时间（秒）",
                                     "skill": "arcane_link"
-                                },
-                                "unresolved": "意志形态的属性缩放与上限需绑定；阵诀·智命中分支需核实实际形态"
+                                }
                             }
                         },
                         {
@@ -404,7 +402,11 @@
                             "target": "team",
                             "trigger": "阵诀·智下自身战技命中囹圄敌人，提前结束囹圄后",
                             "kind": "fixed",
-                            "amount": 30
+                            "amount": 30,
+                            "ranked_amount": {
+                                "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                "parameter": "atb_return_wisd"
+                            }
                         }
                     ],
                     "evaluation_point": "on_hit"
@@ -427,7 +429,79 @@
                 {
                     "name": "应龙四式",
                     "trigger_condition": {
-                        "text": "当有敌人被施加法术附着时可以发动",
+                        "text": "智识值 ≥ 意志值，阵诀·智生效中；敌人被施加自然附着或进入2层及以上其他法术附着",
+                        "effects": {
+                            "all": [
+                                "STATUS_SPELL_INFLICT"
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "VULN_NATURAL",
+                            "value": null,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "arcane_link:VULN_NATURAL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "自然"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "combo_wisdom_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果",
+                                        "skill": "arcane_link"
+                                    }
+                                },
+                                "duration": {
+                                    "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                    "parameter": "duration"
+                                }
+                            }
+                        },
+                        {
+                            "effect_id": "VULN_COLD",
+                            "value": null,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "arcane_link:VULN_COLD",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "combo_wisdom_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果",
+                                        "skill": "arcane_link"
+                                    }
+                                },
+                                "duration": {
+                                    "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                    "parameter": "duration"
+                                }
+                            }
+                        },
+                        {
+                            "effect_id": "STATUS_CONFINEMENT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "应龙四式·阵诀·意",
+                    "trigger_condition": {
+                        "text": "意志值 > 智识值，阵诀·意生效中；敌人被施加法术附着",
                         "effects": {
                             "all": [
                                 "STATUS_SPELL_INFLICT"
@@ -455,18 +529,37 @@
                                     "自然"
                                 ],
                                 "recipient": "enemy",
-                                "trigger": "combo_hit",
+                                "trigger": "combo_will_hit",
                                 "strength": {
                                     "base": {
                                         "row": "脆弱效果",
                                         "skill": "arcane_link"
-                                    }
+                                    },
+                                    "terms": [
+                                        {
+                                            "input": "source.意志",
+                                            "coefficient": {
+                                                "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                                "parameter": "spell_vul_per_will"
+                                            },
+                                            "cap": {
+                                                "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                                "parameter": "max_spell_vul_will"
+                                            }
+                                        }
+                                    ]
                                 },
                                 "duration": {
-                                    "row": "囹圄及脆弱 / 持续时间（秒）",
-                                    "skill": "arcane_link"
+                                    "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                    "parameter": "duration_will"
                                 },
-                                "unresolved": "意志形态的属性缩放与上限需绑定；阵诀·智命中分支需核实实际形态"
+                                "potential_adjustments": [
+                                    {
+                                        "passive": "chr_0032_lizhiyan_potential_1",
+                                        "operation": "add_strength",
+                                        "parameter": "rate_pre"
+                                    }
+                                ]
                             }
                         },
                         {
@@ -482,18 +575,37 @@
                                     "寒冷"
                                 ],
                                 "recipient": "enemy",
-                                "trigger": "combo_hit",
+                                "trigger": "combo_will_hit",
                                 "strength": {
                                     "base": {
                                         "row": "脆弱效果",
                                         "skill": "arcane_link"
-                                    }
+                                    },
+                                    "terms": [
+                                        {
+                                            "input": "source.意志",
+                                            "coefficient": {
+                                                "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                                "parameter": "spell_vul_per_will"
+                                            },
+                                            "cap": {
+                                                "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                                "parameter": "max_spell_vul_will"
+                                            }
+                                        }
+                                    ]
                                 },
                                 "duration": {
-                                    "row": "囹圄及脆弱 / 持续时间（秒）",
-                                    "skill": "arcane_link"
+                                    "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                    "parameter": "duration_will"
                                 },
-                                "unresolved": "意志形态的属性缩放与上限需绑定；阵诀·智命中分支需核实实际形态"
+                                "potential_adjustments": [
+                                    {
+                                        "passive": "chr_0032_lizhiyan_potential_1",
+                                        "operation": "add_strength",
+                                        "parameter": "rate_pre"
+                                    }
+                                ]
                             }
                         },
                         {

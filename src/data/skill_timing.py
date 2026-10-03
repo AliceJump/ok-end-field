@@ -293,6 +293,7 @@ class SkillTimingStore:
         if not verification["all_reached_eof"] or verification["binary_roundtrip"]["failures"]:
             raise ValueError("Unverified timing snapshot")
         self._records = None
+        self._ranked_blackboards = None
         self._effect_start_frames = {}
         self._normal_attack_sp_gains = {}
         self._global_normal_attack_sp_gain = None
@@ -545,6 +546,28 @@ class SkillTimingStore:
     def record(self, skill_id: str) -> dict:
         """Full lossless records are loaded only for inspection, outside the hot loop."""
         return self._all_records()[skill_id]
+
+    def ranked_parameter(self, skill_id: str, parameter: str, rank: int | None = None) -> float:
+        """Read an explicitly captured level patch, never a SkillData default."""
+        if self._ranked_blackboards is None:
+            compressed = (self.path / "ranked_blackboards.json.gz").read_bytes()
+            if hashlib.sha256(compressed).hexdigest() != self.index["ranked_blackboards_sha256"]:
+                raise ValueError("Ranked blackboard hash mismatch")
+            self._ranked_blackboards = json.loads(gzip.decompress(compressed))
+        rows = self._ranked_blackboards[skill_id]
+        selected = max(row["level"] for row in rows) if rank is None else rank
+        if isinstance(selected, bool) or not isinstance(selected, int):
+            raise ValueError("Skill rank must be an integer")
+        matches = [row for row in rows if row["level"] == selected]
+        if len(matches) != 1:
+            raise ValueError(f"Unavailable skill rank {rank}: {skill_id}")
+        values = [item for item in matches[0]["blackboard"] if item["key"] == parameter]
+        if len(values) != 1 or values[0]["valueStr"]:
+            raise ValueError(f"Ambiguous/missing numeric skill parameter: {skill_id}/{parameter}")
+        value = float(values[0]["value"])
+        if not math.isfinite(value):
+            raise ValueError("Non-finite skill parameter")
+        return value
 
 
 @lru_cache(maxsize=1)

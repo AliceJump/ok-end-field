@@ -569,12 +569,13 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertEqual(
             [effect.effect_id for effect in arcane_link.enhancement.effects],
             [
-                EffectType.TRIGGER_REPEAT_EFFECT,
                 EffectType.VULN_NATURAL,
                 EffectType.VULN_COLD,
                 EffectType.STATUS_CONFINEMENT,
             ],
         )
+        will_link = next(e for e in arcane_link.enhancements if e.name == "应龙四式·阵诀·意")
+        self.assertEqual(will_link.effects[0].effect_id, EffectType.TRIGGER_REPEAT_EFFECT)
 
         ardelia = characters["ardelia"]
         ardelia_skill = next(skill for skill in ardelia.skills if skill.skill_id == "ardelia_skill")

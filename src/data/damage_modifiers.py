@@ -66,6 +66,7 @@ class DamageModifierSpec:
     stack_policy: str = "replace"
     unresolved: str | None = None
     sources: tuple[str, ...] = ()
+    lifetime_scope: str = "timed"
 
 
 def _number(value, *, percent: bool) -> float:
@@ -101,6 +102,16 @@ def bind_damage_modifier(data: dict, *, skill_id: str, skills: dict, rank: int |
                 raise ValueError(f"Inactive/missing passive damage source: {ref['passive']}")
             sources.append(f"{passive.source}/parameters/{ref['parameter']}")
             return _number(passive.parameters[ref["parameter"]], percent=percent)
+        if "native_skill" in ref:
+            from src.data.skill_timing import load_skill_timings
+
+            store = load_skill_timings()
+            value = store.ranked_parameter(ref["native_skill"], ref["parameter"], rank)
+            sources.append(
+                f"skill_timings/{store.index['snapshot_date']}/SkillPatchTable/"
+                f"{ref['native_skill']}/{ref['parameter']}/rank={rank or 'max'}"
+            )
+            return _number(value, percent=percent)
         referenced = ref.get("skill", skill_id)
         stats = skills[referenced]["rank_stats"]
         matches = [r for r in stats["rows"] if r["label"] == ref["row"]]
@@ -165,4 +176,5 @@ def bind_damage_modifier(data: dict, *, skill_id: str, skills: dict, rank: int |
         stack_policy=data.get("stack_policy", "replace"),
         unresolved=data.get("unresolved"),
         sources=tuple(sources),
+        lifetime_scope=data.get("lifetime_scope", "timed"),
     )
