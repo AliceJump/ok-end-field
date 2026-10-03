@@ -66,6 +66,7 @@ def _finish(world, instance):
         return
     # Mark as finished before callbacks so recursive removal is idempotent.
     del world.native_buff_instances[instance.uid]
+    world.end_native_scope(instance.uid)
     _sync(world, instance.owner, instance.key)
     _callbacks(world, instance, 2)
 

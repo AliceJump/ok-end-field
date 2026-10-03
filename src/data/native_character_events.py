@@ -21,7 +21,11 @@ def bind_character_events(world, store, character, profile, actor):
     These hooks preserve the native pre-consumption snapshot. Combo UI priority,
     pending-state acceptance and cast availability remain separate concerns.
     """
-    native_id = profile.skill_id.split("_combo_skill", 1)[0]
+    native_id = character.progression.native_id
+    # Progression tables share one Administrator ID; CharacterData and skills
+    # use the separately authored male/female assets selected by the profile.
+    if native_id == "chr_9000_endmin":
+        native_id = profile.skill_id.split("_combo", 1)[0]
     asset = native_asset("data_" + native_id)
     abilities = next(v for v in _dictionaries(asset) if "comboSkillConditions" in v)
     events = {row["value"]: key for key, row in native_enums()["Beyond.Gameplay.Core.AbilitySystem+Event"].items()}
@@ -44,6 +48,7 @@ def bind_character_events(world, store, character, profile, actor):
         world.register_character_hook(trigger, program)
     for buff_id in ("buff_physical_crushed", "buff_physical_do_fracture"):
         data = native_record(store, buff_id)["data"]
-        world.native_buff_tags[buff_id] = tuple(int.from_bytes(bytes.fromhex(t["raw"]), "little", signed=True)
+        world.native_buff_tags[buff_id] = tuple(t["tagId"] if "tagId" in t else
+                                               int.from_bytes(bytes.fromhex(t["raw"]), "little", signed=True)
                                                for t in data["applyTags"])
     return tuple(diagnostics)

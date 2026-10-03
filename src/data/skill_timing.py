@@ -388,6 +388,10 @@ class SkillTimingStore:
                 profiles.append(self._profile_for_skill_id(skill_id))
         return tuple(profiles)
 
+    def profile(self, skill_id: str) -> SkillTiming:
+        """Look up a referenced native replacement without assuming a name suffix."""
+        return self._profile_for_skill_id(skill_id)
+
     def battle_phase_profiles(self, character: str) -> tuple[SkillTiming, ...]:
         """Return explicit numbered battle-button phases when native data exposes them."""
         phases = []

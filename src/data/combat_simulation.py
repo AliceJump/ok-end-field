@@ -120,6 +120,35 @@ class NativeBuffControl:
 
 
 @dataclass(frozen=True)
+class NativeSkillChange:
+    slot: int
+    target_skill: str
+    source: NativeTarget
+    lifetime: int
+    duration: CombatExpression
+    inherit_cooldown: bool = False
+    reverted_skill: str | None = None
+
+
+@dataclass(frozen=True)
+class NativeSkillOverride:
+    uid: str
+    scope: str
+    target_skill: str
+    expires: float | None
+    ends_with_scope: bool
+    reverted_skill: str | None
+    inherit_cooldown: bool = False
+
+
+@dataclass(frozen=True)
+class NativeSkillControl:
+    actor: str
+    slot: int
+    uid: str
+
+
+@dataclass(frozen=True)
 class NativeIteration:
     target: NativeTarget
     events: tuple[CombatEvent, ...]
@@ -170,6 +199,9 @@ class CombatEvent:
     target_bindings: tuple[NativeTargetBinding, ...] = ()
     iterations: tuple[NativeIteration, ...] = ()
     buff_controls: tuple[NativeBuffControl, ...] = ()
+    skill_changes: tuple[NativeSkillChange, ...] = ()
+    skill_controls: tuple[NativeSkillControl, ...] = ()
+    end_scope: str | None = None
 
 
 @dataclass(frozen=True)
@@ -202,6 +234,8 @@ class ActionProgram:
     native_buff_ids: tuple[str, ...] = ()
     native_timer_ids: tuple[str, ...] = ()
     native_buff_queries: tuple[NativeBuffQuery, ...] = ()
+    native_slot: int | None = None
+    native_requires_override: bool = False
 
 
 @dataclass(frozen=True)
@@ -265,6 +299,9 @@ class CombatWorldState:
         self.default_energy_per_sp: dict[str, float] = {}
         self.native_buffs: dict[tuple[str, str], tuple[int, float | None]] = {}
         self.native_buff_instances: dict[str, object] = {}
+        self.native_skill_overrides: dict[tuple[str, int], NativeSkillOverride] = {}
+        self.native_skill_slots: dict[tuple[str, int], str] = {}
+        self.native_programs: dict[tuple[str, str], ActionProgram] = {}
         self.native_listeners: list[tuple[str, str, ActionProgram, NativeListener]] = []
         self.native_timers: dict[tuple[str, str], float] = {}
         self.native_character_hooks: list[tuple[str, ActionProgram]] = []
@@ -750,6 +787,87 @@ class CombatWorldState:
                 value *= coefficient
             character.energy = max(0, min(character.energy_cap, character.energy + value))
 
+    def selected_native_skill(self, actor, slot):
+        return self.native_skill_slots.get((actor, slot))
+
+    def register_native_program(self, program, *, default=False):
+        self.native_programs[program.actor, program.key] = program
+        if default and program.native_slot is not None:
+            self.native_skill_slots.setdefault((program.actor, program.native_slot), program.key)
+
+    def selects_program(self, program):
+        if program.native_slot is None:
+            return True
+        selected = self.selected_native_skill(program.actor, program.native_slot)
+        return selected == program.key if selected is not None else not program.native_requires_override
+
+    def end_native_scope(self, action_id):
+        for (actor, slot), override in tuple(self.native_skill_overrides.items()):
+            if override.scope == action_id and override.ends_with_scope:
+                self._revert_native_skill(actor, slot, override.uid)
+
+    def _native_cooldown_progress(self, actor, key):
+        if key is None:
+            return 1.0
+        program = self.native_programs.get((actor, key))
+        if program is None:
+            raise UnresolvedMechanic(f"Unbound native replacement cooldown: {key}")
+        remaining = max(0.0, self.cooldowns.get(program.cooldown_key or key, 0) - self.time)
+        return max(0.0, min(1.0, 1 - remaining / program.cooldown)) if program.cooldown > 0 else 1.0
+
+    def _set_native_cooldown_progress(self, actor, key, progress):
+        program = self.native_programs.get((actor, key))
+        if program is None:
+            raise UnresolvedMechanic(f"Unbound native replacement cooldown: {key}")
+        self.cooldowns[program.cooldown_key or key] = self.time + program.cooldown * (1 - progress)
+
+    def _revert_native_skill(self, actor, slot, uid):
+        identity = (actor, slot)
+        override = self.native_skill_overrides.get(identity)
+        if override is None or override.uid != uid:
+            return
+        current = self.native_skill_slots.get(identity)
+        if current != override.reverted_skill:
+            if override.inherit_cooldown and slot in {0, 1} and override.reverted_skill is not None:
+                progress = self._native_cooldown_progress(actor, current)
+                self._set_native_cooldown_progress(actor, override.reverted_skill, progress)
+            if override.reverted_skill is None:
+                self.native_skill_slots.pop(identity, None)
+            else:
+                self.native_skill_slots[identity] = override.reverted_skill
+        del self.native_skill_overrides[identity]
+
+    def _change_native_skill(self, action_id, program, change, inputs):
+        if change.slot not in {0, 1, 2} or change.lifetime not in {0, 1, 2}:
+            raise UnresolvedMechanic("Unknown native skill replacement slot/lifetime")
+        sources = self.native_targets(change.source, action_id, program)
+        if not sources or sources[0] not in self.characters:
+            return
+        actor = sources[0]
+        duration = change.duration.evaluate(inputs) if change.lifetime == 0 else None
+        identity = (actor, change.slot)
+        reverted = change.reverted_skill or self.native_skill_slots.get(identity)
+        if change.inherit_cooldown:
+            if (actor, change.target_skill) not in self.native_programs or reverted is not None and (actor, reverted) not in self.native_programs:
+                raise UnresolvedMechanic("Unbound native replacement cooldown programs")
+        # Execute captures the requested reversion before ChangeSkill clears the
+        # previous handle. Cooldown progress is read after that clear/reversion.
+        previous = self.native_skill_overrides.get(identity)
+        if previous is not None:
+            self._revert_native_skill(actor, change.slot, previous.uid)
+        progress = self._native_cooldown_progress(actor, self.native_skill_slots.get(identity)) if change.inherit_cooldown else None
+        if progress is not None:
+            self._set_native_cooldown_progress(actor, change.target_skill, progress)
+        self.native_skill_slots[identity] = change.target_skill
+        self._sequence += 1
+        uid = f"skill:{self._sequence}"
+        expires = self.time + duration if duration is not None and duration > 0 else None
+        self.native_skill_overrides[identity] = NativeSkillOverride(uid, action_id, change.target_skill, expires,
+                                                                  change.lifetime == 2, reverted, change.inherit_cooldown)
+        if expires is not None:
+            event = CombatEvent(0, "native_skill_reverted", skill_controls=(NativeSkillControl(actor, change.slot, uid),))
+            heapq.heappush(self._queue, (expires, self._sequence, uid, program, event))
+
     def _apply_native_buff(self, owner, change, inputs, action_id, program):
         delta = change.count.evaluate(inputs)
         if delta != int(delta):
@@ -792,6 +910,13 @@ class CombatWorldState:
         if (action_id, sequence) in self._seen_events:
             return
         self._seen_events.add((action_id, sequence))
+        if event.end_scope is not None:
+            self.end_native_scope(event.end_scope)
+            return
+        if event.skill_controls:
+            for control in event.skill_controls:
+                self._revert_native_skill(control.actor, control.slot, control.uid)
+            return
         if event.buff_controls:
             from src.data.native_buff_runtime import control_buff
 
@@ -841,6 +966,11 @@ class CombatWorldState:
             self._executing_action = None
             return
         self.unresolved.update(event.unresolved)
+        for change in event.skill_changes:
+            try:
+                self._change_native_skill(action_id, program, change, inputs)
+            except (UnresolvedMechanic, MissingCombatInput) as error:
+                self.unresolved.add(str(error))
         for binding in event.target_bindings:
             try:
                 targets = tuple(dict.fromkeys(target for selector in binding.selectors
@@ -991,6 +1121,8 @@ class CombatWorldState:
             raise ValueError("Invalid action parameters")
         if not actor.alive or self.sp < gate or actor.energy < program.energy_cost:
             return False
+        if not self.selects_program(program):
+            return False
         cooldown_key = program.cooldown_key or program.key
         if self.time < self.ready_at(program):
             return False
@@ -1022,6 +1154,7 @@ class CombatWorldState:
         self.actor_ready[program.actor] = self.time + (program.duration if program.actor_lock is None else program.actor_lock)
         previous = self.active_actions.get(program.actor)
         if previous:
+            self.end_native_scope(previous[0])
             self._queue[:] = [row for row in self._queue if row[2] != previous[0] or row[4].persists_after_interrupt]
             heapq.heapify(self._queue)
         self.active_actions[program.actor] = (action_id, program, self.time)
@@ -1030,6 +1163,9 @@ class CombatWorldState:
         for event in program.events:
             self._sequence += 1
             heapq.heappush(self._queue, (self.time + event.at, self._sequence, action_id, program, event))
+        self._sequence += 1
+        heapq.heappush(self._queue, (self.time + program.duration, self._sequence, action_id, program,
+                                   CombatEvent(0, "native_action_finished", end_scope=action_id)))
         self.advance(self.time)
         return True
 
@@ -1074,7 +1210,8 @@ class CombatWorldState:
 
     def disable_actor(self, actor):
         self.characters[actor].alive = False
-        self._queue[:] = [row for row in self._queue if row[3].actor != actor or row[4].buff_controls]
+        self._queue[:] = [row for row in self._queue if row[3].actor != actor or row[4].buff_controls
+                         or row[4].skill_controls or row[4].end_scope is not None]
         if any(instance.source == actor or instance.owner == actor for instance in self.native_buff_instances.values()):
             self.unresolved.add("Native buff death policy needs binding")
         heapq.heapify(self._queue)
@@ -1144,6 +1281,7 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                         tuple(sorted((a, p.key, at) for a, (_, p, at) in state.active_actions.items())),
                         state.damage_state.phase_signature(state.time),
                         state.main_control, state.returned_sp, tuple(sorted(state.native_buffs.items())),
+                        tuple(sorted(state.native_skill_slots.items())), tuple(sorted(state.native_skill_overrides.items())),
                         tuple((v.owner, v.key, v.source, v.expires, v.period, v.remaining, repr(v.definition),
                                tuple(sorted(state._action_inputs[v.uid].items()))) for v in state.native_buff_instances.values()),
                         tuple(sorted(state.native_timers.items())),
