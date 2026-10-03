@@ -227,7 +227,7 @@ CONSERVATIVE_FULL_OVERRIDES: dict[tuple[str, str], float] = {
 def _skill_multiplier(skill: dict) -> tuple[float, float, list[str]]:
     """从 rank_stats 提取（总倍率%, 总失衡值, 条件行说明）。
 
-    - 伤害行：标签含「倍率」或「伤害」，且不含 治疗/效果/失衡；
+    - 伤害行：标签含「倍率」或「伤害」，且不含 治疗/效果/失衡/时间类字段；
       「处决」「终结技期间」等条件变体行不计入裸伤害（C 层再算）。
     - 数值：带 % 直接取；纯小数（如 1.3）按倍率小数 ×100；纯大数按百分比。
     """
@@ -261,7 +261,7 @@ def _skill_multiplier(skill: dict) -> tuple[float, float, list[str]]:
             continue
         if "治疗" in label or "效果" in label or "技力" in label or "能量" in label \
                 or any(word in label for word in ("提升", "提高", "增加", "暴击")) \
-                or "时长" in label or "时间" in label or "消耗" in label:
+                or "时长" in label or "时间" in label or "间隔" in label or "消耗" in label:
             continue
         if "失衡" in label:
             nums = [float(x) for x in re.findall(r"\d+(?:\.\d+)?", last)]
