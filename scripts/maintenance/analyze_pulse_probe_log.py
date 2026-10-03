@@ -13,7 +13,7 @@ member_count / task）。用途：统计「哪些槽位/角色在实战中出现
     python scripts/maintenance/analyze_pulse_probe_log.py             # 全量
     python scripts/maintenance/analyze_pulse_probe_log.py --char 洛茜
     python scripts/maintenance/analyze_pulse_probe_log.py --slot 2
-    python scripts/maintenance/analyze_pulse_probe_log.py --json out.json
+    python scripts/maintenance/analyze_pulse_probe_log.py --json tmp/pulse-report.json
 """
 
 from __future__ import annotations
@@ -47,6 +47,10 @@ def load_entries(path: Path) -> list[dict]:
     entries: list[dict] = []
     if not path.is_file():
         return entries
+    path = path.resolve()
+    allowed_roots = ((ROOT / "configs").resolve(), default_log_path().parent.resolve())
+    if path.suffix.lower() != ".jsonl" or not any(path.is_relative_to(root) for root in allowed_roots):
+        raise ValueError("log must be a JSONL file in the repository or configured config directory")
     with open(path, "r", encoding="utf-8") as f:
         for line in f:
             line = line.strip()
@@ -96,10 +100,16 @@ def aggregate(battles: list[list[dict]]) -> dict:
     ratios:[...], teams:set}}；intervals 为同一场战斗内同身份相邻两次
     脉冲的 active_t 差。
     """
-    stats: dict[str, dict] = defaultdict(lambda: {
-        "pulses": 0, "battles": 0, "first_seen": [], "intervals": [],
-        "ratios": [], "teams": [],
-    })
+    stats: dict[str, dict] = defaultdict(
+        lambda: {
+            "pulses": 0,
+            "battles": 0,
+            "first_seen": [],
+            "intervals": [],
+            "ratios": [],
+            "teams": [],
+        }
+    )
     for records in battles:
         seen_in_battle: set[str] = set()
         last_t: dict[str, float] = {}
@@ -143,9 +153,7 @@ def format_report(stats: dict, battle_count: int, total: int) -> str:
         first_med = f"{statistics.median(b['first_seen']):.1f}" if b["first_seen"] else "-"
         gap_med = f"{statistics.median(b['intervals']):.1f}" if b["intervals"] else "-"
         ratio_avg = f"{statistics.mean(b['ratios']):.3f}" if b["ratios"] else "-"
-        lines.append(
-            f"{ident:<14}{b['pulses']:>6}{b['battles']:>6}{first_med:>18}{gap_med:>12}{ratio_avg:>10}"
-        )
+        lines.append(f"{ident:<14}{b['pulses']:>6}{b['battles']:>6}{first_med:>18}{gap_med:>12}{ratio_avg:>10}")
     teams: dict[str, int] = defaultdict(int)
     for b in stats.values():
         for team in b["teams"]:
@@ -167,8 +175,16 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--json", type=Path, default=None, help="把聚合结果写成 JSON 文件")
     args = parser.parse_args(argv)
 
+    if args.json:
+        args.json = args.json.resolve()
+        if not args.json.is_relative_to((ROOT / "tmp").resolve()) or args.json.suffix.lower() != ".json":
+            parser.error("JSON report must be a JSON file under the repository tmp directory")
+
     path = args.log or default_log_path()
-    entries = load_entries(path)
+    try:
+        entries = load_entries(path)
+    except ValueError as exc:
+        parser.error(str(exc))
     if args.char:
         entries = [e for e in entries if args.char in str(e.get("char") or "")]
     if args.slot is not None:
@@ -176,7 +192,7 @@ def main(argv: list[str] | None = None) -> int:
 
     battles = split_battles(entries)
     if args.max_battles is not None and args.max_battles > 0:
-        battles = battles[-args.max_battles:]
+        battles = battles[-args.max_battles :]
     if not battles:
         print(f"没有可分析的记录：{path}")
         return 1
@@ -200,6 +216,7 @@ def main(argv: list[str] | None = None) -> int:
                 for ident, b in stats.items()
             },
         }
+        args.json.parent.mkdir(parents=True, exist_ok=True)
         args.json.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
         print(f"聚合结果已写入 {args.json}")
     return 0

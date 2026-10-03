@@ -5,6 +5,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "maintenance" / "analyze_pulse_probe_log.py"
 _spec = importlib.util.spec_from_file_location("analyze_pulse_probe_log", _SCRIPT)
@@ -38,11 +39,36 @@ class TestLoadEntries(unittest.TestCase):
             f.write("\n")
             path = Path(f.name)
         try:
-            entries = mod.load_entries(path)
+            with patch.object(mod, "default_log_path", return_value=path):
+                entries = mod.load_entries(path)
             self.assertEqual(len(entries), 1)
             self.assertEqual(entries[0]["active_t"], 1.0)
         finally:
             path.unlink()
+
+    def test_existing_log_outside_config_directories_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "outside.jsonl"
+            path.write_text("{}\n", encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "configured config directory"):
+                mod.load_entries(path)
+
+    def test_parent_traversal_cannot_escape_config_directory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            config = root / "configs"
+            config.mkdir()
+            (root / "outside.jsonl").write_text("{}\n", encoding="utf-8")
+            with patch.object(mod, "default_log_path", return_value=config / "pulse_probe_log.jsonl"):
+                with self.assertRaises(ValueError):
+                    mod.load_entries(config / ".." / "outside.jsonl")
+
+    def test_json_report_rejects_paths_outside_scratch_directory_before_reading(self):
+        with patch.object(mod, "load_entries") as loader:
+            with self.assertRaises(SystemExit) as raised:
+                mod.main(["--json", str(mod.ROOT / "src" / "report.json")])
+            self.assertEqual(raised.exception.code, 2)
+            loader.assert_not_called()
 
 
 class TestSplitBattles(unittest.TestCase):
@@ -59,12 +85,14 @@ class TestSplitBattles(unittest.TestCase):
 
 class TestAggregate(unittest.TestCase):
     def test_identity_first_seen_and_intervals(self):
-        battles = [[
-            _entry(2.0, char="洛茜", slot=1),
-            _entry(4.0, char="洛茜", slot=1),
-            _entry(6.0, char="洛茜", slot=1),
-            _entry(8.0, slot=3),
-        ]]
+        battles = [
+            [
+                _entry(2.0, char="洛茜", slot=1),
+                _entry(4.0, char="洛茜", slot=1),
+                _entry(6.0, char="洛茜", slot=1),
+                _entry(8.0, slot=3),
+            ]
+        ]
         stats = mod.aggregate(battles)
         self.assertEqual(stats["洛茜"]["pulses"], 3)
         self.assertEqual(stats["洛茜"]["battles"], 1)
@@ -93,14 +121,17 @@ class TestMain(unittest.TestCase):
             return Path(f.name)
 
     def test_end_to_end_with_json_output(self):
-        log = self._write_log([
-            _entry(2.0, char="洛茜", team=["洛茜", "黎风"]),
-            _entry(4.0, char="洛茜", team=["洛茜", "黎风"]),
-            _entry(1.0, char="黎风", team=["洛茜", "黎风"]),
-        ])
+        log = self._write_log(
+            [
+                _entry(2.0, char="洛茜", team=["洛茜", "黎风"]),
+                _entry(4.0, char="洛茜", team=["洛茜", "黎风"]),
+                _entry(1.0, char="黎风", team=["洛茜", "黎风"]),
+            ]
+        )
         with tempfile.TemporaryDirectory() as tmp:
-            out = Path(tmp) / "agg.json"
-            code = mod.main(["--log", str(log), "--json", str(out)])
+            out = Path(tmp) / "tmp" / "reports" / "agg.json"
+            with patch.object(mod, "ROOT", Path(tmp)), patch.object(mod, "default_log_path", return_value=log):
+                code = mod.main(["--log", str(log), "--json", str(out)])
             self.assertEqual(code, 0)
             payload = json.loads(out.read_text(encoding="utf-8"))
             self.assertEqual(payload["battles"], 2)
@@ -110,8 +141,9 @@ class TestMain(unittest.TestCase):
     def test_char_filter_and_empty_result(self):
         log = self._write_log([_entry(2.0, char="洛茜")])
         try:
-            self.assertEqual(mod.main(["--log", str(log), "--char", "洛茜"]), 0)
-            self.assertEqual(mod.main(["--log", str(log), "--char", "不存在"]), 1)
+            with patch.object(mod, "default_log_path", return_value=log):
+                self.assertEqual(mod.main(["--log", str(log), "--char", "洛茜"]), 0)
+                self.assertEqual(mod.main(["--log", str(log), "--char", "不存在"]), 1)
         finally:
             log.unlink()
 

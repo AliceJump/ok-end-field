@@ -7,7 +7,8 @@ import sys
 from dataclasses import asdict
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
 
 from src.data.skill_rotation import generate_damage_rotation
 from src.data.skill_timing import load_skill_timings
@@ -16,6 +17,14 @@ from src.tasks.onetime.TimedCombatLogic import TimedCombatLogic
 
 TEAM = ["莱万汀", "狼卫", "安塔尔", "艾尔黛拉"]
 SOURCE = "https://www.prydwen.gg/arknights-endfield/characters/laevatain/"
+
+
+def resolve_output_path(value: str | Path) -> Path:
+    """Keep generated reports inside the repository's scratch directory."""
+    path = Path(value).resolve()
+    if not path.is_relative_to((ROOT / "tmp").resolve()) or path.suffix.lower() != ".json":
+        raise argparse.ArgumentTypeError("output must be a JSON file under the repository tmp directory")
+    return path
 
 
 class ReplayHud:
@@ -52,6 +61,12 @@ class ReplayHud:
     def get_skill_bar_count(self):
         return int((self.sp + 1e-8) // 100)
 
+    def get_skill_bar_sp(self):
+        return self.sp
+
+    def sleep(self, seconds):
+        self.advance(seconds)
+
     def send_key(self, token):
         self.sp -= self.options[token].sp_cost
         self.casts.append({"seconds": round(self.now, 3), "slot": token})
@@ -75,7 +90,7 @@ def benchmark(regen=8.0, seconds=180.0):
     if plan is None:
         raise ValueError("No periodic plan")
     hud = ReplayHud(options, regen)
-    logic = TimedCombatLogic(hud, store)
+    logic = TimedCombatLogic(hud, store, clock=lambda: hud.now)
     logic.team = TEAM
     logic.order = list(plan.slots)
     logic.plan = plan
@@ -92,7 +107,7 @@ def benchmark(regen=8.0, seconds=180.0):
     # scheduler behavior, not the game's animation length or damage output.
     ult_hud = ReplayHud(options, regen)
     ult_hud.sp = 0
-    ult_logic = TimedCombatLogic(ult_hud, store)
+    ult_logic = TimedCombatLogic(ult_hud, store, clock=lambda: ult_hud.now)
     ult_logic.team, ult_logic.order = TEAM, list(plan.slots)
     profiles = store.profiles(TEAM[0], "ult")
     ult_logic._begin(profiles, 0)
@@ -148,7 +163,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--regen", type=float, default=8.0)
     parser.add_argument("--seconds", type=float, default=180.0)
-    parser.add_argument("--output", type=Path)
+    parser.add_argument("--output", type=resolve_output_path)
     args = parser.parse_args()
     if not all(math.isfinite(value) and value > 0 for value in (args.seconds, args.regen)):
         parser.error("seconds and regen must be finite and positive")
