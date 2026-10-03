@@ -1390,6 +1390,26 @@
         "value": 15
       }
     },
+    "Beyond.Gameplay.Core.StoreAtbValue+AtbValueType": {
+      "All": {
+        "data_offset": 37320,
+        "field_index": 44109,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "ExcludeReturned": {
+        "data_offset": 37322,
+        "field_index": 44111,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "ReturnedOnly": {
+        "data_offset": 37321,
+        "field_index": 44110,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
     "Beyond.Gameplay.DamageDecorateMask": {
       "Airborne": {
         "data_offset": 10397,
@@ -1830,6 +1850,46 @@
         "field_index": 8923,
         "raw_hex": "12",
         "value": 9
+      }
+    },
+    "Beyond.Gameplay.GainAtbMethod": {
+      "Gain": {
+        "data_offset": 10623,
+        "field_index": 9043,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Return": {
+        "data_offset": 10624,
+        "field_index": 9044,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
+    "Beyond.Gameplay.GainAtbType": {
+      "Default": {
+        "data_offset": 10619,
+        "field_index": 9038,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "NormalAttack": {
+        "data_offset": 10620,
+        "field_index": 9039,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "PowerAttack": {
+        "data_offset": 10621,
+        "field_index": 9040,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "Skill": {
+        "data_offset": 10622,
+        "field_index": 9041,
+        "raw_hex": "06",
+        "value": 3
       }
     },
     "Beyond.Gameplay.PhysicalInflictionType": {

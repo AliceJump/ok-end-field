@@ -10,12 +10,20 @@ import math
 from dataclasses import replace
 
 from src.data.combat_expressions import CombatExpression, combat_input
-from src.data.combat_simulation import ActionProgram, CombatEvent, NativeBuffChange, NativeListener, UnresolvedMechanic
+from src.data.combat_simulation import (
+    ActionProgram,
+    CombatEvent,
+    NativeBuffChange,
+    NativeListener,
+    NativeResourceChange,
+    NativeTarget,
+    UnresolvedMechanic,
+)
 from src.data.damage_resolution import DamageHit
 from src.data.effects import EffectType
 from src.data.native_combat_parameters import bind_native_parameters
 from src.data.native_gameplay import native_asset, native_enums, native_number, native_record
-from src.data.skill_types import CombatResourceType, ResourceChangeKind, SkillEffect, SkillResourceChange
+from src.data.skill_types import CombatResourceType, SkillEffect
 
 _DAMAGE_ELEMENTS = {0: "物理", 2: "灼热", 3: "电磁", 4: "寒冷", 6: "自然"}
 _PHYSICAL = {
@@ -100,6 +108,13 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
     event_defaults = {}
     ability_events = {v["value"]: k for k, v in native_enums()["Beyond.Gameplay.Core.AbilitySystem+Event"].items()}
     damage_masks = {k: v["value"] for k, v in native_enums()["Beyond.Gameplay.DamageDecorateMask"].items()}
+
+    def resource_target(value):
+        kinds = {0: "action_target", 1: "source", 2: "context", 4: "owner", 5: "main", 6: "main_target"}
+        source = value["targetSource"]
+        if source not in kinds:
+            raise UnresolvedMechanic(f"Native instant target search requires selector binding: {profile.skill_id}")
+        return NativeTarget(kinds[source], value["targetGroupKey"] if source == 2 else "")
 
     def target_count(target):
         if target["targetSource"] in {0, 1, 4, 5, 6}:
@@ -392,16 +407,17 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             timer_ids.add(body["buffId"])
             emit(CombatEvent(at, "native_timer", timers=((body["buffId"], number(body["cdTime"])),)))
         elif name == "ObtainCostAction+Data":
-            if body["isPercentValue"]:
-                raise UnresolvedMechanic("Percent resource recipient capacity requires binding")
             resource = {0: CombatResourceType.ULTIMATE_ENERGY, 1: CombatResourceType.SKILL_POINT}.get(body["costType"])
             if resource is None:
                 raise UnresolvedMechanic(f"Unknown resource type: {body['costType']}")
-            amount = CombatExpression("multiply", (number(body["costValue"]), number(body["coefficient"])))
-            emit(CombatEvent(at, "native_resource", resources=(SkillResourceChange(
-                resource, "team" if resource == CombatResourceType.SKILL_POINT else "self", ResourceChangeKind.FIXED,
-                affected_by_energy_gain=not body["ignoreUspGainScalar"],
-            ),), resource_formulas=(amount,)))
+            if body["atbGainMethod"] not in {0, 1}:
+                raise UnresolvedMechanic(f"Unknown native SP gain method: {body['atbGainMethod']}")
+            emit(CombatEvent(at, "native_resource", native_resources=(NativeResourceChange(
+                resource, number(body["costValue"]), number(body["coefficient"]),
+                resource_target(body["source"]), resource_target(body["target"]), percent=body["isPercentValue"],
+                ignore_energy_gain=body["ignoreUspGainScalar"], returned_sp=body["atbGainMethod"] == 1,
+                only_main_source=resource == CombatResourceType.SKILL_POINT and body["atbOnlyMainChar"],
+            ),)))
         elif name == "CreateBuffAction+Data":
             for reference in body["buffs"]:
                 buff_id = reference["buffId"]
@@ -412,12 +428,21 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                     if kind != "battle":
                         raise UnresolvedMechanic("Default battle-energy producer on another action type")
                     settings = native_asset("SkillSetting")
-                    # ObtainUspInNormalSkill reads the actual SP cost, including
-                    # native talent/potential cost modifications.
-                    amount = native.cost * settings["atbConsumedDefaultUspGainOther"]
-                    emit(CombatEvent(at, "battle_energy", resources=(SkillResourceChange(
-                        CombatResourceType.ULTIMATE_ENERGY, "team", ResourceChangeKind.FIXED, amount=amount,
-                        affected_by_energy_gain=True),)))
+                    ratio = CombatExpression("literal", (float(parameters["ratio"]),))
+                    if reference["assignBlackboard"]:
+                        for item in reference["assignItems"]:
+                            if item["targetKey"] != "ratio":
+                                continue
+                            if not item["useDirectValue"] or item["directValueType"] != 0:
+                                raise UnresolvedMechanic("Default energy ratio inheritance needs binding")
+                            ratio = CombatExpression("literal", (float(item["numericValue"]),))
+                    # SkillCastInfo captures the cost excluding previously
+                    # returned team SP at cast start, not cost minus later gains.
+                    emit(CombatEvent(at, "battle_energy", native_resources=(NativeResourceChange(
+                        CombatResourceType.ULTIMATE_ENERGY, combat_input("cast.non_returned_sp"), ratio,
+                        NativeTarget("source"), NativeTarget("squad"),
+                        default_energy=(settings["atbConsumedDefaultUspGainSelf"], settings["atbConsumedDefaultUspGainOther"]),
+                    ),)))
                     continue
                 if reference["assignBlackboard"] and reference["assignItems"]:
                     for item in reference["assignItems"]:

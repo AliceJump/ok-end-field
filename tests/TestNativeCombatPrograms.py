@@ -5,13 +5,15 @@ import unittest
 
 from src.data.character_skills import get_character
 from src.data.combat_catalog import build_combat_catalog
+from src.data.combat_expressions import CombatExpression
 from src.data.combat_runtime import CombatRuntime
+from src.data.combat_simulation import ActionProgram, CombatEvent, NativeResourceChange, NativeTarget
 from src.data.damage_resolution import FixedDamagePanel
 from src.data.effects import EffectType
 from src.data.native_action_program import _nodes, compile_native_action
 from src.data.native_reactions import reaction_enhancement
 from src.data.skill_timing import SkillTimingStore
-from src.data.skill_types import SkillEffect
+from src.data.skill_types import CombatResourceType, SkillEffect
 
 
 class TestNativeCombatPrograms(unittest.TestCase):
@@ -45,6 +47,82 @@ class TestNativeCombatPrograms(unittest.TestCase):
         self.assertEqual(self.world.count("1", "target", EffectType.STATUS_MIFU_KAITIAN_READY), 0)
         # Other unresolved geometry/state primitives are reported explicitly.
         self.assertTrue(self.world.unresolved)
+
+    def test_returned_sp_pool_is_spent_before_fresh_sp_and_energy_uses_cast_snapshot(self):
+        self.world.start(self.base, action_id="base")
+        self.assertEqual(self.world.returned_sp, 50)
+        self.assertEqual(self.world._action_inputs["base"]["cast.non_returned_sp"], 100)
+        self.world.advance(self.world.ready_at(self.follow))
+        energy = {a: c.energy for a, c in self.world.characters.items()}
+        for actor, character in self.world.characters.items():
+            self.assertAlmostEqual(energy[actor], 6.5 * (1 + character.attributes["energy_gain"]), places=5)
+        self.world.start(self.follow, action_id="follow")
+        self.assertEqual(self.world.returned_sp, 0)
+        self.assertEqual(self.world._action_inputs["follow"]["cast.non_returned_sp"], 0)
+        self.world.advance(3)
+        self.assertEqual({a: c.energy for a, c in self.world.characters.items()}, energy)
+
+    def resource_program(self, *, amount, coefficient=1, target="main", percent=False, ignore=False,
+                         resource=CombatResourceType.ULTIMATE_ENERGY, returned=False, source="source", only_main=False):
+        literal = lambda value: CombatExpression("literal", (float(value),))
+        change = NativeResourceChange(resource, literal(amount), literal(coefficient), NativeTarget(source),
+                                      NativeTarget(target), percent=percent, ignore_energy_gain=ignore,
+                                      returned_sp=returned, only_main_source=only_main)
+        return ActionProgram("resource", "1", "normal", 0, 0, 0,
+                             (CombatEvent(0, "resource", native_resources=(change,)),))
+
+    def test_energy_recipient_capacity_and_gain_are_applied_before_coefficient(self):
+        self.world.main_control = "2"
+        self.world.characters["1"].attributes["energy_gain"] = 9
+        self.world.characters["2"].attributes["energy_gain"] = .5
+        self.world.characters["2"].energy_cap = 120
+        self.world.start(self.resource_program(amount=.1, coefficient=2, percent=True), action_id="percent")
+        self.assertAlmostEqual(self.world.characters["2"].energy, 36)
+        self.assertEqual(self.world.characters["1"].energy, 0)
+        self.world.start(self.resource_program(amount=10, coefficient=-1), action_id="negative_coefficient")
+        self.assertAlmostEqual(self.world.characters["2"].energy, 21)
+        self.world.start(self.resource_program(amount=-10, coefficient=-1), action_id="negative_base")
+        self.assertAlmostEqual(self.world.characters["2"].energy, 31)
+        self.world.start(self.resource_program(amount=10, ignore=True), action_id="ignore_gain")
+        self.assertAlmostEqual(self.world.characters["2"].energy, 41)
+
+    def test_return_pool_uses_credited_gain_and_normal_gain_does_not_join_it(self):
+        self.world.sp = 290
+        gain = self.resource_program(amount=50, target="source", resource=CombatResourceType.SKILL_POINT, returned=True)
+        self.world.start(gain, action_id="overflow_return")
+        self.assertEqual((self.world.sp, self.world.returned_sp, self.world.sp_overflow), (300, 10, 40))
+        self.world.start(ActionProgram("cost", "1", "battle", 100, 0, 0, ()), action_id="spend")
+        self.assertEqual(self.world._action_inputs["spend"]["cast.non_returned_sp"], 90)
+        ordinary = self.resource_program(amount=50, target="source", resource=CombatResourceType.SKILL_POINT)
+        self.world.start(ordinary, action_id="gain")
+        self.assertEqual((self.world.sp, self.world.returned_sp), (250, 0))
+
+    def test_sp_only_main_checks_resource_source_and_enemy_is_not_energy_recipient(self):
+        self.world.sp = 100
+        self.world.main_control = "2"
+        p = self.resource_program(amount=20, target="source", resource=CombatResourceType.SKILL_POINT, only_main=True)
+        self.world.start(p, action_id="off_main")
+        self.assertEqual(self.world.sp, 100)
+        p = self.resource_program(amount=20, source="main", target="source",
+                                  resource=CombatResourceType.SKILL_POINT, only_main=True)
+        self.world.start(p, action_id="main_source")
+        self.assertEqual(self.world.sp, 120)
+        p = self.resource_program(amount=20, target="action_target")
+        self.world.start(p, action_id="enemy_target")
+        self.assertTrue(all(c.energy == 0 for c in self.world.characters.values()))
+
+    def test_default_energy_separates_source_and_other_coefficients(self):
+        literal = lambda value: CombatExpression("literal", (float(value),))
+        change = NativeResourceChange(CombatResourceType.ULTIMATE_ENERGY,
+                                      CombatExpression("input", ("cast.non_returned_sp",)), literal(2),
+                                      NativeTarget("source"), NativeTarget("squad"), default_energy=(.1, .05))
+        p = ActionProgram("default", "1", "battle", 100, 0, 0,
+                          (CombatEvent(0, "default", native_resources=(change,)),))
+        for c in self.world.characters.values():
+            c.attributes["energy_gain"] = 0
+        self.world.returned_sp = 40
+        self.world.start(p, action_id="default")
+        self.assertEqual([c.energy for c in self.world.characters.values()], [12, 6, 6])
 
     def test_two_layers_do_not_unlock_and_zero_layers_only_create_first_shred(self):
         self.follow_with_shred(2)
