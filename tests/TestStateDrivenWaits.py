@@ -679,7 +679,7 @@ class TestStateDrivenWaits(unittest.TestCase):
 
             def active_time(self):
                 # 利用 detect_team 的调用次数模拟时间推进
-                return float(detect_team.call_count)
+                return float(self.detect_calls)
 
             def next_frame(self):
                 return object()
