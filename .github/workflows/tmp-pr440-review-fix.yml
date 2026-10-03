@@ -22,8 +22,20 @@ jobs:
           python-version: '3.12'
       - name: Install tooling
         run: pip install polib
-      - name: Apply fixes
-        run: python scripts/tmp_pr440_review_fix.py
+      - name: Normalize helper and apply fixes
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('scripts/tmp_pr440_review_fix.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''    if blocks:\n        with po_path.open("a", encoding="utf-8", newline="\\n") as fh:\n            if po_path.stat().st_size:\n                fh.write("\\n")\n            fh.write("\\n\\n".join(blocks))\n            fh.write("\\n")\n'''
+          new = '''    if blocks:\n        current = po_path.read_text(encoding="utf-8").rstrip("\\n")\n        addition = "\\n\\n".join(block.strip("\\n") for block in blocks)\n        po_path.write_text(current + "\\n\\n" + addition + "\\n", encoding="utf-8", newline="\\n")\n'''
+          if old not in text:
+              raise SystemExit('helper append block not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8', newline='\n')
+          PY
+          python scripts/tmp_pr440_review_fix.py
       - name: Validate focused changes
         run: |
           python -m py_compile src/core/BattleConfig.py src/data/hidden_state_expectation.py scripts/tmp_pr440_review_fix.py
