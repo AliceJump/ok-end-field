@@ -1,0 +1,40 @@
+name: Temporary PR 440 review cleanup
+
+on:
+  push:
+    branches:
+      - codex/character-mechanics-v1
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ github.actor != 'github-actions[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: codex/character-mechanics-v1
+          fetch-depth: 0
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install tooling
+        run: pip install polib
+      - name: Apply fixes
+        run: python scripts/tmp_pr440_review_fix.py
+      - name: Validate focused changes
+        run: |
+          python -m py_compile src/core/BattleConfig.py src/data/hidden_state_expectation.py scripts/tmp_pr440_review_fix.py
+          python .agents/skills/ok-script-i18n/scripts/task_i18n_helper.py check --i18n i18n
+          python -m unittest tests.TestPoLocaleConsistency tests.TestHiddenStateExpectation -v
+          git diff --check
+      - name: Commit fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/core/BattleConfig.py src/data/hidden_state_expectation.py tests/TestHiddenStateExpectation.py docs/dev/skill-timing-mode.md i18n/*/LC_MESSAGES/ok.po i18n/*/LC_MESSAGES/ok.mo
+          git diff --cached --stat
+          git commit -m "fix: finish timing combat review cleanup"
+          git push origin HEAD:codex/character-mechanics-v1
