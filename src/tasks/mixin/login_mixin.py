@@ -6,11 +6,7 @@ from ok import Box
 from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
 from src.interaction.Mouse import run_at_window_pos
-from src.tasks.account.account_identity import (
-    visible_account_label,
-    visible_account_parts,
-    visible_account_pattern,
-)
+from src.tasks.account.account_identity import visible_account_label, visible_account_parts
 
 
 class LoginMixin(BaseEfTask):
@@ -21,7 +17,7 @@ class LoginMixin(BaseEfTask):
         该方法会：
         - 检查是否已登录并返回主界面；
         - 打开“最近”账号列表；
-        - 按登录界面实际可见的手机号前三位和后四位匹配目标账号；
+        - 对同一帧账号列表 OCR 结果分别匹配手机号前三位和后四位，再按几何位置合并账号候选；
         - 可见号码重复时，结合账号文字下方的“最近”标识与切换前账号身份确认目标；
         - 点击登录并等待登录成功。
 
@@ -80,7 +76,7 @@ class LoginMixin(BaseEfTask):
             self.log_error("未找到‘最近’按钮，可能未成功返回登录界面")
             raise RuntimeError("未找到‘最近’按钮，可能未成功返回登录界面")
 
-        # “最近”入口下方就是账号列表。这里覆盖整行账号文字，因此 OCR 能同时看到手机号前三位和后四位。
+        # “最近”入口下方就是账号列表。整块区域只 OCR 一次，再分别匹配前三位和后四位。
         account_box = self.box_of_screen(0, (recent_tab[0].y + recent_tab[0].height) / self.height, 1, 1)
         if not self._click_account_from_recent_list(username, account_box):
             label = visible_account_label(username)
@@ -89,6 +85,97 @@ class LoginMixin(BaseEfTask):
         self.click_text("登录", box=self.box.center)
         if not self._confirm_logged_in():
             raise RuntimeError("登录失败")
+
+    @staticmethod
+    def _ocr_box_text(box: Box) -> str:
+        """Normalize OCR text for local prefix/suffix matching."""
+        return re.sub(r"\s+", "", str(getattr(box, "name", "") or ""))
+
+    @staticmethod
+    def _contains_account_part(text: str, part: str) -> bool:
+        """Match a visible phone segment without allowing it to be embedded in a longer digit run."""
+        if not text or not part:
+            return False
+        return re.search(rf"(?<!\d){re.escape(part)}(?!\d)", text) is not None
+
+    @staticmethod
+    def _same_account_row(prefix_box: Box, suffix_box: Box) -> bool:
+        """Return whether two OCR boxes plausibly belong to the same masked phone row."""
+        if prefix_box is suffix_box:
+            return True
+
+        prefix_center_y = prefix_box.y + prefix_box.height / 2
+        suffix_center_y = suffix_box.y + suffix_box.height / 2
+        row_tolerance = max(prefix_box.height, suffix_box.height, 1) * 0.8
+        if abs(prefix_center_y - suffix_center_y) > row_tolerance:
+            return False
+
+        prefix_center_x = prefix_box.x + prefix_box.width / 2
+        suffix_center_x = suffix_box.x + suffix_box.width / 2
+        if suffix_center_x <= prefix_center_x:
+            return False
+
+        gap = suffix_box.x - (prefix_box.x + prefix_box.width)
+        max_gap = max(prefix_box.width, suffix_box.width, 1) * 6
+        return gap <= max_gap
+
+    @staticmethod
+    def _merge_account_part_boxes(prefix_box: Box, suffix_box: Box) -> Box:
+        """Merge the visible prefix/suffix OCR boxes into one clickable account-row box."""
+        if prefix_box is suffix_box:
+            return prefix_box
+
+        left = min(prefix_box.x, suffix_box.x)
+        top = min(prefix_box.y, suffix_box.y)
+        right = max(prefix_box.x + prefix_box.width, suffix_box.x + suffix_box.width)
+        bottom = max(prefix_box.y + prefix_box.height, suffix_box.y + suffix_box.height)
+        return Box(int(left), int(top), int(right - left), int(bottom - top))
+
+    def _account_candidates_from_ocr_results(self, ocr_results: list[Box], username: str) -> list[Box]:
+        """Build account candidates by independently matching prefix/suffix boxes, then pairing by geometry."""
+        prefix, suffix = visible_account_parts(username)
+        if not prefix or not suffix:
+            return []
+
+        prefix_boxes: list[Box] = []
+        suffix_boxes: list[Box] = []
+        for result in ocr_results or []:
+            text = self._ocr_box_text(result)
+            if self._contains_account_part(text, prefix):
+                prefix_boxes.append(result)
+            if self._contains_account_part(text, suffix):
+                suffix_boxes.append(result)
+
+        if not prefix_boxes or not suffix_boxes:
+            return []
+
+        candidates: list[Box] = []
+        used_suffix_ids: set[int] = set()
+        for prefix_box in sorted(prefix_boxes, key=lambda item: (item.y, item.x)):
+            eligible = [
+                suffix_box
+                for suffix_box in suffix_boxes
+                if id(suffix_box) not in used_suffix_ids and self._same_account_row(prefix_box, suffix_box)
+            ]
+            if not eligible:
+                continue
+
+            def pair_score(suffix_box: Box):
+                if suffix_box is prefix_box:
+                    return (-1, -1)
+                prefix_center_y = prefix_box.y + prefix_box.height / 2
+                suffix_center_y = suffix_box.y + suffix_box.height / 2
+                gap = max(0, suffix_box.x - (prefix_box.x + prefix_box.width))
+                return (abs(prefix_center_y - suffix_center_y), gap)
+
+            suffix_box = min(eligible, key=pair_score)
+            used_suffix_ids.add(id(suffix_box))
+            candidate = self._merge_account_part_boxes(prefix_box, suffix_box)
+            signature = (candidate.x, candidate.y, candidate.width, candidate.height)
+            if not any((item.x, item.y, item.width, item.height) == signature for item in candidates):
+                candidates.append(candidate)
+
+        return sorted(candidates, key=lambda item: (item.y, item.x))
 
     def _recent_marker_box(self, candidate: Box, next_candidate: Box | None = None):
         """Return the narrow vertical band immediately below one masked account row."""
@@ -139,23 +226,19 @@ class LoginMixin(BaseEfTask):
             if len(recent_candidates) == 1 and len(non_recent) == 1:
                 self.log_info("检测到两个相同可见账号，已排除标记为‘最近’的切换前账号")
                 return non_recent[0]
-            self.log_error(
-                "可见账号与切换前账号相同，但无法通过唯一‘最近’标识区分目标账号"
-            )
+            self.log_error("可见账号与切换前账号相同，但无法通过唯一‘最近’标识区分目标账号")
             return None
 
-        self.log_error(
-            "多个账号具有相同目标可见号码，但切换前账号不是其中之一，无法唯一确定目标账号"
-        )
+        self.log_error("多个账号具有相同目标可见号码，但切换前账号不是其中之一，无法唯一确定目标账号")
         return None
 
     def _click_account_from_recent_list(self, username: str, box) -> Box | None:
-        """Find and click an account by its visible prefix+suffix, retrying OCR for transient frames."""
-        pattern = visible_account_pattern(username)
+        """OCR the account list once per retry, pair visible prefix/suffix boxes, then click the selected row."""
         label = visible_account_label(username)
         start_time = self.active_time()
         while self.active_time() - start_time < 60:
-            candidates = self.login_ocr(match=pattern, box=box, need_active=False)
+            ocr_results = self.login_ocr(box=box, need_active=False)
+            candidates = self._account_candidates_from_ocr_results(ocr_results, username)
             target = self._choose_account_candidate(candidates, username)
             if target is None:
                 self.sleep(1)
