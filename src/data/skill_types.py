@@ -8,6 +8,7 @@ from enum import Enum
 from typing import Literal
 
 from src.data.character_progression import CharacterProgression
+from src.data.damage_modifiers import DamageModifierSpec
 from src.data.effects import EffectType
 
 
@@ -108,6 +109,7 @@ class SkillEffect:
     target: str | None = None  # enemy/ally/self/team/field；None=未声明
     count: int | None = None  # 正=施加/增加，负=消费/减少，None=未知或动态
     subject_effect_id: EffectType | None = None  # operation/predicate 所指向的具体资源/状态
+    damage_modifier: DamageModifierSpec | None = None
 
 
 @dataclass(frozen=True)

@@ -206,7 +206,34 @@
                             "value": "5%/10%（按消费1/2处涡流）",
                             "duration": 15,
                             "target": "enemy",
-                            "count": 1
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "tangtang_skill:VULN_ALL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷",
+                                    "灼热",
+                                    "电磁",
+                                    "自然"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "whirlpool_consumed",
+                                "strength": {
+                                    "count_input": "consumed.whirlpool",
+                                    "by_count": {
+                                        "0": 0,
+                                        "1": {
+                                            "row": "两个水龙卷 / 法术脆弱"
+                                        },
+                                        "2": {
+                                            "row": "三个水龙卷 / 法术脆弱"
+                                        }
+                                    }
+                                },
+                                "duration": {
+                                    "row": "法术脆弱持续时间 / （秒）"
+                                }
+                            }
                         }
                     ],
                     "resource_changes": [

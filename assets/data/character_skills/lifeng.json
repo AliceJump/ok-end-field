@@ -174,10 +174,27 @@
                     "effects": [
                         {
                             "effect_id": "VULN_PHYSICAL",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
-                            "count": null
+                            "count": null,
+                            "damage_modifier": {
+                                "key": "lifeng_skill:VULN_PHYSICAL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "物理"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "final_hit_without_shred",
+                                "strength": {
+                                    "base": {
+                                        "row": "物理脆弱效果"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "物理脆弱持续时间（秒）"
+                                }
+                            }
                         }
                     ]
                 }

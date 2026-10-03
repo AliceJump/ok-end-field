@@ -177,17 +177,54 @@
                         },
                         {
                             "effect_id": "VULN_PHYSICAL",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
-                            "count": null
+                            "count": null,
+                            "damage_modifier": {
+                                "key": "ardelia_skill:VULN_PHYSICAL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "物理"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "corrosion_consumed",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "脆弱持续时间（秒）"
+                                }
+                            }
                         },
                         {
                             "effect_id": "VULN_ALL",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
-                            "count": null
+                            "count": null,
+                            "damage_modifier": {
+                                "key": "ardelia_skill:VULN_ALL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷",
+                                    "灼热",
+                                    "电磁",
+                                    "自然"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "corrosion_consumed",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "脆弱持续时间（秒）"
+                                }
+                            }
                         }
                     ]
                 }
