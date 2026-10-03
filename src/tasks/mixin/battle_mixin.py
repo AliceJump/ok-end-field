@@ -55,8 +55,8 @@ from src.core.BattleConfig import (
 from src.core.config_migration import legacy_battle_mode_to_bool
 from src.core.global_config_store import get_global_config
 from src.core.sequence_parser import parse_sequence
-from src.data.FeatureList import FeatureList as fL
 from src.data.combat_observation import ActionBlockReason, EnemyPresence
+from src.data.FeatureList import FeatureList as fL
 from src.image.enemy_health_probe import probe_enemy_presence_fast
 from src.image.hsv_config import HSVRange as hR
 from src.image.recommend_skill_detector import PULSE_ON_RATIO, get_recommend_skill_detector
@@ -889,6 +889,8 @@ class BattleMixin(BaseEfTask):
         # Give target lock/camera steering one short beat before deciding the
         # forward direction for the dodge.
         self.sleep(0.05)
+        self.dodge_forward(pre_hold=0.05, dodge_down_time=0.03, after_sleep=0.1)
+        self.dodge_forward(pre_hold=0.05, dodge_down_time=0.03, after_sleep=0.1)
         self.dodge_forward(pre_hold=0.05, dodge_down_time=0.03, after_sleep=0.02)
         return True
 
@@ -1120,10 +1122,7 @@ class BattleMixin(BaseEfTask):
         member_count = int(getattr(self, "_battle_member_count", 0) or 0)
         if member_count < 1 or member_count > 4:
             return False
-        return all(
-            bool(self._find_battle_ult(f"ult_{index}"))
-            for index in range(1, member_count + 1)
-        )
+        return all(bool(self._find_battle_ult(f"ult_{index}")) for index in range(1, member_count + 1))
 
     def _find_battle_ult(self, feature: str):
         """根据本次队伍人数，将终结技模板映射到实际技能框。"""
