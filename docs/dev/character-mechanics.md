@@ -141,22 +141,23 @@ damage_basis
 
 ## 敌人存在与技能受阻观测钩子
 
-先保留运行时语义，具体固定坐标/阈值后续拿实战画面再填，不在没有样本时猜检测参数。
+以下描述以当前实现为准；固定区域与阈值已经由实战截图样本落地，不再是占位 hook。
 
 ### 敌人是否仍在场
 
-BattleMixin 新增 `probe_enemy_presence()`，返回：
+BattleMixin 的 `probe_enemy_presence()` 委托 `probe_enemy_presence_fast()`，返回：
 
 ```
-UNKNOWN  当前还没有可靠观测
-PRESENT  固定区域明确看到敌人证据
-ABSENT   已检查固定区域但没有敌人证据
+UNKNOWN  尚未完成缺席确认，或当前帧不可用
+PRESENT  固定区域检测到 Boss / 普通敌人血条颜色证据
+ABSENT   普通敌人区域完成两轮干净扫描且 Boss 区域也无血条证据
 ```
 
-后续 detector 的预定证据：
+当前 detector 使用固定血条区域和 BGR 颜色几何：
 
-- Boss：屏幕上方固定区域的大红色 Boss 血条；
-- 小怪：场景内固定样式的小血条/敌人标识。
+- Boss：检查屏幕上方固定区域；
+- 小怪：按切片轮询场景上半部的普通敌人血条区域；
+- `PRESENT` 命中即快速返回；`ABSENT` 需要两轮完整干净扫描，未完成时保持 `UNKNOWN`。
 
 只有在外层仍处于战斗 HUD、且 detector 明确返回 `ABSENT` 时，时间排轴才进入“场内无敌人暂停”：
 
@@ -167,31 +168,27 @@ ABSENT   已检查固定区域但没有敌人证据
 - `combat_time()` 继续推进，不修改 `state_until`、cooldown 或 native timeline 起始时间，因此这段等待会真实消耗角色状态/技能窗口；
 - 一旦进入 ABSENT 暂停，UNKNOWN 不会误恢复，必须等明确 PRESENT。
 
-当前 hook 默认返回 UNKNOWN，因此在 detector 尚未实现前不会改变现有实战行为。
-
 ### 顶部白字：技能受阻原因
 
-BattleMixin 新增 `probe_combat_action_block_reason()`，后续固定检查屏幕中上方短白字区域，预留两类结果：
+BattleMixin 的 `probe_combat_action_block_reason()` 当前通过屏幕中上方固定白字带的几何特征检测 `TOO_FAR`，并要求连续两帧稳定命中；已经存在于动作尝试开始前的旧提示会先等待清除，避免串到下一次动作。
 
 ```
-TOO_FAR       离敌人太远（较短文本）
-DURING_SKILL  当前技能期间无法释放此技能（较长文本）
+TOO_FAR       已实现：固定白字带检测“离敌人太远”
+DURING_SKILL  尚未实现：当前不会由 detector 返回
 ```
 
-可以先按白色文本带的长度/几何区分，必要时再补 OCR，不要求一开始就做全屏文字识别。
+调度器已经接入反馈语义：一次动作尝试后的观察窗口内若命中 `TOO_FAR`，会撤销“技能已开始”的未证实时间轴并进入短退避，避免错误 cooldown / state 继续污染后续排轴。
 
-调度器已经接入反馈语义：一次动作尝试后的 1.2 秒内若命中提示，会撤销“技能已开始”的未证实时间轴；战技进入 0.2 秒短退避，避免错误 cooldown / state 继续污染后续排轴。
-
-`TOO_FAR` 另外调用 `recover_target_too_far()`。该 hook 当前故意是 no-op，预定实现顺序为：
+`TOO_FAR` 会调用 `recover_target_too_far()`；当前实现为：
 
 ```
-锁定/对准目标
--> 等待视角转向稳定
--> 长距离向前冲刺
+中键索敌
+-> 短暂等待视角转向
+-> 连续 3 次向前闪避贴近敌人
 -> 回到正常战斗调度
 ```
 
-`DURING_SKILL` 不触发位移恢复，只取消失败尝试并稍后重试。
+`DURING_SKILL` 的检测尚未实现；后续若接入该原因，应只取消失败尝试并稍后重试，不触发位移恢复。
 
 ## 战斗时间与脚本暂停分离
 
