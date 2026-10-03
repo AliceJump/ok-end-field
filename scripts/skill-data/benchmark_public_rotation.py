@@ -3,6 +3,7 @@
 import argparse
 import json
 import math
+import os
 import sys
 from dataclasses import asdict
 from pathlib import Path
@@ -160,16 +161,20 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--seconds", type=float, default=180.0)
     parser.add_argument("--output", type=Path)
     args = parser.parse_args(argv)
+    output_path = None
     if args.output:
-        args.output = args.output.resolve()
-        if not args.output.is_relative_to((ROOT / "tmp").resolve()) or args.output.suffix.lower() != ".json":
+        # Canonicalize symlinks and require the directory separator after tmp.
+        # Keep the checked canonical value as the one used by the write below.
+        output_path = os.path.realpath(args.output)
+        allowed_root = os.path.realpath(ROOT / "tmp")
+        if not output_path.startswith(allowed_root + os.sep) or Path(output_path).suffix.lower() != ".json":
             parser.error("output must be a JSON file under the repository tmp directory")
     if not all(math.isfinite(value) and value > 0 for value in (args.seconds, args.regen)):
         parser.error("seconds and regen must be finite and positive")
     result = json.dumps(benchmark(args.regen, args.seconds), ensure_ascii=False, indent=2)
-    if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(result + "\n", encoding="utf-8")
+    if output_path:
+        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+        Path(output_path).write_text(result + "\n", encoding="utf-8")
     print(result)
     return 0
 

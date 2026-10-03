@@ -62,5 +62,8 @@ class TestBenchmarkReportPaths(unittest.TestCase):
     def test_absolute_path_outside_repository_is_rejected(self):
         self.assert_invalid_output(benchmark.ROOT.parent / "outside.json")
 
+    def test_sibling_directory_with_same_prefix_is_rejected(self):
+        self.assert_invalid_output(benchmark.ROOT / "tmp_evil" / "report.json")
+
     def test_non_json_file_is_rejected(self):
         self.assert_invalid_output(benchmark.ROOT / "tmp" / "script.py")
