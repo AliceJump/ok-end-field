@@ -281,9 +281,8 @@ BATTLE_CONFIG_TYPE = {
 
 BATTLE_CONFIG_DESCRIPTION = {
     KEY_TIMING_ROTATION: (
-        "当前分支的独立时间排轴模式。\n"
-        "开启后由时间排轴接管战斗策略，并隐藏旧 AutoCombat 模式配置；"
-        "关闭后通过「战斗模式」选择原有策略。"
+        "独立实验模式，优先于其他战斗策略开关。\n"
+        "利用实时监测和本地技能时间数据安排出技。"
     ),
     KEY_LEGACY_COMBAT_MODE: (
         "仅在「技能时间排轴」关闭时显示。\n"

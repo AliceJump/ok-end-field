@@ -138,6 +138,8 @@ def load_damage_envelopes(path: Path | None = None) -> dict[tuple[str, str], Dam
 
     result = {}
     for row in rows:
+        if not isinstance(row, dict):
+            continue
         actor = str(row.get("character") or "")
         for skill in row.get("skills") or ():
             if not isinstance(skill, dict):

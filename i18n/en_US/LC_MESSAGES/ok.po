@@ -2976,3 +2976,38 @@ msgstr "Fixed Rotation"
 
 msgid "实时条件"
 msgstr "Realtime Conditions"
+
+msgid ""
+"仅在「技能时间排轴」关闭时显示。\n"
+"选择原有 AutoCombat 的执行模式；同一时刻只启用一种模式。"
+msgstr ""
+"Shown only when Skill Timing Rotation is disabled.\n"
+"Select the execution mode for the legacy AutoCombat logic; only one mode is active at a time."
+
+msgid "仅协议空间启用初始等待"
+msgstr "Initial Wait in Protocol Space Only"
+
+msgid ""
+"开启后，初始等待时间只在协议空间生效；普通战斗检测到战斗 UI "
+"后立即开始自动操作。协议空间优先通过开局全队终结技就绪判定，并保留左上角撤离按钮作为兜底。"
+msgstr ""
+"When enabled, the initial wait applies only in Protocol Space; normal combat"
+" starts auto-operation immediately after the combat UI is detected. In "
+"Protocol Space, full-team Ultimate readiness is checked first, with the top-"
+"left Evacuate button kept as a fallback."
+
+msgid "脉冲探针记录"
+msgstr "Pulse Probe Logging"
+
+msgid ""
+"独立诊断探针：战斗中观测技能按钮区域出现白色脉冲（官方推荐\n"
+"释放时机）的位置与时间，追加记录到\n"
+"「configs/pulse_probe_log.jsonl」，用于统计哪些强化态/技能\n"
+"有官方脉冲提示。\n"
+"只记录不按键，不影响任何战斗行为；关闭后停止记录。"
+msgstr ""
+"Standalone diagnostic probe: observes the position and timing of white pulses in the skill-button area (official recommended cast timing) during combat and appends records to configs/pulse_probe_log.jsonl to identify which enhanced states/skills have official pulse prompts.\n"
+"Records only and never presses keys; disabling stops logging."
+
+msgid "自动技能列表"
+msgstr "Auto Skill List"

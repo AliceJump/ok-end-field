@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+import json
+import tempfile
 import unittest
+from pathlib import Path
 
 from src.data.character_mechanics import load_character_mechanics
 from src.data.hidden_state_expectation import (
@@ -38,6 +41,26 @@ class TestHiddenDamageExpectation(unittest.TestCase):
 
     def _battle_transition(self, actor):
         return next(item for item in self.mechanics[actor].transitions if item.action == "battle")
+
+    def test_damage_envelope_loader_skips_non_dict_rows(self):
+        rows = [
+            None,
+            "bad-row",
+            7,
+            {
+                "character": "测试角色",
+                "skills": [
+                    {"type": "战技", "crit_expect": 10, "full_expect": 20},
+                ],
+            },
+        ]
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "damage_baseline.json"
+            path.write_text(json.dumps(rows, ensure_ascii=False), encoding="utf-8")
+            envelopes = load_damage_envelopes(path)
+        self.assertEqual(set(envelopes), {("测试角色", "战技")})
+        self.assertEqual(envelopes[("测试角色", "战技")].low, 10.0)
+        self.assertEqual(envelopes[("测试角色", "战技")].high, 20.0)
 
     def test_typhoeus_with_natural_provider_uses_expected_stack_fraction_not_full(self):
         hidden = HiddenStateExpectation(
