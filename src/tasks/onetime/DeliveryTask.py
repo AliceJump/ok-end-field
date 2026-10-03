@@ -26,6 +26,7 @@ from src.tasks.account.account_mixin import AccountMixin
 from src.tasks.mixin.map_mixin import MapMixin
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
+
 def _legacy_delivery_run_mode(config, new_key):
     if config.get(new_key) in {"正常送货", "仅接取", "仅送货"}:
         return _NO_MIGRATION

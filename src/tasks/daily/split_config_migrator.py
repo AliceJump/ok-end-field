@@ -64,7 +64,9 @@ def _area_trade_key_map() -> dict[str, str]:
     return key_map
 
 
-def _import_legacy_selection(source_config: dict, target_config: dict, target_key: str, *, ops_key: str, defaults: list):
+def _import_legacy_selection(
+    source_config: dict, target_config: dict, target_key: str, *, ops_key: str, defaults: list
+):
     """导入旧开关/操作列表；目标已有列表时保留目标值。"""
     if isinstance(target_config.get(target_key), list):
         return _NO_MIGRATION

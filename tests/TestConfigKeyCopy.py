@@ -26,7 +26,10 @@ class TestConfigKeyCopy(unittest.TestCase):
         ]
         for initial, missing_only, replace_default in cases:
             for replace_defaults, expected in ((False, missing_only), (True, replace_default)):
-                with self.subTest(initial=initial, replace_defaults=replace_defaults), tempfile.TemporaryDirectory() as tmp:
+                with (
+                    self.subTest(initial=initial, replace_defaults=replace_defaults),
+                    tempfile.TemporaryDirectory() as tmp,
+                ):
                     path = os.path.join(tmp, "Task.json")
                     write_json_file(path, initial)
                     self.migrate(tmp, replace_defaults=replace_defaults)
