@@ -1,5 +1,6 @@
 """Bind immediate CharacterData conditions without inventing combo eligibility."""
 
+from src.data.combat_simulation import walk_combat_events
 from src.data.native_action_program import compile_native_action
 from src.data.native_gameplay import native_asset, native_enums, native_record
 
@@ -36,7 +37,7 @@ def bind_character_events(world, store, character, profile, actor):
                                         attributes=world.characters[actor].attributes,
                                         panel=world.characters[actor].panel,
                                         event_sequence=condition["comboSkillCheckAction"], event_blackboard=bb)
-        errors = tuple(error for event in program.events for error in event.unresolved)
+        errors = tuple(error for event in walk_combat_events(program.events) for error in event.unresolved)
         if errors:
             diagnostics.extend(errors)
             continue
