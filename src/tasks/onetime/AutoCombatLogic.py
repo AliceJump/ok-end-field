@@ -173,6 +173,26 @@ class AutoCombatLogic:
             task.log_info(f"自动排轴对齐当前主控: 槽位 {current_slot + 1} 段先手")
         return rotated
 
+    def _build_team_skill_sequence(self, task, team, damage_rotation_enabled):
+        """生成队伍技能序列，并按冷/热启动状态初始化自动循环轴。"""
+        if not damage_rotation_enabled:
+            return generate_skill_sequence(team)
+        skill_sequence = generate_damage_rotation(team)
+        if not self.rotation_enabled:
+            include_ult = self.protocol_space_detected
+            if not include_ult:
+                task.log_info(
+                    "冷启动排轴: 未检测到协议空间特征，轴不含终结技"
+                    "（就绪后由普通模式兜底释放）"
+                )
+            self.auto_rotation_sequence = self._align_auto_rotation_to_current(
+                task, generate_auto_rotation(team, include_ult=include_ult)
+            )
+            self.auto_rotation_index = 0
+            self.auto_rotation_active = True
+            task.log_info(f"自动排轴已生成（可重复循环）: {self.auto_rotation_sequence}")
+        return skill_sequence
+
     def _sync_normal_attack_hold(self):
         if self._normal_attack_hold_enabled:
             self.task.active_and_send_mouse_delta(activate=True, only_activate=True)
@@ -586,23 +606,9 @@ class AutoCombatLogic:
                     try:
                         team, stable = task.detect_team_stable(deadline=_sleep_end)
                         if stable and team and any(m != "?" for m in team):
-                            if _damage_rotation_enabled:
-                                skill_sequence = generate_damage_rotation(team)
-                                if not self.rotation_enabled:
-                                    include_ult = self.protocol_space_detected
-                                    if not include_ult:
-                                        task.log_info(
-                                            "冷启动排轴: 未检测到协议空间特征，轴不含终结技"
-                                            "（就绪后由普通模式兜底释放）"
-                                        )
-                                    self.auto_rotation_sequence = self._align_auto_rotation_to_current(
-                                        task, generate_auto_rotation(team, include_ult=include_ult)
-                                    )
-                                    self.auto_rotation_index = 0
-                                    self.auto_rotation_active = True
-                                    task.log_info(f"自动排轴已生成（可重复循环）: {self.auto_rotation_sequence}")
-                            else:
-                                skill_sequence = generate_skill_sequence(team)
+                            skill_sequence = self._build_team_skill_sequence(
+                                task, team, _damage_rotation_enabled
+                            )
                             task._battle_team, self.normal_skill_sequence = team, skill_sequence
                             task.log_info(f"初始等待期间识别到队伍: {team}")
                             task.log_info(f"自动技能列表已生成: {self.normal_skill_sequence}")
@@ -670,23 +676,9 @@ class AutoCombatLogic:
                     try:
                         team, stable = task.detect_team_stable()
                         if stable and team and any(m != "?" for m in team):
-                            if _damage_rotation_enabled:
-                                skill_sequence = generate_damage_rotation(team)
-                                if not self.rotation_enabled:
-                                    include_ult = self.protocol_space_detected
-                                    if not include_ult:
-                                        task.log_info(
-                                            "冷启动排轴: 未检测到协议空间特征，轴不含终结技"
-                                            "（就绪后由普通模式兜底释放）"
-                                        )
-                                    self.auto_rotation_sequence = self._align_auto_rotation_to_current(
-                                        task, generate_auto_rotation(team, include_ult=include_ult)
-                                    )
-                                    self.auto_rotation_index = 0
-                                    self.auto_rotation_active = True
-                                    task.log_info(f"自动排轴已生成（可重复循环）: {self.auto_rotation_sequence}")
-                            else:
-                                skill_sequence = generate_skill_sequence(team)
+                            skill_sequence = self._build_team_skill_sequence(
+                                task, team, _damage_rotation_enabled
+                            )
                             task._battle_team, self.normal_skill_sequence = team, skill_sequence
                             task.log_info(f"战斗中识别到队伍: {team}")
                             task.log_info(f"自动技能列表已生成: {self.normal_skill_sequence}")
