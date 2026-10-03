@@ -19,14 +19,6 @@ TEAM = ["莱万汀", "狼卫", "安塔尔", "艾尔黛拉"]
 SOURCE = "https://www.prydwen.gg/arknights-endfield/characters/laevatain/"
 
 
-def resolve_output_path(value: str | Path) -> Path:
-    """Keep generated reports inside the repository's scratch directory."""
-    path = Path(value).resolve()
-    if not path.is_relative_to((ROOT / "tmp").resolve()) or path.suffix.lower() != ".json":
-        raise argparse.ArgumentTypeError("output must be a JSON file under the repository tmp directory")
-    return path
-
-
 class ReplayHud:
     """Accepted casts, nominal SP recovery, no enemies, links or Ultimate energy."""
 
@@ -161,12 +153,17 @@ def benchmark(regen=8.0, seconds=180.0):
     }
 
 
-if __name__ == "__main__":
+def main(argv: list[str] | None = None) -> int:
+    """Run the offline benchmark and confine optional reports to repository tmp."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--regen", type=float, default=8.0)
     parser.add_argument("--seconds", type=float, default=180.0)
-    parser.add_argument("--output", type=resolve_output_path)
-    args = parser.parse_args()
+    parser.add_argument("--output", type=Path)
+    args = parser.parse_args(argv)
+    if args.output:
+        args.output = args.output.resolve()
+        if not args.output.is_relative_to((ROOT / "tmp").resolve()) or args.output.suffix.lower() != ".json":
+            parser.error("output must be a JSON file under the repository tmp directory")
     if not all(math.isfinite(value) and value > 0 for value in (args.seconds, args.regen)):
         parser.error("seconds and regen must be finite and positive")
     result = json.dumps(benchmark(args.regen, args.seconds), ensure_ascii=False, indent=2)
@@ -174,3 +171,8 @@ if __name__ == "__main__":
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(result + "\n", encoding="utf-8")
     print(result)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

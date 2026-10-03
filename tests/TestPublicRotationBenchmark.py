@@ -1,5 +1,6 @@
-import argparse
 import importlib.util
+import json
+import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -42,17 +43,24 @@ class TestBenchmarkReportPaths(unittest.TestCase):
         self.assertIsNotNone(result["ultimate_guard_replay"]["first_normal_attack_input_seconds"])
 
     def test_json_report_under_scratch_directory_is_accepted(self):
-        path = benchmark.ROOT / "tmp" / "rotation-benchmark" / "report.json"
-        self.assertEqual(benchmark.resolve_output_path(path), path.resolve())
+        with tempfile.TemporaryDirectory(dir=benchmark.ROOT / "tmp") as directory:
+            path = Path(directory) / "nested" / "report.json"
+            with patch.object(benchmark, "benchmark", return_value={"scope": "offline"}):
+                self.assertEqual(benchmark.main(["--output", str(path)]), 0)
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8")), {"scope": "offline"})
+
+    def assert_invalid_output(self, path):
+        with patch.object(benchmark, "benchmark") as calculate:
+            with self.assertRaises(SystemExit) as error:
+                benchmark.main(["--output", str(path)])
+            self.assertEqual(error.exception.code, 2)
+            calculate.assert_not_called()
 
     def test_parent_traversal_outside_scratch_directory_is_rejected(self):
-        with self.assertRaises(argparse.ArgumentTypeError):
-            benchmark.resolve_output_path(benchmark.ROOT / "tmp" / ".." / "report.json")
+        self.assert_invalid_output(benchmark.ROOT / "tmp" / ".." / "report.json")
 
     def test_absolute_path_outside_repository_is_rejected(self):
-        with self.assertRaises(argparse.ArgumentTypeError):
-            benchmark.resolve_output_path(benchmark.ROOT.parent / "outside.json")
+        self.assert_invalid_output(benchmark.ROOT.parent / "outside.json")
 
     def test_non_json_file_is_rejected(self):
-        with self.assertRaises(argparse.ArgumentTypeError):
-            benchmark.resolve_output_path(benchmark.ROOT / "tmp" / "script.py")
+        self.assert_invalid_output(benchmark.ROOT / "tmp" / "script.py")
