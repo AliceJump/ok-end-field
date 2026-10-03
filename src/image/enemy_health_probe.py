@@ -25,7 +25,8 @@ ENEMY_NORMAL_HP_SLICES = 4
 ENEMY_ABSENT_CONFIRM_ROUNDS = 2
 
 # 1080p reference geometry. Both sampling and candidate geometry scale with the
-# actual capture size, so 4K does not scan twice as many rows for the same UI.
+# capture height, so 4K doubles the UI geometry while ultrawide aspect ratios do
+# not incorrectly enlarge the expected HP-bar thickness/length.
 ENEMY_HP_SAMPLE_STEP_1080 = 3
 ENEMY_HP_MIN_RUN_1080 = 4
 ENEMY_HP_MIN_HEIGHT_1080 = 4
@@ -34,8 +35,8 @@ _RUN_KERNELS: dict[int, np.ndarray] = {}
 _FULL_SLICE_MASK = (1 << ENEMY_NORMAL_HP_SLICES) - 1
 
 
-def _scaled_px(value: int, screen_width: int, screen_height: int) -> int:
-    scale = max(screen_width / 1920.0, screen_height / 1080.0)
+def _scaled_px(value: int, _screen_width: int, screen_height: int) -> int:
+    scale = screen_height / 1080.0
     return max(1, int(round(value * scale)))
 
 
