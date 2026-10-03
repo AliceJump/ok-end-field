@@ -6,7 +6,11 @@ from ok import Box
 from src.core.BaseEfTask import BaseEfTask
 from src.data.FeatureList import FeatureList as fL
 from src.interaction.Mouse import run_at_window_pos
-from src.tasks.account.account_identity import visible_account_label, visible_account_pattern
+from src.tasks.account.account_identity import (
+    visible_account_label,
+    visible_account_parts,
+    visible_account_pattern,
+)
 
 
 class LoginMixin(BaseEfTask):
@@ -18,7 +22,7 @@ class LoginMixin(BaseEfTask):
         - 检查是否已登录并返回主界面；
         - 打开“最近”账号列表；
         - 按登录界面实际可见的手机号前三位和后四位匹配目标账号；
-        - 可见号码重复时，通过账号文字下方的“最近”标识排除当前最近账号；
+        - 可见号码重复时，结合账号文字下方的“最近”标识与切换前账号身份确认目标；
         - 点击登录并等待登录成功。
 
         Args:
@@ -98,28 +102,50 @@ class LoginMixin(BaseEfTask):
             bottom_px = min(self.height, top_px + max(candidate.height, 20))
         return self.box_of_screen(0, top_px / self.height, 1, bottom_px / self.height)
 
-    def _choose_account_candidate(self, candidates: list[Box]) -> Box | None:
-        """Choose one OCR account row; duplicate visible IDs prefer the row not marked “最近”."""
+    def _choose_account_candidate(self, candidates: list[Box], username: str) -> Box | None:
+        """Choose one masked account row using the previous identity and the “最近” marker."""
         if not candidates:
             return None
         candidates = sorted(candidates, key=lambda item: (item.y, item.x))
         if len(candidates) == 1:
             return candidates[0]
 
+        recent_candidates: list[Box] = []
         non_recent: list[Box] = []
         for index, candidate in enumerate(candidates):
             next_candidate = candidates[index + 1] if index + 1 < len(candidates) else None
             marker_box = self._recent_marker_box(candidate, next_candidate)
             recent_marker = self.login_ocr(match=re.compile("最近"), box=marker_box, need_active=False)
-            if not recent_marker:
+            if recent_marker:
+                recent_candidates.append(candidate)
+            else:
                 non_recent.append(candidate)
 
-        if len(non_recent) == 1:
-            self.log_info("检测到多个相同可见账号，已选择未标记为‘最近’的账号")
-            return non_recent[0]
+        previous_username = str(getattr(self, "_previous_account_user", "") or "").strip()
+        if not previous_username:
+            self.log_error("可见账号匹配冲突，但切换前账号身份未知，已取消自动选择")
+            return None
+
+        if previous_username == username:
+            if len(recent_candidates) == 1:
+                self.log_info("目标账号就是切换前账号，已选择标记为‘最近’的账号")
+                return recent_candidates[0]
+            self.log_error(
+                f"目标账号是切换前账号，但‘最近’候选数量为 {len(recent_candidates)}，无法唯一确定"
+            )
+            return None
+
+        if visible_account_parts(previous_username) == visible_account_parts(username):
+            if len(recent_candidates) == 1 and len(non_recent) == 1:
+                self.log_info("检测到两个相同可见账号，已排除标记为‘最近’的切换前账号")
+                return non_recent[0]
+            self.log_error(
+                "可见账号与切换前账号相同，但无法通过唯一‘最近’标识区分目标账号"
+            )
+            return None
 
         self.log_error(
-            f"可见账号匹配冲突：共 {len(candidates)} 个候选，排除‘最近’后仍有 {len(non_recent)} 个候选"
+            "多个账号具有相同目标可见号码，但切换前账号不是其中之一，无法唯一确定目标账号"
         )
         return None
 
@@ -130,7 +156,7 @@ class LoginMixin(BaseEfTask):
         start_time = self.active_time()
         while self.active_time() - start_time < 60:
             candidates = self.login_ocr(match=pattern, box=box, need_active=False)
-            target = self._choose_account_candidate(candidates)
+            target = self._choose_account_candidate(candidates, username)
             if target is None:
                 self.sleep(1)
                 continue
