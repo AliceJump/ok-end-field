@@ -142,10 +142,7 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
                     "直接填写 web-api.skland.com/account/info/hg/check 返回 JSON 里的 data.content 值。\n"
                     "仅在「地图数据来源 = 手动 content」时使用。"
                 ),
-                "地图账号": (
-                    "从账号配置页读取该账号保存的地图同步 content。\n"
-                    "仅在「地图数据来源 = 账号配置」时使用。"
-                ),
+                "地图账号": ("从账号配置页读取该账号保存的地图同步 content。\n仅在「地图数据来源 = 账号配置」时使用。"),
                 "选择物品": ("选择要参与导航的物品列表。\n只会在当前地图里匹配这些物品。"),
                 "标记按键": ("接近目标后用于标记“已获取”的键位。\n默认按键为 f。"),
                 "标记按住时长": ("按住标记按键并持续达到这个时长后，\n才会把当前目标标记为已获取。"),
@@ -268,7 +265,10 @@ class ItemNavigatorTask(InstructionsMixin, WsPositionMixin, BaseEfTask, TriggerT
             [
                 inst_line("📍 " + self.tr("物品导航配置说明"), "#FF5555", bold=True),
                 inst_line(
-                    "⚙️ " + self.tr("地图数据来源：自动当前账号读取当前任务账号；账号配置读取指定账号；手动 content 使用本任务 content"),
+                    "⚙️ "
+                    + self.tr(
+                        "地图数据来源：自动当前账号读取当前任务账号；账号配置读取指定账号；手动 content 使用本任务 content"
+                    ),
                     "#FF5555",
                     bold=True,
                 ),

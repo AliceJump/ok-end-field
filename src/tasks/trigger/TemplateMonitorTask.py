@@ -41,12 +41,14 @@ class TemplateMonitorTask(BaseEfTask, TriggerTask):
             }
         )
 
-        self.config_description.update({
-            "模板ID": "要检测的模板ID（FeatureList枚举值）。必填。",
-            "识别框": "检测区域框，格式：x1,y1,x2,y2（相对坐标0-1）。留空表示全屏。",
-            "模板HSV处理器": "处理模板图像，只保留指定颜色区域参与匹配。留空表示不使用。",
-            "启用反转": "是否启用HSV处理器的反转功能。",
-        })
+        self.config_description.update(
+            {
+                "模板ID": "要检测的模板ID（FeatureList枚举值）。必填。",
+                "识别框": "检测区域框，格式：x1,y1,x2,y2（相对坐标0-1）。留空表示全屏。",
+                "模板HSV处理器": "处理模板图像，只保留指定颜色区域参与匹配。留空表示不使用。",
+                "启用反转": "是否启用HSV处理器的反转功能。",
+            }
+        )
         self.validate_unique_sub_config_parents()
 
     def _parse_box(self, box_str):

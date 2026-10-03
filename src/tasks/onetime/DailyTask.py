@@ -41,11 +41,7 @@ def _legacy_daily_task_list(entries, defaults):
             return _NO_MIGRATION
         if not any(old_key in config for _, old_key in entries):
             return _NO_MIGRATION
-        return [
-            name
-            for name, old_key in entries
-            if bool(config.get(old_key, defaults.get(name, False)))
-        ]
+        return [name for name, old_key in entries if bool(config.get(old_key, defaults.get(name, False)))]
 
     return transform
 
@@ -91,7 +87,7 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
     }
 
     _LEGACY_DEFAULTS = {
-        **{name: True for name in BOAT_TASKS + OTHER_TASKS + BATTLE_TASKS + REWARD_TASKS},
+        **dict.fromkeys(BOAT_TASKS + OTHER_TASKS + BATTLE_TASKS + REWARD_TASKS, True),
         "自动送货": False,
         "传送到帝江号右侧传送点": True,
     }
@@ -176,10 +172,12 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             BoatOrganizeTask,
             switch_key="⭐帝江号整理",
             run_method="boat_organize",
-            predicate=lambda: self._task_selected(self.CFG_BOAT_TASKS, "帝江号整理")
-            and (
-                bool(self.organize_feature.impl_config("⭐帝江号一键存放"))
-                or bool(self.organize_feature.impl_config("⭐简易制作"))
+            predicate=lambda: (
+                self._task_selected(self.CFG_BOAT_TASKS, "帝江号整理")
+                and (
+                    bool(self.organize_feature.impl_config("⭐帝江号一键存放"))
+                    or bool(self.organize_feature.impl_config("⭐简易制作"))
+                )
             ),
         )
         self.harvest_feature = DailyFeature(
@@ -187,8 +185,10 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             BoatHarvestTask,
             switch_key="⭐帝江号收菜",
             run_method="boat_claim_rewards",
-            predicate=lambda: self._task_selected(self.CFG_BOAT_TASKS, "帝江号收菜")
-            and bool(self.harvest_feature.impl_config("⭐帝江号收菜")),
+            predicate=lambda: (
+                self._task_selected(self.CFG_BOAT_TASKS, "帝江号收菜")
+                and bool(self.harvest_feature.impl_config("⭐帝江号收菜"))
+            ),
         )
         self.mail_feature = DailyFeature(
             self,
@@ -216,8 +216,10 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             RegionalBuildTask,
             switch_key="⭐地区建设",
             run_method="run_regional",
-            predicate=lambda: self._task_selected(self.CFG_OTHER_TASKS, "地区建设")
-            and bool(self.regional_feature.impl_config("⭐地区建设")),
+            predicate=lambda: (
+                self._task_selected(self.CFG_OTHER_TASKS, "地区建设")
+                and bool(self.regional_feature.impl_config("⭐地区建设"))
+            ),
         )
         self.craft_feature = DailyFeature(
             self,
@@ -252,8 +254,10 @@ class DailyTask(Common, EndCommandMixin, AccountMixin):
             ActivityRewardTask,
             switch_key="⭐活动奖励",
             run_method="claim_activity_rewards",
-            predicate=lambda: self._task_selected(self.CFG_REWARD_TASKS, "活动奖励")
-            and bool(self.activity_feature.impl_config("⭐活动奖励")),
+            predicate=lambda: (
+                self._task_selected(self.CFG_REWARD_TASKS, "活动奖励")
+                and bool(self.activity_feature.impl_config("⭐活动奖励"))
+            ),
         )
         self.daily_reward_feature = DailyFeature(
             self,
