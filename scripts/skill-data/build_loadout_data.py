@@ -337,21 +337,38 @@ def validate_snapshot(manifest: dict, snap_dir: Path) -> None:
     required = {"2": "weapon", "4": "equip", "7": "matrix"}
     items = manifest.get("items", [])
     counts = manifest.get("catalog_counts", {})
+    captured_counts = manifest.get("captured_counts", {})
+    limit = manifest.get("limit")
+    if not isinstance(limit, int) or limit < 0:
+        raise ValueError("快照缺少有效的 limit 完整性标记")
+    if limit:
+        raise ValueError("快照使用了 --limit，内容不完整")
+    if manifest.get("complete") is not True:
+        raise ValueError("快照未标记为完整")
     if manifest.get("failure_count") != 0 or manifest.get("failures"):
         raise ValueError("快照包含抓取失败")
     if set(manifest.get("subtypes", [])) != set(required):
         raise ValueError("快照必须覆盖武器、装备和基质")
     if manifest.get("success_count") != len(items):
         raise ValueError("成功计数与条目数不一致")
+    if not isinstance(captured_counts, dict):
+        raise ValueError("快照缺少实际抓取计数")
     for subtype, kind in required.items():
         entries = [entry for entry in items if entry.get("subtype") == subtype]
         expected = counts.get(subtype)
+        captured = captured_counts.get(subtype)
         if not isinstance(expected, int) or expected <= 0 or len(entries) != expected:
             raise ValueError(f"子类 {subtype} 的抓取不完整")
+        if captured != len(entries):
+            raise ValueError(f"子类 {subtype} 的实际抓取计数不一致")
         if len({entry.get("item_id") for entry in entries}) != expected:
             raise ValueError(f"子类 {subtype} 存在重复条目")
-        if any(entry.get("kind") != kind or not (snap_dir / entry["detail_file"]).is_file()
-               for entry in entries):
+        if any(
+            entry.get("kind") != kind
+            or not str(entry.get("item_id") or "").isdigit()
+            or not (snap_dir / entry["detail_file"]).is_file()
+            for entry in entries
+        ):
             raise ValueError(f"子类 {subtype} 缺少有效详情")
 
 
