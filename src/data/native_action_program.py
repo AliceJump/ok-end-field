@@ -93,7 +93,7 @@ def _nodes(value):
 
 
 def compile_native_action(store, character, profile, actor, kind, *, damage_bonus=0.0, attributes=None, panel=None,
-                          event_sequence=None, event_blackboard=None):
+                          event_sequence=None, event_blackboard=None, isolated_blackboard=False, buff_path=()):
     """A single enemy in range is an explicit simulation scenario, not a hit proof."""
     attributes = attributes or {}
     conditions = {
@@ -103,7 +103,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
     native = bind_native_parameters(store, profile.skill_id, character.progression,
                                     character.progression.baseline.skill_rank, conditions=conditions)
     record = store.record(profile.skill_id)["data"]
-    bb = dict(native.blackboard)
+    bb = {} if isolated_blackboard else dict(native.blackboard)
     bb.update(event_blackboard or {})
     events = []
     buff_ids = set()
@@ -217,12 +217,13 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                     # The physical reaction tags are captured on the BuffData,
                     # so these exact IDs need neither guessed names nor hashing.
                     supported = {-430063731, -168668661}
-                    tags = [tag["tagId"] for tag in query["tags"]]
+                    tags = [tag["tagId"] if "tagId" in tag else
+                            int.from_bytes(bytes.fromhex(tag["raw"]), "little", signed=True) for tag in query["tags"]]
                     if not tags or not set(tags) <= supported:
                         raise UnresolvedMechanic("Native event tag hierarchy is not bound")
                     keys = [f"event.buff_tag.{tag}" for tag in tags]
                 elif value["checkType"] == 0:
-                    keys = [f"event.buff_id.{bid}" for bid in value["buffIdList"]]
+                    keys = [f"event.buff_id.{bid['buffId'] if isinstance(bid, dict) else bid}" for bid in value["buffIdList"]]
                 else:
                     raise UnresolvedMechanic("Unknown native buff identity query")
                 event_defaults.update(dict.fromkeys(keys, 0.0))
@@ -429,6 +430,13 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
         elif name == "AddGlobalCDTimer+Data":
             timer_ids.add(body["buffId"])
             emit(CombatEvent(at, "native_timer", timers=((body["buffId"], number(body["cdTime"])),)))
+        elif name == "ObtainUspInNormalSkill+Data":
+            settings = native_asset("SkillSetting")
+            emit(CombatEvent(at, "battle_energy", native_resources=(NativeResourceChange(
+                CombatResourceType.ULTIMATE_ENERGY, combat_input("cast.non_returned_sp"), number(body["coefficient"]),
+                resource_target(body["source"]), NativeTarget("squad"),
+                default_energy=(settings["atbConsumedDefaultUspGainSelf"], settings["atbConsumedDefaultUspGainOther"]),
+            ),)))
         elif name == "ObtainCostAction+Data":
             resource = {0: CombatResourceType.ULTIMATE_ENERGY, 1: CombatResourceType.SKILL_POINT}.get(body["costType"])
             if resource is None:
@@ -447,34 +455,14 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 eid = _BUFF_EFFECTS.get(buff_id)
                 data = native_record(store, buff_id)["data"]
                 parameters = {r["key"]: r["valueStr"] or r["valueDouble"] for r in data["blackboard"]}
-                if buff_id == "buff_common_obtain_ultimate_sp":
-                    if kind != "battle":
-                        raise UnresolvedMechanic("Default battle-energy producer on another action type")
-                    settings = native_asset("SkillSetting")
-                    ratio = CombatExpression("literal", (float(parameters["ratio"]),))
-                    if reference["assignBlackboard"]:
-                        for item in reference["assignItems"]:
-                            if item["targetKey"] != "ratio":
-                                continue
-                            if not item["useDirectValue"] or item["directValueType"] != 0:
-                                raise UnresolvedMechanic("Default energy ratio inheritance needs binding")
-                            ratio = CombatExpression("literal", (float(item["numericValue"]),))
-                    # SkillCastInfo captures the cost excluding previously
-                    # returned team SP at cast start, not cost minus later gains.
-                    emit(CombatEvent(at, "battle_energy", native_resources=(NativeResourceChange(
-                        CombatResourceType.ULTIMATE_ENERGY, combat_input("cast.non_returned_sp"), ratio,
-                        NativeTarget("source"), NativeTarget("squad"),
-                        default_energy=(settings["atbConsumedDefaultUspGainSelf"], settings["atbConsumedDefaultUspGainOther"]),
-                    ),)))
-                    continue
                 if reference["assignBlackboard"] and reference["assignItems"]:
                     for item in reference["assignItems"]:
-                        if not item["useDirectValue"] or item["directValueType"] != 0:
-                            raise UnresolvedMechanic(f"Dynamic buff inheritance: {buff_id}/{item['targetKey']}")
-                        parameters[item["targetKey"]] = item["numericValue"]
+                        if item["directValueType"] != 0:
+                            raise UnresolvedMechanic(f"Non-numeric buff inheritance: {buff_id}/{item['targetKey']}")
+                        parameters[item["targetKey"]] = item["numericValue"] if item["useDirectValue"] else bb.get(item["inputValueKey"])
                 duration = native_number(data["duration"], parameters)
                 count = native_number(body["count"], bb)
-                if count is None or count != int(count):
+                if eid is not None and (count is None or count != int(count)):
                     raise UnresolvedMechanic(f"Dynamic native buff count: {buff_id}")
                 if eid is not None:
                     emit(CombatEvent(at, "buff_created", effects=(SkillEffect(eid, count=int(count), duration=duration, target="self"),)))
@@ -482,16 +470,22 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                     buff_ids.add(buff_id)
                     stacking = data["stackingSettings"]
                     maximum = stacking["maxStackCnt"] if stacking["maxStackCnt"] > 0 else None
+                    definition = None
+                    if (data["buffEventAction"] or data["abilityEventAction"]) and stacking["stackingType"] in {0, 2, 7}:
+                        from src.data.native_buff_program import compile_buff_definition
+
+                        definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,
+                                                             attributes=attributes, panel=panel, path=buff_path)
                     target = "enemy" if body["targetSettings"]["targetSource"] in {0, 2, 6} else "self"
                     change = NativeBuffChange(buff_id, number(body["count"]),
                                               CombatExpression("literal", (duration,)) if duration is not None else None,
                                               permanent=data["lifeType"] == 1, maximum=maximum, target=target,
-                                              selector=resource_target(body["targetSettings"]))
+                                              selector=resource_target(body["targetSettings"]), definition=definition)
                     emit(CombatEvent(at, "native_buff_created", native_buffs=(change,)))
                     # Preserve the presence/count even when another part of the
                     # buff still needs an interpreter; it is not zero damage proof.
                     listeners = []
-                    for subscription in data["abilityEventAction"]:
+                    for subscription in (() if definition is not None else data["abilityEventAction"]):
                         trigger = ability_events.get(subscription["abilityEvent"])
                         if trigger != "OnBeforeOutputPhysicalInfliction":
                             raise UnresolvedMechanic(f"Native event subscription: {buff_id}/{trigger}")
@@ -503,7 +497,10 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                         listeners.append(NativeListener(buff_id, trigger, callbacks))
                     if listeners:
                         emit(CombatEvent(at, "native_listener", listeners=tuple(listeners)))
-                    remaining = {k: v for k, v in data.items() if k != "abilityEventAction"}
+                    bound = {"abilityEventAction"}
+                    if definition is not None:
+                        bound.add("buffEventAction")
+                    remaining = {k: v for k, v in data.items() if k not in bound}
                     has_modifiers = bool(data["attributeModifier"]["attributeModifiers"] or data["damageModifier"]
                                          or data["healModifier"] or data["globalModifier"] or data["poiseModifier"]
                                          or data["shieldConfigs"])
