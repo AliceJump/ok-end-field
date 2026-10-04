@@ -12,6 +12,9 @@ from src.image.skill_bar_expected_probe import (
 )
 
 
+_UNKNOWN = SkillBarProbe(SkillBarState.UNKNOWN)
+
+
 class TestExpectedSkillBarProbe(unittest.TestCase):
     def test_nearly_full_white_stays_partial(self):
         bar = np.zeros((8, 100, 3), dtype=np.uint8)
@@ -48,7 +51,7 @@ class TestExpectedSkillBarProbe(unittest.TestCase):
             2: SkillBarProbe(SkillBarState.PARTIAL, 0.25),
         }
 
-        result = resolve_expected_skill_bar_sp(135, lambda index: calls.append(index) or mapping[index])
+        result = resolve_expected_skill_bar_sp(135, lambda index: calls.append(index) or mapping.get(index, _UNKNOWN))
 
         self.assertEqual(result, 225.0)
         self.assertEqual(calls, [1, 2])
@@ -58,7 +61,7 @@ class TestExpectedSkillBarProbe(unittest.TestCase):
             2: SkillBarProbe(SkillBarState.EMPTY),
             1: SkillBarProbe(SkillBarState.PARTIAL, 0.80),
         }
-        result = resolve_expected_skill_bar_sp(235, lambda index: calls.append(index) or mapping[index])
+        result = resolve_expected_skill_bar_sp(235, lambda index: calls.append(index) or mapping.get(index, _UNKNOWN))
         self.assertEqual(result, 180.0)
         self.assertEqual(calls, [2, 1])
 
@@ -69,7 +72,7 @@ class TestExpectedSkillBarProbe(unittest.TestCase):
             2: SkillBarProbe(SkillBarState.EMPTY),
         }
 
-        result = resolve_expected_skill_bar_sp(135, lambda index: calls.append(index) or mapping[index])
+        result = resolve_expected_skill_bar_sp(135, lambda index: calls.append(index) or mapping.get(index, _UNKNOWN))
 
         self.assertEqual(result, 200.0)
         self.assertEqual(calls, [1, 2])
@@ -83,7 +86,7 @@ class TestExpectedSkillBarProbe(unittest.TestCase):
             0: SkillBarProbe(SkillBarState.PARTIAL, 0.42),
         }
 
-        result = resolve_expected_skill_bar_sp(150, lambda index: calls.append(index) or mapping[index])
+        result = resolve_expected_skill_bar_sp(150, lambda index: calls.append(index) or mapping.get(index, _UNKNOWN))
 
         self.assertEqual(result, 42.0)
         self.assertEqual(calls, [1, 2, 0])
@@ -106,7 +109,7 @@ class TestExpectedSkillBarProbe(unittest.TestCase):
 
         def fake_probe(_task, frame, index):
             seen_frames.append(frame)
-            return probes[index]
+            return probes.get(index, _UNKNOWN)
 
         with patch("src.image.skill_bar_expected_probe.probe_skill_bar_slot", side_effect=fake_probe):
             result = read_expected_skill_bar_sp(task, 230)
