@@ -115,6 +115,20 @@ class TestExpectedSkillBarProbe(unittest.TestCase):
         self.assertEqual(len(seen_frames), 2)
         self.assertIs(seen_frames[0], seen_frames[1])
 
+    def test_missing_frame_uses_legacy_reader(self):
+        class Task:
+            def __init__(self):
+                self.reads = 0
+
+            def get_skill_bar_sp(self):
+                self.reads += 1
+                return 175.0
+
+        task = Task()
+
+        self.assertEqual(read_expected_skill_bar_sp(task, 180), 175.0)
+        self.assertEqual(task.reads, 1)
+
 
 if __name__ == "__main__":
     unittest.main()
