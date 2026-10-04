@@ -14,6 +14,7 @@
 | `ok-config-migration` | 修改持久化任务配置的键名、值格式或所属任务，并迁移账号覆盖数据 | `.agents/skills/ok-config-migration/SKILL.md` |
 | `wiki-skill-sync` | 从官方/第三方 wiki 同步干员技能数据、修复技能描述与效果数值 | `.agents/skills/wiki-skill-sync/SKILL.md` |
 | `ok-script-pr-review` | 触发、等待、核验、回复和解析 CodeRabbit PR 审阅 | `.agents/skills/ok-script-pr-review/SKILL.md` |
+| `pr-scope-responsibility` | 规划或审阅 PR 职责边界、判断是否需要拆分、核对标题/描述与实际 diff 范围一致性 | `.agents/skills/pr-scope-responsibility/SKILL.md` |
 | `github-workflows` | 编辑或排查 GitHub Actions YAML、权限、actionlint 与 SonarCloud 规则 | `.agents/skills/github-workflows/SKILL.md` |
 | `github-rulesets` | 分支/tag ruleset、bypass、GitHub App token 与受保护分支工作流 | `.agents/skills/github-rulesets/SKILL.md` |
 | `github-actions-performance` | 分析 Actions 慢任务、checkout 历史/tag 与同步性能 | `.agents/skills/github-actions-performance/SKILL.md` |
