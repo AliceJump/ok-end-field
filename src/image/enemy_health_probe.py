@@ -570,13 +570,15 @@ def _draw_enemy_presence_debug(task, frame, scanned_regions, hits, state: EnemyP
                 box.confidence = 1.0
                 hit_boxes.append(box)
 
-            # ok-script 2.0.7b1 ignores draw_boxes([]), so explicitly clear the
-            # stale hit layer on a miss, then redraw the current scan regions.
-            if not hit_boxes:
+            # ok-script 2.0.7b1 can only clear all live boxes at once. Do that
+            # once on a hit->miss transition; repeated miss frames must not keep
+            # deleting unrelated overlays registered by other features.
+            if not hit_boxes and getattr(task, "_enemy_presence_live_hit_drawn", False):
                 clear_box = getattr(task, "clear_box", None)
                 if callable(clear_box):
                     try:
                         clear_box()
+                        task._enemy_presence_live_hit_drawn = False
                     except Exception:
                         pass
 
@@ -585,6 +587,7 @@ def _draw_enemy_presence_debug(task, frame, scanned_regions, hits, state: EnemyP
             draw_boxes("enemy_presence_scan_regions", scan_boxes, color="blue", debug=True)
             if hit_boxes:
                 draw_boxes("enemy_presence_hits", hit_boxes, color="green", debug=True)
+                task._enemy_presence_live_hit_drawn = True
 
     _save_enemy_presence_debug_frame(task, frame, scanned_regions, hits, state)
 
@@ -627,8 +630,8 @@ def probe_enemy_presence_fast(task) -> EnemyPresence:
 
     With framework ``use_overlay`` enabled, the blue debug layer shows the
     exact ROI(s) scanned by this probe call and the green layer shows the exact
-    pink pixel run that passed the detector. A miss clears the previous hit
-    before redrawing the current scan.
+    pink pixel run that passed the detector. The first miss after a live hit
+    clears that stale hit before redrawing the current scan regions.
 
     When ``保存敌人检测调试帧`` is enabled on AutoCombatTask, every valid probe
     frame is saved as a PNG with yellow scan ROI / green hit boxes, plus a
