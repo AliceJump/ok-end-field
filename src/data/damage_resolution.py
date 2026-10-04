@@ -207,11 +207,15 @@ class TimedDamageState:
         ]
 
     def resolve_hit(
-        self, panel: FixedDamagePanel, hit: DamageHit, *, now: float, inputs: dict[str, float] | None = None
+        self, panel: FixedDamagePanel, hit: DamageHit, *, now: float, inputs: dict[str, float] | None = None,
+        native_damage_taken: float = 0.0,
     ) -> DamageResult:
         self.expire(now)
         buckets = {bucket.value: 0.0 for bucket in DamageBucket}
         unknown = []
+        if not math.isfinite(native_damage_taken):
+            return DamageResult(None, None, buckets, ("Non-finite native defender damage scale",))
+        buckets[DamageBucket.DAMAGE_TAKEN.value] += native_damage_taken
         field_values = {}
         for modifier in self.modifiers:
             spec = modifier.spec
@@ -251,8 +255,12 @@ class TimedDamageState:
         attack = panel.attack(buckets[DamageBucket.ATTACK.value])
         crit_rate = min(1.0, max(0.0, panel.crit_rate + buckets[DamageBucket.CRIT_RATE.value]))
         crit_damage = max(0.0, panel.crit_damage + buckets[DamageBucket.CRIT_DAMAGE.value])
-        non_crit = attack * hit.multiplier * (1 + hit.damage_bonus + buckets[DamageBucket.DAMAGE_BONUS.value])
-        for bucket in (DamageBucket.AMPLIFICATION, DamageBucket.VULNERABILITY, DamageBucket.DAMAGE_TAKEN):
+        # NormalCalcZone keeps separate attacker/defender additive arrays, then
+        # multiplies both and clamps the combined zone to zero.
+        normal_scale = max(0.0, (1 + hit.damage_bonus + buckets[DamageBucket.DAMAGE_BONUS.value])
+                           * (1 + buckets[DamageBucket.DAMAGE_TAKEN.value]))
+        non_crit = attack * hit.multiplier * normal_scale
+        for bucket in (DamageBucket.AMPLIFICATION, DamageBucket.VULNERABILITY):
             fixed = panel.amplification.get(hit.element, 0) if bucket == DamageBucket.AMPLIFICATION else 0
             non_crit *= 1 + fixed + buckets[bucket.value]
         non_crit *= hit.enemy_multiplier

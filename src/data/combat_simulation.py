@@ -138,6 +138,7 @@ class NativeBuffProgram:
     unresolved: tuple[str, ...] = ()
     tags: tuple[int, ...] = ()
     stacking_key: str | None = None
+    damage_scales: tuple = ()
 
 
 @dataclass(frozen=True)
@@ -663,7 +664,9 @@ class CombatWorldState:
                 scale *= 1 + previous
             hit = DamageHit(actor, enemy, "物理", scale, panel.bonus_for("物理", ("physical_anomaly",)),
                             damage_tag="physical_anomaly", can_crit=native_row)
-            result = self.damage_state.resolve_hit(panel, hit, now=self.time, inputs=inputs)
+            from src.data.native_damage_processors import resolve_native_hit
+
+            result = resolve_native_hit(self, panel, hit, inputs)
             if result.expected is None:
                 self.unresolved.update(result.unknown)
             else:
@@ -1217,7 +1220,9 @@ class CombatWorldState:
                         self.unresolved.add(f"Unbound damage multiplier: {event.hit_multiplier_input}")
                         multiplier = 0
                     hit = replace(hit, multiplier=multiplier)
-                result = self.damage_state.resolve_hit(panel, hit, now=self.time, inputs=inputs)
+                from src.data.native_damage_processors import resolve_native_hit
+
+                result = resolve_native_hit(self, panel, hit, inputs)
                 if result.expected is None:
                     self.unresolved.update(result.unknown)
                 else:
