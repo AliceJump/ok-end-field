@@ -220,14 +220,24 @@ def probe_skill_bar_slot(task, frame, index: int) -> SkillBarProbe:
     return classify_skill_bar_roi(bar)
 
 
-def read_expected_skill_bar_sp(task, expected_sp: float | None, frame=None) -> float:
-    """Read SP from one immutable frame, using the legacy detector only as fallback."""
-    source_frame = task.frame if frame is None else frame
-    if source_frame is None or getattr(source_frame, "size", 0) == 0:
+def _legacy_skill_bar_sp(task) -> float:
+    fallback = getattr(task, "get_skill_bar_sp", None)
+    if not callable(fallback):
         return -1.0
+    try:
+        return float(fallback())
+    except Exception:
+        return -1.0
+
+
+def read_expected_skill_bar_sp(task, expected_sp: float | None, frame=None) -> float:
+    """Read SP from one immutable frame, using the legacy detector as fallback."""
+    source_frame = getattr(task, "frame", None) if frame is None else frame
+    if source_frame is None or getattr(source_frame, "size", 0) == 0:
+        return _legacy_skill_bar_sp(task)
 
     return resolve_expected_skill_bar_sp(
         expected_sp,
         lambda index: probe_skill_bar_slot(task, source_frame, index),
-        fallback=getattr(task, "get_skill_bar_sp", None),
+        fallback=lambda: _legacy_skill_bar_sp(task),
     )
