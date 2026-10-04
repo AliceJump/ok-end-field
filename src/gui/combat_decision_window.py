@@ -187,8 +187,15 @@ if QApplication is not None:
             history_revision = combat_decision_history_revision()
             if history_revision == self._last_history_revision:
                 return
+            if self.history.textCursor().hasSelection():
+                return
+
+            bar = self.history.verticalScrollBar()
+            old_position = bar.value()
+            was_at_bottom = old_position == bar.maximum()
             self._last_history_revision = history_revision
             self.history.setPlainText("\n\n".join(_format_entry(item, multiline=False) for item in reversed(history)))
+            bar.setValue(bar.maximum() if was_at_bottom else min(old_position, bar.maximum()))
 
 
 def show_combat_decision_window() -> bool:
