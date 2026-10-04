@@ -1,6 +1,8 @@
 """Real native spell producers, recipients, timing and canonical buff queries."""
 
+import copy
 import unittest
+from dataclasses import replace
 
 from src.data.character_skills import get_character
 from src.data.combat_expressions import CombatExpression, combat_input
@@ -16,7 +18,8 @@ from src.data.combat_simulation import (
     NativeTarget,
 )
 from src.data.effects import EffectType
-from src.data.native_action_program import compile_native_action
+from src.data.native_action_program import _nodes, compile_native_action
+from src.data.native_gameplay import native_record
 from src.data.native_spell_runtime import attachment_policies
 from src.data.native_tags import tag_hash
 from src.data.skill_timing import SkillTimingStore
@@ -149,6 +152,49 @@ class TestNativeSpellInfliction(unittest.TestCase):
         self.assertEqual(self.world.native_buff_count("target", key), 0)
         self.assertEqual(self.world.enemies["target"].infliction_time_left, 0)
         self.assertNotIn(("target", key), self.world.native_buffs)
+
+    def condition_program(self, mask, *, enabled=True, saved=""):
+        store = SkillTimingStore()
+        profile = store.profiles("莱万汀", "battle")[0]
+        data = native_record(store, "buff_chr_0016_laevat_passive_enemy")["data"]
+        check = copy.deepcopy(next(n for n in _nodes(data) if n["$type"].endswith("CheckSpellInflictionType+Data")))
+        check["$value"].update(mask=mask, isEnable=enabled, savedKey=saved)
+        outcome = {"$type": "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data", "$value": {
+            "directValue": True, "key": "accepted", "operation": 0,
+            "value": {"useBlackboardKey": False, "blackboardKey": "", "value": 17}}}
+        sequence = {"actionData": [check, outcome]}
+        if not enabled:
+            sequence = {"actionData": [{"$type": "Beyond.Gameplay.Core.IfElseAction+IfElseActionData", "$value": {
+                "serverActionIndex": 0, "conditionAction": {"actionData": [check]},
+                "succeedActions": {"actionData": [outcome]}, "failActions": {"actionData": []}}}]}
+        return compile_native_action(store, get_character("laevatain"), profile, "1", "normal",
+                                     event_sequence=sequence, isolated_blackboard=True)
+
+    def test_native_spell_condition_uses_incoming_event_type_and_all_mask(self):
+        for mask in (0, 1, 2, 4, 8, 15):
+            program = self.condition_program(mask)
+            for element in range(4):
+                world = CombatWorldState(("1",), regen=0)
+                action = f"mask{mask}:{element}"
+                world.start(replace(program, parameters=(*program.parameters, ("event.spell_type", element))), action_id=action)
+                self.assertEqual(world._action_inputs[action].get("bb.accepted"),
+                                 17 if mask & (1 << element) else None)
+                self.assertFalse(world.unresolved)
+
+    def test_disabled_nested_condition_is_skipped_and_missing_context_cannot_accept(self):
+        program = self.condition_program(1, enabled=False)
+        self.world.start(program, action_id="disabled")
+        self.assertEqual(self.world._action_inputs["disabled"]["bb.accepted"], 17)
+        self.world = CombatWorldState(("1",), regen=0)
+        self.assertTrue(self.world.start(self.condition_program(1), action_id="missing"))
+        self.assertNotIn("bb.accepted", self.world._action_inputs["missing"])
+        self.assertTrue(any("event.spell_type" in error for error in self.world.unresolved))
+
+    def test_unbound_saved_key_does_not_silently_execute_following_action(self):
+        program = self.condition_program(1, saved="output")
+        self.world.start(replace(program, parameters=(("event.spell_type", 0),)), action_id="save")
+        self.assertNotIn("bb.accepted", self.world._action_inputs["save"])
+        self.assertTrue(any("output/mask" in error for error in self.world.unresolved))
 
 
 if __name__ == "__main__":
