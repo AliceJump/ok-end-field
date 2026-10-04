@@ -348,6 +348,11 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             del events[begin:]
             emit(CombatEvent(at, "native_iteration", iterations=(NativeIteration(selector, callbacks),)))
         elif name == "DamageAction+DamageActionData":
+            # ActionTargetType is independent of TargetSettings.targetSource.
+            attacker = {0: "source", 1: "owner", 5: "main"}.get(body["attacker"])
+            if attacker is None:
+                raise UnresolvedMechanic(f"Native attacker target needs binding: {body['attacker']}")
+            hit_source = NativeTarget(attacker)
             for unit in body["damageUnits"]:
                 if unit["damageAttributeType"] != 0:
                     continue  # Poise-only unit; damage never inherits the stale literal.
@@ -360,6 +365,8 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                     multiplier = number(calculation["$value"]["atkScale"])
                 if unit["damageProcessors"]:
                     raise UnresolvedMechanic(f"Native damage processors: {profile.skill_id}")
+                if unit["takeAtkSnapshot"]:
+                    emit(CombatEvent(at, "unresolved_native", unresolved=("Native attacker attribute snapshot not yet bound",)))
                 element = _DAMAGE_ELEMENTS.get(unit["damageType"])
                 if element is None:
                     raise UnresolvedMechanic(f"Unbound damage type: {unit['damageType']}")
@@ -367,10 +374,10 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 # BattleFormula.CalculateDamage multiplies these branches by
                 # the source's reaction scalar, after the normal damage buckets.
                 if mask & 0xfd00038:
-                    scalar = attribute(NativeTarget("source"), "ignite_damage_scalar")
+                    scalar = attribute(hit_source, "ignite_damage_scalar")
                     multiplier = CombatExpression("multiply", (multiplier, scalar))
                 elif mask & damage_masks["PhysicalInfliction"]:
-                    scalar = attribute(NativeTarget("source"), "physical_infliction_damage_scalar")
+                    scalar = attribute(hit_source, "physical_infliction_damage_scalar")
                     multiplier = CombatExpression("multiply", (multiplier, scalar))
                 tags = tuple(tag for native_tag, tag in (
                     ("NormalAttack", "normal"), ("NormalSkill", "skill"),
@@ -380,12 +387,13 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 ) if mask & damage_masks[native_tag])
                 hit_guard = guard
                 if unit["onlyEnableForMainChar"]:
-                    hit_guard = CombatExpression("all", (guard, combat_input("source.is_main"))) if guard else combat_input("source.is_main")
+                    main = attribute(hit_source, "is_main")
+                    hit_guard = CombatExpression("all", (guard, main)) if guard else main
                 hit_event = CombatEvent(at, "on_hit", hit=DamageHit(
                     actor, "target", element, 0, panel.bonus_for(element, tags) if panel else damage_bonus,
                     tags[0] if tags else "unclassified", can_crit=True,
                     damage_tags=tags,
-                ), hit_multiplier_formula=multiplier)
+                ), hit_multiplier_formula=multiplier, hit_source=hit_source)
                 events.append(CombatEvent(at, "native_damage_targets", condition=hit_guard,
                                           iterations=(NativeIteration(resource_target(body["targetSettings"]), (hit_event,)),)))
         elif name in _PHYSICAL:
