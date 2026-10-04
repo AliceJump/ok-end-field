@@ -27,6 +27,7 @@ from src.data.damage_resolution import DamageHit
 from src.data.effects import EffectType
 from src.data.native_combat_parameters import bind_native_parameters
 from src.data.native_gameplay import native_asset, native_enums, native_number, native_record
+from src.data.native_tags import expand_tags, tag_query
 from src.data.skill_types import CombatResourceType, SkillEffect
 
 _DAMAGE_ELEMENTS = {0: "物理", 2: "灼热", 3: "电磁", 4: "寒冷", 6: "自然"}
@@ -142,18 +143,23 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             return combat_input("target." + target["targetGroupKey"] + ".count")
         raise UnresolvedMechanic(f"Unbound selector count: {profile.skill_id}/{target['targetSource']}")
 
-    def buff_count(settings, target):
-        if settings["checkType"] == 1:
-            tags = [t["raw"] for t in settings["tagQuery"]["tags"]]
-            if tags == ["21281e40"]:
-                return combat_input("count.STACK_SHRED")
-            raise UnresolvedMechanic(f"Unbound native buff tag query: {tags}")
+    def buff_count(settings, target, count_type=0):
+        if count_type not in {0, 1}:
+            raise UnresolvedMechanic(f"Unknown native buff count type: {count_type}")
         selector = resource_target(target)
-        identity = (selector, tuple(settings["buffIdList"]))
+        mode, tags = None, ()
+        if settings["checkType"] == 1:
+            mode, tags = tag_query(settings["tagQuery"])
+            ids = ()
+        elif settings["checkType"] == 0:
+            ids = tuple(settings["buffIdList"])
+        else:
+            raise UnresolvedMechanic(f"Unknown native buff query type: {settings['checkType']}")
+        identity = (selector, ids, mode, tags, count_type)
         if identity not in buff_queries:
             key = f"native.query.{len(buff_queries)}"
-            buff_queries[identity] = NativeBuffQuery(key, selector, identity[1])
-        buff_ids.update(identity[1])
+            buff_queries[identity] = NativeBuffQuery(key, selector, ids, mode, tags, count_type)
+        buff_ids.update(ids)
         return combat_input(buff_queries[identity].key)
 
     def number(value):
@@ -192,45 +198,31 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             elif name == "CheckBuffStackNumAdvanced+Data":
                 tests = {0: "lt", 1: "le", 2: "gt", 3: "ge", 4: "eq"}
                 test = CombatExpression(tests[value["compareType"]],
-                                               (buff_count(value["buffSettings"], value["checkTarget"]), number(value["value"])))
+                                               (buff_count(value["buffSettings"], value["checkTarget"], value["buffStackNumType"]), number(value["value"])))
+            elif name == "CheckBuffStackNumByTag+Data":
+                tests = {0: "lt", 1: "le", 2: "gt", 3: "ge", 4: "eq"}
+                count = buff_count({"checkType": 1, "tagQuery": value["tagQuery"]}, value["checkTarget"], value["buffStackNumType"])
+                test = CombatExpression(tests[value["compareType"]], (count, number(value["value"])))
             elif name == "CheckBuffStackNum+Data":
                 bid = value["buffId"]["buffId"]
-                target = value["checkTarget"]
-                if target["targetSource"] == 2:
-                    if target["targetGroupKey"] != "trigger":
-                        raise UnresolvedMechanic("Unbound native buff event target")
-                    source = combat_input("event.target_is_enemy")
-                elif target["targetSource"] in {0, 6}:
-                    source = CombatExpression("literal", (1.0,))
-                else:
-                    raise UnresolvedMechanic("Unbound native buff stack target")
-                if bid != "buff_physical_no_guard":
-                    raise UnresolvedMechanic(f"Native buff stack query needs owner binding: {bid}")
                 tests = {0: "lt", 1: "le", 2: "gt", 3: "ge", 4: "eq"}
-                test = CombatExpression("all", (source, CombatExpression(tests[value["compareType"]],
-                    (combat_input("count.STACK_SHRED"), number(value["value"])))))
+                count = buff_count({"checkType": 0, "buffIdList": [bid]}, value["checkTarget"])
+                test = CombatExpression(tests[value["compareType"]], (count, number(value["value"])))
             elif name == "CheckBuffIdInContext+Data":
                 if value["blackboardKey"]:
                     raise UnresolvedMechanic("Dynamic native event buff identity")
                 if value["checkType"] == 1:
-                    query = value["query"]
-                    mode = {r["value"]: k for k, r in native_enums()["Beyond.Gameplay.Core.GameplayTagQuery+QueryType"].items()}.get(query["queryType"])
-                    if mode != "HasAny":
-                        raise UnresolvedMechanic(f"Unbound hierarchical native tag query: {mode}")
-                    # The physical reaction tags are captured on the BuffData,
-                    # so these exact IDs need neither guessed names nor hashing.
-                    supported = {-430063731, -168668661}
-                    tags = [tag["tagId"] if "tagId" in tag else
-                            int.from_bytes(bytes.fromhex(tag["raw"]), "little", signed=True) for tag in query["tags"]]
-                    if not tags or not set(tags) <= supported:
-                        raise UnresolvedMechanic("Native event tag hierarchy is not bound")
+                    mode, tags = tag_query(value["query"])
                     keys = [f"event.buff_tag.{tag}" for tag in tags]
                 elif value["checkType"] == 0:
                     keys = [f"event.buff_id.{bid['buffId'] if isinstance(bid, dict) else bid}" for bid in value["buffIdList"]]
                 else:
                     raise UnresolvedMechanic("Unknown native buff identity query")
                 event_defaults.update(dict.fromkeys(keys, 0.0))
-                test = CombatExpression("any", tuple(combat_input(k) for k in keys))
+                test = CombatExpression("all" if value["checkType"] == 1 and mode in {"HasAll", "ExceptAll"} else "any",
+                                        tuple(combat_input(k) for k in keys))
+                if value["checkType"] == 1 and mode.startswith("Except"):
+                    test = CombatExpression("not", (test,))
             elif name == "CheckObjectTypeMatch+Data":
                 target = value["target"]
                 if target["targetSource"] != 2 or target["targetGroupKey"] != "trigger":
@@ -491,7 +483,8 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                     change = NativeBuffChange(buff_id, number(body["count"]),
                                               CombatExpression("literal", (duration,)) if duration is not None else None,
                                               permanent=data["lifeType"] == 1, maximum=maximum, target=target,
-                                              selector=resource_target(body["targetSettings"]), definition=definition)
+                                              selector=resource_target(body["targetSettings"]), definition=definition,
+                                              tags=expand_tags(data["applyTags"]))
                     emit(CombatEvent(at, "native_buff_created", native_buffs=(change,)))
                     # Preserve the presence/count even when another part of the
                     # buff still needs an interpreter; it is not zero damage proof.

@@ -7,6 +7,7 @@ import math
 from dataclasses import dataclass, replace
 
 from src.data.combat_simulation import CombatEvent, NativeBuffControl, NativeBuffProgram, UnresolvedMechanic
+from src.data.native_event_context import event_targets
 
 
 @dataclass
@@ -46,13 +47,14 @@ def _schedule(world, instance, at, kind):
     heapq.heappush(world._queue, (at, world._sequence, instance.uid, instance.program, event))
 
 
-def _execute(world, instance, program, payload=None):
+def _execute(world, instance, program, payload=None, target=None):
     for key, value in program.parameters:
         world._action_inputs[instance.uid].setdefault(key, value)
-    for event in program.events:
-        world._sequence += 1
-        world._execute_event(instance.uid, world._sequence, program,
-                             replace(event, inputs=(*event.inputs, *(payload or {}).items())))
+    with event_targets(world, instance.uid, target):
+        for event in program.events:
+            world._sequence += 1
+            world._execute_event(instance.uid, world._sequence, program,
+                                 replace(event, inputs=(*event.inputs, *(payload or {}).items())))
 
 
 def _callbacks(world, instance, event_type):
@@ -99,6 +101,7 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     if definition.stacking not in {0, 2, 7}:
         raise UnresolvedMechanic(f"Native buff stacking policy not yet bound: {change.key}/{definition.stacking}")
     world.unresolved.update(definition.unresolved)
+    world.native_buff_tags[change.key] = definition.tags
     for _ in range(delta):
         existing = _instances(world, owner, change.key)
         if definition.stacking == 7 and existing:
@@ -152,10 +155,10 @@ def control_buff(world, control):
         raise UnresolvedMechanic(f"Unknown native buff clock event: {control.kind}")
 
 
-def dispatch_buff_event(world, trigger, actor, payload):
+def dispatch_buff_event(world, trigger, actor, payload, target=None):
     for instance in tuple(world.native_buff_instances.values()):
         if instance.owner != actor:
             continue
         for kind, program in instance.definition.subscriptions:
             if kind == trigger:
-                _execute(world, instance, program, payload)
+                _execute(world, instance, program, payload, target)
