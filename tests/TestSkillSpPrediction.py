@@ -55,6 +55,7 @@ class TestSkillSpPrediction(unittest.TestCase):
             result = logic._sample_sp(force=True)
 
         self.assertEqual(result, 176.0)
+        self.assertEqual(logic.cached_sp, 176.0)
         self.assertEqual(logic.last_observed_sp, 176.0)
         self.assertEqual(logic.expected_sp, 176.0)
         self.assertEqual(logic.last_visual_sp_wall_time, 11.5)
@@ -68,6 +69,7 @@ class TestSkillSpPrediction(unittest.TestCase):
             result = logic._sample_sp(force=True)
 
         self.assertEqual(result, -1.0)
+        self.assertEqual(logic.cached_sp, 160.0)
         self.assertEqual(logic.expected_sp, 160.0)
         self.assertEqual(logic.last_observed_sp, 235.0)
         self.assertEqual(logic.last_visual_sp_wall_time, 10.0)
