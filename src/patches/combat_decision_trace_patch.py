@@ -26,6 +26,17 @@ def _actor_for_token(logic, token) -> str:
     return "未知角色"
 
 
+def _task_actor_for_sequence(task, sequence) -> str:
+    team = getattr(task, "_battle_team", []) or []
+    try:
+        actor = team[int(sequence) - 1]
+        if actor and actor != "?":
+            return actor
+    except (TypeError, ValueError, IndexError):
+        pass
+    return "未知角色"
+
+
 def _action_name(kind: str | None) -> str:
     return {
         "battle": "战技",
@@ -366,17 +377,18 @@ def install_combat_decision_trace_patch():
             )
         return result
 
-    def use_ult_with_reason(task_self, ult_sequence=None, *args, **kwargs):
+    def use_ult_with_reason(task_self, *args, **kwargs):
+        if "ult_sequence" in kwargs:
+            ult_sequence = kwargs["ult_sequence"]
+        elif args:
+            ult_sequence = args[0]
+        else:
+            ult_sequence = None
+
         if _task_trace_enabled(task_self) and ult_sequence is not None:
-            team = getattr(task_self, "_battle_team", []) or []
-            try:
-                actor = team[int(ult_sequence) - 1]
-                if actor == "?":
-                    actor = "未知角色"
-            except (TypeError, ValueError, IndexError):
-                actor = "未知角色"
             from src.gui.combat_decision_window import publish_combat_decision
 
+            actor = _task_actor_for_sequence(task_self, ult_sequence)
             publish_combat_decision(
                 actor,
                 "终结技",
@@ -384,17 +396,12 @@ def install_combat_decision_trace_patch():
                 "该角色终结技已经显示为可用，技能时间限制也允许衔接；时间排轴现在准备执行它。",
                 dedupe_key=("ult", ult_sequence, "ready"),
             )
-        result = original_use_ult(task_self, ult_sequence=ult_sequence, *args, **kwargs)
+
+        result = original_use_ult(task_self, *args, **kwargs)
         if result and _task_trace_enabled(task_self) and ult_sequence is not None:
-            team = getattr(task_self, "_battle_team", []) or []
-            try:
-                actor = team[int(ult_sequence) - 1]
-                if actor == "?":
-                    actor = "未知角色"
-            except (TypeError, ValueError, IndexError):
-                actor = "未知角色"
             from src.gui.combat_decision_window import publish_combat_decision
 
+            actor = _task_actor_for_sequence(task_self, ult_sequence)
             publish_combat_decision(
                 actor,
                 "终结技",
