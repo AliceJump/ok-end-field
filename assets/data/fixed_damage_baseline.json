@@ -55,7 +55,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -207,7 +209,9 @@
           "combo": 0.0,
           "ultimate": 0.336
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -357,7 +361,9 @@
           "combo": 0.9869999999999999,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -508,7 +514,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -658,7 +666,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -807,7 +817,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -955,7 +967,9 @@
           "combo": 0.449,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -1103,7 +1117,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -1252,7 +1268,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -1404,7 +1422,9 @@
           "combo": 0.0,
           "ultimate": 0.561
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -1553,7 +1573,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -1702,7 +1724,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.2015306122449,
+      "ignite_damage_scalar": 1.4030612244898
     },
     "skills": [
       {
@@ -1853,7 +1877,9 @@
           "combo": 0.0,
           "ultimate": 0.561
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -2002,7 +2028,9 @@
           "combo": 0.9869999999999999,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -2152,7 +2180,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -2304,7 +2334,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -2453,7 +2485,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -2605,7 +2639,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -2756,7 +2792,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -2905,7 +2943,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -3054,7 +3094,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -3204,7 +3246,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -3351,7 +3395,9 @@
           "combo": 0.9869999999999999,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -3499,7 +3545,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -3651,7 +3699,9 @@
           "combo": 0.0,
           "ultimate": 0.561
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -3801,7 +3851,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -3952,7 +4004,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -4101,7 +4155,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -4251,7 +4307,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -4398,7 +4456,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -4548,7 +4608,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {
@@ -4699,7 +4761,9 @@
           "combo": 0.0,
           "ultimate": 0.0
         }
-      }
+      },
+      "physical_infliction_damage_scalar": 1.22704081632653,
+      "ignite_damage_scalar": 1.45408163265306
     },
     "skills": [
       {

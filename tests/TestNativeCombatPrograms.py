@@ -254,6 +254,7 @@ class TestNativeCombatPrograms(unittest.TestCase):
             world = CombatWorldState(("1",), regen=0)
             world.characters["1"].panel = FixedDamagePanel(100, 0, 0, 1, rate, .5)
             world.characters["1"].attributes["arts_strength"] = 0
+            world.characters["1"].attributes["physical_infliction_damage_scalar"] = 1
             world.reaction_inputs["physical.STATUS_HEAVY_STRIKE.multiplier.1"] = 3
             world.add_shred("target", 1)
             world.apply_effect("1", "target", SkillEffect(EffectType.STATUS_HEAVY_STRIKE, count=1, target="enemy"), {})

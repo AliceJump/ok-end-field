@@ -10,6 +10,7 @@ from pathlib import Path
 import compute_damage_baseline as damage
 
 from src.data.character_progression import SNAPSHOT, load_character_progression
+from src.data.native_damage_scalars import reaction_scalars
 
 ROOT = Path(__file__).resolve().parents[2]
 ATTRIBUTES = {39: "力量", 40: "敏捷", 41: "智识", 42: "意志"}
@@ -87,6 +88,7 @@ def compute(key: str, tables: dict) -> dict:
             )
             constant_sources.append(talent.effect_id)
             result = damage.compute_character(*args, full_overrides={}, additional_mods=mods)
+    result["panel"].update(reaction_scalars(progression.native_id, level))
     for field in ("cycle_expect", "cycle_expect_link4"):
         result.pop(field, None)
     result["trace"] = [

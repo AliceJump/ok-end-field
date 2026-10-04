@@ -173,6 +173,13 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             raise UnresolvedMechanic(f"Unbound native number: {profile.skill_id}/{value}")
         return CombatExpression("literal", (result,))
 
+    def attribute(selector, name):
+        identity = (selector, name)
+        if identity not in attribute_queries:
+            key = f"native.attribute.{len(attribute_queries)}"
+            attribute_queries[identity] = NativeAttributeQuery(key, selector, name)
+        return combat_input(attribute_queries[identity].key)
+
     def condition(sequence):
         result = []
         invert = False
@@ -357,6 +364,14 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 if element is None:
                     raise UnresolvedMechanic(f"Unbound damage type: {unit['damageType']}")
                 mask = unit["damageDecorateMask"]
+                # BattleFormula.CalculateDamage multiplies these branches by
+                # the source's reaction scalar, after the normal damage buckets.
+                if mask & 0xfd00038:
+                    scalar = attribute(NativeTarget("source"), "ignite_damage_scalar")
+                    multiplier = CombatExpression("multiply", (multiplier, scalar))
+                elif mask & damage_masks["PhysicalInfliction"]:
+                    scalar = attribute(NativeTarget("source"), "physical_infliction_damage_scalar")
+                    multiplier = CombatExpression("multiply", (multiplier, scalar))
                 tags = tuple(tag for native_tag, tag in (
                     ("NormalAttack", "normal"), ("NormalSkill", "skill"),
                     ("UltimateSkill", "ultimate"), ("ComboSkill", "combo"),
@@ -422,11 +437,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                     if enhance is None:
                         raise UnresolvedMechanic(f"Missing native enhancement: {row['enhanceFormulaKey']}")
                     selector = resource_target(request["enhanceAttributeSource"])
-                    identity = (selector, "arts_strength")
-                    if identity not in attribute_queries:
-                        key = f"native.attribute.{len(attribute_queries)}"
-                        attribute_queries[identity] = NativeAttributeQuery(key, selector, "arts_strength")
-                    strength = combat_input(attribute_queries[identity].key)
+                    strength = attribute(selector, "arts_strength")
                     numerator = CombatExpression("multiply", (enhance["paramA"], strength))
                     if enhance["formulaType"] == 1:
                         enhancement = numerator

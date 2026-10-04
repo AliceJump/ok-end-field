@@ -641,6 +641,12 @@ class CombatWorldState:
             self.unresolved.add(f"Unbound physical damage: {eid.value}")
         else:
             scale = coefficient * (1 + arts / 100)
+            if native_row:
+                scalar = self.characters[actor].attributes.get("physical_infliction_damage_scalar")
+                if scalar is None or not math.isfinite(scalar) or scalar <= 0:
+                    self.unresolved.add("Missing native physical_infliction_damage_scalar")
+                    scalar = 0
+                scale *= scalar
             if not native_row and rule.scales_with_stacks:
                 scale *= 1 + previous
             hit = DamageHit(actor, enemy, "物理", scale, panel.bonus_for("物理", ("physical_anomaly",)),
