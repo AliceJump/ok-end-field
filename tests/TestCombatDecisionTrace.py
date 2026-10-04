@@ -10,6 +10,7 @@ from src.core.BattleConfig import (
 from src.gui.combat_decision_window import (
     _format_entry,
     clear_combat_decisions,
+    combat_decision_history_revision,
     combat_decision_revision,
     combat_decision_snapshot,
     publish_combat_decision,
@@ -28,6 +29,7 @@ class TestCombatDecisionTrace(unittest.TestCase):
 
     def test_same_semantic_decision_updates_live_row_without_spamming_history(self):
         start_revision = combat_decision_revision()
+        start_history_revision = combat_decision_history_revision()
         publish_combat_decision(
             "余烬",
             "连携技",
@@ -49,6 +51,7 @@ class TestCombatDecisionTrace(unittest.TestCase):
         self.assertEqual(len(history), 1)
         self.assertEqual(current.detail, "已执行 0.421s / 至少需要 0.483s。")
         self.assertEqual(combat_decision_revision(), start_revision + 2)
+        self.assertEqual(combat_decision_history_revision(), start_history_revision + 1)
 
     def test_new_decision_key_appends_history(self):
         publish_combat_decision("洁尔佩塔", "战技", "等待", "技力不足。", dedupe_key=("battle", "wait"))
@@ -61,6 +64,31 @@ class TestCombatDecisionTrace(unittest.TestCase):
         )
         _current, history = combat_decision_snapshot()
         self.assertEqual(len(history), 2)
+
+    def test_history_revision_keeps_changing_after_history_reaches_capacity(self):
+        for index in range(200):
+            publish_combat_decision(
+                "测试角色",
+                "战技",
+                "等待",
+                f"第 {index} 条决策。",
+                dedupe_key=("capacity", index),
+            )
+        _current, history = combat_decision_snapshot()
+        self.assertEqual(len(history), 200)
+        before = combat_decision_history_revision()
+
+        publish_combat_decision(
+            "测试角色",
+            "战技",
+            "准备释放",
+            "新的决策应替换最旧历史并继续触发窗口刷新。",
+            dedupe_key=("capacity", 200),
+        )
+        _current, history = combat_decision_snapshot()
+        self.assertEqual(len(history), 200)
+        self.assertEqual(combat_decision_history_revision(), before + 1)
+        self.assertEqual(history[-1].state, "准备释放")
 
     def test_display_text_uses_meaning_instead_of_internal_field_names(self):
         publish_combat_decision(
