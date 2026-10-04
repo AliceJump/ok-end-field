@@ -106,8 +106,12 @@ def classify_skill_bar_roi(bar) -> SkillBarProbe:
 
     # Sparse colour effects are not useful directional evidence. Refuse to call
     # them EMPTY so the caller can use the conservative legacy detector instead.
-    white_coverage = np.count_nonzero(white_mask) / white_mask.size
-    yellow_coverage = np.count_nonzero(yellow_mask) / yellow_mask.size
+    white_size = int(white_mask.size)
+    yellow_size = int(yellow_mask.size)
+    if white_size <= 0 or yellow_size <= 0:
+        return SkillBarProbe(SkillBarState.UNKNOWN)
+    white_coverage = np.count_nonzero(white_mask) / white_size
+    yellow_coverage = np.count_nonzero(yellow_mask) / yellow_size
     if white_coverage >= _AMBIGUOUS_MASK_RATIO or yellow_coverage >= _AMBIGUOUS_MASK_RATIO:
         return SkillBarProbe(SkillBarState.UNKNOWN)
     return SkillBarProbe(SkillBarState.EMPTY)
