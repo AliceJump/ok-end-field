@@ -42,6 +42,33 @@ def _timestamp_now() -> str:
     return datetime.now().strftime("%H:%M:%S.%f")[:-3]
 
 
+def _default_history_stream(dedupe_key: object | None) -> object | None:
+    """Group high-frequency observations without hiding real executed events."""
+    if not isinstance(dedupe_key, tuple) or not dedupe_key:
+        return None
+    family = dedupe_key[0]
+    if family == "link" and len(dedupe_key) >= 2:
+        state = str(dedupe_key[1])
+        if state == "pressed":
+            return None
+        if state.startswith("ui-"):
+            return ("link", "界面可用状态")
+        return ("link", "允许插入状态")
+    if family == "battle" and len(dedupe_key) >= 2:
+        return ("battle", dedupe_key[1])
+    if family == "ult" and len(dedupe_key) >= 2:
+        return ("ult", dedupe_key[1])
+    if family == "enemy":
+        return ("enemy",)
+    if family == "idle":
+        return ("idle",)
+    if family == "session":
+        return ("session",)
+    if family == "blocked":
+        return None
+    return dedupe_key[:1]
+
+
 def clear_combat_decisions() -> None:
     global _CURRENT, _REVISION, _HISTORY_REVISION
     with _LOCK:
@@ -64,10 +91,9 @@ def publish_combat_decision(
 ) -> None:
     """Publish one human-readable decision without feeding anything back to combat logic.
 
-    ``history_stream`` identifies one semantic decision source (for example a
-    character's battle-skill decision or the link-availability check). Repeated
-    polls update the live row but append history only when that source's own state
-    changes. Independent sources therefore cannot make each other spam history.
+    Repeated polls update the live row, while history is deduplicated per semantic
+    source. Independent checks therefore cannot make each other alternate and spam
+    the history list. Real execution/blocked events deliberately remain append-only.
     """
     global _CURRENT, _REVISION, _HISTORY_REVISION
     entry = CombatDecisionEntry(
@@ -78,10 +104,13 @@ def publish_combat_decision(
         reason=reason,
         detail=detail,
     )
+    if history_stream is None:
+        history_stream = _default_history_stream(dedupe_key)
     with _LOCK:
         should_append = True
         if history_stream is not None:
-            previous = _HISTORY_STATE.get(history_stream, object())
+            sentinel = object()
+            previous = _HISTORY_STATE.get(history_stream, sentinel)
             should_append = previous != dedupe_key
             _HISTORY_STATE[history_stream] = dedupe_key
         if should_append:
