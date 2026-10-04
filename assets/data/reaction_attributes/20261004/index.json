@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-10-04",
+  "source": "TableCfg/CharacterTable.bytes",
+  "source_sha256": "451cf2910bddc1bdfcd078ff6795285df744f9f3a8fe385e803a145a50676278",
+  "source_bytes": 2380460,
+  "data_sha256": "91948ab692cda2097bc9780ced07050d495d5a468e7feb25d44910c969cd6d29",
+  "characters": 34,
+  "rows": 3502,
+  "attribute_types": {
+    "PhysicalInflictionDamageScalar": 25,
+    "IgniteDamageScalar": 49
+  },
+  "verification": "SparkBuffer decoded structure equals existing table export; identities, levels, break stages and selected attribute IDs/values retain exact raw byte offsets"
+}
