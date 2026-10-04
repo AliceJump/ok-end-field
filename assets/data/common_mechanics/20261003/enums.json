@@ -1094,6 +1094,20 @@
         "value": 0
       }
     },
+    "Beyond.Gameplay.Core.BuffStackNumType": {
+      "BuffCount": {
+        "data_offset": 37268,
+        "field_index": 43708,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "BuffIdCount": {
+        "data_offset": 37269,
+        "field_index": 43709,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
     "Beyond.Gameplay.Core.BuffStackingSettings+StackingType": {
       "Enhance": {
         "data_offset": 37478,

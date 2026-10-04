@@ -62,6 +62,7 @@ class NativeBuffChange:
     target: str = "self"
     selector: NativeTarget | None = None
     definition: NativeBuffProgram | None = None
+    tags: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -95,6 +96,9 @@ class NativeBuffQuery:
     key: str
     target: NativeTarget
     buff_ids: tuple[str, ...]
+    tag_mode: str | None = None
+    tags: tuple[int, ...] = ()
+    count_type: int = 0
 
 
 @dataclass(frozen=True)
@@ -110,6 +114,7 @@ class NativeBuffProgram:
     callbacks: tuple[tuple[int, ActionProgram], ...]
     subscriptions: tuple[tuple[str, ActionProgram], ...] = ()
     unresolved: tuple[str, ...] = ()
+    tags: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -583,7 +588,7 @@ class CombatWorldState:
         native_type = {EffectType.STATUS_HEAVY_HIT: 0, EffectType.STATUS_KNOCKDOWN: 1,
                        EffectType.STATUS_HEAVY_STRIKE: 3, EffectType.STATUS_SHATTER: 2}[eid]
         self.dispatch_native("OnBeforeOutputPhysicalInfliction", actor,
-                             {"event.physical_type": float(native_type), "event.shred_before": float(previous)})
+                             {"event.physical_type": float(native_type), "event.shred_before": float(previous)}, target=enemy)
         native_buff = {EffectType.STATUS_HEAVY_STRIKE: "buff_physical_crushed",
                        EffectType.STATUS_SHATTER: "buff_physical_do_fracture"}.get(eid)
         if native_buff is not None:
@@ -674,25 +679,28 @@ class CombatWorldState:
         finally:
             self._executing_action = previous_action
 
-    def dispatch_native(self, trigger, actor, payload=None):
+    def dispatch_native(self, trigger, actor, payload=None, *, target=None):
         """Callbacks read the event's state before its producer consumes a pool."""
         previous_action = self._executing_action
         try:
             from src.data.native_buff_runtime import dispatch_buff_event
 
-            dispatch_buff_event(self, trigger, actor, payload or {})
+            dispatch_buff_event(self, trigger, actor, payload or {}, target)
             from src.data.native_passive_runtime import dispatch_passive_event
 
-            dispatch_passive_event(self, trigger, actor, payload or {})
+            dispatch_passive_event(self, trigger, actor, payload or {}, target)
             for owner, action_id, program, listener in tuple(self.native_listeners):
                 if owner != actor or listener.trigger != trigger or (owner, listener.buff_id) not in self.native_buffs:
                     continue
-                for event in listener.events:
-                    from dataclasses import replace
+                from dataclasses import replace
 
-                    self._sequence += 1
-                    invoked = replace(event, inputs=(*event.inputs, *(payload or {}).items()))
-                    self._execute_event(action_id, self._sequence, program, invoked)
+                from src.data.native_event_context import event_targets
+
+                with event_targets(self, action_id, target):
+                    for event in listener.events:
+                        self._sequence += 1
+                        invoked = replace(event, inputs=(*event.inputs, *(payload or {}).items()))
+                        self._execute_event(action_id, self._sequence, program, invoked)
         finally:
             self._executing_action = previous_action
 
@@ -876,6 +884,8 @@ class CombatWorldState:
         delta = change.count.evaluate(inputs)
         if delta != int(delta):
             raise UnresolvedMechanic(f"Non-integer native buff layers: {change.key}")
+        if delta > 0:
+            self.native_buff_tags[change.key] = change.definition.tags if change.definition else change.tags
         identity = (owner, change.key)
         if change.definition is not None or any(v.owner == owner and v.key == change.key
                                                 for v in self.native_buff_instances.values()):
@@ -944,9 +954,22 @@ class CombatWorldState:
                 inputs[f"native.{prefix}.{buff_id}"] = self.native_buffs.get((owner, buff_id), (0, None))[0]
         for query in program.native_buff_queries:
             try:
-                inputs[query.key] = sum(self.native_buffs.get((owner, buff_id), (0, None))[0]
-                                        for owner in self.native_targets(query.target, action_id, program)
-                                        for buff_id in query.buff_ids)
+                owners = self.native_targets(query.target, action_id, program)
+                if query.tag_mode is not None:
+                    # Native tag count obtains one AbilitySystem. Multi-target
+                    # selection precedence is not inferred by summing recipients.
+                    if len(owners) > 1:
+                        raise UnresolvedMechanic("Unbound native multi-target tag count selection")
+                    from src.data.native_tags import matches_tags
+
+                    ids = tuple(k for k, tags in self.native_buff_tags.items()
+                                if matches_tags(tags, query.tag_mode, query.tags))
+                else:
+                    ids = query.buff_ids
+                counts = [self.enemies[owner].shred_stacks if buff_id == "buff_physical_no_guard" and owner in self.enemies
+                          else self.native_buffs.get((owner, buff_id), (0, None))[0]
+                          for owner in owners for buff_id in ids]
+                inputs[query.key] = sum(counts) if query.count_type == 0 else sum(c > 0 for c in counts)
             except UnresolvedMechanic:
                 # A later branch may not read this group; only an evaluated
                 # expression should reject the branch for its missing input.

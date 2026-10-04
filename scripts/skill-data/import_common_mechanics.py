@@ -32,8 +32,8 @@ def import_assets(source: Path):
     selected, sources = {}, {}
     with zipfile.ZipFile(source / "asset_objects.zip") as archive:
         for name, tree in records.items():
-            if name != "SkillSetting" and not name.startswith((
-                "data_projectile_chr_", "data_abilityentity_chr_", "data_chr_",
+            if name not in {"SkillSetting", "GameplayTagConfig"} and not name.startswith((
+                "data_projectile_chr_", "data_abilityentity_chr_", "data_chr_", "data_tag_",
             )):
                 continue
             check = checks[name]

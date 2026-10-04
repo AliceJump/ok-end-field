@@ -3,6 +3,7 @@
 from src.data.combat_simulation import walk_combat_events
 from src.data.native_action_program import compile_native_action
 from src.data.native_gameplay import native_asset, native_enums, native_record
+from src.data.native_tags import expand_tags
 
 
 def _dictionaries(value):
@@ -46,9 +47,7 @@ def bind_character_events(world, store, character, profile, actor):
             diagnostics.extend(errors)
             continue
         world.register_character_hook(trigger, program)
-    for buff_id in ("buff_physical_crushed", "buff_physical_do_fracture"):
+    for buff_id in ("buff_physical_crushed", "buff_physical_do_fracture", "buff_physical_no_guard"):
         data = native_record(store, buff_id)["data"]
-        world.native_buff_tags[buff_id] = tuple(t["tagId"] if "tagId" in t else
-                                               int.from_bytes(bytes.fromhex(t["raw"]), "little", signed=True)
-                                               for t in data["applyTags"])
+        world.native_buff_tags[buff_id] = expand_tags(data["applyTags"])
     return tuple(diagnostics)

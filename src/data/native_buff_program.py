@@ -3,6 +3,7 @@
 from src.data.combat_expressions import CombatExpression, combat_input
 from src.data.combat_simulation import NativeBuffProgram, UnresolvedMechanic
 from src.data.native_gameplay import native_enums
+from src.data.native_tags import expand_tags
 
 
 def compile_buff_definition(store, character, profile, actor, buff_id, data, reference, *, attributes, panel, path):
@@ -58,4 +59,4 @@ def compile_buff_definition(store, character, profile, actor, buff_id, data, ref
                              combat_input("bb." + data["stackingSettings"]["maxStackCntKey"])
                              if data["stackingSettings"]["useMaxStackCntKey"] else
                              CombatExpression("literal", (float(data["stackingSettings"]["maxStackCnt"]),)),
-                             tuple(callbacks), tuple(subscriptions), tuple(unresolved))
+                             tuple(callbacks), tuple(subscriptions), tuple(unresolved), expand_tags(data["applyTags"]))
