@@ -59,8 +59,7 @@ class TestSkillSpPrediction(unittest.TestCase):
         self.assertEqual(logic.last_observed_sp, 176.0)
         self.assertEqual(logic.expected_sp, 176.0)
         self.assertEqual(logic.last_visual_sp_wall_time, 11.5)
-        passed_expected = read.call_args.kwargs.get("expected_sp", read.call_args.args[1])
-        self.assertEqual(passed_expected, 172.0)
+        read.assert_called_once_with(logic.task, 172.0, frame=logic.task.frame)
 
     def test_failed_visual_probe_keeps_prediction_and_wall_anchor(self):
         logic = self._logic(scheduler_now=100.0, wall_now=11.5)
