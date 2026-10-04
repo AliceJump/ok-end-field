@@ -123,98 +123,132 @@ def _partial_sp(index: int, ratio: float) -> float:
     return min(299.9, index * 100.0 + min(max(float(ratio), 0.0), 0.999) * 100.0)
 
 
-def resolve_expected_skill_bar_sp(
-    expected_sp: float | None,
-    probe_slot: Callable[[int], SkillBarProbe],
-    fallback: Callable[[], float] | None = None,
-) -> float:
-    """Resolve SP with an expected-value start and at most one probe per slot.
+def _safe_fallback(fallback: Callable[[], float] | None) -> float:
+    if fallback is None:
+        return -1.0
+    try:
+        return float(fallback())
+    except Exception:
+        return -1.0
 
-    FULL moves right; EMPTY moves left. All slot observations belong to the same
-    source frame. ``checked`` bounds the search to three probes and prevents a
-    contradictory FULL/EMPTY pair from bouncing forever.
-    """
 
-    def use_fallback():
-        if fallback is None:
-            return -1.0
-        try:
-            return float(fallback())
-        except Exception:
-            return -1.0
-
+def _expected_start_index(expected_sp: float | None) -> int:
     if expected_sp is None or not np.isfinite(expected_sp):
-        index = 2
-    else:
-        expected = min(300.0, max(0.0, float(expected_sp)))
-        index = min(2, int(expected // 100.0))
+        return 2
+    expected = min(300.0, max(0.0, float(expected_sp)))
+    return min(2, int(expected // 100.0))
 
-    checked: dict[int, SkillBarProbe] = {}
 
+def _full_transition(index: int, checked: dict[int, SkillBarProbe]):
+    if index == 2:
+        return 300.0, None
+    right = checked.get(index + 1)
+    if right is not None and right.state == SkillBarState.EMPTY:
+        return float((index + 1) * 100), None
+    return None, index + 1
+
+
+def _empty_transition(
+    index: int,
+    checked: dict[int, SkillBarProbe],
+    fallback: Callable[[], float] | None,
+):
+    if index == 0:
+        return _safe_fallback(fallback), None
+    left = checked.get(index - 1)
+    if left is not None and left.state == SkillBarState.FULL:
+        return float(index * 100), None
+    return None, index - 1
+
+
+def _guided_transition(
+    index: int,
+    probe: SkillBarProbe,
+    checked: dict[int, SkillBarProbe],
+    fallback: Callable[[], float] | None,
+):
+    if probe.state == SkillBarState.PARTIAL:
+        return _partial_sp(index, probe.ratio), None
+    if probe.state == SkillBarState.FULL:
+        return _full_transition(index, checked)
+    if probe.state == SkillBarState.EMPTY:
+        return _empty_transition(index, checked, fallback)
+    return None, None
+
+
+def _guided_probe(
+    start_index: int,
+    probe_slot: Callable[[int], SkillBarProbe],
+    checked: dict[int, SkillBarProbe],
+    fallback: Callable[[], float] | None,
+):
+    index = start_index
     while 0 <= index < 3 and len(checked) < 3 and index not in checked:
         probe = probe_slot(index)
         checked[index] = probe
+        result, next_index = _guided_transition(index, probe, checked, fallback)
+        if result is not None:
+            return result
+        if next_index is None:
+            return None
+        index = next_index
+    return None
 
-        if probe.state == SkillBarState.PARTIAL:
-            return _partial_sp(index, probe.ratio)
 
-        if probe.state == SkillBarState.FULL:
-            if index == 2:
-                return 300.0
-            right = checked.get(index + 1)
-            if right is not None and right.state == SkillBarState.EMPTY:
-                return float((index + 1) * 100)
-            index += 1
-            continue
+def _partial_is_consistent(candidate: int, checked: dict[int, SkillBarProbe]) -> bool:
+    left_ok = all(
+        checked[i].state in {SkillBarState.FULL, SkillBarState.UNKNOWN}
+        for i in range(candidate)
+        if i in checked
+    )
+    right_ok = all(
+        checked[i].state in {SkillBarState.EMPTY, SkillBarState.UNKNOWN}
+        for i in range(candidate + 1, 3)
+        if i in checked
+    )
+    return left_ok and right_ok
 
-        if probe.state == SkillBarState.EMPTY:
-            if index == 0:
-                # EMPTY first bar is visually indistinguishable from a missing
-                # HUD, so use the old HUD-aware detector for this rare edge.
-                return use_fallback()
-            left = checked.get(index - 1)
-            if left is not None and left.state == SkillBarState.FULL:
-                return float(index * 100)
-            index -= 1
-            continue
 
-        # UNKNOWN carries no directional information.
-        break
-
-    # Try the remaining slots once, in the old right-to-left order. This is the
-    # conservative escape hatch for UNKNOWN/contradictory observations.
+def _probe_remaining_partial(
+    probe_slot: Callable[[int], SkillBarProbe],
+    checked: dict[int, SkillBarProbe],
+):
     for candidate in (2, 1, 0):
         if candidate in checked:
             continue
         candidate_probe = probe_slot(candidate)
         checked[candidate] = candidate_probe
-        if candidate_probe.state == SkillBarState.PARTIAL:
-            # Only accept an immediately useful partial reading if already-known
-            # neighbours do not contradict its monotonic bar position.
-            left_ok = all(
-                checked[i].state in {SkillBarState.FULL, SkillBarState.UNKNOWN}
-                for i in range(candidate)
-                if i in checked
-            )
-            right_ok = all(
-                checked[i].state in {SkillBarState.EMPTY, SkillBarState.UNKNOWN}
-                for i in range(candidate + 1, 3)
-                if i in checked
-            )
-            if left_ok and right_ok:
-                return _partial_sp(candidate, candidate_probe.ratio)
+        if candidate_probe.state == SkillBarState.PARTIAL and _partial_is_consistent(candidate, checked):
+            return _partial_sp(candidate, candidate_probe.ratio)
+    return None
 
-    states = [checked.get(i, SkillBarProbe(SkillBarState.UNKNOWN)).state for i in range(3)]
-    valid_boundaries = {
-        (SkillBarState.EMPTY, SkillBarState.EMPTY, SkillBarState.EMPTY): 0.0,
+
+def _boundary_sp(checked: dict[int, SkillBarProbe]) -> float | None:
+    states = tuple(checked.get(i, SkillBarProbe(SkillBarState.UNKNOWN)).state for i in range(3))
+    return {
         (SkillBarState.FULL, SkillBarState.EMPTY, SkillBarState.EMPTY): 100.0,
         (SkillBarState.FULL, SkillBarState.FULL, SkillBarState.EMPTY): 200.0,
         (SkillBarState.FULL, SkillBarState.FULL, SkillBarState.FULL): 300.0,
-    }
-    boundary = valid_boundaries.get(tuple(states))
-    if boundary is None or boundary == 0.0:
-        return use_fallback()
-    return boundary
+    }.get(states)
+
+
+def resolve_expected_skill_bar_sp(
+    expected_sp: float | None,
+    probe_slot: Callable[[int], SkillBarProbe],
+    fallback: Callable[[], float] | None = None,
+) -> float:
+    """Resolve SP from one frame, using expected SP only to choose the first slot."""
+    checked: dict[int, SkillBarProbe] = {}
+    result = _guided_probe(_expected_start_index(expected_sp), probe_slot, checked, fallback)
+    if result is not None:
+        return result
+
+    result = _probe_remaining_partial(probe_slot, checked)
+    if result is not None:
+        return result
+
+    boundary = _boundary_sp(checked)
+    return boundary if boundary is not None else _safe_fallback(fallback)
 
 
 def probe_skill_bar_slot(task, frame, index: int) -> SkillBarProbe:
