@@ -177,6 +177,8 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
         for node in sequence["actionData"]:
             name = node["$type"].rsplit(".", 1)[-1]
             value = node["$value"]
+            if not value.get("isEnable", True):
+                continue
             if name == "NotNextCheckAction+Data":
                 invert = not invert
                 continue
@@ -188,6 +190,14 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 test = combat_input(f"timer.{value['buffId']}.ready")
             elif name == "CheckPhysicalInflictionType+Data":
                 test = CombatExpression("any", tuple(CombatExpression("eq", (combat_input("event.physical_type"), float(i)))
+                                                     for i in range(4) if value["mask"] & (1 << i)))
+            elif name == "CheckSpellInflictionType+Data":
+                # Native ExecuteInternal tests bit event.inflictionType. A
+                # nonempty savedKey also writes the blackboard on success;
+                # that side effect needs short-circuit sequence binding.
+                if value["savedKey"] or value["mask"] < 0 or value["mask"] & ~15:
+                    raise UnresolvedMechanic("Native spell condition output/mask needs binding")
+                test = CombatExpression("any", tuple(CombatExpression("eq", (combat_input("event.spell_type"), float(i)))
                                                      for i in range(4) if value["mask"] & (1 << i)))
             elif name == "CheckOriginSkillType+Data":
                 test = CombatExpression("any", tuple(CombatExpression("eq", (combat_input("event.skill_type"), float(i)))
