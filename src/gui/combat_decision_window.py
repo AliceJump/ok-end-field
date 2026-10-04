@@ -33,6 +33,7 @@ _LOCK = threading.Lock()
 _HISTORY: deque[CombatDecisionEntry] = deque(maxlen=200)
 _CURRENT: CombatDecisionEntry | None = None
 _CURRENT_KEY: object | None = None
+_REVISION = 0
 _WINDOW = None
 
 
@@ -41,11 +42,12 @@ def _timestamp_now() -> str:
 
 
 def clear_combat_decisions() -> None:
-    global _CURRENT, _CURRENT_KEY
+    global _CURRENT, _CURRENT_KEY, _REVISION
     with _LOCK:
         _HISTORY.clear()
         _CURRENT = None
         _CURRENT_KEY = None
+        _REVISION += 1
 
 
 def publish_combat_decision(
@@ -63,7 +65,7 @@ def publish_combat_decision(
     row is appended only when the semantic decision key changes, so rapidly changing
     elapsed-time details stay readable instead of becoming a frame-by-frame log.
     """
-    global _CURRENT, _CURRENT_KEY
+    global _CURRENT, _CURRENT_KEY, _REVISION
     entry = CombatDecisionEntry(
         timestamp=_timestamp_now(),
         actor=actor or "未知角色",
@@ -77,11 +79,17 @@ def publish_combat_decision(
             _HISTORY.append(entry)
         _CURRENT = entry
         _CURRENT_KEY = dedupe_key
+        _REVISION += 1
 
 
 def combat_decision_snapshot() -> tuple[CombatDecisionEntry | None, list[CombatDecisionEntry]]:
     with _LOCK:
         return _CURRENT, list(_HISTORY)
+
+
+def combat_decision_revision() -> int:
+    with _LOCK:
+        return _REVISION
 
 
 def _format_entry(entry: CombatDecisionEntry, *, multiline: bool) -> str:
@@ -137,9 +145,6 @@ if QApplication is not None:
                 return
             self._last_history_size = len(history)
             self.history.setPlainText("\n\n".join(_format_entry(item, multiline=False) for item in reversed(history)))
-            cursor = self.history.textCursor()
-            cursor.movePosition(cursor.Start)
-            self.history.setTextCursor(cursor)
 
 
 def show_combat_decision_window() -> bool:
