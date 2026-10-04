@@ -34,6 +34,7 @@ _HISTORY: deque[CombatDecisionEntry] = deque(maxlen=200)
 _CURRENT: CombatDecisionEntry | None = None
 _CURRENT_KEY: object | None = None
 _REVISION = 0
+_HISTORY_REVISION = 0
 _WINDOW = None
 
 
@@ -42,12 +43,13 @@ def _timestamp_now() -> str:
 
 
 def clear_combat_decisions() -> None:
-    global _CURRENT, _CURRENT_KEY, _REVISION
+    global _CURRENT, _CURRENT_KEY, _REVISION, _HISTORY_REVISION
     with _LOCK:
         _HISTORY.clear()
         _CURRENT = None
         _CURRENT_KEY = None
         _REVISION += 1
+        _HISTORY_REVISION += 1
 
 
 def publish_combat_decision(
@@ -65,7 +67,7 @@ def publish_combat_decision(
     row is appended only when the semantic decision key changes, so rapidly changing
     elapsed-time details stay readable instead of becoming a frame-by-frame log.
     """
-    global _CURRENT, _CURRENT_KEY, _REVISION
+    global _CURRENT, _CURRENT_KEY, _REVISION, _HISTORY_REVISION
     entry = CombatDecisionEntry(
         timestamp=_timestamp_now(),
         actor=actor or "未知角色",
@@ -77,6 +79,7 @@ def publish_combat_decision(
     with _LOCK:
         if dedupe_key is None or dedupe_key != _CURRENT_KEY:
             _HISTORY.append(entry)
+            _HISTORY_REVISION += 1
         _CURRENT = entry
         _CURRENT_KEY = dedupe_key
         _REVISION += 1
@@ -90,6 +93,11 @@ def combat_decision_snapshot() -> tuple[CombatDecisionEntry | None, list[CombatD
 def combat_decision_revision() -> int:
     with _LOCK:
         return _REVISION
+
+
+def combat_decision_history_revision() -> int:
+    with _LOCK:
+        return _HISTORY_REVISION
 
 
 def _format_entry(entry: CombatDecisionEntry, *, multiline: bool) -> str:
@@ -129,7 +137,7 @@ if QApplication is not None:
             layout.addWidget(self.history, 1)
 
             self._last_current = None
-            self._last_history_size = -1
+            self._last_history_revision = -1
             self._timer = QTimer(self)
             self._timer.timeout.connect(self.refresh_view)
             self._timer.start(80)
@@ -141,9 +149,10 @@ if QApplication is not None:
                 self._last_current = current
                 self.current.setPlainText("等待战斗决策…" if current is None else _format_entry(current, multiline=True))
 
-            if len(history) == self._last_history_size:
+            history_revision = combat_decision_history_revision()
+            if history_revision == self._last_history_revision:
                 return
-            self._last_history_size = len(history)
+            self._last_history_revision = history_revision
             self.history.setPlainText("\n\n".join(_format_entry(item, multiline=False) for item in reversed(history)))
 
 
