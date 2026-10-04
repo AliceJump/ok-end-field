@@ -28,6 +28,12 @@ def _instances(world, owner, key):
     return [v for v in world.native_buff_instances.values() if v.owner == owner and v.key == key]
 
 
+def _stacking_group(world, owner, key, definition):
+    identity = definition.stacking_key if definition.stacking_key is not None else key
+    return [v for v in world.native_buff_instances.values() if v.owner == owner
+            and (v.definition.stacking_key if v.definition.stacking_key is not None else v.key) == identity]
+
+
 def _sync(world, owner, key):
     instances = _instances(world, owner, key)
     if not instances:
@@ -100,10 +106,13 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
         raise UnresolvedMechanic(f"Invalid native buff parameters: {change.key}")
     if definition.stacking not in {0, 2, 7}:
         raise UnresolvedMechanic(f"Native buff stacking policy not yet bound: {change.key}/{definition.stacking}")
+    group = _stacking_group(world, owner, change.key, definition)
+    if any(v.definition.stacking != definition.stacking or v.definition.maximum != definition.maximum for v in group):
+        raise UnresolvedMechanic(f"Native shared stacking group has conflicting policies: {change.key}")
     world.unresolved.update(definition.unresolved)
     world.native_buff_tags[change.key] = definition.tags
     for _ in range(delta):
-        existing = _instances(world, owner, change.key)
+        existing = _stacking_group(world, owner, change.key, definition)
         if definition.stacking == 7 and existing:
             continue
         if definition.stacking == 2 and maximum > 0 and len(existing) >= maximum:

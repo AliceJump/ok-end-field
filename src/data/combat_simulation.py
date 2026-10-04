@@ -131,6 +131,7 @@ class NativeBuffProgram:
     subscriptions: tuple[tuple[str, ActionProgram], ...] = ()
     unresolved: tuple[str, ...] = ()
     tags: tuple[int, ...] = ()
+    stacking_key: str | None = None
 
 
 @dataclass(frozen=True)

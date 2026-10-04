@@ -127,6 +127,14 @@ DamageActionData.attacker属于独立的ActionTargetType，不沿用targetSettin
 
 六项专项覆盖实际Source与Owner面板区分、执行时主控切换、两种主控限制、空/多/敌人攻击者拒绝、未绑定枚举及属性快照诊断。全仓1099项通过，修改文件Python解析、Ruff I/F、敏感路径与差异检查通过。技力返还时机继续后置。
 
+### 原生buff共享堆叠身份
+
+IdentifierType的metadata字段44626/44627确认0=Id、1=StackingKey。BuffData.get_stackingKey（方法60834，RVA `0x373b9f0`，3500字节SHA256 `3fc4ee602267c7561cffa1882372788048d1a640f1d8c1072e85bf8a19e08313`）在 `0x373ba19` 测试identifierType，分别返回BuffData.id或stackingSettings.stackingKey；Id模式忽略序列化残留key。BuffContainer的m_stackingGroups是每个Owner内的string→group字典，CreateBuff（方法60779，RVA `0x373ba40`，8500字节 `0b18e13dd2f606b75f9aee49c49175a19fb9c67952dbd49a7006f81029d59129`）使用该实际字符串查组，不把Source或真实buff ID额外拼入共享key。
+
+执行器现在按Owner及该字符串管理已支持的Unlimited、Stack、Unique上限；真实实例仍保存独立ID、Source、BB和到期事件。溢出结束旧实例的回调并取消它的后续计时，按ID移除只移除该ID，不将共享key当作全部成员的别名。原生StackBuff（方法60757，RVA `0x373af10`，8500字节 `b36b7997c8347aacdf10121d03c6b76d2bc7af60f044ccd92db0db500cbd0ecf`）的Stack=2分支在 `0x373b293` 比较组上限并在溢出路径结束已有buff。不同策略/上限混入同组的初始化优先顺序仍未完整绑定，执行前拒绝；非零/动态priority及反向priority保留未解析诊断。
+
+三种 `buff_common_pulse_{fire,cryst,natural}_triggered` 均使用pulse_triggered共享key、Stack=2、上限1；本次核实并编译这个身份，没有据此宣称导电修正、异元素入口参数或腐蚀逐秒计算已经执行。七项专项覆盖跨ID上限/结束/计时/BB、不同Owner与Source、真实ID移除、Id与StackingKey共同字符串空间、Unique与预测隔离、冲突拒绝、三份原生导电配置及未知/空key拒绝。全仓1106项通过，修改文件Python解析、Ruff I/F、敏感路径与差异检查通过。技力时机继续后置。
+
 ### 同元素爆发的独立计时
 
 原生SpellInfliction同元素分支现在创建 `buff_common_{fire,pulse,cryst,natural}_..._triggered` 的实际定义，不在附着时直接计算爆发伤害。四份原生配置均为waitFirst=true、周期1秒、触发上限1、Unlimited独立实例；电磁buff持续10秒，其余持续5秒，触发结束不等于立即删除buff。来源角色、敌人Owner、BuffBB与排队事件独立保存；新的附着不会刷新已有爆发计时。消费附着池不等于移除独立爆发buff，实际FinishBuff则取消后续触发。
