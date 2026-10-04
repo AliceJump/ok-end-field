@@ -212,17 +212,23 @@ class TimedCombatLogic:
             return self._SP_MEDIUM_PROBE_INTERVAL
         return self._SP_LOW_PROBE_INTERVAL
 
-    def _cache_sp(self, sp, now=None, wall_now=None):
+    def _cache_sp(self, sp, now=None):
+        """Cache scheduler SP without changing visual-observation state."""
+        now = self._clock() if now is None else now
+        value = float(sp)
+        self.cached_sp = value
+        self.last_sp_probe_at = now
+        self.next_sp_probe_at = now + self._sp_probe_interval(value)
+        return value
+
+    def _cache_visual_sp(self, sp, now=None, wall_now=None):
         """Commit a successful visual observation as the new prediction anchor."""
         now = self._clock() if now is None else now
         wall_now = self._sp_wall_clock() if wall_now is None else wall_now
-        value = float(sp)
-        self.cached_sp = value
+        value = self._cache_sp(sp, now)
         self.expected_sp = value
         self.last_observed_sp = value
-        self.last_sp_probe_at = now
         self.last_visual_sp_wall_time = wall_now
-        self.next_sp_probe_at = now + self._sp_probe_interval(value)
         return value
 
     def _project_probe_expected(self, wall_now=None):
@@ -245,7 +251,7 @@ class TimedCombatLogic:
             and hasattr(self.task, "is_skill_bar_full_fast")
             and self.task.is_skill_bar_full_fast()
         ):
-            return self._cache_sp(300.0, now, wall_now)
+            return self._cache_visual_sp(300.0, now, wall_now)
 
         if not force and now < self.next_sp_probe_at:
             return self.cached_sp
@@ -257,7 +263,7 @@ class TimedCombatLogic:
             frame=getattr(self.task, "frame", None),
         )
         if observed >= 0:
-            return self._cache_sp(observed, now, wall_now)
+            return self._cache_visual_sp(observed, now, wall_now)
 
         # No new visual truth: retain prediction and the previous visual anchor.
         self.next_sp_probe_at = now + self._SP_UNKNOWN_PROBE_INTERVAL
@@ -271,9 +277,7 @@ class TimedCombatLogic:
         base = self.expected_sp if self.expected_sp >= 0 else float(before_sp)
         predicted = max(0.0, base - max(0.0, float(expected_cost)))
         self.expected_sp = predicted
-        self.cached_sp = predicted
-        now = self._clock()
-        self.next_sp_probe_at = now + self._sp_probe_interval(predicted)
+        self._cache_sp(predicted)
 
     def _log_phase_transition(self, old, new):
         if old == new:
