@@ -119,6 +119,14 @@ BattleFormula.CalculateDamage在mask `0xfd00038` 分支的 `0x3543f07` 乘来源
 
 新增六项覆盖80/90级与全部固定基准、缺失等级不得插值、篡改JSON摘要后仍校验原始字节、真实猛击及四种法术爆发节点、缺少标量零伤害并报诊断、物理状态转移不重复乘标量。全仓1085项通过，修改Python/JSON解析、原始表字节证据、Ruff I/F、敏感路径和差异检查通过。法术反应生命周期、来源属性processor、抗性与敌人状态等其他缺口仍待执行；技力时机后置。
 
+### 同元素爆发的独立计时
+
+原生SpellInfliction同元素分支现在创建 `buff_common_{fire,pulse,cryst,natural}_..._triggered` 的实际定义，不在附着时直接计算爆发伤害。四份原生配置均为waitFirst=true、周期1秒、触发上限1、Unlimited独立实例；电磁buff持续10秒，其余持续5秒，触发结束不等于立即删除buff。来源角色、敌人Owner、BuffBB与排队事件独立保存；新的附着不会刷新已有爆发计时。消费附着池不等于移除独立爆发buff，实际FinishBuff则取消后续触发。
+
+触发时按原生动作顺序执行爆发Before事件、SkillSetting倍率读取、DamageAction，使用当时的Source技艺强度和反应标量。TriggerSpellBurstEventAction（方法60312，RVA `0x4890580`，3000字节SHA256 `5437446650f8b7d34611ea26db79e610f1281122326b39c6be69a0ac45a5e7a9`）先向Source发布127=OnCharBeforeOutputSpellBurst，再向Owner发布128=OnEnemyBeforeTakeSpellBurst；回调接收实际敌人和四元素类型，STATUS_SPELL_BURST在该时点发布。DamageUnit.takeAtkSnapshot=false的这组记录按触发时属性读取；切换主控不改变来源。
+
+嵌套爆发定义也进入动作完整性遍历。OnSpellAbnormalStartFinish、附着增强回调和完整免疫/属性processor等尚未绑定的部分仍阻止完整计价。实际SpellInfliction来源不是本编译角色时，不使用错误角色的面板和回调定义执行爆发，明确报告缺口。八项专项覆盖四元素时序/次数/到期、独立BB、切主控/目标、附着与爆发分开移除、Before回调、预测隔离及嵌套缺口检查。全仓1093项通过，修改文件Python解析、Ruff I/F、敏感路径和差异检查通过。
+
 标签阶段随后rebase到远程master `ad9d1afe`（包含#440与格式更新）。已经合入master的父分支提交不重复重放，仅重放本分支的语义归一及机制执行提交，保留master新加的部分队友识别、敌人占位探针和按键反馈逻辑。两份本分支所需的原生读取计划/回编码输入档案保留原字节，供数据重建及核验使用。懒加载完整记录的损坏测试仍在实际读取记录时检查摘要，不强迫读取时序目录就提前解压整份数据。
 
 补全原先未知的队友槽位时，机制目录增量接入新增角色的面板、技能、事件和被动，保持同一战斗世界、epoch、已有资源观测、私有状态、冷却、死亡及待确认动作；预测分支同时接入新角色，随后确认不会覆盖掉补全结果。识别前的动作历史没有证据时明确保留未解析诊断。真实弭弗/骏卫/余烬部分队伍的补全回归与运行时专项72项通过，全仓1060项通过；技力时机专项仍按用户要求后置。
