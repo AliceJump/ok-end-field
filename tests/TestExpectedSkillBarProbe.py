@@ -113,7 +113,7 @@ class TestExpectedSkillBarProbe(unittest.TestCase):
 
         self.assertEqual(result, 175.0)
         self.assertEqual(len(seen_frames), 2)
-        self.assertIs(seen_frames[0], seen_frames[1])
+        self.assertTrue(all(frame is task.frame for frame in seen_frames))
 
     def test_frame_without_scaled_box_support_uses_legacy_reader(self):
         class Task:
