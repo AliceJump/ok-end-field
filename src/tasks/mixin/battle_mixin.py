@@ -32,11 +32,22 @@ from src.core.BattleConfig import (
     BATTLE_CONFIG_MODE_KEY,
     BATTLE_CONFIG_NAME,
     BATTLE_CONFIG_TYPE,
-    BATTLE_GROUP_CONFIGS,
+    BATTLE_ROOT_CONFIGS,
     DEFAULT_BATTLE_CONFIG,
+    DEFAULT_LEGACY_COMBAT_MODE,
+    KEY_BATTLE_INITIAL_WAIT,
+    KEY_COND_ENABLED,
+    KEY_DAMAGE_ROTATION,
+    KEY_ENABLE_ROTATION,
+    KEY_LEGACY_COMBAT_MODE,
     KEY_RECOMMEND_SKILL,
     KEY_SKILL_ALLOWLIST,
     KEY_ULT_RELEASE_MODE,
+    LEGACY_COMBAT_MODE_AUTO_FILTER,
+    LEGACY_COMBAT_MODE_CONDITIONAL,
+    LEGACY_COMBAT_MODE_DAMAGE,
+    LEGACY_COMBAT_MODE_NORMAL,
+    LEGACY_COMBAT_MODE_ROTATION,
     RECOMMEND_SKILL_REGIONS,
     ULT_RELEASE_MODE_ALT,
     ULT_RELEASE_MODE_HOLD,
@@ -45,7 +56,9 @@ from src.core.BattleConfig import (
 from src.core.config_migration import legacy_battle_mode_to_bool
 from src.core.global_config_store import get_global_config
 from src.core.sequence_parser import parse_sequence
+from src.data.combat_observation import ActionBlockReason, EnemyPresence
 from src.data.FeatureList import FeatureList as fL
+from src.image.enemy_health_probe import probe_enemy_presence_fast
 from src.image.hsv_config import HSVRange as hR
 from src.image.recommend_skill_detector import PULSE_ON_RATIO, get_recommend_skill_detector
 from src.tasks.onetime.AutoCombatLogic import AutoCombatLogic
@@ -79,6 +92,88 @@ SWITCH_CHAR_W = 8 / 1920  # 归一化宽
 SWITCH_CHAR_H = 16 / 1080  # 归一化高
 SWITCH_CHAR_SLOTS = 4  # 最多 4 个出现位置
 SWITCH_CHAR_EXPAND = 1 / 8  # 搜索框向外扩大的比例（相对框自身宽/高）
+
+# ── 战斗顶部反馈文本带：固定位置 + 白色几何，不走 OCR ───────────────────────
+# 1920x1080 实测样本「离目标太远」完整文本带；归一化后可直接覆盖 4K/2K。
+COMBAT_TOO_FAR_TEXT_REGION = (0.4703, 0.1593, 0.5266, 0.1815)
+COMBAT_TOO_FAR_STABLE_FRAMES = 2
+COMBAT_TOO_FAR_STABLE_MIN_GAP = 0.01
+COMBAT_TOO_FAR_STABLE_MAX_GAP = 0.20
+COMBAT_TOO_FAR_SIGNATURE_TOLERANCE = (0.03, 0.08, 0.08, 0.025)
+
+
+def _measure_combat_too_far_text_band(frame):
+    """Return a cheap geometry signature for the fixed white feedback band.
+
+    Signature = (width_ratio, height_ratio, white_fill_ratio, center_x_ratio).
+    The accepted ranges are intentionally wider than the single 1080p sample,
+    while still requiring the band to nearly span this tight fixed region.
+    """
+    if frame is None or getattr(frame, "size", 0) == 0 or frame.ndim != 3:
+        return None
+
+    mask = cv2.inRange(frame, (180, 180, 180), (255, 255, 255))
+    points = cv2.findNonZero(mask)
+    if points is None:
+        return None
+
+    x, y, width, height = cv2.boundingRect(points)
+    frame_height, frame_width = mask.shape
+    if frame_width <= 0 or frame_height <= 0:
+        return None
+
+    width_ratio = width / frame_width
+    height_ratio = height / frame_height
+    fill_ratio = cv2.countNonZero(mask) / (frame_width * frame_height)
+    left_ratio = x / frame_width
+    right_ratio = (x + width) / frame_width
+    top_ratio = y / frame_height
+    bottom_ratio = (y + height) / frame_height
+
+    if not (
+        0.88 <= width_ratio <= 0.98
+        and 0.60 <= height_ratio <= 0.92
+        and 0.12 <= fill_ratio <= 0.34
+        and left_ratio <= 0.10
+        and right_ratio >= 0.90
+        and top_ratio <= 0.20
+        and bottom_ratio >= 0.72
+    ):
+        return None
+
+    center_x_ratio = (x + width / 2) / frame_width
+    return width_ratio, height_ratio, fill_ratio, center_x_ratio
+
+
+# ── 技力条：4K 基准坐标 ──────────────────────────────────────────────────────
+# 技力从左向右填充。完整格检测从右向左查，可以在满 3 格时只做一次颜色检测；
+# 若第 n 格完整，只额外读取第 n+1 格的部分填充。部分填充识别等待样图补全。
+SKILL_BAR_AREA_4K = (1586, 1940, 2266, 1983)
+SKILL_BAR_Y_4K = (1958, 1970)
+SKILL_BAR_X_4K = ((1604, 1796), (1824, 2013), (2043, 2231))
+
+
+def _resolve_skill_bar_progress(is_full, read_fill):
+    """Resolve 0..3 bars with at most 3 full checks + 1 partial check.
+
+    is_full(index) and read_fill(index) use zero-based bar indices. read_fill
+    returns a 0..1 fraction or None when the partial detector is unavailable.
+    """
+    for index in (2, 1, 0):
+        if not is_full(index):
+            continue
+        whole = index + 1
+        if whole == 3:
+            return 3.0
+        fraction = read_fill(whole)
+        if fraction is None:
+            return float(whole)
+        return min(3.0, whole + max(0.0, min(float(fraction), 1.0)))
+
+    fraction = read_fill(0)
+    if fraction is None:
+        return None
+    return max(0.0, min(float(fraction), 1.0))
 
 
 def _load_char_name_map() -> dict[str, str]:
@@ -141,13 +236,11 @@ class BattleMixin(BaseEfTask):
             self.config_description = {}
         if not hasattr(self, "config_type") or self.config_type is None:
             self.config_type = {}
-        # 「使用独立配置」开关：勾选后展开显示当前任务的独立战斗配置项。
-        # 实时条件的 3 个内部数据 key（序列/立即释放开关）不单独展开为行——
-        # 它们由「启用实时条件」面板承载（KEY_COND_ENABLED 渲染为面板行，随开关显隐）
-        # KEY_INSTANT_ULT / KEY_INSTANT_LINK 已从 DEFAULT_BATTLE_CONFIG 移除，无需再排除
+        # 「使用独立配置」只引用 Battle Config 的根节点。模式子项继续由
+        # 「技能时间排轴」/「战斗模式」各自展开，避免同一个配置被两个父项引用。
         battle_mode_type = {
             "sub_configs": {
-                True: [key for key in DEFAULT_BATTLE_CONFIG if key not in BATTLE_GROUP_CONFIGS[KEY_SKILL_ALLOWLIST]],
+                True: BATTLE_ROOT_CONFIGS,
             },
         }
 
@@ -163,14 +256,49 @@ class BattleMixin(BaseEfTask):
         self.config_type.update(BATTLE_CONFIG_TYPE)
         self.config_type[BATTLE_CONFIG_MODE_KEY] = battle_mode_type
 
-    def get_battle_config(self, key: str, default=None):
+    def _raw_battle_config(self, key: str, default=None):
+        """Read one battle value from the active global/task config source."""
         global_value = self.battle_config_manager.get(key, DEFAULT_BATTLE_CONFIG.get(key, default))
         # config.get 在运行中已绑定账号覆盖；日常子任务按当前账号取战斗模式和参数。
         raw_value = self.config.get(BATTLE_CONFIG_MODE_KEY, False)
-        use_independent = self._parse_use_independent(raw_value)
-        if not use_independent:
+        if not self._parse_use_independent(raw_value):
             return global_value
         return self.config.get(key, global_value)
+
+    @staticmethod
+    def _legacy_mode_flag(mode: str, key: str):
+        """Map the single legacy-mode selector back to old internal booleans."""
+        if mode not in {
+            LEGACY_COMBAT_MODE_NORMAL,
+            LEGACY_COMBAT_MODE_AUTO_FILTER,
+            LEGACY_COMBAT_MODE_DAMAGE,
+            LEGACY_COMBAT_MODE_ROTATION,
+            LEGACY_COMBAT_MODE_CONDITIONAL,
+        }:
+            mode = DEFAULT_LEGACY_COMBAT_MODE
+
+        if key == KEY_COND_ENABLED:
+            return mode == LEGACY_COMBAT_MODE_CONDITIONAL
+        if key == KEY_ENABLE_ROTATION:
+            return mode == LEGACY_COMBAT_MODE_ROTATION
+        if key == KEY_SKILL_ALLOWLIST:
+            return mode in {LEGACY_COMBAT_MODE_AUTO_FILTER, LEGACY_COMBAT_MODE_DAMAGE}
+        if key == KEY_DAMAGE_ROTATION:
+            return mode == LEGACY_COMBAT_MODE_DAMAGE
+        return None
+
+    def get_battle_config(self, key: str, default=None):
+        # 旧执行逻辑仍读取四个历史 bool；它们不再由 UI 独立控制，而是统一
+        # 从「战斗模式」推导，保证同一时间只有一个旧策略生效。
+        if key in {
+            KEY_COND_ENABLED,
+            KEY_ENABLE_ROTATION,
+            KEY_SKILL_ALLOWLIST,
+            KEY_DAMAGE_ROTATION,
+        }:
+            mode = self._raw_battle_config(KEY_LEGACY_COMBAT_MODE, DEFAULT_LEGACY_COMBAT_MODE)
+            return self._legacy_mode_flag(mode, key)
+        return self._raw_battle_config(key, default)
 
     def _parse_use_independent(self, value):
         """解析「使用独立配置」值，支持布尔值、旧字符串格式和未识别值回退。
@@ -250,12 +378,19 @@ class BattleMixin(BaseEfTask):
     # 终结技释放后延迟退出检查的时间（秒）
     ULT_EXIT_DELAY = 3.0
 
-    def use_ult(self, ult_sequence: str | None = None):
+    def use_ult(self, ult_sequence: str | None = None, wait_for_team_recovery: bool = True):
         """
         尝试释放终极技。
 
         依次检测技能键：
             1 -> 2 -> 3 -> 4
+
+        Args:
+            ult_sequence: 指定要释放的终结技槽位；None 时按 1..4 检测。
+            wait_for_team_recovery: 仅控制 Alt 释放后是否同步等待头像消失并恢复。
+                默认 True；当前时间排轴同样传 True，因此保留 HUD 恢复等待。
+                显式传 False 可跳过 Alt 路径的同步等待；长按模式无论该参数
+                取值都保留旧同步等待以保证按键释放。
 
         Returns:
             bool
@@ -276,9 +411,11 @@ class BattleMixin(BaseEfTask):
                     self.send_key_up("alt")
                     # 从实际完成按键操作的时刻开始计算退出延迟
                     self._last_ult_release_time = self.active_time()
-                    # 等待技能释放导致战斗状态变化，然后等待重新识别到至少一个人
-                    self._has_detected_team_member(time_out=1, require_four_unknown=True)
-                    self._has_detected_team_member()
+                    # Alt 路径允许调用方显式跳过同步等待；当前时间排轴调用仍传 True，
+                    # 因此会等待头像消失并恢复后再继续调度。
+                    if wait_for_team_recovery:
+                        self._has_detected_team_member(time_out=1, require_four_unknown=True)
+                        self._has_detected_team_member()
                     return True
                 self.send_key_down(ult)  # 确认使用send_key：终极技键位为游戏固定不可配置键，不经过KeyConfigManager管理
                 # 等待技能释放导致战斗状态变化
@@ -588,10 +725,21 @@ class BattleMixin(BaseEfTask):
         return (last_result or ["?"], False)
 
     def _is_detected_team_frame_matched(self, team, battle_team, require_four_unknown):
-        """判断当前帧的队伍识别结果是否满足等待条件。"""
+        """判断当前帧的队伍识别结果是否满足等待条件。
+
+        战斗中已经确认失效/阵亡的槽位不再要求头像恢复；其余槽位仍必须
+        与开场队伍按位置完全一致。这样终结技动画结束后的 HUD 恢复不会
+        因一个已经永久变成 "?" 的槽位每次都等到超时。
+        """
         if require_four_unknown:
             return bool(team) and len(team) == 4 and all(member == "?" for member in team)
-        return bool(team) and not any(member == "?" for member in team) and team == battle_team
+        if not team or not battle_team or len(team) != len(battle_team):
+            return False
+        disabled = set(getattr(self, "_battle_team_disabled_slots", set()) or ())
+        return all(
+            index in disabled or (current != "?" and current == expected)
+            for index, (current, expected) in enumerate(zip(team, battle_team, strict=False))
+        )
 
     def _log_detected_team_member_result(self, team, battle_team, require_four_unknown, time_out, success):
         """记录队伍检测成功或超时的结果。"""
@@ -657,11 +805,113 @@ class BattleMixin(BaseEfTask):
 
         return False
 
+    def probe_enemy_presence(self) -> EnemyPresence:
+        """Detect enemy presence from fixed boss/normal HP-bar regions."""
+        return probe_enemy_presence_fast(self)
+
+    def _read_combat_too_far_text_band(self):
+        feedback_box = self.box_of_screen(
+            *COMBAT_TOO_FAR_TEXT_REGION,
+            name="combat_action_feedback",
+        )
+        return _measure_combat_too_far_text_band(feedback_box.crop_frame(self.frame))
+
+    def reset_combat_action_feedback_probe(self):
+        """Drop all temporal state for the top-center action-feedback detector."""
+        self._combat_too_far_band_streak = 0
+        self._combat_too_far_band_signature = None
+        self._combat_too_far_band_last_seen_at = None
+        self._combat_too_far_wait_for_clear = False
+
+    def arm_combat_action_feedback_probe(self):
+        """Arm feedback detection for a new input without accepting stale text.
+
+        The current frame is sampled before the combat key is sent. If an old
+        TOO_FAR prompt is still visible, the detector waits for that band to
+        disappear before it can treat a later reappearance as feedback for the
+        new action.
+        """
+        stale_visible = self._read_combat_too_far_text_band() is not None
+        self.reset_combat_action_feedback_probe()
+        self._combat_too_far_wait_for_clear = stale_visible
+
+    def probe_combat_action_block_reason(self) -> ActionBlockReason | None:
+        """Detect a newly appeared fixed white top-center failure band.
+
+        The prompt is identified by its unique fixed position, near-full band
+        width, white-pixel geometry, and two consecutive stable frames. A band
+        already visible when the action was armed is ignored until it clears.
+        """
+        signature = self._read_combat_too_far_text_band()
+        now = self.active_time()
+
+        if signature is None:
+            self._combat_too_far_band_streak = 0
+            self._combat_too_far_band_signature = None
+            self._combat_too_far_band_last_seen_at = None
+            self._combat_too_far_wait_for_clear = False
+            return None
+
+        if getattr(self, "_combat_too_far_wait_for_clear", False):
+            self._combat_too_far_band_streak = 0
+            self._combat_too_far_band_signature = None
+            self._combat_too_far_band_last_seen_at = None
+            return None
+
+        previous = getattr(self, "_combat_too_far_band_signature", None)
+        last_seen_at = getattr(self, "_combat_too_far_band_last_seen_at", None)
+        streak = getattr(self, "_combat_too_far_band_streak", 0)
+        stable = (
+            previous is not None
+            and last_seen_at is not None
+            and COMBAT_TOO_FAR_STABLE_MIN_GAP <= now - last_seen_at <= COMBAT_TOO_FAR_STABLE_MAX_GAP
+            and all(
+                abs(current - old) <= tolerance
+                for current, old, tolerance in zip(
+                    signature,
+                    previous,
+                    COMBAT_TOO_FAR_SIGNATURE_TOLERANCE,
+                    strict=True,
+                )
+            )
+        )
+
+        self._combat_too_far_band_signature = signature
+        self._combat_too_far_band_last_seen_at = now
+        self._combat_too_far_band_streak = streak + 1 if stable else 1
+
+        if self._combat_too_far_band_streak >= COMBAT_TOO_FAR_STABLE_FRAMES:
+            return ActionBlockReason.TOO_FAR
+        return None
+
+    def recover_target_too_far(self) -> bool:
+        """Lock the current target and dodge forward immediately to close range."""
+        self.log_info("时间排轴距离恢复: 中键索敌后向前闪避贴近敌人")
+        self.click(key="middle", down_time=0.002)
+        # Give target lock/camera steering one short beat before deciding the
+        # forward direction for the dodge.
+        self.sleep(0.05)
+        self.dodge_forward(pre_hold=0.05, dodge_down_time=0.03, after_sleep=0.1)
+        self.dodge_forward(pre_hold=0.05, dodge_down_time=0.03, after_sleep=0.1)
+        self.dodge_forward(pre_hold=0.05, dodge_down_time=0.03, after_sleep=0.02)
+        return True
+
+    def is_link_skill_ready(self):
+        """Shared link readiness monitor, without sending a combat key."""
+        return bool(
+            self.find_one(
+                fL.default_link_skill,
+                threshold=0.7,
+                vertical_variance=0.005,
+                horizontal_variance=0.005,
+            )
+        )
+
     def use_link_skill(self):
         """
         使用连携技能。
         """
-        if self.find_one(fL.default_link_skill, threshold=0.7, vertical_variance=0.005, horizontal_variance=0.005):
+        if self.is_link_skill_ready():
             self.press_combat_key("e")
             return True
 
@@ -736,6 +986,17 @@ class BattleMixin(BaseEfTask):
             self.log_info(f"推荐技能 {label} 命中, 按下按键 {key}（队伍 {member_count} 人）")
             pressed = True
         return pressed
+
+    def probe_pulse(self):
+        """独立脉冲探针：观测当前帧各技能按钮区域的白色脉冲并落盘。
+
+        只记录不按键，不受「自动技能列表 / 推荐技能」等配置影响
+        （自带独立开关 KEY_PULSE_PROBE，默认开）。由战斗循环每帧调用；
+        探针内部自带节流与异常兜底，绝不干扰战斗行为。
+        """
+        from src.image.pulse_probe import get_pulse_probe
+
+        get_pulse_probe().observe(self)
 
     def in_combat(self, required_yellow=1):
         """
@@ -851,6 +1112,19 @@ class BattleMixin(BaseEfTask):
             if result := self.find_one(feature, box=box):
                 return result
         return None
+
+    def are_all_battle_ults_ready(self) -> bool:
+        """Return whether every current team member's ultimate is ready.
+
+        in_combat() calls in_team() first, so _battle_member_count normally
+        already reflects the visible team by the time combat logic starts.
+        Keep this as a read-only readiness probe: it reuses the same per-slot
+        template mapping as actual ultimate release and never presses a key.
+        """
+        member_count = int(getattr(self, "_battle_member_count", 0) or 0)
+        if member_count < 1 or member_count > 4:
+            return False
+        return all(bool(self._find_battle_ult(f"ult_{index}")) for index in range(1, member_count + 1))
 
     def _find_battle_ult(self, feature: str):
         """根据本次队伍人数，将终结技模板映射到实际技能框。"""
@@ -975,43 +1249,107 @@ class BattleMixin(BaseEfTask):
         self.dodge_forward(pre_hold=0.05, dodge_down_time=0.03, after_sleep=0.02)
         self.last_no_number_action_time = self.active_time()
 
-    def get_skill_bar_count(self):
+    def _is_skill_bar_full(self, index):
+        x1, x2 = SKILL_BAR_X_4K[index]
+        y_start, y_end = SKILL_BAR_Y_4K
+        return self.check_is_pure_color_in_4k(x1, y_start, x2, y_end, yellow_skill_color)
+
+    def is_skill_bar_full_fast(self):
+        """Cheap full-SP probe: check only the third skill bar.
+
+        Timed combat uses this every scheduler frame only after a previous
+        precise observation has already reached 2.x bars. It avoids repeating
+        the full staged 3+1 scan while still reacting to 3 bars immediately.
         """
-        获取当前技能条数量。
+        return self._is_skill_bar_full(2)
 
-        Returns:
-            int
-                -1 表示未检测到
-        """
+    def _read_skill_bar_fill_ratio(self, index):
+        x1, x2 = SKILL_BAR_X_4K[index]
+        y1, y2 = SKILL_BAR_Y_4K
 
-        skill_area_box = self.box_of_screen_scaled(3840, 2160, 1586, 1940, 2266, 1983)
+        # 收缩，避开边框
+        box = self.box_of_screen_scaled(3840, 2160, x1 + 3, y1 + 2, x2 - 3, y2 - 2)
+        bar = box.crop_frame(self.frame)
+        if bar.size == 0:
+            return None
 
-        skill_area = skill_area_box.crop_frame(self.frame)
+        hsv = cv2.cvtColor(bar, cv2.COLOR_BGR2HSV)
 
-        if not has_rectangles(skill_area):
-            return -1
+        white_mask = cv2.inRange(hsv, (0, 0, 170), (180, 60, 255))
+        yellow_mask = cv2.inRange(hsv, (20, 80, 140), (45, 255, 255))
 
-        count = 0
+        fill_mask = cv2.bitwise_or(white_mask, yellow_mask)
 
-        y_start, y_end = 1958, 1970
+        h, w = fill_mask.shape
+        filled_cols = 0
+        gap = 0
 
-        bars = [(1604, 1796), (1824, 2013), (2043, 2231)]
+        for x in range(w):
+            col = fill_mask[:, x]
+            ratio = np.count_nonzero(col) / h
 
-        for x1, x2 in bars:
-            if self.check_is_pure_color_in_4k(x1, y_start, x2, y_end, yellow_skill_color):
-                count += 1
+            if ratio >= 0.55:
+                filled_cols = x + 1
+                gap = 0
             else:
-                break
+                gap += 1
+                # 允许少量抖动，不要一断就停
+                if gap >= 2:
+                    break
 
-        if count == 0:
-            has_white_left = self.check_is_pure_color_in_4k(
-                1604, y_start, 1614, y_end, white_skill_color, threshold=0.1
-            )
+        ratio = filled_cols / w
 
-            if not has_white_left:
-                count = -1
+        # 收尾修正
+        if ratio < 0.02:
+            return 0.0
+        if ratio > 0.98:
+            return 1.0
+        return ratio
 
-        return count
+    def get_skill_bar_progress(self):
+        """获取技力条精细进度，范围 0..3；-1 表示未检测到。
+
+        优化顺序：
+        - 先检测第 3 格是否完整，命中直接返回 3（1+0 次检测）；
+        - 否则检测第 2 格，命中后只读取第 3 格部分填充；
+        - 再检测第 1 格，命中后只读取第 2 格部分填充；
+        - 三格都不完整时，只读取第 1 格部分填充（最坏 3+1 次检测）。
+        """
+
+        x1, y1, x2, y2 = SKILL_BAR_AREA_4K
+        skill_area_box = self.box_of_screen_scaled(3840, 2160, x1, y1, x2, y2)
+        skill_area = skill_area_box.crop_frame(self.frame)
+        if not has_rectangles(skill_area):
+            return -1.0
+
+        progress = _resolve_skill_bar_progress(
+            self._is_skill_bar_full,
+            self._read_skill_bar_fill_ratio,
+        )
+        if progress is not None:
+            return progress
+
+        # 部分填充识别尚未接入时保留旧行为：白色左边界存在代表技力条有效，
+        # 只是当前没有完整黄色格；否则视为未检测到。
+        y_start, y_end = SKILL_BAR_Y_4K
+        first_x1, _ = SKILL_BAR_X_4K[0]
+        has_white_left = self.check_is_pure_color_in_4k(
+            first_x1, y_start, first_x1 + 10, y_end, white_skill_color, threshold=0.1
+        )
+        return 0.0 if has_white_left else -1.0
+
+    def get_skill_bar_sp(self):
+        """获取近似技力值（0..300）；部分填充识别完成后可直接用于 25/50/75 SP 技能。"""
+        progress = self.get_skill_bar_progress()
+        return -1.0 if progress < 0 else progress * 100.0
+
+    def get_skill_bar_count(self):
+        """获取完整技能条数量；-1 表示未检测到。
+
+        保持旧 API 语义，内部复用从右向左的快速扫描。
+        """
+        progress = self.get_skill_bar_progress()
+        return -1 if progress < 0 else int(progress)
 
     def check_is_pure_color_in_4k(self, x1, y1, x2, y2, color_range=None, threshold=0.9):
         skill_area_box = self.box_of_screen_scaled(3840, 2160, x1, y1, x2, y2)
@@ -1070,7 +1408,7 @@ class BattleMixin(BaseEfTask):
         start_time = self.active_time()
         deadline = start_time + 420
         last_battle_time = None
-        sleep_time = self.get_battle_config("进入战斗后的初始等待时间", 3)
+        sleep_time = self.get_battle_config(KEY_BATTLE_INITIAL_WAIT, 3)
 
         while True:
             # 全局超时保护

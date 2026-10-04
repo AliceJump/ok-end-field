@@ -287,7 +287,9 @@ def _build_team_skill_context(
     for name, cdata in characters.items():
         if name not in team_set:
             continue
-        for s in cdata.get("skills", []):
+        for s in cdata.get("skills") or []:
+            if not isinstance(s, dict):
+                continue
             skill_id = s.get("skill_id", "")
             key = (name, skill_id)
             team_skills[key] = s
@@ -468,7 +470,9 @@ def build_skill_allowlist(
             continue
 
         skill = None
-        for s in char_data.get("skills", []):
+        for s in char_data.get("skills") or []:
+            if not isinstance(s, dict):
+                continue
             if s.get("skill_type") == "战技":
                 skill = s
                 break

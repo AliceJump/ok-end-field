@@ -29,98 +29,101 @@ class AutoSkipDialogTaskModule(_LangModuleBaseT):
 class CharactersModule(_LangModuleBaseT):
     """characters — OCR 语言节点（值取自 zh_CN）"""
 
-    zhuang_fang_yi: str
+    zhuang_fangyi: str
     """庄方宜"""
 
-    luo_qian: str
+    rossi: str
     """洛茜"""
 
-    tang_tang: str
+    tangtang: str
     """汤汤"""
 
-    guan_li_yuan: str
+    endministrator: str
     """管理员"""
 
-    li_feng: str
+    lifeng: str
     """黎风"""
 
-    yu_jin: str
+    ember: str
     """余烬"""
 
-    jie_er_pei_ta: str
+    gilberta: str
     """洁尔佩塔"""
 
-    ai_er_dai_la: str
+    ardelia: str
     """艾尔黛拉"""
 
-    jun_wei: str
+    pogranichnik: str
     """骏卫"""
 
-    lai_wan_ting: str
+    laevatain: str
     """莱万汀"""
 
-    yi_feng: str
+    yvonne: str
     """伊冯"""
 
-    bie_li: str
+    last_rite: str
     """别礼"""
 
-    chen_qian_yu: str
+    chen_qianyu: str
     """陈千语"""
 
-    zhou_xue: str
+    snowshine: str
     """昼雪"""
 
-    sai_xi: str
+    xaihi: str
     """赛希"""
 
-    lang_wei: str
+    wulfgard: str
     """狼卫"""
 
-    pei_li_ka: str
+    perlica: str
     """佩丽卡"""
 
-    hu_guang: str
+    arclight: str
     """弧光"""
 
-    a_lie_shi: str
+    alesh: str
     """阿列什"""
 
-    ai_wei_wen_na: str
+    avywenna: str
     """艾维文娜"""
 
     da_pan: str
     """大潘"""
 
-    ai_te_la: str
+    estella: str
     """埃特拉"""
 
-    ka_qi_er: str
+    catcher: str
     """卡契尔"""
 
-    an_ta_er: str
+    antal: str
     """安塔尔"""
 
-    ying_shi: str
+    fluorite: str
     """萤石"""
 
-    qiu_li: str
+    akekuri: str
     """秋栗"""
 
-    jue: str
+    arcane: str
     """诀"""
 
-    ka_miao: str
+    camille: str
     """卡缪"""
 
     mi_fu: str
     """弭弗"""
 
-    li_nuo: str
+    liino: str
     """梨诺"""
 
-    ti_fu_luo_si: str
+    typhoeus: str
     """提弗洛斯"""
+
+    purrchena: str
+    """噗切娜"""
 
 
 class DailyBattleMixinModule(_LangModuleBaseT):

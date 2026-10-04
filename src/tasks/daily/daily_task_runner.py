@@ -170,22 +170,16 @@ class DailyTaskRunner:
         self.final_summary["current_task"] = ""
         return True
 
-    def _abort_after_fatal_failure(self, key: str, repeat_idx: int, repeat_total: int) -> None:
+    def _abort_current_round_after_fatal_failure(self, key: str) -> None:
         remaining = list(self.task_status.get("all", []))
         self.task_status["all"].clear()
         self.task_status["skipped"].extend(remaining)
         self.final_summary["status"] = "关键任务失败"
         self.final_summary["current_task"] = key
         self.task.log_info(
-            self.task.tr("关键任务 {key} 失败，已跳过后续任务并关闭游戏").format(key=self.task.tr(key)),
+            self.task.tr("关键任务 {key} 失败，已跳过当前账号后续任务").format(key=self.task.tr(key)),
             notify=True,
         )
-        self._append_round_summary(repeat_idx, repeat_total)
-        self._sync_task_status_info()
-        try:
-            self.task.kill_game()
-        except Exception as e:
-            self.task.log_info(self.task.tr("关键任务失败后关闭游戏失败: {err}").format(err=e), notify=True)
 
     def run(self, repeat_times: int = 1):
         self.task.log_info("开始执行日常任务...", notify=True)
@@ -212,6 +206,7 @@ class DailyTaskRunner:
                     self.task.tr("开始第 {idx}/{total} 轮任务执行").format(idx=repeat_idx + 1, total=repeat_total)
                 )
 
+                round_aborted = False
                 for item in self.task_items:
                     key, func = item[0], item[1]
                     predicate = item[2] if len(item) > 2 else None
@@ -226,14 +221,21 @@ class DailyTaskRunner:
                         if key not in self.failure_screenshot_tasks:
                             with contextlib.suppress(Exception):
                                 self.task.screenshot(f"DailyTask_FatalTask_{key}")
-                        self._abort_after_fatal_failure(key, repeat_idx + 1, repeat_total)
-                        return
+                        self._abort_current_round_after_fatal_failure(key)
+                        round_aborted = True
+                        break
 
                     if success is False and key in self.fatal_task_keys:
-                        self._abort_after_fatal_failure(key, repeat_idx + 1, repeat_total)
-                        return
+                        self._abort_current_round_after_fatal_failure(key)
+                        round_aborted = True
+                        break
 
-                if self.task_status["failed"]:
+                if round_aborted:
+                    self.task.log_info(
+                        self.task.tr("第 {idx} 轮 | 关键任务失败，已跳过当前账号后续任务").format(idx=repeat_idx + 1),
+                        notify=True,
+                    )
+                elif self.task_status["failed"]:
                     self.task.log_info(
                         self.task.tr("第 {idx} 轮 | 失败任务: {failed}").format(
                             idx=repeat_idx + 1, failed=[self.task.tr(k) for k in self.task_status["failed"]]
@@ -245,6 +247,9 @@ class DailyTaskRunner:
 
                 self._append_round_summary(repeat_idx + 1, repeat_total)
                 self._sync_task_status_info()
+                if round_aborted:
+                    self.current_task_key = None
+                    self.final_summary["current_task"] = ""
 
             if self.final_summary.get("all_fail_tasks"):
                 self.final_summary["status"] = "部分失败"

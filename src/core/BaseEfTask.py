@@ -25,6 +25,8 @@ from src.core.global_config_store import (
     ENSURE_MAIN_ONCE_ACTION_SLEEP_NAME,
     KEY_CONFIG_NAME,
     get_global_config,
+    migrate_account_battle_mode_selectors,
+    migrate_task_battle_mode_selector,
     migrate_task_minimap_values_to_owner,
     migrate_task_nav_values_to_global,
     migrate_task_zip_line_values_to_global,
@@ -288,7 +290,9 @@ class BaseEfTask(
         migrate_config_file_keys(self.__class__.__name__, key_migrations)
         migrate_config_values(self.__class__.__name__, value_migrations)
         # 在框架 Config 构造（verify_config 会删除任务文件中不在 default 的旧键）之前，
-        # 把共享小地图参数、导航真值与滑索旧值转存到对应所有者，避免数据被提前删除。
+        # 把战斗模式、共享小地图参数、导航真值与滑索旧值转存到对应所有者，避免数据被提前删除。
+        migrate_task_battle_mode_selector(self.__class__.__name__)
+        migrate_account_battle_mode_selectors()
         migrate_task_minimap_values_to_owner(self)
         migrate_task_nav_values_to_global(self.__class__.__name__)
         migrate_task_zip_line_values_to_global(self.__class__.__name__)

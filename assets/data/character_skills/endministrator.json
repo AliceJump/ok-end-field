@@ -1,0 +1,649 @@
+{
+    "character_id": "endministrator",
+    "name": "管理员",
+    "star": 6,
+    "element": "物理",
+    "profession": "近卫",
+    "weapon_type": "单手剑",
+    "skills": [
+        {
+            "skill_id": "endministrator_normal",
+            "name": "毁伤序列",
+            "skill_type": "普通攻击",
+            "element": "物理",
+            "has_enhancement": false,
+            "enhancement": null,
+            "description": "普通攻击：对敌人进行至多5段攻击，造成物理伤害。作为主控干员时，重击会造成18点失衡。 下落攻击：处于空中时使用普通攻击，会下落并攻击附近敌人，造成物理伤害。 处决攻击：附近有敌人处于失衡状态时使用普通攻击，将处决该敌人，造成大量物理伤害并恢复一定技力。",
+            "damage_multiplier": null,
+            "stagger_value": 18,
+            "cooldown": null,
+            "spirit_cost": 0,
+            "effects": [],
+            "rank_stats": {
+                "levels": [
+                    "RANK 1",
+                    "RANK 2",
+                    "RANK 3",
+                    "RANK 4",
+                    "RANK 5",
+                    "RANK 6",
+                    "RANK 7",
+                    "RANK 8",
+                    "RANK 9",
+                    "专精1",
+                    "专精2",
+                    "专精3"
+                ],
+                "rows": [
+                    {
+                        "label": "普攻第一段倍率",
+                        "values": [
+                            "23%",
+                            "25%",
+                            "27%",
+                            "29%",
+                            "32%",
+                            "34%",
+                            "36%",
+                            "39%",
+                            "41%",
+                            "44%",
+                            "47%",
+                            "51%"
+                        ]
+                    },
+                    {
+                        "label": "普攻第二段倍率",
+                        "values": [
+                            "27%",
+                            "30%",
+                            "32%",
+                            "35%",
+                            "38%",
+                            "41%",
+                            "43%",
+                            "46%",
+                            "49%",
+                            "52%",
+                            "56%",
+                            "61%"
+                        ]
+                    },
+                    {
+                        "label": "普攻第三段倍率",
+                        "values": [
+                            "30%",
+                            "33%",
+                            "36%",
+                            "39%",
+                            "42%",
+                            "45%",
+                            "48%",
+                            "51%",
+                            "54%",
+                            "58%",
+                            "63%",
+                            "68%"
+                        ]
+                    },
+                    {
+                        "label": "普攻第四段倍率",
+                        "values": [
+                            "35%",
+                            "38%",
+                            "41%",
+                            "45%",
+                            "48%",
+                            "52%",
+                            "55%",
+                            "59%",
+                            "62%",
+                            "67%",
+                            "72%",
+                            "78%"
+                        ]
+                    },
+                    {
+                        "label": "普攻第五段倍率",
+                        "values": [
+                            "40%",
+                            "44%",
+                            "48%",
+                            "52%",
+                            "56%",
+                            "60%",
+                            "64%",
+                            "68%",
+                            "72%",
+                            "77%",
+                            "83%",
+                            "90%"
+                        ]
+                    },
+                    {
+                        "label": "处决攻击倍率",
+                        "values": [
+                            "400%",
+                            "440%",
+                            "480%",
+                            "520%",
+                            "560%",
+                            "600%",
+                            "640%",
+                            "680%",
+                            "720%",
+                            "770%",
+                            "830%",
+                            "900%"
+                        ]
+                    },
+                    {
+                        "label": "下落攻击倍率",
+                        "values": [
+                            "80%",
+                            "88%",
+                            "96%",
+                            "104%",
+                            "112%",
+                            "120%",
+                            "128%",
+                            "136%",
+                            "144%",
+                            "154%",
+                            "166%",
+                            "180%"
+                        ]
+                    }
+                ]
+            },
+            "rank_stats_variants": []
+        },
+        {
+            "skill_id": "endministrator_skill",
+            "name": "构成序列",
+            "skill_type": "战技",
+            "element": "物理",
+            "has_enhancement": true,
+            "description": "使用源石技艺冲击前方一定范围内的敌人，造成物理伤害和猛击。",
+            "damage_multiplier": "300%（基础）+ 200%（每层破防）",
+            "stagger_value": 0,
+            "cooldown": null,
+            "spirit_cost": 100,
+            "effects": [
+                {
+                    "effect_id": "STATUS_HEAVY_STRIKE",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ],
+            "enhancements": [
+                {
+                    "name": "破甲效果",
+                    "trigger_condition": {
+                        "text": "命中敌人时消耗破防层数",
+                        "effects": {
+                            "all": [
+                                "STACK_SHRED"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "破甲效果",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STACK_SHRED",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        }
+                    ]
+                }
+            ],
+            "rank_stats": {
+                "levels": [
+                    "RANK 1",
+                    "RANK 2",
+                    "RANK 3",
+                    "RANK 4",
+                    "RANK 5",
+                    "RANK 6",
+                    "RANK 7",
+                    "RANK 8",
+                    "RANK 9",
+                    "专精1",
+                    "专精2",
+                    "专精3"
+                ],
+                "rows": [
+                    {
+                        "label": "技力消耗",
+                        "values": [
+                            "100",
+                            "100",
+                            "100",
+                            "100",
+                            "100",
+                            "100",
+                            "100",
+                            "100",
+                            "100",
+                            "100",
+                            "100",
+                            "100"
+                        ]
+                    },
+                    {
+                        "label": "伤害倍率",
+                        "values": [
+                            "156%",
+                            "171%",
+                            "187%",
+                            "202%",
+                            "218%",
+                            "234%",
+                            "249%",
+                            "265%",
+                            "280%",
+                            "300%",
+                            "323%",
+                            "350%"
+                        ]
+                    },
+                    {
+                        "label": "失衡值",
+                        "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10"
+                        ]
+                    }
+                ]
+            },
+            "rank_stats_variants": []
+        },
+        {
+            "skill_id": "endministrator_link",
+            "name": "锁闭序列",
+            "skill_type": "连携技",
+            "element": "物理",
+            "has_enhancement": true,
+            "description": "当小队内其他干员的连携技造成伤害时可以发动。冲到敌人身边，对其造成物理伤害，并附着源石结晶，在一段时间内将其封印。施加物理异常和破防会消耗源石结晶并额外造成物理伤害。",
+            "damage_multiplier": "250%",
+            "stagger_value": 0,
+            "cooldown": null,
+            "spirit_cost": 0,
+            "effects": [
+                {
+                    "effect_id": "STATUS_ORIGINIUM_CRYSTAL",
+                    "value": 1,
+                    "duration": null,
+                    "target": "enemy",
+                    "count": 1
+                }
+            ],
+            "enhancements": [
+                {
+                    "name": "源石结晶被物理异常或破防消耗",
+                    "trigger_condition": {
+                        "text": "锁闭序列附着源石结晶后，施加物理异常或破防会消耗结晶",
+                        "effects": {
+                            "all": [
+                                "STATUS_ORIGINIUM_CRYSTAL"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "额外造成物理伤害",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_ORIGINIUM_CRYSTAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "TRIGGER_ADDITIONAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
+                },
+                {
+                    "name": "锁闭序列",
+                    "trigger_condition": {
+                        "text": "当小队内其他干员的连携技造成伤害时可以发动",
+                        "effects": {
+                            "all": []
+                        }
+                    },
+                    "effects": []
+                }
+            ],
+            "rank_stats": {
+                "levels": [
+                    "RANK 1",
+                    "RANK 2",
+                    "RANK 3",
+                    "RANK 4",
+                    "RANK 5",
+                    "RANK 6",
+                    "RANK 7",
+                    "RANK 8",
+                    "RANK 9",
+                    "专精1",
+                    "专精2",
+                    "专精3"
+                ],
+                "rows": [
+                    {
+                        "label": "冷却时间",
+                        "values": [
+                            "16秒",
+                            "16秒",
+                            "16秒",
+                            "16秒",
+                            "16秒",
+                            "16秒",
+                            "16秒",
+                            "16秒",
+                            "16秒",
+                            "16秒",
+                            "16秒",
+                            "15秒"
+                        ]
+                    },
+                    {
+                        "label": "伤害倍率",
+                        "values": [
+                            "45%",
+                            "49%",
+                            "54%",
+                            "58%",
+                            "62%",
+                            "67%",
+                            "71%",
+                            "76%",
+                            "80%",
+                            "86%",
+                            "93%",
+                            "100%"
+                        ]
+                    },
+                    {
+                        "label": "击碎结晶伤害倍率",
+                        "values": [
+                            "178%",
+                            "196%",
+                            "213%",
+                            "231%",
+                            "249%",
+                            "267%",
+                            "284%",
+                            "302%",
+                            "320%",
+                            "342%",
+                            "369%",
+                            "400%"
+                        ]
+                    },
+                    {
+                        "label": "失衡值",
+                        "values": [
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10",
+                            "10"
+                        ]
+                    },
+                    {
+                        "label": "封印时间（秒）",
+                        "values": [
+                            "4",
+                            "4",
+                            "4",
+                            "4",
+                            "4",
+                            "4",
+                            "4",
+                            "4",
+                            "4",
+                            "4.5",
+                            "4.5",
+                            "5"
+                        ]
+                    }
+                ]
+            },
+            "rank_stats_variants": []
+        },
+        {
+            "skill_id": "endministrator_ultimate",
+            "name": "轰击序列",
+            "skill_type": "终结技",
+            "element": "物理",
+            "has_enhancement": true,
+            "description": "使用源石技艺轰击地面，对前方扇形范围内的敌人造成大量物理伤害。如果敌人身上附着源石结晶，则消耗源石结晶并额外造成一次物理伤害。",
+            "damage_multiplier": "800%",
+            "stagger_value": 0,
+            "cooldown": "15秒",
+            "spirit_cost": 90,
+            "effects": [],
+            "enhancements": [
+                {
+                    "name": "源石结晶消耗额外伤害",
+                    "trigger_condition": {
+                        "text": "敌人身上附着源石结晶时消耗结晶并额外造成物理伤害",
+                        "effects": {
+                            "all": [
+                                "STATUS_ORIGINIUM_CRYSTAL"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "追加物理伤害",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_ORIGINIUM_CRYSTAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "TRIGGER_ADDITIONAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy"
+                        }
+                    ]
+                }
+            ],
+            "rank_stats": {
+                "levels": [
+                    "RANK 1",
+                    "RANK 2",
+                    "RANK 3",
+                    "RANK 4",
+                    "RANK 5",
+                    "RANK 6",
+                    "RANK 7",
+                    "RANK 8",
+                    "RANK 9",
+                    "专精1",
+                    "专精2",
+                    "专精3"
+                ],
+                "rows": [
+                    {
+                        "label": "所需终结技能量",
+                        "values": [
+                            "80",
+                            "80",
+                            "80",
+                            "80",
+                            "80",
+                            "80",
+                            "80",
+                            "80",
+                            "80",
+                            "80",
+                            "80",
+                            "80"
+                        ]
+                    },
+                    {
+                        "label": "冷却时间",
+                        "values": [
+                            "10秒",
+                            "10秒",
+                            "10秒",
+                            "10秒",
+                            "10秒",
+                            "10秒",
+                            "10秒",
+                            "10秒",
+                            "10秒",
+                            "10秒",
+                            "10秒",
+                            "10秒"
+                        ]
+                    },
+                    {
+                        "label": "伤害倍率",
+                        "values": [
+                            "356%",
+                            "391%",
+                            "427%",
+                            "462%",
+                            "498%",
+                            "533%",
+                            "569%",
+                            "604%",
+                            "640%",
+                            "684%",
+                            "738%",
+                            "800%"
+                        ]
+                    },
+                    {
+                        "label": "额外伤害倍率",
+                        "values": [
+                            "267%",
+                            "294%",
+                            "320%",
+                            "347%",
+                            "374%",
+                            "400%",
+                            "427%",
+                            "454%",
+                            "480%",
+                            "514%",
+                            "554%",
+                            "600%"
+                        ]
+                    },
+                    {
+                        "label": "失衡值",
+                        "values": [
+                            "25",
+                            "25",
+                            "25",
+                            "25",
+                            "25",
+                            "25",
+                            "25",
+                            "25",
+                            "25",
+                            "25",
+                            "25",
+                            "25"
+                        ]
+                    }
+                ]
+            },
+            "rank_stats_variants": []
+        }
+    ],
+    "base_stats": {
+        "levels": [
+            "1级",
+            "20级",
+            "40级",
+            "60级",
+            "80级",
+            "90级"
+        ],
+        "rows": {
+            "生命值": [
+                "500",
+                "1566",
+                "2689",
+                "3811",
+                "4934",
+                "5495"
+            ],
+            "攻击力": [
+                "30",
+                "92",
+                "157",
+                "222",
+                "287",
+                "319"
+            ],
+            "力量": [
+                "14",
+                "38",
+                "62",
+                "86",
+                "111",
+                "123"
+            ],
+            "敏捷": [
+                "14",
+                "41",
+                "69",
+                "98",
+                "126",
+                "140"
+            ],
+            "智识": [
+                "9",
+                "28",
+                "47",
+                "67",
+                "87",
+                "96"
+            ],
+            "意志": [
+                "10",
+                "31",
+                "53",
+                "74",
+                "96",
+                "107"
+            ]
+        }
+    }
+}

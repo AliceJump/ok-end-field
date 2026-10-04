@@ -7,7 +7,7 @@ from ok import Box
 from src.core.base_mixin.game_flow_mixin import GameFlowMixin
 from src.core.base_mixin.runtime_mixin import RuntimeMixin
 from src.core.BattleConfig import ULT_RELEASE_MODE_ALT, ULT_RELEASE_MODE_HOLD
-from src.tasks.mixin.battle_mixin import BattleMixin
+from src.tasks.mixin.battle_mixin import BattleMixin, _resolve_skill_bar_progress
 from src.tasks.navigation.mixin.map_mixin import MapMixin
 
 
@@ -261,6 +261,54 @@ class _TaskMapHarness:
 
 
 class TestStateDrivenWaits(unittest.TestCase):
+    def test_skill_bar_progress_full_scan_short_circuits_from_right(self):
+        full_calls = []
+        fill_calls = []
+
+        def is_full(index):
+            full_calls.append(index)
+            return index == 2
+
+        def read_fill(index):
+            fill_calls.append(index)
+            return 0.5
+
+        self.assertEqual(_resolve_skill_bar_progress(is_full, read_fill), 3.0)
+        self.assertEqual(full_calls, [2])
+        self.assertEqual(fill_calls, [])
+
+    def test_skill_bar_progress_reads_only_next_partial_bar(self):
+        full_calls = []
+        fill_calls = []
+
+        def is_full(index):
+            full_calls.append(index)
+            return index == 1
+
+        def read_fill(index):
+            fill_calls.append(index)
+            return 0.25
+
+        self.assertEqual(_resolve_skill_bar_progress(is_full, read_fill), 2.25)
+        self.assertEqual(full_calls, [2, 1])
+        self.assertEqual(fill_calls, [2])
+
+    def test_skill_bar_progress_worst_case_is_three_plus_one(self):
+        full_calls = []
+        fill_calls = []
+
+        def is_full(index):
+            full_calls.append(index)
+            return False
+
+        def read_fill(index):
+            fill_calls.append(index)
+            return 0.75
+
+        self.assertEqual(_resolve_skill_bar_progress(is_full, read_fill), 0.75)
+        self.assertEqual(full_calls, [2, 1, 0])
+        self.assertEqual(fill_calls, [0])
+
     def test_ensure_main_observes_before_enabling_recovery(self):
         task = _EnsureMainHarness([None, True, True])
 
@@ -394,6 +442,61 @@ class TestStateDrivenWaits(unittest.TestCase):
         self.assertEqual(combat_logic.return_value.run.call_count, 2)
         self.assertEqual(task.frames, 2)
 
+    def test_team_recovery_ignores_confirmed_dead_slots(self):
+        task = type("TeamMatchHarness", (), {})()
+        task._battle_team_disabled_slots = {1}
+        battle_team = ["佩丽卡", "狼卫", "陈千语", "管理员"]
+
+        self.assertTrue(
+            BattleMixin._is_detected_team_frame_matched(
+                task,
+                ["佩丽卡", "?", "陈千语", "管理员"],
+                battle_team,
+                False,
+            )
+        )
+        self.assertFalse(
+            BattleMixin._is_detected_team_frame_matched(
+                task,
+                ["佩丽卡", "?", "?", "管理员"],
+                battle_team,
+                False,
+            )
+        )
+        self.assertTrue(
+            BattleMixin._is_detected_team_frame_matched(
+                task,
+                ["?", "?", "?", "?"],
+                battle_team,
+                True,
+            )
+        )
+
+    def test_all_ultimate_ready_probe_reuses_current_team_slot_mapping(self):
+        task = type("UltReadyHarness", (), {})()
+        task._battle_member_count = 3
+        calls = []
+        task._find_battle_ult = lambda feature: calls.append(feature) or object()
+
+        self.assertTrue(BattleMixin.are_all_battle_ults_ready(task))
+        self.assertEqual(calls, ["ult_1", "ult_2", "ult_3"])
+
+    def test_all_ultimate_ready_probe_stops_on_missing_slot(self):
+        task = type("UltReadyHarness", (), {})()
+        task._battle_member_count = 4
+        calls = []
+        task._find_battle_ult = lambda feature: calls.append(feature) or (None if feature == "ult_3" else object())
+
+        self.assertFalse(BattleMixin.are_all_battle_ults_ready(task))
+        self.assertEqual(calls, ["ult_1", "ult_2", "ult_3"])
+
+    def test_all_ultimate_ready_probe_requires_known_member_count(self):
+        task = type("UltReadyHarness", (), {})()
+        task._battle_member_count = 0
+        task._find_battle_ult = lambda feature: object()
+
+        self.assertFalse(BattleMixin.are_all_battle_ults_ready(task))
+
     def test_alt_ult_records_release_before_wait_and_team_detection(self):
         task = _UltHarness(ULT_RELEASE_MODE_ALT)
 
@@ -407,6 +510,21 @@ class TestStateDrivenWaits(unittest.TestCase):
                 ("timestamp", None),
                 ("detect", {"time_out": 1, "require_four_unknown": True}),
                 ("detect", {}),
+            ],
+        )
+        self.assertEqual(task._last_ult_release_time, 42)
+
+    def test_alt_ult_can_skip_team_recovery_for_timed_scheduler(self):
+        task = _UltHarness(ULT_RELEASE_MODE_ALT)
+
+        self.assertTrue(BattleMixin.use_ult(task, "2", wait_for_team_recovery=False))
+        self.assertEqual(
+            task.events,
+            [
+                ("down", "alt"),
+                ("press", "2"),
+                ("up", "alt"),
+                ("timestamp", None),
             ],
         )
         self.assertEqual(task._last_ult_release_time, 42)

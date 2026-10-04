@@ -631,7 +631,7 @@ def create_example_database() -> SkillDatabase:
     # 添加自动释放限制
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="laevat_skill",
+            skill_id="laevatain_skill",
             enhancement_source="熔火层数",
             should_forbid_normal_release=False,
             reason="熔火层数是自我触发，不影响普通释放逻辑",
@@ -649,7 +649,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="aglina_ultimate",
+            skill_id="gilberta_ultimate",
             enhancement_source="破防状态",
             should_forbid_normal_release=False,
             reason="破防状态是条件触发，不影响普通释放逻辑",
@@ -658,7 +658,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="azrila_link",
+            skill_id="ember_link",
             enhancement_source="主控干员受击",
             should_forbid_normal_release=False,
             reason="连携技是条件触发，不影响普通释放逻辑",
@@ -667,7 +667,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="pograni_skill",
+            skill_id="pogranichnik_skill",
             enhancement_source="破防层数消耗",
             should_forbid_normal_release=False,
             reason="破防层数消耗是条件触发，不影响普通释放逻辑",
@@ -694,7 +694,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="wulfa_link",
+            skill_id="rossi_link",
             enhancement_source="破防+法术附着",
             should_forbid_normal_release=False,
             reason="双状态触发是条件触发，不影响普通释放逻辑",
@@ -703,7 +703,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="mifu_skill",
+            skill_id="mi_fu_skill",
             enhancement_source="三段战技替换",
             should_forbid_normal_release=False,
             reason="战技替换是条件触发，不影响普通释放逻辑",
@@ -721,7 +721,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="chen_link",
+            skill_id="chen_qianyu_link",
             enhancement_source="破防状态",
             should_forbid_normal_release=False,
             reason="破防触发是条件触发，不影响普通释放逻辑",
@@ -730,7 +730,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="dapan_link",
+            skill_id="da_pan_link",
             enhancement_source="4层破防",
             should_forbid_normal_release=False,
             reason="4层破防是条件触发，不影响普通释放逻辑",
@@ -739,7 +739,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="dapan_ultimate",
+            skill_id="da_pan_ultimate",
             enhancement_source="备料状态",
             should_forbid_normal_release=False,
             reason="备料状态是条件触发，不影响普通释放逻辑",
@@ -748,7 +748,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="etra_link",
+            skill_id="estella_link",
             enhancement_source="冻结状态",
             should_forbid_normal_release=False,
             reason="冻结触发是条件触发，不影响普通释放逻辑",
@@ -766,7 +766,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="meurs_link",
+            skill_id="catcher_link",
             enhancement_source="蓄力/低生命",
             should_forbid_normal_release=False,
             reason="蓄力/低生命是条件触发，不影响普通释放逻辑",
@@ -775,7 +775,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="karin_link",
+            skill_id="akekuri_link",
             enhancement_source="失衡",
             should_forbid_normal_release=False,
             reason="失衡触发是条件触发，不影响普通释放逻辑",
@@ -784,7 +784,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="bounda_link",
+            skill_id="fluorite_link",
             enhancement_source="2层附着",
             should_forbid_normal_release=False,
             reason="2层附着是条件触发，不影响普通释放逻辑",
@@ -793,7 +793,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="bounda_ultimate",
+            skill_id="fluorite_ultimate",
             enhancement_source="炸弹引爆",
             should_forbid_normal_release=False,
             reason="炸弹引爆是条件触发，不影响普通释放逻辑",
@@ -802,7 +802,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="zhuangfy_skill",
+            skill_id="zhuang_fangyi_skill",
             enhancement_source="电磁附着消耗",
             should_forbid_normal_release=False,
             reason="电磁附着消耗是条件触发，不影响普通释放逻辑",
@@ -811,7 +811,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="endmin_skill",
+            skill_id="endministrator_skill",
             enhancement_source="破甲效果",
             should_forbid_normal_release=False,
             reason="破甲效果是条件触发，不影响普通释放逻辑",
@@ -820,7 +820,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="lizhiyan_skill",
+            skill_id="arcane_skill",
             enhancement_source="种子爆发",
             should_forbid_normal_release=False,
             reason="种子爆发是条件触发，不影响普通释放逻辑",
@@ -829,7 +829,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="lastrite_skill",
+            skill_id="last_rite_skill",
             enhancement_source="寒冷脆弱",
             should_forbid_normal_release=False,
             reason="寒冷脆弱是条件触发，不影响普通释放逻辑",
@@ -838,7 +838,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="lastrite_ultimate",
+            skill_id="last_rite_ultimate",
             enhancement_source="寒冷脆弱增强",
             should_forbid_normal_release=False,
             reason="寒冷脆弱增强是条件触发，不影响普通释放逻辑",
@@ -856,7 +856,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="aurora_skill",
+            skill_id="snowshine_skill",
             enhancement_source="护盾叠加",
             should_forbid_normal_release=False,
             reason="护盾叠加是条件触发，不影响普通释放逻辑",
@@ -865,7 +865,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="seraph_skill",
+            skill_id="xaihi_skill",
             enhancement_source="支援晶体",
             should_forbid_normal_release=False,
             reason="支援晶体是条件触发，不影响普通释放逻辑",
@@ -874,7 +874,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="seraph_ultimate",
+            skill_id="xaihi_ultimate",
             enhancement_source="寒冷增幅+自然增幅",
             should_forbid_normal_release=False,
             reason="增幅效果是条件触发，不影响普通释放逻辑",
@@ -883,7 +883,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="ikut_skill",
+            skill_id="arclight_skill",
             enhancement_source="导电消耗",
             should_forbid_normal_release=False,
             reason="导电消耗是条件触发，不影响普通释放逻辑",
@@ -892,7 +892,7 @@ def create_example_database() -> SkillDatabase:
 
     db.add_restriction(
         AutoReleaseRestriction(
-            skill_id="deepfin_skill",
+            skill_id="alesh_skill",
             enhancement_source="寒冷附着消耗",
             should_forbid_normal_release=False,
             reason="寒冷附着消耗是条件触发，不影响普通释放逻辑",

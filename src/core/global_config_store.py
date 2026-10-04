@@ -16,6 +16,12 @@ from src.core.BattleConfig import (
     BATTLE_CONFIG_NAME,
     BATTLE_CONFIG_TYPE,
     DEFAULT_BATTLE_CONFIG,
+    KEY_COND_ENABLED,
+    KEY_DAMAGE_ROTATION,
+    KEY_ENABLE_ROTATION,
+    KEY_LEGACY_COMBAT_MODE,
+    KEY_SKILL_ALLOWLIST,
+    infer_legacy_combat_mode,
 )
 from src.core.config_migration import copy_migrated_config_keys
 from src.core.GridNavConfig import GRID_NAV_CONFIG_KEYS
@@ -387,6 +393,52 @@ def _migrate_key_names_in_file(option_name: str, migrations: dict[str, str], def
         write_json_file(config_file, config)
 
 
+_BATTLE_MODE_LEGACY_KEYS = (
+    KEY_COND_ENABLED,
+    KEY_ENABLE_ROTATION,
+    KEY_SKILL_ALLOWLIST,
+    KEY_DAMAGE_ROTATION,
+)
+
+
+def _migrate_battle_mode_selector_in_file(config_name: str) -> None:
+    """Populate the new single mode selector before framework verification."""
+    config_file = config_path(f"{config_name}.json")
+    data = read_json_file(config_file)
+    if not isinstance(data, dict) or KEY_LEGACY_COMBAT_MODE in data:
+        return
+    if not any(key in data for key in _BATTLE_MODE_LEGACY_KEYS):
+        return
+    data[KEY_LEGACY_COMBAT_MODE] = infer_legacy_combat_mode(data)
+    write_json_file(config_file, data)
+
+
+def migrate_task_battle_mode_selector(task_class_name: str) -> None:
+    """Migrate one task's historical strategy booleans to the mode selector."""
+    _migrate_battle_mode_selector_in_file(task_class_name)
+
+
+def migrate_account_battle_mode_selectors() -> None:
+    """Migrate account-scoped task overrides without deleting legacy keys."""
+    from src.tasks.account.account_scope_store import update_overrides
+
+    def apply(data):
+        accounts = data.get("accounts") or {}
+        if not isinstance(accounts, dict):
+            return data
+        for task_map in accounts.values():
+            if not isinstance(task_map, dict):
+                continue
+            for task_config in task_map.values():
+                if not isinstance(task_config, dict) or KEY_LEGACY_COMBAT_MODE in task_config:
+                    continue
+                if any(key in task_config for key in _BATTLE_MODE_LEGACY_KEYS):
+                    task_config[KEY_LEGACY_COMBAT_MODE] = infer_legacy_combat_mode(task_config)
+        return data
+
+    update_overrides(apply)
+
+
 def _migrate_legacy_config_file(option: ConfigOption) -> None:
     """在框架 Config 构造之前，对配置文件做文件级迁移。
 
@@ -398,6 +450,7 @@ def _migrate_legacy_config_file(option: ConfigOption) -> None:
     state = _read_migration_state()
     if option.name == BATTLE_CONFIG_NAME:
         _backup_legacy_task_configs(state)
+        _migrate_battle_mode_selector_in_file(BATTLE_CONFIG_NAME)
     elif option.name == NAV_CONFIG_NAME:
         _backup_legacy_nav_task_configs(state)
 
