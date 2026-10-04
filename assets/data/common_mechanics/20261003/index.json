@@ -1,5 +1,13 @@
 {
   "asset_sources": {
+    "DamageScaleProcessorConfig": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/DamageScaleProcessorConfig.asset",
+      "bundle_sha256": "b2048bd8c8259f8690101395d0395f56d25ac71dad37a78321a33054dfc75957",
+      "byte_identical": true,
+      "object_id": -1701479754824449965,
+      "object_sha256": "595b29f2408a22333eb73a02b9e33fc83a8e17414e69446d27f4f0439ae881c4",
+      "tree_sha256": "9b37295e36af7358ff46f68b789784adae3d15ec28c3e032abebfb2598f59ee3"
+    },
     "GameplayTagConfig": {
       "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/GameplayTagConfig.asset",
       "bundle_sha256": "10554ca18e3892789583e2476bda4d9359cc684f7a8c499b551331b48ff031d3",
@@ -2721,9 +2729,9 @@
       "tree_sha256": "b82b6c1f8827899b0a0921122d176b4e807abe5d64dd1436bee5aa7a6a0a6820"
     }
   },
-  "assets_count": 340,
-  "assets_sha256": "be0352b316e397b9cdd8c1748d8cda27e9903f2779bec473357238143ec7f24a",
-  "enums_sha256": "2c84e4b17d59a3bd3bed3e57d0cfd0edb13f2387776c219446f47cfc5eb5467b",
+  "assets_count": 341,
+  "assets_sha256": "485ebe9de11ca314ccff3de1f301035ef8882031768a7e7feae5f2dcb91ccf45",
+  "enums_sha256": "2fd57644cb9d0cfa3046fb6d57307f56554ab1d6aecbe852b4748c9fe8a57af5",
   "native_plans_sha256": "82cdcb3268cdd70c3d1ce81f176d6be42e7a42ac52c107869130897ec0f94693",
   "records": 531,
   "records_sha256": "e8a457dcd856592b4a424598e563b2d065263ee0c9df1b4352f6b461daded837",

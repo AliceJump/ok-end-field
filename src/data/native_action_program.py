@@ -567,7 +567,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                     stacking = data["stackingSettings"]
                     maximum = stacking["maxStackCnt"] if stacking["maxStackCnt"] > 0 else None
                     definition = None
-                    if (data["buffEventAction"] or data["abilityEventAction"]) and stacking["stackingType"] in {0, 2, 7}:
+                    if stacking["stackingType"] in {0, 2, 7}:
                         from src.data.native_buff_program import compile_buff_definition
 
                         definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,
@@ -596,9 +596,10 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                         emit(CombatEvent(at, "native_listener", listeners=tuple(listeners)))
                     bound = {"abilityEventAction"}
                     if definition is not None:
-                        bound.add("buffEventAction")
+                        bound.update({"buffEventAction", "damageModifier", "attributeModifier", "healModifier",
+                                      "globalModifier", "poiseModifier", "shieldConfigs"})
                     remaining = {k: v for k, v in data.items() if k not in bound}
-                    has_modifiers = bool(data["attributeModifier"]["attributeModifiers"] or data["damageModifier"]
+                    has_modifiers = definition is None and bool(data["attributeModifier"]["attributeModifiers"] or data["damageModifier"]
                                          or data["healModifier"] or data["globalModifier"] or data["poiseModifier"]
                                          or data["shieldConfigs"])
                     if _has_gameplay(remaining) or has_modifiers:

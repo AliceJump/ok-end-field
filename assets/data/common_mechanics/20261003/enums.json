@@ -1868,6 +1868,34 @@
         "value": 2
       }
     },
+    "Beyond.Gameplay.Core.DamageModifier+Data+EnableSide": {
+      "Attacker": {
+        "data_offset": 37526,
+        "field_index": 44771,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Defender": {
+        "data_offset": 37527,
+        "field_index": 44772,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
+    "Beyond.Gameplay.Core.DamageScaleProcessor+DamageScaleSide": {
+      "Attacker": {
+        "data_offset": 37537,
+        "field_index": 44813,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Defender": {
+        "data_offset": 37538,
+        "field_index": 44814,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
     "Beyond.Gameplay.Core.GameplayTagQuery+QueryType": {
       "ExceptAll": {
         "data_offset": 43762,

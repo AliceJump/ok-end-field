@@ -26,6 +26,9 @@ class TestNativeCrossSpell(unittest.TestCase):
         self.world.enemies["other"] = EnemyCombatState()
         self.world.characters["1"].panel = FixedDamagePanel(100, 0, 0, 1, 0, .5)
         self.world.characters["1"].attributes.update(arts_strength=50, ignite_damage_scalar=1.4)
+        # Explicit scenario input; native baseline defaults for this attribute
+        # have not been extracted and must not be inferred by the interpreter.
+        self.world.characters["1"].attributes["native.final_nonconverted.57"] = 0
         self.serial = 0
 
     def row(self, key, layers, arts=50):
@@ -58,7 +61,12 @@ class TestNativeCrossSpell(unittest.TestCase):
                         self.assertEqual((values["bb.consumed_type"], values["bb.consumed_layer"], values["bb.count"]),
                                          (old, layers, layers))
                         self.assertAlmostEqual(values["bb.atk_scale"], self.row("异常初始伤害倍率", layers))
-                        self.assertAlmostEqual(self.world.damage, 100 * self.row("异常初始伤害倍率", layers) * 1.4)
+                        scale = 1
+                        if new == 1:
+                            final = self.instance(f"buff_common_pulse_{old_name}_triggered")
+                            value = self.world._action_inputs[final.uid]["bb.final_spell_resistance_decrease"]
+                            scale += struct.unpack("<f", struct.pack("<f", value))[0]
+                        self.assertAlmostEqual(self.world.damage, 100 * self.row("异常初始伤害倍率", layers) * 1.4 * scale)
                         self.assertEqual(self.world.enemies["target"].infliction_stacks, 0)
                         self.assertIsNone(self.world.enemies["target"].infliction_element)
                         self.assertAlmostEqual(entry.expires, .1, places=6)
@@ -157,7 +165,8 @@ class TestNativeCrossSpell(unittest.TestCase):
         fire_diagnostics = [error for e in walk_combat_events(self.programs[0].events) for error in e.unresolved]
         self.assertTrue(any("child/action-bound" in error for error in fire_diagnostics))
         self.assertFalse(any("StoreAttributeValue" in error for error in diagnostics))
-        self.assertTrue(any("Native buff execution" in error for error in diagnostics))
+        self.assertTrue(any("OnSpellAbnormalStartFinish" in error for error in diagnostics))
+        self.assertFalse(any("Native damage modifier needs binding" in error for error in diagnostics))
 
 
 if __name__ == "__main__":
