@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 import heapq
 import math
+import time
 from dataclasses import dataclass, field
 
 from src.data.combat_expressions import CombatExpression, MissingCombatInput
@@ -22,6 +23,10 @@ from src.data.skill_types import CombatResourceType, ResourceChangeKind, SkillEf
 
 class UnresolvedMechanic(ValueError):
     """A missing gameplay parameter must not become an implicit zero or one."""
+
+
+class CombatSearchLimit(RuntimeError):
+    """An incomplete bounded search must not select its first explored branch."""
 
 
 @dataclass(frozen=True)
@@ -1373,7 +1378,8 @@ class MechanismPlan:
     outcomes: tuple[ActionOutcome, ...]
 
 
-def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram, ...], *, depth=4, horizon=20.0, beam_width=128):
+def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram, ...], *, depth=4, horizon=20.0,
+                         beam_width=128, max_expansions=None, timeout=None):
     """Compare complete resource/state transitions, including waits and producer value.
 
     Resource and unlock value are realized by subsequent legal actions, not assigned
@@ -1381,6 +1387,16 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
     """
     if not 1 <= depth <= 8 or not math.isfinite(horizon) or horizon <= 0 or beam_width < 1:
         raise ValueError("Invalid search bounds")
+    if (max_expansions is not None and (not isinstance(max_expansions, int) or max_expansions < 1)
+            or timeout is not None and (not math.isfinite(timeout) or timeout <= 0)):
+        raise ValueError("Invalid runtime search budget")
+    deadline = None if timeout is None else time.monotonic() + timeout
+    expansions = 0
+
+    def check_time():
+        if deadline is not None and time.monotonic() >= deadline:
+            raise CombatSearchLimit("Combat search time budget exceeded")
+
     initial = world.time
     frontier = [(world.fork(), ())]
     best = None
@@ -1388,6 +1404,10 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
         next_frontier = []
         for state, outcomes in frontier:
             for program in programs:
+                check_time()
+                expansions += 1
+                if max_expansions is not None and expansions > max_expansions:
+                    raise CombatSearchLimit("Combat search expansion budget exceeded")
                 candidate = state.fork()
                 wait = candidate.ready_at(program)
                 gate = max(program.sp_cost, program.gate or 0)
@@ -1399,6 +1419,7 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                     continue
                 candidate.advance(wait)
                 executed = candidate.simulate(program)
+                check_time()
                 if executed is None:
                     continue
                 after, outcome = executed
@@ -1410,6 +1431,7 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                     tail.advance(initial + horizon)
                 elif tail._queue:
                     tail.advance(min(initial + horizon, max(row[0] for row in tail._queue)))
+                check_time()
                 if tail.unresolved:
                     continue
                 plan = MechanismPlan(tuple(o.program for o in path), tail.damage - world.damage, tail.time - initial, tail.sp,
@@ -1460,4 +1482,5 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                     del grouped[first]
                 if len(frontier) == beam_width:
                     break
+    check_time()
     return best
