@@ -80,6 +80,25 @@ buff专项八项覆盖持有者、继承快照、期限末次触发、触发次�
 
 ## 验证
 
+### 原生法术附着入口
+
+`SpellInfliction+Data` 现在保留原生 source、target 和 isExtra，执行实际目标组，空组不施加，未绑定组和角色接收者明确报缺口。发送 OnCharBeforeOutputSpellInfliction / OnEnemyBeforeTakeSpellInfliction 后更新敌方池，再发送两个 After 事件；回调按触发目标读取状态，保留原来的来源与持有者。
+
+角色对敌人的池为 `buff_common_energy_shard_attached_{fire,pulse,cryst,natural}`，不是 `buff_common_enemy_spell_*_attached`。后者标签属于 `Skill/Enemy/Common/SpellInflictOnChar`，代表敌人对角色的附着，默认10秒；前者属于 `Skill/Character/Common/SpellInflict`，默认20秒、最大4层、EnhanceAndRefresh=8。本次未提交的研究曾选错这两个方向，已通过原生 GetEnergyShardAttachedBuff 和 SpellInfliction 静态标签映射纠正。原生身份/标签查询及 FinishBuff 消费现在都读取同一个敌方附着池，消费/过期不会留下另一份影子计数。
+
+世界推进时间现在调用 EnemyCombatState.tick，修复附着池此前始终不递减的问题；快照记录实际过期时间，预测分支独立。保留实际施加、叠层、刷新、上限及异元素清池状态；原生附着增强回调、法术爆发与异元素反应的完整伤害/免疫/生命周期仍明确标为未解析，不能据此提前通过伤害规划的完整性检查。没有用文字倍率替代未执行的原生回调。技力时机工作仍后置。
+
+原生证据（客户端版本与输入摘要沿用本文件前述记录）：
+
+| 原生入口 | 核对结果 | RVA / 字节窗口 / SHA256 |
+| --- | --- | --- |
+| AbilitySystemUtils.GetEnergyShardAttachedBuff，方法57220 | 0/1/2/3返回fire/pulse/cryst/natural对应energy shard池 | `0x3ea6890`，163字节，`970f4b55e0677972850ba96e35324db6232f0bd8b9279a9959739c41c0ab9fea` |
+| SpellInfliction.ExecuteInternal，方法60013 | source/target解析、Before→buff转移→After顺序；同元素与异元素分支分别执行 | `0x3ea8220`，16000字节，`493507c4158070becd0c3469e10c52dbd2cb2003c3e39a1a4b258198edfe0230` |
+| SpellInfliction静态初始化，方法60016 | 四种SpellInflict子标签与0/1/2/3双向映射 | `0x3ea6460`，2600字节，`ac5c6990b18413a2341db21a9454ba8579051476a3728225cc0442057159977e` |
+| AbilitySystemUtils.GetSpellStatusBuff，方法57221 | 12种异元素入口，buff名称为新元素/被消费元素；寒冷→自然进入natural_cryst | `0x47eb600`，234字节，`5ffc7e282e4370ff85ceeaf23fd14e00e51adf627d8fad5d02751621c83e8133`；分支块`0x4c08d04`，750字节，`bbb22bc5457d7a89e1a868c406369c3d2eea6f8bad6bfdafc882e820fb9ae73a` |
+
+新增9项回归覆盖真实佩丽卡原生动作、实际接收者、空组/错误目标、多敌人组、来源回调、20秒刷新和4层上限、ID/父标签/不同ID计数、原生消费及预测隔离。全仓1069项通过，变更文件Python解析、Ruff I/F、敏感路径与差异检查通过。
+
 标签阶段随后rebase到远程master `ad9d1afe`（包含#440与格式更新）。已经合入master的父分支提交不重复重放，仅重放本分支的语义归一及机制执行提交，保留master新加的部分队友识别、敌人占位探针和按键反馈逻辑。两份本分支所需的原生读取计划/回编码输入档案保留原字节，供数据重建及核验使用。懒加载完整记录的损坏测试仍在实际读取记录时检查摘要，不强迫读取时序目录就提前解压整份数据。
 
 补全原先未知的队友槽位时，机制目录增量接入新增角色的面板、技能、事件和被动，保持同一战斗世界、epoch、已有资源观测、私有状态、冷却、死亡及待确认动作；预测分支同时接入新角色，随后确认不会覆盖掉补全结果。识别前的动作历史没有证据时明确保留未解析诊断。真实弭弗/骏卫/余烬部分队伍的补全回归与运行时专项72项通过，全仓1060项通过；技力时机专项仍按用户要求后置。

@@ -3,7 +3,7 @@
 建模约定（详见 effect_semantics.py 模块注释）：
 - 敌人身上任意时刻最多一种法术附着（异元素交叉会清空全部，官方规则），
   因此附着存为互斥的 (元素, 层数) 结构，而非每元素一个计数器。
-- 附着层数即异常等级（I~IV），直接作为反应伤害的 ×(1+异常等级) 输入。
+- 附着层数作为异常等级（I~IV），反应伤害由对应的原生表行结算。
 - 连击是队伍共享池，数值表来自 DAMAGE_FORMULA §8（灰机wiki 数值）。
 - 反应规则（谁能触发什么）见本文件 REACTION_RULES（第 3 部分）。
 """
@@ -47,7 +47,7 @@ class EnemyCombatState:
     # 事件不属于持久世界状态，下一 action 开始前由调用方 clear_transient_events()。
     transient_events: dict[EffectType, int] = field(default_factory=dict)
 
-    def apply_infliction(self, element: EffectType) -> EffectType | None:
+    def apply_infliction(self, element: EffectType, *, duration: float = INFLICTION_DURATION_SECONDS) -> EffectType | None:
         """对敌人施加法术附着，按官方规则转移并返回应结算的事件。
 
         返回：
@@ -61,11 +61,11 @@ class EnemyCombatState:
         if self.infliction_element is None:
             self.infliction_element = element
             self.infliction_stacks = 1
-            self.infliction_time_left = INFLICTION_DURATION_SECONDS
+            self.infliction_time_left = duration
             return None
         if self.infliction_element is element:
             self.infliction_stacks = min(self.infliction_stacks + 1, MAX_INFLICTION_STACKS)
-            self.infliction_time_left = INFLICTION_DURATION_SECONDS
+            self.infliction_time_left = duration
             return EffectType.STATUS_SPELL_BURST
         # 异元素交叉：反应类型由新施加元素决定（EFFECT_SYSTEM §2 反应组合表）
         self.infliction_element = None
