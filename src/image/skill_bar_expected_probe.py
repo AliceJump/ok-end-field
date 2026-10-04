@@ -54,7 +54,7 @@ def _has_consecutive_true(values, required=2):
 
 def _left_fill_ratio(mask):
     """Measure a left-to-right contiguous fill while tolerating a one-column gap."""
-    if mask is None or mask.size == 0:
+    if mask is None or getattr(mask, "size", 0) == 0 or getattr(mask, "ndim", 0) != 2:
         return None
     height, width = mask.shape
     if height <= 0 or width <= 0:
@@ -62,16 +62,16 @@ def _left_fill_ratio(mask):
 
     filled_cols = 0
     gap = 0
+    required_pixels = _PARTIAL_COLUMN_RATIO * height
     for x in range(width):
-        ratio = np.count_nonzero(mask[:, x]) / height
-        if ratio >= _PARTIAL_COLUMN_RATIO:
+        if np.count_nonzero(mask[:, x]) >= required_pixels:
             filled_cols = x + 1
             gap = 0
         else:
             gap += 1
             if gap >= 2:
                 break
-    return filled_cols / width
+    return float(np.divide(filled_cols, width))
 
 
 def classify_skill_bar_roi(bar) -> SkillBarProbe:
@@ -83,6 +83,8 @@ def classify_skill_bar_roi(bar) -> SkillBarProbe:
     """
     if bar is None or getattr(bar, "size", 0) == 0 or getattr(bar, "ndim", 0) != 3:
         return SkillBarProbe(SkillBarState.UNKNOWN)
+    if bar.shape[-1] != 3:
+        return SkillBarProbe(SkillBarState.UNKNOWN)
 
     hsv = cv2.cvtColor(bar, cv2.COLOR_BGR2HSV)
     white_mask = cv2.inRange(hsv, _WHITE_LOWER, _WHITE_UPPER)
@@ -92,7 +94,7 @@ def classify_skill_bar_roi(bar) -> SkillBarProbe:
     if height <= 0 or width <= 0:
         return SkillBarProbe(SkillBarState.UNKNOWN)
 
-    yellow_rows = np.count_nonzero(yellow_mask, axis=1) / width >= _FULL_ROW_RATIO
+    yellow_rows = np.count_nonzero(yellow_mask, axis=1) >= (_FULL_ROW_RATIO * width)
     if _has_consecutive_true(yellow_rows, required=2):
         return SkillBarProbe(SkillBarState.FULL, 1.0)
 
@@ -110,9 +112,9 @@ def classify_skill_bar_roi(bar) -> SkillBarProbe:
     yellow_size = int(yellow_mask.size)
     if white_size <= 0 or yellow_size <= 0:
         return SkillBarProbe(SkillBarState.UNKNOWN)
-    white_coverage = np.count_nonzero(white_mask) / white_size
-    yellow_coverage = np.count_nonzero(yellow_mask) / yellow_size
-    if white_coverage >= _AMBIGUOUS_MASK_RATIO or yellow_coverage >= _AMBIGUOUS_MASK_RATIO:
+    white_ambiguous = np.count_nonzero(white_mask) >= (_AMBIGUOUS_MASK_RATIO * white_size)
+    yellow_ambiguous = np.count_nonzero(yellow_mask) >= (_AMBIGUOUS_MASK_RATIO * yellow_size)
+    if white_ambiguous or yellow_ambiguous:
         return SkillBarProbe(SkillBarState.UNKNOWN)
     return SkillBarProbe(SkillBarState.EMPTY)
 
@@ -184,8 +186,9 @@ def resolve_expected_skill_bar_sp(
     for candidate in (2, 1, 0):
         if candidate in checked:
             continue
-        checked[candidate] = probe_slot(candidate)
-        if checked[candidate].state == SkillBarState.PARTIAL:
+        candidate_probe = probe_slot(candidate)
+        checked[candidate] = candidate_probe
+        if candidate_probe.state == SkillBarState.PARTIAL:
             # Only accept an immediately useful partial reading if already-known
             # neighbours do not contradict its monotonic bar position.
             left_ok = all(
@@ -199,7 +202,7 @@ def resolve_expected_skill_bar_sp(
                 if i in checked
             )
             if left_ok and right_ok:
-                return _partial_sp(candidate, checked[candidate].ratio)
+                return _partial_sp(candidate, candidate_probe.ratio)
 
     states = [checked.get(i, SkillBarProbe(SkillBarState.UNKNOWN)).state for i in range(3)]
     valid_boundaries = {
