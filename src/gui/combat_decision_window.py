@@ -31,8 +31,8 @@ class CombatDecisionEntry:
 
 _LOCK = threading.Lock()
 _HISTORY: deque[CombatDecisionEntry] = deque(maxlen=200)
+_HISTORY_STATE: dict[object, object] = {}
 _CURRENT: CombatDecisionEntry | None = None
-_CURRENT_KEY: object | None = None
 _REVISION = 0
 _HISTORY_REVISION = 0
 _WINDOW = None
@@ -43,11 +43,11 @@ def _timestamp_now() -> str:
 
 
 def clear_combat_decisions() -> None:
-    global _CURRENT, _CURRENT_KEY, _REVISION, _HISTORY_REVISION
+    global _CURRENT, _REVISION, _HISTORY_REVISION
     with _LOCK:
         _HISTORY.clear()
+        _HISTORY_STATE.clear()
         _CURRENT = None
-        _CURRENT_KEY = None
         _REVISION += 1
         _HISTORY_REVISION += 1
 
@@ -60,14 +60,16 @@ def publish_combat_decision(
     detail: str = "",
     *,
     dedupe_key: object | None = None,
+    history_stream: object | None = None,
 ) -> None:
     """Publish one human-readable decision without feeding anything back to combat logic.
 
-    Repeated polling of the same decision updates only the live row. A new history
-    row is appended only when the semantic decision key changes, so rapidly changing
-    elapsed-time details stay readable instead of becoming a frame-by-frame log.
+    ``history_stream`` identifies one semantic decision source (for example a
+    character's battle-skill decision or the link-availability check). Repeated
+    polls update the live row but append history only when that source's own state
+    changes. Independent sources therefore cannot make each other spam history.
     """
-    global _CURRENT, _CURRENT_KEY, _REVISION, _HISTORY_REVISION
+    global _CURRENT, _REVISION, _HISTORY_REVISION
     entry = CombatDecisionEntry(
         timestamp=_timestamp_now(),
         actor=actor or "未知角色",
@@ -77,11 +79,15 @@ def publish_combat_decision(
         detail=detail,
     )
     with _LOCK:
-        if dedupe_key is None or dedupe_key != _CURRENT_KEY:
+        should_append = True
+        if history_stream is not None:
+            previous = _HISTORY_STATE.get(history_stream, object())
+            should_append = previous != dedupe_key
+            _HISTORY_STATE[history_stream] = dedupe_key
+        if should_append:
             _HISTORY.append(entry)
             _HISTORY_REVISION += 1
         _CURRENT = entry
-        _CURRENT_KEY = dedupe_key
         _REVISION += 1
 
 
