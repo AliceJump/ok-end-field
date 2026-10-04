@@ -425,6 +425,30 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
         elif name == "SaveBuffStackNumAdvanced+Data":
             emit(CombatEvent(at, "native_snapshot", assignments=(("bb." + body["key"],
                               buff_count(body["buffSettings"], body["checkTarget"])),)))
+        elif name == "StoreAttributeValue+Data":
+            enums = native_enums()
+            if body["primaryAttributeType"] != enums["Beyond.GEnums.ModifyAttributeType"]["Specific"]["value"]:
+                raise UnresolvedMechanic("Native primary/sub/all attribute selection not yet bound")
+            attributes_by_id = {v["value"]: k for k, v in enums["Beyond.GEnums.AttributeType"].items()}
+            attribute_id = body["attributeType"]
+            if attribute_id not in attributes_by_id:
+                raise UnresolvedMechanic(f"Unknown native stored attribute: {attribute_id}")
+            stores = enums["Beyond.Gameplay.Core.StoreAttributeValue+StoreAttributeType"]
+            if body["storeAttributeType"] == stores["BaseNonConverted"]["value"]:
+                mode = "armed_nonconverted"
+            elif body["storeAttributeType"] == stores["FinalNonConverted"]["value"]:
+                mode = "final_nonconverted"
+            else:
+                raise UnresolvedMechanic(f"Unknown native attribute store mode: {body['storeAttributeType']}")
+            # Do not alias the non-converted native value to a converted panel
+            # stat. Missing inputs remain unknown until their producer is bound.
+            stored = attribute(resource_target(body["targetSettings"]), f"native.{mode}.{attribute_id}")
+            single = lambda value: CombatExpression("float32", (number(value),))
+            if body["useFloor"]:
+                stored = CombatExpression("floor", (CombatExpression("divide", (stored, single(body["divisorValue"]))),))
+            formula = CombatExpression("add", (single(body["baseValue"]),
+                                        CombatExpression("multiply", (stored, single(body["multiplierValue"])))))
+            emit(CombatEvent(at, "native_attribute_snapshot", assignments=(("bb." + body["key"], formula),)))
         elif name == "StoreBuffCount+Data":
             target = body["buffOwners"]
             if (body["useCurrentBuff"] or body["buffId"] != "buff_physical_no_guard"
