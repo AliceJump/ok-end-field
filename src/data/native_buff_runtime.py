@@ -92,7 +92,8 @@ def change_buff(world, owner, change, inputs, action_id, program, delta):
     duration = definition.duration.evaluate(values) if definition.duration is not None else None
     period = definition.period.evaluate(values)
     limit = definition.trigger_limit.evaluate(values)
-    maximum = definition.maximum.evaluate(values)
+    # Unique and Unlimited do not read maxStackCnt; stale keys may be absent.
+    maximum = definition.maximum.evaluate(values) if definition.stacking == 2 else 0
     if duration is not None and duration < 0 or limit != int(limit) or maximum != int(maximum):
         raise UnresolvedMechanic(f"Invalid native buff parameters: {change.key}")
     if definition.stacking not in {0, 2, 7}:

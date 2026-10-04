@@ -176,7 +176,7 @@ class TestNativeCombatPrograms(unittest.TestCase):
             CombatEvent(0, "query", assignments=(("bb.seen", CombatExpression("input", (query.key,))),)),
         ), native_buff_queries=(query,))
         self.world.start(p, action_id="marker")
-        self.assertEqual(self.world.native_buffs, {("2", "marker"): (1, 6)})
+        self.assertEqual(self.world.native_buffs, {**self.catalog.world.native_buffs, ("2", "marker"): (1, 6)})
         self.assertEqual(self.world._action_inputs["marker"]["bb.seen"], 1)
         self.assertNotIn(("1", "marker"), self.world.native_buffs)
 
@@ -311,7 +311,7 @@ class TestNativeCombatPrograms(unittest.TestCase):
                 world.add_shred("target", count)
                 world.dispatch_character_event("OnBeforeAddedBuff", "1", "target", "buff_physical_crushed")
                 marker = f"buff_chr_0029_pograni_combo_skill_count{count}"
-                self.assertEqual(world.native_buffs, {("2", marker): (1, 6)})
+                self.assertEqual(world.native_buffs, {**self.catalog.world.native_buffs, ("2", marker): (1, 6)})
                 self.assertEqual(world.characters["2"].blackboard["EntityBB_noguard_count"], count)
                 world.advance(6)
                 self.assertNotIn(("2", marker), world.native_buffs)
@@ -324,7 +324,7 @@ class TestNativeCombatPrograms(unittest.TestCase):
                 world = self.catalog.world.fork()
                 world.add_shred("target", count)
                 world.dispatch_character_event("OnBeforeAddedBuff", "1", target, buff_id)
-                self.assertFalse(world.native_buffs)
+                self.assertEqual(world.native_buffs, self.catalog.world.native_buffs)
                 self.assertNotIn("EntityBB_noguard_count", world.characters["2"].blackboard)
 
     def test_rejected_native_cast_cannot_publish_teammate_combo_marker(self):

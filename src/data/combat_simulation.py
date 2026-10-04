@@ -302,6 +302,7 @@ class CombatWorldState:
         self.native_skill_overrides: dict[tuple[str, int], NativeSkillOverride] = {}
         self.native_skill_slots: dict[tuple[str, int], str] = {}
         self.native_programs: dict[tuple[str, str], ActionProgram] = {}
+        self.native_passives: dict[str, object] = {}
         self.native_listeners: list[tuple[str, str, ActionProgram, NativeListener]] = []
         self.native_timers: dict[tuple[str, str], float] = {}
         self.native_character_hooks: list[tuple[str, ActionProgram]] = []
@@ -680,6 +681,9 @@ class CombatWorldState:
             from src.data.native_buff_runtime import dispatch_buff_event
 
             dispatch_buff_event(self, trigger, actor, payload or {})
+            from src.data.native_passive_runtime import dispatch_passive_event
+
+            dispatch_passive_event(self, trigger, actor, payload or {})
             for owner, action_id, program, listener in tuple(self.native_listeners):
                 if owner != actor or listener.trigger != trigger or (owner, listener.buff_id) not in self.native_buffs:
                     continue
@@ -1282,6 +1286,8 @@ def plan_action_sequence(world: CombatWorldState, programs: tuple[ActionProgram,
                         state.damage_state.phase_signature(state.time),
                         state.main_control, state.returned_sp, tuple(sorted(state.native_buffs.items())),
                         tuple(sorted(state.native_skill_slots.items())), tuple(sorted(state.native_skill_overrides.items())),
+                        tuple((uid, repr(passive), tuple(sorted(state._action_inputs[uid].items())))
+                              for uid, passive in state.native_passives.items()),
                         tuple((v.owner, v.key, v.source, v.expires, v.period, v.remaining, repr(v.definition),
                                tuple(sorted(state._action_inputs[v.uid].items()))) for v in state.native_buff_instances.values()),
                         tuple(sorted(state.native_timers.items())),

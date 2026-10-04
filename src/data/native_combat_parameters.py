@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 from src.data.character_progression import CharacterProgression
 from src.data.combat_simulation import UnresolvedMechanic
+from src.data.native_gameplay import native_record
 from src.data.skill_timing import SkillTimingStore
 
 
@@ -30,8 +31,9 @@ def _modify(original, operation, value):
     raise UnresolvedMechanic(f"Unknown native parameter operation {operation}")
 
 
-def bind_native_parameters(store: SkillTimingStore, skill_id: str, progression: CharacterProgression, rank=None, *, conditions=None):
-    record = store.record(skill_id)["data"]
+def bind_native_parameters(store: SkillTimingStore, skill_id: str, progression: CharacterProgression, rank=None, *,
+                           conditions=None, initial_blackboard=None):
+    record = native_record(store, skill_id)["data"]
     bb = {r["key"]: r["valueStr"] if r["valueStr"] else r["valueDouble"] for r in record["blackboard"]}
     try:
         patch = store.ranked_skill(skill_id, rank)
@@ -48,6 +50,9 @@ def bind_native_parameters(store: SkillTimingStore, skill_id: str, progression: 
         for item in patch["blackboard"]:
             bb[item["key"]] = item["valueStr"] if item["valueStr"] else item["value"]
         cost_type, cost, cooldown = patch["costType"], patch["costValue"], patch["coolDown"]
+    # Callers can supply a verified initial parameter scope. Native producer
+    # overlaps are rejected by the passive compiler pending precedence proof.
+    bb.update(initial_blackboard or {})
     sources = [f"SkillPatchTable/{skill_id}/rank={rank or 'max'}"]
     cooldown_display = cooldown
     conditions = conditions or {}

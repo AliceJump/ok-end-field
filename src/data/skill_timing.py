@@ -390,7 +390,16 @@ class SkillTimingStore:
 
     def profile(self, skill_id: str) -> SkillTiming:
         """Look up a referenced native replacement without assuming a name suffix."""
-        return self._profile_for_skill_id(skill_id)
+        if skill_id in self.index["skills"]:
+            return self._profile_for_skill_id(skill_id)
+        from src.data.native_gameplay import native_record
+
+        data = native_record(self, skill_id)["data"]
+        cast = data["castData"]
+        return SkillTiming(skill_id=skill_id, duration=max(0, data["durationFrame"]) / 30,
+                           exclusive=max(0, data["exclusiveFrame"]) / 30, cooldown=cast["cooldownTime"],
+                           skill_points=0, allow_next=(),
+                           sp_cost=cast["costData"]["costValue"] if cast["costData"]["costType"] == 1 else 0)
 
     def battle_phase_profiles(self, character: str) -> tuple[SkillTiming, ...]:
         """Return explicit numbered battle-button phases when native data exposes them."""
