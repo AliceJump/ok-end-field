@@ -2,9 +2,17 @@
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass, replace
 
-from src.data.combat_simulation import ActionProgram, CombatWorldState
+from src.data.combat_simulation import (
+    ActionProgram,
+    CombatSearchLimit,
+    CombatWorldState,
+    MechanismPlan,
+    plan_action_sequence,
+    walk_combat_events,
+)
 
 
 @dataclass
@@ -16,6 +24,13 @@ class PendingCombatAction:
     resource_version: int
 
 
+@dataclass(frozen=True)
+class BattleRecommendation:
+    program: ActionProgram | None = None
+    plan: MechanismPlan | None = None
+    reason: str = ""
+
+
 class CombatRuntime:
     def __init__(self, catalog, *, epoch):
         self.catalog = catalog
@@ -24,6 +39,50 @@ class CombatRuntime:
         self.last_resource_sample: tuple[float, float] | None = None
         self._attempt = 0
         self._resource_version = 0
+        self.observation_gaps: set[str] = set()
+
+    def note_observation_gap(self, reason):
+        self.observation_gaps.add(reason)
+
+    def recommend_battle(self, now, *, max_sample_age=.5):
+        """Select an immediately legal first battle action from a complete local model.
+
+        Links and ultimates retain their HUD-driven dispatch. This comparison only
+        covers battle actions against the existing single-target scene assumption.
+        """
+        self.advance(now)
+        if self.pending is not None:
+            return BattleRecommendation(reason="cast_pending")
+        if self.observation_gaps:
+            return BattleRecommendation(reason="unobserved_action_or_target")
+        if self.catalog.diagnostics or self.world.unresolved:
+            return BattleRecommendation(reason="unresolved_model")
+        sample = self.last_resource_sample
+        if sample is None or not 0 <= now - sample[0] <= max_sample_age:
+            return BattleRecommendation(reason="stale_sp_observation")
+        actors = tuple(a for a, s in self.world.characters.items() if s.alive)
+        if any(self.world.characters[a].panel is None or not self.catalog.candidates(a, "battle") for a in actors):
+            return BattleRecommendation(reason="incomplete_team")
+        programs = tuple(p for p in self.catalog.candidates(kind="battle") if p.actor in actors)
+        if not programs or len(programs) > 16 or len({p.key for p in programs}) != len(programs):
+            return BattleRecommendation(reason="unsupported_candidate_set")
+        if any(event.unresolved for p in programs for event in walk_combat_events(p.events)):
+            return BattleRecommendation(reason="unresolved_action")
+        try:
+            plan = plan_action_sequence(self.world, programs, depth=2, horizon=6, beam_width=8,
+                                        max_expansions=144, timeout=.025)
+        except CombatSearchLimit:
+            return BattleRecommendation(reason="search_budget")
+        if plan is None or not math.isfinite(plan.damage) or plan.damage <= 0:
+            return BattleRecommendation(reason="no_priced_sequence")
+        program = next(p for p in programs if p.key == plan.actions[0])
+        if (program not in self.catalog.available(program.actor, "battle")
+                or self.world.ready_at(program) > self.world.time
+                or self.world.sp < max(program.sp_cost, program.gate or 0)
+                or self.world.characters[program.actor].energy < program.energy_cost
+                or plan.outcomes[0].before.time > self.world.time):
+            return BattleRecommendation(reason="first_action_requires_wait")
+        return BattleRecommendation(program, plan)
 
     @property
     def world(self):
