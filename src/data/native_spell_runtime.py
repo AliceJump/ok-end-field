@@ -72,11 +72,20 @@ def apply_native_spell(world, action_id, program, change, inputs):
         world.dispatch_native("OnEnemyBeforeTakeSpellInfliction", target, payload, target=target)
         if state.infliction_element is None or state.infliction_element == element:
             world.dispatch_character_event("OnBeforeAddedBuff", source, target, key)
+        old_type = next((number for number, (_, previous, _, _) in policies.items()
+                         if previous == state.infliction_element), None)
+        old_count = state.infliction_stacks
         reaction = state.apply_infliction(element, duration=duration)
         world.unresolved.add("Native spell attachment enhancement callbacks not yet bound")
         if reaction is not None:
             if reaction == EffectType.STATUS_SPELL_BURST and change.burst_buff is not None and source == program.actor:
                 world._apply_native_buff(target, change.burst_buff, inputs, action_id, program)
+            elif reaction != EffectType.STATUS_SPELL_BURST and old_type in dict(change.cross_buffs) and source == program.actor:
+                cross_inputs = dict(inputs)
+                cross_inputs.update({"bb.spell.consumed_type": float(old_type), "bb.spell.consumed_layer": float(old_count),
+                                     "bb.spell.count": float(old_count)})
+                world._apply_native_buff(target, dict(change.cross_buffs)[old_type], cross_inputs, action_id, program)
+                world._events.append(reaction.value)
             else:
                 world._events.append(reaction.value)
                 # Separate callback scope/source binding remains required for

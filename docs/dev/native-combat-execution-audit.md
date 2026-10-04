@@ -135,6 +135,16 @@ IdentifierType的metadata字段44626/44627确认0=Id、1=StackingKey。BuffData.
 
 三种 `buff_common_pulse_{fire,cryst,natural}_triggered` 均使用pulse_triggered共享key、Stack=2、上限1；本次核实并编译这个身份，没有据此宣称导电修正、异元素入口参数或腐蚀逐秒计算已经执行。七项专项覆盖跨ID上限/结束/计时/BB、不同Owner与Source、真实ID移除、Id与StackingKey共同字符串空间、Unique与预测隔离、冲突拒绝、三份原生导电配置及未知/空key拒绝。全仓1106项通过，修改文件Python解析、Ruff I/F、敏感路径与差异检查通过。技力时机继续后置。
 
+### 异元素入口和消费参数
+
+GetSpellStatusBuff返回的是12个 `buff_common_try_{新元素}_{被消费元素}_triggered` 入口，入口再创建实际反应buff，不能跳过try直接使用实际buff里序列化的默认0。先前入口表只记录了元素配对，本阶段补齐这个生产层。SpellInfliction.GetSpellStatusBuff（方法60014，RVA `0x47eb580`）在 `0x47eb5dc` 至 `0x47eb5e3` 调用已核验的AbilitySystemUtils.GetSpellStatusBuff；该函数及异元素分支的字节摘要沿用上文，stringLiteral明确带try前缀。
+
+SpellInfliction.ExecuteInternal在 `0x3ea9aee` 保存旧buff.enhanceCnt，消费后向新入口写入consumed_type、consumed_layer和count：`0x3ea9e71` 写旧元素、`0x3eaa0c1` 和 `0x3eaa311` 将旧enhanceCnt转换为double，随后创建入口。这里没有将count减1或加1。Buff.Reset（方法60689，RVA `0x2db0360`，9000字节SHA256 `06cea813109c7a68fd2e5e52c93ccd392817e8d80aec747a92a58820ac946f9b`）在 `0x2db151c` 将enhanceCnt初始化为1；Buff._Enhance（方法60716，RVA `0x347aa90`，4500字节 `f191fc8f074a1259396d6608bd6f23177d9cdf52751ebe40e19576e7369a69c4`）在 `0x347aad4` 加1。
+
+执行器捕获实际敌人在Before回调后的旧元素和层数，清空附着池，再创建带这三个参数的独立try实例。其OnStart执行原生ReadSkillSettingData、实际Source技艺增强和CreateBuff的BB继承；短暂try入口到期不代替后续反应到期。燃烧每跳倍率、导电增伤/持续时间、冻结碎冰倍率/持续时间、腐蚀初始值/每跳/上限/持续时间都从对应表列读取，捕获值属于每个实例；没有用文字描述另写一套倍率。初始DamageAction按原生回调执行，动态反应标量仍在实际命中时读取。
+
+六项专项覆盖12种配对×4层、所有副参数/持续时间继承、共享导电组替换、实例属性捕获和预测隔离、缺失技艺或越界表列不得沿用0、不同实际来源拒绝以及嵌套缺口检查。全仓1112项通过，修改文件Python解析、Ruff I/F、敏感路径与差异检查通过。CreateBuff的autoFinishByAction/asChildBuff此前未报告，本阶段加入明确诊断；其自动移除规则、附着增强、StoreAttributeValue、抗性修正、冻结免疫、腐蚀属性刷新、全局异常起止报告等仍有未执行部分。被动和排轴不得把当前已知初始伤害视为整条反应的完整收益。技力时机继续后置。
+
 ### 同元素爆发的独立计时
 
 原生SpellInfliction同元素分支现在创建 `buff_common_{fire,pulse,cryst,natural}_..._triggered` 的实际定义，不在附着时直接计算爆发伤害。四份原生配置均为waitFirst=true、周期1秒、触发上限1、Unlimited独立实例；电磁buff持续10秒，其余持续5秒，触发结束不等于立即删除buff。来源角色、敌人Owner、BuffBB与排队事件独立保存；新的附着不会刷新已有爆发计时。消费附着池不等于移除独立爆发buff，实际FinishBuff则取消后续触发。
