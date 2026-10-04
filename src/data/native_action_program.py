@@ -94,7 +94,8 @@ def _nodes(value):
 
 
 def compile_native_action(store, character, profile, actor, kind, *, damage_bonus=0.0, attributes=None, panel=None,
-                          event_sequence=None, event_blackboard=None, isolated_blackboard=False, buff_path=()):
+                          event_sequence=None, event_blackboard=None, initial_blackboard=None,
+                          isolated_blackboard=False, buff_path=()):
     """A single enemy in range is an explicit simulation scenario, not a hit proof."""
     attributes = attributes or {}
     conditions = {
@@ -102,8 +103,9 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
         "lizhiyan_will": attributes.get("智识", 0) < attributes.get("意志", 0),
     }
     native = bind_native_parameters(store, profile.skill_id, character.progression,
-                                    character.progression.baseline.skill_rank, conditions=conditions)
-    record = store.record(profile.skill_id)["data"]
+                                    character.progression.baseline.skill_rank, conditions=conditions,
+                                    initial_blackboard=initial_blackboard)
+    record = native_record(store, profile.skill_id)["data"]
     bb = {} if isolated_blackboard else dict(native.blackboard)
     bb.update(event_blackboard or {})
     events = []
