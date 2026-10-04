@@ -223,7 +223,10 @@ def probe_skill_bar_slot(task, frame, index: int) -> SkillBarProbe:
     x1, x2 = SKILL_BAR_X_4K[index]
     y1, y2 = SKILL_BAR_Y_4K
     box = box_of_screen_scaled(3840, 2160, x1 + 3, y1 + 2, x2 - 3, y2 - 2)
-    bar = box.crop_frame(frame)
+    crop_frame = getattr(box, "crop_frame", None) if box is not None else None
+    if not callable(crop_frame):
+        return SkillBarProbe(SkillBarState.UNKNOWN)
+    bar = crop_frame(frame)
     return classify_skill_bar_roi(bar)
 
 
