@@ -77,6 +77,7 @@ class NativeSpellInfliction:
     source: NativeTarget
     target: NativeTarget
     is_extra: bool = False
+    burst_buff: NativeBuffChange | None = None
 
 
 @dataclass(frozen=True)
@@ -181,7 +182,8 @@ def walk_combat_events(events):
             yield from walk_combat_events(iteration.events)
         for listener in event.listeners:
             yield from walk_combat_events(listener.events)
-        for change in event.native_buffs:
+        buffs = (*event.native_buffs, *(spell.burst_buff for spell in event.native_spells if spell.burst_buff is not None))
+        for change in buffs:
             if change.definition is not None:
                 if change.definition.unresolved:
                     yield CombatEvent(0, "unresolved_native_buff", unresolved=change.definition.unresolved)
@@ -223,6 +225,7 @@ class CombatEvent:
     skill_controls: tuple[NativeSkillControl, ...] = ()
     end_scope: str | None = None
     native_spells: tuple[NativeSpellInfliction, ...] = ()
+    native_spell_bursts: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -1117,6 +1120,13 @@ class CombatWorldState:
                 from src.data.native_spell_runtime import apply_native_spell
 
                 apply_native_spell(self, action_id, program, change, inputs)
+            except UnresolvedMechanic as error:
+                self.unresolved.add(str(error))
+        for spell_type in event.native_spell_bursts:
+            try:
+                from src.data.native_spell_runtime import dispatch_native_burst
+
+                dispatch_native_burst(self, action_id, program, spell_type, inputs)
             except UnresolvedMechanic as error:
                 self.unresolved.add(str(error))
         for change in event.native_buffs:
