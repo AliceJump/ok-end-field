@@ -10,6 +10,7 @@ from src.data.combat_runtime import CombatRuntime
 from src.data.combat_simulation import (
     ActionProgram,
     CombatEvent,
+    CombatWorldState,
     NativeBuffChange,
     NativeBuffQuery,
     NativeIteration,
@@ -243,9 +244,21 @@ class TestNativeCombatPrograms(unittest.TestCase):
         self.assertAlmostEqual(values["bb.yuanshi_multi"], 1 + reaction_enhancement("Damage", arts))
         hits = [e.hit for e in walk_combat_events(self.finish.events) if e.hit]
         self.assertEqual(hits[-1].damage_tags, ("physical_anomaly",))
-        self.assertFalse(hits[-1].can_crit)
+        self.assertTrue(hits[-1].can_crit)
         panel = self.world.characters["1"].panel
         self.assertAlmostEqual(hits[-1].damage_bonus, panel.bonus_for("物理", ("physical_anomaly",)))
+
+    def test_native_physical_reaction_uses_attacker_critical_expectation(self):
+        amounts = []
+        for rate in (0, .5, 1):
+            world = CombatWorldState(("1",), regen=0)
+            world.characters["1"].panel = FixedDamagePanel(100, 0, 0, 1, rate, .5)
+            world.characters["1"].attributes["arts_strength"] = 0
+            world.reaction_inputs["physical.STATUS_HEAVY_STRIKE.multiplier.1"] = 3
+            world.add_shred("target", 1)
+            world.apply_effect("1", "target", SkillEffect(EffectType.STATUS_HEAVY_STRIKE, count=1, target="enemy"), {})
+            amounts.append(world.damage)
+        self.assertEqual(amounts, [300, 375, 450])
 
     def test_native_blackboard_formula_is_used_instead_of_inactive_literal(self):
         p = self.catalog.candidates("2", "battle")[0]
