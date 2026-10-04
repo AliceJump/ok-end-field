@@ -69,9 +69,8 @@ class TimedCombatLogic(_TimedCombatLogicBase):
         if observed >= 0:
             return self._cache_visual_sp(observed, now, wall_now)
 
-        # Failed visual reads do not overwrite the prediction, the last visual
-        # truth, or the wall-clock anchor. Retry soon using the same window.
-        self.cached_sp = -1.0
+        # Failed visual reads carry no new truth. Keep the current prediction,
+        # last visual observation and wall-clock anchor intact, but retry soon.
         self.next_sp_probe_at = now + self._SP_UNKNOWN_PROBE_INTERVAL
         return -1.0
 
