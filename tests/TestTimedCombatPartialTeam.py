@@ -89,6 +89,39 @@ class TestTimedCombatPartialTeam(unittest.TestCase):
         self.assertNotIn("3", logic.dead_slot_evidence)
         self.assertEqual(logic.disabled_slots, set())
 
+    def test_native_runtime_completion_keeps_pending_cast_and_existing_state(self):
+        task = _PartialTeamTask(["弭弗", "骏卫", "?", "余烬"])
+        clock = [0.0]
+        logic = TimedCombatLogic(task, load_skill_timings(), clock=lambda: clock[0])
+        logic._detect_team(1)
+        runtime = logic.combat_runtime
+        world = runtime.world
+        world.regen = 0
+        world.characters["1"].energy = 57
+        world.characters["4"].alive = False
+        world.native_timers["1", "sentinel"] = 12.5
+        base = runtime.catalog.candidates("1", "battle")[0]
+        self.assertTrue(runtime.stage(base, 0))
+        pending = runtime.pending
+        before_passives = set(world.native_passives)
+        task.detected_team = ["弭弗", "骏卫", "陈千语", "余烬"]
+        clock[0] = .4
+        logic._refresh_team_slots(1)
+        self.assertIs(logic.combat_runtime, runtime)
+        self.assertIs(runtime.world, world)
+        self.assertIs(runtime.pending, pending)
+        self.assertEqual(runtime.epoch, 0)
+        self.assertEqual(world.characters["1"].energy, 57)
+        self.assertFalse(world.characters["4"].alive)
+        self.assertEqual(world.native_timers["1", "sentinel"], 12.5)
+        self.assertTrue(before_passives <= world.native_passives.keys())
+        self.assertIsNotNone(world.characters["3"].panel)
+        self.assertIsNotNone(pending.predicted.characters["3"].panel)
+        self.assertTrue(runtime.catalog.candidates("3", "battle"))
+        self.assertTrue(runtime.confirm("1", "battle", .4))
+        self.assertIsNotNone(world.characters["3"].panel)
+        self.assertEqual(world.native_timers["1", "sentinel"], 12.5)
+
 
 if __name__ == "__main__":
     unittest.main()
