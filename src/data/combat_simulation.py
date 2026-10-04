@@ -72,6 +72,14 @@ class NativeTarget:
 
 
 @dataclass(frozen=True)
+class NativeSpellInfliction:
+    infliction_type: int
+    source: NativeTarget
+    target: NativeTarget
+    is_extra: bool = False
+
+
+@dataclass(frozen=True)
 class NativeResourceChange:
     resource: CombatResourceType
     amount: CombatExpression
@@ -207,6 +215,7 @@ class CombatEvent:
     skill_changes: tuple[NativeSkillChange, ...] = ()
     skill_controls: tuple[NativeSkillControl, ...] = ()
     end_scope: str | None = None
+    native_spells: tuple[NativeSpellInfliction, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -371,6 +380,17 @@ class CombatWorldState:
             for r in requirements
         ) and all(any(self.satisfies(actor, enemy, (r,)) for r in group) for group in any_groups)
 
+    def native_buff_count(self, owner, buff_id):
+        if buff_id == "buff_physical_no_guard" and owner in self.enemies:
+            return self.enemies[owner].shred_stacks
+        if buff_id.startswith("buff_common_energy_shard_attached_"):
+            from src.data.native_spell_runtime import attachment_count
+
+            count = attachment_count(self, owner, buff_id)
+            if count is not None:
+                return count
+        return self.native_buffs.get((owner, buff_id), (0, None))[0]
+
     def _expire(self):
         for (owner, effect), expires in tuple(self.pool_expiries.items()):
             if expires <= self.time:
@@ -396,16 +416,20 @@ class CombatWorldState:
                 effects.append((name, EffectType.STACK_SHRED.value, enemy.shred_stacks,
                                 self.pool_expiries.get((name, EffectType.STACK_SHRED))))
             if enemy.infliction_element is not None:
-                effects.append((name, enemy.infliction_element.value, enemy.infliction_stacks, None))
+                effects.append((name, enemy.infliction_element.value, enemy.infliction_stacks,
+                                self.time + enemy.infliction_time_left))
         return CombatSnapshot(
             self.time, self.sp, tuple(sorted((a, s.energy) for a, s in self.characters.items())),
             tuple(sorted(effects, key=repr)), tuple(sorted(self.cooldowns.items())), self.damage,
         )
 
     def _advance_clock(self, now):
-        gained = self.regen * (now - self.time)
+        elapsed = now - self.time
+        gained = self.regen * elapsed
         self.sp_overflow += max(0, self.sp + gained - 300)
         self.sp = min(300, self.sp + gained)
+        for enemy in self.enemies.values():
+            enemy.tick(elapsed)
         self.time = now
         self._expire()
 
@@ -434,6 +458,7 @@ class CombatWorldState:
             target.infliction_stacks -= used
             if target.infliction_stacks == 0:
                 target.infliction_element = None
+                target.infliction_time_left = 0
         else:
             owner = self._owner(actor, enemy, effect)
             remaining = used
@@ -884,6 +909,20 @@ class CombatWorldState:
         delta = change.count.evaluate(inputs)
         if delta != int(delta):
             raise UnresolvedMechanic(f"Non-integer native buff layers: {change.key}")
+        if change.key.startswith("buff_common_energy_shard_attached_"):
+            from src.data.native_spell_runtime import attachment_policies
+
+            for key, element, _, _ in attachment_policies().values():
+                if key != change.key:
+                    continue
+                if owner not in self.enemies:
+                    raise UnresolvedMechanic("Native attachment buff requires enemy binding")
+                if change.remove_all or delta < 0:
+                    self.consume(program.actor, owner, element, None if change.remove_all else -int(delta))
+                    return
+                if delta == 0:
+                    return
+                raise UnresolvedMechanic("Native attachment creation must use spell transition producer")
         if delta > 0:
             self.native_buff_tags[change.key] = change.definition.tags if change.definition else change.tags
         identity = (owner, change.key)
@@ -951,7 +990,7 @@ class CombatWorldState:
             inputs[f"count.{subject.value}"] = self.count(actor, enemy, subject)
         for buff_id in program.native_buff_ids:
             for owner, prefix in ((actor, "self"), (enemy, "enemy")):
-                inputs[f"native.{prefix}.{buff_id}"] = self.native_buffs.get((owner, buff_id), (0, None))[0]
+                inputs[f"native.{prefix}.{buff_id}"] = self.native_buff_count(owner, buff_id)
         for query in program.native_buff_queries:
             try:
                 owners = self.native_targets(query.target, action_id, program)
@@ -966,8 +1005,7 @@ class CombatWorldState:
                                 if matches_tags(tags, query.tag_mode, query.tags))
                 else:
                     ids = query.buff_ids
-                counts = [self.enemies[owner].shred_stacks if buff_id == "buff_physical_no_guard" and owner in self.enemies
-                          else self.native_buffs.get((owner, buff_id), (0, None))[0]
+                counts = [self.native_buff_count(owner, buff_id)
                           for owner in owners for buff_id in ids]
                 inputs[query.key] = sum(counts) if query.count_type == 0 else sum(c > 0 for c in counts)
             except UnresolvedMechanic:
@@ -1041,6 +1079,13 @@ class CombatWorldState:
             self.damage_state.spawn_field(event.field_id, source_actor=actor, now=self.time, duration=event.field_duration)
         if event.field_id and event.remove_field:
             self.damage_state.remove_field(event.field_id)
+        for change in event.native_spells:
+            try:
+                from src.data.native_spell_runtime import apply_native_spell
+
+                apply_native_spell(self, action_id, program, change, inputs)
+            except UnresolvedMechanic as error:
+                self.unresolved.add(str(error))
         for change in event.native_buffs:
             try:
                 owners = self.native_targets(change.selector, action_id, program) if change.selector is not None else (
