@@ -150,7 +150,9 @@ class TestNativeBuffLifecycle(unittest.TestCase):
         self.world.start(program, action_id="real_buff")
         self.assertEqual(self.world.sp, 117)
         self.assertEqual(self.world.returned_sp, 0)
-        self.assertFalse(self.world.unresolved)
+        # The copied CreateBuff action requests action-bound removal. The
+        # resource producer is known; that extra lifetime remains incomplete.
+        self.assertEqual(self.world.unresolved, {"Native child/action-bound buff lifetime not yet bound"})
         self.assertIn(("1", "buff_chr_0034_typhoea_normal_attack5_atb_recovered"), self.world.native_buffs)
         self.world.advance(.3)
         self.assertFalse(self.world.native_buff_instances)
