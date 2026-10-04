@@ -1,5 +1,6 @@
 """Cross-element producers retain consumed layers and native setting outputs."""
 
+import struct
 import unittest
 from dataclasses import replace
 
@@ -93,6 +94,29 @@ class TestNativeCrossSpell(unittest.TestCase):
         self.assertEqual(self.world._action_inputs[current.uid]["bb.consumed_layer"], 3)
         self.assertAlmostEqual(current.expires, 2 + self.row("导电持续时间", 3))
 
+    def test_actual_conduct_and_freeze_capture_explicit_source_abnormal_attributes(self):
+        for new, attribute_id, output in (
+            (1, 57, "bb.final_spell_resistance_decrease"),
+            (2, 58, "bb.final_phy_dmg_up"),
+        ):
+            with self.subTest(new=new):
+                self.setUp()
+                self.world.characters["1"].attributes[f"native.final_nonconverted.{attribute_id}"] = .4
+                self.cast(new, 0, 3)
+                instance = self.instance(f"buff_common_{SPELL_ELEMENTS[new][0]}_fire_triggered")
+                values = self.world._action_inputs[instance.uid]
+                base_key = "bb.spell_resistance_decrease" if new == 1 else "bb.phy_dmg_up"
+                base = struct.unpack("<f", struct.pack("<f", values[base_key]))[0]
+                self.assertAlmostEqual(values[output], base * 1.4)
+                captured = values[output]
+                self.world.characters["1"].attributes[f"native.final_nonconverted.{attribute_id}"] = .8
+                self.world.advance(.2)
+                self.assertEqual(self.world._action_inputs[instance.uid][output], captured)
+                self.cast(new, 0, 3, enemy="other")
+                other = next(v for v in self.world.native_buff_instances.values() if v.key == instance.key and v.owner == "other")
+                self.assertAlmostEqual(self.world._action_inputs[other.uid][output], base * 1.8)
+                self.assertTrue(self.world.unresolved)  # Final modifier/lifetime gaps remain explicit.
+
     def test_setting_capture_is_per_instance_and_prediction_does_not_touch_original(self):
         actual = self.world
         self.world = actual.fork()
@@ -132,7 +156,7 @@ class TestNativeCrossSpell(unittest.TestCase):
         diagnostics = [error for e in walk_combat_events(self.programs[1].events) for error in e.unresolved]
         fire_diagnostics = [error for e in walk_combat_events(self.programs[0].events) for error in e.unresolved]
         self.assertTrue(any("child/action-bound" in error for error in fire_diagnostics))
-        self.assertTrue(any("StoreAttributeValue" in error for error in diagnostics))
+        self.assertFalse(any("StoreAttributeValue" in error for error in diagnostics))
         self.assertTrue(any("Native buff execution" in error for error in diagnostics))
 
 

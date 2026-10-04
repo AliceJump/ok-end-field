@@ -32,6 +32,620 @@
         "value": 0
       }
     },
+    "Beyond.GEnums.AttributeType": {
+      "Agi": {
+        "data_offset": 317774,
+        "field_index": 165401,
+        "raw_hex": "50",
+        "value": 40
+      },
+      "AtbCostAddition": {
+        "data_offset": 317779,
+        "field_index": 165406,
+        "raw_hex": "5a",
+        "value": 45
+      },
+      "Atk": {
+        "data_offset": 317736,
+        "field_index": 165363,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "AtkIncreaseFactorFromAgi": {
+        "data_offset": 317824,
+        "field_index": 165438,
+        "raw_hex": "809a",
+        "value": 77
+      },
+      "AtkIncreaseFactorFromStr": {
+        "data_offset": 317822,
+        "field_index": 165437,
+        "raw_hex": "8098",
+        "value": 76
+      },
+      "AtkIncreaseFactorFromWill": {
+        "data_offset": 317828,
+        "field_index": 165440,
+        "raw_hex": "809e",
+        "value": 79
+      },
+      "AtkIncreaseFactorFromWisd": {
+        "data_offset": 317826,
+        "field_index": 165439,
+        "raw_hex": "809c",
+        "value": 78
+      },
+      "AttackRate": {
+        "data_offset": 317749,
+        "field_index": 165376,
+        "raw_hex": "1e",
+        "value": 15
+      },
+      "BreakingAttackDamageTakenScalar": {
+        "data_offset": 317761,
+        "field_index": 165388,
+        "raw_hex": "36",
+        "value": 27
+      },
+      "ComboSkillCooldownDecrease": {
+        "data_offset": 317870,
+        "field_index": 165461,
+        "raw_hex": "80c8",
+        "value": 100
+      },
+      "ComboSkillCooldownFinalAddition": {
+        "data_offset": 317757,
+        "field_index": 165384,
+        "raw_hex": "2e",
+        "value": 23
+      },
+      "ComboSkillCooldownRecoveryScalar": {
+        "data_offset": 317856,
+        "field_index": 165454,
+        "raw_hex": "80ba",
+        "value": 93
+      },
+      "ComboSkillCooldownScalar": {
+        "data_offset": 317781,
+        "field_index": 165408,
+        "raw_hex": "5e",
+        "value": 47
+      },
+      "ComboSkillDamageIncrease": {
+        "data_offset": 317767,
+        "field_index": 165394,
+        "raw_hex": "42",
+        "value": 33
+      },
+      "CriticalDamageIncrease": {
+        "data_offset": 317744,
+        "field_index": 165371,
+        "raw_hex": "14",
+        "value": 10
+      },
+      "CriticalRate": {
+        "data_offset": 317743,
+        "field_index": 165370,
+        "raw_hex": "12",
+        "value": 9
+      },
+      "CrystAbnormalDamageIncrease": {
+        "data_offset": 317792,
+        "field_index": 165419,
+        "raw_hex": "74",
+        "value": 58
+      },
+      "CrystBurstDamageIncrease": {
+        "data_offset": 317771,
+        "field_index": 165398,
+        "raw_hex": "4a",
+        "value": 37
+      },
+      "CrystDamageIncrease": {
+        "data_offset": 317787,
+        "field_index": 165414,
+        "raw_hex": "6a",
+        "value": 53
+      },
+      "CrystDamageTakenScalar": {
+        "data_offset": 317741,
+        "field_index": 165368,
+        "raw_hex": "0e",
+        "value": 7
+      },
+      "CrystDmgResistScalar": {
+        "data_offset": 317834,
+        "field_index": 165443,
+        "raw_hex": "80a4",
+        "value": 82
+      },
+      "CrystEnhancedDmgIncrease": {
+        "data_offset": 317804,
+        "field_index": 165428,
+        "raw_hex": "8086",
+        "value": 67
+      },
+      "CrystResistance": {
+        "data_offset": 317862,
+        "field_index": 165457,
+        "raw_hex": "80c0",
+        "value": 96
+      },
+      "CrystVulnerableDmgIncrease": {
+        "data_offset": 317816,
+        "field_index": 165434,
+        "raw_hex": "8092",
+        "value": 73
+      },
+      "DamageToBrokenUnitIncrease": {
+        "data_offset": 317795,
+        "field_index": 165422,
+        "raw_hex": "7a",
+        "value": 61
+      },
+      "Def": {
+        "data_offset": 317737,
+        "field_index": 165364,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "Enum": {
+        "data_offset": 317872,
+        "field_index": 165462,
+        "raw_hex": "80ca",
+        "value": 101
+      },
+      "EtherDamageIncrease": {
+        "data_offset": 317789,
+        "field_index": 165416,
+        "raw_hex": "6e",
+        "value": 55
+      },
+      "EtherDamageTakenScalar": {
+        "data_offset": 317794,
+        "field_index": 165421,
+        "raw_hex": "78",
+        "value": 60
+      },
+      "EtherDmgResistScalar": {
+        "data_offset": 317840,
+        "field_index": 165446,
+        "raw_hex": "80aa",
+        "value": 85
+      },
+      "EtherEnhancedDmgIncrease": {
+        "data_offset": 317808,
+        "field_index": 165430,
+        "raw_hex": "808a",
+        "value": 69
+      },
+      "EtherResistance": {
+        "data_offset": 317868,
+        "field_index": 165460,
+        "raw_hex": "80c6",
+        "value": 99
+      },
+      "EtherVulnerableDmgIncrease": {
+        "data_offset": 317820,
+        "field_index": 165436,
+        "raw_hex": "8096",
+        "value": 75
+      },
+      "FireAbnormalDamageIncrease": {
+        "data_offset": 317790,
+        "field_index": 165417,
+        "raw_hex": "70",
+        "value": 56
+      },
+      "FireBurstDamageIncrease": {
+        "data_offset": 317769,
+        "field_index": 165396,
+        "raw_hex": "46",
+        "value": 35
+      },
+      "FireDamageIncrease": {
+        "data_offset": 317785,
+        "field_index": 165412,
+        "raw_hex": "66",
+        "value": 51
+      },
+      "FireDamageTakenScalar": {
+        "data_offset": 317739,
+        "field_index": 165366,
+        "raw_hex": "0a",
+        "value": 5
+      },
+      "FireDmgResistScalar": {
+        "data_offset": 317838,
+        "field_index": 165445,
+        "raw_hex": "80a8",
+        "value": 84
+      },
+      "FireEnhancedDmgIncrease": {
+        "data_offset": 317800,
+        "field_index": 165426,
+        "raw_hex": "8082",
+        "value": 65
+      },
+      "FireResistance": {
+        "data_offset": 317866,
+        "field_index": 165459,
+        "raw_hex": "80c4",
+        "value": 98
+      },
+      "FireVulnerableDmgIncrease": {
+        "data_offset": 317812,
+        "field_index": 165432,
+        "raw_hex": "808e",
+        "value": 71
+      },
+      "Hatred": {
+        "data_offset": 317745,
+        "field_index": 165372,
+        "raw_hex": "16",
+        "value": 11
+      },
+      "HealOutputIncrease": {
+        "data_offset": 317763,
+        "field_index": 165390,
+        "raw_hex": "3a",
+        "value": 29
+      },
+      "HealTakenIncrease": {
+        "data_offset": 317764,
+        "field_index": 165391,
+        "raw_hex": "3c",
+        "value": 30
+      },
+      "HpRecoveryPerSec": {
+        "data_offset": 317752,
+        "field_index": 165379,
+        "raw_hex": "24",
+        "value": 18
+      },
+      "HpRecoveryPerSecByMaxHpRatio": {
+        "data_offset": 317753,
+        "field_index": 165380,
+        "raw_hex": "26",
+        "value": 19
+      },
+      "IgniteDamageScalar": {
+        "data_offset": 317783,
+        "field_index": 165410,
+        "raw_hex": "62",
+        "value": 49
+      },
+      "InAirMoveSpeedScalar": {
+        "data_offset": 317852,
+        "field_index": 165452,
+        "raw_hex": "80b6",
+        "value": 91
+      },
+      "KeywordSpeedUpScalar": {
+        "data_offset": 317854,
+        "field_index": 165453,
+        "raw_hex": "80b8",
+        "value": 92
+      },
+      "KnockDownTimeAddition": {
+        "data_offset": 317768,
+        "field_index": 165395,
+        "raw_hex": "44",
+        "value": 34
+      },
+      "Level": {
+        "data_offset": 317734,
+        "field_index": 165361,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "LifeSteal": {
+        "data_offset": 317777,
+        "field_index": 165404,
+        "raw_hex": "56",
+        "value": 43
+      },
+      "MaxHp": {
+        "data_offset": 317735,
+        "field_index": 165362,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "MaxPoise": {
+        "data_offset": 317754,
+        "field_index": 165381,
+        "raw_hex": "28",
+        "value": 20
+      },
+      "MaxUltimateSp": {
+        "data_offset": 317756,
+        "field_index": 165383,
+        "raw_hex": "2c",
+        "value": 22
+      },
+      "MoveSpeedScalar": {
+        "data_offset": 317747,
+        "field_index": 165374,
+        "raw_hex": "1a",
+        "value": 13
+      },
+      "NaturalAbnormalDamageIncrease": {
+        "data_offset": 317793,
+        "field_index": 165420,
+        "raw_hex": "76",
+        "value": 59
+      },
+      "NaturalBurstDamageIncrease": {
+        "data_offset": 317772,
+        "field_index": 165399,
+        "raw_hex": "4c",
+        "value": 38
+      },
+      "NaturalDamageIncrease": {
+        "data_offset": 317788,
+        "field_index": 165415,
+        "raw_hex": "6c",
+        "value": 54
+      },
+      "NaturalDamageTakenScalar": {
+        "data_offset": 317782,
+        "field_index": 165409,
+        "raw_hex": "60",
+        "value": 48
+      },
+      "NaturalDmgResistScalar": {
+        "data_offset": 317832,
+        "field_index": 165442,
+        "raw_hex": "80a2",
+        "value": 81
+      },
+      "NaturalEnhancedDmgIncrease": {
+        "data_offset": 317806,
+        "field_index": 165429,
+        "raw_hex": "8088",
+        "value": 68
+      },
+      "NaturalResistance": {
+        "data_offset": 317860,
+        "field_index": 165456,
+        "raw_hex": "80be",
+        "value": 95
+      },
+      "NaturalVulnerableDmgIncrease": {
+        "data_offset": 317818,
+        "field_index": 165435,
+        "raw_hex": "8094",
+        "value": 74
+      },
+      "NormalAttackDamageIncrease": {
+        "data_offset": 317751,
+        "field_index": 165378,
+        "raw_hex": "22",
+        "value": 17
+      },
+      "NormalAttackRange": {
+        "data_offset": 317746,
+        "field_index": 165373,
+        "raw_hex": "18",
+        "value": 12
+      },
+      "NormalAttackStartRange": {
+        "data_offset": 317850,
+        "field_index": 165451,
+        "raw_hex": "80b4",
+        "value": 90
+      },
+      "NormalSkillCooldownAddition": {
+        "data_offset": 317780,
+        "field_index": 165407,
+        "raw_hex": "5c",
+        "value": 46
+      },
+      "NormalSkillDamageIncrease": {
+        "data_offset": 317766,
+        "field_index": 165393,
+        "raw_hex": "40",
+        "value": 32
+      },
+      "PhysicalAndSpellInflictionEnhance": {
+        "data_offset": 317844,
+        "field_index": 165448,
+        "raw_hex": "80ae",
+        "value": 87
+      },
+      "PhysicalDamageIncrease": {
+        "data_offset": 317784,
+        "field_index": 165411,
+        "raw_hex": "64",
+        "value": 50
+      },
+      "PhysicalDamageTakenScalar": {
+        "data_offset": 317738,
+        "field_index": 165365,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "PhysicalDmgResistScalar": {
+        "data_offset": 317830,
+        "field_index": 165441,
+        "raw_hex": "80a0",
+        "value": 80
+      },
+      "PhysicalEnhancedDmgIncrease": {
+        "data_offset": 317798,
+        "field_index": 165425,
+        "raw_hex": "8080",
+        "value": 64
+      },
+      "PhysicalInflictionDamageScalar": {
+        "data_offset": 317759,
+        "field_index": 165386,
+        "raw_hex": "32",
+        "value": 25
+      },
+      "PhysicalResistance": {
+        "data_offset": 317858,
+        "field_index": 165455,
+        "raw_hex": "80bc",
+        "value": 94
+      },
+      "PhysicalVulnerableDmgIncrease": {
+        "data_offset": 317810,
+        "field_index": 165431,
+        "raw_hex": "808c",
+        "value": 70
+      },
+      "PoiseDamageOutputScalar": {
+        "data_offset": 317760,
+        "field_index": 165387,
+        "raw_hex": "34",
+        "value": 26
+      },
+      "PoiseDamageTakenScalar": {
+        "data_offset": 317758,
+        "field_index": 165385,
+        "raw_hex": "30",
+        "value": 24
+      },
+      "PoiseRecTime": {
+        "data_offset": 317755,
+        "field_index": 165382,
+        "raw_hex": "2a",
+        "value": 21
+      },
+      "PoiseRecTimeScalar": {
+        "data_offset": 317765,
+        "field_index": 165392,
+        "raw_hex": "3e",
+        "value": 31
+      },
+      "PulseAbnormalDamageIncrease": {
+        "data_offset": 317791,
+        "field_index": 165418,
+        "raw_hex": "72",
+        "value": 57
+      },
+      "PulseBurstDamageIncrease": {
+        "data_offset": 317770,
+        "field_index": 165397,
+        "raw_hex": "48",
+        "value": 36
+      },
+      "PulseDamageIncrease": {
+        "data_offset": 317786,
+        "field_index": 165413,
+        "raw_hex": "68",
+        "value": 52
+      },
+      "PulseDamageTakenScalar": {
+        "data_offset": 317740,
+        "field_index": 165367,
+        "raw_hex": "0c",
+        "value": 6
+      },
+      "PulseDmgResistScalar": {
+        "data_offset": 317836,
+        "field_index": 165444,
+        "raw_hex": "80a6",
+        "value": 83
+      },
+      "PulseEnhancedDmgIncrease": {
+        "data_offset": 317802,
+        "field_index": 165427,
+        "raw_hex": "8084",
+        "value": 66
+      },
+      "PulseResistance": {
+        "data_offset": 317864,
+        "field_index": 165458,
+        "raw_hex": "80c2",
+        "value": 97
+      },
+      "PulseVulnerableDmgIncrease": {
+        "data_offset": 317814,
+        "field_index": 165433,
+        "raw_hex": "8090",
+        "value": 72
+      },
+      "ShelterDmgScalar": {
+        "data_offset": 317797,
+        "field_index": 165424,
+        "raw_hex": "7e",
+        "value": 63
+      },
+      "ShieldOutputIncrease": {
+        "data_offset": 317846,
+        "field_index": 165449,
+        "raw_hex": "80b0",
+        "value": 88
+      },
+      "ShieldTakenIncrease": {
+        "data_offset": 317848,
+        "field_index": 165450,
+        "raw_hex": "80b2",
+        "value": 89
+      },
+      "SkillCooldownScalar": {
+        "data_offset": 317750,
+        "field_index": 165377,
+        "raw_hex": "20",
+        "value": 16
+      },
+      "SlowActionSpeedScalar": {
+        "data_offset": 317842,
+        "field_index": 165447,
+        "raw_hex": "80ac",
+        "value": 86
+      },
+      "Str": {
+        "data_offset": 317773,
+        "field_index": 165400,
+        "raw_hex": "4e",
+        "value": 39
+      },
+      "TurnRateScalar": {
+        "data_offset": 317748,
+        "field_index": 165375,
+        "raw_hex": "1c",
+        "value": 14
+      },
+      "UltimateSkillDamageIncrease": {
+        "data_offset": 317762,
+        "field_index": 165389,
+        "raw_hex": "38",
+        "value": 28
+      },
+      "UltimateSpGainScalar": {
+        "data_offset": 317778,
+        "field_index": 165405,
+        "raw_hex": "58",
+        "value": 44
+      },
+      "WeaknessDmgScalar": {
+        "data_offset": 317796,
+        "field_index": 165423,
+        "raw_hex": "7c",
+        "value": 62
+      },
+      "Weight": {
+        "data_offset": 317742,
+        "field_index": 165369,
+        "raw_hex": "10",
+        "value": 8
+      },
+      "Will": {
+        "data_offset": 317776,
+        "field_index": 165403,
+        "raw_hex": "54",
+        "value": 42
+      },
+      "Wisd": {
+        "data_offset": 317775,
+        "field_index": 165402,
+        "raw_hex": "52",
+        "value": 41
+      }
+    },
     "Beyond.GEnums.DamageType": {
       "Cryst": {
         "data_offset": 317712,
@@ -112,6 +726,32 @@
         "field_index": 167337,
         "raw_hex": "00",
         "value": 0
+      }
+    },
+    "Beyond.GEnums.ModifyAttributeType": {
+      "All": {
+        "data_offset": 317877,
+        "field_index": 165467,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "Main": {
+        "data_offset": 317875,
+        "field_index": 165465,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "Specific": {
+        "data_offset": 317874,
+        "field_index": 165464,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Sub": {
+        "data_offset": 317876,
+        "field_index": 165466,
+        "raw_hex": "04",
+        "value": 2
       }
     },
     "Beyond.GEnums.PhysicalAndSpellInflictionEnhanceFormulaType": {
@@ -1504,6 +2144,20 @@
       "ReturnedOnly": {
         "data_offset": 37321,
         "field_index": 44110,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
+    "Beyond.Gameplay.Core.StoreAttributeValue+StoreAttributeType": {
+      "BaseNonConverted": {
+        "data_offset": 37323,
+        "field_index": 44115,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "FinalNonConverted": {
+        "data_offset": 37324,
+        "field_index": 44116,
         "raw_hex": "02",
         "value": 1
       }
