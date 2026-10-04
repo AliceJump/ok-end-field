@@ -14,6 +14,7 @@ from src.image.enemy_health_probe import (
 )
 
 HP_BGR = np.array([102, 68, 255], dtype=np.uint8)
+BAR_BGR = np.array([220, 220, 220], dtype=np.uint8)
 
 
 class _ProbeHarness:
@@ -26,20 +27,57 @@ def _frame(width=1920, height=1080):
 
 
 class TestEnemyHealthProbe(unittest.TestCase):
-    def test_accepts_small_residual_hp_bar_at_1080p(self):
+    def test_accepts_minimum_residual_hp_bar_at_1080p_with_context(self):
         roi = np.zeros((100, 400, 3), dtype=np.uint8)
-        roi[20:25, 100:104] = HP_BGR
+        roi[20:25, 100:110] = HP_BGR
+        roi[29:32, 80:170] = BAR_BGR
+        self.assertTrue(_has_enemy_hp_run(roi, 1920, 1080))
+
+    def test_rejects_too_short_residual_hp_bar_at_1080p(self):
+        roi = np.zeros((100, 400, 3), dtype=np.uint8)
+        roi[20:25, 100:109] = HP_BGR
+        roi[29:32, 80:170] = BAR_BGR
+        self.assertFalse(_has_enemy_hp_run(roi, 1920, 1080))
+
+    def test_long_hp_run_skips_secondary_context_at_1080p(self):
+        roi = np.zeros((100, 400, 3), dtype=np.uint8)
+        roi[20:25, 100:140] = HP_BGR
+        self.assertTrue(_has_enemy_hp_run(roi, 1920, 1080))
+
+    def test_short_hp_colored_vfx_without_context_is_rejected(self):
+        roi = np.zeros((100, 400, 3), dtype=np.uint8)
+        roi[20:25, 100:130] = HP_BGR
+        self.assertFalse(_has_enemy_hp_run(roi, 1920, 1080))
+
+    def test_short_hp_run_with_horizontal_ui_context_is_accepted(self):
+        roi = np.zeros((100, 400, 3), dtype=np.uint8)
+        roi[20:25, 100:121] = HP_BGR
+        roi[29:32, 70:180] = BAR_BGR
         self.assertTrue(_has_enemy_hp_run(roi, 1920, 1080))
 
     def test_rejects_thin_pink_particle(self):
         roi = np.zeros((100, 400, 3), dtype=np.uint8)
-        roi[20:23, 100:107] = HP_BGR
+        roi[20:23, 100:120] = HP_BGR
         self.assertFalse(_has_enemy_hp_run(roi, 1920, 1080))
 
-    def test_scales_geometry_to_4k(self):
+    def test_horizontal_and_vertical_evidence_must_be_same_pixel_run(self):
+        roi = np.zeros((100, 400, 3), dtype=np.uint8)
+        roi[9, 100:110] = HP_BGR
+        roi[12:16, 105] = HP_BGR
+        roi[20:23, 80:170] = BAR_BGR
+        self.assertFalse(_has_enemy_hp_run(roi, 1920, 1080))
+
+    def test_scales_geometry_and_context_to_4k(self):
         roi = np.zeros((200, 800, 3), dtype=np.uint8)
-        roi[40:50, 200:208] = HP_BGR
+        roi[40:50, 200:220] = HP_BGR
+        roi[58:64, 160:300] = BAR_BGR
         self.assertTrue(_has_enemy_hp_run(roi, 3840, 2160))
+
+    def test_rejects_4k_run_below_scaled_threshold(self):
+        roi = np.zeros((200, 800, 3), dtype=np.uint8)
+        roi[40:50, 200:219] = HP_BGR
+        roi[58:64, 160:300] = BAR_BGR
+        self.assertFalse(_has_enemy_hp_run(roi, 3840, 2160))
 
     def test_normal_enemy_returns_present_and_reuses_slice(self):
         frame = _frame()
