@@ -77,29 +77,29 @@ def _effect_timing_sentence(logic) -> str:
     return f"技能时间数据中可确认的首次实际生效时间约为 {max(known):.3f}s。"
 
 
-def _describe_battle_wait(logic, token, sp) -> tuple[str, str, str]:
+def _describe_battle_wait(logic, token, sp) -> tuple[str, str, str, str]:
     actor = _actor_for_token(logic, token)
     now = logic._clock()
 
     if not logic._slot_available(token):
-        return actor, "跳过", "该角色当前不可用或尚未完成识别。"
+        return actor, "跳过", "该角色当前不可用或尚未完成识别。", "slot-unavailable"
     if now < logic.state_until.get(token, 0):
-        return actor, "等待", "该角色仍处于会替换战技的特殊状态，暂不按普通战技处理。"
+        return actor, "等待", "该角色仍处于会替换战技的特殊状态，暂不按普通战技处理。", "special-state"
     retry_at = logic.battle_retry_after.get(token, 0)
     if now < retry_at:
-        return actor, "等待", f"上一轮释放没有确认成功，约 {retry_at - now:.2f}s 后再尝试。"
+        return actor, "等待", f"上一轮释放没有确认成功，约 {retry_at - now:.2f}s 后再尝试。", "retry"
     if logic.forced_main_control_slot == token and now < logic.forced_main_control_until:
-        return actor, "等待", "该角色当前需要保留主控普攻窗口，暂时不释放自身战技。"
+        return actor, "等待", "该角色当前需要保留主控普攻窗口，暂时不释放自身战技。", "main-control-window"
 
     profiles, sp_gate, expected_cost = logic._battle_context(token)
     if not profiles:
-        return actor, "跳过", "没有找到该角色战技的可用时间数据。"
+        return actor, "跳过", "没有找到该角色战技的可用时间数据。", "missing-profile"
     if sp_gate is None or expected_cost is None:
-        return actor, "等待", "当前战技的技力门槛或预计消耗还不能可靠确定。"
+        return actor, "等待", "当前战技的技力门槛或预计消耗还不能可靠确定。", "unknown-cost"
     if sp < 0:
-        return actor, "等待", "当前技力还没有可靠识别结果。"
+        return actor, "等待", "当前技力还没有可靠识别结果。", "unknown-sp"
     if sp < sp_gate:
-        return actor, "等待", f"当前技力约 {sp:.1f} SP，至少需要 {sp_gate:g} SP 才会尝试释放。"
+        return actor, "等待", f"当前技力约 {sp:.1f} SP，至少需要 {sp_gate:g} SP 才会尝试释放。", "insufficient-sp"
 
     allowed = logic._allowed(profiles, candidate_slot=token, candidate_kind="battle")
     if not allowed:
@@ -110,21 +110,23 @@ def _describe_battle_wait(logic, token, sp) -> tuple[str, str, str]:
                 "等待",
                 f"{previous_actor}的{previous_action}还没到允许下一动作接入的时间点"
                 f"（已执行 {elapsed:.3f}s / 至少需要 {required:.3f}s）。",
+                "handoff-timing",
             )
-        return actor, "等待", "上一动作仍未到可以安全接续下一技能的时间点。"
+        return actor, "等待", "上一动作仍未到可以安全接续下一技能的时间点。", "handoff-wait"
 
     cooldown_left = max((logic.cooldowns.get(profile.skill_id, 0) - now for profile in profiles), default=0.0)
     if cooldown_left > 0:
-        return actor, "等待", f"该角色战技仍在冷却，约还需 {cooldown_left:.2f}s。"
+        return actor, "等待", f"该角色战技仍在冷却，约还需 {cooldown_left:.2f}s。", "cooldown"
 
     if not logic.phase_planner.can_spend(token, "battle", sp, expected_cost):
-        return actor, "等待", "当前阶段正在为后续动作保留技力，所以暂不花费这次战技消耗。"
+        return actor, "等待", "当前阶段正在为后续动作保留技力，所以暂不花费这次战技消耗。", "phase-reserve"
 
     return (
         actor,
         "准备释放",
         f"当前技力约 {sp:.1f} SP，已达到 {sp_gate:g} SP 门槛；"
         "技能冷却和动作衔接时间也允许，现在准备尝试该角色战技。",
+        "ready",
     )
 
 
@@ -234,7 +236,7 @@ def install_combat_decision_trace_patch():
 
     def try_battle_token_with_reason(self, token, sp, overflow=False, advance_cursor=True):
         if _task_trace_enabled(self.task):
-            actor, state, reason = _describe_battle_wait(self, token, sp)
+            actor, state, reason, reason_key = _describe_battle_wait(self, token, sp)
             _publish(
                 self,
                 actor,
@@ -242,7 +244,7 @@ def install_combat_decision_trace_patch():
                 state,
                 reason,
                 "这是当前调度器已有条件的解释，不会额外改变角色顺序或释放时机。",
-                dedupe_key=("battle", token, state, reason.split("（", 1)[0]),
+                dedupe_key=("battle", token, state, reason_key),
             )
 
         result = original_try_battle_token(
