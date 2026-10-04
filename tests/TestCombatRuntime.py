@@ -5,6 +5,7 @@ import unittest
 from src.data.combat_catalog import CombatCatalog
 from src.data.combat_runtime import CombatRuntime
 from src.data.combat_simulation import ActionProgram, CombatEvent, CombatWorldState
+from src.data.damage_resolution import FixedDamagePanel
 from src.data.skill_types import CombatResourceType, ResourceChangeKind, SkillResourceChange
 
 
@@ -70,6 +71,48 @@ class TestCombatRuntime(unittest.TestCase):
         self.assertEqual(self.runtime.world.characters["2"].energy, 0)
         self.runtime.cancel()
         self.assertEqual(self.runtime.world.characters["2"].energy, 0)
+
+    def completed_catalog(self):
+        world = CombatWorldState(("1", "2"), regen=0)
+        world.characters["2"].panel = FixedDamagePanel(100, 0, 0, 1, 0, .5)
+        world.characters["2"].attributes["level"] = 80
+        world.characters["2"].energy_cap = 120
+        program = ActionProgram("new_skill", "2", "battle", 0, 1, 0, (), native_slot=0)
+        world.register_native_program(program, default=True)
+        return CombatCatalog(world, {("2", "battle"): (program,)}, ())
+
+    def test_completing_unknown_slot_preserves_world_pending_and_observations(self):
+        world = self.runtime.world
+        world.characters["2"].energy = 37
+        world.characters["2"].alive = False
+        world.enemies["target"].shred_stacks = 3
+        self.assertTrue(self.runtime.stage(self.program, 100))
+        pending = self.runtime.pending
+        self.runtime._resource_version = 5
+        self.runtime.extend_catalog(self.completed_catalog(), ("2",), 100.1)
+        self.assertIs(self.runtime.world, world)
+        self.assertIs(self.runtime.pending, pending)
+        self.assertEqual(self.runtime.epoch, 100)
+        self.assertEqual(self.runtime._resource_version, 5)
+        self.assertEqual(world.characters["2"].energy, 37)
+        self.assertFalse(world.characters["2"].alive)
+        self.assertEqual(world.enemies["target"].shred_stacks, 3)
+        self.assertEqual(world.selected_native_skill("2", 0), "new_skill")
+        self.assertIsNotNone(pending.predicted.characters["2"].panel)
+        self.runtime.confirm("1", "battle", 101)
+        self.assertIs(self.runtime.world, world)
+        self.assertIsNotNone(world.characters["2"].panel)
+        self.assertFalse(world.characters["2"].alive)
+        self.assertEqual(world.sp, 200)
+        self.assertTrue(any("before slot identification: 2" in error for error in world.unresolved))
+
+    def test_completion_cannot_replace_an_already_identified_actor(self):
+        catalog = self.completed_catalog()
+        self.runtime.extend_catalog(catalog, ("2",), 100)
+        before = self.runtime.world.snapshot()
+        with self.assertRaises(ValueError):
+            self.runtime.extend_catalog(catalog, ("2",), 100)
+        self.assertEqual(self.runtime.world.snapshot(), before)
 
 
 if __name__ == "__main__":

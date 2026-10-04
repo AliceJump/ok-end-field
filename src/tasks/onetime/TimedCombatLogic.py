@@ -608,7 +608,10 @@ class TimedCombatLogic:
         self.damage_quotes = load_damage_quotes(team)
         if isinstance(self.store, SkillTimingStore):
             catalog = build_combat_catalog(team, self.store)
-            self.combat_runtime = CombatRuntime(catalog, epoch=self._clock())
+            if reset_runtime or self.combat_runtime is None:
+                self.combat_runtime = CombatRuntime(catalog, epoch=self._clock())
+            elif filled_slots:
+                self.combat_runtime.extend_catalog(catalog, (token for token, _ in filled_slots), self._clock())
             for diagnostic in catalog.diagnostics:
                 self.task.log_info(f"时间排轴机制数据: {diagnostic}")
 

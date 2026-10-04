@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 from src.data.combat_simulation import ActionProgram, CombatWorldState
 
@@ -31,6 +31,50 @@ class CombatRuntime:
 
     def advance(self, now):
         self.world.advance(max(self.world.time, now - self.epoch))
+
+    def extend_catalog(self, catalog, actors, now):
+        """Complete previously unidentified slots without restarting the battle."""
+        actors = tuple(actors)
+        world = self.world
+        if set(world.characters) != set(catalog.world.characters) or any(
+            actor not in world.characters or world.characters[actor].panel is not None for actor in actors
+        ):
+            raise ValueError("Catalog completion must identify existing unknown slots")
+        self.advance(now)
+        worlds = [world]
+        if self.pending is not None:
+            predicted = self.pending.predicted
+            predicted.advance(max(predicted.time, now - self.epoch))
+            worlds.append(predicted)
+        from src.data.native_passive_runtime import activate_passive
+
+        fresh = catalog.world
+        for state in worlds:
+            state.native_buff_tags.update(fresh.native_buff_tags)
+            for actor in actors:
+                character = state.characters[actor]
+                template = fresh.characters[actor]
+                character.panel = template.panel
+                character.attributes.update(template.attributes)
+                character.energy_cap = template.energy_cap
+                state.register_damage_passives(actor, fresh.passive_modifiers.get(actor, ()))
+                for (owner, _), program in fresh.native_programs.items():
+                    if owner == actor:
+                        state.register_native_program(program)
+                for (owner, slot), key in fresh.native_skill_slots.items():
+                    if owner == actor:
+                        state.native_skill_slots.setdefault((actor, slot), key)
+                for trigger, program in fresh.native_character_hooks:
+                    if program.actor == actor:
+                        state.register_character_hook(trigger, program)
+                for passive in fresh.native_passives.values():
+                    if passive.program.actor == actor:
+                        activate_passive(state, passive)
+                # Actions before portrait identification cannot be reconstructed
+                # from the new catalog. Keep that uncertainty visible to pricing.
+                if state.time > 0:
+                    state.unresolved.add(f"Unobserved native history before slot identification: {actor}")
+        self.catalog = replace(catalog, world=world)
 
     def observe_sp(self, sp, now):
         self.advance(now)
