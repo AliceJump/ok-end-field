@@ -34,8 +34,14 @@ def compile_buff_definition(store, character, profile, actor, buff_id, data, ref
         return programs
 
     callbacks, subscriptions, unresolved = [], [], []
-    if data["stackingSettings"]["identifierType"] != 0 or data["stackingSettings"]["stackingKey"]:
-        unresolved.append(f"Native shared buff stacking identity not yet bound: {buff_id}")
+    stacking = data["stackingSettings"]
+    if stacking["identifierType"] not in {0, 1}:
+        raise UnresolvedMechanic(f"Unknown native buff stacking identity: {buff_id}/{stacking['identifierType']}")
+    stacking_key = stacking["stackingKey"] if stacking["identifierType"] == 1 else None
+    if stacking_key == "":
+        raise UnresolvedMechanic(f"Empty native shared buff stacking key: {buff_id}")
+    if stacking["usePriorityKey"] or stacking["priority"] != 0 or stacking["negatePriority"]:
+        unresolved.append(f"Native buff stacking priority not yet bound: {buff_id}")
     for event in data["buffEventAction"]:
         programs = compile_blocks(event["actions"]) or ()
         if event["buffEvent"] not in {0, 1, 2, 3, 5}:
@@ -59,4 +65,4 @@ def compile_buff_definition(store, character, profile, actor, buff_id, data, ref
                              combat_input("bb." + data["stackingSettings"]["maxStackCntKey"])
                              if data["stackingSettings"]["useMaxStackCntKey"] else
                              CombatExpression("literal", (float(data["stackingSettings"]["maxStackCnt"]),)),
-                             tuple(callbacks), tuple(subscriptions), tuple(unresolved), expand_tags(data["applyTags"]))
+                             tuple(callbacks), tuple(subscriptions), tuple(unresolved), expand_tags(data["applyTags"]), stacking_key)
