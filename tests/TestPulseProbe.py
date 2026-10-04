@@ -92,11 +92,7 @@ class TestPulseProbe(unittest.TestCase):
     def _entries(self):
         if not self.log_path.exists():
             return []
-        return [
-            json.loads(line)
-            for line in self.log_path.read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        return [json.loads(line) for line in self.log_path.read_text(encoding="utf-8").splitlines() if line.strip()]
 
     def test_rising_edge_recorded_with_fields(self):
         task = self._task(member_count=4, team=["赛希", "弭弗", "莱万汀", "噗切娜"])

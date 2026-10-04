@@ -47,7 +47,7 @@ class PulseProbe:
     """白色脉冲观测器：上升沿 → JSONL 落盘，只记录不按键。"""
 
     def __init__(self, log_path=None):
-        """":param log_path: 落盘路径；None 时按 ``config_path`` 惰性解析
+        """ ":param log_path: 落盘路径；None 时按 ``config_path`` 惰性解析
         （测试注入临时路径用，生产走默认单例即可）。"""
         self._lock = threading.RLock()
         self._detector = RecommendSkillDetector()  # 探针私有去抖状态
@@ -103,9 +103,7 @@ class PulseProbe:
 
             # 全屏闪光过滤：≥3 区域同时全白 = 大招演出/爆炸，非单按钮脉冲；
             # 复位全部区域，允许后续真实脉冲重新产生上升沿。
-            if len(active_regions) >= 3 and all(
-                ratios[str(r["label"])] >= PULSE_ON_RATIO for r in active_regions
-            ):
+            if len(active_regions) >= 3 and all(ratios[str(r["label"])] >= PULSE_ON_RATIO for r in active_regions):
                 for r in active_regions:
                     self._detector.reset_label(str(r["label"]))
                 return

@@ -159,8 +159,9 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--regen", type=float, default=8.0)
     parser.add_argument("--seconds", type=float, default=180.0)
-    parser.add_argument("--output", nargs="?", const=REPORT_FILE, choices=[REPORT_FILE],
-                        help=f"保存报告到固定路径 {REPORT_FILE}")
+    parser.add_argument(
+        "--output", nargs="?", const=REPORT_FILE, choices=[REPORT_FILE], help=f"保存报告到固定路径 {REPORT_FILE}"
+    )
     args = parser.parse_args(argv)
     output_path = None
     if args.output:

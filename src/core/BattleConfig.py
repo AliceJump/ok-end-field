@@ -280,13 +280,9 @@ BATTLE_CONFIG_TYPE = {
 # ==========================================================
 
 BATTLE_CONFIG_DESCRIPTION = {
-    KEY_TIMING_ROTATION: (
-        "独立实验模式，优先于其他战斗策略开关。\n"
-        "利用实时监测和本地技能时间数据安排出技。"
-    ),
+    KEY_TIMING_ROTATION: ("独立实验模式，优先于其他战斗策略开关。\n利用实时监测和本地技能时间数据安排出技。"),
     KEY_LEGACY_COMBAT_MODE: (
-        "仅在「技能时间排轴」关闭时显示。\n"
-        "选择原有 AutoCombat 的执行模式；同一时刻只启用一种模式。"
+        "仅在「技能时间排轴」关闭时显示。\n选择原有 AutoCombat 的执行模式；同一时刻只启用一种模式。"
     ),
     KEY_ULT_RELEASE_MODE: "配置终结技的释放方式",
     KEY_SKILL_RELEASE: ("按列表顺序自动循环释放「战技」。\n可从 1/2/3/4 中选择并排序，至少保留一个。"),

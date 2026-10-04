@@ -17,14 +17,13 @@ _spec.loader.exec_module(mod)
 class TestParseEquip(unittest.TestCase):
     def test_lv70_flat_and_percentage_values(self):
         item = {"document": {"documentMap": {}}}
-        table = [["生命值", "+1000"], ["物理伤害加成", "+5%"],
-                 ["暴击率加成", "+12.5%"]]
-        with mock.patch.object(mod, "_iter_widget_contents", return_value=[("基础属性", "base")]), \
-             mock.patch.object(mod, "_document_tables", return_value=[table]):
+        table = [["生命值", "+1000"], ["物理伤害加成", "+5%"], ["暴击率加成", "+12.5%"]]
+        with (
+            mock.patch.object(mod, "_iter_widget_contents", return_value=[("基础属性", "base")]),
+            mock.patch.object(mod, "_document_tables", return_value=[table]),
+        ):
             parsed = mod.parse_equip(item, "1", {})
-        self.assertEqual(parsed["lv70_stats"], {"生命值": 1000,
-                                                "物理伤害加成": "+5%",
-                                                "暴击率加成": "+12.5%"})
+        self.assertEqual(parsed["lv70_stats"], {"生命值": 1000, "物理伤害加成": "+5%", "暴击率加成": "+12.5%"})
 
 
 class TestSnapshotSafety(unittest.TestCase):
@@ -37,12 +36,20 @@ class TestSnapshotSafety(unittest.TestCase):
             data.mkdir()
             for filename in ("weapons.json", "equipments.json", "matrices.json"):
                 (data / filename).write_text("unchanged", encoding="utf-8")
-            manifest = {"subtypes": ["2"], "catalog_counts": {"2": 20}, "success_count": 0,
-                        "failure_count": 0, "items": [], "failures": []}
+            manifest = {
+                "subtypes": ["2"],
+                "catalog_counts": {"2": 20},
+                "success_count": 0,
+                "failure_count": 0,
+                "items": [],
+                "failures": [],
+            }
             (snap / "manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
-            with mock.patch.object(mod, "ITEM_DETAILS_ROOT", snap.parent), \
-                 mock.patch.object(mod, "DATA_DIR", data), \
-                 mock.patch.object(sys, "argv", ["build_loadout_data.py"]):
+            with (
+                mock.patch.object(mod, "ITEM_DETAILS_ROOT", snap.parent),
+                mock.patch.object(mod, "DATA_DIR", data),
+                mock.patch.object(sys, "argv", ["build_loadout_data.py"]),
+            ):
                 self.assertEqual(mod.main(), 1)
             for path in data.iterdir():
                 self.assertEqual(path.read_text(encoding="utf-8"), "unchanged")
@@ -54,8 +61,7 @@ class TestSnapshotSafety(unittest.TestCase):
             for subtype, kind in (("2", "weapon"), ("4", "equip"), ("7", "matrix")):
                 filename = f"{subtype}.json"
                 (root / filename).write_text("{}", encoding="utf-8")
-                entries.append({"subtype": subtype, "kind": kind, "item_id": subtype,
-                                "detail_file": filename})
+                entries.append({"subtype": subtype, "kind": kind, "item_id": subtype, "detail_file": filename})
             manifest = {
                 "subtypes": ["2", "4", "7"],
                 "limit": 0,
@@ -89,8 +95,7 @@ class TestSnapshotSafety(unittest.TestCase):
             for subtype, kind in (("2", "weapon"), ("4", "equip"), ("7", "matrix")):
                 filename = f"{subtype}.json"
                 (root / filename).write_text("{}", encoding="utf-8")
-                entries.append({"subtype": subtype, "kind": kind, "item_id": subtype,
-                                "detail_file": filename})
+                entries.append({"subtype": subtype, "kind": kind, "item_id": subtype, "detail_file": filename})
             manifest = {
                 "subtypes": ["2", "4", "7"],
                 "limit": 1,
@@ -113,8 +118,7 @@ class TestSnapshotSafety(unittest.TestCase):
                 filename = f"{subtype}.json"
                 (root / filename).write_text("{}", encoding="utf-8")
                 item_id = "../7" if subtype == "7" else subtype
-                entries.append({"subtype": subtype, "kind": kind, "item_id": item_id,
-                                "detail_file": filename})
+                entries.append({"subtype": subtype, "kind": kind, "item_id": item_id, "detail_file": filename})
             manifest = {
                 "subtypes": ["2", "4", "7"],
                 "limit": 0,
@@ -134,12 +138,13 @@ class TestSnapshotSafety(unittest.TestCase):
             root = Path(tmp)
             snap = root / "snapshots" / "partial"
             snap.mkdir(parents=True)
-            (snap / "manifest.json").write_text(json.dumps({"success_count": 0, "items": []}),
-                                               encoding="utf-8")
-            with mock.patch.object(mod, "ROOT", root), \
-                 mock.patch.object(mod, "ITEM_DETAILS_ROOT", snap.parent), \
-                 mock.patch.object(mod, "DATA_DIR", root / "data"), \
-                 mock.patch.object(sys, "argv", ["build_loadout_data.py", "--allow-partial"]):
+            (snap / "manifest.json").write_text(json.dumps({"success_count": 0, "items": []}), encoding="utf-8")
+            with (
+                mock.patch.object(mod, "ROOT", root),
+                mock.patch.object(mod, "ITEM_DETAILS_ROOT", snap.parent),
+                mock.patch.object(mod, "DATA_DIR", root / "data"),
+                mock.patch.object(sys, "argv", ["build_loadout_data.py", "--allow-partial"]),
+            ):
                 self.assertEqual(mod.main(), 0)
             self.assertEqual(json.loads((root / "data" / "weapons.json").read_text()), {})
 

@@ -38,8 +38,7 @@ class TestEnemyCombatState(unittest.TestCase):
         self.assertEqual(enemy.infliction_time_left, 0)
 
     def test_tick_expires_timed_states_without_affecting_shred(self):
-        enemy = EnemyCombatState(shred_stacks=3, states={EffectType.STATUS_FROZEN: 2,
-                                                      EffectType.STATUS_BURNING: 4})
+        enemy = EnemyCombatState(shred_stacks=3, states={EffectType.STATUS_FROZEN: 2, EffectType.STATUS_BURNING: 4})
         enemy.tick(2)
         self.assertEqual(enemy.states, {EffectType.STATUS_BURNING: 2})
         self.assertEqual(enemy.shred_stacks, 3)
@@ -90,12 +89,16 @@ class TestEnemyCombatState(unittest.TestCase):
             with self.subTest(new_element=new_element):
                 enemy = EnemyCombatState()
                 # 先挂一个异元素附着（首次施加无反应），再施加 new_element 触发交叉反应
-                other = next(e for e in {
-                    EffectType.ATTACH_BURN,
-                    EffectType.ATTACH_ELECTROMAGNETIC,
-                    EffectType.ATTACH_COLD,
-                    EffectType.ATTACH_NATURAL,
-                } - {new_element})
+                other = next(
+                    e
+                    for e in {
+                        EffectType.ATTACH_BURN,
+                        EffectType.ATTACH_ELECTROMAGNETIC,
+                        EffectType.ATTACH_COLD,
+                        EffectType.ATTACH_NATURAL,
+                    }
+                    - {new_element}
+                )
                 enemy.apply_infliction(other)
                 self.assertIs(enemy.apply_infliction(new_element), reaction)
 
@@ -140,12 +143,15 @@ class TestTeamCombatState(unittest.TestCase):
 
 class TestReactionRules(unittest.TestCase):
     def test_spell_rules_cover_all_four_elements(self):
-        self.assertEqual(set(SPELL_REACTION_BY_ELEMENT), {
-            EffectType.ATTACH_BURN,
-            EffectType.ATTACH_ELECTROMAGNETIC,
-            EffectType.ATTACH_COLD,
-            EffectType.ATTACH_NATURAL,
-        })
+        self.assertEqual(
+            set(SPELL_REACTION_BY_ELEMENT),
+            {
+                EffectType.ATTACH_BURN,
+                EffectType.ATTACH_ELECTROMAGNETIC,
+                EffectType.ATTACH_COLD,
+                EffectType.ATTACH_NATURAL,
+            },
+        )
         # 每条异元素规则：消耗全部附着、进入对应状态
         for element, rule in SPELL_REACTION_BY_ELEMENT.items():
             with self.subTest(element=element):

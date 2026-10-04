@@ -130,28 +130,45 @@ def _mifu(key: str, payload: dict) -> CharacterMechanic | None:
         resources=(MechanicResource("shred", "破防层数"),),
         transitions=(
             MechanicTransition(
-                "battle", "断云", "追形", p1_cost, p1_cost, p1_refund,
+                "battle",
+                "断云",
+                "追形",
+                p1_cost,
+                p1_cost,
+                p1_refund,
                 produces=("battle_phase:追形",),
                 notes=("原生下一段替换技能",),
             ),
             MechanicTransition(
-                "battle", "追形", "开天", p2_cost, p2_cost,
+                "battle",
+                "追形",
+                "开天",
+                p2_cost,
+                p2_cost,
                 requires=(f"shred>={shred_layers}",),
                 consumes=(f"shred:{shred_layers}+",),
                 produces=("battle_phase:开天", "STATUS_HEAVY_STRIKE"),
             ),
             MechanicTransition(
-                "battle", "开天", "断云", p3_cost, p3_cost,
+                "battle",
+                "开天",
+                "断云",
+                p3_cost,
+                p3_cost,
                 notes=("伤害类型按猛击而非普通战技处理",),
             ),
             MechanicTransition(
-                "link", "拳出无悔", "追形",
+                "link",
+                "拳出无悔",
+                "追形",
                 requires=(f"shred>={shred_layers}",),
                 produces=("VULN_PHYSICAL", "battle_phase:追形"),
                 notes=((link or {}).get("description") or "",),
             ),
             MechanicTransition(
-                "ult", "绝心", "追形",
+                "ult",
+                "绝心",
+                "追形",
                 produces=("STATUS_HEAVY_HIT", "battle_phase:追形"),
                 notes=((ult or {}).get("description") or "",),
             ),
@@ -194,28 +211,36 @@ def _typhoeus(key: str, payload: dict) -> CharacterMechanic | None:
         ),
         transitions=(
             MechanicTransition(
-                "battle", "进入浮空", "浮空射击",
+                "battle",
+                "进入浮空",
+                "浮空射击",
                 sp_gate=_last_stat(battle, "技力消耗"),
                 sp_cost=_last_stat(battle, "技力消耗"),
                 produces=("STATUS_HOVERING",),
                 notes=(f"随后必须完成最多 {shot_count} 次空中普攻",),
             ),
             MechanicTransition(
-                "normal", "浮空射击", "浮空射击",
+                "normal",
+                "浮空射击",
+                "浮空射击",
                 requires=("ATTACH_NATURAL",),
                 consumes=("ATTACH_NATURAL:1", "STACK_HUNTING_ARROW:0..1"),
                 produces=("STACK_SIGN:1",),
                 repeats=shot_count,
             ),
             MechanicTransition(
-                "link", "启示转猎矢", "浮空射击",
+                "link",
+                "启示转猎矢",
+                "浮空射击",
                 requires=(f"STACK_SIGN:{insight_cap}",),
                 consumes=(f"STACK_SIGN:{insight_cap}",),
                 produces=(f"STACK_HUNTING_ARROW:{link_arrows}", "reset:air_shots"),
                 notes=(f"{insight_per_arrow} 启示 -> 1 猎矢",),
             ),
             MechanicTransition(
-                "ult", "冰山呼告", "浮空射击",
+                "ult",
+                "冰山呼告",
+                "浮空射击",
                 produces=(f"STACK_HUNTING_ARROW:{ult_arrows}", "STATUS_HOVERING", "reset:air_shots"),
                 notes=(f"终结技后还有 {shot_count} 次空中普攻",),
             ),
@@ -254,13 +279,17 @@ def _zhuang(key: str, payload: dict) -> CharacterMechanic | None:
         ),
         transitions=(
             MechanicTransition(
-                "link", "一息万变", None,
+                "link",
+                "一息万变",
+                None,
                 requires=("ATTACH_ELECTROMAGNETIC",),
                 consumes=("ATTACH_ELECTROMAGNETIC:all",),
                 produces=("STATUS_CONDUCTING:+1_or_apply",),
             ),
             MechanicTransition(
-                "battle", "惊霆诀", None,
+                "battle",
+                "惊霆诀",
+                None,
                 sp_gate=_last_stat(battle, "技力消耗"),
                 sp_cost=_last_stat(battle, "技力消耗"),
                 consumes=("STATUS_CONDUCTING:all_if_present", "STACK_QINGTING_SWORD:all_on_attack"),
@@ -268,12 +297,16 @@ def _zhuang(key: str, payload: dict) -> CharacterMechanic | None:
                 notes=("导电等级决定本次倍率和生成剑数",),
             ),
             MechanicTransition(
-                "ult", "万钧风雷", "天理合真",
+                "ult",
+                "万钧风雷",
+                "天理合真",
                 produces=("ult_state",),
                 notes=("状态内战技/连携强化", "首次战技免费且不消耗导电并固定生成3剑"),
             ),
             MechanicTransition(
-                "battle", "天理合真首次惊霆诀", None,
+                "battle",
+                "天理合真首次惊霆诀",
+                None,
                 sp_gate=0,
                 sp_cost=0,
                 requires=("ult_state", "first_battle_in_ult"),
@@ -286,7 +319,9 @@ def _zhuang(key: str, payload: dict) -> CharacterMechanic | None:
             "连携消耗电磁附着并施加/升级导电",
             f"战技消费导电并单次最多生成 {per_cast_cap} 柄青霆剑",
             f"青霆剑快照上限 {sword_cap if sword_cap is not None else 'unknown'}",
-            f"终结技持续 {ult_duration:g}s；首次战技免费且固定生成 3 剑" if ult_duration else "终结技首次战技免费且固定生成 3 剑",
+            f"终结技持续 {ult_duration:g}s；首次战技免费且固定生成 3 剑"
+            if ult_duration
+            else "终结技首次战技免费且固定生成 3 剑",
         ),
     )
 
@@ -323,23 +358,31 @@ def _yvonne(key: str, payload: dict) -> CharacterMechanic | None:
         ),
         transitions=(
             MechanicTransition(
-                "battle", "冰冰弹·β型", None,
+                "battle",
+                "冰冰弹·β型",
+                None,
                 sp_gate=_last_stat(battle, "技力消耗"),
                 sp_cost=_last_stat(battle, "技力消耗"),
                 requires=("ATTACH_COLD|ATTACH_NATURAL",),
                 consumes=("spell_attach:all",),
                 produces=("STATUS_FROZEN",),
                 notes=(
-                    f"每消耗 1 层附着额外获得 {per_layer_energy:g} 终结技能量" if per_layer_energy is not None else "消耗层数影响伤害/终结技能量",
+                    f"每消耗 1 层附着额外获得 {per_layer_energy:g} 终结技能量"
+                    if per_layer_energy is not None
+                    else "消耗层数影响伤害/终结技能量",
                 ),
             ),
             MechanicTransition(
-                "link", "速冻仔·u37", None,
+                "link",
+                "速冻仔·u37",
+                None,
                 requires=("STATUS_FROZEN", "main_control_final_strike"),
                 produces=("STATUS_FROZEN",),
             ),
             MechanicTransition(
-                "ult", "冷冻射手", "主控强化普攻",
+                "ult",
+                "冷冻射手",
+                "主控强化普攻",
                 requires=("prefer:STATUS_FROZEN",),
                 consumes=("STATUS_FROZEN:on_final_attack_if_present",),
                 produces=("forced_main_control",),
@@ -350,7 +393,9 @@ def _yvonne(key: str, payload: dict) -> CharacterMechanic | None:
         evidence=(
             "战技要求寒冷或自然附着并消费目标全部法术附着后冻结",
             "连携要求冻结目标受到主控重击",
-            f"终结技强制主控约 {ult_duration:g}s；不构成全队技能锁" if ult_duration else "终结技强制切换主控；不构成全队技能锁",
+            f"终结技强制主控约 {ult_duration:g}s；不构成全队技能锁"
+            if ult_duration
+            else "终结技强制切换主控；不构成全队技能锁",
             "终结技最后一次普通攻击为重击；冻结存在时追加伤害并消耗冻结",
         ),
     )

@@ -202,9 +202,9 @@ def _effect_start_frame(data: dict) -> int | None:
         for action in sequence.get("actionData") or ():
             action_type = _action_type_name(action)
             body = action.get("$value") or {}
-            if action_type in _EFFECT_ACTION_TYPES:
-                primary.append(frame)
-            elif action_type == "CreateBuffAction+Data" and _meaningful_buff_ids(body):
+            if action_type in _EFFECT_ACTION_TYPES or (
+                action_type == "CreateBuffAction+Data" and _meaningful_buff_ids(body)
+            ):
                 primary.append(frame)
             elif action_type == "ChangeSkillAction+Data":
                 secondary.append(frame)
@@ -320,7 +320,7 @@ class SkillTimingStore:
             for skill_id in self.index["skills"]:
                 if not skill_id.startswith(prefix) or not skill_id.endswith(suffix):
                     continue
-                stage = skill_id[len(prefix):-len(suffix)]
+                stage = skill_id[len(prefix) : -len(suffix)]
                 if stage.isdigit():
                     numbered_links.append((int(stage), skill_id))
             if numbered_links:
@@ -335,7 +335,7 @@ class SkillTimingStore:
         for skill_id in self.index["skills"]:
             if not skill_id.startswith(prefix):
                 continue
-            suffix = skill_id[len(prefix):]
+            suffix = skill_id[len(prefix) :]
             if suffix.isdigit():
                 numbered.append((int(suffix), skill_id))
         if numbered:
@@ -354,9 +354,7 @@ class SkillTimingStore:
             }
         ]
         costs = [
-            math.ceil(cast["costValue"] / 100)
-            if cast["costType"] == 1
-            else 0 if cast["costValue"] == 0 else None
+            math.ceil(cast["costValue"] / 100) if cast["costType"] == 1 else 0 if cast["costValue"] == 0 else None
             for cast in casts
         ]
         effect_frame = self.effect_start_frame(skill_id)
@@ -398,7 +396,7 @@ class SkillTimingStore:
             for skill_id in self.index["skills"]:
                 if not skill_id.startswith(prefix):
                     continue
-                suffix = skill_id[len(prefix):]
+                suffix = skill_id[len(prefix) :]
                 if suffix.isdigit():
                     numbered.append((int(suffix), skill_id))
             if numbered:
@@ -450,10 +448,7 @@ class SkillTimingStore:
 
     def global_normal_attack_sp_gain(self) -> float | None:
         if self._global_normal_attack_sp_gain is None:
-            gains = [
-                self.normal_attack_sp_gain(cid)
-                for cid in self.index["characters"]
-            ]
+            gains = [self.normal_attack_sp_gain(cid) for cid in self.index["characters"]]
             known = [gain for gain in gains if gain is not None]
             self._global_normal_attack_sp_gain = max(known) if known else -1.0
         return None if self._global_normal_attack_sp_gain < 0 else self._global_normal_attack_sp_gain
@@ -482,8 +477,7 @@ class SkillTimingStore:
                 continue
 
             allowed = any(
-                end_id in (window.get("allowed_skill_ids") or ())
-                for window in source.get("allow_next_windows") or ()
+                end_id in (window.get("allowed_skill_ids") or ()) for window in source.get("allow_next_windows") or ()
             )
             casts = end["level_patches"] or [
                 {
@@ -497,11 +491,7 @@ class SkillTimingStore:
 
             source_record = self.record(source_id)["data"]
             span = _state_span_frames(source_record)
-            duration = (
-                span / fps
-                if span is not None
-                else max(0, source["exclusive_frame"]) / fps
-            )
+            duration = span / fps if span is not None else max(0, source["exclusive_frame"]) / fps
             battle_record = self.record(battle_id)["data"]
             end_cd = _set_skill_cd_seconds(battle_record, battle_id)
             specs.append(

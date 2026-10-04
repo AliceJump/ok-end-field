@@ -472,9 +472,7 @@ class TestStateDrivenWaits(unittest.TestCase):
         task = type("UltReadyHarness", (), {})()
         task._battle_member_count = 4
         calls = []
-        task._find_battle_ult = lambda feature: calls.append(feature) or (
-            None if feature == "ult_3" else object()
-        )
+        task._find_battle_ult = lambda feature: calls.append(feature) or (None if feature == "ult_3" else object())
 
         self.assertFalse(BattleMixin.are_all_battle_ults_ready(task))
         self.assertEqual(calls, ["ult_1", "ult_2", "ult_3"])

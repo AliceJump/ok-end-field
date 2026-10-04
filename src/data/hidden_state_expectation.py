@@ -244,9 +244,7 @@ class HiddenStateExpectation:
             slot = str(index)
             for resource in mechanic.resources:
                 if resource.maximum is not None:
-                    self.resources[(slot, resource.key)] = DiscreteBelief.certain(
-                        0, resource.maximum
-                    )
+                    self.resources[(slot, resource.key)] = DiscreteBelief.certain(0, resource.maximum)
 
     def condition_probability(self, condition: str) -> float:
         condition = str(condition or "")
@@ -254,11 +252,7 @@ class HiddenStateExpectation:
             return self.attachments[condition].probability_at_least(1)
         resource_key = self._STATUS_RESOURCES.get(condition)
         if resource_key is not None:
-            matches = [
-                belief
-                for (_slot, key), belief in self.resources.items()
-                if key == resource_key
-            ]
+            matches = [belief for (_slot, key), belief in self.resources.items() if key == resource_key]
             if matches:
                 return max(belief.probability_at_least(1) for belief in matches)
         if "|" in condition:
@@ -287,11 +281,7 @@ class HiddenStateExpectation:
                     threshold = int(float(raw))
                 except ValueError:
                     return self.UNKNOWN_BINARY
-                matches = [
-                    belief
-                    for (slot, key), belief in self.resources.items()
-                    if key == resource_key
-                ]
+                matches = [belief for (slot, key), belief in self.resources.items() if key == resource_key]
                 if matches:
                     return max(belief.probability_at_least(threshold) for belief in matches)
 
@@ -327,11 +317,7 @@ class HiddenStateExpectation:
         success = self.requirements_probability(requires)
 
         for token in consumes:
-            if (
-                token.endswith(":all")
-                or token.endswith(":all_if_present")
-                or token.endswith(":all_on_attack")
-            ):
+            if token.endswith(":all") or token.endswith(":all_if_present") or token.endswith(":all_on_attack"):
                 effect = token.split(":", 1)[0]
                 key, belief = self._resource(slot, effect)
                 if key is not None and belief is not None:
@@ -355,9 +341,7 @@ class HiddenStateExpectation:
                 if ".." in raw:
                     low, high = raw.split("..", 1)
                     try:
-                        self.resources[(slot, key)] = belief.add_uniform(
-                            int(float(low)), int(float(high)), success
-                        )
+                        self.resources[(slot, key)] = belief.add_uniform(int(float(low)), int(float(high)), success)
                     except ValueError:
                         pass
                 else:
@@ -382,9 +366,7 @@ class HiddenStateExpectation:
                             self.resources[(slot, resource_key)] = belief.add(int(float(raw)), success)
                         except ValueError:
                             pass
-                    self.conditions["STATUS_CONDUCTING"] = self.resources[
-                        (slot, resource_key)
-                    ].probability_at_least(1)
+                    self.conditions["STATUS_CONDUCTING"] = self.resources[(slot, resource_key)].probability_at_least(1)
                 continue
             if token.startswith("ATTACH_"):
                 belief = self.attachments.get(token, DiscreteBelief.certain(0, 4))
@@ -397,10 +379,13 @@ class HiddenStateExpectation:
                 continue
             if token == "ult_state":
                 self.set_condition("ult_state", max(self.condition_probability("ult_state"), success))
-                self.set_condition("first_battle_in_ult", max(
-                    self.condition_probability("first_battle_in_ult"),
-                    success,
-                ))
+                self.set_condition(
+                    "first_battle_in_ult",
+                    max(
+                        self.condition_probability("first_battle_in_ult"),
+                        success,
+                    ),
+                )
 
     def apply_action(self, action):
         self.apply_tokens(
@@ -430,11 +415,7 @@ class HiddenStateExpectation:
                     return belief.expected / belief.maximum, "expected_natural_attach_fraction"
                 return 0.0, "no_natural_attachment"
             if mechanic.archetype == "consume_status_build_stack_burst" and kind == "战技":
-                matches = [
-                    belief
-                    for (_slot, key), belief in self.resources.items()
-                    if key == "conducting"
-                ]
+                matches = [belief for (_slot, key), belief in self.resources.items() if key == "conducting"]
                 if matches and matches[0].maximum > 0:
                     return matches[0].expected / matches[0].maximum, "expected_conducting_fraction"
                 return self.condition_probability("STATUS_CONDUCTING"), "conducting_belief"
@@ -495,11 +476,7 @@ class HiddenStateExpectation:
                     if belief is not None:
                         full_probability = belief.full_probability
                 elif mechanic.archetype == "consume_status_build_stack_burst" and kind == "战技":
-                    matches = [
-                        belief
-                        for (_slot, key), belief in self.resources.items()
-                        if key == "conducting"
-                    ]
+                    matches = [belief for (_slot, key), belief in self.resources.items() if key == "conducting"]
                     if matches:
                         full_probability = matches[0].full_probability
         return ExpectedDamage(
