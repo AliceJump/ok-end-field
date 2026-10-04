@@ -32,10 +32,6 @@ def _buff(store, character, profile, actor, reference, *, attributes, panel):
     data = native_record(store, key)["data"]
     definition = compile_buff_definition(store, character, profile, actor, key, data, reference,
                                          attributes=attributes, panel=panel, path=())
-    # Attached buffs can also carry processors without any lifecycle actions.
-    fields = ("attributeModifier", "damageModifier", "healModifier", "globalModifier", "poiseModifier", "shieldConfigs")
-    if any(data[field].get("attributeModifiers") if field == "attributeModifier" else data[field] for field in fields):
-        definition = replace(definition, unresolved=(*definition.unresolved, f"Native attached buff modifiers need binding: {key}"))
     return NativeBuffChange(key, CombatExpression("literal", (1.0,)), selector=NativeTarget("owner"), definition=definition)
 
 
