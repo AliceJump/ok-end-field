@@ -110,6 +110,13 @@ class NativeBuffQuery:
 
 
 @dataclass(frozen=True)
+class NativeAttributeQuery:
+    key: str
+    target: NativeTarget
+    attribute: str
+
+
+@dataclass(frozen=True)
 class NativeBuffProgram:
     parameters: tuple[tuple[str, float], ...]
     inherited: tuple[tuple[str, CombatExpression], ...]
@@ -250,6 +257,7 @@ class ActionProgram:
     native_buff_queries: tuple[NativeBuffQuery, ...] = ()
     native_slot: int | None = None
     native_requires_override: bool = False
+    native_attribute_queries: tuple[NativeAttributeQuery, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -1012,6 +1020,19 @@ class CombatWorldState:
                 # A later branch may not read this group; only an evaluated
                 # expression should reject the branch for its missing input.
                 inputs.pop(query.key, None)
+        for query in program.native_attribute_queries:
+            # Resolve at callback time; Source and Owner may differ for a buff.
+            # An unused branch may legitimately have no attribute recipient.
+            inputs.pop(query.key, None)
+            try:
+                owners = self.native_targets(query.target, action_id, program)
+                if len(owners) != 1 or owners[0] not in self.characters:
+                    continue
+                value = self.characters[owners[0]].attributes.get(query.attribute)
+                if isinstance(value, (int, float)) and math.isfinite(value):
+                    inputs[query.key] = float(value)
+            except UnresolvedMechanic:
+                pass
         for timer_id in program.native_timer_ids:
             inputs[f"timer.{timer_id}.ready"] = float(self.native_timers.get((actor, timer_id), 0) <= self.time)
         inputs["consumed.STACK_SHRED"] = self._action_consumed.get(action_id, {}).get((actor, EffectType.STACK_SHRED), 0)
@@ -1027,6 +1048,12 @@ class CombatWorldState:
                 else:
                     self._action_inputs[action_id][key] = value
         except MissingCombatInput as error:
+            # A failed producer must invalidate its previous/default output.
+            # Otherwise a later DamageAction can read a stale native BB value.
+            for key, _ in event.assignments:
+                self._action_inputs[action_id].pop(key, None)
+                if key.startswith("bb.EntityBB_"):
+                    self.characters[actor].blackboard.pop(key[3:], None)
             self.unresolved.add(str(error))
             self._executing_action = None
             return

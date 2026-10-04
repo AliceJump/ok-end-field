@@ -13,6 +13,7 @@ from src.data.combat_expressions import CombatExpression, combat_input
 from src.data.combat_simulation import (
     ActionProgram,
     CombatEvent,
+    NativeAttributeQuery,
     NativeBuffChange,
     NativeBuffQuery,
     NativeIteration,
@@ -113,6 +114,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
     events = []
     buff_ids = set()
     buff_queries = {}
+    attribute_queries = {}
     timer_ids = set()
     event_defaults = {}
     ability_events = {v["value"]: k for k, v in native_enums()["Beyond.Gameplay.Core.AbilitySystem+Event"].items()}
@@ -410,8 +412,6 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
         elif name == "ReadSkillSettingData+Data":
             settings = native_asset("SkillSetting")
             for request in body["dataList"]:
-                if request["enhanceAttributeSource"]["targetSource"] not in {1, 4}:
-                    raise UnresolvedMechanic("Native setting enhancement needs recipient attributes")
                 row = next((r for r in settings["spellInflictionDataList"] if r["key"] == request["dataKey"]), None)
                 if row is None:
                     raise UnresolvedMechanic(f"Missing native setting row: {request['dataKey']}")
@@ -421,7 +421,12 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                                     if r["key"] == row["enhanceFormulaKey"]), None)
                     if enhance is None:
                         raise UnresolvedMechanic(f"Missing native enhancement: {row['enhanceFormulaKey']}")
-                    strength = combat_input("source.arts_strength")
+                    selector = resource_target(request["enhanceAttributeSource"])
+                    identity = (selector, "arts_strength")
+                    if identity not in attribute_queries:
+                        key = f"native.attribute.{len(attribute_queries)}"
+                        attribute_queries[identity] = NativeAttributeQuery(key, selector, "arts_strength")
+                    strength = combat_input(attribute_queries[identity].key)
                     numerator = CombatExpression("multiply", (enhance["paramA"], strength))
                     if enhance["formulaType"] == 1:
                         enhancement = numerator
@@ -574,4 +579,5 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                             + (("target.smart_target.count", 1.0),),
                             next_action_windows=profile.allow_next, native_buff_ids=tuple(sorted(buff_ids)),
                             native_timer_ids=tuple(sorted(timer_ids)))
-    return replace(program, gate=cost, native_buff_queries=tuple(buff_queries.values()))
+    return replace(program, gate=cost, native_buff_queries=tuple(buff_queries.values()),
+                   native_attribute_queries=tuple(attribute_queries.values()))
