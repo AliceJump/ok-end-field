@@ -134,6 +134,50 @@
         "value": 0
       }
     },
+    "Beyond.GEnums.PotentialModifyType": {
+      "AddBuff": {
+        "data_offset": 320174,
+        "field_index": 167334,
+        "raw_hex": "0a",
+        "value": 5
+      },
+      "AddPassiveSkill": {
+        "data_offset": 320170,
+        "field_index": 167330,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "ChangeSkillBlackboard": {
+        "data_offset": 320172,
+        "field_index": 167332,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "ChangeSkillParam": {
+        "data_offset": 320171,
+        "field_index": 167331,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "Enum": {
+        "data_offset": 320175,
+        "field_index": 167335,
+        "raw_hex": "0c",
+        "value": 6
+      },
+      "ModifyAttr": {
+        "data_offset": 320173,
+        "field_index": 167333,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "None": {
+        "data_offset": 320169,
+        "field_index": 167329,
+        "raw_hex": "00",
+        "value": 0
+      }
+    },
     "Beyond.GEnums.SkillParamModifyType": {
       "Add": {
         "data_offset": 320182,

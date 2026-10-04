@@ -12,6 +12,8 @@ from src.data.damage_resolution import FixedDamagePanel
 from src.data.native_action_program import _nodes, compile_native_action
 from src.data.native_character_events import bind_character_events
 from src.data.native_gameplay import native_asset, native_record
+from src.data.native_passive_program import compile_passive_producers
+from src.data.native_passive_runtime import activate_passive
 from src.data.native_reactions import reaction_parameters
 from src.data.skill_types import SkillType
 
@@ -164,4 +166,16 @@ def build_combat_catalog(team, store, *, baseline=BASELINE):
             # their native input-cache actions have also been bound.
             default = index == 0 and not any(p.requires for p in group[1:])
             world.register_native_program(program, default=default)
+    for actor, name in zip(actors, team, strict=True):
+        row = rows.get(name)
+        group = programs.get((actor, "battle"), ())
+        if row is None or not group:
+            continue
+        character = get_character(row["key"], skill_rank=row["profile"]["skill_rank"], potential=row["profile"]["potential"])
+        producers, errors = compile_passive_producers(store, character, actor, store.profile(group[0].key),
+                                                     attributes=world.characters[actor].attributes,
+                                                     panel=world.characters[actor].panel)
+        diagnostics.extend(errors)
+        for passive in producers:
+            activate_passive(world, passive)
     return CombatCatalog(world, programs, tuple(diagnostics))
