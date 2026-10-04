@@ -636,7 +636,7 @@ class CombatWorldState:
             if not native_row and rule.scales_with_stacks:
                 scale *= 1 + previous
             hit = DamageHit(actor, enemy, "物理", scale, panel.bonus_for("物理", ("physical_anomaly",)),
-                            damage_tag="physical_anomaly", can_crit=False)
+                            damage_tag="physical_anomaly", can_crit=native_row)
             result = self.damage_state.resolve_hit(panel, hit, now=self.time, inputs=inputs)
             if result.expected is None:
                 self.unresolved.update(result.unknown)

@@ -366,7 +366,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                     hit_guard = CombatExpression("all", (guard, combat_input("source.is_main"))) if guard else combat_input("source.is_main")
                 hit_event = CombatEvent(at, "on_hit", hit=DamageHit(
                     actor, "target", element, 0, panel.bonus_for(element, tags) if panel else damage_bonus,
-                    tags[0] if tags else "unclassified", can_crit="physical_anomaly" not in tags,
+                    tags[0] if tags else "unclassified", can_crit=True,
                     damage_tags=tags,
                 ), hit_multiplier_formula=multiplier)
                 events.append(CombatEvent(at, "native_damage_targets", condition=hit_guard,
