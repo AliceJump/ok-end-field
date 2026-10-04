@@ -213,9 +213,12 @@ def resolve_expected_skill_bar_sp(
 def probe_skill_bar_slot(task, frame, index: int) -> SkillBarProbe:
     if index < 0 or index >= len(SKILL_BAR_X_4K):
         return SkillBarProbe(SkillBarState.UNKNOWN)
+    box_of_screen_scaled = getattr(task, "box_of_screen_scaled", None)
+    if not callable(box_of_screen_scaled):
+        return SkillBarProbe(SkillBarState.UNKNOWN)
     x1, x2 = SKILL_BAR_X_4K[index]
     y1, y2 = SKILL_BAR_Y_4K
-    box = task.box_of_screen_scaled(3840, 2160, x1 + 3, y1 + 2, x2 - 3, y2 - 2)
+    box = box_of_screen_scaled(3840, 2160, x1 + 3, y1 + 2, x2 - 3, y2 - 2)
     bar = box.crop_frame(frame)
     return classify_skill_bar_roi(bar)
 
