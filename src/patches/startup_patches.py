@@ -9,6 +9,7 @@ def install_startup_patches():
         return
 
     from src.patches.cascade_dropdown_patch import install_cascade_dropdown_patch
+    from src.patches.combat_decision_trace_patch import install_combat_decision_trace_patch
     from src.patches.conditional_rotation_patch import install_conditional_rotation_patch
     from src.patches.config_transfer_patch import install_config_transfer_patch
     from src.patches.dynamic_config_patch import install_dynamic_config_patch
@@ -25,6 +26,7 @@ def install_startup_patches():
 
     install_no_frame_task_patch()
     install_cascade_dropdown_patch()
+    install_combat_decision_trace_patch()
     install_config_transfer_patch()
     install_conditional_rotation_patch()
     install_dynamic_config_patch()
