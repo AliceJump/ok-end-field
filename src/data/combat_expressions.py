@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import struct
 from dataclasses import dataclass
 
 
@@ -46,6 +47,11 @@ class CombatExpression:
                 value = max(args)
             elif self.operation == "floor":
                 value = math.floor(args[0])
+            elif self.operation == "float32":
+                try:
+                    value = struct.unpack("<f", struct.pack("<f", args[0]))[0]
+                except OverflowError as error:
+                    raise MissingCombatInput("Native single-precision value overflow") from error
             elif self.operation == "ceil":
                 value = math.ceil(args[0])
             elif self.operation == "round":

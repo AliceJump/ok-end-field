@@ -22,6 +22,18 @@
 - `CombatWorldState` 保存角色属性与能量、敌人破防及附着、共享SP、效果实例、原生buff、角色EntityBB、计时器、未结束事件和逐击伤害。破防池20秒刷新/到期来自原生buff；自然到期不发布消费事件。实际消费层数按动作记录，下一动作的触发输入单独保留。
 - `CombatRuntime` 在按键前创建预测分支，施放被接受后提交，拒绝或超时丢弃；新HUD样本按时点覆盖预测SP，随后发生的回复仍继续执行。死亡和主控观测同步到待提交分支。
 
+### 原生属性保存动作
+
+`StoreAttributeValue` 已绑定 Specific=0 分支，分别读取目标的非转换armed值（store模式0）或非转换final值（模式1）。这两种输入使用独立属性键，不直接复用已转换的面板属性，也不把来源、持有者或主控全部替换成技能拥有者。Main/Sub/All主副能力选择仍报告未解析。AttributeType的102条枚举、ModifyAttributeType四条枚举和StoreAttributeType两条枚举从同版本metadata补入快照，保留字段索引、数据偏移及压缩常量字节，并校验解码值及快照摘要。
+
+不取整时为base + attribute × multiplier，divisor是未激活字段，不读取。取整时为base + floor(attribute / divisor) × multiplier，而不是对最终结果取整；base、multiplier、divisor沿原生GetValue的float返回路径舍入为单精度，再转为double计算。缺值、非有限输入、零除数及溢出使本次输出失效，清除已有BB值，不能继续读序列化默认0。
+
+导电与冻结的原始动作分别读取57=PulseAbnormalDamageIncrease、58=CrystAbnormalDamageIncrease；不是技艺强度。实例开始时保存的final_spell_resistance_decrease/final_phy_dmg_up不会随着之后来源属性变化而自行重算，新实例读取新值。当前成长表没有这两个属性的基准条目，尚未核实通用初值及动态生产者，所以没有为32角色擅自补0；提供明确输入的场景可以执行，缺失输入仍阻止完整计价。保存动作完成不等于导电伤害processor、冻结控制及碎冰链已执行。
+
+原生证据：StoreAttributeValue.ExecuteInternal方法60040/RVA0x43b0720/10000字节SHA256 `3b1ba03f2cb6d5ab40d1b6a93f785427bcec5065ce0f3c2e0b523669b3fa5a8e`；取整分支0x4fbc6cc/350字节 `286cd54f26d8f03ce3a0939b8e60fe942dcba2dee66ec1acc5942481d95b6817`；callee0x1c2af0/20字节 `e640837fe5db098a0f598e841b2f5d5607b38c7b5920015ddea5d79a32cbbb2b` 的roundsd立即数9为向下舍入。GetNonConvertedArmedValue方法60520/RVA0x3548f00/3000字节 `7106cf7b86674f22306a674ed3a1cc2b511422d74d90e23e70015776dbf5f68a`，GetNonConvertedFinalValue方法60521/RVA0x35489c0/3000字节 `f0ea6b4cd6e64aaf5426bef6c0648dc1c1d61b686be19af069cb0cbb8a6a12c2`。方法末尾涉及ServerActionParams.CreateServerOp（57318/RVA0x30475d0）的服务器操作生成，本次仅核验本地读取和存值公式，不将其扩写成服务器同步已验证。
+
+本阶段新增八项回归，属性保存及异元素反应专项14项通过，全仓1129项全部通过；变更Python的Ruff I/F、语法/JSON及敏感路径检查、差异检查通过。技力时机工作继续后置。
+
 ## 已验证的动作链
 
 弭弗断云/追形/开天的100/50/50 SP消耗读取等级参数，断云的50 SP返还读取动作。追形消费至少3层才生成开天就绪；2层不解锁，0层只建立第一层破防。就绪buff按原生期限到期，开天实际移除就绪状态。其他未解释的动作节点仍列入 `unresolved`，这条链不能据此宣称所有伤害与空间行为已准确计价。
