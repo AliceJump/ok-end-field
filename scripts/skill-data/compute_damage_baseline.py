@@ -45,8 +45,28 @@ SNAP_ROOT = ROOT / "tools/wiki_catalog/operator_details"
 ZH_CN_DIR = ROOT / "tools/wiki_catalog/zh_cn"
 
 STAT_FLAT = ("生命值", "生命", "攻击力", "防御力", "力量", "敏捷", "智识", "意志", "源石技艺强度")
-TRIGGER_WORDS = ("当", "后，", "后,", "时，", "时,", "使", "如果", "若", "释放", "施放", "击败",
-                 "触发", "低于", "高于", "施加", "恢复", "返还", "下一次", "每次", "期间")
+TRIGGER_WORDS = (
+    "当",
+    "后，",
+    "后,",
+    "时，",
+    "时,",
+    "使",
+    "如果",
+    "若",
+    "释放",
+    "施放",
+    "击败",
+    "触发",
+    "低于",
+    "高于",
+    "施加",
+    "恢复",
+    "返还",
+    "下一次",
+    "每次",
+    "期间",
+)
 ELEMENTS = ("物理", "灼热", "寒冷", "电磁", "自然")
 SKILL_TYPE_BUCKETS = {
     "普通攻击": "normal_attack_dmg",
@@ -259,9 +279,17 @@ def _skill_multiplier(skill: dict) -> tuple[float, float, list[str]]:
             # 待打桩裁决（ROTATION_REQUIREMENTS P1-8 C9），A 层裸伤害不计入。
             conditional.append(f"{label}: {last}（按消耗层数，A 层不计）")
             continue
-        if "治疗" in label or "效果" in label or "技力" in label or "能量" in label \
-                or any(word in label for word in ("提升", "提高", "增加", "暴击")) \
-                or "时长" in label or "时间" in label or "间隔" in label or "消耗" in label:
+        if (
+            "治疗" in label
+            or "效果" in label
+            or "技力" in label
+            or "能量" in label
+            or any(word in label for word in ("提升", "提高", "增加", "暴击"))
+            or "时长" in label
+            or "时间" in label
+            or "间隔" in label
+            or "消耗" in label
+        ):
             continue
         if "失衡" in label:
             nums = [float(x) for x in re.findall(r"\d+(?:\.\d+)?", last)]
@@ -376,10 +404,17 @@ def _operator_secondary_stats(snap_dir: Path) -> dict[str, str]:
     return result
 
 
-def compute_character(key: str, char: dict, build: dict, weapons: dict, equipments: dict,
-                      primary_map: dict[str, str], wiki_item_ids: dict[str, list[str]],
-                      secondary_map: dict[str, str] | None = None,
-                      full_overrides: dict[tuple[str, str], float] | None = None) -> dict:
+def compute_character(
+    key: str,
+    char: dict,
+    build: dict,
+    weapons: dict,
+    equipments: dict,
+    primary_map: dict[str, str],
+    wiki_item_ids: dict[str, list[str]],
+    secondary_map: dict[str, str] | None = None,
+    full_overrides: dict[tuple[str, str], float] | None = None,
+) -> dict:
     trace: list[str] = []
     name = str(char.get("name") or key)
     element = str(char.get("element") or "")
@@ -417,7 +452,9 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
                 trace.append(f"    [装备·条件] {piece_name} {bucket}+{v}%（A 层不计）")
                 continue
             mods.append({"kind": "pct", "stat": bucket, "value": v})
-        trace.append(f"    [装备] {piece_name}（{piece.get('set')}）: {piece.get('refinement_max') or piece.get('lv70_stats')}")
+        trace.append(
+            f"    [装备] {piece_name}（{piece.get('set')}）: {piece.get('refinement_max') or piece.get('lv70_stats')}"
+        )
 
     # 套组效果（主套组 3 件）
     set_main = (build.get("equipment") or {}).get("set_main")
@@ -464,9 +501,7 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
     atk_base = base.get("攻击力", 0) + weapon_atk
     atk_pct = merged.get("pct_atk_pct", 0) / 100
     atk_fixed = merged.get("flat_攻击力", 0)
-    atk = (atk_base * (1 + atk_pct) + atk_fixed) * (
-        1 + 0.005 * primary_total + 0.002 * secondary_total
-    )
+    atk = (atk_base * (1 + atk_pct) + atk_fixed) * (1 + 0.005 * primary_total + 0.002 * secondary_total)
     trace.append(
         f"  攻击力 = ({atk_base:.0f} × {1 + atk_pct:.4f} + {atk_fixed:.0f})"
         f" × (1 + 0.005×{primary_total:.0f} + 0.002×{secondary_total:.0f}) = {atk:.1f}"
@@ -563,9 +598,7 @@ def compute_character(key: str, char: dict, build: dict, weapons: dict, equipmen
     team_full_link.add_link(MAX_LINK_STACKS)
     skill_link_mult = 1.0 + team_full_link.link_bonus(is_ult=False)
     cycle_expect_link4 = round(
-        _best_expect("战技") * skill_link_mult
-        + _best_expect("连携技")
-        + 2 * _best_expect("普通攻击"),
+        _best_expect("战技") * skill_link_mult + _best_expect("连携技") + 2 * _best_expect("普通攻击"),
         1,
     )
     trace.append(
@@ -645,22 +678,28 @@ def main() -> int:
         char = _load(path)
         build_path = DATA_DIR / "character_builds" / f"{path.stem}.json"
         build = _load(build_path) if build_path.exists() else {}
-        result = compute_character(path.stem, char, build, weapons, equipments,
-                                   primary_map, wiki_item_ids, secondary_map)
+        result = compute_character(
+            path.stem, char, build, weapons, equipments, primary_map, wiki_item_ids, secondary_map
+        )
         requirement = FULL_CALIBER_REQUIREMENTS.get(path.stem)
         if requirement:
             # 满口径依赖队伍供给：同时计算保守口径，供排轴器按队伍构成选择
             # （skill_rotation.load_damage_baseline_for_team）。
             conservative = compute_character(
-                path.stem, char, build, weapons, equipments,
-                primary_map, wiki_item_ids, secondary_map,
+                path.stem,
+                char,
+                build,
+                weapons,
+                equipments,
+                primary_map,
+                wiki_item_ids,
+                secondary_map,
                 full_overrides={**_SKILL_FULL_MULTIPLIER_OVERRIDES, **CONSERVATIVE_FULL_OVERRIDES},
             )
             result["full_caliber_requires"] = dict(requirement)
             result["cycle_expect_conservative"] = conservative["cycle_expect"]
             result["trace"].append(
-                f"  保守口径循环期望: {conservative['cycle_expect']:.0f}"
-                f"（满口径依赖 {requirement}，队伍不满足时使用）"
+                f"  保守口径循环期望: {conservative['cycle_expect']:.0f}（满口径依赖 {requirement}，队伍不满足时使用）"
             )
         results.append(result)
 
@@ -688,11 +727,12 @@ def main() -> int:
     print()
     print(f"{'角色':<8} {'ATK':>7} {'暴击率':>6} {'战技倍率':>8} {'战技期望':>9}")
     for r in sorted(results, key=key_metric, reverse=True):
-        best = max((s for s in r["skills"] if s["type"] == "战技"),
-                   key=lambda s: s["crit_expect"], default=None)
+        best = max((s for s in r["skills"] if s["type"] == "战技"), key=lambda s: s["crit_expect"], default=None)
         if best:
-            print(f"{r['character']:<8} {r['panel']['ATK']:>7.0f} {r['panel']['暴击率']*100:>5.1f}% "
-                  f"{best['multiplier_pct']:>7.1f}% {best['crit_expect']:>9.0f}")
+            print(
+                f"{r['character']:<8} {r['panel']['ATK']:>7.0f} {r['panel']['暴击率'] * 100:>5.1f}% "
+                f"{best['multiplier_pct']:>7.1f}% {best['crit_expect']:>9.0f}"
+            )
     return 0
 
 

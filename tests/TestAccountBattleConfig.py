@@ -419,11 +419,7 @@ class TestBattleConfigOverrides(unittest.TestCase):
         self.assertEqual(selector["type"], "drop_down")
 
         # 一个具体配置只归属一个模式分支；共享配置归外层 timing=False。
-        children = [
-            key
-            for mode_children in selector["sub_configs"].values()
-            for key in mode_children
-        ]
+        children = [key for mode_children in selector["sub_configs"].values() for key in mode_children]
         self.assertEqual(len(children), len(set(children)))
 
         for hidden_key in (

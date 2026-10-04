@@ -5,7 +5,6 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-
 _SCRIPT = Path(__file__).resolve().parents[1] / "scripts/skill-data/benchmark_public_rotation.py"
 _SPEC = importlib.util.spec_from_file_location("benchmark_public_rotation", _SCRIPT)
 benchmark = importlib.util.module_from_spec(_SPEC)
@@ -46,16 +45,17 @@ class TestBenchmarkReportPaths(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             path = root / benchmark.REPORT_FILE
-            with patch.object(benchmark, "ROOT", root), \
-                 patch.object(benchmark, "benchmark", return_value={"scope": "offline"}):
+            with (
+                patch.object(benchmark, "ROOT", root),
+                patch.object(benchmark, "benchmark", return_value={"scope": "offline"}),
+            ):
                 self.assertEqual(benchmark.main(["--output", benchmark.REPORT_FILE]), 0)
             self.assertEqual(json.loads(path.read_text(encoding="utf-8")), {"scope": "offline"})
 
     def test_output_flag_uses_the_fixed_report_path(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            with patch.object(benchmark, "ROOT", root), \
-                 patch.object(benchmark, "benchmark", return_value={}):
+            with patch.object(benchmark, "ROOT", root), patch.object(benchmark, "benchmark", return_value={}):
                 self.assertEqual(benchmark.main(["--output"]), 0)
             self.assertTrue((root / benchmark.REPORT_FILE).is_file())
 

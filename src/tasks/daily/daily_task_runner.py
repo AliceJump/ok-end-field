@@ -235,9 +235,7 @@ class DailyTaskRunner:
 
                 if round_aborted:
                     self.task.log_info(
-                        self.task.tr("第 {idx} 轮 | 关键任务失败，已跳过当前账号后续任务").format(
-                            idx=repeat_idx + 1
-                        ),
+                        self.task.tr("第 {idx} 轮 | 关键任务失败，已跳过当前账号后续任务").format(idx=repeat_idx + 1),
                         notify=True,
                     )
                 elif self.task_status["failed"]:

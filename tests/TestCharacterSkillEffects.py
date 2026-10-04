@@ -339,7 +339,9 @@ class TestCharacterSkillEffects(unittest.TestCase):
             [EffectType.STACK_QINGTING_SWORD],
         )
         self.assertEqual(zhuang_fangyi_skill.enhancements[1].effects[0].count, 1)
-        self.assertEqual([effect.effect_id for effect in zhuang_fangyi_skill.effects], [EffectType.STACK_QINGTING_SWORD])
+        self.assertEqual(
+            [effect.effect_id for effect in zhuang_fangyi_skill.effects], [EffectType.STACK_QINGTING_SWORD]
+        )
         self.assertEqual(zhuang_fangyi_skill.effects[0].count, -1)
         self.assertEqual(zhuang_fangyi_skill.stagger_value, 15)
         self.assertIn("45%", zhuang_fangyi_skill.damage_multiplier)
@@ -405,11 +407,19 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertEqual(alesh_skill.enhancement.effects[0].count, -1)
 
         endministrator = characters["endministrator"]
-        endministrator_normal = next(skill for skill in endministrator.skills if skill.skill_id == "endministrator_normal")
+        endministrator_normal = next(
+            skill for skill in endministrator.skills if skill.skill_id == "endministrator_normal"
+        )
         endministrator_link = next(skill for skill in endministrator.skills if skill.skill_id == "endministrator_link")
-        endministrator_ultimate = next(skill for skill in endministrator.skills if skill.skill_id == "endministrator_ultimate")
-        self.assertNotIn(EffectType.STATUS_ORIGINIUM_CRYSTAL, [effect.effect_id for effect in endministrator_normal.effects])
-        self.assertEqual([effect.effect_id for effect in endministrator_link.effects], [EffectType.STATUS_ORIGINIUM_CRYSTAL])
+        endministrator_ultimate = next(
+            skill for skill in endministrator.skills if skill.skill_id == "endministrator_ultimate"
+        )
+        self.assertNotIn(
+            EffectType.STATUS_ORIGINIUM_CRYSTAL, [effect.effect_id for effect in endministrator_normal.effects]
+        )
+        self.assertEqual(
+            [effect.effect_id for effect in endministrator_link.effects], [EffectType.STATUS_ORIGINIUM_CRYSTAL]
+        )
         self.assertEqual(
             [effect.effect_id for effect in endministrator_link.enhancement.effects],
             [EffectType.STATUS_ORIGINIUM_CRYSTAL, EffectType.TRIGGER_ADDITIONAL],
@@ -448,7 +458,9 @@ class TestCharacterSkillEffects(unittest.TestCase):
         self.assertIn(EffectType.STATUS_HIGH_SINGING, [effect.effect_id for effect in liino_ultimate.effects])
 
         pogranichnik = characters["pogranichnik"]
-        pogranichnik_ultimate = next(skill for skill in pogranichnik.skills if skill.skill_id == "pogranichnik_ultimate")
+        pogranichnik_ultimate = next(
+            skill for skill in pogranichnik.skills if skill.skill_id == "pogranichnik_ultimate"
+        )
         self.assertEqual(len(pogranichnik_ultimate.enhancements), 2)
         self.assertEqual(pogranichnik_ultimate.enhancements[0].effects[0].count, -1)
 

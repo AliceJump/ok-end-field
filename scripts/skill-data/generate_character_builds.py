@@ -133,8 +133,7 @@ def _extract_weapon_recs(payload: dict) -> list[str]:
         for b in blocks.values():
             if b.get("kind") == "text":
                 txt = "".join(
-                    (el.get("text") or {}).get("text") or ""
-                    for el in (b.get("text") or {}).get("inlineElements") or []
+                    (el.get("text") or {}).get("text") or "" for el in (b.get("text") or {}).get("inlineElements") or []
                 )
                 if txt.strip().startswith("注：武器推荐内容"):
                     has_note = True
@@ -152,15 +151,23 @@ def select_official_pieces(names: list[str], equipments: dict) -> list[str | Non
     quotas = {"护甲": 1, "护手": 1, "配件": 2}
     names = sorted(set(names))
     sets = {equipments[name].get("set") for name in names if equipments[name].get("set")}
+
     def available_slots(set_name):
-        return sum(min(limit, sum(equipments[name].get("part") == part and
-                                 equipments[name].get("set") == set_name for name in names))
-                   for part, limit in quotas.items())
+        return sum(
+            min(
+                limit,
+                sum(equipments[name].get("part") == part and equipments[name].get("set") == set_name for name in names),
+            )
+            for part, limit in quotas.items()
+        )
+
     preferred = min(sets, key=lambda name: (-available_slots(name), name)) if sets else None
     pieces = []
     for part, limit in quotas.items():
-        candidates = sorted((name for name in names if equipments[name].get("part") == part),
-                            key=lambda name: (equipments[name].get("set") != preferred, name))
+        candidates = sorted(
+            (name for name in names if equipments[name].get("part") == part),
+            key=lambda name: (equipments[name].get("set") != preferred, name),
+        )
         pieces.extend(candidates[:limit] + [None] * max(0, limit - len(candidates)))
     return pieces
 

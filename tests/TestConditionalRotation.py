@@ -384,9 +384,7 @@ class TestConditionalRotationCombat(unittest.TestCase):
     @patch("src.tasks.onetime.AutoCombatLogic.generate_damage_rotation", return_value=["2", "4"])
     @patch.object(pyautogui, "mouseDown")
     @patch.object(pyautogui, "mouseUp")
-    def test_damage_rotation_enabled_uses_damage_order(
-        self, _mu, _md, generate_damage
-    ):
+    def test_damage_rotation_enabled_uses_damage_order(self, _mu, _md, generate_damage):
         """伤害优先排序开启（默认）时，序列由 generate_damage_rotation 生成。"""
         task = _FakeTask({KEY_SKILL_ALLOWLIST: True, KEY_DAMAGE_ROTATION: True})
         task.stable_team_result = (["余烬", "别礼", "伊冯", "洁尔佩塔"], True)

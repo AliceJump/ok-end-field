@@ -36,9 +36,9 @@ RELATED_API = "https://zonai.skland.com/web/v1/wiki/item/list"
 
 # mainTypeId 恒为 1；typeSubId → 简称
 SUBTYPES = {
-    "2": "weapon",   # 武器
-    "4": "equip",    # 装备
-    "7": "matrix",   # 武器基质
+    "2": "weapon",  # 武器
+    "4": "equip",  # 装备
+    "7": "matrix",  # 武器基质
 }
 
 
@@ -85,8 +85,7 @@ def _write_text(path: Path, text: str) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out", default=r"tools/wiki_catalog/item_details")
-    parser.add_argument("--subtypes", default="2,4,7",
-                        help="逗号分隔的 typeSubId（2=武器 4=装备 7=武器基质）")
+    parser.add_argument("--subtypes", default="2,4,7", help="逗号分隔的 typeSubId（2=武器 4=装备 7=武器基质）")
     parser.add_argument("--proxy", default=None, help="例如 http://127.0.0.1:10808")
     parser.add_argument("--headed", action="store_true", help="显示浏览器窗口")
     parser.add_argument("--settle-ms", type=int, default=1200, help="详情响应后等待关联请求完成")
@@ -142,9 +141,7 @@ def main() -> int:
 
         for sub_id in sub_ids:
             kind = SUBTYPES[sub_id]
-            catalog_url = (
-                f"https://wiki.skland.com/endfield/catalog?mainTypeId=1&typeSubId={sub_id}&header=0"
-            )
+            catalog_url = f"https://wiki.skland.com/endfield/catalog?mainTypeId=1&typeSubId={sub_id}&header=0"
             try:
                 with page.expect_response(
                     lambda r, s=sub_id: (
@@ -176,12 +173,14 @@ def main() -> int:
             for position, item in enumerate(items, start=1):
                 item_id = str(item.get("itemId", "")).strip()
                 if not item_id.isdigit():
-                    failures.append({
-                        "subtype": sub_id,
-                        "stage": "catalog_item",
-                        "item_id": item_id,
-                        "error": "itemId 必须为纯数字",
-                    })
+                    failures.append(
+                        {
+                            "subtype": sub_id,
+                            "stage": "catalog_item",
+                            "item_id": item_id,
+                            "error": "itemId 必须为纯数字",
+                        }
+                    )
                     print(f"[{kind}] invalid itemId: {item_id!r}", flush=True)
                     continue
                 name = str(item.get("name") or f"{kind}_{item_id}").strip()
@@ -201,9 +200,7 @@ def main() -> int:
                     page.on("response", on_response)
                     with page.expect_response(
                         lambda r, exp=item_id: (
-                            r.url.startswith(DETAIL_API)
-                            and urlsplit(r.url).query == f"id={exp}"
-                            and r.status == 200
+                            r.url.startswith(DETAIL_API) and urlsplit(r.url).query == f"id={exp}" and r.status == 200
                         ),
                         timeout=60000,
                     ) as detail_info:
@@ -242,10 +239,15 @@ def main() -> int:
                     }
                     index.append(entry)
                 except Exception as exc:
-                    failures.append({
-                        "subtype": sub_id, "item_id": item_id, "name": name,
-                        "detail_url": detail_url, "error": str(exc),
-                    })
+                    failures.append(
+                        {
+                            "subtype": sub_id,
+                            "item_id": item_id,
+                            "name": name,
+                            "detail_url": detail_url,
+                            "error": str(exc),
+                        }
+                    )
                     print(f"  ERROR: {exc}", flush=True)
                 finally:
                     page.remove_listener("response", on_response)

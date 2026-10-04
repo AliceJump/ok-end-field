@@ -48,10 +48,12 @@ class SkillScriptTestCase(unittest.TestCase):
     def test_character_language_keys_match_canonical_ids(self):
         # This is a data contract; avoid importing the capture-only pypinyin dependency.
         tree = ast.parse((ROOT / "scripts/i18n/sync_character_langs.py").read_text(encoding="utf-8"))
-        mapping = next(ast.literal_eval(node.value) for node in tree.body
-                       if isinstance(node, ast.Assign) and any(
-                           isinstance(target, ast.Name) and target.id == "ZH_KEY_MAP"
-                           for target in node.targets))
+        mapping = next(
+            ast.literal_eval(node.value)
+            for node in tree.body
+            if isinstance(node, ast.Assign)
+            and any(isinstance(target, ast.Name) and target.id == "ZH_KEY_MAP" for target in node.targets)
+        )
         self.assertEqual(mapping["提弗洛斯"], "typhoeus")
         self.assertEqual(mapping["噗切娜"], "purrchena")
 

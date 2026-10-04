@@ -31,6 +31,7 @@ DATA_DIR = ROOT / "assets/data"
 
 # ---------------------------------------------------------------- 基础工具
 
+
 def _cell_text(cell) -> str:
     """表格单元格可能是 str 或 list[str]（多段落）。"""
     if cell is None:
@@ -171,6 +172,7 @@ def _write_json(path: Path, data) -> None:
 
 # ---------------------------------------------------------------- 解析器
 
+
 def parse_weapon(item: dict, item_id: str) -> dict:
     doc = item.get("document") or {}
     kv = _kv_tables(doc)
@@ -199,10 +201,7 @@ def parse_weapon(item: dict, item_id: str) -> dict:
                 rank = row[0].strip()
                 if not re.match(r"Rank\s*\d+", rank):
                     continue
-                ranks[rank] = {
-                    name: _cell_text(row[i + 1]).strip()
-                    for i, name in enumerate(names) if i + 1 < len(row)
-                }
+                ranks[rank] = {name: _cell_text(row[i + 1]).strip() for i, name in enumerate(names) if i + 1 < len(row)}
             if names:
                 skills.append({"names": names, "ranks": ranks})
         elif header and header[:1] == ["推荐装备干员"]:
@@ -332,6 +331,7 @@ def parse_matrix(item: dict, item_id: str, matrix_tags: dict[str, tuple[str, str
 
 # ---------------------------------------------------------------- 主流程
 
+
 def validate_snapshot(manifest: dict, snap_dir: Path) -> None:
     """Refuse truncated captures before overwriting the exported databases."""
     required = {"2": "weapon", "4": "equip", "7": "matrix"}
@@ -454,9 +454,7 @@ def main() -> int:
         if kind == "weapon":
             parsed = parse_weapon(item, item_id)
             parsed["recommended_operator_ids"] = _only_operators(parsed["recommended_operator_ids"])
-            parsed["recommended_matrix_ids"] = [
-                i for i in parsed["recommended_matrix_ids"] if i in id_to_name
-            ]
+            parsed["recommended_matrix_ids"] = [i for i in parsed["recommended_matrix_ids"] if i in id_to_name]
             weapons[name] = parsed
         elif kind == "equip":
             parsed = parse_equip(item, item_id, equip_tags)

@@ -35,7 +35,7 @@ def default_log_path() -> Path:
     """默认日志路径：优先走应用的 config_folder 解析，失败回退仓库 configs。"""
     try:
         sys.path.insert(0, str(ROOT))
-        from src.core.paths import config_path  # noqa: E402
+        from src.core.paths import config_path
 
         return Path(config_path("pulse_probe_log.jsonl"))
     except Exception:
@@ -51,7 +51,7 @@ def load_entries(path: Path) -> list[dict]:
     allowed_roots = ((ROOT / "configs").resolve(), default_log_path().parent.resolve())
     if path.suffix.lower() != ".jsonl" or not any(path.is_relative_to(root) for root in allowed_roots):
         raise ValueError("log must be a JSONL file in the repository or configured config directory")
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         for line in f:
             line = line.strip()
             if not line:

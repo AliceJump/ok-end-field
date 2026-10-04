@@ -92,8 +92,11 @@ def _p(owner: EffectOwner, cap: int | None, consume: ConsumePolicy) -> EffectSem
     return EffectSemantics(EffectKind.POOL, owner, cap, consume, RefreshPolicy.STACK)
 
 
-def _s(owner: EffectOwner, consume: ConsumePolicy = ConsumePolicy.EXPIRES,
-       refresh: RefreshPolicy = RefreshPolicy.RESET_TIMER) -> EffectSemantics:
+def _s(
+    owner: EffectOwner,
+    consume: ConsumePolicy = ConsumePolicy.EXPIRES,
+    refresh: RefreshPolicy = RefreshPolicy.RESET_TIMER,
+) -> EffectSemantics:
     """state 快捷构造。"""
     return EffectSemantics(EffectKind.STATE, owner, None, consume, refresh)
 

@@ -137,7 +137,6 @@ class TestTeamAwareBaselineSelection(unittest.TestCase):
         self.assertIsNot(first, third)
         self.assertEqual(third["莱万汀"], 350.0)
 
-
     def test_real_requirements_use_chinese_element_names(self):
         # full_caliber_requires.attach 必须用中文元素名（与 attach_elements 同口径），
         # 防止再引入英文键导致比对恒 False（回归防护）

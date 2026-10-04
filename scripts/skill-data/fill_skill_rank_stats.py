@@ -26,7 +26,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
-from analyze_operator_skills import (  # noqa: E402
+from analyze_operator_skills import (
     CHARACTER_SKILLS_DIR,
     SNAPSHOT_ROOT,
     _combat_widget,
@@ -103,8 +103,16 @@ def fill_operator(detail_path: Path, skills_by_file: dict[Path, dict]) -> dict:
     payload = json.loads(detail_path.read_text(encoding="utf-8"))
     item = payload.get("data", {}).get("item", {})
     name = str(item.get("name") or detail_path.stem)
-    summary = {"name": name, "matched": False, "skills_updated": 0, "desc_updated": 0,
-               "stats_updated": 0, "variants": [], "unmatched": [], "preview": False}
+    summary = {
+        "name": name,
+        "matched": False,
+        "skills_updated": 0,
+        "desc_updated": 0,
+        "stats_updated": 0,
+        "variants": [],
+        "unmatched": [],
+        "preview": False,
+    }
 
     document = item.get("document") or {}
     widget = _combat_widget(document)
@@ -145,8 +153,7 @@ def fill_operator(detail_path: Path, skills_by_file: dict[Path, dict]) -> dict:
         # 描述：所有形态的官方文本按 tab 顺序拼接（多形态角色如「诀」的本地
         # 数据历来是全形态合并文本；单形态角色只有一段，行为不变）
         parts = [
-            _flatten_description(_document_text(document_map, tab.get("intro", {}).get("description")))
-            for tab in tabs
+            _flatten_description(_document_text(document_map, tab.get("intro", {}).get("description"))) for tab in tabs
         ]
         wiki_desc = "".join(part for part in parts if part)
         local_desc = re.sub(r"\s+", "", str(target.get("description") or ""))
@@ -212,9 +219,10 @@ def main() -> int:
             notes.append(f"变体跳过: {', '.join(summary['variants'])}")
         if summary["unmatched"]:
             notes.append(f"本地无同名技能: {', '.join(summary['unmatched'])}")
-        print(f"{summary['name']}: 技能表+{summary['skills_updated']} 描述+{summary['desc_updated']}"
-              f" 属性+{summary['stats_updated']}"
-              + (f"  [{' | '.join(notes)}]" if notes else ""))
+        print(
+            f"{summary['name']}: 技能表+{summary['skills_updated']} 描述+{summary['desc_updated']}"
+            f" 属性+{summary['stats_updated']}" + (f"  [{' | '.join(notes)}]" if notes else "")
+        )
 
     print(f"\n快照 {snapshot}: {totals}")
     if not args.write:

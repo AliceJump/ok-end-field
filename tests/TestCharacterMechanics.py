@@ -83,11 +83,14 @@ class TestCharacterMechanics(unittest.TestCase):
 
     def test_native_numbered_battle_phases_keep_each_mifu_cost(self):
         phases = load_skill_timings().battle_phase_profiles("弭弗")
-        self.assertEqual([item.skill_id for item in phases], [
-            "chr_0031_mifu_normalskill_1",
-            "chr_0031_mifu_normalskill_2",
-            "chr_0031_mifu_normalskill_3",
-        ])
+        self.assertEqual(
+            [item.skill_id for item in phases],
+            [
+                "chr_0031_mifu_normalskill_1",
+                "chr_0031_mifu_normalskill_2",
+                "chr_0031_mifu_normalskill_3",
+            ],
+        )
         self.assertEqual([item.sp_cost for item in phases], [100, 50, 50])
 
     def test_legacy_cycle_optimizer_is_blocked_for_complex_mechanics(self):

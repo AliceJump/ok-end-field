@@ -126,10 +126,7 @@ def make_burst_plan(
     minimum, ending = derive_sp_budget(actions)
     known_damage = [action.expected_damage for action in actions]
     damage = sum(known_damage) if all(value is not None for value in known_damage) else None
-    duration = sum(
-        max(0.0, action.duration) * max(1, int(action.repeats))
-        for action in actions
-    )
+    duration = sum(max(0.0, action.duration) * max(1, int(action.repeats)) for action in actions)
     reserve = minimum if reserve_floor is None else max(0.0, min(300.0, reserve_floor))
     return BurstPlan(
         key=key,
@@ -316,8 +313,7 @@ class TeamPhasePlanner:
             executable = [
                 plan
                 for plan in executable
-                if plan.owner_slot == primary
-                or (plan.owner_slot is None and primary in plan.participants)
+                if plan.owner_slot == primary or (plan.owner_slot is None and primary in plan.participants)
             ]
             executable.sort(key=lambda plan: (-plan.min_start_sp, plan.key))
         else:
@@ -341,7 +337,7 @@ class TeamPhasePlanner:
     def remaining_actions(self) -> tuple[BurstAction, ...]:
         if self.active_plan is None:
             return ()
-        return self.active_plan.actions[self.state.action_index:]
+        return self.active_plan.actions[self.state.action_index :]
 
     @property
     def target_sp(self) -> float:
@@ -363,18 +359,10 @@ class TeamPhasePlanner:
             return old, self.state.phase
 
         if self.state.phase in {CombatPhase.NORMAL, CombatPhase.PREP, CombatPhase.CHARGE}:
-            self.state.phase = (
-                CombatPhase.BURST_READY
-                if sp >= self.target_sp
-                else CombatPhase.CHARGE
-            )
+            self.state.phase = CombatPhase.BURST_READY if sp >= self.target_sp else CombatPhase.CHARGE
         elif self.state.phase == CombatPhase.RECOVER:
             self.state.action_index = 0
-            self.state.phase = (
-                CombatPhase.BURST_READY
-                if sp >= self.target_sp
-                else CombatPhase.CHARGE
-            )
+            self.state.phase = CombatPhase.BURST_READY if sp >= self.target_sp else CombatPhase.CHARGE
         return old, self.state.phase
 
     def can_spend(
@@ -387,11 +375,7 @@ class TeamPhasePlanner:
         if self.active_plan is None or current_sp < 0:
             return True
         next_action = self.next_action
-        is_next = (
-            next_action is not None
-            and next_action.slot == slot
-            and next_action.kind == kind
-        )
+        is_next = next_action is not None and next_action.slot == slot and next_action.kind == kind
 
         if self.state.phase == CombatPhase.CHARGE:
             if net_sp_cost <= 0:
@@ -446,9 +430,7 @@ class TeamPhasePlanner:
             return
         self.state.action_index = 0
         self.state.phase = (
-            CombatPhase.BURST_READY
-            if self.state.sp >= 0 and self.state.sp >= self.target_sp
-            else CombatPhase.CHARGE
+            CombatPhase.BURST_READY if self.state.sp >= 0 and self.state.sp >= self.target_sp else CombatPhase.CHARGE
         )
 
     def seek_action(self, slot: str, kind: str, label: str | None = None) -> bool:
@@ -462,11 +444,7 @@ class TeamPhasePlanner:
                 continue
             self.state.action_index = index
             if self.state.sp >= 0:
-                self.state.phase = (
-                    CombatPhase.BURST_READY
-                    if self.state.sp >= self.target_sp
-                    else CombatPhase.CHARGE
-                )
+                self.state.phase = CombatPhase.BURST_READY if self.state.sp >= self.target_sp else CombatPhase.CHARGE
             return True
         return False
 

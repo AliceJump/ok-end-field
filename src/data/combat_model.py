@@ -78,8 +78,11 @@ class EnemyCombatState:
         if self.infliction_time_left == 0:
             self.infliction_element = None
             self.infliction_stacks = 0
-        self.states = {effect: remaining - elapsed for effect, remaining in self.states.items()
-                       if remaining - elapsed > EXPIRY_EPSILON_SECONDS}
+        self.states = {
+            effect: remaining - elapsed
+            for effect, remaining in self.states.items()
+            if remaining - elapsed > EXPIRY_EPSILON_SECONDS
+        }
 
     def add_shred(self, stacks: int = 1) -> None:
         """叠破防层（击飞/倒地 +1；首次物理异常只叠层不触发效果）。"""
@@ -133,6 +136,7 @@ _ELEMENT_REACTION: dict[EffectType, EffectType] = {
 # 异常反应规则表：EFFECT_SYSTEM §2（反应组合）/ §4（倍率）的机器可执行版
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class ReactionRule:
     """一条「前置状态/池 + 新施加输入 → 消耗 + 结算 + 施加结果」的反应规则。
@@ -167,53 +171,96 @@ SPELL_BURST_RULE = ReactionRule(
 
 SPELL_REACTION_BY_ELEMENT: dict[EffectType, ReactionRule] = {
     EffectType.ATTACH_BURN: ReactionRule(
-        name="燃烧", domain="spell", requires=EffectType.STATUS_SPELL_INFLICT,
-        same_element_only=False, consumes_all=True, multiplier=80.0,
-        scales_with_stacks=True, applies=EffectType.STATUS_BURNING,
+        name="燃烧",
+        domain="spell",
+        requires=EffectType.STATUS_SPELL_INFLICT,
+        same_element_only=False,
+        consumes_all=True,
+        multiplier=80.0,
+        scales_with_stacks=True,
+        applies=EffectType.STATUS_BURNING,
     ),
     EffectType.ATTACH_ELECTROMAGNETIC: ReactionRule(
-        name="导电", domain="spell", requires=EffectType.STATUS_SPELL_INFLICT,
-        same_element_only=False, consumes_all=True, multiplier=80.0,
-        scales_with_stacks=True, applies=EffectType.STATUS_CONDUCTING,
+        name="导电",
+        domain="spell",
+        requires=EffectType.STATUS_SPELL_INFLICT,
+        same_element_only=False,
+        consumes_all=True,
+        multiplier=80.0,
+        scales_with_stacks=True,
+        applies=EffectType.STATUS_CONDUCTING,
     ),
     EffectType.ATTACH_COLD: ReactionRule(
-        name="冻结", domain="spell", requires=EffectType.STATUS_SPELL_INFLICT,
-        same_element_only=False, consumes_all=True, multiplier=80.0,
-        scales_with_stacks=True, applies=EffectType.STATUS_FROZEN,
+        name="冻结",
+        domain="spell",
+        requires=EffectType.STATUS_SPELL_INFLICT,
+        same_element_only=False,
+        consumes_all=True,
+        multiplier=80.0,
+        scales_with_stacks=True,
+        applies=EffectType.STATUS_FROZEN,
     ),
     EffectType.ATTACH_NATURAL: ReactionRule(
-        name="腐蚀", domain="spell", requires=EffectType.STATUS_SPELL_INFLICT,
-        same_element_only=False, consumes_all=True, multiplier=80.0,
-        scales_with_stacks=True, applies=EffectType.STATUS_CORROSION,
+        name="腐蚀",
+        domain="spell",
+        requires=EffectType.STATUS_SPELL_INFLICT,
+        same_element_only=False,
+        consumes_all=True,
+        multiplier=80.0,
+        scales_with_stacks=True,
+        applies=EffectType.STATUS_CORROSION,
     ),
 }
 
 PHYSICAL_RULES: tuple[ReactionRule, ...] = (
     ReactionRule(
-        name="碎冰", domain="physical", requires=EffectType.STATUS_FROZEN,
-        same_element_only=False, consumes_all=True, multiplier=120.0,
-        scales_with_stacks=False, applies=None,  # 结束固结
+        name="碎冰",
+        domain="physical",
+        requires=EffectType.STATUS_FROZEN,
+        same_element_only=False,
+        consumes_all=True,
+        multiplier=120.0,
+        scales_with_stacks=False,
+        applies=None,  # 结束固结
     ),
     ReactionRule(
-        name="击飞", domain="physical", requires=EffectType.STATUS_SHRED,
-        same_element_only=False, consumes_all=False,  # 叠层型：调用方 add_shred(1)
-        multiplier=120.0, scales_with_stacks=False,
+        name="击飞",
+        domain="physical",
+        requires=EffectType.STATUS_SHRED,
+        same_element_only=False,
+        consumes_all=False,  # 叠层型：调用方 add_shred(1)
+        multiplier=120.0,
+        scales_with_stacks=False,
         applies=EffectType.STATUS_HEAVY_HIT,
     ),
     ReactionRule(
-        name="倒地", domain="physical", requires=EffectType.STATUS_SHRED,
-        same_element_only=False, consumes_all=False,
-        multiplier=120.0, scales_with_stacks=False,
+        name="倒地",
+        domain="physical",
+        requires=EffectType.STATUS_SHRED,
+        same_element_only=False,
+        consumes_all=False,
+        multiplier=120.0,
+        scales_with_stacks=False,
         applies=EffectType.STATUS_KNOCKDOWN,
     ),
     ReactionRule(
-        name="猛击", domain="physical", requires=EffectType.STATUS_SHRED,
-        same_element_only=False, consumes_all=True, multiplier=150.0,
-        scales_with_stacks=True, applies=None,
+        name="猛击",
+        domain="physical",
+        requires=EffectType.STATUS_SHRED,
+        same_element_only=False,
+        consumes_all=True,
+        multiplier=150.0,
+        scales_with_stacks=True,
+        applies=None,
     ),
     ReactionRule(
-        name="碎甲", domain="physical", requires=EffectType.STATUS_SHRED,
-        same_element_only=False, consumes_all=True, multiplier=50.0,
-        scales_with_stacks=True, applies=EffectType.STATUS_SHATTER,
+        name="碎甲",
+        domain="physical",
+        requires=EffectType.STATUS_SHRED,
+        same_element_only=False,
+        consumes_all=True,
+        multiplier=50.0,
+        scales_with_stacks=True,
+        applies=EffectType.STATUS_SHATTER,
     ),
 )
