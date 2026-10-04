@@ -78,6 +78,7 @@ class NativeSpellInfliction:
     target: NativeTarget
     is_extra: bool = False
     burst_buff: NativeBuffChange | None = None
+    cross_buffs: tuple[tuple[int, NativeBuffChange], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -183,7 +184,8 @@ def walk_combat_events(events):
             yield from walk_combat_events(iteration.events)
         for listener in event.listeners:
             yield from walk_combat_events(listener.events)
-        buffs = (*event.native_buffs, *(spell.burst_buff for spell in event.native_spells if spell.burst_buff is not None))
+        buffs = (*event.native_buffs, *(spell.burst_buff for spell in event.native_spells if spell.burst_buff is not None),
+                 *(change for spell in event.native_spells for _, change in spell.cross_buffs))
         for change in buffs:
             if change.definition is not None:
                 if change.definition.unresolved:

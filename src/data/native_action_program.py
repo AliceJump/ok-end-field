@@ -117,6 +117,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
     attribute_queries = {}
     timer_ids = set()
     event_defaults = {}
+    spell_buff_definitions = {}
     ability_events = {v["value"]: k for k, v in native_enums()["Beyond.Gameplay.Core.AbilitySystem+Event"].items()}
     damage_masks = {k: v["value"] for k, v in native_enums()["Beyond.Gameplay.DamageDecorateMask"].items()}
 
@@ -475,14 +476,25 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             if body["inflictionType"] not in SPELL_ELEMENTS:
                 raise UnresolvedMechanic(f"Unknown native spell type: {body['inflictionType']}")
             element_name, _ = SPELL_ELEMENTS[body["inflictionType"]]
-            key = f"buff_common_{element_name}_{element_name}_triggered"
-            data = native_record(store, key)["data"]
-            definition = compile_buff_definition(store, character, profile, actor, key, data,
-                                                 {"assignBlackboard": False}, attributes=attributes, panel=panel, path=buff_path)
-            burst = NativeBuffChange(key, CombatExpression("literal", (1.0,)), definition=definition)
+
+            def spell_buff(key, inherited=()):
+                if key not in spell_buff_definitions:
+                    data = native_record(store, key)["data"]
+                    reference = {"assignBlackboard": bool(inherited), "assignItems": [
+                        {"directValueType": 0, "useDirectValue": False, "targetKey": name,
+                         "inputValueKey": "spell." + name} for name in inherited]}
+                    definition = compile_buff_definition(store, character, profile, actor, key, data,
+                                                         reference, attributes=attributes, panel=panel, path=buff_path)
+                    spell_buff_definitions[key] = NativeBuffChange(key, CombatExpression("literal", (1.0,)), definition=definition)
+                return spell_buff_definitions[key]
+
+            burst = spell_buff(f"buff_common_{element_name}_{element_name}_triggered")
+            cross = tuple((old_type, spell_buff(f"buff_common_try_{element_name}_{old_name}_triggered",
+                                               ("consumed_type", "consumed_layer", "count")))
+                          for old_type, (old_name, _) in SPELL_ELEMENTS.items() if old_type != body["inflictionType"])
             emit(CombatEvent(at, "native_spell_infliction", native_spells=(NativeSpellInfliction(
                 body["inflictionType"], resource_target(body["source"]), resource_target(body["target"]), body["isExtra"],
-                burst_buff=burst,
+                burst_buff=burst, cross_buffs=cross,
             ),)))
         elif name == "TriggerSpellBurstEventAction+Data":
             if body["spellBurstType"] not in {0, 1, 2, 3}:
@@ -508,6 +520,8 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 only_main_source=resource == CombatResourceType.SKILL_POINT and body["atbOnlyMainChar"],
             ),)))
         elif name == "CreateBuffAction+Data":
+            if body.get("autoFinishByAction") or body.get("asChildBuff"):
+                emit(CombatEvent(at, "unresolved_native", unresolved=("Native child/action-bound buff lifetime not yet bound",)))
             for reference in body["buffs"]:
                 buff_id = reference["buffId"]
                 eid = _BUFF_EFFECTS.get(buff_id)
