@@ -1,5 +1,13 @@
 {
   "asset_sources": {
+    "GameplayTagConfig": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/GameplayTagConfig.asset",
+      "bundle_sha256": "10554ca18e3892789583e2476bda4d9359cc684f7a8c499b551331b48ff031d3",
+      "byte_identical": true,
+      "object_id": 2542509944398252660,
+      "object_sha256": "f87d9a4dcd12198eb1ff61805a6ff39cccd6a268f0130e6e72f627b7a03fc3e2",
+      "tree_sha256": "3c4cf756ec425ec3b8a857552b27ffce10ce229896917e8a248f62823e0e07f6"
+    },
     "SkillSetting": {
       "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/SkillSetting.asset",
       "bundle_sha256": "36a3f1b46800541fb8fdb815e3e542240c432780fb7041af84e37e8816422493",
@@ -2511,11 +2519,211 @@
       "object_id": -6949350154730085610,
       "object_sha256": "83e6c6cd749a18e816451c80bc32584bb54d2f3fcca4b65ada829d48757da2da",
       "tree_sha256": "fd80084bee3663fde110eb73909907ca4bd1122a457062b5bbaa236f40722d44"
+    },
+    "data_tag_ai_character": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_ai_character.asset",
+      "bundle_sha256": "3aac3c780ced5abb9126f22389ca3ccc70f47898237127784e7c2617c20f37d6",
+      "byte_identical": true,
+      "object_id": 4998536573134957295,
+      "object_sha256": "3b9bc20869277229f04d1240205f6c53434dffb37fdc5872652a86fb01235324",
+      "tree_sha256": "2fd6a652a74c70e29bb1869e61bb9e2a62a026ca40da0b57ecd32620f1309459"
+    },
+    "data_tag_ai_enemy": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_ai_enemy.asset",
+      "bundle_sha256": "e2ae631fa104ad57a074fa63df0b4aabbd2754dd745728136445d69461558f99",
+      "byte_identical": true,
+      "object_id": -2314423090499678744,
+      "object_sha256": "92c2adb0ee7adfd6fdc98d0ef052eec7bd94cd75cfef46043db35b05d4bbb4ce",
+      "tree_sha256": "985622d369fc65ebdc4693c26679cb383cd945584486d6f720a49db6972889fb"
+    },
+    "data_tag_ai_npc": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_ai_npc.asset",
+      "bundle_sha256": "f814e53d4bfd6e8c957ba63dfff287b0779dcab5f179f270bceb009bbbc71093",
+      "byte_identical": true,
+      "object_id": 928601777968889398,
+      "object_sha256": "b32e981c5e13c159d63b16853c02984a2bb4a6e4f61985bcb98ef748f012bfdd",
+      "tree_sha256": "516de46fc599008eefd20a0003ea32d935c96023570320116f00004b2cb8d0c0"
+    },
+    "data_tag_audio_csurface": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_audio_csurface.asset",
+      "bundle_sha256": "5ce13f9a12a1a65728039a9219ed7933fcafdd1e44fb77fbdd4785b37d6bb12a",
+      "byte_identical": true,
+      "object_id": -8889070829202807606,
+      "object_sha256": "bb123a1dffd537b996d64a26ceb5424096891ff01c2b295b2c8a5129f34d6420",
+      "tree_sha256": "7545a2c34d34e60333aa84de367d8bdbc68ae433a80bc061986d31cc4aa9a289"
+    },
+    "data_tag_earmorph_avatar": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_earmorph_avatar.asset",
+      "bundle_sha256": "574052e76663e44ae137a751e797859427227d862a5e1cf97497ad2418cd0f6a",
+      "byte_identical": true,
+      "object_id": -8577277769932313070,
+      "object_sha256": "b867bb5b305c2a5afa213c7740b49a2e60fcce8348e2bf151363a76e5a1af5f8",
+      "tree_sha256": "ee4ebb029a2e31e0c8e56c4bedc0c6e7a1d1bc93de6e33fca8e5610452aabe2a"
+    },
+    "data_tag_earmorph_emotion": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_earmorph_emotion.asset",
+      "bundle_sha256": "32f3513fe56fb2f58bd2792342500981268fc1005d1cc7d8f287e8012b96fb5e",
+      "byte_identical": true,
+      "object_id": 210639039920178163,
+      "object_sha256": "d96d5d639990a81a20b7aca50ba2689c275df10992a0d9a26ad2953208715847",
+      "tree_sha256": "02524c0f6ea683a9fe19b8f0fa14c9a0410c6ebc5e2a1b81b755724ccf173f8f"
+    },
+    "data_tag_earmorph_morphanim": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_earmorph_morphanim.asset",
+      "bundle_sha256": "3e5e131bc26d7d3cc0d1dac85a59531ca8aac05d3d8d60cf429e28c35de1f504",
+      "byte_identical": true,
+      "object_id": -622335166302835825,
+      "object_sha256": "4ec3a3050a16b1141699a0398d84aa370d0922c5e210bb19b6c3652d0dc3febb",
+      "tree_sha256": "7e07cec80250d6004eee71d75006e75a876f6cc0932b90428fc8403b1ce84683"
+    },
+    "data_tag_editortag": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_editortag.asset",
+      "bundle_sha256": "1e59d763e286aa31936797e89bf4db864ae51062aa039b980bba370b2991884c",
+      "byte_identical": true,
+      "object_id": -3556823175022888925,
+      "object_sha256": "9eaa5620171c742bfdc0bf64c2738d548e71f20e984f0a9af328806799c70f0e",
+      "tree_sha256": "3fc7760f1657af7d17da945f51de5d9f43dd332b8947693e47612a4a15ea455e"
+    },
+    "data_tag_facialmorph_avatar": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_facialmorph_avatar.asset",
+      "bundle_sha256": "f8dd5ae74d776fe88d4a7f6179a412c0779f8e4e24e5c6116842f4deb00bc79c",
+      "byte_identical": true,
+      "object_id": 1184620408417501143,
+      "object_sha256": "4e34a4252780936c050edcbbe44265121ed7db01dfc2745d55fe6e0cb5e1c23e",
+      "tree_sha256": "387b29f7ceb88dbdf3dca5e4dd72cca02ba5e242b97cdeea203f0bcddddc7a87"
+    },
+    "data_tag_facialmorph_emotion": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_facialmorph_emotion.asset",
+      "bundle_sha256": "d9a685698dedf1aee28f0d35c96f00d8839aeef2353dc17cc946f7bbbff65ccb",
+      "byte_identical": true,
+      "object_id": 2328328672117495993,
+      "object_sha256": "419ce2cc083bba1b852ab20fe5ac160ce045476eee5e6c01fc6af0762eca7e2b",
+      "tree_sha256": "1f02e4c292b59e56f1d38092852c8da1bfa673e76a86e55a98dd18af314da0e2"
+    },
+    "data_tag_facialmorph_morphanim": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_facialmorph_morphanim.asset",
+      "bundle_sha256": "105500868ebaac625d10e314db9179a9cc306d53da35a61840d1aeae9b37e871",
+      "byte_identical": true,
+      "object_id": 7676615014170928936,
+      "object_sha256": "b3735b768f42bf5c24cd61061a4315f260619a8095a7cbd46069ded27fcc04b1",
+      "tree_sha256": "a08afa5590c42872f14e2b8b7e4e30ac2015bcaca7a27f0a0bf8fec8fc89ea22"
+    },
+    "data_tag_facialmorph_pose": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_facialmorph_pose.asset",
+      "bundle_sha256": "0b8368e1980460ea09fd951c01d2c4ce4b549677333610b39dbc52a5354cfb5b",
+      "byte_identical": true,
+      "object_id": 6066963169347117334,
+      "object_sha256": "298cac35c00e3b9c05e76bf9b9ac01ec76a5a8cfcf56a32011d91eb8de4dcbca",
+      "tree_sha256": "ce6ed87863e9a898e7e55b975d63f77d072284a06713f86e41c60beeb8e6fcb9"
+    },
+    "data_tag_gameplay_state_extra": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_gameplay_state_extra.asset",
+      "bundle_sha256": "2a5ecd44ed33e1be427deb1c6d3c191cdce8887ed1233631492d746eb407fd1b",
+      "byte_identical": true,
+      "object_id": -3054977401558060265,
+      "object_sha256": "b7df0220c16c9ea091ee8776757fb3a1e9894c72189901f810bd2afd3c5cbc79",
+      "tree_sha256": "34340cf3f278cf8c80cba9067029dd06febb7d79d2dfed002d663ff88b29866e"
+    },
+    "data_tag_global_state": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_global_state.asset",
+      "bundle_sha256": "7d3390ec5a889545c2205d8263325e13dd29bf5fb3670b7e14b37cb478bc42a5",
+      "byte_identical": true,
+      "object_id": -1024868188274116901,
+      "object_sha256": "e721d5dcef1daa77f0258f100220704be8757bfffad058bcf3bb3ecf06ea5968",
+      "tree_sha256": "e6342855c1aa11d84dc96f805d8557c63e3884bad4573d2243726444caf47e1b"
+    },
+    "data_tag_int_category": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_int_category.asset",
+      "bundle_sha256": "1f4977f843cb817ce60e5d78a622e230e408f4b0392eda99856b40a9e589dff1",
+      "byte_identical": true,
+      "object_id": 4915331501288182113,
+      "object_sha256": "6d9a5fee3d49364657213c5140bdcdf1ee61a3670201975c1954e886d9b32bb9",
+      "tree_sha256": "295d25ba46028358291475d725d619f29150d3608068daec9767a2f0493a716b"
+    },
+    "data_tag_npc_ability_all": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_npc_ability_all.asset",
+      "bundle_sha256": "f1b494b044100a4da78fc80f3ec055fabcaccdf8116fcfcb5a26f2a65cc0aa68",
+      "byte_identical": true,
+      "object_id": 781883152648368957,
+      "object_sha256": "7820f98265c150bae30f42914bf88233f7c08da5ce74066e56f9cdb6efca3505",
+      "tree_sha256": "6abdc4eb9a649c574ce808cb931ef210ef8512eeb7e1b0f8782b7d352fe828e4"
+    },
+    "data_tag_npc_animationconfig_generic": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_npc_animationconfig_generic.asset",
+      "bundle_sha256": "b5a4dea2ed5221b139b2d441fceb0abfe30b4e29f5253ec94a6b76afe02e1542",
+      "byte_identical": true,
+      "object_id": 8892006676123786942,
+      "object_sha256": "cf7580cc784b7f5e6468beedbed8de35bbaff6ae8a9e0ad913b92037fb2152dc",
+      "tree_sha256": "67e87911dda4406c1024b7a112e3bacf9c9129cb37eb3735f3fd13c9d726f8e9"
+    },
+    "data_tag_npc_animationconfig_humanoid": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_npc_animationconfig_humanoid.asset",
+      "bundle_sha256": "9d5f2d54592ad19b9cf47c66f405d1bc86fef126447f2632d8e9cc96bb8a3833",
+      "byte_identical": true,
+      "object_id": 3148550346055174860,
+      "object_sha256": "06d1b9257322dd164a3b3b8f2e9ef4310b0d19c7a6216f2fa0a92a4b4f5d8a1f",
+      "tree_sha256": "860ea17ceb255d553fc5831b9775f08c0120755edd5ab82d34a6c640a57dd25a"
+    },
+    "data_tag_npc_avatarmesh": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_npc_avatarmesh.asset",
+      "bundle_sha256": "c48bbdcca0d890715af37d8e0652e01ba0e34b71a35e383170c34cc53104d118",
+      "byte_identical": true,
+      "object_id": -6518040243829459979,
+      "object_sha256": "59418b1a30b24c7a65cef525d95dd13aeaef6d1f206152eadaf7fb99369cb2ae",
+      "tree_sha256": "99f3a61305ecc36bb4ce376f58d81fa33c196297b7d2414d8f4c216e68bce623"
+    },
+    "data_tag_npc_avatartemplet": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_npc_avatartemplet.asset",
+      "bundle_sha256": "a3780a71d02fc3ccbfc92667471bc930f7876147ef65ba68834e70d3fa9dd549",
+      "byte_identical": true,
+      "object_id": 6776219653213346227,
+      "object_sha256": "01ca3cd68f03378f8efb86e9cb4aeb966903d6f511f94fb7ace4e0d009780d70",
+      "tree_sha256": "04cbf54e09cbeed16c7615dbb8840c50774192e72171c2a6d3b51ddc27cc7e37"
+    },
+    "data_tag_npcanimator": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_npcanimator.asset",
+      "bundle_sha256": "5c12039abf4cf597b8be1af12cc5b900b2edcd20bdb922c04bd025266c028b26",
+      "byte_identical": true,
+      "object_id": 6964700076366687319,
+      "object_sha256": "6bf0d533412e7d914bb8adc34fc367aa7110eeb0710882655c38e4121f7afba0",
+      "tree_sha256": "48402a562f8d2c5ff060c6cf2de58138ab123ae4db075e45d99b57aa3eaa2a33"
+    },
+    "data_tag_npcmontage_generic": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_npcmontage_generic.asset",
+      "bundle_sha256": "93826dcc4c42d45ccea01d611e816c82c715e9d3c62f83d98476fbd1453adcc1",
+      "byte_identical": true,
+      "object_id": 3764835022845166485,
+      "object_sha256": "561171e39b61c11f5ab798aff4ae1a7447734ca14e2c9f2da8a441859c53d0b0",
+      "tree_sha256": "358f51151f2e4b551ff1630e14b5bf69e0ec7147004f16bb5febadda1654c865"
+    },
+    "data_tag_npcmontage_humanoid": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_npcmontage_humanoid.asset",
+      "bundle_sha256": "831eb6639a6c5864802053db3abec7afb048a05e38bd61c2d1027fe086700198",
+      "byte_identical": true,
+      "object_id": -8622458781992550706,
+      "object_sha256": "73f204824ea89c96d2c405b603ed2e62ea7dfe431ee94d27d37da226139eb6bf",
+      "tree_sha256": "c19fed51864da604b6279c59c19539b045aaee2f35c71b0cd2171976425310dc"
+    },
+    "data_tag_npcmontage_key": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_npcmontage_key.asset",
+      "bundle_sha256": "15dfd613fd9e348884e5bfb3917e279afe25de9fd12b78cb7248478002dd3dd7",
+      "byte_identical": true,
+      "object_id": 1615879079150372044,
+      "object_sha256": "512205ed025b15ee43d9be96ac8b46f9d75411728531324288eca54d2eacde90",
+      "tree_sha256": "c29c7820b7a18855ea446bd204b30409df155480bbbf5e11a3258d629f0dbb71"
+    },
+    "data_tag_npcmontage_virtual": {
+      "asset_path": "Assets/Beyond/DynamicAssets/GameData/GameplayConfig/GameplayTagConfig/data_tag_npcmontage_virtual.asset",
+      "bundle_sha256": "575ec9a991b72eaf6cf4b099ed160bb15771c7a5f1199ca1e998de4cbb8b2419",
+      "byte_identical": true,
+      "object_id": -8954637627261017145,
+      "object_sha256": "ab97d5de3a3c43c368fc1035e911fe31ef25c49eb67a04a41b73672ac92e8a75",
+      "tree_sha256": "b82b6c1f8827899b0a0921122d176b4e807abe5d64dd1436bee5aa7a6a0a6820"
     }
   },
-  "assets_count": 314,
-  "assets_sha256": "01d9d2da84fac287c17458ac9f8ab7917b0f5dc6c46f3ed744be93e4e565da5a",
-  "enums_sha256": "143049e9678161c51d7493783fb5794b749e722dae0b0521cfe3d38e78c58c9c",
+  "assets_count": 340,
+  "assets_sha256": "be0352b316e397b9cdd8c1748d8cda27e9903f2779bec473357238143ec7f24a",
+  "enums_sha256": "140ca1eabd6d5113d20bbdba0a4577db34fd8fe802ae2f7d218d422f4a495ea5",
   "native_plans_sha256": "82cdcb3268cdd70c3d1ce81f176d6be42e7a42ac52c107869130897ec0f94693",
   "records": 531,
   "records_sha256": "e8a457dcd856592b4a424598e563b2d065263ee0c9df1b4352f6b461daded837",

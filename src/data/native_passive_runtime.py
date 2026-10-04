@@ -3,6 +3,8 @@
 import heapq
 from dataclasses import replace
 
+from src.data.native_event_context import event_targets
+
 
 def activate_passive(world, passive):
     actor = passive.program.actor
@@ -20,7 +22,7 @@ def activate_passive(world, passive):
     return True
 
 
-def dispatch_passive_event(world, trigger, actor, payload):
+def dispatch_passive_event(world, trigger, actor, payload, target=None):
     for uid, passive in tuple(world.native_passives.items()):
         if passive.program.actor != actor or not world.characters[actor].alive:
             continue
@@ -29,6 +31,7 @@ def dispatch_passive_event(world, trigger, actor, payload):
                 continue
             for key, value in program.parameters:
                 world._action_inputs[uid].setdefault(key, value)
-            for event in program.events:
-                world._sequence += 1
-                world._execute_event(uid, world._sequence, program, replace(event, inputs=(*event.inputs, *payload.items())))
+            with event_targets(world, uid, target):
+                for event in program.events:
+                    world._sequence += 1
+                    world._execute_event(uid, world._sequence, program, replace(event, inputs=(*event.inputs, *payload.items())))
