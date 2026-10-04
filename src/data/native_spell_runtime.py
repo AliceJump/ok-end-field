@@ -75,9 +75,28 @@ def apply_native_spell(world, action_id, program, change, inputs):
         reaction = state.apply_infliction(element, duration=duration)
         world.unresolved.add("Native spell attachment enhancement callbacks not yet bound")
         if reaction is not None:
-            world._events.append(reaction.value)
-            # Native reaction callbacks, their immunity gates and damage policy
-            # are separate producers. Missing damage must keep plans unresolved.
-            world.unresolved.add(f"Unbound spell reaction: {reaction.value}")
+            if reaction == EffectType.STATUS_SPELL_BURST and change.burst_buff is not None and source == program.actor:
+                world._apply_native_buff(target, change.burst_buff, inputs, action_id, program)
+            else:
+                world._events.append(reaction.value)
+                # Separate callback scope/source binding remains required for
+                # cross reactions or a caster different from the compiled actor.
+                world.unresolved.add(f"Unbound spell reaction: {reaction.value}")
         world.dispatch_native("OnCharAfterOutputSpellInfliction", source, payload, target=target)
         world.dispatch_native("OnEnemyAfterTakeSpellInfliction", target, payload, target=target)
+
+
+def dispatch_native_burst(world, action_id, program, spell_type, inputs):
+    from src.data.combat_simulation import NativeTarget
+
+    sources = world.native_targets(NativeTarget("source"), action_id, program)
+    owners = world.native_targets(NativeTarget("owner"), action_id, program)
+    if len(sources) != 1 or sources[0] not in world.characters or len(owners) != 1 or owners[0] not in world.enemies:
+        raise UnresolvedMechanic("Native spell burst requires character Source and enemy Owner")
+    if spell_type not in SPELL_ELEMENTS:
+        raise UnresolvedMechanic(f"Unknown native spell burst type: {spell_type}")
+    source, target = sources[0], owners[0]
+    payload = {"event.spell_type": float(spell_type), "event.skill_type": inputs.get("event.skill_type", 0)}
+    world.dispatch_native("OnCharBeforeOutputSpellBurst", source, payload, target=target)
+    world.dispatch_native("OnEnemyBeforeTakeSpellBurst", target, payload, target=target)
+    world._events.append(EffectType.STATUS_SPELL_BURST.value)

@@ -461,13 +461,25 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 reverted_skill=body["revertedSkillId"] if body["specificRevertedSkillId"] else None,
             ),)))
         elif name == "SpellInfliction+Data":
+            from src.data.native_buff_program import compile_buff_definition
             from src.data.native_spell_runtime import SPELL_ELEMENTS
 
             if body["inflictionType"] not in SPELL_ELEMENTS:
                 raise UnresolvedMechanic(f"Unknown native spell type: {body['inflictionType']}")
+            element_name, _ = SPELL_ELEMENTS[body["inflictionType"]]
+            key = f"buff_common_{element_name}_{element_name}_triggered"
+            data = native_record(store, key)["data"]
+            definition = compile_buff_definition(store, character, profile, actor, key, data,
+                                                 {"assignBlackboard": False}, attributes=attributes, panel=panel, path=buff_path)
+            burst = NativeBuffChange(key, CombatExpression("literal", (1.0,)), definition=definition)
             emit(CombatEvent(at, "native_spell_infliction", native_spells=(NativeSpellInfliction(
                 body["inflictionType"], resource_target(body["source"]), resource_target(body["target"]), body["isExtra"],
+                burst_buff=burst,
             ),)))
+        elif name == "TriggerSpellBurstEventAction+Data":
+            if body["spellBurstType"] not in {0, 1, 2, 3}:
+                raise UnresolvedMechanic(f"Unknown native spell burst type: {body['spellBurstType']}")
+            emit(CombatEvent(at, "native_spell_burst", native_spell_bursts=(body["spellBurstType"],)))
         elif name == "ObtainUspInNormalSkill+Data":
             settings = native_asset("SkillSetting")
             emit(CombatEvent(at, "battle_energy", native_resources=(NativeResourceChange(
