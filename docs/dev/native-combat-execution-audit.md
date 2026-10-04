@@ -119,6 +119,14 @@ BattleFormula.CalculateDamage在mask `0xfd00038` 分支的 `0x3543f07` 乘来源
 
 新增六项覆盖80/90级与全部固定基准、缺失等级不得插值、篡改JSON摘要后仍校验原始字节、真实猛击及四种法术爆发节点、缺少标量零伤害并报诊断、物理状态转移不重复乘标量。全仓1085项通过，修改Python/JSON解析、原始表字节证据、Ruff I/F、敏感路径和差异检查通过。法术反应生命周期、来源属性processor、抗性与敌人状态等其他缺口仍待执行；技力时机后置。
 
+### 原生伤害的攻击者归属
+
+DamageActionData.attacker属于独立的ActionTargetType，不沿用targetSettings的敌人选择，也不默认使用编译角色。原生GetActionTarget（方法57386，RVA `0x34b6aa0`，2500字节SHA256 `d93ca77b3dc4c3f0b465934538c662d0f3cd8067c80188434419d304fa33e4f8`）将0=ActionSource、1=ActionOwner分别交给来源和持有者getter；5=MainCharacter的分支在 `0x4db1542` 读取实际主控，200字节摘要 `bba115ec6a8e028340cac9449e85a6085c769feeb710160abff4aeb4445827e2`。枚举值来自metadata字段9428至9433；2=InputTarget、3=CurrentTarget、4=ContextTarget的参数捕获先后未绑定，明确拒绝，不借用同名的通用目标选择器推断。
+
+命中时按所选攻击者读取攻击、暴击、固定元素/技能增伤、反应标量和动态来源输入，伤害事件也保留该角色。空目标、多角色、敌人攻击者及缺失面板不回退为编译角色。序列的onlyExecuteWhenSourceIsMainChar检查实际Source，单次伤害的onlyEnableForMainChar检查实际攻击者。DamageAction._ProcessDamage（方法58146，RVA `0x34b71c0`，16000字节SHA256 `1259aa4820fd579b0dab3d1a11b64dea8f0eb08ea6bc48293cc540d5fdd0afa2`）在非快照路径 `0x34b7652` 至 `0x34b7684` 读取所选攻击者主控标记；快照路径读缓存标记。takeAtkSnapshot=true仍明确报告属性快照未绑定，不将当前属性近似视为已完成机制。
+
+六项专项覆盖实际Source与Owner面板区分、执行时主控切换、两种主控限制、空/多/敌人攻击者拒绝、未绑定枚举及属性快照诊断。全仓1099项通过，修改文件Python解析、Ruff I/F、敏感路径与差异检查通过。技力返还时机继续后置。
+
 ### 同元素爆发的独立计时
 
 原生SpellInfliction同元素分支现在创建 `buff_common_{fire,pulse,cryst,natural}_..._triggered` 的实际定义，不在附着时直接计算爆发伤害。四份原生配置均为waitFirst=true、周期1秒、触发上限1、Unlimited独立实例；电磁buff持续10秒，其余持续5秒，触发结束不等于立即删除buff。来源角色、敌人Owner、BuffBB与排队事件独立保存；新的附着不会刷新已有爆发计时。消费附着池不等于移除独立爆发buff，实际FinishBuff则取消后续触发。

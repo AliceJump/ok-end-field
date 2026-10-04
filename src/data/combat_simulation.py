@@ -226,6 +226,7 @@ class CombatEvent:
     end_scope: str | None = None
     native_spells: tuple[NativeSpellInfliction, ...] = ()
     native_spell_bursts: tuple[int, ...] = ()
+    hit_source: NativeTarget | None = None
 
 
 @dataclass(frozen=True)
@@ -998,6 +999,13 @@ class CombatWorldState:
             return
         self._executing_action = action_id
         inputs = self.damage_inputs(actor, enemy)
+        sources = self.native_targets(NativeTarget("source"), action_id, program)
+        for key in tuple(inputs):
+            if key.startswith("source."):
+                del inputs[key]
+        if len(sources) == 1 and sources[0] in self.characters:
+            inputs.update({key: value for key, value in self.damage_inputs(sources[0], enemy).items()
+                           if key.startswith("source.")})
         inputs.update(self._action_inputs.get(action_id, {}))
         inputs.update({"bb." + k: v for k, v in self.characters[actor].blackboard.items()})
         inputs.update(event.inputs)
@@ -1037,7 +1045,8 @@ class CombatWorldState:
                 owners = self.native_targets(query.target, action_id, program)
                 if len(owners) != 1 or owners[0] not in self.characters:
                     continue
-                value = self.characters[owners[0]].attributes.get(query.attribute)
+                value = (float(owners[0] == self.main_control) if query.attribute == "is_main"
+                         else self.characters[owners[0]].attributes.get(query.attribute))
                 if isinstance(value, (int, float)) and math.isfinite(value):
                     inputs[query.key] = float(value)
             except UnresolvedMechanic:
@@ -1156,15 +1165,34 @@ class CombatWorldState:
                 self.unresolved.add("Damage target requires enemy binding")
                 return
             enemy = current[0]
-            panel = self.characters[actor].panel
+            hit_actor = actor
+            if event.hit_source is not None:
+                try:
+                    attackers = self.native_targets(event.hit_source, action_id, program)
+                except UnresolvedMechanic as error:
+                    self.unresolved.add(str(error))
+                    return
+                if len(attackers) != 1 or attackers[0] not in self.characters:
+                    self.unresolved.add("Native damage attacker requires a single character")
+                    return
+                hit_actor = attackers[0]
+            panel = self.characters[hit_actor].panel
             if panel is None:
-                self.unresolved.add(f"Missing fixed panel: {actor}")
+                self.unresolved.add(f"Missing fixed panel: {hit_actor}")
             else:
                 hit = event.hit
-                if hit.enemy != enemy:
+                if hit.enemy != enemy or event.hit_source is not None:
                     from dataclasses import replace
 
-                    hit = replace(hit, enemy=enemy)
+                    hit = replace(hit, actor=hit_actor, enemy=enemy,
+                                  damage_bonus=panel.bonus_for(hit.element, hit.damage_tags)
+                                  if event.hit_source is not None else hit.damage_bonus)
+                if event.hit_source is not None:
+                    for key in tuple(inputs):
+                        if key.startswith("source."):
+                            del inputs[key]
+                    inputs.update({key: value for key, value in self.damage_inputs(hit_actor, enemy).items()
+                                   if key.startswith("source.")})
                 if event.hit_multiplier_formula is not None:
                     from dataclasses import replace
 
@@ -1187,11 +1215,11 @@ class CombatWorldState:
                 else:
                     self.damage += result.expected
             if program.kind == "ult":
-                self.emit("ultimate_hit", actor, enemy, inputs)
+                self.emit("ultimate_hit", hit_actor, enemy, inputs)
             elif program.kind == "link" and (
                 inputs.get("count.ATTACH_COLD", 0) > 0 or inputs.get("count.STATUS_FROZEN", 0) > 0
             ):
-                self.emit("combo_hit_cold_attached_or_frozen", actor, enemy, inputs)
+                self.emit("combo_hit_cold_attached_or_frozen", hit_actor, enemy, inputs)
         for effect in event.effects:
             if effect not in consumers:
                 try:
