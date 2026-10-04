@@ -47,7 +47,6 @@ def _publish(logic, actor, action, state, reason, detail="", *, dedupe_key=None)
         detail,
         dedupe_key=dedupe_key,
     )
-    logic._decision_trace_serial = getattr(logic, "_decision_trace_serial", 0) + 1
 
 
 def _active_timing_detail(logic) -> tuple[str, str, float, float | None]:
@@ -311,9 +310,14 @@ def install_combat_decision_trace_patch():
         return reason
 
     def step_with_idle_reason(self):
-        before = getattr(self, "_decision_trace_serial", 0)
+        if not _task_trace_enabled(self.task):
+            return original_step(self)
+
+        from src.gui.combat_decision_window import combat_decision_revision
+
+        before = combat_decision_revision()
         result = original_step(self)
-        if _task_trace_enabled(self.task) and getattr(self, "_decision_trace_serial", 0) == before:
+        if combat_decision_revision() == before:
             _publish(
                 self,
                 "当前主控角色",
