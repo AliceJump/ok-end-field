@@ -19,6 +19,7 @@ from src.data.combat_simulation import (
     NativeListener,
     NativeResourceChange,
     NativeSkillChange,
+    NativeSpellInfliction,
     NativeTarget,
     NativeTargetBinding,
     UnresolvedMechanic,
@@ -432,6 +433,14 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 body["skillSlot"], body["targetSkillId"], resource_target(body["skillSource"]), body["lifeTimeType"],
                 number(body["duration"]), inherit_cooldown=body["inheritOriginSkillCdProgress"],
                 reverted_skill=body["revertedSkillId"] if body["specificRevertedSkillId"] else None,
+            ),)))
+        elif name == "SpellInfliction+Data":
+            from src.data.native_spell_runtime import SPELL_ELEMENTS
+
+            if body["inflictionType"] not in SPELL_ELEMENTS:
+                raise UnresolvedMechanic(f"Unknown native spell type: {body['inflictionType']}")
+            emit(CombatEvent(at, "native_spell_infliction", native_spells=(NativeSpellInfliction(
+                body["inflictionType"], resource_target(body["source"]), resource_target(body["target"]), body["isExtra"],
             ),)))
         elif name == "ObtainUspInNormalSkill+Data":
             settings = native_asset("SkillSetting")
