@@ -12,6 +12,7 @@ import numpy as np
 from src.data.combat_observation import EnemyPresence
 from src.image.enemy_direction_diagnostics import _queue_direction_artifact
 from src.image.enemy_direction_probe import (
+    EnemyDirectionMarker,
     EnemyDirectionObservation,
     _direction_to_parameter_deg,
     _ellipse_axes,
@@ -114,6 +115,32 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             self.assertAlmostEqual(marker.arc_width_deg, 8.0)
         best_marker = max(observation.markers, key=lambda marker: marker.score)
         self.assertEqual(observation.angle_deg, best_marker.angle_deg)
+
+    def test_target_lock_ignores_small_score_flip(self):
+        task = _DirectionTask()
+        first_markers = (
+            EnemyDirectionMarker(30.0, 30.0, 30.0),
+            EnemyDirectionMarker(34.0, 34.0, 29.0),
+        )
+        second_markers = (
+            EnemyDirectionMarker(30.0, 30.0, 30.0),
+            EnemyDirectionMarker(34.0, 34.0, 31.0),
+        )
+        observations = (
+            EnemyDirectionObservation(30.0, 30.0, first_markers),
+            EnemyDirectionObservation(34.0, 31.0, second_markers),
+        )
+        with patch(
+            "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
+            side_effect=observations,
+        ):
+            recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN)
+            task.now += 0.05
+            recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN)
+
+        self.assertAlmostEqual(task._enemy_direction_last_angle, 30.0)
+        self.assertEqual(task._enemy_direction_streak, 2)
+        self.assertEqual(len(task.moves), 1)
 
     def test_normal_enemy_hp_hit_skips_direction_probe(self):
         task = _DirectionTask()
