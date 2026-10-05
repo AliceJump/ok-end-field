@@ -25,11 +25,17 @@ class TestLoginMixin(unittest.TestCase):
         task.active_and_send_mouse_delta = MagicMock(return_value=True)
         task.wait_click_feature = MagicMock(return_value=True)
         task.click_text = MagicMock()
+        task._click_account_from_recent_list = MagicMock(return_value=MagicMock())
         task._confirm_logged_in = MagicMock(return_value=True)
+        task.login_ocr = MagicMock(return_value=[])
         task.log_error = MagicMock()
+        task.log_info = MagicMock()
+        task.sleep = MagicMock()
+        task.get_game_hwnd = MagicMock(return_value=1)
         task.box = SimpleNamespace(bottom_left=MagicMock(), center=MagicMock())
         task.lang = SimpleNamespace(login_mixin=SimpleNamespace(ms=MagicMock(), k_20275ef2=MagicMock()))
         task.box_of_screen = MagicMock(return_value=MagicMock())
+        task._previous_account_user = ""
         return task
 
     @patch("src.tasks.mixin.login_mixin.pyautogui.click")
@@ -37,25 +43,116 @@ class TestLoginMixin(unittest.TestCase):
         task = self._make_task()
         task.active_and_send_mouse_delta.return_value = False
 
-        self.assertFalse(task.login_flow("1234567890"))
+        self.assertFalse(task.login_flow("13812345678"))
 
         task.wait_click_feature.assert_not_called()
         task.click_text.assert_not_called()
         pyautogui_click.assert_not_called()
 
-    def test_login_escapes_recent_account_suffix(self):
+    def test_login_searches_full_account_area_below_recent_tab(self):
         task = self._make_task()
-        recent_entry = MagicMock(y=40, height=20)
-        task.click_text.side_effect = ([recent_entry], MagicMock(), MagicMock())
-        username = "ab.+"
+        recent_entry = SimpleNamespace(x=10, y=40, width=30, height=20)
+        account_box = MagicMock()
+        task.box_of_screen.return_value = account_box
+        task.click_text.side_effect = ([recent_entry], MagicMock())
+        username = "13812345678"
 
         task.login_flow(username)
 
-        account_match = task.click_text.call_args_list[1].args[0]
-        self.assertIsInstance(account_match, re.Pattern)
-        self.assertEqual(account_match.pattern, re.escape(username[-4:]))
-        self.assertIsNotNone(account_match.fullmatch(username[-4:]))
-        self.assertEqual(task.click_text.call_args_list[2], call("登录", box=task.box.center))
+        task.box_of_screen.assert_called_once_with(0, 0.6, 1, 1)
+        task._click_account_from_recent_list.assert_called_once_with(username, account_box)
+        self.assertEqual(task.click_text.call_args_list[1], call("登录", box=task.box.center))
+
+    def test_account_candidates_pair_prefix_and_suffix_on_same_row(self):
+        task = self._make_task()
+        prefix = SimpleNamespace(name="138", x=100, y=20, width=30, height=10)
+        suffix = SimpleNamespace(name="5678", x=180, y=21, width=40, height=10)
+        other_suffix = SimpleNamespace(name="5678", x=180, y=70, width=40, height=10)
+
+        candidates = LoginMixin._account_candidates_from_ocr_results(
+            task, [prefix, suffix, other_suffix], "13812345678"
+        )
+
+        self.assertEqual(len(candidates), 1)
+        candidate = candidates[0]
+        self.assertEqual((candidate.x, candidate.y, candidate.width, candidate.height), (100, 20, 120, 11))
+
+    def test_account_candidates_accept_single_ocr_box_containing_both_parts(self):
+        task = self._make_task()
+        combined = SimpleNamespace(name="138****5678", x=100, y=20, width=120, height=12)
+
+        candidates = LoginMixin._account_candidates_from_ocr_results(task, [combined], "13812345678")
+
+        self.assertEqual(candidates, [combined])
+
+    def test_account_candidates_do_not_pair_parts_from_different_rows(self):
+        task = self._make_task()
+        prefix = SimpleNamespace(name="138", x=100, y=20, width=30, height=10)
+        suffix = SimpleNamespace(name="5678", x=180, y=45, width=40, height=10)
+
+        candidates = LoginMixin._account_candidates_from_ocr_results(task, [prefix, suffix], "13812345678")
+
+        self.assertEqual(candidates, [])
+
+    def test_account_candidates_require_digit_boundaries(self):
+        task = self._make_task()
+        false_prefix = SimpleNamespace(name="91380", x=100, y=20, width=50, height=10)
+        suffix = SimpleNamespace(name="5678", x=180, y=20, width=40, height=10)
+
+        candidates = LoginMixin._account_candidates_from_ocr_results(task, [false_prefix, suffix], "13812345678")
+
+        self.assertEqual(candidates, [])
+
+    def test_duplicate_visible_accounts_choose_non_recent_when_switching_from_same_mask(self):
+        task = self._make_task()
+        task._previous_account_user = "13800005678"
+        first = SimpleNamespace(x=10, y=10, width=80, height=10)
+        second = SimpleNamespace(x=10, y=50, width=80, height=10)
+        marker_box_1 = MagicMock()
+        marker_box_2 = MagicMock()
+        task.box_of_screen.side_effect = [marker_box_1, marker_box_2]
+        task.login_ocr.side_effect = [[MagicMock()], []]
+
+        chosen = LoginMixin._choose_account_candidate(task, [first, second], "13812345678")
+
+        self.assertIs(chosen, second)
+        first_recent_match = task.login_ocr.call_args_list[0].kwargs["match"]
+        second_recent_match = task.login_ocr.call_args_list[1].kwargs["match"]
+        self.assertIsInstance(first_recent_match, re.Pattern)
+        self.assertEqual(first_recent_match.pattern, "最近")
+        self.assertEqual(second_recent_match.pattern, "最近")
+        self.assertEqual(task.login_ocr.call_args_list[0].kwargs["box"], marker_box_1)
+        self.assertEqual(task.login_ocr.call_args_list[1].kwargs["box"], marker_box_2)
+
+    def test_duplicate_visible_accounts_choose_recent_when_target_is_previous_account(self):
+        task = self._make_task()
+        task._previous_account_user = "13812345678"
+        first = SimpleNamespace(x=10, y=10, width=80, height=10)
+        second = SimpleNamespace(x=10, y=50, width=80, height=10)
+        task.login_ocr.side_effect = [[MagicMock()], []]
+
+        chosen = LoginMixin._choose_account_candidate(task, [first, second], "13812345678")
+
+        self.assertIs(chosen, first)
+
+    def test_duplicate_visible_accounts_refuse_when_previous_identity_unknown(self):
+        task = self._make_task()
+        first = SimpleNamespace(x=10, y=10, width=80, height=10)
+        second = SimpleNamespace(x=10, y=50, width=80, height=10)
+        task.login_ocr.side_effect = [[MagicMock()], []]
+
+        self.assertIsNone(LoginMixin._choose_account_candidate(task, [first, second], "13812345678"))
+        task.log_error.assert_called_once()
+
+    def test_duplicate_visible_accounts_refuse_when_previous_account_has_different_mask(self):
+        task = self._make_task()
+        task._previous_account_user = "13900000000"
+        first = SimpleNamespace(x=10, y=10, width=80, height=10)
+        second = SimpleNamespace(x=10, y=50, width=80, height=10)
+        task.login_ocr.side_effect = [[], []]
+
+        self.assertIsNone(LoginMixin._choose_account_candidate(task, [first, second], "13812345678"))
+        task.log_error.assert_called_once()
 
 
 @unittest.skipUnless(sys.platform == "win32", "Window activation requires Windows desktop dependencies")

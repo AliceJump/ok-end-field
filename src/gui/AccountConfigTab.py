@@ -198,8 +198,8 @@ class AccountConfigTab(CustomTab):
         tip = BodyLabel(
             og.app.tr(
                 "按账号和任务配置独立参数。先选账号，再选任务，下面会自动出现该任务的属性控件。"
-                "账号页只需要填写账号名（手机号），无需填写密码。系统兼容旧格式 `账号,密码` 但不会保存密码。"
-                "登录时也可只使用手机号后四位进行匹配（若唯一）。"
+                "账号列表每行填写一个手机号；若一行包含逗号，只使用逗号前的账号内容。"
+                "切换账号时按登录界面可见的手机号前三位和后四位匹配；可见号码重复时会排除标记为『最近』的账号。"
             )
         )
         tip.setWordWrap(True)
@@ -211,7 +211,7 @@ class AccountConfigTab(CustomTab):
         base_layout.setContentsMargins(0, 0, 0, 0)
         base_layout.setSpacing(8)
 
-        account_list_row = LabelAndWidget("账号列表", "每行一个账号名（手机号），无需密码")
+        account_list_row = LabelAndWidget("账号列表", "每行一个手机号；逗号后内容忽略")
         self.account_list_edit = TextEdit()
         self.account_list_edit.setFixedWidth(420)
         self.account_list_edit.setMinimumHeight(120)
@@ -316,14 +316,14 @@ class AccountConfigTab(CustomTab):
 
     @staticmethod
     def _parse_accounts(account_list_text: str) -> list[dict[str, str]]:
-        """Parse account list text into structured account dictionaries with username and password."""
+        """Parse account list text into unique account dictionaries containing only usernames."""
         accounts: list[dict[str, str]] = []
         seen = set()
         for entry in parse_account_list_text(account_list_text):
             username = str(entry.get("username", "")).strip()
             if username and username not in seen:
                 seen.add(username)
-                accounts.append({"username": username, "password": str(entry.get("password", ""))})
+                accounts.append({"username": username})
         return accounts
 
     def _resolve_account_key_by_username(self, username: str) -> str:
@@ -512,8 +512,8 @@ class AccountConfigTab(CustomTab):
             reused=summary.get("reused_count", 0),
             created=summary.get("created_count", 0),
         )
-        status += og.app.tr("；账号名（手机号）是唯一ID，密码变化不影响ID，账号名变化会新建ID")
-        status += og.app.tr("；账号页无需填写密码，保存时会移除任何密码信息（仅保留用户名）")
+        status += og.app.tr("；账号名（手机号）是唯一ID，账号名变化会新建ID")
+        status += og.app.tr("；若输入包含逗号，只保存逗号前的账号内容")
 
         invalid_count = int(summary.get("invalid_count", 0) or 0)
         if invalid_count > 0:
