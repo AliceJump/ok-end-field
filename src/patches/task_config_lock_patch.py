@@ -28,7 +28,6 @@ def install_task_config_lock_patch():
         return
 
     from ok import TriggerTask
-    from ok.gui.Communicate import communicate
     from ok.gui.tasks.TaskCard import TaskCard
 
     original_update_buttons = TaskCard.update_buttons
@@ -46,12 +45,11 @@ def install_task_config_lock_patch():
     def trigger_disable(self):
         # ok-script 2.0.7b1 can leave TriggerTask.running=True when run()
         # returns True because its execute loop continues before clearing the
-        # flag.  Clear that stale state before BaseTask.disable() emits the task
+        # flag. Clear that stale state before BaseTask.disable() emits the task
         # update so every existing editor (including AccountConfigTab) unlocks
         # immediately when the trigger is switched off.
         self.running = False
         original_trigger_disable(self)
-        communicate.task.emit(self)
 
     TaskCard.update_buttons = update_buttons
     TriggerTask.disable = trigger_disable
