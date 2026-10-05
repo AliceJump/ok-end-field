@@ -1,8 +1,12 @@
 import unittest
+from types import SimpleNamespace
 
 from ok import TriggerTask
 
-from src.patches.task_config_lock_patch import is_task_config_editable
+from src.patches.task_config_lock_patch import (
+    is_task_config_editable,
+    release_finished_trigger_state,
+)
 
 
 class _RegularTask:
@@ -26,9 +30,26 @@ class TestTaskConfigLockPatch(unittest.TestCase):
         task = self._trigger_task(enabled=True, running=False)
         self.assertFalse(is_task_config_editable(task))
 
-    def test_disabled_trigger_ignores_stale_running_flag(self):
+    def test_disabled_trigger_stays_locked_until_active_invocation_returns(self):
         task = self._trigger_task(enabled=False, running=True)
+        executor = SimpleNamespace(current_task=task)
+
+        self.assertFalse(is_task_config_editable(task))
+
+        finished = release_finished_trigger_state(executor)
+
+        self.assertIs(finished, task)
+        self.assertFalse(task.running)
+        self.assertIsNone(executor.current_task)
         self.assertTrue(is_task_config_editable(task))
+
+    def test_finished_trigger_cleanup_ignores_non_trigger_current_task(self):
+        task = _RegularTask(running=True)
+        executor = SimpleNamespace(current_task=task)
+
+        self.assertIsNone(release_finished_trigger_state(executor))
+        self.assertIs(executor.current_task, task)
+        self.assertTrue(task.running)
 
 
 if __name__ == "__main__":
