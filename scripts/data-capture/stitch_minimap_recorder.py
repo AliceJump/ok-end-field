@@ -84,9 +84,7 @@ def main(argv=None) -> int:
             f"({item['size'][0]}x{item['size'][1]}, {item['placed']} 片, "
             f"位姿图 {item['nodes']} 节点 / {item['edges']} 边 / {item['anchors']} 锚点)"
         )
-        print(
-            f"           残差 {item['residual_before']} -> {item['residual_after']}"
-        )
+        print(f"           残差 {item['residual_before']} -> {item['residual_after']}")
         if item.get("overlay_path"):
             print(f"           overlay: {item['overlay_path']}")
         if item.get("pose_graph_path"):

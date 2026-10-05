@@ -139,10 +139,7 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
         edge_max_gap = max(1, self._cfg_int(CONFIG_EDGE_MAX_GAP, 30))
         min_response = max(0.0, self._cfg_float(CONFIG_MIN_RESPONSE, 0.25))
         anchor_weight = max(0.0, self._cfg_float(CONFIG_ANCHOR_WEIGHT, 50.0))
-        save_root = Path(
-            str(self.config.get(CONFIG_SAVE_DIR, DEFAULT_SAVE_DIR) or "").strip()
-            or DEFAULT_SAVE_DIR
-        )
+        save_root = Path(str(self.config.get(CONFIG_SAVE_DIR, DEFAULT_SAVE_DIR) or "").strip() or DEFAULT_SAVE_DIR)
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")[:-3]
         run_dir = save_root / stamp
         patch_dir = run_dir / "patches"
@@ -256,11 +253,7 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                 last_sample = odometry.last_sample() if odometry is not None else None
                 last_sample = last_sample if isinstance(last_sample, dict) else {}
                 try:
-                    position_px = (
-                        odometry.position_px()
-                        if odometry is not None
-                        else (0.0, 0.0)
-                    )
+                    position_px = odometry.position_px() if odometry is not None else (0.0, 0.0)
                 except Exception:
                     position_px = (0.0, 0.0)
 
@@ -353,59 +346,31 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
                     "raw_z": state.get("raw_z"),
                     "visual_anchor_chain_x": state.get("visual_anchor_chain_x"),
                     "visual_anchor_chain_z": state.get("visual_anchor_chain_z"),
-                    "visual_anchor_chain_correction_px": state.get(
-                        "visual_anchor_chain_correction_px"
-                    ),
-                    "visual_anchor_chain_correction_m": state.get(
-                        "visual_anchor_chain_correction_m"
-                    ),
+                    "visual_anchor_chain_correction_px": state.get("visual_anchor_chain_correction_px"),
+                    "visual_anchor_chain_correction_m": state.get("visual_anchor_chain_correction_m"),
                     "visual_anchor_chain_nodes": state.get("visual_anchor_chain_nodes"),
                     "visual_anchor_chain_edges": state.get("visual_anchor_chain_edges"),
                     "visual_anchor_chain_anchors": state.get("visual_anchor_chain_anchors"),
                     "visual_anchor_chain_iterations": state.get("visual_anchor_chain_iterations"),
-                    "visual_anchor_chain_min_response": state.get(
-                        "visual_anchor_chain_min_response"
-                    ),
-                    "visual_anchor_chain_median_response": state.get(
-                        "visual_anchor_chain_median_response"
-                    ),
-                    "visual_anchor_chain_residual_median": state.get(
-                        "visual_anchor_chain_residual_median"
-                    ),
-                    "visual_anchor_chain_residual_max": state.get(
-                        "visual_anchor_chain_residual_max"
-                    ),
+                    "visual_anchor_chain_min_response": state.get("visual_anchor_chain_min_response"),
+                    "visual_anchor_chain_median_response": state.get("visual_anchor_chain_median_response"),
+                    "visual_anchor_chain_residual_median": state.get("visual_anchor_chain_residual_median"),
+                    "visual_anchor_chain_residual_max": state.get("visual_anchor_chain_residual_max"),
                     "visual_anchor_chain_reason": state.get("visual_anchor_chain_reason"),
-                    "visual_anchor_chain_keyframe_reason": state.get(
-                        "visual_anchor_chain_keyframe_reason"
-                    ),
-                    "visual_anchor_chain_keyframe_correction_m": state.get(
-                        "visual_anchor_chain_keyframe_correction_m"
-                    ),
-                    "visual_anchor_chain_keyframe_nodes": state.get(
-                        "visual_anchor_chain_keyframe_nodes"
-                    ),
-                    "visual_anchor_chain_keyframe_edges": state.get(
-                        "visual_anchor_chain_keyframe_edges"
-                    ),
-                    "visual_anchor_chain_keyframe_anchors": state.get(
-                        "visual_anchor_chain_keyframe_anchors"
-                    ),
-                    "visual_anchor_chain_keyframe_iterations": state.get(
-                        "visual_anchor_chain_keyframe_iterations"
-                    ),
-                    "visual_anchor_chain_keyframe_min_response": state.get(
-                        "visual_anchor_chain_keyframe_min_response"
-                    ),
+                    "visual_anchor_chain_keyframe_reason": state.get("visual_anchor_chain_keyframe_reason"),
+                    "visual_anchor_chain_keyframe_correction_m": state.get("visual_anchor_chain_keyframe_correction_m"),
+                    "visual_anchor_chain_keyframe_nodes": state.get("visual_anchor_chain_keyframe_nodes"),
+                    "visual_anchor_chain_keyframe_edges": state.get("visual_anchor_chain_keyframe_edges"),
+                    "visual_anchor_chain_keyframe_anchors": state.get("visual_anchor_chain_keyframe_anchors"),
+                    "visual_anchor_chain_keyframe_iterations": state.get("visual_anchor_chain_keyframe_iterations"),
+                    "visual_anchor_chain_keyframe_min_response": state.get("visual_anchor_chain_keyframe_min_response"),
                     "visual_anchor_chain_keyframe_median_response": state.get(
                         "visual_anchor_chain_keyframe_median_response"
                     ),
                     "visual_anchor_chain_keyframe_residual_median": state.get(
                         "visual_anchor_chain_keyframe_residual_median"
                     ),
-                    "visual_anchor_chain_keyframe_residual_max": state.get(
-                        "visual_anchor_chain_keyframe_residual_max"
-                    ),
+                    "visual_anchor_chain_keyframe_residual_max": state.get("visual_anchor_chain_keyframe_residual_max"),
                     "anchor_set": anchor_set,
                     "rest": state.get("rest"),
                     "rest_reason": rest_diag.get("reason"),
@@ -595,8 +560,5 @@ class MinimapPositionRecorder(RuntimeStateMixin, BaseEfTask):
             return summary
 
         for item in stitches:
-            self.log_info(
-                f"拼接图: {item['path']} "
-                f"({item['size'][0]}x{item['size'][1]}, {item['placed']} 片)"
-            )
+            self.log_info(f"拼接图: {item['path']} ({item['size'][0]}x{item['size'][1]}, {item['placed']} 片)")
         return summary

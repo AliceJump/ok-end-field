@@ -60,25 +60,15 @@ def build_world_pose(
         "visual_anchor_chain_residual_max": state.get("visual_anchor_chain_residual_max"),
         "visual_anchor_chain_reason": state.get("visual_anchor_chain_reason"),
         "visual_anchor_chain_keyframe_reason": state.get("visual_anchor_chain_keyframe_reason"),
-        "visual_anchor_chain_keyframe_correction_m": state.get(
-            "visual_anchor_chain_keyframe_correction_m"
-        ),
+        "visual_anchor_chain_keyframe_correction_m": state.get("visual_anchor_chain_keyframe_correction_m"),
         "visual_anchor_chain_keyframe_nodes": state.get("visual_anchor_chain_keyframe_nodes"),
         "visual_anchor_chain_keyframe_edges": state.get("visual_anchor_chain_keyframe_edges"),
         "visual_anchor_chain_keyframe_anchors": state.get("visual_anchor_chain_keyframe_anchors"),
         "visual_anchor_chain_keyframe_iterations": state.get("visual_anchor_chain_keyframe_iterations"),
-        "visual_anchor_chain_keyframe_min_response": state.get(
-            "visual_anchor_chain_keyframe_min_response"
-        ),
-        "visual_anchor_chain_keyframe_median_response": state.get(
-            "visual_anchor_chain_keyframe_median_response"
-        ),
-        "visual_anchor_chain_keyframe_residual_median": state.get(
-            "visual_anchor_chain_keyframe_residual_median"
-        ),
-        "visual_anchor_chain_keyframe_residual_max": state.get(
-            "visual_anchor_chain_keyframe_residual_max"
-        ),
+        "visual_anchor_chain_keyframe_min_response": state.get("visual_anchor_chain_keyframe_min_response"),
+        "visual_anchor_chain_keyframe_median_response": state.get("visual_anchor_chain_keyframe_median_response"),
+        "visual_anchor_chain_keyframe_residual_median": state.get("visual_anchor_chain_keyframe_residual_median"),
+        "visual_anchor_chain_keyframe_residual_max": state.get("visual_anchor_chain_keyframe_residual_max"),
         "source": source,
     }
 

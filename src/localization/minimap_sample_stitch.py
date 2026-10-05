@@ -370,11 +370,7 @@ def summarize_records(
         "odom_reason_counts": dict(sorted(reasons.items())),
     }
     if records:
-        times = [
-            float(r["t"])
-            for r in records
-            if r.get("t") is not None and math.isfinite(float(r.get("t")))
-        ]
+        times = [float(r["t"]) for r in records if r.get("t") is not None and math.isfinite(float(r.get("t")))]
         if times:
             out["duration_s"] = round(max(times) - min(times), 3)
     return out
@@ -896,9 +892,7 @@ def solve_pose_graph(
         weights = new_weights
 
     residual_after = residuals(positions)
-    if not np.all(np.isfinite(positions)) or float(
-        np.max(np.linalg.norm(positions - initial, axis=1))
-    ) > 500.0:
+    if not np.all(np.isfinite(positions)) or float(np.max(np.linalg.norm(positions - initial, axis=1))) > 500.0:
         positions = initial.copy()
         residual_after = residuals(positions)
     return PoseGraphResult(
@@ -1047,8 +1041,19 @@ def _draw_overlay(
     start, end = pts_i[0], pts_i[-1]
     cv2.circle(image, (int(start[0]), int(start[1])), 5, (255, 120, 0), -1, cv2.LINE_AA)
     cv2.circle(image, (int(end[0]), int(end[1])), 5, (0, 80, 255), -1, cv2.LINE_AA)
-    cv2.putText(image, "start", (int(start[0]) + 6, int(start[1]) + 16), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (255, 120, 0), 1, cv2.LINE_AA)
-    cv2.putText(image, "end", (int(end[0]) + 6, int(end[1]) + 16), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 80, 255), 1, cv2.LINE_AA)
+    cv2.putText(
+        image,
+        "start",
+        (int(start[0]) + 6, int(start[1]) + 16),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.45,
+        (255, 120, 0),
+        1,
+        cv2.LINE_AA,
+    )
+    cv2.putText(
+        image, "end", (int(end[0]) + 6, int(end[1]) + 16), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 80, 255), 1, cv2.LINE_AA
+    )
 
 
 def _residual_stats(values: np.ndarray) -> dict:

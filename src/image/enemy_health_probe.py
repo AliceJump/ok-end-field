@@ -106,7 +106,7 @@ def _row_has_overlapping_run(row, candidate_left: int, candidate_right: int, min
     transitions = np.diff(padded)
     starts = np.flatnonzero(transitions == 1)
     ends = np.flatnonzero(transitions == -1)
-    for start, end in zip(starts, ends):
+    for start, end in zip(starts, ends, strict=False):
         if end - start < min_run:
             continue
         overlap = min(end, candidate_right) - max(start, candidate_left)

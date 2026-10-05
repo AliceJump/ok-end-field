@@ -157,13 +157,9 @@ class MinimapVisualAnchorChainCorrector:
             anchor=None if anchor is None else np.asarray(anchor, dtype=np.float64).reshape(2),
             anchor_weight=self._anchor_weight if anchor is not None else 0.0,
             extra_anchor=(
-                None
-                if keyframe_anchor is None
-                else np.asarray(keyframe_anchor, dtype=np.float64).reshape(2)
+                None if keyframe_anchor is None else np.asarray(keyframe_anchor, dtype=np.float64).reshape(2)
             ),
-            extra_anchor_weight=float(keyframe_anchor_weight)
-            if keyframe_anchor is not None
-            else 0.0,
+            extra_anchor_weight=float(keyframe_anchor_weight) if keyframe_anchor is not None else 0.0,
         )
         self._next_uid += 1
         if anchor is not None:
@@ -322,9 +318,7 @@ class MinimapVisualAnchorChainCorrector:
                 and self._nodes
                 and self._ws_anchor_pos is not None
             ):
-                self._ws_anchor_pos = self._ws_anchor_pos + (
-                    self._prev_positions[1] - self._prev_positions[0]
-                )
+                self._ws_anchor_pos = self._ws_anchor_pos + (self._prev_positions[1] - self._prev_positions[0])
                 self._ws_anchor_uid = self._nodes[0].uid
             else:
                 self._ws_anchor_uid = None

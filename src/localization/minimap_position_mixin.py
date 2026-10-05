@@ -221,9 +221,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION: (
                 "用 WS 绝对锚点启动关键帧视觉锚定链校正，并用视觉重叠约束修正累计漂移后发布位置"
             ),
-            CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW: (
-                "关键帧视觉锚定链校正保留的最近切片数；越大越稳但计算越多"
-            ),
+            CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW: ("关键帧视觉锚定链校正保留的最近切片数；越大越稳但计算越多"),
             CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP: "每拍新切片最多和之前多少拍建立相对平移边",
             CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE: "切片对相位相关的最低响应；低于该值不建边",
             CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT: "静止校准 WS 绝对锚点的权重；越大越贴近 WS",
@@ -233,9 +231,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME: "每隔多少拍建立一个关键帧；每次静止校准也会建关键帧",
             CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES: "每个关键帧最多和之前多少个关键帧建立直接视觉边",
             CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE: "关键帧视觉边的最低相位相关响应",
-            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT: (
-                "关键帧优化位置作为局部关键帧视觉锚定链校正软锚点的权重"
-            ),
+            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT: ("关键帧优化位置作为局部关键帧视觉锚定链校正软锚点的权重"),
         }
 
     # ------------------------------------------------------------------ #
@@ -880,9 +876,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             self._minimap_sync_seq += 1
             self._apply_estimate(st, self._minimap_fusion.estimate())
             st["just_synced"] = True
-            st["sync_residual"] = self._augment_sync_residual(
-                self._minimap_fusion.last_sync_residual
-            )
+            st["sync_residual"] = self._augment_sync_residual(self._minimap_fusion.last_sync_residual)
         if synced:
             self._minimap_position_trusted = True
             self._minimap_trust_reason = "sync"
@@ -892,9 +886,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             self._apply_estimate(st, self._minimap_fusion.estimate())
             st["just_synced"] = True
             st["sync_checked"] = True
-            st["sync_residual"] = self._augment_sync_residual(
-                self._minimap_fusion.last_sync_residual
-            )
+            st["sync_residual"] = self._augment_sync_residual(self._minimap_fusion.last_sync_residual)
             self._minimap_position_trusted = True
             self._minimap_trust_reason = "forced_sync"
             last_result = self._minimap_od.last_result() or {}
