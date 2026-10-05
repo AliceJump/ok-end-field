@@ -1,11 +1,18 @@
+import json
+import queue
 import unittest
+from datetime import datetime
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 import cv2
 import numpy as np
 
 from src.data.combat_observation import EnemyPresence
+from src.image.enemy_direction_diagnostics import _queue_direction_artifact
 from src.image.enemy_direction_probe import EnemyDirectionObservation, probe_enemy_direction_fast
+from src.image.enemy_health_probe import KEY_SAVE_ENEMY_PRESENCE_FRAMES
 from src.patches.enemy_direction_recovery_patch import (
     _recover_direction_fail_soft,
     recover_enemy_direction_if_needed,
@@ -51,6 +58,9 @@ class _DirectionTask:
         self._enemy_hp_last_slice = None
         self.moves = []
         self.debug = []
+        self.config = {KEY_SAVE_ENEMY_PRESENCE_FRAMES: False}
+        self.overlay = False
+        self.draw_calls = []
 
     def active_time(self):
         return self.now
@@ -64,6 +74,12 @@ class _DirectionTask:
 
     def log_debug(self, message):
         self.debug.append(message)
+
+    def _is_debug_overlay_enabled(self):
+        return self.overlay
+
+    def draw_boxes(self, name, boxes, **kwargs):
+        self.draw_calls.append((name, boxes, kwargs))
 
 
 class TestEnemyDirectionProbe(unittest.TestCase):
@@ -135,6 +151,140 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN)
         self.assertEqual(len(task.moves), 1)
         self.assertLess(task.moves[0]["dy"], 0)
+
+    def test_live_overlay_contains_scan_bounds_and_hit_box(self):
+        task = _DirectionTask()
+        task.overlay = True
+        observation = EnemyDirectionObservation(angle_deg=25.0, score=22.0)
+        with patch(
+            "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
+            return_value=observation,
+        ):
+            recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN)
+
+        self.assertEqual(len(task.draw_calls), 1)
+        layer, boxes, kwargs = task.draw_calls[0]
+        self.assertEqual(layer, "enemy_direction_debug")
+        self.assertEqual(kwargs["color"], "blue")
+        self.assertEqual(len(boxes), 4)
+        names = [box.name for box in boxes]
+        self.assertTrue(any("enemy_direction_scan:target" in name for name in names))
+        self.assertTrue(any("enemy_direction_hit:25.0deg" in name for name in names))
+
+    def test_save_direction_hit_png_and_inform(self):
+        task = _DirectionTask()
+        task.config[KEY_SAVE_ENEMY_PRESENCE_FRAMES] = True
+        observation = EnemyDirectionObservation(angle_deg=30.0, score=24.5)
+
+        with TemporaryDirectory() as directory:
+            task._enemy_direction_debug_folder = directory
+            task._enemy_direction_debug_sync_save = True
+            with patch(
+                "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
+                return_value=observation,
+            ):
+                recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN)
+
+            output_dir = Path(directory)
+            images = list(output_dir.glob("enemy_direction_*.png"))
+            informs = list(output_dir.glob("enemy_direction_*.inform.json"))
+            self.assertEqual(len(images), 1)
+            self.assertEqual(len(informs), 1)
+
+            payload = json.loads(informs[0].read_text(encoding="utf-8"))
+            self.assertEqual(payload["schema"], "enemy_direction_probe/v1")
+            self.assertTrue(payload["detected"])
+            self.assertEqual(payload["result"], "hit")
+            self.assertEqual(payload["action"], "tracking")
+            self.assertEqual(payload["streak"], 1)
+            self.assertAlmostEqual(payload["observation"]["angle_deg"], 30.0)
+            self.assertAlmostEqual(payload["observation"]["score"], 24.5)
+            self.assertEqual(len(payload["scan_rings"]), 3)
+
+            annotated = cv2.imread(str(images[0]))
+            self.assertIsNotNone(annotated)
+            exact_green = np.all(annotated == np.array([0, 255, 0], dtype=np.uint8), axis=2)
+            self.assertTrue(np.any(exact_green))
+
+    def test_save_direction_miss_png_and_inform(self):
+        task = _DirectionTask()
+        task.frame = np.full((1080, 1920, 3), 60, dtype=np.uint8)
+        task.config[KEY_SAVE_ENEMY_PRESENCE_FRAMES] = True
+
+        with TemporaryDirectory() as directory:
+            task._enemy_direction_debug_folder = directory
+            task._enemy_direction_debug_sync_save = True
+            with patch(
+                "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
+                return_value=None,
+            ):
+                self.assertFalse(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
+
+            informs = list(Path(directory).glob("enemy_direction_*.inform.json"))
+            self.assertEqual(len(informs), 1)
+            payload = json.loads(informs[0].read_text(encoding="utf-8"))
+            self.assertFalse(payload["detected"])
+            self.assertEqual(payload["result"], "miss")
+            self.assertEqual(payload["action"], "miss")
+            self.assertIsNone(payload["observation"])
+
+    def test_async_queue_owns_frame_snapshot(self):
+        task = _DirectionTask()
+        task._enemy_direction_artifact_queue = queue.Queue(maxsize=1)
+        frame = np.full((8, 8, 3), 7, dtype=np.uint8)
+        captured_at = datetime.now().astimezone()
+        observation = EnemyDirectionObservation(angle_deg=15.0, score=12.0)
+
+        _queue_direction_artifact(
+            task,
+            Path("."),
+            "sample",
+            frame,
+            observation,
+            EnemyPresence.UNKNOWN,
+            1,
+            "tracking",
+            None,
+            None,
+            1,
+            captured_at,
+        )
+
+        item = task._enemy_direction_artifact_queue.get_nowait()
+        queued_frame = item[3]
+        self.assertIsNot(queued_frame, frame)
+        self.assertTrue(np.array_equal(queued_frame, frame))
+        frame[:] = 99
+        self.assertTrue(np.all(queued_frame == 7))
+
+    def test_full_async_queue_drops_before_copy(self):
+        class _CopyMustNotRun:
+            def copy(self):
+                raise AssertionError("full queue must be rejected before frame.copy()")
+
+        task = _DirectionTask()
+        task._enemy_direction_artifact_queue = queue.Queue(maxsize=1)
+        task._enemy_direction_artifact_queue.put_nowait(object())
+        captured_at = datetime.now().astimezone()
+
+        _queue_direction_artifact(
+            task,
+            Path("."),
+            "sample",
+            _CopyMustNotRun(),
+            None,
+            EnemyPresence.UNKNOWN,
+            0,
+            "miss",
+            None,
+            None,
+            1,
+            captured_at,
+        )
+
+        self.assertEqual(task._enemy_direction_artifact_queue.qsize(), 1)
+        self.assertTrue(task.debug)
+        self.assertIn("队列已满", task.debug[0])
 
     def test_recovery_failure_never_changes_presence_even_if_logging_fails(self):
         task = _DirectionTask()
