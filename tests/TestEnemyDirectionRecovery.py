@@ -12,7 +12,6 @@ import numpy as np
 from src.data.combat_observation import EnemyPresence
 from src.image.enemy_direction_diagnostics import _queue_direction_artifact
 from src.image.enemy_direction_probe import (
-    EnemyDirectionMarker,
     EnemyDirectionObservation,
     _direction_to_parameter_deg,
     _ellipse_axes,
@@ -116,43 +115,50 @@ class TestEnemyDirectionProbe(unittest.TestCase):
         best_marker = max(observation.markers, key=lambda marker: marker.score)
         self.assertEqual(observation.angle_deg, best_marker.angle_deg)
 
-    def test_target_lock_ignores_small_score_flip(self):
+    def test_turn_side_stays_locked_until_marker_disappears(self):
         task = _DirectionTask()
-        first_markers = (
-            EnemyDirectionMarker(30.0, 30.0, 30.0),
-            EnemyDirectionMarker(34.0, 34.0, 29.0),
-        )
-        second_markers = (
-            EnemyDirectionMarker(30.0, 30.0, 30.0),
-            EnemyDirectionMarker(34.0, 34.0, 31.0),
-        )
         observations = (
-            EnemyDirectionObservation(30.0, 30.0, first_markers),
-            EnemyDirectionObservation(34.0, 31.0, second_markers),
+            EnemyDirectionObservation(0.0, 30.0),
+            EnemyDirectionObservation(180.0, 40.0),
+            None,
+            EnemyDirectionObservation(180.0, 40.0),
         )
         with patch(
             "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
             side_effect=observations,
         ):
-            recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN)
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
             task.now += 0.05
-            recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN)
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
+            task.now += 0.05
+            self.assertFalse(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
+            task.now += 0.05
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
 
-        self.assertAlmostEqual(task._enemy_direction_last_angle, 30.0)
-        self.assertEqual(task._enemy_direction_streak, 2)
-        self.assertEqual(len(task.moves), 1)
+        self.assertEqual(len(task.moves), 3)
+        self.assertLess(task.moves[0]["dx"], 0)
+        self.assertLess(task.moves[1]["dx"], 0)
+        self.assertGreater(task.moves[2]["dx"], 0)
+        self.assertTrue(all(move["dy"] == 0 for move in task.moves))
 
-    def test_normal_enemy_hp_hit_skips_direction_probe(self):
+    def test_normal_enemy_hp_hit_skips_direction_probe_and_clears_turn_lock(self):
         task = _DirectionTask()
+        with patch(
+            "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
+            return_value=EnemyDirectionObservation(angle_deg=0.0, score=30.0),
+        ):
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
+        self.assertLess(task.moves[0]["dx"], 0)
+
         task._enemy_hp_last_slice = 2
         with patch(
             "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
             side_effect=AssertionError("direction detector should stay idle"),
         ):
             self.assertFalse(recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT))
-        self.assertEqual(task.moves, [])
+        self.assertIsNone(task._enemy_direction_turn_dx_sign)
 
-    def test_boss_present_still_recovers_after_two_stable_frames(self):
+    def test_boss_present_recovers_immediately_and_keeps_turning(self):
         task = _DirectionTask()
         observation = EnemyDirectionObservation(angle_deg=180.0, score=30.0)
         with patch(
@@ -160,15 +166,15 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             return_value=observation,
         ):
             self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT))
-            self.assertEqual(task.moves, [])
             task.now += 0.05
             self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT))
 
-        self.assertEqual(len(task.moves), 1)
-        self.assertGreater(task.moves[0]["dx"], 0)
-        self.assertEqual(task.moves[0]["dy"], 0)
-        self.assertEqual(task.moves[0]["steps"], 1)
-        self.assertEqual(task.moves[0]["delay"], 0.0)
+        self.assertEqual(len(task.moves), 2)
+        for move in task.moves:
+            self.assertGreater(move["dx"], 0)
+            self.assertEqual(move["dy"], 0)
+            self.assertEqual(move["steps"], 1)
+            self.assertEqual(move["delay"], 0.0)
 
     def test_screen_right_marker_uses_negative_dx(self):
         task = _DirectionTask()
@@ -178,24 +184,21 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             return_value=observation,
         ):
             recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT)
-            task.now += 0.05
-            recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT)
         self.assertEqual(len(task.moves), 1)
         self.assertLess(task.moves[0]["dx"], 0)
         self.assertEqual(task.moves[0]["dy"], 0)
 
     def test_unknown_presence_can_start_recovery(self):
         task = _DirectionTask()
-        observation = EnemyDirectionObservation(angle_deg=-90.0, score=20.0)
+        observation = EnemyDirectionObservation(angle_deg=0.0, score=20.0)
         with patch(
             "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
             return_value=observation,
         ):
             recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN)
-            task.now += 0.05
-            recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN)
         self.assertEqual(len(task.moves), 1)
-        self.assertLess(task.moves[0]["dy"], 0)
+        self.assertLess(task.moves[0]["dx"], 0)
+        self.assertEqual(task.moves[0]["dy"], 0)
 
     def test_live_overlay_contains_ellipse_scan_and_hit(self):
         task = _DirectionTask()
@@ -246,13 +249,15 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             self.assertEqual(payload["schema"], "enemy_direction_probe/v2")
             self.assertTrue(payload["detected"])
             self.assertEqual(payload["result"], "hit")
-            self.assertEqual(payload["action"], "tracking")
+            self.assertEqual(payload["action"], "turn_right")
             self.assertEqual(payload["streak"], 1)
             self.assertAlmostEqual(payload["observation"]["angle_deg"], 30.0)
             self.assertAlmostEqual(payload["observation"]["score"], 24.5)
             self.assertEqual(len(payload["observation"]["markers"]), 1)
             self.assertAlmostEqual(payload["scan_annulus"]["inner_scale"], 0.98)
             self.assertAlmostEqual(payload["scan_annulus"]["outer_scale"], 1.02)
+            self.assertLess(payload["mouse_delta"]["dx"], 0)
+            self.assertEqual(payload["mouse_delta"]["dy"], 0)
             self.assertEqual(payload["image"], images[0].name)
             self.assertEqual(payload["annotated_image"], images[0].name)
             self.assertEqual(payload["raw_image"], raw_images[0].name)
