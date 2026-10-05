@@ -11,7 +11,6 @@ from src.image.skill_bar_expected_probe import (
     resolve_expected_skill_bar_sp,
 )
 
-
 _UNKNOWN = SkillBarProbe(SkillBarState.UNKNOWN)
 
 

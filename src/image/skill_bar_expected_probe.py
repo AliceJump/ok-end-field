@@ -7,9 +7,9 @@ legacy skill-bar APIs used by other combat modes.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable
 
 import cv2
 import numpy as np
@@ -197,9 +197,7 @@ def _guided_probe(
 
 def _partial_is_consistent(candidate: int, checked: dict[int, SkillBarProbe]) -> bool:
     left_ok = all(
-        checked[i].state in {SkillBarState.FULL, SkillBarState.UNKNOWN}
-        for i in range(candidate)
-        if i in checked
+        checked[i].state in {SkillBarState.FULL, SkillBarState.UNKNOWN} for i in range(candidate) if i in checked
     )
     right_ok = all(
         checked[i].state in {SkillBarState.EMPTY, SkillBarState.UNKNOWN}
