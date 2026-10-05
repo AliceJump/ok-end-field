@@ -6,7 +6,10 @@ import numpy as np
 
 from src.data.combat_observation import EnemyPresence
 from src.image.enemy_direction_probe import EnemyDirectionObservation, probe_enemy_direction_fast
-from src.patches.enemy_direction_recovery_patch import recover_enemy_direction_if_needed
+from src.patches.enemy_direction_recovery_patch import (
+    _recover_direction_fail_soft,
+    recover_enemy_direction_if_needed,
+)
 
 
 def _marker_frame(angle_deg: float, width: int = 1920, height: int = 1080):
@@ -118,6 +121,16 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN)
         self.assertEqual(len(task.moves), 1)
         self.assertLess(task.moves[0]["dy"], 0)
+
+    def test_recovery_failure_never_changes_presence_even_if_logging_fails(self):
+        task = _DirectionTask()
+        task.log_debug = lambda _message: (_ for _ in ()).throw(RuntimeError("logger failed"))
+        with patch(
+            "src.patches.enemy_direction_recovery_patch.recover_enemy_direction_if_needed",
+            side_effect=RuntimeError("mouse recovery failed"),
+        ):
+            result = _recover_direction_fail_soft(task, EnemyPresence.PRESENT)
+        self.assertEqual(result, EnemyPresence.PRESENT)
 
 
 if __name__ == "__main__":
