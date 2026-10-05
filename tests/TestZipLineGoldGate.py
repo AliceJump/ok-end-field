@@ -32,6 +32,7 @@ class TestZipLineGoldGate(unittest.TestCase):
         gold_processor = object()
         white_processor = object()
         stub = SimpleNamespace(
+            _zip_line_distance_pattern=ZipLineMixin._zip_line_distance_pattern,
             make_hsv_isolator=Mock(side_effect=[gold_processor, white_processor]),
             align_ocr_or_find_target_to_center=Mock(return_value=True),
         )
