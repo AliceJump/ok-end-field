@@ -49,6 +49,12 @@ class _TimedTeamStability:
         return current, state.streak >= _REQUIRED_MATCHES
 
 
+def _reset_channel(logic, channel: str) -> None:
+    tracker = getattr(logic, _STATE_ATTR, None)
+    if tracker is not None:
+        tracker.channels.pop(channel, None)
+
+
 def _observe_once(logic, channel: str, fallback, **kwargs):
     task = logic.task
     detector = getattr(task, "detect_team", None)
@@ -59,6 +65,7 @@ def _observe_once(logic, channel: str, fallback, **kwargs):
     if frame is None or (hasattr(frame, "size") and frame.size == 0):
         frame = task.next_frame()
     if frame is None or (hasattr(frame, "size") and frame.size == 0):
+        _reset_channel(logic, channel)
         return ["?"], False
 
     team = detector(frame)
