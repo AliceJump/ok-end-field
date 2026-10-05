@@ -414,7 +414,7 @@ class TestBattleConfigOverrides(unittest.TestCase):
             timing_rules[False],
             [KEY_LEGACY_COMBAT_MODE, KEY_NO_NUMBER_OPERATION_INTERVAL, KEY_PULSE_PROBE],
         )
-        self.assertNotIn(True, timing_rules)
+        self.assertEqual(timing_rules[True], ["显示战斗决策窗口"])
 
         selector = BATTLE_CONFIG_TYPE[KEY_LEGACY_COMBAT_MODE]
         self.assertEqual(selector["type"], "drop_down")

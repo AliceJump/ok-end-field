@@ -21,6 +21,7 @@ from src.data.team_phase_planner import (
 )
 from src.data.timing_dps import build_options, load_damage_quotes, optimize_cycle
 from src.image.enemy_health_probe import reset_enemy_presence_probe
+from src.image.skill_bar_expected_probe import read_expected_skill_bar_sp
 
 
 class TimedCombatLogic:
@@ -41,10 +42,11 @@ class TimedCombatLogic:
     _ACTION_FEEDBACK_WINDOW = 1.20
     _DEAD_SLOT_CONFIRM_REFRESHES = 3
 
-    def __init__(self, task, store=None, clock=None):
+    def __init__(self, task, store=None, clock=None, wall_clock=None):
         self.task = task
         self.store = store
         self._clock = clock or time.monotonic
+        self._sp_wall_clock = wall_clock or time.monotonic
         self.team = []
         self.order = []
         self.ult_order = ["1", "2", "3", "4"]
@@ -78,6 +80,9 @@ class TimedCombatLogic:
         self.forced_main_control_until = 0.0
         self.pending_advance_cursor = True
         self.cached_sp = -1.0
+        self.expected_sp = -1.0
+        self.last_observed_sp = -1.0
+        self.last_visual_sp_wall_time = None
         self.next_sp_probe_at = 0.0
         self.last_sp_probe_at = 0.0
         self.sp_pressure_threshold = 265.0
@@ -208,39 +213,71 @@ class TimedCombatLogic:
         return self._SP_LOW_PROBE_INTERVAL
 
     def _cache_sp(self, sp, now=None):
+        """Cache scheduler SP without changing visual-observation state."""
         now = self._clock() if now is None else now
-        self.cached_sp = float(sp)
+        value = float(sp)
+        self.cached_sp = value
         self.last_sp_probe_at = now
-        self.next_sp_probe_at = now + self._sp_probe_interval(self.cached_sp)
-        return self.cached_sp
+        self.next_sp_probe_at = now + self._sp_probe_interval(value)
+        return value
+
+    def _cache_visual_sp(self, sp, now=None, wall_now=None):
+        """Commit a successful visual observation as the new prediction anchor."""
+        now = self._clock() if now is None else now
+        wall_now = self._sp_wall_clock() if wall_now is None else wall_now
+        value = self._cache_sp(sp, now)
+        self.expected_sp = value
+        self.last_observed_sp = value
+        self.last_visual_sp_wall_time = wall_now
+        return value
+
+    def _project_probe_expected(self, wall_now=None):
+        """Add natural regen once for the full visual-to-visual wall-clock window."""
+        base = self.expected_sp
+        anchor = self.last_visual_sp_wall_time
+        if base < 0 or anchor is None:
+            return None
+        wall_now = self._sp_wall_clock() if wall_now is None else wall_now
+        elapsed = max(0.0, float(wall_now) - float(anchor))
+        return min(300.0, max(0.0, base + elapsed * self._NATURAL_SP_PER_SECOND))
 
     def _sample_sp(self, force=False):
-        """Dynamically sample the expensive precise bar detector.
-
-        Precise scans accelerate as the cached value approaches the team-
-        specific overflow pressure line. Once that line is crossed, every
-        scheduler frame also performs only the cheap third-bar full check.
-        A positive full check returns 300 immediately.
-        """
+        """Sample SP, using the current prediction only to choose the first ROI."""
         now = self._clock()
+        wall_now = self._sp_wall_clock()
         if (
             not force
             and self.cached_sp >= self.sp_pressure_threshold
             and hasattr(self.task, "is_skill_bar_full_fast")
             and self.task.is_skill_bar_full_fast()
         ):
-            return self._cache_sp(300.0, now)
+            return self._cache_visual_sp(300.0, now, wall_now)
 
         if not force and now < self.next_sp_probe_at:
             return self.cached_sp
 
-        return self._cache_sp(self.task.get_skill_bar_sp(), now)
+        probe_expected = self._project_probe_expected(wall_now)
+        observed = read_expected_skill_bar_sp(
+            self.task,
+            probe_expected,
+            frame=getattr(self.task, "frame", None),
+        )
+        if observed >= 0:
+            return self._cache_visual_sp(observed, now, wall_now)
+
+        # No new visual truth: retain prediction and the previous visual anchor.
+        self.next_sp_probe_at = now + self._SP_UNKNOWN_PROBE_INTERVAL
+        return -1.0
 
     def _note_assumed_sp_spend(self, before_sp, expected_cost):
+        """Apply unverified low-cost spending to prediction only."""
         if before_sp < 0:
             self.next_sp_probe_at = self._clock()
             return
-        self._cache_sp(max(0.0, before_sp - max(0.0, expected_cost)))
+        base = self.expected_sp if self.expected_sp >= 0 else float(before_sp)
+        predicted = max(0.0, base - max(0.0, float(expected_cost)))
+        self.expected_sp = predicted
+        self._cache_sp(predicted)
 
     def _log_phase_transition(self, old, new):
         if old == new:

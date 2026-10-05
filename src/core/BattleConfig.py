@@ -30,6 +30,7 @@ KEY_DAMAGE_ROTATION = "伤害优先排序"
 
 # Independent timing mode takes precedence over every legacy strategy.
 KEY_TIMING_ROTATION = "技能时间排轴"
+KEY_TIMING_DECISION_WINDOW = "显示战斗决策窗口"
 
 # 旧 AutoCombat 的模式选择。旧布尔开关继续保留为内部兼容字段，
 # UI 和运行时均以该单选模式为准，避免多个策略同时为 True。
@@ -157,6 +158,8 @@ DEFAULT_SKILL_ALLOWLIST = True
 
 DEFAULT_DAMAGE_ROTATION = True
 
+DEFAULT_TIMING_DECISION_WINDOW = False
+
 # 旧默认组合为「自动技能列表=True + 伤害优先排序=True」。
 # 新模式选择器保持相同行为，避免新安装默认策略发生变化。
 DEFAULT_LEGACY_COMBAT_MODE = LEGACY_COMBAT_MODE_DAMAGE
@@ -171,6 +174,7 @@ DEFAULT_PULSE_PROBE = True
 
 DEFAULT_BATTLE_CONFIG = {
     KEY_TIMING_ROTATION: False,
+    KEY_TIMING_DECISION_WINDOW: DEFAULT_TIMING_DECISION_WINDOW,
     KEY_LEGACY_COMBAT_MODE: DEFAULT_LEGACY_COMBAT_MODE,
     KEY_ULT_RELEASE_MODE: DEFAULT_ULT_RELEASE_MODE,
     KEY_SKILL_RELEASE: DEFAULT_SKILL_RELEASE,
@@ -241,9 +245,11 @@ BATTLE_CONFIG_TYPE = {
     # 关闭后只展开一个旧模式选择器和旧模式公共项。
     KEY_TIMING_ROTATION: {
         "sub_configs": {
+            True: [KEY_TIMING_DECISION_WINDOW],
             False: LEGACY_COMBAT_SHARED_CONFIGS,
         },
     },
+    KEY_TIMING_DECISION_WINDOW: {},
     KEY_LEGACY_COMBAT_MODE: {
         "type": "drop_down",
         "options": LEGACY_COMBAT_MODE_OPTIONS,
@@ -281,6 +287,11 @@ BATTLE_CONFIG_TYPE = {
 
 BATTLE_CONFIG_DESCRIPTION = {
     KEY_TIMING_ROTATION: ("独立实验模式，优先于其他战斗策略开关。\n利用实时监测和本地技能时间数据安排出技。"),
+    KEY_TIMING_DECISION_WINDOW: (
+        "仅在「技能时间排轴」开启时显示。\n"
+        "战斗开始后打开独立实时窗口，以角色、动作、状态和原因的形式展示调度器当前想做什么、为什么等待或为什么执行。\n"
+        "窗口只旁路读取现有判断，不改变任何技能释放顺序、按键时机或连携调度。"
+    ),
     KEY_LEGACY_COMBAT_MODE: (
         "仅在「技能时间排轴」关闭时显示。\n选择原有 AutoCombat 的执行模式；同一时刻只启用一种模式。"
     ),
