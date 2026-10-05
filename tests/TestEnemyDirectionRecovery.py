@@ -112,6 +112,8 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             self.assertAlmostEqual(actual, expected, delta=2)
         for marker in observation.markers:
             self.assertAlmostEqual(marker.arc_width_deg, 8.0)
+        best_marker = max(observation.markers, key=lambda marker: marker.score)
+        self.assertEqual(observation.angle_deg, best_marker.angle_deg)
 
     def test_normal_enemy_hp_hit_skips_direction_probe(self):
         task = _DirectionTask()
