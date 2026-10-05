@@ -44,6 +44,28 @@ class TimedTeamDetectionStabilityTest(unittest.TestCase):
         self.assertEqual(task.calls, 2)
         self.assertGreater(task.now, 0.3)
 
+    def test_missing_frame_breaks_confirmation_streak(self):
+        expected = ["庄方宜", "佩丽卡", "诀", "梨诺"]
+        task = _SlowTeamTask(expected)
+        logic = SimpleNamespace(task=task)
+
+        def fallback(**_kwargs):
+            self.fail("timed incremental detection must not fall back to blocking detect_team_stable")
+
+        first, first_stable = _observe_once(logic, "initial", fallback, deadline=0.3)
+        self.assertEqual(first, expected)
+        self.assertFalse(first_stable)
+
+        task.frame = None
+        missing, missing_stable = _observe_once(logic, "initial", fallback, deadline=0.3)
+        self.assertEqual(missing, ["?"])
+        self.assertFalse(missing_stable)
+
+        task.frame = object()
+        third, third_stable = _observe_once(logic, "initial", fallback, deadline=0.3)
+        self.assertEqual(third, expected)
+        self.assertFalse(third_stable)
+
     def test_initial_and_refresh_streaks_are_independent(self):
         tracker = _TimedTeamStability()
         team = ["A", "B", "C", "D"]
