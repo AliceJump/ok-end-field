@@ -8,28 +8,15 @@ from src.core.global_config_store import (
     get_global_config,
 )
 from src.core.sequence_parser import parse_int_sequence
-from src.image.fast_block_ocr import HsvBlockOcrProcessor
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.navigation_mixin import NavigationMixin
-
-
-_ZIP_LINE_GOLD_OCR = HsvBlockOcrProcessor(hR.GOLD_TEXT)
-_ZIP_LINE_WHITE_OCR = HsvBlockOcrProcessor(hR.WHITE)
 
 
 class ZipLineMixin(InstructionsMixin, NavigationMixin):
     @property
     def zip_line_config(self):
         return get_global_config(ZIP_LINE_CONFIG_NAME)
-
-    def ocr(self, *args, frame_processor=None, **kwargs):
-        """滑索专用块 OCR；其他 OCR 调用保持框架原行为。"""
-        if isinstance(frame_processor, HsvBlockOcrProcessor):
-            result = frame_processor.recognize(self, *args, **kwargs)
-            if result is not None:
-                return result
-        return super().ocr(*args, frame_processor=frame_processor, **kwargs)
 
     def build_instructions(self):
         """滑索配置使用说明。
@@ -125,7 +112,7 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         result = self.ocr(
             match=self._zip_line_distance_pattern(zip_line),
             frame=frame if frame is not None else self.next_frame(),
-            frame_processor=_ZIP_LINE_GOLD_OCR,
+            frame_processor=self.make_hsv_isolator(hR.GOLD_TEXT),
         )
         if not result:
             return False
@@ -148,7 +135,10 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
             self._zip_line_distance_pattern(zip_line),
             is_num=True,
             need_scroll=need_scroll,
-            ocr_frame_processor_list=[_ZIP_LINE_GOLD_OCR, _ZIP_LINE_WHITE_OCR],
+            ocr_frame_processor_list=[
+                self.make_hsv_isolator(hR.GOLD_TEXT),
+                self.make_hsv_isolator(hR.WHITE),
+            ],
             tolerance=tolerance,
             max_time=max_time,
         )
