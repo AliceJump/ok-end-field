@@ -115,6 +115,22 @@ def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
     return True
 
 
+def _recover_direction_fail_soft(task, presence: EnemyPresence) -> EnemyPresence:
+    """Run optional camera recovery without changing or blocking presence probing."""
+    try:
+        recover_enemy_direction_if_needed(task, presence)
+    except Exception as exc:
+        # Camera recovery is auxiliary. Neither a movement/scaling failure nor a
+        # broken diagnostic logger may interrupt the established presence path.
+        try:
+            logger = getattr(task, "log_debug", None)
+            if callable(logger):
+                logger(f"敌人方向恢复失败，保留原敌人检测结果: {exc}")
+        except Exception:
+            pass
+    return presence
+
+
 def install_enemy_direction_recovery_patch() -> None:
     """Attach direction recovery to the existing enemy-presence probe hot path."""
     global _PATCH_INSTALLED
@@ -130,8 +146,7 @@ def install_enemy_direction_recovery_patch() -> None:
 
     def probe_enemy_presence_with_direction_recovery(self):
         presence = original_probe(self)
-        recover_enemy_direction_if_needed(self, presence)
-        return presence
+        return _recover_direction_fail_soft(self, presence)
 
     probe_enemy_presence_with_direction_recovery._enemy_direction_recovery_wrapped = True
     BattleMixin.probe_enemy_presence = probe_enemy_presence_with_direction_recovery
