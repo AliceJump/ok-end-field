@@ -7,9 +7,10 @@ def is_task_config_editable(task) -> bool:
     """Return whether task configuration may be edited safely.
 
     One-time tasks only need to be locked while their current run is active.
-    Trigger tasks are long-lived background workers, so their configuration is
-    locked for the whole enabled period and becomes editable again as soon as
-    the trigger is disabled.
+    Trigger tasks stay locked while enabled and also while a disabled trigger is
+    still finishing its current invocation. Once that invocation has returned,
+    the executor-side quiescent-boundary cleanup clears ``running`` and the
+    configuration becomes editable again.
     """
     if task is None:
         return True
@@ -17,8 +18,27 @@ def is_task_config_editable(task) -> bool:
     from ok import TriggerTask
 
     if isinstance(task, TriggerTask):
-        return not bool(getattr(task, "enabled", False))
+        return not bool(getattr(task, "enabled", False) or getattr(task, "running", False))
     return not bool(getattr(task, "running", False))
+
+
+def release_finished_trigger_state(executor):
+    """Clear stale TriggerTask execution state between executor iterations.
+
+    This helper is only called from the patched ``TaskExecutor.next_task``.
+    Reaching that method means the previous ``task.run()`` invocation has
+    already returned, so clearing ``running`` and ``current_task`` here cannot
+    expose configuration while task code is still executing.
+    """
+    from ok import TriggerTask
+
+    task = getattr(executor, "current_task", None)
+    if not isinstance(task, TriggerTask):
+        return None
+
+    task.running = False
+    executor.current_task = None
+    return task
 
 
 def install_task_config_lock_patch():
@@ -27,11 +47,12 @@ def install_task_config_lock_patch():
     if _PATCH_INSTALLED:
         return
 
-    from ok import TriggerTask
+    from ok.core.events import communicate
     from ok.gui.tasks.TaskCard import TaskCard
+    from ok.task.TaskExecutor import TaskExecutor
 
     original_update_buttons = TaskCard.update_buttons
-    original_trigger_disable = TriggerTask.disable
+    original_next_task = TaskExecutor.next_task
 
     def update_buttons(self, task):
         original_update_buttons(self, task)
@@ -42,15 +63,14 @@ def install_task_config_lock_patch():
         if reset_config is not None:
             reset_config.setEnabled(editable)
 
-    def trigger_disable(self):
-        # ok-script 2.0.7b1 can leave TriggerTask.running=True when run()
-        # returns True because its execute loop continues before clearing the
-        # flag. Clear that stale state before BaseTask.disable() emits the task
-        # update so every existing editor (including AccountConfigTab) unlocks
-        # immediately when the trigger is switched off.
-        self.running = False
-        original_trigger_disable(self)
+    def next_task(self):
+        finished_trigger = release_finished_trigger_state(self)
+        if finished_trigger is not None:
+            communicate.task.emit(finished_trigger)
+        return original_next_task(self)
 
+    update_buttons.__wrapped__ = original_update_buttons
+    next_task.__wrapped__ = original_next_task
     TaskCard.update_buttons = update_buttons
-    TriggerTask.disable = trigger_disable
+    TaskExecutor.next_task = next_task
     _PATCH_INSTALLED = True
