@@ -47,7 +47,7 @@ class TestZipLineGoldGate(unittest.TestCase):
 
     def test_gold_center_check_uses_generic_hsv_ocr_processor(self):
         processor = object()
-        target = SimpleNamespace(x=950, y=501, width=20, height=20)
+        target = SimpleNamespace(x=950, y=569, width=20, height=20)
         stub = SimpleNamespace(
             make_hsv_isolator=Mock(return_value=processor),
             ocr=Mock(return_value=[target]),
