@@ -14,8 +14,7 @@ _DIRECTION_MIN_RED = 18.0
 _DIRECTION_MIN_ARC_DEG = 5.0
 _DIRECTION_MAX_ARC_DEG = 20.0
 _MARKER_ARC_WIDTH_DEG = 8.0
-_SINGLE_RUN_DOUBLE_MIN_DEG = 14.0
-_DOUBLE_MARKER_RELATIVE_RATIO = 1.22
+_DOUBLE_MARKER_MIN_RUN_DEG = 10.0
 _ELLIPSE_AXES_1080 = (349.0, 245.0)
 _ELLIPSE_ANNULUS_SCALE = (0.98, 1.02)
 _ELLIPSE_RADIAL_SAMPLES = 9
@@ -167,24 +166,17 @@ def _marker_candidates(profile: np.ndarray, sample: _EllipseSample) -> tuple[Ene
     if not runs:
         return ()
 
-    shortest_span = min(span for _start, _length, span in runs)
-    split_threshold = (
-        shortest_span * _DOUBLE_MARKER_RELATIVE_RATIO
-        if len(runs) > 1
-        else _SINGLE_RUN_DOUBLE_MIN_DEG
-    )
-
     markers: list[EnemyDirectionMarker] = []
     for start, length, span_deg in runs:
         start_parameter = start * _DIRECTION_BIN_DEG
-        if span_deg >= split_threshold:
-            # The shortest visible run in the same frame is the measured
-            # footprint of one primitive after antialiasing/thresholding. Using
-            # that footprint cancels rendering thickness when splitting a merged
-            # pair. With only one run, fall back to the nominal fixed width.
-            primitive_span = shortest_span if len(runs) > 1 else _MARKER_ARC_WIDTH_DEG
-            first = (start_parameter + primitive_span / 2.0) % 360.0
-            second = (start_parameter + span_deg - primitive_span / 2.0) % 360.0
+        if span_deg >= _DOUBLE_MARKER_MIN_RUN_DEG:
+            # A short marker has a fixed eight-degree footprint. Long runs are
+            # two overlapping primitives, so use the nominal primitive width
+            # instead of another run as the split baseline. This prevents a
+            # clipped five-degree arc from causing a normal eight-degree arc to
+            # split while still separating the observed ~12-degree merged runs.
+            first = (start_parameter + _MARKER_ARC_WIDTH_DEG / 2.0) % 360.0
+            second = (start_parameter + span_deg - _MARKER_ARC_WIDTH_DEG / 2.0) % 360.0
             parameters = (first, second)
         else:
             parameters = (_run_center_parameter(profile, start, length),)
@@ -207,9 +199,9 @@ def probe_enemy_direction_fast(frame: np.ndarray | None) -> EnemyDirectionObserv
     """Return the strongest red off-screen marker from a thin fitted ellipse annulus.
 
     The hot path samples only nine radial points for each of 720 ellipse angles.
-    Marker arcs are modeled as a fixed eight-degree primitive. A significantly
-    longer connected run is interpreted as two overlapping primitives, so the
-    selected recovery direction never has to use the midpoint of a merged pair.
+    Marker arcs are modeled as a fixed eight-degree primitive. A run that reaches
+    the fixed merged-marker threshold is interpreted as two overlapping
+    primitives, so clipped short runs cannot change the split behavior.
     """
     if frame is None or getattr(frame, "size", 0) == 0 or frame.ndim != 3 or frame.shape[2] < 3:
         return None
