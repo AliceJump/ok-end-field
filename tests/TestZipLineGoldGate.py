@@ -1,89 +1,12 @@
-import re
 import unittest
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, call
 
-import cv2
-import numpy as np
-
-from src.image.fast_block_ocr import HsvBlockOcrProcessor
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.zip_line_mixin import ZipLineMixin
 
 
-class _FakeRecOnlyBackend:
-    def __init__(self, *, unsupported=False):
-        self.unsupported = unsupported
-        self.calls = []
-
-    def ocr(self, images, *, det=True, rec=True, cls=True):
-        self.calls.append((images, det, rec, cls))
-        if self.unsupported:
-            raise TypeError("rec-only is unsupported")
-        return [[("108m", 0.99) for _ in images]]
-
-
-class TestFastBlockOcr(unittest.TestCase):
-    @staticmethod
-    def _gold_text_frame():
-        # 使用接近生产截图比例的 ROI，确保候选尺寸阈值按实际 ROI 语义验证，
-        # 而不是为了单测把生产阈值改成依赖整帧尺寸。
-        frame = np.zeros((540, 960, 3), dtype=np.uint8)
-        hsv_color = np.uint8([[[30, 100, 230]]])
-        bgr_color = tuple(int(value) for value in cv2.cvtColor(hsv_color, cv2.COLOR_HSV2BGR)[0, 0])
-        cv2.putText(frame, "108m", (390, 285), cv2.FONT_HERSHEY_SIMPLEX, 1.2, bgr_color, 3, cv2.LINE_AA)
-        return frame
-
-    @staticmethod
-    def _task(frame, backend):
-        executor = SimpleNamespace(frame=frame, ocr_lib=lambda _lib: backend)
-        return SimpleNamespace(
-            executor=executor,
-            ocr_default_threshold=0.2,
-            fix_texts=lambda _boxes: None,
-            fix_match_regex=lambda match: match,
-            get_box_by_name=lambda _name: None,
-        )
-
-    def test_gold_text_is_reduced_to_candidate_blocks(self):
-        frame = self._gold_text_frame()
-        processor = HsvBlockOcrProcessor(hR.GOLD_TEXT)
-
-        candidates = processor.candidate_blocks(frame)
-
-        self.assertTrue(candidates)
-        self.assertTrue(any(candidate.width < frame.shape[1] // 2 for candidate in candidates))
-        self.assertTrue(any(candidate.height < frame.shape[0] // 2 for candidate in candidates))
-
-    def test_recognition_uses_rec_only_batch_and_maps_box_back(self):
-        frame = self._gold_text_frame()
-        backend = _FakeRecOnlyBackend()
-        processor = HsvBlockOcrProcessor(hR.GOLD_TEXT)
-        task = self._task(frame, backend)
-
-        result = processor.recognize(task, match=re.compile("108"), frame=frame)
-
-        self.assertTrue(result)
-        self.assertEqual(result[0].name, "108m")
-        self.assertTrue(backend.calls)
-        images, det, rec, cls = backend.calls[0]
-        self.assertTrue(images)
-        self.assertFalse(det)
-        self.assertTrue(rec)
-        self.assertFalse(cls)
-        self.assertLess(result[0].width, frame.shape[1])
-        self.assertLess(result[0].height, frame.shape[0])
-
-    def test_unsupported_backend_requests_generic_ocr_fallback(self):
-        frame = self._gold_text_frame()
-        backend = _FakeRecOnlyBackend(unsupported=True)
-        processor = HsvBlockOcrProcessor(hR.GOLD_TEXT)
-        task = self._task(frame, backend)
-
-        self.assertIsNone(processor.recognize(task, match=re.compile("108"), frame=frame))
-
-
-class TestZipLineClickGate(unittest.TestCase):
+class TestZipLineGoldGate(unittest.TestCase):
     @staticmethod
     def _stub():
         lang = SimpleNamespace(zip_line_mixin=SimpleNamespace(k_2f4f4a2f="move", k_0b1e4f35="leave"))
@@ -104,6 +27,42 @@ class TestZipLineClickGate(unittest.TestCase):
         self.assertIsNotNone(pattern.search("108m"))
         self.assertIsNone(pattern.search("1080m"))
         self.assertIsNone(pattern.search("2108m"))
+
+    def test_alignment_uses_generic_hsv_ocr_processors(self):
+        gold_processor = object()
+        white_processor = object()
+        stub = SimpleNamespace(
+            make_hsv_isolator=Mock(side_effect=[gold_processor, white_processor]),
+            align_ocr_or_find_target_to_center=Mock(return_value=True),
+        )
+
+        result = ZipLineMixin._align_zip_line_distance(stub, 108, need_scroll=True)
+
+        self.assertTrue(result)
+        stub.make_hsv_isolator.assert_has_calls([call(hR.GOLD_TEXT), call(hR.WHITE)])
+        kwargs = stub.align_ocr_or_find_target_to_center.call_args.kwargs
+        self.assertEqual(kwargs["ocr_frame_processor_list"], [gold_processor, white_processor])
+        self.assertTrue(kwargs["is_num"])
+        self.assertTrue(kwargs["need_scroll"])
+
+    def test_gold_center_check_uses_generic_hsv_ocr_processor(self):
+        processor = object()
+        target = SimpleNamespace(x=950, y=501, width=20, height=20)
+        stub = SimpleNamespace(
+            make_hsv_isolator=Mock(return_value=processor),
+            ocr=Mock(return_value=[target]),
+            screen_center=Mock(return_value=(960, 540)),
+            scale_distance=Mock(return_value=20),
+            height=1080,
+            next_frame=Mock(),
+        )
+
+        result = ZipLineMixin._zip_line_target_is_gold_and_centered(stub, 108, frame="frame")
+
+        self.assertTrue(result)
+        stub.make_hsv_isolator.assert_called_once_with(hR.GOLD_TEXT)
+        self.assertIs(stub.ocr.call_args.kwargs["frame_processor"], processor)
+        self.assertEqual(stub.ocr.call_args.kwargs["frame"], "frame")
 
     def test_white_or_unlocked_target_never_clicks(self):
         stub = self._stub()
