@@ -104,7 +104,9 @@ def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
 
     radians = math.radians(observation.angle_deg)
     step = _scaled_mouse_step(task)
-    dx = int(round(math.cos(radians) * step))
+    # Endfield's calibrated mouse yaw sign is inverted horizontally: positive
+    # dx turns the camera left, so a marker on screen-right must receive -dx.
+    dx = int(round(-math.cos(radians) * step))
     dy = int(round(math.sin(radians) * step))
     if dx == 0 and dy == 0:
         return True
