@@ -3,10 +3,7 @@ from types import SimpleNamespace
 
 from ok import TriggerTask
 
-from src.patches.task_config_lock_patch import (
-    is_task_config_editable,
-    release_finished_trigger_state,
-)
+from src.patches.task_config_lock_patch import is_task_config_editable, wrap_trigger_run
 
 
 class _RegularTask:
@@ -30,34 +27,75 @@ class TestTaskConfigLockPatch(unittest.TestCase):
         task = self._trigger_task(enabled=True, running=False)
         self.assertTrue(is_task_config_editable(task))
 
-    def test_disabled_trigger_stays_locked_until_active_invocation_returns(self):
-        task = self._trigger_task(enabled=False, running=True)
+    def test_trigger_run_emits_locked_then_unlocked_state_on_success(self):
+        task = self._trigger_task(enabled=True, running=True)
         executor = SimpleNamespace(current_task=task)
+        task._executor = executor
+        emitted = []
 
-        self.assertFalse(is_task_config_editable(task))
+        def original_run():
+            self.assertFalse(is_task_config_editable(task))
+            return True
 
-        finished = release_finished_trigger_state(executor)
+        task.run = original_run
+        wrap_trigger_run(task, lambda current: emitted.append((current.running, executor.current_task is current)))
 
-        self.assertIs(finished, task)
+        self.assertTrue(task.run())
+        self.assertEqual(emitted, [(True, True), (False, False)])
         self.assertFalse(task.running)
         self.assertIsNone(executor.current_task)
         self.assertTrue(is_task_config_editable(task))
 
-    def test_finished_trigger_cleanup_ignores_non_trigger_current_task(self):
-        task = _RegularTask(running=True)
+    def test_disabled_active_trigger_unlocks_only_after_run_exits(self):
+        task = self._trigger_task(enabled=False, running=True)
         executor = SimpleNamespace(current_task=task)
+        task._executor = executor
+        emitted = []
 
-        self.assertIsNone(release_finished_trigger_state(executor))
-        self.assertIs(executor.current_task, task)
-        self.assertTrue(task.running)
+        class DisabledDuringRun(Exception):
+            pass
 
-    def test_finished_trigger_cleanup_ignores_already_idle_trigger(self):
-        task = self._trigger_task(enabled=False, running=False)
-        executor = SimpleNamespace(current_task=task)
+        def original_run():
+            self.assertFalse(is_task_config_editable(task))
+            raise DisabledDuringRun()
 
-        self.assertIsNone(release_finished_trigger_state(executor))
-        self.assertIs(executor.current_task, task)
+        task.run = original_run
+        wrap_trigger_run(task, lambda current: emitted.append((current.running, executor.current_task is current)))
+
+        with self.assertRaises(DisabledDuringRun):
+            task.run()
+
+        self.assertEqual(emitted, [(True, True), (False, False)])
         self.assertFalse(task.running)
+        self.assertIsNone(executor.current_task)
+        self.assertTrue(is_task_config_editable(task))
+
+    def test_trigger_run_wrapper_does_not_manage_direct_untracked_calls(self):
+        task = self._trigger_task(enabled=True, running=False)
+        executor = SimpleNamespace(current_task=None)
+        task._executor = executor
+        emitted = []
+        task.run = lambda: "ok"
+
+        wrap_trigger_run(task, emitted.append)
+
+        self.assertEqual(task.run(), "ok")
+        self.assertEqual(emitted, [])
+        self.assertFalse(task.running)
+        self.assertIsNone(executor.current_task)
+
+    def test_trigger_run_wrapper_is_idempotent(self):
+        task = self._trigger_task(enabled=True, running=True)
+        executor = SimpleNamespace(current_task=task)
+        task._executor = executor
+        emitted = []
+        task.run = lambda: None
+
+        wrap_trigger_run(task, emitted.append)
+        wrapped = task.run
+        wrap_trigger_run(task, emitted.append)
+
+        self.assertIs(task.run, wrapped)
 
 
 if __name__ == "__main__":
