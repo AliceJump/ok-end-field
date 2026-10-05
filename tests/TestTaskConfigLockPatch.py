@@ -1,0 +1,35 @@
+import unittest
+
+from ok import TriggerTask
+
+from src.patches.task_config_lock_patch import is_task_config_editable
+
+
+class _RegularTask:
+    def __init__(self, running: bool):
+        self.running = running
+
+
+class TestTaskConfigLockPatch(unittest.TestCase):
+    @staticmethod
+    def _trigger_task(*, enabled: bool, running: bool):
+        task = object.__new__(TriggerTask)
+        task._enabled = enabled
+        task.running = running
+        return task
+
+    def test_regular_task_locks_only_while_running(self):
+        self.assertFalse(is_task_config_editable(_RegularTask(running=True)))
+        self.assertTrue(is_task_config_editable(_RegularTask(running=False)))
+
+    def test_trigger_task_locks_for_whole_enabled_period(self):
+        task = self._trigger_task(enabled=True, running=False)
+        self.assertFalse(is_task_config_editable(task))
+
+    def test_disabled_trigger_ignores_stale_running_flag(self):
+        task = self._trigger_task(enabled=False, running=True)
+        self.assertTrue(is_task_config_editable(task))
+
+
+if __name__ == "__main__":
+    unittest.main()
