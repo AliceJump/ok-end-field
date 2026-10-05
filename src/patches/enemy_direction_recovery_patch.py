@@ -11,12 +11,8 @@ from src.image.enemy_direction_probe import EnemyDirectionObservation, probe_ene
 
 _PATCH_INSTALLED = False
 _PROBE_INTERVAL = 0.04
-_STABLE_FRAMES = 2
-_STABLE_MAX_GAP = 0.18
-_STABLE_ANGLE_TOLERANCE_DEG = 12.0
-_TARGET_LOCK_ANGLE_TOLERANCE_DEG = 12.0
-_TARGET_SWITCH_SCORE_RATIO = 1.25
 _MOUSE_STEP_1080 = 48
+_MIN_HORIZONTAL_COMPONENT = 0.05
 
 
 def _task_time(task) -> float:
@@ -26,14 +22,11 @@ def _task_time(task) -> float:
     return time.monotonic()
 
 
-def _angle_delta(current: float, previous: float) -> float:
-    return (current - previous + 180.0) % 360.0 - 180.0
-
-
 def _reset_direction_state(task, *, keep_throttle: bool = False) -> None:
     task._enemy_direction_last_angle = None
     task._enemy_direction_last_seen_at = None
     task._enemy_direction_streak = 0
+    task._enemy_direction_turn_dx_sign = None
     task._enemy_direction_recovering = False
     if not keep_throttle:
         task._enemy_direction_next_probe_at = 0.0
@@ -47,78 +40,40 @@ def _scaled_mouse_step(task) -> int:
     return max(1, int(round(_MOUSE_STEP_1080 * height / 1080.0)))
 
 
-def _select_locked_observation(
-    task,
-    observation: EnemyDirectionObservation,
-    now: float,
-) -> EnemyDirectionObservation:
-    """Keep the current marker unless it disappears or a rival is clearly stronger."""
-    markers = observation.markers
-    previous_angle = getattr(task, "_enemy_direction_last_angle", None)
-    previous_at = getattr(task, "_enemy_direction_last_seen_at", None)
-    if (
-        not markers
-        or previous_angle is None
-        or previous_at is None
-        or not 0.0 <= now - previous_at <= _STABLE_MAX_GAP
-    ):
-        return observation
-
-    nearest = min(
-        markers,
-        key=lambda marker: abs(_angle_delta(marker.angle_deg, float(previous_angle))),
-    )
-    nearest_delta = abs(_angle_delta(nearest.angle_deg, float(previous_angle)))
-    best = max(markers, key=lambda marker: marker.score)
-
-    if nearest_delta > _TARGET_LOCK_ANGLE_TOLERANCE_DEG:
-        selected = best
-    elif best is nearest or best.score < nearest.score * _TARGET_SWITCH_SCORE_RATIO:
-        selected = nearest
-    else:
-        selected = best
-
-    if selected.angle_deg == observation.angle_deg and selected.score == observation.score:
-        return observation
-    return EnemyDirectionObservation(
-        angle_deg=selected.angle_deg,
-        score=selected.score,
-        markers=markers,
-    )
+def _initial_turn_dx_sign(angle_deg: float) -> int:
+    """Return the calibrated horizontal turn sign for the marker's screen side."""
+    horizontal = math.cos(math.radians(angle_deg))
+    if horizontal > _MIN_HORIZONTAL_COMPONENT:
+        # Marker is on screen-right. Endfield uses negative dx to turn right.
+        return -1
+    if horizontal < -_MIN_HORIZONTAL_COMPONENT:
+        # Marker is on screen-left. Endfield uses positive dx to turn left.
+        return 1
+    return 0
 
 
-def _note_observation(task, observation: EnemyDirectionObservation, now: float) -> int:
-    previous_angle = getattr(task, "_enemy_direction_last_angle", None)
-    previous_at = getattr(task, "_enemy_direction_last_seen_at", None)
-    previous_streak = int(getattr(task, "_enemy_direction_streak", 0))
-    stable = (
-        previous_angle is not None
-        and previous_at is not None
-        and 0.0 <= now - previous_at <= _STABLE_MAX_GAP
-        and abs(_angle_delta(observation.angle_deg, float(previous_angle))) <= _STABLE_ANGLE_TOLERANCE_DEG
-    )
-    streak = previous_streak + 1 if stable else 1
+def _note_marker_seen(task, observation: EnemyDirectionObservation, now: float) -> int:
     task._enemy_direction_last_angle = observation.angle_deg
     task._enemy_direction_last_seen_at = now
-    task._enemy_direction_streak = streak
+    task._enemy_direction_streak = int(getattr(task, "_enemy_direction_streak", 0)) + 1
     task._enemy_direction_recovering = True
-    return streak
+    return task._enemy_direction_streak
 
 
 def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
-    """Rotate one small step toward a stable off-screen enemy marker.
+    """Rotate horizontally until the off-screen marker is gone or HP is visible.
 
-    A normal-enemy HP hit already provides a useful on-screen location, so the
-    direction probe stays completely idle in that case. Boss HP is intentionally
-    different: its fixed top-center bar proves the boss exists but says nothing
-    about camera direction, therefore boss PRESENT observations still allow this
-    recovery probe.
+    A normal-enemy HP hit already provides an on-screen target, so the direction
+    probe stays idle and any latched turn direction is cleared. Boss HP is
+    intentionally different: its fixed top-center bar proves the boss exists but
+    says nothing about camera direction, therefore boss PRESENT observations
+    still allow this recovery probe.
 
-    When multiple marker primitives are visible, the previously tracked nearby
-    marker keeps the lock. A rival marker may take over only after becoming at
-    least 25% stronger; if the old direction disappears, the strongest remaining
-    marker is selected normally. This avoids frame-to-frame score jitter making
-    the camera alternate between adjacent markers.
+    The first marker with an unambiguous horizontal side chooses left or right.
+    That turn side is then latched: later marker angle/score changes cannot reverse
+    the camera. The latch is released only when the marker disappears, normal
+    enemy HP becomes visible, or the recovery path errors. This prevents multiple
+    nearby/overlapping marker primitives from making the camera oscillate.
 
     Every actual direction-probe attempt also emits optional diagnostics. The
     existing ``保存敌人检测调试帧`` option saves an annotated PNG plus matching
@@ -170,38 +125,29 @@ def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
         _reset_direction_state(task, keep_throttle=True)
         return False
 
-    observation = _select_locked_observation(task, observation, now)
-    streak = _note_observation(task, observation, now)
-    if streak < _STABLE_FRAMES:
-        draw_enemy_direction_debug(
-            task,
-            frame,
-            observation,
-            presence,
-            streak=streak,
-            action="tracking",
-        )
-        return True
+    streak = _note_marker_seen(task, observation, now)
+    dx_sign = getattr(task, "_enemy_direction_turn_dx_sign", None)
+    if dx_sign not in (-1, 1):
+        dx_sign = _initial_turn_dx_sign(observation.angle_deg)
+        if dx_sign == 0:
+            draw_enemy_direction_debug(
+                task,
+                frame,
+                observation,
+                presence,
+                streak=streak,
+                action="tracking_no_horizontal_side",
+            )
+            return True
+        task._enemy_direction_turn_dx_sign = dx_sign
 
-    radians = math.radians(observation.angle_deg)
-    step = _scaled_mouse_step(task)
-    # Endfield's calibrated mouse yaw sign is inverted horizontally: positive
-    # dx turns the camera left, so a marker on screen-right must receive -dx.
-    dx = int(round(-math.cos(radians) * step))
-    dy = int(round(math.sin(radians) * step))
-    if dx == 0 and dy == 0:
-        draw_enemy_direction_debug(
-            task,
-            frame,
-            observation,
-            presence,
-            streak=streak,
-            action="stable_no_delta",
-        )
-        return True
-
+    dx = int(dx_sign) * _scaled_mouse_step(task)
+    dy = 0
     move = getattr(task, "active_and_send_mouse_delta", None)
-    action = "mouse_delta" if callable(move) else "stable_no_mouse_sender"
+    if dx > 0:
+        action = "turn_left" if callable(move) else "turn_left_no_mouse_sender"
+    else:
+        action = "turn_right" if callable(move) else "turn_right_no_mouse_sender"
     draw_enemy_direction_debug(
         task,
         frame,
