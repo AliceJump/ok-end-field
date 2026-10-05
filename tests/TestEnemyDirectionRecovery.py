@@ -1,5 +1,7 @@
 import json
+import queue
 import unittest
+from datetime import datetime
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -8,6 +10,7 @@ import cv2
 import numpy as np
 
 from src.data.combat_observation import EnemyPresence
+from src.image.enemy_direction_diagnostics import _queue_direction_artifact
 from src.image.enemy_direction_probe import EnemyDirectionObservation, probe_enemy_direction_fast
 from src.image.enemy_health_probe import KEY_SAVE_ENEMY_PRESENCE_FRAMES
 from src.patches.enemy_direction_recovery_patch import (
@@ -224,6 +227,64 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             self.assertEqual(payload["result"], "miss")
             self.assertEqual(payload["action"], "miss")
             self.assertIsNone(payload["observation"])
+
+    def test_async_queue_owns_frame_snapshot(self):
+        task = _DirectionTask()
+        task._enemy_direction_artifact_queue = queue.Queue(maxsize=1)
+        frame = np.full((8, 8, 3), 7, dtype=np.uint8)
+        captured_at = datetime.now().astimezone()
+        observation = EnemyDirectionObservation(angle_deg=15.0, score=12.0)
+
+        _queue_direction_artifact(
+            task,
+            Path("."),
+            "sample",
+            frame,
+            observation,
+            EnemyPresence.UNKNOWN,
+            1,
+            "tracking",
+            None,
+            None,
+            1,
+            captured_at,
+        )
+
+        item = task._enemy_direction_artifact_queue.get_nowait()
+        queued_frame = item[3]
+        self.assertIsNot(queued_frame, frame)
+        self.assertTrue(np.array_equal(queued_frame, frame))
+        frame[:] = 99
+        self.assertTrue(np.all(queued_frame == 7))
+
+    def test_full_async_queue_drops_before_copy(self):
+        class _CopyMustNotRun:
+            def copy(self):
+                raise AssertionError("full queue must be rejected before frame.copy()")
+
+        task = _DirectionTask()
+        task._enemy_direction_artifact_queue = queue.Queue(maxsize=1)
+        task._enemy_direction_artifact_queue.put_nowait(object())
+        captured_at = datetime.now().astimezone()
+
+        _queue_direction_artifact(
+            task,
+            Path("."),
+            "sample",
+            _CopyMustNotRun(),
+            None,
+            EnemyPresence.UNKNOWN,
+            0,
+            "miss",
+            None,
+            None,
+            1,
+            captured_at,
+        )
+
+        self.assertEqual(task._enemy_direction_artifact_queue.qsize(), 1)
+        self.assertTrue(task.debug)
+        self.assertIn("队列已满", task.debug[0])
 
     def test_recovery_failure_never_changes_presence_even_if_logging_fails(self):
         task = _DirectionTask()
