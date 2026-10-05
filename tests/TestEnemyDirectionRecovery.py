@@ -186,8 +186,14 @@ class TestEnemyDirectionProbe(unittest.TestCase):
                 recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN)
 
             output_dir = Path(directory)
-            images = list(output_dir.glob("enemy_direction_*.png"))
+            raw_images = list(output_dir.glob("enemy_direction_*.raw.png"))
+            images = [
+                path
+                for path in output_dir.glob("enemy_direction_*.png")
+                if not path.name.endswith(".raw.png")
+            ]
             informs = list(output_dir.glob("enemy_direction_*.inform.json"))
+            self.assertEqual(len(raw_images), 1)
             self.assertEqual(len(images), 1)
             self.assertEqual(len(informs), 1)
 
@@ -200,6 +206,13 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             self.assertAlmostEqual(payload["observation"]["angle_deg"], 30.0)
             self.assertAlmostEqual(payload["observation"]["score"], 24.5)
             self.assertEqual(len(payload["scan_rings"]), 3)
+            self.assertEqual(payload["image"], images[0].name)
+            self.assertEqual(payload["annotated_image"], images[0].name)
+            self.assertEqual(payload["raw_image"], raw_images[0].name)
+
+            raw = cv2.imread(str(raw_images[0]))
+            self.assertIsNotNone(raw)
+            self.assertTrue(np.array_equal(raw, task.frame))
 
             annotated = cv2.imread(str(images[0]))
             self.assertIsNotNone(annotated)
