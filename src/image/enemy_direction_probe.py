@@ -14,7 +14,7 @@ _DIRECTION_MIN_RED = 18.0
 _DIRECTION_MIN_ARC_DEG = 5.0
 _DIRECTION_MAX_ARC_DEG = 20.0
 _MARKER_ARC_WIDTH_DEG = 8.0
-_DOUBLE_MARKER_MIN_RUN_DEG = 10.0
+_DOUBLE_MARKER_MIN_RUN_DEG = 12.0
 _ELLIPSE_AXES_1080 = (349.0, 245.0)
 _ELLIPSE_ANNULUS_SCALE = (0.98, 1.02)
 _ELLIPSE_RADIAL_SAMPLES = 9
@@ -170,11 +170,11 @@ def _marker_candidates(profile: np.ndarray, sample: _EllipseSample) -> tuple[Ene
     for start, length, span_deg in runs:
         start_parameter = start * _DIRECTION_BIN_DEG
         if span_deg >= _DOUBLE_MARKER_MIN_RUN_DEG:
-            # A short marker has a fixed eight-degree footprint. Long runs are
-            # two overlapping primitives, so use the nominal primitive width
-            # instead of another run as the split baseline. This prevents a
-            # clipped five-degree arc from causing a normal eight-degree arc to
-            # split while still separating the observed ~12-degree merged runs.
+            # Five-point smoothing can widen an eight-degree primitive to about
+            # ten degrees, so a merged run must clear the fixed twelve-degree
+            # threshold before it is interpreted as two overlapping primitives.
+            # This also keeps clipped short arcs from changing another marker's
+            # split behavior.
             first = (start_parameter + _MARKER_ARC_WIDTH_DEG / 2.0) % 360.0
             second = (start_parameter + span_deg - _MARKER_ARC_WIDTH_DEG / 2.0) % 360.0
             parameters = (first, second)
