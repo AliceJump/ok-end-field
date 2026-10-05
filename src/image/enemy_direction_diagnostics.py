@@ -263,6 +263,8 @@ def _build_direction_inform(
     return {
         "schema": "enemy_direction_probe/v1",
         "image": f"{stem}.png",
+        "annotated_image": f"{stem}.png",
+        "raw_image": f"{stem}.raw.png",
         "captured_at": captured_at.isoformat(timespec="microseconds"),
         "sequence": int(sequence),
         "presence": presence.value,
@@ -298,23 +300,64 @@ def _resolve_direction_capture_dir(task) -> Path | None:
     return Path(screenshot_folder) / "enemy_direction"
 
 
-def _write_direction_artifact(output_dir: Path, stem: str, annotated, inform: dict) -> None:
+def _write_direction_artifact(
+    output_dir: Path,
+    stem: str,
+    frame,
+    observation: EnemyDirectionObservation | None,
+    presence: EnemyPresence,
+    streak: int,
+    action: str,
+    mouse_delta: tuple[int, int] | None,
+    error: str | None,
+    sequence: int,
+    captured_at: datetime,
+) -> None:
+    """Write raw input, annotated evidence, and metadata from one owned snapshot."""
     output_dir.mkdir(parents=True, exist_ok=True)
+    raw_path = output_dir / f"{stem}.raw.png"
     image_path = output_dir / f"{stem}.png"
     info_path = output_dir / f"{stem}.inform.json"
+    temp_raw = output_dir / f".{stem}.tmp.raw.png"
     temp_image = output_dir / f".{stem}.tmp.png"
     temp_info = output_dir / f".{stem}.tmp.inform.json"
 
     try:
+        inform = _build_direction_inform(
+            stem,
+            frame,
+            observation,
+            presence,
+            streak,
+            action,
+            mouse_delta,
+            error,
+            sequence,
+            captured_at,
+        )
+        # Persist the exact detector input before annotation mutates this owned
+        # snapshot. This avoids another full-frame copy, including at 4K.
+        if not cv2.imwrite(str(temp_raw), frame):
+            raise OSError(f"cv2.imwrite returned false for {temp_raw}")
+        annotated = _annotate_direction_frame(
+            frame,
+            observation,
+            presence,
+            streak,
+            action,
+            mouse_delta,
+            error,
+        )
         if not cv2.imwrite(str(temp_image), annotated):
             raise OSError(f"cv2.imwrite returned false for {temp_image}")
         with temp_info.open("w", encoding="utf-8") as file:
             json.dump(inform, file, ensure_ascii=False, indent=2)
             file.write("\n")
+        temp_raw.replace(raw_path)
         temp_image.replace(image_path)
         temp_info.replace(info_path)
     finally:
-        for temp_path in (temp_image, temp_info):
+        for temp_path in (temp_raw, temp_image, temp_info):
             try:
                 if temp_path.exists():
                     temp_path.unlink()
@@ -351,16 +394,8 @@ def _direction_artifact_worker(work_queue) -> None:
             captured_at,
         ) = work_queue.get()
         try:
-            annotated = _annotate_direction_frame(
-                frame,
-                observation,
-                presence,
-                streak,
-                action,
-                mouse_delta,
-                error,
-            )
-            inform = _build_direction_inform(
+            _write_direction_artifact(
+                output_dir,
                 stem,
                 frame,
                 observation,
@@ -372,7 +407,6 @@ def _direction_artifact_worker(work_queue) -> None:
                 sequence,
                 captured_at,
             )
-            _write_direction_artifact(output_dir, stem, annotated, inform)
         except Exception as exc:
             _log_direction_save_error_once(task, exc)
         finally:
@@ -396,16 +430,8 @@ def _queue_direction_artifact(
     if getattr(task, "_enemy_direction_debug_sync_save", False):
         try:
             snapshot = frame.copy()
-            annotated = _annotate_direction_frame(
-                snapshot,
-                observation,
-                presence,
-                streak,
-                action,
-                mouse_delta,
-                error,
-            )
-            inform = _build_direction_inform(
+            _write_direction_artifact(
+                output_dir,
                 stem,
                 snapshot,
                 observation,
@@ -417,7 +443,6 @@ def _queue_direction_artifact(
                 sequence,
                 captured_at,
             )
-            _write_direction_artifact(output_dir, stem, annotated, inform)
         except Exception as exc:
             _log_direction_save_error_once(task, exc)
         return
@@ -522,7 +547,7 @@ def draw_enemy_direction_debug(
     mouse_delta: tuple[int, int] | None = None,
     error: str | None = None,
 ) -> None:
-    """Emit fail-soft live and persisted evidence for one actual probe attempt."""
+    """Emit fail-soft live, raw, annotated, and metadata evidence for one probe."""
     if frame is None or getattr(frame, "size", 0) == 0 or frame.ndim != 3:
         return
 
