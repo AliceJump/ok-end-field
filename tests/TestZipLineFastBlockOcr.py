@@ -157,6 +157,19 @@ class TestZipLineClickGate(unittest.TestCase):
         stub.send_key.assert_called_once_with("e")
         stub.ocr.assert_called_once()
 
+    def test_e_retry_does_not_recheck_gold_after_click(self):
+        stub = self._stub()
+        stub._zip_line_target_is_gold_and_centered = Mock(return_value=True)
+        stub.ocr.side_effect = [[SimpleNamespace(name="move")], []]
+
+        result = ZipLineMixin.ensure_click_on_zip_line(stub, 108)
+
+        self.assertTrue(result)
+        stub._zip_line_target_is_gold_and_centered.assert_called_once()
+        stub.click.assert_called_once()
+        self.assertEqual(stub.send_key.call_count, 2)
+        self.assertEqual(stub.ocr.call_count, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

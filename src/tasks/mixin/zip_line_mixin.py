@@ -247,24 +247,24 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         self.ensure_main()
 
     def ensure_click_on_zip_line(self, zip_line, max_attempts=5, lock_timeout=2):
-        """等待目标黄色且居中后校准点击；E 沿用原有交互流程，不做二次颜色判断。"""
+        """等待目标黄色且居中后校准点击；click 后仅重试 E，不做二次颜色判断。"""
         stop_match = [
             self.lang.zip_line_mixin.k_2f4f4a2f,
             self.lang.zip_line_mixin.k_0b1e4f35,
         ]
         stop_box = self.box_of_screen(0.351, 0.943, 0.657, 0.981)
 
+        lock_start = self.active_time()
+        while not self._zip_line_target_is_gold_and_centered(zip_line, frame=self.next_frame()):
+            if self.active_time() - lock_start >= lock_timeout:
+                return False
+            self.sleep(0.05)
+
+        # click 是一次性的校准动作：只有中心目标已经是黄色时才允许执行。
+        self.click(after_sleep=0.1)
+
+        # click 之后黄色门控已经完成；后续仅重试 E，直到停止提示消失或次数耗尽。
         for _ in range(max_attempts):
-            lock_start = self.active_time()
-            while not self._zip_line_target_is_gold_and_centered(zip_line, frame=self.next_frame()):
-                if self.active_time() - lock_start >= lock_timeout:
-                    return False
-                self.sleep(0.05)
-
-            # click 是校准动作：只有中心目标已经是黄色时才允许执行。
-            self.click(after_sleep=0.1)
-
-            # E 与黄色门控无关，继续沿用原本的滑索交互流程。
             self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
             if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
                 return True
