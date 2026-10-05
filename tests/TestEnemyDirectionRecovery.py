@@ -104,10 +104,24 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT))
 
         self.assertEqual(len(task.moves), 1)
-        self.assertLess(task.moves[0]["dx"], 0)
+        self.assertGreater(task.moves[0]["dx"], 0)
         self.assertEqual(task.moves[0]["dy"], 0)
         self.assertEqual(task.moves[0]["steps"], 1)
         self.assertEqual(task.moves[0]["delay"], 0.0)
+
+    def test_screen_right_marker_uses_negative_dx(self):
+        task = _DirectionTask()
+        observation = EnemyDirectionObservation(angle_deg=0.0, score=30.0)
+        with patch(
+            "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
+            return_value=observation,
+        ):
+            recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT)
+            task.now += 0.05
+            recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT)
+        self.assertEqual(len(task.moves), 1)
+        self.assertLess(task.moves[0]["dx"], 0)
+        self.assertEqual(task.moves[0]["dy"], 0)
 
     def test_unknown_presence_can_start_recovery(self):
         task = _DirectionTask()
