@@ -6,6 +6,7 @@ import math
 import time
 
 from src.data.combat_observation import EnemyPresence
+from src.image.enemy_direction_diagnostics import draw_enemy_direction_debug
 from src.image.enemy_direction_probe import EnemyDirectionObservation, probe_enemy_direction_fast
 
 _PATCH_INSTALLED = False
@@ -71,6 +72,11 @@ def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
     about camera direction, therefore boss PRESENT observations still allow this
     recovery probe.
 
+    Every actual direction-probe attempt also emits optional diagnostics. The
+    existing ``保存敌人检测调试帧`` option saves an annotated PNG plus matching
+    ``.inform.json`` under ``enemy_direction/``; live debug overlay shows the
+    three scan-ring bounds and the current detected direction marker.
+
     Returns True while a direction marker is currently being tracked.
     """
     normal_target_visible = presence == EnemyPresence.PRESENT and isinstance(
@@ -85,9 +91,19 @@ def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
         return bool(getattr(task, "_enemy_direction_recovering", False))
     task._enemy_direction_next_probe_at = now + _PROBE_INTERVAL
 
+    frame = getattr(task, "frame", None)
     try:
-        observation = probe_enemy_direction_fast(getattr(task, "frame", None))
+        observation = probe_enemy_direction_fast(frame)
     except Exception as exc:
+        draw_enemy_direction_debug(
+            task,
+            frame,
+            None,
+            presence,
+            streak=0,
+            action="error",
+            error=str(exc),
+        )
         logger = getattr(task, "log_debug", None)
         if callable(logger):
             logger(f"敌人方向提示检测失败，忽略本帧: {exc}")
@@ -95,11 +111,27 @@ def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
         return False
 
     if observation is None:
+        draw_enemy_direction_debug(
+            task,
+            frame,
+            None,
+            presence,
+            streak=0,
+            action="miss",
+        )
         _reset_direction_state(task, keep_throttle=True)
         return False
 
     streak = _note_observation(task, observation, now)
     if streak < _STABLE_FRAMES:
+        draw_enemy_direction_debug(
+            task,
+            frame,
+            observation,
+            presence,
+            streak=streak,
+            action="tracking",
+        )
         return True
 
     radians = math.radians(observation.angle_deg)
@@ -109,9 +141,27 @@ def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
     dx = int(round(-math.cos(radians) * step))
     dy = int(round(math.sin(radians) * step))
     if dx == 0 and dy == 0:
+        draw_enemy_direction_debug(
+            task,
+            frame,
+            observation,
+            presence,
+            streak=streak,
+            action="stable_no_delta",
+        )
         return True
 
     move = getattr(task, "active_and_send_mouse_delta", None)
+    action = "mouse_delta" if callable(move) else "stable_no_mouse_sender"
+    draw_enemy_direction_debug(
+        task,
+        frame,
+        observation,
+        presence,
+        streak=streak,
+        action=action,
+        mouse_delta=(dx, dy) if callable(move) else None,
+    )
     if callable(move):
         move(dx=dx, dy=dy, activate=True, delay=0.0, steps=1)
     return True
