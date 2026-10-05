@@ -6,34 +6,25 @@ _PATCH_INSTALLED = False
 def is_task_config_editable(task) -> bool:
     """Return whether task configuration may be edited safely.
 
-    One-time tasks only need to be locked while their current run is active.
-    Trigger tasks stay locked while enabled and also while a disabled trigger is
-    still finishing its current invocation. Once that invocation has returned,
-    the executor-side quiescent-boundary cleanup clears ``running`` and the
-    configuration becomes editable again.
+    Keep the original lock semantics: configuration is locked only while the
+    task is actually running. TriggerTask enablement alone is not treated as an
+    active invocation.
     """
-    if task is None:
-        return True
-
-    from ok import TriggerTask
-
-    if isinstance(task, TriggerTask):
-        return not bool(getattr(task, "enabled", False) or getattr(task, "running", False))
-    return not bool(getattr(task, "running", False))
+    return not bool(task and getattr(task, "running", False))
 
 
 def release_finished_trigger_state(executor):
-    """Clear stale TriggerTask execution state between executor iterations.
+    """Clear stale TriggerTask state at the boundary between executor iterations.
 
     This helper is only called from the patched ``TaskExecutor.next_task``.
     Reaching that method means the previous ``task.run()`` invocation has
-    already returned, so clearing ``running`` and ``current_task`` here cannot
+    already returned, so clearing the known ``running=True`` leak here cannot
     expose configuration while task code is still executing.
     """
     from ok import TriggerTask
 
     task = getattr(executor, "current_task", None)
-    if not isinstance(task, TriggerTask):
+    if not isinstance(task, TriggerTask) or not bool(getattr(task, "running", False)):
         return None
 
     task.running = False
@@ -42,7 +33,7 @@ def release_finished_trigger_state(executor):
 
 
 def install_task_config_lock_patch():
-    """Disable task configuration inputs while the task may consume them."""
+    """Disable task configuration inputs while the task is actually running."""
     global _PATCH_INSTALLED
     if _PATCH_INSTALLED:
         return
