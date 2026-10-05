@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from functools import wraps
+
 _PATCH_INSTALLED = False
 
 
@@ -13,23 +15,32 @@ def is_task_config_editable(task) -> bool:
     return not bool(task and getattr(task, "running", False))
 
 
-def release_finished_trigger_state(executor):
-    """Clear stale TriggerTask state at the boundary between executor iterations.
+def wrap_trigger_run(task, emit_state):
+    """Wrap one TriggerTask run so UI state follows the real invocation lifetime."""
+    if getattr(task, "_config_lock_run_wrapped", False):
+        return
 
-    This helper is only called from the patched ``TaskExecutor.next_task``.
-    Reaching that method means the previous ``task.run()`` invocation has
-    already returned, so clearing the known ``running=True`` leak here cannot
-    expose configuration while task code is still executing.
-    """
-    from ok import TriggerTask
+    original_run = task.run
 
-    task = getattr(executor, "current_task", None)
-    if not isinstance(task, TriggerTask) or not bool(getattr(task, "running", False)):
-        return None
+    @wraps(original_run)
+    def run_with_config_lock(*args, **kwargs):
+        executor = getattr(task, "_executor", None)
+        managed_invocation = bool(
+            getattr(task, "running", False) and executor is not None and getattr(executor, "current_task", None) is task
+        )
+        if managed_invocation:
+            emit_state(task)
+        try:
+            return original_run(*args, **kwargs)
+        finally:
+            if managed_invocation:
+                task.running = False
+                if getattr(executor, "current_task", None) is task:
+                    executor.current_task = None
+                emit_state(task)
 
-    task.running = False
-    executor.current_task = None
-    return task
+    task.run = run_with_config_lock
+    task._config_lock_run_wrapped = True
 
 
 def install_task_config_lock_patch():
@@ -38,12 +49,12 @@ def install_task_config_lock_patch():
     if _PATCH_INSTALLED:
         return
 
+    from ok import TriggerTask
     from ok.core.events import communicate
     from ok.gui.tasks.TaskCard import TaskCard
-    from ok.task.TaskExecutor import TaskExecutor
 
     original_update_buttons = TaskCard.update_buttons
-    original_next_task = TaskExecutor.next_task
+    original_trigger_after_init = TriggerTask.after_init
 
     def update_buttons(self, task):
         original_update_buttons(self, task)
@@ -54,14 +65,12 @@ def install_task_config_lock_patch():
         if reset_config is not None:
             reset_config.setEnabled(editable)
 
-    def next_task(self):
-        finished_trigger = release_finished_trigger_state(self)
-        if finished_trigger is not None:
-            communicate.task.emit(finished_trigger)
-        return original_next_task(self)
+    def trigger_after_init(self, *args, **kwargs):
+        original_trigger_after_init(self, *args, **kwargs)
+        wrap_trigger_run(self, communicate.task.emit)
 
     update_buttons.__wrapped__ = original_update_buttons
-    next_task.__wrapped__ = original_next_task
+    trigger_after_init.__wrapped__ = original_trigger_after_init
     TaskCard.update_buttons = update_buttons
-    TaskExecutor.next_task = next_task
+    TriggerTask.after_init = trigger_after_init
     _PATCH_INSTALLED = True
