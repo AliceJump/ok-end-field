@@ -14,22 +14,18 @@ from ok import Box, og
 
 from src.data.combat_observation import EnemyPresence
 from src.image.enemy_direction_probe import (
+    EnemyDirectionMarker,
     EnemyDirectionObservation,
-    _INNER_REFERENCE_RING,
-    _OUTER_REFERENCE_RING,
-    _TARGET_RING,
+    _ELLIPSE_ANNULUS_SCALE,
+    _MARKER_ARC_WIDTH_DEG,
+    _direction_to_parameter_deg,
+    _ellipse_axes,
 )
 from src.image.enemy_health_probe import KEY_SAVE_ENEMY_PRESENCE_FRAMES
 
-_DEBUG_SCAN_COLOR = (0, 255, 255)
 _DEBUG_HIT_COLOR = (0, 255, 0)
 _DEBUG_TEXT_COLOR = (255, 255, 255)
 _DIRECTION_ARTIFACT_QUEUE_MAXSIZE = 8
-_RING_SPECS = (
-    ("inner_reference", _INNER_REFERENCE_RING),
-    ("target", _TARGET_RING),
-    ("outer_reference", _OUTER_REFERENCE_RING),
-)
 
 
 def _debug_overlay_enabled(task) -> bool:
@@ -57,32 +53,50 @@ def _save_direction_frames_enabled(task) -> bool:
     return bool(value)
 
 
-def _ring_radii(frame, ring: tuple[float, float]) -> tuple[int, int]:
-    height = frame.shape[0]
-    return int(round(ring[0] * height)), int(round(ring[1] * height))
-
-
-def _ring_box(frame, ring: tuple[float, float]) -> tuple[int, int, int, int]:
+def _ellipse_geometry(frame) -> tuple[int, int, float, float]:
     height, width = frame.shape[:2]
-    cx = width / 2.0
-    cy = height / 2.0
-    _inner, outer = _ring_radii(frame, ring)
-    x1 = max(0, int(round(cx - outer)))
-    y1 = max(0, int(round(cy - outer)))
-    x2 = min(width, int(round(cx + outer + 1)))
-    y2 = min(height, int(round(cy + outer + 1)))
+    semi_axis_x, semi_axis_y = _ellipse_axes(width, height)
+    return width // 2, height // 2, semi_axis_x, semi_axis_y
+
+
+def _scan_box(frame) -> tuple[int, int, int, int]:
+    height, width = frame.shape[:2]
+    cx, cy, semi_axis_x, semi_axis_y = _ellipse_geometry(frame)
+    outer = _ELLIPSE_ANNULUS_SCALE[1]
+    x1 = max(0, int(round(cx - semi_axis_x * outer)))
+    y1 = max(0, int(round(cy - semi_axis_y * outer)))
+    x2 = min(width, int(round(cx + semi_axis_x * outer + 1)))
+    y2 = min(height, int(round(cy + semi_axis_y * outer + 1)))
     return x1, y1, x2, y2
 
 
-def _marker_box(frame, observation: EnemyDirectionObservation) -> tuple[int, int, int, int]:
+def _observation_markers(frame, observation: EnemyDirectionObservation | None) -> tuple[EnemyDirectionMarker, ...]:
+    if observation is None:
+        return ()
+    if observation.markers:
+        return observation.markers
+    _cx, _cy, semi_axis_x, semi_axis_y = _ellipse_geometry(frame)
+    parameter = _direction_to_parameter_deg(observation.angle_deg, semi_axis_x, semi_axis_y)
+    return (
+        EnemyDirectionMarker(
+            angle_deg=float(observation.angle_deg),
+            parameter_angle_deg=parameter,
+            score=float(observation.score),
+        ),
+    )
+
+
+def _marker_center(frame, marker: EnemyDirectionMarker) -> tuple[int, int]:
+    cx, cy, semi_axis_x, semi_axis_y = _ellipse_geometry(frame)
+    radians = math.radians(marker.parameter_angle_deg)
+    x = int(round(cx + semi_axis_x * math.cos(radians)))
+    y = int(round(cy + semi_axis_y * math.sin(radians)))
+    return x, y
+
+
+def _marker_box(frame, marker: EnemyDirectionMarker) -> tuple[int, int, int, int]:
     height, width = frame.shape[:2]
-    cx = width / 2.0
-    cy = height / 2.0
-    inner, outer = _ring_radii(frame, _TARGET_RING)
-    radius = (inner + outer) / 2.0
-    radians = math.radians(observation.angle_deg)
-    x = int(round(cx + math.cos(radians) * radius))
-    y = int(round(cy + math.sin(radians) * radius))
+    x, y = _marker_center(frame, marker)
     half = max(4, int(round(14 * height / 1080.0)))
     x1 = max(0, x - half)
     y1 = max(0, y - half)
@@ -99,26 +113,43 @@ def _draw_live_overlay(task, frame, observation: EnemyDirectionObservation | Non
         return
 
     boxes = []
-    for label, ring in _RING_SPECS:
-        x1, y1, x2, y2 = _ring_box(frame, ring)
-        box = Box(x1, y1, max(1, x2 - x1), max(1, y2 - y1))
-        box.name = f"enemy_direction_scan:{label}"
-        box.confidence = 1.0
-        boxes.append(box)
+    x1, y1, x2, y2 = _scan_box(frame)
+    scan_box = Box(x1, y1, max(1, x2 - x1), max(1, y2 - y1))
+    scan_box.name = "enemy_direction_scan:ellipse_annulus"
+    scan_box.confidence = 1.0
+    boxes.append(scan_box)
 
-    if observation is not None:
-        x1, y1, x2, y2 = _marker_box(frame, observation)
+    for index, marker in enumerate(_observation_markers(frame, observation), start=1):
+        x1, y1, x2, y2 = _marker_box(frame, marker)
         box = Box(x1, y1, max(1, x2 - x1), max(1, y2 - y1))
         box.name = (
-            f"enemy_direction_hit:{observation.angle_deg:.1f}deg:"
-            f"score={observation.score:.1f}:streak={streak}:{action}"
+            f"enemy_direction_hit:{index}:{marker.angle_deg:.1f}deg:"
+            f"score={marker.score:.1f}:streak={streak}:{action}"
         )
         box.confidence = 1.0
         boxes.append(box)
 
-    # Keep all direction diagnostics in one layer so each draw replaces the
-    # previous probe result without clearing overlays owned by other features.
+    # Live overlay is constrained to Box primitives. Saved evidence below burns
+    # the actual fixed-width ellipse arcs instead of rectangular hit boxes.
     draw_boxes("enemy_direction_debug", boxes, color="blue", debug=True)
+
+
+def _draw_marker_arc(frame, marker: EnemyDirectionMarker, color, thickness: int) -> None:
+    cx, cy, semi_axis_x, semi_axis_y = _ellipse_geometry(frame)
+    half_arc = marker.arc_width_deg / 2.0
+    cv2.ellipse(
+        frame,
+        (cx, cy),
+        (max(1, int(round(semi_axis_x))), max(1, int(round(semi_axis_y)))),
+        0,
+        marker.parameter_angle_deg - half_arc,
+        marker.parameter_angle_deg + half_arc,
+        color,
+        thickness,
+        cv2.LINE_AA,
+    )
+    hit_x, hit_y = _marker_center(frame, marker)
+    cv2.circle(frame, (hit_x, hit_y), max(2, thickness + 1), color, -1, cv2.LINE_AA)
 
 
 def _annotate_direction_frame(
@@ -130,67 +161,21 @@ def _annotate_direction_frame(
     mouse_delta: tuple[int, int] | None,
     error: str | None,
 ):
-    # The caller owns this snapshot, so annotation can happen in place.
+    """Burn only detected fixed-width marker arcs; never draw rectangular hits."""
     annotated = frame
-    height, width = annotated.shape[:2]
-    cx = width // 2
-    cy = height // 2
-    thickness = max(1, int(round(height / 540.0)))
-    font_scale = max(0.45, height / 2160.0)
+    height = annotated.shape[0]
+    thickness = max(2, int(round(3 * height / 1080.0)))
 
-    for label, ring in _RING_SPECS:
-        inner, outer = _ring_radii(annotated, ring)
-        cv2.circle(annotated, (cx, cy), inner, _DEBUG_SCAN_COLOR, thickness, cv2.LINE_AA)
-        cv2.circle(annotated, (cx, cy), outer, _DEBUG_SCAN_COLOR, thickness, cv2.LINE_AA)
-        cv2.putText(
-            annotated,
-            label,
-            (max(2, cx - outer), max(18, cy - outer - 4)),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            font_scale,
-            _DEBUG_SCAN_COLOR,
-            thickness,
-            cv2.LINE_AA,
-        )
-
-    cv2.drawMarker(
-        annotated,
-        (cx, cy),
-        _DEBUG_SCAN_COLOR,
-        markerType=cv2.MARKER_CROSS,
-        markerSize=max(12, int(round(22 * height / 1080.0))),
-        thickness=thickness,
-        line_type=cv2.LINE_AA,
-    )
-
-    if observation is not None:
-        x1, y1, x2, y2 = _marker_box(annotated, observation)
-        hit_x = (x1 + x2 - 1) // 2
-        hit_y = (y1 + y2 - 1) // 2
-        cv2.line(annotated, (cx, cy), (hit_x, hit_y), _DEBUG_HIT_COLOR, thickness, cv2.LINE_AA)
-        cv2.rectangle(
-            annotated,
-            (x1, y1),
-            (max(x1, x2 - 1), max(y1, y2 - 1)),
-            _DEBUG_HIT_COLOR,
-            thickness,
-        )
-        cv2.putText(
-            annotated,
-            f"HIT {observation.angle_deg:.1f}deg score={observation.score:.1f}",
-            (max(2, x1), max(18, y1 - 6)),
-            cv2.FONT_HERSHEY_SIMPLEX,
-            font_scale,
-            _DEBUG_HIT_COLOR,
-            thickness,
-            cv2.LINE_AA,
-        )
+    for marker in _observation_markers(annotated, observation):
+        _draw_marker_arc(annotated, marker, _DEBUG_HIT_COLOR, thickness)
 
     result = "error" if error else ("hit" if observation is not None else "miss")
     lines = [
         f"enemy_direction={result} presence={presence.value}",
         f"streak={streak} action={action}",
     ]
+    if observation is not None:
+        lines.append(f"markers={len(_observation_markers(annotated, observation))}")
     if mouse_delta is not None:
         lines.append(f"mouse_delta=({mouse_delta[0]},{mouse_delta[1]})")
     if error:
@@ -205,7 +190,7 @@ def _annotate_direction_frame(
             cv2.FONT_HERSHEY_SIMPLEX,
             max(0.55, height / 1800.0),
             _DEBUG_TEXT_COLOR,
-            thickness,
+            max(1, int(round(height / 540.0))),
             cv2.LINE_AA,
         )
     return annotated
@@ -224,44 +209,29 @@ def _build_direction_inform(
     captured_at: datetime,
 ) -> dict:
     height, width = frame.shape[:2]
-    ring_data = []
-    for label, ring in _RING_SPECS:
-        inner, outer = _ring_radii(frame, ring)
-        x1, y1, x2, y2 = _ring_box(frame, ring)
-        ring_data.append(
-            {
-                "label": label,
-                "inner_radius": inner,
-                "outer_radius": outer,
-                "bounding_box": {
-                    "x": x1,
-                    "y": y1,
-                    "width": x2 - x1,
-                    "height": y2 - y1,
-                    "x2": x2,
-                    "y2": y2,
-                },
-            }
-        )
+    _cx, _cy, semi_axis_x, semi_axis_y = _ellipse_geometry(frame)
+    inner_scale, outer_scale = _ELLIPSE_ANNULUS_SCALE
+    markers = _observation_markers(frame, observation)
 
-    marker = None
+    marker_data = [
+        {
+            "angle_deg": float(marker.angle_deg),
+            "parameter_angle_deg": float(marker.parameter_angle_deg),
+            "score": float(marker.score),
+            "arc_width_deg": float(marker.arc_width_deg),
+        }
+        for marker in markers
+    ]
+    selected = None
     if observation is not None:
-        x1, y1, x2, y2 = _marker_box(frame, observation)
-        marker = {
+        selected = {
             "angle_deg": float(observation.angle_deg),
             "score": float(observation.score),
-            "box": {
-                "x": x1,
-                "y": y1,
-                "width": x2 - x1,
-                "height": y2 - y1,
-                "x2": x2,
-                "y2": y2,
-            },
+            "markers": marker_data,
         }
 
     return {
-        "schema": "enemy_direction_probe/v1",
+        "schema": "enemy_direction_probe/v2",
         "image": f"{stem}.png",
         "annotated_image": f"{stem}.png",
         "raw_image": f"{stem}.raw.png",
@@ -283,8 +253,22 @@ def _build_direction_inform(
             "height": int(height),
             "center": {"x": width / 2.0, "y": height / 2.0},
         },
-        "scan_rings": ring_data,
-        "observation": marker,
+        "scan_annulus": {
+            "semi_axis_x": float(semi_axis_x),
+            "semi_axis_y": float(semi_axis_y),
+            "inner_scale": float(inner_scale),
+            "outer_scale": float(outer_scale),
+            "inner_axes": {
+                "x": float(semi_axis_x * inner_scale),
+                "y": float(semi_axis_y * inner_scale),
+            },
+            "outer_axes": {
+                "x": float(semi_axis_x * outer_scale),
+                "y": float(semi_axis_y * outer_scale),
+            },
+        },
+        "marker_arc_width_deg": float(_MARKER_ARC_WIDTH_DEG),
+        "observation": selected,
     }
 
 
@@ -335,8 +319,6 @@ def _write_direction_artifact(
             sequence,
             captured_at,
         )
-        # Persist the exact detector input before annotation mutates this owned
-        # snapshot. This avoids another full-frame copy, including at 4K.
         if not cv2.imwrite(str(temp_raw), frame):
             raise OSError(f"cv2.imwrite returned false for {temp_raw}")
         annotated = _annotate_direction_frame(
@@ -554,7 +536,6 @@ def draw_enemy_direction_debug(
     try:
         _draw_live_overlay(task, frame, observation, streak, action)
     except Exception:
-        # Live diagnostics must not affect camera recovery.
         pass
     _save_direction_frame(
         task,
