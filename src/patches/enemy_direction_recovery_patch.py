@@ -14,6 +14,8 @@ _PROBE_INTERVAL = 0.04
 _STABLE_FRAMES = 2
 _STABLE_MAX_GAP = 0.18
 _STABLE_ANGLE_TOLERANCE_DEG = 12.0
+_TARGET_LOCK_ANGLE_TOLERANCE_DEG = 12.0
+_TARGET_SWITCH_SCORE_RATIO = 1.25
 _MOUSE_STEP_1080 = 48
 
 
@@ -45,6 +47,46 @@ def _scaled_mouse_step(task) -> int:
     return max(1, int(round(_MOUSE_STEP_1080 * height / 1080.0)))
 
 
+def _select_locked_observation(
+    task,
+    observation: EnemyDirectionObservation,
+    now: float,
+) -> EnemyDirectionObservation:
+    """Keep the current marker unless it disappears or a rival is clearly stronger."""
+    markers = observation.markers
+    previous_angle = getattr(task, "_enemy_direction_last_angle", None)
+    previous_at = getattr(task, "_enemy_direction_last_seen_at", None)
+    if (
+        not markers
+        or previous_angle is None
+        or previous_at is None
+        or not 0.0 <= now - previous_at <= _STABLE_MAX_GAP
+    ):
+        return observation
+
+    nearest = min(
+        markers,
+        key=lambda marker: abs(_angle_delta(marker.angle_deg, float(previous_angle))),
+    )
+    nearest_delta = abs(_angle_delta(nearest.angle_deg, float(previous_angle)))
+    best = max(markers, key=lambda marker: marker.score)
+
+    if nearest_delta > _TARGET_LOCK_ANGLE_TOLERANCE_DEG:
+        selected = best
+    elif best is nearest or best.score < nearest.score * _TARGET_SWITCH_SCORE_RATIO:
+        selected = nearest
+    else:
+        selected = best
+
+    if selected.angle_deg == observation.angle_deg and selected.score == observation.score:
+        return observation
+    return EnemyDirectionObservation(
+        angle_deg=selected.angle_deg,
+        score=selected.score,
+        markers=markers,
+    )
+
+
 def _note_observation(task, observation: EnemyDirectionObservation, now: float) -> int:
     previous_angle = getattr(task, "_enemy_direction_last_angle", None)
     previous_at = getattr(task, "_enemy_direction_last_seen_at", None)
@@ -72,10 +114,16 @@ def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
     about camera direction, therefore boss PRESENT observations still allow this
     recovery probe.
 
+    When multiple marker primitives are visible, the previously tracked nearby
+    marker keeps the lock. A rival marker may take over only after becoming at
+    least 25% stronger; if the old direction disappears, the strongest remaining
+    marker is selected normally. This avoids frame-to-frame score jitter making
+    the camera alternate between adjacent markers.
+
     Every actual direction-probe attempt also emits optional diagnostics. The
     existing ``保存敌人检测调试帧`` option saves an annotated PNG plus matching
     ``.inform.json`` under ``enemy_direction/``; live debug overlay shows the
-    three scan-ring bounds and the current detected direction marker.
+    fitted ellipse annulus and detected marker primitives.
 
     Returns True while a direction marker is currently being tracked.
     """
@@ -122,6 +170,7 @@ def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
         _reset_direction_state(task, keep_throttle=True)
         return False
 
+    observation = _select_locked_observation(task, observation, now)
     streak = _note_observation(task, observation, now)
     if streak < _STABLE_FRAMES:
         draw_enemy_direction_debug(
