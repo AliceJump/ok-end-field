@@ -8,15 +8,28 @@ from src.core.global_config_store import (
     get_global_config,
 )
 from src.core.sequence_parser import parse_int_sequence
+from src.image.fast_block_ocr import HsvBlockOcrProcessor
 from src.image.hsv_config import HSVRange as hR
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.navigation_mixin import NavigationMixin
+
+
+_ZIP_LINE_GOLD_OCR = HsvBlockOcrProcessor(hR.GOLD_TEXT)
+_ZIP_LINE_WHITE_OCR = HsvBlockOcrProcessor(hR.WHITE)
 
 
 class ZipLineMixin(InstructionsMixin, NavigationMixin):
     @property
     def zip_line_config(self):
         return get_global_config(ZIP_LINE_CONFIG_NAME)
+
+    def ocr(self, *args, frame_processor=None, **kwargs):
+        """滑索专用块 OCR；其他 OCR 调用保持框架原行为。"""
+        if isinstance(frame_processor, HsvBlockOcrProcessor):
+            result = frame_processor.recognize(self, *args, **kwargs)
+            if result is not None:
+                return result
+        return super().ocr(*args, frame_processor=frame_processor, **kwargs)
 
     def build_instructions(self):
         """滑索配置使用说明。
@@ -102,6 +115,44 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         zip_line_list = parse_int_sequence(zip_line_list_str)
         self.zip_line_list_go(zip_line_list, need_scroll, target, need_v=need_v)
 
+    @staticmethod
+    def _zip_line_distance_pattern(zip_line):
+        """匹配完整距离数字，避免 108 错配到 1080m 等更长距离。"""
+        return re.compile(rf"(?<!\d){re.escape(str(zip_line))}(?!\d)")
+
+    def _zip_line_target_is_gold_and_centered(self, zip_line, frame=None, tolerance=20):
+        """判断目标距离是否处于黄色锁定态且位于屏幕中心附近。"""
+        result = self.ocr(
+            match=self._zip_line_distance_pattern(zip_line),
+            frame=frame if frame is not None else self.next_frame(),
+            frame_processor=_ZIP_LINE_GOLD_OCR,
+        )
+        if not result:
+            return False
+
+        screen_center_x, screen_center_y = self.screen_center()
+        scaled_tolerance = self.scale_distance(tolerance)
+        numeric_y_offset = int(self.height * ((525 - 486) / 1080))
+        for target in result:
+            target_center_x = target.x + target.width // 2
+            target_center_y = target.y - numeric_y_offset + target.height // 2
+            if (
+                abs(target_center_x - screen_center_x) <= scaled_tolerance
+                and abs(target_center_y - screen_center_y) <= scaled_tolerance
+            ):
+                return True
+        return False
+
+    def _align_zip_line_distance(self, zip_line, need_scroll=None, tolerance=50, max_time=100):
+        return self.align_ocr_or_find_target_to_center(
+            self._zip_line_distance_pattern(zip_line),
+            is_num=True,
+            need_scroll=need_scroll,
+            ocr_frame_processor_list=[_ZIP_LINE_GOLD_OCR, _ZIP_LINE_WHITE_OCR],
+            tolerance=tolerance,
+            max_time=max_time,
+        )
+
     def zip_line_list_go(self, zip_line_list, need_scroll=None, target=None, need_v=False):
         """按顺序对齐滑索并执行滑行
 
@@ -113,18 +164,16 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
 
         """
         for zip_line in zip_line_list:
-            self.align_ocr_or_find_target_to_center(
-                re.compile(str(zip_line)),
-                is_num=True,
-                need_scroll=need_scroll,
-                ocr_frame_processor_list=[
-                    self.make_hsv_isolator(hR.GOLD_TEXT),
-                    self.make_hsv_isolator(hR.WHITE),
-                ],
-                max_time=100,
-            )
+            self._align_zip_line_distance(zip_line, need_scroll=need_scroll)
             self.log_info(f"成功将滑索调整到{zip_line}的中心")
-            self.ensure_click_on_zip_line()
+
+            if not self.ensure_click_on_zip_line(zip_line):
+                # 白色和黄色都可用于寻找/移动视角；只有最后准备 click 时才要求黄色。
+                self.log_info(f"滑索{zip_line}已对中但仍为白色，收紧对中后等待黄色锁定")
+                self._align_zip_line_distance(zip_line, need_scroll=need_scroll, tolerance=8, max_time=10)
+                if not self.ensure_click_on_zip_line(zip_line):
+                    raise RuntimeError(f"滑索{zip_line}未进入黄色锁定态，不执行校准点击")
+
             start = self.active_time()
             while True:
                 self.next_frame()
@@ -197,16 +246,26 @@ class ZipLineMixin(InstructionsMixin, NavigationMixin):
         self.log_info("滑索结束")
         self.ensure_main()
 
-    def ensure_click_on_zip_line(self, max_attempts=5):
+    def ensure_click_on_zip_line(self, zip_line, max_attempts=5, lock_timeout=2):
+        """等待目标黄色且居中后校准点击；click 后仅重试 E，不做二次颜色判断。"""
+        stop_match = [
+            self.lang.zip_line_mixin.k_2f4f4a2f,
+            self.lang.zip_line_mixin.k_0b1e4f35,
+        ]
+        stop_box = self.box_of_screen(0.351, 0.943, 0.657, 0.981)
+
+        lock_start = self.active_time()
+        while not self._zip_line_target_is_gold_and_centered(zip_line, frame=self.next_frame()):
+            if self.active_time() - lock_start >= lock_timeout:
+                return False
+            self.sleep(0.05)
+
+        # click 是一次性的校准动作：只有中心目标已经是黄色时才允许执行。
+        self.click(after_sleep=0.1)
+
+        # click 之后黄色门控已经完成；后续仅重试 E，直到停止提示消失或次数耗尽。
         for _ in range(max_attempts):
-            self.click(after_sleep=0.1)
             self.send_key("e")  # 确认使用send_key：滑索交互键为游戏固定不可改绑键
-            if not self.ocr(
-                match=[
-                    self.lang.zip_line_mixin.k_2f4f4a2f,
-                    self.lang.zip_line_mixin.k_0b1e4f35,
-                ],
-                frame=self.next_frame(),
-                box=self.box_of_screen(0.351, 0.943, 0.657, 0.981),
-            ):
+            if not self.ocr(match=stop_match, frame=self.next_frame(), box=stop_box):
                 return True
+        return False
