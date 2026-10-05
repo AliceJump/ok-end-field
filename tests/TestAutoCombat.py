@@ -5,6 +5,7 @@ from pathlib import Path
 from ok.test.TaskTestCase import TaskTestCase
 
 from src.config import config
+from src.image.enemy_health_probe import KEY_SAVE_ENEMY_PRESENCE_FRAMES
 from src.tasks.trigger.AutoCombatTask import AutoCombatTask
 
 
@@ -17,6 +18,14 @@ class TestMyOneTimeTask(TaskTestCase):
         if not Path(image).exists():
             self.skipTest(f"Missing image: {image}")
         super().set_image(image)
+
+    def test_enemy_presence_capture_option_defaults_off(self):
+        self.assertIn(KEY_SAVE_ENEMY_PRESENCE_FRAMES, self.task.default_config)
+        self.assertFalse(self.task.default_config[KEY_SAVE_ENEMY_PRESENCE_FRAMES])
+        self.assertIn(KEY_SAVE_ENEMY_PRESENCE_FRAMES, self.task.config_description)
+        description = self.task.config_description[KEY_SAVE_ENEMY_PRESENCE_FRAMES]
+        self.assertIn(".inform.json", description)
+        self.assertIn("screenshots/enemy_presence", description)
 
     def test_parse_skill_sequence_unified_for_comma_style(self):
         self.assertEqual(
