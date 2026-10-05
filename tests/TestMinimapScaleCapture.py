@@ -130,7 +130,7 @@ class TestMinimapScaleCaptureTask(TaskTestCase):
             self.assertEqual(sample["map_id"], "map02")
             self.assertEqual(sample["heading"], 90.0)
             # region 是 region_geometry(width, height) 的四个值
-            self.assertEqual(sample["region"], [161.28, 166.32, 26.88, 84.48])
+            self.assertEqual(sample["region"], [161.28, 166.32, 21.12, 82.56])
             # 落盘发生在"第 5 拍"（2 拍移动 + 3 拍静止），不是第一拍静止就采
             self.assertEqual(fake.calls, 5)
 
@@ -151,7 +151,7 @@ class TestMinimapScaleCaptureTask(TaskTestCase):
             self.assertEqual(sample["file"], f"2560x1440/map02/{pngs[0].name}")
             self.assertTrue((Path(tmp) / sample["file"]).is_file())
             # region 跟着新分辨率走
-            self.assertEqual(sample["region"], [215.04, 221.76, 35.84, 112.64])
+            self.assertEqual(sample["region"], [215.04, 221.76, 28.16, 110.08])
 
     def test_map_id_cannot_escape_save_dir(self):
         """map_id 来自 WS 报文，不能靠它把样本写到保存目录之外。"""

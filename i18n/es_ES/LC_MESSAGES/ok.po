@@ -3396,3 +3396,72 @@ msgstr ""
 
 msgid "自动技能列表"
 msgstr "Lista automática de habilidades"
+
+msgid "关键帧视觉锚定链校正"
+msgstr "Corrección de cadena de anclaje visual por fotogramas clave"
+
+msgid "关键帧视觉锚定链校正窗口(拍)"
+msgstr "Ventana de corrección de cadena de anclaje visual por fotogramas clave (fotogramas)"
+
+msgid "关键帧视觉锚定链校正边间隔(拍)"
+msgstr "Intervalo de aristas de corrección de cadena de anclaje visual (fotogramas)"
+
+msgid "关键帧视觉锚定链校正最小响应"
+msgstr "Respuesta mínima de corrección de cadena de anclaje visual"
+
+msgid "关键帧视觉锚定链校正锚点权重"
+msgstr "Peso de ancla de corrección de cadena de anclaje visual"
+
+msgid "关键帧视觉锚定链校正修正上限(米)"
+msgstr "Límite de corrección de cadena de anclaje visual (m)"
+
+msgid "关键帧视觉锚定链校正关键帧间隔(拍)"
+msgstr "Intervalo de fotogramas clave de corrección de cadena de anclaje visual"
+
+msgid "关键帧视觉锚定链校正关键帧边数"
+msgstr "Número de aristas de fotogramas clave de corrección de cadena de anclaje visual"
+
+msgid "关键帧视觉锚定链校正关键帧最小响应"
+msgstr "Respuesta mínima de fotogramas clave de corrección de cadena de anclaje visual"
+
+msgid "关键帧视觉锚定链校正关键帧锚点权重"
+msgstr "Peso de ancla de fotogramas clave de corrección de cadena de anclaje visual"
+
+msgid "用 WS 绝对锚点启动关键帧视觉锚定链校正，并用视觉重叠约束修正累计漂移后发布位置"
+msgstr ""
+"Inicia la corrección de cadena de anclaje visual por fotogramas clave desde "
+"el ancla absoluta de WS y usa restricciones de solapamiento visual para "
+"corregir la deriva acumulada antes de publicar la posición."
+
+msgid "关键帧视觉锚定链校正保留的最近切片数；越大越稳但计算越多"
+msgstr ""
+"Número de cortes recientes conservados por la corrección de cadena de "
+"anclaje visual; un valor mayor es más estable pero consume más cálculo."
+
+msgid "每拍新切片最多和之前多少拍建立相对平移边"
+msgstr "Distancia máxima de fotogramas para crear aristas de traslación relativa desde cada corte nuevo."
+
+msgid "切片对相位相关的最低响应；低于该值不建边"
+msgstr "Respuesta mínima de correlación de fase para un par de cortes; por debajo no se crea arista."
+
+msgid "静止校准 WS 绝对锚点的权重；越大越贴近 WS"
+msgstr "Peso del ancla absoluta WS en calibración estática; un valor mayor se acerca más a WS."
+
+msgid "单拍关键帧视觉锚定链校正量的安全上限（米）；超过则回退原始融合值"
+msgstr ""
+"Límite de seguridad para una corrección de cadena de anclaje visual (m); "
+"si se supera, se vuelve a la posición fusionada original."
+
+msgid "每隔多少拍建立一个关键帧；每次静止校准也会建关键帧"
+msgstr "Crea un fotograma clave cada N fotogramas; cada calibración estática también crea uno."
+
+msgid "每个关键帧最多和之前多少个关键帧建立直接视觉边"
+msgstr "Número máximo de aristas visuales directas de cada fotograma clave con los anteriores."
+
+msgid "关键帧视觉边的最低相位相关响应"
+msgstr "Respuesta mínima de correlación de fase para una arista visual de fotograma clave."
+
+msgid "关键帧优化位置作为局部关键帧视觉锚定链校正软锚点的权重"
+msgstr ""
+"Peso de la posición optimizada del fotograma clave como ancla suave para "
+"la corrección de cadena de anclaje visual local."

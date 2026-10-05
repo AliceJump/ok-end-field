@@ -83,13 +83,28 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
         status_reported = False
         if state.get("just_synced") and state.get("sync_residual") is not None:
             residual = state["sync_residual"]
-            self.log_info(
-                "静止校准误差 "
+            message = (
+                "静止校准：原始融合与新 WS 误差 "
                 f"{float(residual['dist']):.3f}m "
                 f"(dx={float(residual['dx']):+.3f}, "
                 f"dz={float(residual['dz']):+.3f})"
             )
-            self.info_set("小地图校准", f"{float(residual['dist']):.2f}m")
+            corrected_dist = residual.get("visual_anchor_chain_dist")
+            corrected_dx = residual.get("visual_anchor_chain_dx")
+            corrected_dz = residual.get("visual_anchor_chain_dz")
+            if corrected_dist is not None and corrected_dx is not None and corrected_dz is not None:
+                message += (
+                    " | 锚定链校正输出与同一 WS 误差 "
+                    f"{float(corrected_dist):.3f}m "
+                    f"(dx={float(corrected_dx):+.3f}, "
+                    f"dz={float(corrected_dz):+.3f})"
+                )
+            self.log_info(message)
+            if corrected_dist is None:
+                info_text = f"{float(residual['dist']):.2f}m"
+            else:
+                info_text = f"原始 {float(residual['dist']):.2f}m / 校正 {float(corrected_dist):.2f}m"
+            self.info_set("小地图校准", info_text)
             status_reported = True
         status = self._position_status_text(state, x, z)
         status_key = (
@@ -115,7 +130,11 @@ class MinimapPositionTask(MinimapPositionMixin, BaseEfTask, TriggerTask):
             return f"未锚定({reason})"
         if not state.get("position_trusted", True):
             return "待校准"
-        return "静止" if state.get("rest") else "移动"
+        motion = "静止" if state.get("rest") else "移动"
+        correction = state.get("visual_anchor_chain_correction_m")
+        if correction is not None:
+            return f"{motion} 锚定链校正={float(correction):.2f}m"
+        return motion
 
     def on_destroy(self):
         """任务销毁时停止 WS 客户端和本地位置源。"""

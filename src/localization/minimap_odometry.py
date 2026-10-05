@@ -63,10 +63,11 @@ __all__ = [
 ]
 
 # 默认小地图几何（来自 get_arrow_angle 默认中心 + 真机截图实测）：
-# 圆心归一化 (0.084, 0.154)，外圈半径约 0.044 * width，内圈(盖住箭头扫掠)约 0.014 * width。
+# 圆心归一化 (0.084, 0.154)，外圈半径约 0.043 * width，内圈(盖住箭头+高亮描边)
+# 约 0.011 * width；羽化 3px，避免内外边缘把 UI 边框/箭头亮边卷进相关区。
 DEFAULT_CENTER_RATIO = (0.084, 0.154)
-DEFAULT_R_OUTER_RATIO = 0.044
-DEFAULT_R_INNER_RATIO = 0.014
+DEFAULT_R_OUTER_RATIO = 0.0430
+DEFAULT_R_INNER_RATIO = 0.0110
 # 环带外接框在外半径之外再留的余量（占外半径比例）。
 # 注意：这个值是"安全下限"，不能随便调小。裁剪相当于给相位相关换了个 FFT 窗，
 # 窗太小时"完全相同两帧"会解出 ±0.5px 的偏置（实测 pad=1.3 在 1920x1080/1280x720
@@ -183,7 +184,7 @@ def annulus_mask(
     center: tuple[float, float],
     r_inner: float,
     r_outer: float,
-    feather: int = 2,
+    feather: int = 3,
 ) -> np.ndarray:
     """构建小地图圆环 mask（0/1 float32，边缘羽化）。
 
@@ -342,7 +343,7 @@ class MinimapOdometry:
         center_ratio: tuple[float, float] = DEFAULT_CENTER_RATIO,
         r_outer_ratio: float = DEFAULT_R_OUTER_RATIO,
         r_inner_ratio: float = DEFAULT_R_INNER_RATIO,
-        feather: int = 2,
+        feather: int = 3,
         crop_pad_ratio: float = DEFAULT_CROP_PAD_RATIO,
         sample_min_dt: float = 0.15,
         # 转向、停车校准等正常控制动作会阻塞数秒。只要相位相关仍然可信，
@@ -403,6 +404,7 @@ class MinimapOdometry:
         self._pending_px = np.zeros(2, dtype=np.float64)
         self._last: dict | None = None
         self._last_result: dict | None = None
+        self._last_gray: np.ndarray | None = None
         self._scale_warned = False
 
     # ------------------------------------------------------------------ #
@@ -472,6 +474,7 @@ class MinimapOdometry:
         self._anchor_gray = None
         self._anchor_t = None
         self._last = None
+        self._last_gray = None
         if frame is not None:
             self._arm_anchor(frame, None)
 
@@ -552,6 +555,7 @@ class MinimapOdometry:
             return self._result(ok=False, sampled=False, reason="no_frame", reanchored=False)
 
         gray = self._crop_gray(frame)
+        self._last_gray = gray
         if gray is None:
             return self._result(ok=False, sampled=False, reason="no_gray", reanchored=False)
 
@@ -764,3 +768,51 @@ class MinimapOdometry:
         WS 静止校准会整个失效。
         """
         return self._last
+
+    def last_ring_patch(self) -> tuple[np.ndarray | None, np.ndarray | None]:
+        """最近一次采样的圆环灰度与 alpha（只含环带外接框，供关键帧视觉锚定链校正使用）。"""
+
+        gray = self._last_gray
+        if gray is None:
+            return None, None
+        width, height = self._dimensions()
+        if width <= 0 or height <= 0:
+            return None, None
+        cx, cy, r_inner, r_outer = region_geometry(
+            width,
+            height,
+            self._center_ratio,
+            self._r_outer_ratio,
+            self._r_inner_ratio,
+        )
+        half = math.ceil(r_outer) + 2
+        side = half * 2
+        x0 = round(cx) - half
+        y0 = round(cy) - half
+        bx0, by0, _bx1, _by1 = self._box()
+        rx0 = x0 - bx0
+        ry0 = y0 - by0
+        rx1 = rx0 + side
+        ry1 = ry0 + side
+        if rx0 < 0 or ry0 < 0 or rx1 > gray.shape[1] or ry1 > gray.shape[0]:
+            patch = gray
+            ph, pw = patch.shape[:2]
+            alpha = annulus_mask(
+                ph,
+                pw,
+                (cx - bx0, cy - by0),
+                r_inner,
+                r_outer,
+                feather=self._feather,
+            )
+            return patch, alpha
+        patch = gray[ry0:ry1, rx0:rx1]
+        alpha = annulus_mask(
+            side,
+            side,
+            (cx - x0, cy - y0),
+            r_inner,
+            r_outer,
+            feather=self._feather,
+        )
+        return patch, alpha

@@ -565,8 +565,8 @@ class TestRegionGeometry(unittest.TestCase):
         cx, cy, r_in, r_out = region_geometry(2560, 1440)
         self.assertAlmostEqual(cx, 0.084 * 2560, delta=1e-6)  # 215.04
         self.assertAlmostEqual(cy, 0.154 * 1440, delta=1e-6)  # 221.76
-        self.assertAlmostEqual(r_in, 0.014 * 2560, delta=1e-6)  # 35.84
-        self.assertAlmostEqual(r_out, 0.044 * 2560, delta=1e-6)  # 112.64
+        self.assertAlmostEqual(r_in, 0.011 * 2560, delta=1e-6)  # 28.16
+        self.assertAlmostEqual(r_out, 0.043 * 2560, delta=1e-6)  # 110.08
 
     def test_radii_follow_width_only(self):
         """半径只按宽换算（圆不为椭圆的假设）：换高度半径不变，圆心 y 变。"""

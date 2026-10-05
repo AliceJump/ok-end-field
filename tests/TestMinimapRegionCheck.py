@@ -8,6 +8,7 @@ import numpy as np
 from ok.test.TaskTestCase import TaskTestCase
 
 from src.config import config
+from src.core.config_migration import apply_value_migrations
 from src.tasks.localization.MinimapRegionCheck import MinimapRegionCheck
 
 
@@ -34,8 +35,53 @@ class TestMinimapRegionCheckTask(TaskTestCase):
         # 默认几何与里程计一致
         self.assertAlmostEqual(task.default_config["圆心x比例(占宽)"], 0.084)
         self.assertAlmostEqual(task.default_config["圆心y比例(占高)"], 0.154)
-        self.assertAlmostEqual(task.default_config["外圈半径比例(占宽)"], 0.044)
-        self.assertAlmostEqual(task.default_config["内圈半径比例(占宽)"], 0.014)
+        self.assertAlmostEqual(task.default_config["外圈半径比例(占宽)"], 0.043)
+        self.assertAlmostEqual(task.default_config["内圈半径比例(占宽)"], 0.011)
+
+    def test_old_default_geometry_values_are_migrated(self):
+        old = {
+            "外圈半径比例(占宽)": 0.044,
+            "内圈半径比例(占宽)": 0.014,
+        }
+        migrated, modified = apply_value_migrations(
+            dict(old),
+            MinimapRegionCheck.config_value_migrations,
+        )
+        self.assertTrue(modified)
+        self.assertAlmostEqual(migrated["外圈半径比例(占宽)"], 0.043)
+        self.assertAlmostEqual(migrated["内圈半径比例(占宽)"], 0.011)
+
+    def test_custom_geometry_values_are_preserved(self):
+        custom = {
+            "外圈半径比例(占宽)": 0.040,
+            "内圈半径比例(占宽)": 0.012,
+        }
+        migrated, modified = apply_value_migrations(
+            dict(custom),
+            MinimapRegionCheck.config_value_migrations,
+        )
+        self.assertFalse(modified)
+        self.assertEqual(migrated, custom)
+
+    def test_missing_geometry_values_are_not_added(self):
+        migrated, modified = apply_value_migrations(
+            {},
+            MinimapRegionCheck.config_value_migrations,
+        )
+        self.assertFalse(modified)
+        self.assertEqual(migrated, {})
+
+    def test_geometry_migration_is_idempotent(self):
+        current = {
+            "外圈半径比例(占宽)": 0.043,
+            "内圈半径比例(占宽)": 0.011,
+        }
+        migrated, modified = apply_value_migrations(
+            dict(current),
+            MinimapRegionCheck.config_value_migrations,
+        )
+        self.assertFalse(modified)
+        self.assertEqual(migrated, current)
 
     def test_run_writes_annotated_images(self):
         task = self.task

@@ -44,6 +44,41 @@ def build_world_pose(
         "error": state.get("error"),
         "dmap_px": state.get("dmap_px"),
         "world_delta": state.get("world_delta"),
+        "raw_x": state.get("raw_x"),
+        "raw_z": state.get("raw_z"),
+        "visual_anchor_chain_x": state.get("visual_anchor_chain_x"),
+        "visual_anchor_chain_z": state.get("visual_anchor_chain_z"),
+        "visual_anchor_chain_correction_px": state.get("visual_anchor_chain_correction_px"),
+        "visual_anchor_chain_correction_m": state.get("visual_anchor_chain_correction_m"),
+        "visual_anchor_chain_nodes": state.get("visual_anchor_chain_nodes"),
+        "visual_anchor_chain_edges": state.get("visual_anchor_chain_edges"),
+        "visual_anchor_chain_anchors": state.get("visual_anchor_chain_anchors"),
+        "visual_anchor_chain_iterations": state.get("visual_anchor_chain_iterations"),
+        "visual_anchor_chain_min_response": state.get("visual_anchor_chain_min_response"),
+        "visual_anchor_chain_median_response": state.get("visual_anchor_chain_median_response"),
+        "visual_anchor_chain_residual_median": state.get("visual_anchor_chain_residual_median"),
+        "visual_anchor_chain_residual_max": state.get("visual_anchor_chain_residual_max"),
+        "visual_anchor_chain_reason": state.get("visual_anchor_chain_reason"),
+        "visual_anchor_chain_keyframe_reason": state.get("visual_anchor_chain_keyframe_reason"),
+        "visual_anchor_chain_keyframe_correction_m": state.get(
+            "visual_anchor_chain_keyframe_correction_m"
+        ),
+        "visual_anchor_chain_keyframe_nodes": state.get("visual_anchor_chain_keyframe_nodes"),
+        "visual_anchor_chain_keyframe_edges": state.get("visual_anchor_chain_keyframe_edges"),
+        "visual_anchor_chain_keyframe_anchors": state.get("visual_anchor_chain_keyframe_anchors"),
+        "visual_anchor_chain_keyframe_iterations": state.get("visual_anchor_chain_keyframe_iterations"),
+        "visual_anchor_chain_keyframe_min_response": state.get(
+            "visual_anchor_chain_keyframe_min_response"
+        ),
+        "visual_anchor_chain_keyframe_median_response": state.get(
+            "visual_anchor_chain_keyframe_median_response"
+        ),
+        "visual_anchor_chain_keyframe_residual_median": state.get(
+            "visual_anchor_chain_keyframe_residual_median"
+        ),
+        "visual_anchor_chain_keyframe_residual_max": state.get(
+            "visual_anchor_chain_keyframe_residual_max"
+        ),
         "source": source,
     }
 

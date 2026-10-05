@@ -3281,3 +3281,72 @@ msgstr ""
 
 msgid "自动技能列表"
 msgstr "Auto Skill List"
+
+msgid "关键帧视觉锚定链校正"
+msgstr "Keyframe Visual Anchor Chain Correction"
+
+msgid "关键帧视觉锚定链校正窗口(拍)"
+msgstr "Keyframe Visual Anchor Chain Correction Window (Frames)"
+
+msgid "关键帧视觉锚定链校正边间隔(拍)"
+msgstr "Keyframe Visual Anchor Chain Correction Edge Interval (Frames)"
+
+msgid "关键帧视觉锚定链校正最小响应"
+msgstr "Keyframe Visual Anchor Chain Correction Minimum Response"
+
+msgid "关键帧视觉锚定链校正锚点权重"
+msgstr "Keyframe Visual Anchor Chain Correction Anchor Weight"
+
+msgid "关键帧视觉锚定链校正修正上限(米)"
+msgstr "Keyframe Visual Anchor Chain Correction Limit (m)"
+
+msgid "关键帧视觉锚定链校正关键帧间隔(拍)"
+msgstr "Keyframe Visual Anchor Chain Correction Keyframe Interval (Frames)"
+
+msgid "关键帧视觉锚定链校正关键帧边数"
+msgstr "Keyframe Visual Anchor Chain Correction Keyframe Edge Count"
+
+msgid "关键帧视觉锚定链校正关键帧最小响应"
+msgstr "Keyframe Visual Anchor Chain Correction Keyframe Minimum Response"
+
+msgid "关键帧视觉锚定链校正关键帧锚点权重"
+msgstr "Keyframe Visual Anchor Chain Correction Keyframe Anchor Weight"
+
+msgid "用 WS 绝对锚点启动关键帧视觉锚定链校正，并用视觉重叠约束修正累计漂移后发布位置"
+msgstr ""
+"Start the keyframe visual anchor chain correction from the WS absolute "
+"anchor, then use visual overlap constraints to correct accumulated drift "
+"before publishing the position."
+
+msgid "关键帧视觉锚定链校正保留的最近切片数；越大越稳但计算越多"
+msgstr ""
+"Number of recent slices retained by the keyframe visual anchor chain "
+"correction; larger is more stable but costs more computation."
+
+msgid "每拍新切片最多和之前多少拍建立相对平移边"
+msgstr "Maximum frame distance for creating relative translation edges from each new slice."
+
+msgid "切片对相位相关的最低响应；低于该值不建边"
+msgstr "Minimum phase-correlation response for a slice pair; no edge is created below this value."
+
+msgid "静止校准 WS 绝对锚点的权重；越大越贴近 WS"
+msgstr "Weight of the stationary WS absolute anchor; higher values stay closer to WS."
+
+msgid "单拍关键帧视觉锚定链校正量的安全上限（米）；超过则回退原始融合值"
+msgstr ""
+"Safety limit for a single keyframe visual anchor chain correction (m); "
+"values above it fall back to the raw fused position."
+
+msgid "每隔多少拍建立一个关键帧；每次静止校准也会建关键帧"
+msgstr "Create a keyframe every N frames; every stationary calibration also creates a keyframe."
+
+msgid "每个关键帧最多和之前多少个关键帧建立直接视觉边"
+msgstr "Maximum number of direct visual edges from each keyframe to previous keyframes."
+
+msgid "关键帧视觉边的最低相位相关响应"
+msgstr "Minimum phase-correlation response for a keyframe visual edge."
+
+msgid "关键帧优化位置作为局部关键帧视觉锚定链校正软锚点的权重"
+msgstr ""
+"Weight of the keyframe optimized position as a soft anchor for the local "
+"keyframe visual anchor chain correction."

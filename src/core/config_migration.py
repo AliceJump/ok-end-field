@@ -76,6 +76,29 @@ def migrate_config_file_keys(task_class_name: str, migrations: dict[str, str]) -
         write_json_file(config_file, config)
 
 
+def migrate_account_task_config_keys(task_class_name: str, migrations: dict[str, str]) -> None:
+    """把账号级任务覆盖中的旧配置键同步到新键，保留已经存在的新值。"""
+
+    if not migrations:
+        return
+
+    from src.tasks.account.account_scope_store import update_overrides
+
+    def apply(data):
+        accounts = data.get("accounts")
+        if not isinstance(accounts, dict):
+            return data
+        for task_map in accounts.values():
+            if not isinstance(task_map, dict):
+                continue
+            overrides = task_map.get(task_class_name)
+            if isinstance(overrides, dict):
+                copy_migrated_config_keys(overrides, migrations)
+        return data
+
+    update_overrides(apply)
+
+
 # ── 值转换迁移 ────────────────────────────────────────────
 
 
@@ -151,6 +174,28 @@ def rename_choice_value(old_value: str, new_value: str):
     def transform(config, new_key):
         if config.get(new_key) == old_value:
             return new_value
+        return _NO_MIGRATION
+
+    return transform
+
+
+def replace_default_value(old_default, new_default):
+    """把仍等于旧默认值的数字配置迁移到新默认值。
+
+    用户显式改过的值（不等于 ``old_default``）保持原样，避免调参覆盖用户配置。
+    """
+
+    def transform(config, new_key):
+        current = config.get(new_key)
+        if isinstance(current, bool):
+            return _NO_MIGRATION
+        try:
+            current_value = float(current)
+            old_value = float(old_default)
+        except (TypeError, ValueError):
+            return _NO_MIGRATION
+        if abs(current_value - old_value) <= 1e-9:
+            return new_default
         return _NO_MIGRATION
 
     return transform

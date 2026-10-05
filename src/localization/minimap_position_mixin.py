@@ -40,8 +40,12 @@ WS 有传输延迟，只在两边都停住时才能安全地用它做基准。�
                      （``too_long_dt``，相关可信、只是基线到了上限）不撤销信任——
                      位移提交阈值开启后它会是常态，撤销信任会让导航反复停车等重新校准。
     trust_reason      position_trusted 的最近状态来源。
-    just_synced/sync_residual  本拍是否刚触发静止校准、以及校准前的残差
-                     （``{map_x, map_z, ws_x, ws_z, dx, dz, dist}``，即小地图推算偏了多少米）。
+    just_synced/sync_residual  本拍是否刚触发静止校准，以及校准前的原始融合残差和
+                     上一拍视觉锚定链校正输出残差。原始字段为
+                     ``{map_x, map_z, ws_x, ws_z, dx, dz, dist}``；校正字段为
+                     ``{visual_anchor_chain_x, visual_anchor_chain_z,
+                     visual_anchor_chain_dx, visual_anchor_chain_dz,
+                     visual_anchor_chain_dist, visual_anchor_chain_reason}``。
     sync_checked/sync_redundant  本拍收到 WS 后是否检查了静止校准，以及检查结果是否为
                      “当前估计已与 WS 对齐，无需重锚”。
 
@@ -57,6 +61,9 @@ WS 有传输延迟，只在两边都停住时才能安全地用它做基准。�
 from __future__ import annotations
 
 import math
+from typing import ClassVar
+
+import numpy as np
 
 from src.core.global_config_store import get_global_config
 from src.core.NavConfig import (
@@ -77,6 +84,11 @@ from src.localization.minimap_heading_mixin import (
 )
 from src.localization.minimap_odometry import MinimapOdometry
 from src.localization.minimap_position_fusion import MinimapPositionFusion
+from src.localization.minimap_sample_stitch import fused_map_px
+from src.localization.minimap_visual_anchor_chain import (
+    MinimapKeyframeVisualAnchorChain,
+    MinimapVisualAnchorChainCorrector,
+)
 from src.localization.ws_position_mixin import WsPositionMixin
 from src.runtime_state.topics import RuntimeTopic
 from src.runtime_state.world_pose import publish_world_pose
@@ -89,6 +101,16 @@ from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 __all__ = [
     "CONFIG_COMMIT_MIN_SHIFT",
     "CONFIG_SYNC_DISTANCE",
+    "CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT",
+    "CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION",
+    "CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP",
+    "CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME",
+    "CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES",
+    "CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE",
+    "CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT",
+    "CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION",
+    "CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE",
+    "CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW",
     "CONFIG_WS_MIN_HITS",
     "CONFIG_WS_WAIT",
     "DEFAULT_COMMIT_MIN_SHIFT_PX",
@@ -100,6 +122,16 @@ CONFIG_WS_WAIT = "WS等待稳定秒数"
 CONFIG_WS_MIN_HITS = "WS稳定最小位置数"
 CONFIG_SYNC_DISTANCE = "航点校准最小距离(米)"
 CONFIG_COMMIT_MIN_SHIFT = "位移提交阈值(像素)"
+CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION = "关键帧视觉锚定链校正"
+CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW = "关键帧视觉锚定链校正窗口(拍)"
+CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP = "关键帧视觉锚定链校正边间隔(拍)"
+CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE = "关键帧视觉锚定链校正最小响应"
+CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT = "关键帧视觉锚定链校正锚点权重"
+CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION = "关键帧视觉锚定链校正修正上限(米)"
+CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME = "关键帧视觉锚定链校正关键帧间隔(拍)"
+CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES = "关键帧视觉锚定链校正关键帧边数"
+CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE = "关键帧视觉锚定链校正关键帧最小响应"
+CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT = "关键帧视觉锚定链校正关键帧锚点权重"
 
 #: 位移提交阈值默认值（1920 宽下约 1.8m）。0 = 关闭，回到"按时间提交"的旧行为。
 #: 误差按采样次数累积、每样本误差大致是绝对量，而每样本位移 = 速度 * 采样间隔，
@@ -135,6 +167,20 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
     换分辨率时过期——历史上 2560 宽量出的 0.6703 被拿到 1920 下用，距离就系统性偏了 27%。
     """
 
+    # 旧键只用于一次性迁移；运行时、UI、诊断字段统一使用“关键帧视觉锚定链校正”。
+    config_key_migrations: ClassVar[dict[str, str]] = {
+        "在线位姿图": CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION,
+        "在线位姿图窗口(拍)": CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW,
+        "在线位姿图边间隔(拍)": CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP,
+        "在线位姿图最小响应": CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE,
+        "在线位姿图锚点权重": CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT,
+        "在线位姿图修正上限(米)": CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION,
+        "在线位姿图关键帧间隔(拍)": CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME,
+        "在线位姿图关键帧边数": CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES,
+        "在线位姿图关键帧最小响应": CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE,
+        "在线位姿图关键帧锚点权重": CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT,
+    }
+
     # ------------------------------------------------------------------ #
     # 配置（任务把这两个 dict merge 进自己的 default_config / config_description）
     # ------------------------------------------------------------------ #
@@ -147,6 +193,16 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             CONFIG_MIN_SCORE: 0.6,
             CONFIG_SYNC_DISTANCE: 100.0,
             CONFIG_COMMIT_MIN_SHIFT: DEFAULT_COMMIT_MIN_SHIFT_PX,
+            CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION: True,
+            CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW: 60,
+            CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP: 12,
+            CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE: 0.25,
+            CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT: 50.0,
+            CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION: 10.0,
+            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME: 10,
+            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES: 8,
+            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE: 0.3,
+            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT: 25.0,
         }
 
     @staticmethod
@@ -162,6 +218,24 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             "漂移更大。设成 2~3 像素可让每米提交次数与速度脱钩（原地小步走几乎不提交），"
             "同时位置仍连续（未提交部分照常计入位置）。"
             "0 = 关闭，回到按时间提交的旧行为，便于 A/B 对比",
+            CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION: (
+                "用 WS 绝对锚点启动关键帧视觉锚定链校正，并用视觉重叠约束修正累计漂移后发布位置"
+            ),
+            CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW: (
+                "关键帧视觉锚定链校正保留的最近切片数；越大越稳但计算越多"
+            ),
+            CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP: "每拍新切片最多和之前多少拍建立相对平移边",
+            CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE: "切片对相位相关的最低响应；低于该值不建边",
+            CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT: "静止校准 WS 绝对锚点的权重；越大越贴近 WS",
+            CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION: (
+                "单拍关键帧视觉锚定链校正量的安全上限（米）；超过则回退原始融合值"
+            ),
+            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME: "每隔多少拍建立一个关键帧；每次静止校准也会建关键帧",
+            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES: "每个关键帧最多和之前多少个关键帧建立直接视觉边",
+            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE: "关键帧视觉边的最低相位相关响应",
+            CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT: (
+                "关键帧优化位置作为局部关键帧视觉锚定链校正软锚点的权重"
+            ),
         }
 
     # ------------------------------------------------------------------ #
@@ -174,6 +248,10 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         self._init_ws_position_mixin()
         self._minimap_od: MinimapOdometry | None = None
         self._minimap_fusion: MinimapPositionFusion | None = None
+        self._minimap_visual_anchor_chain: MinimapVisualAnchorChainCorrector | None = None
+        self._minimap_keyframe_visual_anchor_chain: MinimapKeyframeVisualAnchorChain | None = None
+        self._minimap_keyframe_counter = 0
+        self._minimap_keyframe_uid = 0
         self._minimap_ws_map_id: str | None = None
         self._minimap_last_ws: tuple[float, float] | None = None
         self._minimap_last_ws_xyz: tuple[float, float, float] | None = None
@@ -232,6 +310,27 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         }
         return nav_profile_for_width(int(getattr(self, "width", 0) or 0), values)
 
+    def _build_visual_anchor_chain(self, scale: float):
+        """创建局部求解器与全局关键帧视觉锚定链校正；关闭时返回 (None, None)。"""
+
+        if not self._cfg_bool(CONFIG_VISUAL_ANCHOR_CHAIN_CORRECTION, True):
+            return None, None
+        corrector = MinimapVisualAnchorChainCorrector(
+            window_size=self._cfg_int(CONFIG_VISUAL_ANCHOR_CHAIN_WINDOW, 60),
+            edge_gap=self._cfg_int(CONFIG_VISUAL_ANCHOR_CHAIN_EDGE_GAP, 12),
+            min_response=self._cfg_float(CONFIG_VISUAL_ANCHOR_CHAIN_MIN_RESPONSE, 0.25),
+            anchor_weight=self._cfg_float(CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT, 50.0),
+            scale_m_per_px=(scale if scale > 0 else None),
+            max_correction_m=self._cfg_float(CONFIG_VISUAL_ANCHOR_CHAIN_MAX_CORRECTION, 5.0),
+        )
+        keyframe_chain = MinimapKeyframeVisualAnchorChain(
+            max_edges=self._cfg_int(CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_EDGES, 8),
+            min_response=self._cfg_float(CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_MIN_RESPONSE, 0.3),
+            anchor_weight=self._cfg_float(CONFIG_VISUAL_ANCHOR_CHAIN_ANCHOR_WEIGHT, 50.0),
+            scale_m_per_px=(scale if scale > 0 else None),
+        )
+        return corrector, keyframe_chain
+
     def start_minimap_position(self, *, wait_stable: bool = True) -> bool:
         """建里程计 + 融合、启动位置源、等 WS 稳定并立即设锚点。
 
@@ -282,6 +381,12 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
                 if cred != self._minimap_source_cred:
                     self.log_info("地图 WS 真值来源已变化，清空绝对锚点等待重新校准")
                     self._minimap_fusion.reset()
+                    if self._minimap_visual_anchor_chain is not None:
+                        self._minimap_visual_anchor_chain.reset()
+                    if self._minimap_keyframe_visual_anchor_chain is not None:
+                        self._minimap_keyframe_visual_anchor_chain.reset()
+                    self._minimap_keyframe_counter = 0
+                    self._minimap_keyframe_uid = 0
                     self._minimap_ws_map_id = None
                     self._minimap_last_ws = None
                     self._minimap_last_ws_xyz = None
@@ -314,6 +419,12 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             scale_m_per_px=scale,
             arrow_func=self._read_arrow,
         )
+        (
+            self._minimap_visual_anchor_chain,
+            self._minimap_keyframe_visual_anchor_chain,
+        ) = self._build_visual_anchor_chain(scale)
+        self._minimap_keyframe_counter = 0
+        self._minimap_keyframe_uid = 0
         self._minimap_ws_map_id = None
         self._minimap_last_ws = None
         self._minimap_last_ws_xyz = None
@@ -370,6 +481,12 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         except Exception as e:
             self.log_warning(f"停止位置源失败: {e}")
         finally:
+            if self._minimap_visual_anchor_chain is not None:
+                self._minimap_visual_anchor_chain.reset()
+            if self._minimap_keyframe_visual_anchor_chain is not None:
+                self._minimap_keyframe_visual_anchor_chain.reset()
+            self._minimap_keyframe_counter = 0
+            self._minimap_keyframe_uid = 0
             self._minimap_started = False
             self.runtime_state_hub.clear(RuntimeTopic.WORLD_POSE)
 
@@ -504,6 +621,7 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         st["ws"] = self._minimap_last_ws
         st["ws_xyz"] = self._minimap_last_ws_xyz
         st["y"] = self._minimap_last_ws_xyz[1] if self._minimap_last_ws_xyz is not None else None
+        self._apply_visual_anchor_chain(st, now)
         st["error"] = None
         if st.get("x") is not None and st.get("z") is not None and self._minimap_last_ws is not None:
             st["error"] = math.hypot(st["x"] - self._minimap_last_ws[0], st["z"] - self._minimap_last_ws[1])
@@ -514,6 +632,140 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
         self._update_sync_request(st)
         self._minimap_last_state = dict(st)
         return st
+
+    def _apply_visual_anchor_chain(self, st: dict, now) -> None:
+        """用关键帧视觉锚定链校正本拍位置；只改内存状态，不落盘、不绘图。"""
+
+        corrector = self._minimap_visual_anchor_chain
+        if corrector is None or self._minimap_od is None or self._minimap_fusion is None:
+            return
+        x, z = st.get("x"), st.get("z")
+        if x is None or z is None:
+            corrector.reset()
+            return
+        st["raw_x"] = float(x)
+        st["raw_z"] = float(z)
+        last = self._minimap_od.last_result() or {}
+        if not last.get("sampled") and not st.get("just_synced"):
+            previous = self._minimap_last_state
+            if previous is not None and previous.get("x") is not None:
+                st["x"] = previous.get("x")
+                st["z"] = previous.get("z")
+                for key in (
+                    "visual_anchor_chain_x",
+                    "visual_anchor_chain_z",
+                    "visual_anchor_chain_correction_px",
+                    "visual_anchor_chain_correction_m",
+                    "visual_anchor_chain_nodes",
+                    "visual_anchor_chain_edges",
+                    "visual_anchor_chain_anchors",
+                    "visual_anchor_chain_iterations",
+                    "visual_anchor_chain_min_response",
+                    "visual_anchor_chain_median_response",
+                    "visual_anchor_chain_residual_median",
+                    "visual_anchor_chain_residual_max",
+                ):
+                    if key in previous:
+                        st[key] = previous[key]
+                st["visual_anchor_chain_reason"] = previous.get(
+                    "visual_anchor_chain_reason",
+                    "no_new_sample",
+                )
+            else:
+                st["visual_anchor_chain_reason"] = "no_new_sample"
+            return
+        gray, alpha = self._minimap_od.last_ring_patch()
+        if gray is None or alpha is None:
+            return
+        matrix = self._minimap_fusion.map_to_world_px
+        raw_px = fused_map_px(matrix, x, z)
+        if raw_px is None:
+            return
+        anchor = None
+        if st.get("just_synced") and st.get("ws") is not None:
+            ws = st["ws"]
+            anchor = fused_map_px(matrix, ws[0], ws[1])
+        keyframe_anchor = None
+        keyframe_weight = 0.0
+        keyframe_result = None
+        if self._minimap_keyframe_visual_anchor_chain is not None:
+            interval = max(1, self._cfg_int(CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME, 10))
+            self._minimap_keyframe_counter += 1
+            is_keyframe = bool(st.get("just_synced")) or self._minimap_keyframe_counter >= interval
+            if is_keyframe:
+                self._minimap_keyframe_counter = 0
+                keyframe_result = self._minimap_keyframe_visual_anchor_chain.add(
+                    uid=self._minimap_keyframe_uid,
+                    time=self._now(now),
+                    gray=gray,
+                    alpha=alpha,
+                    initial_pos=raw_px,
+                    anchor=anchor,
+                )
+                self._minimap_keyframe_uid += 1
+                if keyframe_result.valid:
+                    keyframe_anchor = keyframe_result.position
+                    keyframe_weight = self._cfg_float(CONFIG_VISUAL_ANCHOR_CHAIN_KEYFRAME_WEIGHT, 25.0)
+        result = corrector.add(
+            time=self._now(now),
+            gray=gray,
+            alpha=alpha,
+            initial_pos=raw_px,
+            anchor=anchor,
+            keyframe_anchor=keyframe_anchor,
+            keyframe_anchor_weight=keyframe_weight,
+        )
+        if keyframe_result is not None:
+            st["visual_anchor_chain_keyframe_reason"] = keyframe_result.reason
+            st["visual_anchor_chain_keyframe_correction_m"] = float(keyframe_result.correction_m)
+            st["visual_anchor_chain_keyframe_nodes"] = int(keyframe_result.nodes)
+            st["visual_anchor_chain_keyframe_edges"] = int(keyframe_result.edges)
+            st["visual_anchor_chain_keyframe_anchors"] = int(keyframe_result.anchors)
+            st["visual_anchor_chain_keyframe_iterations"] = int(keyframe_result.iterations)
+            st["visual_anchor_chain_keyframe_min_response"] = float(keyframe_result.min_response)
+            st["visual_anchor_chain_keyframe_median_response"] = float(keyframe_result.median_response)
+            st["visual_anchor_chain_keyframe_residual_median"] = float(keyframe_result.residual_median)
+            st["visual_anchor_chain_keyframe_residual_max"] = float(keyframe_result.residual_max)
+        else:
+            previous = self._minimap_last_state
+            for key in (
+                "visual_anchor_chain_keyframe_reason",
+                "visual_anchor_chain_keyframe_correction_m",
+                "visual_anchor_chain_keyframe_nodes",
+                "visual_anchor_chain_keyframe_edges",
+                "visual_anchor_chain_keyframe_anchors",
+                "visual_anchor_chain_keyframe_iterations",
+                "visual_anchor_chain_keyframe_min_response",
+                "visual_anchor_chain_keyframe_median_response",
+                "visual_anchor_chain_keyframe_residual_median",
+                "visual_anchor_chain_keyframe_residual_max",
+            ):
+                if previous is not None and key in previous:
+                    st[key] = previous[key]
+        st["visual_anchor_chain_correction_px"] = (
+            float(result.correction_px[0]),
+            float(result.correction_px[1]),
+        )
+        st["visual_anchor_chain_correction_m"] = float(result.correction_m)
+        st["visual_anchor_chain_nodes"] = int(result.nodes)
+        st["visual_anchor_chain_edges"] = int(result.edges)
+        st["visual_anchor_chain_anchors"] = int(result.anchors)
+        st["visual_anchor_chain_iterations"] = int(result.iterations)
+        st["visual_anchor_chain_min_response"] = float(result.min_response)
+        st["visual_anchor_chain_median_response"] = float(result.median_response)
+        st["visual_anchor_chain_residual_median"] = float(result.residual_median)
+        st["visual_anchor_chain_residual_max"] = float(result.residual_max)
+        st["visual_anchor_chain_reason"] = result.reason
+        if not result.valid:
+            return
+        world = np.asarray(matrix, dtype=np.float64) @ result.position
+        if not np.all(np.isfinite(world)):
+            st["visual_anchor_chain_reason"] = "bad_position"
+            return
+        st["visual_anchor_chain_x"] = float(world[0])
+        st["visual_anchor_chain_z"] = float(world[1])
+        st["x"] = float(world[0])
+        st["z"] = float(world[1])
 
     def sample_world_pose(self, frame=None, *, now=None) -> dict:
         """采样并发布一帧世界坐标，供状态总线消费者使用。"""
@@ -599,6 +851,12 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             self.log_info(f"地图已切换 {self._minimap_ws_map_id} -> {map_id}，清空锚点等待重新校准")
             self._minimap_ws_map_id = map_id
             self._minimap_fusion.reset()
+            if self._minimap_visual_anchor_chain is not None:
+                self._minimap_visual_anchor_chain.reset()
+            if self._minimap_keyframe_visual_anchor_chain is not None:
+                self._minimap_keyframe_visual_anchor_chain.reset()
+            self._minimap_keyframe_counter = 0
+            self._minimap_keyframe_uid = 0
             self._minimap_last_ws = (x, z)
             self._minimap_last_ws_xyz = (x, y, z)
             self._minimap_position_trusted = False
@@ -622,7 +880,9 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             self._minimap_sync_seq += 1
             self._apply_estimate(st, self._minimap_fusion.estimate())
             st["just_synced"] = True
-            st["sync_residual"] = self._minimap_fusion.last_sync_residual
+            st["sync_residual"] = self._augment_sync_residual(
+                self._minimap_fusion.last_sync_residual
+            )
         if synced:
             self._minimap_position_trusted = True
             self._minimap_trust_reason = "sync"
@@ -632,7 +892,9 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             self._apply_estimate(st, self._minimap_fusion.estimate())
             st["just_synced"] = True
             st["sync_checked"] = True
-            st["sync_residual"] = self._minimap_fusion.last_sync_residual
+            st["sync_residual"] = self._augment_sync_residual(
+                self._minimap_fusion.last_sync_residual
+            )
             self._minimap_position_trusted = True
             self._minimap_trust_reason = "forced_sync"
             last_result = self._minimap_od.last_result() or {}
@@ -643,6 +905,35 @@ class MinimapPositionMixin(MinimapHeadingMixin, RuntimeStateMixin, WsPositionMix
             )
             return True
         return synced
+
+    def _augment_sync_residual(self, residual: dict | None) -> dict | None:
+        """在原始融合校准残差上补充校准前最后一拍的锚定链校正误差。"""
+
+        if residual is None:
+            return None
+        previous = self._minimap_last_state
+        if previous is None:
+            return dict(residual)
+        visual_x = previous.get("x")
+        visual_z = previous.get("z")
+        ws_x = residual.get("ws_x")
+        ws_z = residual.get("ws_z")
+        if visual_x is None or visual_z is None or ws_x is None or ws_z is None:
+            return dict(residual)
+
+        out = dict(residual)
+        vx = float(visual_x)
+        vz = float(visual_z)
+        out["visual_anchor_chain_x"] = vx
+        out["visual_anchor_chain_z"] = vz
+        out["visual_anchor_chain_dx"] = vx - float(ws_x)
+        out["visual_anchor_chain_dz"] = vz - float(ws_z)
+        out["visual_anchor_chain_dist"] = math.hypot(
+            vx - float(ws_x),
+            vz - float(ws_z),
+        )
+        out["visual_anchor_chain_reason"] = previous.get("visual_anchor_chain_reason")
+        return out
 
     @staticmethod
     def _apply_estimate(st: dict, est: dict | None) -> None:

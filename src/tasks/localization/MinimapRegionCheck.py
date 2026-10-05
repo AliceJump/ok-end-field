@@ -21,11 +21,13 @@ from __future__ import annotations
 
 from datetime import datetime
 from pathlib import Path
+from typing import ClassVar
 
 import cv2
 from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
+from src.core.config_migration import replace_default_value
 from src.localization.minimap_odometry import (
     DEFAULT_CENTER_RATIO,
     DEFAULT_R_INNER_RATIO,
@@ -42,6 +44,12 @@ class MinimapRegionCheck(BaseEfTask):
     """截图一次并标注小地图圆环区域，用于核对圆心/半径是否准确。"""
 
     requires_foreground = True  # 需要读取游戏画面/小地图
+
+    # 旧默认值只在用户没改过时迁移到新默认值；自定义半径保持不变。
+    config_value_migrations: ClassVar[dict[str, object]] = {
+        "外圈半径比例(占宽)": replace_default_value(0.044, 0.043),
+        "内圈半径比例(占宽)": replace_default_value(0.014, 0.011),
+    }
 
     # 几何/输出参数（可通过任务配置覆盖，集中在此处便于统一调整）；
     # 前四项与里程计用的默认几何是同一份常量，改动必须同步

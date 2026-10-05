@@ -58,6 +58,7 @@ class _FakeTask(MinimapPositionMixin):
             "WS等待稳定秒数": 0.2,
             "WS稳定最小位置数": 2,
             "朝向最低分数": 0.6,
+            "关键帧视觉锚定链校正": False,
         }
         # 固定住全局导航配置，避免测试依赖 configs/ 下的真实文件
         self.nav_config = dict(DEFAULT_NAV_CONFIG)
@@ -182,6 +183,31 @@ class TestMinimapPositionMixin(unittest.TestCase):
         self.assertAlmostEqual(st["x"], 607.16, delta=1e-6)
         self.assertAlmostEqual(st["z"], -136.13, delta=1e-6)
         self.assertAlmostEqual(st["dmap_px"][0], 0.0, delta=1e-6)
+
+    def test_sync_residual_includes_visual_anchor_chain_error(self):
+        self.task._minimap_last_state = {
+            "x": 103.0,
+            "z": 205.0,
+            "visual_anchor_chain_reason": "ok",
+        }
+        residual = self.task._augment_sync_residual(
+            {
+                "map_x": 106.0,
+                "map_z": 209.0,
+                "ws_x": 100.0,
+                "ws_z": 200.0,
+                "dx": 6.0,
+                "dz": 9.0,
+                "dist": (6.0**2 + 9.0**2) ** 0.5,
+            }
+        )
+
+        self.assertEqual(residual["visual_anchor_chain_x"], 103.0)
+        self.assertEqual(residual["visual_anchor_chain_z"], 205.0)
+        self.assertEqual(residual["visual_anchor_chain_dx"], 3.0)
+        self.assertEqual(residual["visual_anchor_chain_dz"], 5.0)
+        self.assertAlmostEqual(residual["visual_anchor_chain_dist"], (3.0**2 + 5.0**2) ** 0.5)
+        self.assertEqual(residual["visual_anchor_chain_reason"], "ok")
 
     def test_repeated_ws_while_still_skips_resync(self):
         """静止时 WS 每秒重复推同一坐标：第二次起是空操作，不再刷校准行、不再清零。"""
@@ -396,6 +422,34 @@ class TestMinimapPositionMixin(unittest.TestCase):
         self.assertEqual(pose["ws_xyz"], (607.16, 0.0, -136.13))
         self.assertTrue(pose["position_trusted"])
         self.assertEqual(pose["source"], "minimap")
+
+    def test_visual_anchor_chain_publishes_corrected_position_and_diagnostics(self):
+        self.task.config["关键帧视觉锚定链校正"] = True
+        self.task.config["关键帧视觉锚定链校正窗口(拍)"] = 20
+        self.task.config["关键帧视觉锚定链校正边间隔(拍)"] = 5
+        self.task.config["关键帧视觉锚定链校正修正上限(米)"] = 100.0
+        self.task.config["关键帧视觉锚定链校正关键帧间隔(拍)"] = 2
+        self.task.config["关键帧视觉锚定链校正关键帧边数"] = 4
+        self.task.start_minimap_position()
+        self.task.tick(self.frame)
+        self.task.tick(self.frame, ws=(100.0, 200.0))
+        for _ in range(7):
+            self.task.tick(_frame_at(3), ws=(100.0, 200.0))
+        state = self.task.sample_world_pose(frame=_frame_at(3))
+        self.assertEqual(state.get("visual_anchor_chain_reason"), "ok", state)
+        self.assertGreaterEqual(int(state.get("visual_anchor_chain_edges") or 0), 1)
+        self.assertIn("raw_x", state)
+        self.assertIn("visual_anchor_chain_correction_m", state)
+        self.assertIn("visual_anchor_chain_keyframe_reason", state)
+        self.assertGreaterEqual(int(state.get("visual_anchor_chain_keyframe_nodes") or 0), 1)
+        pose = self.task.runtime_state_hub.value(
+            RuntimeTopic.WORLD_POSE,
+            now=state["sample_t"],
+        )
+        self.assertIsNotNone(pose)
+        self.assertEqual(pose["visual_anchor_chain_reason"], "ok")
+        self.assertIn("visual_anchor_chain_correction_m", pose)
+        self.assertIn("visual_anchor_chain_keyframe_reason", pose)
 
     def test_distance_since_sync_requests_calibration(self):
         self.task.config["航点校准最小距离(米)"] = 0.5
