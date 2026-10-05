@@ -114,14 +114,111 @@ jobs:
           uv run --locked --no-sync python -m ok.update.inline_ok_requirements --tag "$env:RELEASE_TAG"
 
       - name: Install dependencies
+        id: deps
         run: |
           pip install -r requirements.txt
           pip install polib
 
-      - name: Run tests
+      - name: Validate test responsibility groups
+        id: test_manifest
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --validate
+
+      - name: Tests · Accounts and authentication
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
         timeout-minutes: 5
         run: |
-          python -u -m unittest discover -s tests -p "Test*.py" -v
+          python -u scripts/testing/run_ci_test_group.py --group accounts-auth
+
+      - name: Tests · Configuration and task UI
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group config-task-ui
+
+      - name: Tests · Daily task flow
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group daily-flow
+
+      - name: Tests · Daily config and delivery
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group daily-delivery
+
+      - name: Tests · Combat character data
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group combat-character-data
+
+      - name: Tests · Combat model and planning
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group combat-model-planning
+
+      - name: Tests · Combat rotation and timing
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group combat-rotation-timing
+
+      - name: Tests · Combat runtime decisions
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group combat-runtime
+
+      - name: Tests · Enemy direction recovery
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group enemy-direction
+
+      - name: Tests · Enemy presence and probes
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group enemy-presence
+
+      - name: Tests · Navigation and zipline
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group navigation-zipline
+
+      - name: Tests · Vision and models
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group vision-models
+
+      - name: Tests · GUI and overlays
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group gui-overlays
+
+      - name: Tests · Runtime and platform patches
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group runtime-platform
+
+      - name: Tests · Localization and release
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group localization-release
+
+      - name: Tests · Map and data services
+        if: ${{ !cancelled() && steps.deps.outcome == 'success' && steps.test_manifest.outcome == 'success' }}
+        timeout-minutes: 5
+        run: |
+          python -u scripts/testing/run_ci_test_group.py --group map-data
 
   sync:
     needs: test
