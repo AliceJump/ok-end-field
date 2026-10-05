@@ -11,7 +11,12 @@ import numpy as np
 
 from src.data.combat_observation import EnemyPresence
 from src.image.enemy_direction_diagnostics import _queue_direction_artifact
-from src.image.enemy_direction_probe import EnemyDirectionObservation, probe_enemy_direction_fast
+from src.image.enemy_direction_probe import (
+    EnemyDirectionObservation,
+    _direction_to_parameter_deg,
+    _ellipse_axes,
+    probe_enemy_direction_fast,
+)
 from src.image.enemy_health_probe import KEY_SAVE_ENEMY_PRESENCE_FRAMES
 from src.patches.enemy_direction_recovery_patch import (
     _recover_direction_fail_soft,
@@ -19,35 +24,32 @@ from src.patches.enemy_direction_recovery_patch import (
 )
 
 
-def _marker_frame(angle_deg: float, width: int = 1920, height: int = 1080):
+def _marker_frame_many(angles_deg, width: int = 1920, height: int = 1080, *, ellipse_scale: float = 1.0):
     frame = np.full((height, width, 3), 60, dtype=np.uint8)
-    radius = int(round(352 * height / 1080.0))
-    thickness = max(8, int(round(16 * height / 1080.0)))
-    cv2.ellipse(
-        frame,
-        (width // 2, height // 2),
-        (radius, radius),
-        0,
-        angle_deg - 5,
-        angle_deg + 5,
-        (45, 45, 230),
-        thickness,
-        cv2.LINE_AA,
+    semi_axis_x, semi_axis_y = _ellipse_axes(width, height)
+    axes = (
+        int(round(semi_axis_x * ellipse_scale)),
+        int(round(semi_axis_y * ellipse_scale)),
     )
+    thickness = max(8, int(round(16 * height / 1080.0)))
+    for angle_deg in angles_deg:
+        parameter = _direction_to_parameter_deg(angle_deg, semi_axis_x, semi_axis_y)
+        cv2.ellipse(
+            frame,
+            (width // 2, height // 2),
+            axes,
+            0,
+            parameter - 4,
+            parameter + 4,
+            (45, 45, 230),
+            thickness,
+            cv2.LINE_AA,
+        )
     return frame
 
 
-def _broad_red_sector(width: int = 1920, height: int = 1080):
-    frame = np.full((height, width, 3), 60, dtype=np.uint8)
-    yy, xx = np.indices((height, width))
-    cx = width / 2.0
-    cy = height / 2.0
-    radius = np.hypot(xx - cx, yy - cy)
-    angle = (np.degrees(np.arctan2(yy - cy, xx - cx)) + 360.0) % 360.0
-    angle_delta = np.abs((angle - 170.0 + 180.0) % 360.0 - 180.0)
-    mask = (radius >= 275 * height / 1080.0) & (radius <= 430 * height / 1080.0) & (angle_delta <= 8)
-    frame[mask] = (45, 45, 230)
-    return frame
+def _marker_frame(angle_deg: float, width: int = 1920, height: int = 1080):
+    return _marker_frame_many((angle_deg,), width, height)
 
 
 class _DirectionTask:
@@ -83,19 +85,33 @@ class _DirectionTask:
 
 
 class TestEnemyDirectionProbe(unittest.TestCase):
-    def test_detects_fixed_ring_marker(self):
+    def test_detects_fixed_ellipse_marker(self):
         observation = probe_enemy_direction_fast(_marker_frame(170))
         self.assertIsNotNone(observation)
-        self.assertAlmostEqual(observation.angle_deg, 170, delta=4)
-        self.assertGreater(observation.score, 10)
+        self.assertAlmostEqual(observation.angle_deg, 170, delta=3)
+        self.assertGreater(observation.score, 18)
+        self.assertEqual(len(observation.markers), 1)
 
     def test_scales_to_4k(self):
         observation = probe_enemy_direction_fast(_marker_frame(-160, 3840, 2160))
         self.assertIsNotNone(observation)
-        self.assertAlmostEqual(observation.angle_deg, -160, delta=4)
+        self.assertAlmostEqual(observation.angle_deg, -160, delta=3)
 
-    def test_broad_red_sector_is_rejected_by_neighbor_ring_contrast(self):
-        self.assertIsNone(probe_enemy_direction_fast(_broad_red_sector()))
+    def test_red_arc_outside_ellipse_annulus_is_rejected(self):
+        observation = probe_enemy_direction_fast(
+            _marker_frame_many((170,), ellipse_scale=0.90)
+        )
+        self.assertIsNone(observation)
+
+    def test_overlapping_long_run_splits_into_two_fixed_markers(self):
+        observation = probe_enemy_direction_fast(_marker_frame_many((30, 34, 80)))
+        self.assertIsNotNone(observation)
+        self.assertEqual(len(observation.markers), 3)
+        angles = sorted(marker.angle_deg for marker in observation.markers)
+        for actual, expected in zip(angles, (30, 34, 80), strict=True):
+            self.assertAlmostEqual(actual, expected, delta=2)
+        for marker in observation.markers:
+            self.assertAlmostEqual(marker.arc_width_deg, 8.0)
 
     def test_normal_enemy_hp_hit_skips_direction_probe(self):
         task = _DirectionTask()
@@ -152,7 +168,7 @@ class TestEnemyDirectionProbe(unittest.TestCase):
         self.assertEqual(len(task.moves), 1)
         self.assertLess(task.moves[0]["dy"], 0)
 
-    def test_live_overlay_contains_scan_bounds_and_hit_box(self):
+    def test_live_overlay_contains_ellipse_scan_and_hit(self):
         task = _DirectionTask()
         task.overlay = True
         observation = EnemyDirectionObservation(angle_deg=25.0, score=22.0)
@@ -166,10 +182,10 @@ class TestEnemyDirectionProbe(unittest.TestCase):
         layer, boxes, kwargs = task.draw_calls[0]
         self.assertEqual(layer, "enemy_direction_debug")
         self.assertEqual(kwargs["color"], "blue")
-        self.assertEqual(len(boxes), 4)
+        self.assertEqual(len(boxes), 2)
         names = [box.name for box in boxes]
-        self.assertTrue(any("enemy_direction_scan:target" in name for name in names))
-        self.assertTrue(any("enemy_direction_hit:25.0deg" in name for name in names))
+        self.assertTrue(any("enemy_direction_scan:ellipse_annulus" in name for name in names))
+        self.assertTrue(any("enemy_direction_hit:1:25.0deg" in name for name in names))
 
     def test_save_direction_hit_png_and_inform(self):
         task = _DirectionTask()
@@ -198,14 +214,16 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             self.assertEqual(len(informs), 1)
 
             payload = json.loads(informs[0].read_text(encoding="utf-8"))
-            self.assertEqual(payload["schema"], "enemy_direction_probe/v1")
+            self.assertEqual(payload["schema"], "enemy_direction_probe/v2")
             self.assertTrue(payload["detected"])
             self.assertEqual(payload["result"], "hit")
             self.assertEqual(payload["action"], "tracking")
             self.assertEqual(payload["streak"], 1)
             self.assertAlmostEqual(payload["observation"]["angle_deg"], 30.0)
             self.assertAlmostEqual(payload["observation"]["score"], 24.5)
-            self.assertEqual(len(payload["scan_rings"]), 3)
+            self.assertEqual(len(payload["observation"]["markers"]), 1)
+            self.assertAlmostEqual(payload["scan_annulus"]["inner_scale"], 0.98)
+            self.assertAlmostEqual(payload["scan_annulus"]["outer_scale"], 1.02)
             self.assertEqual(payload["image"], images[0].name)
             self.assertEqual(payload["annotated_image"], images[0].name)
             self.assertEqual(payload["raw_image"], raw_images[0].name)
@@ -236,6 +254,7 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             informs = list(Path(directory).glob("enemy_direction_*.inform.json"))
             self.assertEqual(len(informs), 1)
             payload = json.loads(informs[0].read_text(encoding="utf-8"))
+            self.assertEqual(payload["schema"], "enemy_direction_probe/v2")
             self.assertFalse(payload["detected"])
             self.assertEqual(payload["result"], "miss")
             self.assertEqual(payload["action"], "miss")
