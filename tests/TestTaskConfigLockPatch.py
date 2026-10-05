@@ -26,9 +26,9 @@ class TestTaskConfigLockPatch(unittest.TestCase):
         self.assertFalse(is_task_config_editable(_RegularTask(running=True)))
         self.assertTrue(is_task_config_editable(_RegularTask(running=False)))
 
-    def test_trigger_task_locks_for_whole_enabled_period(self):
+    def test_enabled_idle_trigger_remains_editable(self):
         task = self._trigger_task(enabled=True, running=False)
-        self.assertFalse(is_task_config_editable(task))
+        self.assertTrue(is_task_config_editable(task))
 
     def test_disabled_trigger_stays_locked_until_active_invocation_returns(self):
         task = self._trigger_task(enabled=False, running=True)
@@ -50,6 +50,14 @@ class TestTaskConfigLockPatch(unittest.TestCase):
         self.assertIsNone(release_finished_trigger_state(executor))
         self.assertIs(executor.current_task, task)
         self.assertTrue(task.running)
+
+    def test_finished_trigger_cleanup_ignores_already_idle_trigger(self):
+        task = self._trigger_task(enabled=False, running=False)
+        executor = SimpleNamespace(current_task=task)
+
+        self.assertIsNone(release_finished_trigger_state(executor))
+        self.assertIs(executor.current_task, task)
+        self.assertFalse(task.running)
 
 
 if __name__ == "__main__":
