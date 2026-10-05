@@ -130,7 +130,8 @@ def _annotate_direction_frame(
     mouse_delta: tuple[int, int] | None,
     error: str | None,
 ):
-    annotated = frame.copy()
+    # The caller owns this snapshot, so annotation can happen in place.
+    annotated = frame
     height, width = annotated.shape[:2]
     cx = width // 2
     cy = height // 2
@@ -335,8 +336,42 @@ def _log_direction_save_error_once(task, exc: Exception) -> None:
 
 def _direction_artifact_worker(work_queue) -> None:
     while True:
-        task, output_dir, stem, annotated, inform = work_queue.get()
+        (
+            task,
+            output_dir,
+            stem,
+            frame,
+            observation,
+            presence,
+            streak,
+            action,
+            mouse_delta,
+            error,
+            sequence,
+            captured_at,
+        ) = work_queue.get()
         try:
+            annotated = _annotate_direction_frame(
+                frame,
+                observation,
+                presence,
+                streak,
+                action,
+                mouse_delta,
+                error,
+            )
+            inform = _build_direction_inform(
+                stem,
+                frame,
+                observation,
+                presence,
+                streak,
+                action,
+                mouse_delta,
+                error,
+                sequence,
+                captured_at,
+            )
             _write_direction_artifact(output_dir, stem, annotated, inform)
         except Exception as exc:
             _log_direction_save_error_once(task, exc)
@@ -344,9 +379,44 @@ def _direction_artifact_worker(work_queue) -> None:
             work_queue.task_done()
 
 
-def _queue_direction_artifact(task, output_dir, stem, annotated, inform) -> None:
+def _queue_direction_artifact(
+    task,
+    output_dir,
+    stem,
+    frame,
+    observation,
+    presence,
+    streak,
+    action,
+    mouse_delta,
+    error,
+    sequence,
+    captured_at,
+) -> None:
     if getattr(task, "_enemy_direction_debug_sync_save", False):
         try:
+            snapshot = frame.copy()
+            annotated = _annotate_direction_frame(
+                snapshot,
+                observation,
+                presence,
+                streak,
+                action,
+                mouse_delta,
+                error,
+            )
+            inform = _build_direction_inform(
+                stem,
+                snapshot,
+                observation,
+                presence,
+                streak,
+                action,
+                mouse_delta,
+                error,
+                sequence,
+                captured_at,
+            )
             _write_direction_artifact(output_dir, stem, annotated, inform)
         except Exception as exc:
             _log_direction_save_error_once(task, exc)
@@ -365,8 +435,31 @@ def _queue_direction_artifact(task, output_dir, stem, annotated, inform) -> None
         task._enemy_direction_artifact_worker = worker
         worker.start()
 
+    if work_queue.full():
+        _log_direction_save_error_once(
+            task,
+            RuntimeError("敌人方向检测调试帧写入队列已满，已丢弃当前帧"),
+        )
+        return
+
+    snapshot = frame.copy()
     try:
-        work_queue.put_nowait((task, output_dir, stem, annotated, inform))
+        work_queue.put_nowait(
+            (
+                task,
+                output_dir,
+                stem,
+                snapshot,
+                observation,
+                presence,
+                streak,
+                action,
+                mouse_delta,
+                error,
+                sequence,
+                captured_at,
+            )
+        )
     except queue.Full:
         _log_direction_save_error_once(
             task,
@@ -400,16 +493,9 @@ def _save_direction_frame(
             f"enemy_direction_{captured_at.strftime('%Y%m%d_%H%M%S')}_"
             f"{captured_at.microsecond:06d}_{sequence:06d}_{result}"
         )
-        annotated = _annotate_direction_frame(
-            frame,
-            observation,
-            presence,
-            streak,
-            action,
-            mouse_delta,
-            error,
-        )
-        inform = _build_direction_inform(
+        _queue_direction_artifact(
+            task,
+            output_dir,
             stem,
             frame,
             observation,
@@ -421,7 +507,6 @@ def _save_direction_frame(
             sequence,
             captured_at,
         )
-        _queue_direction_artifact(task, output_dir, stem, annotated, inform)
     except Exception as exc:
         _log_direction_save_error_once(task, exc)
 
