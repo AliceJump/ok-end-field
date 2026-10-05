@@ -14,6 +14,7 @@ _DIRECTION_MIN_RED = 18.0
 _DIRECTION_MIN_ARC_DEG = 5.0
 _DIRECTION_MAX_ARC_DEG = 20.0
 _MARKER_ARC_WIDTH_DEG = 8.0
+_SINGLE_MARKER_RUN_DEG = 13.5
 _DOUBLE_MARKER_MIN_RUN_DEG = 15.0
 _ELLIPSE_AXES_1080 = (349.0, 245.0)
 _ELLIPSE_ANNULUS_SCALE = (0.98, 1.02)
@@ -170,12 +171,13 @@ def _marker_candidates(profile: np.ndarray, sample: _EllipseSample) -> tuple[Ene
     for start, length, span_deg in runs:
         start_parameter = start * _DIRECTION_BIN_DEG
         if span_deg >= _DOUBLE_MARKER_MIN_RUN_DEG:
-            # Anti-aliasing plus five-point smoothing expands a single fixed
-            # eight-degree primitive to roughly 12.5-14.5 degrees at the
-            # supported resolutions. Only a run beyond that single-marker
-            # envelope is interpreted as two overlapping primitives.
-            first = (start_parameter + _MARKER_ARC_WIDTH_DEG / 2.0) % 360.0
-            second = (start_parameter + span_deg - _MARKER_ARC_WIDTH_DEG / 2.0) % 360.0
+            # Anti-aliasing plus five-point smoothing expands one fixed eight-degree
+            # primitive to roughly 12.5-14.5 degrees. Use the midpoint of that
+            # observed footprint to recover overlapping primitive centers instead
+            # of anchoring them to the widened run edges with the semantic 8° width.
+            half_single_run = _SINGLE_MARKER_RUN_DEG / 2.0
+            first = (start_parameter + half_single_run) % 360.0
+            second = (start_parameter + span_deg - half_single_run) % 360.0
             parameters = (first, second)
         else:
             parameters = (_run_center_parameter(profile, start, length),)
