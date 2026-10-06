@@ -116,6 +116,7 @@ TEST_GROUPS: dict[str, tuple[str, tuple[str, ...]]] = {
             "TestEnemyDirectionRecovery.py",
             "TestMouseRotationCalibration.py",
             "TestPublicRotationBenchmark.py",
+            "TestTargetLockPointerProbe.py",
         ),
     ),
     "enemy-presence": (
