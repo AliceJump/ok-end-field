@@ -90,10 +90,11 @@ class TestSkillTiming(unittest.TestCase):
             path = Path(directory)
             (path / "index.json").write_bytes((SNAPSHOT / "index.json").read_bytes())
             store = SkillTimingStore(path)
+            self.assertTrue(store.profiles("perlica", "battle"))
             self.assertIsNone(store._records)
             (path / "records.json.gz").write_bytes(b"broken")
             with self.assertRaisesRegex(ValueError, "hash mismatch"):
-                store.profiles("perlica", "battle")
+                store.record("chr_0004_pelica_normal_skill")
 
     def test_lossless_record_preserves_empty_string_and_raw_curve(self):
         # Check the packaged records themselves, not a hand-written fixture.
@@ -349,6 +350,7 @@ class TestTimedCombat(unittest.TestCase):
 
         class Harness:
             _read_combat_too_far_text_band = BattleMixin._read_combat_too_far_text_band
+            reset_combat_action_feedback_probe = BattleMixin.reset_combat_action_feedback_probe
 
             def __init__(self):
                 self.frame = band

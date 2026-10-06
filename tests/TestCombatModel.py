@@ -38,7 +38,8 @@ class TestEnemyCombatState(unittest.TestCase):
         self.assertEqual(enemy.infliction_time_left, 0)
 
     def test_tick_expires_timed_states_without_affecting_shred(self):
-        enemy = EnemyCombatState(shred_stacks=3, states={EffectType.STATUS_FROZEN: 2, EffectType.STATUS_BURNING: 4})
+        enemy = EnemyCombatState(shred_stacks=3, states={EffectType.STATUS_FROZEN: 2,
+                                                      EffectType.STATUS_BURNING: 4})
         enemy.tick(2)
         self.assertEqual(enemy.states, {EffectType.STATUS_BURNING: 2})
         self.assertEqual(enemy.shred_stacks, 3)
@@ -53,28 +54,16 @@ class TestEnemyCombatState(unittest.TestCase):
         enemy = EnemyCombatState()
         enemy.apply_infliction(EffectType.ATTACH_NATURAL)
         for expected in (2, 3, 4):
-            self.assertIs(
-                enemy.apply_infliction(EffectType.ATTACH_NATURAL),
-                EffectType.STATUS_SPELL_BURST,
-            )
+            self.assertIs(enemy.apply_infliction(EffectType.ATTACH_NATURAL), EffectType.STATUS_SPELL_BURST)
             self.assertEqual(enemy.infliction_stacks, expected)
-        # 第 5 次施加仍封顶 4 层，继续触发爆发但不再涨层
-        self.assertIs(
-            enemy.apply_infliction(EffectType.ATTACH_NATURAL),
-            EffectType.STATUS_SPELL_BURST,
-        )
+        self.assertIs(enemy.apply_infliction(EffectType.ATTACH_NATURAL), EffectType.STATUS_SPELL_BURST)
         self.assertEqual(enemy.infliction_stacks, 4)
 
-    def test_cross_element_reacts_by_new_element_and_clears_all(self):
+    def test_cross_element_reacts_and_clears_all(self):
         enemy = EnemyCombatState()
-        enemy.apply_infliction(EffectType.ATTACH_COLD)
-        enemy.apply_infliction(EffectType.ATTACH_COLD)
-        enemy.apply_infliction(EffectType.ATTACH_COLD)  # 3 层寒冷
-        # 施加灼热 → 燃烧（类型由新元素决定，强度由旧层数决定——旧层数由调用方取）
-        self.assertIs(
-            enemy.apply_infliction(EffectType.ATTACH_BURN),
-            EffectType.STATUS_BURNING,
-        )
+        for _ in range(3):
+            enemy.apply_infliction(EffectType.ATTACH_COLD)
+        self.assertIs(enemy.apply_infliction(EffectType.ATTACH_BURN), EffectType.STATUS_BURNING)
         self.assertIsNone(enemy.infliction_element)
         self.assertEqual(enemy.infliction_stacks, 0)
 
@@ -85,36 +74,42 @@ class TestEnemyCombatState(unittest.TestCase):
             EffectType.ATTACH_COLD: EffectType.STATUS_FROZEN,
             EffectType.ATTACH_NATURAL: EffectType.STATUS_CORROSION,
         }
+        elements = tuple(mapping)
         for new_element, reaction in mapping.items():
             with self.subTest(new_element=new_element):
                 enemy = EnemyCombatState()
-                # 先挂一个异元素附着（首次施加无反应），再施加 new_element 触发交叉反应
-                other = next(
-                    e
-                    for e in {
-                        EffectType.ATTACH_BURN,
-                        EffectType.ATTACH_ELECTROMAGNETIC,
-                        EffectType.ATTACH_COLD,
-                        EffectType.ATTACH_NATURAL,
-                    }
-                    - {new_element}
-                )
+                other = next(element for element in elements if element is not new_element)
                 enemy.apply_infliction(other)
                 self.assertIs(enemy.apply_infliction(new_element), reaction)
 
     def test_non_attach_element_rejected(self):
-        enemy = EnemyCombatState()
         with self.assertRaises(ValueError):
-            enemy.apply_infliction(EffectType.STATUS_FROZEN)
+            EnemyCombatState().apply_infliction(EffectType.STATUS_FROZEN)
 
-    def test_shred_add_caps_and_consume_returns_all(self):
+    def test_shred_consume_keeps_event_on_zero_consume(self):
         enemy = EnemyCombatState()
         for _ in range(6):
             enemy.add_shred()
         self.assertEqual(enemy.shred_stacks, 4)
         self.assertEqual(enemy.consume_shred(), 4)
         self.assertEqual(enemy.shred_stacks, 0)
+        self.assertEqual(enemy.transient_events[EffectType.EVENT_SHRED_CONSUMED], 4)
         self.assertEqual(enemy.consume_shred(), 0)
+        self.assertEqual(enemy.transient_events[EffectType.EVENT_SHRED_CONSUMED], 4)
+
+    def test_shred_consume_accumulates_within_action(self):
+        enemy = EnemyCombatState(shred_stacks=2)
+        self.assertEqual(enemy.consume_shred(), 2)
+        enemy.add_shred(3)
+        self.assertEqual(enemy.consume_shred(), 3)
+        self.assertEqual(enemy.transient_events[EffectType.EVENT_SHRED_CONSUMED], 5)
+
+    def test_consumed_shred_event_is_transient(self):
+        enemy = EnemyCombatState(shred_stacks=3)
+        enemy.consume_shred()
+        self.assertEqual(enemy.transient_events, {EffectType.EVENT_SHRED_CONSUMED: 3})
+        enemy.clear_transient_events()
+        self.assertEqual(enemy.transient_events, {})
 
 
 class TestTeamCombatState(unittest.TestCase):
@@ -135,8 +130,7 @@ class TestTeamCombatState(unittest.TestCase):
                 self.assertAlmostEqual(team.link_bonus(is_ult=True), ult)
 
     def test_link_consume_clears(self):
-        team = TeamCombatState()
-        team.add_link(3)
+        team = TeamCombatState(link_stacks=3)
         self.assertEqual(team.consume_link(), 3)
         self.assertEqual(team.link_stacks, 0)
 
@@ -152,7 +146,6 @@ class TestReactionRules(unittest.TestCase):
                 EffectType.ATTACH_NATURAL,
             },
         )
-        # 每条异元素规则：消耗全部附着、进入对应状态
         for element, rule in SPELL_REACTION_BY_ELEMENT.items():
             with self.subTest(element=element):
                 self.assertTrue(rule.consumes_all)
@@ -165,36 +158,23 @@ class TestReactionRules(unittest.TestCase):
         self.assertFalse(SPELL_BURST_RULE.scales_with_stacks)
 
     def test_all_spell_reactions_scale_with_stacks(self):
-        # §4：公测口径四种法术反应触发伤害均为 80%×(1+异常等级)
-        # （冻结 130% 固定为二测口径，已按 calc-framework/gamekee 公测口径修正）
-        for element in (
-            EffectType.ATTACH_BURN,
-            EffectType.ATTACH_ELECTROMAGNETIC,
-            EffectType.ATTACH_COLD,
-            EffectType.ATTACH_NATURAL,
-        ):
-            rule = SPELL_REACTION_BY_ELEMENT[element]
-            with self.subTest(element=element):
-                self.assertEqual(rule.multiplier, 80.0)
-                self.assertTrue(rule.scales_with_stacks)
+        for rule in SPELL_REACTION_BY_ELEMENT.values():
+            self.assertEqual(rule.multiplier, 80.0)
+            self.assertTrue(rule.scales_with_stacks)
 
     def test_physical_chain_official_multipliers(self):
-        by_name = {r.name: r for r in PHYSICAL_RULES}
-        # 层数无关固定倍率
+        by_name = {rule.name: rule for rule in PHYSICAL_RULES}
         self.assertEqual(by_name["碎冰"].multiplier, 120.0)
         self.assertEqual(by_name["击飞"].multiplier, 120.0)
         self.assertEqual(by_name["倒地"].multiplier, 120.0)
-        # 层数相关（×(1+异常等级)）：猛击 150%、碎甲 50%，且都消耗全部破防层
         self.assertEqual(by_name["猛击"].multiplier, 150.0)
         self.assertTrue(by_name["猛击"].consumes_all)
         self.assertTrue(by_name["猛击"].scales_with_stacks)
         self.assertEqual(by_name["碎甲"].multiplier, 50.0)
         self.assertTrue(by_name["碎甲"].consumes_all)
         self.assertTrue(by_name["碎甲"].scales_with_stacks)
-        # 击飞/倒地不消耗破防层（叠层型）
         self.assertFalse(by_name["击飞"].consumes_all)
         self.assertFalse(by_name["倒地"].consumes_all)
-        # 碎冰由固结触发，碎冰后无新状态（结束固结）
         self.assertIs(by_name["碎冰"].requires, EffectType.STATUS_FROZEN)
         self.assertIsNone(by_name["碎冰"].applies)
 
