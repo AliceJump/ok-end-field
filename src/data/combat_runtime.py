@@ -49,12 +49,12 @@ class CombatRuntime:
 
         Links and ultimates retain their HUD-driven dispatch. This comparison only
         covers battle actions against the existing single-target scene assumption.
+        Observation gaps remain diagnostic evidence; they no longer globally disable
+        the local battle search.
         """
         self.advance(now)
         if self.pending is not None:
             return BattleRecommendation(reason="cast_pending")
-        if self.observation_gaps:
-            return BattleRecommendation(reason="unobserved_action_or_target")
         if self.catalog.diagnostics or self.world.unresolved:
             return BattleRecommendation(reason="unresolved_model")
         sample = self.last_resource_sample
