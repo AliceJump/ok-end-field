@@ -12,6 +12,7 @@ import numpy as np
 from src.data.combat_observation import EnemyPresence
 from src.image.enemy_direction_diagnostics import _queue_direction_artifact
 from src.image.enemy_direction_probe import (
+    EnemyDirectionMarker,
     EnemyDirectionObservation,
     _direction_to_parameter_deg,
     _ellipse_axes,
@@ -128,14 +129,17 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             with self.subTest(angle=angle):
                 self.assertEqual(_dodge_direction_from_angle(angle), direction)
 
-    def test_recovery_dodges_without_rotating_camera(self):
+    def test_recovery_requires_two_stable_frames_before_dodge(self):
         task = _DirectionTask()
         observation = EnemyDirectionObservation(angle_deg=-90.0, score=30.0)
         with patch(
             "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
             return_value=observation,
         ):
-            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
+            self.assertEqual(task.dodges, [])
+            task.now += 0.05
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
 
         self.assertEqual(len(task.dodges), 1)
         direction, kwargs = task.dodges[0]
@@ -149,6 +153,7 @@ class TestEnemyDirectionProbe(unittest.TestCase):
         task = _DirectionTask()
         observations = (
             EnemyDirectionObservation(0.0, 30.0),
+            EnemyDirectionObservation(0.0, 30.0),
             EnemyDirectionObservation(180.0, 40.0),
             EnemyDirectionObservation(180.0, 40.0),
         )
@@ -156,13 +161,59 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
             side_effect=observations,
         ):
-            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
             task.now += 0.05
-            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
+            task.now += 0.05
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
             task.now += 0.21
-            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
 
         self.assertEqual([direction for direction, _kwargs in task.dodges], ["d", "a"])
+
+    def test_direction_change_resets_stability_before_dodge(self):
+        task = _DirectionTask()
+        observations = (
+            EnemyDirectionObservation(0.0, 30.0),
+            EnemyDirectionObservation(30.0, 30.0),
+            EnemyDirectionObservation(30.0, 30.0),
+        )
+        with patch(
+            "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
+            side_effect=observations,
+        ):
+            recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT)
+            task.now += 0.05
+            recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT)
+            self.assertEqual(task.dodges, [])
+            task.now += 0.05
+            recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT)
+
+        self.assertEqual([direction for direction, _kwargs in task.dodges], ["sd"])
+
+    def test_target_lock_hysteresis_keeps_nearby_marker(self):
+        task = _DirectionTask()
+        first_markers = (
+            EnemyDirectionMarker(0.0, 0.0, 20.0),
+            EnemyDirectionMarker(45.0, 45.0, 18.0),
+        )
+        second_markers = (
+            EnemyDirectionMarker(0.0, 0.0, 20.0),
+            EnemyDirectionMarker(45.0, 45.0, 24.0),
+        )
+        observations = (
+            EnemyDirectionObservation(0.0, 20.0, first_markers),
+            EnemyDirectionObservation(45.0, 24.0, second_markers),
+        )
+        with patch(
+            "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
+            side_effect=observations,
+        ):
+            recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT)
+            task.now += 0.05
+            recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT)
+
+        self.assertEqual([direction for direction, _kwargs in task.dodges], ["d"])
 
     def test_centering_guard_expires_without_global_frequency_change(self):
         task = _DirectionTask()
@@ -171,7 +222,9 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
             return_value=observation,
         ):
-            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
+            task.now += 0.05
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
         self.assertTrue(_centering_blocked(task))
         task.now += 0.21
         self.assertFalse(_centering_blocked(task))
@@ -194,28 +247,41 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             return_value=observation,
         ):
             self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT))
+            self.assertEqual(task.dodges, [])
+            task.now += 0.05
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT))
 
         self.assertEqual([direction for direction, _kwargs in task.dodges], ["a"])
 
-    def test_unknown_presence_can_start_recovery(self):
+    def test_unknown_presence_tracks_without_dodging(self):
         task = _DirectionTask()
         observation = EnemyDirectionObservation(angle_deg=90.0, score=20.0)
         with patch(
             "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
             return_value=observation,
         ):
-            recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN)
-        self.assertEqual([direction for direction, _kwargs in task.dodges], ["s"])
+            for _ in range(3):
+                self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
+                task.now += 0.05
+
+        self.assertEqual(task.dodges, [])
+        self.assertEqual(task._enemy_direction_streak, 3)
 
     def test_marker_miss_ends_recovery_but_keeps_post_dodge_center_guard(self):
         task = _DirectionTask()
         with patch(
             "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
-            side_effect=(EnemyDirectionObservation(0.0, 30.0), None),
+            side_effect=(
+                EnemyDirectionObservation(0.0, 30.0),
+                EnemyDirectionObservation(0.0, 30.0),
+                None,
+            ),
         ):
-            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
             task.now += 0.05
-            self.assertFalse(recover_enemy_direction_if_needed(task, EnemyPresence.UNKNOWN))
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
+            task.now += 0.05
+            self.assertFalse(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
         self.assertTrue(_centering_blocked(task))
 
     def test_live_overlay_contains_ellipse_scan_and_hit(self):
@@ -267,7 +333,7 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             self.assertEqual(payload["schema"], "enemy_direction_probe/v2")
             self.assertTrue(payload["detected"])
             self.assertEqual(payload["result"], "hit")
-            self.assertEqual(payload["action"], "dodge_sd")
+            self.assertEqual(payload["action"], "tracking")
             self.assertEqual(payload["streak"], 1)
             self.assertAlmostEqual(payload["observation"]["angle_deg"], 30.0)
             self.assertAlmostEqual(payload["observation"]["score"], 24.5)
