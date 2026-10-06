@@ -125,6 +125,24 @@ class WsPositionMixin:
         self._map_ws_last_position_log_xz = (float(x), float(z))
         return True
 
+    def _log_map_ws_debug(self, direction: str, payload: Any) -> None:
+        """仅在 debug 模式打印官方地图 WS 消息；发送鉴权 token 时隐藏内容。"""
+        if not getattr(self, "debug", False):
+            return
+        log_debug = getattr(self, "log_debug", None)
+        if not callable(log_debug):
+            return
+        try:
+            if isinstance(payload, dict) and int(payload.get("type") or 0) == 1:
+                log_debug(f"[地图WS][debug] {direction}: type=1 (token 已隐藏)")
+                return
+            if isinstance(payload, dict):
+                log_debug(f"[地图WS][debug] {direction}: type={payload.get('type')} data={payload.get('data')}")
+                return
+            log_debug(f"[地图WS][debug] {direction}: {payload}")
+        except Exception:
+            log_debug(f"[地图WS][debug] {direction}: 无法格式化消息")
+
     def _is_ws_position_server_enabled(self) -> bool:
         thread = self._ws_server_thread
         return bool(self._ws_enabled and thread and thread.is_alive())
@@ -380,7 +398,9 @@ class WsPositionMixin:
         return {"roleId": str(role_id), "serverId": str(server_id)}
 
     async def _map_ws_send(self, ws, msg_type: int, data: dict[str, Any] | None = None, msg_id: str | None = None):
-        await ws.send(json.dumps({"type": msg_type, "data": data or {}, "msgId": msg_id or _make_msg_id()}))
+        payload = {"type": msg_type, "data": data or {}, "msgId": msg_id or _make_msg_id()}
+        self._log_map_ws_debug("发送", payload)
+        await ws.send(json.dumps(payload))
 
     def _map_ws_should_stop_for_game_window(self) -> bool:
         is_alive = getattr(self, "_is_game_window_alive", None)
@@ -487,9 +507,12 @@ class WsPositionMixin:
                         if isinstance(msg, (bytes, bytearray)):
                             msg = msg.decode("utf-8", errors="ignore")
                         if not isinstance(msg, str) or not msg.strip().startswith("{"):
+                            if getattr(self, "debug", False) and callable(getattr(self, "log_debug", None)):
+                                self.log_debug(f"[地图WS][debug] 收到非 JSON 消息: {msg!r}")
                             continue
 
                         payload = json.loads(msg)
+                        self._log_map_ws_debug("收到", payload)
                         msg_type = payload.get("type")
                         if msg_type == 2:
                             auth_ok = True

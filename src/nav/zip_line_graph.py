@@ -8,8 +8,8 @@
 - ``长距滑索架``：110m
 
 连接距离使用三维欧氏距离。这样同一 X/Z 位置但不同楼层的两个滑索架不会
-因为二维投影重合而被错误连接；长度取两端连接半径的较大值，表示任意一端
-具备长距能力即可建立连接。
+因为二维投影重合而被错误连接。连接半径只在两端都是长距滑索架时取 110m，
+其余组合取普通滑索架 80m。
 """
 
 from __future__ import annotations
@@ -21,7 +21,13 @@ from typing import Any
 
 __all__ = [
     "LONG_RANGE_ZIP_LINE_NAME",
+    "LONG_RANGE_ZIP_LINE_NAMES",
+    "SHARED_LONG_RANGE_ZIP_LINE_NAME",
+    "SHARED_ZIP_LINE_NAME",
+    "SHARED_ZIP_LINE_NAMES",
+    "SHARED_ZIP_LINE_RADIUS_M",
     "ZIP_LINE_NAME",
+    "ZIP_LINE_POWER_FACILITY_NAMES",
     "ZIP_LINE_RANGES",
     "ZIP_LINE_TEMPLATE_IDS",
     "ZipLineGraph",
@@ -32,9 +38,24 @@ __all__ = [
 
 ZIP_LINE_NAME = "滑索架"
 LONG_RANGE_ZIP_LINE_NAME = "长距滑索架"
+SHARED_ZIP_LINE_NAME = "共享滑索架"
+SHARED_LONG_RANGE_ZIP_LINE_NAME = "共享长距离滑索架"
+SHARED_ZIP_LINE_NAMES = frozenset({SHARED_ZIP_LINE_NAME, SHARED_LONG_RANGE_ZIP_LINE_NAME})
+LONG_RANGE_ZIP_LINE_NAMES = frozenset({LONG_RANGE_ZIP_LINE_NAME, SHARED_LONG_RANGE_ZIP_LINE_NAME})
+SHARED_ZIP_LINE_RADIUS_M = 6.0
+ZIP_LINE_POWER_FACILITY_NAMES = frozenset(
+    {
+        "供电桩",
+        "中继器",
+        "息壤供电桩",
+        "息壤中继器",
+    }
+)
 ZIP_LINE_RANGES = {
     ZIP_LINE_NAME: 80.0,
     LONG_RANGE_ZIP_LINE_NAME: 110.0,
+    SHARED_ZIP_LINE_NAME: 80.0,
+    SHARED_LONG_RANGE_ZIP_LINE_NAME: 110.0,
 }
 ZIP_LINE_TEMPLATE_IDS = {
     "5d53bdb714ba42c1e1a1b748b55b686f": ZIP_LINE_NAME,
@@ -49,6 +70,49 @@ def _finite_float(value: Any) -> float | None:
     except (TypeError, ValueError):
         return None
     return number if math.isfinite(number) else None
+
+
+def _mark_shared_zip_line_nodes(
+    nodes: Iterable[ZipLineNode],
+    power_facility_points: Iterable[dict[str, float]],
+    radius_m: float,
+) -> list[ZipLineNode]:
+    """把附近没有供电桩/中继器的滑索架改标为共享滑索架。"""
+
+    points = [
+        (float(point["x"]), float(point["y"]), float(point["z"]))
+        for point in power_facility_points
+        if isinstance(point, dict)
+        and point.get("x") is not None
+        and point.get("y") is not None
+        and point.get("z") is not None
+    ]
+    radius = max(0.0, float(radius_m))
+    result: list[ZipLineNode] = []
+
+    for node in nodes:
+        shared_name = {
+            ZIP_LINE_NAME: SHARED_ZIP_LINE_NAME,
+            LONG_RANGE_ZIP_LINE_NAME: SHARED_LONG_RANGE_ZIP_LINE_NAME,
+        }.get(node.name)
+        if shared_name is None:
+            result.append(node)
+            continue
+
+        has_power = any(math.dist(node.xyz, point) <= radius for point in points)
+        result.append(
+            ZipLineNode(
+                node_id=node.node_id,
+                map_id=node.map_id,
+                level_id=node.level_id,
+                name=shared_name if not has_power else node.name,
+                x=node.x,
+                y=node.y,
+                z=node.z,
+            )
+        )
+
+    return result
 
 
 @dataclass(frozen=True)
@@ -77,6 +141,11 @@ class ZipLineNode:
     def xyz(self) -> tuple[float, float, float]:
         """官方地图连接距离使用的三维坐标。"""
         return self.x, self.y, self.z
+
+    @property
+    def is_long_range(self) -> bool:
+        """是否属于长距滑索架。"""
+        return self.name in LONG_RANGE_ZIP_LINE_NAMES
 
 
 @dataclass(frozen=True)
@@ -175,6 +244,9 @@ class ZipLineGraph:
         *,
         map_id: str = "",
         distance_tolerance_m: float = 1e-6,
+        shared_facility_points: Iterable[dict[str, float]] | None = None,
+        include_shared_zip_lines: bool = True,
+        shared_radius_m: float = SHARED_ZIP_LINE_RADIUS_M,
     ) -> ZipLineGraph:
         """从 ``mark/list`` 响应构造滑索图。
 
@@ -227,6 +299,11 @@ class ZipLineGraph:
                 )
 
         nodes = sorted(nodes_by_id.values(), key=lambda node: node.node_id)
+        if shared_facility_points is not None:
+            nodes = _mark_shared_zip_line_nodes(nodes, shared_facility_points, shared_radius_m)
+        if not include_shared_zip_lines:
+            nodes = [node for node in nodes if node.name not in SHARED_ZIP_LINE_NAMES]
+
         links: list[ZipLineLink] = []
         tolerance = max(0.0, float(distance_tolerance_m))
         for index, first in enumerate(nodes):
@@ -236,7 +313,11 @@ class ZipLineGraph:
                 if first.level_id and second.level_id and first.level_id != second.level_id:
                     continue
                 distance = math.dist(first.xyz, second.xyz)
-                max_range = max(first.connect_range_m, second.connect_range_m)
+                max_range = (
+                    ZIP_LINE_RANGES[LONG_RANGE_ZIP_LINE_NAME]
+                    if first.is_long_range and second.is_long_range
+                    else ZIP_LINE_RANGES[ZIP_LINE_NAME]
+                )
                 if distance <= 0.0 or distance > max_range + tolerance:
                     continue
                 links.append(

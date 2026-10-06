@@ -61,6 +61,7 @@ from src.core.GridNavConfig import (
     CONFIG_GRID_TIMEOUT,
     CONFIG_GRID_TURN_TOLERANCE,
     CONFIG_GRID_TURN_WHILE_MOVING,
+    CONFIG_GRID_USE_SHARED_ZIP_LINES,
     CONFIG_GRID_USE_ZIP_LINES,
     CONFIG_GRID_WALL_PENALTY,
     CONFIG_GRID_WAYPOINT_RADIUS,
@@ -72,6 +73,7 @@ from src.core.GridNavConfig import (
     GRID_TURN_TOLERANCE_DEG,
 )
 from src.core.NavConfig import NAV_CONFIG_NAME
+from src.data import map_mark_query, user_map_mark_store
 from src.data.FeatureList import FeatureList as fL
 from src.nav.grid_io import GRID_SUFFIX, DenseGrid, load_grid
 from src.nav.grid_planner import PlanResult
@@ -89,7 +91,7 @@ from src.nav.route_follower import (
     GridRouteFollower,
     bearing_to_point,
 )
-from src.nav.zip_line_graph import ZipLineGraph, ZipLineNode
+from src.nav.zip_line_graph import ZIP_LINE_POWER_FACILITY_NAMES, ZipLineGraph, ZipLineNode
 from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineReplanRequired
 
@@ -1039,7 +1041,24 @@ class GridNavigationMixin(RuntimeStateMixin):
             self.log_info("地图滑索接口未返回有效数据，继续使用普通网格路线")
             return None
 
-        graph = ZipLineGraph.from_mark_payloads([response], map_id=map_id)
+        user_map_mark_store.persist_user_marks(
+            response,
+            map_id=map_id,
+            account_id=str(getattr(self, "current_account_id", "") or "").strip(),
+            map_user_id=str(getattr(service, "_map_ws_user_id", "") or "").strip(),
+            role_id=str(account.get("roleId") or "").strip(),
+            server_id=str(account.get("serverId") or "").strip(),
+        )
+
+        user_items = map_mark_query.extract_mark_points(response, map_id=map_id, user_only=True)
+        power_points = [point for name in ZIP_LINE_POWER_FACILITY_NAMES for point in user_items.get(name, [])]
+        include_shared = self._grid_cfg_bool(CONFIG_GRID_USE_SHARED_ZIP_LINES, False)
+        graph = ZipLineGraph.from_mark_payloads(
+            [response],
+            map_id=map_id,
+            shared_facility_points=power_points,
+            include_shared_zip_lines=include_shared,
+        )
         if graph:
             self._grid_nav_zip_line_cache[map_id] = graph
             summary = graph.summary()

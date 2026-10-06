@@ -14,7 +14,7 @@ from qfluentwidgets import FluentIcon
 
 from src.core.BaseEfTask import BaseEfTask
 from src.core.paths import config_folder
-from src.data import item_map_query
+from src.data import item_map_query, map_mark_query, user_map_mark_store
 from src.icons import Icons
 from src.tasks.mixin.instructions_mixin import InstructionsMixin, inst_gap, inst_line
 from src.tasks.mixin.runtime_state_mixin import RuntimeStateMixin
@@ -41,6 +41,7 @@ HG_CHECK_API_URL = "https://web-api.skland.com/account/info/hg/check"
 # 因此浮层文字与箭头朝向始终一致；若日后确认坐标系不同，只需调整此表顺序。
 COMPASS_LABELS = ("北", "东北", "东", "东南", "南", "西南", "西", "西北")
 HEIGHT_SAME_THRESHOLD = 0.05
+OFFICIAL_MARKS_CACHE_TTL = 30.0
 
 
 class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, TriggerTask):
@@ -127,6 +128,10 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
         self._marked: dict[str, set] = {}  # mapId -> set of point hashes
         # WS 服务启动状态追踪（仅记录首次启动日志）
         self._navigator_window_missing_logged = False
+        # 官方地图工业设施点位缓存：mapId -> {名称: [坐标]}
+        self._official_marks_cache: dict[str, dict[str, list]] = {}
+        self._official_marks_empty: set[str] = set()
+        self._official_marks_fetched_at: dict[str, float] = {}
 
         # 箭头渲染可调参数（便于快速微调视觉）
         self._arrow_center_rel = (162 / 1920, 166 / 1080)  # 相对于窗口的箭头中心位置（比例），默认在左上角稍微偏右下
@@ -469,11 +474,80 @@ class ItemNavigatorTask(InstructionsMixin, RuntimeStateMixin, BaseEfTask, Trigge
         return math.hypot(a[0] - b[0], a[1] - b[1])
 
     def _get_candidates_for_map(self, map_id: str, selected_items: list[str]) -> dict[str, list]:
-        # Use item_map_query to get items; then restrict to given map_id
         if not selected_items:
             return {}
-        summary = item_map_query.get_item_map(selected_items)
-        return summary.get(map_id, {})
+        static_items = item_map_query.get_item_map(selected_items).get(map_id, {})
+        official_items = self._official_marks_for_map(map_id)
+        if official_items:
+            selected = set(selected_items)
+            official_items = {name: points for name, points in official_items.items() if name in selected}
+        return map_mark_query.merge_item_maps([static_items, official_items])
+
+    def _official_marks_for_map(self, map_id: str) -> dict[str, list]:
+        """Fetch and cache current-map user facilities from the official map API."""
+
+        now = self.active_time()
+        last_fetched = self._official_marks_fetched_at.get(map_id, 0.0)
+        if (
+            map_id in self._official_marks_cache or map_id in self._official_marks_empty
+        ) and now - last_fetched < OFFICIAL_MARKS_CACHE_TTL:
+            return self._official_marks_cache.get(map_id, {})
+
+        service = self.get_runtime_position_service()
+        if service is None:
+            return {}
+        api_get = getattr(service, "_map_api_get", None)
+        if not callable(api_get):
+            return {}
+        if not getattr(service, "_map_ws_cred", ""):
+            return {}
+
+        account = getattr(service, "_map_ws_account", None)
+        if not isinstance(account, dict) or not account:
+            resolver = getattr(service, "_resolve_map_account_from_cred", None)
+            if not callable(resolver):
+                return {}
+            try:
+                account = resolver()
+            except Exception as exc:
+                self.log_info(f"读取官方地图设施失败，继续使用本地物品点位: {exc}")
+                return {}
+        if not isinstance(account, dict) or not account:
+            return {}
+
+        try:
+            response = api_get(
+                "/web/v1/game/endfield/map/mark/list",
+                {"mapId": map_id, **account},
+            )
+        except Exception as exc:
+            self.log_info(f"读取官方地图设施失败，继续使用本地物品点位: {exc}")
+            self._official_marks_fetched_at[map_id] = now
+            return {}
+
+        if not isinstance(response, dict) or response.get("code") not in (None, 0):
+            self._official_marks_fetched_at[map_id] = now
+            return {}
+
+        points = map_mark_query.extract_mark_points(response, map_id=map_id)
+        self._official_marks_fetched_at[map_id] = now
+        user_map_mark_store.persist_user_marks(
+            response,
+            map_id=map_id,
+            account_id=str(getattr(self, "current_account_id", "") or "").strip(),
+            map_user_id=str(getattr(service, "_map_ws_user_id", "") or "").strip(),
+            role_id=str(account.get("roleId") or "").strip(),
+            server_id=str(account.get("serverId") or "").strip(),
+        )
+        if points:
+            self._official_marks_cache[map_id] = points
+            self._official_marks_empty.discard(map_id)
+            return points
+
+        # 接口成功但没有设施属于稳定结果，缓存空结果避免每轮重复请求。
+        self._official_marks_empty.add(map_id)
+        self._official_marks_cache.pop(map_id, None)
+        return {}
 
     def _draw_nav_arrow(self, dx: float, dz: float, tooltip: str):
         try:

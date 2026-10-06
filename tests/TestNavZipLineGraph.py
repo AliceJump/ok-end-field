@@ -4,6 +4,7 @@ import unittest
 
 from src.nav.zip_line_graph import (
     LONG_RANGE_ZIP_LINE_NAME,
+    SHARED_ZIP_LINE_NAME,
     ZIP_LINE_NAME,
     ZIP_LINE_RANGES,
     ZipLineGraph,
@@ -50,12 +51,37 @@ class TestZipLineGraph(unittest.TestCase):
         )
 
         self.assertEqual(len(graph), 3)
-        self.assertEqual(
-            {link.distance_m for link in graph.links},
-            {75.0, 95.0},
-        )
+        self.assertEqual({link.distance_m for link in graph.links}, {75.0})
         self.assertEqual(ZIP_LINE_RANGES[ZIP_LINE_NAME], 80.0)
         self.assertEqual(ZIP_LINE_RANGES[LONG_RANGE_ZIP_LINE_NAME], 110.0)
+
+    def test_normal_to_long_zip_line_uses_normal_range(self):
+        graph = ZipLineGraph.from_mark_payloads(
+            [
+                _payload(
+                    [
+                        _mark("a", "normal", 0, 0, 0),
+                        _mark("b", "long", 95, 0, 0),
+                    ]
+                )
+            ]
+        )
+
+        self.assertEqual(graph.links, ())
+
+    def test_long_range_to_long_range_uses_long_range(self):
+        graph = ZipLineGraph.from_mark_payloads(
+            [
+                _payload(
+                    [
+                        _mark("a", "long", 0, 0, 0),
+                        _mark("b", "long", 100, 0, 0),
+                    ]
+                )
+            ]
+        )
+
+        self.assertEqual({link.distance_m for link in graph.links}, {100.0})
 
     def test_three_dimensional_distance_prevents_vertical_false_link(self):
         graph = ZipLineGraph.from_mark_payloads(
@@ -85,6 +111,44 @@ class TestZipLineGraph(unittest.TestCase):
             ]
         )
 
+        self.assertEqual(graph.links, ())
+
+    def test_marks_unpowered_zip_lines_as_shared(self):
+        graph = ZipLineGraph.from_mark_payloads(
+            [
+                _payload(
+                    [
+                        _mark("a", "normal", 0, 0, 0),
+                        _mark("b", "normal", 75, 0, 0),
+                    ]
+                )
+            ],
+            map_id="map01",
+            shared_facility_points=[{"x": 1.0, "y": 0.0, "z": 0.0}],
+            include_shared_zip_lines=True,
+        )
+
+        self.assertEqual(
+            {node.name for node in graph.nodes},
+            {ZIP_LINE_NAME, SHARED_ZIP_LINE_NAME},
+        )
+
+    def test_shared_zip_lines_are_excluded_by_default(self):
+        graph = ZipLineGraph.from_mark_payloads(
+            [
+                _payload(
+                    [
+                        _mark("a", "normal", 0, 0, 0),
+                        _mark("b", "normal", 75, 0, 0),
+                    ]
+                )
+            ],
+            map_id="map01",
+            shared_facility_points=[{"x": 1.0, "y": 0.0, "z": 0.0}],
+            include_shared_zip_lines=False,
+        )
+
+        self.assertEqual([node.node_id for node in graph.nodes], ["a"])
         self.assertEqual(graph.links, ())
 
     def test_for_map_keeps_only_requested_map(self):

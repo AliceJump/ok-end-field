@@ -4,6 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
+from unittest import mock
 
 import numpy as np
 
@@ -26,6 +27,7 @@ from src.runtime_state.topics import RuntimeTopic
 from src.tasks.navigation.mixin.grid_navigation_mixin import (
     CONFIG_GRID_ALLOW_UNKNOWN,
     CONFIG_GRID_FILE,
+    CONFIG_GRID_USE_SHARED_ZIP_LINES,
     GridNavigationMixin,
 )
 from src.tasks.navigation.mixin.zip_line_mixin import ZipLineReplanRequired
@@ -278,9 +280,12 @@ class TestGridNavigationMixin(unittest.TestCase):
         }
         self.task._map_ws_account = {"roleId": "r", "serverId": "s"}
         self.task._map_api_get = lambda path, params=None: payload
+        self.task.config[CONFIG_GRID_USE_SHARED_ZIP_LINES] = True
         self.task.zip_line_list_go = lambda distances, **kwargs: None
 
-        graph = self.task._grid_zip_lines_for_map("test")
+        with mock.patch("src.data.user_map_mark_store.persist_user_marks") as persist:
+            graph = self.task._grid_zip_lines_for_map("test")
+            self.assertEqual(persist.call_count, 1)
 
         self.assertIsNotNone(graph)
         self.assertEqual(len(graph), 2)

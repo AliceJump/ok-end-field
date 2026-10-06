@@ -35,6 +35,7 @@ __all__ = [
     "CONFIG_GRID_TIMEOUT",
     "CONFIG_GRID_TURN_TOLERANCE",
     "CONFIG_GRID_TURN_WHILE_MOVING",
+    "CONFIG_GRID_USE_SHARED_ZIP_LINES",
     "CONFIG_GRID_USE_ZIP_LINES",
     "CONFIG_GRID_WALL_PENALTY",
     "CONFIG_GRID_WAYPOINT_RADIUS",
@@ -78,6 +79,7 @@ CONFIG_GRID_MAX_REPLANS = "最大重规划次数"
 CONFIG_GRID_TIMEOUT = "导航超时(秒)"
 CONFIG_GRID_TICK = "控制周期(秒)"
 CONFIG_GRID_USE_ZIP_LINES = "使用滑索路径"
+CONFIG_GRID_USE_SHARED_ZIP_LINES = "使用共享滑索"
 
 GRID_HEADING_TOLERANCE_DEG = 4.0
 GRID_TURN_TOLERANCE_DEG = 4.0
@@ -114,6 +116,7 @@ DEFAULT_GRID_NAV_CONFIG: dict[str, Any] = {
     CONFIG_GRID_TIMEOUT: 180.0,
     CONFIG_GRID_TICK: 0.2,
     CONFIG_GRID_USE_ZIP_LINES: True,
+    CONFIG_GRID_USE_SHARED_ZIP_LINES: False,
 }
 
 GRID_NAV_CONFIG_KEYS: tuple[str, ...] = tuple(DEFAULT_GRID_NAV_CONFIG)
@@ -154,5 +157,9 @@ GRID_NAV_CONFIG_DESCRIPTION: dict[str, str] = {
     CONFIG_GRID_USE_ZIP_LINES: (
         "从当前官方地图账号读取用户滑索架，把 80m/110m 内的可连接点加入路线搜索。"
         "需要全局「Nav Config」配置可用的 content；没有滑索数据时不改变原路线"
+    ),
+    CONFIG_GRID_USE_SHARED_ZIP_LINES: (
+        "默认关闭。滑索架附近 6 米内没有供电桩、中继器、息壤供电桩或息壤中继器时，"
+        "会改标为共享滑索架/共享长距离滑索架；开启后才把这些共享滑索纳入路线搜索。"
     ),
 }
