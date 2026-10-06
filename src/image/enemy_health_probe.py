@@ -190,7 +190,14 @@ def _has_enemy_hp_context(
     return False
 
 
-def _find_enemy_hp_run(roi, screen_width: int, screen_height: int):
+def _find_enemy_hp_run(
+    roi,
+    screen_width: int,
+    screen_height: int,
+    *,
+    context_roi=None,
+    context_offset=(0, 0),
+):
     """Return the local pixel box that passes HP geometry + context checks."""
     if roi is None or getattr(roi, "size", 0) == 0 or roi.ndim != 3:
         return None
@@ -245,10 +252,12 @@ def _find_enemy_hp_run(roi, screen_width: int, screen_height: int):
         hit_top = int(top + run_start)
         hit_width = int(right - left + 1)
         hit_height = int(run_end - run_start + 1)
+        context_source = roi if context_roi is None else context_roi
+        context_x, context_y = context_offset if context_roi is not None else (0, 0)
         if not _has_enemy_hp_context(
-            roi,
-            int(left),
-            hit_top,
+            context_source,
+            int(left) + int(context_x),
+            hit_top + int(context_y),
             hit_width,
             hit_height,
             screen_width,
@@ -267,10 +276,23 @@ def _has_enemy_hp_run(roi, screen_width: int, screen_height: int) -> bool:
     return _find_enemy_hp_run(roi, screen_width, screen_height) is not None
 
 
-def _probe_region(frame, region, screen_width: int, screen_height: int):
+def _probe_region(frame, region, screen_width: int, screen_height: int, *, context_region=None):
     rect = _normalized_rect(frame, region)
     px1, py1, px2, py2 = rect
-    local_hit = _find_enemy_hp_run(frame[py1:py2, px1:px2], screen_width, screen_height)
+    context_roi = None
+    context_offset = (0, 0)
+    if context_region is not None:
+        cx1, cy1, cx2, cy2 = _normalized_rect(frame, context_region)
+        context_roi = frame[cy1:cy2, cx1:cx2]
+        context_offset = (px1 - cx1, py1 - cy1)
+
+    local_hit = _find_enemy_hp_run(
+        frame[py1:py2, px1:px2],
+        screen_width,
+        screen_height,
+        context_roi=context_roi,
+        context_offset=context_offset,
+    )
     if local_hit is None:
         return rect, None
 
@@ -652,7 +674,13 @@ def probe_enemy_presence_fast(task) -> EnemyPresence:
     last_slice = getattr(task, "_enemy_hp_last_slice", None)
     if isinstance(last_slice, int) and 0 <= last_slice < ENEMY_NORMAL_HP_SLICES:
         label = f"last_slice_{last_slice}"
-        rect, hit = _probe_region(frame, _normal_slice_region(last_slice), screen_width, screen_height)
+        rect, hit = _probe_region(
+            frame,
+            _normal_slice_region(last_slice),
+            screen_width,
+            screen_height,
+            context_region=ENEMY_NORMAL_HP_REGION,
+        )
         scanned_regions.append((label, rect, hit is not None))
         if hit is not None:
             hits.append((label, hit))
@@ -682,7 +710,13 @@ def probe_enemy_presence_fast(task) -> EnemyPresence:
     if scan_index is not None:
         task._enemy_hp_scan_cursor = (scan_index + 1) % ENEMY_NORMAL_HP_SLICES
         label = f"normal_slice_{scan_index}"
-        rect, hit = _probe_region(frame, _normal_slice_region(scan_index), screen_width, screen_height)
+        rect, hit = _probe_region(
+            frame,
+            _normal_slice_region(scan_index),
+            screen_width,
+            screen_height,
+            context_region=ENEMY_NORMAL_HP_REGION,
+        )
         scanned_regions.append((label, rect, hit is not None))
         if hit is not None:
             hits.append((label, hit))
