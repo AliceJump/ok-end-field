@@ -10,6 +10,11 @@ from src.image.enemy_direction_probe import EnemyDirectionObservation, probe_ene
 
 _PATCH_INSTALLED = False
 _PROBE_INTERVAL = 0.04
+_STABLE_FRAMES = 2
+_STABLE_MAX_GAP = 0.18
+_STABLE_ANGLE_TOLERANCE_DEG = 12.0
+_TARGET_LOCK_ANGLE_TOLERANCE_DEG = 12.0
+_TARGET_SWITCH_SCORE_RATIO = 1.25
 _DODGE_INTERVAL = 0.25
 _CENTERING_GUARD_SECONDS = 0.20
 _DODGE_PRE_HOLD = 0.03
@@ -23,6 +28,10 @@ def _task_time(task) -> float:
     if callable(clock):
         return float(clock())
     return time.monotonic()
+
+
+def _angle_delta(current: float, previous: float) -> float:
+    return (current - previous + 180.0) % 360.0 - 180.0
 
 
 def _reset_direction_state(task, *, keep_throttle: bool = False) -> None:
@@ -45,6 +54,46 @@ def _dodge_direction_from_angle(angle_deg: float) -> str:
     return _DODGE_DIRECTIONS[sector]
 
 
+def _select_locked_observation(
+    task,
+    observation: EnemyDirectionObservation,
+    now: float,
+) -> EnemyDirectionObservation:
+    """Keep the current marker unless it disappears or a rival is clearly stronger."""
+    markers = observation.markers
+    previous_angle = getattr(task, "_enemy_direction_last_angle", None)
+    previous_at = getattr(task, "_enemy_direction_last_seen_at", None)
+    if (
+        not markers
+        or previous_angle is None
+        or previous_at is None
+        or not 0.0 <= now - previous_at <= _STABLE_MAX_GAP
+    ):
+        return observation
+
+    nearest = min(
+        markers,
+        key=lambda marker: abs(_angle_delta(marker.angle_deg, float(previous_angle))),
+    )
+    nearest_delta = abs(_angle_delta(nearest.angle_deg, float(previous_angle)))
+    best = max(markers, key=lambda marker: marker.score)
+
+    if nearest_delta > _TARGET_LOCK_ANGLE_TOLERANCE_DEG:
+        selected = best
+    elif best is nearest or best.score < nearest.score * _TARGET_SWITCH_SCORE_RATIO:
+        selected = nearest
+    else:
+        selected = best
+
+    if selected.angle_deg == observation.angle_deg and selected.score == observation.score:
+        return observation
+    return EnemyDirectionObservation(
+        angle_deg=selected.angle_deg,
+        score=selected.score,
+        markers=markers,
+    )
+
+
 def _centering_blocked(task, now: float | None = None) -> bool:
     if now is None:
         now = _task_time(task)
@@ -56,29 +105,49 @@ def _guard_centering_after_dodge(task, now: float) -> None:
     task._enemy_direction_no_center_until = max(current, now + _CENTERING_GUARD_SECONDS)
 
 
-def _note_marker_seen(task, observation: EnemyDirectionObservation, now: float) -> int:
+def _note_observation(task, observation: EnemyDirectionObservation, now: float) -> int:
+    previous_angle = getattr(task, "_enemy_direction_last_angle", None)
+    previous_at = getattr(task, "_enemy_direction_last_seen_at", None)
+    previous_streak = int(getattr(task, "_enemy_direction_streak", 0))
+    stable = (
+        previous_angle is not None
+        and previous_at is not None
+        and 0.0 <= now - previous_at <= _STABLE_MAX_GAP
+        and abs(_angle_delta(observation.angle_deg, float(previous_angle))) <= _STABLE_ANGLE_TOLERANCE_DEG
+    )
+    streak = previous_streak + 1 if stable else 1
     task._enemy_direction_last_angle = observation.angle_deg
     task._enemy_direction_last_seen_at = now
-    task._enemy_direction_streak = int(getattr(task, "_enemy_direction_streak", 0)) + 1
+    task._enemy_direction_streak = streak
     task._enemy_direction_recovering = True
-    return task._enemy_direction_streak
+    return streak
 
 
 def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
-    """Dodge toward the current off-screen marker until that marker disappears.
+    """Dodge toward a stable off-screen marker when enemy absence is actionable.
 
     A normal-enemy HP hit already provides an on-screen target, so the direction
     probe stays idle. Boss HP is intentionally different: its fixed top-center
     bar proves the boss exists but says nothing about camera direction, therefore
     boss PRESENT observations still allow this recovery probe.
 
-    The marker angle is quantized to the nearest of eight movement directions:
-    W/A/S/D and the four diagonals. Recovery never rotates the camera itself.
-    Each dodge briefly suppresses middle-button centering while the dodge is in
-    progress and for a short grace period afterward; normal centering frequency
-    is otherwise unchanged. If the marker remains visible after the dodge
-    cooldown, its current angle is sampled again and may choose a different
-    movement direction.
+    Direction evidence must remain stable for two nearby frames before it can
+    trigger movement. UNKNOWN enemy presence is observation-only: marker state
+    and hysteresis continue to update, but no dodge is emitted until the HP probe
+    resolves to ABSENT (or boss PRESENT keeps direction recovery applicable).
+    This prevents one incomplete HP scan plus one transient red effect from
+    becoming an immediate movement command.
+
+    When multiple marker primitives are visible, the previously tracked nearby
+    marker keeps the lock. A rival marker may take over only after becoming at
+    least 25% stronger; if the old direction disappears, the strongest remaining
+    marker is selected normally.
+
+    The stable marker angle is quantized to the nearest of eight movement
+    directions: W/A/S/D and the four diagonals. Recovery never rotates the camera
+    itself. Each dodge briefly suppresses middle-button centering while the dodge
+    is in progress and for a short grace period afterward; normal centering
+    frequency is otherwise unchanged.
 
     Every actual direction-probe attempt also emits optional diagnostics. The
     existing ``保存敌人检测调试帧`` option saves an annotated PNG plus matching
@@ -130,8 +199,21 @@ def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
         _reset_direction_state(task, keep_throttle=True)
         return False
 
-    streak = _note_marker_seen(task, observation, now)
+    observation = _select_locked_observation(task, observation, now)
+    streak = _note_observation(task, observation, now)
     direction_key = _dodge_direction_from_angle(observation.angle_deg)
+
+    if streak < _STABLE_FRAMES or presence == EnemyPresence.UNKNOWN:
+        draw_enemy_direction_debug(
+            task,
+            frame,
+            observation,
+            presence,
+            streak=streak,
+            action="tracking",
+        )
+        return True
+
     next_dodge_at = float(getattr(task, "_enemy_direction_next_dodge_at", 0.0))
     dodge = getattr(task, "_dodge_with_direction", None)
 
