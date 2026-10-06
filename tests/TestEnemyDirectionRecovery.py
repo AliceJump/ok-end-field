@@ -169,6 +169,36 @@ class TestEnemyDirectionProbe(unittest.TestCase):
 
         self.assertEqual([direction for direction, _kwargs in task.dodges], ["d", "d"])
 
+    def test_recovery_rechecks_direction_after_dodge_cooldown(self):
+        task = _DirectionTask()
+        observations = (
+            EnemyDirectionObservation(0.0, 30.0),
+            EnemyDirectionObservation(0.0, 30.0),
+            EnemyDirectionObservation(180.0, 40.0),
+            EnemyDirectionObservation(180.0, 40.0),
+            EnemyDirectionObservation(180.0, 40.0),
+            EnemyDirectionObservation(180.0, 40.0),
+            EnemyDirectionObservation(180.0, 40.0),
+            EnemyDirectionObservation(180.0, 40.0),
+            EnemyDirectionObservation(180.0, 40.0),
+        )
+        with patch(
+            "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
+            side_effect=observations,
+        ):
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
+            task.now += 0.05
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
+            task.now += 0.12
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
+            task.now += 0.14
+            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
+            for _ in range(5):
+                task.now += 0.15
+                self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
+
+        self.assertEqual([direction for direction, _kwargs in task.dodges], ["d", "a"])
+
     def test_direction_change_resets_stability_before_dodge(self):
         task = _DirectionTask()
         observations = (
