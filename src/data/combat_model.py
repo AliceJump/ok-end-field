@@ -3,7 +3,7 @@
 建模约定（详见 effect_semantics.py 模块注释）：
 - 敌人身上任意时刻最多一种法术附着（异元素交叉会清空全部，官方规则），
   因此附着存为互斥的 (元素, 层数) 结构，而非每元素一个计数器。
-- 附着层数即异常等级（I~IV），直接作为反应伤害的 ×(1+异常等级) 输入。
+- 附着层数作为异常等级（I~IV），反应伤害由对应的原生表行结算。
 - 连击是队伍共享池，数值表来自 DAMAGE_FORMULA §8（灰机wiki 数值）。
 - 反应规则（谁能触发什么）见本文件 REACTION_RULES（第 3 部分）。
 """
@@ -43,8 +43,11 @@ class EnemyCombatState:
     shred_stacks: int = 0
     # 其余持续状态 → 剩余持续时间（秒）；由编排器负责 tick 与过期
     states: dict[EffectType, float] = field(default_factory=dict)
+    # 当前 action/结算窗口产生的瞬时事件 → 携带的整数 payload。
+    # 事件不属于持久世界状态，下一 action 开始前由调用方 clear_transient_events()。
+    transient_events: dict[EffectType, int] = field(default_factory=dict)
 
-    def apply_infliction(self, element: EffectType) -> EffectType | None:
+    def apply_infliction(self, element: EffectType, *, duration: float = INFLICTION_DURATION_SECONDS) -> EffectType | None:
         """对敌人施加法术附着，按官方规则转移并返回应结算的事件。
 
         返回：
@@ -58,11 +61,11 @@ class EnemyCombatState:
         if self.infliction_element is None:
             self.infliction_element = element
             self.infliction_stacks = 1
-            self.infliction_time_left = INFLICTION_DURATION_SECONDS
+            self.infliction_time_left = duration
             return None
         if self.infliction_element is element:
             self.infliction_stacks = min(self.infliction_stacks + 1, MAX_INFLICTION_STACKS)
-            self.infliction_time_left = INFLICTION_DURATION_SECONDS
+            self.infliction_time_left = duration
             return EffectType.STATUS_SPELL_BURST
         # 异元素交叉：反应类型由新施加元素决定（EFFECT_SYSTEM §2 反应组合表）
         self.infliction_element = None
@@ -89,10 +92,23 @@ class EnemyCombatState:
         self.shred_stacks = min(self.shred_stacks + stacks, MAX_SHRED_STACKS)
 
     def consume_shred(self) -> int:
-        """消耗全部破防层（猛击/碎甲触发时），返回被消耗的层数。"""
+        """消耗全部破防层，并累计 EVENT_SHRED_CONSUMED(count)。
+
+        返回值保持旧接口兼容；瞬时事件用于“消费后”才能触发的机制，
+        例如骏卫连携技和弭弗追形→开天判断。同一 action 内多次正数消费
+        会累加，零层消费不会清除前面已经产生的事件；只由
+        clear_transient_events() 在 action 边界统一清理。
+        """
         consumed = self.shred_stacks
         self.shred_stacks = 0
+        if consumed > 0:
+            event = EffectType.EVENT_SHRED_CONSUMED
+            self.transient_events[event] = self.transient_events.get(event, 0) + consumed
         return consumed
+
+    def clear_transient_events(self) -> None:
+        """清除上一 action 的瞬时事件；不影响任何持续状态/资源。"""
+        self.transient_events.clear()
 
 
 @dataclass

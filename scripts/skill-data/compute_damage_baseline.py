@@ -118,12 +118,20 @@ def _parse_stat_clause(sentence: str) -> dict | None:
         (r"连携技冷却缩减\+(\d+(?:\.\d+)?)%", "combo_cd"),
         (r"失衡效率加成\+(\d+(?:\.\d+)?)%", "stagger_eff"),
         (r"最大生命值\+(\d+(?:\.\d+)?)%", "hp_pct"),
+        (r"副能力\+(\d+(?:\.\d+)?)%", "secondary"),
     ]
     for pat, key in patterns:
         m = re.fullmatch(pat, s)
         if m:
             return {"kind": "pct", "stat": key, "value": float(m.group(1))}
+    for skill_type, bucket in SKILL_TYPE_BUCKETS.items():
+        m = re.fullmatch(rf"{skill_type}伤害(?:\+|提升|提高)(\d+(?:\.\d+)?)%", s)
+        if m:
+            return {"kind": "pct", "stat": bucket, "value": float(m.group(1))}
     for el in ELEMENTS:
+        m = re.fullmatch(rf"{el}增幅\+(\d+(?:\.\d+)?)%", s)
+        if m:
+            return {"kind": "pct", "stat": f"amp_{el}", "value": float(m.group(1))}
         m = re.fullmatch(rf"{el}伤害\+(\d+(?:\.\d+)?)%", s)
         if m:
             return {"kind": "pct", "stat": f"elem_{el}", "value": float(m.group(1))}
@@ -273,6 +281,9 @@ def _skill_multiplier(skill: dict) -> tuple[float, float, list[str]]:
             continue
         last = str(values[-1])
         flat_label = label.replace("/", "").replace(" ", "")
+        if "受击后" in flat_label:
+            conditional.append(f"{label}: {last}（需要施放过程中受到伤害）")
+            continue
         if "消耗" in label and ("倍率" in label or "伤害" in label):
             # 消耗型伤害行（如「消耗每层附着 / 额外伤害倍率」）：按消耗层数结算，
             # 触发条件通常保证层数供给，但每层倍率口径（平叠 vs ×(1+异常等级)）
@@ -297,7 +308,7 @@ def _skill_multiplier(skill: dict) -> tuple[float, float, list[str]]:
                 stagger += nums[-1]
             continue
         if "倍率" in label or "伤害" in label or "攻击" in label:
-            if "处决" in flat_label or "终结技期间" in flat_label:
+            if "处决" in flat_label or "下落" in flat_label or "终结技期间" in flat_label:
                 conditional.append(f"{label}: {last}")
                 continue
             v = _parse_pct(last)
@@ -414,11 +425,12 @@ def compute_character(
     wiki_item_ids: dict[str, list[str]],
     secondary_map: dict[str, str] | None = None,
     full_overrides: dict[tuple[str, str], float] | None = None,
+    additional_mods: list[dict] | None = None,
 ) -> dict:
     trace: list[str] = []
     name = str(char.get("name") or key)
     element = str(char.get("element") or "")
-    mods: list[dict] = []
+    mods: list[dict] = list(additional_mods or [])
 
     base_rows = (char.get("base_stats") or {}).get("rows") or {}
     levels = (char.get("base_stats") or {}).get("levels") or []
@@ -492,6 +504,7 @@ def compute_character(
     secondary_total = 0.0
     if secondary and secondary != primary:
         secondary_total = base.get(secondary, 0) + merged.get(f"flat_{secondary}", 0)
+        secondary_total *= 1 + merged.get("pct_secondary", 0) / 100
         trace.append(f"  副能力: {secondary}（官方标注）总值 {secondary_total:.0f}")
     else:
         secondary = None
@@ -531,6 +544,26 @@ def compute_character(
         "heal_eff": merged.get("pct_heal_eff", 0),
         "ult_charge": merged.get("pct_ult_charge", 0),
     }
+    panel[primary] = round(primary_total, 2)
+    if secondary:
+        panel[secondary] = round(secondary_total, 2)
+    # Fixed gear/attribute components are reusable by per-hit combat resolution.
+    # Temporary attack bonuses apply to the white attack, without multiplying flat attack again.
+    panel["damage_basis"] = {
+        "attack_white": atk_base, "attack_percent": atk_pct, "attack_flat": atk_fixed,
+        "attribute_factor": 1 + 0.005 * primary_total + 0.002 * secondary_total,
+        "crit_rate": crit_rate, "crit_damage": crit_dmg,
+        "amplification": {el: merged.get(f"pct_amp_{el}", 0) / 100 for el in ELEMENTS},
+        "damage_bonus": {
+            "all": merged.get("pct_all_damage", 0) / 100,
+            "all_skill": merged.get("pct_all_skill_dmg", 0) / 100,
+            **{el: merged.get(f"pct_elem_{el}", 0) / 100 for el in ELEMENTS},
+            **{tag: merged.get(f"pct_{bucket}", 0) / 100 for tag, bucket in (
+                ("normal", "normal_attack_dmg"), ("skill", "skill_dmg"),
+                ("combo", "combo_dmg"), ("ultimate", "ult_dmg"),
+            )},
+        },
+    }
 
     # 技能伤害（A 层裸伤害）
     skill_results = []
@@ -541,9 +574,11 @@ def compute_character(
         bonus = merged.get("pct_all_damage", 0) + merged.get("pct_all_skill_dmg", 0)
         if bucket:
             bonus += merged.get(f"pct_{bucket}", 0)
-        bonus += merged.get(f"pct_elem_{element}", 0)
+        skill_element = skill.get("element") or element
+        bonus += merged.get(f"pct_elem_{skill_element}", 0)
         dmg_mult = 1 + bonus / 100
-        non_crit = atk * (mult / 100) * dmg_mult
+        amplification = merged.get(f"pct_amp_{skill_element}", 0)
+        non_crit = atk * (mult / 100) * dmg_mult * (1 + amplification / 100)
         crit_expect = non_crit * (1 + crit_rate * crit_dmg)
         entry = {
             "skill_id": skill.get("skill_id"),
@@ -552,6 +587,7 @@ def compute_character(
             "multiplier_pct": round(mult, 1),
             "stagger": stagger,
             "bonus_pct": round(bonus, 1),
+            "amplification_pct": round(amplification, 1),
             "non_crit": round(non_crit, 1),
             "crit_expect": round(crit_expect, 1),
             "conditional_rows": conditional,
@@ -559,7 +595,7 @@ def compute_character(
         overrides = _SKILL_FULL_MULTIPLIER_OVERRIDES if full_overrides is None else full_overrides
         full_mult = overrides.get((key, str(skill.get("skill_id") or "")))
         if full_mult is not None and full_mult != mult:
-            full_non_crit = atk * (full_mult / 100) * dmg_mult
+            full_non_crit = atk * (full_mult / 100) * dmg_mult * (1 + amplification / 100)
             entry["full_multiplier_pct"] = round(full_mult, 1)
             entry["full_non_crit"] = round(full_non_crit, 1)
             entry["full_expect"] = round(full_non_crit * (1 + crit_rate * crit_dmg), 1)

@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "rossi_skill",
@@ -185,7 +186,6 @@
                         "text": "目标已拥有破防状态时释放狼之珀",
                         "effects": {
                             "all": [
-                                "STACK_SHRED",
                                 "STATUS_SHRED"
                             ]
                         }
@@ -311,24 +311,72 @@
                     "name": "第二段暴击增益",
                     "trigger_condition": {
                         "text": "连携技第二段命中",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "enhancement_effect": "提升自身暴击率和暴击伤害",
                     "enhancement_visible_pulse": false,
                     "effects": [
                         {
-                            "effect_id": "BUFF_CRIT_RATE_UP",
+                            "effect_id": "CLEAR_ATTACH",
                             "value": 1,
                             "duration": null,
-                            "target": "self"
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "STATUS_HEAVY_HIT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "BUFF_CRIT_RATE_UP",
+                            "value": null,
+                            "duration": 15,
+                            "target": "self",
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "rossi_link:BUFF_CRIT_RATE_UP",
+                                "bucket": "crit_rate",
+                                "elements": [
+                                    "all"
+                                ],
+                                "recipient": "self",
+                                "trigger": "second_combo_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "暴击率提升"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "增益效果持续时间 / （秒）"
+                                }
+                            }
                         },
                         {
                             "effect_id": "BUFF_CRIT_DMG_UP",
-                            "value": 1,
-                            "duration": null,
-                            "target": "self"
+                            "value": null,
+                            "duration": 15,
+                            "target": "self",
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "rossi_link:BUFF_CRIT_DMG_UP",
+                                "bucket": "crit_damage",
+                                "elements": [
+                                    "all"
+                                ],
+                                "recipient": "self",
+                                "trigger": "second_combo_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "暴击伤害提升"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "增益效果持续时间 / （秒）"
+                                }
+                            }
                         }
                     ]
                 },
@@ -336,9 +384,7 @@
                     "name": "精准衔接额外破防",
                     "trigger_condition": {
                         "text": "第二次连携技精准衔接",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "enhancement_effect": "额外施加1层破防",
                     "enhancement_visible_pulse": false,
@@ -363,15 +409,7 @@
                             ]
                         }
                     },
-                    "effects": [
-                        {
-                            "effect_id": "STATUS_HEAVY_HIT",
-                            "value": 1,
-                            "duration": null,
-                            "target": "enemy",
-                            "count": 1
-                        }
-                    ]
+                    "effects": []
                 }
             ],
             "description": "当有敌人同时处于破防和法术附着状态时可以发动。 洛茜的连携技可连续发动两次，第一次会对目标造成物理伤害。 第二次将消耗目标全部的法术附着，对其造成基于消耗层数的物理伤害并造成一次击飞，同时在一段时间内提升自身的暴击率和暴击伤害。 当第二次连携技精准衔接时，可以额外施加1层破防。",
@@ -379,15 +417,7 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [
-                {
-                    "effect_id": "CLEAR_ATTACH",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": -1
-                }
-            ],
+            "effects": [],
             "rank_stats": {
                 "levels": [
                     "RANK 1",
@@ -702,7 +732,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

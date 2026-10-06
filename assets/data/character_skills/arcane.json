@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "arcane_skill",
@@ -318,6 +319,98 @@
                         }
                     ]
                 }
+            ],
+            "enhancements": [
+                {
+                    "name": "阵诀·智：战技命中囹圄敌人",
+                    "trigger_condition": {
+                        "text": "智识值 ≥ 意志值，阵诀·智生效中，自身战技命中处于囹圄状态的敌人时",
+                        "effects": null
+                    },
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_CONFINEMENT",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "VULN_NATURAL",
+                            "value": null,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "arcane_link:VULN_NATURAL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "自然"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "wisdom_confinement_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果",
+                                        "skill": "arcane_link"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "额外脆弱持续时间（秒）",
+                                    "skill": "arcane_link"
+                                }
+                            }
+                        },
+                        {
+                            "effect_id": "VULN_COLD",
+                            "value": null,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "arcane_link:VULN_COLD",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "wisdom_confinement_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果",
+                                        "skill": "arcane_link"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "额外脆弱持续时间（秒）",
+                                    "skill": "arcane_link"
+                                }
+                            }
+                        },
+                        {
+                            "effect_id": "TRIGGER_ADDITIONAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ],
+                    "resource_changes": [
+                        {
+                            "resource": "skill_point",
+                            "target": "team",
+                            "trigger": "阵诀·智下自身战技命中囹圄敌人，提前结束囹圄后",
+                            "kind": "fixed",
+                            "amount": 30,
+                            "ranked_amount": {
+                                "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                "parameter": "atb_return_wisd"
+                            }
+                        }
+                    ],
+                    "evaluation_point": "on_hit"
+                }
             ]
         },
         {
@@ -336,7 +429,7 @@
                 {
                     "name": "应龙四式",
                     "trigger_condition": {
-                        "text": "当有敌人被施加法术附着时可以发动",
+                        "text": "智识值 ≥ 意志值，阵诀·智生效中；敌人被施加自然附着或进入2层及以上其他法术附着",
                         "effects": {
                             "all": [
                                 "STATUS_SPELL_INFLICT"
@@ -345,25 +438,56 @@
                     },
                     "effects": [
                         {
-                            "effect_id": "STATUS_SPELL_INFLICT",
-                            "value": 1,
-                            "duration": null,
-                            "target": "enemy",
-                            "count": 1
-                        },
-                        {
                             "effect_id": "VULN_NATURAL",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
-                            "count": 1
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "arcane_link:VULN_NATURAL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "自然"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "combo_wisdom_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果",
+                                        "skill": "arcane_link"
+                                    }
+                                },
+                                "duration": {
+                                    "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                    "parameter": "duration"
+                                }
+                            }
                         },
                         {
                             "effect_id": "VULN_COLD",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
-                            "count": 1
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "arcane_link:VULN_COLD",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "combo_wisdom_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果",
+                                        "skill": "arcane_link"
+                                    }
+                                },
+                                "duration": {
+                                    "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                    "parameter": "duration"
+                                }
+                            }
                         },
                         {
                             "effect_id": "STATUS_CONFINEMENT",
@@ -375,40 +499,117 @@
                     ]
                 },
                 {
-                    "name": "阵诀·智：战技命中囹圄敌人",
+                    "name": "应龙四式·阵诀·意",
                     "trigger_condition": {
-                        "text": "智识值 ≥ 意志值，阵诀·智生效中，自身战技命中处于囹圄状态的敌人时",
+                        "text": "意志值 > 智识值，阵诀·意生效中；敌人被施加法术附着",
                         "effects": {
                             "all": [
-                                "STATUS_CONFINEMENT"
+                                "STATUS_SPELL_INFLICT"
                             ]
                         }
                     },
-                    "enhancement_visible_pulse": false,
                     "effects": [
                         {
-                            "effect_id": "STATUS_CONFINEMENT",
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
                             "value": 1,
                             "duration": null,
                             "target": "enemy",
-                            "count": -1
+                            "count": 1
                         },
                         {
                             "effect_id": "VULN_NATURAL",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
-                            "count": 1
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "arcane_link:VULN_NATURAL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "自然"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "combo_will_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果",
+                                        "skill": "arcane_link"
+                                    },
+                                    "terms": [
+                                        {
+                                            "input": "source.意志",
+                                            "coefficient": {
+                                                "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                                "parameter": "spell_vul_per_will"
+                                            },
+                                            "cap": {
+                                                "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                                "parameter": "max_spell_vul_will"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "duration": {
+                                    "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                    "parameter": "duration_will"
+                                },
+                                "potential_adjustments": [
+                                    {
+                                        "passive": "chr_0032_lizhiyan_potential_1",
+                                        "operation": "add_strength",
+                                        "parameter": "rate_pre"
+                                    }
+                                ]
+                            }
                         },
                         {
                             "effect_id": "VULN_COLD",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
-                            "count": 1
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "arcane_link:VULN_COLD",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "combo_will_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果",
+                                        "skill": "arcane_link"
+                                    },
+                                    "terms": [
+                                        {
+                                            "input": "source.意志",
+                                            "coefficient": {
+                                                "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                                "parameter": "spell_vul_per_will"
+                                            },
+                                            "cap": {
+                                                "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                                "parameter": "max_spell_vul_will"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "duration": {
+                                    "native_skill": "chr_0032_lizhiyan_combo_skill",
+                                    "parameter": "duration_will"
+                                },
+                                "potential_adjustments": [
+                                    {
+                                        "passive": "chr_0032_lizhiyan_potential_1",
+                                        "operation": "add_strength",
+                                        "parameter": "rate_pre"
+                                    }
+                                ]
+                            }
                         },
                         {
-                            "effect_id": "TRIGGER_ADDITIONAL",
+                            "effect_id": "STATUS_CONFINEMENT",
                             "value": 1,
                             "duration": null,
                             "target": "enemy",
@@ -811,6 +1012,15 @@
                         }
                     ]
                 }
+            ],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "trigger": "连携技成功命中后",
+                    "kind": "fixed",
+                    "amount": 10
+                }
             ]
         },
         {
@@ -825,28 +1035,35 @@
             "stagger_value": 0,
             "cooldown": "20秒",
             "spirit_cost": 100,
-            "effects": [
-                {
-                    "effect_id": "STATUS_SPELL_INFLICT",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
-                }
-            ],
+            "effects": [],
             "enhancements": [
                 {
                     "name": "阵诀·智：强制施加腐蚀",
                     "trigger_condition": {
                         "text": "智识值 ≥ 意志值，阵诀·智生效中，破晦阵生成时",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "enhancement_visible_pulse": false,
                     "effects": [
                         {
                             "effect_id": "STATUS_CORROSION",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "阵诀·意：重复法术附着",
+                    "trigger_condition": {
+                        "text": "意志值 > 智识值，阵诀·意生效中，破晦阵生成时对处于法术附着状态的敌人",
+                        "effects": null
+                    },
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
                             "value": 1,
                             "duration": null,
                             "target": "enemy",

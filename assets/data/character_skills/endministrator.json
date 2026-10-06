@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "endministrator_skill",
@@ -197,7 +198,8 @@
                             "value": 1,
                             "duration": null,
                             "target": "enemy",
-                            "count": -1
+                            "count": -1,
+                            "consumes_all": true
                         }
                     ]
                 }
@@ -318,7 +320,8 @@
                             "effect_id": "TRIGGER_ADDITIONAL",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
                         }
                     ]
                 },
@@ -326,9 +329,7 @@
                     "name": "锁闭序列",
                     "trigger_condition": {
                         "text": "当小队内其他干员的连携技造成伤害时可以发动",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "effects": []
                 }
@@ -475,7 +476,8 @@
                             "effect_id": "TRIGGER_ADDITIONAL",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
                         }
                     ]
                 }

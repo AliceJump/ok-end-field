@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "avywenna_skill",
@@ -174,7 +175,8 @@
                     "effect_id": "REMOVE_THUNDER_SPEAR",
                     "value": 0,
                     "duration": null,
-                    "target": "field"
+                    "target": "field",
+                    "count": null
                 }
             ],
             "enhancements": [
@@ -183,8 +185,9 @@
                     "trigger_condition": {
                         "text": "存在雷枪或强雷枪时召回",
                         "effects": {
-                            "all": [
-                                "PLACE_THUNDER_SPEAR"
+                            "any": [
+                                "MECH_THUNDER_SPEAR",
+                                "MECH_STRONG_THUNDER_SPEAR"
                             ]
                         }
                     },
@@ -195,7 +198,8 @@
                             "effect_id": "ATTACH_ELECTROMAGNETIC",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
                         }
                     ]
                 }
@@ -344,35 +348,22 @@
             "name": "雷枪·掣击",
             "skill_type": "连携技",
             "element": "电磁",
-            "has_enhancement": true,
+            "has_enhancement": false,
             "description": "主控干员对处于电磁附着或导电状态的目标进行重击后可以发动。跃起并向目标掷出3支雷枪，并对前方范围内的敌人造成一次电磁伤害。",
             "damage_multiplier": "380%",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [],
-            "enhancements": [
+            "effects": [
                 {
-                    "name": "雷枪·掣击",
-                    "trigger_condition": {
-                        "text": "主控干员对处于电磁附着或导电状态的目标进行重击后可以发动",
-                        "effects": {
-                            "any": [
-                                "ATTACH_ELECTROMAGNETIC",
-                                "STATUS_CONDUCTING"
-                            ]
-                        }
-                    },
-                    "effects": [
-                        {
-                            "effect_id": "PLACE_THUNDER_SPEAR",
-                            "value": 3,
-                            "duration": null,
-                            "target": "field"
-                        }
-                    ]
+                    "effect_id": "MECH_THUNDER_SPEAR",
+                    "value": 1,
+                    "duration": 30,
+                    "target": "field",
+                    "count": 3
                 }
             ],
+            "enhancements": [],
             "rank_stats": {
                 "levels": [
                     "RANK 1",
@@ -475,10 +466,11 @@
             "spirit_cost": 100,
             "effects": [
                 {
-                    "effect_id": "PLACE_THUNDER_SPEAR",
+                    "effect_id": "MECH_STRONG_THUNDER_SPEAR",
                     "value": 1,
-                    "duration": null,
-                    "target": "field"
+                    "duration": 30,
+                    "target": "field",
+                    "count": 1
                 }
             ],
             "rank_stats": {
@@ -584,7 +576,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

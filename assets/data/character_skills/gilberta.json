@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "gilberta_skill",
@@ -248,7 +249,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "gilberta_link",
@@ -274,6 +276,13 @@
                         }
                     },
                     "effects": [
+                        {
+                            "effect_id": "MECH_VACUUM",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        },
                         {
                             "effect_id": "STATUS_HEAVY_HIT",
                             "value": 1,
@@ -368,6 +377,13 @@
             "spirit_cost": 90,
             "effects": [
                 {
+                    "effect_id": "MECH_GRAVITY",
+                    "value": 1,
+                    "duration": 5,
+                    "target": "field",
+                    "count": 1
+                },
+                {
                     "effect_id": "ATTACH_NATURAL",
                     "value": 1,
                     "duration": null,
@@ -383,10 +399,39 @@
                 },
                 {
                     "effect_id": "VULN_ALL",
-                    "value": 1,
+                    "value": null,
                     "duration": null,
                     "target": "enemy",
-                    "count": 1
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "gilberta_gravity:vulnerability",
+                        "bucket": "vulnerability",
+                        "elements": [
+                            "寒冷",
+                            "灼热",
+                            "电磁",
+                            "自然"
+                        ],
+                        "recipient": "enemy",
+                        "trigger": "gravity_field_enter",
+                        "strength": {
+                            "base": {
+                                "row": "基础法术脆弱效果"
+                            },
+                            "terms": [
+                                {
+                                    "input": "enemy.shred",
+                                    "coefficient": {
+                                        "row": "每层破防提升 / 法术脆弱"
+                                    }
+                                }
+                            ]
+                        },
+                        "duration": {
+                            "row": "力场持续时间（秒）"
+                        },
+                        "evaluation": "hit"
+                    }
                 }
             ],
             "enhancements": [
@@ -405,9 +450,39 @@
                     "effects": [
                         {
                             "effect_id": "VULN_ALL",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null,
+                            "damage_modifier": {
+                                "key": "gilberta_gravity:vulnerability",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷",
+                                    "灼热",
+                                    "电磁",
+                                    "自然"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "gravity_field_enter",
+                                "strength": {
+                                    "base": {
+                                        "row": "基础法术脆弱效果"
+                                    },
+                                    "terms": [
+                                        {
+                                            "input": "enemy.shred",
+                                            "coefficient": {
+                                                "row": "每层破防提升 / 法术脆弱"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "duration": {
+                                    "row": "力场持续时间（秒）"
+                                },
+                                "evaluation": "hit"
+                            }
                         }
                     ]
                 },
@@ -428,7 +503,8 @@
                             "effect_id": "STATUS_HEAVY_HIT",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
                         }
                     ]
                 }

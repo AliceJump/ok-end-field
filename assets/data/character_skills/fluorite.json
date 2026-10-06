@@ -139,14 +139,15 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "fluorite_skill",
             "name": "小惊喜",
             "skill_type": "战技",
             "element": "自然",
-            "has_enhancement": true,
+            "has_enhancement": false,
             "description": "踢出自制炸弹将其黏附在目标身上，并施加缓速，短暂延迟后爆炸对范围内的敌人造成自然伤害并施加自然附着。若黏附目标被击败则自制炸弹提前爆炸。场上同时只能存在一个自制炸弹。",
             "damage_multiplier": "420%",
             "stagger_value": 0,
@@ -175,20 +176,7 @@
                     "count": 1
                 }
             ],
-            "enhancements": [
-                {
-                    "name": "自制炸弹",
-                    "trigger_condition": {
-                        "text": "战技命中敌人",
-                        "effects": {
-                            "all": []
-                        }
-                    },
-                    "enhancement_effect": "自制炸弹",
-                    "enhancement_visible_pulse": false,
-                    "effects": []
-                }
-            ],
+            "enhancements": [],
             "rank_stats": {
                 "levels": [
                     "RANK 1",
@@ -296,14 +284,20 @@
                         "text": "当敌人进入2层及以上寒冷附着或自然附着时可以发动",
                         "effects": {
                             "any": [
-                                "ATTACH_COLD",
-                                "ATTACH_NATURAL"
+                                {
+                                    "effect_id": "ATTACH_COLD",
+                                    "min_count": 2
+                                },
+                                {
+                                    "effect_id": "ATTACH_NATURAL",
+                                    "min_count": 2
+                                }
                             ]
                         }
                     },
                     "effects": [
                         {
-                            "effect_id": "STATUS_SPELL_INFLICT",
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
                             "value": 1,
                             "duration": null,
                             "target": "enemy",
@@ -426,8 +420,14 @@
                         "text": "最后一段伤害命中处于2层及以上寒冷附着或自然附着的目标",
                         "effects": {
                             "any": [
-                                "ATTACH_COLD",
-                                "ATTACH_NATURAL"
+                                {
+                                    "effect_id": "ATTACH_COLD",
+                                    "min_count": 2
+                                },
+                                {
+                                    "effect_id": "ATTACH_NATURAL",
+                                    "min_count": 2
+                                }
                             ]
                         }
                     },
@@ -435,7 +435,7 @@
                     "enhancement_visible_pulse": false,
                     "effects": [
                         {
-                            "effect_id": "STATUS_SPELL_INFLICT",
+                            "effect_id": "TRIGGER_REPEAT_EFFECT",
                             "value": 1,
                             "duration": null,
                             "target": "enemy",

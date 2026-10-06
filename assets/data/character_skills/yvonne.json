@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "yvonne_skill",
@@ -169,7 +170,7 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 100,
-            "effects": null,
+            "effects": [],
             "enhancements": [
                 {
                     "name": "冻结触发",
@@ -198,6 +199,25 @@
                             "duration": null,
                             "target": "enemy",
                             "count": 1
+                        }
+                    ],
+                    "resource_changes": [
+                        {
+                            "resource": "ultimate_energy",
+                            "target": "self",
+                            "trigger": "本次战技成功施加冻结后；命中多名目标仅获得一次",
+                            "kind": "fixed",
+                            "amount": 10
+                        },
+                        {
+                            "resource": "ultimate_energy",
+                            "target": "self",
+                            "trigger": "本次战技成功施加冻结后；按实际消费附着层数，命中多名目标仅结算一次",
+                            "kind": "per_effect_count",
+                            "per_unit": 30,
+                            "count_basis": "consumed",
+                            "max_units": 4,
+                            "formula": "30 × 本次实际消费的寒冷或自然附着层数"
                         }
                     ]
                 }
@@ -512,7 +532,16 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "trigger": "本次连携技第一次成功命中后；命中多名目标仅获得一次",
+                    "kind": "fixed",
+                    "amount": 10
+                }
+            ]
         },
         {
             "skill_id": "yvonne_ultimate",
@@ -527,12 +556,9 @@
             "spirit_cost": 220,
             "effects": [
                 {
-                    "effect_id": "BUFF_CRIT_DMG_UP",
-                    "target": "self",
-                    "count": 1
-                },
-                {
-                    "effect_id": "BUFF_CRIT_RATE_UP",
+                    "effect_id": "STATUS_YVONNE_ASSISTED",
+                    "value": 1,
+                    "duration": 7,
                     "target": "self",
                     "count": 1
                 }
@@ -541,7 +567,7 @@
                 {
                     "name": "冻结状态追加伤害+消耗冻结",
                     "trigger_condition": {
-                        "text": "敌人处于冻结状态",
+                        "text": "终结技持续结束前最后一次强化普攻命中冻结目标时",
                         "effects": {
                             "all": [
                                 "STATUS_FROZEN"
@@ -555,7 +581,8 @@
                             "effect_id": "TRIGGER_ADDITIONAL",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
                         },
                         {
                             "effect_id": "CLEAR_FROZEN",
@@ -564,7 +591,96 @@
                             "target": "enemy",
                             "count": -1
                         }
-                    ]
+                    ],
+                    "evaluation_point": "on_final_normal_attack_hit"
+                },
+                {
+                    "name": "强化普攻累积暴击层数",
+                    "trigger_condition": {
+                        "text": "小嘀嗒辅助姿态期间每次强化普通攻击；最多10层",
+                        "effects": null
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "STACK_YVONNE_CRIT",
+                            "value": 1,
+                            "duration": "终结技剩余时间",
+                            "target": "self",
+                            "count": 1
+                        },
+                        {
+                            "effect_id": "BUFF_CRIT_RATE_UP",
+                            "value": "0.03 × min(STACK_YVONNE_CRIT, 10)",
+                            "duration": "终结技剩余时间",
+                            "target": "self",
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "yvonne_ultimate:BUFF_CRIT_RATE_UP",
+                                "bucket": "crit_rate",
+                                "elements": [
+                                    "all"
+                                ],
+                                "recipient": "self",
+                                "trigger": "enhanced_normal_crit_stack_changed",
+                                "strength": {
+                                    "terms": [
+                                        {
+                                            "input": "source.crit_stacks",
+                                            "coefficient": {
+                                                "row": "每层暴击率增加"
+                                            },
+                                            "cap": 0.3
+                                        }
+                                    ]
+                                },
+                                "duration_input": "ultimate.remaining",
+                                "evaluation": "hit"
+                            }
+                        }
+                    ],
+                    "resource_changes": [],
+                    "evaluation_point": "on_normal_attack"
+                },
+                {
+                    "name": "满层暴击伤害",
+                    "trigger_condition": {
+                        "text": "小嘀嗒辅助姿态期间暴击层数达到10；同一姿态只启用一次",
+                        "effects": {
+                            "all": [
+                                "STATUS_YVONNE_ASSISTED",
+                                {
+                                    "effect_id": "STACK_YVONNE_CRIT",
+                                    "min_count": 10
+                                }
+                            ]
+                        }
+                    },
+                    "effects": [
+                        {
+                            "effect_id": "BUFF_CRIT_DMG_UP",
+                            "value": 0.6,
+                            "duration": "终结技剩余时间",
+                            "target": "self",
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "yvonne_ultimate:BUFF_CRIT_DMG_UP",
+                                "bucket": "crit_damage",
+                                "elements": [
+                                    "all"
+                                ],
+                                "recipient": "self",
+                                "trigger": "crit_stacks_reached_10",
+                                "strength": {
+                                    "base": {
+                                        "row": "满层暴击伤害增加"
+                                    }
+                                },
+                                "duration_input": "ultimate.remaining"
+                            }
+                        }
+                    ],
+                    "resource_changes": [],
+                    "evaluation_point": "after_normal_attack"
                 }
             ],
             "rank_stats": {

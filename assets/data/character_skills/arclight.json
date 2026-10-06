@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "arclight_skill",
@@ -195,7 +196,16 @@
                             "effect_id": "TRIGGER_ADDITIONAL",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
+                        }
+                    ],
+                    "resource_changes": [
+                        {
+                            "resource": "skill_point",
+                            "target": "team",
+                            "kind": "fixed",
+                            "amount": 40
                         }
                     ]
                 }
@@ -451,7 +461,21 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "kind": "fixed",
+                    "amount": 10
+                },
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "kind": "fixed",
+                    "amount": 5
+                }
+            ]
         },
         {
             "skill_id": "arclight_ultimate",
@@ -492,13 +516,15 @@
                             "value": 1,
                             "duration": null,
                             "target": "enemy",
-                            "count": -1
+                            "count": -1,
+                            "consumes_all": true
                         },
                         {
                             "effect_id": "STATUS_CONDUCTING",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
                         }
                     ]
                 }

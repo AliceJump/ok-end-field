@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "zhuang_fangyi_skill",
@@ -181,16 +182,16 @@
                     "effects": [
                         {
                             "effect_id": "STATUS_CONDUCTING",
-                            "value": 0,
+                            "value": null,
                             "duration": null,
                             "target": "enemy",
                             "count": -1
                         },
                         {
                             "effect_id": "STACK_QINGTING_SWORD",
-                            "value": 0,
-                            "duration": null,
-                            "target": "self",
+                            "value": null,
+                            "duration": 36,
+                            "target": "field",
                             "count": null
                         }
                     ]
@@ -199,11 +200,7 @@
                     "name": "未消耗导电时兜底生成青霆剑",
                     "trigger_condition": {
                         "text": "现存青霆剑少于3柄，且本次未消耗导电",
-                        "effects": {
-                            "all": [
-                                "STACK_QINGTING_SWORD"
-                            ]
-                        }
+                        "effects": null
                     },
                     "enhancement_effect": "生成1柄青霆剑",
                     "enhancement_visible_pulse": false,
@@ -211,9 +208,60 @@
                         {
                             "effect_id": "STACK_QINGTING_SWORD",
                             "value": 1,
+                            "duration": 36,
+                            "target": "field",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "天理合真期间强化",
+                    "trigger_condition": {
+                        "text": "处于天理合真状态时，惊霆诀伤害倍率提高、范围扩大，最后一次雷击命中时施加电磁附着",
+                        "effects": {
+                            "all": [
+                                "STATUS_TIANLI_HEZHEN"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "终结技期间战技强化；最后一次雷击施加电磁附着",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "ATTACH_ELECTROMAGNETIC",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ]
+                },
+                {
+                    "name": "天理合真首次惊霆诀",
+                    "trigger_condition": {
+                        "text": "天理合真期间首次施放惊霆诀时，不消耗技力与导电；若存在目标，固定生成3柄青霆剑",
+                        "effects": {
+                            "all": [
+                                "STATUS_TIANLI_FIRST_SKILL_READY"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "消费首次战技强化标记；覆盖普通导电消费分支，技力消耗为0，并生成3柄青霆剑",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_TIANLI_FIRST_SKILL_READY",
+                            "value": 1,
                             "duration": null,
                             "target": "self",
-                            "count": 1
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "STACK_QINGTING_SWORD",
+                            "value": 3,
+                            "duration": 36,
+                            "target": "field",
+                            "count": 3
                         }
                     ]
                 }
@@ -226,9 +274,9 @@
             "effects": [
                 {
                     "effect_id": "STACK_QINGTING_SWORD",
-                    "value": 0,
+                    "value": null,
                     "duration": null,
-                    "target": "self",
+                    "target": "field",
                     "count": -1
                 }
             ],
@@ -403,7 +451,17 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "trigger": "青霆剑每次雷击成功命中时；终结技首次战技仍适用",
+                    "kind": "per_hit",
+                    "per_unit": 6,
+                    "count_basis": "sword_lightning_hits"
+                }
+            ]
         },
         {
             "skill_id": "zhuang_fangyi_link",
@@ -422,7 +480,8 @@
                     "value": 1,
                     "duration": null,
                     "target": "enemy",
-                    "count": -1
+                    "count": -1,
+                    "consumes_all": true
                 }
             ],
             "enhancements": [
@@ -455,7 +514,20 @@
                             "effect_id": "STATUS_CONDUCTING",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
+                        }
+                    ],
+                    "resource_changes": [
+                        {
+                            "resource": "ultimate_energy",
+                            "target": "self",
+                            "trigger": "连携技实际消费电磁附着后",
+                            "kind": "per_effect_count",
+                            "per_unit": 10,
+                            "source_effect_id": "ATTACH_ELECTROMAGNETIC",
+                            "count_basis": "consumed",
+                            "max_units": 4
                         }
                     ]
                 }
@@ -580,7 +652,16 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "trigger": "连携技成功命中后",
+                    "kind": "fixed",
+                    "amount": 10
+                }
+            ]
         },
         {
             "skill_id": "zhuang_fangyi_ultimate",
@@ -590,16 +671,23 @@
             "has_enhancement": false,
             "enhancement": null,
             "description": "进入天理合真状态：普通攻击得到强化。自身行动更不容易被打断。战技惊霆诀伤害倍率提高，伤害范围扩大，最后一次雷击命中时施加电磁附着。连携技一息万变对一定范围内的敌人生效，伤害倍率提高，冷却恢复速度提升至原本的4倍。首次施放战技惊霆诀不消耗技力与导电，若存在目标，则无论其是否处于导电状态，必定生成3柄青霆剑。作为主控干员时，终结技期间普攻第三段后会造成18点失衡。",
-            "damage_multiplier": "600%",
-            "stagger_value": 18,
-            "cooldown": "20秒",
-            "spirit_cost": 100,
+            "damage_multiplier": "终结技期间普攻：150% / 210% / 300%（专精3）",
+            "stagger_value": 0,
+            "cooldown": "15秒",
+            "spirit_cost": 240,
             "effects": [
                 {
-                    "effect_id": "ATTACH_ELECTROMAGNETIC",
+                    "effect_id": "STATUS_TIANLI_HEZHEN",
                     "value": 1,
-                    "duration": null,
-                    "target": "enemy",
+                    "duration": 25,
+                    "target": "self",
+                    "count": 1
+                },
+                {
+                    "effect_id": "STATUS_TIANLI_FIRST_SKILL_READY",
+                    "value": 1,
+                    "duration": 25,
+                    "target": "self",
                     "count": 1
                 }
             ],
@@ -723,7 +811,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

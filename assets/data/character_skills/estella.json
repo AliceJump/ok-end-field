@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "estella_skill",
@@ -231,7 +232,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "estella_link",
@@ -271,13 +273,39 @@
                             "effect_id": "TRIGGER_ADDITIONAL",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
                         },
                         {
                             "effect_id": "VULN_PHYSICAL",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null,
+                            "damage_modifier": {
+                                "key": "estella_link:VULN_PHYSICAL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "物理"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "frozen_target_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "物理脆弱倍率"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "物理脆弱持续时间 / （秒）"
+                                },
+                                "potential_adjustments": [
+                                    {
+                                        "passive": "chr_0021_whiten_potential_1",
+                                        "parameter": "rate_plus",
+                                        "operation": "add_duration"
+                                    }
+                                ]
+                            }
                         }
                     ]
                 }
@@ -434,7 +462,8 @@
                             "effect_id": "STATUS_HEAVY_HIT",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null
                         }
                     ]
                 }

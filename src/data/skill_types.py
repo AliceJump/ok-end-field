@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Literal
 
+from src.data.character_progression import CharacterProgression
+from src.data.damage_modifiers import DamageModifierSpec
 from src.data.effects import EffectType
 
 
@@ -39,40 +41,115 @@ class ConditionType(Enum):
     ANY = "ANY"  # 任意技能/事件
 
 
+class CombatResourceType(Enum):
+    """战斗中的数值资源。"""
+
+    SKILL_POINT = "skill_point"  # 全队共享技力/SP
+    ULTIMATE_ENERGY = "ultimate_energy"  # 角色自己的终结技能量
+
+
+class ResourceChangeKind(Enum):
+    """资源变化的计算方式。"""
+
+    FIXED = "fixed"
+    PER_HIT = "per_hit"
+    PER_EFFECT_COUNT = "per_effect_count"
+    PIECEWISE_BY_COUNT = "piecewise_by_count"
+    DYNAMIC = "dynamic"
+
+
+@dataclass
+class SkillResourceChange:
+    """技能导致的技力/终结技能量变化。
+
+    先把真实语义结构化保存；复杂公式允许暂存 formula，
+    下一阶段 TeamCombatState/ActionOutcome 再负责执行。
+    """
+
+    resource: CombatResourceType
+    target: str  # team / self
+    kind: ResourceChangeKind
+    amount: int | float | None = None
+    per_unit: int | float | None = None
+    source_effect_id: EffectType | None = None
+    max_units: int | None = None
+    values_by_count: dict[int, int | float] = field(default_factory=dict)
+    formula: str | None = None
+    trigger: str | None = None  # 命中/击杀/每次事件等；None 不代表无条件结算
+    count_basis: str | None = None  # consumed / before_action / hit_targets 等快照口径
+    affected_by_energy_gain: bool | None = None
+    max_amount: int | float | None = None
+
+    @classmethod
+    def from_dict(cls, data: dict) -> SkillResourceChange:
+        return cls(
+            resource=CombatResourceType(data["resource"]), target=data["target"],
+            kind=ResourceChangeKind(data["kind"]), amount=data.get("amount"),
+            per_unit=data.get("per_unit"),
+            source_effect_id=EffectType(data["source_effect_id"]) if data.get("source_effect_id") else None,
+            max_units=data.get("max_units"),
+            values_by_count={int(k): v for k, v in (data.get("values_by_count") or {}).items()},
+            formula=data.get("formula"), trigger=data.get("trigger"),
+            count_basis=data.get("count_basis"), affected_by_energy_gain=data.get("affected_by_energy_gain"),
+            max_amount=data.get("max_amount"),
+        )
+
+
 @dataclass
 class SkillEffect:
-    """技能原子化效果。"""
+    """技能原子化效果。
 
-    effect_id: EffectType  # 效果ID
-    value: int = 0  # 效果值（如层数、百分比等）
-    duration: str = ""  # 持续时间
-    target: str = "enemy"  # 效果目标：enemy/ally/self
-    count: int | None = 1  # 施加/消耗计数；None=数量由运行时状态动态决定
+    None 表示“数据源没有给出/当前模型无法静态确定”，不得等价成 0、1 或 enemy。
+    动态公式（例如“导电异常等级+1”）同样保留为 None，由机制层在运行时计算。
+    """
+
+    effect_id: EffectType
+    value: int | float | str | None = None
+    duration: int | float | str | None = None
+    target: str | None = None  # enemy/ally/self/team/field；None=未声明
+    count: int | None = None  # 正=施加/增加，负=消费/减少，None=未知或动态
+    subject_effect_id: EffectType | None = None  # operation/predicate 所指向的具体资源/状态
+    damage_modifier: DamageModifierSpec | None = None
+    consumes_all: bool = False
 
 
 @dataclass(frozen=True)
-class TriggerEffectGroup:
-    """保留触发效果组的逻辑运算符。"""
+class TriggerEffectRequirement:
+    """单个效果条件，可携带最低层数/数量要求。"""
 
-    operator: Literal["all", "any"]
-    effects: tuple[EffectType, ...]
+    effect: EffectType
+    min_count: int = 1
 
     def is_satisfied(
         self,
         current_effects: Collection[EffectType] | Mapping[EffectType, int],
     ) -> bool:
-        """按组运算符判断当前效果是否满足触发条件。"""
-        required = set(self.effects)
-        available = set(current_effects)
-        if EffectType.STACK_SIGN in required:
-            sign_count = (
-                current_effects.get(EffectType.STACK_SIGN, 0)
-                if isinstance(current_effects, Mapping)
-                else sum(effect == EffectType.STACK_SIGN for effect in current_effects)
-            )
-            if sign_count < 8:
-                available.discard(EffectType.STACK_SIGN)
-        return required <= available if self.operator == "all" else bool(required & available)
+        if isinstance(current_effects, Mapping):
+            return current_effects.get(self.effect, 0) >= self.min_count
+        if self.min_count > 1:
+            # 无计数信息的集合不能证明高层数条件成立。
+            return False
+        return self.effect in current_effects
+
+
+@dataclass(frozen=True)
+class TriggerEffectGroup:
+    """保留触发效果组的逻辑运算符和各效果最低层数。"""
+
+    operator: Literal["all", "any"]
+    requirements: tuple[TriggerEffectRequirement, ...]
+
+    @property
+    def effects(self) -> tuple[EffectType, ...]:
+        """兼容旧调用方的只读效果 ID 视图。"""
+        return tuple(requirement.effect for requirement in self.requirements)
+
+    def is_satisfied(
+        self,
+        current_effects: Collection[EffectType] | Mapping[EffectType, int],
+    ) -> bool:
+        results = [requirement.is_satisfied(current_effects) for requirement in self.requirements]
+        return all(results) if self.operator == "all" else any(results)
 
 
 @dataclass
@@ -83,8 +160,14 @@ class SkillEnhancement:
     trigger_condition: str  # 触发条件（如"命中处于寒冷附着或自然附着的敌人时"）
     trigger_effects: list[EffectType] = field(default_factory=list)  # 触发条件关联的效果 ID
     effects: list[SkillEffect] = field(default_factory=list)  # 强化效果列表
+    resource_changes: list[SkillResourceChange] = field(default_factory=list)
+    replaces_base_action: bool = False  # True=这是技能替换动作，不能与基础 action 的 effects/cost 同时结算
+    spirit_cost_override: int | None = None
+    damage_multiplier_override: str | None = None
+    stagger_value_override: int | None = None
     enhancement_visible_pulse: bool = False  # 强化状态可见脉冲
     trigger_effect_groups: list[TriggerEffectGroup] = field(default_factory=list)  # 带 all/any 语义的条件组
+    evaluation_point: str | None = None  # before_action / on_hit / on_normal_attack 等
 
     def is_trigger_satisfied(
         self,
@@ -122,6 +205,7 @@ class Skill:
     element: ElementType  # 元素类型
     enhancements: list[SkillEnhancement] = field(default_factory=list)  # 全部独立条件效果
     effects: list[SkillEffect] = field(default_factory=list)  # 技能基础效果列表
+    resource_changes: list[SkillResourceChange] = field(default_factory=list)
     description: str = ""  # 技能描述
     damage_multiplier: str = ""  # 伤害倍率
     stagger_value: int = 0  # 失衡值
@@ -150,6 +234,7 @@ class Character:
     profession: str  # 职业
     weapon_type: str  # 武器类型
     skills: list[Skill] = field(default_factory=list)  # 技能列表
+    progression: CharacterProgression | None = None
 
 
 @dataclass

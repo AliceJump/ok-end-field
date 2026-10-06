@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "mi_fu_skill",
@@ -148,31 +149,114 @@
             "element": "物理",
             "has_enhancement": true,
             "description": "连续施放可最多施放3段不同招式，初始战技为断云。断云：消耗100技力，施放后返还50技力。从拳套中发射出拘束索，对目标及其附近敌人造成物理伤害并尝试将其拉取至自身附近。施放后战技在一段时间内替换为追形。追形：消耗50技力。朝前方连续挥拳造成物理伤害，最后一拳额外造成猛击。如果本次猛击消耗的最大破防层数不少于3层，战技在一段时间内替换为开天。开天：消耗50技力，朝前方范围造成大量物理伤害。本次伤害类型不属于战技伤害，而是视为猛击伤害。",
-            "damage_multiplier": "150%（断云）+ 200%（追形）+ 600%（开天）",
+            "damage_multiplier": "150%（断云）",
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 100,
             "effects": [
                 {
-                    "effect_id": "STATUS_HEAVY_STRIKE",
+                    "effect_id": "STATUS_MIFU_ZHUIXING_READY",
                     "value": 1,
                     "duration": null,
-                    "target": "enemy",
+                    "target": "self",
                     "count": 1
                 }
             ],
             "enhancements": [
                 {
-                    "name": "三段战技替换",
+                    "name": "追形替换动作",
                     "trigger_condition": {
-                        "text": "断云→追形→开天",
+                        "text": "战技已被替换为追形",
                         "effects": {
-                            "all": []
+                            "all": [
+                                "STATUS_MIFU_ZHUIXING_READY"
+                            ]
                         }
                     },
-                    "enhancement_effect": "技能替换",
+                    "enhancement_effect": "追形消耗50技力，最后一拳造成猛击；本分支完全替换基础断云动作",
                     "enhancement_visible_pulse": false,
-                    "effects": []
+                    "replaces_base_action": true,
+                    "spirit_cost_override": 50,
+                    "damage_multiplier_override": "200%",
+                    "stagger_value_override": 5,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_MIFU_ZHUIXING_READY",
+                            "value": 1,
+                            "duration": null,
+                            "target": "self",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "STATUS_HEAVY_STRIKE",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ],
+                    "resource_changes": []
+                },
+                {
+                    "name": "追形消费3层破防后解锁开天",
+                    "trigger_condition": {
+                        "text": "本次追形的猛击实际消费不少于3层破防",
+                        "effects": {
+                            "all": [
+                                "STATUS_MIFU_ZHUIXING_READY",
+                                {
+                                    "effect_id": "EVENT_SHRED_CONSUMED",
+                                    "min_count": 3
+                                }
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "战技在一段时间内替换为开天",
+                    "enhancement_visible_pulse": false,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_MIFU_KAITIAN_READY",
+                            "value": 1,
+                            "duration": null,
+                            "target": "self",
+                            "count": 1
+                        }
+                    ],
+                    "resource_changes": []
+                },
+                {
+                    "name": "开天替换动作",
+                    "trigger_condition": {
+                        "text": "战技已被替换为开天",
+                        "effects": {
+                            "all": [
+                                "STATUS_MIFU_KAITIAN_READY"
+                            ]
+                        }
+                    },
+                    "enhancement_effect": "开天消耗50技力；伤害视为猛击伤害；本分支完全替换基础断云动作",
+                    "enhancement_visible_pulse": false,
+                    "replaces_base_action": true,
+                    "spirit_cost_override": 50,
+                    "damage_multiplier_override": "600%（视为猛击伤害）",
+                    "stagger_value_override": 10,
+                    "effects": [
+                        {
+                            "effect_id": "STATUS_MIFU_KAITIAN_READY",
+                            "value": 1,
+                            "duration": null,
+                            "target": "self",
+                            "count": -1
+                        },
+                        {
+                            "effect_id": "STATUS_HEAVY_STRIKE",
+                            "value": 1,
+                            "duration": null,
+                            "target": "enemy",
+                            "count": 1
+                        }
+                    ],
+                    "resource_changes": []
                 }
             ],
             "rank_stats": {
@@ -278,7 +362,16 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "kind": "fixed",
+                    "amount": 50,
+                    "formula": "断云消耗100技力，施放后返还50技力"
+                }
+            ]
         },
         {
             "skill_id": "mi_fu_link",
@@ -299,16 +392,43 @@
                         "text": "当有敌人达到3层及以上破防时可以发动",
                         "effects": {
                             "all": [
-                                "STATUS_SHRED"
+                                {
+                                    "effect_id": "STACK_SHRED",
+                                    "min_count": 3
+                                }
                             ]
                         }
                     },
                     "effects": [
                         {
                             "effect_id": "VULN_PHYSICAL",
+                            "value": null,
+                            "duration": 16,
+                            "target": "enemy",
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "mi_fu_link:VULN_PHYSICAL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "物理"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "combo_hit",
+                                "strength": {
+                                    "base": {
+                                        "row": "物理脆弱效果"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "物理脆弱持续时间（秒）"
+                                }
+                            }
+                        },
+                        {
+                            "effect_id": "STATUS_MIFU_ZHUIXING_READY",
                             "value": 1,
                             "duration": null,
-                            "target": "enemy",
+                            "target": "self",
                             "count": 1
                         }
                     ]
@@ -434,7 +554,15 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "kind": "fixed",
+                    "amount": 10
+                }
+            ]
         },
         {
             "skill_id": "mi_fu_ultimate",
@@ -445,7 +573,7 @@
             "enhancement": null,
             "description": "短暂蓄力后朝前方冲刺，对身前目标强制造成击飞，随后将其砸向地面造成物理伤害。施放后战技在一段时间内替换为追形。",
             "damage_multiplier": "700%",
-            "stagger_value": 0,
+            "stagger_value": 20,
             "cooldown": "15秒",
             "spirit_cost": 80,
             "effects": [
@@ -454,6 +582,13 @@
                     "value": 1,
                     "duration": null,
                     "target": "enemy",
+                    "count": 1
+                },
+                {
+                    "effect_id": "STATUS_MIFU_ZHUIXING_READY",
+                    "value": 1,
+                    "duration": null,
+                    "target": "self",
                     "count": 1
                 }
             ],
@@ -543,7 +678,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

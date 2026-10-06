@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "last_rite_skill",
@@ -177,9 +178,34 @@
                     "effects": [
                         {
                             "effect_id": "VULN_COLD",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null,
+                            "damage_modifier": {
+                                "key": "last_rite_skill:VULN_COLD",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "spell_attachment_consumed",
+                                "strength": {
+                                    "terms": [
+                                        {
+                                            "input": "consumed.spell_attachment",
+                                            "coefficient": {
+                                                "passive": "chr_0026_lastrite_talent_1_2",
+                                                "parameter": "crystal_up"
+                                            }
+                                        }
+                                    ]
+                                },
+                                "duration": {
+                                    "passive": "chr_0026_lastrite_talent_1_2",
+                                    "parameter": "duration"
+                                }
+                            }
                         }
                     ]
                 }
@@ -287,7 +313,21 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "skill_point",
+                    "target": "team",
+                    "kind": "fixed",
+                    "amount": 30
+                },
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "kind": "fixed",
+                    "amount": 16
+                }
+            ]
         },
         {
             "skill_id": "last_rite_link",
@@ -308,7 +348,10 @@
                         "text": "当有敌人进入3层及以上寒冷附着状态时可以发动",
                         "effects": {
                             "all": [
-                                "ATTACH_COLD"
+                                {
+                                    "effect_id": "ATTACH_COLD",
+                                    "min_count": 3
+                                }
                             ]
                         }
                     },
@@ -460,7 +503,23 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "kind": "fixed",
+                    "amount": 40
+                },
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "kind": "per_effect_count",
+                    "per_unit": 15,
+                    "source_effect_id": "ATTACH_COLD",
+                    "max_units": 4
+                }
+            ]
         },
         {
             "skill_id": "last_rite_ultimate",
@@ -470,11 +529,19 @@
             "has_enhancement": false,
             "enhancement": null,
             "description": "披着霜铠，凝结冰镰，对前方进行三次斩击，该状态下免疫所有伤害。每次斩击造成大量寒冷伤害。别礼只能从自身的战技、连携技中获得终结技能量。",
-            "damage_multiplier": "800%（伤害）+ 寒冷脆弱×1.5",
-            "stagger_value": 0,
+            "damage_multiplier": "400% + 400% + 800%（专精3）",
+            "stagger_value": 20,
             "cooldown": "20秒",
-            "spirit_cost": 100,
-            "effects": [],
+            "spirit_cost": 240,
+            "effects": [
+                {
+                    "effect_id": "BUFF_INVULNERABLE",
+                    "value": 1,
+                    "duration": "终结技动作期间",
+                    "target": "self",
+                    "count": 1
+                }
+            ],
             "rank_stats": {
                 "levels": [
                     "RANK 1",
@@ -629,7 +696,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

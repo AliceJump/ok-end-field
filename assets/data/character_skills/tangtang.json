@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "tangtang_skill",
@@ -176,29 +177,75 @@
                     "duration": null,
                     "target": "enemy",
                     "count": 1
-                },
-                {
-                    "effect_id": "VULN_ALL",
-                    "value": 1,
-                    "duration": null,
-                    "target": "enemy",
-                    "count": 1
                 }
             ],
             "enhancements": [
                 {
-                    "name": "水龙卷系统",
+                    "name": "消耗涡流形成额外水龙卷",
                     "trigger_condition": {
-                        "text": "消耗涡流形成水龙卷",
+                        "text": "附近存在涡流时，消耗附近所有涡流形成额外水龙卷；每消耗1处返还20技力",
                         "effects": {
                             "all": [
                                 "STACK_WHIRLPOOL"
                             ]
                         }
                     },
-                    "enhancement_effect": "水龙卷系统",
+                    "enhancement_effect": "消费附近全部涡流；每消费1处返还20技力。总共形成多个水龙卷时施加法术脆弱：消费1处为5%，消费2处为10%（专精3）；持续15秒。",
                     "enhancement_visible_pulse": false,
-                    "effects": []
+                    "effects": [
+                        {
+                            "effect_id": "CONSUME_ALL",
+                            "value": null,
+                            "duration": null,
+                            "target": "field",
+                            "count": null,
+                            "subject_effect_id": "STACK_WHIRLPOOL"
+                        },
+                        {
+                            "effect_id": "VULN_ALL",
+                            "value": "5%/10%（按消费1/2处涡流）",
+                            "duration": 15,
+                            "target": "enemy",
+                            "count": 1,
+                            "damage_modifier": {
+                                "key": "tangtang_skill:VULN_ALL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷",
+                                    "灼热",
+                                    "电磁",
+                                    "自然"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "whirlpool_consumed",
+                                "strength": {
+                                    "count_input": "consumed.whirlpool",
+                                    "by_count": {
+                                        "0": 0,
+                                        "1": {
+                                            "row": "两个水龙卷 / 法术脆弱"
+                                        },
+                                        "2": {
+                                            "row": "三个水龙卷 / 法术脆弱"
+                                        }
+                                    }
+                                },
+                                "duration": {
+                                    "row": "法术脆弱持续时间 / （秒）"
+                                }
+                            }
+                        }
+                    ],
+                    "resource_changes": [
+                        {
+                            "resource": "skill_point",
+                            "target": "team",
+                            "kind": "per_effect_count",
+                            "per_unit": 20,
+                            "source_effect_id": "STACK_WHIRLPOOL",
+                            "max_units": 2
+                        }
+                    ]
                 }
             ],
             "rank_stats": {
@@ -385,7 +432,15 @@
             "stagger_value": 0,
             "cooldown": null,
             "spirit_cost": 0,
-            "effects": [],
+            "effects": [
+                {
+                    "effect_id": "STACK_WHIRLPOOL",
+                    "value": 1,
+                    "duration": 30,
+                    "target": "field",
+                    "count": 1
+                }
+            ],
             "enhancements": [
                 {
                     "name": "河水，助我！",
@@ -398,15 +453,7 @@
                             ]
                         }
                     },
-                    "effects": [
-                        {
-                            "effect_id": "ATTACH_COLD",
-                            "value": 1,
-                            "duration": null,
-                            "target": "enemy",
-                            "count": 1
-                        }
-                    ]
+                    "effects": []
                 }
             ],
             "rank_stats": {
@@ -495,7 +542,15 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "kind": "fixed",
+                    "amount": 10
+                }
+            ]
         },
         {
             "skill_id": "tangtang_ultimate",
@@ -508,15 +563,21 @@
             "stagger_value": 0,
             "cooldown": "20秒",
             "spirit_cost": 90,
-            "effects": [],
+            "effects": [
+                {
+                    "effect_id": "MECH_ANCIENT_PATTERN",
+                    "value": 1,
+                    "duration": 4,
+                    "target": "field",
+                    "count": 1
+                }
+            ],
             "enhancements": [
                 {
                     "name": "古老图形封锁",
                     "trigger_condition": {
                         "text": "主控干员在古老图形中下落攻击，提前结束演化降下巨浪并提升伤害",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "enhancement_effect": "巨浪伤害提升",
                     "enhancement_visible_pulse": false,

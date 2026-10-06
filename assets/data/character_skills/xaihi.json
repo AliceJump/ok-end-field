@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "xaihi_skill",
@@ -170,11 +171,7 @@
                     "name": "支援晶体重击治疗",
                     "trigger_condition": {
                         "text": "主控干员对敌人造成重击",
-                        "effects": {
-                            "all": [
-                                "MECH_SUPPORT_CRYSTAL"
-                            ]
-                        }
+                        "effects": null
                     },
                     "enhancement_effect": "支援晶体为主控干员回复生命值，最多触发2次",
                     "enhancement_visible_pulse": false,
@@ -183,7 +180,8 @@
                             "effect_id": "BUFF_HEAL",
                             "value": 1,
                             "duration": null,
-                            "target": "ally"
+                            "target": "ally",
+                            "count": null
                         }
                     ]
                 },
@@ -191,20 +189,44 @@
                     "name": "满血转法术增幅",
                     "trigger_condition": {
                         "text": "支援晶体触发回复时主控干员生命值已满",
-                        "effects": {
-                            "all": [
-                                "MECH_SUPPORT_CRYSTAL"
-                            ]
-                        }
+                        "effects": null
                     },
                     "enhancement_effect": "施加法术增幅",
                     "enhancement_visible_pulse": false,
                     "effects": [
                         {
                             "effect_id": "BUFF_SPELL_UP",
-                            "value": 1,
-                            "duration": null,
-                            "target": "ally"
+                            "value": null,
+                            "duration": 25,
+                            "target": "ally",
+                            "count": null,
+                            "damage_modifier": {
+                                "key": "xaihi_skill:BUFF_SPELL_UP",
+                                "bucket": "amplification",
+                                "elements": [
+                                    "寒冷",
+                                    "灼热",
+                                    "电磁",
+                                    "自然"
+                                ],
+                                "recipient": "main_control",
+                                "trigger": "crystal_full_hp_heal",
+                                "strength": {
+                                    "base": {
+                                        "row": "法术增幅效果"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "法术增幅持续时间 / （秒）"
+                                },
+                                "potential_adjustments": [
+                                    {
+                                        "passive": "chr_0011_seraph_potential_1",
+                                        "parameter": "atk_up",
+                                        "operation": "add_strength"
+                                    }
+                                ]
+                            }
                         }
                     ]
                 }
@@ -218,7 +240,7 @@
                 {
                     "effect_id": "MECH_SUPPORT_CRYSTAL",
                     "value": 1,
-                    "duration": null,
+                    "duration": 20,
                     "target": "field",
                     "count": 1
                 }
@@ -362,11 +384,16 @@
                     "name": "压力测试",
                     "trigger_condition": {
                         "text": "当支援晶体的生命回复次数耗尽后可以发动",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "effects": [
+                        {
+                            "effect_id": "MECH_SUPPORT_CRYSTAL",
+                            "value": 1,
+                            "duration": null,
+                            "target": "field",
+                            "count": -1
+                        },
                         {
                             "effect_id": "ATTACH_COLD",
                             "value": 1,
@@ -374,7 +401,8 @@
                             "target": "enemy",
                             "count": 1
                         }
-                    ]
+                    ],
+                    "enhancement_effect": "消耗回复次数已耗尽的支援晶体，将其投向敌人并施加1层寒冷附着"
                 }
             ],
             "rank_stats": {
@@ -446,7 +474,15 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "kind": "fixed",
+                    "amount": 10
+                }
+            ]
         },
         {
             "skill_id": "xaihi_ultimate",
@@ -463,17 +499,87 @@
             "effects": [
                 {
                     "effect_id": "BUFF_COLD_UP",
-                    "value": 1,
-                    "duration": null,
-                    "target": "ally",
-                    "count": 1
+                    "value": null,
+                    "duration": 12,
+                    "target": "team",
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "xaihi_ultimate:BUFF_COLD_UP",
+                        "bucket": "amplification",
+                        "elements": [
+                            "寒冷"
+                        ],
+                        "recipient": "team",
+                        "trigger": "on_cast",
+                        "strength": {
+                            "base": {
+                                "row": "基础寒冷增幅效果"
+                            },
+                            "terms": [
+                                {
+                                    "input": "source.智识",
+                                    "coefficient": {
+                                        "row": "每点智识提升的 / 增幅效果"
+                                    },
+                                    "cap": {
+                                        "row": "智识提升增幅上限"
+                                    }
+                                }
+                            ]
+                        },
+                        "duration": {
+                            "row": "持续时间（秒）"
+                        },
+                        "potential_adjustments": [
+                            {
+                                "passive": "chr_0011_seraph_potential_5",
+                                "parameter": "atk_up",
+                                "operation": "multiply_strength"
+                            }
+                        ]
+                    }
                 },
                 {
                     "effect_id": "BUFF_NATURAL_UP",
-                    "value": 1,
-                    "duration": null,
-                    "target": "ally",
-                    "count": 1
+                    "value": null,
+                    "duration": 12,
+                    "target": "team",
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "xaihi_ultimate:BUFF_NATURAL_UP",
+                        "bucket": "amplification",
+                        "elements": [
+                            "自然"
+                        ],
+                        "recipient": "team",
+                        "trigger": "on_cast",
+                        "strength": {
+                            "base": {
+                                "row": "基础自然增幅效果"
+                            },
+                            "terms": [
+                                {
+                                    "input": "source.智识",
+                                    "coefficient": {
+                                        "row": "每点智识提升的 / 增幅效果"
+                                    },
+                                    "cap": {
+                                        "row": "智识提升增幅上限"
+                                    }
+                                }
+                            ]
+                        },
+                        "duration": {
+                            "row": "持续时间（秒）"
+                        },
+                        "potential_adjustments": [
+                            {
+                                "passive": "chr_0011_seraph_potential_5",
+                                "parameter": "atk_up",
+                                "operation": "multiply_strength"
+                            }
+                        ]
+                    }
                 }
             ],
             "rank_stats": {
@@ -613,7 +719,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

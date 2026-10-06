@@ -1,0 +1,150 @@
+{
+  "character": "余烬",
+  "key": "ember",
+  "element": "灼热",
+  "primary_stat": "力量",
+  "secondary_stat": "意志",
+  "panel": {
+    "HP": 8012.8,
+    "ATK": 3165.5,
+    "DEF": 119,
+    "力量": 581.0,
+    "敏捷": 87.0,
+    "智识": 77.0,
+    "意志": 302.1,
+    "暴击率": 0.05,
+    "暴击伤害": 0.5,
+    "源石技艺强度": 0,
+    "atk_pct": 0,
+    "elem_dmg_pct": {
+      "物理": 0,
+      "灼热": 0,
+      "寒冷": 0,
+      "电磁": 0,
+      "自然": 0
+    },
+    "all_skill_dmg": 0,
+    "all_damage": 0,
+    "heal_eff": 33.5,
+    "ult_charge": 26.7,
+    "damage_basis": {
+      "attack_white": 702.0,
+      "attack_percent": 0.0,
+      "attack_flat": 0,
+      "attribute_factor": 4.5092,
+      "crit_rate": 0.05,
+      "crit_damage": 0.5,
+      "amplification": {
+        "物理": 0.0,
+        "灼热": 0.0,
+        "寒冷": 0.0,
+        "电磁": 0.0,
+        "自然": 0.0
+      }
+    }
+  },
+  "skills": [
+    {
+      "skill_id": "ember_normal",
+      "name": "陷阵剑术",
+      "type": "普通攻击",
+      "multiplier_pct": 431.0,
+      "stagger": 0.0,
+      "bonus_pct": 0,
+      "amplification_pct": 0,
+      "non_crit": 13643.1,
+      "crit_expect": 13984.2,
+      "conditional_rows": [
+        "处决攻击倍率: 720%",
+        "下落攻击倍率: 144%"
+      ]
+    },
+    {
+      "skill_id": "ember_skill",
+      "name": "进军",
+      "type": "战技",
+      "multiplier_pct": 312.0,
+      "stagger": 10.0,
+      "bonus_pct": 0,
+      "amplification_pct": 0,
+      "non_crit": 9876.2,
+      "crit_expect": 10123.1,
+      "conditional_rows": [
+        "受击后额外造成 / 失衡值: 10（需要施放过程中受到伤害）"
+      ]
+    },
+    {
+      "skill_id": "ember_link",
+      "name": "前线援护",
+      "type": "连携技",
+      "multiplier_pct": 184.0,
+      "stagger": 10.0,
+      "bonus_pct": 0,
+      "amplification_pct": 0,
+      "non_crit": 5824.4,
+      "crit_expect": 5970.1,
+      "conditional_rows": []
+    },
+    {
+      "skill_id": "ember_ultimate",
+      "name": "重燃誓约",
+      "type": "终结技",
+      "multiplier_pct": 520.0,
+      "stagger": 25.0,
+      "bonus_pct": 0,
+      "amplification_pct": 0,
+      "non_crit": 16460.4,
+      "crit_expect": 16871.9,
+      "conditional_rows": []
+    }
+  ],
+  "build": {
+    "weapon": "终点之声",
+    "matrix": null,
+    "set_main": "生物辅助装备组",
+    "set_off": null,
+    "pieces": [
+      "生物辅助重甲",
+      "生物辅助臂甲",
+      "生物辅助接驳器·壹型"
+    ]
+  },
+  "trace": [
+    "  基础面板（80级）: {'生命值': 4934.0, '攻击力': 291.0, '力量': 219.0, '敏捷': 87.0, '智识': 77.0, '意志': 108.0}",
+    "    [武器技能 Rank 9] 力量+124 -> {'kind': 'flat', 'stat': '力量', 'value': 124}",
+    "    [武器技能 Rank 9] 最大生命值+62.4% -> {'kind': 'pct', 'stat': 'hp_pct', 'value': 62.4}",
+    "    [武器技能 Rank 9] 副能力+14.0% -> {'kind': 'pct', 'stat': 'secondary', 'value': 14.0}",
+    "  武器: 终点之声（满级攻击 411，武器技能 Rank9 词条已计入）",
+    "    [装备] 生物辅助重甲（生物辅助装备组）: {'力量': '+113', '意志': '+75', '治疗效率加成': '+13.5%'}",
+    "    [装备] 生物辅助臂甲（生物辅助装备组）: {'力量': '+84', '意志': '+55', '终结技充能效率': '+26.7%'}",
+    "    [装备] 生物辅助接驳器·壹型（生物辅助装备组）: {'力量': '+41', '意志': '+27', '生命值': '+53.8%'}",
+    "    [套组 生物辅助装备组] 装备者治疗效率+20% -> {'kind': 'pct', 'stat': 'heal_eff', 'value': 20.0}",
+    "  汇总词条: {'flat_力量': 362, 'pct_hp_pct': 62.4, 'pct_secondary': 14.0, 'flat_防御力': 119, 'flat_意志': 157, 'pct_heal_eff': 33.5, 'pct_ult_charge': 26.7}",
+    "  主能力: 力量（官方标签）总值 581",
+    "  副能力: 意志（官方标注）总值 302",
+    "  攻击力 = (702 × 1.0000 + 0) × (1 + 0.005×581 + 0.002×302) = 3165.5"
+  ],
+  "profile": {
+    "character_level": 80,
+    "skill_rank": 9,
+    "potential": 0,
+    "weapon_level": 90,
+    "weapon_skill_rank": 9,
+    "all_attribute_nodes": true,
+    "all_combat_talents_max_rank": true,
+    "combat_talents": [
+      {
+        "id": "chr_0009_azrila_talent_1_2",
+        "level": 2,
+        "description": "战技进军和连携技前线援护的施放过程中获得50%庇护，且更不容易被打断。"
+      },
+      {
+        "id": "chr_0009_azrila_talent_2_2",
+        "level": 2,
+        "description": "受到来自敌人的伤害后，攻击力+9%，持续7秒，该效果最多叠加3层。"
+      }
+    ],
+    "conditional_talent_state": "untriggered",
+    "note": "沿用现有推荐装备及精锻口径；这只是静态直接伤害，不含破防链、后续解锁、动画时间或SP机会成本。受击天赋保留触发规则，标准假人未受击时不提前施加攻击增益。"
+  }
+}

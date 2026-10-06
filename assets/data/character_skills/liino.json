@@ -156,7 +156,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "liino_skill",
@@ -187,10 +188,27 @@
                 },
                 {
                     "effect_id": "BUFF_ATTACK_UP",
-                    "value": 1,
+                    "value": null,
                     "duration": null,
                     "target": "ally",
-                    "count": 1
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "liino_skill:BUFF_ATTACK_UP",
+                        "bucket": "attack",
+                        "elements": [
+                            "all"
+                        ],
+                        "recipient": "team",
+                        "trigger": "singing_aura_enter",
+                        "strength": {
+                            "base": {
+                                "row": "攻击力提升"
+                            }
+                        },
+                        "duration": {
+                            "row": "演唱姿态持续时间 / （秒）"
+                        }
+                    }
                 },
                 {
                     "effect_id": "BUFF_HEAL",
@@ -388,7 +406,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "liino_link",
@@ -544,7 +563,16 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "resource_changes": [
+                {
+                    "resource": "ultimate_energy",
+                    "target": "self",
+                    "trigger": "连携技成功施放",
+                    "kind": "fixed",
+                    "amount": 20
+                }
+            ]
         },
         {
             "skill_id": "liino_ultimate",
@@ -575,24 +603,91 @@
                 },
                 {
                     "effect_id": "BUFF_ATTACK_UP",
-                    "value": 1,
+                    "value": null,
                     "duration": null,
                     "target": "ally",
-                    "count": 1
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "liino_ultimate:BUFF_ATTACK_UP",
+                        "bucket": "attack",
+                        "elements": [
+                            "all"
+                        ],
+                        "recipient": "team",
+                        "trigger": "ultimate_aura_enter",
+                        "strength": {
+                            "base": {
+                                "row": "攻击力提升"
+                            }
+                        },
+                        "duration": {
+                            "row": "高歌姿态持续时间 / （秒）"
+                        }
+                    }
                 },
                 {
                     "effect_id": "BUFF_ELECTROMAGNETIC_UP",
-                    "value": 1,
+                    "value": null,
                     "duration": null,
                     "target": "ally",
-                    "count": 1
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "liino_ultimate:BUFF_ELECTROMAGNETIC_UP",
+                        "bucket": "amplification",
+                        "elements": [
+                            "电磁"
+                        ],
+                        "recipient": "team",
+                        "trigger": "ultimate_aura_enter",
+                        "strength": {
+                            "terms": [
+                                {
+                                    "input": "source.意志",
+                                    "coefficient": {
+                                        "row": "每点意志提升的 / 增幅效果"
+                                    },
+                                    "cap": {
+                                        "row": "意志提升的 / 增幅上限"
+                                    }
+                                }
+                            ]
+                        },
+                        "duration": {
+                            "row": "高歌姿态持续时间 / （秒）"
+                        }
+                    }
                 },
                 {
                     "effect_id": "BUFF_NATURAL_UP",
-                    "value": 1,
+                    "value": null,
                     "duration": null,
                     "target": "ally",
-                    "count": 1
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "liino_ultimate:BUFF_NATURAL_UP",
+                        "bucket": "amplification",
+                        "elements": [
+                            "自然"
+                        ],
+                        "recipient": "team",
+                        "trigger": "ultimate_aura_enter",
+                        "strength": {
+                            "terms": [
+                                {
+                                    "input": "source.意志",
+                                    "coefficient": {
+                                        "row": "每点意志提升的 / 增幅效果"
+                                    },
+                                    "cap": {
+                                        "row": "意志提升的 / 增幅上限"
+                                    }
+                                }
+                            ]
+                        },
+                        "duration": {
+                            "row": "高歌姿态持续时间 / （秒）"
+                        }
+                    }
                 },
                 {
                     "effect_id": "BUFF_HEAL",
@@ -875,7 +970,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

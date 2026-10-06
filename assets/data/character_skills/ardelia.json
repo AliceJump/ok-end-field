@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "ardelia_skill",
@@ -176,15 +177,54 @@
                         },
                         {
                             "effect_id": "VULN_PHYSICAL",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null,
+                            "damage_modifier": {
+                                "key": "ardelia_skill:VULN_PHYSICAL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "物理"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "corrosion_consumed",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "脆弱持续时间（秒）"
+                                }
+                            }
                         },
                         {
                             "effect_id": "VULN_ALL",
-                            "value": 1,
+                            "value": null,
                             "duration": null,
-                            "target": "enemy"
+                            "target": "enemy",
+                            "count": null,
+                            "damage_modifier": {
+                                "key": "ardelia_skill:VULN_ALL",
+                                "bucket": "vulnerability",
+                                "elements": [
+                                    "寒冷",
+                                    "灼热",
+                                    "电磁",
+                                    "自然"
+                                ],
+                                "recipient": "enemy",
+                                "trigger": "corrosion_consumed",
+                                "strength": {
+                                    "base": {
+                                        "row": "脆弱效果"
+                                    }
+                                },
+                                "duration": {
+                                    "row": "脆弱持续时间（秒）"
+                                }
+                            }
                         }
                     ]
                 }
@@ -311,9 +351,7 @@
                     "name": "火山蘑菇云",
                     "trigger_condition": {
                         "text": "当主控干员对不处于破防或法术附着状态的敌人造成重击后可以发动",
-                        "effects": {
-                            "all": []
-                        }
+                        "effects": null
                     },
                     "effects": [
                         {
@@ -547,7 +585,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

@@ -139,7 +139,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "antal_skill",
@@ -163,17 +164,51 @@
                 },
                 {
                     "effect_id": "VULN_ELECTROMAGNETIC",
-                    "value": 1,
+                    "value": null,
                     "duration": null,
                     "target": "enemy",
-                    "count": 1
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "antal_skill:VULN_ELECTROMAGNETIC",
+                        "bucket": "vulnerability",
+                        "elements": [
+                            "电磁"
+                        ],
+                        "recipient": "enemy",
+                        "trigger": "on_hit",
+                        "strength": {
+                            "base": {
+                                "row": "电磁脆弱效果"
+                            }
+                        },
+                        "duration": {
+                            "row": "持续时间（秒）"
+                        }
+                    }
                 },
                 {
                     "effect_id": "VULN_BURN",
-                    "value": 1,
+                    "value": null,
                     "duration": null,
                     "target": "enemy",
-                    "count": 1
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "antal_skill:VULN_BURN",
+                        "bucket": "vulnerability",
+                        "elements": [
+                            "灼热"
+                        ],
+                        "recipient": "enemy",
+                        "trigger": "on_hit",
+                        "strength": {
+                            "base": {
+                                "row": "灼热脆弱效果"
+                            }
+                        },
+                        "duration": {
+                            "row": "持续时间（秒）"
+                        }
+                    }
                 }
             ],
             "rank_stats": {
@@ -279,7 +314,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         },
         {
             "skill_id": "antal_link",
@@ -309,7 +345,7 @@
                         {
                             "effect_id": "TRIGGER_REPEAT_EFFECT",
                             "value": 1,
-                            "duration": "",
+                            "duration": null,
                             "target": "enemy",
                             "count": 1
                         }
@@ -397,7 +433,7 @@
                         {
                             "effect_id": "TRIGGER_REPEAT_EFFECT",
                             "value": 1,
-                            "duration": "",
+                            "duration": null,
                             "target": "enemy",
                             "count": 1
                         }
@@ -490,17 +526,65 @@
             "effects": [
                 {
                     "effect_id": "BUFF_ELECTROMAGNETIC_UP",
-                    "value": 1,
+                    "value": null,
                     "duration": null,
                     "target": "ally",
-                    "count": 1
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "antal_ultimate:BUFF_ELECTROMAGNETIC_UP",
+                        "bucket": "amplification",
+                        "elements": [
+                            "电磁"
+                        ],
+                        "recipient": "team",
+                        "trigger": "on_cast",
+                        "strength": {
+                            "base": {
+                                "row": "电磁增幅效果"
+                            }
+                        },
+                        "duration": {
+                            "row": "持续时间（秒）"
+                        },
+                        "potential_adjustments": [
+                            {
+                                "passive": "chr_0023_antal_potential_1",
+                                "parameter": "rate",
+                                "operation": "multiply_strength"
+                            }
+                        ]
+                    }
                 },
                 {
                     "effect_id": "BUFF_BURN_UP",
-                    "value": 1,
+                    "value": null,
                     "duration": null,
                     "target": "ally",
-                    "count": 1
+                    "count": 1,
+                    "damage_modifier": {
+                        "key": "antal_ultimate:BUFF_BURN_UP",
+                        "bucket": "amplification",
+                        "elements": [
+                            "灼热"
+                        ],
+                        "recipient": "team",
+                        "trigger": "on_cast",
+                        "strength": {
+                            "base": {
+                                "row": "灼热增幅效果"
+                            }
+                        },
+                        "duration": {
+                            "row": "持续时间（秒）"
+                        },
+                        "potential_adjustments": [
+                            {
+                                "passive": "chr_0023_antal_potential_1",
+                                "parameter": "rate",
+                                "operation": "multiply_strength"
+                            }
+                        ]
+                    }
                 }
             ],
             "rank_stats": {
@@ -606,7 +690,8 @@
                     }
                 ]
             },
-            "rank_stats_variants": []
+            "rank_stats_variants": [],
+            "enhancements": []
         }
     ],
     "base_stats": {

@@ -1,0 +1,2841 @@
+{
+  "enums": {
+    "Beyond.CompareType": {
+      "Equals": {
+        "data_offset": 288164,
+        "field_index": 157458,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "GE": {
+        "data_offset": 288163,
+        "field_index": 157457,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "GT": {
+        "data_offset": 288162,
+        "field_index": 157456,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "LE": {
+        "data_offset": 288161,
+        "field_index": 157455,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "LT": {
+        "data_offset": 288160,
+        "field_index": 157454,
+        "raw_hex": "00",
+        "value": 0
+      }
+    },
+    "Beyond.GEnums.AttributeType": {
+      "Agi": {
+        "data_offset": 317774,
+        "field_index": 165401,
+        "raw_hex": "50",
+        "value": 40
+      },
+      "AtbCostAddition": {
+        "data_offset": 317779,
+        "field_index": 165406,
+        "raw_hex": "5a",
+        "value": 45
+      },
+      "Atk": {
+        "data_offset": 317736,
+        "field_index": 165363,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "AtkIncreaseFactorFromAgi": {
+        "data_offset": 317824,
+        "field_index": 165438,
+        "raw_hex": "809a",
+        "value": 77
+      },
+      "AtkIncreaseFactorFromStr": {
+        "data_offset": 317822,
+        "field_index": 165437,
+        "raw_hex": "8098",
+        "value": 76
+      },
+      "AtkIncreaseFactorFromWill": {
+        "data_offset": 317828,
+        "field_index": 165440,
+        "raw_hex": "809e",
+        "value": 79
+      },
+      "AtkIncreaseFactorFromWisd": {
+        "data_offset": 317826,
+        "field_index": 165439,
+        "raw_hex": "809c",
+        "value": 78
+      },
+      "AttackRate": {
+        "data_offset": 317749,
+        "field_index": 165376,
+        "raw_hex": "1e",
+        "value": 15
+      },
+      "BreakingAttackDamageTakenScalar": {
+        "data_offset": 317761,
+        "field_index": 165388,
+        "raw_hex": "36",
+        "value": 27
+      },
+      "ComboSkillCooldownDecrease": {
+        "data_offset": 317870,
+        "field_index": 165461,
+        "raw_hex": "80c8",
+        "value": 100
+      },
+      "ComboSkillCooldownFinalAddition": {
+        "data_offset": 317757,
+        "field_index": 165384,
+        "raw_hex": "2e",
+        "value": 23
+      },
+      "ComboSkillCooldownRecoveryScalar": {
+        "data_offset": 317856,
+        "field_index": 165454,
+        "raw_hex": "80ba",
+        "value": 93
+      },
+      "ComboSkillCooldownScalar": {
+        "data_offset": 317781,
+        "field_index": 165408,
+        "raw_hex": "5e",
+        "value": 47
+      },
+      "ComboSkillDamageIncrease": {
+        "data_offset": 317767,
+        "field_index": 165394,
+        "raw_hex": "42",
+        "value": 33
+      },
+      "CriticalDamageIncrease": {
+        "data_offset": 317744,
+        "field_index": 165371,
+        "raw_hex": "14",
+        "value": 10
+      },
+      "CriticalRate": {
+        "data_offset": 317743,
+        "field_index": 165370,
+        "raw_hex": "12",
+        "value": 9
+      },
+      "CrystAbnormalDamageIncrease": {
+        "data_offset": 317792,
+        "field_index": 165419,
+        "raw_hex": "74",
+        "value": 58
+      },
+      "CrystBurstDamageIncrease": {
+        "data_offset": 317771,
+        "field_index": 165398,
+        "raw_hex": "4a",
+        "value": 37
+      },
+      "CrystDamageIncrease": {
+        "data_offset": 317787,
+        "field_index": 165414,
+        "raw_hex": "6a",
+        "value": 53
+      },
+      "CrystDamageTakenScalar": {
+        "data_offset": 317741,
+        "field_index": 165368,
+        "raw_hex": "0e",
+        "value": 7
+      },
+      "CrystDmgResistScalar": {
+        "data_offset": 317834,
+        "field_index": 165443,
+        "raw_hex": "80a4",
+        "value": 82
+      },
+      "CrystEnhancedDmgIncrease": {
+        "data_offset": 317804,
+        "field_index": 165428,
+        "raw_hex": "8086",
+        "value": 67
+      },
+      "CrystResistance": {
+        "data_offset": 317862,
+        "field_index": 165457,
+        "raw_hex": "80c0",
+        "value": 96
+      },
+      "CrystVulnerableDmgIncrease": {
+        "data_offset": 317816,
+        "field_index": 165434,
+        "raw_hex": "8092",
+        "value": 73
+      },
+      "DamageToBrokenUnitIncrease": {
+        "data_offset": 317795,
+        "field_index": 165422,
+        "raw_hex": "7a",
+        "value": 61
+      },
+      "Def": {
+        "data_offset": 317737,
+        "field_index": 165364,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "Enum": {
+        "data_offset": 317872,
+        "field_index": 165462,
+        "raw_hex": "80ca",
+        "value": 101
+      },
+      "EtherDamageIncrease": {
+        "data_offset": 317789,
+        "field_index": 165416,
+        "raw_hex": "6e",
+        "value": 55
+      },
+      "EtherDamageTakenScalar": {
+        "data_offset": 317794,
+        "field_index": 165421,
+        "raw_hex": "78",
+        "value": 60
+      },
+      "EtherDmgResistScalar": {
+        "data_offset": 317840,
+        "field_index": 165446,
+        "raw_hex": "80aa",
+        "value": 85
+      },
+      "EtherEnhancedDmgIncrease": {
+        "data_offset": 317808,
+        "field_index": 165430,
+        "raw_hex": "808a",
+        "value": 69
+      },
+      "EtherResistance": {
+        "data_offset": 317868,
+        "field_index": 165460,
+        "raw_hex": "80c6",
+        "value": 99
+      },
+      "EtherVulnerableDmgIncrease": {
+        "data_offset": 317820,
+        "field_index": 165436,
+        "raw_hex": "8096",
+        "value": 75
+      },
+      "FireAbnormalDamageIncrease": {
+        "data_offset": 317790,
+        "field_index": 165417,
+        "raw_hex": "70",
+        "value": 56
+      },
+      "FireBurstDamageIncrease": {
+        "data_offset": 317769,
+        "field_index": 165396,
+        "raw_hex": "46",
+        "value": 35
+      },
+      "FireDamageIncrease": {
+        "data_offset": 317785,
+        "field_index": 165412,
+        "raw_hex": "66",
+        "value": 51
+      },
+      "FireDamageTakenScalar": {
+        "data_offset": 317739,
+        "field_index": 165366,
+        "raw_hex": "0a",
+        "value": 5
+      },
+      "FireDmgResistScalar": {
+        "data_offset": 317838,
+        "field_index": 165445,
+        "raw_hex": "80a8",
+        "value": 84
+      },
+      "FireEnhancedDmgIncrease": {
+        "data_offset": 317800,
+        "field_index": 165426,
+        "raw_hex": "8082",
+        "value": 65
+      },
+      "FireResistance": {
+        "data_offset": 317866,
+        "field_index": 165459,
+        "raw_hex": "80c4",
+        "value": 98
+      },
+      "FireVulnerableDmgIncrease": {
+        "data_offset": 317812,
+        "field_index": 165432,
+        "raw_hex": "808e",
+        "value": 71
+      },
+      "Hatred": {
+        "data_offset": 317745,
+        "field_index": 165372,
+        "raw_hex": "16",
+        "value": 11
+      },
+      "HealOutputIncrease": {
+        "data_offset": 317763,
+        "field_index": 165390,
+        "raw_hex": "3a",
+        "value": 29
+      },
+      "HealTakenIncrease": {
+        "data_offset": 317764,
+        "field_index": 165391,
+        "raw_hex": "3c",
+        "value": 30
+      },
+      "HpRecoveryPerSec": {
+        "data_offset": 317752,
+        "field_index": 165379,
+        "raw_hex": "24",
+        "value": 18
+      },
+      "HpRecoveryPerSecByMaxHpRatio": {
+        "data_offset": 317753,
+        "field_index": 165380,
+        "raw_hex": "26",
+        "value": 19
+      },
+      "IgniteDamageScalar": {
+        "data_offset": 317783,
+        "field_index": 165410,
+        "raw_hex": "62",
+        "value": 49
+      },
+      "InAirMoveSpeedScalar": {
+        "data_offset": 317852,
+        "field_index": 165452,
+        "raw_hex": "80b6",
+        "value": 91
+      },
+      "KeywordSpeedUpScalar": {
+        "data_offset": 317854,
+        "field_index": 165453,
+        "raw_hex": "80b8",
+        "value": 92
+      },
+      "KnockDownTimeAddition": {
+        "data_offset": 317768,
+        "field_index": 165395,
+        "raw_hex": "44",
+        "value": 34
+      },
+      "Level": {
+        "data_offset": 317734,
+        "field_index": 165361,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "LifeSteal": {
+        "data_offset": 317777,
+        "field_index": 165404,
+        "raw_hex": "56",
+        "value": 43
+      },
+      "MaxHp": {
+        "data_offset": 317735,
+        "field_index": 165362,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "MaxPoise": {
+        "data_offset": 317754,
+        "field_index": 165381,
+        "raw_hex": "28",
+        "value": 20
+      },
+      "MaxUltimateSp": {
+        "data_offset": 317756,
+        "field_index": 165383,
+        "raw_hex": "2c",
+        "value": 22
+      },
+      "MoveSpeedScalar": {
+        "data_offset": 317747,
+        "field_index": 165374,
+        "raw_hex": "1a",
+        "value": 13
+      },
+      "NaturalAbnormalDamageIncrease": {
+        "data_offset": 317793,
+        "field_index": 165420,
+        "raw_hex": "76",
+        "value": 59
+      },
+      "NaturalBurstDamageIncrease": {
+        "data_offset": 317772,
+        "field_index": 165399,
+        "raw_hex": "4c",
+        "value": 38
+      },
+      "NaturalDamageIncrease": {
+        "data_offset": 317788,
+        "field_index": 165415,
+        "raw_hex": "6c",
+        "value": 54
+      },
+      "NaturalDamageTakenScalar": {
+        "data_offset": 317782,
+        "field_index": 165409,
+        "raw_hex": "60",
+        "value": 48
+      },
+      "NaturalDmgResistScalar": {
+        "data_offset": 317832,
+        "field_index": 165442,
+        "raw_hex": "80a2",
+        "value": 81
+      },
+      "NaturalEnhancedDmgIncrease": {
+        "data_offset": 317806,
+        "field_index": 165429,
+        "raw_hex": "8088",
+        "value": 68
+      },
+      "NaturalResistance": {
+        "data_offset": 317860,
+        "field_index": 165456,
+        "raw_hex": "80be",
+        "value": 95
+      },
+      "NaturalVulnerableDmgIncrease": {
+        "data_offset": 317818,
+        "field_index": 165435,
+        "raw_hex": "8094",
+        "value": 74
+      },
+      "NormalAttackDamageIncrease": {
+        "data_offset": 317751,
+        "field_index": 165378,
+        "raw_hex": "22",
+        "value": 17
+      },
+      "NormalAttackRange": {
+        "data_offset": 317746,
+        "field_index": 165373,
+        "raw_hex": "18",
+        "value": 12
+      },
+      "NormalAttackStartRange": {
+        "data_offset": 317850,
+        "field_index": 165451,
+        "raw_hex": "80b4",
+        "value": 90
+      },
+      "NormalSkillCooldownAddition": {
+        "data_offset": 317780,
+        "field_index": 165407,
+        "raw_hex": "5c",
+        "value": 46
+      },
+      "NormalSkillDamageIncrease": {
+        "data_offset": 317766,
+        "field_index": 165393,
+        "raw_hex": "40",
+        "value": 32
+      },
+      "PhysicalAndSpellInflictionEnhance": {
+        "data_offset": 317844,
+        "field_index": 165448,
+        "raw_hex": "80ae",
+        "value": 87
+      },
+      "PhysicalDamageIncrease": {
+        "data_offset": 317784,
+        "field_index": 165411,
+        "raw_hex": "64",
+        "value": 50
+      },
+      "PhysicalDamageTakenScalar": {
+        "data_offset": 317738,
+        "field_index": 165365,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "PhysicalDmgResistScalar": {
+        "data_offset": 317830,
+        "field_index": 165441,
+        "raw_hex": "80a0",
+        "value": 80
+      },
+      "PhysicalEnhancedDmgIncrease": {
+        "data_offset": 317798,
+        "field_index": 165425,
+        "raw_hex": "8080",
+        "value": 64
+      },
+      "PhysicalInflictionDamageScalar": {
+        "data_offset": 317759,
+        "field_index": 165386,
+        "raw_hex": "32",
+        "value": 25
+      },
+      "PhysicalResistance": {
+        "data_offset": 317858,
+        "field_index": 165455,
+        "raw_hex": "80bc",
+        "value": 94
+      },
+      "PhysicalVulnerableDmgIncrease": {
+        "data_offset": 317810,
+        "field_index": 165431,
+        "raw_hex": "808c",
+        "value": 70
+      },
+      "PoiseDamageOutputScalar": {
+        "data_offset": 317760,
+        "field_index": 165387,
+        "raw_hex": "34",
+        "value": 26
+      },
+      "PoiseDamageTakenScalar": {
+        "data_offset": 317758,
+        "field_index": 165385,
+        "raw_hex": "30",
+        "value": 24
+      },
+      "PoiseRecTime": {
+        "data_offset": 317755,
+        "field_index": 165382,
+        "raw_hex": "2a",
+        "value": 21
+      },
+      "PoiseRecTimeScalar": {
+        "data_offset": 317765,
+        "field_index": 165392,
+        "raw_hex": "3e",
+        "value": 31
+      },
+      "PulseAbnormalDamageIncrease": {
+        "data_offset": 317791,
+        "field_index": 165418,
+        "raw_hex": "72",
+        "value": 57
+      },
+      "PulseBurstDamageIncrease": {
+        "data_offset": 317770,
+        "field_index": 165397,
+        "raw_hex": "48",
+        "value": 36
+      },
+      "PulseDamageIncrease": {
+        "data_offset": 317786,
+        "field_index": 165413,
+        "raw_hex": "68",
+        "value": 52
+      },
+      "PulseDamageTakenScalar": {
+        "data_offset": 317740,
+        "field_index": 165367,
+        "raw_hex": "0c",
+        "value": 6
+      },
+      "PulseDmgResistScalar": {
+        "data_offset": 317836,
+        "field_index": 165444,
+        "raw_hex": "80a6",
+        "value": 83
+      },
+      "PulseEnhancedDmgIncrease": {
+        "data_offset": 317802,
+        "field_index": 165427,
+        "raw_hex": "8084",
+        "value": 66
+      },
+      "PulseResistance": {
+        "data_offset": 317864,
+        "field_index": 165458,
+        "raw_hex": "80c2",
+        "value": 97
+      },
+      "PulseVulnerableDmgIncrease": {
+        "data_offset": 317814,
+        "field_index": 165433,
+        "raw_hex": "8090",
+        "value": 72
+      },
+      "ShelterDmgScalar": {
+        "data_offset": 317797,
+        "field_index": 165424,
+        "raw_hex": "7e",
+        "value": 63
+      },
+      "ShieldOutputIncrease": {
+        "data_offset": 317846,
+        "field_index": 165449,
+        "raw_hex": "80b0",
+        "value": 88
+      },
+      "ShieldTakenIncrease": {
+        "data_offset": 317848,
+        "field_index": 165450,
+        "raw_hex": "80b2",
+        "value": 89
+      },
+      "SkillCooldownScalar": {
+        "data_offset": 317750,
+        "field_index": 165377,
+        "raw_hex": "20",
+        "value": 16
+      },
+      "SlowActionSpeedScalar": {
+        "data_offset": 317842,
+        "field_index": 165447,
+        "raw_hex": "80ac",
+        "value": 86
+      },
+      "Str": {
+        "data_offset": 317773,
+        "field_index": 165400,
+        "raw_hex": "4e",
+        "value": 39
+      },
+      "TurnRateScalar": {
+        "data_offset": 317748,
+        "field_index": 165375,
+        "raw_hex": "1c",
+        "value": 14
+      },
+      "UltimateSkillDamageIncrease": {
+        "data_offset": 317762,
+        "field_index": 165389,
+        "raw_hex": "38",
+        "value": 28
+      },
+      "UltimateSpGainScalar": {
+        "data_offset": 317778,
+        "field_index": 165405,
+        "raw_hex": "58",
+        "value": 44
+      },
+      "WeaknessDmgScalar": {
+        "data_offset": 317796,
+        "field_index": 165423,
+        "raw_hex": "7c",
+        "value": 62
+      },
+      "Weight": {
+        "data_offset": 317742,
+        "field_index": 165369,
+        "raw_hex": "10",
+        "value": 8
+      },
+      "Will": {
+        "data_offset": 317776,
+        "field_index": 165403,
+        "raw_hex": "54",
+        "value": 42
+      },
+      "Wisd": {
+        "data_offset": 317775,
+        "field_index": 165402,
+        "raw_hex": "52",
+        "value": 41
+      }
+    },
+    "Beyond.GEnums.DamageType": {
+      "Cryst": {
+        "data_offset": 317712,
+        "field_index": 165335,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "Ether": {
+        "data_offset": 317715,
+        "field_index": 165338,
+        "raw_hex": "0e",
+        "value": 7
+      },
+      "Fire": {
+        "data_offset": 317710,
+        "field_index": 165333,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "LifeDrain": {
+        "data_offset": 317713,
+        "field_index": 165336,
+        "raw_hex": "0a",
+        "value": 5
+      },
+      "Natural": {
+        "data_offset": 317714,
+        "field_index": 165337,
+        "raw_hex": "0c",
+        "value": 6
+      },
+      "Physical": {
+        "data_offset": 317708,
+        "field_index": 165331,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Pulse": {
+        "data_offset": 317711,
+        "field_index": 165334,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "Real": {
+        "data_offset": 317709,
+        "field_index": 165332,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
+    "Beyond.GEnums.ModifiableSkillParam": {
+      "CoolDown": {
+        "data_offset": 320178,
+        "field_index": 167339,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "CoolDownDisplay": {
+        "data_offset": 320180,
+        "field_index": 167341,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "CostValue": {
+        "data_offset": 320177,
+        "field_index": 167338,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "MaxChargeTime": {
+        "data_offset": 320179,
+        "field_index": 167340,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "None": {
+        "data_offset": 320176,
+        "field_index": 167337,
+        "raw_hex": "00",
+        "value": 0
+      }
+    },
+    "Beyond.GEnums.ModifyAttributeType": {
+      "All": {
+        "data_offset": 317877,
+        "field_index": 165467,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "Main": {
+        "data_offset": 317875,
+        "field_index": 165465,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "Specific": {
+        "data_offset": 317874,
+        "field_index": 165464,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Sub": {
+        "data_offset": 317876,
+        "field_index": 165466,
+        "raw_hex": "04",
+        "value": 2
+      }
+    },
+    "Beyond.GEnums.PhysicalAndSpellInflictionEnhanceFormulaType": {
+      "InverseProportion": {
+        "data_offset": 320740,
+        "field_index": 167984,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "Linear": {
+        "data_offset": 320739,
+        "field_index": 167983,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "None": {
+        "data_offset": 320738,
+        "field_index": 167982,
+        "raw_hex": "00",
+        "value": 0
+      }
+    },
+    "Beyond.GEnums.PotentialModifyType": {
+      "AddBuff": {
+        "data_offset": 320174,
+        "field_index": 167334,
+        "raw_hex": "0a",
+        "value": 5
+      },
+      "AddPassiveSkill": {
+        "data_offset": 320170,
+        "field_index": 167330,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "ChangeSkillBlackboard": {
+        "data_offset": 320172,
+        "field_index": 167332,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "ChangeSkillParam": {
+        "data_offset": 320171,
+        "field_index": 167331,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "Enum": {
+        "data_offset": 320175,
+        "field_index": 167335,
+        "raw_hex": "0c",
+        "value": 6
+      },
+      "ModifyAttr": {
+        "data_offset": 320173,
+        "field_index": 167333,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "None": {
+        "data_offset": 320169,
+        "field_index": 167329,
+        "raw_hex": "00",
+        "value": 0
+      }
+    },
+    "Beyond.GEnums.SkillParamModifyType": {
+      "Add": {
+        "data_offset": 320182,
+        "field_index": 167344,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "Multiply": {
+        "data_offset": 320183,
+        "field_index": 167345,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "None": {
+        "data_offset": 320181,
+        "field_index": 167343,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Overwrite": {
+        "data_offset": 320184,
+        "field_index": 167346,
+        "raw_hex": "06",
+        "value": 3
+      }
+    },
+    "Beyond.GEnums.SkillType": {
+      "ComboSkill": {
+        "data_offset": 318151,
+        "field_index": 165715,
+        "raw_hex": "0a",
+        "value": 5
+      },
+      "None": {
+        "data_offset": 318146,
+        "field_index": 165710,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "NormalAttack": {
+        "data_offset": 318147,
+        "field_index": 165711,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "NormalSkill": {
+        "data_offset": 318149,
+        "field_index": 165713,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "PassiveSkill": {
+        "data_offset": 318148,
+        "field_index": 165712,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "UltimateSkill": {
+        "data_offset": 318150,
+        "field_index": 165714,
+        "raw_hex": "08",
+        "value": 4
+      }
+    },
+    "Beyond.Gameplay.Core.AbilitySystem+Event": {
+      "BeforeApplyDamageModifier": {
+        "data_offset": 36762,
+        "field_index": 41399,
+        "raw_hex": "38",
+        "value": 28
+      },
+      "BeforeApplyHealModifier": {
+        "data_offset": 36763,
+        "field_index": 41400,
+        "raw_hex": "3a",
+        "value": 29
+      },
+      "Enum": {
+        "data_offset": 36936,
+        "field_index": 41500,
+        "raw_hex": "8bbc",
+        "value": 1502
+      },
+      "OnAbilityEntityFinished": {
+        "data_offset": 36912,
+        "field_index": 41488,
+        "raw_hex": "820c",
+        "value": 262
+      },
+      "OnAbilityEntitySpawned": {
+        "data_offset": 36910,
+        "field_index": 41487,
+        "raw_hex": "820a",
+        "value": 261
+      },
+      "OnAbsorbBuff": {
+        "data_offset": 36898,
+        "field_index": 41481,
+        "raw_hex": "81a6",
+        "value": 211
+      },
+      "OnAddedBuff": {
+        "data_offset": 36746,
+        "field_index": 41383,
+        "raw_hex": "12",
+        "value": 9
+      },
+      "OnAfterAddedShield": {
+        "data_offset": 36846,
+        "field_index": 41455,
+        "raw_hex": "8126",
+        "value": 147
+      },
+      "OnAfterApplyModifier": {
+        "data_offset": 36748,
+        "field_index": 41385,
+        "raw_hex": "16",
+        "value": 11
+      },
+      "OnAfterApplyPhysics": {
+        "data_offset": 36780,
+        "field_index": 41417,
+        "raw_hex": "68",
+        "value": 52
+      },
+      "OnAfterApplyPull": {
+        "data_offset": 36759,
+        "field_index": 41396,
+        "raw_hex": "32",
+        "value": 25
+      },
+      "OnAfterCharacterTakeBlowOff": {
+        "data_offset": 36775,
+        "field_index": 41412,
+        "raw_hex": "5e",
+        "value": 47
+      },
+      "OnAfterHitByProjectile": {
+        "data_offset": 36868,
+        "field_index": 41466,
+        "raw_hex": "8144",
+        "value": 162
+      },
+      "OnAfterKillEntity": {
+        "data_offset": 36902,
+        "field_index": 41483,
+        "raw_hex": "81bc",
+        "value": 222
+      },
+      "OnAfterOutputAirborne": {
+        "data_offset": 36782,
+        "field_index": 41419,
+        "raw_hex": "70",
+        "value": 56
+      },
+      "OnAfterOutputBlowOff": {
+        "data_offset": 36784,
+        "field_index": 41421,
+        "raw_hex": "74",
+        "value": 58
+      },
+      "OnAfterOutputKnockDown": {
+        "data_offset": 36769,
+        "field_index": 41406,
+        "raw_hex": "52",
+        "value": 41
+      },
+      "OnAfterOutputPhysicalInfliction": {
+        "data_offset": 36926,
+        "field_index": 41495,
+        "raw_hex": "8324",
+        "value": 402
+      },
+      "OnAfterOutputWeaknessTriggered": {
+        "data_offset": 36834,
+        "field_index": 41449,
+        "raw_hex": "811a",
+        "value": 141
+      },
+      "OnAfterProjectileHitEntity": {
+        "data_offset": 36876,
+        "field_index": 41470,
+        "raw_hex": "814c",
+        "value": 166
+      },
+      "OnAfterSkillApplyCost": {
+        "data_offset": 36838,
+        "field_index": 41451,
+        "raw_hex": "811e",
+        "value": 143
+      },
+      "OnAfterTakeAirborne": {
+        "data_offset": 36752,
+        "field_index": 41389,
+        "raw_hex": "1e",
+        "value": 15
+      },
+      "OnAfterTakeBlowOff": {
+        "data_offset": 36777,
+        "field_index": 41414,
+        "raw_hex": "62",
+        "value": 49
+      },
+      "OnAfterTakeKnockDown": {
+        "data_offset": 36754,
+        "field_index": 41391,
+        "raw_hex": "24",
+        "value": 18
+      },
+      "OnAfterTakePhysicalInfliction": {
+        "data_offset": 36786,
+        "field_index": 41423,
+        "raw_hex": "78",
+        "value": 60
+      },
+      "OnApplyKnockDownInAirborne": {
+        "data_offset": 36760,
+        "field_index": 41397,
+        "raw_hex": "34",
+        "value": 26
+      },
+      "OnAtbMax": {
+        "data_offset": 36787,
+        "field_index": 41424,
+        "raw_hex": "7a",
+        "value": 61
+      },
+      "OnAttributeChanged": {
+        "data_offset": 36741,
+        "field_index": 41378,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "OnBeforeAddedBuff": {
+        "data_offset": 36888,
+        "field_index": 41476,
+        "raw_hex": "819a",
+        "value": 205
+      },
+      "OnBeforeAddedShield": {
+        "data_offset": 36844,
+        "field_index": 41454,
+        "raw_hex": "8124",
+        "value": 146
+      },
+      "OnBeforeApplyModifier": {
+        "data_offset": 36747,
+        "field_index": 41384,
+        "raw_hex": "14",
+        "value": 10
+      },
+      "OnBeforeApplyPhysics": {
+        "data_offset": 36779,
+        "field_index": 41416,
+        "raw_hex": "66",
+        "value": 51
+      },
+      "OnBeforeApplyPoiseModifier": {
+        "data_offset": 36770,
+        "field_index": 41407,
+        "raw_hex": "54",
+        "value": 42
+      },
+      "OnBeforeApplyPull": {
+        "data_offset": 36758,
+        "field_index": 41395,
+        "raw_hex": "30",
+        "value": 24
+      },
+      "OnBeforeCalculateDamage": {
+        "data_offset": 36914,
+        "field_index": 41489,
+        "raw_hex": "825a",
+        "value": 301
+      },
+      "OnBeforeCastSkill": {
+        "data_offset": 36764,
+        "field_index": 41401,
+        "raw_hex": "3c",
+        "value": 30
+      },
+      "OnBeforeCharacterTakeBlowOff": {
+        "data_offset": 36774,
+        "field_index": 41411,
+        "raw_hex": "5c",
+        "value": 46
+      },
+      "OnBeforeDamageAction": {
+        "data_offset": 36812,
+        "field_index": 41438,
+        "raw_hex": "80d0",
+        "value": 104
+      },
+      "OnBeforeHitByProjectile": {
+        "data_offset": 36866,
+        "field_index": 41465,
+        "raw_hex": "8142",
+        "value": 161
+      },
+      "OnBeforeKillEntity": {
+        "data_offset": 36900,
+        "field_index": 41482,
+        "raw_hex": "81ba",
+        "value": 221
+      },
+      "OnBeforeOutputAirborne": {
+        "data_offset": 36781,
+        "field_index": 41418,
+        "raw_hex": "6e",
+        "value": 55
+      },
+      "OnBeforeOutputBlowOff": {
+        "data_offset": 36783,
+        "field_index": 41420,
+        "raw_hex": "72",
+        "value": 57
+      },
+      "OnBeforeOutputBuff": {
+        "data_offset": 36890,
+        "field_index": 41477,
+        "raw_hex": "819c",
+        "value": 206
+      },
+      "OnBeforeOutputDamage": {
+        "data_offset": 36916,
+        "field_index": 41490,
+        "raw_hex": "825c",
+        "value": 302
+      },
+      "OnBeforeOutputHitEnvDamage": {
+        "data_offset": 36922,
+        "field_index": 41493,
+        "raw_hex": "8284",
+        "value": 322
+      },
+      "OnBeforeOutputKnockDown": {
+        "data_offset": 36768,
+        "field_index": 41405,
+        "raw_hex": "50",
+        "value": 40
+      },
+      "OnBeforeOutputPhysicalInfliction": {
+        "data_offset": 36924,
+        "field_index": 41494,
+        "raw_hex": "8322",
+        "value": 401
+      },
+      "OnBeforeOutputPoiseDamage": {
+        "data_offset": 36810,
+        "field_index": 41437,
+        "raw_hex": "80ce",
+        "value": 103
+      },
+      "OnBeforePartDisable": {
+        "data_offset": 36932,
+        "field_index": 41498,
+        "raw_hex": "8af6",
+        "value": 1403
+      },
+      "OnBeforeProjectileHitEntity": {
+        "data_offset": 36874,
+        "field_index": 41469,
+        "raw_hex": "814a",
+        "value": 165
+      },
+      "OnBeforeTakeAirborne": {
+        "data_offset": 36751,
+        "field_index": 41388,
+        "raw_hex": "1c",
+        "value": 14
+      },
+      "OnBeforeTakeBlowOff": {
+        "data_offset": 36776,
+        "field_index": 41413,
+        "raw_hex": "60",
+        "value": 48
+      },
+      "OnBeforeTakeDamage": {
+        "data_offset": 36806,
+        "field_index": 41435,
+        "raw_hex": "80ca",
+        "value": 101
+      },
+      "OnBeforeTakeKnockDown": {
+        "data_offset": 36753,
+        "field_index": 41390,
+        "raw_hex": "22",
+        "value": 17
+      },
+      "OnBeforeTakePhysicalInfliction": {
+        "data_offset": 36785,
+        "field_index": 41422,
+        "raw_hex": "76",
+        "value": 59
+      },
+      "OnBeforeTakePoiseDamage": {
+        "data_offset": 36906,
+        "field_index": 41485,
+        "raw_hex": "81e4",
+        "value": 242
+      },
+      "OnBuffAbsorbed": {
+        "data_offset": 36896,
+        "field_index": 41480,
+        "raw_hex": "81a4",
+        "value": 210
+      },
+      "OnBuffEndsEarly": {
+        "data_offset": 36886,
+        "field_index": 41475,
+        "raw_hex": "8198",
+        "value": 204
+      },
+      "OnBuffEnhanceChanged": {
+        "data_offset": 36894,
+        "field_index": 41479,
+        "raw_hex": "81a2",
+        "value": 209
+      },
+      "OnCharAfterOutputSpellInfliction": {
+        "data_offset": 36830,
+        "field_index": 41447,
+        "raw_hex": "8102",
+        "value": 129
+      },
+      "OnCharAfterTakeSpellAbnormal": {
+        "data_offset": 36822,
+        "field_index": 41443,
+        "raw_hex": "80fa",
+        "value": 125
+      },
+      "OnCharAfterTakeSpellInfliction": {
+        "data_offset": 36818,
+        "field_index": 41441,
+        "raw_hex": "80f6",
+        "value": 123
+      },
+      "OnCharBeforeOutputSpellBurst": {
+        "data_offset": 36826,
+        "field_index": 41445,
+        "raw_hex": "80fe",
+        "value": 127
+      },
+      "OnCharBeforeOutputSpellInfliction": {
+        "data_offset": 36824,
+        "field_index": 41444,
+        "raw_hex": "80fc",
+        "value": 126
+      },
+      "OnCharBeforeTakeSpellAbnormal": {
+        "data_offset": 36820,
+        "field_index": 41442,
+        "raw_hex": "80f8",
+        "value": 124
+      },
+      "OnCharBeforeTakeSpellInfliction": {
+        "data_offset": 36816,
+        "field_index": 41440,
+        "raw_hex": "80f4",
+        "value": 122
+      },
+      "OnCharDeckAttrChanged": {
+        "data_offset": 36862,
+        "field_index": 41463,
+        "raw_hex": "8136",
+        "value": 155
+      },
+      "OnCharLanded": {
+        "data_offset": 36856,
+        "field_index": 41460,
+        "raw_hex": "8130",
+        "value": 152
+      },
+      "OnCollectAddedBuffBbValue": {
+        "data_offset": 36880,
+        "field_index": 41472,
+        "raw_hex": "8192",
+        "value": 201
+      },
+      "OnCollectOutputBuffBbValue": {
+        "data_offset": 36882,
+        "field_index": 41473,
+        "raw_hex": "8194",
+        "value": 202
+      },
+      "OnCollideAgainstWall": {
+        "data_offset": 36757,
+        "field_index": 41394,
+        "raw_hex": "2e",
+        "value": 23
+      },
+      "OnConsumeBuff": {
+        "data_offset": 36892,
+        "field_index": 41478,
+        "raw_hex": "81a0",
+        "value": 208
+      },
+      "OnConvertWeaknessToInterruptible": {
+        "data_offset": 36934,
+        "field_index": 41499,
+        "raw_hex": "8bba",
+        "value": 1501
+      },
+      "OnCostAtb": {
+        "data_offset": 36864,
+        "field_index": 41464,
+        "raw_hex": "8138",
+        "value": 156
+      },
+      "OnCustomAbilityEvent": {
+        "data_offset": 36742,
+        "field_index": 41379,
+        "raw_hex": "0a",
+        "value": 5
+      },
+      "OnEnemyAfterTakeSpellInfliction": {
+        "data_offset": 36832,
+        "field_index": 41448,
+        "raw_hex": "8104",
+        "value": 130
+      },
+      "OnEnemyBeforeTakeSpellBurst": {
+        "data_offset": 36828,
+        "field_index": 41446,
+        "raw_hex": "8100",
+        "value": 128
+      },
+      "OnEnemyBeforeTakeSpellInfliction": {
+        "data_offset": 36814,
+        "field_index": 41439,
+        "raw_hex": "80f2",
+        "value": 121
+      },
+      "OnEnemyEnterFight": {
+        "data_offset": 36858,
+        "field_index": 41461,
+        "raw_hex": "8132",
+        "value": 153
+      },
+      "OnEnterFight": {
+        "data_offset": 36743,
+        "field_index": 41380,
+        "raw_hex": "0c",
+        "value": 6
+      },
+      "OnExitFight": {
+        "data_offset": 36744,
+        "field_index": 41381,
+        "raw_hex": "0e",
+        "value": 7
+      },
+      "OnFinishedBuff": {
+        "data_offset": 36884,
+        "field_index": 41474,
+        "raw_hex": "8196",
+        "value": 203
+      },
+      "OnForceInFight": {
+        "data_offset": 36860,
+        "field_index": 41462,
+        "raw_hex": "8134",
+        "value": 154
+      },
+      "OnForceTriggerWeakness": {
+        "data_offset": 36840,
+        "field_index": 41452,
+        "raw_hex": "8120",
+        "value": 144
+      },
+      "OnHpChange": {
+        "data_offset": 36918,
+        "field_index": 41491,
+        "raw_hex": "825e",
+        "value": 303
+      },
+      "OnInterruptActionSuccess": {
+        "data_offset": 36767,
+        "field_index": 41404,
+        "raw_hex": "42",
+        "value": 33
+      },
+      "OnObtainAtb": {
+        "data_offset": 36836,
+        "field_index": 41450,
+        "raw_hex": "811c",
+        "value": 142
+      },
+      "OnOutputBuff": {
+        "data_offset": 36808,
+        "field_index": 41436,
+        "raw_hex": "80cc",
+        "value": 102
+      },
+      "OnOutputCriticalDamage": {
+        "data_offset": 36772,
+        "field_index": 41409,
+        "raw_hex": "58",
+        "value": 44
+      },
+      "OnOutputDamage": {
+        "data_offset": 36750,
+        "field_index": 41387,
+        "raw_hex": "1a",
+        "value": 13
+      },
+      "OnOutputHeal": {
+        "data_offset": 36778,
+        "field_index": 41415,
+        "raw_hex": "64",
+        "value": 50
+      },
+      "OnOutputHitEnvDamage": {
+        "data_offset": 36920,
+        "field_index": 41492,
+        "raw_hex": "8282",
+        "value": 321
+      },
+      "OnOwnerDead": {
+        "data_offset": 36745,
+        "field_index": 41382,
+        "raw_hex": "10",
+        "value": 8
+      },
+      "OnOwnerHpZero": {
+        "data_offset": 36738,
+        "field_index": 41375,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "OnOwnerSwitchToCenter": {
+        "data_offset": 36739,
+        "field_index": 41376,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "OnOwnerSwitchToGuard": {
+        "data_offset": 36740,
+        "field_index": 41377,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "OnPartsBeHit": {
+        "data_offset": 36802,
+        "field_index": 41433,
+        "raw_hex": "80a4",
+        "value": 82
+      },
+      "OnPartsDisable": {
+        "data_offset": 36800,
+        "field_index": 41432,
+        "raw_hex": "80a2",
+        "value": 81
+      },
+      "OnPartsEnable": {
+        "data_offset": 36798,
+        "field_index": 41431,
+        "raw_hex": "80a0",
+        "value": 80
+      },
+      "OnPartsPoiseBreak": {
+        "data_offset": 36804,
+        "field_index": 41434,
+        "raw_hex": "80a6",
+        "value": 83
+      },
+      "OnPerfectDodge": {
+        "data_offset": 36842,
+        "field_index": 41453,
+        "raw_hex": "8122",
+        "value": 145
+      },
+      "OnPoiseKnotBreak": {
+        "data_offset": 36904,
+        "field_index": 41484,
+        "raw_hex": "81e2",
+        "value": 241
+      },
+      "OnPoiseRecover": {
+        "data_offset": 36756,
+        "field_index": 41393,
+        "raw_hex": "2c",
+        "value": 22
+      },
+      "OnPoiseZero": {
+        "data_offset": 36755,
+        "field_index": 41392,
+        "raw_hex": "2a",
+        "value": 21
+      },
+      "OnProjectileFinished": {
+        "data_offset": 36872,
+        "field_index": 41468,
+        "raw_hex": "8148",
+        "value": 164
+      },
+      "OnProjectileLaunched": {
+        "data_offset": 36870,
+        "field_index": 41467,
+        "raw_hex": "8146",
+        "value": 163
+      },
+      "OnReceiveHeal": {
+        "data_offset": 36773,
+        "field_index": 41410,
+        "raw_hex": "5a",
+        "value": 45
+      },
+      "OnRemoveAllPendingComboSkill": {
+        "data_offset": 36928,
+        "field_index": 41496,
+        "raw_hex": "8af2",
+        "value": 1401
+      },
+      "OnSetWeakness": {
+        "data_offset": 36854,
+        "field_index": 41459,
+        "raw_hex": "812e",
+        "value": 151
+      },
+      "OnShieldBlockDamage": {
+        "data_offset": 36848,
+        "field_index": 41456,
+        "raw_hex": "8128",
+        "value": 148
+      },
+      "OnSkillEnd": {
+        "data_offset": 36765,
+        "field_index": 41402,
+        "raw_hex": "3e",
+        "value": 31
+      },
+      "OnSkillInterrupted": {
+        "data_offset": 36766,
+        "field_index": 41403,
+        "raw_hex": "40",
+        "value": 32
+      },
+      "OnSquadFinishedBuff": {
+        "data_offset": 36792,
+        "field_index": 41428,
+        "raw_hex": "8082",
+        "value": 65
+      },
+      "OnSquadHpChange": {
+        "data_offset": 36788,
+        "field_index": 41425,
+        "raw_hex": "7c",
+        "value": 62
+      },
+      "OnSquadMemberDie": {
+        "data_offset": 36794,
+        "field_index": 41429,
+        "raw_hex": "8086",
+        "value": 67
+      },
+      "OnSquadRepatriate": {
+        "data_offset": 36930,
+        "field_index": 41497,
+        "raw_hex": "8af4",
+        "value": 1402
+      },
+      "OnSquadTakeDamage": {
+        "data_offset": 36790,
+        "field_index": 41427,
+        "raw_hex": "8080",
+        "value": 64
+      },
+      "OnSquadTakeSpellAbnormal": {
+        "data_offset": 36796,
+        "field_index": 41430,
+        "raw_hex": "8088",
+        "value": 68
+      },
+      "OnSquadUspChange": {
+        "data_offset": 36789,
+        "field_index": 41426,
+        "raw_hex": "7e",
+        "value": 63
+      },
+      "OnTakeCriticalDamage": {
+        "data_offset": 36771,
+        "field_index": 41408,
+        "raw_hex": "56",
+        "value": 43
+      },
+      "OnTakeDamage": {
+        "data_offset": 36749,
+        "field_index": 41386,
+        "raw_hex": "18",
+        "value": 12
+      },
+      "OnTakePoiseDamage": {
+        "data_offset": 36908,
+        "field_index": 41486,
+        "raw_hex": "81e6",
+        "value": 243
+      },
+      "OnTeleportationPointRest": {
+        "data_offset": 36850,
+        "field_index": 41457,
+        "raw_hex": "812a",
+        "value": 149
+      },
+      "OnTriggerDodge": {
+        "data_offset": 36878,
+        "field_index": 41471,
+        "raw_hex": "816a",
+        "value": 181
+      },
+      "OnTriggerUndeadFeature": {
+        "data_offset": 36761,
+        "field_index": 41398,
+        "raw_hex": "36",
+        "value": 27
+      },
+      "OnTrulyExitFight": {
+        "data_offset": 36852,
+        "field_index": 41458,
+        "raw_hex": "812c",
+        "value": 150
+      }
+    },
+    "Beyond.Gameplay.Core.Buff+Event": {
+      "DuringBuffEnable": {
+        "data_offset": 37449,
+        "field_index": 44551,
+        "raw_hex": "0a",
+        "value": 5
+      },
+      "Enum": {
+        "data_offset": 37456,
+        "field_index": 44558,
+        "raw_hex": "18",
+        "value": 12
+      },
+      "OnBuffAfterTryEnhanced": {
+        "data_offset": 37451,
+        "field_index": 44553,
+        "raw_hex": "0e",
+        "value": 7
+      },
+      "OnBuffBeforeTryEnhanced": {
+        "data_offset": 37452,
+        "field_index": 44554,
+        "raw_hex": "10",
+        "value": 8
+      },
+      "OnBuffDisable": {
+        "data_offset": 37448,
+        "field_index": 44550,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "OnBuffDispelled": {
+        "data_offset": 37453,
+        "field_index": 44555,
+        "raw_hex": "12",
+        "value": 9
+      },
+      "OnBuffEnable": {
+        "data_offset": 37447,
+        "field_index": 44549,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "OnBuffEnhanceChanged": {
+        "data_offset": 37450,
+        "field_index": 44552,
+        "raw_hex": "0c",
+        "value": 6
+      },
+      "OnBuffFinish": {
+        "data_offset": 37446,
+        "field_index": 44548,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "OnBuffFinishedEarlyInterrupted": {
+        "data_offset": 37454,
+        "field_index": 44556,
+        "raw_hex": "14",
+        "value": 10
+      },
+      "OnBuffReleased": {
+        "data_offset": 37455,
+        "field_index": 44557,
+        "raw_hex": "16",
+        "value": 11
+      },
+      "OnBuffStart": {
+        "data_offset": 37444,
+        "field_index": 44546,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "OnBuffTrigger": {
+        "data_offset": 37445,
+        "field_index": 44547,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
+    "Beyond.Gameplay.Core.Buff+LifeType": {
+      "Infinity": {
+        "data_offset": 37458,
+        "field_index": 44561,
+        "raw_hex": "01",
+        "value": 1
+      },
+      "Limited": {
+        "data_offset": 37457,
+        "field_index": 44560,
+        "raw_hex": "00",
+        "value": 0
+      }
+    },
+    "Beyond.Gameplay.Core.BuffStackNumType": {
+      "BuffCount": {
+        "data_offset": 37268,
+        "field_index": 43708,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "BuffIdCount": {
+        "data_offset": 37269,
+        "field_index": 43709,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
+    "Beyond.Gameplay.Core.BuffStackingSettings+StackingType": {
+      "Enhance": {
+        "data_offset": 37478,
+        "field_index": 44632,
+        "raw_hex": "03",
+        "value": 3
+      },
+      "EnhanceAndOverwriteDuration": {
+        "data_offset": 37492,
+        "field_index": 44639,
+        "raw_hex": "0a",
+        "value": 10
+      },
+      "EnhanceAndRefresh": {
+        "data_offset": 37488,
+        "field_index": 44637,
+        "raw_hex": "08",
+        "value": 8
+      },
+      "Extend": {
+        "data_offset": 37482,
+        "field_index": 44634,
+        "raw_hex": "05",
+        "value": 5
+      },
+      "HighPriority": {
+        "data_offset": 37474,
+        "field_index": 44630,
+        "raw_hex": "01",
+        "value": 1
+      },
+      "HighPriorityWithMaxStack": {
+        "data_offset": 37494,
+        "field_index": 44640,
+        "raw_hex": "0b",
+        "value": 11
+      },
+      "Modify": {
+        "data_offset": 37484,
+        "field_index": 44635,
+        "raw_hex": "06",
+        "value": 6
+      },
+      "OverwriteDuration": {
+        "data_offset": 37490,
+        "field_index": 44638,
+        "raw_hex": "09",
+        "value": 9
+      },
+      "Refresh": {
+        "data_offset": 37480,
+        "field_index": 44633,
+        "raw_hex": "04",
+        "value": 4
+      },
+      "Stack": {
+        "data_offset": 37476,
+        "field_index": 44631,
+        "raw_hex": "02",
+        "value": 2
+      },
+      "TimedGrowingEnhance": {
+        "data_offset": 37496,
+        "field_index": 44641,
+        "raw_hex": "0c",
+        "value": 12
+      },
+      "Unique": {
+        "data_offset": 37486,
+        "field_index": 44636,
+        "raw_hex": "07",
+        "value": 7
+      },
+      "Unlimited": {
+        "data_offset": 37472,
+        "field_index": 44629,
+        "raw_hex": "00",
+        "value": 0
+      }
+    },
+    "Beyond.Gameplay.Core.ChangeSkillAction+LifeTimeType": {
+      "FinishByAction": {
+        "data_offset": 37072,
+        "field_index": 42295,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "Infinite": {
+        "data_offset": 37071,
+        "field_index": 42294,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "SpecificTime": {
+        "data_offset": 37070,
+        "field_index": 42293,
+        "raw_hex": "00",
+        "value": 0
+      }
+    },
+    "Beyond.Gameplay.Core.ChangeSkillAction+SkillSlot": {
+      "ComboSkill": {
+        "data_offset": 37068,
+        "field_index": 42290,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "NormalSkill": {
+        "data_offset": 37067,
+        "field_index": 42289,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "UltimateSkill": {
+        "data_offset": 37069,
+        "field_index": 42291,
+        "raw_hex": "04",
+        "value": 2
+      }
+    },
+    "Beyond.Gameplay.Core.DamageModifier+Data+EnableSide": {
+      "Attacker": {
+        "data_offset": 37526,
+        "field_index": 44771,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Defender": {
+        "data_offset": 37527,
+        "field_index": 44772,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
+    "Beyond.Gameplay.Core.DamageScaleProcessor+DamageScaleSide": {
+      "Attacker": {
+        "data_offset": 37537,
+        "field_index": 44813,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Defender": {
+        "data_offset": 37538,
+        "field_index": 44814,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
+    "Beyond.Gameplay.Core.GameplayTagQuery+QueryType": {
+      "ExceptAll": {
+        "data_offset": 43762,
+        "field_index": 51843,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "ExceptAny": {
+        "data_offset": 43761,
+        "field_index": 51842,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "HasAll": {
+        "data_offset": 43760,
+        "field_index": 51841,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "HasAny": {
+        "data_offset": 43759,
+        "field_index": 51840,
+        "raw_hex": "00",
+        "value": 0
+      }
+    },
+    "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data+OperationType": {
+      "Add": {
+        "data_offset": 37190,
+        "field_index": 43071,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "Assign": {
+        "data_offset": 37189,
+        "field_index": 43070,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Ceil": {
+        "data_offset": 37194,
+        "field_index": 43075,
+        "raw_hex": "0a",
+        "value": 5
+      },
+      "Divide": {
+        "data_offset": 37192,
+        "field_index": 43073,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "Floor": {
+        "data_offset": 37193,
+        "field_index": 43074,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "Multiply": {
+        "data_offset": 37191,
+        "field_index": 43072,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "RoundToInt": {
+        "data_offset": 37195,
+        "field_index": 43076,
+        "raw_hex": "0c",
+        "value": 6
+      }
+    },
+    "Beyond.Gameplay.Core.ObjectType": {
+      "AbilityEntity": {
+        "data_offset": 47885,
+        "field_index": 57097,
+        "raw_hex": "8400",
+        "value": 512
+      },
+      "All": {
+        "data_offset": 47874,
+        "field_index": 57089,
+        "raw_hex": "01",
+        "value": -1
+      },
+      "Character": {
+        "data_offset": 47876,
+        "field_index": 57091,
+        "raw_hex": "10",
+        "value": 8
+      },
+      "CinematicEntity": {
+        "data_offset": 47887,
+        "field_index": 57098,
+        "raw_hex": "8800",
+        "value": 1024
+      },
+      "Creature": {
+        "data_offset": 47891,
+        "field_index": 57100,
+        "raw_hex": "a000",
+        "value": 4096
+      },
+      "Enemy": {
+        "data_offset": 47877,
+        "field_index": 57092,
+        "raw_hex": "20",
+        "value": 16
+      },
+      "EnemyAll": {
+        "data_offset": 47905,
+        "field_index": 57104,
+        "raw_hex": "c0008020",
+        "value": 16400
+      },
+      "EnemyPart": {
+        "data_offset": 47897,
+        "field_index": 57102,
+        "raw_hex": "c0008000",
+        "value": 16384
+      },
+      "FactoryRegion": {
+        "data_offset": 47881,
+        "field_index": 57095,
+        "raw_hex": "8100",
+        "value": 128
+      },
+      "GodEntity": {
+        "data_offset": 47893,
+        "field_index": 57101,
+        "raw_hex": "c0004000",
+        "value": 8192
+      },
+      "Interactive": {
+        "data_offset": 47878,
+        "field_index": 57093,
+        "raw_hex": "40",
+        "value": 32
+      },
+      "Invalid": {
+        "data_offset": 47875,
+        "field_index": 57090,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "Npc": {
+        "data_offset": 47883,
+        "field_index": 57096,
+        "raw_hex": "8200",
+        "value": 256
+      },
+      "Projectile": {
+        "data_offset": 47879,
+        "field_index": 57094,
+        "raw_hex": "8080",
+        "value": 64
+      },
+      "RemoteFactoryEntity": {
+        "data_offset": 47889,
+        "field_index": 57099,
+        "raw_hex": "9000",
+        "value": 2048
+      },
+      "SocialBuilding": {
+        "data_offset": 47901,
+        "field_index": 57103,
+        "raw_hex": "c0010000",
+        "value": 32768
+      }
+    },
+    "Beyond.Gameplay.Core.ObjectTypeIndex": {
+      "AbilityEntity": {
+        "data_offset": 47866,
+        "field_index": 57080,
+        "raw_hex": "12",
+        "value": 9
+      },
+      "Character": {
+        "data_offset": 47860,
+        "field_index": 57074,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "CinematicEntity": {
+        "data_offset": 47867,
+        "field_index": 57081,
+        "raw_hex": "14",
+        "value": 10
+      },
+      "Creature": {
+        "data_offset": 47869,
+        "field_index": 57083,
+        "raw_hex": "18",
+        "value": 12
+      },
+      "Enemy": {
+        "data_offset": 47861,
+        "field_index": 57075,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "EnemyPart": {
+        "data_offset": 47871,
+        "field_index": 57085,
+        "raw_hex": "1c",
+        "value": 14
+      },
+      "Enum": {
+        "data_offset": 47873,
+        "field_index": 57087,
+        "raw_hex": "20",
+        "value": 16
+      },
+      "FactoryRegion": {
+        "data_offset": 47864,
+        "field_index": 57078,
+        "raw_hex": "0e",
+        "value": 7
+      },
+      "GodEntity": {
+        "data_offset": 47870,
+        "field_index": 57084,
+        "raw_hex": "1a",
+        "value": 13
+      },
+      "Interactive": {
+        "data_offset": 47862,
+        "field_index": 57076,
+        "raw_hex": "0a",
+        "value": 5
+      },
+      "Invalid": {
+        "data_offset": 47859,
+        "field_index": 57073,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Npc": {
+        "data_offset": 47865,
+        "field_index": 57079,
+        "raw_hex": "10",
+        "value": 8
+      },
+      "Projectile": {
+        "data_offset": 47863,
+        "field_index": 57077,
+        "raw_hex": "0c",
+        "value": 6
+      },
+      "RemoteFactoryEntity": {
+        "data_offset": 47868,
+        "field_index": 57082,
+        "raw_hex": "16",
+        "value": 11
+      },
+      "SocialBuilding": {
+        "data_offset": 47872,
+        "field_index": 57086,
+        "raw_hex": "1e",
+        "value": 15
+      }
+    },
+    "Beyond.Gameplay.Core.StoreAtbValue+AtbValueType": {
+      "All": {
+        "data_offset": 37320,
+        "field_index": 44109,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "ExcludeReturned": {
+        "data_offset": 37322,
+        "field_index": 44111,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "ReturnedOnly": {
+        "data_offset": 37321,
+        "field_index": 44110,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
+    "Beyond.Gameplay.Core.StoreAttributeValue+StoreAttributeType": {
+      "BaseNonConverted": {
+        "data_offset": 37323,
+        "field_index": 44115,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "FinalNonConverted": {
+        "data_offset": 37324,
+        "field_index": 44116,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
+    "Beyond.Gameplay.DamageDecorateMask": {
+      "Airborne": {
+        "data_offset": 10397,
+        "field_index": 8964,
+        "raw_hex": "0080000000000000",
+        "value": 32768
+      },
+      "All": {
+        "data_offset": 10573,
+        "field_index": 8986,
+        "raw_hex": "ffffffffffffffff",
+        "value": 18446744073709551615
+      },
+      "Bomb": {
+        "data_offset": 10365,
+        "field_index": 8960,
+        "raw_hex": "0008000000000000",
+        "value": 2048
+      },
+      "Burning": {
+        "data_offset": 10477,
+        "field_index": 8974,
+        "raw_hex": "0000000400000000",
+        "value": 67108864
+      },
+      "Burst": {
+        "data_offset": 10549,
+        "field_index": 8983,
+        "raw_hex": "0000c00300000000",
+        "value": 62914560
+      },
+      "CanBreakWeakness": {
+        "data_offset": 10373,
+        "field_index": 8961,
+        "raw_hex": "0010000000000000",
+        "value": 4096
+      },
+      "ComboSkill": {
+        "data_offset": 10381,
+        "field_index": 8962,
+        "raw_hex": "0020000000000000",
+        "value": 8192
+      },
+      "Crush": {
+        "data_offset": 10389,
+        "field_index": 8963,
+        "raw_hex": "0040000000000000",
+        "value": 16384
+      },
+      "CrystAbnormalInitial": {
+        "data_offset": 10317,
+        "field_index": 8954,
+        "raw_hex": "2000000000000000",
+        "value": 32
+      },
+      "CrystBurst": {
+        "data_offset": 10453,
+        "field_index": 8971,
+        "raw_hex": "0000800000000000",
+        "value": 8388608
+      },
+      "DashAttack": {
+        "data_offset": 10421,
+        "field_index": 8967,
+        "raw_hex": "0000020000000000",
+        "value": 131072
+      },
+      "Dot": {
+        "data_offset": 10493,
+        "field_index": 8976,
+        "raw_hex": "0000001000000000",
+        "value": 268435456
+      },
+      "FireAbnormalInitial": {
+        "data_offset": 10301,
+        "field_index": 8952,
+        "raw_hex": "0800000000000000",
+        "value": 8
+      },
+      "FireBurst": {
+        "data_offset": 10445,
+        "field_index": 8970,
+        "raw_hex": "0000400000000000",
+        "value": 4194304
+      },
+      "Fracture": {
+        "data_offset": 10413,
+        "field_index": 8966,
+        "raw_hex": "0000004000000000",
+        "value": 1073741824
+      },
+      "IgniteByMud": {
+        "data_offset": 10325,
+        "field_index": 8955,
+        "raw_hex": "4000000000000000",
+        "value": 64
+      },
+      "IgniteDamageSet": {
+        "data_offset": 10533,
+        "field_index": 8981,
+        "raw_hex": "3800d00f00000000",
+        "value": 265289784
+      },
+      "IgnoreDodgeImmune": {
+        "data_offset": 10517,
+        "field_index": 8979,
+        "raw_hex": "00000c0000000000",
+        "value": 786432
+      },
+      "IgnoreGuardDodge": {
+        "data_offset": 10285,
+        "field_index": 8950,
+        "raw_hex": "0200000000000000",
+        "value": 2
+      },
+      "IgnoreSkillImmune": {
+        "data_offset": 10525,
+        "field_index": 8980,
+        "raw_hex": "0000080000000000",
+        "value": 524288
+      },
+      "KnockDown": {
+        "data_offset": 10405,
+        "field_index": 8965,
+        "raw_hex": "0000010000000000",
+        "value": 65536
+      },
+      "NaturalAbnormalInitial": {
+        "data_offset": 10429,
+        "field_index": 8968,
+        "raw_hex": "0000100000000000",
+        "value": 1048576
+      },
+      "NaturalBurst": {
+        "data_offset": 10469,
+        "field_index": 8973,
+        "raw_hex": "0000000200000000",
+        "value": 33554432
+      },
+      "None": {
+        "data_offset": 10269,
+        "field_index": 8948,
+        "raw_hex": "0000000000000000",
+        "value": 0
+      },
+      "NormalAttack": {
+        "data_offset": 10333,
+        "field_index": 8956,
+        "raw_hex": "8000000000000000",
+        "value": 128
+      },
+      "NormalAttackDamageSet": {
+        "data_offset": 10541,
+        "field_index": 8982,
+        "raw_hex": "8404020000000000",
+        "value": 132228
+      },
+      "NormalAttackLastCombo": {
+        "data_offset": 10437,
+        "field_index": 8969,
+        "raw_hex": "0000200000000000",
+        "value": 2097152
+      },
+      "NormalSkill": {
+        "data_offset": 10341,
+        "field_index": 8957,
+        "raw_hex": "0001000000000000",
+        "value": 256
+      },
+      "PhysicalInfliction": {
+        "data_offset": 10565,
+        "field_index": 8985,
+        "raw_hex": "00c0014000000000",
+        "value": 1073856512
+      },
+      "PlungingAttack": {
+        "data_offset": 10357,
+        "field_index": 8959,
+        "raw_hex": "0004000000000000",
+        "value": 1024
+      },
+      "PoiseBreak": {
+        "data_offset": 10277,
+        "field_index": 8949,
+        "raw_hex": "0100000000000000",
+        "value": 1
+      },
+      "PowerAttack": {
+        "data_offset": 10293,
+        "field_index": 8951,
+        "raw_hex": "0400000000000000",
+        "value": 4
+      },
+      "PulseAbnormalInitial": {
+        "data_offset": 10309,
+        "field_index": 8953,
+        "raw_hex": "1000000000000000",
+        "value": 16
+      },
+      "PulseBurst": {
+        "data_offset": 10461,
+        "field_index": 8972,
+        "raw_hex": "0000000100000000",
+        "value": 16777216
+      },
+      "RemainArea": {
+        "data_offset": 10501,
+        "field_index": 8977,
+        "raw_hex": "0000002000000000",
+        "value": 536870912
+      },
+      "Shatter": {
+        "data_offset": 10485,
+        "field_index": 8975,
+        "raw_hex": "0000000800000000",
+        "value": 134217728
+      },
+      "SpellAbnormalInitial": {
+        "data_offset": 10557,
+        "field_index": 8984,
+        "raw_hex": "3800100000000000",
+        "value": 1048632
+      },
+      "TalentDamage": {
+        "data_offset": 10509,
+        "field_index": 8978,
+        "raw_hex": "0000008000000000",
+        "value": 2147483648
+      },
+      "UltimateSkill": {
+        "data_offset": 10349,
+        "field_index": 8958,
+        "raw_hex": "0002000000000000",
+        "value": 512
+      }
+    },
+    "Beyond.Gameplay.DamageDecorateType": {
+      "Airborne": {
+        "data_offset": 10251,
+        "field_index": 8929,
+        "raw_hex": "1e",
+        "value": 15
+      },
+      "Bomb": {
+        "data_offset": 10247,
+        "field_index": 8925,
+        "raw_hex": "16",
+        "value": 11
+      },
+      "Burning": {
+        "data_offset": 10262,
+        "field_index": 8940,
+        "raw_hex": "34",
+        "value": 26
+      },
+      "CanBreakWeakness": {
+        "data_offset": 10248,
+        "field_index": 8926,
+        "raw_hex": "18",
+        "value": 12
+      },
+      "ComboSkill": {
+        "data_offset": 10249,
+        "field_index": 8927,
+        "raw_hex": "1a",
+        "value": 13
+      },
+      "Crush": {
+        "data_offset": 10250,
+        "field_index": 8928,
+        "raw_hex": "1c",
+        "value": 14
+      },
+      "CrystAbnormalInitial": {
+        "data_offset": 10241,
+        "field_index": 8919,
+        "raw_hex": "0a",
+        "value": 5
+      },
+      "CrystBurst": {
+        "data_offset": 10259,
+        "field_index": 8937,
+        "raw_hex": "2e",
+        "value": 23
+      },
+      "DashAttack": {
+        "data_offset": 10253,
+        "field_index": 8931,
+        "raw_hex": "22",
+        "value": 17
+      },
+      "Dot": {
+        "data_offset": 10264,
+        "field_index": 8942,
+        "raw_hex": "38",
+        "value": 28
+      },
+      "FireAbnormalInitial": {
+        "data_offset": 10239,
+        "field_index": 8917,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "FireBurst": {
+        "data_offset": 10258,
+        "field_index": 8936,
+        "raw_hex": "2c",
+        "value": 22
+      },
+      "Fracture": {
+        "data_offset": 10266,
+        "field_index": 8944,
+        "raw_hex": "3c",
+        "value": 30
+      },
+      "IgniteByMud": {
+        "data_offset": 10242,
+        "field_index": 8920,
+        "raw_hex": "0c",
+        "value": 6
+      },
+      "IgnoreDodgeImmune": {
+        "data_offset": 10254,
+        "field_index": 8932,
+        "raw_hex": "24",
+        "value": 18
+      },
+      "IgnoreGuardDodge": {
+        "data_offset": 10237,
+        "field_index": 8915,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "IgnoreSkillImmune": {
+        "data_offset": 10255,
+        "field_index": 8933,
+        "raw_hex": "26",
+        "value": 19
+      },
+      "KnockDown": {
+        "data_offset": 10252,
+        "field_index": 8930,
+        "raw_hex": "20",
+        "value": 16
+      },
+      "Max": {
+        "data_offset": 10268,
+        "field_index": 8946,
+        "raw_hex": "40",
+        "value": 32
+      },
+      "NaturalAbnormalInitial": {
+        "data_offset": 10256,
+        "field_index": 8934,
+        "raw_hex": "28",
+        "value": 20
+      },
+      "NaturalBurst": {
+        "data_offset": 10261,
+        "field_index": 8939,
+        "raw_hex": "32",
+        "value": 25
+      },
+      "None": {
+        "data_offset": 10235,
+        "field_index": 8913,
+        "raw_hex": "01",
+        "value": -1
+      },
+      "NormalAttack": {
+        "data_offset": 10243,
+        "field_index": 8921,
+        "raw_hex": "0e",
+        "value": 7
+      },
+      "NormalAttackLastCombo": {
+        "data_offset": 10257,
+        "field_index": 8935,
+        "raw_hex": "2a",
+        "value": 21
+      },
+      "NormalSkill": {
+        "data_offset": 10244,
+        "field_index": 8922,
+        "raw_hex": "10",
+        "value": 8
+      },
+      "PlungingAttack": {
+        "data_offset": 10246,
+        "field_index": 8924,
+        "raw_hex": "14",
+        "value": 10
+      },
+      "PoiseBreak": {
+        "data_offset": 10236,
+        "field_index": 8914,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "PowerAttack": {
+        "data_offset": 10238,
+        "field_index": 8916,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "PulseAbnormalInitial": {
+        "data_offset": 10240,
+        "field_index": 8918,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "PulseBurst": {
+        "data_offset": 10260,
+        "field_index": 8938,
+        "raw_hex": "30",
+        "value": 24
+      },
+      "RemainArea": {
+        "data_offset": 10265,
+        "field_index": 8943,
+        "raw_hex": "3a",
+        "value": 29
+      },
+      "Shatter": {
+        "data_offset": 10263,
+        "field_index": 8941,
+        "raw_hex": "36",
+        "value": 27
+      },
+      "TalentDamage": {
+        "data_offset": 10267,
+        "field_index": 8945,
+        "raw_hex": "3e",
+        "value": 31
+      },
+      "UltimateSkill": {
+        "data_offset": 10245,
+        "field_index": 8923,
+        "raw_hex": "12",
+        "value": 9
+      }
+    },
+    "Beyond.Gameplay.GainAtbMethod": {
+      "Gain": {
+        "data_offset": 10623,
+        "field_index": 9043,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Return": {
+        "data_offset": 10624,
+        "field_index": 9044,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
+    "Beyond.Gameplay.GainAtbType": {
+      "Default": {
+        "data_offset": 10619,
+        "field_index": 9038,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "NormalAttack": {
+        "data_offset": 10620,
+        "field_index": 9039,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "PowerAttack": {
+        "data_offset": 10621,
+        "field_index": 9040,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "Skill": {
+        "data_offset": 10622,
+        "field_index": 9041,
+        "raw_hex": "06",
+        "value": 3
+      }
+    },
+    "Beyond.Gameplay.PhysicalInflictionType": {
+      "Airborne": {
+        "data_offset": 11126,
+        "field_index": 9407,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Crush": {
+        "data_offset": 11129,
+        "field_index": 9410,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "Fracture": {
+        "data_offset": 11128,
+        "field_index": 9409,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "KnockDown": {
+        "data_offset": 11127,
+        "field_index": 9408,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
+    "Beyond.Gameplay.SkillType": {
+      "AttachSkill": {
+        "data_offset": 10648,
+        "field_index": 9074,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "Attack": {
+        "data_offset": 10645,
+        "field_index": 9071,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "BreakingAttack": {
+        "data_offset": 10646,
+        "field_index": 9072,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "ComboSkill": {
+        "data_offset": 10650,
+        "field_index": 9076,
+        "raw_hex": "0c",
+        "value": 6
+      },
+      "Dodge": {
+        "data_offset": 10649,
+        "field_index": 9075,
+        "raw_hex": "0a",
+        "value": 5
+      },
+      "ExtraActiveSkill": {
+        "data_offset": 10652,
+        "field_index": 9078,
+        "raw_hex": "10",
+        "value": 8
+      },
+      "NormalSkill": {
+        "data_offset": 10647,
+        "field_index": 9073,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "PassiveSkill": {
+        "data_offset": 10644,
+        "field_index": 9070,
+        "raw_hex": "01",
+        "value": -1
+      },
+      "UltimateSkill": {
+        "data_offset": 10651,
+        "field_index": 9077,
+        "raw_hex": "0e",
+        "value": 7
+      }
+    },
+    "Beyond.Gameplay.SpellAbnormalType": {
+      "Burst": {
+        "data_offset": 11135,
+        "field_index": 9417,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "Cryst": {
+        "data_offset": 11133,
+        "field_index": 9415,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "Fire": {
+        "data_offset": 11131,
+        "field_index": 9413,
+        "raw_hex": "00",
+        "value": 0
+      },
+      "Natural": {
+        "data_offset": 11134,
+        "field_index": 9416,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "None": {
+        "data_offset": 11130,
+        "field_index": 9412,
+        "raw_hex": "01",
+        "value": -1
+      },
+      "Pulse": {
+        "data_offset": 11132,
+        "field_index": 9414,
+        "raw_hex": "02",
+        "value": 1
+      }
+    },
+    "Beyond.Gameplay.TargetSource": {
+      "Context": {
+        "data_offset": 10637,
+        "field_index": 9061,
+        "raw_hex": "04",
+        "value": 2
+      },
+      "InstantSearch": {
+        "data_offset": 10638,
+        "field_index": 9062,
+        "raw_hex": "06",
+        "value": 3
+      },
+      "MainCharacter": {
+        "data_offset": 10640,
+        "field_index": 9064,
+        "raw_hex": "0a",
+        "value": 5
+      },
+      "MainTarget": {
+        "data_offset": 10641,
+        "field_index": 9065,
+        "raw_hex": "0c",
+        "value": 6
+      },
+      "Owner": {
+        "data_offset": 10639,
+        "field_index": 9063,
+        "raw_hex": "08",
+        "value": 4
+      },
+      "Source": {
+        "data_offset": 10636,
+        "field_index": 9060,
+        "raw_hex": "02",
+        "value": 1
+      },
+      "Target": {
+        "data_offset": 10635,
+        "field_index": 9059,
+        "raw_hex": "00",
+        "value": 0
+      }
+    }
+  },
+  "metadata_sha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+}
