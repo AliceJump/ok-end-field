@@ -117,16 +117,16 @@ class TestMechanismBattleDispatch(unittest.TestCase):
         self.assertFalse(self.logic._enemy_operation_paused())
         self.assertEqual(self.runtime.recommend_battle(0).reason, "unobserved_action_or_target")
 
-    def test_absent_unknown_button_mismatch_and_throttle_leave_legacy_dispatch(self):
+    def test_unknown_presence_does_not_block_mechanism_and_throttle_still_applies(self):
         self.logic.last_enemy_presence = EnemyPresence.UNKNOWN
-        with patch.object(self.runtime, "recommend_battle") as search:
+        with patch.object(self.logic, "_try_battle_token", return_value=True) as dispatch:
+            self.assertTrue(self.logic._try_mechanism_battle(100))
             self.assertFalse(self.logic._try_mechanism_battle(100))
-            self.assertFalse(self.logic._try_mechanism_battle(100))
-        search.assert_not_called()
-        self.assertEqual(sum("机制回退" in text for text in self.task.messages), 1)
+        dispatch.assert_called_once_with("1", 100, overflow=False, advance_cursor=True)
+        self.assertFalse(any("enemy_not_confirmed" in text for text in self.task.messages))
+
         self.task.now = .5
         self.runtime.observe_sp(100, .5)
-        self.logic.last_enemy_presence = EnemyPresence.PRESENT
         with patch.object(self.logic, "_battle_context", return_value=((), None, None)), patch.object(self.logic, "_try_battle_token") as dispatch:
             self.assertFalse(self.logic._try_mechanism_battle(100))
         dispatch.assert_not_called()
