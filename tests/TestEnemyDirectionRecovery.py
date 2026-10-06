@@ -97,9 +97,7 @@ class TestEnemyDirectionProbe(unittest.TestCase):
         self.assertAlmostEqual(observation.angle_deg, -160, delta=3)
 
     def test_red_arc_outside_ellipse_annulus_is_rejected(self):
-        observation = probe_enemy_direction_fast(
-            _marker_frame_many((170,), ellipse_scale=0.90)
-        )
+        observation = probe_enemy_direction_fast(_marker_frame_many((170,), ellipse_scale=0.90))
         self.assertIsNone(observation)
 
     def test_overlapping_long_run_splits_into_two_fixed_markers(self):
@@ -316,11 +314,7 @@ class TestEnemyDirectionProbe(unittest.TestCase):
 
             output_dir = Path(directory)
             raw_images = list(output_dir.glob("enemy_direction_*.raw.png"))
-            images = [
-                path
-                for path in output_dir.glob("enemy_direction_*.png")
-                if not path.name.endswith(".raw.png")
-            ]
+            images = [path for path in output_dir.glob("enemy_direction_*.png") if not path.name.endswith(".raw.png")]
             informs = list(output_dir.glob("enemy_direction_*.inform.json"))
             self.assertEqual(len(raw_images), 1)
             self.assertEqual(len(images), 1)

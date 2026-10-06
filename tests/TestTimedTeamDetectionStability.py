@@ -1,7 +1,7 @@
 import unittest
 from types import SimpleNamespace
 
-from src.patches.timed_team_detection_patch import _TimedTeamStability, _observe_once
+from src.patches.timed_team_detection_patch import _observe_once, _TimedTeamStability
 
 
 class _SlowTeamTask:

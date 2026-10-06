@@ -1,7 +1,6 @@
 """Enemy HP-bar presence probe tests."""
 
 import json
-import queue
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -12,11 +11,11 @@ import numpy as np
 
 from src.data.combat_observation import EnemyPresence
 from src.image.enemy_health_probe import (
+    _ENEMY_PRESENCE_ARTIFACT_QUEUE_MAXSIZE,
     ENEMY_ABSENT_CONFIRM_ROUNDS,
     ENEMY_HP_BGR_LOWER,
     ENEMY_NORMAL_HP_SLICES,
     KEY_SAVE_ENEMY_PRESENCE_FRAMES,
-    _ENEMY_PRESENCE_ARTIFACT_QUEUE_MAXSIZE,
     _has_enemy_hp_run,
     _queue_enemy_presence_artifact,
     probe_enemy_presence_fast,
