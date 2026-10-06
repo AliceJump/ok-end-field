@@ -239,19 +239,16 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             self.assertFalse(recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT))
         self.assertEqual(task.dodges, [])
 
-    def test_boss_present_still_uses_directional_dodge(self):
+    def test_boss_present_skips_direction_probe(self):
         task = _DirectionTask()
-        observation = EnemyDirectionObservation(angle_deg=180.0, score=30.0)
+        self.assertIsNone(task._enemy_hp_last_slice)
         with patch(
             "src.patches.enemy_direction_recovery_patch.probe_enemy_direction_fast",
-            return_value=observation,
+            side_effect=AssertionError("boss presence should keep direction detector idle"),
         ):
-            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT))
-            self.assertEqual(task.dodges, [])
-            task.now += 0.05
-            self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT))
+            self.assertFalse(recover_enemy_direction_if_needed(task, EnemyPresence.PRESENT))
 
-        self.assertEqual([direction for direction, _kwargs in task.dodges], ["a"])
+        self.assertEqual(task.dodges, [])
 
     def test_unknown_presence_tracks_without_dodging(self):
         task = _DirectionTask()
