@@ -108,6 +108,17 @@ class TestEnemyHealthProbe(unittest.TestCase):
         roi[58:64, 160:300] = BAR_BGR
         self.assertFalse(_has_enemy_hp_run(roi, 3840, 2160))
 
+    def test_short_hp_context_can_cross_normal_slice_boundary(self):
+        frame = _frame()
+        # Slice 0 ends at y=286 at 1080p. Keep the short pink candidate wholly
+        # inside slice 0 while placing only its supporting slot edge in slice 1.
+        frame[279:284, 800:821] = HP_BGR
+        frame[289:292, 780:900] = BAR_BGR
+        task = _ProbeHarness(frame)
+
+        self.assertEqual(probe_enemy_presence_fast(task), EnemyPresence.PRESENT)
+        self.assertEqual(getattr(task, "_enemy_hp_last_slice", None), 0)
+
     def test_normal_enemy_returns_present_and_reuses_slice(self):
         frame = _frame()
         frame[250:255, 800:920] = HP_BGR
