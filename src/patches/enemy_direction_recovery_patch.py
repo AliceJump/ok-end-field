@@ -15,7 +15,7 @@ _STABLE_MAX_GAP = 0.18
 _STABLE_ANGLE_TOLERANCE_DEG = 12.0
 _TARGET_LOCK_ANGLE_TOLERANCE_DEG = 12.0
 _TARGET_SWITCH_SCORE_RATIO = 1.25
-_DODGE_INTERVAL = 0.25
+_DODGE_INTERVAL = 1.0
 _CENTERING_GUARD_SECONDS = 0.20
 _DODGE_PRE_HOLD = 0.03
 _DODGE_DOWN_TIME = 0.02
@@ -138,7 +138,8 @@ def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
 
     The stable marker angle is quantized to the nearest of eight movement
     directions: W/A/S/D and the four diagonals. Recovery never rotates the camera
-    itself. Each dodge briefly suppresses middle-button centering while the dodge
+    itself. Enemy-directed recovery dodges are rate-limited to at most one per
+    second. Each dodge briefly suppresses middle-button centering while the dodge
     is in progress and for a short grace period afterward; normal centering
     frequency is otherwise unchanged.
 
