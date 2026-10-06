@@ -6,14 +6,16 @@ import time
 from collections import deque
 
 from src.data.character_mechanics import load_character_mechanics, mechanic_blockers
+from src.data.combat_catalog import build_combat_catalog
 from src.data.combat_observation import (
     ActionBlockReason,
     EnemyPresence,
     normalize_action_block_reason,
     normalize_enemy_presence,
 )
+from src.data.combat_runtime import CombatRuntime
 from src.data.skill_rotation import generate_damage_rotation
-from src.data.skill_timing import SkillTiming, load_skill_timings
+from src.data.skill_timing import SkillTiming, SkillTimingStore, load_skill_timings
 from src.data.team_phase_planner import (
     CombatPhase,
     TeamPhasePlanner,
@@ -92,6 +94,10 @@ class TimedCombatLogic:
         self.last_action_attempt = None
         self.phase_planner = TeamPhasePlanner()
         self._last_phase_log = None
+        self.combat_runtime = None
+        self.last_enemy_presence = EnemyPresence.UNKNOWN
+        self.next_mechanism_probe_at = 0.0
+        self._mechanism_status = None
 
     def _hold(self, enabled, force=False):
         if enabled:
@@ -119,9 +125,12 @@ class TimedCombatLogic:
         """
         probe = getattr(self.task, "probe_enemy_presence", None)
         state = normalize_enemy_presence(probe() if callable(probe) else None)
+        self.last_enemy_presence = state
         now = self._clock()
 
         if state == EnemyPresence.ABSENT:
+            if self.combat_runtime is not None and self.combat_runtime.world._actions_started:
+                self.combat_runtime.note_observation_gap("Target lost after modeled actions")
             if self.enemy_pause_started is None:
                 self.enemy_pause_started = now
                 self.task.log_info(
@@ -153,6 +162,8 @@ class TimedCombatLogic:
         self.last_action_attempt = (self._clock(), kind, token)
 
     def _cancel_unstarted_action(self, kind, token, now):
+        if self.combat_runtime is not None:
+            self.combat_runtime.cancel(token, kind)
         if kind == "battle":
             if self.pending is not None and self.pending[1] == token:
                 self.pending = None
@@ -229,6 +240,8 @@ class TimedCombatLogic:
         self.expected_sp = value
         self.last_observed_sp = value
         self.last_visual_sp_wall_time = wall_now
+        if self.combat_runtime is not None:
+            self.combat_runtime.observe_sp(value, now)
         return value
 
     def _project_probe_expected(self, wall_now=None):
@@ -269,6 +282,19 @@ class TimedCombatLogic:
         self.next_sp_probe_at = now + self._SP_UNKNOWN_PROBE_INTERVAL
         return -1.0
 
+    def _stage_combat_action(self, token, kind, profiles, now, *, energy_ready=False):
+        runtime = self.combat_runtime
+        if runtime is None:
+            return True
+        runtime.cancel()
+        keys = {profile.skill_id for profile in profiles}
+        candidates = [p for p in runtime.catalog.available(token, kind) if p.key in keys]
+        if not candidates:
+            return not runtime.catalog.candidates(token, kind)
+        # Administrator gender entries share a button. The context has already
+        # narrowed genuine action replacements through their ready predicates.
+        return runtime.stage(candidates[0], now, energy_ready=energy_ready)
+
     def _note_assumed_sp_spend(self, before_sp, expected_cost):
         """Apply unverified low-cost spending to prediction only."""
         if before_sp < 0:
@@ -295,6 +321,8 @@ class TimedCombatLogic:
         )
 
     def _observe_phase_sp(self, sp):
+        if self.combat_runtime is not None:
+            self.combat_runtime.advance(self._clock())
         old, new = self.phase_planner.observe_sp(sp)
         self._log_phase_transition(old, new)
         return new
@@ -362,6 +390,25 @@ class TimedCombatLogic:
     def _battle_context(self, token):
         """Resolve the currently visible battle-button phase and its SP semantics."""
         name = self.team[int(token) - 1]
+        runtime = self.combat_runtime
+        if runtime is not None and runtime.catalog.candidates(token, "battle"):
+            runtime.advance(self._clock())
+            available = runtime.catalog.available(token, "battle")
+            if not available:
+                return (), None, None
+            selected = available[0]
+            profiles = self.store.battle_phase_profiles(name) or self.store.profiles(name, "battle")
+            matching = tuple(p for p in profiles if p.skill_id == selected.key)
+            if matching:
+                # Immediate native refunds change the observable SP drop, but
+                # never lower the SP budget needed to start the action.
+                predicted = runtime.world.fork()
+                before = predicted.sp
+                if predicted.start(selected, action_id="confirmation-preview"):
+                    net_cost = before - predicted.sp
+                else:
+                    net_cost = selected.sp_cost
+                return matching, max(selected.sp_cost, selected.gate or 0), max(0, net_cost)
         mechanic = self._mechanic_for_token(token)
         if mechanic is not None and mechanic.archetype == "multi_stage_battle":
             phases = self.store.battle_phase_profiles(name)
@@ -420,6 +467,9 @@ class TimedCombatLogic:
 
     def _accept_battle_skill(self, token, advance_cursor=True):
         self._clear_action_attempt_feedback()
+        if self.combat_runtime is not None:
+            if not self.combat_runtime.confirm(token, "battle", self._clock()):
+                self.combat_runtime.note_observation_gap(f"Unmodeled accepted battle: {token}")
         self._observe_battle()
         self._set_cooldowns()
         self._activate_state(token, self.state_specs.get(token), "战技")
@@ -448,6 +498,8 @@ class TimedCombatLogic:
                 f"时间排轴: 战技 {token} 技力消耗已确认 ({before_sp:.1f}->{current_sp:.1f}, 阈值 {minimum_drop:.1f})"
             )
         elif now - self.started >= 0.8:
+            if self.combat_runtime is not None:
+                self.combat_runtime.cancel(token, "battle")
             self.pending = None
             self._clear_action_attempt_feedback()
             self.pending_advance_cursor = True
@@ -536,6 +588,9 @@ class TimedCombatLogic:
         previous_phase_indices = dict(self.battle_phase_indices)
 
         if reset_runtime:
+            self.next_mechanism_probe_at = 0.0
+            self._mechanism_status = None
+            self.last_enemy_presence = EnemyPresence.UNKNOWN
             self.disabled_slots.clear()
             self.dead_slot_evidence.clear()
             self.battle_retry_after.clear()
@@ -595,6 +650,14 @@ class TimedCombatLogic:
             str(index + 1): self.store.ultimate_state(name) for index, name in enumerate(team) if name != "?"
         }
         self.damage_quotes = load_damage_quotes(team)
+        if isinstance(self.store, SkillTimingStore):
+            catalog = build_combat_catalog(team, self.store)
+            if reset_runtime or self.combat_runtime is None:
+                self.combat_runtime = CombatRuntime(catalog, epoch=self._clock())
+            elif filled_slots:
+                self.combat_runtime.extend_catalog(catalog, (token for token, _ in filled_slots), self._clock())
+            for diagnostic in catalog.diagnostics:
+                self.task.log_info(f"时间排轴机制数据: {diagnostic}")
 
         burst_plans = build_team_burst_plans(team, self.mechanics, self.store)
         preferred_slots = tuple(token for token in self.ult_order if self._slot_available(token))
@@ -758,6 +821,9 @@ class TimedCombatLogic:
             return
 
         self.disabled_slots.update(newly_disabled)
+        if self.combat_runtime is not None:
+            for token in newly_disabled:
+                self.combat_runtime.disable_actor(token, self._clock())
         for token in newly_disabled:
             self.dead_slot_evidence.pop(token, None)
         self._sync_task_team_slots()
@@ -847,6 +913,16 @@ class TimedCombatLogic:
             return False
 
         profiles, sp_gate, expected_cost = self._battle_context(token)
+        if self.plan is not None and sp_gate is not None:
+            followup = next((item for item in self.plan.support_followups if item[0] == token), None)
+            if followup is not None and self._slot_available(followup[1]):
+                _, next_token, delay = followup
+                next_profiles, _, _ = self._battle_context(next_token)
+                if not next_profiles or now + delay < self.state_until.get(next_token, 0):
+                    return False
+                if any(now + delay < self.cooldowns.get(profile.skill_id, 0) for profile in next_profiles):
+                    return False
+                sp_gate = max(sp_gate, dict(self.plan.required_sp).get(token, sp_gate))
         if (
             not profiles
             or sp_gate is None
@@ -859,8 +935,10 @@ class TimedCombatLogic:
         if not self.phase_planner.can_spend(token, "battle", sp, expected_cost):
             return False
 
-        self.phase_planner.start_if_ready(token, "battle")
         started = self._clock()
+        if not self._stage_combat_action(token, "battle", profiles, started):
+            return False
+        self.phase_planner.start_if_ready(token, "battle")
         self._arm_action_feedback()
         self.task.send_key(token)
         self._note_action_attempt("battle", token)
@@ -907,7 +985,57 @@ class TimedCombatLogic:
                 self.task.sleep(self._ACTION_FEEDBACK_PROBE_GAP)
         return False
 
+    def _try_mechanism_battle(self, sp, overflow=False):
+        """Replan the first action only; dispatch through existing cast safeguards."""
+        runtime = self.combat_runtime
+        now = self._clock()
+        if runtime is None or now < self.next_mechanism_probe_at:
+            return False
+        self.next_mechanism_probe_at = now + 0.5
+        if self.last_enemy_presence != EnemyPresence.PRESENT:
+            reason = "enemy_not_confirmed"
+            recommendation = None
+        elif self.pending is not None or self.forced_battle_token is not None:
+            return False
+        else:
+            recommendation = runtime.recommend_battle(now)
+            reason = recommendation.reason
+        if recommendation is not None and recommendation.program is not None:
+            program = recommendation.program
+            profiles, _, _ = self._battle_context(program.actor)
+            if not any(profile.skill_id == program.key for profile in profiles):
+                reason = "button_phase_mismatch"
+            elif self._try_battle_token(
+                program.actor,
+                sp,
+                overflow=overflow,
+                advance_cursor=bool(self.order and self.order[self.cursor] == program.actor),
+            ):
+                self._mechanism_status = "selected"
+                template = "时间排轴机制选择: {actor}/{skill}，预测序列 {sequence}，伤害 {damage:.1f}，耗时 {seconds:.2f}s"
+                translate = getattr(self.task, "tr", lambda text: text)
+                self.task.log_info(
+                    translate(template).format(
+                        actor=program.actor,
+                        skill=program.key,
+                        sequence=" -> ".join(recommendation.plan.actions),
+                        damage=recommendation.plan.damage,
+                        seconds=recommendation.plan.seconds,
+                    )
+                )
+                return True
+            else:
+                reason = "existing_cast_guard"
+        if reason != self._mechanism_status:
+            self._mechanism_status = reason
+            template = "时间排轴机制回退: {reason}；沿用现有排轴"
+            translate = getattr(self.task, "tr", lambda text: text)
+            self.task.log_info(translate(template).format(reason=reason))
+        return False
+
     def _try_planned_battle_skill(self, sp, overflow=False):
+        if self._try_mechanism_battle(sp, overflow=overflow):
+            return True
         if not self.order:
             return False
         return self._try_battle_token(
@@ -935,6 +1063,9 @@ class TimedCombatLogic:
     def _try_overflow_battle_skill(self, sp, checkpoint):
         if sp < self.sp_pressure_threshold or not self.order:
             return False
+
+        if self._try_mechanism_battle(sp, overflow=True):
+            return True
 
         current = self.order[self.cursor]
         if self._try_battle_token(current, sp, overflow=True, advance_cursor=True):
@@ -987,6 +1118,11 @@ class TimedCombatLogic:
     def step(self):
         """One refreshed HUD observation; no legacy strategy switches are read."""
         now = self._clock()
+        if self.combat_runtime is not None:
+            detector = getattr(self.task, "detect_current_char_index", None)
+            current = detector() if detector is not None else None
+            if isinstance(current, int) and 0 <= current < len(self.team):
+                self.combat_runtime.observe_main_control(str(current + 1), now)
         if self._probe_action_feedback() is not None:
             return
         self._confirm_battle(now)
@@ -1037,6 +1173,8 @@ class TimedCombatLogic:
             started = self._clock()
             self._arm_action_feedback()
             if self.task.use_link_skill():
+                if self.combat_runtime is not None:
+                    self.combat_runtime.note_observation_gap("Link actor/phase not observed")
                 self._note_action_attempt("link")
                 if links:
                     self._begin(links, started, kind="link")
@@ -1064,10 +1202,15 @@ class TimedCombatLogic:
         ready_ults.sort(key=lambda item: -item[0])
         for _rate, token, profiles in ready_ults:
             started = self._clock()
+            if not self._stage_combat_action(token, "ult", profiles, started, energy_ready=True):
+                continue
             self._arm_action_feedback()
             if self.task.use_ult(ult_sequence=token, wait_for_team_recovery=True):
                 self._note_action_attempt("ult", token)
                 ended = self._clock()
+                if self.combat_runtime is not None:
+                    if not self.combat_runtime.confirm(token, "ult", ended):
+                        self.combat_runtime.note_observation_gap(f"Unmodeled accepted ultimate: {token}")
                 self._observe_bonus("ult", token)
                 self._observe_phase_action(token, "ult")
                 self._set_cooldowns(profiles, started)
@@ -1090,6 +1233,8 @@ class TimedCombatLogic:
                 if self._try_overflow_battle_skill(post_ult_sp, "终结技恢复"):
                     return
                 return
+            if self.combat_runtime is not None:
+                self.combat_runtime.cancel(token, "ult")
 
         if self._try_planned_battle_skill(sp):
             return
