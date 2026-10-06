@@ -126,17 +126,15 @@ def _note_observation(task, observation: EnemyDirectionObservation, now: float) 
 def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
     """Dodge toward a stable off-screen marker when enemy absence is actionable.
 
-    A normal-enemy HP hit already provides an on-screen target, so the direction
-    probe stays idle. Boss HP is intentionally different: its fixed top-center
-    bar proves the boss exists but says nothing about camera direction, therefore
-    boss PRESENT observations still allow this recovery probe.
+    Any confirmed enemy HP presence, including a boss HP bar, proves that combat
+    still has a visible enemy target. In that state the direction probe stays
+    completely idle instead of trying to infer an off-screen recovery direction.
 
     Direction evidence must remain stable for two nearby frames before it can
     trigger movement. UNKNOWN enemy presence is observation-only: marker state
     and hysteresis continue to update, but no dodge is emitted until the HP probe
-    resolves to ABSENT (or boss PRESENT keeps direction recovery applicable).
-    This prevents one incomplete HP scan plus one transient red effect from
-    becoming an immediate movement command.
+    resolves to ABSENT. This prevents one incomplete HP scan plus one transient
+    red effect from becoming an immediate movement command.
 
     When multiple marker primitives are visible, the previously tracked nearby
     marker keeps the lock. A rival marker may take over only after becoming at
@@ -156,10 +154,7 @@ def recover_enemy_direction_if_needed(task, presence: EnemyPresence) -> bool:
 
     Returns True while a direction marker is currently being tracked.
     """
-    normal_target_visible = presence == EnemyPresence.PRESENT and isinstance(
-        getattr(task, "_enemy_hp_last_slice", None), int
-    )
-    if normal_target_visible:
+    if presence == EnemyPresence.PRESENT:
         _reset_direction_state(task)
         return False
 
