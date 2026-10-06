@@ -164,9 +164,9 @@ class TestEnemyDirectionProbe(unittest.TestCase):
             self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
             task.now += 0.05
             self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
-            task.now += 0.05
+            task.now += 0.12
             self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
-            task.now += 0.21
+            task.now += 0.14
             self.assertTrue(recover_enemy_direction_if_needed(task, EnemyPresence.ABSENT))
 
         self.assertEqual([direction for direction, _kwargs in task.dodges], ["d", "a"])
