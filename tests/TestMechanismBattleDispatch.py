@@ -103,19 +103,18 @@ class TestMechanismBattleDispatch(unittest.TestCase):
         self.assertEqual(self.runtime.recommend_battle(.6).reason, "unresolved_action")
         self.assertEqual(self.task.keys, [])
 
-    def test_pending_and_unidentified_link_or_lost_target_block_recommendations(self):
+    def test_pending_blocks_but_observation_gaps_are_diagnostic_only(self):
         self.runtime.stage(self.producer, 0)
         self.assertEqual(self.runtime.recommend_battle(0).reason, "cast_pending")
         self.runtime.cancel()
         self.runtime.note_observation_gap("Link actor/phase not observed")
-        self.assertEqual(self.runtime.recommend_battle(0).reason, "unobserved_action_or_target")
-        self.runtime.observation_gaps.clear()
+        self.assertEqual(self.runtime.recommend_battle(0).program, self.producer)
         self.world.start(self.producer, action_id="accepted")
         self.task.probe_enemy_presence = lambda: EnemyPresence.ABSENT
         self.assertTrue(self.logic._enemy_operation_paused())
         self.task.probe_enemy_presence = lambda: EnemyPresence.PRESENT
         self.assertFalse(self.logic._enemy_operation_paused())
-        self.assertEqual(self.runtime.recommend_battle(0).reason, "unobserved_action_or_target")
+        self.assertNotEqual(self.runtime.recommend_battle(0).reason, "unobserved_action_or_target")
 
     def test_unknown_presence_does_not_block_mechanism_and_throttle_still_applies(self):
         self.logic.last_enemy_presence = EnemyPresence.UNKNOWN
@@ -146,7 +145,7 @@ class TestMechanismBattleDispatch(unittest.TestCase):
         with self.assertRaises(ValueError):
             plan_action_sequence(self.world, (self.producer,), timeout=float("nan"))
 
-    def test_actual_link_dispatch_marks_history_without_inventing_an_actor(self):
+    def test_actual_link_dispatch_marks_history_without_disabling_search(self):
         self.task.link = True
         with patch.object(self.logic, "_allowed", return_value=True):
             self.logic.step()
@@ -154,7 +153,7 @@ class TestMechanismBattleDispatch(unittest.TestCase):
         self.assertIn("Link actor/phase not observed", self.runtime.observation_gaps)
         self.assertEqual(self.world.enemies["target"].shred_stacks, 0)
         self.assertEqual(self.world.damage, 0)
-        self.assertEqual(self.runtime.recommend_battle(self.task.now).reason, "unobserved_action_or_target")
+        self.assertNotEqual(self.runtime.recommend_battle(self.task.now).reason, "unobserved_action_or_target")
 
     def test_real_native_team_retains_legacy_dispatch_when_model_is_incomplete(self):
         from src.data.combat_catalog import build_combat_catalog
