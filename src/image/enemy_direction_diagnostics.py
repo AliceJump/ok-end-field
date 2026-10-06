@@ -14,10 +14,10 @@ from ok import Box, og
 
 from src.data.combat_observation import EnemyPresence
 from src.image.enemy_direction_probe import (
-    EnemyDirectionMarker,
-    EnemyDirectionObservation,
     _ELLIPSE_ANNULUS_SCALE,
     _MARKER_ARC_WIDTH_DEG,
+    EnemyDirectionMarker,
+    EnemyDirectionObservation,
     _direction_to_parameter_deg,
     _ellipse_axes,
 )
@@ -123,8 +123,7 @@ def _draw_live_overlay(task, frame, observation: EnemyDirectionObservation | Non
         x1, y1, x2, y2 = _marker_box(frame, marker)
         box = Box(x1, y1, max(1, x2 - x1), max(1, y2 - y1))
         box.name = (
-            f"enemy_direction_hit:{index}:{marker.angle_deg:.1f}deg:"
-            f"score={marker.score:.1f}:streak={streak}:{action}"
+            f"enemy_direction_hit:{index}:{marker.angle_deg:.1f}deg:score={marker.score:.1f}:streak={streak}:{action}"
         )
         box.confidence = 1.0
         boxes.append(box)
@@ -242,11 +241,7 @@ def _build_direction_inform(
         "result": "error" if error else ("hit" if observation is not None else "miss"),
         "streak": int(streak),
         "action": action,
-        "mouse_delta": (
-            {"dx": int(mouse_delta[0]), "dy": int(mouse_delta[1])}
-            if mouse_delta is not None
-            else None
-        ),
+        "mouse_delta": ({"dx": int(mouse_delta[0]), "dy": int(mouse_delta[1])} if mouse_delta is not None else None),
         "error": error,
         "screen": {
             "width": int(width),

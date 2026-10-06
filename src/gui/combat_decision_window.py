@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 
 try:
-    from PySide6.QtCore import QThread, QTimer, Qt
+    from PySide6.QtCore import Qt, QThread, QTimer
     from PySide6.QtWidgets import QApplication, QDialog, QLabel, QPlainTextEdit, QVBoxLayout
 except ImportError:  # pragma: no cover - packaged app depends on PySide6
     QApplication = None
@@ -182,7 +182,9 @@ if QApplication is not None:
             current, history = combat_decision_snapshot()
             if current != self._last_current:
                 self._last_current = current
-                self.current.setPlainText("等待战斗决策…" if current is None else _format_entry(current, multiline=True))
+                self.current.setPlainText(
+                    "等待战斗决策…" if current is None else _format_entry(current, multiline=True)
+                )
 
             history_revision = combat_decision_history_revision()
             if history_revision == self._last_history_revision:

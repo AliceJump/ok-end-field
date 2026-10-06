@@ -124,8 +124,7 @@ def _describe_battle_wait(logic, token, sp) -> tuple[str, str, str, str]:
     return (
         actor,
         "准备释放",
-        f"当前技力约 {sp:.1f} SP，已达到 {sp_gate:g} SP 门槛；"
-        "技能冷却和动作衔接时间也允许，现在准备尝试该角色战技。",
+        f"当前技力约 {sp:.1f} SP，已达到 {sp_gate:g} SP 门槛；技能冷却和动作衔接时间也允许，现在准备尝试该角色战技。",
         "ready",
     )
 

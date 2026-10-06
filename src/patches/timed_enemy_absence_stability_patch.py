@@ -25,9 +25,7 @@ def _enemy_operation_paused_with_stability(logic) -> bool:
         if logic.enemy_pause_started is not None:
             elapsed = max(0.0, now - logic.enemy_pause_started)
             logic.enemy_pause_started = None
-            logic.task.log_info(
-                f"时间排轴敌人占位检测: 敌人重新出现，恢复技能调度；暂停 {elapsed:.2f}s 已计入状态耗时"
-            )
+            logic.task.log_info(f"时间排轴敌人占位检测: 敌人重新出现，恢复技能调度；暂停 {elapsed:.2f}s 已计入状态耗时")
         return False
 
     if logic.enemy_pause_started is not None:
@@ -51,8 +49,7 @@ def _enemy_operation_paused_with_stability(logic) -> bool:
 
     logic.enemy_pause_started = now
     logic.task.log_info(
-        "时间排轴敌人占位检测: 战斗UI仍在且连续未见敌人证据，暂停技能调度；"
-        "保持普攻和中键索敌，状态与冷却时间继续流逝"
+        "时间排轴敌人占位检测: 战斗UI仍在且连续未见敌人证据，暂停技能调度；保持普攻和中键索敌，状态与冷却时间继续流逝"
     )
     return True
 

@@ -63,12 +63,7 @@ def _select_locked_observation(
     markers = observation.markers
     previous_angle = getattr(task, "_enemy_direction_last_angle", None)
     previous_at = getattr(task, "_enemy_direction_last_seen_at", None)
-    if (
-        not markers
-        or previous_angle is None
-        or previous_at is None
-        or not 0.0 <= now - previous_at <= _STABLE_MAX_GAP
-    ):
+    if not markers or previous_angle is None or previous_at is None or not 0.0 <= now - previous_at <= _STABLE_MAX_GAP:
         return observation
 
     nearest = min(
@@ -279,6 +274,7 @@ def install_enemy_direction_recovery_patch() -> None:
 
     original_probe = BattleMixin.probe_enemy_presence
     if not getattr(original_probe, "_enemy_direction_recovery_wrapped", False):
+
         def probe_enemy_presence_with_direction_recovery(self):
             presence = original_probe(self)
             return _recover_direction_fail_soft(self, presence)
@@ -288,6 +284,7 @@ def install_enemy_direction_recovery_patch() -> None:
 
     original_click = BattleMixin.click
     if not getattr(original_click, "_enemy_direction_center_guard_wrapped", False):
+
         def click_with_enemy_direction_center_guard(self, *args, **kwargs):
             key = args[8] if len(args) > 8 else kwargs.get("key", "left")
             if key == "middle" and _centering_blocked(self):
