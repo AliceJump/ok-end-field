@@ -992,14 +992,10 @@ class TimedCombatLogic:
         if runtime is None or now < self.next_mechanism_probe_at:
             return False
         self.next_mechanism_probe_at = now + 0.5
-        if self.last_enemy_presence != EnemyPresence.PRESENT:
-            reason = "enemy_not_confirmed"
-            recommendation = None
-        elif self.pending is not None or self.forced_battle_token is not None:
+        if self.pending is not None or self.forced_battle_token is not None:
             return False
-        else:
-            recommendation = runtime.recommend_battle(now)
-            reason = recommendation.reason
+        recommendation = runtime.recommend_battle(now)
+        reason = recommendation.reason
         if recommendation is not None and recommendation.program is not None:
             program = recommendation.program
             profiles, _, _ = self._battle_context(program.actor)
