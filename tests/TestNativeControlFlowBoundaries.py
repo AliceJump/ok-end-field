@@ -37,3 +37,6 @@ class TestNativeControlFlowBoundaries(unittest.TestCase):
     def test_native_interrupt_keeps_targeted_immobilization_unresolved(self):
         self.assert_native_boundary("chr_0004_pelica_normal_skill", "InterruptAction+Data",
                                     {"immobilizedTime": 1.0, "overrideSuperArmorLimit": -1})
+
+    def test_native_jump_remains_unresolved(self):
+        self.assert_native_boundary('chr_0024_deepfin_combo_skill', 'JumpToAction+Data', {'destFrame': 4})
