@@ -1,5 +1,7 @@
 # 机制模拟续接检查点（2026-10-05）
 
+> 2026-10-07用户最新转向：先终止全面/逐队机制补全，优先把加成类接入master编排，连携暂沿用master处理并预留识别接口。旧续作automation-2已暂停。最新入口为[加成接入计划](damage-bonus-master-integration-plan.md)，覆盖下方旧续作顺序；本次仅保存计划，尚未实施这一新范围。
+
 分支：`codex/effect-semantics-normalization`。用户要求阶段提交并推送，不新开 PR；master 已同步到 `ad9d1afe`。本次按用户额度提醒保存进度，不表示完整机制已经完成。技力返还时机和 HUD 阈值识别继续后置。
 
 ## 已接入
