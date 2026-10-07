@@ -8,10 +8,16 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-_SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "skill-data" / "build_loadout_data.py"
+_REPO = Path(__file__).resolve().parents[1]
+_SCRIPT = _REPO / "scripts" / "skill-data" / "build_loadout_data.py"
 _spec = importlib.util.spec_from_file_location("build_loadout_data", _SCRIPT)
 mod = importlib.util.module_from_spec(_spec)
 _spec.loader.exec_module(mod)
+
+_BUILD_SCRIPT = _REPO / "scripts" / "skill-data" / "generate_character_builds.py"
+_build_spec = importlib.util.spec_from_file_location("generate_character_builds_for_loadout_test", _BUILD_SCRIPT)
+builds = importlib.util.module_from_spec(_build_spec)
+_build_spec.loader.exec_module(builds)
 
 
 class TestParseEquip(unittest.TestCase):
@@ -51,6 +57,48 @@ class TestParseEquip(unittest.TestCase):
                     "accessory_2_id": "2336",
                 }
             ],
+        )
+
+    def test_generator_uses_first_complete_card_without_deduplicating_accessories(self):
+        equipments = {
+            "险关手甲": {
+                "item_id": "2335",
+                "recommended_loadouts": [
+                    {
+                        "operator_id": "2116",
+                        "armor_id": "2334",
+                        "gloves_id": "2335",
+                        "accessory_1_id": "2336",
+                        "accessory_2_id": "2336",
+                    }
+                ],
+            },
+            "险关通信器": {
+                "item_id": "2336",
+                "recommended_loadouts": [
+                    {
+                        "operator_id": "2116",
+                        "armor_id": "9991",
+                        "gloves_id": "9992",
+                        "accessory_1_id": "9993",
+                        "accessory_2_id": "9994",
+                    }
+                ],
+            },
+        }
+        id_to_name = {
+            "2116": "提弗洛斯",
+            "2334": "险关装甲",
+            "2335": "险关手甲",
+            "2336": "险关通信器",
+            "9991": "后续护甲",
+            "9992": "后续护手",
+            "9993": "后续配件一",
+            "9994": "后续配件二",
+        }
+        self.assertEqual(
+            builds.collect_official_loadouts(equipments, id_to_name),
+            {"提弗洛斯": ["险关装甲", "险关手甲", "险关通信器", "险关通信器"]},
         )
 
 
