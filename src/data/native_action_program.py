@@ -576,7 +576,12 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 only_main_source=resource == CombatResourceType.SKILL_POINT and body["atbOnlyMainChar"],
             ),)))
         elif name == "CreateBuffAction+Data":
-            if body.get("autoFinishByAction") or body.get("asChildBuff"):
+            # Empty inheritSkillIdList cannot match the next-skill transfer arm.
+            # Only root timeline actions have an authored OnEnd deadline here.
+            action_bound = (body.get("autoFinishByAction") and not body.get("asChildBuff")
+                            and not body.get("inheritSkillIdList") and not buff_path
+                            and event_sequence is None and end > at)
+            if body.get("asChildBuff") or body.get("autoFinishByAction") and not action_bound:
                 emit(CombatEvent(at, "unresolved_native", unresolved=("Native child/action-bound buff lifetime not yet bound",)))
             for reference in body["buffs"]:
                 buff_id = reference["buffId"]
@@ -593,6 +598,8 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 if eid is not None and (count is None or count != int(count)):
                     raise UnresolvedMechanic(f"Dynamic native buff count: {buff_id}")
                 if eid is not None:
+                    if action_bound:
+                        emit(CombatEvent(at, "unresolved_native", unresolved=("Canonical buff lacks action-bound instance identity",)))
                     emit(CombatEvent(at, "buff_created", effects=(SkillEffect(eid, count=int(count), duration=duration, target="self"),)))
                 else:
                     buff_ids.add(buff_id)
@@ -604,12 +611,20 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
 
                         definition = compile_buff_definition(store, character, profile, actor, buff_id, data, reference,
                                                              attributes=attributes, panel=panel, path=buff_path)
+                    bound_instance = action_bound and definition is not None
+                    period = native_number(data["triggerInterval"], parameters)
+                    if bound_instance and (period is None or not math.isfinite(period) or period > 0):
+                        emit(CombatEvent(at, "unresolved_native", unresolved=("Action-bound periodic buff needs tick/end ordering",)))
+                        bound_instance = False
                     target = "enemy" if body["targetSettings"]["targetSource"] in {0, 2, 6} else "self"
                     change = NativeBuffChange(buff_id, number(body["count"]),
                                               CombatExpression("literal", (duration,)) if duration is not None else None,
                                               permanent=data["lifeType"] == 1, maximum=maximum, target=target,
                                               selector=resource_target(body["targetSettings"]), definition=definition,
-                                              tags=expand_tags(data["applyTags"]))
+                                              tags=expand_tags(data["applyTags"]),
+                                              action_finish_after=end - at if bound_instance else None)
+                    if action_bound and definition is None:
+                        emit(CombatEvent(at, "unresolved_native", unresolved=("Action-bound buff lacks executable instance definition",)))
                     emit(CombatEvent(at, "native_buff_created", native_buffs=(change,)))
                     # Preserve the presence/count even when another part of the
                     # buff still needs an interpreter; it is not zero damage proof.
