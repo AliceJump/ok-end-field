@@ -18,6 +18,12 @@ class CombatExpression(ImmutableCombatValue):
     operation: str
     operands: tuple[CombatExpression | float | str, ...]
 
+    def referenced_inputs(self):
+        if self.operation == "input":
+            return frozenset((self.operands[0],))
+        return frozenset(key for operand in self.operands if isinstance(operand, CombatExpression)
+                         for key in operand.referenced_inputs())
+
     def evaluate(self, inputs):
         if self.operation == "input":
             key, = self.operands
