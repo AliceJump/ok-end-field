@@ -62,6 +62,26 @@ _SCENE_GEOMETRY = {
     "CustomRootMotionAction+Data", "TeleportPosSelectAction+Data", "SaveTwoDirectionAngle+Data",
     "MoveToAction+Data", "SnapToTargetWithRangeAction+Data", "AllowNextSkillAction+Data",
 }
+_SCENARIO_IGNORED = {
+    "SetSuperArmorAction+Data",  # No incoming attacks in this stationary-target damage scenario.
+    "TimeDilationAction+Data",  # Absolute authored event times and SkillTiming windows are fixed inputs.
+    "SetIgnoreGlobalTimeScaleAction+Data",  # Fixed timeline seconds are not rescaled by presentation playback.
+    "CheckComboSkillCameraAlphaSetting+Data",  # Explicit camera option 1; preserve boolean/inversion below.
+    "IgnoreModelIntervalCheck+Data",  # Fixed observed cast windows exclude model-playback interval arbitration.
+    "SaveTargetDistanceAction+Data",  # Ignore only an unused numeric output; used distances stay unresolved.
+    "MarkCanInterrupt+Data",  # Legal handoffs use SkillTiming windows, with no external hit interrupts.
+    "UltimateTimeAction+Data",  # Fixed absolute timeline excludes cutscene playback clock changes.
+}
+
+
+def _reads_blackboard(value, key):
+    if isinstance(value, dict):
+        if value.get("useBlackboardKey") and value.get("blackboardKey") == key:
+            return True
+        return any(_reads_blackboard(child, key) for child in value.values())
+    if isinstance(value, (list, tuple)):
+        return any(_reads_blackboard(child, key) for child in value)
+    return False
 _GAMEPLAY = {"DamageAction+DamageActionData", "ObtainCostAction+Data", "CreateBuffAction+Data",
              "SpellInfliction+Data", "LaunchProjectile+Data", "SpawnAbilityEntity+Data",
              "HealAction+Data", "CastSkill+Data", "FinishBuffAction+Data", "FinishBuffAdvanced+Data",
@@ -73,7 +93,7 @@ def _has_gameplay(value):
         name = node["$type"].rsplit(".", 1)[-1]
         if name in _GAMEPLAY:
             return True
-        if name in _PRESENTATION or name in _SCENE_GEOMETRY or name.startswith("Selector+"):
+        if name in _PRESENTATION or name in _SCENE_GEOMETRY or name in _SCENARIO_IGNORED - {"SaveTargetDistanceAction+Data"} or name.startswith("Selector+"):
             continue
         if name.startswith("Check") or name.startswith("Compare") or name.endswith("Calculation"):
             continue
@@ -109,6 +129,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                                     character.progression.baseline.skill_rank, conditions=conditions,
                                     initial_blackboard=initial_blackboard)
     record = native_record(store, profile.skill_id)["data"]
+    scenario_nodes = set()
     bb = {} if isolated_blackboard else dict(native.blackboard)
     bb.update(event_blackboard or {})
     events = []
@@ -255,6 +276,11 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
                 if value["compare"] not in tests:
                     raise UnresolvedMechanic("Unknown comparison enum")
                 test = CombatExpression(tests[value["compare"]], (a, b))
+            elif name == "CheckComboSkillCameraAlphaSetting+Data" and name in _SCENARIO_IGNORED:
+                if value["desiredAlphaSetting"] not in {0, 1}:
+                    raise UnresolvedMechanic("Unknown native camera alpha option")
+                scenario_nodes.add(name)
+                test = CombatExpression("literal", (float(value["desiredAlphaSetting"] == 1),))
             else:
                 raise UnresolvedMechanic(f"Runtime condition: {profile.skill_id}/{name}")
             result.append(CombatExpression("not", (test,)) if invert else test)
@@ -275,6 +301,12 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
             name = node["$type"].rsplit(".", 1)[-1]
             if not body.get("isEnable", True) or name in _PRESENTATION or name in _SCENE_GEOMETRY:
                 continue
+            if name in _SCENARIO_IGNORED and not name.startswith("Check"):
+                if name != "SaveTargetDistanceAction+Data" or not (
+                    _reads_blackboard(record, body["bbKey"]) or _reads_blackboard(event_sequence, body["bbKey"])
+                ):
+                    scenario_nodes.add(name)
+                    continue
             if name == "NotNextCheckAction+Data":
                 invert_next = not invert_next
                 continue
@@ -644,6 +676,7 @@ def compile_native_action(store, character, profile, actor, kind, *, damage_bonu
         raise UnresolvedMechanic(f"Unknown cast resource: {native.cost_type}")
     program = ActionProgram(profile.skill_id, actor, kind, cost, profile.handoff, native.cooldown, tuple(events),
                             energy_cost=energy, actor_lock=profile.actionable,
+                            scenario_ignored_nodes=tuple(sorted(scenario_nodes)),
                             parameters=tuple(("bb." + k, float(v)) for k, v in bb.items() if isinstance(v, (float, int)))
                             + tuple(event_defaults.items())
                             + (("target.smart_target.count", 1.0),),

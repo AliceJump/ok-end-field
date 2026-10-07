@@ -283,6 +283,7 @@ class ActionProgram(ImmutableCombatValue):
     native_slot: int | None = None
     native_requires_override: bool = False
     native_attribute_queries: tuple[NativeAttributeQuery, ...] = ()
+    scenario_ignored_nodes: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

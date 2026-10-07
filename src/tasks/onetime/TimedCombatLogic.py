@@ -1012,6 +1012,9 @@ class TimedCombatLogic:
                 self.task.log_info(translate(template).format(
                     actor=program.actor, skill=program.key, sequence=" -> ".join(recommendation.plan.actions),
                     damage=recommendation.plan.damage, seconds=recommendation.plan.seconds))
+                if program.scenario_ignored_nodes:
+                    self.task.log_debug(translate("时间排轴机制场景忽略节点: {nodes}").format(
+                        nodes=", ".join(program.scenario_ignored_nodes)))
                 return True
             else:
                 reason = "existing_cast_guard"
